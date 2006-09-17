@@ -26,11 +26,49 @@
 
 #include "firebird.h"
 #include "../jrd/IntlUtil.h"
-#include "../jrd/intlobj_new.h"
 #include "../jrd/unicode_util.h"
+#include "../intl/country_codes.h"
+
+
+using Jrd::UnicodeUtil;
+
+
+namespace
+{
+	struct TextTypeImpl
+	{
+		TextTypeImpl(charset* a_cs, UnicodeUtil::Utf16Collation* a_collation)
+			: cs(a_cs),
+			  collation(a_collation)
+		{
+		}
+
+		~TextTypeImpl()
+		{
+			if (cs->charset_fn_destroy)
+				cs->charset_fn_destroy(cs);
+
+			delete cs;
+			delete collation;
+		}
+
+		charset* cs;
+		UnicodeUtil::Utf16Collation* collation;
+	};
+}
 
 
 namespace Firebird {
+
+
+static void unicodeDestroy(texttype* tt);
+static USHORT unicodeKeyLength(texttype* tt, USHORT len);
+static USHORT unicodeStrToKey(texttype* tt, USHORT srcLen, const UCHAR* src,
+	USHORT dstLen, UCHAR* dst, USHORT keyType);
+static SSHORT unicodeCompare(texttype* tt, ULONG len1, const UCHAR* str1,
+	ULONG len2, const UCHAR* str2, INTL_BOOL* errorFlag);
+static ULONG unicodeCanonical(texttype* tt, ULONG srcLen, const UCHAR* src,
+	ULONG dstLen, UCHAR* dst);
 
 
 string IntlUtil::generateSpecificAttributes(
@@ -202,6 +240,103 @@ bool IntlUtil::parseSpecificAttributes(
 }
 
 
+string IntlUtil::convertAsciiToUtf16(string ascii)
+{
+	string s;
+
+	for (const char* p = ascii.c_str(); p < (ascii.c_str() + ascii.length()); ++p)
+	{
+		USHORT c = *(UCHAR*) p;
+		s.append((char*) &c, sizeof(c));
+	}
+
+	return s;
+}
+
+
+string IntlUtil::convertUtf16ToAscii(string utf16, bool* error)
+{
+	fb_assert(utf16.length() % sizeof(USHORT) == 0);
+
+	string s;
+
+	for (const USHORT* p = (USHORT*) utf16.c_str(); p < (USHORT*) (utf16.c_str() + utf16.length()); ++p)
+	{
+		if (*p <= 0xFF)
+			s.append((UCHAR) *p);
+		else
+		{
+			*error = true;
+			return "";
+		}
+	}
+
+	*error = false;
+
+	return s;
+}
+
+
+bool IntlUtil::initUnicodeCollation(texttype* tt, charset* cs, const ASCII* name,
+	USHORT attributes, const UCharBuffer& specificAttributes)
+{
+	// name comes from stack. Copy it.
+	tt->texttype_name = new ASCII[strlen(name) + 1];
+	strcpy(const_cast<ASCII*>(tt->texttype_name), name);
+
+	tt->texttype_version = TEXTTYPE_VERSION_1;
+	tt->texttype_country = CC_INTL;
+	tt->texttype_fn_destroy = unicodeDestroy;
+	tt->texttype_fn_compare = unicodeCompare;
+	tt->texttype_fn_key_length = unicodeKeyLength;
+	tt->texttype_fn_string_to_key = unicodeStrToKey;
+
+	IntlUtil::SpecificAttributesMap map;
+	IntlUtil::parseSpecificAttributes(cs, specificAttributes.getCount(),
+		specificAttributes.begin(), &map);
+
+	IntlUtil::SpecificAttributesMap map16;
+
+	bool found = map.getFirst();
+
+	while (found)
+	{
+		UCharBuffer s1, s2;
+		USHORT errCode;
+		ULONG errPosition;
+
+		s1.resize(cs->charset_to_unicode.csconvert_fn_convert(
+			&cs->charset_to_unicode, map.current()->first.length(), NULL, 0, NULL, &errCode, &errPosition));
+		s1.resize(cs->charset_to_unicode.csconvert_fn_convert(
+			&cs->charset_to_unicode, map.current()->first.length(), (UCHAR*) map.current()->first.c_str(),
+			s1.getCapacity(), s1.begin(), &errCode, &errPosition));
+
+		s2.resize(cs->charset_to_unicode.csconvert_fn_convert(
+			&cs->charset_to_unicode, map.current()->second.length(), NULL, 0, NULL, &errCode, &errPosition));
+		s2.resize(cs->charset_to_unicode.csconvert_fn_convert(
+			&cs->charset_to_unicode, map.current()->second.length(), (UCHAR*) map.current()->second.c_str(),
+			s2.getCapacity(), s2.begin(), &errCode, &errPosition));
+
+		map16.put(string((char*) s1.begin(), s1.getCount()), string((char*) s2.begin(), s2.getCount()));
+
+		found = map.getNext();
+	}
+
+	UnicodeUtil::Utf16Collation* collation =
+		UnicodeUtil::Utf16Collation::create(tt, attributes, map16);
+
+	if (!collation)
+		return false;
+
+	tt->texttype_impl = new TextTypeImpl(cs, collation);
+
+	if (tt->texttype_canonical_width != 0)
+		tt->texttype_fn_canonical = unicodeCanonical;
+
+	return true;
+}
+
+
 string IntlUtil::escapeAttribute(charset* cs, const string& s)
 {
 	string ret;
@@ -336,6 +471,166 @@ bool IntlUtil::readOneChar(charset* cs, const UCHAR** s, const UCHAR* end, ULONG
 	}
 
 	return true;
+}
+
+
+static void unicodeDestroy(texttype* tt)
+{
+	delete [] const_cast<ASCII*>(tt->texttype_name);
+	delete tt->texttype_impl;
+}
+
+
+static USHORT unicodeKeyLength(texttype* tt, USHORT len)
+{
+	return tt->texttype_impl->collation->keyLength(
+		len / tt->texttype_impl->cs->charset_min_bytes_per_char * 4);
+}
+
+
+static USHORT unicodeStrToKey(texttype* tt, USHORT srcLen, const UCHAR* src,
+	USHORT dstLen, UCHAR* dst, USHORT keyType)
+{
+	try
+	{
+		charset* cs = tt->texttype_impl->cs;
+
+		HalfStaticArray<UCHAR, BUFFER_SMALL> utf16Str;
+		USHORT errorCode;
+		ULONG offendingPos;
+
+		utf16Str.getBuffer(
+			cs->charset_to_unicode.csconvert_fn_convert(
+				&cs->charset_to_unicode,
+				srcLen,
+				src,
+				0,
+				NULL,
+				&errorCode,
+				&offendingPos));
+
+		ULONG utf16Len = cs->charset_to_unicode.csconvert_fn_convert(
+			&cs->charset_to_unicode,
+			srcLen,
+			src,
+			utf16Str.getCapacity(),
+			utf16Str.begin(),
+			&errorCode,
+			&offendingPos);
+
+		return tt->texttype_impl->collation->stringToKey(
+			utf16Len, (USHORT*)utf16Str.begin(), dstLen, dst, keyType);
+	}
+	catch (BadAlloc)
+	{
+		fb_assert(false);
+		return INTL_BAD_KEY_LENGTH;
+	}
+}
+
+
+static SSHORT unicodeCompare(texttype* tt, ULONG len1, const UCHAR* str1,
+	ULONG len2, const UCHAR* str2, INTL_BOOL* errorFlag)
+{
+	try
+	{
+		*errorFlag = false;
+
+		charset* cs = tt->texttype_impl->cs;
+
+		HalfStaticArray<UCHAR, BUFFER_SMALL> utf16Str1;
+		HalfStaticArray<UCHAR, BUFFER_SMALL> utf16Str2;
+		USHORT errorCode;
+		ULONG offendingPos;
+
+		utf16Str1.getBuffer(
+			cs->charset_to_unicode.csconvert_fn_convert(
+				&cs->charset_to_unicode,
+				len1,
+				str1,
+				0,
+				NULL,
+				&errorCode,
+				&offendingPos));
+
+		ULONG utf16Len1 = cs->charset_to_unicode.csconvert_fn_convert(
+			&cs->charset_to_unicode,
+			len1,
+			str1,
+			utf16Str1.getCapacity(),
+			utf16Str1.begin(),
+			&errorCode,
+			&offendingPos);
+
+		utf16Str2.getBuffer(
+			cs->charset_to_unicode.csconvert_fn_convert(
+				&cs->charset_to_unicode,
+				len2,
+				str2,
+				0,
+				NULL,
+				&errorCode,
+				&offendingPos));
+
+		ULONG utf16Len2 = cs->charset_to_unicode.csconvert_fn_convert(
+			&cs->charset_to_unicode,
+			len2,
+			str2,
+			utf16Str2.getCapacity(),
+			utf16Str2.begin(),
+			&errorCode,
+			&offendingPos);
+
+		return tt->texttype_impl->collation->compare(
+			utf16Len1, (USHORT*)utf16Str1.begin(),
+			utf16Len2, (USHORT*)utf16Str2.begin(), errorFlag);
+	}
+	catch (BadAlloc)
+	{
+		fb_assert(false);
+		return 0;
+	}
+}
+
+
+static ULONG unicodeCanonical(texttype* tt, ULONG srcLen, const UCHAR* src, ULONG dstLen, UCHAR* dst)
+{
+	try
+	{
+		charset* cs = tt->texttype_impl->cs;
+
+		HalfStaticArray<UCHAR, BUFFER_SMALL> utf16Str;
+		USHORT errorCode;
+		ULONG offendingPos;
+
+		utf16Str.getBuffer(
+			cs->charset_to_unicode.csconvert_fn_convert(
+				&cs->charset_to_unicode,
+				srcLen,
+				src,
+				0,
+				NULL,
+				&errorCode,
+				&offendingPos));
+
+		ULONG utf16Len = cs->charset_to_unicode.csconvert_fn_convert(
+			&cs->charset_to_unicode,
+			srcLen,
+			src,
+			utf16Str.getCapacity(),
+			utf16Str.begin(),
+			&errorCode,
+			&offendingPos);
+
+		return tt->texttype_impl->collation->canonical(
+			utf16Len, reinterpret_cast<USHORT*>(utf16Str.begin()),
+			dstLen, reinterpret_cast<ULONG*>(dst));
+	}
+	catch (BadAlloc)
+	{
+		fb_assert(false);
+		return INTL_BAD_KEY_LENGTH;
+	}
 }
 
 

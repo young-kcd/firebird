@@ -38,7 +38,7 @@
 void gds__log(UCHAR*, ...);
 */
 
-#define	EXTERN_texttype(name)	INTL_BOOL name (TEXTTYPE, charset*, const ASCII*, const ASCII*, USHORT, const UCHAR*, ULONG)
+#define	EXTERN_texttype(name)	INTL_BOOL name (texttype*, charset*, const ASCII*, const ASCII*, USHORT, const UCHAR*, ULONG)
 // #define EXTERN_convert(name)	INTL_BOOL name (csconvert*, const ASCII*, const ASCII*)
 #define EXTERN_charset(name)	INTL_BOOL name (charset*, const ASCII*)
 
@@ -304,7 +304,7 @@ INTL_BOOL FB_DLL_EXPORT LD_lookup_charset(charset* cs, const ASCII* name)
 			return lookup_symbol(cs, name);											\
 	}
 #define CSALIAS(name, cs_id)
-#define COLLATION(name, cc_id, cs_id, coll_id, symbol, attr)
+#define COLLATION(name, base_name, cc_id, cs_id, coll_id, symbol, attr)
 #define COLLATE_ALIAS(name, coll_id)
 #define END_CHARSET
 
@@ -359,11 +359,11 @@ INTL_BOOL FB_DLL_EXPORT LD_lookup_texttype(texttype* tt, const ASCII* texttype_n
 #define CSALIAS(name, cs_id)
 #define END_CHARSET	\
 	}
-#define COLLATION(tt_name, cc_id, cs_id, coll_id, symbol, coll_attr)	\
+#define COLLATION(tt_name, base_name, cc_id, cs_id, coll_id, symbol, coll_attr)	\
 	{																	\
 		EXTERN_texttype((*coll_lookup_symbol)) = symbol;				\
 																		\
-		if (coll_lookup_symbol && strcmp(texttype_name, tt_name) == 0)	\
+		if (coll_lookup_symbol && strcmp(texttype_name, (base_name ? base_name : tt_name)) == 0)	\
 		{																\
 			INTL_BOOL ret = coll_lookup_symbol(							\
 				tt, &cs, texttype_name, charset_name,					\

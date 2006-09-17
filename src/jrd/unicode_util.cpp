@@ -26,11 +26,15 @@
 
 #include "firebird.h"
 #include "../jrd/unicode_util.h"
+#include "../jrd/IntlUtil.h"
 #include "../jrd/gdsassert.h"
 #include "unicode/ustring.h"
 #include "unicode/uchar.h"
 #include "unicode/ucnv.h"
 #include "unicode/ucol.h"
+
+
+using Firebird::IntlUtil;
 
 
 namespace Jrd {
@@ -545,26 +549,81 @@ INTL_BOOL UnicodeUtil::utf32WellFormed(ULONG len, const ULONG* str, ULONG* offen
 }
 
 
-UnicodeUtil::Utf16Collation* UnicodeUtil::Utf16Collation::create(const char* locale)
+UnicodeUtil::Utf16Collation* UnicodeUtil::Utf16Collation::create(
+	texttype* tt, USHORT attributes,
+	Firebird::IntlUtil::SpecificAttributesMap& specificAttributes)
 {
+	Firebird::string locale;
+	int attributeCount = 0;
+
+	if (specificAttributes.get(IntlUtil::convertAsciiToUtf16("LOCALE"), locale))
+		++attributeCount;
+
+	bool error;
+	locale = IntlUtil::convertUtf16ToAscii(locale, &error);
+	if (error)
+		return false;
+
+	if ((attributes & ~(TEXTTYPE_ATTR_PAD_SPACE | TEXTTYPE_ATTR_CASE_INSENSITIVE)) ||
+		(specificAttributes.count() - attributeCount) != 0)
+	{
+		return false;
+	}
+
+	tt->texttype_pad_option = (attributes & TEXTTYPE_ATTR_PAD_SPACE) ? true : false;
+
 	UErrorCode status = U_ZERO_ERROR;
 
-	UCollator* collator = ucol_open(locale, &status);
-	if (!collator)
+	if (locale.hasData())
+	{
+		int i = uloc_countAvailable();
+
+		while (--i >= 0)
+		{
+			if (locale == uloc_getAvailable(i))
+				break;
+		}
+
+		if (i < 0)
+			return false;
+	}
+
+	UCollator* compareCollator = ucol_open(locale.c_str(), &status);
+	if (!compareCollator)
 		return NULL;
 
-	UCollator* partialCollator = ucol_open(locale, &status);
+	UCollator* partialCollator = ucol_open(locale.c_str(), &status);
 	if (!partialCollator)
 	{
-		ucol_close(collator);
+		ucol_close(compareCollator);
+		return NULL;
+	}
+
+	UCollator* sortCollator = ucol_open(locale.c_str(), &status);
+	if (!sortCollator)
+	{
+		ucol_close(compareCollator);
+		ucol_close(partialCollator);
 		return NULL;
 	}
 
 	ucol_setAttribute(partialCollator, UCOL_STRENGTH, UCOL_PRIMARY, &status);
 
+	if (attributes & TEXTTYPE_ATTR_CASE_INSENSITIVE)
+	{
+		ucol_setAttribute(compareCollator, UCOL_STRENGTH, UCOL_SECONDARY, &status);
+		tt->texttype_flags |= TEXTTYPE_SEPARATE_UNIQUE;
+		tt->texttype_canonical_width = 4;	// UTF-32
+	}
+	else
+		tt->texttype_flags = TEXTTYPE_DIRECT_MATCH;
+
 	Utf16Collation* obj = new Utf16Collation();
-	obj->collator = collator;
+	obj->tt = tt;
+	obj->attributes = attributes;
+	obj->compareCollator = compareCollator;
 	obj->partialCollator = partialCollator;
+	obj->sortCollator = sortCollator;
 
 	return obj;
 }
@@ -572,8 +631,9 @@ UnicodeUtil::Utf16Collation* UnicodeUtil::Utf16Collation::create(const char* loc
 
 UnicodeUtil::Utf16Collation::~Utf16Collation()
 {
-	ucol_close((UCollator*)collator);
+	ucol_close((UCollator*)compareCollator);
 	ucol_close((UCollator*)partialCollator);
+	ucol_close((UCollator*)sortCollator);
 }
 
 
@@ -596,9 +656,44 @@ USHORT UnicodeUtil::Utf16Collation::stringToKey(USHORT srcLen, const USHORT* src
 		return INTL_BAD_KEY_LENGTH;
 	}
 
-	return ucol_getSortKey(static_cast<const UCollator*>(
-		(key_type == INTL_KEY_PARTIAL ? partialCollator : collator)),
-		reinterpret_cast<const UChar*>(src), srcLen / sizeof(*src), dst, dstLen);
+	srcLen /= sizeof(*src);
+
+	if (tt->texttype_pad_option)
+	{
+		const USHORT* pad;
+
+		for (pad = src + srcLen - 1; pad >= src; --pad)
+		{
+			if (*pad != 32)
+				break;
+		}
+
+		srcLen = pad - src + 1;
+	}
+
+	void* coll;
+
+	switch (key_type)
+	{
+		case INTL_KEY_PARTIAL:
+			coll = partialCollator;
+			break;
+
+		case INTL_KEY_UNIQUE:
+			coll = compareCollator;
+			break;
+
+		case INTL_KEY_SORT:
+			coll = sortCollator;
+			break;
+
+		default:
+			fb_assert(false);
+			return INTL_BAD_KEY_LENGTH;
+	}
+
+	return ucol_getSortKey(static_cast<const UCollator*>(coll),
+		reinterpret_cast<const UChar*>(src), srcLen, dst, dstLen);
 }
 
 
@@ -612,9 +707,52 @@ SSHORT UnicodeUtil::Utf16Collation::compare(ULONG len1, const USHORT* str1,
 
 	*error_flag = false;
 
-	return (SSHORT)ucol_strcoll(static_cast<const UCollator*>(collator),
-								reinterpret_cast<const UChar*>(str1), len1 / sizeof(*str1), 
-								reinterpret_cast<const UChar*>(str2), len2 / sizeof(*str2));
+	len1 /= sizeof(*str1);
+	len2 /= sizeof(*str2);
+
+	if (tt->texttype_pad_option)
+	{
+		const USHORT* pad;
+
+		for (pad = str1 + len1 - 1; pad >= str1; --pad)
+		{
+			if (*pad != 32)
+				break;
+		}
+
+		len1 = pad - str1 + 1;
+
+		for (pad = str2 + len2 - 1; pad >= str2; --pad)
+		{
+			if (*pad != 32)
+				break;
+		}
+
+		len2 = pad - str2 + 1;
+	}
+
+	return (SSHORT)ucol_strcoll(static_cast<const UCollator*>(compareCollator),
+								reinterpret_cast<const UChar*>(str1), len1, 
+								reinterpret_cast<const UChar*>(str2), len2);
+}
+
+
+ULONG UnicodeUtil::Utf16Collation::canonical(ULONG srcLen, const USHORT* src, ULONG dstLen, ULONG* dst)
+{
+	USHORT errCode;
+	ULONG errPosition;
+
+	Firebird::HalfStaticArray<UCHAR, BUFFER_SMALL> upperStr;
+
+	if (attributes & TEXTTYPE_ATTR_CASE_INSENSITIVE)
+	{
+		srcLen = utf16UpperCase(srcLen, src,
+			dstLen, reinterpret_cast<USHORT*>(upperStr.getBuffer(dstLen)));
+		src = reinterpret_cast<USHORT*>(upperStr.begin());
+	}
+
+	// convert UTF-16 to UTF-32
+	return utf16ToUtf32(srcLen, src, dstLen, dst, &errCode, &errPosition) / sizeof(ULONG);
 }
 
 

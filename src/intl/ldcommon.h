@@ -44,7 +44,7 @@ typedef USHORT UNICODE;
 
 
 
-#define	TEXTTYPE_ENTRY(name)	INTL_BOOL name (TEXTTYPE cache, charset* cs,											\
+#define	TEXTTYPE_ENTRY(name)	INTL_BOOL name (texttype* cache, charset* cs,											\
 												const ASCII* tt_name, const ASCII* cs_name,							\
 												USHORT attributes,													\
 												const UCHAR* specific_attributes, ULONG specific_attributes_length)

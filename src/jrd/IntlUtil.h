@@ -27,11 +27,11 @@
 #ifndef JRD_INTLUTIL_H
 #define JRD_INTLUTIL_H
 
+#include "../common/classes/array.h"
 #include "../common/classes/GenericMap.h"
 #include "../common/classes/fb_string.h"
+#include "../jrd/intlobj_new.h"
 
-struct charset;
-struct texttype;
 
 namespace Firebird {
 
@@ -46,6 +46,12 @@ public:
 		charset* cs, SpecificAttributesMap& map);
 	static bool parseSpecificAttributes(
 		charset* cs, ULONG len, const UCHAR* s, SpecificAttributesMap* map);
+
+	static string convertAsciiToUtf16(string ascii);
+	static string convertUtf16ToAscii(string utf16, bool* error);
+
+	static bool initUnicodeCollation(texttype* tt, charset* cs, const ASCII* name,
+		USHORT attributes, const UCharBuffer& specificAttributes);
 
 private:
 	static string escapeAttribute(charset* cs, const string& s);

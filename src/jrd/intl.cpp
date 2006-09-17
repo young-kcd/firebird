@@ -514,7 +514,7 @@ template <typename pContainsObjectImpl, typename pLikeObjectImpl,
 class CollationImpl : public TextType
 {
 public:
-	CollationImpl(TTYPE_ID a_type, TEXTTYPE a_tt, CharSet* a_cs) : TextType(a_type, a_tt, a_cs) {}
+	CollationImpl(TTYPE_ID a_type, texttype* a_tt, CharSet* a_cs) : TextType(a_type, a_tt, a_cs) {}
 
 	virtual bool matches(thread_db* tdbb, const UCHAR* a, SLONG b, const UCHAR* c, SLONG d)
 	{
@@ -725,7 +725,7 @@ TextType* CharSetContainer::lookupCollation(thread_db* tdbb, USHORT tt_id)
 			info.specificAttributes = specificAttributes;
 		}
 
-		TEXTTYPE tt = FB_NEW(*tdbb->tdbb_database->dbb_permanent) texttype;
+		texttype* tt = FB_NEW(*tdbb->tdbb_database->dbb_permanent) texttype;
 		memset(tt, 0, sizeof(texttype));
 
 		if (!lookup_texttype(tt, &info))

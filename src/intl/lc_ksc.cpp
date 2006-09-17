@@ -27,15 +27,15 @@
 #include "cv_ksc.h"
 #include "ld_proto.h"
 
-static USHORT LCKSC_string_to_key(TEXTTYPE obj, USHORT iInLen, const BYTE* pInChar,
+static USHORT LCKSC_string_to_key(texttype* obj, USHORT iInLen, const BYTE* pInChar,
 	USHORT iOutLen, BYTE *pOutChar, USHORT);
-static USHORT LCKSC_key_length(TEXTTYPE obj, USHORT inLen);
-static SSHORT LCKSC_compare(TEXTTYPE obj, ULONG l1, const BYTE* s1, ULONG l2, const BYTE* s2, INTL_BOOL* error_flag);
+static USHORT LCKSC_key_length(texttype* obj, USHORT inLen);
+static SSHORT LCKSC_compare(texttype* obj, ULONG l1, const BYTE* s1, ULONG l2, const BYTE* s2, INTL_BOOL* error_flag);
 
 static int GetGenHanNdx(UCHAR b1, UCHAR b2);
 static int GetSpeHanNdx(UCHAR b1, UCHAR b2);
 
-static inline bool FAMILY_MULTIBYTE(TEXTTYPE cache,
+static inline bool FAMILY_MULTIBYTE(texttype* cache,
 									SSHORT country,
 									const ASCII* POSIX,
 									USHORT attributes,
@@ -133,7 +133,7 @@ const USHORT LANGKSC_MAX_KEY	= 4096;
 const BYTE	ASCII_SPACE	= 32;
 
 
-static USHORT LCKSC_string_to_key(TEXTTYPE obj, USHORT iInLen, const BYTE* pInChar,
+static USHORT LCKSC_string_to_key(texttype* obj, USHORT iInLen, const BYTE* pInChar,
 	USHORT iOutLen, BYTE *pOutChar,
 	USHORT key_type) // unused
 {
@@ -240,7 +240,7 @@ static int GetSpeHanNdx(UCHAR b1, UCHAR b2)
 }
 
 
-static USHORT LCKSC_key_length(TEXTTYPE obj, USHORT inLen)
+static USHORT LCKSC_key_length(texttype* obj, USHORT inLen)
 {
 	const USHORT len = inLen + (inLen / 2);
 
@@ -252,7 +252,7 @@ static USHORT LCKSC_key_length(TEXTTYPE obj, USHORT inLen)
 *	function name	:	LCKSC_compare
 *	description	:	compare two string
 */
-static SSHORT LCKSC_compare(TEXTTYPE obj, ULONG l1, const BYTE* s1, ULONG l2, const BYTE* s2, INTL_BOOL* error_flag)
+static SSHORT LCKSC_compare(texttype* obj, ULONG l1, const BYTE* s1, ULONG l2, const BYTE* s2, INTL_BOOL* error_flag)
 {
 	fb_assert(error_flag != NULL);
 

@@ -1532,6 +1532,15 @@ static void store_intlnames(thread_db* tdbb, Database* dbb)
 	{
 		STORE(REQUEST_HANDLE handle) X IN RDB$COLLATIONS USING
 			PAD(collptr->init_collation_name, X.RDB$COLLATION_NAME);
+
+			if (collptr->init_collation_base_name)
+			{
+				X.RDB$BASE_COLLATION_NAME.NULL = false;
+				PAD(collptr->init_collation_base_name, X.RDB$BASE_COLLATION_NAME);
+			}
+			else
+				X.RDB$BASE_COLLATION_NAME.NULL = true;
+
 			X.RDB$CHARACTER_SET_ID = collptr->init_collation_charset;
 			X.RDB$COLLATION_ID = collptr->init_collation_id;
 			X.RDB$SYSTEM_FLAG = RDB_system;

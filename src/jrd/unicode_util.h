@@ -28,6 +28,8 @@
 #define JRD_UNICODE_UTIL_H
 
 #include "intlobj_new.h"
+#include "../jrd/IntlUtil.h"
+#include "../common/classes/array.h"
 
 namespace Jrd {
 
@@ -62,7 +64,9 @@ public:
 	class Utf16Collation
 	{
 	public:
-		static Utf16Collation* create(const char* locale);
+		static Utf16Collation* create(
+			texttype* tt, USHORT attributes,
+			Firebird::IntlUtil::SpecificAttributesMap& specificAttributes);
 
 		~Utf16Collation();
 
@@ -71,10 +75,14 @@ public:
 						   USHORT key_type) const;
 		SSHORT compare(ULONG len1, const USHORT* str1, ULONG len2, const USHORT* str2,
 					   INTL_BOOL* error_flag) const;
+		ULONG canonical(ULONG srcLen, const USHORT* src, ULONG dstLen, ULONG* dst);
 
 	private:
-		void* collator;
+		texttype* tt;
+		USHORT attributes;
+		void* compareCollator;
 		void* partialCollator;
+		void* sortCollator;
 	};
 };
 

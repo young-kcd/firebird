@@ -681,6 +681,10 @@ SOURCE=..\..\..\src\intl\collations\undef.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\src\jrd\unicode_util.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\src\intl\collations\win1251_ua.h
 # End Source File
 # Begin Source File
@@ -746,6 +750,10 @@ SOURCE=..\..\..\src\common\fb_exception.cpp
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\IntlUtil.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\unicode_util.cpp
 # End Source File
 # End Group
 # Begin Source File

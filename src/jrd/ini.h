@@ -168,7 +168,7 @@ struct rtyp {
 #define CHARSET(name, cs_id, coll_id, bytes, num, s1, s2, attr) \
 				{(name), (cs_id),   (UCHAR) nam_charset_name},
 #define CSALIAS(name, cs_id)	{(name), (cs_id),   (UCHAR) nam_charset_name},
-#define COLLATION(name, cc_id, cs_id, coll_id, sym, attr)
+#define COLLATION(name, base_name, cc_id, cs_id, coll_id, sym, attr)
 #define END_CHARSET
 
 static const rtyp types[] = {
@@ -198,7 +198,7 @@ typedef initcharset CS_TYPE;
 #define CHARSET(name, cs_id, coll_id, bytes, num, s1, s2, attr) \
 	{ (const UCHAR *) (name), (cs_id), (bytes)},
 #define CSALIAS(name, cs_id)
-#define COLLATION(name, cc_id, cs_id, coll_id, sym, attr)
+#define COLLATION(name, base_name, cc_id, cs_id, coll_id, sym, attr)
 #define END_CHARSET
 
 static const CS_TYPE cs_types[] = {
@@ -212,6 +212,7 @@ static const CS_TYPE cs_types[] = {
 
 struct initcollation {
 	const UCHAR *init_collation_name;
+	const UCHAR *init_collation_base_name;
 	SSHORT init_collation_charset;
 	SSHORT init_collation_id;
 	USHORT init_collation_attributes;
@@ -220,10 +221,10 @@ struct initcollation {
 typedef initcollation COLL_TYPE;
 
 #define CHARSET(name, cs_id, coll_id, bytes, num, s1, s2, attr) \
-	{ (const UCHAR *) (name), (cs_id), (coll_id), (attr) },
+	{ (const UCHAR *) (name), NULL, (cs_id), (coll_id), (attr) },
 #define CSALIAS(name, cs_id)
-#define COLLATION(name, cc_id, cs_id, coll_id, sym, attr) \
-	{ (const UCHAR *) (name), (cs_id), (coll_id), (attr) },
+#define COLLATION(name, base_name, cc_id, cs_id, coll_id, sym, attr) \
+	{ (const UCHAR *) (name), (const UCHAR *) (base_name), (cs_id), (coll_id), (attr) },
 #define END_CHARSET
 
 static const COLL_TYPE coll_types[] = {

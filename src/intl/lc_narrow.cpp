@@ -85,7 +85,7 @@ const UINT16 NULL_TERTIARY		= 0;
  *	The degenerate case of short strings is handled by a minimal key
  *	length.
  */
-USHORT LC_NARROW_key_length(TEXTTYPE obj, USHORT inLen)
+USHORT LC_NARROW_key_length(texttype* obj, USHORT inLen)
 {
 /* fb_assert (inLen <= LANGFAM2_MAX_KEY); *//* almost certainly an error */
 
@@ -149,7 +149,7 @@ static ULONG do_debug = 0;
  * RETURN:
  *		Length, in bytes, of returned key
  */
-USHORT LC_NARROW_string_to_key(TEXTTYPE obj, USHORT iInLen, const BYTE* pInChar, USHORT iOutLen, BYTE *pOutChar,
+USHORT LC_NARROW_string_to_key(texttype* obj, USHORT iInLen, const BYTE* pInChar, USHORT iOutLen, BYTE *pOutChar,
 							   USHORT key_type)
 {
 	fb_assert(pOutChar != NULL);
@@ -366,7 +366,7 @@ struct coltab_status {
 
 
 
-static SSHORT special_scan(TEXTTYPE obj, ULONG l1, const BYTE* s1, ULONG l2, const BYTE* s2)
+static SSHORT special_scan(texttype* obj, ULONG l1, const BYTE* s1, ULONG l2, const BYTE* s2)
 {
 	const SortOrderTblEntry* col1 = 0;
 	const SortOrderTblEntry* col2 = 0;
@@ -420,7 +420,7 @@ static SSHORT special_scan(TEXTTYPE obj, ULONG l1, const BYTE* s1, ULONG l2, con
 }
 
 
-static const SortOrderTblEntry* get_coltab_entry(TEXTTYPE obj, const UCHAR** p,
+static const SortOrderTblEntry* get_coltab_entry(texttype* obj, const UCHAR** p,
 	ULONG* l, coltab_status* stat)
 {
 	if (stat->stat_flags & LC_HAVE_WAITING) {
@@ -495,7 +495,7 @@ static const SortOrderTblEntry* get_coltab_entry(TEXTTYPE obj, const UCHAR** p,
 
 #define XOR	^					/* C bitwise XOR operator - defined for readability */
 
-SSHORT LC_NARROW_compare(TEXTTYPE obj, ULONG l1, const BYTE* s1, ULONG l2, const BYTE* s2, 
+SSHORT LC_NARROW_compare(texttype* obj, ULONG l1, const BYTE* s1, ULONG l2, const BYTE* s2, 
 	INTL_BOOL* error_flag)
 {
 	fb_assert(obj != NULL);
@@ -607,7 +607,7 @@ SSHORT LC_NARROW_compare(TEXTTYPE obj, ULONG l1, const BYTE* s1, ULONG l2, const
  * Routine used for comparing results from comparison algorithm
  * to results from key creation algorithm
  */
-static SSHORT old_fam2_compare(TEXTTYPE obj, ULONG l1, const BYTE* s1,
+static SSHORT old_fam2_compare(texttype* obj, ULONG l1, const BYTE* s1,
 	ULONG l2, const BYTE* s2, INTL_BOOL* error_flag)
 {
 	BYTE key1[LANGFAM2_MAX_KEY];
@@ -646,7 +646,7 @@ static SSHORT old_fam2_compare(TEXTTYPE obj, ULONG l1, const BYTE* s1,
  * Routine used for comparing results from comparision algorithm
  * to results from key creation algorithm
  */
-static SSHORT fam2_compare(TEXTTYPE obj, ULONG l1, const BYTE* s1,
+static SSHORT fam2_compare(texttype* obj, ULONG l1, const BYTE* s1,
 	ULONG l2, const BYTE* s2, INTL_BOOL* error_flag)
 {
 	SSHORT res1 = old_fam2_compare(obj, l1, s1, l2, s2);
@@ -666,7 +666,7 @@ static SSHORT fam2_compare(TEXTTYPE obj, ULONG l1, const BYTE* s1,
 
 #endif	/* DEBUG_COMPARE */
 
-ULONG LC_NARROW_canonical(TEXTTYPE obj, ULONG srcLen, const UCHAR* src, ULONG dstLen, UCHAR* dst)
+ULONG LC_NARROW_canonical(texttype* obj, ULONG srcLen, const UCHAR* src, ULONG dstLen, UCHAR* dst)
 {
 	fb_assert(dst != NULL);
 	fb_assert(src != NULL);
@@ -702,7 +702,7 @@ ULONG LC_NARROW_canonical(TEXTTYPE obj, ULONG srcLen, const UCHAR* src, ULONG ds
 }
 
 
-void LC_NARROW_destroy(TEXTTYPE obj)
+void LC_NARROW_destroy(texttype* obj)
 {
 	delete obj->texttype_impl;
 }

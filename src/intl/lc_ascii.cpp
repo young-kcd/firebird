@@ -26,7 +26,7 @@
 #include "ld_proto.h"
 #include "lc_ascii.h"
 
-static inline bool FAMILY_ASCII(TEXTTYPE cache,
+static inline bool FAMILY_ASCII(texttype* cache,
 								SSHORT country,
 								const ASCII* POSIX,
 								USHORT attributes,
@@ -383,7 +383,7 @@ const BYTE ASCII_SPACE			= 32;			// ASCII code for space
  * This is used for index buffer allocation within the
  * Engine.
  */
-USHORT famasc_key_length(TEXTTYPE obj, USHORT inLen)
+USHORT famasc_key_length(texttype* obj, USHORT inLen)
 {
 /* fb_assert (inLen <= LANGASCII_MAX_KEY); - possible upper logic error if true */
 	return (MIN(inLen, LANGASCII_MAX_KEY));
@@ -400,7 +400,7 @@ USHORT famasc_key_length(TEXTTYPE obj, USHORT inLen)
  * RETURN:
  *		Length, in bytes, of returned key
  */
-USHORT famasc_string_to_key(TEXTTYPE obj, USHORT iInLen, const BYTE* pInChar, USHORT iOutLen, BYTE *pOutChar,
+USHORT famasc_string_to_key(texttype* obj, USHORT iInLen, const BYTE* pInChar, USHORT iOutLen, BYTE *pOutChar,
 	USHORT key_type) // unused
 {
 	fb_assert(pOutChar != NULL);
@@ -441,7 +441,7 @@ static bool all_spaces(const BYTE* s, SLONG len)
 }
 
 
-SSHORT famasc_compare(TEXTTYPE obj, ULONG l1, const BYTE* s1, ULONG l2, const BYTE* s2,
+SSHORT famasc_compare(texttype* obj, ULONG l1, const BYTE* s1, ULONG l2, const BYTE* s2,
 	INTL_BOOL* error_flag)
 {
 	fb_assert(obj != NULL);
@@ -479,7 +479,7 @@ SSHORT famasc_compare(TEXTTYPE obj, ULONG l1, const BYTE* s1, ULONG l2, const BY
 }
 
 
-ULONG famasc_str_to_upper(TEXTTYPE obj, ULONG iLen, const BYTE* pStr, ULONG iOutLen, BYTE *pOutStr)
+ULONG famasc_str_to_upper(texttype* obj, ULONG iLen, const BYTE* pStr, ULONG iOutLen, BYTE *pOutStr)
 {
 	fb_assert(pStr != NULL);
 	fb_assert(pOutStr != NULL);
@@ -497,7 +497,7 @@ ULONG famasc_str_to_upper(TEXTTYPE obj, ULONG iLen, const BYTE* pStr, ULONG iOut
 }
 
 
-ULONG famasc_str_to_lower(TEXTTYPE obj, ULONG iLen, const BYTE* pStr, ULONG iOutLen, BYTE *pOutStr)
+ULONG famasc_str_to_lower(texttype* obj, ULONG iLen, const BYTE* pStr, ULONG iOutLen, BYTE *pOutStr)
 {
 	fb_assert(pStr != NULL);
 	fb_assert(pOutStr != NULL);

@@ -24,11 +24,11 @@
 #include "lc_narrow.h"
 
 
-static ULONG fam2_str_to_upper(TEXTTYPE obj, ULONG iLen, const BYTE* pStr, ULONG iOutLen, BYTE *pOutStr);
-static ULONG fam2_str_to_lower(TEXTTYPE obj, ULONG iLen, const BYTE* pStr, ULONG iOutLen, BYTE *pOutStr);
+static ULONG fam2_str_to_upper(texttype* obj, ULONG iLen, const BYTE* pStr, ULONG iOutLen, BYTE *pOutStr);
+static ULONG fam2_str_to_lower(texttype* obj, ULONG iLen, const BYTE* pStr, ULONG iOutLen, BYTE *pOutStr);
 
 
-static inline bool FAMILY2(TEXTTYPE cache,
+static inline bool FAMILY2(texttype* cache,
 							SSHORT country,
 							USHORT flags,
 							const SortOrderTblEntry* NoCaseOrderTbl,
@@ -92,7 +92,7 @@ TEXTTYPE_ENTRY (ISO885913_c1_init)
 /*
  *	Returns INTL_BAD_STR_LENGTH if output buffer was too small
  */
-static ULONG fam2_str_to_upper(TEXTTYPE obj, ULONG iLen, const BYTE* pStr, ULONG iOutLen, BYTE *pOutStr)
+static ULONG fam2_str_to_upper(texttype* obj, ULONG iLen, const BYTE* pStr, ULONG iOutLen, BYTE *pOutStr)
 {
 	fb_assert(pStr != NULL);
 	fb_assert(pOutStr != NULL);
@@ -113,7 +113,7 @@ static ULONG fam2_str_to_upper(TEXTTYPE obj, ULONG iLen, const BYTE* pStr, ULONG
 /*
  *	Returns INTL_BAD_STR_LENGTH if output buffer was too small
  */
-static ULONG fam2_str_to_lower(TEXTTYPE obj, ULONG iLen, const BYTE* pStr, ULONG iOutLen, BYTE *pOutStr)
+static ULONG fam2_str_to_lower(texttype* obj, ULONG iLen, const BYTE* pStr, ULONG iOutLen, BYTE *pOutStr)
 {
 	fb_assert(pStr != NULL);
 	fb_assert(pOutStr != NULL);

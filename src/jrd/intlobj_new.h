@@ -146,7 +146,7 @@ typedef void (*pfn_INTL_tt_destroy) (
                                       but accent-sensitive */
 
 
-typedef struct texttype {
+struct texttype {
 	/* Data which needs to be initialized by collation driver */
 	USHORT texttype_version;	/* version ID of object */
 	TextTypeImpl* texttype_impl;   /* collation object implemented in driver */
@@ -201,7 +201,7 @@ typedef struct texttype {
 
 	/* Some space which may be freely used by collation driver */
 	void* reserved_for_driver[10];
-} *TEXTTYPE;
+};
 
 /* Returns resulting string length or INTL_BAD_STR_LENGTH in case of error */
 typedef ULONG (*pfn_INTL_convert) (

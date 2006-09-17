@@ -331,6 +331,10 @@
 				RelativePath="..\..\..\src\intl\ld.cpp"
 				>
 			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\unicode_util.cpp"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="Header files"
@@ -802,6 +806,10 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\intl\collations\undef.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\unicode_util.h"
 				>
 			</File>
 			<File

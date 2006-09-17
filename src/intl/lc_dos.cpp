@@ -27,7 +27,7 @@
 #include "lc_narrow.h"
 #include "ld_proto.h"
 
-static inline bool FAMILY1(TEXTTYPE cache,
+static inline bool FAMILY1(texttype* cache,
 							SSHORT country,
 							USHORT flags,
 							const SortOrderTblEntry* NoCaseOrderTbl,
@@ -538,7 +538,7 @@ TEXTTYPE_ENTRY(CYRL_c2_init)
 /*
  *	Returns INTL_BAD_STR_LENGTH if output buffer was too small
  */
-ULONG fam1_str_to_upper(TEXTTYPE obj, ULONG iLen, const BYTE* pStr, ULONG iOutLen, BYTE *pOutStr)
+ULONG fam1_str_to_upper(texttype* obj, ULONG iLen, const BYTE* pStr, ULONG iOutLen, BYTE *pOutStr)
 {
 	fb_assert(pStr != NULL);
 	fb_assert(pOutStr != NULL);
@@ -559,7 +559,7 @@ ULONG fam1_str_to_upper(TEXTTYPE obj, ULONG iLen, const BYTE* pStr, ULONG iOutLe
 /*
  *	Returns INTL_BAD_STR_LENGTH if output buffer was too small
  */
-ULONG fam1_str_to_lower(TEXTTYPE obj, ULONG iLen, const BYTE* pStr, ULONG iOutLen, BYTE *pOutStr)
+ULONG fam1_str_to_lower(texttype* obj, ULONG iLen, const BYTE* pStr, ULONG iOutLen, BYTE *pOutStr)
 {
 	fb_assert(pStr != NULL);
 	fb_assert(pOutStr != NULL);

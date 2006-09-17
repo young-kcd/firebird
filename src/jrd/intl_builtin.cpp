@@ -5,22 +5,24 @@
 #endif
 #include "../common/classes/alloc.h"
 #include "../jrd/intl.h"
+#include "../jrd/IntlUtil.h"
 #include "../intl/country_codes.h"
 #include "../jrd/gdsassert.h"
 #include "../jrd/jrd.h"
 #include "../jrd/err_proto.h"
 #include "../intl/charsets.h"
 
+using Firebird::IntlUtil;
 using Jrd::UnicodeUtil;
  
 
-static USHORT internal_keylength(TEXTTYPE, USHORT);
-static USHORT internal_string_to_key(TEXTTYPE, USHORT, const UCHAR*, USHORT, UCHAR*, USHORT);
-static SSHORT internal_compare(TEXTTYPE, ULONG, const UCHAR*, ULONG, const UCHAR*, INTL_BOOL*);
-static ULONG internal_str_to_upper(TEXTTYPE, ULONG, const UCHAR*, ULONG, UCHAR*);
-static ULONG internal_str_to_lower(TEXTTYPE, ULONG, const UCHAR*, ULONG, UCHAR*);
-static void internal_destroy(TEXTTYPE);
-static void unicode_destroy(TEXTTYPE obj);
+static USHORT internal_keylength(texttype*, USHORT);
+static USHORT internal_string_to_key(texttype*, USHORT, const UCHAR*, USHORT, UCHAR*, USHORT);
+static SSHORT internal_compare(texttype*, ULONG, const UCHAR*, ULONG, const UCHAR*, INTL_BOOL*);
+static ULONG internal_str_to_upper(texttype*, ULONG, const UCHAR*, ULONG, UCHAR*);
+static ULONG internal_str_to_lower(texttype*, ULONG, const UCHAR*, ULONG, UCHAR*);
+static void internal_destroy(texttype*);
+static INTL_BOOL cs_utf8_init(charset* csptr, const ASCII* charset_name);
 
 
 namespace
@@ -32,7 +34,7 @@ namespace
 }
 
 
-static inline bool FAMILY_INTERNAL(TEXTTYPE cache,
+static inline bool FAMILY_INTERNAL(texttype* tt,
 								   SSHORT country,
 								   const ASCII* POSIX,
 								   USHORT attributes,
@@ -43,24 +45,24 @@ static inline bool FAMILY_INTERNAL(TEXTTYPE cache,
 	if ((attributes & ~TEXTTYPE_ATTR_PAD_SPACE) || specific_attributes_length)
 		return false;
 
-	cache->texttype_version			= TEXTTYPE_VERSION_1;
-	cache->texttype_name			= POSIX;
-	cache->texttype_country			= (country);
-	cache->texttype_pad_option		= (attributes & TEXTTYPE_ATTR_PAD_SPACE) ? true : false;
-	cache->texttype_fn_key_length	= internal_keylength;
-	cache->texttype_fn_string_to_key= internal_string_to_key;
-	cache->texttype_fn_compare		= internal_compare;
-	cache->texttype_fn_str_to_upper	= internal_str_to_upper;
-	cache->texttype_fn_str_to_lower	= internal_str_to_lower;
-	cache->texttype_fn_destroy		= internal_destroy;
-	cache->texttype_impl			= new TextTypeImpl;
-	cache->texttype_impl->texttype_pad_char = ' ';
+	tt->texttype_version			= TEXTTYPE_VERSION_1;
+	tt->texttype_name				= POSIX;
+	tt->texttype_country			= (country);
+	tt->texttype_pad_option			= (attributes & TEXTTYPE_ATTR_PAD_SPACE) ? true : false;
+	tt->texttype_fn_key_length		= internal_keylength;
+	tt->texttype_fn_string_to_key	= internal_string_to_key;
+	tt->texttype_fn_compare			= internal_compare;
+	tt->texttype_fn_str_to_upper	= internal_str_to_upper;
+	tt->texttype_fn_str_to_lower	= internal_str_to_lower;
+	tt->texttype_fn_destroy			= internal_destroy;
+	tt->texttype_impl				= new TextTypeImpl;
+	tt->texttype_impl->texttype_pad_char = ' ';
 
 	return true;
 }
 
 
-static inline bool FAMILY_INTERNAL_UTF(TEXTTYPE cache,
+static inline bool FAMILY_INTERNAL_UTF(texttype* tt,
 									   const ASCII* POSIX,
 									   USHORT attributes,
 									   const UCHAR* specific_attributes,
@@ -69,30 +71,11 @@ static inline bool FAMILY_INTERNAL_UTF(TEXTTYPE cache,
 	if ((attributes & ~TEXTTYPE_ATTR_PAD_SPACE) || specific_attributes_length)
 		return false;
 
-	cache->texttype_version			= TEXTTYPE_VERSION_1;
-	cache->texttype_name			= POSIX;
-	cache->texttype_country			= CC_INTL;
-	cache->texttype_flags			= TEXTTYPE_DIRECT_MATCH;
-	cache->texttype_pad_option		= (attributes & TEXTTYPE_ATTR_PAD_SPACE) ? true : false;
-
-	return true;
-}
-
-
-static inline bool FAMILY_INTERNAL_UNICODE(TEXTTYPE cache,
-										   const ASCII* POSIX,
-										   USHORT attributes,
-										   const UCHAR* specific_attributes,
-										   ULONG specific_attributes_length)
-{
-	if (FAMILY_INTERNAL_UTF(cache, POSIX, attributes, specific_attributes, specific_attributes_length))
-	{
-		//// TODO: locale
-		cache->reserved_for_driver[0] = UnicodeUtil::Utf16Collation::create("");
-		cache->texttype_fn_destroy = unicode_destroy;
-
-		return cache->reserved_for_driver[0] != NULL;
-	}
+	tt->texttype_version	= TEXTTYPE_VERSION_1;
+	tt->texttype_name		= POSIX;
+	tt->texttype_country	= CC_INTL;
+	tt->texttype_flags		= TEXTTYPE_DIRECT_MATCH;
+	tt->texttype_pad_option	= (attributes & TEXTTYPE_ATTR_PAD_SPACE) ? true : false;
 
 	return true;
 }
@@ -177,7 +160,7 @@ static fss_size_t fss_wctomb(UCHAR * s, fss_wchar_t wc)
 }
 
 #ifdef NOT_USED_OR_REPLACED
-static SSHORT internal_fss_mbtowc(TEXTTYPE obj,
+static SSHORT internal_fss_mbtowc(texttype* obj,
 						   USHORT* wc, const UCHAR* p, USHORT n)
 {
 /**************************************
@@ -206,7 +189,7 @@ static SSHORT internal_fss_mbtowc(TEXTTYPE obj,
 }
 #endif
 
-static ULONG internal_fss_to_unicode(TEXTTYPE obj,
+static ULONG internal_fss_to_unicode(texttype* obj,
 									 ULONG src_len,
 									 const UCHAR* src_ptr,
 									 ULONG dest_len,
@@ -424,7 +407,7 @@ static ULONG internal_fss_substring(charset* obj, ULONG srcLen, const UCHAR* src
 }
 
 static ULONG internal_str_copy(
-								TEXTTYPE obj,
+								texttype* obj,
 								ULONG inLen,
 								const UCHAR* src, ULONG outLen, UCHAR* dest)
 {
@@ -446,7 +429,7 @@ static ULONG internal_str_copy(
 	return (dest - pStart);
 }
 
-static USHORT internal_keylength(TEXTTYPE obj, USHORT iLength)
+static USHORT internal_keylength(texttype* obj, USHORT iLength)
 {
 /**************************************
  *
@@ -462,7 +445,7 @@ static USHORT internal_keylength(TEXTTYPE obj, USHORT iLength)
 }
 
 static USHORT internal_string_to_key(
-									 TEXTTYPE obj,
+									 texttype* obj,
 									 USHORT inLen,
 									 const UCHAR* src,
 									 USHORT outLen,
@@ -497,7 +480,7 @@ static USHORT internal_string_to_key(
 }
 
 static SSHORT internal_compare(
-							   TEXTTYPE obj,
+							   texttype* obj,
 							   ULONG length1,
 							   const UCHAR* p1, ULONG length2, const UCHAR* p2, INTL_BOOL* error_flag)
 {
@@ -554,7 +537,7 @@ static SSHORT internal_compare(
 
 
 static ULONG internal_str_to_upper(
-									TEXTTYPE obj,
+									texttype* obj,
 									ULONG inLen,
 									const UCHAR* src, ULONG outLen, UCHAR* dest)
 {
@@ -579,7 +562,7 @@ static ULONG internal_str_to_upper(
 
 
 static ULONG internal_str_to_lower(
-									TEXTTYPE obj,
+									texttype* obj,
 									ULONG inLen,
 									const UCHAR* src, ULONG outLen, UCHAR* dest)
 {
@@ -603,7 +586,7 @@ static ULONG internal_str_to_lower(
 }
 
 
-static void internal_destroy(TEXTTYPE obj)
+static void internal_destroy(texttype* obj)
 {
 /**************************************
  *
@@ -618,146 +601,7 @@ static void internal_destroy(TEXTTYPE obj)
 }
 
 
-static void unicode_destroy(TEXTTYPE obj)
-{
-/**************************************
- *
- *      u n i c o d e _ d e s t r o y
- *
- **************************************
- *
- * Functional description
- *
- **************************************/
-	fb_assert(obj != NULL);
-	delete (UnicodeUtil::Utf16Collation*)obj->reserved_for_driver[0];
-}
-
-
-static USHORT unicode8_keylength(TEXTTYPE obj, USHORT len)
-{
-/**************************************
- *
- *      u n i c o d e 8 _ k e y l e n g t h
- *
- **************************************
- *
- * Functional description
- *
- **************************************/
-	fb_assert(obj != NULL);
-	return ((UnicodeUtil::Utf16Collation*)obj->reserved_for_driver[0])->keyLength(len);
-}
-
-
-static USHORT unicode8_string_to_key(
-									 TEXTTYPE obj,
-									 USHORT srcLen,
-									 const UCHAR* src,
-									 USHORT dstLen,
-									 UCHAR* dst,
-									 USHORT key_type)
-{
-/**************************************
- *
- *      u n i c o d e 8 _ s t r i n g _ t o _ k e y
- *
- **************************************
- *
- * Functional description
- *
- **************************************/
-	fb_assert(obj != NULL);
-
-	USHORT err_code;
-	ULONG err_position;
-
-	Firebird::HalfStaticArray<UCHAR, BUFFER_SMALL> utf16Str;
-	ULONG utf16Len = UnicodeUtil::utf8ToUtf16(srcLen, src, 0, NULL,
-		&err_code, &err_position);
-
-	utf16Len = UnicodeUtil::utf8ToUtf16(srcLen, src,
-		utf16Len, reinterpret_cast<USHORT*>(utf16Str.getBuffer(utf16Len)),
-		&err_code, &err_position);
-
-	if (obj->texttype_pad_option)
-	{
-		const UCHAR* pad;
-
-		for (pad = utf16Str.begin() + utf16Len - sizeof(USHORT); pad >= utf16Str.begin(); pad -= sizeof(USHORT))
-		{
-			if (*reinterpret_cast<const USHORT*>(pad) != 32)
-				break;
-		}
-
-		utf16Len = pad - utf16Str.begin() + sizeof(USHORT);
-	}
-
-	return ((UnicodeUtil::Utf16Collation*)obj->reserved_for_driver[0])->stringToKey(
-		utf16Len, (USHORT*)utf16Str.begin(), dstLen, dst, key_type);
-}
-
-
-static SSHORT unicode8_compare(TEXTTYPE obj, ULONG length1, const UCHAR* p1,
-							   ULONG length2, const UCHAR* p2, INTL_BOOL* error_flag)
-{
-/**************************************
- *
- *      u n i c o d e 8 _ c o m p a r e
- *
- **************************************
- *
- * Functional description
- *
- **************************************/
-	fb_assert(obj != NULL);
-
-	USHORT err_code;
-	ULONG err_position;
-
-	Firebird::HalfStaticArray<UCHAR, BUFFER_SMALL> utf16Str1;
-	Firebird::HalfStaticArray<UCHAR, BUFFER_SMALL> utf16Str2;
-	ULONG utf16Len1 = UnicodeUtil::utf8ToUtf16(length1, p1, 0, NULL,
-		&err_code, &err_position);
-	ULONG utf16Len2 = UnicodeUtil::utf8ToUtf16(length2, p2, 0, NULL,
-		&err_code, &err_position);
-
-	utf16Len1 = UnicodeUtil::utf8ToUtf16(length1, p1,
-		utf16Len1, reinterpret_cast<USHORT*>(utf16Str1.getBuffer(utf16Len1)),
-		&err_code, &err_position);
-
-	utf16Len2 = UnicodeUtil::utf8ToUtf16(length2, p2,
-		utf16Len2, reinterpret_cast<USHORT*>(utf16Str2.getBuffer(utf16Len2)),
-		&err_code, &err_position);
-
-	if (obj->texttype_pad_option)
-	{
-		const UCHAR* pad;
-
-		for (pad = utf16Str1.begin() + utf16Len1 - sizeof(USHORT); pad >= utf16Str1.begin(); pad -= sizeof(USHORT))
-		{
-			if (*reinterpret_cast<const USHORT*>(pad) != 32)
-				break;
-		}
-
-		utf16Len1 = pad - utf16Str1.begin() + sizeof(USHORT);
-
-		for (pad = utf16Str2.begin() + utf16Len2 - sizeof(USHORT); pad >= utf16Str2.begin(); pad -= sizeof(USHORT))
-		{
-			if (*reinterpret_cast<const USHORT*>(pad) != 32)
-				break;
-		}
-
-		utf16Len2 = pad - utf16Str2.begin() + sizeof(USHORT);
-	}
-
-	return ((UnicodeUtil::Utf16Collation*)obj->reserved_for_driver[0])->compare(
-		utf16Len1, (USHORT*)utf16Str1.begin(),
-		utf16Len2, (USHORT*)utf16Str2.begin(), error_flag);
-}
-
-
-static USHORT utf16_keylength(TEXTTYPE obj, USHORT len)
+static USHORT utf16_keylength(texttype* obj, USHORT len)
 {
 /**************************************
  *
@@ -772,7 +616,7 @@ static USHORT utf16_keylength(TEXTTYPE obj, USHORT len)
 }
 
 static USHORT utf16_string_to_key(
-								  TEXTTYPE obj,
+								  texttype* obj,
 								  USHORT srcLen,
 								  const UCHAR* src,
 								  USHORT dstLen,
@@ -808,7 +652,7 @@ static USHORT utf16_string_to_key(
 }
 
 static SSHORT utf16_compare(
-							TEXTTYPE obj,
+							texttype* obj,
 							ULONG len1, 
 							const UCHAR* str1, 
 							ULONG len2, 
@@ -854,7 +698,7 @@ static SSHORT utf16_compare(
 }
 
 static ULONG utf16_upper(
-						 TEXTTYPE obj,
+						 texttype* obj,
 						 ULONG srcLen, 
 						 const UCHAR* src, 
 						 ULONG dstLen, 
@@ -878,7 +722,7 @@ static ULONG utf16_upper(
 }
 
 static ULONG utf16_lower(
-						 TEXTTYPE obj,
+						 texttype* obj,
 						 ULONG srcLen, 
 						 const UCHAR* src, 
 						 ULONG dstLen, 
@@ -902,7 +746,7 @@ static ULONG utf16_lower(
 }
 
 
-static USHORT utf32_keylength(TEXTTYPE obj, USHORT len)
+static USHORT utf32_keylength(texttype* obj, USHORT len)
 {
 /**************************************
  *
@@ -917,7 +761,7 @@ static USHORT utf32_keylength(TEXTTYPE obj, USHORT len)
 }
 
 static USHORT utf32_string_to_key(
-								  TEXTTYPE obj,
+								  texttype* obj,
 								  USHORT srcLen,
 								  const UCHAR* src,
 								  USHORT dstLen,
@@ -1085,7 +929,7 @@ static ULONG wc_to_mb(csconvert* obj, ULONG nSrc, const USHORT* pSrc,
 	return ((pDest - pStart) * sizeof(*pDest));
 }
 
-static INTL_BOOL ttype_ascii_init(TEXTTYPE cache, const ASCII* texttype_name, const ASCII* charset_name,
+static INTL_BOOL ttype_ascii_init(texttype* tt, const ASCII* texttype_name, const ASCII* charset_name,
 								  USHORT attributes, const UCHAR* specific_attributes,
 								  ULONG specific_attributes_length)
 {
@@ -1100,11 +944,11 @@ static INTL_BOOL ttype_ascii_init(TEXTTYPE cache, const ASCII* texttype_name, co
  *************************************/
 	static const ASCII POSIX[] = "C.ASCII";
 
-	return FAMILY_INTERNAL(cache, CC_C, POSIX, attributes, specific_attributes, specific_attributes_length);
+	return FAMILY_INTERNAL(tt, CC_C, POSIX, attributes, specific_attributes, specific_attributes_length);
 }
 
 
-static INTL_BOOL ttype_none_init(TEXTTYPE cache, const ASCII* texttype_name, const ASCII* charset_name,
+static INTL_BOOL ttype_none_init(texttype* tt, const ASCII* texttype_name, const ASCII* charset_name,
 								 USHORT attributes, const UCHAR* specific_attributes,
 								 ULONG specific_attributes_length)
 {
@@ -1119,11 +963,11 @@ static INTL_BOOL ttype_none_init(TEXTTYPE cache, const ASCII* texttype_name, con
  *************************************/
 	static const ASCII POSIX[] = "C";
 
-	return FAMILY_INTERNAL(cache, CC_C, POSIX, attributes, specific_attributes, specific_attributes_length);
+	return FAMILY_INTERNAL(tt, CC_C, POSIX, attributes, specific_attributes, specific_attributes_length);
 }
 
 
-static INTL_BOOL ttype_unicode_fss_init(TEXTTYPE cache, const ASCII* texttype_name, const ASCII* charset_name,
+static INTL_BOOL ttype_unicode_fss_init(texttype* tt, const ASCII* texttype_name, const ASCII* charset_name,
 										USHORT attributes, const UCHAR* specific_attributes,
 										ULONG specific_attributes_length)
 {
@@ -1138,11 +982,11 @@ static INTL_BOOL ttype_unicode_fss_init(TEXTTYPE cache, const ASCII* texttype_na
  *************************************/
 	static const ASCII POSIX[] = "C.UNICODE_FSS";
 
-	if (FAMILY_INTERNAL(cache, CC_C, POSIX, attributes, specific_attributes, specific_attributes_length))
+	if (FAMILY_INTERNAL(tt, CC_C, POSIX, attributes, specific_attributes, specific_attributes_length))
 	{
-		cache->texttype_flags |= TEXTTYPE_DIRECT_MATCH;
-		cache->texttype_fn_str_to_upper	= NULL;		// use default implementation
-		cache->texttype_fn_str_to_lower	= NULL;		// use default implementation
+		tt->texttype_flags |= TEXTTYPE_DIRECT_MATCH;
+		tt->texttype_fn_str_to_upper	= NULL;		// use default implementation
+		tt->texttype_fn_str_to_lower	= NULL;		// use default implementation
 		return true;
 	}
 
@@ -1150,7 +994,7 @@ static INTL_BOOL ttype_unicode_fss_init(TEXTTYPE cache, const ASCII* texttype_na
 }
 
 
-static INTL_BOOL ttype_binary_init(TEXTTYPE cache, const ASCII* texttype_name, const ASCII* charset_name,
+static INTL_BOOL ttype_binary_init(texttype* tt, const ASCII* texttype_name, const ASCII* charset_name,
 								   USHORT attributes, const UCHAR* specific_attributes,
 								   ULONG specific_attributes_length)
 {
@@ -1165,11 +1009,11 @@ static INTL_BOOL ttype_binary_init(TEXTTYPE cache, const ASCII* texttype_name, c
  *************************************/
 	static const ASCII POSIX[] = "C.OCTETS";
 
-	if (FAMILY_INTERNAL(cache, CC_C, POSIX, attributes, specific_attributes, specific_attributes_length))
+	if (FAMILY_INTERNAL(tt, CC_C, POSIX, attributes, specific_attributes, specific_attributes_length))
 	{
-		cache->texttype_fn_str_to_upper = internal_str_copy;
-		cache->texttype_fn_str_to_lower = internal_str_copy;
-		cache->texttype_impl->texttype_pad_char = '\0';
+		tt->texttype_fn_str_to_upper = internal_str_copy;
+		tt->texttype_fn_str_to_lower = internal_str_copy;
+		tt->texttype_impl->texttype_pad_char = '\0';
 		return true;
 	}
 
@@ -1177,7 +1021,7 @@ static INTL_BOOL ttype_binary_init(TEXTTYPE cache, const ASCII* texttype_name, c
 }
 
 
-static INTL_BOOL ttype_utf8_init(TEXTTYPE cache, const ASCII* texttype_name, const ASCII* charset_name,
+static INTL_BOOL ttype_utf8_init(texttype* tt, const ASCII* texttype_name, const ASCII* charset_name,
 								 USHORT attributes, const UCHAR* specific_attributes,
 								 ULONG specific_attributes_length)
 {
@@ -1192,11 +1036,11 @@ static INTL_BOOL ttype_utf8_init(TEXTTYPE cache, const ASCII* texttype_name, con
  *************************************/
 	static const ASCII POSIX[] = "C.UTF8";
 
-	return FAMILY_INTERNAL_UTF(cache, POSIX, attributes, specific_attributes, specific_attributes_length);
+	return FAMILY_INTERNAL_UTF(tt, POSIX, attributes, specific_attributes, specific_attributes_length);
 }
 
 
-static INTL_BOOL ttype_unicode8_init(TEXTTYPE cache, const ASCII* texttype_name, const ASCII* charset_name,
+static INTL_BOOL ttype_unicode8_init(texttype* tt, const ASCII* texttype_name, const ASCII* charset_name,
 									 USHORT attributes, const UCHAR* specific_attributes,
 									 ULONG specific_attributes_length)
 {
@@ -1211,20 +1055,19 @@ static INTL_BOOL ttype_unicode8_init(TEXTTYPE cache, const ASCII* texttype_name,
  *************************************/
 	static const ASCII POSIX[] = "C.UTF8.UNICODE";
 
-	if (FAMILY_INTERNAL_UNICODE(cache, POSIX, attributes, specific_attributes, specific_attributes_length))
-	{
-		cache->texttype_fn_key_length = unicode8_keylength;
-		cache->texttype_fn_string_to_key = unicode8_string_to_key;
-		cache->texttype_fn_compare = unicode8_compare;
+	charset* cs = new charset;
+	memset(cs, 0, sizeof(*cs));
+	cs_utf8_init(cs, "UTF8");
 
-		return true;
-	}
+	Firebird::UCharBuffer specificAttributes;
+	memcpy(specificAttributes.getBuffer(specific_attributes_length),
+		specific_attributes, specific_attributes_length);
 
-	return false;
+	return Firebird::IntlUtil::initUnicodeCollation(tt, cs, POSIX, attributes, specificAttributes);
 }
 
 
-static INTL_BOOL ttype_utf16_init(TEXTTYPE cache, const ASCII* texttype_name, const ASCII* charset_name,
+static INTL_BOOL ttype_utf16_init(texttype* tt, const ASCII* texttype_name, const ASCII* charset_name,
 								  USHORT attributes, const UCHAR* specific_attributes,
 								  ULONG specific_attributes_length)
 {
@@ -1239,13 +1082,13 @@ static INTL_BOOL ttype_utf16_init(TEXTTYPE cache, const ASCII* texttype_name, co
  *************************************/
 	static const ASCII POSIX[] = "C.UTF16";
 
-	if (FAMILY_INTERNAL_UTF(cache, POSIX, attributes, specific_attributes, specific_attributes_length))
+	if (FAMILY_INTERNAL_UTF(tt, POSIX, attributes, specific_attributes, specific_attributes_length))
 	{
-		cache->texttype_fn_key_length = utf16_keylength;
-		cache->texttype_fn_string_to_key = utf16_string_to_key;
-		cache->texttype_fn_compare = utf16_compare;
-		cache->texttype_fn_str_to_upper = utf16_upper;
-		cache->texttype_fn_str_to_lower = utf16_lower;
+		tt->texttype_fn_key_length = utf16_keylength;
+		tt->texttype_fn_string_to_key = utf16_string_to_key;
+		tt->texttype_fn_compare = utf16_compare;
+		tt->texttype_fn_str_to_upper = utf16_upper;
+		tt->texttype_fn_str_to_lower = utf16_lower;
 		return true;
 	}
 
@@ -1253,7 +1096,7 @@ static INTL_BOOL ttype_utf16_init(TEXTTYPE cache, const ASCII* texttype_name, co
 }
 
 
-static INTL_BOOL ttype_utf32_init(TEXTTYPE cache, const ASCII* texttype_name, const ASCII* charset_name,
+static INTL_BOOL ttype_utf32_init(texttype* tt, const ASCII* texttype_name, const ASCII* charset_name,
 								  USHORT attributes, const UCHAR* specific_attributes,
 								  ULONG specific_attributes_length)
 {
@@ -1268,10 +1111,10 @@ static INTL_BOOL ttype_utf32_init(TEXTTYPE cache, const ASCII* texttype_name, co
  *************************************/
 	static const ASCII POSIX[] = "C.UTF32";
 
-	if (FAMILY_INTERNAL_UTF(cache, POSIX, attributes, specific_attributes, specific_attributes_length))
+	if (FAMILY_INTERNAL_UTF(tt, POSIX, attributes, specific_attributes, specific_attributes_length))
 	{
-		cache->texttype_fn_key_length = utf32_keylength;
-		cache->texttype_fn_string_to_key = utf32_string_to_key;
+		tt->texttype_fn_key_length = utf32_keylength;
+		tt->texttype_fn_string_to_key = utf32_string_to_key;
 		return true;
 	}
 
