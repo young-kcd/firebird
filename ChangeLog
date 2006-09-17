@@ -1,3 +1,22 @@
+2006-09-17 03:41  asfernandes
+
+	* firebird2/src/dsql/: parse.y (1.221), pass1.cpp (1.290):
+	
+	Allow only one of WHEN MATCHED and WHEN NOT MATCHED in MERGE as the
+	SQL spec
+
+2006-09-16 17:53  asfernandes
+
+	* firebird2/src/dsql/pass1.cpp (1.289):
+	
+	Fixed problem with REPLACE and WHEN blocks
+
+2006-09-16 15:12  mkubecek
+
+	* firebird2/src/isql/show.epp (1.109):
+	
+	use fb_utils::stricmp() to fix POSIX builds
+
 2006-09-15 09:24  robocop
 
 	* firebird2/src/jrd/utl.cpp (1.94):
