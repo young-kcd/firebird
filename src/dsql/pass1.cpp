@@ -6284,104 +6284,127 @@ static dsql_nod* pass1_merge(dsql_req* request, dsql_nod* input, bool proc_flag)
 	source = for_select->nod_arg[e_flp_select]->nod_arg[e_select_expr]->nod_arg[e_join_left_rel];
 	target = for_select->nod_arg[e_flp_select]->nod_arg[e_select_expr]->nod_arg[e_join_rght_rel];
 
-	// get the assignments of the UPDATE statement
-	dsql_nod* list =
-		input->nod_arg[e_mrg_when]->nod_arg[e_mrg_when_matched]->nod_arg[e_mrg_update_statement];
-	fb_assert(list->nod_type == nod_list);
+	dsql_nod* modify = NULL;
 
-	Firebird::Array<dsql_nod*> org_values, new_values;
-	int i;
-
-	// separate the new and org values to process in correct contexts
-	for (i = 0; i < list->nod_count; ++i)
+	if (input->nod_arg[e_mrg_when]->nod_arg[e_mrg_when_matched])
 	{
-		const dsql_nod* const assign = list->nod_arg[i];
-		fb_assert(assign->nod_type == nod_assign);
-		org_values.add(assign->nod_arg[0]);
-		new_values.add(assign->nod_arg[1]);
+		// get the assignments of the UPDATE statement
+		dsql_nod* list =
+			input->nod_arg[e_mrg_when]->nod_arg[e_mrg_when_matched]->nod_arg[e_mrg_update_statement];
+		fb_assert(list->nod_type == nod_list);
+
+		Firebird::Array<dsql_nod*> org_values, new_values;
+		int i;
+
+		// separate the new and org values to process in correct contexts
+		for (i = 0; i < list->nod_count; ++i)
+		{
+			const dsql_nod* const assign = list->nod_arg[i];
+			fb_assert(assign->nod_type == nod_assign);
+			org_values.add(assign->nod_arg[0]);
+			new_values.add(assign->nod_arg[1]);
+		}
+
+		// build the MODIFY node
+		modify = MAKE_node(nod_modify_current, e_mdc_count);
+		dsql_ctx* context = get_context(target);
+		dsql_nod** ptr;
+
+		modify->nod_arg[e_mdc_context] = (dsql_nod*) context;
+
+		// push the USING context
+		request->req_context->push(get_context(source));
+		request->req_scope_level++;
+
+		// process old context values
+		request->req_context->push(context);
+		request->req_scope_level++;
+
+		for (ptr = org_values.begin(); ptr < org_values.end(); ++ptr)
+			*ptr = PASS1_node(request, *ptr, false);
+
+		request->req_scope_level--;
+		request->req_context->pop();
+
+		// pop the USING context
+		request->req_scope_level--;
+		request->req_context->pop();
+
+		// process relation
+		modify->nod_arg[e_mdc_update] = pass1_relation(request, input->nod_arg[e_mrg_relation]);
+
+		// process new context values
+		for (ptr = new_values.begin(); ptr < new_values.end(); ++ptr)
+			*ptr = PASS1_node(request, *ptr, false);
+
+		request->req_context->pop();
+
+		// recreate list of assignments
+		modify->nod_arg[e_mdc_statement] = list =
+			MAKE_node(nod_list, list->nod_count);
+
+		for (i = 0; i < list->nod_count; ++i)
+		{
+			dsql_nod* assign = MAKE_node(nod_assign, 2);
+			assign->nod_arg[0] = org_values[i];
+			assign->nod_arg[1] = new_values[i];
+			list->nod_arg[i] = assign;
+		}
+
+		// We do not allow cases like UPDATE T SET f1 = v1, f2 = v2, f1 = v3...
+		field_appears_once(modify->nod_arg[e_mdc_statement],
+			input->nod_arg[e_mrg_when]->nod_arg[e_mrg_when_matched]->nod_arg[e_mrg_update_statement],
+			false, "MERGE");
 	}
 
-	// build the MODIFY node
-	dsql_nod* modify = MAKE_node(nod_modify_current, e_mdc_count);
-	dsql_ctx* context = get_context(target);
-	dsql_nod** ptr;
+	dsql_nod* insert = NULL;
 
-	modify->nod_arg[e_mdc_context] = (dsql_nod*) context;
-
-	// push the USING context
-	request->req_context->push(get_context(source));
-	request->req_scope_level++;
-
-	// process old context values
-	request->req_context->push(context);
-	request->req_scope_level++;
-
-	for (ptr = org_values.begin(); ptr < org_values.end(); ++ptr)
-		*ptr = PASS1_node(request, *ptr, false);
-
-	request->req_scope_level--;
-	request->req_context->pop();
-
-	// pop the USING context
-	request->req_scope_level--;
-	request->req_context->pop();
-
-	// process relation
-	modify->nod_arg[e_mdc_update] = pass1_relation(request, input->nod_arg[e_mrg_relation]);
-
-	// process new context values
-	for (ptr = new_values.begin(); ptr < new_values.end(); ++ptr)
-		*ptr = PASS1_node(request, *ptr, false);
-
-	request->req_context->pop();
-
-	// recreate list of assignments
-	modify->nod_arg[e_mdc_statement] = list =
-		MAKE_node(nod_list, list->nod_count);
-
-	for (i = 0; i < list->nod_count; ++i)
+	if (input->nod_arg[e_mrg_when]->nod_arg[e_mrg_when_not_matched])
 	{
-		dsql_nod* assign = MAKE_node(nod_assign, 2);
-		assign->nod_arg[0] = org_values[i];
-		assign->nod_arg[1] = new_values[i];
-		list->nod_arg[i] = assign;
+		// push the USING context
+		request->req_context->push(get_context(source));
+		request->req_scope_level++;
+
+		// the INSERT relation should be processed in a higher level than the source
+		request->req_scope_level++;
+
+		// build the INSERT node
+		insert = MAKE_node(nod_insert, e_ins_count);
+		insert->nod_arg[e_ins_relation] = input->nod_arg[e_mrg_relation];
+		insert->nod_arg[e_ins_fields] =
+			input->nod_arg[e_mrg_when]->nod_arg[e_mrg_when_not_matched]->nod_arg[e_mrg_insert_fields];
+		insert->nod_arg[e_ins_values] =
+			input->nod_arg[e_mrg_when]->nod_arg[e_mrg_when_not_matched]->nod_arg[e_mrg_insert_values];
+		insert = pass1_insert(request, insert, proc_flag);
+
+		// restore the scope level
+		request->req_scope_level--;
+
+		// pop the USING context
+		request->req_scope_level--;
+		request->req_context->pop();
 	}
-
-	// We do not allow cases like UPDATE T SET f1 = v1, f2 = v2, f1 = v3...
-	field_appears_once(modify->nod_arg[e_mdc_statement],
-		input->nod_arg[e_mrg_when]->nod_arg[e_mrg_when_matched]->nod_arg[e_mrg_update_statement],
-		false, "MERGE");
-
-	// push the USING context
-	request->req_context->push(get_context(source));
-	request->req_scope_level++;
-
-	// the INSERT relation should be processed in a higher level than the source
-	request->req_scope_level++;
-
-	// build the INSERT node
-	dsql_nod* insert = MAKE_node(nod_insert, e_ins_count);
-	insert->nod_arg[e_ins_relation] = input->nod_arg[e_mrg_relation];
-	insert->nod_arg[e_ins_fields] =
-		input->nod_arg[e_mrg_when]->nod_arg[e_mrg_when_not_matched]->nod_arg[e_mrg_insert_fields];
-	insert->nod_arg[e_ins_values] =
-		input->nod_arg[e_mrg_when]->nod_arg[e_mrg_when_not_matched]->nod_arg[e_mrg_insert_values];
-	insert = pass1_insert(request, insert, proc_flag);
-
-	// restore the scope level
-	request->req_scope_level--;
-
-	// pop the USING context
-	request->req_scope_level--;
-	request->req_context->pop();
 
 	// build a IF (target.RDB$DB_KEY IS NULL)
 	dsql_nod* action = MAKE_node(nod_if, e_if_count);
 	action->nod_arg[e_if_condition] = MAKE_node(nod_missing, 1);
 	action->nod_arg[e_if_condition]->nod_arg[0] = MAKE_node(nod_dbkey, 1);
 	action->nod_arg[e_if_condition]->nod_arg[0]->nod_arg[0] = target;
-	action->nod_arg[e_if_true] = insert;	// then INSERT
-	action->nod_arg[e_if_false] = modify;	// else UPDATE
+
+	if (insert)
+	{
+		action->nod_arg[e_if_true] = insert;	// then INSERT
+		action->nod_arg[e_if_false] = modify;	// else UPDATE
+	}
+	else
+	{
+		// negate the condition -> IF (target.RDB$DB_KEY IS NOT NULL)
+		dsql_nod* not_node = MAKE_node(nod_not, 1);
+		not_node->nod_arg[0] = action->nod_arg[e_if_condition];
+		action->nod_arg[e_if_condition] = not_node;
+
+		action->nod_arg[e_if_true] = modify;	// then UPDATE
+	}
 
 	// insert the IF inside the FOR SELECT
 	for_select->nod_arg[e_flp_action] = action;

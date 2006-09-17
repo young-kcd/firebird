@@ -3417,6 +3417,10 @@ merge_when_clause
 		{ $$ = make_node(nod_merge_when, e_mrg_when_count, $1, $2); }
 	|	merge_when_not_matched_clause merge_when_matched_clause
 		{ $$ = make_node(nod_merge_when, e_mrg_when_count, $2, $1); }
+	|	merge_when_matched_clause
+		{ $$ = make_node(nod_merge_when, e_mrg_when_count, $1, NULL); }
+	|	merge_when_not_matched_clause
+		{ $$ = make_node(nod_merge_when, e_mrg_when_count, NULL, $1); }
 	;
 
 merge_when_matched_clause
