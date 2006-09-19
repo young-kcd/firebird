@@ -29,7 +29,6 @@
 
 #include "intlobj_new.h"
 #include "../jrd/IntlUtil.h"
-#include "../common/classes/array.h"
 
 namespace Jrd {
 
