@@ -47,8 +47,8 @@ public:
 	static bool parseSpecificAttributes(
 		charset* cs, ULONG len, const UCHAR* s, SpecificAttributesMap* map);
 
-	static string convertAsciiToUtf16(string ascii);
-	static string convertUtf16ToAscii(string utf16, bool* error);
+	static string convertAsciiToUtf16(const string& ascii);
+	static string convertUtf16ToAscii(const string& utf16, bool* error);
 
 	static bool initUnicodeCollation(texttype* tt, charset* cs, const ASCII* name,
 		USHORT attributes, const UCharBuffer& specificAttributes);

@@ -240,11 +240,12 @@ bool IntlUtil::parseSpecificAttributes(
 }
 
 
-string IntlUtil::convertAsciiToUtf16(string ascii)
+string IntlUtil::convertAsciiToUtf16(const string& ascii)
 {
 	string s;
+	const char* end = ascii.c_str() + ascii.length();
 
-	for (const char* p = ascii.c_str(); p < (ascii.c_str() + ascii.length()); ++p)
+	for (const char* p = ascii.c_str(); p < end; ++p)
 	{
 		USHORT c = *(UCHAR*) p;
 		s.append((char*) &c, sizeof(c));
@@ -254,13 +255,14 @@ string IntlUtil::convertAsciiToUtf16(string ascii)
 }
 
 
-string IntlUtil::convertUtf16ToAscii(string utf16, bool* error)
+string IntlUtil::convertUtf16ToAscii(const string& utf16, bool* error)
 {
 	fb_assert(utf16.length() % sizeof(USHORT) == 0);
 
 	string s;
+	const USHORT* end = (const USHORT*) (utf16.c_str() + utf16.length());
 
-	for (const USHORT* p = (USHORT*) utf16.c_str(); p < (USHORT*) (utf16.c_str() + utf16.length()); ++p)
+	for (const USHORT* p = (const USHORT*) utf16.c_str(); p < end; ++p)
 	{
 		if (*p <= 0xFF)
 			s.append((UCHAR) *p);
@@ -281,8 +283,9 @@ bool IntlUtil::initUnicodeCollation(texttype* tt, charset* cs, const ASCII* name
 	USHORT attributes, const UCharBuffer& specificAttributes)
 {
 	// name comes from stack. Copy it.
-	tt->texttype_name = new ASCII[strlen(name) + 1];
-	strcpy(const_cast<ASCII*>(tt->texttype_name), name);
+	ASCII* nameCopy = new ASCII[strlen(name) + 1];
+	strcpy(nameCopy, name);
+	tt->texttype_name = nameCopy;
 
 	tt->texttype_version = TEXTTYPE_VERSION_1;
 	tt->texttype_country = CC_INTL;
