@@ -515,25 +515,6 @@ begin
       exit;
   end;
 
-  //If Fb15 RC or Fb15 is installed then we can install over it.
-  //unless we find the server running.
-  if (ProductsInstalledCount = 1) AND
-    (((ProductsInstalled AND FB15) = FB15) OR
-     ((ProductsInstalled AND FB15RC) = FB15RC)) then
-    if ( FirebirdDefaultServerRunning ) then begin
-      result := false;
-      MsgBox( #13+ExpandConstant('{cm:FbRunning1,1.5}')
-      +#13
-      +#13+ExpandConstant('{cm:FbRunning2}')
-      +#13+ExpandConstant('{cm:FbRunning3}')
-      +#13, mbError, MB_OK);
-      exit;
-      end
-    else begin
-      result := true;
-      exit;
-    end
-  ;
   
   //If Fb2.0 is installed then we can install over it.
   //unless we find the server running.
@@ -654,11 +635,15 @@ begin
       InstallRootDir := Default;
 
     if (( InstallRootDir = '' ) and
-        ( FirebirdRootDir = Default )) then // Fb 1.5 is already installed,
+        ( FirebirdRootDir = Default )) then // Fb 2.0 is already installed,
       InstallRootDir := Default;             // so we offer to install over it
 
     if (( InstallRootDir = '') and
         ( FirebirdVer[0] = 1 ) and ( FirebirdVer[1] = 5 ) ) then   // Firebird 1.5 is installed
+      InstallRootDir := Default;                                   // but the user has changed the default
+
+    if (( InstallRootDir = '') and
+        ( FirebirdVer[0] = 2 ) and ( FirebirdVer[1] = 0 ) ) then   // Firebird 2.0 is installed
       InstallRootDir := FirebirdRootDir;                            // but the user has changed the default
 
     // if we haven't found anything then try the FIREBIRD env var
