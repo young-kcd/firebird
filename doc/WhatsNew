@@ -2,13 +2,18 @@
   * v2.0 Release Candidate 5
   **************************
 
+    * Fix unregistered bug.
+        Win32 installer was trying to upgrade an existing Fb 1.5 install.
+        This was the underlying cause of CORE-934
+      Contributor(s):
+        Paul Reeves <preeves at ibphoenix.com>
     * Fixed RC4 bug (CORE-924)
         An attempt to select DB_KEY from a procedure crashes the server
       Contributor(s):
         Dmitry Yemanov <yemanov at yandex.ru>
 
     * Fixed RC4 bug (CORE-923)
-        Events (if many ones are registered) not working via the local protocol  
+        Events (if many ones are registered) not working via the local protocol
       Contributor(s):
         Dmitry Yemanov <yemanov at yandex.ru>
 
@@ -23,7 +28,7 @@
         Vlad Horsun <horsun at kdb.dp.ua>
 
     * Fixed RC4 bug (CORE-906)
-        Updating table with non-unique index causes unique data violation error  
+        Updating table with non-unique index causes unique data violation error
       Contributor(s):
         Vlad Horsun <horsun at kdb.dp.ua>
 
@@ -38,7 +43,7 @@
         Vlad Horsun <horsun at kdb.dp.ua>
 
     * Fixed RC4 bug (CORE-898)
-        Two uninitialized variables cause a server crash in alice.cpp / common_main  
+        Two uninitialized variables cause a server crash in alice.cpp / common_main
       Contributor(s):
         Vlad Horsun <horsun at kdb.dp.ua>
 
