@@ -235,11 +235,17 @@ int CLIB_ROUTINE main( int argc, char **argv)
 						clientname);
 					break;
 				case FB_SUCCESS :
-					printf("Installed %s version : %u.%u.%u.%u "
-						"(shared DLL count %d)\n", clientname,
-						verMS >> 16, verMS & 0x0000ffff,
-						verLS >> 16, verLS & 0x0000ffff,
-						sharedCount);
+					if (sharedCount)
+						printf("Installed %s version : %u.%u.%u.%u "
+							"(shared DLL count %d)\n", clientname,
+							verMS >> 16, verMS & 0x0000ffff,
+							verLS >> 16, verLS & 0x0000ffff,
+							sharedCount);
+					else
+						printf("Installed %s version : %u.%u.%u.%u\n",
+							clientname,
+							verMS >> 16, verMS & 0x0000ffff,
+							verLS >> 16, verLS & 0x0000ffff);
 					break;
 			}
 			break;
