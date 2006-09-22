@@ -7,6 +7,7 @@
         This was the underlying cause of CORE-934
       Contributor(s):
         Paul Reeves <preeves at ibphoenix.com>
+
     * Fixed RC4 bug (CORE-924)
         An attempt to select DB_KEY from a procedure crashes the server
       Contributor(s):
