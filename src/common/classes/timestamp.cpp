@@ -239,7 +239,8 @@ void TimeStamp::round_time(ISC_TIME &ntime, int precision)
 
 ISC_TIME TimeStamp::encode_time(int hours, int minutes, int seconds, int fractions)
 {
-	return ((hours * 60 + minutes) * 60 + seconds) * ISC_TIME_SECONDS_PRECISION;
+	fb_assert(fractions < ISC_TIME_SECONDS_PRECISION);
+	return ((hours * 60 + minutes) * 60 + seconds) * ISC_TIME_SECONDS_PRECISION + fractions;
 }
 
 // Encode timestamp from UNIX datetime structure
