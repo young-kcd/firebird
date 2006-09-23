@@ -1,3 +1,25 @@
+2006-09-22 04:34  asfernandes
+
+	* firebird2/doc/WhatsNew (1.95.2.21):
+	
+	Misc
+
+2006-09-21 14:35  paul_reeves
+
+	* firebird2/: doc/WhatsNew (1.95.2.20), src/jrd/isc_version.h
+	(1.8.4.3):
+	
+	Update WhatsNew Bump build number
+
+2006-09-21 12:59  paul_reeves
+
+	*
+	firebird2/builds/install/arch-specific/win32/FirebirdInstall_20.iss
+	(1.12.2.5):
+	
+	Fix unregistered bug. Win32 installer was trying to upgrade an
+	existing Fb 1.5 install.  This was the underlying cause of CORE-934
+
 2006-09-20 08:51  dimitr
 
 	* firebird2/src/jrd/isc_version.h (1.8.4.2):
