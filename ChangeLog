@@ -1,3 +1,28 @@
+2006-09-22 14:58  dimitr
+
+	* firebird2/doc/Firebird_conf.txt (1.3):
+	
+	Fixed the docs.
+
+2006-09-22 13:51  dimitr
+
+	* firebird2/src/utilities/install/: install.cpp (1.10),
+	install_client.cpp (1.8):
+	
+	Don't report an error if the client library is installed manually.
+
+2006-09-22 06:24  dimitr
+
+	* firebird2/src/common/classes/timestamp.cpp (1.14):
+	
+	Fixed the issue reported in fb-devel.
+
+2006-09-21 14:23  asfernandes
+
+	* firebird2/src/jrd/: IntlUtil.cpp (1.6), IntlUtil.h (1.5):
+	
+	Improvements based on Claudio suggestions
+
 2006-09-19 04:30  asfernandes
 
 	* firebird2/src/jrd/unicode_util.h (1.7):
