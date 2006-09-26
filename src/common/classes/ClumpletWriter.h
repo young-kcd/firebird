@@ -45,9 +45,11 @@ class ClumpletWriter : public ClumpletReader
 public:
 	// Create empty clumplet writer.
 	ClumpletWriter(Kind k, size_t limit, UCHAR tag = 0);
+	ClumpletWriter(MemoryPool& pool, Kind k, size_t limit, UCHAR tag = 0);
 
 	// Create writer from a given buffer
 	ClumpletWriter(Kind k, size_t limit, const UCHAR* buffer, size_t buffLen, UCHAR tag);
+	ClumpletWriter(MemoryPool& pool, Kind k, size_t limit, const UCHAR* buffer, size_t buffLen, UCHAR tag);
 
 	void reset(UCHAR tag);
 	void reset(const UCHAR* buffer, size_t buffLen);

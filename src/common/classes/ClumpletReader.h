@@ -45,10 +45,11 @@ namespace Firebird {
 class ClumpletReader : protected AutoStorage
 {
 public:
-	enum Kind {Tagged, UnTagged, SpbAttach, SpbStart, Tpb/*, SpbInfo*/};
+	enum Kind {Tagged, UnTagged, SpbAttach, SpbStart, Tpb/*, SpbInfo*/, WideTagged, WideUnTagged};
 
 	// Constructor prepares an object from plain PB
 	ClumpletReader(Kind k, const UCHAR* buffer, size_t buffLen);
+	ClumpletReader(MemoryPool& pool, Kind k, const UCHAR* buffer, size_t buffLen);
 	virtual ~ClumpletReader() { }
 
 	// Navigation in clumplet buffer
@@ -88,11 +89,11 @@ public:
 #endif
 
 protected:
-	enum ClumpletType {TraditionalDpb, SingleTpb, StringSpb, IntSpb, ByteSpb};
+	enum ClumpletType {TraditionalDpb, SingleTpb, StringSpb, IntSpb, ByteSpb, Wide};
 	ClumpletType getClumpletType(UCHAR tag) const;
 	size_t getClumpletSize(bool wTag, bool wLength, bool wData) const;
 	void adjustSpbState();
-	
+
 	size_t cur_offset;
 	const Kind kind;
 	UCHAR spbState;		// Reflects state of spb parser/writer
