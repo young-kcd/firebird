@@ -263,14 +263,14 @@ void ClumpletWriter::insertBytesLengthCheck(UCHAR tag, const UCHAR* bytes, size_
 		{
 			USHORT value = static_cast<USHORT>(length);
 			fb_assert(sizeof(USHORT) == 2);
+			const UCHAR* ptr = reinterpret_cast<UCHAR*>(&value);
 #if defined(WORDS_BIGENDIAN)
 			UCHAR b[2];
-			const UCHAR* ptr = reinterpret_cast<UCHAR*>(&value);
 			b[0] = ptr[1];
 			b[1] = ptr[0];
 			dynamic_buffer.insert(cur_offset, b, sizeof(b));
 #else
-			dynamic_buffer.insert(cur_offset, reinterpret_cast<UCHAR*>(&value), sizeof(value));
+			dynamic_buffer.insert(cur_offset, ptr, sizeof(value));
 #endif
 			cur_offset += 2;
 		}
@@ -279,16 +279,16 @@ void ClumpletWriter::insertBytesLengthCheck(UCHAR tag, const UCHAR* bytes, size_
 		{
 			ULONG value = static_cast<ULONG>(length);
 			fb_assert(sizeof(ULONG) == 4);
+			const UCHAR* ptr = reinterpret_cast<UCHAR*>(&value);
 #if defined(WORDS_BIGENDIAN)
 			UCHAR b[4];
-			const UCHAR* ptr = reinterpret_cast<UCHAR*>(&value);
 			b[0] = ptr[3];
 			b[1] = ptr[2];
 			b[2] = ptr[1];
 			b[3] = ptr[0];
 			dynamic_buffer.insert(cur_offset, b, sizeof(b));
 #else
-			dynamic_buffer.insert(cur_offset, reinterpret_cast<UCHAR*>(&value), sizeof(value));
+			dynamic_buffer.insert(cur_offset, ptr, sizeof(value));
 #endif
 			cur_offset += 4;
 		}
