@@ -1,3 +1,17 @@
+2006-09-27 02:32  asfernandes
+
+	* firebird2/src/common/classes/ClumpletWriter.cpp (1.16):
+	
+	Misc
+
+2006-09-26 17:09  dimitr
+
+	* firebird2/src/common/classes/: ClumpletReader.cpp (1.24),
+	ClumpletReader.h (1.16), ClumpletWriter.cpp (1.15),
+	ClumpletWriter.h (1.10):
+	
+	A few extentions to the clumplet classes.
+
 2006-09-24 05:16  asfernandes
 
 	* firebird2/src/utilities/install/install_client.cpp (1.9):
