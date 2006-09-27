@@ -624,7 +624,7 @@ SLONG DYN_get_number(const UCHAR** ptr)
 }
 
 
-USHORT DYN_get_string(const TEXT** ptr, TEXT* field, size_t size, bool err_flag)
+USHORT DYN_get_string(const TEXT** ptr, TEXT* field, size_t size)
 {
 /**************************************
  *
@@ -635,8 +635,7 @@ USHORT DYN_get_string(const TEXT** ptr, TEXT* field, size_t size, bool err_flag)
  * Functional description
  *	Pick up a string, move to a target, and, if requested,
  *	set a null flag.  Return length of string.
- *	If destination field size is too small, punt if err_flag is true,
- *	otherwise try to copy as much as possible and skip the rest.
+ *	If destination field size is too small, punt.
  *	Strings need enough space for null pad.
  *
  **************************************/
@@ -648,14 +647,8 @@ USHORT DYN_get_string(const TEXT** ptr, TEXT* field, size_t size, bool err_flag)
 	USHORT l = length;
 	if (l) {
 		if (length >= size) {
-			if (err_flag) {
-				DYN_error_punt(false, 159, NULL, NULL, NULL, NULL, NULL);
-			/* msg 159: Name longer than database field size */
-			}
-			else {
-				l = size - 1;
-				e = length - l;
-			}
+			DYN_error_punt(false, 159, NULL, NULL, NULL, NULL, NULL);
+			// msg 159: Name longer than database field size
 		}
 		do {
 			*field++ = *p++;
@@ -671,7 +664,7 @@ USHORT DYN_get_string(const TEXT** ptr, TEXT* field, size_t size, bool err_flag)
 }
 
 
-USHORT DYN_get_string(const TEXT** ptr, Firebird::MetaName& field, size_t, bool err_flag)
+USHORT DYN_get_string(const TEXT** ptr, Firebird::MetaName& field, size_t)
 {
 /**************************************
  *
@@ -681,18 +674,17 @@ USHORT DYN_get_string(const TEXT** ptr, Firebird::MetaName& field, size_t, bool 
  *
  * Functional description
  *	Pick up an object name, move to a target. Return length of string.
- *	If destination field size is too small, punt if err_flag is true,
- *	otherwise try to copy as much as possible and skip the rest.
+ *	If destination field size is too small, punt.
  *
  **************************************/
 	const TEXT* p = *ptr;
 	USHORT length = (UCHAR) *p++;
 	length |= ((USHORT) ((UCHAR) (*p++))) << 8;
 	
-	if (err_flag && length > MAX_SQL_IDENTIFIER_LEN)
+	if (length > MAX_SQL_IDENTIFIER_LEN)
 	{
 		DYN_error_punt(false, 159, NULL, NULL, NULL, NULL, NULL);
-		/* msg 159: Name longer than database field size */
+		// msg 159: Name longer than database field size
 	}
 	field.assign(p, length);
 	p += length;
@@ -702,7 +694,7 @@ USHORT DYN_get_string(const TEXT** ptr, Firebird::MetaName& field, size_t, bool 
 }
 
 
-USHORT DYN_get_string(const TEXT** ptr, Firebird::PathName& field, size_t, bool)
+USHORT DYN_get_string(const TEXT** ptr, Firebird::PathName& field, size_t)
 {
 /**************************************
  *
@@ -712,7 +704,7 @@ USHORT DYN_get_string(const TEXT** ptr, Firebird::PathName& field, size_t, bool)
  *
  * Functional description
  *	Pick up a file name, move to a target. Return length 
- *	of string. Copy all available data ignoring err_flag.
+ *	of string.
  *
  **************************************/
 	const TEXT* p = *ptr;
@@ -727,7 +719,7 @@ USHORT DYN_get_string(const TEXT** ptr, Firebird::PathName& field, size_t, bool)
 }
 
 
-USHORT DYN_get_string(const TEXT** ptr, Firebird::UCharBuffer& array, size_t, bool err_flag)
+USHORT DYN_get_string(const TEXT** ptr, Firebird::UCharBuffer& array, size_t)
 {
 /**************************************
  *
@@ -737,7 +729,7 @@ USHORT DYN_get_string(const TEXT** ptr, Firebird::UCharBuffer& array, size_t, bo
  *
  * Functional description
  *	Pick up a string, move to a target. Return length 
- *	of string. Copy all available data ignoring err_flag.
+ *	of string.
  *
  **************************************/
 	const TEXT* p = *ptr;

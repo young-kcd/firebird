@@ -33,9 +33,7 @@ const int STUFF_COUNT		= 4;
 const int TEXT_BLOB_LENGTH	= 512;
 
 
-#define GET_STRING(from, to)	DYN_get_string ((const TEXT**)from, to, sizeof(to), true)
-
-#define GET_STRING_2(from, to)	DYN_get_string ((const TEXT**)from, to, sizeof(to), false)
+#define GET_STRING(from, to)	DYN_get_string ((const TEXT**)from, to, sizeof(to))
 
 namespace Jrd {
 
@@ -85,13 +83,10 @@ void	DYN_error_punt(bool, USHORT, const TEXT*, const TEXT*,
 				const TEXT*, const TEXT*, const TEXT*);
 void	DYN_execute(Jrd::Global*, const UCHAR**, const Firebird::MetaName*, Firebird::MetaName*, Firebird::MetaName*, Firebird::MetaName*, Firebird::MetaName*);
 SLONG	DYN_get_number(const UCHAR**);
-USHORT	DYN_get_string(const TEXT**, Firebird::MetaName&, size_t, bool);
-USHORT	DYN_get_string(const TEXT**, Firebird::PathName&, size_t, bool);
-USHORT	DYN_get_string(const TEXT**, Firebird::UCharBuffer&, size_t, bool);
-USHORT	DYN_get_string(const TEXT**, TEXT*, size_t, bool);
-
-// This function is not defined anywhere.
-// void	DYN_get_string2(TEXT**, TEXT*, USHORT);
+USHORT	DYN_get_string(const TEXT**, Firebird::MetaName&, size_t);
+USHORT	DYN_get_string(const TEXT**, Firebird::PathName&, size_t);
+USHORT	DYN_get_string(const TEXT**, Firebird::UCharBuffer&, size_t);
+USHORT	DYN_get_string(const TEXT**, TEXT*, size_t);
 
 // This function doesn't need to be exported currently.
 bool	DYN_is_it_sql_role(Jrd::Global*, const Firebird::MetaName&, Firebird::MetaName&, Jrd::thread_db*);

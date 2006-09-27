@@ -303,7 +303,7 @@ void DYN_define_collation( Global* gbl, const UCHAR** ptr)
 						break;
 
 					case isc_dyn_coll_specific_attributes:
-						GET_STRING_2(ptr, specific_attributes);
+						GET_STRING(ptr, specific_attributes);
 
 						fb_assert(cs);
 						if (cs)
@@ -927,7 +927,7 @@ void DYN_define_exception( Global* gbl, const UCHAR** ptr)
 				switch (verb)
 				{
 				case isc_dyn_xcp_msg:
-					GET_STRING_2(ptr, X.RDB$MESSAGE);
+					GET_STRING(ptr, X.RDB$MESSAGE);
 					X.RDB$MESSAGE.NULL = FALSE;
 					break;
 
