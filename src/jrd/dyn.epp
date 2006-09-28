@@ -639,7 +639,6 @@ USHORT DYN_get_string(const TEXT** ptr, TEXT* field, size_t size)
  *	Strings need enough space for null pad.
  *
  **************************************/
-	USHORT e = 0;
 	const TEXT* p = *ptr;
 	USHORT length = (UCHAR) *p++;
 	length |= ((USHORT) ((UCHAR) (*p++))) << 8;
@@ -653,8 +652,6 @@ USHORT DYN_get_string(const TEXT** ptr, TEXT* field, size_t size)
 		do {
 			*field++ = *p++;
 		} while (--l);
-		for (; e; e--)
-			p++;
 	}
 
 	*field = 0;
