@@ -641,7 +641,7 @@ DECLARE EXTERNAL FUNCTION substr
  *****************************************
  *
  * Functional description:
- *	substr(s,i,l) returns the substring 
+ *	substrlen(s,i,l) returns the substring
  *	of s which starts at position i and
  *	ends at position i+l-1, being l the length.
  *	Note: This function is NOT limited to
