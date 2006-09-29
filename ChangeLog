@@ -1,3 +1,9 @@
+2006-09-28 08:27  robocop
+
+	* firebird2/src/extlib/: ib_udf.sql (1.6), ib_udf2.sql (1.9):
+	
+	Fix comment.
+
 2006-09-28 03:31  asfernandes
 
 	* firebird2/src/jrd/dyn.epp (1.92):
