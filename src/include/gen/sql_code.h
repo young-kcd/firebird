@@ -742,6 +742,7 @@ static const struct {
 	{336397212, -607}, /* 924 dsql_no_array_computed           */
 	{336397213, -637}, /* 925 dsql_implicit_domain_name        */
 	{336397214, -607}, /* 926 dsql_only_can_subscript_array    */
+	{336397215, -104}, /* 927 dsql_max_sort_items              */
 	{336723983, -901}, /*  15 gsec_cant_open_db                */
 	{336723984, -901}, /*  16 gsec_switches_error              */
 	{336723985, -901}, /*  17 gsec_no_op_spec                  */

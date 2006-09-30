@@ -7889,6 +7889,14 @@ static dsql_nod* pass1_sort( dsql_req* request, dsql_nod* input, dsql_nod* selec
 			// invalid ORDER BY clause
 	}
 
+	if (input->nod_count > MAX_SORT_ITEMS)
+	{
+		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104, isc_arg_gds,
+			isc_dsql_command_err, isc_arg_gds, isc_order_by_err,
+			isc_arg_gds, isc_dsql_max_sort_items, 0);
+			// invalid ORDER BY clause, cannot sort on more than 255 items
+	}
+
 	// Node is simply to be rebuilt -- just recurse merrily
 
 	dsql_nod* node = MAKE_node(input->nod_type, input->nod_count);

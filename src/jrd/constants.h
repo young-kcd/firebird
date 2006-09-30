@@ -155,6 +155,8 @@ const size_t DEFAULT_TIMESTAMP_PRECISION	= 3;
 
 const size_t MAX_ARRAY_DIMENSIONS = 16;
 
+const size_t MAX_SORT_ITEMS = 255; // ORDER BY f1,...,f255
+
 // relation types
 
 enum rel_t {

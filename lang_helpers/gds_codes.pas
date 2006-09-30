@@ -754,6 +754,7 @@ const
 	gds_dsql_no_array_computed           = 336397212;
 	gds_dsql_implicit_domain_name        = 336397213;
 	gds_dsql_only_can_subscript_array    = 336397214;
+	gds_dsql_max_sort_items              = 336397215;
 	gds_gsec_cant_open_db                = 336723983;
 	gds_gsec_switches_error              = 336723984;
 	gds_gsec_no_op_spec                  = 336723985;
