@@ -3789,7 +3789,7 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 			const bid blob_id = REL.RDB$VIEW_BLR;
 			null_view = blob_id.isEmpty();
 			external_flag = REL.RDB$EXTERNAL_FILE[0];
-			if (REL.RDB$FORMAT == 255)
+			if (REL.RDB$FORMAT == MAX_TABLE_VERSIONS)
 			{
 				EXE_unwind(tdbb, request_fmt1);
 				ERR_post(isc_no_meta_update,
@@ -3812,54 +3812,55 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 
 					/* Update RFR to reflect new fields id */
 
-					if (!RFR.RDB$FIELD_ID.NULL &&
-						RFR.RDB$FIELD_ID >= REL.RDB$FIELD_ID)
-							REL.RDB$FIELD_ID = RFR.RDB$FIELD_ID + 1;
+					if (!RFR.RDB$FIELD_ID.NULL && RFR.RDB$FIELD_ID >= REL.RDB$FIELD_ID)
+						REL.RDB$FIELD_ID = RFR.RDB$FIELD_ID + 1;
 
 					if (RFR.RDB$FIELD_ID.NULL || RFR.RDB$UPDATE_FLAG.NULL)
-					MODIFY RFR USING
-						if (RFR.RDB$FIELD_ID.NULL)
-						{
-							if (external_flag)
+					{
+						MODIFY RFR USING
+							if (RFR.RDB$FIELD_ID.NULL)
 							{
-								RFR.RDB$FIELD_ID = RFR.RDB$FIELD_POSITION;
-								/* RFR.RDB$FIELD_POSITION.NULL is
-								   needed to be referenced in the
-								   code somewhere for GPRE to include
-								   this field in the structures that
-								   it generates at the top of this func. */
-								RFR.RDB$FIELD_ID.NULL =
-									RFR.RDB$FIELD_POSITION.NULL;
+								if (external_flag)
+								{
+									RFR.RDB$FIELD_ID = RFR.RDB$FIELD_POSITION;
+									/* RFR.RDB$FIELD_POSITION.NULL is
+									   needed to be referenced in the
+									   code somewhere for GPRE to include
+									   this field in the structures that
+									   it generates at the top of this func. */
+									RFR.RDB$FIELD_ID.NULL =
+										RFR.RDB$FIELD_POSITION.NULL;
+								}
+								else
+								{
+									RFR.RDB$FIELD_ID = REL.RDB$FIELD_ID;
+									RFR.RDB$FIELD_ID.NULL = FALSE;
+								}
+								REL.RDB$FIELD_ID++;
 							}
-							else
+							if (RFR.RDB$UPDATE_FLAG.NULL)
 							{
-								RFR.RDB$FIELD_ID = REL.RDB$FIELD_ID;
-								RFR.RDB$FIELD_ID.NULL = FALSE;
+								RFR.RDB$UPDATE_FLAG.NULL = FALSE;
+								RFR.RDB$UPDATE_FLAG = 1;
+								if (!FLD.RDB$COMPUTED_BLR.isEmpty())
+								{
+									RFR.RDB$UPDATE_FLAG = 0;
+									computed_field = true;
+								}
+								if (!null_view && REL.RDB$DBKEY_LENGTH > 8)
+								{
+									jrd_req* temp = NULL;
+									RFR.RDB$UPDATE_FLAG = 0;
+									FOR(REQUEST_HANDLE temp) X IN RDB$TRIGGERS WITH
+										X.RDB$RELATION_NAME EQ work->dfw_name.c_str() AND
+											X.RDB$TRIGGER_TYPE EQ 1
+										RFR.RDB$UPDATE_FLAG = 1;
+									END_FOR;
+									CMP_release(tdbb, temp);
+								}
 							}
-							REL.RDB$FIELD_ID++;
-						}
-						if (RFR.RDB$UPDATE_FLAG.NULL)
-						{
-							RFR.RDB$UPDATE_FLAG.NULL = FALSE;
-							RFR.RDB$UPDATE_FLAG = 1;
-							if (!FLD.RDB$COMPUTED_BLR.isEmpty())
-							{
-								RFR.RDB$UPDATE_FLAG = 0;
-								computed_field = true;
-							}
-							if (!null_view && REL.RDB$DBKEY_LENGTH > 8)
-							{
-								jrd_req* temp = NULL;
-								RFR.RDB$UPDATE_FLAG = 0;
-								FOR(REQUEST_HANDLE temp) X IN RDB$TRIGGERS WITH
-									X.RDB$RELATION_NAME EQ work->dfw_name.c_str() AND
-										X.RDB$TRIGGER_TYPE EQ 1
-									RFR.RDB$UPDATE_FLAG = 1;
-								END_FOR;
-								CMP_release(tdbb, temp);
-							}
-						}
-					END_MODIFY;
+						END_MODIFY;
+					}
 
 					/* Store stuff in field summary */
 

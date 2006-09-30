@@ -157,6 +157,8 @@ const size_t MAX_ARRAY_DIMENSIONS = 16;
 
 const size_t MAX_SORT_ITEMS = 255; // ORDER BY f1,...,f255
 
+const size_t MAX_TABLE_VERSIONS = 255; // maybe this should be in ods.h.
+
 // relation types
 
 enum rel_t {
