@@ -2314,8 +2314,27 @@ void DYN_define_index(Global*		gbl,
 				}
 			}
 			else {
-				DYN_error_punt(false, 18, NULL, NULL, NULL, NULL, NULL);
-				// msg 18: "could not find UNIQUE or PRIMARY KEY constraint with specified fields"
+				jrd_req* request2 = NULL;
+				found = false;
+
+				FOR(REQUEST_HANDLE request2 TRANSACTION_HANDLE gbl->gbl_transaction)
+					X IN RDB$RELATIONS
+						WITH X.RDB$RELATION_NAME EQ referenced_relation.c_str()
+					found = true;
+				END_FOR
+				
+				CMP_release(tdbb, request2);
+
+				if (found)
+				{
+					DYN_error_punt(false, 18, NULL, NULL, NULL, NULL, NULL);
+					// msg 18: "could not find UNIQUE or PRIMARY KEY constraint with specified fields"
+				}
+				else
+				{
+					DYN_error_punt(false, 241, referenced_relation.c_str(), NULL, NULL, NULL, NULL);
+					// msg 241: "Table %s not found"
+				}
 			}
 		}
 		else if (referenced_relation.length()) {
