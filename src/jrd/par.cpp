@@ -232,7 +232,7 @@ jrd_nod* PAR_blr(thread_db*	tdbb,
 }
 
 
-USHORT PAR_desc(thread_db* tdbb, CompilerScratch* csb, DSC* desc)
+USHORT PAR_desc(thread_db* tdbb, CompilerScratch* csb, DSC* desc, bool* explicitCollation)
 {
 /**************************************
  *
@@ -410,6 +410,14 @@ USHORT PAR_desc(thread_db* tdbb, CompilerScratch* csb, DSC* desc)
 
 	default:
 		error(csb, isc_datnotsup, 0);
+	}
+
+	if (explicitCollation)
+	{
+		if (dtype == blr_cstring2 || dtype == blr_text2 || dtype == blr_varying2 || dtype == blr_type_of2)
+			*explicitCollation = true;
+		else
+			*explicitCollation = false;
 	}
 
 	return type_alignments[desc->dsc_dtype];
@@ -811,14 +819,13 @@ static jrd_nod* par_cast(thread_db* tdbb, CompilerScratch* csb)
 	node->nod_arg[e_cast_fmt] = (jrd_nod*) format;
 
 	dsc* desc = &format->fmt_desc[0];
-	PAR_desc(tdbb, csb, desc);
+	bool explicitCollation;
+	PAR_desc(tdbb, csb, desc, &explicitCollation);
 	format->fmt_length = desc->dsc_length;
 
 	node->nod_arg[e_cast_source] = parse(tdbb, csb, VALUE);
 
-	if (DTYPE_IS_TEXT(desc->dsc_dtype) ||
-		((desc->dsc_dtype == dtype_blob || desc->dsc_dtype == dtype_quad) &&
-		 desc->dsc_sub_type == isc_blob_text))
+	if (explicitCollation)
 	{
 		jrd_nod* dep_node = PAR_make_node (tdbb, e_dep_length);
 		dep_node->nod_type = nod_dependency;
@@ -2817,12 +2824,24 @@ static jrd_nod* parse(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 
 	case blr_dcl_variable:
 		{
+			dsc* desc = (dsc*) (node->nod_arg + e_dcl_desc);
+			bool explicitCollation;
+
 			n = BLR_WORD;
 			node->nod_arg[e_dcl_id] = (jrd_nod*) (IPTR) n;
-			PAR_desc(tdbb, csb, (DSC *) (node->nod_arg + e_dcl_desc));
+			PAR_desc(tdbb, csb, desc, &explicitCollation);
 			vec<jrd_nod*>* vector = csb->csb_variables =
 				vec<jrd_nod*>::newVector(*tdbb->getDefaultPool(), csb->csb_variables, n + 1);
 			(*vector)[n] = node;
+
+			if (explicitCollation)
+			{
+				jrd_nod* dep_node = PAR_make_node (tdbb, e_dep_length);
+				dep_node->nod_type = nod_dependency;
+				dep_node->nod_arg [e_dep_object] = (jrd_nod*)(IPTR) INTL_TEXT_TYPE(*desc);
+				dep_node->nod_arg [e_dep_object_type] = (jrd_nod*)(IPTR) obj_collation;
+				csb->csb_dependencies.push(dep_node);
+			}
 		}
 		break;
 

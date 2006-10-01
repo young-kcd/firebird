@@ -2325,8 +2325,10 @@ void DYN_define_index(Global*		gbl,
 				CMP_release(tdbb, request2);
 
 				if (isView)
+				{
 					DYN_error_punt(false, 242, referenced_relation.c_str(), NULL, NULL, NULL, NULL);
-				// msg 242: "attempt to reference a view (%s) in a foreign key"
+					// msg 242: "attempt to reference a view (%s) in a foreign key"
+				}
 
 				if (found)
 				{

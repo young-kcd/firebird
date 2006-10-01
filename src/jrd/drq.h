@@ -202,6 +202,7 @@ const int drq_l_rfld_coll	= 151;	// lookup relation field collation
 const int drq_l_fld_coll	= 152;	// lookup field collation
 const int drq_l_prp_src		= 153;	// lookup a procedure parameter source
 const int drq_s_prms2		= 154;	// store parameters (ODS 11.1)
-const int drq_MAX			= 155;
+const int drq_l_prm_coll	= 155;	// lookup procedure parameter collation
+const int drq_MAX			= 156;
 
 #endif /* JRD_DRQ_H */
