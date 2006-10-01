@@ -2256,23 +2256,20 @@ void DYN_define_index(Global*		gbl,
 			int list_index = -1;
 			bool found = false;
 			FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
-			    X IN RDB$RELATION_CONSTRAINTS CROSS
-				Y IN RDB$INDICES OVER RDB$INDEX_NAME CROSS
-					Z IN RDB$INDEX_SEGMENTS OVER RDB$INDEX_NAME WITH
-					Y.RDB$RELATION_NAME EQ referenced_relation.c_str() AND
-				    Y.RDB$UNIQUE_FLAG NOT MISSING AND
-					(X.RDB$CONSTRAINT_TYPE = PRIMARY_KEY OR
-					X.RDB$CONSTRAINT_TYPE = UNIQUE_CNSTRT)
-					SORTED BY Y.RDB$INDEX_NAME,
-					DESCENDING Z.RDB$FIELD_POSITION
+			    RC IN RDB$RELATION_CONSTRAINTS CROSS
+				IND IN RDB$INDICES OVER RDB$INDEX_NAME CROSS
+					ISEG IN RDB$INDEX_SEGMENTS OVER RDB$INDEX_NAME WITH
+					IND.RDB$RELATION_NAME EQ referenced_relation.c_str() AND
+				    IND.RDB$UNIQUE_FLAG NOT MISSING AND
+					(RC.RDB$CONSTRAINT_TYPE = PRIMARY_KEY OR
+					RC.RDB$CONSTRAINT_TYPE = UNIQUE_CNSTRT)
+					SORTED BY IND.RDB$INDEX_NAME,
+					DESCENDING ISEG.RDB$FIELD_POSITION
 
 				if (!DYN_REQUEST(drq_l_unq_idx))
 					DYN_REQUEST(drq_l_unq_idx) = request;
 
-				/* create a control break on index name, in which we set up
-				   to handle a new index, assuming it is the right one */
-
-				if (index_name != Y.RDB$INDEX_NAME) {
+				if (index_name != IND.RDB$INDEX_NAME) {
 					if (list_index >= 0)
 						found = false;
 					if (found) {
@@ -2280,7 +2277,7 @@ void DYN_define_index(Global*		gbl,
 						break;
 					}
 					list_index = field_list.getCount() - 1;
-					index_name = Y.RDB$INDEX_NAME;
+					index_name = IND.RDB$INDEX_NAME;
 					found = true;
 				}
 
@@ -2288,8 +2285,8 @@ void DYN_define_index(Global*		gbl,
 				   match, then this is not the correct index */
 
 				if (list_index >= 0) {
-					fb_utils::exact_name_limit(Z.RDB$FIELD_NAME, sizeof(Z.RDB$FIELD_NAME));
-					if (field_list[list_index--] != Z.RDB$FIELD_NAME)
+					fb_utils::exact_name_limit(ISEG.RDB$FIELD_NAME, sizeof(ISEG.RDB$FIELD_NAME));
+					if (field_list[list_index--] != ISEG.RDB$FIELD_NAME)
 					{
 						found = false;
 					}
@@ -2316,19 +2313,25 @@ void DYN_define_index(Global*		gbl,
 			else {
 				jrd_req* request2 = NULL;
 				found = false;
+				bool isView = false;
 
 				FOR(REQUEST_HANDLE request2 TRANSACTION_HANDLE gbl->gbl_transaction)
 					X IN RDB$RELATIONS
 						WITH X.RDB$RELATION_NAME EQ referenced_relation.c_str()
 					found = true;
+					isView = !X.RDB$VIEW_BLR.NULL;
 				END_FOR
 				
 				CMP_release(tdbb, request2);
 
+				if (isView)
+					DYN_error_punt(false, 242, referenced_relation.c_str(), NULL, NULL, NULL, NULL);
+				// msg 242: "attempt to reference a view (%s) in a foreign key"
+
 				if (found)
 				{
-					DYN_error_punt(false, 18, NULL, NULL, NULL, NULL, NULL);
-					// msg 18: "could not find UNIQUE or PRIMARY KEY constraint with specified fields"
+					DYN_error_punt(false, 18, referenced_relation.c_str(), NULL, NULL, NULL, NULL);
+					// msg 18: "could not find UNIQUE or PRIMARY KEY constraint in table %s with specified columns"
 				}
 				else
 				{
@@ -2372,8 +2375,8 @@ void DYN_define_index(Global*		gbl,
 			id = old_id;
 
 			if (IDX.RDB$FOREIGN_KEY.NULL)
-				DYN_error_punt(false, 20, NULL, NULL, NULL, NULL, NULL);
-			/* msg 20: "could not find primary key index in specified relation" */
+				DYN_error_punt(false, 20, referenced_relation.c_str(), NULL, NULL, NULL, NULL);
+			/* msg 20: "could not find PRIMARY KEY index in specified table %s" */
 		}
 
 		IDX.RDB$SEGMENT_COUNT = seg_count;
