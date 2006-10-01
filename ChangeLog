@@ -1,3 +1,30 @@
+2006-09-30 18:17  asfernandes
+
+	* firebird2/src/: jrd/dyn_def.epp (1.140), msgs/facilities.sql
+	(1.81), msgs/messages.sql (1.95):
+	
+	Fixed CORE-945 - Bad error message when trying to create FK to
+	non-existent table
+
+2006-09-30 11:25  robocop
+
+	* firebird2/src/jrd/: constants.h (1.33), dfw.epp (1.194):
+	
+	Misc.
+
+2006-09-30 11:10  robocop
+
+	* firebird2/: lang_helpers/gds_codes.ftn (1.42),
+	lang_helpers/gds_codes.pas (1.42), src/dsql/pass1.cpp (1.291),
+	src/include/gen/codetext.h (1.50), src/include/gen/iberror.h
+	(1.51), src/include/gen/msgs.h (1.65), src/include/gen/rdb_codes.h
+	(1.48), src/include/gen/sql_code.h (1.53), src/jrd/constants.h
+	(1.32), src/msgs/facilities.sql (1.80), src/msgs/messages.sql
+	(1.94), src/msgs/system_errors.sql (1.40):
+	
+	Solve problem reported by Bill Oliver in fb-devel: we should
+	complain when someone tries to sort on more than 255 items.
+
 2006-09-28 08:27  robocop
 
 	* firebird2/src/extlib/: ib_udf.sql (1.6), ib_udf2.sql (1.9):
