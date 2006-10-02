@@ -2377,8 +2377,10 @@ void DYN_define_index(Global*		gbl,
 			id = old_id;
 
 			if (IDX.RDB$FOREIGN_KEY.NULL)
+			{
 				DYN_error_punt(false, 20, referenced_relation.c_str(), NULL, NULL, NULL, NULL);
-			/* msg 20: "could not find PRIMARY KEY index in specified table %s" */
+				// msg 20: "could not find PRIMARY KEY index in specified table %s"
+			}
 		}
 
 		IDX.RDB$SEGMENT_COUNT = seg_count;

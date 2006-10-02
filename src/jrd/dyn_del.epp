@@ -173,7 +173,7 @@ void DYN_delete_collation(Global* gbl, const UCHAR** ptr)
 
 				DYN_rundown_request(request2, -1);
 				DYN_error_punt(false, 243, COLL.RDB$COLLATION_NAME, PRM.RDB$PROCEDURE_NAME,
-						PRM.RDB$PARAMETER_NAME, NULL, NULL);
+					PRM.RDB$PARAMETER_NAME, NULL, NULL);
 				// msg 243: "Collation %s is used in procedure %s (parameter name %s) and cannot be dropped"
 			END_FOR;
 
