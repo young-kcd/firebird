@@ -414,8 +414,11 @@ USHORT PAR_desc(thread_db* tdbb, CompilerScratch* csb, DSC* desc, bool* explicit
 
 	if (explicitCollation)
 	{
-		if (dtype == blr_cstring2 || dtype == blr_text2 || dtype == blr_varying2 || dtype == blr_type_of2)
+		if (dtype == blr_cstring2 || dtype == blr_text2 || dtype == blr_varying2 ||
+			dtype == blr_blob2 || dtype == blr_type_of2)
+		{
 			*explicitCollation = true;
+		}
 		else
 			*explicitCollation = false;
 	}
