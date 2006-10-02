@@ -1,3 +1,19 @@
+2006-10-02 00:09  asfernandes
+
+	* firebird2/src/: jrd/drq.h (1.18), jrd/dyn_def.epp (1.142),
+	jrd/dyn_del.epp (1.66), jrd/par.cpp (1.145), jrd/par_proto.h
+	(1.19), msgs/facilities.sql (1.83), msgs/messages.sql (1.97):
+	
+	Fixed untracked collation dependencies in PSQL
+
+2006-10-01 11:14  robocop
+
+	* firebird2/src/: jrd/dyn_def.epp (1.141), msgs/facilities.sql
+	(1.82), msgs/history.sql (1.39), msgs/messages.sql (1.96):
+	
+	More improvements for CORE-945 because there are other confusing
+	messages in DYN.
+
 2006-09-30 18:17  asfernandes
 
 	* firebird2/src/: jrd/dyn_def.epp (1.140), msgs/facilities.sql
