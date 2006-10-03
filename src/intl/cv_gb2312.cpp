@@ -179,26 +179,34 @@ INTL_BOOL CVGB_check_gb2312(charset* cs, ULONG gb_len, const UCHAR *gb_str, ULON
  *          return false.  
  *          else return(true);
  **************************************/
-	const UCHAR *gb_str_start = gb_str;
+	const UCHAR* gb_str_start = gb_str;
 
-	while (gb_len--) {
+	while (gb_len--)
+	{
+		if (offending_position)
+			*offending_position = gb_str - gb_str_start;
+
 		const UCHAR c1 = *gb_str;
-		if (GB1(c1)) {			/* Is it  GB2312 */
-			if (gb_len == 0)	/* truncated GB2312 */
+
+		if (c1 & 0x80)	// it is not an ASCII char
+		{
+			if (GB1(c1))	// first byte is GB2312
 			{
-				if (offending_position)
-					*offending_position = gb_str - gb_str_start;
-				return (false);
-			}
-			else {
+				if (gb_len == 0 ||		// truncated GB2312
+					!GB2(gb_str[1]))	// bad second byte
+				{
+					return false;
+				}
+
 				gb_str += 2;
 				gb_len -= 1;
 			}
+			else	// bad first byte
+				return false;
 		}
-		else {					/* it is a ASCII */
-
+		else	// it is an ASCII char
 			gb_str++;
-		}
 	}
-	return (true);
+
+	return true;
 }
