@@ -183,9 +183,6 @@ INTL_BOOL CVGB_check_gb2312(charset* cs, ULONG gb_len, const UCHAR *gb_str, ULON
 
 	while (gb_len--)
 	{
-		if (offending_position)
-			*offending_position = gb_str - gb_str_start;
-
 		const UCHAR c1 = *gb_str;
 
 		if (c1 & 0x80)	// it is not an ASCII char
@@ -195,6 +192,9 @@ INTL_BOOL CVGB_check_gb2312(charset* cs, ULONG gb_len, const UCHAR *gb_str, ULON
 				if (gb_len == 0 ||		// truncated GB2312
 					!GB2(gb_str[1]))	// bad second byte
 				{
+					if (offending_position)
+						*offending_position = gb_str - gb_str_start;
+
 					return false;
 				}
 
@@ -202,7 +202,12 @@ INTL_BOOL CVGB_check_gb2312(charset* cs, ULONG gb_len, const UCHAR *gb_str, ULON
 				gb_len -= 1;
 			}
 			else	// bad first byte
+			{
+				if (offending_position)
+					*offending_position = gb_str - gb_str_start;
+
 				return false;
+			}
 		}
 		else	// it is an ASCII char
 			gb_str++;
