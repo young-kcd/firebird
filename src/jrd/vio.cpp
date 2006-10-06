@@ -260,7 +260,8 @@ void VIO_backout(TDBB tdbb, RPB * rpb, JRD_TRA transaction)
 		CCH_RELEASE(tdbb, &temp.rpb_window);
 		return;
 	}
-	if (temp.rpb_flags & rpb_deleted)
+	if ((temp.rpb_flags & rpb_deleted) && 
+		!(temp.rpb_flags & rpb_delta))
 		CCH_RELEASE(tdbb, &temp.rpb_window);
 	else {
 		temp.rpb_record = VIO_gc_record(tdbb, relation);
@@ -643,7 +644,8 @@ int VIO_chase_record_version(TDBB tdbb, RPB * rpb, RSB rsb, JRD_TRA transaction,
 					return FALSE;
 				}
 				temp = *rpb;
-				if (!(rpb->rpb_flags & rpb_deleted)) {
+				if ((!(rpb->rpb_flags & rpb_deleted)) || 
+					(rpb->rpb_flags & rpb_delta)) {
 					VIO_data(tdbb, rpb, pool);
 					rpb->rpb_page = temp.rpb_page;
 					rpb->rpb_line = temp.rpb_line;
