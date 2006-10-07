@@ -1782,7 +1782,7 @@ dsql_nod* MAKE_field(dsql_ctx* context, dsql_fld* field, dsql_nod* indices)
 		node->nod_desc.dsc_flags = DSC_nullable;
 	}
 
-	// check if the field is a system domain and and the type is CHAR/VARCHAR CHARACTER SET UNICODE_FSS
+	// check if the field is a system domain and the type is CHAR/VARCHAR CHARACTER SET UNICODE_FSS
 	if ((field->fld_flags & FLD_system) &&
 		node->nod_desc.dsc_dtype <= dtype_varying &&
 		INTL_GET_CHARSET(&node->nod_desc) == CS_METADATA)
