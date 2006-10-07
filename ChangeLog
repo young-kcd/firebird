@@ -1,3 +1,15 @@
+2006-10-06 19:33  awharrison
+
+	* firebird2/src/jrd/vio.cpp (1.49.2.4):
+	
+	Backported a fix to eliminate some wrong length record errors
+	
+	Normally, deleted records are represented by a stub which has no
+	data so should not be used for VIO_data calls when building the
+	version chain.	Under some circumstances, however, the deleted flag
+	is set on a complete record version with a delta back version. 
+	When that happens, the record should be retrieved
+
 2006-09-09 11:11  hvlad
 
 	* firebird2/src/jrd/tpc.cpp (1.6.2.1):
