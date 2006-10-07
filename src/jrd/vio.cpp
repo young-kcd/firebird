@@ -235,7 +235,8 @@ void VIO_backout(thread_db* tdbb, record_param* rpb, const jrd_tra* transaction)
 #endif
 
 	jrd_rel* relation = rpb->rpb_relation;
-	VIO_bump_count(tdbb, DBB_backout_count, relation, false);
+	VIO_bump_count(tdbb, DBB_backout_count, relation);
+	RuntimeStatistics::bumpValue(tdbb, RuntimeStatistics::RECORD_BACKOUTS);
 	RecordStack going, staying;
 	Record* data = NULL;
 	Record* old_data = NULL;
@@ -434,7 +435,7 @@ void VIO_backout(thread_db* tdbb, record_param* rpb, const jrd_tra* transaction)
 }
 
 
-void VIO_bump_count(thread_db* tdbb, USHORT count_id, jrd_rel* relation, bool error)
+void VIO_bump_count(thread_db* tdbb, USHORT count_id, jrd_rel* relation)
 {
 /**************************************
  *
@@ -471,7 +472,7 @@ void VIO_bump_count(thread_db* tdbb, USHORT count_id, jrd_rel* relation, bool er
 	vcl** ptr = tdbb->tdbb_attachment->att_counts + count_id;
 
 	vcl* vector = *ptr = vcl::newVector(*dbb->dbb_permanent, *ptr, relation_id + 1);
-	((*vector)[relation_id]) += (error) ? -1 : 1;
+	((*vector)[relation_id])++;
 }
 
 
@@ -1464,7 +1465,8 @@ void VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 		verb_post(tdbb, transaction, rpb, 0, 0, same_tx, false);
 	}
 
-	VIO_bump_count(tdbb, DBB_delete_count, relation, false);
+	VIO_bump_count(tdbb, DBB_delete_count, relation);
+	RuntimeStatistics::bumpValue(tdbb, RuntimeStatistics::RECORD_DELETES);
 
 /* for an autocommit transaction, mark a commit as necessary */
 
@@ -1736,7 +1738,8 @@ bool VIO_get(thread_db* tdbb, record_param* rpb, RecordSource* rsb, jrd_tra* tra
 		VIO_data(tdbb, rpb, pool);
 	}
 
-	VIO_bump_count(tdbb, DBB_read_idx_count, rpb->rpb_relation, false);
+	VIO_bump_count(tdbb, DBB_read_idx_count, rpb->rpb_relation);
+	RuntimeStatistics::bumpValue(tdbb, RuntimeStatistics::RECORD_IDX_READS);
 
 	return true;
 }
@@ -2164,7 +2167,8 @@ void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb,
 /* If we're the system transaction, modify stuff in place.  This saves
    endless grief on cleanup */
 
-	VIO_bump_count(tdbb, DBB_update_count, relation, false);
+	VIO_bump_count(tdbb, DBB_update_count, relation);
+	RuntimeStatistics::bumpValue(tdbb, RuntimeStatistics::RECORD_UPDATES);
 
 	if (transaction->tra_flags & TRA_system) {
 		update_in_place(tdbb, transaction, org_rpb, new_rpb);
@@ -2367,10 +2371,12 @@ void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb,
 
 
 bool VIO_next_record(thread_db* tdbb,
-						record_param* rpb,
-						RecordSource* rsb,
-						jrd_tra* transaction,
-						JrdMemoryPool* pool, bool backwards, bool onepage)
+					 record_param* rpb,
+					 RecordSource* rsb,
+					 jrd_tra* transaction,
+					 JrdMemoryPool* pool,
+					 bool backwards,
+					 bool onepage)
 {
 /**************************************
  *
@@ -2429,7 +2435,8 @@ bool VIO_next_record(thread_db* tdbb,
 	}
 #endif
 
-	VIO_bump_count(tdbb, DBB_read_seq_count, rpb->rpb_relation, false);
+	VIO_bump_count(tdbb, DBB_read_seq_count, rpb->rpb_relation);
+	RuntimeStatistics::bumpValue(tdbb, RuntimeStatistics::RECORD_SEQ_READS);
 
 	return true;
 }
@@ -2726,7 +2733,8 @@ void VIO_store(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 	}
 #endif
 
-	VIO_bump_count(tdbb, DBB_insert_count, relation, false);
+	VIO_bump_count(tdbb, DBB_insert_count, relation);
+	RuntimeStatistics::bumpValue(tdbb, RuntimeStatistics::RECORD_INSERTS);
 
 	if (!(transaction->tra_flags & TRA_system) &&
 		(transaction->tra_save_point) &&
@@ -3569,7 +3577,8 @@ static void expunge(thread_db* tdbb, record_param* rpb,
 	record_param temp = *rpb;
 	RecordStack empty_staying;
 	garbage_collect(tdbb, &temp, rpb->rpb_page, empty_staying);
-	VIO_bump_count(tdbb, DBB_expunge_count, rpb->rpb_relation, false);
+	VIO_bump_count(tdbb, DBB_expunge_count, rpb->rpb_relation);
+	RuntimeStatistics::bumpValue(tdbb, RuntimeStatistics::RECORD_EXPUNGES);
 }
 
 
@@ -4680,7 +4689,8 @@ static void purge(thread_db* tdbb, record_param* rpb)
 	staying.push(record);
 	garbage_collect(tdbb, &temp, rpb->rpb_page, staying);
 	gc_rec->rec_flags &= ~REC_gc_active;
-	VIO_bump_count(tdbb, DBB_purge_count, relation, false);
+	VIO_bump_count(tdbb, DBB_purge_count, relation);
+	RuntimeStatistics::bumpValue(tdbb, RuntimeStatistics::RECORD_PURGES);
 
 	return; // true;
 }

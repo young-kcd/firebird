@@ -89,7 +89,13 @@ class jrd_tra : public pool_alloc_rpt<SCHAR, type_tra>
 		tra_wait
 	};
 
-	jrd_tra(MemoryPool& p) : tra_blobs(&p), tra_resources(p), tra_context_vars(p) {}
+	jrd_tra(MemoryPool& p) :
+		tra_blobs(&p),
+		tra_resources(p),
+		tra_context_vars(p),
+		tra_stats(p)
+	{}
+
 	Attachment* tra_attachment;	/* database attachment */
 	SLONG tra_number;			/* transaction number */
 	SLONG tra_top;				/* highest transaction in snapshot */
@@ -118,6 +124,7 @@ class jrd_tra : public pool_alloc_rpt<SCHAR, type_tra>
 	Firebird::TimeStamp tra_timestamp; // transaction start time
 	jrd_req* tra_requests;		// Doubly linked list of requests active in this transaction
 	DatabaseSnapshot* tra_db_snapshot; // Database state snapshot (for monitoring purposes)
+	RuntimeStatistics tra_stats;
 	UCHAR tra_transactions[1];
 
 	SSHORT getLockWait() const

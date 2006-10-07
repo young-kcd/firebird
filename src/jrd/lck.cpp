@@ -552,6 +552,7 @@ SLONG LCK_get_owner_handle(thread_db* tdbb, enum lck_t lock_type)
 	case LCK_backup_alloc:
 	case LCK_backup_database:
 	case LCK_counter:
+	case LCK_monitor:
 	case LCK_tt_exist:
 		return *LCK_OWNER_HANDLE_DBB(dbb);
 	case LCK_attachment:

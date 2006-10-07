@@ -189,7 +189,8 @@ public:
 	jrd_req(JrdMemoryPool* pool) :
 		req_blobs(pool), req_external(*pool), req_access(*pool), req_resources(*pool),
 		req_trg_name(*pool), req_fors(*pool), req_exec_sta(*pool), req_invariants(*pool),
-		req_timestamp(true), req_sql_text(*pool) {}
+		req_timestamp(true), req_sql_text(*pool), req_stats(*pool)
+	{}
 
 	Attachment*	req_attachment;		// database attachment
 	SLONG		req_id;				// request identifier
@@ -229,7 +230,7 @@ public:
 	ULONG		req_records_inserted;	/* count of records inserted by request */
 	ULONG		req_records_updated;	/* count of records updated by request */
 	ULONG		req_records_deleted;	/* count of records deleted by request */
-
+	RuntimeStatistics	req_stats;
 	AffectedRows req_records_affected;	/* records affected by the last statement */
 
 	USHORT req_view_flags;			/* special flags for virtual ops on views */

@@ -114,6 +114,7 @@ static void expand_view_lock(jrd_tra*, jrd_rel*, SCHAR);
 static tx_inv_page* fetch_inventory_page(thread_db*, WIN *, SLONG, USHORT);
 static SLONG inventory_page(thread_db*, SLONG);
 static SSHORT limbo_transaction(thread_db*, SLONG);
+static void link_transaction(thread_db*, jrd_tra*);
 static void restart_requests(thread_db*, jrd_tra*);
 #ifdef SWEEP_THREAD
 static void start_sweeper(thread_db*, Database*);
@@ -155,6 +156,8 @@ void TRA_attach_request(Jrd::jrd_tra* transaction, Jrd::jrd_req* request) {
 		request->req_tra_next = transaction->tra_requests;
 	}
 	transaction->tra_requests = request;
+
+	request->req_stats.setParent(&transaction->tra_stats);
 }
 
 void TRA_detach_request(Jrd::jrd_req* request) {
@@ -179,6 +182,8 @@ void TRA_detach_request(Jrd::jrd_req* request) {
 	request->req_transaction = NULL;
 	request->req_tra_next = NULL;
 	request->req_tra_prev = NULL;
+
+	request->req_stats.setParent(&request->req_attachment->att_stats);
 }
 
 bool TRA_active_transactions(thread_db* tdbb, Database* dbb)
@@ -753,6 +758,7 @@ void TRA_init(thread_db* tdbb)
 	trans->tra_lock_timeout = DEFAULT_LOCK_TIMEOUT;
 	trans->tra_flags |= TRA_system | TRA_ignore_limbo;
 	trans->tra_pool = dbb->dbb_permanent;
+	trans->tra_stats.setParent(&dbb->dbb_stats);
 }
 
 
@@ -782,27 +788,6 @@ void TRA_invalidate(Database* database, ULONG mask)
 				transaction->tra_flags |= TRA_invalidated;
 		}
 	}
-}
-
-
-void TRA_link_transaction(thread_db* tdbb, jrd_tra* transaction)
-{
-/**************************************
- *
- *	T R A _ l i n k _ t r a n s a c t i o n
- *
- **************************************
- *
- * Functional description
- *	Link transaction block into database attachment.
- *
- **************************************/
-	SET_TDBB(tdbb);
-
-	Attachment* attachment  = tdbb->tdbb_attachment;
-	transaction->tra_attachment = attachment;
-	transaction->tra_next = attachment->att_transactions;
-	attachment->att_transactions = transaction;
 }
 
 
@@ -1043,7 +1028,7 @@ jrd_tra* TRA_reconnect(thread_db* tdbb, const UCHAR* id, USHORT length)
 				 isc_arg_string, ERR_cstring(text), 0);
 	}
 
-	TRA_link_transaction(tdbb, trans);
+	link_transaction(tdbb, trans);
 
 	return trans;
 }
@@ -1626,7 +1611,7 @@ jrd_tra* TRA_start(thread_db* tdbb, int tpb_length, const SCHAR* tpb)
 /* Link the transaction to the attachment block before releasing
    header page for handling signals. */
 
-	TRA_link_transaction(tdbb, trans);
+	link_transaction(tdbb, trans);
 
 #ifndef SUPERSERVER_V2
 	if (!(dbb->dbb_flags & DBB_read_only))
@@ -2511,6 +2496,29 @@ static SSHORT limbo_transaction(thread_db* tdbb, SLONG id)
 	CCH_RELEASE(tdbb, &window);
 
 	return state;
+}
+
+
+static void link_transaction(thread_db* tdbb, jrd_tra* transaction)
+{
+/**************************************
+ *
+ *	l i n k _ t r a n s a c t i o n
+ *
+ **************************************
+ *
+ * Functional description
+ *	Link transaction block into database attachment.
+ *
+ **************************************/
+	SET_TDBB(tdbb);
+
+	Attachment* attachment  = tdbb->tdbb_attachment;
+	transaction->tra_attachment = attachment;
+	transaction->tra_next = attachment->att_transactions;
+	attachment->att_transactions = transaction;
+
+	transaction->tra_stats.setParent(&attachment->att_stats);
 }
 
 

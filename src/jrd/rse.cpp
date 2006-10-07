@@ -160,7 +160,9 @@ void RSE_close(thread_db* tdbb, RecordSource* rsb)
 				record_param* rpb = &request->req_rpb[rsb->rsb_stream];
 				if (rpb->getWindow(tdbb).win_flags & WIN_large_scan &&
 					rpb->rpb_relation->rel_scan_count)
-						--rpb->rpb_relation->rel_scan_count;
+				{
+					--rpb->rpb_relation->rel_scan_count;
+				}
 				return;
 			}
 
@@ -1838,7 +1840,8 @@ static bool get_record(thread_db*	tdbb,
 /* do bof and eof handling for streams which may be navigated */
 
 	if (rsb->rsb_type == rsb_sequential ||
-		rsb->rsb_type == rsb_navigate || rsb->rsb_type == rsb_sort)
+		rsb->rsb_type == rsb_navigate ||
+		rsb->rsb_type == rsb_sort)
 	{
 		if (((mode == RSE_get_forward) && (impure->irsb_flags & irsb_eof)) ||
 			((mode == RSE_get_backward) && (impure->irsb_flags & irsb_bof)))
@@ -2500,9 +2503,9 @@ static UCHAR *get_sort(thread_db* tdbb, RecordSource* rsb
 
 	ULONG* data = 0;
 #ifdef SCROLLABLE_CURSORS
-	SORT_get(tdbb->tdbb_status_vector, impure->irsb_sort_handle, &data, mode);
+	SORT_get(tdbb, impure->irsb_sort_handle, &data, mode);
 #else
-	SORT_get(tdbb->tdbb_status_vector, impure->irsb_sort_handle, &data);
+	SORT_get(tdbb, impure->irsb_sort_handle, &data);
 #endif
 
 	return reinterpret_cast<UCHAR*>(data);
@@ -2950,8 +2953,7 @@ static void open_sort(thread_db* tdbb, RecordSource* rsb, irsb_sort* impure, UIN
 		// to build a record.
 
 		UCHAR* data = 0;
-		SORT_put(tdbb->tdbb_status_vector, impure->irsb_sort_handle,
-				 (ULONG **) &data);
+		SORT_put(tdbb, impure->irsb_sort_handle, (ULONG **) &data);
 
 		// Zero out the sort key. This solve a multitude of problems.
 
@@ -3018,7 +3020,7 @@ static void open_sort(thread_db* tdbb, RecordSource* rsb, irsb_sort* impure, UIN
 		}
 	}
 
-	SORT_sort(tdbb->tdbb_status_vector, impure->irsb_sort_handle);
+	SORT_sort(tdbb, impure->irsb_sort_handle);
 
 	}
 	catch (const Firebird::Exception& ex) {

@@ -548,6 +548,7 @@ jrd_req* EXE_find_request(thread_db* tdbb, jrd_req* request, bool validate)
 			clone = CMP_clone_request(tdbb, request, n, validate);
 	}
 	clone->req_attachment = tdbb->tdbb_attachment;
+	clone->req_stats.setParent(&tdbb->tdbb_attachment->att_stats);
 	clone->req_flags |= req_in_use;
 	THD_MUTEX_UNLOCK(dbb->dbb_mutexes + DBB_MUTX_clone);
 	return clone;
@@ -911,6 +912,8 @@ void EXE_start(thread_db* tdbb, jrd_req* request, jrd_tra* transaction)
 		impure->vlu_flags = 0;
 	}
 
+	RuntimeStatistics::bumpValue(tdbb, RuntimeStatistics::STMT_EXECUTES);
+
 	// Start a save point if not in middle of one
 	if (transaction && (transaction != dbb->dbb_sys_trans)) {
 		VIO_start_save_point(tdbb, transaction);
@@ -1194,7 +1197,6 @@ static jrd_nod* erase(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 									rpb->rpb_record, NULL,
 									jrd_req::req_trigger_delete)))
 	{
-		VIO_bump_count(tdbb, DBB_delete_count, relation, true);
 		trigger_failure(tdbb, trigger);
 	}
 
@@ -1213,7 +1215,6 @@ static jrd_nod* erase(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 			IDX_erase(tdbb, rpb, transaction, &bad_relation, &bad_index);
 
 		if (error_code) {
-			VIO_bump_count(tdbb, DBB_delete_count, relation, true);
 			ERR_duplicate_error(error_code, bad_relation, bad_index);
 		}
 	}
@@ -2689,7 +2690,6 @@ static jrd_nod* modify(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 							&bad_relation, &bad_index);
 
 				if (error_code) {
-					VIO_bump_count(tdbb, DBB_update_count, bad_relation, true);
 					ERR_duplicate_error(error_code, bad_relation, bad_index);
 				}
 			}
@@ -2701,7 +2701,6 @@ static jrd_nod* modify(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 											org_rpb->rpb_record, new_rpb->rpb_record,
 											jrd_req::req_trigger_update)))
 			{
-				VIO_bump_count(tdbb, DBB_update_count, relation, true);
 				trigger_failure(tdbb, trigger);
 			}
 
@@ -2721,7 +2720,6 @@ static jrd_nod* modify(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 												&bad_relation, &bad_index);
 
 				if (error_code) {
-					VIO_bump_count(tdbb, DBB_update_count, relation, true);
 					ERR_duplicate_error(error_code, bad_relation, bad_index);
 				}
 			}
@@ -3475,7 +3473,6 @@ static jrd_nod* store(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 						  &bad_relation, &bad_index);
 
 			if (error_code) {
-				VIO_bump_count(tdbb, DBB_insert_count, bad_relation, true);
 				ERR_duplicate_error(error_code, bad_relation, bad_index);
 			}
 		}
@@ -3486,7 +3483,6 @@ static jrd_nod* store(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 										NULL, rpb->rpb_record,
 										jrd_req::req_trigger_insert)))
 		{
-			VIO_bump_count(tdbb, DBB_insert_count, relation, true);
 			trigger_failure(tdbb, trigger);
 		}
 

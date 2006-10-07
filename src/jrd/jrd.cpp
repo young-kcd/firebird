@@ -771,9 +771,6 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 		LCK_init(tdbb, LCK_OWNER_database);
 		dbb->dbb_flags |= DBB_lck_init_done;
 
-		// Initialize locks
-		init_database_locks(tdbb, dbb);
-
 		INI_init();
 
 		PageSpace* pageSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
@@ -787,7 +784,10 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 			dbb->dbb_page_buffers = options.dpb_page_buffers;
 		}
 		CCH_init(tdbb, options.dpb_buffers);
-		
+
+		// Initialize locks
+		init_database_locks(tdbb, dbb);
+
 		// Initialize backup difference subsystem. This must be done before WAL and shadowing
 		// is enabled because nbackup it is a lower level subsystem
 		dbb->dbb_backup_manager = FB_NEW(*dbb->dbb_permanent) BackupManager(tdbb, dbb, nbak_state_unknown);
@@ -1590,6 +1590,7 @@ ISC_STATUS GDS_COMPILE(ISC_STATUS* user_status,
 		request->req_attachment = attachment;
 		request->req_request = attachment->att_requests;
 		attachment->att_requests = request;
+		request->req_stats.setParent(&attachment->att_stats);
 	
 		DEBUG;
 		*req_handle = request;
@@ -1844,9 +1845,6 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 	LCK_init(tdbb, LCK_OWNER_database);
 	dbb->dbb_flags |= DBB_lck_init_done;
 
-	// Initialize locks
-	init_database_locks(tdbb, dbb);
-
 	INI_init();
 	PAG_init();
 	V4_JRD_MUTEX_UNLOCK(dbb->dbb_mutexes + DBB_MUTX_init_fini);
@@ -1917,7 +1915,10 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 	if (options.dpb_set_page_buffers)
 		dbb->dbb_page_buffers = options.dpb_page_buffers;
 	CCH_init(tdbb, options.dpb_buffers);
-	
+
+	// Initialize locks
+	init_database_locks(tdbb, dbb);
+
 	// Initialize backup difference subsystem. This must be done before WAL and shadowing
 	// is enabled because nbackup it is a lower level subsystem
 	dbb->dbb_backup_manager = FB_NEW(*dbb->dbb_permanent) BackupManager(tdbb, dbb, nbak_state_normal); 
@@ -3471,18 +3472,15 @@ ISC_STATUS GDS_SERVICE_ATTACH(ISC_STATUS* user_status,
 	tdbb->tdbb_status_vector = user_status;
 	tdbb->tdbb_database = NULL;
 
-	JRD_SS_MUTEX_LOCK;
 	try
 	{
 		*svc_handle = SVC_attach(service_length, service_name, spb_length, spb);
 	}
 	catch (const Firebird::Exception& ex)
 	{
-		JRD_SS_MUTEX_UNLOCK;
 		return error(user_status, ex);
 	}
 
-	JRD_SS_MUTEX_UNLOCK;
 	return return_success(tdbb);
 }
 
@@ -3963,6 +3961,7 @@ ISC_STATUS GDS_TRANSACT_REQUEST(ISC_STATUS*	user_status,
 	} // new context
 
 	request->req_attachment = attachment;
+	request->req_stats.setParent(&attachment->att_stats);
 
 	USHORT len;
 	if (in_msg_length)
@@ -5724,14 +5723,28 @@ static void init_database_locks(thread_db* tdbb, Database* dbb)
 
 	fb_assert(dbb);
 
+	// Lock shared by all dbb owners, used to generate
+	// unique cross-database integer numbers
 	Lock* lock = FB_NEW_RPT(*dbb->dbb_permanent, sizeof(SLONG)) Lock();
 	dbb->dbb_increment_lock = lock;
 	lock->lck_type = LCK_counter;
 	lock->lck_owner_handle = LCK_get_owner_handle(tdbb, lock->lck_type);
 	lock->lck_parent = dbb->dbb_lock;
 	lock->lck_length = sizeof(SLONG);
-	lock->lck_key.lck_long = -1;
 	lock->lck_dbb = dbb;
+	LCK_lock(tdbb, lock, LCK_SR, LCK_WAIT);
+
+	// Yet another shared lock, used to signal other dbb owners
+	// to dump their monitoring data and to synchronize operations
+	lock = FB_NEW_RPT(*dbb->dbb_permanent, sizeof(SLONG)) Lock();
+	dbb->dbb_monitor_lock = lock;
+	lock->lck_type = LCK_monitor;
+	lock->lck_owner_handle = LCK_get_owner_handle(tdbb, lock->lck_type);
+	lock->lck_parent = dbb->dbb_lock;
+	lock->lck_length = sizeof(SLONG);
+	lock->lck_dbb = dbb;
+	lock->lck_object = reinterpret_cast<blk*>(dbb);
+	lock->lck_ast = DatabaseSnapshot::blockingAst;
 	LCK_lock(tdbb, lock, LCK_SR, LCK_WAIT);
 }
 
@@ -6047,6 +6060,9 @@ static void shutdown_database(Database* dbb, const bool release_pools)
 	if (dbb->dbb_backup_manager)
 		dbb->dbb_backup_manager->shutdown(tdbb);
 	// FUN_fini(tdbb);
+
+	if (dbb->dbb_monitor_lock)
+		LCK_release(tdbb, dbb->dbb_monitor_lock);
 
 	if (dbb->dbb_increment_lock)
 		LCK_release(tdbb, dbb->dbb_increment_lock);

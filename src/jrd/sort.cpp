@@ -502,7 +502,7 @@ void SORT_fini(sort_context* scb, Attachment* att)
 
 
 #ifdef SCROLLABLE_CURSORS
-void SORT_get(ISC_STATUS* status_vector,
+void SORT_get(thread_db* tdbb,
 			  sort_context* scb,
 			  ULONG ** record_address,
 			  RSE_GET_MODE mode)
@@ -521,7 +521,7 @@ void SORT_get(ISC_STATUS* status_vector,
  **************************************/
 	sort_record* record;
 
-	scb->scb_status_vector = status_vector;
+	scb->scb_status_vector = tdbb->tdbb_status_vector;
 
 	// If there were runs, get the records from the merge
 	// tree. Otherwise everything fit in memory.
@@ -587,9 +587,11 @@ void SORT_get(ISC_STATUS* status_vector,
 		SORT_diddle_key((UCHAR *) record->sort_record_key, scb, false);
 
 	*record_address = (ULONG *) record;
+
+	RuntimeStatistics::bumpValue(tdbb, RuntimeStatistics::SORT_GETS);
 }
 #else
-void SORT_get(ISC_STATUS* status_vector,
+void SORT_get(thread_db* tdbb,
 			  sort_context* scb,
 			  ULONG** record_address)
 {
@@ -607,7 +609,7 @@ void SORT_get(ISC_STATUS* status_vector,
  **************************************/
 	sort_record* record;
 
-	scb->scb_status_vector = status_vector;
+	scb->scb_status_vector = tdbb->tdbb_status_vector;
 
 	// If there weren't any runs, everything fit in memory. Just return stuff.
 
@@ -629,6 +631,8 @@ void SORT_get(ISC_STATUS* status_vector,
 	if (record) {
 		diddle_key((UCHAR *) record->sort_record_key, scb, false);
 	}
+
+	RuntimeStatistics::bumpValue(tdbb, RuntimeStatistics::SORT_GETS);
 }
 #endif
 
@@ -772,7 +776,7 @@ sort_context* SORT_init(thread_db* tdbb,
 }
 
 
-void SORT_put(ISC_STATUS * status_vector, sort_context* scb, ULONG ** record_address)
+void SORT_put(thread_db* tdbb, sort_context* scb, ULONG ** record_address)
 {
 /**************************************
  *
@@ -790,7 +794,7 @@ void SORT_put(ISC_STATUS * status_vector, sort_context* scb, ULONG ** record_add
  *      in the scratch files.  The runs are eventually merged.
  *
  **************************************/
-	scb->scb_status_vector = status_vector;
+	scb->scb_status_vector = tdbb->tdbb_status_vector;
 
 	// Find the last record passed in, and zap the keys something comparable
 	// by unsigned longword compares
@@ -846,6 +850,8 @@ void SORT_put(ISC_STATUS * status_vector, sort_context* scb, ULONG ** record_add
 	scb->scb_records++;
 #endif
 	*record_address = (ULONG *) record->sr_sort_record.sort_record_key;
+
+	RuntimeStatistics::bumpValue(tdbb, RuntimeStatistics::SORT_PUTS);
 }
 
 
@@ -911,7 +917,7 @@ void SORT_shutdown(Attachment* att)
 }
 
 
-void SORT_sort(ISC_STATUS * status_vector, sort_context* scb)
+void SORT_sort(thread_db* tdbb, sort_context* scb)
 {
 /**************************************
  *
@@ -930,7 +936,7 @@ void SORT_sort(ISC_STATUS * status_vector, sort_context* scb)
 	merge_control* merge;
 	merge_control* merge_pool;
 
-	scb->scb_status_vector = status_vector;
+	scb->scb_status_vector = tdbb->tdbb_status_vector;
 
 	try {
 
@@ -955,6 +961,7 @@ void SORT_sort(ISC_STATUS * status_vector, sort_context* scb)
 		scb->scb_flags |= scb_initialized;
 #endif
 		scb->scb_flags |= scb_sorted;
+		RuntimeStatistics::bumpValue(tdbb, RuntimeStatistics::SORTS);
 		return;
 	}
 
@@ -1090,6 +1097,7 @@ void SORT_sort(ISC_STATUS * status_vector, sort_context* scb)
 	}
 
 	scb->scb_flags |= scb_sorted;
+	RuntimeStatistics::bumpValue(tdbb, RuntimeStatistics::SORTS);
 
 	}
 	catch (const Firebird::BadAlloc&) {

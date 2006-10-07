@@ -1640,9 +1640,10 @@ USHORT EVL_group(thread_db* tdbb, RecordSource* rsb, jrd_nod *const node, USHORT
 					const size_t asb_index =
 						(from->nod_type == nod_agg_list_distinct) ? 2 : 1;
 					AggregateSort* asb = (AggregateSort*) from->nod_arg[asb_index];
-					impure_agg_sort* asb_impure = (impure_agg_sort*) ((SCHAR *) request + asb->nod_impure);
+					impure_agg_sort* asb_impure =
+						(impure_agg_sort*) ((SCHAR *) request + asb->nod_impure);
 					UCHAR* data;
-					SORT_put(tdbb->tdbb_status_vector, asb_impure->iasb_sort_handle,
+					SORT_put(tdbb, asb_impure->iasb_sort_handle,
 							 reinterpret_cast<ULONG**>(&data));
 					MOVE_CLEAR(data, ROUNDUP_LONG(asb->asb_key_desc->skd_length));
 					asb->asb_desc.dsc_address = data;
@@ -2775,19 +2776,21 @@ static void compute_agg_distinct(thread_db* tdbb, jrd_nod* node)
 	const size_t asb_index =
 		(node->nod_type == nod_agg_list_distinct) ? 2 : 1;
 	AggregateSort* asb = (AggregateSort*) node->nod_arg[asb_index];
-	impure_agg_sort* asb_impure = (impure_agg_sort*) ((SCHAR *) request + asb->nod_impure);
+	impure_agg_sort* asb_impure =
+		(impure_agg_sort*) ((SCHAR *) request + asb->nod_impure);
 	dsc* desc = &asb->asb_desc;
-	impure_value_ex* impure = (impure_value_ex*) ((SCHAR *) request + node->nod_impure);
+	impure_value_ex* impure =
+		(impure_value_ex*) ((SCHAR *) request + node->nod_impure);
 
 /* Sort the values already "put" to sort */
 
-	SORT_sort(tdbb->tdbb_status_vector, asb_impure->iasb_sort_handle);
+	SORT_sort(tdbb, asb_impure->iasb_sort_handle);
 
 /* Now get the sorted/projected values and compute the aggregate */
 
 	while (true) {
 		UCHAR* data;
-		SORT_get(tdbb->tdbb_status_vector, asb_impure->iasb_sort_handle,
+		SORT_get(tdbb, asb_impure->iasb_sort_handle,
 				 reinterpret_cast<ULONG**>(&data)
 #ifdef SCROLLABLE_CURSORS
 				 , RSE_get_forward

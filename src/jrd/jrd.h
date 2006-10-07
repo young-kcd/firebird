@@ -98,6 +98,8 @@
 
 #include "../jrd/pag.h"
 
+#include "../jrd/RuntimeStatistics.h"
+
 class str;
 class CharSetContainer;
 struct dsc;
@@ -106,11 +108,7 @@ struct mod;
 
 namespace Jrd {
 
-// The database block, the topmost block in the metadata
-// cache for a database
-
-const int HASH_SIZE		= 509;
-
+const int HASH_SIZE = 509;
 
 // fwd. decl.
 //class vec;
@@ -147,6 +145,9 @@ class TextType;
 class jrd_prc;
 class Parameter;
 class jrd_fld;
+
+// The database block, the topmost block in the metadata
+// cache for a database
 
 class Database : private pool_alloc<type_dbb>
 {
@@ -192,6 +193,7 @@ public:
 	//SLONG dbb_shadow_sync_count;		// to synchronize changes to shadows
 	Lock*		dbb_retaining_lock;		// lock for preserving commit retaining snapshot
 	Lock*		dbb_increment_lock;		// lock used as an internal id generator
+	Lock*		dbb_monitor_lock;		// lock for monitoring purposes
 	PageManager dbb_page_manager;
 	vcl*		dbb_t_pages;			// pages number for transactions
 	vcl*		dbb_gen_id_pages;		// known pages for gen_id
@@ -257,11 +259,12 @@ public:
 	BlockingThread*	dbb_free_btbs;		// Unused BlockingThread blocks
 
 	Firebird::MemoryStats dbb_memory_stats;
-	
+
 	SLONG dbb_reads;
 	SLONG dbb_writes;
 	SLONG dbb_fetches;
 	SLONG dbb_marks;
+	RuntimeStatistics dbb_stats;
 	SLONG dbb_last_header_write;		// Transaction id of last header page physical write
 	SLONG dbb_flush_cycle;				// Current flush cycle
 	SLONG dbb_sweep_interval;			// Transactions between sweep
@@ -293,7 +296,8 @@ private:
 		dbb_database_name(p),
 		dbb_encrypt_key(p),
 		dbb_pools(p, 4),
-		dbb_charsets(p)
+		dbb_charsets(p),
+		dbb_stats(p)
 	{
 		dbb_pools.resize(1);
 	}
@@ -461,7 +465,8 @@ public:
 		att_filename(*dbb->dbb_permanent),
 		att_context_vars(*dbb->dbb_permanent),
 		att_network_protocol(*dbb->dbb_permanent),
-		att_remote_address(*dbb->dbb_permanent)
+		att_remote_address(*dbb->dbb_permanent),
+		att_stats(*dbb->dbb_permanent, &dbb->dbb_stats)
 #ifndef SUPERSERVER
 		, att_dsql_cache(*dbb->dbb_permanent)
 #endif
@@ -509,6 +514,7 @@ public:
 	SecurityClass*	att_security_class;		// security class for database
 	SecurityClass*	att_security_classes;	// security classes
 	vcl*		att_counts[DBB_max_count];
+	RuntimeStatistics	att_stats;
 	ULONG		att_flags;					// Flags describing the state of the attachment
 	SSHORT		att_charset;				// user's charset specified in dpb
 	// The following data member is set but never used, so the DPB to set the location of a
@@ -891,7 +897,6 @@ const USHORT TDBB_stack_trace_done		= 32;	// PSQL stack trace is added into stat
 const USHORT TDBB_shutdown_manager		= 64;	// Server shutdown thread
 const USHORT TDBB_deferred				= 128;	// deferred work performed now
 
-
 // duplicate context of firebird string to store in jrd_nod::nod_arg
 inline char* stringDup(MemoryPool& p, const Firebird::string& s)
 {
@@ -1059,4 +1064,3 @@ namespace Jrd {
 }
 
 #endif // JRD_JRD_H
-

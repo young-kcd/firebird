@@ -484,6 +484,7 @@ jrd_req* CMP_clone_request(thread_db* tdbb, jrd_req* request, USHORT level, bool
 	clone = FB_NEW_RPT(*request->req_pool, n) jrd_req(request->req_pool);
 	(*vector)[level] = clone;
 	clone->req_attachment = tdbb->tdbb_attachment;
+	clone->req_stats.setParent(&tdbb->tdbb_attachment->att_stats);
 	clone->req_id = LCK_increment(tdbb, dbb->dbb_increment_lock);
 	clone->req_count = request->req_count;
 	clone->req_pool = request->req_pool;
@@ -2087,6 +2088,8 @@ jrd_req* CMP_make_request(thread_db* tdbb, CompilerScratch* csb)
 		tdbb->tdbb_request = old_request;
 		ERR_punt();
 	}
+
+	RuntimeStatistics::bumpValue(tdbb, RuntimeStatistics::STMT_PREPARES);
 
 	return request;
 }

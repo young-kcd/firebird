@@ -59,6 +59,7 @@ enum lck_t {
 	LCK_page_space,				/* Page space ID lock */
 	LCK_dsql_cache,				/* DSQL cache lock */
 	LCK_counter,				/* Lock holding a cross-process counter */
+	LCK_monitor,				/* Lock to dump the monitoring data */
 	LCK_tt_exist				/* TextType existence lock */
 };
 

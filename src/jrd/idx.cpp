@@ -437,8 +437,7 @@ void IDX_create_index(
 			}
 
 			UCHAR* p;
-			SORT_put(tdbb->tdbb_status_vector, sort_handle,
-					 reinterpret_cast<ULONG**>(&p));
+			SORT_put(tdbb, sort_handle, reinterpret_cast<ULONG**>(&p));
 
 			/* try to catch duplicates early */
 
@@ -483,7 +482,7 @@ void IDX_create_index(
 	if (primary.getWindow(tdbb).win_flags & WIN_large_scan)
 		--relation->rel_scan_count;
 
-	SORT_sort(tdbb->tdbb_status_vector, sort_handle);
+	SORT_sort(tdbb, sort_handle);
 
 	if (ifl_data.ifl_duplicates > 0) {
 		ERR_post(isc_no_dup, isc_arg_string,

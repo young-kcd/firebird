@@ -1012,6 +1012,8 @@ void CCH_fetch_page(
 
 	AST_CHECK();
 	++dbb->dbb_reads;
+	RuntimeStatistics::bumpValue(tdbb, RuntimeStatistics::PAGE_READS);
+	fb_assert(dbb->dbb_reads == dbb->dbb_stats.getValue(RuntimeStatistics::PAGE_READS));
 #ifdef SUPERSERVER
 	THREAD_EXIT();
 #endif
@@ -1466,6 +1468,7 @@ void CCH_flush(thread_db* tdbb, USHORT flush_flag, SLONG tra_number)
 		{
 			PIO_flush(dbb->dbb_shadow->sdw_file);
 		}
+		RuntimeStatistics::bumpValue(tdbb, RuntimeStatistics::FLUSHES);
 	}
 
 /* take the opportunity when we know there are no pages
@@ -1787,6 +1790,8 @@ void CCH_mark(thread_db* tdbb, WIN * window, USHORT mark_system)
 	Database* dbb = tdbb->tdbb_database;
 
 	dbb->dbb_marks++;
+	RuntimeStatistics::bumpValue(tdbb, RuntimeStatistics::PAGE_MARKS);
+	fb_assert(dbb->dbb_marks == dbb->dbb_stats.getValue(RuntimeStatistics::PAGE_MARKS));
 	BufferControl* bcb = dbb->dbb_bcb;
 	BufferDesc* bdb = window->win_bdb;
 	BLKCHK(bdb, type_bdb);
@@ -4726,6 +4731,8 @@ static BufferDesc* get_buffer(thread_db* tdbb, const PageNumber page, LATCH latc
 					else {
 						bdb->bdb_flags &= ~(BDB_faked | BDB_prefetch);
 						dbb->dbb_fetches++;
+						RuntimeStatistics::bumpValue(tdbb, RuntimeStatistics::PAGE_FETCHES);
+						fb_assert(dbb->dbb_fetches == dbb->dbb_stats.getValue(RuntimeStatistics::PAGE_FETCHES));
 						return bdb;
 					}
 				}
@@ -4830,6 +4837,8 @@ static BufferDesc* get_buffer(thread_db* tdbb, const PageNumber page, LATCH latc
 				}
 #endif
 				dbb->dbb_fetches++;
+				RuntimeStatistics::bumpValue(tdbb, RuntimeStatistics::PAGE_FETCHES);
+				fb_assert(dbb->dbb_fetches == dbb->dbb_stats.getValue(RuntimeStatistics::PAGE_FETCHES));
 //				BCB_MUTEX_RELEASE;
 				return bdb;
 			}
@@ -6289,6 +6298,8 @@ static bool write_page(
 	if (true) {
 		AST_CHECK();
 		dbb->dbb_writes++;
+		RuntimeStatistics::bumpValue(tdbb, RuntimeStatistics::PAGE_WRITES);
+		fb_assert(dbb->dbb_writes == dbb->dbb_stats.getValue(RuntimeStatistics::PAGE_WRITES));
 
 		/* write out page to main database file, and to any
 		   shadows, making a special case of the header page */
@@ -6469,4 +6480,3 @@ static void unmark(thread_db* tdbb, WIN * window)
 		}
 	}
 }
-
