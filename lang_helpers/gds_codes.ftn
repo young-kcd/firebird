@@ -1496,6 +1496,10 @@ C --
       PARAMETER (GDS__dsql_only_can_subscript_array    = 336397214)
       INTEGER*4 GDS__dsql_max_sort_items             
       PARAMETER (GDS__dsql_max_sort_items              = 336397215)
+      INTEGER*4 GDS__dsql_max_group_items            
+      PARAMETER (GDS__dsql_max_group_items             = 336397216)
+      INTEGER*4 GDS__dsql_conflicting_sort_field     
+      PARAMETER (GDS__dsql_conflicting_sort_field      = 336397217)
       INTEGER*4 GDS__gsec_cant_open_db               
       PARAMETER (GDS__gsec_cant_open_db                = 336723983)
       INTEGER*4 GDS__gsec_switches_error             

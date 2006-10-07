@@ -199,6 +199,8 @@ static void field_unknown(const TEXT*, const TEXT*, const dsql_nod*);
 static dsql_par* find_dbkey(const dsql_req*, const dsql_nod*);
 static dsql_par* find_record_version(const dsql_req*, const dsql_nod*);
 static dsql_ctx* get_context(const dsql_nod* node);
+static bool get_object_and_field(const dsql_nod* node,
+	const char** obj_name, const char** fld_name, bool do_collation);
 static bool invalid_reference(const dsql_ctx*, const dsql_nod*,
 	const dsql_nod*, bool, bool);
 static bool node_match(const dsql_nod*, const dsql_nod*, bool);
@@ -546,7 +548,7 @@ dsql_nod* PASS1_node(dsql_req* request, dsql_nod* input, bool proc_flag)
 	dsql_fld* field;
 	dsql_nod* sub1;
 
-// Dispatch on node type.  Fall thru on easy ones
+	// Dispatch on node type.  Fall thru on easy ones
 
 	switch (input->nod_type)
 	{
@@ -604,8 +606,8 @@ dsql_nod* PASS1_node(dsql_req* request, dsql_nod* input, bool proc_flag)
 
 	case nod_extract:
 
-		/* Figure out the data type of the sub parameter, and make
-		   sure the requested type of information can be extracted */
+		// Figure out the data type of the sub parameter, and make
+		// sure the requested type of information can be extracted
 
 		sub1 = PASS1_node(request, input->nod_arg[e_extract_value], proc_flag);
 		MAKE_desc(request, &sub1->nod_desc, sub1, NULL);
@@ -1063,7 +1065,7 @@ dsql_nod* PASS1_node(dsql_req* request, dsql_nod* input, bool proc_flag)
 		break;
 	}
 
-// Node is simply to be rebuilt -- just recurse merrily
+	// Node is simply to be rebuilt -- just recurse merrily
 
 	node = MAKE_node(input->nod_type, input->nod_count);
 	const dsql_nod** ptr2 = const_cast<const dsql_nod**>(node->nod_arg);
@@ -1354,8 +1356,8 @@ dsql_nod* PASS1_statement(dsql_req* request, dsql_nod* input, bool proc_flag)
 
 	case nod_assign:
 		node = MAKE_node(input->nod_type, input->nod_count);
-		node->nod_arg[0] = PASS1_node(request, input->nod_arg[0], proc_flag);
-		node->nod_arg[1] = PASS1_node(request, input->nod_arg[1], proc_flag);
+		node->nod_arg[e_asgn_value] = PASS1_node(request, input->nod_arg[e_asgn_value], proc_flag);
+		node->nod_arg[e_asgn_field] = PASS1_node(request, input->nod_arg[e_asgn_field], proc_flag);
 		break;
 
 	case nod_commit:
@@ -1570,8 +1572,7 @@ dsql_nod* PASS1_statement(dsql_req* request, dsql_nod* input, bool proc_flag)
 
 	case nod_exception_stmt:
 		node = input;
-		/* if exception value is defined,
-		   pass value node */
+		// if exception value is defined, pass value node
 		if (input->nod_arg[e_xcps_msg])
 		{
 			node->nod_arg[e_xcps_msg] =
@@ -1852,7 +1853,7 @@ dsql_nod* PASS1_statement(dsql_req* request, dsql_nod* input, bool proc_flag)
 		break;
 	}
 
-// Finish off by cleaning up contexts
+	// Finish off by cleaning up contexts
 	request->req_context->clear(base);
 
 #ifdef DSQL_DEBUG
@@ -2465,7 +2466,7 @@ static void field_appears_once(const dsql_nod* fields, const dsql_nod* old_field
 	{
 		const dsql_nod* elem1 = fields->nod_arg[i];
 		if (elem1->nod_type == nod_assign && !is_insert)
-			elem1 = elem1->nod_arg[1]; // 0 = value, 1 = field.
+			elem1 = elem1->nod_arg[e_asgn_field];
 
 		if (elem1->nod_type == nod_field)
 		{
@@ -2474,7 +2475,7 @@ static void field_appears_once(const dsql_nod* fields, const dsql_nod* old_field
 			{
 				const dsql_nod* elem2 = fields->nod_arg[j];
 				if (elem2->nod_type == nod_assign && !is_insert)
-					elem2 = elem2->nod_arg[1]; // 0 = value, 1 = field.
+					elem2 = elem2->nod_arg[e_asgn_field];
 
 				if (elem2->nod_type == nod_field)
 				{
@@ -2692,6 +2693,59 @@ static dsql_ctx* get_context(const dsql_nod* node)
 		return (dsql_ctx*) node->nod_arg[e_rel_context];
 	else	// nod_derived_table
 		return (dsql_ctx*) node->nod_arg[e_derived_table_context];
+}
+
+
+/**
+
+ 	get_object_and_field
+
+    @brief	Get the relation/procedure's name and field's name from a context
+
+
+    @param node
+    @param obj_name
+    @param fld_name
+
+ **/
+static bool get_object_and_field(const dsql_nod* node,
+	const char** obj_name, const char** fld_name, bool do_collation)
+{
+	switch (node->nod_type)
+	{
+	case nod_field:
+		break;
+	case nod_derived_field:
+		node = node->nod_arg[e_derived_field_value];
+		if (node->nod_type != nod_field)
+			return false;
+		break;
+	case nod_via:
+		node = node->nod_arg[e_via_value_1];
+		if (node->nod_type != nod_field)
+			return false;
+		break;
+	case nod_cast:
+		node = node->nod_arg[e_cast_source];
+		if (node->nod_type != nod_field || !do_collation)
+			return false;
+		break;
+	default: // nod_alias, nod_constant, expressions, etc
+		return false;
+	}
+	
+	const dsql_ctx* context = reinterpret_cast<dsql_ctx*>(node->nod_arg[e_fld_context]);
+	DEV_BLKCHK(context, dsql_type_ctx);
+	
+	*obj_name = 0;
+	if (context->ctx_relation)
+		*obj_name = context->ctx_relation->rel_name;
+	else if (context->ctx_procedure)
+		*obj_name = context->ctx_procedure->prc_name;
+		
+	*fld_name = reinterpret_cast<dsql_fld*>(node->nod_arg[e_fld_field])->fld_name;
+
+	return obj_name && fld_name;
 }
 
 
@@ -3866,7 +3920,7 @@ static dsql_nod* pass1_dbkey( dsql_req* request, dsql_nod* input)
 		}
 	}
 
-// field unresolved
+	// field unresolved
 
 	field_unknown(reinterpret_cast<const char*>(qualifier ? qualifier->str_data : 0),
 				DB_KEY_STRING, input);
@@ -3906,7 +3960,7 @@ static dsql_nod* pass1_delete( dsql_req* request, dsql_nod* input, bool proc_fla
 	request->req_type = (cursor) ? REQ_DELETE_CURSOR : REQ_DELETE;
 	dsql_nod* node = MAKE_node(nod_erase, e_era_count);
 
-// Generate record selection expression
+	// Generate record selection expression
 
 	dsql_nod* rse;
 	if (cursor)
@@ -3961,8 +4015,8 @@ static dsql_nod* pass1_delete( dsql_req* request, dsql_nod* input, bool proc_fla
  **/
 static bool pass1_relproc_is_recursive(dsql_req* request, dsql_nod* input)
 {
-	dsql_str* rel_name = NULL;
-	dsql_str* rel_alias = NULL;
+	const dsql_str* rel_name = NULL;
+	const dsql_str* rel_alias = NULL;
 
 	switch (input->nod_type)
 	{
@@ -5682,6 +5736,14 @@ static dsql_nod* pass1_group_by_list(dsql_req* request, dsql_nod* input, dsql_no
 	DEV_BLKCHK(input, dsql_type_nod);
 	DEV_BLKCHK(selectList, dsql_type_nod);
 
+	if (input->nod_count > MAX_SORT_ITEMS) // sort and group have the same limit for now.
+	{
+		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
+			isc_arg_gds, isc_dsql_command_err,
+			isc_arg_gds, isc_dsql_max_group_items, 0);
+			// cannot group on more than 255 items
+	}
+
 	DsqlNodStack stack;
 	dsql_nod** ptr = input->nod_arg;
 	for (const dsql_nod* const* const end = ptr + input->nod_count;
@@ -5689,12 +5751,13 @@ static dsql_nod* pass1_group_by_list(dsql_req* request, dsql_nod* input, dsql_no
 	{
 		DEV_BLKCHK(*ptr, dsql_type_nod);
 		dsql_nod* sub = (*ptr);
+		dsql_nod* frnode = 0;
 		if (sub->nod_type == nod_field_name) {
 			// check for alias or field node
-			dsql_nod* frnode = pass1_field(request, sub, false, selectList);
-			stack.push(frnode);
+			frnode = pass1_field(request, sub, false, selectList);
 		}
-		else if ((sub->nod_type == nod_constant) && (sub->nod_desc.dsc_dtype == dtype_long)) {
+		else if ((sub->nod_type == nod_constant) && (sub->nod_desc.dsc_dtype == dtype_long))
+		{
 			const ULONG position = (IPTR) (sub->nod_arg[0]);
 			if ((position < 1) || !selectList ||
 				(position > (ULONG) selectList->nod_count))
@@ -5704,12 +5767,14 @@ static dsql_nod* pass1_group_by_list(dsql_req* request, dsql_nod* input, dsql_no
 							isc_arg_string, "GROUP BY", 0);
 					// Invalid column position used in the GROUP BY clause
 			}
-			stack.push(PASS1_node(request, selectList->nod_arg[position - 1], false));
+			frnode = PASS1_node(request, selectList->nod_arg[position - 1], false);
 		}
 		else
 		{
-			stack.push(PASS1_node(request, *ptr, false));
+			frnode = PASS1_node(request, *ptr, false);
 		}
+		
+		stack.push(frnode);
 	}
 	// Finally make the complete list.
 	dsql_nod* node = MAKE_list(stack);
@@ -5815,9 +5880,9 @@ static dsql_nod* pass1_insert( dsql_req* request, dsql_nod* input, bool proc_fla
 	{
 		DEV_BLKCHK(*ptr, dsql_type_nod);
 		DEV_BLKCHK(*ptr2, dsql_type_nod);
-		dsql_nod* temp = MAKE_node(nod_assign, 2);
-		temp->nod_arg[0] = *ptr2;
-		temp->nod_arg[1] = *ptr;
+		dsql_nod* temp = MAKE_node(nod_assign, e_asgn_count);
+		temp->nod_arg[e_asgn_value] = *ptr2;
+		temp->nod_arg[e_asgn_field] = *ptr;
 		stack.push(temp);
 		temp = *ptr2;
 		set_parameter_type(request, temp, *ptr, false);
@@ -6301,8 +6366,8 @@ static dsql_nod* pass1_merge(dsql_req* request, dsql_nod* input, bool proc_flag)
 		{
 			const dsql_nod* const assign = list->nod_arg[i];
 			fb_assert(assign->nod_type == nod_assign);
-			org_values.add(assign->nod_arg[0]);
-			new_values.add(assign->nod_arg[1]);
+			org_values.add(assign->nod_arg[e_asgn_value]);
+			new_values.add(assign->nod_arg[e_asgn_field]);
 		}
 
 		// build the MODIFY node
@@ -6345,9 +6410,9 @@ static dsql_nod* pass1_merge(dsql_req* request, dsql_nod* input, bool proc_flag)
 
 		for (i = 0; i < list->nod_count; ++i)
 		{
-			dsql_nod* assign = MAKE_node(nod_assign, 2);
-			assign->nod_arg[0] = org_values[i];
-			assign->nod_arg[1] = new_values[i];
+			dsql_nod* assign = MAKE_node(nod_assign, e_asgn_count);
+			assign->nod_arg[e_asgn_value] = org_values[i];
+			assign->nod_arg[e_asgn_field] = new_values[i];
 			list->nod_arg[i] = assign;
 		}
 
@@ -7010,9 +7075,9 @@ static dsql_nod* pass1_replace(dsql_req* request, dsql_nod* input, bool proc_fla
 		DEV_BLKCHK(*field_ptr, dsql_type_nod);
 		DEV_BLKCHK(*value_ptr, dsql_type_nod);
 
-		dsql_nod* temp = MAKE_node(nod_assign, 2);
-		temp->nod_arg[0] = *value_ptr;
-		temp->nod_arg[1] = *field_ptr;
+		dsql_nod* temp = MAKE_node(nod_assign, e_asgn_count);
+		temp->nod_arg[e_asgn_value] = *value_ptr;
+		temp->nod_arg[e_asgn_field] = *field_ptr;
 		stack.push(temp);
 
 		temp = *value_ptr;
@@ -7111,9 +7176,9 @@ static dsql_nod* pass1_replace(dsql_req* request, dsql_nod* input, bool proc_fla
 		for (const dsql_nod* const* const end = ptr + update_ret->nod_count;
 			ptr < end; src_ptr++, dst_ptr++, ptr++)
 		{
-			dsql_nod* temp = MAKE_node(nod_assign, 2);
-			temp->nod_arg[0] = *src_ptr;
-			temp->nod_arg[1] = (*dst_ptr)->nod_arg[1];
+			dsql_nod* temp = MAKE_node(nod_assign, e_asgn_count);
+			temp->nod_arg[e_asgn_value] = *src_ptr;
+			temp->nod_arg[e_asgn_field] = (*dst_ptr)->nod_arg[1];
 			*ptr = temp;
 		}
 	}
@@ -7217,9 +7282,9 @@ static dsql_nod* pass1_returning(dsql_req* request,
 		for (const dsql_nod* const* const end = ptr + node->nod_count;
 			ptr < end; src++, dst++, ptr++)
 		{
-			dsql_nod* temp = MAKE_node(nod_assign, 2);
-			temp->nod_arg[0] = *src;
-			temp->nod_arg[1] = *dst;
+			dsql_nod* temp = MAKE_node(nod_assign, e_asgn_count);
+			temp->nod_arg[e_asgn_value] = *src;
+			temp->nod_arg[e_asgn_field] = *dst;
 			*ptr = temp;
 		}
 	}
@@ -7243,9 +7308,9 @@ static dsql_nod* pass1_returning(dsql_req* request,
 			p_node->nod_arg[e_par_index] = (dsql_nod*) parameter->par_index;
 			p_node->nod_arg[e_par_parameter] = (dsql_nod*) parameter;
 
-			dsql_nod* temp = MAKE_node(nod_assign, 2);
-			temp->nod_arg[0] = *src;
-			temp->nod_arg[1] = p_node;
+			dsql_nod* temp = MAKE_node(nod_assign, e_asgn_count);
+			temp->nod_arg[e_asgn_value] = *src;
+			temp->nod_arg[e_asgn_field] = p_node;
 			*ptr = temp;
 		}
 	}
@@ -7901,13 +7966,15 @@ static dsql_nod* pass1_sort( dsql_req* request, dsql_nod* input, dsql_nod* selec
 
 	dsql_nod* node = MAKE_node(input->nod_type, input->nod_count);
 	dsql_nod** ptr2 = node->nod_arg;
+	
+	SSHORT collarray[MAX_SORT_ITEMS];
+	bool wascollation[MAX_SORT_ITEMS];
 
 	dsql_nod** ptr = input->nod_arg;
-	for (const dsql_nod* const* const end = ptr + input->nod_count;
-		ptr < end; ptr++)
+	for (int sortloop = 0; sortloop < input->nod_count; sortloop++)
 	{
-		DEV_BLKCHK(*ptr, dsql_type_nod);
-		dsql_nod* node1 = *ptr;
+		DEV_BLKCHK(input->nod_arg[sortloop], dsql_type_nod);
+		dsql_nod* node1 = input->nod_arg[sortloop];
 		if (node1->nod_type != nod_order) {
 			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104, isc_arg_gds,
 				isc_dsql_command_err, isc_arg_gds, isc_order_by_err, 0);
@@ -7951,14 +8018,51 @@ static dsql_nod* pass1_sort( dsql_req* request, dsql_nod* input, dsql_nod* selec
 			node1 = PASS1_node(request, node1, false);
 		}
 
+		bool got_collation = false;
+		SSHORT collate_id = 0;
 		if (collate) {
 			// finally apply collation order, if necessary
 			node1 = pass1_collate(request, node1, collate);
+			collate_id = DSC_GET_COLLATE(&node1->nod_desc);
+			got_collation = true;
 		}
 
+		const char* new_obj_name;
+		const char* new_fld_name;
+		const dsql_nod* new_nulls_placement = node2->nod_arg[e_order_nulls];
+		if (ptr2 > node->nod_arg &&
+			get_object_and_field(node1, &new_obj_name, &new_fld_name, got_collation))
+		{
+			for (const dsql_nod* const* check = node->nod_arg; check < ptr2; ++check)
+			{
+				const int pos = node->nod_arg - check;
+				const char* check_obj_name;
+				const char* check_fld_name;
+				const dsql_nod* check_nulls_placement = (*check)->nod_arg[e_order_nulls];
+				if (get_object_and_field((*check)->nod_arg[e_order_field],
+					&check_obj_name, &check_fld_name, wascollation[pos]) &&
+					!strcmp(new_obj_name, check_obj_name) &&
+					!strcmp(new_fld_name, check_fld_name) &&
+					(node2->nod_arg[e_order_flag] != (*check)->nod_arg[e_order_flag] ||
+					((new_nulls_placement == 0) ^ (check_nulls_placement == 0)) ||
+					new_nulls_placement && //check_nulls_placement && REDUNDANT
+					new_nulls_placement->nod_arg[0] != check_nulls_placement->nod_arg[0] ||
+					collate_id != collarray[pos]))
+				{
+					ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
+						isc_arg_gds, isc_dsql_conflicting_sort_field,
+						isc_arg_string, new_obj_name,
+						isc_arg_string, new_fld_name, 0);
+					// Cannot include the same field (%s.%s) twice in the ORDER BY clause with conflicting sorting options
+				}
+			}
+		}
+		
 		// store actual value to be ordered by
 		node2->nod_arg[e_order_field] = node1;
 		*ptr2++ = node2;
+		collarray[sortloop] = collate_id;
+		wascollation[sortloop] = got_collation;
 	}
 
 	return node;
@@ -8490,8 +8594,8 @@ static dsql_nod* pass1_update( dsql_req* request, dsql_nod* input, bool proc_fla
 	{
 		const dsql_nod* const assign = list->nod_arg[i];
 		fb_assert(assign->nod_type == nod_assign);
-		org_values.add(assign->nod_arg[0]);
-		new_values.add(assign->nod_arg[1]);
+		org_values.add(assign->nod_arg[e_asgn_value]);
+		new_values.add(assign->nod_arg[e_asgn_field]);
 	}
 
 	dsql_nod** ptr;
@@ -8538,9 +8642,9 @@ static dsql_nod* pass1_update( dsql_req* request, dsql_nod* input, bool proc_fla
 			MAKE_node(nod_list, list->nod_count);
 		for (int i = 0; i < list->nod_count; ++i)
 		{
-			dsql_nod* assign = MAKE_node(nod_assign, 2);
-			assign->nod_arg[0] = org_values[i];
-			assign->nod_arg[1] = new_values[i];
+			dsql_nod* assign = MAKE_node(nod_assign, e_asgn_count);
+			assign->nod_arg[e_asgn_value] = org_values[i];
+			assign->nod_arg[e_asgn_field] = new_values[i];
 			list->nod_arg[i] = assign;
 		}
 		// We do not allow cases like UPDATE T SET f1 = v1, f2 = v2, f1 = v3...
@@ -8629,9 +8733,9 @@ static dsql_nod* pass1_update( dsql_req* request, dsql_nod* input, bool proc_fla
 		{
 			set_parameter_type(request, sub2, sub1, false);
 		}
-		dsql_nod* assign = MAKE_node(nod_assign, 2);
-		assign->nod_arg[0] = sub1;
-		assign->nod_arg[1] = sub2;
+		dsql_nod* assign = MAKE_node(nod_assign, e_asgn_count);
+		assign->nod_arg[e_asgn_value] = sub1;
+		assign->nod_arg[e_asgn_field] = sub2;
 		list->nod_arg[j] = assign;
 	}
 
@@ -9487,7 +9591,7 @@ static void set_parameters_name( dsql_nod* list_node, const dsql_nod* rel_node)
 	DEV_BLKCHK(list_node, dsql_type_nod);
 	DEV_BLKCHK(rel_node, dsql_type_nod);
 
-	const dsql_ctx* context = (dsql_ctx*) rel_node->nod_arg[0];
+	const dsql_ctx* context = reinterpret_cast<dsql_ctx*>(rel_node->nod_arg[e_rel_context]);
 	DEV_BLKCHK(context, dsql_type_ctx);
 	const dsql_rel* relation = context->ctx_relation;
 
@@ -9497,8 +9601,8 @@ static void set_parameters_name( dsql_nod* list_node, const dsql_nod* rel_node)
 	{
 		DEV_BLKCHK(*ptr, dsql_type_nod);
 		if ((*ptr)->nod_type == nod_assign)
-			set_parameter_name((*ptr)->nod_arg[0],
-							   (*ptr)->nod_arg[1], relation);
+			set_parameter_name((*ptr)->nod_arg[e_asgn_value],
+							   (*ptr)->nod_arg[e_asgn_field], relation);
 		else
 			fb_assert(FALSE);
 	}

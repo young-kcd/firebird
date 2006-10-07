@@ -777,6 +777,8 @@ const ISC_LONG isc_dsql_no_array_computed           = 336397212L;
 const ISC_LONG isc_dsql_implicit_domain_name        = 336397213L;
 const ISC_LONG isc_dsql_only_can_subscript_array    = 336397214L;
 const ISC_LONG isc_dsql_max_sort_items              = 336397215L;
+const ISC_LONG isc_dsql_max_group_items             = 336397216L;
+const ISC_LONG isc_dsql_conflicting_sort_field      = 336397217L;
 const ISC_LONG isc_gsec_cant_open_db                = 336723983L;
 const ISC_LONG isc_gsec_switches_error              = 336723984L;
 const ISC_LONG isc_gsec_no_op_spec                  = 336723985L;
@@ -836,7 +838,7 @@ const ISC_LONG isc_gstat_unexpected_eof             = 336920580L;
 const ISC_LONG isc_gstat_open_err                   = 336920605L;
 const ISC_LONG isc_gstat_read_err                   = 336920606L;
 const ISC_LONG isc_gstat_sysmemex                   = 336920607L;
-const ISC_LONG isc_err_max                          = 781;
+const ISC_LONG isc_err_max                          = 783;
 
 #else /* c definitions */
 
@@ -1583,6 +1585,8 @@ const ISC_LONG isc_err_max                          = 781;
 #define isc_dsql_implicit_domain_name        336397213L
 #define isc_dsql_only_can_subscript_array    336397214L
 #define isc_dsql_max_sort_items              336397215L
+#define isc_dsql_max_group_items             336397216L
+#define isc_dsql_conflicting_sort_field      336397217L
 #define isc_gsec_cant_open_db                336723983L
 #define isc_gsec_switches_error              336723984L
 #define isc_gsec_no_op_spec                  336723985L
@@ -1642,7 +1646,7 @@ const ISC_LONG isc_err_max                          = 781;
 #define isc_gstat_open_err                   336920605L
 #define isc_gstat_read_err                   336920606L
 #define isc_gstat_sysmemex                   336920607L
-#define isc_err_max                          781
+#define isc_err_max                          783
 
 #endif
 
