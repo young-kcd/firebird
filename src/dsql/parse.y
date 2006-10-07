@@ -3361,16 +3361,16 @@ order_direction	: ASC
 			{ $$ = 0; }
 		;
 
-nulls_placement : FIRST
-			{ $$ = MAKE_constant((dsql_str*) NOD_NULLS_FIRST, CONSTANT_SLONG); }
-		| LAST
-			{ $$ = MAKE_constant((dsql_str*) NOD_NULLS_LAST, CONSTANT_SLONG); }
-		;
-
 nulls_clause : NULLS nulls_placement
 			{ $$ = $2; }
 		|
 			{ $$ = 0; }
+		;
+
+nulls_placement : FIRST
+			{ $$ = MAKE_constant((dsql_str*) NOD_NULLS_FIRST, CONSTANT_SLONG); }
+		| LAST
+			{ $$ = MAKE_constant((dsql_str*) NOD_NULLS_LAST, CONSTANT_SLONG); }
 		;
 
 /* ROWS clause */
@@ -3524,11 +3524,11 @@ assignments	: assignment
 		;
 
 assignment	: update_column_name '=' value
-			{ $$ = make_node (nod_assign, 2, $3, $1); }
+			{ $$ = make_node (nod_assign, e_asgn_count, $3, $1); }
 		;
 
 exec_udf	: udf
-			{ $$ = make_node (nod_assign, 2, $1, make_node (nod_null, 0, NULL)); }
+			{ $$ = make_node (nod_assign, e_asgn_count, $1, make_node (nod_null, 0, NULL)); }
 		;
 
 

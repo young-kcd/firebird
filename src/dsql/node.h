@@ -653,6 +653,10 @@ enum node_args {
 	e_era_rse,
 	e_era_return,
 	e_era_count,
+	
+	e_asgn_value = 0,       // nod_assign
+	e_asgn_field,
+	e_asgn_count,
 
 	e_erc_context = 0,		// nod_erase_current
 	e_erc_return,
