@@ -5744,7 +5744,7 @@ static void init_database_locks(thread_db* tdbb, Database* dbb)
 	lock->lck_length = sizeof(SLONG);
 	lock->lck_dbb = dbb;
 	lock->lck_object = reinterpret_cast<blk*>(dbb);
-	lock->lck_ast = DatabaseSnapshot::blockingAst;
+	//lock->lck_ast = DatabaseSnapshot::blockingAst;
 	LCK_lock(tdbb, lock, LCK_SR, LCK_WAIT);
 }
 
