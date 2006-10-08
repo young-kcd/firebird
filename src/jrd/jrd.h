@@ -460,7 +460,7 @@ class Attachment : public pool_alloc<type_att>
 public:
 	explicit Attachment(Database* dbb) :
 		att_database(dbb), 
-		att_stats(*dbb->dbb_permanent, &dbb->dbb_stats)
+		att_stats(*dbb->dbb_permanent, &dbb->dbb_stats),
 		att_lc_messages(*dbb->dbb_permanent),
 		att_working_directory(*dbb->dbb_permanent), 
 		att_filename(*dbb->dbb_permanent),
