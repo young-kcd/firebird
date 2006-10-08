@@ -6,9 +6,6 @@ set ERRLEV=0
 
 @if errorlevel 1 (call :ERROR Executing setenvvar.bat failed & goto :EOF)
 
-:: verify that prepare was run before
-@if not exist %ROOT_PATH%\gen\dbs\metadata.fdb (goto :HELP_PREP & goto :EOF)
-
 :: verify that boot was run before
 @if not exist %ROOT_PATH%\gen\gpre_boot.exe (goto :HELP_BOOT & goto :EOF)
 
@@ -133,13 +130,6 @@ copy %ROOT_PATH%\src\extlib\fbudf\fbudf.sql %ROOT_PATH%\output\udf > nul
 @copy install_classic.bat %ROOT_PATH%\output\bin >nul
 @copy uninstall.bat %ROOT_PATH%\output\bin >nul
 
-@goto :EOF
-
-::==============
-:HELP_PREP
-@echo.
-@echo    You must run prepare.bat before running this script
-@echo.
 @goto :EOF
 
 ::==============

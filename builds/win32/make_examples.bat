@@ -5,9 +5,6 @@
 @call setenvvar.bat
 @if errorlevel 1 (goto :EOF)
 
-:: verify that prepare was run before
-@if not exist %ROOT_PATH%\gen\dbs\metadata.fdb (goto :HELP_PREP & goto :EOF)
-
 :: verify that boot was run before
 @if not exist %ROOT_PATH%\gen\gpre_boot.exe (goto :HELP_BOOT & goto :EOF)
 
@@ -176,13 +173,6 @@ if defined FB2_INTLEMP (
   )
 )
 
-@goto :EOF
-
-::==============
-:HELP_PREP
-@echo.
-@echo    You must run prepare.bat before running this script
-@echo.
 @goto :EOF
 
 ::==============
