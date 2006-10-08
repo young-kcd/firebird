@@ -3213,7 +3213,7 @@ static SLONG fast_load(thread_db* tdbb,
 			// Get the next record in sorted order.
 
 			UCHAR* record;
-			SORT_get(tdbb, sort_handle, (ULONG **) &record // TMN: cast
+			SORT_get(tdbb, sort_handle, reinterpret_cast<ULONG**>(&record)
 #ifdef SCROLLABLE_CURSORS
 				 , RSE_get_forward
 #endif

@@ -2953,7 +2953,7 @@ static void open_sort(thread_db* tdbb, RecordSource* rsb, irsb_sort* impure, UIN
 		// to build a record.
 
 		UCHAR* data = 0;
-		SORT_put(tdbb, impure->irsb_sort_handle, (ULONG **) &data);
+		SORT_put(tdbb, impure->irsb_sort_handle, reinterpret_cast<ULONG**>(&data));
 
 		// Zero out the sort key. This solve a multitude of problems.
 
