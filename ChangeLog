@@ -1,3 +1,85 @@
+2006-10-08 03:59  asfernandes
+
+	* firebird2/src/jrd/jrd.h (1.176):
+	
+	Correction
+
+2006-10-08 03:57  asfernandes
+
+	* firebird2/src/: dsql/pass1.cpp (1.293), jrd/jrd.h (1.175),
+	jrd/req.h (1.63):
+	
+	Misc
+
+2006-10-08 03:09  asfernandes
+
+	* firebird2/builds/win32/: make_all.bat (1.43), make_examples.bat
+	(1.18):
+	
+	prepare.bat was removed
+
+2006-10-07 19:06  asfernandes
+
+	* firebird2/src/dsql/make.cpp (1.125):
+	
+	Misc
+
+2006-10-07 12:53  dimitr
+
+	* firebird2/src/jrd/: btr.cpp (1.179), cch.cpp (1.136), cmp.cpp
+	(1.235), evl.cpp (1.203), exe.cpp (1.197), idx.cpp (1.113), jrd.cpp
+	(1.269), jrd.h (1.174), lck.cpp (1.60), lck.h (1.27), req.h (1.62),
+	rse.cpp (1.119), shut.cpp (1.43), sort.cpp (1.88), sort_proto.h
+	(1.17), tra.cpp (1.127), tra.h (1.57), tra_proto.h (1.19), vio.cpp
+	(1.177), vio_proto.h (1.28):
+	
+	1) A new class to handle aggregated multi-level performance
+	counters.  2) Cleanup and minor fixing.  3) A few monitoring
+	changes.
+
+2006-10-07 12:42  dimitr
+
+	* firebird2/src/jrd/: RuntimeStatistics.cpp (1.1),
+	RuntimeStatistics.h (1.1):
+	
+	Added a new class to handle aggregated multi-level performance
+	counters.  Unavailable externally for now, the code exists just to
+	be tested in production.
+
+2006-10-07 11:52  robocop
+
+	* firebird2/src/jrd/vio.cpp (1.176):
+	
+	Misc.
+
+2006-10-07 11:40  robocop
+
+	* firebird2/: lang_helpers/gds_codes.ftn (1.43),
+	lang_helpers/gds_codes.pas (1.43), src/dsql/pass1.cpp (1.292),
+	src/include/gen/codetext.h (1.51), src/include/gen/iberror.h
+	(1.52), src/include/gen/msgs.h (1.66), src/include/gen/rdb_codes.h
+	(1.49), src/include/gen/sql_code.h (1.54), src/msgs/facilities.sql
+	(1.84), src/msgs/messages.sql (1.98), src/msgs/system_errors.sql
+	(1.41):
+	
+	- Give meaningful message when reaching max group items (255),
+	reported by David Schnepper.  - Misc: more mnemonics for nodes'
+	argument positions.  - Experimental: try to detect conflicting sort
+	options on the same field.
+
+2006-10-07 11:30  robocop
+
+	* firebird2/src/dsql/: node.h (1.84), parse.y (1.222):
+	
+	Misc: more mnemonic for nodes' argument positions.
+
+2006-10-07 11:29  robocop
+
+	* firebird2/src/common/classes/stack.h (1.19):
+	
+	Misc: since this file had a mixture of two coding styles, I chose
+	one.
+
 2006-10-06 19:09  awharrison
 
 	* firebird2/src/jrd/vio.cpp (1.175):
