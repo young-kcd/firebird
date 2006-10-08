@@ -132,8 +132,8 @@ static const UCHAR sweep_tpb[] =
 };
 
 
-void TRA_attach_request(Jrd::jrd_tra* transaction, Jrd::jrd_req* request) {
-
+void TRA_attach_request(Jrd::jrd_tra* transaction, Jrd::jrd_req* request)
+{
 	// When request finishes normally transaction reference is not cleared.
 	// Then if afterwards request is restarted TRA_attach_request is called again.
 	if (request->req_transaction) {
@@ -160,8 +160,10 @@ void TRA_attach_request(Jrd::jrd_tra* transaction, Jrd::jrd_req* request) {
 	request->req_stats.setParent(&transaction->tra_stats);
 }
 
-void TRA_detach_request(Jrd::jrd_req* request) {
-	if (!request->req_transaction) return;
+void TRA_detach_request(Jrd::jrd_req* request)
+{
+	if (!request->req_transaction)
+		return;
 
 	// Remove request from the doubly linked list
 	if (request->req_tra_next) {
