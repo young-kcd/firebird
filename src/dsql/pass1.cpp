@@ -2706,6 +2706,7 @@ static dsql_ctx* get_context(const dsql_nod* node)
     @param node
     @param obj_name
     @param fld_name
+    @param do_collation
 
  **/
 static bool get_object_and_field(const dsql_nod* node,
@@ -2717,31 +2718,31 @@ static bool get_object_and_field(const dsql_nod* node,
 		break;
 	case nod_derived_field:
 		node = node->nod_arg[e_derived_field_value];
-		if (node->nod_type != nod_field)
-			return false;
 		break;
 	case nod_via:
 		node = node->nod_arg[e_via_value_1];
-		if (node->nod_type != nod_field)
-			return false;
 		break;
 	case nod_cast:
-		node = node->nod_arg[e_cast_source];
-		if (node->nod_type != nod_field || !do_collation)
+		if (!do_collation)
 			return false;
+		node = node->nod_arg[e_cast_source];
 		break;
 	default: // nod_alias, nod_constant, expressions, etc
 		return false;
 	}
-	
+
+	if (node->nod_type != nod_field)
+		return false;
+
 	const dsql_ctx* context = reinterpret_cast<dsql_ctx*>(node->nod_arg[e_fld_context]);
 	DEV_BLKCHK(context, dsql_type_ctx);
 	
-	*obj_name = 0;
 	if (context->ctx_relation)
 		*obj_name = context->ctx_relation->rel_name;
 	else if (context->ctx_procedure)
 		*obj_name = context->ctx_procedure->prc_name;
+	else
+		*obj_name = NULL;
 		
 	*fld_name = reinterpret_cast<dsql_fld*>(node->nod_arg[e_fld_field])->fld_name;
 
@@ -5751,7 +5752,7 @@ static dsql_nod* pass1_group_by_list(dsql_req* request, dsql_nod* input, dsql_no
 	{
 		DEV_BLKCHK(*ptr, dsql_type_nod);
 		dsql_nod* sub = (*ptr);
-		dsql_nod* frnode = 0;
+		dsql_nod* frnode = NULL;
 		if (sub->nod_type == nod_field_name) {
 			// check for alias or field node
 			frnode = pass1_field(request, sub, false, selectList);
@@ -5762,10 +5763,10 @@ static dsql_nod* pass1_group_by_list(dsql_req* request, dsql_nod* input, dsql_no
 			if ((position < 1) || !selectList ||
 				(position > (ULONG) selectList->nod_count))
 			{
-					ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
-							isc_arg_gds, isc_dsql_column_pos_err,
-							isc_arg_string, "GROUP BY", 0);
-					// Invalid column position used in the GROUP BY clause
+				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
+						  isc_arg_gds, isc_dsql_column_pos_err,
+						  isc_arg_string, "GROUP BY", 0);
+				// Invalid column position used in the GROUP BY clause
 			}
 			frnode = PASS1_node(request, selectList->nod_arg[position - 1], false);
 		}
@@ -7970,7 +7971,6 @@ static dsql_nod* pass1_sort( dsql_req* request, dsql_nod* input, dsql_nod* selec
 	SSHORT collarray[MAX_SORT_ITEMS];
 	bool wascollation[MAX_SORT_ITEMS];
 
-	dsql_nod** ptr = input->nod_arg;
 	for (int sortloop = 0; sortloop < input->nod_count; sortloop++)
 	{
 		DEV_BLKCHK(input->nod_arg[sortloop], dsql_type_nod);
@@ -8030,6 +8030,7 @@ static dsql_nod* pass1_sort( dsql_req* request, dsql_nod* input, dsql_nod* selec
 		const char* new_obj_name;
 		const char* new_fld_name;
 		const dsql_nod* new_nulls_placement = node2->nod_arg[e_order_nulls];
+
 		if (ptr2 > node->nod_arg &&
 			get_object_and_field(node1, &new_obj_name, &new_fld_name, got_collation))
 		{
@@ -8039,12 +8040,13 @@ static dsql_nod* pass1_sort( dsql_req* request, dsql_nod* input, dsql_nod* selec
 				const char* check_obj_name;
 				const char* check_fld_name;
 				const dsql_nod* check_nulls_placement = (*check)->nod_arg[e_order_nulls];
+
 				if (get_object_and_field((*check)->nod_arg[e_order_field],
-					&check_obj_name, &check_fld_name, wascollation[pos]) &&
-					!strcmp(new_obj_name, check_obj_name) &&
-					!strcmp(new_fld_name, check_fld_name) &&
+						&check_obj_name, &check_fld_name, wascollation[pos]) &&
+					strcmp(new_obj_name, check_obj_name) == 0 &&
+					strcmp(new_fld_name, check_fld_name) == 0 &&
 					(node2->nod_arg[e_order_flag] != (*check)->nod_arg[e_order_flag] ||
-					((new_nulls_placement == 0) ^ (check_nulls_placement == 0)) ||
+					((new_nulls_placement == NULL) ^ (check_nulls_placement == NULL)) ||
 					new_nulls_placement && //check_nulls_placement && REDUNDANT
 					new_nulls_placement->nod_arg[0] != check_nulls_placement->nod_arg[0] ||
 					collate_id != collarray[pos]))
