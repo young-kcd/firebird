@@ -305,36 +305,48 @@ bool_t xdr_protocol(XDR* xdrs, PACKET* p)
 		return P_TRUE(xdrs, p);
 
 	case op_connect:
-		connect = &p->p_cnct;
-		MAP(xdr_enum,
-			reinterpret_cast<xdr_op&>(connect->p_cnct_operation));
-		MAP(xdr_short,
-			reinterpret_cast<SSHORT&>(connect->p_cnct_cversion));
-		MAP(xdr_enum, reinterpret_cast<xdr_op&>(connect->p_cnct_client));
-		MAP(xdr_cstring, connect->p_cnct_file);
-		MAP(xdr_short, reinterpret_cast<SSHORT&>(connect->p_cnct_count));
-
-		// report protocol failure in case of too many suggested versions
-		if (connect->p_cnct_count >= FB_NELEM(connect->p_cnct_versions))
 		{
-			return P_FALSE(xdrs, p);
-		}
-
-		MAP(xdr_cstring, connect->p_cnct_user_id);
-		for (i = 0, tail = connect->p_cnct_versions;
-			 i < connect->p_cnct_count; i++, tail++)
-		{
-			MAP(xdr_short,
-				reinterpret_cast<SSHORT&>(tail->p_cnct_version));
+			connect = &p->p_cnct;
 			MAP(xdr_enum,
-				reinterpret_cast<xdr_op&>(tail->p_cnct_architecture));
-			MAP(xdr_u_short, tail->p_cnct_min_type);
-			MAP(xdr_u_short, tail->p_cnct_max_type);
+				reinterpret_cast<xdr_op&>(connect->p_cnct_operation));
 			MAP(xdr_short,
-				reinterpret_cast<SSHORT&>(tail->p_cnct_weight));
+				reinterpret_cast<SSHORT&>(connect->p_cnct_cversion));
+			MAP(xdr_enum, reinterpret_cast<xdr_op&>(connect->p_cnct_client));
+			MAP(xdr_cstring, connect->p_cnct_file);
+			MAP(xdr_short, reinterpret_cast<SSHORT&>(connect->p_cnct_count));
+
+			MAP(xdr_cstring, connect->p_cnct_user_id);
+
+			const size_t CNCT_VERSIONS = FB_NELEM(connect->p_cnct_versions);
+			for (i = 0, tail = connect->p_cnct_versions;
+				 i < connect->p_cnct_count; i++, tail++)
+			{
+				// ignore the rest of protocols in case of too many suggested versions
+				p_cnct::p_cnct_repeat dummy;
+				if (i >= CNCT_VERSIONS)
+				{
+					tail = &dummy;
+				}
+		
+				MAP(xdr_short,
+					reinterpret_cast<SSHORT&>(tail->p_cnct_version));
+				MAP(xdr_enum,
+					reinterpret_cast<xdr_op&>(tail->p_cnct_architecture));
+				MAP(xdr_u_short, tail->p_cnct_min_type);
+				MAP(xdr_u_short, tail->p_cnct_max_type);
+				MAP(xdr_short,
+					reinterpret_cast<SSHORT&>(tail->p_cnct_weight));
+			}
+
+			// ignore the rest of protocols in case of too many suggested versions
+			if (connect->p_cnct_count > CNCT_VERSIONS)
+			{
+				connect->p_cnct_count = CNCT_VERSIONS;
+			}
+		
+			DEBUG_PRINTSIZE(xdrs, p->p_operation);
+			return P_TRUE(xdrs, p);
 		}
-		DEBUG_PRINTSIZE(xdrs, p->p_operation);
-		return P_TRUE(xdrs, p);
 
 	case op_accept:
 		accept = &p->p_acpt;
