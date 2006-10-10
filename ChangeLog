@@ -1,3 +1,16 @@
+2006-10-09 15:16  alexpeshkoff
+
+	* firebird2/src/remote/protocol.cpp (1.55):
+	
+	Instead of rejecting connect packet with more than 10 protocols try
+	to use first 10 of them, ignoring others.
+
+2006-10-09 14:36  alexpeshkoff
+
+	* firebird2/src/jrd/os/posix/isc_ipc.cpp (1.18):
+	
+	Fixed CORE-87
+
 2006-10-08 18:03  asfernandes
 
 	* firebird2/src/jrd/tra.cpp (1.128):
