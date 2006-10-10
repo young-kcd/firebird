@@ -36,8 +36,6 @@
  *
  */
 
- /* $Id: isc_ipc.cpp,v 1.18 2006-10-09 12:36:39 alexpeshkoff Exp $ */
-
 #include "firebird.h"
 #include <stdio.h>
 #include <stdlib.h>
