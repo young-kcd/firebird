@@ -461,6 +461,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\jrd\RuntimeStatistics.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\jrd\sch.cpp"
 				>
 			</File>
@@ -1214,6 +1218,10 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\rse_proto.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\RuntimeStatistics.h"
 				>
 			</File>
 			<File
