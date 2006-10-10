@@ -47,6 +47,7 @@
 
 #include "../jrd/event.h"
 #include "../jrd/alt_proto.h"
+#include "../jrd/constants.h"
 
 #if !defined(SUPERSERVER) || defined(EMBEDDED) || defined(SUPERCLIENT)
 #if !defined(BOOT_BUILD)
@@ -246,7 +247,7 @@ struct teb_t {
 	UCHAR* teb_tpb;
 };
 
-	teb_t tebs[16];
+	teb_t tebs[MAX_DB_PER_TRANS];
 	teb_t* teb;
 	va_list ptr;
 

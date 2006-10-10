@@ -557,6 +557,9 @@ static void log_teb(SSHORT count, const TEB* vector)
  *	Log a transaction element block.
  *
  **************************************/
+	if (count < 0)
+		return;
+		
 	for (TEB* const end = vector + count; vector < end; vector++) {
 		log_pointer(*vector->teb_database);
 		log_long((SLONG) vector->teb_tpb_length);

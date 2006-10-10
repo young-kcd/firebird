@@ -3816,24 +3816,22 @@ ISC_STATUS GDS_START_MULTIPLE(ISC_STATUS * user_status,
 
 	try {
 
-	for (v = vector; v < end; v++)
-	{
-		Attachment* attachment = *v->teb_database;
-		if (check_database(tdbb, attachment, user_status)) {
-			return user_status[1];
-		}
+		for (v = vector; v < end; v++)
+		{
+			Attachment* attachment = *v->teb_database;
+			if (check_database(tdbb, attachment, user_status)) {
+				return user_status[1];
+			}
 #ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
-		LOG_call(log_start_multiple, *tra_handle, count, vector);
+			LOG_call(log_start_multiple, *tra_handle, count, vector);
 #endif
-		tdbb->tdbb_status_vector = user_status;
-		transaction =
-			TRA_start(tdbb, v->teb_tpb_length,
-					  reinterpret_cast<const char*>(v->teb_tpb));
-		transaction->tra_sibling = prior;
-		prior = transaction;
-		Database* dbb = tdbb->tdbb_database;
-		--dbb->dbb_use_count;
-	}
+			tdbb->tdbb_status_vector = user_status;
+			transaction = TRA_start(tdbb, v->teb_tpb_length, v->teb_tpb);
+			transaction->tra_sibling = prior;
+			prior = transaction;
+			Database* dbb = tdbb->tdbb_database;
+			--dbb->dbb_use_count;
+		}
 
 	}	// try
 	catch (const Firebird::Exception& ex) {

@@ -1493,7 +1493,7 @@ int TRA_snapshot_state(thread_db* tdbb, const jrd_tra* trans, SLONG number)
 }
 
 
-jrd_tra* TRA_start(thread_db* tdbb, int tpb_length, const SCHAR* tpb)
+jrd_tra* TRA_start(thread_db* tdbb, int tpb_length, const UCHAR* tpb)
 {
 /**************************************
  *
@@ -1524,8 +1524,7 @@ jrd_tra* TRA_start(thread_db* tdbb, int tpb_length, const SCHAR* tpb)
 	Jrd::ContextPoolHolder context(tdbb, JrdMemoryPool::createPool());
 	jrd_tra* temp = FB_NEW_RPT(*tdbb->getDefaultPool(), 0) jrd_tra(*tdbb->getDefaultPool());
 	temp->tra_pool = tdbb->getDefaultPool();
-	transaction_options(tdbb, temp, reinterpret_cast<const UCHAR*>(tpb),
-						tpb_length);
+	transaction_options(tdbb, temp, tpb, tpb_length);
 
 	Lock* lock = TRA_transaction_lock(tdbb, temp);
 
@@ -1797,7 +1796,8 @@ jrd_tra* TRA_start(thread_db* tdbb, int tpb_length, const SCHAR* tpb)
    undo the transaction if it rolls back. */
 
 	if ((trans != dbb->dbb_sys_trans) &&
-		!(trans->tra_flags & TRA_no_auto_undo)) {
+		!(trans->tra_flags & TRA_no_auto_undo))
+	{
 		VIO_start_save_point(tdbb, trans);
 		trans->tra_save_point->sav_flags |= SAV_trans_level;
 	}
@@ -1926,9 +1926,7 @@ bool TRA_sweep(thread_db* tdbb, jrd_tra* trans)
    below to advance the OIT we must save it before it changes. */
 
 	if (!(transaction = trans))
-		transaction = TRA_start(tdbb,
-								sizeof(sweep_tpb),
-								reinterpret_cast<const char*>(sweep_tpb));
+		transaction = TRA_start(tdbb, sizeof(sweep_tpb), sweep_tpb);
 
 	SLONG transaction_oldest_active = transaction->tra_oldest_active;
 	tdbb->tdbb_transaction = transaction;
@@ -2998,7 +2996,7 @@ static void transaction_options(
 		{
 			continue;
 		}
-		for (USHORT l = 0; l < id; l++) {
+		for (ULONG l = 0; l < id; l++) {
 			if ( (lock = (*vector)[l]) ) {
 				level = lock->lck_logical;
 				LCK_release(tdbb, lock);

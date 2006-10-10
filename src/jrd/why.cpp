@@ -91,6 +91,7 @@
 #include "../jrd/why_proto.h"
 #include "../common/classes/rwlock.h"
 #include "../common/classes/auto.h"
+#include "../jrd/constants.h"
 
 
 // In 2.0 it's hard to include ibase.h in why.cpp due to API declaration conflicts.
@@ -5092,7 +5093,7 @@ ISC_STATUS API_ROUTINE_VARARG GDS_START_TRANSACTION(ISC_STATUS * user_status,
  *	Start a transaction.
  *
  **************************************/
-	TEB tebs[16], *teb, *end;
+	TEB tebs[MAX_DB_PER_TRANS], *teb, *end;
 	ISC_STATUS status;
 	va_list ptr;
 

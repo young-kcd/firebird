@@ -1503,11 +1503,12 @@ static void cmp_slice( gpre_req* request)
 	request->add_byte(isc_sdl_field);
 	CMP_stuff_symbol(request, field->fld_symbol);
 
-	bool loop_flags[16];
+	bool loop_flags[MAX_ARRAY_DIMENSIONS];
 	{ // scope block
-	USHORT n = 0;
-	for (bool* p = loop_flags; n < slice->slc_dimensions; n++, p++)
-		*p = cmp_sdl_loop(request, n, slice, array);
+		fb_assert(slice->slc_dimensions <= MAX_ARRAY_DIMENSIONS);
+		USHORT n = 0;
+		for (bool* p = loop_flags; n < slice->slc_dimensions; n++, p++)
+			*p = cmp_sdl_loop(request, n, slice, array);
 	} // end scope block
 	
 	request->add_byte(isc_sdl_element);

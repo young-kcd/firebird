@@ -159,6 +159,8 @@ const size_t MAX_SORT_ITEMS = 255; // ORDER BY f1,...,f255
 
 const size_t MAX_TABLE_VERSIONS = 255; // maybe this should be in ods.h.
 
+const size_t MAX_DB_PER_TRANS = 16; // A multi-db txn can span up to 16 dbs
+
 // relation types
 
 enum rel_t {
