@@ -40,7 +40,7 @@ RSC=rc.exe
 # PROP Output_Dir "..\..\..\temp\release\engine_es"
 # PROP Intermediate_Dir "..\..\..\temp\release\engine_es"
 # PROP Target_Dir ""
-# ADD BASE CPP /nologo /W3 /GR- /GX /O2 /D "WIN32" /D "NDEBUG" /D "_MBCS" /D "_LIB" /YX /FD /c
+# ADD BASE CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_MBCS" /D "_LIB" /YX /FD /c
 # ADD CPP /nologo /MD /W3 /GX /Ot /Og /Oi /Op /Oy /Ob1 /I "../../../src/include" /I "../../../src/include/gen" /I "../../../extern/icu/include" /I "../../../src/vulcan" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_LIB" /D "_X86_" /D "SUPERSERVER" /D "EMBEDDED" /D NAMESPACE=Vulcan /YX /FD /EHc- /c
 # ADD BASE RSC /l 0x419 /d "NDEBUG"
 # ADD RSC /l 0x419 /d "NDEBUG"
@@ -63,7 +63,7 @@ LIB32=link.exe -lib
 # PROP Output_Dir "..\..\..\temp\debug\engine_es"
 # PROP Intermediate_Dir "..\..\..\temp\debug\engine_es"
 # PROP Target_Dir ""
-# ADD BASE CPP /nologo /W3 /Gm /GR- /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_MBCS" /D "_LIB" /YX /FD /GZ /c
+# ADD BASE CPP /nologo /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_MBCS" /D "_LIB" /YX /FD /GZ /c
 # ADD CPP /nologo /MDd /W3 /Gm /GX /ZI /Od /I "../../../src/include" /I "../../../src/include/gen" /I "../../../extern/icu/include" /I "../../../src/vulcan" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_LIB" /D "_X86_" /D "SUPERSERVER" /D "DEV_BUILD" /D "EMBEDDED" /D NAMESPACE=Vulcan /FD /GZ /c
 # ADD BASE RSC /l 0x419 /d "_DEBUG"
 # ADD RSC /l 0x419 /d "_DEBUG"
@@ -420,6 +420,10 @@ SOURCE=..\..\..\src\jrd\rpb_chain.cpp
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\rse.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\RuntimeStatistics.cpp
 # End Source File
 # Begin Source File
 
@@ -1166,6 +1170,10 @@ SOURCE=..\..\..\src\jrd\rse.h
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\rse_proto.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\RuntimeStatistics.h
 # End Source File
 # Begin Source File
 
