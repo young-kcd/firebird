@@ -7175,7 +7175,7 @@ static jrd_nod* optimize_like(thread_db* tdbb, CompilerScratch* csb, jrd_nod* li
 		p_count =
 			MOV_make_string2(escape_desc, INTL_TTYPE(&match_desc), &p, escape_buffer);
 
-		first_len = matchCharset->substring(tdbb, p_count, p, sizeof(first_ch), first_ch, 0, 1);
+		first_len = matchCharset->substring(p_count, p, sizeof(first_ch), first_ch, 0, 1);
 		matchTextType->canonical(first_len, p, sizeof(escape_canonic), escape_canonic);
 	}
 
@@ -7184,7 +7184,7 @@ static jrd_nod* optimize_like(thread_db* tdbb, CompilerScratch* csb, jrd_nod* li
 	p_count =
 		MOV_make_string2(pattern_desc, INTL_TTYPE(&match_desc), &p, pattern_buffer);
 
-	first_len = matchCharset->substring(tdbb, p_count, p, sizeof(first_ch), first_ch, 0, 1);
+	first_len = matchCharset->substring(p_count, p, sizeof(first_ch), first_ch, 0, 1);
 
 	UCHAR first_canonic[sizeof(ULONG)];
 	matchTextType->canonical(first_len, p, sizeof(first_canonic), first_canonic);
@@ -7245,7 +7245,7 @@ static jrd_nod* optimize_like(thread_db* tdbb, CompilerScratch* csb, jrd_nod* li
 			break;
 		}
 
-		q += patternCharset->substring(tdbb, pattern_desc->dsc_length, pattern_desc->dsc_address,
+		q += patternCharset->substring(pattern_desc->dsc_length, pattern_desc->dsc_address,
 								literal->lit_desc.dsc_length - (q - literal->lit_desc.dsc_address), q,
 								(patternPtrStart - patternCanonical.begin()) / canWidth,
 								1);

@@ -2580,12 +2580,12 @@ static void adjust_text_descriptor(thread_db* tdbb, dsc* desc)
 
 			if (charSet->getFlags() & CHARSET_LEGACY_SEMANTICS)
 			{
-				desc->dsc_length = charSet->substring(tdbb, TEXT_LEN(desc), desc->dsc_address, TEXT_LEN(desc),
+				desc->dsc_length = charSet->substring(TEXT_LEN(desc), desc->dsc_address, TEXT_LEN(desc),
 										buffer.getBuffer(TEXT_LEN(desc) * charSet->maxBytesPerChar()), 0,
 										TEXT_LEN(desc));
 
 				ULONG maxLength = TEXT_LEN(desc) / charSet->maxBytesPerChar();
-				ULONG charLength = charSet->length(tdbb, desc->dsc_length, desc->dsc_address, true);
+				ULONG charLength = charSet->length(desc->dsc_length, desc->dsc_address, true);
 
 				while (charLength > maxLength)
 				{
@@ -2600,7 +2600,7 @@ static void adjust_text_descriptor(thread_db* tdbb, dsc* desc)
 			}
 			else
 			{
-				desc->dsc_length = charSet->substring(tdbb, TEXT_LEN(desc), desc->dsc_address,
+				desc->dsc_length = charSet->substring(TEXT_LEN(desc), desc->dsc_address,
 										TEXT_LEN(desc), buffer.getBuffer(TEXT_LEN(desc)), 0,
 										TEXT_LEN(desc) / charSet->maxBytesPerChar());
 			}
@@ -4262,7 +4262,7 @@ static bool sleuth(thread_db* tdbb, jrd_nod* node, const dsc* desc1, const dsc* 
 	else
 		ttype = INTL_TTYPE(desc1);
 
-	TextType* obj = INTL_texttype_lookup(tdbb, ttype);
+	Collation* obj = INTL_texttype_lookup(tdbb, ttype);
 
 /* Get operator definition string (control string) */
 
@@ -4380,7 +4380,7 @@ static bool string_boolean(thread_db* tdbb, jrd_nod* node, dsc* desc1,
 		else
 			type1 = ttype_none;	/* Do byte matching */
 
-		TextType* obj = INTL_texttype_lookup(tdbb, type1);
+		Collation* obj = INTL_texttype_lookup(tdbb, type1);
 		CharSet* charset = obj->getCharSet();
 
 		/* Get address and length of search string - make it string if neccessary
@@ -4471,7 +4471,7 @@ static bool string_boolean(thread_db* tdbb, jrd_nod* node, dsc* desc1,
 					escape_length = MOV_make_string(dsc,
 										 type1, reinterpret_cast<const char**>(&escape_str), (vary*) temp3,
 										 sizeof(temp3));
-					if (!escape_length || charset->length(tdbb, escape_length, escape_str, true) != 1)
+					if (!escape_length || charset->length(escape_length, escape_str, true) != 1)
 					{
 						/* If characters left, or null byte character, return error */
 						BLB_close(tdbb, blob);
@@ -4479,10 +4479,8 @@ static bool string_boolean(thread_db* tdbb, jrd_nod* node, dsc* desc1,
 					}
 
 					USHORT escape[2] = {0, 0};
-					USHORT err_code;
-					ULONG err_position;
 
-					charset->getConvToUnicode().convert(escape_length, escape_str, sizeof(escape), escape, &err_code, &err_position);
+					charset->getConvToUnicode().convert(escape_length, escape_str, sizeof(escape), escape);
 					if (!escape[0])
 					{
 						/* If or null byte character, return error */
@@ -4579,7 +4577,7 @@ static bool string_function(
 
 	jrd_req* request = tdbb->tdbb_request;
 
-	TextType* obj = INTL_texttype_lookup(tdbb, ttype);
+	Collation* obj = INTL_texttype_lookup(tdbb, ttype);
 	CharSet* charset = obj->getCharSet();
 
 /* Handle STARTS WITH */
@@ -4651,17 +4649,15 @@ static bool string_function(
 			escape_length = MOV_make_string(dsc,
 								 ttype, reinterpret_cast<const char**>(&escape_str), (vary*) temp3,
 								 sizeof(temp3));
-			if (!escape_length || charset->length(tdbb, escape_length, escape_str, true) != 1)
+			if (!escape_length || charset->length(escape_length, escape_str, true) != 1)
 			{
 				/* If characters left, or null byte character, return error */
 				ERR_post(isc_like_escape_invalid, 0);
 			}
 
 			USHORT escape[2] = {0, 0};
-			USHORT err_code;
-			ULONG err_position;
 
-			charset->getConvToUnicode().convert(escape_length, escape_str, sizeof(escape), escape, &err_code, &err_position);
+			charset->getConvToUnicode().convert(escape_length, escape_str, sizeof(escape), escape);
 			if (!escape[0])
 			{
 				/* If or null byte character, return error */
@@ -4752,7 +4748,7 @@ static dsc* string_length(thread_db* tdbb, jrd_nod* node, impure_value* impure)
 					Firebird::HalfStaticArray<UCHAR, BUFFER_LARGE> buffer;
 
 					length = BLB_get_data(tdbb, blob, buffer.getBuffer(blob->blb_length), blob->blb_length, false);
-					length = charSet->length(tdbb, length, buffer.begin(), true);
+					length = charSet->length(length, buffer.begin(), true);
 				}
 				else
 					length = blob->blb_length / charSet->maxBytesPerChar();
@@ -4796,7 +4792,7 @@ static dsc* string_length(thread_db* tdbb, jrd_nod* node, impure_value* impure)
 		case blr_strlen_char:
 		{
 			CharSet* charSet = INTL_charset_lookup(tdbb, ttype);
-			length = charSet->length(tdbb, length, p, true);
+			length = charSet->length(length, p, true);
 			break;
 		}
 
@@ -4870,14 +4866,9 @@ static dsc* substring(thread_db* tdbb, impure_value* impure,
 			Firebird::HalfStaticArray<UCHAR, BUFFER_LARGE> buffer2;
 			buffer2.getBuffer(dataLen);
 
-			if ((dataLen = charSet->substring(tdbb, dataLen, buffer.begin(),
-					buffer2.getCapacity(), buffer2.begin(),
-					offset, length)) == INTL_BAD_STR_LENGTH)
-			{
-				ERR_post(isc_arith_except, 0);
-			}
-			else
-				BLB_put_data(tdbb, newBlob, buffer2.begin(), dataLen);
+			dataLen = charSet->substring(dataLen, buffer.begin(),
+				buffer2.getCapacity(), buffer2.begin(), offset, length);
+			BLB_put_data(tdbb, newBlob, buffer2.begin(), dataLen);
 		}
 		else
 		{
@@ -4967,13 +4958,9 @@ static dsc* substring(thread_db* tdbb, impure_value* impure,
 			desc.dsc_length = totLen;
 			EVL_make_value(tdbb, &desc, impure);
 
-			if ((dataLen = charSet->substring(tdbb, pcount, p, totLen,
-					impure->vlu_desc.dsc_address, offset, length)) == INTL_BAD_STR_LENGTH)
-			{
-				ERR_post(isc_arith_except, 0);
-			}
-			else
-				impure->vlu_desc.dsc_length = static_cast<USHORT>(dataLen);
+			dataLen = charSet->substring(pcount, p, totLen,
+				impure->vlu_desc.dsc_address, offset, length);
+			impure->vlu_desc.dsc_length = static_cast<USHORT>(dataLen);
 		}
 	}
 
@@ -5092,7 +5079,7 @@ static dsc* trim(thread_db* tdbb, jrd_nod* node, impure_value* impure)
 	{
 		// We have valueCanonical already allocated.
 		// Use it to get the substring that will be written to the new blob.
-		ULONG len = cs->substring(tdbb, valueLength, valueAddress,
+		ULONG len = cs->substring(valueLength, valueAddress,
 			valueCanonical.getCapacity(), valueCanonical.begin(),
 			offsetLead / tt->getCanonicalWidth(),
 			(offsetTrail - offsetLead) / tt->getCanonicalWidth());
@@ -5117,7 +5104,7 @@ static dsc* trim(thread_db* tdbb, jrd_nod* node, impure_value* impure)
 		INTL_ASSIGN_TTYPE(&desc, ttype);
 		EVL_make_value(tdbb, &desc, impure);
 
-		impure->vlu_desc.dsc_length = cs->substring(tdbb, valueLength, valueAddress,
+		impure->vlu_desc.dsc_length = cs->substring(valueLength, valueAddress,
 			impure->vlu_desc.dsc_length, impure->vlu_desc.dsc_address,
 			offsetLead / tt->getCanonicalWidth(),
 			(offsetTrail - offsetLead) / tt->getCanonicalWidth());

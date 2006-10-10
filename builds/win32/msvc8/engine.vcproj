@@ -209,7 +209,15 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\jrd\CharSet.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\jrd\cmp.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\Collation.cpp"
 				>
 			</File>
 			<File
@@ -509,6 +517,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\jrd\TextType.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\jrd\thd.cpp"
 				>
 			</File>
@@ -645,6 +657,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\jrd\CharSet.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\jrd\cmp_proto.h"
 				>
 			</File>
@@ -653,11 +669,19 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\jrd\Collation.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\jrd\common.h"
 				>
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\constants.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\CsConvert.h"
 				>
 			</File>
 			<File
@@ -1322,6 +1346,10 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\termtype.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\TextType.h"
 				>
 			</File>
 			<File

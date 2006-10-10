@@ -76,7 +76,7 @@ class jrd_nod;
 struct sort_key_def;
 template <typename T> class vec;
 class jrd_prc;
-class TextType;
+class Collation;
 struct index_desc;
 struct IndexDescAlloc;
 class Format;
@@ -485,14 +485,14 @@ struct Resource
 		rsc_relation,
 		rsc_procedure,
 		rsc_index,
-		rsc_ttype
+		rsc_collation
 	};
 
 	enum rsc_s	rsc_type;
 	USHORT		rsc_id;			/* Id of the resource */
 	jrd_rel*	rsc_rel;		/* Relation block */
 	jrd_prc*	rsc_prc;		/* Procedure block */
-	TextType*	rsc_tt;			/* TextType block */
+	Collation*	rsc_coll;		/* Collation block */
 
 	static bool greaterThan(const Resource& i1, const Resource& i2) {
 		// A few places of the engine depend on fact that rsc_type 
@@ -507,8 +507,8 @@ struct Resource
 		return i1.rsc_id > i2.rsc_id;
 	}
 
-	Resource(rsc_s type, USHORT id, jrd_rel* rel, jrd_prc* prc, TextType* tt) :
-		rsc_type(type), rsc_id(id), rsc_rel(rel), rsc_prc(prc), rsc_tt(tt) { }
+	Resource(rsc_s type, USHORT id, jrd_rel* rel, jrd_prc* prc, Collation* coll) :
+		rsc_type(type), rsc_id(id), rsc_rel(rel), rsc_prc(prc), rsc_coll(coll) { }
 };
 
 typedef Firebird::SortedArray<Resource, Firebird::EmptyStorage<Resource>, 

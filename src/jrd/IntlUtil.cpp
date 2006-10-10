@@ -27,6 +27,7 @@
 #include "firebird.h"
 #include "../jrd/IntlUtil.h"
 #include "../jrd/unicode_util.h"
+#include "../jrd/intl_classes.h"
 #include "../intl/country_codes.h"
 
 
@@ -72,7 +73,7 @@ static ULONG unicodeCanonical(texttype* tt, ULONG srcLen, const UCHAR* src,
 
 
 string IntlUtil::generateSpecificAttributes(
-	charset* cs, SpecificAttributesMap& map)
+	Jrd::CharSet* cs, SpecificAttributesMap& map)
 {
 	bool found = map.getFirst();
 	string s;
@@ -80,8 +81,6 @@ string IntlUtil::generateSpecificAttributes(
 	while (found)
 	{
 		UCHAR c[sizeof(ULONG)];
-		USHORT errCode;
-		ULONG errPos;
 		ULONG size;
 
 		SpecificAttribute* attribute = map.current();
@@ -89,10 +88,10 @@ string IntlUtil::generateSpecificAttributes(
 		s += escapeAttribute(cs, attribute->first);
 
 		const USHORT equalChar = '=';
-		size = cs->charset_from_unicode.csconvert_fn_convert(
-			&cs->charset_from_unicode,
+
+		size = cs->getConvFromUnicode().convert(
 			sizeof(equalChar), (const UCHAR*)&equalChar,
-			sizeof(c), c, &errCode, &errPos);
+			sizeof(c), c);
 
 		s += string((const char*)&c, size);
 
@@ -103,10 +102,8 @@ string IntlUtil::generateSpecificAttributes(
 		if (found)
 		{
 			const USHORT semiColonChar = ';';
-			size = cs->charset_from_unicode.csconvert_fn_convert(
-				&cs->charset_from_unicode,
-				sizeof(semiColonChar), (const UCHAR*)&semiColonChar, sizeof(c),
-				c, &errCode, &errPos);
+			size = cs->getConvFromUnicode().convert(
+				sizeof(semiColonChar), (const UCHAR*)&semiColonChar, sizeof(c), c);
 
 			s += string((const char*)&c, size);
 		}
@@ -117,7 +114,7 @@ string IntlUtil::generateSpecificAttributes(
 
 
 bool IntlUtil::parseSpecificAttributes(
-	charset* cs, ULONG len, const UCHAR* s, SpecificAttributesMap* map)
+	Jrd::CharSet* cs, ULONG len, const UCHAR* s, SpecificAttributesMap* map)
 {
 	// Note that the map isn't cleared.
 	// Old attributes will be combined with the new ones.
@@ -130,8 +127,8 @@ bool IntlUtil::parseSpecificAttributes(
 
 	while (p < end)
 	{
-		while (p < end && size == cs->charset_space_length &&
-			   memcmp(p, cs->charset_space_character, cs->charset_space_length) == 0)
+		while (p < end && size == cs->getSpaceLength() &&
+			   memcmp(p, cs->getSpace(), cs->getSpaceLength()) == 0)
 		{
 			if (!readAttributeChar(cs, &p, end, &size, true))
 				return true;
@@ -140,17 +137,11 @@ bool IntlUtil::parseSpecificAttributes(
 		const UCHAR* start = p;
 
 		UCHAR uc[sizeof(ULONG)];
-		USHORT errCode;
-		ULONG errPos;
 		ULONG uSize;
 
 		while (p < end)
 		{
-			uSize = cs->charset_to_unicode.csconvert_fn_convert(
-				&cs->charset_to_unicode, size, p, sizeof(uc), uc, &errCode, &errPos);
-
-			if (uSize == INTL_BAD_STR_LENGTH)
-				return false;
+			uSize = cs->getConvToUnicode().convert(size, p, sizeof(uc), uc);
 				
 			if (uSize == 2 &&
 					 ((*(USHORT*)uc >= 'A' && *(USHORT*)uc <= 'Z') ||
@@ -170,29 +161,24 @@ bool IntlUtil::parseSpecificAttributes(
 		string name = string((const char*)start, p - start);
 		name = unescapeAttribute(cs, name);
 
-		while (p < end && size == cs->charset_space_length &&
-			   memcmp(p, cs->charset_space_character, cs->charset_space_length) == 0)
+		while (p < end && size == cs->getSpaceLength() &&
+			   memcmp(p, cs->getSpace(), cs->getSpaceLength()) == 0)
 		{
 			if (!readAttributeChar(cs, &p, end, &size, true))
 				return false;
 		}
 
-		uSize = cs->charset_to_unicode.csconvert_fn_convert(
-			&cs->charset_to_unicode, size, p, sizeof(uc), uc, &errCode, &errPos);
+		uSize = cs->getConvToUnicode().convert(size, p, sizeof(uc), uc);
 
-		if (uSize == INTL_BAD_STR_LENGTH ||
-			uSize != 2 ||
-			*(USHORT*)uc != '=')
-		{
+		if (uSize != 2 || *(USHORT*)uc != '=')
 			return false;
-		}
 
 		string value;
 
 		if (readAttributeChar(cs, &p, end, &size, true))
 		{
-			while (p < end && size == cs->charset_space_length &&
-				   memcmp(p, cs->charset_space_character, cs->charset_space_length) == 0)
+			while (p < end && size == cs->getSpaceLength() &&
+				   memcmp(p, cs->getSpace(), cs->getSpaceLength()) == 0)
 			{
 				if (!readAttributeChar(cs, &p, end, &size, true))
 					return false;
@@ -202,16 +188,12 @@ bool IntlUtil::parseSpecificAttributes(
 
 			while (p < end)
 			{
-				uSize = cs->charset_to_unicode.csconvert_fn_convert(
-					&cs->charset_to_unicode, size, p, sizeof(uc), uc, &errCode, &errPos);
+				uSize = cs->getConvToUnicode().convert(size, p, sizeof(uc), uc);
 
-				if (uSize == INTL_BAD_STR_LENGTH)
-					return false;
-					
 				if (uSize != 2 || *(USHORT*)uc != ';')
 				{
-					if (!(size == cs->charset_space_length &&
-						  memcmp(p, cs->charset_space_character, cs->charset_space_length) == 0))
+					if (!(size == cs->getSpaceLength() &&
+						  memcmp(p, cs->getSpace(), cs->getSpaceLength()) == 0))
 					{
 						endNoSpace = p + size;
 					}
@@ -295,8 +277,21 @@ bool IntlUtil::initUnicodeCollation(texttype* tt, charset* cs, const ASCII* name
 	tt->texttype_fn_string_to_key = unicodeStrToKey;
 
 	IntlUtil::SpecificAttributesMap map;
-	IntlUtil::parseSpecificAttributes(cs, specificAttributes.getCount(),
-		specificAttributes.begin(), &map);
+
+	Jrd::CharSet* charSet = NULL;
+
+	try
+	{
+		charSet = Jrd::CharSet::createInstance(*getDefaultMemoryPool(), 0, cs);
+		IntlUtil::parseSpecificAttributes(charSet, specificAttributes.getCount(),
+			specificAttributes.begin(), &map);
+		delete charSet;
+	}
+	catch (...)
+	{
+		delete charSet;
+		return false;
+	}
 
 	IntlUtil::SpecificAttributesMap map16;
 
@@ -340,7 +335,7 @@ bool IntlUtil::initUnicodeCollation(texttype* tt, charset* cs, const ASCII* name
 }
 
 
-string IntlUtil::escapeAttribute(charset* cs, const string& s)
+string IntlUtil::escapeAttribute(Jrd::CharSet* cs, const string& s)
 {
 	string ret;
 	const UCHAR* p = (const UCHAR*)s.begin();
@@ -350,11 +345,8 @@ string IntlUtil::escapeAttribute(charset* cs, const string& s)
 	while (readOneChar(cs, &p, end, &size))
 	{
 		UCHAR uc[sizeof(ULONG)];
-		USHORT errCode;
-		ULONG errPos;
 
-		ULONG uSize = cs->charset_to_unicode.csconvert_fn_convert(
-			&cs->charset_to_unicode, size, p, sizeof(uc), uc, &errCode, &errPos);
+		ULONG uSize = cs->getConvToUnicode().convert(size, p, sizeof(uc), uc);
 
 		if (uSize == 2)
 		{
@@ -363,9 +355,8 @@ string IntlUtil::escapeAttribute(charset* cs, const string& s)
 				*(USHORT*)uc = '\\';
 				UCHAR bytes[sizeof(ULONG)];
 				
-				ULONG bytesSize = cs->charset_from_unicode.csconvert_fn_convert(
-					&cs->charset_from_unicode, sizeof(USHORT), uc,
-					sizeof(bytes), bytes, &errCode, &errPos);
+				ULONG bytesSize = cs->getConvFromUnicode().convert(
+					sizeof(USHORT), uc, sizeof(bytes), bytes);
 
 				ret.append(string((const char*)bytes, bytesSize));
 			}
@@ -378,7 +369,7 @@ string IntlUtil::escapeAttribute(charset* cs, const string& s)
 }
 
 
-string IntlUtil::unescapeAttribute(charset* cs, const string& s)
+string IntlUtil::unescapeAttribute(Jrd::CharSet* cs, const string& s)
 {
 	string ret;
 	const UCHAR* p = (const UCHAR*)s.begin();
@@ -392,14 +383,10 @@ string IntlUtil::unescapeAttribute(charset* cs, const string& s)
 }
 
 
-bool IntlUtil::isAttributeEscape(charset* cs, const UCHAR* s, ULONG size)
+bool IntlUtil::isAttributeEscape(Jrd::CharSet* cs, const UCHAR* s, ULONG size)
 {
 	UCHAR uc[sizeof(ULONG)];
-	USHORT errCode;
-	ULONG errPos;
-
-	ULONG uSize = cs->charset_to_unicode.csconvert_fn_convert(
-		&cs->charset_to_unicode, size, s, sizeof(uc), uc, &errCode, &errPos);
+	ULONG uSize = cs->getConvToUnicode().convert(size, s, sizeof(uc), uc);
 
 	if (uSize == 2 && *(USHORT*)uc == '\\')
 		return true;
@@ -408,7 +395,7 @@ bool IntlUtil::isAttributeEscape(charset* cs, const UCHAR* s, ULONG size)
 }
 
 
-bool IntlUtil::readAttributeChar(charset* cs, const UCHAR** s, const UCHAR* end, ULONG* size, bool returnEscape)
+bool IntlUtil::readAttributeChar(Jrd::CharSet* cs, const UCHAR** s, const UCHAR* end, ULONG* size, bool returnEscape)
 {
 	if (readOneChar(cs, s, end, size))
 	{
@@ -436,7 +423,7 @@ bool IntlUtil::readAttributeChar(charset* cs, const UCHAR** s, const UCHAR* end,
 }
 
 
-bool IntlUtil::readOneChar(charset* cs, const UCHAR** s, const UCHAR* end, ULONG* size)
+bool IntlUtil::readOneChar(Jrd::CharSet* cs, const UCHAR** s, const UCHAR* end, ULONG* size)
 {
 	(*s) += *size;
 
@@ -448,30 +435,7 @@ bool IntlUtil::readOneChar(charset* cs, const UCHAR** s, const UCHAR* end, ULONG
 	}
 
 	UCHAR c[sizeof(ULONG)];
-
-	if (cs->charset_fn_substring)
-		*size = cs->charset_fn_substring(cs, end - *s, *s, sizeof(c), c, 0, 1);
-	else if (cs->charset_min_bytes_per_char == cs->charset_max_bytes_per_char)
-		*size = cs->charset_min_bytes_per_char;
-	else
-	{
-		UCHAR uc[sizeof(ULONG)];
-		USHORT errCode;
-		ULONG errPos;
-		ULONG uSize;
-
-		ULONG n = cs->charset_min_bytes_per_char;
-
-		while ((uSize = cs->charset_to_unicode.csconvert_fn_convert(
-			&cs->charset_to_unicode, n, *s, sizeof(uc), uc, &errCode, &errPos)) == 0)
-		{
-			++n;
-			if (n > cs->charset_max_bytes_per_char)
-				return false;
-		}
-
-		*size = n;
-	}
+	*size = cs->substring(end - *s, *s, sizeof(c), c, 0, 1);
 
 	return true;
 }

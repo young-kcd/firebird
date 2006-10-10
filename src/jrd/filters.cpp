@@ -665,7 +665,6 @@ ISC_STATUS filter_transliterate_text(USHORT action, BlobControl* control)
 	
 	BlobControl* source;
 	ISC_STATUS status;
-	USHORT err_code;
 	ULONG err_position;
 	SSHORT source_cs, dest_cs;
 	SSHORT i;
@@ -700,59 +699,6 @@ ISC_STATUS filter_transliterate_text(USHORT action, BlobControl* control)
 
 		SET_TDBB(tdbb);
 		aux->ctlaux_obj1 = INTL_convert_lookup(tdbb, dest_cs, source_cs);
-		if (aux->ctlaux_obj1 == NULL) {
-			/* Do the convert the hard way, via Unicode.
-			   In this case, we become the filter from Unicode to
-			   the destination format.  And we setup as our source
-			   a filter from <source> to <Unicode>.
-			   recursively using the same routine. */
-
-			if (action == isc_blob_filter_open) {
-				aux->ctlaux_obj1 =
-					INTL_convert_lookup(tdbb, dest_cs, CS_UTF16);
-			}
-			else {
-				aux->ctlaux_obj1 =
-					INTL_convert_lookup(tdbb, CS_UTF16, source_cs);
-			}
-
-			if (aux->ctlaux_obj1 == NULL) {
-				control->ctl_status[0] = isc_arg_gds;
-				control->ctl_status[1] = isc_text_subtype;
-				control->ctl_status[2] = isc_arg_number;
-				control->ctl_status[3] = dest_cs;
-				control->ctl_status[4] = isc_arg_end;
-				return isc_text_subtype;
-			}
-
-			// ISC_STATUS to pointer!
-			aux->ctlaux_subfilter =
-				(BlobControl*) caller(isc_blob_filter_alloc, control, 0, NULL, NULL);
-
-			/* This is freed in BLF_close_filter */
-
-			*(aux->ctlaux_subfilter) = *control;
-
-			control->ctl_handle = aux->ctlaux_subfilter;
-			control->ctl_source = filter_transliterate_text;
-			source = control->ctl_handle;
-
-			if (action == isc_blob_filter_open) {
-				control->ctl_from_sub_type = CS_UTF16;
-				aux->ctlaux_subfilter->ctl_to_sub_type = CS_UTF16;
-			}
-			else {
-				control->ctl_to_sub_type = CS_UTF16;
-				aux->ctlaux_subfilter->ctl_from_sub_type = CS_UTF16;
-			}
-
-
-			/* Now that the new filter has been inserted, tell it to open */
-
-			status = caller(action, control, 0, NULL, NULL);
-			if (status)
-				return status;
-		}
 
 		if (action == isc_blob_filter_open) {
 			control->ctl_max_segment =
@@ -847,12 +793,15 @@ ISC_STATUS filter_transliterate_text(USHORT action, BlobControl* control)
 
 		/* convert the text */
 
-		result_length = aux->ctlaux_obj1.convert(control->ctl_buffer_length, control->ctl_buffer,
-			aux->ctlaux_buffer1_len, aux->ctlaux_buffer1,
-			&err_code, &err_position);
-
-		if (err_code)
+		try
+		{
+			result_length = aux->ctlaux_obj1.convert(control->ctl_buffer_length, control->ctl_buffer,
+				aux->ctlaux_buffer1_len, aux->ctlaux_buffer1);
+		}
+		catch (const Firebird::status_exception&)
+		{
 			return isc_transliteration_failed;
+		}
 
 		/* hand the text off to the next stage of the filter */
 
@@ -941,14 +890,18 @@ ISC_STATUS filter_transliterate_text(USHORT action, BlobControl* control)
 
 /* Now convert from the temporary buffer into the destination buffer */
 
-	result_length = aux->ctlaux_obj1.convert(length, aux->ctlaux_buffer1,
-					control->ctl_buffer_length, control->ctl_buffer,
-					&err_code, &err_position);
-
-	if (err_code == CS_CONVERT_ERROR)
+	try
+	{
+		result_length = aux->ctlaux_obj1.convert(length, aux->ctlaux_buffer1,
+						control->ctl_buffer_length, control->ctl_buffer,
+						&err_position);
+	}
+	catch (const Firebird::status_exception&)
+	{
 		return isc_transliteration_failed;
+	}
 
-	if (err_code == CS_BAD_INPUT) {
+	if (err_position < length) {
 		/* Bad input *might* be due to input buffer truncation in the middle
 		   of a character, so shuffle bytes, add some more data, and try again.
 		   If we already tried that then it's really some bad input */
@@ -957,7 +910,7 @@ ISC_STATUS filter_transliterate_text(USHORT action, BlobControl* control)
 			return isc_transliteration_failed;
 	}
 	
-	const USHORT unused_len = (err_code == 0) ?	0 : length - err_position;
+	const USHORT unused_len = (err_position >= length) ? 0 : length - err_position;
 	control->ctl_segment_length = result_length;
 	if (unused_len) {
 		memcpy(aux->ctlaux_buffer1, aux->ctlaux_buffer1 + err_position, unused_len);

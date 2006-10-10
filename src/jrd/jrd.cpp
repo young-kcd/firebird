@@ -2540,7 +2540,7 @@ ISC_STATUS GDS_INTL_FUNCTION(ISC_STATUS* user_status, Attachment** handle,
 							isc_arg_gds, isc_malformed_string, 0);
 				}
 				else
-					*result = charSet->length(tdbb, strLen, str, true);
+					*result = charSet->length(strLen, str, true);
 
 				break;
 			}
@@ -2548,7 +2548,7 @@ ISC_STATUS GDS_INTL_FUNCTION(ISC_STATUS* user_status, Attachment** handle,
 			case INTL_FUNCTION_OCTET_LENGTH:
 			{
 				Firebird::HalfStaticArray<UCHAR, 256> dummy;
-				*result = charSet->substring(tdbb, strLen, str,
+				*result = charSet->substring(strLen, str,
 					strLen, dummy.getBuffer(strLen), 0, 
 					strLen / charSet->maxBytesPerChar());
 				break;

@@ -158,7 +158,13 @@
 				RelativePath="..\..\..\src\jrd\cch.cpp">
 			</File>
 			<File
+				RelativePath="..\..\..\src\jrd\CharSet.cpp">
+			</File>
+			<File
 				RelativePath="..\..\..\src\jrd\cmp.cpp">
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\Collation.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\cvt.cpp">
@@ -383,6 +389,9 @@
 				RelativePath="..\..\..\src\jrd\TempSpace.cpp">
 			</File>
 			<File
+				RelativePath="..\..\..\src\jrd\TextType.cpp">
+			</File>
+			<File
 				RelativePath="..\..\..\src\jrd\thd.cpp">
 			</File>
 			<File
@@ -483,16 +492,25 @@
 				RelativePath="..\..\..\src\jrd\cdefs.h">
 			</File>
 			<File
+				RelativePath="..\..\..\src\jrd\Charset.h">
+			</File>
+			<File
 				RelativePath="..\..\..\src\jrd\cmp_proto.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\codetext.h">
 			</File>
 			<File
+				RelativePath="..\..\..\src\jrd\Collation.h">
+			</File>
+			<File
 				RelativePath="..\..\..\src\jrd\common.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\constants.h">
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\CsConvert.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\cvt2_proto.h">
@@ -991,6 +1009,9 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\termtype.h">
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\TextType.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\thd.h">

@@ -338,15 +338,15 @@ void DYN_define_collation( Global* gbl, const UCHAR** ptr)
 				Firebird::IntlUtil::SpecificAttributesMap map;
 
 				if (!Firebird::IntlUtil::parseSpecificAttributes(
-						cs->getObj(), info.specificAttributes.getCount(), info.specificAttributes.begin(), &map) ||
+						cs, info.specificAttributes.getCount(), info.specificAttributes.begin(), &map) ||
 					!Firebird::IntlUtil::parseSpecificAttributes(
-						cs->getObj(), specific_attributes.getCount(), specific_attributes.begin(), &map))
+						cs, specific_attributes.getCount(), specific_attributes.begin(), &map))
 				{
 					DYN_error_punt(false, 222, NULL, NULL, NULL, NULL, NULL);
 					// msg: 222: "Invalid collation attributes"
 				}
 
-				Firebird::string s = Firebird::IntlUtil::generateSpecificAttributes(cs->getObj(), map);
+				Firebird::string s = Firebird::IntlUtil::generateSpecificAttributes(cs, map);
 				memcpy(info.specificAttributes.getBuffer(s.length()), s.begin(), s.length());
 			}
 			

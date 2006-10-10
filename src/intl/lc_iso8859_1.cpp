@@ -25,6 +25,7 @@
 #include "firebird.h"
 #include "../intl/ldcommon.h"
 #include "../intl/ld_proto.h"
+#include "../jrd/CharSet.h"
 #include "../jrd/IntlUtil.h"
 
 static ULONG fam2_str_to_upper(texttype* obj, ULONG iLen, const BYTE* pStr, ULONG iOutLen, BYTE *pOutStr);
@@ -54,10 +55,24 @@ static inline bool FAMILY2(texttype* cache,
 		return false;
 
 	IntlUtil::SpecificAttributesMap map;
+	Jrd::CharSet* charSet = NULL;
 
-	if (!IntlUtil::parseSpecificAttributes(cs, specific_attributes_length, specific_attributes, &map) ||
-		map.count() != 0)
+	try
 	{
+		charSet = Jrd::CharSet::createInstance(*getDefaultMemoryPool(), 0, cs);
+
+		if (!IntlUtil::parseSpecificAttributes(charSet, specific_attributes_length, specific_attributes, &map) ||
+			map.count() != 0)
+		{
+			delete charSet;
+			return false;
+		}
+
+		delete charSet;
+	}
+	catch (...)
+	{
+		delete charSet;
 		return false;
 	}
 
@@ -101,25 +116,42 @@ static inline bool FAMILY3(texttype* cache,
 	bool multiLevel = false;
 
 	IntlUtil::SpecificAttributesMap map;
-	if (!IntlUtil::parseSpecificAttributes(cs, specific_attributes_length, specific_attributes, &map))
-		return false;
+	Jrd::CharSet* charSet = NULL;
 
-	string value;
-	if (map.get("MULTI-LEVEL", value))
+	try
 	{
-		if (value == "0")
-			multiLevel = false;
-		else if (value == "1")
-			multiLevel = true;
-		else
+		charSet = Jrd::CharSet::createInstance(*getDefaultMemoryPool(), 0, cs);
+
+		if (!IntlUtil::parseSpecificAttributes(charSet, specific_attributes_length, specific_attributes, &map))
+		{
+			delete charSet;
 			return false;
+		}
 
-		map.remove("MULTI-LEVEL");
+		string value;
+		if (map.get("MULTI-LEVEL", value))
+		{
+			if (value == "0")
+				multiLevel = false;
+			else if (value == "1")
+				multiLevel = true;
+			else
+				return false;
+
+			map.remove("MULTI-LEVEL");
+		}
+
+		string newSpecificAttributes = IntlUtil::generateSpecificAttributes(charSet, map);
+		specific_attributes = (const UCHAR*)newSpecificAttributes.begin();
+		specific_attributes_length = newSpecificAttributes.length();
+
+		delete charSet;
 	}
-
-	string newSpecificAttributes = IntlUtil::generateSpecificAttributes(cs, map);
-	specific_attributes = (const UCHAR*)newSpecificAttributes.begin();
-	specific_attributes_length = newSpecificAttributes.length();
+	catch (...)
+	{
+		delete charSet;
+		return false;
+	}
 
 	if (FAMILY2(cache, cs, country, flags, NoCaseOrderTbl, ToUpperConversionTbl, ToLowerConversionTbl,
 				CompressTbl, ExpansionTbl, POSIX,

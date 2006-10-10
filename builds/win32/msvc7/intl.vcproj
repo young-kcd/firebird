@@ -158,6 +158,9 @@
 			Name="INTL files"
 			Filter="cpp;c;cxx;rc;def;r;odl;idl;hpj;bat">
 			<File
+				RelativePath="..\..\..\src\jrd\CharSet.cpp">
+			</File>
+			<File
 				RelativePath="..\..\..\src\intl\cs_big5.cpp">
 			</File>
 			<File
@@ -310,6 +313,9 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\intl\collations\blNEXTus0.h">
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\CharSet.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\intl\charsets.h">

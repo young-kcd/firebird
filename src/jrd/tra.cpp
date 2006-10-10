@@ -815,7 +815,7 @@ void TRA_post_resources(thread_db* tdbb, jrd_tra* transaction, ResourceList& res
 	{
 		if (rsc->rsc_type == Resource::rsc_relation ||
 			rsc->rsc_type == Resource::rsc_procedure ||
-			rsc->rsc_type == Resource::rsc_ttype)
+			rsc->rsc_type == Resource::rsc_collation)
 		{
 			size_t i;
 			if (!transaction->tra_resources.find(*rsc, i)) 
@@ -837,8 +837,8 @@ void TRA_post_resources(thread_db* tdbb, jrd_tra* transaction, ResourceList& res
 					}
 #endif
 					break;
-				case Resource::rsc_ttype:
-					rsc->rsc_tt->incUseCount(tdbb);
+				case Resource::rsc_collation:
+					rsc->rsc_coll->incUseCount(tdbb);
 					break;
 				default:   // shut up compiler warning
 					break;
@@ -1086,8 +1086,8 @@ void TRA_release_transaction(thread_db* tdbb, jrd_tra* transaction)
 		case Resource::rsc_procedure:
 			CMP_decrement_prc_use_count(tdbb, rsc->rsc_prc);
 			break;
-		case Resource::rsc_ttype:
-			rsc->rsc_tt->decUseCount(tdbb);
+		case Resource::rsc_collation:
+			rsc->rsc_coll->decUseCount(tdbb);
 			break;
 		default:
 			MET_release_existence(rsc->rsc_rel);

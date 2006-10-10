@@ -32,6 +32,10 @@
 #include "../common/classes/fb_string.h"
 #include "../jrd/intlobj_new.h"
 
+namespace Jrd
+{
+	class CharSet;
+}
 
 namespace Firebird {
 
@@ -43,9 +47,9 @@ public:
 
 public:
 	static string generateSpecificAttributes(
-		charset* cs, SpecificAttributesMap& map);
+		Jrd::CharSet* cs, SpecificAttributesMap& map);
 	static bool parseSpecificAttributes(
-		charset* cs, ULONG len, const UCHAR* s, SpecificAttributesMap* map);
+		Jrd::CharSet* cs, ULONG len, const UCHAR* s, SpecificAttributesMap* map);
 
 	static string convertAsciiToUtf16(const string& ascii);
 	static string convertUtf16ToAscii(const string& utf16, bool* error);
@@ -54,13 +58,13 @@ public:
 		USHORT attributes, const UCharBuffer& specificAttributes);
 
 private:
-	static string escapeAttribute(charset* cs, const string& s);
-	static string unescapeAttribute(charset* cs, const string& s);
+	static string escapeAttribute(Jrd::CharSet* cs, const string& s);
+	static string unescapeAttribute(Jrd::CharSet* cs, const string& s);
 
-	static bool isAttributeEscape(charset* cs, const UCHAR* s, ULONG size);
+	static bool isAttributeEscape(Jrd::CharSet* cs, const UCHAR* s, ULONG size);
 
-	static bool readAttributeChar(charset* cs, const UCHAR** s, const UCHAR* end, ULONG* size, bool returnEscape);
-	static bool readOneChar(charset* cs, const UCHAR** s, const UCHAR* end, ULONG* size);
+	static bool readAttributeChar(Jrd::CharSet* cs, const UCHAR** s, const UCHAR* end, ULONG* size, bool returnEscape);
+	static bool readOneChar(Jrd::CharSet* cs, const UCHAR** s, const UCHAR* end, ULONG* size);
 };
 
 }	// namespace Firebird

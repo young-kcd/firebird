@@ -2039,10 +2039,10 @@ jrd_req* CMP_make_request(thread_db* tdbb, CompilerScratch* csb)
 #endif
 				break;
 			}
-		case Resource::rsc_ttype:
+		case Resource::rsc_collation:
 			{
-				TextType* ttype = resource->rsc_tt;
-				ttype->incUseCount(tdbb);
+				Collation* coll = resource->rsc_coll;
+				coll->incUseCount(tdbb);
 				break;
 			}
 		default:
@@ -2163,8 +2163,8 @@ void CMP_post_resource(	ResourceList* rsc_ptr,
 	case Resource::rsc_procedure:
 		resource.rsc_prc = (jrd_prc*) obj;
 		break;
-	case Resource::rsc_ttype:
-		resource.rsc_tt = (TextType*) obj;
+	case Resource::rsc_collation:
+		resource.rsc_coll = (Collation*) obj;
 		break;
 	default:
 		BUGCHECK(220);			/* msg 220 unknown resource */
@@ -2281,10 +2281,10 @@ void CMP_release(thread_db* tdbb, jrd_req* request)
 					CMP_decrement_prc_use_count(tdbb, resource->rsc_prc);
 					break;
 				}
-			case Resource::rsc_ttype:
+			case Resource::rsc_collation:
 				{
-					TextType* ttype = resource->rsc_tt;
-					ttype->decUseCount(tdbb);
+					Collation* coll = resource->rsc_coll;
+					coll->decUseCount(tdbb);
 					break;
 				}
 			default:
@@ -3259,7 +3259,7 @@ static jrd_nod* pass1(thread_db* tdbb,
 			{
 				CMP_post_resource(&csb->csb_resources,
 					INTL_texttype_lookup(tdbb, ttype),
-					Resource::rsc_ttype, ttype);
+					Resource::rsc_collation, ttype);
 			}
 
 			break;
@@ -3312,7 +3312,7 @@ static jrd_nod* pass1(thread_db* tdbb,
 			{
 				CMP_post_resource(&csb->csb_resources,
 					INTL_texttype_lookup(tdbb, ttype),
-					Resource::rsc_ttype, ttype);
+					Resource::rsc_collation, ttype);
 			}
 
 			// if this is a modify or store, check REFERENCES access to any foreign keys

@@ -1612,7 +1612,7 @@ void CVT_move(const dsc* from, dsc* to, FPTR_ERROR err)
 				if (toCharSet->isMultiByte() &&
 					!(toCharSet->getFlags() & CHARSET_LEGACY_SEMANTICS) &&
 					toLength != 31 &&	// allow non CHARSET_LEGACY_SEMANTICS to be used as connection charset
-					toCharSet->length(tdbb, toLength, start, false) > to_size / toCharSet->maxBytesPerChar())
+					toCharSet->length(toLength, start, false) > to_size / toCharSet->maxBytesPerChar())
 				{
 					(*err)(isc_arith_except, 0);
 				}
