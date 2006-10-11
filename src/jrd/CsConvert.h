@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD International support
- *	MODULE:		intl_classes.h
+ *	MODULE:		CsConvert.h
  *	DESCRIPTION:	International text handling definitions
  *
  *  The contents of this file are subject to the Initial
