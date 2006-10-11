@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD International support
- *	MODULE:		intl_classes.h
+ *	MODULE:		CharSet.h
  *	DESCRIPTION:	International text handling definitions
  *
  *  The contents of this file are subject to the Initial
