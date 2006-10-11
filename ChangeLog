@@ -1,3 +1,10 @@
+2006-10-10 14:12  georgy_sergeev
+
+	* firebird2/src/jrd/vio.cpp (1.151.2.1.2.2):
+	
+	The fbtrace suuport is fixed. vio.cpp is merged with the 1.175
+	version.
+
 2006-09-25 11:53  georgy_sergeev
 
 	* firebird2/src/: common/classes/ClumpletReader.h (1.15.4.1.2.1),
