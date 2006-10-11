@@ -564,7 +564,7 @@ ULONG INTL_convert_bytes(thread_db* tdbb,
  *
  **************************************/
 	ULONG len;
-	////ULONG len2;
+
 
 	SET_TDBB(tdbb);
 

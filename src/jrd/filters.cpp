@@ -892,6 +892,7 @@ ISC_STATUS filter_transliterate_text(USHORT action, BlobControl* control)
 
 	try
 	{
+		err_position = length;
 		result_length = aux->ctlaux_obj1.convert(length, aux->ctlaux_buffer1,
 						control->ctl_buffer_length, control->ctl_buffer,
 						&err_position);
