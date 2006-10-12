@@ -1,3 +1,29 @@
+2006-10-11 20:18  dimitr
+
+	* firebird2/src/jrd/Collation.cpp (1.2):
+	
+	This should fix the compilation issue on posix. No idea why it's
+	not required for win32.
+
+2006-10-11 18:05  asfernandes
+
+	* firebird2/src/jrd/: Collation.h (1.2), CsConvert.h (1.2),
+	TextType.h (1.2):
+	
+	Misc
+
+2006-10-11 18:04  asfernandes
+
+	* firebird2/src/jrd/: Charset.h (1.2), CharSet.h (1.1):
+	
+	Fix case of filename - thanks to Dmitry
+
+2006-10-11 05:31  asfernandes
+
+	* firebird2/src/jrd/: filters.cpp (1.51), intl.cpp (1.92):
+	
+	Misc
+
 2006-10-10 21:40  asfernandes
 
 	* firebird2/: builds/posix/make.shared.variables (1.66),
