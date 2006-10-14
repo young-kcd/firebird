@@ -93,6 +93,10 @@ LINK32=link.exe
 # PROP Default_Filter "cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
 # Begin Source File
 
+SOURCE=..\..\..\src\jrd\CharSet.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\src\intl\cs_big5.cpp
 # End Source File
 # Begin Source File
@@ -294,6 +298,10 @@ SOURCE=..\..\..\src\intl\collations\blNEXTit0.h
 # Begin Source File
 
 SOURCE=..\..\..\src\intl\collations\blNEXTus0.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\CharSet.h
 # End Source File
 # Begin Source File
 
@@ -741,11 +749,11 @@ SOURCE=..\..\..\src\common\classes\alloc.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\common\classes\fb_string.cpp
+SOURCE=..\..\..\src\common\fb_exception.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\common\fb_exception.cpp
+SOURCE=..\..\..\src\common\classes\fb_string.cpp
 # End Source File
 # Begin Source File
 

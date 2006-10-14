@@ -187,7 +187,15 @@ SOURCE=..\..\..\src\jrd\cch.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\src\jrd\CharSet.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\src\jrd\cmp.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\Collation.cpp
 # End Source File
 # Begin Source File
 
@@ -484,6 +492,10 @@ SOURCE=..\..\..\src\jrd\TempSpace.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\src\jrd\TextType.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\src\jrd\thd.cpp
 # End Source File
 # Begin Source File
@@ -621,6 +633,10 @@ SOURCE=..\..\..\src\jrd\cdefs.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\src\jrd\CharSet.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\src\jrd\cmp_proto.h
 # End Source File
 # Begin Source File
@@ -629,11 +645,19 @@ SOURCE=..\..\..\src\jrd\codetext.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\src\jrd\Collation.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\src\jrd\common.h
 # End Source File
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\constants.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\CsConvert.h
 # End Source File
 # Begin Source File
 
@@ -1266,6 +1290,10 @@ SOURCE=..\..\..\src\jrd\TempSpace.h
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\termtype.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\TextType.h
 # End Source File
 # Begin Source File
 
