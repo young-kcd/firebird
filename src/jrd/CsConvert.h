@@ -218,17 +218,13 @@ public:
 	{
 		USHORT errCode;
 		ULONG errPos;
-		ULONG len;
+		ULONG len = (*cnvt1->csconvert_fn_convert)(cnvt1, srcLen, NULL, 0, NULL, &errCode, &errPos);
 
 		if (cnvt2)
 		{
-			len = (*cnvt1->csconvert_fn_convert)(cnvt1, srcLen, NULL, 0, NULL, &errCode, &errPos);
-
 			if (len != INTL_BAD_STR_LENGTH && errCode == 0)
 				len = (*cnvt2->csconvert_fn_convert)(cnvt2, len, NULL, 0, NULL, &errCode, &errPos);
 		}
-		else
-			len = (*cnvt1->csconvert_fn_convert)(cnvt1, srcLen, NULL, 0, NULL, &errCode, &errPos);
 
 		if (len == INTL_BAD_STR_LENGTH || errCode != 0)
 			Firebird::status_exception::raise(isc_arith_except, 0);
