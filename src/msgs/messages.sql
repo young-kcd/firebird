@@ -3080,5 +3080,6 @@ INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FL
 INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FLAGS, TEXT, "ACTION", EXPLANATION) VALUES (NULL, 'DYN_delete_collation', 'dyn_del.epp', NULL, 8, 243, NULL, 'Collation %s is used in procedure %s (parameter name %s) and cannot be dropped', NULL, NULL);
 INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FLAGS, TEXT, "ACTION", EXPLANATION) VALUES ('dsql_max_group_items', 'pass1_group_by_list', 'pass1.cpp', NULL, 13, 928, NULL, 'cannot group on more than 255 items', NULL, NULL);
 INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FLAGS, TEXT, "ACTION", EXPLANATION) VALUES ('dsql_conflicting_sort_field', 'pass1_sort', 'pass1.cpp', NULL, 13, 929, NULL, 'Cannot include the same field (%s.%s) twice in the ORDER BY clause with conflicting sorting options', NULL, NULL);
+INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FLAGS, TEXT, "ACTION", EXPLANATION) VALUES ('max_db_per_trans_allowed', 'GDS_START_TRANSACTION', 'jrd.cpp', NULL, 0, 554, NULL, 'A multi database transaction cannot span more than %d databases', NULL, NULL);
 
 COMMIT WORK;

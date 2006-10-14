@@ -3799,6 +3799,14 @@ ISC_STATUS GDS_START_MULTIPLE(ISC_STATUS * user_status,
 	thread_db* tdbb = JRD_MAIN_set_thread_data(thd_context);
 
 	NULL_CHECK(tra_handle, isc_bad_trans_handle);
+	
+	if (count < 1 || count > MAX_DB_PER_TRANS)
+	{
+		tdbb->tdbb_status_vector = user_status;
+		ERR_post_nothrow(isc_max_db_per_trans_allowed, isc_arg_number, MAX_DB_PER_TRANS, 0);
+		return error(user_status);
+	}
+
 	const TEB* const end = vector + count;
 
 	for (v = vector; v < end; v++) {
@@ -3870,20 +3878,47 @@ ISC_STATUS GDS_START_TRANSACTION(ISC_STATUS * user_status,
  **************************************/
 	api_entry_point_init(user_status);
 
+	if (count < 1 || count > MAX_DB_PER_TRANS)
+	{
+		thread_db thd_context;
+		thread_db* tdbb = JRD_MAIN_set_thread_data(thd_context);
+		tdbb->tdbb_status_vector = user_status;
+		ERR_post_nothrow(isc_max_db_per_trans_allowed, isc_arg_number, MAX_DB_PER_TRANS, 0);
+		return error(user_status);
+	}
+
 	TEB tebs[16];
-	TEB* teb;
-	const TEB* end;
+	TEB* teb = tebs;
+
+	if (count > FB_NELEM(tebs))
+		teb = (TEB*) gds__alloc(((SLONG) sizeof(TEB) * count));
+	// FREE: later in this module
+
+	if (!teb) {					// NOMEM:
+		thread_db thd_context;
+		thread_db* tdbb = JRD_MAIN_set_thread_data(thd_context);
+		tdbb->tdbb_status_vector = user_status;
+		ERR_post_nothrow(isc_virmemexh, 0);
+		return error(user_status);
+	}
+
+	const TEB* const end = teb + count;
 	va_list ptr;
 	va_start(ptr, count);
 
-	for (teb = tebs, end = teb + count; teb < end; teb++) {
-		teb->teb_database = va_arg(ptr, Attachment**);
-		teb->teb_tpb_length = va_arg(ptr, int);
-		teb->teb_tpb = va_arg(ptr, UCHAR *);
+	for (TEB* teb_iter = teb; teb_iter < end; teb_iter++) {
+		teb_iter->teb_database = va_arg(ptr, Attachment**);
+		teb_iter->teb_tpb_length = va_arg(ptr, int);
+		teb_iter->teb_tpb = va_arg(ptr, UCHAR *);
 	}
 	va_end(ptr);
 
-	return GDS_START_MULTIPLE(user_status, tra_handle, count, tebs);
+	ISC_STATUS status = GDS_START_MULTIPLE(user_status, tra_handle, count, teb);
+	
+	if (teb != tebs)
+		gds__free(teb);
+		
+	return status;
 }
 
 
@@ -5434,33 +5469,34 @@ void DatabaseOptions::get(const UCHAR* dpb, USHORT dpb_length)
 			rdr.getString(dpb_set_db_charset);
 			break;
 
-		case isc_dpb_address_path: {
-			Firebird::ClumpletReader address_stack(Firebird::ClumpletReader::UnTagged, 
-				rdr.getBytes(), rdr.getClumpLength());
-			while (!address_stack.isEof()) {
-				if (address_stack.getClumpTag() != isc_dpb_address) {
-					address_stack.moveNext();
-					continue;
-				}
-				Firebird::ClumpletReader address(Firebird::ClumpletReader::UnTagged, 
-					address_stack.getBytes(), address_stack.getClumpLength());
-				while (!address.isEof()) {
-					switch (address.getClumpTag()) {
-						case isc_dpb_addr_protocol:
-							address.getString(dpb_network_protocol);
-							break;
-						case isc_dpb_addr_endpoint:
-							address.getString(dpb_remote_address);
-							break;
-						default:
-							break;
+		case isc_dpb_address_path:
+			{
+				Firebird::ClumpletReader address_stack(Firebird::ClumpletReader::UnTagged,
+					rdr.getBytes(), rdr.getClumpLength());
+				while (!address_stack.isEof()) {
+					if (address_stack.getClumpTag() != isc_dpb_address) {
+						address_stack.moveNext();
+						continue;
 					}
-					address.moveNext();
+					Firebird::ClumpletReader address(Firebird::ClumpletReader::UnTagged,
+						address_stack.getBytes(), address_stack.getClumpLength());
+					while (!address.isEof()) {
+						switch (address.getClumpTag()) {
+							case isc_dpb_addr_protocol:
+								address.getString(dpb_network_protocol);
+								break;
+							case isc_dpb_addr_endpoint:
+								address.getString(dpb_remote_address);
+								break;
+							default:
+								break;
+						}
+						address.moveNext();
+					}
+					break;
 				}
-				break;
 			}
 			break;
-		}
 
 		case isc_dpb_pid:
 			dpb_remote_pid = rdr.getInt();

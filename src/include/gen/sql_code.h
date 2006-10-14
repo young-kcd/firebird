@@ -574,6 +574,7 @@ static const struct {
 	{335544871, -901}, /* 551 domain_name                      */
 	{335544872, -219}, /* 552 domnotdef                        */
 	{335544873, -171}, /* 553 array_max_dimensions             */
+	{335544874, -901}, /* 554 max_db_per_trans_allowed         */
 	{335740929, -901}, /*   1 gfix_db_name                     */
 	{335740930, -901}, /*   2 gfix_invalid_sw                  */
 	{335740932, -901}, /*   4 gfix_incmp_sw                    */

@@ -5093,35 +5093,31 @@ ISC_STATUS API_ROUTINE_VARARG GDS_START_TRANSACTION(ISC_STATUS * user_status,
  *	Start a transaction.
  *
  **************************************/
-	TEB tebs[MAX_DB_PER_TRANS], *teb, *end;
-	ISC_STATUS status;
-	va_list ptr;
+	TEB tebs[16];
+	TEB* teb = tebs;
 
-	if (count <= FB_NELEM(tebs))
-		teb = tebs;
-	else
+	if (count > FB_NELEM(tebs))
 		teb = (TEB *) alloc((SLONG) (sizeof(struct teb) * count));
 
 	if (!teb) {
 		user_status[0] = isc_arg_gds;
-		user_status[1] = status = isc_virmemexh;
+		user_status[1] = isc_virmemexh;
 		user_status[2] = isc_arg_end;
-		return status;
+		return user_status[1];
 	}
 
-	end = teb + count;
+	const TEB* const end = teb + count;
+	va_list ptr;
 	va_start(ptr, count);
 
-	for (; teb < end; teb++) {
-		teb->teb_database = va_arg(ptr, FB_API_HANDLE*);
-		teb->teb_tpb_length = va_arg(ptr, int);
-		teb->teb_tpb = va_arg(ptr, UCHAR *);
+	for (TEB* teb_iter = teb; teb_iter < end; teb_iter++) {
+		teb_iter->teb_database = va_arg(ptr, FB_API_HANDLE*);
+		teb_iter->teb_tpb_length = va_arg(ptr, int);
+		teb_iter->teb_tpb = va_arg(ptr, UCHAR *);
 	}
 	va_end(ptr);
 
-	teb = end - count;
-
-	status = GDS_START_MULTIPLE(user_status, tra_handle, count, teb);
+	ISC_STATUS status = GDS_START_MULTIPLE(user_status, tra_handle, count, teb);
 
 	if (teb != tebs)
 		free_block(teb);

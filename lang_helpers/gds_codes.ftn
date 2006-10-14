@@ -1158,6 +1158,8 @@ C --
       PARAMETER (GDS__domnotdef                        = 335544872)
       INTEGER*4 GDS__array_max_dimensions            
       PARAMETER (GDS__array_max_dimensions             = 335544873)
+      INTEGER*4 GDS__max_db_per_trans_allowed        
+      PARAMETER (GDS__max_db_per_trans_allowed         = 335544874)
       INTEGER*4 GDS__gfix_db_name                    
       PARAMETER (GDS__gfix_db_name                     = 335740929)
       INTEGER*4 GDS__gfix_invalid_sw                 
