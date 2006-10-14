@@ -3891,10 +3891,12 @@ ISC_STATUS GDS_START_TRANSACTION(ISC_STATUS * user_status,
 	TEB* teb = tebs;
 
 	if (count > FB_NELEM(tebs))
+	{
 		teb = (TEB*) gds__alloc(((SLONG) sizeof(TEB) * count));
-	// FREE: later in this module
+		// FREE: later in this module
+	}
 
-	if (!teb) {					// NOMEM:
+	if (!teb) {		// NOMEM:
 		thread_db thd_context;
 		thread_db* tdbb = JRD_MAIN_set_thread_data(thd_context);
 		tdbb->tdbb_status_vector = user_status;
