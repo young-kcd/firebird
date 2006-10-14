@@ -1,3 +1,27 @@
+2006-10-14 03:29  robocop
+
+	* firebird2/: src/jrd/alt.cpp (1.62), src/jrd/constants.h (1.35),
+	src/jrd/jrd.cpp (1.274), src/jrd/why.cpp (1.115),
+	src/include/gen/codetext.h (1.52), src/include/gen/iberror.h
+	(1.53), src/include/gen/msgs.h (1.67), src/include/gen/rdb_codes.h
+	(1.50), src/include/gen/sql_code.h (1.55), src/msgs/facilities.sql
+	(1.85), src/msgs/messages.sql (1.99), src/msgs/system_errors.sql
+	(1.42), lang_helpers/gds_codes.ftn (1.44),
+	lang_helpers/gds_codes.pas (1.44):
+	
+	ApiGuide.pdf says a maximum of 16 databases is allowed for a
+	multi-db transaction. However, Ann agrees that a modern new,
+	sensible limit is 256 databases for start_transaction and
+	start_multiple.  Fixed a buffer overrun in jrd.cpp related to this.
+
+2006-10-14 03:20  robocop
+
+	* firebird2/builds/win32/msvc6/: engine.dsp (1.70),
+	engine_classic.dsp (1.66), engine_embed.dsp (1.45), intl.dsp
+	(1.36):
+	
+	Updating the VC6 build after Adriano's additions.
+
 2006-10-11 20:18  dimitr
 
 	* firebird2/src/jrd/Collation.cpp (1.2):
