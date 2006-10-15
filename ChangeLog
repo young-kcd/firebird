@@ -1,3 +1,15 @@
+2006-10-14 20:33  asfernandes
+
+	* firebird2/src/jrd/jrd.cpp (1.275):
+	
+	Misc
+
+2006-10-14 18:56  asfernandes
+
+	* firebird2/src/jrd/CsConvert.h (1.3):
+	
+	Simplify - thanks to Claudio
+
 2006-10-14 03:29  robocop
 
 	* firebird2/: src/jrd/alt.cpp (1.62), src/jrd/constants.h (1.35),
