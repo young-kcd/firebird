@@ -28,6 +28,7 @@
 #define TEXTTYPE_secondary_insensitive			0x08	/* Don't use secondary level for comparisions */
 #define TEXTTYPE_tertiary_insensitive			0x10	/* Don't use tertiary level for comparisions */
 #define TEXTTYPE_non_multi_level				0x20	/* Sortkey isn't more precise than equivalence class */
+#define TEXTTYPE_specials_first					0x40
 
 namespace
 {
@@ -40,7 +41,9 @@ namespace
 			  texttype_expand_table(NULL),
 			  texttype_compress_table(NULL),
 			  texttype_toupper_table(NULL),
-			  texttype_tolower_table(NULL)
+			  texttype_tolower_table(NULL),
+			  ignore_sum(0),
+			  primary_sum(0)
 		{
 		}
 
@@ -51,6 +54,8 @@ namespace
 		const BYTE* texttype_compress_table;
 		const BYTE* texttype_toupper_table;
 		const BYTE* texttype_tolower_table;
+		int ignore_sum;
+		int primary_sum;
 	};
 }
 
@@ -61,3 +66,33 @@ SSHORT LC_NARROW_compare(texttype* obj, ULONG l1, const BYTE* s1, ULONG l2, cons
 	INTL_BOOL* error_flag);
 ULONG LC_NARROW_canonical(texttype* obj, ULONG srcLen, const UCHAR* src, ULONG dstLen, UCHAR* dst);
 void LC_NARROW_destroy(texttype* obj);
+
+bool LC_NARROW_family2(
+	texttype* tt,
+	charset* cs,
+	SSHORT country,
+	USHORT flags,
+	const SortOrderTblEntry* noCaseOrderTbl,
+	const BYTE* toUpperConversionTbl,
+	const BYTE* toLowerConversionTbl,
+	const CompressPair* compressTbl,
+	const ExpandChar* expansionTbl,
+	const ASCII* name,
+	USHORT attributes,
+	const UCHAR* specificAttributes,
+	ULONG specificAttributesLength);
+
+bool LC_NARROW_family3(
+	texttype* tt,
+	charset* cs,
+	SSHORT country,
+	USHORT flags,
+	const SortOrderTblEntry* noCaseOrderTbl,
+	const BYTE* toUpperConversionTbl,
+	const BYTE* toLowerConversionTbl,
+	const CompressPair* compressTbl,
+	const ExpandChar* expansionTbl,
+	const ASCII* name,
+	USHORT attributes,
+	const UCHAR* specificAttributes,
+	ULONG specificAttributesLength);
