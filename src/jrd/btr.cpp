@@ -448,9 +448,10 @@ DSC* BTR_eval_expression(thread_db* tdbb, index_desc* idx, Record* record, bool 
 	// idx_expression_request to the same transaction twice
 	const bool already_attached = (expr_request->req_caller == expr_request);
 
-	if (tdbb->tdbb_request && !already_attached) {
-		TRA_attach_request(tdbb->tdbb_request->req_transaction, expr_request);
+	if (!already_attached) {
+		TRA_attach_request(tdbb->tdbb_transaction, expr_request);
 	}
+	fb_assert(expr_request->req_transaction);
 
 	tdbb->tdbb_request = expr_request;
 	tdbb->tdbb_request->req_rpb[0].rpb_record = record;
