@@ -746,6 +746,13 @@ static const struct {
 	{336397215, -104}, /* 927 dsql_max_sort_items              */
 	{336397216, -104}, /* 928 dsql_max_group_items             */
 	{336397217, -104}, /* 929 dsql_conflicting_sort_field      */
+	{336397218, -104}, /* 930 dsql_derived_table_more_columns  */
+	{336397219, -104}, /* 931 dsql_derived_table_less_columns  */
+	{336397220, -104}, /* 932 dsql_derived_field_unnamed       */
+	{336397221, -104}, /* 933 dsql_derived_field_dup_name      */
+	{336397222, -104}, /* 934 dsql_derived_alias_select        */
+	{336397223, -104}, /* 935 dsql_derived_alias_field         */
+	{336397224, -104}, /* 936 dsql_auto_field_bad_pos          */
 	{336723983, -901}, /*  15 gsec_cant_open_db                */
 	{336723984, -901}, /*  16 gsec_switches_error              */
 	{336723985, -901}, /*  17 gsec_no_op_spec                  */

@@ -1502,6 +1502,20 @@ C --
       PARAMETER (GDS__dsql_max_group_items             = 336397216)
       INTEGER*4 GDS__dsql_conflicting_sort_field     
       PARAMETER (GDS__dsql_conflicting_sort_field      = 336397217)
+      INTEGER*4 GDS__dsql_derived_table_more_columns 
+      PARAMETER (GDS__dsql_derived_table_more_columns  = 336397218)
+      INTEGER*4 GDS__dsql_derived_table_less_columns 
+      PARAMETER (GDS__dsql_derived_table_less_columns  = 336397219)
+      INTEGER*4 GDS__dsql_derived_field_unnamed      
+      PARAMETER (GDS__dsql_derived_field_unnamed       = 336397220)
+      INTEGER*4 GDS__dsql_derived_field_dup_name     
+      PARAMETER (GDS__dsql_derived_field_dup_name      = 336397221)
+      INTEGER*4 GDS__dsql_derived_alias_select       
+      PARAMETER (GDS__dsql_derived_alias_select        = 336397222)
+      INTEGER*4 GDS__dsql_derived_alias_field        
+      PARAMETER (GDS__dsql_derived_alias_field         = 336397223)
+      INTEGER*4 GDS__dsql_auto_field_bad_pos         
+      PARAMETER (GDS__dsql_auto_field_bad_pos          = 336397224)
       INTEGER*4 GDS__gsec_cant_open_db               
       PARAMETER (GDS__gsec_cant_open_db                = 336723983)
       INTEGER*4 GDS__gsec_switches_error             

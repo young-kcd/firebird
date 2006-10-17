@@ -4515,6 +4515,23 @@ static dsql_nod* pass1_derived_table(dsql_req* request, dsql_nod* input, bool pr
 	}
 	context->ctx_rse = node->nod_arg[e_derived_table_rse] = rse;
 
+	// CVC: prepare a truncated alias for the derived table here
+	// because we need it several times.
+	TEXT aliasbuffer[100] = "";
+	TEXT* aliasname = aliasbuffer;
+	if (alias) {
+		int length = alias->str_length;
+		if (length > 99) {
+			length = 99;
+			memcpy(aliasname, alias->str_data, length);
+			aliasname[length] = 0;
+		}
+		else
+			aliasname = alias->str_data;
+	}
+	else
+		aliasname = "<unnamed>";
+
 	// If an alias-list is specified process it.
 	const bool ignoreColumnChecks = (input->nod_flags & NOD_DT_IGNORE_COLUMN_CHECK);
 	if (node->nod_arg[e_derived_table_column_alias] &&
@@ -4522,40 +4539,19 @@ static dsql_nod* pass1_derived_table(dsql_req* request, dsql_nod* input, bool pr
 	{
 		dsql_nod* list = node->nod_arg[e_derived_table_column_alias];
 
-		// Have both lists the same number of items?
+		// Do both lists have the same number of items?
 		if (list->nod_count != rse->nod_arg[e_rse_items]->nod_count) {
 			// Column list by derived table %s [alias-name] has %s [more/fewer] columns
 			// than the number of items.
 			//
-			TEXT err_message[200], aliasname[100];
-			aliasname[0] = 0;
-			if (alias) {
-				int length = alias->str_length;
-				if (length > 99) {
-					length = 99;
-				}
-				const TEXT* src = alias->str_data;
-				TEXT* dest = aliasname;
-				for (; length; length--) {
-					*dest++ = *src++;
-				}
-				*dest = 0;
-			}
-			if (list->nod_count > rse->nod_arg[e_rse_items]->nod_count) {
-				sprintf (err_message, "list by derived table %s has more columns than the number of items.",
-					aliasname);
-			}
-			else {
-				sprintf (err_message, "list by derived table %s has fewer columns than the number of items.",
-					aliasname);
-			}
-			//
-			// !!! THIS MESSAGE SHOULD BE CHANGED !!!
-			//
+			int errcode = isc_dsql_derived_table_less_columns;
+			if (list->nod_count > rse->nod_arg[e_rse_items]->nod_count)
+				errcode = isc_dsql_derived_table_more_columns;
+
 			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
 					  isc_arg_gds, isc_dsql_command_err,
-					  isc_arg_gds, isc_field_name,
-					  isc_arg_string, err_message, 0);
+					  isc_arg_gds, errcode,
+					  isc_arg_string, aliasname, 0);
 		}
 
 		// Generate derived fields and assign alias-name to it.
@@ -4578,7 +4574,7 @@ static dsql_nod* pass1_derived_table(dsql_req* request, dsql_nod* input, bool pr
 			dsql_nod* select_item =
 				pass1_make_derived_field(request, tdsql, rse->nod_arg[e_rse_items]->nod_arg[count]);
 
-			// Auto-create dummy column name for pass_any()
+			// Auto-create dummy column name for pass1_any()
 			if (ignoreColumnChecks && (select_item->nod_type != nod_derived_field)) {
 				// Make new derived field node
 				dsql_nod* derived_field =
@@ -4605,20 +4601,17 @@ static dsql_nod* pass1_derived_table(dsql_req* request, dsql_nod* input, bool pr
 	}
 
 	int count;
-	// Check if all root select-items have an derived field else show a message.
+	// Check if all root select-items have a derived field else show a message.
 	for (count = 0; count < rse->nod_arg[e_rse_items]->nod_count; count++) {
 		const dsql_nod* select_item = rse->nod_arg[e_rse_items]->nod_arg[count];
 		if (select_item->nod_type != nod_derived_field) {
-			// No columnname specified for column number %d
-			//
-			// !!! THIS MESSAGE SHOULD BE CHANGED !!!
-			//
-            TEXT columnnumber[80];
-            sprintf (columnnumber, "%d is specified without a name", count + 1);
+			// no column name specified for column number %d in derived table %s
+
 			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
 					  isc_arg_gds, isc_dsql_command_err,
-					  isc_arg_gds, isc_field_name,
-					  isc_arg_string, columnnumber, 0);
+					  isc_arg_gds, isc_dsql_derived_field_unnamed,
+					  isc_arg_number, SLONG(count + 1),
+					  isc_arg_string, aliasname, 0);
 		}
 	}
 
@@ -4633,25 +4626,12 @@ static dsql_nod* pass1_derived_table(dsql_req* request, dsql_nod* input, bool pr
 			if (!strcmp(reinterpret_cast<const char*>(name1->str_data),
 				reinterpret_cast<const char*>(name2->str_data)))
 			{
-				// The column %s was specified multiple times for derived table %s
-				//
-				// !!! THIS MESSAGE SHOULD BE CHANGED !!!
-				//
-				TEXT columnnumber[80];
-				if (alias) {
-					sprintf (columnnumber,
-						"The column %s was specified multiple times for derived table %s",
-						name1->str_data, alias->str_data);
-				}
-				else {
-					sprintf (columnnumber,
-						"The column %s was specified multiple times for derived table %s",
-						name1->str_data, "unnamed");
-				}
+				// column %s was specified multiple times for derived table %s
 				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
 						  isc_arg_gds, isc_dsql_command_err,
-						  isc_arg_gds, isc_field_name,
-						  isc_arg_string, columnnumber, 0);
+						  isc_arg_gds, isc_dsql_derived_field_dup_name,
+						  isc_arg_string, name1->str_data,
+						  isc_arg_string, aliasname, 0);
 			}
 		}
 	}
@@ -4764,12 +4744,10 @@ static void pass1_expand_select_node(dsql_req* request, dsql_nod* node, DsqlNodS
 			dsql_nod* select_item = *ptr;
 			// select-item should always be a derived field!
 			if (select_item->nod_type != nod_derived_field) {
-				// Internal dsql error: alias type expected by exploding.
-				//
-				// !!! THIS MESSAGE SHOULD BE CHANGED !!!
-				//
+				// Internal dsql error: alias type expected by pass1_expand_select_node
 				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
-					  isc_arg_gds, isc_dsql_command_err, 0);
+					  isc_arg_gds, isc_dsql_command_err,
+					  isc_arg_gds, isc_dsql_derived_alias_select, 0);
 			}
 			stack.push(select_item);
 		}
@@ -5085,12 +5063,10 @@ static dsql_nod* pass1_field( dsql_req* request, dsql_nod* input,
 						}
 					}
 					else {
-						// Internal dsql error: alias type expected by field.
-						//
-						// !!! THIS MESSAGE SHOULD BE CHANGED !!!
-						//
+						// Internal dsql error: alias type expected by pass1_field
 						ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
-							  isc_arg_gds, isc_dsql_command_err, 0);
+							  isc_arg_gds, isc_dsql_command_err,
+							  isc_arg_gds, isc_dsql_derived_alias_field, 0);
 					}
 				}
 
@@ -8411,12 +8387,10 @@ static void pass1_union_auto_cast(dsql_nod* input, const dsc& desc,
 			if (in_select_list)
 			{
 				if ((position < 0) || (position >= input->nod_count)) {
-					// Internal dsql error: position out of range.
-					//
-					// !!! THIS MESSAGE SHOULD BE CHANGED !!!
-					//
+					// Internal dsql error: column position out of range in pass1_union_auto_cast
 					ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
-						  isc_arg_gds, isc_dsql_command_err, 0);
+						  isc_arg_gds, isc_dsql_command_err,
+						  isc_arg_gds, isc_dsql_auto_field_bad_pos, 0);
 				}
 				else {
 					dsql_nod* select_item = input->nod_arg[position];

@@ -758,6 +758,13 @@ const
 	gds_dsql_max_sort_items              = 336397215;
 	gds_dsql_max_group_items             = 336397216;
 	gds_dsql_conflicting_sort_field      = 336397217;
+	gds_dsql_derived_table_more_columns  = 336397218;
+	gds_dsql_derived_table_less_columns  = 336397219;
+	gds_dsql_derived_field_unnamed       = 336397220;
+	gds_dsql_derived_field_dup_name      = 336397221;
+	gds_dsql_derived_alias_select        = 336397222;
+	gds_dsql_derived_alias_field         = 336397223;
+	gds_dsql_auto_field_bad_pos          = 336397224;
 	gds_gsec_cant_open_db                = 336723983;
 	gds_gsec_switches_error              = 336723984;
 	gds_gsec_no_op_spec                  = 336723985;
