@@ -1,3 +1,13 @@
+2006-10-16 21:17  asfernandes
+
+	* firebird2/src/intl/: lc_iso8859_1.cpp (1.20), lc_iso8859_13.cpp
+	(1.4), lc_iso8859_2.cpp (1.15), lc_narrow.cpp (1.18), lc_narrow.h
+	(1.8):
+	
+	Implementation of collation attribute SPECIALS_FIRST for narrows
+	collations to sort specials characters in the primary level instead
+	of the last one. (CORE-202)
+
 2006-10-14 20:33  asfernandes
 
 	* firebird2/src/jrd/jrd.cpp (1.275):
