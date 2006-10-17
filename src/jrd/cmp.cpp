@@ -4915,15 +4915,15 @@ static jrd_nod* pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node
 			// SMB_SET uses ULONG, not USHORT
 			const ULONG id = (ULONG)(IPTR) node->nod_arg[e_fld_id];
 			SBM_SET(tdbb->getDefaultPool(), &csb->csb_rpt[stream].csb_fields, id);
-			if (node->nod_flags & nod_value) {
-				csb->csb_impure += sizeof(impure_value_ex);
-				break;
-			}
 		}
 		// FALL INTO
 
 	case nod_argument:
 	case nod_variable:
+		if (node->nod_flags & nod_value) {
+			csb->csb_impure += sizeof(impure_value_ex);
+			break;
+		}
 		csb->csb_impure += sizeof(dsc);
 		break;
 
