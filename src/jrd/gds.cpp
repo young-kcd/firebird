@@ -873,11 +873,13 @@ static SLONG safe_interpret(char* const s, const size_t bufsize,
 	case isc_arg_warning:
 	case isc_arg_gds:
 		{
+			while (arg < args + 5) // could be argend, but we only use up to args[4]
+			    *arg++ = 0;
+			    
 			USHORT fac = 0, dummy_class = 0;
 			const ISC_STATUS decoded = gds__decode(code, &fac, &dummy_class);
-			if (gds__msg_format(0, fac, (USHORT) decoded,
-								bufsize, s, args[0], args[1], args[2], args[3],
-								args[4]) < 0)
+			if (gds__msg_format(0, fac, (USHORT) decoded, bufsize, s,
+								args[0], args[1], args[2], args[3], args[4]) < 0)
 			{
 				bool found = false;
 
