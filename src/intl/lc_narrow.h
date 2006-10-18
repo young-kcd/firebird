@@ -22,13 +22,13 @@
  * Contributor(s): ______________________________________.
  */
 
-#define TEXTTYPE_reverse_secondary				0x01	/* Reverse order of secondary keys */
-#define TEXTTYPE_ignore_specials				0x02	/* Do not put special values in keys */
-#define TEXTTYPE_expand_before					0x04	/* Expansion weights before litagure */
-#define TEXTTYPE_secondary_insensitive			0x08	/* Don't use secondary level for comparisions */
-#define TEXTTYPE_tertiary_insensitive			0x10	/* Don't use tertiary level for comparisions */
-#define TEXTTYPE_non_multi_level				0x20	/* Sortkey isn't more precise than equivalence class */
-#define TEXTTYPE_specials_first					0x40
+#define TEXTTYPE_reverse_secondary				0x01	// Reverse order of secondary keys
+#define TEXTTYPE_ignore_specials				0x02	// Do not put special values in keys
+#define TEXTTYPE_expand_before					0x04	// Expansion weights before litagure
+#define TEXTTYPE_secondary_insensitive			0x08	// Don't use secondary level for comparisions
+#define TEXTTYPE_tertiary_insensitive			0x10	// Don't use tertiary level for comparisions
+#define TEXTTYPE_non_multi_level				0x20	// Sortkey isn't more precise than equivalence class
+#define TEXTTYPE_specials_first					0x40	// Sort special characters in the primary level
 
 namespace
 {
