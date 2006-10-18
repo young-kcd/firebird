@@ -1,3 +1,35 @@
+2006-10-17 14:55  dimitr
+
+	* firebird2/src/jrd/cmp.cpp (1.237):
+	
+	Fixed CORE-954.
+
+2006-10-17 13:03  hvlad
+
+	* firebird2/src/jrd/btr.cpp (1.181):
+	
+	Fixed CORE-952: AV when blob is used in expression index
+
+2006-10-17 08:23  robocop
+
+	* firebird2/src/jrd/gds.cpp (1.207):
+	
+	Avoid crashes due to mismatch in msg file (helps mostly while
+	developing).
+
+2006-10-17 08:03  robocop
+
+	* firebird2/: src/include/gen/codetext.h (1.53),
+	src/include/gen/iberror.h (1.54), src/include/gen/msgs.h (1.68),
+	src/include/gen/rdb_codes.h (1.51), src/include/gen/sql_code.h
+	(1.56), src/msgs/facilities.sql (1.86), src/msgs/messages.sql
+	(1.100), src/msgs/system_errors.sql (1.43),
+	lang_helpers/gds_codes.ftn (1.45), lang_helpers/gds_codes.pas
+	(1.45), src/dsql/pass1.cpp (1.294):
+	
+	Put into the msg file several hardcoded messages marked by Arno to
+	be localized.
+
 2006-10-16 21:17  asfernandes
 
 	* firebird2/src/intl/: lc_iso8859_1.cpp (1.20), lc_iso8859_13.cpp
