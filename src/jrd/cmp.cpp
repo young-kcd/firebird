@@ -4920,11 +4920,8 @@ static jrd_nod* pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node
 
 	case nod_argument:
 	case nod_variable:
-		if (node->nod_flags & nod_value) {
-			csb->csb_impure += sizeof(impure_value_ex);
-			break;
-		}
-		csb->csb_impure += sizeof(dsc);
+		csb->csb_impure += (node->nod_flags & nod_value) ?
+			sizeof(impure_value_ex) : sizeof(dsc);
 		break;
 
 	case nod_concatenate:
