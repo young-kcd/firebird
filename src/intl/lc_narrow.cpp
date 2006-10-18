@@ -893,6 +893,7 @@ bool LC_NARROW_family3(
 
 	IntlUtil::SpecificAttributesMap map;
 	Jrd::CharSet* charSet = NULL;
+	string newSpecificAttributes;
 
 	try
 	{
@@ -917,7 +918,7 @@ bool LC_NARROW_family3(
 			map.remove("MULTI-LEVEL");
 		}
 
-		string newSpecificAttributes = IntlUtil::generateSpecificAttributes(charSet, map);
+		newSpecificAttributes = IntlUtil::generateSpecificAttributes(charSet, map);
 		specificAttributes = (const UCHAR*)newSpecificAttributes.begin();
 		specificAttributesLength = newSpecificAttributes.length();
 
