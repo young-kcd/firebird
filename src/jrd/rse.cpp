@@ -2630,9 +2630,9 @@ static void invalidate_child_rpbs(thread_db* tdbb, RecordSource* rsb)
 			case rsb_recurse:
 				{
 					const USHORT streams = (USHORT)(U_IPTR) rsb->rsb_arg[rsb->rsb_count];
-					RecordSource** ptr = rsb->rsb_arg + rsb->rsb_count + 1;
+					RecordSource** ptr = rsb->rsb_arg;
 
-					for (const RecordSource* const* end = ptr + streams; ptr < end; ptr++) 
+					for (const RecordSource* const* end = ptr + streams; ptr < end; ptr += 2) 
 						invalidate_child_rpbs(tdbb, *ptr);
 				}
 				return;
