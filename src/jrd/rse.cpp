@@ -2384,6 +2384,12 @@ static bool get_record(thread_db*	tdbb,
 			}
 		}
 
+		// hvlad: self referenced members are removed from recursive SELECT's 
+		// in recursive CTE (it is done in dsql\pass1.cpp). If there are no other 
+		// members in such SELECT then rsb_count will be zero. Handle it 
+		else if (!rsb->rsb_count)
+			return false;
+
 		else if (!fetch_record(tdbb, rsb, rsb->rsb_count - 1
 #ifdef SCROLLABLE_CURSORS
 							   , mode
