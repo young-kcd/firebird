@@ -7944,9 +7944,6 @@ static dsql_nod* pass1_sort( dsql_req* request, dsql_nod* input, dsql_nod* selec
 	dsql_nod* node = MAKE_node(input->nod_type, input->nod_count);
 	dsql_nod** ptr2 = node->nod_arg;
 	
-	SSHORT collarray[MAX_SORT_ITEMS];
-	bool wascollation[MAX_SORT_ITEMS];
-
 	for (int sortloop = 0; sortloop < input->nod_count; sortloop++)
 	{
 		DEV_BLKCHK(input->nod_arg[sortloop], dsql_type_nod);
@@ -7994,53 +7991,14 @@ static dsql_nod* pass1_sort( dsql_req* request, dsql_nod* input, dsql_nod* selec
 			node1 = PASS1_node(request, node1, false);
 		}
 
-		bool got_collation = false;
-		SSHORT collate_id = 0;
 		if (collate) {
 			// finally apply collation order, if necessary
 			node1 = pass1_collate(request, node1, collate);
-			collate_id = DSC_GET_COLLATE(&node1->nod_desc);
-			got_collation = true;
 		}
 
-		const char* new_obj_name;
-		const char* new_fld_name;
-		const dsql_nod* new_nulls_placement = node2->nod_arg[e_order_nulls];
-
-		if (ptr2 > node->nod_arg &&
-			get_object_and_field(node1, &new_obj_name, &new_fld_name, got_collation))
-		{
-			for (const dsql_nod* const* check = node->nod_arg; check < ptr2; ++check)
-			{
-				const int pos = node->nod_arg - check;
-				const char* check_obj_name;
-				const char* check_fld_name;
-				const dsql_nod* check_nulls_placement = (*check)->nod_arg[e_order_nulls];
-
-				if (get_object_and_field((*check)->nod_arg[e_order_field],
-						&check_obj_name, &check_fld_name, wascollation[pos]) &&
-					strcmp(new_obj_name, check_obj_name) == 0 &&
-					strcmp(new_fld_name, check_fld_name) == 0 &&
-					(node2->nod_arg[e_order_flag] != (*check)->nod_arg[e_order_flag] ||
-					((new_nulls_placement == NULL) ^ (check_nulls_placement == NULL)) ||
-					new_nulls_placement && //check_nulls_placement && REDUNDANT
-					new_nulls_placement->nod_arg[0] != check_nulls_placement->nod_arg[0] ||
-					collate_id != collarray[pos]))
-				{
-					ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
-						isc_arg_gds, isc_dsql_conflicting_sort_field,
-						isc_arg_string, new_obj_name,
-						isc_arg_string, new_fld_name, 0);
-					// Cannot include the same field (%s.%s) twice in the ORDER BY clause with conflicting sorting options
-				}
-			}
-		}
-		
 		// store actual value to be ordered by
 		node2->nod_arg[e_order_field] = node1;
 		*ptr2++ = node2;
-		collarray[sortloop] = collate_id;
-		wascollation[sortloop] = got_collation;
 	}
 
 	return node;
