@@ -1,3 +1,39 @@
+2006-10-18 22:25  asfernandes
+
+	* firebird2/src/jrd/rse.cpp (1.123):
+	
+	Misc
+
+2006-10-18 11:21  hvlad
+
+	* firebird2/src/jrd/rse.cpp (1.122):
+	
+	Fixed bug in recursive CTE implementation
+
+2006-10-18 10:41  hvlad
+
+	* firebird2/src/jrd/rse.cpp (1.121):
+	
+	Fixed broken handling of recursive CTE's
+
+2006-10-18 10:03  dimitr
+
+	* firebird2/src/jrd/cmp.cpp (1.238):
+	
+	Simplified the code a bit.
+
+2006-10-18 05:19  asfernandes
+
+	* firebird2/src/intl/lc_narrow.h (1.9):
+	
+	Misc
+
+2006-10-18 05:14  asfernandes
+
+	* firebird2/src/intl/lc_narrow.cpp (1.19):
+	
+	Correction
+
 2006-10-17 14:55  dimitr
 
 	* firebird2/src/jrd/cmp.cpp (1.237):
