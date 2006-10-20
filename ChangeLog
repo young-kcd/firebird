@@ -1,3 +1,10 @@
+2006-10-19 07:12  robocop
+
+	* firebird2/src/dsql/pass1.cpp (1.295):
+	
+	Disable the duplicate field check for sort.  (But keep the check
+	for max items at 255.)
+
 2006-10-18 22:25  asfernandes
 
 	* firebird2/src/jrd/rse.cpp (1.123):
