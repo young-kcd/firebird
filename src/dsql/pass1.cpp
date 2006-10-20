@@ -7957,7 +7957,7 @@ static dsql_nod* pass1_sort( dsql_req* request, dsql_nod* input, dsql_nod* selec
 		node2->nod_arg[e_order_flag] = node1->nod_arg[e_order_flag]; // asc/desc flag
 		node2->nod_arg[e_order_nulls] = node1->nod_arg[e_order_nulls]; // nulls first/last flag
 
-		const dsql_str* collate = 0;
+		const dsql_str* collate = NULL;
 
 		// get node of value to be ordered by
 		node1 = node1->nod_arg[e_order_field];
