@@ -41,7 +41,7 @@
  *
  */
 /*
-$Id: inet.cpp,v 1.70.2.6 2004-10-20 17:25:14 dimitr Exp $
+$Id: inet.cpp,v 1.70.2.7 2006-10-23 13:05:43 paulbeach Exp $
 */
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -1610,7 +1610,11 @@ static PORT aux_connect(PORT port, PACKET* packet, XDR_INT (*ast)(void))
 /* If this is a server, we're got an auxiliary connection.  Accept it */
 
 	if (port->port_server_flags) {
+		
+		THREAD_EXIT;
 		n = accept(port->port_channel, (struct sockaddr *) &address, &l);
+		THREAD_ENTER;
+
 		if (n == INVALID_SOCKET) {
 			inet_error(port, "accept", isc_net_event_connect_err, ERRNO);
 			SOCLOSE(port->port_channel);
