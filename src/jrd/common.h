@@ -119,6 +119,10 @@
 #define IMPLEMENTATION  isc_info_db_impl_linux_amd64 /* 66  next higher unique number, See you later  */
 #endif
 
+#ifdef PPC
+#define IMPLEMENTATION  isc_info_db_impl_linux_ppc /* 69  next higher unique number, See you later  */
+#endif
+
 #ifdef i386
 #define I386
 #define IMPLEMENTATION  isc_info_db_impl_i386 /* 60  next higher unique number, See you later  */

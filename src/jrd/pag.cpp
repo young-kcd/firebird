@@ -147,9 +147,10 @@ static const int CLASS_DARWIN_PPC = 23;   // Darwin/PowerPC
 static const int CLASS_LINUX_AMD64 = 24;  // LINUX on AMD64 systems
 static const int CLASS_FREEBSD_AMD64 = 25;// FreeBSD/amd64
 static const int CLASS_WINDOWS_AMD64 = 26;// Windows/amd64
+static const int CLASS_LINUX_PPC = 27;    // LINUX/PowerPC
 
 static const int CLASS_MAX10 = CLASS_LINUX_AMD64;	// This should not be changed, no new ports with ODS10
-static const int CLASS_MAX = CLASS_WINDOWS_AMD64;
+static const int CLASS_MAX = CLASS_LINUX_PPC;
 
 // ARCHITECTURE COMPATIBILITY CLASSES
 
@@ -231,7 +232,8 @@ static ArchitectureType archMatrix[CLASS_MAX + 1] = {
 	archBigEndian,    // CLASS_DARWIN_PPC
 	archLittleEndian, // CLASS_LINUX_AMD64
 	archLittleEndian, // CLASS_FREEBSD_AMD64
-	archLittleEndian  // CLASS_WINDOWS_AMD64
+	archLittleEndian, // CLASS_WINDOWS_AMD64
+	archBigEndian     // CLASS_LINUX_PPC
 };
 
 #ifdef sun
@@ -239,6 +241,9 @@ static ArchitectureType archMatrix[CLASS_MAX + 1] = {
 const SSHORT CLASS		= CLASS_SOLARIS_I386;
 #else
 const SSHORT CLASS		= CLASS_SOLARIS_SPARC;
+#endif
+#ifdef PPC
+const SSHORT CLASS		= CLASS_LINUX_PPC;
 #endif
 #endif
 
