@@ -172,7 +172,7 @@ public:
 		}
 		else
 		{
-			USHORT len = (*cnvt1->csconvert_fn_convert)(
+			ULONG len = (*cnvt1->csconvert_fn_convert)(
 				cnvt1, srcLen, src, dstLen, dst, &errCode, &errPos);
 
 			if (len == INTL_BAD_STR_LENGTH)
