@@ -59,10 +59,10 @@ public:
 } //namespace Jrd
 
 
-#include "CsConvert.h"
-#include "Charset.h"
-#include "TextType.h"
-#include "Collation.h"
+#include "../jrd/CsConvert.h"
+#include "../jrd/CharSet.h"
+#include "../jrd/TextType.h"
+#include "../jrd/Collation.h"
 
 
 #endif	// JRD_INTL_CLASSES_H
