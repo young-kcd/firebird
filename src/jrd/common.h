@@ -116,7 +116,7 @@
 #define IEEE
 
 #ifdef AMD64
-#define IMPLEMENTATION  isc_info_db_impl_linux_amd64 /* 66  next higher unique number, See you later  */
+#define IMPLEMENTATION  isc_info_db_impl_linux_amd64 /* 66 */
 #endif
 
 #ifdef PPC
@@ -125,7 +125,7 @@
 
 #ifdef i386
 #define I386
-#define IMPLEMENTATION  isc_info_db_impl_i386 /* 60  next higher unique number, See you later  */
+#define IMPLEMENTATION  isc_info_db_impl_i386 /* 60 */
 #endif /* i386 */
 
 #ifdef sparc
