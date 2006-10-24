@@ -1,3 +1,30 @@
+2006-10-23 16:33  asfernandes
+
+	* firebird2/src/jrd/CsConvert.h (1.4):
+	
+	Fixed the problem found by Alex
+
+2006-10-23 13:48  alexpeshkoff
+
+	* firebird2/src/jrd/: common.h (1.141), inf_pub.h (1.14), pag.cpp
+	(1.115), utl.cpp (1.95):
+	
+	applied patch by Damyan Ivanov for PowepPC
+
+2006-10-23 13:43  alexpeshkoff
+
+	* firebird2/: builds/posix/prefix.linux_powerpc (1.1), configure.in
+	(1.246):
+	
+	applied patch by Damyan Ivanov for PowepPC
+
+2006-10-23 13:40  alexpeshkoff
+
+	* firebird2/: src/jrd/intl_classes.h (1.27),
+	builds/posix/make.shared.variables (1.67):
+	
+	fixed posix build
+
 2006-10-20 20:49  asfernandes
 
 	* firebird2/src/dsql/pass1.cpp (1.296):
