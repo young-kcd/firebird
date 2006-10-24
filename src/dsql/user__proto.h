@@ -81,7 +81,7 @@ ISC_STATUS API_ROUTINE isc_embed_dsql_fetch2_a(ISC_STATUS*, int*, const SCHAR*, 
 #endif
 
 ISC_STATUS API_ROUTINE isc_embed_dsql_insert(ISC_STATUS*, const SCHAR*, USHORT, XSQLDA*);
-void   API_ROUTINE isc_embed_dsql_length(UCHAR*, USHORT*);
+void   API_ROUTINE isc_embed_dsql_length(const UCHAR*, USHORT*);
 ISC_STATUS API_ROUTINE isc_embed_dsql_open(ISC_STATUS*, FB_API_HANDLE*, const SCHAR*, USHORT, XSQLDA*);
 ISC_STATUS API_ROUTINE isc_embed_dsql_open2(ISC_STATUS*, FB_API_HANDLE*, const SCHAR*, USHORT, XSQLDA*, XSQLDA*);
 ISC_STATUS API_ROUTINE isc_embed_dsql_prepare(ISC_STATUS*, FB_API_HANDLE*, FB_API_HANDLE*,
