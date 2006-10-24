@@ -142,6 +142,13 @@
       Contributor(s):
         Adriano dos Santos Fernandes <adrianosf at uol.com.br>
 
+    * Improvement CORE-863
+        INSERT without values
+      Example(s):
+        INSERT INTO <table> DEFAULT VALUES [RETURNING <values>]
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
     * Improvement CORE-970
         Show line/column numbers in PSQL error stack trace
       Contributor(s):
