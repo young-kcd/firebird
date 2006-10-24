@@ -5842,27 +5842,29 @@ static dsql_nod* pass1_insert( dsql_req* request, dsql_nod* input, bool proc_fla
 
 	// Match field fields and values
 
-	if (fields->nod_count != values->nod_count) {
-		// count of column list and value list don't match
-		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 804,
-				  isc_arg_gds, isc_dsql_var_count_err, 0);
-	}
-
 	DsqlNodStack stack;
 
-	dsql_nod** ptr = fields->nod_arg;
-	dsql_nod** ptr2 = values->nod_arg;
-	for (const dsql_nod* const* const end = ptr + fields->nod_count;
-		ptr < end; ptr++, ptr2++)
-	{
-		DEV_BLKCHK(*ptr, dsql_type_nod);
-		DEV_BLKCHK(*ptr2, dsql_type_nod);
-		dsql_nod* temp = MAKE_node(nod_assign, e_asgn_count);
-		temp->nod_arg[e_asgn_value] = *ptr2;
-		temp->nod_arg[e_asgn_field] = *ptr;
-		stack.push(temp);
-		temp = *ptr2;
-		set_parameter_type(request, temp, *ptr, false);
+	if (values) {
+		if (fields->nod_count != values->nod_count) {
+			// count of column list and value list don't match
+			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 804,
+					  isc_arg_gds, isc_dsql_var_count_err, 0);
+		}
+
+		dsql_nod** ptr = fields->nod_arg;
+		dsql_nod** ptr2 = values->nod_arg;
+		for (const dsql_nod* const* const end = ptr + fields->nod_count;
+			ptr < end; ptr++, ptr2++)
+		{
+			DEV_BLKCHK(*ptr, dsql_type_nod);
+			DEV_BLKCHK(*ptr2, dsql_type_nod);
+			dsql_nod* temp = MAKE_node(nod_assign, e_asgn_count);
+			temp->nod_arg[e_asgn_value] = *ptr2;
+			temp->nod_arg[e_asgn_field] = *ptr;
+			stack.push(temp);
+			temp = *ptr2;
+			set_parameter_type(request, temp, *ptr, false);
+		}
 	}
 
 	node->nod_arg[e_sto_statement] = MAKE_list(stack);

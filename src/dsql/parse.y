@@ -3396,10 +3396,13 @@ rows_clause	: ROWS value
 insert		: INSERT INTO simple_table_name ins_column_parens_opt
 				VALUES '(' value_list ')' returning_clause
 			{ $$ = make_node (nod_insert, (int) e_ins_count, 
-				$3, make_list ($4), make_list ($7), NULL, $9); }
+				$3, $4, make_list ($7), NULL, $9); }
 		| INSERT INTO simple_table_name ins_column_parens_opt select_expr
 			{ $$ = make_node (nod_insert, (int) e_ins_count,
 				$3, $4, NULL, $5, NULL); }
+		| INSERT INTO simple_table_name DEFAULT VALUES returning_clause
+			{ $$ = make_node (nod_insert, (int) e_ins_count,
+				$3, NULL, NULL, NULL, $6); }
 		;
 
 
