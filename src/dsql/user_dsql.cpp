@@ -530,11 +530,9 @@ ISC_STATUS API_ROUTINE isc_embed_dsql_fetch2_a(ISC_STATUS* user_status,
  *	Fetch next record from a dynamic SQL cursor (ADA version)
  *
  **************************************/
-	ISC_STATUS s;
-
 	*sqlcode = 0;
 
-	s =
+	ISC_STATUS s =
 		isc_embed_dsql_fetch2(user_status, cursor_name, dialect, sqlda,
 							  direction, offset);
 	if (s == 100)
@@ -560,14 +558,13 @@ ISC_STATUS API_ROUTINE isc_embed_dsql_insert(ISC_STATUS* user_status,
  *
  **************************************/
 	ISC_STATUS_ARRAY local_status;
-	stmt* statement;
 
 	INIT_DSQL(user_status, local_status);
 	try
 	{
 		// get the symbol table entry 
 
-		statement = lookup_stmt(cursor_name, cursor_names, NAME_cursor);
+		stmt* statement = lookup_stmt(cursor_name, cursor_names, NAME_cursor);
 
 		return isc_dsql_insert(user_status,
 						   &statement->stmt_handle,
@@ -643,18 +640,17 @@ ISC_STATUS API_ROUTINE isc_embed_dsql_open2(ISC_STATUS* user_status,
  *
  **************************************/
 	ISC_STATUS_ARRAY local_status;
-	stmt* stmt;
 
 	INIT_DSQL(user_status, local_status);
 	try
 	{
 		// get the symbol table entry 
 
-		stmt = lookup_stmt(cursor_name, cursor_names, NAME_cursor);
+		stmt* statement = lookup_stmt(cursor_name, cursor_names, NAME_cursor);
 
 		return isc_dsql_execute2(user_status,
 							 trans_handle,
-							 &stmt->stmt_handle,
+							 &statement->stmt_handle,
 							 dialect, in_sqlda, out_sqlda);
 	}
 	catch (const Firebird::Exception& ex)
@@ -684,7 +680,7 @@ ISC_STATUS API_ROUTINE isc_embed_dsql_prepare(ISC_STATUS*	user_status,
  *
  **************************************/
 	ISC_STATUS s;
-	ISC_STATUS_ARRAY local_status, local_status2;
+	ISC_STATUS_ARRAY local_status;
 	stmt* statement;
 	HNDL stmt_handle;
 
@@ -731,6 +727,7 @@ ISC_STATUS API_ROUTINE isc_embed_dsql_prepare(ISC_STATUS*	user_status,
 		// An error occurred.  Free any newly allocated statement handle. 
 
 		if (!statement) {
+			ISC_STATUS_ARRAY local_status2;
 			isc_dsql_free_statement(local_status2,
 									&stmt_handle,
 									DSQL_drop);
@@ -817,8 +814,6 @@ ISC_STATUS API_ROUTINE isc_embed_dsql_release(ISC_STATUS* user_status,
  *
  **************************************/
 	ISC_STATUS_ARRAY	local_status;
-	stmt**	stmt_ptr;
-	stmt* p;
 
 	INIT_DSQL(user_status, local_status);
 	try
@@ -844,7 +839,8 @@ ISC_STATUS API_ROUTINE isc_embed_dsql_release(ISC_STATUS* user_status,
 
 		// and remove this statement from the local list
 
-		for (stmt_ptr = &statements; p = *stmt_ptr; stmt_ptr = &p->stmt_next) {
+		stmt* p;
+		for (stmt** stmt_ptr = &statements; p = *stmt_ptr; stmt_ptr = &p->stmt_next) {
 			if (p == statement) {
 				*stmt_ptr = statement->stmt_next;
 				gds__free(statement);
@@ -1049,9 +1045,7 @@ ISC_STATUS API_ROUTINE isc_execute_immediate_d(ISC_STATUS* status_vector,
 										   SLONG* tra_handle,
 										   struct dsc$descriptor_s * string)
 {
-	USHORT len;
-
-	len = string->dsc$w_length;
+	USHORT len = string->dsc$w_length;
 
 	return isc_execute_immediate(status_vector,
 								 db_handle,
@@ -1116,9 +1110,7 @@ ISC_STATUS API_ROUTINE isc_prepare_d(ISC_STATUS* status_vector,
 								 struct dsc$descriptor_s * string,
 								 SQLDA* sqlda)
 {
-	USHORT len;
-
-	len = string->dsc$w_length;
+	USHORT len = string->dsc$w_length;
 
 	return isc_prepare(status_vector,
 					   db_handle,
@@ -1139,7 +1131,7 @@ int API_ROUTINE isc_to_sqlda(	SQLDA*	sqlda,
 								int		host_var_size,
 								SCHAR*	name)
 {
-// no longer supported 
+	// no longer supported
 	return 0;
 }
 
