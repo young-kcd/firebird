@@ -41,7 +41,7 @@
  *
  */
 /*
-$Id: inet.cpp,v 1.70.2.7 2006-10-23 13:05:43 paulbeach Exp $
+$Id: inet.cpp,v 1.70.2.8 2006-10-24 15:05:40 paulbeach Exp $
 */
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -1731,9 +1731,14 @@ static PORT aux_request( PORT port, PACKET * packet)
 		return NULL;
 	}
 
-	int optval;
-	setsockopt(n, SOL_SOCKET, SO_REUSEADDR,
-			   (SCHAR *) &optval, sizeof(optval));
+	int optval = TRUE;
+	int ret;
+	ret = setsockopt(n, SOL_SOCKET, SO_REUSEADDR,
+					(SCHAR *) &optval, sizeof(optval));
+	if (ret == -1) {
+		inet_error(port, "setsockopt REUSE", isc_net_event_listen_err, ERRNO);
+		return NULL;
+	}
 
 	if (bind(n, (struct sockaddr *) &address, sizeof(address)) < 0) {
 		inet_error(port, "bind", isc_net_event_listen_err, ERRNO);
