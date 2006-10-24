@@ -8,6 +8,11 @@
       Contributor(s):
         Paul Reeves <preeves at ibphoenix.com>
 
+    * Fixed RC4 bug (CORE-897)
+        Error "no current record to fetch" while execution a query
+      Contributor(s):
+        Arno Brinkman <firebird at abvisie.nl>
+
     * Fixed RC4 bug (CORE-924)
         An attempt to select DB_KEY from a procedure crashes the server
       Contributor(s):
