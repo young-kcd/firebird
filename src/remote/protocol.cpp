@@ -314,12 +314,6 @@ bool_t xdr_protocol(XDR* xdrs, PACKET* p)
 		MAP(xdr_cstring, connect->p_cnct_file);
 		MAP(xdr_short, reinterpret_cast<SSHORT&>(connect->p_cnct_count));
 
-		// report protocol failure in case of too many suggested versions
-		if (connect->p_cnct_count >= FB_NELEM(connect->p_cnct_versions))
-		{
-			return P_FALSE(xdrs, p);
-		}
-
 		MAP(xdr_cstring, connect->p_cnct_user_id);
 		for (i = 0, tail = connect->p_cnct_versions;
 			 i < connect->p_cnct_count; i++, tail++)
