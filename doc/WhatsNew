@@ -2,6 +2,11 @@
   * v2.1 Alpha 1
   **************
 
+    * More dependencies (unregistered)
+        Fixed untracked collation dependencies in PSQL
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
     * Bugfix CORE-870
         Engine crashes while trying to backup a logically corrupt database
       Contributor(s):
@@ -78,7 +83,7 @@
         Dmitry Yemanov <dimitr at firebirdsql.org>
 
     * Bugfix CORE-152
-        Sqlsubtype incorrect on timestamp math, constant arithmetic
+        Sqlsubtype incorrect on timestamp difference
       Contributor(s):
         Claudio Valderrama <cvalde at usa.net>
 
@@ -116,6 +121,7 @@
         Bad error message when tring to create a foreign key to a non-existent table
       Contributor(s):
         Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+        Claudio Valderrama <cvalde at usa.net>
 
     * Bugfix CORE-929
         Bug in a DSQL parameter being casted and used in arithmetics
@@ -148,7 +154,7 @@
         Adriano dos Santos Fernandes <adrianosf at uol.com.br>
 
     * Bugfix CORE-896
-        SUBSTRING with NULL offset or length don't return NULL
+        SUBSTRING with NULL offset or length doesn't return NULL
       Contributor(s):
         Adriano dos Santos Fernandes <adrianosf at uol.com.br>
 
@@ -180,7 +186,7 @@
     * Improvement CORE-779
         Introduced a type flag for stored procedures
       Note(s):
-        Column RDB$PROCEDURE_TYPE has been added to the table RDB#PROCEDURES.
+        Column RDB$PROCEDURE_TYPE has been added to the table RDB$PROCEDURES.
         Possible values are:
           - 0 or NULL - legacy procedure (no validation checks are performed)
           - 1 - selectable procedure (the one that contains a SUSPEND statement)
@@ -247,6 +253,13 @@
         Chinese character set GBK
       Contributor(s):
         Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Security fix (unregistered)
+        Tricky paths can allow a directory traversal attack bypassing config file
+        settings for DB creation dir, for example.
+      Contributor(s):
+        Claudio Valderrama <cvalde at usa.net>
+
 
     * Feature CORE-964
         Aggregate function LIST (string concatenation)
