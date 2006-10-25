@@ -242,9 +242,10 @@ const SSHORT CLASS		= CLASS_SOLARIS_I386;
 #else
 const SSHORT CLASS		= CLASS_SOLARIS_SPARC;
 #endif
+#endif
+
 #ifdef PPC
 const SSHORT CLASS		= CLASS_LINUX_PPC;
-#endif
 #endif
 
 #ifdef hpux
