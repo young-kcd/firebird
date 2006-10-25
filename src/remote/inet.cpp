@@ -19,8 +19,6 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * Added TCP_NO_DELAY option for superserver on Linux
- * FSG 16.03.2001
  *
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "EPSON" port
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "XENIX" port
@@ -140,11 +138,7 @@ const USHORT MAX_PTYPE	= ptype_batch_send;
 #else
 const USHORT MAX_PTYPE	= ptype_out_of_band;
 #endif
-#ifdef SMALL_FILE_NAMES
-const char* GDS_HOSTS_FILE	= "/etc/gdshosts.eqv";
-#else
 const char* GDS_HOSTS_FILE	= "/etc/gds_hosts.equiv";
-#endif
 #endif // VMS
 
 #ifdef WIN_NT
@@ -185,6 +179,14 @@ const char* GDS_HOSTS_FILE	= "/etc/gds_hosts.equiv";
 
 #ifndef ENOBUFS
 #define ENOBUFS	0
+#endif
+
+#ifndef FB_SEND_FLAGS
+#define FB_SEND_FLAGS 0
+#endif
+
+#ifndef FB_SETOPT_FLAGS
+#define FB_SETOPT_FLAGS 0
 #endif
 
 SLONG INET_remote_buffer;
@@ -287,7 +289,7 @@ static int fork(SOCKET, USHORT);
 #endif
 
 static in_addr get_bind_address();
-static in_addr get_host_address(const TEXT *);
+static in_addr get_host_address(const Firebird::string&);
 
 static void copy_p_cnct_repeat_array(	p_cnct::p_cnct_repeat*			pDest,
 										const p_cnct::p_cnct_repeat*	pSource,
@@ -505,7 +507,8 @@ rem_port* INET_analyze(Firebird::PathName& file_name,
 	static const p_cnct::p_cnct_repeat protocols_to_try1[] =
 	{
 		REMOTE_PROTOCOL(PROTOCOL_VERSION8, ptype_rpc, MAX_PTYPE, 1),
-		REMOTE_PROTOCOL(PROTOCOL_VERSION10, ptype_rpc, MAX_PTYPE, 2)
+		REMOTE_PROTOCOL(PROTOCOL_VERSION10, ptype_rpc, MAX_PTYPE, 2),
+		REMOTE_PROTOCOL(PROTOCOL_VERSION10, ptype_rpc, ptype_lazy_send, 3)
 #ifdef SCROLLABLE_CURSORS
 		,
 		REMOTE_PROTOCOL(PROTOCOL_SCROLLABLE_CURSORS, ptype_rpc, MAX_PTYPE, 3)
@@ -613,6 +616,10 @@ rem_port* INET_analyze(Firebird::PathName& file_name,
 		port->port_flags |= PORT_no_oob;
 	}
 
+	if (packet->p_acpt.p_acpt_type == ptype_lazy_send) {
+		port->port_flags |= PORT_lazy;
+	}
+
 	return port;
 }
 
@@ -659,39 +666,32 @@ rem_port* INET_connect(const TEXT* name,
 	ISC_tcp_setup(ISC_wait, gds__completion_ast);
 #endif
 
-	const TEXT* protocol = NULL;
-	TEXT temp[BUFFER_TINY];
+	Firebird::string host;
+	Firebird::string protocol;
 
 	if (name) {
-		strncpy(temp, name, sizeof(temp));
-		temp[sizeof(temp) - 1] = 0;
-		for (TEXT* p = temp; *p;) {
-			if (*p++ == '/') {
-				p[-1] = 0;
-				name = temp;
-				protocol = p;
-				break;
-			}
+		host = name;
+		const size_t pos = host.find("/");
+		if (pos != Firebird::string::npos) {
+			protocol = host.substr(pos + 1);
+			host = host.substr(0, pos);
 		}
 	}
 
-	if (name && *name) {
+	if (host.hasData()) {
 		if (port->port_connection) {
 			ALLR_free(port->port_connection);
 		}
-		port->port_connection = REMOTE_make_string(name);
+		port->port_connection = REMOTE_make_string(host.c_str());
 	}
 	else {
-		name = port->port_host->str_data;
+		host = port->port_host->str_data;
 	}
 
-	if (!protocol) {
+	if (protocol.isEmpty()) {
 		const unsigned short port2 = Config::getRemoteServicePort();
 		if (port2) {
-			// EKU: since temp is 128 byte long, the port number will always
-			// fit into the buffer, hence snprintf replaced with sprintf
-			sprintf(temp, "%hu", port2);
-			protocol = temp;
+			protocol.printf("%hu", port2);
 		}
 		else {
 			protocol = Config::getRemoteServiceName();
@@ -705,13 +705,13 @@ rem_port* INET_connect(const TEXT* name,
 
 #ifdef VMS
 	/* V M S */
-	if (getservport(protocol, "tcp", &address.sin_port) == -1) {
+	if (getservport(protocol.c_str(), "tcp", &address.sin_port) == -1) {
 		inet_error(port, "getservbyname", isc_net_connect_err, 0);
 		disconnect(port);
 		return NULL;
 	}
 	if (packet) {
-		if (getaddr(name, &address) == -1) {
+		if (getaddr(host.c_str(), &address) == -1) {
 			inet_error(port, "gethostbyname", isc_net_connect_err, 0);
 			disconnect(port);
 			return NULL;
@@ -732,13 +732,13 @@ rem_port* INET_connect(const TEXT* name,
 
 	if (packet) {
 		// client connection
-		host_addr = get_host_address(name);
+		host_addr = get_host_address(host);
 
 		if (host_addr.s_addr == INADDR_NONE)
 		{
 			SNPRINTF(msg, FB_NELEM(msg),
 					"INET/INET_connect: gethostbyname (%s) failed, error code = %d",
-					name, H_ERRNO);
+					host.c_str(), H_ERRNO);
 			gds__log(msg, 0);
 			inet_gen_error(port,
 						   isc_network_error,
@@ -762,7 +762,7 @@ rem_port* INET_connect(const TEXT* name,
 
 	THREAD_EXIT();
 
-	const struct servent* service = getservbyname(protocol, "tcp");
+	const struct servent* service = getservbyname(protocol.c_str(), "tcp");
 #ifdef WIN_NT
 /* On Windows NT/9x, getservbyname can only accomodate
  * 1 call at a time.  In this case it returns the error
@@ -773,7 +773,7 @@ rem_port* INET_connect(const TEXT* name,
 	if (!service) {
 		if (H_ERRNO == INET_RETRY_ERRNO) {
 			for (int retry = 0; retry < INET_RETRY_CALL; retry++) {
-				if ( (service = getservbyname(protocol, "tcp")) )
+				if ( (service = getservbyname(protocol.c_str(), "tcp")) )
 					break;
 			}
 		}
@@ -790,7 +790,7 @@ rem_port* INET_connect(const TEXT* name,
     for zero-installation clients.
     */
 	if (!service) {
-		if (strcmp(protocol, FB_SERVICE_NAME) == 0) {
+		if (protocol == FB_SERVICE_NAME) {
 			/* apply hardwired translation */
 			address.sin_port = htons(FB_SERVICE_PORT);
 		}
@@ -801,7 +801,7 @@ rem_port* INET_connect(const TEXT* name,
 			 * let's see whether this is a port number
 			 * instead of a service name
 			 */
-			address.sin_port = htons(atoi(protocol));
+			address.sin_port = htons(atoi(protocol.c_str()));
 		}
 
 		if (address.sin_port == 0)
@@ -821,7 +821,8 @@ rem_port* INET_connect(const TEXT* name,
 						   isc_arg_gds,
 						   isc_service_unknown,
 						   isc_arg_string,
-						   protocol, isc_arg_string, "tcp", 0);
+						   protocol.c_str(),
+						   isc_arg_string, "tcp", 0);
 			return NULL;
 		}						/* else / not hardwired gds_db translation */
 	}
@@ -1521,14 +1522,9 @@ static rem_port* aux_request( rem_port* port, PACKET* packet)
 		return NULL;
 	}
 
-	int optval = TRUE;
-	int ret;
-	ret = setsockopt(n, SOL_SOCKET, SO_REUSEADDR,
+	int optval;
+	setsockopt(n, SOL_SOCKET, SO_REUSEADDR,
 			   (SCHAR *) &optval, sizeof(optval));
-	if (ret == -1) {
-		inet_error(port, "setsockopt REUSE", isc_net_event_listen_err, ERRNO);
-		return NULL;
-	}
 
 	if (bind(n, (struct sockaddr *) &address, sizeof(address)) < 0) {
 		inet_error(port, "bind", isc_net_event_listen_err, INET_ERRNO);
@@ -1966,42 +1962,7 @@ static int fork( SOCKET old_handle, USHORT flag)
  *
  **************************************/
 	if (!INET_command_line[0]) {
-
-#ifdef CMDLINE_VIA_SERVICE_MANAGER
-
-		SC_HANDLE service;
-		SC_HANDLE manager = OpenSCManager(NULL, NULL, SC_MANAGER_CONNECT);
-		if (manager &&
-			(service =
-			 OpenService(manager, REMOTE_SERVICE, SERVICE_QUERY_CONFIG)))
-		{
-			SCHAR buffer[1024];
-			DWORD config_len;
-
-			LPQUERY_SERVICE_CONFIG config = (LPQUERY_SERVICE_CONFIG) buffer;
-			if (!QueryServiceConfig
-				(service, config, sizeof(buffer), &config_len))
-			{
-				THREAD_ENTER();
-				config = (LPQUERY_SERVICE_CONFIG) ALLR_alloc(config_len);
-				/* NOMEM: ALLR_alloc handled */
-				/* FREE:  later in this block */
-				QueryServiceConfig(service, config, config_len, &config_len);
-			}
-			strcpy(INET_command_line, config->lpBinaryPathName);
-			if ((SCHAR *) config != buffer) {
-				ALLR_free(config);
-				THREAD_EXIT();
-			}
-			CloseServiceHandle(service);
-		}
-		else {
-			strcpy(INET_command_line, GetCommandLine());
-		}
-		CloseServiceHandle(manager);
-#else
 		strcpy(INET_command_line, GetCommandLine());
-#endif
 		INET_p = INET_command_line + strlen(INET_command_line);
 	}
 
@@ -2010,7 +1971,7 @@ static int fork( SOCKET old_handle, USHORT flag)
 					GetCurrentProcess(), &new_handle, 0, TRUE,
 					DUPLICATE_SAME_ACCESS);
 
-	sprintf(INET_p, " -s -i -h %"SLONGFORMAT, (SLONG) new_handle);
+	sprintf(INET_p, " -i -h %"SLONGFORMAT, (SLONG) new_handle);
 	STARTUPINFO start_crud;
 	start_crud.cb = sizeof(STARTUPINFO);
 	start_crud.lpReserved = NULL;
@@ -2059,7 +2020,7 @@ static in_addr get_bind_address()
 	return config_address;
 }
 
-static in_addr get_host_address(const TEXT* name)
+static in_addr get_host_address(const Firebird::string& name)
 {
 /**************************************
  *
@@ -2075,11 +2036,11 @@ static in_addr get_host_address(const TEXT* name)
 
 	THREAD_EXIT();
 
-	address.s_addr = inet_addr(name);
+	address.s_addr = inet_addr(name.c_str());
 
 	if (address.s_addr == INADDR_NONE) {
 
-		const hostent* host = gethostbyname(name);
+		const hostent* host = gethostbyname(name.c_str());
 
 		/* On Windows NT/9x, gethostbyname can only accomodate
 		 * 1 call at a time.  In this case it returns the error
@@ -2092,7 +2053,7 @@ static in_addr get_host_address(const TEXT* name)
 		if (!host) {
 			if (H_ERRNO == INET_RETRY_ERRNO) {
 				for (int retry = 0; retry < INET_RETRY_CALL; retry++) {
-					if ( (host = gethostbyname(name)) )
+					if ( (host = gethostbyname(name.c_str())) )
 						break;
 				}
 			}
@@ -3591,6 +3552,7 @@ static int packet_receive(
 	return TRUE;
 }
 
+
 static bool_t packet_send( rem_port* port, const SCHAR* buffer, SSHORT buffer_length)
 {
 /**************************************
@@ -3610,6 +3572,7 @@ static bool_t packet_send( rem_port* port, const SCHAR* buffer, SSHORT buffer_le
 #else
 	const char* data = buffer;
 #endif
+
 	SSHORT length = buffer_length;
 
 	while (length) {
@@ -3621,7 +3584,7 @@ static bool_t packet_send( rem_port* port, const SCHAR* buffer, SSHORT buffer_le
 		}
 #endif
 		SSHORT n = -1;
-		n = send((SOCKET) port->port_handle, data, length, 0);
+		n = send((SOCKET) port->port_handle, data, length, FB_SEND_FLAGS);
 #ifdef DEBUG
 		if (INET_trace & TRACE_operations) {
 			fprintf(stdout, "After Send n is %d\n", n);
@@ -3662,7 +3625,7 @@ static bool_t packet_send( rem_port* port, const SCHAR* buffer, SSHORT buffer_le
 #else
 		const char* b = buffer;
 #endif
-		while ((n = send((SOCKET) port->port_handle, b, 1, MSG_OOB)) == -1 &&
+		while ((n = send((SOCKET) port->port_handle, b, 1, MSG_OOB | FB_SEND_FLAGS)) == -1 &&
 				(INET_ERRNO == ENOBUFS || INTERRUPT_ERROR(INET_ERRNO)))
 		{
 			if (count++ > 20) {
