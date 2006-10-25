@@ -244,10 +244,6 @@ const SSHORT CLASS		= CLASS_SOLARIS_SPARC;
 #endif
 #endif
 
-#ifdef PPC
-const SSHORT CLASS		= CLASS_LINUX_PPC;
-#endif
-
 #ifdef hpux
 const SSHORT CLASS		= CLASS_HPUX_PA;
 #endif
@@ -285,6 +281,8 @@ const SSHORT CLASS		= CLASS_LINUX_I386;
 const SSHORT CLASS		= CLASS_LINUX_SPARC;
 #elif defined(AMD64)
 const SSHORT CLASS		= CLASS_LINUX_AMD64;
+#elif defined(PPC)
+const SSHORT CLASS		= CLASS_LINUX_PPC;
 #else
 #error no support on other hardware for Linux
 #endif
