@@ -1,3 +1,18 @@
+2006-10-24 15:25  dimitr
+
+	* firebird2/doc/WhatsNew (1.95.2.22):
+	
+	Added the missing bugfix. Arno, sorry.
+
+2006-10-24 10:10  dimitr
+
+	* firebird2/src/remote/protocol.cpp (1.52.2.2):
+	
+	Removed incorrect fix that caused a server crash. As this rollback
+	cannot cause any regressions, RC6 is not required.  A proper
+	solution is already committed into HEAD and could be backported
+	into v2.0.1, if necessary.
+
 2006-10-10 14:12  georgy_sergeev
 
 	* firebird2/src/jrd/vio.cpp (1.151.2.1.2.2):
