@@ -164,6 +164,26 @@
       Contributor(s):
         Adriano dos Santos Fernandes <adrianosf at uol.com.br>
 
+    * Improvement CORE-976
+        Synchronization of DSQL metadata cache objects in classic-server
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Improvement CORE-977
+        Put blob charset in XSQLVAR::sqlscale
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Improvement CORE-979
+        Make RDB$DB_KEY in outer joins returns NULL when appropriate
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Improvement CORE-978
+        Extend ISQL SHOW SYSTEM command
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
     * Improvement CORE-863
         INSERT without values
       Example(s):
@@ -260,6 +280,11 @@
       Contributor(s):
         Adriano dos Santos Fernandes <adrianosf at uol.com.br>
 
+    * Feature CORE-975
+        Thai character set TIS620
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
     * Security fix (unregistered)
         Tricky paths can allow a directory traversal attack bypassing config file
         settings for DB creation dir, for example.
@@ -287,6 +312,7 @@
         2) UNICODE collation (charset_UNICODE) is available for all fbintl charsets
         3) Collation attributes
         4) CREATE/DROP COLLATION statements
+        5) SHOW COLLATION and collation extraction in ISQL
       Contributor(s):
         Adriano dos Santos Fernandes <adrianosf at uol.com.br>
 
