@@ -2,6 +2,16 @@
   * v2.1 Alpha 1
   **************
 
+    * Bugfix CORE-870
+        Engine crashes while trying to backup a logically corrupt database
+      Contributor(s):
+        Claudio Valderrama <cvalde at usa.net>
+
+    * Bugfix CORE-200
+        Empty column names with aggregate functions
+      Contributor(s):
+        Claudio Valderrama <cvalde at usa.net>
+
     * Bugfix CORE-967
         SQL with incorrect characters (outside the ASCII range) may be processed wrongly
       Contributor(s):
