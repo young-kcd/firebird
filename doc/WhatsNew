@@ -5,7 +5,8 @@
     * Bugfix CORE-966
        Bug in socket binding for database event.
 	Contributor(s):
-        Paul Beach <pbeach at ibphoenix.com> and Dmitry Yemanov <dimitr at firebirdsql.org>
+        Paul Beach <pbeach at ibphoenix.com>
+        Dmitry Yemanov <dimitr at firebirdsql.org>
 
     * More dependencies (unregistered)
         Fixed untracked collation dependencies in PSQL

@@ -1523,9 +1523,9 @@ static rem_port* aux_request( rem_port* port, PACKET* packet)
 	}
 
 	int optval = TRUE;
-	int ret;
-	ret = setsockopt(n, SOL_SOCKET, SO_REUSEADDR,
-			   (SCHAR *) &optval, sizeof(optval));
+	int ret = setsockopt(n, SOL_SOCKET, SO_REUSEADDR,
+						 (SCHAR *) &optval, sizeof(optval));
+
 	if (ret == -1) {
 		inet_error(port, "setsockopt REUSE", isc_net_event_listen_err, INET_ERRNO);
 		return NULL;
