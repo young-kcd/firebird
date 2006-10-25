@@ -1522,9 +1522,14 @@ static rem_port* aux_request( rem_port* port, PACKET* packet)
 		return NULL;
 	}
 
-	int optval;
-	setsockopt(n, SOL_SOCKET, SO_REUSEADDR,
+	int optval = TRUE;
+	int ret;
+	ret = setsockopt(n, SOL_SOCKET, SO_REUSEADDR,
 			   (SCHAR *) &optval, sizeof(optval));
+	if (ret == -1) {
+		inet_error(port, "setsockopt REUSE", isc_net_event_listen_err, INET_ERRNO);
+		return NULL;
+	}
 
 	if (bind(n, (struct sockaddr *) &address, sizeof(address)) < 0) {
 		inet_error(port, "bind", isc_net_event_listen_err, INET_ERRNO);
