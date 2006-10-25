@@ -1,6 +1,19 @@
+    * Backport fix for CORE-966
+        Bug in socket binding for database events.
+	Contributor(s):
+	  Paul Beach <pbeach at ibphoenix.com>
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Backport fix for CORE-157 and CORE-363.
+        Server hangs when a client registers events but the
+	  connection is not established.
+	Contributor(s):
+	  Paul Beach <pbeach at ibphoenix.com>
+        Alex Peshkov <peshkoff at mail.ru>
+
     * Fixed unregistered bugs.
-        Error not detected when buffer overflows in isql
-        Problems handling quoted strings
+      Error not detected when buffer overflows in isql
+      Problems handling quoted strings
 	Contributor(s):
 	  Paul Beach <pbeach at ibphoenix.com>
         Dimitry Sibiryakov <sd at topol.udm.net>
