@@ -1,3 +1,53 @@
+2006-10-25 17:41  asfernandes
+
+	* firebird2/doc/WhatsNew (1.102):
+	
+	Some more entries
+
+2006-10-25 17:09  asfernandes
+
+	* firebird2/: doc/WhatsNew (1.101), src/remote/inet.cpp (1.179):
+	
+	Misc
+
+2006-10-25 11:54  paulbeach
+
+	* firebird2/: doc/WhatsNew (1.100), src/remote/inet.cpp (1.178):
+	
+	Commit the right inet.cpp and fix for CORE-966
+
+2006-10-25 10:59  alexpeshkoff
+
+	* firebird2/src/jrd/pag.cpp (1.117):
+	
+	fixed one more bug in PowerPC patch
+
+2006-10-25 10:28  alexpeshkoff
+
+	* firebird2/src/jrd/pag.cpp (1.116):
+	
+	fixed bug in PowerPC patch, commited by me - thanks to Adriano
+
+2006-10-25 09:05  robocop
+
+	* firebird2/src/remote/inet.cpp (1.177):
+	
+	Undo Paul Beach's fix for CORE-966 in HEAD because the patch is
+	malformed and contains outdated code. Maybe it was intended for
+	v2.0.
+
+2006-10-25 09:02  robocop
+
+	* firebird2/doc/WhatsNew (1.99):
+	
+	I think these entries go into v2.1's WhatsNew, too.
+
+2006-10-25 08:22  dimitr
+
+	* firebird2/doc/WhatsNew (1.98):
+	
+	Update.
+
 2006-10-24 18:47  dimitr
 
 	* firebird2/doc/WhatsNew (1.97):
