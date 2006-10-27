@@ -1,8 +1,18 @@
   **************************
+  * v2.0 Final
+  **************************
+
+    * Fixed RC5 bug
+        Server crashes if being connected via gds32 from latest InterBase versions
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+        Alex Peshkov <peshkoff at mail.ru>
+
+  **************************
   * v2.0 Release Candidate 5
   **************************
 
-    * Fix unregistered bug.
+    * Fixed unregistered bug
         Win32 installer was trying to upgrade an existing Fb 1.5 install.
         This was the underlying cause of CORE-934
       Contributor(s):
@@ -143,13 +153,6 @@
         STARTS WITH not working properly on an indexed column with charset UTF8
       Contributor(s):
         Adriano dos Santos Fernandes <adrianosf at uol.com.br>
-
-    * Fixed unregistered bug
-        Don't crash if some bad client passes more than the supported number of
-        remote protocol versions
-      Contributor(s):
-        Aleksey Karyakin <karyakin at cmpmail.com>
-        Alex Peshkov <peshkoff at mail.ru>
 
     * Fixed unregistered bug
         TCP buffer size bigger than 32K cannot be processed correctly
