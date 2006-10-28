@@ -1,4 +1,4 @@
-Firebird Database Server 2.0 Release Candidate 5
+Firebird Database Server 2.0
 ==================================================
 
   ** IMPORTANT **
