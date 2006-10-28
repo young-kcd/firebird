@@ -1,3 +1,22 @@
+2006-10-27 12:31  paul_reeves
+
+	* firebird2/builds/install/arch-specific/win32/: Readme.txt
+	(1.9.2.4), installation_readme.txt (1.9.2.4):
+	
+	Bring Win32 readme docs up to date.
+
+2006-10-27 10:40  dimitr
+
+	* firebird2/src/jrd/isc_version.h (1.8.4.4):
+	
+	Update.
+
+2006-10-27 10:31  dimitr
+
+	* firebird2/doc/WhatsNew (1.95.2.23):
+	
+	Update.
+
 2006-10-25 08:05  georgy_sergeev
 
 	* firebird2/src/burp/restore.epp (1.101.4.1.2.1):
