@@ -1,3 +1,11 @@
+2006-10-28 17:34  asfernandes
+
+	*
+	firebird2/builds/install/arch-specific/win32/installation_readme.tx
+	t (1.9.2.5):
+	
+	Correction for final version
+
 2006-10-27 12:31  paul_reeves
 
 	* firebird2/builds/install/arch-specific/win32/: Readme.txt
