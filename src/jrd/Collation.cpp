@@ -436,7 +436,8 @@ Collation* Collation::createInstance(MemoryPool& pool, TTYPE_ID id, texttype* tt
 			break;
 	}
 
-	fb_assert(false);
+	fb_assert(false);	
+	return NULL;	// compiler silencer
 }
 
 
