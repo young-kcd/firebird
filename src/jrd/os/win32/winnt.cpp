@@ -212,7 +212,7 @@ jrd_file* PIO_create(Database* dbb, const Firebird::PathName& string, bool overw
 }
 
 
-int PIO_expand(const TEXT* file_name, USHORT file_length, TEXT* expanded_name,
+bool PIO_expand(const TEXT* file_name, USHORT file_length, TEXT* expanded_name,
 	size_t len_expanded)
 {
 /**************************************

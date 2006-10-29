@@ -41,7 +41,7 @@ iscProtocol	ISC_extract_host(Firebird::PathName&, Firebird::PathName&, bool);
 bool		ISC_expand_filename(Firebird::PathName&, bool);
 
 // This form of ISC_expand_filename makes epp files happy
-inline int	ISC_expand_filename(const TEXT* unexpanded, 
+inline bool	ISC_expand_filename(const TEXT* unexpanded, 
 								USHORT len_unexpanded, 
 								TEXT* expanded, 
 								size_t len_expanded, 
@@ -51,7 +51,7 @@ inline int	ISC_expand_filename(const TEXT* unexpanded,
 			len_unexpanded ? len_unexpanded : strlen(unexpanded));
 	ISC_expand_filename(pn, expand_share);
 	// What do I return here if the previous call returns false?
-	return pn.copyTo(expanded, len_expanded);
+	return (pn.copyTo(expanded, len_expanded) != 0);
 }
 
 #ifdef VMS
