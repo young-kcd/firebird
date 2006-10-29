@@ -16,34 +16,44 @@ o Neue Features vorschlagen
 Einführung
 ==========
 
-Herzlich willkommen zum ersten Beta Release von Firebird 2.0.
+Willkommen zu Firebird 2.0.
 
 
 Verwendungszweck
 ================
 
-Dieses Beta Release ist nicht für die Verwendung in einer
-Produktionsumgebung bestimmt. Es wurde der Öffentlichkeit zu
-Evaluierungszwecken zur Verfügung gestellt, und wird von
-erfahrenen Firebird Benutzern getestet. Es wird darauf
-vertraut, dass jeder Beta Tester zuerst die Release Notes
-liest.
+Firebird 2.0 wurde intensiven Tests unterzogen und ist nun für
+die breite Verwendung in Produktionsumgebungen bestimmt. Dennoch
+wird darauf hingewiesen, dass eine Standardvorgehen eingehalten
+wird, das wie folgt aussehen kann.
 
- o Installieren Sie diese Version NICHT, falls Sie Firebird vorher
-   noch nie verwendet haben.
-   Verwenden Sie stattdessen Firebird v1.5.2.
+ o Lesen Sie die Installation Liesmich und die Release
+   Notes.
+
+ o Wenn Sie wichtige Daten haben, vergessen Sie nicht,
+   vor dem Einsatz dieses Release ein Backup durchzuführen.
+   
+ o Es wird empfohlen, dass eine frühere Version vor der
+   Installation entfernt wird. Die Deinstallation entfernt
+   keine Konfigurations- oder Log-Dateien.
+
+ o Es wird empfohlen, dass Sie eigene Tests in einer
+   Entwicklungsumgebung durchführen, bevor es an eine
+   Produktionsumgebung weitergegeben wird.
+   
+   
 
 
 Features in diesem Release (alle Plattformen)
 =============================================
 
-Nähere Informationen gibt es in doc/Firebird_v2.0.ReleaseNotes.pdf.
+Nähere Informationen finden Sie in doc/Firebird_v2.0.0.ReleaseNotes.pdf.
 
 
 Beseitigte Fehler in diesem Release (alle Plattformen)
 ======================================================
 
-Nähere Informationen gibt es in doc/Firebird_v2.0.ReleaseNotes.pdf.
+Nähere Informationen finden Sie in doc/Firebird_v2.0.0.ReleaseNotes.pdf.
 
 
 Installation der selbst-installierenden Datei
@@ -56,14 +66,10 @@ begleitenden Hinweise im Setup-Wizard.
 Bekannte Probleme
 =================
 
- o Der Installationsprozess ist nicht in der Lage einen laufenden
-   Firebird 2.0 Server zu erkennen. Die Installation wird daher
-   fehlschlagen, wenn versucht wird, eine aktive Datei zu überschreiben.
-
- o Die Sicherheitsdatenbank hat sich geändert! Nähere Informationen zu
-   diesem Thema finden Sie im DOC Verzeichnis.
-   Benutzer, die eine bestehende Sicherheitsdatenbank migrieren möchten,
-   können dazu folgendes Skript verwenden: misc/upgrade/security
+ o Die Sicherheitsdatenbank hat sich geändert! Nähere Informationen
+   zu diesem Thema finden Sie im DOC Verzeichnis. Benutzer, die eine
+   bestehende Sicherheitsdatenbank migrieren möchten, können dazu
+   das Skript in misc/upgrade/security verwenden.
 
 
 Probleme melden
@@ -85,16 +91,15 @@ o Denken Sie nach wie vor, dass es sich um einen Fehler handelt?
   Überprüfen Sie die Liste der offenen Fehler. Diese kann hier
   gefunden werden:
 
-    http://prdownloads.sourceforge.net/firebird/Firebird_v1_OpenBugs.html
+    http://tracker.firebirdsql.org/secure/BrowseProject.jspa
 
-  Eine ältere Vesion befindet sich im doc Verzeichnis dieses Release.
+Verwenden Sie bitte den Issue Tracker nicht dazu, um technische
+Unterstützung zu erhalten. Wenn Sie sich nicht sicher sind, so
+treten Sie der Support-Liste bei:
 
-Ansonsten, wenn Sie sich sicher sind, dass es sich um
-einen Fehler handelt, dann versuchen Sie einen
-reproduzierbaren Testfall zu erstellen. Diesen können
-Sie dann dem Bug-Tracker hinzufügen.
-
-  http://sourceforge.net/tracker/?atid=109028&group_id=9028&func=browse
+  mailto:firebird-support-subscribe@yahoogroups.com
+  
+und stellen Sie Ihre Fragen dort.
 
 
 Neue Features vorschlagen
@@ -106,7 +111,7 @@ Die Chancen stehen gut, dass jemand bereits die selbe
 Idee hatte. Verwenden Sie diesen Link, um die aktuelle
 Liste einzusehen:
 
-  http://sourceforge.net/tracker/?atid=109028&group_id=9028&func=browse
+  http://tracker.firebirdsql.org/secure/CreateIssue!default.jspa
 
 
 
