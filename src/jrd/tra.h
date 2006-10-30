@@ -80,6 +80,8 @@ typedef Firebird::BePlusTree<BlobIndex, ULONG, MemoryPool, BlobIndex> BlobIndexT
 
 /* Transaction block */
 
+const int DEFAULT_LOCK_TIMEOUT = -1; // infinite
+
 class jrd_tra : public pool_alloc_rpt<SCHAR, type_tra>
 {
     public:
@@ -93,7 +95,8 @@ class jrd_tra : public pool_alloc_rpt<SCHAR, type_tra>
 		tra_blobs(&p),
 		tra_resources(p),
 		tra_context_vars(p),
-		tra_stats(p)
+		tra_stats(p),
+		tra_lock_timeout(DEFAULT_LOCK_TIMEOUT)
 	{}
 
 	Attachment* tra_attachment;	/* database attachment */

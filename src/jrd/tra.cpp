@@ -91,7 +91,6 @@ static const SCHAR lock_types[] =
 };
 #endif /* VMS */
 
-const int DEFAULT_LOCK_TIMEOUT = -1; // infinite
 static const SLONG MAX_TRA_NUMBER = MAX_SLONG;
 
 using namespace Jrd;
@@ -757,7 +756,6 @@ void TRA_init(thread_db* tdbb)
 
 	jrd_tra* trans = FB_NEW_RPT(*dbb->dbb_permanent, 0) jrd_tra(*dbb->dbb_permanent);
 	dbb->dbb_sys_trans = trans;
-	trans->tra_lock_timeout = DEFAULT_LOCK_TIMEOUT;
 	trans->tra_flags |= TRA_system | TRA_ignore_limbo;
 	trans->tra_pool = dbb->dbb_permanent;
 	trans->tra_stats.setParent(&dbb->dbb_stats);
@@ -995,7 +993,6 @@ jrd_tra* TRA_reconnect(thread_db* tdbb, const UCHAR* id, USHORT length)
 	jrd_tra* trans = FB_NEW_RPT(*tdbb->getDefaultPool(), 0) jrd_tra(*tdbb->getDefaultPool());
 	trans->tra_pool = tdbb->getDefaultPool();
 	trans->tra_number = gds__vax_integer(id, length);
-	trans->tra_lock_timeout = DEFAULT_LOCK_TIMEOUT;
 	trans->tra_flags |= TRA_prepared | TRA_reconnected | TRA_write;
 
 	const UCHAR state = limbo_transaction(tdbb, trans->tra_number);
@@ -2837,7 +2834,6 @@ static void transaction_options(
 	if (*tpb != isc_tpb_version3 && *tpb != isc_tpb_version1)
 		ERR_post(isc_bad_tpb_form, isc_arg_gds, isc_wrotpbver, 0);
 
-	transaction->tra_lock_timeout = DEFAULT_LOCK_TIMEOUT;
 	bool wait = true, lock_timeout = false;
 
 	++tpb;
