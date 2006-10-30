@@ -108,7 +108,7 @@ if "%ERRLEV%"=="1" goto :END
 @call create_msgs.bat msg
 ::=======
 @call :NEXT_STEP
-@goto END:
+@goto :END
 
 
 ::===================

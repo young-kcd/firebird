@@ -37,6 +37,7 @@ if DEFINED VS71COMNTOOLS (
 ) else (
 	call :DEBUG
 )
+@goto :EOF
 
 
 ::===========
