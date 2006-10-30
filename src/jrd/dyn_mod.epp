@@ -1515,6 +1515,7 @@ void DYN_modify_procedure( Global* gbl, const UCHAR** ptr)
 	bool found = false;
 	bool only_description = false;
 	prc_t prc_type = prc_legacy;
+	const UCHAR* debug_info_ptr = NULL;
 
 	try {
 
@@ -1604,6 +1605,11 @@ void DYN_modify_procedure( Global* gbl, const UCHAR** ptr)
 					P.RDB$SECURITY_CLASS.NULL = FALSE;
 					break;
 
+				case isc_dyn_debug_info:
+					debug_info_ptr = *ptr;
+					DYN_skip_blr_blob(ptr);
+					break;
+
 				default:
 					--(*ptr);
 					DYN_execute(gbl, ptr, NULL, NULL, NULL, NULL, &procedure_name);
@@ -1630,6 +1636,10 @@ void DYN_modify_procedure( Global* gbl, const UCHAR** ptr)
 
 					P.RDB$VALID_BLR = TRUE;
 					P.RDB$VALID_BLR.NULL = FALSE;
+
+					P.RDB$DEBUG_INFO.NULL = (debug_info_ptr == NULL) ? TRUE : FALSE;
+					if (debug_info_ptr)
+						DYN_put_blr_blob(gbl, &debug_info_ptr, &P.RDB$DEBUG_INFO);
 				END_MODIFY;
 			END_FOR;
 
@@ -1839,6 +1849,7 @@ void DYN_modify_trigger( Global* gbl, const UCHAR** ptr)
 	GET_STRING(ptr, trigger_name);
 	const UCHAR* source = NULL;
 	const UCHAR* blr = NULL;
+	const UCHAR* debug_info_ptr = NULL;
 
 	found = false;
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
@@ -1941,6 +1952,11 @@ void DYN_modify_trigger( Global* gbl, const UCHAR** ptr)
 						X.RDB$DESCRIPTION.NULL = TRUE;
 					break;
 
+			case isc_dyn_debug_info:
+				debug_info_ptr = *ptr;
+				DYN_skip_blr_blob(ptr);
+				break;
+
 				default:
 					--(*ptr);
 					DYN_execute(gbl, ptr, NULL, NULL, &trigger_name, NULL, NULL);
@@ -1963,6 +1979,10 @@ void DYN_modify_trigger( Global* gbl, const UCHAR** ptr)
 				MODIFY TRG USING
 					TRG.RDB$VALID_BLR = TRUE;
 					TRG.RDB$VALID_BLR.NULL = FALSE;
+
+					TRG.RDB$DEBUG_INFO.NULL = (debug_info_ptr == NULL) ? TRUE : FALSE;
+					if (debug_info_ptr)
+						DYN_put_blr_blob(gbl, &debug_info_ptr, &TRG.RDB$DEBUG_INFO);
 				END_MODIFY;
 			END_FOR;
 

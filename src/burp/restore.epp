@@ -4640,6 +4640,7 @@ bool get_procedure()
 			X.RDB$SYSTEM_FLAG = 0;
 			X.RDB$SYSTEM_FLAG.NULL = FALSE;
 			X.RDB$VALID_BLR.NULL = TRUE;
+			X.RDB$DEBUG_INFO.NULL = TRUE;
 		
 			skip_init(&scan_next_attr);
 			while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
@@ -4712,6 +4713,16 @@ bool get_procedure()
 					{
 						X.RDB$VALID_BLR.NULL = FALSE;
 						X.RDB$VALID_BLR = (USHORT) get_numeric();
+					}
+					else
+						bad_attribute (scan_next_attr, attribute, 290);
+					break;
+
+				case att_procedure_debug_info:
+					if (tdgbl->RESTORE_format >= 8)
+					{
+						X.RDB$DEBUG_INFO.NULL = FALSE;
+						get_misc_blob (&X.RDB$DEBUG_INFO, 9, true);
 					}
 					else
 						bad_attribute (scan_next_attr, attribute, 290);
@@ -6051,6 +6062,7 @@ bool get_trigger()
 			X.RDB$SYSTEM_FLAG.NULL = FALSE;
 			X.RDB$FLAGS.NULL = TRUE;
 			X.RDB$VALID_BLR.NULL = TRUE;
+			X.RDB$DEBUG_INFO.NULL = TRUE;
 
 			skip_init(&scan_next_attr);
 			while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
@@ -6120,6 +6132,16 @@ bool get_trigger()
 					{
 						X.RDB$VALID_BLR.NULL = FALSE;
 						X.RDB$VALID_BLR = (USHORT) get_numeric();
+					}
+					else
+						bad_attribute (scan_next_attr, attribute, 134);
+					break;
+
+				case att_trig_debug_info:
+					if (tdgbl->RESTORE_format >= 8)
+					{
+						X.RDB$DEBUG_INFO.NULL = FALSE;
+						get_misc_blob (&X.RDB$DEBUG_INFO, 9, true);
 					}
 					else
 						bad_attribute (scan_next_attr, attribute, 134);

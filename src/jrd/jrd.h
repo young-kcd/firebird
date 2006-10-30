@@ -94,6 +94,8 @@
 #include "../jrd/jrd_blks.h"
 #include "../include/fb_blk.h"
 
+#include "../jrd/blb.h"
+
 // Definition of DatabasePlugins
 #include "../jrd/flu.h"
 
@@ -649,6 +651,7 @@ public:
 class Trigger {
 public:
 	Firebird::HalfStaticArray<UCHAR, 128> blr;	// BLR code
+	bid			dbg_blob_id;					// RDB$DEBUG_INFO 
 	jrd_req*	request;					// Compiled request. Gets filled on first invocation
 	bool		compile_in_progress;
 	bool		sys_trigger;
@@ -659,7 +662,8 @@ public:
 	void compile(thread_db*);				// Ensure that trigger is compiled
 	void release(thread_db*);				// Try to free trigger request
 
-	explicit Trigger(MemoryPool& p) : blr(p), name(p) { }
+	explicit Trigger(MemoryPool& p) : blr(p), name(p) 
+	{ dbg_blob_id.clear(); }
 };
 
 typedef Firebird::ObjectsArray<Trigger> trig_vec;

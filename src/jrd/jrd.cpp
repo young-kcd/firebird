@@ -128,6 +128,7 @@
 #include "../jrd/IntlManager.h"
 #include "../common/classes/fb_tls.h"
 #include "../common/classes/ClumpletReader.h"
+#include "../jrd/DebugInterface.h"
 
 
 #ifdef GARBAGE_THREAD
@@ -222,8 +223,19 @@ void Jrd::Trigger::compile(thread_db* tdbb)
 
 		try {
 			Jrd::ContextPoolHolder context(tdbb, new_pool);
-			PAR_blr(tdbb, relation, blr.begin(),  NULL, NULL, &request, true,
+
+			Firebird::MapBlrToSrc csb_map;
+			if (!dbg_blob_id.isEmpty())
+				DBG_parse_debug_info(tdbb, &dbg_blob_id, csb_map);
+
+			CompilerScratch* csb = CompilerScratch::newCsb(*tdbb->getDefaultPool(), 5);
+			csb->csb_g_flags |= par_flags;
+			csb->csb_map_blr2src = &csb_map;
+
+			PAR_blr(tdbb, relation, blr.begin(),  NULL, &csb, &request, true,
 					par_flags);
+
+			delete csb;
 		}
 		catch (const Firebird::Exception&) {
 			compile_in_progress = false;

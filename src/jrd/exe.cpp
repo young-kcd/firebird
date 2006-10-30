@@ -2479,11 +2479,13 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 
 		case nod_src_info:
 			if (request->req_operation == jrd_req::req_evaluate) {
-				request->req_src_line = (USHORT) (IPTR) node->nod_arg[0];
-				request->req_src_column = (USHORT) (IPTR) node->nod_arg[1];
-				request->req_operation = jrd_req::req_return;
+				request->req_src_line = (USHORT) (IPTR) node->nod_arg[e_src_info_line];
+				request->req_src_column = (USHORT) (IPTR) node->nod_arg[e_src_info_col];
+				//request->req_operation = jrd_req::req_return;
+				node = node->nod_arg[e_src_info_node];
 			}
-			node = node->nod_parent;
+			else
+				node = node->nod_parent;
 			break;
 
 		default:
@@ -3286,9 +3288,9 @@ static void set_error(thread_db* tdbb, const xcp_repeat* exception, jrd_nod* msg
 			length = MIN(length, sizeof(message) - 1);
 
 			/* dimitr: or should we throw an error here, i.e.
-					   replace the above assignment with the following lines:
+					replace the above assignment with the following lines:
 
-			if (length > sizeof(message) - 1)
+			 if (length > sizeof(message) - 1)
 				ERR_post(isc_imp_exc, isc_arg_gds, isc_blktoobig, 0);
 			*/
 

@@ -3642,6 +3642,10 @@ static jrd_nod* pass1(thread_db* tdbb,
 		ignore_dbkey(tdbb, csb, (RecordSelExpr*) node->nod_arg[e_any_rse], view);
 		break;
 
+	case nod_src_info:
+		node->nod_arg[e_src_info_node] = pass1(tdbb, csb, node->nod_arg[2], view, view_stream, validate_expr);
+		return node;		
+
 	default:
 		break;
 
@@ -4756,6 +4760,10 @@ static jrd_nod* pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node
 			}
 		}
 		break;
+
+	case nod_src_info:
+		node->nod_arg[e_src_info_node] = pass2(tdbb, csb, node->nod_arg[2], node);
+		return node;
 
 	default:
 		break;

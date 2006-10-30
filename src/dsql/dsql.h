@@ -390,6 +390,12 @@ public:
 													const dsql_nod* prim_columns,
 													const char*	for_rel_name,
 													const dsql_nod* for_columns);
+
+	void	begin_debug();
+	void	end_debug();
+	void	put_debug_src_info(USHORT, USHORT);
+	void	put_debug_variable(USHORT, const TEXT*);
+	void	append_debug_info();
 	// end - member functions that should be private
 
 	dsql_req(DsqlMemoryPool& p) 
@@ -403,7 +409,8 @@ public:
 		req_cursors(p),
 		req_curr_ctes(p),
 		req_ctes(p),
-		req_cte_aliases(p) { }
+		req_cte_aliases(p),
+		req_debug_data(p)	{ }
 
 	dsql_req*	req_parent;		//!< Source request, if cursor update
 	dsql_req*	req_sibling;	//!< Next sibling request, if cursor update
@@ -460,6 +467,8 @@ public:
 	USHORT	req_client_dialect;	//!< dialect passed into the API call
 	USHORT	req_in_outer_join;	//!< processing inside outer-join part
 	dsql_str*		req_alias_relation_prefix;	//!< prefix for every relation-alias.
+
+	Firebird::HalfStaticArray<BLOB_PTR, 128> req_debug_data;
 
 	void addCTEs(dsql_nod* list);
 	dsql_nod* findCTE(const dsql_str* name);

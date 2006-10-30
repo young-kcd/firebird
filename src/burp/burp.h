@@ -372,6 +372,7 @@ enum att_type {
 	att_trig_description2,
 	att_trig_flags,
 	att_trig_valid_blr,
+	att_trig_debug_info,
 
 	// Function attributes 
 
@@ -458,6 +459,7 @@ enum att_type {
 	att_procedure_owner_name,
 	att_procedure_type,
 	att_procedure_valid_blr,
+	att_procedure_debug_info,
 
 	// Stored procedure parameter attributes 
 

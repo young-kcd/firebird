@@ -539,6 +539,7 @@
 #define isc_dyn_drop_difference           221
 #define isc_dyn_begin_backup              222
 #define isc_dyn_end_backup                223
+#define isc_dyn_debug_info                240
 
 /***********************/
 /* View specific stuff */
@@ -812,7 +813,7 @@
 /* Last $dyn value assigned */
 /****************************/
 
-#define isc_dyn_last_dyn_value            240
+#define isc_dyn_last_dyn_value            241
 
 /******************************************/
 /* Array slice description language (SDL) */
@@ -882,7 +883,8 @@
 #define isc_blob_format                   6
 #define isc_blob_tra                      7
 #define isc_blob_extfile                  8
-#define isc_blob_max_predefined_subtype   9
+#define isc_blob_debug_info               9
+#define isc_blob_max_predefined_subtype   10
 
 /* the range 20-30 is reserved for dBASE and Paradox types */
 
@@ -897,5 +899,14 @@
 #define isc_info_db_SQL_dialect           62
 #define isc_dpb_SQL_dialect               63
 #define isc_dpb_set_db_SQL_dialect        65
+
+/********************************************/
+/* Debug information items					*/
+/********************************************/
+
+#define fb_dbg_version				1
+#define fb_dbg_end					255
+#define fb_dbg_map_src2blr			2
+#define fb_dbg_map_varname			3
 
 #endif // ifndef INCLUDE_CONSTS_PUB_H

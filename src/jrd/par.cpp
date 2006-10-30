@@ -2420,6 +2420,7 @@ static jrd_nod* parse(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
  **************************************/
 	SET_TDBB(tdbb);
 
+	const USHORT blr_offset = csb->csb_running - csb->csb_blr;
 	const SSHORT blr_operator = BLR_BYTE;
 
 	if (blr_operator < 0 || blr_operator >= FB_NELEM(type_table)) {
@@ -2997,12 +2998,12 @@ static jrd_nod* parse(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 		node->nod_arg[e_seek_offset] = parse(tdbb, csb, VALUE);
 		break;
 #endif
-
+/*
 	case blr_src_info:
 		node->nod_arg[0] = (jrd_nod*) (IPTR) BLR_WORD;
 		node->nod_arg[1] = (jrd_nod*) (IPTR) BLR_WORD;
 		break;
-
+*/
 	default:
 		syntax_error(csb, elements[expected]);
 	}
@@ -3011,6 +3012,23 @@ static jrd_nod* parse(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 		node->nod_type = (NOD_T) (USHORT) blr_table4[(int) blr_operator];
 	else
 		node->nod_type = (NOD_T) (USHORT) blr_table[(int) blr_operator];
+
+	if (csb->csb_map_blr2src)
+	{
+		size_t pos = 0;
+		if (csb->csb_map_blr2src->find(blr_offset, pos))
+		{
+			Firebird::MapBlrToSrcItem& i = (*csb->csb_map_blr2src)[pos];
+			jrd_nod* node_src = PAR_make_node(tdbb, e_src_info_length);
+
+			node_src->nod_type = nod_src_info;
+			node_src->nod_arg[e_src_info_line] = (jrd_nod*) (IPTR) i.mbs_src_line;
+			node_src->nod_arg[e_src_info_col] = (jrd_nod*) (IPTR) i.mbs_src_col;
+			node_src->nod_arg[e_src_info_node] = node;
+
+			return node_src;
+		}
+	}
 
 	return node;
 }

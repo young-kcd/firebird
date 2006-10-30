@@ -1237,9 +1237,12 @@ void GEN_statement( dsql_req* request, dsql_nod* node)
 		return;
 
 	case nod_src_info:
+		request->put_debug_src_info(node->nod_line, node->nod_column);
+/*
 		stuff(request, blr_src_info);
 		stuff_word(request, node->nod_line);
 		stuff_word(request, node->nod_column);
+*/
 		return;
 
 	default:

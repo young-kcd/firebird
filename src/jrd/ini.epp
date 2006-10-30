@@ -677,6 +677,13 @@ void INI_init2(void)
 					if (ENCODE_ODS(major_version, minor_original) >= ODS_11_1)
 						n = init2_helper(fld, n, relation);
 				}
+				else if (fld[RFLD_F_NAME] == nam_debug_info &&
+						 (relfld[RFLD_R_NAME] == nam_trgs ||
+						  relfld[RFLD_R_NAME] == nam_procedures))
+				{
+					if (ENCODE_ODS(major_version, minor_original) >= ODS_11_1)
+						n = init2_helper(fld, n, relation);
+				}
 				else if ((fld[RFLD_F_NAME] == nam_default ||
 						  fld[RFLD_F_NAME] == nam_d_source ||
 						  fld[RFLD_F_NAME] == nam_collate_id /***||

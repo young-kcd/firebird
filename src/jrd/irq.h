@@ -120,7 +120,8 @@ const int irq_l_domain		= 82;		// lookup a domain
 const int irq_m_fields2		= 83;		// process a modification of RDB$FIELDS for procedures (ODS 11.1)
 const int irq_m_fields3		= 84;		// process a modification of RDB$FIELDS for triggers (ODS 11.1)
 const int irq_r_params2		= 85;		/* scan procedure parameters (ODS 11.1) */
+const int irq_l_trg_dbg		= 86;		// lookup trigger debug_info (ODS 11.1)
 
-const int irq_MAX			= 86;
+const int irq_MAX			= 87;
 
 #endif /* JRD_IRQ_H */

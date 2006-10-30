@@ -39,9 +39,12 @@ namespace Jrd {
    number of the first segment-clump.  The two types of blobs can be
    reliably distinguished by a zero or non-zero relation id. */
 
+class Attachment;
 class BlobControl;
+class jrd_rel;
 class jrd_req;
 class jrd_tra;
+class vcl;
 
 // This structure must occupy 8 bytes
 struct bid {

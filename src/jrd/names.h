@@ -229,6 +229,8 @@ NAME("RDB$STATE", nam_state)
 NAME("RDB$STATEMENT_ID", nam_stmt_id)
 NAME("RDB$SWEEP_INTERVAL", nam_sweep_int)
 
+NAME("RDB$DEBUG_INFO", nam_debug_info)
+
 NAME("MON$ATTACHMENTS", nam_mon_attachments)
 NAME("MON$ATTACHMENT_ID", nam_mon_att_id)
 NAME("MON$ATTACHMENT_NAME", nam_mon_att_name)

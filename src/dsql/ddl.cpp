@@ -2473,6 +2473,8 @@ static void define_procedure( dsql_req* request, NOD_TYPE op)
 		}
 	}
 
+	request->begin_debug();
+
 	const dsql_str* source = (dsql_str*) procedure_node->nod_arg[e_prc_source];
 	if (source)
 	{
@@ -2683,6 +2685,7 @@ static void define_procedure( dsql_req* request, NOD_TYPE op)
 		isc_dyn_prc_t_selectable : isc_dyn_prc_t_executable;
 	request->append_number(isc_dyn_prc_type, prc_type);
 
+	request->append_debug_info();
 	request->append_uchar(isc_dyn_end);
 }
 
@@ -3151,6 +3154,8 @@ static void define_trigger(dsql_req* request, NOD_TYPE op)
 		}
 	}
 
+	request->begin_debug();
+
 	const dsql_str* source = (dsql_str*) trigger_node->nod_arg[e_trg_source];
 	dsql_nod* actions = (trigger_node->nod_arg[e_trg_actions]) ?
 		trigger_node->nod_arg[e_trg_actions]->nod_arg[e_trg_act_body] : NULL;
@@ -3254,6 +3259,7 @@ static void define_trigger(dsql_req* request, NOD_TYPE op)
 		request->req_type = REQ_DDL;
 	}
 
+	request->append_debug_info();
 	request->append_uchar(isc_dyn_end);
 }
 
@@ -6027,6 +6033,9 @@ static void put_local_variable( dsql_req* request, dsql_var* variable,
 	}
 	request->append_uchar(blr_variable);
 	request->append_ushort(variable->var_variable_number);
+
+	request->put_debug_variable(variable->var_variable_number,
+		variable->var_name);
 }
 
 
@@ -6812,6 +6821,67 @@ void dsql_req::generate_unnamed_trigger_beginning(	bool		on_update_trigger,
 	append_uchar(2);
 	append_uchar(2);
 	append_uchar(blr_begin);
+}
+
+void dsql_req::begin_debug()
+{
+	fb_assert(!req_debug_data.getCount());
+
+	req_debug_data.add(fb_dbg_version);
+	req_debug_data.add(1);
+}
+
+void dsql_req::end_debug()
+{
+	req_debug_data.add(fb_dbg_end);
+}
+
+void dsql_req::put_debug_src_info(USHORT line, USHORT col)
+{
+	req_debug_data.add(fb_dbg_map_src2blr);
+
+	req_debug_data.add(line);
+	req_debug_data.add(line >> 8);
+
+	req_debug_data.add(col);
+	req_debug_data.add(col >> 8);
+
+	const ULONG offset = (req_blr_data.getCount() - req_base_offset) - 2;
+	req_debug_data.add(offset);
+	req_debug_data.add(offset >> 8);
+}
+
+void dsql_req::put_debug_variable(USHORT number, const TEXT* name)
+{
+	fb_assert(name);
+
+	req_debug_data.add(fb_dbg_map_varname);
+
+	req_debug_data.add(number);
+	req_debug_data.add(number >> 8);
+
+	const USHORT len = strlen(name);
+	fb_assert(len <= MAX_UCHAR);
+	req_debug_data.add(len);
+
+	while (*name) 
+		req_debug_data.add(*name++);
+}
+
+void dsql_req::append_debug_info()
+{
+	end_debug();
+
+	const size_t len = req_blr_data.getCount() + req_debug_data.getCount();
+	if (len + 4 < MAX_USHORT) 
+	{
+		append_uchar(isc_dyn_debug_info);
+		append_ushort( req_debug_data.getCount() );
+
+		const UCHAR *const end = req_debug_data.end();
+		for(UCHAR *c = req_debug_data.begin(); c < end; c++)
+			append_uchar(*c);
+	}
 }
 
 //

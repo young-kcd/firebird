@@ -49,6 +49,7 @@ TYPE("SUMMARY", 5, nam_f_sub_type)
 TYPE("FORMAT", 6, nam_f_sub_type)
 TYPE("TRANSACTION_DESCRIPTION", 7, nam_f_sub_type)
 TYPE("EXTERNAL_FILE_DESCRIPTION", 8, nam_f_sub_type)
+TYPE("DEBUG_INFORMATION", 9, nam_f_sub_type)
 
 TYPE("VALUE", 0, nam_fun_type)
 TYPE("BOOLEAN", 1, nam_fun_type)

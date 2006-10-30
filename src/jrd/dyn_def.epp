@@ -121,7 +121,6 @@ static void check_unique_name(thread_db*, Global*, const Firebird::MetaName&, bo
 static bool find_field_source(thread_db*, Global*, const Firebird::MetaName&, USHORT, const TEXT*, TEXT*);
 static bool get_who(thread_db*, Global*, Firebird::MetaName&);
 static bool is_it_user_name(Global*, const Firebird::MetaName&, thread_db*);
-static USHORT skip_blr_blob(const UCHAR** ptr);
 
 static rel_t get_relation_type(thread_db*, Global*, const Firebird::MetaName&);
 static void check_foreign_key_temp_scope(thread_db*, Global*, const TEXT*, const TEXT*);
@@ -2931,12 +2930,12 @@ void DYN_define_parameter( Global* gbl, const UCHAR** ptr, Firebird::MetaName* p
 
 			case isc_dyn_fld_default_value:
 				default_value_ptr = *ptr;
-				skip_blr_blob(ptr);
+				DYN_skip_blr_blob(ptr);
 				break;
 
 			case isc_dyn_fld_default_source:
 				default_source_ptr = *ptr;
-				skip_blr_blob(ptr);
+				DYN_skip_blr_blob(ptr);
 				break;
 
 			default:
@@ -3090,6 +3089,7 @@ void DYN_define_procedure( Global* gbl, const UCHAR** ptr)
 	check_unique_name(tdbb, gbl, procedure_name, true);
 	bool sql_prot = false;
 	prc_t prc_type = prc_legacy;
+	const UCHAR* debug_info_ptr = NULL;
 
 	request = CMP_find_request(tdbb, drq_s_prcs, DYN_REQUESTS);
 	id = drq_s_prcs;
@@ -3153,6 +3153,11 @@ void DYN_define_procedure( Global* gbl, const UCHAR** ptr)
 				sql_prot = (bool) DYN_get_number(ptr);
 				break;
 
+			case isc_dyn_debug_info:
+				debug_info_ptr = *ptr;
+				DYN_skip_blr_blob(ptr);
+				break;
+
 			default:
 				--(*ptr);
 				DYN_execute(gbl, ptr, NULL, NULL, NULL, NULL, &procedure_name);
@@ -3176,6 +3181,10 @@ void DYN_define_procedure( Global* gbl, const UCHAR** ptr)
 
 				P.RDB$VALID_BLR = TRUE;
 				P.RDB$VALID_BLR.NULL = FALSE;
+
+				P.RDB$DEBUG_INFO.NULL = (debug_info_ptr == NULL) ? TRUE : FALSE;
+				if (debug_info_ptr)
+					DYN_put_blr_blob(gbl, &debug_info_ptr, &P.RDB$DEBUG_INFO);
 			END_MODIFY;
 		END_FOR;
 
@@ -4127,6 +4136,7 @@ void DYN_define_trigger(Global*						gbl,
 	jrd_req* request = CMP_find_request(tdbb, drq_s_triggers, DYN_REQUESTS);
 
 	bool b_ending_store = false;
+	const UCHAR* debug_info_ptr = NULL;
 
 	try {
 
@@ -4220,6 +4230,11 @@ void DYN_define_trigger(Global*						gbl,
 					&& X.RDB$SYSTEM_FLAG == fb_sysflag_referential_constraint); */
 				break;
 
+			case isc_dyn_debug_info:
+				debug_info_ptr = *ptr;
+				DYN_skip_blr_blob(ptr);
+				break;
+
 			default:
 				--(*ptr);
 				MetaTmp(X.RDB$RELATION_NAME)
@@ -4255,6 +4270,10 @@ void DYN_define_trigger(Global*						gbl,
 			MODIFY TRG USING
 				TRG.RDB$VALID_BLR = TRUE;
 				TRG.RDB$VALID_BLR.NULL = FALSE;
+
+				TRG.RDB$DEBUG_INFO.NULL = (debug_info_ptr == NULL) ? TRUE : FALSE;
+				if (debug_info_ptr)
+					DYN_put_blr_blob(gbl, &debug_info_ptr, &TRG.RDB$DEBUG_INFO);
 			END_MODIFY;
 		END_FOR;
 
@@ -4736,33 +4755,6 @@ bool is_it_user_name(Global* gbl, const Firebird::MetaName& role_name, thread_db
 	}
 
 	return found;
-}
-
-
-static USHORT skip_blr_blob(const UCHAR** ptr)
-{
-/**************************************
- *
- *	s k i p _ b l r _ b l o b
- *
- **************************************
- *
- * Functional description
- *	Skip a blr blob.
- *
- **************************************/
-	const UCHAR* p = *ptr;
-	USHORT length = *p++;
-	length |= (*p++) << 8;
-
-	if (!length) {
-		*ptr = p;
-		return length;
-	}
-
-	*ptr = p + length;
-
-	return length;
 }
 
 

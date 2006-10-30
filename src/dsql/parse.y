@@ -1580,8 +1580,11 @@ proc_block	: proc_statement
 		| full_proc_block
 		;
 
-full_proc_block	: BEGIN full_proc_block_body END
-			{ $$ = $2; }
+full_proc_block	: stmt_start_line stmt_start_column BEGIN full_proc_block_body END
+			{ 
+				dsql_nod* src_info = make_node (nod_src_info, 2, $1, $2);
+				$$ = make_node (nod_list, 2, src_info, $4); 
+			}
 		;
 
 full_proc_block_body	: proc_statements

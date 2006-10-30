@@ -56,6 +56,8 @@ typedef nod_t NOD_T;
 #include "../jrd/scl.h"
 #include "../jrd/sbm.h"
 
+#include "../jrd/DebugInterface.h"
+
 // This macro enables DSQL tracing code
 //#define CMP_DEBUG
 
@@ -476,6 +478,12 @@ const int e_trim_specification	= 2;
 const int e_trim_count			= 2;
 const int e_trim_length			= 3;
 
+// nod_src_info
+const int e_src_info_line			= 0;
+const int e_src_info_col			= 1;
+const int e_src_info_node			= 2;
+const int e_src_info_length			= 3;
+
 // Request resources
 
 struct Resource
@@ -673,6 +681,7 @@ public:
 	SLONG			csb_impure;			/* Next offset into impure area */
 	USHORT			csb_g_flags;
 	MemoryPool&		csb_pool;				/* Memory pool to be used by csb */
+	Firebird::MapBlrToSrc*	csb_map_blr2src;	// mapping between blr offsets and source text position
 
     struct csb_repeat
 	{

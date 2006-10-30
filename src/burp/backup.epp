@@ -3459,6 +3459,8 @@ void write_procedures(void)
 				put_numeric (att_procedure_type, X.RDB$PROCEDURE_TYPE);
 			if (!X.RDB$VALID_BLR.NULL)
 				put_numeric (att_procedure_valid_blr, X.RDB$VALID_BLR);
+			if (!X.RDB$DEBUG_INFO.NULL)
+				put_blr_blob (att_procedure_debug_info, &X.RDB$DEBUG_INFO);
 			put(tdgbl, att_end);
 			COPY(X.RDB$PROCEDURE_NAME, proc);
 			write_procedure_prms (proc);
@@ -3979,6 +3981,9 @@ void write_triggers(void)
 
 			if (!(X.RDB$VALID_BLR.NULL))
 				put_numeric (att_trig_valid_blr, X.RDB$VALID_BLR);
+
+			if (!X.RDB$DEBUG_INFO.NULL)
+				put_blr_blob (att_trig_debug_info, &X.RDB$DEBUG_INFO);
 			
 			put(tdgbl, att_end);
 

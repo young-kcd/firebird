@@ -756,3 +756,29 @@ void DYN_UTIL_copy_domain(thread_db* tdbb,
 	}
 }
 
+
+USHORT DYN_skip_blr_blob(const UCHAR** ptr)
+{
+/**************************************
+ *
+ *	D Y N _ s k i p _ b l r _ b l o b
+ *
+ **************************************
+ *
+ * Functional description
+ *	Skip a blr blob.
+ *
+ **************************************/
+	const UCHAR* p = *ptr;
+	USHORT length = *p++;
+	length |= (*p++) << 8;
+
+	if (!length) {
+		*ptr = p;
+		return length;
+	}
+
+	*ptr = p + length;
+
+	return length;
+}
