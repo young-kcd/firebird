@@ -194,10 +194,11 @@ void DatabaseSnapshot::SharedMemory::garbageCollect(thread_db* tdbb, bool self)
 	temp_lock->lck_dbb = dbb;
 
 	// Parse the data and remove all garbage clumplets
-	bool garbage_collect = false;
 
 	while (!reader.isEof())
 	{
+		bool garbage_collect = false;
+
 		if (reader.getClumpTag() == TAG_DBB)
 		{
 			FB_GUID guid;
@@ -206,7 +207,7 @@ void DatabaseSnapshot::SharedMemory::garbageCollect(thread_db* tdbb, bool self)
 
 			// Is this our own dbb instance?
 			const bool our_dbb =
-				!memcmp(&guid, &dbb->dbb_guid, sizeof(FB_GUID));
+				memcmp(&guid, &dbb->dbb_guid, sizeof(FB_GUID)) == 0;
 
 			if (self)
 			{
