@@ -65,9 +65,6 @@
 
 #pragma warning(disable:4996)  // 'identificator' was declared deprecated
 
-#ifndef _X86_
-#define _X86_
-#endif
 
 #define WIN32_LEAN_AND_MEAN		// Exclude rarely-used stuff from Windows headers
 
@@ -180,21 +177,38 @@
 #undef _FILE_OFFSET_BITS
 #undef _LARGE_FILES
 
-/* sizeof(void *) = 8 ==> HAS_64BIT_POINTERS */
+/* target architecture */
+#if defined(_M_IX86)
+#ifndef _X86_
+#define _X86_
+#endif
+/* sizeof(void *) */
 #define SIZEOF_VOID_P 4
+/* alignment of long */
+#define ALIGNMENT 4
+#elif defined(_M_AMD64)
+#ifndef _AMD64_
+#define _AMD64_
+#endif
+/* sizeof(void *) */
+#define SIZEOF_VOID_P 8
+/* alignment of long */
+#define ALIGNMENT 8
+#else
+#error unknown target platform
+#endif
+
+/* sizeof(long) */
 #define SIZEOF_LONG 4
+
+/* alignment of double */
+#define DOUBLE_ALIGN 8
 
 /* Is union semun defined? */
 #undef HAVE_SEMUN
 
 /* Is struct xdr_ops defined? */
 #undef HAVE_STRUCT_XDR_OPS
-
-/* alignment of long */
-#define ALIGNMENT 4
-
-/* alignment of double */
-#define DOUBLE_ALIGN 8
 
 /* Functions */
 #define snprintf _snprintf
