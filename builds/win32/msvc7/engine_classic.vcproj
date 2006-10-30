@@ -175,6 +175,9 @@
 				RelativePath="..\..\..\src\jrd\DataTypeUtil.cpp">
 			</File>
 			<File
+				RelativePath="..\..\..\src\jrd\DebugInterface.cpp">
+			</File>
+			<File
 				RelativePath="..\..\..\gen\jrd\dfw.cpp">
 			</File>
 			<File
@@ -528,6 +531,9 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\dbg_proto.h">
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\DebugInterface.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\dflt.h">
