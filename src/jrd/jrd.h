@@ -47,6 +47,7 @@
 #include "../common/classes/stack.h"
 #include "../common/classes/timestamp.h"
 #include "../common/classes/GenericMap.h"
+#include "../jrd/os/guid.h"
 #include "../jrd/sbm.h"
 
 #ifdef DEV_BUILD
@@ -185,6 +186,8 @@ public:
 	BufferControl*	dbb_bcb;			// Buffer control block
 	vec<jrd_rel*>*	dbb_relations;		// relation vector
 	vec<jrd_prc*>*	dbb_procedures;		// scanned procedures
+	FB_GUID		dbb_guid;				// dbb instance identifier
+	Lock*		dbb_instance_lock;		// dbb instance lock
 	Lock* 		dbb_lock;				// granddaddy lock
 	jrd_tra*	dbb_sys_trans;			// system transaction
 //	jrd_file*	dbb_file;				// files for I/O operations
@@ -376,6 +379,7 @@ const UATOM DBB_shut_force			= 0x40L;	// forced shutdown in progress
 const UATOM DBB_shutdown_locks		= 0x80L;	// Database locks release by shutdown
 const UATOM DBB_shutdown_full		= 0x100L;	// Database fully shut down
 const UATOM DBB_shutdown_single		= 0x200L;	// Database is in single-user maintenance mode
+const UATOM DBB_monitor_off			= 0x400L;	// Database has the monitoring lock released
 
 //
 // Database attachments

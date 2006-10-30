@@ -929,8 +929,8 @@ ISC_STATUS SVC_query2(Service* service,
 		case isc_info_svc_svr_db_info:
 			{
 				UCHAR dbbuf[1024];
-				USHORT num_dbs = 0;
-				USHORT num_att = 0;
+				ULONG num_dbs = 0;
+				ULONG num_att = 0;
 
 				*info++ = item;
 				TEXT* const ptr =
@@ -1377,8 +1377,8 @@ void SVC_query(Service*		service,
 #ifdef SERVER_SHUTDOWN
 		case isc_info_svc_svr_db_info:
 			{
-				USHORT num_att = 0;
-				USHORT num_dbs = 0;
+				ULONG num_att = 0;
+				ULONG num_dbs = 0;
 				JRD_num_attachments(NULL, 0, 0, &num_att, &num_dbs);
 				length = INF_convert(num_att, buffer);
 				info = INF_put_item(item,

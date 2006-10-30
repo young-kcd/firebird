@@ -322,12 +322,6 @@ enum fids {
 	f_mon_db_res_space,
 	f_mon_db_created,
 	f_mon_db_pages,
-	f_mon_db_cur_mem,
-	f_mon_db_max_mem,
-	f_mon_db_page_reads,
-	f_mon_db_page_writes,
-	f_mon_db_page_fetches,
-	f_mon_db_page_marks,
 
 	f_mon_att_id = 0,
 	f_mon_att_server_pid,
@@ -361,9 +355,5 @@ enum fids {
 	f_mon_stmt_state,
 	f_mon_stmt_timestamp,
 	f_mon_stmt_caller_id,
-	f_mon_stmt_sql_text,
-	f_mon_stmt_rec_selects,
-	f_mon_stmt_rec_inserts,
-	f_mon_stmt_rec_updates,
-	f_mon_stmt_rec_deletes
+	f_mon_stmt_sql_text
 };

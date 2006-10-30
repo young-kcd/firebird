@@ -24,13 +24,56 @@
 #define JRD_DATABASE_SNAPSHOT_H
 
 #include "../common/classes/array.h"
+#include "../common/classes/ClumpletReader.h"
+#include "../common/classes/ClumpletWriter.h"
 
 namespace Jrd {
 
-class DatabaseSnapshot  {
+class DatabaseSnapshot {
 	struct RelationData {
 		int rel_id;
 		RecordBuffer* data;
+	};
+
+	class SharedMemory {
+		static const size_t VERSION;
+		static const size_t DEFAULT_SIZE;
+		static const size_t SEMAPHORES;
+
+		struct Header {
+			size_t version;
+			size_t length;
+	#ifndef WIN_NT
+			MTX_T mutex;
+	#endif
+		};
+
+	public:
+		SharedMemory();
+		~SharedMemory();
+
+		void acquire();
+		void release();
+
+		Firebird::ClumpletReader* readData(thread_db*);
+		void writeData(thread_db*, Firebird::ClumpletWriter&);
+
+	private:
+		// copying is prohibited
+		SharedMemory(const SharedMemory&);
+		SharedMemory& operator =(const SharedMemory&);
+
+		void garbageCollect(thread_db*, bool);
+		void extend(size_t);
+
+		static void checkMutex(const TEXT*, int);
+		static void init(void*, SH_MEM_T*, bool);
+
+		SH_MEM_T handle;
+	#ifdef WIN_NT
+		MTX_T mutex;
+	#endif
+		Header* base;
 	};
 
 public:
@@ -39,24 +82,29 @@ public:
 	RecordBuffer* getData(const jrd_rel*) const;
 
 	static DatabaseSnapshot* create(thread_db*);
+	static int blockingAst(void*);
 
 protected:
 	DatabaseSnapshot(thread_db*, MemoryPool&, jrd_tra*);
 
 private:
+	RecordBuffer* allocBuffer(thread_db*, MemoryPool&, int);
+	void clearRecord(Record*);
+	void putField(Record*, int, const void*, size_t);
+
+	static Firebird::ClumpletReader* dumpData(thread_db*, bool);
+	static const char* checkNull(int, int, const char*, size_t);
+
+	static void putDatabase(Database*, Firebird::ClumpletWriter&);
+	static void putAttachment(Attachment*, Firebird::ClumpletWriter&);
+	static void putTransaction(jrd_tra*, Firebird::ClumpletWriter&);
+	static void putRequest(jrd_req*, Firebird::ClumpletWriter&);
+
+	static Firebird::Mutex initMutex;
+	static SharedMemory* dump;
+
 	jrd_tra* transaction;
 	Firebird::Array<RelationData> snapshot;
-
-	RecordBuffer* allocBuffer(thread_db*, MemoryPool&, int);
-
-	void clearRecord(Record*);
-
-	void putField(Record*, int, const void*);
-
-	void putDatabase(Database*, RecordBuffer*);
-	void putAttachment(Attachment*, RecordBuffer*);
-	void putTransaction(jrd_tra*, RecordBuffer*);
-	void putRequest(jrd_req*, RecordBuffer*);
 };
 
 } // namespace

@@ -4487,10 +4487,19 @@ bool JRD_reschedule(thread_db* tdbb, SLONG quantum, bool punt)
 		THREAD_ENTER();
 	}
 
+	Database* dbb = tdbb->tdbb_database;
+
+	// Enable signal handler for the monitoring stuff
+
+	if (dbb->dbb_ast_flags & DBB_monitor_off) {
+		dbb->dbb_ast_flags &= ~DBB_monitor_off;
+		LCK_lock(tdbb, dbb->dbb_monitor_lock, LCK_SR, LCK_WAIT);
+	}
+
 	// If database has been shutdown then get out
 
-	Database* dbb = tdbb->tdbb_database;
 	Attachment* attachment = tdbb->tdbb_attachment;
+
 	if (attachment)
 	{
 		Firebird::PathName file_name = attachment->att_filename;
@@ -4879,6 +4888,13 @@ static ISC_STATUS check_database(thread_db* tdbb, Attachment* attachment, ISC_ST
 		return error(user_status);
 	}
 #endif
+
+	// Enable signal handler for the monitoring stuff
+
+	if (dbb->dbb_ast_flags & DBB_monitor_off) {
+		dbb->dbb_ast_flags &= ~DBB_monitor_off;
+		LCK_lock(tdbb, dbb->dbb_monitor_lock, LCK_SR, LCK_WAIT);
+	}
 
 	return FB_SUCCESS;
 }
@@ -5686,6 +5702,8 @@ static Database* init(thread_db*	tdbb,
 	dbb->dbb_flags |= DBB_exclusive;
 	dbb->dbb_sweep_interval = SWEEP_INTERVAL;
 
+	GenerateGuid(&dbb->dbb_guid);
+
 	// set a garbage collection policy
 
 	if ((dbb->dbb_flags & (DBB_gc_cooperative | DBB_gc_background)) == 0)
@@ -5776,7 +5794,7 @@ static void init_database_locks(thread_db* tdbb, Database* dbb)
 	LCK_lock(tdbb, lock, LCK_SR, LCK_WAIT);
 
 	// Yet another shared lock, used to signal other dbb owners
-	// to dump their monitoring data and to synchronize operations
+	// to dump their monitoring data and synchronize operations
 	lock = FB_NEW_RPT(*dbb->dbb_permanent, sizeof(SLONG)) Lock();
 	dbb->dbb_monitor_lock = lock;
 	lock->lck_type = LCK_monitor;
@@ -5785,7 +5803,18 @@ static void init_database_locks(thread_db* tdbb, Database* dbb)
 	lock->lck_length = sizeof(SLONG);
 	lock->lck_dbb = dbb;
 	lock->lck_object = reinterpret_cast<blk*>(dbb);
-	//lock->lck_ast = DatabaseSnapshot::blockingAst;
+	lock->lck_ast = DatabaseSnapshot::blockingAst;
+	LCK_lock(tdbb, lock, LCK_SR, LCK_WAIT);
+
+	// Lock that identifies a dbb instance
+	const size_t key_length = sizeof(FB_GUID);
+	lock = FB_NEW_RPT(*dbb->dbb_permanent, key_length) Lock();
+	dbb->dbb_instance_lock = lock;
+	lock->lck_type = LCK_instance;
+	lock->lck_owner_handle = LCK_get_owner_handle(tdbb, lock->lck_type);
+	lock->lck_length = key_length;
+	memcpy(lock->lck_key.lck_string, &dbb->dbb_guid, key_length);
+	lock->lck_dbb = dbb;
 	LCK_lock(tdbb, lock, LCK_SR, LCK_WAIT);
 }
 
@@ -6102,6 +6131,9 @@ static void shutdown_database(Database* dbb, const bool release_pools)
 		dbb->dbb_backup_manager->shutdown(tdbb);
 	// FUN_fini(tdbb);
 
+	if (dbb->dbb_instance_lock)
+		LCK_release(tdbb, dbb->dbb_instance_lock);
+
 	if (dbb->dbb_monitor_lock)
 		LCK_release(tdbb, dbb->dbb_monitor_lock);
 
@@ -6233,7 +6265,7 @@ void JRD_set_cache_default(ULONG* num_ptr)
 
 #ifdef SERVER_SHUTDOWN
 TEXT* JRD_num_attachments(TEXT* const buf, USHORT buf_len, USHORT flag,
-						USHORT* atts, USHORT* dbs)
+						  ULONG* atts, ULONG* dbs)
 {
 /**************************************
  *
@@ -6270,8 +6302,8 @@ TEXT* JRD_num_attachments(TEXT* const buf, USHORT buf_len, USHORT flag,
 	}
 #endif
 
-	USHORT num_dbs = 0;
-	USHORT num_att = 0;
+	ULONG num_dbs = 0;
+	ULONG num_att = 0;
 	USHORT total = 0;
 	ULONG drive_mask = 0L;
 	db_file* dbf = NULL;
