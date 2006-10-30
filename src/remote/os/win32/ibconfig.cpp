@@ -569,7 +569,7 @@ BOOL ValidateUser(HWND hParentWnd)
 	else {
 		szSysDbaPasswd[0] = '\0';
 		return (DialogBox
-				((HINSTANCE) GetWindowLong(hParentWnd, GWLP_HINSTANCE),
+				((HINSTANCE) GetWindowLongPtr(hParentWnd, GWLP_HINSTANCE),
 				 MAKEINTRESOURCE(PASSWORD_DLG), hParentWnd,
 				 (DLGPROC) PasswordDlgProc) > 0);
 	}
