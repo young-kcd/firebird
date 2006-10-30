@@ -465,10 +465,16 @@ DECLARE EXTERNAL FUNCTION pi
  *	Returns a random number between 0 
  *	and 1.  
  * 
+ * Note: The rand() function was changed
+ *  in Firebird 2.0 so that the seed value
+ *  is not set by every call. This corrects
+ *  a potential duplicate value problem and
+ *  ensures that different values will
+ *  always be returned.
  *
- * Note: Use srand to seed the 
- *	random number generator. 
- *	This behavior has been changed.
+ *  To seed the random number generator or
+ *  retain the old behaviour, use srand(). 
+ *
  *****************************************/
 DECLARE EXTERNAL FUNCTION rand 
 	RETURNS DOUBLE PRECISION BY VALUE
@@ -598,11 +604,15 @@ DECLARE EXTERNAL FUNCTION sqrt
  *****************************************
  *
  * Functional description:
- *	Returns a random number between 0 
- *	and 1.  Note the random number
- *	generator is seeded using the current 
- *	time.
+ *	Seeds the random number generator using
+ *  the current time and returns the first
+ *  pseudo-random number (between 0 and 1)
+ *  in the new sequence.
  *
+ * Note:
+ *  Two srand() calls performed within a second
+ *  will return the same value.
+ * 
  *****************************************/
 DECLARE EXTERNAL FUNCTION srand 
 	RETURNS DOUBLE PRECISION BY VALUE
