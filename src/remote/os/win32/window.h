@@ -49,5 +49,16 @@ const int TMP_STRINGLEN		= 512;
 static const char* szClassName = "FB_Server";
 static const char* szWindowName = "Firebird Server"; // Used in iscguard.cpp
 
+/* Defines to make 32-bit only compilers happy */
+
+#ifndef _WIN64
+#ifndef DWLP_MSGRESULT
+#define DWLP_MSGRESULT DWL_MSGRESULT
+#endif
+#ifndef GWLP_HINSTANCE
+#define GWLP_HINSTANCE GWL_HINSTANCE
+#endif
+#endif
+
 #endif // OS_WIN32_WINDOW_H
 
