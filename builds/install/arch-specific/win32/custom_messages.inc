@@ -40,7 +40,7 @@ en.InstallSummaryCancel1= If you continue with this installation Firebird will b
 en.InstallSummaryCancel2= You will have to complete installation manually.
 en.InstallSummaryCancel3= Do you want to CANCEL this installation?
 
-en.InstalledProducts='re-installation analysis indicates that %s existing Firebird or Interbase %s been found.
+en.InstalledProducts=Pre-installation analysis indicates that %s existing Firebird or Interbase %s been found.
 en.InstalledProdCountSingular=version has
 en.InstalledProdCountPlural=versions have
 
