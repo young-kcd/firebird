@@ -1513,6 +1513,7 @@ jrd_tra* TRA_start(thread_db* tdbb, int tpb_length, const SCHAR* tpb)
 	Jrd::ContextPoolHolder context(tdbb, JrdMemoryPool::createPool());
 	jrd_tra* temp = FB_NEW_RPT(*tdbb->getDefaultPool(), 0) jrd_tra(*tdbb->getDefaultPool());
 	temp->tra_pool = tdbb->getDefaultPool();
+	temp->tra_lock_timeout = DEFAULT_LOCK_TIMEOUT;
 	transaction_options(tdbb, temp, reinterpret_cast<const UCHAR*>(tpb),
 						tpb_length);
 
@@ -2805,7 +2806,6 @@ static void transaction_options(
 	if (*tpb != isc_tpb_version3 && *tpb != isc_tpb_version1)
 		ERR_post(isc_bad_tpb_form, isc_arg_gds, isc_wrotpbver, 0);
 
-	transaction->tra_lock_timeout = DEFAULT_LOCK_TIMEOUT;
 	bool wait = true, lock_timeout = false;
 
 	++tpb;
