@@ -38,6 +38,7 @@
 
 #include "../remote/os/win32/ibconfig.h"
 #include "../remote/os/win32/property.rh"
+#include "../remote/os/win32/window.h"
 
 #include "../jrd/ibase.h"
 
