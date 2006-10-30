@@ -255,7 +255,7 @@ LRESULT CALLBACK InterbasePage(HWND hDlg, UINT unMsg, WPARAM wParam,
 		switch (((LPNMHDR) lParam)->code) {
 		case PSN_KILLACTIVE:	// When the page is about to lose focus
 			{
-				SetWindowLong(hDlg, DWL_MSGRESULT, FALSE);
+				SetWindowLong(hDlg, DWLP_MSGRESULT, FALSE);
 				break;
 			}
 		case PSN_SETACTIVE:	// When the page is about to recieve 
@@ -279,7 +279,7 @@ LRESULT CALLBACK InterbasePage(HWND hDlg, UINT unMsg, WPARAM wParam,
 				}
 				else			// Error writing the values
 				{
-					SetWindowLong(hDlg, DWL_MSGRESULT, TRUE);
+					SetWindowLong(hDlg, DWLP_MSGRESULT, TRUE);
 					return TRUE;
 				}
 			break;
@@ -568,7 +568,7 @@ BOOL ValidateUser(HWND hParentWnd)
 	else {
 		szSysDbaPasswd[0] = '\0';
 		return (DialogBox
-				((HINSTANCE) GetWindowLong(hParentWnd, GWL_HINSTANCE),
+				((HINSTANCE) GetWindowLong(hParentWnd, GWLP_HINSTANCE),
 				 MAKEINTRESOURCE(PASSWORD_DLG), hParentWnd,
 				 (DLGPROC) PasswordDlgProc) > 0);
 	}

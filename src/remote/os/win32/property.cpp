@@ -256,7 +256,7 @@ LRESULT CALLBACK GeneralPage(HWND hDlg, UINT unMsg, WPARAM wParam,
 	case WM_NOTIFY:
 		switch (((LPNMHDR) lParam)->code) {
 		case PSN_KILLACTIVE:
-			SetWindowLong(hDlg, DWL_MSGRESULT, FALSE);
+			SetWindowLong(hDlg, DWLP_MSGRESULT, FALSE);
 			break;
 		case PSN_HELP:
 			HelpCmd(hDlg, hInstance, ibsp_Server_Information_Properties);
@@ -324,8 +324,8 @@ static void RefreshUserCount(HWND hDlg)
  *  Description: This method calls the JRD_num_attachments() function to get
  *               the number of active attachments to the server.
  *****************************************************************************/
-	USHORT num_att = 0;
-	USHORT num_dbs = 0;
+	ULONG num_att = 0;
+	ULONG num_dbs = 0;
 	HCURSOR hOldCursor = SetCursor(LoadCursor(NULL, IDC_WAIT));
 
 	JRD_num_attachments(NULL, 0, 0, &num_att, &num_dbs);

@@ -301,7 +301,7 @@ static THREAD_ENTRY_DECLARE cleanup_thread(THREAD_ENTRY_PARAM)
  *	This thread is responsible for the cleanup.
  *
  **************************************/
-	USHORT attach_count, database_count;
+	ULONG attach_count, database_count;
 	TEXT return_buffer[ERROR_BUFFER_LENGTH], *buff_ptr = return_buffer;
 
 // find out if we have any attachments 
