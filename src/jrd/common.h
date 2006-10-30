@@ -612,7 +612,9 @@ typedef unsigned __int64 UINT64;
 #define QUADCONST(n) (n)
 #endif
 
-#ifdef _X86_
+#ifdef AMD64
+#define IMPLEMENTATION  isc_info_db_impl_winnt_amd64 /* 68 */
+#else
 #ifndef I386
 #define I386
 #endif
