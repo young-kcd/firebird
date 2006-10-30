@@ -1245,7 +1245,7 @@ void CFBDialog::DisableApplyButton()
 }
 
 
-void CFBDialog::OnTimer(UINT nIDEvent) 
+void CFBDialog::OnTimer(UINT_PTR nIDEvent) 
 {
 	UpdateServerStatus();
 }

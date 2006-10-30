@@ -62,7 +62,10 @@ static const char* szWindowName = "Firebird Server"; // Used in iscguard.cpp
 #define GCLP_HICON GCL_HICON
 #endif
 #ifndef LONG_PTR
-#define LONG_PTR long
+#define LONG_PTR LONG
+#endif
+#ifndef UINT_PTR
+#define UINT_PTR UINT
 #endif
 #define GetWindowLongPtr GetWindowLong
 #define SetWindowLongPtr SetWindowLong

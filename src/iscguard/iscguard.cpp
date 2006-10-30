@@ -356,7 +356,7 @@ static LRESULT CALLBACK WindowFunc(
 	static HINSTANCE hInstance = NULL;
 	static unsigned long thread_id;
 
-	hInstance = (HINSTANCE) GetWindowLong(hWnd, GWL_HINSTANCE);
+	hInstance = (HINSTANCE) GetWindowLongPtr(hWnd, GWLP_HINSTANCE);
 	switch (message) {
 	case WM_CLOSE:
 		{
@@ -846,7 +846,7 @@ LRESULT CALLBACK GeneralPage(HWND hDlg, UINT unMsg, WPARAM wParam,
  *               are identified within the LPARAM which will be pointer to 
  *               the NMDR structure
  *****************************************************************************/
-	HINSTANCE hInstance = (HINSTANCE) GetWindowLong(hDlg, GWL_HINSTANCE);
+	HINSTANCE hInstance = (HINSTANCE) GetWindowLongPtr(hDlg, GWLP_HINSTANCE);
 
 	switch (unMsg) {
 	case WM_INITDIALOG:
@@ -955,7 +955,7 @@ LRESULT CALLBACK GeneralPage(HWND hDlg, UINT unMsg, WPARAM wParam,
 	case WM_NOTIFY:
 		switch (((LPNMHDR) lParam)->code) {
 		case PSN_KILLACTIVE:
-			SetWindowLong(hDlg, DWL_MSGRESULT, FALSE);
+			SetWindowLong(hDlg, DWLP_MSGRESULT, FALSE);
 			break;
 		case PSN_HELP:
 #ifdef NOT_USED_OR_REPLACED
@@ -982,7 +982,7 @@ THREAD_ENTRY_DECLARE  swap_icons(THREAD_ENTRY_PARAM param)
 	Firebird::ContextPoolHolder threadContext(getDefaultMemoryPool());
 
 	HWND hWnd = static_cast<HWND>(param);
-	HINSTANCE hInstance = (HINSTANCE) GetWindowLong(hWnd, GWL_HINSTANCE);
+	HINSTANCE hInstance = (HINSTANCE) GetWindowLongPtr(hWnd, GWLP_HINSTANCE);
 	HICON hIconNormal = (HICON) LoadImage(hInstance,
 									MAKEINTRESOURCE(IDI_IBGUARD),
 									IMAGE_ICON, 0, 0, LR_DEFAULTCOLOR);
@@ -1010,16 +1010,16 @@ displayed, stop animating the icon
 */
 	while (!hPSDlg) {
 		if (!Shell_NotifyIcon(NIM_MODIFY, &nidAlert))
-			SetClassLong(hWnd, GCL_HICON, (long) hIconAlert);
+			SetClassLongPtr(hWnd, GCLP_HICON, (LONG_PTR) hIconAlert);
 		Sleep(500);
 
 		if (!Shell_NotifyIcon(NIM_MODIFY, &nidNormal))
-			SetClassLong(hWnd, GCL_HICON, (long) hIconNormal);
+			SetClassLongPtr(hWnd, GCLP_HICON, (LONG_PTR) hIconNormal);
 		Sleep(500);
 	}
 /* Make sure that the icon is normal */
 	if (!Shell_NotifyIcon(NIM_MODIFY, &nidNormal))
-		SetClassLong(hWnd, GCL_HICON, (long) hIconNormal);
+		SetClassLongPtr(hWnd, GCLP_HICON, (LONG_PTR) hIconNormal);
 
 	if (hIconNormal)
 		DestroyIcon(hIconNormal);
