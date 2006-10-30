@@ -1316,9 +1316,13 @@ ISC_STATUS API_ROUTINE GDS_COMPILE2(ISC_STATUS* user_status,
  *
  **************************************/
 
-	if (GDS_COMPILE(user_status, db_handle, req_handle, blr_length, blr))
-		/* Note: if user_status == NULL then GDS_COMPILE handled it */
-		return user_status[1];
+	ISC_STATUS* status;
+	ISC_STATUS_ARRAY local;
+
+	GET_STATUS;
+
+	if (GDS_COMPILE(status, db_handle, req_handle, blr_length, blr))
+		return status[1];
 
 	WHY_REQ request = WHY_translate_handle(*req_handle);
 	request->user_handle = req_handle;
