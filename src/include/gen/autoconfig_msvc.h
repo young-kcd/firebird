@@ -179,17 +179,12 @@
 
 /* target architecture */
 #if defined(_M_IX86)
-#ifndef _X86_
-#define _X86_
-#endif
 /* sizeof(void *) */
 #define SIZEOF_VOID_P 4
 /* alignment of long */
 #define ALIGNMENT 4
 #elif defined(_M_AMD64)
-#ifndef _AMD64_
-#define _AMD64_
-#endif
+#define AMD64
 /* sizeof(void *) */
 #define SIZEOF_VOID_P 8
 /* alignment of long */
