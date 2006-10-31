@@ -207,7 +207,7 @@ void DatabaseSnapshot::SharedMemory::garbageCollect(thread_db* tdbb, bool self)
 
 			// Is this our own dbb instance?
 			const bool our_dbb =
-				memcmp(&guid, &dbb->dbb_guid, sizeof(FB_GUID)) == 0;
+				!memcmp(&guid, &dbb->dbb_guid, sizeof(FB_GUID));
 
 			if (self)
 			{
