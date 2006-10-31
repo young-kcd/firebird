@@ -1368,11 +1368,13 @@ void MET_load_trigger(thread_db* tdbb,
 	if (ENCODE_ODS(dbb->dbb_ods_version, dbb->dbb_minor_original) >= ODS_11_1)
 	{
 		jrd_req* debug_info_req = CMP_find_request(tdbb, irq_l_trg_dbg, IRQ_REQUESTS);
+
 		FOR(REQUEST_HANDLE debug_info_req)
-				TRG IN RDB$TRIGGERS WITH TRG.RDB$RELATION_NAME = relation->rel_name.c_str() AND 
-				TRG.RDB$TRIGGER_NAME EQ trigger_name.c_str() AND
-				TRG.RDB$TRIGGER_TYPE > 0 AND 
-				TRG.RDB$TRIGGER_TYPE < TRIGGER_COMBINED_MAX
+				TRG IN RDB$TRIGGERS
+			WITH TRG.RDB$RELATION_NAME EQ relation->rel_name.c_str() AND 
+				 TRG.RDB$TRIGGER_NAME EQ trigger_name.c_str() AND
+				 TRG.RDB$TRIGGER_TYPE > 0 AND 
+				 TRG.RDB$TRIGGER_TYPE < TRIGGER_COMBINED_MAX
 		
 			if (!REQUEST(irq_l_trg_dbg))
 				REQUEST(irq_l_trg_dbg) = debug_info_req;
@@ -1380,6 +1382,9 @@ void MET_load_trigger(thread_db* tdbb,
 			if (TRG.RDB$DEBUG_INFO.NULL == FALSE)
 				debug_blob_id = TRG.RDB$DEBUG_INFO;
 		END_FOR;
+
+		if (!REQUEST(irq_l_trg_dbg))
+			REQUEST(irq_l_trg_dbg) = debug_info_req;
 	}
 
 	// Scan RDB$TRIGGERS next

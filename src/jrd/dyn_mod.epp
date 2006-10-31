@@ -1952,10 +1952,10 @@ void DYN_modify_trigger( Global* gbl, const UCHAR** ptr)
 						X.RDB$DESCRIPTION.NULL = TRUE;
 					break;
 
-			case isc_dyn_debug_info:
-				debug_info_ptr = *ptr;
-				DYN_skip_blr_blob(ptr);
-				break;
+				case isc_dyn_debug_info:
+					debug_info_ptr = *ptr;
+					DYN_skip_blr_blob(ptr);
+					break;
 
 				default:
 					--(*ptr);
