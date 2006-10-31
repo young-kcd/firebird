@@ -158,25 +158,29 @@ public:
 		data[count++] = item;
   		return count;
 	}
-	void remove(size_t index) {
+	T* remove(size_t index) {
   		fb_assert(index < count);
   		memmove(data + index, data + index + 1, sizeof(T) * (--count - index));
+		return &data[index];
 	}
-	void removeRange(size_t from, size_t to) {
+	T* removeRange(size_t from, size_t to) {
   		fb_assert(from <= to);
   		fb_assert(to <= count);
   		memmove(data + from, data + to, sizeof(T) * (count - to));
 		count -= (to - from);
+		return &data[index];
 	}
-	void removeCount(size_t index, size_t n) {
+	T* removeCount(size_t index, size_t n) {
   		fb_assert(index + n <= count);
   		memmove(data + index, data + index + n, sizeof(T) * (count - index - n));
 		count -= n;
+		return &data[index];
 	}
-	void remove(T* itr) {
+	T* remove(T* itr) {
 		const size_t index = itr - begin();
   		fb_assert(index < count);
   		memmove(data + index, data + index + 1, sizeof(T) * (--count - index));
+		return &data[index];
 	}
 	void shrink(size_t newCount) {
 		fb_assert(newCount <= count);
