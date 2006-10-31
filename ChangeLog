@@ -1,3 +1,25 @@
+2006-10-30 20:07  dimitr
+
+	* firebird2/src/jrd/tra.cpp (1.117.2.1):
+
+	Simplified fix for CORE-980.
+
+2006-10-30 14:54  paul_reeves
+
+	* firebird2/builds/install/arch-specific/win32/:
+	ba/Instalacija_ProcitajMe.txt (1.4.4.1), ba/ProcitajMe.txt
+	(1.2.4.1), ba/custom_messages_ba.inc (1.2.4.2), custom_messages.inc
+	(1.2.4.2), fr/custom_messages_fr.inc (1.2.6.2),
+	hu/telepitesi_segedlet.txt (1.1.6.1):
+
+	Update some i18n Windows installation files.
+
+2006-10-30 09:29  dimitr
+
+	* firebird2/src/extlib/ib_udf2.sql (1.8.4.1):
+
+	A more detailed description (upon Helen's request).
+
 2006-10-29 15:37  tsteinmaurer
 
 	* firebird2/builds/install/arch-specific/win32/de/:
