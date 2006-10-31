@@ -2,6 +2,11 @@
   * v2.0 Final
   **************************
 
+    * Fixed RC5 bug (CORE-980)
+        NO WAIT is implied instead of WAIT when the host application doesn't provide TPB
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
     * Fixed RC5 bug
         Server crashes if being connected via gds32 from latest InterBase versions
       Contributor(s):
