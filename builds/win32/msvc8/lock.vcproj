@@ -9,6 +9,9 @@
 		<Platform
 			Name="Win32"
 		/>
+		<Platform
+			Name="x64"
+		/>
 	</Platforms>
 	<ToolFiles>
 	</ToolFiles>
@@ -90,6 +93,84 @@
 			/>
 		</Configuration>
 		<Configuration
+			Name="Debug|x64"
+			OutputDirectory="$(PlatformName)\$(ConfigurationName)"
+			IntermediateDirectory="$(PlatformName)\$(ConfigurationName)"
+			ConfigurationType="4"
+			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
+			UseOfMFC="0"
+			ATLMinimizesCRunTimeLibraryUsage="false"
+			CharacterSet="2"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+				TargetEnvironment="3"
+			/>
+			<Tool
+				Name="VCCLCompilerTool"
+				AdditionalOptions="/EHsc-"
+				Optimization="0"
+				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
+				PreprocessorDefinitions="WIN32,_DEBUG,_LIB,SUPERSERVER,DEV_BUILD"
+				ExceptionHandling="0"
+				BasicRuntimeChecks="3"
+				RuntimeLibrary="3"
+				RuntimeTypeInfo="false"
+				PrecompiledHeaderFile="..\..\..\temp\debug\lock_ss/lock.pch"
+				AssemblerListingLocation="..\..\..\temp\debug\lock_ss/"
+				ObjectFile="..\..\..\temp\debug\lock_ss/"
+				ProgramDataBaseFileName="..\..\..\temp\debug\lock_ss/"
+				WarningLevel="3"
+				SuppressStartupBanner="true"
+				Detect64BitPortabilityProblems="true"
+				DebugInformationFormat="3"
+				CompileAs="0"
+			/>
+			<Tool
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+				PreprocessorDefinitions="_DEBUG"
+				Culture="1053"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+			/>
+			<Tool
+				Name="VCLibrarianTool"
+				OutputFile="..\..\..\temp\debug\lock_ss\lock.lib"
+				SuppressStartupBanner="true"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
+		</Configuration>
+		<Configuration
 			Name="Release|Win32"
 			OutputDirectory="..\..\..\temp\release\lock_ss"
 			IntermediateDirectory="..\..\..\temp\release\lock_ss"
@@ -123,7 +204,87 @@
 				FavorSizeOrSpeed="1"
 				OmitFramePointers="true"
 				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
-				PreprocessorDefinitions="NDEBUG,_LIB,SUPERSERVER,WIN32,_X86_"
+				PreprocessorDefinitions="NDEBUG,_LIB,SUPERSERVER,WIN32"
+				ExceptionHandling="0"
+				RuntimeLibrary="2"
+				RuntimeTypeInfo="false"
+				PrecompiledHeaderFile="..\..\..\temp\release\lock_ss/lock.pch"
+				AssemblerListingLocation="..\..\..\temp\release\lock_ss/"
+				ObjectFile="..\..\..\temp\release\lock_ss/"
+				ProgramDataBaseFileName="..\..\..\temp\release\lock_ss/"
+				WarningLevel="3"
+				SuppressStartupBanner="true"
+				DebugInformationFormat="3"
+				CompileAs="0"
+			/>
+			<Tool
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+				PreprocessorDefinitions="_DEBUG"
+				Culture="1053"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+			/>
+			<Tool
+				Name="VCLibrarianTool"
+				OutputFile="..\..\..\temp\release\lock_ss\lock.lib"
+				SuppressStartupBanner="true"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
+		</Configuration>
+		<Configuration
+			Name="Release|x64"
+			OutputDirectory="$(PlatformName)\$(ConfigurationName)"
+			IntermediateDirectory="$(PlatformName)\$(ConfigurationName)"
+			ConfigurationType="4"
+			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
+			UseOfMFC="0"
+			ATLMinimizesCRunTimeLibraryUsage="false"
+			CharacterSet="2"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+				TargetEnvironment="3"
+			/>
+			<Tool
+				Name="VCCLCompilerTool"
+				AdditionalOptions="/EHsc-"
+				Optimization="4"
+				InlineFunctionExpansion="1"
+				EnableIntrinsicFunctions="true"
+				FavorSizeOrSpeed="1"
+				OmitFramePointers="true"
+				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
+				PreprocessorDefinitions="NDEBUG,_LIB,SUPERSERVER,WIN32"
 				ExceptionHandling="0"
 				RuntimeLibrary="2"
 				RuntimeTypeInfo="false"
@@ -195,6 +356,4 @@
 			</File>
 		</Filter>
 	</Files>
-	<Globals>
-	</Globals>
 </VisualStudioProject>

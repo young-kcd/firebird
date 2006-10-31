@@ -12,6 +12,10 @@
 
 @SET SERVER_NAME=localhost
 
+@set PLATFORM=win32
+@if %PROCESSOR_ARCHITECTURE%==x86 (set PLATFORM=win32)
+@if %PROCESSOR_ARCHITECTURE%==AMD64 (set PLATFORM=x64)
+
 @cd ..\..
 @for /f "delims=" %%a in ('@cd') do (set ROOT_PATH=%%a)
 @cd %~dp0
@@ -23,6 +27,7 @@
 
 @msdev /? >nul 2>nul
 @if not errorlevel 9009 ((set MSVC_VERSION=6) & (set VS_VER=msvc6) & (goto :END))
+
 
 ::===========
 :HELP
@@ -36,6 +41,7 @@
 :END
 @echo.
 @echo    vs_ver=%VS_VER%
+@echo    platform=%PLATFORM%
 @echo    msvc_version=%MSVC_VERSION%
 @echo    db_path=%DB_PATH%
 @echo    root_path=%ROOT_PATH%

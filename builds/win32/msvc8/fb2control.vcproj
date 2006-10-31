@@ -10,6 +10,9 @@
 		<Platform
 			Name="Win32"
 		/>
+		<Platform
+			Name="x64"
+		/>
 	</Platforms>
 	<ToolFiles>
 	</ToolFiles>
@@ -79,7 +82,6 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalOptions="/MACHINE:I386"
 				AdditionalDependencies="shlwapi.lib version.lib"
 				OutputFile="..\..\..\temp\release\firebird\system32\Firebird2Control.cpl"
 				Version="1.0"
@@ -179,7 +181,6 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalOptions="/MACHINE:I386"
 				AdditionalDependencies="shlwapi.lib version.lib"
 				OutputFile="..\..\..\temp\debug\firebird\system32\Firebird2Control.cpl"
 				Version="1.0"
@@ -190,6 +191,209 @@
 				ProgramDatabaseFile=".\..\..\..\temp\debug\fb2control/Firebird2Control.pdb"
 				SubSystem="2"
 				ImportLibrary=".\..\..\..\temp\debug\fb2control/Firebird2Control.lib"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCManifestTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCAppVerifierTool"
+			/>
+			<Tool
+				Name="VCWebDeploymentTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
+		</Configuration>
+		<Configuration
+			Name="Release|x64"
+			OutputDirectory="$(PlatformName)\$(ConfigurationName)"
+			IntermediateDirectory="$(PlatformName)\$(ConfigurationName)"
+			ConfigurationType="2"
+			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
+			UseOfMFC="2"
+			ATLMinimizesCRunTimeLibraryUsage="false"
+			CharacterSet="2"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+				PreprocessorDefinitions="NDEBUG"
+				MkTypLibCompatible="true"
+				SuppressStartupBanner="true"
+				TargetEnvironment="3"
+				TypeLibraryName=".\..\..\..\temp\release\fb2control/fb2control.tlb"
+			/>
+			<Tool
+				Name="VCCLCompilerTool"
+				AdditionalOptions="/EHsc-"
+				Optimization="3"
+				InlineFunctionExpansion="1"
+				FavorSizeOrSpeed="2"
+				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
+				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;SUPERSERVER;WINVER=0x400"
+				ExceptionHandling="0"
+				RuntimeLibrary="2"
+				RuntimeTypeInfo="false"
+				UsePrecompiledHeader="0"
+				PrecompiledHeaderFile=".\..\..\..\temp\release\fb2control/fb2control.pch"
+				AssemblerListingLocation=".\..\..\..\temp\release\fb2control/"
+				ObjectFile=".\..\..\..\temp\release\fb2control/"
+				ProgramDataBaseFileName=".\..\..\..\temp\release\fb2control/"
+				BrowseInformation="1"
+				WarningLevel="3"
+				SuppressStartupBanner="true"
+				DebugInformationFormat="3"
+				CompileAs="0"
+			/>
+			<Tool
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+				PreprocessorDefinitions="_AFXDLL;NDEBUG"
+				Culture="1036"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+			/>
+			<Tool
+				Name="VCLinkerTool"
+				AdditionalDependencies="shlwapi.lib version.lib"
+				OutputFile="..\..\..\temp\release\firebird\system32\Firebird2Control.cpl"
+				Version="1.0"
+				LinkIncremental="1"
+				SuppressStartupBanner="true"
+				ModuleDefinitionFile="..\..\..\src\utilities\fbcpl\FBControl.def"
+				GenerateDebugInformation="true"
+				ProgramDatabaseFile=".\..\..\..\temp\release\fb2control/Firebird2Control.pdb"
+				SubSystem="2"
+				ImportLibrary=".\..\..\..\temp\release\fb2control/Firebird2Control.lib"
+				TargetMachine="17"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCManifestTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCAppVerifierTool"
+			/>
+			<Tool
+				Name="VCWebDeploymentTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
+		</Configuration>
+		<Configuration
+			Name="Debug|x64"
+			OutputDirectory="$(PlatformName)\$(ConfigurationName)"
+			IntermediateDirectory="$(PlatformName)\$(ConfigurationName)"
+			ConfigurationType="2"
+			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
+			UseOfMFC="2"
+			ATLMinimizesCRunTimeLibraryUsage="false"
+			CharacterSet="2"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+				PreprocessorDefinitions="_DEBUG"
+				MkTypLibCompatible="true"
+				SuppressStartupBanner="true"
+				TargetEnvironment="3"
+				TypeLibraryName=".\..\..\..\temp\debug\fb2control/fb2control.tlb"
+			/>
+			<Tool
+				Name="VCCLCompilerTool"
+				AdditionalOptions="/EHsc-"
+				Optimization="0"
+				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
+				PreprocessorDefinitions="_DEBUG;_WINDOWS;WIN32;DEV_BUILD;_USRDLL;CPL_APPLET;WINVER=0x400"
+				ExceptionHandling="0"
+				BasicRuntimeChecks="3"
+				RuntimeLibrary="3"
+				RuntimeTypeInfo="false"
+				AssemblerListingLocation=".\..\..\..\temp\debug\fb2control/"
+				ObjectFile=".\..\..\..\temp\debug\fb2control/"
+				ProgramDataBaseFileName=".\..\..\..\temp\debug\fb2control/"
+				BrowseInformation="1"
+				WarningLevel="3"
+				SuppressStartupBanner="true"
+				Detect64BitPortabilityProblems="true"
+				DebugInformationFormat="3"
+				CompileAs="0"
+				UndefinePreprocessorDefinitions="TRACE"
+			/>
+			<Tool
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+				PreprocessorDefinitions="_AFXDLL;_DEBUG"
+				Culture="2057"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+			/>
+			<Tool
+				Name="VCLinkerTool"
+				AdditionalDependencies="shlwapi.lib version.lib"
+				OutputFile="..\..\..\temp\debug\firebird\system32\Firebird2Control.cpl"
+				Version="1.0"
+				LinkIncremental="1"
+				SuppressStartupBanner="true"
+				ModuleDefinitionFile="..\..\..\src\utilities\fbcpl\FBControl.def"
+				GenerateDebugInformation="true"
+				ProgramDatabaseFile=".\..\..\..\temp\debug\fb2control/Firebird2Control.pdb"
+				SubSystem="2"
+				ImportLibrary=".\..\..\..\temp\debug\fb2control/Firebird2Control.lib"
+				TargetMachine="17"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -269,6 +473,24 @@
 						PrecompiledHeaderThrough="stdafx.h"
 					/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|x64"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						UsePrecompiledHeader="1"
+						PrecompiledHeaderThrough="stdafx.h"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|x64"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						UsePrecompiledHeader="1"
+						PrecompiledHeaderThrough="stdafx.h"
+					/>
+				</FileConfiguration>
 			</File>
 		</Filter>
 		<Filter
@@ -325,6 +547,22 @@
 				</FileConfiguration>
 				<FileConfiguration
 					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCResourceCompilerTool"
+						AdditionalIncludeDirectories=""
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|x64"
+					>
+					<Tool
+						Name="VCResourceCompilerTool"
+						AdditionalIncludeDirectories=""
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|x64"
 					>
 					<Tool
 						Name="VCResourceCompilerTool"
