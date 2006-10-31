@@ -168,7 +168,7 @@ public:
   		fb_assert(to <= count);
   		memmove(data + from, data + to, sizeof(T) * (count - to));
 		count -= (to - from);
-		return &data[index];
+		return &data[from];
 	}
 	T* removeCount(size_t index, size_t n) {
   		fb_assert(index + n <= count);
