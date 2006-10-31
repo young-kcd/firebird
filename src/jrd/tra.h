@@ -95,8 +95,8 @@ class jrd_tra : public pool_alloc_rpt<SCHAR, type_tra>
 		tra_blobs(&p),
 		tra_resources(p),
 		tra_context_vars(p),
-		tra_stats(p),
-		tra_lock_timeout(DEFAULT_LOCK_TIMEOUT)
+		tra_lock_timeout(DEFAULT_LOCK_TIMEOUT),
+		tra_stats(p)
 	{}
 
 	Attachment* tra_attachment;	/* database attachment */
