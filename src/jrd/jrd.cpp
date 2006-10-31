@@ -4472,7 +4472,6 @@ void JRD_print_procedure_info(thread_db* tdbb, const char* mesg)
 #endif // DEBUG_PROCS
 
 
-#ifdef MULTI_THREAD
 bool JRD_reschedule(thread_db* tdbb, SLONG quantum, bool punt)
 {
 /**************************************
@@ -4487,6 +4486,7 @@ bool JRD_reschedule(thread_db* tdbb, SLONG quantum, bool punt)
  *
  **************************************/
 
+#ifdef MULTI_THREAD
 	// Force garbage collection activity to yield the
 	// processor in case client threads haven't had
 	// an opportunity to enter the scheduling queue.
@@ -4498,6 +4498,7 @@ bool JRD_reschedule(thread_db* tdbb, SLONG quantum, bool punt)
 		THREAD_YIELD();
 		THREAD_ENTER();
 	}
+#endif
 
 	Database* dbb = tdbb->tdbb_database;
 
@@ -4583,13 +4584,16 @@ bool JRD_reschedule(thread_db* tdbb, SLONG quantum, bool punt)
 	}
 
 	tdbb->tdbb_quantum = (tdbb->tdbb_quantum <= 0) ?
+#ifdef MULTI_THREAD
 		(quantum ? quantum : (ThreadPriorityScheduler::boosted() ? 
-			Config::getPriorityBoost() : 1) * QUANTUM) : 
+			Config::getPriorityBoost() : 1) * QUANTUM) :
+#else
+		(quantum ? quantum : QUANTUM) :
+#endif
 		tdbb->tdbb_quantum;
 
 	return false;
 }
-#endif
 
 
 void JRD_restore_context(void)

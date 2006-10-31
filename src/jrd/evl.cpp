@@ -294,10 +294,8 @@ RecordBitmap** EVL_bitmap(thread_db* tdbb, jrd_nod* node)
 
 	DEV_BLKCHK(node, type_nod);
 
-#ifdef SUPERSERVER
 	if (--tdbb->tdbb_quantum < 0)
 		JRD_reschedule(tdbb, 0, true);
-#endif
 
 	switch (node->nod_type) {
 	case nod_bit_and:
@@ -815,10 +813,8 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* const node)
 
 	SET_TDBB(tdbb);
 
-#ifdef SUPERSERVER
 	if (--tdbb->tdbb_quantum < 0)
 		JRD_reschedule(tdbb, 0, true);
-#endif
 
 	jrd_req* const request = tdbb->tdbb_request;
 	impure_value* const impure = (impure_value*) ((SCHAR *) request + node->nod_impure);
@@ -1325,10 +1321,8 @@ USHORT EVL_group(thread_db* tdbb, RecordSource* rsb, jrd_nod *const node, USHORT
 
 	DEV_BLKCHK(node, type_nod);
 
-#ifdef SUPERSERVER
 	if (--tdbb->tdbb_quantum < 0)
 		JRD_reschedule(tdbb, 0, true);
-#endif
 
 /* if we found the last record last time, we're all done  */
 

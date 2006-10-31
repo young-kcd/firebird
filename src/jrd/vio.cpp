@@ -3637,14 +3637,10 @@ static void garbage_collect(thread_db* tdbb,
 		if (rpb->rpb_record) {
 			going.push(rpb->rpb_record);
 		}
-#ifdef SUPERSERVER
 		/* Don't monopolize the server while chasing long
 		   back version chains. */
-
-		if (--tdbb->tdbb_quantum < 0) {
+		if (--tdbb->tdbb_quantum < 0)
 			JRD_reschedule(tdbb, 0, true);
-		}
-#endif
 	}
 
 	BLB_garbage_collect(tdbb, going, staying, prior_page, rpb->rpb_relation);
@@ -4086,14 +4082,10 @@ static void list_staying(thread_db* tdbb, record_param* rpb, RecordStack& stayin
 			temp.rpb_prior = (temp.rpb_flags & rpb_delta) ? data : NULL;
 			DPM_fetch_back(tdbb, &temp, LCK_read, 1);
 			depth++;
-#ifdef SUPERSERVER
 			/* Don't monopolize the server while chasing long
 			   back version chains. */
-
-			if (--tdbb->tdbb_quantum < 0) {
+			if (--tdbb->tdbb_quantum < 0)
 				JRD_reschedule(tdbb, 0, true);
-			}
-#endif
 		}
 
 		/* If there is a next older version, then process it: remember that

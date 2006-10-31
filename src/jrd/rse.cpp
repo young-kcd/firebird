@@ -1808,14 +1808,8 @@ static bool get_record(thread_db*	tdbb,
  **************************************/
 	SET_TDBB(tdbb);
 
-#ifdef SUPERSERVER
-
 	if (--tdbb->tdbb_quantum < 0)
-	{
 		JRD_reschedule(tdbb, 0, true);
-	}
-
-#endif
 
 /* check request flags for special processing */
 
