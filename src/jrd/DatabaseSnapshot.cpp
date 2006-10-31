@@ -185,8 +185,7 @@ void DatabaseSnapshot::SharedMemory::garbageCollect(thread_db* tdbb, bool self)
 	ClumpletWriter writer(ClumpletReader::WideUnTagged, MAX_ULONG);
 
 	// Temporary lock used to check existence of the given dbb instance
-	AutoPtr<Lock> temp_lock =
-		FB_NEW_RPT(*tdbb->getDefaultPool(), sizeof(FB_GUID)) Lock();
+	AutoPtr<Lock> temp_lock(FB_NEW_RPT(*tdbb->getDefaultPool(), sizeof(FB_GUID)) Lock());
 	temp_lock->lck_type = LCK_instance;
 	temp_lock->lck_owner_handle =
 		LCK_get_owner_handle(tdbb, temp_lock->lck_type);
@@ -307,7 +306,7 @@ void DatabaseSnapshot::SharedMemory::init(void* arg, SH_MEM_T* shmemData, bool i
 	header->length = 0;
 
 #ifndef WIN_NT
-	checkMutex("init", ISC_mutex_init(&shmem->base->mutex, shmem_data->sh_mem_mutex_arg));
+	checkMutex("init", ISC_mutex_init(&shmem->base->mutex, shmemData->sh_mem_mutex_arg));
 #endif
 }
 
@@ -387,7 +386,7 @@ DatabaseSnapshot::DatabaseSnapshot(thread_db* tdbb, MemoryPool& pool, jrd_tra* t
 
 	// Dump data for our own dbb, as we won't be
 	// signalled by the LCK_convert call below
-	AutoPtr<ClumpletReader> reader = dumpData(tdbb, false);
+	AutoPtr<ClumpletReader> reader(dumpData(tdbb, false));
 
 	// This variable defines whether we're interested in the global data
 	// (i.e. all attachments) and hence should signal other processes
