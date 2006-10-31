@@ -90,6 +90,7 @@
 #define msvc_version 7
 #define FirebirdURL "http://www.firebirdsql.org"
 #define BaseVer "2_0"
+#define GroupnameVer "2.0"
 #define release
 #define no_pdb
 #define i18n
@@ -123,7 +124,7 @@ AppPublisherURL={#FirebirdURL}
 AppSupportURL={#FirebirdURL}
 AppUpdatesURL={#FirebirdURL}
 DefaultDirName={code:ChooseInstallDir|{pf}\Firebird\Firebird_{#BaseVer}}
-DefaultGroupName=Firebird_{#BaseVer}
+DefaultGroupName=Firebird {#GroupnameVer}
 AllowNoIcons=true
 SourceDir=..\..\..\..\
 LicenseFile=builds\install\misc\IPLicense.txt
@@ -264,6 +265,7 @@ Name: {group}\Firebird ISQL Tool; Filename: {app}\bin\isql.exe; WorkingDir: {app
 #define App_Name = SetupSetting("AppName")
 Name: {group}\Firebird 2.0.0 Release Notes; Filename: {app}\doc\Firebird_v2.0.0.ReleaseNotes.pdf; MinVersion: 4.0,4.0;  Comment: {#App_Name} {cm:ReleaseNotes}
 Name: {group}\Firebird 1.5.3 Release Notes; Filename: {app}\doc\Firebird_v1.5.3.ReleaseNotes.pdf; MinVersion: 4.0,4.0;  Comment: {#App_Name} {cm:ReleaseNotes}
+Name: {group}\Firebird 2.0 Quick Start Guide; Filename: {app}\doc\Firebird-2.0-QuickStart.pdf; MinVersion: 4.0,4.0;  Comment: {#App_Name}
 ;Name: {group}\Firebird 1.5.2 Release Notes; Filename: {app}\doc\Firebird_v1.5.2.ReleaseNotes.pdf; MinVersion: 4.0,4.0;  Comment: {#App_Name} {cm:ReleaseNotes}
 ;Name: {group}\Firebird 1.5.1 Release Notes; Filename: {app}\doc\Firebird_v1.5.1.ReleaseNotes.pdf; MinVersion: 4.0,4.0;  Comment: {#App_Name} {cm:ReleaseNotes}
 ;Name: {group}\Firebird 1.5 Release Notes; Filename: {app}\doc\Firebird_v1.5.ReleaseNotes.pdf; MinVersion: 4.0,4.0;  Comment: {#App_Name} {cm:ReleaseNotes}
