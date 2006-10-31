@@ -1,3 +1,166 @@
+2006-10-31 03:31  asfernandes
+
+	* firebird2/src/jrd/tra.h (1.59):
+
+	Remove GCC warnings
+
+2006-10-30 22:06  hvlad
+
+	* firebird2/builds/win32/msvc7/: engine.vcproj (1.61),
+	engine_classic.vcproj (1.61), engine_embed.vcproj (1.50):
+
+	Add new files (debug info)
+
+2006-10-30 22:04  hvlad
+
+	* firebird2/src/jrd/: DebugInterface.cpp (1.1), DebugInterface.h
+	(1.1):
+
+	1. Remove blr_src_info code as it is prevents database downgrade
+	from ODS 11.1 2. Put debug information (mapping between blr offset
+	and source line\column and names of local variables) into new blob
+	field RDB$DEBUG_INFO This is first step to implement native SQL
+	debugger i believe
+
+2006-10-30 21:57  hvlad
+
+	* firebird2/src/: burp/backup.epp (1.92), burp/burp.h (1.78),
+	burp/restore.epp (1.111), dsql/ddl.cpp (1.188), dsql/dsql.h
+	(1.100), dsql/gen.cpp (1.112), dsql/parse.y (1.224),
+	include/consts_pub.h (1.4), jrd/blb.h (1.24), jrd/cmp.cpp (1.239),
+	jrd/dyn_def.epp (1.145), jrd/dyn_mod.epp (1.81), jrd/dyn_ut_proto.h
+	(1.12), jrd/dyn_util.epp (1.43), jrd/exe.cpp (1.198), jrd/exe.h
+	(1.89), jrd/fields.h (1.12), jrd/ini.epp (1.87), jrd/irq.h (1.12),
+	jrd/jrd.cpp (1.277), jrd/jrd.h (1.178), jrd/met.epp (1.208),
+	jrd/names.h (1.10), jrd/par.cpp (1.147), jrd/relations.h (1.14),
+	jrd/types.h (1.10):
+
+	1. Remove blr_src_info code as it is prevents database downgrade
+	from ODS 11.1 2. Put debug information (mapping between blr offset
+	and source line\column and names of local variables) into new blob
+	field RDB$DEBUG_INFO This is first step to implement native SQL
+	debugger i believe
+
+2006-10-30 21:21  asfernandes
+
+	* firebird2/src/jrd/DatabaseSnapshot.cpp (1.14):
+
+	Misc
+
+2006-10-30 20:04  dimitr
+
+	* firebird2/src/jrd/: tra.cpp (1.131), tra.h (1.58):
+
+	Fixed CORE-980.
+
+2006-10-30 16:23  asfernandes
+
+	* firebird2/src/jrd/why.cpp (1.116):
+
+	Fixed another problem reported by "dlh" in fb-devel
+
+2006-10-30 16:14  asfernandes
+
+	* firebird2/builds/win32/: make_boot.bat (1.31), make_icu.bat
+	(1.10):
+
+	Fix problems reported by "dlh" in fb-devel
+
+2006-10-30 15:17  dimitr
+
+	* firebird2/src/: remote/os/win32/window.h (1.8),
+	utilities/fbcpl/fbdialog.cpp (1.8), utilities/fbcpl/fbdialog.h
+	(1.6):
+
+	Win64 adjustments.
+
+2006-10-30 15:13  dimitr
+
+	* firebird2/src/: remote/os/win32/ibconfig.cpp (1.18),
+	remote/os/win32/window.h (1.7), iscguard/iscguard.cpp (1.48):
+
+	Win64 adjustments.
+
+2006-10-30 14:39  dimitr
+
+	* firebird2/extern/icu/source/: allinone/allinone_8.sln (1.2),
+	test/cintltst/cintltst_8.vcproj (1.2), common/common_8.vcproj
+	(1.2), tools/ctestfw/ctestfw_8.vcproj (1.2),
+	tools/gencmn/decmn_8.vcproj (1.2), tools/gencmn/gencmn_8.vcproj
+	(1.2), tools/genrb/derb_8.vcproj (1.2), tools/genrb/genrb_8.vcproj
+	(1.2), tools/genbrk/genbrk_8.vcproj (1.2),
+	tools/genccode/genccode_8.vcproj (1.2),
+	tools/gencnval/gencnval_8.vcproj (1.2),
+	tools/gennames/gennames_8.vcproj (1.2),
+	tools/gennorm/gennorm_8.vcproj (1.2),
+	tools/genpname/genpname_8.vcproj (1.2),
+	tools/genprops/genprops_8.vcproj (1.2),
+	tools/gensprep/gensprep_8.vcproj (1.2),
+	tools/gentest/gentest_8.vcproj (1.2), tools/genuca/genuca_8.vcproj
+	(1.2), i18n/i18n_8.vcproj (1.2), tools/icuswap/icuswap_8.vcproj
+	(1.2), test/intltest/intltest_8.vcproj (1.2), io/io_8.vcproj (1.2),
+	test/iotest/iotest_8.vcproj (1.2), layout/layout_8.vcproj (1.2),
+	layoutex/layoutex_8.vcproj (1.2), tools/makeconv/makeconv_8.vcproj
+	(1.2), data/makedata_8.vcproj (1.2), tools/pkgdata/pkgdata_8.vcproj
+	(1.2), stubdata/stubdata_8.vcproj (1.2),
+	tools/toolutil/toolutil_8.vcproj (1.2), extra/uconv/uconv_8.vcproj
+	(1.2):
+
+	Updated projects for the AMD64 target.
+
+2006-10-30 14:09  dimitr
+
+	* firebird2/extern/icu/source/test/iotest/iotest.cpp (1.3):
+
+	This weird change fixes the compilation issue on VC8.
+
+2006-10-30 14:05  dimitr
+
+	* firebird2/src/remote/os/win32/ibconfig.cpp (1.17):
+
+	This is supposed to fix pre-VC8 builds.
+
+2006-10-30 14:04  dimitr
+
+	* firebird2/src/include/gen/autoconfig_msvc.h (1.104):
+
+	Win64 adjustments.
+
+2006-10-30 14:00  dimitr
+
+	* firebird2/src/remote/os/win32/window.h (1.6):
+
+	This is supposed to fix pre-VC8 builds.
+
+2006-10-30 13:41  dimitr
+
+	* firebird2/src/remote/os/win32/: cntl.cpp (1.21), ibconfig.cpp
+	(1.16), property.cpp (1.16), window.cpp (1.17):
+
+	Win64 adjustments + cleanup.
+
+2006-10-30 13:40  dimitr
+
+	* firebird2/src/jrd/common.h (1.143):
+
+	Win64 adjustments.
+
+2006-10-30 13:39  dimitr
+
+	* firebird2/src/jrd/: jrd.cpp (1.276), jrd.h (1.177), jrd_proto.h
+	(1.44), lck.cpp (1.61), lck.h (1.28), shut.cpp (1.44), svc.cpp
+	(1.174):
+
+	1) Updated monitoring implementation.  2) Cleanup.
+
+2006-10-30 13:35  dimitr
+
+	* firebird2/src/: include/gen/ids.h (1.18), jrd/names.h (1.9),
+	jrd/relations.h (1.13), jrd/file_params.h (1.27),
+	jrd/DatabaseSnapshot.cpp (1.13), jrd/DatabaseSnapshot.h (1.4):
+
+	1) Updated monitoring implementation.  2) Cleanup.
+
 2006-10-29 15:13  dimitr
 
 	* firebird2/src/: common/classes/fb_string.h (1.6),
