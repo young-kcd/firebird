@@ -98,17 +98,20 @@ JrdMemoryPool *JrdMemoryPool::createPool() {
 	return result;
 }
 
-void JrdMemoryPool::deletePool(JrdMemoryPool* pool) {
+JrdMemoryPool** JrdMemoryPool::deletePool(JrdMemoryPool* pool) {
 	Database* dbb = GET_DBB();
-	for (int n = 0; n < dbb->dbb_pools.getCount(); ++n)
+	JrdMemoryPool** rc = 0;
+	for (size_t n = 0; n < dbb->dbb_pools.getCount(); ++n)
 	{
 		if (dbb->dbb_pools[n] == pool)
 		{
-			dbb->dbb_pools.remove(n);
+			rc = dbb->dbb_pools.remove(n);
 			break;
 		}
 	}
+	fb_assert(rc);
 	MemoryPool::deletePool(pool);
+	return rc;
 }
 
 void JrdMemoryPool::noDbbDeletePool(JrdMemoryPool* pool) {

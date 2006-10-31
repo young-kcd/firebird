@@ -50,7 +50,7 @@ protected:
 public:
 	static JrdMemoryPool *createDbPool(Firebird::MemoryStats &stats);
 	static JrdMemoryPool *createPool();
-	static void deletePool(JrdMemoryPool* pool);
+	static JrdMemoryPool** deletePool(JrdMemoryPool* pool);
 	static void noDbbDeletePool(JrdMemoryPool* pool);
 
 	Jrd::DataComprControl* plb_dccs;

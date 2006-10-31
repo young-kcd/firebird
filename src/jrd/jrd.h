@@ -317,7 +317,7 @@ private:
 			if (*itr && *itr == dbb_bufferpool)
 				dbb_bufferpool = 0;
 			if (*itr && *itr != dbb_permanent)
-				JrdMemoryPool::deletePool(*itr);
+				itr = JrdMemoryPool::deletePool(*itr);
 			else
 				++itr;
 		}
