@@ -194,10 +194,10 @@ void DatabaseSnapshot::SharedMemory::garbageCollect(thread_db* tdbb, bool self)
 
 	// Parse the data and remove all garbage clumplets
 
+	bool garbage_collect = false;
+
 	while (!reader.isEof())
 	{
-		bool garbage_collect = false;
-
 		if (reader.getClumpTag() == TAG_DBB)
 		{
 			FB_GUID guid;
