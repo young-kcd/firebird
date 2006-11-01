@@ -83,7 +83,6 @@ inline int STREAM_INDEX(const jrd_nod* node)
 		case nod_procedure:
 			return e_prc_stream;
 		case nod_union:
-		case nod_recurse:
 			return e_uni_stream;
 		default:
 			return e_agg_stream;
