@@ -955,7 +955,7 @@ LRESULT CALLBACK GeneralPage(HWND hDlg, UINT unMsg, WPARAM wParam,
 	case WM_NOTIFY:
 		switch (((LPNMHDR) lParam)->code) {
 		case PSN_KILLACTIVE:
-			SetWindowLong(hDlg, DWLP_MSGRESULT, FALSE);
+			SetWindowLongPtr(hDlg, DWLP_MSGRESULT, FALSE);
 			break;
 		case PSN_HELP:
 #ifdef NOT_USED_OR_REPLACED

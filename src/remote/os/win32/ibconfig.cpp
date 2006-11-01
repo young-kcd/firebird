@@ -256,7 +256,7 @@ LRESULT CALLBACK InterbasePage(HWND hDlg, UINT unMsg, WPARAM wParam,
 		switch (((LPNMHDR) lParam)->code) {
 		case PSN_KILLACTIVE:	// When the page is about to lose focus
 			{
-				SetWindowLong(hDlg, DWLP_MSGRESULT, FALSE);
+				SetWindowLongPtr(hDlg, DWLP_MSGRESULT, FALSE);
 				break;
 			}
 		case PSN_SETACTIVE:	// When the page is about to recieve 
@@ -280,7 +280,7 @@ LRESULT CALLBACK InterbasePage(HWND hDlg, UINT unMsg, WPARAM wParam,
 				}
 				else			// Error writing the values
 				{
-					SetWindowLong(hDlg, DWLP_MSGRESULT, TRUE);
+					SetWindowLongPtr(hDlg, DWLP_MSGRESULT, TRUE);
 					return TRUE;
 				}
 			break;
