@@ -41,7 +41,6 @@ SINT64	DYN_UTIL_gen_unique_id(Jrd::thread_db*, Jrd::Global*, SSHORT,
 bool    DYN_UTIL_is_array(Jrd::thread_db*, Jrd::Global*, const Firebird::MetaName&);
 void	DYN_UTIL_copy_domain(Jrd::thread_db*, Jrd::Global* gbl,
 			const Firebird::MetaName&, const Firebird::MetaName&);
-USHORT	DYN_skip_blr_blob(const UCHAR**);
 
 #endif // JRD_DYN_UT_PROTO_H
 
