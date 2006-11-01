@@ -1216,7 +1216,7 @@ LPSECURITY_ATTRIBUTES ISC_get_security_desc()
     EXPLICIT_ACCESS ea;
     memset(&ea, 0, sizeof(EXPLICIT_ACCESS));
     ea.grfAccessPermissions = SYNCHRONIZE;
-    ea.grfAccessMode = SET_ACCESS;
+    ea.grfAccessMode = GRANT_ACCESS;
     ea.grfInheritance = NO_INHERITANCE;
     ea.Trustee.TrusteeForm = TRUSTEE_IS_SID;
     ea.Trustee.TrusteeType = TRUSTEE_IS_WELL_KNOWN_GROUP;
