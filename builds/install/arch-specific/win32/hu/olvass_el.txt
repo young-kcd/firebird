@@ -25,11 +25,11 @@ Felhasználás
 
 A Firebird 2.0 alapos tesztelések során
 bizonyította, hogy alkalmas kiterjedt üzemi
-- éles - környezetben történõ felhasználásra.
-Ennek ellenére ajánlatos, a már ismert,
-általánosan alkalmazott telepítési procedúrát
-alkalmazni a termék - éles - környezetben történõ
-üzembehelyezése során. Ilyenek például:
+- éles - környezetben történõ felhasználásra. Ennek
+ellenére ajánlatos, a már ismert, általánosan
+alkalmazott telepítési procedúrát alkalmazni a termék
+- éles - környezetben történõ üzembehelyezése során.
+Ilyenek például:
 
  o Tájékozódjon a termékrõl és az üzembehelyezésrõl
    a telepítési segédletbõl valamint a kiadási
@@ -39,12 +39,12 @@ alkalmazni a termék - éles - környezetben történõ
    telepítés megkezdése elõtt.
    
  o Telepítés elõtt tanácsos eltávolítani minden
-   régebbi verziót. Az eltávolítás hátrahagyja
-   a konfigurációs állományokat és a naplófájlokat.
-   
+   régebbi verziót. Az eltávolítás hátrahagyja a
+   konfigurációs állományokat és a naplófájlokat.
+
  o Ajánlatos saját tesztelés végezni a fejlesztõi
-   rendszeren az új verzióval, mielõtt telepíti
-   a programot az üzemi rendszerre.
+   rendszeren az új verzióval, mielõtt telepíti a
+   programot az üzemi rendszerre.
 
 
 Ezen verzió szolgáltatásai (minden platformon)
@@ -66,7 +66,7 @@ dokumentumot.
 Telepítés öntelepítõ állományból
 ================================
 
-Kérem futtassa a telepítõ programot, majd olvassa el a 
+Kérem futtassa a telepítõ programot, majd olvassa el a
 telepítõ varázsló által megjelenített telepítési
 segédletet.  A telepítés befejezése után ezt a
 dokumentumot a:
@@ -89,7 +89,7 @@ csomagolású terjesztés mellett található meg.)
 A beágyazott szerver telepítése
 ===============================
 
-A beágyazott szerver úgy készült, hogy egy létezõ 
+A beágyazott szerver úgy készült, hogy egy létezõ
 alkalmazás részeként üzemeljen. A beágyazott szerver
 telepítési leírásáért, valamint további információkért
 olvassa el a:
@@ -104,23 +104,24 @@ Ismert problémák
  o A biztonsági adatbázis megváltozott Az új adatbázis
    neve security2.fdb lett és megerõsített
    jelszótitkosítási algoritmus került benne
-   alkalmazásra. További, az új biztonsági funkciókkal
-   kapcsolatos információkat a doc mappában találhat.
-   A régi verziókról áttérõ felhasználó számára a
-   elérhetõ egy áttérést segítõ szkript a 
-   misc/upgrade/security helyen. Ez a szkript átalakítja
-   a régi biztonsági adatbázist az új formátumra.
+   alkalmazásra. További, az új biztonsági
+   funkciókkal kapcsolatos információkat a doc
+   mappában találhat. A régi verziókról áttérõ
+   felhasználó számára a elérhetõ egy áttérést segítõ
+   szkript a  misc/upgrade/security helyen. Ez a
+   szkript átalakítja a régi biztonsági adatbázist az
+   új formátumra.
 
 
  o Néhány örökölt Windowsos program nem ismeri fel az
-   fbclient.dll kliens könyvtárat és/vagy nem találja meg
-   az  alapértelmezett helyén. Ez az alapértelmezett hely
-   most  a .\bin mappa közvetlenül a Firebird
-   gyökérkönyvtár  alatt. Példának okáért a Borland
-   IBConsole program nem fog mûködni a fbclient.dll 
-   kliens könyvtárral egészen addig, amíg azt át nem
-   másolja a rendszer <system> mappába és át nem nevezi
-   "gds32.dll"-re.
+   fbclient.dll kliens könyvtárat és/vagy nem találja
+   meg az  alapértelmezett helyén. Ez az
+   alapértelmezett hely most  a .\bin mappa
+   közvetlenül a Firebird gyökérkönyvtár  alatt.
+   Példának okáért a Borland IBConsole program nem
+   fog mûködni a fbclient.dll kliens könyvtárral
+   egészen addig, amíg azt át nem másolja a rendszer
+   <system> mappába és át nem nevezi "gds32.dll"-re.
 
  o A Windows-os készlet tartalmaz egy instclient.exe 
    nevezetû programot, amely arra használhat, hogy az 
@@ -137,20 +138,21 @@ UDF-ek és BLOB Szûrõk
 ---------------------
 A biztonsági beállításokban történt változtatás miatt
 ebben a verzióban elõfordulhat, hogy az egyedileg
-használt UDF könyvtárak elérhetetlenné válnak a szerver 
-számára, amíg az UDF könyvtárak elérési útjait meg nem 
-adja a firebird.conf konfigurációs állomány megfelelõ 
-szakaszában. További információkért olvassa el a 
-megjegyzéseket a firebird.conf konfigurációs állományban 
-valamint a "Firebird 2.0.0 - Újdonságok" dokumentumban.
+használt UDF könyvtárak elérhetetlenné válnak a
+szerver  számára, amíg az UDF könyvtárak elérési
+útjait meg nem  adja a firebird.conf konfigurációs
+állomány megfelelõ  szakaszában. További
+információkért olvassa el a  megjegyzéseket a
+firebird.conf konfigurációs állományban valamint a "
+Firebird 2.0.0 - Újdonságok" dokumentumban.
 
 
 Az SQL Nyelv dokumentációja
 ===========================
 Új nyelvi szolgáltatások, kulcsszavak, kiterjesztések 
 valamint korlátozások kerültek bevezetésre ebben a
-verzióban. A részletekrõl a "Firebird 2.0.0 - Újdonságok"
-dokumentumból tudhat meg  többet.
+verzióban. A részletekrõl a "Firebird 2.0.0 -
+Újdonságok" dokumentumból tudhat meg  többet.
 
 
 Hibák jelentése
@@ -158,8 +160,8 @@ Hibák jelentése
 
 o Biztosan érti, hogy hogyan mûködik a Firebird?
 
-  Például Önt a rendszer helyes viselkedése érdekli, és
-  igazából technikai támogatás jellegû kérdése van. 
+  Például Önt a rendszer helyes viselkedése érdekli,
+  és igazából technikai támogatás jellegû kérdése van.
   Ebben az esetben forduljon bizalommal a Firebird
   technikai támogatást nyújtó listájához.
 
@@ -189,9 +191,10 @@ rendszerbe.
 
 Mielõtt új képességekkel kapcsolatos igénylést nyújtana 
 be, kérjük tekintse át a jelenlegi igényléseket. Az 
-esély igen nagy, hogy valaki gondolt az Ön által is 
-felvetett hiányosságra. Az alábbi linken megtekintheti a 
-már benyújtott igényléseket és új kérést nyújthat be, 
-amennyiben az valóban szükségszerû.
+esély igen nagy, hogy valaki gondolt az Ön által is
+felvetett hiányosságra. Az alábbi linken
+megtekintheti a  már benyújtott igényléseket és új
+kérést nyújthat be,  amennyiben az valóban
+szükségszerû.
 
   http://sourceforge.net/tracker/?group_id=9028&atid=359028
