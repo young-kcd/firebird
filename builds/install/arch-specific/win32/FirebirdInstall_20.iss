@@ -152,7 +152,7 @@ Name: ba; MessagesFile: compiler:Languages\Bosnian.isl; InfoBeforeFile: builds\i
 Name: fr; MessagesFile: compiler:Languages\French.isl; InfoBeforeFile: builds\install\arch-specific\win32\fr\installation_lisezmoi.txt; InfoAfterFile: builds\install\arch-specific\win32\fr\lisezmoi.txt;
 Name: de; MessagesFile: compiler:Languages\German.isl; InfoBeforeFile: builds\install\arch-specific\win32\de\installation_liesmich.txt; InfoAfterFile: builds\install\arch-specific\win32\de\liesmich.txt;
 Name: es; MessagesFile: compiler:Languages\Spanish.isl; InfoBeforeFile: builds\install\arch-specific\win32\es\leame_instalacion.txt; InfoAfterFile: builds\install\arch-specific\win32\es\leame.txt;
-Name: hu; MessagesFile: compiler:Languages\Hungarian.isl; InfoBeforeFile: builds\install\arch-specific\win32\installation_readme.txt; InfoAfterFile: builds\install\arch-specific\win32\readme.txt;
+Name: hu; MessagesFile: compiler:Languages\Hungarian.isl; InfoBeforeFile: builds\install\arch-specific\win32\hu\telepitesi_segedlet.txt; InfoAfterFile: builds\install\arch-specific\win32\hu\olvass_el.txt;
 Name: it; MessagesFile: compiler:Languages\Italian.isl; InfoBeforeFile: builds\install\arch-specific\win32\it\leggimi_installazione.txt; InfoAfterFile: builds\install\arch-specific\win32\it\leggimi.txt
 Name: pl; MessagesFile: compiler:Languages\Polish.isl; InfoBeforeFile: builds\install\arch-specific\win32\pl\instalacja_czytajto.txt; InfoAfterFile: builds\install\arch-specific\win32\pl\czytajto.txt;
 Name: pt; MessagesFile: compiler:Languages\PortugueseStd.isl; InfoBeforeFile: builds\install\arch-specific\win32\pt\instalacao_leia-me.txt; InfoAfterFile: builds\install\arch-specific\win32\pt\leia-me.txt

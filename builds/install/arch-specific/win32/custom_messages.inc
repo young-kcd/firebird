@@ -57,8 +57,8 @@ en.ReleaseNotes= release notes. (Requires Acrobat Reader.)
 en.Uninstall=Uninstall Firebird
 en.Winsock2Web1=Winsock 2 is not installed.
 en.Winsock2Web2=Would you like to Visit the Winsock 2 Update Home Page?
-en.NoWinsock2 = Please Install Winsock 2 Update before continuing
-en.MSWinsock2Update = http://www.microsoft.com/windows95/downloads/contents/WUAdminTools/S_WUNetworkingTools/W95Sockets2/Default.asp
+en.NoWinsock2=Please Install Winsock 2 Update before continuing
+en.MSWinsock2Update=http://www.microsoft.com/windows95/downloads/contents/WUAdminTools/S_WUNetworkingTools/W95Sockets2/Default.asp
 
 en.RunCSNoGuardian=Run Firebird classic server (without guardian)
 en.RunSSNoGuardian=Run Firebird Superserver (without guardian)
