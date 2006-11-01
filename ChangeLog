@@ -1,3 +1,17 @@
+2006-10-31 15:28  paul_reeves
+
+	* firebird2/builds/install/arch-specific/win32/:
+	BuildExecutableInstall.bat (1.15.2.5), FirebirdInstall_20.iss
+	(1.12.2.6):
+
+	Minor Windows packaging changes
+
+2006-10-31 11:32  dimitr
+
+	* firebird2/doc/WhatsNew (1.95.2.24):
+
+	Update
+
 2006-10-30 20:07  dimitr
 
 	* firebird2/src/jrd/tra.cpp (1.117.2.1):
