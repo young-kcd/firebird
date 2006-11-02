@@ -40,10 +40,9 @@ it.InstallSummaryCancel1= Se si procede con l'installazione, Firebird verrà inst
 it.InstallSummaryCancel2= La configurazione dovrà essere effettuata manualmente.
 it.InstallSummaryCancel3= Si desidera ANNULLARE l'installazione?
 
-it.InstalledProducts=L'analisi preliminare ha evidenziato la presenza di %s versione/i di Firebird o InterBase %s.
-;these are intentionally blank
-it.InstalledProdCountSingular=
-it.InstalledProdCountPlural=
+it.InstalledProducts=L'analisi preliminare ha evidenziato la presenza di %s %s di Firebird o InterBase.
+it.InstalledProdCountSingular=versione
+it.InstalledProdCountPlural=versioni
 
 it.FbRunning1=Risulta al momento in esecuzione un'istanza di Firebird %1 Server.
 it.FbRunning2=     È necessario arrestare l'applicazione o il servizio
@@ -69,3 +68,4 @@ it.RunISQL=Esegui Interactive SQL (ISQL) da riga di comando
 
 it.ReadmeFile=leggimi.txt
 it.InstallationReadmeFile=leggimi_installazione.txt
+
