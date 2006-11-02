@@ -79,6 +79,6 @@ static const char* szWindowName = "Firebird Server"; // Used in iscguard.cpp
 #ifndef SetClassLongPtr
 #define SetClassLongPtr SetClassLong
 #endif
-#endif
+#endif // _WIN64
 
 #endif // OS_WIN32_WINDOW_H

@@ -88,16 +88,9 @@ USHORT	DYN_get_string(const TEXT**, Firebird::PathName&, size_t);
 USHORT	DYN_get_string(const TEXT**, Firebird::UCharBuffer&, size_t);
 USHORT	DYN_get_string(const TEXT**, TEXT*, size_t);
 
-// This function doesn't need to be exported currently.
 bool	DYN_is_it_sql_role(Jrd::Global*, const Firebird::MetaName&, Firebird::MetaName&, Jrd::thread_db*);
 USHORT	DYN_put_blr_blob(Jrd::Global*, const UCHAR**, Jrd::bid*);
-
-// This function is not defined anywhere.
-//USHORT	DYN_put_blr_blob2(Jrd::gbl*, const UCHAR**, ISC_QUAD *);
-
 USHORT	DYN_put_text_blob(Jrd::Global*, const UCHAR**, Jrd::bid*, USHORT bpb_length = 0, const UCHAR* bpb = NULL);
-// This function is not defined anywhere.
-//USHORT	DYN_put_text_blob2(Jrd::gbl*, const UCHAR**, ISC_QUAD *);
 
 void	DYN_rundown_request(Jrd::jrd_req*, SSHORT);
 USHORT	DYN_skip_attribute(const UCHAR**);
