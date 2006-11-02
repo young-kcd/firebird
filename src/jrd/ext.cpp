@@ -253,8 +253,8 @@ bool EXT_get(RecordSource* rsb)
 	UCHAR* p = record->rec_data + offset;
 	SSHORT l = record->rec_length - offset;
 
-	if (file->ext_ifi == 0 ||
-		(fseek(file->ext_ifi, rpb->rpb_ext_pos, 0) != 0))
+	if (file->ext_ifi == 0 || (ftell(file->ext_ifi) != rpb->rpb_ext_pos &&
+		(fseek(file->ext_ifi, rpb->rpb_ext_pos, 0) != 0)))
 	{
 		ERR_post(isc_io_error,
 				 isc_arg_string, "fseek",
@@ -263,13 +263,10 @@ bool EXT_get(RecordSource* rsb)
 				 isc_arg_gds, isc_io_open_err, SYS_ERR, errno, 0);
 	}
 
-	while (l--) {
-		const SSHORT c = getc(file->ext_ifi);
-		if (c == EOF)
-			return false;
-		*p++ = c;
-	}
-	rpb->rpb_ext_pos = ftell(file->ext_ifi);
+	if (!fread(p, l, 1, file->ext_ifi))
+		return false;
+
+	rpb->rpb_ext_pos += l;
 
 /* Loop thru fields setting missing fields to either blanks/zeros
    or the missing value */
@@ -501,8 +498,14 @@ void EXT_store(record_param* rpb, jrd_tra* transaction)
 				 ERR_cstring(reinterpret_cast<const char*>(file->ext_filename)),
 				 isc_arg_gds, isc_io_open_err, SYS_ERR, errno, 0);
 	}
-	for (; l--; ++p)
-		putc(*p, file->ext_ifi);
+
+	if (!fwrite(p, l, 1, file->ext_ifi))
+	{
+		ERR_post(isc_io_error, isc_arg_string, "fwrite", isc_arg_string,
+				 ERR_cstring(reinterpret_cast<const char*>(file->ext_filename)),
+				 isc_arg_gds, isc_io_open_err, SYS_ERR, errno, 0);
+	}
+
 	fflush(file->ext_ifi);
 }
 
