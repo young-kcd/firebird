@@ -1,3 +1,37 @@
+2006-11-01 22:19  hvlad
+
+	* firebird2/src/jrd/Optimizer.h (1.20):
+
+	Fixed mistake
+
+2006-11-01 22:16  hvlad
+
+	* firebird2/src/jrd/: dyn.epp (1.93), dyn.h (1.31), dyn_ut_proto.h
+	(1.13), dyn_util.epp (1.44):
+
+	Moved DYN_skip_blr_blob from dyn_util.epp into dyn.epp as Claudio
+	suggested
+
+2006-11-01 18:46  dimitr
+
+	* firebird2/src/jrd/isc.cpp (1.61):
+
+	Fixed CORE-984.
+
+2006-11-01 08:11  dimitr
+
+	* firebird2/src/remote/os/win32/window.h (1.9):
+
+	Corrections (Win64 related).
+
+2006-11-01 08:06  dimitr
+
+	* firebird2/src/: iscguard/iscguard.cpp (1.49),
+	remote/os/win32/ibconfig.cpp (1.19), remote/os/win32/property.cpp
+	(1.17):
+
+	Corrections (Win64 related).
+
 2006-10-31 16:59  dimitr
 
 	* firebird2/src/jrd/: blb.cpp (1.131), btr.cpp (1.182), evl.cpp
