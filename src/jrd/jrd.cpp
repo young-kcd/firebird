@@ -2557,15 +2557,6 @@ ISC_STATUS GDS_INTL_FUNCTION(ISC_STATUS* user_status, Attachment** handle,
 				break;
 			}
 
-			case INTL_FUNCTION_OCTET_LENGTH:
-			{
-				Firebird::HalfStaticArray<UCHAR, 256> dummy;
-				*result = charSet->substring(strLen, str,
-					strLen, dummy.getBuffer(strLen), 0, 
-					strLen / charSet->maxBytesPerChar());
-				break;
-			}
-
 			default:
 				fb_assert(false);
 				break;

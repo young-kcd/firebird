@@ -3606,7 +3606,7 @@ static dsql_nod* pass1_constant( dsql_req* request, dsql_nod* input)
 	const ISC_STATUS s =
 		gds__intl_function(status_vector, &request->req_dbb->dbb_database_handle,
 			INTL_FUNCTION_CHAR_LENGTH, INTL_GET_CHARSET(&constant->nod_desc),
-			constant->nod_desc.dsc_length, constant->nod_desc.dsc_address, &length);
+			string->str_length, constant->nod_desc.dsc_address, &length);
 	THREAD_ENTER();
 
 	if (s) {

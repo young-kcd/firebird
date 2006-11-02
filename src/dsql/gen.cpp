@@ -58,7 +58,8 @@
 static void gen_aggregate(dsql_req*, const dsql_nod*);
 static void gen_cast(dsql_req*, const dsql_nod*);
 static void gen_coalesce(dsql_req*, const dsql_nod*);
-static void gen_constant(dsql_req*, dsc*, bool);
+static void gen_constant(dsql_req*, const dsc*, bool);
+static void gen_constant(dsql_req*, dsql_nod*, bool);
 static void gen_descriptor(dsql_req*, const dsc*, bool);
 static void gen_error_condition(dsql_req*, const dsql_nod*);
 static void gen_field(dsql_req*, const dsql_ctx*, const dsql_fld*, dsql_nod*);
@@ -118,7 +119,7 @@ void GEN_expr( dsql_req* request, dsql_nod* node)
 		return;
 
 	case nod_constant:
-		gen_constant(request, &node->nod_desc, USE_VALUE);
+		gen_constant(request, node, USE_VALUE);
 		return;
 
 	case nod_derived_field:
@@ -381,7 +382,7 @@ void GEN_expr( dsql_req* request, dsql_nod* node)
 			if (child->nod_type == nod_constant &&
 				DTYPE_IS_NUMERIC(child->nod_desc.dsc_dtype))
 			{
-				gen_constant(request, &child->nod_desc, NEGATE_VALUE);
+				gen_constant(request, child, NEGATE_VALUE);
 				return;
 			}
 		}
@@ -1375,7 +1376,7 @@ static void gen_coalesce( dsql_req* request, const dsql_nod* node)
     @param negate_value
 
  **/
-static void gen_constant( dsql_req* request, dsc* desc, bool negate_value)
+static void gen_constant( dsql_req* request, const dsc* desc, bool negate_value)
 {
 	SLONG value;
 	SINT64 i64value;
@@ -1493,22 +1494,7 @@ static void gen_constant( dsql_req* request, dsc* desc, bool negate_value)
 
 	case dtype_text:
 		{
-			USHORT length;
-
-			ISC_STATUS_ARRAY status_vector = {0};
-
-			THREAD_EXIT();
-			const ISC_STATUS s =
-				gds__intl_function(status_vector, &request->req_dbb->dbb_database_handle,
-					INTL_FUNCTION_OCTET_LENGTH, INTL_GET_CHARSET(desc),
-					desc->dsc_length, desc->dsc_address, &length);
-			THREAD_ENTER();
-
-			if (s) {
-				ERRD_punt(status_vector);
-			}
-
-			desc->dsc_length = length;
+			USHORT length = desc->dsc_length;
 
 			gen_descriptor(request, desc, true);
 			if (length)
@@ -1523,6 +1509,27 @@ static void gen_constant( dsql_req* request, dsc* desc, bool negate_value)
 		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 103,
 				  isc_arg_gds, isc_dsql_constant_err, 0);
 	}
+}
+
+
+/**
+  
+ 	gen_constant
+  
+    @brief	Generate BLR for a constant.
+ 
+
+    @param request
+    @param node
+    @param negate_value
+
+ **/
+static void gen_constant( dsql_req* request, dsql_nod* node, bool negate_value)
+{
+	if (node->nod_desc.dsc_dtype == dtype_text)
+		node->nod_desc.dsc_length = ((dsql_str*) node->nod_arg[0])->str_length;
+
+	gen_constant(request, &node->nod_desc, negate_value);
 }
 
 
