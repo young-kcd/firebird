@@ -1,3 +1,21 @@
+2006-11-01 12:12  paul_reeves
+
+	* firebird2/builds/install/arch-specific/win32/hu/:
+	custom_messages_hu.inc (1.2.6.3), olvass_el.txt (1.1.6.2),
+	telepitesi_segedlet.txt (1.1.6.2):
+
+	More refinements to the hungarian i18n strings for the windows
+	installer
+
+2006-11-01 09:51  paul_reeves
+
+	* firebird2/builds/install/arch-specific/win32/:
+	FirebirdInstall_20.iss (1.12.2.7), custom_messages.inc (1.2.4.3),
+	hu/custom_messages_hu.inc (1.2.6.2), hu/olvass_el.txt (1.1.6.1):
+
+	Add the overlooked hungarian strings for the Windows installer.
+	Remove whitespace from custom_messages.inc
+
 2006-10-31 15:28  paul_reeves
 
 	* firebird2/builds/install/arch-specific/win32/:
