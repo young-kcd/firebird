@@ -24,7 +24,6 @@ o Instalação em sistemas com o Firebird 1.5
 o Instalação em sistemas com o Firebird 2.0
 o Novas funcionalidades da aplicação de instalação
 o Problemas de instalação conhecidos
-o Funcionalidades da instalação abandonadas 
 o Remoção
 o Outras Notas
 o Instalação a partir de um ficheiro batch
