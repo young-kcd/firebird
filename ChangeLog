@@ -1,3 +1,11 @@
+2006-11-02 15:01  paul_reeves
+
+	* firebird2/builds/install/arch-specific/win32/it/:
+	custom_messages_it.inc (1.1.2.2), leggimi.txt (1.1.2.1),
+	leggimi_installazione.txt (1.1.2.1):
+
+	Add italian i18n stuff for the Windows installer.
+
 2006-11-01 12:12  paul_reeves
 
 	* firebird2/builds/install/arch-specific/win32/hu/:
