@@ -15,7 +15,7 @@ pt.UseApplicationTaskMsg=Executar como &Aplicação?
 pt.TaskGroupDescription=Executar o servidor Firebird como:
 pt.UseServiceTask=Executar como um &Serviço?
 pt.AutoStartTask=Iniciar o &Firebird automaticamente de cada vez que o Windows arranca?
-pt.CopyFbClientToSysTask=Copiar a biblioteca do cliente &Firebird para a pasta de <sistema>?
+pt.CopyFbClientToSysTask=Copiar a biblioteca do cliente &Firebird para a pasta de <system>?
 pt.CopyFbClientAsGds32Task=Criar a biblioteca cliente como GDS32.DLL para "retro-compatibilidade"?
 pt.InstallCPLAppletTask="Instalar a aplicação no &Painel de Controlo?"
 pt.instreg=Modificando o registo
@@ -44,7 +44,7 @@ pt.InstalledProducts='A análise de reinstalação indica que foram encontradas %s 
 pt.InstalledProdCountSingular=versão tem
 pt.InstalledProdCountPlural=versões têm
 
-pt.FbRunning1=Um Servidor Firebird % anterior já se encontra em execução.
+pt.FbRunning1=Um Servidor Firebird %1 anterior já se encontra em execução.
 pt.FbRunning2=     Tem que fechar a aplicação ou parar o serviço
 pt.FbRunning3=                 antes de continuar.
 
