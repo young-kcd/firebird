@@ -1,3 +1,26 @@
+2006-11-02 23:37  asfernandes
+
+	* firebird2/src/: dsql/gen.cpp (1.114), dsql/pass1.cpp (1.298),
+	jrd/jrd.cpp (1.279), jrd/why_proto.h (1.29):
+
+	Fixed a bug when the connection charset is multibyte, appeared
+	after recent changes to CsConvert class.
+
+2006-11-02 20:55  asfernandes
+
+	* firebird2/src/: jrd/dyn.h (1.32), remote/os/win32/window.h
+	(1.10):
+
+	Misc
+
+2006-11-02 10:35  dimitr
+
+	* firebird2/src/jrd/ext.cpp (1.69):
+
+	A few small fixes that improve performance of external tables
+	(2x-10x for reads and up to 50% for writes, depending on file
+	caching effects).
+
 2006-11-01 22:19  hvlad
 
 	* firebird2/src/jrd/Optimizer.h (1.20):
