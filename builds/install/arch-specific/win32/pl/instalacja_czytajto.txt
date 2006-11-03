@@ -10,7 +10,7 @@ Firebird Serwer Baz Danych 2.0
   ** ********* **
 
 Ten dokument jest przewodnikiem instalacji Firebird 2.0
-Beta 1 na platformie Win32. Poni¿sze informacje dotycz¹
+na platformie Win32. Poni¿sze informacje dotycz¹
 raczej tego pakietu instalacyjnego ni¿ Firebirda 2.0 w ogóle.
 
 
@@ -76,12 +76,6 @@ nie potrafi automatycznie wykryæ czy jest uruchomiony
 serwer Firebird 2.0 Beta 1. Tak wiêc nie pojawi siê ¿adne
 ostrze¿enie dopóki nie spróbuje nadpisaæ aktywny plik.
 Unikniesz tego jeœli instalujesz po raz pierwszy.
-
-
-Nowe funkcjonalnoœci instalatora Firebird 2.0.0 Beta 1
--------------------------------------------------------
-
-Instalator Beta 1 nie ma ¿adnych nowych funkcjonalnoœci
 
 
 Nowe funkcjonalnoœci instalatora 
