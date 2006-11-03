@@ -6860,11 +6860,12 @@ void dsql_req::put_debug_variable(USHORT number, const TEXT* name)
 	req_debug_data.add(number);
 	req_debug_data.add(number >> 8);
 
-	const USHORT len = strlen(name);
-	fb_assert(len <= MAX_UCHAR);
+	USHORT len = strlen(name);
+	if (len > MAX_UCHAR)
+		len = MAX_UCHAR;
 	req_debug_data.add(len);
 
-	while (*name) 
+	while (len--) 
 		req_debug_data.add(*name++);
 }
 
@@ -6879,7 +6880,7 @@ void dsql_req::append_debug_info()
 		append_ushort( req_debug_data.getCount() );
 
 		const UCHAR *const end = req_debug_data.end();
-		for(UCHAR *c = req_debug_data.begin(); c < end; c++)
+		for(const UCHAR *c = req_debug_data.begin(); c < end; c++)
 			append_uchar(*c);
 	}
 }

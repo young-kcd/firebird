@@ -3643,7 +3643,8 @@ static jrd_nod* pass1(thread_db* tdbb,
 		break;
 
 	case nod_src_info:
-		node->nod_arg[e_src_info_node] = pass1(tdbb, csb, node->nod_arg[2], view, view_stream, validate_expr);
+		node->nod_arg[e_src_info_node] = 
+			pass1(tdbb, csb, node->nod_arg[e_src_info_node], view, view_stream, validate_expr);
 		return node;		
 
 	default:
@@ -4762,7 +4763,8 @@ static jrd_nod* pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node
 		break;
 
 	case nod_src_info:
-		node->nod_arg[e_src_info_node] = pass2(tdbb, csb, node->nod_arg[2], node);
+		node->nod_arg[e_src_info_node] = 
+			pass2(tdbb, csb, node->nod_arg[e_src_info_node], node);
 		return node;
 
 	default:

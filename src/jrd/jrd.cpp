@@ -221,6 +221,7 @@ void Jrd::Trigger::compile(thread_db* tdbb)
 		else
 			par_flags |= csb_post_trigger;
 
+		CompilerScratch* csb = NULL;
 		try {
 			Jrd::ContextPoolHolder context(tdbb, new_pool);
 
@@ -228,7 +229,7 @@ void Jrd::Trigger::compile(thread_db* tdbb)
 			if (!dbg_blob_id.isEmpty())
 				DBG_parse_debug_info(tdbb, &dbg_blob_id, csb_map);
 
-			CompilerScratch* csb = CompilerScratch::newCsb(*tdbb->getDefaultPool(), 5);
+			csb = CompilerScratch::newCsb(*tdbb->getDefaultPool(), 5);
 			csb->csb_g_flags |= par_flags;
 			csb->csb_map_blr2src = &csb_map;
 
@@ -239,6 +240,10 @@ void Jrd::Trigger::compile(thread_db* tdbb)
 		}
 		catch (const Firebird::Exception&) {
 			compile_in_progress = false;
+			if (csb) {
+				delete csb;
+				csb = NULL;
+			}
 			if (request) {
 				CMP_release(tdbb, request);
 				request = NULL;
