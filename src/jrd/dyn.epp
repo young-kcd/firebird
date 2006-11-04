@@ -709,7 +709,7 @@ USHORT DYN_get_string(const TEXT** ptr, Firebird::MetaName& field, size_t, bool 
 
 		length = INTL_convert_bytes(JRD_get_thread_data(),
 			ttype_metadata, (BYTE*) temp, sizeof(temp),
-			ttype_dynamic, (const BYTE*) field.c_str(), length, ERR_post);
+			ttype_dynamic, (const BYTE*) field.c_str(), field.length(), ERR_post);
 		field.assign(temp, length);
 	}
 
@@ -745,14 +745,14 @@ USHORT DYN_get_string(const TEXT** ptr, Firebird::PathName& field, size_t, bool 
 	{
 		thread_db* tdbb = JRD_get_thread_data();
 
-		field.resize(
+		field.reserve(
 			INTL_convert_bytes(tdbb,
 				ttype_metadata, NULL, 0,
-				ttype_dynamic, (const BYTE*) temp.begin(), length, ERR_post));
+				ttype_dynamic, (const BYTE*) temp.begin(), temp.length(), ERR_post));
 
 		length = INTL_convert_bytes(tdbb,
-			ttype_metadata, (BYTE*) field.begin(), field.length(),
-			ttype_dynamic, (const BYTE*) temp.begin(), length, ERR_post);
+			ttype_metadata, (BYTE*) field.begin(), field.capacity(),
+			ttype_dynamic, (const BYTE*) temp.begin(), temp.length(), ERR_post);
 		field.resize(length);
 	}
 	else
