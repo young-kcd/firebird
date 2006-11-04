@@ -4,12 +4,12 @@
 
     * Bugfix CORE-986
         Non-ASCII quoted identifiers are not converted to metadata (UNICODE_FSS) charset
-	Contributor(s):
+      Contributor(s):
         Adriano dos Santos Fernandes <adrianosf at uol.com.br>
 
     * Bugfix CORE-966
         Bug in socket binding for database event.
-	Contributor(s):
+      Contributor(s):
         Paul Beach <pbeach at ibphoenix.com>
         Dmitry Yemanov <dimitr at firebirdsql.org>
 
