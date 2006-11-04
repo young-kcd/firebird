@@ -1,3 +1,23 @@
+2006-11-04 04:03  asfernandes
+
+	* firebird2/src/dsql/ddl.cpp (1.190):
+
+	Misc
+
+2006-11-04 03:47  asfernandes
+
+	* firebird2/src/jrd/met.epp (1.211):
+
+	Misc
+
+2006-11-03 10:42  hvlad
+
+	* firebird2/src/: dsql/ddl.cpp (1.189), dsql/gen.cpp (1.115),
+	jrd/cmp.cpp (1.240), jrd/jrd.cpp (1.280), jrd/met.epp (1.210),
+	jrd/par.cpp (1.149):
+
+	Few corrections pointed by Claudio
+
 2006-11-02 23:37  asfernandes
 
 	* firebird2/src/: dsql/gen.cpp (1.114), dsql/pass1.cpp (1.298),
