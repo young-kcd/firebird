@@ -33,7 +33,8 @@ const int STUFF_COUNT		= 4;
 const int TEXT_BLOB_LENGTH	= 512;
 
 
-#define GET_STRING(from, to)	DYN_get_string ((const TEXT**)from, to, sizeof(to))
+#define GET_STRING(from, to)	DYN_get_string ((const TEXT**)from, to, sizeof(to), true)
+#define GET_BYTES(from, to)		DYN_get_string ((const TEXT**)from, to, sizeof(to), false)
 
 namespace Jrd {
 
@@ -83,10 +84,10 @@ void	DYN_error_punt(bool, USHORT, const TEXT*, const TEXT*,
 				const TEXT*, const TEXT*, const TEXT*);
 void	DYN_execute(Jrd::Global*, const UCHAR**, const Firebird::MetaName*, Firebird::MetaName*, Firebird::MetaName*, Firebird::MetaName*, Firebird::MetaName*);
 SLONG	DYN_get_number(const UCHAR**);
-USHORT	DYN_get_string(const TEXT**, Firebird::MetaName&, size_t);
-USHORT	DYN_get_string(const TEXT**, Firebird::PathName&, size_t);
-USHORT	DYN_get_string(const TEXT**, Firebird::UCharBuffer&, size_t);
-USHORT	DYN_get_string(const TEXT**, TEXT*, size_t);
+USHORT	DYN_get_string(const TEXT**, Firebird::MetaName&, size_t, bool);
+USHORT	DYN_get_string(const TEXT**, Firebird::PathName&, size_t, bool);
+USHORT	DYN_get_string(const TEXT**, Firebird::UCharBuffer&, size_t, bool);
+USHORT	DYN_get_string(const TEXT**, TEXT*, size_t, bool);
 
 bool	DYN_is_it_sql_role(Jrd::Global*, const Firebird::MetaName&, Firebird::MetaName&, Jrd::thread_db*);
 USHORT	DYN_put_blr_blob(Jrd::Global*, const UCHAR**, Jrd::bid*);

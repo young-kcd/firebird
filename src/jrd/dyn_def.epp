@@ -926,7 +926,7 @@ void DYN_define_exception( Global* gbl, const UCHAR** ptr)
 				switch (verb)
 				{
 				case isc_dyn_xcp_msg:
-					GET_STRING(ptr, X.RDB$MESSAGE);
+					GET_BYTES(ptr, X.RDB$MESSAGE);
 					X.RDB$MESSAGE.NULL = FALSE;
 					break;
 

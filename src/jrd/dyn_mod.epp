@@ -370,7 +370,7 @@ void DYN_modify_exception( Global* gbl, const UCHAR** ptr)
 			while ((verb = *(*ptr)++) != isc_dyn_end)
 				switch (verb) {
 				case isc_dyn_xcp_msg:
-					GET_STRING(ptr, X.RDB$MESSAGE);
+					GET_BYTES(ptr, X.RDB$MESSAGE);
 					X.RDB$MESSAGE.NULL = FALSE;
 					break;
 

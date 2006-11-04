@@ -624,7 +624,7 @@ SLONG DYN_get_number(const UCHAR** ptr)
 }
 
 
-USHORT DYN_get_string(const TEXT** ptr, TEXT* field, size_t size)
+USHORT DYN_get_string(const TEXT** ptr, TEXT* field, size_t size, bool transliterate)
 {
 /**************************************
  *
@@ -643,25 +643,40 @@ USHORT DYN_get_string(const TEXT** ptr, TEXT* field, size_t size)
 	USHORT length = (UCHAR) *p++;
 	length |= ((USHORT) ((UCHAR) (*p++))) << 8;
 	
+	Firebird::HalfStaticArray<TEXT, MAX_SQL_IDENTIFIER_LEN> temp;
 	USHORT l = length;
+
 	if (l) {
 		if (length >= size) {
 			DYN_error_punt(false, 159, NULL, NULL, NULL, NULL, NULL);
 			// msg 159: Name longer than database field size
 		}
+
+		TEXT* p2 = temp.getBuffer(length);
+
 		do {
-			*field++ = *p++;
+			*p2++ = *p++;
 		} while (--l);
 	}
 
-	*field = 0;
 	*ptr = p;
+
+	if (transliterate)
+	{
+		length = INTL_convert_bytes(JRD_get_thread_data(),
+			ttype_metadata, (BYTE*) field, size - 1,
+			ttype_dynamic, (const BYTE*) temp.begin(), length, ERR_post);
+	}
+	else
+		memcpy(field, temp.begin(), length);
+
+	field[length] = 0;
 
 	return length;
 }
 
 
-USHORT DYN_get_string(const TEXT** ptr, Firebird::MetaName& field, size_t)
+USHORT DYN_get_string(const TEXT** ptr, Firebird::MetaName& field, size_t, bool transliterate)
 {
 /**************************************
  *
@@ -687,11 +702,22 @@ USHORT DYN_get_string(const TEXT** ptr, Firebird::MetaName& field, size_t)
 	p += length;
 
 	*ptr = p;
+
+	if (transliterate)
+	{
+		TEXT temp[MAX_SQL_IDENTIFIER_LEN];
+
+		length = INTL_convert_bytes(JRD_get_thread_data(),
+			ttype_metadata, (BYTE*) temp, sizeof(temp),
+			ttype_dynamic, (const BYTE*) field.c_str(), length, ERR_post);
+		field.assign(temp, length);
+	}
+
 	return length;
 }
 
 
-USHORT DYN_get_string(const TEXT** ptr, Firebird::PathName& field, size_t)
+USHORT DYN_get_string(const TEXT** ptr, Firebird::PathName& field, size_t, bool transliterate)
 {
 /**************************************
  *
@@ -707,16 +733,36 @@ USHORT DYN_get_string(const TEXT** ptr, Firebird::PathName& field, size_t)
 	const TEXT* p = *ptr;
 	USHORT length = (UCHAR) *p++;
 	length |= ((USHORT) ((UCHAR) (*p++))) << 8;
-	
-	field.assign(p, length);
+
+	Firebird::PathName temp;
+
+	temp.assign(p, length);
 	p += length;
 
 	*ptr = p;
+
+	if (transliterate)
+	{
+		thread_db* tdbb = JRD_get_thread_data();
+
+		field.resize(
+			INTL_convert_bytes(tdbb,
+				ttype_metadata, NULL, 0,
+				ttype_dynamic, (const BYTE*) temp.begin(), length, ERR_post));
+
+		length = INTL_convert_bytes(tdbb,
+			ttype_metadata, (BYTE*) field.begin(), field.length(),
+			ttype_dynamic, (const BYTE*) temp.begin(), length, ERR_post);
+		field.resize(length);
+	}
+	else
+		field = temp;
+
 	return length;
 }
 
 
-USHORT DYN_get_string(const TEXT** ptr, Firebird::UCharBuffer& array, size_t)
+USHORT DYN_get_string(const TEXT** ptr, Firebird::UCharBuffer& array, size_t, bool transliterate)
 {
 /**************************************
  *
@@ -733,10 +779,30 @@ USHORT DYN_get_string(const TEXT** ptr, Firebird::UCharBuffer& array, size_t)
 	USHORT length = (UCHAR) *p++;
 	length |= ((USHORT) ((UCHAR) (*p++))) << 8;
 
-	memcpy(array.getBuffer(length), p, length);
+	Firebird::UCharBuffer temp;
+
+	memcpy(temp.getBuffer(length), p, length);
 	p += length;
 
 	*ptr = p;
+
+	if (transliterate)
+	{
+		thread_db* tdbb = JRD_get_thread_data();
+
+		array.resize(
+			INTL_convert_bytes(tdbb,
+				ttype_metadata, NULL, 0,
+				ttype_dynamic, temp.begin(), length, ERR_post));
+
+		length = INTL_convert_bytes(tdbb,
+			ttype_metadata, array.begin(), array.getCapacity(),
+			ttype_dynamic, temp.begin(), length, ERR_post);
+		array.resize(length);
+	}
+	else
+		array = temp;
+
 	return length;
 }
 

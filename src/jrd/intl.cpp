@@ -572,15 +572,27 @@ ULONG INTL_convert_bytes(thread_db* tdbb,
 	fb_assert(src_type != dest_type);
 	fb_assert(err != NULL);
 
+	dest_type = INTL_charset(tdbb, dest_type);
+	src_type = INTL_charset(tdbb, src_type);
+
 	const UCHAR* const start_dest_ptr = dest_ptr;
 
 	if ((dest_type == CS_BINARY) ||
 		(dest_type == CS_NONE) ||
+		(src_type == CS_BINARY) ||
 		(src_type == CS_NONE))
 	{
 		/* See if we just need a length estimate */
 		if (dest_ptr == NULL)
 			return (src_len);
+
+		if (dest_type != CS_BINARY && dest_type != CS_NONE)
+		{
+			CharSet* toCharSet = INTL_charset_lookup(tdbb, dest_type);
+
+			if (!toCharSet->wellFormed(src_len, src_ptr))
+				(*err)(isc_malformed_string, 0);
+		}
 
 		len = MIN(dest_len, src_len);
 		if (len)
@@ -597,8 +609,6 @@ ULONG INTL_convert_bytes(thread_db* tdbb,
 	}
 	else if (src_len == 0)
 		return (0);
-	else if (src_type == CS_BINARY)
-		(*err)(isc_arith_except, isc_arg_gds, isc_transliteration_failed, 0);
 	else
 		/* character sets are known to be different */
 	{
