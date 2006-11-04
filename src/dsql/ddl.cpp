@@ -6880,7 +6880,7 @@ void dsql_req::append_debug_info()
 		append_ushort( req_debug_data.getCount() );
 
 		const UCHAR *const end = req_debug_data.end();
-		for(const UCHAR *c = req_debug_data.begin(); c < end; c++)
+		for (const UCHAR *c = req_debug_data.begin(); c < end; c++)
 			append_uchar(*c);
 	}
 }
