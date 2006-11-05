@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: rse.cpp,v 1.28.2.5 2004-10-09 14:14:53 dimitr Exp $
+ * $Id: rse.cpp,v 1.28.2.6 2006-11-05 14:38:12 alexpeshkoff Exp $
  *
  * 2001.07.28: John Bellardo: Implemented rse_skip and made rse_first work with
  *                              seekable streams.
@@ -730,8 +730,8 @@ void RSE_open(TDBB tdbb, RSB rsb)
 				/* Initialize the record number of each stream in the union */
 
 				ptr = &rsb->rsb_arg[rsb->rsb_count];
-				for (end = ptr + (USHORT) * ptr; ++ptr <= end;)
-					request->req_rpb[(USHORT) * ptr].rpb_number = -1;
+				for (end = ptr + (USHORT) (IPTR) *ptr; ++ptr <= end;)
+					request->req_rpb[(USHORT) (IPTR) *ptr].rpb_number = -1;
 
 				rsb = rsb->rsb_arg[0];
 			}
@@ -2124,14 +2124,14 @@ static BOOLEAN get_procedure(TDBB				tdbb,
 	msg_format = (FMT) procedure->prc_output_msg->nod_arg[e_msg_format];
 	if (!impure->irsb_message)
 	{
-		size = msg_format->fmt_length + ALIGNMENT;
+		size = msg_format->fmt_length + FB_ALIGNMENT;
 		impure->irsb_message = FB_NEW_RPT(*tdbb->tdbb_default, size) str();
 		impure->irsb_message->str_length = size;
 	}
 	om =
 		(UCHAR *) FB_ALIGN((U_IPTR) impure->irsb_message->str_data,
-						   ALIGNMENT);
-	oml = impure->irsb_message->str_length - ALIGNMENT;
+						   FB_ALIGNMENT);
+	oml = impure->irsb_message->str_length - FB_ALIGNMENT;
 
 	if (!rpb->rpb_record) {
 		record = rpb->rpb_record =
@@ -2914,7 +2914,7 @@ static void join_to_nulls(TDBB tdbb, RSB rsb, USHORT streams)
 	request = tdbb->tdbb_request;
 	stack = (LLS) rsb->rsb_arg[streams];
 	for (; stack; stack = stack->lls_next) {
-		rpb = &request->req_rpb[(USHORT) stack->lls_object];
+		rpb = &request->req_rpb[(USHORT) (IPTR) stack->lls_object];
 
 		/* Make sure a record block has been allocated.  If there isn't
 		   one, first find the format, then allocate the record block */
@@ -2972,7 +2972,7 @@ static void map_sort_data(JRD_REQ request, SMB map, UCHAR * data)
 		   list that contains the data to send back
 		 */
 		if (IS_INTL_DATA(&item->smb_desc) &&
-			(USHORT) item->smb_desc.dsc_address <
+			(USHORT) (IPTR) item->smb_desc.dsc_address <
 			map->smb_key_length * sizeof(ULONG)) continue;
 
 		rpb = &request->req_rpb[item->smb_stream];
@@ -3238,7 +3238,7 @@ static void open_sort(TDBB tdbb, RSB rsb, IRSB_SORT impure, ULONG max_records)
 				   the sort record, then want to sort by language dependent order */
 
 				if (IS_INTL_DATA(&item->smb_desc) &&
-					(USHORT) item->smb_desc.dsc_address <
+					(USHORT) (IPTR) item->smb_desc.dsc_address <
 					map->smb_key_length * sizeof(ULONG)) {
 					INTL_string_to_key(tdbb, INTL_INDEX_TYPE(&item->smb_desc),
 									   from, &to, FALSE);
@@ -3351,8 +3351,8 @@ static void proc_assignment(
 		else if (desc1.dsc_dtype == dtype_int64)
 			*((SINT64 *) desc2.dsc_address) = *((SINT64 *) desc1.dsc_address);
 
-		else if (((U_IPTR) desc1.dsc_address & (ALIGNMENT - 1)) ||
-				 ((U_IPTR) desc2.dsc_address & (ALIGNMENT - 1)))
+		else if (((U_IPTR) desc1.dsc_address & (FB_ALIGNMENT - 1)) ||
+				 ((U_IPTR) desc2.dsc_address & (FB_ALIGNMENT - 1)))
 			MOVE_FAST(desc1.dsc_address, desc2.dsc_address, desc1.dsc_length);
 
 		else

@@ -2220,7 +2220,7 @@ static QLI_NOD expand_sort( SYN input, LLS stack, QLI_NOD list)
 	for (i = 0; i < node->nod_count; i++) {
 		expr = *syn_ptr++;
 		if (expr->syn_type == nod_position) {
-			position = (USHORT) expr->syn_arg[0];
+			position = (USHORT) (IPTR) expr->syn_arg[0];
 			if (!list || !position || position > list->nod_count)
 				IBERROR(152);	/* Msg152 invalid ORDER BY ordinal */
 			item = (ITM) list->nod_arg[position - 1];

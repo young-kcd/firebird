@@ -1719,7 +1719,7 @@ DSQL_NOD MAKE_variable(DSQL_FLD field,
 
 	tdsql = GET_THREAD_DATA;
 
-	var_ = FB_NEW_RPT(*tdsql->tsql_default, strlen(name)) var;
+	var_ = FB_NEW_RPT(*tdsql->tsql_default, strlen(name)) Variable;
 	node = MAKE_node(nod_variable, e_var_count);
 	node->nod_arg[e_var_variable] = (DSQL_NOD) var_;
 	var_->var_msg_number = msg_number;

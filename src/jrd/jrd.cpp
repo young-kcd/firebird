@@ -3905,7 +3905,7 @@ ISC_STATUS DLL_EXPORT GDS_TRANSACT_REQUEST(ISC_STATUS*	user_status,
 					 gds_arg_number, (SLONG) in_msg_length,
 					 gds_arg_number, (SLONG) len, 0);
 		}
-		if ((U_IPTR) in_msg & (ALIGNMENT - 1)) {
+		if ((U_IPTR) in_msg & (FB_ALIGNMENT - 1)) {
 			MOVE_FAST(in_msg, (SCHAR *) request + in_message->nod_impure,
 					  in_msg_length);
 		}
@@ -3931,7 +3931,7 @@ ISC_STATUS DLL_EXPORT GDS_TRANSACT_REQUEST(ISC_STATUS*	user_status,
 	}
 
 	if (out_msg_length) {
-		if ((U_IPTR) out_msg & (ALIGNMENT - 1)) {
+		if ((U_IPTR) out_msg & (FB_ALIGNMENT - 1)) {
 			MOVE_FAST((SCHAR *) request + out_message->nod_impure, out_msg,
 					  out_msg_length);
 		}

@@ -25,10 +25,10 @@
 //
 //____________________________________________________________
 //
-//	$Id: msc.cpp,v 1.6 2003-07-02 12:57:41 brodsom Exp $
+//	$Id: msc.cpp,v 1.6.2.1 2006-11-05 14:38:01 alexpeshkoff Exp $
 //
 //  
-//$Id: msc.cpp,v 1.6 2003-07-02 12:57:41 brodsom Exp $
+//$Id: msc.cpp,v 1.6.2.1 2006-11-05 14:38:01 alexpeshkoff Exp $
 //  
 
 // ***************************************************
@@ -104,7 +104,7 @@ UCHAR *MSC_alloc(int size)
 	int n;
 	UCHAR *blk, *p, *end;
 
-	size = FB_ALIGN(size, ALIGNMENT);
+	size = FB_ALIGN(size, FB_ALIGNMENT);
 
 	if (!space || size > space->spc_remaining) {
 		n = MAX(size, 4096);
@@ -141,7 +141,7 @@ UCHAR *MSC_alloc_permanent(int size)
 	int n;
 	UCHAR *blk, *p, *end;
 
-	size = FB_ALIGN(size, ALIGNMENT);
+	size = FB_ALIGN(size, FB_ALIGNMENT);
 
 	if (!permanent_space || size > permanent_space->spc_remaining) {
 		n = MAX(size, 4096);

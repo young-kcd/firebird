@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.embed.lockmgr,v 1.5.2.1 2003-07-19 04:57:38 bellardo Exp $
+#  $Id: Makefile.in.embed.lockmgr,v 1.5.2.2 2006-11-05 14:37:29 alexpeshkoff Exp $
 #
 ROOT=..
 ObjModuleName=embed.lockmgr
@@ -46,7 +46,7 @@ LOCKMGR_Sources = $(addprefix lock/, $(LOCKMGR_Files))
 LOCKMGR_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(LOCKMGR_Sources))))
 
 AllObjects = $(LOCKMGR_Objects)
-Dependencies = $(AllObjects:.o=.d) 
+Dependencies=$(AllObjects:.o=.$(DEP_EXT))
 
 
 .PHONY: lock_mgr

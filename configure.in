@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.141.2.38 2005-06-09 09:04:44 kkuznetsov Exp $
+dnl $Id: configure.in,v 1.141.2.39 2006-11-05 14:37:18 alexpeshkoff Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -155,6 +155,18 @@ case "$target" in
     LOCK_MANAGER_FLG=N
     EDITLINE_FLG=N
     SHRLIB_EXT=dll
+    ;;
+
+  powerpc-ibm-aix*)
+    MAKEFILE_PREFIX=aix
+    INSTALL_PREFIX=aix
+    PLATFORM=AIX_PPC
+    AC_DEFINE(AIX_PPC, 1, [Define this if OS is aix])
+    LOCK_MANAGER_FLG=Y
+    EDITLINE_FLG=N
+    SHRLIB_EXT=a
+    libdir=/usr/lib64
+    CPU_TYPE=PowerPC
     ;;
 
   *)

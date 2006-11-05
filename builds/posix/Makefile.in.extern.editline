@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.extern.editline,v 1.2.2.1 2004-05-23 18:24:03 skidder Exp $
+#  $Id: Makefile.in.extern.editline,v 1.2.2.2 2006-11-05 14:37:30 alexpeshkoff Exp $
 #
 ROOT=..
 #ObjModuleName=editline
@@ -51,7 +51,7 @@ include     $(ROOT)/gen/make.shared.variables
 #EDITLINE_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(EDITLINE_Sources))))
 
 #AllObjects = $(EDITLINE_Objects)
-#Dependencies = $(AllObjects:.o=.d) 
+#Dependencies=$(AllObjects:.o=.$(DEP_EXT))
 
 
 

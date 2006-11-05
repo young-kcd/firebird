@@ -49,7 +49,7 @@
  *
  */
 /*
-$Id: common.h,v 1.73.2.4 2004-03-29 03:50:10 skidder Exp $
+$Id: common.h,v 1.73.2.5 2006-11-05 14:38:09 alexpeshkoff Exp $
 */
 
 #ifndef JRD_COMMON_H
@@ -186,7 +186,7 @@ int syslog(int pri, char *fmt, ...);
 #define QUADFORMAT "ll"
 #define QUADCONST(n) (n##LL)
 
-/*#define ALIGNMENT	4*/
+/*#define FB_ALIGNMENT	4*/
 /*#define DOUBLE_ALIGN	8*/
 
 #ifdef SUPERSERVER
@@ -237,7 +237,7 @@ typedef RETSIGTYPE (*SIG_FPTR) ();
 #define XLONGFORMAT "lX"
 #define xLONGFORMAT "lx"
 
-/*#define ALIGNMENT       4*/
+/*#define FB_ALIGNMENT       4*/
 /*#define DOUBLE_ALIGN    4*/
 #define BSD_UNIX        1
 #define UNIX            1
@@ -268,7 +268,7 @@ typedef RETSIGTYPE (*SIG_FPTR) (int);
 #endif
 */
 
-/*#define ALIGNMENT     4*/
+/*#define FB_ALIGNMENT     4*/
 /*#define DOUBLE_ALIGN  4*/
 
 #define UNIX  1
@@ -295,7 +295,7 @@ typedef RETSIGTYPE (*SIG_FPTR) (int);
 #ifdef NETBSD
 
 #if defined(__i386__)
-/*#define ALIGNMENT     4*/
+/*#define FB_ALIGNMENT     4*/
 /*#define DOUBLE_ALIGN  4*/
 
 #define IEEE  1
@@ -404,7 +404,7 @@ typedef RETSIGTYPE (*SIG_FPTR) ();
 #define                 IEEE
 
 #ifdef sparc
-/*#define ALIGNMENT       4*/
+/*#define FB_ALIGNMENT       4*/
 /*#define DOUBLE_ALIGN    8*/
 #define IMPLEMENTATION  isc_info_db_impl_isc_sun4 /* 30 */
 #else /* sparc */
@@ -440,7 +440,7 @@ typedef RETSIGTYPE (*SIG_FPTR) (int);
 #define UNIX            1
 #define CURSES_KEYPAD   1
 
-/*#define ALIGNMENT       8*/
+/*#define FB_ALIGNMENT       8*/
 /*#define DOUBLE_ALIGN    8*/
 #define IMPLEMENTATION  isc_info_db_impl_isc_hp_ux /* 31 */
 
@@ -472,7 +472,7 @@ typedef RETSIGTYPE (*SIG_FPTR) ();
 *****************************************************/
 #ifdef VMS
 #define VAX_FLOAT       1
-/*#define ALIGNMENT       4*/
+/*#define FB_ALIGNMENT       4*/
 #define NO_NFS
 #define CTO32L(p)       (*(long*)p)
 #define NO_CHECKSUM	1
@@ -502,13 +502,20 @@ typedef RETSIGTYPE (*SIG_FPTR) ();
 * IBM AIX RS/6000 and IBM AIX PowerPC 
 *****************************************************/
 
+#ifdef AIX_PPC
+#ifndef _AIX
+#define _AIX
+#endif
+#endif
+
 #ifdef _AIX						/* IBM AIX */
-#ifndef _POWER					/* IBM RS/6000 */
 #define AIX
+#ifndef _POWER					/* IBM RS/6000 */
+#define AIX_RS6000
 #define KILLER_SIGNALS
 #define UNIX            1
 #define CURSES_KEYPAD   1
-/*#define ALIGNMENT       4*/
+/*#define FB_ALIGNMENT       4*/
 #define IMPLEMENTATION  isc_info_db_impl_isc_rt_aix /* 35 */
 #define                 IEEE
 #define MEMMOVE(from,to,length)       memmove ((void *)to, (void *)from, (size_t) length)
@@ -517,11 +524,12 @@ typedef RETSIGTYPE (*SIG_FPTR) ();
 #define MOVE_CLEAR(to,length)           memset (to, 0, (int) (length))
 #define SYSCALL_INTERRUPTED(err)        (((err) == EINTR) || ((err) == ERESTART))	/* pjpg 20001102 */
 #else /* AIX PowerPC */
+#undef AIX_PPC
 #define AIX_PPC
 #define KILLER_SIGNALS
 #define UNIX            1
 #define CURSES_KEYPAD   1
-/*#define ALIGNMENT       4*/
+/*#define FB_ALIGNMENT       4*/
 #define IMPLEMENTATION  isc_info_db_impl_isc_rt_aix /* 35 */
 #define                 IEEE
 #define MEMMOVE(from,to,length)       memmove ((void *)to, (void *)from, (size_t) length)
@@ -536,7 +544,9 @@ typedef RETSIGTYPE (*SIG_FPTR) ();
 
 #endif /* IBM PowerPC */
 
-typedef RETSIGTYPE (*SIG_FPTR) ();
+typedef RETSIGTYPE (*SIG_FPTR) (int);
+#define WCOREDUMP(x) (((x)&0x80) != 0)
+
 #endif /* IBM AIX */
 
 
@@ -680,14 +690,14 @@ typedef RETSIGTYPE (*SIG_FPTR) ();
 #ifdef I386
 /* Using internal alignment optimal for 386 processor and above
  */
-/*#define ALIGNMENT       4*/
+/*#define FB_ALIGNMENT       4*/
 /*#define DOUBLE_ALIGN    8*/
 #endif
 #endif
 
-#ifndef ALIGNMENT
-/*#define ALIGNMENT       2*/
-#error must define ALIGNMENT for your system
+#ifndef FB_ALIGNMENT
+/*#define FB_ALIGNMENT       2*/
+#error must define FB_ALIGNMENT for your system
 #endif
 
 #ifndef SHIFTLONG

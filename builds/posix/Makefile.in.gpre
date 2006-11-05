@@ -29,7 +29,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.gpre,v 1.8 2003-07-08 01:05:22 brodsom Exp $
+#  $Id: Makefile.in.gpre,v 1.8.2.1 2006-11-05 14:37:30 alexpeshkoff Exp $
 #
 ROOT=../..
 
@@ -60,7 +60,7 @@ AllObjects = $(GPRECommon_Objects) $(GPREBoot_Objects) $(GPRE_Objects) \
 			 $(GPRELIB_Objects)
 
 
-Dependencies = $(AllObjects:.o=.d)
+Dependencies=$(AllObjects:.o=.$(DEP_EXT))
 
 
 

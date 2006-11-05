@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.client.util,v 1.9.2.4 2004-09-17 20:34:21 skidder Exp $
+#  $Id: Makefile.in.client.util,v 1.9.2.5 2006-11-05 14:37:29 alexpeshkoff Exp $
 #
 ROOT=..
 ObjModuleName=client.util
@@ -116,7 +116,7 @@ AllObjects = $(CREATEDB_Object) $(DROP_Object) \
 			 $(FBMGR_Objects) $(REBUILD_Objects) $(RELAY_Objects)
 
 
-Dependencies = $(AllObjects:.o=.d) 
+Dependencies=$(AllObjects:.o=.$(DEP_EXT))
 
 
 .PHONY: all create_db gstat gds_drop gds_relay gsec fbguard fbmgr_bin fb_lock_print

@@ -47,7 +47,7 @@
 
 #define MAX_TREE_DEPTH 4
 // Must be a power of 2
-#define ALLOC_ALIGNMENT ALIGNMENT
+#define ALLOC_ALIGNMENT FB_ALIGNMENT
 
 #define MEM_ALIGN(X) FB_ALIGN(X,ALLOC_ALIGNMENT)
 
@@ -241,23 +241,29 @@ void operator delete(void* mem) throw();
 
 void operator delete[](void* mem) throw();
 
+#ifdef AIX
+#define FB_STATIC_INLINE_NEW inline
+#else
+#define FB_STATIC_INLINE_NEW static inline
+#endif
+
 #ifdef DEBUG_GDS_ALLOC
-static inline void* operator new(size_t s, Firebird::MemoryPool& pool, char* file, int line) {
+FB_STATIC_INLINE_NEW void* operator new(size_t s, Firebird::MemoryPool& pool, char* file, int line) {
 	return pool.allocate(s, 0, file, line);
 //	return pool.calloc(s, 0, file, line);
 }
-static inline void* operator new[](size_t s, Firebird::MemoryPool& pool, char* file, int line) {
+FB_STATIC_INLINE_NEW void* operator new[](size_t s, Firebird::MemoryPool& pool, char* file, int line) {
 	return pool.allocate(s, 0, file, line);
 //	return pool.calloc(s, 0, file, line);
 }
 #define FB_NEW(pool) new(pool,__FILE__,__LINE__)
 #define FB_NEW_RPT(pool,count) new(pool,count,__FILE__,__LINE__)
 #else
-static inline void* operator new(size_t s, Firebird::MemoryPool& pool) {
+FB_STATIC_INLINE_NEW void* operator new(size_t s, Firebird::MemoryPool& pool) {
 	return pool.allocate(s);
 //	return pool.calloc(s);
 }
-static inline void* operator new[](size_t s, Firebird::MemoryPool& pool) {
+FB_STATIC_INLINE_NEW void* operator new[](size_t s, Firebird::MemoryPool& pool) {
 	return pool.allocate(s);
 //	return pool.calloc(s);
 }

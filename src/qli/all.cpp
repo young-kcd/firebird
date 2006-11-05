@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: all.cpp,v 1.14 2003-04-16 10:18:15 aafemt Exp $
+$Id: all.cpp,v 1.14.2.1 2006-11-05 14:38:22 alexpeshkoff Exp $
 */
 
 /***************************************************
@@ -98,9 +98,9 @@ BLK ALLQ_alloc( PLB pool, UCHAR type, int count)
 		size += count * tail;
 
 #ifndef VMS
-	size = FB_ALIGN(size, ALIGNMENT);
+	size = FB_ALIGN(size, FB_ALIGNMENT);
 #else
-	size = ((size + ALIGNMENT - 1) & ~(ALIGNMENT - 1));
+	size = ((size + FB_ALIGNMENT - 1) & ~(FB_ALIGNMENT - 1));
 #endif
 
 	if (size <= 4 || size > 65535)

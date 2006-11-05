@@ -17,7 +17,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: align.cpp,v 1.8 2003-02-13 15:33:51 brodsom Exp $
+$Id: align.cpp,v 1.8.2.1 2006-11-05 14:38:08 alexpeshkoff Exp $
 */
 
 #include "firebird.h"
@@ -42,9 +42,9 @@ typedef struct alignment {
 	short rule_double_align;
 	char *rule_rule;
 	char *rule_system;
-} ALIGNMENT;
+} ST_ALIGNMENT;
 
-static ALIGNMENT rules[] = {
+static ST_ALIGNMENT rules[] = {
 	1, 9, 0, 4, 4, NO_OP, "VMS",	/* VMS */
 	2, 10, 0, 4, 4, EVEN, "MC 68K",	/* Generic Motorola */
 	4, 12, 0, 4, 4, MAJOR_MINOR, "VAX Ultrix, 386i, RT",	/* VAX Ultrix */
@@ -69,7 +69,7 @@ int main(int argc, char *argv[])
 	long vector[3];
 #endif
 	short offset, length, faults;
-	ALIGNMENT *rule;
+	ST_ALIGNMENT *rule;
 
 	offset = (int) &((XYZ) 0)->b;
 	length = sizeof(struct xyz);
@@ -79,7 +79,7 @@ int main(int argc, char *argv[])
 		if (rule->rule_offset == offset &&
 			rule->rule_length == length && rule->rule_faults == faults) {
 			ib_printf("\n/* %s */\n\n", rule->rule_system);
-			ib_printf("#define ALIGNMENT\t%d\n", rule->rule_base_align);
+			ib_printf("#define FB_ALIGNMENT\t%d\n", rule->rule_base_align);
 			ib_printf("#define DOUBLE_ALIGN\t%d\n", rule->rule_double_align);
 			ib_printf("#define FB_ALIGN(n,b)\t%s\n", rule->rule_rule);
 			check_byte_order();

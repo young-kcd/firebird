@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.libfbembed,v 1.10.2.4 2004-09-17 20:34:21 skidder Exp $
+#  $Id: Makefile.in.libfbembed,v 1.10.2.5 2006-11-05 14:37:30 alexpeshkoff Exp $
 #
 ROOT=..
 ObjModuleName=libfbembed
@@ -54,7 +54,7 @@ SERVER_Sources = $(addprefix remote/, $(SERVER_Files))
 SERVER_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(SERVER_Sources))))
 
 AllObjects = $(LIBFBEMBED_Objects) $(SERVER_Objects)
-Dependencies = $(AllObjects:.o=.d)
+Dependencies=$(AllObjects:.o=.$(DEP_EXT))
 
 
 .PHONY: libfbembed

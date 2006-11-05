@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
-  * $Id: evl.cpp,v 1.34.2.8 2004-10-12 15:34:39 hvlad Exp $ 
+  * $Id: evl.cpp,v 1.34.2.9 2006-11-05 14:38:09 alexpeshkoff Exp $ 
  */
 
 /*
@@ -289,7 +289,7 @@ DSC *DLL_EXPORT EVL_assign_to(TDBB tdbb, JRD_NOD node)
 		// All seem to work fine.
 		record =
 			request->req_rpb[(int) node->nod_arg[e_fld_stream]].rpb_record;
-		EVL_field(0, record, (USHORT) node->nod_arg[e_fld_id],
+		EVL_field(0, record, (USHORT) (IPTR) node->nod_arg[e_fld_id],
 				  &impure->vlu_desc);
 		if (!impure->vlu_desc.dsc_address)
 			ERR_post(gds_read_only_field, 0);
@@ -359,7 +359,7 @@ SBM *DLL_EXPORT EVL_bitmap(TDBB tdbb, JRD_NOD node)
 			impure = (INV) ((SCHAR *) tdbb->tdbb_request + node->nod_impure);
 			SBM_reset(&impure->inv_bitmap);
 			desc = EVL_expr(tdbb, node->nod_arg[0]);
-			id = 1 + 2 * (USHORT) node->nod_arg[1];
+			id = 1 + 2 * (USHORT) (IPTR) node->nod_arg[1];
 			numbers = desc->dsc_address;
 			numbers += id * sizeof(SLONG);
 			MOVE_FAST(numbers, &rel_dbkey, sizeof(SLONG));
@@ -856,9 +856,9 @@ DSC* DLL_EXPORT EVL_expr(TDBB tdbb, JRD_NOD node)
 			 * the relation block is referenced. 
 			 * Reference: Bug 10116, 10424 
 			 */
-			if (!EVL_field(request->req_rpb[(USHORT) node->nod_arg[e_fld_stream]].rpb_relation,
+			if (!EVL_field(request->req_rpb[(USHORT) (IPTR) node->nod_arg[e_fld_stream]].rpb_relation,
 							record,
-							(USHORT) node->nod_arg[e_fld_id],
+							(USHORT) (IPTR) node->nod_arg[e_fld_id],
 							&impure->vlu_desc))
 			{
 				request->req_flags |= req_null;
@@ -1725,7 +1725,7 @@ USHORT DLL_EXPORT EVL_group(TDBB tdbb, BLK rsb, JRD_NOD node, USHORT state)
 	{
 		from = (*ptr)->nod_arg[e_asgn_from];
 		field = (*ptr)->nod_arg[e_asgn_to];
-		id = (USHORT) field->nod_arg[e_fld_id];
+		id = (USHORT) (IPTR) field->nod_arg[e_fld_id];
 		record =
 			request->req_rpb[(int) field->nod_arg[e_fld_stream]].rpb_record;
 		impure = (VLUX) ((SCHAR *) request + from->nod_impure);

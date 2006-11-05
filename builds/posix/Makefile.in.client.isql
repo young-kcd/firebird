@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.client.isql,v 1.6.2.2 2004-09-17 20:34:21 skidder Exp $
+#  $Id: Makefile.in.client.isql,v 1.6.2.3 2006-11-05 14:37:29 alexpeshkoff Exp $
 #
 ROOT=..
 ObjModuleName=client.isql
@@ -48,7 +48,7 @@ ISQL_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(ISQL_Sources)))
 
 AllObjects = $(ISQL_Objects)
 
-Dependencies = $(AllObjects:.o=.d) 
+Dependencies=$(AllObjects:.o=.$(DEP_EXT))
 
 
 

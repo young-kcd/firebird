@@ -1782,7 +1782,6 @@ ISC_STATUS GDS_DSQL_EXECUTE_IMMED2(ISC_STATUS * user_status,
 	RETURN_SUCCESS;
 }
 
-
 ISC_STATUS GDS_DSQL_FETCH(ISC_STATUS * user_status,
 					  RSR * stmt_handle,
 					  USHORT blr_length,
@@ -2028,7 +2027,7 @@ ISC_STATUS GDS_DSQL_FETCH(ISC_STATUS * user_status,
 		statement->rsr_message = message->msg_next;
 
 		if (statement->rsr_user_select_format == statement->rsr_select_format) {
-			if ((U_IPTR) msg & (ALIGNMENT - 1))
+			if ((U_IPTR) msg & ( FB_ALIGNMENT - 1 ))
 				memcpy(msg, message->msg_address, msg_length);
 			else
 				mov_faster((SLONG *) message->msg_address, (SLONG *) msg,
@@ -2614,8 +2613,8 @@ ISC_STATUS GDS_GET_SEGMENT(ISC_STATUS * user_status,
 				buffer_length -= l;
 
 				if (l) {
-					if (((U_IPTR) buffer & (ALIGNMENT - 1))
-						|| ((U_IPTR) p & (ALIGNMENT - 1)))
+					if (((U_IPTR) buffer & (FB_ALIGNMENT - 1))
+						|| ((U_IPTR) p & (FB_ALIGNMENT - 1)))
 						memcpy(buffer, p, l);
 					else
 						mov_faster((SLONG *) p, (SLONG *) buffer, l);
@@ -3021,8 +3020,8 @@ ISC_STATUS GDS_PUT_SEGMENT(ISC_STATUS * user_status,
 		*p++ = segment_length >> 8;
 
 		if (segment_length) {
-			if (((U_IPTR) segment & (ALIGNMENT - 1))
-				|| ((U_IPTR) p & (ALIGNMENT - 1))) memcpy(p, segment,
+			if (((U_IPTR) segment & (FB_ALIGNMENT - 1))
+				|| ((U_IPTR) p & (FB_ALIGNMENT - 1))) memcpy(p, segment,
 														  segment_length);
 			else
 				mov_faster((SLONG *) segment, (SLONG *) p, segment_length);
@@ -3474,7 +3473,7 @@ ISC_STATUS GDS_RECEIVE(ISC_STATUS * user_status,
 		/* Copy data from the message buffer to the client buffer */
 
 		message = tail->rrq_message;
-		if ((U_IPTR) msg & (ALIGNMENT - 1))
+		if ((U_IPTR) msg & (FB_ALIGNMENT - 1))
 			memcpy(msg, message->msg_address, msg_length);
 		else
 			mov_faster((SLONG *) message->msg_address, (SLONG *) msg, msg_length);

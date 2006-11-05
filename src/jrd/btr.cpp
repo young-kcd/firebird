@@ -24,7 +24,7 @@
  *
  */
 /*
-$Id: btr.cpp,v 1.33.2.5 2005-08-09 08:19:14 hvlad Exp $
+$Id: btr.cpp,v 1.33.2.6 2006-11-05 14:38:08 alexpeshkoff Exp $
 */
 
 #include "firebird.h"
@@ -254,11 +254,11 @@ USHORT BTR_all(TDBB    tdbb,
 		return 0;
 
 	if ((SLONG) (root->irt_count * sizeof(IDX)) > *idx_size) {
-		size = (sizeof(IDX) * dbb->dbb_max_idx) + ALIGNMENT;
+		size = (sizeof(IDX) * dbb->dbb_max_idx) + FB_ALIGNMENT;
 		*csb_idx_allocation = new_buffer = FB_NEW_RPT(*dbb->dbb_permanent, size) str();
 		buffer = *start_buffer =
-			(IDX *) FB_ALIGN((U_IPTR) new_buffer->str_data, ALIGNMENT);
-		*idx_size = size - ALIGNMENT;
+			(IDX *) FB_ALIGN((U_IPTR) new_buffer->str_data, FB_ALIGNMENT);
+		*idx_size = size - FB_ALIGNMENT;
 	}
 	count = 0;
 	for (i = 0; i < root->irt_count; i++)
@@ -3977,8 +3977,8 @@ midpoint = (UCHAR *) new_node;
 	q = (UCHAR *) (NEXT_NODE(node));
 	l = bucket->btr_length - (q - (UCHAR *) bucket);
 
-	if (((U_IPTR) p & (ALIGNMENT - 1))
-		|| ((U_IPTR) q & (ALIGNMENT - 1)))
+	if (((U_IPTR) p & (FB_ALIGNMENT - 1))
+		|| ((U_IPTR) q & (FB_ALIGNMENT - 1)))
 		MOVE_FAST(q, p, l);
 	else
 		MOVE_FASTER(q, p, l);

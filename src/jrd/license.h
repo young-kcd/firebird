@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: license.h,v 1.30 2003-06-08 13:13:24 dimitr Exp $
+ * $Id: license.h,v 1.30.2.1 2006-11-05 14:38:10 alexpeshkoff Exp $
  * Revision 1.5  2000/12/08 16:18:21  fsg
  * Preliminary changes to get IB_BUILD_NO automatically
  * increased on commits.
@@ -100,7 +100,7 @@
 #endif
 #endif
 
-#ifdef AIX
+#ifdef AIX_RS6000
 #define FB_PLATFORM	"IA"
 #endif
 

@@ -239,7 +239,7 @@ rec_err:
 			length = d->dsc_length;
 		memcpy(d->dsc_address, var->sqldata, length);
 		if (d->dsc_scale != var->sqlscale) {
-			double DeltaPow = pow(10, var->sqlscale - d->dsc_scale);
+			double DeltaPow = pow(10.0, var->sqlscale - d->dsc_scale);
 #			define ReScaleLike(t) *((t *)d->dsc_address) *= DeltaPow
 			switch (d->dsc_dtype) {
 			case dtype_short:

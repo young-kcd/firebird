@@ -1055,12 +1055,12 @@ JRD_REL * bad_relation, USHORT * bad_index)
 			 index_number < idx->idx_foreign_primaries->count();
 			 index_number++) {
 			if (idx->idx_id !=
-				(UCHAR) (*idx->idx_foreign_primaries)[index_number]) continue;
+				(UCHAR) (IPTR) (*idx->idx_foreign_primaries)[index_number]) continue;
 			partner_relation =
 				MET_relation(tdbb,
 							 (int) (*idx->idx_foreign_relations)[index_number]);
 			index_id =
-				(USHORT) (*idx->idx_foreign_indexes)[index_number];
+				(USHORT) (IPTR) (*idx->idx_foreign_indexes)[index_number];
 			if ( (result =
 				check_partner_index(tdbb, relation, record, transaction, idx,
 									partner_relation, index_id)) )

@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: cmd.cpp,v 1.9.2.1 2003-10-30 22:25:53 skidder Exp $
+//	$Id: cmd.cpp,v 1.9.2.2 2006-11-05 14:38:01 alexpeshkoff Exp $
 //
 
 #include "firebird.h"
@@ -204,7 +204,7 @@ CMD_compile_ddl(GPRE_REQ request)
 
 	case ACT_drop_shadow:
 		put_numeric(request, gds_dyn_delete_shadow,
-					(SSHORT) action->act_object);
+					(SSHORT) (IPTR) action->act_object);
 		STUFF_END;
 		break;
 

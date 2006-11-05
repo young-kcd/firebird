@@ -753,7 +753,7 @@ udf_data_type	: simple_type
 		| CSTRING '(' pos_short_integer ')' charset_clause
 			{ 
 			lex.g_field->fld_dtype = dtype_cstring; 
-			lex.g_field->fld_character_length = (USHORT) $3; }
+			lex.g_field->fld_character_length = (USHORT) (IPTR) $3; }
 		;
 
 arg_desc_list1	: 
@@ -1161,7 +1161,7 @@ logfile_attr	: KW_SIZE equals long_integer
 			{ lex.g_file->fil_length = (SLONG) $3; }
 /*
 		| RAW_PARTITIONS equals pos_short_integer
-			{ lex.g_file->fil_partitions = (SSHORT) $3; 
+			{ lex.g_file->fil_partitions = (SSHORT) (IPTR) $3; 
 			  lex.g_file->fil_flags |= LOG_raw; } */
 		;
 
@@ -2292,26 +2292,26 @@ blob_type	: BLOB blob_subtype blob_segsize charset_clause
 		| BLOB '(' unsigned_short_integer ')'
 			{ 
 			lex.g_field->fld_dtype = dtype_blob; 
-			lex.g_field->fld_seg_length = (USHORT) $3;
+			lex.g_field->fld_seg_length = (USHORT) (IPTR) $3;
 			lex.g_field->fld_sub_type = 0;
 			}
 		| BLOB '(' unsigned_short_integer ',' signed_short_integer ')'
 			{ 
 			lex.g_field->fld_dtype = dtype_blob; 
-			lex.g_field->fld_seg_length = (USHORT) $3;
-			lex.g_field->fld_sub_type = (USHORT) $5;
+			lex.g_field->fld_seg_length = (USHORT) (IPTR) $3;
+			lex.g_field->fld_sub_type = (USHORT) (IPTR) $5;
 			}
 		| BLOB '(' ',' signed_short_integer ')'
 			{ 
 			lex.g_field->fld_dtype = dtype_blob; 
 			lex.g_field->fld_seg_length = 80;
-			lex.g_field->fld_sub_type = (USHORT) $4;
+			lex.g_field->fld_sub_type = (USHORT) (IPTR) $4;
 			}
 		;
 
 blob_segsize	: SEGMENT KW_SIZE unsigned_short_integer
 		  	{
-			lex.g_field->fld_seg_length = (USHORT) $3;
+			lex.g_field->fld_seg_length = (USHORT) (IPTR) $3;
 		  	}
 		|
 		  	{
@@ -2321,7 +2321,7 @@ blob_segsize	: SEGMENT KW_SIZE unsigned_short_integer
 
 blob_subtype	: SUB_TYPE signed_short_integer
 			{
-			lex.g_field->fld_sub_type = (USHORT) $2;
+			lex.g_field->fld_sub_type = (USHORT) (IPTR) $2;
 			}
 		| SUB_TYPE symbol_blob_subtype_name
 			{
@@ -2347,7 +2347,7 @@ charset_clause	: CHARACTER SET symbol_character_set_name
 national_character_type	: national_character_keyword '(' pos_short_integer ')'
 			{ 
 			lex.g_field->fld_dtype = dtype_text; 
-			lex.g_field->fld_character_length = (USHORT) $3; 
+			lex.g_field->fld_character_length = (USHORT) (IPTR) $3; 
 			lex.g_field->fld_flags |= FLD_national;
 			}
 		| national_character_keyword
@@ -2359,7 +2359,7 @@ national_character_type	: national_character_keyword '(' pos_short_integer ')'
 		| national_character_keyword VARYING '(' pos_short_integer ')'
 			{ 
 			lex.g_field->fld_dtype = dtype_varying; 
-			lex.g_field->fld_character_length = (USHORT) $4; 
+			lex.g_field->fld_character_length = (USHORT) (IPTR) $4; 
 			lex.g_field->fld_flags |= FLD_national;
 			}
 		;
@@ -2367,7 +2367,7 @@ national_character_type	: national_character_keyword '(' pos_short_integer ')'
 character_type	: character_keyword '(' pos_short_integer ')'
 			{ 
 			lex.g_field->fld_dtype = dtype_text; 
-			lex.g_field->fld_character_length = (USHORT) $3; 
+			lex.g_field->fld_character_length = (USHORT) (IPTR) $3; 
 			}
 		| character_keyword
 			{ 
@@ -2377,7 +2377,7 @@ character_type	: character_keyword '(' pos_short_integer ')'
 		| varying_keyword '(' pos_short_integer ')'
 			{ 
 			lex.g_field->fld_dtype = dtype_varying; 
-			lex.g_field->fld_character_length = (USHORT) $3; 
+			lex.g_field->fld_character_length = (USHORT) (IPTR) $3; 
 			}
 		;
 
@@ -2479,7 +2479,7 @@ prec_scale	:
 			    	lex.g_field->fld_dtype = dtype_long; 
 			    	lex.g_field->fld_length = sizeof (SLONG); 
 			    	}
-			lex.g_field->fld_precision = (USHORT) $2;
+			lex.g_field->fld_precision = (USHORT) (IPTR) $2;
 			}
 		| '(' signed_long_integer ',' signed_long_integer ')'
 			{ 
@@ -2538,8 +2538,8 @@ prec_scale	:
 			    	lex.g_field->fld_length = sizeof (SLONG); 
 			    	}
 			    }
-			lex.g_field->fld_precision = (USHORT) $2;
-			lex.g_field->fld_scale = - (SSHORT) $4;
+			lex.g_field->fld_precision = (USHORT) (IPTR) $2;
+			lex.g_field->fld_scale = - (SSHORT) (IPTR) $4;
 			}
 		;
 
@@ -2756,7 +2756,7 @@ restr_option	: table_list table_lock
 		;
 
 table_lock	: FOR lock_type lock_mode
-			{ $$ = make_flag_node (nod_lock_mode, (SSHORT) ((SSHORT) $2 | (SSHORT) $3), (SSHORT) 0, NULL); }
+			{ $$ = make_flag_node (nod_lock_mode, (SSHORT) ((SSHORT) (IPTR) $2 | (SSHORT) (IPTR) $3), (SSHORT) 0, NULL); }
 		|
 			{ $$ = 0; }
 		;

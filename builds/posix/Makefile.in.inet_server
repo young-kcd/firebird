@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.inet_server,v 1.11.2.3 2004-09-17 20:34:21 skidder Exp $
+#  $Id: Makefile.in.inet_server,v 1.11.2.4 2006-11-05 14:37:30 alexpeshkoff Exp $
 #
 ROOT=..
 ObjModuleName=inet_server
@@ -44,7 +44,7 @@ SERVER_Sources = $(addprefix remote/, $(SERVER_Files))
 SERVER_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(SERVER_Sources))))
 
 AllObjects = $(SERVER_Objects)
-Dependencies = $(AllObjects:.o=.d) 
+Dependencies=$(AllObjects:.o=.$(DEP_EXT))
 
 
 .PHONY: fb_inet_server

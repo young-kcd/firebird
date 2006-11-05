@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.static.gpre,v 1.10.2.2 2004-03-29 03:49:24 skidder Exp $
+#  $Id: Makefile.in.static.gpre,v 1.10.2.3 2006-11-05 14:37:30 alexpeshkoff Exp $
 #
 ROOT=..
 ObjModuleName=static.gpre
@@ -52,7 +52,7 @@ GPRESTATIC_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(GPRESTATI
 
 
 AllObjects = $(GPRESTATIC_Objects)
-Dependencies = $(AllObjects:.o=.d) 
+Dependencies=$(AllObjects:.o=.$(DEP_EXT))
 
 
 .PHONY: gpre_static 

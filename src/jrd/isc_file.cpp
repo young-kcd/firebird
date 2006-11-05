@@ -1413,7 +1413,7 @@ static BOOLEAN get_mounts(
 
 		l = *(SLONG *) mnt_buffer;
 		/* FREE: in get_mounts() */
-		if (!(*buffer = gds__alloc((SLONG) l)) ||
+		if (!(*buffer = (TEXT*)gds__alloc((SLONG) l)) ||
 			(*count = mntctl(MCTL_QUERY, l, *buffer)) <= 0)
 			return FALSE;		/* NOMEM: */
 	}

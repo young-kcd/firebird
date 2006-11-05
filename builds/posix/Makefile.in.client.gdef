@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.client.gdef,v 1.5.2.2 2004-09-17 20:34:21 skidder Exp $
+#  $Id: Makefile.in.client.gdef,v 1.5.2.3 2006-11-05 14:37:28 alexpeshkoff Exp $
 #
 ROOT=..
 ObjModuleName=client.gdef
@@ -55,7 +55,7 @@ GDEF_Sources = $(addprefix dudley/, $(GDEF_Files)) $(GDEF_Other_Sources)
 GDEF_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(GDEF_Sources))))
 
 AllObjects = $(GDEF_Objects)
-Dependencies = $(AllObjects:.o=.d)
+Dependencies=$(AllObjects:.o=.$(DEP_EXT))
 
 
 .PHONY: all gdef

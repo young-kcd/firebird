@@ -51,9 +51,9 @@ extern "C" {
 /* must be careful with alignment on structures like this that are
    not run through the ALL routine */
 
-typedef struct thread {
-	struct thread *thread_next;	/* Next thread to be scheduled */
-	struct thread *thread_prior;	/* Prior thread */
+typedef struct sch_thread {
+	struct sch_thread *thread_next;	/* Next thread to be scheduled */
+	struct sch_thread *thread_prior;	/* Prior thread */
 	EVENT_T thread_stall[1];	/* Generic event to stall thread */
 	FB_THREAD_ID thread_id;			/* Current thread id */
 	USHORT thread_count;		/* AST disable count */
@@ -681,7 +681,7 @@ static THREAD alloc_thread(void)
 	if (thread = free_threads)
 		free_threads = thread->thread_next;
 	else {
-		thread = (THREAD) gds__alloc((SLONG) sizeof(struct thread));
+		thread = (THREAD) gds__alloc((SLONG) sizeof(struct sch_thread));
 		/* FREE: unknown */
 		if (!thread)			/* NOMEM: bugcheck */
 			mutex_bugcheck("Out of memory", 0);	/* no real error handling */

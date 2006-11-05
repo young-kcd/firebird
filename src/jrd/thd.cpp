@@ -54,6 +54,9 @@
 #include <signal.h>
 #endif
 
+#ifdef AIX
+extern "C" int sched_yield(void);
+#endif
 
 extern "C" {
 
@@ -1867,7 +1870,7 @@ static int thread_start(
 	pthread_attr_t pattr;
 	int state;
 
-#if ( !defined HP10 && !defined LINUX && !defined FREEBSD )
+#if ( !defined HP10 && !defined LINUX && !defined FREEBSD && !defined AIX)
 		state = pthread_attr_init(&pattr);
 	if (state)
 		return state;
@@ -1885,11 +1888,23 @@ static int thread_start(
 
 #else
 #if ( defined LINUX || defined FREEBSD )
-		if (state = pthread_create(&thread, NULL, (void*(*)(void*))routine, arg))
+	if (state = pthread_create(&thread, NULL, (void*(*)(void*))routine, arg))
 		return state;
 	return pthread_detach(thread);
+#elif defined (_AIX)
+    state = pthread_attr_init(&pattr);
+    if (state)
+        return state;
+    pthread_attr_setdetachstate(&pattr, PTHREAD_CREATE_DETACHED);
+    // AIX has a default of PTHREAD_SCOPE_PROCESS
+    pthread_attr_setscope(&pattr, PTHREAD_SCOPE_SYSTEM);
+    // AIX default stack size is PTHREAD_STACK_MIN which is too small
+    pthread_attr_setstacksize(&pattr, 1024*1024);
+    state = pthread_create(&thread, &pattr, (void*(*)(void*))routine, arg);
+    pthread_attr_destroy(&pattr);
+    return state;
 #else
-		long stack_size;
+	long stack_size;
 
 	state = pthread_attr_create(&pattr);
 	if (state) {

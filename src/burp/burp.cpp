@@ -434,17 +434,7 @@ int DLL_EXPORT BURP_gbak(int		argc,
  *	Routine called by command line utility, services API, and server manager.
  *
  **************************************/
-	TEXT *file1, **end, *string, *p, *q, c, *device, *redirect;
-/* This function runs within thread for services API, so here should not be
-   *any* static variables. I did not change an existing definition
-   for AIX PowerPC because of the problem (see comments below). So
-   whoever will do a port on AIX, must reconsider a static definition */
-#ifdef AIX_PPC
-	static TEXT *file2;			/* SomeHow, making this volatile does'nt give the
-								   desired value in case of AIX PowerPC */
-#else
-	TEXT *file2;
-#endif
+	TEXT *file1, *file2, **end, *string, *p, *q, c, *device, *redirect;
 	UCHAR *dpb;
 
 	IN_SW_TAB in_sw_tab;

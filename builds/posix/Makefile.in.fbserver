@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.fbserver,v 1.11.2.6 2004-10-20 16:50:39 alexpeshkoff Exp $
+#  $Id: Makefile.in.fbserver,v 1.11.2.7 2006-11-05 14:37:30 alexpeshkoff Exp $
 #
 ROOT=..
 ObjModuleName=fbserver
@@ -52,7 +52,7 @@ SERVER_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(SERVER_Source
 
 AllObjects = $(SERVER_Objects)
 
-Dependencies = $(AllObjects:.o=.d) 
+Dependencies=$(AllObjects:.o=.$(DEP_EXT))
 
 
 
@@ -72,10 +72,6 @@ $(FB_SUPER_SERVER):	$(SERVER_Objects) $(IPSERVER_Objects) -lfbserver
 
 
 
-
-AllObjects = $(SERVER_Objects)
-
-Dependencies = $(AllObjects:.o=.d)
 
 include $(ROOT)/gen/make.shared.targets
 

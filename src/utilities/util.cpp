@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: util.cpp,v 1.8.2.1 2004-12-06 09:45:45 kkuznetsov Exp $
+$Id: util.cpp,v 1.8.2.2 2006-11-05 14:38:28 alexpeshkoff Exp $
 */
 
 #include "firebird.h"
@@ -161,7 +161,7 @@ int UTIL_wait_for_child( pid_t child_pid)
 		return (WEXITSTATUS(child_exit_status));
 
 	if (
-#ifndef AIX_PPC
+#ifdef WCOREDUMP
 		   WCOREDUMP(child_exit_status) ||
 #endif
 		   WIFSIGNALED(child_exit_status) || !WIFEXITED(child_exit_status))

@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.client.gbak,v 1.6.2.2 2004-09-17 20:34:21 skidder Exp $
+#  $Id: Makefile.in.client.gbak,v 1.6.2.3 2006-11-05 14:37:28 alexpeshkoff Exp $
 #
 
 ROOT=..
@@ -54,7 +54,7 @@ GSPLIT_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(GSPLIT_Source
 
 
 AllObjects = $(GBAK_Objects) $(GSPLIT_Objects)
-Dependencies = $(AllObjects:.o=.d) 
+Dependencies=$(AllObjects:.o=.$(DEP_EXT))
 
 
 .PHONY: all gbak gsplit

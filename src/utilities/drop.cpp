@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: drop.cpp,v 1.19 2003-04-16 10:18:35 aafemt Exp $
+ * $Id: drop.cpp,v 1.19.2.1 2006-11-05 14:38:27 alexpeshkoff Exp $
  *
  * 2002.10.27 Sean Leyne - Completed removal of obsolete "DELTA" port
  * 2002.10.27 Sean Leyne - Completed removal of obsolete "IMP" port
@@ -43,6 +43,10 @@
 #include "../jrd/gds_proto.h"
 #include "../jrd/isc_proto.h"
 #include "../common/config/config.h"
+
+#ifndef HAVE_MMAP
+#include "../jrd/isc_s_proto.h"
+#endif
 
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
@@ -157,7 +161,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 }
 
 
-static void dummy_init(void)
+static void dummy_init(void*, sh_mem*, int)
 {
 /**************************************
  *

@@ -2,21 +2,21 @@
 #
 # Run this to generate all the initial makefiles, etc.
 #
-# $Id: autogen.sh,v 1.8.2.1 2003-11-11 08:24:11 tmcsys Exp $
+# $Id: autogen.sh,v 1.8.2.2 2006-11-05 14:37:13 alexpeshkoff Exp $
 
 PKG_NAME=Firebird2
 SRCDIR=`dirname $0`
 DIE=0
 
-if [ -z $AUTOCONF ]
+if [ -z "$AUTOCONF" ]
 then
   AUTOCONF=autoconf
 fi
-if [ -z $LIBTOOL ]
+if [ -z "$LIBTOOL" ]
 then
   LIBTOOL=libtool
 fi
-if [ -z $LIBTOOLIZE ]
+if [ -z "$LIBTOOLIZE" ]
 then
   LIBTOOLIZE=libtoolize
 fi
@@ -62,6 +62,19 @@ if test -z "$*" -a x$NOCONFIGURE = x; then
   echo "If you wish to pass any to it, please specify them on the"
   echo \`$0\'" command line."
   echo
+fi
+
+if [ `uname -s` = AIX ]; then
+	export CC=xlc_r7
+	export CXX=xlC_r7
+
+#convert version files to aix export format
+#this is not general format converter and may fail in case of vers file(s) changes
+	for i in builds/posix/*.vers
+	do
+		to="gen/`basename $i`"
+		grep \;\$ $i | grep -v '[\#\*\}]' | awk -F';' '{print $1;}' >$to
+	done
 fi
 
 # Generate configure from configure.in

@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.boot.gpre,v 1.14.2.2 2004-03-29 03:49:24 skidder Exp $
+#  $Id: Makefile.in.boot.gpre,v 1.14.2.3 2006-11-05 14:37:28 alexpeshkoff Exp $
 #
 ROOT=..
 ObjModuleName=boot.gpre
@@ -61,7 +61,7 @@ GPREBOOT_Objects = $(JRDBOOT_Objects) $(GPRE_Objects) $(OS_SPECIFIC_Objects)
 
 AllObjects = $(GPREBOOT_Objects)
 
-Dependencies = $(AllObjects:.o=.d) 
+Dependencies=$(AllObjects:.o=.$(DEP_EXT))
 
 
 

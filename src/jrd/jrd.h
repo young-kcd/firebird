@@ -855,7 +855,7 @@ class btb : public pool_alloc<type_btb>
 {
     public:
 	btb *btb_next;
-	struct thread* btb_thread_id;
+	struct sch_thread* btb_thread_id;
 };
 typedef btb *BTB;
 
@@ -960,7 +960,7 @@ typedef struct ihndl
 
 /* RITTER - changed HP10 to HPUX in the expression below */
 #ifdef MULTI_THREAD
-#if (defined SOLARIS_MT || defined WIN_NT || \
+#if (defined SOLARIS_MT || defined WIN_NT || defined AIX || \
 	defined HPUX || defined LINUX || defined DARWIN || defined FREEBSD )
 #define PLATFORM_GET_THREAD_DATA ((TDBB) THD_get_specific())
 #endif

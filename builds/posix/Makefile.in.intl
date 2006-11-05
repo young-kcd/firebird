@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.intl,v 1.11.2.4 2004-10-07 21:34:24 skidder Exp $
+#  $Id: Makefile.in.intl,v 1.11.2.5 2006-11-05 14:37:30 alexpeshkoff Exp $
 #
 ROOT=..
 ObjModuleName=intl
@@ -62,7 +62,7 @@ INTL_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(INTL_Sources)))
 
 
 AllObjects = $(INTL_Objects)
-Dependencies = $(AllObjects:.o=.d)
+Dependencies=$(AllObjects:.o=.$(DEP_EXT))
 
 
 .PHONY: all libfbintl

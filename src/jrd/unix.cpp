@@ -48,6 +48,9 @@
 #include <unistd.h>
 #endif
 #ifdef HAVE_AIO_H
+#ifdef AIX_PPC
+#include <signal.h>
+#endif
 #include <aio.h>
 #endif
 

@@ -26,7 +26,7 @@
 #   Contributor(s):
 # 
 # 
-#   $Id: make.defaults,v 1.25.2.9 2004-10-07 21:34:24 skidder Exp $
+#   $Id: make.defaults,v 1.25.2.10 2006-11-05 14:37:30 alexpeshkoff Exp $
 # 
 
 
@@ -275,3 +275,6 @@ FBEMBED_LINK	= -L$(LIB) -lfbembed
 #For want of a better suggestion we may as well default to posix
 PLATFORM_PATH	?=	jrd/os/posix
 LIB_EMBED_LINK_OPTIONS=
+
+#Dependency file extension
+DEP_EXT		= d

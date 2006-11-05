@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.embed.qli,v 1.10.2.2 2004-09-17 20:34:21 skidder Exp $
+#  $Id: Makefile.in.embed.qli,v 1.10.2.3 2006-11-05 14:37:30 alexpeshkoff Exp $
 #
 ROOT=..
 ObjModuleName=embed.qli
@@ -52,7 +52,7 @@ QLI_Sources = $(addprefix qli/, $(QLI_Files)) $(QLI_Other_Sources)
 QLI_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(QLI_Sources))))
 
 AllObjects = $(QLI_Objects) 
-Dependencies = $(AllObjects:.o=.d)
+Dependencies=$(AllObjects:.o=.$(DEP_EXT))
 
 
 

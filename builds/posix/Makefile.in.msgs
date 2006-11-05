@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.msgs,v 1.12 2003-07-08 10:45:47 brodsom Exp $
+#  $Id: Makefile.in.msgs,v 1.12.2.1 2006-11-05 14:37:30 alexpeshkoff Exp $
 #
 ROOT=..
 ObjModuleName=msgs
@@ -72,7 +72,7 @@ CHANGE_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(CHANGE_Source
 AllObjects = $(CHECK_Objects) $(BUILD_Objects) $(ENTER_Objects) \
 			 $(MODIFY_Objects) $(CHANGE_Objects)
 
-Dependencies = $(AllObjects:.o=.d)
+Dependencies=$(AllObjects:.o=.$(DEP_EXT))
 
 .PHONY: all msgs build_file check_messages enter_messages modify_messages change_messages
 

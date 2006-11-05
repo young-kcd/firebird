@@ -3795,7 +3795,7 @@ static void sql_grant_revoke( SYN node, USHORT type)
 	RLB rlb;
 
 
-	privileges = (USHORT) node->syn_arg[s_grant_privileges];
+	privileges = (USHORT) (IPTR) node->syn_arg[s_grant_privileges];
 	relation = (QLI_REL) node->syn_arg[s_grant_relation];
 	relation->rel_database = database = setup_update(relation->rel_database);
 	relation_name = relation->rel_symbol->sym_string;

@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.libfbclient,v 1.14.2.5 2004-10-07 21:34:24 skidder Exp $
+#  $Id: Makefile.in.libfbclient,v 1.14.2.6 2006-11-05 14:37:30 alexpeshkoff Exp $
 #
 ROOT=..
 ObjModuleName=libfbclient
@@ -126,7 +126,7 @@ $(LIBFBCLIENT_SO):	$(FBCLIENT_Objects)
 
 
 AllObjects = $(FBCLIENT_Objects)
-Dependencies = $(AllObjects:.o=.d)
+Dependencies=$(AllObjects:.o=.$(DEP_EXT))
 
 
 include $(ROOT)/gen/make.shared.targets

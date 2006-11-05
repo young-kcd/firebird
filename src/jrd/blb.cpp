@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: blb.cpp,v 1.30.2.6 2004-04-27 01:44:57 skidder Exp $
+$Id: blb.cpp,v 1.30.2.7 2006-11-05 14:38:08 alexpeshkoff Exp $
 */
 
 #include "firebird.h"
@@ -563,8 +563,8 @@ USHORT BLB_get_segment(TDBB tdbb,
 
 		length -= l;
 		buffer_length -= l;
-		if (((U_IPTR) from & (ALIGNMENT - 1))
-			|| ((U_IPTR) to & (ALIGNMENT - 1)))
+		if (((U_IPTR) from & (FB_ALIGNMENT - 1))
+			|| ((U_IPTR) to & (FB_ALIGNMENT - 1)))
 			MOVE_FAST(from, to, l);
 		else
 			MOVE_FASTER(from, to, l);
@@ -599,8 +599,8 @@ USHORT BLB_get_segment(TDBB tdbb,
 	}
 
 	if (active_page) {
-		if (((U_IPTR) from & (ALIGNMENT - 1))
-			|| ((U_IPTR) blob->blb_data & (ALIGNMENT - 1)))
+		if (((U_IPTR) from & (FB_ALIGNMENT - 1))
+			|| ((U_IPTR) blob->blb_data & (FB_ALIGNMENT - 1)))
 			MOVE_FAST(from, blob->blb_data, length);
 		else
 			MOVE_FASTER(from, blob->blb_data, length);
@@ -860,7 +860,7 @@ void BLB_move(TDBB tdbb, DSC * from_desc, DSC * to_desc, JRD_NOD field)
 	request = tdbb->tdbb_request;
 	source = (BID) from_desc->dsc_address;
 	destination = (BID) to_desc->dsc_address;
-	id = (USHORT) field->nod_arg[e_fld_id];
+	id = (USHORT) (IPTR) field->nod_arg[e_fld_id];
 	rpb = &request->req_rpb[(int) field->nod_arg[e_fld_stream]];
 	relation = rpb->rpb_relation;
 	record = rpb->rpb_record;
@@ -1264,8 +1264,8 @@ void BLB_put_segment(TDBB tdbb, BLB blob, UCHAR* seg, USHORT segment_length)
 
 	if (!length_flag && segment_length <= blob->blb_space_remaining) {
 		blob->blb_space_remaining -= segment_length;
-		if (((U_IPTR) segment & (ALIGNMENT - 1))
-			|| ((U_IPTR) p & (ALIGNMENT - 1)))
+		if (((U_IPTR) segment & (FB_ALIGNMENT - 1))
+			|| ((U_IPTR) p & (FB_ALIGNMENT - 1)))
 			MOVE_FAST(segment, p, segment_length);
 		else
 			MOVE_FASTER(segment, p, segment_length);
@@ -1288,8 +1288,8 @@ void BLB_put_segment(TDBB tdbb, BLB blob, UCHAR* seg, USHORT segment_length)
 		if (!length_flag && l) {
 			segment_length -= l;
 			blob->blb_space_remaining -= l;
-			if (((U_IPTR) segment & (ALIGNMENT - 1))
-				|| ((U_IPTR) p & (ALIGNMENT - 1)))
+			if (((U_IPTR) segment & (FB_ALIGNMENT - 1))
+				|| ((U_IPTR) p & (FB_ALIGNMENT - 1)))
 				MOVE_FAST(segment, p, l);
 			else
 				MOVE_FASTER(segment, p, l);
@@ -2353,7 +2353,7 @@ static void slice_callback(SLICE arg, ULONG count, DSC * descriptors)
 		if (array_desc->dsc_dtype == dtype_varying &&
 			(U_IPTR) array_desc->dsc_address !=
 			FB_ALIGN((U_IPTR) array_desc->dsc_address,
-					 (MIN(sizeof(USHORT), ALIGNMENT))))
+					 (MIN(sizeof(USHORT), FB_ALIGNMENT))))
 		{
 			STR tmp_buffer;
 			USHORT tmp_len;
@@ -2399,7 +2399,7 @@ static void slice_callback(SLICE arg, ULONG count, DSC * descriptors)
 			if (array_desc->dsc_dtype == dtype_varying &&
 				(U_IPTR) array_desc->dsc_address !=
 				FB_ALIGN((U_IPTR) array_desc->dsc_address,
-						 (MIN(sizeof(USHORT), ALIGNMENT)))) {
+						 (MIN(sizeof(USHORT), FB_ALIGNMENT)))) {
 				temp_desc.dsc_dtype = dtype_text;
 				temp_desc.dsc_sub_type = array_desc->dsc_sub_type;
 				temp_desc.dsc_scale = array_desc->dsc_scale;

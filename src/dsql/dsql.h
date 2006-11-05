@@ -315,7 +315,7 @@ enum FUN_T
 // Variables - input, output & local
 
 //! Variable block
-class var : public pool_alloc_rpt<SCHAR, dsql_type_var>
+class Variable : public pool_alloc_rpt<SCHAR, dsql_type_var>
 {
 public:
 	dsql_fld*	var_field;		//!< Field on which variable is based
@@ -325,7 +325,7 @@ public:
 	USHORT	var_variable_number;	//!< Local variable number
 	TEXT	var_name[2];
 };
-typedef var* VAR;
+typedef Variable* VAR;
 
 // values used in var_flags
 

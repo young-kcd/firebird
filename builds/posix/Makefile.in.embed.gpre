@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.embed.gpre,v 1.9.2.3 2004-09-17 20:34:21 skidder Exp $
+#  $Id: Makefile.in.embed.gpre,v 1.9.2.4 2006-11-05 14:37:29 alexpeshkoff Exp $
 #
 ROOT=..
 ObjModuleName=embed.gpre
@@ -52,7 +52,7 @@ GPRE_Sources = $(addprefix gpre/, $(GPRE_Files)) $(GPRE_Other_Sources)
 GPRE_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(GPRE_Sources))))
 
 AllObjects = $(GPRE_Objects)
-Dependencies = $(AllObjects:.o=.d) 
+Dependencies=$(AllObjects:.o=.$(DEP_EXT))
 
 
 .PHONY: gpre

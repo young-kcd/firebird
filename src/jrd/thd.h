@@ -26,7 +26,7 @@
  *
  */
 /*
-$Id: thd.h,v 1.12.2.4 2004-09-17 23:34:14 skidder Exp $
+$Id: thd.h,v 1.12.2.5 2006-11-05 14:38:13 alexpeshkoff Exp $
 */
 
 #ifndef _JRD_THD_H_
@@ -58,6 +58,10 @@ $Id: thd.h,v 1.12.2.4 2004-09-17 23:34:14 skidder Exp $
 #define POSIX_THREADS           1
 #endif
 
+#if (defined(AIX) && defined(SUPERSERVER))
+#define POSIX_THREADS           1
+#endif
+
 /* The following ifdef was added to build thread safe gds shared
    library on linux platform. It seems the gdslib works now (20020220)
    with thread enabled applications. Anyway, more tests should be 
@@ -74,6 +78,10 @@ $Id: thd.h,v 1.12.2.4 2004-09-17 23:34:14 skidder Exp $
 #endif
 
 #if (defined(DARWIN) && defined(SUPERCLIENT))
+#define POSIX_THREADS           1
+#endif
+
+#if (defined(AIX) && defined(SUPERCLIENT))
 #define POSIX_THREADS           1
 #endif
 
@@ -261,8 +269,8 @@ typedef struct wlck_t {
 
 /* Threading allocation size */
 
-#define THREAD_STRUCT_SIZE(type,n)	(n * sizeof (type) + ALIGNMENT)
-#define THREAD_STRUCT_ALIGN(blk)	FB_ALIGN((U_IPTR) blk, ALIGNMENT)
+#define THREAD_STRUCT_SIZE(type,n)	(n * sizeof (type) + FB_ALIGNMENT)
+#define THREAD_STRUCT_ALIGN(blk)	FB_ALIGN((U_IPTR) blk, FB_ALIGNMENT)
 
 #ifdef V4_THREADING
 #define V4_INIT				THD_init()

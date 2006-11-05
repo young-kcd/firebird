@@ -947,7 +947,7 @@ static void delete_session(SLONG session_id)
 #ifdef WIN_NT
 		Sleep(250);
 #endif
-#if (defined SOLARIS_MT || defined LINUX)
+#if (defined SOLARIS_MT || defined LINUX || defined AIX)
 		sleep(1);
 #endif
 		THREAD_ENTER;

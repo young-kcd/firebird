@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.libfbserver,v 1.6.2.4 2004-10-20 16:50:39 alexpeshkoff Exp $
+#  $Id: Makefile.in.libfbserver,v 1.6.2.5 2006-11-05 14:37:30 alexpeshkoff Exp $
 #
 ROOT=..
 ObjModuleName=libfbserver
@@ -79,7 +79,7 @@ $(LIBFBSERVER_A):	$(LIBFBSERVER_Objects)
 
 
 AllObjects = $(LIBFBSERVER_Objects)
-Dependencies = $(AllObjects:.o=.d)
+Dependencies=$(AllObjects:.o=.$(DEP_EXT))
 
 include $(ROOT)/gen/make.shared.targets
 

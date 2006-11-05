@@ -29,7 +29,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.codes,v 1.7.2.1 2003-07-19 04:57:38 bellardo Exp $
+#  $Id: Makefile.in.codes,v 1.7.2.2 2006-11-05 14:37:29 alexpeshkoff Exp $
 #
 ROOT=..
 ObjModuleName=codes
@@ -59,7 +59,7 @@ CODES_Sources = jrd/codes.epp
 CODES_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(CODES_Sources))))
 
 AllObjects = $(CODES_Objects)
-Dependencies = $(AllObjects:.o=.d)
+Dependencies=$(AllObjects:.o=.$(DEP_EXT))
 
 generated_headers: build_codes include/gen/ids.h
 

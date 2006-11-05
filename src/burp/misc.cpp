@@ -56,7 +56,7 @@ UCHAR *MISC_alloc_burp(ULONG size)
 	TGBL tdgbl = GET_THREAD_DATA;
 
 /* Add some header space to store a list of blocks allocated for this gbak */
-	size += ROUNDUP(sizeof(UCHAR *), ALIGNMENT);
+	size += ROUNDUP(sizeof(UCHAR *), FB_ALIGNMENT);
 
 	UCHAR* block = (UCHAR*)gds__alloc(size);
 
@@ -76,7 +76,7 @@ UCHAR *MISC_alloc_burp(ULONG size)
 	*((UCHAR **) block) = tdgbl->head_of_mem_list;
 	tdgbl->head_of_mem_list = block;
 
-	return (block + ROUNDUP(sizeof(UCHAR *), ALIGNMENT));
+	return (block + ROUNDUP(sizeof(UCHAR *), FB_ALIGNMENT));
 }
 
 
@@ -101,7 +101,7 @@ void MISC_free_burp( void *free)
 	if (free != NULL) {
 		/* Point at the head of the allocated block */
 		block =
-			(UCHAR **) ((UCHAR *) free - ROUNDUP(sizeof(UCHAR *), ALIGNMENT));
+			(UCHAR **) ((UCHAR *) free - ROUNDUP(sizeof(UCHAR *), FB_ALIGNMENT));
 
 		/* Scan for this block in the list of blocks */
 		for (ptr = &tdgbl->head_of_mem_list; *ptr; ptr = (UCHAR **) * ptr) {

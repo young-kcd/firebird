@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.embed.gfix,v 1.7.2.2 2004-09-17 20:34:21 skidder Exp $
+#  $Id: Makefile.in.embed.gfix,v 1.7.2.3 2006-11-05 14:37:29 alexpeshkoff Exp $
 #
 ROOT=..
 ObjModuleName=embed.gfix
@@ -51,7 +51,7 @@ GFIX_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(GFIX_Sources)))
 
 AllObjects = $(GFIX_Objects)
 
-Dependencies = $(AllObjects:.o=.d) 
+Dependencies=$(AllObjects:.o=.$(DEP_EXT))
 
 
 .PHONY: gfix

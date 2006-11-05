@@ -26,7 +26,7 @@
 #   Contributor(s):
 #
 #
-#   $Id: make.rules,v 1.19.2.2 2003-07-19 06:19:03 bellardo Exp $
+#   $Id: make.rules,v 1.19.2.3 2006-11-05 14:37:30 alexpeshkoff Exp $
 #
 
 #____________________________________________________________________________
@@ -100,7 +100,10 @@ ifdef UseLibToolForLink
     STATICEXE_LINK = libtool $(CC) -all-static
 else
 
-    LIB_LINK= $(CC)
+    ifndef LIB_LINK
+	LIB_LINK= $(CC)
+    endif
+    
     STATICLIB_LINK= ar cruvs
 #    LIB_LINK_OPTIONS = -soname libgds.$(SHRLIB_EXT) -rpath /usr/lib
 #    LIB_LINK_OPTIONS = -soname libgds.$(SHRLIB_EXT).2 -rpath /usr/lib
@@ -223,7 +226,7 @@ $(OBJ)/%.lo: $(SRC_ROOT)/%.cpp
 #.epp.cpp:
 #	$(GPRE_STATIC) $(GPRE_FLAGS) $<
 
-$(OBJ)/%.o: $(OBJ)/%.d
+$(OBJ)/%.o: $(OBJ)/%.$(DEP_EXT)
 
 .SUFFIXES: .epp .e
 
@@ -231,17 +234,17 @@ $(OBJ)/%.o: $(OBJ)/%.d
 # since the .d file was just created then it will force a compile of the
 # .cpp files
 
-$(OBJ)/%.d:: $(SRC_ROOT)/%.c
+$(OBJ)/%.$(DEP_EXT):: $(SRC_ROOT)/%.c
 	@$(ECHO) "need to rebuild $^"
 	$(ECHO) $(OBJ)/$(*).o " : FORCE" > $@
 #	$(TOUCH) $^
 
-$(OBJ)/%.d:: $(SRC_ROOT)/%.epp
+$(OBJ)/%.$(DEP_EXT):: $(SRC_ROOT)/%.epp
 	@$(ECHO) "need to rebuild $^"
 	$(ECHO) $(OBJ)/$(*).o " : FORCE" > $@
 #	$(TOUCH) $^
 
-$(OBJ)/%.d:: $(SRC_ROOT)/%.cpp
+$(OBJ)/%.$(DEP_EXT):: $(SRC_ROOT)/%.cpp
 	@$(ECHO) "need to rebuild $^"
 	$(ECHO) $(OBJ)/$(*).o " : FORCE" > $@
 #	$(TOUCH) $^
@@ -257,11 +260,11 @@ $(GEN_ROOT)/%.res: $(SRC_ROOT)/%.rc
 # gets in trouble with directory path names)
 
 define move-dep
-        if [ -f $(*F).d ]; \
+        if [ -f $(*F).$(DEP_EXT) ]; \
         then \
-                sed -e '1 s#$(@F)#$(OBJ)\/$(@F)#' $(*F).d > tmp.d; \
-                $(MV) tmp.d $(OBJ)/$(*F).d; \
-                $(RM) $(*F).d; \
+                sed -e '1 s#$(@F)#$(OBJ)\/$(@F)#' $(*F).$(DEP_EXT) > tmp.d; \
+                $(MV) tmp.d $(OBJ)/$(*F).$(DEP_EXT); \
+                $(RM) $(*F).$(DEP_EXT); \
                 $(TOUCH) $@; \
         fi
 endef

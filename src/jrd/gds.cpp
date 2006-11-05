@@ -185,7 +185,7 @@ static void gdsPrefixInit();	// C++ function
 
 extern "C" {
 
-#if !(defined VMS || defined WIN_NT || defined LINUX || defined FREEBSD || defined NETBSD || defined DARWIN )
+#if !(defined VMS || defined WIN_NT || defined LINUX || defined FREEBSD || defined NETBSD || defined DARWIN || defined AIX)
 extern int errno;
 extern SCHAR *sys_errlist[];
 extern int sys_nerr;
@@ -3372,7 +3372,7 @@ static void init(void)
 #ifdef UNIX
 	gds_pid = getpid();
 #ifdef SUPERSERVER
-#if (defined SOLARIS || defined HPUX || defined LINUX)
+#if (defined SOLARIS || defined HPUX || defined LINUX || defined AIX)
 	{
 		/* Increase max open files to hard limit for Unix
 		   platforms which are known to have low soft limits. */

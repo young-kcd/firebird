@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.extlib,v 1.10.2.7 2004-10-07 21:34:24 skidder Exp $
+#  $Id: Makefile.in.extlib,v 1.10.2.8 2006-11-05 14:37:30 alexpeshkoff Exp $
 #
 ROOT=..
 ObjModuleName=extlib
@@ -61,7 +61,7 @@ udf_client_library_classic =
 
 
 AllObjects = $(UDF_Objects) $(UTIL_Objects) $(FBUDF_Objects)
-Dependencies = $(AllObjects:.o=.d)
+Dependencies=$(AllObjects:.o=.$(DEP_EXT))
 
 
 .PHONY: all lib_ib_udf lib_ib_util lib_fb_udf

@@ -35,7 +35,7 @@ extern void API_ROUTINE gds__thread_enter(void);
 extern void API_ROUTINE gds__thread_exit(void);
 extern void SCH_abort(void);
 extern void SCH_ast(enum ast_t);
-extern struct thread *SCH_current_thread(void);
+extern struct sch_thread *SCH_current_thread(void);
 extern void SCH_enter(void);
 extern void SCH_exit(void);
 extern void SCH_hiber(void);
@@ -43,7 +43,7 @@ extern void SCH_init(void);
 extern int SCH_schedule(void);
 extern BOOLEAN SCH_thread_enter_check(void);
 extern BOOLEAN SCH_validate(void);
-extern void SCH_wake(struct thread *);
+extern void SCH_wake(struct sch_thread *);
 #ifdef VMS
 extern int API_ROUTINE gds__ast_active(void);
 extern void API_ROUTINE gds__completion_ast(void);

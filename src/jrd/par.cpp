@@ -34,7 +34,7 @@
  *
  */
 /*
-$Id: par.cpp,v 1.43.2.5 2004-06-19 08:11:45 dimitr Exp $
+$Id: par.cpp,v 1.43.2.6 2006-11-05 14:38:11 alexpeshkoff Exp $
 */
 
 #include "firebird.h"
@@ -2518,7 +2518,7 @@ static JRD_NOD parse(TDBB tdbb, CSB * csb, USHORT expected)
 		node->nod_arg[e_agg_rse] = parse(tdbb, csb, TYPE_RSE);
 		node->nod_arg[e_agg_group] = parse(tdbb, csb, OTHER);
 		node->nod_arg[e_agg_map] =
-			par_map(tdbb, csb, (USHORT) node->nod_arg[e_agg_stream]);
+			par_map(tdbb, csb, (USHORT) (IPTR) node->nod_arg[e_agg_stream]);
 		break;
 
 	case blr_group_by:

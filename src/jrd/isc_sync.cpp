@@ -72,6 +72,7 @@
 #include "../jrd/file_params.h"
 #include "../jrd/gdsassert.h"
 #include "../jrd/jrd.h"
+#include "../jrd/thd.h"
 #include "../jrd/sch_proto.h"
 #include "../jrd/err_proto.h"
 #include "../jrd/thd_proto.h"
@@ -782,7 +783,7 @@ int ISC_event_wait(
 		if (micro_seconds > 0 && (ret == -1) && (errno == EAGAIN))
 #else
 /* RITTER - added HP11 to the preprocessor condition below */
-#if (defined LINUX || defined DARWIN || defined HP11 || defined FREEBSD)
+#if (defined LINUX || defined DARWIN || defined HP11 || defined FREEBSD || defined AIX)
 		if (micro_seconds > 0 && (ret == ETIMEDOUT))
 #else
 		if (micro_seconds > 0 && (ret == ETIME))
