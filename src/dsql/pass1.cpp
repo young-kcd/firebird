@@ -234,7 +234,6 @@ static dsql_nod* pass1_make_derived_field(dsql_req*, tsql*, dsql_nod*);
 static dsql_nod* pass1_merge(dsql_req*, dsql_nod*, bool);
 static dsql_nod* pass1_not(dsql_req*, const dsql_nod*, bool, bool);
 static void	pass1_put_args_on_stack(dsql_req*, dsql_nod*, DsqlNodStack&, bool);
-static dsql_nod* pass1_recursive_cte(dsql_req* request, dsql_nod* input, bool proc_flag);
 static dsql_nod* pass1_relation(dsql_req*, dsql_nod*);
 static dsql_nod* pass1_replace(dsql_req*, dsql_nod*, bool);
 static dsql_nod* pass1_returning(dsql_req*, const dsql_nod*, bool);
@@ -760,8 +759,8 @@ dsql_nod* PASS1_node(dsql_req* request, dsql_nod* input, bool proc_flag)
 				 (request->req_curr_ctes.object() == cte)) 
 			{
 				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
-						isc_arg_gds, isc_random, 
-						isc_arg_string, "Recursive CTE member can refer itself only in FROM clause",
+						isc_arg_gds, isc_dsql_cte_wrong_reference, // Recursive CTE member (%s) can refer itself only in FROM clause
+						isc_arg_string, rel_name->str_data,
 						0);
 			}
 
@@ -770,8 +769,8 @@ dsql_nod* PASS1_node(dsql_req* request, dsql_nod* input, bool proc_flag)
 				dsql_nod* cte1 = stack.object();
 				if (cte1 == cte) {
 					ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
-						isc_arg_gds, isc_random, 
-						isc_arg_string, "Cyclic CTEs dependencies found",
+						isc_arg_gds, isc_dsql_cte_cycle,			// CTE %s have cyclic dependencies
+						isc_arg_string, rel_name->str_data,
 						0);
 				}
 			}
@@ -4087,8 +4086,7 @@ static dsql_nod* pass1_join_is_recursive(dsql_req* request, dsql_nod*& input)
 
 	if (leftRecursive && join_type != nod_join_inner) {
 		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
-			isc_arg_gds, isc_random, 
-			isc_arg_string, "recursive member of cte can''t be member of an outer join",
+			isc_arg_gds, isc_dsql_cte_outer_join,		// Recursive member of CTE can''t be member of an outer join
 			0);
 	}
 
@@ -4110,15 +4108,13 @@ static dsql_nod* pass1_join_is_recursive(dsql_req* request, dsql_nod*& input)
 
 	if (rightRecursive && join_type != nod_join_inner) {
 		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
-			isc_arg_gds, isc_random, 
-			isc_arg_string, "recursive member of cte can''t be member of an outer join",
+			isc_arg_gds, isc_dsql_cte_outer_join,			// Recursive member of CTE can''t be member of an outer join
 			0);
 	}
 
 	if (leftRecursive && rightRecursive) {
 		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
-			isc_arg_gds, isc_random, 
-			isc_arg_string, "recursive member of cte can''t reference to itself more than once",
+			isc_arg_gds, isc_dsql_cte_mult_references,		// Recursive member of CTE can''t reference itself more than once
 			0);
 	}
 
@@ -4174,8 +4170,7 @@ static bool pass1_rse_is_recursive(dsql_req* request, dsql_nod* input)
 				{
 					if (found) {
 						ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
-							isc_arg_gds, isc_random, 
-							isc_arg_string, "recursive member of cte can''t reference to itself more than once",
+							isc_arg_gds, isc_dsql_cte_mult_references,		// Recursive member of CTE can''t reference itself more than once
 							0);
 					}
 					found = true;
@@ -4192,8 +4187,7 @@ static bool pass1_rse_is_recursive(dsql_req* request, dsql_nod* input)
 				{
 					if (found) {
 						ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
-							isc_arg_gds, isc_random, 
-							isc_arg_string, "recursive member of cte can''t reference to itself more than once",
+							isc_arg_gds, isc_dsql_cte_mult_references,		// Recursive member of CTE can''t reference itself more than once
 							0);
 					}
 					found = true;
@@ -4242,8 +4236,8 @@ static dsql_nod* pass1_recursive_cte(dsql_req* request, dsql_nod* input, bool pr
 	if (query->nod_type != nod_list && pass1_rse_is_recursive(request, query))
 	{
 		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
-			isc_arg_gds, isc_random, 
-			isc_arg_string, "recursive cte must be union",
+			isc_arg_gds, isc_dsql_cte_not_a_union,	// Recursive CTE (%s) must be an UNION
+			isc_arg_string, cte_alias->str_data,
 			0);
 	}
 
@@ -4263,26 +4257,29 @@ static dsql_nod* pass1_recursive_cte(dsql_req* request, dsql_nod* input, bool pr
 			if (anchor_rse)
 			{
 				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
-					isc_arg_gds, isc_random, 
-					isc_arg_string, "non-recursive query after recursive",
+					isc_arg_gds, isc_dsql_cte_nonrecurs_after_recurs, // CTE '%s' defined non-recursive member after recursive
+					isc_arg_string, cte_alias->str_data,
 					0);
 			}
 			if (rse->nod_arg[e_qry_distinct]) {
 				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
-					isc_arg_gds, isc_random, 
-					isc_arg_string, "recursive query have DISTINCT clause",
+					isc_arg_gds, isc_dsql_cte_wrong_clause,	// Recursive member of CTE '%s' have %s clause
+					isc_arg_string, cte_alias->str_data,
+					isc_arg_string, "DISTINCT",
 					0);
 			}
 			if (rse->nod_arg[e_qry_group]) {
 				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
-					isc_arg_gds, isc_random, 
-					isc_arg_string, "recursive query have GROUP BY clause",
+					isc_arg_gds, isc_dsql_cte_wrong_clause,	// Recursive member of CTE '%s' have %s clause
+					isc_arg_string, cte_alias->str_data,
+					isc_arg_string, "GROUP BY",
 					0);
 			}
 			if (rse->nod_arg[e_qry_having]) {
 				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
-					isc_arg_gds, isc_random, 
-					isc_arg_string, "recursive query have HAVING clause",
+					isc_arg_gds, isc_dsql_cte_wrong_clause,	// Recursive member of CTE '%s' have %s clause
+					isc_arg_string, cte_alias->str_data,
+					isc_arg_string, "HAVING",
 					0);
 			}
 			// hvlad: we need also forbid any aggregate function here
@@ -4290,8 +4287,8 @@ static dsql_nod* pass1_recursive_cte(dsql_req* request, dsql_nod* input, bool pr
 
 			if ((qry->nod_type == nod_list) && !(qry->nod_flags & NOD_UNION_ALL)) {
 				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
-					isc_arg_gds, isc_random, 
-					isc_arg_string, "recursive members of CTE must be linked with another members via UNION ALL",
+					isc_arg_gds, isc_dsql_cte_union_all, // Recursive members of CTE (%s) must be linked with another members via UNION ALL
+					isc_arg_string, cte_alias->str_data,
 					0);
 			}
 			if (!recursive_rse) {
@@ -4315,8 +4312,8 @@ static dsql_nod* pass1_recursive_cte(dsql_req* request, dsql_nod* input, bool pr
 	}
 	if (!anchor_rse) {
 		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
-			isc_arg_gds, isc_random, 
-			isc_arg_string, "non-recursive query is missing",
+			isc_arg_gds, isc_dsql_cte_miss_nonrecursive, // Non-recursive member is missing in CTE '%s'
+			isc_arg_string, cte_alias->str_data,
 			0);
 	}
 	
@@ -9661,8 +9658,7 @@ void dsql_req::addCTEs(dsql_nod* with)
 
 	if (req_ctes.getCount()) {
 		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
-			isc_arg_gds, isc_random, 
-			isc_arg_string, "WITH clause can't be nested",
+			isc_arg_gds, isc_dsql_cte_nested_with,	// WITH clause can't be nested
 			0);
 	}
 

@@ -789,6 +789,16 @@ const ISC_LONG isc_dsql_derived_field_dup_name      = 336397221L;
 const ISC_LONG isc_dsql_derived_alias_select        = 336397222L;
 const ISC_LONG isc_dsql_derived_alias_field         = 336397223L;
 const ISC_LONG isc_dsql_auto_field_bad_pos          = 336397224L;
+const ISC_LONG isc_dsql_cte_wrong_reference         = 336397225L;
+const ISC_LONG isc_dsql_cte_cycle                   = 336397226L;
+const ISC_LONG isc_dsql_cte_outer_join              = 336397227L;
+const ISC_LONG isc_dsql_cte_mult_references         = 336397228L;
+const ISC_LONG isc_dsql_cte_not_a_union             = 336397229L;
+const ISC_LONG isc_dsql_cte_nonrecurs_after_recurs  = 336397230L;
+const ISC_LONG isc_dsql_cte_wrong_clause            = 336397231L;
+const ISC_LONG isc_dsql_cte_union_all               = 336397232L;
+const ISC_LONG isc_dsql_cte_miss_nonrecursive       = 336397233L;
+const ISC_LONG isc_dsql_cte_nested_with             = 336397234L;
 const ISC_LONG isc_gsec_cant_open_db                = 336723983L;
 const ISC_LONG isc_gsec_switches_error              = 336723984L;
 const ISC_LONG isc_gsec_no_op_spec                  = 336723985L;
@@ -848,7 +858,7 @@ const ISC_LONG isc_gstat_unexpected_eof             = 336920580L;
 const ISC_LONG isc_gstat_open_err                   = 336920605L;
 const ISC_LONG isc_gstat_read_err                   = 336920606L;
 const ISC_LONG isc_gstat_sysmemex                   = 336920607L;
-const ISC_LONG isc_err_max                          = 793;
+const ISC_LONG isc_err_max                          = 803;
 
 #else /* c definitions */
 
@@ -1607,6 +1617,16 @@ const ISC_LONG isc_err_max                          = 793;
 #define isc_dsql_derived_alias_select        336397222L
 #define isc_dsql_derived_alias_field         336397223L
 #define isc_dsql_auto_field_bad_pos          336397224L
+#define isc_dsql_cte_wrong_reference         336397225L
+#define isc_dsql_cte_cycle                   336397226L
+#define isc_dsql_cte_outer_join              336397227L
+#define isc_dsql_cte_mult_references         336397228L
+#define isc_dsql_cte_not_a_union             336397229L
+#define isc_dsql_cte_nonrecurs_after_recurs  336397230L
+#define isc_dsql_cte_wrong_clause            336397231L
+#define isc_dsql_cte_union_all               336397232L
+#define isc_dsql_cte_miss_nonrecursive       336397233L
+#define isc_dsql_cte_nested_with             336397234L
 #define isc_gsec_cant_open_db                336723983L
 #define isc_gsec_switches_error              336723984L
 #define isc_gsec_no_op_spec                  336723985L
@@ -1666,7 +1686,7 @@ const ISC_LONG isc_err_max                          = 793;
 #define isc_gstat_open_err                   336920605L
 #define isc_gstat_read_err                   336920606L
 #define isc_gstat_sysmemex                   336920607L
-#define isc_err_max                          793
+#define isc_err_max                          803
 
 #endif
 

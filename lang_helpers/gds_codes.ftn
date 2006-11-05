@@ -1520,6 +1520,26 @@ C --
       PARAMETER (GDS__dsql_derived_alias_field         = 336397223)
       INTEGER*4 GDS__dsql_auto_field_bad_pos         
       PARAMETER (GDS__dsql_auto_field_bad_pos          = 336397224)
+      INTEGER*4 GDS__dsql_cte_wrong_reference        
+      PARAMETER (GDS__dsql_cte_wrong_reference         = 336397225)
+      INTEGER*4 GDS__dsql_cte_cycle                  
+      PARAMETER (GDS__dsql_cte_cycle                   = 336397226)
+      INTEGER*4 GDS__dsql_cte_outer_join             
+      PARAMETER (GDS__dsql_cte_outer_join              = 336397227)
+      INTEGER*4 GDS__dsql_cte_mult_references        
+      PARAMETER (GDS__dsql_cte_mult_references         = 336397228)
+      INTEGER*4 GDS__dsql_cte_not_a_union            
+      PARAMETER (GDS__dsql_cte_not_a_union             = 336397229)
+      INTEGER*4 GDS__dsql_cte_nonrecurs_after_recurs 
+      PARAMETER (GDS__dsql_cte_nonrecurs_after_recurs  = 336397230)
+      INTEGER*4 GDS__dsql_cte_wrong_clause           
+      PARAMETER (GDS__dsql_cte_wrong_clause            = 336397231)
+      INTEGER*4 GDS__dsql_cte_union_all              
+      PARAMETER (GDS__dsql_cte_union_all               = 336397232)
+      INTEGER*4 GDS__dsql_cte_miss_nonrecursive      
+      PARAMETER (GDS__dsql_cte_miss_nonrecursive       = 336397233)
+      INTEGER*4 GDS__dsql_cte_nested_with            
+      PARAMETER (GDS__dsql_cte_nested_with             = 336397234)
       INTEGER*4 GDS__gsec_cant_open_db               
       PARAMETER (GDS__gsec_cant_open_db                = 336723983)
       INTEGER*4 GDS__gsec_switches_error             

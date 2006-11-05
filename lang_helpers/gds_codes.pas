@@ -767,6 +767,16 @@ const
 	gds_dsql_derived_alias_select        = 336397222;
 	gds_dsql_derived_alias_field         = 336397223;
 	gds_dsql_auto_field_bad_pos          = 336397224;
+	gds_dsql_cte_wrong_reference         = 336397225;
+	gds_dsql_cte_cycle                   = 336397226;
+	gds_dsql_cte_outer_join              = 336397227;
+	gds_dsql_cte_mult_references         = 336397228;
+	gds_dsql_cte_not_a_union             = 336397229;
+	gds_dsql_cte_nonrecurs_after_recurs  = 336397230;
+	gds_dsql_cte_wrong_clause            = 336397231;
+	gds_dsql_cte_union_all               = 336397232;
+	gds_dsql_cte_miss_nonrecursive       = 336397233;
+	gds_dsql_cte_nested_with             = 336397234;
 	gds_gsec_cant_open_db                = 336723983;
 	gds_gsec_switches_error              = 336723984;
 	gds_gsec_no_op_spec                  = 336723985;

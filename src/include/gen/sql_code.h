@@ -755,6 +755,16 @@ static const struct {
 	{336397222, -104}, /* 934 dsql_derived_alias_select        */
 	{336397223, -104}, /* 935 dsql_derived_alias_field         */
 	{336397224, -104}, /* 936 dsql_auto_field_bad_pos          */
+	{336397225, -104}, /* 937 dsql_cte_wrong_reference         */
+	{336397226, -104}, /* 938 dsql_cte_cycle                   */
+	{336397227, -104}, /* 939 dsql_cte_outer_join              */
+	{336397228, -104}, /* 940 dsql_cte_mult_references         */
+	{336397229, -104}, /* 941 dsql_cte_not_a_union             */
+	{336397230, -104}, /* 942 dsql_cte_nonrecurs_after_recurs  */
+	{336397231, -104}, /* 943 dsql_cte_wrong_clause            */
+	{336397232, -104}, /* 944 dsql_cte_union_all               */
+	{336397233, -104}, /* 945 dsql_cte_miss_nonrecursive       */
+	{336397234, -104}, /* 946 dsql_cte_nested_with             */
 	{336723983, -901}, /*  15 gsec_cant_open_db                */
 	{336723984, -901}, /*  16 gsec_switches_error              */
 	{336723985, -901}, /*  17 gsec_no_op_spec                  */
