@@ -1,3 +1,24 @@
+2006-11-04 16:33  asfernandes
+
+	* firebird2/src/jrd/dyn.epp (1.95):
+
+	Fixed the problem found by Claudio during make_boot
+
+2006-11-04 08:57  robocop
+
+	* firebird2/doc/WhatsNew (1.104):
+
+	Misc: this file uses spaces instead of tabs for indentation.
+
+2006-11-04 04:44  asfernandes
+
+	* firebird2/: doc/WhatsNew (1.103), src/jrd/dyn.epp (1.94),
+	src/jrd/dyn.h (1.33), src/jrd/dyn_def.epp (1.146),
+	src/jrd/dyn_mod.epp (1.83), src/jrd/intl.cpp (1.93):
+
+	Fixed CORE-986 - Non-ASCII quoted identifiers are not converted to
+	metadata (UNICODE_FSS) charset
+
 2006-11-04 04:03  asfernandes
 
 	* firebird2/src/dsql/ddl.cpp (1.190):
