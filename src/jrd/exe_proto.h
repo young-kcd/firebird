@@ -24,6 +24,8 @@
 #ifndef JRD_EXE_PROTO_H
 #define JRD_EXE_PROTO_H
 
+#include "../jrd/req.h"
+
 namespace Jrd {
 	class jrd_req;
 	class jrd_nod;
@@ -31,6 +33,7 @@ namespace Jrd {
 }
 
 void EXE_assignment(Jrd::thread_db*, Jrd::jrd_nod*);
+void EXE_execute_db_triggers(Jrd::thread_db*, Jrd::jrd_tra*, enum Jrd::jrd_req::req_ta);
 Jrd::jrd_req* EXE_find_request(Jrd::thread_db*, Jrd::jrd_req*, bool);
 void EXE_receive(Jrd::thread_db*, Jrd::jrd_req*, USHORT, USHORT, UCHAR*);
 void EXE_send(Jrd::thread_db*, Jrd::jrd_req*, USHORT, USHORT, const UCHAR*);

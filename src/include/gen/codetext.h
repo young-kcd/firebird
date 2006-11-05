@@ -634,6 +634,8 @@ static const struct {
 	{"replace_doesnt_match_pk", 336003099},
 	{"replace_doesnt_match_matching", 336003100},
 	{"replace_with_complex_view", 336003101},
+	{"dsql_incompatible_trigger_type", 336003102},
+	{"dsql_db_trigger_type_cant_change", 336003103},
 	{"dyn_role_does_not_exist", 336068796},
 	{"dyn_no_grant_admin_opt", 336068797},
 	{"dyn_user_not_role_member", 336068798},

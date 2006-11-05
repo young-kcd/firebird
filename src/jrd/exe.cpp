@@ -485,6 +485,78 @@ void EXE_assignment(thread_db* tdbb, jrd_nod* node)
 }
 
 
+void EXE_execute_db_triggers(thread_db* tdbb,
+							 jrd_tra* transaction,
+							 enum jrd_req::req_ta trigger_action)
+{
+/**************************************
+ *
+ *	E X E _ e x e c u t e _ d b _ t r i g g e r s
+ *
+ **************************************
+ *
+ * Functional description
+ *	Execute database triggers
+ *
+ **************************************/
+ 	// do nothing if user don't want database triggers
+	if (tdbb->tdbb_attachment->att_flags & ATT_no_db_triggers)
+		return;
+
+	int type = 0;
+
+	switch (trigger_action)
+	{
+		case jrd_req::req_trigger_connect:
+			type = DB_TRIGGER_CONNECT;
+			break;
+
+		case jrd_req::req_trigger_disconnect:
+			type = DB_TRIGGER_DISCONNECT;
+			break;
+
+		case jrd_req::req_trigger_trans_start:
+			type = DB_TRIGGER_TRANS_START;
+			break;
+
+		case jrd_req::req_trigger_trans_commit:
+			type = DB_TRIGGER_TRANS_COMMIT;
+			break;
+
+		case jrd_req::req_trigger_trans_rollback:
+			type = DB_TRIGGER_TRANS_ROLLBACK;
+			break;
+
+		default:
+			fb_assert(false);
+			return;
+	}
+
+	jrd_req* trigger = NULL;
+
+	if (tdbb->tdbb_database->dbb_triggers[type])
+	{
+		jrd_tra* old_transaction = tdbb->tdbb_transaction;
+		tdbb->tdbb_transaction = transaction;
+
+		try
+		{
+			trigger = execute_triggers(tdbb, &tdbb->tdbb_database->dbb_triggers[type],
+				NULL, NULL, trigger_action);
+			tdbb->tdbb_transaction = old_transaction;
+		}
+		catch (...)
+		{
+			tdbb->tdbb_transaction = old_transaction;
+			throw;
+		}
+	}
+
+	if (trigger)
+		trigger_failure(tdbb, trigger);
+}
+
+
 jrd_req* EXE_find_request(thread_db* tdbb, jrd_req* request, bool validate)
 {
 /**************************************
@@ -1475,13 +1547,18 @@ static jrd_req* execute_triggers(thread_db* tdbb,
 
 	SET_TDBB(tdbb);
 
-	jrd_tra* transaction = tdbb->tdbb_request->req_transaction;
+	jrd_tra* transaction = (tdbb->tdbb_request ? tdbb->tdbb_request->req_transaction : tdbb->tdbb_transaction);
 	trig_vec* vector = *triggers;
 	jrd_req* result = NULL;
 
 	Record* null_rec = NULL;
 
-	if (!old_rec || !new_rec) {
+	if (!old_rec && !new_rec)
+	{
+		// this is a database trigger
+	}
+	else if (!old_rec || !new_rec)
+	{
 		const Record* record = old_rec ? old_rec : new_rec;
 		fb_assert(record && record->rec_format);
 		// copy the record
@@ -1497,6 +1574,7 @@ static jrd_req* execute_triggers(thread_db* tdbb,
 	}
 
 	jrd_req* trigger = NULL;
+	Firebird::TimeStamp timestamp;
 
 	try
 	{
@@ -1506,7 +1584,12 @@ static jrd_req* execute_triggers(thread_db* tdbb,
 			trigger = EXE_find_request(tdbb, ptr->request, false);
 			trigger->req_rpb[0].rpb_record = old_rec ? old_rec : null_rec;
 			trigger->req_rpb[1].rpb_record = new_rec ? new_rec : null_rec;
-			trigger->req_timestamp = tdbb->tdbb_request->req_timestamp;
+
+			if (tdbb->tdbb_request)
+				trigger->req_timestamp = tdbb->tdbb_request->req_timestamp;
+			else
+				trigger->req_timestamp = timestamp;
+			
 			trigger->req_trigger_action = trigger_action;
 			EXE_start(tdbb, trigger, transaction);
 			trigger->req_attachment = NULL;

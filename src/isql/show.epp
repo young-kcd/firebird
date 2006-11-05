@@ -137,6 +137,14 @@ const SCHAR* Trigger_suffix_types[] = {
 	"DELETE"			// NTX: keyword
 };
 
+const SCHAR* Db_trigger_types[] = {
+	"CONNECT",				// NTX: keyword
+	"DISCONNECT",			// NTX: keyword
+	"TRANSACTION START",	// NTX: keyword
+	"TRANSACTION COMMIT",	// NTX: keyword
+	"TRANSACTION ROLLBACK"	// NTX: keyword
+};
+
 
 enum priv_flag { 
 	priv_UNKNOWN	= 1,
@@ -218,19 +226,31 @@ inline int TRIGGER_ACTION_SUFFIX(int value, int slot) {
 const char* trigger_action(int type)
 {
 	static char buffer[256];
-	int prefix = TRIGGER_ACTION_PREFIX(type);
-	strcpy(buffer, Trigger_prefix_types[prefix]);
-	int suffix = TRIGGER_ACTION_SUFFIX(type, 1);
-	strcat(buffer, " ");
-	strcat(buffer, Trigger_suffix_types[suffix]);
-	if ( (suffix = TRIGGER_ACTION_SUFFIX(type, 2)) ) {
-		strcat(buffer, " OR ");
+
+	if ((type & TRIGGER_TYPE_MASK) == TRIGGER_TYPE_DML)
+	{
+		int prefix = TRIGGER_ACTION_PREFIX(type);
+		strcpy(buffer, Trigger_prefix_types[prefix]);
+		int suffix = TRIGGER_ACTION_SUFFIX(type, 1);
+		strcat(buffer, " ");
 		strcat(buffer, Trigger_suffix_types[suffix]);
+		if ( (suffix = TRIGGER_ACTION_SUFFIX(type, 2)) ) {
+			strcat(buffer, " OR ");
+			strcat(buffer, Trigger_suffix_types[suffix]);
+		}
+		if ( (suffix = TRIGGER_ACTION_SUFFIX(type, 3)) ) {
+			strcat(buffer, " OR ");
+			strcat(buffer, Trigger_suffix_types[suffix]);
+		}
 	}
-	if ( (suffix = TRIGGER_ACTION_SUFFIX(type, 3)) ) {
-		strcat(buffer, " OR ");
-		strcat(buffer, Trigger_suffix_types[suffix]);
+	else if ((type & TRIGGER_TYPE_MASK) == TRIGGER_TYPE_DB)
+		sprintf(buffer, "ON %s", Db_trigger_types[type & ~TRIGGER_TYPE_DB]);
+	else
+	{
+		buffer[0] = '\0';
+		fb_assert(false);
 	}
+
 	return buffer;
 }
 
@@ -4250,6 +4270,45 @@ static processing_state show_trigger(
 	// Show all triggers
 	if (!*object)
 	{
+		bool has_dbtrig = false;
+
+		FOR TRG IN RDB$TRIGGERS
+			WITH (TRG.RDB$SYSTEM_FLAG EQ 0 OR TRG.RDB$SYSTEM_FLAG MISSING) AND
+				 TRG.RDB$RELATION_NAME MISSING
+			SORTED BY TRG.RDB$TRIGGER_NAME
+
+			if (!has_dbtrig)
+			{
+				isqlGlob.printf(
+						 "Trigger name                     Invalid%s", NEWLINE);
+				isqlGlob.printf(
+						 "================================ =======%s", NEWLINE);
+				has_dbtrig = true;
+			}
+
+			const char* invalid = "        ";
+
+			if (ENCODE_ODS(isqlGlob.major_ods, isqlGlob.minor_ods) >= ODS_11_1)
+			{
+				FOR TRG2 IN RDB$TRIGGERS
+					WITH TRG2.RDB$TRIGGER_NAME EQ TRG.RDB$TRIGGER_NAME
+					if (!(TRG2.RDB$VALID_BLR.NULL || TRG2.RDB$VALID_BLR))
+						invalid = "    *   ";
+				END_FOR
+			}
+
+			fb_utils::exact_name(TRG.RDB$TRIGGER_NAME);
+			isqlGlob.printf("%-32s%s%s%s",
+					 TRG.RDB$TRIGGER_NAME,
+					 invalid,
+					 (TRG.RDB$SYSTEM_FLAG == 1 ? "(system)" : ""),	// never used
+					 NEWLINE);
+		END_FOR
+		ON_ERROR
+			ISQL_errmsg(isc_status);
+			return ps_ERR;
+		END_ERROR;
+
 		FOR TRG IN RDB$TRIGGERS CROSS REL IN RDB$RELATIONS
 			//WITH (REL.RDB$SYSTEM_FLAG NE 1 OR REL.RDB$SYSTEM_FLAG MISSING) AND
 			//NOT (ANY CHK IN RDB$CHECK_CONSTRAINTS WITH
@@ -4260,6 +4319,9 @@ static processing_state show_trigger(
 
 			if (first)
 			{
+				if (has_dbtrig)
+					isqlGlob.printf("%s", NEWLINE);
+
 				isqlGlob.printf(
 						 "Table name                       Trigger name                     Invalid%s", NEWLINE);
 				isqlGlob.printf(
@@ -4291,7 +4353,8 @@ static processing_state show_trigger(
 			ISQL_errmsg(isc_status);
 			return ps_ERR;
 		END_ERROR;
-		if (first)
+
+		if (first && !has_dbtrig)
 			return OBJECT_NOT_FOUND;
 		else
 			return (SKIP);
@@ -4332,13 +4395,19 @@ static processing_state show_trigger(
 		//if (skip)
 		//	continue;
 		fb_utils::exact_name(TRG.RDB$TRIGGER_NAME);
-		fb_utils::exact_name(TRG.RDB$RELATION_NAME);
 
-		if (first) {
-			isqlGlob.printf("%sTriggers on Table %s:%s",
-					 NEWLINE,
-					 TRG.RDB$RELATION_NAME,
-					 NEWLINE);
+		if (first)
+		{
+			if (!TRG.RDB$RELATION_NAME.NULL)
+			{
+				fb_utils::exact_name(TRG.RDB$RELATION_NAME);
+
+				isqlGlob.printf("%sTriggers on Table %s:%s",
+						 NEWLINE,
+						 TRG.RDB$RELATION_NAME,
+						 NEWLINE);
+			}
+
 			first = false;
 		}
 

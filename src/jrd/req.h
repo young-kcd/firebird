@@ -254,9 +254,15 @@ public:
 	USHORT	req_src_column;
 
 	enum req_ta {
-		req_trigger_insert = 1,
-		req_trigger_update = 2,
-		req_trigger_delete = 3
+		// order should be maintained because the numbers are stored in BLR
+		req_trigger_insert			= 1,
+		req_trigger_update			= 2,
+		req_trigger_delete			= 3,
+		req_trigger_connect			= 4,
+		req_trigger_disconnect		= 5,
+		req_trigger_trans_start		= 6,
+		req_trigger_trans_commit	= 7,
+		req_trigger_trans_rollback	= 8
 	} req_trigger_action;			/* action that caused trigger to fire */
 
 	enum req_s {

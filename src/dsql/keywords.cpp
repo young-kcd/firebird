@@ -96,6 +96,7 @@ static const TOK tokens[] =
 	{COMMITTED, "COMMITTED", 1, false},
 	{COMPUTED, "COMPUTED", 1, false},
 	{CONDITIONAL, "CONDITIONAL", 1, false},
+	{CONNECT, "CONNECT", 2, false},
 	{CONSTRAINT, "CONSTRAINT", 1, false},
 	{CONTAINING, "CONTAINING", 1, false},
 	{COUNT, "COUNT", 1, false},
@@ -125,6 +126,7 @@ static const TOK tokens[] =
 	{DESC, "DESCENDING", 1, false},
 	{KW_DESCRIPTOR,	"DESCRIPTOR", 2, true},
 	{KW_DIFFERENCE, "DIFFERENCE", 2, true},
+	{DISCONNECT, "DISCONNECT", 2, false},
 	{DISTINCT, "DISTINCT", 1, false},
 	{DO, "DO", 1, false},
 	{DOMAIN, "DOMAIN", 1, false},
@@ -282,6 +284,7 @@ static const TOK tokens[] =
 	{SPACE, "SPACE", 2, true},
 	{SQLCODE, "SQLCODE", 1, false},
 	{STABILITY, "STABILITY", 1, false},
+	{START, "START", 2, false},
 	{STARTING, "STARTING", 1, false},
 	{STARTING, "STARTS", 1, false},	// Alias of STARTING
 	{STATEMENT, "STATEMENT", 2, true},

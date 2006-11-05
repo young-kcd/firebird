@@ -270,7 +270,9 @@ enum dfw_t {
 	dfw_arg_partner_rel_id,	// partner relation id for dfw_delete_index if index is FK, optional
 	dfw_arg_proc_name,		// procedure name for dfw_delete_prm, mandatory
 	dfw_arg_force_computed,	// we need to drop dependencies from a field that WAS computed
-	dfw_arg_check_blr		// check if BLR is still compilable
+	dfw_arg_check_blr,		// check if BLR is still compilable
+	dfw_arg_rel_name,		// relation name of a trigger
+	dfw_arg_trg_type		// trigger type
 };
 
 class DeferredWork : public pool_alloc<type_dfw>

@@ -218,4 +218,21 @@ enum tra_iso_mode_t {
 	iso_mode_rc_no_version = 3
 };
 
+const int TRIGGER_TYPE_SHIFT		= 13;
+const int TRIGGER_TYPE_MASK			= (0x3 << TRIGGER_TYPE_SHIFT);
+
+const int TRIGGER_TYPE_DML			= (0 << TRIGGER_TYPE_SHIFT);
+const int TRIGGER_TYPE_DB			= (1 << TRIGGER_TYPE_SHIFT);
+//const int TRIGGER_TYPE_DDL		= (2 << TRIGGER_TYPE_SHIFT);
+
+const int DB_TRIGGER_CONNECT		= 0;
+const int DB_TRIGGER_DISCONNECT		= 1;
+const int DB_TRIGGER_TRANS_START	= 2;
+const int DB_TRIGGER_TRANS_COMMIT	= 3;
+const int DB_TRIGGER_TRANS_ROLLBACK	= 4;
+const int DB_TRIGGER_MAX			= 5;
+
+// that's how database trigger action types are encoded
+//    (TRIGGER_TYPE_DB | type)
+
 #endif // JRD_CONSTANTS_H

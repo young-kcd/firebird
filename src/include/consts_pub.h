@@ -102,6 +102,7 @@
 #define isc_dpb_gsec_attach               69
 #define isc_dpb_address_path              70
 #define isc_dpb_pid                       71
+#define isc_dpb_no_db_triggers            72
 
 /**************************************************/
 /* clumplet tags used inside isc_dpb_address_path */

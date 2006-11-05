@@ -2113,6 +2113,29 @@ static bool create_trigger(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 
 	case 3:
 		get_trigger_dependencies(work);
+		return true;
+
+	case 4:
+		{
+			DeferredWork* arg = work->dfw_args;
+			while (arg && (arg->dfw_type != dfw_arg_rel_name)) 
+				arg = arg->dfw_next;
+
+			if (!arg)
+			{
+				DeferredWork* arg = work->dfw_args;
+				while (arg && (arg->dfw_type != dfw_arg_trg_type)) 
+					arg = arg->dfw_next;
+
+				fb_assert(arg);
+
+				if (arg && (arg->dfw_id & TRIGGER_TYPE_MASK) == TRIGGER_TYPE_DB)
+				{
+					MET_load_trigger(tdbb, NULL, work->dfw_name,
+						&tdbb->tdbb_database->dbb_triggers[arg->dfw_id & ~TRIGGER_TYPE_DB]);
+				}
+			}
+		}
 		break;
 	}
 
@@ -3227,8 +3250,31 @@ static bool delete_trigger(	thread_db*	tdbb,
 
 	case 3:
 		/* get rid of dependencies */
-
 		MET_delete_dependencies(tdbb, work->dfw_name, obj_trigger);
+		return true;
+
+	case 4:
+		{
+			DeferredWork* arg = work->dfw_args;
+			while (arg && (arg->dfw_type != dfw_arg_rel_name)) 
+				arg = arg->dfw_next;
+
+			if (!arg)
+			{
+				DeferredWork* arg = work->dfw_args;
+				while (arg && (arg->dfw_type != dfw_arg_trg_type)) 
+					arg = arg->dfw_next;
+
+				fb_assert(arg);
+
+				if (arg && (arg->dfw_id & TRIGGER_TYPE_MASK) == TRIGGER_TYPE_DB)
+				{
+					MET_release_trigger(tdbb,
+						&tdbb->tdbb_database->dbb_triggers[arg->dfw_id & ~TRIGGER_TYPE_DB],
+						work->dfw_name);
+				}
+			}
+		}
 		break;
 	}
 
@@ -4292,11 +4338,35 @@ static bool modify_trigger(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 		return true;
 
 	case 3:
-		/* get rid of old dependencies, bring in the new */
+		{
+			DeferredWork* arg = work->dfw_args;
+			while (arg && (arg->dfw_type != dfw_arg_rel_name)) 
+				arg = arg->dfw_next;
 
-		MET_delete_dependencies(tdbb, work->dfw_name, obj_trigger);
-		get_trigger_dependencies(work);
-		return true;
+			if (!arg)
+			{
+				DeferredWork* arg = work->dfw_args;
+				while (arg && (arg->dfw_type != dfw_arg_trg_type)) 
+					arg = arg->dfw_next;
+
+				fb_assert(arg);
+
+				if (arg && (arg->dfw_id & TRIGGER_TYPE_MASK) == TRIGGER_TYPE_DB)
+				{
+					MET_release_trigger(tdbb,
+						&tdbb->tdbb_database->dbb_triggers[arg->dfw_id & ~TRIGGER_TYPE_DB],
+						work->dfw_name);
+
+					MET_load_trigger(tdbb, NULL, work->dfw_name,
+						&tdbb->tdbb_database->dbb_triggers[arg->dfw_id & ~TRIGGER_TYPE_DB]);
+				}
+			}
+
+			/* get rid of old dependencies, bring in the new */
+			MET_delete_dependencies(tdbb, work->dfw_name, obj_trigger);
+			get_trigger_dependencies(work);
+			return true;
+		}
 
 	case 4:
 		if (ENCODE_ODS(dbb->dbb_ods_version, dbb->dbb_minor_original) >= ODS_11_1)

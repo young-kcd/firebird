@@ -77,6 +77,7 @@ Jrd::jrd_nod*	MET_get_dependencies(Jrd::thread_db*, Jrd::jrd_rel*, const UCHAR*,
 								Jrd::CompilerScratch**, Firebird::MetaName&, int, USHORT);
 Jrd::jrd_fld*	MET_get_field(Jrd::jrd_rel*, USHORT);
 void		MET_get_shadow_files(Jrd::thread_db*, bool);
+void		MET_load_db_triggers(Jrd::thread_db*, int);
 void		MET_load_trigger(Jrd::thread_db*, Jrd::jrd_rel*, const Firebird::MetaName&, Jrd::trig_vec**);
 void		MET_lookup_cnstrt_for_index(Jrd::thread_db*, Firebird::MetaName& constraint, const Firebird::MetaName& index_name);
 void		MET_lookup_cnstrt_for_trigger(Jrd::thread_db*, Firebird::MetaName&, Firebird::MetaName&, const Firebird::MetaName&);
@@ -102,6 +103,7 @@ Jrd::jrd_prc*	MET_procedure(Jrd::thread_db*, int, bool, USHORT);
 Jrd::jrd_rel*	MET_relation(Jrd::thread_db*, USHORT);
 bool		MET_relation_default_class (Jrd::thread_db*, const Firebird::MetaName&, const Firebird::MetaName&);
 void		MET_release_existence(Jrd::jrd_rel*);
+void		MET_release_trigger(Jrd::thread_db*, Jrd::trig_vec**, const Firebird::MetaName&);
 void		MET_release_triggers(Jrd::thread_db*, Jrd::trig_vec**);
 #ifdef DEV_BUILD
 void		MET_verify_cache(Jrd::thread_db*);

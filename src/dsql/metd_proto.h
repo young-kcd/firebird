@@ -55,7 +55,7 @@ dsql_udf*      METD_get_function(dsql_req*, const dsql_str*);
 dsql_nod* METD_get_primary_key(dsql_req*, const dsql_str*);
 dsql_prc* METD_get_procedure(dsql_req*, const dsql_str*);
 dsql_rel* METD_get_relation(dsql_req*, const dsql_str*);
-dsql_str*      METD_get_trigger_relation(dsql_req*, const dsql_str*, USHORT*);
+bool   METD_get_trigger(dsql_req*, const dsql_str*, dsql_str**, USHORT*);
 bool   METD_get_type(dsql_req*, const dsql_str*, char*, SSHORT*);
 dsql_rel* METD_get_view_base(dsql_req*   request,
 							 const char* view_name,	// UTF-8

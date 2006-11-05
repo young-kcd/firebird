@@ -993,6 +993,11 @@ int common_main(int		argc,
 				tdgbl->gbl_sw_novalidity = true;
 				break;
 
+			case (IN_SW_BURP_NO):
+				tdgbl->gbl_sw_nodbtriggers = true;
+				dpb.insertByte(isc_dpb_no_db_triggers, 1);
+				break;
+
 			case (IN_SW_BURP_NT):	// Backup non-transportable format 
 				tdgbl->gbl_sw_transportable = false;
 				break;
@@ -1982,7 +1987,7 @@ static gbak_action open_files(const TEXT* file1,
 	*file2 = tdgbl->gbl_sw_files->fil_name;
 	if (tdgbl->gbl_sw_files->fil_size_code != size_n)
 		BURP_error(262, true, *file2, 0, 0, 0, 0);
-	// msg 262 size specificati on either missing or incorrect for file %s  
+	// msg 262 size specification either missing or incorrect for file %s  
 
 	if ((sw_replace == IN_SW_BURP_C || sw_replace == IN_SW_BURP_R) &&
 		!isc_attach_database(status_vector,

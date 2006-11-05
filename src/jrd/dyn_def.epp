@@ -4242,6 +4242,9 @@ void DYN_define_trigger(Global*						gbl,
 			}
 		}
 
+		if (X.RDB$RELATION_NAME.NULL && !tdbb->tdbb_attachment->locksmith())
+			ERR_post(isc_adm_task_denied, 0);
+
 		b_ending_store = true;
 
 /* the END_STORE_SPECIAL adds the foll. lines of code to the END_STORE

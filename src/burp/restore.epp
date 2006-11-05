@@ -600,6 +600,9 @@ int RESTORE_restore (const TEXT* file_name,
 							 strlen(tdgbl->gbl_sw_password));
 	}
 
+	if (tdgbl->gbl_sw_nodbtriggers)
+		dpb.insertByte(isc_dpb_no_db_triggers, 1);
+
 	// set forced writes to the value which was in the header
 	dpb.insertByte(isc_dpb_force_write, tdgbl->hdr_forced_writes);
 
@@ -644,6 +647,10 @@ int RESTORE_restore (const TEXT* file_name,
 		}
 
 		dpb.insertByte(isc_dpb_set_db_readonly, TRUE);
+
+		if (tdgbl->gbl_sw_nodbtriggers)
+			dpb.insertByte(isc_dpb_no_db_triggers, 1);
+
 		if (isc_attach_database (tdgbl->status_vector, 0, database_name,
 				  &db_handle, dpb.getBufferLength(), 
 				  reinterpret_cast<const SCHAR*>(dpb.getBuffer())))
@@ -1022,6 +1029,9 @@ void create_database (const TEXT* file_name)
 			isc_dpb_shut_attachment | isc_dpb_shut_single);
 	dpb.insertInt(isc_dpb_shutdown_delay, 0);
 	dpb.insertInt(isc_dpb_overwrite, tdgbl->gbl_sw_overwrite);
+
+	if (tdgbl->gbl_sw_nodbtriggers)
+		dpb.insertByte(isc_dpb_no_db_triggers, 1);
 
 	ISC_STATUS_ARRAY status_vector;
 
@@ -6055,6 +6065,8 @@ bool get_trigger()
 		STORE (TRANSACTION_HANDLE local_trans
 				REQUEST_HANDLE tdgbl->handles_get_trigger_req_handle1)
 			X IN RDB$TRIGGERS
+
+			X.RDB$RELATION_NAME.NULL = TRUE;
 			X.RDB$DESCRIPTION.NULL = TRUE;
 			X.RDB$TRIGGER_BLR.NULL = TRUE;
 			X.RDB$TRIGGER_SOURCE.NULL = TRUE;
@@ -6101,6 +6113,7 @@ bool get_trigger()
 					break;
 
 				case att_trig_relation_name:
+					X.RDB$RELATION_NAME.NULL = FALSE;
 					GET_TEXT(X.RDB$RELATION_NAME);
 					break;
 
@@ -6163,6 +6176,8 @@ bool get_trigger()
 		STORE (TRANSACTION_HANDLE local_trans
 				REQUEST_HANDLE tdgbl->handles_get_trigger_req_handle1)
 			X IN RDB$TRIGGERS
+
+			X.RDB$RELATION_NAME.NULL = TRUE;
 			X.RDB$DESCRIPTION.NULL = TRUE;
 			X.RDB$TRIGGER_BLR.NULL = TRUE;
 			X.RDB$TRIGGER_SOURCE.NULL = TRUE;
@@ -6207,6 +6222,7 @@ bool get_trigger()
 					break;
 
 				case att_trig_relation_name:
+					X.RDB$RELATION_NAME.NULL = FALSE;
 					GET_TEXT(X.RDB$RELATION_NAME);
 					break;
 

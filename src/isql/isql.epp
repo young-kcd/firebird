@@ -156,6 +156,7 @@ enum switch_id {
 	SWITCH_MERGE,
 	SWITCH_MERGE2,
 	SWITCH_NOAUTOCOMMIT,
+	SWITCH_NODBTRIGGERS,
 	SWITCH_NOWARN,
 	SWITCH_OUTPUT,
 	SWITCH_PAGE,
@@ -199,6 +200,7 @@ const switch_info switches[] =
 	{ SWITCH_MERGE,        "merge",          1, SWARG_NONE,    127 },
 	{ SWITCH_MERGE2,       "m2",             2, SWARG_NONE,    128 },
 	{ SWITCH_NOAUTOCOMMIT, "noautocommit",   1, SWARG_NONE,    129 },
+	{ SWITCH_NODBTRIGGERS, "nodbtriggers",   3, SWARG_NONE,    154 },
 	{ SWITCH_NOWARN,       "nowarnings",     3, SWARG_NONE,    130 },
 	{ SWITCH_OUTPUT,       "output",         1, SWARG_STRING,  131 },
 	{ SWITCH_PAGE,         "pagelength",     3, SWARG_INTEGER, 132 },
@@ -413,6 +415,7 @@ static bool Input_file = false;
 static SSHORT Pagelength = 20;
 static bool Stats = false;
 static bool Autocommit = true; // Commit ddl
+static bool Nodbtriggers = false; // No database triggers
 static bool Warnings = true; // Print warnings
 #ifdef SCROLLABLE_CURSORS
 static bool Autofetch = true; // automatically fetch all records
@@ -5172,6 +5175,9 @@ static processing_state newdb(TEXT* dbname,
 		dpb.insertInt(isc_dpb_num_buffers, local_numbufs);
 	}
 
+	if (Nodbtriggers)
+		dpb.insertInt(isc_dpb_no_db_triggers, 1);
+
 	{ // scope
 		const TEXT* local_name = isqlGlob.global_Db_name;
 
@@ -5689,6 +5695,10 @@ static processing_state parse_arg(int argc,
 
 				case SWITCH_NOAUTOCOMMIT:
 					Autocommit = false;
+					break;
+
+				case SWITCH_NODBTRIGGERS:
+					Nodbtriggers = true;
 					break;
 
 				case SWITCH_NOWARN:

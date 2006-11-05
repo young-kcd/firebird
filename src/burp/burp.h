@@ -807,6 +807,7 @@ public:
 	bool		gbl_sw_ignore_limbo;
 	bool		gbl_sw_meta;
 	bool		gbl_sw_novalidity;
+	bool		gbl_sw_nodbtriggers;
 	USHORT		gbl_sw_page_size;
 	bool		gbl_sw_compress;
 	bool		gbl_sw_version;

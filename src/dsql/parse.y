@@ -514,6 +514,8 @@ static LexerState lex;
 /* tokens added for Firebird 2.1 */
 
 %token ACCENT
+%token CONNECT
+%token DISCONNECT
 %token GLOBAL 
 %token INSENSITIVE
 %token LIST
@@ -525,6 +527,7 @@ static LexerState lex;
 %token REPLACE
 %token SENSITIVE
 %token SPACE
+%token START
 %token TEMPORARY 
 
 /* precedence declarations for expression evaluation */
@@ -1936,35 +1939,107 @@ check_opt	: WITH CHECK OPTION
 
 /* CREATE TRIGGER */
 
-trigger_clause : symbol_trigger_name FOR simple_table_name
+trigger_clause
+	:	symbol_trigger_name
 		trigger_active
 		trigger_type
 		trigger_position
 		trigger_action
 		end_trigger
-			{ $$ = make_node (nod_def_trigger, (int) e_trg_count,
-				$1, $3, $4, $5, $6, $7, $8); }
-		;
+		{
+			$$ = make_node (nod_def_trigger, (int) e_trg_count,
+				$1, NULL, $2, $3, $4, $5, $6);
+		}
+	|	symbol_trigger_name FOR simple_table_name
+		trigger_active
+		trigger_type
+		trigger_position
+		trigger_action
+		end_trigger
+		{
+			$$ = make_node (nod_def_trigger, (int) e_trg_count,
+				$1, $3, $4, $5, $6, $7, $8);
+		}
+	|	symbol_trigger_name
+		trigger_active
+		trigger_type
+		trigger_position
+		ON simple_table_name
+		trigger_action
+		end_trigger
+		{
+			$$ = make_node (nod_def_trigger, (int) e_trg_count,
+				$1, $6, $2, $3, $4, $7, $8);
+		}
+	;
 
-rtrigger_clause : symbol_trigger_name FOR simple_table_name
+rtrigger_clause
+	:	symbol_trigger_name
 		trigger_active
 		trigger_type
 		trigger_position
 		trigger_action
 		end_trigger
-			{ $$ = make_node (nod_redef_trigger, (int) e_trg_count,
-				$1, $3, $4, $5, $6, $7, $8); }
-		;
+		{
+			$$ = make_node (nod_redef_trigger, (int) e_trg_count,
+				$1, NULL, $2, $3, $4, $5, $6);
+		}
+	|	symbol_trigger_name FOR simple_table_name
+		trigger_active
+		trigger_type
+		trigger_position
+		trigger_action
+		end_trigger
+		{
+			$$ = make_node (nod_redef_trigger, (int) e_trg_count,
+				$1, $3, $4, $5, $6, $7, $8);
+		}
+	|	symbol_trigger_name
+		trigger_active
+		trigger_type
+		trigger_position
+		ON simple_table_name
+		trigger_action
+		end_trigger
+		{
+			$$ = make_node (nod_redef_trigger, (int) e_trg_count,
+				$1, $6, $2, $3, $4, $7, $8);
+		}
+	;
 
-replace_trigger_clause : symbol_trigger_name FOR simple_table_name
+replace_trigger_clause
+	:	symbol_trigger_name
 		trigger_active
 		trigger_type
 		trigger_position
 		trigger_action
 		end_trigger
-			{ $$ = make_node (nod_replace_trigger, (int) e_trg_count,
-				$1, $3, $4, $5, $6, $7, $8); }
-		;
+		{
+			$$ = make_node (nod_replace_trigger, (int) e_trg_count,
+				$1, NULL, $2, $3, $4, $5, $6);
+		}
+	|	symbol_trigger_name FOR simple_table_name
+		trigger_active
+		trigger_type
+		trigger_position
+		trigger_action
+		end_trigger
+		{
+			$$ = make_node (nod_replace_trigger, (int) e_trg_count,
+				$1, $3, $4, $5, $6, $7, $8);
+		}
+	|	symbol_trigger_name
+		trigger_active
+		trigger_type
+		trigger_position
+		ON simple_table_name
+		trigger_action
+		end_trigger
+		{
+			$$ = make_node (nod_replace_trigger, (int) e_trg_count,
+				$1, $6, $2, $3, $4, $7, $8);
+		}
+	;
 
 trigger_active	: ACTIVE 
 			{ $$ = MAKE_constant ((dsql_str*) 0, CONSTANT_SLONG); }
@@ -1974,9 +2049,25 @@ trigger_active	: ACTIVE
 			{ $$ = NULL; }
 		;
 
-trigger_type	: trigger_type_prefix trigger_type_suffix
-			{ $$ = MAKE_trigger_type ($1, $2); }
-		;
+trigger_type
+	:	trigger_type_prefix trigger_type_suffix
+		{ $$ = MAKE_trigger_type ($1, $2); }
+	|	ON trigger_db_type
+		{ $$ = $2; }
+	;
+
+trigger_db_type
+	:	CONNECT
+		{ $$ = MAKE_constant ((dsql_str*) (TRIGGER_TYPE_DB | DB_TRIGGER_CONNECT), CONSTANT_SLONG); }
+	|	DISCONNECT
+		{ $$ = MAKE_constant ((dsql_str*) (TRIGGER_TYPE_DB | DB_TRIGGER_DISCONNECT), CONSTANT_SLONG); }
+	|	TRANSACTION START
+		{ $$ = MAKE_constant ((dsql_str*) (TRIGGER_TYPE_DB | DB_TRIGGER_TRANS_START), CONSTANT_SLONG); }
+	|	TRANSACTION COMMIT
+		{ $$ = MAKE_constant ((dsql_str*) (TRIGGER_TYPE_DB | DB_TRIGGER_TRANS_COMMIT), CONSTANT_SLONG); }
+	|	TRANSACTION ROLLBACK
+		{ $$ = MAKE_constant ((dsql_str*) (TRIGGER_TYPE_DB | DB_TRIGGER_TRANS_ROLLBACK), CONSTANT_SLONG); }
+	;
 
 trigger_type_prefix	: BEFORE
 			{ $$ = MAKE_constant ((dsql_str*) 0, CONSTANT_SLONG); }
@@ -2161,10 +2252,13 @@ keyword_or_column	: valid_symbol_name
 		| OCTET_LENGTH
 		| TRAILING
 		| TRIM
-		| GLOBAL				/* added in FB 2.1 */
+		| CONNECT				/* added in FB 2.1 */
+		| DISCONNECT
+		| GLOBAL
 		| INSENSITIVE
 		| RECURSIVE 
 		| SENSITIVE
+		| START
 		;
 
 col_opt	: ALTER

@@ -1685,26 +1685,28 @@ dsql_rel* METD_get_relation(dsql_req* request, const dsql_str* name)
 }
 
 
-dsql_str* METD_get_trigger_relation(dsql_req* request, const dsql_str* name, USHORT* trig_type)
+bool METD_get_trigger(dsql_req* request, const dsql_str* name, dsql_str** relation, USHORT* trig_type)
 {
 /**************************************
  *
- *	M E T D _ g e t _ t r i g g e r _ r e l a t i o n
+ *	M E T D _ g e t _ t r i g g e r
  *
  **************************************
  *
  * Functional description
- *	Look up a trigger's relation and return it's current type
+ *	Look up a trigger's relation and it's current type
  *
  **************************************/
 	dsql_dbb* dbb;
-	dsql_str* relation;
 
 	ISC_STATUS_ARRAY isc_status = {0};
 	dbb = request->req_dbb;
 	isc_db_handle DB = dbb->dbb_database_handle;
 
-	relation = NULL;
+	bool found = false;
+
+	if (relation)
+		*relation = NULL;
 
 	THREAD_EXIT();
 
@@ -1713,10 +1715,17 @@ dsql_str* METD_get_trigger_relation(dsql_req* request, const dsql_str* name, USH
 
 		THREAD_ENTER();
 
-		fb_utils::exact_name(X.RDB$RELATION_NAME);
-
-		relation = MAKE_string(X.RDB$RELATION_NAME, strlen(X.RDB$RELATION_NAME));
+		found = true;
 		*trig_type = X.RDB$TRIGGER_TYPE;
+
+		if (!X.RDB$RELATION_NAME.NULL)
+		{
+			if (relation)
+			{
+				fb_utils::exact_name(X.RDB$RELATION_NAME);
+				*relation = MAKE_string(X.RDB$RELATION_NAME, strlen(X.RDB$RELATION_NAME));
+			}
+		}
 
 		THREAD_EXIT();
 
@@ -1728,7 +1737,7 @@ dsql_str* METD_get_trigger_relation(dsql_req* request, const dsql_str* name, USH
 
 	THREAD_ENTER();
 
-	return relation;
+	return found;
 }
 
 

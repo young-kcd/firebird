@@ -2,6 +2,16 @@
   * v2.1 Alpha 1
   **************
 
+    * Feature CORE-645 and CORE-745
+        Database triggers.
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Feature CORE-711
+        Make syntax for "CREATE TRIGGER" compliant with SQL2003
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
     * Bugfix CORE-986
         Non-ASCII quoted identifiers are not converted to metadata (UNICODE_FSS) charset
       Contributor(s):
@@ -295,7 +305,6 @@
         settings for DB creation dir, for example.
       Contributor(s):
         Claudio Valderrama <cvalde at usa.net>
-
 
     * Feature CORE-964
         Aggregate function LIST (string concatenation)

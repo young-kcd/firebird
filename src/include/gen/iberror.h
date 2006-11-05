@@ -667,6 +667,8 @@ const ISC_LONG isc_primary_key_required             = 336003098L;
 const ISC_LONG isc_replace_doesnt_match_pk          = 336003099L;
 const ISC_LONG isc_replace_doesnt_match_matching    = 336003100L;
 const ISC_LONG isc_replace_with_complex_view        = 336003101L;
+const ISC_LONG isc_dsql_incompatible_trigger_type   = 336003102L;
+const ISC_LONG isc_dsql_db_trigger_type_cant_change = 336003103L;
 const ISC_LONG isc_dyn_role_does_not_exist          = 336068796L;
 const ISC_LONG isc_dyn_no_grant_admin_opt           = 336068797L;
 const ISC_LONG isc_dyn_user_not_role_member         = 336068798L;
@@ -858,7 +860,7 @@ const ISC_LONG isc_gstat_unexpected_eof             = 336920580L;
 const ISC_LONG isc_gstat_open_err                   = 336920605L;
 const ISC_LONG isc_gstat_read_err                   = 336920606L;
 const ISC_LONG isc_gstat_sysmemex                   = 336920607L;
-const ISC_LONG isc_err_max                          = 803;
+const ISC_LONG isc_err_max                          = 805;
 
 #else /* c definitions */
 
@@ -1495,6 +1497,8 @@ const ISC_LONG isc_err_max                          = 803;
 #define isc_replace_doesnt_match_pk          336003099L
 #define isc_replace_doesnt_match_matching    336003100L
 #define isc_replace_with_complex_view        336003101L
+#define isc_dsql_incompatible_trigger_type   336003102L
+#define isc_dsql_db_trigger_type_cant_change 336003103L
 #define isc_dyn_role_does_not_exist          336068796L
 #define isc_dyn_no_grant_admin_opt           336068797L
 #define isc_dyn_user_not_role_member         336068798L
@@ -1686,7 +1690,7 @@ const ISC_LONG isc_err_max                          = 803;
 #define isc_gstat_open_err                   336920605L
 #define isc_gstat_read_err                   336920606L
 #define isc_gstat_sysmemex                   336920607L
-#define isc_err_max                          803
+#define isc_err_max                          805
 
 #endif
 

@@ -1330,6 +1330,52 @@ void MET_get_shadow_files( thread_db* tdbb, bool delete_files)
 }
 
 
+void MET_load_db_triggers(thread_db* tdbb, int type)
+{
+/**************************************
+ *
+ *      M E T _ l o a d _ d b _ t r i g g e r
+ *
+ **************************************
+ *
+ * Functional description
+ *      Load database triggers from RDB$TRIGGERS.
+ *
+ **************************************/
+
+	SET_TDBB(tdbb);
+
+	Database* dbb = tdbb->tdbb_database;
+	CHECK_DBB(dbb);
+
+	if ((tdbb->tdbb_attachment->att_flags & ATT_no_db_triggers) ||
+		tdbb->tdbb_database->dbb_triggers[type] != NULL)
+	{
+		return;
+	}
+
+	tdbb->tdbb_database->dbb_triggers[type] = FB_NEW(*tdbb->tdbb_database->dbb_permanent)
+		trig_vec(*tdbb->tdbb_database->dbb_permanent);
+
+	jrd_req* trigger_request = NULL;
+	int encoded_type = type | TRIGGER_TYPE_DB;
+
+	FOR(REQUEST_HANDLE trigger_request)
+		TRG IN RDB$TRIGGERS
+		WITH TRG.RDB$RELATION_NAME MISSING AND 
+			 TRG.RDB$TRIGGER_TYPE EQ encoded_type AND
+			 TRG.RDB$TRIGGER_INACTIVE EQ 0
+		SORTED BY TRG.RDB$TRIGGER_SEQUENCE
+
+		MET_load_trigger(tdbb, NULL, TRG.RDB$TRIGGER_NAME,
+			&tdbb->tdbb_database->dbb_triggers[type]);
+
+	END_FOR;
+
+	CMP_release(tdbb, trigger_request);
+}
+
+
 void MET_load_trigger(thread_db* tdbb,
 					  jrd_rel* relation,
 					  const Firebird::MetaName& trigger_name,
@@ -1352,15 +1398,15 @@ void MET_load_trigger(thread_db* tdbb,
 	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
-	if (relation->rel_flags & REL_sys_trigs_being_loaded) {
-		return;
-	}
+	if (relation)
+	{
+		if (relation->rel_flags & REL_sys_trigs_being_loaded)
+			return;
 
-	// No need to load triggers for ReadOnly databases,
-	// since INSERT/DELETE/UPDATE statements are not going to be allowed
-
-	if (dbb->dbb_flags & DBB_read_only) {
-		return;
+		// No need to load table triggers for ReadOnly databases,
+		// since INSERT/DELETE/UPDATE statements are not going to be allowed
+		if (dbb->dbb_flags & DBB_read_only)
+			return;
 	}
 
 	bid debug_blob_id;
@@ -1371,10 +1417,7 @@ void MET_load_trigger(thread_db* tdbb,
 
 		FOR(REQUEST_HANDLE debug_info_req)
 			TRG IN RDB$TRIGGERS
-			WITH TRG.RDB$RELATION_NAME EQ relation->rel_name.c_str() AND 
-				TRG.RDB$TRIGGER_NAME EQ trigger_name.c_str() AND
-				TRG.RDB$TRIGGER_TYPE > 0 AND 
-				TRG.RDB$TRIGGER_TYPE < TRIGGER_COMBINED_MAX
+			WITH TRG.RDB$TRIGGER_NAME EQ trigger_name.c_str()
 		
 			if (!REQUEST(irq_l_trg_dbg))
 				REQUEST(irq_l_trg_dbg) = debug_info_req;
@@ -1392,29 +1435,45 @@ void MET_load_trigger(thread_db* tdbb,
 	jrd_req* trigger_request = CMP_find_request(tdbb, irq_s_triggers, IRQ_REQUESTS);
 
 	FOR(REQUEST_HANDLE trigger_request)
-		TRG IN RDB$TRIGGERS WITH TRG.RDB$RELATION_NAME =
-			relation->rel_name.c_str() AND TRG.RDB$TRIGGER_NAME EQ trigger_name.c_str()
+		TRG IN RDB$TRIGGERS
+		WITH TRG.RDB$TRIGGER_NAME EQ trigger_name.c_str()
 		if (!REQUEST(irq_s_triggers))
 			REQUEST(irq_s_triggers) = trigger_request;
 
-		if (TRG.RDB$TRIGGER_TYPE > 0 && TRG.RDB$TRIGGER_TYPE < TRIGGER_COMBINED_MAX)
+		/* check if the trigger is to be fired without any permissions
+		   checks. Verify such a claim */
+		USHORT trig_flags = (USHORT) TRG.RDB$FLAGS;
+
+		/* if there is an ignore permission flag, see if it is legit */
+		if ((TRG.RDB$FLAGS & TRG_ignore_perm) &&
+			!verify_TRG_ignore_perm(tdbb, trigger_name))
 		{
-			/* check if the trigger is to be fired without any permissions
-			   checks. Verify such a claim */
-			USHORT trig_flags = (USHORT) TRG.RDB$FLAGS;
+			gds__msg_format(NULL, JRD_BUGCHK, 304, sizeof(errmsg),
+							errmsg, trigger_name.c_str(), NULL, NULL,
+							NULL, NULL);
+			ERR_log(JRD_BUGCHK, 304, errmsg);
 
-			/* if there is an ignore permission flag, see if it is legit */
-			if ((TRG.RDB$FLAGS & TRG_ignore_perm) &&
-				!verify_TRG_ignore_perm(tdbb, trigger_name))
+			trig_flags &= ~TRG_ignore_perm;
+		}
+
+		if (TRG.RDB$RELATION_NAME.NULL)
+		{
+			if ((TRG.RDB$TRIGGER_TYPE & TRIGGER_TYPE_MASK) == TRIGGER_TYPE_DB)
 			{
-				gds__msg_format(NULL, JRD_BUGCHK, 304, sizeof(errmsg),
-								errmsg, trigger_name.c_str(), NULL, NULL,
-								NULL, NULL);
-				ERR_log(JRD_BUGCHK, 304, errmsg);
-
-				trig_flags &= ~TRG_ignore_perm;
+				// this is a database trigger
+				get_trigger(tdbb,
+							relation,
+							&TRG.RDB$TRIGGER_BLR,
+							&debug_blob_id,
+							triggers,
+							TRG.RDB$TRIGGER_NAME,
+							(UCHAR) (TRG.RDB$TRIGGER_TYPE & ~TRIGGER_TYPE_DB),
+							(bool) TRG.RDB$SYSTEM_FLAG,
+							trig_flags);
 			}
-
+		}
+		else
+		{
 			// dimitr: support for the universal triggers
 			int trigger_action, slot_index = 0;
 			while ((trigger_action = TRIGGER_ACTION_SLOT(TRG.RDB$TRIGGER_TYPE, ++slot_index)) > 0)
@@ -4359,6 +4418,56 @@ static bool par_messages(thread_db*	tdbb,
 	}
 
 	return true;
+}
+
+
+void MET_release_trigger(thread_db* tdbb, trig_vec** vector_ptr,
+	const Firebird::MetaName& name)
+{
+/***********************************************
+ *
+ *      M E T _ r e l e a s e _ t r i g g e r
+ *
+ ***********************************************
+ *
+ * Functional description
+ *      Release a specified trigger.
+ *      If trigger are still active let someone
+ *      else do the work.
+ *
+ **************************************/
+	trig_vec* vector = *vector_ptr;
+	if (!vector)
+	{
+		return;
+	}
+
+	SET_TDBB(tdbb);
+
+	size_t i;
+
+	for (i = 0; i < vector->getCount(); i++)
+	{
+		if ((*vector)[i].name == name)
+		{
+			jrd_req* r = (*vector)[i].request;
+			if (r && CMP_clone_is_active(r))
+				return;
+		}
+	}
+
+	for (i = 0; i < vector->getCount(); i++)
+	{
+		if ((*vector)[i].name == name)
+		{
+			jrd_req* r = (*vector)[i].request;
+			if (r)
+				CMP_release(tdbb, r);
+
+			vector->remove(i);
+			break;
+		}
+	}
 }
 
 

@@ -3100,5 +3100,9 @@ INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FL
 INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FLAGS, TEXT, "ACTION", EXPLANATION) VALUES ('dsql_cte_union_all', 'pass1_recursive_cte', 'dsql.cpp', NULL, 13, 944, NULL, 'Recursive members of CTE (%s) must be linked with another members via UNION ALL', NULL, NULL);
 INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FLAGS, TEXT, "ACTION", EXPLANATION) VALUES ('dsql_cte_miss_nonrecursive', 'pass1_recursive_cte', 'dsql.cpp', NULL, 13, 945, NULL, 'Non-recursive member is missing in CTE ''%s''', NULL, NULL);
 INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FLAGS, TEXT, "ACTION", EXPLANATION) VALUES ('dsql_cte_nested_with', 'dsql_req::addCTEs', 'dsql.cpp', NULL, 13, 946, NULL, 'WITH clause can''t be nested', NULL, NULL);
+INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FLAGS, TEXT, "ACTION", EXPLANATION) VALUES ('USAGE_NODBTRIGGERS', 'ISQL_main', 'isql.epp', NULL, 17, 154, NULL, '	-nod(btriggers)         dont run database triggers', NULL, NULL);
+INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FLAGS, TEXT, "ACTION", EXPLANATION) VALUES (NULL, '', 'burp.cpp', NULL, 12, 294, NULL, '	%sNO_D(BTRIGGERS)      do not run database triggers', NULL, NULL);
+INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FLAGS, TEXT, "ACTION", EXPLANATION) VALUES ('dsql_incompatible_trigger_type', 'define_trigger', 'ddl.cpp', NULL, 7, 30, NULL, 'Incompatible trigger type', NULL, NULL);
+INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FLAGS, TEXT, "ACTION", EXPLANATION) VALUES ('dsql_db_trigger_type_cant_change', 'define_trigger', 'ddl.cpp', NULL, 7, 31, NULL, 'Database trigger type can''t be changed', NULL, NULL);
 
 COMMIT WORK;

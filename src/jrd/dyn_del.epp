@@ -1730,10 +1730,16 @@ void DYN_delete_trigger( Global* gbl, const UCHAR** ptr)
 
 	try {
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
-		TM IN RDB$TRIGGER_MESSAGES WITH TM.RDB$TRIGGER_NAME EQ t.c_str()
+		TM IN RDB$TRIGGER_MESSAGES
+		CROSS TR IN RDB$TRIGGERS 
+		WITH TM.RDB$TRIGGER_NAME EQ t.c_str() AND
+			 TR.RDB$TRIGGER_NAME EQ TM.RDB$TRIGGER_NAME
 
         if (!DYN_REQUEST(drq_e_trg_msgs))
             DYN_REQUEST(drq_e_trg_msgs) = request;
+
+		if (TR.RDB$RELATION_NAME.NULL && !tdbb->tdbb_attachment->locksmith())
+			ERR_post(isc_adm_task_denied, 0);
 
 		ERASE TM;
 	END_FOR;
@@ -1752,6 +1758,9 @@ void DYN_delete_trigger( Global* gbl, const UCHAR** ptr)
 
         if (!DYN_REQUEST(drq_e_trigger))
             DYN_REQUEST(drq_e_trigger) = request;
+
+		if (X.RDB$RELATION_NAME.NULL && !tdbb->tdbb_attachment->locksmith())
+			ERR_post(isc_adm_task_denied, 0);
 
 		r = X.RDB$RELATION_NAME;
 		ERASE X;

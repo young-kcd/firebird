@@ -233,7 +233,7 @@ void Jrd::Trigger::compile(thread_db* tdbb)
 			csb->csb_g_flags |= par_flags;
 			csb->csb_map_blr2src = &csb_map;
 
-			PAR_blr(tdbb, relation, blr.begin(),  NULL, &csb, &request, true,
+			PAR_blr(tdbb, relation, blr.begin(),  NULL, &csb, &request, (relation ? true : false),
 					par_flags);
 
 			delete csb;
@@ -327,6 +327,7 @@ public:
 	USHORT	dpb_sql_dialect;
 	USHORT	dpb_set_db_sql_dialect;
 	SLONG	dpb_remote_pid;
+	bool	dpb_no_db_triggers;
 // here begin compound objects
 // for constructor to work properly dpb_sys_user_name 
 // MUST be FIRST
@@ -347,6 +348,7 @@ public:
 	Firebird::string	dpb_set_db_charset;
 	Firebird::string	dpb_network_protocol;
 	Firebird::string	dpb_remote_address;
+
 public:
 	DatabaseOptions()
 	{
@@ -428,6 +430,12 @@ static void check_autocommit(jrd_req* request, thread_db* tdbb)
 
 	if (request->req_transaction->tra_flags & TRA_perform_autocommit)
 	{
+		if (!(request->req_transaction->tra_flags & TRA_prepared))
+		{
+			// run ON TRANSACTION COMMIT triggers
+			EXE_execute_db_triggers(tdbb, request->req_transaction, jrd_req::req_trigger_trans_commit);
+		}
+
 		request->req_transaction->tra_flags &= ~TRA_perform_autocommit;
 		TRA_commit(tdbb, request->req_transaction, true);
 	}
@@ -1128,7 +1136,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 	}
 
 /*
- * if the attachment is through gbak and this the attachment is not by owner
+ * if the attachment is through gbak and this attachment is not by owner
  * or sysdba then return error. This has been added here to allow for the
  * GBAK security feature of only allowing the owner or sysdba to backup a
  * database. smistry 10/5/98
@@ -1140,6 +1148,20 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 		!attachment->locksmith())
 	{
 		ERR_post(isc_adm_task_denied, 0);
+	}
+
+	if (((attachment->att_flags & ATT_gfix_attachment) ||
+		 (attachment->att_flags & ATT_gstat_attachment)))
+	{
+		options.dpb_no_db_triggers = true;
+	}
+
+	if (options.dpb_no_db_triggers)
+	{
+		if (attachment->locksmith())
+			attachment->att_flags |= ATT_no_db_triggers;
+		else
+			ERR_post(isc_adm_task_denied, 0);
 	}
 
 #ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
@@ -1247,6 +1269,35 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 	dbb->dbb_backup_manager->end_backup(tdbb, true); // true = do recovery
 	
 	*handle = attachment;	
+
+	if (!(attachment->att_flags & ATT_no_db_triggers))
+	{
+		jrd_tra* transaction;
+
+		try
+		{
+			// start a transaction to execute ON CONNECT triggers
+			transaction = TRA_start(tdbb, 0, NULL);
+
+			// load all database triggers
+			MET_load_db_triggers(tdbb, DB_TRIGGER_CONNECT);
+			MET_load_db_triggers(tdbb, DB_TRIGGER_DISCONNECT);
+			MET_load_db_triggers(tdbb, DB_TRIGGER_TRANS_START);
+			MET_load_db_triggers(tdbb, DB_TRIGGER_TRANS_COMMIT);
+			MET_load_db_triggers(tdbb, DB_TRIGGER_TRANS_ROLLBACK);
+
+			// run ON CONNECT triggers
+			EXE_execute_db_triggers(tdbb, transaction, jrd_req::req_trigger_connect);
+
+			// and commit the transaction
+			TRA_commit(tdbb, transaction, false);
+		}
+		catch (const Firebird::Exception&)
+		{
+			TRA_rollback(tdbb, transaction, false, false);
+			throw;
+		}
+	}
 
 #ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
 	LOG_call(log_handle_returned, *handle);
@@ -1817,6 +1868,9 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 		attachment->att_flags |= ATT_gbak_attachment;
 	}
 
+	if (options.dpb_no_db_triggers)
+		attachment->att_flags |= ATT_no_db_triggers;
+
 	switch (options.dpb_sql_dialect) {
 	case 0:
 		// This can be issued by QLI, GDEF and old BDE clients.  
@@ -2280,11 +2334,39 @@ ISC_STATUS GDS_DETACH(ISC_STATUS* user_status, Attachment** handle)
 			 dbb->dbb_max_memory);
 #endif
 
-	// purge_attachment below can do an ERR_post
-
-	tdbb->tdbb_status_vector = user_status;
-
 	try {
+	if (!(attachment->att_flags & ATT_no_db_triggers))
+	{
+		ISC_STATUS_ARRAY temp_status = {0};
+		jrd_tra* transaction;
+
+		tdbb->tdbb_status_vector = temp_status;
+
+		try
+		{
+			// start a transaction to execute ON DISCONNECT triggers
+			transaction = TRA_start(tdbb, 0, NULL);
+
+			// run ON DISCONNECT triggers
+			EXE_execute_db_triggers(tdbb, transaction, jrd_req::req_trigger_disconnect);
+
+			// and commit the transaction
+			TRA_commit(tdbb, transaction, false);
+		}
+		catch (const Firebird::Exception&)
+		{
+			try
+			{
+				TRA_rollback(tdbb, transaction, false, false);
+			}
+			catch (const Firebird::Exception&)
+			{
+			}
+		}
+	}
+
+	// purge_attachment below can do an ERR_post
+	tdbb->tdbb_status_vector = user_status;
 
 	// Purge attachment, don't rollback open transactions
 
@@ -3846,6 +3928,10 @@ ISC_STATUS GDS_START_MULTIPLE(ISC_STATUS * user_status,
 			transaction->tra_sibling = prior;
 			prior = transaction;
 			Database* dbb = tdbb->tdbb_database;
+
+			// run ON TRANSACTION START triggers
+			EXE_execute_db_triggers(tdbb, transaction, jrd_req::req_trigger_trans_start);
+
 			--dbb->dbb_use_count;
 		}
 
@@ -4959,7 +5045,9 @@ static ISC_STATUS commit(
 			 *tra_handle);
 #endif
 
-	ISC_STATUS* ptr = user_status;
+	ISC_STATUS* ptr = tdbb->tdbb_status_vector = user_status;
+	
+	try {
 
 	if (transaction->tra_sibling &&
 		!(transaction->tra_flags & TRA_prepared) &&
@@ -4967,8 +5055,12 @@ static ISC_STATUS commit(
 	{
 		return error(user_status);
 	}
-	
-	try {
+
+	if (!(transaction->tra_flags & TRA_prepared))
+	{
+		// run ON TRANSACTION COMMIT triggers
+		EXE_execute_db_triggers(tdbb, transaction, jrd_req::req_trigger_trans_commit);
+	}
 
 	while ( (transaction = next) ) {
 		next = transaction->tra_sibling;
@@ -5532,6 +5624,10 @@ void DatabaseOptions::get(const UCHAR* dpb, USHORT dpb_length)
 			dpb_remote_pid = rdr.getInt();
 			break;
 
+		case isc_dpb_no_db_triggers:
+			dpb_no_db_triggers = rdr.getInt() != 0;
+			break;
+
 		default:
 			break;
 		}
@@ -5852,6 +5948,12 @@ static ISC_STATUS prepare(thread_db*		tdbb,
 
 	try {
 
+	if (!(transaction->tra_flags & TRA_prepared))
+	{
+		// run ON TRANSACTION COMMIT triggers
+		EXE_execute_db_triggers(tdbb, transaction, jrd_req::req_trigger_trans_commit);
+	}
+
 	for (; transaction; transaction = transaction->tra_sibling) {
 		check_database(tdbb, transaction->tra_attachment, status_vector);
 		tdbb->tdbb_status_vector = status_vector;
@@ -6071,7 +6173,22 @@ static bool rollback(thread_db*	tdbb,
 		check_database(tdbb, transaction->tra_attachment, status_vector);
 
 		try {
+		if (!(tdbb->tdbb_attachment->att_flags & ATT_no_db_triggers))
+		{
+			ISC_STATUS_ARRAY temp_status = {0};
+			tdbb->tdbb_status_vector = temp_status;
+
+			try
+			{
+				EXE_execute_db_triggers(tdbb, transaction, jrd_req::req_trigger_trans_rollback);
+			}
+			catch (const Firebird::Exception&)
+			{
+			}
+		}
+
 		tdbb->tdbb_status_vector = status_vector;
+
 		TRA_rollback(tdbb, transaction, retaining_flag, false);
 		Database* dbb = tdbb->tdbb_database;
 		--dbb->dbb_use_count;

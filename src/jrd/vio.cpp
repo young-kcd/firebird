@@ -1367,10 +1367,20 @@ void VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 				SCL_check_relation(&desc, SCL_control);
 			}
 
-			EVL_field(0, rpb->rpb_record, f_trg_rname, &desc);
-			DFW_post_work(transaction, dfw_update_format, &desc, 0);
+			EVL_field(0, rpb->rpb_record, f_trg_rname, &desc2);
+			DFW_post_work(transaction, dfw_update_format, &desc2, 0);
 			EVL_field(0, rpb->rpb_record, f_trg_name, &desc);
-			DFW_post_work(transaction, dfw_delete_trigger, &desc, 0);
+			work = DFW_post_work(transaction, dfw_delete_trigger, &desc, 0);
+
+			if (!(desc2.dsc_flags & DSC_null))
+				DFW_post_work_arg(transaction, work, &desc2, 0)->dfw_type = dfw_arg_rel_name;
+
+			if (EVL_field(0, rpb->rpb_record, f_trg_type, &desc2))
+			{
+				DFW_post_work_arg(transaction, work, &desc2,
+					MOV_get_long(&desc2, 0))->dfw_type = dfw_arg_trg_type;
+			}
+
 			break;
 
 		case rel_priv:
@@ -2268,14 +2278,25 @@ void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb,
 			break;
 
 		case rel_triggers:
-			EVL_field(0, new_rpb->rpb_record, f_trg_rname, &desc1);
-			SCL_check_relation(&desc1, SCL_control);
-			EVL_field(0, new_rpb->rpb_record, f_trg_rname, &desc1);
-			DFW_post_work(transaction, dfw_update_format, &desc1, 0);
-			EVL_field(0, org_rpb->rpb_record, f_trg_rname, &desc1);
-			DFW_post_work(transaction, dfw_update_format, &desc1, 0);
-			EVL_field(0, org_rpb->rpb_record, f_trg_name, &desc1);
-			DFW_post_work(transaction, dfw_modify_trigger, &desc1, 0);
+			{
+				EVL_field(0, new_rpb->rpb_record, f_trg_rname, &desc1);
+				SCL_check_relation(&desc1, SCL_control);
+				EVL_field(0, new_rpb->rpb_record, f_trg_rname, &desc1);
+				DFW_post_work(transaction, dfw_update_format, &desc1, 0);
+				EVL_field(0, org_rpb->rpb_record, f_trg_rname, &desc1);
+				DFW_post_work(transaction, dfw_update_format, &desc1, 0);
+				EVL_field(0, org_rpb->rpb_record, f_trg_name, &desc1);
+				DeferredWork* dw = DFW_post_work(transaction, dfw_modify_trigger, &desc1, 0);
+
+				if (EVL_field(0, new_rpb->rpb_record, f_trg_rname, &desc2))
+					DFW_post_work_arg(transaction, dw, &desc2, 0)->dfw_type = dfw_arg_rel_name;
+
+				if (EVL_field(0, new_rpb->rpb_record, f_trg_type, &desc2))
+				{
+					DFW_post_work_arg(transaction, dw, &desc2,
+						MOV_get_long(&desc2, 0))->dfw_type = dfw_arg_trg_type;
+				}
+			}
 			break;
 			
 		case rel_files:
@@ -2580,6 +2601,7 @@ void VIO_store(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 
 	SET_TDBB(tdbb);
 	jrd_req* request = tdbb->tdbb_request;
+	DeferredWork* work = NULL;
 
 #ifdef VIO_DEBUG
 	if (debug_flag > DEBUG_WRITES) {
@@ -2606,7 +2628,7 @@ void VIO_store(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 			EVL_field(0, rpb->rpb_record, f_prc_id, &desc2);
 			{ // scope
 				const USHORT id = MOV_get_long(&desc2, 0);
-				DeferredWork* work = DFW_post_work(transaction, dfw_create_procedure, &desc, id);
+				work = DFW_post_work(transaction, dfw_create_procedure, &desc, id);
 
 				SSHORT check_blr = TRUE;
 
@@ -2694,10 +2716,21 @@ void VIO_store(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 				SCL_check_relation(&desc, SCL_control);
 			}
 
-			EVL_field(0, rpb->rpb_record, f_trg_rname, &desc);
-			DFW_post_work(transaction, dfw_update_format, &desc, 0);
+			if (EVL_field(0, rpb->rpb_record, f_trg_rname, &desc2))
+				DFW_post_work(transaction, dfw_update_format, &desc2, 0);
+
 			EVL_field(0, rpb->rpb_record, f_trg_name, &desc);
-			DFW_post_work(transaction, dfw_create_trigger, &desc, 0);
+			work = DFW_post_work(transaction, dfw_create_trigger, &desc, 0);
+
+			if (!(desc2.dsc_flags & DSC_null))
+				DFW_post_work_arg(transaction, work, &desc2, 0)->dfw_type = dfw_arg_rel_name;
+
+			if (EVL_field(0, rpb->rpb_record, f_trg_type, &desc2))
+			{
+				DFW_post_work_arg(transaction, work, &desc2,
+					MOV_get_long(&desc2, 0))->dfw_type = dfw_arg_trg_type;
+			}
+
 			break;
 
 		case rel_priv:

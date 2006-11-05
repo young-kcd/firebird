@@ -1264,8 +1264,59 @@ static void list_all_triggers()
  **************************************/
 	bool header = true;
 
-/* Query gets the trigger info for non-system triggers with
-   source that are not part of an SQL constraint */
+	// Query gets the trigger info for non-system triggers with
+	// source that are not part of an SQL constraint.
+
+	FOR TRG IN RDB$TRIGGERS
+		WITH (TRG.RDB$SYSTEM_FLAG EQ 0 OR TRG.RDB$SYSTEM_FLAG MISSING) AND
+			 TRG.RDB$RELATION_NAME MISSING
+		SORTED BY TRG.RDB$TRIGGER_TYPE, TRG.RDB$TRIGGER_SEQUENCE, TRG.RDB$TRIGGER_NAME
+
+		if (header)
+		{
+			isqlGlob.printf("SET TERM %s %s%s", Procterm, isqlGlob.global_Term, NEWLINE);
+			isqlGlob.printf(
+					 "%s/* Triggers only will work for SQL triggers */%s",
+					 NEWLINE,
+					 NEWLINE);
+			header = false;
+		}
+		fb_utils::exact_name(TRG.RDB$TRIGGER_NAME);
+
+		if (TRG.RDB$TRIGGER_INACTIVE.NULL)
+			TRG.RDB$TRIGGER_INACTIVE = 0;
+
+		//  If trigger is not SQL put it in comments 
+		if (!(TRG.RDB$FLAGS & TRG_sql))
+			isqlGlob.printf("/* ");
+
+		if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
+			ISQL_copy_SQL_id (TRG.RDB$TRIGGER_NAME, SQL_identifier,  DBL_QUOTE);
+		else
+			strcpy (SQL_identifier,  TRG.RDB$TRIGGER_NAME);
+
+		isqlGlob.printf("CREATE TRIGGER %s %s%s %s POSITION %d %s",
+				 SQL_identifier, NEWLINE,
+				 (TRG.RDB$TRIGGER_INACTIVE ? "INACTIVE" : "ACTIVE"),
+				 trigger_action (TRG.RDB$TRIGGER_TYPE), TRG.RDB$TRIGGER_SEQUENCE,
+				 NEWLINE);
+
+		if (!TRG.RDB$TRIGGER_SOURCE.NULL)
+			SHOW_print_metadata_text_blob (isqlGlob.Out, &TRG.RDB$TRIGGER_SOURCE);
+
+		isqlGlob.printf(" %s%s", Procterm, NEWLINE);
+		isqlGlob.printf(NEWLINE);
+
+		if (!(TRG.RDB$FLAGS & TRG_sql))
+		{
+			isqlGlob.printf("*/%s", NEWLINE);
+		}
+
+	END_FOR
+	ON_ERROR
+		ISQL_errmsg(gds_status);
+		return;
+	END_ERROR;
 
 	FOR TRG IN RDB$TRIGGERS CROSS REL IN RDB$RELATIONS OVER RDB$RELATION_NAME
 		//WITH (REL.RDB$SYSTEM_FLAG NE 1 OR REL.RDB$SYSTEM_FLAG MISSING) AND
@@ -1349,7 +1400,7 @@ static void list_check()
  *
  **************************************/
 
-// Query gets the check clauses for triggers stored for check constraints 
+	// Query gets the check clauses for triggers stored for check constraints 
 
 	FOR TRG IN RDB$TRIGGERS CROSS
 		CHK IN RDB$CHECK_CONSTRAINTS WITH

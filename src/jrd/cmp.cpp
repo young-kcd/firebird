@@ -1961,7 +1961,7 @@ jrd_req* CMP_make_request(thread_db* tdbb, CompilerScratch* csb)
 
 	DEBUG;
 	csb->csb_node = pass1(tdbb, csb, csb->csb_node, 0, 0, false);
-	csb->csb_impure = REQ_SIZE + REQ_TAIL * csb->csb_n_stream;
+	csb->csb_impure = REQ_SIZE + REQ_TAIL * MAX(csb->csb_n_stream, 1);
 	csb->csb_exec_sta.clear();
 	csb->csb_node = pass2(tdbb, csb, csb->csb_node, 0);
 

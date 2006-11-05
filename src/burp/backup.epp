@@ -3967,7 +3967,9 @@ void write_triggers(void)
 			BURP_verbose (156, temp, NULL, NULL, NULL, NULL);
 			// msg 156   writing trigger %s 
 		
-			PUT_TEXT (att_trig_relation_name, X.RDB$RELATION_NAME);
+			if (!X.RDB$RELATION_NAME.NULL)
+				PUT_TEXT (att_trig_relation_name, X.RDB$RELATION_NAME);
+
 			put_numeric (att_trig_sequence, X.RDB$TRIGGER_SEQUENCE);
 			put_numeric (att_trig_type, X.RDB$TRIGGER_TYPE);
 			put_blr_blob (att_trig_blr, &X.RDB$TRIGGER_BLR);
@@ -4005,7 +4007,9 @@ void write_triggers(void)
 			BURP_verbose (156, temp, NULL, NULL, NULL, NULL);
 			// msg 156   writing trigger %s 
 		
-			PUT_TEXT (att_trig_relation_name, X.RDB$RELATION_NAME);
+			if (!X.RDB$RELATION_NAME.NULL)
+				PUT_TEXT (att_trig_relation_name, X.RDB$RELATION_NAME);
+
 			put_numeric (att_trig_sequence, X.RDB$TRIGGER_SEQUENCE);
 			put_numeric (att_trig_type, X.RDB$TRIGGER_TYPE);
 			put_blr_blob (att_trig_blr, &X.RDB$TRIGGER_BLR);
@@ -4037,7 +4041,9 @@ void write_triggers(void)
 			BURP_verbose (156, temp, NULL, NULL, NULL, NULL);
 			// msg 156   writing trigger %s 
 			
-			PUT_TEXT (att_trig_relation_name, X.RDB$RELATION_NAME);
+			if (!X.RDB$RELATION_NAME.NULL)
+				PUT_TEXT (att_trig_relation_name, X.RDB$RELATION_NAME);
+
 			put_numeric (att_trig_sequence, X.RDB$TRIGGER_SEQUENCE);
 			put_numeric (att_trig_type, X.RDB$TRIGGER_TYPE);
 			put_blr_blob (att_trig_blr, &X.RDB$TRIGGER_BLR);

@@ -152,6 +152,29 @@ class jrd_fld;
 // The database block, the topmost block in the metadata
 // cache for a database
 
+// Relation trigger definition
+
+class Trigger {
+public:
+	Firebird::HalfStaticArray<UCHAR, 128> blr;	// BLR code
+	bid			dbg_blob_id;					// RDB$DEBUG_INFO 
+	jrd_req*	request;					// Compiled request. Gets filled on first invocation
+	bool		compile_in_progress;
+	bool		sys_trigger;
+	UCHAR		type;						// Trigger type
+	USHORT		flags;						// Flags as they are in RDB$TRIGGERS table
+	jrd_rel*	relation;					// Trigger parent relation
+	Firebird::MetaName	name;				// Trigger name
+	void compile(thread_db*);				// Ensure that trigger is compiled
+	void release(thread_db*);				// Try to free trigger request
+
+	explicit Trigger(MemoryPool& p) : blr(p), name(p) 
+	{ dbg_blob_id.clear(); }
+};
+
+typedef Firebird::ObjectsArray<Trigger> trig_vec;
+
+
 class Database : private pool_alloc<type_dbb>
 {
 public:
@@ -203,6 +226,7 @@ public:
 	vcl*		dbb_t_pages;			// pages number for transactions
 	vcl*		dbb_gen_id_pages;		// known pages for gen_id
 	BlobFilter*	dbb_blob_filters;		// known blob filters
+	trig_vec*	dbb_triggers[DB_TRIGGER_MAX];
 
 	DatabaseModules	modules;			// external function/filter modules
 	MUTX_T *dbb_mutexes;				// Database block mutexes
@@ -577,6 +601,7 @@ const ULONG ATT_cancel_disable		= 16384;	// Disable cancel operations
 
 const ULONG ATT_gfix_attachment		= 32768;	// Indicate a GFIX attachment
 const ULONG ATT_gstat_attachment	= 65536;	// Indicate a GSTAT attachment
+const ULONG ATT_no_db_triggers		= 131072;	// Don't execute database triggers
 
 
 // Procedure block
@@ -645,28 +670,6 @@ public:
 //public:
 	explicit Parameter(MemoryPool& p) : prm_name(p) { }
 };
-
-// Relation trigger definition
-
-class Trigger {
-public:
-	Firebird::HalfStaticArray<UCHAR, 128> blr;	// BLR code
-	bid			dbg_blob_id;					// RDB$DEBUG_INFO 
-	jrd_req*	request;					// Compiled request. Gets filled on first invocation
-	bool		compile_in_progress;
-	bool		sys_trigger;
-	UCHAR		type;						// Trigger type
-	USHORT		flags;						// Flags as they are in RDB$TRIGGERS table
-	jrd_rel*	relation;					// Trigger parent relation
-	Firebird::MetaName	name;				// Trigger name
-	void compile(thread_db*);				// Ensure that trigger is compiled
-	void release(thread_db*);				// Try to free trigger request
-
-	explicit Trigger(MemoryPool& p) : blr(p), name(p) 
-	{ dbg_blob_id.clear(); }
-};
-
-typedef Firebird::ObjectsArray<Trigger> trig_vec;
 
 // Index block to cache index information
 

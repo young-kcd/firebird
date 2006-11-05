@@ -3096,10 +3096,11 @@ static void define_trigger(dsql_req* request, NOD_TYPE op)
 
 	USHORT trig_type;
 	dsql_nod* relation_node = NULL;
+	dsql_nod* type_node = trigger_node->nod_arg[e_trg_type];
 
 	if (op == nod_replace_trigger)
 	{
-		if (METD_get_trigger_relation(request, trigger_name, &trig_type))
+		if (METD_get_trigger(request, trigger_name, NULL, &trig_type))
 		{
 			define_trigger(request, nod_mod_trigger);
 		}
@@ -3116,12 +3117,32 @@ static void define_trigger(dsql_req* request, NOD_TYPE op)
 								trigger_name->str_data,
 								trigger_name->str_length);
 		relation_node = trigger_node->nod_arg[e_trg_table];
-		const dsql_str* relation_name =
-			(dsql_str*) relation_node->nod_arg[e_rln_name];
-		fb_assert(relation_name->str_length <= MAX_USHORT);
-		request->append_string(	isc_dyn_rel_name,
-								relation_name->str_data,
-								relation_name->str_length);
+		if (relation_node)
+		{
+			if (type_node && ((SSHORT)(IPTR) type_node->nod_arg[0] & TRIGGER_TYPE_MASK) != TRIGGER_TYPE_DML)
+			{
+				ERRD_post(isc_dsql_command_err,
+						  isc_arg_gds, isc_dsql_incompatible_trigger_type,
+						  0);
+			}
+
+			const dsql_str* relation_name =
+				(dsql_str*) relation_node->nod_arg[e_rln_name];
+			fb_assert(relation_name->str_length <= MAX_USHORT);
+			request->append_string(	isc_dyn_rel_name,
+									relation_name->str_data,
+									relation_name->str_length);
+		}
+		else
+		{
+			if (type_node && ((SSHORT)(IPTR) type_node->nod_arg[0] & TRIGGER_TYPE_MASK) != TRIGGER_TYPE_DB)
+			{
+				ERRD_post(isc_dsql_command_err,
+						  isc_arg_gds, isc_dsql_incompatible_trigger_type,
+						  0);
+			}
+		}
+
 		request->append_uchar(isc_dyn_sql_object);
 	}
 	else // nod_mod_trigger
@@ -3136,21 +3157,31 @@ static void define_trigger(dsql_req* request, NOD_TYPE op)
 			/* Since we will be updating the body of the trigger, we need
 			   to know what relation the trigger relates to. */
 
-			const dsql_str* relation_name =
-				 METD_get_trigger_relation(request, trigger_name, &trig_type);
-			if (!relation_name)
+			dsql_str* relation_name = NULL;
+			METD_get_trigger(request, trigger_name, &relation_name, &trig_type);
+
+			if (relation_name)
 			{
-					ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -204,
-							  isc_arg_gds, isc_dsql_trigger_err, isc_arg_gds,
-							  isc_random, isc_arg_string,
-							  trigger_name->str_data, 0);
+				if (type_node && ((SSHORT)(IPTR) type_node->nod_arg[0] & TRIGGER_TYPE_MASK) != TRIGGER_TYPE_DML)
+				{
+					ERRD_post(isc_dsql_command_err,
+							  isc_arg_gds, isc_dsql_incompatible_trigger_type,
+							  0);
+				}
+
+				relation_node = FB_NEW_RPT(*tdsql->getDefaultPool(), e_rln_count) dsql_nod;
+				trigger_node->nod_arg[e_trg_table] = relation_node;
+				relation_node->nod_type = nod_relation_name;
+				relation_node->nod_count = e_rln_count;
+				// Warning: implicit const cast
+				relation_node->nod_arg[e_rln_name] = (dsql_nod*) relation_name;
 			}
-			relation_node = FB_NEW_RPT(*tdsql->getDefaultPool(), e_rln_count) dsql_nod;
-			trigger_node->nod_arg[e_trg_table] = relation_node;
-			relation_node->nod_type = nod_relation_name;
-			relation_node->nod_count = e_rln_count;
-			// Warning: implicit const cast
-			relation_node->nod_arg[e_rln_name] = (dsql_nod*) relation_name;
+			else if (type_node && (USHORT)(IPTR) type_node->nod_arg[0] != trig_type)
+			{
+				ERRD_post(isc_dsql_command_err,
+						  isc_arg_gds, isc_dsql_db_trigger_type_cant_change,
+						  0);
+			}
 		}
 	}
 
@@ -3200,32 +3231,35 @@ static void define_trigger(dsql_req* request, NOD_TYPE op)
 			reset_context_stack(request);
 		}
 
-		dsql_nod* const temp = relation_node->nod_arg[e_rln_alias];
-		if (hasOldContext(trig_type))
+		if (relation_node)
 		{
-			relation_node->nod_arg[e_rln_alias] =
-				(dsql_nod*) MAKE_cstring(OLD_CONTEXT);
-			dsql_ctx* oldContext = PASS1_make_context(request, relation_node);
-			oldContext->ctx_flags |= CTX_system;
-		}
-		else
-		{
-			request->req_context_number++;
-		}
+			dsql_nod* const temp = relation_node->nod_arg[e_rln_alias];
+			if (hasOldContext(trig_type))
+			{
+				relation_node->nod_arg[e_rln_alias] =
+					(dsql_nod*) MAKE_cstring(OLD_CONTEXT);
+				dsql_ctx* oldContext = PASS1_make_context(request, relation_node);
+				oldContext->ctx_flags |= CTX_system;
+			}
+			else
+			{
+				request->req_context_number++;
+			}
 
-		if (hasNewContext(trig_type))
-		{
-			relation_node->nod_arg[e_rln_alias] =
-				(dsql_nod*) MAKE_cstring(NEW_CONTEXT);
-			dsql_ctx* newContext = PASS1_make_context(request, relation_node);
-			newContext->ctx_flags |= CTX_system;
-		}
-		else
-		{
-			request->req_context_number++;
-		}
+			if (hasNewContext(trig_type))
+			{
+				relation_node->nod_arg[e_rln_alias] =
+					(dsql_nod*) MAKE_cstring(NEW_CONTEXT);
+				dsql_ctx* newContext = PASS1_make_context(request, relation_node);
+				newContext->ctx_flags |= CTX_system;
+			}
+			else
+			{
+				request->req_context_number++;
+			}
 
-		relation_node->nod_arg[e_rln_alias] = temp;
+			relation_node->nod_arg[e_rln_alias] = temp;
+		}
 
 		// generate the trigger blr
 
@@ -4300,7 +4334,7 @@ static void delete_trigger(dsql_req* request,
     fb_assert(string);
     if (silent_deletion) {
 		USHORT trig_type;
-		if (!METD_get_trigger_relation(request, string, &trig_type))
+		if (!METD_get_trigger(request, string, NULL, &trig_type))
             return;
     }
 	request->append_cstring(isc_dyn_delete_trigger, string->str_data);
