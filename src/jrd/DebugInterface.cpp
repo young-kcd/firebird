@@ -20,6 +20,7 @@
  *  Contributor(s): ______________________________________.
  */
 
+#include "firebird.h"
 #include "../jrd/DebugInterface.h"
 #include "../jrd/blb_proto.h"
 
@@ -111,6 +112,6 @@ void DBG_parse_debug_info(thread_db* tdbb, bid *blob_id, MapBlrToSrc& Map)
 	if (bad_format) 
 	{
 		Map.clear();
-		ERR_post_warning(isc_random, isc_arg_string, "Bad debug info format", 0);
+		ERR_post_warning(isc_bad_debug_format, 0);
 	}
 }

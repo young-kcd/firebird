@@ -3088,5 +3088,7 @@ INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FL
 INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FLAGS, TEXT, "ACTION", EXPLANATION) VALUES ('dsql_derived_alias_select', 'pass1_expand_select_node', 'pass1.cpp', NULL, 13, 934, NULL, 'Internal dsql error: alias type expected by pass1_expand_select_node', NULL, NULL);
 INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FLAGS, TEXT, "ACTION", EXPLANATION) VALUES ('dsql_derived_alias_field', 'pass1_field', 'pass1.cpp', NULL, 13, 935, NULL, 'Internal dsql error: alias type expected by pass1_field', NULL, NULL);
 INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FLAGS, TEXT, "ACTION", EXPLANATION) VALUES ('dsql_auto_field_bad_pos', 'pass1_union_auto_cast', 'pass1.cpp', NULL, 13, 936, NULL, 'Internal dsql error: column position out of range in pass1_union_auto_cast', NULL, NULL);
+INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FLAGS, TEXT, "ACTION", EXPLANATION) VALUES ('bad_debug_format', 'DBG_parse_debug_info', 'DebugInterface.cpp', NULL, 0, 555, NULL, 'Bad debug info format', NULL, NULL);
+INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FLAGS, TEXT, "ACTION", EXPLANATION) VALUES ('bad_proc_BLR', 'MET_procedure', 'met.cpp', NULL, 0, 556, NULL, 'Error while parsing procedure %s''s BLR', NULL, NULL);
 
 COMMIT WORK;
