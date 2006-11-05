@@ -158,6 +158,10 @@ SOURCE=..\..\..\src\jrd\db_alias.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\src\jrd\DebugInterface.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\gen\jrd\dfw.cpp
 
 !IF  "$(CFG)" == "engine_embed - Win32 Release"
@@ -690,6 +694,10 @@ SOURCE=..\..\..\src\jrd\dbg.h
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\dbg_proto.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\DebugInterface.h
 # End Source File
 # Begin Source File
 

@@ -215,6 +215,10 @@ SOURCE=..\..\..\src\jrd\DataTypeUtil.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\src\jrd\DebugInterface.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\src\jrd\divorce.cpp
 # End Source File
 # Begin Source File
@@ -717,6 +721,10 @@ SOURCE=..\..\..\src\jrd\dbg.h
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\dbg_proto.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\DebugInterface.h
 # End Source File
 # Begin Source File
 
