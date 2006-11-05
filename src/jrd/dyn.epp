@@ -958,12 +958,6 @@ USHORT DYN_skip_blr_blob(const UCHAR** ptr)
 	const UCHAR* p = *ptr;
 	USHORT length = *p++;
 	length |= (*p++) << 8;
-
-	if (!length) {
-		*ptr = p;
-		return length;
-	}
-
 	*ptr = p + length;
 
 	return length;
