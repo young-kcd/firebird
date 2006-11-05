@@ -626,7 +626,7 @@ static const TEXT msg_table[VAL_MAX_ERROR][66] =
 	"Page %ld wrong type (expected %d encountered %d)",	// 0 
 	"Checksum error on page %ld",
 	"Page %ld doubly allocated",
-	"Page %ld is use but marked free",
+	"Page %ld is used but marked free",
 	"Page %ld is an orphan",
 	"Warning: blob %ld appears inconsistent",	// 5 
 	"Blob %ld is corrupt",
