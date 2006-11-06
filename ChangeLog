@@ -1,3 +1,11 @@
+2006-11-05 16:27  makowski
+
+	* firebird2/builds/install/arch-specific/win32/fr/:
+	custom_messages_fr.inc (1.2.6.3), installation_lisezmoi.txt
+	(1.1.6.1), lisezmoi.txt (1.1.6.1):
+
+	B2_0_Release
+
 2006-11-03 15:59  paul_reeves
 
 	*
