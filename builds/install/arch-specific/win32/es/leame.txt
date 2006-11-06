@@ -89,7 +89,7 @@ o ¿Está seguro de comprender cómo funciona Firebird?
     mailto:firebird-support-subscribe@yahoogroups.com
 
 
-o Aún piensa que es un error?
+o ¿Aún piensa que es un error?
 
   Antes que nada, verifique el sistema de gestión de 
   incidencias (issue tracker) en:

@@ -1,20 +1,31 @@
-Firebird Database Server 1.5.2
+Firebird Database Server 2.0
 ==================================================
 
+  ** IMPORTANTE **
+
+  La estructura en disco de los archivos Firebird 
+  (ODS) ha cambiado respecto a la versión 1.5. Lea
+  las siguientes notas relacionadas con la nueva 
+  estructura y su instalación sobre versiones 
+  anteriores de Firebird.
+
+  ** ********** **
+  
 Este documento es una guía para instalar este paquete
-de Firebird 1.5 en la plataforma Win32. Estas notas
-referencian al paquete de instalación mismo, más
-que a Firebird 1.5 en general.
+de Firebird 2.0 en la plataforma Win32. Estas notas
+hacen referencia al paquete de instalación en sí, más
+que a Firebird 2.0 en general.
 
 
 Contenido
 ---------
 
 o Antes de instalar
+o Nueva ODS 11.0
+o Instalación en sistemas con Firebird 1.5
 o Instalación en sistemas con Firebird 2.0
 o Nuevas características del instalador
-o Características relacionadas con la instalación que
-  ya no son válidas
+o Problemas conocidos relacionados con la instalación
 o Desinstalación
 o Otras notas
 o Instalación desde un archivo batch
@@ -24,255 +35,146 @@ Antes de instalar
 -----------------
 
 Se recomienda que DESINSTALE cualquier versión
-previa de Firebird 1.0, Firebird 1.5 o Interbase
-antes de instalar este paquete.
+anterior de Firebird o Interbase antes de 
+instalar este paquete. Es particularmente
+importante que verifique que fbclient.dll y gds32.dll
+hayan sido eliminados de <system32>. 
 
 
-Instalación en sistemas con Firebird 2.0 no estable
+Nueva ODS 11.0
+--------------
+
+Firebird 2.0 introduce una nueva versión (11.0) 
+de la estructura en disco de archivos Firebird (ODS),
+que es completamente incompatible con la versión 11.0
+utilizada en las versiones alpha.
+
+Si está instalando esta versión de Firebird 2.0 por
+primera vez sobre una instalación previa de Firebird 2 
+alpha se recomienda que lo haga en una carpeta 
+diferente. Aunque la desinstalación no elimina
+la base de datos de seguridad existente, ésta 
+utiliza una estructura (ODS) incompatible, y no
+podrá conectarse al servidor.
+
+
+Instalación en sistemas con Firebird 1.5
+----------------------------------------
+La base de datos de seguridad ha cambiado. La nueva
+base de datos se llama security2.fdb y usa un 
+algoritmo de encriptación de contraseñas mejorado. 
+Puede obtener más información sobre las nuevas
+características de seguridad en las notas de la 
+versión.
+
+La nueva estructura de bases de datos y los cambios
+en la encriptación generan varios problemas 
+relacionados con la migración de sitios que tengan
+muchos identificadores de usuario (user ids).
+El instalador no intentará realizar esta migración, 
+la cual debe ser realizada manualmente. Una posible
+técnica se describe en misc/upgrade/security/. 
+
+
+Instalación en sistemas con Firebird 2.0
+----------------------------------------
+
+Adicionalmente al cambio de la estructura en disco 
+(ODS), tenga en cuenta que el instalador no puede
+detectar automáticamente si una versión Alfa o Beta
+de Firebird 2.0 se está ejecutando como servicio.
+Por lo tanto, no recibirá ninguna advertencia hasta
+que el instalador intente reemplazar el archivo
+en uso. Esto puede evitarse mediante una desinstalación 
+previa.
+
+
+Nuevas características del instalador
+-------------------------------------
+
+o Si se encuentra el archivo firebird.conf el 
+  instalador instalará el archivo de configuración
+  por defecto como:
+
+  firebird.conf.default.
+
+  El archivo firebird.conf existente no se modificará.
+  Esto busca asegurar que las restricciones de
+  acceso se mantengan luego de una actualización.
+
+
+o El instalador soporta ahora varios lenguajes,
+  pero SOLO durante el proceso de instalación en sí.
+  
+  NOTA: Los lenguajes disponibles están determinados
+  por la versión de Windows que utiliza. Esto
+  significa que, por ejemplo, los usuarios del oeste
+  de Europa no verán los lenguajes eslavos disponibles.
+  
+
+Problemas conocidos relacionados con la instalación
 ---------------------------------------------------
 
-El proceso de instalación de Firebird 1.5.2 no puede
-detectar una versión activa de Firebird 2.0 no estable.
-Si Ud. está ejecutando una versión inestable de
-Firebird 2.0 es esencial que detenga el servidor antes
-de intentar instalar Firebird 1.5.2.
+Ninguno conocido en este momento.
 
-
-Nuevas características del instalador en Firebird 1.5.2
--------------------------------------------------------
-
-Se ha agregado soporte para varios lenguajes en el
-instalador. Este soporte se extiende SOLO al proceso
-de instalación.
-
-
-Nuevas características del instalador en Firebird 1.5
------------------------------------------------------
-
-o Este instalador ahora combina los ejecutables de
-  super server y classic server en un mismo paquete
-  de instalación. Ud. puede elegir instalar uno o el
-  otro, pero no ambos. Para cambiar de tipo de
-  servidor deberá desinstalar y re-instalar.
- 
-o Las reglas para la instalación de librerías han
-  cambiado considerablemente. Están explicadas en
-  detalle en el archivo
-  .\docs\README.Win32LibraryInstallation.txt,
-  el cual estará disponible al finalizar la
-  instalación.
-
-  Como resultado de estas nuevas reglas el instalador
-  verifica la existencia de una instalación previa
-  de Firebird o Interbase
- 
-  - Si Firebirs 1.5 está instalado, tratará de
-    sobrescribir la instalación. Si el servidor
-    se está ejecutando, se detendrá la instalación.
-   
-  - Si se encuentra otra version de Firebird o
-    Interbase instalada, se notificará al usuario.
-    Si el usuario continúa el proceso instalará
-    Firebird y creará las entradas de registro
-    pero no configurará Firebird para ejecutarse,
-    ni como servicio ni como aplicación. Esto
-    debe hacerse manualmente.
-
-  - El instalador tiene una nueva opción de línea
-    de comando
-      /force
-    que les permite a los que tienen una actitud
-    del tipo 'que me importa' no tomar en cuenta
-    la regla anterior.
-
-
-o Si existe un archivo firebird.conf modificado en
-  el directorio de instalación, será guardado como:
-    firebird.conf.saved.n
-  donde n es un número. El instalador siempre escribe
-  el archivo firebird.conf por defecto. Esto se hace
-  para garantizar consistencia en el proceso de
-  instalación. De otra manera, el instalador tendría
-  que interpretar el archivo de configuración existente
-  (que probablemente sea erróneo).
- 
-
-
-Características relacionadas con la instalación que
-ya no son válidas
----------------------------------------------------
-
-o Firebird 1.0 reservaba una clave de registro para
-  uso de Firebird:
- 
-    HKLM\SOFTWARE\FirebirdSQL
-  Esto ya no es válido y será borrado por el
-  instalador. Si Ud. tiene alguna aplicación que
-  depende de esta clave, debería agregarla manualmente
-  luego de la instalación. No obstante, es preferible
-  que reconstruya su aplicación para que lea la nueva
-  clave.
- 
-o Las primeras versiones pre-lanzamiento de
-  Firebird 1.5 instalaban fbclient.dll en el
-  directorio <system>. Esta práctica ya no es
-  válida. Se ofrece ahora una opción para copiar
-  la librería en el directorio <system> en el
-  momento de la instalación; no obstante, es
-  preferible que reconstruya sus aplicaciones
-  de conformidad con el nuevo uso de fbclient.
- 
 
 Desinstalación
 --------------
 
-o Es preferible que este paquete sea desinstalado
-  correctamente usando la aplicación de desinstalación
-  provista. Puede ser invocada desde el Panel de
-  Control. Alternativamente, puede ser desinstalada
-  ejecutando directamente el programa unins000.exe
-  desde el directorio de instalación.
- 
+o Es recomendable que este paquete sea correctamente
+  desinstalado utilizando el desinstalador provisto, 
+  que puede ser utilizado desde el Panel de Control.
+  Como alternativa, puede ser desinstalado ejecutando
+  unins000.exe directamente desde la carpeta de 
+  instalación.
+
 o Si Firebird se está ejecutando como una aplicación
-  (no como servicio) se recomienda que Ud. detenga
-  el servidor manualmente antes de ejecutar el
-  desinstalador. Esto es porque el desinstalador no
-  puede detener una aplicación que se esté ejecutando.
-  Si un servidor está corriendo durante la
-  desinstalación, ésta terminará con errores. Ud. 
-  tendrá que borrar manualmente lo que quede en el 
-  disco.
+  (en lugar de hacerlo como servicio), se recomienda
+  detener el servidor manualmente antes de ejecutar
+  el desinstalador, debido a que este último no puede
+  detener una aplicación en ejecución.
+  Si el servidor estuviera ejecutándose durante el 
+  proceso de desinstalación, éste no se completará
+  correctamente. Deberá eliminar los remanentes
+  manualmente.
+ 
+o El proceso de desinstalación dejará cuatro archivos
+  en la carpeta de instalación:
+
+  - aliases.conf
+  - firebird.conf
+  - firebird.log
+  - security2.fdb
+
+  Esto es intencional. Estos archivos son potencialmente
+  modificables por los usuarios y podrían necesitarse
+  si Firebird es reinstalado en el futuro. Pueden 
+  eliminarse si no son necesarios.
 
 
 Otras notas
 -----------
 
-  Firebird requiere Winsock2. Todas las plataformas
-  Win32 deberían incluir esta librería, excepto por
-  Win95. Se realiza una comprobación de la librería
-  durante la instalación; si no se encuentra, se
-  terminará el proceso. Ud. puede visitar este enlace:
+  Firebird requiere WinSock2. Todas las plataformas
+  Win32 deberían tenerlo, con excepción de Win95. 
+  Durante la instalación se realiza una verificación
+  de la librería Winsock2. Si la misma no se encuentra,
+  la instalación fallará. Puede visitar el siguiente
+  enlace:
 
-    http://support.microsoft.com/default.aspx?scid=kb;
-      EN-US;q177719
+    http://support.microsoft.com/default.aspx?scid=kb;EN-US;q177719
 
-  para encontrar instrucciones sobre como actualizar.
+  para obtener información sobre cómo realizar la 
+  actualización.
 
 
-Instalación desde un archivo batch
-----------------------------------
+o Instalación desde un archivo batch
+------------------------------------
 
 El programa de instalación puede ser ejecutado desde
-un archivo batch. Se pueden pasar los parámetros
-siguientes:
+un archivo batch.
+Por favor lea el siguiente documento:
 
-/SP-
-  Deshabilita el mensaje 'This will install... Do you
-  wish to continue?' al comienzo de la instalación.
+    installation_scripted.txt
 
-/SILENT, /VERYSILENT
-  Configura el instalador para ser silencioso o muy
-  silencioso. Cuando la instalación es silenciosa ni el
-  asistente ni la ventana de fondo se muestran pero
-  la ventana de progreso de instalación sí. Cuando
-  la instalación es muy silenciosa tampoco se muestra
-  esta ventana de progreso. Todo lo demás, por ejemplo
-  el mensaje inicial (si no se ha usado el parámetro
-  '/SP-') y los mensajes de error durante la
-  instalación, se muestra normalmente.
-
-  Si es necesario un reinicio y no se usa el parámetro
-  '/NORESTART' (ver más abajo) y la instalación es
-  silenciosa, se mostrará un cuadro de mensaje
-  'Reboot now?' (¿Reiniciar ahora?). Si está en modo
-  muy silencioso, reiniciará sin preguntar.
-
-
-/NORESTART
-  Indica al instalador que no debe reiniciar, aún si
-  es necesario.
- 
-/DIR="x:\directorio"
-  Sobrescribe el nombre del directorio por defecto
-  mostrado en la página de selección de directorio
-  de destino del asistente. Se debe especificar una
-  ruta completa incluyendo la unidad. Si la directiva
-  DisableDirPage de la sección [Setup] está puesta a
-  'yes', este parámetro de línea de comando se ignora.
- 
-/GROUP="folder name"
-  Reemplaza el nombre de carpeta por defecto mostrado
-  en la página de selección de carpeta del menú Inicio
-  del asistente. Si la directiva
-DisableProgramGroupPage
-  de la sección [Setup] se pone a 'yes', este parámetro
-  se ignora.
-
-/NOICONS
-  Indica al instalador que deshabilite la opción
-  'No crear ningún icono' en la página de selección
-  de carpeta de menú Inicio del asistene.
-
-/COMPONENTS="lista de componentes separados por comas"
-
-  Los componentes pueden ser
-                SuperServerComponent,
-                ClassicServerComponent,
-                ServerComponent,
-                DevAdminComponent and
-                ClientComponent
-
-  Reemplaza la configuración de componentes por
-  defecto. Si se usa este parámetro la instalación 
-  selecciona automáticamente el tipo 'personalizado'. 
-  Una instalación completa requiere combinar 
-  componentes.
-  Por ejemplo:
- 
-  /COMPONENTS="SuperServerComponent, ServerComponent,
-               DevAdminComponent, ClientComponent"
- 
-  sería lo necesario para una instalación completa.
-
-
-/FORCE
-  Indica al instalador que ignore su análisis del
-  entorno existente. Intentará instalar y configurar
-  Firebird 1.5 como si no hubiera una versión previa
-  de Firebird o Interbase instalada.
-
-  Esto puede ser útil si Ud. tiene una instalación
-  muy dañada que no quiere desinstalar. O puede ser
-  otra forma de hacer enojar a sus usuarios,
-  rompiendo una instalación previa perfectamente
-  funcional de Interbase. Es su opción.
-
-
-/NOCPL
-  No instalar el Applet del Panel de Control. Esto
-  es útil por dos razones:
- 
-  o Instalar/desinstalar el applet del Panel de
-    Control frecuentemente requiere un reinicio
-    del sistema.
-
-  o Ud. puede desear usar un applet alternativo.
-
- 
-/NOGDS32
-  No instalar una copia de la librería cliente
-  en el directorio de sistema, aún si el análisis
-  de instalación concluye que es correcto hacerlo.
-
-
-/COPYFBCLIENT
-  Copia fbclient.dll al directorio de sistema. Esto
-  se recomienda para instalaciones de cliente si
-  Ud. está seguro que solamente usará una única
-  versión de servidor. Si espera que su aplicación
-  pueda acceder a diferentes versiones de servidor,
-  no se recomienda este parámetro. Vea
- 
-    doc/README.Win32LibraryInstallation.txt
-
-  para más información.
+para tener todos los detalles.
