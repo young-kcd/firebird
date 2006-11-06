@@ -1334,7 +1334,7 @@ void MET_load_db_triggers(thread_db* tdbb, int type)
 {
 /**************************************
  *
- *      M E T _ l o a d _ d b _ t r i g g e r
+ *      M E T _ l o a d _ d b _ t r i g g e r s
  *
  **************************************
  *

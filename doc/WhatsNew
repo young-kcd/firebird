@@ -3,7 +3,7 @@
   **************
 
     * Feature CORE-645 and CORE-745
-        Database triggers.
+        Database triggers
       Contributor(s):
         Adriano dos Santos Fernandes <adrianosf at uol.com.br>
 
@@ -18,7 +18,7 @@
         Adriano dos Santos Fernandes <adrianosf at uol.com.br>
 
     * Bugfix CORE-966
-        Bug in socket binding for database event.
+        Bug in socket binding for database event
       Contributor(s):
         Paul Beach <pbeach at ibphoenix.com>
         Dmitry Yemanov <dimitr at firebirdsql.org>
