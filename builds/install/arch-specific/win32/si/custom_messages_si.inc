@@ -1,4 +1,5 @@
 si.MyAppName=Firebird Database Server 2.0
+si.ServerInstall=Polna instalacija serverja in razvojnih orodij.
 si.SuperServerInstall=Polna instalacija super serverja in razvojnih orodij.
 si.ClassicServerInstall=Polna instalacija klasiènega serverja in razvojnih orodij.
 si.DeveloperInstall=Instalacija klientovih orodij za razvijalce in administratorje baze.

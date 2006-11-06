@@ -36,7 +36,6 @@
 #  include <time.h>
 # endif
 #endif
-#include "fb_types.h"
 #include "ib_util.h"
 #include "ib_udf.h"
 
@@ -66,7 +65,7 @@ double EXPORT IB_UDF_acos( double *a)
 	return (acos(*a));
 }
 
-char *EXPORT IB_UDF_ascii_char( ISC_LONG *a)
+char *EXPORT IB_UDF_ascii_char( int *a)
 {
 	if (!a)
 		return 0;
@@ -78,10 +77,10 @@ char *EXPORT IB_UDF_ascii_char( ISC_LONG *a)
 	return (b);
 }
 
-ISC_LONG EXPORT IB_UDF_ascii_val( const char *a)
+int EXPORT IB_UDF_ascii_val( const char *a)
 {
 	// NULL is treated as ASCII(0).
-	return ((ISC_LONG) (*a));
+	return ((int) (*a));
 }
 
 double EXPORT IB_UDF_asin( double *a)
@@ -99,17 +98,17 @@ double EXPORT IB_UDF_atan2( double *a, double *b)
 	return (atan2(*a, *b));
 }
 
-ISC_LONG EXPORT IB_UDF_bin_and( ISC_LONG *a, ISC_LONG *b)
+long EXPORT IB_UDF_bin_and( long *a, long *b)
 {
 	return (*a & *b);
 }
 
-ISC_LONG EXPORT IB_UDF_bin_or( ISC_LONG *a, ISC_LONG *b)
+long EXPORT IB_UDF_bin_or( long *a, long *b)
 {
 	return (*a | *b);
 }
 
-ISC_LONG EXPORT IB_UDF_bin_xor( ISC_LONG *a, ISC_LONG *b)
+long EXPORT IB_UDF_bin_xor( long *a, long *b)
 {
 	return (*a ^ *b);
 }
@@ -134,22 +133,18 @@ double EXPORT IB_UDF_cot( double *a)
 	return (1.0 / tan(*a));
 }
 
-double EXPORT IB_UDF_div( ISC_LONG *a, ISC_LONG *b)
+double EXPORT IB_UDF_div( long *a, long *b)
 {
-	if (*b != 0)
-	{
-		// VS8.0 has two implementations of div().
-		// Let's explicitly use the int-aware one.
-		div_t div_result = div((int) *a, (int) *b);
+	if (*b != 0) {
+		div_t div_result = div(*a, *b);
 		return (div_result.quot);
 	}
 	else
-	{
-		// This is a Kludge!  We need to return INF, 
-		// but this seems to be the only way to do 
-		// it since there seens to be no constant for it.
+		/* This is a Kludge!  We need to return INF, 
+		   but this seems to be the only way to do 
+		   it since there seens to be no constant for it. */
 		return (1 / tan(0.0));
-	}
+
 }
 
 double EXPORT IB_UDF_floor( double *a)
@@ -201,7 +196,7 @@ char *EXPORT IB_UDF_lower(const char *s)
 	return buf;
 }
 
-char *EXPORT IB_UDF_lpad( const char *s, ISC_LONG *a, const char *c)
+char *EXPORT IB_UDF_lpad( const char *s, long *a, const char *c)
 {
 	if (!s || !c)
 		return 0;
@@ -250,22 +245,17 @@ char *EXPORT IB_UDF_ltrim( const char *s)
 	return buf;
 }
 
-double EXPORT IB_UDF_mod( ISC_LONG *a, ISC_LONG *b)
+double EXPORT IB_UDF_mod( long *a, long *b)
 {
-	if (*b != 0)
-	{
-		// VS8.0 has two implementations of div().
-		// Let's explicitly use the int-aware one.
-		div_t div_result = div((int) *a, (int) *b);
+	if (*b != 0) {
+		div_t div_result = div(*a, *b);
 		return (div_result.rem);
 	}
 	else
-	{
-		// This is a Kludge!  We need to return INF, 
-		// but this seems to be the only way to do 
-		// it since there seens to be no constant for it.
+		/* This is a Kludge!  We need to return INF, 
+		   but this seems to be the only way to do 
+		   it since there seens to be no constant for it. */
 		return (1 / tan(0.0));
-	}
 }
 
 double EXPORT IB_UDF_pi()
@@ -284,7 +274,7 @@ double EXPORT IB_UDF_rand()
 	return ((float) rand() / (float) RAND_MAX);
 }
 
-char *EXPORT IB_UDF_rpad( const char *s, ISC_LONG *a, const char *c)
+char *EXPORT IB_UDF_rpad( const char *s, long *a, const char *c)
 {
 	if (!s || !c)
 		return 0;
@@ -332,7 +322,7 @@ char *EXPORT IB_UDF_rtrim( const char *s)
 	return buf;
 }
 
-ISC_LONG EXPORT IB_UDF_sign( double *a)
+int EXPORT IB_UDF_sign( double *a)
 {
 	if (*a > 0)
 		return 1;
@@ -357,7 +347,7 @@ double EXPORT IB_UDF_sqrt( double *a)
 	return (sqrt(*a));
 }
 
-char* EXPORT IB_UDF_substr(const char* s, ISC_SHORT* m, ISC_SHORT* n)
+char* EXPORT IB_UDF_substr(const char* s, short* m, short* n)
 {
 	if (!s) {
 		return 0;
@@ -393,7 +383,7 @@ char* EXPORT IB_UDF_substr(const char* s, ISC_SHORT* m, ISC_SHORT* n)
 	return buf;
 }
 
-char* EXPORT IB_UDF_substrlen(const char* s, ISC_SHORT* m, ISC_SHORT* n)
+char* EXPORT IB_UDF_substrlen(const char* s, short* m, short* n)
 {
 	/* Created by Claudio Valderrama for the Firebird project,
 		2001.04.17 We don't want to return NULL when params are wrong
@@ -432,7 +422,7 @@ char* EXPORT IB_UDF_substrlen(const char* s, ISC_SHORT* m, ISC_SHORT* n)
 	return buf;
 }
 
-ISC_LONG EXPORT IB_UDF_strlen( const char *a)
+int EXPORT IB_UDF_strlen( const char *a)
 {
 	return (strlen(a));
 }

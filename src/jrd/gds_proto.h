@@ -33,6 +33,9 @@ const SSHORT IB_PREFIX_TYPE			= 0;
 const SSHORT IB_PREFIX_LOCK_TYPE	= 1;
 const SSHORT IB_PREFIX_MSG_TYPE		= 2;
 
+// Needed in common/config/dir_list.cpp
+const ULONG ALLROOM			= -1UL;	 /* use all available space */
+
 // flags for gds_alloc_report
 const ULONG ALLOC_dont_report	= 1L << 0;	/* Don't report this block */
 const ULONG ALLOC_silent		= 1L << 1;	/* Don't report new leaks */
@@ -115,6 +118,9 @@ void	API_ROUTINE gds__qtoq(const void*, void*);
 void	API_ROUTINE gds__register_cleanup(FPTR_VOID_PTR, void*);
 SLONG	API_ROUTINE gds__sqlcode(const ISC_STATUS*);
 void	API_ROUTINE gds__sqlcode_s(const ISC_STATUS*, ULONG*);
+void	API_ROUTINE gds__temp_dir(TEXT*);
+void*	API_ROUTINE gds__temp_file(BOOLEAN, const TEXT*, TEXT*, TEXT* = NULL,
+	BOOLEAN = FALSE);
 void		API_ROUTINE gds__unregister_cleanup(FPTR_VOID_PTR, void*);
 BOOLEAN	API_ROUTINE gds__validate_lib_path(const TEXT*, const TEXT*, TEXT*,
 											  SLONG);

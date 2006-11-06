@@ -62,8 +62,6 @@ const size_t MAX_SQL_IDENTIFIER_SIZE = 32;
 const size_t MAX_SQL_IDENTIFIER_LEN = MAX_SQL_IDENTIFIER_SIZE - 1;
 typedef TEXT SqlIdentifier[MAX_SQL_IDENTIFIER_SIZE];
 
-const char* const NULL_STRING_MARK = "*** null ***";
-
 const char* const NULL_ROLE = "NONE";
 
 const char* const PRIMARY_KEY		= "PRIMARY KEY";
@@ -72,9 +70,6 @@ const char* const UNIQUE_CNSTRT		= "UNIQUE";
 const char* const CHECK_CNSTRT		= "CHECK";
 const char* const NOT_NULL_CNSTRT	= "NOT NULL";
 
-const char* const REL_SCOPE_PERSISTENT		= "persistent table \"%s\"";
-const char* const REL_SCOPE_GTT_PRESERVE	= "global temporary table \"%s\" of type ON COMMIT PRESERVE ROWS";
-const char* const REL_SCOPE_GTT_DELETE		= "global temporary table \"%s\" of type ON COMMIT DELETE ROWS";
 
 /* literal strings in rdb$ref_constraints to be used to identify
    the cascade actions for referential constraints. Used
@@ -152,87 +147,5 @@ const size_t MAX_TIME_PRECISION			= 3;
 const size_t DEFAULT_TIME_PRECISION		= 0;
 // Should be 6 as per SQL spec
 const size_t DEFAULT_TIMESTAMP_PRECISION	= 3;
-
-const size_t MAX_ARRAY_DIMENSIONS = 16;
-
-const size_t MAX_SORT_ITEMS = 255; // ORDER BY f1,...,f255
-
-const size_t MAX_TABLE_VERSIONS = 255; // maybe this should be in ods.h.
-
-const size_t MAX_DB_PER_TRANS = 256; // A multi-db txn can span up to 256 dbs
-
-// relation types
-
-enum rel_t {
-	rel_persistent = 0,
-	rel_view = 1,
-	rel_external = 2,
-	rel_virtual = 3,
-	rel_global_temp_preserve = 4,
-	rel_global_temp_delete = 5
-};
-
-// procedure types
-
-enum prc_t {
-	prc_legacy = 0,
-	prc_selectable = 1,
-	prc_executable = 2
-};
-
-// states
-
-enum att_state_t {
-	att_s_idle = 0,
-	att_s_active = 1,
-	att_s_killed = 2
-};
-
-enum tra_state_t {
-	tra_s_idle = 0,
-	tra_s_active = 1
-};
-
-enum stmt_state_t {
-	stmt_s_idle = 0,
-	stmt_s_stalled = 1,
-	stmt_s_active = 2,
-	stmt_s_killed = 3
-};
-
-// shutdown modes
-
-enum shut_mode_t {
-	shut_mode_online = 0,
-	shut_mode_single = 1,
-	shut_mode_multi = 2,
-	shut_mode_full = 3
-};
-
-// transaction isolation levels
-
-enum tra_iso_mode_t {
-	iso_mode_consistency = 0,
-	iso_mode_concurrency = 1,
-	iso_mode_rc_version = 2,
-	iso_mode_rc_no_version = 3
-};
-
-const int TRIGGER_TYPE_SHIFT		= 13;
-const int TRIGGER_TYPE_MASK			= (0x3 << TRIGGER_TYPE_SHIFT);
-
-const int TRIGGER_TYPE_DML			= (0 << TRIGGER_TYPE_SHIFT);
-const int TRIGGER_TYPE_DB			= (1 << TRIGGER_TYPE_SHIFT);
-//const int TRIGGER_TYPE_DDL		= (2 << TRIGGER_TYPE_SHIFT);
-
-const int DB_TRIGGER_CONNECT		= 0;
-const int DB_TRIGGER_DISCONNECT		= 1;
-const int DB_TRIGGER_TRANS_START	= 2;
-const int DB_TRIGGER_TRANS_COMMIT	= 3;
-const int DB_TRIGGER_TRANS_ROLLBACK	= 4;
-const int DB_TRIGGER_MAX			= 5;
-
-// that's how database trigger action types are encoded
-//    (TRIGGER_TYPE_DB | type)
 
 #endif // JRD_CONSTANTS_H

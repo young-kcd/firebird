@@ -187,11 +187,12 @@ namespace Firebird {
 			lastpos = pos;
 		}
 		const_pointer start = c_str();
-		for (const_pointer endL = &start[lastpos]; endL >= start; --endL)
-		{
+		const_pointer endL = &start[lastpos];
+		while (endL >= start) {
 			if (memcmp(endL, s, l) == 0) {
 				return endL - start;
 			}
+			--endL;
 		}
 		return npos;
 	}
@@ -205,11 +206,12 @@ namespace Firebird {
 			lastpos = pos;
 		}
 		const_pointer start = c_str();
-		for (const_pointer endL = &start[lastpos]; endL >= start; --endL)
-		{
+		const_pointer endL = &start[lastpos];
+		while (endL >= start) {
 			if (*endL == c) {
 				return endL - start;
 			}
+			--endL;
 		}
 		return npos;
 	}
@@ -362,9 +364,9 @@ extern "C" {
 #error NS: I am lazy to implement version of this routine based on plain vsprintf.
 #error Please find an implementation of vsnprintf function for your platform.
 #error For example, consider importing library from http://www.ijs.si/software/snprintf/
-#error to Firebird extern repository
+#error to Firebird src\extern repository
 #endif
-		enum {tempsize = 4096};
+		enum {tempsize = 256};
 		char temp[tempsize];
 		int l = VSNPRINTF(temp, tempsize, format, params);
 		if (l < 0) {

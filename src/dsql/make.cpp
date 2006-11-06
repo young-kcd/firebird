@@ -52,7 +52,6 @@
 #include "../dsql/metd_proto.h"
 #include "../dsql/misc_func.h"
 #include "../dsql/utld_proto.h"
-#include "../jrd/DataTypeUtil.h"
 #include "../jrd/ods.h"
 #include "../jrd/ini.h"
 #include "../jrd/thd.h"
@@ -300,7 +299,7 @@ dsql_str* MAKE_cstring(const char* str)
  **/
 void MAKE_desc(dsql_req* request, dsc* desc, dsql_nod* node, dsql_nod* null_replacement)
 {
-	dsc desc1, desc2, desc3;
+	dsc desc1, desc2;
 	USHORT dtype, dtype1, dtype2;
 	dsql_map* map;
 	dsql_ctx* context;
@@ -427,54 +426,90 @@ void MAKE_desc(dsql_req* request, dsc* desc, dsql_nod* node, dsql_nod* null_repl
 		desc->dsc_flags = DSC_nullable;
 		return;
 
-	case nod_agg_list:
-		MAKE_desc(request, desc, node->nod_arg[0], null_replacement);
-		if (DTYPE_IS_BLOB(desc->dsc_dtype))
-		{
-			ERRD_post(isc_expression_eval_err, 0);
-		}
-		if (!DTYPE_IS_TEXT(desc->dsc_dtype))
-		{
-			desc->dsc_ttype() = ttype_ascii;
-		}
-		desc->dsc_dtype = dtype_varying;
-		desc->dsc_length = MAX_COLUMN_SIZE;
-		desc->dsc_scale = 0;
-		desc->dsc_flags = DSC_nullable;
-		return;
-
 	case nod_concatenate:
-		MAKE_desc(request, &desc1, node->nod_arg[0], node->nod_arg[1]);
-		MAKE_desc(request, &desc2, node->nod_arg[1], node->nod_arg[0]);
-		DSqlDataTypeUtil(request).makeConcatenate(desc, &desc1, &desc2);
+		{
+			MAKE_desc(request, &desc1, node->nod_arg[0], node->nod_arg[1]);
+			MAKE_desc(request, &desc2, node->nod_arg[1], node->nod_arg[0]);
+
+			desc->dsc_scale = 0;
+			desc->dsc_dtype = dtype_varying;
+
+			if (node->nod_arg[0]->nod_type == nod_null &&
+				node->nod_arg[1]->nod_type == nod_null)
+			{
+				// NULL || NULL = NULL of VARCHAR(1) CHARACTER SET NONE
+				desc->dsc_ttype() = 0;
+				desc->dsc_length = sizeof(USHORT) + 1;
+				desc->dsc_flags |= DSC_nullable;
+				return;
+			}
+
+			if (desc1.dsc_dtype <= dtype_any_text)
+				desc->dsc_ttype() = desc1.dsc_ttype();
+			else
+				desc->dsc_ttype() = ttype_ascii;
+
+			ULONG length =
+				((node->nod_arg[0]->nod_type == nod_null) ? 0 : DSC_string_length(&desc1)) /
+				METD_get_charset_bpc(request, INTL_GET_CHARSET(&desc1));
+
+			length +=
+				((node->nod_arg[1]->nod_type == nod_null) ? 0 : DSC_string_length(&desc2)) /
+				METD_get_charset_bpc(request, INTL_GET_CHARSET(&desc2));
+
+			desc->dsc_length = UTLD_char_length_to_byte_length(
+				length, METD_get_charset_bpc(request, INTL_GET_CHARSET(desc))) + sizeof(USHORT);
+			desc->dsc_flags = (desc1.dsc_flags | desc2.dsc_flags) & DSC_nullable;
+		}
 		return;
 
 	case nod_derived_field:
 		MAKE_desc(request, desc, node->nod_arg[e_derived_field_value], null_replacement);
 		return;
 
- 	case nod_upcase:
- 	case nod_lowcase:
- 		MAKE_desc(request, &desc1, node->nod_arg[0], null_replacement);
-		if (desc1.dsc_dtype <= dtype_any_text || desc1.dsc_dtype == dtype_blob)
- 		{
- 			*desc = desc1;
- 			return;
- 		}
+	case nod_upcase:
+	case nod_lowcase:
+    case nod_substr:
+		MAKE_desc(request, &desc1, node->nod_arg[0], null_replacement);
+		if (desc1.dsc_dtype <= dtype_any_text) {
+			*desc = desc1;
+			return;
+		}
+		desc->dsc_dtype = dtype_varying;
+		desc->dsc_scale = 0;
 
- 		desc->dsc_dtype = dtype_varying;
- 		desc->dsc_scale = 0;
-		desc->dsc_ttype() = ttype_ascii;
-		desc->dsc_length = sizeof(USHORT) + DSC_string_length(&desc1);
+		/* Beware that JRD treats substring() always as returning CHAR
+		instead	of VARCHAR for historical reasons. */
+		if (node->nod_type == nod_substr && desc1.dsc_dtype == dtype_blob)
+		{
+			dsql_nod* for_node = node->nod_arg[e_substr_length];
+			// Migrate the charset and collation from the blob to the string. 
+			desc->dsc_ttype() = desc1.dsc_blob_ttype();
+
+			USHORT maxBytesPerChar = METD_get_charset_bpc(request, desc1.dsc_scale);	// BLOB character set
+
+			// Set maximum possible length
+			SLONG length = UTLD_char_length_to_byte_length(MAX_COLUMN_SIZE - sizeof(USHORT), maxBytesPerChar);
+
+			if (for_node->nod_type == nod_constant &&
+				for_node->nod_desc.dsc_dtype == dtype_long)
+			{
+				// We have a constant passed as length, so
+				// use the real length
+				length = UTLD_char_length_to_byte_length(*(SLONG *) for_node->nod_desc.dsc_address, maxBytesPerChar);
+
+				if (length < 0 || length > MAX_COLUMN_SIZE - sizeof(USHORT))
+					length = UTLD_char_length_to_byte_length(MAX_COLUMN_SIZE - sizeof(USHORT), maxBytesPerChar);
+			}
+			desc->dsc_length = sizeof(USHORT) + length;
+		}
+		else
+		{
+			desc->dsc_ttype() = ttype_ascii;
+			desc->dsc_length = sizeof(USHORT) + DSC_string_length(&desc1);
+		}
 		desc->dsc_flags = desc1.dsc_flags & DSC_nullable;
 		return;
- 
-	case nod_substr:
-		MAKE_desc(request, &desc1, node->nod_arg[0], null_replacement);
-		MAKE_desc(request, &desc2, node->nod_arg[1], null_replacement);
-		MAKE_desc(request, &desc3, node->nod_arg[2], null_replacement);
- 		DSqlDataTypeUtil(request).makeSubstr(desc, &desc1, &desc2, &desc3);
-  		return;
 
     case nod_trim:
 		MAKE_desc(request, &desc1, node->nod_arg[e_trim_value], null_replacement);
@@ -483,27 +518,19 @@ void MAKE_desc(dsql_req* request, dsc* desc, dsql_nod* node, dsql_nod* null_repl
 		else
 			desc2.dsc_flags = 0;
 
-		if (desc1.dsc_dtype == dtype_blob)
-		{
-			*desc = desc1;
-			desc->dsc_flags |= (desc1.dsc_flags | desc2.dsc_flags) & DSC_nullable;
-		}
-		else if (desc1.dsc_dtype <= dtype_any_text)
-		{
+		if (desc1.dsc_dtype <= dtype_any_text) {
 			*desc = desc1;
 			desc->dsc_dtype = dtype_varying;
 			desc->dsc_length = sizeof(USHORT) + DSC_string_length(&desc1);
 			desc->dsc_flags = (desc1.dsc_flags | desc2.dsc_flags) & DSC_nullable;
-		}
-		else
-		{
-			desc->dsc_dtype = dtype_varying;
-			desc->dsc_scale = 0;
-			desc->dsc_ttype() = ttype_ascii;
-			desc->dsc_length = sizeof(USHORT) + DSC_string_length(&desc1);
-			desc->dsc_flags = (desc1.dsc_flags | desc2.dsc_flags) & DSC_nullable;
+			return;
 		}
 
+		desc->dsc_dtype = dtype_varying;
+		desc->dsc_scale = 0;
+		desc->dsc_ttype() = ttype_ascii;
+		desc->dsc_length = sizeof(USHORT) + DSC_string_length(&desc1);
+		desc->dsc_flags = (desc1.dsc_flags | desc2.dsc_flags) & DSC_nullable;
 		return;
 
 	case nod_cast:
@@ -623,7 +650,6 @@ void MAKE_desc(dsql_req* request, dsc* desc, dsql_nod* node, dsql_nod* null_repl
 						desc->dsc_dtype = dtype_long;
 						desc->dsc_length = sizeof(SLONG);
 						desc->dsc_scale = ISC_TIME_SECONDS_PRECISION_SCALE;
-						desc->dsc_sub_type = dsc_num_type_numeric;
 					}
 					else {
 						fb_assert(dtype == dtype_timestamp);
@@ -644,10 +670,11 @@ void MAKE_desc(dsql_req* request, dsc* desc, dsql_nod* node, dsql_nod* null_repl
 					ERRD_post(isc_expression_eval_err, 0);
 				}
 			}
-			else if (DTYPE_IS_DATE(desc1.dsc_dtype) || (node->nod_type == nod_add))
+			else if (DTYPE_IS_DATE(desc1.dsc_dtype) ||
+					 /* <date> +/- <non-date> */
+					 (node->nod_type == nod_add))
+				/* <non-date> + <date> */
 			{
-				// <date> +/- <non-date>
-				// <non-date> + <date>
 				desc->dsc_dtype = desc1.dsc_dtype;
 				if (!DTYPE_IS_DATE(desc->dsc_dtype))
 					desc->dsc_dtype = desc2.dsc_dtype;
@@ -784,14 +811,12 @@ void MAKE_desc(dsql_req* request, dsc* desc, dsql_nod* node, dsql_nod* null_repl
 						desc->dsc_dtype = dtype_long;
 						desc->dsc_length = sizeof(SLONG);
 						desc->dsc_scale = ISC_TIME_SECONDS_PRECISION_SCALE;
-						desc->dsc_sub_type = dsc_num_type_numeric;
 					}
 					else {
 						fb_assert(dtype == dtype_timestamp);
 						desc->dsc_dtype = dtype_int64;
 						desc->dsc_length = sizeof(SINT64);
 						desc->dsc_scale = -9;
-						desc->dsc_sub_type = dsc_num_type_numeric;
 					}
 				}
 				else if (is_date_and_time(desc1, desc2)) {
@@ -806,10 +831,11 @@ void MAKE_desc(dsql_req* request, dsc* desc, dsql_nod* node, dsql_nod* null_repl
 					ERRD_post(isc_expression_eval_err, 0);
 				}
 			}
-			else if (DTYPE_IS_DATE(desc1.dsc_dtype) || (node->nod_type == nod_add2))
+			else if (DTYPE_IS_DATE(desc1.dsc_dtype) ||
+					 /* <date> +/- <non-date> */
+					 (node->nod_type == nod_add2))
+				/* <non-date> + <date> */
 			{
-				// <date> +/- <non-date>
-				// <non-date> + <date>
 				desc->dsc_dtype = desc1.dsc_dtype;
 				if (!DTYPE_IS_DATE(desc->dsc_dtype))
 					desc->dsc_dtype = desc2.dsc_dtype;
@@ -948,7 +974,6 @@ void MAKE_desc(dsql_req* request, dsc* desc, dsql_nod* node, dsql_nod* null_repl
 		}
 		return;
 
-	/*
 	case nod_count:
 		desc->dsc_dtype = dtype_long;
 		desc->dsc_sub_type = 0;
@@ -956,7 +981,6 @@ void MAKE_desc(dsql_req* request, dsc* desc, dsql_nod* node, dsql_nod* null_repl
 		desc->dsc_length = sizeof(SLONG);
 		desc->dsc_flags = 0;
 		return;
-	*/
 
 	case nod_divide:
 		MAKE_desc(request, &desc1, node->nod_arg[0], node->nod_arg[1]);
@@ -1088,7 +1112,7 @@ void MAKE_desc(dsql_req* request, dsc* desc, dsql_nod* node, dsql_nod* null_repl
 				desc->dsc_length = 8;
 			else
 				desc->dsc_length = relation->rel_dbkey_length;
-			desc->dsc_flags = DSC_nullable;
+			desc->dsc_flags = 0;
 			desc->dsc_ttype() = ttype_binary;
 		}
 		else {
@@ -1766,13 +1790,7 @@ dsql_nod* MAKE_field(dsql_ctx* context, dsql_fld* field, dsql_nod* indices)
 		}
 	}
 	else {
-		if (indices)
-		{
-			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 607,
-					  isc_arg_gds, isc_dsql_only_can_subscript_array,
-					  isc_arg_string, field->fld_name, 0);
-		}
-
+		fb_assert(!indices);
 		MAKE_desc_from_field(&node->nod_desc, field);
 	}
 
@@ -1782,7 +1800,7 @@ dsql_nod* MAKE_field(dsql_ctx* context, dsql_fld* field, dsql_nod* indices)
 		node->nod_desc.dsc_flags = DSC_nullable;
 	}
 
-	// check if the field is a system domain and the type is CHAR/VARCHAR CHARACTER SET UNICODE_FSS
+	// check if the field is a system domain and and the type is CHAR/VARCHAR CHARACTER SET UNICODE_FSS
 	if ((field->fld_flags & FLD_system) &&
 		node->nod_desc.dsc_dtype <= dtype_varying &&
 		INTL_GET_CHARSET(&node->nod_desc) == CS_METADATA)
@@ -2191,10 +2209,6 @@ static void make_parameter_names(dsql_par* parameter, const dsql_nod* item)
 			parameter->par_rel_alias = context->ctx_alias;
 		}
 		break;
-	case nod_via:
-		// subquery, aka sub-select
-		make_parameter_names(parameter, item->nod_arg[e_via_value_1]);
-		break;
 	case nod_derived_field:
 		string = (dsql_str*) item->nod_arg[e_derived_field_name];
 		parameter->par_alias = reinterpret_cast<const TEXT*>(string->str_data);
@@ -2226,73 +2240,76 @@ static void make_parameter_names(dsql_par* parameter, const dsql_nod* item)
 		break;
 	case nod_map:
 		{
-			const dsql_map* map = (dsql_map*) item->nod_arg[e_map_map];
-			const dsql_nod* map_node = map->map_node;
-			while (map_node->nod_type == nod_map) {
-				// skip all the nod_map nodes
-				map = (dsql_map*) map_node->nod_arg[e_map_map];
-				map_node = map->map_node;
-			}
-			switch (map_node->nod_type) {
-			case nod_field:
-				field = (dsql_fld*) map_node->nod_arg[e_fld_field];
-				name_alias = field->fld_name;
-				break;
-			case nod_alias:
-				string = (dsql_str*) map_node->nod_arg[e_alias_alias];
-				parameter->par_alias = reinterpret_cast<const TEXT*>(string->str_data);
-				alias = map_node->nod_arg[e_alias_value];
-				if (alias->nod_type == nod_field) {
-					field = (dsql_fld*) alias->nod_arg[e_fld_field];
-					parameter->par_name = field->fld_name;
-				}
-				break;
-			case nod_derived_field:
-				string = (dsql_str*) map_node->nod_arg[e_derived_field_name];
-				parameter->par_alias = reinterpret_cast<const TEXT*>(string->str_data);
-				alias = map_node->nod_arg[e_derived_field_value];
-				if (alias->nod_type == nod_field) {
-					field = (dsql_fld*) alias->nod_arg[e_fld_field];
-					parameter->par_name = field->fld_name;
-				}
-				break;
-
-			case nod_agg_count:
-				name_alias = "COUNT";
-				break;
-			case nod_agg_total:
-			case nod_agg_total2:
-				name_alias = "SUM";
-				break;
-			case nod_agg_average:
-			case nod_agg_average2:
-				name_alias = "AVG";
-				break;
-			case nod_agg_min:
-				name_alias = "MIN";
-				break;
-			case nod_agg_max:
-				name_alias = "MAX";
-				break;
-			case nod_agg_list:
-				name_alias = "LIST";
-				break;
-			} // switch(map_node->nod_type)
+		const dsql_map* map = (dsql_map*) item->nod_arg[e_map_map];
+		const dsql_nod* map_node = map->map_node;
+		while (map_node->nod_type == nod_map) {
+			// skip all the nod_map nodes
+			map = (dsql_map*) map_node->nod_arg[e_map_map];
+			map_node = map->map_node;
+		}
+		switch (map_node->nod_type) {
+		case nod_field:
+			field = (dsql_fld*) map_node->nod_arg[e_fld_field];
+			name_alias = field->fld_name;
 			break;
+		case nod_alias:
+			string = (dsql_str*) map_node->nod_arg[e_alias_alias];
+			parameter->par_alias = reinterpret_cast<const TEXT*>(string->str_data);
+			alias = map_node->nod_arg[e_alias_value];
+			if (alias->nod_type == nod_field) {
+				field = (dsql_fld*) alias->nod_arg[e_fld_field];
+				parameter->par_name = field->fld_name;
+			}
+			break;
+		case nod_derived_field:
+			string = (dsql_str*) map_node->nod_arg[e_derived_field_name];
+			parameter->par_alias = reinterpret_cast<const TEXT*>(string->str_data);
+			alias = map_node->nod_arg[e_derived_field_value];
+			if (alias->nod_type == nod_field) {
+				field = (dsql_fld*) alias->nod_arg[e_fld_field];
+				parameter->par_name = field->fld_name;
+			}
+			break;
+
+		case nod_agg_count:
+			name_alias = "COUNT";
+			break;
+		case nod_agg_total:
+			name_alias = "SUM";
+			break;
+		case nod_agg_average:
+			name_alias = "AVG";
+			break;
+		case nod_agg_total2:
+			name_alias = "SUM";
+			break;
+		case nod_agg_average2:
+			name_alias = "AVG";
+			break;
+		case nod_agg_min:
+			name_alias = "MIN";
+			break;
+		case nod_agg_max:
+			name_alias = "MAX";
+			break;
+		} // switch(map_node->nod_type)
+		break;
 		} // case nod_map
 	case nod_variable:
 		{
-			dsql_var* variable = (dsql_var*) item->nod_arg[e_var_variable];
-			name_alias = variable->var_field->fld_name;
-			break;
+		dsql_var* variable = (dsql_var*) item->nod_arg[e_var_variable];
+		name_alias = variable->var_field->fld_name;
+		break;
 		}
 	case nod_udf: 
 		{
-			dsql_udf* userFunc = (dsql_udf*) item->nod_arg[0];
-			name_alias = userFunc->udf_name;
-			break;
+		dsql_udf* userFunc = (dsql_udf*) item->nod_arg[0];
+		name_alias = userFunc->udf_name;
+		break;
 		}
 	case nod_gen_id:
+		name_alias	= "GEN_ID";
+		break;
 	case nod_gen_id2:
 		name_alias	= "GEN_ID";
 		break;
@@ -2304,34 +2321,14 @@ static void make_parameter_names(dsql_par* parameter, const dsql_nod* item)
 		break;
 	case nod_internal_info:
 		{
-			internal_info_id id =
-				*reinterpret_cast<internal_info_id*>(item->nod_arg[0]->nod_desc.dsc_address);
-			name_alias = InternalInfo::getAlias(id);
-		}
+		internal_info_id id =
+			*reinterpret_cast<internal_info_id*>(item->nod_arg[0]->nod_desc.dsc_address);
+		name_alias = InternalInfo::getAlias(id);
 		break;
+		}
 	case nod_concatenate:
 		if ( !Config::getOldColumnNaming() )
 			name_alias = "CONCATENATION";
-		break;
-	case nod_constant:
-	case nod_null:
-		name_alias = "CONSTANT";
-		break;
-	case nod_add:
-	case nod_add2:
-		name_alias = "ADD";
-		break;
-	case nod_subtract:
-	case nod_subtract2:
-		name_alias = "SUBTRACT";
-		break;
-	case nod_multiply:
-	case nod_multiply2:
-		name_alias = "MULTIPLY";
-		break;
-	case nod_divide:
-	case nod_divide2:
-		name_alias = "DIVIDE";
 		break;
 	case nod_substr:
 		name_alias = "SUBSTRING";
@@ -2368,30 +2365,30 @@ static void make_parameter_names(dsql_par* parameter, const dsql_nod* item)
 		break;
 	case nod_strlen:
 		{
-	 		const ULONG length_type =
-				*(SLONG*)item->nod_arg[e_strlen_type]->nod_desc.dsc_address;
+ 		const ULONG length_type =
+			*(SLONG*)item->nod_arg[e_strlen_type]->nod_desc.dsc_address;
 
-			switch (length_type)
-			{
-				case blr_strlen_bit:
-					name_alias = "BIT_LENGTH";
-					break;
+		switch (length_type)
+		{
+			case blr_strlen_bit:
+				name_alias = "BIT_LENGTH";
+				break;
 
-				case blr_strlen_char:
-					name_alias = "CHAR_LENGTH";
-					break;
+			case blr_strlen_char:
+				name_alias = "CHAR_LENGTH";
+				break;
 
-				case blr_strlen_octet:
-					name_alias = "OCTET_LENGTH";
-					break;
+			case blr_strlen_octet:
+				name_alias = "OCTET_LENGTH";
+				break;
 
-				default:
-					name_alias = "LENGTH";
-					fb_assert(false);
-					break;
-			}
+			default:
+				name_alias = "LENGTH";
+				fb_assert(false);
+				break;
 		}
 		break;
+		}
 	case nod_searched_case:
 	case nod_simple_case:
 		name_alias = "CASE";

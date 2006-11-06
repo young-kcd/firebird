@@ -98,8 +98,6 @@ protected:
 			this->getPool().deallocate(data);
 	}
 public:
-	typedef T* iterator;
-	typedef const T* const_iterator;
 	Array<T, Storage>& operator =(const Array<T, Storage>& L) 
 	{
 		ensureCapacity(L.count);
@@ -158,29 +156,25 @@ public:
 		data[count++] = item;
   		return count;
 	}
-	T* remove(size_t index) {
+	void remove(size_t index) {
   		fb_assert(index < count);
   		memmove(data + index, data + index + 1, sizeof(T) * (--count - index));
-		return &data[index];
 	}
-	T* removeRange(size_t from, size_t to) {
+	void removeRange(size_t from, size_t to) {
   		fb_assert(from <= to);
   		fb_assert(to <= count);
   		memmove(data + from, data + to, sizeof(T) * (count - to));
 		count -= (to - from);
-		return &data[from];
 	}
-	T* removeCount(size_t index, size_t n) {
+	void removeCount(size_t index, size_t n) {
   		fb_assert(index + n <= count);
   		memmove(data + index, data + index + n, sizeof(T) * (count - index - n));
 		count -= n;
-		return &data[index];
 	}
-	T* remove(T* itr) {
+	void remove(T* itr) {
 		const size_t index = itr - begin();
   		fb_assert(index < count);
   		memmove(data + index, data + index + 1, sizeof(T) * (--count - index));
-		return &data[index];
 	}
 	void shrink(size_t newCount) {
 		fb_assert(newCount <= count);
@@ -192,27 +186,6 @@ public:
 		ensureCapacity(newCount);
 		memset(data + count, 0, sizeof(T) * (newCount - count));
 		count = newCount;
-	}
-	// Resize array according to STL's vector::resize() rules
-	void resize(size_t newCount, const T& val) {
-		if (newCount > count) {
-			ensureCapacity(newCount);
-			while (count < newCount) {
-				data[count++] = val;
-			}
-		}
-		else {
-			count = newCount;
-		}
-	}
-	// Resize array according to STL's vector::resize() rules
-	void resize(size_t newCount) {
-		if (newCount > count) {
-			grow(newCount);
-		}
-		else {
-			count = newCount;
-		}
 	}
 	void join(const Array<T, Storage>& L) {
 		ensureCapacity(count + L.count);
@@ -316,8 +289,7 @@ public:
 		Array<T, InlineStorage<T, InlineCapacity> > (InitialCapacity) {}
 };
 
-typedef HalfStaticArray<UCHAR, 16> UCharBuffer;
-
 }	// namespace Firebird
 
 #endif // CLASSES_ARRAY_H
+

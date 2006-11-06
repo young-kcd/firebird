@@ -31,7 +31,7 @@
 				PreprocessorDefinitions="NDEBUG,_CONSOLE,SUPERCLIENT,WIN32,_X86_"
 				ExceptionHandling="FALSE"
 				RuntimeLibrary="2"
-				RuntimeTypeInfo="FALSE"
+				RuntimeTypeInfo="TRUE"
 				PrecompiledHeaderFile="..\..\..\temp\release\gpre_boot/gpre_boot.pch"
 				AssemblerListingLocation="..\..\..\temp\release\gpre_boot/"
 				ObjectFile="..\..\..\temp\release\gpre_boot/"
@@ -93,7 +93,7 @@
 				ExceptionHandling="FALSE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				RuntimeTypeInfo="FALSE"
+				RuntimeTypeInfo="TRUE"
 				PrecompiledHeaderFile="..\..\..\temp\debug\gpre_boot/gpre_boot.pch"
 				AssemblerListingLocation="..\..\..\temp\debug\gpre_boot/"
 				ObjectFile="..\..\..\temp\debug\gpre_boot/"
@@ -211,6 +211,9 @@
 			Name="JRD files"
 			Filter="h;c">
 			<File
+				RelativePath="..\..\..\src\jrd\dls.cpp">
+			</File>
+			<File
 				RelativePath="..\..\..\src\jrd\dsc.cpp">
 			</File>
 			<File
@@ -311,9 +314,6 @@
 				RelativePath="..\..\..\src\gpre\sql_proto.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\common\classes\TempFile.h">
-			</File>
-			<File
 				RelativePath="..\..\..\src\gpre\words.h">
 			</File>
 		</Filter>
@@ -334,13 +334,6 @@
 						Name="VCResourceCompilerTool"
 						AdditionalIncludeDirectories="..\..\..\src\jrd;$(NoInherit)"/>
 				</FileConfiguration>
-			</File>
-		</Filter>
-		<Filter
-			Name="OTHER files"
-			Filter="">
-			<File
-				RelativePath="..\..\..\src\common\classes\TempFile.cpp">
 			</File>
 		</Filter>
 	</Files>

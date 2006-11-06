@@ -43,7 +43,6 @@
  */
 
 #include "firebird.h"
-#include "memory_routines.h"	// needed for get_long
 
 #include <stdlib.h>
 #include <string.h>
@@ -64,9 +63,7 @@
 #include "../jrd/fil.h"
 #include "../jrd/flu.h"
 #include "../jrd/db_alias.h"
-#include "../jrd/os/path_utils.h"
 #include "../common/classes/ClumpletWriter.h"
-#include "../common/utils_proto.h"
 
 /* includes specific for DSQL */
 
@@ -91,7 +88,6 @@
 #include "../jrd/why_proto.h"
 #include "../common/classes/rwlock.h"
 #include "../common/classes/auto.h"
-#include "../jrd/constants.h"
 
 
 // In 2.0 it's hard to include ibase.h in why.cpp due to API declaration conflicts.
@@ -262,12 +258,11 @@ why_hndl* WHY_alloc_handle(int implementation, int handle_type)
 				// Avoid generating NULL handle when sequence number wraps
 				if (!temp)
 					temp = ++handle_sequence_number;
-				handle->public_handle = (FB_API_HANDLE)(IPTR)temp;
+				handle->public_handle = (FB_API_HANDLE)(IPTR) temp;
 			} while (!handleMapping->add(handle));
 
 			handleMappingLock.endWrite();
-		}
-		catch (const Firebird::Exception&) {
+		} catch(const std::exception&) {
 			// Handle out-of-memory conditions
 			handleMappingLock.endWrite();
 			free_block(handle);
@@ -349,7 +344,6 @@ static ISC_STATUS prepare(ISC_STATUS *, WHY_TRA);
 static void release_dsql_support(sqlda_sup*);
 static void release_handle(WHY_HNDL);
 static void save_error_string(ISC_STATUS *);
-static bool set_path(const Firebird::PathName&, Firebird::PathName&);
 static void subsystem_enter(void);
 static void subsystem_exit(void);
 
@@ -434,8 +428,6 @@ static const TEXT glbunknown[10] = "<unknown>";
 #define GDS_DROP_DATABASE		isc_drop_database
 //#define GDS_EVENT_WAIT			gds__event_wait
 #define GDS_INTL_FUNCTION		gds__intl_function
-#define GDS_DSQL_CACHE			gds__dsql_cache
-#define GDS_SQL_TEXT			gds__sql_text
 #define GDS_GET_SEGMENT			isc_get_segment
 #define GDS_GET_SLICE			isc_get_slice
 #define GDS_OPEN_BLOB			isc_open_blob
@@ -563,11 +555,9 @@ const int PROC_SERVICE_START	= 51;
 
 const int PROC_ROLLBACK_RETAINING	= 52;
 const int PROC_CANCEL_OPERATION	= 53;
-const int PROC_INTL_FUNCTION	= 54;	// internal call
-const int PROC_DSQL_CACHE		= 55;	// internal call
-const int PROC_SQL_TEXT			= 56;	// internal call
+const int PROC_INTL_FUNCTION	= 54;
 
-const int PROC_count			= 57;
+const int PROC_count			= 55;
 
 struct ENTRY
 {
@@ -706,39 +696,6 @@ static const SCHAR describe_bind_info[] =
 	isc_info_sql_describe_end
 };
 
-static const SCHAR sql_prepare_info2[] = 
-{
-	isc_info_sql_stmt_type,
-
-	// describe_select_info
-	isc_info_sql_select,
-	isc_info_sql_describe_vars,
-	isc_info_sql_sqlda_seq,
-	isc_info_sql_type,
-	isc_info_sql_sub_type,
-	isc_info_sql_scale,
-	isc_info_sql_length,
-	isc_info_sql_field,
-	isc_info_sql_relation,
-	isc_info_sql_owner,
-	isc_info_sql_alias,
-	isc_info_sql_describe_end,
-
-	// describe_bind_info
-	isc_info_sql_bind,
-	isc_info_sql_describe_vars,
-	isc_info_sql_sqlda_seq,
-	isc_info_sql_type,
-	isc_info_sql_sub_type,
-	isc_info_sql_scale,
-	isc_info_sql_length,
-	isc_info_sql_field,
-	isc_info_sql_relation,
-	isc_info_sql_owner,
-	isc_info_sql_alias,
-	isc_info_sql_describe_end
-};
-
 
 ISC_STATUS API_ROUTINE GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 										   SSHORT	file_length,
@@ -762,6 +719,7 @@ ISC_STATUS API_ROUTINE GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 	ISC_STATUS_ARRAY local, temp;
 	USHORT n, length, org_length, temp_length;
 	WHY_DBB database;
+	TEXT expanded_filename[MAXPATHLEN], temp_filebuf[MAXPATHLEN];
 #if defined(UNIX)
 	TEXT single_user[5];
 #endif
@@ -799,8 +757,9 @@ ISC_STATUS API_ROUTINE GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 
 	subsystem_enter();
 	SUBSYSTEM_USAGE_INCR;
-
+	
 	try {
+		TEXT* temp_filename = temp_filebuf;
 
 		ptr = status;
 
@@ -820,32 +779,34 @@ ISC_STATUS API_ROUTINE GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
    utilities can modify it */
 
 		temp_length = org_length ? org_length : strlen(file_name);
-		Firebird::PathName temp_filename(file_name, temp_length);
-		Firebird::PathName expanded_filename;
+		memcpy(temp_filename, file_name, temp_length);
+		temp_filename[temp_length] = '\0';
 
 		if (!ISC_check_if_remote(temp_filename, true))
 		{
-			Firebird::PathName database_filename;
-			if (ResolveDatabaseAlias(temp_filename, database_filename))
+			Firebird::PathName database;
+			if (ResolveDatabaseAlias(temp_filename, database))
 			{
-				ISC_expand_filename(database_filename, false);
-				expanded_filename = database_filename;
+				ISC_expand_filename(database, false);
+				strcpy(expanded_filename, database.c_str());
 			}
-			else if (set_path(temp_filename, expanded_filename))
+			else if (isc_set_path(temp_filename, org_length, expanded_filename))
 			{
 				temp_filename = expanded_filename;
-				org_length = temp_filename.length();
+				org_length = strlen(temp_filename);
 			}
 			else
 			{
-				expanded_filename = temp_filename;
-				ISC_expand_filename(expanded_filename, true);
+				ISC_expand_filename(temp_filename, org_length,
+									expanded_filename, sizeof(expanded_filename),
+									true);
 			}
 		}
 		else
 		{
-			expanded_filename = temp_filename;
-			ISC_expand_filename(expanded_filename, true);
+			ISC_expand_filename(temp_filename, org_length, 
+								expanded_filename, sizeof(expanded_filename),
+								true);
 		}
 
 		Firebird::ClumpletWriter newDpb(Firebird::ClumpletReader::Tagged, MAX_DPB_SIZE, 
@@ -860,40 +821,23 @@ ISC_STATUS API_ROUTINE GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 				continue;
 			}
 			WHY_ATT handle = NULL;
-			if (!CALL(PROC_ATTACH_DATABASE, n) (ptr, org_length, temp_filename.c_str(),
+			if (!CALL(PROC_ATTACH_DATABASE, n) (ptr, org_length, temp_filename,
 												&handle, newDpb.getBufferLength(), 
 												reinterpret_cast<const char*>(newDpb.getBuffer()),
-												expanded_filename.c_str()))
+												expanded_filename))
 			{
-				length = expanded_filename.length();
+				length = strlen(expanded_filename);
 				database = allocate_handle(n, handle, HANDLE_database);
 				if (database)
 				{
 					database->db_path = (TEXT*) alloc((SLONG) (length + 1));
-					if (database->db_path) 
-					{
-						database->db_prepare_buffer = 
-							(SCHAR*) alloc((SLONG) DBB_PREPARE_BUFFER_SIZE);
-					}
 				}
-				if (!database || !database->db_path || !database->db_prepare_buffer)
+				if (!database || !database->db_path)
 				{
 					/* No memory. Make a half-hearted to detach and get out. */
 
 					if (database)
-					{
-						if (database->db_path) 
-						{
-							free_block(database->db_path);
-							database->db_path = 0;
-						}
-						if (database->db_prepare_buffer) 
-						{
-							free_block(database->db_prepare_buffer);
-							database->db_prepare_buffer = 0;
-						}
- 						release_handle(database);
-					}
+						release_handle(database);
 					CALL(PROC_DETACH, n) (ptr, handle);
 					status[0] = isc_arg_gds;
 					status[1] = isc_virmemexh;
@@ -903,20 +847,20 @@ ISC_STATUS API_ROUTINE GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 
 				*public_handle = database->public_handle;
 				TEXT* p = database->db_path;
-				memcpy(p, expanded_filename.c_str(), length);
+				memcpy(p, expanded_filename, length);
 				p[length] = 0;
 
 				database->cleanup = NULL;
 				status[0] = isc_arg_gds;
 				status[1] = 0;
 
-				/* Check to make sure that status[2] is not a warning.  If it is, then
-				 * the rest of the vector should be untouched.  If it is not, then make
-				 * this element isc_arg_end
-				 *
-				 * This cleanup is done to remove any erroneous errors from trying multiple
-				 * protocols for a database attach
-				 */
+			/* Check to make sure that status[2] is not a warning.  If it is, then
+			 * the rest of the vector should be untouched.  If it is not, then make
+			 * this element isc_arg_end
+			 *
+			 * This cleanup is done to remove any erroneous errors from trying multiple
+			 * protocols for a database attach
+			 */
 				if (status[2] != isc_arg_warning) {
 					status[2] = isc_arg_end;
 				}
@@ -925,18 +869,18 @@ ISC_STATUS API_ROUTINE GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 				CHECK_STATUS_SUCCESS(status);
 				return status[1];
 			}
-			if (ptr[1] != isc_unavailable) 
-			{
+			if (ptr[1] != isc_unavailable) {
 				ptr = temp;
 			}
 		}
 	}
-	catch(const Firebird::Exception& e)
+	catch(const std::exception& e)
 	{
-  		e.stuff_exception(status);
+		Firebird::stuff_exception(status, e);
 		SUBSYSTEM_USAGE_DECR;
 		return error(status, local);
 	}
+
 	SUBSYSTEM_USAGE_DECR;
 	return error(status, local);
 }
@@ -1316,13 +1260,9 @@ ISC_STATUS API_ROUTINE GDS_COMPILE2(ISC_STATUS* user_status,
  *
  **************************************/
 
-	ISC_STATUS* status;
-	ISC_STATUS_ARRAY local;
-
-	GET_STATUS;
-
-	if (GDS_COMPILE(status, db_handle, req_handle, blr_length, blr))
-		return status[1];
+	if (GDS_COMPILE(user_status, db_handle, req_handle, blr_length, blr))
+		/* Note: if user_status == NULL then GDS_COMPILE handled it */
+		return user_status[1];
 
 	WHY_REQ request = WHY_translate_handle(*req_handle);
 	request->user_handle = req_handle;
@@ -1401,6 +1341,7 @@ ISC_STATUS API_ROUTINE GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 	ISC_STATUS_ARRAY local, temp;
 	USHORT n, length, org_length, temp_length;
 	WHY_DBB database;
+	TEXT expanded_filename[MAXPATHLEN], temp_filebuf[MAXPATHLEN];
 #ifdef UNIX
 	TEXT single_user[5];
 #endif
@@ -1437,7 +1378,9 @@ ISC_STATUS API_ROUTINE GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 
 	subsystem_enter();
 	SUBSYSTEM_USAGE_INCR;
+	
 	try {
+		TEXT* temp_filename = temp_filebuf;
 
 		ptr = status;
 
@@ -1447,9 +1390,7 @@ ISC_STATUS API_ROUTINE GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 		{
 			const TEXT* p = file_name + org_length - 1;
 			while (*p == ' ')
-			{
 				--p;
-			}
 			org_length = p - file_name + 1;
 		}
 
@@ -1460,33 +1401,35 @@ ISC_STATUS API_ROUTINE GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 			temp_length = org_length;
 		else
 			temp_length = strlen(file_name);
-
-		Firebird::PathName temp_filename(file_name, temp_length);
-		Firebird::PathName expanded_filename;
+		
+		memcpy(temp_filename, file_name, temp_length);
+		temp_filename[temp_length] = '\0';
 
 		if (!ISC_check_if_remote(temp_filename, true))
 		{
-			Firebird::PathName database_filename;
-			if (ResolveDatabaseAlias(temp_filename, database_filename))
+			Firebird::PathName database;
+			if (ResolveDatabaseAlias(temp_filename, database))
 			{
-				ISC_expand_filename(database_filename, false);
-				expanded_filename = database_filename;
+				ISC_expand_filename(database, false);
+				strcpy(expanded_filename, database.c_str());
 			}
-			else if (set_path(temp_filename, expanded_filename))
+			else if (isc_set_path(temp_filename, org_length, expanded_filename))
 			{
 				temp_filename = expanded_filename;
-				org_length = temp_filename.length();
+				org_length = strlen(temp_filename);
 			}
 			else
 			{
-				expanded_filename = temp_filename;
-				ISC_expand_filename(expanded_filename, true);
+				ISC_expand_filename(temp_filename, org_length,
+									expanded_filename, sizeof(expanded_filename),
+									true);
 			}
 		}
 		else
 		{
-			expanded_filename = temp_filename;
-			ISC_expand_filename(expanded_filename, true);
+			ISC_expand_filename(temp_filename, org_length, 
+								expanded_filename, sizeof(expanded_filename),
+								true);
 		}
 
 		Firebird::ClumpletWriter newDpb(Firebird::ClumpletReader::Tagged, MAX_DPB_SIZE, 
@@ -1499,21 +1442,20 @@ ISC_STATUS API_ROUTINE GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 			if (why_enabled && !(why_enabled & (1 << n)))
 				continue;
 			WHY_ATT handle = NULL;
-			if (!CALL(PROC_CREATE_DATABASE, n) (ptr, org_length, temp_filename.c_str(),
+			if (!CALL(PROC_CREATE_DATABASE, n) (ptr, org_length, temp_filename,
 												&handle, newDpb.getBufferLength(), 
 												reinterpret_cast<const char*>(newDpb.getBuffer()), 
-												0, expanded_filename.c_str()))
+												0, expanded_filename))
 			{
 #ifdef WIN_NT
-            	/* Now we can expand, the file exists. */
-				expanded_filename = temp_filename;
-	            ISC_expand_filename (expanded_filename, true);
-				length = expanded_filename.length();
+    	        /* Now we can expand, the file exists. */
+        	    length = ISC_expand_filename (temp_filename, org_length, 
+					expanded_filename, sizeof(expanded_filename), true);
 #else
 				length = org_length;
 				if (!length) 
 				{
-					length = temp_filename.length();
+					length = strlen(temp_filename);
 				}
 #endif
 
@@ -1521,30 +1463,15 @@ ISC_STATUS API_ROUTINE GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 				if (database)
 				{
 					database->db_path = (TEXT *) alloc((SLONG) (length + 1));
-					if (database->db_path) 
-					{
-						database->db_prepare_buffer = 
-							(SCHAR*) alloc((SLONG) DBB_PREPARE_BUFFER_SIZE);
-					}
 				}
-				if (!database || !database->db_path || !database->db_prepare_buffer)
+				if (!database || !database->db_path)
 				{
 					/* No memory. Make a half-hearted to drop database. The
 					   database was successfully created but the user wouldn't
 					   be able to tell. */
 
 					if (database)
-					{
-						if (database->db_path) {
-							free_block(database->db_path);
-							database->db_path = 0;
-						}
-						if (database->db_prepare_buffer) {
-							free_block(database->db_prepare_buffer);
-							database->db_prepare_buffer = 0;
-						}
- 						release_handle(database);
-					}
+						release_handle(database);
 					CALL(PROC_DROP_DATABASE, n) (ptr, handle);
 					status[0] = isc_arg_gds;
 					status[1] = isc_virmemexh;
@@ -1554,16 +1481,15 @@ ISC_STATUS API_ROUTINE GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 
 				fb_assert(database);
 				fb_assert(database->db_path);
-				fb_assert(database->db_prepare_buffer);
 
 				*public_handle = database->public_handle;
 				TEXT* p = database->db_path;
 
 #ifdef WIN_NT
-    	        /* for (q = (*handle)->dbb_filename->str_data; length; length--) */
-        	    memcpy(p, expanded_filename.c_str(), length);
+            	/* for (q = (*handle)->dbb_filename->str_data; length; length--) */
+        	    memcpy(p, expanded_filename, length);
 #else
-				memcpy(p, temp_filename.c_str(), length);
+				memcpy(p, temp_filename, length);
 #endif
 				p[length] = 0;
 
@@ -1579,16 +1505,16 @@ ISC_STATUS API_ROUTINE GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 			if (ptr[1] != isc_unavailable)
 				ptr = temp;
 		}
-
-		SUBSYSTEM_USAGE_DECR;
-		return error(status, local);
 	}
-	catch(const Firebird::Exception& e)
+	catch(const std::exception& e)
 	{
-  		e.stuff_exception(status);
+  		Firebird::stuff_exception(status, e);
 		SUBSYSTEM_USAGE_DECR;
 		return error(status, local);
 	}
+
+	SUBSYSTEM_USAGE_DECR;
+	return error(status, local);
 }
 
 
@@ -1806,14 +1732,8 @@ ISC_STATUS API_ROUTINE GDS_DETACH(ISC_STATUS * user_status,
 
 /* Release associated request handles */
 
-	if (dbb->db_path) {
+	if (dbb->db_path)
 		free_block(dbb->db_path);
-		dbb->db_path = 0;
-	}
-	if (dbb->db_prepare_buffer) {
-		free_block(dbb->db_prepare_buffer);
-		dbb->db_prepare_buffer = 0;
-	}
 
 	while (request = dbb->requests) {
 		dbb->requests = request->next;
@@ -1942,14 +1862,8 @@ ISC_STATUS API_ROUTINE GDS_DROP_DATABASE(ISC_STATUS * user_status,
 
 /* Release associated request handles */
 
-	if (dbb->db_path) {
- 		free_block(dbb->db_path);
-		dbb->db_path = 0;
-	}
-	if (dbb->db_prepare_buffer) {
-		free_block(dbb->db_prepare_buffer);
-		dbb->db_prepare_buffer = 0;
-	}
+	if (dbb->db_path)
+		free_block(dbb->db_path);
 
 	while (request = dbb->requests) {
 		dbb->requests = request->next;
@@ -2152,56 +2066,37 @@ ISC_STATUS API_ROUTINE isc_dsql_describe(ISC_STATUS * user_status,
 	ISC_STATUS_ARRAY local;
 	USHORT buffer_len;
 	SCHAR *buffer, local_buffer[512];
-	WHY_STMT statement;
 
 	GET_STATUS;
-	TRANSLATE_HANDLE(*stmt_handle, statement, HANDLE_statement, isc_bad_stmt_handle);
 
-	sqlda_sup::dasup_clause &clause = 
-		statement->das->dasup_clauses[DASUP_CLAUSE_select];
+	if (!(buffer = get_sqlda_buffer(local_buffer, sizeof(local_buffer), sqlda,
+									dialect, &buffer_len)))
+	{
+		status[0] = isc_arg_gds;
+		status[1] = isc_virmemexh;
+		status[2] = isc_arg_end;
+		return error2(status, local);
+	}
 
-	if (clause.dasup_info_len && clause.dasup_info_buf)
+	if (!GDS_DSQL_SQL_INFO(	status,
+							stmt_handle,
+							sizeof(describe_select_info),
+							describe_select_info,
+							buffer_len,
+							buffer))
 	{
 		iterative_sql_info(	status,
 							stmt_handle,
 							sizeof(describe_select_info),
 							describe_select_info,
-							clause.dasup_info_len,
-							clause.dasup_info_buf,
+							buffer_len,
+							buffer,
 							dialect,
 							sqlda);
 	}
-	else
-	{
-		if (!(buffer = get_sqlda_buffer(local_buffer, sizeof(local_buffer), sqlda,
-										dialect, &buffer_len)))
-		{
-			status[0] = isc_arg_gds;
-			status[1] = isc_virmemexh;
-			status[2] = isc_arg_end;
-			return error2(status, local);
-		}
 
-		if (!GDS_DSQL_SQL_INFO(	status,
-								stmt_handle,
-								sizeof(describe_select_info),
-								describe_select_info,
-								buffer_len,
-								buffer))
-		{
-			iterative_sql_info(	status,
-								stmt_handle,
-								sizeof(describe_select_info),
-								describe_select_info,
-								buffer_len,
-								buffer,
-								dialect,
-								sqlda);
-		}
-
-		if (buffer != local_buffer) {
-			free_block(buffer);
-		}
+	if (buffer != local_buffer) {
+		free_block(buffer);
 	}
 
 	if (status[1]) {
@@ -2232,56 +2127,37 @@ ISC_STATUS API_ROUTINE isc_dsql_describe_bind(ISC_STATUS * user_status,
 	ISC_STATUS_ARRAY local;
 	USHORT buffer_len;
 	SCHAR *buffer, local_buffer[512];
-	WHY_STMT statement;
 
 	GET_STATUS;
-	TRANSLATE_HANDLE(*stmt_handle, statement, HANDLE_statement, isc_bad_stmt_handle);
 
-	sqlda_sup::dasup_clause &clause = 
-		statement->das->dasup_clauses[DASUP_CLAUSE_bind];
+	if (!(buffer = get_sqlda_buffer(local_buffer, sizeof(local_buffer), sqlda,
+									dialect, &buffer_len)))
+	{
+		status[0] = isc_arg_gds;
+		status[1] = isc_virmemexh;
+		status[2] = isc_arg_end;
+		return error2(status, local);
+	}
 
-	if (clause.dasup_info_len && clause.dasup_info_buf)
+	if (!GDS_DSQL_SQL_INFO(	status,
+							stmt_handle,
+							sizeof(describe_bind_info),
+							describe_bind_info,
+							buffer_len,
+							buffer))
 	{
 		iterative_sql_info(	status,
 							stmt_handle,
-							sizeof(describe_select_info),
-							describe_select_info,
-							clause.dasup_info_len,
-							clause.dasup_info_buf,
+							sizeof(describe_bind_info),
+							describe_bind_info,
+							buffer_len,
+							buffer,
 							dialect,
 							sqlda);
 	}
-	else
-	{
-		if (!(buffer = get_sqlda_buffer(local_buffer, sizeof(local_buffer), sqlda,
-										dialect, &buffer_len)))
-		{
-			status[0] = isc_arg_gds;
-			status[1] = isc_virmemexh;
-			status[2] = isc_arg_end;
-			return error2(status, local);
-		}
 
-		if (!GDS_DSQL_SQL_INFO(	status,
-								stmt_handle,
-								sizeof(describe_bind_info),
-								describe_bind_info,
-								buffer_len,
-								buffer))
-		{
-			iterative_sql_info(	status,
-								stmt_handle,
-								sizeof(describe_bind_info),
-								describe_bind_info,
-								buffer_len,
-								buffer,
-								dialect,
-								sqlda);
-		}
-
-		if (buffer != local_buffer) {
-			free_block(buffer);
-		}
+	if (buffer != local_buffer) {
+		free_block(buffer);
 	}
 
 	if (status[1]) {
@@ -3382,19 +3258,13 @@ ISC_STATUS API_ROUTINE GDS_DSQL_PREPARE(ISC_STATUS* user_status,
 	ISC_STATUS *status;
 	ISC_STATUS_ARRAY local;
 	USHORT buffer_len;
-	SCHAR *buffer, *local_buffer;
+	SCHAR *buffer, local_buffer[BUFFER_MEDIUM];
 	sqlda_sup* dasup;
 
 	GET_STATUS;
 
-	WHY_STMT statement;
-	TRANSLATE_HANDLE(*stmt_handle, statement, HANDLE_statement, isc_bad_stmt_handle);
-
-	WHY_DBB	database = statement->parent;
-	local_buffer = database->db_prepare_buffer;
-
-	if (!(buffer = get_sqlda_buffer(local_buffer, DBB_PREPARE_BUFFER_SIZE, 
-						sqlda, dialect, &buffer_len))) 
+	if (!(buffer = get_sqlda_buffer(local_buffer, sizeof(local_buffer), sqlda,
+									dialect, &buffer_len)))
 	{
 		status[0] = isc_arg_gds;
 		status[1] = isc_virmemexh;
@@ -3408,93 +3278,27 @@ ISC_STATUS API_ROUTINE GDS_DSQL_PREPARE(ISC_STATUS* user_status,
 							length,
 							string,
 							dialect,
-							sizeof(sql_prepare_info2),
-							sql_prepare_info2,
+							sizeof(sql_prepare_info),
+							sql_prepare_info,
 							buffer_len,
 							buffer))
 	{
-//		WHY_STMT statement = WHY_translate_handle(*stmt_handle);
+		WHY_STMT statement = WHY_translate_handle(*stmt_handle);
 		release_dsql_support(statement->das);
 
-		if (!(dasup = (sqlda_sup*) alloc((SLONG) sizeof(sqlda_sup))))
-		{
+		if (!(dasup = (sqlda_sup*) alloc((SLONG) sizeof(sqlda_sup)))) {
 			statement->requests = 0;
 			status[0] = isc_arg_gds;
 			status[1] = isc_virmemexh;
 			status[2] = isc_arg_end;
 		}
-		else 
-		{
+		else {
 			statement->das = dasup;
 			dasup->dasup_dialect = dialect;
 
-			SCHAR* p = buffer;
-
-			dasup->dasup_stmt_type = 0;
-			if (*p == isc_info_sql_stmt_type)
-			{
-				const USHORT len = gds__vax_integer((UCHAR*)p + 1, 2);
-				dasup->dasup_stmt_type = gds__vax_integer((UCHAR*)p + 3, len);
-				p += 3 + len;
-			}
-
-			sqlda_sup::dasup_clause &das_select = dasup->dasup_clauses[DASUP_CLAUSE_select];
-			sqlda_sup::dasup_clause &das_bind = dasup->dasup_clauses[DASUP_CLAUSE_bind];
-			das_select.dasup_info_buf = das_bind.dasup_info_buf = 0;
-			das_select.dasup_info_len = das_bind.dasup_info_len = 0;
-
-			if (*p == isc_info_sql_select)
-				das_select.dasup_info_buf = p;
-
-			das_bind.dasup_info_buf = UTLD_skip_sql_info(p);
-
-			p = das_select.dasup_info_buf;
-			if (p)
-			{
-				SCHAR* p2 = das_bind.dasup_info_buf;
-				if (p2)
-				{
-					const SLONG len =  p2 - p;
-
-					p2 = alloc(len + 1);
-					memmove(p2, p, len);
-					p2[len] = isc_info_end;
-					das_select.dasup_info_buf = p2;
-					das_select.dasup_info_len = len + 1;
-				}
-				else 
-				{
-					das_select.dasup_info_buf = 0;
-					das_select.dasup_info_len = 0;
-				}
-			}
-
-			p = das_bind.dasup_info_buf;
-			if (p)
-			{
-				SCHAR* p2 = UTLD_skip_sql_info(p);
-				if (p2)
-				{
-					const SLONG len =  p2 - p;
-
-					p2 = alloc(len + 1);
-					memmove(p2, p, len);
-					p2[len] = isc_info_end;
-					das_bind.dasup_info_buf = p2;
-					das_bind.dasup_info_len = len + 1;
-				}
-				else 
-				{
-					das_bind.dasup_info_buf = 0;
-					das_bind.dasup_info_len = 0;
-				}
-			}
-
 			iterative_sql_info(status, stmt_handle, sizeof(sql_prepare_info),
-							   sql_prepare_info, // buffer_len, buffer, dialect,
-							   das_select.dasup_info_len,
-							   das_select.dasup_info_buf,
-							   dialect, sqlda);
+							   sql_prepare_info, buffer_len, buffer, dialect,
+							   sqlda);
 		}
 	}
 
@@ -3653,28 +3457,14 @@ ISC_STATUS API_ROUTINE GDS_DSQL_SQL_INFO(ISC_STATUS* user_status,
 					   buffer_length, buffer);
 	else
 #endif
-	{
-		if (( (item_length == 1) && (items[0] == isc_info_sql_stmt_type) ||
-			  (item_length == 2) && (items[0] == isc_info_sql_stmt_type) && 
-			  (items[1] == isc_info_end || items[1] == 0) ) &&
-			statement->das && statement->das->dasup_stmt_type)
-		{
-			*buffer++ = isc_info_sql_stmt_type;
-			put_short((UCHAR*) buffer, 4);
-			buffer += 2;
-			put_long((UCHAR*) buffer, statement->das->dasup_stmt_type);
-		}
-		else 
-		{
-			CALL(PROC_DSQL_SQL_INFO, statement->implementation) (status,
+		CALL(PROC_DSQL_SQL_INFO, statement->implementation) (status,
 															 &statement->
 															 handle,
 															 item_length,
 															 items,
 															 buffer_length,
 															 buffer);
-		}
-	}
+
 	subsystem_exit();
 
 	if (status[1])
@@ -3793,60 +3583,6 @@ ISC_STATUS API_ROUTINE GDS_INTL_FUNCTION(ISC_STATUS * user_status,
 															strLen,
 															str,
 															result))
-	{
-		return error(status, local);
-	}
-
-	RETURN_SUCCESS;
-}
-
-
-ISC_STATUS API_ROUTINE GDS_DSQL_CACHE(ISC_STATUS * user_status,
-									  FB_API_HANDLE * handle,
-									  USHORT operation,
-									  int type,
-									  const char* name,
-									  bool* result)
-{
-	ISC_STATUS *status;
-	ISC_STATUS_ARRAY local;
-	WHY_ATT database;
-
-	GET_STATUS;
-	TRANSLATE_HANDLE(*handle, database, HANDLE_database, isc_bad_db_handle);
-	subsystem_enter();
-
-	if (CALL(PROC_DSQL_CACHE, database->implementation) (status,
-														 &database->handle,
-														 operation,
-														 type,
-														 name,
-														 result))
-	{
-		return error(status, local);
-	}
-
-	RETURN_SUCCESS;
-}
-
-
-ISC_STATUS API_ROUTINE GDS_SQL_TEXT(ISC_STATUS * user_status,
-									FB_API_HANDLE* handle,
-									USHORT length,
-									const char* string)
-{
-	ISC_STATUS *status;
-	ISC_STATUS_ARRAY local;
-	WHY_REQ request;
-
-	GET_STATUS;
-	TRANSLATE_HANDLE(*handle, request, HANDLE_request, isc_bad_req_handle);
-	subsystem_enter();
-
-	if (CALL(PROC_SQL_TEXT, request->implementation) (status,
-													  &request->handle,
-													  length,
-													  string))
 	{
 		return error(status, local);
 	}
@@ -5097,31 +4833,35 @@ ISC_STATUS API_ROUTINE_VARARG GDS_START_TRANSACTION(ISC_STATUS * user_status,
  *	Start a transaction.
  *
  **************************************/
-	TEB tebs[16];
-	TEB* teb = tebs;
+	TEB tebs[16], *teb, *end;
+	ISC_STATUS status;
+	va_list ptr;
 
-	if (count > FB_NELEM(tebs))
+	if (count <= FB_NELEM(tebs))
+		teb = tebs;
+	else
 		teb = (TEB *) alloc((SLONG) (sizeof(struct teb) * count));
 
 	if (!teb) {
 		user_status[0] = isc_arg_gds;
-		user_status[1] = isc_virmemexh;
+		user_status[1] = status = isc_virmemexh;
 		user_status[2] = isc_arg_end;
-		return user_status[1];
+		return status;
 	}
 
-	const TEB* const end = teb + count;
-	va_list ptr;
+	end = teb + count;
 	va_start(ptr, count);
 
-	for (TEB* teb_iter = teb; teb_iter < end; teb_iter++) {
-		teb_iter->teb_database = va_arg(ptr, FB_API_HANDLE*);
-		teb_iter->teb_tpb_length = va_arg(ptr, int);
-		teb_iter->teb_tpb = va_arg(ptr, UCHAR *);
+	for (; teb < end; teb++) {
+		teb->teb_database = va_arg(ptr, FB_API_HANDLE*);
+		teb->teb_tpb_length = va_arg(ptr, int);
+		teb->teb_tpb = va_arg(ptr, UCHAR *);
 	}
 	va_end(ptr);
 
-	ISC_STATUS status = GDS_START_MULTIPLE(user_status, tra_handle, count, teb);
+	teb = end - count;
+
+	status = GDS_START_MULTIPLE(user_status, tra_handle, count, teb);
 
 	if (teb != tebs)
 		free_block(teb);
@@ -5805,9 +5545,6 @@ static SCHAR *get_sqlda_buffer(SCHAR * buffer,
 		n_variables = ((SQLDA *) sqlda)->sqln;
 
 	length = 32 + n_variables * 172;
-	if (length < local_buffer_length)
-		length = local_buffer_length;
-
 	*buffer_length = (USHORT)((length > 65500L) ? 65500L : length);
 	if (*buffer_length > local_buffer_length)
 		buffer = alloc((SLONG) * buffer_length);
@@ -6123,17 +5860,13 @@ static void release_dsql_support(sqlda_sup* dasup)
 		return;
 	}
 
-	/* for C++, add "sqlda_sup::" before "dasup_clause" */
+	/* for C++, add "dasup::" before "dasup_clause" */
 	sqlda_sup::dasup_clause* pClauses = dasup->dasup_clauses;
 
 	why_priv_gds__free_if_set(pClauses[DASUP_CLAUSE_bind].dasup_blr);
 	why_priv_gds__free_if_set(pClauses[DASUP_CLAUSE_select].dasup_blr);
 	why_priv_gds__free_if_set(pClauses[DASUP_CLAUSE_bind].dasup_msg);
 	why_priv_gds__free_if_set(pClauses[DASUP_CLAUSE_select].dasup_msg);
-
-	why_priv_gds__free_if_set(pClauses[DASUP_CLAUSE_bind].dasup_info_buf);
-	why_priv_gds__free_if_set(pClauses[DASUP_CLAUSE_select].dasup_info_buf);
-
 	free_block(dasup);
 }
 
@@ -6231,50 +5964,6 @@ static void save_error_string(ISC_STATUS * status)
 }
 
 
-static bool set_path(const Firebird::PathName& file_name, Firebird::PathName& expanded_name)
-{
-/**************************************
- *
- *	s e t _ p a t h
- *
- **************************************
- *
- * Functional description
- *	Set a prefix to a filename based on 
- *	the ISC_PATH user variable.
- *
- **************************************/
-
-	// look for the environment variables to tack 
-	// onto the beginning of the database path
-	Firebird::PathName pathname;
-	if (!fb_utils::readenv("ISC_PATH", pathname))
-		return false;
-
-	// if the file already contains a remote node
-	// or any path at all forget it
-	for (const TEXT* p = file_name.c_str(); *p; p++)
-	{
-		if (*p == ':' || *p == '/' || *p == '\\')
-			return false;
-	}
-
-	// concatenate the strings
-
-	expanded_name = pathname;
-
-	// CVC: Make the concatenation work if no slash is present.
-	char lastChar = expanded_name[expanded_name.length() - 1];
-	if (lastChar != ':' && lastChar != '/' && lastChar != '\\') {
-		expanded_name.append(PathUtils::dir_sep);
-	}
-
-	expanded_name.append(file_name);
-
-	return true;
-}
-
-
 static void subsystem_enter(void)
 {
 /**************************************
@@ -6287,6 +5976,10 @@ static void subsystem_enter(void)
  *	Enter subsystem.
  *
  **************************************/
+
+#ifdef EMBEDDED
+	THD_INIT;
+#endif
 
 	THREAD_ENTER();
 #if !(defined REQUESTER || defined SUPERCLIENT || defined SUPERSERVER)

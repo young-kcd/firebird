@@ -5,6 +5,7 @@ set ERRLEV=0
 
 call clean_all
 call make_icu
+:: call parse
 call make_boot
 if "%ERRLEV%"=="1" goto :END2
 call make_all 

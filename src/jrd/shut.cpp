@@ -146,8 +146,7 @@ bool SHUT_database(Database* dbb, SSHORT flag, SSHORT delay)
 /* Only platform's user locksmith can shutdown or bring online
    a database. */
 
-	if (!attachment->locksmith()) 
-	{
+	if (!(attachment->att_user->usr_flags & (USR_locksmith | USR_owner))) {
 		return false;
 	}
 
@@ -250,7 +249,7 @@ bool SHUT_database(Database* dbb, SSHORT flag, SSHORT delay)
 
 	++dbb->dbb_use_count;
 	dbb->dbb_ast_flags &= ~(DBB_shut_force | DBB_shut_attach | DBB_shut_tran);
-	WIN window(HEADER_PAGE_NUMBER);
+	WIN window(HEADER_PAGE);
 	Ods::header_page* header =
 		(Ods::header_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
 	CCH_MARK_MUST_WRITE(tdbb, &window);
@@ -273,7 +272,7 @@ bool SHUT_database(Database* dbb, SSHORT flag, SSHORT delay)
 	CCH_release_exclusive(tdbb);
 
 	}	// try
-	catch (const Firebird::Exception& ex) {
+	catch (const std::exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		return false;
 	}
@@ -319,7 +318,7 @@ bool SHUT_online(Database* dbb, SSHORT flag)
 /* Only platform's user locksmith can shutdown or bring online
    a database. */
 
-	if (!attachment->att_user->locksmith()) {
+	if (!(attachment->att_user->usr_flags & (USR_locksmith | USR_owner))) {
 		return false;
 	}
 	
@@ -360,7 +359,7 @@ bool SHUT_online(Database* dbb, SSHORT flag)
 
 	/* Clear shutdown flag on database header page */
 
-	WIN window(HEADER_PAGE_NUMBER);
+	WIN window(HEADER_PAGE);
 	Ods::header_page* header = (Ods::header_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
 	CCH_MARK_MUST_WRITE(tdbb, &window);
 	// Set appropriate shutdown mode in database header
@@ -391,7 +390,7 @@ bool SHUT_online(Database* dbb, SSHORT flag)
 	SHUT_blocking_ast(dbb);
 
 	}	// try
-	catch (const Firebird::Exception& ex) {
+	catch (const std::exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		return false;
 	}
@@ -542,12 +541,6 @@ static bool shutdown_locks(Database* dbb, SSHORT flag)
 
 	if (!shut_attachment) {
 		CCH_shutdown_database(dbb);
-		if (dbb->dbb_instance_lock)
-			LCK_release(tdbb, dbb->dbb_instance_lock);
-		if (dbb->dbb_monitor_lock)
-			LCK_release(tdbb, dbb->dbb_monitor_lock);
-		if (dbb->dbb_increment_lock)
-			LCK_release(tdbb, dbb->dbb_increment_lock);
 		if (dbb->dbb_shadow_lock)
 			LCK_release(tdbb, dbb->dbb_shadow_lock);
 		if (dbb->dbb_retaining_lock)

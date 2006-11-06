@@ -33,8 +33,7 @@
 #define isc_info_truncated		2
 #define isc_info_error			3
 #define isc_info_data_not_ready	          4
-#define isc_info_length			126
-#define isc_info_flag_end		127
+#define isc_info_flag_end		  127
 
 /******************************/
 /* Database information items */
@@ -193,10 +192,6 @@ enum  info_db_implementations
 	
 	isc_info_db_impl_freebsd_amd64 = 67,
 
-	isc_info_db_impl_winnt_amd64 = 68,
-
-	isc_info_db_impl_linux_ppc = 69,
-
 	isc_info_db_impl_last_value   /* Leave this LAST! */
 };
 
@@ -290,8 +285,6 @@ enum info_db_provider
 #define isc_info_rsb_once		20
 #define isc_info_rsb_procedure		21
 #define isc_info_rsb_skip		22
-#define isc_info_rsb_virt_sequential	23
-#define isc_info_rsb_recursive	24
 
 /**********************/
 /* Bitmap expressions */

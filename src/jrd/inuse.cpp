@@ -60,10 +60,6 @@ bool INUSE_cleanup(IUO inuse, FPTR_VOID_PTR cleanup_routine)
 			ptr < end; ptr++)
 		{
 			if (*ptr) {
-				// dimitr:	this assert is put temporarily in order to track
-				//			mutexes that could be left acquired when we leave
-				//			the JRD context
-				fb_assert(false);
 				(*cleanup_routine) (*ptr);
 				needed_cleaning = true;
 			}
@@ -240,6 +236,7 @@ static void init(void)
  **************************************/
 
 	if (!initialized) {
+		THD_INIT;
 		THD_GLOBAL_MUTEX_LOCK;
 		if (!initialized) {
 			gds__register_cleanup(cleanup, 0);

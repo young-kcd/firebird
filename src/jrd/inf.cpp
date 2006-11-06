@@ -102,19 +102,10 @@ int INF_blob_info(const blb* blob,
  *
  **************************************/
 	SCHAR buffer[128];
-	USHORT length;
+	SSHORT length;
 
 	const SCHAR* const end_items = items + item_length;
 	const SCHAR* const end = info + output_length;
-	SCHAR* start_info;
-	
-	if (*items == isc_info_length) {
-		start_info = info;
-		items++;
-	}
-	else {
-		start_info = 0;
-	}
 
 	while (items < end_items && *items != isc_info_end) {
 		SCHAR item = *items++;
@@ -150,14 +141,6 @@ int INF_blob_info(const blb* blob,
 	}
 
 	*info++ = isc_info_end;
-
-	if (start_info && (end - info >= 7))
-	{
-		SLONG number = info - start_info;
-		memmove(start_info + 7, start_info, number);
-		length = INF_convert(number, buffer);
-		INF_put_item(isc_info_length, length, buffer, start_info, end);
-	}
 
 	return TRUE;
 }
@@ -325,7 +308,7 @@ int INF_database_info(const SCHAR* items,
 #endif
 
 		case isc_info_attachment_id:
-			length = INF_convert(PAG_attachment_id(tdbb), buffer);
+			length = INF_convert(PAG_attachment_id(), buffer);
 			break;
 
 		case isc_info_ods_version:
@@ -461,10 +444,14 @@ int INF_database_info(const SCHAR* items,
 
 		case isc_info_creation_date:
 			{
-				const ISC_TIMESTAMP ts = dbb->dbb_creation_date.value();
-				length = INF_convert(ts.timestamp_date, p); 
+				WIN window(HEADER_PAGE);
+				Ods::header_page* header = (Ods::header_page*) 
+					CCH_FETCH(tdbb, &window, LCK_read, pag_header);
+
+				length = INF_convert(header->hdr_creation_date[0], p); 
 				p += length;
-				length += INF_convert(ts.timestamp_time, p);
+				length += INF_convert(header->hdr_creation_date[1], p);
+				CCH_RELEASE(tdbb, &window);
 			}
 			break;
 
@@ -476,8 +463,7 @@ int INF_database_info(const SCHAR* items,
 		case isc_info_forced_writes:
 			if (!header_refreshed)
 			{
-				PageSpace* pageSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
-				const jrd_file* file = pageSpace->file;
+				const jrd_file* file = dbb->dbb_file;
 				PAG_header(file->fil_string, file->fil_length, true);
 				header_refreshed = true;
 			}
@@ -725,8 +711,7 @@ int INF_database_info(const SCHAR* items,
 		case isc_info_oldest_transaction:
 			if (!header_refreshed)
 			{
-				PageSpace* pageSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
-				const jrd_file* file = pageSpace->file;
+				const jrd_file* file = dbb->dbb_file;
 				PAG_header(file->fil_string, file->fil_length, true);
 				header_refreshed = true;
 			}
@@ -736,8 +721,7 @@ int INF_database_info(const SCHAR* items,
 		case isc_info_oldest_active:
 			if (!header_refreshed)
 			{
-				PageSpace* pageSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
-				const jrd_file* file = pageSpace->file;
+				const jrd_file* file = dbb->dbb_file;
 				PAG_header(file->fil_string, file->fil_length, true);
 				header_refreshed = true;
 			}
@@ -747,8 +731,7 @@ int INF_database_info(const SCHAR* items,
 		case isc_info_oldest_snapshot:
 			if (!header_refreshed)
 			{
-				PageSpace* pageSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
-				const jrd_file* file = pageSpace->file;
+				const jrd_file* file = dbb->dbb_file;
 				PAG_header(file->fil_string, file->fil_length, true);
 				header_refreshed = true;
 			}
@@ -758,8 +741,7 @@ int INF_database_info(const SCHAR* items,
 		case isc_info_next_transaction:
 			if (!header_refreshed)
 			{
-				PageSpace* pageSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
-				const jrd_file* file = pageSpace->file;
+				const jrd_file* file = dbb->dbb_file;
 				PAG_header(file->fil_string, file->fil_length, true);
 				header_refreshed = true;
 			}
@@ -856,16 +838,6 @@ int INF_request_info(const jrd_req* request,
 
 	const SCHAR* const end_items = items + item_length;
 	const SCHAR* const end = info + output_length;
-	SCHAR* start_info;
-	
-	if (*items == isc_info_length) {
-		start_info = info;
-		items++;
-	}
-	else {
-		start_info = 0;
-	}
-
 	SCHAR buffer[256];
 	memset(buffer, 0, sizeof(buffer));
 	SCHAR* buffer_ptr = buffer;
@@ -990,14 +962,6 @@ int INF_request_info(const jrd_req* request,
 
 	*info++ = isc_info_end;
 
-	if (start_info && (end - info >= 7))
-	{
-		SLONG number = info - start_info;
-		memmove(start_info + 7, start_info, number);
-		length = INF_convert(number, buffer);
-		INF_put_item(isc_info_length, length, buffer, start_info, end);
-	}
-
 	return TRUE;
 }
 
@@ -1018,19 +982,10 @@ int INF_transaction_info(const jrd_tra* transaction,
  *
  **************************************/
 	SCHAR buffer[128];
-	USHORT length;
+	SSHORT length;
 
 	const SCHAR* const end_items = items + item_length;
 	const SCHAR* const end = info + output_length;
-	SCHAR* start_info;
-	
-	if (*items == isc_info_length) {
-		start_info = info;
-		items++;
-	}
-	else {
-		start_info = 0;
-	}
 
 	while (items < end_items && *items != isc_info_end) {
 		SCHAR item = *items++;
@@ -1103,14 +1058,6 @@ int INF_transaction_info(const jrd_tra* transaction,
 	}
 
 	*info++ = isc_info_end;
-
-	if (start_info && (end - info >= 7))
-	{
-		SLONG number = info - start_info;
-		memmove(start_info + 7, start_info, number);
-		length = INF_convert(number, buffer);
-		INF_put_item(isc_info_length, length, buffer, start_info, end);
-	}
 
 	return TRUE;
 }

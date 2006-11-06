@@ -57,9 +57,9 @@
 #include "../gpre/gpre_meta.h"
 #include "../gpre/msc_proto.h"
 #include "../gpre/par_proto.h"
+#include "../jrd/gds_proto.h"
 #include "../gpre/gpreswi.h"
 #include "../common/utils_proto.h"
-#include "../common/classes/TempFile.h"
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -75,10 +75,14 @@ extern "C" {
 // Globals
 GpreGlobals gpreGlob;
 
-const char* const SCRATCH = "fb_query_";
+#ifdef SMALL_FILE_NAMES
+const char* const SCRATCH		= "fb_q";
+#else
+const char* const SCRATCH		= "fb_query_";
+#endif
 
-const char* const FOPEN_READ_TYPE = "r";
-const char* const FOPEN_WRITE_TYPE = "w";
+const char* const FOPEN_READ_TYPE		= "r";
+const char* const FOPEN_WRITE_TYPE	= "w";
 
 static bool			all_digits(const char*);
 static bool			arg_is_string(SLONG, TEXT**, const TEXT*);
@@ -115,28 +119,7 @@ static SLONG prior_line_position;
 
 static act* global_last_action;
 static act* global_first_action;
-static UCHAR classes_array[256];
-
-inline UCHAR classes(int idx)
-{
-	return classes_array[(UCHAR) idx];
-}
-
-inline UCHAR classes(UCHAR idx)
-{
-	return classes_array[idx];
-}
-
-inline void set_classes(int idx, UCHAR v)
-{
-	classes_array[(UCHAR) idx] = v;
-}
-
-inline void set_classes(UCHAR idx, UCHAR v)
-{
-	classes_array[idx] = v;
-}
-
+static UCHAR classes[256];
 
 static TEXT input_buffer[512], *input_char;
 
@@ -241,14 +224,15 @@ static const ext_table_t dml_ext_table[] =
 	{ lang_undef, IN_SW_GPRE_0, NULL, NULL }
 };
 
-const UCHAR CHR_LETTER	= 1;
-const UCHAR	CHR_DIGIT	= 2;
-const UCHAR CHR_IDENT	= 4;
-const UCHAR CHR_QUOTE	= 8;
-const UCHAR CHR_WHITE	= 16;
-const UCHAR CHR_INTRODUCER	= 32;
-const UCHAR CHR_DBLQUOTE	= 64;
-
+enum char_types {
+	CHR_LETTER	= 1,
+	CHR_DIGIT	= 2,
+	CHR_IDENT	= 4,
+	CHR_QUOTE	= 8,
+	CHR_WHITE	= 16,
+	CHR_INTRODUCER	= 32,
+	CHR_DBLQUOTE	= 64
+};
 
 //  macro compares chars; case sensitive for some platforms 
 
@@ -290,30 +274,30 @@ int main(int argc, char* argv[])
 	//  Initialize character class table 
 	int i;
 	for (i = 0; i <= 127; ++i) {
-		set_classes(i, 0);
+		classes[i] = 0;
 	}
 	for (i = 128; i <= 255; ++i) {
-		set_classes(i, CHR_LETTER | CHR_IDENT);
+		classes[i] = CHR_LETTER | CHR_IDENT;
 	}
 	for (i = 'a'; i <= 'z'; ++i) {
-		set_classes(i, CHR_LETTER | CHR_IDENT);
+		classes[i] = CHR_LETTER | CHR_IDENT;
 	}
 	for (i = 'A'; i <= 'Z'; ++i) {
-		set_classes(i, CHR_LETTER | CHR_IDENT);
+		classes[i] = CHR_LETTER | CHR_IDENT;
 	}
 	for (i = '0'; i <= '9'; ++i) {
-		set_classes(i, CHR_DIGIT | CHR_IDENT);
+		classes[i] = CHR_DIGIT | CHR_IDENT;
 	}
 
-	set_classes('_', CHR_LETTER | CHR_IDENT | CHR_INTRODUCER);
-	set_classes('$', CHR_IDENT);
-	set_classes(' ', CHR_WHITE);
-	set_classes('\t', CHR_WHITE);
-	set_classes('\n', CHR_WHITE);
-	set_classes('\r', CHR_WHITE);
-	set_classes('\'', CHR_QUOTE);
-	set_classes('\"', CHR_DBLQUOTE);
-	set_classes('#', CHR_IDENT);
+	classes[static_cast<UCHAR>('_')]	= CHR_LETTER | CHR_IDENT | CHR_INTRODUCER;
+	classes[static_cast<UCHAR>('$')]	= CHR_IDENT;
+	classes[static_cast<UCHAR>(' ')]	= CHR_WHITE;
+	classes[static_cast<UCHAR>('\t')]	= CHR_WHITE;
+	classes[static_cast<UCHAR>('\n')]	= CHR_WHITE;
+	classes[static_cast<UCHAR>('\r')]	= CHR_WHITE;
+	classes[static_cast<UCHAR>('\'')]	= CHR_QUOTE;
+	classes[static_cast<UCHAR>('\"')]	= CHR_DBLQUOTE;
+	classes[static_cast<UCHAR>('#')]	= CHR_IDENT;
 
 //  zorch 0 through 7 in the fortran label vector 
 
@@ -757,14 +741,12 @@ int main(int argc, char* argv[])
 	TEXT temp_name[MAXPATHLEN];
 
 #ifndef __ALPHA
-	// Replace this kludge with TempFile since gds__temp_file doesn't exist anymore.
 	temp = (FILE *) gds__temp_file(TRUE, "temp", 0);
 	strcpy(temp_name, "temporary file");
 #else
-	// Replace this kludge with TempFile since gds__temp_file doesn't exist anymore.
 	temp = (FILE *) gds__temp_file(TRUE, "temp", temp_name);
 #endif
-	if (temp) {
+	if (temp != (FILE *) - 1) {
 		SSHORT c;
 		while ((c = get_char(input_file)) != EOF)
 			putc(c, temp);
@@ -908,7 +890,7 @@ int main(int argc, char* argv[])
 		while (end_position = compile_module(end_position, filename_array[3]));
 		// empty loop body
 	}	// try
-	catch (const Firebird::Exception&) {}  // fall through to the cleanup code
+	catch (const std::exception&) {}  // fall through to the cleanup code
 
 #ifdef FTN_BLK_DATA
 	if (gpreGlob.sw_language == lang_fortran)
@@ -958,7 +940,7 @@ int main(int argc, char* argv[])
 void CPR_abort()
 {
 	++fatals_global;
-	//throw Firebird::Exception();
+	//throw std::exception();
 	throw gpre_exception("Program terminated.");
 }
 
@@ -1208,7 +1190,7 @@ void CPR_raw_read()
 	while (c = get_char(input_file))
 	{
 		position++;
-		if ((classes(c) == CHR_WHITE) && sw_trace && token_string) {
+		if ((classes[c] == CHR_WHITE) && sw_trace && token_string) {
 			*p = 0;
 			puts(token_string);
 			token_string[0] = 0;
@@ -1226,7 +1208,7 @@ void CPR_raw_read()
 		}
 		else {
 			line_position++;
-			if (classes(c) != CHR_WHITE)
+			if (classes[c] != CHR_WHITE)
 				continue_char = (gpreGlob.token_global.tok_keyword == KW_AMPERSAND);
 		}
 	}
@@ -1335,7 +1317,7 @@ TOK CPR_token()
 static bool all_digits(const char* str1)
 {
 	for (; *str1; str1++)
-		if (!(classes(*str1) & CHR_DIGIT))
+		if (!(classes[static_cast<UCHAR>(*str1)] & CHR_DIGIT))
 			return false;
 
 	return true;
@@ -1405,11 +1387,17 @@ static SLONG compile_module( SLONG start_position, const TEXT* base_directory)
 	fseek(input_file, start_position, 0);
 	input_char = input_buffer;
 
-	Firebird::PathName filename = TempFile::create(SCRATCH);
-	strcpy(trace_file_name, filename.c_str());
-	trace_file = fopen(trace_file_name, "w+b");
+#if !(defined WIN_NT)
+	trace_file = (FILE *) gds__temp_file(TRUE, SCRATCH, 0);
+#else
+//  PC-like platforms can't delete a file that is open.  Therefore
+//  we will save the name of the temp file for later deletion. 
 
-	if (!trace_file) {
+	trace_file = (FILE *) gds__temp_file(TRUE, SCRATCH, trace_file_name);
+#endif
+
+	if (trace_file == (FILE *) - 1) {
+		trace_file = NULL;
 		CPR_error("Couldn't open scratch file");
 		return 0;
 	}
@@ -2055,7 +2043,7 @@ static TOK get_token()
 
 	gpreGlob.token_global.tok_position = position;
 	gpreGlob.token_global.tok_white_space = 0;
-	UCHAR char_class = classes(c);
+	UCHAR char_class = classes[c];
 
 #ifdef GPRE_ADA
 	if ((gpreGlob.sw_language == lang_ada) && (c == '\'')) {
@@ -2072,7 +2060,7 @@ static TOK get_token()
 	bool label = false;
 
 	if (gpreGlob.sw_sql && (char_class & CHR_INTRODUCER)) {
-		while (classes(c = nextchar()) & CHR_IDENT) {
+		while (classes[c = nextchar()] & CHR_IDENT) {
 			if (p < end) {
 				*p++ = (TEXT) c;
 			}
@@ -2082,7 +2070,7 @@ static TOK get_token()
 	}
 	else if (char_class & CHR_LETTER) {
 		while (true) {
-			while (classes(c = nextchar()) & CHR_IDENT)
+			while (classes[c = nextchar()] & CHR_IDENT)
 				*p++ = (TEXT) c;
 			if (c != '-' || gpreGlob.sw_language != lang_cobol)
 				break;
@@ -2099,7 +2087,7 @@ static TOK get_token()
 		if (gpreGlob.sw_language == lang_fortran && line_position < 7)
 			label = true;
 #endif
-		while (classes(c = nextchar()) & CHR_DIGIT)
+		while (classes[c = nextchar()] & CHR_DIGIT)
 			*p++ = (TEXT) c;
 		if (label) {
 			*p = 0;
@@ -2107,7 +2095,7 @@ static TOK get_token()
 		}
 		if (c == '.') {
 			*p++ = (TEXT) c;
-			while (classes(c = nextchar()) & CHR_DIGIT)
+			while (classes[c = nextchar()] & CHR_DIGIT)
 				*p++ = (TEXT) c;
 		}
 		if (!label && (c == 'E' || c == 'e')) {
@@ -2117,7 +2105,7 @@ static TOK get_token()
 				*p++ = (TEXT) c;
 			else
 				return_char(c);
-			while (classes(c = nextchar()) & CHR_DIGIT)
+			while (classes[c = nextchar()] & CHR_DIGIT)
 				*p++ = (TEXT) c;
 		}
 		return_char(c);
@@ -2196,9 +2184,9 @@ static TOK get_token()
 		}
 	}
 	else if (c == '.') {
-		if (classes(c = nextchar()) & CHR_DIGIT) {
+		if (classes[c = nextchar()] & CHR_DIGIT) {
 			*p++ = (TEXT) c;
-			while (classes(c = nextchar()) & CHR_DIGIT)
+			while (classes[c = nextchar()] & CHR_DIGIT)
 				*p++ = (TEXT) c;
 			if ((c == 'E' || c == 'e')) {
 				*p++ = (TEXT) c;
@@ -2207,7 +2195,7 @@ static TOK get_token()
 					*p++ = (TEXT) c;
 				else
 					return_char(c);
-				while (classes(c = nextchar()) & CHR_DIGIT)
+				while (classes[c = nextchar()] & CHR_DIGIT)
 					*p++ = (TEXT) c;
 			}
 			return_char(c);
@@ -2783,7 +2771,7 @@ static void return_char( SSHORT c)
 
 static SSHORT skip_white()
 {
-	SSHORT c;
+	SSHORT c, next;
 
 	while (true) {
 		if ((c = nextchar()) == EOF)
@@ -2822,7 +2810,7 @@ static SSHORT skip_white()
 		}
 #endif
 
-		const UCHAR char_class = classes(c);
+		const UCHAR char_class = classes[c];
 
 		if (char_class & CHR_WHITE) {
 			continue;
@@ -2847,8 +2835,7 @@ static SSHORT skip_white()
 			(gpreGlob.sw_language == lang_c ||
 			 isLangCpp(gpreGlob.sw_language)))
 		{
-			SSHORT next = nextchar();
-			if (next != '*') {
+			if ((next = nextchar()) != '*') {
 				if (isLangCpp(gpreGlob.sw_language) && next == '/') {
 					while ((c = nextchar()) != '\n' && c != EOF);
 					continue;
@@ -2886,8 +2873,7 @@ static SSHORT skip_white()
 #endif
 
 		if (c == '-' && (gpreGlob.sw_sql || gpreGlob.sw_language == lang_ada)) {
-			SSHORT next = nextchar();
-			if (next != '-') {
+			if ((next = nextchar()) != '-') {
 				return_char(next);
 				return c;
 			}
@@ -2903,8 +2889,7 @@ static SSHORT skip_white()
 		}
 
 		if (c == '(' && gpreGlob.sw_language == lang_pascal) {
-			SSHORT next = nextchar();
-			if (next != '*') {
+			if ((next = nextchar()) != '*') {
 				return_char(next);
 				return c;
 			}

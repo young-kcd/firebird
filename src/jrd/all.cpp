@@ -30,8 +30,10 @@
 #include "../jrd/jrd.h"
 #include "../jrd/all.h"
 #include "../jrd/tra.h"
+#include "../jrd/all_proto.h"
 #include "../jrd/err_proto.h"
-#include "../common/classes/array.h"
+
+#include <algorithm>
 
 using namespace Jrd;
 
@@ -62,8 +64,12 @@ void ALL_check_memory()
  **************************************/
 	Database* dbb = GET_DBB();
 
+#ifdef V4_THREADING
+	V4_RW_LOCK_LOCK(dbb->dbb_rw_locks + DBB_WLCK_pools, WLCK_read);
+#endif
+
 	// walk through all the pools in the database
-	Firebird::Array<JrdMemoryPool*>::iterator itr;
+	Firebird::vector<JrdMemoryPool*>::iterator itr;
 	for (itr = dbb->dbb_pools.begin(); itr < dbb->dbb_pools.end(); ++itr)
 	{
 		JrdMemoryPool* pool = *itr;
@@ -72,6 +78,10 @@ void ALL_check_memory()
 			pool->verify_pool();
 		}
 	}
+
+#ifdef V4_THREADING
+	V4_RW_LOCK_UNLOCK(dbb->dbb_rw_locks + DBB_WLCK_pools);
+#endif
 }
 #endif /* DEV_BUILD */
 
@@ -94,28 +104,91 @@ JrdMemoryPool *JrdMemoryPool::createPool() {
 	JrdMemoryPool *result = (JrdMemoryPool *)internal_create(sizeof(JrdMemoryPool), dbb->dbb_permanent);
 #endif
 	result->plb_dccs = NULL;
-	dbb->dbb_pools.push(result);
+	dbb->dbb_pools.push_back(result);
 	return result;
 }
 
-JrdMemoryPool** JrdMemoryPool::deletePool(JrdMemoryPool* pool) {
+void JrdMemoryPool::deletePool(JrdMemoryPool* pool) {
 	Database* dbb = GET_DBB();
-	JrdMemoryPool** rc = 0;
-	for (size_t n = 0; n < dbb->dbb_pools.getCount(); ++n)
-	{
-		if (dbb->dbb_pools[n] == pool)
-		{
-			rc = dbb->dbb_pools.remove(n);
-			break;
-		}
-	}
-	fb_assert(rc);
+	Database::pool_vec_type::iterator itr =
+		std::find(dbb->dbb_pools.begin(), dbb->dbb_pools.end(), pool);
+	if (itr != dbb->dbb_pools.end()) dbb->dbb_pools.erase(itr);
 	MemoryPool::deletePool(pool);
-	return rc;
 }
 
 void JrdMemoryPool::noDbbDeletePool(JrdMemoryPool* pool) {
 	MemoryPool::deletePool(pool);
+}
+
+TEXT* ALL_cstring(JrdMemoryPool* pool, const Firebird::string& in_string)
+{
+/**************************************
+ *
+ *	A L L _ c s t r i n g
+ *
+ **************************************
+ *
+ * Functional description
+ *	Copy a stack local string to an allocated
+ *	string so it doesn't disappear before we 
+ *	return to the user or where ever.
+ *
+ **************************************/
+	TEXT* p = FB_NEW(*pool) TEXT[in_string.length() + 1];
+	strcpy(p, in_string.c_str());
+	return p;
+}
+
+
+void ALL_fini(void)
+{
+/**************************************
+ *
+ *	A L L _ f i n i
+ *
+ **************************************
+ *
+ * Functional description
+ *	Get rid of everything.
+ *	NOTE:  This routine does not lock any mutexes on
+ *	its own behalf.  It is assumed that mutexes will
+ *	have been locked before entry.
+ *	Call gds__free explicitly instead of ALL_free
+ *	because it references the Database block which gets
+ *	released at the top of this routine.
+ *
+ **************************************/
+	Database* dbb = GET_DBB();
+
+	/* Don't know if we even need to do this, so it is commented out */
+	//delete dbb;
+}
+
+
+void ALL_init(void)
+{
+/**************************************
+ *
+ *	A L L _ i n i t
+ *
+ **************************************
+ *
+ * Functional description
+ *	Initialize the pool system.
+ *	NOTE:  This routine does not lock any mutexes on
+ *	its own behalf.  It is assumed that mutexes will
+ *	have been locked before entry.
+ *
+ **************************************/
+	thread_db* tdbb = JRD_get_thread_data();
+	Database* dbb = tdbb->tdbb_database;
+
+	JrdMemoryPool* pool = dbb->dbb_permanent;
+//	tdbb->setDefaultPool(pool);
+//	dbb->dbb_permanent->setExtendSize(PERM_EXTEND_SIZE);
+	dbb->dbb_pools[0] = pool;
+	dbb->dbb_bufferpool = JrdMemoryPool::createPool();
+//	FB_NEW(*pool) JrdMemoryPool(CACH_EXTEND_SIZE);
 }
 
 
@@ -157,12 +230,13 @@ void ALL_print_memory_pool_info(FILE* fptr, Database* databases)
 	{
 		fprintf(fptr, "\n\t dbb%d -> %s\n", k, dbb->dbb_filename.c_str());
 		j = 0;
-		
-		int itr;
-		for (itr = 0; itr < dbb->dbb_pools.getCount(); ++itr)
+
+		Firebird::vector<JrdMemoryPool*>::iterator itr;
+
+		for (itr = dbb->dbb_pools.begin(); itr != dbb->dbb_pools.end(); ++itr)
 		{
-			if (dbb->dbb_pools[itr]) 
-			{
+			JrdMemoryPool *myPool = *itr;
+			if (myPool) {
 				++j;
 			}
 		}
@@ -172,13 +246,14 @@ void ALL_print_memory_pool_info(FILE* fptr, Database* databases)
 			j++;
 		}
 		fprintf(fptr, " and %d attachment(s)", j);
-		for (itr = 0; itr < dbb->dbb_pools.getCount(); ++itr)
+		for (itr = dbb->dbb_pools.begin(); itr != dbb->dbb_pools.end(); ++itr)
 		{
-			JrdMemoryPool *myPool = dbb->dbb_pools[itr];
-			if (myPool) 
-			{
-				myPool->print_contents(fptr, true);
+			JrdMemoryPool *myPool = *itr;
+			if (!myPool) {
+				continue;
 			}
+			
+			myPool->print_contents(fptr, true);
 		}
 	}
 }

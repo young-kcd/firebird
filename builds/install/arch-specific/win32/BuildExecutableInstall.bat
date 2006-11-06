@@ -84,7 +84,7 @@ set FBBUILD_PROD_STATUS=
 set FBBUILD_PROD_STATUS=DEV) || type %ROOT_PATH%\src\jrd\build_no.h | findstr /I ALPHA > nul && (
 set FBBUILD_PROD_STATUS=DEV) || type %ROOT_PATH%\src\jrd\build_no.h | findstr /I BETA > nul && (
 set FBBUILD_PROD_STATUS=PROD) || type %ROOT_PATH%\src\jrd\build_no.h | findstr /I "Release Candidate" > nul && (
-set FBBUILD_PROD_STATUS=PROD) || type %ROOT_PATH%\src\jrd\build_no.h | findstr /I "RC" > nul && (
+set FBBUILD_PROD_STATUS=PROD) || type %ROOT_PATH%\src\jrd\build_no.h | findstr "RC" > nul && (
 set FBBUILD_PROD_STATUS=PROD) || type %ROOT_PATH%\src\jrd\build_no.h | findstr /I "Final" > nul && (
 set FBBUILD_PROD_STATUS=PROD)
 
@@ -119,16 +119,16 @@ sed -V | findstr version > nul
 
 if %FBBUILD_ZIP_PACK% EQU 1 (
   if not defined SEVENZIP (
-    call :ERROR SEVENZIP environment variable is not defined.
-    @goto :EOF
+	call :ERROR SEVENZIP environment variable is not defined.
+	@goto :EOF
   ) else (@echo     o Compression utility found.)
 )
 
 
 if %FBBUILD_ISX_PACK% EQU 1 (
   if NOT DEFINED INNO_SETUP_PATH (
-    call :ERROR INNO_SETUP_PATH variable not defined
-    @goto :EOF
+	call :ERROR INNO_SETUP_PATH variable not defined
+	@goto :EOF
   ) else (@echo     o Inno Setup found at %INNO_SETUP_PATH%.)
 )
 
@@ -174,14 +174,14 @@ del %temp%.\b$?.txt
 if not exist %FBBUILD_OUTPUT%\system32 (mkdir %FBBUILD_OUTPUT%\system32)
 @if DEFINED MSDevDir (
   @if %MSVC_VERSION% EQU 6 (
-    @copy "%MSDevDir%\vcredist\msvcrt.dll" %FBBUILD_OUTPUT%\system32\ > nul
-    @copy "%MSDevDir%\vcredist\msvcp%MSVC_VERSION%0.dll" %FBBUILD_OUTPUT%\system32\ > nul
+	@copy "%MSDevDir%\vcredist\msvcrt.dll" %FBBUILD_OUTPUT%\bin\ > nul
+	@copy "%MSDevDir%\vcredist\msvcp%MSVC_VERSION%0.dll" %FBBUILD_OUTPUT%\bin\ > nul
   )
 ) else (
   @if DEFINED MSVCDir (
 	@if %MSVC_VERSION% EQU 7 (
-      @copy "%FrameworkSDKDir%\bin\msvcp%MSVC_VERSION%?.dll" %FBBUILD_OUTPUT%\system32\ > nul
-      @copy "%FrameworkSDKDir%\bin\msvcr%MSVC_VERSION%?.dll" %FBBUILD_OUTPUT%\system32\ > nul
+	  @copy "%FrameworkSDKDir%\bin\msvcp%MSVC_VERSION%?.dll" %FBBUILD_OUTPUT%\bin\ > nul
+	  @copy "%FrameworkSDKDir%\bin\msvcr%MSVC_VERSION%?.dll" %FBBUILD_OUTPUT%\bin\ > nul
 	)
   )
 )
@@ -215,11 +215,11 @@ for %%v in (fbclient ib_util) do (
 @if "%FBBUILD_SHIP_PDB%"=="ship_pdb" (
   @echo   Copying pdb files...
   for %%v in ( fbembed fb_inet_server fbserver fbclient ) do (
-    @copy %ROOT_PATH%\temp\%FBBUILD_BUILDTYPE%\%%v\%%v.pdb %FBBUILD_OUTPUT%\bin > nul
-    @if %ERRORLEVEL% GEQ 1 (
-      call :ERROR Copying %%v.pdb files failed
+	@copy %ROOT_PATH%\temp\%FBBUILD_BUILDTYPE%\%%v\%%v.pdb %FBBUILD_OUTPUT%\bin > nul
+	@if %ERRORLEVEL% GEQ 1 (
+	  call :ERROR Copying %%v.pdb files failed
 	  goto :EOF
-    )
+	)
   )
 )
 ::  @copy %ROOT_PATH%\temp\%FBBUILD_BUILDTYPE%\firebird\bin\*.pdb %FBBUILD_OUTPUT%\bin > nul
@@ -238,16 +238,16 @@ for %%v in (fbclient ib_util) do (
 for %%v in ( ib_udf.sql ib_udf2.sql ) do (
   copy %ROOT_PATH%\src\extlib\%%v  %FBBUILD_OUTPUT%\UDF\%%v > nul
   @if %ERRORLEVEL% GEQ 1 (
-    call :ERROR Copying %ROOT_PATH%\src\extlib\%%v failed.
-    goto :EOF
+	call :ERROR Copying %ROOT_PATH%\src\extlib\%%v failed.
+	goto :EOF
   )
 )
 
 for %%v in ( fbudf.sql fbudf.txt ) do (
   copy %ROOT_PATH%\src\extlib\fbudf\%%v  %FBBUILD_OUTPUT%\UDF\%%v > nul
   @if %ERRORLEVEL% GEQ 1 (
-    call :ERROR Copying %ROOT_PATH%\src\extlib\%%v failed with error %ERRORLEVEL%
-    goto :EOF
+	call :ERROR Copying %ROOT_PATH%\src\extlib\%%v failed with error %ERRORLEVEL%
+	goto :EOF
   )
 )
 
@@ -279,7 +279,7 @@ mkdir %FBBUILD_OUTPUT%\misc\upgrade\ib_udf 2>nul
 @if %ERRORLEVEL% GEQ 1 ( (call :ERROR Copying doc\sql.extensions failed  ) & (goto :EOF))
 
 @echo   Copying pdf docs...
-@for %%v in ( Firebird-1.5-QuickStart.pdf Firebird_v1.5.3.ReleaseNotes.pdf Firebird_v2.0.0.ReleaseNotes.pdf ) do (
+@for %%v in ( Firebird-2.0-QuickStart.pdf Firebird_v1.5.3.ReleaseNotes.pdf Firebird_v2.0.0.ReleaseNotes.pdf ) do (
   @echo     ... %%v
   (@copy /Y %FB_EXTERNAL_DOCS%\%%v %FBBUILD_OUTPUT%\doc\%%v > nul) || (call :WARNING Copying %FB_EXTERNAL_DOCS%\%%v failed.)
 )
@@ -304,10 +304,10 @@ for /R %FBBUILD_OUTPUT%\doc %%v in (.) do (
   pushd %%v
   for /F %%W in ( 'dir /B /A-D' ) do (
 	if /I "%%~xW" NEQ ".txt" (
-  	  if /I "%%~xW" NEQ ".pdf" (
-        if /I "%%~xW" NEQ ".htm" (
-          if /I "%%~xW" NEQ ".html" (
-            ren %%W %%W.txt
+	  if /I "%%~xW" NEQ ".pdf" (
+		if /I "%%~xW" NEQ ".htm" (
+		  if /I "%%~xW" NEQ ".html" (
+			ren %%W %%W.txt
 		  )
 		)
 	  )
@@ -431,7 +431,7 @@ set FBBUILD_ZIP_PACK_ROOT=%ROOT_PATH%\builds\zip_pack
 if not exist %FBBUILD_ZIP_PACK_ROOT% @mkdir %FBBUILD_ZIP_PACK_ROOT% 2>nul
 @del /s /q %FBBUILD_ZIP_PACK_ROOT%\ > nul
 @copy /Y %FBBUILD_OUTPUT% %FBBUILD_ZIP_PACK_ROOT% > nul
-for %%v in (bin doc doc\sql.extensions help include intl lib udf examples ) do (
+for %%v in (bin doc doc\sql.extensions help include intl lib udf examples misc misc\upgrade misc\upgrade\ib_udf misc\upgrade\security system32 ) do (
 	@mkdir %FBBUILD_ZIP_PACK_ROOT%\%%v 2>nul
 	@copy /Y %FBBUILD_OUTPUT%\%%v\*.* %FBBUILD_ZIP_PACK_ROOT%\%%v\ > nul
 )
@@ -465,13 +465,13 @@ goto :EOF
 ::=======
 if %FBBUILD_ZIP_PACK% EQU 0 goto :EOF
 if "%FBBUILD_SHIP_PDB%" == "ship_pdb" (
-    if exist %FBBUILD_INSTALL_IMAGES%\Firebird-%PRODUCT_VER_STRING%-%FBBUILD_PACKAGE_NUMBER%_win32.zip (
- 	  del %FBBUILD_INSTALL_IMAGES%\Firebird-%PRODUCT_VER_STRING%-%FBBUILD_PACKAGE_NUMBER%_win32_pdb.zip
+	if exist %FBBUILD_INSTALL_IMAGES%\Firebird-%PRODUCT_VER_STRING%-%FBBUILD_PACKAGE_NUMBER%_win32.zip (
+	  del %FBBUILD_INSTALL_IMAGES%\Firebird-%PRODUCT_VER_STRING%-%FBBUILD_PACKAGE_NUMBER%_win32_pdb.zip
 	)
 	set FBBUILD_ZIPFILE=%FBBUILD_INSTALL_IMAGES%\Firebird-%PRODUCT_VER_STRING%-%FBBUILD_PACKAGE_NUMBER%_win32_pdb.zip
 
 ) else (
-    if exist %FBBUILD_INSTALL_IMAGES%\Firebird-%PRODUCT_VER_STRING%-%FBBUILD_PACKAGE_NUMBER%_win32.zip (
+	if exist %FBBUILD_INSTALL_IMAGES%\Firebird-%PRODUCT_VER_STRING%-%FBBUILD_PACKAGE_NUMBER%_win32.zip (
 	  del %FBBUILD_INSTALL_IMAGES%\Firebird-%PRODUCT_VER_STRING%-%FBBUILD_PACKAGE_NUMBER%_win32.zip
 	)
 	set FBBUILD_ZIPFILE=%FBBUILD_INSTALL_IMAGES%\Firebird-%PRODUCT_VER_STRING%-%FBBUILD_PACKAGE_NUMBER%_win32.zip
@@ -504,7 +504,7 @@ for %%v in ( doc intl udf ) do (@mkdir %FBBUILD_EMB_PACK_ROOT%\%%v 2>nul)
 @copy /Y %FBBUILD_OUTPUT%\doc\Firebird*.pdf %FBBUILD_EMB_PACK_ROOT%\doc\ > nul
 @copy /Y %FBBUILD_OUTPUT%\intl\*.* %FBBUILD_EMB_PACK_ROOT%\intl\ > nul
 @copy /Y %FBBUILD_OUTPUT%\udf\*.* %FBBUILD_EMB_PACK_ROOT%\udf\ > nul
-@copy /Y %FBBUILD_OUTPUT%\system32\msvc*.* %FBBUILD_EMB_PACK_ROOT% > nul
+@copy /Y %FBBUILD_OUTPUT%\bin\msvc*.* %FBBUILD_EMB_PACK_ROOT% > nul
 
 if "%FBBUILD_SHIP_PDB%"=="ship_pdb" (
   @copy /Y %ROOT_PATH%\temp\release\fbembed\fbembed.pdb %FBBUILD_EMB_PACK_ROOT% > nul
@@ -555,12 +555,14 @@ goto :EOF
 ::Set file timestamp to something meaningful.
 ::While building and testing this feature might be annoying, so we don't do it.
 ::==========================================================
+setlocal
+set TIMESTRING=0%PRODUCT_VER_STRING:~0,1%:0%PRODUCT_VER_STRING:~2,1%:0%PRODUCT_VER_STRING:~4,1%
 @if /I "%BUILDTYPE%"=="release" (
-	(@echo Touching release build files with 01:05:10 timestamp) & (touch -s -D -t01:05:10 %FBBUILD_OUTPUT%\*.*)
-	(if %FBBUILD_EMB_PACK% EQU 1 (@echo Touching release build files with 01:05:10 timestamp) & (touch -s -D -t01:05:10 %ROOT_PATH%\emb_pack\*.*) )
-	(if %FBBUILD_ZIP_PACK% EQU 1 (@echo Touching release build files with 01:05:10 timestamp) & (touch -s -D -t01:05:10 %ROOT_PATH%\zip_pack\*.*) )
+	(@echo Touching release build files with %TIMESTRING% timestamp) & (touch -s -D -t%TIMESTRING% %FBBUILD_OUTPUT%\*.*)
+	(if %FBBUILD_EMB_PACK% EQU 1 (@echo Touching release build files with %TIMESTRING% timestamp) & (touch -s -D -t%TIMESTRING% %ROOT_PATH%\emb_pack\*.*) )
+	(if %FBBUILD_ZIP_PACK% EQU 1 (@echo Touching release build files with %TIMESTRING% timestamp) & (touch -s -D -t%TIMESTRING% %ROOT_PATH%\zip_pack\*.*) )
 )
-
+endlocal
 ::End of TOUCH_ALL
 ::----------------
 @goto :EOF
@@ -599,10 +601,10 @@ if %FBBUILD_ISX_PACK% NEQ 1 goto :EOF
 @echo              (You need to set the INNO_SETUP_PATH environment variable.)
 @echo.
 @echo       ZIP    Create Zip package.
-@echo              (PKZIP is currently used and the PKZIP env var must be set.)
+@echo              (SEVENZIP is currently used and the SEVENZIP env var must be set.)
 @echo.
 @echo       EMB    Create Embedded package.
-@echo              (PKZIP is currently used and the PKZIP env var must be set.)
+@echo              (SEVENZIP is currently used and the SEVENZIP env var must be set.)
 @echo.
 @echo       ALL    Build InnoSetup, Zip and Embedded packages.
 @echo.

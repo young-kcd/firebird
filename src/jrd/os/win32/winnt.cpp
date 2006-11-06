@@ -42,6 +42,7 @@
 #include "../jrd/lck.h"
 #include "../jrd/cch.h"
 #include "gen/iberror.h"
+#include "../jrd/all_proto.h"
 #include "../jrd/cch_proto.h"
 #include "../jrd/err_proto.h"
 #include "../jrd/isc_proto.h"
@@ -91,9 +92,6 @@ static const DWORD g_dwExtraFlags = FILE_FLAG_RANDOM_ACCESS;
 #endif
 #endif
 
-static const DWORD g_dwShareTempFlags = FILE_SHARE_READ;
-static const DWORD g_dwExtraTempFlags = FILE_ATTRIBUTE_TEMPORARY |
-										FILE_FLAG_DELETE_ON_CLOSE;
 
 
 int PIO_add_file(Database* dbb, jrd_file* main_file, const Firebird::PathName& file_name, SLONG start)
@@ -110,7 +108,7 @@ int PIO_add_file(Database* dbb, jrd_file* main_file, const Firebird::PathName& f
  *	sequence of 0.
  *
  **************************************/
-	jrd_file* new_file = PIO_create(dbb, file_name, false, false);
+	jrd_file* new_file = PIO_create(dbb, file_name, false);
 	if (!new_file) {
 		return 0;
 	}
@@ -161,7 +159,29 @@ void PIO_close(jrd_file* main_file)
 }
 
 
-jrd_file* PIO_create(Database* dbb, const Firebird::PathName& string, bool overwrite, bool temporary)
+int PIO_connection(const Firebird::PathName& file_name)
+{
+/**************************************
+ *
+ *	P I O _ c o n n e c t i o n
+ *
+ **************************************
+ *
+ * Functional description
+ *	Analyze a file specification and determine whether a page/lock
+ *	server is required and available.  If so, return a "connection"
+ *	block.  If not, return NULL.
+ *
+ *	Note: The file name must have been expanded prior to this call.
+ *
+ **************************************/
+
+	return 0;
+}
+
+
+
+jrd_file* PIO_create(Database* dbb, const Firebird::PathName& string, bool overwrite)
 {
 /**************************************
  *
@@ -177,33 +197,33 @@ jrd_file* PIO_create(Database* dbb, const Firebird::PathName& string, bool overw
 
 	const HANDLE desc = CreateFile(file_name,
 					  GENERIC_READ | GENERIC_WRITE,
-					  (temporary ? g_dwShareTempFlags : g_dwShareFlags),
+					  g_dwShareFlags,
 					  NULL,
 					  (overwrite ? CREATE_ALWAYS : CREATE_NEW),
 					  FILE_ATTRIBUTE_NORMAL |
-					  g_dwExtraFlags | 
-					  (temporary ? g_dwExtraTempFlags : 0),
+					  g_dwExtraFlags,
 					  0);
 
 	if (desc == INVALID_HANDLE_VALUE)
 	{
 		ERR_post(isc_io_error,
 				 isc_arg_string, "CreateFile (create)",
-				 isc_arg_cstring, string.length(), ERR_cstring(string),
-				 isc_arg_gds, isc_io_create_err, isc_arg_win32, GetLastError(),
-				 0);
+				 isc_arg_cstring,
+				 string.length(),
+				 ERR_cstring(string),
+				 isc_arg_gds,
+				 isc_io_create_err, isc_arg_win32, GetLastError(), 0);
 	}
 
 /* File open succeeded.  Now expand the file name. */
-/* workspace is the expanded name here */
+/* workspace is the exapnded name here */
 
 	Firebird::PathName workspace(string);
 	ISC_expand_filename(workspace, false);
 	jrd_file *file;
 	try {
 		file = setup_file(dbb, workspace, desc);
-	}
-	catch (const Firebird::Exception&) {
+	} catch(const std::exception&) {
 		CloseHandle(desc);
 		throw;
 	}
@@ -212,7 +232,7 @@ jrd_file* PIO_create(Database* dbb, const Firebird::PathName& string, bool overw
 }
 
 
-bool PIO_expand(const TEXT* file_name, USHORT file_length, TEXT* expanded_name,
+int PIO_expand(const TEXT* file_name, USHORT file_length, TEXT* expanded_name,
 	size_t len_expanded)
 {
 /**************************************
@@ -328,8 +348,7 @@ void PIO_header(Database* dbb, SCHAR * address, int length)
  *  callers should not rely on this behavior
  *
  **************************************/
-	PageSpace* pageSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
-	jrd_file* file = pageSpace->file;
+	jrd_file* file = dbb->dbb_file;
 	HANDLE desc = (HANDLE) ((file->fil_flags & FIL_force_write) ?
 					 file->fil_force_write_desc : file->fil_desc);
 
@@ -417,8 +436,7 @@ SLONG PIO_max_alloc(Database* dbb)
  *	Compute last physically allocated page of database.
  *
  **************************************/
-	PageSpace* pageSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
-	jrd_file* file = pageSpace->file;
+	jrd_file* file = dbb->dbb_file;
 
 	while (file->fil_next) {
 		file = file->fil_next;
@@ -448,8 +466,7 @@ SLONG PIO_act_alloc(Database* dbb)
  **  Traverse the linked list of files and add up the number of pages
  **  in each file
  **/
-	PageSpace* pageSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
-	for (const jrd_file* file = pageSpace->file; file != NULL; file = file->fil_next) {
+	for (const jrd_file* file = dbb->dbb_file; file != NULL; file = file->fil_next) {
 		tot_pages += get_number_of_pages(file, dbb->dbb_page_size);
 	}
 
@@ -460,6 +477,7 @@ SLONG PIO_act_alloc(Database* dbb)
 jrd_file* PIO_open(Database* dbb,
 			 const Firebird::PathName& string,
 			 bool trace_flag,
+			 blk* connection, 
 			 const Firebird::PathName& file_name)
 {
 /**************************************
@@ -469,7 +487,9 @@ jrd_file* PIO_open(Database* dbb,
  **************************************
  *
  * Functional description
- *	Open a database file.
+ *	Open a database file. If a "connection"
+ *	block is provided, use the connection
+ *	to communicate with a page/lock server.
  *
  **************************************/
 	const TEXT* ptr = (string.hasData() ? string : file_name).c_str();
@@ -512,8 +532,7 @@ jrd_file* PIO_open(Database* dbb,
 			 * the Header Page flag setting to make sure that the database is set
 			 * ReadOnly.
 			 */
-			PageSpace* pageSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
-			if (!pageSpace->file)
+			if (!dbb->dbb_file)
 				dbb->dbb_flags |= DBB_being_opened_read_only;
 		}
 	}
@@ -521,8 +540,7 @@ jrd_file* PIO_open(Database* dbb,
 	jrd_file *file;
 	try {
 		file = setup_file(dbb, string, desc);
-	}
-	catch (const Firebird::Exception&) {
+	} catch(const std::exception&) {
 		CloseHandle(desc);
 		throw;
 	}
@@ -904,7 +922,7 @@ static jrd_file* seek_file(jrd_file*			file,
  *
  **************************************/
 	Database* dbb = bdb->bdb_dbb;
-	ULONG page = bdb->bdb_page.getPageNum();
+	ULONG page = bdb->bdb_page;
 
 	for (;; file = file->fil_next) {
 		if (!file) {
@@ -999,8 +1017,7 @@ static jrd_file* setup_file(Database*					dbb,
 
 /* If this isn't the primary file, we're done */
 
-	PageSpace* pageSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
-	if (pageSpace && pageSpace->file)
+	if (dbb->dbb_file)
 		return file;
 
 /* Set a local variable that indicates whether we're running
@@ -1060,19 +1077,17 @@ static jrd_file* setup_file(Database*					dbb,
 			SCHAR spare_memory[MIN_PAGE_SIZE*2];
 			SCHAR *header_page_buffer = (SCHAR*) FB_ALIGN((IPTR)spare_memory, MIN_PAGE_SIZE);
 		
-			pageSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
 			try {
-				pageSpace->file = file;
+				dbb->dbb_file = file;
 				PIO_header(dbb, header_page_buffer, MIN_PAGE_SIZE);
 				if ((reinterpret_cast<Ods::header_page*>(header_page_buffer)->hdr_flags & Ods::hdr_shutdown_mask) == Ods::hdr_shutdown_single)
 					ERR_post(isc_shutdown, isc_arg_cstring, file_name.length(), ERR_cstring(file_name), 0);
-				pageSpace->file = NULL; // Will be set again later by the caller				
-			}
-			catch (const Firebird::Exception&) {
+				dbb->dbb_file = NULL; // Will be set again later by the caller				
+			} catch(const std::exception&) {
 				delete dbb->dbb_lock;
 				dbb->dbb_lock = NULL;
 				delete file;
-				pageSpace->file = NULL; // Will be set again later by the caller
+				dbb->dbb_file = NULL; // Will be set again later by the caller
 				throw;
 			}
 		}

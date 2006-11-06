@@ -1,5 +1,5 @@
-Firebird Database Server 2.0 BETA 2
-===================================
+Firebird Database Server 2.0
+============================
 
   ** IMPORTANTE **
 
@@ -12,8 +12,8 @@ Firebird Database Server 2.0 BETA 2
   ** ********** **
 
 Questo documento contiene istruzioni per
-l'installazione di Firebird 2.0 Beta 2 su piattaforma
-Windows. Questa documentazione si riferisce dunque al
+l'installazione di Firebird 2.0 su piattaforma
+Win32. Questa documentazione si riferisce dunque al
 solo processo di installazione, e non a Firebird 2.0
 in generale.
 
@@ -46,19 +46,18 @@ fbclient.dll e gds32.dll nella cartella di sistema.
 La nuova ODS 11.0
 -----------------
 
-A partire dalla versione 2.0 Beta 1 Firebird usa un
-nuovo formato per i file su disco (ODS, che sta per
-On-Disk Structure), la versione 11.0. Si tratta di
-un formato assolutamente incompatibile con il formato
-(pure chiamato 11.0) delle versioni Alpha di Firebird
-2.0.
+Firebird 2.0 usa un nuovo formato per i file su disco
+(ODS, che sta per On-Disk Structure), la versione 11.0.
+Si tratta di un formato assolutamente incompatibile con
+il formato (pure chiamato 11.0) delle precedenti
+versioni Alpha di Firebird 2.0.
 
-Se è la prima volta che installate una versione Beta
-di Firebird 2.0, e avete già una versione Alpha, si
-raccomanda di installare in una nuova cartella. Questo
+Se è la prima volta che installate Firebird 2.0, e
+avete già una versione Alpha, si raccomanda di
+installare in una nuova cartella. Questo
 perché una disinstallazione manterrebbe il file
 security2.fdb esistente, che però non è utilizzabile
-dalle versioni Beta di Firebird 2 (il che rende
+dalla versione finale di Firebird 2.0 (il che rende
 impossibile la connessione a qualunque database).
 
 
@@ -68,8 +67,8 @@ Installazione su sistemi contenenti Firebird 1.5
 Il database degli utenti è cambiato. Il nome del
 nuovo database degli utenti è security2.fdb, ed usa
 un algoritmo migliore per la cifratura delle password.
-Per maggiori informazioni, fate riferimento al file
-doc/README.sha1.txt.
+Per maggiori informazioni, fate riferimento alle note
+sul rilascio.
 
 La nuova struttura del database degli utenti e il
 nuovo algoritmo di cifratura pongono problemi di
@@ -78,21 +77,22 @@ molti utenti. Il programma di installazione non è
 progettato per effettuare questa migrazione, che deve
 quindi essere attuata manualmente.
 Una possibile tecnica di migrazione è riportata in
-misc/upgrade/security. Questo problema verrà
-comunque risolto in una delle prossime versioni.
+misc/upgrade/security.
 
 
 Installazione su sistemi contenenti Firebird 2.0
 ------------------------------------------------
 
 Oltre alla modifica della ODS, occorre tenere presente
-che il programma di installazione al momento non è in
-grado di rilevare automaticamente se un server
-Firebird 2.0 Alpha o Beta 1 è in esecuzione come
-servizio. Per questo motivo, in questa situazione non
-si riceverà alcun avviso fino a quando il programma
-non fallirà nel tentare di sovrascrivere un file in
-uso.
+che il programma di installazione non è in grado di
+rilevare automaticamente se un server Firebird 2.0
+Alpha o Beta è in esecuzione come servizio. Per questo
+motivo, in questa situazione non si riceverà alcun
+avviso fino a quando il programma non fallirà nel
+tentare di sovrascrivere un file in uso. Se si usa
+la cautela di disinstallare una versione precedente
+prima di installare questa, il problema non si
+presenta.
 
 
 Nuove caratteristiche del programma di installazione
@@ -118,12 +118,7 @@ o Il programma di installazione (e SOLO il programma
 Problemi aperti del programma di installazione
 ----------------------------------------------
 
-Un'installazione di solo client installa in effetti
-anche il file eseguibile del server. Questo verrà
-corretto in una prossima versione. Nel frattempo, sarà
-sufficiente cancellare a mano il file .exe, operazione
-che può anche essere automatizzata nel caso di
-installazioni batch.
+Non si registrano problemi.
 
 
 Disinstallazione
@@ -136,7 +131,7 @@ o Si consiglia di distinstallare il prodotto nel modo
 
 o Se Firebird è in esecuzione come applicazione (e non
   come servizio), si raccomanda di arrestare
-  manualmente il servizio prima di procedere con la
+  manualmente il server prima di procedere con la
   disinstallazione. Questo è necessario in quanto il
   programma di disinstallazione non è in grado di
   arrestare un'applicazione in esecuzione. Se il
@@ -183,4 +178,4 @@ informazioni, potete fare riferimento al file:
 
     installation_scripted.txt
 
-non ancora disponibile in italiano.
+non disponibile in italiano.

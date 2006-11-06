@@ -490,7 +490,7 @@ rem_port* XNET_reconnect(ULONG client_pid, ISC_STATUS* status_vector)
 		}
 
 	}
-	catch (const Firebird::Exception&) {
+	catch (const std::exception&) {
 		XNET_LOG_ERROR("Unable to initialize child process");
 		status_vector[1] = isc_unavailable;
 
@@ -565,7 +565,7 @@ static bool connect_init()
 
 		return true;
 	}
-	catch (const Firebird::Exception&) {
+	catch (const std::exception&) {
 		connect_fini();
 		return false;
 	}
@@ -637,9 +637,9 @@ static int accept_connection(rem_port* port, P_CNCT * cnct)
 	if (xcc) {
 		XPS xps = (XPS) xcc->xcc_mapped_addr;
 		if (xps) {
-			TEXT address[MAX_COMPUTERNAME_LENGTH + 1];
-			ISC_get_host(address, sizeof(address));
-			port->port_address_str = REMOTE_make_string(address);
+			Firebird::string address;
+			address.printf("%u", xps->xps_client_proc_id);
+			port->port_address_str = REMOTE_make_string(address.c_str());
 		}
 	}
 
@@ -810,7 +810,7 @@ static rem_port* aux_connect(rem_port* port, PACKET* packet, t_event_ast ast)
 
 		return new_port;
 	}
-	catch (const Firebird::Exception&) {
+	catch (const std::exception&) {
 
 		XNET_LOG_ERROR("aux_connect() failed");
 
@@ -944,7 +944,7 @@ static rem_port* aux_request(rem_port* port, PACKET* packet)
 
 		return new_port;
 	}
-	catch (const Firebird::Exception&) {
+	catch (const std::exception&) {
 
 		XNET_LOG_ERROR("aux_request() failed");
 
@@ -1220,7 +1220,7 @@ static rem_port* connect_client(PACKET* packet, ISC_STATUS* status_vector)
 		}
 
 		}
-		catch (const Firebird::Exception&) {
+		catch (const std::exception&) {
 			XNET_UNLOCK();
 			throw;
 		}
@@ -1310,7 +1310,7 @@ static rem_port* connect_client(PACKET* packet, ISC_STATUS* status_vector)
 		xps->xps_channels[XPS_CHANNEL_S2C_DATA].xch_client_ptr = (start_ptr + avail);
 
 	}
-	catch (const Firebird::Exception&) {
+	catch (const std::exception&) {
 
 			if (file_handle) {
 				if (mapped_address) {
@@ -1429,7 +1429,7 @@ static rem_port* connect_server(ISC_STATUS* status_vector, USHORT flag)
 				return port;
 
 				}
-				catch (const Firebird::Exception&) {
+				catch (const std::exception&) {
 					XNET_LOG_ERROR("failed to allocate server port for communication");
 					break;
 				}
@@ -2234,7 +2234,7 @@ static XPM make_xpm(ULONG map_number, time_t timestamp)
 	return xpm;
 
 	}
-	catch (const Firebird::Exception&) {
+	catch (const std::exception&) {
 		return NULL;
 	}
 }
@@ -2318,7 +2318,7 @@ static bool server_init()
 			Firebird::system_call_failed::raise("MapViewOfFile");
 		}
 	}
-	catch (const Firebird::Exception&) {
+	catch (const std::exception&) {
 		connect_fini();
 		XNET_LOG_ERROR("XNET server initialization failed");
 		return false;
@@ -2409,11 +2409,42 @@ static bool fork(ULONG client_pid, USHORT flag, ULONG* forked_pid)
  *
  **************************************/
 	if (!XNET_command_line[0]) {
+
+#ifdef CMDLINE_VIA_SERVICE_MANAGER
+
+		SC_HANDLE service;
+		SC_HANDLE manager = OpenSCManager(NULL, NULL, SC_MANAGER_CONNECT);
+		if ((manager) &&
+			(service = OpenService(manager, REMOTE_SERVICE, SERVICE_QUERY_CONFIG)))
+		{
+			SCHAR buffer[BUFFER_LARGE];
+			DWORD config_len;
+
+			LPQUERY_SERVICE_CONFIG config = (LPQUERY_SERVICE_CONFIG) buffer;
+			THREAD_EXIT();
+			if (!QueryServiceConfig(service, config, sizeof(buffer), &config_len))
+			{
+				config = (LPQUERY_SERVICE_CONFIG) ALLR_alloc(config_len);
+				QueryServiceConfig(service, config, config_len, &config_len);
+			}
+			strcpy(XNET_command_line, config->lpBinaryPathName);
+			if ((SCHAR *) config != buffer) {
+				ALLR_free(config);
+			}
+			CloseServiceHandle(service);
+			THREAD_ENTER();
+		}
+		else {
+			strcpy(XNET_command_line, GetCommandLine());
+		}
+		CloseServiceHandle(manager);
+#else
 		strcpy(XNET_command_line, GetCommandLine());
+#endif
 		XNET_p = XNET_command_line + strlen(XNET_command_line);
 	}
 
-	sprintf(XNET_p, " -x -h %"ULONGFORMAT, (ULONG) client_pid);
+	sprintf(XNET_p, " -s -x -h %"ULONGFORMAT, (ULONG) client_pid);
 
 	STARTUPINFO start_crud;
 	start_crud.cb = sizeof(STARTUPINFO);
@@ -2573,7 +2604,7 @@ static rem_port* get_server_port(ULONG client_pid,
 		gds__register_cleanup((FPTR_VOID_PTR) exit_handler, port);
 
 	}
-	catch (const Firebird::Exception&) {
+	catch (const std::exception&) {
 		if (xcc) {
 			if (xcc->xcc_proc_h) {
 				CloseHandle(xcc->xcc_proc_h);

@@ -104,6 +104,39 @@
 
 #include "../common/config/config.h"
 
+// Turn on V4 mutex protection for gds__alloc/free 
+// 03/23/2003 BRS. Those defines don't do anything, V4_ macros are defined in thd.h 
+// but this file is included before this definition and so the macros are defined as empty
+// Those definitions are commented to allow V4_ macros to be inside V4_THREADING ifdefs
+// The include chain is
+// gdsassert.h -> gds_proto.h -> fil.h -> thd.h
+//
+//#ifdef WIN_NT
+//#define V4_THREADING
+//#endif
+//
+//#ifdef SOLARIS_MT
+//#define V4_THREADING
+//#endif
+//
+//#ifdef SUPERSERVER
+//#define V4_THREADING			// RFM: 9/22/2000 fix from Inprise tree,
+//								// Inprise bug 114840
+//#endif
+//
+// The following ifdef was added to build thread safe gds shared
+//  library on linux platform. It seems the gdslib works now (20020220)
+//  with thread enabled applications. Anyway, more tests should be 
+//  done as I don't have deep knowledge of the interbase/firebird 
+//  engine and this change may imply side effect I haven't known 
+//  about yet. Tomas Nejedlik (tomas@nejedlik.cz)
+//
+//#if ((defined(LINUX) || defined(FREEBSD)) && defined(SUPERCLIENT))
+//#define V4_THREADING
+//#endif
+//
+
+
 #ifdef SUPERSERVER
 static const TEXT gdslogid[] = " (Server)";
 #else
@@ -356,9 +389,7 @@ static const UCHAR
 	dcl_cursor[] = { op_word, op_line, op_verb, op_indent, op_word, op_line, op_args, 0},
 	cursor_stmt[] = { op_cursor_stmt, 0 },
 	strlength[] = { op_byte, op_line, op_verb, 0},
-	trim[] = { op_byte, op_byte, op_line, op_verb, 0},
-	src_info[] = { op_word, op_word, op_line, 0},
-	modify2[] = { op_byte, op_byte, op_line, op_verb, op_verb, 0};
+	trim[] = { op_byte, op_byte, op_line, op_verb, 0};
 
 #include "../jrd/blp.h"
 
@@ -873,13 +904,11 @@ static SLONG safe_interpret(char* const s, const size_t bufsize,
 	case isc_arg_warning:
 	case isc_arg_gds:
 		{
-			while (arg < args + 5) // could be argend, but we only use up to args[4]
-			    *arg++ = 0;
-			    
 			USHORT fac = 0, dummy_class = 0;
 			const ISC_STATUS decoded = gds__decode(code, &fac, &dummy_class);
-			if (gds__msg_format(0, fac, (USHORT) decoded, bufsize, s,
-								args[0], args[1], args[2], args[3], args[4]) < 0)
+			if (gds__msg_format(0, fac, (USHORT) decoded,
+								bufsize, s, args[0], args[1], args[2], args[3],
+								args[4]) < 0)
 			{
 				bool found = false;
 
@@ -1488,13 +1517,6 @@ SSHORT API_ROUTINE gds__msg_lookup(void* handle,
 			if (fb_utils::readenv("LC_MESSAGES", p))
 			{
 				sanitize(p);
-				Firebird::string::size_type pos = p.find_last_of('/');
-				if (pos == Firebird::string::npos)
-				    pos = p.find_last_of('\\');
-				    
-				if (pos != Firebird::string::npos)
-				    p.erase(0, pos + 1);
-				    
 				fb_utils::snprintf(translated_msg_file,
 					sizeof(translated_msg_file), MSG_FILE_LANG, p.c_str());
 				gds__prefix_msg(msg_file, translated_msg_file);
@@ -1504,7 +1526,6 @@ SSHORT API_ROUTINE gds__msg_lookup(void* handle,
 			}
 			else
 				status = 1;
-				
 			if (status) {
 				/* Default to standard message file */
 
@@ -2061,8 +2082,7 @@ USHORT API_ROUTINE gds__parse_bpb2(USHORT bpb_length,
 			break;
 
 		case isc_bpb_type:
-		case isc_bpb_storage:
-			type |= (USHORT) gds__vax_integer(p, length);
+			type = (USHORT) gds__vax_integer(p, length);
 			break;
 
 		case isc_bpb_source_interp:
@@ -2175,7 +2195,7 @@ int API_ROUTINE gds__print_blr(
 	blr_print_line(control, (SSHORT) offset);
 
 	}	// try
-	catch (const Firebird::LongJump&) {
+	catch (const std::exception&) {
 		return -1;
 	}
 
@@ -2359,6 +2379,133 @@ void API_ROUTINE gds__sqlcode_s(const ISC_STATUS* status_vector, ULONG* sqlcode)
  **************************************/
 
 	*sqlcode = gds__sqlcode(status_vector);
+}
+
+
+void API_ROUTINE gds__temp_dir(TEXT* buffer)
+{
+/**************************************
+ *
+ *      g d s _ _ t e m p _ d i r
+ *
+ **************************************
+ *
+ * Functional description
+ *      Return temporary directory.
+ *
+ **************************************/
+	buffer[0] = 0;
+
+	gdsPrefixInit();
+
+	strcpy(buffer, fbTempDir);	// safe - no BO
+}
+
+
+void* API_ROUTINE gds__temp_file(
+					 BOOLEAN stdio_flag, const TEXT* string,
+					 TEXT* expanded_string, TEXT* dir, BOOLEAN unlink_flag)
+{
+/**************************************
+ *
+ *      g d s _ _ t e m p _ f i l e
+ *
+ **************************************
+ *
+ * Functional description
+ *      Create and open a temp file with a given location.
+ *      Unless the address of a buffer for the expanded file name string is
+ *      given, make up the file "pre-deleted". Return -1 on failure.
+ *      If unlink_flag is TRUE than file is marked as pre-deleted even if 
+ *      expanded_string is not NULL.
+ * NOTE 
+ *      Function returns untyped handle that needs to be casted to either FILE
+ *      or used as file descriptor. This is ugly and needs to be fixed probably 
+ *      via introducing two functions with different return types.
+ *
+ **************************************/
+	TEXT temp_dir[MAXPATHLEN];
+
+	const TEXT* directory = dir;
+	if (!directory) {
+		gds__temp_dir(temp_dir);
+		directory = temp_dir;
+	}
+	if (strlen(directory) >= MAXPATHLEN - strlen(string) - strlen(TEMP_PATTERN) - 2)
+		return (void *)-1;
+
+	void* result;
+
+#ifdef WIN_NT
+	/* These are the characters used in temporary filenames.  */
+	static const char letters[] = "abcdefghijklmnopqrstuvwxyz0123456789";
+
+	_timeb t;
+	_ftime(&t);
+	__int64 randomness = t.time;
+	randomness *= 1000;
+	randomness += t.millitm;
+	for (int tryCount = 0; tryCount < MAX_TMPFILE_TRIES; tryCount++) {
+		char file_name[MAXPATHLEN];
+		strcpy(file_name, directory);
+		if (file_name[strlen(file_name) - 1] != '\\')
+			strcat(file_name, "\\");
+		strcat(file_name, string);
+		char suffix[] = TEMP_PATTERN;
+		__int64 temp = randomness;
+		for (size_t i = 0; i < sizeof(suffix) - 1; i++) {
+			suffix[i] = letters[temp % (sizeof(letters) - 1)];
+			temp /= sizeof(letters) - 1;
+		}
+		strcat(file_name, suffix);
+		if (expanded_string)
+			strcpy(expanded_string, file_name);
+		result = (void*)_sopen(file_name, _O_CREAT | _O_TRUNC | _O_RDWR | 
+			_O_BINARY | _O_SHORT_LIVED | _O_NOINHERIT | _O_EXCL |
+			(expanded_string && !unlink_flag ? 0 : _O_TEMPORARY),
+			_SH_DENYRW, _S_IREAD | _S_IWRITE);
+		if ((int)result != -1 || (errno != EACCES && errno != EEXIST))
+			break;
+		randomness++;
+	}
+	if ((int)result == -1) return result;
+	if (stdio_flag) {
+		if (!(result = fdopen((int) result, "w+b")))
+			return (void *)-1;
+	}
+#else
+	TEXT file_name[MAXPATHLEN];
+	strcpy(file_name, directory);
+	if (file_name[strlen(file_name) - 1] != '/')
+		strcat(file_name, "/");
+	strcat(file_name, string);
+	strcat(file_name, TEMP_PATTERN);
+	
+#ifdef HAVE_MKSTEMP
+	result = (void *)(IPTR)mkstemp(file_name);
+#else
+	if (mktemp(file_name) == (char *)0)
+		return (void *)-1;
+
+	do {
+		result = (void *)open(file_name, O_RDWR | O_EXCL | O_CREAT);
+	} while (result == (void *)-1 && errno == EINTR);
+#endif
+	if (result == (void *)-1)
+		return result;
+
+	if (stdio_flag)
+		if (!(result = fdopen((int)(IPTR)result, "w+")))
+			return (void *)-1;
+
+	if (expanded_string)
+		strcpy(expanded_string, file_name);
+
+	if (!expanded_string || unlink_flag)
+		unlink(file_name);
+#endif
+
+	return result;
 }
 
 
@@ -2722,7 +2869,7 @@ static void blr_error(gds_ctl* control, const TEXT* string, ...)
 	va_end(args);
 	offset = 0;
 	blr_print_line(control, (SSHORT) offset);
-	Firebird::LongJump::raise();
+	Firebird::status_exception::raise();
 }
 
 
@@ -2915,8 +3062,7 @@ static int blr_print_dtype(gds_ctl* control)
    jump table */
 	const TEXT* string;
 
-	switch (dtype)
-	{
+	switch (dtype) {
 	case blr_short:
 		string = "short";
 		length = 2;
@@ -3002,20 +3148,6 @@ static int blr_print_dtype(gds_ctl* control)
 		length = 8;
 		break;
 
-	case blr_type_of:
-		string = "type_of";
-		// Don't bother with this length.
-		// It will not be used for blr_type_of.
-		length = 0;
-		break;
-
-	case blr_type_of2:
-		string = "type_of2";
-		// Don't bother with this length.
-		// It will not be used for blr_type_of2.
-		length = 0;
-		break;
-
 	default:
 		blr_error(control, "*** invalid data type ***");
 		break;
@@ -3023,18 +3155,13 @@ static int blr_print_dtype(gds_ctl* control)
 
 	blr_format(control, "blr_%s, ", string);
 
-	switch (dtype)
-	{
+	switch (dtype) {
 	case blr_text:
 		length = blr_print_word(control);
 		break;
 
 	case blr_varying:
 		length = blr_print_word(control) + 2;
-		break;
-
-	case blr_cstring:
-		length = blr_print_word(control);
 		break;
 
 	case blr_short:
@@ -3064,19 +3191,10 @@ static int blr_print_dtype(gds_ctl* control)
 		blr_print_word(control);
 		break;
 
-	case blr_type_of:
-	case blr_type_of2:
-		{
-			UCHAR n = blr_print_byte(control);
-
-			while (n-- > 0)
-				blr_print_char(control);
-
-			if (dtype == blr_type_of2)
-				blr_print_word(control);
-
-			break;
-		}
+	default:
+		if (dtype == blr_cstring)
+			length = blr_print_word(control);
+		break;
 	}
 
 	return length;
@@ -3174,7 +3292,6 @@ static void blr_print_verb(gds_ctl* control, SSHORT level)
 	SSHORT n;
 
 	while (*ops)
-	{
 		switch (*ops++) {
 		case op_verb:
 			blr_print_verb(control, level);
@@ -3323,7 +3440,6 @@ static void blr_print_verb(gds_ctl* control, SSHORT level)
 			fb_assert(false);
 			break;
 		}
-	}
 }
 
 
@@ -3384,6 +3500,9 @@ void gds__cleanup(void)
 		(*routine)(arg);
 	}
 
+#ifdef V4_THREADING
+/* V4_DESTROY; */
+#endif
 	initialized = false;
 }
 
@@ -3402,6 +3521,13 @@ static void init(void)
  **************************************/
 	if (initialized)
 		return;
+
+	/* V4_INIT; */
+	/* V4_GLOBAL_MUTEX_LOCK; */
+	if (initialized) {
+		/*  V4_GLOBAL_MUTEX_UNLOCK; */
+		return;
+	}
 
 #ifdef VMS
 	exit_description.exit_handler = cleanup;
@@ -3450,6 +3576,8 @@ static void init(void)
 #ifndef REQUESTER
 	ISC_signal_init();
 #endif
+
+	/* V4_GLOBAL_MUTEX_UNLOCK; */
 }
 
 static void sanitize(Firebird::string& locale)

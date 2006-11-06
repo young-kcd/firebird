@@ -33,7 +33,7 @@
 				PreprocessorDefinitions="WIN32,NDEBUG,_LIB,SUPERSERVER"
 				ExceptionHandling="FALSE"
 				RuntimeLibrary="2"
-				RuntimeTypeInfo="FALSE"
+				RuntimeTypeInfo="TRUE"
 				PrecompiledHeaderFile="..\..\..\temp\release\common_ss/common.pch"
 				AssemblerListingLocation="..\..\..\temp\release\common_ss/"
 				ObjectFile="..\..\..\temp\release\common_ss/"
@@ -86,7 +86,7 @@
 				ExceptionHandling="FALSE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				RuntimeTypeInfo="FALSE"
+				RuntimeTypeInfo="TRUE"
 				UsePrecompiledHeader="2"
 				PrecompiledHeaderFile="..\..\..\temp\debug\common_ss/common.pch"
 				AssemblerListingLocation="..\..\..\temp\debug\common_ss/"
@@ -188,9 +188,6 @@
 				RelativePath="..\..\..\src\jrd\os\win32\path_utils.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\src\common\classes\TempFile.cpp">
-			</File>
-			<File
 				RelativePath="..\..\..\src\common\classes\timestamp.cpp">
 			</File>
 			<File
@@ -238,9 +235,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\common\classes\MetaName.h">
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\classes\TempFile.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\common\classes\timestamp.h">

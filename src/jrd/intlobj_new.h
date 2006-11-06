@@ -44,18 +44,10 @@ typedef SCHAR ASCII;
 
 typedef USHORT INTL_BOOL;
 
-#ifdef __cplusplus
-namespace {
-#endif
-
 /* Forward declarations to be implemented in collation driver */
 struct TextTypeImpl;
 struct CharSetImpl;
 struct CsConvertImpl;
-
-#ifdef __cplusplus
-}
-#endif
 
 struct texttype; /* forward decl for the fc signatures before the struct itself. */
 struct csconvert;
@@ -146,7 +138,7 @@ typedef void (*pfn_INTL_tt_destroy) (
                                       but accent-sensitive */
 
 
-struct texttype {
+typedef struct texttype {
 	/* Data which needs to be initialized by collation driver */
 	USHORT texttype_version;	/* version ID of object */
 	TextTypeImpl* texttype_impl;   /* collation object implemented in driver */
@@ -201,7 +193,7 @@ struct texttype {
 
 	/* Some space which may be freely used by collation driver */
 	void* reserved_for_driver[10];
-};
+} *TEXTTYPE;
 
 /* Returns resulting string length or INTL_BAD_STR_LENGTH in case of error */
 typedef ULONG (*pfn_INTL_convert) (

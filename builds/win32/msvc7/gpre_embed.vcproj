@@ -30,7 +30,7 @@
 				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen,../../../src/jrd"
 				PreprocessorDefinitions="GPRE_FORTRAN,GPRE_PASCAL,GPRE_COBOL,GPRE_ADA,NDEBUG,_CONSOLE,SUPERCLIENT,WIN32,_X86_"
 				RuntimeLibrary="2"
-				RuntimeTypeInfo="FALSE"
+				RuntimeTypeInfo="TRUE"
 				PrecompiledHeaderFile=".\..\..\..\temp\release\gpre_embed/gpre_embed.pch"
 				AssemblerListingLocation=".\..\..\..\temp\release\gpre_embed/"
 				ObjectFile=".\..\..\..\temp\release\gpre_embed/"
@@ -89,7 +89,7 @@
 				PreprocessorDefinitions="GPRE_FORTRAN,GPRE_PASCAL,GPRE_COBOL,GPRE_ADA,_DEBUG,_CONSOLE,SUPERCLIENT,WIN32,_X86_,DEV_BUILD"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				RuntimeTypeInfo="FALSE"
+				RuntimeTypeInfo="TRUE"
 				PrecompiledHeaderFile=".\..\..\..\temp\debug\gpre_embed/gpre_embed.pch"
 				AssemblerListingLocation=".\..\..\..\temp\debug\gpre_embed/"
 				ObjectFile=".\..\..\..\temp\debug\gpre_embed/"
@@ -142,9 +142,6 @@
 		<Filter
 			Name="COMMON files"
 			Filter="cpp;c">
-			<File
-				RelativePath="..\..\..\src\common\classes\TempFile.cpp">
-			</File>
 			<File
 				RelativePath="..\..\..\src\common\utils.cpp">
 			</File>
@@ -317,9 +314,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\gpre\sql_proto.h">
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\classes\TempFile.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\common\utils_proto.h">

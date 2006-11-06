@@ -179,14 +179,7 @@ and trigger-new is:
 			  RDB$FILE_NAME in character_sets and collations
 			  RDB$BASE_COLLATION_NAME and RDB$SPECIFIC_ATTRIBUTES in collations
  */
-
-/* Version 8: RDB$RELATION_TYPE in relations
-			  RDB$PROCEDURE_TYPE and RDB$VALID_BLR in procedures
-			  RDB$VALID_BLR in triggers
-			  RDB$DEFAULT_VALUE, RDB$DEFAULT_SOURCE and RDB$COLLATION_ID in procedure_parameters
-
- */
-const int ATT_BACKUP_FORMAT		= 8;	// ASF: when change this, change the text of the message gbak_inv_bkup_ver too
+const int ATT_BACKUP_FORMAT		= 7;	// ASF: when change this, change the text of the message gbak_inv_bkup_ver too
 
 // format version number for ranges for arrays 
 
@@ -250,8 +243,7 @@ enum att_type {
 	att_relation_view_source2,
 	att_relation_ext_description2,
 	att_relation_flags,  
-	att_relation_ext_file_name, // name of file for external tables
-	att_relation_type,
+	att_relation_ext_file_name, // name of file for external tables 
 
 	// Field attributes (used for both global and local fields) 
 
@@ -370,9 +362,7 @@ enum att_type {
 	att_trig_inactive,
 	att_trig_source2,
 	att_trig_description2,
-	att_trig_flags,
-	att_trig_valid_blr,
-	att_trig_debug_info,
+	att_trig_flags,	 
 
 	// Function attributes 
 
@@ -457,9 +447,6 @@ enum att_type {
 	att_procedure_blr,
 	att_procedure_security_class,
 	att_procedure_owner_name,
-	att_procedure_type,
-	att_procedure_valid_blr,
-	att_procedure_debug_info,
 
 	// Stored procedure parameter attributes 
 
@@ -469,9 +456,6 @@ enum att_type {
 	att_procedureprm_field_source,
 	att_procedureprm_description,
 	att_procedureprm_description2,
-	att_procedureprm_default_value,
-	att_procedureprm_default_source,
-	att_procedureprm_collation_id,
 
 	// Exception attributes 
 
@@ -758,7 +742,7 @@ const size_t ACT_LEN = sizeof(act);
 
 const ULONG MAX_LENGTH = -1UL; // Keep in sync with burp_fil.fil_length
 
-// This structure has been cloned from spit.cpp
+// This structure has been cloned from spit.c 
 
 struct hdr_split {
 	TEXT hdr_split_tag[18];
@@ -807,7 +791,6 @@ public:
 	bool		gbl_sw_ignore_limbo;
 	bool		gbl_sw_meta;
 	bool		gbl_sw_novalidity;
-	bool		gbl_sw_nodbtriggers;
 	USHORT		gbl_sw_page_size;
 	bool		gbl_sw_compress;
 	bool		gbl_sw_version;
@@ -842,7 +825,6 @@ public:
 	burp_prc*	procedures;
 	SLONG		BCK_capabilities;
 	USHORT		RESTORE_format;
-	int         RESTORE_ods;
 	ULONG		mvol_io_buffer_size;
 	ULONG		mvol_actual_buffer_size;
 	UINT64		mvol_cumul_count;
@@ -990,7 +972,7 @@ inline static ULONG BURP_UP_TO_BLOCK(const ULONG size)
 	return (((size) + BURP_BLOCK - 1) & ~(BURP_BLOCK - 1));
 }
 
-/* Move the read and write mode declarations in here from burp.cpp
+/* Move the read and write mode declarations in here from burp.c
    so that other files can see them for multivolume opens */
 
 #ifdef WIN_NT

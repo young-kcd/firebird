@@ -126,13 +126,12 @@ const int GET_LINE		= 1;
 const int GET_EOF		= 2;
 const int GET_BINARY	= 4;
 
-const TEXT SVC_TRMNTR	= '\377';
+const TEXT SVC_TRMNTR	= '\1';
 
 namespace Jrd {
 	Service::Service(serv_entry *se, Firebird::MemoryPool& p) :
-		svc_parsed_sw(p), 
 		svc_handle(0), svc_status(svc_status_array), svc_input(0), svc_output(0),
-		svc_stdout_head(0), svc_stdout_tail(0), svc_stdout(0), svc_argv(p), svc_argc(0),
+		svc_stdout_head(0), svc_stdout_tail(0), svc_stdout(0), svc_argv(0), svc_argc(0),
 		svc_service(se), svc_resp_buf(0), svc_resp_ptr(0), svc_resp_buf_len(0),
 		svc_resp_len(0), svc_flags(0), svc_user_flag(0), svc_spb_version(0), svc_do_shutdown(false),
 		svc_username(p), svc_enc_password(p), svc_switches(p), svc_perm_sw(p)
@@ -164,6 +163,10 @@ namespace Jrd {
 		{
 			gds__free(svc_stdout);
 		}
+		if (svc_argv) 
+		{
+			gds__free(svc_argv);
+		}
 #endif //SERVICE_THREAD
 
 		if (svc_resp_buf)
@@ -174,65 +177,6 @@ namespace Jrd {
 #ifdef WIN_NT
 		CloseHandle((HANDLE) svc_handle);
 #endif
-	}
-	
-	void Service::parseSwitches()
-	{
-		svc_parsed_sw = svc_switches;
-		svc_parsed_sw.trim();
-		svc_argc = 2;
-		
-		if (svc_parsed_sw.isEmpty())
-		{
-			svc_argv.getBuffer(svc_argc + 1)[1] = 0;
-			return;
-		}
-		
-		bool inStr = false;
-		for (size_t i = 0; i < svc_parsed_sw.length(); ++i)
-		{
-
-			switch (svc_parsed_sw[i])
-			{
-			case SVC_TRMNTR:
-				svc_parsed_sw.erase(i, 1);
-				if (inStr)
-				{
-					if (i < svc_parsed_sw.length() && svc_parsed_sw[i] != SVC_TRMNTR)
-					{
-						inStr = false;
-						--i;
-					}
-				}
-				else
-				{
-					inStr = true;
-					--i;
-				}
-				break;
-				
-			case ' ':
-				if (!inStr)
-				{
-					++svc_argc;
-					svc_parsed_sw[i] = 0;
-				}
-				break;
-			}
-		}
-		
-		const char** argv = svc_argv.getBuffer(svc_argc + 1);
-		argv++;	// leave space for argv[0]
-		*argv++ = svc_parsed_sw.c_str();
-		for (const char *p = svc_parsed_sw.begin(); 
-			p < svc_parsed_sw.end(); ++p)
-		{
-			if (!*p) 
-			{
-				*argv++ = p + 1;
-			}
-		}
-		*argv = 0;
 	}
 } //namespace
 	
@@ -605,6 +549,7 @@ Service* SVC_attach(USHORT	service_length,
 	service->svc_stdout_head = 1;
 	service->svc_stdout_tail = SVC_STDOUT_BUFFER_SIZE;
 	service->svc_stdout = NULL;
+	service->svc_argv = NULL;
 #endif
 	service->svc_spb_version = options.spb_version;
 	service->svc_username = options.spb_user_name;
@@ -657,7 +602,7 @@ Service* SVC_attach(USHORT	service_length,
 	}
 
 	}	// try
-	catch (const Firebird::Exception&) {
+	catch (const std::exception&) {
 		delete service;
 		throw;
 	}
@@ -884,19 +829,9 @@ ISC_STATUS SVC_query2(Service* service,
 /* Process the receive portion of the query now. */
 
 	const SCHAR* const end = info + buffer_length;
+
 	items = recv_items;
 	const SCHAR* const end_items2 = items + recv_item_length;
-
-	SCHAR* start_info;
-
-	if (*items == isc_info_length) {
-		start_info = info;
-		items++;
-	}
-	else {
-		start_info = 0;
-	}
-
 	while (items < end_items2 && *items != isc_info_end)
 	{
 		/*
@@ -929,8 +864,8 @@ ISC_STATUS SVC_query2(Service* service,
 		case isc_info_svc_svr_db_info:
 			{
 				UCHAR dbbuf[1024];
-				ULONG num_dbs = 0;
-				ULONG num_att = 0;
+				USHORT num_dbs = 0;
+				USHORT num_att = 0;
 
 				*info++ = item;
 				TEXT* const ptr =
@@ -1274,13 +1209,6 @@ ISC_STATUS SVC_query2(Service* service,
 	if (info < end)
 		*info = isc_info_end;
 
-	if (start_info && (end - info >= 7))
-	{
-		SLONG number = 1 + (info - start_info);
-		memmove(start_info + 7, start_info, number);
-		USHORT length2 = INF_convert(number, buffer);
-		INF_put_item(isc_info_length, length2, buffer, start_info, end);
-	}
 
 	if (!(service->svc_flags & SVC_thd_running))
 	{
@@ -1377,8 +1305,8 @@ void SVC_query(Service*		service,
 #ifdef SERVER_SHUTDOWN
 		case isc_info_svc_svr_db_info:
 			{
-				ULONG num_att = 0;
-				ULONG num_dbs = 0;
+				USHORT num_att = 0;
+				USHORT num_dbs = 0;
 				JRD_num_attachments(NULL, 0, 0, &num_att, &num_dbs);
 				length = INF_convert(num_att, buffer);
 				info = INF_put_item(item,
@@ -1822,15 +1750,86 @@ void* SVC_start(Service* service, USHORT spb_length, const SCHAR* spb_data)
 #else
 
 /* Break up the command line into individual arguments. */
-	service->parseSwitches();
-	service->svc_argv[0] = (TEXT *)(serv->serv_thd);
+	if (service->svc_switches.hasData())
+	{
+		USHORT argc;
+		TEXT* p;
+		for (argc = 2, p = service->svc_switches.begin(); *p;) {
+			if (*p == ' ') {
+				argc++;
+				while (*p == ' ')
+					p++;
+			}
+			else {
+				if (*p == SVC_TRMNTR) {
+					while (*p++ && *p != SVC_TRMNTR);
+					fb_assert(*p == SVC_TRMNTR);
+				}
+				p++;
+			}
+		}
+
+		service->svc_argc = argc;
+
+		TEXT** arg = (TEXT **) gds__alloc((SLONG) ((argc + 1) * sizeof(TEXT *)));
+		/*
+		 * the service block can be reused hence free a memory from the
+		 * previous usage if any.
+		 */
+		if (service->svc_argv)
+			gds__free(service->svc_argv);
+		service->svc_argv = arg;
+		/* FREE: at SVC_detach() - Possible memory leak if ERR_post() occurs */
+		if (!arg)				/* NOMEM: */
+			ERR_post(isc_virmemexh, 0);
+
+		*arg++ = (TEXT *)(serv->serv_thd);
+		const TEXT* q = p = service->svc_switches.begin();
+
+		while (*q == ' ')
+			q++;
+
+		while (*q) {
+			*arg = p;
+			while (*p = *q++) {
+				if (*p == ' ')
+					break;
+
+				if (*p == SVC_TRMNTR) {
+					*arg = ++p;	/* skip terminator */
+					while (*p = *q++)
+						/* If *q points to the last argument, then terminate the argument */
+						if ((*q == 0 || *q == ' ') && *p == SVC_TRMNTR) {
+							*p = '\0';
+							break;
+						}
+						else
+							p++;
+				}
+
+				if (*p == '\\' && *q == ' ') {
+					*p = ' ';
+					q++;
+				}
+				p++;
+			}
+			arg++;
+			if (!*p)
+				break;
+			*p++ = '\0';
+			while (*q == ' ')
+				q++;
+		}
+		*arg = NULL;
+	}
 
 /*
  * the service block can be reused hence free a memory from the
  * previous usage as well as init a status vector.
  */
 
-	memset((void *) service->svc_status, 0, sizeof(ISC_STATUS_ARRAY));
+	memset((void *) service->svc_status, 0,
+		   ISC_STATUS_LENGTH * sizeof(ISC_STATUS));
 
 	if (service->svc_stdout)
 		gds__free(service->svc_stdout);
@@ -1886,7 +1885,7 @@ void* SVC_start(Service* service, USHORT spb_length, const SCHAR* spb_data)
 #endif /* SERVICE_THREAD */
 
 	}	// try
-	catch (const Firebird::Exception&) {
+	catch (const std::exception&) {
 		delete service;
 		throw;
 	}
@@ -2174,12 +2173,50 @@ static void service_fork(ThreadEntryPoint* service_executable, Service* service)
  *	Startup a service.
  *
  **************************************/
+	TEXT* p;
+	
+	USHORT argc = 2;
+	for (p = service->svc_switches.begin(); *p;)
+		if (*p++ == ' ')
+			argc++;
 
-	// Break up the command line into individual arguments.
-	service->parseSwitches();
+	service->svc_argc = argc;
 
-	USHORT argc = service->svc_argc;
-	service->svc_argv[0] = (TEXT *)(service_executable);
+	TEXT** arg = (TEXT **) gds__alloc((SLONG) ((argc + 1) * sizeof(TEXT *)));
+	service->svc_argv = arg;
+/* FREE: at SVC_detach() - Possible memory leak if ERR_post() occurs */
+	if (!arg)					/* NOMEM: */
+		ERR_post(isc_virmemexh, 0);
+
+	*arg++ = (TEXT *)(service_executable);
+
+/* Break up the command line into individual arguments. */
+
+	const TEXT* q = p = service->svc_switches.begin();
+
+	while (*q == ' ')
+		q++;
+	while (*q) {
+		*arg++ = p;
+		while ((*p = *q++) && *p != ' ') {
+			if (*p == '\\' && *q == ' ') {
+				*p = ' ';
+				q++;
+			}
+			p++;
+		}
+		if (!*p)
+			break;
+		*p++ = 0;
+		while (*q == ' ')
+			q++;
+	}
+	*arg = NULL;
+
+	service->svc_stdout = (UCHAR*)gds__alloc((SLONG) SVC_STDOUT_BUFFER_SIZE + 1);
+/* FREE: at SVC_detach() */
+	if (!service->svc_stdout)	/* NOMEM: */
+		ERR_post(isc_virmemexh, 0);
 
 	THREAD_EXIT();
 	gds__thread_start(service_executable,
@@ -2350,10 +2387,104 @@ static void service_fork(TEXT* service_path, Service* service)
 	if (statistics(service_path, &stat_buf) == -1)
 		io_error("stat", errno, service_path, isc_io_access_err);
 
+/* Make sure we have buffers that are large enough to hold the number
+   and size of the command line arguments. */
+
+	TEXT* p;
+	
+	USHORT argc = 2;
+	for (p = service->svc_switches.begin(); *p;)
+	{
+		if (*p == ' ')
+		{
+			argc++;
+			while (*p == ' ')
+				p++;
+		}
+		else
+		{
+			if (*p == SVC_TRMNTR)
+			{
+				while (*p++ && *p != SVC_TRMNTR);
+				fb_assert (*p == SVC_TRMNTR);
+			}
+			p++;
+		}
+	}
+
+	// Hardcoded, ISC_STATUS_LEN, platform specific or what????
+	TEXT* argv_buf[20];
+	TEXT** argv;
+	if (argc > FB_NELEM(argv_buf))
+		argv = (TEXT **) gds__alloc((SLONG) (argc * sizeof(TEXT *)));
+	else
+		argv = argv_buf;
+/* FREE: at procedure return */
+	if (!argv)					/* NOMEM: */
+		ERR_post(isc_virmemexh, 0);
+	service->svc_argc = argc;
+
+	TEXT argv_data_buf[512];
+	TEXT* argv_data;
+	const USHORT len = service->svc_switches.length() + 1;
+	if (len > sizeof(argv_data_buf))
+		argv_data = (TEXT *) gds__alloc((SLONG) len);
+	else
+		argv_data = argv_data_buf;
+/* FREE: at procedure return */
+	if (!argv_data) {			/* NOMEM: */
+		if (argv != argv_buf)
+			gds__free(argv);
+		ERR_post(isc_virmemexh, 0);
+	}
+
 /* Break up the command line into individual arguments. */
-	service->parseSwitches();
-	const char **argv = &service->svc_argv[0];
-	*argv = service_path;
+
+	TEXT** arg = argv;
+	*arg++ = service_path;
+
+	p = argv_data;
+	const TEXT* q = service->svc_switches.c_str();
+
+	while (*q == ' ')
+		q++;
+	while (*q)
+	{
+		*arg = p;
+		while (*p = *q++)
+		{
+			if (*p == ' ')
+				break;
+
+			if (*p == SVC_TRMNTR)
+			{
+				*arg = ++p;	/* skip terminator */
+				while (*p = *q++)
+						/* If *q points to the last argument, then terminate the argument */
+					if ((*q == 0 || *q == ' ') && *p == SVC_TRMNTR)
+					{
+						*p = '\0';
+						break;
+					}
+					else
+						p++;
+			}
+
+			if (*p == '\\' && *q == ' ')
+			{
+				*p = ' ';
+				q++;
+			}
+			p++;
+		}
+		arg++;
+		if (!*p)
+			break;
+		*p++ = '\0';
+		while (*q == ' ')
+			q++;
+	}
+	*arg = NULL;
 
 /* At last we can fork the sub-process.  If the fork succeeds, repeat
    it so that we don't have defunct processes hanging around. */
@@ -2365,6 +2496,10 @@ static void service_fork(TEXT* service_path, Service* service)
 	switch (pid = vfork()) {
 	case -1:
 		THREAD_ENTER();
+		if (argv != argv_buf)
+			gds__free(argv);
+		if (argv_data != argv_data_buf)
+			gds__free(argv_data);
 		ERR_post(isc_sys_request, isc_arg_string, "vfork", SYS_ERR, errno, 0);
 		break;
 
@@ -2389,7 +2524,7 @@ static void service_fork(TEXT* service_path, Service* service)
 #ifdef DEV_BUILD
 		{
 			char buf[2 * MAXPATHLEN];
-			const char** s = argv;
+			char** s = argv;
 
 			strcpy (buf, "service_fork:");
 			while (*s != (char *)0)
@@ -2401,7 +2536,7 @@ static void service_fork(TEXT* service_path, Service* service)
 			gds__log(buf);
 		}
 #endif
-		execvp(argv[0], const_cast<char* const*>(argv));
+		execvp(argv[0], argv);
 		_exit(FINI_ERROR);
 	}
 
@@ -2411,6 +2546,11 @@ static void service_fork(TEXT* service_path, Service* service)
 	waitpid(pid, NULL, 0);
 
 	THREAD_ENTER();
+
+	if (argv != argv_buf)
+		gds__free(argv);
+	if (argv_data != argv_data_buf)
+		gds__free(argv_data);
 
 	if (!(service->svc_input = fdopen(pair1[0], "r")) ||
 		!(service->svc_output = fdopen(pair2[1], "w")))
@@ -2980,14 +3120,16 @@ static void get_action_svc_string(const Firebird::ClumpletReader& spb,
  **************************************/
 	Firebird::string s;
 	spb.getString(s);
+	
 	for (size_t i = 0; i < s.length(); ++i)
 	{
 		if (s[i] == SVC_TRMNTR)
 		{
-			s.insert(i, 1, SVC_TRMNTR);
-			++i;
+			s.erase(i, 1);
+			--i;
 		}
 	}
+	
 	switches += SVC_TRMNTR;
 	switches += s;
 	switches += SVC_TRMNTR;

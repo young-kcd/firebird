@@ -185,8 +185,8 @@ LRESULT CALLBACK WindowFunc(HWND hWnd,
 	ULONG ulInUseMask = 0L;
 	PDEV_BROADCAST_VOLUME pdbcv;
 	char szDrives[DRV_STRINGLEN];
-	ULONG num_att = 0;
-	ULONG num_dbs = 0;
+	USHORT num_att = 0;
+	USHORT num_dbs = 0;
 
 	switch (message) {
 	case WM_QUERYENDSESSION:
@@ -548,8 +548,8 @@ BOOL CanEndServer(HWND hWnd, bool bSysExit)
  *  Description: This function displays a message mox and queries the user if
  *               the server can be shutdown.
  *****************************************************************************/
-	ULONG usNumAtt;
-	ULONG usNumDbs;
+	USHORT usNumAtt;
+	USHORT usNumDbs;
 	JRD_num_attachments(NULL, 0, 0, &usNumAtt, &usNumDbs);
 
 	char szMsgString[MSG_STRINGLEN];

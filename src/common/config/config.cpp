@@ -52,13 +52,13 @@ const char*	GCPolicyDefault	= GCPolicyCooperative;
 const ConfigImpl::ConfigEntry ConfigImpl::entries[] =
 {
 	{TYPE_STRING,		"RootDirectory",			(ConfigValue) 0},
-	{TYPE_INTEGER,		"TempBlockSize",			(ConfigValue) 1048576},		// bytes
+	{TYPE_INTEGER,		"SortMemBlockSize",			(ConfigValue) 1048576},		// bytes
 #ifdef SUPERSERVER
-	{TYPE_INTEGER,		"TempCacheLimit",			(ConfigValue) 67108864},	// bytes
+	{TYPE_INTEGER,		"SortMemUpperLimit",		(ConfigValue) 67108864},	// bytes
 #elif defined(WIN_NT) // win32 CS
-	{TYPE_INTEGER,		"TempCacheLimit",			(ConfigValue) 8388608},		// bytes
+	{TYPE_INTEGER,		"SortMemUpperLimit",		(ConfigValue) 8388608},		// bytes
 #else // non-win32 CS
-	{TYPE_INTEGER,		"TempCacheLimit",			(ConfigValue) 0},			// bytes
+	{TYPE_INTEGER,		"SortMemUpperLimit",		(ConfigValue) 0},			// bytes
 #endif
 	{TYPE_BOOLEAN,		"RemoteFileOpenAbility",	(ConfigValue) false},
 	{TYPE_INTEGER,		"GuardianOption",			(ConfigValue) 1},
@@ -106,7 +106,6 @@ const ConfigImpl::ConfigEntry ConfigImpl::entries[] =
 	{TYPE_INTEGER,		"MaxUnflushedWriteTime",	(ConfigValue) -1},
 #endif
 	{TYPE_INTEGER,		"ProcessPriorityLevel",		(ConfigValue) 0},
-	{TYPE_BOOLEAN,		"CreateInternalWindow",		(ConfigValue) true},
 	{TYPE_BOOLEAN,		"CompleteBooleanEvaluation", (ConfigValue) false},
 	{TYPE_INTEGER,		"RemoteAuxPort",			(ConfigValue) 0},
 	{TYPE_STRING,		"RemoteBindAddress",		(ConfigValue) 0},
@@ -148,8 +147,7 @@ const ConfigImpl& ConfigImpl::instance()
 			if (!sys_config) {
 				sys_config = FB_NEW(*getDefaultMemoryPool()) ConfigImpl(*getDefaultMemoryPool());
 			}
-		}
-		catch (const Firebird::Exception&) {
+		} catch(const std::exception&) {
 			config_init_lock.leave();
 			throw;
 		}
@@ -279,14 +277,14 @@ const char* Config::getRootDirectory()
 	return result ? result : sysConfig.root_dir;
 }
 
-int Config::getTempBlockSize()
+int Config::getSortMemBlockSize()
 {
-	return (int) sysConfig.values[KEY_TEMP_BLOCK_SIZE];
+	return (int) sysConfig.values[KEY_SORT_MEM_BLOCK_SIZE];
 }
 
-int Config::getTempCacheLimit()
+int Config::getSortMemUpperLimit()
 {
-	return (int) sysConfig.values[KEY_TEMP_CACHE_LIMIT];
+	return (int) sysConfig.values[KEY_SORT_MEM_UPPER_LIMIT];
 }
 
 bool Config::getRemoteFileOpenAbility()
@@ -445,11 +443,6 @@ int Config::getMaxUnflushedWriteTime()
 int Config::getProcessPriorityLevel()
 {
 	return (int) sysConfig.values[KEY_PROCESS_PRIORITY_LEVEL];
-}
-
-bool Config::getCreateInternalWindow()
-{
-	return (bool) sysConfig.values[KEY_CREATE_INTERNAL_WINDOW];
 }
 
 bool Config::getCompleteBooleanEvaluation()

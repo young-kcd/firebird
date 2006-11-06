@@ -282,7 +282,7 @@ bool SecurityDatabase::lookup_user(TEXT * user_name, int *uid, int *gid, TEXT * 
 	uname[sizeof uname - 1] = 0;
 
 	THREAD_EXIT();
-	mutex.enter();
+	mutex.acquire();
 	THREAD_ENTER();
 
 	// Attach database and compile request
@@ -296,7 +296,7 @@ bool SecurityDatabase::lookup_user(TEXT * user_name, int *uid, int *gid, TEXT * 
 			isc_detach_database(status, &tmp);
 		}
 		THREAD_ENTER();
-		mutex.leave();
+		mutex.release();
 		ERR_post(isc_psw_attach, 0);
 	}
 
@@ -307,7 +307,7 @@ bool SecurityDatabase::lookup_user(TEXT * user_name, int *uid, int *gid, TEXT * 
 	if (isc_start_transaction(status, &lookup_trans, 1, &lookup_db, sizeof(TPB), TPB))
 	{
 		THREAD_ENTER();
-		mutex.leave();
+		mutex.release();
 		ERR_post(isc_psw_start_trans, 0);
 	}
 
@@ -338,7 +338,7 @@ bool SecurityDatabase::lookup_user(TEXT * user_name, int *uid, int *gid, TEXT * 
 		isc_detach_database(status, &lookup_db);
 	}
 	THREAD_ENTER();
-	mutex.leave();
+	mutex.release();
 
 	return found;
 }

@@ -44,6 +44,7 @@
 #include "../jrd/ibase.h"
 #include "../common/classes/array.h"
 #include "../common/classes/ClumpletWriter.h"
+#include <typeinfo>
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -99,7 +100,7 @@ void missing_parameter_for_switch(const char* sw) {
 	usage();
 } 
 
-class b_error : public Firebird::LongJump
+class b_error : public std::exception
 {
 public:
 	explicit b_error(const char* message) {
@@ -287,8 +288,8 @@ void nbackup::seek_file(FILE_HANDLE &file, SINT64 pos)
 void nbackup::open_database_write()
 {
 #ifdef WIN_NT
-	dbase = CreateFile(dbname.c_str(), GENERIC_READ | GENERIC_WRITE, 
-		FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, 
+	dbase = CreateFile(dbname.c_str(), GENERIC_READ | GENERIC_WRITE,
+		FILE_SHARE_READ | FILE_SHARE_WRITE,
 		NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 	if (dbase == INVALID_HANDLE_VALUE)
 		b_error::raise("Error (%d) opening database file: %s", GetLastError(), dbname.c_str());
@@ -309,8 +310,8 @@ void nbackup::open_database_scan()
 	// and OS itself. Basically, reading any large file brings the whole system
 	// down for extended period of time. Documented workaround is to avoid using
 	// system cache when reading large files.
-	dbase = CreateFile(dbname.c_str(),
-		GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, 
+	dbase = CreateFile(dbname.c_str(), GENERIC_READ,
+		FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, 
 		FILE_ATTRIBUTE_NORMAL | FILE_FLAG_SEQUENTIAL_SCAN | FILE_FLAG_NO_BUFFERING,
 		NULL);
 	if (dbase == INVALID_HANDLE_VALUE)
@@ -325,7 +326,7 @@ void nbackup::open_database_scan()
 void nbackup::create_database()
 {
 #ifdef WIN_NT
-	dbase = CreateFile(dbname.c_str(), GENERIC_READ | GENERIC_WRITE, FILE_SHARE_DELETE, 
+	dbase = CreateFile(dbname.c_str(), GENERIC_READ | GENERIC_WRITE, 0,
 		NULL, CREATE_NEW, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_SEQUENTIAL_SCAN, NULL);
 	if (dbase == INVALID_HANDLE_VALUE)
 		b_error::raise("Error (%d) creating database file: %s", GetLastError(), dbname.c_str());
@@ -348,7 +349,7 @@ void nbackup::close_database()
 void nbackup::open_backup_scan()
 {
 #ifdef WIN_NT
-	backup = CreateFile(bakname.c_str(), GENERIC_READ, 0, 
+	backup = CreateFile(bakname.c_str(), GENERIC_READ, 0,
 		NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_SEQUENTIAL_SCAN, NULL);
 	if (backup == INVALID_HANDLE_VALUE)
 		b_error::raise("Error (%d) opening backup file: %s", GetLastError(), bakname.c_str());
@@ -365,8 +366,8 @@ void nbackup::create_backup()
 	if (bakname == "stdout") {
 		backup = GetStdHandle(STD_OUTPUT_HANDLE);
 	}
-	else {		
-		backup = CreateFile(bakname.c_str(), GENERIC_WRITE, FILE_SHARE_DELETE, 
+	else {
+		backup = CreateFile(bakname.c_str(), GENERIC_WRITE, 0,
 			NULL, CREATE_NEW, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_SEQUENTIAL_SCAN, NULL);
 	}
 	if (backup == INVALID_HANDLE_VALUE)
@@ -486,8 +487,10 @@ void nbackup::lock_database()
 	attach_database();
 	try {
 		internal_lock_database();
-	} 
-	catch (const Firebird::Exception&) {
+	} catch(const std::exception& ex) {
+		if (typeid(ex) != typeid(b_error)) {
+			fprintf(stderr, "Unexpected error %s: %s\n", typeid(ex).name(), ex.what());
+		}
 		detach_database();		
 		throw;
 	}
@@ -499,8 +502,10 @@ void nbackup::unlock_database()
 	attach_database();
 	try {
 		internal_unlock_database();
-	} 
-	catch (const Firebird::Exception&) {
+	} catch(const std::exception& ex) {
+		if (typeid(ex) != typeid(b_error)) {
+			fprintf(stderr, "Unexpected error %s: %s\n", typeid(ex).name(), ex.what());
+		}
 		detach_database();		
 		throw;
 	}
@@ -737,10 +742,12 @@ void nbackup::backup_database(int level, const char* fname)
 		if (isc_commit_transaction(status, &trans))
 			pr_error(status, "commit history insert");
 		
-	} 
-	catch (const Firebird::Exception&) {
+	} catch (const std::exception& ex) {
+		if (typeid(ex) != typeid(b_error)) {
+			fprintf(stderr, "Unexpected error %s: %s\n", typeid(ex).name(), ex.what());
+		}
 		if (delete_backup)
-			remove(bakname.c_str());
+			unlink(bakname.c_str());
 		if (trans) {
 			if (isc_rollback_transaction(status, &trans))
 				pr_error(status, "rollback transaction");
@@ -778,7 +785,7 @@ void nbackup::restore_database(int filecount, const char* const* files)
 					{
 						close_database();
 						if (!curLevel) {
-							remove(dbname.c_str());
+							unlink(dbname.c_str());
 							b_error::raise("Level 0 backup is not restored");
 						}
 						fixup_database();
@@ -788,8 +795,7 @@ void nbackup::restore_database(int filecount, const char* const* files)
 					try {
 						open_backup_scan();
 						break;
-					}
-					catch (const Firebird::Exception& e) {
+					} catch (const std::exception& e) {
 						printf("%s\n", e.what());
 					}
 #ifdef WIN_NT
@@ -903,11 +909,13 @@ void nbackup::restore_database(int filecount, const char* const* files)
 			close_backup();
 			curLevel++;
 		}
-	} 
-	catch (const Firebird::Exception&) {
+	} catch(const std::exception& ex) {
+		if (typeid(ex) != typeid(b_error)) {
+			fprintf(stderr, "Unexpected error %s: %s\n", typeid(ex).name(), ex.what());
+		}
 		delete[] page_buffer;
 		if (delete_database)
-			remove(dbname.c_str());
+			unlink(dbname.c_str());
 		throw;
 	}
 }
@@ -1054,8 +1062,7 @@ int main( int argc, char *argv[] )
 				nbackup(database, username, password).restore_database(filecount, backup_files);
 				break;
 		}
-	}
-	catch (const Firebird::Exception&) {
+	} catch (const std::exception&) {
 		// It must have been printed out. No need to repeat the task
 		return EXIT_ERROR;
 	}

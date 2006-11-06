@@ -64,7 +64,6 @@
 #include <stdio.h>
 #include "../jrd/common.h"
 #include "../jrd/ibase.h"
-#include "../jrd/constants.h"
 
 #ifdef GPRE_FORTRAN
 #if defined AIX || defined AIX_PPC || defined sun
@@ -229,7 +228,7 @@ typedef enum nod_t {
 	nod_label, nod_leave, nod_loop,
 	nod_max, nod_min, nod_count,
 	nod_total, nod_average, nod_list,
-	nod_deferred, nod_missing, nod_between,
+	nod_defered, nod_missing, nod_between,
 	nod_union, nod_map, nod_starting,
 	nod_like, nod_agg_count, nod_agg_max,
 	nod_agg_min, nod_agg_total, nod_agg_average,
@@ -344,6 +343,8 @@ const size_t VAL_LEN = sizeof(val);
 /* Array information block.  Used to hold info about an array field.
    Note: the dimension (dim) block used to hold dimension information.
    The preferred mechanism is the repeating tail on the array block. */
+
+const int MAX_ARRAY_DIMENSIONS = 16;
 
 struct ary {
 	USHORT ary_dtype;			/* data type of array */
@@ -1554,7 +1555,7 @@ extern GpreGlobals gpreGlob;
 #define assert_IS_ACT(x) fb_assert(!(x) || ((x)->act_type >= 0 && (x)->act_type < ACT_LASTACT))
 
 
-class gpre_exception: public Firebird::LongJump
+class gpre_exception: public std::exception
 {
 	char msg[MAXPATHLEN << 1];
 public:
@@ -1569,7 +1570,7 @@ public:
 	}
 	const char* what() const throw()
 	{
-		return msg[0] ? msg : "gpre_exception";
+		return msg;
 	}
 };
 

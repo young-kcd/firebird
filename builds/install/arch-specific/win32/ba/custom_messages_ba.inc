@@ -1,4 +1,5 @@
 ba.MyAppName=Firebird Database Server 2.0
+ba.ServerInstall=Puna instalacija Server-a i razvojnih alata.
 ba.SuperServerInstall=Puna instalacija Super Server-a i razvojnih alata.
 ba.ClassicServerInstall=Puna instalacijaClassic Server-a i razvojnih alata.
 ba.DeveloperInstall=Instalacija Client alata za Developere i database administratore.
@@ -43,7 +44,7 @@ ba.InstalledProducts='re-instalaciona analiza pokazuje da %s postojeæi Firebird 
 ba.InstalledProdCountSingular=verzija ima
 ba.InstalledProdCountPlural=verzije imaju
 
-ba.FbRunning1=Postojeæi Firebird 1.5 ili 2.0 Server je pokrenut.
+ba.FbRunning1=Postojeæi Firebird %1 Server je pokrenut.
 ba.FbRunning2= Morate zatvoriti aplikaciju ili zaustaviti 
 ba.FbRunning3=         service prije nastavka.
 

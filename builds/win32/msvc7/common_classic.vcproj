@@ -27,7 +27,7 @@
 				ExceptionHandling="FALSE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				RuntimeTypeInfo="FALSE"
+				RuntimeTypeInfo="TRUE"
 				UsePrecompiledHeader="2"
 				PrecompiledHeaderFile="..\..\..\temp\debug\common_cs/common_classic.pch"
 				AssemblerListingLocation="..\..\..\temp\debug\common_cs/"
@@ -86,7 +86,7 @@
 				PreprocessorDefinitions="WIN32,NDEBUG,_LIB"
 				ExceptionHandling="FALSE"
 				RuntimeLibrary="2"
-				RuntimeTypeInfo="FALSE"
+				RuntimeTypeInfo="TRUE"
 				PrecompiledHeaderFile="..\..\..\temp\release\common_cs/common_classic.pch"
 				AssemblerListingLocation="..\..\..\temp\release\common_cs/"
 				ObjectFile="..\..\..\temp\release\common_cs/"
@@ -187,9 +187,6 @@
 				RelativePath="..\..\..\src\jrd\os\win32\path_utils.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\src\common\classes\TempFile.cpp">
-			</File>
-			<File
 				RelativePath="..\..\..\src\common\classes\timestamp.cpp">
 			</File>
 			<File
@@ -234,9 +231,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\common\classes\MetaName.h">
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\classes\TempFile.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\common\classes\timestamp.h">

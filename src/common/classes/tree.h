@@ -30,6 +30,7 @@
 #ifndef CLASSES_TREE_H
 #define CLASSES_TREE_H
 
+#include <exception>
 #include "../jrd/gdsassert.h"
 #include <string.h>
 #ifdef HAVE_STDLIB_H
@@ -37,6 +38,7 @@
 					   stdlib.h (EKU) */
 #endif
 #include "vector.h"
+#include <new>
 
 namespace Firebird {
 
@@ -105,30 +107,11 @@ template <typename Value, typename Key = Value, typename Allocator = MallocAlloc
 	int NodeCount = NODE_PAGE_SIZE / sizeof(void*)>
 class BePlusTree {
 public:
-	BePlusTree(Allocator *_pool)
-		: pool(_pool), level(0), root(NULL), defaultAccessor(this)
-	{ }
-
-	BePlusTree(Allocator *_pool, const BePlusTree& from)
-		: pool(_pool), level(0), root(NULL), defaultAccessor(this)
-	{
-		append(from);
-	}
-
-	BePlusTree& operator =(BePlusTree& from) {
-		clear();
-		append(from);
-		return *this;
-	}
+	BePlusTree(Allocator *_pool) : pool(_pool), level(0), root(NULL), defaultAccessor(this)	{ }
 
 	void clear() {
-		// Do not deallocate root page if tree is shallow
-		if (level == 0) {
-			if (root) {
-				((ItemList*) root)->clear();
-			}
-			return;
-		}
+		// We delete tree which was not fully created
+		if (!root) return;
 		
 		// Find first items page
 		void *temp = root;
@@ -164,7 +147,6 @@ public:
 
     ~BePlusTree() {
 		clear();
-		pool->deallocate(root);
 	}
 
 	bool isEmpty() const {
@@ -245,18 +227,7 @@ public:
 		fb_assert(bytes_per_node);
 		return ((NodeList*)root)->getCount() * bytes_per_node;
 	}
-
-	void append(BePlusTree& from) {
-		// This is slow approach especially when used for assignment. 
-		// Optimize it when need arises.
-		Accessor accessor(&from);
-		if (accessor.getFirst()) {
-			do {
-				add(accessor.current());
-			} while (accessor.getNext());
-		}
-	}
-
+	
 private:
 	BePlusTree(Allocator *_pool, void *rootPage) : 	pool(_pool), level(0), 
 		root(new(rootPage) ItemList()), defaultAccessor(this) {}
@@ -704,8 +675,7 @@ bool BePlusTree<Value, Key, Allocator, KeyOfValue, Cmp, LeafCount, NodeCount>::a
 		nodeList->add(newNode);
 		this->root = nodeList;
 		this->level++;
-	}
-	catch (const Firebird::Exception&) {
+	} catch(const std::exception&) {
 		// Recover tree to innocent state
 		while (curLevel) {
 			NodeList *itemL = reinterpret_cast<NodeList*>(newNode);

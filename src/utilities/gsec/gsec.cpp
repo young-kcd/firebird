@@ -69,7 +69,7 @@ const int MAXSTUFF	= 1000;		/* longest interactive command line */
 class tsec *gdsec;
 #endif
 
-static int common_main(int, const char**, Jrd::pfn_svc_output, Jrd::Service*);
+static int common_main(int, char**, Jrd::pfn_svc_output, Jrd::Service*);
 static void util_output(const SCHAR*, ...);
 
 static void data_print(void*, const internal_user_data*, bool);
@@ -86,7 +86,7 @@ void inline gsec_exit(int code, tsec* tdsec)
 {
 	tdsec->tsec_exit_code = code;
 	if (tdsec->tsec_throw)
-		Firebird::LongJump::raise();
+		throw std::exception();
 }
 
 #ifdef SERVICE_THREAD
@@ -101,7 +101,7 @@ THREAD_ENTRY_DECLARE GSEC_main(THREAD_ENTRY_PARAM arg)
  *   Entrypoint for GSEC via the services manager
  **********************************************/
 	Jrd::Service* service = (Jrd::Service*)arg;
-	const int exit_code = common_main(service->svc_argc, service->svc_argv.begin(),
+	const int exit_code = common_main(service->svc_argc, service->svc_argv,
 						  SVC_output, service);
 
 /* Mark service thread as finished. */
@@ -113,7 +113,7 @@ THREAD_ENTRY_DECLARE GSEC_main(THREAD_ENTRY_PARAM arg)
 
 #else
 
-int CLIB_ROUTINE main( int argc, const char* argv[])
+int CLIB_ROUTINE main( int argc, char* argv[])
 {
 /**************************************
  *
@@ -160,7 +160,7 @@ inline void envPick(TEXT* dest, size_t size, const TEXT* var)
 #endif /* SERVICE_THREAD */
 
 int common_main(int argc,
-				const char* argv[],
+				char* argv[],
 				Jrd::pfn_svc_output output_proc,
 				Jrd::Service* output_data)
 {
@@ -428,7 +428,7 @@ int common_main(int argc,
 	return ret;					// silence compiler warning
 
 	}	// try
-	catch (const Firebird::Exception&) {
+	catch (const std::exception&) {
 		/* All calls to gsec_exit(), normal and error exits, wind up here */
 		tdsec->tsec_service_blk->svc_started();
 		tdsec->tsec_throw = false;

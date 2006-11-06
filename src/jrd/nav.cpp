@@ -38,6 +38,7 @@
 #include "../jrd/lck.h"
 #include "../jrd/cch.h"
 #include "../jrd/blr.h"
+#include "../jrd/all_proto.h"
 #include "../jrd/btr_proto.h"
 #include "../jrd/cch_proto.h"
 #include "../jrd/dbg_proto.h"
@@ -67,7 +68,7 @@ static bool get_record(RecordSource*, IRSB_NAV, record_param*, temporary_key*, b
 static void init_fetch(IRSB_NAV);
 static UCHAR* nav_open(thread_db*, RecordSource*, IRSB_NAV, WIN *, RSE_GET_MODE, btree_exp**);
 static void set_position(IRSB_NAV, record_param*, WIN*, const UCHAR*, btree_exp*, const UCHAR*, USHORT);
-static bool setup_bitmaps(RecordSource*, IRSB_NAV);
+static void setup_bitmaps(RecordSource*, IRSB_NAV);
 
 
 #ifdef SCROLLABLE_CURSORS
@@ -159,7 +160,7 @@ bool NAV_get_record(thread_db* tdbb,
  *	Get a record from a stream, either in
  *	the forward or backward direction, or the
  *	current record.  This routine must set 
- *	BOF or EOF properly.
+ *	BOF, EOF, or CRACK properly.
  *
  **************************************/
 	SET_TDBB(tdbb);
@@ -203,14 +204,11 @@ bool NAV_get_record(thread_db* tdbb,
 #endif
 
 	// find the last fetched position from the index
-	const USHORT pageSpaceID = rpb->rpb_relation->getPages(tdbb)->rel_pg_space_id; 
-	WIN window(pageSpaceID, impure->irsb_nav_page);
+	WIN window(impure->irsb_nav_page);
 
 	btree_exp* expanded_next = NULL;
 	UCHAR* nextPointer = get_position(tdbb, rsb, impure, &window, 
 		direction, &expanded_next);
-	if (!nextPointer)
-		return false;
 	temporary_key key;
 	MOVE_FAST(impure->irsb_nav_data, key.key_data, impure->irsb_nav_length);
 	jrd_nod* retrieval_node = (jrd_nod*) rsb->rsb_arg[RSB_NAV_index];
@@ -275,7 +273,7 @@ bool NAV_get_record(thread_db* tdbb,
 	Ods::IndexNode node;
 	while (true) {
 		Ods::btree_page* page = (Ods::btree_page*) window.win_buffer;
-		const UCHAR flags = page->btr_header.pag_flags;
+		const SCHAR flags = page->btr_header.pag_flags;
 
 		UCHAR* pointer = nextPointer;
 		btree_exp* expanded_node = expanded_next;
@@ -438,13 +436,11 @@ bool NAV_get_record(thread_db* tdbb,
 		}
 
 		nextPointer = get_position(tdbb, rsb, impure, &window, direction, &expanded_next);
-		if (!nextPointer)
-			return false;
 	}
 
 	CCH_RELEASE(tdbb, &window);
 
-	// bof or eof must have been set at this point
+	// crack, bof, or eof must have been set at this point
 	return false;
 }
 
@@ -593,13 +589,13 @@ static void expand_index(WIN * window)
 	UCHAR* pointer = BTreeNode::getPointerFirstNode(page);
 	const UCHAR* const endPointer = ((UCHAR*) page + page->btr_length);
 
-	const UCHAR flags = page->pag_flags;
+	const SCHAR flags = page->pag_flags;
 	IndexNode node, priorNode;
 
 	while (pointer < endPointer) {
 
 		if (!priorPointer) {
-			pointer = BTreeNode::readNode(&node, pointer, flags, true);
+			pointer = BTreeNode::readNode(&node, pointer, flags);
 		}
 
 		memcpy(key.key_data + node.prefix, node.data, node_length);
@@ -650,7 +646,7 @@ static btree_exp* find_current(exp_index_buf* expanded_page, Ods::btree_page* pa
 	}
 
 	btree_exp* expanded_node = expanded_page->exp_nodes;
-	const UCHAR flags = page->btr_header.pag_flags;
+	const SCHAR flags = page->btr_header.pag_flags;
 	UCHAR* pointer = BTreeNode::getPointerFirstNode(page);
 	const UCHAR* const endPointer = ((UCHAR*) page + page->btr_length);
 	Ods::IndexNode node;
@@ -694,7 +690,7 @@ static bool find_saved_node(RecordSource* rsb, IRSB_NAV impure,
 	// looking for the node (in case the page has split);
 	// the inner loop goes through the nodes on each page
 	temporary_key key;
-	const UCHAR flags = page->btr_header.pag_flags;
+	const SCHAR flags = page->btr_header.pag_flags;
 	Ods::IndexNode node;
 	while (true) {
 		UCHAR* pointer = BTreeNode::getPointerFirstNode(page);
@@ -771,9 +767,9 @@ static UCHAR* get_position(
 
 	// If this is the first time, start at the beginning (or the end)
 #ifdef SCROLLABLE_CURSORS
-	if (!window->win_page.getPageNum() || impure->irsb_flags & (irsb_bof | irsb_eof))
+	if (!window->win_page || impure->irsb_flags & (irsb_bof | irsb_eof))
 #else
-	if (!window->win_page.getPageNum())
+	if (!window->win_page)
 #endif
 	{
 		return nav_open(tdbb, rsb, impure, window, direction, expanded_node);
@@ -794,7 +790,7 @@ static UCHAR* get_position(
 #endif
 
 	UCHAR* pointer = 0;
-	const UCHAR flags = page->btr_header.pag_flags;
+	const SCHAR flags = page->btr_header.pag_flags;
 	const SLONG incarnation = CCH_get_incarnation(window);
 	Ods::IndexNode node;
 	if (incarnation == impure->irsb_nav_incarnation) {
@@ -886,6 +882,7 @@ static bool get_record(
  *
  * Functional description
  *	Get the record indicated by the passed rpb.
+ *	This routine must set or clear the CRACK flag.
  *
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
@@ -944,7 +941,7 @@ static bool get_record(
 	}
 
 	}	// try
-	catch (const Firebird::Exception&) {
+	catch (const std::exception&) {
 		// Cleanup the HACK should there be an error
 		tdbb->tdbb_attachment->att_flags &= ~ATT_no_cleanup;
 		tdbb->tdbb_attachment->att_flags |= old_att_flags;
@@ -993,9 +990,7 @@ static UCHAR* nav_open(
 	SET_TDBB(tdbb);
 
 	// initialize for a retrieval
-	if (!setup_bitmaps(rsb, impure))
-		return NULL;
-
+	setup_bitmaps(rsb, impure);
 	impure->irsb_nav_page = 0;
 	impure->irsb_nav_length = 0;
 
@@ -1021,7 +1016,7 @@ static UCHAR* nav_open(
 	Ods::btree_page* page = BTR_find_page(tdbb, retrieval, window, idx, &lower,
 		&upper, false);
 #endif
-	impure->irsb_nav_page = window->win_page.getPageNum();
+	impure->irsb_nav_page = window->win_page;
 
 
 #ifdef SCROLLABLE_CURSORS
@@ -1156,7 +1151,7 @@ static void set_position(IRSB_NAV impure, record_param* rpb, WIN* window,
 	// We can actually set position without having a data page
 	// fetched; if not, just set the incarnation to the lowest possible
 	impure->irsb_nav_incarnation = CCH_get_incarnation(window);
-	impure->irsb_nav_page = window->win_page.getPageNum();
+	impure->irsb_nav_page = window->win_page;
 	impure->irsb_nav_number = rpb->rpb_number;
 
 	// save the current key value if it hasn't already been saved 
@@ -1177,7 +1172,7 @@ static void set_position(IRSB_NAV impure, record_param* rpb, WIN* window,
 }
 
 
-static bool setup_bitmaps(RecordSource* rsb, IRSB_NAV impure)
+static void setup_bitmaps(RecordSource* rsb, IRSB_NAV impure)
 {
 /**************************************
  *
@@ -1207,9 +1202,6 @@ static bool setup_bitmaps(RecordSource* rsb, IRSB_NAV impure)
 		// done in EVL_bitmap ().
 		impure->irsb_nav_bitmap = EVL_bitmap(tdbb,
 				reinterpret_cast<jrd_nod*>(rsb->rsb_arg[RSB_NAV_inversion]));
-		return (*impure->irsb_nav_bitmap != NULL);
 	}
-
-	return true;
 }
 

@@ -1,10 +1,9 @@
 :: This bat sets the environment values
 :: ROOT_PATH dos format path of the main directory
 :: DB_PATH unix format path of the main directory
-:: VS_VER VisualStudio version (msvc6|msvc7|msvc8)
+:: VS_VER VisualStudio version (msvc6|msvc7)
 :: SERVER_NAME server needed to connect to firebird (could include port)
 ::   Example : localhost/3051
-
 
 @echo off
 ::=================
@@ -12,22 +11,16 @@
 
 @SET SERVER_NAME=localhost
 
-@set PLATFORM=win32
-@if %PROCESSOR_ARCHITECTURE%==x86 (set PLATFORM=win32)
-@if %PROCESSOR_ARCHITECTURE%==AMD64 (set PLATFORM=x64)
-
 @cd ..\..
 @for /f "delims=" %%a in ('@cd') do (set ROOT_PATH=%%a)
 @cd %~dp0
-@for /f "tokens=*" %%a in ('@echo %ROOT_PATH:\=/%') do (set DB_PATH=%%a)
+for /f "tokens=*" %%a in ('@echo %ROOT_PATH:\=/%') do (set DB_PATH=%%a)
 
-@for /f "delims=." %%a in ('@devenv /?') do (
-  @for /f "tokens=6" %%b in ("%%a") do ((set MSVC_VERSION=%%b) & (set VS_VER=msvc%%b) & (goto :END))
-)
+@devenv /? >nul 2>nul
+@if not errorlevel 9009 ((set MSVC_VERSION=7) & (set VS_VER=msvc7) & (goto :END))
 
 @msdev /? >nul 2>nul
 @if not errorlevel 9009 ((set MSVC_VERSION=6) & (set VS_VER=msvc6) & (goto :END))
-
 
 ::===========
 :HELP
@@ -41,7 +34,6 @@
 :END
 @echo.
 @echo    vs_ver=%VS_VER%
-@echo    platform=%PLATFORM%
 @echo    msvc_version=%MSVC_VERSION%
 @echo    db_path=%DB_PATH%
 @echo    root_path=%ROOT_PATH%

@@ -52,31 +52,8 @@ namespace Jrd {
 using namespace Firebird;
 
 
-struct ExternalInfo
-{
-	ExternalInfo(const PathName& a_moduleName, const string& a_name)
-		: moduleName(a_moduleName),
-		  name(a_name)
-	{
-	}
-
-	ExternalInfo(MemoryPool& p, const ExternalInfo& externalInfo)
-		: moduleName(p, externalInfo.moduleName),
-		  name(p, externalInfo.name)
-	{
-	}
-
-	ExternalInfo()
-	{
-	}
-
-	PathName moduleName;
-	string name;
-};
-
-
 static Firebird::InitInstance<GenericMap<Pair<Left<PathName, ModuleLoader::Module*> > > > modules;
-static Firebird::InitInstance<GenericMap<Pair<Full<string, ExternalInfo> > > > charSetCollations;
+static Firebird::InitInstance<GenericMap<Pair<Full<string, PathName> > > > charSetCollations;
 
 
 bool IntlManager::initialize()
@@ -85,19 +62,19 @@ bool IntlManager::initialize()
 	ObjectsArray<string> conflicts;
 
 	//// TODO: intlnames.h
-	registerCharSetCollation("NONE:NONE", "", "NONE");
-	registerCharSetCollation("OCTETS:OCTETS", "", "OCTETS");
-	registerCharSetCollation("ASCII:ASCII", "", "ASCII");
-	registerCharSetCollation("UNICODE_FSS:UNICODE_FSS", "", "UNICODE_FSS");
-	registerCharSetCollation("UTF8:UTF8", "", "UTF8");
-	registerCharSetCollation("UTF8:UCS_BASIC", "", "UCS_BASIC");
-	registerCharSetCollation("UTF8:UNICODE", "", "UNICODE");
+	registerCharSetCollation("NONE:NONE", "");
+	registerCharSetCollation("OCTETS:OCTETS", "");
+	registerCharSetCollation("ASCII:ASCII", "");
+	registerCharSetCollation("UNICODE_FSS:UNICODE_FSS", "");
+	registerCharSetCollation("UTF8:UTF8", "");
+	registerCharSetCollation("UTF8:UCS_BASIC", "");
+	registerCharSetCollation("UTF8:UNICODE", "");
 
-	registerCharSetCollation("UTF16:UTF16", "", "UTF16");
+	registerCharSetCollation("UTF16:UTF16", "");
 #ifdef FB_NEW_INTL_ALLOW_NOT_READY
-	registerCharSetCollation("UTF16:UCS_BASIC", "", "UCS_BASIC");
-	registerCharSetCollation("UTF32:UTF32", "", "UTF32");
-	registerCharSetCollation("UTF32:UCS_BASIC", "", "UCS_BASIC");
+	registerCharSetCollation("UTF16:UCS_BASIC", "");
+	registerCharSetCollation("UTF32:UTF32", "");
+	registerCharSetCollation("UTF32:UCS_BASIC", "");
 #endif
 
 	Firebird::PathName intlPath;
@@ -146,17 +123,15 @@ bool IntlManager::initialize()
 							}
 						}
 					}
-					
+
 					for (Element* el2 = el->children; el2; el2 = el2->sibling)
 					{
 						if (el2->name == "collation")
 						{
-							string collationName = (const char*)el2->getAttributeName(0);
+							string collationName = (const char*)JString::upcase(el2->getAttributeName(0));
 							string charSetCollation = charSetName + ":" + collationName;
-							const char* externalName = (const char*)el2->getAttributeName(1);
 
-							if (!registerCharSetCollation(charSetCollation, filename,
-								(externalName ? externalName : collationName)))
+							if (!registerCharSetCollation(charSetCollation, filename))
 							{
 								conflicts.add(charSetCollation);
 								ok = false;
@@ -189,27 +164,25 @@ bool IntlManager::collationInstalled(const Firebird::string& collationName,
 
 bool IntlManager::lookupCharSet(const Firebird::string& charSetName, charset* cs)
 {
-	ExternalInfo externalInfo;
+	PathName filename;
 
-	if (charSetCollations().get(charSetName + ":" + charSetName, externalInfo))
+	if (charSetCollations().get(charSetName + ":" + charSetName, filename))
 	{
-		if (externalInfo.moduleName.isEmpty())
-			return INTL_builtin_lookup_charset(cs, externalInfo.name.c_str());
+		if (filename.isEmpty())
+			return INTL_builtin_lookup_charset(cs, charSetName.c_str());
 
 #ifdef INTL_BUILTIN
-		return LD_lookup_charset(cs, externalInfo.name.c_str());
+		return LD_lookup_charset(cs, charSetName.c_str());
 #else
 		ModuleLoader::Module* module;
 		
-		if (modules().get(externalInfo.moduleName, module) && module)
+		if (modules().get(filename, module) && module)
 		{
 			pfn_INTL_lookup_charset lookupFunction =
 				(pfn_INTL_lookup_charset)module->findSymbol(STRINGIZE(CHARSET_ENTRYPOINT));
 
-			if (lookupFunction && (*lookupFunction)(cs, externalInfo.name.c_str()))
-			{
-				return validateCharSet(charSetName, cs);
-			}
+			if (lookupFunction && (*lookupFunction)(cs, charSetName.c_str()))
+				return true;
 		}
 #endif
 	}
@@ -224,34 +197,32 @@ bool IntlManager::lookupCollation(const Firebird::string& collationName,
 								  ULONG specificAttributesLen, bool ignoreAttributes,
 								  texttype* tt)
 {
-	ExternalInfo charSetExternalInfo;
-	ExternalInfo collationExternalInfo;
+	PathName filename;
 
-	if (charSetCollations().get(charSetName + ":" + charSetName, charSetExternalInfo) &&
-		charSetCollations().get(charSetName + ":" + collationName, collationExternalInfo))
+	if (charSetCollations().get(charSetName + ":" + collationName, filename))
 	{
-		if (collationExternalInfo.moduleName.isEmpty())
+		if (filename.isEmpty())
 		{
-			return INTL_builtin_lookup_texttype(tt, collationExternalInfo.name.c_str(),
-				charSetExternalInfo.name.c_str(), attributes, specificAttributes,
+			return INTL_builtin_lookup_texttype(tt, collationName.c_str(),
+				charSetName.c_str(), attributes, specificAttributes,
 				specificAttributesLen, ignoreAttributes);
 		}
 
 
 #ifdef INTL_BUILTIN
-		return LD_lookup_texttype(tt, collationExternalInfo.name.c_str(),
-			charSetExternalInfo.name.c_str(), attributes, specificAttributes,
+		return LD_lookup_texttype(tt, collationName.c_str(),
+			charSetName.c_str(), attributes, specificAttributes,
 			specificAttributesLen, ignoreAttributes);
 #else
 		ModuleLoader::Module* module;
 		
-		if (modules().get(collationExternalInfo.moduleName, module) && module)
+		if (modules().get(filename, module) && module)
 		{
 			pfn_INTL_lookup_texttype lookupFunction =
 				(pfn_INTL_lookup_texttype)module->findSymbol(STRINGIZE(TEXTTYPE_ENTRYPOINT));
 
 			if (lookupFunction &&
-				(*lookupFunction)(tt, collationExternalInfo.name.c_str(), charSetExternalInfo.name.c_str(),
+				(*lookupFunction)(tt, collationName.c_str(), charSetName.c_str(),
 								  attributes, specificAttributes,
 								  specificAttributesLen, ignoreAttributes))
 			{
@@ -265,57 +236,20 @@ bool IntlManager::lookupCollation(const Firebird::string& collationName,
 }
 
 
-bool IntlManager::registerCharSetCollation(const Firebird::string& name, const Firebird::PathName& filename,
-										   const Firebird::string& externalName)
+bool IntlManager::registerCharSetCollation(const Firebird::string& name, const Firebird::PathName& filename)
 {
-	ExternalInfo conflict;
+	PathName conflictFilename;
 
-	if (charSetCollations().get(name, conflict))
+	if (charSetCollations().get(name, conflictFilename))
 	{
 		gds__log((string("INTL plugin conflict: ") + name + " defined in " +
-			(conflict.moduleName.isEmpty() ? "<builtin>" : conflict.moduleName.c_str()) +
+			(conflictFilename.isEmpty() ? "<builtin>" : conflictFilename.c_str()) +
 			" and " + filename.c_str()).c_str());
 		return false;
 	}
 
-	charSetCollations().put(name, ExternalInfo(filename, externalName));
+	charSetCollations().put(name, filename);
 	return true;
-}
-
-
-bool IntlManager::validateCharSet(const Firebird::string& charSetName, charset* cs)
-{
-	bool valid = true;
-	string s;
-
-	string unsupportedMsg;
-	unsupportedMsg.printf("Unsupported character set %s.", charSetName.c_str());
-
-	if (!(cs->charset_flags & CHARSET_ASCII_BASED))
-	{
-		valid = false;
-		s.printf("%s. Only ASCII-based character sets are supported yet.",
-			unsupportedMsg.c_str());
-		gds__log(s.c_str());
-	}
-
-	if (cs->charset_min_bytes_per_char != 1)
-	{
-		valid = false;
-		s.printf("%s. Wide character sets are not supported yet.",
-			unsupportedMsg.c_str());
-		gds__log(s.c_str());
-	}
-
-	if (cs->charset_space_length != 1 || *cs->charset_space_character != ' ')
-	{
-		valid = false;
-		s.printf("%s. Only ASCII space is supported in charset_space_character yet.",
-			unsupportedMsg.c_str());
-		gds__log(s.c_str());
-	}
-
-	return valid;
 }
 
 

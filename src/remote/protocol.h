@@ -19,6 +19,8 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ * Added TCP_NO_DELAY option for superserver on Linux
+ * FSG 16.03.2001
  *
  * 2002.02.15 Sean Leyne - This module needs to be cleanedup to remove obsolete ports/defines:
  *                            - "EPSON", "XENIX" +++
@@ -132,9 +134,8 @@ typedef enum
 	arch_freebsd	= 37,
 	arch_netbsd		= 38,
 	arch_darwin_ppc		= 39,
-	arch_winnt_64	= 40,
 
-	arch_max		= 41	/* Keep this at the end */
+	arch_max		= 40	/* Keep this at the end */
 } P_ARCH;
 
 /* Protocol Types */
@@ -143,7 +144,6 @@ const USHORT ptype_page			= 1;	/* Page server protocol */
 const USHORT ptype_rpc			= 2;	/* Simple remote procedure call */
 const USHORT ptype_batch_send	= 3;	/* Batch sends, no asynchrony */
 const USHORT ptype_out_of_band	= 4;	/* Batch sends w/ out of band notification */
-const USHORT ptype_lazy_send	= 5;	/* Deferred packets delivery */
 
 /* Generic object id */
 

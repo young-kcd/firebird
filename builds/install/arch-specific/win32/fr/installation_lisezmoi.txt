@@ -1,1 +1,184 @@
- 
+Firebird Serveur Bases de données 2.0
+==================================================
+
+  ** IMPORTANT **
+
+  La structure sur disque a changée depuis Firebird 1.5. Lisez les notes
+  ci dessous au sujet de l'ODS et de l'installation sur 
+  une ancienne version de Firebird.
+
+  ** ********* **
+
+** NOTE IMPORTANTE **
+
+Ce document est une traduction et malgré nos efforts,
+il peut ne pas correspondre exactement à la dernière
+version, seul le texte original en anglais
+(installation_readme.txt) est toujours à jour.
+
+**       FIN      **
+
+Ce document est un guide pour l'insatllation de
+Firebird 2.0 sur une plateforme Win32. Ces notes concernent 
+l'itilitaire d'installation, pas
+Firebird 2.0 en général.
+
+
+Contenu
+--------
+
+o Avant l'installation
+o Nouvel ODS 11.0
+o Installation sur une machine avec Firebird 1.5
+o Installation sur une machine avec Firebird 2.0
+o Nouvelles fonctionnalités du programme d'installation
+o Problèmes connus d'installation
+o Fonctionnalités obsolètes du programme d'installation
+o Desinstallation
+o Autres Notes
+o Installation depuis un fichier batch
+
+
+Avant l'installation
+--------------------
+
+Il est recommandé de désinstaller toutes les
+précédentes versions de Firebird 1.0, Firebird 1.5 ou
+InterBase avant de commencer l'installation.
+Il est particulièrement important de vérifier que
+fbclient.dll et gds32.dll ont été retirés de <system32>.
+
+
+Nouvel ODS 11.0
+---------------
+
+Firebird 2.0 utilise le nouvel ODS 11.0 qui est incompatible
+avec l' ODS 11.0 utilisé par les verions alpha.
+
+Si vous installez cette version de Firebird 2.0 pour
+la première fois au dessus d'un système avec Firebird 2 
+alpha il est recommandé de l'installer dans un nouveau répertoire.
+Ceci parce qu'une désinstallation va conserver la
+version existante de la base security2. Toutefois cette ancienne 
+version utilise un ODS incompatible et vous ne pourrez vous connecter 
+au serveur.
+
+
+Installation sur une machine avec Firebird 1.5
+----------------------------------------------
+
+La base de sécurité a changée. La nouvelle base
+est nommée security2.fdb et utilise un algorithme
+de cryptage renforcé. Vous pouvez trouver plus
+d'information sur ces fonctionnalités dans les notes de version.
+
+La nouvelle structure dela base et le changement de cryptage
+créent des problème de migration pour les sites qui ont
+de nombreux utilisateurs enregistrés. L'utilitaire
+d'installtion de tente rien pour cette migration.  Elle doit être 
+faite manuellement. Une technique de technique de migration technique
+est décrite dans misc/upgrade/security/. 
+
+
+Installation sur une machine avec Firebird 2.0
+----------------------------------------------
+
+En plus du changement d'ODS veuillez noter
+que l'utilitaire d'installation ne peut détecter automatiquement
+si un serveur Firebird 2.0 Alpha ou Beta fonctionne en
+tant que service. De ce fait vous ne serez pas averti
+tant que l'utilitaire n'essaiera pas de d'écrire sur un
+fichier en cours d'utilisation. Cela peut être évité si vous faites
+d'abord une désinstallation.
+
+
+Nouvelles fonctionnalités du programme d'installation
+-----------------------------------------------------
+
+o Si un fichier firebird.conf existant est détecté
+  l'utilitaire installera de fichier de configuration par défaut 
+  comme :
+
+  firebird.conf.default.
+
+  Le fichier firebird.conf existant ne sera pas modifié.
+  Cela permet que les restrictions d'accès ne soient pas
+  modifiées.
+
+
+o Le programme d'installation est maintenant traduit dans
+  plusieures langues. La traduction concerne SEULEMENT le
+  processus d'installation.
+
+  
+  NOTE: Les langues disponibles sont fonctions de votre
+  version de Windows. Ainsi, par exemple, les européens de 
+  l'ouest ne verront pas les langues slaves disponibles.
+
+
+Problèmes connus d'installation
+-------------------------------
+
+Acun connu pour le moment.
+
+
+Désinstallation
+---------------
+
+o Il est préférable d'utiliser le programme de
+  désinstalation fourni.
+  Il peut être appelé depuis le panneau de
+  configuration. Vous pouvez aussi utiliser directement
+  unins000.exe depuis le répertoire d'installation.
+
+o Si Firebird est exécuté comme application (et non
+  comme service) il est recommendé d'arreter d'abord
+  le serveur avant de commencer la désinstalation. Ce
+  parce que le programme de desinstallation ne peut
+  arreter une application en cours. Si le serveur
+  fonctionne pendant la désinstallation, des erreurs
+  seront générées.
+  Vous devrez alors supprimer les fichiers restant
+  manuellement.
+
+o La desintalltion laisse quatre fichiers dans le
+  répertoire d'installation:
+
+  - aliases.conf
+  - firebird.conf
+  - firebird.log
+  - security2.fdb
+
+  Ceci est intentionnel. Ces fichiers sont tous
+  potentiellement modifiables par les utilisateurs et peuvent
+  être nécessaires si Firebird est reinstallé dans le futur. Ils
+  peuvent être effacés si nécessaire.
+
+
+Autres Notes
+------------
+
+  Firebird necessite WinSock2. Toutes les plateformes
+  Win32 doivent l'avoir, sauf Win95. Un test de
+  l'existence de Winsock2 est fait durant
+  l'installation. S'il n'est pas concluant
+  l'installation echouera. Vous pouvez visiter cet
+  lien:
+
+    http://support.microsoft.com/default.aspx?scid=kb;EN-US;q177719
+
+  pour savoir comment faire la mise à jour.
+
+
+Installation depuis un fichier batch
+------------------------------------
+
+Le programme d'installation peut être utilisé depuis un
+fichier batch
+Lisez le document :
+
+    installation_scripted.txt
+
+pour plus de détails.
+
+

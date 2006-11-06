@@ -59,6 +59,7 @@
 
 #include "../jrd/flu_proto.h"
 #include "../jrd/gds_proto.h"
+#include "../jrd/dls_proto.h"
 #include "../jrd/err_proto.h"
 
 #include "gen/iberror.h"

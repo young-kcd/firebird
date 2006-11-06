@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD International support
  *	MODULE:		IntlManager.h
- *	DESCRIPTION:	INTL Manager
+ *	DESCRIPTION:	
  *
  *  The contents of this file are subject to the Initial
  *  Developer's Public License Version 1.0 (the "License");
@@ -51,11 +51,7 @@ public:
 								texttype* tt);
 
 private:
-	static bool registerCharSetCollation(const Firebird::string& name,
-										 const Firebird::PathName& filename,
-										 const Firebird::string& externalName);
-
-	static bool validateCharSet(const Firebird::string& charSetName, charset* cs);
+	static bool registerCharSetCollation(const Firebird::string& name, const Firebird::PathName& filename);
 };
 
 }	// namespace Jrd

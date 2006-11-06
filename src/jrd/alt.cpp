@@ -47,7 +47,6 @@
 
 #include "../jrd/event.h"
 #include "../jrd/alt_proto.h"
-#include "../jrd/constants.h"
 
 #if !defined(SUPERSERVER) || defined(EMBEDDED) || defined(SUPERCLIENT)
 #if !defined(BOOT_BUILD)
@@ -240,17 +239,20 @@ ISC_STATUS API_ROUTINE_VARARG gds__start_transaction(
 												 FB_API_HANDLE* tra_handle,
 												 SSHORT count, ...)
 {
-	// This infamous structure is defined several times in different places
-	struct teb_t {
-		FB_API_HANDLE* teb_database;
-		int teb_tpb_length;
-		UCHAR* teb_tpb;
-	};
+// This infamous structure is defined several times in different places/
+struct teb_t {
+	FB_API_HANDLE* teb_database;
+	int teb_tpb_length;
+	UCHAR* teb_tpb;
+};
 
 	teb_t tebs[16];
-	teb_t* teb = tebs;
+	teb_t* teb;
+	va_list ptr;
 
-	if (count > FB_NELEM(tebs))
+	if (count <= FB_NELEM(tebs))
+		teb = tebs;
+	else
 		teb = (teb_t*) gds__alloc(((SLONG) sizeof(teb_t) * count));
 	/* FREE: later in this module */
 
@@ -262,7 +264,6 @@ ISC_STATUS API_ROUTINE_VARARG gds__start_transaction(
 	}
 
 	const teb_t* const end = teb + count;
-	va_list ptr;
 	va_start(ptr, count);
 
 	for (teb_t* teb_iter = teb; teb_iter < end; ++teb_iter) {

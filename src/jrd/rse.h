@@ -38,8 +38,6 @@
 #include "../jrd/lls.h"
 #include "../jrd/sbm.h"
 
-#include "../jrd/RecordBuffer.h"
-
 struct dsc;
 
 namespace Jrd {
@@ -74,9 +72,7 @@ enum rsb_t
 	rsb_ext_dbkey,						// external DB_KEY access
 	rsb_navigate,						// navigational walk on an index
 	rsb_left_cross,						// left outer join as a nested loop
-	rsb_procedure,						// stored procedure
-	rsb_virt_sequential,				// sequential access to a virtual table
-	rsb_recurse							// Recursive union
+	rsb_procedure						// stored procedure
 };
 
 
@@ -156,23 +152,6 @@ struct merge_file {
 
 const ULONG MERGE_BLOCK_SIZE	= 65536;
 
-// forward declaration
-struct irsb_recurse;
-
-class RSBRecurse
-{
-public:
-	static void open(thread_db*, RecordSource*, irsb_recurse*);
-	static bool get(thread_db*, RecordSource*, irsb_recurse*);
-	static void close(thread_db*, RecordSource*, irsb_recurse*);
-	
-	enum mode { 
-		root, 
-		recurse
-	};
-
-	static const USHORT MAX_RECURSE_LEVEL;
-};
 
 // Impure area formats for the various RecordSource types
 
@@ -182,14 +161,6 @@ struct irsb {
 };
 
 typedef irsb *IRSB;
-
-struct irsb_recurse {
-	ULONG	irsb_flags;
-	USHORT	irsb_level;
-	RSBRecurse::mode irsb_mode;
-	char*	irsb_stack;
-	char*	irsb_data;
-};
 
 struct irsb_first_n {
 	ULONG irsb_flags;
@@ -232,11 +203,6 @@ struct irsb_mrg {
 		SSHORT irsb_mrg_order;			// logical merge order by substream
 		merge_file irsb_mrg_file;		// merge equivalence file
 	} irsb_mrg_rpt[1];
-};
-
-struct irsb_virtual {
-	ULONG irsb_flags;
-	RecordBuffer* irsb_record_buffer;
 };
 
 /* CVC: Unused as of Nov-2005.
@@ -324,9 +290,8 @@ public:
 
 // values for smb_field_id
 
-const SSHORT SMB_DBKEY = -1;		// dbkey value
-const SSHORT SMB_DBKEY_VALID = -2;	// dbkey valid flag
-const SSHORT SMB_TRANS_ID = -3;		// transaction id of record
+const SSHORT SMB_DBKEY = -1;	// dbkey value
+const SSHORT SMB_TRANS_ID = -2;	// transaction id of record
 
 // bits for the smb_flags field
 

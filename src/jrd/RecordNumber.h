@@ -24,6 +24,7 @@
  *  Contributor(s): ______________________________________.
  *
  *
+ *  $Id: RecordNumber.h,v 1.5 2005-05-27 22:43:14 asfernandes Exp $
  *
  */
 
@@ -40,13 +41,13 @@ const SINT64 BOF_NUMBER = QUADCONST(-1);
 class RecordNumber {
 public:
 	// Default constructor.
-	inline RecordNumber() : value(EMPTY_NUMBER), valid(false) {}
+	inline RecordNumber() : value(EMPTY_NUMBER) {}
 
 	// Copy constructor
-	inline RecordNumber(const RecordNumber& from) : value(from.value), valid(from.valid) {}
+	inline RecordNumber(const RecordNumber& from) : value(from.value) {}
 
 	// Explicit constructor from 64-bit record number value
-	inline explicit RecordNumber(SINT64 number) : value(number), valid(true) {}
+	inline explicit RecordNumber(SINT64 number) : value(number) {}
 
 	// Assignment operator
 	inline RecordNumber& operator =(const RecordNumber& from) { 
@@ -89,8 +90,6 @@ public:
 	bool isBof() const { return value == BOF_NUMBER; }
 
 	bool isEmpty() const { return value == EMPTY_NUMBER; }
-
-	bool isValid() const { return valid; }
 
 	inline bool checkNumber(
 		USHORT records_per_page, // ~400 (8k page)
@@ -158,17 +157,11 @@ public:
 			(((UINT64) bid_number[0]) << 32);
 	}
 
-	inline void setValid(bool value)
-	{
-		valid = value;
-	}
-
 private:
 	// Use signed value because negative values are widely used as flags in the 
 	// engine. Since page number is the signed 32-bit integer and it is also may
 	// be stored in this structure we want sign extension to take place.
 	SINT64 value;
-	bool valid;
 };
 
 #endif // JRD_RECORDNUMBER_H

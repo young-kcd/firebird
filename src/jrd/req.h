@@ -35,6 +35,7 @@
 #include "../jrd/RecordNumber.h"
 #include "../common/classes/timestamp.h"
 
+#include <vector>
 
 namespace Jrd {
 
@@ -49,15 +50,11 @@ template <typename T> class vec;
 class jrd_tra;
 class Savepoint;
 class RecordSource;
-class thread_db;
 
 /* record parameter block */
 
 struct record_param {
-	record_param() : 
-		rpb_relation(0),
-		rpb_window(DB_PAGE_SPACE, -1)
-		{}
+	record_param() : rpb_window(-1) {}
 	RecordNumber rpb_number;	/* record number in relation */
 	SLONG rpb_transaction_nr;	/* transaction number */
 	jrd_rel*	rpb_relation;	/* relation of record */
@@ -76,22 +73,11 @@ struct record_param {
 	SLONG rpb_b_page;			/* back page */
 	USHORT rpb_b_line;			/* back line */
 
-	UCHAR* rpb_address;			/* address of record sans header */
+	UCHAR*	rpb_address;		/* address of record sans header */
 	USHORT rpb_length;			/* length of record */
 	USHORT rpb_flags;			/* record ODS flags replica */
 	USHORT rpb_stream_flags;	/* stream flags */
 	SSHORT rpb_org_scans;		/* relation scan count at stream open */
-
-	inline WIN& getWindow(thread_db* tdbb) {
-		if (rpb_relation) {
-			rpb_window.win_page.setPageSpaceID(
-				rpb_relation->getPages(tdbb)->rel_pg_space_id);
-		}
-
-		return rpb_window;
-	}
-
-private:
 	struct win rpb_window;
 };
 
@@ -188,12 +174,10 @@ class jrd_req : public pool_alloc_rpt<record_param, type_req>
 public:
 	jrd_req(JrdMemoryPool* pool) :
 		req_blobs(pool), req_external(*pool), req_access(*pool), req_resources(*pool),
-		req_trg_name(*pool), req_stats(*pool), req_fors(*pool), req_exec_sta(*pool),
-		req_invariants(*pool), req_timestamp(true), req_sql_text(*pool)
-	{}
+		req_trg_name(*pool), req_fors(*pool), req_exec_sta(*pool), req_invariants(*pool),
+		req_timestamp(true) {}
 
 	Attachment*	req_attachment;		// database attachment
-	SLONG		req_id;				// request identifier
 	USHORT		req_count;			// number of streams
 	USHORT		req_incarnation;	// incarnation number
 	ULONG		req_impure_size;	// size of impure area
@@ -230,7 +214,7 @@ public:
 	ULONG		req_records_inserted;	/* count of records inserted by request */
 	ULONG		req_records_updated;	/* count of records updated by request */
 	ULONG		req_records_deleted;	/* count of records deleted by request */
-	RuntimeStatistics	req_stats;
+
 	AffectedRows req_records_affected;	/* records affected by the last statement */
 
 	USHORT req_view_flags;			/* special flags for virtual ops on views */
@@ -248,21 +232,11 @@ public:
 	ULONG		req_flags;			/* misc request flags */
 	Savepoint*	req_proc_sav_point;	/* procedure savepoint list */
 	Firebird::TimeStamp	req_timestamp;		/* Start time of request */
-	Firebird::string req_sql_text;
-
-	USHORT	req_src_line;
-	USHORT	req_src_column;
 
 	enum req_ta {
-		// order should be maintained because the numbers are stored in BLR
-		req_trigger_insert			= 1,
-		req_trigger_update			= 2,
-		req_trigger_delete			= 3,
-		req_trigger_connect			= 4,
-		req_trigger_disconnect		= 5,
-		req_trigger_trans_start		= 6,
-		req_trigger_trans_commit	= 7,
-		req_trigger_trans_rollback	= 8
+		req_trigger_insert = 1,
+		req_trigger_update = 2,
+		req_trigger_delete = 3
 	} req_trigger_action;			/* action that caused trigger to fire */
 
 	enum req_s {

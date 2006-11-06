@@ -61,6 +61,7 @@
 #include "../jrd/intl.h"
 #include "../jrd/btr.h"
 #include "../jrd/gdsassert.h"
+#include "../jrd/all_proto.h"
 #include "../jrd/cmp_proto.h"
 #include "../jrd/dsc_proto.h"
 #include "../jrd/err_proto.h"
@@ -68,7 +69,6 @@
 #include "../jrd/fun_proto.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/idx_proto.h"
-#include "../jrd/intl_proto.h"
 #include "../jrd/jrd_proto.h"
 
 #include "../jrd/lck_proto.h"
@@ -81,8 +81,6 @@
 #include "../jrd/dsc_proto.h"
 #include "../jrd/dbg_proto.h"	// DBG_supervisor
 #include "../jrd/execute_statement.h"
-
-#include "../jrd/DataTypeUtil.h"
 
 /* Pick up relation ids */
 #include "../jrd/ini.h"
@@ -440,9 +438,6 @@ jrd_req* CMP_clone_request(thread_db* tdbb, jrd_req* request, USHORT level, bool
 
 	SET_TDBB(tdbb);
 
-	Database* dbb = tdbb->tdbb_database;
-	fb_assert(dbb);
-
 	// find the request if we've got it
 
 	if (!level) {
@@ -484,8 +479,6 @@ jrd_req* CMP_clone_request(thread_db* tdbb, jrd_req* request, USHORT level, bool
 	clone = FB_NEW_RPT(*request->req_pool, n) jrd_req(request->req_pool);
 	(*vector)[level] = clone;
 	clone->req_attachment = tdbb->tdbb_attachment;
-	clone->req_stats.setParent(&tdbb->tdbb_attachment->att_stats);
-	clone->req_id = LCK_increment(tdbb, dbb->dbb_increment_lock);
 	clone->req_count = request->req_count;
 	clone->req_pool = request->req_pool;
 	clone->req_impure_size = request->req_impure_size;
@@ -575,7 +568,7 @@ jrd_req* CMP_compile2(thread_db* tdbb, const UCHAR* blr, USHORT internal_flag)
 		delete csb;
 
 	}
-	catch (const Firebird::Exception& ex) {
+	catch (const std::exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);		
 		if (request) {
 			CMP_release(tdbb, request);
@@ -648,7 +641,7 @@ jrd_req* CMP_find_request(thread_db* tdbb, USHORT id, USHORT which)
 	// Request exists and is in use. Look for clones until we find
 	// one that is available.
 
-	for (int n = 1; true; n++) {
+	for (USHORT n = 1; true; n++) {
 		if (n > MAX_RECURSION) {
 			THD_MUTEX_UNLOCK(dbb->dbb_mutexes + DBB_MUTX_cmp_clone);
 			ERR_post(isc_no_meta_update,
@@ -922,8 +915,6 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC * de
 				IBERROR(223);	// msg 223 argument of scalar operation must be an array
 			}
 			*desc = array->arr_desc.iad_rpt[0].iad_desc;
-			if (array->arr_desc.iad_dimensions > MAX_ARRAY_DIMENSIONS)
-				IBERROR(306); // Found array data type with more than 16 dimensions
 			return;
 		}
 
@@ -1019,18 +1010,6 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC * de
 			return;
 		}
 		break;
-
-	case nod_agg_list:
-	case nod_agg_list_distinct:
-		CMP_get_desc(tdbb, csb, node->nod_arg[0], desc);
-		if (!DTYPE_IS_TEXT(desc->dsc_dtype)) {
-			desc->dsc_ttype() = ttype_ascii;
-		}
-		desc->dsc_dtype = dtype_varying;
-		desc->dsc_length = MAX_COLUMN_SIZE;
-		desc->dsc_scale = 0;
-		desc->dsc_flags = 0;
-		return;
 
 	case nod_add:
 	case nod_subtract:
@@ -1262,17 +1241,12 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC * de
 			USHORT dtype1 = desc1.dsc_dtype;
 			USHORT dtype2 = desc2.dsc_dtype;
 
-			// In Dialect 2 or 3, strings can never partipate in addition / sub
-			// (use a specific cast instead)
-			if (DTYPE_IS_TEXT(dtype1) || DTYPE_IS_TEXT(dtype2))
-				ERR_post(isc_expression_eval_err, 0);
-
 			// Because dtype_int64 > dtype_double, we cannot just use the MAX macro to set
 			// the result dtype. The rule is that two exact numeric operands yield an int64
 			// result, while an approximate numeric and anything yield a double result.
 
-			if (DTYPE_IS_EXACT(desc1.dsc_dtype) &&
-				DTYPE_IS_EXACT(desc2.dsc_dtype))
+			if (DTYPE_IS_EXACT(desc1.dsc_dtype)
+				&& DTYPE_IS_EXACT(desc2.dsc_dtype))
 			{
 				dtype = dtype_int64;
 			}
@@ -1281,8 +1255,7 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC * de
 			{
 				dtype = dtype_double;
 			}
-			else
-			{
+			else {
 				// mixed numeric and non-numeric:
 
 				fb_assert(COULD_BE_DATE(desc1) || COULD_BE_DATE(desc2));
@@ -1573,14 +1546,46 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC * de
 			DSC desc1, desc2;
 			CMP_get_desc(tdbb, csb, node->nod_arg[0], &desc1);
 			CMP_get_desc(tdbb, csb, node->nod_arg[1], &desc2);
-			DataTypeUtil(tdbb).makeConcatenate(desc, &desc1, &desc2);
+			desc->dsc_dtype = dtype_varying;
+			ULONG rc_len;
+			if (desc1.dsc_dtype <= dtype_varying)
+			{
+			    rc_len = DSC_string_length(&desc1);
+				desc->dsc_ttype() = desc1.dsc_ttype();
+			}
+			else
+			{
+			    rc_len = DSC_convert_to_text_length(desc1.dsc_dtype);
+				desc->dsc_ttype() = ttype_ascii;
+			}
+			if (desc2.dsc_dtype <= dtype_varying)
+			{
+				rc_len += DSC_string_length (&desc2);
+				if (((desc->dsc_ttype() == CS_ASCII) || (desc->dsc_ttype() == CS_NONE)) &&
+					(desc2.dsc_ttype() != CS_NONE)) 
+				{
+					desc->dsc_ttype() = desc2.dsc_ttype();
+				}
+			}
+			else
+			{
+				rc_len += DSC_convert_to_text_length(desc2.dsc_dtype);
+			}
+			if (rc_len > MAX_COLUMN_SIZE - sizeof(USHORT))
+			{
+				rc_len = MAX_COLUMN_SIZE - sizeof(USHORT);
+				ERR_post_warning(isc_concat_overflow, 0);
+			}
+			desc->dsc_length = static_cast<USHORT>(rc_len) + sizeof(USHORT);
+			desc->dsc_scale = 0;
+			desc->dsc_flags = 0;
 			return;
 		}
 
 	case nod_upcase:
 	case nod_lowcase:
 		CMP_get_desc(tdbb, csb, node->nod_arg[0], desc);
-		if (desc->dsc_dtype > dtype_varying && desc->dsc_dtype != dtype_blob) {
+		if (desc->dsc_dtype > dtype_varying) {
 			desc->dsc_length = DSC_convert_to_text_length(desc->dsc_dtype);
 			desc->dsc_dtype = dtype_text;
 			desc->dsc_ttype() = ttype_ascii;
@@ -1633,7 +1638,6 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC * de
     case nod_current_role:
 		desc->dsc_dtype = dtype_text;
 		desc->dsc_ttype() = ttype_metadata;
-		// ASF: should be multiplied by maxBytesPerChar of ttype_metadata in the future
 		desc->dsc_length = USERNAME_LENGTH;
 		desc->dsc_scale = 0;
 		desc->dsc_flags = 0;
@@ -1718,9 +1722,9 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC * de
 
 	case nod_substr:
 		{
-			DSC desc0, desc1, desc2, desc3;
+			CMP_get_desc(tdbb, csb, node->nod_arg[0], desc);
 
-			CMP_get_desc(tdbb, csb, node->nod_arg[0], &desc0);
+			DSC desc1, desc2, desc3;
 
 			jrd_nod* offset_node = node->nod_arg[1];
 			jrd_nod* decrement_node = NULL;
@@ -1738,7 +1742,7 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC * de
 			jrd_nod* length_node = node->nod_arg[2];
 			CMP_get_desc(tdbb, csb, length_node, &desc2);
 
-			DataTypeUtil(tdbb).makeSubstr(desc, &desc0, &desc1, &desc2);
+			ULONG rc_len = 0;
 
 			if (desc1.dsc_flags & DSC_null || desc2.dsc_flags & DSC_null)
 			{
@@ -1773,37 +1777,32 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC * de
 						ERR_post(isc_bad_substring_length,
 								 isc_arg_number, length, 0);
 					}
+					// Set up the given length
+					rc_len = length;
 				}
 			}
-
+			if (desc->dsc_dtype == dtype_blob)
+			{
+				if (!rc_len && !(desc->dsc_flags & DSC_null))
+				{
+					// We don't know how big will the resulting string be
+					rc_len = MAX_COLUMN_SIZE - sizeof(USHORT);
+				}
+				desc->dsc_dtype = dtype_varying;
+				desc->dsc_ttype() = desc->dsc_blob_ttype();
+				desc->dsc_scale = 0;
+				desc->dsc_length = static_cast<USHORT>(rc_len) + sizeof(USHORT);
+			}
 			return;
 		}
 
 	case nod_trim:
-		CMP_get_desc(tdbb, csb, node->nod_arg[e_trim_value], desc);
-
-		if (node->nod_arg[e_trim_characters])
 		{
-			DSC desc1;
-			CMP_get_desc(tdbb, csb, node->nod_arg[e_trim_characters], &desc1);
-			desc->dsc_flags |= desc1.dsc_flags & DSC_null;
-		}
-
-		if (desc->dsc_dtype != dtype_blob)
-		{
-			USHORT length = DSC_string_length(desc);
-
-			if (!DTYPE_IS_TEXT(desc->dsc_dtype))
-			{
-				desc->dsc_ttype() = ttype_ascii;
-				desc->dsc_scale = 0;
-			}
-
+			CMP_get_desc(tdbb, csb, node->nod_arg[e_trim_value], desc);
+			desc->dsc_length = sizeof(USHORT) + DSC_string_length(desc);
 			desc->dsc_dtype = dtype_varying;
-			desc->dsc_length = length + sizeof(USHORT);
+			return;
 		}
-
-		return;
 
 	case nod_function:
 		{
@@ -1947,9 +1946,6 @@ jrd_req* CMP_make_request(thread_db* tdbb, CompilerScratch* csb)
 
 	SET_TDBB(tdbb);
 
-	Database* dbb = tdbb->tdbb_database;
-	fb_assert(dbb);
-
 	jrd_req* old_request = tdbb->tdbb_request;
 	tdbb->tdbb_request = NULL;
 
@@ -1960,8 +1956,9 @@ jrd_req* CMP_make_request(thread_db* tdbb, CompilerScratch* csb)
 	// optimizations can be performed here.
 
 	DEBUG;
-	csb->csb_node = pass1(tdbb, csb, csb->csb_node, 0, 0, false);
-	csb->csb_impure = REQ_SIZE + REQ_TAIL * MAX(csb->csb_n_stream, 1);
+	jrd_nod* node = pass1(tdbb, csb, csb->csb_node, 0, 0, false);
+	csb->csb_node = node;
+	csb->csb_impure = REQ_SIZE + REQ_TAIL * csb->csb_n_stream;
 	csb->csb_exec_sta.clear();
 	csb->csb_node = pass2(tdbb, csb, csb->csb_node, 0);
 
@@ -1974,7 +1971,6 @@ jrd_req* CMP_make_request(thread_db* tdbb, CompilerScratch* csb)
 
 	const SLONG n = (csb->csb_impure - REQ_SIZE + REQ_TAIL - 1) / REQ_TAIL;
 	request = FB_NEW_RPT(*tdbb->getDefaultPool(), n) jrd_req(tdbb->getDefaultPool());
-	request->req_id = LCK_increment(tdbb, dbb->dbb_increment_lock);
 	request->req_count = csb->csb_n_stream;
 	request->req_pool = tdbb->getDefaultPool();
 	request->req_impure_size = csb->csb_impure;
@@ -2039,12 +2035,6 @@ jrd_req* CMP_make_request(thread_db* tdbb, CompilerScratch* csb)
 #endif
 				break;
 			}
-		case Resource::rsc_collation:
-			{
-				Collation* coll = resource->rsc_coll;
-				coll->incUseCount(tdbb);
-				break;
-			}
 		default:
 			BUGCHECK(219);		// msg 219 request of unknown resource
 		}
@@ -2083,13 +2073,11 @@ jrd_req* CMP_make_request(thread_db* tdbb, CompilerScratch* csb)
 	tdbb->tdbb_request = old_request;
 
 	} // try
-	catch (const Firebird::Exception& ex) {
+	catch (const std::exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);		
 		tdbb->tdbb_request = old_request;
 		ERR_punt();
 	}
-
-	RuntimeStatistics::bumpValue(tdbb, RuntimeStatistics::STMT_PREPARES);
 
 	return request;
 }
@@ -2139,7 +2127,7 @@ void CMP_post_access(thread_db* tdbb,
 
 
 void CMP_post_resource(	ResourceList* rsc_ptr,
-						void* obj,
+						BLK rel_or_prc,
 						enum Resource::rsc_s type,
 						USHORT id)
 {
@@ -2154,17 +2142,14 @@ void CMP_post_resource(	ResourceList* rsc_ptr,
  *
  **************************************/
 	// Initialize resource block
-	Resource resource(type, id, NULL, NULL, NULL);
+	Resource resource(type, id, NULL, NULL);
 	switch (type) {
 	case Resource::rsc_relation:
 	case Resource::rsc_index:
-		resource.rsc_rel = (jrd_rel*) obj;
+		resource.rsc_rel = (jrd_rel*) rel_or_prc;
 		break;
 	case Resource::rsc_procedure:
-		resource.rsc_prc = (jrd_prc*) obj;
-		break;
-	case Resource::rsc_collation:
-		resource.rsc_coll = (Collation*) obj;
+		resource.rsc_prc = (jrd_prc*) rel_or_prc;
 		break;
 	default:
 		BUGCHECK(220);			/* msg 220 unknown resource */
@@ -2225,7 +2210,6 @@ void CMP_decrement_prc_use_count(thread_db* tdbb, jrd_prc* procedure)
 	{
 		if (procedure->prc_request) {
 			CMP_release(tdbb, procedure->prc_request);
-			procedure->prc_request = NULL;
 		}
 		procedure->prc_flags &= ~PRC_being_altered;
 		MET_remove_procedure(tdbb, procedure->prc_id, procedure);
@@ -2279,12 +2263,6 @@ void CMP_release(thread_db* tdbb, jrd_req* request)
 			case Resource::rsc_procedure:
 				{
 					CMP_decrement_prc_use_count(tdbb, resource->rsc_prc);
-					break;
-				}
-			case Resource::rsc_collation:
-				{
-					Collation* coll = resource->rsc_coll;
-					coll->decUseCount(tdbb);
 					break;
 				}
 			default:
@@ -2664,7 +2642,6 @@ static jrd_nod* copy(thread_db* tdbb,
 			RecordSelExpr* new_rse =
 				(RecordSelExpr*) PAR_make_node(tdbb, old_rse->rse_count + rse_delta + 2);
 			new_rse->nod_type = input->nod_type;
-			new_rse->nod_flags = input->nod_flags;
 			new_rse->nod_count = 0;
 			new_rse->rse_count = old_rse->rse_count;
 			jrd_nod** arg1 = old_rse->rse_relation;
@@ -2829,7 +2806,6 @@ static jrd_nod* copy(thread_db* tdbb,
 		node = PAR_make_node(tdbb, e_uni_length);
 		node->nod_type = input->nod_type;
 		node->nod_count = 2;
-		node->nod_flags = input->nod_flags;
 		stream = (USHORT)(IPTR) input->nod_arg[e_uni_stream];
 		fb_assert(stream <= MAX_STREAMS);
 		new_stream = csb->nextStream();
@@ -3247,24 +3223,6 @@ static jrd_nod* pass1(thread_db* tdbb,
 	case nod_argument:
 		break;
 
-	case nod_cast:
-		{
-			dsc desc;
-			CMP_get_desc(tdbb, csb, node, &desc);
-
-			USHORT ttype = INTL_TEXT_TYPE(desc);
-
-			// Are we using a collation?
-			if (TTYPE_TO_COLLATION(ttype) != 0)
-			{
-				CMP_post_resource(&csb->csb_resources,
-					INTL_texttype_lookup(tdbb, ttype),
-					Resource::rsc_collation, ttype);
-			}
-
-			break;
-		}
-
 	case nod_field:
 		{
 			stream = (USHORT)(IPTR) node->nod_arg[e_fld_stream];
@@ -3300,19 +3258,6 @@ static jrd_nod* pass1(thread_db* tdbb,
 								(USHORT)(IPTR) node->nod_arg[e_fld_id])))
 			{
 				break;
-			}
-
-			dsc desc;
-			CMP_get_desc(tdbb, csb, node, &desc);
-
-			USHORT ttype = INTL_TEXT_TYPE(desc);
-
-			// Are we using a collation?
-			if (TTYPE_TO_COLLATION(ttype) != 0)
-			{
-				CMP_post_resource(&csb->csb_resources,
-					INTL_texttype_lookup(tdbb, ttype),
-					Resource::rsc_collation, ttype);
 			}
 
 			// if this is a modify or store, check REFERENCES access to any foreign keys
@@ -3538,57 +3483,7 @@ static jrd_nod* pass1(thread_db* tdbb,
 			NodeStack stack;
 			expand_view_nodes(tdbb, csb, stream, stack, type);
 			if (stack.hasData())
-			{
-				// If that is a DB_KEY of a view, it's possible (in case of 
-				// outer joins) that some sub-stream have a NULL DB_KEY.
-				// In this case, we build a COALESCE(DB_KEY, _OCTETS ""),
-				// for the concatenation of sub DB_KEYs not result in NULL.
-				if (type == nod_dbkey && stack.getCount() > 1)
-				{
-					NodeStack stack2;
-
-					for (NodeStack::iterator i(stack); i.hasData(); ++i)
-					{
-						jrd_nod* new_node = PAR_make_node(tdbb, 1);
-						new_node->nod_type = nod_value_if;
-						new_node->nod_count = 3;
-
-						// build an IF (RDB$DB_KEY IS NOT NULL)
-						new_node->nod_arg[0] = PAR_make_node(tdbb, 1);
-						new_node->nod_arg[0]->nod_type = nod_not;
-						new_node->nod_arg[0]->nod_count = 1;
-						new_node->nod_arg[0]->nod_arg[0] = PAR_make_node(tdbb, 1);
-						new_node->nod_arg[0]->nod_arg[0]->nod_type = nod_missing;
-						new_node->nod_arg[0]->nod_arg[0]->nod_count = 1;
-						new_node->nod_arg[0]->nod_arg[0]->nod_arg[0] = i.object();
-
-						new_node->nod_arg[1] = i.object();	// THEN
-
-						const SSHORT count = lit_delta +
-							(0 + sizeof(jrd_nod*) - 1) / sizeof(jrd_nod*);
-						new_node->nod_arg[2] = PAR_make_node(tdbb, count);	// ELSE
-						new_node->nod_arg[2]->nod_type = nod_literal;
-						new_node->nod_arg[2]->nod_count = 0;
-						Literal* literal = (Literal*) new_node->nod_arg[2];
-						literal->lit_desc.dsc_dtype = dtype_text;
-						literal->lit_desc.dsc_ttype() = CS_BINARY;
-						literal->lit_desc.dsc_scale = 0;
-						literal->lit_desc.dsc_length = 0;
-						literal->lit_desc.dsc_address = reinterpret_cast<UCHAR*>(literal->lit_data);
-
-						stack2.push(new_node);
-					}
-
-					stack.clear();
-
-					// stack2 is in reverse order, pushing everything in stack
-					// will correct the order.
-					for (NodeStack::iterator i2(stack2); i2.hasData(); ++i2)
-						stack.push(i2.object());
-				}
-
 				return catenate_nodes(tdbb, stack);
-			}
 
 			// The user is asking for the dbkey/record version of an aggregate.
 			// Humor him with a key filled with zeros.
@@ -3641,11 +3536,6 @@ static jrd_nod* pass1(thread_db* tdbb,
 	case nod_unique:
 		ignore_dbkey(tdbb, csb, (RecordSelExpr*) node->nod_arg[e_any_rse], view);
 		break;
-
-	case nod_src_info:
-		node->nod_arg[e_src_info_node] = 
-			pass1(tdbb, csb, node->nod_arg[e_src_info_node], view, view_stream, validate_expr);
-		return node;		
 
 	default:
 		break;
@@ -4161,7 +4051,7 @@ static RecordSelExpr* pass1_rse(thread_db* tdbb,
 	if (plan) {
 		rse->rse_plan = plan;
 	}
-	
+
 	rse->rse_writelock = writelock;
 
 #ifdef SCROLLABLE_CURSORS
@@ -4315,7 +4205,8 @@ static void pass1_source(thread_db*			tdbb,
 		size_t pos;
 		if (ctx.find(key, pos)) {
 			element->csb_alias = FB_NEW(csb->csb_pool) 
-				Firebird::MetaName(csb->csb_pool, ctx[pos].vcx_context_name);
+				Firebird::string(csb->csb_pool, ctx[pos].vcx_context_name.c_str(), 
+												ctx[pos].vcx_context_name.length());
 		}
 	}
 
@@ -4762,11 +4653,6 @@ static jrd_nod* pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node
 		}
 		break;
 
-	case nod_src_info:
-		node->nod_arg[e_src_info_node] = 
-			pass2(tdbb, csb, node->nod_arg[e_src_info_node], node);
-		return node;
-
 	default:
 		break;
 	}
@@ -4857,15 +4743,21 @@ static jrd_nod* pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node
 		}
 		break;
 
-	case nod_total:
 	case nod_agg_total:
 	case nod_agg_total_distinct:
+	case nod_total:
 	case nod_agg_total2:
 	case nod_agg_total_distinct2:
+		{
+			node->nod_count = 0;
+			csb->csb_impure += sizeof(impure_value);
+			dsc descriptor_a;
+			CMP_get_desc(tdbb, csb, node, &descriptor_a);
+		}
+		break;
+
 	case nod_agg_average2:
 	case nod_agg_average_distinct2:
-	case nod_agg_list:
-	case nod_agg_list_distinct:
 		{
 			node->nod_count = 0;
 			csb->csb_impure += sizeof(impure_value_ex);
@@ -4925,13 +4817,16 @@ static jrd_nod* pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node
 			// SMB_SET uses ULONG, not USHORT
 			const ULONG id = (ULONG)(IPTR) node->nod_arg[e_fld_id];
 			SBM_SET(tdbb->getDefaultPool(), &csb->csb_rpt[stream].csb_fields, id);
+			if (node->nod_flags & nod_value) {
+				csb->csb_impure += sizeof(impure_value_ex);
+				break;
+			}
 		}
 		// FALL INTO
 
 	case nod_argument:
 	case nod_variable:
-		csb->csb_impure += (node->nod_flags & nod_value) ?
-			sizeof(impure_value_ex) : sizeof(dsc);
+		csb->csb_impure += sizeof(dsc);
 		break;
 
 	case nod_concatenate:
@@ -5635,7 +5530,7 @@ static void process_map(thread_db* tdbb, CompilerScratch* csb, jrd_nod* map,
  **************************************
  *
  * Functional description
- *	Translate a map block into a format.  If the format
+ *	Translate a map block into a format.  If the format is
  *	is missing or incomplete, extend it.
  *
  **************************************/
@@ -5722,7 +5617,7 @@ static void process_map(thread_db* tdbb, CompilerScratch* csb, jrd_nod* map,
 
 	// flesh out the format of the record
 
-	ULONG offset = FLAG_BYTES(format->fmt_count);
+	format->fmt_length = (USHORT) FLAG_BYTES(format->fmt_count);
 
 	Format::fmt_desc_iterator desc3 = format->fmt_desc.begin();
 	for (const Format::fmt_desc_const_iterator end_desc = format->fmt_desc.end();
@@ -5730,16 +5625,11 @@ static void process_map(thread_db* tdbb, CompilerScratch* csb, jrd_nod* map,
 	{
 		const USHORT align = type_alignments[desc3->dsc_dtype];
 		if (align) {
-			offset = FB_ALIGN(offset, align);
+			format->fmt_length = FB_ALIGN(format->fmt_length, align);
 		}
-		desc3->dsc_address = (UCHAR *) (IPTR) offset;
-		offset += desc3->dsc_length;
+		desc3->dsc_address = (UCHAR *) (IPTR) format->fmt_length;
+		format->fmt_length += desc3->dsc_length;
 	}
-
-	if (offset > MAX_FORMAT_SIZE)
-		ERR_post(isc_imp_exc, isc_arg_gds, isc_blktoobig, 0);
-
-	format->fmt_length = (USHORT) offset;
 }
 
 

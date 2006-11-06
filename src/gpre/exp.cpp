@@ -381,7 +381,7 @@ SINT64 EXP_SINT64_ordinal(bool advance_flag)
 	if (gpreGlob.token_global.tok_type != tok_number)
 		CPR_s_error("<number>");
 
-	const char format[8] = "%"SQUADFORMAT;
+	const char format[8] = "%"QUADFORMAT"d";
 	SINT64 n;
 	sscanf(gpreGlob.token_global.tok_string, format, &n);
 	

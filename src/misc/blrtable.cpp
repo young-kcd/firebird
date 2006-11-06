@@ -83,7 +83,6 @@ static const VERB verbs[] =
 	PAIR(nod_loop, blr_loop, 1, 1, STATEMENT, STATEMENT),
 	PAIR(nod_message, blr_message, 0, 0, STATEMENT, OTHER),
 	PAIR(nod_modify, blr_modify, 0, 0, STATEMENT, STATEMENT),
-	PAIR(nod_modify, blr_modify2, 0, 0, STATEMENT, STATEMENT),
 	PAIR(nod_user_savepoint, blr_user_savepoint, e_sav_length, 0, STATEMENT, OTHER),
 	PAIR(nod_receive, blr_receive, e_send_length, 1, STATEMENT, STATEMENT),
 	PAIR(nod_select, blr_select, 0, 0, STATEMENT, STATEMENT),
@@ -105,8 +104,6 @@ static const VERB verbs[] =
 	PAIR2(nod_agg_total_distinct, blr_agg_total_distinct, 2, 1, VALUE, VALUE),
 	PAIR2(nod_agg_average, blr_agg_average, 1, 1, VALUE, VALUE),
 	PAIR2(nod_agg_average_distinct, blr_agg_average_distinct, 2, 1, VALUE, VALUE),
-	PAIR(nod_agg_list, blr_agg_list, 2, 2, VALUE, VALUE),
-	PAIR(nod_agg_list_distinct, blr_agg_list_distinct, 3, 2, VALUE, VALUE),
 	PAIR(nod_argument, blr_parameter, e_arg_length, 0, VALUE, VALUE),
 	PAIR(nod_argument, blr_parameter2, e_arg_length, 0, VALUE, VALUE),
 	PAIR(nod_argument, blr_parameter3, e_arg_length, 0, VALUE, VALUE),
@@ -167,7 +164,6 @@ static const VERB verbs[] =
 
 	PAIR(nod_map, blr_map, 0, 0, OTHER, OTHER),
 	PAIR(nod_union, blr_union, 0, 0, RELATION, OTHER),
-	PAIR(nod_union, blr_recurse, 0, 0, RELATION, OTHER),
 	PAIR(nod_aggregate, blr_aggregate, e_agg_length, 0, RELATION, OTHER),
 	PAIR(nod_relation, blr_relation, 0, 0, RELATION, OTHER),
 	PAIR(nod_relation, blr_rid, 0, 0, RELATION, OTHER),
@@ -214,7 +210,6 @@ static const VERB verbs[] =
 	PAIR(nod_lowcase, blr_lowcase, 1, 1, VALUE, VALUE),
 	PAIR(nod_strlen, blr_strlen, e_strlen_length, e_strlen_count, VALUE, VALUE),
 	PAIR(nod_trim, blr_trim, e_trim_length, e_trim_count, VALUE, VALUE),
-	PAIR(nod_src_info, blr_src_info, 2, 0, STATEMENT, STATEMENT),
 	{0, NULL, NULL, NULL, NULL, NULL, NULL}
 };
 

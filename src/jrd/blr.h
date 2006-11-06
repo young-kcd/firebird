@@ -58,8 +58,6 @@
 #define blr_sql_time		(unsigned char)13
 #define blr_int64               (unsigned char)16
 #define blr_blob2		(unsigned char)17
-#define blr_type_of		(unsigned char)18
-#define blr_type_of2	(unsigned char)19
 
 /* Historical alias for pre V6 applications */
 #define blr_date		blr_timestamp
@@ -275,19 +273,6 @@
 #define blr_current_timestamp	(unsigned char)161
 #define blr_current_time	(unsigned char)162
 
-/* These codes reuse BLR code space */
-
-#define blr_post_arg		(unsigned char)163
-#define blr_exec_into		(unsigned char)164
-#define blr_user_savepoint	(unsigned char)165
-#define blr_dcl_cursor		(unsigned char)166
-#define blr_cursor_stmt		(unsigned char)167
-#define blr_current_timestamp2	(unsigned char)168
-#define blr_current_time2	(unsigned char)169
-#define blr_agg_list		(unsigned char)170
-#define blr_agg_list_distinct	(unsigned char)171
-#define blr_modify2			(unsigned char)172
-
 /* FB 1.0 specific BLR */
 
 #define blr_current_role	(unsigned char)174
@@ -306,21 +291,32 @@
 #define blr_lowcase			(unsigned char)181
 #define blr_strlen			(unsigned char)182
 
-/* sub parameter for blr_strlen */
+/* sub parameters for blr_length */
+
 #define blr_strlen_bit		(unsigned char)0
 #define blr_strlen_char		(unsigned char)1
 #define blr_strlen_octet	(unsigned char)2
 
 #define blr_trim			(unsigned char)183
 
-/* first sub parameter for blr_trim */
+/* sub parameters for blr_trim */
+
 #define blr_trim_both		(unsigned char)0
 #define blr_trim_leading	(unsigned char)1
 #define blr_trim_trailing	(unsigned char)2
 
-/* second sub parameter for blr_trim */
 #define blr_trim_spaces		(unsigned char)0
 #define blr_trim_characters	(unsigned char)1
+
+/* These codes reuse BLR code space */
+
+#define blr_post_arg		(unsigned char)163
+#define blr_exec_into		(unsigned char)164
+#define blr_user_savepoint	(unsigned char)165
+#define blr_dcl_cursor		(unsigned char)166
+#define blr_cursor_stmt		(unsigned char)167
+#define blr_current_timestamp2	(unsigned char)168
+#define blr_current_time2	(unsigned char)169
 
 /* These codes are actions for user-defined savepoints */
 
@@ -334,11 +330,5 @@
 #define blr_cursor_open			(unsigned char)0
 #define blr_cursor_close		(unsigned char)1
 #define blr_cursor_fetch		(unsigned char)2
-
-/* FB 2.1 specific BLR */
-
-/* Source code line and column numbers */
-#define blr_src_info		(unsigned char)184
-#define blr_recurse			(unsigned char)185
 
 #endif /* JRD_BLR_H */

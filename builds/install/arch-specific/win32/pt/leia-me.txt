@@ -5,36 +5,42 @@ Firebird 2.0.0       (Win32 Build)
 
 o Introdução
 o Utilizadores Alvo
-o Estabilidade
 o Funcionalidades desta versão (todas as plataformas)
 o Erros resolvidos nesta versão
+o Instalação
 o Questões Conhecidas
-o Erros Relatados
+o Como Relatar Erros
 o Pedido de Novas Funcionalidades
 
 
 Introdução
 ==========
 
-Bemvindo à terceira versão Alfa do Firebird 2.0.
+Bemvindo ao Firebird 2.0.
 
 
 Utilizadores Alvo
 =================
 
-Esta versão alfa não se destina a uso em ambientes de 
-trabalho.
-Destina-se apenas a avaliação e tem como objectivo ser 
-testada por utilizadores de Firebird experimentados. 
-Espera-se que todos os utilizadores leiam primeiro as 
-Notas da Versão.
+O Firebird 2.0 passou por uma extensiva fase de testes
+e o seu objectivo é ser utilizado em produção.
+Porém, recomenda-se a todos os utilizadores que sigam
+algumas práticas padrão antes de o colocar num servidor
+de produção, assim como:
 
- o NÃO INSTALE esta versão se nunca usou o Firebird primeiro. 
-   Se for esse o caso use o Firebird v1.5.2.
+ o Por favor leia primeiro as instruções de instalação
+   e as Notas de Lançamento.
 
- o Se tem vindo a testar versões Alfa anteriores por favor
-   consulte o ficheiro de instalação e as Notas da Versão.
+ o Se tem dados que preza lembre-se de fazer backups dos 
+   mesmos antes de instalar esta versão.
 
+ o É recomendado que remova todas as versões prévias do 
+   Firebird antes desta instalação. Este procedimento
+   preserva os ficheiros de configuração e de logs.
+
+ o É recomendado que faça os seus próprios testes num
+   desenvolvimento de programação antes de passar a um
+   ambiente de produção.
 
 Funcionalidades desta versão (todas as plataformas)
 ===================================================
@@ -54,20 +60,17 @@ Instalando o executável de auto-instalação
 ==========================================
 
 Por favor corra o executável e leia as notas de instalação 
-que o acompanham e que estão contidas no assistente de configuração.
+que o acompanham e que estão contidas no assistente de 
+configuração.
 
 
 Questões conhecidas
 ===================
 
- o O processo de instalação falha na detecção dum servidor
-   Firebird 2.0 em execução. A Instalação acabará por fracassar
-   ao tentar sobrepor um ficheiro que se encontre activo.
-
  o A base de dados de segurança foi modificada! Consulte 
    a pasta DOC para mais detalhes. Utilizadores que pretendam
-   migrar uma base de dados do formato antigo para o novo, poderão
-   utilizar o script em misc/upgrade/security
+   migrar uma base de dados do formato antigo para o novo, 
+   poderão utilizar o script em misc/upgrade/security
 
 Como Relatar Erros
 ==================
@@ -76,8 +79,8 @@ o Tem a certeza que compreende como o Firebird funciona?
 
   Talvez se encontre perante um comportamento correcto e 
   a sua questão seja seja apenas uma questão de suporte. 
-  Neste caso poderá contactar o suporte-firebird na lista 
-  do servidor.
+  Neste caso poderá contactar a lista de suporte 
+  firebird-support.
 
   Poderá subscrevê-la aqui:
 
@@ -87,16 +90,14 @@ o Ainda assim pensa que se trata dum erro?
 
   Verifique primeiro a lista de questões sobre testes aqui:
 
-    http://sourceforge.net/tracker/?atid=593943&group_id=9028&func=browse
+    http://tracker.firebirdsql.org/secure/BrowseProject.jspa
 
-  É especialmente destinada a serem relatados problemas
-  encontrados durante o teste de pre-versões do Firebird.
+  Por favor não utilize o tracker para questões de suporte.
+  Se tem dúvidas, subscreva primeiro a lista de suporte em:
 
-  Poderá também verificar a lista de Erros Abertos de versões
-  estáveis do Firebird. Tal poderá ser encontrada em:
+    mailto:firebird-support-subscribe@yahoogroups.com
 
-    http://sourceforge.net/tracker/?atid=109028&group_id=9028&func=browse
-
+  e coloque primeiro as suas questões.
 
 Pedido de Novas Funcionalidades
 ===============================
@@ -107,6 +108,7 @@ Existe a probabilidade de que alguém já tenha primeiro
 pensado em tal. Use o seguinte link para rever a
 lista actual e submeter novos pedidos, se necessário, em:
 
-  http://sourceforge.net/tracker/?atid=359028&group_id=9028&func=browse
+  http://tracker.firebirdsql.org/secure/CreateIssue!default.jspa
+
 
 

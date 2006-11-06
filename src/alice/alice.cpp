@@ -92,7 +92,7 @@ const int ALICE_MSG_FAC = 3;
 static inline void exit_local(int code, AliceGlobals* tdgbl)
 {
 	tdgbl->exit_code = code;
-    Firebird::LongJump::raise();
+	Firebird::status_exception::raise();
 }
 
 #if defined (WIN95)
@@ -105,7 +105,7 @@ static void expand_filename(const TEXT*, TEXT*);
 #ifndef SERVICE_THREAD
 static int output_main(Jrd::Service*, const UCHAR*);
 #endif
-static int common_main(int, const char**, Jrd::pfn_svc_output, Jrd::Service*);
+static int common_main(int, char**, Jrd::pfn_svc_output, Jrd::Service*);
 static void alice_output(const SCHAR*, ...) ATTRIBUTE_FORMAT(1,2);
 
 
@@ -133,7 +133,7 @@ static int output_svc(Jrd::Service* output_data, const UCHAR * output_buf)
 THREAD_ENTRY_DECLARE ALICE_main(THREAD_ENTRY_PARAM arg)
 {
 	Jrd::Service* service = (Jrd::Service*)arg;
-	const int exit_code = common_main(service->svc_argc, service->svc_argv.begin(),
+	const int exit_code = common_main(service->svc_argc, service->svc_argv,
 					SVC_output, service);
 
 //  Mark service thread as finished.
@@ -155,7 +155,7 @@ THREAD_ENTRY_DECLARE ALICE_main(THREAD_ENTRY_PARAM arg)
 //      Call the 'real' main.
 //
 
-int CLIB_ROUTINE main(int argc, const char** argv)
+int CLIB_ROUTINE main(int argc, char* argv[])
 {
 	const int exit_code = common_main(argc, argv, output_main, NULL);
 
@@ -182,8 +182,8 @@ static int output_main(Jrd::Service* output_data, const UCHAR* output_buf)
 //		Parse switches and do work
 //
 
-int common_main(int					argc,
-				const char*			argv[],
+int common_main(int			argc,
+				char*		argv[],
 				Jrd::pfn_svc_output	output_proc,
 				Jrd::Service*		output_data)
 {
@@ -459,14 +459,14 @@ int common_main(int					argc,
 			if (--argc <= 0) {
 				ALICE_error(13);	// msg 13: user name required
 			}
-			tdgbl->ALICE_data.ua_user = reinterpret_cast<const UCHAR*>(*argv++);
+			tdgbl->ALICE_data.ua_user = reinterpret_cast<UCHAR*>(*argv++);
 		}
 
 		if (table->in_sw_value & sw_password) {
 			if (--argc <= 0) {
 				ALICE_error(14);	// msg 14: password required
 			}
-			tdgbl->ALICE_data.ua_password = reinterpret_cast<const UCHAR*>(*argv++);
+			tdgbl->ALICE_data.ua_password = reinterpret_cast<UCHAR*>(*argv++);
 		}
 
 		if (table->in_sw_value & sw_disable) {
@@ -600,7 +600,7 @@ int common_main(int					argc,
 	exit_local(FINI_OK, tdgbl);
 
 	}	// try
-	catch (const Firebird::Exception&)
+	catch (const std::exception&)
 	{
 		// All "calls" to exit_local(), normal and error exits, wind up here
 

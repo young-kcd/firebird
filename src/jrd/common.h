@@ -19,6 +19,8 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ * Added TCP_NO_DELAY option for superserver on Linux
+ * FSG 16.03.2001
  *
  * 2001.07.06 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
  *                         conditionals, as the engine now fully supports
@@ -110,22 +112,22 @@
 //format for __LINE__
 #define LINEFORMAT "d"
 
+#ifdef SUPERSERVER
+#define SET_TCP_NO_DELAY
+#endif
+
 //#define KILLER_SIGNALS
 
 #define UNIX
 #define IEEE
 
 #ifdef AMD64
-#define IMPLEMENTATION  isc_info_db_impl_linux_amd64 /* 66 */
-#endif
-
-#ifdef PPC
-#define IMPLEMENTATION  isc_info_db_impl_linux_ppc /* 69  next higher unique number, See you later  */
+#define IMPLEMENTATION  isc_info_db_impl_linux_amd64 /* 66  next higher unique number, See you later  */
 #endif
 
 #ifdef i386
 #define I386
-#define IMPLEMENTATION  isc_info_db_impl_i386 /* 60 */
+#define IMPLEMENTATION  isc_info_db_impl_i386 /* 60  next higher unique number, See you later  */
 #endif /* i386 */
 
 #ifdef sparc
@@ -217,6 +219,10 @@ static inline int sinixz_sigaction(int sig, const struct sinixz_sigaction *act,
 
 //#define ALIGNMENT	4
 //#define DOUBLE_ALIGN	8
+
+#ifdef SUPERSERVER
+#define SET_TCP_NO_DELAY
+#endif
 
 //#define KILLER_SIGNALS
 
@@ -371,8 +377,11 @@ static inline int sinixz_sigaction(int sig, const struct sinixz_sigaction *act,
  * in Solaris
  */
 #define SOLARIS_MT
-#define MULTI_THREAD
 
+#ifdef SOLARIS_MT
+#define ANY_THREADING
+#define MULTI_THREAD
+#endif
 /*  Define the following only on platforms whose standard I/O
  *  implementation is so weak that we wouldn't be able to fopen
  *  a file whose underlying file descriptor would be > 255.
@@ -612,9 +621,7 @@ typedef unsigned __int64 UINT64;
 #define QUADCONST(n) (n)
 #endif
 
-#ifdef AMD64
-#define IMPLEMENTATION  isc_info_db_impl_winnt_amd64 /* 68 */
-#else
+#ifdef _X86_
 #ifndef I386
 #define I386
 #endif

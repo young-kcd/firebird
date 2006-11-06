@@ -20,6 +20,8 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
+ * Added TCP_NO_DELAY option for superserver on Linux
+ * FSG 16.03.2001
  * Solaris x86 changes - Konstantin Kuznetsov, Neil McCalden
  * 26-Sept-2001 Paul Beach - External File Directory Config. Parameter
  * 17-Oct-2001 Mike Nordell: CPU affinity
@@ -53,6 +55,23 @@
 #include "../jrd/gds_proto.h"
 #include "../jrd/isc_proto.h"
 #include "../jrd/jrd_proto.h"
+
+/* Temporary file management specific stuff */
+
+#include "../jrd/fil.h"
+#include "../jrd/dls_proto.h"
+
+// I can't find where these are used.
+//static BOOLEAN dls_init = FALSE;
+//#if defined(SUPERSERVER) || !defined(SUPERCLIENT)
+//static BOOLEAN dls_flag = FALSE;
+//#endif
+//static BOOLEAN fdls_init = FALSE;
+//#ifdef SUPERSERVER
+//static BOOLEAN fdls_flag = FALSE;
+//#endif
+
+/* End of temporary file management specific stuff */
 
 #ifdef SOLARIS
 #include <sys/utsname.h>
@@ -1216,7 +1235,7 @@ LPSECURITY_ATTRIBUTES ISC_get_security_desc()
     EXPLICIT_ACCESS ea;
     memset(&ea, 0, sizeof(EXPLICIT_ACCESS));
     ea.grfAccessPermissions = SYNCHRONIZE;
-    ea.grfAccessMode = GRANT_ACCESS;
+    ea.grfAccessMode = SET_ACCESS;
     ea.grfInheritance = NO_INHERITANCE;
     ea.Trustee.TrusteeForm = TRUSTEE_IS_SID;
     ea.Trustee.TrusteeType = TRUSTEE_IS_WELL_KNOWN_GROUP;

@@ -24,7 +24,6 @@
 #include "../common/config/dir_list.h"
 #include "../jrd/os/path_utils.h"
 #include "../jrd/gds_proto.h"
-#include "../jrd/TempSpace.h"
 
 namespace Firebird {
 
@@ -262,20 +261,30 @@ void TempDirectoryList::initTemp()
 	initialize(true);
 
 	// Iterate through directories to parse them
+	// and fill the "items" vector
 	for (size_t i = 0; i < getCount(); i++) {
-		PathName dir = (*this)[i];
+		PathName dir = (*(inherited*)this)[i];
 		size_t pos = dir.rfind(" ");
-		(*this)[i] = ParsedPath(dir.substr(0, pos));
+		long size = atol(dir.substr(pos + 1, PathName::npos).c_str());
+		if (pos != PathName::npos && !size) {
+			pos = PathName::npos;
+		}
+		if (size <= 0) {
+			size = ALLROOM;
+		}
+		items.add(Item(dir.substr(0, pos), size));
 	}
 }
 
 const PathName TempDirectoryList::getConfigString() const
 {
-	const char* value = Config::getTempDirectories();
-	if (!value) {
+	const char* value;
+	char tmp_buf[MAXPATHLEN];
+	if (!(value = Config::getTempDirectories())) {
 		// Temporary directory configuration has not been defined.
 		// Let's make default configuration.
-		return TempFile::getTempPath();
+		gds__temp_dir(tmp_buf);
+		value = tmp_buf;
 	}
 	return PathName(value);
 }

@@ -320,7 +320,7 @@ act* PAR_action(const TEXT* base_dir)
 			// For example, a failure in our runtime.
 			throw;
 		}
-		catch (const Firebird::Exception&) {
+		catch (const std::exception&) {
 			gpreGlob.sw_sql = false;
 			/* This is to force GPRE to get the next symbol. Fix for bug #274. DROOT */
 			gpreGlob.token_global.tok_symbol = NULL;
@@ -349,7 +349,7 @@ act* PAR_action(const TEXT* base_dir)
 				// CVC: a fatal exception should be propagated.
 				throw;
 			}
-			catch (const Firebird::Exception&) {
+			catch (const std::exception&) {
 				return 0;
 			}
 		case SYM_blob:
@@ -366,7 +366,7 @@ act* PAR_action(const TEXT* base_dir)
 				// CVC: a fatal exception should be propagated.
 				throw;
 			}
-			catch (const Firebird::Exception&) {
+			catch (const std::exception&) {
 				return 0;
 			}
 		case SYM_relation:
@@ -383,7 +383,7 @@ act* PAR_action(const TEXT* base_dir)
 				// CVC: a fatal exception should be propagated.
 				throw;
 			}
-			catch (const Firebird::Exception&) {
+			catch (const std::exception&) {
 				return 0;
 			}
 		default:
@@ -592,7 +592,7 @@ act* PAR_database(bool sql, const TEXT* base_directory)
 		    found_error = true;
 	}
 	// CVC: It avoids countless errors if the db can't be loaded.
-	catch (const Firebird::Exception& exc)
+	catch (const Firebird::status_exception& exc)
 	{
 		found_error = true;
 		// CVC: Print the low level error. The lack of this caused me a lot of problems.
@@ -1120,7 +1120,7 @@ gpre_sym* PAR_symbol(enum sym_t type)
 
 void PAR_unwind()
 {
-	throw Firebird::LongJump();
+	throw std::exception();
 }
 
 

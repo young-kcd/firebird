@@ -24,17 +24,12 @@
 
 #include "firebird.h"
 #include "../intl/ldcommon.h"
-#include "../jrd/CharSet.h"
-#include "../jrd/IntlUtil.h"
 #include "lc_narrow.h"
 #include "ld_proto.h"
-#include <limits.h>
 
-using namespace Firebird;
-
-
-static ULONG fam2_str_to_upper(texttype* obj, ULONG iLen, const BYTE* pStr, ULONG iOutLen, BYTE *pOutStr);
-static ULONG fam2_str_to_lower(texttype* obj, ULONG iLen, const BYTE* pStr, ULONG iOutLen, BYTE *pOutStr);
+/*
+ * Generic base for InterBase 4.0 Language Driver
+ */
 
 
 const USHORT LANGFAM2_MAX_KEY	= MAX_KEY;
@@ -90,7 +85,7 @@ const UINT16 NULL_TERTIARY		= 0;
  *	The degenerate case of short strings is handled by a minimal key
  *	length.
  */
-USHORT LC_NARROW_key_length(texttype* obj, USHORT inLen)
+USHORT LC_NARROW_key_length(TEXTTYPE obj, USHORT inLen)
 {
 /* fb_assert (inLen <= LANGFAM2_MAX_KEY); *//* almost certainly an error */
 
@@ -113,7 +108,7 @@ USHORT LC_NARROW_key_length(texttype* obj, USHORT inLen)
 			bool useSecondary = false;
 			bool useTertiary = false;
 
-			for (int ch = 0; ch <= 255; ++ch)
+			for (USHORT ch = 0; ch <= 255; ++ch)
 			{
 				const SortOrderTblEntry* coll =
 					&((const SortOrderTblEntry*)obj->texttype_impl->texttype_collation_table)[ch];
@@ -154,7 +149,7 @@ static ULONG do_debug = 0;
  * RETURN:
  *		Length, in bytes, of returned key
  */
-USHORT LC_NARROW_string_to_key(texttype* obj, USHORT iInLen, const BYTE* pInChar, USHORT iOutLen, BYTE *pOutChar,
+USHORT LC_NARROW_string_to_key(TEXTTYPE obj, USHORT iInLen, const BYTE* pInChar, USHORT iOutLen, BYTE *pOutChar,
 							   USHORT key_type)
 {
 	fb_assert(pOutChar != NULL);
@@ -206,7 +201,7 @@ USHORT LC_NARROW_string_to_key(texttype* obj, USHORT iInLen, const BYTE* pInChar
 			  texttype_collation_table)[*pInChar];
 		if (!(coll->IsExpand || coll->IsCompress)) {
 			if (coll->Primary != NULL_WEIGHT && lprimary < iOutLen)
-				outbuff[lprimary++] = coll->Primary + obj->texttype_impl->primary_sum;
+				outbuff[lprimary++] = coll->Primary;
 			if (coll->Secondary != NULL_SECONDARY && lsecondary < sizeof(secondary))
 				secondary[lsecondary++] = coll->Secondary;
 			if (coll->Tertiary != NULL_TERTIARY && ltertiary < sizeof(tertiary))
@@ -214,25 +209,12 @@ USHORT LC_NARROW_string_to_key(texttype* obj, USHORT iInLen, const BYTE* pInChar
 		}
 		else if (coll->IsExpand && coll->IsCompress) {
 			/* Both flags set indicate a special value */
-
-			if (obj->texttype_impl->texttype_flags & TEXTTYPE_specials_first)
+			if ((coll->Primary != NULL_WEIGHT) &&
+				!(obj->texttype_impl->texttype_flags & TEXTTYPE_ignore_specials) &&
+				 lspecial + 1 < sizeof(special))
 			{
-				if (coll->Primary != NULL_WEIGHT && lprimary < iOutLen)
-					outbuff[lprimary++] = coll->Primary + obj->texttype_impl->ignore_sum;
-				if (coll->Secondary != NULL_SECONDARY && lsecondary < sizeof(secondary))
-					secondary[lsecondary++] = coll->Secondary;
-				if (coll->Tertiary != NULL_TERTIARY && ltertiary < sizeof(tertiary))
-					tertiary[ltertiary++] = coll->Tertiary;
-			}
-			else
-			{
-				if ((coll->Primary != NULL_WEIGHT) &&
-					!(obj->texttype_impl->texttype_flags & TEXTTYPE_ignore_specials) &&
-					 lspecial + 1 < sizeof(special))
-				{
-					special[lspecial++] = (i + 1);	/* position */
-					special[lspecial++] = coll->Primary;
-				}
+				special[lspecial++] = (i + 1);	/* position */
+				special[lspecial++] = coll->Primary;
 			}
 		}
 		else if (coll->IsExpand) {
@@ -384,7 +366,7 @@ struct coltab_status {
 
 
 
-static SSHORT special_scan(texttype* obj, ULONG l1, const BYTE* s1, ULONG l2, const BYTE* s2)
+static SSHORT special_scan(TEXTTYPE obj, ULONG l1, const BYTE* s1, ULONG l2, const BYTE* s2)
 {
 	const SortOrderTblEntry* col1 = 0;
 	const SortOrderTblEntry* col2 = 0;
@@ -398,13 +380,8 @@ static SSHORT special_scan(texttype* obj, ULONG l1, const BYTE* s1, ULONG l2, co
 			col1 =
 				&((const SortOrderTblEntry*) obj->texttype_impl->
 				  texttype_collation_table)[*s1];
-
-			if (col1->IsExpand && col1->IsCompress &&
-				!(obj->texttype_impl->texttype_flags & TEXTTYPE_specials_first))
-			{
+			if (col1->IsExpand && col1->IsCompress)
 				break;
-			}
-
 			l1--;
 			s1++;
 			index1++;
@@ -415,12 +392,8 @@ static SSHORT special_scan(texttype* obj, ULONG l1, const BYTE* s1, ULONG l2, co
 			col2 =
 				&((const SortOrderTblEntry*) obj->texttype_impl->
 				  texttype_collation_table)[*s2];
-			if (col2->IsExpand && col2->IsCompress &&
-				!(obj->texttype_impl->texttype_flags & TEXTTYPE_specials_first))
-			{
+			if (col2->IsExpand && col2->IsCompress)
 				break;
-			}
-
 			l2--;
 			s2++;
 			index2++;
@@ -447,11 +420,9 @@ static SSHORT special_scan(texttype* obj, ULONG l1, const BYTE* s1, ULONG l2, co
 }
 
 
-static const SortOrderTblEntry* get_coltab_entry(texttype* obj, const UCHAR** p,
-	ULONG* l, coltab_status* stat, int* sum)
+static const SortOrderTblEntry* get_coltab_entry(TEXTTYPE obj, const UCHAR** p,
+	ULONG* l, coltab_status* stat)
 {
-	*sum = obj->texttype_impl->primary_sum;
-
 	if (stat->stat_flags & LC_HAVE_WAITING) {
 		(*l)--;
 		(*p)++;
@@ -465,33 +436,19 @@ static const SortOrderTblEntry* get_coltab_entry(texttype* obj, const UCHAR** p,
 		const SortOrderTblEntry* col =
 			&((const SortOrderTblEntry*) obj->texttype_impl->
 			  texttype_collation_table)[**p];
-		if (!(col->IsExpand || col->IsCompress))
-		{
+		if (!(col->IsExpand || col->IsCompress)) {
 			/* Have col */
 			(*l)--;
 			(*p)++;
 			return col;
 		}
-		else if (col->IsExpand && col->IsCompress)
-		{
-			if (obj->texttype_impl->texttype_flags & TEXTTYPE_specials_first)
-			{
-				*sum = obj->texttype_impl->ignore_sum;
-
-				/* Have col */
-				(*l)--;
-				(*p)++;
-				return col;
-			}
-			else
-			{
-				/* Both flags set indicate a special value */
-				/* Need a new col */
-				(*l)--;
-				(*p)++;
-				stat->stat_flags |= LC_HAVE_SPECIAL;
-				continue;
-			}
+		else if (col->IsExpand && col->IsCompress) {
+			/* Both flags set indicate a special value */
+			/* Need a new col */
+			(*l)--;
+			(*p)++;
+			stat->stat_flags |= LC_HAVE_SPECIAL;
+			continue;
 		}
 		else if (col->IsExpand) {
 			const ExpandChar* exp = &((const ExpandChar*) obj->texttype_impl->texttype_expand_table)[0];
@@ -538,7 +495,7 @@ static const SortOrderTblEntry* get_coltab_entry(texttype* obj, const UCHAR** p,
 
 #define XOR	^					/* C bitwise XOR operator - defined for readability */
 
-SSHORT LC_NARROW_compare(texttype* obj, ULONG l1, const BYTE* s1, ULONG l2, const BYTE* s2, 
+SSHORT LC_NARROW_compare(TEXTTYPE obj, ULONG l1, const BYTE* s1, ULONG l2, const BYTE* s2, 
 	INTL_BOOL* error_flag)
 {
 	fb_assert(obj != NULL);
@@ -578,15 +535,12 @@ SSHORT LC_NARROW_compare(texttype* obj, ULONG l1, const BYTE* s1, ULONG l2, cons
 	const SortOrderTblEntry* col2 = 0;
 
 	while (true) {
-		int sum1, sum2;
-
-		col1 = get_coltab_entry(obj, &s1, &l1, &stat1, &sum1);
-		col2 = get_coltab_entry(obj, &s2, &l2, &stat2, &sum2);
-
+		col1 = get_coltab_entry(obj, &s1, &l1, &stat1);
+		col2 = get_coltab_entry(obj, &s2, &l2, &stat2);
 		if (!col1 || !col2)
 			break;
-		if (col1->Primary + sum1 != col2->Primary + sum2)
-			return ((col1->Primary + sum1) - (col2->Primary + sum2));
+		if (col1->Primary != col2->Primary)
+			return (col1->Primary - col2->Primary);
 		if ((obj->texttype_impl->texttype_flags & TEXTTYPE_secondary_insensitive) == 0 &&
 			col1->Secondary != col2->Secondary)
 		{
@@ -632,8 +586,7 @@ SSHORT LC_NARROW_compare(texttype* obj, ULONG l1, const BYTE* s1, ULONG l2, cons
 		if (
 			((stat1.stat_flags & LC_HAVE_SPECIAL)
 			 || (stat2.stat_flags & LC_HAVE_SPECIAL))
-			&& !(obj->texttype_impl->texttype_flags & TEXTTYPE_ignore_specials)
-			&& !(obj->texttype_impl->texttype_flags & TEXTTYPE_specials_first))
+			&& !(obj->texttype_impl->texttype_flags & TEXTTYPE_ignore_specials))
 		{
 			return special_scan(obj, save_l1, save_s1, save_l2, save_s2);
 		}
@@ -654,7 +607,7 @@ SSHORT LC_NARROW_compare(texttype* obj, ULONG l1, const BYTE* s1, ULONG l2, cons
  * Routine used for comparing results from comparison algorithm
  * to results from key creation algorithm
  */
-static SSHORT old_fam2_compare(texttype* obj, ULONG l1, const BYTE* s1,
+static SSHORT old_fam2_compare(TEXTTYPE obj, ULONG l1, const BYTE* s1,
 	ULONG l2, const BYTE* s2, INTL_BOOL* error_flag)
 {
 	BYTE key1[LANGFAM2_MAX_KEY];
@@ -693,7 +646,7 @@ static SSHORT old_fam2_compare(texttype* obj, ULONG l1, const BYTE* s1,
  * Routine used for comparing results from comparision algorithm
  * to results from key creation algorithm
  */
-static SSHORT fam2_compare(texttype* obj, ULONG l1, const BYTE* s1,
+static SSHORT fam2_compare(TEXTTYPE obj, ULONG l1, const BYTE* s1,
 	ULONG l2, const BYTE* s2, INTL_BOOL* error_flag)
 {
 	SSHORT res1 = old_fam2_compare(obj, l1, s1, l2, s2);
@@ -713,7 +666,7 @@ static SSHORT fam2_compare(texttype* obj, ULONG l1, const BYTE* s1,
 
 #endif	/* DEBUG_COMPARE */
 
-ULONG LC_NARROW_canonical(texttype* obj, ULONG srcLen, const UCHAR* src, ULONG dstLen, UCHAR* dst)
+ULONG LC_NARROW_canonical(TEXTTYPE obj, ULONG srcLen, const UCHAR* src, ULONG dstLen, UCHAR* dst)
 {
 	fb_assert(dst != NULL);
 	fb_assert(src != NULL);
@@ -749,271 +702,8 @@ ULONG LC_NARROW_canonical(texttype* obj, ULONG srcLen, const UCHAR* src, ULONG d
 }
 
 
-void LC_NARROW_destroy(texttype* obj)
+void LC_NARROW_destroy(TEXTTYPE obj)
 {
 	delete obj->texttype_impl;
 }
 
-
-
-bool LC_NARROW_family2(
-	texttype* tt,
-	charset* cs,
-	SSHORT country,
-	USHORT flags,
-	const SortOrderTblEntry* noCaseOrderTbl,
-	const BYTE* toUpperConversionTbl,
-	const BYTE* toLowerConversionTbl,
-	const CompressPair* compressTbl,
-	const ExpandChar* expansionTbl,
-	const ASCII* name,
-	USHORT attributes,
-	const UCHAR* specificAttributes,
-	ULONG specificAttributesLength)
-{
-	if (attributes & ~TEXTTYPE_ATTR_PAD_SPACE)
-		return false;
-
-	tt->texttype_version			= TEXTTYPE_VERSION_1;
-	tt->texttype_name				= name;
-	tt->texttype_country			= country;
-	tt->texttype_pad_option			= (attributes & TEXTTYPE_ATTR_PAD_SPACE) ? true : false;
-	tt->texttype_fn_key_length		= LC_NARROW_key_length;
-	tt->texttype_fn_string_to_key	= LC_NARROW_string_to_key;
-	tt->texttype_fn_compare			= LC_NARROW_compare;
-	tt->texttype_fn_str_to_upper	= fam2_str_to_upper;
-	tt->texttype_fn_str_to_lower	= fam2_str_to_lower;
-	tt->texttype_fn_destroy			= LC_NARROW_destroy;
-	tt->texttype_impl				= new TextTypeImpl;
-	tt->texttype_impl->texttype_collation_table	= (const BYTE*) noCaseOrderTbl;
-	tt->texttype_impl->texttype_toupper_table	= toUpperConversionTbl;
-	tt->texttype_impl->texttype_tolower_table	= toLowerConversionTbl;
-	tt->texttype_impl->texttype_compress_table	= (const BYTE*) compressTbl;
-	tt->texttype_impl->texttype_expand_table	= (const BYTE*) expansionTbl;
-	tt->texttype_impl->texttype_flags			= ((flags) & REVERSE) ? TEXTTYPE_reverse_secondary : 0;
-	tt->texttype_impl->texttype_bytes_per_key	= 0;
-
-	IntlUtil::SpecificAttributesMap map;
-	Jrd::CharSet* charSet = NULL;
-
-	try
-	{
-		charSet = Jrd::CharSet::createInstance(*getDefaultMemoryPool(), 0, cs);
-
-		if (!IntlUtil::parseSpecificAttributes(charSet, specificAttributesLength, specificAttributes, &map))
-		{
-			delete charSet;
-			return false;
-		}
-
-		delete charSet;
-	}
-	catch (...)
-	{
-		delete charSet;
-		return false;
-	}
-
-	int validAttributeCount = 0;
-	string value;
-
-	if (map.get("SPECIALS-FIRST", value) && (value == "0" || value == "1"))
-	{
-		int maxPrimary = 0;
-		int minPrimary = INT_MAX;
-		int maxIgnore = 0;
-
-		while (compressTbl->CharPair[0])
-		{
-			if (compressTbl->NoCaseWeight.Primary > maxPrimary)
-				maxPrimary = compressTbl->NoCaseWeight.Primary;
-
-			if (compressTbl->NoCaseWeight.Primary < minPrimary)
-				minPrimary = compressTbl->NoCaseWeight.Primary;
-
-			++compressTbl;
-		}
-
-		for (int ch = 0; ch <= 255; ++ch)
-		{
-			const SortOrderTblEntry* coll =
-				&((const SortOrderTblEntry*)tt->texttype_impl->texttype_collation_table)[ch];
-
-			if (!(coll->IsExpand || coll->IsCompress))
-			{
-				if (coll->Primary > maxPrimary)
-					maxPrimary = coll->Primary;
-
-				if (coll->Primary < minPrimary)
-					minPrimary = coll->Primary;
-			}
-			else if (coll->IsExpand && coll->IsCompress)
-			{
-				if (coll->Primary > maxIgnore)
-					maxIgnore = coll->Primary;
-			}
-		}
-
-		if (maxIgnore > 0 && maxPrimary + maxIgnore - 1 <= 255)
-		{
-			++validAttributeCount;
-
-			if (value == "1")
-			{
-				tt->texttype_impl->texttype_flags |= TEXTTYPE_specials_first;
-				tt->texttype_impl->ignore_sum = minPrimary - 1;
-				tt->texttype_impl->primary_sum = maxIgnore - 1;
-			}
-		}
-	}
-
-	if (map.count() - validAttributeCount != 0)
-		return false;
-
-	return true;
-}
-
-
-bool LC_NARROW_family3(
-	texttype* tt,
-	charset* cs,
-	SSHORT country,
-	USHORT flags,
-	const SortOrderTblEntry* noCaseOrderTbl,
-	const BYTE* toUpperConversionTbl,
-	const BYTE* toLowerConversionTbl,
-	const CompressPair* compressTbl,
-	const ExpandChar* expansionTbl,
-	const ASCII* name,
-	USHORT attributes,
-	const UCHAR* specificAttributes,
-	ULONG specificAttributesLength)
-{
-	bool multiLevel = false;
-
-	IntlUtil::SpecificAttributesMap map;
-	Jrd::CharSet* charSet = NULL;
-	string newSpecificAttributes;
-
-	try
-	{
-		charSet = Jrd::CharSet::createInstance(*getDefaultMemoryPool(), 0, cs);
-
-		if (!IntlUtil::parseSpecificAttributes(charSet, specificAttributesLength, specificAttributes, &map))
-		{
-			delete charSet;
-			return false;
-		}
-
-		string value;
-		if (map.get("MULTI-LEVEL", value))
-		{
-			if (value == "0")
-				multiLevel = false;
-			else if (value == "1")
-				multiLevel = true;
-			else
-				return false;
-
-			map.remove("MULTI-LEVEL");
-		}
-
-		newSpecificAttributes = IntlUtil::generateSpecificAttributes(charSet, map);
-		specificAttributes = (const UCHAR*)newSpecificAttributes.begin();
-		specificAttributesLength = newSpecificAttributes.length();
-
-		delete charSet;
-	}
-	catch (...)
-	{
-		delete charSet;
-		return false;
-	}
-
-	if (LC_NARROW_family2(tt, cs, country, flags, noCaseOrderTbl,
-				toUpperConversionTbl, toLowerConversionTbl, compressTbl, expansionTbl, name,
-				attributes & ~(TEXTTYPE_ATTR_CASE_INSENSITIVE | TEXTTYPE_ATTR_ACCENT_INSENSITIVE),
-				specificAttributes, specificAttributesLength))
-	{
-		if (!multiLevel)
-			tt->texttype_impl->texttype_flags |= TEXTTYPE_non_multi_level;
-
-		if (attributes & (TEXTTYPE_ATTR_CASE_INSENSITIVE | TEXTTYPE_ATTR_ACCENT_INSENSITIVE))
-		{
-			tt->texttype_impl->texttype_flags |= TEXTTYPE_ignore_specials;
-
-			if (multiLevel)
-			{
-				tt->texttype_flags |= TEXTTYPE_SEPARATE_UNIQUE;
-
-				if ((attributes & (TEXTTYPE_ATTR_CASE_INSENSITIVE | TEXTTYPE_ATTR_ACCENT_INSENSITIVE)) ==
-					TEXTTYPE_ATTR_ACCENT_INSENSITIVE)
-				{
-					tt->texttype_flags |= TEXTTYPE_UNSORTED_UNIQUE;
-				}
-			}
-
-			if ((attributes & (TEXTTYPE_ATTR_CASE_INSENSITIVE | TEXTTYPE_ATTR_ACCENT_INSENSITIVE)) ==
-				(TEXTTYPE_ATTR_CASE_INSENSITIVE | TEXTTYPE_ATTR_ACCENT_INSENSITIVE))
-			{
-				tt->texttype_canonical_width = 1;
-			}
-			else
-				tt->texttype_canonical_width = 2;
-
-			tt->texttype_fn_canonical = LC_NARROW_canonical;
-
-			if (attributes & TEXTTYPE_ATTR_ACCENT_INSENSITIVE)
-				tt->texttype_impl->texttype_flags |= TEXTTYPE_secondary_insensitive;
-
-			if (attributes & TEXTTYPE_ATTR_CASE_INSENSITIVE)
-				tt->texttype_impl->texttype_flags |= TEXTTYPE_tertiary_insensitive;
-		}
-
-		return true;
-	}
-	else
-		return false;
-}
-
-
-/*
- *	Returns INTL_BAD_STR_LENGTH if output buffer was too small
- */
-static ULONG fam2_str_to_upper(texttype* obj, ULONG iLen, const BYTE* pStr, ULONG iOutLen, BYTE *pOutStr)
-{
-	fb_assert(pStr != NULL);
-	fb_assert(pOutStr != NULL);
-	fb_assert(iOutLen >= iLen);
-	const BYTE* const p = pOutStr;
-	while (iLen && iOutLen) {
-		*pOutStr++ = (obj->texttype_impl->texttype_toupper_table[(unsigned) *pStr]);
-		pStr++;
-		iLen--;
-		iOutLen--;
-	}
-	if (iLen != 0)
-		return (INTL_BAD_STR_LENGTH);
-	return (pOutStr - p);
-}
-
-
-/*
- *	Returns INTL_BAD_STR_LENGTH if output buffer was too small
- */
-static ULONG fam2_str_to_lower(texttype* obj, ULONG iLen, const BYTE* pStr, ULONG iOutLen, BYTE *pOutStr)
-{
-	fb_assert(pStr != NULL);
-	fb_assert(pOutStr != NULL);
-	fb_assert(iOutLen >= iLen);
-	const BYTE* const p = pOutStr;
-	while (iLen && iOutLen) {
-		*pOutStr++ = (obj->texttype_impl->texttype_tolower_table[(unsigned) *pStr]);
-		pStr++;
-		iLen--;
-		iOutLen--;
-	}
-	if (iLen != 0)
-		return (INTL_BAD_STR_LENGTH);
-	return (pOutStr - p);
-}

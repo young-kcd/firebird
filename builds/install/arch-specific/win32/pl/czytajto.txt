@@ -1,4 +1,3 @@
-<div class="moz-text-flowed" style="font-family: -moz-fixed">
 =================================================
 Firebird 2.0.0       (Kompilacja do wersji Win32)
 =================================================
@@ -10,26 +9,37 @@ o Naprawione b³êdy tego wydania
 o Instalacja
 o Znane b³êdy
 o Zg³aszanie b³êdów
-o ¯¹dania nowych funkcjonalnoœci
+o Propozycje nowych funkcjonalnoœci
 
 
 Wprowadzenie
 ============
 
-Witamy w trzecim Alpha wydaniu Firebird 2.0.
+Witamy w Firebird 2.0.
 
 
 Docelowi u¿ytkownicy
 ====================
 
-To wydanie alpha nie jest przeznaczone dla normalnego u¿ytkowania. Zosta³o 
-wydane tylko dla celów testowych i oczekuje siê, ¿e bêdzie testowane przez 
-doœwiadczonych u¿ytkowników Firebirda. Mamy nadziejê, ¿e wszyscy testerzy 
-przeczytaj¹ t¹ notatkê przed przest¹pieniem do testów.
+Firebird 2.0 przeszed³ intensywne testy i jest przeznaczony
+dla szerokiego u¿ytku. Aczkolwiek rekomenduje siê aby 
+u¿ytkownicy zachowali nastêpuj¹ce standardowe praktyki przed
+uruchomieniem tej emisji na serwerze produkcyjnym:
 
- o NIE instaluj tej wersji jeœli nigdy wczeœniej nie u¿ywa³eœ Firebirda. 
-   Zamiast niej u¿yj Firebirda w wersji 1.5.2.
+ o Proszê siê upewniæ ¿e przeczyta³eœ instalacyjne 
+   czytajto i noty emisyjne.
 
+ o Jeœli posiadasz dane, które cenisz pamiêtaj o zrobieniu
+   kopii przez zainstalowaniem tej wersji.
+   
+ o Rekomenduje siê usuniêcie jakichkolwiek wczeœniejszych
+   wersji przed przeprowadzeniem instalacji. Odinstalowanie
+   zachowuje pliki konfiguracyjne i pliki logów.
+ 
+ o Rekomuenduje siê przeprowadzenie w³asnych testów
+   w œrodowisku deweloperskim przez uruchomieniem 
+   w œrodowisku produkcyjnym.
+   
 
 Cechy tego wydania (wszystkie platformy)
 ========================================
@@ -53,9 +63,6 @@ instalacji, zawarte w kreatorze instalacji
 Znane b³êdy
 ===========
 
- o Proces instalacji nie potrafi wykryæ dzia³aj¹cego serwera Firebird 2.0.
-   Instalacja mo¿e siê nie udaæ, gdy bêdzie próbowa³a nadpisaæ uruchomiony plik.   
-
  o Baza danych bezpieczeñstwa zmieni³a siê! Zobacz katalog DOC w celu uzyskania
    dodatkowych informacji. U¿ytkownicy, którzy chc¹ przenieœæ star¹ bazê 
    Bezpieczeñstwa do nowego formatu mog¹ u¿yæ skryptu, który znajduje siê w katalogu
@@ -71,21 +78,21 @@ o Jesteœ pewny, ¿e rozumiesz jak dzia³a Firebird?
 
   Mo¿esz siê zapisaæ tu:
 
-    mailto:ib-support-subscribe@yahoogroups.com
+    mailto:firebird-support-subscribe@yahoogroups.com
 
 
 o Ci¹gle myœlisz, ¿e to b³¹d?
 
   SprawdŸ listê Otwartych B³êdów. Mo¿esz j¹ znaleŸæ tu:
 
-    http://prdownloads.sourceforge.net/firebird/Firebird_v1_OpenBugs.html
+    http://tracker.firebirdsql.org/secure/BrowseProject.jspa
 
-  Nie uaktualniona wersja znajduje siê w katalogu doc tego wydania.
+Proszê nie u¿ywaæ trackera w celu uzyskania pomocy technicznej.
+Jeœli masz w¹tpliwoœci to zapisz siê najpierw do listy wsparcia:
 
-W przeciwnym wypadku, gdy jesteœ ca³kowicie pewien, ¿e to jest b³¹d spróbuj
-stworzyæ sensowny test pokazuj¹cy b³¹d. Wtedy mo¿esz go zg³osiæ na:
-
-  http://sourceforge.net/tracker/?atid=109028&group_id=9028&func=browse
+  mailto:firebird-support-subscribe@yahoogroups.com 
+  
+i zadaj pytanie tam.
 
 
 Propozycje nowych funkcjonalnoœci
@@ -95,10 +102,5 @@ Przed zg³aszaniem ¿¹dañ nowych funkcjonalnoœci, sprawdŸ bie¿¹c¹ listê
 ¿¹dañ. Jest szansa, ¿e ktoœ ju¿ zg³osi³ tak¹ funkcjonalnoœæ. Bie¿¹ca lista
 funkcjonalnoœci znajduje siê tu:
 
-  http://sourceforge.net/tracker/?atid=109028&group_id=9028&func=browse
+  http://tracker.firebirdsql.org/secure/CreateIssue!default.jspa 
 
-
-
- 
-
-</div>

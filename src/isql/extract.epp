@@ -46,15 +46,12 @@
 #include <math.h>
 #include <ctype.h>				// isdigit 
 #include "../jrd/common.h"
-#include "../jrd/constants.h"
 #include "../jrd/ibase.h"
 #include "../jrd/gds_proto.h"
-#include "../jrd/intlobj_new.h"
 #include "../isql/isql.h"
 #include "../isql/extra_proto.h"
 #include "../isql/isql_proto.h"
 #include "../isql/show_proto.h"
-#include "../jrd/ini.h"
 #include "../jrd/obj.h"
 #include "../jrd/ods.h"
 #include "../common/utils_proto.h"
@@ -68,7 +65,6 @@ static void list_all_procs();
 static void list_all_tables(LegacyTables flag, SSHORT);
 static void list_all_triggers();
 static void list_check();
-static void list_collations();
 static void list_create_db();
 static void list_domain_table(const SCHAR*, SSHORT);
 static void list_domains(SSHORT);
@@ -185,7 +181,6 @@ int EXTRACT_ddl(LegacyTables flag,
 	{
 		list_create_db();
 		list_filters();
-		list_collations();
 		list_functions();
 		list_generators();
 		list_domains(default_char_set_id);
@@ -305,28 +300,10 @@ int EXTRACT_list_table(const SCHAR* relation_name,
 
 	bool first = true;
 	SCHAR char_sets[86];
-	USHORT rel_flags = 0;
 	//bool intchar = false;
 	// CVC: shouldn't this var be initialized inside the FOR statement instead?
 	// CVC: 2004.12.03: I discovered someone made this variable obsolete;
 	// it's set but never used. Hope the change was right. I commented it.
-
-	rel_t rel_type = rel_persistent;
-
-	if (ENCODE_ODS(isqlGlob.major_ods, isqlGlob.minor_ods) >= ODS_11_1)
-	{
-		FOR RT IN RDB$RELATIONS
-			WITH RT.RDB$RELATION_NAME EQ relation_name
-				AND RT.RDB$RELATION_TYPE NOT MISSING
-
-			rel_type = (rel_t) RT.RDB$RELATION_TYPE;
-
-		END_FOR
-		ON_ERROR
-			ISQL_errmsg(gds_status);
-			return FINI_ERROR;
-		END_ERROR;
-	}
 
 // Query to obtain relation detail information 
 
@@ -354,30 +331,17 @@ int EXTRACT_list_table(const SCHAR* relation_name,
 					 relation_name,
 					 REL.RDB$OWNER_NAME,
 					 NEWLINE);
-					 
-			if (rel_type == rel_global_temp_preserve ||
-				rel_type == rel_global_temp_delete)
-			{
-				isqlGlob.printf("CREATE GLOBAL TEMPORARY TABLE ");
-			}
-			else
-			{
-				isqlGlob.printf("CREATE TABLE ");
-			}
-			
 			if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
 			{
 				if (new_name)
 					ISQL_copy_SQL_id (new_name, SQL_identifier, DBL_QUOTE);
 				else
 					ISQL_copy_SQL_id (relation_name, SQL_identifier, DBL_QUOTE);
-				isqlGlob.printf("%s ", SQL_identifier);
+				isqlGlob.printf("CREATE TABLE %s ", SQL_identifier);
 			}
-			else 
-			{
-				isqlGlob.printf("%s ", new_name ? new_name : relation_name);
-			}
-			
+			else
+				isqlGlob.printf("CREATE TABLE %s ",
+						 new_name ? new_name : relation_name);
 			if (!REL.RDB$EXTERNAL_FILE.NULL)
 			{
 				ISQL_copy_SQL_id (REL.RDB$EXTERNAL_FILE, SQL_identifier2,
@@ -413,7 +377,9 @@ int EXTRACT_list_table(const SCHAR* relation_name,
 			if (!FLD.RDB$COMPUTED_SOURCE.NULL)
 				ISQL_print_validation (isqlGlob.Out, &FLD.RDB$COMPUTED_SOURCE, true, gds_trans);
 		}
-		else if (!(fb_utils::implicit_domain(FLD.RDB$FIELD_NAME) && FLD.RDB$SYSTEM_FLAG != 1))
+		else if (!((strncmp(FLD.RDB$FIELD_NAME, "RDB$", 4) == 0) &&
+				isdigit (FLD.RDB$FIELD_NAME[4]) &&
+				FLD.RDB$SYSTEM_FLAG != 1))
 		{
 			fb_utils::exact_name(FLD.RDB$FIELD_NAME);
 			if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
@@ -441,7 +407,6 @@ int EXTRACT_list_table(const SCHAR* relation_name,
 		{
 			// Look through types array 
 			for (int i = 0; Column_types[i].type; i++)
-			{
 				if (FLD.RDB$FIELD_TYPE == Column_types[i].type)
 				{
 					bool precision_known = false;
@@ -507,10 +472,9 @@ int EXTRACT_list_table(const SCHAR* relation_name,
 					isqlGlob.prints(Print_buffer);
 					break;
 				}
-			}
+
 
 			if ((FLD.RDB$FIELD_TYPE == T_CHAR) || (FLD.RDB$FIELD_TYPE == VARCHAR))
-			{
 				if (FLD.RDB$CHARACTER_LENGTH.NULL)
 				{
 
@@ -520,7 +484,6 @@ int EXTRACT_list_table(const SCHAR* relation_name,
 				{
 					isqlGlob.printf("(%d)", FLD.RDB$CHARACTER_LENGTH);
 				}
-			}
 
 			// Catch arrays after printing the type  
 
@@ -546,6 +509,7 @@ int EXTRACT_list_table(const SCHAR* relation_name,
 				 FLD.RDB$FIELD_TYPE == BLOB) &&
 				!FLD.RDB$CHARACTER_SET_ID.NULL)
 			{
+
 				char_sets[0] = '\0';
 
 				// Override rdb$fields id with relation_fields if present 
@@ -678,19 +642,7 @@ int EXTRACT_list_table(const SCHAR* relation_name,
 	if (first) // we extracted nothing
 		return FINI_ERROR;
 
-	if (rel_type == rel_global_temp_preserve)
-	{
-		isqlGlob.printf(")%sON COMMIT PRESERVE ROWS", NEWLINE);
-	}
-	else if (rel_type == rel_global_temp_delete)
-	{
-		isqlGlob.printf(")%sON COMMIT DELETE ROWS", NEWLINE);
-	}
-	else
-	{
-		isqlGlob.printf(")");
-	}
-	isqlGlob.printf("%s%s", isqlGlob.global_Term, NEWLINE);
+	isqlGlob.printf(")%s%s", isqlGlob.global_Term, NEWLINE);
 	return FINI_OK;
 }
 
@@ -732,26 +684,6 @@ static void get_procedure_args(const char* proc_name)
 			PRM.RDB$PARAMETER_TYPE = ptype
 			SORTED BY PRM.RDB$PARAMETER_NUMBER
 
-			bool prm_collation_id_null = true;
-			SSHORT prm_collation_id = 0;
-
-			bool prm_default_source_null = true;
-			ISC_QUAD prm_default_source;
-
-			if (ENCODE_ODS(isqlGlob.major_ods, isqlGlob.minor_ods) >= ODS_11_1)
-			{
-				FOR PRM2 IN RDB$PROCEDURE_PARAMETERS
-					WITH PRM2.RDB$PROCEDURE_NAME EQ PRM.RDB$PROCEDURE_NAME AND
-						 PRM2.RDB$PARAMETER_NAME EQ PRM.RDB$PARAMETER_NAME
-
-					prm_collation_id_null = PRM2.RDB$COLLATION_ID.NULL;
-					prm_collation_id = PRM2.RDB$COLLATION_ID;
-
-					prm_default_source_null = PRM2.RDB$DEFAULT_SOURCE.NULL;
-					prm_default_source = PRM2.RDB$DEFAULT_SOURCE;
-				END_FOR 
-			}
-
 			if (first_time)
 			{
 				first_time = false;
@@ -780,162 +712,114 @@ static void get_procedure_args(const char* proc_name)
 
 			isqlGlob.printf("%s ", SQL_identifier);
 
-			if (!(fb_utils::implicit_domain(FLD.RDB$FIELD_NAME) && FLD.RDB$SYSTEM_FLAG != 1))
-			{
-				isqlGlob.printf("TYPE OF ");
-
-				fb_utils::exact_name(FLD.RDB$FIELD_NAME);
-				if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
+			// Get column type name to print 
+			for (int i = 0; Column_types[i].type; i++)
+				if (FLD.RDB$FIELD_TYPE == Column_types[i].type)
 				{
-					ISQL_copy_SQL_id (FLD.RDB$FIELD_NAME, SQL_identifier, DBL_QUOTE);
-					isqlGlob.prints(SQL_identifier);
+					bool precision_known = false;
+
+					if (isqlGlob.major_ods >= ODS_VERSION10)
+					{
+						// Handle Integral subtypes NUMERIC and DECIMAL 
+						if ((FLD.RDB$FIELD_TYPE == SMALLINT) ||
+							(FLD.RDB$FIELD_TYPE == INTEGER) ||
+							(FLD.RDB$FIELD_TYPE == BIGINT))
+						{
+							/* We are ODS >= 10 and could be any Dialect */
+
+							FOR FLD1 IN RDB$FIELDS WITH
+								FLD1.RDB$FIELD_NAME EQ FLD.RDB$FIELD_NAME
+
+								if (!FLD1.RDB$FIELD_PRECISION.NULL)
+								{
+									/* We are Dialect >=3 since FIELD_PRECISION is non-NULL */
+									if (FLD1.RDB$FIELD_SUB_TYPE > 0 &&
+										FLD1.RDB$FIELD_SUB_TYPE <= MAX_INTSUBTYPES)
+									{
+										sprintf (Print_buffer, "%s(%d, %d)",
+												Integral_subtypes[FLD1.RDB$FIELD_SUB_TYPE],
+												FLD1.RDB$FIELD_PRECISION,
+												-FLD1.RDB$FIELD_SCALE);
+										precision_known = true;
+									}
+								}
+							END_FOR
+							ON_ERROR
+								ISQL_errmsg (isc_status);
+								return;
+							END_ERROR;
+						}
+					}
+					if (!precision_known)
+					{
+						// Take a stab at numerics and decimals 
+						if ((FLD.RDB$FIELD_TYPE == SMALLINT) &&
+							(FLD.RDB$FIELD_SCALE < 0))
+						{
+							sprintf (Print_buffer, "NUMERIC(4, %d)",
+									-FLD.RDB$FIELD_SCALE);
+						}
+						else if ((FLD.RDB$FIELD_TYPE == INTEGER) &&
+								 (FLD.RDB$FIELD_SCALE < 0))
+						{
+							sprintf (Print_buffer, "NUMERIC(9, %d)",
+									-FLD.RDB$FIELD_SCALE);
+						}
+						else if ((FLD.RDB$FIELD_TYPE == DOUBLE_PRECISION) &&
+								 (FLD.RDB$FIELD_SCALE < 0))
+						{
+							sprintf (Print_buffer, "NUMERIC(15, %d)",
+									-FLD.RDB$FIELD_SCALE);
+						}
+						else
+						{
+							sprintf (Print_buffer, "%s",
+									 Column_types[i].type_name);
+						}
+					}
+					isqlGlob.prints(Print_buffer);
+					break;
+				}
+
+			/* Changed this to return RDB$CHARACTER_LENGTH if available
+			   Fix for Bug #122563
+			   FSG 18.Nov.2000
+			*/
+			if ((FLD.RDB$FIELD_TYPE == T_CHAR) || (FLD.RDB$FIELD_TYPE == VARCHAR))
+				if (FLD.RDB$CHARACTER_LENGTH.NULL)
+				{
+
+					isqlGlob.printf("(%d)", FLD.RDB$FIELD_LENGTH);
 				}
 				else
-					isqlGlob.prints(FLD.RDB$FIELD_NAME);
-
-				// International character sets
-				// Print only the collation
-				if ((FLD.RDB$FIELD_TYPE == T_CHAR || FLD.RDB$FIELD_TYPE == VARCHAR) &&
-					!prm_collation_id_null && prm_collation_id)
 				{
-					char_sets[0] = '\0';
-					ISQL_get_character_sets(FLD.RDB$CHARACTER_SET_ID, prm_collation_id, true, char_sets);
-					if (char_sets[0])
-						isqlGlob.prints(char_sets);
+					isqlGlob.printf("(%d)", FLD.RDB$CHARACTER_LENGTH);
 				}
 
-				if (ptype == 0) // input, try to extract default and make Vlad happy.
-				{
-					if (!prm_default_source_null)
-					{
-						isqlGlob.printf(" ");
-						SHOW_print_metadata_text_blob(isqlGlob.Out, &prm_default_source);
-					}
-				}
-			}
-			else
+
+
+			// Show international character sets and collations 
+			if (!FLD.RDB$COLLATION_ID.NULL || !FLD.RDB$CHARACTER_SET_ID.NULL)
 			{
-				// Get column type name to print 
-				for (int i = 0; Column_types[i].type; i++)
+				char_sets[0] = 0;
+				if (FLD.RDB$COLLATION_ID.NULL)
+					FLD.RDB$COLLATION_ID = 0;
+
+				if (FLD.RDB$CHARACTER_SET_ID.NULL)
+					FLD.RDB$CHARACTER_SET_ID = 0;
+
+				ISQL_get_character_sets (FLD.RDB$CHARACTER_SET_ID,
+										 FLD.RDB$COLLATION_ID, false, char_sets);
+				if (char_sets[0])
+					isqlGlob.prints(char_sets);
+			}
+			
+			if (ptype == 0) // input, try to extract default and make Vlad happy.
+			{
+				if (!FLD.RDB$DEFAULT_SOURCE.NULL)
 				{
-					if (FLD.RDB$FIELD_TYPE == Column_types[i].type)
-					{
-						bool precision_known = false;
-
-						if (isqlGlob.major_ods >= ODS_VERSION10)
-						{
-							// Handle Integral subtypes NUMERIC and DECIMAL 
-							if ((FLD.RDB$FIELD_TYPE == SMALLINT) ||
-								(FLD.RDB$FIELD_TYPE == INTEGER) ||
-								(FLD.RDB$FIELD_TYPE == BIGINT))
-							{
-								/* We are ODS >= 10 and could be any Dialect */
-
-								FOR FLD1 IN RDB$FIELDS WITH
-									FLD1.RDB$FIELD_NAME EQ FLD.RDB$FIELD_NAME
-
-									if (!FLD1.RDB$FIELD_PRECISION.NULL)
-									{
-										/* We are Dialect >=3 since FIELD_PRECISION is non-NULL */
-										if (FLD1.RDB$FIELD_SUB_TYPE > 0 &&
-											FLD1.RDB$FIELD_SUB_TYPE <= MAX_INTSUBTYPES)
-										{
-											sprintf (Print_buffer, "%s(%d, %d)",
-													Integral_subtypes[FLD1.RDB$FIELD_SUB_TYPE],
-													FLD1.RDB$FIELD_PRECISION,
-													-FLD1.RDB$FIELD_SCALE);
-											precision_known = true;
-										}
-									}
-								END_FOR
-								ON_ERROR
-									ISQL_errmsg (isc_status);
-									return;
-								END_ERROR;
-							}
-						}
-						if (!precision_known)
-						{
-							// Take a stab at numerics and decimals 
-							if ((FLD.RDB$FIELD_TYPE == SMALLINT) &&
-								(FLD.RDB$FIELD_SCALE < 0))
-							{
-								sprintf (Print_buffer, "NUMERIC(4, %d)",
-										-FLD.RDB$FIELD_SCALE);
-							}
-							else if ((FLD.RDB$FIELD_TYPE == INTEGER) &&
-									 (FLD.RDB$FIELD_SCALE < 0))
-							{
-								sprintf (Print_buffer, "NUMERIC(9, %d)",
-										-FLD.RDB$FIELD_SCALE);
-							}
-							else if ((FLD.RDB$FIELD_TYPE == DOUBLE_PRECISION) &&
-									 (FLD.RDB$FIELD_SCALE < 0))
-							{
-								sprintf (Print_buffer, "NUMERIC(15, %d)",
-										-FLD.RDB$FIELD_SCALE);
-							}
-							else
-							{
-								sprintf (Print_buffer, "%s",
-										 Column_types[i].type_name);
-							}
-						}
-						isqlGlob.prints(Print_buffer);
-						break;
-					}
-				}
-
-				/* Changed this to return RDB$CHARACTER_LENGTH if available
-				   Fix for Bug #122563
-				   FSG 18.Nov.2000
-				*/
-				if ((FLD.RDB$FIELD_TYPE == T_CHAR) || (FLD.RDB$FIELD_TYPE == VARCHAR))
-				{
-					if (FLD.RDB$CHARACTER_LENGTH.NULL)
-					{
-
-						isqlGlob.printf("(%d)", FLD.RDB$FIELD_LENGTH);
-					}
-					else
-					{
-						isqlGlob.printf("(%d)", FLD.RDB$CHARACTER_LENGTH);
-					}
-				}
-
-				// Show international character sets and collations 
-				if (!FLD.RDB$COLLATION_ID.NULL || !FLD.RDB$CHARACTER_SET_ID.NULL)
-				{
-					char_sets[0] = 0;
-
-					SSHORT collation = 0;
-
-					if (!prm_collation_id_null)
-						collation = prm_collation_id;
-					else if (!FLD.RDB$COLLATION_ID.NULL)
-						collation = FLD.RDB$COLLATION_ID;
-
-					if (FLD.RDB$CHARACTER_SET_ID.NULL)
-						FLD.RDB$CHARACTER_SET_ID = 0;
-
-					ISQL_get_character_sets (FLD.RDB$CHARACTER_SET_ID,
-											 collation, false, char_sets);
-					if (char_sets[0])
-						isqlGlob.prints(char_sets);
-				}
-
-				if (ptype == 0) // input, try to extract default and make Vlad happy.
-				{
-					if (!prm_default_source_null)
-					{
-						isqlGlob.printf(" ");
-						SHOW_print_metadata_text_blob(isqlGlob.Out, &prm_default_source);
-					}
-					else if (!FLD.RDB$DEFAULT_SOURCE.NULL)
-					{
-						isqlGlob.printf(" ");
-						SHOW_print_metadata_text_blob(isqlGlob.Out, &FLD.RDB$DEFAULT_SOURCE);
-					}
+					isqlGlob.printf(" ");
+					SHOW_print_metadata_text_blob(isqlGlob.Out, &FLD.RDB$DEFAULT_SOURCE);
 				}
 			}
 		END_FOR
@@ -1264,59 +1148,8 @@ static void list_all_triggers()
  **************************************/
 	bool header = true;
 
-	// Query gets the trigger info for non-system triggers with
-	// source that are not part of an SQL constraint.
-
-	FOR TRG IN RDB$TRIGGERS
-		WITH (TRG.RDB$SYSTEM_FLAG EQ 0 OR TRG.RDB$SYSTEM_FLAG MISSING) AND
-			 TRG.RDB$RELATION_NAME MISSING
-		SORTED BY TRG.RDB$TRIGGER_TYPE, TRG.RDB$TRIGGER_SEQUENCE, TRG.RDB$TRIGGER_NAME
-
-		if (header)
-		{
-			isqlGlob.printf("SET TERM %s %s%s", Procterm, isqlGlob.global_Term, NEWLINE);
-			isqlGlob.printf(
-					 "%s/* Triggers only will work for SQL triggers */%s",
-					 NEWLINE,
-					 NEWLINE);
-			header = false;
-		}
-		fb_utils::exact_name(TRG.RDB$TRIGGER_NAME);
-
-		if (TRG.RDB$TRIGGER_INACTIVE.NULL)
-			TRG.RDB$TRIGGER_INACTIVE = 0;
-
-		//  If trigger is not SQL put it in comments 
-		if (!(TRG.RDB$FLAGS & TRG_sql))
-			isqlGlob.printf("/* ");
-
-		if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
-			ISQL_copy_SQL_id (TRG.RDB$TRIGGER_NAME, SQL_identifier,  DBL_QUOTE);
-		else
-			strcpy (SQL_identifier,  TRG.RDB$TRIGGER_NAME);
-
-		isqlGlob.printf("CREATE TRIGGER %s %s%s %s POSITION %d %s",
-				 SQL_identifier, NEWLINE,
-				 (TRG.RDB$TRIGGER_INACTIVE ? "INACTIVE" : "ACTIVE"),
-				 trigger_action (TRG.RDB$TRIGGER_TYPE), TRG.RDB$TRIGGER_SEQUENCE,
-				 NEWLINE);
-
-		if (!TRG.RDB$TRIGGER_SOURCE.NULL)
-			SHOW_print_metadata_text_blob (isqlGlob.Out, &TRG.RDB$TRIGGER_SOURCE);
-
-		isqlGlob.printf(" %s%s", Procterm, NEWLINE);
-		isqlGlob.printf(NEWLINE);
-
-		if (!(TRG.RDB$FLAGS & TRG_sql))
-		{
-			isqlGlob.printf("*/%s", NEWLINE);
-		}
-
-	END_FOR
-	ON_ERROR
-		ISQL_errmsg(gds_status);
-		return;
-	END_ERROR;
+/* Query gets the trigger info for non-system triggers with
+   source that are not part of an SQL constraint */
 
 	FOR TRG IN RDB$TRIGGERS CROSS REL IN RDB$RELATIONS OVER RDB$RELATION_NAME
 		//WITH (REL.RDB$SYSTEM_FLAG NE 1 OR REL.RDB$SYSTEM_FLAG MISSING) AND
@@ -1400,7 +1233,7 @@ static void list_check()
  *
  **************************************/
 
-	// Query gets the check clauses for triggers stored for check constraints 
+// Query gets the check clauses for triggers stored for check constraints 
 
 	FOR TRG IN RDB$TRIGGERS CROSS
 		CHK IN RDB$CHECK_CONSTRAINTS WITH
@@ -1451,92 +1284,6 @@ static void list_check()
 		ISQL_errmsg(gds_status);
 		return;
 	END_ERROR;
-}
-
-
-static void list_collations()
-{
-/**************************************
- *
- *	l i s t _ c o l l a t i o n s
- *
- **************************************
- *
- * Functional description
- *	Re create all non-system collations
- *
- **************************************/
-
-	if (isqlGlob.major_ods < ODS_VERSION11)
-		return;
-
-	bool first = true;
-
-	FOR CL IN RDB$COLLATIONS CROSS
-		CS IN RDB$CHARACTER_SETS WITH
-		CS.RDB$CHARACTER_SET_ID EQ CL.RDB$CHARACTER_SET_ID AND
-		(CL.RDB$SYSTEM_FLAG MISSING OR CL.RDB$SYSTEM_FLAG NE 1)
-		SORTED BY CS.RDB$CHARACTER_SET_NAME, CL.RDB$COLLATION_NAME
-
-		if (first)
-		{
-			isqlGlob.printf(
-					 "%s/*  Collations */%s",
-					 NEWLINE,
-					 NEWLINE);
-			first = false;
-		}
-
-		isqlGlob.printf("CREATE COLLATION ");
-
-		fb_utils::exact_name(CL.RDB$COLLATION_NAME);
-		if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
-			ISQL_copy_SQL_id (CL.RDB$COLLATION_NAME, SQL_identifier, DBL_QUOTE);
-		else
-			strcpy (SQL_identifier, CL.RDB$COLLATION_NAME);
-		isqlGlob.printf("%s", SQL_identifier);
-
-		fb_utils::exact_name(CS.RDB$CHARACTER_SET_NAME);
-		if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
-			ISQL_copy_SQL_id (CS.RDB$CHARACTER_SET_NAME, SQL_identifier, DBL_QUOTE);
-		else
-			strcpy (SQL_identifier, CS.RDB$CHARACTER_SET_NAME);
-		isqlGlob.printf(" FOR %s", SQL_identifier);
-
-		if (!CL.RDB$BASE_COLLATION_NAME.NULL)
-		{
-			fb_utils::exact_name(CL.RDB$BASE_COLLATION_NAME);
-			ISQL_copy_SQL_id (CL.RDB$BASE_COLLATION_NAME, SQL_identifier, SINGLE_QUOTE);
-			isqlGlob.printf(" FROM EXTERNAL (%s)", SQL_identifier);
-		}
-
-		if (!CL.RDB$COLLATION_ATTRIBUTES.NULL)
-		{
-			if (CL.RDB$COLLATION_ATTRIBUTES & TEXTTYPE_ATTR_PAD_SPACE)
-				isqlGlob.printf(" PAD SPACE");
-
-			if (CL.RDB$COLLATION_ATTRIBUTES & TEXTTYPE_ATTR_CASE_INSENSITIVE)
-				isqlGlob.printf(" CASE INSENSITIVE");
-
-			if (CL.RDB$COLLATION_ATTRIBUTES & TEXTTYPE_ATTR_ACCENT_INSENSITIVE)
-				isqlGlob.printf(" ACCENT INSENSITIVE");
-		}
-
-		if (!CL.RDB$SPECIFIC_ATTRIBUTES.NULL)
-		{
-			isqlGlob.printf(" '");
-			SHOW_print_metadata_text_blob (isqlGlob.Out, &CL.RDB$SPECIFIC_ATTRIBUTES);
-			isqlGlob.printf("'");
-		}
-
-		isqlGlob.printf("%s%s", isqlGlob.global_Term, NEWLINE);
-	END_FOR
-	ON_ERROR
-		ISQL_errmsg(gds_status);
-		return;
-	END_ERROR;
-
-	isqlGlob.printf(NEWLINE);
 }
 
 
@@ -1754,7 +1501,8 @@ static void list_domain_table(const SCHAR* table_name,
 		SORTED BY FLD.RDB$FIELD_NAME
 
 		// Skip over artificial domains
-		if (fb_utils::implicit_domain(FLD.RDB$FIELD_NAME) &&
+		if (strncmp (FLD.RDB$FIELD_NAME, "RDB$", 4) == 0 &&
+			isdigit (FLD.RDB$FIELD_NAME[4]) &&
 			(FLD.RDB$SYSTEM_FLAG.NULL || FLD.RDB$SYSTEM_FLAG != 1))
 		{
 			continue;

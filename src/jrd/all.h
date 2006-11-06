@@ -26,9 +26,14 @@
 
 #include "../jrd/jrd.h"
 #include "../common/classes/alloc.h"
+#include "../jrd/block_cache.h"
 #include "../jrd/lls.h"
 #include "../common/classes/fb_string.h"
 
+void ALL_fini(void);
+void ALL_init(void);
+
+struct blk;
 
 namespace Jrd {
 	class Database;
@@ -50,11 +55,13 @@ protected:
 public:
 	static JrdMemoryPool *createDbPool(Firebird::MemoryStats &stats);
 	static JrdMemoryPool *createPool();
-	static JrdMemoryPool** deletePool(JrdMemoryPool* pool);
+	static void deletePool(JrdMemoryPool* pool);
 	static void noDbbDeletePool(JrdMemoryPool* pool);
 
 	Jrd::DataComprControl* plb_dccs;
 };
+
+TEXT* ALL_cstring(JrdMemoryPool* pool, const Firebird::string& in_string);
 
 #endif	// JRD_ALL_H
 

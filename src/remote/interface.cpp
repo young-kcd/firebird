@@ -71,10 +71,6 @@
 #include <unistd.h>
 #endif
 
-#ifdef WIN_NT
-#include <process.h>
-#endif
-
 #if defined(WIN_NT)
 #if !defined(EMBEDDED)
 #define XNET
@@ -110,22 +106,20 @@ namespace {
 	// for both services and databases attachments
 	struct ParametersSet {
 		UCHAR dummy_packet_interval, user_name, sys_user_name, 
-			  password, password_enc, address_path, pid;
+			  password, password_enc, address_path;
 	};
 	const ParametersSet dpbParam = {isc_dpb_dummy_packet_interval, 
 									isc_dpb_user_name, 
 									isc_dpb_sys_user_name, 
 									isc_dpb_password, 
 									isc_dpb_password_enc,
-									isc_dpb_address_path,
-									isc_dpb_pid};
+									isc_dpb_address_path};
 	const ParametersSet spbParam = {isc_spb_dummy_packet_interval, 
 									isc_spb_user_name, 
 									isc_spb_sys_user_name, 
 									isc_spb_password, 
 									isc_spb_password_enc,
-									isc_spb_address_path,
-									isc_spb_pid};
+									isc_spb_address_path};
 }
 
 static RVNT add_event(rem_port*);
@@ -150,7 +144,7 @@ static void enqueue_receive(rem_port*,
 							RDB, void*, rrq::rrq_repeat*);
 static void dequeue_receive(rem_port*);
 static ISC_STATUS error(const ISC_STATUS*);
-static ISC_STATUS error(ISC_STATUS* user_status, const Firebird::Exception& ex);
+static ISC_STATUS error(ISC_STATUS* user_status, const std::exception& ex);
 #ifndef MULTI_THREAD
 static void event_handler(rem_port*);
 #else
@@ -191,7 +185,9 @@ static ISC_STATUS send_and_receive(RDB, PACKET *, ISC_STATUS *);
 static ISC_STATUS send_blob(ISC_STATUS*, RBL, USHORT, const UCHAR*);
 static void send_cancel_event(RVNT);
 static bool send_packet(rem_port*, PACKET *, ISC_STATUS *);
+#ifdef NOT_USED_OR_REPLACED
 static bool send_partial_packet(rem_port*, PACKET *, ISC_STATUS *);
+#endif
 #ifdef MULTI_THREAD
 static void server_death(rem_port*);
 #endif
@@ -209,16 +205,6 @@ static ULONG remote_event_id = 0;
 #define NULL_CHECK(ptr, code)	if (*ptr) return handle_error (user_status, (ISC_STATUS) code)
 
 #define SET_OBJECT(rdb, object, id) REMOTE_set_object (rdb->rdb_port, (struct blk *) object, id)
-
-inline bool defer_packet(rem_port* port, const PACKET* packet, ISC_STATUS* status)
-{
-	rem_que_packet p;
-	p.packet = *packet;
-	p.sent = false;
-	port->port_deferred_packets->add(p);
-
-	return clear_queue(port, status);
-}
 
 #define GDS_ATTACH_DATABASE	REM_attach_database
 #define GDS_BLOB_INFO		REM_blob_info
@@ -353,7 +339,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 
 		*handle = rdb;
 	}
-	catch (const Firebird::Exception& ex)
+	catch (const std::exception& ex)
 	{
 		return error(user_status, ex);
 	}
@@ -399,7 +385,7 @@ ISC_STATUS GDS_BLOB_INFO(ISC_STATUS*	user_status,
 					  item_length, items, 0, 0, buffer_length, buffer);
 		REM_restore_thread_data();
 	}
-	catch (const Firebird::Exception& ex)
+	catch (const std::exception& ex)
 	{
 		return error(user_status, ex);
 	}
@@ -450,7 +436,7 @@ ISC_STATUS GDS_CANCEL_BLOB(ISC_STATUS * user_status, RBL * blob_handle)
 		release_blob(blob);
 		*blob_handle = NULL;
 	}
-	catch (const Firebird::Exception& ex)
+	catch (const std::exception& ex)
 	{
 		return error(user_status, ex);
 	}
@@ -499,7 +485,7 @@ ISC_STATUS GDS_CANCEL_EVENTS(ISC_STATUS * user_status, RDB * handle, SLONG * id)
 			send_cancel_event(event);
 		}
 	}
-	catch (const Firebird::Exception& ex)
+	catch (const std::exception& ex)
 	{
 		return error(user_status, ex);
 	}
@@ -550,7 +536,7 @@ ISC_STATUS GDS_CLOSE_BLOB(ISC_STATUS * user_status, RBL * blob_handle)
 		release_blob(blob);
 		*blob_handle = NULL;
 	}
-	catch (const Firebird::Exception& ex)
+	catch (const std::exception& ex)
 	{
 		return error(user_status, ex);
 	}
@@ -594,7 +580,7 @@ ISC_STATUS GDS_COMMIT(ISC_STATUS * user_status, RTR * rtr_handle)
 		release_transaction(transaction);
 		*rtr_handle = NULL;
 	}
-	catch (const Firebird::Exception& ex)
+	catch (const std::exception& ex)
 	{
 		return error(user_status, ex);
 	}
@@ -639,7 +625,7 @@ ISC_STATUS GDS_COMMIT_RETAINING(ISC_STATUS * user_status, RTR * rtr_handle)
 			return error(user_status);
 		}
 	}
-	catch (const Firebird::Exception& ex)
+	catch (const std::exception& ex)
 	{
 		return error(user_status, ex);
 	}
@@ -748,7 +734,7 @@ ISC_STATUS GDS_COMPILE(ISC_STATUS* user_status,
 			message->msg_address = NULL;
 		}
 	}
-	catch (const Firebird::Exception& ex)
+	catch (const std::exception& ex)
 	{
 	    // deallocate new_blr here???
 		return error(user_status, ex);
@@ -827,7 +813,7 @@ ISC_STATUS GDS_CREATE_BLOB2(ISC_STATUS* user_status,
 		blob->rbl_next = transaction->rtr_blobs;
 		transaction->rtr_blobs = blob;
 	}
-	catch (const Firebird::Exception& ex)
+	catch (const std::exception& ex)
 	{
 		return error(user_status, ex);
 	}
@@ -911,7 +897,7 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 
 		*handle = rdb;
 	}
-	catch (const Firebird::Exception& ex)
+	catch (const std::exception& ex)
 	{
 		return error(user_status, ex);
 	}
@@ -986,7 +972,7 @@ ISC_STATUS GDS_DATABASE_INFO(ISC_STATUS*	user_status,
 
 		REM_restore_thread_data();
 	}
-	catch (const Firebird::Exception& ex)
+	catch (const std::exception& ex)
 	{
 		return error(user_status, ex);
 	}
@@ -1044,7 +1030,7 @@ ISC_STATUS GDS_DDL(ISC_STATUS*	user_status,
 
 		status = send_and_receive(rdb, packet, user_status);
 	}
-	catch (const Firebird::Exception& ex)
+	catch (const std::exception& ex)
 	{
 		return error(user_status, ex);
 	}
@@ -1124,7 +1110,7 @@ ISC_STATUS GDS_DETACH(ISC_STATUS* user_status, RDB* handle)
 
 		/* Can't return_success(rdb) here as we've already torn down memory */
 	}
-	catch (const Firebird::Exception& ex)
+	catch (const std::exception& ex)
 	{
 		return error(user_status, ex);
 	}
@@ -1195,7 +1181,7 @@ ISC_STATUS GDS_DROP_DATABASE(ISC_STATUS* user_status, RDB* handle)
 		disconnect(port);
 		*handle = NULL;
 	}
-	catch (const Firebird::Exception& ex)
+	catch (const std::exception& ex)
 	{
 		return error(user_status, ex);
 	}
@@ -1239,37 +1225,28 @@ ISC_STATUS GDS_DSQL_ALLOCATE(ISC_STATUS*	user_status,
 		if (rdb->rdb_port->port_protocol < PROTOCOL_VERSION7)
 			return unsupported(user_status);
 
-		RSR statement;
-		if (rdb->rdb_port->port_flags & PORT_lazy) {
-			*stmt_handle = statement = (RSR) ALLR_block(type_rsr, 0);
-			statement->rsr_rdb = rdb;
-			statement->rsr_id = INVALID_OBJECT;
-			statement->rsr_flags |= RSR_lazy;
-		}
-		else {
-			PACKET* packet = &rdb->rdb_packet;
-			packet->p_operation = op_allocate_statement;
-			packet->p_rlse.p_rlse_object = rdb->rdb_id;
+		PACKET* packet = &rdb->rdb_packet;
+		packet->p_operation = op_allocate_statement;
+		packet->p_rlse.p_rlse_object = rdb->rdb_id;
 
-			if (send_and_receive(rdb, packet, user_status))
-				return error(user_status);
+		if (send_and_receive(rdb, packet, user_status))
+			return error(user_status);
 
-			/* Allocate SQL request block */
+		/* Allocate SQL request block */
 
-			statement = (RSR) ALLR_block(type_rsr, 0);
-			*stmt_handle = statement;
-			statement->rsr_rdb = rdb;
-			statement->rsr_id = packet->p_resp.p_resp_object;
-
-			/* register the object */
-
-			SET_OBJECT(rdb, statement, statement->rsr_id);
-		}
-
+		RSR statement = (RSR) ALLR_block(type_rsr, 0);
+		*stmt_handle = statement;
+		statement->rsr_rdb = rdb;
+		statement->rsr_id = packet->p_resp.p_resp_object;
 		statement->rsr_next = rdb->rdb_sql_requests;
+
 		rdb->rdb_sql_requests = statement;
+
+		/* register the object */
+
+		SET_OBJECT(rdb, statement, statement->rsr_id);
 	}
-	catch (const Firebird::Exception& ex)
+	catch (const std::exception& ex)
 	{
 		return error(user_status, ex);
 	}
@@ -1477,7 +1454,7 @@ ISC_STATUS GDS_DSQL_EXECUTE2(ISC_STATUS*	user_status,
 
 		statement->rsr_rtr = *rtr_handle;
 	}
-	catch (const Firebird::Exception& ex)
+	catch (const std::exception& ex)
 	{
 		return error(user_status, ex);
 	}
@@ -1702,7 +1679,7 @@ ISC_STATUS GDS_DSQL_EXECUTE_IMMED2(ISC_STATUS* user_status,
 		else if (!transaction && packet->p_resp.p_resp_object)
 			*rtr_handle = make_transaction(rdb, packet->p_resp.p_resp_object);
 	}
-	catch (const Firebird::Exception& ex)
+	catch (const std::exception& ex)
 	{
 		return error(user_status, ex);
 	}
@@ -1968,7 +1945,7 @@ ISC_STATUS GDS_DSQL_FETCH(ISC_STATUS* user_status,
 
 		message->msg_address = NULL;
 	}
-	catch (const Firebird::Exception& ex)
+	catch (const std::exception& ex)
 	{
 		return error(user_status, ex);
 	}
@@ -2011,45 +1988,14 @@ ISC_STATUS GDS_DSQL_FREE(ISC_STATUS * user_status, RSR * stmt_handle, USHORT opt
 			return unsupported(user_status);
 		}
 
-		if (statement->rsr_flags & RSR_lazy) {
-			if (option == DSQL_drop) {
-				release_sql_request(statement);
-				*stmt_handle = NULL;
-			}
-			else {
-				statement->rsr_flags &= ~RSR_fetched;
-				statement->rsr_rtr = NULL;
-
-				if (!clear_queue(rdb->rdb_port, user_status))
-					return error(user_status);
-
-				REMOTE_reset_statement(statement);
-			}
-
-			return return_success(rdb);
-		}
-
 		PACKET* packet = &rdb->rdb_packet;
 		packet->p_operation = op_free_statement;
 		P_SQLFREE* free_stmt = &packet->p_sqlfree;
 		free_stmt->p_sqlfree_statement = statement->rsr_id;
 		free_stmt->p_sqlfree_option = option;
 
-		if (rdb->rdb_port->port_flags & PORT_lazy) {
-			if (!defer_packet(rdb->rdb_port, packet, user_status))
-				return error(user_status);
-
-			if (option == DSQL_drop) {
-				packet->p_resp.p_resp_object = INVALID_OBJECT;
-			}
-			else {
-				packet->p_resp.p_resp_object = statement->rsr_id;
-			}
-		}
-		else {
-			if (send_and_receive(rdb, packet, user_status)) {
-				return error(user_status);
-			}
+		if (send_and_receive(rdb, packet, user_status)) {
+			return error(user_status);
 		}
 
 		statement->rsr_handle = (FB_API_HANDLE) (IPTR) packet->p_resp.p_resp_object;
@@ -2067,7 +2013,7 @@ ISC_STATUS GDS_DSQL_FREE(ISC_STATUS * user_status, RSR * stmt_handle, USHORT opt
 			REMOTE_reset_statement(statement);
 		}
 	}
-	catch (const Firebird::Exception& ex)
+	catch (const std::exception& ex)
 	{
 		return error(user_status, ex);
 	}
@@ -2150,15 +2096,6 @@ ISC_STATUS GDS_DSQL_INSERT(ISC_STATUS * user_status,
 		/* set up the packet for the other guy... */
 
 		PACKET* packet = &rdb->rdb_packet;
-
-		if (statement->rsr_flags & RSR_lazy) {
-			packet->p_operation = op_allocate_statement;
-			packet->p_rlse.p_rlse_object = rdb->rdb_id;
-
-			if (!send_partial_packet(rdb->rdb_port, packet, user_status))
-				return error(user_status);
-		}
-
 		packet->p_operation = op_insert;
 		P_SQLDATA* sqldata = &packet->p_sqldata;
 		sqldata->p_sqldata_statement = statement->rsr_id;
@@ -2173,21 +2110,11 @@ ISC_STATUS GDS_DSQL_INSERT(ISC_STATUS * user_status,
 
 		message->msg_address = NULL;
 
-		if (statement->rsr_flags & RSR_lazy) {
-			if (!receive_response(rdb, packet))
-				return error(user_status);
-
-			statement->rsr_id = packet->p_resp.p_resp_object;
-			SET_OBJECT(rdb, statement, statement->rsr_id);
-
-			statement->rsr_flags &= ~RSR_lazy;
-		}
-
 		if (!receive_response(rdb, packet)) {
 			return error(user_status);
 		}
 	}
-	catch (const Firebird::Exception& ex)
+	catch (const std::exception& ex)
 	{
 		return error(user_status, ex);
 	}
@@ -2258,15 +2185,6 @@ ISC_STATUS GDS_DSQL_PREPARE(ISC_STATUS * user_status, RTR * rtr_handle, RSR * st
 		/* set up the packet for the other guy... */
 
 		PACKET* packet = &rdb->rdb_packet;
-
-		if (statement->rsr_flags & RSR_lazy) {
-			packet->p_operation = op_allocate_statement;
-			packet->p_rlse.p_rlse_object = rdb->rdb_id;
-
-			if (!send_partial_packet(rdb->rdb_port, packet, user_status))
-				return error(user_status);
-		}
-
 		packet->p_operation = op_prepare_statement;
 		P_SQLST* prepare = &packet->p_sqlst;
 		prepare->p_sqlst_transaction = (transaction) ? transaction->rtr_id : 0;
@@ -2286,16 +2204,6 @@ ISC_STATUS GDS_DSQL_PREPARE(ISC_STATUS * user_status, RTR * rtr_handle, RSR * st
 
 		/* Set up for the response packet. */
 
-		if (statement->rsr_flags & RSR_lazy) {
-			if (!receive_response(rdb, packet))
-				return error(user_status);
-
-			statement->rsr_id = packet->p_resp.p_resp_object;
-			SET_OBJECT(rdb, statement, statement->rsr_id);
-
-			statement->rsr_flags &= ~RSR_lazy;
-		}
-
 		P_RESP* response = &packet->p_resp;
 		CSTRING temp = response->p_resp_data;
 		response->p_resp_data.cstr_allocated = buffer_length;
@@ -2310,7 +2218,7 @@ ISC_STATUS GDS_DSQL_PREPARE(ISC_STATUS * user_status, RTR * rtr_handle, RSR * st
 			return error(user_status);
 		}
 	}
-	catch (const Firebird::Exception& ex)
+	catch (const std::exception& ex)
 	{
 		return error(user_status, ex);
 	}
@@ -2388,7 +2296,7 @@ ISC_STATUS GDS_DSQL_SET_CURSOR(ISC_STATUS* user_status,
 			return error(user_status);
 		}
 	}
-	catch (const Firebird::Exception& ex)
+	catch (const std::exception& ex)
 	{
 		return error(user_status, ex);
 	}
@@ -2438,7 +2346,7 @@ ISC_STATUS GDS_DSQL_SQL_INFO(ISC_STATUS* user_status,
 		status = info(user_status, rdb, op_info_sql, statement->rsr_id, 0,
 					  item_length, items, 0, 0, buffer_length, buffer);
 	}
-	catch (const Firebird::Exception& ex)
+	catch (const std::exception& ex)
 	{
 		return error(user_status, ex);
 	}
@@ -2671,7 +2579,7 @@ ISC_STATUS GDS_GET_SEGMENT(ISC_STATUS * user_status,
 
 		response->p_resp_data = temp;
 	}
-	catch (const Firebird::Exception& ex)
+	catch (const std::exception& ex)
 	{
 		return error(user_status, ex);
 	}
@@ -2781,7 +2689,7 @@ ISC_STATUS GDS_GET_SLICE(ISC_STATUS* user_status,
 		if (return_length)
 			*return_length = response->p_slr_length;
 	}
-	catch (const Firebird::Exception& ex)
+	catch (const std::exception& ex)
 	{
 		return error(user_status, ex);
 	}
@@ -2859,7 +2767,7 @@ ISC_STATUS GDS_OPEN_BLOB2(ISC_STATUS* user_status,
 		blob->rbl_ptr = blob->rbl_buffer = blob->rbl_data;
 		transaction->rtr_blobs = blob;
 	}
-	catch (const Firebird::Exception& ex)
+	catch (const std::exception& ex)
 	{
 		return error(user_status, ex);
 	}
@@ -2920,7 +2828,7 @@ ISC_STATUS GDS_PREPARE(ISC_STATUS* user_status,
 			return error(user_status);
 		}
 	}
-	catch (const Firebird::Exception& ex)
+	catch (const std::exception& ex)
 	{
 		return error(user_status, ex);
 	}
@@ -3014,7 +2922,7 @@ ISC_STATUS GDS_PUT_SEGMENT(ISC_STATUS* user_status,
 
 		blob->rbl_ptr = p + segment_length;
 	}
-	catch (const Firebird::Exception& ex)
+	catch (const std::exception& ex)
 	{
 		return error(user_status, ex);
 	}
@@ -3110,7 +3018,7 @@ ISC_STATUS GDS_PUT_SLICE(ISC_STATUS* user_status,
 
 		*array_id = packet->p_resp.p_resp_blob_id;
 	}
-	catch (const Firebird::Exception& ex)
+	catch (const std::exception& ex)
 	{
 		return error(user_status, ex);
 	}
@@ -3221,7 +3129,7 @@ ISC_STATUS GDS_QUE_EVENTS(ISC_STATUS* user_status,
 			return error(user_status);
 		}
 	}
-	catch (const Firebird::Exception& ex)
+	catch (const std::exception& ex)
 	{
 		return error(user_status, ex);
 	}
@@ -3468,7 +3376,7 @@ ISC_STATUS GDS_RECEIVE(ISC_STATUS * user_status,
 #endif
 		tail->rrq_msgs_waiting--;
 	}
-	catch (const Firebird::Exception& ex)
+	catch (const std::exception& ex)
 	{
 		return error(user_status, ex);
 	}
@@ -3516,7 +3424,7 @@ ISC_STATUS GDS_RECONNECT(ISC_STATUS* user_status,
 
 		*rtr_handle = make_transaction(rdb, packet->p_resp.p_resp_object);
 	}
-	catch (const Firebird::Exception& ex)
+	catch (const std::exception& ex)
 	{
 		return error(user_status, ex);
 	}
@@ -3558,7 +3466,7 @@ ISC_STATUS GDS_RELEASE_REQUEST(ISC_STATUS * user_status, rrq** req_handle)
 		release_request(request);
 		*req_handle = NULL;
 	}
-	catch (const Firebird::Exception& ex)
+	catch (const std::exception& ex)
 	{
 		return error(user_status, ex);
 	}
@@ -3659,7 +3567,7 @@ punt:
 					  item_length, (const SCHAR*) items, 0, 0, buffer_length,
 					  (SCHAR *) buffer);
 	}
-	catch (const Firebird::Exception& ex)
+	catch (const std::exception& ex)
 	{
 		return error(user_status, ex);
 	}
@@ -3706,7 +3614,7 @@ ISC_STATUS GDS_ROLLBACK_RETAINING(ISC_STATUS * user_status, RTR * rtr_handle)
 			return error(user_status);
 		}
 	}
-	catch (const Firebird::Exception& ex)
+	catch (const std::exception& ex)
 	{
 		return error(user_status, ex);
 	}
@@ -3749,7 +3657,7 @@ ISC_STATUS GDS_ROLLBACK(ISC_STATUS * user_status, RTR * rtr_handle)
 		release_transaction(transaction);
 		*rtr_handle = NULL;
 	}
-	catch (const Firebird::Exception& ex)
+	catch (const std::exception& ex)
 	{
 		return error(user_status, ex);
 	}
@@ -3811,7 +3719,7 @@ ISC_STATUS GDS_SEEK_BLOB(ISC_STATUS * user_status,
 		blob->rbl_fragment_length = 0;
 		blob->rbl_flags &= ~(RBL_eof | RBL_eof_pending | RBL_segment);
 	}
-	catch (const Firebird::Exception& ex)
+	catch (const std::exception& ex)
 	{
 		return error(user_status, ex);
 	}
@@ -3875,7 +3783,7 @@ ISC_STATUS GDS_SEND(ISC_STATUS * user_status,
 			return error(user_status);
 		}
 	}
-	catch (const Firebird::Exception& ex)
+	catch (const std::exception& ex)
 	{
 		return error(user_status, ex);
 	}
@@ -3958,7 +3866,7 @@ ISC_STATUS GDS_SERVICE_ATTACH(ISC_STATUS* user_status,
 
 		*handle = rdb;
 	}
-	catch (const Firebird::Exception& ex)
+	catch (const std::exception& ex)
 	{
 		return error(user_status, ex);
 	}
@@ -4007,7 +3915,7 @@ ISC_STATUS GDS_SERVICE_DETACH(ISC_STATUS * user_status, RDB * handle)
 		disconnect(port);
 		*handle = NULL;
 	}
-	catch (const Firebird::Exception& ex)
+	catch (const std::exception& ex)
 	{
 		return error(user_status, ex);
 	}
@@ -4073,7 +3981,7 @@ ISC_STATUS GDS_SERVICE_QUERY(ISC_STATUS* user_status,
 					  item_length, items, recv_item_length, recv_items,
 					  buffer_length, buffer);
 	}
-	catch (const Firebird::Exception& ex)
+	catch (const std::exception& ex)
 	{
 		status = error(user_status, ex);
 	}
@@ -4128,7 +4036,7 @@ ISC_STATUS GDS_SERVICE_START(ISC_STATUS * user_status,
 			svcstart(user_status, rdb, op_service_start, rdb->rdb_id, 0,
 					 item_length, items);
 	}
-	catch (const Firebird::Exception& ex)
+	catch (const std::exception& ex)
 	{
 		return error(user_status, ex);
 	}
@@ -4219,7 +4127,7 @@ ISC_STATUS GDS_START_AND_SEND(ISC_STATUS * user_status,
 			receive_after_start(request, packet->p_resp.p_resp_object);
 		}
 	}
-	catch (const Firebird::Exception& ex)
+	catch (const std::exception& ex)
 	{
 		return error(user_status, ex);
 	}
@@ -4292,7 +4200,7 @@ ISC_STATUS GDS_START(ISC_STATUS * user_status,
 			receive_after_start(request, packet->p_resp.p_resp_object);
 		}
 	}
-	catch (const Firebird::Exception& ex)
+	catch (const std::exception& ex)
 	{
 		return error(user_status, ex);
 	}
@@ -4342,7 +4250,7 @@ ISC_STATUS GDS_START_TRANSACTION(ISC_STATUS * user_status,
 
 		*rtr_handle = make_transaction(rdb, packet->p_resp.p_resp_object);
 	}
-	catch (const Firebird::Exception& ex)
+	catch (const std::exception& ex)
 	{
 		return error(user_status, ex);
 	}
@@ -4481,7 +4389,7 @@ ISC_STATUS GDS_TRANSACT_REQUEST(ISC_STATUS* user_status,
 			}
 		}
 	}
-	catch (const Firebird::Exception& ex)
+	catch (const std::exception& ex)
 	{
 		return error(user_status, ex);
 	}
@@ -4525,7 +4433,7 @@ ISC_STATUS GDS_TRANSACTION_INFO(ISC_STATUS* user_status,
 				 item_length, reinterpret_cast<const SCHAR*>(items), 0, 0,
 				 buffer_length, (SCHAR *) buffer);
 	}
-	catch (const Firebird::Exception& ex)
+	catch (const std::exception& ex)
 	{
 		return error(user_status, ex);
 	}
@@ -4564,7 +4472,7 @@ ISC_STATUS GDS_UNWIND(ISC_STATUS* user_status, rrq** req_handle, USHORT level)
 	{
 		// EXE_unwind (*req_handle);
 	}
-	catch (const Firebird::Exception& ex)
+	catch(const std::exception& ex)
 	{
 		return error(user_status, ex);
 	}
@@ -5344,18 +5252,6 @@ static void disconnect( rem_port* port)
 
 	RDB rdb = port->port_context;
 	if (rdb) {
-		PACKET* packet = &rdb->rdb_packet;
-
-		// Deliver the pending deferred packets
-
-		for (rem_que_packet* p = port->port_deferred_packets->begin();
-			 p < port->port_deferred_packets->end(); p++)
-		{
-			if (!p->sent) {
-				port->send(&p->packet);
-			}
-		}
-
 		/* BAND-AID:
 		   It seems as if we are disconnecting the port
 		   on both the server and client side.  For now
@@ -5367,16 +5263,13 @@ static void disconnect( rem_port* port)
 
 		 */
 
+		PACKET* packet = &rdb->rdb_packet;
 		if (port->port_type != port_pipe) {
 			packet->p_operation = op_disconnect;
 			port->send(packet);
 		}
 		REMOTE_free_packet(port, packet);
 	}
-
-	// Cleanup the queue
-
-	delete port->port_deferred_packets;
 
 	// Clear context reference for the associated event handler
 	// to avoid SEGV during shutdown
@@ -5450,7 +5343,7 @@ static ISC_STATUS error( const ISC_STATUS* user_status)
 	return user_status[1];
 }
 
-static ISC_STATUS error(ISC_STATUS* user_status, const Firebird::Exception& ex)
+static ISC_STATUS error(ISC_STATUS* user_status, const std::exception& ex)
 {
 /**************************************
  *
@@ -5686,12 +5579,7 @@ static bool get_new_dpb(Firebird::ClumpletWriter& dpb,
 			Firebird::status_exception::raise(isc_unavailable, isc_arg_end);
 		}
 	}
-
-    if (dpb.find(par.pid)) {
-		dpb.deleteClumplet();
-	}
-	dpb.insertInt(par.pid, getpid());
-
+	
 #ifndef NO_PASSWORD_ENCRYPTION
 	if (dpb.find(par.password))
 	{
@@ -5704,7 +5592,7 @@ static bool get_new_dpb(Firebird::ClumpletWriter& dpb,
 		dpb.insertString(par.password_enc, password);
 	}
 #endif
-
+	
 	if (dpb.find(par.sys_user_name)) 
 	{
 		dpb.getString(user_string);
@@ -5857,9 +5745,6 @@ static bool init(ISC_STATUS* user_status,
 	RDB rdb = port->port_context;
 	PACKET* packet = &rdb->rdb_packet;
 
-	MemoryPool& pool = *getDefaultMemoryPool();
-	port->port_deferred_packets = FB_NEW(pool) PacketQueue(pool);
-
 /* Make attach packet */
 
 	P_ATCH* attach = &packet->p_atch;
@@ -5954,7 +5839,7 @@ static ISC_STATUS mov_dsql_message(const UCHAR*	from_msg,
 		}
 
 	}	// try
-	catch (const Firebird::Exception& ex) {
+	catch (const std::exception& ex) {
 		Firebird::stuff_exception(tdrdb->trdb_status_vector, ex);
 		return FB_FAILURE;
 	}
@@ -6219,18 +6104,6 @@ static bool receive_packet_noqueue(rem_port* port,
 	user_status[1] = isc_net_read_err;
 	user_status[2] = isc_arg_end;
 
-	// Receive responses for all deferred packets that were already sent
-
-	while (port->port_deferred_packets->getCount())
-	{
-		rem_que_packet* p = port->port_deferred_packets->begin();
-		if (!p->sent)
-			break;
-		if (!port->receive(packet))
-			return FALSE;
-		port->port_deferred_packets->remove(p);
-	}
-
 	return (port->receive(packet));
 }
 
@@ -6429,20 +6302,7 @@ static bool release_object(RDB rdb,
 	packet->p_operation = op;
 	packet->p_rlse.p_rlse_object = id;
 
-	ISC_STATUS* status = rdb->rdb_status_vector;
-
-	if (rdb->rdb_port->port_flags & PORT_lazy) {
-		switch (op) {
-			case op_close_blob:
-			case op_cancel_blob:
-			case op_release:
-				return defer_packet(rdb->rdb_port, packet, status);
-			default:
-				break;
-		}
-	}
-
-	if (!send_packet(rdb->rdb_port, packet, status))
+	if (!send_packet(rdb->rdb_port, packet, rdb->rdb_status_vector))
 		return false;
 
 	return receive_response(rdb, packet);
@@ -6941,21 +6801,10 @@ static bool send_packet(rem_port* port,
 	user_status[1] = isc_net_write_err;
 	user_status[2] = isc_arg_end;
 
-	// Send packets that were deferred
-
-	for (rem_que_packet* p = port->port_deferred_packets->begin();
-		p < port->port_deferred_packets->end(); p++)
-	{
-		if (!p->sent) {
-			if (!port->send_partial(&p->packet))
-				return FALSE;
-			p->sent = true;
-		}
-	}
-
 	return (port->send(packet));
 }
 
+#ifdef NOT_USED_OR_REPLACED
 static bool send_partial_packet(rem_port*		port,
 								PACKET*	packet,
 								ISC_STATUS*	user_status)
@@ -6985,20 +6834,13 @@ static bool send_partial_packet(rem_port*		port,
 	user_status[1] = isc_net_write_err;
 	user_status[2] = isc_arg_end;
 
-	// Send packets that were deferred
-
-	for (rem_que_packet* p = port->port_deferred_packets->begin();
-		p < port->port_deferred_packets->end(); p++)
-	{
-		if (!p->sent) {
-			if (!port->send_partial(&p->packet))
-				return FALSE;
-			p->sent = true;
-		}
+	if (!port->send_partial(packet)) {
+		return false;
 	}
 
-	return (port->send_partial(packet));
+	return true;
 }
+#endif
 
 #ifdef MULTI_THREAD
 static void server_death(rem_port* port)

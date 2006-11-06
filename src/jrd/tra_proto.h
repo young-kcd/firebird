@@ -47,6 +47,7 @@ void	TRA_header_write(Jrd::thread_db*, Jrd::Database*, SLONG);
 #endif
 void	TRA_init(Jrd::thread_db*);
 void	TRA_invalidate(Jrd::Database*, ULONG);
+void	TRA_link_transaction(Jrd::thread_db*, Jrd::jrd_tra*);
 void	TRA_post_resources(Jrd::thread_db*, Jrd::jrd_tra*, Jrd::ResourceList&);
 bool	TRA_precommited(Jrd::thread_db*, SLONG, SLONG);
 void	TRA_prepare(Jrd::thread_db*, Jrd::jrd_tra*, USHORT, const UCHAR*);
@@ -56,7 +57,7 @@ void	TRA_rollback(Jrd::thread_db*, Jrd::jrd_tra*, const bool, const bool);
 void	TRA_set_state(Jrd::thread_db*, Jrd::jrd_tra*, SLONG, SSHORT);
 void	TRA_shutdown_attachment(Jrd::thread_db*, Jrd::Attachment*);
 int		TRA_snapshot_state(Jrd::thread_db*, const Jrd::jrd_tra*, SLONG);
-Jrd::jrd_tra*	TRA_start(Jrd::thread_db*, int, const UCHAR*);
+Jrd::jrd_tra*	TRA_start(Jrd::thread_db*, int, const SCHAR*);
 int		TRA_state(const UCHAR*, ULONG, ULONG);
 bool	TRA_sweep(Jrd::thread_db*, Jrd::jrd_tra*);
 Jrd::Lock*	TRA_transaction_lock(Jrd::thread_db*, blk*);

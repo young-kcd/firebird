@@ -32,8 +32,6 @@
 #define JRD_EXE_H
 
 #include "../jrd/jrd_blks.h"
-#include "../jrd/blb.h"
-#include "../jrd/Relation.h"
 #include "../common/classes/array.h"
 #include "../common/classes/MetaName.h"
 
@@ -56,8 +54,6 @@ typedef nod_t NOD_T;
 #include "../jrd/scl.h"
 #include "../jrd/sbm.h"
 
-#include "../jrd/DebugInterface.h"
-
 // This macro enables DSQL tracing code
 //#define CMP_DEBUG
 
@@ -78,7 +74,6 @@ class jrd_nod;
 struct sort_key_def;
 template <typename T> class vec;
 class jrd_prc;
-class Collation;
 struct index_desc;
 struct IndexDescAlloc;
 class Format;
@@ -92,7 +87,7 @@ public:
 	jrd_nod*	nod_parent;
 	SLONG	nod_impure;			/* Inpure offset from request block */
 	NOD_T	nod_type;				/* Type of node */
-	USHORT	nod_flags;
+	UCHAR	nod_flags;
 	SCHAR	nod_scale;			/* Target scale factor */
 	USHORT	nod_count;			/* Number of arguments */
 };
@@ -123,7 +118,6 @@ const int nod_value		= 16;		/* full value area required in impure space */
 const int nod_deoptimize	= 32;	/* boolean which requires deoptimization */
 const int nod_agg_dbkey	= 64;		/* dbkey of an aggregate */
 const int nod_invariant	= 128;		/* node is recognized as being invariant */
-const int nod_recurse	= 256;		/* union node is a recursive union */
 
 
 /* Special RecordSelExpr node */
@@ -216,7 +210,6 @@ struct impure_value {
 		GDS_TIMESTAMP vlu_timestamp;
 		GDS_TIME vlu_sql_time;
 		GDS_DATE vlu_sql_date;
-		bid vlu_bid;
 		void* vlu_invariant; // Pre-compiled invariant object for nod_like and other string functions
 	} vlu_misc;
 };
@@ -286,14 +279,13 @@ const int e_sav_name		= 1;
 const int e_sav_length		= 2;
 
 const int e_mod_statement	= 0;
-const int e_mod_statement2	= 1;
-const int e_mod_sub_mod		= 2;
-const int e_mod_validate	= 3;
-const int e_mod_map_view	= 4;
-const int e_mod_org_stream	= 5;
-const int e_mod_new_stream	= 6;
-const int e_mod_rsb			= 7;
-const int e_mod_length		= 8;
+const int e_mod_sub_mod		= 1;
+const int e_mod_validate	= 2;
+const int e_mod_map_view	= 3;
+const int e_mod_org_stream	= 4;
+const int e_mod_new_stream	= 5;
+const int e_mod_rsb			= 6;
+const int e_mod_length		= 7;
 
 const int e_send_statement	= 0;
 const int e_send_message	= 1;
@@ -478,12 +470,6 @@ const int e_trim_specification	= 2;
 const int e_trim_count			= 2;
 const int e_trim_length			= 3;
 
-// nod_src_info
-const int e_src_info_line			= 0;
-const int e_src_info_col			= 1;
-const int e_src_info_node			= 2;
-const int e_src_info_length			= 3;
-
 // Request resources
 
 struct Resource
@@ -492,15 +478,13 @@ struct Resource
 	{
 		rsc_relation,
 		rsc_procedure,
-		rsc_index,
-		rsc_collation
+		rsc_index
 	};
 
 	enum rsc_s	rsc_type;
 	USHORT		rsc_id;			/* Id of the resource */
 	jrd_rel*	rsc_rel;		/* Relation block */
 	jrd_prc*	rsc_prc;		/* Procedure block */
-	Collation*	rsc_coll;		/* Collation block */
 
 	static bool greaterThan(const Resource& i1, const Resource& i2) {
 		// A few places of the engine depend on fact that rsc_type 
@@ -515,8 +499,8 @@ struct Resource
 		return i1.rsc_id > i2.rsc_id;
 	}
 
-	Resource(rsc_s type, USHORT id, jrd_rel* rel, jrd_prc* prc, Collation* coll) :
-		rsc_type(type), rsc_id(id), rsc_rel(rel), rsc_prc(prc), rsc_coll(coll) { }
+	Resource(rsc_s type, USHORT id, jrd_rel* rel, jrd_prc* prc) :
+		rsc_type(type), rsc_id(id), rsc_rel(rel), rsc_prc(prc) { }
 };
 
 typedef Firebird::SortedArray<Resource, Firebird::EmptyStorage<Resource>, 
@@ -681,7 +665,6 @@ public:
 	SLONG			csb_impure;			/* Next offset into impure area */
 	USHORT			csb_g_flags;
 	MemoryPool&		csb_pool;				/* Memory pool to be used by csb */
-	Firebird::MapBlrToSrc*	csb_map_blr2src;	// mapping between blr offsets and source text position
 
     struct csb_repeat
 	{
@@ -711,7 +694,7 @@ public:
 		USHORT csb_indices;			/* Number of indices */
 
 		jrd_rel* csb_relation;
-		Firebird::MetaName* csb_alias;	/* SQL alias name for this instance of relation */
+		Firebird::string* csb_alias;	/* SQL alias name for this instance of relation */
 		jrd_prc* csb_procedure;
 		jrd_rel* csb_view;		/* parent view */
 

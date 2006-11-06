@@ -45,6 +45,7 @@
 #include "../jrd/cch.h"
 #include "../jrd/sort.h"
 #include "../jrd/gdsassert.h"
+#include "../jrd/all_proto.h"
 #include "../jrd/btr_proto.h"
 #include "../jrd/cch_proto.h"
 #include "../jrd/dpm_proto.h"
@@ -113,7 +114,7 @@ struct INT64_KEY {
 };
 
 // I assume this wasn't done sizeof(INT64_KEY) on purpose, since alignment might affect it.
-const size_t INT64_KEY_LENGTH = sizeof (double) + sizeof (SSHORT);
+size_t INT64_KEY_LENGTH	= sizeof (double) + sizeof (SSHORT);
 
 static const double pow10_table[] =
 {
@@ -175,18 +176,18 @@ enum contents {
 
 typedef contents CONTENTS;
 
-static SLONG add_node(thread_db*, WIN*, index_insertion*, temporary_key*, RecordNumber*,
+static SLONG add_node(thread_db*, WIN*, index_insertion*, temporary_key*, RecordNumber*, 
 					  SLONG*, SLONG*);
 static void compress(thread_db*, const dsc*, temporary_key*, USHORT, bool, bool, USHORT);
 static USHORT compress_root(thread_db*, index_root_page*);
 static void copy_key(const temporary_key*, temporary_key*);
 static CONTENTS delete_node(thread_db*, WIN*, UCHAR*);
-static void delete_tree(thread_db*, USHORT, USHORT, PageNumber, PageNumber);
+static void delete_tree(thread_db*, USHORT, USHORT, SLONG, SLONG);
 static DSC *eval(thread_db*, jrd_nod*, DSC*, bool*);
 static SLONG fast_load(thread_db*, jrd_rel*, index_desc*, USHORT, sort_context*,
 					   SelectivityList&);
 
-static index_root_page* fetch_root(thread_db*, WIN*, const jrd_rel*, const RelationPages*);
+static index_root_page* fetch_root(thread_db*, WIN *, const jrd_rel*);
 static UCHAR* find_node_start_point(btree_page*, temporary_key*, UCHAR*, USHORT*, 
 									bool, bool, bool = false, RecordNumber = NO_VALUE);
 
@@ -233,11 +234,9 @@ USHORT BTR_all(thread_db*		tdbb,
 	SET_TDBB(tdbb);
 	const Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
-	
-	RelationPages* relPages = relation->getPages(tdbb);
-	WIN window(relPages->rel_pg_space_id, -1);
+	WIN window(-1);
 
-	index_root_page* root = fetch_root(tdbb, &window, relation, relPages);
+	index_root_page* root = fetch_root(tdbb, &window, relation);
 	if (!root) {
 		return 0;
 	}
@@ -254,25 +253,6 @@ USHORT BTR_all(thread_db*		tdbb,
 
 	CCH_RELEASE(tdbb, &window);
 	return count;
-}
-
-
-void BTR_complement_key(temporary_key* key)
-{
-/**************************************
- *
- *	B T R _ c o m p l e m e n t _ k e y
- *
- **************************************
- *
- * Functional description
- *	Negate a key for descending index.
- *
- **************************************/
-	UCHAR* p = key->key_data;
-	for (const UCHAR* const end = p + key->key_length; p < end; p++) {
-		*p ^= -1;
-	}
 }
 
 
@@ -304,8 +284,7 @@ void BTR_create(thread_db* tdbb,
 
 	// Index is created.  Go back to the index root page and update it to
 	// point to the index.
-	RelationPages* relPages = relation->getPages(tdbb);
-	WIN window(relPages->rel_pg_space_id, relPages->rel_index_root);
+	WIN window(relation->rel_index_root);
 	index_root_page* root = 
 		(index_root_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_root);
 	CCH_MARK(tdbb, &window);
@@ -342,12 +321,12 @@ void BTR_delete_index(thread_db* tdbb, WIN * window, USHORT id)
 	else {
 		index_root_page::irt_repeat* irt_desc = root->irt_rpt + id;
 		CCH_MARK(tdbb, window);
-		const PageNumber next(window->win_page.getPageSpaceID(), irt_desc->irt_root);
+		const SLONG next = irt_desc->irt_root;
 
 		// remove the pointer to the top-level index page before we delete it
 		irt_desc->irt_root = 0;
 		irt_desc->irt_flags = 0;
-		const PageNumber prior = window->win_page;
+		const SLONG prior = window->win_page;
 		const USHORT relation_id = root->irt_relation;
 
 		CCH_RELEASE(tdbb, window);
@@ -448,10 +427,9 @@ DSC* BTR_eval_expression(thread_db* tdbb, index_desc* idx, Record* record, bool 
 	// idx_expression_request to the same transaction twice
 	const bool already_attached = (expr_request->req_caller == expr_request);
 
-	if (!already_attached) {
-		TRA_attach_request(tdbb->tdbb_transaction, expr_request);
+	if (tdbb->tdbb_request && !already_attached) {
+		TRA_attach_request(tdbb->tdbb_request->req_transaction, expr_request);
 	}
-	fb_assert(expr_request->req_transaction);
 
 	tdbb->tdbb_request = expr_request;
 	tdbb->tdbb_request->req_rpb[0].rpb_record = record;
@@ -464,7 +442,7 @@ DSC* BTR_eval_expression(thread_db* tdbb, index_desc* idx, Record* record, bool 
 		if (!(result = EVL_expr(tdbb, idx->idx_expression)))
 			result = &idx->idx_expression_desc;
 	}
-	catch (const Firebird::Exception&) {
+	catch(const std::exception&) {
 		if (!already_attached) {
 			TRA_detach_request(expr_request);
 		}
@@ -509,8 +487,7 @@ void BTR_evaluate(thread_db* tdbb, IndexRetrieval* retrieval, RecordBitmap** bit
 	}
 
 	index_desc idx;
-	RelationPages* relPages = retrieval->irb_relation->getPages(tdbb);
-	WIN window(relPages->rel_pg_space_id, -1);
+	WIN window(-1);
 	temporary_key lower, upper;
 	lower.key_flags = 0;
 	lower.key_length = 0;
@@ -585,7 +562,7 @@ void BTR_evaluate(thread_db* tdbb, IndexRetrieval* retrieval, RecordBitmap** bit
 		skipLowerKey = false;
 	}
 
-	const UCHAR flags = page->btr_header.pag_flags;
+	const SCHAR flags = page->btr_header.pag_flags;
 	// if there is an upper bound, scan the index pages looking for it
 	if (retrieval->irb_upper_count)	{
 		while (scan(tdbb, pointer, bitmap, &idx, retrieval, prefix, &upper, flags, 
@@ -750,10 +727,7 @@ btree_page* BTR_find_page(thread_db* tdbb,
 		}
 	}
 
-	RelationPages* relPages = retrieval->irb_relation->getPages(tdbb);
-	fb_assert(window->win_page.getPageSpaceID() == relPages->rel_pg_space_id);
-
-	window->win_page = relPages->rel_index_root;
+	window->win_page = retrieval->irb_relation->rel_index_root;
 	index_root_page* rpage = (index_root_page*) CCH_FETCH(tdbb, window, LCK_read, pag_root);
 
 	if (!BTR_description(tdbb, retrieval->irb_relation, rpage,
@@ -861,8 +835,7 @@ void BTR_insert(thread_db* tdbb, WIN * root_window, index_insertion* insertion)
 	const Database* dbb = tdbb->tdbb_database;
 
 	index_desc* idx = insertion->iib_descriptor;
-	RelationPages* relPages = insertion->iib_relation->getPages(tdbb);
-	WIN window(relPages->rel_pg_space_id, idx->idx_root);
+	WIN window(idx->idx_root);
 	btree_page* bucket = (btree_page*) CCH_FETCH(tdbb, &window, LCK_read, pag_index);
 
 	if (bucket->btr_level == 0) {
@@ -896,14 +869,14 @@ void BTR_insert(thread_db* tdbb, WIN * root_window, index_insertion* insertion)
 	CCH_MARK(tdbb, &window);
 	bucket->btr_header.pag_flags &= ~btr_dont_gc;
 
-	if (window.win_page.getPageNum() != idx->idx_root) {
+	if (window.win_page != idx->idx_root) {
 		// AB: It could be possible that the "top" page meanwhile was changed by 
 		// another insert. In that case we are going to insert our split_page
 		// in the existing "top" page instead of making a new "top" page.
 
 		index_insertion propagate = *insertion;
 		propagate.iib_number.setValue(split_page);
-		propagate.iib_descriptor->idx_root = window.win_page.getPageNum();
+		propagate.iib_descriptor->idx_root = window.win_page;
 		propagate.iib_key = &key;
 
 		temporary_key ret_key;
@@ -918,7 +891,7 @@ void BTR_insert(thread_db* tdbb, WIN * root_window, index_insertion* insertion)
 		}
 	}
 
-	WIN new_window(relPages->rel_pg_space_id, split_page);
+	WIN new_window(split_page);
 	btree_page* new_bucket = 
 		(btree_page*) CCH_FETCH(tdbb, &new_window, LCK_read, pag_index);
 
@@ -929,7 +902,7 @@ void BTR_insert(thread_db* tdbb, WIN * root_window, index_insertion* insertion)
 	}
 
 	// hvlad: save some info from bucket for latter use before releasing a page
-	const UCHAR flags = bucket->btr_header.pag_flags;
+	const SCHAR flags = bucket->btr_header.pag_flags;
 	const USHORT btr_relation = bucket->btr_relation;
 	const UCHAR btr_level = bucket->btr_level + 1;
 	const UCHAR btr_id = bucket->btr_id;
@@ -958,7 +931,6 @@ void BTR_insert(thread_db* tdbb, WIN * root_window, index_insertion* insertion)
 	// Allocate and format new bucket, this will always be a non-leaf page
 	new_bucket = (btree_page*) DPM_allocate(tdbb, &new_window);
 	CCH_precedence(tdbb, &new_window, window.win_page);
-
 	new_bucket->btr_header.pag_type = pag_index;
 	new_bucket->btr_relation = btr_relation;
 	new_bucket->btr_level = btr_level;
@@ -981,7 +953,7 @@ void BTR_insert(thread_db* tdbb, WIN * root_window, index_insertion* insertion)
 	// Set up first node as degenerate, but pointing to first bucket on
 	// next level.
 	IndexNode node;
-	BTreeNode::setNode(&node, 0, 0, RecordNumber(0), window.win_page.getPageNum());
+	BTreeNode::setNode(&node, 0, 0, RecordNumber(0), window.win_page);
 	pointer = BTreeNode::writeNode(&node, pointer, flags, false);
 
 	// Move in the split node
@@ -1003,7 +975,8 @@ void BTR_insert(thread_db* tdbb, WIN * root_window, index_insertion* insertion)
 	CCH_RELEASE(tdbb, &new_window);
 	CCH_precedence(tdbb, root_window, new_window.win_page);
 	CCH_MARK(tdbb, root_window);
-	root->irt_rpt[idx->idx_id].irt_root = new_window.win_page.getPageNum();
+	root->irt_rpt[idx->idx_id].irt_root = new_window.win_page;
+
 	CCH_RELEASE(tdbb, root_window);
 }
 
@@ -1139,7 +1112,7 @@ IDX_E BTR_key(thread_db* tdbb, jrd_rel* relation, Record* record, index_desc* id
 		return result;
 
 	}	// try
-	catch (const Firebird::Exception& ex) {
+	catch(const std::exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		key->key_length = 0;
 		return idx_e_conversion;
@@ -1285,10 +1258,10 @@ UCHAR *BTR_last_node(btree_page* page, exp_index_buf* expanded_page, btree_exp**
 	// starting at the end of the page, find the
 	// first node that is not an end marker
 	UCHAR *pointer = ((UCHAR*)page + page->btr_length);
-	const UCHAR flags = page->pag_flags;
+	const SCHAR flags = page->pag_flags;
 	IndexNode node;
 	while (true) {
-		pointer = BTreeNode::previousNode(&node, pointer, flags, &enode);
+		pointer = BTR_previousNode(&node, pointer, flags, &enode);
 		if (!node.isEndBucket && !node.isEndLevel) {
 			if (expanded_node) {
 				*expanded_node = enode;
@@ -1363,8 +1336,7 @@ btree_page* BTR_left_handoff(thread_db* tdbb, WIN * window, btree_page* page,
 #endif
 
 
-USHORT BTR_lookup(thread_db* tdbb, jrd_rel* relation, USHORT id, index_desc* buffer, 
-				  RelationPages* relPages)
+USHORT BTR_lookup(thread_db* tdbb, jrd_rel* relation, USHORT id, index_desc* buffer)
 {
 /**************************************
  *
@@ -1377,9 +1349,9 @@ USHORT BTR_lookup(thread_db* tdbb, jrd_rel* relation, USHORT id, index_desc* buf
  *
  **************************************/
 	SET_TDBB(tdbb);
-	WIN window(relPages->rel_pg_space_id, -1);
+	WIN window(-1);
 
-	index_root_page* root = fetch_root(tdbb, &window, relation, relPages);
+	index_root_page* root = fetch_root(tdbb, &window, relation);
 	if (!root) {
 		return FB_FAILURE;
 	}
@@ -1601,7 +1573,7 @@ bool BTR_next_index(thread_db* tdbb,
 	SET_TDBB(tdbb);
 
 	SSHORT id;
-	if (idx->idx_id == (USHORT) -1) {
+	if ((USHORT)idx->idx_id == (USHORT) -1) {
 		id = 0;
 		window->win_bdb = NULL;
 	}
@@ -1613,17 +1585,8 @@ bool BTR_next_index(thread_db* tdbb,
 	if (window->win_bdb) {
 		root = (index_root_page*) window->win_buffer;
 	}
-	else { 
-		RelationPages* relPages;
-		if (transaction)
-			relPages = relation->getPages(tdbb, transaction->tra_number);
-		else
-			relPages = relation->getPages(tdbb);
-
-		if (!(root = fetch_root(tdbb, window, relation, relPages))) 
-		{
-			return false; 
-		}
+	else if (!(root = fetch_root(tdbb, window, relation))) {
+		return false;
 	}
 
 	for (; id < root->irt_count; ++id) {
@@ -1667,6 +1630,55 @@ bool BTR_next_index(thread_db* tdbb,
 }
 
 
+UCHAR* BTR_nextNode(IndexNode* node, UCHAR* pointer,
+					SCHAR flags,  btree_exp** expanded_node)
+{
+/**************************************
+ *
+ *	B T R _ n e x t N o d e
+ *
+ **************************************
+ *
+ * Functional description                               
+ *	Find the next node on both the index page
+ *	and its associated expanded buffer.
+ *
+ **************************************/
+
+	pointer = BTreeNode::readNode(node, pointer, flags, true);
+
+	if (*expanded_node) {
+		*expanded_node = (btree_exp*) ((UCHAR*) (*expanded_node)->btx_data +
+			node->prefix + node->length);
+	}
+
+	return pointer;
+}
+
+
+UCHAR *BTR_previousNode(IndexNode* node, UCHAR* pointer,
+					SCHAR flags,  btree_exp** expanded_node)
+{
+/**************************************
+ *
+ *	B T R _ p r e v i o u s N o d e
+ *
+ **************************************
+ *
+ * Functional description                               
+ *	Find the previous node on a page.  Used when walking
+ *	an index backwards.  
+ *
+ **************************************/
+
+	pointer = (pointer - (*expanded_node)->btx_btr_previous_length);
+
+	*expanded_node = (btree_exp*) ((UCHAR*) *expanded_node - (*expanded_node)->btx_previous_length);
+
+	return pointer;
+}
+
+
 void BTR_remove(thread_db* tdbb, WIN * root_window, index_insertion* insertion)
 {
 /**************************************
@@ -1683,8 +1695,7 @@ void BTR_remove(thread_db* tdbb, WIN * root_window, index_insertion* insertion)
 
 	//const Database* dbb = tdbb->tdbb_database;
 	index_desc* idx = insertion->iib_descriptor;
-	RelationPages* relPages = insertion->iib_relation->getPages(tdbb);
-	WIN window(relPages->rel_pg_space_id, idx->idx_root);
+	WIN window(idx->idx_root);
 	btree_page* page = (btree_page*) CCH_FETCH(tdbb, &window, LCK_read, pag_index);
 
 	// If the page is level 0, re-fetch it for write
@@ -1716,7 +1727,7 @@ void BTR_remove(thread_db* tdbb, WIN * root_window, index_insertion* insertion)
 		// get the page number of the child, and check to make sure 
 		// the page still has only one node on it
 		UCHAR *pointer = BTreeNode::getPointerFirstNode(page);
-		const UCHAR flags = page->btr_header.pag_flags;
+		const SCHAR flags = page->btr_header.pag_flags;
 		IndexNode pageNode;
 		pointer = BTreeNode::readNode(&pageNode, pointer, flags, false);
 
@@ -1767,13 +1778,11 @@ void BTR_reserve_slot(thread_db* tdbb, jrd_rel* relation, jrd_tra* transaction,
 	const Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
-	fb_assert(relation);
-	RelationPages* relPages = relation->getPages(tdbb);
-	fb_assert(relPages && relPages->rel_index_root);
+	fb_assert(relation && relation->rel_index_root);
 
 	// Get root page, assign an index id, and store the index descriptor.
 	// Leave the root pointer null for the time being.
-	WIN window(relPages->rel_pg_space_id, relPages->rel_index_root);
+	WIN window(relation->rel_index_root);
 	index_root_page* root = 
 		(index_root_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_root);
 	CCH_MARK(tdbb, &window);
@@ -1863,11 +1872,12 @@ retry:
 		// Exploit the fact idx_repeat structure matches ODS IRTD one
 		memcpy(desc, idx->idx_rpt, l);
 	}
+
 	CCH_RELEASE(tdbb, &window);
 }
 
 
-void BTR_selectivity(thread_db* tdbb, jrd_rel* relation, USHORT id,
+void BTR_selectivity(thread_db* tdbb, const jrd_rel* relation, USHORT id,
 					 SelectivityList& selectivity)
 {
 /**************************************
@@ -1886,10 +1896,9 @@ void BTR_selectivity(thread_db* tdbb, jrd_rel* relation, USHORT id,
  **************************************/
 
 	SET_TDBB(tdbb);
-	RelationPages* relPages = relation->getPages(tdbb);
-	WIN window(relPages->rel_pg_space_id, -1);
+	WIN window(-1);
 
-	index_root_page* root = fetch_root(tdbb, &window, relation, relPages);
+	index_root_page* root = fetch_root(tdbb, &window, relation);
 	if (!root) {
 		return;
 	}
@@ -1902,7 +1911,7 @@ void BTR_selectivity(thread_db* tdbb, jrd_rel* relation, USHORT id,
 	window.win_flags = WIN_large_scan;
 	window.win_scans = 1;
 	btree_page* bucket = (btree_page*) CCH_HANDOFF(tdbb, &window, page, LCK_read, pag_index);
-	UCHAR flags = bucket->btr_header.pag_flags;
+	SCHAR flags = bucket->btr_header.pag_flags;
 
 	// go down the left side of the index to leaf level
 	UCHAR* pointer = BTreeNode::getPointerFirstNode(bucket);
@@ -2060,60 +2069,12 @@ void BTR_selectivity(thread_db* tdbb, jrd_rel* relation, USHORT id,
 	}
 
 	// Store the selectivity on the root page
-	window.win_page = relPages->rel_index_root;
+	window.win_page = relation->rel_index_root;
 	window.win_flags = 0;
 	root = (index_root_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_root);
 	CCH_MARK(tdbb, &window);
 	update_selectivity(root, id, selectivity);
 	CCH_RELEASE(tdbb, &window);
-}
-
-
-bool BTR_types_comparable(const dsc& target, const dsc& source)
-{
-/**************************************
- *
- *	B T R _ t y p e s _ c o m p a r a b l e
- *
- **************************************
- *
- * Functional description
- *	Return whether two datatypes are comparable in terms of the CVT rules.
- *  The purpose is to ensure that compress() converts datatypes in the same
- *  direction as CVT2_compare(), thus causing index scans to always deliver
- *  the same results as the generic boolean evaluation.
- *
- **************************************/
-	if (DTYPE_IS_TEXT(target.dsc_dtype))
-	{
-		// should we also check for the INTL stuff here?
-		return (DTYPE_IS_TEXT(source.dsc_dtype));
-	}
-	else if (DTYPE_IS_NUMERIC(target.dsc_dtype))
-	{
-		return (DTYPE_IS_TEXT(source.dsc_dtype) ||
-			DTYPE_IS_NUMERIC(source.dsc_dtype));
-	}
-	else if (target.dsc_dtype == dtype_sql_date)
-	{
-		return (DTYPE_IS_TEXT(source.dsc_dtype) ||
-			source.dsc_dtype == dtype_sql_date);
-	}
-	else if (target.dsc_dtype == dtype_sql_time)
-	{
-		return (DTYPE_IS_TEXT(source.dsc_dtype) ||
-			source.dsc_dtype == dtype_sql_time);
-	}
-	else if (target.dsc_dtype == dtype_timestamp)
-	{
-		return (DTYPE_IS_TEXT(source.dsc_dtype) ||
-			DTYPE_IS_DATE(source.dsc_dtype));
-	}
-	else
-	{
-		fb_assert(DTYPE_IS_BLOB(target.dsc_dtype));
-		return false;
-	}
 }
 
 
@@ -2173,7 +2134,7 @@ static SLONG add_node(thread_db* tdbb,
 
 	// Fetch the page at the next level down.  If the next level is leaf level, 
 	// fetch for write since we know we are going to write to the page (most likely).
-	const PageNumber index = window->win_page;
+	const SLONG index = window->win_page;
 	CCH_HANDOFF(tdbb, window, page,
 		(SSHORT) ((bucket->btr_level == 1) ? LCK_write : LCK_read), pag_index);
 
@@ -2229,6 +2190,25 @@ static SLONG add_node(thread_db* tdbb,
 		*sibling_page = sibling_page2;
 	}
 	return split;
+}
+
+
+void BTR_complement_key(temporary_key* key)
+{
+/**************************************
+ *
+ *	B T R _ c o m p l e m e n t _ k e y
+ *
+ **************************************
+ *
+ * Functional description
+ *	Negate a key for descending index.
+ *
+ **************************************/
+	UCHAR* p = key->key_data;
+	for (const UCHAR* const end = p + key->key_length; p < end; p++) {
+		*p ^= -1;
+	}
 }
 
 
@@ -2760,7 +2740,7 @@ static CONTENTS delete_node(thread_db* tdbb, WIN *window, UCHAR *pointer)
 
 	CCH_MARK(tdbb, window);
 
-	const UCHAR flags = page->btr_header.pag_flags;
+	const SCHAR flags = page->btr_header.pag_flags;
 	const bool leafPage = (page->btr_level == 0);
 	const bool useJumpInfo = (flags & btr_jump_info);
 	//const SLONG nodeOffset = pointer - (UCHAR*)page;
@@ -2892,7 +2872,7 @@ static CONTENTS delete_node(thread_db* tdbb, WIN *window, UCHAR *pointer)
 	// check to see if the page is now empty
 	pointer = BTreeNode::getPointerFirstNode(page);
 	//bool leafPage = (page->btr_level == 0);
-	//const UCHAR flags = page->pag_flags;
+	//const SCHAR flags = page->pag_flags;
 	IndexNode node;
 	pointer = BTreeNode::readNode(&node, pointer, flags, leafPage);
 	if (node.isEndBucket || node.isEndLevel) {
@@ -2916,7 +2896,7 @@ static CONTENTS delete_node(thread_db* tdbb, WIN *window, UCHAR *pointer)
 
 
 static void delete_tree(thread_db* tdbb,
-						USHORT rel_id, USHORT idx_id, PageNumber next, PageNumber prior)
+						USHORT rel_id, USHORT idx_id, SLONG next, SLONG prior)
 {
 /**************************************
  *
@@ -2930,13 +2910,13 @@ static void delete_tree(thread_db* tdbb,
  **************************************/
 
 	SET_TDBB(tdbb);
-	WIN window(next.getPageSpaceID(), -1);
+	WIN window(-1);
 	window.win_flags = WIN_large_scan;
 	window.win_scans = 1;
 
-	SLONG down = next.getPageNum();
+	SLONG down = next;
 	// Delete the index tree from the top down.
-	while (next.getPageNum()) {
+	while (next) {
 		window.win_page = next;
 		btree_page* page = (btree_page*) CCH_FETCH(tdbb, &window, LCK_write, 0);
 
@@ -2955,7 +2935,7 @@ static void delete_tree(thread_db* tdbb,
 
 		// if we are at the beginning of a non-leaf level, position 
 		// "down" to the beginning of the next level down
-		if (next.getPageNum() == down) {
+		if (next == down) {
 			if (page->btr_level) {
 				UCHAR *pointer = BTreeNode::getPointerFirstNode(page);
 				IndexNode pageNode;
@@ -2975,7 +2955,7 @@ static void delete_tree(thread_db* tdbb,
 		prior = window.win_page;
 
 		// if we are at end of level, go down to the next level
-		if (!next.getPageNum()) {
+		if (!next) {
 			next = down;
 		}
 	}
@@ -3058,15 +3038,12 @@ static SLONG fast_load(thread_db* tdbb,
 	const Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
-	const USHORT pageSpaceID = relation->getPages(tdbb)->rel_pg_space_id;
 	// Variable initialization
 	for (int i = 0; i < MAX_LEVELS; i++)
 	{
 		keys[i].key_flags = 0;
 		keys[i].key_length = 0;
 		BTreeNode::setNode(&levelNode[i]);
-
-		windows[i].win_page.setPageSpaceID(pageSpaceID);
 	}
 
 	// leaf-page and pointer-page size limits, we always need to 
@@ -3086,13 +3063,13 @@ static SLONG fast_load(thread_db* tdbb,
 	// Just set this variable to false to disable jump information inside indices.
 	bool useJumpInfo = (dbb->dbb_ods_version >= ODS_VERSION11);
 
-	typedef Firebird::Array<jumpNodeList*> jumpNodeListContainer;
+	typedef Firebird::vector<jumpNodeList*> jumpNodeListContainer;
 	jumpNodeListContainer* jumpNodes = FB_NEW(*tdbb->getDefaultPool()) 
 		jumpNodeListContainer(*tdbb->getDefaultPool());
-	jumpNodes->push(FB_NEW(*tdbb->getDefaultPool()) jumpNodeList(*tdbb->getDefaultPool()));
+	jumpNodes->push_back(FB_NEW(*tdbb->getDefaultPool()) jumpNodeList(*tdbb->getDefaultPool()));
 
 	keyList* jumpKeys = FB_NEW(*tdbb->getDefaultPool()) keyList(*tdbb->getDefaultPool());
-	jumpKeys->push(FB_NEW(*tdbb->getDefaultPool()) dynKey);
+	jumpKeys->push_back(FB_NEW(*tdbb->getDefaultPool()) dynKey);
 	(*jumpKeys)[0]->keyData = FB_NEW(*tdbb->getDefaultPool()) UCHAR[key_length];
 
 	IndexJumpInfo jumpInfo;
@@ -3194,8 +3171,6 @@ static SLONG fast_load(thread_db* tdbb,
 		// pointer holds the "main" pointer for inserting new nodes.
 
 		win_for_array split_window;
-		split_window.win_page.setPageSpaceID(pageSpaceID);
-
 		temporary_key split_key, temp_key;
 		split_key.key_flags = 0;
 		split_key.key_length = 0;
@@ -3214,7 +3189,8 @@ static SLONG fast_load(thread_db* tdbb,
 			// Get the next record in sorted order.
 
 			UCHAR* record;
-			SORT_get(tdbb, sort_handle, reinterpret_cast<ULONG**>(&record)
+			SORT_get(tdbb->tdbb_status_vector, sort_handle,
+				  (ULONG **) & record // TMN: cast
 #ifdef SCROLLABLE_CURSORS
 				 , RSE_get_forward
 #endif
@@ -3286,8 +3262,8 @@ static SLONG fast_load(thread_db* tdbb,
 
 				// Allocate new bucket.
 				btree_page* split = (btree_page*) DPM_allocate(tdbb, &split_window);
-				bucket->btr_sibling = split_window.win_page.getPageNum();
-				split->btr_left_sibling = windows[0].win_page.getPageNum();
+				bucket->btr_sibling = split_window.win_page;
+				split->btr_left_sibling = windows[0].win_page;
 				split->btr_header.pag_type = pag_index;
 				split->btr_relation = bucket->btr_relation;
 				split->btr_level = bucket->btr_level;
@@ -3321,7 +3297,7 @@ static SLONG fast_load(thread_db* tdbb,
 				previousNode = splitNode;
 
 				// save the page number of the previous page and release it
-				split_pages[0] = windows[0].win_page.getPageNum();
+				split_pages[0] = windows[0].win_page;
 				split_record_numbers[0] = splitNode.recordNumber;
 				CCH_RELEASE(tdbb, &windows[0]);
 #ifdef DEBUG_BTR_PAGES
@@ -3521,9 +3497,9 @@ static SLONG fast_load(thread_db* tdbb,
 					key->key_length = 0;
 
 					// Initialize jumpNodes variables for new level
-					jumpNodes->push(FB_NEW(*tdbb->getDefaultPool()) 
+					jumpNodes->push_back(FB_NEW(*tdbb->getDefaultPool()) 
 						jumpNodeList(*tdbb->getDefaultPool()));
-					jumpKeys->push(FB_NEW(*tdbb->getDefaultPool()) dynKey);
+					jumpKeys->push_back(FB_NEW(*tdbb->getDefaultPool()) dynKey);
 					(*jumpKeys)[level]->keyLength = 0;
 					(*jumpKeys)[level]->keyData = 
 						FB_NEW(*tdbb->getDefaultPool()) UCHAR[key_length];
@@ -3545,7 +3521,7 @@ static SLONG fast_load(thread_db* tdbb,
 				tempNode = levelNode[level];
 				// Set new node values.
 				BTreeNode::setNode(&levelNode[level], prefix, temp_key.key_length - prefix, 
-					split_record_numbers[level - 1], windows[level - 1].win_page.getPageNum());
+					split_record_numbers[level - 1], windows[level - 1].win_page);
 				levelNode[level].data = temp_key.key_data + prefix;
 
 				// See if the new node fits in the current bucket.  
@@ -3595,8 +3571,8 @@ static SLONG fast_load(thread_db* tdbb,
 					}
 
 					btree_page* split = (btree_page*) DPM_allocate(tdbb, &split_window);
-					bucket->btr_sibling = split_window.win_page.getPageNum();
-					split->btr_left_sibling = window->win_page.getPageNum();
+					bucket->btr_sibling = split_window.win_page;
+					split->btr_left_sibling = window->win_page;
 					split->btr_header.pag_type = pag_index;
 					split->btr_relation = bucket->btr_relation;
 					split->btr_level = bucket->btr_level;
@@ -3631,7 +3607,7 @@ static SLONG fast_load(thread_db* tdbb,
 					tempNode = splitNode;
 
 					// indicate to propagate the page we just split from
-					split_pages[level] = window->win_page.getPageNum();
+					split_pages[level] = window->win_page;
 					split_record_numbers[level] = splitNode.recordNumber;
 					CCH_RELEASE(tdbb, window);
 #ifdef DEBUG_BTR_PAGES
@@ -3710,8 +3686,11 @@ static SLONG fast_load(thread_db* tdbb,
 				pointers[level] = levelPointer;
 			}
 
-			if (--tdbb->tdbb_quantum < 0)
+#ifdef SUPERSERVER
+			if (--tdbb->tdbb_quantum < 0) {
 				error = JRD_reschedule(tdbb, 0, false);
+			}
+#endif
 		}
 
 		// To finish up, put an end of level marker on the last bucket 
@@ -3801,7 +3780,7 @@ static SLONG fast_load(thread_db* tdbb,
 
 
 	}	// try
-	catch (const Firebird::Exception& ex) {
+	catch (const std::exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		error = true;
 	}
@@ -3816,8 +3795,7 @@ static SLONG fast_load(thread_db* tdbb,
 	try {
 
 		if (error) {
-			delete_tree(tdbb, relation->rel_id, idx->idx_id, 
-				window->win_page, PageNumber(window->win_page.getPageSpaceID(), 0));
+			delete_tree(tdbb, relation->rel_id, idx->idx_id, window->win_page, 0);
 			ERR_punt();
 		}
 
@@ -3836,10 +3814,10 @@ static SLONG fast_load(thread_db* tdbb,
 				(float) ((count) ? (1.0 / (float) (count - duplicates)) : 0.0);
 		}
 
-		return window->win_page.getPageNum();
+		return window->win_page;
 
 	}	// try
-	catch (const Firebird::Exception& ex) {
+	catch(const std::exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		if (!error) {
 			error = true;
@@ -3852,8 +3830,7 @@ static SLONG fast_load(thread_db* tdbb,
 }
 
 
-static index_root_page* fetch_root(thread_db* tdbb, WIN* window, const jrd_rel* relation, 
-								   const RelationPages* relPages)
+static index_root_page* fetch_root(thread_db* tdbb, WIN * window, const jrd_rel* relation)
 {
 /**************************************
  *
@@ -3869,13 +3846,13 @@ static index_root_page* fetch_root(thread_db* tdbb, WIN* window, const jrd_rel* 
  **************************************/
 	SET_TDBB(tdbb);
 
-	if ((window->win_page = relPages->rel_index_root) == 0) {
+	if ((window->win_page = relation->rel_index_root) == 0) {
 		if (relation->rel_id == 0) {
 			return NULL;
 		}
 		else {
 			DPM_scan_pages(tdbb);
-			window->win_page = relPages->rel_index_root;
+			window->win_page = relation->rel_index_root;
 		}
 	}
 
@@ -3902,7 +3879,7 @@ static UCHAR* find_node_start_point(btree_page* bucket, temporary_key* key,
  *
  **************************************/
 
-	const UCHAR flags = bucket->btr_header.pag_flags;
+	const SCHAR flags = bucket->btr_header.pag_flags;
 	USHORT prefix = 0;
 	const UCHAR* const key_end = key->key_data + key->key_length;
 	if (!(flags & btr_all_record_number)) {
@@ -4156,7 +4133,7 @@ static UCHAR* find_area_start_point(btree_page* bucket, const temporary_key* key
  *  a node at a specific offset.
  *
  **************************************/
-	const UCHAR flags = bucket->btr_header.pag_flags;
+	const SCHAR flags = bucket->btr_header.pag_flags;
 	UCHAR *pointer;
 	USHORT prefix = 0;
 	if (flags & btr_jump_info) {
@@ -4358,7 +4335,7 @@ static SLONG find_page(btree_page* bucket, const temporary_key* key,
  *
  **************************************/
 
-	const UCHAR flags = bucket->btr_header.pag_flags;
+	const SCHAR flags = bucket->btr_header.pag_flags;
 	const bool leafPage = (bucket->btr_level == 0);
 	bool firstPass = true;
 	const bool descending = (idx_flags & idx_descending);
@@ -4657,7 +4634,6 @@ static CONTENTS garbage_collect(thread_db* tdbb, WIN * window, SLONG parent_numb
 	const Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
-	const USHORT pageSpaceID = window->win_page.getPageSpaceID();
 	btree_page* gc_page = (btree_page*) window->win_buffer;
 	CONTENTS result = contents_above_threshold;
 
@@ -4702,7 +4678,7 @@ static CONTENTS garbage_collect(thread_db* tdbb, WIN * window, SLONG parent_numb
 	// is the parent page; there is a minute possibility that it could have been 
 	// released and reused already as another page on this level, but if so, it 
 	// won't really matter because we won't find the node on it
-	WIN parent_window(pageSpaceID, parent_number);
+	WIN parent_window(parent_number);
 	btree_page* parent_page =
 		(btree_page*) CCH_FETCH(tdbb, &parent_window, LCK_write, pag_undefined);
 	if ((parent_page->btr_header.pag_type != pag_index)
@@ -4718,10 +4694,10 @@ static CONTENTS garbage_collect(thread_db* tdbb, WIN * window, SLONG parent_numb
 	// but if it does not recognize us as its right sibling, keep 
 	// going to the right until we find the page that is our real 
 	// left sibling
-	WIN left_window(pageSpaceID, left_number);
+	WIN left_window(left_number);
 	btree_page* left_page =
 		(btree_page*) CCH_FETCH(tdbb, &left_window, LCK_write, pag_index);
-	while (left_page->btr_sibling != window->win_page.getPageNum()) {
+	while (left_page->btr_sibling != window->win_page) {
 #ifdef DEBUG_BTR
 		CCH_RELEASE(tdbb, &parent_window);
 		CCH_RELEASE(tdbb, &left_window);
@@ -4753,12 +4729,12 @@ static CONTENTS garbage_collect(thread_db* tdbb, WIN * window, SLONG parent_numb
 
 	// fetch the right sibling page
 	btree_page* right_page = NULL;
-	WIN right_window(pageSpaceID, gc_page->btr_sibling);
-	if (right_window.win_page.getPageNum()) {
+	WIN right_window(gc_page->btr_sibling);
+	if (right_window.win_page) {
 		// right_window.win_flags = 0; redundant, made by the constructor
 		right_page = (btree_page*) CCH_FETCH(tdbb, &right_window, LCK_write, pag_index);
 
-		if (right_page->btr_left_sibling != window->win_page.getPageNum()) {
+		if (right_page->btr_left_sibling != window->win_page) {
 			CCH_RELEASE(tdbb, &parent_window);
 			if (left_page) {
 				CCH_RELEASE(tdbb, &left_window);
@@ -4772,7 +4748,7 @@ static CONTENTS garbage_collect(thread_db* tdbb, WIN * window, SLONG parent_numb
 		}
 	}
 
-	const UCHAR flags = gc_page->btr_header.pag_flags;
+	const SCHAR flags = gc_page->btr_header.pag_flags;
 	// Check if flags are valid.
 	if ((parent_page->btr_header.pag_flags & BTR_FLAG_COPY_MASK) !=
 		(flags & BTR_FLAG_COPY_MASK))
@@ -4793,7 +4769,7 @@ static CONTENTS garbage_collect(thread_db* tdbb, WIN * window, SLONG parent_numb
 			continue;
 		}
 
-		if (parentNode.pageNumber == window->win_page.getPageNum() || 
+		if (parentNode.pageNumber == window->win_page || 
 			parentNode.isEndLevel) 
 		{
 			break;
@@ -4894,7 +4870,7 @@ static CONTENTS garbage_collect(thread_db* tdbb, WIN * window, SLONG parent_numb
 
 	// see if there's enough space on the left page to move all the nodes to it
 	// and leave some extra space for expansion (at least one key length)
-	const UCHAR gcFlags = gc_page->btr_header.pag_flags;
+	const SCHAR gcFlags = gc_page->btr_header.pag_flags;
 	UCHAR* gcPointer = BTreeNode::getPointerFirstNode(gc_page);
 	IndexNode gcNode;
 	BTreeNode::readNode(&gcNode, gcPointer, gcFlags, leafPage);
@@ -4941,7 +4917,7 @@ static CONTENTS garbage_collect(thread_db* tdbb, WIN * window, SLONG parent_numb
 		// Update leftPointer to scratch page. 
 		leftPointer = (UCHAR*)newBucket + (leftPointer - (UCHAR*)left_page) - 
 			jumpersOriginalSize;
-		const UCHAR flags2 = newBucket->btr_header.pag_flags;
+		const SCHAR flags2 = newBucket->btr_header.pag_flags;
 		gcPointer = BTreeNode::getPointerFirstNode(gc_page);
 		//
 		BTreeNode::readNode(&leftNode, leftPointer, flags2, leafPage);
@@ -5017,7 +4993,7 @@ static CONTENTS garbage_collect(thread_db* tdbb, WIN * window, SLONG parent_numb
 				CCH_precedence(tdbb, &right_window, parent_window.win_page);
 			}
 			CCH_MARK(tdbb, &right_window);
-			right_page->btr_left_sibling = left_window.win_page.getPageNum();
+			right_page->btr_left_sibling = left_window.win_page;
 
 			CCH_RELEASE(tdbb, &right_window);
 		}
@@ -5034,7 +5010,7 @@ static CONTENTS garbage_collect(thread_db* tdbb, WIN * window, SLONG parent_numb
 		CCH_MARK(tdbb, &left_window);
 
 		if (right_page) {
-			left_page->btr_sibling = right_window.win_page.getPageNum();
+			left_page->btr_sibling = right_window.win_page;
 		}
 		else {
 			left_page->btr_sibling = 0;
@@ -5086,7 +5062,7 @@ static CONTENTS garbage_collect(thread_db* tdbb, WIN * window, SLONG parent_numb
 				CCH_precedence(tdbb, &right_window, parent_window.win_page);
 			}
 			CCH_MARK(tdbb, &right_window);
-			right_page->btr_left_sibling = left_window.win_page.getPageNum();
+			right_page->btr_left_sibling = left_window.win_page;
 
 			CCH_RELEASE(tdbb, &right_window);
 		}
@@ -5103,7 +5079,7 @@ static CONTENTS garbage_collect(thread_db* tdbb, WIN * window, SLONG parent_numb
 		CCH_MARK(tdbb, &left_window);
 
 		if (right_page) {
-			left_page->btr_sibling = right_window.win_page.getPageNum();
+			left_page->btr_sibling = right_window.win_page;
 		}
 		else {
 			left_page->btr_sibling = 0;
@@ -5223,7 +5199,7 @@ static void generate_jump_nodes(thread_db* tdbb, btree_page* page,
 
 	IndexJumpInfo jumpInfo;
 	BTreeNode::getPointerFirstNode(page, &jumpInfo);
-	const UCHAR flags = page->btr_header.pag_flags;
+	const SCHAR flags = page->btr_header.pag_flags;
 	const bool leafPage = (page->btr_level == 0);
 
 	*jumpersSize = 0;
@@ -5383,11 +5359,9 @@ static SLONG insert_node(thread_db* tdbb,
 	const Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
-	const USHORT pageSpaceID = window->win_page.getPageSpaceID();
-
 	// find the insertion point for the specified key
 	btree_page* bucket = (btree_page*) window->win_buffer;
-	const UCHAR flags = bucket->btr_header.pag_flags;
+	const SCHAR flags = bucket->btr_header.pag_flags;
 	temporary_key* key = insertion->iib_key;
 
 	const bool unique = (insertion->iib_descriptor->idx_flags & idx_unique);
@@ -5811,7 +5785,7 @@ static SLONG insert_node(thread_db* tdbb,
 	}
 
 	// Allocate and format the overflow page
-	WIN split_window(pageSpaceID, -1);
+	WIN split_window(-1);
 	btree_page* split = (btree_page*) DPM_allocate(tdbb, &split_window);
 
 	// if we're a pointer page, make sure the child page is written first
@@ -5831,7 +5805,7 @@ static SLONG insert_node(thread_db* tdbb,
 	split->btr_id = bucket->btr_id;
 	split->btr_level = bucket->btr_level;
 	split->btr_sibling = right_sibling;
-	split->btr_left_sibling = window->win_page.getPageNum();
+	split->btr_left_sibling = window->win_page;
 	split->btr_header.pag_flags = (flags & BTR_FLAG_COPY_MASK);
 
 	// Format the first node on the overflow page
@@ -5885,7 +5859,7 @@ static SLONG insert_node(thread_db* tdbb,
 	// the prefixes found on the original page; the sum of the prefixes on the 
 	// original page must exclude the split node
 	split->btr_prefix_total = newBucket->btr_prefix_total - prefix_total;
-	const SLONG split_page = split_window.win_page.getPageNum();
+	const SLONG split_page = split_window.win_page;
 
 	CCH_RELEASE(tdbb, &split_window);
 	CCH_precedence(tdbb, window, split_window.win_page);
@@ -5944,7 +5918,7 @@ static SLONG insert_node(thread_db* tdbb,
 	}
 
 	// Update page information.
-	bucket->btr_sibling = split_window.win_page.getPageNum();
+	bucket->btr_sibling = split_window.win_page;
 	bucket->btr_prefix_total = prefix_total;
 	// mark the bucket as non garbage-collectable until we can propagate
 	// the split page up to the parent; otherwise its possible that the 
@@ -5952,7 +5926,7 @@ static SLONG insert_node(thread_db* tdbb,
 	bucket->btr_header.pag_flags |= btr_dont_gc;
 
 	if (original_page) {
-		*original_page = window->win_page.getPageNum();
+		*original_page = window->win_page;
 	}
 
 	// now we need to go to the right sibling page and update its 
@@ -5960,7 +5934,7 @@ static SLONG insert_node(thread_db* tdbb,
 	if (right_sibling) {
 		bucket = (btree_page*) CCH_HANDOFF(tdbb, window, right_sibling, LCK_write, pag_index);
 		CCH_MARK(tdbb, window);
-		bucket->btr_left_sibling = split_window.win_page.getPageNum();
+		bucket->btr_left_sibling = split_window.win_page;
 	}
 	CCH_RELEASE(tdbb, window);
 
@@ -6019,58 +5993,6 @@ static INT64_KEY make_int64_key(SINT64 q, SSHORT scale)
 
 	return key;
 }
-
-
-// CVC: Those two functions were superseded by BtreeNode functions in btn.cpp.
-#ifdef NOT_USED_OR_REPLACED
-static UCHAR* nextNode(IndexNode* node, UCHAR* pointer,
-					UCHAR flags,  btree_exp** expanded_node)
-{
-/**************************************
- *
- *	n e x t N o d e - Obsolete
- *
- **************************************
- *
- * Functional description
- *	Find the next node on both the index page
- *	and its associated expanded buffer.
- *
- **************************************/
-
-	pointer = BTreeNode::readNode(node, pointer, flags, true);
-
-	if (*expanded_node) {
-		*expanded_node = (btree_exp*) ((UCHAR*) (*expanded_node)->btx_data +
-			node->prefix + node->length);
-	}
-
-	return pointer;
-}
-
-
-static UCHAR *previousNode(IndexNode* node, UCHAR* pointer,
-					UCHAR flags, btree_exp** expanded_node)
-{
-/**************************************
- *
- *	p r e v i o u s N o d e - Obsolete
- *
- **************************************
- *
- * Functional description
- *	Find the previous node on a page.  Used when walking
- *	an index backwards.
- *
- **************************************/
-
-	pointer = (pointer - (*expanded_node)->btx_btr_previous_length);
-
-	*expanded_node = (btree_exp*) ((UCHAR*) *expanded_node - (*expanded_node)->btx_previous_length);
-
-	return pointer;
-}
-#endif
 
 
 #ifdef DEBUG_INDEXKEY
@@ -6145,7 +6067,7 @@ static CONTENTS remove_node(thread_db* tdbb, index_insertion* insertion, WIN* wi
 		if (number != END_BUCKET) {
 
 			// handoff down to the next level, retaining the parent page number
-			const SLONG parent_number = window->win_page.getPageNum();
+			const SLONG parent_number = window->win_page;
 			page = (btree_page*) CCH_HANDOFF(tdbb, window, number, (SSHORT)
 				((page->btr_level == 1) ? LCK_write : LCK_read), pag_index);
 
@@ -6203,7 +6125,7 @@ static CONTENTS remove_leaf_node(thread_db* tdbb, index_insertion* insertion, WI
 	}
 
 	// Make sure first node looks ok
-	const UCHAR flags = page->btr_header.pag_flags;
+	const SCHAR flags = page->btr_header.pag_flags;
 	IndexNode node;
 	pointer = BTreeNode::readNode(&node, pointer, flags, true);
 	if (prefix > node.prefix
@@ -6307,6 +6229,7 @@ static CONTENTS remove_leaf_node(thread_db* tdbb, index_insertion* insertion, WI
 			} while (--l);
 		}
 
+#ifdef SUPERSERVER
 		// Until deletion of duplicate nodes becomes efficient, limit
 		// leaf level traversal by rescheduling.
 		if (--tdbb->tdbb_quantum < 0) {
@@ -6315,6 +6238,7 @@ static CONTENTS remove_leaf_node(thread_db* tdbb, index_insertion* insertion, WI
 				ERR_punt();
 			}
 		}
+#endif
 	}
 
 	// If we've needed to search thru a significant number of pages, warn the

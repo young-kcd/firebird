@@ -5,6 +5,9 @@
 @call setenvvar.bat
 @if errorlevel 1 (goto :EOF)
 
+:: verify that prepare was run before
+@if not exist %ROOT_PATH%\gen\dbs\metadata.fdb (goto :HELP_PREP & goto :EOF)
+
 :: verify that boot was run before
 @if not exist %ROOT_PATH%\gen\gpre_boot.exe (goto :HELP_BOOT & goto :EOF)
 
@@ -78,9 +81,9 @@ if defined FB2_INTLEMP (
 if "%VS_VER%"=="msvc6" (
 	@msdev %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2.dsw /MAKE "empbuild - Win32 Release" "intlbld - Win32 Release" %CLEAN% /OUT examples.log
 ) else (
-	@devenv %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2_Examples.sln %CLEAN% "release|%PLATFORM%" /project empbuild /OUT empbuild.log
+	@devenv %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2_Examples.sln %CLEAN% release /project empbuild /OUT empbuild.log
     if defined FB2_INTLEMP (
-      @devenv %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2_Examples.sln %CLEAN% "release|%PLATFORM%" /project intlbuild /OUT intlbuild.log
+      @devenv %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2_Examples.sln %CLEAN% release /project intlbuild /OUT intlbuild.log
 	)
 )
 
@@ -93,9 +96,9 @@ if "%VS_VER%"=="msvc6" (
 if "%VS_VER%"=="msvc6" (
 	@msdev %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2.dsw /MAKE "empbuild - Win32 Debug" "intlbld - Win32 Debug" %CLEAN% /OUT examples.log
 ) else (
-	@devenv %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2_Examples.sln %CLEAN% "debug|%PLATFORM%" /project empbuild /OUT empbuild.log
+	@devenv %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2_Examples.sln %CLEAN% debug /project empbuild /OUT empbuild.log
 	if defined FB2_INTLEMP (
-	  @devenv %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2_Examples.sln %CLEAN% "debug|%PLATFORM%" /project intlbuild /OUT intlbld.log
+	  @devenv %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2_Examples.sln %CLEAN% debug /project intlbuild /OUT intlbld.log
 	)
 )
 @goto :EOF
@@ -173,6 +176,13 @@ if defined FB2_INTLEMP (
   )
 )
 
+@goto :EOF
+
+::==============
+:HELP_PREP
+@echo.
+@echo    You must run prepare.bat before running this script
+@echo.
 @goto :EOF
 
 ::==============

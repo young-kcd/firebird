@@ -298,7 +298,6 @@ const USHORT RSR_eof		= 2;		/* End-of-stream encountered */
 const USHORT RSR_blob		= 4;		/* Statement relates to blob op */
 const USHORT RSR_no_batch	= 8;		/* Do not batch fetch rows */
 const USHORT RSR_stream_err	= 16;		/* There is an error pending in the batched rows */
-const USHORT RSR_lazy		= 32;		/* To be allocated at the first reference */
 
 
 enum blk_t
@@ -353,18 +352,6 @@ typedef int HANDLE;
 // fwd. decl.
 struct p_cnct;
 struct rmtque;
-
-/* Queue of deferred packets */
-
-struct rem_que_packet
-{
-	PACKET packet;
-	bool sent;
-};
-
-typedef Firebird::Array<rem_que_packet> PacketQueue;
-
-/* Port itself */
 
 class port_interface
 {
@@ -434,9 +421,7 @@ struct rem_port
 #ifdef VMS
 	USHORT			port_iosb[4];
 #endif
-	void*			port_xcc;				/* interprocess structure */
-	PacketQueue*	port_deferred_packets;	/* queue of deferred packets */
-	OBJCT			port_last_object_id;	/* cached last id */
+	void*			port_xcc;              /* interprocess structure */
 #ifdef SUPERSERVER
 	Firebird::ObjectsArray< Firebird::Array< char > >*	port_queue;
 	size_t			port_qoffset;			// current packet in the queue
@@ -487,7 +472,7 @@ struct rem_port
 	ISC_STATUS	receive_msg(P_DATA*, PACKET*);
 	ISC_STATUS	seek_blob(P_SEEK*, PACKET*);
 	ISC_STATUS	send_msg(P_DATA*, PACKET*);
-	ISC_STATUS	send_response(PACKET*, OBJCT, USHORT, const ISC_STATUS*, bool);
+	ISC_STATUS	send_response(PACKET*, OBJCT, USHORT, const ISC_STATUS*);
 	ISC_STATUS	service_attach(P_ATCH*, PACKET*);
 	ISC_STATUS	service_end(P_RLSE*, PACKET*);
 	ISC_STATUS	service_start(P_INFO*, PACKET*);
@@ -513,8 +498,7 @@ const USHORT PORT_not_trusted	= 256;	/* Connection is from an untrusted node */
 // This is tested only in wnet.cpp but never set.
 //const USHORT PORT_impersonate	= 512;	// A remote user is being impersonated
 const USHORT PORT_dummy_pckt_set= 1024;	/* A dummy packet interval is set  */
-const USHORT PORT_partial_data	= 2048;	/* Physical packet doesn't contain all API packet */
-const USHORT PORT_lazy			= 4096;	/* Deferred operations are allowed */
+const USHORT PORT_partial_data  = 2048;	/* Physical packet doesn't contain all API packet */
 
 
 /* Misc declarations */

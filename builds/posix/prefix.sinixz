@@ -17,6 +17,8 @@
 #
 # Erik Kunze, Philosys GmbH, <kunze@philosys.de>
 #
+# $Id: prefix.sinixz,v 1.24 2004-05-06 12:49:34 eku Exp $
+#
 # 2 Oct 2002, Nickolay Samofatov - Major Cleanup
 
 # Are we going to compile the SINIX-2000 version?

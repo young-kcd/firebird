@@ -186,9 +186,8 @@ THREAD_ENTRY_DECLARE BURP_main(THREAD_ENTRY_PARAM arg)
  *
  **************************************/
 	Jrd::Service* service = (Jrd::Service*)arg;
-	const int exit_code = common_main(service->svc_argc, 
-									  const_cast<char**>(service->svc_argv.begin()),
-									  SVC_output, service);
+	const int exit_code = common_main(service->svc_argc, service->svc_argv,
+						  SVC_output, service);
 
 // Mark service thread as finished. 
 // If service is detached, cleanup memory being used by service. 
@@ -755,9 +754,9 @@ int common_main(int		argc,
 				if ((argv < end) && (**argv != *switch_char) ) {
 					// find optional BURP_SW_OVERWRITE parameter
 					TEXT c;
-					const TEXT* param_pattern = BURP_SW_OVERWRITE;
+					const TEXT* q = BURP_SW_OVERWRITE;
 					for (const TEXT *p = *argv; c = *p++;)
-						if (UPPER(c) != *param_pattern++)
+						if (UPPER(c) != *q++)
 							break;
 
 					if (!c) {
@@ -993,11 +992,6 @@ int common_main(int		argc,
 				tdgbl->gbl_sw_novalidity = true;
 				break;
 
-			case (IN_SW_BURP_NOD):
-				tdgbl->gbl_sw_nodbtriggers = true;
-				dpb.insertByte(isc_dpb_no_db_triggers, 1);
-				break;
-
 			case (IN_SW_BURP_NT):	// Backup non-transportable format 
 				tdgbl->gbl_sw_transportable = false;
 				break;
@@ -1163,7 +1157,7 @@ int common_main(int		argc,
 	return result;
 	}	// try
 
-	catch (const Firebird::Exception&)
+	catch (const std::exception&)
 	{
 		// All calls to exit_local(), normal and error exits, wind up here 
 
@@ -1329,7 +1323,7 @@ void BURP_exit_local(int code, BurpGlobals* tdgbl)
 {
 	tdgbl->exit_code = code;
 	if (tdgbl->burp_throw)
-		throw Firebird::LongJump();
+		throw std::exception();
 }
 
 
@@ -1987,7 +1981,7 @@ static gbak_action open_files(const TEXT* file1,
 	*file2 = tdgbl->gbl_sw_files->fil_name;
 	if (tdgbl->gbl_sw_files->fil_size_code != size_n)
 		BURP_error(262, true, *file2, 0, 0, 0, 0);
-	// msg 262 size specification either missing or incorrect for file %s  
+	// msg 262 size specificati on either missing or incorrect for file %s  
 
 	if ((sw_replace == IN_SW_BURP_C || sw_replace == IN_SW_BURP_R) &&
 		!isc_attach_database(status_vector,
@@ -2037,7 +2031,7 @@ static gbak_action open_files(const TEXT* file1,
  * like it should have (if creating a database).
  */
 	if (tdgbl->gbl_sw_service_thd)
-		memset(tdgbl->status, 0, sizeof(ISC_STATUS_ARRAY));
+		memset(tdgbl->status, 0, ISC_STATUS_LENGTH * sizeof(ISC_STATUS));
 
 // check the file size specification 
 	for (fil = tdgbl->gbl_sw_files; fil; fil = fil->fil_next) {

@@ -27,27 +27,20 @@
 ::===========
 :PREPROCESS
 @echo Processing %1/%2.epp
+@del %ROOT_PATH%\gen\%1\%2.cpp 2>nul
 @echo Calling GPRE for %1/%2.epp
 @if "%3"=="" (call :GPRE_M %1 %2) else (call :GPRE_GDS %1 %2)
-
-@if not exist %ROOT_PATH%\gen\%1\%2.cpp (
-	@move %ROOT_PATH%\gen\preprocessing.cpp %ROOT_PATH%\gen\%1\%2.cpp
-) else (
-	@fc %ROOT_PATH%\gen\preprocessing.cpp %ROOT_PATH%\gen\%1\%2.cpp >nul
-	@if errorlevel 1 @move %ROOT_PATH%\gen\preprocessing.cpp %ROOT_PATH%\gen\%1\%2.cpp
-)
-
 @echo.
 @goto :EOF
 
 ::===========
 :GPRE_M
-@%GPRE% -n -m -raw %ROOT_PATH%\src\%1\%2.epp %ROOT_PATH%\gen\preprocessing.cpp -b %DB_PATH%/gen/dbs/
+@%GPRE% -n -m -raw %ROOT_PATH%\src\%1\%2.epp %ROOT_PATH%\gen\%1\%2.cpp -b %DB_PATH%/gen/dbs/
 @goto :EOF
 
 ::===========
 :GPRE_GDS
-@%GPRE% -n -gds -raw -ids %ROOT_PATH%\src\%1\%2.epp %ROOT_PATH%\gen\preprocessing.cpp -b %DB_PATH%/gen/dbs/
+@%GPRE% -n -gds -raw -ids %ROOT_PATH%\src\%1\%2.epp %ROOT_PATH%\gen\%1\%2.cpp -b %DB_PATH%/gen/dbs/
 goto :EOF
 
 ::===========
@@ -63,6 +56,7 @@ goto :EOF
 @set GPRE=%ROOT_PATH%\gen\gpre_boot
 @for %%i in (alice_meta) do @call :PREPROCESS alice %%i
 @for %%i in (array, blob, metd) do @call :PREPROCESS dsql %%i
+@for %%i in (exe, extract) do @call :PREPROCESS dudley %%i
 @for %%i in (gpre_meta) do @call :PREPROCESS gpre %%i
 @for %%i in (dfw, dpm, dyn, dyn_def, dyn_del, dyn_mod, dyn_util, fun, grant, ini, met, pcmet, scl) do @call :PREPROCESS jrd %%i GDS
 @for %%i in (stats) do @call :PREPROCESS utilities %%i

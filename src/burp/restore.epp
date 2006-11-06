@@ -66,14 +66,10 @@ namespace // unnamed, private
 {
 
 
-const int DB_VERSION_DDL4		= 40;  // ods4 db
-const int DB_VERSION_DDL5		= 50;  // ods5 db
-const int DB_VERSION_DDL8		= 80;  // ods8 db
-const int DB_VERSION_CURRENT	= DB_VERSION_DDL8;  // IB4.0 is ods8 
-const int DB_VERSION_DDL9       = 90;  // ods9 db, IB5
-const int DB_VERSION_DDL10      = 100; // ods10 db, IB6, FB1, FB1.5
-const int DB_VERSION_DDL11      = 110; // ods11 db, FB2
-const int DB_VERSION_DDL11_1    = 111; // ods11.1 db, FB2.1
+const int DB_VERSION_DDL4		= 4;  // ods4 db 
+const int DB_VERSION_DDL5		= 5;  // ods5 db 
+const int DB_VERSION_DDL8		= 8;  // ods8 db 
+const int DB_VERSION_CURRENT	= DB_VERSION_DDL8;  // v4.0 is ods8 
 
 const int DEFERRED_ACTIVE		= 3;	/* RDB$INDEX_INACTIVE setting for Foreign Keys
 										* This setting is used temporarily while
@@ -95,11 +91,10 @@ enum scan_attr_t {
 
 void	add_files(const char*);
 void	bad_attribute(scan_attr_t, ATT_TYPE, USHORT);
-void	check_db_version();
+USHORT	check_db_version();
 void	create_database (const TEXT*);
 void	decompress(UCHAR*, USHORT);
 void	eat_blob();
-void	eat_text(BurpGlobals* tdgbl);
 burp_rel*	find_relation (const TEXT *);
 // CVC: when do these functions return false indeed???
 // get_acl and get_index are the only exceptions but ironically their
@@ -253,7 +248,6 @@ int RESTORE_restore (const TEXT* file_name,
 	tdgbl->relations = NULL;
 	tdgbl->procedures = NULL;
 	tdgbl->RESTORE_format = 0;
-	tdgbl->RESTORE_ods = 0;
 	tdgbl->global_trans = 0;
 
 	tdgbl->gbl_sw_transportable = tdgbl->gbl_sw_compress = false;
@@ -402,10 +396,10 @@ int RESTORE_restore (const TEXT* file_name,
 		
 			START_TRANSACTION activateIndexTran;
 			FOR (TRANSACTION_HANDLE activateIndexTran REQUEST_HANDLE req_handle5)
-				IND1 IN RDB$INDICES WITH IND1.RDB$INDEX_NAME EQ IDS.RDB$INDEX_NAME
-				MODIFY IND1 USING
-						IND1.RDB$INDEX_INACTIVE = FALSE;
-				END_MODIFY;
+			    IND1 IN RDB$INDICES WITH IND1.RDB$INDEX_NAME EQ IDS.RDB$INDEX_NAME
+               	MODIFY IND1 USING 
+            		IND1.RDB$INDEX_INACTIVE = FALSE;
+            	END_MODIFY;
 			END_FOR;
 			ON_ERROR
 				fError = true;
@@ -600,9 +594,6 @@ int RESTORE_restore (const TEXT* file_name,
 							 strlen(tdgbl->gbl_sw_password));
 	}
 
-	if (tdgbl->gbl_sw_nodbtriggers)
-		dpb.insertByte(isc_dpb_no_db_triggers, 1);
-
 	// set forced writes to the value which was in the header
 	dpb.insertByte(isc_dpb_force_write, tdgbl->hdr_forced_writes);
 
@@ -647,10 +638,6 @@ int RESTORE_restore (const TEXT* file_name,
 		}
 
 		dpb.insertByte(isc_dpb_set_db_readonly, TRUE);
-
-		if (tdgbl->gbl_sw_nodbtriggers)
-			dpb.insertByte(isc_dpb_no_db_triggers, 1);
-
 		if (isc_attach_database (tdgbl->status_vector, 0, database_name,
 				  &db_handle, dpb.getBufferLength(), 
 				  reinterpret_cast<const SCHAR*>(dpb.getBuffer())))
@@ -766,7 +753,7 @@ void bad_attribute (scan_attr_t		scan_next_attr,
 
 	if (!tdgbl->gbl_sw_skip_count)
 	{
-		TEXT t_name[128];
+        TEXT t_name[128];
 		gds__msg_format(NULL, 12, type, sizeof(t_name), t_name, NULL, NULL,
 						NULL, NULL, NULL);
 		BURP_print (80, t_name, (void*) bad_attr, NULL, NULL, NULL);
@@ -794,7 +781,7 @@ void bad_attribute (scan_attr_t		scan_next_attr,
 	}
 }
 
-void check_db_version()
+USHORT check_db_version()
 {
 /**************************************
  *
@@ -803,66 +790,34 @@ void check_db_version()
  **************************************
  *
  * Functional description
- *	Find the ODS version number of the database.
+ *	Find the version number of the database.
  *
  **************************************/
-	struct rel_field_t
-	{
-		const char* rel;
-		const char* fld;
-		int ods_version;
-	};
+	isc_req_handle  req_handle1 = 0, req_handle2 = 0;
 
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
-	tdgbl->RESTORE_ods = DB_VERSION_DDL4;
 
-	const rel_field_t relations[] =
-	{
-		{"RDB$TRIGGERS",	0,	DB_VERSION_DDL5}, // IB3.3
-		{"RDB$PROCEDURES",	0,	DB_VERSION_DDL8}, // IB4
-		{"RDB$ROLES",		0,	DB_VERSION_DDL9}, // IB5
-		{0, 0, 0}
-	};
-
-	isc_req_handle req_handle = 0;
-	for (const rel_field_t* rel = relations; rel->rel; ++rel)
-	{
-		FOR (REQUEST_HANDLE req_handle)
-			FIRST 1 X IN RDB$RELATIONS
-			WITH X.RDB$RELATION_NAME = rel->rel
-			tdgbl->RESTORE_ods = rel->ods_version;
-		END_FOR;
-		ON_ERROR
-			general_on_error ();
-		END_ERROR;
-	}
-	MISC_release_request_silent(req_handle);
-	
-	if (tdgbl->RESTORE_ods < DB_VERSION_DDL8)
-		return;
-
-	const rel_field_t rel_fields[] =
-	{
-		{"RDB$FIELDS",		"RDB$FIELD_PRECISION",	DB_VERSION_DDL10}, // FB1, FB1.5
-		{"RDB$ROLES",		"RDB$DESCRIPTION",		DB_VERSION_DDL11}, // FB2
-		{"RDB$RELATIONS",	"RDB$RELATION_TYPE",	DB_VERSION_DDL11_1}, // FB2.1
-		{0, 0, 0}
-	};
-		
-	isc_req_handle req_handle2 = 0;
-	for (const rel_field_t* rf = rel_fields; rf->rel; ++rf)
-	{
-		FOR (REQUEST_HANDLE req_handle2)
-			FIRST 1 X2 IN RDB$RELATION_FIELDS
-			WITH X2.RDB$RELATION_NAME = rf->rel
-			AND X2.RDB$FIELD_NAME = rf->fld
-			tdgbl->RESTORE_ods = rf->ods_version;
-		END_FOR;
-		ON_ERROR
-			general_on_error ();
-		END_ERROR;
-	}
+	USHORT db_version = DB_VERSION_DDL4;
+	FOR (REQUEST_HANDLE req_handle1)
+		FIRST 1 X IN RDB$RELATIONS
+		WITH X.RDB$RELATION_NAME = "RDB$TRIGGERS"
+		db_version = DB_VERSION_DDL5;
+	END_FOR;
+	ON_ERROR
+		general_on_error ();
+	END_ERROR;
+	MISC_release_request_silent(req_handle1);
+	FOR (REQUEST_HANDLE req_handle2)
+		FIRST 1 X IN RDB$RELATIONS
+		WITH X.RDB$RELATION_NAME = "RDB$PROCEDURES"
+		db_version = DB_VERSION_DDL8;
+	END_FOR;
+	ON_ERROR
+		general_on_error ();
+	END_ERROR;
 	MISC_release_request_silent(req_handle2);
+
+	return db_version;
 }
 
 void create_database (const TEXT* file_name)
@@ -891,7 +846,7 @@ void create_database (const TEXT* file_name)
 	bool db_read_only = false, SQL_dialect_flag = false;
 	USHORT forced_writes = 2; // default for the current platform 
 	ULONG page_buffers = 0;
-	USHORT SQL_dialect = 0;
+    USHORT SQL_dialect = 0;
 
 	ATT_TYPE attribute;
 	rec_type record;
@@ -1030,9 +985,6 @@ void create_database (const TEXT* file_name)
 	dpb.insertInt(isc_dpb_shutdown_delay, 0);
 	dpb.insertInt(isc_dpb_overwrite, tdgbl->gbl_sw_overwrite);
 
-	if (tdgbl->gbl_sw_nodbtriggers)
-		dpb.insertByte(isc_dpb_no_db_triggers, 1);
-
 	ISC_STATUS_ARRAY status_vector;
 
 	if (isc_create_database (status_vector, 0, file_name,
@@ -1078,7 +1030,7 @@ void decompress(UCHAR* buffer,
 		// This change was made to restore National Semi-Conductor's corrupted 
 		// gbak file and it is in the code base now.  -Andrew                  
 
-		// so count really only to 255
+        // so count really only to 255
 		SSHORT count = (SCHAR) get(tdgbl);
 		if (count > 0)
 		{
@@ -1129,17 +1081,6 @@ void eat_blob()
 	const SLONG length = get_numeric();
 
 	get_skip(tdgbl, length);
-}
-
-// *****************************
-// e a t _ t e x t
-// *****************************
-// Discard a text field from the backup file.
-void eat_text(BurpGlobals* tdgbl)
-{
-	const ULONG l = get(tdgbl);
-	if (l)
-		MVOL_skip_block(tdgbl, l);
 }
 
 burp_rel* find_relation (const TEXT* name)
@@ -2030,7 +1971,7 @@ void get_blr_blob (ISC_QUAD	*blob_id,
  *
  **************************************/
 	ISC_STATUS_ARRAY	status_vector;
-	UCHAR		*buffer, static_buffer[1024];
+	UCHAR		*buffer, static_buffer[1024], *p;
 
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
@@ -2064,7 +2005,7 @@ void get_blr_blob (ISC_QUAD	*blob_id,
 
 	if (length)
 	{
-		UCHAR* p = get_block(tdgbl, buffer, length);
+		p = get_block(tdgbl, buffer, length);
 		// Make sure it has an eoc 
 		if (p[-1] != blr_eoc) {
 			p[0] = blr_eoc;
@@ -2172,7 +2113,7 @@ bool get_character_set()
 
 			default:
 				bad_attribute (scan_next_attr, attribute, msgErr_restore_charset);
-				// 213 character set
+				// RDB$CHARSETS 
 				break;
 			}
 		}
@@ -2205,7 +2146,6 @@ bool get_chk_constraint()
 		X IN RDB$CHECK_CONSTRAINTS
 		X.RDB$CONSTRAINT_NAME.NULL = TRUE;
 		X.RDB$TRIGGER_NAME.NULL = TRUE;
-
 		skip_init(&scan_next_attr);
 		while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
 		{
@@ -2222,8 +2162,8 @@ bool get_chk_constraint()
 				break;
 
 			default:
-				bad_attribute (scan_next_attr, attribute, 286);
-				// msg 286 check constraint
+				bad_attribute (scan_next_attr, attribute, 208);
+				// msg 208 relation constraint 
 				break;
 			}
 		}
@@ -2252,7 +2192,7 @@ bool get_collation()
 
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
-	if (tdgbl->RESTORE_ods >= DB_VERSION_DDL11)
+	if (tdgbl->RESTORE_format >= 7)
 	{
 		STORE (REQUEST_HANDLE tdgbl->handles_get_collation_req_handle1)
 			X IN RDB$COLLATIONS
@@ -2316,28 +2256,18 @@ bool get_collation()
 					break;
 
 				case att_coll_base_collation_name:
-					if (tdgbl->RESTORE_format >= 7)
-					{
-						X.RDB$BASE_COLLATION_NAME.NULL = FALSE;
-						GET_TEXT(X.RDB$BASE_COLLATION_NAME);
-					}
-					else
-						bad_attribute (scan_next_attr, attribute, msgErr_restore_collation);
+					X.RDB$BASE_COLLATION_NAME.NULL = FALSE;
+					GET_TEXT(X.RDB$BASE_COLLATION_NAME);
 					break;
 
 				case att_coll_specific_attr:
-					if (tdgbl->RESTORE_format >= 7)
-					{
-						X.RDB$SPECIFIC_ATTRIBUTES.NULL = FALSE;
-						get_source_blob (&X.RDB$SPECIFIC_ATTRIBUTES, false);
-					}
-					else
-						bad_attribute (scan_next_attr, attribute, msgErr_restore_collation);
+					X.RDB$SPECIFIC_ATTRIBUTES.NULL = FALSE;
+					get_source_blob (&X.RDB$SPECIFIC_ATTRIBUTES, false);
 					break;
 
 				default:
 					bad_attribute (scan_next_attr, attribute, msgErr_restore_collation);
-					// Msg 215 collation
+					// Bad RDB$COLLATION 
 					break;
 				}
 			}
@@ -2409,23 +2339,9 @@ bool get_collation()
 					GET_TEXT(X.RDB$FUNCTION_NAME);
 					break;
 
-				case att_coll_base_collation_name:
-					if (tdgbl->RESTORE_format >= 7)
-						eat_text(tdgbl);
-					else
-						bad_attribute (scan_next_attr, attribute, msgErr_restore_collation);
-					break;
-
-				case att_coll_specific_attr:
-					if (tdgbl->RESTORE_format >= 7)
-						eat_blob();
-					else
-						bad_attribute (scan_next_attr, attribute, msgErr_restore_collation);
-					break;
-
 				default:
 					bad_attribute (scan_next_attr, attribute, msgErr_restore_collation);
-					// Msg 215 collation
+					// Bad RDB$COLLATION 
 					break;
 				}
 			}
@@ -2879,9 +2795,6 @@ bool get_exception(void)
 		X IN RDB$EXCEPTIONS
 		X.RDB$DESCRIPTION.NULL = TRUE;
 		X.RDB$MESSAGE.NULL = TRUE;
-		X.RDB$SYSTEM_FLAG = 0;
-		X.RDB$SYSTEM_FLAG.NULL = FALSE;
-		
 		skip_init(&scan_next_attr);
 		while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
 		{
@@ -2910,8 +2823,8 @@ bool get_exception(void)
 				break;
 
 			default:
-				bad_attribute (scan_next_attr, attribute, 287);
-				// msg 287 exception
+				bad_attribute (scan_next_attr, attribute, 89);
+				// msg 89 function 
 				break;
 			}
 		}
@@ -2976,7 +2889,6 @@ burp_fld* get_field (burp_rel*	relation)
 		X.RDB$DEFAULT_VALUE.NULL = TRUE;
 		X.RDB$NULL_FLAG.NULL = TRUE;
 		X.RDB$COLLATION_ID.NULL = TRUE;
-
 		skip_init(&scan_next_attr);
 		while (get_attribute(&attribute, tdgbl) != att_end)
 		{
@@ -3135,7 +3047,7 @@ burp_fld* get_field (burp_rel*	relation)
 
 			default:
 				bad_attribute (scan_next_attr, attribute, 84);
-				// msg 84 column
+				// msg 84 field
 				break;
 			}
 		}
@@ -3167,7 +3079,6 @@ bool get_field_dimensions()
 
 	STORE (REQUEST_HANDLE tdgbl->handles_get_field_dimensions_req_handle1)
 		X IN RDB$FIELD_DIMENSIONS
-
 		skip_init(&scan_next_attr);
 		while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
 		{
@@ -3190,8 +3101,8 @@ bool get_field_dimensions()
 				break;
 
 			default:
-				bad_attribute (scan_next_attr, attribute, 288);
-				// msg 288 array dimensions
+				bad_attribute (scan_next_attr, attribute, 58);
+				// msg 58 array 
 				break;
 			}
 		}
@@ -3224,7 +3135,6 @@ bool get_files()
 	STORE (REQUEST_HANDLE tdgbl->handles_get_files_req_handle1)
 		X IN RDB$FILES
 		X.RDB$FILE_FLAGS = 0;
-
 		skip_init(&scan_next_attr);
 		while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
 		{
@@ -3293,9 +3203,6 @@ bool get_filter()
 	STORE (REQUEST_HANDLE tdgbl->handles_get_filter_req_handle1)
 		X IN RDB$FILTERS
 		X.RDB$DESCRIPTION.NULL = TRUE;
-		X.RDB$SYSTEM_FLAG = 0;
-		X.RDB$SYSTEM_FLAG.NULL = FALSE;
-		
 		skip_init(&scan_next_attr);
 		while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
 		{
@@ -3371,9 +3278,6 @@ bool get_function()
 
 	STORE (REQUEST_HANDLE tdgbl->handles_get_function_req_handle1)
 		X IN RDB$FUNCTIONS
-		X.RDB$SYSTEM_FLAG = 0;
-		X.RDB$SYSTEM_FLAG.NULL = FALSE;
-		
 		skip_init(&scan_next_attr);
 		while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
 		{
@@ -3512,7 +3416,7 @@ void get_function_arg(bool dummy)
 		return;
 	}
 
-	if (tdgbl->RESTORE_ods >= DB_VERSION_DDL10)
+	if (tdgbl->RESTORE_format >= 6)
 	{
 		// with RDB$FIELD_PRECISION 
 		STORE (REQUEST_HANDLE tdgbl->handles_get_function_arg_req_handle1)
@@ -3564,13 +3468,8 @@ void get_function_arg(bool dummy)
 					break;
 
 				case att_functionarg_field_precision:
-					if (tdgbl->RESTORE_format >= 6)
-					{
-						X.RDB$FIELD_PRECISION.NULL = FALSE;
-						X.RDB$FIELD_PRECISION = (USHORT) get_numeric();
-					}
-					else
-						bad_attribute (scan_next_attr, attribute, 90);
+					X.RDB$FIELD_PRECISION.NULL = FALSE;
+					X.RDB$FIELD_PRECISION = (USHORT) get_numeric();
 					break;
 
 				default:
@@ -3634,12 +3533,6 @@ void get_function_arg(bool dummy)
 					X.RDB$CHARACTER_SET_ID = (USHORT) get_numeric();
 					break;
 
-				case att_functionarg_field_precision:
-					if (tdgbl->RESTORE_format >= 6)
-						get_numeric();
-					else
-						bad_attribute (scan_next_attr, attribute, 90);
-
 				default:
 					bad_attribute (scan_next_attr, attribute, 90);
 					// msg 90 function argument 
@@ -3698,19 +3591,19 @@ bool get_generator()
 			value = get_int64();
 			break;
 
-		case att_gen_description:
-			if (tdgbl->RESTORE_format >= 7)
-			{
-				get_source_blob (&gen_desc, false);
-				got_desc = gen_desc.gds_quad_high || gen_desc.gds_quad_low;
-			}
-			else
-				bad_attribute(scan_next_attr, attribute, 289);
-			break;
+			case att_gen_description:
+				if (tdgbl->RESTORE_format >= 7)
+				{
+					get_source_blob (&gen_desc, false);
+					got_desc = gen_desc.gds_quad_high || gen_desc.gds_quad_low;
+				}
+				else
+					bad_attribute(scan_next_attr, attribute, 93);
+				break;
 
 		default:
-			bad_attribute (scan_next_attr, attribute, 289);
-			// msg 289 generator
+			bad_attribute (scan_next_attr, attribute, 93);
+			// msg 93 index
 			break;
 		}
 	}
@@ -3746,7 +3639,7 @@ bool get_global_field()
 
 	GFLD gfield = NULL;
 
-	if (tdgbl->RESTORE_ods >= DB_VERSION_DDL10)
+	if (tdgbl->RESTORE_format >= 6)
 	{
 		// with rdb$field_precision 
 		STORE (REQUEST_HANDLE tdgbl->handles_get_global_field_req_handle1)
@@ -3780,8 +3673,8 @@ bool get_global_field()
 			X.RDB$CHARACTER_SET_ID.NULL = TRUE;
 			X.RDB$COLLATION_ID.NULL = TRUE;
 			X.RDB$FIELD_PRECISION.NULL = TRUE;
-			memset (X.RDB$QUERY_NAME, ' ', sizeof(X.RDB$QUERY_NAME));
 
+			memset (X.RDB$QUERY_NAME, ' ', sizeof(X.RDB$QUERY_NAME));
 			skip_init(&scan_next_attr);
 			while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
 			{
@@ -4001,18 +3894,13 @@ bool get_global_field()
 					break;
 
 				case att_field_precision:
-					if (tdgbl->RESTORE_format >= 6)
-					{
-						X.RDB$FIELD_PRECISION.NULL = FALSE;
-						X.RDB$FIELD_PRECISION = (USHORT) get_numeric();
-					}
-					else
-						bad_attribute (scan_next_attr, attribute, 92);
+					X.RDB$FIELD_PRECISION.NULL = FALSE;
+					X.RDB$FIELD_PRECISION = (USHORT) get_numeric();
 					break;
 
 				default:
 					bad_attribute (scan_next_attr, attribute, 92);
-					// msg 92  domain
+					// msg 92  global field 
 					break;
 				}
 			}
@@ -4033,7 +3921,7 @@ bool get_global_field()
 		END_ERROR;
 
 	}
-	else // RESTORE_ods < DB_VERSION_DDL10
+	else /* RESTORE_format < 6 */
 	{
 		// without rdb$field_precision 
 
@@ -4067,8 +3955,8 @@ bool get_global_field()
 			X.RDB$FIELD_SUB_TYPE.NULL = TRUE;
 			X.RDB$CHARACTER_SET_ID.NULL = TRUE;
 			X.RDB$COLLATION_ID.NULL = TRUE;
+
 			memset (X.RDB$QUERY_NAME, ' ', sizeof(X.RDB$QUERY_NAME));
-			
 			skip_init(&scan_next_attr);
 			while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
 			{
@@ -4287,16 +4175,9 @@ bool get_global_field()
 					X.RDB$COLLATION_ID = (USHORT) get_numeric();
 					break;
 
-				case att_field_precision:
-					if (tdgbl->RESTORE_format >= 6)
-						get_numeric();
-					else
-						bad_attribute (scan_next_attr, attribute, 92);
-					break;
-
 				default:
 					bad_attribute (scan_next_attr, attribute, 92);
-					// msg 92  domain
+					// msg 92  global field 
 					break;
 				}
 			}
@@ -4364,9 +4245,6 @@ bool get_index (const burp_rel* relation)
 		X.RDB$FOREIGN_KEY.NULL = TRUE;
 		X.RDB$EXPRESSION_SOURCE.NULL = TRUE;
 		X.RDB$EXPRESSION_BLR.NULL = TRUE;
-		X.RDB$SYSTEM_FLAG = 0;
-		X.RDB$SYSTEM_FLAG.NULL = FALSE;
-		
 		skip_init(&scan_next_attr);
 		while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
 		{
@@ -4622,7 +4500,7 @@ bool get_procedure()
  *
  **************************************/
 	ATT_TYPE	attribute;
-	GDS_NAME	procedure_name = "";
+	GDS_NAME	procedure_name;
 	TEXT		temp[GDS_NAME_LEN];
 	SSHORT		l;
 	scan_attr_t		scan_next_attr;
@@ -4636,210 +4514,83 @@ bool get_procedure()
 	procedure->prc_next = tdgbl->procedures;
 	tdgbl->procedures = procedure;
 
-	if (tdgbl->RESTORE_ods >= DB_VERSION_DDL11_1)
-	{
-		STORE (TRANSACTION_HANDLE local_trans
-				REQUEST_HANDLE tdgbl->handles_get_procedure_req_handle1)
-			X IN RDB$PROCEDURES
-			X.RDB$PROCEDURE_SOURCE.NULL = TRUE;
-			X.RDB$DESCRIPTION.NULL = TRUE;
-			X.RDB$SECURITY_CLASS.NULL = TRUE;
-			X.RDB$OWNER_NAME.NULL = TRUE;
-			X.RDB$PROCEDURE_TYPE.NULL = FALSE;
-			X.RDB$PROCEDURE_TYPE = 0;
-			X.RDB$SYSTEM_FLAG = 0;
-			X.RDB$SYSTEM_FLAG.NULL = FALSE;
-			X.RDB$VALID_BLR.NULL = TRUE;
-			X.RDB$DEBUG_INFO.NULL = TRUE;
-		
-			skip_init(&scan_next_attr);
-			while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
+	STORE (TRANSACTION_HANDLE local_trans
+			REQUEST_HANDLE tdgbl->handles_get_procedure_req_handle1)
+		X IN RDB$PROCEDURES
+		X.RDB$PROCEDURE_SOURCE.NULL = TRUE;
+		X.RDB$DESCRIPTION.NULL = TRUE;
+		X.RDB$SECURITY_CLASS.NULL = TRUE;
+		X.RDB$OWNER_NAME.NULL = TRUE;
+		skip_init(&scan_next_attr);
+		while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
+		{
+			switch (attribute)
 			{
-				switch (attribute)
-				{
-				case att_procedure_name:
-					l = GET_TEXT(X.RDB$PROCEDURE_NAME);
-							procedure->prc_name_length = l;
-							strcpy (procedure->prc_name, X.RDB$PROCEDURE_NAME);
-					MISC_terminate (X.RDB$PROCEDURE_NAME, temp, l, sizeof(temp));
-					BURP_verbose (195, temp, NULL, NULL, NULL, NULL);
-					// msg 195 restoring stored procedure %s 
-					break;
+			case att_procedure_name:
+				l = GET_TEXT(X.RDB$PROCEDURE_NAME);
+						procedure->prc_name_length = l;
+						strcpy (procedure->prc_name, X.RDB$PROCEDURE_NAME);
+				MISC_terminate (X.RDB$PROCEDURE_NAME, temp, l, sizeof(temp));
+				BURP_verbose (195, temp, NULL, NULL, NULL, NULL);
+				// msg 195 restoring stored procedure %s 
+				break;
 
-				case att_procedure_description:
-					get_misc_blob (&X.RDB$DESCRIPTION, 0, true);
-					X.RDB$DESCRIPTION.NULL = FALSE;
-					break;
+			case att_procedure_description:
+				get_misc_blob (&X.RDB$DESCRIPTION, 0, true);
+				X.RDB$DESCRIPTION.NULL = FALSE;
+				break;
 
-				case att_procedure_description2:
-					get_source_blob (&X.RDB$DESCRIPTION, true);
-					X.RDB$DESCRIPTION.NULL = FALSE;
-					break;
+			case att_procedure_description2:
+				get_source_blob (&X.RDB$DESCRIPTION, true);
+				X.RDB$DESCRIPTION.NULL = FALSE;
+				break;
 
-				case att_procedure_source:
-					get_misc_blob (&X.RDB$PROCEDURE_SOURCE, 0, true);
-					X.RDB$PROCEDURE_SOURCE.NULL = FALSE;
-					break;
+			case att_procedure_source:
+				get_misc_blob (&X.RDB$PROCEDURE_SOURCE, 0, true);
+				X.RDB$PROCEDURE_SOURCE.NULL = FALSE;
+				break;
 
-				case att_procedure_source2:
-					get_source_blob (&X.RDB$PROCEDURE_SOURCE, true);
-					X.RDB$PROCEDURE_SOURCE.NULL = FALSE;
-					break;
+			case att_procedure_source2:
+				get_source_blob (&X.RDB$PROCEDURE_SOURCE, true);
+				X.RDB$PROCEDURE_SOURCE.NULL = FALSE;
+				break;
 
-				case att_procedure_blr:
-					get_blr_blob (&X.RDB$PROCEDURE_BLR, true);
-					break;
+			case att_procedure_blr:
+				get_blr_blob (&X.RDB$PROCEDURE_BLR, true);
+				break;
 
-				case att_procedure_security_class:
-					GET_TEXT(X.RDB$SECURITY_CLASS);
-					X.RDB$SECURITY_CLASS.NULL = FALSE;
-					break;
+			case att_procedure_security_class:
+				GET_TEXT(X.RDB$SECURITY_CLASS);
+				X.RDB$SECURITY_CLASS.NULL = FALSE;
+				break;
 
-				case att_procedure_owner_name:
-					GET_TEXT(procedure->prc_owner);
-					break;
+			case att_procedure_owner_name:
+				GET_TEXT(procedure->prc_owner);
+				break;
 
-				case att_procedure_inputs:
-					X.RDB$PROCEDURE_INPUTS = (USHORT) get_numeric();
-					if (X.RDB$PROCEDURE_INPUTS == 0)
-						X.RDB$PROCEDURE_INPUTS.NULL = TRUE;
-					else
-						X.RDB$PROCEDURE_INPUTS.NULL = FALSE;
-					break;
+			case att_procedure_inputs:
+				X.RDB$PROCEDURE_INPUTS = (USHORT) get_numeric();
+						if (X.RDB$PROCEDURE_INPUTS == 0)
+							X.RDB$PROCEDURE_INPUTS.NULL = TRUE;
+						else
+							X.RDB$PROCEDURE_INPUTS.NULL = FALSE;
+				break;
 
-				case att_procedure_outputs:
-					X.RDB$PROCEDURE_OUTPUTS = (USHORT) get_numeric();
-					break;
+			case att_procedure_outputs:
+				X.RDB$PROCEDURE_OUTPUTS = (USHORT) get_numeric();
+				break;
 
-				case att_procedure_type:
-					if (tdgbl->RESTORE_format >= 8)
-						X.RDB$PROCEDURE_TYPE = (USHORT) get_numeric();
-					else
-						bad_attribute (scan_next_attr, attribute, 290);
-					break;
-
-				case att_procedure_valid_blr:
-					if (tdgbl->RESTORE_format >= 8)
-					{
-						X.RDB$VALID_BLR.NULL = FALSE;
-						X.RDB$VALID_BLR = (USHORT) get_numeric();
-					}
-					else
-						bad_attribute (scan_next_attr, attribute, 290);
-					break;
-
-				case att_procedure_debug_info:
-					if (tdgbl->RESTORE_format >= 8)
-					{
-						X.RDB$DEBUG_INFO.NULL = FALSE;
-						get_misc_blob (&X.RDB$DEBUG_INFO, 9, true);
-					}
-					else
-						bad_attribute (scan_next_attr, attribute, 290);
-					break;
-
-				default:
-					bad_attribute (scan_next_attr, attribute, 290);
-					// msg 290 procedure
-					break;
-				}
+			default:
+				bad_attribute (scan_next_attr, attribute, 89);
+				// msg 89 function 
+				break;
 			}
-			strcpy (procedure_name, X.RDB$PROCEDURE_NAME);
-		END_STORE;
-		ON_ERROR
-			general_on_error ();
-		END_ERROR;
-	}
-	else
-	{
-		STORE (TRANSACTION_HANDLE local_trans
-				REQUEST_HANDLE tdgbl->handles_get_procedure_req_handle1)
-			X IN RDB$PROCEDURES
-			X.RDB$PROCEDURE_SOURCE.NULL = TRUE;
-			X.RDB$DESCRIPTION.NULL = TRUE;
-			X.RDB$SECURITY_CLASS.NULL = TRUE;
-			X.RDB$OWNER_NAME.NULL = TRUE;
-			X.RDB$SYSTEM_FLAG = 0;
-			X.RDB$SYSTEM_FLAG.NULL = FALSE;
-		
-			skip_init(&scan_next_attr);
-			while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
-			{
-				switch (attribute)
-				{
-				case att_procedure_name:
-					l = GET_TEXT(X.RDB$PROCEDURE_NAME);
-							procedure->prc_name_length = l;
-							strcpy (procedure->prc_name, X.RDB$PROCEDURE_NAME);
-					MISC_terminate (X.RDB$PROCEDURE_NAME, temp, l, sizeof(temp));
-					BURP_verbose (195, temp, NULL, NULL, NULL, NULL);
-					// msg 195 restoring stored procedure %s 
-					break;
-
-				case att_procedure_description:
-					get_misc_blob (&X.RDB$DESCRIPTION, 0, true);
-					X.RDB$DESCRIPTION.NULL = FALSE;
-					break;
-
-				case att_procedure_description2:
-					get_source_blob (&X.RDB$DESCRIPTION, true);
-					X.RDB$DESCRIPTION.NULL = FALSE;
-					break;
-
-				case att_procedure_source:
-					get_misc_blob (&X.RDB$PROCEDURE_SOURCE, 0, true);
-					X.RDB$PROCEDURE_SOURCE.NULL = FALSE;
-					break;
-
-				case att_procedure_source2:
-					get_source_blob (&X.RDB$PROCEDURE_SOURCE, true);
-					X.RDB$PROCEDURE_SOURCE.NULL = FALSE;
-					break;
-
-				case att_procedure_blr:
-					get_blr_blob (&X.RDB$PROCEDURE_BLR, true);
-					break;
-
-				case att_procedure_security_class:
-					GET_TEXT(X.RDB$SECURITY_CLASS);
-					X.RDB$SECURITY_CLASS.NULL = FALSE;
-					break;
-
-				case att_procedure_owner_name:
-					GET_TEXT(procedure->prc_owner);
-					break;
-
-				case att_procedure_inputs:
-					X.RDB$PROCEDURE_INPUTS = (USHORT) get_numeric();
-					if (X.RDB$PROCEDURE_INPUTS == 0)
-						X.RDB$PROCEDURE_INPUTS.NULL = TRUE;
-					else
-						X.RDB$PROCEDURE_INPUTS.NULL = FALSE;
-					break;
-
-				case att_procedure_outputs:
-					X.RDB$PROCEDURE_OUTPUTS = (USHORT) get_numeric();
-					break;
-
-				case att_procedure_type:
-					if (tdgbl->RESTORE_format >= 8)
-						get_numeric();
-					else
-						bad_attribute (scan_next_attr, attribute, 290);
-					break;
-
-				default:
-					bad_attribute (scan_next_attr, attribute, 290);
-					// msg 290 procedure
-					break;
-				}
-			}
-			strcpy (procedure_name, X.RDB$PROCEDURE_NAME);
-		END_STORE;
-		ON_ERROR
-			general_on_error ();
-		END_ERROR;
-	}	
+		}
+		strcpy (procedure_name, X.RDB$PROCEDURE_NAME);
+	END_STORE;
+	ON_ERROR
+		general_on_error ();
+	END_ERROR;
 
 	// at the end of prms for a procedure is the rec_procedure_end marker 
 
@@ -4874,149 +4625,55 @@ bool get_procedure_prm (GDS_NAME	procptr)
 	isc_tr_handle local_trans =
 		tdgbl->global_trans ? tdgbl->global_trans : gds_trans;
 
-	if (tdgbl->RESTORE_ods >= DB_VERSION_DDL11_1)
-	{
-		STORE (TRANSACTION_HANDLE local_trans
-				REQUEST_HANDLE tdgbl->handles_get_procedure_prm_req_handle1)
-			X IN RDB$PROCEDURE_PARAMETERS
-			X.RDB$DESCRIPTION.NULL = TRUE;
-			strcpy (X.RDB$PROCEDURE_NAME, procptr);
-			X.RDB$SYSTEM_FLAG = 0;
-			X.RDB$SYSTEM_FLAG.NULL = FALSE;
-			X.RDB$DEFAULT_VALUE.NULL = TRUE;
-			X.RDB$DEFAULT_SOURCE.NULL = TRUE;
-			X.RDB$COLLATION_ID.NULL = TRUE;
-
-			skip_init(&scan_next_attr);
-			while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
+	STORE (TRANSACTION_HANDLE local_trans
+			REQUEST_HANDLE tdgbl->handles_get_procedure_prm_req_handle1)
+		X IN RDB$PROCEDURE_PARAMETERS
+		X.RDB$DESCRIPTION.NULL = TRUE;
+		strcpy (X.RDB$PROCEDURE_NAME, procptr);
+		skip_init(&scan_next_attr);
+		while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
+		{
+			switch (attribute)
 			{
-				switch (attribute)
-				{
-				case att_procedureprm_name:
-					l = GET_TEXT(X.RDB$PARAMETER_NAME);
-					MISC_terminate (X.RDB$PARAMETER_NAME, temp, l, sizeof(temp));
-					BURP_verbose (196, temp, NULL, NULL, NULL, NULL);
-					// msg 196 restoring parameter %s for stored procedure 
-					break;
+			case att_procedureprm_name:
+				l = GET_TEXT(X.RDB$PARAMETER_NAME);
+				MISC_terminate (X.RDB$PARAMETER_NAME, temp, l, sizeof(temp));
+				BURP_verbose (196, temp, NULL, NULL, NULL, NULL);
+				// msg 196 restoring parameter %s for stored procedure 
+				break;
 
-				case att_procedureprm_type:
-					X.RDB$PARAMETER_TYPE= (USHORT) get_numeric();
-					break;
+			case att_procedureprm_type:
+				X.RDB$PARAMETER_TYPE= (USHORT) get_numeric();
+				break;
 
-				case att_procedureprm_number:
-					X.RDB$PARAMETER_NUMBER= (USHORT) get_numeric();
-					break;
+			case att_procedureprm_number:
+				X.RDB$PARAMETER_NUMBER= (USHORT) get_numeric();
+				break;
 
-				case att_procedureprm_field_source:
-					GET_TEXT(X.RDB$FIELD_SOURCE);
-					break;
+			case att_procedureprm_field_source:
+				GET_TEXT(X.RDB$FIELD_SOURCE);
+				break;
 
-				case att_procedureprm_description:
-					get_misc_blob (&X.RDB$DESCRIPTION, 0, true);
-					X.RDB$DESCRIPTION.NULL = FALSE;
-					break;
+			case att_procedureprm_description:
+				get_misc_blob (&X.RDB$DESCRIPTION, 0, true);
+				X.RDB$DESCRIPTION.NULL = FALSE;
+				break;
 
-				case att_procedureprm_description2:
-					get_source_blob (&X.RDB$DESCRIPTION, true);
-					X.RDB$DESCRIPTION.NULL = FALSE;
-					break;
+			case att_procedureprm_description2:
+				get_source_blob (&X.RDB$DESCRIPTION, true);
+				X.RDB$DESCRIPTION.NULL = FALSE;
+				break;
 
-				case att_procedureprm_default_value:
-					if (tdgbl->RESTORE_format >= 8)
-					{
-						X.RDB$DEFAULT_VALUE.NULL = FALSE;
-						get_blr_blob (&X.RDB$DEFAULT_VALUE, true);
-					}
-					else
-						bad_attribute (scan_next_attr, attribute, 291);
-					break;
-
-				case att_procedureprm_default_source:
-					if (tdgbl->RESTORE_format >= 8)
-					{
-						X.RDB$DEFAULT_SOURCE.NULL = FALSE;
-						get_source_blob (&X.RDB$DEFAULT_SOURCE, true);
-					}
-					else
-						bad_attribute (scan_next_attr, attribute, 291);
-					break;
-
-				case att_procedureprm_collation_id:
-					if (tdgbl->RESTORE_format >= 8)
-					{
-						X.RDB$COLLATION_ID.NULL = FALSE;
-						X.RDB$COLLATION_ID = (USHORT) get_numeric();
-					}
-					else
-						bad_attribute (scan_next_attr, attribute, 291);
-					break;
-
-				default:
-					bad_attribute (scan_next_attr, attribute, 291);
-					// msg 291 procedure parameter
-					break;
-				}
+			default:
+				bad_attribute (scan_next_attr, attribute, 90);
+				// msg 90 function argument 
+				break;
 			}
-		END_STORE;
-		ON_ERROR
-			general_on_error ();
-		END_ERROR;
-	}
-	else
-	{
-		STORE (TRANSACTION_HANDLE local_trans
-				REQUEST_HANDLE tdgbl->handles_get_procedure_prm_req_handle1)
-			X IN RDB$PROCEDURE_PARAMETERS
-			X.RDB$DESCRIPTION.NULL = TRUE;
-			strcpy (X.RDB$PROCEDURE_NAME, procptr);
-			X.RDB$SYSTEM_FLAG = 0;
-			X.RDB$SYSTEM_FLAG.NULL = FALSE;
-
-			skip_init(&scan_next_attr);
-			while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
-			{
-				switch (attribute)
-				{
-				case att_procedureprm_name:
-					l = GET_TEXT(X.RDB$PARAMETER_NAME);
-					MISC_terminate (X.RDB$PARAMETER_NAME, temp, l, sizeof(temp));
-					BURP_verbose (196, temp, NULL, NULL, NULL, NULL);
-					// msg 196 restoring parameter %s for stored procedure 
-					break;
-
-				case att_procedureprm_type:
-					X.RDB$PARAMETER_TYPE= (USHORT) get_numeric();
-					break;
-
-				case att_procedureprm_number:
-					X.RDB$PARAMETER_NUMBER= (USHORT) get_numeric();
-					break;
-
-				case att_procedureprm_field_source:
-					GET_TEXT(X.RDB$FIELD_SOURCE);
-					break;
-
-				case att_procedureprm_description:
-					get_misc_blob (&X.RDB$DESCRIPTION, 0, true);
-					X.RDB$DESCRIPTION.NULL = FALSE;
-					break;
-
-				case att_procedureprm_description2:
-					get_source_blob (&X.RDB$DESCRIPTION, true);
-					X.RDB$DESCRIPTION.NULL = FALSE;
-					break;
-
-				default:
-					bad_attribute (scan_next_attr, attribute, 291);
-					// msg 291 procedure parameter
-					break;
-				}
-			}
-		END_STORE;
-		ON_ERROR
-			general_on_error ();
-		END_ERROR;
-	}
+		}
+	END_STORE;
+	ON_ERROR
+		general_on_error ();
+	END_ERROR;
 
 	return true;
 }
@@ -5045,7 +4702,6 @@ bool get_ref_constraint()
 		X.RDB$MATCH_OPTION.NULL = TRUE;
 		X.RDB$UPDATE_RULE.NULL = TRUE;
 		X.RDB$DELETE_RULE.NULL = TRUE;
-
 		skip_init(&scan_next_attr);
 		while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
 		{
@@ -5077,8 +4733,8 @@ bool get_ref_constraint()
 					break;
 
 				default:
-					bad_attribute (scan_next_attr, attribute, 292);
-					// msg 292 referential constraint
+					bad_attribute (scan_next_attr, attribute, 208);
+					// msg 208 relation constraint 
 					break;
 			}
 		}
@@ -5115,8 +4771,8 @@ bool get_relation()
 	rec_type	record;
 	scan_attr_t		scan_next_attr;
 
-	SLONG		rel_flags = 0, sys_flag = 0, type = 0;
-	bool		rel_flags_null = true, type_null = true;
+	SLONG		rel_flags = 0, sys_flag = 0;
+	bool		rel_flags_null = true, sys_flag_null = true;
 	ISC_QUAD	view_blr = isc_blob_null, view_src = isc_blob_null,
 				rel_desc = isc_blob_null, ext_desc = isc_blob_null;
 	bool		view_blr_null = true, view_src_null = true, rel_desc_null = true,
@@ -5202,6 +4858,7 @@ bool get_relation()
 			break;
 
 		case att_relation_system_flag:
+			sys_flag_null = false;
 			sys_flag = get_numeric();
 			break;
 
@@ -5224,19 +4881,9 @@ bool get_relation()
 			GET_TEXT(ext_file_name);
 			break;
 
-		case att_relation_type:
-			if (tdgbl->RESTORE_format >= 8)
-			{
-				type_null = false;
-				type = get_numeric();
-			}
-			else
-				bad_attribute(scan_next_attr, attribute, 111);
-			break;
-
 		default:
 			bad_attribute (scan_next_attr, attribute, 111);
-			// msg 111 table
+			// msg 111 relation 
 			break;
 		}
 	}
@@ -5248,73 +4895,35 @@ bool get_relation()
 	else
 		local_trans = tdgbl->global_trans;
 
-	if (tdgbl->RESTORE_ods >= DB_VERSION_DDL11_1)
-	{
-		STORE (TRANSACTION_HANDLE local_trans
-				REQUEST_HANDLE tdgbl->handles_get_relation_req_handle1)
-			X IN RDB$RELATIONS
+	STORE (TRANSACTION_HANDLE local_trans
+			REQUEST_HANDLE tdgbl->handles_get_relation_req_handle1)
+		X IN RDB$RELATIONS
 
-			X.RDB$SYSTEM_FLAG.NULL = FALSE;
-			X.RDB$FLAGS.NULL = rel_flags_null;
-			X.RDB$SECURITY_CLASS.NULL = sec_class_null;
-			X.RDB$VIEW_BLR.NULL = view_blr_null;
-			X.RDB$VIEW_SOURCE.NULL = view_src_null;
-			X.RDB$DESCRIPTION.NULL = rel_desc_null;
-			X.RDB$RUNTIME.NULL = TRUE;
-			X.RDB$EXTERNAL_DESCRIPTION.NULL = ext_desc_null;
-			X.RDB$EXTERNAL_FILE.NULL = ext_file_name_null;
-			X.RDB$RELATION_TYPE.NULL = type_null;
+		X.RDB$SYSTEM_FLAG.NULL = sys_flag_null;
+		X.RDB$FLAGS.NULL = rel_flags_null;
+		X.RDB$SECURITY_CLASS.NULL = sec_class_null;
+		X.RDB$VIEW_BLR.NULL = view_blr_null;
+		X.RDB$VIEW_SOURCE.NULL = view_src_null;
+		X.RDB$DESCRIPTION.NULL = rel_desc_null;
+		X.RDB$RUNTIME.NULL = TRUE;
+		X.RDB$EXTERNAL_DESCRIPTION.NULL = ext_desc_null;
+		X.RDB$EXTERNAL_FILE.NULL = ext_file_name_null;
 
-			X.RDB$SYSTEM_FLAG = (USHORT) sys_flag;
-			X.RDB$FLAGS = (USHORT) rel_flags;
-			X.RDB$VIEW_BLR = view_blr;
-			X.RDB$VIEW_SOURCE = view_src;
-			X.RDB$DESCRIPTION = rel_desc;
-			X.RDB$EXTERNAL_DESCRIPTION = ext_desc;
+		X.RDB$SYSTEM_FLAG = (USHORT) sys_flag;
+		X.RDB$FLAGS = (USHORT) rel_flags;
+		X.RDB$VIEW_BLR = view_blr;
+		X.RDB$VIEW_SOURCE = view_src;
+		X.RDB$DESCRIPTION = rel_desc;
+		X.RDB$EXTERNAL_DESCRIPTION = ext_desc;
 
-			strcpy(X.RDB$SECURITY_CLASS, sec_class);
-			strcpy(X.RDB$RELATION_NAME, relation->rel_name);
-			strcpy(X.RDB$EXTERNAL_FILE, ext_file_name);
+		strcpy(X.RDB$SECURITY_CLASS, sec_class);
+		strcpy(X.RDB$RELATION_NAME, relation->rel_name);
+		strcpy(X.RDB$EXTERNAL_FILE, ext_file_name);
 
-			X.RDB$RELATION_TYPE = (USHORT) type;
-
-		END_STORE;
-		ON_ERROR
-			general_on_error ();
-		END_ERROR;
-	}
-	else
-	{
-		STORE (TRANSACTION_HANDLE local_trans
-				REQUEST_HANDLE tdgbl->handles_get_relation_req_handle1)
-			X IN RDB$RELATIONS
-
-			X.RDB$SYSTEM_FLAG.NULL = FALSE;
-			X.RDB$FLAGS.NULL = rel_flags_null;
-			X.RDB$SECURITY_CLASS.NULL = sec_class_null;
-			X.RDB$VIEW_BLR.NULL = view_blr_null;
-			X.RDB$VIEW_SOURCE.NULL = view_src_null;
-			X.RDB$DESCRIPTION.NULL = rel_desc_null;
-			X.RDB$RUNTIME.NULL = TRUE;
-			X.RDB$EXTERNAL_DESCRIPTION.NULL = ext_desc_null;
-			X.RDB$EXTERNAL_FILE.NULL = ext_file_name_null;
-
-			X.RDB$SYSTEM_FLAG = (USHORT) sys_flag;
-			X.RDB$FLAGS = (USHORT) rel_flags;
-			X.RDB$VIEW_BLR = view_blr;
-			X.RDB$VIEW_SOURCE = view_src;
-			X.RDB$DESCRIPTION = rel_desc;
-			X.RDB$EXTERNAL_DESCRIPTION = ext_desc;
-
-			strcpy(X.RDB$SECURITY_CLASS, sec_class);
-			strcpy(X.RDB$RELATION_NAME, relation->rel_name);
-			strcpy(X.RDB$EXTERNAL_FILE, ext_file_name);
-
-		END_STORE;
-		ON_ERROR
-			general_on_error ();
-		END_ERROR;
-	}
+	END_STORE;
+	ON_ERROR
+		general_on_error ();
+	END_ERROR;
 
 	// Eat up misc. records 
 	burp_fld* field = NULL;
@@ -5412,7 +5021,6 @@ bool get_rel_constraint()
 		X.RDB$DEFERRABLE.NULL = TRUE;
 		X.RDB$INITIALLY_DEFERRED.NULL = TRUE;
 		X.RDB$INDEX_NAME.NULL = TRUE;
-
 		skip_init(&scan_next_attr);
 		while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
 		{
@@ -5450,7 +5058,7 @@ bool get_rel_constraint()
 
 				default:
 					bad_attribute (scan_next_attr, attribute, 208);
-					// msg 208 table constraint
+					// msg 208 relation constraint 
 					break;
 			}
 		}
@@ -5496,7 +5104,7 @@ bool get_relation_data()
 
 		default:
 			bad_attribute (scan_next_attr, attribute, 111);
-			// msg 111 table
+			// msg 111 relation 
 			break;
 		}
 	}
@@ -5561,14 +5169,14 @@ bool get_sql_roles()
  *	Restore data for SQL roles
  *
  **************************************/
-	ATT_TYPE		attribute;
+	ATT_TYPE        attribute;
 	scan_attr_t		scan_next_attr;
-	TEXT			temp[GDS_NAME_LEN];
-	SSHORT			l;
+	TEXT            temp[GDS_NAME_LEN];
+	SSHORT          l;
 
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
-	if (tdgbl->RESTORE_ods >= DB_VERSION_DDL11)
+	if (tdgbl->RESTORE_format >= 7)
 	{
 		STORE (REQUEST_HANDLE tdgbl->handles_get_sql_roles_req_handle1)
 			X IN RDB$ROLES
@@ -5578,8 +5186,8 @@ bool get_sql_roles()
 			X.RDB$DESCRIPTION.NULL = TRUE;
 			X.RDB$SYSTEM_FLAG = 0;
 			X.RDB$SYSTEM_FLAG.NULL = FALSE;
-			
 			skip_init(&scan_next_attr);
+
 			while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
 			{
 				switch (attribute)
@@ -5602,68 +5210,16 @@ bool get_sql_roles()
 					break;
 
 				case att_role_description:
-					if (tdgbl->RESTORE_format >= 7)
-					{
-						get_source_blob (&X.RDB$DESCRIPTION, false);
-						X.RDB$DESCRIPTION.NULL = FALSE;
-					}
-					else
-						bad_attribute (scan_next_attr, attribute, 250);
+					get_source_blob (&X.RDB$DESCRIPTION, false);
+					X.RDB$DESCRIPTION.NULL = FALSE;
 				    break;
 
 				default:
-					// msg 250 SQL role
-					bad_attribute (scan_next_attr, attribute, 250);
-					break;
-				}
-			}
-		END_STORE
-		ON_ERROR
-			general_on_error ();
-		END_ERROR;
-	}
-	else if (tdgbl->RESTORE_ods >= DB_VERSION_DDL9)
-	{
-		// This is the first IB version (v5, ods9) where roles appeared.
-		// They remained unchanged for IB6 / FB1 and FB1.5 (ods10).
-		STORE (REQUEST_HANDLE tdgbl->handles_get_sql_roles_req_handle1)
-			X IN RDB$ROLES
-
-			X.RDB$ROLE_NAME.NULL = TRUE;
-			X.RDB$OWNER_NAME.NULL = TRUE;
-			// Here we didn't have RBD$SYSTEM_FLAG field.
-
-			skip_init(&scan_next_attr);
-			while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
-			{
-				switch (attribute)
-				{
-				case att_role_name:
-					X.RDB$ROLE_NAME.NULL = FALSE;
-					l = GET_TEXT(X.RDB$ROLE_NAME);
-					MISC_terminate (X.RDB$ROLE_NAME, temp, l, sizeof(temp));
-					/************************************************
+					/*************************************************
 					**
-					** msg 251, restoring SQL role: %s
+					** msg 250, Bad attribute for restoring SQL role
 					**
-					*************************************************/
-					BURP_verbose (251, temp, NULL, NULL, NULL, NULL);
-					break;
-
-				case att_role_owner_name:
-					X.RDB$OWNER_NAME.NULL = FALSE;
-					GET_TEXT(X.RDB$OWNER_NAME);
-					break;
-
-				case att_role_description:
-					if (tdgbl->RESTORE_format >= 7)
-						eat_blob();
-					else
-						bad_attribute (scan_next_attr, attribute, 250);
-					break;
-					
-				default:
-					// msg 250 SQL role
+					**************************************************/
 					bad_attribute (scan_next_attr, attribute, 250);
 					break;
 				}
@@ -5675,31 +5231,51 @@ bool get_sql_roles()
 	}
 	else
 	{
-		// We say we support IB4, then we should skip roles.
-		skip_init(&scan_next_attr);
+		STORE (REQUEST_HANDLE tdgbl->handles_get_sql_roles_req_handle1)
+			X IN RDB$ROLES
 
-		while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
-		{
-			switch (attribute)
+			X.RDB$ROLE_NAME.NULL = TRUE;
+			X.RDB$OWNER_NAME.NULL = TRUE;
+			X.RDB$DESCRIPTION.NULL = TRUE;
+			X.RDB$SYSTEM_FLAG = 0;
+			X.RDB$SYSTEM_FLAG.NULL = FALSE;
+			skip_init(&scan_next_attr);
+
+			while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
 			{
-			case att_role_name:
-			case att_role_owner_name:
-				eat_text(tdgbl);
-				break;
+				switch (attribute)
+				{
+				case att_role_name:
+					X.RDB$ROLE_NAME.NULL = FALSE;
+					l = GET_TEXT(X.RDB$ROLE_NAME);
+					MISC_terminate (X.RDB$ROLE_NAME, temp, l, sizeof(temp));
+					/************************************************
+					**
+					** msg 251, restoring SQL role: %s
+					**
+					*************************************************/
+					BURP_verbose (251, temp, NULL, NULL, NULL, NULL);
+					break;
 
-			case att_role_description:
-				if (tdgbl->RESTORE_format >= 7)
-					eat_blob();
-				else
+				case att_role_owner_name:
+					X.RDB$OWNER_NAME.NULL = FALSE;
+					GET_TEXT(X.RDB$OWNER_NAME);
+					break;
+
+				default:
+					/*************************************************
+					**
+					** msg 250, Bad attribute for restoring SQL role
+					**
+					**************************************************/
 					bad_attribute (scan_next_attr, attribute, 250);
-				break;
-
-			default:
-				// msg 250 SQL role
-				bad_attribute (scan_next_attr, attribute, 250);
-				break;
+					break;
+				}
 			}
-		}
+		END_STORE
+		ON_ERROR
+			general_on_error ();
+		END_ERROR;
 	}
 
 	return true;
@@ -5720,8 +5296,8 @@ bool is_ascii_name (const TEXT *name, const SSHORT len)
 	SSHORT i = 0;
 
 	while (i < len &&
-			( (name[i] >= 'A' && name[i] <= 'Z') ||
-			(name[i] >= '0' && name[i] <= '9') ||
+		   ( (name[i] >= 'A' && name[i] <= 'Z') ||
+		     (name[i] >= '0' && name[i] <= '9') ||
 			  name[i] == '_' || name[i] == '$' ) )
 	{
 		++i;
@@ -5751,7 +5327,6 @@ bool get_security_class()
 
 	STORE (REQUEST_HANDLE tdgbl->handles_get_security_class_req_handle1)
 		X IN RDB$SECURITY_CLASSES
-
 		skip_init(&scan_next_attr);
 		while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
 		{
@@ -5817,8 +5392,8 @@ bool get_security_class()
 }
 
 void get_source_blob (
-	ISC_QUAD	*blob_id,
-	bool	glb_trans)
+    ISC_QUAD	*blob_id,
+    bool	glb_trans)
 {
 /**************************************
  *
@@ -5886,8 +5461,8 @@ void get_source_blob (
 }
 
 USHORT get_text (
-	TEXT	*text,
-	ULONG	length)
+    TEXT	*text,
+    ULONG	length)
 {
 /**************************************
  *
@@ -5940,9 +5515,6 @@ bool get_trigger_old (
 		X.RDB$DESCRIPTION.NULL = TRUE;
 		X.RDB$TRIGGER_BLR.NULL = TRUE;
 		X.RDB$TRIGGER_SOURCE.NULL = TRUE;
-		X.RDB$SYSTEM_FLAG = 0;
-		X.RDB$SYSTEM_FLAG.NULL = FALSE;
-
 		skip_init(&scan_next_attr);
 		while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
 		{
@@ -6012,6 +5584,7 @@ bool get_trigger_old (
 		strncpy (X.RDB$RELATION_NAME, relation->rel_name, GDS_NAME_LEN);
 		strcpy (name, X.RDB$TRIGGER_NAME);
 		X.RDB$TRIGGER_SEQUENCE = TRIGGER_SEQUENCE_DEFAULT;
+		X.RDB$SYSTEM_FLAG = 0;   // restore as vanilla user type 
 
 	END_STORE;
 	ON_ERROR
@@ -6060,206 +5633,88 @@ bool get_trigger()
 	isc_tr_handle local_trans =
 		tdgbl->global_trans ? tdgbl->global_trans : gds_trans;
 
-	if (tdgbl->RESTORE_ods >= DB_VERSION_DDL11_1)
-	{
-		STORE (TRANSACTION_HANDLE local_trans
-				REQUEST_HANDLE tdgbl->handles_get_trigger_req_handle1)
-			X IN RDB$TRIGGERS
-
-			X.RDB$RELATION_NAME.NULL = TRUE;
-			X.RDB$DESCRIPTION.NULL = TRUE;
-			X.RDB$TRIGGER_BLR.NULL = TRUE;
-			X.RDB$TRIGGER_SOURCE.NULL = TRUE;
-			X.RDB$SYSTEM_FLAG = 0;
-			X.RDB$SYSTEM_FLAG.NULL = FALSE;
-			X.RDB$FLAGS.NULL = TRUE;
-			X.RDB$VALID_BLR.NULL = TRUE;
-			X.RDB$DEBUG_INFO.NULL = TRUE;
-
-			skip_init(&scan_next_attr);
-			while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
+	STORE (TRANSACTION_HANDLE local_trans
+			REQUEST_HANDLE tdgbl->handles_get_trigger_req_handle1)
+		X IN RDB$TRIGGERS
+		X.RDB$DESCRIPTION.NULL = TRUE;
+		X.RDB$TRIGGER_BLR.NULL = TRUE;
+		X.RDB$TRIGGER_SOURCE.NULL = TRUE;
+		X.RDB$SYSTEM_FLAG = 0;
+		X.RDB$SYSTEM_FLAG.NULL = FALSE;
+		X.RDB$FLAGS.NULL = TRUE;
+		skip_init(&scan_next_attr);
+		while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
+		{
+			switch (attribute)
 			{
-				switch (attribute)
-				{
-				case att_trig_type:
-					X.RDB$TRIGGER_TYPE = (USHORT) get_numeric();
-					break;
+			case att_trig_type:
+				X.RDB$TRIGGER_TYPE = (USHORT) get_numeric();
+				break;
 
-				case att_trig_flags:
-					X.RDB$FLAGS = (USHORT) get_numeric();
-					X.RDB$FLAGS.NULL = FALSE;
-					break;
+			case att_trig_flags:
+				X.RDB$FLAGS = (USHORT) get_numeric();
+				X.RDB$FLAGS.NULL = FALSE;
+				break;
 
-				case att_trig_blr:
-					X.RDB$TRIGGER_BLR.NULL = FALSE;
-					get_blr_blob (&X.RDB$TRIGGER_BLR, true);
-					break;
+			case att_trig_blr:
+				X.RDB$TRIGGER_BLR.NULL = FALSE;
+				get_blr_blob (&X.RDB$TRIGGER_BLR, true);
+				break;
 
-				case att_trig_source:
-					X.RDB$TRIGGER_SOURCE.NULL = FALSE;
-					get_misc_blob (&X.RDB$TRIGGER_SOURCE, 1, true);
-					break;
+			case att_trig_source:
+				X.RDB$TRIGGER_SOURCE.NULL = FALSE;
+				get_misc_blob (&X.RDB$TRIGGER_SOURCE, 1, true);
+				break;
 
-				case att_trig_source2:
-					X.RDB$TRIGGER_SOURCE.NULL = FALSE;
-					get_source_blob (&X.RDB$TRIGGER_SOURCE, true);
-					break;
+			case att_trig_source2:
+				X.RDB$TRIGGER_SOURCE.NULL = FALSE;
+				get_source_blob (&X.RDB$TRIGGER_SOURCE, true);
+				break;
 
-				case att_trig_name:
-					GET_TEXT(X.RDB$TRIGGER_NAME);
-					strcpy (name, X.RDB$TRIGGER_NAME);
-					BURP_verbose (126, X.RDB$TRIGGER_NAME, NULL, NULL, NULL, NULL);
-					// msg 126 restoring trigger %s 
-					break;
+			case att_trig_name:
+				GET_TEXT(X.RDB$TRIGGER_NAME);
+				strcpy (name, X.RDB$TRIGGER_NAME);
+				BURP_verbose (126, X.RDB$TRIGGER_NAME, NULL, NULL, NULL, NULL);
+				// msg 126 restoring trigger %s 
+				break;
 
-				case att_trig_relation_name:
-					X.RDB$RELATION_NAME.NULL = FALSE;
-					GET_TEXT(X.RDB$RELATION_NAME);
-					break;
+			case att_trig_relation_name:
+				GET_TEXT(X.RDB$RELATION_NAME);
+				break;
 
-				case att_trig_sequence:
-					X.RDB$TRIGGER_SEQUENCE = (USHORT) get_numeric();
-					break;
+			case att_trig_sequence:
+				X.RDB$TRIGGER_SEQUENCE = (USHORT) get_numeric();
+				break;
 
-				case att_trig_description:
-					X.RDB$DESCRIPTION.NULL = FALSE;
-					get_misc_blob (&X.RDB$DESCRIPTION, 1, true);
-					break;
+			case att_trig_description:
+				X.RDB$DESCRIPTION.NULL = FALSE;
+				get_misc_blob (&X.RDB$DESCRIPTION, 1, true);
+				break;
 
-				case att_trig_description2:
-					X.RDB$DESCRIPTION.NULL = FALSE;
-					get_source_blob (&X.RDB$DESCRIPTION, true);
-					break;
+			case att_trig_description2:
+				X.RDB$DESCRIPTION.NULL = FALSE;
+				get_source_blob (&X.RDB$DESCRIPTION, true);
+				break;
 
-				case att_trig_system_flag:
-					X.RDB$SYSTEM_FLAG = (USHORT) get_numeric();
-					X.RDB$SYSTEM_FLAG.NULL = FALSE;
-					break;
+			case att_trig_system_flag:
+				X.RDB$SYSTEM_FLAG = (USHORT) get_numeric();
+				X.RDB$SYSTEM_FLAG.NULL = FALSE;
+				break;
 
-				case att_trig_inactive:
-					X.RDB$TRIGGER_INACTIVE = (USHORT) get_numeric();
-					break;
+			case att_trig_inactive:
+				X.RDB$TRIGGER_INACTIVE = (USHORT) get_numeric();
+				break;
 
-				case att_trig_valid_blr:
-					if (tdgbl->RESTORE_format >= 8)
-					{
-						X.RDB$VALID_BLR.NULL = FALSE;
-						X.RDB$VALID_BLR = (USHORT) get_numeric();
-					}
-					else
-						bad_attribute (scan_next_attr, attribute, 134);
-					break;
-
-				case att_trig_debug_info:
-					if (tdgbl->RESTORE_format >= 8)
-					{
-						X.RDB$DEBUG_INFO.NULL = FALSE;
-						get_misc_blob (&X.RDB$DEBUG_INFO, 9, true);
-					}
-					else
-						bad_attribute (scan_next_attr, attribute, 134);
-					break;
-
-				default:
-					bad_attribute (scan_next_attr, attribute, 134);
-					// msg 134 trigger 
-					break;
-				}
+			default:
+				bad_attribute (scan_next_attr, attribute, 134);
+				// msg 134 trigger 
+				break;
 			}
-		END_STORE;
-		ON_ERROR
-			general_on_error ();
-		END_ERROR;
-	}
-	else
-	{
-		STORE (TRANSACTION_HANDLE local_trans
-				REQUEST_HANDLE tdgbl->handles_get_trigger_req_handle1)
-			X IN RDB$TRIGGERS
-
-			X.RDB$RELATION_NAME.NULL = TRUE;
-			X.RDB$DESCRIPTION.NULL = TRUE;
-			X.RDB$TRIGGER_BLR.NULL = TRUE;
-			X.RDB$TRIGGER_SOURCE.NULL = TRUE;
-			X.RDB$SYSTEM_FLAG = 0;
-			X.RDB$SYSTEM_FLAG.NULL = FALSE;
-			X.RDB$FLAGS.NULL = TRUE;
-
-			skip_init(&scan_next_attr);
-			while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
-			{
-				switch (attribute)
-				{
-				case att_trig_type:
-					X.RDB$TRIGGER_TYPE = (USHORT) get_numeric();
-					break;
-
-				case att_trig_flags:
-					X.RDB$FLAGS = (USHORT) get_numeric();
-					X.RDB$FLAGS.NULL = FALSE;
-					break;
-
-				case att_trig_blr:
-					X.RDB$TRIGGER_BLR.NULL = FALSE;
-					get_blr_blob (&X.RDB$TRIGGER_BLR, true);
-					break;
-
-				case att_trig_source:
-					X.RDB$TRIGGER_SOURCE.NULL = FALSE;
-					get_misc_blob (&X.RDB$TRIGGER_SOURCE, 1, true);
-					break;
-
-				case att_trig_source2:
-					X.RDB$TRIGGER_SOURCE.NULL = FALSE;
-					get_source_blob (&X.RDB$TRIGGER_SOURCE, true);
-					break;
-
-				case att_trig_name:
-					GET_TEXT(X.RDB$TRIGGER_NAME);
-					strcpy (name, X.RDB$TRIGGER_NAME);
-					BURP_verbose (126, X.RDB$TRIGGER_NAME, NULL, NULL, NULL, NULL);
-					// msg 126 restoring trigger %s 
-					break;
-
-				case att_trig_relation_name:
-					X.RDB$RELATION_NAME.NULL = FALSE;
-					GET_TEXT(X.RDB$RELATION_NAME);
-					break;
-
-				case att_trig_sequence:
-					X.RDB$TRIGGER_SEQUENCE = (USHORT) get_numeric();
-					break;
-
-				case att_trig_description:
-					X.RDB$DESCRIPTION.NULL = FALSE;
-					get_misc_blob (&X.RDB$DESCRIPTION, 1, true);
-					break;
-
-				case att_trig_description2:
-					X.RDB$DESCRIPTION.NULL = FALSE;
-					get_source_blob (&X.RDB$DESCRIPTION, true);
-					break;
-
-				case att_trig_system_flag:
-					X.RDB$SYSTEM_FLAG = (USHORT) get_numeric();
-					X.RDB$SYSTEM_FLAG.NULL = FALSE;
-					break;
-
-				case att_trig_inactive:
-					X.RDB$TRIGGER_INACTIVE = (USHORT) get_numeric();
-					break;
-
-				default:
-					bad_attribute (scan_next_attr, attribute, 134);
-					// msg 134 trigger 
-					break;
-				}
-			}
-		END_STORE;
-		ON_ERROR
-			general_on_error ();
-		END_ERROR;
-	}
+		}
+	END_STORE;
+	ON_ERROR
+		general_on_error ();
+	END_ERROR;
 
 	if (tdgbl->gbl_sw_incremental)
 	{
@@ -6401,7 +5856,6 @@ bool get_type()
 		X.RDB$DESCRIPTION.NULL = TRUE;
 		X.RDB$SYSTEM_FLAG = 0;
 		X.RDB$SYSTEM_FLAG.NULL = FALSE;
-
 		skip_init(&scan_next_attr);
 		while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
 		{
@@ -6435,8 +5889,8 @@ bool get_type()
 				break;
 
 			default:
-				bad_attribute (scan_next_attr, attribute, 293);
-				// msg 293 type (in RDB$TYPES)
+				bad_attribute (scan_next_attr, attribute, 136);
+				// msg 136 trigger type 
 				break;
 			}
 		}
@@ -6574,13 +6028,6 @@ bool get_user_privilege()
 			break;
 	}
 
-	if (tdgbl->RESTORE_ods <= DB_VERSION_DDL8)
-	{
-		// Discard roles for IB4.
-		if (user_type == obj_sql_role || object_type == obj_sql_role)
-			exists = false;
-	}
-	
 	if (exists)
 	{
 		if (!local_trans)
@@ -6689,7 +6136,6 @@ bool get_view (burp_rel*		relation)
 			REQUEST_HANDLE tdgbl->handles_get_view_req_handle1)
 		X IN RDB$VIEW_RELATIONS
 		strcpy (X.RDB$VIEW_NAME, relation->rel_name);
-
 		skip_init(&scan_next_attr);
 		while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
 		{
@@ -6981,7 +6427,7 @@ void realign(UCHAR* buffer,
 		}
 	}
 
-	// If this is format version 2 or greater, build fields for null flags
+	// If this is format version 2, build fields for null flags 
 
 	if (tdgbl->RESTORE_format >= 2)
 	{
@@ -7077,6 +6523,10 @@ bool restore (const TEXT* file_name,
  *	Perform the body of restore.
  *
  **************************************/
+	ATT_TYPE	attribute;
+	isc_req_handle  req_handle2 = 0, req_handle3 = 0,
+					req_handle5 = 0;
+
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 	// Read burp record first 
@@ -7098,7 +6548,7 @@ bool restore (const TEXT* file_name,
 	{
 		BURP_error(44, true, isc_arg_number, (void*)(IPTR)tdgbl->RESTORE_format,
 					0, NULL, 0, NULL, 0, NULL, 0, NULL);
-		// msg 44 Expected backup version 1..8.  Found %ld
+		// msg 44 Expected backup version 1, 2, 3, 4, 5, 6, or 7.  Found %ld 
 	}
 
 	create_database (database_name);
@@ -7114,19 +6564,16 @@ bool restore (const TEXT* file_name,
 
 	EXEC SQL SET TRANSACTION NAME tdgbl->global_trans ISOLATION LEVEL READ COMMITTED;
 
-	check_db_version();
-	if (tdgbl->RESTORE_ods < DB_VERSION_CURRENT)
+	USHORT db_version = check_db_version();
+	if (db_version < DB_VERSION_CURRENT)
 	{
-		BURP_error(51, true, isc_arg_number, (void*) (IPTR) tdgbl->RESTORE_ods,
+		BURP_error(51, true, isc_arg_number, (void*) (IPTR) db_version,
 					0, NULL, 0, NULL, 0, NULL, 0, NULL);
 		// msg 51 database format %ld is too old to restore to 
 	}
 
 	BURP_verbose (129, NULL, NULL, NULL, NULL, NULL);
 	// msg 129 started transaction 
-
-	ATT_TYPE	attribute;
-	isc_req_handle  req_handle2 = 0, req_handle3 = 0;
 
 	while (get_attribute(&attribute, tdgbl) != att_end)
 	{
@@ -7377,10 +6824,8 @@ bool restore (const TEXT* file_name,
 	// Purge shadow metadata if necessary 
 
 	if (tdgbl->gbl_sw_kill)
-	{
-		isc_req_handle req_handle4 = 0;
-		
-		FOR (REQUEST_HANDLE req_handle4)
+
+		FOR (REQUEST_HANDLE req_handle5)
 			FIL IN RDB$FILES WITH FIL.RDB$SHADOW_NUMBER NOT MISSING
 			AND FIL.RDB$SHADOW_NUMBER NE 0
 		ERASE FIL;
@@ -7392,12 +6837,9 @@ bool restore (const TEXT* file_name,
 			general_on_error ();
 		END_ERROR;
 
-		MISC_release_request_silent(req_handle4);
-	}
+	MISC_release_request_silent(req_handle5);
 
-	// update statistics for system indices
-	isc_req_handle req_handle5 = 0;
-
+	// update statistics for system indices 
 	FOR (REQUEST_HANDLE req_handle5)
 		IND IN RDB$INDICES WITH IND.RDB$SYSTEM_FLAG EQ 1
 		MODIFY IND;
@@ -7534,14 +6976,12 @@ void store_blr_gen_id (const TEXT*	gen_name,	// TEXT GDS_NAME[GDS_NAME_LEN]
  **************************************/
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
-	if (tdgbl->RESTORE_ods >= DB_VERSION_DDL11)
+	if (tdgbl->RESTORE_format >= 7)
 	{
 		STORE (REQUEST_HANDLE tdgbl->handles_store_blr_gen_id_req_handle1)
 			X IN RDB$GENERATORS
 			strcpy (X.RDB$GENERATOR_NAME, gen_name);
 			X.RDB$DESCRIPTION.NULL = TRUE;
-			X.RDB$SYSTEM_FLAG = 0;
-			X.RDB$SYSTEM_FLAG.NULL = FALSE;
 			if (gen_desc)
 			{
 				X.RDB$DESCRIPTION = *gen_desc;
@@ -7557,8 +6997,6 @@ void store_blr_gen_id (const TEXT*	gen_name,	// TEXT GDS_NAME[GDS_NAME_LEN]
 		STORE (REQUEST_HANDLE tdgbl->handles_store_blr_gen_id_req_handle1)
 			X IN RDB$GENERATORS
 			strcpy (X.RDB$GENERATOR_NAME, gen_name);
-			X.RDB$SYSTEM_FLAG = 0;
-			X.RDB$SYSTEM_FLAG.NULL = FALSE;
 		END_STORE;
 		ON_ERROR
 			general_on_error ();
@@ -7580,7 +7018,7 @@ void store_blr_gen_id (const TEXT*	gen_name,	// TEXT GDS_NAME[GDS_NAME_LEN]
 
 	// build the blr with the right relation name
 
-	if (tdgbl->RESTORE_ods >= DB_VERSION_DDL10)
+	if (tdgbl->RESTORE_format >= 6)
 	{
 		add_byte(blr, blr_version5);
 	}
@@ -7589,7 +7027,7 @@ void store_blr_gen_id (const TEXT*	gen_name,	// TEXT GDS_NAME[GDS_NAME_LEN]
 		add_byte(blr, blr_version4);
 	}
 	add_byte(blr, blr_begin);
-	if (tdgbl->RESTORE_ods >= DB_VERSION_DDL10)
+	if (tdgbl->RESTORE_format >= 6)
 	{
 		add_byte(blr, blr_dcl_variable);
 		add_word(blr, 0);
@@ -7607,7 +7045,7 @@ void store_blr_gen_id (const TEXT*	gen_name,	// TEXT GDS_NAME[GDS_NAME_LEN]
 	add_byte(blr, blr_assignment);
 	add_byte(blr, blr_gen_id);
 	add_string(blr, gen_name);
-	if (tdgbl->RESTORE_ods >= DB_VERSION_DDL10)
+	if (tdgbl->RESTORE_format >= 6)
 	{
 		add_byte(blr, blr_literal);
 		add_byte(blr, blr_int64);

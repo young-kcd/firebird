@@ -1,4 +1,4 @@
-Firebird Database Server 2.0 Release Candidate 1
+Firebird Database Server 2.0
 ==================================================
 
   ** IMPORTANT **
@@ -10,8 +10,8 @@ Firebird Database Server 2.0 Release Candidate 1
   ** ********* **
 
 This document is a guide to installing this package of
-Firebird 2.0 RC1 on the Win32 platform. These notes
-refer to the installation package itself, rather than
+Firebird 2.0 on the Win32 platform. These notes refer 
+to the installation package itself, rather than
 Firebird 2.0 in general.
 
 
@@ -80,7 +80,7 @@ installer cannot automatically detect if a
 Firebird 2.0 Alpha or Beta server is running
 as a service. Therefore you will receive no warning
 until the installer attempts to overwrite an active
-file.
+file. This can be avoided if you uninstall first.
 
 
 New features of the installer
@@ -111,11 +111,7 @@ o Support for several languages has been added to the
 Known installation problems
 ---------------------------
 
-A client-only install is in fact installing the
-server executable. This will be fixed in a future
-release. In the meantime the work-around is to delete 
-the .exe. This can be automated by using a scripted 
-install.
+None are known at this time.
 
 
 Uninstallation

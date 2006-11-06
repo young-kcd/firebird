@@ -38,7 +38,6 @@
 
 #include "../remote/os/win32/ibconfig.h"
 #include "../remote/os/win32/property.rh"
-#include "../remote/os/win32/window.h"
 
 #include "../jrd/ibase.h"
 
@@ -256,7 +255,7 @@ LRESULT CALLBACK InterbasePage(HWND hDlg, UINT unMsg, WPARAM wParam,
 		switch (((LPNMHDR) lParam)->code) {
 		case PSN_KILLACTIVE:	// When the page is about to lose focus
 			{
-				SetWindowLongPtr(hDlg, DWLP_MSGRESULT, FALSE);
+				SetWindowLong(hDlg, DWL_MSGRESULT, FALSE);
 				break;
 			}
 		case PSN_SETACTIVE:	// When the page is about to recieve 
@@ -280,7 +279,7 @@ LRESULT CALLBACK InterbasePage(HWND hDlg, UINT unMsg, WPARAM wParam,
 				}
 				else			// Error writing the values
 				{
-					SetWindowLongPtr(hDlg, DWLP_MSGRESULT, TRUE);
+					SetWindowLong(hDlg, DWL_MSGRESULT, TRUE);
 					return TRUE;
 				}
 			break;
@@ -569,7 +568,7 @@ BOOL ValidateUser(HWND hParentWnd)
 	else {
 		szSysDbaPasswd[0] = '\0';
 		return (DialogBox
-				((HINSTANCE) GetWindowLongPtr(hParentWnd, GWLP_HINSTANCE),
+				((HINSTANCE) GetWindowLong(hParentWnd, GWL_HINSTANCE),
 				 MAKEINTRESOURCE(PASSWORD_DLG), hParentWnd,
 				 (DLGPROC) PasswordDlgProc) > 0);
 	}

@@ -30,6 +30,7 @@
 #include "../jrd/jrd.h"
 #include "../jrd/log.h"
 #include "../jrd/ods.h"
+#include "../jrd/all_proto.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/log_proto.h"
 #include "../jrd/pag_proto.h"
@@ -557,9 +558,6 @@ static void log_teb(SSHORT count, const TEB* vector)
  *	Log a transaction element block.
  *
  **************************************/
-	if (count < 0)
-		return;
-		
 	for (TEB* const end = vector + count; vector < end; vector++) {
 		log_pointer(*vector->teb_database);
 		log_long((SLONG) vector->teb_tpb_length);

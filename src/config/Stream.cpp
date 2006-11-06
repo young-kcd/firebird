@@ -33,7 +33,6 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include "firebird.h"
-#include "../common/classes/alloc.h"
 #include "Stream.h"
 #include "StreamSegment.h"
 

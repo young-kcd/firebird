@@ -55,6 +55,7 @@
 #include "../jrd/intl.h"
 #include "../jrd/dyn.h"
 //#include "../jrd/license.h"
+#include "../jrd/all_proto.h"
 #include "../jrd/blb_proto.h"
 #include "../jrd/cmp_proto.h"
 #include "../jrd/dpm_proto.h"
@@ -106,6 +107,10 @@ void DYN_ddl(Attachment* attachment, jrd_tra* transaction, USHORT length,
 
 	thread_db* tdbb = JRD_get_thread_data();
 
+#if defined(V4_THREADING) || (defined(SUPERSERVER) && defined(WIN_NT))
+	Database* dbb = tdbb->tdbb_database;
+#endif
+
 	const UCHAR* ptr = ddl;
 
 	if (*ptr++ != isc_dyn_version_1) {
@@ -124,11 +129,17 @@ void DYN_ddl(Attachment* attachment, jrd_tra* transaction, USHORT length,
 	JrdMemoryPool* tempPool = JrdMemoryPool::createPool();
 	Jrd::ContextPoolHolder context(tdbb, tempPool);
 
-	Database* dbb = tdbb->tdbb_database;
-
 	try {
 
+#if defined(SUPERSERVER) && defined(WIN_NT)
+		THREAD_EXIT();
 		THD_MUTEX_LOCK(dbb->dbb_mutexes + DBB_MUTX_dyn);
+		THREAD_ENTER();
+#else
+#ifdef V4_THREADING
+		V4_JRD_MUTEX_LOCK(dbb->dbb_mutexes + DBB_MUTX_dyn);
+#endif
+#endif
 
 		VIO_start_save_point(tdbb, transaction);
 		transaction->tra_save_point->sav_verb_count++;
@@ -137,9 +148,16 @@ void DYN_ddl(Attachment* attachment, jrd_tra* transaction, USHORT length,
 		transaction->tra_save_point->sav_verb_count--;
 		VIO_verb_cleanup(tdbb, transaction);
 
+#if defined(SUPERSERVER) && defined(WIN_NT)
 		THD_MUTEX_UNLOCK(dbb->dbb_mutexes + DBB_MUTX_dyn);
+#else
+#ifdef V4_THREADING
+		V4_JRD_MUTEX_UNLOCK(dbb->dbb_mutexes + DBB_MUTX_dyn);
+#endif
+#endif
+
 	}
-	catch (const Firebird::Exception& ex) {
+	catch (const std::exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		const Savepoint* savepoint = transaction->tra_save_point;
 		if (savepoint && savepoint->sav_verb_count)
@@ -151,13 +169,19 @@ void DYN_ddl(Attachment* attachment, jrd_tra* transaction, USHORT length,
 			try {
 				VIO_verb_cleanup(tdbb, transaction);
 			}
-			catch (const Firebird::Exception&) {
-				THD_MUTEX_UNLOCK(dbb->dbb_mutexes + DBB_MUTX_dyn);
+			catch (const std::exception&) {
 				BUGCHECK(290);	/* msg 290 error during savepoint backout */
 			}
 		}
 
+#if defined(SUPERSERVER) && defined(WIN_NT)
 		THD_MUTEX_UNLOCK(dbb->dbb_mutexes + DBB_MUTX_dyn);
+#else
+#ifdef V4_THREADING
+		V4_JRD_MUTEX_UNLOCK(dbb->dbb_mutexes + DBB_MUTX_dyn);
+#endif
+#endif
+
 		ERR_punt();
 	}
 }
@@ -371,10 +395,6 @@ void DYN_execute(Global* gbl,
 
 		case isc_dyn_def_collation:
 			DYN_define_collation(gbl, ptr);
-			break;
-
-		case isc_dyn_del_collation:
-			DYN_delete_collation(gbl, ptr);
 			break;
 
 		case isc_dyn_def_rel:
@@ -624,7 +644,7 @@ SLONG DYN_get_number(const UCHAR** ptr)
 }
 
 
-USHORT DYN_get_string(const TEXT** ptr, TEXT* field, size_t size, bool transliterate)
+USHORT DYN_get_string(const TEXT** ptr, TEXT* field, size_t size, bool err_flag)
 {
 /**************************************
  *
@@ -635,48 +655,43 @@ USHORT DYN_get_string(const TEXT** ptr, TEXT* field, size_t size, bool translite
  * Functional description
  *	Pick up a string, move to a target, and, if requested,
  *	set a null flag.  Return length of string.
- *	If destination field size is too small, punt.
+ *	If destination field size is too small, punt if err_flag is true,
+ *	otherwise try to copy as much as possible and skip the rest.
  *	Strings need enough space for null pad.
  *
  **************************************/
+	USHORT e = 0;
 	const TEXT* p = *ptr;
 	USHORT length = (UCHAR) *p++;
 	length |= ((USHORT) ((UCHAR) (*p++))) << 8;
 	
-	Firebird::HalfStaticArray<TEXT, MAX_SQL_IDENTIFIER_LEN> temp;
 	USHORT l = length;
-
 	if (l) {
 		if (length >= size) {
-			DYN_error_punt(false, 159, NULL, NULL, NULL, NULL, NULL);
-			// msg 159: Name longer than database field size
+			if (err_flag) {
+				DYN_error_punt(false, 159, NULL, NULL, NULL, NULL, NULL);
+			/* msg 159: Name longer than database field size */
+			}
+			else {
+				l = size - 1;
+				e = length - l;
+			}
 		}
-
-		TEXT* p2 = temp.getBuffer(length);
-
 		do {
-			*p2++ = *p++;
+			*field++ = *p++;
 		} while (--l);
+		for (; e; e--)
+			p++;
 	}
 
+	*field = 0;
 	*ptr = p;
-
-	if (transliterate)
-	{
-		length = INTL_convert_bytes(JRD_get_thread_data(),
-			ttype_metadata, (BYTE*) field, size - 1,
-			ttype_dynamic, (const BYTE*) temp.begin(), length, ERR_post);
-	}
-	else
-		memcpy(field, temp.begin(), length);
-
-	field[length] = 0;
 
 	return length;
 }
 
 
-USHORT DYN_get_string(const TEXT** ptr, Firebird::MetaName& field, size_t, bool transliterate)
+USHORT DYN_get_string(const TEXT** ptr, Firebird::MetaName& field, size_t, bool err_flag)
 {
 /**************************************
  *
@@ -686,38 +701,28 @@ USHORT DYN_get_string(const TEXT** ptr, Firebird::MetaName& field, size_t, bool 
  *
  * Functional description
  *	Pick up an object name, move to a target. Return length of string.
- *	If destination field size is too small, punt.
+ *	If destination field size is too small, punt if err_flag is true,
+ *	otherwise try to copy as much as possible and skip the rest.
  *
  **************************************/
 	const TEXT* p = *ptr;
 	USHORT length = (UCHAR) *p++;
 	length |= ((USHORT) ((UCHAR) (*p++))) << 8;
 	
-	if (length > MAX_SQL_IDENTIFIER_LEN)
+	if (err_flag && length > MAX_SQL_IDENTIFIER_LEN)
 	{
 		DYN_error_punt(false, 159, NULL, NULL, NULL, NULL, NULL);
-		// msg 159: Name longer than database field size
+		/* msg 159: Name longer than database field size */
 	}
 	field.assign(p, length);
 	p += length;
 
 	*ptr = p;
-
-	if (transliterate)
-	{
-		TEXT temp[MAX_SQL_IDENTIFIER_LEN];
-
-		length = INTL_convert_bytes(JRD_get_thread_data(),
-			ttype_metadata, (BYTE*) temp, sizeof(temp),
-			ttype_dynamic, (const BYTE*) field.c_str(), field.length(), ERR_post);
-		field.assign(temp, length);
-	}
-
 	return length;
 }
 
 
-USHORT DYN_get_string(const TEXT** ptr, Firebird::PathName& field, size_t, bool transliterate)
+USHORT DYN_get_string(const TEXT** ptr, Firebird::PathName& field, size_t, bool)
 {
 /**************************************
  *
@@ -727,82 +732,17 @@ USHORT DYN_get_string(const TEXT** ptr, Firebird::PathName& field, size_t, bool 
  *
  * Functional description
  *	Pick up a file name, move to a target. Return length 
- *	of string.
+ *	of string. Copy all available data ignoring err_flag.
  *
  **************************************/
 	const TEXT* p = *ptr;
 	USHORT length = (UCHAR) *p++;
 	length |= ((USHORT) ((UCHAR) (*p++))) << 8;
-
-	Firebird::PathName temp;
-
-	temp.assign(p, length);
+	
+	field.assign(p, length);
 	p += length;
 
 	*ptr = p;
-
-	if (transliterate)
-	{
-		thread_db* tdbb = JRD_get_thread_data();
-
-		field.reserve(
-			INTL_convert_bytes(tdbb,
-				ttype_metadata, NULL, 0,
-				ttype_dynamic, (const BYTE*) temp.begin(), temp.length(), ERR_post));
-
-		length = INTL_convert_bytes(tdbb,
-			ttype_metadata, (BYTE*) field.begin(), field.capacity(),
-			ttype_dynamic, (const BYTE*) temp.begin(), temp.length(), ERR_post);
-		field.resize(length);
-	}
-	else
-		field = temp;
-
-	return length;
-}
-
-
-USHORT DYN_get_string(const TEXT** ptr, Firebird::UCharBuffer& array, size_t, bool transliterate)
-{
-/**************************************
- *
- *	D Y N _ g e t _ s t r i n g
- *
- **************************************
- *
- * Functional description
- *	Pick up a string, move to a target. Return length 
- *	of string.
- *
- **************************************/
-	const TEXT* p = *ptr;
-	USHORT length = (UCHAR) *p++;
-	length |= ((USHORT) ((UCHAR) (*p++))) << 8;
-
-	Firebird::UCharBuffer temp;
-
-	memcpy(temp.getBuffer(length), p, length);
-	p += length;
-
-	*ptr = p;
-
-	if (transliterate)
-	{
-		thread_db* tdbb = JRD_get_thread_data();
-
-		array.resize(
-			INTL_convert_bytes(tdbb,
-				ttype_metadata, NULL, 0,
-				ttype_dynamic, temp.begin(), length, ERR_post));
-
-		length = INTL_convert_bytes(tdbb,
-			ttype_metadata, array.begin(), array.getCapacity(),
-			ttype_dynamic, temp.begin(), length, ERR_post);
-		array.resize(length);
-	}
-	else
-		array = temp;
-
 	return length;
 }
 
@@ -835,7 +775,7 @@ USHORT DYN_put_blr_blob(Global* gbl, const UCHAR** ptr, bid* blob_id)
 		BLB_put_segment(tdbb, blob, p, length);
 		BLB_close(tdbb, blob);
 	}
-	catch (const Firebird::Exception& ex) {
+	catch (const std::exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_error_punt(true, 106, NULL, NULL, NULL, NULL, NULL);
 		/* msg 106: "Create metadata blob failed" */
@@ -882,7 +822,7 @@ USHORT DYN_put_text_blob(Global* gbl, const UCHAR** ptr, bid* blob_id, USHORT bp
 		}
 		BLB_close(tdbb, blob);
 	}
-	catch (const Firebird::Exception& ex) {
+	catch (const std::exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_error_punt(true, 106, NULL, NULL, NULL, NULL, NULL);
 		/* msg 106: "Create metadata blob failed" */
@@ -932,27 +872,6 @@ USHORT DYN_skip_attribute(const UCHAR** ptr)
  * Functional description
  *	Skip over attribute returning length (excluding
  *	size of count bytes).
- *
- **************************************/
-	const UCHAR* p = *ptr;
-	USHORT length = *p++;
-	length |= (*p++) << 8;
-	*ptr = p + length;
-
-	return length;
-}
-
-
-USHORT DYN_skip_blr_blob(const UCHAR** ptr)
-{
-/**************************************
- *
- *	D Y N _ s k i p _ b l r _ b l o b
- *
- **************************************
- *
- * Functional description
- *	Skip a blr blob.
  *
  **************************************/
 	const UCHAR* p = *ptr;
@@ -1244,7 +1163,7 @@ static void grant( Global* gbl, const UCHAR** ptr)
 	}	// for (...)
 
 	}	// try
-	catch (const Firebird::Exception& ex) {
+	catch (const std::exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		/* we need to rundown as we have to set the env.
 		   But in case the error is from store_priveledge we have already
@@ -1366,7 +1285,7 @@ static bool grantor_can_grant(Global*					gbl,
 
 /* If the current user is locksmith - allow all grants to occur */
 
-	if (tdbb->tdbb_attachment->locksmith()) {
+	if (tdbb->tdbb_attachment->att_user->usr_flags & USR_locksmith) {
 		return true;
 	}
 
@@ -1552,7 +1471,7 @@ static bool grantor_can_grant(Global*					gbl,
 	// all done.
 
 	}	// try
-	catch (const Firebird::Exception& ex) {
+	catch (const std::exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1);
 		DYN_error_punt(true, err_num, NULL, NULL, NULL, NULL, NULL);
@@ -1593,8 +1512,11 @@ static bool grantor_can_grant_role(	thread_db*	tdbb,
 	if (DYN_is_it_sql_role(gbl, role_name, owner, tdbb))
 	{
 		// Both SYSDBA and the owner of this ROLE can grant membership
-		if (tdbb->tdbb_attachment->locksmith() || owner == grantor)
+		if ((tdbb->tdbb_attachment->att_user->usr_flags & USR_locksmith)
+			|| (owner == grantor))
+		{
 			return true;
+		}
 	}
 	else
 	{
@@ -1824,7 +1746,7 @@ static void revoke_permission(Global* gbl, const UCHAR** ptr)
 					if (!DYN_REQUEST(drq_e_grant1))
 						DYN_REQUEST(drq_e_grant1) = request;
 
-				if ((revoking_user->locksmith()) ||
+				if ((revoking_user->usr_flags & USR_locksmith) ||
 					(revoking_user_name == PRIV.RDB$GRANTOR))
 				{
 					ERASE PRIV;
@@ -1853,7 +1775,7 @@ static void revoke_permission(Global* gbl, const UCHAR** ptr)
 				   in this table which have been granted the privilege, we
 				   erase the entries from RDB$USER_PRIVILEGES. */
 
-				if ((revoking_user->locksmith()) ||
+				if ((revoking_user->usr_flags & USR_locksmith) ||
 					(revoking_user_name == PRIV.RDB$GRANTOR))
 				{
 					ERASE PRIV;
@@ -1883,7 +1805,7 @@ static void revoke_permission(Global* gbl, const UCHAR** ptr)
 	}
 
 	}
-	catch (const Firebird::Exception& ex) {
+	catch (const std::exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		/* we need to rundown as we have to set the env.
 		   But in case the error is from store_priveledge we have already 
@@ -1941,7 +1863,7 @@ static void set_field_class_name(Global*					gbl,
 		MODIFY RFR
 			while (!unique)
 		    {
-				sprintf(RFR.RDB$SECURITY_CLASS, "%s%" SQUADFORMAT, "SQL$GRANT",
+				sprintf(RFR.RDB$SECURITY_CLASS, "%s%" QUADFORMAT "d", "SQL$GRANT", 
 				DPM_gen_id(tdbb, 
 					MET_lookup_generator(tdbb, "RDB$SECURITY_CLASS"), false, (SINT64) 1));
 
@@ -2018,10 +1940,11 @@ static void store_privilege(Global*						gbl,
 			DYN_REQUEST(drq_s_grant) = request;
 		}
 	}
-	catch (const Firebird::Exception& ex) {
+	catch (const std::exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1);
 		DYN_error_punt(true, 79, NULL, NULL, NULL, NULL, NULL);
 		/* msg 79: "STORE RDB$USER_PRIVILEGES failed in grant" */
 	}
 }
+
