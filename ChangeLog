@@ -1,3 +1,97 @@
+2006-11-06 02:07  asfernandes
+
+	* firebird2/: doc/WhatsNew (1.106), src/jrd/met.epp (1.214),
+	src/msgs/facilities.sql (1.90):
+
+	Misc
+
+2006-11-06 01:47  asfernandes
+
+	* firebird2/src/burp/: burp.cpp (1.117), burpswi.h (1.15):
+
+	Corrections
+
+2006-11-05 19:30  asfernandes
+
+	* firebird2/: doc/WhatsNew (1.105), src/burp/backup.epp (1.93),
+	src/burp/burp.cpp (1.116), src/burp/burp.h (1.79),
+	src/burp/burpswi.h (1.14), src/burp/restore.epp (1.112),
+	src/dsql/ddl.cpp (1.191), src/dsql/keywords.cpp (1.56),
+	src/dsql/metd.epp (1.95), src/dsql/metd_proto.h (1.27),
+	src/dsql/parse.y (1.225), src/include/consts_pub.h (1.5),
+	src/include/gen/codetext.h (1.56), src/include/gen/iberror.h
+	(1.57), src/include/gen/msgs.h (1.71), src/include/gen/rdb_codes.h
+	(1.54), src/include/gen/sql_code.h (1.59), src/isql/extract.epp
+	(1.76), src/isql/isql.epp (1.202), src/isql/show.epp (1.111),
+	src/jrd/cmp.cpp (1.241), src/jrd/constants.h (1.36),
+	src/jrd/dfw.epp (1.195), src/jrd/dyn_def.epp (1.147),
+	src/jrd/dyn_del.epp (1.68), src/jrd/dyn_mod.epp (1.84),
+	src/jrd/exe.cpp (1.200), src/jrd/exe_proto.h (1.15),
+	src/jrd/jrd.cpp (1.281), src/jrd/jrd.h (1.180), src/jrd/met.epp
+	(1.213), src/jrd/met_proto.h (1.57), src/jrd/req.h (1.64),
+	src/jrd/tra.h (1.60), src/jrd/vio.cpp (1.180),
+	src/msgs/facilities.sql (1.89), src/msgs/messages.sql (1.103),
+	src/msgs/system_errors.sql (1.46):
+
+	1) CORE-645 and CORE-745: Database triggers 2) CORE-711: Make
+	syntax for "CREATE TRIGGER" compliant with SQL2003
+
+2006-11-05 11:54  hvlad
+
+	* firebird2/lang_helpers/: gds_codes.ftn (1.47), gds_codes.pas
+	(1.47):
+
+	Replace few hardcoded error messages by new error codes
+
+2006-11-05 11:50  hvlad
+
+	* firebird2/src/: dsql/pass1.cpp (1.299), include/gen/codetext.h
+	(1.55), include/gen/iberror.h (1.56), include/gen/msgs.h (1.70),
+	include/gen/rdb_codes.h (1.53), include/gen/sql_code.h (1.58),
+	msgs/facilities.sql (1.88), msgs/messages.sql (1.102),
+	msgs/system_errors.sql (1.45):
+
+	Replace few hardcoded error messages by new error codes
+
+2006-11-05 05:04  robocop
+
+	* firebird2/src/jrd/DatabaseSnapshot.cpp (1.18):
+
+	Make buildable with VC6. If other compilers reject it, it will need
+	an #ifdef.
+
+2006-11-05 05:03  robocop
+
+	* firebird2/src/jrd/validation.cpp (1.25):
+
+	Misc.
+
+2006-11-05 05:02  robocop
+
+	* firebird2/builds/win32/msvc6/: engine.dsp (1.71),
+	engine_classic.dsp (1.67), engine_embed.dsp (1.46):
+
+	Add DebugInterface to the VC6 builds.
+
+2006-11-05 05:01  robocop
+
+	* firebird2/: src/include/gen/codetext.h (1.54),
+	src/include/gen/iberror.h (1.55), src/include/gen/msgs.h (1.69),
+	src/include/gen/rdb_codes.h (1.52), src/include/gen/sql_code.h
+	(1.57), src/jrd/DebugInterface.cpp (1.2), src/jrd/met.epp (1.212),
+	src/msgs/facilities.sql (1.87), src/msgs/messages.sql (1.101),
+	src/msgs/system_errors.sql (1.44), lang_helpers/gds_codes.ftn
+	(1.46), lang_helpers/gds_codes.pas (1.46):
+
+	Put two recent hardcoded messages into the msg db.
+
+2006-11-05 04:55  robocop
+
+	* firebird2/src/jrd/dyn.epp (1.96):
+
+	Simplify Vlad's DYN_skip_blr_blob but with this change, it becomes
+	the same as DYN_skip_attribute and thus it's candidate for removal.
+
 2006-11-04 16:33  asfernandes
 
 	* firebird2/src/jrd/dyn.epp (1.95):
