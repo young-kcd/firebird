@@ -993,7 +993,7 @@ int common_main(int		argc,
 				tdgbl->gbl_sw_novalidity = true;
 				break;
 
-			case (IN_SW_BURP_NO):
+			case (IN_SW_BURP_NOD):
 				tdgbl->gbl_sw_nodbtriggers = true;
 				dpb.insertByte(isc_dpb_no_db_triggers, 1);
 				break;
