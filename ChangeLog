@@ -1,3 +1,10 @@
+2006-11-06 07:27  paul_reeves
+
+	* firebird2/builds/install/arch-specific/win32/es/: leame.txt
+	(1.1.6.2), leame_instalacion.txt (1.1.6.1):
+
+	more corrections to the spanish section of the windows installer
+
 2006-11-05 16:27  makowski
 
 	* firebird2/builds/install/arch-specific/win32/fr/:
