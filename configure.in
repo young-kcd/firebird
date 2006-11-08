@@ -556,7 +556,7 @@ AC_MSG_CHECKING(alignment of long)
 AC_TRY_RUN([main () {
   struct s {
     char a;
-    long b;
+    Long long b;
   };
   exit((int)&((struct s*)0)->b);
 }], ac_cv_c_alignment=$ac_status, ac_cv_c_alignment=$ac_status)
