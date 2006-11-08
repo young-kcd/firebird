@@ -1276,6 +1276,10 @@ C --
       PARAMETER (GDS__replace_doesnt_match_matching    = 336003100)
       INTEGER*4 GDS__replace_with_complex_view       
       PARAMETER (GDS__replace_with_complex_view        = 336003101)
+      INTEGER*4 GDS__dsql_incompatible_trigger_type  
+      PARAMETER (GDS__dsql_incompatible_trigger_type   = 336003102)
+      INTEGER*4 GDS__dsql_db_trigger_type_cant_change
+      PARAMETER (GDS__dsql_db_trigger_type_cant_change = 336003103)
       INTEGER*4 GDS__dyn_role_does_not_exist         
       PARAMETER (GDS__dyn_role_does_not_exist          = 336068796)
       INTEGER*4 GDS__dyn_no_grant_admin_opt          
