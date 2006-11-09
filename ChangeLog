@@ -1,3 +1,10 @@
+2006-11-08 14:20  paulbeach
+
+	* firebird2/configure.in (1.241.2.2):
+
+	Configure.in should work out alignment correctly for non X86
+	platforms
+
 2006-11-06 07:27  paul_reeves
 
 	* firebird2/builds/install/arch-specific/win32/es/: leame.txt
