@@ -1,3 +1,30 @@
+2006-11-09 01:31  asfernandes
+
+	* firebird2/builds/win32/msvc7/: gpre_boot.vcproj (1.30),
+	gpre_embed.vcproj (1.6):
+
+	More cleanup in internal gpre
+
+2006-11-09 01:18  asfernandes
+
+	* firebird2/src/jrd/dfw.epp (1.196):
+
+	Remove variable shadowing - thanks to Claudio
+
+2006-11-08 15:50  asfernandes
+
+	* firebird2/builds/win32/msvc7/: gpre_boot.vcproj (1.29),
+	gpre_embed.vcproj (1.5):
+
+	Correction - thanks to Claudio
+
+2006-11-08 14:00  paulbeach
+
+	* firebird2/configure.in (1.247):
+
+	Configure.in should work out alignment correctly for non X86
+	platforms
+
 2006-11-08 02:21  asfernandes
 
 	* firebird2/builds/win32/msvc7/: gpre_boot.vcproj (1.28),
