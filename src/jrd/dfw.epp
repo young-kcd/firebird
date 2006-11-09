@@ -2123,7 +2123,7 @@ static bool create_trigger(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 
 			if (!arg)
 			{
-				DeferredWork* arg = work->dfw_args;
+				arg = work->dfw_args;
 				while (arg && (arg->dfw_type != dfw_arg_trg_type)) 
 					arg = arg->dfw_next;
 
@@ -3261,7 +3261,7 @@ static bool delete_trigger(	thread_db*	tdbb,
 
 			if (!arg)
 			{
-				DeferredWork* arg = work->dfw_args;
+				arg = work->dfw_args;
 				while (arg && (arg->dfw_type != dfw_arg_trg_type)) 
 					arg = arg->dfw_next;
 
@@ -4345,7 +4345,7 @@ static bool modify_trigger(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 
 			if (!arg)
 			{
-				DeferredWork* arg = work->dfw_args;
+				arg = work->dfw_args;
 				while (arg && (arg->dfw_type != dfw_arg_trg_type)) 
 					arg = arg->dfw_next;
 
