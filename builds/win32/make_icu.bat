@@ -4,11 +4,11 @@
 ::Set up the compiler environment
 if DEFINED VS80COMNTOOLS (
 @devenv /? >nul 2>nul
-@if errorlevel 9009 (call "%VS80COMNTOOLS%vsvars32.bat") else ( echo    The file: & echo      %VS80COMNTOOLS%vsvars32.bat & echo    has already been executed.)
+@if errorlevel 9009 (call "%VS80COMNTOOLS%vsvars32.bat") else ( echo    The file: & echo      "%VS80COMNTOOLS%vsvars32.bat" & echo    has already been executed.)
 ) else (
 if DEFINED VS71COMNTOOLS (
 @devenv /? >nul 2>nul
-@if errorlevel 9009 (call "%VS71COMNTOOLS%vsvars32.bat") else ( echo    The file: & echo      %VS71COMNTOOLS%vsvars32.bat & echo    has already been executed.)
+@if errorlevel 9009 (call "%VS71COMNTOOLS%vsvars32.bat") else ( echo    The file: & echo      "%VS71COMNTOOLS%vsvars32.bat" & echo    has already been executed.)
 ) else (
 @msdev /? >nul 2>nul
 @if errorlevel 9009 (call "C:\Program Files\Microsoft Visual Studio\VC98\Bin\vcvars32.bat") else (echo MSVC6 vcvars.bat has already been executed.)
