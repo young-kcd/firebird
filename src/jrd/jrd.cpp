@@ -1272,7 +1272,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 
 	if (!(attachment->att_flags & ATT_no_db_triggers))
 	{
-		jrd_tra* transaction;
+		jrd_tra* transaction = 0;
 
 		try
 		{
@@ -1294,7 +1294,8 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 		}
 		catch (const Firebird::Exception&)
 		{
-			TRA_rollback(tdbb, transaction, false, false);
+			if (transaction)
+				TRA_rollback(tdbb, transaction, false, false);
 			throw;
 		}
 	}
@@ -2338,7 +2339,7 @@ ISC_STATUS GDS_DETACH(ISC_STATUS* user_status, Attachment** handle)
 	if (!(attachment->att_flags & ATT_no_db_triggers))
 	{
 		ISC_STATUS_ARRAY temp_status = {0};
-		jrd_tra* transaction;
+		jrd_tra* transaction = 0;
 
 		tdbb->tdbb_status_vector = temp_status;
 
@@ -2357,7 +2358,8 @@ ISC_STATUS GDS_DETACH(ISC_STATUS* user_status, Attachment** handle)
 		{
 			try
 			{
-				TRA_rollback(tdbb, transaction, false, false);
+				if (transaction)
+					TRA_rollback(tdbb, transaction, false, false);
 			}
 			catch (const Firebird::Exception&)
 			{
