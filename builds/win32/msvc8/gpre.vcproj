@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="8,00"
+	Version="8.00"
 	Name="gpre"
 	ProjectGUID="{D84F0839-28A4-40B2-B5F4-F5E1E7F48FD0}"
+	RootNamespace="gpre"
 	>
 	<Platforms>
 		<Platform
@@ -282,6 +283,10 @@
 			<Tool
 				Name="VCXDCMakeTool"
 			/>
+				RelativePath="..\..\..\src\gpre\rmc.cpp"
+				>
+			</File>
+			<File
 			<Tool
 				Name="VCBscMakeTool"
 			/>
