@@ -64,8 +64,8 @@
 using namespace Firebird;
 using namespace Jrd;
 
-const UCHAR TAG_DBB = -1U;
-const UCHAR TAG_RECORD = -2U;
+const UCHAR TAG_DBB		= '\xFF'; //-1U
+const UCHAR TAG_RECORD	= '\xFE'; //-2U;
 
 
 // SharedMemory class
