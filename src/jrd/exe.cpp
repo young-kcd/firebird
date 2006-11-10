@@ -499,7 +499,7 @@ void EXE_execute_db_triggers(thread_db* tdbb,
  *	Execute database triggers
  *
  **************************************/
- 	// do nothing if user don't want database triggers
+ 	// do nothing if user doesn't want database triggers
 	if (tdbb->tdbb_attachment->att_flags & ATT_no_db_triggers)
 		return;
 

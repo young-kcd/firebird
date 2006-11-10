@@ -2117,7 +2117,7 @@ static bool create_trigger(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 
 	case 4:
 		{
-			DeferredWork* arg = work->dfw_args;
+			const DeferredWork* arg = work->dfw_args;
 			while (arg && (arg->dfw_type != dfw_arg_rel_name)) 
 				arg = arg->dfw_next;
 
@@ -2698,7 +2698,7 @@ static bool delete_parameter(	thread_db*	tdbb,
 	case 1:
 /* hvlad: temporary disable procedure parameters dependency check
 		  until proper solution (something like dyn_mod_parameter)
-		  will be implemented. This check was never worked properly
+		  will be implemented. This check never worked properly
 		  so no harm is done
 
 		if (MET_lookup_procedure_id(tdbb, work->dfw_id, false, true, 0))
@@ -3255,7 +3255,7 @@ static bool delete_trigger(	thread_db*	tdbb,
 
 	case 4:
 		{
-			DeferredWork* arg = work->dfw_args;
+			const DeferredWork* arg = work->dfw_args;
 			while (arg && (arg->dfw_type != dfw_arg_rel_name)) 
 				arg = arg->dfw_next;
 
@@ -3329,7 +3329,7 @@ static bool find_depend_in_dfw(	thread_db*	tdbb,
 
 /* Look to see if an object of the desired type is being deleted. */
 
-	for (DeferredWork* work = transaction->tra_deferred_work; work;
+	for (const DeferredWork* work = transaction->tra_deferred_work; work;
 		work = work->dfw_next)
 	{
 		if ((work->dfw_type == dfw_type ||
@@ -4339,7 +4339,7 @@ static bool modify_trigger(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 
 	case 3:
 		{
-			DeferredWork* arg = work->dfw_args;
+			const DeferredWork* arg = work->dfw_args;
 			while (arg && (arg->dfw_type != dfw_arg_rel_name)) 
 				arg = arg->dfw_next;
 
@@ -4681,8 +4681,7 @@ static void release_protect_lock(thread_db* tdbb, jrd_tra*	transaction, Lock* re
 	vec<Lock*>* vector = transaction->tra_relation_locks;
 	if (vector) {
 		vec<Lock*>::iterator lock = vector->begin();
-		for (ULONG i = 0; i < vector->count();
-			++i, ++lock)
+		for (ULONG i = 0; i < vector->count(); ++i, ++lock)
 		{
 			if (*lock == relLock)
 			{

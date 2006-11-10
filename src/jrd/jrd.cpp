@@ -6173,25 +6173,25 @@ static bool rollback(thread_db*	tdbb,
 		check_database(tdbb, transaction->tra_attachment, status_vector);
 
 		try {
-		if (!(tdbb->tdbb_attachment->att_flags & ATT_no_db_triggers))
-		{
-			ISC_STATUS_ARRAY temp_status = {0};
-			tdbb->tdbb_status_vector = temp_status;
-
-			try
+			if (!(tdbb->tdbb_attachment->att_flags & ATT_no_db_triggers))
 			{
-				EXE_execute_db_triggers(tdbb, transaction, jrd_req::req_trigger_trans_rollback);
-			}
-			catch (const Firebird::Exception&)
-			{
-			}
-		}
+				ISC_STATUS_ARRAY temp_status = {0};
+				tdbb->tdbb_status_vector = temp_status;
 
-		tdbb->tdbb_status_vector = status_vector;
+				try
+				{
+					EXE_execute_db_triggers(tdbb, transaction, jrd_req::req_trigger_trans_rollback);
+				}
+				catch (const Firebird::Exception&)
+				{
+				}
+			}
 
-		TRA_rollback(tdbb, transaction, retaining_flag, false);
-		Database* dbb = tdbb->tdbb_database;
-		--dbb->dbb_use_count;
+			tdbb->tdbb_status_vector = status_vector;
+
+			TRA_rollback(tdbb, transaction, retaining_flag, false);
+			Database* dbb = tdbb->tdbb_database;
+			--dbb->dbb_use_count;
 
 		}	// try
 		catch (const Firebird::Exception& ex) {

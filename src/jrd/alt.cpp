@@ -118,8 +118,9 @@ SLONG API_ROUTINE_VARARG isc_event_block(UCHAR** event_buffer,
 		const char* q = va_arg(ptr, SCHAR *);
 
 		/* Strip the blanks from the ends */
-		const char* end;
-		for (end = q + strlen(q); --end >= q && *end == ' ';);
+		const char* end = q + strlen(q);
+		while (--end >= q && *end == ' ')
+			;
 		*p++ = end - q + 1;
 		while (q <= end)
 			*p++ = *q++;
@@ -164,8 +165,9 @@ const int MAX_NAME_LENGTH		= 31;
 		const TEXT* const q = *nb++;
 
 		/* Strip trailing blanks from string */
-		const char* end;
-		for (end = q + MAX_NAME_LENGTH; --end >= q && *end == ' ';);
+		const char* end = q + MAX_NAME_LENGTH;
+		while (--end >= q && *end == ' ')
+			;
 		length += end - q + 1 + 5;
 	}
 
@@ -197,8 +199,9 @@ const int MAX_NAME_LENGTH		= 31;
 		const TEXT* q = *nb++;
 
 		/* Strip trailing blanks from string */
-		const char* end;
-		for (end = q + MAX_NAME_LENGTH; --end >= q && *end == ' ';);
+		const char* end = q + MAX_NAME_LENGTH;
+		while (--end >= q && *end == ' ')
+			;
 		*p++ = end - q + 1;
 		while (q <= end)
 			*p++ = *q++;

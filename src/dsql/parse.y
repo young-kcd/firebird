@@ -2051,22 +2051,22 @@ trigger_active	: ACTIVE
 
 trigger_type
 	:	trigger_type_prefix trigger_type_suffix
-		{ $$ = MAKE_trigger_type ($1, $2); }
+			{ $$ = MAKE_trigger_type ($1, $2); }
 	|	ON trigger_db_type
-		{ $$ = $2; }
+			{ $$ = $2; }
 	;
 
 trigger_db_type
 	:	CONNECT
-		{ $$ = MAKE_constant ((dsql_str*) (TRIGGER_TYPE_DB | DB_TRIGGER_CONNECT), CONSTANT_SLONG); }
+			{ $$ = MAKE_constant ((dsql_str*) (TRIGGER_TYPE_DB | DB_TRIGGER_CONNECT), CONSTANT_SLONG); }
 	|	DISCONNECT
-		{ $$ = MAKE_constant ((dsql_str*) (TRIGGER_TYPE_DB | DB_TRIGGER_DISCONNECT), CONSTANT_SLONG); }
+			{ $$ = MAKE_constant ((dsql_str*) (TRIGGER_TYPE_DB | DB_TRIGGER_DISCONNECT), CONSTANT_SLONG); }
 	|	TRANSACTION START
-		{ $$ = MAKE_constant ((dsql_str*) (TRIGGER_TYPE_DB | DB_TRIGGER_TRANS_START), CONSTANT_SLONG); }
+			{ $$ = MAKE_constant ((dsql_str*) (TRIGGER_TYPE_DB | DB_TRIGGER_TRANS_START), CONSTANT_SLONG); }
 	|	TRANSACTION COMMIT
-		{ $$ = MAKE_constant ((dsql_str*) (TRIGGER_TYPE_DB | DB_TRIGGER_TRANS_COMMIT), CONSTANT_SLONG); }
+			{ $$ = MAKE_constant ((dsql_str*) (TRIGGER_TYPE_DB | DB_TRIGGER_TRANS_COMMIT), CONSTANT_SLONG); }
 	|	TRANSACTION ROLLBACK
-		{ $$ = MAKE_constant ((dsql_str*) (TRIGGER_TYPE_DB | DB_TRIGGER_TRANS_ROLLBACK), CONSTANT_SLONG); }
+			{ $$ = MAKE_constant ((dsql_str*) (TRIGGER_TYPE_DB | DB_TRIGGER_TRANS_ROLLBACK), CONSTANT_SLONG); }
 	;
 
 trigger_type_prefix	: BEFORE
