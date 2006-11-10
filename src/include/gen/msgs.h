@@ -759,12 +759,12 @@ static const struct {
 	{336397223, "Internal dsql error: alias type expected by pass1_field"},		/* 735, dsql_derived_alias_field */
 	{336397224, "Internal dsql error: column position out of range in pass1_union_auto_cast"},		/* 736, dsql_auto_field_bad_pos */
 	{336397225, "Recursive CTE member (%s) can refer itself only in FROM clause"},		/* 737, dsql_cte_wrong_reference */
-	{336397226, "CTE '%s' have cyclic dependencies"},		/* 738, dsql_cte_cycle */
+	{336397226, "CTE '%s' has cyclic dependencies"},		/* 738, dsql_cte_cycle */
 	{336397227, "Recursive member of CTE can't be member of an outer join"},		/* 739, dsql_cte_outer_join */
 	{336397228, "Recursive member of CTE can't reference itself more than once"},		/* 740, dsql_cte_mult_references */
 	{336397229, "Recursive CTE (%s) must be an UNION"},		/* 741, dsql_cte_not_a_union */
 	{336397230, "CTE '%s' defined non-recursive member after recursive"},		/* 742, dsql_cte_nonrecurs_after_recurs */
-	{336397231, "Recursive member of CTE '%s' have %s clause"},		/* 743, dsql_cte_wrong_clause */
+	{336397231, "Recursive member of CTE '%s' has %s clause"},		/* 743, dsql_cte_wrong_clause */
 	{336397232, "Recursive members of CTE (%s) must be linked with another members via UNION ALL"},		/* 744, dsql_cte_union_all */
 	{336397233, "Non-recursive member is missing in CTE '%s'"},		/* 745, dsql_cte_miss_nonrecursive */
 	{336397234, "WITH clause can't be nested"},		/* 746, dsql_cte_nested_with */

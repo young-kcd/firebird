@@ -769,7 +769,7 @@ dsql_nod* PASS1_node(dsql_req* request, dsql_nod* input, bool proc_flag)
 				dsql_nod* cte1 = stack.object();
 				if (cte1 == cte) {
 					ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
-						isc_arg_gds, isc_dsql_cte_cycle,			// CTE %s have cyclic dependencies
+						isc_arg_gds, isc_dsql_cte_cycle,			// CTE %s has cyclic dependencies
 						isc_arg_string, rel_name->str_data,
 						0);
 				}
@@ -4263,21 +4263,21 @@ static dsql_nod* pass1_recursive_cte(dsql_req* request, dsql_nod* input, bool pr
 			}
 			if (rse->nod_arg[e_qry_distinct]) {
 				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
-					isc_arg_gds, isc_dsql_cte_wrong_clause,	// Recursive member of CTE '%s' have %s clause
+					isc_arg_gds, isc_dsql_cte_wrong_clause,	// Recursive member of CTE '%s' has %s clause
 					isc_arg_string, cte_alias->str_data,
 					isc_arg_string, "DISTINCT",
 					0);
 			}
 			if (rse->nod_arg[e_qry_group]) {
 				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
-					isc_arg_gds, isc_dsql_cte_wrong_clause,	// Recursive member of CTE '%s' have %s clause
+					isc_arg_gds, isc_dsql_cte_wrong_clause,	// Recursive member of CTE '%s' has %s clause
 					isc_arg_string, cte_alias->str_data,
 					isc_arg_string, "GROUP BY",
 					0);
 			}
 			if (rse->nod_arg[e_qry_having]) {
 				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
-					isc_arg_gds, isc_dsql_cte_wrong_clause,	// Recursive member of CTE '%s' have %s clause
+					isc_arg_gds, isc_dsql_cte_wrong_clause,	// Recursive member of CTE '%s' has %s clause
 					isc_arg_string, cte_alias->str_data,
 					isc_arg_string, "HAVING",
 					0);
