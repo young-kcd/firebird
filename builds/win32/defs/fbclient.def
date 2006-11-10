@@ -230,6 +230,7 @@ EXPORTS
 	isc_embed_dsql_open2	@214
 	isc_embed_dsql_prepare	@215
 	isc_embed_dsql_release	@216
+	isc_embed_dsql_length	@273
 
 	; Error-handling functions
 
@@ -239,6 +240,7 @@ EXPORTS
 	isc_print_status	@151
 	isc_sqlcode	@165
 	isc_sql_interprete	@164
+	isc_sqlcode_s		@278
 
 	; Event functions
 
@@ -247,6 +249,8 @@ EXPORTS
 	isc_event_counts	@131
 	isc_que_events	@155
 	isc_wait_for_event	@177
+	isc_event_block_a	@274
+	isc_event_block_s	@275
 
 	; Security functions
 
@@ -327,6 +331,8 @@ EXPORTS
 	isc_to_sqlda	@170
 	isc_vtof	@175
 	isc_vtov	@176
+	isc_baddress	@276
+	isc_baddress_s	@277
 
 	_isc_start_transaction=isc_start_transaction
 	_isc_expand_dpb=isc_expand_dpb
