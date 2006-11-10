@@ -34,6 +34,9 @@
 // 2002.10.28 Sean Leyne - Completed removal of obsolete "DGUX" port
 // 2002.10.28 Sean Leyne - Completed removal of obsolete "HP700" port
 //
+// Modified to allow support for RM/Cobol.  Actual RM/Cobol code generation
+// in rmc.cpp.
+// Stephen W. Boyd 31.Aug.2006
 //
 
 #include "firebird.h"
@@ -710,7 +713,7 @@ void COB_print_buffer(TEXT* output_bufferL,
 	bool save_single_quote;
 	USHORT max_line;
 
-	if (gpreGlob.sw_ansi)
+	if (isAnsiCobol(gpreGlob.sw_cob_dialect))
 		max_line = 72;
 	else
 		max_line = 79;
@@ -1245,7 +1248,7 @@ static void gen_blob_open( const act* action)
 static void gen_blr(void* user_arg, SSHORT offset, const char* string)
 {
 	int max_line, max_diff;
-	if (gpreGlob.sw_ansi) {
+	if (isAnsiCobol(gpreGlob.sw_cob_dialect)) {
 		max_line = 70;
 		max_diff = 7;
 	}

@@ -40,6 +40,8 @@
 //
 // 2002.10.30 Sean Leyne - Removed support for obsolete "PC_PLATFORM" define
 //
+// Added support for RM/Cobol
+// Stephen W. Boyd 31.Aug.2006
 //____________________________________________________________
 //
 //
@@ -165,12 +167,18 @@ static SLONG traced_position = 0;
 //___________________________________________________________________
 // Test if input language is cpp based.
 //
-bool isLangCpp(LANG_T lang)
+bool isLangCpp(lang_t lang)
 {
     if (lang == lang_cxx || lang == lang_internal) {
         return true;
     }
     return false;
+}
+
+// Test if input language is an ANSI-85 Cobol variant
+bool isAnsiCobol(cob_t dialect)
+{
+	return (dialect == cob_ansi) || (dialect == cob_rmc);
 }
 
 /*
@@ -330,7 +338,8 @@ int main(int argc, char* argv[])
 	sw_alsys					= false;
 	gpreGlob.sw_external		= false;
 	sw_standard_out				= false;
-	gpreGlob.sw_ansi			= false;
+	gpreGlob.sw_cob_dialect     = cob_vms;
+	gpreGlob.sw_cob_dformat		= "";
 	gpreGlob.sw_version			= false;
 	gpreGlob.sw_d_float			= false;
 	gpreGlob.sw_sql_dialect		= SQL_DIALECT_V5;
@@ -618,7 +627,12 @@ int main(int argc, char* argv[])
 
 #ifdef GPRE_COBOL
 		case IN_SW_GPRE_ANSI:
-			gpreGlob.sw_ansi = true;
+			gpreGlob.sw_cob_dialect = cob_ansi;
+			break;
+
+		case IN_SW_GPRE_RMCOBOL:
+			gpreGlob.sw_cob_dialect = cob_rmc;
+			gen_routine = RMC_action;
 			break;
 
 		case IN_SW_GPRE_COB:
@@ -783,12 +797,12 @@ int main(int argc, char* argv[])
 #endif
 
 #if defined(GPRE_COBOL) && !defined(BOOT_BUILD)
-//  if cobol is defined we need both sw_cobol and sw_ansi to
+//  if cobol is defined we need both sw_cobol and sw_cob_dialect to
 //  determine how the string substitution table is set up
 //  
 
 	if (gpreGlob.sw_language == lang_cobol)
-		if (gpreGlob.sw_ansi) {
+		if (isAnsiCobol(gpreGlob.sw_cob_dialect)) {
 			if (db)
 				db->dbb_name->sym_string = "isc-database";
 			comment_start = "      *  ";
@@ -805,7 +819,7 @@ int main(int argc, char* argv[])
             gpreGlob.transaction_name = "ISC_TRANS";
         }
 
-	COB_name_init(gpreGlob.sw_ansi);
+	COB_name_init(isAnsiCobol(gpreGlob.sw_cob_dialect));
 #endif
 
 //  
@@ -1979,7 +1993,18 @@ static bool get_switches(int			argc,
 			gpreGlob.default_lc_ctype = (const TEXT*) * ++argv;
 			break;
 
+		case IN_SW_GPRE_DATE_FMT:
+			if (!arg_is_string(
+					--argc,
+					argv,
+					"Command line syntax: -dfm requires date format string:\n "))
+			{
+				return false;
+			}
+			gpreGlob.sw_cob_dformat = *++argv;
+			break;
 		}
+
 	}
 
 	sw_table_iterator++;
@@ -2012,7 +2037,7 @@ static TOK get_token()
 
 #ifdef GPRE_COBOL
 //  Skip over cobol line continuation characters 
-	if (gpreGlob.sw_language == lang_cobol && !gpreGlob.sw_ansi)
+	if (gpreGlob.sw_language == lang_cobol && !isAnsiCobol(gpreGlob.sw_cob_dialect))
 		while (line_position == 1) {
 			c = skip_white();
 			start_line = line_global;
@@ -2086,7 +2111,7 @@ static TOK get_token()
 				*p++ = (TEXT) c;
 			if (c != '-' || gpreGlob.sw_language != lang_cobol)
 				break;
-			if (gpreGlob.sw_language == lang_cobol && gpreGlob.sw_ansi)
+			if (gpreGlob.sw_language == lang_cobol && isAnsiCobol(gpreGlob.sw_cob_dialect))
 				*p++ = (TEXT) c;
 			else
 				*p++ = '_';
@@ -2127,7 +2152,7 @@ static TOK get_token()
 		gpreGlob.token_global.tok_type = (char_class & CHR_QUOTE) ? tok_sglquoted : tok_dblquoted;
 		for (;;) {
 			SSHORT next = nextchar();
-			if (gpreGlob.sw_language == lang_cobol && gpreGlob.sw_ansi && next == '\n') {
+			if (gpreGlob.sw_language == lang_cobol && isAnsiCobol(gpreGlob.sw_cob_dialect) && next == '\n') {
 				if (prior_line_position == 73) {
 					// should be a split literal 
 					next = skip_white();
@@ -2350,8 +2375,8 @@ static int nextchar()
 
 #ifdef GPRE_COBOL
 	if (gpreGlob.sw_language == lang_cobol &&
-		(!gpreGlob.sw_ansi && line_position == 1 && c == '-') ||
-		(gpreGlob.sw_ansi && line_position == 7 && c == '-'))
+		(!isAnsiCobol(gpreGlob.sw_cob_dialect) && line_position == 1 && c == '-') ||
+		(isAnsiCobol(gpreGlob.sw_cob_dialect) && line_position == 7 && c == '-'))
 	{
 		first_position = FALSE;
 	}
@@ -2622,8 +2647,8 @@ static void pass2( SLONG start_position)
 					if (d == comment_start[1])
 						fputs(comment_stop, gpreGlob.out_file);
 				}
-				if (gpreGlob.sw_language != lang_cobol || !gpreGlob.sw_ansi || c == '\n'
-					|| to_skip-- <= 0)
+				if (gpreGlob.sw_language != lang_cobol || !isAnsiCobol(gpreGlob.sw_cob_dialect)
+					|| c == '\n' || to_skip-- <= 0)
 				{
 					putc(c, gpreGlob.out_file);
 				}
@@ -2805,16 +2830,16 @@ static SSHORT skip_white()
 #ifdef GPRE_COBOL
 		// skip sequence numbers when ansi COBOL 
 
-		if (gpreGlob.sw_language == lang_cobol && gpreGlob.sw_ansi) {
+		if (gpreGlob.sw_language == lang_cobol && isAnsiCobol(gpreGlob.sw_cob_dialect)) {
 			while (line_position < 7 && (c = nextchar()) != '\n' && c != EOF);
 		}
 
 		// skip COBOL comments and conditional compilation 
 
 		if (gpreGlob.sw_language == lang_cobol &&
-			(!gpreGlob.sw_ansi && line_position == 1 &&
+			(!isAnsiCobol(gpreGlob.sw_cob_dialect) && line_position == 1 &&
 			 (c == 'C' || c == 'c' || c == '*' || c == '/' || c == '\\') ||
-			 (gpreGlob.sw_ansi && line_position == 7 && c != '\t' && c != ' '
+			 (isAnsiCobol(gpreGlob.sw_cob_dialect) && line_position == 7 && c != '\t' && c != ' '
 			  && c != '-')))
 		{
 			while ((c = nextchar()) != '\n' && c != EOF);

@@ -54,6 +54,8 @@
  *
  * 2002.10.30 Sean Leyne - Removed support for obsolete "PC_PLATFORM" define
  *
+ * 2006.08.31 Stephen W. Boyd        - Added support for RM/Cobol
+ * 2006.10.12 Stephen W. Boyd        - Added support for FOR UPDATE WITH LOCK
  */
 
 #ifndef GPRE_GPRE_H
@@ -104,9 +106,9 @@ const int MAX_EVENT_SIZE = 16; // event names use 15 chars from old docs.
 // Values for SQL dialects.
 #include "../dsql/sqlda_pub.h"
 
-/* Language options */
+// Language options
 
-typedef enum lang_t
+enum lang_t
 {
 	lang_undef,
 	lang_internal,
@@ -121,7 +123,16 @@ typedef enum lang_t
 	lang_cplusplus,
 	lang_cpp,
 	lang_internal_cxx
-} LANG_T;
+};
+
+// Cobol dialect options
+enum cob_t
+{
+	cob_vms,					// VMS
+	cob_ansi,					// ANSI-85
+	cob_rmc						// RM/Cobol
+};
+
 
 //___________________________________________________________________
 // Test if input language is cpp based.
@@ -137,7 +148,8 @@ typedef enum lang_t
 // and lang_internal.
 //
 
-bool isLangCpp(LANG_T lang);
+bool isLangCpp(lang_t lang);
+bool isAnsiCobol(cob_t dialect);
 
 
 /* Structure used by Fortran and Basic to determine whether or not
@@ -922,7 +934,9 @@ inline size_t RSE_LEN(const size_t cnt)
 }
 
 enum rse_flags_vals {
-	RSE_singleton = 1
+	RSE_singleton = 1,
+	RSE_for_update = 2,
+	RSE_with_lock = 4
 };
 
 
@@ -1449,7 +1463,7 @@ enum udf_flags_vals {
 };
 
 
-/* Update block -- used for (at least) MODIFY */
+// Update block -- used for (at least) MODIFY
 
 struct upd {
 	USHORT upd_level;			/* reference level */
@@ -1468,11 +1482,12 @@ const size_t UPD_LEN = sizeof(upd);
 #include "../jrd/dsc.h"
 #include "parse.h"
 
-/* GPRE wide globals */
+// GPRE wide globals
 
 struct GpreGlobals
 {
-	bool sw_ansi;
+	cob_t sw_cob_dialect;
+	const TEXT* sw_cob_dformat;
 	bool sw_auto;
 	bool sw_sql;
 	bool sw_raw;
@@ -1502,20 +1517,20 @@ struct GpreGlobals
 	gpre_req* requests;
 	gpre_lls* events;
 	FILE *out_file;
-	LANG_T sw_language;
+	lang_t sw_language;
 	int errors_global;
 	act* global_functions;
 	dbd global_db_list[MAX_DATABASES];
 	USHORT global_db_count;
 	INTLSYM text_subtypes;
 
-/* ada_flags fields definition */
+	// ada_flags fields definition
 
 	int ADA_create_database;	// the flag is set when there is a
-									// create database SQL statement in
-									// user program, and is used to
-									// generate additional "with" and
-									// "function" declarations
+								// create database SQL statement in
+								// user program, and is used to
+								// generate additional "with" and
+								// "function" declarations
 
 	USHORT ada_flags;
 	// from gpre.cpp
@@ -1537,6 +1552,7 @@ struct GpreGlobals
 };
 
 extern GpreGlobals gpreGlob;
+
 
 #ifndef fb_assert
 #ifdef DEV_BUILD

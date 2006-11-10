@@ -30,6 +30,15 @@
  *
  * 2002.10.29 Sean Leyne - Removed support for obsolete IPX/SPX Protocol
  *
+ * 2006.09.06 Steve Boyd - Added various prototypes required by Cobol ESQL
+ *                         isc_embed_dsql_length
+ *                         isc_event_block_a
+ *                         isc_sqlcode_s
+ *                         isc_embed_dsql_fetch_a
+ *                         isc_event_block_s
+ *                         isc_baddress
+ *                         isc_baddress_s
+ *
  */
 
 #ifndef JRD_IBASE_H
@@ -480,7 +489,17 @@ void ISC_EXPORT isc_encode_timestamp(const void*,
 
 ISC_LONG ISC_EXPORT_VARARG isc_event_block(ISC_UCHAR**,
 										   ISC_UCHAR**,
-										   unsigned short, ...);
+										   ISC_USHORT, ...);
+
+ISC_USHORT ISC_EXPORT isc_event_block_a(ISC_SCHAR**,
+											ISC_SCHAR**,
+											ISC_USHORT, 
+											ISC_SCHAR**);
+void ISC_EXPORT isc_event_block_s(ISC_SCHAR**,
+								  ISC_SCHAR**,
+								  ISC_USHORT,
+								  ISC_SCHAR**,
+								  ISC_USHORT*);
 
 void ISC_EXPORT isc_event_counts(ISC_ULONG*,
 								 short,
@@ -591,8 +610,11 @@ ISC_STATUS ISC_EXPORT_VARARG isc_start_transaction(ISC_STATUS *,
 
 ISC_LONG ISC_EXPORT isc_sqlcode(const ISC_STATUS*);
 
+void ISC_EXPORT isc_sqlcode_s(const ISC_STATUS*,
+							  ISC_ULONG*);
+
 void ISC_EXPORT isc_sql_interprete(short,
-								   ISC_SCHAR *,
+								   ISC_SCHAR*,
 								   short);
 
 ISC_STATUS ISC_EXPORT isc_transaction_info(ISC_STATUS*,
@@ -924,6 +946,15 @@ ISC_STATUS ISC_EXPORT isc_embed_dsql_fetch(ISC_STATUS*,
 										   unsigned short,
 										   XSQLDA*);
 
+ISC_STATUS ISC_EXPORT isc_embed_dsql_fetch_a(ISC_STATUS*,
+											 int*,
+											 const ISC_SCHAR*,
+											 ISC_USHORT,
+											 XSQLDA*);
+
+void ISC_EXPORT isc_embed_dsql_length(const ISC_UCHAR*,
+									  ISC_USHORT*);
+
 ISC_STATUS ISC_EXPORT isc_embed_dsql_open(ISC_STATUS*,
 										  isc_tr_handle*,
 										  const ISC_SCHAR*,
@@ -1047,6 +1078,9 @@ int ISC_EXPORT isc_version(isc_db_handle*,
 
 ISC_LONG ISC_EXPORT isc_reset_fpe(ISC_USHORT);
 
+U_IPTR	ISC_EXPORT isc_baddress(ISC_SCHAR*);
+void	ISC_EXPORT isc_baddress_s(const ISC_SCHAR*,
+								  U_IPTR*);
 
 /*****************************************/
 /* Service manager functions             */

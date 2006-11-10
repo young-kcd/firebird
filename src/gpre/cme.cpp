@@ -23,6 +23,7 @@
 //  TMN (Mike Nordell) 11.APR.2001 - Reduce compiler warnings, buffer ptr bug
 //  
 //
+// 2006.10.12 Stephen W. Boyd			- Added support for WITH LOCK subclause.
 //____________________________________________________________
 //
 //
@@ -1145,6 +1146,8 @@ void CME_rse(gpre_rse* selection, gpre_req* request)
 		request->add_byte(selection->rse_count);
 		for (i = 0; i < selection->rse_count; i++)
 			CME_relation(selection->rse_context[i], request);
+		if (selection->rse_flags & RSE_with_lock)
+			request->add_byte(blr_writelock);
 	}
 
 //  Process the clauses present 

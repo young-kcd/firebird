@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: gpreswi.h,v 1.12 2005-05-27 22:42:15 asfernandes Exp $
+ *
  * Revision 1.2  2000/11/16 15:54:29  fsg
  * Added new switch -verbose to gpre that will dump
  * parsed lines to stderr
@@ -32,6 +32,10 @@
  * in WHERE clauses for sql dialect 2 and 3.
  * (cause a core dump in a test case from C.R. Zamana)
  *
+ * Added support for RM/Cobol
+ * SWB 31.Aug.2006
+ * Added support for user specifiable date format for Cobol programs
+ * SWB 15.Sep.2006
  */
 
 
@@ -92,6 +96,17 @@ enum gpre_cmd_switch
 	 * without the need to edit the epp source
 	 */
 	IN_SW_GPRE_BASE,
+
+	/*
+	 * Added to allow generation of RM/Cobol compatible code
+	 * SWB 31.Aug.2006
+	*/
+	IN_SW_GPRE_RMCOBOL,
+	/*
+	 * Added to allow specification of a Cobol date format, other than ISC_QUAD, to be used to 
+	 * deliver dates to Cobol programs
+	*/
+	IN_SW_GPRE_DATE_FMT,
 
 	/* As mentioned above: This should always be one larger than the largest 
 	   switch value.
@@ -163,8 +178,10 @@ static const in_sw_tab_t gpre_in_sw_table[] =
 #ifdef GPRE_COBOL
 	{IN_SW_GPRE_COB		, 0, "COB"			, 0, 0, 0, FALSE, 0, 0, "\t\textended COBOL program"},
 	{IN_SW_GPRE_ANSI		, 0, "ANSI"			, 0, 0, 0, FALSE, 0, 0, "\t\tgenerate ANSI85 compatible COBOL"},
+	{IN_SW_GPRE_RMCOBOL		, 0, "RMC"			, 0, 0, 0, FALSE, 0, 0, "\t\tRM/Cobol"},
 #endif
 	{IN_SW_GPRE_Z		, 0, "Z"			, 0, 0, 0, FALSE, 0, 0, "\t\tprint software version"},
 	{IN_SW_GPRE_BASE	, 0, "BASE"			, 0, 0, 0, FALSE, 0, 0, "\t\tbase directory for compiletime DB"},
+	{IN_SW_GPRE_DATE_FMT, 0, "DFM"			, 0, 0, 0, FALSE, 0, 0, "\t\tCobol date format"},
 	{IN_SW_GPRE_0		, 0, NULL			, 0, 0, 0, FALSE, 0, 0, NULL}
 };

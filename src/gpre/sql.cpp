@@ -2245,16 +2245,6 @@ static act* act_declare(void)
 			symbol->sym_type =
 				(delimited) ? SYM_delimited_cursor : SYM_cursor;
 			request->req_rse = SQE_select(request, false);
-			if (MSC_match(KW_FOR)) {
-				if (!MSC_match(KW_UPDATE))
-					CPR_s_error("UPDATE");
-				if (!MSC_match(KW_OF))
-					CPR_s_error("OF");
-
-				do {
-					CPR_token();
-				} while (MSC_match(KW_COMMA));
-			}
 			EXP_rse_cleanup(request->req_rse);
 		}
 		else if (MSC_match(KW_READ)) {

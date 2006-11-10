@@ -646,7 +646,8 @@ act* PAR_database(bool sql, const TEXT* base_directory)
 bool PAR_end()
 {
 	if ((gpreGlob.sw_language == lang_ada) || (gpreGlob.sw_language == lang_c) ||
-		(isLangCpp(gpreGlob.sw_language)))
+		(isLangCpp(gpreGlob.sw_language)) ||
+		((gpreGlob.sw_language == lang_cobol) && isAnsiCobol(gpreGlob.sw_cob_dialect)))
 	{
 		return (MSC_match(KW_SEMI_COLON));
 	}
