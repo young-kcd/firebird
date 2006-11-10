@@ -41,8 +41,8 @@ RSC=rc.exe
 # PROP Intermediate_Dir "..\..\..\temp\debug\gpre_boot"
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
-# ADD BASE CPP /nologo /W3 /Gm /GR /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_CONSOLE" /D "_MBCS" /YX /FD /GZ /c
-# ADD CPP /nologo /MDd /W3 /Gm /GR- /GX /Zi /Od /I "../../../src/include" /I "../../../src/include/gen" /D "_DEBUG" /D "_CONSOLE" /D "SUPERCLIENT" /D "WIN32" /D "_MBCS" /D "_X86_" /D "DEV_BUILD" /D "_WINDOWS" /D "_USRDLL" /D "CLIENT" /FR /FD /GZ /c
+# ADD BASE CPP /nologo /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_CONSOLE" /D "_MBCS" /YX /FD /GZ /c
+# ADD CPP /nologo /MDd /W3 /Gm /GX /Zi /Od /I "../../../src/include" /I "../../../src/include/gen" /D "_DEBUG" /D "_CONSOLE" /D "SUPERCLIENT" /D "WIN32" /D "_MBCS" /D "_X86_" /D "DEV_BUILD" /D "_WINDOWS" /D "_USRDLL" /D "CLIENT" /D "BOOT_BUILD" /FR /FD /GZ /c
 # ADD BASE RSC /l 0x41d /d "_DEBUG"
 # ADD RSC /l 0x41d /d "_DEBUG"
 BSC32=bscmake.exe
@@ -66,9 +66,9 @@ LINK32=link.exe
 # PROP Intermediate_Dir "..\..\..\temp\release\gpre_boot"
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
-# ADD BASE CPP /nologo /MDd /W3 /Gm /GR /GX /ZI /Od /I "../../../src/include" /I "../../../src/include/gen" /I "../../../src/jrd" /D "_DEBUG" /D "_CONSOLE" /D "SUPERCLIENT" /D "WIN32" /D "_MBCS" /D "_X86_" /FR /FD /GZ /c
+# ADD BASE CPP /nologo /MDd /W3 /Gm /GX /ZI /Od /I "../../../src/include" /I "../../../src/include/gen" /I "../../../src/jrd" /D "_DEBUG" /D "_CONSOLE" /D "SUPERCLIENT" /D "WIN32" /D "_MBCS" /D "_X86_" /FR /FD /GZ /c
 # SUBTRACT BASE CPP /YX
-# ADD CPP /nologo /MD /W3 /GR- /GX /Ot /Og /Oi /Oy /Ob1 /I "../../../src/include" /I "../../../src/include/gen" /D "NDEBUG" /D "_CONSOLE" /D "SUPERCLIENT" /D "WIN32" /D "_MBCS" /D "_X86_" /FR /FD /EHc- /c
+# ADD CPP /nologo /MD /W3 /GX /Ot /Og /Oi /Oy /Ob1 /I "../../../src/include" /I "../../../src/include/gen" /D "NDEBUG" /D "_CONSOLE" /D "SUPERCLIENT" /D "WIN32" /D "_MBCS" /D "_X86_" /D "BOOT_BUILD" /FR /FD /EHc- /c
 # ADD BASE RSC /l 0x41d /d "_DEBUG"
 # ADD RSC /l 0x41d /d "_DEBUG"
 BSC32=bscmake.exe
@@ -90,10 +90,6 @@ LINK32=link.exe
 # PROP Default_Filter "cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
 # Begin Source File
 
-SOURCE=..\..\..\src\gpre\ada.cpp
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\src\gpre\c_cxx.cpp
 # End Source File
 # Begin Source File
@@ -107,10 +103,6 @@ SOURCE=..\..\..\src\gpre\cme.cpp
 # Begin Source File
 
 SOURCE=..\..\..\src\gpre\cmp.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\gpre\cob.cpp
 # End Source File
 # Begin Source File
 
@@ -147,10 +139,6 @@ SOURCE=..\..\..\src\gpre\msc.cpp
 # Begin Source File
 
 SOURCE=..\..\..\src\gpre\par.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\gpre\pas.cpp
 # End Source File
 # Begin Source File
 
