@@ -1,3 +1,15 @@
+2006-11-09 10:24  paul_reeves
+
+	* firebird2/builds/win32/make_icu.bat (1.12):
+
+	Add missing quotes
+
+2006-11-09 08:43  paulbeach
+
+	* firebird2/configure.in (1.248):
+
+	Correct typo
+
 2006-11-09 01:31  asfernandes
 
 	* firebird2/builds/win32/msvc7/: gpre_boot.vcproj (1.30),
