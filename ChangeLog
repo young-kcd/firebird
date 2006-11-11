@@ -1,3 +1,10 @@
+2006-11-10 18:27  umasotti
+
+	* firebird2/builds/install/arch-specific/win32/it/leggimi.txt
+	(1.1.2.2):
+
+	Clarified sentence.
+
 2006-11-09 10:37  paul_reeves
 
 	* firebird2/builds/win32/make_icu.bat (1.6.4.3):
