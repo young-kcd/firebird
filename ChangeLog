@@ -1,3 +1,94 @@
+2006-11-11 03:47  asfernandes
+
+	* firebird2/src/: gpre/cme.cpp (1.39), gpre/gpreswi.h (1.14),
+	gpre/sqe.cpp (1.43), jrd/ibase.h (1.123):
+
+	Misc
+
+2006-11-11 01:52  asfernandes
+
+	* firebird2/src/: isql/show.epp (1.112), jrd/met.epp (1.215):
+
+	Some suggestions from Claudio
+
+2006-11-10 09:38  robocop
+
+	* firebird2/src/jrd/jrd.cpp (1.283):
+
+	Fix a crash in Adriano's db triggers when using -shut and -tran in
+	gfix, because TRA_start can throw and thus our result in jrd.cpp
+	was uninitialized.
+
+2006-11-10 09:13  robocop
+
+	* firebird2/src/jrd/DatabaseSnapshot.cpp (1.19):
+
+	Get rid of warnings.
+
+2006-11-10 09:12  robocop
+
+	* firebird2/src/: dsql/parse.y (1.226), jrd/alt.cpp (1.63),
+	jrd/dfw.epp (1.197), jrd/exe.cpp (1.201), jrd/jrd.cpp (1.282):
+
+	Misc.
+
+2006-11-10 09:08  robocop
+
+	* firebird2/src/: include/gen/msgs.h (1.72), msgs/messages.sql
+	(1.104), dsql/pass1.cpp (1.300):
+
+	Fix typos in recent messages.
+
+2006-11-10 09:04  robocop
+
+	* firebird2/builds/win32/defs/: fbclient.def (1.14), fbrmclib.def
+	(1.1), gds32.def (1.12):
+
+	Commit build changes by Stephen Boyd to support RM Cobol.
+	Restoring the missing entry points that COBOL needs and that were
+	deleted years ago. Added the entry points in the new fbrmclib.
+
+2006-11-10 09:02  robocop
+
+	* firebird2/builds/win32/msvc6/: fbclient_static.dsp (1.21),
+	gds32.dsp (1.26), gpre_boot.dsp (1.27), gpre_embed.dsp (1.4):
+
+	VC6 cleanup.
+
+2006-11-10 08:59  robocop
+
+	* firebird2/builds/win32/msvc6/: Firebird2.dsw (1.40), fbrmclib.dsp
+	(1.1), gpre.dsp (1.26), gpre_static.dsp (1.10):
+
+	Commit build changes by Stephen Boyd to support RM Cobol.  Fixing
+	VC6 builds.
+
+2006-11-10 08:57  robocop
+
+	* firebird2/builds/win32/msvc8/: fbrmclib.vcproj (1.1), gpre.vcproj
+	(1.4):
+
+	Commit build changes by Stephen Boyd to support RM Cobol.
+	fbrmclib.vcproj needs to be added to VC8's Firebird2.sln and then
+	the corresponding changes have to be propagated to VC7 and *nix
+	builds.
+
+2006-11-10 08:52  robocop
+
+	* firebird2/src/gpre/: fbrmclib.cpp (1.1), rmc.cpp (1.1):
+
+	Commit source changes by Stephen Boyd to support RM Cobol.  COBOL
+	support (rmc) and additional interface library (fbrmclib).
+
+2006-11-10 08:50  robocop
+
+	* firebird2/src/: gpre/cme.cpp (1.38), gpre/cob.cpp (1.63),
+	gpre/gpre.cpp (1.81), gpre/gpre.h (1.85), gpre/gpreswi.h (1.13),
+	gpre/lang_proto.h (1.10), gpre/par.cpp (1.63), gpre/sqe.cpp (1.42),
+	gpre/sql.cpp (1.63), jrd/ibase.h (1.122):
+
+	Commit source changes by Stephen Boyd to support RM Cobol.
+
 2006-11-09 10:24  paul_reeves
 
 	* firebird2/builds/win32/make_icu.bat (1.12):
