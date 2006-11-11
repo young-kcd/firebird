@@ -1100,7 +1100,7 @@ void CME_rse(gpre_rse* selection, gpre_req* request)
 	else
 		request->add_byte(blr_rs_stream);
 
-//  Process unions, if any, otherwise process relations 
+	//  Process unions, if any, otherwise process relations 
 
 	gpre_rse* sub_rse = 0;
 	gpre_nod* union_node = selection->rse_union;
@@ -1150,7 +1150,7 @@ void CME_rse(gpre_rse* selection, gpre_req* request)
 			request->add_byte(blr_writelock);
 	}
 
-//  Process the clauses present 
+	//  Process the clauses present 
 
 	if (selection->rse_first)
 	{
@@ -1205,11 +1205,11 @@ void CME_rse(gpre_rse* selection, gpre_req* request)
 	}
 
 #ifdef SCROLLABLE_CURSORS
-//  generate a statement to be executed if the user scrolls 
-//  in a direction other than forward; a message is sent outside 
-//  the normal send/receive protocol to specify the direction 
-//  and offset to scroll; note that we do this only on a SELECT 
-//  type statement and only when talking to a 4.1 engine or greater 
+	//  generate a statement to be executed if the user scrolls 
+	//  in a direction other than forward; a message is sent outside 
+	//  the normal send/receive protocol to specify the direction 
+	//  and offset to scroll; note that we do this only on a SELECT 
+	//  type statement and only when talking to a 4.1 engine or greater 
 
 	if (request->req_flags & REQ_sql_cursor &&
 		request->req_database->dbb_base_level >= 5)
@@ -1226,7 +1226,7 @@ void CME_rse(gpre_rse* selection, gpre_req* request)
 	}
 #endif
 
-//  Finish up by making a BLR_END 
+	//  Finish up by making a BLR_END 
 
 	request->add_byte(blr_end);
 }

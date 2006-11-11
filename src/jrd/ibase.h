@@ -492,9 +492,10 @@ ISC_LONG ISC_EXPORT_VARARG isc_event_block(ISC_UCHAR**,
 										   ISC_USHORT, ...);
 
 ISC_USHORT ISC_EXPORT isc_event_block_a(ISC_SCHAR**,
-											ISC_SCHAR**,
-											ISC_USHORT, 
-											ISC_SCHAR**);
+										ISC_SCHAR**,
+										ISC_USHORT, 
+										ISC_SCHAR**);
+
 void ISC_EXPORT isc_event_block_s(ISC_SCHAR**,
 								  ISC_SCHAR**,
 								  ISC_USHORT,

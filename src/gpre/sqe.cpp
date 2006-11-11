@@ -3171,7 +3171,6 @@ static GPRE_NOD par_udf_or_field_with_collate(gpre_req* request,
 
 static void par_update(gpre_rse *select, bool have_union, bool view_flag)
 {
-
 	// Parse FOR UPDATE if present
 	if (MSC_match(KW_FOR)) {
 		if (! MSC_match(KW_UPDATE)) {
@@ -3185,6 +3184,7 @@ static void par_update(gpre_rse *select, bool have_union, bool view_flag)
 		}
 		select->rse_flags |= RSE_for_update;
 	}
+
 	// Parse WITH LOCK if present
 	if (MSC_match(KW_WITH)) {
 		if (! MSC_match(KW_LOCK)) {

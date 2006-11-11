@@ -100,12 +100,13 @@ enum gpre_cmd_switch
 	/*
 	 * Added to allow generation of RM/Cobol compatible code
 	 * SWB 31.Aug.2006
-	*/
+	 */
 	IN_SW_GPRE_RMCOBOL,
+
 	/*
 	 * Added to allow specification of a Cobol date format, other than ISC_QUAD, to be used to 
 	 * deliver dates to Cobol programs
-	*/
+	 */
 	IN_SW_GPRE_DATE_FMT,
 
 	/* As mentioned above: This should always be one larger than the largest 
@@ -177,8 +178,8 @@ static const in_sw_tab_t gpre_in_sw_table[] =
 #endif
 #ifdef GPRE_COBOL
 	{IN_SW_GPRE_COB		, 0, "COB"			, 0, 0, 0, FALSE, 0, 0, "\t\textended COBOL program"},
-	{IN_SW_GPRE_ANSI		, 0, "ANSI"			, 0, 0, 0, FALSE, 0, 0, "\t\tgenerate ANSI85 compatible COBOL"},
-	{IN_SW_GPRE_RMCOBOL		, 0, "RMC"			, 0, 0, 0, FALSE, 0, 0, "\t\tRM/Cobol"},
+	{IN_SW_GPRE_ANSI	, 0, "ANSI"			, 0, 0, 0, FALSE, 0, 0, "\t\tgenerate ANSI85 compatible COBOL"},
+	{IN_SW_GPRE_RMCOBOL	, 0, "RMC"			, 0, 0, 0, FALSE, 0, 0, "\t\tRM/Cobol"},
 #endif
 	{IN_SW_GPRE_Z		, 0, "Z"			, 0, 0, 0, FALSE, 0, 0, "\t\tprint software version"},
 	{IN_SW_GPRE_BASE	, 0, "BASE"			, 0, 0, 0, FALSE, 0, 0, "\t\tbase directory for compiletime DB"},
