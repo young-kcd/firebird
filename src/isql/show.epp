@@ -4272,42 +4272,42 @@ static processing_state show_trigger(
 	{
 		bool has_dbtrig = false;
 
-		FOR TRG IN RDB$TRIGGERS
-			WITH (TRG.RDB$SYSTEM_FLAG EQ 0 OR TRG.RDB$SYSTEM_FLAG MISSING) AND
-				 TRG.RDB$RELATION_NAME MISSING
-			SORTED BY TRG.RDB$TRIGGER_NAME
+		if (ENCODE_ODS(isqlGlob.major_ods, isqlGlob.minor_ods) >= ODS_11_1)
+		{
+			FOR TRG IN RDB$TRIGGERS
+				WITH (TRG.RDB$SYSTEM_FLAG EQ 0 OR TRG.RDB$SYSTEM_FLAG MISSING) AND
+					 TRG.RDB$RELATION_NAME MISSING
+				SORTED BY TRG.RDB$TRIGGER_NAME
 
-			if (!has_dbtrig)
-			{
-				isqlGlob.printf(
-						 "Trigger name                     Invalid%s", NEWLINE);
-				isqlGlob.printf(
-						 "================================ =======%s", NEWLINE);
-				has_dbtrig = true;
-			}
+				if (!has_dbtrig)
+				{
+					isqlGlob.printf(
+							 "Trigger name                     Invalid%s", NEWLINE);
+					isqlGlob.printf(
+							 "================================ =======%s", NEWLINE);
+					has_dbtrig = true;
+				}
 
-			const char* invalid = "        ";
+				const char* invalid = "        ";
 
-			if (ENCODE_ODS(isqlGlob.major_ods, isqlGlob.minor_ods) >= ODS_11_1)
-			{
 				FOR TRG2 IN RDB$TRIGGERS
 					WITH TRG2.RDB$TRIGGER_NAME EQ TRG.RDB$TRIGGER_NAME
 					if (!(TRG2.RDB$VALID_BLR.NULL || TRG2.RDB$VALID_BLR))
 						invalid = "    *   ";
 				END_FOR
-			}
 
-			fb_utils::exact_name(TRG.RDB$TRIGGER_NAME);
-			isqlGlob.printf("%-32s%s%s%s",
-					 TRG.RDB$TRIGGER_NAME,
-					 invalid,
-					 (TRG.RDB$SYSTEM_FLAG == 1 ? "(system)" : ""),	// never used
-					 NEWLINE);
-		END_FOR
-		ON_ERROR
-			ISQL_errmsg(isc_status);
-			return ps_ERR;
-		END_ERROR;
+				fb_utils::exact_name(TRG.RDB$TRIGGER_NAME);
+				isqlGlob.printf("%-32s%s%s%s",
+						 TRG.RDB$TRIGGER_NAME,
+						 invalid,
+						 (TRG.RDB$SYSTEM_FLAG == 1 ? "(system)" : ""),	// never used
+						 NEWLINE);
+			END_FOR
+			ON_ERROR
+				ISQL_errmsg(isc_status);
+				return ps_ERR;
+			END_ERROR;
+		}
 
 		FOR TRG IN RDB$TRIGGERS CROSS REL IN RDB$RELATIONS
 			//WITH (REL.RDB$SYSTEM_FLAG NE 1 OR REL.RDB$SYSTEM_FLAG MISSING) AND
