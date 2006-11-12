@@ -1294,7 +1294,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 		}
 		catch (const Firebird::Exception&)
 		{
-			if (transaction)
+			if (!(dbb->dbb_flags & DBB_bugcheck) && transaction)
 				TRA_rollback(tdbb, transaction, false, false);
 			throw;
 		}
@@ -2356,6 +2356,9 @@ ISC_STATUS GDS_DETACH(ISC_STATUS* user_status, Attachment** handle)
 		}
 		catch (const Firebird::Exception&)
 		{
+			if (dbb->dbb_flags & DBB_bugcheck)
+				throw;
+
 			try
 			{
 				if (transaction)
@@ -2363,6 +2366,8 @@ ISC_STATUS GDS_DETACH(ISC_STATUS* user_status, Attachment** handle)
 			}
 			catch (const Firebird::Exception&)
 			{
+				if (dbb->dbb_flags & DBB_bugcheck)
+					throw;
 			}
 		}
 	}
@@ -6186,6 +6191,8 @@ static bool rollback(thread_db*	tdbb,
 				}
 				catch (const Firebird::Exception&)
 				{
+					if (tdbb->tdbb_database->dbb_flags & DBB_bugcheck)
+						throw;
 				}
 			}
 
