@@ -322,14 +322,19 @@ public:
 		struct timespec timeout;
 		timeout.tv_sec = time(NULL) + seconds;
 		timeout.tv_nsec = 0;
+		int errcode = 0;
 		do {
-			if (sem_timedwait(&sem, &timeout) == 0) 
+			int rc = sem_timedwait(&sem, &timeout);
+			if (rc == 0) 
 				return true;
-		} while (errno == EINTR);
-		if (errno == ETIMEDOUT) {
+			// fix for CORE-988, also please see 
+			// http://carcino.gen.nz/tech/linux/glibc_sem_timedwait_errors.php
+			errcode = rc > 0 ? rc : errno;
+		} while (errcode == EINTR);
+		if (errcode == ETIMEDOUT) {
 			return false;
 		}
-		system_call_failed::raise("sem_timedwait");
+		system_call_failed::raise("sem_timedwait", errcode);
 		return false;	// avoid warnings
 	}
 	
