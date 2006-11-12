@@ -38,3 +38,9 @@ stop(){
 	start-stop-daemon --stop --pidfile $pidfile --oknodo
 	eend $?
 }
+
+restart(){
+	svc_stop
+	sleep 1
+	svc_start
+}
