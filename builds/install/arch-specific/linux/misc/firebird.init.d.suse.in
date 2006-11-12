@@ -16,7 +16,7 @@
 # Required-Start: $network $remote_fs
 # Required-Stop:  
 # Default-Start:  2 3 5
-# Default-Stop:   
+# Default-Stop:   0 1 6
 # Description:    Start the Firebird database server.
 ### END INIT INFO
 
@@ -30,6 +30,7 @@ if [ -r /etc/sysconfig/firebird ]
   then
   . /etc/sysconfig/firebird
 fi
+
 
 # Determine the base and follow a runlevel link name.
 base=${0##*/}
