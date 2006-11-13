@@ -152,7 +152,7 @@ namespace Jrd
 		
 		bool operator==(const Module &im) const
 		{
-			// we need it to compare exact match sort on some key
+			// we need it to compare exact match after find()
 			return interMod == im.interMod;
 		}
 
