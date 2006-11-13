@@ -150,6 +150,12 @@ namespace Jrd
 			return interMod - im.interMod > 0;
 		}
 
+		bool operator==(const Module &im) const
+		{
+			// we need it to compare exact match after find()
+			return interMod == im.interMod;
+		}
+
 		void *lookupSymbol(const Firebird::string& name)
 		{
 			if (! interMod)

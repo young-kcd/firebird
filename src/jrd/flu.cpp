@@ -177,7 +177,7 @@ namespace Jrd
 		if (rc)
 		{
 			size_t pos;
-			if (!interest.find(m, pos))
+			if (!(interest.find(m, pos) && interest[pos] == m))
 			{
 				interest.add(m);
 			}
