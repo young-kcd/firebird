@@ -149,6 +149,12 @@ namespace Jrd
 			// we need it to sort on some key
 			return interMod - im.interMod > 0;
 		}
+		
+		bool operator==(const Module &im) const
+		{
+			// we need it to compare exact match sort on some key
+			return interMod == im.interMod;
+		}
 
 		void *lookupSymbol(const Firebird::string& name)
 		{
