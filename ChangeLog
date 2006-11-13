@@ -1,3 +1,16 @@
+2006-11-12 22:19  asfernandes
+
+	* firebird2/src/jrd/jrd.cpp (1.284):
+
+	Do not swallow bugcheck exceptions - thanks to Claudio
+
+2006-11-12 14:58  alexpeshkoff
+
+	* firebird2/src/common/classes/semaphore.h (1.30):
+
+	Fix CORE-988 class Semaphore now can work with broken versions of
+	glibc (sem_timedwait())
+
 2006-11-11 03:47  asfernandes
 
 	* firebird2/src/: gpre/cme.cpp (1.39), gpre/gpreswi.h (1.14),
