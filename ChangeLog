@@ -1,3 +1,9 @@
+2006-11-13 17:12  alexpeshkoff
+
+	* firebird2/src/jrd/: flu.cpp (1.54), flu.h (1.12):
+
+	frontported fix for CORE-982
+
 2006-11-12 22:19  asfernandes
 
 	* firebird2/src/jrd/jrd.cpp (1.284):
