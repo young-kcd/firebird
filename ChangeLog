@@ -1,3 +1,17 @@
+2006-11-13 16:42  alexpeshkoff
+
+	* firebird2/src/jrd/flu.h (1.11.4.2):
+
+	typo in comment
+
+2006-11-13 16:38  alexpeshkoff
+
+	* firebird2/src/jrd/: flu.cpp (1.52.4.1), flu.h (1.11.4.1):
+
+	Fix CVS:
+	----------------------------------------------------------------------
+	Fix CORE-982
+
 2006-11-12 16:25  alexpeshkoff
 
 	*
