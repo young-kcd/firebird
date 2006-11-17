@@ -1399,7 +1399,7 @@ void PAG_init2(USHORT shadow_number)
 				 *p != HDR_end; 
 				 p += 2 + p[1])
 			{
-				switch (*p) {
+				switch (static_cast<UCHAR>(*p)) {
 				case HDR_file:
 					file_length = p[1];
 					file_name = buf;
@@ -1415,6 +1415,10 @@ void PAG_init2(USHORT shadow_number)
 					//if (!(dbb->dbb_flags & DBB_read_only))
 						MOVE_FAST(p + 2, &dbb->dbb_sweep_interval,
 								  sizeof(SLONG));
+					break;
+
+				case HDR_on_detach:
+					dbb->dbb_on_detach.assign(&p[2], p[1]);
 					break;
 				}
 			}
@@ -1778,6 +1782,24 @@ void PAG_sweep_interval(SLONG interval)
 
 	PAG_add_clump(HEADER_PAGE, HDR_sweep_interval, sizeof(SLONG),
 				  (UCHAR *) & interval, CLUMP_REPLACE, 1);
+}
+
+
+void PAG_on_detach(const char* on_detach)
+{
+/**************************************
+ *
+ *	P A G _ s w e e p _ i n t e r v a l
+ *
+ **************************************
+ *
+ * Functional description
+ *	Set sweep interval.
+ *
+ **************************************/
+
+	PAG_add_clump(HEADER_PAGE, HDR_on_detach, strlen(on_detach),
+				  (UCHAR *) on_detach, CLUMP_REPLACE, 1);
 }
 
 

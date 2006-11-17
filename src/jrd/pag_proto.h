@@ -55,6 +55,7 @@ void	PAG_set_db_readonly(Jrd::Database*, bool);
 void	PAG_set_db_SQL_dialect(Jrd::Database*, SSHORT);
 void	PAG_set_page_buffers(ULONG);
 void	PAG_sweep_interval(SLONG);
+void	PAG_on_detach(const char*);
 //int		PAG_unlicensed(void);
 
 #endif // JRD_PAG_PROTO_H

@@ -723,6 +723,10 @@ static void dmp_header(const header_page* page)
 			printf("\tSweep interval: %ld\n", number);
 			break;
 
+		case HDR_on_detach:
+			printf("\tProcedure on detach: %*s\n", p[1], p + 2);
+			break;
+
 		case HDR_log_name:
 			printf("\tLog file name: %*s\n", p[1], p + 2);
 			break;
