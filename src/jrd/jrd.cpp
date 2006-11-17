@@ -341,7 +341,6 @@ public:
 	Firebird::string	dpb_set_db_charset;
 	Firebird::string	dpb_network_protocol;
 	Firebird::string	dpb_remote_address;
-	Firebird::string	dpb_on_detach;
 public:
 	DatabaseOptions()
 	{
@@ -1194,11 +1193,6 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 		dbb->dbb_sweep_interval = options.dpb_sweep_interval;
 	}
 
-	if (options.dpb_on_detach.hasData()) {
-		PAG_on_detach(options.dpb_on_detach.c_str());
-		dbb->dbb_on_detach = options.dpb_on_detach;
-	}
-
 	if (options.dpb_set_force_write) {
 		PAG_set_force_write(dbb, options.dpb_force_write);
 	}
@@ -2022,11 +2016,6 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 	if (options.dpb_sweep_interval != -1) {
 		PAG_sweep_interval(options.dpb_sweep_interval);
 		dbb->dbb_sweep_interval = options.dpb_sweep_interval;
-	}
-
-	if (options.dpb_on_detach.hasData()) {
-		PAG_on_detach(options.dpb_on_detach.c_str());
-		dbb->dbb_on_detach = options.dpb_on_detach;
 	}
 
 	if (options.dpb_set_force_write)
@@ -5147,10 +5136,6 @@ void DatabaseOptions::get(const UCHAR* dpb, USHORT dpb_length)
 			dpb_sweep_interval = rdr.getInt();
 			break;
 
-		case isc_dpb_on_detach:
-			rdr.getString(dpb_on_detach);
-			break;
-
 		case isc_dpb_verify:
 			dpb_verify = (USHORT) rdr.getInt();
 			if (dpb_verify & isc_dpb_ignore)
@@ -6472,55 +6457,10 @@ static void purge_attachment(thread_db*		tdbb,
  **************************************/
 	SET_TDBB(tdbb);
 	Database* dbb = attachment->att_database;
-	
-	// do not care about possibly opened transactions for a while
-	// run OnDetach Procedure
-	if (dbb->dbb_on_detach.hasData() && 
-		!(dbb->dbb_flags & DBB_bugcheck) &&
-		!(attachment->att_flags & ATT_shutdown) &&
-		!(dbb->dbb_ast_flags & DBB_shutdown) &&
-		!(dbb->dbb_ast_flags & DBB_shutdown_full)) 
-	{
-	  ISC_STATUS_ARRAY local_status;
-	  try
-	  {
-		jrd_tra* transaction = TRA_start(tdbb, 0, 0);
-		Firebird::string blr;
-		blr += blr_version4;
-		blr += blr_exec_proc;
-		blr += char(dbb->dbb_on_detach.length());
-		blr += dbb->dbb_on_detach;
-		blr += char(0);
-		blr += char(0);
-		blr += char(0);
-		blr += char(0);
-		blr += blr_eoc;
-		GDS_TRANSACT_REQUEST(local_status, &attachment, &transaction, 
-			blr.length(), blr.c_str(), 0, 0, 0, 0);
-		if (local_status[0] == 1 && local_status[1])
-		{
-			gds__log_status(dbb->dbb_database_name.c_str(), local_status);
-			rollback(tdbb, transaction, local_status, false);
-		}
-		else 
-		{
-			commit(local_status, &transaction, false);
-			if (local_status[0] == 1 && local_status[1])
-			{
-				gds__log_status(dbb->dbb_database_name.c_str(), local_status);
-			}
-		}
-	  }
-	  catch(const std::exception& ex)
-	  {
-	  	Firebird::stuff_exception(local_status, ex);
-		gds__log_status(dbb->dbb_database_name.c_str(), local_status);
-	  }
-	}
 
 	const ULONG att_flags = attachment->att_flags;
 	attachment->att_flags |= ATT_shutdown;
-	
+
 	if (!(dbb->dbb_flags & DBB_bugcheck)) {
 
 		// Check for any pending transactions

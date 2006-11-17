@@ -279,10 +279,8 @@ public:
 	Firebird::vector<CharSetContainer*>		dbb_charsets;	/* intl character set descriptions */
 	TxPageCache*	dbb_tip_cache;	/* cache of latest known state of all transactions in system */
 	vcl*		dbb_pc_transactions;	/* active precommitted transactions */
-	BackupManager *dbb_backup_manager;	/* physical backup manager */
+	BackupManager *dbb_backup_manager; /* physical backup manager */
 	Symbol*	dbb_hash_table[HASH_SIZE];	/* keep this at the end */
-
-	Firebird::string dbb_on_detach;		// procedure to be called on detach
 
 private:
 	explicit Database(MemoryPool& p)
@@ -291,8 +289,7 @@ private:
 		dbb_database_name(p),
 		dbb_encrypt_key(p),
 		dbb_pools(1, p, type_dbb),
-		dbb_charsets(p),
-		dbb_on_detach(p)
+		dbb_charsets(p)
 	{
 	}
 
