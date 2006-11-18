@@ -49,8 +49,8 @@ void	API_ROUTINE isc_set_single_user(const UCHAR**, SSHORT*, const TEXT*);
 int		API_ROUTINE isc_version(FB_API_HANDLE*, FPTR_VERSION_CALLBACK, void*);
 void	API_ROUTINE isc_format_implementation(USHORT, USHORT, TEXT *,
 												  USHORT, USHORT, TEXT *);
-U_IPTR	API_ROUTINE isc_baddress(SCHAR*);
-void	API_ROUTINE isc_baddress_s(const SCHAR*, U_IPTR*);
+uintptr_t	API_ROUTINE isc_baddress(SCHAR*);
+void	API_ROUTINE isc_baddress_s(const SCHAR*, uintptr_t*);
 int		API_ROUTINE BLOB_close(struct bstream *);
 int		API_ROUTINE blob__display(SLONG*, FB_API_HANDLE*, FB_API_HANDLE*, const TEXT*,
 									 const SSHORT*);

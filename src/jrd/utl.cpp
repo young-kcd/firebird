@@ -1330,7 +1330,7 @@ void API_ROUTINE isc_format_implementation(
 }
 
 
-U_IPTR API_ROUTINE isc_baddress(SCHAR* object)
+uintptr_t API_ROUTINE isc_baddress(SCHAR* object)
 {
 /**************************************
  *
@@ -1343,11 +1343,11 @@ U_IPTR API_ROUTINE isc_baddress(SCHAR* object)
  *
  **************************************/
 
-	return (U_IPTR) object;
+	return (uintptr_t) object;
 }
 
 
-void API_ROUTINE isc_baddress_s(const SCHAR* object, U_IPTR* address)
+void API_ROUTINE isc_baddress_s(const SCHAR* object, uintptr_t* address)
 {
 /**************************************
  *
@@ -1360,7 +1360,7 @@ void API_ROUTINE isc_baddress_s(const SCHAR* object, U_IPTR* address)
  *
  **************************************/
 
-	*address = (U_IPTR) object;
+	*address = (uintptr_t) object;
 }
 
 

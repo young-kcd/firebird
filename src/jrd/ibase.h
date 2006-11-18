@@ -1079,9 +1079,9 @@ int ISC_EXPORT isc_version(isc_db_handle*,
 
 ISC_LONG ISC_EXPORT isc_reset_fpe(ISC_USHORT);
 
-U_IPTR	ISC_EXPORT isc_baddress(ISC_SCHAR*);
-void	ISC_EXPORT isc_baddress_s(const ISC_SCHAR*,
-								  U_IPTR*);
+uintptr_t	ISC_EXPORT isc_baddress(ISC_SCHAR*);
+void		ISC_EXPORT isc_baddress_s(const ISC_SCHAR*,
+								  uintptr_t*);
 
 /*****************************************/
 /* Service manager functions             */
