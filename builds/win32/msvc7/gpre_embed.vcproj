@@ -195,6 +195,9 @@
 				RelativePath="..\..\..\src\gpre\pretty.cpp">
 			</File>
 			<File
+				RelativePath="..\..\..\src\gpre\rmc.cpp">
+			</File>
+			<File
 				RelativePath="..\..\..\src\gpre\sqe.cpp">
 			</File>
 			<File
