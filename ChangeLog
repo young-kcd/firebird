@@ -1,3 +1,19 @@
+2006-11-17 10:09  alexpeshkoff
+
+	* firebird2/src/jrd/: dmp.cpp (1.30.4.2), ibase.h (1.114.2.2),
+	jrd.cpp (1.237.2.4), jrd.h (1.148.4.2), pag.cpp (1.98.4.3),
+	pag_proto.h (1.14.4.2):
+
+	rolled back my bad commit
+
+2006-11-17 09:45  alexpeshkoff
+
+	* firebird2/src/jrd/: dmp.cpp (1.30.4.1), ibase.h (1.114.2.1),
+	inf.cpp (1.62.4.1), jrd.cpp (1.237.2.3), jrd.h (1.148.4.1), ods.h
+	(1.38.4.1), pag.cpp (1.98.4.2), pag_proto.h (1.14.4.1):
+
+	backported
+
 2006-11-13 16:42  alexpeshkoff
 
 	* firebird2/src/jrd/flu.h (1.11.4.2):
