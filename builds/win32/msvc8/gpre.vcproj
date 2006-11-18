@@ -283,10 +283,6 @@
 			<Tool
 				Name="VCXDCMakeTool"
 			/>
-				RelativePath="..\..\..\src\gpre\rmc.cpp"
-				>
-			</File>
-			<File
 			<Tool
 				Name="VCBscMakeTool"
 			/>
@@ -476,6 +472,10 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\gpre\pretty.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\gpre\rmc.cpp"
 				>
 			</File>
 			<File
