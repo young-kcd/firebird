@@ -138,7 +138,7 @@ void ERRD_error( int code, const char* text)
         *status_vector++ = isc_random;
         *status_vector++ = isc_arg_cstring;
         *status_vector++ = strlen(s);
-        *status_vector++ = reinterpret_cast<ISC_STATUS>(s); // warning, pointer to SLONG!
+        *status_vector++ = reinterpret_cast<ISC_STATUS>(s);
         *status_vector++ = isc_arg_end;
     }
 
@@ -161,10 +161,6 @@ void ERRD_error( int code, const char* text)
 bool ERRD_post_warning(ISC_STATUS status, ...)
 {
 	va_list args;
-
-#pragma FB_COMPILER_MESSAGE("Warning, using STATUS array to hold pointers to STATUSes!")
-// meaning; if sizeof(long) != sizeof(void*), this code WILL crash something.
-
 
 	va_start(args, status);
 
