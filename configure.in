@@ -430,10 +430,13 @@ dnl Check for libraries
 AC_CHECK_LIB(dl, main)
 AC_CHECK_LIB(c, main)
 AC_CHECK_LIB(m, main)
-AC_CHECK_LIB(curses, main)
-dnl AC_CHECK_LIB(termcap, main)
 if test "$EDITLINE_FLG" = "Y"; then
-  AC_SUBST(EDITLINE_A, -leditline)
+	AC_CHECK_LIB(curses, tgetent, , \
+		AC_CHECK_LIB(ncurses, tgetent, , \
+			AC_CHECK_LIB(termcap, tgetent, , \
+				AC_CHECK_LIB(tinfo, tgetent, , \
+					AC_MSG_ERROR(termcap support not found)))))  
+	AC_SUBST(EDITLINE_A, -leditline)
 fi
 dnl AC_CHECK_LIB(stdc++, main,,, $LIBS)
 
