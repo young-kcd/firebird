@@ -100,7 +100,7 @@ if "%ERRLEV%"=="1" goto :END
 :: BUILD btyacc
 :btyacc
 @echo.
-@echo Building btyacc...
+@echo Building btyacc (%DBG_DIR%)...
 @call compile.bat %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot btyacc.log btyacc
 if errorlevel 1 call :boot2 btyacc
 goto :EOF
@@ -109,7 +109,7 @@ goto :EOF
 :: BUILD gpre_boot
 :gpre_boot
 @echo.
-@echo Building gpre_boot...
+@echo Building gpre_boot (%DBG_DIR%)...
 @call compile.bat %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot gpre_boot.log gpre_boot
 if errorlevel 1 goto :gpre_boot2
 goto :EOF
@@ -128,7 +128,7 @@ goto :EOF
 :: BUILD gbak_embed
 :gbak_embed
 @echo.
-@echo Building gbak_embed...
+@echo Building gbak_embed (%DBG_DIR%)...
 @call compile.bat %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot gbak_embed.log gbak_embed
 if errorlevel 1 call :boot2 gbak_embed
 @goto :EOF
@@ -137,7 +137,7 @@ if errorlevel 1 call :boot2 gbak_embed
 :: BUILD gpre_embed
 :gpre_embed
 @echo.
-@echo Building gpre_embed...
+@echo Building gpre_embed (%DBG_DIR%)...
 @call compile.bat %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot gpre_embed.log gpre_embed
 if errorlevel 1 call :boot2 gpre_embed
 @goto :EOF
@@ -146,7 +146,7 @@ if errorlevel 1 call :boot2 gpre_embed
 :: BUILD isql_embed
 :isql_embed
 @echo.
-@echo Building isql_embed...
+@echo Building isql_embed (%DBG_DIR%)...
 @call compile.bat %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot isql_embed.log isql_embed
 if errorlevel 1 call :boot2 isql_embed
 @goto :EOF
@@ -165,7 +165,7 @@ goto :EOF
 :: BUILD messages
 :msgs
 @echo.
-@echo Building build_msg...
+@echo Building build_msg (%DBG_DIR%)...
 @call compile.bat %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot build_msg.log build_msg
 if errorlevel 1 goto :msgs2
 @copy %ROOT_PATH%\temp\%DBG_DIR%\build_msg\build_msg.exe   %ROOT_PATH%\gen\ > nul
@@ -181,7 +181,7 @@ goto :EOF
 :: BUILD codes
 :codes
 @echo.
-@echo Building codes...
+@echo Building codes (%DBG_DIR%)...
 @call compile.bat %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot codes.log codes
 if errorlevel 1 goto :codes2
 @copy %ROOT_PATH%\temp\%DBG_DIR%\codes\codes.exe   %ROOT_PATH%\gen\ > nul
