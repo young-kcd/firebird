@@ -590,7 +590,8 @@ int INF_database_info(
                 
                 user = att->att_user;
 				if (user) {
-					const char *user_name = user->usr_user_name ? user->usr_user_name : "(SQL Server)";
+					const char *user_name = user->usr_user_name ? 
+										    user->usr_user_name : "(Firebird Worker Thread)";
 					p = buffer;
 					*p++ = l = strlen (user_name);
 					for (q = const_cast<char*>(user_name); l; l--)
