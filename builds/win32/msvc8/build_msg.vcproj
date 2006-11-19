@@ -129,7 +129,7 @@
 			/>
 			<Tool
 				Name="VCMIDLTool"
-				TypeLibraryName=".\..\..\..\temp\release\build_msg/build_msg.tlb"
+				TypeLibraryName=".\..\..\..\temp\debug\build_msg/build_msg.tlb"
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
@@ -140,10 +140,10 @@
 				RuntimeLibrary="3"
 				RuntimeTypeInfo="false"
 				UsePrecompiledHeader="0"
-				PrecompiledHeaderFile=".\..\..\..\temp\release\build_msg/build_msg.pch"
-				AssemblerListingLocation=".\..\..\..\temp\release\build_msg/"
-				ObjectFile=".\..\..\..\temp\release\build_msg/"
-				ProgramDataBaseFileName=".\..\..\..\temp\release\build_msg/"
+				PrecompiledHeaderFile=".\..\..\..\temp\debug\build_msg/build_msg.pch"
+				AssemblerListingLocation=".\..\..\..\temp\debug\build_msg/"
+				ObjectFile=".\..\..\..\temp\debug\build_msg/"
+				ProgramDataBaseFileName=".\..\..\..\temp\debug\build_msg/"
 				WarningLevel="3"
 				SuppressStartupBanner="true"
 				DebugInformationFormat="3"
@@ -163,11 +163,11 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
-				OutputFile=".\..\..\..\temp\release\build_msg/build_msg.exe"
+				OutputFile=".\..\..\..\temp\debug\build_msg/build_msg.exe"
 				LinkIncremental="2"
 				SuppressStartupBanner="true"
 				GenerateDebugInformation="true"
-				ProgramDatabaseFile=".\..\..\..\temp\release\build_msg/build_msg.pdb"
+				ProgramDatabaseFile=".\..\..\..\temp\debug\build_msg/build_msg.pdb"
 				SubSystem="1"
 			/>
 			<Tool
@@ -311,7 +311,7 @@
 			<Tool
 				Name="VCMIDLTool"
 				TargetEnvironment="3"
-				TypeLibraryName=".\..\..\..\temp\release\build_msg/build_msg.tlb"
+				TypeLibraryName=".\..\..\..\temp\debug\build_msg/build_msg.tlb"
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
@@ -322,10 +322,10 @@
 				RuntimeLibrary="3"
 				RuntimeTypeInfo="false"
 				UsePrecompiledHeader="0"
-				PrecompiledHeaderFile=".\..\..\..\temp\release\build_msg/build_msg.pch"
-				AssemblerListingLocation=".\..\..\..\temp\release\build_msg/"
-				ObjectFile=".\..\..\..\temp\release\build_msg/"
-				ProgramDataBaseFileName=".\..\..\..\temp\release\build_msg/"
+				PrecompiledHeaderFile=".\..\..\..\temp\debug\build_msg/build_msg.pch"
+				AssemblerListingLocation=".\..\..\..\temp\debug\build_msg/"
+				ObjectFile=".\..\..\..\temp\debug\build_msg/"
+				ProgramDataBaseFileName=".\..\..\..\temp\debug\build_msg/"
 				WarningLevel="3"
 				SuppressStartupBanner="true"
 				DebugInformationFormat="3"
@@ -345,11 +345,11 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
-				OutputFile=".\..\..\..\temp\release\build_msg/build_msg.exe"
+				OutputFile=".\..\..\..\temp\debug\build_msg/build_msg.exe"
 				LinkIncremental="2"
 				SuppressStartupBanner="true"
 				GenerateDebugInformation="true"
-				ProgramDatabaseFile=".\..\..\..\temp\release\build_msg/build_msg.pdb"
+				ProgramDatabaseFile=".\..\..\..\temp\debug\build_msg/build_msg.pdb"
 				SubSystem="1"
 				TargetMachine="17"
 			/>

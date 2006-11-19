@@ -32,43 +32,15 @@ if DEFINED VS71COMNTOOLS (
 ::==========
 :: MAIN
 
-@if "%DBG%"=="" (
-	call :RELEASE
-) else (
-	call :DEBUG
-)
-@goto :EOF
+@echo Building %DBG_DIR%
 
+if "%VS_VER%"=="msvc8" (
+	@call compile.bat %ROOT_PATH%\extern\icu\source\allinone\allinone_8 make_icu.log
+) else (
+	@call compile.bat %ROOT_PATH%\extern\icu\source\allinone\allinone make_icu.log
+)
 
-::===========
-:RELEASE
-@echo   Building release...
-if "%VS_VER%"=="msvc6" (
-	@msdev %ROOT_PATH%\extern\icu\source\allinone\allinone.dsw /MAKE "all - Win32 Release" %CLEAN% /OUT make_icu.log
-) else (
-if "%VS_VER%"=="msvc7" (
-	@devenv %ROOT_PATH%\extern\icu\source\allinone\allinone.sln %CLEAN% release /OUT make_icu.log
-) else (
-	@devenv %ROOT_PATH%\extern\icu\source\allinone\allinone_8.sln %CLEAN% "release|%PLATFORM%" /OUT make_icu.log
-)
-)
-if errorlevel 1 call :ERROR Release build failed
-@goto :EOF
-
-
-::===========
-:DEBUG
-@echo   Building debug...
-if "%VS_VER%"=="msvc6" (
-	@msdev %ROOT_PATH%\extern\icu\source\allinone\allinone.dsw /MAKE "all - Win32 Debug" %CLEAN% /OUT make_icu.log
-) else (
-if "%VS_VER%"=="msvc7" (
-	@devenv %ROOT_PATH%\extern\icu\source\allinone\allinone.sln %CLEAN% debug /OUT make_icu.log
-) else (
-	@devenv %ROOT_PATH%\extern\icu\source\allinone\allinone_8.sln %CLEAN% "debug|%PLATFORM%" /OUT make_icu.log
-)
-)
-if errorlevel 1 call :ERROR Debug build failed
+if errorlevel 1 call :ERROR build failed - see make_icu.log for details
 @goto :EOF
 
 

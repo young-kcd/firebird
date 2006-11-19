@@ -21,6 +21,11 @@
 @cd %~dp0
 @for /f "tokens=*" %%a in ('@echo %ROOT_PATH:\=/%') do (set DB_PATH=%%a)
 
+@vcexpress /? >nul 2>nul
+@if not errorlevel 9009 ((set MSVC_VERSION=8) & (set VS_VER=msvc8) & (set VS_VER_EXPRESS=1) & (goto :END))
+
+@set VS_VER_EXPRESS=
+
 @for /f "delims=." %%a in ('@devenv /?') do (
   @for /f "tokens=6" %%b in ("%%a") do ((set MSVC_VERSION=%%b) & (set VS_VER=msvc%%b) & (goto :END))
 )
@@ -41,10 +46,12 @@
 :END
 @echo.
 @echo    vs_ver=%VS_VER%
+@echo    vs_ver_express=%VS_VER_EXPRESS%
 @echo    platform=%PLATFORM%
 @echo    msvc_version=%MSVC_VERSION%
 @echo    db_path=%DB_PATH%
 @echo    root_path=%ROOT_PATH%
-@echo    firebird=%FIREBIRD%
 @echo    server_name=%SERVER_NAME%
 @echo.
+
+@exit /B 0

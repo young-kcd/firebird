@@ -26,7 +26,18 @@
 ::===========
 :MAIN
 @call :BUILD_EMPBUILD
-@if "%DBG%"=="" (call :RELEASE) else (call :DEBUG)
+
+@echo.
+@echo Building %DBG_DIR%
+if "%VS_VER%"=="msvc6" (
+	@compile.bat %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2 examples.log empbuild intlbld
+) else (
+	@compile.bat %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2_Examples empbuild.log empbuild
+    if defined FB2_INTLEMP (
+	  @compile.bat %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2_Examples intlbuild.log intlbuild
+	)
+)
+
 @call :MOVE
 @call :BUILD_EMPLOYEE
 @call :MOVE2
@@ -69,35 +80,6 @@ if defined FB2_INTLEMP (
 @%ROOT_PATH%\gen\gpre_embed.exe -r -m -n -z %ROOT_PATH%\examples\empbuild\intlbld.e %ROOT_PATH%\gen\examples\intlbld.c -b %DB_PATH%/gen/examples/
 )
 
-@goto :EOF
-
-::===========
-:RELEASE
-@echo.
-@echo Building release
-if "%VS_VER%"=="msvc6" (
-	@msdev %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2.dsw /MAKE "empbuild - Win32 Release" "intlbld - Win32 Release" %CLEAN% /OUT examples.log
-) else (
-	@devenv %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2_Examples.sln %CLEAN% "release|%PLATFORM%" /project empbuild /OUT empbuild.log
-    if defined FB2_INTLEMP (
-      @devenv %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2_Examples.sln %CLEAN% "release|%PLATFORM%" /project intlbuild /OUT intlbuild.log
-	)
-)
-
-@goto :EOF
-
-::===========
-:DEBUG
-@echo.
-@echo Building debug
-if "%VS_VER%"=="msvc6" (
-	@msdev %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2.dsw /MAKE "empbuild - Win32 Debug" "intlbld - Win32 Debug" %CLEAN% /OUT examples.log
-) else (
-	@devenv %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2_Examples.sln %CLEAN% "debug|%PLATFORM%" /project empbuild /OUT empbuild.log
-	if defined FB2_INTLEMP (
-	  @devenv %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2_Examples.sln %CLEAN% "debug|%PLATFORM%" /project intlbuild /OUT intlbld.log
-	)
-)
 @goto :EOF
 
 
