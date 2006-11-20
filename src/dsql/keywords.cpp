@@ -197,7 +197,6 @@ static const TOK tokens[] =
 	{MAXIMUM, "MAX", 1, false},
 	{MAX_SEGMENT, "MAXIMUM_SEGMENT", 1, false},
 	{MERGE, "MERGE", 1, false},
-	{MESSAGE, "MESSAGE", 1, false},
 	{MINIMUM, "MIN", 1, false},
 	{MINUTE, "MINUTE", 2, false},
 	{MODULE_NAME, "MODULE_NAME", 1, false},

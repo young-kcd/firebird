@@ -325,7 +325,6 @@ static LexerState lex;
 %token MAXIMUM
 %token MAX_SEGMENT
 %token MERGE
-%token MESSAGE
 %token MINIMUM
 %token MODULE_NAME
 %token NAMES
