@@ -785,22 +785,21 @@ static rem_port* aux_connect(rem_port* port, PACKET* packet, t_event_ast ast)
 			Firebird::system_call_failed::raise("OpenEvent");
 		}
 
-		// send events channel
-		xps->xps_channels[XPS_CHANNEL_C2S_EVENTS].xch_client_ptr =
-			((UCHAR *) xpm->xpm_address + sizeof(struct xps));
-
-		// receive events channel
-		xps->xps_channels[XPS_CHANNEL_S2C_EVENTS].xch_client_ptr =
-			((UCHAR *) xpm->xpm_address + sizeof(struct xps) + (XNET_EVENT_SPACE));
+		// send and receive events channels
 
 		xcc->xcc_send_channel = &xps->xps_channels[XPS_CHANNEL_C2S_EVENTS];		
 		xcc->xcc_recv_channel = &xps->xps_channels[XPS_CHANNEL_S2C_EVENTS];
 
+		UCHAR* const channel_c2s_client_ptr =
+			((UCHAR *) xpm->xpm_address + sizeof(struct xps));
+		UCHAR* const channel_s2c_client_ptr =
+			((UCHAR *) xpm->xpm_address + sizeof(struct xps) + (XNET_EVENT_SPACE));
+
 		// alloc new port and link xcc to it
 		new_port = alloc_port(NULL,
-							  xcc->xcc_send_channel->xch_client_ptr,
+							  channel_c2s_client_ptr,
 							  xcc->xcc_send_channel->xch_size,
-							  xcc->xcc_recv_channel->xch_client_ptr,
+							  channel_s2c_client_ptr,
 							  xcc->xcc_recv_channel->xch_size);
 
 		port->port_async = new_port;
@@ -919,22 +918,21 @@ static rem_port* aux_request(rem_port* port, PACKET* packet)
 			Firebird::system_call_failed::raise("CreateEvent");
 		}
 
-		// send events channel
-		xps->xps_channels[XPS_CHANNEL_S2C_EVENTS].xch_client_ptr =
-			((UCHAR *) xpm->xpm_address + sizeof(struct xps) + (XNET_EVENT_SPACE));
-
-		// receive events channel
-		xps->xps_channels[XPS_CHANNEL_C2S_EVENTS].xch_client_ptr =
-			((UCHAR *) xpm->xpm_address + sizeof(struct xps));
+		// send and receive events channels
 
 		xcc->xcc_send_channel = &xps->xps_channels[XPS_CHANNEL_S2C_EVENTS];		
 		xcc->xcc_recv_channel = &xps->xps_channels[XPS_CHANNEL_C2S_EVENTS];
 
+		UCHAR* const channel_s2c_client_ptr =
+			((UCHAR *) xpm->xpm_address + sizeof(struct xps) + (XNET_EVENT_SPACE));
+		UCHAR* const channel_c2s_client_ptr =
+			((UCHAR *) xpm->xpm_address + sizeof(struct xps));
+
 		// alloc new port and link xcc to it
 		new_port = alloc_port(NULL,
-							  xcc->xcc_send_channel->xch_client_ptr,
+							  channel_s2c_client_ptr,
 							  xcc->xcc_send_channel->xch_size,
-							  xcc->xcc_recv_channel->xch_client_ptr,
+							  channel_c2s_client_ptr,
 							  xcc->xcc_recv_channel->xch_size);
 
 		port->port_async = new_port;
@@ -1304,57 +1302,56 @@ static rem_port* connect_client(PACKET* packet, ISC_STATUS* status_vector)
 		UCHAR* start_ptr =
 			(UCHAR*) xps + (sizeof(struct xps) + (XNET_EVENT_SPACE * 2));
 
-		// send channel
-		xps->xps_channels[XPS_CHANNEL_C2S_DATA].xch_client_ptr = start_ptr;
-		// receive channel
-		xps->xps_channels[XPS_CHANNEL_S2C_DATA].xch_client_ptr = (start_ptr + avail);
+		// send and receive channels
+		UCHAR* const channel_c2s_client_ptr = start_ptr;
+		UCHAR* const channel_s2c_client_ptr = start_ptr + avail;
 
+		rem_port* port =
+			alloc_port(0,
+					   channel_c2s_client_ptr,
+					   xcc->xcc_send_channel->xch_size,
+					   channel_s2c_client_ptr,
+					   xcc->xcc_recv_channel->xch_size);
+
+		status_vector[1] = FB_SUCCESS;
+		port->port_status_vector = status_vector;
+		port->port_xcc = (void *) xcc;
+		gds__register_cleanup((FPTR_VOID_PTR) exit_handler, port);
+		send_full(port, packet);
+
+		return port;
 	}
 	catch (const Firebird::Exception&) {
 
-			if (file_handle) {
-				if (mapped_address) {
-					UnmapViewOfFile(mapped_address);
-				}
-				CloseHandle(file_handle);
+		if (file_handle) {
+			if (mapped_address) {
+				UnmapViewOfFile(mapped_address);
 			}
+			CloseHandle(file_handle);
+		}
 
-			if (xpm) {
-				ALLR_free(xpm);
-			}
+		if (xpm) {
+			ALLR_free(xpm);
+		}
 
-			if (xcc) {
-				if (xcc->xcc_event_send_channel_filled) {
-					CloseHandle(xcc->xcc_event_send_channel_filled);
-				}
-				if (xcc->xcc_event_send_channel_empted) {
-					CloseHandle(xcc->xcc_event_send_channel_empted);
-				}
-				if (xcc->xcc_event_recv_channel_filled) {
-					CloseHandle(xcc->xcc_event_recv_channel_filled);
-				}
-				if (xcc->xcc_event_recv_channel_empted) {
-					CloseHandle(xcc->xcc_event_recv_channel_empted);
-				}
-				ALLR_free(xcc);
+		if (xcc) {
+			if (xcc->xcc_event_send_channel_filled) {
+				CloseHandle(xcc->xcc_event_send_channel_filled);
 			}
+			if (xcc->xcc_event_send_channel_empted) {
+				CloseHandle(xcc->xcc_event_send_channel_empted);
+			}
+			if (xcc->xcc_event_recv_channel_filled) {
+				CloseHandle(xcc->xcc_event_recv_channel_filled);
+			}
+			if (xcc->xcc_event_recv_channel_empted) {
+				CloseHandle(xcc->xcc_event_recv_channel_empted);
+			}
+			ALLR_free(xcc);
+		}
 
 		return NULL;
 	}
-
-	rem_port* port =
-		alloc_port(0, xcc->xcc_send_channel->xch_client_ptr,
-				   xcc->xcc_send_channel->xch_size,
-				   xcc->xcc_recv_channel->xch_client_ptr,
-				   xcc->xcc_recv_channel->xch_size);
-
-	status_vector[1] = FB_SUCCESS;
-	port->port_status_vector = status_vector;
-	port->port_xcc = (void *) xcc;
-	gds__register_cleanup((FPTR_VOID_PTR) exit_handler, port);
-	send_full(port, packet);
-
-	return port;
 }
 
 
@@ -2472,7 +2469,7 @@ static rem_port* get_server_port(ULONG client_pid,
 
 	try {
 		UCHAR* p = (UCHAR *) xpm->xpm_address + XPS_SLOT_OFFSET(global_pages_per_slot, slot_num);
-		memset(p, (char) 0, XPS_MAPPED_PER_CLI(global_pages_per_slot));
+		memset(p, 0, XPS_MAPPED_PER_CLI(global_pages_per_slot));
 		xcc->xcc_next = NULL;
 		xcc->xcc_mapped_addr = p;
 		xcc->xcc_xpm = xpm;
@@ -2534,21 +2531,25 @@ static rem_port* get_server_port(ULONG client_pid,
 		p += sizeof(struct xps);
 
 		const ULONG avail =
-			(USHORT) (XPS_USEFUL_SPACE(global_pages_per_slot) - (XNET_EVENT_SPACE * 2)) / 2;
+			(ULONG) (XPS_USEFUL_SPACE(global_pages_per_slot) - (XNET_EVENT_SPACE * 2)) / 2;
 
-		xps->xps_channels[XPS_CHANNEL_C2S_EVENTS].xch_buffer = p;	/* client to server events */
+		// client to server events
+		UCHAR* const channel_c2s_event_buffer = p;
 		xps->xps_channels[XPS_CHANNEL_C2S_EVENTS].xch_size = XNET_EVENT_SPACE;
 
 		p += XNET_EVENT_SPACE;
-		xps->xps_channels[XPS_CHANNEL_S2C_EVENTS].xch_buffer = p;	/* server to client events */
+		// server to client events
+		UCHAR* const channel_s2c_event_buffer = p;
 		xps->xps_channels[XPS_CHANNEL_S2C_EVENTS].xch_size = XNET_EVENT_SPACE;
 
 		p += XNET_EVENT_SPACE;
-		xps->xps_channels[XPS_CHANNEL_C2S_DATA].xch_buffer = p;	/* client to server data */
+		// client to server data
+		UCHAR* const channel_c2s_data_buffer = p;
 		xps->xps_channels[XPS_CHANNEL_C2S_DATA].xch_size = avail;
 
 		p += avail;
-		xps->xps_channels[XPS_CHANNEL_S2C_DATA].xch_buffer = p;	/* server to client data */
+		// server to client data
+		UCHAR* const channel_s2c_data_buffer = p;
 		xps->xps_channels[XPS_CHANNEL_S2C_DATA].xch_size = avail;
 
 		xcc->xcc_recv_channel = &xps->xps_channels[XPS_CHANNEL_C2S_DATA];
@@ -2557,9 +2558,9 @@ static rem_port* get_server_port(ULONG client_pid,
 		// finally, allocate and set the port structure for this client
 
 		port = alloc_port(0,
-						  xcc->xcc_send_channel->xch_buffer,
+						  channel_s2c_data_buffer,
 						  xcc->xcc_send_channel->xch_size,
-						  xcc->xcc_recv_channel->xch_buffer,
+						  channel_c2s_data_buffer,
 						  xcc->xcc_recv_channel->xch_size);
 
 		port->port_xcc = (void *) xcc;

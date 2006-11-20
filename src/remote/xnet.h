@@ -93,9 +93,9 @@ typedef struct xch
 {
     ULONG		xch_length;					// message length
     ULONG		xch_size;					// channel data size
-    USHORT      xch_flags;					// flags
-    UCHAR       *xch_buffer;				// message
-    UCHAR 	    *xch_client_ptr;			// client pointer to xch buffers
+    USHORT		xch_flags;					// flags
+	ULONG		xch_dummy1;					// for binary compatibility
+	ULONG		xch_dummy2;					// with 32-bit builds
 } *XCH;
 
 // Thread connection control block
