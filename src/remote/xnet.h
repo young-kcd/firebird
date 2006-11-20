@@ -74,7 +74,7 @@ typedef struct xpm {
     USHORT      xpm_flags;					// flag word
     CADDR_T     xpm_address;				// address of mapped memory
     UCHAR       xpm_ids[XPS_MAX_NUM_CLI];	// ids
-    time_t      xpm_timestamp;				// timestamp to avoid map name confilcts
+    ULONG       xpm_timestamp;				// timestamp to avoid map name confilcts
 } *XPM;
 
 // Mapped structure flags
@@ -157,7 +157,7 @@ typedef struct {
 	ULONG pages_per_slot;
 	ULONG map_num;
 	ULONG slot_num;
-	time_t timestamp;
+	ULONG timestamp;
 } XNET_RESPONSE, *PXNET_RESPONSE;
 
 // XNET_CONNECT_RESPONZE_SIZE - amount of bytes server writes on connect response

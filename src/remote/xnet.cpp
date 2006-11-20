@@ -76,11 +76,11 @@ static HANDLE server_process_handle = 0;
 static void server_shutdown(rem_port* port);
 #endif
 static TEXT XNET_command_line[MAXPATHLEN + 32], *XNET_p;
-static rem_port* get_server_port(ULONG, XPM, ULONG, ULONG, time_t, ISC_STATUS*);
-static bool make_map(ULONG, time_t, FILE_ID*, CADDR_T*);
-static XPM make_xpm(ULONG, time_t);
+static rem_port* get_server_port(ULONG, XPM, ULONG, ULONG, ULONG, ISC_STATUS*);
+static bool make_map(ULONG, ULONG, FILE_ID*, CADDR_T*);
+static XPM make_xpm(ULONG, ULONG);
 static bool server_init();
-static XPM get_free_slot(ULONG*, ULONG*, time_t*);
+static XPM get_free_slot(ULONG*, ULONG*, ULONG*);
 static bool fork(ULONG, USHORT, ULONG*);
 
 static int xdrxnet_create(XDR *, rem_port*, UCHAR *, USHORT, enum xdr_op);
@@ -476,7 +476,7 @@ rem_port* XNET_reconnect(ULONG client_pid, ISC_STATUS* status_vector)
 			Firebird::system_call_failed::raise("OpenEvent");
 		}
 
-		XPM xpm = make_xpm(current_process_id, time_t(0));
+		XPM xpm = make_xpm(current_process_id, 0);
 		if (!xpm) {
 			Firebird::system_call_failed::raise("CreateFileMapping");
 		}
@@ -1163,7 +1163,7 @@ static rem_port* connect_client(PACKET* packet, ISC_STATUS* status_vector)
 	global_slots_per_map = response.slots_per_map;
 	const ULONG map_num = response.map_num;
 	const ULONG slot_num = response.slot_num;
-	const time_t timestamp = response.timestamp;
+	const ULONG timestamp = response.timestamp;
 
 	TEXT name_buffer[BUFFER_TINY];
 	FILE_ID file_handle = 0;
@@ -1195,7 +1195,7 @@ static rem_port* connect_client(PACKET* packet, ISC_STATUS* status_vector)
 			// Area hasn't been mapped. Open new file mapping.
 
 			make_map_name(name_buffer, sizeof(name_buffer), XNET_MAPPED_FILE_NAME,
-						map_num, (ULONG) timestamp);
+						map_num, timestamp);
 			file_handle = OpenFileMapping(FILE_MAP_WRITE, FALSE, name_buffer);
 			if (!file_handle) {
 				Firebird::system_call_failed::raise("OpenFileMapping");
@@ -1260,7 +1260,7 @@ static rem_port* connect_client(PACKET* packet, ISC_STATUS* status_vector)
 		xpm->xpm_count++;
 
 		make_event_name(name_buffer, sizeof(name_buffer), XNET_E_C2S_DATA_CHAN_FILLED,
-						map_num, slot_num, (ULONG) timestamp);
+						map_num, slot_num, timestamp);
 		xcc->xcc_event_send_channel_filled =
 			OpenEvent(EVENT_ALL_ACCESS, FALSE, name_buffer);
 		if (!xcc->xcc_event_send_channel_filled) {
@@ -1268,7 +1268,7 @@ static rem_port* connect_client(PACKET* packet, ISC_STATUS* status_vector)
 		}
 
 		make_event_name(name_buffer, sizeof(name_buffer), XNET_E_C2S_DATA_CHAN_EMPTED,
-						map_num, slot_num, (ULONG) timestamp);
+						map_num, slot_num, timestamp);
 		xcc->xcc_event_send_channel_empted =
 			OpenEvent(EVENT_ALL_ACCESS, FALSE, name_buffer);
 		if (!xcc->xcc_event_send_channel_empted) {
@@ -1276,7 +1276,7 @@ static rem_port* connect_client(PACKET* packet, ISC_STATUS* status_vector)
 		}
 
 		make_event_name(name_buffer, sizeof(name_buffer), XNET_E_S2C_DATA_CHAN_FILLED,
-						map_num, slot_num, (ULONG) timestamp);
+						map_num, slot_num, timestamp);
 		xcc->xcc_event_recv_channel_filled =
 				OpenEvent(EVENT_ALL_ACCESS, FALSE, name_buffer);
 		if (!xcc->xcc_event_recv_channel_filled) {
@@ -1284,7 +1284,7 @@ static rem_port* connect_client(PACKET* packet, ISC_STATUS* status_vector)
 		}
 
 		make_event_name(name_buffer, sizeof(name_buffer), XNET_E_S2C_DATA_CHAN_EMPTED,
-						map_num, slot_num, (ULONG) timestamp);
+						map_num, slot_num, timestamp);
 		xcc->xcc_event_recv_channel_empted =
 				OpenEvent(EVENT_ALL_ACCESS, FALSE, name_buffer);
 		if (!xcc->xcc_event_recv_channel_empted) {
@@ -1399,13 +1399,13 @@ static rem_port* connect_server(ISC_STATUS* status_vector, USHORT flag)
 
 		presponse->slots_per_map = global_slots_per_map;
 		presponse->pages_per_slot = global_pages_per_slot;
-		presponse->timestamp = time_t(0);
+		presponse->timestamp = 0;
 
 		if (flag & (SRVR_debug | SRVR_multi_client))
 		{
 			// searhing for free slot
 			ULONG map_num, slot_num;
-			time_t timestamp = time(NULL);
+			ULONG timestamp = (ULONG) time(NULL);
 
 			XNET_LOCK();
 			XPM xpm = get_free_slot(&map_num, &slot_num, &timestamp);
@@ -2155,7 +2155,7 @@ void release_all()
 /***********************************************************************/
 
 static bool make_map(ULONG map_number,
-					 time_t timestamp,
+					 ULONG timestamp,
 					 FILE_ID* map_handle,
 					 CADDR_T* map_address)
 {
@@ -2172,7 +2172,7 @@ static bool make_map(ULONG map_number,
 	TEXT name_buffer[BUFFER_TINY];
 
 	make_map_name(name_buffer, sizeof(name_buffer), XNET_MAPPED_FILE_NAME,
-				  map_number, (ULONG) timestamp);
+				  map_number, timestamp);
 	*map_handle = CreateFileMapping(INVALID_HANDLE_VALUE,
 		                              ISC_get_security_desc(),
 		                              PAGE_READWRITE,
@@ -2193,7 +2193,7 @@ static bool make_map(ULONG map_number,
 }
 
 
-static XPM make_xpm(ULONG map_number, time_t timestamp)
+static XPM make_xpm(ULONG map_number, ULONG timestamp)
 {
 /**************************************
  *
@@ -2331,7 +2331,7 @@ static bool server_init()
 }
 
 
-static XPM get_free_slot(ULONG* map_num, ULONG* slot_num, time_t* timestamp)
+static XPM get_free_slot(ULONG* map_num, ULONG* slot_num, ULONG* timestamp)
 {
 /**************************************
  *
@@ -2450,7 +2450,7 @@ static rem_port* get_server_port(ULONG client_pid,
 								 XPM xpm,
 								 ULONG map_num,
 								 ULONG slot_num,
-								 time_t timestamp,
+								 ULONG timestamp,
 								 ISC_STATUS* status_vector)
 {
 /**************************************
@@ -2498,7 +2498,7 @@ static rem_port* get_server_port(ULONG client_pid,
 		xps->xps_client_protocol = 0L;
 
 		make_event_name(name_buffer, sizeof(name_buffer), XNET_E_C2S_DATA_CHAN_FILLED,
-						map_num, slot_num, (ULONG) timestamp);
+						map_num, slot_num, timestamp);
 		xcc->xcc_event_recv_channel_filled =
 			CreateEvent(ISC_get_security_desc(), FALSE, FALSE, name_buffer);
 		if (!xcc->xcc_event_recv_channel_filled) {
@@ -2506,7 +2506,7 @@ static rem_port* get_server_port(ULONG client_pid,
 		}
 
 		make_event_name(name_buffer, sizeof(name_buffer), XNET_E_C2S_DATA_CHAN_EMPTED,
-						map_num, slot_num, (ULONG) timestamp);
+						map_num, slot_num, timestamp);
 		xcc->xcc_event_recv_channel_empted =
 			CreateEvent(ISC_get_security_desc(), FALSE, FALSE, name_buffer);
 		if (!xcc->xcc_event_recv_channel_empted) {
@@ -2514,7 +2514,7 @@ static rem_port* get_server_port(ULONG client_pid,
 		}
 
 		make_event_name(name_buffer, sizeof(name_buffer), XNET_E_S2C_DATA_CHAN_FILLED,
-						map_num, slot_num, (ULONG) timestamp);
+						map_num, slot_num, timestamp);
 		xcc->xcc_event_send_channel_filled =
 			CreateEvent(ISC_get_security_desc(), FALSE, FALSE, name_buffer);
 		if (!xcc->xcc_event_send_channel_filled) {
@@ -2522,7 +2522,7 @@ static rem_port* get_server_port(ULONG client_pid,
 		}
 
 		make_event_name(name_buffer, sizeof(name_buffer), XNET_E_S2C_DATA_CHAN_EMPTED,
-						map_num, slot_num, (ULONG) timestamp);
+						map_num, slot_num, timestamp);
 		xcc->xcc_event_send_channel_empted =
 			CreateEvent(ISC_get_security_desc(), FALSE, FALSE, name_buffer);
 		if (!xcc->xcc_event_send_channel_empted) {
