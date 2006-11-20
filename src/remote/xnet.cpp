@@ -2173,7 +2173,7 @@ static bool make_map(ULONG map_number,
 
 	make_map_name(name_buffer, sizeof(name_buffer), XNET_MAPPED_FILE_NAME,
 				  map_number, (ULONG) timestamp);
-	*map_handle = CreateFileMapping((HANDLE) 0xFFFFFFFF,
+	*map_handle = CreateFileMapping(INVALID_HANDLE_VALUE,
 		                              ISC_get_security_desc(),
 		                              PAGE_READWRITE,
 		                              0L,
@@ -2301,7 +2301,7 @@ static bool server_init()
 		}
 
 		make_obj_name(name_buffer, sizeof(name_buffer), XNET_CONNECT_MAP);
-		xnet_connect_map_h = CreateFileMapping((HANDLE)0xFFFFFFFF,
+		xnet_connect_map_h = CreateFileMapping(INVALID_HANDLE_VALUE,
 												ISC_get_security_desc(),
 												PAGE_READWRITE,
 												0,
