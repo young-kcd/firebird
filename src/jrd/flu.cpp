@@ -140,6 +140,12 @@ namespace {
 
 namespace Jrd
 {
+	bool Module::operator>(const Module &im) const
+	{
+		// we need it to sort on some key
+		return interMod > im.interMod;
+	}
+
 	Module::InternalModule* Module::scanModule(const Firebird::PathName& name)
 	{
 		typedef Module::InternalModule** itr;
@@ -177,7 +183,7 @@ namespace Jrd
 		if (rc)
 		{
 			size_t pos;
-			if (!(interest.find(m, pos) && interest[pos] == m))
+			if (!interest.find(m, pos))
 			{
 				interest.add(m);
 			}
