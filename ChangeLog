@@ -1,3 +1,9 @@
+2006-11-19 15:37  alexpeshkoff
+
+	* firebird2/src/jrd/inf.cpp (1.20.2.1):
+
+	backport
+
 2006-11-05 15:37  alexpeshkoff
 
 	* firebird2/: autogen.sh (1.8.2.2), configure.in (1.141.2.39),
