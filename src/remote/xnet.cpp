@@ -2171,11 +2171,11 @@ static bool make_map(ULONG map_number,
 	make_map_name(name_buffer, sizeof(name_buffer), XNET_MAPPED_FILE_NAME,
 				  map_number, timestamp);
 	*map_handle = CreateFileMapping(INVALID_HANDLE_VALUE,
-		                              ISC_get_security_desc(),
-		                              PAGE_READWRITE,
-		                              0L,
-		                              XPS_MAPPED_SIZE(global_slots_per_map, global_pages_per_slot),
-		                              name_buffer);
+									ISC_get_security_desc(),
+									PAGE_READWRITE,
+									0L,
+									XPS_MAPPED_SIZE(global_slots_per_map, global_pages_per_slot),
+									name_buffer);
 	if (!(*map_handle) || (*map_handle && ERRNO == ERROR_ALREADY_EXISTS))
 		return false;
 
@@ -2299,11 +2299,11 @@ static bool server_init()
 
 		make_obj_name(name_buffer, sizeof(name_buffer), XNET_CONNECT_MAP);
 		xnet_connect_map_h = CreateFileMapping(INVALID_HANDLE_VALUE,
-												ISC_get_security_desc(),
-												PAGE_READWRITE,
-												0,
-												XNET_CONNECT_RESPONZE_SIZE,
-												name_buffer);
+											   ISC_get_security_desc(),
+											   PAGE_READWRITE,
+											   0,
+											   XNET_CONNECT_RESPONZE_SIZE,
+											   name_buffer);
 		if (!xnet_connect_map_h || (xnet_connect_map_h && ERRNO == ERROR_ALREADY_EXISTS))
 		{
 			Firebird::system_call_failed::raise("CreateFileMapping");
