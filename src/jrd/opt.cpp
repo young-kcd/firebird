@@ -1644,7 +1644,9 @@ static void check_sorts(RecordSelExpr* rse)
 
 					// AB: Don't distribute the sort when a FIRST/SKIP is supplied,
 					// because that will affect the behaviour from the deeper RSE.
-					if (new_rse->rse_first || new_rse->rse_skip) {
+					if (new_rse != rse &&
+						(new_rse->rse_first || new_rse->rse_skip))
+					{
 						node = NULL;
 						break;
 					}
