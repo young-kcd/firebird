@@ -470,10 +470,10 @@ DatabaseSnapshot::DatabaseSnapshot(thread_db* tdbb, MemoryPool& pool, jrd_tra* t
 
 				if (rid == rel_mon_database)
 				{
-					database_processed = database_seen;
-
 					if (fid == f_mon_db_name)
 					{
+						database_processed = database_seen;
+
 						// Do we look at our own database record?
 						allowed = !dbb->dbb_database_name.compare(source, length);
 						if (allowed)
@@ -483,7 +483,7 @@ DatabaseSnapshot::DatabaseSnapshot(thread_db* tdbb, MemoryPool& pool, jrd_tra* t
 						}
 					}
 
-					// We need to return the database record only once.
+					// We need to return the database record only once
 					if (allowed && !database_processed)
 					{
 						putField(record, fid, source, length);
