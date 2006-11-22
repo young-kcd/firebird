@@ -1,3 +1,27 @@
+2006-11-21 15:02  dimitr
+
+	* firebird2/src/jrd/opt.cpp (1.283):
+
+	Attempted to fix CORE-995.
+
+2006-11-21 14:56  dimitr
+
+	* firebird2/src/jrd/DatabaseSnapshot.cpp (1.20):
+
+	Fixed the issue spotted by Martijn.
+
+2006-11-21 14:37  alexpeshkoff
+
+	* firebird2/src/jrd/: flu.cpp (1.55), flu.h (1.13):
+
+	Much better fix for CORE-982
+
+2006-11-21 08:47  dimitr
+
+	* firebird2/src/jrd/opt.cpp (1.282):
+
+	Fixed CORE-1005.
+
 2006-11-21 01:20  asfernandes
 
 	* firebird2/src/remote/: xnet.cpp (1.80), xnet.h (1.15):
