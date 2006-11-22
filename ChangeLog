@@ -1,3 +1,29 @@
+2006-11-21 22:02  hvlad
+
+	* firebird2/src/jrd/vio.cpp (1.151.2.2):
+
+	Fix for CORE-1006 : AV at rollback and \ or garbage collection if
+	updated table have expression index with SELECT in it
+
+2006-11-21 22:00  hvlad
+
+	* firebird2/src/jrd/btr.cpp (1.162.2.5):
+
+	Backport fix for CORE-952: AV when blob is used in expression index
+	It is also related to CORE-1006
+
+2006-11-21 14:38  alexpeshkoff
+
+	* firebird2/src/jrd/: flu.cpp (1.52.4.2), flu.h (1.11.4.3):
+
+	backported
+
+2006-11-21 08:47  dimitr
+
+	* firebird2/src/jrd/opt.cpp (1.261.2.4):
+
+	Fixed CORE-1005.
+
 2006-11-19 16:45  alexpeshkoff
 
 	* firebird2/configure.in (1.241.2.4):
