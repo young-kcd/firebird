@@ -1,3 +1,15 @@
+2006-11-23 01:30  asfernandes
+
+	* firebird2/src/jrd/opt.cpp (1.284):
+
+	Misc
+
+2006-11-22 15:33  asfernandes
+
+	* firebird2/builds/win32/msvc8/fbudf.vcproj (1.4):
+
+	Remove use of ODBC in FBUDF
+
 2006-11-21 15:02  dimitr
 
 	* firebird2/src/jrd/opt.cpp (1.283):
