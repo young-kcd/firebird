@@ -393,8 +393,6 @@ const UCHAR HDR_password_file_key	= 9;	/* Key to compare to password db */
 const UCHAR HDR_difference_file	= 12;	/* Delta file that is used during backup lock */
 const UCHAR HDR_backup_guid		= 13;	/* UID generated on each switch into backup mode */
 const UCHAR HDR_max				= 14;	/* Maximum HDR_clump value */
-const UCHAR HDR_on_detach		= 250;	// procedure to be called on detach
-										// use big code to avoid compatibility problems
 
 /* Header page flags */
 
