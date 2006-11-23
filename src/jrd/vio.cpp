@@ -3029,8 +3029,8 @@ void VIO_verb_cleanup(thread_db* tdbb, jrd_tra* transaction)
 			}
 			delete action;
 		}
-			tdbb->tdbb_transaction = old_tran;
-		}
+		tdbb->tdbb_transaction = old_tran;
+	}
 	catch (...) {
 		tdbb->tdbb_transaction = old_tran;
 		throw;
