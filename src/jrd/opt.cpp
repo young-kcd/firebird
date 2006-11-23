@@ -7468,9 +7468,9 @@ static void set_direction(const jrd_nod* from_clause, jrd_nod* to_clause)
  **************************************/
 	DEV_BLKCHK(from_clause, type_nod);
 	DEV_BLKCHK(to_clause, type_nod);
-/* both clauses are allocated with thrice the number of arguments to
-   leave room at the end for an ascending/descending and nulls placement flags,
-   one for each field */
+	// Both clauses are allocated with thrice the number of arguments to
+	// leave room at the end for an ascending/descending and nulls placement flags,
+	// one for each field.
 	jrd_nod* const* from_ptr = from_clause->nod_arg;
 	jrd_nod** to_ptr = to_clause->nod_arg;
 	for (const jrd_nod* const* const end = from_ptr + from_clause->nod_count;
