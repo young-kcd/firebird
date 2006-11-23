@@ -1,3 +1,23 @@
+2006-11-23 01:41  asfernandes
+
+	* firebird2/src/jrd/: opt.cpp (1.261.2.5), vio.cpp (1.151.2.3):
+
+	Misc
+
+2006-11-23 01:40  asfernandes
+
+	* firebird2/src/jrd/ods.h (1.38.4.2):
+
+	Rollback residue of Alex incorrect commit
+
+2006-11-22 11:16  dimitr
+
+	* firebird2/builds/install/arch-specific/win32/ru/: Readme.txt
+	(1.1.2.1), custom_messages_ru.inc (1.1.2.1),
+	installation_readme.txt (1.1.2.1):
+
+	Added Russian support to the installer. Thanks to Sergey Kovalev.
+
 2006-11-21 22:02  hvlad
 
 	* firebird2/src/jrd/vio.cpp (1.151.2.2):
