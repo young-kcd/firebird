@@ -2336,7 +2336,8 @@ void put_relation( burp_rel* relation)
 		if (relation->rel_flags & REL_view)
 		{
 			put_numeric(att_view_context, field->fld_view_context);
-			PUT_TEXT(att_base_field, field->fld_base);
+			if (field->fld_base[0])
+				PUT_TEXT(att_base_field, field->fld_base);
 		}
 		if (field->fld_flags & FLD_computed)
 			put_numeric(att_field_computed_flag, TRUE);
