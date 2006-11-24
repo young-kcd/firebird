@@ -1,3 +1,16 @@
+2006-11-24 01:24  asfernandes
+
+	* firebird2/src/: burp/backup.epp (1.94), burp/burp.h (1.80),
+	burp/restore.epp (1.113), dsql/ddl.cpp (1.192), dsql/metd.epp
+	(1.96), include/consts_pub.h (1.6), include/gen/ids.h (1.19),
+	isql/extract.epp (1.77), isql/show.epp (1.113), jrd/constants.h
+	(1.37), jrd/dyn_def.epp (1.148), jrd/fields.h (1.13), jrd/ini.epp
+	(1.88), jrd/jrd.cpp (1.285), jrd/names.h (1.11), jrd/relations.h
+	(1.15), jrd/types.h (1.11):
+
+	Added RDB$NULL_FLAG and RDB$PARAMETER_MECHANISM to
+	RDB$PROCEDURE_PARAMETERS
+
 2006-11-23 01:30  asfernandes
 
 	* firebird2/src/jrd/opt.cpp (1.284):
