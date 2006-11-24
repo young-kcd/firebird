@@ -8,7 +8,7 @@ setlocal
 
 set solution=%1
 set output=%2
-set projects=
+set projects=""
 
 @if "%DBG%"=="" (
 	if "%VS_VER%"=="msvc6" (
@@ -41,9 +41,11 @@ if "%VS_VER%"=="msvc6" (
 shift
 shift
 
+set all_proj=1
 :loop_start
 
 if "%1" == "" goto loop_end
+set all_proj=0
 
 if "%VS_VER%"=="msvc6" (
 	set projects=%projects% /MAKE "%1 - Win32 %config%"
@@ -57,11 +59,13 @@ goto loop_start
 :loop_end
 
 if "%VS_VER%"=="msvc6" (
-	if "%projects%"=="" (
+	if "%all_proj%"=="1" (
 		set projects=/MAKE "all - Win32 %config%"
 	)
+)
 
-	%exec% %solution%.sln %projects% %CLEAN% /OUT %output%
+if "%VS_VER%"=="msvc6" (
+	%exec% %solution%.dsw %projects% %CLEAN% /OUT %output%
 ) else (
 	%exec% %solution%.sln %projects% %CLEAN% %config% /OUT %output%
 )
