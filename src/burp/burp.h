@@ -472,6 +472,8 @@ enum att_type {
 	att_procedureprm_default_value,
 	att_procedureprm_default_source,
 	att_procedureprm_collation_id,
+	att_procedureprm_null_flag,
+	att_procedureprm_mechanism,
 
 	// Exception attributes 
 

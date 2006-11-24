@@ -180,6 +180,13 @@ enum prc_t {
 	prc_executable = 2
 };
 
+// procedure parameter mechanism
+
+enum prm_mech_t {
+	prm_mech_normal = 0,
+	prm_mech_type_of = 1
+};
+
 // states
 
 enum att_state_t {

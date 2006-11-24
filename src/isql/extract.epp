@@ -738,6 +738,11 @@ static void get_procedure_args(const char* proc_name)
 			bool prm_default_source_null = true;
 			ISC_QUAD prm_default_source;
 
+			bool prm_null_flag_null = true;
+			BOOL prm_null_flag;
+
+			prm_mech_t prm_mech = prm_mech_normal;
+
 			if (ENCODE_ODS(isqlGlob.major_ods, isqlGlob.minor_ods) >= ODS_11_1)
 			{
 				FOR PRM2 IN RDB$PROCEDURE_PARAMETERS
@@ -749,6 +754,12 @@ static void get_procedure_args(const char* proc_name)
 
 					prm_default_source_null = PRM2.RDB$DEFAULT_SOURCE.NULL;
 					prm_default_source = PRM2.RDB$DEFAULT_SOURCE;
+
+					prm_null_flag_null = PRM2.RDB$NULL_FLAG.NULL;
+					prm_null_flag = PRM2.RDB$NULL_FLAG;
+
+					if (!PRM2.RDB$PARAMETER_MECHANISM.NULL)
+						prm_mech = (prm_mech_t) PRM2.RDB$PARAMETER_MECHANISM;
 				END_FOR 
 			}
 
@@ -782,7 +793,8 @@ static void get_procedure_args(const char* proc_name)
 
 			if (!(fb_utils::implicit_domain(FLD.RDB$FIELD_NAME) && FLD.RDB$SYSTEM_FLAG != 1))
 			{
-				isqlGlob.printf("TYPE OF ");
+				if (prm_mech == prm_mech_type_of)
+					isqlGlob.printf("TYPE OF ");
 
 				fb_utils::exact_name(FLD.RDB$FIELD_NAME);
 				if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
@@ -938,6 +950,9 @@ static void get_procedure_args(const char* proc_name)
 					}
 				}
 			}
+
+			if (!prm_null_flag_null && prm_null_flag)
+				isqlGlob.printf(" NOT NULL");
 		END_FOR
 		ON_ERROR
 			ISQL_errmsg(gds_status);

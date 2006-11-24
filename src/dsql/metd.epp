@@ -1313,8 +1313,8 @@ dsql_prc* METD_get_procedure(dsql_req* request, const dsql_str* name)
 			SSHORT pr_collation_id_null = TRUE;
 			SSHORT pr_collation_id;
 			SSHORT pr_default_value_null = TRUE;
-			///SSHORT pr_null_flag_null = TRUE;
-			///SSHORT pr_null_flag;
+			SSHORT pr_null_flag_null = TRUE;
+			SSHORT pr_null_flag;
 
 			if (ENCODE_ODS(dbb->dbb_ods_version, dbb->dbb_minor_version) >= ODS_11_1)
 			{
@@ -1328,8 +1328,8 @@ dsql_prc* METD_get_procedure(dsql_req* request, const dsql_str* name)
 
 					pr_default_value_null = PR2.RDB$DEFAULT_VALUE.NULL;
 
-					///pr_null_flag_null = PR2.RDB$NULL_FLAG.NULL;
-					///pr_null_flag = PR2.RDB$NULL_FLAG;
+					pr_null_flag_null = PR2.RDB$NULL_FLAG.NULL;
+					pr_null_flag = PR2.RDB$NULL_FLAG;
 
 				END_FOR
 			}
@@ -1364,7 +1364,6 @@ dsql_prc* METD_get_procedure(dsql_req* request, const dsql_str* name)
 
 			convert_dtype(parameter, FLD.RDB$FIELD_TYPE);
 
-			/***            
 			if (!pr_null_flag_null)
 			{
 				if (!pr_null_flag)
@@ -1372,8 +1371,6 @@ dsql_prc* METD_get_procedure(dsql_req* request, const dsql_str* name)
 			}
 			else if (!FLD.RDB$NULL_FLAG)
 				parameter->fld_flags |= FLD_nullable;
-			***/
-			parameter->fld_flags |= FLD_nullable;
 
 			if (FLD.RDB$FIELD_TYPE == blr_blob)
 				parameter->fld_seg_length = FLD.RDB$SEGMENT_LENGTH;

@@ -4879,13 +4879,22 @@ bool get_procedure_prm (GDS_NAME	procptr)
 		STORE (TRANSACTION_HANDLE local_trans
 				REQUEST_HANDLE tdgbl->handles_get_procedure_prm_req_handle1)
 			X IN RDB$PROCEDURE_PARAMETERS
-			X.RDB$DESCRIPTION.NULL = TRUE;
+
 			strcpy (X.RDB$PROCEDURE_NAME, procptr);
-			X.RDB$SYSTEM_FLAG = 0;
-			X.RDB$SYSTEM_FLAG.NULL = FALSE;
+
+			X.RDB$DESCRIPTION.NULL = TRUE;
 			X.RDB$DEFAULT_VALUE.NULL = TRUE;
 			X.RDB$DEFAULT_SOURCE.NULL = TRUE;
 			X.RDB$COLLATION_ID.NULL = TRUE;
+
+			X.RDB$SYSTEM_FLAG = 0;
+			X.RDB$SYSTEM_FLAG.NULL = FALSE;
+
+			X.RDB$NULL_FLAG = FALSE;
+			X.RDB$NULL_FLAG.NULL = FALSE;
+
+			X.RDB$PARAMETER_MECHANISM = prm_mech_normal;
+			X.RDB$PARAMETER_MECHANISM.NULL = FALSE;
 
 			skip_init(&scan_next_attr);
 			while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
@@ -4947,6 +4956,20 @@ bool get_procedure_prm (GDS_NAME	procptr)
 						X.RDB$COLLATION_ID.NULL = FALSE;
 						X.RDB$COLLATION_ID = (USHORT) get_numeric();
 					}
+					else
+						bad_attribute (scan_next_attr, attribute, 291);
+					break;
+
+				case att_procedureprm_null_flag:
+					if (tdgbl->RESTORE_format >= 8)
+						X.RDB$NULL_FLAG = (USHORT) get_numeric();
+					else
+						bad_attribute (scan_next_attr, attribute, 291);
+					break;
+
+				case att_procedureprm_mechanism:
+					if (tdgbl->RESTORE_format >= 8)
+						X.RDB$PARAMETER_MECHANISM = (USHORT) get_numeric();
 					else
 						bad_attribute (scan_next_attr, attribute, 291);
 					break;

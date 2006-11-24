@@ -6886,7 +6886,7 @@ static void purge_attachment(thread_db*		tdbb,
 
 // verify_request_synchronization
 //
-// @brief Finds the sub-requests at the given level and replaces with it the
+// @brief Finds the sub-requests at the given level and replaces it with the
 // original passed request (note the pointer by reference). If that specific
 // sub-request is not found, throw the dreaded "request synchronization error".
 // Notice that at this time, the calling function's "request" pointer has been

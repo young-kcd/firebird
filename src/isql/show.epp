@@ -3624,11 +3624,32 @@ static processing_state show_proc(const SCHAR* procname)
 			isqlGlob.printf("%-33s %s ", PRM.RDB$PARAMETER_NAME,
 					 (PRM.RDB$PARAMETER_TYPE ? "OUTPUT" : "INPUT"));
 
+			prm_mech_t mechanism = prm_mech_normal;
+			bool prm_default_source_null = true;
+			ISC_QUAD prm_default_source;
+
+			if (ENCODE_ODS(isqlGlob.major_ods, isqlGlob.minor_ods) >= ODS_11_1)
+			{
+				FOR PRM2 IN RDB$PROCEDURE_PARAMETERS
+					WITH PRM2.RDB$PROCEDURE_NAME EQ PRM.RDB$PROCEDURE_NAME AND
+						 PRM2.RDB$PARAMETER_NAME EQ PRM.RDB$PARAMETER_NAME
+
+					if (!PRM2.RDB$PARAMETER_MECHANISM.NULL)
+						mechanism = (prm_mech_t) PRM2.RDB$PARAMETER_MECHANISM;
+
+					if (PRM.RDB$PARAMETER_TYPE == 0) // input, try to show default and make Vlad happy.
+					{
+						prm_default_source_null = PRM2.RDB$DEFAULT_SOURCE.NULL;
+						prm_default_source = PRM2.RDB$DEFAULT_SOURCE;
+					}
+				END_FOR 
+			}
+
 			// Decide if this is a user-created domain
 			if (!(fb_utils::implicit_domain(FLD.RDB$FIELD_NAME) && FLD.RDB$SYSTEM_FLAG != 1))
 			{
 				fb_utils::exact_name(FLD.RDB$FIELD_NAME);
-				isqlGlob.printf("(%s) ", FLD.RDB$FIELD_NAME);
+				isqlGlob.printf("(%s%s) ", (mechanism == prm_mech_type_of ? "TYPE OF " : ""), FLD.RDB$FIELD_NAME);
 			}
 
 			isqlGlob.printf("%s%s", type_name, lenstring);
@@ -3636,28 +3657,14 @@ static processing_state show_proc(const SCHAR* procname)
 			// Show international character sets and collations
 
 			if (FLD.RDB$FIELD_TYPE == T_CHAR ||
-					   FLD.RDB$FIELD_TYPE == VARCHAR  ||
-					   FLD.RDB$FIELD_TYPE == BLOB)
+				FLD.RDB$FIELD_TYPE == VARCHAR  ||
+				FLD.RDB$FIELD_TYPE == BLOB)
 			{
 				show_proc_charsets(PRM.RDB$PROCEDURE_NAME, PRM.RDB$PARAMETER_NAME, true, true, false);
 			}
 			
 			if (PRM.RDB$PARAMETER_TYPE == 0) // input, try to show default and make Vlad happy.
 			{
-				bool prm_default_source_null = true;
-				ISC_QUAD prm_default_source;
-
-				if (ENCODE_ODS(isqlGlob.major_ods, isqlGlob.minor_ods) >= ODS_11_1)
-				{
-					FOR PRM2 IN RDB$PROCEDURE_PARAMETERS
-						WITH PRM2.RDB$PROCEDURE_NAME EQ PRM.RDB$PROCEDURE_NAME AND
-							 PRM2.RDB$PARAMETER_NAME EQ PRM.RDB$PARAMETER_NAME
-
-						prm_default_source_null = PRM2.RDB$DEFAULT_SOURCE.NULL;
-						prm_default_source = PRM2.RDB$DEFAULT_SOURCE;
-					END_FOR 
-				}
-
 				if (!prm_default_source_null)
 				{
 					isqlGlob.printf(" ");

@@ -156,7 +156,8 @@ enum backup_capabilities
 								// rdb$procedure_type in rdb$procedures
 								// rdb$valid_blr in rdb$triggers
 								// rdb$valid_blr in rdb$procedures
-								// rdb$default_value, rdb$default_source and rdb$collation_id in rdb$procedure_parameters
+								// rdb$default_value, rdb$default_source, rdb$collation_id,
+								// rdb$null_flag and rdb$paramaeter_mechanism in rdb$procedure_parameters
 };
 
 #ifdef DEBUG
@@ -208,6 +209,8 @@ const rfr_tab_t rfr_table[] =
 	//{"RDB$PROCEDURE_PARAMETERS", "RDB$DEFAULT_VALUE", BCK_ods11_1},
 	//{"RDB$PROCEDURE_PARAMETERS", "RDB$DEFAULT_SOURCE", BCK_ods11_1},
 	//{"RDB$PROCEDURE_PARAMETERS", "RDB$COLLATION_ID", BCK_ods11_1},
+	//{"RDB$PROCEDURE_PARAMETERS", "RDB$NULL_FLAG", BCK_ods11_1},
+	//{"RDB$PROCEDURE_PARAMETERS", "RDB$PARAMETER_MECHANISM", BCK_ods11_1},
 	{0, 0, 0}
 };
 
@@ -3538,6 +3541,10 @@ void write_procedure_prms( GDS_NAME procptr)
 				att_procedureprm_default_source, &X.RDB$DEFAULT_SOURCE);
 			if (!X.RDB$COLLATION_ID.NULL)
 				put_numeric (att_procedureprm_collation_id, X.RDB$COLLATION_ID);
+			if (!X.RDB$NULL_FLAG.NULL)
+				put_numeric (att_procedureprm_null_flag, X.RDB$NULL_FLAG);
+			if (!X.RDB$PARAMETER_MECHANISM.NULL)
+				put_numeric (att_procedureprm_mechanism, X.RDB$PARAMETER_MECHANISM);
 			put(tdgbl, att_end);
 		END_FOR;
 		ON_ERROR

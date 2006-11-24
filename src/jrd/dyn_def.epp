@@ -2805,6 +2805,7 @@ void DYN_define_parameter( Global* gbl, const UCHAR** ptr, Firebird::MetaName* p
 	id = drq_s_prms;
 
 	Firebird::MetaName prc_name;
+	prm_mech_t mechanism = prm_mech_normal;
 
 	STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		P IN RDB$PROCEDURE_PARAMETERS USING
@@ -2938,6 +2939,10 @@ void DYN_define_parameter( Global* gbl, const UCHAR** ptr, Firebird::MetaName* p
 				DYN_skip_blr_blob(ptr);
 				break;
 
+			case isc_dyn_prm_mechanism:
+				mechanism = (prm_mech_t) DYN_get_number(ptr);
+				break;
+
 			default:
 				--(*ptr);
 				DYN_execute(gbl, ptr, NULL, NULL, NULL, NULL, procedure_name);
@@ -3025,8 +3030,11 @@ void DYN_define_parameter( Global* gbl, const UCHAR** ptr, Firebird::MetaName* p
 					DYN_put_text_blob(gbl, &default_source_ptr, &P.RDB$DEFAULT_SOURCE);
 
 				// we don't support not-nullable parameters yet
-				///P.RDB$NULL_FLAG.NULL = FALSE;
-				///P.RDB$NULL_FLAG = FALSE;
+				P.RDB$NULL_FLAG.NULL = FALSE;
+				P.RDB$NULL_FLAG = FALSE;
+				
+				P.RDB$PARAMETER_MECHANISM.NULL = FALSE;
+				P.RDB$PARAMETER_MECHANISM = (USHORT) mechanism;
 			END_MODIFY
 		END_FOR
 

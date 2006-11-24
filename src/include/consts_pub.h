@@ -757,6 +757,7 @@
 
 #define isc_dyn_prm_number                138
 #define isc_dyn_prm_type                  139
+#define isc_dyn_prm_mechanism             241
 
 /********************************/
 /* Relation specific attributes */
@@ -814,7 +815,7 @@
 /* Last $dyn value assigned */
 /****************************/
 
-#define isc_dyn_last_dyn_value            241
+#define isc_dyn_last_dyn_value            242
 
 /******************************************/
 /* Array slice description language (SDL) */

@@ -109,6 +109,9 @@ TYPE ("LEGACY", prc_legacy, nam_prc_type)
 TYPE ("SELECTABLE", prc_selectable, nam_prc_type)
 TYPE ("EXECUTABLE", prc_executable, nam_prc_type)
 
+TYPE("NORMAL", prm_mech_normal, nam_prm_mechanism)
+TYPE("TYPE OF", prm_mech_type_of, nam_prm_mechanism)
+
 TYPE ("IDLE", att_s_idle, nam_mon_att_state)
 TYPE ("ACTIVE", att_s_active, nam_mon_att_state)
 TYPE ("KILLED", att_s_killed, nam_mon_att_state)

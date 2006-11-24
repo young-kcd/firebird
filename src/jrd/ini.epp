@@ -686,8 +686,9 @@ void INI_init2(void)
 				}
 				else if ((fld[RFLD_F_NAME] == nam_default ||
 						  fld[RFLD_F_NAME] == nam_d_source ||
-						  fld[RFLD_F_NAME] == nam_collate_id /***||
-						  fld[RFLD_F_NAME] == nam_null_flag***/) &&
+						  fld[RFLD_F_NAME] == nam_collate_id ||
+						  fld[RFLD_F_NAME] == nam_null_flag ||
+						  fld[RFLD_F_NAME] == nam_prm_mechanism) &&
 						 relfld[RFLD_R_NAME] == nam_proc_parameters)
 				{
 					if (ENCODE_ODS(major_version, minor_original) >= ODS_11_1)

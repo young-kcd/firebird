@@ -230,6 +230,7 @@ NAME("RDB$STATEMENT_ID", nam_stmt_id)
 NAME("RDB$SWEEP_INTERVAL", nam_sweep_int)
 
 NAME("RDB$DEBUG_INFO", nam_debug_info)
+NAME("RDB$PARAMETER_MECHANISM", nam_prm_mechanism)
 
 NAME("MON$ATTACHMENTS", nam_mon_attachments)
 NAME("MON$ATTACHMENT_ID", nam_mon_att_id)

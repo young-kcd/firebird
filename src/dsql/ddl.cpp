@@ -5968,6 +5968,8 @@ static void put_field( dsql_req* request, dsql_fld* field, bool udf_flag)
 		if (field->fld_explicit_collation)
 			request->append_number(isc_dyn_fld_collation, field->fld_collation_id);
 
+		request->append_number(isc_dyn_prm_mechanism, prm_mech_type_of);
+
 		return;
 	}
 

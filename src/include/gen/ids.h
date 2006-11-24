@@ -265,7 +265,8 @@ enum fids {
 	f_prm_default,
 	f_prm_dsource,
 	f_prm_coll_id,
-	///f_prm_null_flag,
+	f_prm_null_flag,
+	f_prm_mech,
 
 	f_cs_cs_name = 0,
 	f_cs_form_of_use,
