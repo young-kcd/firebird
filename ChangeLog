@@ -1,3 +1,41 @@
+2006-11-25 02:34  asfernandes
+
+	* firebird2/src/burp/backup.epp (1.96):
+
+	Misc
+
+2006-11-24 15:20  asfernandes
+
+	* firebird2/builds/win32/msvc7/fbudf.vcproj (1.20):
+
+	Remove use of ODBC in FBUDF of MSVC7 build
+
+2006-11-24 11:22  robocop
+
+	* firebird2/src/burp/backup.epp (1.95):
+
+	Solve CORE-1009 so that Jiri can sleep at night.  :-)
+
+2006-11-24 11:17  robocop
+
+	* firebird2/builds/win32/msvc6/Firebird2.dsw (1.41):
+
+	Get rid of empbuild and intlbl in Firebird2.dsw to follow newer VC
+	versions that put them in a separate solution.
+
+2006-11-24 11:15  robocop
+
+	* firebird2/builds/win32/msvc6/fbudf.dsp (1.16):
+
+	Clean linker references to ODBC and others in fbudf.
+
+2006-11-24 11:14  robocop
+
+	* firebird2/builds/win32/compile.bat (1.2):
+
+	Use the famous brute force approach to fix syntax error in this new
+	DOS batch file introduced by Adriano (for the VC6 case).
+
 2006-11-24 01:24  asfernandes
 
 	* firebird2/src/: burp/backup.epp (1.94), burp/burp.h (1.80),
