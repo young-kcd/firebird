@@ -157,7 +157,7 @@ enum backup_capabilities
 								// rdb$valid_blr in rdb$triggers
 								// rdb$valid_blr in rdb$procedures
 								// rdb$default_value, rdb$default_source, rdb$collation_id,
-								// rdb$null_flag and rdb$paramaeter_mechanism in rdb$procedure_parameters
+								// rdb$null_flag and rdb$parameter_mechanism in rdb$procedure_parameters
 };
 
 #ifdef DEBUG
