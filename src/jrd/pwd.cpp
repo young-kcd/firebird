@@ -453,6 +453,11 @@ void SecurityDatabase::verifyUser(TEXT* name,
 	}
 
 #ifndef EMBEDDED
+	else
+	{
+		remoteFailedLogins().loginFail(remoteId);
+		ERR_post(isc_login, 0);
+	}
 
 	// Look up the user name in the userinfo database and use the parameters
 	// found there. This means that another database must be accessed, and

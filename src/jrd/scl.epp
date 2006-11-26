@@ -604,11 +604,6 @@ void SCL_init(bool create,
 
 	if (user_name || (id == -1))
 	{
-		if (!user_name || (!password_enc && !password))
-		{
-			ERR_post(isc_login, 0);
-		}
-
 		if (!JRD_get_thread_security_disabled())
 		{
 			Attachment* att = tdbb->tdbb_attachment;
