@@ -235,7 +235,6 @@ static dsql_nod* pass1_merge(dsql_req*, dsql_nod*, bool);
 static dsql_nod* pass1_not(dsql_req*, const dsql_nod*, bool, bool);
 static void	pass1_put_args_on_stack(dsql_req*, dsql_nod*, DsqlNodStack&, bool);
 static dsql_nod* pass1_relation(dsql_req*, dsql_nod*);
-static dsql_nod* pass1_replace(dsql_req*, dsql_nod*, bool);
 static dsql_nod* pass1_returning(dsql_req*, const dsql_nod*, bool);
 static dsql_nod* pass1_rse(dsql_req*, dsql_nod*, dsql_nod*, dsql_nod*, dsql_nod*, USHORT);
 static dsql_nod* pass1_rse_impl(dsql_req*, dsql_nod*, dsql_nod*, dsql_nod*, dsql_nod*, USHORT);
@@ -250,6 +249,7 @@ static dsql_nod* pass1_union(dsql_req*, dsql_nod*, dsql_nod*, dsql_nod*, USHORT)
 static void pass1_union_auto_cast(dsql_nod*, const dsc&, SSHORT,
 	bool in_select_list = false);
 static dsql_nod* pass1_update(dsql_req*, dsql_nod*, bool);
+static dsql_nod* pass1_update_or_insert(dsql_req*, dsql_nod*, bool);
 static dsql_nod* pass1_variable(dsql_req*, dsql_nod*);
 static dsql_nod* post_map(dsql_nod*, dsql_ctx*);
 static dsql_nod* remap_field(dsql_req*, dsql_nod*, dsql_ctx*, USHORT);
@@ -661,7 +661,7 @@ dsql_nod* PASS1_node(dsql_req* request, dsql_nod* input, bool proc_flag)
 	case nod_delete:
 	case nod_insert:
 	case nod_merge:
-	case nod_replace:
+	case nod_update_or_insert:
 	case nod_order:
 	case nod_select:
 	case nod_with:
@@ -1840,8 +1840,8 @@ dsql_nod* PASS1_statement(dsql_req* request, dsql_nod* input, bool proc_flag)
 			return input;
 		}
 
-	case nod_replace:
-		node = pass1_savepoint(request, pass1_replace(request, input, proc_flag));
+	case nod_update_or_insert:
+		node = pass1_savepoint(request, pass1_update_or_insert(request, input, proc_flag));
 		break;
 
 	default:
@@ -6953,249 +6953,6 @@ static dsql_rel* pass1_base_table( dsql_req* request, const dsql_rel* relation,
 
 /**
 
- 	pass1_replace
-
-    @brief	Process REPLACE statement.
-
-
-    @param request
-    @param input
-	@param proc_flag
-
- **/
-static dsql_nod* pass1_replace(dsql_req* request, dsql_nod* input, bool proc_flag)
-{
-	DEV_BLKCHK(request, dsql_type_req);
-	DEV_BLKCHK(input, dsql_type_nod);
-
-	dsql_str* relation_name =
-		(dsql_str*) input->nod_arg[e_rep_relation]->nod_arg[e_rpn_name];
-	dsql_str* base_name = relation_name;
-
-	dsql_nod* values = input->nod_arg[e_rep_values];
-
-	// build the INSERT node
-	dsql_nod* insert = MAKE_node(nod_insert, e_ins_count);
-	insert->nod_arg[e_ins_relation] = input->nod_arg[e_rep_relation];
-	insert->nod_arg[e_ins_fields] = input->nod_arg[e_rep_fields];
-	insert->nod_arg[e_ins_values] = values;
-	insert->nod_arg[e_ins_return] = input->nod_arg[e_rep_return];
-	insert = pass1_insert(request, insert, proc_flag);
-
-	// PASS1_statement will transform nod_insert to nod_store
-	fb_assert(insert->nod_type == nod_store);
-
-	dsql_ctx* context = (dsql_ctx*) insert->nod_arg[e_sto_relation]->nod_arg[e_rel_context];
-	DEV_BLKCHK(context, dsql_type_ctx);
-
-	dsql_rel* relation = context->ctx_relation;
-	dsql_nod* fields = input->nod_arg[e_rep_fields];
-
-	// if a field list isn't present, build one using the same
-	// rules of INSERT INTO table VALUES ...
-	if (!fields)
-		fields = explode_fields(relation);
-
-	// maintain a pair of view's field name / base field name
-	MetaNamePairMap view_fields;
-
-	if ((relation->rel_flags & REL_view) && !input->nod_arg[e_rep_matching])
-	{
-		dsql_rel* base_rel =
-			METD_get_view_base(request, relation_name->str_data, view_fields);
-
-		// get the base table name if there is only one
-		if (base_rel)
-			base_name = MAKE_cstring(base_rel->rel_name);
-		else
-			ERRD_post(isc_replace_with_complex_view, 0);
-	}
-
-	dsql_nod* matching = input->nod_arg[e_rep_matching];
-
-	if (matching)
-	{
-		request->req_context->push(context);
-		request->req_scope_level++;
-
-		dsql_nod* matching_fields = PASS1_node(request, matching, false);
-
-		request->req_scope_level--;
-		request->req_context->pop();
-
-		field_appears_once(matching_fields, matching, true, "REPLACE");
-	}
-	else
-	{
-		matching = METD_get_primary_key(request, base_name);
-
-		if (!matching)
-		{
-			ERRD_post(isc_primary_key_required,
-					  isc_arg_string, base_name->str_data,
-					  0);
-		}
-	}
-
-	// build a boolean to use in the UPDATE statement
-	dsql_nod* match = NULL;
-	USHORT match_count = 0;
-
-	DsqlNodStack stack;
-	dsql_nod** field_ptr = fields->nod_arg;
-	dsql_nod** value_ptr = values->nod_arg;
-
-	for (const dsql_nod* const* const field_end = field_ptr + fields->nod_count;
-		 field_ptr < field_end; field_ptr++, value_ptr++)
-	{
-		DEV_BLKCHK(*field_ptr, dsql_type_nod);
-		DEV_BLKCHK(*value_ptr, dsql_type_nod);
-
-		dsql_nod* temp = MAKE_node(nod_assign, e_asgn_count);
-		temp->nod_arg[e_asgn_value] = *value_ptr;
-		temp->nod_arg[e_asgn_field] = *field_ptr;
-		stack.push(temp);
-
-		temp = *value_ptr;
-		dsql_nod* temp2 = insert->nod_arg[e_sto_statement]->nod_arg[field_ptr - fields->nod_arg]->nod_arg[1];
-		set_parameter_type(request, temp, temp2, false);
-
-		fb_assert((*field_ptr)->nod_type == nod_field_name);
-
-		// When relation is a view and MATCHING was not specified, field_name
-		// stores the base field name that is what we should find in the primary
-		// key of base table.
-		Firebird::MetaName field_name;
-
-		if ((relation->rel_flags & REL_view) && !input->nod_arg[e_rep_matching])
-		{
-			view_fields.get(
-				Firebird::MetaName(((dsql_str*) (*field_ptr)->nod_arg[e_fln_name])->str_data),
-				field_name);
-		}
-		else
-			field_name = ((dsql_str*) (*field_ptr)->nod_arg[e_fln_name])->str_data;
-
-		if (field_name.hasData())
-		{
-			dsql_nod** matching_ptr = matching->nod_arg;
-
-			for (const dsql_nod* const* const matching_end = matching_ptr + matching->nod_count;
-				 matching_ptr < matching_end; matching_ptr++)
-			{
-				DEV_BLKCHK(*matching_ptr, dsql_type_nod);
-				fb_assert((*matching_ptr)->nod_type == nod_field_name);
-
-				if (Firebird::MetaName(((dsql_str*)
-						(*matching_ptr)->nod_arg[e_fln_name])->str_data) ==
-					field_name)
-				{
-					++match_count;
-
-					dsql_nod* eql = MAKE_node(nod_eql, 2);
-					eql->nod_arg[0] = *field_ptr;
-					eql->nod_arg[1] = *value_ptr;
-
-					if (match)
-					{
-						// It's a composed MATCHING. Build an AND.
-						dsql_nod* and_node = MAKE_node(nod_and, 2);
-						and_node->nod_arg[0] = match;
-						and_node->nod_arg[1] = eql;
-						match = and_node;
-					}
-					else
-						match = eql;
-				}
-			}
-		}
-	}
-
-	// check if implicit or explicit MATCHING is valid
-	if (match_count != matching->nod_count)
-	{
-		if (input->nod_arg[e_rep_matching])
-			ERRD_post(isc_replace_doesnt_match_matching, 0);
-		else
-		{
-			ERRD_post(isc_replace_doesnt_match_pk,
-					  isc_arg_string, base_name->str_data,
-					  0);
-		}
-	}
-
-	// build the UPDATE node
-	dsql_nod* update = MAKE_node(nod_update, e_upd_count);
-	update->nod_arg[e_upd_relation] = input->nod_arg[e_rep_relation];
-	update->nod_arg[e_upd_statement] = MAKE_list(stack);
-	update->nod_arg[e_upd_boolean] = match;
-
-	if (input->nod_arg[e_rep_return])
-	{
-		update->nod_arg[e_upd_rse_flags] = (dsql_nod*) NOD_SELECT_EXPR_SINGLETON;
-
-		dsql_nod* store_ret = insert->nod_arg[e_sto_return];
-
-		// nod_returning was already processed
-		fb_assert(store_ret->nod_type == nod_list);
-
-		// And we create an already processed RETURNING, because
-		// nod_returning creates parameters and they're already
-		// created by the INSERT statement.
-		dsql_nod* update_ret = update->nod_arg[e_upd_return] =
-			MAKE_node(nod_list, store_ret->nod_count);
-
-		dsql_nod** src_ptr = input->nod_arg[e_rep_return]->nod_arg[e_ret_source]->nod_arg;
-		dsql_nod** dst_ptr = store_ret->nod_arg;
-		dsql_nod** ptr = update_ret->nod_arg;
-
-		for (const dsql_nod* const* const end = ptr + update_ret->nod_count;
-			ptr < end; src_ptr++, dst_ptr++, ptr++)
-		{
-			dsql_nod* temp = MAKE_node(nod_assign, e_asgn_count);
-			temp->nod_arg[e_asgn_value] = *src_ptr;
-			temp->nod_arg[e_asgn_field] = (*dst_ptr)->nod_arg[1];
-			*ptr = temp;
-		}
-	}
-
-	update = pass1_update(request, update, proc_flag);
-
-	// PASS1_statement will transform nod_update to nod_modify
-	fb_assert(update->nod_type == nod_modify);
-
-	// test if ROW_COUNT = 0
-	dsql_nod* eql = MAKE_node(nod_eql, 2);
-	eql->nod_arg[0] = MAKE_node(nod_internal_info, e_internal_info_count);
-	eql->nod_arg[0]->nod_arg[e_internal_info] =
-		MAKE_constant((dsql_str*) internal_rows_affected, CONSTANT_SLONG);
-	eql->nod_arg[1] = MAKE_constant((dsql_str*) 0, CONSTANT_SLONG);
-
-	USHORT req_flags = request->req_flags;
-	request->req_flags |= REQ_block;	// to compile ROW_COUNT
-	eql = PASS1_node(request, eql, proc_flag);
-	request->req_flags = req_flags;
-
-	// if (ROW_COUNT = 0) then INSERT
-	dsql_nod* if_nod = MAKE_node(nod_if, e_if_count);
-	if_nod->nod_arg[e_if_condition] = eql;
-	if_nod->nod_arg[e_if_true] = insert;
-
-	// build the UPDATE / IF nodes
-	dsql_nod* list = MAKE_node(nod_list, 2);
-	list->nod_arg[0] = update;
-	list->nod_arg[1] = if_nod;
-
-	// if RETURNING is present, req_type is already REQ_EXEC_PROCEDURE
-	if (!input->nod_arg[e_rep_return])
-		request->req_type = REQ_INSERT;
-
-	return list;
-}
-
-
-/**
-
  	pass1_returning
 
     @brief	Compile a RETURNING clause.
@@ -8681,6 +8438,249 @@ static dsql_nod* pass1_update( dsql_req* request, dsql_nod* input, bool proc_fla
 						node->nod_arg[e_mod_update]);
 
 	return node;
+}
+
+
+/**
+
+ 	pass1_update_or_insert
+
+    @brief	Process UPDATE OR INSERT statement.
+
+
+    @param request
+    @param input
+	@param proc_flag
+
+ **/
+static dsql_nod* pass1_update_or_insert(dsql_req* request, dsql_nod* input, bool proc_flag)
+{
+	DEV_BLKCHK(request, dsql_type_req);
+	DEV_BLKCHK(input, dsql_type_nod);
+
+	dsql_str* relation_name =
+		(dsql_str*) input->nod_arg[e_upi_relation]->nod_arg[e_rpn_name];
+	dsql_str* base_name = relation_name;
+
+	dsql_nod* values = input->nod_arg[e_upi_values];
+
+	// build the INSERT node
+	dsql_nod* insert = MAKE_node(nod_insert, e_ins_count);
+	insert->nod_arg[e_ins_relation] = input->nod_arg[e_upi_relation];
+	insert->nod_arg[e_ins_fields] = input->nod_arg[e_upi_fields];
+	insert->nod_arg[e_ins_values] = values;
+	insert->nod_arg[e_ins_return] = input->nod_arg[e_upi_return];
+	insert = pass1_insert(request, insert, proc_flag);
+
+	// PASS1_statement will transform nod_insert to nod_store
+	fb_assert(insert->nod_type == nod_store);
+
+	dsql_ctx* context = (dsql_ctx*) insert->nod_arg[e_sto_relation]->nod_arg[e_rel_context];
+	DEV_BLKCHK(context, dsql_type_ctx);
+
+	dsql_rel* relation = context->ctx_relation;
+	dsql_nod* fields = input->nod_arg[e_upi_fields];
+
+	// if a field list isn't present, build one using the same
+	// rules of INSERT INTO table VALUES ...
+	if (!fields)
+		fields = explode_fields(relation);
+
+	// maintain a pair of view's field name / base field name
+	MetaNamePairMap view_fields;
+
+	if ((relation->rel_flags & REL_view) && !input->nod_arg[e_upi_matching])
+	{
+		dsql_rel* base_rel =
+			METD_get_view_base(request, relation_name->str_data, view_fields);
+
+		// get the base table name if there is only one
+		if (base_rel)
+			base_name = MAKE_cstring(base_rel->rel_name);
+		else
+			ERRD_post(isc_upd_ins_with_complex_view, 0);
+	}
+
+	dsql_nod* matching = input->nod_arg[e_upi_matching];
+
+	if (matching)
+	{
+		request->req_context->push(context);
+		request->req_scope_level++;
+
+		dsql_nod* matching_fields = PASS1_node(request, matching, false);
+
+		request->req_scope_level--;
+		request->req_context->pop();
+
+		field_appears_once(matching_fields, matching, true, "UPDATE OR INSERT");
+	}
+	else
+	{
+		matching = METD_get_primary_key(request, base_name);
+
+		if (!matching)
+		{
+			ERRD_post(isc_primary_key_required,
+					  isc_arg_string, base_name->str_data,
+					  0);
+		}
+	}
+
+	// build a boolean to use in the UPDATE statement
+	dsql_nod* match = NULL;
+	USHORT match_count = 0;
+
+	DsqlNodStack stack;
+	dsql_nod** field_ptr = fields->nod_arg;
+	dsql_nod** value_ptr = values->nod_arg;
+
+	for (const dsql_nod* const* const field_end = field_ptr + fields->nod_count;
+		 field_ptr < field_end; field_ptr++, value_ptr++)
+	{
+		DEV_BLKCHK(*field_ptr, dsql_type_nod);
+		DEV_BLKCHK(*value_ptr, dsql_type_nod);
+
+		dsql_nod* temp = MAKE_node(nod_assign, e_asgn_count);
+		temp->nod_arg[e_asgn_value] = *value_ptr;
+		temp->nod_arg[e_asgn_field] = *field_ptr;
+		stack.push(temp);
+
+		temp = *value_ptr;
+		dsql_nod* temp2 = insert->nod_arg[e_sto_statement]->nod_arg[field_ptr - fields->nod_arg]->nod_arg[1];
+		set_parameter_type(request, temp, temp2, false);
+
+		fb_assert((*field_ptr)->nod_type == nod_field_name);
+
+		// When relation is a view and MATCHING was not specified, field_name
+		// stores the base field name that is what we should find in the primary
+		// key of base table.
+		Firebird::MetaName field_name;
+
+		if ((relation->rel_flags & REL_view) && !input->nod_arg[e_upi_matching])
+		{
+			view_fields.get(
+				Firebird::MetaName(((dsql_str*) (*field_ptr)->nod_arg[e_fln_name])->str_data),
+				field_name);
+		}
+		else
+			field_name = ((dsql_str*) (*field_ptr)->nod_arg[e_fln_name])->str_data;
+
+		if (field_name.hasData())
+		{
+			dsql_nod** matching_ptr = matching->nod_arg;
+
+			for (const dsql_nod* const* const matching_end = matching_ptr + matching->nod_count;
+				 matching_ptr < matching_end; matching_ptr++)
+			{
+				DEV_BLKCHK(*matching_ptr, dsql_type_nod);
+				fb_assert((*matching_ptr)->nod_type == nod_field_name);
+
+				if (Firebird::MetaName(((dsql_str*)
+						(*matching_ptr)->nod_arg[e_fln_name])->str_data) ==
+					field_name)
+				{
+					++match_count;
+
+					dsql_nod* eql = MAKE_node(nod_eql, 2);
+					eql->nod_arg[0] = *field_ptr;
+					eql->nod_arg[1] = *value_ptr;
+
+					if (match)
+					{
+						// It's a composed MATCHING. Build an AND.
+						dsql_nod* and_node = MAKE_node(nod_and, 2);
+						and_node->nod_arg[0] = match;
+						and_node->nod_arg[1] = eql;
+						match = and_node;
+					}
+					else
+						match = eql;
+				}
+			}
+		}
+	}
+
+	// check if implicit or explicit MATCHING is valid
+	if (match_count != matching->nod_count)
+	{
+		if (input->nod_arg[e_upi_matching])
+			ERRD_post(isc_upd_ins_doesnt_match_matching, 0);
+		else
+		{
+			ERRD_post(isc_upd_ins_doesnt_match_pk,
+					  isc_arg_string, base_name->str_data,
+					  0);
+		}
+	}
+
+	// build the UPDATE node
+	dsql_nod* update = MAKE_node(nod_update, e_upd_count);
+	update->nod_arg[e_upd_relation] = input->nod_arg[e_upi_relation];
+	update->nod_arg[e_upd_statement] = MAKE_list(stack);
+	update->nod_arg[e_upd_boolean] = match;
+
+	if (input->nod_arg[e_upi_return])
+	{
+		update->nod_arg[e_upd_rse_flags] = (dsql_nod*) NOD_SELECT_EXPR_SINGLETON;
+
+		dsql_nod* store_ret = insert->nod_arg[e_sto_return];
+
+		// nod_returning was already processed
+		fb_assert(store_ret->nod_type == nod_list);
+
+		// And we create an already processed RETURNING, because
+		// nod_returning creates parameters and they're already
+		// created by the INSERT statement.
+		dsql_nod* update_ret = update->nod_arg[e_upd_return] =
+			MAKE_node(nod_list, store_ret->nod_count);
+
+		dsql_nod** src_ptr = input->nod_arg[e_upi_return]->nod_arg[e_ret_source]->nod_arg;
+		dsql_nod** dst_ptr = store_ret->nod_arg;
+		dsql_nod** ptr = update_ret->nod_arg;
+
+		for (const dsql_nod* const* const end = ptr + update_ret->nod_count;
+			ptr < end; src_ptr++, dst_ptr++, ptr++)
+		{
+			dsql_nod* temp = MAKE_node(nod_assign, e_asgn_count);
+			temp->nod_arg[e_asgn_value] = *src_ptr;
+			temp->nod_arg[e_asgn_field] = (*dst_ptr)->nod_arg[1];
+			*ptr = temp;
+		}
+	}
+
+	update = pass1_update(request, update, proc_flag);
+
+	// PASS1_statement will transform nod_update to nod_modify
+	fb_assert(update->nod_type == nod_modify);
+
+	// test if ROW_COUNT = 0
+	dsql_nod* eql = MAKE_node(nod_eql, 2);
+	eql->nod_arg[0] = MAKE_node(nod_internal_info, e_internal_info_count);
+	eql->nod_arg[0]->nod_arg[e_internal_info] =
+		MAKE_constant((dsql_str*) internal_rows_affected, CONSTANT_SLONG);
+	eql->nod_arg[1] = MAKE_constant((dsql_str*) 0, CONSTANT_SLONG);
+
+	USHORT req_flags = request->req_flags;
+	request->req_flags |= REQ_block;	// to compile ROW_COUNT
+	eql = PASS1_node(request, eql, proc_flag);
+	request->req_flags = req_flags;
+
+	// if (ROW_COUNT = 0) then INSERT
+	dsql_nod* if_nod = MAKE_node(nod_if, e_if_count);
+	if_nod->nod_arg[e_if_condition] = eql;
+	if_nod->nod_arg[e_if_true] = insert;
+
+	// build the UPDATE / IF nodes
+	dsql_nod* list = MAKE_node(nod_list, 2);
+	list->nod_arg[0] = update;
+	list->nod_arg[1] = if_nod;
+
+	// if RETURNING is present, req_type is already REQ_EXEC_PROCEDURE
+	if (!input->nod_arg[e_upi_return])
+		request->req_type = REQ_INSERT;
+
+	return list;
 }
 
 

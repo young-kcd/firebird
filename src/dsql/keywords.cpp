@@ -246,7 +246,6 @@ static const TOK tokens[] =
 	{RECURSIVE, "RECURSIVE", 2, false},
 	{REFERENCES, "REFERENCES", 1, false},
 	{RELEASE, "RELEASE", 2, false},
-	{REPLACE, "REPLACE", 2, false},
 	{REQUESTS, "REQUESTS", 2, true},
 	{RESERVING, "RESERV", 1, false},	// Alias of RESERVING
 	{RESERVING, "RESERVING", 1, false},

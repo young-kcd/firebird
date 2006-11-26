@@ -523,7 +523,6 @@ static LexerState lex;
 %token PAD
 %token PRESERVE
 %token RECURSIVE 
-%token REPLACE
 %token SENSITIVE
 %token SPACE
 %token START
@@ -578,13 +577,13 @@ statement	: alter
 		| exec_procedure
 		| exec_block
 		| recreate
-		| replace
 		| revoke
 		| rollback
 		| savepoint
 		| select
 		| set
 		| update
+		| update_or_insert
 		| KW_DEBUG signed_short_integer
 			{ prepare_console_debug ((IPTR) $2, &yydebug);
 			  $$ = make_node (nod_null, (int) 0, NULL); }
@@ -1626,8 +1625,8 @@ stmt_start_column :
 simple_proc_statement	: assignment
 		| insert
 		| merge
-		| replace
 		| update
+		| update_or_insert
 		| delete
 		| singleton_select
 		| exec_procedure
@@ -3579,20 +3578,20 @@ update_positioned : UPDATE table_name SET assignments cursor_clause
 		;
 
 
-/* REPLACE statement */
+/* UPDATE OR INSERT statement */
 
-replace
-	:	REPLACE INTO simple_table_name ins_column_parens_opt
+update_or_insert
+	:	UPDATE OR INSERT INTO simple_table_name ins_column_parens_opt
 			VALUES '(' value_list ')'
-			replace_matching_opt
+			update_or_insert_matching_opt
 			returning_clause
 		{
-			$$ = make_node (nod_replace, (int) e_rep_count,
-				$3, make_list ($4), make_list ($7), $9, $10);
+			$$ = make_node (nod_update_or_insert, (int) e_upi_count,
+				$5, make_list ($6), make_list ($9), $11, $12);
 		}
 	;
 
-replace_matching_opt
+update_or_insert_matching_opt
 	:	MATCHING ins_column_parens
 		{ $$ = $2; }
 	|
@@ -4549,7 +4548,6 @@ non_reserved_word :
 	| MATCHING
 	| PAD
 	| PRESERVE
-	| REPLACE
 	| SPACE
 	| TEMPORARY
 	;

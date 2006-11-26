@@ -347,7 +347,7 @@ enum nod_t
 	nod_agg_list,
 	nod_src_info,
 	nod_with,
-	nod_replace,
+	nod_update_or_insert,
 	nod_merge,
 	nod_merge_when, // 280
 	nod_merge_update,
@@ -633,12 +633,12 @@ enum node_args {
 	e_sto_return,
 	e_sto_count,
 
-	e_rep_relation = 0,		// nod_replace
-	e_rep_fields,
-	e_rep_values,
-	e_rep_matching,
-	e_rep_return,
-	e_rep_count,
+	e_upi_relation = 0,		// nod_update_or_insert
+	e_upi_fields,
+	e_upi_values,
+	e_upi_matching,
+	e_upi_return,
+	e_upi_count,
 
 	e_del_relation = 0,		// nod_delete
 	e_del_boolean,

@@ -1,5 +1,5 @@
 -----------------
-REPLACE statement
+UPDATE OR INSERT statement
 -----------------
 
   Function:
@@ -9,7 +9,7 @@ REPLACE statement
     Adriano dos Santos Fernandes <adrianosf@uol.com.br>
 
   Syntax rules:
-    REPLACE INTO <table or view> [(<column_list>)]
+    UPDATE OR INSERT INTO <table or view> [(<column_list>)]
     	VALUES (<value_list>)
 		[MATCHING <column_list>]
     	[RETURNING <column_list> [INTO <variable_list>]]
@@ -18,9 +18,9 @@ REPLACE statement
     DSQL, PSQL
 
   Examples:
-    1. REPLACE INTO T1 (F1, F2) VALUES (:F1, :F2);
-    2. REPLACE INTO EMPLOYEE (ID, NAME) VALUES (:ID, :NAME) RETURNING ID;
-    3. REPLACE INTO T1 (F1, F2) VALUES (:F1, :F2) MATCHING (F1);
+    1. UPDATE OR INSERT INTO T1 (F1, F2) VALUES (:F1, :F2);
+    2. UPDATE OR INSERT INTO EMPLOYEE (ID, NAME) VALUES (:ID, :NAME) RETURNING ID;
+    3. UPDATE OR INSERT INTO T1 (F1, F2) VALUES (:F1, :F2) MATCHING (F1);
 
   Notes:
     1. Views are only allowed if it's based on only one table (i.e. no joins or unions).

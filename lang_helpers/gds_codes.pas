@@ -642,9 +642,9 @@ const
 	gds_dsql_type_not_supp_ext_tab       = 336003096;
 	gds_dsql_feature_not_supported_ods   = 336003097;
 	gds_primary_key_required             = 336003098;
-	gds_replace_doesnt_match_pk          = 336003099;
-	gds_replace_doesnt_match_matching    = 336003100;
-	gds_replace_with_complex_view        = 336003101;
+	gds_upd_ins_doesnt_match_pk          = 336003099;
+	gds_upd_ins_doesnt_match_matching    = 336003100;
+	gds_upd_ins_with_complex_view        = 336003101;
 	gds_dsql_incompatible_trigger_type   = 336003102;
 	gds_dsql_db_trigger_type_cant_change = 336003103;
 	gds_dyn_role_does_not_exist          = 336068796;

@@ -2834,10 +2834,6 @@ void DSQL_pretty(const dsql_nod* node, int column)
 		verb = "with";
 		break;
 
-	case nod_replace:
-		verb = "replace";
-		break;
-
 	default:
 		sprintf(s, "unknown type %d", node->nod_type);
 		verb = s;

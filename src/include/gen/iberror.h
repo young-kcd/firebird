@@ -664,9 +664,9 @@ const ISC_LONG isc_dsql_cursor_not_open             = 336003095L;
 const ISC_LONG isc_dsql_type_not_supp_ext_tab       = 336003096L;
 const ISC_LONG isc_dsql_feature_not_supported_ods   = 336003097L;
 const ISC_LONG isc_primary_key_required             = 336003098L;
-const ISC_LONG isc_replace_doesnt_match_pk          = 336003099L;
-const ISC_LONG isc_replace_doesnt_match_matching    = 336003100L;
-const ISC_LONG isc_replace_with_complex_view        = 336003101L;
+const ISC_LONG isc_upd_ins_doesnt_match_pk          = 336003099L;
+const ISC_LONG isc_upd_ins_doesnt_match_matching    = 336003100L;
+const ISC_LONG isc_upd_ins_with_complex_view        = 336003101L;
 const ISC_LONG isc_dsql_incompatible_trigger_type   = 336003102L;
 const ISC_LONG isc_dsql_db_trigger_type_cant_change = 336003103L;
 const ISC_LONG isc_dyn_role_does_not_exist          = 336068796L;
@@ -1494,9 +1494,9 @@ const ISC_LONG isc_err_max                          = 805;
 #define isc_dsql_type_not_supp_ext_tab       336003096L
 #define isc_dsql_feature_not_supported_ods   336003097L
 #define isc_primary_key_required             336003098L
-#define isc_replace_doesnt_match_pk          336003099L
-#define isc_replace_doesnt_match_matching    336003100L
-#define isc_replace_with_complex_view        336003101L
+#define isc_upd_ins_doesnt_match_pk          336003099L
+#define isc_upd_ins_doesnt_match_matching    336003100L
+#define isc_upd_ins_with_complex_view        336003101L
 #define isc_dsql_incompatible_trigger_type   336003102L
 #define isc_dsql_db_trigger_type_cant_change 336003103L
 #define isc_dyn_role_does_not_exist          336068796L

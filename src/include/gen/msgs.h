@@ -631,9 +631,9 @@ static const struct {
 	{336003096, "Data type %s is not supported for EXTERNAL TABLES. Relation '%s', field '%s'"},		/* 607, dsql_type_not_supp_ext_tab */
 	{336003097, "Feature not supported on ODS version older than %d.%d"},		/* 608, dsql_feature_not_supported_ods */
 	{336003098, "Primary key required on table %s"},		/* 609, primary_key_required */
-	{336003099, "REPLACE field list does not match primary key of table %s"},		/* 610, replace_doesnt_match_pk */
-	{336003100, "REPLACE field list does not match MATCHING clause"},		/* 611, replace_doesnt_match_matching */
-	{336003101, "REPLACE without MATCHING could not be used with views based on more than one table"},		/* 612, replace_with_complex_view */
+	{336003099, "REPLACE field list does not match primary key of table %s"},		/* 610, upd_ins_doesnt_match_pk */
+	{336003100, "REPLACE field list does not match MATCHING clause"},		/* 611, upd_ins_doesnt_match_matching */
+	{336003101, "REPLACE without MATCHING could not be used with views based on more than one table"},		/* 612, upd_ins_with_complex_view */
 	{336003102, "Incompatible trigger type"},		/* 613, dsql_incompatible_trigger_type */
 	{336003103, "Database trigger type can't be changed"},		/* 614, dsql_db_trigger_type_cant_change */
 	{336068796, "SQL role %s does not exist"},		/* 615, dyn_role_does_not_exist */
