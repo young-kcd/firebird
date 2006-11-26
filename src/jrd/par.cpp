@@ -1606,7 +1606,10 @@ static jrd_nod* par_modify(thread_db* tdbb, CompilerScratch* csb, SSHORT blr_ope
 	node->nod_arg[e_mod_statement] = parse(tdbb, csb, STATEMENT);
 
 	if (blr_operator == blr_modify2)
+	{
+		node->nod_count = 2;
 		node->nod_arg[e_mod_statement2] = parse(tdbb, csb, STATEMENT);
+	}
 
 	return node;
 }
