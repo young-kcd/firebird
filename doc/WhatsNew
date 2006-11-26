@@ -276,7 +276,7 @@
         Adriano dos Santos Fernandes <adrianosf at uol.com.br>
 
     * Feature CORE-815
-        REPLACE and MERGE statements
+        UPDATE OR INSERT and MERGE statements
       Contributor(s):
         Adriano dos Santos Fernandes <adrianosf at uol.com.br>
 
