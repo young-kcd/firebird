@@ -227,11 +227,9 @@ namespace Jrd
 			return Module(im);
 		}
 
-		bool prohibited = false;
-
 		// apply suffix (and/or prefix) and try that name
 		Firebird::PathName module(initialModule);
-		for (int i = 0; i < sizeof(libfixes) / sizeof(Libfix); i++)
+		for (size_t i = 0; i < sizeof(libfixes) / sizeof(Libfix); i++)
 		{
 			const Libfix* l = &libfixes[i];
 			// os-dependent module name modification
@@ -268,29 +266,31 @@ namespace Jrd
 						PathUtils::isRelative(fixedModule))
 				{
 					path = fixedModule;
-					iUdfDirectoryList().expandFileName(fixedModule, path);
+					if (! iUdfDirectoryList().expandFileName(fixedModule, path))
+					{
+						// relative path was used, but no appropriate file present
+						continue;
+					}
 				}
 
 				// The module name, including directory path,
 				// must satisfy UdfAccess entry in config file.
-				bool ok = iUdfDirectoryList().isPathInList(fixedModule);
-
+				if (! iUdfDirectoryList().isPathInList(fixedModule))
+				{
+					ERR_post(isc_conf_access_denied,
+						isc_arg_string, "UDF/BLOB-filter module",
+						isc_arg_string, ERR_cstring(initialModule),
+						isc_arg_end);
+				}
+				
 				ModuleLoader::Module* mlm = ModuleLoader::loadModule(fixedModule);
 				if (mlm)
 				{
-					if (ok)
-					{
-						im = FB_NEW(*getDefaultMemoryPool())
-							InternalModule(*getDefaultMemoryPool(), mlm,
-								initialModule, fixedModule);
-						loadedModules().add(im);
-						return Module(im);
-					}
-					else
-					{
-						prohibited = true;
-						delete mlm;
-					}
+					im = FB_NEW(*getDefaultMemoryPool())
+						InternalModule(*getDefaultMemoryPool(), mlm,
+							initialModule, fixedModule);
+					loadedModules().add(im);
+					return Module(im);
 				}
 			}
 			else
@@ -307,15 +307,6 @@ namespace Jrd
 					return Module(im);
 				}
 			}
-		}
-
-		// module is loadable, but prohibited in configuration
-		if (prohibited)
-		{
-			ERR_post(isc_conf_access_denied,
-				isc_arg_string, "UDF/BLOB-filter module",
-				isc_arg_string, ERR_cstring(initialModule.c_str()),
-				isc_arg_end);
 		}
 
 		// let others raise 'missing library' error if needed
