@@ -1,3 +1,48 @@
+2006-11-27 01:31  asfernandes
+
+	* firebird2/src/msgs/messages.sql (1.106):
+
+	Update the errors messages
+
+2006-11-26 18:06  alexpeshkoff
+
+	* firebird2/src/jrd/: scl.epp (1.76), pwd.cpp (1.50):
+
+	Let windows embedded server work without specifying user name and
+	password. OS user name is used to be CURRENT_USER value.
+
+2006-11-26 17:08  asfernandes
+
+	* firebird2/doc/WhatsNew (1.107):
+
+	Rename REPLACE to UPDATE OR INSERT
+
+2006-11-26 16:39  asfernandes
+
+	* firebird2/: doc/sql.extensions/README.replace (1.2),
+	doc/sql.extensions/README.update_or_insert (1.1),
+	lang_helpers/gds_codes.ftn (1.49), lang_helpers/gds_codes.pas
+	(1.49), src/dsql/dsql.cpp (1.184), src/dsql/keywords.cpp (1.58),
+	src/dsql/node.h (1.85), src/dsql/parse.y (1.228),
+	src/dsql/pass1.cpp (1.301), src/include/gen/codetext.h (1.57),
+	src/include/gen/iberror.h (1.58), src/include/gen/msgs.h (1.73),
+	src/include/gen/sql_code.h (1.60), src/msgs/messages.sql (1.105),
+	src/msgs/system_errors.sql (1.47):
+
+	Rename REPLACE to UPDATE OR INSERT
+
+2006-11-26 16:37  asfernandes
+
+	* firebird2/src/jrd/par.cpp (1.150):
+
+	Fixed memory corruption in REPLACE...RETURNING
+
+2006-11-26 14:33  alexpeshkoff
+
+	* firebird2/src/jrd/flu.cpp (1.56):
+
+	Fixed CORE-1016
+
 2006-11-25 02:34  asfernandes
 
 	* firebird2/src/burp/backup.epp (1.96):
