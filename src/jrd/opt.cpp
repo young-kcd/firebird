@@ -3663,30 +3663,29 @@ static void form_rivers(thread_db*		tdbb,
 	// CVC: Notice "plan_node" is pointing to the last element in the loop above.
 	// If the loop didn't execute, we had garbage in "plan_node".
 
-	Database* dbb = tdbb->tdbb_database;
-	if (dbb->dbb_ods_version >= ODS_VERSION11) {
-		// For ODS11 and higher databases we can use new calculations
-
-		OptimizerInnerJoin* innerJoin = FB_NEW(*tdbb->getDefaultPool())
-			OptimizerInnerJoin(*tdbb->getDefaultPool(), opt, temp, river_stack,
-			sort_clause, project_clause, plan_clause);
-
-		do {
-			count = innerJoin->findJoinOrder();
-		} while (form_river(tdbb, opt, count, streams, temp, river_stack,
-					sort_clause, project_clause, 0));
-
-		delete innerJoin;
-		return;
-	}
-
-
 	if (temp[0] != 0) {
-		do {
-			count = find_order(tdbb, opt, temp, plan_node);
-		} while (form_river
-			   (tdbb, opt, count, streams, temp, river_stack, sort_clause,
-				project_clause, 0));
+		Database* dbb = tdbb->tdbb_database;
+		if (dbb->dbb_ods_version >= ODS_VERSION11) {
+			// For ODS11 and higher databases we can use new calculations
+
+			OptimizerInnerJoin* innerJoin = FB_NEW(*tdbb->getDefaultPool())
+				OptimizerInnerJoin(*tdbb->getDefaultPool(), opt, temp, river_stack,
+				sort_clause, project_clause, plan_clause);
+
+			do {
+				count = innerJoin->findJoinOrder();
+			} while (form_river(tdbb, opt, count, streams, temp, river_stack,
+						sort_clause, project_clause, 0));
+
+			delete innerJoin;
+		}
+		else {
+			do {
+				count = find_order(tdbb, opt, temp, plan_node);
+			} while (form_river
+				   (tdbb, opt, count, streams, temp, river_stack, sort_clause,
+					project_clause, 0));
+		}
 	}
 }
 
