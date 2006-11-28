@@ -1001,8 +1001,8 @@ rem_port* INET_reconnect(HANDLE handle, ISC_STATUS* status_vector)
 	port->port_handle = handle;
 	port->port_server_flags |= SRVR_server;
 
-	int n = 0, optval = TRUE;
-	n = setsockopt((SOCKET) port->port_handle, SOL_SOCKET,
+	int optval = TRUE;
+	int n = setsockopt((SOCKET) port->port_handle, SOL_SOCKET,
 					SO_KEEPALIVE, (SCHAR*) &optval, sizeof(optval));
 	if (n == -1) {
 		gds__log("inet server err: setting KEEPALIVE socket option \n");
@@ -1028,7 +1028,6 @@ rem_port* INET_server(int sock)
  *	established.  Set up port block with the appropriate socket.
  *
  **************************************/
-	int n = 0;
 #ifdef VMS
 	ISC_tcp_setup(ISC_wait, gds__completion_ast);
 #endif
@@ -1037,7 +1036,7 @@ rem_port* INET_server(int sock)
 	port->port_handle = (HANDLE) sock;
 
 	int optval = 1;
-	n = setsockopt(sock, SOL_SOCKET, SO_KEEPALIVE,
+	int n = setsockopt(sock, SOL_SOCKET, SO_KEEPALIVE,
 			   (SCHAR *) & optval, sizeof(optval));
 	if (n == -1) {
 		gds__log("inet server err: setting KEEPALIVE socket option \n");
@@ -1521,9 +1520,13 @@ static rem_port* aux_request( rem_port* port, PACKET* packet)
 		return NULL;
 	}
 
-	int optval;
-	setsockopt(n, SOL_SOCKET, SO_REUSEADDR,
+	int optval = TRUE;
+	int ret = setsockopt(n, SOL_SOCKET, SO_REUSEADDR,
 			   (SCHAR *) &optval, sizeof(optval));
+	if (ret == -1) {
+		inet_error(port, "setsockopt REUSE", isc_net_event_listen_err, INET_ERRNO);
+		return NULL;
+	}
 
 	if (bind(n, (struct sockaddr *) &address, sizeof(address)) < 0) {
 		inet_error(port, "bind", isc_net_event_listen_err, INET_ERRNO);
