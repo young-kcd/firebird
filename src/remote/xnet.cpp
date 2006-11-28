@@ -75,7 +75,6 @@ static int send_partial(rem_port*, PACKET *);
 static HANDLE server_process_handle = 0;
 static void server_shutdown(rem_port* port);
 #endif
-static TEXT XNET_command_line[MAXPATHLEN + 32], *XNET_p;
 static rem_port* get_server_port(ULONG, XPM, ULONG, ULONG, ULONG, ISC_STATUS*);
 static bool make_map(ULONG, ULONG, FILE_ID*, CADDR_T*);
 static XPM make_xpm(ULONG, ULONG);
@@ -1368,7 +1367,6 @@ static rem_port* connect_server(ISC_STATUS* status_vector, USHORT flag)
  *
  **************************************/
 	current_process_id = getpid();
-	XNET_command_line[0] = 0;
 
 	if (!server_init())
 		return NULL;
@@ -2405,12 +2403,11 @@ static bool fork(ULONG client_pid, USHORT flag, ULONG* forked_pid)
  *  It's for classic server only
  *
  **************************************/
-	if (!XNET_command_line[0]) {
-		strcpy(XNET_command_line, GetCommandLine());
-		XNET_p = XNET_command_line + strlen(XNET_command_line);
-	}
+	TEXT name[MAXPATHLEN];
+	GetModuleFileName(NULL, name, sizeof(name));
 
-	sprintf(XNET_p, " -x -h %"ULONGFORMAT, (ULONG) client_pid);
+	Firebird::string cmdLine;
+	cmdLine.printf("%s -x -h %"ULONGFORMAT, name, client_pid);
 
 	STARTUPINFO start_crud;
 	start_crud.cb = sizeof(STARTUPINFO);
@@ -2423,9 +2420,9 @@ static bool fork(ULONG client_pid, USHORT flag, ULONG* forked_pid)
 	PROCESS_INFORMATION pi;
 
 	const bool cp_result =
-		CreateProcess(NULL, XNET_command_line, NULL, NULL, TRUE,
+		CreateProcess(NULL, cmdLine.begin(), NULL, NULL, TRUE,
 					  (flag & SRVR_high_priority ? HIGH_PRIORITY_CLASS : NORMAL_PRIORITY_CLASS)
-						| DETACHED_PROCESS | CREATE_SUSPENDED | STARTF_FORCEOFFFEEDBACK,
+						| DETACHED_PROCESS | CREATE_SUSPENDED,
 					   NULL, NULL, &start_crud, &pi);
 
 	// Child process ID (forked_pid) used as map number

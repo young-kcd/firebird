@@ -374,9 +374,6 @@ rem_port* WNET_connect(const TEXT*		name,
 
 	LPSECURITY_ATTRIBUTES security_attr = ISC_get_security_desc();
 	THREAD_EXIT();
-	TEXT command_line[MAXPATHLEN + 32];
-	command_line[0] = 0;
-	TEXT* p = 0;
 
 	while (true)
 	{
@@ -424,15 +421,14 @@ rem_port* WNET_connect(const TEXT*		name,
 			return port;
 		}
 
-		if (!command_line[0])
-		{
-			strcpy(command_line, GetCommandLine());
-			p = command_line + strlen(command_line);
-		}
+		TEXT name[MAXPATHLEN];
+		GetModuleFileName(NULL, name, sizeof(name));
 
-		sprintf(p, " -w -h %"SLONGFORMAT, (SLONG) port->port_handle);
-		STARTUPINFO           start_crud;
-		PROCESS_INFORMATION   pi;
+		Firebird::string cmdLine;
+		cmdLine.printf("%s -w -h %"SLONGFORMAT, name, (SLONG) port->port_handle);
+
+		STARTUPINFO start_crud;
+		PROCESS_INFORMATION pi;
 		start_crud.cb = sizeof(STARTUPINFO);
 		start_crud.lpReserved = NULL;
 		start_crud.lpReserved2 = NULL;
@@ -440,16 +436,13 @@ rem_port* WNET_connect(const TEXT*		name,
 		start_crud.lpDesktop = NULL;
 		start_crud.lpTitle = NULL;
 		start_crud.dwFlags = STARTF_FORCEOFFFEEDBACK;
-		const USHORT ret = CreateProcess(NULL,
-							command_line,
-							NULL,
-							NULL,
-							TRUE,
-							(flag & SRVR_high_priority ?
+
+		if (CreateProcess(NULL, cmdLine.begin(), NULL, NULL, TRUE,
+						  (flag & SRVR_high_priority ?
 							 HIGH_PRIORITY_CLASS | DETACHED_PROCESS :
 							 NORMAL_PRIORITY_CLASS | DETACHED_PROCESS),
-							NULL, NULL, &start_crud, &pi);
-		if (ret) {
+						  NULL, NULL, &start_crud, &pi))
+		{
 			CloseHandle(pi.hThread);
 			CloseHandle(pi.hProcess);
 		}
