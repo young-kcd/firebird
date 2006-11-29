@@ -1,3 +1,28 @@
+2006-11-29 01:20  asfernandes
+
+	* firebird2/src/dsql/dsql.cpp (1.185):
+
+	Replace a deleted piece of code - thanks to Claudio
+
+2006-11-28 14:26  dimitr
+
+	* firebird2/src/jrd/opt.cpp (1.285):
+
+	Fixed CORE-1025.
+
+2006-11-28 11:19  dimitr
+
+	* firebird2/src/remote/: inet.cpp (1.180), xnet.cpp (1.81),
+	os/win32/wnet.cpp (1.39):
+
+	Fixed CORE-1017.
+
+2006-11-28 09:52  robocop
+
+	* firebird2/src/include/gen/msgs.h (1.74):
+
+	For unknown reasons, this generated file wasn't committed.
+
 2006-11-27 01:31  asfernandes
 
 	* firebird2/src/msgs/messages.sql (1.106):
