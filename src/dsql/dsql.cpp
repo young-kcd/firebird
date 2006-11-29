@@ -2834,6 +2834,10 @@ void DSQL_pretty(const dsql_nod* node, int column)
 		verb = "with";
 		break;
 
+	case nod_update_or_insert:
+		verb = "update_or_insert";
+		break;
+
 	default:
 		sprintf(s, "unknown type %d", node->nod_type);
 		verb = s;
