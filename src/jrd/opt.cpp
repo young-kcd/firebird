@@ -698,7 +698,7 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 	}
 
 	// Put the parent missing nodes on the stack.
-	for (i = 0; (i < missingStack.getCount()) && (conjunct_count < MAX_CONJUNCTS); i++)
+	while (missingStack.hasData() && conjunct_count < MAX_CONJUNCTS)
 	{
 		opt->opt_conjuncts.grow(conjunct_count + 1);
 		jrd_nod* node = missingStack.pop();
