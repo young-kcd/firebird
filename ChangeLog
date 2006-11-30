@@ -1,3 +1,17 @@
+2006-11-29 18:48  dimitr
+
+	* firebird2/src/jrd/opt.cpp (1.286):
+
+	Fixed CORE-1029.
+
+2006-11-29 15:17  asfernandes
+
+	* firebird2/builds/win32/old_makes/: burp.mak (1.2), dsql.mak
+	(1.2), extlib.mak (1.2), intl.mak (1.2), jrd.mak (1.2), msgs.mak
+	(1.2), remote.mak (1.2), v5_examples.mak (1.2):
+
+	Remove obsolete files
+
 2006-11-29 01:20  asfernandes
 
 	* firebird2/src/dsql/dsql.cpp (1.185):
