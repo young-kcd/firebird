@@ -3208,24 +3208,9 @@ static dsc* eval_statistical(thread_db* tdbb, jrd_nod* node, impure_value* impur
 		flag = 0;
 		break;
 
-#ifndef AIX_PPC
 	default:
 		BUGCHECK(233);			/* msg 233 eval_statistical: invalid operation */
-#endif
 	}
-
-#ifdef AIX_PPC
-	if (node->nod_type != nod_count &&
-		node->nod_type != nod_count2 &&
-		node->nod_type != nod_min &&
-		node->nod_type != nod_max &&
-		node->nod_type != nod_from &&
-		node->nod_type != nod_average &&
-		node->nod_type != nod_average2 && node->nod_type != nod_total)
-	{
-		BUGCHECK(233);			/* msg 233 eval_statistical: invalid operation */
-	}
-#endif
 
 /* Close stream and return value */
 
