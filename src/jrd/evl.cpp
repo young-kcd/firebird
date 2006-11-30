@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
-  * $Id: evl.cpp,v 1.34.2.9 2006-11-05 14:38:09 alexpeshkoff Exp $ 
+  * $Id: evl.cpp,v 1.34.2.10 2006-11-30 09:06:29 alexpeshkoff Exp $ 
  */
 
 /*
@@ -3602,22 +3602,9 @@ static DSC *eval_statistical(TDBB tdbb, JRD_NOD node, VLU impure)
 		flag = 0;
 		break;
 
-#ifndef AIX_PPC
 	default:
 		BUGCHECK(233);			/* msg 233 eval_statistical: invalid operation */
-#endif
 	}
-
-#ifdef AIX_PPC
-	if (node->nod_type != nod_count &&
-		node->nod_type != nod_count2 &&
-		node->nod_type != nod_min &&
-		node->nod_type != nod_max &&
-		node->nod_type != nod_from &&
-		node->nod_type != nod_average &&
-		node->nod_type != nod_average2 && node->nod_type != nod_total)
-		BUGCHECK(233);			/* msg 233 eval_statistical: invalid operation */
-#endif
 
 /* Close stream and return value */
 
