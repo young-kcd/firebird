@@ -1,3 +1,9 @@
+2006-11-29 18:57  dimitr
+
+	* firebird2/src/jrd/opt.cpp (1.261.2.7):
+
+	Fixed CORE-1029.
+
 2006-11-28 15:09  dimitr
 
 	* firebird2/src/remote/inet.cpp (1.160.2.4):
