@@ -739,7 +739,7 @@ static void get_procedure_args(const char* proc_name)
 			ISC_QUAD prm_default_source;
 
 			bool prm_null_flag_null = true;
-			BOOL prm_null_flag;
+			bool prm_null_flag;
 
 			prm_mech_t prm_mech = prm_mech_normal;
 
