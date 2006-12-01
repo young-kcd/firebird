@@ -1,3 +1,9 @@
+2006-11-30 10:21  alexpeshkoff
+
+	* firebird2/src/jrd/evl.cpp (1.165.2.2):
+
+	removed old hack for AIX, no idea what it was for (frontport)
+
 2006-11-29 18:57  dimitr
 
 	* firebird2/src/jrd/opt.cpp (1.261.2.7):
