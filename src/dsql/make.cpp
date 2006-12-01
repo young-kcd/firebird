@@ -2126,7 +2126,7 @@ static void make_placeholder_null(dsc* const desc)
 static void make_parameter_names(dsql_par* parameter, const dsql_nod* item)
 {
 	const dsql_fld* field;
-	const dsql_ctx* context;
+	const dsql_ctx* context = NULL;
 	const dsql_str* string;
 	const dsql_nod* alias;
 
@@ -2139,28 +2139,10 @@ static void make_parameter_names(dsql_par* parameter, const dsql_nod* item)
 		field = (dsql_fld*) item->nod_arg[e_fld_field];
 		name_alias = field->fld_name;
 		context = (dsql_ctx*) item->nod_arg[e_fld_context];
-		if (context->ctx_relation) {
-			parameter->par_rel_name = context->ctx_relation->rel_name;
-			parameter->par_owner_name = context->ctx_relation->rel_owner;
-		}
-		else if (context->ctx_procedure) {
-			parameter->par_rel_name = context->ctx_procedure->prc_name;
-			parameter->par_owner_name = context->ctx_procedure->prc_owner;
-		}
-		parameter->par_rel_alias = context->ctx_alias;
 		break;
 	case nod_dbkey:
 		parameter->par_name = parameter->par_alias = db_key_name;
 		context = (dsql_ctx*) item->nod_arg[0]->nod_arg[0];
-		if (context->ctx_relation) {
-			parameter->par_rel_name = context->ctx_relation->rel_name;
-			parameter->par_owner_name = context->ctx_relation->rel_owner;
-		}
-		else if (context->ctx_procedure) {
-			parameter->par_rel_name = context->ctx_procedure->prc_name;
-			parameter->par_owner_name = context->ctx_procedure->prc_owner;
-		}
-		parameter->par_rel_alias = context->ctx_alias;
 		break;
 	case nod_alias:
 		string = (dsql_str*) item->nod_arg[e_alias_alias];
@@ -2170,25 +2152,10 @@ static void make_parameter_names(dsql_par* parameter, const dsql_nod* item)
 			field = (dsql_fld*) alias->nod_arg[e_fld_field];
 			parameter->par_name = field->fld_name;
 			context = (dsql_ctx*) alias->nod_arg[e_fld_context];
-			if (context->ctx_relation) {
-				parameter->par_rel_name = context->ctx_relation->rel_name;
-				parameter->par_owner_name =
-					context->ctx_relation->rel_owner;
-			}
-			else if (context->ctx_procedure) {
-				parameter->par_rel_name =
-					context->ctx_procedure->prc_name;
-				parameter->par_owner_name =
-					context->ctx_procedure->prc_owner;
-			}
-			parameter->par_rel_alias = context->ctx_alias;
 		}
 		else if (alias->nod_type == nod_dbkey) {
 			parameter->par_name = db_key_name;
 			context = (dsql_ctx*) alias->nod_arg[0]->nod_arg[0];
-			parameter->par_rel_name = context->ctx_relation->rel_name;
-			parameter->par_owner_name = context->ctx_relation->rel_owner;
-			parameter->par_rel_alias = context->ctx_alias;
 		}
 		break;
 	case nod_via:
@@ -2203,25 +2170,10 @@ static void make_parameter_names(dsql_par* parameter, const dsql_nod* item)
 			field = (dsql_fld*) alias->nod_arg[e_fld_field];
 			parameter->par_name = field->fld_name;
 			context = (dsql_ctx*) alias->nod_arg[e_fld_context];
-			if (context->ctx_relation) {
-				parameter->par_rel_name = context->ctx_relation->rel_name;
-				parameter->par_owner_name =
-					context->ctx_relation->rel_owner;
-			}
-			else if (context->ctx_procedure) {
-				parameter->par_rel_name =
-					context->ctx_procedure->prc_name;
-				parameter->par_owner_name =
-					context->ctx_procedure->prc_owner;
-			}
-			parameter->par_rel_alias = context->ctx_alias;
 		}
 		else if (alias->nod_type == nod_dbkey) {
 			parameter->par_name = db_key_name;
 			context = (dsql_ctx*) alias->nod_arg[0]->nod_arg[0];
-			parameter->par_rel_name = context->ctx_relation->rel_name;
-			parameter->par_owner_name = context->ctx_relation->rel_owner;
-			parameter->par_rel_alias = context->ctx_alias;
 		}
 		break;
 	case nod_map:
@@ -2237,6 +2189,7 @@ static void make_parameter_names(dsql_par* parameter, const dsql_nod* item)
 			case nod_field:
 				field = (dsql_fld*) map_node->nod_arg[e_fld_field];
 				name_alias = field->fld_name;
+				context = (dsql_ctx*) map_node->nod_arg[e_fld_context];
 				break;
 			case nod_alias:
 				string = (dsql_str*) map_node->nod_arg[e_alias_alias];
@@ -2245,6 +2198,7 @@ static void make_parameter_names(dsql_par* parameter, const dsql_nod* item)
 				if (alias->nod_type == nod_field) {
 					field = (dsql_fld*) alias->nod_arg[e_fld_field];
 					parameter->par_name = field->fld_name;
+					context = (dsql_ctx*) alias->nod_arg[e_fld_context];
 				}
 				break;
 			case nod_derived_field:
@@ -2254,6 +2208,7 @@ static void make_parameter_names(dsql_par* parameter, const dsql_nod* item)
 				if (alias->nod_type == nod_field) {
 					field = (dsql_fld*) alias->nod_arg[e_fld_field];
 					parameter->par_name = field->fld_name;
+					context = (dsql_ctx*) alias->nod_arg[e_fld_context];
 				}
 				break;
 
@@ -2403,5 +2358,21 @@ static void make_parameter_names(dsql_par* parameter, const dsql_nod* item)
 
 	if (name_alias) {
 		parameter->par_name = parameter->par_alias = name_alias;
+	}
+
+	if (context)
+	{
+		if (context->ctx_relation)
+		{
+			parameter->par_rel_name = context->ctx_relation->rel_name;
+			parameter->par_owner_name = context->ctx_relation->rel_owner;
+		}
+		else if (context->ctx_procedure)
+		{
+			parameter->par_rel_name = context->ctx_procedure->prc_name;
+			parameter->par_owner_name = context->ctx_procedure->prc_owner;
+		}
+
+		parameter->par_rel_alias = context->ctx_alias;
 	}
 }
