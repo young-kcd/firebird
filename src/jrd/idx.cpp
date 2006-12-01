@@ -433,7 +433,7 @@ void IDX_create_index(
 				gc_record->rec_flags &= ~REC_gc_active;
 				if (primary.getWindow(tdbb).win_flags & WIN_large_scan)
 					--relation->rel_scan_count;
-				BUGCHECK(174);	/* msg 174 index key too big */
+				ERR_post(isc_key_too_big, 0);
 			}
 
 			UCHAR* p;

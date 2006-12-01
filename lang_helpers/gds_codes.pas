@@ -589,6 +589,7 @@ const
 	gds_max_db_per_trans_allowed         = 335544874;
 	gds_bad_debug_format                 = 335544875;
 	gds_bad_proc_BLR                     = 335544876;
+	gds_key_too_big                      = 335544877;
 	gds_gfix_db_name                     = 335740929;
 	gds_gfix_invalid_sw                  = 335740930;
 	gds_gfix_incmp_sw                    = 335740932;

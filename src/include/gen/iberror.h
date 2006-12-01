@@ -611,6 +611,7 @@ const ISC_LONG isc_array_max_dimensions             = 335544873L;
 const ISC_LONG isc_max_db_per_trans_allowed         = 335544874L;
 const ISC_LONG isc_bad_debug_format                 = 335544875L;
 const ISC_LONG isc_bad_proc_BLR                     = 335544876L;
+const ISC_LONG isc_key_too_big                      = 335544877L;
 const ISC_LONG isc_gfix_db_name                     = 335740929L;
 const ISC_LONG isc_gfix_invalid_sw                  = 335740930L;
 const ISC_LONG isc_gfix_incmp_sw                    = 335740932L;
@@ -860,7 +861,7 @@ const ISC_LONG isc_gstat_unexpected_eof             = 336920580L;
 const ISC_LONG isc_gstat_open_err                   = 336920605L;
 const ISC_LONG isc_gstat_read_err                   = 336920606L;
 const ISC_LONG isc_gstat_sysmemex                   = 336920607L;
-const ISC_LONG isc_err_max                          = 805;
+const ISC_LONG isc_err_max                          = 806;
 
 #else /* c definitions */
 
@@ -1441,6 +1442,7 @@ const ISC_LONG isc_err_max                          = 805;
 #define isc_max_db_per_trans_allowed         335544874L
 #define isc_bad_debug_format                 335544875L
 #define isc_bad_proc_BLR                     335544876L
+#define isc_key_too_big                      335544877L
 #define isc_gfix_db_name                     335740929L
 #define isc_gfix_invalid_sw                  335740930L
 #define isc_gfix_incmp_sw                    335740932L
@@ -1690,7 +1692,7 @@ const ISC_LONG isc_err_max                          = 805;
 #define isc_gstat_open_err                   336920605L
 #define isc_gstat_read_err                   336920606L
 #define isc_gstat_sysmemex                   336920607L
-#define isc_err_max                          805
+#define isc_err_max                          806
 
 #endif
 
