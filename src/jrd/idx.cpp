@@ -429,7 +429,6 @@ void IDX_create_index(
 					if (record != gc_record)
 						delete record;
 				} while (stack.hasData() && (record = stack.pop()));
-				SORT_fini(sort_handle, tdbb->tdbb_attachment);
 				gc_record->rec_flags &= ~REC_gc_active;
 				if (primary.getWindow(tdbb).win_flags & WIN_large_scan)
 					--relation->rel_scan_count;
