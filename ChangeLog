@@ -1,3 +1,15 @@
+2006-11-30 15:46  alexpeshkoff
+
+	* firebird2/src/isql/extract.epp (1.78):
+
+	Misc
+
+2006-11-30 10:21  alexpeshkoff
+
+	* firebird2/src/jrd/evl.cpp (1.206):
+
+	removed old hack for AIX, no idea what it was for (frontport)
+
 2006-11-29 18:48  dimitr
 
 	* firebird2/src/jrd/opt.cpp (1.286):
