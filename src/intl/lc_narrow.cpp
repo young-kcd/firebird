@@ -26,6 +26,7 @@
 #include "../intl/ldcommon.h"
 #include "lc_narrow.h"
 #include "ld_proto.h"
+#include <math.h>
 
 /*
  * Generic base for InterBase 4.0 Language Driver
@@ -130,7 +131,13 @@ USHORT LC_NARROW_key_length(TEXTTYPE obj, USHORT inLen)
 		obj->texttype_impl->texttype_bytes_per_key = bytesPerChar;
 	}
 
-	const USHORT len = obj->texttype_impl->texttype_bytes_per_key * MAX(inLen, 2);
+	USHORT len = obj->texttype_impl->texttype_bytes_per_key * MAX(inLen, 2);
+
+	if (obj->texttype_impl->texttype_expand_table &&
+		((const ExpandChar*) obj->texttype_impl->texttype_expand_table)[0].Ch)
+	{
+		len += (USHORT) log10(inLen + 1.0) * 4 * obj->texttype_impl->texttype_bytes_per_key;
+	}
 
 	return (MIN(len, LANGFAM2_MAX_KEY));
 }
