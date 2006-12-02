@@ -2843,12 +2843,12 @@ static dsc* concatenate(thread_db* tdbb, jrd_nod* node, impure_value* impure)
 		return value2;
 
 	{
-		USHORT ttype1 = INTL_TTYPE(value1);
+		USHORT ttype1 = INTL_TEXT_TYPE(*value1);
 
  		if ((value2->dsc_sub_type != CS_NONE) &&
  			((ttype1 == CS_NONE) || (ttype1 == CS_ASCII)))
 		{
- 			ttype1 = value2->dsc_sub_type;
+ 			ttype1 = INTL_TEXT_TYPE(*value2);
  		}
 
 /* Both values are present; build the concatenation */
