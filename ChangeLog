@@ -1,3 +1,16 @@
+2006-12-02 01:50  asfernandes
+
+	* firebird2/src/intl/lc_narrow.cpp (1.16.2.1):
+
+	Simplified fix for CORE-997 - Database-Update 1.5 to 2.0 fails
+
+2006-12-02 01:46  asfernandes
+
+	* firebird2/src/jrd/evl.cpp (1.165.2.3):
+
+	Fixed CORE-1033 - like doesn't work for computed values (at least
+	in a view)
+
 2006-11-30 10:21  alexpeshkoff
 
 	* firebird2/src/jrd/evl.cpp (1.165.2.2):
