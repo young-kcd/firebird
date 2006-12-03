@@ -1,3 +1,34 @@
+2006-12-02 15:53  asfernandes
+
+	* firebird2/src/jrd/idx.cpp (1.117):
+
+	Fixed crashes when create index throw errors - thanks to Dmitry
+
+2006-12-01 15:52  asfernandes
+
+	* firebird2/src/jrd/idx.cpp (1.116):
+
+	Complement for the last commit
+
+2006-12-01 15:36  asfernandes
+
+	* firebird2/: src/include/gen/codetext.h (1.58),
+	src/include/gen/iberror.h (1.59), src/include/gen/msgs.h (1.75),
+	src/include/gen/rdb_codes.h (1.55), src/include/gen/sql_code.h
+	(1.61), src/intl/lc_narrow.cpp (1.20), src/jrd/idx.cpp (1.115),
+	src/msgs/facilities.sql (1.91), src/msgs/messages.sql (1.107),
+	src/msgs/system_errors.sql (1.48), lang_helpers/gds_codes.ftn
+	(1.50), lang_helpers/gds_codes.pas (1.50):
+
+	Fixed CORE-997 - Database-Update 1.5 to 2.0 fails
+
+2006-12-01 14:49  asfernandes
+
+	* firebird2/src/dsql/make.cpp (1.126):
+
+	Fixed CORE-1012 - IBO problems with FB >= 1.5.3 "Error with joins
+	and auto-generated search query"
+
 2006-11-30 15:46  alexpeshkoff
 
 	* firebird2/src/isql/extract.epp (1.78):
