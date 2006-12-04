@@ -26,6 +26,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "../jrd/jrd.h"  /* For MAXPATHLEN Bug #126614 */
+#include "../jrd/license.h"
 #include "../jrd/tra.h"
 #include "../jrd/dsc_proto.h"
 #include "../jrd/pag_proto.h"
@@ -59,6 +60,7 @@ static const char
 
 // System variables names
 static const char
+	ENGINE_VERSION[] = "ENGINE_VERSION",
 	NETWORK_PROTOCOL_NAME[] = "NETWORK_PROTOCOL",
 	CLIENT_ADDRESS_NAME[] = "CLIENT_ADDRESS",
 	DATABASE_NAME[] = "DB_NAME",
@@ -177,6 +179,14 @@ vary* get_context(const vary* ns_vary, const vary* name_vary)
 	// Handle system variables
 	if (ns_str == SYSTEM_NAMESPACE) 
 	{
+		if (name_str == ENGINE_VERSION) 
+		{
+			Firebird::string version;
+			version.printf("%s.%s.%s", FB_MAJOR_VER, FB_MINOR_VER, FB_REV_NO);
+
+			return make_result_str(version);
+		}
+
 		if (name_str == NETWORK_PROTOCOL_NAME) 
 		{
 			if (att->att_network_protocol.isEmpty())
@@ -222,7 +232,7 @@ vary* get_context(const vary* ns_vary, const vary* name_vary)
 			// This synchronization is necessary to keep SuperServer happy.
 			// PAG_attachment_id() may modify database header, call lock manager, etc
 			THREAD_ENTER();
-			SLONG att_id = PAG_attachment_id(0);
+			SLONG att_id = PAG_attachment_id(tdbb);
 			THREAD_EXIT();
 
 			session_id.printf("%d", att_id);
