@@ -61,7 +61,8 @@ enum lck_t {
 	LCK_counter,				/* Lock holding a cross-process counter */
 	LCK_monitor,				/* Lock to dump the monitoring data */
 	LCK_instance,				/* Lock to identify a dbb instance */
-	LCK_tt_exist				/* TextType existence lock */
+	LCK_tt_exist,				/* TextType existence lock */
+	LCK_request					/* Request lock */
 };
 
 /* Lock owner types */

@@ -39,8 +39,8 @@
 #include "../jrd/isc_s_proto.h"
 #include "../jrd/lck_proto.h"
 #include "../jrd/met_proto.h"
-#include "../jrd/pag_proto.h"
 #include "../jrd/os/pio_proto.h"
+#include "../jrd/pag_proto.h"
 #include "../jrd/thread_proto.h"
 
 #include "../jrd/Relation.h"
@@ -679,7 +679,6 @@ const char* DatabaseSnapshot::checkNull(int rid, int fid, const char* source, si
 		switch (fid) {
 		case f_mon_stmt_att_id:
 		case f_mon_stmt_tra_id:
-		case f_mon_stmt_caller_id:
 			return (*(SLONG*) source) ? source : NULL;
 		case f_mon_stmt_timestamp:
 			return (*(SINT64*) source) ? source : NULL;
@@ -752,8 +751,7 @@ ClumpletReader* DatabaseSnapshot::dumpData(thread_db* tdbb, bool locksmith)
 		for (jrd_req* request = attachment->att_requests;
 			request; request = request->req_request)
 		{
-			// Ignore GDML requests
-			if (request->req_sql_text.hasData() || request->req_caller)
+			if (!(request->req_flags & (req_internal | req_sys_trigger)))
 			{
 				putRequest(request, *writer);
 			}
@@ -805,7 +803,7 @@ void DatabaseSnapshot::putDatabase(Database* database,
 	const jrd_file* const file = pageSpace->file;
 	PAG_header(file->fil_string, file->fil_length, true);
 
-	SLONG temp;
+	int temp;
 
 	// database name or alias
 	writer.insertPath(f_mon_db_name, database->dbb_database_name);
@@ -994,20 +992,13 @@ void DatabaseSnapshot::putRequest(jrd_req* request,
 					   (UCHAR*) &request->req_timestamp.value(),
 					   sizeof(ISC_TIMESTAMP));
 	// state
-	if (request->req_flags & req_active)
+	if (request->req_flags & req_blocking)
+		temp = stmt_s_killed;
+	else if (request->req_flags & req_active)
 		temp = stmt_s_active;
-	else if (request->req_flags & req_stall)
-		temp = stmt_s_stalled;
 	else
 		temp = stmt_s_idle;
 	writer.insertInt(f_mon_stmt_state, temp);
-	// caller
-	if (request->req_caller) {
-		writer.insertInt(f_mon_stmt_caller_id, request->req_caller->req_id);
-	}
-	else {
-		writer.insertInt(f_mon_stmt_caller_id, 0);
-	}
 	// sql text
 	writer.insertString(f_mon_stmt_sql_text, request->req_sql_text);
 }

@@ -194,6 +194,7 @@ public:
 
 	Attachment*	req_attachment;		// database attachment
 	SLONG		req_id;				// request identifier
+	Lock*		req_id_lock;		// request lock
 	USHORT		req_count;			// number of streams
 	USHORT		req_incarnation;	// incarnation number
 	ULONG		req_impure_size;	// size of impure area
@@ -314,11 +315,12 @@ const ULONG req_ignore_perm		= 0x40000L;	/* ignore permissions checks */
 const ULONG req_fetch_required	= 0x80000L;	/* need to fetch next record */
 const ULONG req_error_handler	= 0x100000L;	/* looper is called to handle error */
 const ULONG req_blr_version4	= 0x200000L;	/* Request is of blr_version4 */
+const ULONG req_blocking		= 0x400000L;	/* someone asked to stop the request */
 /* Mask for flags preserved in a clone of a request */
-const ULONG REQ_FLAGS_CLONE_MASK	= (req_sys_trigger | req_internal | req_ignore_perm | req_blr_version4);
+const ULONG REQ_FLAGS_CLONE_MASK = (req_sys_trigger | req_internal | req_ignore_perm | req_blr_version4);
 
 /* Mask for flags preserved on initialization of a request */
-const ULONG REQ_FLAGS_INIT_MASK	= (req_in_use | req_internal | req_sys_trigger | req_ignore_perm | req_blr_version4);
+const ULONG REQ_FLAGS_INIT_MASK = (req_in_use | req_internal | req_sys_trigger | req_ignore_perm | req_blr_version4);
 
 /* Flags for req_view_flags */
 enum {

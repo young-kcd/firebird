@@ -120,7 +120,6 @@ TYPE ("IDLE", tra_s_idle, nam_mon_tra_state)
 TYPE ("ACTIVE", tra_s_active, nam_mon_tra_state)
 
 TYPE ("IDLE", stmt_s_idle, nam_mon_stmt_state)
-TYPE ("STALLED", stmt_s_stalled, nam_mon_stmt_state)
 TYPE ("ACTIVE", stmt_s_active, nam_mon_stmt_state)
 TYPE ("KILLED", stmt_s_killed, nam_mon_stmt_state)
 

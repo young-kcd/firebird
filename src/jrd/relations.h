@@ -398,6 +398,5 @@ RELATION(nam_mon_statements, rel_mon_statements, ODS_11_1, rel_virtual)
 	FIELD(f_mon_stmt_tra_id, nam_mon_tra_id, fld_trans_id, 0, 0, 0, 0)
 	FIELD(f_mon_stmt_state, nam_mon_stmt_state, fld_state, 0, 0, 0, 0)
 	FIELD(f_mon_stmt_timestamp, nam_mon_timestamp, fld_time, 0, 0, 0, 0)
-	FIELD(f_mon_stmt_caller_id, nam_mon_caller_id, fld_stmt_id, 0, 0, 0, 0)
 	FIELD(f_mon_stmt_sql_text, nam_mon_sql_text, fld_source, 0, 0, 0, 0)
 END_RELATION

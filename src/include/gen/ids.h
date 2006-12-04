@@ -355,6 +355,5 @@ enum fids {
 	f_mon_stmt_tra_id,
 	f_mon_stmt_state,
 	f_mon_stmt_timestamp,
-	f_mon_stmt_caller_id,
 	f_mon_stmt_sql_text
 };

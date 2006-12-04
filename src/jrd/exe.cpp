@@ -945,6 +945,7 @@ void EXE_start(thread_db* tdbb, jrd_req* request, jrd_tra* transaction)
 	TRA_post_resources(tdbb, transaction, request->req_resources);
 
 	TRA_attach_request(transaction, request);
+	LCK_lock_non_blocking(tdbb, request->req_id_lock, LCK_SR, LCK_WAIT);
 	request->req_flags &= REQ_FLAGS_INIT_MASK;
 	request->req_flags |= req_active;
 	request->req_flags &= ~req_reserved;
@@ -1083,6 +1084,7 @@ void EXE_unwind(thread_db* tdbb, jrd_req* request)
 
 	TRA_detach_request(request);
 
+	LCK_release(tdbb, request->req_id_lock);
 	request->req_flags &= ~(req_active | req_proc_fetch | req_reserved);
 	request->req_flags |= req_abort | req_stall;
 	request->req_timestamp.invalidate();
@@ -1251,7 +1253,7 @@ static jrd_nod* erase(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 		EXT_erase(rpb, transaction);
 	}
 	else if (relation->isVirtual()) {
-		VirtualTable::erase(rpb);
+		VirtualTable::erase(tdbb, rpb);
 	}
 	else if (!relation->rel_view_rse) {
 		VIO_erase(tdbb, rpb, transaction);
@@ -1722,7 +1724,7 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 
 	bool error_pending = false;
 	bool catch_disabled = false;
-	tdbb->tdbb_flags &= ~TDBB_stack_trace_done;
+	tdbb->tdbb_flags &= ~(TDBB_stack_trace_done | TDBB_sys_error);
 
 	// Execute stuff until we drop
 
@@ -2607,7 +2609,9 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 		request->req_operation = jrd_req::req_unwind;
 		request->req_label = 0;
 
-		if (! (tdbb->tdbb_flags & TDBB_stack_trace_done) ) {
+		if (!(tdbb->tdbb_flags & TDBB_stack_trace_done) &&
+			!(tdbb->tdbb_flags & TDBB_sys_error))
+		{
 			stuff_stack_trace(request); 
 			tdbb->tdbb_flags |= TDBB_stack_trace_done;
 		}
@@ -2634,6 +2638,7 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 			}
 		}
 
+		LCK_release(tdbb, request->req_id_lock);
 		request->req_flags &= ~(req_active | req_reserved);
 		request->req_timestamp.invalidate();
 		release_blobs(tdbb, request);
@@ -2754,7 +2759,7 @@ static jrd_nod* modify(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 				EXT_modify(org_rpb, new_rpb, transaction);
 			}
 			else if (relation->isVirtual()) {
-				VirtualTable::modify(org_rpb, new_rpb);
+				VirtualTable::modify(tdbb, org_rpb, new_rpb);
 			}
 			else if (!relation->rel_view_rse)
 			{
@@ -3537,7 +3542,7 @@ static jrd_nod* store(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 			EXT_store(rpb, transaction);
 		}
 		else if (relation->isVirtual()) {
-			VirtualTable::store(rpb);
+			VirtualTable::store(tdbb, rpb);
 		}
 		else if (!relation->rel_view_rse)
 		{
@@ -3642,6 +3647,9 @@ static bool test_and_fixup_error(thread_db* tdbb, const PsqlException* condition
  *
  **************************************/
 	SET_TDBB(tdbb);
+
+	if (tdbb->tdbb_flags & TDBB_sys_error)
+		return false;
 
 	ISC_STATUS* status_vector = tdbb->tdbb_status_vector;
 	const SSHORT sqlcode = gds__sqlcode(status_vector);

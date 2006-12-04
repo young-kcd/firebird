@@ -121,9 +121,11 @@ const int MAX_REQUEST_SIZE	= 10485760;	// 10 MB - just to be safe
 using namespace Jrd;
 
 static UCHAR* alloc_map(thread_db*, CompilerScratch*, USHORT);
+static int blocking_ast_request(void*);
 static jrd_nod* catenate_nodes(thread_db*, NodeStack&);
 static jrd_nod* copy(thread_db*, CompilerScratch*, jrd_nod*, UCHAR *, USHORT, jrd_nod*, bool);
 static void expand_view_nodes(thread_db*, CompilerScratch*, USHORT, NodeStack&, NOD_T);
+static void generate_request_id(thread_db*, jrd_req*);
 static void ignore_dbkey(thread_db*, CompilerScratch*, RecordSelExpr*, const jrd_rel*);
 static jrd_nod* make_defaults(thread_db*, CompilerScratch*, USHORT, jrd_nod*);
 static jrd_nod* make_validation(thread_db*, CompilerScratch*, USHORT);
@@ -485,7 +487,6 @@ jrd_req* CMP_clone_request(thread_db* tdbb, jrd_req* request, USHORT level, bool
 	(*vector)[level] = clone;
 	clone->req_attachment = tdbb->tdbb_attachment;
 	clone->req_stats.setParent(&tdbb->tdbb_attachment->att_stats);
-	clone->req_id = LCK_increment(tdbb, dbb->dbb_increment_lock);
 	clone->req_count = request->req_count;
 	clone->req_pool = request->req_pool;
 	clone->req_impure_size = request->req_impure_size;
@@ -494,6 +495,8 @@ jrd_req* CMP_clone_request(thread_db* tdbb, jrd_req* request, USHORT level, bool
 	clone->req_procedure = request->req_procedure;
 	clone->req_flags = request->req_flags & REQ_FLAGS_CLONE_MASK;
 	clone->req_last_xcp = request->req_last_xcp;
+
+	generate_request_id(tdbb, clone);
 
 	// We are cloning full lists here, not assigning pointers
 	clone->req_invariants = request->req_invariants;
@@ -1974,13 +1977,15 @@ jrd_req* CMP_make_request(thread_db* tdbb, CompilerScratch* csb)
 
 	const SLONG n = (csb->csb_impure - REQ_SIZE + REQ_TAIL - 1) / REQ_TAIL;
 	request = FB_NEW_RPT(*tdbb->getDefaultPool(), n) jrd_req(tdbb->getDefaultPool());
-	request->req_id = LCK_increment(tdbb, dbb->dbb_increment_lock);
 	request->req_count = csb->csb_n_stream;
 	request->req_pool = tdbb->getDefaultPool();
 	request->req_impure_size = csb->csb_impure;
 	request->req_top_node = csb->csb_node;
 	request->req_access = csb->csb_access;
 	request->req_external = csb->csb_external;
+
+	generate_request_id(tdbb, request);
+
 	// CVC: Unused.
 	//request->req_variables = csb->csb_variables;
 	request->req_resources = csb->csb_resources; // Assign array contents
@@ -2417,6 +2422,27 @@ static UCHAR* alloc_map(thread_db* tdbb, CompilerScratch* csb, USHORT stream)
 	csb->csb_rpt[stream].csb_map = p;
 
 	return p;
+}
+
+
+static int blocking_ast_request(void* ast_object)
+{
+/**************************************
+ *
+ *	b l o c k i n g _ a s t _ r e q u e s t
+ *
+ **************************************
+ *
+ * Functional description
+ *	Set request to the cancellation state.
+ *
+ **************************************/
+	jrd_req* request = static_cast<jrd_req*>(ast_object);
+	fb_assert(request);
+
+	request->req_flags |= req_blocking;
+
+	return 0;
 }
 
 
@@ -2940,6 +2966,48 @@ static void expand_view_nodes(thread_db* tdbb,
 		node->nod_arg[0] = (jrd_nod*) (IPTR) stream;
 		stack.push(node);
 	}
+}
+
+
+static void generate_request_id(thread_db* tdbb, jrd_req* request)
+{
+/**************************************
+ *
+ *	g e n e r a t e _ r e q u e s t _ i d
+ *
+ **************************************
+ *
+ * Functional description
+ *	Get request id.  If don't have one, get one.  As a side
+ *	effect, get a lock on it as well.
+ *
+ **************************************/
+	SET_TDBB(tdbb);
+	Database* dbb = tdbb->tdbb_database;
+
+	fb_assert(request);
+
+	fb_assert(!request->req_id_lock);
+	fb_assert(!request->req_id);
+	fb_assert(request->req_pool);
+
+	// Get new request id
+
+	request->req_id = LCK_increment(tdbb, dbb->dbb_increment_lock);
+
+	// Take out lock on request id
+
+	Lock* lock = FB_NEW_RPT(*request->req_pool, sizeof(SLONG)) Lock();
+	request->req_id_lock = lock;
+	lock->lck_type = LCK_request;
+	lock->lck_owner_handle = LCK_get_owner_handle(tdbb, lock->lck_type);
+	lock->lck_parent = dbb->dbb_lock;
+	lock->lck_length = sizeof(SLONG);
+	lock->lck_key.lck_long = request->req_id;
+	lock->lck_dbb = dbb;
+	lock->lck_ast = blocking_ast_request;
+	lock->lck_object = request;
+	LCK_lock(tdbb, lock, LCK_SR, LCK_WAIT);
 }
 
 

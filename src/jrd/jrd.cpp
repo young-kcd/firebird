@@ -2756,12 +2756,12 @@ ISC_STATUS GDS_SQL_TEXT(ISC_STATUS* user_status, jrd_req** req_handle,
 {
 /**************************************
  *
- *	g d s _ r e q u e s t _ s q l _ t e x t
+ *	g d s _ s q l _ t e x t
  *
  **************************************
  *
  * Functional description
- *	Stores the SQL text for the given request.
+ *	Stores the SQL text of the given request.
  *  (candidate for removal when engine functions can be called by DSQL)
  *
  **************************************/
@@ -4591,13 +4591,6 @@ bool JRD_reschedule(thread_db* tdbb, SLONG quantum, bool punt)
 
 	Database* dbb = tdbb->tdbb_database;
 
-	// Enable signal handler for the monitoring stuff
-
-	if (dbb->dbb_ast_flags & DBB_monitor_off) {
-		dbb->dbb_ast_flags &= ~DBB_monitor_off;
-		LCK_lock(tdbb, dbb->dbb_monitor_lock, LCK_SR, LCK_WAIT);
-	}
-
 	// If database has been shutdown then get out
 
 	Attachment* attachment = tdbb->tdbb_attachment;
@@ -4670,6 +4663,38 @@ bool JRD_reschedule(thread_db* tdbb, SLONG quantum, bool punt)
 			}
 		}
 #endif
+		// Handle request cancellation
+
+		jrd_req* request = tdbb->tdbb_request;
+		if (request)
+		{
+			while (request->req_caller)
+				request = request->req_caller;
+
+			if (request->req_flags & req_blocking)
+			{
+				tdbb->tdbb_flags |= TDBB_sys_error;
+
+				if (punt) {
+					CCH_unwind(tdbb, false);
+					ERR_post(isc_cancelled, 0);
+				}
+				else {
+					ISC_STATUS* status = tdbb->tdbb_status_vector;
+					*status++ = isc_arg_gds;
+					*status++ = isc_cancelled;
+					*status++ = isc_arg_end;
+					return true;
+				}
+			}
+		}
+	}
+
+	// Enable signal handler for the monitoring stuff
+
+	if (dbb->dbb_ast_flags & DBB_monitor_off) {
+		dbb->dbb_ast_flags &= ~DBB_monitor_off;
+		LCK_lock(tdbb, dbb->dbb_monitor_lock, LCK_SR, LCK_WAIT);
 	}
 
 	tdbb->tdbb_quantum = (tdbb->tdbb_quantum <= 0) ?

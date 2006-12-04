@@ -202,9 +202,8 @@ enum tra_state_t {
 
 enum stmt_state_t {
 	stmt_s_idle = 0,
-	stmt_s_stalled = 1,
-	stmt_s_active = 2,
-	stmt_s_killed = 3
+	stmt_s_active = 1,
+	stmt_s_killed = 2
 };
 
 // shutdown modes

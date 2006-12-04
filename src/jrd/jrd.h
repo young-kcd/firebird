@@ -907,6 +907,7 @@ const USHORT TDBB_backup_merge			= 16;	// Merging changes from difference file
 const USHORT TDBB_stack_trace_done		= 32;	// PSQL stack trace is added into status-vector
 const USHORT TDBB_shutdown_manager		= 64;	// Server shutdown thread
 const USHORT TDBB_deferred				= 128;	// deferred work performed now
+const USHORT TDBB_sys_error				= 256;	// error shouldn't be handled by the looper
 
 // duplicate context of firebird string to store in jrd_nod::nod_arg
 inline char* stringDup(MemoryPool& p, const Firebird::string& s)

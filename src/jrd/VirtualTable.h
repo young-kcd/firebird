@@ -30,13 +30,13 @@ namespace Jrd {
 namespace VirtualTable {
 
 void close(Jrd::thread_db*, Jrd::RecordSource*);
-void erase(Jrd::record_param*);
+void erase(Jrd::thread_db*, Jrd::record_param*);
 void fini(Jrd::jrd_rel*);
 bool get(Jrd::thread_db*, Jrd::RecordSource*);
-void modify(Jrd::record_param*, Jrd::record_param*);
+void modify(Jrd::thread_db*, Jrd::record_param*, Jrd::record_param*);
 void open(Jrd::thread_db*, Jrd::RecordSource*);
 Jrd::RecordSource* optimize(Jrd::thread_db*, Jrd::OptimizerBlk*, SSHORT);
-void store(Jrd::record_param*);
+void store(Jrd::thread_db*, Jrd::record_param*);
 
 }; // namespace VirtualTable
 

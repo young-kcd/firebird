@@ -21,16 +21,22 @@
  */
 
 #include "firebird.h"
+#include "ids.h"
+#include "../jrd/constants.h"
 #include "../jrd/gdsassert.h"
 #include "../jrd/jrd.h"
 #include "../jrd/dsc.h"
 #include "../jrd/exe.h"
+#include "../jrd/ini.h"
 #include "../jrd/req.h"
 #include "../jrd/rse.h"
 #include "../jrd/val.h"
 #include "../jrd/cmp_proto.h"
 #include "../jrd/err_proto.h"
+#include "../jrd/evl_proto.h"
+#include "../jrd/lck_proto.h"
 #include "../jrd/met_proto.h"
+#include "../jrd/mov_proto.h"
 #include "../jrd/vio_proto.h"
 
 #include "../jrd/DatabaseSnapshot.h"
@@ -51,9 +57,36 @@ void VirtualTable::close(thread_db* tdbb, RecordSource* rsb)
 }
 
 
-void VirtualTable::erase(record_param* rpb)
+void VirtualTable::erase(thread_db* tdbb, record_param* rpb)
 {
-	ERR_post(isc_read_only, 0);
+	SET_TDBB(tdbb);
+
+	Database* dbb = tdbb->tdbb_database;
+	fb_assert(dbb);
+
+	jrd_rel* relation = rpb->rpb_relation;
+	fb_assert(relation);
+
+	if (relation->rel_id != rel_mon_statements)
+		ERR_post(isc_read_only, 0);
+
+	// Get statement id
+	dsc desc;
+	EVL_field(relation, rpb->rpb_record, f_mon_stmt_id, &desc);
+	const SLONG id = MOV_get_long(&desc, 0);
+
+	// Post a blocking request
+	Lock temp_lock;
+	temp_lock.lck_dbb = dbb;
+	temp_lock.lck_type = LCK_request;
+	temp_lock.lck_parent = dbb->dbb_lock;
+	temp_lock.lck_owner_handle =
+		LCK_get_owner_handle(tdbb, temp_lock.lck_type);
+	temp_lock.lck_length = sizeof(SLONG);
+	temp_lock.lck_key.lck_long = id;
+
+	if (LCK_lock_non_blocking(tdbb, &temp_lock, LCK_EX, -1))
+		LCK_release(tdbb, &temp_lock);
 }
 
 
@@ -77,7 +110,7 @@ bool VirtualTable::get(thread_db* tdbb, RecordSource* rsb)
 }
 
 
-void VirtualTable::modify(record_param* org_rpb, record_param* new_rpb)
+void VirtualTable::modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb)
 {
 	ERR_post(isc_read_only, 0);
 }
@@ -128,7 +161,7 @@ Jrd::RecordSource* VirtualTable::optimize(thread_db* tdbb, OptimizerBlk* opt, SS
 }
 
 
-void VirtualTable::store(record_param* rpb)
+void VirtualTable::store(thread_db* tdbb, record_param* rpb)
 {
 	ERR_post(isc_read_only, 0);
 }
