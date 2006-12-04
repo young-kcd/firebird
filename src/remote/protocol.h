@@ -366,8 +366,8 @@ const UCHAR CNCT_user_verification	= 6;	/* Attach/create using this connection
 
 typedef struct bid	/* BLOB ID */
 {
-	ULONG	bid_relation_id;	/* Relation id (or null) */
-	ULONG	bid_number;			/* Record number */
+	ULONG	bid_quad_high;
+	ULONG	bid_quad_low;
 } *BID;
 
 

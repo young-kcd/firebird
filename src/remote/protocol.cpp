@@ -1300,10 +1300,10 @@ static bool_t xdr_quad( XDR* xdrs, struct bid* ip)
 	switch (xdrs->x_op) {
 	case XDR_ENCODE:
 		if ((*xdrs->x_ops->x_putlong)
-			(xdrs, reinterpret_cast<SLONG*>(&ip->bid_relation_id))
+			(xdrs, reinterpret_cast<SLONG*>(&ip->bid_quad_high))
 			&& (*xdrs->x_ops->x_putlong) (xdrs,
 										  reinterpret_cast<
-										  SLONG*>(&ip->bid_number)))
+										  SLONG*>(&ip->bid_quad_low)))
 		{
 			return TRUE;
 		}
@@ -1312,12 +1312,12 @@ static bool_t xdr_quad( XDR* xdrs, struct bid* ip)
 	case XDR_DECODE:
 		if (!(*xdrs->x_ops->x_getlong)
 			(xdrs,
-			 reinterpret_cast<SLONG*>(&ip->bid_relation_id)))
+			 reinterpret_cast<SLONG*>(&ip->bid_quad_high)))
 		{
 			return FALSE;
 		}
 		return (*xdrs->x_ops->x_getlong) (xdrs,
-										  reinterpret_cast<SLONG*>(&ip->bid_number));
+										  reinterpret_cast<SLONG*>(&ip->bid_quad_low));
 
 	case XDR_FREE:
 		return TRUE;

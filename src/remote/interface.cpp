@@ -3806,7 +3806,7 @@ ISC_STATUS GDS_SEEK_BLOB(ISC_STATUS * user_status,
 			return error(user_status);
 		}
 
-		blob->rbl_offset = *result = packet->p_resp.p_resp_blob_id.bid_number;
+		blob->rbl_offset = *result = packet->p_resp.p_resp_blob_id.bid_quad_low;
 		blob->rbl_length = 0;
 		blob->rbl_fragment_length = 0;
 		blob->rbl_flags &= ~(RBL_eof | RBL_eof_pending | RBL_segment);

@@ -4350,7 +4350,7 @@ ISC_STATUS rem_port::seek_blob(P_SEEK * seek, PACKET* sendL)
 	isc_seek_blob(status_vector, &blob->rbl_handle, mode, offset, &result);
 	THREAD_ENTER();
 
-	sendL->p_resp.p_resp_blob_id.bid_number = result;
+	sendL->p_resp.p_resp_blob_id.bid_quad_low = result;
 
 	return this->send_response(sendL, 0, 0, status_vector, false);
 }
