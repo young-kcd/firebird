@@ -1886,12 +1886,13 @@ int PAG_unlicensed(void)
 */
 
 
-static void find_clump_space(
-							 SLONG page_num,
+static void find_clump_space(SLONG page_num,
 							 WIN* window,
 							 PAG* ppage,
 							 USHORT type,
-	SSHORT len, const UCHAR* entry, USHORT must_write)
+							 SSHORT len,
+							 const UCHAR* entry,
+							 USHORT must_write)
 {
 /***********************************************
  *
@@ -2031,12 +2032,13 @@ static void find_clump_space(
 }
 
 
-static bool find_type(
-						 SLONG page_num,
-						 WIN* window,
-						 PAG* ppage,
-						 USHORT lock,
-						 USHORT type, UCHAR** entry_p, const UCHAR** clump_end)
+static bool find_type(SLONG page_num,
+					  WIN* window,
+					  PAG* ppage,
+					  USHORT lock,
+					  USHORT type,
+					  UCHAR** entry_p,
+					  const UCHAR** clump_end)
 {
 /***********************************************
  *
