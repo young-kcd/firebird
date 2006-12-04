@@ -122,7 +122,6 @@
 #include "../jrd/evl_string.h"
 #include "../jrd/intlobj_new.h"
 #include "../jrd/jrd.h"
-#include "../jrd/evl_like.h"
 #include "../jrd/mov_proto.h"
 #include "../jrd/IntlManager.h"
 #include "../common/classes/init.h"

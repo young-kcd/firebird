@@ -30,8 +30,11 @@
 #ifndef JRD_TEXTTYPE_H
 #define JRD_TEXTTYPE_H
 
+struct texttype;
 
 namespace Jrd {
+
+class CharSet;
 
 class TextType
 {
