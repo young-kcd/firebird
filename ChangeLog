@@ -1,3 +1,10 @@
+2006-12-03 18:52  asfernandes
+
+	* firebird2/src/dsql/make.cpp (1.110.2.3):
+
+	Backport fix for CORE-1012 - IBO problems with FB >= 1.5.3 "Error
+	with joins and auto-generated search query"
+
 2006-12-02 01:50  asfernandes
 
 	* firebird2/src/intl/lc_narrow.cpp (1.16.2.1):
