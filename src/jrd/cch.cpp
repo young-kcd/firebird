@@ -1285,7 +1285,7 @@ void CCH_fini(thread_db* tdbb)
 		{
 			while (bcb->bcb_memory.hasData()) 
 			{
-				gds__free(bcb->bcb_memory.pop());
+				dbb->dbb_bufferpool->deallocate(bcb->bcb_memory.pop());
 			}
 #ifdef CACHE_WRITER
 			/* Dispose off any associated latching semaphores */
@@ -2567,7 +2567,7 @@ bool CCH_write_all_shadows(thread_db* tdbb,
 		   and set up to release it in case of error */
 
 		spare_buffer =
-			(SLONG*) dbb->dbb_bufferpool->allocate((SLONG) dbb->dbb_page_size, 0
+			(SLONG*) dbb->dbb_bufferpool->allocate(dbb->dbb_page_size, 0
 #ifdef DEBUG_GDS_ALLOC
 			  ,__FILE__, __LINE__
 #endif
@@ -4631,17 +4631,16 @@ static void expand_buffers(thread_db* tdbb, ULONG number)
 /* Allocate new buffer descriptor blocks */
 
 	ULONG num_in_seg = 0;
-	UCHAR* memory = 0;
+	UCHAR* memory = NULL;
 	for (; new_tail < new_end; new_tail++) {
 		/* if current segment is exhausted, allocate another */
 
 		if (!num_in_seg) {
-			memory = (UCHAR *)gds__alloc((SLONG) dbb->dbb_page_size *
-										 (num_per_seg + 1));
+			const size_t alloc_size = dbb->dbb_page_size * (num_per_seg + 1);
+			memory = (UCHAR*) dbb->dbb_bufferpool->allocate_nothrow(alloc_size);
 			// NOMEM: crash!
 			new_block->bcb_memory.push(memory);
-			memory = (UCHAR *) (((U_IPTR) memory + dbb->dbb_page_size - 1) &
-								~((int) dbb->dbb_page_size - 1));
+			memory = (UCHAR *) FB_ALIGN((U_IPTR) memory, dbb->dbb_page_size);
 			num_in_seg = num_per_seg;
 			left_to_do -= num_per_seg;
 			if (num_per_seg > left_to_do) {
@@ -5448,14 +5447,14 @@ static ULONG memory_init(thread_db* tdbb, BufferControl* bcb, ULONG number)
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->tdbb_database;
 
-	UCHAR* memory = 0;
+	UCHAR* memory = NULL;
 	SLONG buffers = 0;
 	const SLONG page_size = (SLONG) dbb->dbb_page_size;
 	SLONG memory_size = page_size * (number + 1);
 
 	SLONG old_buffers = 0;
-	bcb_repeat* old_tail = 0;
-	const UCHAR* memory_end = 0;
+	bcb_repeat* old_tail = NULL;
+	const UCHAR* memory_end = NULL;
 	bcb_repeat* tail = bcb->bcb_rpt;
 	// "end" is changed inside the loop
 	for (const bcb_repeat* end = tail + number; tail < end; tail++)
@@ -5463,22 +5462,26 @@ static ULONG memory_init(thread_db* tdbb, BufferControl* bcb, ULONG number)
 		if (!memory) {
 			/* Allocate only what is required for remaining buffers. */
 
-			if (memory_size > (SLONG) (page_size * (number + 1))) {
+			if (memory_size > (page_size * (number + 1))) {
 				memory_size = page_size * (number + 1);
 			}
 
 			while (true) 
 			{
-				if ( (memory = (UCHAR *)gds__alloc(memory_size)) )
+				try {
+					memory = (UCHAR*) dbb->dbb_bufferpool->allocate(memory_size);
 					break;
-				/* Either there's not enough virtual memory or there is
-				   but it's not virtually contiguous. Let's find out by
-				   cutting the size in half to see if the buffers can be
-				   scattered over the remaining virtual address space. */
-				memory_size >>= 1;
-				if (memory_size < MIN_BUFFER_SEGMENT) {
-					/* Diminishing returns */
-					return buffers;
+				}
+				catch (Firebird::BadAlloc&) {
+					/* Either there's not enough virtual memory or there is
+					   but it's not virtually contiguous. Let's find out by
+					   cutting the size in half to see if the buffers can be
+					   scattered over the remaining virtual address space. */
+					memory_size >>= 1;
+					if (memory_size < MIN_BUFFER_SEGMENT) {
+						/* Diminishing returns */
+						return buffers;
+					}
 				}
 			}
 
@@ -5488,8 +5491,7 @@ static ULONG memory_init(thread_db* tdbb, BufferControl* bcb, ULONG number)
 			/* Allocate buffers on an address that is an even multiple
 			   of the page size (rather the physical sector size.) This
 			   is a necessary condition to support raw I/O interfaces. */
-			memory = (UCHAR *) (((U_IPTR) memory + page_size - 1) &
-								~((int) page_size - 1));
+			memory = (UCHAR *) FB_ALIGN((U_IPTR) memory, page_size);
 			old_tail = tail;
 			old_buffers = buffers;
 		}
@@ -5503,8 +5505,8 @@ static ULONG memory_init(thread_db* tdbb, BufferControl* bcb, ULONG number)
 			   overhead. Reduce this number by a 25% fudge factor to
 			   leave some memory for useful work. */
 
-			gds__free(bcb->bcb_memory.pop());
-			memory = 0;
+			dbb->dbb_bufferpool->deallocate(bcb->bcb_memory.pop());
+			memory = NULL;
 			for (bcb_repeat* tail2 = old_tail; tail2 < tail; tail2++)
 			{
 				tail2->bcb_bdb = dealloc_bdb(tail2->bcb_bdb);
