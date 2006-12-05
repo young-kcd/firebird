@@ -253,8 +253,12 @@ bool EXT_get(RecordSource* rsb)
 	UCHAR* p = record->rec_data + offset;
 	SSHORT l = record->rec_length - offset;
 
-	if (file->ext_ifi == 0 || (ftell(file->ext_ifi) != rpb->rpb_ext_pos &&
-		(fseek(file->ext_ifi, rpb->rpb_ext_pos, 0) != 0)))
+	// hvlad: fseek will flush file buffer and degrade performance, so don't 
+	// call it if it is not necessary. Note that we must flush file buffer if we 
+	// do read after write
+	if (file->ext_ifi == 0 || 
+		( (ftell(file->ext_ifi) != rpb->rpb_ext_pos || !(file->ext_flags & EXT_last_read)) &&
+		 (fseek(file->ext_ifi, rpb->rpb_ext_pos, 0) != 0)) )
 	{
 		ERR_post(isc_io_error,
 				 isc_arg_string, "fseek",
@@ -267,6 +271,9 @@ bool EXT_get(RecordSource* rsb)
 		return false;
 
 	rpb->rpb_ext_pos += l;
+
+	file->ext_flags |= EXT_last_read;
+	file->ext_flags &= ~EXT_last_write;
 
 /* Loop thru fields setting missing fields to either blanks/zeros
    or the missing value */
@@ -491,8 +498,11 @@ void EXT_store(record_param* rpb, jrd_tra* transaction)
 	const UCHAR* p = record->rec_data + offset;
 	USHORT l = record->rec_length - offset;
 
-	if (file->ext_ifi == 0
-		|| (fseek(file->ext_ifi, (SLONG) 0, 2) != 0))
+	// hvlad: fseek will flush file buffer and degrade performance, so don't 
+	// call it if it is not necessary.	Note that we must flush file buffer if we 
+	// do write after read
+	if (file->ext_ifi == 0 || 
+		(!(file->ext_flags & EXT_last_write) && fseek(file->ext_ifi, (SLONG) 0, 2) != 0) )
 	{
 		ERR_post(isc_io_error, isc_arg_string, "fseek", isc_arg_string,
 				 ERR_cstring(reinterpret_cast<const char*>(file->ext_filename)),
@@ -506,7 +516,9 @@ void EXT_store(record_param* rpb, jrd_tra* transaction)
 				 isc_arg_gds, isc_io_open_err, SYS_ERR, errno, 0);
 	}
 
-	fflush(file->ext_ifi);
+	// fflush(file->ext_ifi);
+	file->ext_flags |= EXT_last_write;
+	file->ext_flags &= ~EXT_last_read;
 }
 
 

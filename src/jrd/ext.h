@@ -59,6 +59,8 @@ class ExternalFile : public pool_alloc_rpt<SCHAR, type_ext>
 //const int EXT_opened	= 1;	// File has been opened
 const int EXT_eof		= 2;	/* Positioned at EOF */
 const int EXT_readonly	= 4;	/* File could only be opened for read */
+const int EXT_last_read		= 8;	// last operation was read
+const int EXT_last_write	= 16;	// last operation was write
 
 #ifdef VMS
 struct irsb_ext {
