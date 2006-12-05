@@ -156,6 +156,7 @@ Name: hu; MessagesFile: compiler:Languages\Hungarian.isl; InfoBeforeFile: builds
 Name: it; MessagesFile: compiler:Languages\Italian.isl; InfoBeforeFile: builds\install\arch-specific\win32\it\leggimi_installazione.txt; InfoAfterFile: builds\install\arch-specific\win32\it\leggimi.txt
 Name: pl; MessagesFile: compiler:Languages\Polish.isl; InfoBeforeFile: builds\install\arch-specific\win32\pl\instalacja_czytajto.txt; InfoAfterFile: builds\install\arch-specific\win32\pl\czytajto.txt;
 Name: pt; MessagesFile: compiler:Languages\PortugueseStd.isl; InfoBeforeFile: builds\install\arch-specific\win32\pt\instalacao_leia-me.txt; InfoAfterFile: builds\install\arch-specific\win32\pt\leia-me.txt
+Name: ru; MessagesFile: compiler:Languages\Russian.isl; InfoBeforeFile: builds\install\arch-specific\win32\ru\installation_readme.txt; InfoAfterFile: builds\install\arch-specific\win32\ru\readme.txt;
 Name: si; MessagesFile: compiler:Languages\Slovenian.isl; InfoBeforeFile: builds\install\arch-specific\win32\si\instalacija_precitajMe.txt; InfoAfterFile: builds\install\arch-specific\win32\readme.txt;
 #endif
 
@@ -170,6 +171,7 @@ hu.BeveledLabel=Magyar
 it.BeveledLabel=Italiano
 pl.BeveledLabel=Polski
 pt.BeveledLabel=Português
+ru.BeveledLabel=<0420><0443><0441><0441><043A><0438><0439>
 si.BeveledLabel=Slovenski
 #endif
 
@@ -184,6 +186,7 @@ si.BeveledLabel=Slovenski
 #include "it\custom_messages_it.inc"
 #include "pl\custom_messages_pl.inc"
 #include "pt\custom_messages_pt.inc"
+#include "ru\custom_messages_ru.inc"
 #include "si\custom_messages_si.inc"
 #endif
 
@@ -293,6 +296,7 @@ Source: builds\install\arch-specific\win32\hu\*.txt; DestDir: {app}\doc; Compone
 Source: builds\install\arch-specific\win32\it\*.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: ignoreversion; Languages: it;
 Source: builds\install\arch-specific\win32\pl\*.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: ignoreversion; Languages: pl;
 Source: builds\install\arch-specific\win32\pt\*.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: ignoreversion; Languages: pt;
+Source: builds\install\arch-specific\win32\ru\*.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: ignoreversion; Languages: ru;
 Source: builds\install\arch-specific\win32\si\*.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: ignoreversion; Languages: si;
 #endif
 Source: output\firebird.conf; DestDir: {app}; DestName: firebird.conf.default; Components: ServerComponent; check: FirebirdConfExists;
@@ -517,7 +521,7 @@ begin
       exit;
   end;
 
-  
+
   //If Fb2.0 is installed then we can install over it.
   //unless we find the server running.
   if (ProductsInstalledCount = 1) AND
@@ -610,8 +614,8 @@ begin
   // Did the install fail because winsock 2 was not installed?
   if Winsock2Failure then
     // Ask user if they want to visit the Winsock2 update web page.
-  	if MsgBox(ExpandConstant('{cm:Winsock2Web1}')+#13#13+ExpandConstant('{cm:Winsock2Web2}'), mbInformation, MB_YESNO) = idYes then
-  	  // User wants to visit the web page
+    if MsgBox(ExpandConstant('{cm:Winsock2Web1}')+#13#13+ExpandConstant('{cm:Winsock2Web2}'), mbInformation, MB_YESNO) = idYes then
+      // User wants to visit the web page
       InstShellExec(sMSWinsock2Update, '', '', SW_SHOWNORMAL, ErrCode);
 end;
 
@@ -621,8 +625,8 @@ end;
 //Otherwise it suggests the default for Fb 1.5
 function ChooseInstallDir(Default: String): String;
 var
-	InterBaseRootDir,
-	FirebirdRootDir: String;
+  InterBaseRootDir,
+  FirebirdRootDir: String;
 begin
   //The installer likes to call this FOUR times, which makes debugging a pain,
   //so let's test for a previous call.
@@ -803,11 +807,11 @@ begin
         AppStr := StartApp('')+' -a';
         RegWriteStringValue (HKLM, 'SOFTWARE\Microsoft\Windows\CurrentVersion\Run', 'Firebird', AppStr);
       end;
-      
+
       //Fix up conf file
       RemoveSavedConfIfNoDiff;
       UpdateFirebirdConf;
-      
+
       //Reset shared library count if necessary
       CheckSharedLibCountAtEnd;
 
@@ -817,7 +821,7 @@ begin
         if FileCopy(GetAppPath+'\doc\'+ReadMeFileStr, GetAppPath+'\'+ReadMeFileStr, false) then
           DeleteFile(GetAppPath+'\doc\'+ReadMeFileStr);
       end;
-      
+
     end;
   end;
 end;
