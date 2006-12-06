@@ -1,30 +1,55 @@
-    * Backport fix for CORE-966
-        Bug in socket binding for database events.
-	Contributor(s):
-	  Paul Beach <pbeach at ibphoenix.com>
-        Dmitry Yemanov <yemanov at yandex.ru>
+  **************
+  * v1.5.4
+  **************
 
-    * Backport fix for CORE-157 and CORE-363.
-        Server hangs when a client registers events but the
-	  connection is not established.
-	Contributor(s):
-	  Paul Beach <pbeach at ibphoenix.com>
+    * Backport fix for CORE-921
+        Core dump in stored procedure using execute statement
+      Contributor(s):
         Alex Peshkov <peshkoff at mail.ru>
 
-    * Fixed unregistered bugs.
-      Error not detected when buffer overflows in isql
-      Problems handling quoted strings
-	Contributor(s):
-	  Paul Beach <pbeach at ibphoenix.com>
+    * Backport fix for CORE-966
+        Bug in socket binding for database events
+      Contributor(s):
+        Paul Beach <pbeach at ibphoenix.com>
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed bugs CORE-157 and CORE-363
+        Server hangs when a client registers events but the
+        connection is not established
+      Contributor(s):
+        Paul Beach <pbeach at ibphoenix.com>
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Fixed bug CORE-973
+        BUGCHECK(183) when attempting to backout a record version after a crash  
+      Contributor(s):
+        Ann Harrison <aharrison at ibphoenix.com>
+
+    * Fixed bug CORE-911
+        AV in Classic server after long idle period
+        when using long running read committed read-only transaction
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
+
+    * Fixed unregistered bugs
+        Error not detected when buffer overflows in isql
+        Problems handling quoted strings
+      Contributor(s):
+        Paul Beach <pbeach at ibphoenix.com>
         Dimitry Sibiryakov <sd at topol.udm.net>
+
+    * Fixed unregistered bug
+        GSTAT prints "unknown Windows NT error" instead of a proper Win32 error message
+      Contributor(s):
+        Claudio Valderrama <cvalde at usa.net>
 
   **************
   * v1.5.3
   **************
 
     * Fixed SF bug #1175157
-	Error in thread scheduler causes server to lockup 
-	in case if IO error at database attachment
+        Error in thread scheduler causes server to lockup 
+        in case if IO error at database attachment
       Contributor(s):
         Vlad Horsun <horsun at kdb.dp.ua>
 
