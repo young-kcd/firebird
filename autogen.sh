@@ -2,7 +2,7 @@
 #
 # Run this to generate all the initial makefiles, etc.
 #
-# $Id: autogen.sh,v 1.8.2.2 2006-11-05 14:37:13 alexpeshkoff Exp $
+# $Id: autogen.sh,v 1.8.2.3 2006-12-06 16:07:31 alexpeshkoff Exp $
 
 PKG_NAME=Firebird2
 SRCDIR=`dirname $0`
@@ -70,6 +70,7 @@ if [ `uname -s` = AIX ]; then
 
 #convert version files to aix export format
 #this is not general format converter and may fail in case of vers file(s) changes
+	mkdir gen
 	for i in builds/posix/*.vers
 	do
 		to="gen/`basename $i`"

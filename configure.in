@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.141.2.39 2006-11-05 14:37:18 alexpeshkoff Exp $
+dnl $Id: configure.in,v 1.141.2.40 2006-12-06 16:07:31 alexpeshkoff Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -186,9 +186,9 @@ dnl possibly needed if we use install-sh program
 dnl AC_CONFIG_AUX_DIR(`pwd`)
 
 AC_PROG_AWK
-AC_PROG_CC  dnl EKU: C++ programs should not use CC, but at the moment all
+AC_PROG_CC(xlc_r7 gcc)  dnl EKU: C++ programs should not use CC, but at the moment all
             dnl makefiles use $(CC) to link objects. This has to be changed!
-AC_PROG_CXX
+AC_PROG_CXX(xlC_r7 g++)
 AC_PROG_LN_S
 dnl EKU: AC_PROG_RANLIB has been superseded by AC_PROG_LIBTOOL
 AC_LIBTOOL_DLOPEN
@@ -511,7 +511,7 @@ AC_CHECK_TYPES([struct xdr_ops],,,[#include <rpc/rpc.h>
 
 
 dnl EKU: try to determine the alignment of long and double
-dnl      replaces ALIGNMENT and DOUBLE_ALIGN in src/jrd/common.h
+dnl      replaces FB_ALIGNMENT and DOUBLE_ALIGN in src/jrd/common.h
 AC_MSG_CHECKING(alignment of long)
 AC_TRY_RUN([main () {
   struct s {
@@ -521,7 +521,7 @@ AC_TRY_RUN([main () {
   exit((int)&((struct s*)0)->b);
 }], ac_cv_c_alignment=$ac_status, ac_cv_c_alignment=$ac_status)
 AC_MSG_RESULT($ac_cv_c_alignment)
-AC_DEFINE_UNQUOTED(ALIGNMENT,$ac_cv_c_alignment)
+AC_DEFINE_UNQUOTED(FB_ALIGNMENT,$ac_cv_c_alignment)
 
 AC_MSG_CHECKING(alignment of double)
 AC_TRY_RUN([main () {
