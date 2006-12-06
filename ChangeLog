@@ -1,3 +1,9 @@
+2006-12-05 23:01  hvlad
+
+	* firebird2/src/jrd/: ext.cpp (1.70), ext.h (1.13):
+
+	Improve write performance of external tables
+
 2006-12-04 22:42  dimitr
 
 	* firebird2/src/remote/: interface.cpp (1.125), protocol.cpp
