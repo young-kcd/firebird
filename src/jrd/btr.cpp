@@ -3183,6 +3183,10 @@ static SLONG fast_load(thread_db* tdbb,
 	duplicatesList.grow(segments);
 	memset(duplicatesList.begin(), 0, segments * sizeof(ULONG));
 
+	// hvlad: look at IDX_create_index for explanations about NULL indicator below
+	const bool isODS11 = (dbb->dbb_ods_version >= ODS_VERSION11);
+	const int nullIndLen = isODS11 && !descending && (idx->idx_count == 1) ? 1 : 0;
+
 	try {
 
 		// If there's an error during index construction, fall
@@ -3225,6 +3229,7 @@ static SLONG fast_load(thread_db* tdbb,
 			}
 			index_sort_record* isr = (index_sort_record*) (record + key_length);
 			count++;
+			record += nullIndLen;
 			
 			// restore previous values
 			bucket = buckets[0];

@@ -257,7 +257,17 @@ void IDX_create_index(
 	const bool isDescending = (idx->idx_flags & idx_descending);
 	const bool isPrimary = (idx->idx_flags & idx_primary);
 
-	const USHORT key_length = ROUNDUP(BTR_key_length(tdbb, relation, idx), sizeof(SLONG));
+	// hvlad: in ODS11 empty string and NULL values can have the same binary 
+	// representation in index keys. BTR can distinguish it by the key_length 
+	// but SORT module currently don't take it into account. Therefore add to 
+	// the index key one byte prefix with 0 for NULL value and 1 for not-NULL 
+	// value to produce right sorting.
+	// BTR\fast_load will remove this one byte prefix from the index key.
+	// Note that this is necessary only for single-segment ascending indexes 
+	// and only for ODS11 and higer.
+
+	const int nullIndLen = isODS11 && !isDescending && (idx->idx_count == 1) ? 1 : 0;
+	const USHORT key_length = ROUNDUP(BTR_key_length(tdbb, relation, idx) + nullIndLen, sizeof(SLONG));
 
 	const USHORT max_key_size =
 		isODS11 ? MAX_KEY_LIMIT : MAX_KEY_PRE_ODS11;
@@ -453,11 +463,14 @@ void IDX_create_index(
 
 			USHORT l = key.key_length;
 
+			if (nullIndLen) {
+				*p++ = (key.key_length == 0) ? 0 : 1;
+			}
 			if (l > 0) {
 				memcpy(p, key.key_data, l);
 				p += l;
 			}
-			if ( (l = key_length - key.key_length) ) {
+			if ( (l = key_length - nullIndLen - key.key_length) ) {
 				memset(p, pad, l);
 				p += l;
 			}
