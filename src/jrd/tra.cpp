@@ -2210,6 +2210,14 @@ static HDR bump_transaction_id(TDBB tdbb, WIN * window)
 			BUGCHECK(267);		/* next transaction older than oldest transaction */
 	}
 
+	// hvlad: fix is backported from FB2 therefore gds_random error number is used
+	// but message text is equal to FB2's
+	if (header->hdr_next_transaction >= MAX_TRA_NUMBER - 1) 
+	{
+		CCH_RELEASE(tdbb, window);
+		ERR_post(gds_imp_exc, gds_arg_gds, gds_random, gds_arg_string, 
+			"Transactions count exceeded. Perform backup and restore to make database operable again", 0);
+	}
 	number = header->hdr_next_transaction + 1;
 
 /* If this is the first transaction on a TIP, allocate the TIP now. */
