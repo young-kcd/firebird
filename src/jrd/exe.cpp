@@ -945,7 +945,7 @@ void EXE_start(thread_db* tdbb, jrd_req* request, jrd_tra* transaction)
 	TRA_post_resources(tdbb, transaction, request->req_resources);
 
 	TRA_attach_request(transaction, request);
-	LCK_lock_non_blocking(tdbb, request->req_id_lock, LCK_SR, LCK_WAIT);
+	LCK_lock(tdbb, request->req_id_lock, LCK_SR, LCK_WAIT);
 	request->req_flags &= REQ_FLAGS_INIT_MASK;
 	request->req_flags |= req_active;
 	request->req_flags &= ~req_reserved;
