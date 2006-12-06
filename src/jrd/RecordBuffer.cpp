@@ -57,7 +57,7 @@ Record* RecordBuffer::getTempRecord() const
 	return record;
 }
 
-void RecordBuffer::store(const Record* new_record)
+offset_t RecordBuffer::store(const Record* new_record)
 {
 	fb_assert(new_record->rec_length == length);
 
@@ -65,7 +65,7 @@ void RecordBuffer::store(const Record* new_record)
 
 	space->write(count * length, (UCHAR*) new_record->rec_data, length);
 
-	count++;
+	return count++;
 }
 
 bool RecordBuffer::fetch(offset_t position, Record* to_record)
