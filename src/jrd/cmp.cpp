@@ -3007,7 +3007,6 @@ static void generate_request_id(thread_db* tdbb, jrd_req* request)
 	lock->lck_dbb = dbb;
 	lock->lck_ast = blocking_ast_request;
 	lock->lck_object = request;
-	LCK_lock(tdbb, lock, LCK_SR, LCK_WAIT);
 }
 
 
