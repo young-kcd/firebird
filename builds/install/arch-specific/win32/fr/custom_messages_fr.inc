@@ -1,4 +1,5 @@
 fr.MyAppName=Firebird Serveur SQL 2.0
+fr.ServerInstall=Installation complète Serveur et outils de dévelopement.
 fr.SuperServerInstall=Installation complète Super Serveur et outils de dévelopement.
 fr.ClassicServerInstall=Installation complète Serveur Classique et outils de dévelopement.
 fr.DeveloperInstall=Installation des outils Client pour Développeurs et administrateurs.
@@ -29,20 +30,24 @@ fr.instsvcStopMsg="Arrête le service"
 fr.instsvcRemove="Enlève le service"
 fr.instappStartQuestion=Démarrer Firebird?
 fr.instappStartMsg=Démarre le serveur
+
 fr.InstallSummarySuffix1=Cette version de Firebird va devenir l'installation par défaut.
 fr.InstallSummarySuffix2=   Aussi, notez bien qu'installer cette version de Firebird
 fr.InstallSummarySuffix3=   quand une version plus ancienne est déjà installée peut
 fr.InstallSummarySuffix4=          donner des résultats imprévisibles.
+
 fr.InstallSummaryCancel1= Si vous continuez avec cette installation, Firebird sera installé mais pas configuré.
 fr.InstallSummaryCancel2= Vous aurez à finir l''installation manuellement.
 fr.InstallSummaryCancel3= Voulez-vous ANNULER cette installation?
-fr.FbRunning1=Une version de Firebird 1.5 ou 2.0 Serveur est active.
-fr.FbRunning2=   Vous devez fermer l'application ou arréter
-fr.FbRunning3=           le service pour continuer.
+
 fr.InstalledProducts=Selon l'analyse de pré-installation il existe %s installation(s) de Firebird ou Interbase%s.
 ;these are intentionally blank
 fr.InstalledProdCountSingular=
 fr.InstalledProdCountPlural=
+
+fr.FbRunning1=Une version de Firebird %1 Serveur est active.
+fr.FbRunning2=   Vous devez fermer l'application ou arréter
+fr.FbRunning3=           le service pour continuer.
 
 fr.PreviousInstallBroken=   (L'installation semble être cassée à cause d'une disparité de la chaîne de version.)
 fr.PreviousInstallGood=   (L'installation semble être bonne.)

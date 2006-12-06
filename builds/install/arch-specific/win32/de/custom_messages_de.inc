@@ -1,4 +1,5 @@
 de.MyAppName=Firebird Datenbank Server 2.0
+de.ServerInstall=Vollständige Installation des Server inkl. Entwicklungstools.
 de.SuperServerInstall=Vollständige Installation des Super Server inkl. Entwicklungstools.
 de.ClassicServerInstall=Vollständige Installation des Classic Server inkl. Entwicklungstools.
 de.DeveloperInstall=Installation der Client Tools für Entwickler und Datenbank-Administratoren.
@@ -43,14 +44,13 @@ de.InstalledProducts=Die Neuinstallations-Analyse ergibt, dass %s existierende F
 de.InstalledProdCountSingular=Version gefunden wurde.
 de.InstalledProdCountPlural=Versionen gefunden wurden.
 
-de.FbRunning1=Ein existierender Firebird 1.5 Server läuft.
+de.FbRunning1=Ein existierender Firebird %1 Server läuft.
 de.FbRunning2= Sie müssen die Anwendung schließen oder den Dienst
 de.FbRunning3=         beenden, bevor Sie fortfahren können.
 
 de.PreviousInstallBroken=   (Die Installation scheint wegen eines Versionskonflikts fehlerhaft zu sein.)
 de.PreviousInstallGood=   (Die Installation scheint korrekt sein.)
 
-;neu hinzugefügt
 de.IconReadme=Firebird 2.0 Liesmich
 de.IconUninstall=Firebird Deinstallation
 de.ReleaseNotes= Release Hinweise. (Benötigt Acrobat Reader.)

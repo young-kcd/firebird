@@ -1,15 +1,16 @@
-Firebird Database Server 2.0 Beta 1
+Firebird Database Server 2.0
 ==================================================
 
   ** VAZNO **
 
-  Pogledajte dole u vezi instalacije preko starije
-  verzije Firebird -a
+  ODS je promijenjen u odnosu na Firebird 1.5. 
+  Pogledajte dole u vezi novog ODS-a i instalacije 
+  preko starije verzije Firebird -a
 
   ** ********* **
 
 Ovaj dokument je vodic za instalaciju ovog paketa
-Firebird-a 2.0 Beta 1 za Win32 platformu. Ovaj tekst
+Firebird-a 2.0 za Win32 platformu. Ovaj tekst
 se odnosi na instalacioni paket, a ne na Firebird 2.0
 u generalnom smislu.
 
@@ -25,7 +26,7 @@ o Nove opcije installer-a
 o Poznati problemi u vezi s instalacijom
 o Deinstalacija
 o Druge biljeske
-o Instalacija iz batch datoteke
+o Instalacija batch datotekom
 
 
 Prije instalacije
@@ -41,12 +42,12 @@ gds32.dll uklonjeni iz <system32>.
 New ODS 11.0
 ------------
 
-Beta 1 donosi novi ODS 11.0 koji je potpuno
+Firebird 2.0 donosi novi ODS 11.0 koji je potpuno
 nekompatibilan sa ODS 11.0 koji je koristen
 u prethodnim alpha verzijama.
 
-Ako instalirate Beta 1 prvi put i vec imate
-Firebird 2 alpha instaliran, preporucuje se da
+Ako instalirate ovaj release Firebird-a 2.0 prvi put 
+i vec imate Firebird 2 alpha instaliran, preporucuje se da
 instalirate u novi direktorij.
 Ovo je zbog toga sto ce uninstal sacuvati postojecu
 security2 bazu. Kako god, ova starija verzija koristi
@@ -60,15 +61,14 @@ Instalacija na sisteme sa Firebird-om 1.5
 Sigurnosna baza je promijenjena. Nova baza se
 zove security2.fdb i koristi pojacani password encryption
 algoritam. Vise o novim sigurnosnim opcijama mozete
-naci u doc/README.sha1.txt.
+naci u release notes-u.
 
 Nova struktura baze i promijenjena enkripcija
 predstavlja nekoliko problema u migraciji za site-ove koji
 imaju puno user-a. Instaler ne pokusava da uradi ovu
-migraciju.  Za Alpha 1 to se mora uraditi rucno.
+migraciju.  Zato se to mora uraditi rucno.
 Moguca tehnika za migraciju je dostupna u
-misc/upgrade/security/. Buduci test release-ovi ce obratiti
-paznju da olaksaju migraciju user-a i da je upotpune.
+misc/upgrade/security/.
 
 
 Instalacija na sisteme sa Firebird-om 2.0
@@ -76,9 +76,10 @@ Instalacija na sisteme sa Firebird-om 2.0
 
 Kao dodatak ODS promjeni molimo primjetite da
 instaler ne moze automatski detektovati da li je
-Firebird 2.0 Alpha 1,2 ili 3 server pokrenut
+Firebird 2.0 Alpha 1 ili Beta server pokrenut
 kao NT service. Zbog toga necete dobiti upozorenje
 sve dok instaler ne pokusa da prepise aktivnu datoteku.
+Ovo se moze izbjeci ako prvo deinstalirate Firebird.
 
 
 Nove opcije Installer-a
@@ -92,22 +93,23 @@ o Ako je postojeci firebird.conf detektovan,
 
   Postojeca firebird.conf datoteka ce biti nedirnuta.
   Ovo je zato da se osigura da su access restrikcije
-  yadryane nakon upgrade-a.
+  zadrzane nakon upgrade-a.
 
 
 o Podrska za nekoliko jezika je dodana u
   installer. Ova podrska se odnosi SAMO na
   proces instalacije.
 
+  NOTE: Dostupni jezici su odredjeni lokalizovanom 
+  verzijom Windows-a koji koristite. Ovo znaci, npr. 
+  da korisnici Western European verzije normalno nece 
+  vidjeti slovenske jezike kao dostupne jezike.
+
 
 Poznati problemi u vezi s instalacijom
 ---------------------------------------
 
-Client-only instalacija u stvari instalira i
-server executable datoteku. Ovo ce biti  ispravljeno u
-buducim beta release-ovima. U medjuvremenu work-around
-je izbrisati .exe. Ovo se moze automatizovati koristeci
-scripted install.
+Trenutno nema poznatih problema.
 
 
 Deinstalacija
@@ -155,7 +157,7 @@ Druge biljeske
  da bi saznali kako isti instalirati.
 
 
-Instalacija iz batch datoteke
+Instalacija batch datotekom
 ------------------------------
 
 Setup program se moze pokrenuti iz batch datoteke.

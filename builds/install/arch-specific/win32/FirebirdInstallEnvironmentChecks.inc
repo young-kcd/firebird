@@ -466,7 +466,7 @@ begin
   result := false;
 
   SelectedComponents := WizardSelectedComponents(false);
-  if pos(lowercase('ClassicServerComponent'),SelectedComponents) >0 then
+  if pos(lowercase('ServerComponent\ClassicServerComponent'),SelectedComponents) >0 then
     result := true;
 end;
 
@@ -491,8 +491,13 @@ procedure SetupSharedFilesArray;
 //All shared files go in this list. Use
 // find /n "sharedfile" FirebirdInstall_15.iss
 //to list them in the order they appear in the setup script
+// Shared Files are defined as either:
+// - Files which are absolutely necessary for a functioning installation.
+//     Hence gbak and gfix are shared files, isql and qli are not
+// - Libraries
+// - License files 
 begin
-SetArrayLength(SharedFileArray,24);
+SetArrayLength(SharedFileArray,29);
 
 SharedFileArray[0].Filename := ExpandConstant('{app}')+'\IPLicense.txt';
 SharedFileArray[1].Filename := ExpandConstant('{app}')+'\IDPLicense.txt';
@@ -504,35 +509,36 @@ SharedFileArray[6].Filename := ExpandConstant('{app}')+'\bin\gsplit.exe';
 SharedFileArray[7].Filename := ExpandConstant('{app}')+'\bin\gstat.exe';
 SharedFileArray[8].Filename := ExpandConstant('{app}')+'\bin\fbguard.exe';
 SharedFileArray[9].Filename := ExpandConstant('{app}')+'\bin\fb_lock_print.exe';
+SharedFileArray[10].Filename := ExpandConstant('{app}')+'\bin\fb_inet_server.exe'
+SharedFileArray[11].Filename := ExpandConstant('{app}')+'\bin\fbserver.exe';
+SharedFileArray[12].Filename := ExpandConstant('{app}')+'\bin\ib_util.dll';
+SharedFileArray[13].Filename := ExpandConstant('{app}')+'\bin\instclient.exe';
+SharedFileArray[14].Filename := ExpandConstant('{app}')+'\bin\instreg.exe';
+SharedFileArray[15].Filename := ExpandConstant('{app}')+'\bin\instsvc.exe';
 
-if ClassicInstallChosen then
-  SharedFileArray[10].Filename := ExpandConstant('{app}')+'\bin\fb_inet_server.exe'
-else
-  SharedFileArray[10].Filename := ExpandConstant('{app}')+'\bin\fbserver.exe';
+SharedFileArray[16].Filename := ExpandConstant('{sys}')+'\gds32.dll';
+SharedFileArray[17].Filename := ExpandConstant('{sys}')+'\fbclient.dll';
 
-SharedFileArray[11].Filename := ExpandConstant('{app}')+'\bin\ib_util.dll';
-SharedFileArray[12].Filename := ExpandConstant('{app}')+'\bin\instclient.exe';
-SharedFileArray[13].Filename := ExpandConstant('{app}')+'\bin\instreg.exe';
-SharedFileArray[14].Filename := ExpandConstant('{app}')+'\bin\instsvc.exe';
+SharedFileArray[18].Filename := ExpandConstant('{app}')+'\bin\fbclient.dll';
 
-SharedFileArray[15].Filename := ExpandConstant('{sys}')+'\gds32.dll';
-SharedFileArray[16].Filename := ExpandConstant('{sys}')+'\fbclient.dll';
+SharedFileArray[19].Filename := ExpandConstant('{app}')+'\bin\icuuc30.dll';
+SharedFileArray[20].Filename := ExpandConstant('{app}')+'\bin\icuin30.dll';
+SharedFileArray[21].Filename := ExpandConstant('{app}')+'\bin\icudt30.dll';
 
-SharedFileArray[17].Filename := ExpandConstant('{app}')+'\bin\fbclient.dll';
+SharedFileArray[22].Filename := ExpandConstant('{app}')+'\bin\msvcrt.dll';
+SharedFileArray[23].Filename := ExpandConstant('{app}')+'\bin\msvcr{#msvc_version}0.dll';
+SharedFileArray[24].Filename := ExpandConstant('{app}')+'\bin\msvcp{#msvc_version}0.dll';
 
-SharedFileArray[18].Filename := ExpandConstant('{app}')+'\bin\msvcrt.dll';
-SharedFileArray[19].Filename := ExpandConstant('{app}')+'\bin\msvcp{#msvc_version}0.dll';
+SharedFileArray[25].Filename := ExpandConstant('{app}')+'\bin\fbintl.dll';
 
-SharedFileArray[20].Filename := ExpandConstant('{app}')+'\bin\fbintl.dll';
-
-SharedFileArray[21].Filename := ExpandConstant('{app}')+'\UDF\ib_udf.dll';
-SharedFileArray[22].Filename := ExpandConstant('{app}')+'\UDF\fbudf.dll';
+SharedFileArray[26].Filename := ExpandConstant('{app}')+'\UDF\ib_udf.dll';
+SharedFileArray[27].Filename := ExpandConstant('{app}')+'\UDF\fbudf.dll';
 
 
 if UsingWinNT then
-  SharedFileArray[23].Filename := ExpandConstant('{sys}')+'\Firebird2Control.cpl'
+  SharedFileArray[28].Filename := ExpandConstant('{sys}')+'\Firebird2Control.cpl'
 else
-  SharedFileArray[23].Filename := ExpandConstant('{sys}')+'\FIREBI~1.CPL';
+  SharedFileArray[28].Filename := ExpandConstant('{sys}')+'\FIREBI~1.CPL';
 
 
 
@@ -668,7 +674,7 @@ function InstallCPLApplet: boolean;
 begin
   result := False;
   if ( (ConfigureFirebird) AND (not NoCPL) ) then
-     result := (ShouldProcessEntry('SuperServerComponent', 'InstallCPLAppletTask') = srYes) ;
+     result := (ShouldProcessEntry('ServerComponent\SuperServerComponent', 'InstallCPLAppletTask') = srYes) ;
 end;
 
 

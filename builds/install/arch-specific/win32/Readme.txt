@@ -16,27 +16,32 @@ o Requesting New Features
 Introduction
 ============
 
-Welcome to Firebird 2.0 Release Candidate 1.
+Welcome to Firebird 2.0
 
 
 Intended Users
 ==============
 
-This release candidate is not intended for production 
-use although it is expected to be nearly production
-ready. However, it is released for evaluation purposes 
-and is expected to be tested by experienced users of 
-Firebird. It is hoped that all field testers will read 
-the release notes first.
+Firebird 2.0 has undergone extensive testing and is 
+intended for widespread production use. However, users 
+are recommended to follow standard practices before 
+deploying this release on a production server. ie:
 
- o DO NOT install this version if you have never used
-   Firebird before. Use Firebird v1.5.3 instead.
-
- o If you have been testing earlier Alpha or Beta 
-   releases please make sure you read the installation 
+ o Please make sure you read the installation 
    readme and the release notes.
 
+ o If you have data you value remember to back it up
+   prior to installing this release.
+   
+ o It is recommended that you remove any previous
+   version prior to installation. Uninstallation
+   preserves configuration files and log files.
 
+ o It is recommended that you carry out your own
+   tests in a development environment prior to
+   production deployment.
+   
+   
 Features in this release (all platforms)
 ========================================
 
@@ -62,11 +67,6 @@ setup wizard.
 Known Issues
 ============
 
- o The installation process fails to detect a running
-   Firebird 2.0 server. Ultimately the installation
-   will fail, when it attempts to overwrite a file
-   that is active.
-
  o The security database has changed! See the DOC
    directory for more details. Users who wish to
    migrate an old security database to the new format
@@ -89,19 +89,11 @@ o Are you sure you understand how Firebird works?
 
 o Still think it is a bug?
 
-  First check the field test issue tracker here:
+  First check the issue tracker here:
 
-    http://sourceforge.net/tracker/?atid=593943&group_id=9028&func=browse
+    http://tracker.firebirdsql.org/secure/BrowseProject.jspa
 
-  It is specifically intended for reporting of problems
-  found while testing pre-release versions of Firebird.
-
-  You might also want to check the list of Open Bugs in
-  stable Firebird releases. This can be found at:
-
-    http://sourceforge.net/tracker/?atid=109028&group_id=9028&func=browse
-
-Please do not use the bug tracker to get technical
+Please do not use the issue tracker to get technical
 support. If in doubt subscribe to the support list 
 first at
 
@@ -118,6 +110,6 @@ existing feature request list. Chances are that someone
 has already thought of it. Existing feature requests
 can be browed here:
 
-  http://sourceforge.net/tracker/?atid=359028&group_id=9028&func=browse
+  http://tracker.firebirdsql.org/secure/CreateIssue!default.jspa
 
 
