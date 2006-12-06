@@ -75,7 +75,6 @@ static int send_partial(rem_port*, PACKET *);
 static HANDLE server_process_handle = 0;
 static void server_shutdown(rem_port* port);
 #endif
-static TEXT XNET_command_line[MAXPATHLEN + 32], *XNET_p;
 static rem_port* get_server_port(ULONG, XPM, ULONG, ULONG, time_t, ISC_STATUS*);
 static bool make_map(ULONG, time_t, FILE_ID*, CADDR_T*);
 static XPM make_xpm(ULONG, time_t);
@@ -1371,7 +1370,6 @@ static rem_port* connect_server(ISC_STATUS* status_vector, USHORT flag)
  *
  **************************************/
 	current_process_id = getpid();
-	XNET_command_line[0] = 0;
 
 	if (!server_init())
 		return NULL;
@@ -2408,43 +2406,11 @@ static bool fork(ULONG client_pid, USHORT flag, ULONG* forked_pid)
  *  It's for classic server only
  *
  **************************************/
-	if (!XNET_command_line[0]) {
-
-#ifdef CMDLINE_VIA_SERVICE_MANAGER
-
-		SC_HANDLE service;
-		SC_HANDLE manager = OpenSCManager(NULL, NULL, SC_MANAGER_CONNECT);
-		if ((manager) &&
-			(service = OpenService(manager, REMOTE_SERVICE, SERVICE_QUERY_CONFIG)))
-		{
-			SCHAR buffer[BUFFER_LARGE];
-			DWORD config_len;
-
-			LPQUERY_SERVICE_CONFIG config = (LPQUERY_SERVICE_CONFIG) buffer;
-			THREAD_EXIT();
-			if (!QueryServiceConfig(service, config, sizeof(buffer), &config_len))
-			{
-				config = (LPQUERY_SERVICE_CONFIG) ALLR_alloc(config_len);
-				QueryServiceConfig(service, config, config_len, &config_len);
-			}
-			strcpy(XNET_command_line, config->lpBinaryPathName);
-			if ((SCHAR *) config != buffer) {
-				ALLR_free(config);
-			}
-			CloseServiceHandle(service);
-			THREAD_ENTER();
-		}
-		else {
-			strcpy(XNET_command_line, GetCommandLine());
-		}
-		CloseServiceHandle(manager);
-#else
-		strcpy(XNET_command_line, GetCommandLine());
-#endif
-		XNET_p = XNET_command_line + strlen(XNET_command_line);
-	}
-
-	sprintf(XNET_p, " -s -x -h %"ULONGFORMAT, (ULONG) client_pid);
+	TEXT name[MAXPATHLEN];
+	GetModuleFileName(NULL, name, sizeof(name));
+ 
+	Firebird::string cmdLine;
+	cmdLine.printf("%s -s -x -h %"ULONGFORMAT, name, client_pid);
 
 	STARTUPINFO start_crud;
 	start_crud.cb = sizeof(STARTUPINFO);
@@ -2457,7 +2423,7 @@ static bool fork(ULONG client_pid, USHORT flag, ULONG* forked_pid)
 	PROCESS_INFORMATION pi;
 
 	const bool cp_result =
-		CreateProcess(NULL, XNET_command_line, NULL, NULL, TRUE,
+		CreateProcess(NULL, cmdLine.begin(), NULL, NULL, TRUE,
 					  (flag & SRVR_high_priority ? HIGH_PRIORITY_CLASS : NORMAL_PRIORITY_CLASS)
 						| DETACHED_PROCESS | CREATE_SUSPENDED | STARTF_FORCEOFFFEEDBACK,
 					   NULL, NULL, &start_crud, &pi);

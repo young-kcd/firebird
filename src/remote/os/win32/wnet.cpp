@@ -374,9 +374,6 @@ rem_port* WNET_connect(const TEXT*		name,
 
 	LPSECURITY_ATTRIBUTES security_attr = ISC_get_security_desc();
 	THREAD_EXIT();
-	TEXT command_line[MAXPATHLEN + 32];
-	command_line[0] = 0;
-	TEXT* p = 0;
 
 	while (true)
 	{
@@ -424,53 +421,12 @@ rem_port* WNET_connect(const TEXT*		name,
 			return port;
 		}
 
-		if (!command_line[0])
-		{
+		TEXT name[MAXPATHLEN];
+		GetModuleFileName(NULL, name, sizeof(name));
 
-#ifdef CMDLINE_VIA_SERVICE_MANAGER
+		Firebird::string cmdLine;
+		cmdLine.printf("%s -s -w -h %"SLONGFORMAT, name, (SLONG) port->port_handle);
 
-			SC_HANDLE manager = OpenSCManager(NULL, NULL, SC_MANAGER_CONNECT);
-			SC_HANDLE service = 0;
-			if (manager) {
-				service = OpenService(	manager,
-										REMOTE_SERVICE,
-										SERVICE_QUERY_CONFIG);
-			}
-
-			if (manager && service)
-			{
-				SCHAR buffer[1024];
-				DWORD config_len;
-
-				LPQUERY_SERVICE_CONFIG config = (LPQUERY_SERVICE_CONFIG) buffer;
-				if (!QueryServiceConfig
-					(service, config, sizeof(buffer), &config_len))
-				{
-					THREAD_ENTER();
-					config = (LPQUERY_SERVICE_CONFIG) ALLR_alloc(config_len);
-					/* NOMEM: handled by ALLR_alloc, FREE: in this block */
-					QueryServiceConfig(service, config, config_len,
-									   &config_len);
-				}
-				sprintf(command_line, "%s -s", config->lpBinaryPathName);
-				if ((SCHAR *) config != buffer) {
-					ALLR_free(config);
-					THREAD_EXIT();
-				}
-				CloseServiceHandle(service);
-			}
-			else
-			{
-				strcpy(command_line, GetCommandLine());
-			}
-			CloseServiceHandle(manager);
-#else
-			strcpy(command_line, GetCommandLine());
-#endif
-			p = command_line + strlen(command_line);
-		}
-
-		sprintf(p, " -s -w -h %"SLONGFORMAT, (SLONG) port->port_handle);
 		STARTUPINFO           start_crud;
 		PROCESS_INFORMATION   pi;
 		start_crud.cb = sizeof(STARTUPINFO);
@@ -481,7 +437,7 @@ rem_port* WNET_connect(const TEXT*		name,
 		start_crud.lpTitle = NULL;
 		start_crud.dwFlags = STARTF_FORCEOFFFEEDBACK;
 		const USHORT ret = CreateProcess(NULL,
-							command_line,
+							cmdLine.begin(),
 							NULL,
 							NULL,
 							TRUE,

@@ -388,7 +388,6 @@ static int INET_max_clients;
 #ifdef WIN_NT
 static bool INET_initialized = false;
 static WSADATA INET_wsadata;
-static TEXT INET_command_line[MAXPATHLEN + 32], *INET_p;
 #endif
 
 
@@ -1963,52 +1962,17 @@ static int fork( SOCKET old_handle, USHORT flag)
  *	Create a child process.
  *
  **************************************/
-	if (!INET_command_line[0]) {
-
-#ifdef CMDLINE_VIA_SERVICE_MANAGER
-
-		SC_HANDLE service;
-		SC_HANDLE manager = OpenSCManager(NULL, NULL, SC_MANAGER_CONNECT);
-		if (manager &&
-			(service =
-			 OpenService(manager, REMOTE_SERVICE, SERVICE_QUERY_CONFIG)))
-		{
-			SCHAR buffer[1024];
-			DWORD config_len;
-
-			LPQUERY_SERVICE_CONFIG config = (LPQUERY_SERVICE_CONFIG) buffer;
-			if (!QueryServiceConfig
-				(service, config, sizeof(buffer), &config_len))
-			{
-				THREAD_ENTER();
-				config = (LPQUERY_SERVICE_CONFIG) ALLR_alloc(config_len);
-				/* NOMEM: ALLR_alloc handled */
-				/* FREE:  later in this block */
-				QueryServiceConfig(service, config, config_len, &config_len);
-			}
-			strcpy(INET_command_line, config->lpBinaryPathName);
-			if ((SCHAR *) config != buffer) {
-				ALLR_free(config);
-				THREAD_EXIT();
-			}
-			CloseServiceHandle(service);
-		}
-		else {
-			strcpy(INET_command_line, GetCommandLine());
-		}
-		CloseServiceHandle(manager);
-#else
-		strcpy(INET_command_line, GetCommandLine());
-#endif
-		INET_p = INET_command_line + strlen(INET_command_line);
-	}
+	TEXT name[MAXPATHLEN];
+	GetModuleFileName(NULL, name, sizeof(name));
 
 	HANDLE new_handle;
 	DuplicateHandle(GetCurrentProcess(), (HANDLE) old_handle,
 					GetCurrentProcess(), &new_handle, 0, TRUE,
 					DUPLICATE_SAME_ACCESS);
 
-	sprintf(INET_p, " -s -i -h %"SLONGFORMAT, (SLONG) new_handle);
+	Firebird::string cmdLine;
+	cmdLine.printf("%s -s -i -h %"SLONGFORMAT, name, (SLONG) new_handle);
+
 	STARTUPINFO start_crud;
 	start_crud.cb = sizeof(STARTUPINFO);
 	start_crud.lpReserved = NULL;
@@ -2019,7 +1983,7 @@ static int fork( SOCKET old_handle, USHORT flag)
 	start_crud.dwFlags = STARTF_FORCEOFFFEEDBACK;
 	
 	PROCESS_INFORMATION pi;
-	if (CreateProcess(NULL, INET_command_line, NULL, NULL, TRUE,
+	if (CreateProcess(NULL, cmdLine.begin(), NULL, NULL, TRUE,
 							(flag & SRVR_high_priority ?
 							 HIGH_PRIORITY_CLASS | DETACHED_PROCESS :
 							 NORMAL_PRIORITY_CLASS | DETACHED_PROCESS),
