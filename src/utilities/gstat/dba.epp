@@ -540,6 +540,14 @@ int CLIB_ROUTINE main(int argc, char** argv)
 
 /* Open database and go to work */
 
+	const char* local_inet_prefix = "localhost:";
+	const char* local_wnet_prefix = "\\\\.\\";
+	Firebird::PathName conn_str = name;
+	if (conn_str.find(local_inet_prefix) == 0)
+		name += strlen(local_inet_prefix);
+	else if (conn_str.find(local_wnet_prefix) == 0)
+		name += strlen(local_wnet_prefix);
+
 	Firebird::PathName temp_buf = name;
 	if (ResolveDatabaseAlias(temp_buf, temp_buf)) {
 		name = temp_buf.c_str();
