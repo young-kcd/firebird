@@ -264,7 +264,7 @@ void IDX_create_index(
 	// value to produce right sorting.
 	// BTR\fast_load will remove this one byte prefix from the index key.
 	// Note that this is necessary only for single-segment ascending indexes 
-	// and only for ODS11 and higer.
+	// and only for ODS11 and higher.
 
 	const int nullIndLen = isODS11 && !isDescending && (idx->idx_count == 1) ? 1 : 0;
 	const USHORT key_length = ROUNDUP(BTR_key_length(tdbb, relation, idx) + nullIndLen, sizeof(SLONG));
