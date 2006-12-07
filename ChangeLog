@@ -1,3 +1,64 @@
+2006-12-07 02:02  asfernandes
+
+	* firebird2/src/jrd/idx.cpp (1.119):
+
+	Misc
+
+2006-12-06 19:30  dimitr
+
+	* firebird2/src/jrd/: RecordBuffer.cpp (1.7), RecordBuffer.h (1.4):
+
+	Misc.
+
+2006-12-06 19:24  dimitr
+
+	* firebird2/src/utilities/gstat/dba.epp (1.70):
+
+	Fixed CORE-959. This is a hack, but hopefully a better one than in
+	v1.5.
+
+2006-12-06 10:37  hvlad
+
+	* firebird2/src/jrd/: btr.cpp (1.183), idx.cpp (1.118):
+
+	Fixed CORE-1040: Wrong single-segment ascending index on character
+	field with NULL and empty string values
+
+2006-12-06 09:22  dimitr
+
+	* firebird2/src/jrd/exe.cpp (1.203):
+
+	Misc.
+
+2006-12-06 09:21  dimitr
+
+	* firebird2/src/jrd/cmp.cpp (1.243):
+
+	Fixed a bug in the yesterday's commit.
+
+2006-12-06 06:51  paul_reeves
+
+	* firebird2/builds/install/arch-specific/win32/:
+	ba/custom_messages_ba.inc (1.3), ba/Instalacija_ProcitajMe.txt
+	(1.5), ba/ProcitajMe.txt (1.3), BuildExecutableInstall.bat (1.16),
+	FirebirdInstallEnvironmentChecks.inc (1.5), FirebirdInstall_20.iss
+	(1.13), Readme.txt (1.10), custom_messages.inc (1.3),
+	i18n_readme.txt (1.4), installation_readme.txt (1.10),
+	de/custom_messages_de.inc (1.3), de/installation_liesmich.txt
+	(1.4), de/liesmich.txt (1.4), es/custom_messages_es.inc (1.2),
+	es/leame.txt (1.2), es/leame_instalacion.txt (1.2),
+	fr/custom_messages_fr.inc (1.3), fr/installation_lisezmoi.txt
+	(1.2), fr/lisezmoi.txt (1.2), hu/custom_messages_hu.inc (1.3),
+	hu/olvass_el.txt (1.2), hu/telepitesi_segedlet.txt (1.2),
+	it/custom_messages_it.inc (1.2), it/leggimi.txt (1.2),
+	it/leggimi_installazione.txt (1.2), pl/custom_messages_pl.inc
+	(1.2), pl/czytajto.txt (1.3), pl/instalacja_czytajto.txt (1.4),
+	pt/custom_messages_pt.inc (1.4), pt/instalacao_leia-me.txt (1.4),
+	pt/leia-me.txt (1.3), si/custom_messages_si.inc (1.3):
+
+	Forward port the windows installation scripts and i18n from
+	B2_0_Release
+
 2006-12-05 23:01  hvlad
 
 	* firebird2/src/jrd/: ext.cpp (1.70), ext.h (1.13):
