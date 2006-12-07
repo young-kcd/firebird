@@ -2,6 +2,11 @@
   * v1.5.4
   **************
 
+    * Backport fix for CORE-1042 
+	Transaction numbers can overflow 32-bit signed integer and corrupt database
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
+
     * Backport fix for CORE-921
         Core dump in stored procedure using execute statement
       Contributor(s):
