@@ -1,3 +1,17 @@
+2006-12-06 16:30  dimitr
+
+	* firebird2/src/remote/: inet.cpp (1.160.2.5), xnet.cpp (1.70.4.2),
+	os/win32/wnet.cpp (1.36.4.1):
+
+	Backport for CORE-1017.
+
+2006-12-06 10:26  hvlad
+
+	* firebird2/src/jrd/: btr.cpp (1.162.2.6), idx.cpp (1.103.4.1):
+
+	Fixed CORE-1040: Wrong single-segment ascending index on character
+	field with NULL and empty string values
+
 2006-12-05 16:26  paul_reeves
 
 	* firebird2/builds/install/arch-specific/win32/:
