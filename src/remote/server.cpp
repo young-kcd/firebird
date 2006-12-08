@@ -150,7 +150,16 @@ static ISC_STATUS	allocate_statement(rem_port*, P_RLSE*, PACKET*);
 static SLONG	append_request_chain(SERVER_REQ, SERVER_REQ*);
 static SLONG	append_request_next(SERVER_REQ, SERVER_REQ*);
 #endif
-static ISC_STATUS	attach_database(rem_port*, P_OP, P_ATCH*, PACKET*);
+static void		attach_database(rem_port*, P_OP, P_ATCH*, PACKET*);
+static void		attach_service(rem_port*, P_ATCH*, PACKET*);
+static void		attach_database2(rem_port*, P_OP, const char*, int, 
+								 const UCHAR*, int, PACKET*);
+static void		attach_service2(rem_port*, P_OP, const char*, int, 
+								const UCHAR*, int, PACKET*);
+#ifdef TRUSTED_AUTH
+static void		trusted_auth(rem_port*, P_TRAU*, PACKET*);
+#endif
+
 #ifdef NOT_USED_OR_REPLACED
 static void		aux_connect(rem_port*, P_REQ*, PACKET*);
 #endif
@@ -644,23 +653,23 @@ static bool accept_connection(rem_port* port,
  *	Process a connect packet.
  *
  **************************************/
-	P_ARCH architecture = arch_generic;
-	USHORT version = 0;
-	USHORT type = 0;
-	bool accepted = false;
-/* Accept the physical connection */
 
+// Accept the physical connection
 	send->p_operation = op_reject;
 	P_ACPT* accept = &send->p_acpt;
-	USHORT weight = 0;
 
 	if (!port->accept(connect)) {
 		port->send(send);
 		return false;
 	}
 
-/* Select the most appropriate protocol (this will get smarter) */
 
+// Select the most appropriate protocol (this will get smarter)
+	P_ARCH architecture = arch_generic;
+	USHORT version = 0;
+	USHORT type = 0;
+	bool accepted = false;
+	USHORT weight = 0;
 	const p_cnct::p_cnct_repeat* protocol = connect->p_cnct_versions;
 
 	for (const p_cnct::p_cnct_repeat* const end = protocol + connect->p_cnct_count;
@@ -673,7 +682,8 @@ static bool accept_connection(rem_port* port,
 			 protocol->p_cnct_version == PROTOCOL_VERSION7 ||
 			 protocol->p_cnct_version == PROTOCOL_VERSION8 ||
 			 protocol->p_cnct_version == PROTOCOL_VERSION9 ||
-			 protocol->p_cnct_version == PROTOCOL_VERSION10
+			 protocol->p_cnct_version == PROTOCOL_VERSION10 ||
+			 protocol->p_cnct_version == PROTOCOL_VERSION11
 #ifdef SCROLLABLE_CURSORS
 			 || protocol->p_cnct_version == PROTOCOL_SCROLLABLE_CURSORS
 #endif
@@ -702,11 +712,11 @@ static bool accept_connection(rem_port* port,
 
 /* and modify the version string to reflect the chosen protocol */
 
-	TEXT buffer[64];
-	sprintf(buffer, "%s/P%d", port->port_version->str_data,
-			port->port_protocol);
+	Firebird::string buffer;
+	buffer.printf("%s/P%d", port->port_version->str_data,
+							port->port_protocol & FB_PROTOCOL_MASK);
 	ALLR_free(port->port_version);
-	port->port_version = REMOTE_make_string(buffer);
+	port->port_version = REMOTE_make_string(buffer.c_str());
 
 	if (architecture == ARCHITECTURE)
 		port->port_flags |= PORT_symmetric;
@@ -889,9 +899,10 @@ static void addClumplets(Firebird::ClumpletWriter& dpb_buffer,
 	}
 }
 
-static ISC_STATUS attach_database(
-							  rem_port* port,
-							  P_OP operation, P_ATCH * attach, PACKET* send)
+static void attach_database(rem_port* port,
+							P_OP operation, 
+							P_ATCH * attach, 
+							PACKET* send)
 {
 /**************************************
  *
@@ -903,10 +914,6 @@ static ISC_STATUS attach_database(
  *	Process an attach or create packet.
  *
  **************************************/
-	ISC_STATUS_ARRAY status_vector;
-
-	send->p_operation = op_accept;
-	FB_API_HANDLE handle = 0;
 	const char* file = reinterpret_cast<const char*>(attach->p_atch_file.cstr_address);
 	const USHORT l = attach->p_atch_file.cstr_length;
 
@@ -919,6 +926,79 @@ static ISC_STATUS attach_database(
 		dpb_buffer.reset(dpb, dl);
 	else
 		dpb_buffer.reset(isc_dpb_version1);
+
+#ifdef TRUSTED_AUTH
+	// Do we need trusted authentication?
+	if (port->port_protocol >= PROTOCOL_VERSION11 && dpb_buffer.find(isc_dpb_trusted_auth))
+	{
+		try 
+		{
+			// extract trusted authentication data from dpb
+			AuthSspi::DataHolder data;
+			memcpy(data.getBuffer(dpb_buffer.getClumpLength()), 
+				dpb_buffer.getBytes(), dpb_buffer.getClumpLength());
+			dpb_buffer.deleteClumplet();
+
+			port->port_trusted_auth = FB_NEW(*getDefaultMemoryPool()) 
+				ServerAuth(file, l, dpb_buffer, attach_database2, operation);
+			AuthSspi* authSspi = port->port_trusted_auth->authSspi;
+
+			if (authSspi->accept(data) && authSspi->isActive())
+			{
+				send->p_operation = op_trusted_auth;
+				cstring& s = send->p_trau.p_trau_data;
+				s.cstr_allocated = 0;
+				s.cstr_length = data.getCount();
+				s.cstr_address = data.begin();
+				port->send(send);
+				return;
+			}
+		}
+		catch(const Firebird::status_exception& e)
+		{
+			ISC_STATUS_ARRAY status_vector;
+			Firebird::stuff_exception(status_vector, e);
+			port->send_response(send, 0, 0, status_vector, false);
+			return;
+		}
+	}
+#endif //TRUSTED_AUTH
+	
+	attach_database2(port, operation, file, l, dpb_buffer.getBuffer(), 
+		dpb_buffer.getBufferLength(), send);
+}
+
+static void attach_database2(rem_port* port,
+							 P_OP operation,
+							 const char* file, 
+							 int l, 
+							 const UCHAR* dpb, 
+							 int dl, 
+							 PACKET* send)
+{
+	ISC_STATUS_ARRAY status_vector;
+    send->p_operation = op_accept;
+	FB_API_HANDLE handle = 0;
+
+	Firebird::ClumpletWriter dpb_buffer(Firebird::ClumpletReader::Tagged, MAX_SSHORT);
+	if (dl)
+		dpb_buffer.reset(dpb, dl);
+	else
+		dpb_buffer.reset(isc_dpb_version1);
+
+#ifdef TRUSTED_AUTH
+	// If we have trusted authentication, append it to database parameter block
+	if (port->port_trusted_auth)
+	{
+		AuthSspi* authSspi = port->port_trusted_auth->authSspi;
+
+		Firebird::string trustedUserName;
+		if (authSspi->getLogin(trustedUserName))
+		{
+			dpb_buffer.insertString(isc_dpb_trusted_auth, trustedUserName);
+		}
+	}
+#endif //TRUSTED_AUTH
 
 	// If we have user identification, append it to database parameter block
 	rem_str* string = port->port_user_name;
@@ -970,7 +1050,12 @@ static ISC_STATUS attach_database(
 		rdb->rdb_handle = handle;
 	}
 
-	return port->send_response(send, 0, 0, status_vector, false);
+	port->send_response(send, 0, 0, status_vector, false);
+
+#ifdef TRUSTED_AUTH
+	delete port->port_trusted_auth;
+	port->port_trusted_auth = 0;
+#endif
 }
 
 
@@ -3286,7 +3371,25 @@ bool process_packet(rem_port* port,
 			break;
 
 		case op_service_attach:
-			port->service_attach(&receive->p_atch, sendL);
+			attach_service(port, &receive->p_atch, sendL);
+			break;
+
+		case op_trusted_auth:
+#ifdef TRUSTED_AUTH
+			trusted_auth(port, &receive->p_trau, sendL);
+			break;
+//else		
+//			fall down ...
+#endif
+		case op_update_account_info:
+		case op_authenticate_user:
+			{
+				ISC_STATUS_ARRAY status_vector;
+				status_vector[0] = isc_arg_gds;
+				status_vector[1] = isc_wish_list;
+				status_vector[2] = isc_arg_end;
+				port->send_response(sendL, 0, 0, status_vector, false);
+			}
 			break;
 
 		case op_service_start:
@@ -3531,6 +3634,51 @@ bool process_packet(rem_port* port,
 	ThreadData::restoreSpecific();
 	return true;
 }
+
+
+#ifdef TRUSTED_AUTH
+static void trusted_auth(rem_port* port, P_TRAU* p_trau, PACKET* send)
+{
+	ISC_STATUS_ARRAY status_vector;
+	ServerAuth *sa = port->port_trusted_auth;
+	if (! sa)
+	{
+		status_vector[0] = isc_arg_gds;
+		status_vector[1] = isc_unavailable;
+		status_vector[2] = isc_arg_end;
+		port->send_response(send, 0, 0, status_vector, false);
+	}
+	try 
+	{
+		AuthSspi::DataHolder data;
+		memcpy(data.getBuffer(p_trau->p_trau_data.cstr_length),
+			p_trau->p_trau_data.cstr_address, p_trau->p_trau_data.cstr_length);
+
+		AuthSspi* authSspi = sa->authSspi;
+
+		if (authSspi->accept(data) && authSspi->isActive())
+		{
+			send->p_operation = op_trusted_auth;
+			cstring& s = send->p_trau.p_trau_data;
+			s.cstr_allocated = 0;
+			s.cstr_length = data.getCount();
+			s.cstr_address = data.begin();
+			port->send(send);
+			return;
+		}
+	}
+	catch(const Firebird::status_exception& e)
+	{
+		ISC_STATUS_ARRAY status_vector;
+		Firebird::stuff_exception(status_vector, e);
+		port->send_response(send, 0, 0, status_vector, false);
+		return;
+	}
+
+	sa->part2(port, sa->operation, sa->fileName.c_str(), sa->fileName.length(), 
+		sa->clumplet.begin(), sa->clumplet.getCount(), send);
+}
+#endif //TRUSTED_AUTH
 
 
 ISC_STATUS rem_port::put_segment(P_OP op, P_SGMT * segment, PACKET* sendL)
@@ -4589,7 +4737,80 @@ static void server_ast(void* event_void, USHORT length, const UCHAR* items)
 }
 
 
-ISC_STATUS rem_port::service_attach(P_ATCH* attach, PACKET* sendL)
+static void attach_service(rem_port* port, P_ATCH* attach, PACKET* sendL)
+{
+	const char* service_name = reinterpret_cast<const char*>
+		(attach->p_atch_file.cstr_address);
+	const USHORT service_length = attach->p_atch_file.cstr_length;
+
+	Firebird::ClumpletWriter spb(Firebird::ClumpletReader::SpbAttach, MAX_DPB_SIZE, 
+		attach->p_atch_dpb.cstr_address, attach->p_atch_dpb.cstr_length, isc_spb_current_version);
+
+#ifdef TRUSTED_AUTH
+	// Do we can & need trusted authentication?
+	if (port->port_protocol >= PROTOCOL_VERSION11 && spb.find(isc_spb_trusted_auth))
+	{
+		try 
+		{
+			// extract trusted authentication data from spb
+			AuthSspi::DataHolder data;
+			memcpy(data.getBuffer(spb.getClumpLength()), 
+				spb.getBytes(), spb.getClumpLength());
+			spb.deleteClumplet();
+
+			port->port_trusted_auth = FB_NEW(*getDefaultMemoryPool()) 
+				ServerAuth(service_name, service_length, spb, attach_service2, op_trusted_auth);
+			AuthSspi* authSspi = port->port_trusted_auth->authSspi;
+
+			if (authSspi->accept(data) && authSspi->isActive())
+			{
+				sendL->p_operation = op_trusted_auth;
+				cstring& s = sendL->p_trau.p_trau_data;
+				s.cstr_allocated = 0;
+				s.cstr_length = data.getCount();
+				s.cstr_address = data.begin();
+				port->send(sendL);
+				return;
+			}
+		}
+		catch(const Firebird::status_exception& e)
+		{
+			ISC_STATUS_ARRAY status_vector;
+			Firebird::stuff_exception(status_vector, e);
+			port->send_response(sendL, 0, 0, status_vector, false);
+			return;
+		}
+	}
+#endif //TRUSTED_AUTH
+	
+	attach_service2(port, op_trusted_auth, service_name, service_length, 
+		spb.getBuffer(), spb.getBufferLength(), sendL);
+}
+
+
+static void attach_service2(rem_port* port,
+							P_OP,
+							const char* service_name, 
+							int service_length, 
+							const UCHAR* spb, 
+							int sl, 
+							PACKET* sendL)
+{
+	port->service_attach(service_name, service_length, 
+		Firebird::ClumpletWriter(Firebird::ClumpletReader::SpbAttach, MAX_DPB_SIZE, 
+			spb, sl, isc_spb_current_version),
+		sendL);
+
+#ifdef TRUSTED_AUTH
+	delete port->port_trusted_auth;
+	port->port_trusted_auth = 0;
+#endif
+}
+
+ISC_STATUS rem_port::service_attach(const char* service_name, 
+									const USHORT service_length,
+									Firebird::ClumpletWriter& spb, 
+									PACKET* sendL)
 {
 /**************************************
  *
@@ -4603,11 +4824,20 @@ ISC_STATUS rem_port::service_attach(P_ATCH* attach, PACKET* sendL)
  **************************************/
 	sendL->p_operation = op_accept;
 	FB_API_HANDLE handle = 0;
-	const UCHAR* service_name = attach->p_atch_file.cstr_address;
-	const USHORT service_length = attach->p_atch_file.cstr_length;
 
-	Firebird::ClumpletWriter spb(Firebird::ClumpletReader::SpbAttach, MAX_DPB_SIZE, 
-		attach->p_atch_dpb.cstr_address, attach->p_atch_dpb.cstr_length, isc_spb_current_version);
+#ifdef TRUSTED_AUTH
+	// If we have trusted authentication, append it to database parameter block
+	if (port_trusted_auth)
+	{
+		AuthSspi* authSspi = port_trusted_auth->authSspi;
+
+		Firebird::string trustedUserName;
+		if (authSspi->getLogin(trustedUserName))
+		{
+			spb.insertString(isc_spb_trusted_auth, trustedUserName);
+		}
+	}
+#endif //TRUSTED_AUTH
 
 	// If we have user identification, append it to database parameter block
 	const rem_str* string = port_user_name;
@@ -4628,7 +4858,7 @@ ISC_STATUS rem_port::service_attach(P_ATCH* attach, PACKET* sendL)
 	ISC_STATUS_ARRAY status_vector;
 	isc_service_attach(status_vector,
 					   service_length,
-					   reinterpret_cast<const char*>(service_name),
+					   service_name,
 					   &handle,
 					   spb.getBufferLength(),
 					   reinterpret_cast<const char*>(spb.getBuffer()));
@@ -4636,13 +4866,22 @@ ISC_STATUS rem_port::service_attach(P_ATCH* attach, PACKET* sendL)
 
 	if (!status_vector[1]) {
 		RDB rdb = (RDB) ALLR_block(type_rdb, 0);
-		this->port_context = rdb;
+		if (rdb)
+		{
+			this->port_context = rdb;
 #ifdef DEBUG_REMOTE_MEMORY
-		printf("attach_service(server)  allocate rdb     %x\n", rdb);
+			printf("attach_service(server)  allocate rdb     %x\n", rdb);
 #endif
-		rdb->rdb_port = this;
-		rdb->rdb_handle = handle;
-		rdb->rdb_flags |= RDB_service;
+			rdb->rdb_port = this;
+			rdb->rdb_handle = handle;
+			rdb->rdb_flags |= RDB_service;
+		}
+		else
+		{
+			status_vector[0] = isc_arg_gds;
+			status_vector[1] = isc_bad_svc_handle;
+			status_vector[2] = isc_arg_end;
+		}
 	}
 
 	return this->send_response(sendL, 0, 0, status_vector, false);

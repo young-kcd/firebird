@@ -81,6 +81,9 @@ const int IN_SW_BURP_HIDDEN_RDWRITE	= 37;
 
 const int IN_SW_BURP_RECREATE		= 38;      // recreate database 
 const int IN_SW_BURP_NOD			= 39;      // do not run database triggers
+#ifdef TRUSTED_SERVICES
+const int IN_SW_BURP_TRUSTED_USER   = 40;      // trusted user name to use on attach 
+#endif
 /**************************************************************************/
     // used 0BCDEFGILMNOPRSTUVYZ    available AHJQWX 
 
@@ -153,6 +156,9 @@ static in_sw_tab_t burp_in_sw_table [] =
                 // msg 276: %sUSE_(ALL_SPACE) do not reserve space for record versions 
     {IN_SW_BURP_USER, 0,				"USER",		    0, 0, 0, FALSE, 191, 0, NULL},
                 // msg 191: %sUSER InterBase user name 
+#ifdef TRUSTED_SERVICES
+    {IN_SW_BURP_TRUSTED_USER, 0,		"TRUSTED",	    0, 0, 0, FALSE, 0, 0, NULL},
+#endif
     {IN_SW_BURP_V,    isc_spb_verbose,		"VERBOSE",	    0, 0, 0, FALSE, 0, 0, NULL},
     {IN_SW_BURP_V,    0,				"VERIFY",	    0, 0, 0, FALSE, 113, 0, NULL},
                 // msg 113: %sVERIFY report each action taken 

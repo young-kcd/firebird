@@ -103,6 +103,7 @@
 #define isc_dpb_address_path              70
 #define isc_dpb_pid                       71
 #define isc_dpb_no_db_triggers            72
+#define isc_dpb_trusted_auth			  73
 
 /**************************************************/
 /* clumplet tags used inside isc_dpb_address_path */
@@ -251,6 +252,7 @@
 #define isc_spb_options                   108
 #define isc_spb_address_path              109
 #define isc_spb_pid                       110
+#define isc_spb_trusted_auth			  111
 
 
 #define isc_spb_connect_timeout           isc_dpb_connect_timeout

@@ -66,6 +66,7 @@
 #include "../jrd/thread_proto.h"
 #include "../common/classes/ClumpletWriter.h"
 #include "../common/config/config.h"
+#include "../auth/trusted/AuthSspi.h"
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -110,7 +111,7 @@ namespace {
 	// for both services and databases attachments
 	struct ParametersSet {
 		UCHAR dummy_packet_interval, user_name, sys_user_name, 
-			  password, password_enc, address_path, pid;
+			  password, password_enc, address_path, pid, trusted_auth;
 	};
 	const ParametersSet dpbParam = {isc_dpb_dummy_packet_interval, 
 									isc_dpb_user_name, 
@@ -118,14 +119,16 @@ namespace {
 									isc_dpb_password, 
 									isc_dpb_password_enc,
 									isc_dpb_address_path,
-									isc_dpb_pid};
+									isc_dpb_pid,
+									isc_dpb_trusted_auth};
 	const ParametersSet spbParam = {isc_spb_dummy_packet_interval, 
 									isc_spb_user_name, 
 									isc_spb_sys_user_name, 
 									isc_spb_password, 
 									isc_spb_password_enc,
 									isc_spb_address_path,
-									isc_spb_pid};
+									isc_spb_pid,
+									isc_spb_trusted_auth};
 }
 
 static RVNT add_event(rem_port*);
@@ -166,7 +169,8 @@ static bool get_single_user(Firebird::ClumpletReader&);
 static ISC_STATUS handle_error(ISC_STATUS *, ISC_STATUS);
 static ISC_STATUS info(ISC_STATUS*, RDB, P_OP, USHORT, USHORT, USHORT,
 					const SCHAR*, USHORT, const SCHAR*, USHORT, SCHAR*);
-static bool init(ISC_STATUS *, rem_port*, P_OP, Firebird::PathName&, Firebird::ClumpletWriter&);
+static bool init(ISC_STATUS *, rem_port*, P_OP, Firebird::PathName&, 
+				 Firebird::ClumpletWriter&, const ParametersSet&);
 static RTR make_transaction(RDB, USHORT);
 static ISC_STATUS mov_dsql_message(const UCHAR*, const rem_fmt*, UCHAR*, const rem_fmt*);
 static void move_error(ISC_STATUS, ...);
@@ -345,7 +349,8 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 		add_other_params(port, newDpb, dpbParam);
 		add_working_directory(newDpb, node_name);
 		
-		const bool result = init(user_status, port, op_attach, expanded_name, newDpb);
+		const bool result = init(user_status, port, op_attach, expanded_name, 
+								 newDpb, dpbParam);
 
 		if (!result) {
 			return error(user_status);
@@ -904,7 +909,8 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 		add_other_params(port, newDpb, dpbParam);
 		add_working_directory(newDpb, node_name);
 
-		const bool result = init(user_status, port, op_create, expanded_name, newDpb);
+		const bool result = init(user_status, port, op_create, expanded_name, 
+								 newDpb, dpbParam);
 		if (!result) {
 			return error(user_status);
 		}
@@ -3951,7 +3957,8 @@ ISC_STATUS GDS_SERVICE_ATTACH(ISC_STATUS* user_status,
 
 		add_other_params(port, newSpb, spbParam);
 
-		const bool result = init(user_status, port, op_service_attach, expanded_name, newSpb);
+		const bool result = init(user_status, port, op_service_attach, expanded_name, 
+								 newSpb, spbParam);
 		if (!result) {
 			return error(user_status);
 		}
@@ -5841,7 +5848,8 @@ static bool init(ISC_STATUS* user_status,
 				 rem_port* port,
 				 P_OP op,
 				 Firebird::PathName& file_name,
-				 Firebird::ClumpletWriter& dpb)
+				 Firebird::ClumpletWriter& dpb,
+				 const ParametersSet& param)
 {
 /**************************************
  *
@@ -5860,7 +5868,29 @@ static bool init(ISC_STATUS* user_status,
 	MemoryPool& pool = *getDefaultMemoryPool();
 	port->port_deferred_packets = FB_NEW(pool) PacketQueue(pool);
 
-/* Make attach packet */
+// Do we can & need to try trusted auth
+
+	if (dpb.find(param.trusted_auth))
+	{
+		dpb.deleteClumplet();
+	}
+
+#ifdef TRUSTED_AUTH
+	AuthSspi authSspi;
+	AuthSspi::DataHolder data;
+
+	if ((port->port_protocol >= PROTOCOL_VERSION11) &&
+		((!dpb.find(param.user_name)) || (dpb.getClumpLength() == 0)))
+	{
+		if (authSspi.request(data))
+		{
+			// on no error we send data no matter, was context created or not
+			dpb.insertBytes(param.trusted_auth, data.begin(), data.getCount());
+		}
+	}
+#endif //TRUSTED_AUTH
+
+// Make attach packet
 
 	P_ATCH* attach = &packet->p_atch;
 	packet->p_operation = op;
@@ -5876,9 +5906,54 @@ static bool init(ISC_STATUS* user_status,
 		return false;
 	}
 
-/* Get response */
+// Get response
 
-	if (!receive_response(rdb, packet)) {
+#ifdef TRUSTED_AUTH
+	ISC_STATUS* status = packet->p_resp.p_resp_status_vector = rdb->rdb_status_vector;
+	if (!receive_packet(rdb->rdb_port, packet, status))
+	{
+		REMOTE_save_status_strings(user_status);
+		disconnect(port);
+		return false;
+	}
+
+	while (packet->p_operation == op_trusted_auth)
+	{
+		if (!authSspi.isActive())
+		{
+			disconnect(port);
+			return false;	// isc_unavailable
+		}
+		cstring *d = &packet->p_trau.p_trau_data;
+		memcpy(data.getBuffer(d->cstr_length), d->cstr_address, d->cstr_length);
+		REMOTE_free_packet(rdb->rdb_port, packet);
+		if (!authSspi.request(data))
+		{
+			disconnect(port);
+			return false;	// isc_unavailable
+		}
+		packet->p_operation = op_trusted_auth;
+		d->cstr_address = data.begin();
+		d->cstr_length = data.getCount();
+
+		if (!send_packet(rdb->rdb_port, packet, user_status)) 
+		{
+			disconnect(port);
+			return false;
+		}
+		if (!receive_packet(rdb->rdb_port, packet, status))
+		{
+			REMOTE_save_status_strings(user_status);
+			disconnect(port);
+			return false;
+		}
+	}
+
+	if (!check_response(rdb, packet))
+#else // TRUSTED_AUTH
+	if (!receive_response(rdb, packet))
+#endif //TRUSTED_AUTH
+	{
 		REMOTE_save_status_strings(user_status);
 		disconnect(port);
 		return false;

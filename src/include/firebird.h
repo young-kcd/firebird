@@ -127,4 +127,11 @@ using namespace NAMESPACE;
 #define SERVICE_THREAD
 #endif
 
+#if defined(WIN_NT)
+#define TRUSTED_AUTH
+#if defined(SERVICE_THREAD)
+#define TRUSTED_SERVICES
+#endif
+#endif
+
 #endif /* INCLUDE_Firebird_H */

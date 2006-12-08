@@ -79,6 +79,24 @@ const USHORT PROTOCOL_VERSION9	= 9;
 
 const USHORT PROTOCOL_VERSION10	= 10;
 
+/* 
+ Since protocol 11 we must be separated from Borland Interbase.
+ Therefore always set highmost bit in protocol version to 1.
+ For unsigned protocol version this does not break version's compare.
+ */
+
+const USHORT FB_PROTOCOL_FLAG = 0x8000;
+const USHORT FB_PROTOCOL_MASK = ~FB_PROTOCOL_FLAG;
+
+/*
+ Protocol 11 has support for user authentication related 
+ operations (op_update_account_info, op_authenticate_user and 
+ op_trusted_auth). When specific operation is not supported,
+ we say "sorry".
+ */
+
+const USHORT PROTOCOL_VERSION11	= (FB_PROTOCOL_FLAG | 11);
+
 #ifdef SCROLLABLE_CURSORS
 This Protocol includes support for scrollable cursors
 and is purposely being undefined so that changes can be made
@@ -263,12 +281,15 @@ typedef enum
 	op_service_start		= 85,
 
 	op_rollback_retaining	= 86,
+
 // Two following opcode are used in vulcan.
-// No plans to implement protocol 11, where they are used,
-// place here only for informational reasons and to have common op-space.
-//	op_update_account_info	= 87,
-//	op_authenticate_user	= 88,
+// No plans to implement them completely for a while, but to 
+// support protocol 11, where they are used, have them here.
+	op_update_account_info	= 87,
+	op_authenticate_user	= 88,
+
 	op_partial				= 89,	// packet is not complete - delay processing
+	op_trusted_auth			= 90,
 
 	op_max
 } P_OP;
@@ -574,6 +595,26 @@ typedef struct p_sqlcur {
     USHORT	p_sqlcur_type;		/* type of cursor */
 } P_SQLCUR;
 
+typedef struct p_trau
+{
+	CSTRING	p_trau_data;					// Context
+} P_TRAU;
+
+struct p_update_account {
+    OBJCT			p_account_database;		/* Database object id */
+    CSTRING_CONST	p_account_apb;			/* Account parameter block (apb) */
+};
+
+struct p_authenticate {
+    OBJCT			p_auth_database;		/* Database object id */
+    CSTRING_CONST	p_auth_dpb;				/* Database parameter block w/ user credentials */
+	CSTRING			p_auth_items;			/* Information */
+	CSTRING			p_auth_recv_items;		/* Receive information */
+	USHORT			p_auth_buffer_length;	/* Target buffer length */
+};
+
+
+
 /* Generalize packet (sic!) */
 
 typedef struct packet {
@@ -608,6 +649,9 @@ typedef struct packet {
     P_SQLCUR	p_sqlcur;	/* DSQL Set cursor name */
     P_SQLFREE	p_sqlfree;	/* DSQL Free statement */
     P_TRRQ	p_trrq;		/* Transact request packet */
+	P_TRAU	p_trau;		/* Trusted authentication */
+	p_update_account p_account_update;
+	p_authenticate p_authenticate_user;
 } PACKET;
 
 #endif // REMOTE_PROTOCOL_H

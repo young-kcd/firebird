@@ -202,6 +202,13 @@ bool TDR_attach_database(ISC_STATUS* status_vector,
 						tdgbl->ALICE_data.ua_password, 
 						strlen(reinterpret_cast<const char*>(tdgbl->ALICE_data.ua_password)));
 	}
+#ifdef TRUSTED_SERVICES
+	if (tdgbl->ALICE_data.ua_tr_user) {
+		dpb.insertBytes(isc_dpb_trusted_auth, 
+						tdgbl->ALICE_data.ua_tr_user,
+						strlen(reinterpret_cast<const char*>(tdgbl->ALICE_data.ua_tr_user)));
+	}
+#endif
 
 	trans->tdr_db_handle = 0;
 

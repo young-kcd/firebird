@@ -799,6 +799,8 @@ public:
 		// this is VERY dirty hack to keep current behaviour
 		memset (&gbl_database_file_name, 0,
 			&veryEnd - reinterpret_cast<char*>(&gbl_database_file_name));
+
+		// normal code follows
 		exit_code = FINI_ERROR;	// prevent FINI_OK in case of unknown error thrown
 								// would be set to FINI_OK (==0) in exit_local
 	}
@@ -829,6 +831,9 @@ public:
 	const SCHAR*	gbl_sw_sql_role;
 	const SCHAR*	gbl_sw_user;
 	const SCHAR*	gbl_sw_password;
+#ifdef TRUSTED_SERVICES
+	const SCHAR*	gbl_sw_tr_user;
+#endif
 	SLONG		gbl_sw_skip_count;
 	SLONG		gbl_sw_page_buffers;
 	burp_fil*	gbl_sw_files;

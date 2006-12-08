@@ -220,6 +220,16 @@
 				RelativePath="..\..\..\src\remote\xnet_proto.h">
 			</File>
 		</Filter>
+		<Filter
+			Name="AuthSspi"
+			Filter="">
+			<File
+				RelativePath="..\..\..\src\auth\trusted\AuthSspi.cpp">
+			</File>
+			<File
+				RelativePath="..\..\..\src\auth\trusted\AuthSspi.h">
+			</File>
+		</Filter>
 	</Files>
 	<Globals>
 	</Globals>

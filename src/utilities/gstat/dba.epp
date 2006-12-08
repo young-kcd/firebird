@@ -326,8 +326,15 @@ int CLIB_ROUTINE main(int argc, char** argv)
 	bool sw_nocreation = false;
 	isc_db_handle db_handle = 0;
 	UCHAR buf[256];
-	UCHAR pass_buff[128], user_buff[128], *password = pass_buff, *username =
-		user_buff;
+
+	UCHAR pass_buff[128], user_buff[128], *password = pass_buff, *username = user_buff;
+	MOVE_CLEAR(user_buff, sizeof(user_buff));
+	MOVE_CLEAR(pass_buff, sizeof(pass_buff));
+
+#ifdef TRUSTED_SERVICES
+	UCHAR tr_buff[128], *tr_user = tr_buff;
+	MOVE_CLEAR(tr_buff, sizeof(tr_buff));
+#endif
 
 	tdba thd_context, *tddba;
 	tdba::putSpecific(tddba, &thd_context);
@@ -403,9 +410,6 @@ int CLIB_ROUTINE main(int argc, char** argv)
 	}
 	const char* name = NULL;
 
-	MOVE_CLEAR(user_buff, sizeof(user_buff));
-	MOVE_CLEAR(pass_buff, sizeof(pass_buff));
-
 	const TEXT* const* const end = argv + argc;
 	++argv;
 	while (argv < end) {
@@ -449,12 +453,18 @@ int CLIB_ROUTINE main(int argc, char** argv)
 				break;
 			case IN_SW_DBA_USERNAME:
 				if (argv < end)
-					strcpy((char*) username, *argv++);
+					strncpy((char*) username, *argv++, sizeof(user_buff) - 1);
 				break;
 			case IN_SW_DBA_PASSWORD:
 				if (argv < end)
-					strcpy((char*) password, *argv++);
+					strncpy((char*) password, *argv++, sizeof(pass_buff) - 1);
 				break;
+#ifdef TRUSTED_SERVICES
+			case IN_SW_DBA_TRUSTEDUSER:
+				if (argv < end)
+					strncpy((char*) tr_user, *argv++, sizeof(tr_buff) - 1);
+				break;
+#endif
 			case IN_SW_DBA_SYSTEM:
 				sw_system = true;
 				break;
@@ -656,13 +666,21 @@ int CLIB_ROUTINE main(int argc, char** argv)
 	dpb.insertTag(isc_dpb_gstat_attach);
 	dpb.insertTag(isc_dpb_no_garbage_collect);
 
-	if (*username) {
+	if (*username) 
+	{
 		dpb.insertBytes(isc_dpb_user_name, username, strlen((char*) username));
 	}
-	if (*password) {
+	if (*password) 
+	{
 		dpb.insertBytes(called_as_service ? isc_dpb_password_enc : isc_dpb_password,
 							password, strlen((char*) password));
 	}
+#ifdef TRUSTED_SERVICES
+	if (*tr_user) 
+	{
+		dpb.insertBytes(isc_dpb_trusted_auth, tr_user, strlen((char*) tr_user));
+	}
+#endif
 
 	isc_attach_database(status_vector, 0, name, &DB, dpb.getBufferLength(), 
 						reinterpret_cast<const char*>(dpb.getBuffer()));

@@ -1420,6 +1420,12 @@ void MET_ready( qli_syntax* node, USHORT create_flag)
 		dpb.insertString(isc_dpb_password, q, length);
 	}
 
+#ifdef TRUSTED_AUTH
+	if (QLI_trusted) {
+		dpb.insertTag(isc_dpb_trusted_auth);
+	}
+#endif
+
 	const qli_syntax* const* const end = node->syn_arg + node->syn_count;
 
 // Start by attaching all databases

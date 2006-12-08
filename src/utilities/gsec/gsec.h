@@ -91,6 +91,11 @@ struct internal_user_data {
 	TEXT	dba_user_name [USER_NAME_LEN];	/* the user's name */
 	bool	dba_user_name_entered;	/* user name entered flag */
 	bool	dba_user_name_specified;/* database specified flag */
+#ifdef TRUSTED_SERVICES
+	TEXT	dba_trust_user_name [USER_NAME_LEN];	/* the trusted dba user's name */
+	bool	dba_trust_user_name_entered;	/* trusted dba user name entered flag */
+	bool	dba_trust_user_name_specified;/* trusted dba user name specified flag */
+#endif
 	TEXT	dba_password [NAME_LEN];	/* the user's name */
 	bool	dba_password_entered;	/* user name entered flag */
 	bool	dba_password_specified;	/* database specified flag */

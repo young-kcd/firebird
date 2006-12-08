@@ -289,6 +289,7 @@ bool_t xdr_protocol(XDR* xdrs, PACKET* p)
 	P_SQLST *prep_stmt;
 	P_SQLDATA *sqldata;
 	P_TRRQ *trrq;
+	P_TRAU *trau;
 #ifdef DEBUG
 	xdr_save_size = xdrs->x_handy;
 #endif
@@ -784,6 +785,36 @@ bool_t xdr_protocol(XDR* xdrs, PACKET* p)
 		if (sqldata->p_sqldata_messages)
 			return xdr_sql_message(xdrs, (SLONG) - 1) ? P_TRUE(xdrs, p) : P_FALSE(xdrs, p);
 		DEBUG_PRINTSIZE(xdrs, p->p_operation);
+		return P_TRUE(xdrs, p);
+
+	// the following added to have formal vulcan compatibility
+	case op_update_account_info:
+		{
+		p_update_account *stuff = &p->p_account_update;
+		MAP(xdr_short, reinterpret_cast < SSHORT & >(stuff->p_account_database));
+		MAP(xdr_cstring_const, stuff->p_account_apb);
+		DEBUG_PRINTSIZE(xdrs, p->p_operation);
+
+		return P_TRUE(xdrs, p);
+		}
+			
+	case op_authenticate_user:
+		{
+		p_authenticate *stuff = &p->p_authenticate_user;
+		MAP(xdr_short, reinterpret_cast < SSHORT & >(stuff->p_auth_database));
+		MAP(xdr_cstring_const, stuff->p_auth_dpb);
+		MAP(xdr_cstring, stuff->p_auth_items);
+		MAP(xdr_short, reinterpret_cast < SSHORT & >(stuff->p_auth_buffer_length));
+		DEBUG_PRINTSIZE(xdrs, p->p_operation);
+
+		return P_TRUE(xdrs, p);
+		}
+
+	case op_trusted_auth:
+		trau = &p->p_trau;
+		MAP(xdr_cstring, trau->p_trau_data);
+		DEBUG_PRINTSIZE(xdrs, p->p_operation);
+
 		return P_TRUE(xdrs, p);
 
 	default:

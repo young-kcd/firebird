@@ -507,10 +507,12 @@ rem_port* INET_analyze(Firebird::PathName& file_name,
 	{
 		REMOTE_PROTOCOL(PROTOCOL_VERSION8, ptype_rpc, MAX_PTYPE, 1),
 		REMOTE_PROTOCOL(PROTOCOL_VERSION10, ptype_rpc, MAX_PTYPE, 2),
-		REMOTE_PROTOCOL(PROTOCOL_VERSION10, ptype_rpc, ptype_lazy_send, 3)
+		REMOTE_PROTOCOL(PROTOCOL_VERSION10, ptype_rpc, ptype_lazy_send, 3),
+		REMOTE_PROTOCOL(PROTOCOL_VERSION11, ptype_rpc, MAX_PTYPE, 4),
+		REMOTE_PROTOCOL(PROTOCOL_VERSION11, ptype_rpc, ptype_lazy_send, 5)
 #ifdef SCROLLABLE_CURSORS
 		,
-		REMOTE_PROTOCOL(PROTOCOL_SCROLLABLE_CURSORS, ptype_rpc, MAX_PTYPE, 3)
+		REMOTE_PROTOCOL(PROTOCOL_SCROLLABLE_CURSORS, ptype_rpc, MAX_PTYPE, 99)
 #endif
 	};
 
@@ -597,9 +599,9 @@ rem_port* INET_analyze(Firebird::PathName& file_name,
 
 /* once we've decided on a protocol, concatenate the version
    string to reflect it...  */
-
 	Firebird::string temp;
-	temp.printf("%s/P%d", port->port_version->str_data, port->port_protocol);
+	temp.printf("%s/P%d", port->port_version->str_data, 
+						  port->port_protocol & FB_PROTOCOL_MASK);
 	ALLR_free(port->port_version);
 	port->port_version = REMOTE_make_string(temp.c_str());
 
@@ -1896,6 +1898,10 @@ static void cleanup_port( rem_port* port)
 
 #ifdef SUPERSERVER
 	delete port->port_queue;
+#endif
+
+#ifdef TRUSTED_AUTH
+	delete port->port_trusted_auth;
 #endif
 
 	ALLR_release((UCHAR *) port);

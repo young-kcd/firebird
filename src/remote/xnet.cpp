@@ -286,10 +286,11 @@ rem_port* XNET_analyze(Firebird::PathName& file_name,
 	{
 		REMOTE_PROTOCOL(PROTOCOL_VERSION7, ptype_rpc, MAX_PTYPE, 1),
 		REMOTE_PROTOCOL(PROTOCOL_VERSION8, ptype_rpc, MAX_PTYPE, 2),
-		REMOTE_PROTOCOL(PROTOCOL_VERSION10, ptype_rpc, MAX_PTYPE, 3)
+		REMOTE_PROTOCOL(PROTOCOL_VERSION10, ptype_rpc, MAX_PTYPE, 3),
+		REMOTE_PROTOCOL(PROTOCOL_VERSION11, ptype_rpc, MAX_PTYPE, 4)
 #ifdef SCROLLABLE_CURSORS
 		,
-		REMOTE_PROTOCOL(PROTOCOL_SCROLLABLE_CURSORS, ptype_rpc, MAX_PTYPE, 4)
+		REMOTE_PROTOCOL(PROTOCOL_SCROLLABLE_CURSORS, ptype_rpc, MAX_PTYPE, 99)
 #endif
 	};
 	cnct->p_cnct_count = FB_NELEM(protocols_to_try1);
@@ -399,7 +400,8 @@ rem_port* XNET_analyze(Firebird::PathName& file_name,
 	// string to reflect it...
 
 	Firebird::string temp;
-	temp.printf("%s/P%d", port->port_version->str_data, port->port_protocol);
+	temp.printf("%s/P%d", port->port_version->str_data, 
+						  port->port_protocol & FB_PROTOCOL_MASK);
 
 	ALLR_free((UCHAR *) port->port_version);
 	port->port_version = REMOTE_make_string(temp.c_str());

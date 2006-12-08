@@ -130,6 +130,9 @@ int  CLIB_ROUTINE main( int argc, char **argv)
 #else
 	QLI_columns = 80;
 #endif
+#ifdef TRUSTED_AUTH
+	QLI_trusted = false;
+#endif
 	QLI_lines = 60;
 	QLI_name_columns = 0;
 	QLI_prompt = QLI_prompt_string;
@@ -181,6 +184,12 @@ int  CLIB_ROUTINE main( int argc, char **argv)
 				else
 					startup_file = *argv++;
 				break;
+
+#ifdef TRUSTED_AUTH
+			case 'K':
+				QLI_trusted = true;
+				break;
+#endif
 
 			case 'N':
 				banner_flag = false;

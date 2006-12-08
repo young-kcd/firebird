@@ -499,6 +499,9 @@ EXTERN USHORT	QLI_count;
 EXTERN bool		QLI_explain;
 EXTERN bool		QLI_hex_output;
 #endif
+#ifdef TRUSTED_AUTH
+EXTERN bool		QLI_trusted;
+#endif
 
 EXTERN jmp_buf QLI_env;					// Error return environment 
 

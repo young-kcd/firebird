@@ -882,3 +882,24 @@ bool_t REMOTE_getbytes (XDR * xdrs, SCHAR * buff, u_int count)
 	return TRUE;
 }
 #endif //SUPERSERVER
+
+#ifdef TRUSTED_AUTH
+ServerAuth::ServerAuth(const char* fName, int fLen, const Firebird::ClumpletWriter& pb, 
+					   ServerAuth::Part2* p2, P_OP op)
+: fileName(*getDefaultMemoryPool()), clumplet(*getDefaultMemoryPool()), 
+  part2(p2), operation(op)
+{
+	fileName.assign(fName, fLen);
+	size_t pbLen = pb.getBufferLength();
+	if (pbLen)
+	{
+		memcpy(clumplet.getBuffer(pbLen), pb.getBuffer(), pbLen);
+	}
+	authSspi = FB_NEW(*getDefaultMemoryPool()) AuthSspi;
+}
+
+ServerAuth::~ServerAuth()
+{
+	delete authSspi;
+}
+#endif //TRUSTED_AUTH

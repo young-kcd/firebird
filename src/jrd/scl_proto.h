@@ -41,8 +41,11 @@ void SCL_check_procedure(const dsc*, Jrd::SecurityClass::flags_t);
 void SCL_check_relation(const dsc*, Jrd::SecurityClass::flags_t);
 Jrd::SecurityClass* SCL_get_class(const TEXT*);
 Jrd::SecurityClass::flags_t SCL_get_mask(const TEXT*, const TEXT*);
-void SCL_init(bool, const TEXT*, const TEXT*, const TEXT*, const TEXT*,
-	const TEXT*, Jrd::thread_db*);
+void SCL_init(bool, const TEXT*, const TEXT*, const TEXT*, const TEXT*, const TEXT*, 
+#ifdef TRUSTED_AUTH
+			  const TEXT*, 
+#endif
+			  Jrd::thread_db*);
 void SCL_move_priv(UCHAR**, Jrd::SecurityClass::flags_t, Firebird::UCharBuffer&, ULONG*);
 Jrd::SecurityClass* SCL_recompute_class(Jrd::thread_db*, const TEXT*);
 void SCL_release(Jrd::SecurityClass*);

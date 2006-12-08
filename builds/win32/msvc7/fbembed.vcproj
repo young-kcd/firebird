@@ -42,7 +42,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib icuuc.lib icuin.lib"
+				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib secur32.lib icuuc.lib icuin.lib"
 				OutputFile="..\..\..\temp\debug\firebird\bin\fbembed.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
@@ -116,7 +116,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="mpr.lib ws2_32.lib version.lib icuuc.lib icuin.lib"
+				AdditionalDependencies="mpr.lib ws2_32.lib version.lib secur32.lib icuuc.lib icuin.lib"
 				OutputFile="..\..\..\temp\release\firebird/bin/fbembed.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
@@ -360,6 +360,15 @@
 						Name="VCResourceCompilerTool"
 						AdditionalIncludeDirectories="..\..\..\src\jrd;$(NoInherit)"/>
 				</FileConfiguration>
+			</File>
+		</Filter>
+		<Filter
+			Name="AuthSspi">
+			<File
+				RelativePath="..\..\..\src\auth\trusted\AuthSspi.cpp">
+			</File>
+			<File
+				RelativePath="..\..\..\src\auth\trusted\AuthSspi.h">
 			</File>
 		</Filter>
 		<File

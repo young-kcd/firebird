@@ -281,15 +281,27 @@ int common_main(int argc,
 		Firebird::ClumpletWriter dpb(Firebird::ClumpletReader::Tagged, MAX_DPB_SIZE, isc_dpb_version1);
 		dpb.insertByte(isc_dpb_gsec_attach, 1); // not 0 - yes, I'm gsec
 
-		if (user_data->dba_user_name_entered) {
-			dpb.insertString(isc_dpb_user_name, 
-				user_data->dba_user_name, strlen(user_data->dba_user_name));
+#ifdef TRUSTED_SERVICES
+		if (user_data->dba_trust_user_name_entered) 
+		{
+			dpb.insertString(isc_dpb_trusted_auth, 
+				user_data->dba_trust_user_name, strlen(user_data->dba_trust_user_name));
 		}
+		else
+#endif
+		{
+			if (user_data->dba_user_name_entered) 
+			{
+				dpb.insertString(isc_dpb_user_name, 
+					user_data->dba_user_name, strlen(user_data->dba_user_name));
+			}
 
-		if (user_data->dba_password_entered) {
-			dpb.insertString(tdsec->tsec_service_gsec ? 
-							isc_dpb_password_enc : isc_dpb_password, 
-				user_data->dba_password, strlen(user_data->dba_password));
+			if (user_data->dba_password_entered) 
+			{
+				dpb.insertString(tdsec->tsec_service_gsec ? 
+								isc_dpb_password_enc : isc_dpb_password, 
+					user_data->dba_password, strlen(user_data->dba_password));
+			}
 		}
 
 		if (user_data->sql_role_name_entered) {
@@ -698,6 +710,12 @@ static bool get_switches(
 				strncpy(user_data->sql_role_name, string, sizeof(user_data->sql_role_name));
 				user_data->sql_role_name_entered = true;
 				break;
+#ifdef TRUSTED_SERVICES
+			case IN_SW_GSEC_DBA_TRUST_USER:
+				strncpy(user_data->dba_trust_user_name, string, sizeof(user_data->dba_trust_user_name));
+				user_data->dba_trust_user_name_entered = true;
+				break;
+#endif
 			case IN_SW_GSEC_Z:
 			case IN_SW_GSEC_0:
 #ifdef SERVICE_THREAD
@@ -799,6 +817,9 @@ static bool get_switches(
 			case IN_SW_GSEC_MNAME:
 			case IN_SW_GSEC_LNAME:
 			case IN_SW_GSEC_DATABASE:
+#ifdef TRUSTED_SERVICES
+			case IN_SW_GSEC_DBA_TRUST_USER:
+#endif
 			case IN_SW_GSEC_DBA_USER_NAME:
 			case IN_SW_GSEC_DBA_PASSWORD:
 			case IN_SW_GSEC_SQL_ROLE_NAME:
@@ -884,6 +905,16 @@ static bool get_switches(
 					user_data->dba_user_name_specified = true;
 					user_data->dba_user_name[0] = '\0';
 					break;
+#ifdef TRUSTED_SERVICES
+				case IN_SW_GSEC_DBA_TRUST_USER:
+					if (user_data->dba_trust_user_name_specified) {
+						err_msg_no = GsecMsg79;
+						break;
+					}
+					user_data->dba_trust_user_name_specified = true;
+					user_data->dba_trust_user_name[0] = '\0';
+					break;
+#endif
 				case IN_SW_GSEC_DBA_PASSWORD:
 					if (user_data->dba_password_specified) {
 						err_msg_no = GsecMsg80;

@@ -166,6 +166,9 @@ enum switch_id {
 	SWITCH_ROLE2,
 	SWITCH_SQLDIALECT,
 	SWITCH_TERM,
+#ifdef TRUSTED_AUTH
+	SWITCH_TRUSTED,
+#endif
 	SWITCH_USER,
 	SWITCH_VERSION,
 #ifdef DEV_BUILD
@@ -211,6 +214,9 @@ const switch_info switches[] =
 	{ SWITCH_SQLDIALECT,   "sqldialect",     1, SWARG_INTEGER, 137 },
 	{ SWITCH_SQLDIALECT,   "sql_dialect",    1, SWARG_INTEGER,  -1 },
 	{ SWITCH_TERM,         "terminator",     1, SWARG_STRING,  138 },
+#ifdef TRUSTED_AUTH
+	{ SWITCH_TRUSTED,      "trusted",        2, SWARG_NONE,    155 },
+#endif
 	{ SWITCH_USER,         "user",           1, SWARG_STRING,  139 },
 	{ SWITCH_EXTRACT,      "x",              1, SWARG_NONE,    140 },
 	{ SWITCH_VERSION,      "z",              1, SWARG_NONE,    141 }
@@ -383,7 +389,10 @@ XSQLDA** global_sqldap;
 USHORT global_dialect_spoken = 0;
 USHORT requested_SQL_dialect = SQL_DIALECT_V6;
 bool connecting_to_pre_v6_server = false;
-bool Quiet;
+bool Quiet = false;
+#ifdef TRUSTED_AUTH
+bool Trusted_auth = false;
+#endif
 bool Version_info = false;
 #if defined (WIN95)
 bool fAnsiCP;
@@ -5178,6 +5187,12 @@ static processing_state newdb(TEXT* dbname,
 	if (Nodbtriggers)
 		dpb.insertInt(isc_dpb_no_db_triggers, 1);
 
+#ifdef TRUSTED_AUTH
+	if (Trusted_auth) {
+		dpb.insertTag(isc_dpb_trusted_auth);
+	}
+#endif
+
 	{ // scope
 		const TEXT* local_name = isqlGlob.global_Db_name;
 
@@ -5787,6 +5802,12 @@ static processing_state parse_arg(int argc,
 				case SWITCH_QUIET:
 					Quiet = true;
 					break;
+					
+#ifdef TRUSTED_AUTH
+				case SWITCH_TRUSTED:
+					Trusted_auth = true;
+					break;
+#endif
 
 				case SWITCH_VERSION:
 					Version_info = true;

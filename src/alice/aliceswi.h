@@ -106,7 +106,8 @@ enum alice_switches
 	IN_SW_ALICE_HIDDEN_FORCE		=	40,
 	IN_SW_ALICE_HIDDEN_TRAN			=	41,
 	IN_SW_ALICE_HIDDEN_ATTACH		=	42,
-	IN_SW_ALICE_SET_DB_SQL_DIALECT	=	43
+	IN_SW_ALICE_SET_DB_SQL_DIALECT	=	43,
+	IN_SW_ALICE_TRUSTED_USER		=	44
 };
 
 static const char* ALICE_SW_ASYNC	= "async";
@@ -214,6 +215,10 @@ static in_sw_tab_t alice_in_sw_table[] =
 	// msg 48: \t-tran\t\tshutdown transaction startup 
 	{IN_SW_ALICE_USE, 0, "use", sw_use,
 	0, ~(sw_use | sw_user | sw_password), FALSE, 49, 0, NULL},
+#ifdef TRUSTED_SERVICES
+	{IN_SW_ALICE_TRUSTED_USER, 0, "trusted", 0, 0, 0,
+	FALSE, 0, 0, NULL},
+#endif
 	// msg 49: \t-use\t\tuse full or reserve space for versions 
 	{IN_SW_ALICE_USER, 0, "user", sw_user,
 	0, 0, FALSE, 50, 0, NULL},

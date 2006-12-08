@@ -830,6 +830,14 @@ int common_main(int		argc,
 					// user name parameter missing 
 				tdgbl->gbl_sw_user = *argv++;
 			}
+#ifdef TRUSTED_SERVICES
+			else if (in_sw_tab->in_sw == IN_SW_BURP_TRUSTED_USER) {
+				if (argv >= end)
+					BURP_error(188, true, 0, 0, 0, 0, 0);
+					// trusted user name parameter missing 
+				tdgbl->gbl_sw_tr_user = *argv++;
+			}
+#endif
 			else if (in_sw_tab->in_sw == IN_SW_BURP_ROLE) {
 				if (argv >= end)
 					BURP_error(253, true, 0, 0, 0, 0, 0);
@@ -1049,6 +1057,13 @@ int common_main(int		argc,
 								 strlen(tdgbl->gbl_sw_user));
 				break;
 
+#ifdef TRUSTED_SERVICES
+			case (IN_SW_BURP_TRUSTED_USER):
+				dpb.insertString(isc_dpb_trusted_auth, 
+								 tdgbl->gbl_sw_tr_user,
+								 strlen(tdgbl->gbl_sw_tr_user));
+				break;
+#endif
 			case (IN_SW_BURP_V):
 				tdgbl->gbl_sw_verbose = true;
 				break;

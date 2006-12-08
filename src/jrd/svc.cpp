@@ -135,7 +135,11 @@ namespace Jrd {
 		svc_stdout_head(0), svc_stdout_tail(0), svc_stdout(0), svc_argv(p), svc_argc(0),
 		svc_service(se), svc_resp_buf(0), svc_resp_ptr(0), svc_resp_buf_len(0),
 		svc_resp_len(0), svc_flags(0), svc_user_flag(0), svc_spb_version(0), svc_do_shutdown(false),
-		svc_username(p), svc_enc_password(p), svc_switches(p), svc_perm_sw(p)
+		svc_username(p), svc_enc_password(p), 
+#ifdef TRUSTED_AUTH
+		svc_trusted_login(p),
+#endif
+		svc_switches(p), svc_perm_sw(p)
 
 	{
 		memset(svc_start_event, 0, sizeof svc_start_event);
@@ -285,6 +289,9 @@ struct Serv_param_block {
 	Firebird::string	spb_command_line;
 	Firebird::string	spb_network_protocol;
 	Firebird::string    spb_remote_address;
+#ifdef TRUSTED_AUTH
+	Firebird::string	spb_trusted_login;
+#endif
 	USHORT				spb_version;
 
 	Serv_param_block() : spb_version(0) { }
@@ -553,7 +560,14 @@ Service* SVC_attach(USHORT	service_length,
 		user_flag = SVC_user_none;
 	}
 	else {
-		if (!options.spb_user_name.hasData())
+#ifdef TRUSTED_AUTH
+		if (options.spb_trusted_login.hasData())
+		{
+			options.spb_user_name = options.spb_trusted_login;
+		}
+		else
+#endif
+			 if (!options.spb_user_name.hasData())
 		{
 			// user name and password are required while
 			// attaching to the services manager
@@ -608,6 +622,9 @@ Service* SVC_attach(USHORT	service_length,
 #endif
 	service->svc_spb_version = options.spb_version;
 	service->svc_username = options.spb_user_name;
+#ifdef TRUSTED_AUTH
+	service->svc_trusted_login = options.spb_trusted_login;
+#endif
 
 /* The password will be issued to the service threads on NT since
  * there is no OS authentication.  If the password is not yet
@@ -1785,21 +1802,34 @@ void* SVC_start(Service* service, USHORT spb_length, const SCHAR* spb_data)
 		svc_id == isc_action_svc_properties)
 	{
 		/* add the username and password to the end of svc_switches if needed */
-		if (service->svc_switches.hasData()) {
-			if (service->svc_username.hasData())
+		if (service->svc_switches.hasData()) 
+		{
+#ifdef TRUSTED_AUTH
+			if (service->svc_trusted_login.hasData()) 
 			{
 				service->svc_switches += ' ';
-				service->svc_switches += USERNAME_SWITCH;
+				service->svc_switches += TRUSTED_USER_SWITCH;
 				service->svc_switches += ' ';
 				service->svc_switches += service->svc_username;
 			}
-
-			if (service->svc_enc_password.hasData())
+			else
+#endif
 			{
-				service->svc_switches += ' ';
-				service->svc_switches += PASSWORD_SWITCH;
-				service->svc_switches += ' ';
-				service->svc_switches += service->svc_enc_password;
+				if (service->svc_username.hasData())
+				{
+					service->svc_switches += ' ';
+					service->svc_switches += USERNAME_SWITCH;
+					service->svc_switches += ' ';
+					service->svc_switches += service->svc_username;
+				}
+
+				if (service->svc_enc_password.hasData())
+				{
+					service->svc_switches += ' ';
+					service->svc_switches += PASSWORD_SWITCH;
+					service->svc_switches += ' ';
+					service->svc_switches += service->svc_enc_password;
+				}
 			}
 		}
 	}
@@ -2005,6 +2035,12 @@ static void get_options(Firebird::ClumpletReader&	spb,
 		case isc_spb_password_enc:
 			spb.getString(options->spb_password_enc);
 			break;
+
+#ifdef TRUSTED_AUTH
+		case isc_spb_trusted_auth:
+			spb.getString(options->spb_trusted_login);
+			break;
+#endif
 
 		case isc_spb_command_line:
 			spb.getString(options->spb_command_line);

@@ -2368,16 +2368,21 @@ inline void setTag(Firebird::ClumpletWriter& dpb, UCHAR tag, const TEXT* value)
 
 void setLogin(Firebird::ClumpletWriter& dpb)
 {
-	Firebird::string username;
-	if (fb_utils::readenv("ISC_USER", username) && !dpb.find(isc_dpb_sys_user_name))
+#ifdef TRUSTED_AUTH
+	if (!dpb.find(isc_dpb_trusted_auth))
+#endif
 	{
-		setTag(dpb, isc_dpb_user_name, username.c_str());
-	}
+		Firebird::string username;
+		if (fb_utils::readenv("ISC_USER", username) && !dpb.find(isc_dpb_sys_user_name))
+		{
+			setTag(dpb, isc_dpb_user_name, username.c_str());
+		}
 
-	Firebird::string password;
-	if (fb_utils::readenv("ISC_PASSWORD", password) && !dpb.find(isc_dpb_password_enc))
-	{
-		setTag(dpb, isc_dpb_password, password.c_str());
+		Firebird::string password;
+		if (fb_utils::readenv("ISC_PASSWORD", password) && !dpb.find(isc_dpb_password_enc))
+		{
+			setTag(dpb, isc_dpb_password, password.c_str());
+		}
 	}
 }
 

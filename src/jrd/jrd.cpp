@@ -348,6 +348,9 @@ public:
 	Firebird::string	dpb_set_db_charset;
 	Firebird::string	dpb_network_protocol;
 	Firebird::string	dpb_remote_address;
+#ifdef TRUSTED_AUTH
+	Firebird::string	dpb_trusted_login;
+#endif
 
 public:
 	DatabaseOptions()
@@ -965,6 +968,9 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 			 options.dpb_password.nullStr(),
 			 options.dpb_password_enc.nullStr(),
 			 options.dpb_role_name.nullStr(),
+#ifdef TRUSTED_AUTH
+			 options.dpb_trusted_login.nullStr(),
+#endif
 			 tdbb);
 
 	initing_security = false;
@@ -1928,6 +1934,9 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 			 options.dpb_password.nullStr(),
 			 options.dpb_password_enc.nullStr(),
 			 options.dpb_role_name.nullStr(),
+#ifdef TRUSTED_AUTH
+			 options.dpb_trusted_login.nullStr(),
+#endif
 			 tdbb);
 
 	initing_security = false;
@@ -5473,6 +5482,12 @@ void DatabaseOptions::get(const UCHAR* dpb, USHORT dpb_length)
 		case isc_dpb_password_enc:
 		    rdr.getString(dpb_password_enc);
 			break;
+
+#ifdef TRUSTED_AUTH
+		case isc_dpb_trusted_auth:
+			rdr.getString(dpb_trusted_login);
+			break;
+#endif
 
 		case isc_dpb_encrypt_key:
 #ifdef ISC_DATABASE_ENCRYPTION
