@@ -387,7 +387,10 @@ void CharSetContainer::unloadCollation(thread_db* tdbb, USHORT tt_id)
 		charset_collations[id]->obsolete = true;
 
 		if (charset_collations[id]->existenceLock)
+		{
 			LCK_release(tdbb, charset_collations[id]->existenceLock);
+			charset_collations[id]->existenceLock = NULL;
+		}
 	}
 	else
 	{
@@ -1371,7 +1374,10 @@ static int blocking_ast_collation(void* ast_object)
 		tt->obsolete = true;
 
 		if (tt->existenceLock)
+		{
 			LCK_release(tdbb, tt->existenceLock);
+			tt->existenceLock = NULL;
+		}
 	}
 
 	// Restore the prior thread context
