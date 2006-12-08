@@ -60,6 +60,15 @@ case "$target" in
     SHRLIB_EXT=so
     ;;
 
+  *-gentoo-freebsd*)
+    MAKEFILE_PREFIX=freebsd
+    PLATFORM=GENTOOFREEBSD
+    AC_DEFINE(FREEBSD, 1, [Define this if OS is FreeBSD])
+    LOCK_MANAGER_FLG=Y
+    EDITLINE_FLG=Y
+    SHRLIB_EXT=so
+    ;;
+
   *-*-freebsd*)
     MAKEFILE_PREFIX=freebsd 
     PLATFORM=FREEBSD
@@ -603,7 +612,7 @@ case "$PLATFORM" in
 	AC_DEFINE(HAVE_POSIX_THREADS)
     ;;
 
-  FREEBSD)
+  FREEBSD|GENTOOFREEBSD)
     dnl the AC_CHECK_TYPES for socklen_t doesn't include sys/socket.h
     dnl so test for socklen_t with sys/socket.h included
     AC_MSG_CHECKING(if sys/socket.h defines socklen_t)
@@ -894,7 +903,7 @@ MAKE_SRC_DIR=builds/posix
 dnl EKU: handle platform specific installation and packaging
 
 case "$PLATFORM" in
-  LINUX)
+  LINUX|GENTOOFREEBSD)
     AC_CONFIG_COMMANDS(,,[
         mkdir -p gen/install/scripts
         mkdir -p gen/install/misc
