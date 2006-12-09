@@ -1,3 +1,28 @@
+2006-12-08 19:26  alexpeshkoff
+
+	* firebird2/configure.in (1.241.2.6):
+
+	Diego Petteno patch for Gentoo/FreBSD
+
+2006-12-08 16:41  alexpeshkoff
+
+	* firebird2/configure.in (1.241.2.5):
+
+	Linux PowerPC port
+
+2006-12-08 16:38  alexpeshkoff
+
+	* firebird2/src/: remote/xdr.cpp (1.22.2.1), jrd/common.h
+	(1.137.2.1), jrd/inf_pub.h (1.9.4.1), jrd/pag.cpp (1.98.4.4):
+
+	Linux PowerPC port
+
+2006-12-08 16:22  alexpeshkoff
+
+	* firebird2/builds/posix/prefix.linux_ppc (1.1.2.1):
+
+	Linux PowerPC port
+
 2006-12-06 16:30  dimitr
 
 	* firebird2/src/remote/: inet.cpp (1.160.2.5), xnet.cpp (1.70.4.2),
