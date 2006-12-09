@@ -342,6 +342,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\auth\trusted\AuthSspi.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\remote\os\win32\chop.cpp"
 				>
 			</File>
@@ -412,6 +416,10 @@
 			>
 			<File
 				RelativePath="..\..\..\src\remote\allr_proto.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\auth\trusted\AuthSspi.h"
 				>
 			</File>
 			<File
