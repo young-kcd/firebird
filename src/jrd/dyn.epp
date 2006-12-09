@@ -210,9 +210,9 @@ void DYN_error(bool	status_flag,
 		/* check every other argument for end of vector */
 
 		ISC_STATUS arg;
-		ISC_STATUS* const end = local_status + sizeof(local_status) - 1;
-		while (v1 < end &&
-			   ((arg = *v2++) != isc_arg_cstring || v1 + 1 < end) &&
+		ISC_STATUS* const end = local_status + FB_NELEM(local_status) - 1;
+		while (v1 < end - 1 &&
+			   ((arg = *v2++) != isc_arg_cstring || v1 + 1 < end - 1) &&
 			   (*v1++ = arg))
 		{
 			*v1++ = *v2++;
