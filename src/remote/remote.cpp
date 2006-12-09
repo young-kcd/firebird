@@ -902,4 +902,4 @@ ServerAuth::~ServerAuth()
 {
 	delete authSspi;
 }
-#endif //TRUSTED_AUTH
+#endif // TRUSTED_AUTH

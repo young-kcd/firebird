@@ -5868,7 +5868,7 @@ static bool init(ISC_STATUS* user_status,
 	MemoryPool& pool = *getDefaultMemoryPool();
 	port->port_deferred_packets = FB_NEW(pool) PacketQueue(pool);
 
-// Do we can & need to try trusted auth
+	// Do we can & need to try trusted auth
 
 	if (dpb.find(param.trusted_auth))
 	{
@@ -5890,7 +5890,7 @@ static bool init(ISC_STATUS* user_status,
 	}
 #endif //TRUSTED_AUTH
 
-// Make attach packet
+	// Make attach packet
 
 	P_ATCH* attach = &packet->p_atch;
 	packet->p_operation = op;
@@ -5906,7 +5906,7 @@ static bool init(ISC_STATUS* user_status,
 		return false;
 	}
 
-// Get response
+	// Get response
 
 #ifdef TRUSTED_AUTH
 	ISC_STATUS* status = packet->p_resp.p_resp_status_vector = rdb->rdb_status_vector;

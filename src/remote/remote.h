@@ -382,7 +382,7 @@ public:
 	ServerAuth(const char* fName, int fLen, const Firebird::ClumpletWriter& pb, Part2* p2, P_OP op);
 	~ServerAuth();
 };
-#endif //TRUSTED_AUTH
+#endif // TRUSTED_AUTH
 
 /* Port itself */
 
