@@ -567,25 +567,28 @@ Service* SVC_attach(USHORT	service_length,
 		}
 		else
 #endif
-			 if (!options.spb_user_name.hasData())
 		{
-			// user name and password are required while
-			// attaching to the services manager
-			ERR_post(isc_service_att_err, isc_arg_gds, isc_svcnouser, 0);
-		}
-		else 
-		{
-			TEXT name[129]; // unused after retrieved
-			int id, group, node_id;
+			if (!options.spb_user_name.hasData())
+			{
+				// user name and password are required while
+				// attaching to the services manager
+				ERR_post(isc_service_att_err, isc_arg_gds, isc_svcnouser, 0);
+			}
+			else 
+			{
+				TEXT name[129]; // unused after retrieved
+				int id, group, node_id;
+
+				Firebird::string remote = options.spb_network_protocol +
+							(options.spb_network_protocol.isEmpty() || 
+							 options.spb_remote_address.isEmpty() ? "" : "/") +
+										  options.spb_remote_address;
 			
-			Firebird::string remote = options.spb_network_protocol +
-				(options.spb_network_protocol.isEmpty() || options.spb_remote_address.isEmpty() ? "" : "/") +
-									  options.spb_remote_address;
-			
-			SecurityDatabase::verifyUser(name, options.spb_user_name.nullStr(),
-					                     options.spb_password.nullStr(), 
-										 options.spb_password_enc.nullStr(),
-										 &id, &group, &node_id, remote);
+				SecurityDatabase::verifyUser(name, options.spb_user_name.nullStr(),
+						                     options.spb_password.nullStr(), 
+											 options.spb_password_enc.nullStr(),
+											 &id, &group, &node_id, remote);
+			}
 		}
 
 /* Check that the validated user has the authority to access this service */
