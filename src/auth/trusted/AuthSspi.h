@@ -40,5 +40,6 @@ public:
 	bool accept(DataHolder& data);
 	bool getLogin(Firebird::string& login);
 };
-#endif //TRUSTED_AUTH
-#endif //AUTH_SPPI_H
+
+#endif // TRUSTED_AUTH
+#endif // AUTH_SPPI_H

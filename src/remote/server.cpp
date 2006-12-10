@@ -654,7 +654,7 @@ static bool accept_connection(rem_port* port,
  *
  **************************************/
 
-// Accept the physical connection
+	// Accept the physical connection
 	send->p_operation = op_reject;
 	P_ACPT* accept = &send->p_acpt;
 
@@ -664,7 +664,7 @@ static bool accept_connection(rem_port* port,
 	}
 
 
-// Select the most appropriate protocol (this will get smarter)
+	// Select the most appropriate protocol (this will get smarter)
 	P_ARCH architecture = arch_generic;
 	USHORT version = 0;
 	USHORT type = 0;
@@ -3640,7 +3640,7 @@ bool process_packet(rem_port* port,
 static void trusted_auth(rem_port* port, P_TRAU* p_trau, PACKET* send)
 {
 	ISC_STATUS_ARRAY status_vector;
-	ServerAuth *sa = port->port_trusted_auth;
+	ServerAuth* sa = port->port_trusted_auth;
 	if (! sa)
 	{
 		status_vector[0] = isc_arg_gds;
@@ -3678,7 +3678,7 @@ static void trusted_auth(rem_port* port, P_TRAU* p_trau, PACKET* send)
 	sa->part2(port, sa->operation, sa->fileName.c_str(), sa->fileName.length(), 
 		sa->clumplet.begin(), sa->clumplet.getCount(), send);
 }
-#endif //TRUSTED_AUTH
+#endif // TRUSTED_AUTH
 
 
 ISC_STATUS rem_port::put_segment(P_OP op, P_SGMT * segment, PACKET* sendL)
@@ -4781,7 +4781,7 @@ static void attach_service(rem_port* port, P_ATCH* attach, PACKET* sendL)
 			return;
 		}
 	}
-#endif //TRUSTED_AUTH
+#endif // TRUSTED_AUTH
 	
 	attach_service2(port, op_trusted_auth, service_name, service_length, 
 		spb.getBuffer(), spb.getBufferLength(), sendL);
@@ -4837,7 +4837,7 @@ ISC_STATUS rem_port::service_attach(const char* service_name,
 			spb.insertString(isc_spb_trusted_auth, trustedUserName);
 		}
 	}
-#endif //TRUSTED_AUTH
+#endif // TRUSTED_AUTH
 
 	// If we have user identification, append it to database parameter block
 	const rem_str* string = port_user_name;

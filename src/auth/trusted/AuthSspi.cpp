@@ -47,8 +47,7 @@ namespace
 
 		// Query required buffer size
 		DWORD token_len = 0;
-		GetTokenInformation(spc.AccessToken,
-				TokenGroups, 0, 0, &token_len);
+		GetTokenInformation(spc.AccessToken, TokenGroups, 0, 0, &token_len);
 
 		// Query actual group information
 		Firebird::Array<char> buffer;
@@ -215,4 +214,5 @@ bool AuthSspi::getLogin(Firebird::string& login)
 	}
 	return false;
 }
-#endif //TRUSTED_AUTH
+
+#endif // TRUSTED_AUTH
