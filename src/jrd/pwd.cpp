@@ -459,6 +459,12 @@ void SecurityDatabase::verifyUser(TEXT* name,
 		ERR_post(isc_login, 0);
 	}
 
+	if (! (Config::getAuthMethod() & 1))
+	{
+		remoteFailedLogins().loginFail(remoteId);
+		ERR_post(isc_login, 0);
+	}
+
 	// Look up the user name in the userinfo database and use the parameters
 	// found there. This means that another database must be accessed, and
 	// that means the current context must be saved and restored.

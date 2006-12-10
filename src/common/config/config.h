@@ -110,8 +110,9 @@ class Config
 		KEY_TRACE_DSQL,								// 41
 		KEY_LEGACY_HASH,							// 42
 		KEY_GC_POLICY,								// 43
-		KEY_REDIRECTION,								// 44
-		KEY_OLD_COLUMN_NAMING						// 45
+		KEY_REDIRECTION,							// 44
+		KEY_OLD_COLUMN_NAMING,						// 45
+		KEY_AUTH_METHOD								// 46
 	};
 
 public:
@@ -350,6 +351,11 @@ public:
 		Use old column naming rules (does not conform to SQL standard)
 	*/
 	static bool getOldColumnNaming();
+
+	/*
+		Use standard (1), trusted (2) or mixed (3) authentication 
+	*/
+	static int getAuthMethod();
 
 };
 

@@ -123,7 +123,8 @@ const ConfigImpl::ConfigEntry ConfigImpl::entries[] =
 	{TYPE_BOOLEAN,		"LegacyHash",				(ConfigValue) true},	// let use old passwd hash verification
 	{TYPE_STRING,		"GCPolicy",					(ConfigValue) GCPolicyDefault},	// garbage collection policy
 	{TYPE_BOOLEAN,		"Redirection",				(ConfigValue) false},
-	{TYPE_BOOLEAN,		"OldColumnNaming",			(ConfigValue) false}	// if true use old style concatenation
+	{TYPE_BOOLEAN,		"OldColumnNaming",			(ConfigValue) false},	// if true use old style concatenation
+	{TYPE_INTEGER,		"Authentication",			(ConfigValue) 3}		// use standard (1), trusted (2) or mixed (3
 };
 
 /******************************************************************************
@@ -521,3 +522,7 @@ bool Config::getOldColumnNaming()
 	return (bool) sysConfig.values[KEY_OLD_COLUMN_NAMING];
 }
 
+int Config::getAuthMethod()
+{
+	return (int) sysConfig.values[KEY_AUTH_METHOD];
+}

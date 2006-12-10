@@ -63,6 +63,7 @@
 #include "../include/fb_exception.h"
 #include "../common/utils_proto.h"
 #include "../common/classes/array.h"
+#include "../common/config/config.h"
 
 
 #ifdef VMS
@@ -610,7 +611,7 @@ void SCL_init(bool create,
 		if (!JRD_get_thread_security_disabled())
 		{
 #ifdef TRUSTED_AUTH
-			if (trusted_user)
+			if (trusted_user && (Config::getAuthMethod() & 2))
 			{
 				strncpy(name, trusted_user, sizeof name);
 				name[sizeof name - 1] = 0;
