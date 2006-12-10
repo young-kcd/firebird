@@ -312,21 +312,21 @@ static void buildDpb(Firebird::ClumpletWriter& dpb, const ULONG switches)
 	}
 
 	if (tdgbl->ALICE_data.ua_user) {
-		dpb.insertBytes(isc_dpb_user_name, 
-						tdgbl->ALICE_data.ua_user,
-						strlen(reinterpret_cast<const char*>(tdgbl->ALICE_data.ua_user)));
+		dpb.insertString(isc_dpb_user_name, 
+						 tdgbl->ALICE_data.ua_user,
+						 strlen(tdgbl->ALICE_data.ua_user));
 	}
 	if (tdgbl->ALICE_data.ua_password) {
-		dpb.insertBytes(tdgbl->sw_service ? isc_dpb_password_enc :
-							isc_dpb_password,
-						tdgbl->ALICE_data.ua_password, 
-						strlen(reinterpret_cast<const char*>(tdgbl->ALICE_data.ua_password)));
+		dpb.insertString(tdgbl->sw_service ? isc_dpb_password_enc :
+						 isc_dpb_password,
+						 tdgbl->ALICE_data.ua_password, 
+						 strlen(tdgbl->ALICE_data.ua_password));
 	}
 #ifdef TRUSTED_SERVICES
 	if (tdgbl->ALICE_data.ua_tr_user) {
-		dpb.insertBytes(isc_dpb_trusted_auth, 
-						tdgbl->ALICE_data.ua_tr_user,
-						strlen(reinterpret_cast<const char*>(tdgbl->ALICE_data.ua_tr_user)));
+		dpb.insertString(isc_dpb_trusted_auth, 
+						 tdgbl->ALICE_data.ua_tr_user,
+						 strlen(tdgbl->ALICE_data.ua_tr_user));
 	}
 #endif
 }

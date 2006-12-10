@@ -372,7 +372,7 @@ TEXT* ISC_get_host(TEXT* string, USHORT length)
 #endif
 
 #ifdef UNIX
-int ISC_get_user(TEXT*	name,
+bool ISC_get_user(TEXT*	name,
 									  int*	id,
 									  int*	group,
 									  TEXT*	project,
@@ -449,7 +449,7 @@ int ISC_get_user(TEXT*	name,
 
 
 #ifdef VMS
-int ISC_get_user(
+bool ISC_get_user(
 									  TEXT* name,
 									  int* id,
 									  int* group,
@@ -551,7 +551,7 @@ int ISC_get_user(
 #endif
 
 #ifdef WIN_NT
-int ISC_get_user(TEXT*	name,
+bool ISC_get_user(TEXT*	name,
 									  int*	id,
 									  int*	group,
 									  TEXT*	project,

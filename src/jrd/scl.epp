@@ -596,13 +596,13 @@ void SCL_init(bool create,
 #else
 	bool wheel = false;
 	if (!user_name) {
-       wheel = (bool) ISC_get_user(name,
-                           &id,
-                           &group,
-                           project,
-                           organization,
-                           &node_id,
-                           sys_user_name);
+       wheel = ISC_get_user(name,
+                            &id,
+                            &group,
+                            project,
+                            organization,
+                            &node_id,
+                            sys_user_name);
 	}
 
 	if (user_name || (id == -1))

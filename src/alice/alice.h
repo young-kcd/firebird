@@ -58,10 +58,10 @@ enum alice_shut_mode {
 struct user_action
 {
 	ULONG ua_switches;
-	const UCHAR* ua_user;
-	const UCHAR* ua_password;
+	const char* ua_user;
+	const char* ua_password;
 #ifdef TRUSTED_SERVICES
-	UCHAR* ua_tr_user;
+	const char* ua_tr_user;
 #endif
 	bool ua_use;
 	bool ua_force;
