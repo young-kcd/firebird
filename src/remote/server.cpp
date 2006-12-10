@@ -140,9 +140,11 @@ namespace {
 	const ParametersSet spbParam = {isc_spb_address_path};
 }
 
+#ifdef SUPERSERVER
 static void free_request(SERVER_REQ);
 static SERVER_REQ alloc_request();
 static bool link_request(SERVER_REQ, rem_port*, SERVER_REQ, const char *);
+#endif
 
 static bool	accept_connection(rem_port*, P_CNCT*, PACKET*);
 static ISC_STATUS	allocate_statement(rem_port*, P_RLSE*, PACKET*);
@@ -4796,10 +4798,10 @@ static void attach_service2(rem_port* port,
 							int sl, 
 							PACKET* sendL)
 {
-	port->service_attach(service_name, service_length, 
-		Firebird::ClumpletWriter(Firebird::ClumpletReader::SpbAttach, MAX_DPB_SIZE, 
-			spb, sl, isc_spb_current_version),
-		sendL);
+	Firebird::ClumpletWriter tmp(Firebird::ClumpletReader::SpbAttach, MAX_DPB_SIZE, 
+			spb, sl, isc_spb_current_version);
+
+	port->service_attach(service_name, service_length, tmp, sendL);
 
 #ifdef TRUSTED_AUTH
 	delete port->port_trusted_auth;
