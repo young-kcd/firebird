@@ -124,7 +124,7 @@ const ConfigImpl::ConfigEntry ConfigImpl::entries[] =
 	{TYPE_STRING,		"GCPolicy",					(ConfigValue) GCPolicyDefault},	// garbage collection policy
 	{TYPE_BOOLEAN,		"Redirection",				(ConfigValue) false},
 	{TYPE_BOOLEAN,		"OldColumnNaming",			(ConfigValue) false},	// if true use old style concatenation
-	{TYPE_INTEGER,		"Authentication",			(ConfigValue) 3}		// use standard (1), trusted (2) or mixed (3
+	{TYPE_INTEGER,		"Authentication",			(ConfigValue) 3}		// use standard (1), trusted (2) or mixed (3)
 };
 
 /******************************************************************************
