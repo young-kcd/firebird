@@ -1,3 +1,32 @@
+2006-12-10 14:45  alexpeshkoff
+
+	* firebird2/src/remote/server.cpp (1.137):
+
+	fixed posix build after my latest changes
+
+2006-12-10 14:43  alexpeshkoff
+
+	* firebird2/src/jrd/svc.cpp (1.176):
+
+	misc
+
+2006-12-10 13:31  alexpeshkoff
+
+	* firebird2/: src/common/config/config.cpp (1.72),
+	src/common/config/config.h (1.41),
+	builds/install/misc/firebird.conf (1.24), src/jrd/pwd.cpp (1.51),
+	src/jrd/scl.epp (1.79):
+
+	Added 'Authentication' parameter to firebird.conf
+
+2006-12-10 12:17  alexpeshkoff
+
+	* firebird2/src/: alice/alice.cpp (1.88), alice/alice.h (1.54),
+	alice/exe.cpp (1.45), alice/tdr.cpp (1.50), jrd/isc.cpp (1.63),
+	jrd/isc_proto.h (1.14), jrd/scl.epp (1.78):
+
+	A couple of improvements/cleanups, suggested by Adriano
+
 2006-12-10 01:56  asfernandes
 
 	* firebird2/builds/win32/msvc8/: fb_inet_server.vcproj (1.5),
