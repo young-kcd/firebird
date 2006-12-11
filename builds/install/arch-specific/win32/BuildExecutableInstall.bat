@@ -438,14 +438,14 @@ for %%v in (bin doc doc\sql.extensions help include intl lib udf examples misc m
 :: Now remove stuff that is not needed.
 setlocal
 set RM_FILE_LIST=doc\installation_readme.txt bin\gpre_boot.exe bin\gpre_static.exe bin\gpre_embed.exe bin\gbak_embed.exe bin\isql_embed.exe bin\gds32.dll
-if %FB2_SNAPSHOT% EQU 0 (set RM_FILE_LIST=bin\fbembed.dll bin\fbembed.pdb %RM_FILE_LIST%)
+if "%FB2_SNAPSHOT%"=="0" (set RM_FILE_LIST=bin\fbembed.dll bin\fbembed.pdb %RM_FILE_LIST%)
 
 for %%v in ( %RM_FILE_LIST% ) do (
   @del %FBBUILD_ZIP_PACK_ROOT%\%%v > nul 2>&1
 )
 endlocal
 
-if %FB2_SNAPSHOT% EQU 1 (
+if "%FB2_SNAPSHOT%"=="1" (
   @copy %ROOT_PATH%\builds\install\arch-specific\win32\readme_snapshot.txt %FBBUILD_ZIP_PACK_ROOT%\readme_snapshot.txt > nul
 )
 
