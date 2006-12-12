@@ -2345,42 +2345,6 @@ ISC_STATUS GDS_DETACH(ISC_STATUS* user_status, Attachment** handle)
 #endif
 
 	try {
-	if (!(attachment->att_flags & ATT_no_db_triggers))
-	{
-		ISC_STATUS_ARRAY temp_status = {0};
-		jrd_tra* transaction = 0;
-
-		tdbb->tdbb_status_vector = temp_status;
-
-		try
-		{
-			// start a transaction to execute ON DISCONNECT triggers
-			transaction = TRA_start(tdbb, 0, NULL);
-
-			// run ON DISCONNECT triggers
-			EXE_execute_db_triggers(tdbb, transaction, jrd_req::req_trigger_disconnect);
-
-			// and commit the transaction
-			TRA_commit(tdbb, transaction, false);
-		}
-		catch (const Firebird::Exception&)
-		{
-			if (dbb->dbb_flags & DBB_bugcheck)
-				throw;
-
-			try
-			{
-				if (transaction)
-					TRA_rollback(tdbb, transaction, false, false);
-			}
-			catch (const Firebird::Exception&)
-			{
-				if (dbb->dbb_flags & DBB_bugcheck)
-					throw;
-			}
-		}
-	}
-
 	// purge_attachment below can do an ERR_post
 	tdbb->tdbb_status_vector = user_status;
 
@@ -6830,11 +6794,59 @@ static void purge_attachment(thread_db*		tdbb,
 	SET_TDBB(tdbb);
 	Database* dbb = attachment->att_database;
 
+	if (!(dbb->dbb_flags & DBB_bugcheck))
+	{
+		try
+		{
+			if (!(attachment->att_flags & ATT_no_db_triggers) &&
+				!(attachment->att_flags & ATT_shutdown))
+			{
+				ISC_STATUS_ARRAY temp_status = {0};
+				jrd_tra* transaction = 0;
+
+				tdbb->tdbb_status_vector = temp_status;
+
+				try
+				{
+					// start a transaction to execute ON DISCONNECT triggers
+					transaction = TRA_start(tdbb, 0, NULL);
+
+					// run ON DISCONNECT triggers
+					EXE_execute_db_triggers(tdbb, transaction, jrd_req::req_trigger_disconnect);
+
+					// and commit the transaction
+					TRA_commit(tdbb, transaction, false);
+				}
+				catch (const Firebird::Exception&)
+				{
+					if (dbb->dbb_flags & DBB_bugcheck)
+						throw;
+
+					try
+					{
+						if (transaction)
+							TRA_rollback(tdbb, transaction, false, false);
+					}
+					catch (const Firebird::Exception&)
+					{
+						if (dbb->dbb_flags & DBB_bugcheck)
+							throw;
+					}
+				}
+			}
+		}
+		catch (const Firebird::Exception&)
+		{
+			attachment->att_flags |= ATT_shutdown;
+			throw;
+		}
+	}
+
 	const ULONG att_flags = attachment->att_flags;
 	attachment->att_flags |= ATT_shutdown;
 
-	if (!(dbb->dbb_flags & DBB_bugcheck)) {
-
+	if (!(dbb->dbb_flags & DBB_bugcheck))
+	{
 		// Check for any pending transactions
 
 		int count = 0;
