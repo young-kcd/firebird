@@ -1,3 +1,30 @@
+2006-12-12 00:11  asfernandes
+
+	* firebird2/src/common/config/config.cpp (1.73):
+
+	Misc
+
+2006-12-11 23:55  asfernandes
+
+	* firebird2/doc/sql.extensions/README.merge.txt (1.1):
+
+	Documentation for MERGE
+
+2006-12-11 15:03  hvlad
+
+	* firebird2/src/jrd/: dfw.epp (1.198), obj.h (1.7), types.h (1.13):
+
+	Fix for CORE-1051: Possible stack corruption in
+	DFW\check_dependencies
+
+2006-12-11 13:53  helebor
+
+	*
+	firebird2/builds/install/arch-specific/win32/firebird_install_logo1.bmp
+	(1.2):
+
+	[no log message]
+
 2006-12-10 14:45  alexpeshkoff
 
 	* firebird2/src/remote/server.cpp (1.137):
