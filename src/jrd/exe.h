@@ -738,6 +738,7 @@ const int csb_blr_version4		= 8;	// the BLR is of version 4
 const int csb_pre_trigger		= 16;	// this is a BEFORE trigger
 const int csb_post_trigger		= 32;	// this is an AFTER trigger
 const int csb_validation		= 64;	// we're in a validation expression (RDB hack)
+const int csb_reuse_context		= 128;	// allow context reusage
 
 const int csb_active		= 1;		// stream is active
 const int csb_used			= 2;		// context has already been defined (BLR parsing only)

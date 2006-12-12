@@ -1002,23 +1002,30 @@ static SSHORT par_context(CompilerScratch* csb, SSHORT* context_ptr)
  *
  **************************************/
 
+	const SSHORT context = (unsigned int) BLR_BYTE;
+	CompilerScratch::csb_repeat* tail = CMP_csb_element(csb, context);
+
+	if (context_ptr)
+		*context_ptr = context;
+
+	if (tail->csb_flags & csb_used) {
+		if (csb->csb_g_flags & csb_reuse_context) {
+			return tail->csb_stream;
+		}
+		else {
+			error(csb, isc_ctxinuse, 0);
+		}
+	}
+
 	const SSHORT stream = csb->nextStream(false);
 	if (stream >= MAX_STREAMS)
 	{
 		error(csb, isc_too_many_contexts, 0);
 	}
-	const SSHORT context = (unsigned int) BLR_BYTE;
 	CMP_csb_element(csb, stream);
-	CompilerScratch::csb_repeat* tail = CMP_csb_element(csb, context);
-
-	if (tail->csb_flags & csb_used)
-		error(csb, isc_ctxinuse, 0);
 
 	tail->csb_flags |= csb_used;
 	tail->csb_stream = (UCHAR) stream;
-
-	if (context_ptr)
-		*context_ptr = context;
 
 	return stream;
 }
@@ -2703,7 +2710,9 @@ static jrd_nod* parse(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 			if (BLR_PEEK == blr_seek)
 				node->nod_arg[e_cursor_stmt_seek] = parse(tdbb, csb, STATEMENT);
 #endif
+			csb->csb_g_flags |= csb_reuse_context;
 			node->nod_arg[e_cursor_stmt_into] = parse(tdbb, csb, STATEMENT);
+			csb->csb_g_flags &= ~csb_reuse_context;
 			break;
 		default:
 			syntax_error(csb, "cursor operation clause");
