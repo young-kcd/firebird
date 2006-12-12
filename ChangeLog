@@ -1,3 +1,12 @@
+2006-12-11 16:38  paul_reeves
+
+	*
+	firebird2/builds/install/arch-specific/win32/BuildExecutableInstall.bat
+	(1.15.2.7):
+
+	Not all cmd shells seem to like the %VAR% EQU N syntax, so revert
+	to string comparisons.
+
 2006-12-08 19:26  alexpeshkoff
 
 	* firebird2/configure.in (1.241.2.6):
