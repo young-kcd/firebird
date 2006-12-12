@@ -2,7 +2,12 @@
   * v1.5.4
   **************
 
-    * Fixed bug CORE-1042 
+    * Fixed bug CORE-1051 
+        Possible stack corruption in the deferred work handler
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
+
+    * Fixed bug CORE-1042
         Transaction numbers can overflow 32-bit signed integer and corrupt database
       Contributor(s):
         Vlad Horsun <horsun at kdb.dp.ua>
