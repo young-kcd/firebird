@@ -184,6 +184,7 @@
 
 /* alignment of long */
 #define ALIGNMENT 4
+#define FB_ALIGNMENT 4
 
 /* alignment of double */
 #define DOUBLE_ALIGN 8
