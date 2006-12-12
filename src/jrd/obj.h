@@ -45,5 +45,8 @@ const int obj_generator			= 14;
 const int obj_udf				= 15;
 const int obj_blob_filter		= 16;
 
+// keep this last !
+const int obj_type_MAX			= 17;
+
 #endif /* JRD_OBJ_H */
 

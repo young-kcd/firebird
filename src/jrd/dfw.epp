@@ -1225,8 +1225,8 @@ static void check_dependencies(thread_db* tdbb,
 	Database* dbb = tdbb->tdbb_database;
 
 	USHORT i;
-	USHORT dep_counts[obj_count];
-	for (i = 0; i < (USHORT) obj_count; i++)
+	USHORT dep_counts[obj_type_MAX];
+	for (i = 0; i < (USHORT) obj_type_MAX; i++)
 		dep_counts[i] = 0;
 
 	if (field_name)
@@ -1286,7 +1286,7 @@ static void check_dependencies(thread_db* tdbb,
 			REQUEST(irq_ch_dpd) = request;
 	}
 
-	for (i = 0; i < obj_count; i++) {
+	for (i = 0; i < obj_type_MAX; i++) {
 		if (dep_counts[i])
 		{
             ISC_STATUS obj_type;
