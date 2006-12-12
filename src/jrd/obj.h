@@ -45,4 +45,7 @@
 #define obj_udf       	        15
 #define obj_blob_filter		    16
 
+// keep this last !
+#define obj_type_MAX			17
+
 #endif /* _JRD_OBJ_H_ */

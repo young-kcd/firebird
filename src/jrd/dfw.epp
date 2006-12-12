@@ -1069,13 +1069,13 @@ static void check_dependencies(TDBB tdbb,
  **************************************/
 	DBB dbb;
 	BLK request;
-	USHORT dep_counts[obj_count], i;
+	USHORT dep_counts[obj_type_MAX], i;
 	ISC_STATUS obj_type;
 
 	SET_TDBB(tdbb);
 	dbb = tdbb->tdbb_database;
 
-	for (i = 0; i < (USHORT) obj_count; i++)
+	for (i = 0; i < (USHORT) obj_type_MAX; i++)
 		dep_counts[i] = 0;
 
 	if (field_name)
@@ -1135,7 +1135,7 @@ static void check_dependencies(TDBB tdbb,
 			REQUEST(irq_ch_dpd) = (BLK)request;
 	}
 
-	for (i = 0; i < obj_count; i++)
+	for (i = 0; i < obj_type_MAX; i++)
 		if (dep_counts[i])
 		{
 			switch (dpdo_type)
