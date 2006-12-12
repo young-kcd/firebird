@@ -944,8 +944,11 @@ static SSHORT par_context(CompilerScratch* csb, SSHORT* context_ptr)
 	CMP_csb_element(csb, stream);
 	CompilerScratch::csb_repeat* tail = CMP_csb_element(csb, context);
 
-	if (tail->csb_flags & csb_used)
+	if ((tail->csb_flags & csb_used) &&
+		!(csb->csb_g_flags & csb_no_context_check))
+	{
 		error(csb, isc_ctxinuse, 0);
+	}
 
 	tail->csb_flags |= csb_used;
 	tail->csb_stream = (UCHAR) stream;
@@ -2643,7 +2646,9 @@ static jrd_nod* parse(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 			if (BLR_PEEK == blr_seek)
 				node->nod_arg[e_cursor_stmt_seek] = parse(tdbb, csb, STATEMENT);
 #endif
+			csb->csb_g_flags |= csb_no_context_check;
 			node->nod_arg[e_cursor_stmt_into] = parse(tdbb, csb, STATEMENT);
+			csb->csb_g_flags &= ~csb_no_context_check;
 			break;
 		default:
 			syntax_error(csb, "cursor operation clause");
