@@ -277,6 +277,9 @@
 
     * Feature CORE-815
         UPDATE OR INSERT and MERGE statements
+      See also:
+        /doc/sql.extensions/README.update_or_insert.txt
+        /doc/sql.extensions/README.merge.txt
       Contributor(s):
         Adriano dos Santos Fernandes <adrianosf at uol.com.br>
 
