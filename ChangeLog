@@ -1,3 +1,48 @@
+2006-12-12 16:51  dimitr
+
+	* firebird2/src/jrd/: exe.h (1.82.2.2), par.cpp (1.132.4.3):
+
+	Dumb fix for CORE-1004. No better ideas at the moment. To be
+	reconsidered in v3.0.
+
+2006-12-12 16:10  dimitr
+
+	* firebird2/src/utilities/gstat/dba.epp (1.67.4.1):
+
+	Backported fix for CORE-959.
+
+2006-12-12 16:08  dimitr
+
+	* firebird2/src/jrd/dyn.epp (1.80.4.1):
+
+	Backported fix for CORE-1010.
+
+2006-12-12 16:06  dimitr
+
+	* firebird2/src/jrd/jrd.h (1.148.4.3):
+
+	A simplified attempt to fix the STL iterators out-of-range issue in
+	v2.0.
+
+2006-12-12 16:05  dimitr
+
+	* firebird2/src/jrd/val.h (1.32.4.1):
+
+	Backported fix for CORE-1046.
+
+2006-12-12 15:39  dimitr
+
+	* firebird2/src/dsql/gen.cpp (1.98.2.1):
+
+	Backported fix for CORE-1046.
+
+2006-12-12 10:17  hvlad
+
+	* firebird2/src/jrd/: dfw.epp (1.178.2.2), obj.h (1.5.12.1):
+
+	Fix for CORE-1051: Possible stack corruption in
+	DFW\check_dependencies
+
 2006-12-11 16:38  paul_reeves
 
 	*
