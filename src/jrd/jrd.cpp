@@ -6796,13 +6796,15 @@ static void purge_attachment(thread_db*		tdbb,
 
 	if (!(dbb->dbb_flags & DBB_bugcheck))
 	{
+		ISC_STATUS* original_status = tdbb->tdbb_status_vector;
+
 		try
 		{
 			if (!(attachment->att_flags & ATT_no_db_triggers) &&
 				!(attachment->att_flags & ATT_shutdown))
 			{
 				ISC_STATUS_ARRAY temp_status = {0};
-				jrd_tra* transaction = 0;
+				jrd_tra* transaction = NULL;
 
 				tdbb->tdbb_status_vector = temp_status;
 
@@ -6837,9 +6839,12 @@ static void purge_attachment(thread_db*		tdbb,
 		}
 		catch (const Firebird::Exception&)
 		{
+			tdbb->tdbb_status_vector = original_status;
 			attachment->att_flags |= ATT_shutdown;
 			throw;
 		}
+
+		tdbb->tdbb_status_vector = original_status;
 	}
 
 	const ULONG att_flags = attachment->att_flags;
