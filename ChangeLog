@@ -1,3 +1,21 @@
+2006-12-13 01:29  asfernandes
+
+	* firebird2/doc/WhatsNew (1.108):
+
+	Misc
+
+2006-12-12 17:12  dimitr
+
+	* firebird2/src/jrd/: exe.h (1.90), par.cpp (1.151):
+
+	A bit different fix for CORE-1004 in HEAD. Experimental.
+
+2006-12-12 15:21  asfernandes
+
+	* firebird2/src/jrd/jrd.cpp (1.288):
+
+	Run ON DISCONNECT triggers on server shutdown - thanks to Alex
+
 2006-12-12 00:11  asfernandes
 
 	* firebird2/src/common/config/config.cpp (1.73):
