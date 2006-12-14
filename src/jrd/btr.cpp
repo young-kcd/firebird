@@ -487,6 +487,40 @@ DSC* BTR_eval_expression(thread_db* tdbb, index_desc* idx, Record* record, bool 
 }
 
 
+inline void checkForLowerKeySkip(
+								 bool& skipLowerKey, 
+								 const bool partLower,
+								 const IndexNode& node,
+								 const temporary_key& lower,
+								 const index_desc& idx,
+								 const IndexRetrieval* retrieval)
+{
+	if (skipLowerKey) 
+	{
+		// are we skip all duplicates of lower key ?
+		if (node.prefix < lower.key_length) {
+			skipLowerKey = false;
+		}
+		else if ((node.prefix == lower.key_length) && node.length) 
+		{
+			if (partLower) 
+			{
+				const USHORT segnum = 
+					idx.idx_count - (UCHAR)(idx.idx_flags & idx_descending ? 
+								(*node.data) ^ -1 : *node.data);
+
+				if (segnum < retrieval->irb_lower_count) {
+					skipLowerKey = false;
+				}
+			} 
+			else {
+				skipLowerKey = false;
+			}
+		}
+	}
+}
+
+
 void BTR_evaluate(thread_db* tdbb, IndexRetrieval* retrieval, RecordBitmap** bitmap)
 {
 /**************************************
@@ -634,28 +668,8 @@ void BTR_evaluate(thread_db* tdbb, IndexRetrieval* retrieval, RecordBitmap** bit
 					BUGCHECK(204);	// msg 204 index inconsistent
 				}
 
-				if (skipLowerKey) 
-				{
-					// are we skip all duplicates of lower key ?
-					if (node.prefix < lower.key_length) {
-						skipLowerKey = false;
-					}
-					else if ((node.prefix == lower.key_length) && node.length) 
-					{
-						if (partLower) 
-						{
-							const USHORT segnum = idx.idx_count - 
-								(UCHAR)(descending ? (*node.data) ^ -1 : *node.data);
-
-							if (segnum < retrieval->irb_lower_count) {
-								skipLowerKey = false;
-							}
-						} 
-						else {
-							skipLowerKey = false;
-						}
-					}
-				}
+				checkForLowerKeySkip(skipLowerKey, partLower, node, 
+									 lower, idx, retrieval);
 				continue;
 			}
 
@@ -668,6 +682,9 @@ void BTR_evaluate(thread_db* tdbb, IndexRetrieval* retrieval, RecordBitmap** bit
 			if (pointer > endPointer) {
 				BUGCHECK(204);	// msg 204 index inconsistent
 			}
+
+			checkForLowerKeySkip(skipLowerKey, partLower, node, 
+								 lower, idx, retrieval);
 		}
 	}
 
