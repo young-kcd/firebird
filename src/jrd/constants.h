@@ -210,8 +210,8 @@ enum stmt_state_t {
 
 enum shut_mode_t {
 	shut_mode_online = 0,
-	shut_mode_single = 1,
-	shut_mode_multi = 2,
+	shut_mode_multi = 1,
+	shut_mode_single = 2,
 	shut_mode_full = 3
 };
 

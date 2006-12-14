@@ -124,8 +124,8 @@ TYPE ("ACTIVE", stmt_s_active, nam_mon_stmt_state)
 TYPE ("KILLED", stmt_s_killed, nam_mon_stmt_state)
 
 TYPE ("ONLINE", shut_mode_online, nam_mon_shut_mode)
-TYPE ("SINGLE_USER_SHUTDOWN", shut_mode_single, nam_mon_shut_mode)
 TYPE ("MULTI_USER_SHUTDOWN", shut_mode_multi, nam_mon_shut_mode)
+TYPE ("SINGLE_USER_SHUTDOWN", shut_mode_single, nam_mon_shut_mode)
 TYPE ("FULL_SHUTDOWN", shut_mode_full, nam_mon_shut_mode)
 
 TYPE ("CONSISTENCY", iso_mode_consistency, nam_mon_iso_mode)
