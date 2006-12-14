@@ -1,0 +1,160 @@
+-----------------
+Monitoring tables
+-----------------
+
+  Function:
+    Allow to monitor server-side activity happening inside a particular database.
+
+  Concept:    
+    The engine offers a set of so called "virtual" tables that provides the user
+    with a snapshot of the current activity within the given database. The word
+    "virtual" means that the table data doesn't exist until explicitly asked for.
+    However, its metadata is stable and can be retrieved from the schema. Virtual
+    monitoring tables exist only in ODS 11.1 (and higher) databases, so a
+    migration via backup/restore is required in order to use this feature.
+
+    The key term of the monitoring feature is an activity snapshot. It represents
+    the current state of the database, consisting of various information about
+    the database itself, active attachments and users, transactions, prepared and
+    running statements, etc. A snapshot is created the first time any of the
+    monitoring tables is being selected from in the given transaction and it's
+    preserved until the transaction ends, so multiple queries (e.g. master-detail
+    ones) will always return the consistent view of the data. In other words, the
+    monitoring tables always behave like a snapshot (aka consistency) transaction,
+    even if the host transaction has been started with another isolation level.
+    To refresh the snapshot, the current transaction should be finished and the
+    monitoring tables should be queried in the new transaction context. Creation
+    of a snapshot is usually quite fast operation, but some delay should be
+    expected under high load (especially in the Classic Server). 
+
+    A valid database connection is required in order to retrieve the monitoring
+    data. The monitoring tables return information about the attached database
+    only. If multiple databases are being accessed on the server, each of them
+    has to be connected to and monitored separately.
+
+    System variables CURRENT_CONNECTION and CURRENT_TRANSACTION could be used
+    to select data about the current (for the caller) connection and transaction
+    respectfully. These variables correspond to the ID columns of the appropriate
+    monitoring tables.
+
+  Security:
+    Complete database monitoring is available to SYSDBA and a database owner.
+    Regular users are restricted to the information about their own attachments
+    only (other attachments are invisible for them).
+
+  Author:
+    Dmitry Yemanov <dimitr at firebirdsql dot org>
+
+  Scope:
+    DSQL and PSQL
+
+  Metadata:
+    MON$DATABASE (connected database)
+      - MON$DATABASE_NAME (database pathname or alias)
+      - MON$PAGE_SIZE (page size)
+      - MON$ODS_MAJOR (major ODS version)
+      - MON$ODS_MINOR (minor ODS version)
+      - MON$OLDEST_TRANSACTION (OIT number)
+      - MON$OLDEST_ACTIVE (OAT number)
+      - MON$OLDEST_SNAPSHOT (OST number)
+      - MON$NEXT_TRANSACTION (next transaction number)
+      - MON$PAGE_BUFFERS (number of pages allocated in the cache)
+      - MON$SQL_DIALECT (SQL dialect of the database)
+      - MON$SHUTDOWN_MODE (current shutdown mode)
+          0: online
+          1: multi-user shutdown
+          2: single-user shutdown
+          3: full shutdown
+      - MON$SWEEP_INTERVAL (sweep interval)
+      - MON$READ_ONLY (read-only flag)
+      - MON$FORCED_WRITES (sync writes flag)
+      - MON$RESERVE_SPACE (reserve space flag)
+      - MON$CREATION_DATE (creation date/time)
+      - MON$PAGES (number of pages allocated on disk)
+
+    MON$ATTACHMENTS (connected attachments)
+      - MON$ATTACHMENT_ID (attachment ID)
+      - MON$SERVER_PID (server process ID)
+      - MON$ATTACHMENT_STATE (attachment state)
+          0: idle
+          1: active
+      - MON$ATTACHMENT_NAME (connection string)
+      - MON$USER (user name)
+      - MON$ROLE (role name)
+      - MON$REMOTE_PROTOCOL (remote protocol name)
+      - MON$REMOTE_ADDRESS (remote address)
+      - MON$REMOTE_PID (remote client process ID)
+      - MON$CHARACTER_SET_ID (attachment character set)
+      - MON$TIMESTAMP (connection date/time)
+      - MON$GARBAGE_COLLECTION (garbage collection flag)
+
+    MON$TRANSACTIONS (started transactions)
+      - MON$TRANSACTION_ID (transaction ID)
+      - MON$ATTACHMENT_ID (attachment ID)
+      - MON$TRANSACTION_STATE (transaction state)
+          0: idle
+          1: active
+      - MON$TIMESTAMP (transaction start date/time)
+      - MON$TOP_TRANSACTION (top transaction)
+      - MON$OLDEST_TRANSACTION (local OIT number)
+      - MON$OLDEST_ACTIVE (local OAT number)
+      - MON$ISOLATION_MODE (isolation mode)
+          0: consistency
+          1: concurrency
+          2: read committed record version
+          3: read committed no record version
+      - MON$LOCK_TIMEOUT (lock timeout)
+          -1: infinite wait
+          0: no wait
+          N: timeout N
+      - MON$READ_ONLY (read-only flag)
+      - MON$AUTO_COMMIT (auto-commit flag)
+      - MON$AUTO_UNDO (auto-undo flag)
+
+    MON$STATEMENTS (prepared statements)
+      - MON$STATEMENT_ID (statement ID)
+      - MON$ATTACHMENT_ID (attachment ID)
+      - MON$TRANSACTION_ID (transaction ID)
+      - MON$STATEMENT_STATE (statement state)
+          0: idle
+          1: active
+          2: cancelled
+      - MON$TIMESTAMP (statement start date/time)
+      - MON$SQL_TEXT (statement text, if appropriate)
+
+  Notes:
+    1) Textual descriptions of all "state" and "mode" values can be found
+       in the system table RDB$TYPES
+
+    2) For table MON$ATTACHMENTS:
+      - column MON$REMOTE_PID contains non-NULL value only if the client
+        library has version 2.1 or higher
+
+    3) For table MON$STATEMENTS:
+      - column MON$SQL_TEXT contains NULL for GDML statements
+      - columns MON$TRANSACTION_ID and MON$TIMESTAMP contain valid values
+        for active statements only
+
+  Example(s):
+    1) Retrieve IDs of all CS processes loading CPU at the moment
+        SELECT MON$SERVER_PID
+        FROM MON$ATTACHMENTS
+        WHERE MON$ATTACHMENT_ID <> CURRENT_CONNECTION
+          AND MON$ATTACHMENT_STATE = 1
+
+    2) Retrieve information about client applications
+        SELECT MON$USER, MON$REMOTE_ADDRESS, MON$REMOTE_PID, MON$TIMESTAMP
+        FROM MON$ATTACHMENTS
+        WHERE MON$ATTACHMENT_ID <> CURRENT_CONNECTION
+
+    3) Get isolation level of the current transaction
+        SELECT MON$ISOLATION_LEVEL
+        FROM MON$TRANSACTIONS
+        WHERE MON$TRANSACTION_ID = CURRENT_TRANSACTION
+
+    4) Get statements that are currently active
+        SELECT ATT.MON$USER, ATT.MON$REMOTE_ADDRESS, STMT.MON$SQL_TEXT, STMT.MON$TIMESTAMP
+        FROM MON$ATTACHMENTS ATT
+          JOIN MON$STATEMENTS STMT ON ATT.MON$ATTACHMENT_ID = STMT.MON$ATTACHMENT_ID
+        WHERE ATT.MON$ATTACHMENT_ID <> CURRENT_CONNECTION
+          AND STMT.MON$STATEMENT_STATE = 1
