@@ -2798,10 +2798,23 @@ static bool delete_procedure(	thread_db*	tdbb,
 
 		// Do not allow to drop procedure used by user requests
 		if (procedure->prc_use_count && MET_procedure_in_use(tdbb, procedure))
+		{
+/*
 			ERR_post(isc_no_meta_update,
 					 isc_arg_gds, isc_obj_in_use,
 					 isc_arg_string, ERR_cstring(work->dfw_name),
 					 0);
+*/
+			gds__log("Deleting procedure %s which is currently in use by active user requests",
+					 work->dfw_name);
+			MET_delete_dependencies(tdbb, work->dfw_name, obj_procedure);
+
+			if (procedure->prc_existence_lock) {
+				LCK_release(tdbb, procedure->prc_existence_lock);
+			}
+			(*tdbb->tdbb_database->dbb_procedures)[procedure->prc_id] = NULL;
+			return false;
+		}
 
 		old_flags = procedure->prc_flags;
 		procedure->prc_flags |= PRC_obsolete;
@@ -4200,10 +4213,45 @@ static bool modify_procedure(	thread_db*	tdbb,
 #endif /* SUPERSERVER */
 		// Do not allow to modify procedure used by user requests
 		if (procedure->prc_use_count && MET_procedure_in_use(tdbb, procedure))
+		{
+/*
 			ERR_post(isc_no_meta_update,
 					 isc_arg_gds, isc_obj_in_use,
 					 isc_arg_string, ERR_cstring(work->dfw_name),
 					 0);
+*/
+			gds__log("Modifying procedure %s which is currently in use by active user requests",
+					 work->dfw_name);
+
+			USHORT prc_alter_count = procedure->prc_alter_count;
+			if (prc_alter_count > MAX_PROC_ALTER)
+			{
+				ERR_post(isc_no_meta_update,
+						 isc_arg_gds, isc_proc_name,
+						 isc_arg_string, ERR_cstring(work->dfw_name),
+						 isc_arg_gds, isc_version_err,
+						 0);
+				/* Msg357: too many versions */
+			}
+
+			if (procedure->prc_existence_lock) {
+				LCK_release(tdbb, procedure->prc_existence_lock);
+			}
+			(*tdbb->tdbb_database->dbb_procedures)[procedure->prc_id] = NULL;
+
+			if (!(procedure = MET_lookup_procedure_id(tdbb,
+													  work->dfw_id,
+													  false,
+													  true,
+													  PRC_being_altered)))
+			{
+#ifdef SUPERSERVER
+				THD_rec_mutex_unlock(&tdbb->tdbb_database->dbb_sp_rec_mutex);
+#endif
+				return false;
+			}
+			procedure->prc_alter_count = ++prc_alter_count;
+		}
 
 		procedure->prc_flags |= PRC_being_altered;
 		if (procedure->prc_request)

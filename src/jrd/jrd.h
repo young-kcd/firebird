@@ -631,9 +631,7 @@ public:
 	Lock* prc_existence_lock;				// existence lock, if any
 	Firebird::MetaName prc_security_name;	// security class name for procedure
 	Firebird::MetaName prc_name;			// ascic name
-	// No. of times the procedure was altered
-	// It's shown in internal debug code in jrd.cpp but it's never incremented.
-	//USHORT prc_alter_count;		
+	USHORT prc_alter_count;					// No. of times the procedure was altered
 
 public:
 	explicit jrd_prc(MemoryPool& p) : prc_security_name(p), prc_name(p) {}
@@ -654,7 +652,7 @@ const USHORT PRC_being_altered		= 64;	// Procedure is getting altered
 									// invalidating procedure pointers from other parts of metadata cache
 const USHORT PRC_check_existence	= 128;	// Existence lock released
 
-//const USHORT MAX_PROC_ALTER			= 64;	// No. of times an in-cache procedure can be altered
+const USHORT MAX_PROC_ALTER			= 64;	// No. of times an in-cache procedure can be altered
 
 
 
