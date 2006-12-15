@@ -1273,6 +1273,13 @@ dsql_prc* METD_get_procedure(dsql_req* request, const dsql_str* name)
 	dsql_prc* temp;
 	SSHORT type, count, defaults;
 
+// see if the procedure is the one currently being defined in this request 
+
+	if (((temp = request->req_procedure) != NULL) &&
+		!strcmp((char*) temp->prc_name, (char*) name->str_data)) {
+		return temp;
+	}
+
     RecMutexHolder holder;
 
 // Start by seeing if symbol is already defined 
@@ -1286,13 +1293,6 @@ dsql_prc* METD_get_procedure(dsql_req* request, const dsql_str* name)
 		{
 			return (dsql_prc*) symbol->sym_object;
 		}
-
-// see if the procedure is the one currently being defined in this request 
-
-	if (((temp = request->req_procedure) != NULL) &&
-		!strcmp((char*) temp->prc_name, (char*) name->str_data)) {
-		return temp;
-	}
 
 // now see if it is in the database 
 
