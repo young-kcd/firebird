@@ -289,8 +289,6 @@ void DatabaseSnapshot::SharedMemory::checkMutex(const TEXT* string, int state)
 
 void DatabaseSnapshot::SharedMemory::init(void* arg, SH_MEM_T* shmemData, bool initialize)
 {
-//	DatabaseSnapshot::SharedMemory* shmem =
-//		(DatabaseSnapshot::SharedMemory*) arg;
 	SharedMemory* shmem = (SharedMemory*) arg;
 	fb_assert(shmem);
 
@@ -307,7 +305,7 @@ void DatabaseSnapshot::SharedMemory::init(void* arg, SH_MEM_T* shmemData, bool i
 	header->length = 0;
 
 #ifndef WIN_NT
-	checkMutex("init", ISC_mutex_init(&shmem->base->mutex, shmemData->sh_mem_mutex_arg));
+	checkMutex("init", ISC_mutex_init(&header->mutex, shmemData->sh_mem_mutex_arg));
 #endif
 }
 
