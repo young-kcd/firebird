@@ -1236,6 +1236,13 @@ dsql_prc* METD_get_procedure(dsql_req* request, const dsql_str* name)
 	dsql_prc* temp;
 	SSHORT type, count, defaults;
 
+	// see if the procedure is the one currently being defined in this request 
+
+	if (((temp = request->req_procedure) != NULL) &&
+		!strcmp((char*) temp->prc_name, (char*) name->str_data)) {
+		return temp;
+	}
+
     RecMutexHolder holder;
 
 	// Start by seeing if symbol is already defined 
@@ -1243,13 +1250,6 @@ dsql_prc* METD_get_procedure(dsql_req* request, const dsql_str* name)
 	dsql_sym* symbol = lookup_symbol(request->req_dbb, name, SYM_procedure);
 	if (symbol)
 		return (dsql_prc*) symbol->sym_object;
-
-	// see if the procedure is the one currently being defined in this request 
-
-	if (((temp = request->req_procedure) != NULL) &&
-		!strcmp((char*) temp->prc_name, (char*) name->str_data)) {
-		return temp;
-	}
 
 	// now see if it is in the database 
 
@@ -1450,9 +1450,15 @@ dsql_rel* METD_get_relation(dsql_req* request, const dsql_str* name)
 	dsql_fld* field;
 	dsql_fld** ptr;
 	dsql_rel* temp;
-	tsql* tdsql;
 
-	tdsql = DSQL_get_thread_data();
+	// See if the relation is the one currently being defined in this request 
+
+	if (((temp = request->req_relation) != NULL) &&
+		!strcmp((char*) temp->rel_name, (char*) name->str_data)) {
+		return temp;
+	}
+
+	tsql* tdsql = DSQL_get_thread_data();
 
     RecMutexHolder holder;
 
@@ -1461,13 +1467,6 @@ dsql_rel* METD_get_relation(dsql_req* request, const dsql_str* name)
 	dsql_sym* symbol = lookup_symbol(request->req_dbb, name, SYM_relation);
 	if (symbol)
 		return (dsql_rel*) symbol->sym_object;
-
-	// See if the relation is the one currently being defined in this request 
-
-	if (((temp = request->req_relation) != NULL) &&
-		!strcmp((char*) temp->rel_name, (char*) name->str_data)) {
-		return temp;
-	}
 
 	ISC_STATUS_ARRAY isc_status = {0};
 	dbb = request->req_dbb;
