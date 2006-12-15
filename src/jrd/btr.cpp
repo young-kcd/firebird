@@ -214,6 +214,9 @@ static bool scan(thread_db*, UCHAR*, RecordBitmap**, index_desc*,
 				 IndexRetrieval*, USHORT, temporary_key*, const SCHAR, 
 				 bool&, temporary_key&);
 static void update_selectivity(index_root_page*, USHORT, const SelectivityList&);
+static void checkForLowerKeySkip(bool&, const bool, const IndexNode&, const temporary_key&, 
+								 const index_desc&, const IndexRetrieval*);
+
 
 USHORT BTR_all(thread_db*		tdbb,
 			   jrd_rel*			relation,
@@ -466,7 +469,7 @@ DSC* BTR_eval_expression(thread_db* tdbb, index_desc* idx, Record* record, bool 
 }
 
 
-inline void checkForLowerKeySkip(
+static void checkForLowerKeySkip(
 								 bool& skipLowerKey, 
 								 const bool partLower,
 								 const IndexNode& node,
@@ -474,66 +477,63 @@ inline void checkForLowerKeySkip(
 								 const index_desc& idx,
 								 const IndexRetrieval* retrieval)
 {
-	if (skipLowerKey) 
+	if (node.prefix == 0)
 	{
-		if (node.prefix == 0)
+		// If the prefix is 0 we have a full key. 
+		// (first node on every new page for example has prefix zero)
+		if (partLower) 
 		{
-			// If the prefix is 0 we have a full key. 
-			// (first node on every new page for example has prefix zero)
-			if (partLower) 
-			{
-				// With multi-segment compare first part of data with lowerKey
-				skipLowerKey = 
-					((lower.key_length <= node.length) &&
-					(memcmp(node.data, lower.key_data, lower.key_length) == 0));
+			// With multi-segment compare first part of data with lowerKey
+			skipLowerKey = 
+				((lower.key_length <= node.length) &&
+				(memcmp(node.data, lower.key_data, lower.key_length) == 0));
 
-				if (skipLowerKey && (node.length > lower.key_length))
+			if (skipLowerKey && (node.length > lower.key_length))
+			{
+				// We've bigger data in the node as the lowerKey, 
+				// now check the segment-number
+				const UCHAR *segp = node.data + lower.key_length;
+
+				const USHORT segnum = 
+					idx.idx_count - (UCHAR)((idx.idx_flags & idx_descending) ? 
+						((*segp) ^ -1) : *segp);
+
+				if (segnum < retrieval->irb_lower_count) 
 				{
-					// We've bigger data in the node as the lowerKey, 
-					// now check the segment-number
-					const UCHAR *segp = node.data + lower.key_length;
-
-					const USHORT segnum = 
-						idx.idx_count - (UCHAR)((idx.idx_flags & idx_descending) ? 
-							((*segp) ^ -1) : *segp);
-
-					if (segnum < retrieval->irb_lower_count) 
-					{
-						skipLowerKey = false;
-					}						
-				}
-			}
-			else
-			{
-				// Compare full data with lowerKey
-				skipLowerKey = 
-					((lower.key_length == node.length) &&
-					(memcmp(node.data, lower.key_data, lower.key_length) == 0));
+					skipLowerKey = false;
+				}						
 			}
 		}
 		else
 		{
-			// Check if we have a duplicate node (for the same page)
-			if (node.prefix < lower.key_length) {
-				skipLowerKey = false;
-			}
-			else if ((node.prefix == lower.key_length) && node.length) 
+			// Compare full data with lowerKey
+			skipLowerKey = 
+				((lower.key_length == node.length) &&
+				(memcmp(node.data, lower.key_data, lower.key_length) == 0));
+		}
+	}
+	else
+	{
+		// Check if we have a duplicate node (for the same page)
+		if (node.prefix < lower.key_length) {
+			skipLowerKey = false;
+		}
+		else if ((node.prefix == lower.key_length) && node.length) 
+		{
+			// In case of multi-segment check segment-number else 
+			// it's a different key
+			if (partLower) 
 			{
-				// In case of multi-segment check segment-number else 
-				// it's a different key
-				if (partLower) 
-				{
-					const USHORT segnum = 
-						idx.idx_count - (UCHAR)((idx.idx_flags & idx_descending) ? 
-							(*node.data) ^ -1 : *node.data);
+				const USHORT segnum = 
+					idx.idx_count - (UCHAR)((idx.idx_flags & idx_descending) ? 
+						(*node.data) ^ -1 : *node.data);
 
-					if (segnum < retrieval->irb_lower_count) {
-						skipLowerKey = false;
-					}
-				} 
-				else {
+				if (segnum < retrieval->irb_lower_count) {
 					skipLowerKey = false;
 				}
+			} 
+			else {
+				skipLowerKey = false;
 			}
 		}
 	}
@@ -677,8 +677,11 @@ void BTR_evaluate(thread_db* tdbb, IndexRetrieval* retrieval, RecordBitmap** bit
 					break;
 				}
 
-				checkForLowerKeySkip(skipLowerKey, partLower, node,
-									 lower, idx, retrieval);
+				if (skipLowerKey)
+				{
+					checkForLowerKeySkip(skipLowerKey, partLower, node,
+										 lower, idx, retrieval);
+				}
 
 				if (!skipLowerKey) {
 					RBM_SET(tdbb->getDefaultPool(), bitmap, node.recordNumber.getValue());
@@ -6479,8 +6482,11 @@ static bool scan(thread_db* tdbb, UCHAR* pointer, RecordBitmap** bitmap,
 				}
 			}
 
-			checkForLowerKeySkip(skipLowerKey, partLower, node,
-								 lowerKey, *idx, retrieval);
+			if (skipLowerKey)
+			{
+				checkForLowerKeySkip(skipLowerKey, partLower, node,
+									 lowerKey, *idx, retrieval);
+			}
 
 			if (!ignore && !skipLowerKey) {
 				if ((flag & irb_starting) || !count) {
