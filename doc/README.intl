@@ -170,3 +170,26 @@ Not all implemented character sets and collations need to be listed in the manif
 
 After installed in the server, they should be registered in the database's system tables (rdb$character_sets and rdb$collations).
 One script file with stored procedures to register/unregister is provided in misc/intl.sql.
+
+In FB 2.1, don't use misc/intl.sql for collations anymore, now a DDL command exist for this task.
+
+Syntax:
+	CREATE COLLATION <name>
+		FOR <charset>
+		[ FROM <base> | FROM EXTERNAL ('<name>') ]
+		[ NO PAD | PAD SPACE ]
+		[ CASE SENSITIVE | CASE INSENSITIVE ]
+		[ ACCENT SENSITIVE | ACCENT INSENSITIVE ]
+		[ '<specific-attributes>' ]
+
+Examples:
+	1) CREATE COLLATION UNICODE_ENUS_CI
+			FOR UTF8
+			FROM UNICODE
+			CASE INSENSITIVE
+			'LOCALE=en_US';
+
+	2) CREATE COLLATION NEW_COLLATION
+			FOR WIN1252
+			PAD SPACE;
+		-- NEW_COLLATION should be declared in .conf file in root/intl directory

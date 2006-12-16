@@ -330,6 +330,8 @@
         3) Collation attributes
         4) CREATE/DROP COLLATION statements
         5) SHOW COLLATION and collation extraction in ISQL
+      See also:
+        /doc/README.intl.txt
       Contributor(s):
         Adriano dos Santos Fernandes <adrianosf at uol.com.br>
 
