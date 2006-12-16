@@ -618,12 +618,17 @@ UnicodeUtil::Utf16Collation* UnicodeUtil::Utf16Collation::create(
 	else
 		tt->texttype_flags = TEXTTYPE_DIRECT_MATCH;
 
+	USet* contractions = uset_open(0, 0);
+	ucol_getContractions(partialCollator, contractions, &status);
+
 	Utf16Collation* obj = new Utf16Collation();
 	obj->tt = tt;
 	obj->attributes = attributes;
 	obj->compareCollator = compareCollator;
 	obj->partialCollator = partialCollator;
 	obj->sortCollator = sortCollator;
+	obj->contractions = contractions;
+	obj->contractionsCount = uset_getItemCount(contractions);
 
 	return obj;
 }
@@ -631,6 +636,8 @@ UnicodeUtil::Utf16Collation* UnicodeUtil::Utf16Collation::create(
 
 UnicodeUtil::Utf16Collation::~Utf16Collation()
 {
+	uset_close(static_cast<USet*>(contractions));
+
 	ucol_close((UCollator*)compareCollator);
 	ucol_close((UCollator*)partialCollator);
 	ucol_close((UCollator*)sortCollator);
@@ -676,8 +683,32 @@ USHORT UnicodeUtil::Utf16Collation::stringToKey(USHORT srcLen, const USHORT* src
 	switch (key_type)
 	{
 		case INTL_KEY_PARTIAL:
+		{
 			coll = partialCollator;
+
+			// Remove last bytes of key if they are start of a contraction
+			// to correctly find in the index.
+			for (int i = 0; i < contractionsCount; ++i)
+			{
+				UChar str[10];
+				UErrorCode status = U_ZERO_ERROR;
+				int len = uset_getItem(static_cast<USet*>(contractions),
+					i, NULL, NULL, str, sizeof(str), &status);
+
+				if (len > srcLen)
+					len = srcLen;
+				else
+					--len;
+
+				if (u_strCompare(str, len, reinterpret_cast<const UChar*>(src) + srcLen - len, len, true) == 0)
+				{
+					srcLen -= len;
+					break;
+				}
+			}
+
 			break;
+		}
 
 		case INTL_KEY_UNIQUE:
 			coll = compareCollator;
@@ -692,8 +723,13 @@ USHORT UnicodeUtil::Utf16Collation::stringToKey(USHORT srcLen, const USHORT* src
 			return INTL_BAD_KEY_LENGTH;
 	}
 
-	return ucol_getSortKey(static_cast<const UCollator*>(coll),
-		reinterpret_cast<const UChar*>(src), srcLen, dst, dstLen);
+	if (srcLen != 0)
+	{
+		return ucol_getSortKey(static_cast<const UCollator*>(coll),
+			reinterpret_cast<const UChar*>(src), srcLen, dst, dstLen);
+	}
+	else
+		return 0;
 }
 
 

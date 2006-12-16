@@ -82,6 +82,8 @@ public:
 		void* compareCollator;
 		void* partialCollator;
 		void* sortCollator;
+		void* contractions;
+		int contractionsCount;
 	};
 };
 
