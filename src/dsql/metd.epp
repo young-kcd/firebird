@@ -1239,7 +1239,8 @@ dsql_prc* METD_get_procedure(dsql_req* request, const dsql_str* name)
 	// see if the procedure is the one currently being defined in this request 
 
 	if (((temp = request->req_procedure) != NULL) &&
-		!strcmp((char*) temp->prc_name, (char*) name->str_data)) {
+		!strcmp((char*) temp->prc_name, (char*) name->str_data))
+	{
 		return temp;
 	}
 
@@ -1454,7 +1455,8 @@ dsql_rel* METD_get_relation(dsql_req* request, const dsql_str* name)
 	// See if the relation is the one currently being defined in this request 
 
 	if (((temp = request->req_relation) != NULL) &&
-		!strcmp((char*) temp->rel_name, (char*) name->str_data)) {
+		!strcmp((char*) temp->rel_name, (char*) name->str_data))
+	{
 		return temp;
 	}
 
