@@ -1,3 +1,50 @@
+2006-12-16 03:21  asfernandes
+
+	* firebird2/src/dsql/metd.epp (1.98):
+
+	Misc
+
+2006-12-16 02:41  asfernandes
+
+	* firebird2/doc/: README.intl (1.4), WhatsNew (1.109):
+
+	Document CREATE COLLATION
+
+2006-12-16 01:30  asfernandes
+
+	* firebird2/src/jrd/: unicode_util.cpp (1.11), unicode_util.h
+	(1.8):
+
+	Fixed CORE-1056 - A query could produce different results,
+	depending on the presence of an index
+
+2006-12-15 18:30  alexpeshkoff
+
+	* firebird2/src/jrd/btr.cpp (1.185):
+
+	frontported fixes from 2.0
+
+2006-12-15 17:04  dimitr
+
+	* firebird2/src/dsql/metd.epp (1.97):
+
+	Fixed CORE-1055. A change in METD_get_relation() seems to not be
+	strongly required, but I keep it in HEAD for testing.
+
+2006-12-15 16:46  dimitr
+
+	* firebird2/src/remote/: os/win32/wnet.cpp (1.41), inet.cpp
+	(1.182), xnet.cpp (1.83):
+
+	1) WNET and XNET cannot support OOB transmission, so they should
+	not ask for that.  2) Cleanup the INET protocol types.
+
+2006-12-15 11:50  dimitr
+
+	* firebird2/src/jrd/DatabaseSnapshot.cpp (1.22):
+
+	Fixed crash in monitoring tables on linux.
+
 2006-12-15 02:32  asfernandes
 
 	* firebird2/src/jrd/dfw.epp (1.200):
