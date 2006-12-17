@@ -2168,8 +2168,8 @@ USHORT PageManager::getTempPageSpaceID(thread_db* tdbb)
 		srand(PAG_attachment_id(tdbb));
 		while (true)
 		{
-			const USHORT tmp = (rand() * (MAX_USHORT - TEMP_PAGE_SPACE - 1)) / (RAND_MAX + 1) + TEMP_PAGE_SPACE + 1;
-			lock->lck_key.lck_long = tmp;
+			const double tmp = rand() * (MAX_USHORT - TEMP_PAGE_SPACE - 1.0) / (RAND_MAX + 1.0);
+			lock->lck_key.lck_long = tmp + TEMP_PAGE_SPACE + 1;
 			if (LCK_lock(tdbb, lock, LCK_write, LCK_NO_WAIT))
 				break;
 		}
