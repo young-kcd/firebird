@@ -1166,6 +1166,8 @@ C --
       PARAMETER (GDS__bad_proc_BLR                     = 335544876)
       INTEGER*4 GDS__key_too_big                     
       PARAMETER (GDS__key_too_big                      = 335544877)
+      INTEGER*4 GDS__concurrent_transaction          
+      PARAMETER (GDS__concurrent_transaction           = 335544878)
       INTEGER*4 GDS__gfix_db_name                    
       PARAMETER (GDS__gfix_db_name                     = 335740929)
       INTEGER*4 GDS__gfix_invalid_sw                 

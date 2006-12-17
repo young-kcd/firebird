@@ -1436,7 +1436,9 @@ void VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 		if (prepare_update(tdbb, transaction, tid_fetch, rpb, &temp, 0,
 			stack, false))
 		{
-			ERR_post(isc_deadlock, isc_arg_gds, isc_update_conflict, 0);
+			ERR_post(isc_deadlock, isc_arg_gds, isc_update_conflict,
+					 isc_arg_gds, isc_concurrent_transaction, isc_arg_number, rpb->rpb_transaction_nr,
+					 0);
 		}
 
 		/* Old record was restored and re-fetched for write.  Now replace it.  */
@@ -2351,7 +2353,9 @@ void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb,
 	if (prepare_update(tdbb, transaction, org_rpb->rpb_transaction_nr, org_rpb,
 				   &temp, new_rpb, stack, false))
 	{
-		ERR_post(isc_deadlock, isc_arg_gds, isc_update_conflict, 0);
+		ERR_post(isc_deadlock, isc_arg_gds, isc_update_conflict,
+				 isc_arg_gds, isc_concurrent_transaction, isc_arg_number, org_rpb->rpb_transaction_nr,
+				 0);
 	}
 
 /* Old record was restored and re-fetched for write.  Now replace it.  */
@@ -2559,7 +2563,9 @@ void VIO_refetch_record(thread_db* tdbb, record_param* rpb,
 		// who modified the record. Alex P, 18-Jun-03
 		(rpb->rpb_transaction_nr != transaction->tra_number))
 	{
-		ERR_post(isc_deadlock, isc_arg_gds, isc_update_conflict, 0);
+		ERR_post(isc_deadlock, isc_arg_gds, isc_update_conflict,
+				 isc_arg_gds, isc_concurrent_transaction, isc_arg_number, rpb->rpb_transaction_nr,
+				 0);
 	}
 }
 
@@ -4591,8 +4597,11 @@ static int prepare_update(	thread_db*		tdbb,
 			switch (state) {
 			case tra_committed:
 				// We need to loop waiting in read committed transactions only
-				if (!(transaction->tra_flags & TRA_read_committed)) {
-					ERR_post(isc_deadlock, isc_arg_gds, isc_update_conflict, 0);
+				if (!(transaction->tra_flags & TRA_read_committed))
+				{
+					ERR_post(isc_deadlock, isc_arg_gds, isc_update_conflict,
+							 isc_arg_gds, isc_concurrent_transaction, isc_arg_number, update_conflict_trans,
+							 0);
 				}
 			case tra_active:
 				return PREPARE_LOCKERR;
