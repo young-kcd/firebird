@@ -944,6 +944,12 @@ static void attach_database(rem_port* port,
 				dpb_buffer.getBytes(), dpb_buffer.getClumpLength());
 			dpb_buffer.deleteClumplet();
 
+			// remove extra trusted_auth if present (security measure)
+			while (dpb_buffer.find(isc_spb_trusted_auth))
+			{
+				dpb_buffer.deleteClumplet();
+			}
+
 			port->port_trusted_auth = FB_NEW(*getDefaultMemoryPool()) 
 				ServerAuth(file, l, dpb_buffer, attach_database2, operation);
 			AuthSspi* authSspi = port->port_trusted_auth->authSspi;
@@ -963,6 +969,8 @@ static void attach_database(rem_port* port,
 		{
 			ISC_STATUS_ARRAY status_vector;
 			Firebird::stuff_exception(status_vector, e);
+			delete port->port_trusted_auth;
+			port->port_trusted_auth = 0;
 			port->send_response(send, 0, 0, status_vector, false);
 			return;
 		}
@@ -1048,12 +1056,21 @@ static void attach_database2(rem_port* port,
 	if (!status_vector[1])
 	{
 		RDB rdb = (RDB) ALLR_block(type_rdb, 0);
-		port->port_context = rdb;
+		if (rdb)
+		{
+			port->port_context = rdb;
 #ifdef DEBUG_REMOTE_MEMORY
-		printf("attach_databases(server)  allocate rdb     %x\n", rdb);
+			printf("attach_databases(server)  allocate rdb     %x\n", rdb);
 #endif
-		rdb->rdb_port = port;
-		rdb->rdb_handle = handle;
+			rdb->rdb_port = port;
+			rdb->rdb_handle = handle;
+		}
+		else
+		{
+			status_vector[0] = isc_arg_gds;
+			status_vector[1] = isc_virmemexh;
+			status_vector[2] = isc_arg_end;
+		}
 	}
 
 	port->send_response(send, 0, 0, status_vector, false);
@@ -4764,6 +4781,12 @@ static void attach_service(rem_port* port, P_ATCH* attach, PACKET* sendL)
 				spb.getBytes(), spb.getClumpLength());
 			spb.deleteClumplet();
 
+			// remove extra trusted_auth if present (security measure)
+			while (spb.find(isc_spb_trusted_auth))
+			{
+				spb.deleteClumplet();
+			}
+
 			port->port_trusted_auth = FB_NEW(*getDefaultMemoryPool()) 
 				ServerAuth(service_name, service_length, spb, attach_service2, op_trusted_auth);
 			AuthSspi* authSspi = port->port_trusted_auth->authSspi;
@@ -4783,6 +4806,8 @@ static void attach_service(rem_port* port, P_ATCH* attach, PACKET* sendL)
 		{
 			ISC_STATUS_ARRAY status_vector;
 			Firebird::stuff_exception(status_vector, e);
+			delete port->port_trusted_auth;
+			port->port_trusted_auth = 0;
 			port->send_response(sendL, 0, 0, status_vector, false);
 			return;
 		}
@@ -4886,7 +4911,7 @@ ISC_STATUS rem_port::service_attach(const char* service_name,
 		else
 		{
 			status_vector[0] = isc_arg_gds;
-			status_vector[1] = isc_bad_svc_handle;
+			status_vector[1] = isc_virmemexh;
 			status_vector[2] = isc_arg_end;
 		}
 	}
