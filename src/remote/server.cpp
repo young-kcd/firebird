@@ -821,6 +821,7 @@ static SLONG append_request_chain( SERVER_REQ request, SERVER_REQ * que_inst)
 	return requests;
 }
 
+
 static SLONG append_request_next( SERVER_REQ request, SERVER_REQ * que_inst)
 {
 /**************************************
@@ -845,6 +846,7 @@ static SLONG append_request_next( SERVER_REQ request, SERVER_REQ * que_inst)
 	return requests;
 }
 #endif
+
 
 static void addClumplets(Firebird::ClumpletWriter& dpb_buffer, 
 						 const ParametersSet& par, 
@@ -900,6 +902,7 @@ static void addClumplets(Firebird::ClumpletWriter& dpb_buffer,
 			dpb_buffer.moveNext();
 	}
 }
+
 
 static void attach_database(rem_port* port,
 							P_OP operation, 
@@ -969,6 +972,7 @@ static void attach_database(rem_port* port,
 	attach_database2(port, operation, file, l, dpb_buffer.getBuffer(), 
 		dpb_buffer.getBufferLength(), send);
 }
+
 
 static void attach_database2(rem_port* port,
 							 P_OP operation,
@@ -4808,6 +4812,7 @@ static void attach_service2(rem_port* port,
 	port->port_trusted_auth = 0;
 #endif
 }
+
 
 ISC_STATUS rem_port::service_attach(const char* service_name, 
 									const USHORT service_length,

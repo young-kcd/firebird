@@ -1,5 +1,5 @@
-#ifndef AUTH_SPPI_H
-#define AUTH_SPPI_H
+#ifndef AUTH_SSPI_H
+#define AUTH_SSPI_H
 
 #include <firebird.h>
 
@@ -31,7 +31,7 @@ public:
 	AuthSspi();
 	~AuthSspi();
 
-	bool isActive()
+	bool isActive() const
 	{
 		return hasContext;
 	}
@@ -42,4 +42,4 @@ public:
 };
 
 #endif // TRUSTED_AUTH
-#endif // AUTH_SPPI_H
+#endif // AUTH_SSPI_H
