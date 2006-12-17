@@ -459,7 +459,14 @@ void SecurityDatabase::verifyUser(TEXT* name,
 		ERR_post(isc_login, 0);
 	}
 
-	if (! (Config::getAuthMethod() & 1))
+	static AmCache useNative = AM_UNKNOWN;
+	if (useNative == AM_UNKNOWN)
+	{
+		Firebird::PathName authMethod(Config::getAuthMethod());
+		useNative = (authMethod == AmNative || authMethod == AmMixed) ? 
+			AM_ENABLED : AM_DISABLED;
+	}
+	if (useNative == AM_DISABLED)
 	{
 		remoteFailedLogins().loginFail(remoteId);
 		ERR_post(isc_login, 0);

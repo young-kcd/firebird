@@ -62,6 +62,12 @@ extern const char*	GCPolicyBackground;
 extern const char*	GCPolicyCombined;
 extern const char*	GCPolicyDefault;
 
+extern const char*	AmNative;
+extern const char*	AmTrusted;
+extern const char*	AmMixed;
+
+enum AmCache {AM_UNKNOWN, AM_DISABLED, AM_ENABLED};
+
 class Config
 {
 	enum ConfigKey
@@ -353,9 +359,9 @@ public:
 	static bool getOldColumnNaming();
 
 	/*
-		Use standard (1), trusted (2) or mixed (3) authentication 
+		Use native, trusted or mixed authentication 
 	*/
-	static int getAuthMethod();
+	static const char *getAuthMethod();
 
 };
 

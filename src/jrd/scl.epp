@@ -611,7 +611,15 @@ void SCL_init(bool create,
 		if (!JRD_get_thread_security_disabled())
 		{
 #ifdef TRUSTED_AUTH
-			if (trusted_user && (Config::getAuthMethod() & 2))
+			static AmCache useTrusted = AM_UNKNOWN;
+			if (useTrusted == AM_UNKNOWN)
+			{
+				Firebird::PathName authMethod(Config::getAuthMethod());
+				useTrusted = (authMethod == AmTrusted || authMethod == AmMixed) ? 
+					AM_ENABLED : AM_DISABLED;
+			}
+
+			if (trusted_user && (useTrusted == AM_ENABLED))
 			{
 				strncpy(name, trusted_user, sizeof name);
 				name[sizeof name - 1] = 0;

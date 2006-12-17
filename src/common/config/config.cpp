@@ -49,6 +49,10 @@ const char*	GCPolicyDefault	= GCPolicyCombined;
 const char*	GCPolicyDefault	= GCPolicyCooperative;
 #endif
 
+const char*	AmNative	= "native";
+const char*	AmTrusted	= "trusted";
+const char*	AmMixed		= "mixed";
+
 const ConfigImpl::ConfigEntry ConfigImpl::entries[] =
 {
 	{TYPE_STRING,		"RootDirectory",			(ConfigValue) 0},
@@ -124,7 +128,7 @@ const ConfigImpl::ConfigEntry ConfigImpl::entries[] =
 	{TYPE_STRING,		"GCPolicy",					(ConfigValue) GCPolicyDefault},	// garbage collection policy
 	{TYPE_BOOLEAN,		"Redirection",				(ConfigValue) false},
 	{TYPE_BOOLEAN,		"OldColumnNaming",			(ConfigValue) false},	// if true use old style concatenation
-	{TYPE_INTEGER,		"Authentication",			(ConfigValue) 3}		// use standard (1), trusted (2) or mixed (3)
+	{TYPE_STRING,		"Authentication",			(ConfigValue) AmMixed}	// use native, trusted or mixed
 };
 
 /******************************************************************************
@@ -522,7 +526,7 @@ bool Config::getOldColumnNaming()
 	return (bool) sysConfig.values[KEY_OLD_COLUMN_NAMING];
 }
 
-int Config::getAuthMethod()
+const char *Config::getAuthMethod()
 {
-	return (int) sysConfig.values[KEY_AUTH_METHOD];
+	return (const char *) sysConfig.values[KEY_AUTH_METHOD];
 }
