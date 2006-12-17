@@ -71,6 +71,8 @@ class tsec *gdsec;
 
 static int common_main(int, const char**, Jrd::pfn_svc_output, Jrd::Service*);
 static void util_output(const SCHAR*, ...);
+static int util_print(const SCHAR*, ...);
+static int vutil_print(SCHAR*, va_list);
 
 static void data_print(void*, const internal_user_data*, bool);
 static bool get_line(int*, SCHAR**, TEXT*, size_t);
@@ -440,14 +442,25 @@ int common_main(int argc,
 	return ret;					// silence compiler warning
 
 	}	// try
-	catch (const Firebird::Exception&) {
+	catch (const Firebird::LongJump&) {
 		/* All calls to gsec_exit(), normal and error exits, wind up here */
 		tdsec->tsec_service_blk->svc_started();
 		tdsec->tsec_throw = false;
 		const int exit_code = tdsec->tsec_exit_code;
 
-		/* All returns occur from this point - even normal returns */
 		return exit_code;
+	}
+	catch (const Firebird::Exception& e) {
+		// Real exceptions are coming here
+		ISC_STATUS_ARRAY status;
+		Firebird::CircularStringsBuffer<4096> localStrings;
+		e.stuff_exception(status, &localStrings);
+		GSEC_print_status(status, false);
+
+		tdsec->tsec_service_blk->svc_started();
+		tdsec->tsec_throw = false;
+
+		return 127;
 	}
 }
 
@@ -1219,7 +1232,7 @@ static SSHORT parse_cmd_line(int argc, const TEXT* const* argv, tsec* tdsec)
 	return ret;
 }
 
-void GSEC_print_status(const ISC_STATUS* status_vector)
+void GSEC_print_status(const ISC_STATUS* status_vector, bool exitOnError)
 {
 /**************************************
  *
@@ -1250,16 +1263,67 @@ void GSEC_print_status(const ISC_STATUS* status_vector)
 		const char* nl = vector[0] == isc_arg_interpreted ? "" : "\n";
 		if (fb_interpret(s, sizeof(s), &vector)) {
 			TRANSLATE_CP(s);
-			util_output("%s%s", s, nl);
+			int exitCode = util_print("%s%s", s, nl);
+			if (exitOnError && exitCode != 0) {
+				gsec_exit(exitCode, tsec::getSpecific());
+			}
 			while (fb_interpret(s, sizeof(s), &vector)) {
 				TRANSLATE_CP(s);
-				util_output("%s%s", s, nl);
+				exitCode = util_print("%s%s", s, nl);
+				if (exitOnError && exitCode != 0) {
+					gsec_exit(exitCode, tsec::getSpecific());
+				}
 			}
 		}
 	}
 }
 
-static void util_output( const SCHAR* format, ...)
+static int vutil_print(const SCHAR* format, va_list arglist)
+{
+/**************************************
+ *
+ *	v u t i l _ p r i n t
+ *
+ **************************************
+ *
+ * Functional description
+ *	Platform independent output routine.
+ *  Varargs function.
+ *
+ **************************************/
+	tsec* tdsec = tsec::getSpecific();
+
+	Firebird::string buf;
+	buf.vprintf(format, arglist);
+	
+	return tdsec->tsec_output_proc(tdsec->tsec_output_data, (UCHAR*)(buf.c_str()));
+}
+
+static void util_output(const SCHAR* format, ...)
+{
+/**************************************
+ *
+ *	u t i l _ o u t p u t
+ *
+ **************************************
+ *
+ * Functional description
+ *	Platform independent output routine.
+ *  Exit on output error
+ *
+ **************************************/
+	va_list arglist;
+	va_start(arglist, format);
+	int exit_code = vutil_print(format, arglist);
+	va_end(arglist);
+
+	if (exit_code != 0) 
+	{
+		gsec_exit(exit_code, tsec::getSpecific());
+	}
+}
+
+static int util_print(const SCHAR* format, ...)
 {
 /**************************************
  *
@@ -1271,25 +1335,12 @@ static void util_output( const SCHAR* format, ...)
  *	Platform independent output routine.
  *
  **************************************/
-	int exit_code;
+	va_list arglist;
+	va_start(arglist, format);
+	int exit_code = vutil_print(format, arglist);
+	va_end(arglist);
 
-	tsec* tdsec = tsec::getSpecific();
-
-	if (format[0] == '\0') {
-		exit_code = tdsec->tsec_output_proc(tdsec->tsec_output_data,
-									(UCHAR * )(""));
-	}
-	else {
-		UCHAR buf[1000];
-		va_list arglist;
-		va_start(arglist, format);
-		VSNPRINTF((char *) buf, sizeof(buf), format, arglist);
-		va_end(arglist);
-		exit_code = tdsec->tsec_output_proc(tdsec->tsec_output_data, buf);
-	}
-
-	if (exit_code != 0)
-		gsec_exit(exit_code, tdsec);
+	return exit_code;
 }
 
 void GSEC_error_redirect(const ISC_STATUS* status_vector,
@@ -1326,8 +1377,8 @@ void GSEC_error(
  *	Format and print an error message, then punt.
  *
  **************************************/
-#ifdef SERVICE_THREAD
 	tsec* tdsec = tsec::getSpecific();
+#ifdef SERVICE_THREAD
 	ISC_STATUS* status = tdsec->tsec_service_blk->svc_status;
 
 	CMD_UTIL_put_svc_status(status, GSEC_MSG_FAC, errcode,
@@ -1336,8 +1387,6 @@ void GSEC_error(
 							isc_arg_string, arg3,
 							isc_arg_string, arg4, isc_arg_string, arg5);
 	tdsec->tsec_service_blk->svc_started();
-#else
-	tsec* tdsec = tsec::getSpecific();
 #endif
 
 	GSEC_print(errcode, arg1, arg2, arg3, arg4, arg5);
