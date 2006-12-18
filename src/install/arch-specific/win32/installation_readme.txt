@@ -1,4 +1,4 @@
-Firebird Database Server 1.5.3 
+Firebird Database Server 1.5.4
 ==================================================
 
 This document is a guide to installing this package of 
@@ -13,7 +13,7 @@ Contents
 o Before installation
 o Installation on systems with Firebird 2.0
 o New features of the installer
-o Deprecated Features related to installation
+o Deprecated features related to installation
 o Uninstallation
 o Other Notes
 o Installation from a batch file
@@ -30,11 +30,37 @@ before installing this package.
 Installation on systems with Firebird 2.0 Alpha
 --------------------------------------------------
 
-The Firebird 1.5.3 installation process cannot detect 
+The Firebird 1.5.4 installation process cannot detect 
 a running version of Firebird 2.0 Alpha. If you have 
 been running an alpha version of Firebird 2.0 
 it is essential that you stop the server before 
-attempting to install Firebird 1.5.3.
+attempting to install Firebird 1.5.4.
+
+
+New features of the installer in Firbird 1.5.4
+----------------------------------------------
+
+o If an existing firebird.conf is detected the
+  installer will install the default conf file
+  as:
+
+  firebird.conf.default.
+
+  The existing firebird.conf file will be untouched.
+  This is to ensure that access restrictions are
+  maintained after an upgrade.
+
+o More languages have been added to the installer -
+  Bosnian, Spanish, Italian, Polish and Russian.
+  
+  Note 1 - Languages are listed in alphabetical order
+  by their original language name, not their english 
+  name.
+
+  Note 2 - Language visibility depends upon the code
+  pages installed. Eastern European languages will 
+  typically not be available to see users of a Western
+  European language.
 
 
 New features of the installer in Firebird 1.5.3
@@ -79,16 +105,6 @@ o The rules for library installation have changed
       /force
     which allows those with a 'devil may care'
     attitude to override the above.
-
-
-o If an amended firebird.conf exists in the 
-  installation directory it is saved as:
-    firebird.conf.saved.n
-  where n is a number. The installer always installs 
-  the default firebird.conf file. This is to guarantee
-  consistency to the installation process. Otherwise 
-  the installer would have to parse the existing (and 
-  possibly broken) configuration file.
 
 
 Deprecated Features related to installation

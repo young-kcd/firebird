@@ -1,8 +1,8 @@
 
 ==================================
-Firebird 1.5.3       (Win32 Build)
+Firebird 1.5.4       (Win32 Build)
 ==================================
-
+(Release Candidate 1)
 
 o Introduction
 o Stability
@@ -18,21 +18,13 @@ o Requesting New Features
 Introduction
 ============
 
-Welcome to Firebird 1.5.3. Full details of the fixes and
+Welcome to Firebird 1.5.4. Full details of the fixes and
 minor enhancements in this release are contained in the
 release notes. These are in the doc/ directory.
 
 
 Stability
 =========
-
-Firebird 1.5 is the first version of Firebird compiled
-with C++. It has been through a long beta and release
-candidate cycle and is considered to be as stable as
-its predecessor, Firebird 1.0.3. No major problems have
-been discovered since the original release of Firebird
-1.5.0 and as such it is considered as stable as or
-better than the last release of Firebird 1 (v1.0.3).
 
 There is no reason to be concerned about using this
 maintenance release in a production environment.
@@ -133,24 +125,27 @@ o Are you sure you understand how Firebird works?
 
 o Still think it is a bug?
 
-  Check the list of Open Bugs. This can be found in the
-  Firebird bug tracker:
+  First check the issue tracker here:
 
-    http://sourceforge.net/tracker/?group_id=9028&atid=109028
+    http://tracker.firebirdsql.org/secure/BrowseProject.jspa
 
-Otherwise, if you are reasonably sure it is a bug then
-please try to develop a reproducible test case. You can
-then submit it to the bug tracker.
+Please do not use the issue tracker to get technical
+support. If in doubt subscribe to the support list 
+first at
 
+  mailto:firebird-support-subscribe@yahoogroups.com
+  
+and ask your question there.
 
+	
 Requesting New Features
 =======================
 
 Before submitting feature requests please review the
 existing feature request list. Chances are that someone
-has already thought of it. Use this link to review a
-current list and submit new request, if necessary:
+has already thought of it. Existing feature requests
+can be browsed here:
 
-  http://sourceforge.net/tracker/?group_id=9028&atid=359028
+  http://tracker.firebirdsql.org/secure/CreateIssue!default.jspa
 
 

@@ -1,4 +1,5 @@
 en.MyAppName=Firebird Database Server 1.5
+en.ServerInstall=Full installation of Server and development tools.
 en.SuperServerInstall=Full installation of Super Server and development tools.
 en.ClassicServerInstall=Full installation of Classic Server and development tools.
 en.DeveloperInstall=Installation of Client tools for Developers and database administrators.
@@ -39,13 +40,13 @@ en.InstallSummaryCancel1= If you continue with this installation Firebird will b
 en.InstallSummaryCancel2= You will have to complete installation manually.
 en.InstallSummaryCancel3= Do you want to CANCEL this installation?
 
-en.InstalledProducts='re-installation analysis indicates that %s existing Firebird or Interbase %s been found.
+en.InstalledProducts=Pre-installation analysis indicates that %s existing Firebird or Interbase %s been found.
 en.InstalledProdCountSingular=version has
 en.InstalledProdCountPlural=versions have
 
-en.Fb15Running1=An existing Firebird 1.5 Server is running.
-en.Fb15Running2= You must close the application or stop the
-en.Fb15Running3=         service before continuing.
+en.FbRunning1=An existing Firebird %1 Server is running.
+en.FbRunning2= You must close the application or stop the
+en.FbRunning3=         service before continuing.
 
 en.PreviousInstallBroken=   (Install appears broken due to version string mismatch.)
 en.PreviousInstallGood=   (Installation appears to be correct.)
@@ -56,8 +57,8 @@ en.ReleaseNotes= release notes. (Requires Acrobat Reader.)
 en.Uninstall=Uninstall Firebird
 en.Winsock2Web1=Winsock 2 is not installed.
 en.Winsock2Web2=Would you like to Visit the Winsock 2 Update Home Page?
-en.NoWinsock2 = Please Install Winsock 2 Update before continuing
-en.MSWinsock2Update = http://www.microsoft.com/windows95/downloads/contents/WUAdminTools/S_WUNetworkingTools/W95Sockets2/Default.asp
+en.NoWinsock2=Please Install Winsock 2 Update before continuing
+en.MSWinsock2Update=http://www.microsoft.com/windows95/downloads/contents/WUAdminTools/S_WUNetworkingTools/W95Sockets2/Default.asp
 
 en.RunCSNoGuardian=Run Firebird classic server (without guardian)
 en.RunSSNoGuardian=Run Firebird Superserver (without guardian)
@@ -67,3 +68,4 @@ en.RunISQL=Run command-line based Interactive SQL tool
 
 en.ReadmeFile=readme.txt
 en.InstallationReadmeFile=installation_readme.txt
+
