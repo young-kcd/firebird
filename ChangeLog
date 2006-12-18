@@ -1,3 +1,67 @@
+2006-12-17 22:03  asfernandes
+
+	* firebird2/: src/jrd/vio.cpp (1.181), src/include/gen/codetext.h
+	(1.59), src/include/gen/iberror.h (1.60), src/include/gen/msgs.h
+	(1.76), src/include/gen/rdb_codes.h (1.56),
+	src/include/gen/sql_code.h (1.62), src/msgs/facilities.sql (1.93),
+	src/msgs/messages.sql (1.110), src/msgs/system_errors.sql (1.49),
+	lang_helpers/gds_codes.ftn (1.51), lang_helpers/gds_codes.pas
+	(1.51):
+
+	Report number of concurrent transaction when raising
+	update_conflict
+
+2006-12-17 20:40  hvlad
+
+	* firebird2/src/jrd/pag.cpp (1.119):
+
+	Correct temporary space id generation for classic server
+
+2006-12-17 16:53  alexpeshkoff
+
+	* firebird2/src/remote/server.cpp (1.139):
+
+	1. Closed security whole with malformed DPB/SPB 2. Avoid memory
+	leak when exception is thrown.	3. Better diiagnostics.  Thanks to
+	Claudio.
+
+2006-12-17 16:51  alexpeshkoff
+
+	* firebird2/src/auth/trusted/AuthSspi.h (1.5):
+
+	Added some comments
+
+2006-12-17 15:02  alexpeshkoff
+
+	* firebird2/: src/common/config/config.cpp (1.74),
+	src/common/config/config.h (1.42),
+	builds/install/misc/firebird.conf (1.25), src/jrd/pwd.cpp (1.52),
+	src/jrd/scl.epp (1.80):
+
+	Use symbolic names for authentication methods in firebird.conf
+
+2006-12-17 12:19  alexpeshkoff
+
+	* firebird2/src/utilities/gsec/: gsec.cpp (1.59), gsec_proto.h
+	(1.13):
+
+	Fixed CORE-1057
+
+2006-12-17 10:09  robocop
+
+	* firebird2/src/: auth/trusted/AuthSspi.h (1.4), remote/server.cpp
+	(1.138):
+
+	Misc.
+
+2006-12-17 10:06  robocop
+
+	* firebird2/src/msgs/: facilities.sql (1.92), messages.sql (1.109):
+
+	Please play by the rules: - New messages go at the end - Platform
+	is named Windows (not windows or window) - Update facilities.sql
+	accordingly.
+
 2006-12-16 03:21  asfernandes
 
 	* firebird2/src/dsql/metd.epp (1.98):
