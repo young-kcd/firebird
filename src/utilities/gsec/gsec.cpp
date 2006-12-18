@@ -444,9 +444,10 @@ int common_main(int argc,
 	}	// try
 	catch (const Firebird::LongJump&) {
 		/* All calls to gsec_exit(), normal and error exits, wind up here */
+		const int exit_code = tdsec->tsec_exit_code;
+
 		tdsec->tsec_service_blk->svc_started();
 		tdsec->tsec_throw = false;
-		const int exit_code = tdsec->tsec_exit_code;
 
 		return exit_code;
 	}
@@ -455,10 +456,11 @@ int common_main(int argc,
 		ISC_STATUS_ARRAY status;
 		Firebird::CircularStringsBuffer<4096> localStrings;
 		e.stuff_exception(status, &localStrings);
-		GSEC_print_status(status, false);
 
 		tdsec->tsec_service_blk->svc_started();
 		tdsec->tsec_throw = false;
+
+		GSEC_print_status(status, false);
 
 		return 127;
 	}
