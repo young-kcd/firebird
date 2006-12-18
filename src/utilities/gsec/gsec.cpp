@@ -86,7 +86,7 @@ void inline gsec_exit(int code, tsec* tdsec)
 {
 	tdsec->tsec_exit_code = code;
 	if (tdsec->tsec_throw)
-		throw std::exception();
+		Firebird::status_exception::raise();
 }
 
 #ifdef SERVICE_THREAD
@@ -236,8 +236,8 @@ int common_main(int argc,
 		argc -= 4;
 	}
 
-	ISC_STATUS* status = tdsec->tsec_status;
 	SSHORT ret = parse_cmd_line(argc, argv, tdsec);
+	
 	Firebird::PathName databaseName;
 	bool databaseNameEntered = user_data->database_name_entered;
 	if (user_data->database_name_entered)
@@ -271,6 +271,7 @@ int common_main(int argc,
 	}
 	databaseName.copyTo(user_data->database_name, sizeof(user_data->database_name));
 	
+	ISC_STATUS* status = tdsec->tsec_status;
 #ifdef SUPERCLIENT
 	useServices = true;
 #else //SUPERCLIENT
@@ -428,11 +429,26 @@ int common_main(int argc,
 	return ret;					// silence compiler warning
 
 	}	// try
-	catch (const std::exception&) {
-		/* All calls to gsec_exit(), normal and error exits, wind up here */
+	catch (const std::exception& e) {
+		/* 
+		 * All exceptions and calls to gsec_exit(), 
+		 * normal and error exits, wind up here 
+		 */
+		int exit_code = tdsec->tsec_exit_code;
+
+		ISC_STATUS_ARRAY status;
+		memset(status, 0, sizeof status);
+		Firebird::CircularStringsBuffer<4096> localStrings;
+		Firebird::stuff_exception(status, e, &localStrings);
+
 		tdsec->tsec_service_blk->svc_started();
 		tdsec->tsec_throw = false;
-		const int exit_code = tdsec->tsec_exit_code;
+		
+		if (status[0]) {
+			// We have real exception, gsec_exit() was not called
+			GSEC_print_status(status);
+			exit_code = 127;
+		}
 
 		/* All returns occur from this point - even normal returns */
 		return exit_code;
