@@ -1033,6 +1033,16 @@ void DYN_modify_global_field(Global* gbl,
 				FLD.RDB$CHARACTER_LENGTH.NULL = FALSE;
 			}
 
+			if (charset) {
+				FLD.RDB$CHARACTER_SET_ID = new_dom.dyn_charset;
+				FLD.RDB$CHARACTER_SET_ID.NULL = FALSE;
+			}
+
+			if (collation) {
+				FLD.RDB$COLLATION_ID = new_dom.dyn_collation;
+				FLD.RDB$COLLATION_ID.NULL = FALSE;
+			}
+
 			if (fldlen) {
 				/* CVC: Rescue from the wrong field_length with a helper. */
 				if (new_dom.dyn_dsc.dsc_dtype <= dtype_varying && new_dom.dyn_charbytelen)
@@ -3051,6 +3061,16 @@ void DYN_modify_sql_field(Global*					gbl,
 						FLD.RDB$CHARACTER_LENGTH.NULL = FALSE;
 					}
 
+					if (charset) {
+						FLD.RDB$CHARACTER_SET_ID = new_fld.dyn_charset;
+						FLD.RDB$CHARACTER_SET_ID.NULL = FALSE;
+					}
+
+					if (collation) {
+						FLD.RDB$COLLATION_ID = new_fld.dyn_collation;
+						FLD.RDB$COLLATION_ID.NULL = FALSE;
+					}
+
 					if (fldlen) {
 						// CVC: Rescue from the wrong field_length with a helper.
 						if (new_fld.dyn_dsc.dsc_dtype <= dtype_varying && new_fld.dyn_charbytelen)
@@ -3153,6 +3173,16 @@ void DYN_modify_sql_field(Global*					gbl,
 						if (charlen) {
 							FLD.RDB$CHARACTER_LENGTH = new_fld.dyn_charlen;
 							FLD.RDB$CHARACTER_LENGTH.NULL = FALSE;
+						}
+
+						if (charset) {
+							FLD.RDB$CHARACTER_SET_ID = new_fld.dyn_charset;
+							FLD.RDB$CHARACTER_SET_ID.NULL = FALSE;
+						}
+
+						if (collation) {
+							FLD.RDB$COLLATION_ID = new_fld.dyn_collation;
+							FLD.RDB$COLLATION_ID.NULL = FALSE;
 						}
 
 						if (fldlen) {
