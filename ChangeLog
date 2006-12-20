@@ -1,3 +1,9 @@
+2006-12-19 09:36  robocop
+
+	* firebird2/: src/jrd/btr.cpp (1.186), doc/README.intl (1.5):
+
+	Totally misc.
+
 2006-12-18 10:30  alexpeshkoff
 
 	* firebird2/src/utilities/gsec/gsec.cpp (1.60):
