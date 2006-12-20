@@ -23,18 +23,23 @@ Before installation
 -------------------
 
 It is recommended that you UNINSTALL all previous 
-versions of Firebird 1.0, Firebird 1.5 or InterBase 
-before installing this package.
+versions of Firebird 1.0, Firebird 1.5, Firebird 2.0
+or InterBase before installing this package.
 
 
-Installation on systems with Firebird 2.0 Alpha
---------------------------------------------------
+Installation on systems with Firebird 2.0
+-----------------------------------------
 
-The Firebird 1.5.4 installation process cannot detect 
-a running version of Firebird 2.0 Alpha. If you have 
-been running an alpha version of Firebird 2.0 
-it is essential that you stop the server before 
-attempting to install Firebird 1.5.4.
+The Firebird 1.5.4 installation process will detect
+a Firebird 2 installation. It will offer a warning 
+and allow you to cancel the install process. If you 
+continue the install process it will correctly
+detect a running Super Server. Installation will be
+cancelled. However, it cannot detect a running 
+Classic Server, and will continue installation. For 
+this reason it is advisable to manually verify the
+server being used if the installer warns of an 
+existing install.
 
 
 New features of the installer in Firbird 1.5.4
@@ -213,7 +218,7 @@ following parameters may be passed:
 /COMPONENTS="comma separated list of component names" 
 
   Choose from - ServerComponent,
-				ServerComponent\SuperServerComponent, 
+                ServerComponent\SuperServerComponent, 
                 ServerComponent\ClassicServerComponent,
                 DevAdminComponent and 
                 ClientComponent
