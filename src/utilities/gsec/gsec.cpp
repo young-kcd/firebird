@@ -453,9 +453,8 @@ int common_main(int argc,
 	}
 	catch (const Firebird::Exception& e) {
 		// Real exceptions are coming here
-		ISC_STATUS_ARRAY status;
-		Firebird::CircularStringsBuffer<4096> localStrings;
-		e.stuff_exception(status, &localStrings);
+		ISC_STATUS *status = tdsec->tsec_status;
+		e.stuff_exception(status);
 
 		tdsec->tsec_service_blk->svc_started();
 		tdsec->tsec_throw = false;
