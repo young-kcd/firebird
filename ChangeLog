@@ -1,3 +1,31 @@
+2006-12-19 13:08  paul_reeves
+
+	* firebird2/src/install/arch-specific/win32/:
+	FirebirdInstallEnvironmentChecks.inc (1.1.2.8),
+	FirebirdInstallSupportFunctions.inc (1.1.2.7),
+	FirebirdInstall_15.iss (1.5.2.26), custom_messages.inc (1.1.2.5):
+
+	Backport relevant enhancements to Windows installation kits from
+	V2.0
+
+2006-12-19 13:05  paul_reeves
+
+	* firebird2/src/install/arch-specific/win32/:
+	de/custom_messages_de.inc (1.1.2.4), fr/custom_messages_fr.inc
+	(1.1.2.6), hu/custom_messages_hu.inc (1.1.2.7),
+	pt/custom_messages_pt.inc (1.1.2.4), si/custom_messages_si.inc
+	(1.1.2.3), ba/Instalacija_ProcitajMe.txt (1.1.2.1),
+	ba/ProcitajMe.txt (1.1.2.1), ba/custom_messages_ba.inc (1.1.2.1),
+	es/custom_messages_es.inc (1.1.2.1), es/leame.txt (1.1.2.1),
+	es/leame_instalacion.txt (1.1.2.1), it/custom_messages_it.inc
+	(1.1.2.1), it/leggimi.txt (1.1.2.1), it/leggimi_installazione.txt
+	(1.1.2.1), pl/custom_messages_pl.inc (1.1.2.1), pl/czytajto.txt
+	(1.1.2.1), pl/instalacja_czytajto.txt (1.1.2.1), ru/Readme.txt
+	(1.1.2.1), ru/custom_messages_ru.inc (1.1.2.1),
+	ru/installation_readme.txt (1.1.2.1):
+
+	Add additional language support for Windows installation kits
+
 2006-12-18 16:12  paul_reeves
 
 	* firebird2/src/install/arch-specific/win32/:
