@@ -43,14 +43,15 @@ void GenerateRandomBytes(void* buffer, size_t size)
 	HCRYPTPROV hProv;
 
 	// Acquire crypto-provider context handle.
-	if (! CryptAcquireContext(&hProv, NULL, NULL, PROV_RSA_FULL, 0))
+	if (! CryptAcquireContext(&hProv, NULL, NULL, PROV_RSA_FULL, CRYPT_VERIFYCONTEXT))
 	{
 		if (GetLastError() == NTE_BAD_KEYSET)
 		{
 			// A common cause of this error is that the key container does not exist. 
 			// To create a key container, call CryptAcquireContext 
 			// using the CRYPT_NEWKEYSET flag. 
-			if (! CryptAcquireContext(&hProv, NULL, NULL, PROV_RSA_FULL, CRYPT_NEWKEYSET))
+			if (! CryptAcquireContext(&hProv, NULL, NULL, PROV_RSA_FULL,
+					CRYPT_VERIFYCONTEXT | CRYPT_NEWKEYSET))
 			{
 				Firebird::system_call_failed::raise("CryptAcquireContext");
 			}
