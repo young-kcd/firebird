@@ -212,9 +212,9 @@ following parameters may be passed:
 
 /COMPONENTS="comma separated list of component names" 
 
-  Choose from - SuperServerComponent, 
-                ClassicServerComponent, 
-                ServerComponent, 
+  Choose from - ServerComponent,
+				ServerComponent\SuperServerComponent, 
+                ServerComponent\ClassicServerComponent,
                 DevAdminComponent and 
                 ClientComponent
 
@@ -223,10 +223,11 @@ following parameters may be passed:
   automatically select a custom type. A full install 
   requires combining components. For example:
   
-  /COMPONENTS="SuperServerComponent, ServerComponent, 
+  /COMPONENTS="ServerComponent, 
+               ServerComponent\SuperServerComponent,  
                DevAdminComponent, ClientComponent"
   
-  would be required for a full install.
+  would be required for a full install of the SuperServer.
 
 
 /FORCE
