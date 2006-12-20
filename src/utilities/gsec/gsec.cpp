@@ -237,7 +237,7 @@ int common_main(int argc,
 	}
 
 	SSHORT ret = parse_cmd_line(argc, argv, tdsec);
-	
+
 	Firebird::PathName databaseName;
 	bool databaseNameEntered = user_data->database_name_entered;
 	if (user_data->database_name_entered)
@@ -438,8 +438,7 @@ int common_main(int argc,
 
 		ISC_STATUS_ARRAY status;
 		memset(status, 0, sizeof status);
-		Firebird::CircularStringsBuffer<4096> localStrings;
-		Firebird::stuff_exception(status, e, &localStrings);
+		Firebird::stuff_exception(status, e);
 
 		tdsec->tsec_service_blk->svc_started();
 		tdsec->tsec_throw = false;
@@ -447,6 +446,7 @@ int common_main(int argc,
 		if (status[0]) {
 			// We have real exception, gsec_exit() was not called
 			GSEC_print_status(status);
+			memcpy(tdsec->tsec_status, status, sizeof status);
 			exit_code = 127;
 		}
 
