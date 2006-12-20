@@ -44,7 +44,7 @@ public:
 	// accept security context from the client (used by server)
 	bool accept(DataHolder& data);
 
-	// returns windows user name, matching accepted security context
+	// returns Windows user name, matching accepted security context
 	bool getLogin(Firebird::string& login);
 };
 
