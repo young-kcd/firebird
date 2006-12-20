@@ -53,7 +53,7 @@ public:
 	operator Where*() {return ptr;}
 	bool operator !() const {return ptr ? false : true;}
 	Where* operator->() {return ptr;}
-	~AutoPtr<Where, Clear>() {Clear::clear(ptr);}
+	~AutoPtr() {Clear::clear(ptr);}
 private:
 	AutoPtr<Where, Clear>(AutoPtr<Where, Clear>&);
 	void operator=(AutoPtr<Where, Clear>&);

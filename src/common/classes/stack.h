@@ -120,7 +120,7 @@ namespace Firebird {
 
 		Stack<Object, Capacity>() : AutoStorage(), stk(0), stk_cache(0) { }
 
-		~Stack<Object, Capacity>()
+		~Stack()
 		{
 			delete stk;
 			delete stk_cache;
