@@ -734,9 +734,7 @@ USHORT DYN_get_string(const TEXT** ptr, Firebird::PathName& field, size_t, bool 
 	USHORT length = (UCHAR) *p++;
 	length |= ((USHORT) ((UCHAR) (*p++))) << 8;
 
-	Firebird::PathName temp;
-
-	temp.assign(p, length);
+	field.assign(p, length);
 	p += length;
 
 	*ptr = p;
@@ -744,19 +742,18 @@ USHORT DYN_get_string(const TEXT** ptr, Firebird::PathName& field, size_t, bool 
 	if (transliterate)
 	{
 		thread_db* tdbb = JRD_get_thread_data();
+		Firebird::PathName temp;
 
-		field.reserve(
+		temp.reserve(
 			INTL_convert_bytes(tdbb,
 				ttype_metadata, NULL, 0,
-				ttype_dynamic, (const BYTE*) temp.begin(), temp.length(), ERR_post));
+				ttype_dynamic, (const BYTE*) field.begin(), field.length(), ERR_post));
 
 		length = INTL_convert_bytes(tdbb,
-			ttype_metadata, (BYTE*) field.begin(), field.capacity(),
-			ttype_dynamic, (const BYTE*) temp.begin(), temp.length(), ERR_post);
-		field.resize(length);
+			ttype_metadata, (BYTE*) temp.begin(), temp.capacity(),
+			ttype_dynamic, (const BYTE*) field.begin(), field.length(), ERR_post);
+		field.assign(temp.c_str(), length);
 	}
-	else
-		field = temp;
 
 	return length;
 }
