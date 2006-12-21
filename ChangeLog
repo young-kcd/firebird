@@ -1,3 +1,17 @@
+2006-12-20 13:14  paul_reeves
+
+	*
+	firebird2/builds/install/arch-specific/win32/installation_scripted.txt
+	(1.1.6.1):
+
+	Update documentation (and as a by product fix CORE-1037)
+
+2006-12-20 10:24  alexpeshkoff
+
+	* firebird2/src/utilities/gsec/gsec.cpp (1.53.2.4):
+
+	bacported fix for threaded services
+
 2006-12-18 11:13  alexpeshkoff
 
 	* firebird2/src/utilities/gsec/gsec.cpp (1.53.2.3):
