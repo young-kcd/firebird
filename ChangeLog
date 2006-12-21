@@ -1,3 +1,24 @@
+2006-12-20 15:49  paul_reeves
+
+	* firebird2/src/install/arch-specific/win32/installation_readme.txt
+	(1.2.2.13):
+
+	Add note that this file is for RC1
+
+2006-12-20 15:48  paul_reeves
+
+	* firebird2/src/install/arch-specific/win32/installation_readme.txt
+	(1.2.2.12):
+
+	Update warning
+
+2006-12-20 13:10  paul_reeves
+
+	* firebird2/src/install/arch-specific/win32/installation_readme.txt
+	(1.2.2.11):
+
+	Update documentation (and as a by product fix CORE-1037)
+
 2006-12-19 13:08  paul_reeves
 
 	* firebird2/src/install/arch-specific/win32/:
