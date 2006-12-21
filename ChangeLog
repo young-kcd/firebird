@@ -1,3 +1,35 @@
+2006-12-20 15:43  asfernandes
+
+	* firebird2/src/jrd/os/win32/guid.cpp (1.14):
+
+	Workaround for unkown Windows configuration preventing security to
+	work
+
+2006-12-20 15:31  asfernandes
+
+	* firebird2/src/common/classes/auto.h (1.12):
+
+	Misc
+
+2006-12-20 09:38  alexpeshkoff
+
+	* firebird2/src/utilities/gsec/gsec.cpp (1.61):
+
+	Fix for threaded services. Thanks to Adriano.
+
+2006-12-20 09:22  robocop
+
+	* firebird2/src/auth/trusted/AuthSspi.h (1.6):
+
+	Totally misc.
+
+2006-12-20 09:21  robocop
+
+	* firebird2/src/common/classes/: auto.h (1.11), stack.h (1.20):
+
+	Remove unneeded template argument list (although I'm not sure why
+	some compilers don't like it).
+
 2006-12-19 09:36  robocop
 
 	* firebird2/: src/jrd/btr.cpp (1.186), doc/README.intl (1.5):
