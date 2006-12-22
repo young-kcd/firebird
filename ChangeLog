@@ -1,3 +1,23 @@
+2006-12-22 02:14  asfernandes
+
+	* firebird2/src/msgs/messages.sql (1.111):
+
+	Misc
+
+2006-12-22 01:12  asfernandes
+
+	* firebird2/src/jrd/dyn.epp (1.99):
+
+	Don't wast time moving bytes when not necessary
+
+2006-12-21 12:35  dimitr
+
+	* firebird2/src/jrd/dyn.epp (1.98):
+
+	Fixed bug introduced in one of the previous commits. Method
+	resize() was overwriting the DYN string with a pad character,
+	because reserve() doesn't set the length.
+
 2006-12-20 15:43  asfernandes
 
 	* firebird2/src/jrd/os/win32/guid.cpp (1.14):
