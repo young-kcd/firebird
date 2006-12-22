@@ -313,12 +313,12 @@ int BACKUP_backup(const TEXT* dbb_file, const TEXT* file_name)
 
 
 
-// decide what type of database we've got 
+	// decide what type of database we've got 
 
 	set_capabilities();
 
-// Write burp record first with other valuable information 
-// In case of split operation, write a 'split' header first to all the files 
+	// Write burp record first with other valuable information 
+	// In case of split operation, write a 'split' header first to all the files 
 
 	if (tdgbl->action->act_action == ACT_backup_split)
 	{
@@ -336,11 +336,11 @@ int BACKUP_backup(const TEXT* dbb_file, const TEXT* file_name)
 
 	MVOL_init_write(dbb_file, file_name, &tdgbl->io_cnt, &tdgbl->io_ptr);
 
-// Write database record 
+	// Write database record 
 
 	write_database(dbb_file);
 
-// Write global fields 
+	// Write global fields 
 
 	BURP_verbose(150, NULL, NULL, NULL, NULL, NULL);
 	// msg 150  writing global fields 
@@ -355,7 +355,19 @@ int BACKUP_backup(const TEXT* dbb_file, const TEXT* file_name)
 		write_shadow_files();
 	}
 
-// Write relations 
+	if (tdgbl->BCK_capabilities & BCK_ods8)
+	{
+		// Write Character Sets 
+		BURP_verbose(msgVerbose_write_charsets, NULL, NULL, NULL, NULL, NULL);
+		write_character_sets();
+
+		// Write Collations 
+		BURP_verbose(msgVerbose_write_collations, NULL, NULL, NULL, NULL,
+					 NULL);
+		write_collations();
+	}
+
+	// Write relations 
 
 	BURP_verbose(154, NULL, NULL, NULL, NULL, NULL);
 	// msg 154 writing relations 
@@ -397,19 +409,9 @@ int BACKUP_backup(const TEXT* dbb_file, const TEXT* file_name)
 		BURP_verbose(197, NULL, NULL, NULL, NULL, NULL);
 		// msg 197 writing exceptions 
 		write_exceptions();
-
-		// Write Character Sets 
-		BURP_verbose(msgVerbose_write_charsets, NULL, NULL, NULL, NULL, NULL);
-		write_character_sets();
-
-		// Write Collations 
-		BURP_verbose(msgVerbose_write_collations, NULL, NULL, NULL, NULL,
-					 NULL);
-		write_collations();
-
 	}
 
-// Now go back and write all data 
+	// Now go back and write all data 
 
 	for (burp_rel* relation = tdgbl->relations; relation; relation = relation->rel_next) {
 		put(tdgbl, (UCHAR) (rec_relation_data));
@@ -428,7 +430,7 @@ int BACKUP_backup(const TEXT* dbb_file, const TEXT* file_name)
 		put(tdgbl, (UCHAR) (rec_relation_end));
 	}
 
-// now for the new triggers in rdb$triggers 
+	// now for the new triggers in rdb$triggers 
 	if (tdgbl->BCK_capabilities & BCK_ffmptt) {
 		BURP_verbose(159, NULL, NULL, NULL, NULL, NULL);
 		// msg 159  writing triggers 
@@ -439,7 +441,7 @@ int BACKUP_backup(const TEXT* dbb_file, const TEXT* file_name)
 		write_user_privileges();
 	}
 
-// Last, but not least, go back and add any access control lists 
+	// Last, but not least, go back and add any access control lists 
 
 	if (tdgbl->BCK_capabilities & BCK_security)
 	{
@@ -490,7 +492,7 @@ int BACKUP_backup(const TEXT* dbb_file, const TEXT* file_name)
 		write_sql_roles();
 	}
 
-// Finish up 
+	// Finish up 
 
 	put(tdgbl, (UCHAR) (rec_end));
 	
