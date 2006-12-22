@@ -1003,10 +1003,11 @@ static SSHORT par_context(CompilerScratch* csb, SSHORT* context_ptr)
  **************************************/
 
 	const SSHORT context = (unsigned int) BLR_BYTE;
-	CompilerScratch::csb_repeat* tail = CMP_csb_element(csb, context);
 
 	if (context_ptr)
 		*context_ptr = context;
+
+	CompilerScratch::csb_repeat* tail = CMP_csb_element(csb, context);
 
 	if (tail->csb_flags & csb_used) {
 		if (csb->csb_g_flags & csb_reuse_context) {
@@ -1022,10 +1023,11 @@ static SSHORT par_context(CompilerScratch* csb, SSHORT* context_ptr)
 	{
 		error(csb, isc_too_many_contexts, 0);
 	}
-	CMP_csb_element(csb, stream);
 
 	tail->csb_flags |= csb_used;
 	tail->csb_stream = (UCHAR) stream;
+
+	CMP_csb_element(csb, stream);
 
 	return stream;
 }
