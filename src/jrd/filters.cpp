@@ -701,8 +701,10 @@ ISC_STATUS filter_transliterate_text(USHORT action, BlobControl* control)
 		aux->ctlaux_obj1 = INTL_convert_lookup(tdbb, dest_cs, source_cs);
 
 		if (action == isc_blob_filter_open) {
-			control->ctl_max_segment =
-				aux->ctlaux_obj1.convertLength(source->ctl_max_segment);
+			// hvlad: avoid possible overflow of USHORT variables converting long
+			// blob segments into multibyte encoding
+			const SLONG max_seg = aux->ctlaux_obj1.convertLength(source->ctl_max_segment);
+			control->ctl_max_segment = MIN(MAX_USHORT - 4, max_seg);
 
 			if (source->ctl_max_segment && control->ctl_max_segment)
 				aux->ctlaux_expansion_factor =
