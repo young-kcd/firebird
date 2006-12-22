@@ -1,3 +1,18 @@
+2006-12-22 01:52  asfernandes
+
+	* firebird2/src/jrd/os/win32/guid.cpp (1.11.6.1):
+
+	Backport workaround for unkown Windows configuration preventing
+	security to work
+
+2006-12-21 13:19  dimitr
+
+	*
+	firebird2/builds/install/arch-specific/win32/ru/custom_messages_ru.inc
+	(1.1.2.2):
+
+	Misc.
+
 2006-12-20 13:14  paul_reeves
 
 	*
