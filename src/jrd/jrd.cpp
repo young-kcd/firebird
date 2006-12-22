@@ -4646,6 +4646,7 @@ bool JRD_reschedule(thread_db* tdbb, SLONG quantum, bool punt)
 
 			if (request->req_flags & req_blocking)
 			{
+				request->req_flags &= ~req_blocking;
 				tdbb->tdbb_flags |= TDBB_sys_error;
 
 				if (punt) {
