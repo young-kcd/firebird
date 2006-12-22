@@ -1268,6 +1268,8 @@ int ISC_event_wait(SSHORT count,
 		return 0;
 	}
 
+#pragma FB_COMPILER_MESSAGE("Warning: B.O. with more than 16 handles")
+
 	HANDLE handles[16];
 	HANDLE* handle_ptr = handles;
 	event_t** ptr = events;
@@ -4213,6 +4215,8 @@ static bool semaphore_wait_isc_sync(int count, int semid, int *semnums)
  *	semaphore was poked else return FB_SUCCESS.
  *
  **************************************/
+#pragma FB_COMPILER_MESSAGE("Warning: B.O. with more than 16 inputs")
+ 
 	struct sembuf semops[16];
 	struct sembuf* semptr = semops;
 	for (int i = 0; i < count; ++semptr, i++) {
