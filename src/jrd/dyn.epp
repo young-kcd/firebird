@@ -652,7 +652,7 @@ USHORT DYN_get_string(const TEXT** ptr, TEXT* field, size_t size, bool translite
 			// msg 159: Name longer than database field size
 		}
 
-		TEXT* p2 = temp.getBuffer(length);
+		TEXT* p2 = (transliterate ? temp.getBuffer(length) : field);
 
 		do {
 			*p2++ = *p++;
@@ -667,8 +667,6 @@ USHORT DYN_get_string(const TEXT** ptr, TEXT* field, size_t size, bool translite
 			ttype_metadata, (BYTE*) field, size - 1,
 			ttype_dynamic, (const BYTE*) temp.begin(), length, ERR_post);
 	}
-	else
-		memcpy(field, temp.begin(), length);
 
 	field[length] = 0;
 
@@ -776,15 +774,11 @@ USHORT DYN_get_string(const TEXT** ptr, Firebird::UCharBuffer& array, size_t, bo
 	USHORT length = (UCHAR) *p++;
 	length |= ((USHORT) ((UCHAR) (*p++))) << 8;
 
-	Firebird::UCharBuffer temp;
-
-	memcpy(temp.getBuffer(length), p, length);
-	p += length;
-
-	*ptr = p;
-
 	if (transliterate)
 	{
+		Firebird::UCharBuffer temp;
+		memcpy(temp.getBuffer(length), p, length);
+
 		thread_db* tdbb = JRD_get_thread_data();
 
 		array.resize(
@@ -798,7 +792,10 @@ USHORT DYN_get_string(const TEXT** ptr, Firebird::UCharBuffer& array, size_t, bo
 		array.resize(length);
 	}
 	else
-		array = temp;
+		memcpy(array.getBuffer(length), p, length);
+
+	p += length;
+	*ptr = p;
 
 	return length;
 }
