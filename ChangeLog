@@ -1,3 +1,42 @@
+2006-12-22 16:49  dimitr
+
+	* firebird2/src/jrd/jrd.cpp (1.290):
+
+	Let's not cancel the verb cleanup process as it causes a fatal
+	bugcheck.
+
+2006-12-22 15:34  dimitr
+
+	* firebird2/src/jrd/par.cpp (1.152):
+
+	Fixed bug introduced by me recently.
+
+2006-12-22 15:29  asfernandes
+
+	* firebird2/src/burp/backup.epp (1.97):
+
+	Fixed CORE-1064 - Wrong backup order for character sets and
+	collations
+
+2006-12-22 10:53  hvlad
+
+	* firebird2/src/jrd/filters.cpp (1.53):
+
+	Correction and more comments for fix for CORE-1063
+
+2006-12-22 09:25  hvlad
+
+	* firebird2/src/jrd/filters.cpp (1.52):
+
+	Fixed CORE-1063: Server hangs eating CPU and performs huge I/O
+	copying different codepage fields
+
+2006-12-22 09:12  robocop
+
+	* firebird2/src/jrd/isc_sync.cpp (1.104):
+
+	Paranoid reminder.
+
 2006-12-22 02:14  asfernandes
 
 	* firebird2/src/msgs/messages.sql (1.111):
