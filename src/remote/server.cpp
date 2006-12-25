@@ -2349,10 +2349,19 @@ ISC_STATUS rem_port::fetch(P_SQLDATA * sqldata, PACKET* sendL)
 
 	response->p_sqldata_status = s;
 	response->p_sqldata_messages = 0;
-	this->send(sendL);
+
+	// hvlad: message->msg_address not used in xdr_protocol because of
+	// response->p_sqldata_messages set to zero above.
+	// It is important to not zero message->msg_address after send because 
+	// during thread context switch in send we can receive packet with
+	// op_free and op_execute (lazy port feature allow this) which itself
+	// set message->msg_address to some useful information
+	// This fix must be re-think when real multithreading will be implemented
 	if (message) {
 		message->msg_address = NULL;
 	}
+
+	this->send(sendL);
 
 /* Since we have a little time on our hands while this packet is sent
    and processed, get the next batch of records.  Start by finding the
