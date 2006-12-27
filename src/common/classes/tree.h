@@ -178,6 +178,8 @@ public:
 	// Remove item. Current position moves to next item after this call. 
 	// If next item doesn't exist method returns false
     bool fastRemove() { return defaultAccessor.fastRemove(); }
+
+	bool found(const Key& key) const { return defaultAccessor.found(key); }
 	
 	bool locate(const Key& key) { return defaultAccessor.locate(locEqual, key); }
 	
@@ -399,6 +401,12 @@ public:
 			return true;
 		}
 	
+		bool found(const Key& key) const 
+		{
+			return (curr && curPos < curr->getCount() && 
+				KeyOfValue::generate(this, current()) == key);
+		}
+
 		bool locate(const Key& key) {
 			return locate(locEqual, key);
 		}
