@@ -1206,7 +1206,7 @@ static bool setup_bitmaps(RecordSource* rsb, IRSB_NAV impure)
 		// There is no need to reset or release the bitmap, it is
 		// done in EVL_bitmap ().
 		impure->irsb_nav_bitmap = EVL_bitmap(tdbb,
-				reinterpret_cast<jrd_nod*>(rsb->rsb_arg[RSB_NAV_inversion]));
+				reinterpret_cast<jrd_nod*>(rsb->rsb_arg[RSB_NAV_inversion]), NULL);
 		return (*impure->irsb_nav_bitmap != NULL);
 	}
 

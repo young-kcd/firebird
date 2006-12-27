@@ -209,7 +209,7 @@ static void print_int64_key(SINT64, SSHORT, INT64_KEY);
 #endif
 static CONTENTS remove_node(thread_db*, index_insertion*, WIN*);
 static CONTENTS remove_leaf_node(thread_db*, index_insertion*, WIN*);
-static bool scan(thread_db*, UCHAR*, RecordBitmap**, index_desc*, 
+static bool scan(thread_db*, UCHAR*, RecordBitmap**, RecordBitmap*, index_desc*, 
 				 IndexRetrieval*, USHORT, temporary_key*, const SCHAR, 
 				 bool&, const temporary_key&);
 static void update_selectivity(index_root_page*, USHORT, const SelectivityList&);
@@ -560,7 +560,7 @@ static void checkForLowerKeySkip(
 }
 
 
-void BTR_evaluate(thread_db* tdbb, IndexRetrieval* retrieval, RecordBitmap** bitmap)
+void BTR_evaluate(thread_db* tdbb, IndexRetrieval* retrieval, RecordBitmap** bitmap, RecordBitmap* bitmap_and)
 {
 /**************************************
  *
@@ -661,7 +661,7 @@ void BTR_evaluate(thread_db* tdbb, IndexRetrieval* retrieval, RecordBitmap** bit
 	const UCHAR flags = page->btr_header.pag_flags;
 	// if there is an upper bound, scan the index pages looking for it
 	if (retrieval->irb_upper_count)	{
-		while (scan(tdbb, pointer, bitmap, &idx, retrieval, prefix, &upper, flags, 
+		while (scan(tdbb, pointer, bitmap, bitmap_and, &idx, retrieval, prefix, &upper, flags, 
 					skipLowerKey, lower)) 
 		{
 			page = (btree_page*) CCH_HANDOFF(tdbb, &window, page->btr_sibling,
@@ -705,7 +705,8 @@ void BTR_evaluate(thread_db* tdbb, IndexRetrieval* retrieval, RecordBitmap** bit
 				}
 
 				if (!skipLowerKey) {
-					RBM_SET(tdbb->getDefaultPool(), bitmap, node.recordNumber.getValue());
+					if (!bitmap_and || bitmap_and->test(node.recordNumber.getValue()))
+						RBM_SET(tdbb->getDefaultPool(), bitmap, node.recordNumber.getValue());
 				}
 				pointer = BTreeNode::readNode(&node, pointer, flags, true);
 				// Check if pointer is still valid
@@ -6391,7 +6392,7 @@ static CONTENTS remove_leaf_node(thread_db* tdbb, index_insertion* insertion, WI
 }
 
 
-static bool scan(thread_db* tdbb, UCHAR* pointer, RecordBitmap** bitmap,
+static bool scan(thread_db* tdbb, UCHAR* pointer, RecordBitmap** bitmap, RecordBitmap* bitmap_and,
 				 index_desc* idx, IndexRetrieval* retrieval, USHORT prefix, 
 				 temporary_key* key, const SCHAR page_flags, 
 				 bool& skipLowerKey, const temporary_key& lowerKey)
@@ -6566,10 +6567,12 @@ static bool scan(thread_db* tdbb, UCHAR* pointer, RecordBitmap** bitmap,
 
 			if (!ignore && !skipLowerKey) {
 				if ((flag & irb_starting) || !count) {
-					RBM_SET(tdbb->getDefaultPool(), bitmap, node.recordNumber.getValue());
+					if (!bitmap_and || bitmap_and->test(node.recordNumber.getValue()))
+						RBM_SET(tdbb->getDefaultPool(), bitmap, node.recordNumber.getValue());
 				}
 				else if (p > (end_key - count)) {
-					RBM_SET(tdbb->getDefaultPool(), bitmap, node.recordNumber.getValue());
+					if (!bitmap_and || bitmap_and->test(node.recordNumber.getValue()))
+						RBM_SET(tdbb->getDefaultPool(), bitmap, node.recordNumber.getValue());
 				}
 			}
 
@@ -6693,10 +6696,12 @@ static bool scan(thread_db* tdbb, UCHAR* pointer, RecordBitmap** bitmap,
 
 			if (!ignore && !skipLowerKey) {
 				if ((flag & irb_starting) || !count) {
-					RBM_SET(tdbb->getDefaultPool(), bitmap, number);
+					if (!bitmap_and || bitmap_and->test(number))
+						RBM_SET(tdbb->getDefaultPool(), bitmap, number);
 				}
 				else if (p > (end_key - count)) {
-					RBM_SET(tdbb->getDefaultPool(), bitmap, number);
+					if (!bitmap_and || bitmap_and->test(number))
+						RBM_SET(tdbb->getDefaultPool(), bitmap, number);
 				}
 			}
 

@@ -374,7 +374,7 @@ void RSE_open(thread_db* tdbb, RecordSource* rsb)
 
 		switch (rsb->rsb_type) {
 		case rsb_indexed:
-			impure->irsb_bitmap = EVL_bitmap(tdbb, (jrd_nod*) rsb->rsb_arg[0]);
+			impure->irsb_bitmap = EVL_bitmap(tdbb, (jrd_nod*) rsb->rsb_arg[0], NULL);
 			impure->irsb_prefetch_number = -1;
 
 		case rsb_navigate:

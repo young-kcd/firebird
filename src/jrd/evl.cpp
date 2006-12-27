@@ -277,7 +277,7 @@ dsc* EVL_assign_to(thread_db* tdbb, jrd_nod* node)
 }
 
 
-RecordBitmap** EVL_bitmap(thread_db* tdbb, jrd_nod* node)
+RecordBitmap** EVL_bitmap(thread_db* tdbb, jrd_nod* node, RecordBitmap* bitmap_and)
 {
 /**************************************
  *
@@ -299,21 +299,25 @@ RecordBitmap** EVL_bitmap(thread_db* tdbb, jrd_nod* node)
 
 	switch (node->nod_type) {
 	case nod_bit_and:
-		return RecordBitmap::bit_and(
-			EVL_bitmap(tdbb, node->nod_arg[0]),
-			EVL_bitmap(tdbb, node->nod_arg[1]));
+		{
+			RecordBitmap** bitmap = EVL_bitmap(tdbb, node->nod_arg[0], bitmap_and);
+			if (!(*bitmap) || !(*bitmap)->getFirst())
+				return bitmap;
+			else
+				return EVL_bitmap(tdbb, node->nod_arg[1], *bitmap);
+		}
 
 	case nod_bit_or:
 		return RecordBitmap::bit_or(
-			EVL_bitmap(tdbb, node->nod_arg[0]),
-			EVL_bitmap(tdbb, node->nod_arg[1]));
+			EVL_bitmap(tdbb, node->nod_arg[0], bitmap_and),
+			EVL_bitmap(tdbb, node->nod_arg[1], bitmap_and));
 
 	case nod_bit_in:
 		{
-			RecordBitmap** inv_bitmap = EVL_bitmap(tdbb, node->nod_arg[0]);
+			RecordBitmap** inv_bitmap = EVL_bitmap(tdbb, node->nod_arg[0], bitmap_and);
 			BTR_evaluate(tdbb,
 						 reinterpret_cast<IndexRetrieval*>(node->nod_arg[1]->nod_arg[e_idx_retrieval]),
-						 inv_bitmap);
+						 inv_bitmap, bitmap_and);
 			return inv_bitmap;
 		}
 
@@ -328,8 +332,10 @@ RecordBitmap** EVL_bitmap(thread_db* tdbb, jrd_nod* node)
 			RecordNumber rel_dbkey;
 			rel_dbkey.bid_decode(numbers);
 			// NS: Why the heck we decrement record number here? I have no idea, but retain the algorithm for now.
+			// hvlad: because from the user point of view db_key's begins from 1 
 			rel_dbkey.decrement();
-			RBM_SET(tdbb->getDefaultPool(), &impure->inv_bitmap, rel_dbkey.getValue());
+			if (bitmap_and && bitmap_and->test(rel_dbkey.getValue()))
+				RBM_SET(tdbb->getDefaultPool(), &impure->inv_bitmap, rel_dbkey.getValue());
 			return &impure->inv_bitmap;
 		}
 
@@ -339,7 +345,7 @@ RecordBitmap** EVL_bitmap(thread_db* tdbb, jrd_nod* node)
 			RecordBitmap::reset(impure->inv_bitmap);
 			BTR_evaluate(tdbb,
 						 reinterpret_cast<IndexRetrieval*>(node->nod_arg[e_idx_retrieval]),
-						 &impure->inv_bitmap);
+						 &impure->inv_bitmap, bitmap_and);
 			return &impure->inv_bitmap;
 		}
 
