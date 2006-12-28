@@ -4295,7 +4295,7 @@ static processing_state get_statement(TEXT* const statement,
 
 		case '-':
 			// Could this the be start of a single-line comment.
-			if (state == normal && count > 0 && (*(p - 1) == '-'))
+			if (state == normal && count > 0 && p[-1] == '-')
 			{
 				state = in_single_line_comment;
 				if (valuable_count == 1)
@@ -4308,7 +4308,7 @@ static processing_state get_statement(TEXT* const statement,
 			// not forward.
 			// Ignore possibilities of a comment beginning inside
 			// quoted strings.
-			if (state == normal && count > 0 && (*(p - 1) == '/'))
+			if (state == normal && count > 0 && p[-1] == '/')
 			{
 				state = in_comment;
 				if (valuable_count == 1)
@@ -4320,7 +4320,8 @@ static processing_state get_statement(TEXT* const statement,
 			// Perhaps this is the end of a comment.
 			// Ignore possibilities of a comment ending inside
 			// quoted strings.
-			if (state == in_comment && (*(p - 1) == '*'))
+			// Ignore things like /*/ since it isn't a block comment; only the start of it.
+			if (state == in_comment && count > 2 && p[-1] == '*')
 			{
 				state = normal;
 				valuable_count--; // This char is not valuable
