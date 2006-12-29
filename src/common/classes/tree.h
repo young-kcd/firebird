@@ -179,7 +179,7 @@ public:
 	// If next item doesn't exist method returns false
     bool fastRemove() { return defaultAccessor.fastRemove(); }
 
-	bool found(const Key& key) const { return defaultAccessor.found(key); }
+	bool isPositioned(const Key& key) const { return defaultAccessor.isPositioned(key); }
 	
 	bool locate(const Key& key) { return defaultAccessor.locate(locEqual, key); }
 	
@@ -339,6 +339,11 @@ public:
 		// Remove item. Current position moves to next item after this call. 
 		// If next item doesn't exist method returns false
 		bool fastRemove() {
+			// invalidate current position of defaultAccessor 
+			// if i'm not a defaultAccessor
+			if (this != &tree->defaultAccessor)
+				tree->defaultAccessor.curr = NULL;
+			
 			if ( !tree->level ) {
 				curr->remove(curPos);
 				return curPos < curr->getCount();
@@ -399,12 +404,6 @@ public:
 				return curr;
 			}
 			return true;
-		}
-	
-		bool found(const Key& key) const 
-		{
-			return (curr && curPos < curr->getCount() && 
-				KeyOfValue::generate(this, current()) == key);
 		}
 
 		bool locate(const Key& key) {
@@ -519,9 +518,22 @@ public:
 		}
 	    Value& current() const { return (*curr)[curPos]; }
 	private:
+	
+		// Returns true if current position is valid and already points to the given key.
+		// Note that we can't guarantie validity of current position if tree is accessed 
+		// by different Accessor's. Therefore this method is private and can be used only 
+		// via tree::defaultAccessor. 
+		bool isPositioned(const Key& key) const 
+		{
+			return (curr && curPos < curr->getCount() && 
+				KeyOfValue::generate(this, current()) == key);
+		}
+
 		BePlusTree* tree;
 		ItemList *curr;
   		size_t curPos;
+
+		friend class BePlusTree;
 	}; // class Accessor
 
 private:

@@ -119,7 +119,7 @@ public:
 
 		const T val_aligned = value & ~(T) (BUNCH_BITS - 1);
 		const BUNCH_T bit_mask = BUNCH_ONE << (value - val_aligned);
-		if (tree.found(val_aligned) || tree.locate(val_aligned)) {
+		if (tree.isPositioned(val_aligned) || tree.locate(val_aligned)) {
 			tree.current().bits |= bit_mask;
 		}
 		else {
@@ -142,7 +142,7 @@ public:
 		}
 
 		const T val_aligned = value & ~(T)(BUNCH_BITS - 1);
-		if (tree.found(val_aligned) || tree.locate(val_aligned)) {
+		if (tree.isPositioned(val_aligned) || tree.locate(val_aligned)) {
 			const BUNCH_T bit_mask = BUNCH_ONE << (value - val_aligned);
 			Bucket *current_bucket = &tree.current();
 			if (current_bucket->bits & bit_mask) {
@@ -162,7 +162,7 @@ public:
 		}
 
 		const T val_aligned = value & ~(T) (BUNCH_BITS - 1);
-		if (tree.found(val_aligned) || tree.locate(val_aligned)) {
+		if (tree.isPositioned(val_aligned) || tree.locate(val_aligned)) {
 			const BUNCH_T bit_mask = BUNCH_ONE << (value - val_aligned);
 			return tree.current().bits & bit_mask;
 		}
