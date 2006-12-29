@@ -3037,38 +3037,79 @@ static processing_state create_db(const TEXT* statement,
 		// Helen on CORE-932. Let's see if we can discover the real db name.
 		size_t db_name_len = MAXPATHLEN - 1;
 		char temp_name[MAXPATHLEN];
-		if (!strncmp(d_name, "/*", 2))
+		if (!strncmp(d_name, "/*", 2) || !strcmp(d_name, "--"))
 		{
-			const char* comment = strstr(statement, "/*");
-			// We don't accept recursive comment blocks, so looking for the next *./ is safe.
-			comment = strstr(comment + 2, "*/");
-			// What happens if the comment is not closed or quotes are spoiling the party?
-			// Then the statement is ill-formed and will be rejected by the server anyway.
-			if (comment)
+			const char* target = d_name[0] == '/' ? "/*" : "--";
+			const char* comment = strstr(statement, target);
+
+			while (true)
 			{
-				comment += 2;
-				while (*comment && fb_isspace(*comment))
-					++comment;
+
+				if (target[0] == '/')
+				{
+					// We don't accept recursive comment blocks, so looking for the next *./ is safe.
+					comment = strstr(comment + 2, "*/");
+					// What happens if the comment is not closed or quotes are spoiling the party?
+					// Then the statement is ill-formed and will be rejected by the server anyway.
+					if (comment)
+					{
+						comment += 2;
+						while (*comment && fb_isspace(*comment))
+							++comment;
+					}
+					else
+						break; // no end of block comment, error, do nothing.
+				}
+				else
+				{
+					while (!strncmp(comment, "--", 2))
+					{
+						while (*comment && *comment != '\n')
+							++comment;
+
+						++comment; // skip the newline
+						while (*comment && fb_isspace(*comment))
+							++comment;
+					}
+				}
+
+
+				if (!strncmp(comment, "/*", 2))
+				{
+					target = "/*";
+					continue;
+				}
+
+				if (!strncmp(comment, "--", 2))
+				{
+					target = "--";
+					continue;
+				}
 
 				// Does the advanced user want a charset specification before the name, too?
-				// AFAIK, supported by IB and FB, but not Vulcan.
+				// AFAIK, supported by IB and FB but dsql/preparse.cpp doesn't understand it.
+				/*
 				if (*comment == '_')
 				{
-					while (*comment && !fb_isspace(*comment))
+					while (*comment && !fb_isspace(*comment) && *comment != '"' && *comment != '\'')
 						++comment;
 
 					while (*comment && fb_isspace(*comment))
 						++comment;
+
+					// Include the "continue" loops here for this to work in all cases.
+					// Check that this happens only once, etc.
 				}
+				*/
 
 				if (*comment == '"' || *comment == '\'')
 				{
 					for (const char& newquote = *comment++; *comment; ++comment)
 					{
+						// If we find 'hello ''world''' this is valid.
 						if (*comment != newquote)
 							continue;
-							
-						// If we find 'hello ''world''' this is valid.
+
 						if (comment[1] == newquote)
 							comment += 2;
 
@@ -3077,18 +3118,19 @@ static processing_state create_db(const TEXT* statement,
 							db_name_len = comment - &newquote + 1;
 							if (db_name_len >= MAXPATHLEN)
 								db_name_len = MAXPATHLEN - 1;
-								
+
 							d_name = temp_name;
 							strncpy(d_name, &newquote, db_name_len);
 							d_name[db_name_len] = 0;
-								
 							break;
 						}
 					}
 				}
-			}
+
+				break;
+			} // while (true)
 		}
-		
+
 		chop_at(d_name, db_name_len + 1);
 		strip_quotes(d_name, isqlGlob.global_Db_name);
 
