@@ -2356,7 +2356,7 @@ ISC_STATUS rem_port::fetch(P_SQLDATA * sqldata, PACKET* sendL)
 	// during thread context switch in send we can receive packet with
 	// op_free and op_execute (lazy port feature allow this) which itself
 	// set message->msg_address to some useful information
-	// This fix must be re-think when real multithreading will be implemented
+	// This fix must be re-thought when real multithreading will be implemented
 	if (message) {
 		message->msg_address = NULL;
 	}
