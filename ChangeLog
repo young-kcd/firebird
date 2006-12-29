@@ -1,3 +1,16 @@
+2006-12-28 13:33  hvlad
+
+	* firebird2/src/jrd/vio.cpp (1.182):
+
+	Implement improvement CORE-1071 : background garbage collector
+	don't need to read backversion of active record
+
+2006-12-28 07:11  robocop
+
+	* firebird2/src/isql/isql.epp (1.205):
+
+	Fix CORE-1002
+
 2006-12-27 22:30  hvlad
 
 	* firebird2/src/common/classes/: sparse_bitmap.h (1.17), tree.h
