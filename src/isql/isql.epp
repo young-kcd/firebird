@@ -3032,7 +3032,64 @@ static processing_state create_db(const TEXT* statement,
 	if (DB) {
 		// Load isqlGlob.global_Db_name with some value to show a successful attach
 
-		chop_at(d_name, MAXPATHLEN);
+		// CVC: Someone may decide to play strange games with undocumented ability
+		// to write crap between CREATE DATABASE and the db name, as described by
+		// Helen on CORE-932. Let's see if we can discover the real db name.
+		size_t db_name_len = MAXPATHLEN - 1;
+		char temp_name[MAXPATHLEN];
+		if (!strncmp(d_name, "/*", 2))
+		{
+			const char* comment = strstr(statement, "/*");
+			// We don't accept recursive comment blocks, so looking for the next *./ is safe.
+			comment = strstr(comment + 2, "*/");
+			// What happens if the comment is not closed or quotes are spoiling the party?
+			// Then the statement is ill-formed and will be rejected by the server anyway.
+			if (comment)
+			{
+				comment += 2;
+				while (*comment && fb_isspace(*comment))
+					++comment;
+
+				// Does the advanced user want a charset specification before the name, too?
+				// AFAIK, supported by IB and FB, but not Vulcan.
+				if (*comment == '_')
+				{
+					while (*comment && !fb_isspace(*comment))
+						++comment;
+
+					while (*comment && fb_isspace(*comment))
+						++comment;
+				}
+
+				if (*comment == '"' || *comment == '\'')
+				{
+					for (const char& newquote = *comment++; *comment; ++comment)
+					{
+						if (*comment != newquote)
+							continue;
+							
+						// If we find 'hello ''world''' this is valid.
+						if (comment[1] == newquote)
+							comment += 2;
+
+						if (*comment == newquote && comment[1] != newquote)
+						{
+							db_name_len = comment - &newquote + 1;
+							if (db_name_len >= MAXPATHLEN)
+								db_name_len = MAXPATHLEN - 1;
+								
+							d_name = temp_name;
+							strncpy(d_name, &newquote, db_name_len);
+							d_name[db_name_len] = 0;
+								
+							break;
+						}
+					}
+				}
+			}
+		}
+		
+		chop_at(d_name, db_name_len + 1);
 		strip_quotes(d_name, isqlGlob.global_Db_name);
 
 		ISQL_get_version(true);
