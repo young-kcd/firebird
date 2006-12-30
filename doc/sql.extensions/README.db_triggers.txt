@@ -32,14 +32,14 @@ Events descriptions:
 - CONNECT
 	Database connection established
 	A transaction is started
-	Triggers are fired - uncaught exceptions rollbacks the transaction,
+	Triggers are fired - uncaught exceptions rollback the transaction,
 disconnect the attachment and are returned to the client
 	The transaction is committed
 
 - DISCONNECT
 	A transaction is started
-	Triggers are fired - uncaught exceptions rollbacks the transaction,
-disconnect the attachment and are swalloed
+	Triggers are fired - uncaught exceptions rollback the transaction,
+disconnect the attachment and are swallowed
 	The transaction is committed
 	The attachment is disconnected
 
@@ -49,7 +49,7 @@ exceptions are returned to the client and the transaction is not created
 
 - TRANSACTION COMMIT
 	Triggers are fired in the committing transaction - uncaught exceptions
-rollbacks the triggers savepoint, the commit command is aborted and the
+rollback the triggers savepoint, the commit command is aborted and the
 exception is returned to the client
 
 - TRANSACTION ROLLBACK
