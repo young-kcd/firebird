@@ -743,10 +743,7 @@ bool EVL_boolean(thread_db* tdbb, jrd_nod* node)
 				{
 					/* An invariant node has already been computed. */
 
-					if (*invariant_flags & VLU_null)
-						request->req_flags |= req_null;
-					else
-						request->req_flags &= ~req_null;
+					request->req_flags &= ~req_null;
 					return impure->vlu_misc.vlu_short != 0;
 				}
 			}
@@ -759,15 +756,13 @@ bool EVL_boolean(thread_db* tdbb, jrd_nod* node)
 				value = !RSE_get_record(tdbb, urs, g_RSE_get_mode);
 			}
 			RSE_close(tdbb, urs);
+			request->req_flags &= ~req_null;
 
 			/* If this is an invariant node, save the return value. */
 
 			if (node->nod_flags & nod_invariant)
 			{
 				*invariant_flags |= VLU_computed;
-				if (request->req_flags & req_null) {
-					*invariant_flags |= VLU_null;
-				}
 				impure->vlu_misc.vlu_short = value ? TRUE : FALSE;
 			}
 			return value;
