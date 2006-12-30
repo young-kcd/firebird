@@ -44,8 +44,8 @@ disconnect the attachment and are swallowed
 	The attachment is disconnected
 
 - TRANSACTION START
-	Triggers are fired in the newly created transaction - uncaught
-exceptions are returned to the client and the transaction is not created
+	Triggers are fired in the newly user created transaction - uncaught
+exceptions are returned to the client and the transaction is rolled-back.
 
 - TRANSACTION COMMIT
 	Triggers are fired in the committing transaction - uncaught exceptions
@@ -54,4 +54,4 @@ exception is returned to the client
 
 - TRANSACTION ROLLBACK
 	Triggers are fired in the rolling-back transaction - changes done will
-be rolled-back and exceptions are swallowed
+be rolled-back togheter with the transaction and exceptions are swallowed

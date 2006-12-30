@@ -6960,7 +6960,6 @@ static void run_commit_triggers(thread_db* tdbb, jrd_tra* transaction)
 	SET_TDBB(tdbb);
 
 	// start a savepoint to rollback changes of all triggers
-	Savepoint* const save_sav_point = transaction->tra_save_point;
 	VIO_start_save_point(tdbb, transaction);
 
 	try
