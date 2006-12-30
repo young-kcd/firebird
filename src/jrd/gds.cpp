@@ -137,9 +137,6 @@ static const char* FB_PID_FILE = "fb_%d";
 #undef leave
 #endif /* WIN_NT */
 
-// Number of times to try to generate new name for temporary file
-const int MAX_TMPFILE_TRIES		= 256;
-
 static char ib_prefix_val[MAXPATHLEN];
 static char ib_prefix_lock_val[MAXPATHLEN];
 static char ib_prefix_msg_val[MAXPATHLEN];
