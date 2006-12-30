@@ -1,3 +1,45 @@
+2006-12-30 02:57  asfernandes
+
+	* firebird2/doc/: sql.extensions/README.db_triggers.txt (1.1),
+	WhatsNew (1.110):
+
+	Document database triggers
+
+2006-12-30 02:26  asfernandes
+
+	* firebird2/src/jrd/jrd.cpp (1.291):
+
+	Rollback changes of all ON TRANSACTION COMMIT triggers when one
+	trigger fail
+
+2006-12-29 11:05  robocop
+
+	* firebird2/src/isql/isql.epp (1.207):
+
+	Did the wrong commit for CORE-932. Sorry.
+
+2006-12-29 10:45  hvlad
+
+	* firebird2/src/common/classes/: sparse_bitmap.h (1.18), tree.h
+	(1.58):
+
+	Taken into account several useful notes made by Nickolay
+
+2006-12-29 09:52  robocop
+
+	* firebird2/src/isql/isql.epp (1.206):
+
+	Trying to fix CORE-932.  Helen's pet bug.  create database /* */ /*
+	 */ <newline> /**/ -- <newline> <db_name> show database should tell
+	you <db_name> instead of the first irrelevant crap after the
+	DATABASE keyword.
+
+2006-12-29 09:48  robocop
+
+	* firebird2/src/remote/server.cpp (1.141):
+
+	Totally misc.
+
 2006-12-28 13:33  hvlad
 
 	* firebird2/src/jrd/vio.cpp (1.182):
