@@ -4,6 +4,8 @@
 
     * Feature CORE-645 and CORE-745
         Database triggers
+      See also:
+        /doc/sql.extensions/README.db_triggers.txt
       Contributor(s):
         Adriano dos Santos Fernandes <adrianosf at uol.com.br>
 
