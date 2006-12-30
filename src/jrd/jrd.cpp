@@ -376,6 +376,7 @@ static void		find_intl_charset(thread_db*, Attachment*, const DatabaseOptions*);
 static jrd_tra*		find_transaction(thread_db*, jrd_tra*, ISC_STATUS);
 static void		init_database_locks(thread_db*, Database*);
 static ISC_STATUS	handle_error(ISC_STATUS*, ISC_STATUS, thread_db*);
+static void		run_commit_triggers(thread_db* tdbb, jrd_tra* transaction);
 static void		verify_request_synchronization(jrd_req*& request, SSHORT level);
 namespace {
 	enum vdnResult {vdnFail, vdnOk, vdnSecurity};
@@ -433,10 +434,11 @@ static void check_autocommit(jrd_req* request, thread_db* tdbb)
 
 	if (request->req_transaction->tra_flags & TRA_perform_autocommit)
 	{
-		if (!(request->req_transaction->tra_flags & TRA_prepared))
+		if (!(tdbb->tdbb_attachment->att_flags & ATT_no_db_triggers) &&
+			!(request->req_transaction->tra_flags & TRA_prepared))
 		{
 			// run ON TRANSACTION COMMIT triggers
-			EXE_execute_db_triggers(tdbb, request->req_transaction, jrd_req::req_trigger_trans_commit);
+			run_commit_triggers(tdbb, request->req_transaction);
 		}
 
 		request->req_transaction->tra_flags &= ~TRA_perform_autocommit;
@@ -5062,10 +5064,11 @@ static ISC_STATUS commit(
 		return error(user_status);
 	}
 
-	if (!(transaction->tra_flags & TRA_prepared))
+	if (!(tdbb->tdbb_attachment->att_flags & ATT_no_db_triggers) &&
+		!(transaction->tra_flags & TRA_prepared))
 	{
 		// run ON TRANSACTION COMMIT triggers
-		EXE_execute_db_triggers(tdbb, transaction, jrd_req::req_trigger_trans_commit);
+		run_commit_triggers(tdbb, transaction);
 	}
 
 	while ( (transaction = next) ) {
@@ -6938,6 +6941,42 @@ static void purge_attachment(thread_db*		tdbb,
 		{
 			shutdown_database(dbb, true);
 		}
+	}
+}
+
+
+static void run_commit_triggers(thread_db* tdbb, jrd_tra* transaction)
+{
+/**************************************
+ *
+ *	r u n _ c o m m i t _ t r i g g e r s
+ *
+ **************************************
+ *
+ * Functional description
+ *	Run ON TRANSACTION COMMIT triggers of a transaction.
+ *
+ **************************************/
+	SET_TDBB(tdbb);
+
+	// start a savepoint to rollback changes of all triggers
+	Savepoint* const save_sav_point = transaction->tra_save_point;
+	VIO_start_save_point(tdbb, transaction);
+
+	try
+	{
+		// run ON TRANSACTION COMMIT triggers
+		EXE_execute_db_triggers(tdbb, transaction, jrd_req::req_trigger_trans_commit);
+	}
+	catch (const Firebird::Exception&)
+	{
+		if (!(tdbb->tdbb_database->dbb_flags & DBB_bugcheck))
+		{
+			// rollbacks the created savepoint
+			++transaction->tra_save_point->sav_verb_count;
+			VIO_verb_cleanup(tdbb, transaction);
+		}
+		throw;
 	}
 }
 
