@@ -1352,7 +1352,7 @@ static IDX_E check_partner_index(
 		}
 
 		RecordBitmap* bitmap = NULL;
-		BTR_evaluate(tdbb, &retrieval, &bitmap);
+		BTR_evaluate(tdbb, &retrieval, &bitmap, NULL);
 
 		/* if there is a bitmap, it means duplicates were found */
 
