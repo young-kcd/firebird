@@ -3503,7 +3503,7 @@ insert		: INSERT INTO simple_table_name ins_column_parens_opt
 
 /* MERGE statement */
 merge
-	:	MERGE INTO simple_table_name USING table_reference ON search_condition
+	:	MERGE INTO table_name USING table_reference ON search_condition
 			merge_when_clause
 		{
 			$$ = make_node(nod_merge, e_mrg_count, $3, $5, $7, $8);
