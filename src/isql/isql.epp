@@ -3067,7 +3067,9 @@ static processing_state create_db(const TEXT* statement,
 						while (*comment && *comment != '\n')
 							++comment;
 
-						++comment; // skip the newline
+						if (*comment == '\n')
+							++comment; // skip the newline
+							
 						while (*comment && fb_isspace(*comment))
 							++comment;
 					}
@@ -3106,12 +3108,16 @@ static processing_state create_db(const TEXT* statement,
 				{
 					for (const char& newquote = *comment++; *comment; ++comment)
 					{
-						// If we find 'hello ''world''' this is valid.
 						if (*comment != newquote)
 							continue;
 
+						// If we find 'hello ''world''' this is valid.
 						if (comment[1] == newquote)
+						{
 							comment += 2;
+							if (!*comment)
+								break;
+						}
 
 						if (*comment == newquote && comment[1] != newquote)
 						{
