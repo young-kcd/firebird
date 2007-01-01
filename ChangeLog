@@ -1,3 +1,28 @@
+2006-12-31 21:55  asfernandes
+
+	* firebird2/src/dsql/parse.y (1.229):
+
+	Allow table alias on INTO part of MERGE
+
+2006-12-31 13:52  hvlad
+
+	* firebird2/src/jrd/idx.cpp (1.120):
+
+	Fix compilation error after change in BTR_evaluate
+
+2006-12-31 10:19  robocop
+
+	* firebird2/src/isql/isql.epp (1.208):
+
+	Adriano found a case where I didn't check for a premature,
+	unexpected null terminator.  I found another case, too.
+
+2006-12-31 10:18  robocop
+
+	* firebird2/src/common/classes/tree.h (1.59):
+
+	Sorry for the hack, but I need to compile.
+
 2006-12-30 17:52  asfernandes
 
 	* firebird2/: doc/sql.extensions/README.db_triggers.txt (1.3),
