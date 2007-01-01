@@ -3311,9 +3311,9 @@ table_proc_inputs	: '(' value_list ')'
 			;
 
 table_name	: simple_table_name
-		| symbol_table_name symbol_table_alias_name
+		| symbol_table_name as_noise symbol_table_alias_name
 			{ $$ = make_node (nod_relation_name, 
-						(int) e_rln_count, $1, $2); }
+						(int) e_rln_count, $1, $3); }
 		;						 
 
 simple_table_name: symbol_table_name
