@@ -1,3 +1,10 @@
+2007-01-01 15:13  asfernandes
+
+	* firebird2/src/dsql/parse.y (1.230):
+
+	Be standard compliant and allow "AS" between the table name and
+	alias in UPDATE, DELETE and MERGE
+
 2006-12-31 21:55  asfernandes
 
 	* firebird2/src/dsql/parse.y (1.229):
