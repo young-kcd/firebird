@@ -1,5 +1,6 @@
-Firebird Serveur de bases de données 1.5.3
+Firebird Serveur de bases de données 1.5.4
 ==================================================
+(Release Candidate 1)
 
 Ce document est un guide pour l'installation de
 Firebird 1.5 sur la plateforme Win32. Ces notes sont
@@ -31,19 +32,50 @@ Avant l'installation
 --------------------
 
 Il est recommandé de désinstaller toutes les
-précédentes versions de Firebird 1.0, Firebird 1.5 ou
-InterBase avant de commencer l'installation.
+précédentes versions de Firebird 1.0, Firebird 1.5, 
+Firebird 2.0 ou InterBase avant de commencer l'installation.
 
 
 Installation sur des systèmes avec Firebird 2.0
-Instable
 -------------------------------------------------------
 
-Le programme d'installation de Firebird 1.5.3 ne peut
-détecter une version existante en cours d'éxécution de
-Firebird 2.0 Instable. Si vous avez une version de
-Firebird 2.0 en cours d'éxécution, il est indispensable
-d'arréter ce serveur avant de commencer l'installation.
+Le programme d'installation de Firebird 1.5.4 peut
+détecter une version existante Firebird 2.0. Il affichera
+un avertissement et vous permettra de mettre fin à l'installation.
+Si vous continez l'installation il détectera un Super Serveur
+en cours de fonctionnement. L'installation sera annulée.
+Toutefois, il ne peut détecter un Classic Serveur, et
+continuera donc l'installation. Pour cette raison et il est
+préférable de manuellement vérifier le serveur utilisé si le
+programme d'installation averti de la présence d'un serveur
+Firebird.
+
+
+Nouvelles fonctionnalités du programme d'installation
+Firebird 1.5.4
+-----------------------------------------------------
+
+o Si un fichier firebird.conf existe le programme
+  d'installation installera le fichier par défaut de
+  configuration comme :
+
+  firebird.conf.default.
+
+  Le fichier existant firebird.conf ne sera pasmodifié.
+  Cela permet d'être certain de garder les restrictions
+  d'accès après une mise à jour.
+
+o D'autres langues on été ajoutées au programme d'installation
+  Bosniaque, Espagnol, Italien, Polonais et Russe.
+  
+  Note 1 - Les langues sont listées dans l'ordre alphabétique
+  de leur nom dans leur langue d'origine, pas par leur nom 
+  en anglais.
+
+  Note 2 - La visibilité des diffrérents langues dépend
+  du code de pages installé. Les langues d'Europe de l'est 
+  ne seront pas visibles pour les utilisateurs utilisant 
+  une langue d'Europe de l'Ouest.
 
 
 Nouvelles fonctionnalités du programme d'installation
@@ -93,16 +125,6 @@ o Les règles d'installation de la bibliothèque ont
     de désactiver le fonctionnement décrit ci-dessus.
 
 
-o Si un fichier firebird.conf modifié existe dans
-  le répertoire d'installation directory il sera
-  sauvegardé en :
-    firebird.conf.saved.n
-  où n est un nombre. L'assistant installera toujours
-  le fichier firebird.conf standard. Cela garanti
-  une installation correcte. Autrement, il faudrait
-  vérifier le fichier existant (qui est peut être
-  non valide).
-
 
 Fonctionnalités obsolètes de l'installation
 -------------------------------------------
@@ -136,10 +158,10 @@ o Il est préférable d'utiliser le programme de
   unins000.exe depuis le répertoire d'installation.
 
 o Si Firebird est exécuté comme application (et non
-  comme service) il est recommendé d'arreter d'abord
+  comme service) il est recommendé d'arrêter d'abord
   le serveur avant de commencer la désinstalation. Ce
   parce que le programme de desinstallation ne peut
-  arreter une application en cours. Si le serveur
+  arrêter une application en cours. Si le serveur
   fonctionne pendant la désinstallation, des erreurs
   seront générées.
   Vous devrez alors supprimer les fichiers restant
@@ -149,7 +171,7 @@ o Si Firebird est exécuté comme application (et non
 Autres Notes
 -----------
 
-  Firebird necessite WinSock2. Toutes les plateformes
+  Firebird nécessite WinSock2. Toutes les plateformes
   Win32 doivent l'avoir, sauf Win95. Un test de
   l'existence de Winsock2 est fait durant
   l'installation. S'il n'est pas concluant
