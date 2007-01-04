@@ -1,5 +1,6 @@
-Firebird Datenbank Server 1.5.3 
-==================================================
+Firebird Datenbank Server 1.5.4
+===============================
+(Release Candidate 1)
 
 Dieses Dokument ist ein Leitfaden, um dieses Paket
 von Firebird 1.5 auf der Win32 Plattform zu installieren.
@@ -12,7 +13,7 @@ Inhalt
 ------
 
 o Vor der Installation
-o Installation auf einem System mit Firebird 2.0 Unstable
+o Installation auf einem System mit Firebird 2.0
 o Neue Funktionen des Installers
 o Veraltete Funktionen des Installers
 o Deinstallation
@@ -24,19 +25,50 @@ Vor der Installation
 --------------------
 
 Es wird empfohlen, dass Sie alle früheren Versionen von
-Firebird 1.0, Firebird 1.5 oder InterBase DEINSTALLIEREN,
-bevor Sie dieses Paket installieren.
+Firebird 1.0, Firebird 1.5, Firebird 2.0 oder InterBase
+deinstallieren, bevor Sie dieses Paket installieren.
 
 
-Installation auf einem System mit Firebird 2.0 Unstable
--------------------------------------------------------
+Installation auf einem System mit Firebird 2.0
+----------------------------------------------
 
-Der Firebird 1.5.3 Installationsprozess kann eine
-laufende Version von Firebird 2.0 Unstable nicht
-erkennen. Falls Sie eine frühe, instabile Version
-von Firebird 2.0 laufen haben, dann ist es wichtig,
-dass Sie den Server stoppen, bevor Sie versuchen
-Firebird 1.5.3 zu installieren.
+Der Firebird 1.5.4 Installationsprozess wird eine
+Firebird 2 Installation erkennen. Es wird eine
+Warnung angezeigt und Sie können die Installation
+abbrechen. Falls Sie mit dem Installationsprozess
+fortfahren, wird ein laufender Super Server korrekt
+erkannt. Die Installation wird abgebrochen. Ein
+laufender Classic Server wird jedoch nicht erkannt
+und die Installation wird fortgesetzt. Zu diesem
+Zweck ist es ratsam, zu überprüfen, welcher Server
+im Einsatz ist, falls der Installer eine Warnung
+bzgl. einer existierenden Installation anzeigt.
+
+
+Neue Funktionen des Installers in Firebird 1.5.4
+------------------------------------------------
+
+o Falls eine existierende firebird.conf vorgefunden
+  wird, wird die Default-Config-Datei wie folgt
+  installiert:
+
+  firebird.conf.default.
+
+  Die existierende firebird.conf Datei bleibt unberührt.
+  Somit wird sichergestellt, dass Zugriffsbeschränkungen
+  nach einem Upgrade erhalten bleiben.
+
+o Zusätzliche Sprachen wurden dem Installer hinzugefügt -
+  Bosnisch, Spanisch, Italienisch, Polnisch und Russisch.
+  
+  Hinweis 1 - Sprachen werden in alphabetischer
+  Reihenfolge nach dem  originalen und nicht nach dem
+  englischen Namen aufgelistet.
+
+  Hinweis 2 - Die Verfügbarkeit der Sprachen ist von
+  der installierten Codepage abhängig. Osteuropäische
+  Sprachen werden für Benutzer von westeuropäischen
+  Sprachen nicht verfügbar sein.
 
 
 Neue Funktionen des Installers in Firebird 1.5.3
@@ -218,9 +250,9 @@ dafür verwendet werden:
 
 /COMPONENTS="Eine durch Komma getrennte Liste von Komponentennamen" 
 
-  Wählen Sie aus von - SuperServerComponent, 
-                       ClassicServerComponent, 
-                       ServerComponent, 
+  Wählen Sie aus von - ServerComponent
+                       ServerComponent\SuperServerComponent, 
+                       ServerComponent\ClassicServerComponent, 
                        DevAdminComponent und
                        ClientComponent
 
@@ -230,7 +262,8 @@ dafür verwendet werden:
   Installation aus. Eine vollständige Installation benötigt
   die Kombination mehrerer Komponenten. Zum Beispiel:
   
-  /COMPONENTS="SuperServerComponent, ServerComponent, 
+  /COMPONENTS="ServerComponent, 
+               ServerComponent\SuperServerComponent,  
                DevAdminComponent, ClientComponent"
   
   würde für eine vollständige Installation benötigt werden.

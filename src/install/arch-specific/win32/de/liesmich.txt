@@ -1,8 +1,8 @@
 
 ==================================
-Firebird 1.5.3       (Win32 Build)
+Firebird 1.5.4       (Win32 Build)
 ==================================
-
+(Release Candidate 1)
 
 o Einführung
 o Stabilität
@@ -18,7 +18,7 @@ o Neue Funktionalitäten anfordern
 Einführung
 ==========
 
-Willkommen zu Firebird 1.5.3. Eine vollständige
+Willkommen zu Firebird 1.5.4. Eine vollständige
 Liste der beseitigten Fehler und den hinzugefügten
 kleineren Erweiterungen finden Sie in den Release
 Notes. Diese befinden sich im doc/ Verzeichnis.
@@ -26,16 +26,6 @@ Notes. Diese befinden sich im doc/ Verzeichnis.
 
 Stabilität
 ==========
-
-Firebird 1.5 ist die erste Version von Firebird, die
-mit C++ übersetzt wurde. Diese Version durchschritt
-eine lange Beta und Release Candidate Phase und kann
-als genau so stabil wie dessen Vorgänger Firebird 1.0.3
-angesehen werden. Es wurden seit dem Original-Release
-von Firebird 1.5.0 keine ernsten Probleme festgestellt.
-Daher kann es als solches, als genau so stabil oder sogar
-stabiler als das letzte Release von Firebird 1 (v1.0.3)
-betrachtet werden.
 
 Es besteht kein Grund beunruhigt zu sein, wenn man dieses
 Wartungs-Release in einer Produktionsumgebung einsetzen
@@ -81,7 +71,7 @@ Installation des Embedded Server
 ================================
 
 Der Embedded Server ist für die Installation, als Teil
-einer existierenden Anwendung, vorgesehen. Für die
+einer existierenden Anwendung vorgesehen. Für die
 Distribution des Embedded Server mit Ihrer Anwendung,
 beachten Sie bitte die Hinweise in doc/README_embedded.txt
 (Dieses Dokument ist nur im Embedded-Paket enthalten.)
@@ -141,27 +131,29 @@ o Sind Sie sicher, dass Sie verstehen, wie Firebird arbeitet?
 
 o Denken Sie nach wie vor, dass es sich um einen Fehler handelt?
 
-  Überprüfen Sie die Liste der offenen Fehler. Diese kann im
+  Überprüfen Sie die Liste der offenen Fehler. Diese können im
   Firebird Bug-Tracker gefunden werden:
 
-    http://sourceforge.net/tracker/?group_id=9028&atid=109028
+    http://tracker.firebirdsql.org/secure/BrowseProject.jspa
 
-Ansonsten, wenn Sie sich sicher sind, dass es sich um
-einen Fehler handelt, dann versuchen Sie einen
-reproduzierbaren Testfall zu erstellen. Diesen können
-Sie dann im Bug-Tracker hinzufügen.
+Verwenden Sie diesen Tracker nicht, um technische
+Unterstützung zu erhalten. Im Zweifelsfall treten Sie
+der Support-Liste bei
 
+  mailto:firebird-support-subscribe@yahoogroups.com
+  
+und stellen Sie Ihre Fragen dort.
 
+	
 Neue Funktionalitäten anfordern
 ===============================
 
 Bevor Sie neue Funktionalitäten anfordern, überprüfen
 Sie die existierende Funktionalitätsanforderungsliste.
 Die Chancen stehen gut, dass jemand bereits die selbe
-Idee hatte. Verwenden Sie diesen Link, um die aktuelle
-Liste einzusehen oder neue Anfragen abzusenden, falls
-notwendig:
+Idee hatte. Existierende Featureanfragen können hier
+eingesehen werden:
 
-  http://sourceforge.net/tracker/?group_id=9028&atid=359028
+  http://tracker.firebirdsql.org/secure/CreateIssue!default.jspa
 
 
