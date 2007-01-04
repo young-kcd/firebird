@@ -4,6 +4,8 @@
 :: VS_VER VisualStudio version (msvc6|msvc7|msvc8)
 :: SERVER_NAME server needed to connect to firebird (could include port)
 ::   Example : localhost/3051
+:: (Note - SERVER_NAME is almost deprecated - it is only used by
+::   make_examples.bat
 
 
 @echo off
@@ -37,13 +39,27 @@
 ::===========
 :HELP
 @echo.
-@echo    ERROR: A working version of visual studio cannot be found on your current path.
-@echo    You need MS Visual Studio 6 or 7 to build Firebird from these batch files.
+@echo    ERROR:
+@echo    A working version of Visual Studio cannot be found
+@echo    on your current path.
+@echo.
+@echo    You need MS Visual Studio 6, 7 or 8 to build Firebird
+@echo    from these batch files.
+@echo.
+@echo    Perhaps you need to run something like:
+@echo.
+@echo      %%VS71COMNTOOLS%%\vsvars32.bat
+@echo.
+@echo    or
+@echo      %%VS80COMNTOOLS%%\vsvars32.bat
+@echo.
+@echo    depending on the version of Visual Studio.
 @echo.
 :: set errorlevel
 @exit /B 1
 
 :END
+@echo    Setting Environment Variables thus...
 @echo.
 @echo    vs_ver=%VS_VER%
 @echo    vs_ver_express=%VS_VER_EXPRESS%
@@ -53,5 +69,6 @@
 @echo    root_path=%ROOT_PATH%
 @echo    server_name=%SERVER_NAME%
 @echo.
+@echo    (End of %0)
 
 @exit /B 0
