@@ -1,3 +1,15 @@
+2007-01-04 15:43  asfernandes
+
+	* firebird2/doc/sql.extensions/README.db_triggers.txt (1.4):
+
+	More documentation for database triggers
+
+2007-01-04 14:26  paul_reeves
+
+	* firebird2/builds/win32/setenvvar.bat (1.14):
+
+	Some minor documentation improvements
+
 2007-01-01 15:13  asfernandes
 
 	* firebird2/src/dsql/parse.y (1.230):
