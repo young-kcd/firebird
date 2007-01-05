@@ -1,3 +1,19 @@
+2007-01-04 20:34  tsteinmaurer
+
+	* firebird2/src/install/arch-specific/win32/de/:
+	installation_liesmich.txt (1.1.2.5), liesmich.txt (1.1.2.5):
+
+	Adjustments in the German translation based on the English version
+	for Firebird 1.5.4
+
+2007-01-04 18:17  makowski
+
+	* firebird2/src/install/arch-specific/win32/fr/:
+	documents-en-francais.txt (1.1.2.2), installation_lisezmoi.txt
+	(1.1.2.6), lisezmoi.txt (1.1.2.5):
+
+	updated for 1.5.4 release candidate 1
+
 2006-12-21 11:59  paul_reeves
 
 	* firebird2/src/install/arch-specific/win32/custom_messages.inc
