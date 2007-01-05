@@ -1,4 +1,177 @@
   **************************
+  * v2.0.1
+  **************************
+
+    * Improvement CORE-1047
+        Add support for Gentoo/FreeBSD detection
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Improvement CORE-1012
+        IBO problems with FB >= 1.5.3 "Error with joins and auto-generated search query"
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Fixed bug CORE-1068
+        ISQL doesn't print not-nullable blobs
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Fixed bug CORE-1064
+        Wrong backup order for character sets and collations
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Fixed bug CORE-1063
+        Server hangs eating CPU and performs huge I/O copying different codepage fields
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
+
+    * Fixed bug CORE-1059
+        Remote Linux Classic crash
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Fixed bug CORE-1057
+        GSEC hiding error - CryptAcquireContext
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Fixed bug CORE-1055
+        Wrong parameter matching for self-referenced procedures
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed bug CORE-1053
+        Invalid results in SELECT, when index is used to evaluate\
+        "greater" operator in WHERE clause
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+        Arno Brinkman <firebird at abvisie.nl>
+        Vlad Horsun <horsun at kdb.dp.ua>
+
+    * Fixed bug CORE-1051
+        Possible stack corruption in DFW\check_dependencies
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
+
+    * Fixed bug CORE-1046
+        Core dump in CVT_move
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed bug CORE-1040
+        Wrong single-segment ascending index on character field with NULL
+        and empty string values
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
+        Arno Brinkman <firebird at abvisie.nl>
+
+    * Fixed bug CORE-1037
+        Command-line for Installation of SuperServer Component is not working
+      Contributor(s):
+        Paul Reeves <preeves at ibphoenix.com>
+
+    * Fixed bug CORE-1033
+        LIKE clause doesn't work for computed values (at least in a view)
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Fixed bug CORE-1029
+        Bad plan in outer joins with IS NULL clauses (dependent on order of predicates)
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed bug CORE-1020
+        Server crashes at runtime when an explicit MERGE plan is specified over a few JOIN ones
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed bug CORE-1020
+        Command-line switch /silent or /verysilent does not install the guardian
+      Contributor(s):
+        Paul Reeves <preeves at ibphoenix.com>
+
+    * Fixed bug CORE-1017
+        Service attachments (over presumably Xnet) fail when Classic started with -x -i parameters
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed bug CORE-1011
+        Server crashes when being connected to via InterBase gds32.dll
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed bug CORE-1010
+        Server crashes if DDL statement execution raises an error
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed bug CORE-1006
+        AV at rollback and/or garbage collection if updated table has expression
+        index with SELECT in it
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
+
+    * Fixed bug CORE-1005
+        DISTINCT vs NULLS LAST clause: wrong order of NULLs
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed bug CORE-1004
+        Context already in use (BLR error)
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed bug CORE-997
+        Database Update 1.5 to 2.0 fails
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Fixed bug CORE-988
+        FB SuperServer 32bit old threading, regularly restarts
+        "fbserver terminated abnormally (-1)"
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Fixed bug CORE-984
+        fbclient.dll changes the security descriptor of the calling process
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed bug CORE-982
+        Error reading data from the connection
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Fixed bug CORE-966
+        Bug in socket binding for database events
+      Contributor(s):
+        Paul Beach <pbeach at ibphoenix.com>
+
+    * Fixed bug CORE-959
+        GSTAT does not work using the localhost connection string
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed bug CORE-952
+        AV when blob is used in expression index
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
+
+    * Fixed bug CORE-944
+        FB2 RC4 Linux Classic server crashes
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Fixed bug CORE-888
+        DDL - object in use
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+  **************************
   * v2.0 Final
   **************************
 
