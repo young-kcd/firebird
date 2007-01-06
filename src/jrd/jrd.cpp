@@ -116,6 +116,7 @@
 #include "../jrd/thread_proto.h"
 #include "../jrd/tra_proto.h"
 #include "../jrd/val_proto.h"
+#include "../jrd/vio_proto.h"
 #include "../jrd/file_params.h"
 #include "../jrd/event_proto.h"
 #include "../jrd/why_proto.h"
@@ -129,11 +130,6 @@
 #include "../common/classes/fb_tls.h"
 #include "../common/classes/ClumpletReader.h"
 #include "../jrd/DebugInterface.h"
-
-
-#ifdef GARBAGE_THREAD
-#include "vio_proto.h"
-#endif
 
 using namespace Jrd;
 
