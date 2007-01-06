@@ -2129,8 +2129,12 @@ void VIO_merge_proc_sav_points(thread_db* tdbb,
 
 		VIO_verb_cleanup(tdbb, transaction);
 
-		sav_point = FB_NEW(*transaction->tra_pool) Savepoint();
-		sav_point->sav_verb_count = 0;
+		if ( (sav_point = transaction->tra_save_free) ) {
+			transaction->tra_save_free = sav_point->sav_next;
+		}
+		else {
+			sav_point = FB_NEW(*transaction->tra_pool) Savepoint();
+		}
 		sav_point->sav_next = sav_next;
 		sav_point->sav_number = sav_number;
 		*sav_point_list = sav_point;
@@ -2595,8 +2599,15 @@ void VIO_start_save_point(thread_db* tdbb, jrd_tra* transaction)
  *
  **************************************/
 	SET_TDBB(tdbb);
+	Savepoint* sav_point;
 
-	Savepoint* sav_point = FB_NEW(*transaction->tra_pool) Savepoint();
+	if ( (sav_point = transaction->tra_save_free) ) {
+		transaction->tra_save_free = sav_point->sav_next;
+	}
+	else {
+		sav_point = FB_NEW(*transaction->tra_pool) Savepoint();
+	}
+
 	sav_point->sav_number = ++transaction->tra_save_point_number;
 	sav_point->sav_next = transaction->tra_save_point;
 	transaction->tra_save_point = sav_point;
@@ -3124,7 +3135,7 @@ void VIO_verb_cleanup(thread_db* tdbb, jrd_tra* transaction)
 					delete rpb.rpb_record;
 				}
 			}
-			delete action->vct_records;
+			RecordBitmap::reset(action->vct_records);
 			if (action->vct_undo) {
 				if (action->vct_undo->getFirst()) {
 					do {
@@ -3132,8 +3143,10 @@ void VIO_verb_cleanup(thread_db* tdbb, jrd_tra* transaction)
 					} while (action->vct_undo->getNext());
 				}
 				delete action->vct_undo;
+				action->vct_undo = NULL;
 			}
-			delete action;
+			action->vct_next = sav_point->sav_verb_free;
+			sav_point->sav_verb_free = action;
 		}
 		tdbb->tdbb_transaction = old_tran;
 	}
@@ -3142,7 +3155,10 @@ void VIO_verb_cleanup(thread_db* tdbb, jrd_tra* transaction)
 		throw;
 	}
 
-	delete sav_point;
+	sav_point->sav_verb_count = 0;
+	sav_point->sav_flags = 0;
+	sav_point->sav_next = transaction->tra_save_free;
+	transaction->tra_save_free = sav_point;
 
 /* If the only remaining savepoint is the 'transaction-level' savepoint
    that was started by TRA_start, then check if it hasn't grown out of
@@ -5030,7 +5046,12 @@ static void verb_post(
 	}
 
 	if (!action) {
-		action = FB_NEW(*tdbb->getDefaultPool()) VerbAction();
+		if ( (action = transaction->tra_save_point->sav_verb_free) ) {
+			transaction->tra_save_point->sav_verb_free = action->vct_next;
+		}
+		else {
+			action = FB_NEW(*tdbb->getDefaultPool()) VerbAction();
+		}
 		action->vct_next = transaction->tra_save_point->sav_verb_actions;
 		transaction->tra_save_point->sav_verb_actions = action;
 		action->vct_relation = rpb->rpb_relation;

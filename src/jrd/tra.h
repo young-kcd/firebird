@@ -113,7 +113,8 @@ class jrd_tra : public pool_alloc_rpt<SCHAR, type_tra>
 	Lock*		tra_lock;		/* lock for transaction */
 	vec<Lock*>*		tra_relation_locks;	/* locks for relations */
 	UInt32Bitmap*	tra_commit_sub_trans;	/* commited sub-transactions */
-	Savepoint*	tra_save_point;	/* list of savepoints  */
+	Savepoint*	tra_save_point;	/* list of savepoints */
+	Savepoint*	tra_save_free;	/* free savepoints */
 	SLONG tra_save_point_number;	/* next save point number to use */
 	ULONG tra_flags;
 	class DeferredWork*	tra_deferred_work;	/* work deferred to commit time */
@@ -202,6 +203,7 @@ class Savepoint : public pool_alloc<type_sav>
 {
     public:
 	VerbAction*		sav_verb_actions;	/* verb action list */
+	VerbAction*		sav_verb_free;		/* free verb actions */
 	USHORT			sav_verb_count;		/* Active verb count */
 	SLONG			sav_number;			/* save point number */
 	Savepoint*		sav_next;
