@@ -334,7 +334,7 @@ RecordBitmap** EVL_bitmap(thread_db* tdbb, jrd_nod* node, RecordBitmap* bitmap_a
 			// NS: Why the heck we decrement record number here? I have no idea, but retain the algorithm for now.
 			// hvlad: because from the user point of view db_key's begins from 1 
 			rel_dbkey.decrement();
-			if (bitmap_and && bitmap_and->test(rel_dbkey.getValue()))
+			if (!bitmap_and || bitmap_and->test(rel_dbkey.getValue()))
 				RBM_SET(tdbb->getDefaultPool(), &impure->inv_bitmap, rel_dbkey.getValue());
 			return &impure->inv_bitmap;
 		}
