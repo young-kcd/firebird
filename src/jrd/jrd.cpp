@@ -5993,7 +5993,7 @@ static ISC_STATUS prepare(thread_db*		tdbb,
 	if (!(transaction->tra_flags & TRA_prepared))
 	{
 		// run ON TRANSACTION COMMIT triggers
-		EXE_execute_db_triggers(tdbb, transaction, jrd_req::req_trigger_trans_commit);
+		run_commit_triggers(tdbb, transaction);
 	}
 
 	for (; transaction; transaction = transaction->tra_sibling) {
@@ -6986,6 +6986,9 @@ static void run_commit_triggers(thread_db* tdbb, jrd_tra* transaction)
  **************************************/
 	SET_TDBB(tdbb);
 
+	if (transaction == tdbb->tdbb_database->dbb_sys_trans)
+		return;
+
 	// start a savepoint to rollback changes of all triggers
 	VIO_start_save_point(tdbb, transaction);
 
@@ -6993,6 +6996,7 @@ static void run_commit_triggers(thread_db* tdbb, jrd_tra* transaction)
 	{
 		// run ON TRANSACTION COMMIT triggers
 		EXE_execute_db_triggers(tdbb, transaction, jrd_req::req_trigger_trans_commit);
+		VIO_verb_cleanup(tdbb, transaction);
 	}
 	catch (const Firebird::Exception&)
 	{

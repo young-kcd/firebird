@@ -59,7 +59,9 @@ exceptions are returned to the client and the transaction is rolled-back.
 - TRANSACTION COMMIT
 	Triggers are fired in the committing transaction - uncaught exceptions
 rollback the triggers savepoint, the commit command is aborted and the
-exception is returned to the client
+exception is returned to the client.
+	Note: for two-phase transactions the triggers are fired in "prepare"
+and not in commit.
 
 - TRANSACTION ROLLBACK
 	Triggers are fired in the rolling-back transaction - changes done will
