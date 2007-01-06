@@ -771,7 +771,7 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb, RecordSource* 
 			}
 
 #ifdef GARBAGE_THREAD
-			// hvlad: if i'm garbage collector I don't need to read backversion 
+			// hvlad: if I'm garbage collector I don't need to read backversion 
 			// of active record. Just do notify self about it 
 			if (attachment->att_flags & ATT_garbage_collector)
 			{
