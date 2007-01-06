@@ -39,7 +39,7 @@ SSHORT DataTypeUtilBase::getResultBlobSubType(const dsc* value1, const dsc* valu
 	SSHORT subType1 = value1->getBlobSubType();
 	SSHORT subType2 = value2->getBlobSubType();
 
-	if (subType1 == isc_blob_untyped)
+	if (subType2 == isc_blob_untyped)	// binary
 		return subType2;
 
 	return subType1;
