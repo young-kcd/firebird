@@ -25,41 +25,23 @@
 #include <windows.h>
 #include "../jrd/common.h"
 #include "../../utilities/install/registry.h"
+#include "../jrd/jrd_proto.h"
 #include "../jrd/thread_proto.h"
-
-HINSTANCE hIBDLLInstance;
-
-#ifdef SUPERSERVER
-
-#ifdef  _MSC_VER
-BOOL WINAPI _CRT_INIT(HINSTANCE, DWORD, LPVOID);
-#else
-BOOL WINAPI _CRT_INIT(HINSTANCE HIdummy, DWORD DWdummy, LPVOID LPVdummy)
-{
-	return TRUE;
-}
-#endif
-
-#else /* SUPERSERVER */
 
 BOOL WINAPI DllMain(HINSTANCE h, DWORD reason, LPVOID reserved)
 {
-	/* save instance value */
-	hIBDLLInstance = h;
-
 	switch (reason)	{
-
-	case DLL_PROCESS_ATTACH:
-		break;
 
 	case DLL_PROCESS_DETACH:
 #ifdef EMBEDDED
 		JRD_shutdown_all(false);
 #endif
+		MemoryPool::deletePool(getDefaultMemoryPool());
+		break;
+
+	default:
 		break;
 	}
 
 	return TRUE;
 }
-
-#endif /* SUPERSERVER */
