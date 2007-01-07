@@ -1,3 +1,61 @@
+2007-01-07 00:54  asfernandes
+
+	* firebird2/: src/jrd/jrd.cpp (1.295),
+	doc/sql.extensions/README.db_triggers.txt (1.5):
+
+	Fix problems with COMMIT triggers: 1) Fix a problem when the
+	transaction could not be commited due to errors in DFW.  2) Run
+	triggers inside a savepoint when "preparing" the transaction.  3)
+	More doc.
+
+2007-01-07 00:50  asfernandes
+
+	* firebird2/src/jrd/vio.cpp (1.186):
+
+	Misc
+
+2007-01-06 22:04  asfernandes
+
+	* firebird2/src/jrd/DataTypeUtil.cpp (1.5):
+
+	Fix concatenation of blobs - the result should be binary if at
+	least one argument is binary
+
+2007-01-06 14:43  hvlad
+
+	* firebird2/src/jrd/jrd.cpp (1.294):
+
+	Fixed CORE-1080 : Bugcheck 167 (invalid SEND request) in SS when
+	many parallel attachments begin to execute trigger not loaded into
+	metadata cache
+
+2007-01-06 12:06  hvlad
+
+	* firebird2/src/jrd/evl.cpp (1.209):
+
+	Fixed my mistake pointed by Dmitry
+
+2007-01-06 11:18  dimitr
+
+	* firebird2/src/jrd/: tra.h (1.61), vio.cpp (1.185):
+
+	Restored the old code that reused savepoints and verbs instead of
+	re-allocating them. In practice it shows about 7-8 percents of time
+	economy during restore. My hopes that our memory manager can handle
+	it efficiently failed.
+
+2007-01-06 10:11  dimitr
+
+	* firebird2/src/jrd/os/win32/ibinitdll.cpp (1.9):
+
+	1) Fixed CORE-1079.  2) Cleanup.
+
+2007-01-06 07:52  dimitr
+
+	* firebird2/src/jrd/: jrd.cpp (1.293), vio.cpp (1.184):
+
+	Fixed CS build.
+
 2007-01-04 15:43  asfernandes
 
 	* firebird2/doc/sql.extensions/README.db_triggers.txt (1.4):
