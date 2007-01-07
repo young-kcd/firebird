@@ -111,6 +111,7 @@ class jrd_tra : public pool_alloc_rpt<SCHAR, type_tra>
 	BlobIndexTree tra_blobs;		/* list of active blobs */
 	ArrayField*	tra_arrays;		/* Linked list of active arrays */
 	Lock*		tra_lock;		/* lock for transaction */
+	Lock*		tra_cancel_lock;	/* lock to cancel the active request */
 	vec<Lock*>*		tra_relation_locks;	/* locks for relations */
 	UInt32Bitmap*	tra_commit_sub_trans;	/* commited sub-transactions */
 	Savepoint*	tra_save_point;	/* list of savepoints */
@@ -165,8 +166,7 @@ const ULONG TRA_perform_autocommit	= 262144L;	/* indicates autocommit is necessa
 const ULONG TRA_rec_version			= 524288L;	/* don't wait for uncommitted versions */
 const ULONG TRA_restart_requests	= 1048576L;	/* restart all requests in attachment */
 const ULONG TRA_no_auto_undo		= 2097152L;	/* don't start a savepoint in TRA_start */
-// Obsolete, this was for LIBS on 16-bit.
-//const ULONG TRA_sweep_at_startup	= 4194304L;	// sweep done at startup 
+const ULONG TRA_cancel_request		= 4194304L;	// cancel active request, if any
 const ULONG TRA_precommitted		= 8388608L;	/* transaction committed at startup */
 
 const int TRA_MASK				= 3;

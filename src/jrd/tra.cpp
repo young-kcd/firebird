@@ -100,6 +100,7 @@ using namespace Ods;
 #include "../jrd/isc_s_proto.h"
 #endif
 
+static int blocking_ast_transaction(void*);
 #ifdef SUPERSERVER_V2
 static SLONG bump_transaction_id(thread_db*, WIN *);
 #else
@@ -144,7 +145,7 @@ void TRA_attach_request(Jrd::jrd_tra* transaction, Jrd::jrd_req* request)
 	fb_assert(request->req_transaction == NULL);
 	fb_assert(request->req_tra_next == NULL);
 	fb_assert(request->req_tra_prev == NULL);
-	
+
 	// Assign transaction reference
 	request->req_transaction = transaction;
 
@@ -1107,6 +1108,9 @@ void TRA_release_transaction(thread_db* tdbb, jrd_tra* transaction)
 
 	// Release the locks associated with the transaction
 
+	if (transaction->tra_cancel_lock)
+		LCK_release(tdbb, transaction->tra_cancel_lock);
+
 	vec<Lock*>* vector = transaction->tra_relation_locks;
 	if (vector) {
 		vec<Lock*>::iterator lock = vector->begin();
@@ -1799,6 +1803,19 @@ jrd_tra* TRA_start(thread_db* tdbb, int tpb_length, const UCHAR* tpb)
 		trans->tra_save_point->sav_flags |= SAV_trans_level;
 	}
 
+/* Allocate the cancellation lock */
+
+	lock = FB_NEW_RPT(*trans->tra_pool, sizeof(SLONG)) Lock();
+	trans->tra_cancel_lock = lock;
+	lock->lck_type = LCK_cancel;
+	lock->lck_owner_handle = LCK_get_owner_handle(tdbb, lock->lck_type);
+	lock->lck_parent = dbb->dbb_lock;
+	lock->lck_length = sizeof(SLONG);
+	lock->lck_key.lck_long = trans->tra_number;
+	lock->lck_dbb = dbb;
+	lock->lck_ast = blocking_ast_transaction;
+	lock->lck_object = trans;
+
 /* if the user asked us to restart all requests in this attachment,
    do so now using the new transaction */
 
@@ -1807,11 +1824,9 @@ jrd_tra* TRA_start(thread_db* tdbb, int tpb_length, const UCHAR* tpb)
 
 /* If the transaction is read-only and read committed, it can be
    precommitted because it can't modify any records and doesn't
-   need a snapshot preserved. This is being enabled for internal
-   transactions used by the sweeper threads. This transaction type
-   can run forever without impacting garbage collection or causing
-   transaction bitmap growth. It can be turned on for external use
-   by removing the test for TDBB_sweeper. */
+   need a snapshot preserved. This transaction type can run
+   forever without impacting garbage collection or causing
+   transaction bitmap growth. */
 
 	if (trans->tra_flags & TRA_readonly &&
 		trans->tra_flags & TRA_read_committed)
@@ -1819,7 +1834,7 @@ jrd_tra* TRA_start(thread_db* tdbb, int tpb_length, const UCHAR* tpb)
 		TRA_set_state(tdbb, trans, trans->tra_number, tra_committed);
 		LCK_release(tdbb, trans->tra_lock);
 		delete trans->tra_lock;
-		trans->tra_lock = 0;
+		trans->tra_lock = NULL;
 		trans->tra_flags |= TRA_precommitted;
 	}
 
@@ -2126,6 +2141,41 @@ int TRA_wait(thread_db* tdbb, jrd_tra* trans, SLONG number, jrd_tra::wait_t wait
 	}
 
 	return state;
+}
+
+
+static int blocking_ast_transaction(void* ast_object)
+{
+/**************************************
+ *
+ *	b l o c k i n g _ a s t _ t r a n s a c t i o n
+ *
+ **************************************
+ *
+ * Functional description
+ *	Mark the transaction to cancel its active requests.
+ *
+ **************************************/
+	jrd_tra* transaction = static_cast<jrd_tra*>(ast_object);
+	fb_assert(transaction);
+
+	thread_db thd_context, *tdbb;
+	JRD_set_thread_data(tdbb, thd_context);
+
+	tdbb->tdbb_database = transaction->tra_cancel_lock->lck_dbb;
+	tdbb->tdbb_attachment = transaction->tra_cancel_lock->lck_attachment;
+	tdbb->tdbb_quantum = QUANTUM;
+	tdbb->tdbb_request = NULL;
+	tdbb->tdbb_transaction = NULL;
+	Jrd::ContextPoolHolder context(tdbb, 0);
+
+	if (transaction->tra_cancel_lock)
+		LCK_release(tdbb, transaction->tra_cancel_lock);
+
+	transaction->tra_flags |= TRA_cancel_request;
+
+	JRD_restore_thread_data();
+	return 0;
 }
 
 

@@ -990,9 +990,7 @@ void DatabaseSnapshot::putRequest(jrd_req* request,
 					   (UCHAR*) &request->req_timestamp.value(),
 					   sizeof(ISC_TIMESTAMP));
 	// state
-	if (request->req_flags & req_blocking)
-		temp = stmt_s_killed;
-	else if (request->req_flags & req_active)
+	if (request->req_flags & req_active)
 		temp = stmt_s_active;
 	else
 		temp = stmt_s_idle;

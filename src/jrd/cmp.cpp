@@ -121,7 +121,6 @@ const int MAX_REQUEST_SIZE	= 10485760;	// 10 MB - just to be safe
 using namespace Jrd;
 
 static UCHAR* alloc_map(thread_db*, CompilerScratch*, USHORT);
-static int blocking_ast_request(void*);
 static jrd_nod* catenate_nodes(thread_db*, NodeStack&);
 static jrd_nod* copy(thread_db*, CompilerScratch*, jrd_nod*, UCHAR *, USHORT, jrd_nod*, bool);
 static void expand_view_nodes(thread_db*, CompilerScratch*, USHORT, NodeStack&, NOD_T);
@@ -2425,27 +2424,6 @@ static UCHAR* alloc_map(thread_db* tdbb, CompilerScratch* csb, USHORT stream)
 }
 
 
-static int blocking_ast_request(void* ast_object)
-{
-/**************************************
- *
- *	b l o c k i n g _ a s t _ r e q u e s t
- *
- **************************************
- *
- * Functional description
- *	Set request to the cancellation state.
- *
- **************************************/
-	jrd_req* request = static_cast<jrd_req*>(ast_object);
-	fb_assert(request);
-
-	request->req_flags |= req_blocking;
-
-	return 0;
-}
-
-
 static jrd_nod* catenate_nodes(thread_db* tdbb, NodeStack& stack)
 {
 /**************************************
@@ -2987,26 +2965,12 @@ static void generate_request_id(thread_db* tdbb, jrd_req* request)
 
 	fb_assert(request);
 
-	fb_assert(!request->req_id_lock);
 	fb_assert(!request->req_id);
 	fb_assert(request->req_pool);
 
 	// Get new request id
 
 	request->req_id = LCK_increment(tdbb, dbb->dbb_increment_lock);
-
-	// Take out lock on request id
-
-	Lock* lock = FB_NEW_RPT(*request->req_pool, sizeof(SLONG)) Lock();
-	request->req_id_lock = lock;
-	lock->lck_type = LCK_request;
-	lock->lck_owner_handle = LCK_get_owner_handle(tdbb, lock->lck_type);
-	lock->lck_parent = dbb->dbb_lock;
-	lock->lck_length = sizeof(SLONG);
-	lock->lck_key.lck_long = request->req_id;
-	lock->lck_dbb = dbb;
-	lock->lck_ast = blocking_ast_request;
-	lock->lck_object = request;
 }
 
 

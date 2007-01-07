@@ -70,15 +70,17 @@ void VirtualTable::erase(thread_db* tdbb, record_param* rpb)
 	if (relation->rel_id != rel_mon_statements)
 		ERR_post(isc_read_only, 0);
 
-	// Get statement id
+	// Get transaction id
 	dsc desc;
-	EVL_field(relation, rpb->rpb_record, f_mon_stmt_id, &desc);
+	if (!EVL_field(relation, rpb->rpb_record, f_mon_stmt_tra_id, &desc))
+		return;
+
 	const SLONG id = MOV_get_long(&desc, 0);
 
 	// Post a blocking request
 	Lock temp_lock;
 	temp_lock.lck_dbb = dbb;
-	temp_lock.lck_type = LCK_request;
+	temp_lock.lck_type = LCK_cancel;
 	temp_lock.lck_parent = dbb->dbb_lock;
 	temp_lock.lck_owner_handle =
 		LCK_get_owner_handle(tdbb, temp_lock.lck_type);

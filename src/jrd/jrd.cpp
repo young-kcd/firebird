@@ -4596,6 +4596,8 @@ bool JRD_reschedule(thread_db* tdbb, SLONG quantum, bool punt)
 	// If database has been shutdown then get out
 
 	Attachment* attachment = tdbb->tdbb_attachment;
+	jrd_tra* transaction = tdbb->tdbb_transaction;
+	jrd_req* request = tdbb->tdbb_request;
 
 	if (attachment)
 	{
@@ -4643,12 +4645,9 @@ bool JRD_reschedule(thread_db* tdbb, SLONG quantum, bool punt)
 		if ((attachment->att_flags & ATT_cancel_raise) &&
 			!(attachment->att_flags & ATT_cancel_disable))
 		{
-			const jrd_tra* transaction;
-			jrd_req* request = tdbb->tdbb_request;
 			if ((!request ||
 				 !(request->req_flags & (req_internal | req_sys_trigger))) &&
-				(!(transaction = tdbb->tdbb_transaction) ||
-				 !(transaction->tra_flags & TRA_system)))
+				(!transaction || !(transaction->tra_flags & TRA_system)))
 			{
 				attachment->att_flags &= ~ATT_cancel_raise;
 				if (punt) {
@@ -4665,31 +4664,25 @@ bool JRD_reschedule(thread_db* tdbb, SLONG quantum, bool punt)
 			}
 		}
 #endif
-		// Handle request cancellation
+	}
 
-		jrd_req* request = tdbb->tdbb_request;
-		if (request)
-		{
-			while (request->req_caller)
-				request = request->req_caller;
+	// Handle request cancellation
 
-			if (request->req_flags & req_blocking)
-			{
-				request->req_flags &= ~req_blocking;
-				tdbb->tdbb_flags |= TDBB_sys_error;
+	if (transaction && (transaction->tra_flags & TRA_cancel_request))
+	{
+		transaction->tra_flags &= ~TRA_cancel_request;
+		tdbb->tdbb_flags |= TDBB_sys_error;
 
-				if (punt) {
-					CCH_unwind(tdbb, false);
-					ERR_post(isc_cancelled, 0);
-				}
-				else {
-					ISC_STATUS* status = tdbb->tdbb_status_vector;
-					*status++ = isc_arg_gds;
-					*status++ = isc_cancelled;
-					*status++ = isc_arg_end;
-					return true;
-				}
-			}
+		if (punt) {
+			CCH_unwind(tdbb, false);
+			ERR_post(isc_cancelled, 0);
+		}
+		else {
+			ISC_STATUS* status = tdbb->tdbb_status_vector;
+			*status++ = isc_arg_gds;
+			*status++ = isc_cancelled;
+			*status++ = isc_arg_end;
+			return true;
 		}
 	}
 

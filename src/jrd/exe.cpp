@@ -944,8 +944,11 @@ void EXE_start(thread_db* tdbb, jrd_req* request, jrd_tra* transaction)
 
 	TRA_post_resources(tdbb, transaction, request->req_resources);
 
+	Lock* lock = transaction->tra_cancel_lock;
+	if (lock && lock->lck_logical == LCK_none)
+		LCK_lock_non_blocking(tdbb, lock, LCK_SR, LCK_WAIT);
+
 	TRA_attach_request(transaction, request);
-	LCK_lock(tdbb, request->req_id_lock, LCK_SR, LCK_WAIT);
 	request->req_flags &= REQ_FLAGS_INIT_MASK;
 	request->req_flags |= req_active;
 	request->req_flags &= ~req_reserved;
@@ -1084,7 +1087,6 @@ void EXE_unwind(thread_db* tdbb, jrd_req* request)
 
 	TRA_detach_request(request);
 
-	LCK_release(tdbb, request->req_id_lock);
 	request->req_flags &= ~(req_active | req_proc_fetch | req_reserved);
 	request->req_flags |= req_abort | req_stall;
 	request->req_timestamp.invalidate();
@@ -2638,7 +2640,6 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 			}
 		}
 
-		LCK_release(tdbb, request->req_id_lock);
 		request->req_flags &= ~(req_active | req_reserved);
 		request->req_timestamp.invalidate();
 		release_blobs(tdbb, request);
