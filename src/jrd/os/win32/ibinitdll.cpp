@@ -28,6 +28,7 @@
 #include "../jrd/jrd_proto.h"
 #include "../jrd/thread_proto.h"
 
+
 BOOL WINAPI DllMain(HINSTANCE h, DWORD reason, LPVOID reserved)
 {
 	switch (reason)	{
@@ -36,7 +37,6 @@ BOOL WINAPI DllMain(HINSTANCE h, DWORD reason, LPVOID reserved)
 #ifdef EMBEDDED
 		JRD_shutdown_all(false);
 #endif
-		MemoryPool::deletePool(getDefaultMemoryPool());
 		break;
 
 	default:
