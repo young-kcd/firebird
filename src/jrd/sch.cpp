@@ -775,7 +775,7 @@ static void cleanup(void *arg)
 		return;
 
 /* this is added to make sure that we release the memory
- * we have alloacted for the thread event handler through
+ * we have allocated for the thread event handler through
  * ISC_event_handle () (CreateEvent) */
 
 #ifdef SUPERCLIENT
