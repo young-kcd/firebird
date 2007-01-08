@@ -1,3 +1,25 @@
+2007-01-07 16:15  dimitr
+
+	* firebird2/src/jrd/: cmp.cpp (1.244), DatabaseSnapshot.cpp (1.23),
+	exe.cpp (1.204), jrd.cpp (1.296), lck.cpp (1.63), lck.h (1.30),
+	req.h (1.66), VirtualTable.cpp (1.6), tra.cpp (1.132), tra.h
+	(1.62):
+
+	Changed cancellation implementation to work at the transaction
+	level as being more efficient.
+
+2007-01-07 13:47  dimitr
+
+	* firebird2/src/jrd/os/win32/ibinitdll.cpp (1.10):
+
+	Removed my recent fix, as it's wrong. Thanks to Adriano.
+
+2007-01-07 13:45  dimitr
+
+	* firebird2/src/jrd/: gds.cpp (1.209), sch.cpp (1.40):
+
+	Misc.
+
 2007-01-07 00:54  asfernandes
 
 	* firebird2/: src/jrd/jrd.cpp (1.295),
