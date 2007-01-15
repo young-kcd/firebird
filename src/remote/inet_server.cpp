@@ -33,6 +33,7 @@
 #include "firebird.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <errno.h>
 #include "../jrd/common.h"
 #include "../jrd/isc_proto.h"
 #include "../jrd/divorce.h"
@@ -277,6 +278,25 @@ int CLIB_ROUTINE server_main( int argc, char** argv)
 	set_signal(SIGPIPE, signal_handler);
 	set_signal(SIGUSR1, signal_handler);
 	set_signal(SIGUSR2, signal_handler);
+#endif
+
+#if defined(UNIX) && defined(DEV_BUILD)
+	{
+		// try to force core files creation for DEV_BUILD
+		struct rlimit core;
+		if (getrlimit(RLIMIT_CORE, &core) == 0)
+		{
+			core.rlim_cur = core.rlim_max;
+			if (setrlimit(RLIMIT_CORE, &core) != 0)
+			{
+				gds__log("setrlimit() failed, errno=%d", errno);
+			}
+		}
+		else
+		{
+			gds__log("getrlimit() failed, errno=%d", errno);
+		}
+	}
 #endif
 
 /* Fork off a server, wait for it to die, then fork off another,
