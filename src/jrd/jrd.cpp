@@ -217,9 +217,32 @@ static REC_MUTX_T databases_rec_mutex;
 
 void Jrd::Trigger::compile(thread_db* tdbb)
 {
-	if (!request && !compile_in_progress)
+	if (!request /*&& !compile_in_progress*/)
 	{
 		SET_TDBB(tdbb);
+
+#ifdef SUPERSERVER
+		Database* dbb = tdbb->tdbb_database;
+
+		if (!(dbb->dbb_flags & DBB_sp_rec_mutex_init))
+		{
+			THD_rec_mutex_init(&dbb->dbb_sp_rec_mutex);
+			dbb->dbb_flags |= DBB_sp_rec_mutex_init;
+		}
+
+		THREAD_EXIT();
+		const int error = THD_rec_mutex_lock(&dbb->dbb_sp_rec_mutex);
+		THREAD_ENTER();
+
+		if (error) {
+			Firebird::system_call_failed::raise("mutex_lock", error);
+		}
+		if (request)
+		{
+			THD_rec_mutex_unlock(&dbb->dbb_sp_rec_mutex);
+			return;
+		}
+#endif /* SUPERSERVER */
 
 		compile_in_progress = true;
 		// Allocate statement memory pool
@@ -246,6 +269,10 @@ void Jrd::Trigger::compile(thread_db* tdbb)
 			else {
 				JrdMemoryPool::deletePool(new_pool);
 			}
+
+#ifdef SUPERSERVER
+			THD_rec_mutex_unlock(&dbb->dbb_sp_rec_mutex);
+#endif
 			throw;
 		}
 		
@@ -261,6 +288,10 @@ void Jrd::Trigger::compile(thread_db* tdbb)
 		}
 
 		compile_in_progress = false;
+
+#ifdef SUPERSERVER
+		THD_rec_mutex_unlock(&dbb->dbb_sp_rec_mutex);
+#endif
 	}
 }
 
