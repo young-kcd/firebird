@@ -2,6 +2,12 @@
   * v2.0.1
   **************************
 
+    * Fixed bug CORE-1080
+	Bugcheck 167 (invalid SEND request) in SS when many parallel attachments begin 
+	to execute trigger not loaded into metadata cache
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
+
     * Improvement CORE-1047
         Add support for Gentoo/FreeBSD detection
       Contributor(s):
