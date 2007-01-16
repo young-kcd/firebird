@@ -1,3 +1,9 @@
+2007-01-15 18:37  alexpeshkoff
+
+	* firebird2/src/remote/inet_server.cpp (1.64):
+
+	front-port - override ulimit setting for DEV_BUILD
+
 2007-01-07 16:15  dimitr
 
 	* firebird2/src/jrd/: cmp.cpp (1.244), DatabaseSnapshot.cpp (1.23),
