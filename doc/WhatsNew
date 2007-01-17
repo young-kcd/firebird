@@ -2,9 +2,14 @@
   * v2.0.1
   **************************
 
+    * Fixed bug CORE-1094
+        isc_dsql_sql_info() returns unordered SQLVAR descriptors
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
     * Fixed bug CORE-1080
-	Bugcheck 167 (invalid SEND request) in SS when many parallel attachments begin 
-	to execute trigger not loaded into metadata cache
+        Bugcheck 167 (invalid SEND request) in SS when many parallel attachments begin 
+        to execute trigger not loaded into metadata cache
       Contributor(s):
         Vlad Horsun <horsun at kdb.dp.ua>
 
