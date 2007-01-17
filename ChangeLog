@@ -1,3 +1,17 @@
+2007-01-16 20:31  hvlad
+
+	* firebird2/doc/WhatsNew (1.95.2.26):
+
+	Update WhatsNew
+
+2007-01-16 20:28  hvlad
+
+	* firebird2/src/jrd/jrd.cpp (1.237.2.5):
+
+	Fixed CORE-1080 : Bugcheck 167 (invalid SEND request) in SS when
+	many parallel attachments begin to execute trigger not loaded into
+	metadata cache
+
 2007-01-15 18:28  alexpeshkoff
 
 	* firebird2/src/remote/inet_server.cpp (1.58.4.2):
