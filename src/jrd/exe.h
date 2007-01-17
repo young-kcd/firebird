@@ -423,7 +423,8 @@ const int e_err_length		= 2;
 
 const int e_cast_source		= 0;
 const int e_cast_fmt		= 1;
-const int e_cast_length		= 2;
+const int e_cast_iteminfo	= 2;
+const int e_cast_length		= 3;
 
 
 // CVC: These belong to SCROLLABLE_CURSORS, but I can't mark them with the macro
@@ -479,10 +480,19 @@ const int e_trim_count			= 2;
 const int e_trim_length			= 3;
 
 // nod_src_info
-const int e_src_info_line			= 0;
-const int e_src_info_col			= 1;
-const int e_src_info_node			= 2;
-const int e_src_info_length			= 3;
+const int e_src_info_line		= 0;
+const int e_src_info_col		= 1;
+const int e_src_info_node		= 2;
+const int e_src_info_length		= 3;
+
+// nod_init_variable
+const int e_init_var_id			= 0;
+const int e_init_var_variable	= 1;
+const int e_init_var_length		= 2;
+
+// nod_domain_validation
+const int e_domval_desc			= 0;
+const int e_domval_length		= sizeof (DSC) / sizeof(::Jrd::jrd_nod*);	// Room for descriptor
 
 // Request resources
 
@@ -607,6 +617,92 @@ struct ExternalAccess
 typedef Firebird::SortedArray<ExternalAccess, Firebird::EmptyStorage<ExternalAccess>, 
 	ExternalAccess, Firebird::DefaultKeyValue<ExternalAccess>, ExternalAccess> ExternalAccessList;
 
+// The three structs below are used for domains DEFAULT and constraints in PSQL
+struct Item
+{
+	Item(NOD_T aType, UCHAR aSubType, USHORT aIndex)
+		: type(aType),
+		  subType(aSubType),
+		  index(aIndex)
+	{
+	}
+
+	Item(NOD_T aType, USHORT aIndex = 0)
+		: type(aType),
+		  subType(0),
+		  index(aIndex)
+	{
+	}
+
+	NOD_T type;
+	UCHAR subType;
+	USHORT index;
+
+	bool operator >(const Item& x) const
+	{
+		if (type == x.type)
+		{
+			if (subType == x.subType)
+				return index > x.index;
+			else
+				return subType > x.subType;
+		}
+		else
+            return type > x.type;
+	}
+};
+
+struct FieldInfo
+{
+	bool nullable;
+	jrd_nod* defaultValue;
+	jrd_nod* validation;
+};
+
+struct ItemInfo
+{
+	ItemInfo(MemoryPool& p, const ItemInfo& o)
+		: name(p, o.name),
+		  field(p, o.field),
+		  nullable(o.nullable),
+		  explicitCollation(o.explicitCollation),
+		  fullDomain(o.fullDomain)
+	{
+	}
+
+	ItemInfo(MemoryPool& p)
+		: name(p),
+		  field(p),
+		  nullable(true),
+		  explicitCollation(false),
+		  fullDomain(false)
+	{
+	}
+
+	ItemInfo()
+		: name(),
+		  field(),
+		  nullable(true),
+		  explicitCollation(false),
+		  fullDomain(false)
+	{
+	}
+
+	bool isSpecial() const
+	{
+		return !nullable || fullDomain;
+	}
+
+	Firebird::MetaName name;
+	Firebird::MetaName field;
+	bool nullable;
+	bool explicitCollation;
+	bool fullDomain;
+};
+
+typedef Firebird::GenericMap<Firebird::Pair<Firebird::Left<Firebird::MetaName, FieldInfo> > > MapFieldInfo;
+typedef Firebird::GenericMap<Firebird::Pair<Firebird::Right<Item, ItemInfo> > > MapItemInfo;
+
 // Compile scratch block
 
 /*
@@ -620,7 +716,7 @@ typedef Firebird::SortedArray<ExternalAccess, Firebird::EmptyStorage<ExternalAcc
 class CompilerScratch : public pool_alloc<type_csb>
 {
 public:
-	CompilerScratch(MemoryPool& p, size_t len)
+	CompilerScratch(MemoryPool& p, size_t len, Firebird::MetaName domain_validation = Firebird::MetaName())
 	:	/*csb_blr(0),
 		csb_running(0),
 		csb_node(0),
@@ -644,11 +740,14 @@ public:
 		csb_invariants(p),
 		csb_current_nodes(p),
 		csb_pool(p),
-		csb_rpt(p, len)
+		csb_rpt(p, len),
+		csb_map_field_info(p),
+		csb_map_item_info(p),
+		csb_domain_validation(domain_validation)
 	{}
 
-	static CompilerScratch* newCsb(MemoryPool& p, size_t len)
-		{ return FB_NEW(p) CompilerScratch(p, len); }
+	static CompilerScratch* newCsb(MemoryPool& p, size_t len, Firebird::MetaName domain_validation = Firebird::MetaName())
+		{ return FB_NEW(p) CompilerScratch(p, len, domain_validation); }
 
 	int nextStream(bool check = true)
 	{
@@ -680,8 +779,11 @@ public:
 	USHORT			csb_msg_number;		/* Highest used message number */
 	SLONG			csb_impure;			/* Next offset into impure area */
 	USHORT			csb_g_flags;
-	MemoryPool&		csb_pool;				/* Memory pool to be used by csb */
-	Firebird::MapBlrToSrc*	csb_map_blr2src;	// mapping between blr offsets and source text position
+	MemoryPool&		csb_pool;			// Memory pool to be used by csb
+	Firebird::DbgInfo*	csb_dbg_info;			// Debug information
+	MapFieldInfo		csb_map_field_info;		// Map field name to field info
+	MapItemInfo			csb_map_item_info;		// Map item to item info
+	Firebird::MetaName	csb_domain_validation;	// Parsing domain constraint in PSQL
 
     struct csb_repeat
 	{

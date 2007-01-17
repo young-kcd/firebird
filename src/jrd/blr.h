@@ -57,9 +57,10 @@
 #define blr_sql_date		(unsigned char)12
 #define blr_sql_time		(unsigned char)13
 #define blr_int64               (unsigned char)16
-#define blr_blob2		(unsigned char)17
-#define blr_type_of		(unsigned char)18
-#define blr_type_of2	(unsigned char)19
+#define blr_blob2			(unsigned char)17
+#define blr_domain_name		(unsigned char)18
+#define blr_domain_name2	(unsigned char)19
+#define blr_not_nullable	(unsigned char)20
 
 /* Historical alias for pre V6 applications */
 #define blr_date		blr_timestamp
@@ -337,8 +338,7 @@
 
 /* FB 2.1 specific BLR */
 
-/* Source code line and column numbers */
-#define blr_src_info		(unsigned char)184
+#define blr_init_variable	(unsigned char)184
 #define blr_recurse			(unsigned char)185
 
-#endif /* JRD_BLR_H */
+#endif // JRD_BLR_H

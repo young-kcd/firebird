@@ -291,6 +291,20 @@ void EXE_assignment(thread_db* tdbb, jrd_nod* node)
 		null = -1;
 	}
 
+	switch (to->nod_type)
+	{
+		case nod_variable:
+			EVL_validate(tdbb, Item(nod_variable, (IPTR) to->nod_arg[e_var_id]),
+				from_desc, null == -1);
+			break;
+
+		case nod_argument:
+			EVL_validate(tdbb,
+				Item(nod_argument, (IPTR) to->nod_arg[e_arg_message], (IPTR) to->nod_arg[e_arg_number]),
+				from_desc, null == -1);
+			break;
+	}
+
 /* If the value is non-missing, move/convert it.  Otherwise fill the
    field with appropriate nulls. */
 	dsc temp;
@@ -1782,6 +1796,7 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 					variable->vlu_desc.dsc_address =
 						variable->vlu_string->str_data;
 				}
+
 				request->req_operation = jrd_req::req_return;
 				node = node->nod_parent;
 			}
@@ -2565,6 +2580,37 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 			}
 			else
 				node = node->nod_parent;
+			break;
+
+		case nod_init_variable:
+			if (request->req_operation == jrd_req::req_evaluate)
+			{
+				MapItemInfo::ValueType itemInfo;
+				if (request->req_map_item_info.get(Item(nod_variable, (IPTR) node->nod_arg[e_init_var_id]), itemInfo))
+				{
+					jrd_nod* var_node = node->nod_arg[e_init_var_variable];
+					DSC* to_desc = &((impure_value*) ((SCHAR *) request + var_node->nod_impure))->vlu_desc;
+
+					to_desc->dsc_flags |= DSC_null;
+
+					MapFieldInfo::ValueType fieldInfo;
+					if (itemInfo.fullDomain &&
+						request->req_map_field_info.get(itemInfo.field, fieldInfo) &&
+						fieldInfo.defaultValue)
+					{
+						dsc* value = EVL_expr(tdbb, fieldInfo.defaultValue);
+
+						if (value && !(request->req_flags & req_null))
+						{
+							to_desc->dsc_flags &= ~DSC_null;
+							MOV_move(value, to_desc);
+						}
+					}
+				}
+
+				request->req_operation = jrd_req::req_return;
+			}
+			node = node->nod_parent;
 			break;
 
 		default:
@@ -3829,7 +3875,7 @@ static void validate(thread_db* tdbb, jrd_nod* list)
 
 			if (!name)
 			{
-				name = "*** unknown ***";
+				name = UNKNOWN_STRING_MARK;
 			}
 
 			ERR_post(isc_not_valid, isc_arg_string, name,

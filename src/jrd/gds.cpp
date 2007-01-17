@@ -354,7 +354,6 @@ static const UCHAR
 	cursor_stmt[] = { op_cursor_stmt, 0 },
 	strlength[] = { op_byte, op_line, op_verb, 0},
 	trim[] = { op_byte, op_byte, op_line, op_verb, 0},
-	src_info[] = { op_word, op_word, op_line, 0},
 	modify2[] = { op_byte, op_byte, op_line, op_verb, op_verb, 0};
 
 #include "../jrd/blp.h"
@@ -2999,18 +2998,22 @@ static int blr_print_dtype(gds_ctl* control)
 		length = 8;
 		break;
 
-	case blr_type_of:
-		string = "type_of";
+	case blr_domain_name:
+		string = "domain_name";
 		// Don't bother with this length.
-		// It will not be used for blr_type_of.
+		// It will not be used for blr_domain_name.
 		length = 0;
 		break;
 
-	case blr_type_of2:
-		string = "type_of2";
+	case blr_domain_name2:
+		string = "domain_name2";
 		// Don't bother with this length.
-		// It will not be used for blr_type_of2.
+		// It will not be used for blr_domain_name2.
 		length = 0;
+		break;
+
+	case blr_not_nullable:
+		string = "not_nullable";
 		break;
 
 	default:
@@ -3022,6 +3025,10 @@ static int blr_print_dtype(gds_ctl* control)
 
 	switch (dtype)
 	{
+	case blr_not_nullable:
+		length = blr_print_dtype(control);
+		break;
+
 	case blr_text:
 		length = blr_print_word(control);
 		break;
@@ -3061,15 +3068,18 @@ static int blr_print_dtype(gds_ctl* control)
 		blr_print_word(control);
 		break;
 
-	case blr_type_of:
-	case blr_type_of2:
+	case blr_domain_name:
+	case blr_domain_name2:
 		{
+			// 0 = TYPE OF; 1 = full domain
+			blr_print_byte(control);
+
 			UCHAR n = blr_print_byte(control);
 
 			while (n-- > 0)
 				blr_print_char(control);
 
-			if (dtype == blr_type_of2)
+			if (dtype == blr_domain_name2)
 				blr_print_word(control);
 
 			break;

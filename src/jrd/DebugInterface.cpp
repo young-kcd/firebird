@@ -27,7 +27,7 @@
 using namespace Jrd;
 using namespace Firebird;
 
-void DBG_parse_debug_info(thread_db* tdbb, bid *blob_id, MapBlrToSrc& Map)
+void DBG_parse_debug_info(thread_db* tdbb, bid *blob_id, Firebird::DbgInfo& dbgInfo)
 {
 	Database* dbb = tdbb->tdbb_database;
 	blb* blob = BLB_open(tdbb, dbb->dbb_sys_trans, blob_id);
@@ -68,7 +68,7 @@ void DBG_parse_debug_info(thread_db* tdbb, bid *blob_id, MapBlrToSrc& Map)
 			i.mbs_offset = *temp++;
 			i.mbs_offset |= *temp++ << 8;
 
-			Map.add(i);
+			dbgInfo.blrToSrc.add(i);
 		}
 		break;
 
@@ -79,20 +79,53 @@ void DBG_parse_debug_info(thread_db* tdbb, bid *blob_id, MapBlrToSrc& Map)
 				break;
 			}
 
-			USHORT val;
 			// variable number
-			val = *temp++;
-			val |= *temp++;
+			USHORT index = *temp++;
+			index |= *temp++;
 
 			// variable name string length
-			val = *temp++;
+			USHORT length = *temp++;
 
-			if (temp + val > end) {
+			if (temp + length > end) {
 				bad_format = true;
 				break;
 			}
+
+			dbgInfo.varIndexToName.put(index, MetaName((const TEXT*) temp, length));
+
 			// variable name string
-			temp += val;
+			temp += length;
+		}
+		break;
+
+		case fb_dbg_map_argument:
+		{
+			if (temp + 4 > end) {
+				bad_format = true;
+				break;
+			}
+
+			ArgumentInfo info;
+
+			// argument type
+			info.type = *temp++;
+
+			// argument number
+			info.index = *temp++;
+			info.index |= *temp++;
+
+			// argument name string length
+			USHORT length = *temp++;
+
+			if (temp + length > end) {
+				bad_format = true;
+				break;
+			}
+
+			dbgInfo.argInfoToName.put(info, MetaName((const TEXT*) temp, length));
+
+			// variable name string
+			temp += length;
 		}
 		break;
 
@@ -111,7 +144,7 @@ void DBG_parse_debug_info(thread_db* tdbb, bid *blob_id, MapBlrToSrc& Map)
 
 	if (bad_format) 
 	{
-		Map.clear();
+		dbgInfo.blrToSrc.clear();
 		ERR_post_warning(isc_bad_debug_format, 0);
 	}
 }

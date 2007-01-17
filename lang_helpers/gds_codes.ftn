@@ -1168,6 +1168,8 @@ C --
       PARAMETER (GDS__key_too_big                      = 335544877)
       INTEGER*4 GDS__concurrent_transaction          
       PARAMETER (GDS__concurrent_transaction           = 335544878)
+      INTEGER*4 GDS__not_valid_for_var               
+      PARAMETER (GDS__not_valid_for_var                = 335544879)
       INTEGER*4 GDS__gfix_db_name                    
       PARAMETER (GDS__gfix_db_name                     = 335740929)
       INTEGER*4 GDS__gfix_invalid_sw                 

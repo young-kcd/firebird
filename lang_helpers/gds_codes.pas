@@ -591,6 +591,7 @@ const
 	gds_bad_proc_BLR                     = 335544876;
 	gds_key_too_big                      = 335544877;
 	gds_concurrent_transaction           = 335544878;
+	gds_not_valid_for_var                = 335544879;
 	gds_gfix_db_name                     = 335740929;
 	gds_gfix_invalid_sw                  = 335740930;
 	gds_gfix_incmp_sw                    = 335740932;

@@ -580,6 +580,7 @@ static const struct {
 	{"bad_proc_BLR", 335544876},
 	{"key_too_big", 335544877},
 	{"concurrent_transaction", 335544878},
+	{"not_valid_for_var", 335544879},
 	{"gfix_db_name", 335740929},
 	{"gfix_invalid_sw", 335740930},
 	{"gfix_incmp_sw", 335740932},

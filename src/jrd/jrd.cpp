@@ -244,13 +244,13 @@ void Jrd::Trigger::compile(thread_db* tdbb)
 		try {
 			Jrd::ContextPoolHolder context(tdbb, new_pool);
 
-			Firebird::MapBlrToSrc csb_map;
+			Firebird::DbgInfo dbgInfo;
 			if (!dbg_blob_id.isEmpty())
-				DBG_parse_debug_info(tdbb, &dbg_blob_id, csb_map);
+				DBG_parse_debug_info(tdbb, &dbg_blob_id, dbgInfo);
 
 			csb = CompilerScratch::newCsb(*tdbb->getDefaultPool(), 5);
 			csb->csb_g_flags |= par_flags;
-			csb->csb_map_blr2src = &csb_map;
+			csb->csb_dbg_info = &dbgInfo;
 
 			PAR_blr(tdbb, relation, blr.begin(),  NULL, &csb, &request, (relation ? true : false),
 					par_flags);

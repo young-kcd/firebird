@@ -192,3 +192,5 @@ NODE(nod_asn_list, asn_list, "")
 		  NODE(nod_strlen, strlen, "STRLEN")
 
 		  NODE(nod_src_info, source_info, "")
+		  NODE(nod_init_variable, init_variable, "")
+		  NODE(nod_domain_validation, domain_validation, "")

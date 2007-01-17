@@ -216,7 +216,7 @@ static const struct
 	{"lowcase", one},
 	{"strlen", strlength},
 	{"trim", trim},
-	{"src_info", src_info},
+	{"init_variable", variable},
 	{"recurse", union_ops},
 	{0, 0}
 };

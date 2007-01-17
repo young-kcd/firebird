@@ -1316,6 +1316,7 @@ dsql_prc* METD_get_procedure(dsql_req* request, const dsql_str* name)
 			SSHORT pr_default_value_null = TRUE;
 			SSHORT pr_null_flag_null = TRUE;
 			SSHORT pr_null_flag;
+			bool pr_type_of = false;
 
 			if (ENCODE_ODS(dbb->dbb_ods_version, dbb->dbb_minor_version) >= ODS_11_1)
 			{
@@ -1331,6 +1332,9 @@ dsql_prc* METD_get_procedure(dsql_req* request, const dsql_str* name)
 
 					pr_null_flag_null = PR2.RDB$NULL_FLAG.NULL;
 					pr_null_flag = PR2.RDB$NULL_FLAG;
+
+					if (!PR2.RDB$PARAMETER_MECHANISM.NULL && PR2.RDB$PARAMETER_MECHANISM == prm_mech_type_of)
+						pr_type_of = true;
 
 				END_FOR
 			}
@@ -1370,7 +1374,7 @@ dsql_prc* METD_get_procedure(dsql_req* request, const dsql_str* name)
 				if (!pr_null_flag)
 					parameter->fld_flags |= FLD_nullable;
 			}
-			else if (!FLD.RDB$NULL_FLAG)
+			else if (!FLD.RDB$NULL_FLAG || pr_type_of)
 				parameter->fld_flags |= FLD_nullable;
 
 			if (FLD.RDB$FIELD_TYPE == blr_blob)

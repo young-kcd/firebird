@@ -1843,6 +1843,10 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC * de
 		CMP_get_desc(tdbb, csb, node->nod_arg[1], desc);
 		return;
 
+	case nod_domain_validation:
+		*desc = *(DSC*) (node->nod_arg + e_domval_desc);
+		return;
+
 	default:
 		fb_assert(false);
 		break;
@@ -1963,9 +1967,40 @@ jrd_req* CMP_make_request(thread_db* tdbb, CompilerScratch* csb)
 
 	DEBUG;
 	csb->csb_node = pass1(tdbb, csb, csb->csb_node, 0, 0, false);
+
+	// Copy and compile (pass1) domains DEFAULT and constraints.
+	bool found = csb->csb_map_field_info.getFirst();
+	while (found)
+	{
+		FieldInfo& fieldInfo = csb->csb_map_field_info.current()->second;
+		UCHAR local_map[MAP_LENGTH];
+
+		fieldInfo.defaultValue =
+			copy(tdbb, csb, fieldInfo.defaultValue, local_map, 0, NULL, false);
+		fieldInfo.validation =
+			copy(tdbb, csb, fieldInfo.validation, local_map, 0, NULL, false);
+
+		fieldInfo.defaultValue = pass1(tdbb, csb, fieldInfo.defaultValue, 0, 0, false);
+		fieldInfo.validation = pass1(tdbb, csb, fieldInfo.validation, 0, 0, false);
+
+		found = csb->csb_map_field_info.getNext();
+	}
+
 	csb->csb_impure = REQ_SIZE + REQ_TAIL * MAX(csb->csb_n_stream, 1);
 	csb->csb_exec_sta.clear();
 	csb->csb_node = pass2(tdbb, csb, csb->csb_node, 0);
+
+	// Compile (pass2) domains DEFAULT and constraints
+	found = csb->csb_map_field_info.getFirst();
+	while (found)
+	{
+		FieldInfo& fieldInfo = csb->csb_map_field_info.current()->second;
+
+		fieldInfo.defaultValue = pass2(tdbb, csb, fieldInfo.defaultValue, 0);
+		fieldInfo.validation = pass2(tdbb, csb, fieldInfo.validation, 0);
+
+		found = csb->csb_map_field_info.getNext();
+	}
 
 	if (csb->csb_impure > MAX_REQUEST_SIZE) {
 		IBERROR(226);			// msg 226 request size limit exceeded
@@ -1982,6 +2017,8 @@ jrd_req* CMP_make_request(thread_db* tdbb, CompilerScratch* csb)
 	request->req_top_node = csb->csb_node;
 	request->req_access = csb->csb_access;
 	request->req_external = csb->csb_external;
+	request->req_map_field_info.takeOwnership(csb->csb_map_field_info);
+	request->req_map_item_info.takeOwnership(csb->csb_map_item_info);
 
 	generate_request_id(tdbb, request);
 
@@ -2863,6 +2900,13 @@ static jrd_nod* copy(thread_db* tdbb,
 	case nod_sort:
 		args *= 3;
 		break;
+
+	case nod_domain_validation:
+		node = PAR_make_node(tdbb, e_domval_length);
+		node->nod_type = nod_domain_validation;
+		node->nod_count = 0;
+		*(dsc*) (node->nod_arg + e_domval_desc) = *(dsc*) (input->nod_arg + e_domval_desc);
+		return node;
 
 	default:
 		break;

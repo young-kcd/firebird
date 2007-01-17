@@ -116,7 +116,7 @@ void		MET_scan_relation(Jrd::thread_db*, Jrd::jrd_rel*);
 const TEXT* MET_trigger_msg(Jrd::thread_db*, const Firebird::MetaName&, USHORT);
 void		MET_update_shadow(Jrd::thread_db*, Jrd::Shadow*, USHORT);
 void		MET_update_transaction(Jrd::thread_db*, Jrd::jrd_tra*, const bool);
-bool		MET_get_domain_desc(Jrd::thread_db*, const Firebird::MetaName& name, dsc* desc);
+bool		MET_get_domain_desc(Jrd::thread_db*, const Firebird::MetaName&, dsc*, Jrd::FieldInfo*);
 void		MET_update_partners(Jrd::thread_db*);
 
 #endif // JRD_MET_PROTO_H

@@ -228,6 +228,8 @@ public:
 	SSHORT		fld_ttype;				//!< ID of field's language_driver
 	TEXT*		fld_type_of_name;		//!< TYPE OF
 	bool		fld_explicit_collation;	//!< COLLATE was explicit specified
+	bool		fld_not_nullable;		//!< NOT NULL was explicit specified
+	bool		fld_constrained;		//!< Type may be constrained
 	TEXT		fld_name[2];
 };
 
@@ -395,6 +397,7 @@ public:
 	void	end_debug();
 	void	put_debug_src_info(USHORT, USHORT);
 	void	put_debug_variable(USHORT, const TEXT*);
+	void	put_debug_argument(UCHAR, USHORT, const TEXT*);
 	void	append_debug_info();
 	// end - member functions that should be private
 

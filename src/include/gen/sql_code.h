@@ -579,6 +579,7 @@ static const struct {
 	{335544876, -901}, /* 556 bad_proc_BLR                     */
 	{335544877, -901}, /* 557 key_too_big                      */
 	{335544878, -904}, /* 558 concurrent_transaction           */
+	{335544879, -625}, /* 559 not_valid_for_var                */
 	{335740929, -901}, /*   1 gfix_db_name                     */
 	{335740930, -901}, /*   2 gfix_invalid_sw                  */
 	{335740932, -901}, /*   4 gfix_incmp_sw                    */

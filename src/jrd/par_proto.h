@@ -30,13 +30,14 @@ namespace Jrd {
 	class jrd_rel;
 	class jrd_req;
 	class thread_db;
+	struct ItemInfo;
 }
 
 struct dsc;
 
 Jrd::jrd_nod*	PAR_blr(Jrd::thread_db*, Jrd::jrd_rel*, const UCHAR*, Jrd::CompilerScratch*,
 					Jrd::CompilerScratch**, Jrd::jrd_req**, const bool, USHORT);
-USHORT			PAR_desc(Jrd::thread_db*, Jrd::CompilerScratch*, dsc*, bool* = NULL);
+USHORT			PAR_desc(Jrd::thread_db*, Jrd::CompilerScratch*, dsc*, Jrd::ItemInfo* = NULL);
 Jrd::jrd_nod*	PAR_gen_field(Jrd::thread_db*, USHORT, USHORT);
 Jrd::jrd_nod*	PAR_make_field(Jrd::thread_db*, Jrd::CompilerScratch*, USHORT, const Firebird::MetaName&);
 Jrd::jrd_nod*	PAR_make_list(Jrd::thread_db*, Jrd::NodeStack&);

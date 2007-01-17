@@ -47,8 +47,56 @@ typedef Firebird::SortedArray<
 	USHORT, 
 	MapBlrToSrcItem> MapBlrToSrc;
 
+typedef GenericMap<Pair<Right<USHORT, MetaName> > > MapVarIndexToName;
+
+struct ArgumentInfo
+{
+	ArgumentInfo(UCHAR aType, USHORT aIndex)
+		: type(aType),
+		  index(aIndex)
+	{
+	}
+
+	ArgumentInfo()
+		: type(0),
+		  index(0)
+	{
+	}
+
+	UCHAR type;
+	USHORT index;
+
+	bool operator >(const ArgumentInfo& x) const
+	{
+		if (type == x.type)
+			return index > x.index;
+		else
+			return type > x.type;
+	}
+};
+
+typedef GenericMap<Pair<Right<ArgumentInfo, MetaName> > > MapArgumentInfoToName;
+
+struct DbgInfo
+{
+	DbgInfo(MemoryPool& p)
+		: blrToSrc(p),
+		  varIndexToName(p),
+		  argInfoToName(p)
+	{
+	}
+
+	DbgInfo()
+	{
+	}
+
+	MapBlrToSrc blrToSrc;					// mapping between blr offsets and source text position
+	MapVarIndexToName varIndexToName;		// mapping between variable index and name
+	MapArgumentInfoToName argInfoToName;	// mapping between argument info (type, index) and name
+};
+
 }; // namespace Firebird 
 
-void DBG_parse_debug_info(Jrd::thread_db*, Jrd::bid*, Firebird::MapBlrToSrc&);
+void DBG_parse_debug_info(Jrd::thread_db*, Jrd::bid*, Firebird::DbgInfo&);
 
 #endif //DEBUG_INTERFACE_H

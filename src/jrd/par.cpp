@@ -232,7 +232,7 @@ jrd_nod* PAR_blr(thread_db*	tdbb,
 }
 
 
-USHORT PAR_desc(thread_db* tdbb, CompilerScratch* csb, DSC* desc, bool* explicitCollation)
+USHORT PAR_desc(thread_db* tdbb, CompilerScratch* csb, DSC* desc, ItemInfo* itemInfo)
 {
 /**************************************
  *
@@ -245,6 +245,13 @@ USHORT PAR_desc(thread_db* tdbb, CompilerScratch* csb, DSC* desc, bool* explicit
  *	of the datatype.
  *
  **************************************/
+	if (itemInfo)
+	{
+		itemInfo->nullable = true;
+		itemInfo->explicitCollation = false;
+		itemInfo->fullDomain = false;
+	}
+
 	desc->dsc_scale = 0;
 	desc->dsc_sub_type = 0;
 	desc->dsc_address = NULL;
@@ -254,6 +261,12 @@ USHORT PAR_desc(thread_db* tdbb, CompilerScratch* csb, DSC* desc, bool* explicit
 
 	switch (dtype)
 	{
+	case blr_not_nullable:
+		PAR_desc(tdbb, csb, desc, itemInfo);
+		if (itemInfo)
+			itemInfo->nullable = false;
+		break;
+
 	case blr_text:
 		desc->dsc_dtype = dtype_text;
 		desc->dsc_flags |= DSC_no_subtype;
@@ -364,19 +377,39 @@ USHORT PAR_desc(thread_db* tdbb, CompilerScratch* csb, DSC* desc, bool* explicit
 			break;
 		}
 
-	case blr_type_of:
-	case blr_type_of2:
+	case blr_domain_name:
+	case blr_domain_name2:
 		{
+			bool fullDomain = (BLR_BYTE != 0);
 			Firebird::MetaName* name = FB_NEW(csb->csb_pool) Firebird::MetaName(csb->csb_pool);
 			par_name(csb, *name);
 
-			if (!MET_get_domain_desc(tdbb, *name, desc))
+			FieldInfo fieldInfo;
+			bool exist = csb->csb_map_field_info.get(*name, fieldInfo);
+
+			if (!MET_get_domain_desc(tdbb, *name, desc, (exist ? NULL : &fieldInfo)))
 			{
 				error(csb, isc_domnotdef,
 					  isc_arg_string, ERR_cstring(name->c_str()), 0);
 			}
 
-			if (dtype == blr_type_of2)
+			if (!exist)
+				csb->csb_map_field_info.put(*name, fieldInfo);
+
+			if (itemInfo)
+			{
+				itemInfo->field = *name;
+
+				if (fullDomain)
+				{
+					itemInfo->nullable = fieldInfo.nullable;
+					itemInfo->fullDomain = true;
+				}
+				else
+					itemInfo->nullable = true;
+			}
+
+			if (dtype == blr_domain_name2)
 			{
 				USHORT ttype = BLR_WORD;
 
@@ -412,15 +445,13 @@ USHORT PAR_desc(thread_db* tdbb, CompilerScratch* csb, DSC* desc, bool* explicit
 		error(csb, isc_datnotsup, 0);
 	}
 
-	if (explicitCollation)
+	if (itemInfo)
 	{
 		if (dtype == blr_cstring2 || dtype == blr_text2 || dtype == blr_varying2 ||
-			dtype == blr_blob2 || dtype == blr_type_of2)
+			dtype == blr_blob2 || dtype == blr_domain_name2)
 		{
-			*explicitCollation = true;
+			itemInfo->explicitCollation = true;
 		}
-		else
-			*explicitCollation = false;
 	}
 
 	return type_alignments[desc->dsc_dtype];
@@ -822,13 +853,19 @@ static jrd_nod* par_cast(thread_db* tdbb, CompilerScratch* csb)
 	node->nod_arg[e_cast_fmt] = (jrd_nod*) format;
 
 	dsc* desc = &format->fmt_desc[0];
-	bool explicitCollation;
-	PAR_desc(tdbb, csb, desc, &explicitCollation);
+	ItemInfo itemInfo;
+	PAR_desc(tdbb, csb, desc, &itemInfo);
 	format->fmt_length = desc->dsc_length;
 
 	node->nod_arg[e_cast_source] = parse(tdbb, csb, VALUE);
 
-	if (explicitCollation)
+	if (itemInfo.isSpecial())
+	{
+		ItemInfo* p = FB_NEW(*tdbb->getDefaultPool()) ItemInfo(*tdbb->getDefaultPool(), itemInfo);
+		node->nod_arg[e_cast_iteminfo] = (jrd_nod*) p;
+	}
+
+	if (itemInfo.explicitCollation)
 	{
 		jrd_nod* dep_node = PAR_make_node (tdbb, e_dep_length);
 		dep_node->nod_type = nod_dependency;
@@ -1202,6 +1239,28 @@ static jrd_nod* par_field(thread_db* tdbb, CompilerScratch* csb, SSHORT blr_oper
 
 	const SSHORT context = (unsigned int) BLR_BYTE;
 
+	// check if this is a VALUE of domain's check constraint
+	if (!csb->csb_domain_validation.isEmpty() && blr_operator == blr_fid && context == 0)
+	{
+		SSHORT id = BLR_WORD;
+		fb_assert(id == 0);
+
+		jrd_nod* node = PAR_make_node(tdbb, e_domval_length);
+		node->nod_type = nod_domain_validation;
+		node->nod_count = 0;
+
+		dsc* desc = (dsc*) (node->nod_arg + e_domval_desc);
+
+		if (!MET_get_domain_desc(tdbb, csb->csb_domain_validation, desc, NULL))
+		{
+			error(csb, isc_domnotdef,
+				  isc_arg_string, ERR_cstring(csb->csb_domain_validation.c_str()),
+				  0);
+		}
+
+		return node;
+	}
+
 	if (context >= csb->csb_rpt.getCount())/* ||
 		!(csb->csb_rpt[context].csb_flags & csb_used) )
 
@@ -1549,12 +1608,33 @@ static jrd_nod* par_message(thread_db* tdbb, CompilerScratch* csb)
 	ULONG offset = 0;
 
 	Format::fmt_desc_iterator desc, end;
-	for (desc = format->fmt_desc.begin(), end = desc + n; desc < end; ++desc) {
-		const USHORT alignment = PAR_desc(tdbb, csb, &*desc);
+	USHORT index = 0;
+
+	for (desc = format->fmt_desc.begin(), end = desc + n; desc < end; ++desc, ++index)
+	{
+		ItemInfo itemInfo;
+		const USHORT alignment = PAR_desc(tdbb, csb, &*desc, &itemInfo);
 		if (alignment)
 			offset = FB_ALIGN(offset, alignment);
 		desc->dsc_address = (UCHAR *) (IPTR) offset;
 		offset += desc->dsc_length;
+
+		if (itemInfo.isSpecial() && index % 2 == 0)
+		{
+			bool exist = false;
+
+			if (csb->csb_dbg_info)
+			{
+				exist = csb->csb_dbg_info->argInfoToName.get(
+					Firebird::ArgumentInfo(csb->csb_msg_number, index / 2), itemInfo.name);
+			}
+
+			if (!exist)
+				itemInfo.name = UNKNOWN_STRING_MARK;
+
+			csb->csb_map_item_info.put(
+				Item(nod_argument, csb->csb_msg_number, index), itemInfo);
+		}
 	}
 
 	if (offset > MAX_FORMAT_SIZE)
@@ -2471,6 +2551,8 @@ static jrd_nod* parse(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 		arg = NULL;
 	}
 
+	bool set_type = true;
+
 /* Dispatch on operator type. */
 
 	switch (blr_operator) {
@@ -2763,6 +2845,8 @@ static jrd_nod* parse(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 	case blr_field:
 	case blr_fid:
 		node = par_field(tdbb, csb, blr_operator);
+		if (node->nod_type == nod_domain_validation)
+			set_type = false;	// to not change nod->nod_type to nod_field
 		break;
 
 	case blr_gen_id:
@@ -2843,16 +2927,30 @@ static jrd_nod* parse(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 	case blr_dcl_variable:
 		{
 			dsc* desc = (dsc*) (node->nod_arg + e_dcl_desc);
-			bool explicitCollation;
+
+			ItemInfo itemInfo;
 
 			n = BLR_WORD;
 			node->nod_arg[e_dcl_id] = (jrd_nod*) (IPTR) n;
-			PAR_desc(tdbb, csb, desc, &explicitCollation);
+			PAR_desc(tdbb, csb, desc, &itemInfo);
 			vec<jrd_nod*>* vector = csb->csb_variables =
 				vec<jrd_nod*>::newVector(*tdbb->getDefaultPool(), csb->csb_variables, n + 1);
 			(*vector)[n] = node;
 
-			if (explicitCollation)
+			if (itemInfo.isSpecial())
+			{
+				bool exist = false;
+
+				if (csb->csb_dbg_info)
+					exist = csb->csb_dbg_info->varIndexToName.get(n, itemInfo.name);
+
+				if (!exist)
+					itemInfo.name = UNKNOWN_STRING_MARK;
+
+				csb->csb_map_item_info.put(Item(nod_variable, n), itemInfo);
+			}
+
+			if (itemInfo.explicitCollation)
 			{
 				jrd_nod* dep_node = PAR_make_node (tdbb, e_dep_length);
 				dep_node->nod_type = nod_dependency;
@@ -3013,21 +3111,37 @@ static jrd_nod* parse(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 		break;
 #endif
 
+	case blr_init_variable:
+		{
+			n = BLR_WORD;
+			node->nod_arg[e_init_var_id] = (jrd_nod*)(U_IPTR) n;
+			vec<jrd_nod*>* vector = csb->csb_variables;
+			if (!vector || n >= vector->count() ||
+				!(node->nod_arg[e_init_var_variable] = (*vector)[n]))
+			{
+				syntax_error(csb, "variable identifier");
+			}
+		}
+		break;
+
 	default:
 		syntax_error(csb, elements[expected]);
 	}
 
-	if (csb->csb_g_flags & csb_blr_version4)
-		node->nod_type = (NOD_T) (USHORT) blr_table4[(int) blr_operator];
-	else
-		node->nod_type = (NOD_T) (USHORT) blr_table[(int) blr_operator];
+	if (set_type)
+	{
+		if (csb->csb_g_flags & csb_blr_version4)
+			node->nod_type = (NOD_T) (USHORT) blr_table4[(int) blr_operator];
+		else
+			node->nod_type = (NOD_T) (USHORT) blr_table[(int) blr_operator];
+	}
 
-	if (csb->csb_map_blr2src)
+	if (csb->csb_dbg_info)
 	{
 		size_t pos = 0;
-		if (csb->csb_map_blr2src->find(blr_offset, pos))
+		if (csb->csb_dbg_info->blrToSrc.find(blr_offset, pos))
 		{
-			Firebird::MapBlrToSrcItem& i = (*csb->csb_map_blr2src)[pos];
+			Firebird::MapBlrToSrcItem& i = csb->csb_dbg_info->blrToSrc[pos];
 			jrd_nod* node_src = PAR_make_node(tdbb, e_src_info_length);
 
 			node_src->nod_type = nod_src_info;

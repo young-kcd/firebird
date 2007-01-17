@@ -912,5 +912,6 @@
 #define fb_dbg_end					255
 #define fb_dbg_map_src2blr			2
 #define fb_dbg_map_varname			3
+#define fb_dbg_map_argument			4
 
 #endif // ifndef INCLUDE_CONSTS_PUB_H

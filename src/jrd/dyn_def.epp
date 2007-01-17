@@ -2773,10 +2773,11 @@ void DYN_define_parameter( Global* gbl, const UCHAR** ptr, Firebird::MetaName* p
 	// Leave these as USHORT. Don't convert the *_null ones to bool.
 	USHORT f_length, f_type, f_charlength, f_seg_length,
 		f_scale_null, f_subtype_null, f_seg_length_null,
-		f_charlength_null, f_precision_null, f_charset_null, f_collation_null;
+		f_charlength_null, f_precision_null, f_charset_null, f_collation_null, f_notnull_null;
 	SSHORT id;
 	SSHORT f_subtype, f_scale, f_precision;
 	SSHORT f_charset, f_collation;
+	USHORT f_notnull;
 	const UCHAR* default_value_ptr = NULL;
 	const UCHAR* default_source_ptr = NULL;
 
@@ -2799,9 +2800,10 @@ void DYN_define_parameter( Global* gbl, const UCHAR** ptr, Firebird::MetaName* p
 
 	f_length = f_type = f_subtype = f_charlength = f_scale = f_seg_length = 0;
 	f_charset = f_collation = f_precision = 0;
+	f_notnull = FALSE;
 	f_scale_null = f_subtype_null = f_charlength_null = f_seg_length_null =
 		TRUE;
-	f_precision_null = f_charset_null = f_collation_null = TRUE;
+	f_precision_null = f_charset_null = f_collation_null = f_notnull_null = TRUE;
 	id = drq_s_prms;
 
 	Firebird::MetaName prc_name;
@@ -2848,6 +2850,11 @@ void DYN_define_parameter( Global* gbl, const UCHAR** ptr, Firebird::MetaName* p
 				GET_STRING(ptr, P.RDB$PROCEDURE_NAME);
 				P.RDB$PROCEDURE_NAME.NULL = FALSE;
 				prc_name = P.RDB$PROCEDURE_NAME;
+				break;
+
+			case isc_dyn_fld_not_null:
+				f_notnull = TRUE;
+				f_notnull_null = FALSE;
 				break;
 
 			case isc_dyn_fld_source:
@@ -3030,9 +3037,9 @@ void DYN_define_parameter( Global* gbl, const UCHAR** ptr, Firebird::MetaName* p
 					DYN_put_text_blob(gbl, &default_source_ptr, &P.RDB$DEFAULT_SOURCE);
 
 				// we don't support not-nullable parameters yet
-				P.RDB$NULL_FLAG.NULL = FALSE;
-				P.RDB$NULL_FLAG = FALSE;
-				
+				P.RDB$NULL_FLAG.NULL = f_notnull_null;
+				P.RDB$NULL_FLAG = f_notnull;
+
 				P.RDB$PARAMETER_MECHANISM.NULL = FALSE;
 				P.RDB$PARAMETER_MECHANISM = (USHORT) mechanism;
 			END_MODIFY

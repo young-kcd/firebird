@@ -189,7 +189,8 @@ public:
 	jrd_req(JrdMemoryPool* pool) :
 		req_blobs(pool), req_external(*pool), req_access(*pool), req_resources(*pool),
 		req_trg_name(*pool), req_stats(*pool), req_fors(*pool), req_exec_sta(*pool),
-		req_invariants(*pool), req_timestamp(true), req_sql_text(*pool)
+		req_invariants(*pool), req_timestamp(true), req_sql_text(*pool), req_domain_validation(NULL),
+		req_map_field_info(*pool), req_map_item_info(*pool)
 	{}
 
 	Attachment*	req_attachment;		// database attachment
@@ -252,6 +253,10 @@ public:
 
 	USHORT	req_src_line;
 	USHORT	req_src_column;
+
+	dsc*			req_domain_validation;	// Current VALUE for constraint validation
+	MapFieldInfo	req_map_field_info;		// Map field name to field info
+	MapItemInfo		req_map_item_info;		// Map item to item info
 
 	enum req_ta {
 		// order should be maintained because the numbers are stored in BLR

@@ -185,7 +185,7 @@ static void post_used_procedures(trig_vec* vector)
 }
 
 
-bool MET_get_domain_desc(thread_db* tdbb, const Firebird::MetaName& name, dsc* desc)
+bool MET_get_domain_desc(thread_db* tdbb, const Firebird::MetaName& name, dsc* desc, FieldInfo* fieldInfo)
 {
 /**************************************
  *
@@ -218,6 +218,49 @@ bool MET_get_domain_desc(thread_db* tdbb, const Firebird::MetaName& name, dsc* d
 								FLD.RDB$COLLATION_ID))
 		{
 		    found = true;
+
+			if (fieldInfo)
+			{
+				fieldInfo->nullable = FLD.RDB$NULL_FLAG.NULL || FLD.RDB$NULL_FLAG == 0;
+
+				if (FLD.RDB$DEFAULT_VALUE.NULL)
+					fieldInfo->defaultValue = NULL;
+				else
+				{
+					CompilerScratch* csb = CompilerScratch::newCsb(*tdbb->getDefaultPool(), 5);
+
+					blb* blob = BLB_open(tdbb, dbb->dbb_sys_trans, &FLD.RDB$DEFAULT_VALUE);
+					SLONG length = blob->blb_length + 10;
+					Firebird::HalfStaticArray<UCHAR, 512>	temp;
+
+					BLB_get_data(tdbb, blob, temp.getBuffer(length), length);
+					csb->csb_blr = temp.begin();
+
+					fieldInfo->defaultValue = PAR_blr(tdbb, NULL, temp.begin(), NULL, &csb, NULL, false, 0);
+
+					csb->csb_blr = 0;
+					delete csb;
+				}
+
+				if (FLD.RDB$VALIDATION_BLR.NULL)
+					fieldInfo->validation = NULL;
+				else
+				{
+					CompilerScratch* csb = CompilerScratch::newCsb(*tdbb->getDefaultPool(), 5, name);
+
+					blb* blob = BLB_open(tdbb, dbb->dbb_sys_trans, &FLD.RDB$VALIDATION_BLR);
+					SLONG length = blob->blb_length + 10;
+					Firebird::HalfStaticArray<UCHAR, 512>	temp;
+
+					BLB_get_data(tdbb, blob, temp.getBuffer(length), length);
+					csb->csb_blr = temp.begin();
+
+					fieldInfo->validation = PAR_blr(tdbb, NULL, temp.begin(), NULL, &csb, NULL, false, 0);
+
+					csb->csb_blr = 0;
+					delete csb;
+				}
+			}
 		}
 
 	END_FOR;
@@ -2996,6 +3039,7 @@ jrd_prc* MET_procedure(thread_db* tdbb, int id, bool noscan, USHORT flags)
 				parameter->prm_number = PA.RDB$PARAMETER_NUMBER;
 				(*paramVector)[parameter->prm_number] = parameter;
 				parameter->prm_name = PA.RDB$PARAMETER_NAME;
+
 				DSC_make_descriptor(&parameter->prm_desc, F.RDB$FIELD_TYPE,
 									F.RDB$FIELD_SCALE, F.RDB$FIELD_LENGTH,
 									F.RDB$FIELD_SUB_TYPE, F.RDB$CHARACTER_SET_ID,
@@ -3058,7 +3102,7 @@ jrd_prc* MET_procedure(thread_db* tdbb, int id, bool noscan, USHORT flags)
 			prc_t prc_type = prc_legacy;
 
 			JrdMemoryPool *csb_pool = JrdMemoryPool::createPool();
-			Firebird::MapBlrToSrc *csb_map = 0;
+			Firebird::DbgInfo* dbgInfo = NULL;
 
 			if (ENCODE_ODS(dbb->dbb_ods_version, dbb->dbb_minor_original) >= ODS_11_1)
 			{
@@ -3076,8 +3120,8 @@ jrd_prc* MET_procedure(thread_db* tdbb, int id, bool noscan, USHORT flags)
 					
 					if (PT.RDB$DEBUG_INFO.NULL == FALSE)
 					{
-						csb_map = FB_NEW(*csb_pool) Firebird::MapBlrToSrc(*csb_pool);
-						DBG_parse_debug_info(tdbb, &PT.RDB$DEBUG_INFO, *csb_map);
+						dbgInfo = FB_NEW(*csb_pool) Firebird::DbgInfo(*csb_pool);
+						DBG_parse_debug_info(tdbb, &PT.RDB$DEBUG_INFO, *dbgInfo);
 					}
 
 				END_FOR;
@@ -3093,13 +3137,13 @@ jrd_prc* MET_procedure(thread_db* tdbb, int id, bool noscan, USHORT flags)
 				Jrd::ContextPoolHolder context(tdbb, csb_pool);
 				CompilerScratch* csb = CompilerScratch::newCsb(*tdbb->getDefaultPool(), 5);
 				
-				csb->csb_map_blr2src = csb_map;
+				csb->csb_dbg_info = dbgInfo;
 				
 				// Now, check the result of this function here! Null pointer means failure.
 				// Or should parse_procedure_blr and its callee throw exceptions instead?
 				if (!parse_procedure_blr(tdbb, procedure, &P.RDB$PROCEDURE_BLR, csb))
 				{
-					delete csb_map;
+					delete dbgInfo;
 					delete csb;
 
 					if (procedure->prc_request) {
@@ -3130,7 +3174,7 @@ jrd_prc* MET_procedure(thread_db* tdbb, int id, bool noscan, USHORT flags)
 						}
 					}
 				}
-				delete csb_map;
+				delete dbgInfo;
 				delete csb;
 			}
 

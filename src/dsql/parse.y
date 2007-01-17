@@ -1323,6 +1323,12 @@ data_type_descriptor :	init_data_type data_type
 				((dsql_fld*) $3)->fld_type_of_name = ((dsql_fld*) $3)->fld_name;
 				$$ = $3;
 			}
+		| column_def_name
+			{
+				((dsql_fld*) $1)->fld_type_of_name = ((dsql_fld*) $1)->fld_name;
+				((dsql_fld*) $1)->fld_constrained = true;
+				$$ = $1;
+			}
 		;
 
 init_data_type :
@@ -1545,8 +1551,12 @@ local_declarations	: local_declaration
 			{ $$ = make_node (nod_list, 2, $1, $2); }
 		;
 
-local_declaration : DECLARE var_decl_opt local_declaration_item ';'
-			{ $$ = $3; }
+local_declaration : stmt_start_line stmt_start_column DECLARE var_decl_opt local_declaration_item ';'
+			{
+				$$ = $5;
+				$$->nod_line = (IPTR) $1;
+				$$->nod_column = (IPTR) $2;
+			}
 		;
 
 local_declaration_item	: var_declaration_item
@@ -2409,13 +2419,27 @@ data_type	: non_array_type
 		| array_type
 		;
 
-domain_or_non_array_type	: non_array_type
-		| TYPE OF domain_type
-		;
+domain_or_non_array_type
+	:	domain_or_non_array_type_name
+	|	domain_or_non_array_type_name NOT KW_NULL
+			{ lex.g_field->fld_not_nullable = true; }
+	;
 
-domain_type	: symbol_column_name
-			{ lex.g_field->fld_type_of_name = ((dsql_str*) $1)->str_data; }
-		;
+domain_or_non_array_type_name
+	:	non_array_type
+	|	domain_type
+	;
+
+domain_type
+	:	TYPE OF symbol_column_name
+			{ lex.g_field->fld_type_of_name = ((dsql_str*) $3)->str_data; }
+	|	symbol_column_name
+			{
+				lex.g_field->fld_type_of_name = ((dsql_str*) $1)->str_data;
+				lex.g_field->fld_constrained = true;
+			}
+	;
+
 
 non_array_type	: simple_type
 		| blob_type
@@ -4699,6 +4723,8 @@ static dsql_fld* make_field (dsql_nod* field_name)
 	strcpy (field->fld_name, (TEXT*) string->str_data);
 	field->fld_type_of_name = NULL;
 	field->fld_explicit_collation = false;
+	field->fld_not_nullable = false;
+	field->fld_constrained = false;
 
 	return field;
 }

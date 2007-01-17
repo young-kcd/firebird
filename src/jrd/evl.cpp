@@ -860,6 +860,10 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* const node)
 			if (impure->vlu_desc.dsc_dtype == dtype_text)
 				adjust_text_descriptor(tdbb, &impure->vlu_desc);
 
+			EVL_validate(tdbb,
+				Item(nod_argument, (IPTR) node->nod_arg[e_arg_message], (IPTR) node->nod_arg[e_arg_number]),
+				&impure->vlu_desc, request->req_flags & req_null);
+
 			return &impure->vlu_desc;
 		}
 
@@ -1032,8 +1036,16 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* const node)
 			if (impure->vlu_desc.dsc_dtype == dtype_text)
 				adjust_text_descriptor(tdbb, &impure->vlu_desc);
 
+			EVL_validate(tdbb, Item(nod_variable, (IPTR) node->nod_arg[e_var_id]),
+				&impure->vlu_desc, impure->vlu_desc.dsc_flags & DSC_null);
+
 			return &impure->vlu_desc;
 		}
+
+	case nod_domain_validation:
+		if (request->req_domain_validation->dsc_flags & DSC_null)
+			request->req_flags |= req_null;
+		return request->req_domain_validation;
 
 	case nod_value_if:
 		return EVL_expr(tdbb, (EVL_boolean(tdbb, node->nod_arg[0])) ?
@@ -1057,7 +1069,8 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* const node)
 			 ptr < end;)
 		{
 			*v++ = EVL_expr(tdbb, *ptr++);
-			if (request->req_flags & req_null)
+			// ASF: CAST target type may be constrained
+			if (node->nod_type != nod_cast && (request->req_flags & req_null))
 				return NULL;
 		}
 	}
@@ -1876,6 +1889,83 @@ void EVL_make_value(thread_db* tdbb, const dsc* desc, impure_value* value)
 		if (address && length)
 			MOVE_FAST(address, p, length);
 	} // scope
+}
+
+
+void EVL_validate(thread_db* tdbb, const Item& item, dsc* desc, bool null)
+{
+/**************************************
+ *
+ *	E V L _ v a l i d a t e
+ *
+ **************************************
+ *
+ * Functional description
+ *	Validate argument/variable for not null and check constraint
+ *
+ **************************************/
+	MapItemInfo::ValueType itemInfo;
+	if (tdbb->tdbb_request->req_map_item_info.get(item, itemInfo))
+		EVL_validate(tdbb, item, &itemInfo, desc, null);
+}
+
+
+void EVL_validate(thread_db* tdbb, const Item& item, const ItemInfo* itemInfo, dsc* desc, bool null)
+{
+/**************************************
+ *
+ *	E V L _ v a l i d a t e
+ *
+ **************************************
+ *
+ * Functional description
+ *	Validate argument/variable for not null and check constraint
+ *
+ **************************************/
+	if (itemInfo == NULL)
+		return;
+
+	jrd_req* request = tdbb->tdbb_request;
+
+	if (null && !itemInfo->nullable)
+	{
+		ERR_post(isc_not_valid_for_var,
+				 isc_arg_string, ERR_cstring(itemInfo->name),
+				 isc_arg_string, NULL_STRING_MARK,
+				 0);
+	}
+
+	MapFieldInfo::ValueType fieldInfo;
+	if (itemInfo->fullDomain &&
+		request->req_map_field_info.get(itemInfo->field, fieldInfo) &&
+		fieldInfo.validation)
+	{
+		request->req_domain_validation = desc;
+
+		if (!EVL_boolean(tdbb, fieldInfo.validation) &&
+			!(request->req_flags & req_null))
+		{
+			const char* value;
+			TEXT temp[128];
+
+			const USHORT length = desc && !(desc->dsc_flags & DSC_null) ?
+				MOV_make_string(desc, ttype_dynamic, &value,
+								reinterpret_cast<vary*>(temp),
+								sizeof(temp)) : 0;
+
+			if (desc == NULL || (desc->dsc_flags & DSC_null))
+				value = NULL_STRING_MARK;
+			else if (!length)
+				value = "";
+			else
+				value = ERR_string(value, length);
+
+			ERR_post(isc_not_valid_for_var,
+					 isc_arg_string, ERR_cstring(itemInfo->name),
+					 isc_arg_string, value,
+					 0);
+		}
+	}
 }
 
 
@@ -2736,6 +2826,15 @@ static dsc* cast(thread_db* tdbb, dsc* value, const jrd_nod* node, impure_value*
 		}
 
 		impure->vlu_desc.dsc_address = string->str_data;
+	}
+
+	EVL_validate(tdbb, Item(nod_cast), (ItemInfo*) node->nod_arg[e_cast_iteminfo],
+		value, value == NULL || (value->dsc_flags & DSC_null));
+
+	if (value == NULL)
+	{
+		tdbb->tdbb_request->req_flags |= req_null;
+		return NULL;
 	}
 
 	if (DTYPE_IS_BLOB(value->dsc_dtype) || DTYPE_IS_BLOB(impure->vlu_desc.dsc_dtype))

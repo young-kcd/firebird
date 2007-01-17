@@ -2522,6 +2522,8 @@ static void define_procedure( dsql_req* request, NOD_TYPE op)
 				reinterpret_cast<const dsql_str*>(parameter->nod_arg[e_dfl_collate]));
 			put_field(request, field, false);
 
+			request->put_debug_argument(0, position, field->fld_name);
+
 			// check for a parameter default value
 			dsql_nod* node = parameter->nod_arg[e_dfl_default];
 			if (node)
@@ -2587,6 +2589,8 @@ static void define_procedure( dsql_req* request, NOD_TYPE op)
 			DDL_resolve_intl_type(request, field,
 				reinterpret_cast<const dsql_str*>(parameter->nod_arg[e_dfl_collate]));
 			put_field(request, field, false);
+
+			request->put_debug_argument(1, position, field->fld_name);
 
 			*ptr = MAKE_variable(field, field->fld_name,
 								 VAR_output, 1, (USHORT) (2 * position),
@@ -5886,17 +5890,22 @@ static void put_dtype(dsql_req* request, const dsql_fld* field, bool use_subtype
 	}
 #endif
 
+	if (field->fld_not_nullable)
+		request->append_uchar(blr_not_nullable);
+
 	if (field->fld_type_of_name)
 	{
 		if (field->fld_explicit_collation)
 		{
-			request->append_uchar(blr_type_of2);
+			request->append_uchar(blr_domain_name2);
+			request->append_uchar(field->fld_constrained ? 1 : 0);
 			request->append_cstring(0, field->fld_type_of_name);
 			request->append_ushort(field->fld_ttype);
 		}
 		else
 		{
-			request->append_uchar(blr_type_of);
+			request->append_uchar(blr_domain_name);
+			request->append_uchar(field->fld_constrained ? 1 : 0);
 			request->append_cstring(0, field->fld_type_of_name);
 		}
 
@@ -5961,6 +5970,9 @@ static void put_field( dsql_req* request, dsql_fld* field, bool udf_flag)
  *
  **************************************/
 
+	if (field->fld_not_nullable)
+		request->append_uchar(isc_dyn_fld_not_null);
+
 	if (field->fld_type_of_name)
 	{
 		request->append_cstring(isc_dyn_fld_source, field->fld_type_of_name);
@@ -5968,7 +5980,8 @@ static void put_field( dsql_req* request, dsql_fld* field, bool udf_flag)
 		if (field->fld_explicit_collation)
 			request->append_number(isc_dyn_fld_collation, field->fld_collation_id);
 
-		request->append_number(isc_dyn_prm_mechanism, prm_mech_type_of);
+		if (!field->fld_constrained)
+			request->append_number(isc_dyn_prm_mechanism, prm_mech_type_of);
 
 		return;
 	}
@@ -6054,21 +6067,30 @@ static void put_local_variable( dsql_req* request, dsql_var* variable,
 	field->fld_dtype = dtype;
 
 	// Check for a default value, borrowed from define_domain
-
-	request->append_uchar(blr_assignment);
 	dsql_nod* node = (host_param) ? host_param->nod_arg[e_dfl_default] : 0;
-	if (node)
+
+	if (node || (!field->fld_constrained && !field->fld_not_nullable))
 	{
-		node = PASS1_node(request, node, false);
-		GEN_expr(request, node);
+		request->append_uchar(blr_assignment);
+
+		if (node)
+		{
+			node = PASS1_node(request, node, false);
+			GEN_expr(request, node);
+		}
+		else
+		{
+			// Initialize variable to NULL
+			request->append_uchar(blr_null);
+		}
+		request->append_uchar(blr_variable);
+		request->append_ushort(variable->var_variable_number);
 	}
 	else
 	{
-		// Initialize variable to NULL
-		request->append_uchar(blr_null);
+		request->append_uchar(blr_init_variable);
+		request->append_ushort(variable->var_variable_number);
 	}
-	request->append_uchar(blr_variable);
-	request->append_ushort(variable->var_variable_number);
 
 	request->put_debug_variable(variable->var_variable_number,
 		variable->var_name);
@@ -6097,6 +6119,9 @@ static void put_local_variables(dsql_req* request, dsql_nod* parameters,
 			ptr < end; ptr++)
 		{
 			dsql_nod* parameter = *ptr;
+
+			request->put_debug_src_info(parameter->nod_line, parameter->nod_column);
+
 			if (parameter->nod_type == nod_def_field)
 			{
 				dsql_fld* field = (dsql_fld*) parameter->nod_arg[e_dfl_field];
@@ -6893,6 +6918,25 @@ void dsql_req::put_debug_variable(USHORT number, const TEXT* name)
 
 	req_debug_data.add(fb_dbg_map_varname);
 
+	req_debug_data.add(number);
+	req_debug_data.add(number >> 8);
+
+	USHORT len = strlen(name);
+	if (len > MAX_UCHAR)
+		len = MAX_UCHAR;
+	req_debug_data.add(len);
+
+	while (len--) 
+		req_debug_data.add(*name++);
+}
+
+void dsql_req::put_debug_argument(UCHAR type, USHORT number, const TEXT* name)
+{
+	fb_assert(name);
+
+	req_debug_data.add(fb_dbg_map_argument);
+
+	req_debug_data.add(type);
 	req_debug_data.add(number);
 	req_debug_data.add(number >> 8);
 
