@@ -2371,13 +2371,6 @@ ISC_STATUS GDS_DSQL_SET_CURSOR(ISC_STATUS* user_status,
 			return unsupported(user_status);
 		}
 
-		/* set up the packet for the other guy... */
-
-		PACKET* packet = &rdb->rdb_packet;
-		packet->p_operation = op_set_cursor;
-		P_SQLCUR* sqlcur = &packet->p_sqlcur;
-		sqlcur->p_sqlcur_statement = statement->rsr_id;
-
 		if (!cursor)
 		{
 			/** Return CURSOR unknown error **/
@@ -2385,12 +2378,42 @@ ISC_STATUS GDS_DSQL_SET_CURSOR(ISC_STATUS* user_status,
 			return error(user_status);
 		}
 
+		/* set up the packet for the other guy... */
+
+		PACKET* packet = &rdb->rdb_packet;
+
+		if (statement->rsr_flags & RSR_lazy) {
+			packet->p_operation = op_allocate_statement;
+			packet->p_rlse.p_rlse_object = rdb->rdb_id;
+
+			if (!send_partial_packet(rdb->rdb_port, packet, user_status))
+				return error(user_status);
+		}
+
+		packet->p_operation = op_set_cursor;
+		P_SQLCUR* sqlcur = &packet->p_sqlcur;
+		sqlcur->p_sqlcur_statement = statement->rsr_id;
+
 		const USHORT name_l = strlen(cursor);
 		sqlcur->p_sqlcur_cursor_name.cstr_length = name_l + 1;
 		sqlcur->p_sqlcur_cursor_name.cstr_address = (UCHAR *) cursor; // const cast
 		sqlcur->p_sqlcur_type = type;
 
-		if (send_and_receive(rdb, packet, user_status)) {
+		if (!send_packet(rdb->rdb_port, packet, user_status)) {
+			return error(user_status);
+		}
+
+		if (statement->rsr_flags & RSR_lazy) {
+			if (!receive_response(rdb, packet))
+				return error(user_status);
+
+			statement->rsr_id = packet->p_resp.p_resp_object;
+			SET_OBJECT(rdb, statement, statement->rsr_id);
+
+			statement->rsr_flags &= ~RSR_lazy;
+		}
+
+		if (!receive_response(rdb, packet)) {
 			return error(user_status);
 		}
 	}
