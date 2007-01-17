@@ -1629,9 +1629,6 @@ static jrd_nod* par_message(thread_db* tdbb, CompilerScratch* csb)
 					Firebird::ArgumentInfo(csb->csb_msg_number, index / 2), itemInfo.name);
 			}
 
-			if (!exist)
-				itemInfo.name = UNKNOWN_STRING_MARK;
-
 			csb->csb_map_item_info.put(
 				Item(nod_argument, csb->csb_msg_number, index), itemInfo);
 		}
@@ -2943,9 +2940,6 @@ static jrd_nod* parse(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 
 				if (csb->csb_dbg_info)
 					exist = csb->csb_dbg_info->varIndexToName.get(n, itemInfo.name);
-
-				if (!exist)
-					itemInfo.name = UNKNOWN_STRING_MARK;
 
 				csb->csb_map_item_info.put(Item(nod_variable, n), itemInfo);
 			}

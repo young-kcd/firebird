@@ -614,6 +614,7 @@ const ISC_LONG isc_bad_proc_BLR                     = 335544876L;
 const ISC_LONG isc_key_too_big                      = 335544877L;
 const ISC_LONG isc_concurrent_transaction           = 335544878L;
 const ISC_LONG isc_not_valid_for_var                = 335544879L;
+const ISC_LONG isc_not_valid_for                    = 335544880L;
 const ISC_LONG isc_gfix_db_name                     = 335740929L;
 const ISC_LONG isc_gfix_invalid_sw                  = 335740930L;
 const ISC_LONG isc_gfix_incmp_sw                    = 335740932L;
@@ -863,7 +864,7 @@ const ISC_LONG isc_gstat_unexpected_eof             = 336920580L;
 const ISC_LONG isc_gstat_open_err                   = 336920605L;
 const ISC_LONG isc_gstat_read_err                   = 336920606L;
 const ISC_LONG isc_gstat_sysmemex                   = 336920607L;
-const ISC_LONG isc_err_max                          = 808;
+const ISC_LONG isc_err_max                          = 809;
 
 #else /* c definitions */
 
@@ -1447,6 +1448,7 @@ const ISC_LONG isc_err_max                          = 808;
 #define isc_key_too_big                      335544877L
 #define isc_concurrent_transaction           335544878L
 #define isc_not_valid_for_var                335544879L
+#define isc_not_valid_for                    335544880L
 #define isc_gfix_db_name                     335740929L
 #define isc_gfix_invalid_sw                  335740930L
 #define isc_gfix_incmp_sw                    335740932L
@@ -1696,7 +1698,7 @@ const ISC_LONG isc_err_max                          = 808;
 #define isc_gstat_open_err                   336920605L
 #define isc_gstat_read_err                   336920606L
 #define isc_gstat_sysmemex                   336920607L
-#define isc_err_max                          808
+#define isc_err_max                          809
 
 #endif
 

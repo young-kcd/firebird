@@ -861,7 +861,8 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* const node)
 				adjust_text_descriptor(tdbb, &impure->vlu_desc);
 
 			EVL_validate(tdbb,
-				Item(nod_argument, (IPTR) node->nod_arg[e_arg_message], (IPTR) node->nod_arg[e_arg_number]),
+				Item(nod_argument, (IPTR) node->nod_arg[e_arg_message]->nod_arg[e_msg_number],
+					(IPTR) node->nod_arg[e_arg_number]),
 				&impure->vlu_desc, request->req_flags & req_null);
 
 			return &impure->vlu_desc;
@@ -1929,17 +1930,16 @@ void EVL_validate(thread_db* tdbb, const Item& item, const ItemInfo* itemInfo, d
 		return;
 
 	jrd_req* request = tdbb->tdbb_request;
+	bool err = false;
 
 	if (null && !itemInfo->nullable)
-	{
-		ERR_post(isc_not_valid_for_var,
-				 isc_arg_string, ERR_cstring(itemInfo->name),
-				 isc_arg_string, NULL_STRING_MARK,
-				 0);
-	}
+		err = true;
+
+	const char* value = NULL_STRING_MARK;
+	TEXT temp[128];
 
 	MapFieldInfo::ValueType fieldInfo;
-	if (itemInfo->fullDomain &&
+	if (!err && itemInfo->fullDomain &&
 		request->req_map_field_info.get(itemInfo->field, fieldInfo) &&
 		fieldInfo.validation)
 	{
@@ -1948,9 +1948,6 @@ void EVL_validate(thread_db* tdbb, const Item& item, const ItemInfo* itemInfo, d
 		if (!EVL_boolean(tdbb, fieldInfo.validation) &&
 			!(request->req_flags & req_null))
 		{
-			const char* value;
-			TEXT temp[128];
-
 			const USHORT length = desc && !(desc->dsc_flags & DSC_null) ?
 				MOV_make_string(desc, ttype_dynamic, &value,
 								reinterpret_cast<vary*>(temp),
@@ -1963,11 +1960,62 @@ void EVL_validate(thread_db* tdbb, const Item& item, const ItemInfo* itemInfo, d
 			else
 				value = ERR_string(value, length);
 
-			ERR_post(isc_not_valid_for_var,
-					 isc_arg_string, ERR_cstring(itemInfo->name),
-					 isc_arg_string, value,
-					 0);
+			err = true;
 		}
+	}
+
+	if (err)
+	{
+		ISC_STATUS status = isc_not_valid_for_var;
+		const char* arg;
+
+		if (item.type == nod_cast)
+		{
+			status = isc_not_valid_for;
+			arg = "CAST";
+		}
+		else
+		{
+			if (itemInfo->name.isEmpty())
+			{
+				int index = item.index + 1;
+
+				status = isc_not_valid_for;
+				Firebird::string s;
+
+				if (item.type == nod_variable)
+				{
+					if (request->req_procedure)
+					{
+						if (index <= request->req_procedure->prc_outputs)
+							s.printf("output parameter number %d", index);
+						else
+						{
+							s.printf("variable number %d",
+								index - request->req_procedure->prc_outputs);
+						}
+					}
+					else
+						s.printf("variable number %d", index);
+				}
+				else if (item.type == nod_argument && item.subType == 0)
+					s.printf("input parameter number %d", (index - 1) / 2 + 1);
+				else if (item.type == nod_argument && item.subType == 1)
+					s.printf("output parameter number %d", index);
+
+				if (s.isEmpty())
+					arg = UNKNOWN_STRING_MARK;
+				else
+					arg = ERR_cstring(s.c_str());
+			}
+			else
+				arg = ERR_cstring(itemInfo->name);
+		}
+
+		ERR_post(status,
+				 isc_arg_string, arg,
+				 isc_arg_string, value,
+				 0);
 	}
 }
 

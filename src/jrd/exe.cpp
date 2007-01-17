@@ -300,7 +300,8 @@ void EXE_assignment(thread_db* tdbb, jrd_nod* node)
 
 		case nod_argument:
 			EVL_validate(tdbb,
-				Item(nod_argument, (IPTR) to->nod_arg[e_arg_message], (IPTR) to->nod_arg[e_arg_number]),
+				Item(nod_argument, (IPTR) to->nod_arg[e_arg_message]->nod_arg[e_msg_number],
+					(IPTR) to->nod_arg[e_arg_number]),
 				from_desc, null == -1);
 			break;
 	}
