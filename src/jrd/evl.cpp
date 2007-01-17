@@ -1043,8 +1043,11 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* const node)
 		}
 
 	case nod_domain_validation:
-		if (request->req_domain_validation->dsc_flags & DSC_null)
+		if (request->req_domain_validation == NULL ||
+			(request->req_domain_validation->dsc_flags & DSC_null))
+		{
 			request->req_flags |= req_null;
+		}
 		return request->req_domain_validation;
 
 	case nod_value_if:
