@@ -1,3 +1,36 @@
+2007-01-18 01:26  asfernandes
+
+	* firebird2/src/dsql/ddl.cpp (1.194):
+
+	Validate input parameters
+
+2007-01-18 00:59  asfernandes
+
+	* firebird2/: lang_helpers/gds_codes.ftn (1.53),
+	lang_helpers/gds_codes.pas (1.53), src/include/gen/codetext.h
+	(1.61), src/include/gen/iberror.h (1.62), src/include/gen/msgs.h
+	(1.78), src/include/gen/rdb_codes.h (1.58),
+	src/include/gen/sql_code.h (1.64), src/jrd/evl.cpp (1.212),
+	src/jrd/exe.cpp (1.206), src/jrd/par.cpp (1.154),
+	src/msgs/facilities.sql (1.95), src/msgs/messages.sql (1.113),
+	src/msgs/system_errors.sql (1.51):
+
+	1) Correction for input parameters 2) Correct message for
+	constraint violation in CAST 3) Display parameter/variable number
+	when there is no debug info
+
+2007-01-17 21:06  hvlad
+
+	* firebird2/src/remote/interface.cpp (1.128):
+
+	Fixed CORE-1097 : isc_dsql_set_cursor_name() fails
+
+2007-01-17 15:21  asfernandes
+
+	* firebird2/src/jrd/evl.cpp (1.211):
+
+	Fixed a crash when validating NULL with a constraint
+
 2007-01-17 02:18  asfernandes
 
 	* firebird2/: lang_helpers/gds_codes.ftn (1.52),
