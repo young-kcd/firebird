@@ -1257,6 +1257,14 @@ void CCH_fini(thread_db* tdbb)
 
 #ifdef CACHE_WRITER
 
+	/* Wait for cache writer startup to complete. */
+		while ((bcb = dbb->dbb_bcb) && (bcb->bcb_flags & BCB_writer_start))
+		{
+			THREAD_EXIT();
+			THREAD_YIELD();
+			THREAD_ENTER();
+		}
+
 	/* Shutdown the dedicated cache writer for this database. */
 
 		if ((bcb = dbb->dbb_bcb) && (bcb->bcb_flags & BCB_cache_writer)) {
@@ -1755,6 +1763,10 @@ void CCH_init(thread_db* tdbb, ULONG number)
 #ifdef CACHE_WRITER
 	if (!(dbb->dbb_flags & DBB_read_only)) {
 		event_t* event = dbb->dbb_writer_event_init;
+
+		// writer startup in progress
+		bcb->bcb_flags |= BCB_writer_start;
+
 		/* Initialize initialization event */
 		ISC_event_init(event, 0, 0);
 		count = ISC_event_clear(event);
@@ -1762,6 +1774,7 @@ void CCH_init(thread_db* tdbb, ULONG number)
 		if (gds__thread_start(cache_writer, dbb,
 			THREAD_high, 0, 0))
 		{
+			bcb->bcb_flags &= ~BCB_writer_start;
 			ERR_bugcheck_msg("cannot start thread");
 		}
 		THREAD_EXIT();
@@ -4054,14 +4067,14 @@ static THREAD_ENTRY_DECLARE cache_writer(THREAD_ENTRY_PARAM arg)
    LCK_init fails we won't be able to accomplish anything anyway, so
    return, unlike the other try blocks further down the page. */
 	event_t* writer_event = 0;
-	BufferControl* bcb = 0;
+	BufferControl* bcb = dbb->dbb_bcb;
 
 	try {
 		writer_event = dbb->dbb_writer_event;
 		ISC_event_init(writer_event, 0, 0);
 		LCK_init(tdbb, LCK_OWNER_attachment);
-		bcb = dbb->dbb_bcb;
 		bcb->bcb_flags |= BCB_cache_writer;
+		bcb->bcb_flags &= ~BCB_writer_start;
 
 		/* Notify our creator that we have started */
 		ISC_event_post(dbb->dbb_writer_event_init);
@@ -4069,7 +4082,9 @@ static THREAD_ENTRY_DECLARE cache_writer(THREAD_ENTRY_PARAM arg)
 	catch (const Firebird::Exception& ex) {
 		Firebird::stuff_exception(status_vector, ex);
 		gds__log_status(dbb->dbb_filename.c_str(), status_vector);
+
 		ISC_event_fini(writer_event);
+		bcb->bcb_flags &= ~(BCB_cache_writer | BCB_writer_start);
 		THREAD_EXIT();
 		return (THREAD_ENTRY_RETURN)(-1);
 	}
@@ -4085,6 +4100,7 @@ static THREAD_ENTRY_DECLARE cache_writer(THREAD_ENTRY_PARAM arg)
 				THREAD_EXIT();
 				ISC_event_wait(1, &writer_event, &count, 10 * 1000000, NULL, 0);
 				THREAD_ENTER();
+				bcb = dbb->dbb_bcb;
 				continue;
 			}
 	

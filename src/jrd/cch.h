@@ -90,6 +90,7 @@ public:
 const int BCB_keep_pages	= 1;	/* set during btc_flush(), pages not removed from dirty binary tree */
 const int BCB_cache_writer	= 2;	/* cache writer thread has been started */
 //const int BCB_checkpoint_db	= 4;	// WAL has requested a database checkpoint
+const int BCB_writer_start  = 4;    // cache writer thread is starting now
 const int BCB_writer_active	= 8;	/* no need to post writer event count */
 #ifdef SUPERSERVER_V2
 const int BCB_cache_reader	= 16;	/* cache reader thread has been started */
