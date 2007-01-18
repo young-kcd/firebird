@@ -1746,6 +1746,10 @@ void CCH_init(thread_db* tdbb, ULONG number)
 		ISC_event_init(event, 0, 0);
 		count = ISC_event_clear(event);
 
+		// set writer flag right now to make sure database
+		// is not closed during cache_writer startup
+		bcb->bcb_flags |= BCB_cache_writer;
+
 		if (gds__thread_start(cache_writer, dbb,
 			THREAD_high, 0, 0))
 		{
@@ -3994,6 +3998,8 @@ static THREAD_ENTRY_DECLARE cache_writer(THREAD_ENTRY_PARAM arg)
  *
  **************************************/
 	Database* dbb = (Database*)arg;
+	BufferControl* bcb = dbb->dbb_bcb;
+
 	THREAD_ENTER();
 
 /* Establish a thread context. */
@@ -4018,14 +4024,11 @@ static THREAD_ENTRY_DECLARE cache_writer(THREAD_ENTRY_PARAM arg)
    LCK_init fails we won't be able to accomplish anything anyway, so
    return, unlike the other try blocks further down the page. */
 	event_t* writer_event = 0;
-	BufferControl* bcb = 0;
 
 	try {
 		writer_event = dbb->dbb_writer_event;
 		ISC_event_init(writer_event, 0, 0);
 		LCK_init(tdbb, LCK_OWNER_attachment);
-		bcb = dbb->dbb_bcb;
-		bcb->bcb_flags |= BCB_cache_writer;
 
 		/* Notify our creator that we have started */
 		ISC_event_post(dbb->dbb_writer_event_init);
@@ -4034,6 +4037,7 @@ static THREAD_ENTRY_DECLARE cache_writer(THREAD_ENTRY_PARAM arg)
 		Firebird::stuff_exception(status_vector, ex);
 		gds__log_status(dbb->dbb_file->fil_string, status_vector);
 		ISC_event_fini(writer_event);
+		bcb->bcb_flags &= ~BCB_cache_writer;
 		THREAD_EXIT();
 		return (THREAD_ENTRY_RETURN)(-1);
 	}
