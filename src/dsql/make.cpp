@@ -1891,10 +1891,6 @@ dsql_par* MAKE_parameter(dsql_msg* message, bool sqlda_flag, bool null_flag,
 	dsql_par* parameter = FB_NEW(*tdsql->getDefaultPool()) dsql_par;
 	parameter->par_message = message;
 	parameter->par_next = message->msg_parameters;
-	if (parameter->par_next != 0)
-		parameter->par_next->par_ordered = parameter;
-	else
-		message->msg_par_ordered = parameter;
 	message->msg_parameters = parameter;
 	parameter->par_parameter = message->msg_parameter++;
 

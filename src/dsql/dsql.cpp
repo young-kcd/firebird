@@ -5044,10 +5044,26 @@ static UCHAR* var_info(
 	if (!message || !message->msg_index)
 		return info;
 
-	for (const dsql_par* param = message->msg_par_ordered; param;
-		param = param->par_ordered)
+	Firebird::HalfStaticArray<const dsql_par*, 16> parameters;
+
+	for (const dsql_par* param = message->msg_parameters; param;
+		param = param->par_next)
 	{
-		if (param->par_index && param->par_index >= first_index)
+		if (param->par_index)
+		{
+			if (param->par_index > parameters.getCount())
+				parameters.grow(param->par_index);
+			fb_assert(!parameters[param->par_index - 1]);
+			parameters[param->par_index - 1] = param;
+		}
+	}
+
+	for (int i = 0; i < parameters.getCount(); i++)
+	{
+		const dsql_par* param = parameters[i];
+		fb_assert(param);
+
+		if (param->par_index >= first_index)
 		{
 			sql_len = param->par_desc.dsc_length;
 			sql_sub_type = 0;

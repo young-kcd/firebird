@@ -626,7 +626,6 @@ class dsql_msg : public pool_alloc<dsql_type_msg>
 {
 public:
 	dsql_par*	msg_parameters;	//!< Parameter list
-	dsql_par*	msg_par_ordered;	//!< Ordered parameter list
 	UCHAR*		msg_buffer;			//!< Message buffer
 	USHORT		msg_number;			//!< Message number
 	USHORT		msg_length;			//!< Message length
@@ -640,7 +639,6 @@ class dsql_par : public pool_alloc<dsql_type_par>
 public:
 	dsql_msg*	par_message;		//!< Parent message
 	dsql_par*	par_next;			//!< Next parameter in linked list
-	dsql_par*	par_ordered;		//!< Next parameter in order of index
 	dsql_par*	par_null;			//!< Null parameter, if used
 	dsql_nod*	par_node;			//!< Associated value node, if any
 	dsql_ctx*	par_dbkey_ctx;		//!< Context of internally requested dbkey
