@@ -1,3 +1,9 @@
+2007-01-18 16:50  alexpeshkoff
+
+	* firebird2/src/jrd/: cch.cpp (1.138), cch.h (1.30):
+
+	front-ported fox for CORE-1098
+
 2007-01-18 01:26  asfernandes
 
 	* firebird2/src/dsql/ddl.cpp (1.194):
