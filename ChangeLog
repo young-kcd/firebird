@@ -1,3 +1,21 @@
+2007-01-18 16:47  alexpeshkoff
+
+	* firebird2/src/jrd/cch.h (1.28.4.1):
+
+	fix for CORE-1098
+
+2007-01-18 15:59  alexpeshkoff
+
+	* firebird2/src/jrd/cch.cpp (1.129.2.2):
+
+	much better fix for CORE-1098
+
+2007-01-18 12:23  alexpeshkoff
+
+	* firebird2/src/jrd/cch.cpp (1.129.2.1):
+
+	fox for CORE-1098
+
 2007-01-17 15:27  dimitr
 
 	* firebird2/src/jrd/isc_version.h (1.8.4.6):
