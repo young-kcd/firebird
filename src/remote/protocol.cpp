@@ -818,13 +818,11 @@ bool_t xdr_protocol(XDR* xdrs, PACKET* p)
 		return P_TRUE(xdrs, p);
 
 	default:
-#ifdef DEBUG
+#ifdef DEV_BUILD
 		if (xdrs->x_op != XDR_FREE)
-			fprintf(stderr, "xdr_packet: operation %d not recognized\n",
-					   p->p_operation);
-#endif
-#ifndef SOLARIS
-		fb_assert(xdrs->x_op == XDR_FREE);
+		{
+			gds__log("xdr_packet: operation %d not recognized\n", p->p_operation);
+		}
 #endif
 		return P_FALSE(xdrs, p);
 	}
