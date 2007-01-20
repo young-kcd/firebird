@@ -37,10 +37,10 @@ inline void ISC_inhibit() throw() {}
 #else
 // And that are functions to manage UNIX signals
 int		ISC_kill(SLONG, SLONG);
-void ISC_signal(int, FPTR_VOID_PTR, void *);
-void ISC_signal_cancel(int, FPTR_VOID_PTR, void *);
-void ISC_enable() throw();
-void ISC_inhibit() throw();
+bool	ISC_signal(int, FPTR_VOID_PTR, void *);
+void	ISC_signal_cancel(int, FPTR_VOID_PTR, void *);
+void	ISC_enable() throw();
+void	ISC_inhibit() throw();
 #endif
 
 void	ISC_signal_init(void);

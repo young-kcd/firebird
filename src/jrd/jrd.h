@@ -392,6 +392,9 @@ const ULONG DBB_suspend_bgio		= 0x200000L;	// Suspend I/O by background threads
 const ULONG DBB_being_opened		= 0x400000L;	// database is being attached to
 const ULONG DBB_gc_cooperative		= 0x0800000L;	// cooperative garbage collection
 const ULONG DBB_gc_background		= 0x1000000L;	// background garbage collection by gc_thread
+#if (defined DEV_BUILD && !defined MULTI_THREAD)
+const ULONG DBB_exec_statement		= 0x1000000L;	// execute statement runs against database
+#endif
 //
 // dbb_ast_flags
 //

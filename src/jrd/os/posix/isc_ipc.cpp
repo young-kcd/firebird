@@ -127,7 +127,7 @@ static int volatile relay_pipe = 0;
 
 
 static void cleanup(void* arg);
-static void isc_signal2(int signal, FPTR_VOID handler, void* arg, ULONG);
+static bool isc_signal2(int signal, FPTR_VOID handler, void* arg, ULONG);
 static SLONG overflow_handler(void* arg);
 static SIG que_signal(int signal, FPTR_VOID handler, void* arg, int flags, bool w_siginfo);
 
@@ -244,6 +244,9 @@ int ISC_kill(SLONG pid, SLONG signal_number)
  *	Notify somebody else.
  *
  **************************************/
+	if (! pid)
+		pid = getpid();
+
 	for (;;) {
 		const int status = kill(pid, signal_number);
 
@@ -304,7 +307,7 @@ int ISC_kill(SLONG pid, SLONG signal_number)
 }
 
 
-void ISC_signal(int signal_number, FPTR_VOID_PTR handler, void* arg)
+bool ISC_signal(int signal_number, FPTR_VOID_PTR handler, void* arg)
 {
 /**************************************
  *
@@ -316,11 +319,11 @@ void ISC_signal(int signal_number, FPTR_VOID_PTR handler, void* arg)
  *	Multiplex multiple handers into single signal.
  *
  **************************************/
-	isc_signal2(signal_number, reinterpret_cast<FPTR_VOID>(handler), arg, SIG_user);
+	return isc_signal2(signal_number, reinterpret_cast<FPTR_VOID>(handler), arg, SIG_user);
 }
 
 
-static void isc_signal2(
+static bool isc_signal2(
 						int signal_number,
 						FPTR_VOID handler, void* arg, ULONG flags)
 {
@@ -356,6 +359,7 @@ static void isc_signal2(
    multiplexor, there is no need to save it. */
 
 	bool old_sig_w_siginfo = false;
+	bool rc = false;
 	if (!sig) {
 		struct sigaction act, oact;
 
@@ -375,6 +379,7 @@ static void isc_signal2(
 				reinterpret_cast<FPTR_VOID>(oact.sa_sigaction) :
 				reinterpret_cast<FPTR_VOID>(oact.sa_handler),
 				NULL, SIG_client, old_sig_w_siginfo);
+			rc = true;
 		}
 	}
 
@@ -383,6 +388,8 @@ static void isc_signal2(
 	que_signal(signal_number, handler, arg, flags, old_sig_w_siginfo);
 
 	THD_MUTEX_UNLOCK(&sig_mutex);
+	
+	return rc;
 }
 
 

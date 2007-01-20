@@ -34,7 +34,6 @@
 #include "../jrd/jrd.h"
 #include "../jrd/tra.h"
 #include "../jrd/dsc.h"
-#include "../jrd/y_handle.h"
 #include "../jrd/thd.h"
 #include "../jrd/err_proto.h"
 #include "../jrd/mov_proto.h"
@@ -43,15 +42,17 @@
 #include "../jrd/thread_proto.h"
 #define	WHY_NO_API 
 #include "../jrd/why_proto.h"
+#include "../jrd/y_handle.h"
 
 #include "../jrd/execute_statement.h"
 
 using namespace Jrd;
 
-WHY_DBB GetWhyAttachment(ISC_STATUS* status,
-						  Attachment* jrd_attachment_handle);
+YValve::Attachment* GetWhyAttachment(ISC_STATUS*, Attachment*);
 
-static const struct {
+namespace {
+
+const struct {
 	SSHORT SqlType;
 	SSHORT DataLength;
 } DscType2SqlType[] =
@@ -83,6 +84,26 @@ static const struct {
 /* dtype_int64		*/ {SQL_INT64, sizeof(SINT64)},
 };
 
+void startCallback(thread_db* tdbb)
+{
+#if (defined DEV_BUILD && !defined MULTI_THREAD)
+	tdbb->tdbb_database->dbb_flags |= DBB_exec_statement;
+#endif
+	tdbb->tdbb_transaction->tra_callback_count++;
+	THREAD_EXIT();
+}
+
+void finishCallback(thread_db* tdbb)
+{
+	THREAD_ENTER();
+#if (defined DEV_BUILD && !defined MULTI_THREAD)
+	tdbb->tdbb_database->dbb_flags &= ~DBB_exec_statement;
+#endif
+	tdbb->tdbb_transaction->tra_callback_count--;
+}
+
+} // anonymous namespace
+
 void ExecuteStatement::Open(thread_db* tdbb, jrd_nod* sql, SSHORT nVars, bool SingleTon)
 {
 	SET_TDBB(tdbb);
@@ -104,27 +125,19 @@ void ExecuteStatement::Open(thread_db* tdbb, jrd_nod* sql, SSHORT nVars, bool Si
 	memcpy(StartOfSqlOperator, SqlText.c_str(), sizeof(StartOfSqlOperator) - 1);
 	StartOfSqlOperator[sizeof(StartOfSqlOperator) - 1] = 0;
 
-	WHY_DBB temp_dbb = GetWhyAttachment(tdbb->tdbb_status_vector,
+	YValve::Attachment* temp_dbb = GetWhyAttachment(tdbb->tdbb_status_vector,
 								  tdbb->tdbb_attachment);
 	if (!temp_dbb)
 		ERR_punt();
 
 	Attachment = temp_dbb->public_handle;
 
-	WHY_TRA temp_tra = WHY_alloc_handle(temp_dbb->implementation, HANDLE_transaction);
-	if (!temp_tra)
-		ERR_post(isc_virmemexh, 0);
-	Transaction = temp_tra->public_handle;
-	temp_tra->handle.h_tra = tdbb->tdbb_transaction;
-	temp_tra->parent = temp_dbb;
+	YValve::Transaction* temp_tra = new YValve::Transaction(tdbb->tdbb_transaction, &Transaction, temp_dbb);
 
 	Statement = 0;
 	Sqlda = MakeSqlda(tdbb, nVars ? nVars : 1);
     Sqlda->sqln = nVars;
     Sqlda->version = 1;
-
-	tdbb->tdbb_transaction->tra_callback_count++;
-	THREAD_EXIT();
 
 	// For normal diagnostic
 	const int max_diag_len = 50;
@@ -133,7 +146,9 @@ void ExecuteStatement::Open(thread_db* tdbb, jrd_nod* sql, SSHORT nVars, bool Si
 	ISC_STATUS_ARRAY local;
 	ISC_STATUS *status = local;
 	memset(local, 0, sizeof(local));
+
 #	define Chk(x) if ((x) != 0) goto err_handler
+	startCallback(tdbb);
 
 	Chk(isc_dsql_allocate_statement(status, &Attachment, &Statement));
 
@@ -166,8 +181,8 @@ void ExecuteStatement::Open(thread_db* tdbb, jrd_nod* sql, SSHORT nVars, bool Si
 
 #	undef Chk
 err_handler:
-	THREAD_ENTER();
-	tdbb->tdbb_transaction->tra_callback_count--;
+	finishCallback(tdbb);
+
 	if (status[0] == 1 && status[1]) {
 		memcpy(tdbb->tdbb_status_vector, status, sizeof(local));
 		Firebird::status_exception::raise(tdbb->tdbb_status_vector);
@@ -186,19 +201,19 @@ bool ExecuteStatement::Fetch(thread_db* tdbb, jrd_nod** JrdVar)
 	ISC_STATUS *status = local;
 	memset(local, 0, sizeof(local));
 	status = local;
-	tdbb->tdbb_transaction->tra_callback_count++;
-	THREAD_EXIT();
+
+	startCallback(tdbb);
     if (isc_dsql_fetch(status, &Statement,
                 SQLDA_VERSION1, Sqlda) == 100)
 	{
 		isc_dsql_free_statement(status, &Statement, DSQL_drop);
-		THREAD_ENTER();
-		tdbb->tdbb_transaction->tra_callback_count--;
+		finishCallback(tdbb);
+
 		Statement = 0;
 		return false;
     }
-	THREAD_ENTER();
-	tdbb->tdbb_transaction->tra_callback_count--;
+	finishCallback(tdbb);
+
 	if (status[0] == 1 && status[1]) {
 		memcpy(tdbb->tdbb_status_vector, status, sizeof(local));
 		Firebird::status_exception::raise(tdbb->tdbb_status_vector);
@@ -271,19 +286,18 @@ rec_err:
     }
 
 	if (SingleMode) {
-		tdbb->tdbb_transaction->tra_callback_count++;
-		THREAD_EXIT();
+		startCallback(tdbb);
 		if (isc_dsql_fetch(status, &Statement,
                 SQLDA_VERSION1, Sqlda) == 100)
 		{
 			isc_dsql_free_statement(status, &Statement, DSQL_drop);
-			THREAD_ENTER();
-			tdbb->tdbb_transaction->tra_callback_count--;
+			finishCallback(tdbb);
+
 			Statement = 0;
 			return false;
 		}
-		THREAD_ENTER();
-		tdbb->tdbb_transaction->tra_callback_count--;
+		finishCallback(tdbb);
+
 		if (! (status[0] == 1 && status[1])) {
 			status[0] = isc_arg_gds;
 			status[1] = isc_sing_select_err;
@@ -298,24 +312,20 @@ rec_err:
 void ExecuteStatement::Close(thread_db* tdbb)
 {
 	if (Statement) {
-		tdbb->tdbb_transaction->tra_callback_count++;
-		THREAD_EXIT();
 		// for a while don't check for errors while freeing statement
+		startCallback(tdbb);
 		isc_dsql_free_statement(0, &Statement, DSQL_drop);
-		THREAD_ENTER();
-		tdbb->tdbb_transaction->tra_callback_count--;
+		finishCallback(tdbb);
+		
 		Statement = 0;
 	}
 	char* p = reinterpret_cast<char*>(Sqlda);
 	delete[] p;
 	Sqlda = 0;
 	if (Transaction) {
-		THREAD_EXIT();
-		WHY_cleanup_transaction(WHY_translate_handle(Transaction));
-		THREAD_ENTER();
+		delete YValve::translate<YValve::Transaction>(&Transaction);
+		Transaction = 0;
 	}
-	WHY_free_handle(Transaction);
-	Transaction = 0;
 	delete[] Buffer;
 	Buffer = 0;
 }

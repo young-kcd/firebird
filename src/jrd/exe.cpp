@@ -1407,12 +1407,18 @@ static void exec_sql(thread_db* tdbb, jrd_req* request, DSC* dsc)
 	memset(local, 0, sizeof(local));
 	ISC_STATUS* status = local;
 
+#if (defined DEV_BUILD && !defined MULTI_THREAD)
+	tdbb->tdbb_database->dbb_flags |= DBB_exec_statement;
+#endif
 	tdbb->tdbb_transaction->tra_callback_count++;
 	callback_execute_immediate(status,
 							   tdbb->tdbb_attachment,
 							   tdbb->tdbb_transaction,
 							   SqlStatementText);
 	tdbb->tdbb_transaction->tra_callback_count--;
+#if (defined DEV_BUILD && !defined MULTI_THREAD)
+	tdbb->tdbb_database->dbb_flags &= ~DBB_exec_statement;
+#endif
 
 	if (status[1]) {
  		memcpy(tdbb->tdbb_status_vector, status, sizeof(local));
