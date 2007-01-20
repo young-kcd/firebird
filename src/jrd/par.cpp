@@ -631,7 +631,8 @@ jrd_nod* PAR_make_node(thread_db* tdbb, int size)
 }
 
 
-CompilerScratch* PAR_parse(thread_db* tdbb, const UCHAR* blr, USHORT internal_flag)
+CompilerScratch* PAR_parse(thread_db* tdbb, const UCHAR* blr, USHORT internal_flag,
+						   USHORT dbginfo_length, const UCHAR* dbginfo)
 {
 /**************************************
  *
@@ -662,6 +663,9 @@ CompilerScratch* PAR_parse(thread_db* tdbb, const UCHAR* blr, USHORT internal_fl
 	{
 		csb->csb_g_flags |= csb_blr_version4;
 	}
+
+	if (dbginfo_length > 0)
+		DBG_parse_debug_info(dbginfo_length, dbginfo, csb->csb_dbg_info);
 
 	jrd_nod* node = parse(tdbb, csb, OTHER);
 	csb->csb_node = node;
@@ -1621,13 +1625,8 @@ static jrd_nod* par_message(thread_db* tdbb, CompilerScratch* csb)
 
 		if (itemInfo.isSpecial() && index % 2 == 0)
 		{
-			bool exist = false;
-
-			if (csb->csb_dbg_info)
-			{
-				exist = csb->csb_dbg_info->argInfoToName.get(
-					Firebird::ArgumentInfo(csb->csb_msg_number, index / 2), itemInfo.name);
-			}
+			csb->csb_dbg_info.argInfoToName.get(
+				Firebird::ArgumentInfo(csb->csb_msg_number, index / 2), itemInfo.name);
 
 			csb->csb_map_item_info.put(
 				Item(nod_argument, csb->csb_msg_number, index), itemInfo);
@@ -2936,11 +2935,7 @@ static jrd_nod* parse(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 
 			if (itemInfo.isSpecial())
 			{
-				bool exist = false;
-
-				if (csb->csb_dbg_info)
-					exist = csb->csb_dbg_info->varIndexToName.get(n, itemInfo.name);
-
+				csb->csb_dbg_info.varIndexToName.get(n, itemInfo.name);
 				csb->csb_map_item_info.put(Item(nod_variable, n), itemInfo);
 			}
 
@@ -3130,21 +3125,18 @@ static jrd_nod* parse(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 			node->nod_type = (NOD_T) (USHORT) blr_table[(int) blr_operator];
 	}
 
-	if (csb->csb_dbg_info)
+	size_t pos = 0;
+	if (csb->csb_dbg_info.blrToSrc.find(blr_offset, pos))
 	{
-		size_t pos = 0;
-		if (csb->csb_dbg_info->blrToSrc.find(blr_offset, pos))
-		{
-			Firebird::MapBlrToSrcItem& i = csb->csb_dbg_info->blrToSrc[pos];
-			jrd_nod* node_src = PAR_make_node(tdbb, e_src_info_length);
+		Firebird::MapBlrToSrcItem& i = csb->csb_dbg_info.blrToSrc[pos];
+		jrd_nod* node_src = PAR_make_node(tdbb, e_src_info_length);
 
-			node_src->nod_type = nod_src_info;
-			node_src->nod_arg[e_src_info_line] = (jrd_nod*) (IPTR) i.mbs_src_line;
-			node_src->nod_arg[e_src_info_col] = (jrd_nod*) (IPTR) i.mbs_src_col;
-			node_src->nod_arg[e_src_info_node] = node;
+		node_src->nod_type = nod_src_info;
+		node_src->nod_arg[e_src_info_line] = (jrd_nod*) (IPTR) i.mbs_src_line;
+		node_src->nod_arg[e_src_info_col] = (jrd_nod*) (IPTR) i.mbs_src_col;
+		node_src->nod_arg[e_src_info_node] = node;
 
-			return node_src;
-		}
+		return node_src;
 	}
 
 	return node;

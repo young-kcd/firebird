@@ -740,6 +740,7 @@ public:
 		csb_invariants(p),
 		csb_current_nodes(p),
 		csb_pool(p),
+		csb_dbg_info(p),
 		csb_map_field_info(p),
 		csb_map_item_info(p),
 		csb_domain_validation(domain_validation),
@@ -780,7 +781,7 @@ public:
 	SLONG			csb_impure;			/* Next offset into impure area */
 	USHORT			csb_g_flags;
 	MemoryPool&		csb_pool;			// Memory pool to be used by csb
-	Firebird::DbgInfo*	csb_dbg_info;			// Debug information
+	Firebird::DbgInfo	csb_dbg_info;			// Debug information
 	MapFieldInfo		csb_map_field_info;		// Map field name to field info
 	MapItemInfo			csb_map_item_info;		// Map item to item info
 	Firebird::MetaName	csb_domain_validation;	// Parsing domain constraint in PSQL

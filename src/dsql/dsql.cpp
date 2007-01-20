@@ -4809,10 +4809,13 @@ static dsql_req* prepare(
 	}
 
 	THREAD_EXIT();
-	const ISC_STATUS status = isc_compile_request(tdsql->tsql_status,
-								 &request->req_dbb->dbb_database_handle,
-								 &request->req_handle, length,
-								 (const char*)(request->req_blr_data.begin()));
+	const ISC_STATUS status = gds__internal_compile_request(
+								tdsql->tsql_status,
+								&request->req_dbb->dbb_database_handle,
+								&request->req_handle, length,
+								(const char*)(request->req_blr_data.begin()),
+								string_length, string,
+								request->req_debug_data.getCount(), request->req_debug_data.begin());
 	THREAD_ENTER();
 
 // restore warnings (if there are any) 
@@ -4839,11 +4842,6 @@ static dsql_req* prepare(
 
 	if (status)
 		punt();
-
-	THREAD_EXIT();
-	gds__sql_text(tdsql->tsql_status, &request->req_handle,
-				  string_length, string);
-	THREAD_ENTER();
 
 	return request;
 }

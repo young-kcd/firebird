@@ -540,7 +540,8 @@ jrd_req* CMP_compile(USHORT blr_length, const UCHAR* blr, USHORT internal_flag)
 }
 
 
-jrd_req* CMP_compile2(thread_db* tdbb, const UCHAR* blr, USHORT internal_flag)
+jrd_req* CMP_compile2(thread_db* tdbb, const UCHAR* blr, USHORT internal_flag,
+					  USHORT dbginfo_length, const UCHAR* dbginfo)
 {
 /**************************************
  *
@@ -565,7 +566,7 @@ jrd_req* CMP_compile2(thread_db* tdbb, const UCHAR* blr, USHORT internal_flag)
 		new_pool = JrdMemoryPool::createPool();
 		Jrd::ContextPoolHolder context(tdbb, new_pool);
 
-		CompilerScratch* csb = PAR_parse(tdbb, blr, internal_flag);
+		CompilerScratch* csb = PAR_parse(tdbb, blr, internal_flag, dbginfo_length, dbginfo);
 		request = CMP_make_request(tdbb, csb);
 
 		if (internal_flag) {

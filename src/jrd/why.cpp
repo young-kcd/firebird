@@ -435,7 +435,7 @@ static const TEXT glbunknown[10] = "<unknown>";
 //#define GDS_EVENT_WAIT			gds__event_wait
 #define GDS_INTL_FUNCTION		gds__intl_function
 #define GDS_DSQL_CACHE			gds__dsql_cache
-#define GDS_SQL_TEXT			gds__sql_text
+#define GDS_INTERNAL_COMPILE	gds__internal_compile_request
 #define GDS_GET_SEGMENT			isc_get_segment
 #define GDS_GET_SLICE			isc_get_slice
 #define GDS_OPEN_BLOB			isc_open_blob
@@ -565,7 +565,7 @@ const int PROC_ROLLBACK_RETAINING	= 52;
 const int PROC_CANCEL_OPERATION	= 53;
 const int PROC_INTL_FUNCTION	= 54;	// internal call
 const int PROC_DSQL_CACHE		= 55;	// internal call
-const int PROC_SQL_TEXT			= 56;	// internal call
+const int PROC_INTERNAL_COMPILE	= 56;	// internal call
 
 const int PROC_count			= 57;
 
@@ -3830,26 +3830,50 @@ ISC_STATUS API_ROUTINE GDS_DSQL_CACHE(ISC_STATUS * user_status,
 }
 
 
-ISC_STATUS API_ROUTINE GDS_SQL_TEXT(ISC_STATUS * user_status,
-									FB_API_HANDLE* handle,
-									USHORT length,
-									const char* string)
+ISC_STATUS API_ROUTINE GDS_INTERNAL_COMPILE(ISC_STATUS* user_status,
+											FB_API_HANDLE* db_handle,
+											FB_API_HANDLE* req_handle,
+											USHORT blr_length,
+											const SCHAR* blr,
+											USHORT string_length,
+											const char* string,
+											USHORT dbginfo_length,
+											const UCHAR* dbginfo)
 {
 	ISC_STATUS *status;
 	ISC_STATUS_ARRAY local;
-	WHY_REQ request;
+	WHY_ATT dbb;
+	WHY_REQ request = NULL;
 
 	GET_STATUS;
-	TRANSLATE_HANDLE(*handle, request, HANDLE_request, isc_bad_req_handle);
+	NULL_CHECK(req_handle, isc_bad_req_handle, HANDLE_request);
+	TRANSLATE_HANDLE(*db_handle, dbb, HANDLE_database, isc_bad_db_handle);
 	subsystem_enter();
 
-	if (CALL(PROC_SQL_TEXT, request->implementation) (status,
-													  &request->handle,
-													  length,
-													  string))
+	if (CALL(PROC_INTERNAL_COMPILE, dbb->implementation) (status, &dbb->handle,
+														  &request, blr_length,
+														  blr,
+														  string_length, string,
+														  dbginfo_length, dbginfo))
 	{
 		return error(status, local);
 	}
+
+	request = allocate_handle(dbb->implementation, request, HANDLE_request);
+	if (!request) {
+		/* No memory. Make a half-hearted attempt to release request. */
+
+		CALL(PROC_RELEASE_REQUEST, dbb->implementation) (status, request->handle.h_why);
+		status[0] = isc_arg_gds;
+		status[1] = isc_virmemexh;
+		status[2] = isc_arg_end;
+		return error(status, local);
+	}
+
+	*req_handle = request->public_handle;
+	request->parent = dbb;
+	request->next = dbb->requests;
+	dbb->requests = request;
 
 	RETURN_SUCCESS;
 }

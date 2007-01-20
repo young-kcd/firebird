@@ -2736,6 +2736,7 @@ void DDL_gen_block(dsql_req* request, dsql_nod* node)
  **************************************/
 	SSHORT inputs = 0, outputs = 0, locals = 0;
 	request->req_blk_node = node;
+	request->begin_debug();
 
 	tsql* tdsql = DSQL_get_thread_data();
 
@@ -2862,6 +2863,8 @@ void DDL_gen_block(dsql_req* request, dsql_nod* node)
 	request->append_uchar(blr_end);
 	GEN_return(request, node->nod_arg[e_exe_blk_outputs], true);
 	request->append_uchar(blr_end);
+
+	request->end_debug();
 }
 
 

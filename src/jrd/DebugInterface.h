@@ -90,6 +90,13 @@ struct DbgInfo
 	{
 	}
 
+	void clear()
+	{
+		blrToSrc.clear();
+		varIndexToName.clear();
+		argInfoToName.clear();
+	}
+
 	MapBlrToSrc blrToSrc;					// mapping between blr offsets and source text position
 	MapVarIndexToName varIndexToName;		// mapping between variable index and name
 	MapArgumentInfoToName argInfoToName;	// mapping between argument info (type, index) and name
@@ -98,5 +105,6 @@ struct DbgInfo
 }; // namespace Firebird 
 
 void DBG_parse_debug_info(Jrd::thread_db*, Jrd::bid*, Firebird::DbgInfo&);
+void DBG_parse_debug_info(USHORT, const UCHAR*, Firebird::DbgInfo&);
 
 #endif //DEBUG_INTERFACE_H

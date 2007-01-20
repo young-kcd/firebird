@@ -37,36 +37,41 @@ void DBG_parse_debug_info(thread_db* tdbb, bid *blob_id, Firebird::DbgInfo& dbgI
 	UCHAR* temp = tmp.getBuffer(length);
 	BLB_get_data(tdbb, blob, temp, length);
 
-	const UCHAR* end = temp + length;
+	DBG_parse_debug_info(length, temp, dbgInfo);
+}
+
+void DBG_parse_debug_info(USHORT length, const UCHAR* data, Firebird::DbgInfo& dbgInfo)
+{
+	const UCHAR* end = data + length;
 	bool bad_format = false;
 
-	if ((*temp++ != fb_dbg_version) ||
+	if ((*data++ != fb_dbg_version) ||
 		(end[-1] != fb_dbg_end)		||
-		(*temp++ != 1))
+		(*data++ != 1))
 	{
 		bad_format = true;
 	}
 
-	while (!bad_format && (temp < end)) 
+	while (!bad_format && (data < end)) 
 	{
-		switch (*temp++)
+		switch (*data++)
 		{
 		case fb_dbg_map_src2blr:
 		{
-			if (temp + 6 > end) {
+			if (data + 6 > end) {
 				bad_format = true;
 				break;
 			}
 
 			MapBlrToSrcItem i;
-			i.mbs_src_line = *temp++;
-			i.mbs_src_line |= *temp++ << 8;
+			i.mbs_src_line = *data++;
+			i.mbs_src_line |= *data++ << 8;
 
-			i.mbs_src_col = *temp++;
-			i.mbs_src_col |= *temp++ << 8;
+			i.mbs_src_col = *data++;
+			i.mbs_src_col |= *data++ << 8;
 
-			i.mbs_offset = *temp++;
-			i.mbs_offset |= *temp++ << 8;
+			i.mbs_offset = *data++;
+			i.mbs_offset |= *data++ << 8;
 
 			dbgInfo.blrToSrc.add(i);
 		}
@@ -74,33 +79,33 @@ void DBG_parse_debug_info(thread_db* tdbb, bid *blob_id, Firebird::DbgInfo& dbgI
 
 		case fb_dbg_map_varname:
 		{
-			if (temp + 3 > end) {
+			if (data + 3 > end) {
 				bad_format = true;
 				break;
 			}
 
 			// variable number
-			USHORT index = *temp++;
-			index |= *temp++;
+			USHORT index = *data++;
+			index |= *data++;
 
 			// variable name string length
-			USHORT length = *temp++;
+			USHORT length = *data++;
 
-			if (temp + length > end) {
+			if (data + length > end) {
 				bad_format = true;
 				break;
 			}
 
-			dbgInfo.varIndexToName.put(index, MetaName((const TEXT*) temp, length));
+			dbgInfo.varIndexToName.put(index, MetaName((const TEXT*) data, length));
 
 			// variable name string
-			temp += length;
+			data += length;
 		}
 		break;
 
 		case fb_dbg_map_argument:
 		{
-			if (temp + 4 > end) {
+			if (data + 4 > end) {
 				bad_format = true;
 				break;
 			}
@@ -108,29 +113,29 @@ void DBG_parse_debug_info(thread_db* tdbb, bid *blob_id, Firebird::DbgInfo& dbgI
 			ArgumentInfo info;
 
 			// argument type
-			info.type = *temp++;
+			info.type = *data++;
 
 			// argument number
-			info.index = *temp++;
-			info.index |= *temp++;
+			info.index = *data++;
+			info.index |= *data++;
 
 			// argument name string length
-			USHORT length = *temp++;
+			USHORT length = *data++;
 
-			if (temp + length > end) {
+			if (data + length > end) {
 				bad_format = true;
 				break;
 			}
 
-			dbgInfo.argInfoToName.put(info, MetaName((const TEXT*) temp, length));
+			dbgInfo.argInfoToName.put(info, MetaName((const TEXT*) data, length));
 
 			// variable name string
-			temp += length;
+			data += length;
 		}
 		break;
 
 		case fb_dbg_end:
-			if (temp != end)
+			if (data != end)
 				bad_format = true;
 		break;
 
@@ -139,12 +144,12 @@ void DBG_parse_debug_info(thread_db* tdbb, bid *blob_id, Firebird::DbgInfo& dbgI
 		}
 	}
 
-	if (!bad_format && (temp != end))
+	if (!bad_format && (data != end))
 		bad_format = true;
 
 	if (bad_format) 
 	{
-		dbgInfo.blrToSrc.clear();
+		dbgInfo.clear();
 		ERR_post_warning(isc_bad_debug_format, 0);
 	}
 }

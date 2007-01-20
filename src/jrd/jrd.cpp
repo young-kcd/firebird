@@ -244,13 +244,11 @@ void Jrd::Trigger::compile(thread_db* tdbb)
 		try {
 			Jrd::ContextPoolHolder context(tdbb, new_pool);
 
-			Firebird::DbgInfo dbgInfo;
-			if (!dbg_blob_id.isEmpty())
-				DBG_parse_debug_info(tdbb, &dbg_blob_id, dbgInfo);
-
 			csb = CompilerScratch::newCsb(*tdbb->getDefaultPool(), 5);
 			csb->csb_g_flags |= par_flags;
-			csb->csb_dbg_info = &dbgInfo;
+
+			if (!dbg_blob_id.isEmpty())
+				DBG_parse_debug_info(tdbb, &dbg_blob_id, csb->csb_dbg_info);
 
 			PAR_blr(tdbb, relation, blr.begin(),  NULL, &csb, &request, (relation ? true : false),
 					par_flags);
@@ -396,6 +394,7 @@ static blb*		check_blob(thread_db*, ISC_STATUS*, blb**);
 static ISC_STATUS	check_database(thread_db*, Attachment*, ISC_STATUS*);
 static void		cleanup(void*);
 static ISC_STATUS	commit(ISC_STATUS*, jrd_tra**, const bool);
+static ISC_STATUS	compile_request(ISC_STATUS*, Attachment**, jrd_req**, SSHORT, const SCHAR*, USHORT, const char*, USHORT, const UCHAR*);
 static bool		drop_files(const jrd_file*);
 static ISC_STATUS	error(ISC_STATUS*, const Firebird::Exception& ex);
 static ISC_STATUS	error(ISC_STATUS*);
@@ -520,7 +519,7 @@ bool invalid_client_SQL_dialect = false;
 #define GDS_DROP_DATABASE		jrd8_drop_database
 #define GDS_INTL_FUNCTION		jrd8_intl_function
 #define GDS_DSQL_CACHE			jrd8_dsql_cache
-#define GDS_SQL_TEXT			jrd8_sql_text
+#define GDS_INTERNAL_COMPILE	jrd8_internal_compile_request
 #define GDS_GET_SEGMENT			jrd8_get_segment
 #define GDS_GET_SLICE			jrd8_get_slice
 #define GDS_OPEN_BLOB2			jrd8_open_blob2
@@ -1670,44 +1669,7 @@ ISC_STATUS GDS_COMPILE(ISC_STATUS* user_status,
  * Functional description
  *
  **************************************/
-	api_entry_point_init(user_status);
-
-	thread_db thd_context;
-	thread_db* tdbb = JRD_MAIN_set_thread_data(thd_context);
-
-	NULL_CHECK(req_handle, isc_bad_req_handle);
-	Attachment* attachment = *db_handle;
-
-	if (check_database(tdbb, attachment, user_status))
-		return user_status[1];
-
-#ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
-	LOG_call(log_compile, *db_handle, *req_handle, blr_length, blr);
-#endif
-
-	try
-	{
-		tdbb->tdbb_status_vector = user_status;
-
-		jrd_req* request =
-			CMP_compile2(tdbb, reinterpret_cast<const UCHAR*>(blr), FALSE);
-		request->req_attachment = attachment;
-		request->req_request = attachment->att_requests;
-		attachment->att_requests = request;
-		request->req_stats.setParent(&attachment->att_stats);
-	
-		DEBUG;
-		*req_handle = request;
-	#ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
-		LOG_call(log_handle_returned, *req_handle);
-	#endif
-	}
-	catch (const Firebird::Exception& ex)
-	{
-		return error(user_status, ex);
-	}
-
-	return return_success(tdbb);
+	return compile_request(user_status, db_handle, req_handle, blr_length, blr, 0, NULL, 0, NULL);
 }
 
 
@@ -2753,42 +2715,27 @@ ISC_STATUS GDS_DSQL_CACHE(ISC_STATUS* user_status, Attachment** handle,
 }
 
 
-ISC_STATUS GDS_SQL_TEXT(ISC_STATUS* user_status, jrd_req** req_handle,
-						USHORT length, const char* string)
+ISC_STATUS GDS_INTERNAL_COMPILE(ISC_STATUS* user_status,
+								Attachment** db_handle,
+								jrd_req** req_handle,
+								SSHORT blr_length,
+								const SCHAR* blr,
+								USHORT string_length, const char* string,
+								USHORT dbginfo_length, const UCHAR* dbginfo)
 {
 /**************************************
  *
- *	g d s _ s q l _ t e x t
+ *	g d s _ $ i n t e r n a l _ c o m p i l e
  *
  **************************************
  *
  * Functional description
- *	Stores the SQL text of the given request.
+ *	Compile a request passing the SQL text and debug information.
  *  (candidate for removal when engine functions can be called by DSQL)
  *
  **************************************/
-	api_entry_point_init(user_status);
-
-	thread_db thd_context;
-	thread_db* tdbb = JRD_MAIN_set_thread_data(thd_context);
-
-	jrd_req* request = *req_handle;
-	CHECK_HANDLE(request, type_req, isc_bad_req_handle);
-
-	if (check_database(tdbb, request->req_attachment, user_status))
-		return user_status[1];
-
-	try
-	{
-		tdbb->tdbb_status_vector = user_status;
-		request->req_sql_text = Firebird::string(string, length);
-	}
-	catch (const Firebird::Exception& ex)
-	{
-		return error(user_status, ex);
-	}
-
-	return return_success(tdbb);
+	return compile_request(user_status, db_handle, req_handle, blr_length, blr,
+		string_length, string, dbginfo_length, dbginfo);
 }
 
 
@@ -5108,6 +5055,67 @@ static ISC_STATUS commit(
 		--dbb->dbb_use_count;
 		return error(user_status, ex);
 	}
+}
+
+
+ISC_STATUS compile_request(ISC_STATUS* user_status,
+						   Attachment** db_handle,
+						   jrd_req** req_handle,
+						   SSHORT blr_length,
+						   const SCHAR* blr,
+						   USHORT string_length, const char* string,
+						   USHORT dbginfo_length, const UCHAR* dbginfo)
+{
+/**************************************
+ *
+ *	compile_request
+ *
+ **************************************
+ *
+ * Functional description
+ *
+ **************************************/
+	api_entry_point_init(user_status);
+
+	thread_db thd_context;
+	thread_db* tdbb = JRD_MAIN_set_thread_data(thd_context);
+
+	NULL_CHECK(req_handle, isc_bad_req_handle);
+	Attachment* attachment = *db_handle;
+
+	if (check_database(tdbb, attachment, user_status))
+		return user_status[1];
+
+#ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
+	LOG_call(log_compile, *db_handle, *req_handle, blr_length, blr);
+#endif
+
+	try
+	{
+		tdbb->tdbb_status_vector = user_status;
+
+		jrd_req* request = CMP_compile2(tdbb, reinterpret_cast<const UCHAR*>(blr), FALSE,
+			dbginfo_length, dbginfo);
+
+		request->req_attachment = attachment;
+		request->req_request = attachment->att_requests;
+		attachment->att_requests = request;
+
+		request->req_sql_text = Firebird::string(string, string_length);
+		request->req_stats.setParent(&attachment->att_stats);
+	
+		DEBUG;
+		*req_handle = request;
+	#ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
+		LOG_call(log_handle_returned, *req_handle);
+	#endif
+	}
+	catch (const Firebird::Exception& ex)
+	{
+		return error(user_status, ex);
+	}
+
+	return return_success(tdbb);
 }
 
 
