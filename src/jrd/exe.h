@@ -740,10 +740,10 @@ public:
 		csb_invariants(p),
 		csb_current_nodes(p),
 		csb_pool(p),
-		csb_rpt(p, len),
 		csb_map_field_info(p),
 		csb_map_item_info(p),
-		csb_domain_validation(domain_validation)
+		csb_domain_validation(domain_validation),
+		csb_rpt(p, len)
 	{}
 
 	static CompilerScratch* newCsb(MemoryPool& p, size_t len, Firebird::MetaName domain_validation = Firebird::MetaName())

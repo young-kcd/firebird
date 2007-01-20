@@ -410,9 +410,9 @@ public:
 		req_blr_data(p),
 		req_labels(p), 
 		req_cursors(p),
+		req_debug_data(p),
 		req_curr_ctes(p),
 		req_ctes(p),
-		req_debug_data(p),
 		req_cte_aliases(p) { }
 
 	dsql_req*	req_parent;		//!< Source request, if cursor update
