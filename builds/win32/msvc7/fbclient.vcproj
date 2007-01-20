@@ -42,7 +42,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib secur32.lib"
+				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
 				OutputFile="..\..\..\temp\debug\firebird\bin\fbclient.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
@@ -115,7 +115,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib secur32.Lib"
+				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
 				OutputFile="..\..\..\temp\release\firebird\bin\fbclient.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"

@@ -25,6 +25,22 @@ private:
 	CtxtHandle ctxtHndl;
 	bool hasContext;
 	Firebird::string ctName;
+
+//	Handle of library
+	static HINSTANCE library;
+
+// declare entries, required from secur32.dll
+	ACQUIRE_CREDENTIALS_HANDLE_FN_A fAcquireCredentialsHandle;
+	DELETE_SECURITY_CONTEXT_FN fDeleteSecurityContext;
+	FREE_CREDENTIALS_HANDLE_FN fFreeCredentialsHandle;
+	QUERY_CONTEXT_ATTRIBUTES_FN_A fQueryContextAttributes;
+	FREE_CONTEXT_BUFFER_FN fFreeContextBuffer;
+	INITIALIZE_SECURITY_CONTEXT_FN_A fInitializeSecurityContext;
+	ACCEPT_SECURITY_CONTEXT_FN fAcceptSecurityContext;
+
+	bool checkAdminPrivilege(PCtxtHandle phContext);
+	bool initEntries();
+
 public:
 	typedef Firebird::Array<unsigned char> DataHolder;
 

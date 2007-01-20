@@ -3,26 +3,6 @@
 #ifdef TRUSTED_AUTH
 #include <../common/classes/ClumpletReader.h>
 
-AuthSspi::AuthSspi()
-	: hasContext(false), ctName(*getDefaultMemoryPool())
-{
-	TimeStamp timeOut;
-	hasCredentials = AcquireCredentialsHandle(0, "NTLM", SECPKG_CRED_BOTH, 0, 0, 0, 0, 
-									   &secHndl, &timeOut) == SEC_E_OK;
-}
-
-AuthSspi::~AuthSspi()
-{
-	if (hasContext)
-	{
-		DeleteSecurityContext(&ctxtHndl);
-	}
-	if (hasCredentials)
-	{
-		FreeCredentialsHandle(&secHndl);
-	}
-}
-
 namespace 
 {
 	void makeDesc(SecBufferDesc& d, SecBuffer& b, size_t len, void* p)
@@ -35,57 +15,125 @@ namespace
 		d.pBuffers = &b;
 	}
 
-	bool checkAdminPrivilege(PCtxtHandle phContext)
+	template<typename ToType>
+		ToType getProc(HINSTANCE lib, const char* entry)
 	{
-		// Query access token from security context
-		SecPkgContext_AccessToken spc;
-		spc.AccessToken = 0;
-		if (QueryContextAttributes(phContext, SECPKG_ATTR_ACCESS_TOKEN, &spc) != SEC_E_OK)
+		FARPROC rc = GetProcAddress(lib, entry);
+		if (! rc)
 		{
-			return false;
+			Firebird::LongJump::raise();
 		}
-
-		// Query required buffer size
-		DWORD token_len = 0;
-		GetTokenInformation(spc.AccessToken, TokenGroups, 0, 0, &token_len);
-
-		// Query actual group information
-		Firebird::Array<char> buffer;
-		TOKEN_GROUPS *ptg = (TOKEN_GROUPS *)buffer.getBuffer(token_len);
-		bool ok = GetTokenInformation(spc.AccessToken,
-				TokenGroups, ptg, token_len, &token_len);
-		FreeContextBuffer(spc.AccessToken);
-		if (! ok)
-		{
-			return false;
-		}
-
-		// Create a System Identifier for the Admin group.
-		SID_IDENTIFIER_AUTHORITY system_sid_authority = {SECURITY_NT_AUTHORITY};
-		PSID admin_sid;
-		if (!AllocateAndInitializeSid(&system_sid_authority, 2,
-					SECURITY_BUILTIN_DOMAIN_RID,
-					DOMAIN_ALIAS_RID_ADMINS,
-					0, 0, 0, 0, 0, 0, &admin_sid))
-		{
-			return false;
-		}
-
-		// Finally we'll iterate through the list of groups for this access
-		// token looking for a match against the SID we created above.
-		for (DWORD i = 0; i < ptg->GroupCount; i++)
-		{
-			if (EqualSid(ptg->Groups[i].Sid, admin_sid))
-			{
-				FreeSid(admin_sid);
-				return true;
-			}
-		}
-		FreeSid(admin_sid);
-		return false;
+		return (ToType)rc;
 	}
 }
 
+HINSTANCE AuthSspi::library = 0;
+
+bool AuthSspi::initEntries()
+{
+	if (! library)
+	{
+		library = LoadLibrary("secur32.dll");
+	}
+	if (! library)
+	{
+		return false;
+	}
+
+	try
+	{
+		fAcquireCredentialsHandle = getProc<ACQUIRE_CREDENTIALS_HANDLE_FN_A>
+			(library, "AcquireCredentialsHandleA");
+		fDeleteSecurityContext = getProc<DELETE_SECURITY_CONTEXT_FN>
+			(library, "DeleteSecurityContext");
+		fFreeCredentialsHandle = getProc<FREE_CREDENTIALS_HANDLE_FN>
+			(library, "FreeCredentialsHandle");
+		fQueryContextAttributes = getProc<QUERY_CONTEXT_ATTRIBUTES_FN_A>
+			(library, "QueryContextAttributesA");
+		fFreeContextBuffer = getProc<FREE_CONTEXT_BUFFER_FN>
+			(library, "FreeContextBuffer");
+		fInitializeSecurityContext = getProc<INITIALIZE_SECURITY_CONTEXT_FN_A>
+			(library, "InitializeSecurityContextA");
+		fAcceptSecurityContext = getProc<ACCEPT_SECURITY_CONTEXT_FN>
+			(library, "AcceptSecurityContext");
+	}
+	catch (const Firebird::LongJump&)
+	{
+		return false;
+	}
+	return true;
+}
+
+AuthSspi::AuthSspi()
+	: hasContext(false), ctName(*getDefaultMemoryPool())
+{
+	TimeStamp timeOut;
+	hasCredentials = initEntries() && (fAcquireCredentialsHandle(0, "NTLM", 
+					SECPKG_CRED_BOTH, 0, 0, 0, 0, 
+					&secHndl, &timeOut) == SEC_E_OK);
+}
+
+AuthSspi::~AuthSspi()
+{
+	if (hasContext)
+	{
+		fDeleteSecurityContext(&ctxtHndl);
+	}
+	if (hasCredentials)
+	{
+		fFreeCredentialsHandle(&secHndl);
+	}
+}
+
+bool AuthSspi::checkAdminPrivilege(PCtxtHandle phContext)
+{
+	// Query access token from security context
+	SecPkgContext_AccessToken spc;
+	spc.AccessToken = 0;
+	if (fQueryContextAttributes(phContext, SECPKG_ATTR_ACCESS_TOKEN, &spc) != SEC_E_OK)
+	{
+		return false;
+	}
+
+	// Query required buffer size
+	DWORD token_len = 0;
+	GetTokenInformation(spc.AccessToken, TokenGroups, 0, 0, &token_len);
+
+	// Query actual group information
+	Firebird::Array<char> buffer;
+	TOKEN_GROUPS *ptg = (TOKEN_GROUPS *)buffer.getBuffer(token_len);
+	bool ok = GetTokenInformation(spc.AccessToken,
+			TokenGroups, ptg, token_len, &token_len);
+	fFreeContextBuffer(spc.AccessToken);
+	if (! ok)
+	{
+		return false;
+	}
+
+	// Create a System Identifier for the Admin group.
+	SID_IDENTIFIER_AUTHORITY system_sid_authority = {SECURITY_NT_AUTHORITY};
+	PSID admin_sid;
+	if (!AllocateAndInitializeSid(&system_sid_authority, 2,
+				SECURITY_BUILTIN_DOMAIN_RID,
+				DOMAIN_ALIAS_RID_ADMINS,
+				0, 0, 0, 0, 0, 0, &admin_sid))
+	{
+		return false;
+	}
+
+	// Finally we'll iterate through the list of groups for this access
+	// token looking for a match against the SID we created above.
+	for (DWORD i = 0; i < ptg->GroupCount; i++)
+	{
+		if (EqualSid(ptg->Groups[i].Sid, admin_sid))
+		{
+			FreeSid(admin_sid);
+			return true;
+		}
+	}
+	FreeSid(admin_sid);
+	return false;
+}
 
 bool AuthSspi::request(AuthSspi::DataHolder& data)
 {
@@ -105,13 +153,13 @@ bool AuthSspi::request(AuthSspi::DataHolder& data)
 
 	ULONG fContextAttr = 0;
 
-	SECURITY_STATUS x = InitializeSecurityContext(
+	SECURITY_STATUS x = fInitializeSecurityContext(
 		&secHndl, hasContext ? &ctxtHndl : 0, 0, 0, 0, SECURITY_NATIVE_DREP, 
 		hasContext ? &inputDesc : 0, 0, &ctxtHndl, &outputDesc, &fContextAttr, &timeOut);
 	switch (x)
 	{
 	case SEC_E_OK:
-		DeleteSecurityContext(&ctxtHndl);
+		fDeleteSecurityContext(&ctxtHndl);
 		hasContext = false;
 		break;
 	case SEC_I_CONTINUE_NEEDED:
@@ -120,7 +168,7 @@ bool AuthSspi::request(AuthSspi::DataHolder& data)
 	default:
 		if (hasContext)
 		{
-			DeleteSecurityContext(&ctxtHndl);
+			fDeleteSecurityContext(&ctxtHndl);
 		}
 		hasContext = false;
 		data.clear();
@@ -158,7 +206,7 @@ bool AuthSspi::accept(AuthSspi::DataHolder& data)
 
 	ULONG fContextAttr = 0;
 	SecPkgContext_Names name;
-	SECURITY_STATUS x = AcceptSecurityContext(
+	SECURITY_STATUS x = fAcceptSecurityContext(
 		&secHndl, hasContext ? &ctxtHndl : 0, &inputDesc, 0, 
 		SECURITY_NATIVE_DREP, &ctxtHndl, &outputDesc, 
 		&fContextAttr, &timeOut);
@@ -169,13 +217,13 @@ bool AuthSspi::accept(AuthSspi::DataHolder& data)
 		{
 			ctName = "SYSDBA";
 		}
-		else if (QueryContextAttributes(&ctxtHndl, SECPKG_ATTR_NAMES, &name) == SEC_E_OK)
+		else if (fQueryContextAttributes(&ctxtHndl, SECPKG_ATTR_NAMES, &name) == SEC_E_OK)
 		{
 			ctName = name.sUserName;
 			ctName.upper();
-			FreeContextBuffer(name.sUserName);
+			fFreeContextBuffer(name.sUserName);
 		}
-		DeleteSecurityContext(&ctxtHndl);
+		fDeleteSecurityContext(&ctxtHndl);
 		hasContext = false;
 		break;
 	case SEC_I_CONTINUE_NEEDED:
@@ -184,7 +232,7 @@ bool AuthSspi::accept(AuthSspi::DataHolder& data)
 	default:
 		if (hasContext)
 		{
-			DeleteSecurityContext(&ctxtHndl);
+			fDeleteSecurityContext(&ctxtHndl);
 		}
 		hasContext = false;
 		data.clear();
