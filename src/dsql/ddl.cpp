@@ -2522,7 +2522,7 @@ static void define_procedure( dsql_req* request, NOD_TYPE op)
 				reinterpret_cast<const dsql_str*>(parameter->nod_arg[e_dfl_collate]));
 			put_field(request, field, false);
 
-			request->put_debug_argument(0, position, field->fld_name);
+			request->put_debug_argument(fb_dbg_arg_input, position, field->fld_name);
 
 			// check for a parameter default value
 			dsql_nod* node = parameter->nod_arg[e_dfl_default];
@@ -2590,7 +2590,7 @@ static void define_procedure( dsql_req* request, NOD_TYPE op)
 				reinterpret_cast<const dsql_str*>(parameter->nod_arg[e_dfl_collate]));
 			put_field(request, field, false);
 
-			request->put_debug_argument(1, position, field->fld_name);
+			request->put_debug_argument(fb_dbg_arg_output, position, field->fld_name);
 
 			*ptr = MAKE_variable(field, field->fld_name,
 								 VAR_output, 1, (USHORT) (2 * position),
@@ -2669,7 +2669,7 @@ static void define_procedure( dsql_req* request, NOD_TYPE op)
 			dsql_var* variable = (dsql_var*) parameter->nod_arg[e_var_variable];
 			dsql_fld* field = variable->var_field;
 
-			if (field->fld_constrained || field->fld_not_nullable)
+			if (field->fld_full_domain || field->fld_not_nullable)
 			{
 				// ASF: To validate input parameters we need only to read his value.
 				// Assigning it to null is an easy way to do this.
@@ -5929,14 +5929,14 @@ static void put_dtype(dsql_req* request, const dsql_fld* field, bool use_subtype
 		if (field->fld_explicit_collation)
 		{
 			request->append_uchar(blr_domain_name2);
-			request->append_uchar(field->fld_constrained ? 1 : 0);
+			request->append_uchar(field->fld_full_domain ? blr_domain_full : blr_domain_type_of);
 			request->append_cstring(0, field->fld_type_of_name);
 			request->append_ushort(field->fld_ttype);
 		}
 		else
 		{
 			request->append_uchar(blr_domain_name);
-			request->append_uchar(field->fld_constrained ? 1 : 0);
+			request->append_uchar(field->fld_full_domain ? blr_domain_full : blr_domain_type_of);
 			request->append_cstring(0, field->fld_type_of_name);
 		}
 
@@ -6011,7 +6011,7 @@ static void put_field( dsql_req* request, dsql_fld* field, bool udf_flag)
 		if (field->fld_explicit_collation)
 			request->append_number(isc_dyn_fld_collation, field->fld_collation_id);
 
-		if (!field->fld_constrained)
+		if (!field->fld_full_domain)
 			request->append_number(isc_dyn_prm_mechanism, prm_mech_type_of);
 
 		return;
@@ -6100,7 +6100,7 @@ static void put_local_variable( dsql_req* request, dsql_var* variable,
 	// Check for a default value, borrowed from define_domain
 	dsql_nod* node = (host_param) ? host_param->nod_arg[e_dfl_default] : 0;
 
-	if (node || (!field->fld_constrained && !field->fld_not_nullable))
+	if (node || (!field->fld_full_domain && !field->fld_not_nullable))
 	{
 		request->append_uchar(blr_assignment);
 

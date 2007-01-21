@@ -1326,7 +1326,7 @@ data_type_descriptor :	init_data_type data_type
 		| column_def_name
 			{
 				((dsql_fld*) $1)->fld_type_of_name = ((dsql_fld*) $1)->fld_name;
-				((dsql_fld*) $1)->fld_constrained = true;
+				((dsql_fld*) $1)->fld_full_domain = true;
 				$$ = $1;
 			}
 		;
@@ -2436,7 +2436,7 @@ domain_type
 	|	symbol_column_name
 			{
 				lex.g_field->fld_type_of_name = ((dsql_str*) $1)->str_data;
-				lex.g_field->fld_constrained = true;
+				lex.g_field->fld_full_domain = true;
 			}
 	;
 
@@ -4724,7 +4724,7 @@ static dsql_fld* make_field (dsql_nod* field_name)
 	field->fld_type_of_name = NULL;
 	field->fld_explicit_collation = false;
 	field->fld_not_nullable = false;
-	field->fld_constrained = false;
+	field->fld_full_domain = false;
 
 	return field;
 }

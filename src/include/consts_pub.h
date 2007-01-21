@@ -914,4 +914,8 @@
 #define fb_dbg_map_varname			3
 #define fb_dbg_map_argument			4
 
+// sub code for fb_dbg_map_argument
+#define fb_dbg_arg_input			0
+#define fb_dbg_arg_output			1
+
 #endif // ifndef INCLUDE_CONSTS_PUB_H

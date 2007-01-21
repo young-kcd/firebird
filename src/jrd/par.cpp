@@ -380,18 +380,13 @@ USHORT PAR_desc(thread_db* tdbb, CompilerScratch* csb, DSC* desc, ItemInfo* item
 	case blr_domain_name:
 	case blr_domain_name2:
 		{
-			bool fullDomain = (BLR_BYTE != 0);
+			bool fullDomain = (BLR_BYTE == blr_domain_full);
 			Firebird::MetaName* name = FB_NEW(csb->csb_pool) Firebird::MetaName(csb->csb_pool);
 			par_name(csb, *name);
 
 			FieldInfo fieldInfo;
 			bool exist = csb->csb_map_field_info.get(*name, fieldInfo);
-
-			if (!MET_get_domain_desc(tdbb, *name, desc, (exist ? NULL : &fieldInfo)))
-			{
-				error(csb, isc_domnotdef,
-					  isc_arg_string, ERR_cstring(name->c_str()), 0);
-			}
+			MET_get_domain(tdbb, *name, desc, (exist ? NULL : &fieldInfo));
 
 			if (!exist)
 				csb->csb_map_field_info.put(*name, fieldInfo);
@@ -1254,13 +1249,7 @@ static jrd_nod* par_field(thread_db* tdbb, CompilerScratch* csb, SSHORT blr_oper
 		node->nod_count = 0;
 
 		dsc* desc = (dsc*) (node->nod_arg + e_domval_desc);
-
-		if (!MET_get_domain_desc(tdbb, csb->csb_domain_validation, desc, NULL))
-		{
-			error(csb, isc_domnotdef,
-				  isc_arg_string, ERR_cstring(csb->csb_domain_validation.c_str()),
-				  0);
-		}
+		MET_get_domain(tdbb, csb->csb_domain_validation, desc, NULL);
 
 		return node;
 	}
@@ -1623,6 +1612,8 @@ static jrd_nod* par_message(thread_db* tdbb, CompilerScratch* csb)
 		desc->dsc_address = (UCHAR *) (IPTR) offset;
 		offset += desc->dsc_length;
 
+		// ASF: Odd indexes are the nullable flag.
+		// So we only check even indexes, which is the actual parameter.
 		if (itemInfo.isSpecial() && index % 2 == 0)
 		{
 			csb->csb_dbg_info.argInfoToName.get(

@@ -3071,7 +3071,7 @@ static int blr_print_dtype(gds_ctl* control)
 	case blr_domain_name:
 	case blr_domain_name2:
 		{
-			// 0 = TYPE OF; 1 = full domain
+			// 0 = blr_domain_type_of; 1 = blr_domain_full
 			blr_print_byte(control);
 
 			for (UCHAR n = blr_print_byte(control); n > 0; --n)

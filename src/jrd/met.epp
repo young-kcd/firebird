@@ -185,16 +185,16 @@ static void post_used_procedures(trig_vec* vector)
 }
 
 
-bool MET_get_domain_desc(thread_db* tdbb, const Firebird::MetaName& name, dsc* desc, FieldInfo* fieldInfo)
+void MET_get_domain(thread_db* tdbb, const Firebird::MetaName& name, dsc* desc, FieldInfo* fieldInfo)
 {
 /**************************************
  *
- *	M E T _ g e t _ d o m a i n _ d e s c
+ *	M E T _ g e t _ d o m a i n
  *
  **************************************
  *
  * Functional description
- *      Get a domain descriptor.
+ *      Get domain descriptor and informations.
  *
  **************************************/
 	SET_TDBB(tdbb);
@@ -223,42 +223,52 @@ bool MET_get_domain_desc(thread_db* tdbb, const Firebird::MetaName& name, dsc* d
 			{
 				fieldInfo->nullable = FLD.RDB$NULL_FLAG.NULL || FLD.RDB$NULL_FLAG == 0;
 
-				if (FLD.RDB$DEFAULT_VALUE.NULL)
-					fieldInfo->defaultValue = NULL;
-				else
+				JrdMemoryPool* csb_pool = JrdMemoryPool::createPool();
+				Jrd::ContextPoolHolder context(tdbb, csb_pool);
+				try
 				{
-					CompilerScratch* csb = CompilerScratch::newCsb(*tdbb->getDefaultPool(), 5);
+					if (FLD.RDB$DEFAULT_VALUE.NULL)
+						fieldInfo->defaultValue = NULL;
+					else
+					{
+						CompilerScratch* csb = CompilerScratch::newCsb(*tdbb->getDefaultPool(), 5);
 
-					blb* blob = BLB_open(tdbb, dbb->dbb_sys_trans, &FLD.RDB$DEFAULT_VALUE);
-					SLONG length = blob->blb_length + 10;
-					Firebird::HalfStaticArray<UCHAR, 512>	temp;
+						blb* blob = BLB_open(tdbb, dbb->dbb_sys_trans, &FLD.RDB$DEFAULT_VALUE);
+						SLONG length = blob->blb_length + 10;
+						Firebird::HalfStaticArray<UCHAR, 512>	temp;
 
-					BLB_get_data(tdbb, blob, temp.getBuffer(length), length);
-					csb->csb_blr = temp.begin();
+						BLB_get_data(tdbb, blob, temp.getBuffer(length), length);
+						csb->csb_blr = temp.begin();
 
-					fieldInfo->defaultValue = PAR_blr(tdbb, NULL, temp.begin(), NULL, &csb, NULL, false, 0);
+						fieldInfo->defaultValue = PAR_blr(tdbb, NULL, temp.begin(), NULL, &csb, NULL, false, 0);
 
-					csb->csb_blr = 0;
-					delete csb;
+						csb->csb_blr = 0;
+						delete csb;
+					}
+
+					if (FLD.RDB$VALIDATION_BLR.NULL)
+						fieldInfo->validation = NULL;
+					else
+					{
+						CompilerScratch* csb = CompilerScratch::newCsb(*tdbb->getDefaultPool(), 5, name);
+
+						blb* blob = BLB_open(tdbb, dbb->dbb_sys_trans, &FLD.RDB$VALIDATION_BLR);
+						SLONG length = blob->blb_length + 10;
+						Firebird::HalfStaticArray<UCHAR, 512>	temp;
+
+						BLB_get_data(tdbb, blob, temp.getBuffer(length), length);
+						csb->csb_blr = temp.begin();
+
+						fieldInfo->validation = PAR_blr(tdbb, NULL, temp.begin(), NULL, &csb, NULL, false, 0);
+
+						csb->csb_blr = 0;
+						delete csb;
+					}
 				}
-
-				if (FLD.RDB$VALIDATION_BLR.NULL)
-					fieldInfo->validation = NULL;
-				else
+				catch (const Firebird::Exception&)
 				{
-					CompilerScratch* csb = CompilerScratch::newCsb(*tdbb->getDefaultPool(), 5, name);
-
-					blb* blob = BLB_open(tdbb, dbb->dbb_sys_trans, &FLD.RDB$VALIDATION_BLR);
-					SLONG length = blob->blb_length + 10;
-					Firebird::HalfStaticArray<UCHAR, 512>	temp;
-
-					BLB_get_data(tdbb, blob, temp.getBuffer(length), length);
-					csb->csb_blr = temp.begin();
-
-					fieldInfo->validation = PAR_blr(tdbb, NULL, temp.begin(), NULL, &csb, NULL, false, 0);
-
-					csb->csb_blr = 0;
-					delete csb;
+					JrdMemoryPool::deletePool(csb_pool);
+					throw;
 				}
 			}
 		}
@@ -267,8 +277,13 @@ bool MET_get_domain_desc(thread_db* tdbb, const Firebird::MetaName& name, dsc* d
 
 	if (!REQUEST(irq_l_domain))
 		REQUEST(irq_l_domain) = handle;
-	
-	return found;
+
+	if (!found)
+	{
+		ERR_post(isc_domnotdef,
+				 isc_arg_string, ERR_cstring(name.c_str()),
+				 0);
+	}
 }
 
 

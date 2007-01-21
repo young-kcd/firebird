@@ -229,7 +229,7 @@ public:
 	TEXT*		fld_type_of_name;		//!< TYPE OF
 	bool		fld_explicit_collation;	//!< COLLATE was explicit specified
 	bool		fld_not_nullable;		//!< NOT NULL was explicit specified
-	bool		fld_constrained;		//!< Type may be constrained
+	bool		fld_full_domain;		//!< Domain name without TYPE OF prefix
 	TEXT		fld_name[2];
 };
 

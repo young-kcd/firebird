@@ -62,6 +62,10 @@
 #define blr_domain_name2	(unsigned char)19
 #define blr_not_nullable	(unsigned char)20
 
+// first sub parameter for blr_domain_name[2]
+#define blr_domain_type_of	(unsigned char)0
+#define blr_domain_full		(unsigned char)1
+
 /* Historical alias for pre V6 applications */
 #define blr_date		blr_timestamp
 
