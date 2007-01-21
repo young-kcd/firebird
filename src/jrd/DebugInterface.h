@@ -70,8 +70,8 @@ struct ArgumentInfo
 	{
 		if (type == x.type)
 			return index > x.index;
-		else
-			return type > x.type;
+
+		return type > x.type;
 	}
 };
 

@@ -136,7 +136,7 @@ public:
 	bool		rse_writelock;
 	RecordSource*	rse_rsb;
 	jrd_nod*	rse_first;
-    jrd_nod*	rse_skip;
+	jrd_nod*	rse_skip;
 	jrd_nod*	rse_boolean;
 	jrd_nod*	rse_sorted;
 	jrd_nod*	rse_projection;
@@ -644,11 +644,11 @@ struct Item
 		{
 			if (subType == x.subType)
 				return index > x.index;
-			else
-				return subType > x.subType;
+
+			return subType > x.subType;
 		}
-		else
-            return type > x.type;
+
+		return type > x.type;
 	}
 };
 
@@ -768,7 +768,7 @@ public:
 	ResourceList	csb_resources;		/* Resources (relations and indexes) */
 	NodeStack		csb_dependencies;	/* objects this request depends upon */
 	Firebird::Array<RecordSource*> csb_fors;	/* stack of fors */
-    Firebird::Array<jrd_nod*> csb_exec_sta;		// Array of exec_into nodes
+	Firebird::Array<jrd_nod*> csb_exec_sta;		// Array of exec_into nodes
 	Firebird::Array<jrd_nod*> csb_invariants;	/* stack of invariant nodes */
 	Firebird::Array<jrd_node_base*> csb_current_nodes;	/* RecordSelExpr's and other invariant candidates within whose scope we are */
 #ifdef SCROLLABLE_CURSORS
@@ -786,7 +786,7 @@ public:
 	MapItemInfo			csb_map_item_info;		// Map item to item info
 	Firebird::MetaName	csb_domain_validation;	// Parsing domain constraint in PSQL
 
-    struct csb_repeat
+	struct csb_repeat
 	{
 		// We must zero-initialize this one
 		csb_repeat()
@@ -866,9 +866,9 @@ struct xcp_repeat {
 
 class PsqlException : public pool_alloc_rpt<xcp_repeat, type_xcp>
 {
-    public:
+public:
 	SLONG xcp_count;
-    xcp_repeat xcp_rpt[1];
+	xcp_repeat xcp_rpt[1];
 };
 
 const int xcp_sql_code	= 1;

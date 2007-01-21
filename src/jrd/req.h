@@ -153,7 +153,7 @@ const UCHAR REC_new_version	= 4;		/* savepoint created new record version and de
 
 class SaveRecordParam : public pool_alloc<type_srpb>
 {
-    public:
+public:
 	record_param srpb_rpb[1];		/* record parameter blocks */
 };
 
@@ -280,7 +280,7 @@ public:
 		req_unwind
 	} req_operation;				/* operation for next node */
 
-    StatusXcp req_last_xcp;			/* last known exception */
+	StatusXcp req_last_xcp;			/* last known exception */
 
 	record_param req_rpb[1];		/* record parameter blocks */
 };
@@ -337,7 +337,7 @@ enum {
 
 class IndexLock : public pool_alloc<type_idl>
 {
-    public:
+public:
 	IndexLock*	idl_next;		/* Next index lock block for relation */
 	Lock*		idl_lock;		/* Lock block */
 	jrd_rel*	idl_relation;	/* Parent relation */

@@ -3074,9 +3074,7 @@ static int blr_print_dtype(gds_ctl* control)
 			// 0 = TYPE OF; 1 = full domain
 			blr_print_byte(control);
 
-			UCHAR n = blr_print_byte(control);
-
-			while (n-- > 0)
+			for (UCHAR n = blr_print_byte(control); n > 0; --n)
 				blr_print_char(control);
 
 			if (dtype == blr_domain_name2)
