@@ -1,5 +1,6 @@
-Firebird Database Server 2.0
+Firebird Database Server 2.0.1
 ==================================================
+(Release Candidate 1)
 
   ** IMPORTANT **
 
@@ -10,9 +11,9 @@ Firebird Database Server 2.0
   ** ********* **
 
 This document is a guide to installing this package of
-Firebird 2.0 on the Win32 platform. These notes refer 
+Firebird 2.0.1 on the Win32 platform. These notes refer 
 to the installation package itself, rather than
-Firebird 2.0 in general.
+Firebird 2.0.1 in general.
 
 
 Contents
@@ -24,7 +25,6 @@ o Installation on systems with Firebird 1.5
 o Installing on systems with Firebird 2.0
 o New features of the installer
 o Known installation problems
-o Deprecated features related to installation
 o Uninstallation
 o Other Notes
 o Installation from a batch file

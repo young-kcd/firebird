@@ -1,7 +1,8 @@
 
 ==================================
-Firebird 2.0.0       (Win32 Build)
+Firebird 2.0.1       (Win32 Build)
 ==================================
+(Release Candidate 1)
 
 o Introduction
 o Intended Users
@@ -16,13 +17,13 @@ o Requesting New Features
 Introduction
 ============
 
-Welcome to Firebird 2.0
+Welcome to Firebird 2.0.1
 
 
 Intended Users
 ==============
 
-Firebird 2.0 has undergone extensive testing and is 
+Firebird 2.0.1 has undergone extensive testing and is 
 intended for widespread production use. However, users 
 are recommended to follow standard practices before 
 deploying this release on a production server. ie:
@@ -45,14 +46,14 @@ deploying this release on a production server. ie:
 Features in this release (all platforms)
 ========================================
 
-See doc/Firebird_v2.0.0.ReleaseNotes.pdf for more
+See doc/Firebird_v2.0.1.ReleaseNotes.pdf for more
 information.
 
 
 Bugs fixed in this release (all platforms)
 ==========================================
 
-See doc/Firebird_v2.0.0.ReleaseNotes.pdf for more
+See doc/Firebird_v2.0.1.ReleaseNotes.pdf for more
 information.
 
 
@@ -108,7 +109,7 @@ Requesting New Features
 Before submitting feature requests please review the
 existing feature request list. Chances are that someone
 has already thought of it. Existing feature requests
-can be browed here:
+can be browsed here:
 
   http://tracker.firebirdsql.org/secure/CreateIssue!default.jspa
 

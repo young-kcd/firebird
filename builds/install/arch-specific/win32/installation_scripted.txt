@@ -106,7 +106,7 @@ Parameters specific to Firebird installs
 /COMPONENTS="comma separated list of component names"
 
   Choose from - ServerComponent,
-		ServerComponent\SuperServerComponent, 
+                ServerComponent\SuperServerComponent, 
                 ServerComponent\ClassicServerComponent,
                 DevAdminComponent and 
                 ClientComponent
