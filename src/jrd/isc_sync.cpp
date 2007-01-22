@@ -57,7 +57,7 @@
 #include <setjmp.h>
 #endif
 
-#ifdef HP10
+#ifdef HPUX
 #include <sys/pstat.h>
 #endif
 
@@ -216,7 +216,7 @@ static void make_object_name(TEXT *, const TEXT *, const TEXT *);
 #endif
 
 
-#if defined FREEBSD || defined NETBSD || defined DARWIN
+#if defined FREEBSD || defined NETBSD || defined DARWIN || defined HPUX
 #define sigset      signal
 #endif
 
@@ -654,7 +654,7 @@ int ISC_event_init(EVENT event, int semid, int semnum)
 		pthread_cond_init(event->event_semnum, pthread_condattr_default);
 #else
 /* RITTER - added HP11 to the preprocessor condition below */
-#if (defined LINUX || defined DARWIN || defined HP11 || defined FREEBSD)
+#if (defined LINUX || defined DARWIN || defined FREEBSD || defined HPUX)
 		pthread_mutex_init(event->event_mutex, NULL);
 		pthread_cond_init(event->event_semnum, NULL);
 #else
@@ -782,8 +782,7 @@ int ISC_event_wait(
 #ifdef HP10
 		if (micro_seconds > 0 && (ret == -1) && (errno == EAGAIN))
 #else
-/* RITTER - added HP11 to the preprocessor condition below */
-#if (defined LINUX || defined DARWIN || defined HP11 || defined FREEBSD || defined AIX)
+#if (defined LINUX || defined DARWIN || defined HPUX || defined FREEBSD || defined AIX)
 		if (micro_seconds > 0 && (ret == ETIMEDOUT))
 #else
 		if (micro_seconds > 0 && (ret == ETIME))
@@ -3256,8 +3255,7 @@ int ISC_mutex_init(MTX mutex, SLONG semaphore)
 	 server (until we are to implement local IPC using shared
 	 memory in which case we need interprocess thread sync.
 */
-/* RITTER - added HP11 */
-#if (defined LINUX || defined DARWIN || defined HP11 || defined FREEBSD)
+#if (defined LINUX || defined DARWIN || defined FREEBSD || defined HPUX)
 	return pthread_mutex_init(mutex->mtx_mutex, NULL);
 #else
 	state = pthread_mutex_init(mutex->mtx_mutex, pthread_mutexattr_default);

@@ -148,9 +148,8 @@ typedef struct itm {
 #endif /* NO_NFS */
 
 
-#ifdef hpux
+#ifdef HPUX
 #define MTAB			"/etc/mnttab"
-/* RITTER - added HP11 to the pre-processor condition below */
 #if !(defined HP10 || defined HP11)
 #include <cluster.h>
 #endif

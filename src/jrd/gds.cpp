@@ -135,7 +135,7 @@
 //  engine and this change may imply side effect I haven't known 
 //  about yet. Tomas Nejedlik (tomas@nejedlik.cz)
 
-#if ((defined(LINUX) || defined(FREEBSD)) && defined(SUPERCLIENT))
+#if ((defined(LINUX) || defined(FREEBSD) || defined(HP11)) && defined(SUPERCLIENT))
 #define V4_THREADING
 #endif
 */
@@ -185,7 +185,7 @@ static void gdsPrefixInit();	// C++ function
 
 extern "C" {
 
-#if !(defined VMS || defined WIN_NT || defined LINUX || defined FREEBSD || defined NETBSD || defined DARWIN || defined AIX)
+#if !(defined VMS || defined WIN_NT || defined LINUX || defined FREEBSD || defined NETBSD || defined DARWIN || defined AIX || defined HP11)
 extern int errno;
 extern SCHAR *sys_errlist[];
 extern int sys_nerr;

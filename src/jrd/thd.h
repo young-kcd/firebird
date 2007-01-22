@@ -26,7 +26,7 @@
  *
  */
 /*
-$Id: thd.h,v 1.12.2.5 2006-11-05 14:38:13 alexpeshkoff Exp $
+$Id: thd.h,v 1.12.2.6 2007-01-22 12:27:53 paulbeach Exp $
 */
 
 #ifndef _JRD_THD_H_
@@ -41,7 +41,6 @@ $Id: thd.h,v 1.12.2.5 2006-11-05 14:38:13 alexpeshkoff Exp $
 #endif
 #endif
 
-/* RITTER - changed HP10 to HPUX in the line below */
 #if (defined(HPUX) && defined(SUPERSERVER))
 #define POSIX_THREADS		1
 #endif
@@ -69,6 +68,11 @@ $Id: thd.h,v 1.12.2.5 2006-11-05 14:38:13 alexpeshkoff Exp $
    engine and this change may imply side effect I haven't known 
    about yet. Tomas Nejedlik (tomas@nejedlik.cz)
 */
+
+#if (defined(HPUX) && defined(SUPERCLIENT))
+#define POSIX_THREADS           1
+#endif
+
 #if (defined(LINUX) && defined(SUPERCLIENT))
 #define POSIX_THREADS           1
 #endif

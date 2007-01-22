@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: sort.cpp,v 1.38.2.1 2003-12-24 13:02:01 dimitr Exp $
+ * $Id: sort.cpp,v 1.38.2.2 2007-01-22 12:27:53 paulbeach Exp $
  *
  * 2001-09-24  SJL - Temporary fix for large sort file bug
  *
@@ -64,7 +64,6 @@
 #include <stdio.h>
 #endif
 
-/* RITTER - declare seek and off_t - :ATTENTION: for 64bit I/O we might need ib_stdio.h ! */
 
 
 #ifdef SOLARIS

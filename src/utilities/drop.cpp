@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: drop.cpp,v 1.19.2.1 2006-11-05 14:38:27 alexpeshkoff Exp $
+ * $Id: drop.cpp,v 1.19.2.2 2007-01-22 12:27:58 paulbeach Exp $
  *
  * 2002.10.27 Sean Leyne - Completed removal of obsolete "DELTA" port
  * 2002.10.27 Sean Leyne - Completed removal of obsolete "IMP" port
@@ -240,6 +240,18 @@ static void remove_resource(
 	gds__prefix_lock(expanded_filename, filename);
 
 	shmem_data.sh_mem_semaphores = sem_count;
+
+#ifdef HP11
+	if (!ISC_map_file
+		(status_vector, expanded_filename, 
+		(void (*) (void *, sh_mem*, int)) dummy_init, 0, shm_length,
+		 &shmem_data)) {
+		ib_printf("\n***Unable to access %s resources:\n", label);
+		gds__print_status(status_vector);
+		return;
+	}
+
+#else
 	if (!ISC_map_file
 		(status_vector, expanded_filename, dummy_init, 0, shm_length,
 		 &shmem_data)) {
@@ -247,8 +259,9 @@ static void remove_resource(
 		gds__print_status(status_vector);
 		return;
 	}
+#endif
 
-	if ((key = get_key(expanded_filename)) == -1) {
+		 if ((key = get_key(expanded_filename)) == -1) {
 		ib_printf("\n***Unable to get the key value of the %s file.\n",
 				  label);
 		return;

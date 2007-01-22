@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.141.2.40 2006-12-06 16:07:31 alexpeshkoff Exp $
+dnl $Id: configure.in,v 1.141.2.41 2007-01-22 12:27:43 paulbeach Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -108,11 +108,11 @@ case "$target" in
 
   *-*-hpux*)
     MAKEFILE_PREFIX=hpux
-    PLATFORM=hpux
-    AC_DEFINE(hpux)
+    PLATFORM=HPUX
+    AC_DEFINE(HPUX)
     LOCK_MANAGER_FLG=Y
     EDITLINE_FLG=N
-    SHRLIB_EXT=so
+    SHRLIB_EXT=sl
     ;;
 
   i386-pc-solaris*)
@@ -416,7 +416,14 @@ if test "$PLATFORM" = "solx86" -o "$PLATFORM" = "SOLARIS"; then
   if test "$EDITLINE_FLG" = "Y"; then
   	AC_CHECK_LIB(termcap, main, XE_APPEND(-ltermcap,EDITLINE_A))
   fi
+  fi
   
+dnl pbeach: There is currently a limitation with shl_load(), where you can't
+dnl dynamically load pthread or any other library that has Thread Local
+dnl Storage declared and has a dependency on pthread.
+if test "$PLATFORM" = "HPUX"; then
+AC_CHECK_LIB(pthread, main)
+AC_CHECK_LIB(cl, main)
 fi
 
 
@@ -822,6 +829,23 @@ MAKE_SRC_DIR=builds/posix
 
 
 dnl EKU: handle platform specific installation and packaging
+dnl: Common Files
+case "$PLATFORM" in
+  [LINUX|HPUX])
+    INSTALL_MISC=src/install/misc
+    AC_CONFIG_FILES([
+    gen/install/misc/firebird.conf:${INSTALL_MISC}/firebird.conf
+    gen/install/misc/aliases.conf:${INSTALL_MISC}/aliases.conf.in
+    gen/install/bin/fb_config:${INSTALL_MISC}/fb_config.in
+    gen/install/bin/CSchangeRunUser.sh:${INSTALL_MISC}/CSchangeRunUser.sh.in
+    gen/install/bin/CSrestoreRootRunUser.sh:${INSTALL_MISC}/CSrestoreRootRunUser.sh.in
+    gen/install/bin/SSchangeRunUser.sh:${INSTALL_MISC}/SSchangeRunUser.sh.in
+    gen/install/bin/SSrestoreRootRunUser.sh:${INSTALL_MISC}/SSrestoreRootRunUser.sh.in],
+   [chmod a+x gen/install/scripts/*.sh gen/install/*sh 2>/dev/null])
+   ;;
+esac
+
+dnl: Platform Specific Files
 
 case "$PLATFORM" in
   LINUX)
@@ -840,8 +864,6 @@ case "$PLATFORM" in
                      gen/install/scripts/postuninstall.sh:${INSTALL_SRC_DIR}/postuninstall.sh.in
                      gen/install/scripts/rpmheader.txt:${INSTALL_SRC_DIR}/rpmheader.txt.in
                      gen/install/scripts/rpmfiles.txt:${INSTALL_SRC_DIR}/rpmfiles.txt.in
-                     gen/install/misc/firebird.conf:src/install/misc/firebird.conf
-                     gen/install/misc/aliases.conf:src/install/misc/aliases.conf.in
                      gen/install/misc/firebird.xinetd:src/install/arch-specific/linux/misc/firebird.xinetd.in
                      gen/install/misc/firebird.init.d.generic:src/install/arch-specific/linux/misc/firebird.init.d.generic.in
                      gen/install/misc/firebird.init.d.mandrake:src/install/arch-specific/linux/misc/firebird.init.d.mandrake.in
@@ -852,14 +874,29 @@ case "$PLATFORM" in
                      gen/install/bin/changeDBAPassword.sh:src/install/arch-specific/linux/misc/changeDBAPassword.sh.in
                      gen/install/bin/changeGdsLibraryCompatibleLink.sh:src/install/arch-specific/linux/misc/changeGdsLibraryCompatibleLink.sh.in
                      gen/install/bin/createAliasDB.sh:src/install/arch-specific/linux/misc/createAliasDB.sh.in
-                     gen/install/bin/fb_config:src/install/misc/fb_config.in
-                     gen/install/bin/CSchangeRunUser.sh:src/install/misc/CSchangeRunUser.sh.in
-                     gen/install/bin/CSrestoreRootRunUser.sh:src/install/misc/CSrestoreRootRunUser.sh.in
-                     gen/install/bin/SSchangeRunUser.sh:src/install/misc/SSchangeRunUser.sh.in
-                     gen/install/bin/SSrestoreRootRunUser.sh:src/install/misc/SSrestoreRootRunUser.sh.in
       ],[chmod a+x gen/install/scripts/*.sh gen/install/*sh 2>/dev/null])
     ;;
 
+  HPUX)
+    HP_INSTALL=src/install/arch-specific/hpux/${FIREBIRD_ARCH_TYPE}
+    HP_INSTALL_MISC=src/install/arch-specific/hpux/misc
+    AC_CONFIG_FILES([
+    gen/install/makeinstallImage.sh:${HP_INSTALL}/makeinstallImage.sh.in
+    gen/install/scripts/preInstall.sh:${HP_INSTALL}/preInstall.sh.in
+    gen/install/scripts/tarInstall.sh:${HP_INSTALL}/tarInstall.sh.in
+    gen/install/scripts/tarmainInstall.sh:${HP_INSTALL}/tarmainInstall.sh.in
+    gen/install/scripts/tarUninstall.sh:${HP_INSTALL}/tarUninstall.sh.in
+    gen/install/scripts/tarmainUninstall.sh:${HP_INSTALL}/tarmainUninstall.sh.in
+    gen/install/scripts/postInstall.sh:${HP_INSTALL}/postInstall.sh.in
+    gen/install/scripts/preUninstall.sh:${HP_INSTALL}/preUninstall.sh.in
+    gen/install/scripts/postUninstall.sh:${HP_INSTALL}/postUninstall.sh.in
+    gen/install/misc/firebird.init.d.hpux:${HP_INSTALL_MISC}/firebird.init.d.hpux.in
+    gen/install/misc/rc.config.firebird.hpux:${HP_INSTALL_MISC}/rc.config.firebird.hpux.in
+    gen/install/bin/changedbaPassword.sh:${HP_INSTALL_MISC}/changedbaPassword.sh.in
+    gen/install/bin/changegdslibrarycompatibleLink.sh:${HP_INSTALL_MISC}/changegdslibrarycompatibleLink.sh.in
+    gen/install/bin/createaliasDB.sh:${HP_INSTALL_MISC}/createaliasDB.sh.in], 
+    [chmod a+x gen/install/scripts/*.sh gen/install/*.sh 2>/dev/null])
+    ;;
 
   FREEBSD)
     AC_CONFIG_FILES([gen/install/install.sh:src/install/arch-specific/freebsd/install.sh.in

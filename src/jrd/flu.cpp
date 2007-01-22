@@ -43,7 +43,7 @@
  *
  */
 /*
-$Id: flu.cpp,v 1.34 2003-06-16 15:42:58 alexpeshkoff Exp $
+$Id: flu.cpp,v 1.34.2.1 2007-01-22 12:27:53 paulbeach Exp $
 */
 
 #include "firebird.h"
@@ -90,7 +90,7 @@ static int condition_handler(int *, int *, int *);
 
 /* HP-UX specific stuff */
 
-#ifdef HP10
+#ifdef HPUX
 #include <dl.h>
 #include <shl.h>
 #include <unistd.h>
@@ -221,7 +221,7 @@ void FLU_unregister_module(MOD module)
 		}
 	}
 
-#ifdef HP10
+#ifdef HPUX
 	shl_unload(module->mod_handle);
 #endif
 
@@ -364,7 +364,7 @@ FPTR_INT ISC_lookup_entrypoint(TEXT* module,
 #endif
 
 
-#ifdef HP10
+#ifdef HPUX
 #define LOOKUP
 FPTR_INT ISC_lookup_entrypoint(TEXT * module,
 							   TEXT * name, TEXT * ib_path_env_var,

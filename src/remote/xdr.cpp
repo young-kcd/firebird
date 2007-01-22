@@ -26,6 +26,9 @@
 
 #include "firebird.h"
 #include <string.h>
+#ifdef HP11
+#include <arpa/inet.h>
+#endif
 #include "../remote/remote.h"
 #include "../remote/xdr.h"
 #include "../jrd/common.h"
@@ -42,7 +45,7 @@
 #if defined(i386) || defined(I386) || defined(_M_IX86) || defined(AMD64)
 #define		SWAP_DOUBLE
 #else
-#if !defined(sparc) && !defined(PowerPC)
+#if !defined(sparc) && !defined(PowerPC) && !defined(hpux)
 #error "Define SWAP_DOUBLE for your platform correctly !"
 #endif
 #endif
