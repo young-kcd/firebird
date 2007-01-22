@@ -466,7 +466,7 @@ begin
   result := false;
 
   SelectedComponents := WizardSelectedComponents(false);
-  if pos(lowercase('ClassicServerComponent'),SelectedComponents) >0 then
+  if pos(lowercase('ServerComponent\ClassicServerComponent'),SelectedComponents) >0 then
     result := true;
 end;
 
@@ -495,7 +495,7 @@ procedure SetupSharedFilesArray;
 // - Files which are absolutely necessary for a functioning installation.
 //     Hence gbak and gfix are shared files, isql and qli are not
 // - Libraries
-// - License files 
+// - License files
 begin
 SetArrayLength(SharedFileArray,24);
 
@@ -591,10 +591,10 @@ end;
 function GetFirebirdDir: string;
 //Check if Firebird installed, get version info to global var and return root dir
 var
-	FirebirdDir: String;
+  FirebirdDir: String;
 begin
   FirebirdDir := '';
-	FirebirdVer := [0,0,0,0];
+  FirebirdVer := [0,0,0,0];
   RegQueryStringValue(HKEY_LOCAL_MACHINE,
     'SOFTWARE\Firebird Project\Firebird Server\Instances','DefaultInstance', FirebirdDir);
   //If nothing returned then check for the registry entry used during beta/RC phase
@@ -615,7 +615,7 @@ var
   InterBaseDir: String;
 begin
   InterBaseDir := '';
-	InterBaseVer   := [0,0,0,0];
+  InterBaseVer   := [0,0,0,0];
   RegQueryStringValue(HKEY_LOCAL_MACHINE,
     'SOFTWARE\Borland\InterBase\CurrentVersion','RootDirectory', InterBaseDir);
   if ( InterBaseDir <> '' ) then
@@ -673,7 +673,7 @@ function InstallCPLApplet: boolean;
 begin
   result := False;
   if ( (ConfigureFirebird) AND (not NoCPL) ) then
-     result := (ShouldProcessEntry('SuperServerComponent', 'InstallCPLAppletTask') = srYes) ;
+     result := (ShouldProcessEntry('ServerComponent\SuperServerComponent', 'InstallCPLAppletTask') = srYes) ;
 end;
 
 
