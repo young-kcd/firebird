@@ -1,3 +1,25 @@
+2007-01-21 16:35  asfernandes
+
+	* firebird2/src/: dsql/ddl.cpp (1.196), dsql/dsql.h (1.105),
+	dsql/parse.y (1.232), include/consts_pub.h (1.9), jrd/blr.h (1.30),
+	jrd/gds.cpp (1.212), jrd/met.epp (1.218), jrd/met_proto.h (1.59),
+	jrd/par.cpp (1.156):
+
+	Some changes based on Claudio's comments
+
+2007-01-21 08:46  robocop
+
+	* firebird2/src/jrd/: DebugInterface.h (1.4), exe.h (1.94), gds.cpp
+	(1.211), req.h (1.68):
+
+	Simplification and indentation.
+
+2007-01-21 08:16  robocop
+
+	* firebird2/builds/win32/msvc6/intl.dsp (1.37):
+
+	Removed unneeded junk.
+
 2007-01-20 18:19  alexpeshkoff
 
 	* firebird2/: src/auth/trusted/AuthSspi.cpp (1.4),
