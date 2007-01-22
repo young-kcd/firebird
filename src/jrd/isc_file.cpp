@@ -218,7 +218,6 @@ static BOOLEAN get_mounts(MNT *, TEXT *, IB_FILE *);
 #endif
 
 #ifdef hpux
-/* RITTER - added HP11 to the pre-processor condition below */
 #if !(defined HP10 || defined HP11)
 static BOOLEAN get_server(TEXT *, TEXT *);
 #endif

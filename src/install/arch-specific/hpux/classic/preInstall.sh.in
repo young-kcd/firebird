@@ -1,0 +1,263 @@
+#!/bin/sh
+#
+#  This library is part of the FirebirdSQL project
+#
+#  This library is free software; you can redistribute it and/or
+#  modify it under the terms of the GNU Lesser General Public
+#  License as published by the Free Software Foundation; either
+#  version 2.1 of the License, or (at your option) any later version.
+#  You may obtain a copy of the Licence at
+#  http://www.gnu.org/licences/lgpl.html
+#  
+#  As a special exception this file can also be included in modules
+#  with other source code as long as that source code has been 
+#  released under an Open Source Initiative certificed licence.  
+#  More information about OSI certification can be found at: 
+#  http://www.opensource.org 
+#  
+#  This module is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU Lesser General Public Licence for more details.
+#  
+#  This module was created by members of the firebird development 
+#  team.  All individual contributions remain the Copyright (C) of 
+#  those individuals and all rights are reserved.  Contributors to 
+#  this file are either listed below or can be obtained from a CVS 
+#  history command.
+# 
+#   Created by:  Mark O'Donohue <mark.odonohue@ludwig.edu.au>
+# 
+#   Contributor(s):
+#  
+# 
+#   $Id: preInstall.sh.in,v 1.1.2.1 2007-01-22 13:25:19 paulbeach Exp $
+# 
+
+
+# The pre install routine for Firebird Classic
+
+
+#------------------------------------------------------------------------
+# Prompt for response, store result in Answer
+
+Answer=""
+
+AskQuestion() {
+    Test=$1
+    DefaultAns=$2
+    echo -n "${1}"
+    Answer="$DefaultAns"
+    read Answer
+}
+
+
+#------------------------------------------------------------------------
+#  stop super server if it is running 
+#  Also will only stop firebird, since that has the init script
+
+
+stopServerIfRunning() {
+
+    checkString=`ps -ef | egrep "(fbserver|fbguard)" |grep -v grep`
+
+    if [ ! -z "$checkString" ] 
+      then
+        if [ -f /etc/init.d/firebird ]
+          then
+            /etc/init.d/firebird stop
+        elif [ -f /etc/rc.d/init.d/firebird ]
+          then
+            /etc/rc.d/init.d/firebird stop
+        fi
+    fi
+}
+
+#------------------------------------------------------------------------
+#  stop server if it is running
+
+
+checkIfServerRunning() {
+
+
+    stopServerIfRunning
+
+# Check is server is being actively used.
+
+    checkString=`ps -ef | egrep "(fbserver|fbguard)" |grep -v grep`
+
+    if [ ! -z "$checkString" ] 
+      then
+        echo "An instance of the Firebird SuperServer seems to be running." 
+        echo "(the fbserver or fbguard process was detected running on your system)"
+        echo "Please quit all Firebird applications and then proceed"
+        exit 1 
+    fi
+
+    checkString=`ps -ef | egrep "(fb_inet_server|gds_pipe)" |grep -v grep`
+
+    if [ ! -z "$checkString" ] 
+      then
+        echo "An instance of the Firebird classic server seems to be running." 
+        echo "(the fb_inet_server or gds_pipe process was detected running on your system)"
+        echo "Please quit all Firebird applications and then proceed." 
+        exit 1 
+    fi
+
+
+# Stop lock manager if it is the only thing running.
+
+    for i in `ps -ef | egrep "fb_lock_mgr" | awk '{print $2}' `
+     do
+        kill $i
+     done
+
+}
+
+#------------------------------------------------------------------------
+# Run process and check status
+
+
+runAndCheckExit() {
+    Cmd=$*
+
+#    echo $Cmd
+    $Cmd
+
+    ExitCode=$?
+
+    if [ $ExitCode -ne 0 ]
+      then
+        echo "Install aborted: The command $Cmd "
+        echo "                 failed with error code $ExitCode"
+        exit $ExitCode
+    fi
+}
+
+
+#------------------------------------------------------------------------
+#  Display message if this is being run interactively.
+
+
+displayMessage() {
+
+    msgText=$1
+    if [ ! -z "$InteractiveInstall" ]
+      then
+        echo $msgText
+    fi
+}
+
+
+#------------------------------------------------------------------------
+#  Archive any existing prior installed files.
+#  This is mainly for the .tar install since rpm packages take care of
+#  thier own.
+
+
+
+archivePriorInstallSystemFiles() {
+
+
+    if [ ! -f manifest.txt ]
+      then
+        return
+    fi
+
+    archiveFileList=""
+
+    for i in `cat manifest.txt`
+      do
+        if [ ! -d /$i ]  # Ignore directories 
+          then
+            if [ -e /$i ]
+              then
+                archiveFileList="$archiveFileList $i"          
+            fi
+        fi
+      done
+
+
+
+    for i in usr/sbin/rcfirebird etc/init.d/firebird etc/rc.d/init.d/firebird
+      do
+        DestFile=./$i
+        if [ -e /$DestFile ]
+          then
+            archiveFileList="$archiveFileList $DestFile"
+        fi
+      done
+
+    deleteFileList="$archiveFileList"
+
+
+    DestFile="$FBRootDir"
+
+    if [ ! -z "$archiveFileList" ]
+      then
+        cat <<EOF
+
+** Warning **
+    Some existing files have been detected from a prior install of 
+    FirebirdSQL.  These files will be archived in
+    file : ${ArchiveMainFile}
+    and then deleted.
+
+EOF
+
+        if [ ! -z "$InteractiveInstall" ]
+          then
+            AskQuestion "Press return to continue or ^C to abort"
+        fi
+
+    fi
+
+
+    if [ ! -z "$archiveFileList" ]
+      then
+
+        displayMessage "Archiving..."
+	oldPWD=`pwd`
+	cd /
+        runAndCheckExit "tar -cvf $ArchiveMainFile $archiveFileList"
+	cd $oldPWD
+
+        displayMessage "Done."
+        displayMessage "Deleting..."
+
+
+        oldPWD=`pwd`
+        cd /
+        for i in $deleteFileList
+          do
+            rm -f $i
+          done
+
+        cd $oldPWD
+
+        displayMessage "Done."
+
+    fi
+}
+
+
+#= Main Pre ================================================================
+
+    if  [ -z "$FirebirdInstallPrefix" ]
+       then
+        FirebirdInstallPrefix=/usr/local/firebird
+    fi
+    FBRootDir=$FirebirdInstallPrefix
+
+    FBBin=$FBRootDir/bin
+    ArchiveDateTag=`date +"%Y%m%d_%H%M"`
+    ArchiveMainFile="${FBRootDir}_${ArchiveDateTag}.tar"
+
+
+    checkIfServerRunning
+
+# Failing that we archive any files we find
+
+    archivePriorInstallSystemFiles
+
+
