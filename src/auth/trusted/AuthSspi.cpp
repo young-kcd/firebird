@@ -87,6 +87,15 @@ AuthSspi::~AuthSspi()
 
 bool AuthSspi::checkAdminPrivilege(PCtxtHandle phContext)
 {
+#if defined(_MSC_VER) && _MSC_VER <= 1200
+	// CVC: MSVC6 hack.
+	struct SecPkgContext_AccessToken
+	{
+		void* AccessToken;
+	};
+	const int SECPKG_ATTR_ACCESS_TOKEN = 18;
+#endif
+
 	// Query access token from security context
 	SecPkgContext_AccessToken spc;
 	spc.AccessToken = 0;
