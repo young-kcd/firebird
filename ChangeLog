@@ -1,3 +1,66 @@
+2007-01-22 16:57  paul_reeves
+
+	*
+	firebird2/src/install/arch-specific/win32/FirebirdInstallEnvironmentChecks.inc
+	(1.1.2.9):
+
+	Add correct prefix to sub-component of windows installer.
+
+2007-01-22 14:25  paulbeach
+
+	* firebird2/: doc/WhatsNew (1.36.2.60), src/jrd/isc_file.cpp
+	(1.52.2.8), src/install/arch-specific/hpux/Makefile.in (1.1.2.1),
+	src/install/arch-specific/hpux/classic/makeinstallImage.sh.in
+	(1.1.2.1), src/install/arch-specific/hpux/classic/postInstall.sh.in
+	(1.1.2.1),
+	src/install/arch-specific/hpux/classic/postUninstall.sh.in
+	(1.1.2.1), src/install/arch-specific/hpux/classic/preInstall.sh.in
+	(1.1.2.1),
+	src/install/arch-specific/hpux/classic/preUninstall.sh.in
+	(1.1.2.1), src/install/arch-specific/hpux/classic/tarInstall.sh.in
+	(1.1.2.1),
+	src/install/arch-specific/hpux/classic/tarUninstall.sh.in
+	(1.1.2.1),
+	src/install/arch-specific/hpux/classic/tarmainInstall.sh.in
+	(1.1.2.1),
+	src/install/arch-specific/hpux/classic/tarmainUninstall.sh.in
+	(1.1.2.1),
+	src/install/arch-specific/hpux/misc/changedbaPassword.sh.in
+	(1.1.2.1),
+	src/install/arch-specific/hpux/misc/changegdslibrarycompatibleLink.sh.in
+	(1.1.2.1), src/install/arch-specific/hpux/misc/createaliasDB.sh.in
+	(1.1.2.1),
+	src/install/arch-specific/hpux/misc/firebird.init.d.hpux.in
+	(1.1.2.1),
+	src/install/arch-specific/hpux/misc/rc.config.firebird.hpux.in
+	(1.1.2.1),
+	src/install/arch-specific/hpux/super/makeinstallImage.sh.in
+	(1.1.2.1), src/install/arch-specific/hpux/super/postInstall.sh.in
+	(1.1.2.1), src/install/arch-specific/hpux/super/postUninstall.sh.in
+	(1.1.2.1), src/install/arch-specific/hpux/super/preInstall.sh.in
+	(1.1.2.1), src/install/arch-specific/hpux/super/preUninstall.sh.in
+	(1.1.2.1), src/install/arch-specific/hpux/super/tarInstall.sh.in
+	(1.1.2.1), src/install/arch-specific/hpux/super/tarUninstall.sh.in
+	(1.1.2.1),
+	src/install/arch-specific/hpux/super/tarmainInstall.sh.in
+	(1.1.2.1),
+	src/install/arch-specific/hpux/super/tarmainUninstall.sh.in
+	(1.1.2.1):
+
+	More changes to support HPUX Ports
+
+2007-01-22 13:27  paulbeach
+
+	* firebird2/: configure.in (1.141.2.41), src/burp/canonical.cpp
+	(1.20.2.2), src/common/classes/locks.h (1.5.2.7), src/jrd/flu.cpp
+	(1.34.2.1), src/jrd/gds.cpp (1.84.2.11), src/jrd/isc_file.cpp
+	(1.52.2.7), src/jrd/isc_sync.cpp (1.55.2.5), src/jrd/sort.cpp
+	(1.38.2.2), src/jrd/thd.h (1.12.2.6), src/remote/inet.cpp
+	(1.70.2.9), src/remote/xdr.cpp (1.9.2.5), src/utilities/drop.cpp
+	(1.19.2.2):
+
+	Changes to support HPUX Ports
+
 2007-01-04 20:34  tsteinmaurer
 
 	* firebird2/src/install/arch-specific/win32/de/:
