@@ -1,3 +1,13 @@
+2007-01-22 17:13  paul_reeves
+
+	* firebird2/builds/install/arch-specific/win32/:
+	BuildExecutableInstall.bat (1.15.2.8), Readme.txt (1.9.2.5),
+	custom_messages.inc (1.2.4.4), installation_readme.txt (1.9.2.6),
+	installation_scripted.txt (1.1.6.2):
+
+	Misc. version number changes to bring installer up-to-date for
+	v2.0.1
+
 2007-01-18 16:47  alexpeshkoff
 
 	* firebird2/src/jrd/cch.h (1.28.4.1):
