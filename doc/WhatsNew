@@ -1,8 +1,7 @@
     * HPUX Ports
-	  Changes committed to CVS to support Classic and SuperServer
-        builds for HPUX11
+	    Changes committed to CVS to support Classic and SuperServer builds for HPUX11
       Contributor(s):
-	Paul Beach (pbeach at ibphoenix.com)
+        Paul Beach (pbeach at ibphoenix.com)
 
   **************
   * v1.5.4
