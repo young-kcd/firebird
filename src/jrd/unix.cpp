@@ -145,7 +145,7 @@ static BOOLEAN  raw_devices_validate_database (int, TEXT *, USHORT);
 static int  raw_devices_unlink_database (TEXT *);
 #endif
 
-#ifdef hpux
+#ifdef HPUX
 union fcntlun {
 	int val;
 	struct flock *lockdes;
@@ -411,7 +411,7 @@ void PIO_force_write(FIL file, USHORT flag)
  *	Set (or clear) force write, if possible, for the database.
  *
  **************************************/
-#ifdef hpux
+#ifdef HPUX
 	union fcntlun control;
 #else
 	int control;
@@ -421,7 +421,7 @@ void PIO_force_write(FIL file, USHORT flag)
    is a no-op. */
 
 #ifndef SUPERSERVER_V2
-#ifdef hpux
+#ifdef HPUX
 	control.val = (flag) ? SYNC : NULL;
 #else
 	control = (flag) ? SYNC : 0;

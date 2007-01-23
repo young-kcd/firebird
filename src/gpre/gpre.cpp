@@ -42,7 +42,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: gpre.cpp,v 1.26.2.3 2005-12-09 02:23:37 robocop Exp $
+//	$Id: gpre.cpp,v 1.26.2.4 2007-01-23 15:04:03 paulbeach Exp $
 //
 
 #define GPRE_MAIN
@@ -203,7 +203,7 @@ static struct ext_table_t dml_ext_table[] =
 #define ADA_EXTENSIONS
 	{ lang_ada, IN_SW_GPRE_ADA, ".eada", ".ada" },
 #endif
-#ifdef hpux
+#ifdef HPUX
 #define ADA_EXTENSIONS
 	{ lang_ada, IN_SW_GPRE_ADA, ".eada", ".ada" },
 #endif
@@ -2801,7 +2801,7 @@ static SSHORT skip_white()
 		}
 
 #if !defined(sun) && defined(GPRE_FORTRAN)
-		/* skip fortran embedded comments on VMS or hpux or sgi */
+		/* skip fortran embedded comments on VMS or HPUX or sgi */
 
 		if (c == '!'
 			&& (sw_language == lang_fortran)) {

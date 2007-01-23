@@ -199,7 +199,7 @@ static ArchitectureType archMatrix10[CLASS_MAX10 + 1] = {
 #endif
 #endif
 
-#ifdef hpux
+#ifdef HPUX
 #define CLASS		CLASS_HPUX_PA
 #endif
 

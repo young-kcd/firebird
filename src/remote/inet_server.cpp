@@ -32,7 +32,7 @@
  *
  */
 /*
-$Id: inet_server.cpp,v 1.26.2.4 2005-03-28 09:22:39 robocop Exp $
+$Id: inet_server.cpp,v 1.26.2.5 2007-01-23 15:04:20 paulbeach Exp $
 */
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -113,7 +113,7 @@ $Id: inet_server.cpp,v 1.26.2.4 2005-03-28 09:22:39 robocop Exp $
 #endif
 #endif
 
-#ifndef hpux
+#ifndef HPUX
 #define sigvector	sigvec
 #endif
 

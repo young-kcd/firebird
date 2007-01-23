@@ -41,7 +41,7 @@
  *
  */
 /*
-$Id: inet.cpp,v 1.70.2.9 2007-01-22 12:27:56 paulbeach Exp $
+$Id: inet.cpp,v 1.70.2.10 2007-01-23 15:04:20 paulbeach Exp $
 */
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -119,7 +119,7 @@ extern "C" int innetgr(const char *, const char *, const char *, const char *);
 
 #include "../common/config/config.h"
 
-#if (defined hpux || defined SCO_UNIX)
+#if (defined HPUX || defined SCO_UNIX)
 extern int h_errno;
 #endif
 
@@ -179,7 +179,7 @@ typedef int socklen_t;
 #define EINTR		0
 #endif
 
-#ifndef hpux
+#ifndef HPUX
 #define sigvector	sigvec
 #endif
 

@@ -45,7 +45,7 @@
 #if defined(i386) || defined(I386) || defined(_M_IX86) || defined(AMD64)
 #define		SWAP_DOUBLE
 #else
-#if !defined(sparc) && !defined(PowerPC) && !defined(hpux)
+#if !defined(sparc) && !defined(PowerPC) && !defined(HPUX)
 #error "Define SWAP_DOUBLE for your platform correctly !"
 #endif
 #endif

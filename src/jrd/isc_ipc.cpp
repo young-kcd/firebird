@@ -34,7 +34,7 @@
  *
  */
 
- /* $Id: isc_ipc.cpp,v 1.37.2.1 2005-09-21 07:51:09 alexpeshkoff Exp $ */
+ /* $Id: isc_ipc.cpp,v 1.37.2.2 2007-01-23 15:04:16 paulbeach Exp $ */
 
 #ifdef SHLIB_DEFS
 #define LOCAL_SHLIB_DEFS
@@ -235,7 +235,7 @@ static void sigwait_thread(int);
 #endif
 
 #ifndef sigvector
-#ifndef hpux
+#ifndef HPUX
 #define sigvector	sigvec
 #endif
 #endif

@@ -217,7 +217,7 @@ static BOOLEAN get_mounts(MNT *, TEXT *, IB_FILE *);
 #endif
 #endif
 
-#ifdef hpux
+#ifdef HPUX
 #if !(defined HP10 || defined HP11)
 static BOOLEAN get_server(TEXT *, TEXT *);
 #endif
@@ -404,8 +404,7 @@ int ISC_analyze_nfs(TEXT * expanded_filename, TEXT * node_name)
 	MTAB_CLOSE(mtab);
 #endif
 
-#ifdef hpux
-/* RITTER - added HP11 to the pre-processor condition below */
+#ifdef HPUX
 #if !(defined HP10 || defined HP11)
 	if (!flag)
 		flag = get_server(expanded_filename, node_name);
@@ -1682,8 +1681,7 @@ static BOOLEAN get_mounts(MNT * mount, TEXT * buffer, IB_FILE * file)
 }
 #endif // GET_MOUNTS
 
-#ifdef hpux
-/* RITTER - added HP11 to the pre-processor condition below */
+#ifdef HPUX
 #if !(defined HP10 || defined HP11)
 static BOOLEAN get_server(TEXT * file_name, TEXT * node_name)
 {
@@ -1714,7 +1712,7 @@ static BOOLEAN get_server(TEXT * file_name, TEXT * node_name)
 	return TRUE;
 }
 #endif
-#endif // hpux
+#endif // HPUX
 #endif // NO_NFS
 
 

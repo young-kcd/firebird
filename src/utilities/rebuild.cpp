@@ -39,7 +39,7 @@
 #include "../jrd/dmp_proto.h"
 #include "../jrd/gds_proto.h"
 
-#ifdef hpux
+#ifdef HPUX
 #define CCH_DUMMY
 #endif
 

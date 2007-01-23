@@ -56,7 +56,7 @@
 #endif
 #endif
 
-#ifdef hpux
+#ifdef HPUX
 #define ARCHITECTURE		arch_hpux
 #endif
 

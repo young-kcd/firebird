@@ -206,7 +206,7 @@ static void make_object_name(TEXT *, const TEXT *, const TEXT *);
 #endif
 
 #ifndef sigvector
-#ifndef hpux
+#ifndef HPUX
 #define sigvector	sigvec
 #endif
 #endif

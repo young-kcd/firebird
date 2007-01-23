@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: ftn.cpp,v 1.20.2.3 2005-11-29 10:22:53 kkuznetsov Exp $
+//	$Id: ftn.cpp,v 1.20.2.4 2007-01-23 15:04:03 paulbeach Exp $
 //
 // 2002.10.28 Sean Leyne - Completed removal of obsolete "DGUX" port
 // 2002.10.28 Sean Leyne - Completed removal of obsolete "SGI" port
@@ -340,7 +340,7 @@ static ADL array_decl_list;
 #define COMMA           ","
 #endif
 
-#ifdef hpux
+#ifdef HPUX
 #define INCLUDE_ISC_FTN  "       INCLUDE  '%s\' \n\n"
 #define INCLUDE_FTN_FILE "include/gds.f"
 #define DOUBLE_DCL      "DOUBLE PRECISION"
@@ -1610,7 +1610,7 @@ static void gen_database_decls( ACT action)
 	REF reference;
 	SSHORT count, max_count;
 	LLS stack_ptr;
-#ifdef hpux
+#ifdef HPUX
 	SSHORT length, i, index;
 #endif
 
@@ -1681,7 +1681,7 @@ static void gen_database_decls( ACT action)
 			dcl_ndx_var = TRUE;
 		}
 
-#ifdef hpux
+#ifdef HPUX
 		/* build fields to handle start_multiple */
 
 		count++;
@@ -1699,7 +1699,7 @@ static void gen_database_decls( ACT action)
 		printa(COLUMN, "COMMON /%s/ %s", name, name);
 	}
 
-#ifdef hpux
+#ifdef HPUX
 //  declare array and set up equivalence for start_multiple vector 
 
 	length = 12;
@@ -1914,7 +1914,7 @@ static void gen_dyn_execute( ACT action)
 {
 	DYN statement;
 	TEXT *transaction, s1[64], *sqlda, *sqlda2;
-#ifdef hpux
+#ifdef HPUX
 	TEXT s2[64], s3[64];
 #endif
 	struct gpre_req *request, req_const;
@@ -1937,7 +1937,7 @@ static void gen_dyn_execute( ACT action)
 
 	sqlda = statement->dyn_sqlda;
 	sqlda2 = statement->dyn_sqlda2;
-#ifdef hpux
+#ifdef HPUX
 	if (sqlda) {
 		sprintf(s2, "isc_baddress (%s)", sqlda);
 		sqlda = s2;
@@ -1974,14 +1974,14 @@ static void gen_dyn_fetch( ACT action)
 {
 	DYN statement;
 	TEXT s1[64], *sqlda;
-#ifdef hpux
+#ifdef HPUX
 	TEXT s2[64];
 #endif
 
 	statement = (DYN) action->act_object;
 
 	sqlda = statement->dyn_sqlda;
-#ifdef hpux
+#ifdef HPUX
 	if (sqlda) {
 		sprintf(s2, "isc_baddress (%s)", sqlda);
 		sqlda = s2;
@@ -2010,7 +2010,7 @@ static void gen_dyn_immediate( ACT action)
 	DYN statement;
 	DBB database;
 	TEXT *transaction, *sqlda, *sqlda2;
-#ifdef hpux
+#ifdef HPUX
 	TEXT s2[64], s3[64];
 #endif
 	struct gpre_req *request, req_const;
@@ -2035,7 +2035,7 @@ static void gen_dyn_immediate( ACT action)
 
 	sqlda = statement->dyn_sqlda;
 	sqlda2 = statement->dyn_sqlda2;
-#ifdef hpux
+#ifdef HPUX
 	if (sqlda) {
 		sprintf(s2, "isc_baddress (%s)", sqlda);
 		sqlda = s2;
@@ -2074,14 +2074,14 @@ static void gen_dyn_insert( ACT action)
 {
 	DYN statement;
 	TEXT s1[64], *sqlda;
-#ifdef hpux
+#ifdef HPUX
 	TEXT  s2[64];
 #endif
 
 	statement = (DYN) action->act_object;
 
 	sqlda = statement->dyn_sqlda;
-#ifdef hpux
+#ifdef HPUX
 	if (sqlda) {
 		sprintf(s2, "isc_baddress (%s)", sqlda);
 		sqlda = s2;
@@ -2108,7 +2108,7 @@ static void gen_dyn_open( ACT action)
 {
 	DYN statement;
 	TEXT *transaction, s1[64], *sqlda, *sqlda2;
-#ifdef hpux
+#ifdef HPUX
 	TEXT s2[64], s3[64];
 #endif
 	struct gpre_req *request, req_const;
@@ -2131,7 +2131,7 @@ static void gen_dyn_open( ACT action)
 
 	sqlda = statement->dyn_sqlda;
 	sqlda2 = statement->dyn_sqlda2;
-#ifdef hpux
+#ifdef HPUX
 	if (sqlda) {
 		sprintf(s2, "isc_baddress (%s)", sqlda);
 		sqlda = s2;
@@ -2169,7 +2169,7 @@ static void gen_dyn_prepare( ACT action)
 	DYN statement;
 	DBB database;
 	TEXT *transaction, s1[64], *sqlda;
-#ifdef hpux
+#ifdef HPUX
 	TEXT * s2[64];
 #endif
 	struct gpre_req *request, req_const;
@@ -2193,7 +2193,7 @@ static void gen_dyn_prepare( ACT action)
 	}
 
 	sqlda = statement->dyn_sqlda;
-#ifdef hpux
+#ifdef HPUX
 	if (sqlda) {
 		sprintf(s2, "isc_baddress (%s)", sqlda);
 		sqlda = s2;
@@ -4197,7 +4197,7 @@ static void gen_t_start( ACT action)
 	DBB db;
 	GPRE_TRA trans;
 	TPB tpb;
-#ifdef hpux
+#ifdef HPUX
 	int count;
 #endif
 	TEXT *filename;
@@ -4223,8 +4223,8 @@ static void gen_t_start( ACT action)
 			}
 		}
 
-#ifdef hpux
-//  If this is hpux we should be building a teb vector here 
+#ifdef HPUX
+//  If this is HPUX we should be building a teb vector here 
 //  with the tpb address and length specified 
 
 	for (tpb = trans->tra_tpb, count = 0; tpb; tpb = tpb->tpb_tra_next) {
@@ -4933,7 +4933,7 @@ static void t_start_auto( GPRE_REQ request, TEXT * vector, ACT action, SSHORT te
 			}
 
 		count++;
-#ifdef hpux
+#ifdef HPUX
 		printa(COLUMN, "ISC_TEB%d_LEN = 0", count);
 		printa(COLUMN, "ISC_TEB%d_TPB = ISC_NULL", count);
 		printa(COLUMN, "ISC_TEB%d_DBB = ISC_BADDRESS (%s)", count,
@@ -4951,7 +4951,7 @@ static void t_start_auto( GPRE_REQ request, TEXT * vector, ACT action, SSHORT te
 			printa(COLUMN, "IF (%s) THEN", buffer);
 	}
 
-#ifdef hpux
+#ifdef HPUX
 	printa(COLUMN_INDENT, "CALL ISC_START_MULTIPLE (%s, %s, %s%d%s, ISC_TEB)",
 		   vector, trname, I2CONST_1, count, I2CONST_2);
 #else

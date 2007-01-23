@@ -22,7 +22,7 @@
  *
  */
 /*
-$Id: align.h,v 1.6 2003-02-14 02:50:10 brodsom Exp $
+$Id: align.h,v 1.6.2.1 2007-01-23 15:04:27 paulbeach Exp $
 */
 
 #ifdef VMS
@@ -35,7 +35,7 @@ $Id: align.h,v 1.6 2003-02-14 02:50:10 brodsom Exp $
 #endif
 #endif
 
-#ifdef hpux
+#ifdef HPUX
 #define FB_ALIGN(n,b)          ((n + b - 1) & ~(b - 1))
 #endif
 

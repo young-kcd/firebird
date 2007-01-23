@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: gpre.h,v 1.33.2.2 2005-10-24 16:51:47 awharrison Exp $
+ * $Id: gpre.h,v 1.33.2.3 2007-01-23 15:04:04 paulbeach Exp $
  * Revision 1.3  2000/11/27 09:26:13  fsg
  * Fixed bugs in gpre to handle PYXIS forms
  * and allow edit.e and fred.e to go through
@@ -78,7 +78,7 @@ extern "C" {
 #endif
 
 #ifdef GPRE_ADA
-#if (defined hpux && defined HP10) || defined SCO_UNIX
+#if (defined HPUX && defined HP10) || defined SCO_UNIX
 #define ALSYS_ADA       1
 #endif
 #endif
