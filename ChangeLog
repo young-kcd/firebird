@@ -1,3 +1,22 @@
+2007-01-23 16:04  paulbeach
+
+	* firebird2/src/: gpre/ftn.cpp (1.20.2.4), gpre/gpre.cpp
+	(1.26.2.4), gpre/gpre.h (1.33.2.3), jrd/isc_file.cpp (1.52.2.9),
+	jrd/isc_ipc.cpp (1.37.2.2), jrd/isc_sync.cpp (1.55.2.6),
+	jrd/license.h (1.30.2.2), jrd/pag.cpp (1.37.2.10), jrd/unix.cpp
+	(1.25.2.3), remote/inet.cpp (1.70.2.10), remote/inet_server.cpp
+	(1.26.2.5), remote/remote_def.h (1.23.2.1), remote/xdr.cpp
+	(1.9.2.6), utilities/rebuild.cpp (1.8.2.1), v5_examples/align.h
+	(1.6.2.1):
+
+	Make HPUX consistent across the source
+
+2007-01-23 15:27  asfernandes
+
+	* firebird2/doc/WhatsNew (1.36.2.61):
+
+	Misc
+
 2007-01-22 16:57  paul_reeves
 
 	*
