@@ -118,7 +118,7 @@ AppName={cm:MyAppName}
 ;The following is important - all ISS install packages should
 ;duplicate this. See the InnoSetup help for details.
 AppID=FBDBServer_{#BaseVer}
-AppVerName=Firebird 2.0.0
+AppVerName=Firebird 2.0.1
 AppPublisher=Firebird Project
 AppPublisherURL={#FirebirdURL}
 AppSupportURL={#FirebirdURL}
@@ -266,14 +266,14 @@ Name: {group}\Firebird Server; Filename: {app}\bin\fbserver.exe; Parameters: -a;
 Name: {group}\Firebird Guardian; Filename: {app}\bin\fbguard.exe; Parameters: -a; Flags: runminimized; MinVersion: 4.0,4.0;  Check: InstallGuardianIcon; IconIndex: 1; Components: ServerComponent\SuperServerComponent; Comment: Run Firebird Super Server (with guardian)
 Name: {group}\Firebird ISQL Tool; Filename: {app}\bin\isql.exe; WorkingDir: {app}; MinVersion: 4.0,4.0;  Comment: {cm:RunISQL}
 #define App_Name = SetupSetting("AppName")
-Name: {group}\Firebird 2.0.0 Release Notes; Filename: {app}\doc\Firebird_v2.0.0.ReleaseNotes.pdf; MinVersion: 4.0,4.0;  Comment: {#App_Name} {cm:ReleaseNotes}
-Name: {group}\Firebird 1.5.3 Release Notes; Filename: {app}\doc\Firebird_v1.5.3.ReleaseNotes.pdf; MinVersion: 4.0,4.0;  Comment: {#App_Name} {cm:ReleaseNotes}
+Name: {group}\Firebird 2.0.1 Release Notes; Filename: {app}\doc\Firebird_v2.0.1.ReleaseNotes.pdf; MinVersion: 4.0,4.0;  Comment: {#App_Name} {cm:ReleaseNotes}
+Name: {group}\Firebird 1.5.4 Release Notes; Filename: {app}\doc\Firebird_v1.5.4.ReleaseNotes.pdf; MinVersion: 4.0,4.0;  Comment: {#App_Name} {cm:ReleaseNotes}
 Name: {group}\Firebird 2.0 Quick Start Guide; Filename: {app}\doc\Firebird-2.0-QuickStart.pdf; MinVersion: 4.0,4.0;  Comment: {#App_Name}
 ;Name: {group}\Firebird 1.5.2 Release Notes; Filename: {app}\doc\Firebird_v1.5.2.ReleaseNotes.pdf; MinVersion: 4.0,4.0;  Comment: {#App_Name} {cm:ReleaseNotes}
 ;Name: {group}\Firebird 1.5.1 Release Notes; Filename: {app}\doc\Firebird_v1.5.1.ReleaseNotes.pdf; MinVersion: 4.0,4.0;  Comment: {#App_Name} {cm:ReleaseNotes}
 ;Name: {group}\Firebird 1.5 Release Notes; Filename: {app}\doc\Firebird_v1.5.ReleaseNotes.pdf; MinVersion: 4.0,4.0;  Comment: {#App_Name} {cm:ReleaseNotes}
 ;Always install the original english version
-Name: {group}\Firebird 2.0.0 Readme; Filename: {app}\readme.txt; MinVersion: 4.0,4.0;
+Name: {group}\Firebird 2.0.1 Readme; Filename: {app}\readme.txt; MinVersion: 4.0,4.0;
 #ifdef i18n
 ;And install translated readme.txt if non-default language is chosen.
 Name: {group}\{cm:IconReadme}; Filename: {app}\{cm:ReadMeFile}; MinVersion: 4.0,4.0; Components: DevAdminComponent; Check: NonDefaultLanguage;
