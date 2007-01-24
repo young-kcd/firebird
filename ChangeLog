@@ -1,3 +1,13 @@
+2007-01-23 16:19  paul_reeves
+
+	*
+	firebird2/builds/install/arch-specific/win32/installation_scripted.txt
+	(1.1.6.3):
+
+	Document the correct usage of the Win32 installer /COMPONENT flag
+
+	(As reported in CORE-1103)
+
 2007-01-22 17:13  paul_reeves
 
 	* firebird2/builds/install/arch-specific/win32/:
