@@ -274,7 +274,7 @@ static HANDLE	wakeup_event[1];
 #define GET_TIME	time (NULL)
 
 const SLONG HASH_MIN_SLOTS	= 101;
-const SLONG HASH_MAX_SLOTS	= 2048;
+const SLONG HASH_MAX_SLOTS	= 65521;
 const USHORT HISTORY_BLOCKS	= 256;
 const int LOCKMANTIMEOUT	= 300;
 
@@ -3186,7 +3186,7 @@ static void lock_initialize(void* arg, SH_MEM shmem_data, bool initialize)
 	if (LOCK_ordering)
 		LOCK_header->lhb_flags |= LHB_lock_ordering;
 
-	const SSHORT length =
+	const SLONG length =
 		sizeof(lhb) +
 		(LOCK_header->lhb_hash_slots * sizeof(LOCK_header->lhb_hash[0]));
 	LOCK_header->lhb_length = shmem_data->sh_mem_length_mapped;
