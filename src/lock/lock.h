@@ -57,12 +57,6 @@
 #include "../jrd/isc_signal.h"
 #include "../jrd/que.h"
 
-#ifdef WIN_NT
-const int DEFAULT_SIZE		= 32768;
-#else
-const int DEFAULT_SIZE		= 98304;
-#endif
-
 #define EXTEND_SIZE     32768
 
 // not used

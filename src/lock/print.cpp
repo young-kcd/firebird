@@ -315,12 +315,10 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 	shmem_data.sh_mem_semaphores = 0;
 #endif
 
-	SLONG LOCK_size_mapped = DEFAULT_SIZE;
-
-#ifdef UNIX
-	LOCK_size_mapped = 0;		/* Use length of existing segment */
+#ifndef VMS
+	SLONG LOCK_size_mapped = 0;			/* Use length of existing segment */
 #else
-	LOCK_size_mapped = DEFAULT_SIZE;	/* length == 0 not supported by all non-UNIX */
+	SLONG LOCK_size_mapped = 1048576;	/* length == 0 not supported by VMS */
 #endif
 
 	ISC_STATUS_ARRAY status_vector;
