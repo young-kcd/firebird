@@ -1,3 +1,12 @@
+2007-01-24 11:02  paul_reeves
+
+	*
+	firebird2/builds/install/arch-specific/win32/FirebirdInstall_20.iss
+	(1.12.2.9):
+
+	More misc. version number changes to bring installer up-to-date for
+	v2.0.1
+
 2007-01-23 16:19  paul_reeves
 
 	*
