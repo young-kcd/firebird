@@ -77,11 +77,7 @@ const ConfigImpl::ConfigEntry ConfigImpl::entries[] =
 #endif
 	{TYPE_INTEGER,		"ConnectionTimeout",		(ConfigValue) 180},			// seconds
 	{TYPE_INTEGER,		"DummyPacketInterval",		(ConfigValue) 0},			// seconds
-#if defined(WIN_NT) && !defined(SUPERSERVER)
 	{TYPE_INTEGER,		"LockMemSize",				(ConfigValue) 1048576},		// bytes
-#else
-	{TYPE_INTEGER,		"LockMemSize",				(ConfigValue) 262144},		// bytes
-#endif
 #if defined(SINIXZ) || defined(FREEBSD) || defined(NETBSD)
 	{TYPE_INTEGER,		"LockSemCount",				(ConfigValue) 25},			// semaphores
 #else
@@ -89,7 +85,7 @@ const ConfigImpl::ConfigEntry ConfigImpl::entries[] =
 #endif
 	{TYPE_INTEGER,		"LockSignal",				(ConfigValue) 16},			// signal #
 	{TYPE_BOOLEAN,		"LockGrantOrder",			(ConfigValue) true},
-	{TYPE_INTEGER,		"LockHashSlots",			(ConfigValue) 101},			// slots
+	{TYPE_INTEGER,		"LockHashSlots",			(ConfigValue) 1009},		// slots
 	{TYPE_INTEGER,		"LockAcquireSpins",			(ConfigValue) 0},
 	{TYPE_INTEGER,		"EventMemSize",				(ConfigValue) 65536},		// bytes
 	{TYPE_INTEGER,		"DeadlockTimeout",			(ConfigValue) 10},			// seconds
