@@ -6299,10 +6299,16 @@ static dsql_nod* pass1_merge(dsql_req* request, dsql_nod* input, bool proc_flag)
 	dsql_nod* source = input->nod_arg[e_mrg_using];		// USING
 	dsql_nod* target = input->nod_arg[e_mrg_relation];	// INTO
 
-	// build a left join between USING and INTO tables
+	// build a join between USING and INTO tables
 	dsql_nod* join = MAKE_node(nod_join, e_join_count);
 	join->nod_arg[e_join_left_rel] = source;
-	join->nod_arg[e_join_type] = MAKE_node(nod_join_left, 0);
+
+	// left join if WHEN NOT MATCHED is present
+	if (input->nod_arg[e_mrg_when]->nod_arg[e_mrg_when_not_matched])
+		join->nod_arg[e_join_type] = MAKE_node(nod_join_left, 0);
+	else
+		join->nod_arg[e_join_type] = MAKE_node(nod_join_inner, 0);
+
 	join->nod_arg[e_join_rght_rel] = target;
 	join->nod_arg[e_join_boolean] = input->nod_arg[e_mrg_condition];
 
