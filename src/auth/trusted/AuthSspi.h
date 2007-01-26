@@ -26,10 +26,10 @@ private:
 	bool hasContext;
 	Firebird::string ctName;
 
-//	Handle of library
+	// Handle of library
 	static HINSTANCE library;
 
-// declare entries, required from secur32.dll
+	// declare entries, required from secur32.dll
 	ACQUIRE_CREDENTIALS_HANDLE_FN_A fAcquireCredentialsHandle;
 	DELETE_SECURITY_CONTEXT_FN fDeleteSecurityContext;
 	FREE_CREDENTIALS_HANDLE_FN fFreeCredentialsHandle;

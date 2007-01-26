@@ -46,10 +46,10 @@ class dsql_req;
 namespace YValve 
 {
 	// flags
-	const UCHAR HANDLE_TRANSACTION_limbo	= 1;
-	const UCHAR HANDLE_BLOB_filter			= 2;	/* Blob is locally filtered */
-	const UCHAR HANDLE_STATEMENT_local		= 4;	/* Process DSQL statement locally */
-	const UCHAR HANDLE_STATEMENT_prepared	= 8;
+	const UCHAR HANDLE_TRANSACTION_limbo	= 0x01;
+	const UCHAR HANDLE_BLOB_filter			= 0x02;	// Blob is locally filtered
+	const UCHAR HANDLE_STATEMENT_local		= 0x04;	// Process DSQL statement locally
+	const UCHAR HANDLE_STATEMENT_prepared	= 0x08;
 	const UCHAR HANDLE_shutdown				= 0x10;	// Database shutdown
 
 	// forwards

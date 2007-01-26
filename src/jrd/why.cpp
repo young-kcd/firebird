@@ -580,9 +580,9 @@ namespace
 			handle = 0;
 		}
 	private:
-		YEntry(const YEntry&);	//prohibit copy constructor
+		YEntry(const YEntry&);	// prohibit copy constructor
 		
-		bool recursive;				//loopback call from ExecState, Udf, etc.
+		bool recursive;				// loopback call from ExecState, Udf, etc.
 
 		static bool inside;
 		static Handle* handle;

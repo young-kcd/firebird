@@ -6490,7 +6490,7 @@ static ISC_STATUS shutdown_dbb(thread_db* tdbb, Database* dbb, Attachment** rele
 			}
 			
 			// attach became invalid pointer
-			// if we have someone, intereted in that fact, inform him
+			// if we have someone interested in that fact, inform him
 			if (released)
 			{
 				*released++ = attach;
@@ -6537,7 +6537,7 @@ static ISC_STATUS shutdown_all()
 	{
 		dbb_next = dbb->dbb_next;
 		
-		ISC_STATUS rc = shutdown_dbb(tdbb, dbb, 0);
+		ISC_STATUS rc = shutdown_dbb(tdbb, dbb, NULL);
 		if (rc != FB_SUCCESS)
 		{
 			if (initialized) 
@@ -6851,7 +6851,7 @@ void JRD_shutdown_all(bool asyncMode)
 // defined SERVER_SHUTDOWN, performs full or partial shutdown 
 // of database. SERVER_SHUTDOWN defined controls some other
 // aspects of operation, therefore was left "as is". 
-// Who wants to invent better naem for it, please do it.
+// Who wants to invent better name for it, please do it.
 
 void JRD_process_close()
 {
