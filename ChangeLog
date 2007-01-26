@@ -1,3 +1,29 @@
+2007-01-26 02:24  asfernandes
+
+	* firebird2/src/: auth/trusted/AuthSspi.h (1.8), jrd/jrd.cpp
+	(1.300), jrd/why.cpp (1.119), jrd/y_handle.h (1.16):
+
+	Misc
+
+2007-01-26 01:36  asfernandes
+
+	* firebird2/src/jrd/flu.h (1.14):
+
+	This destructor should be virtual to not leak resources
+
+2007-01-25 14:26  dimitr
+
+	* firebird2/src/lock/: lock.h (1.36), print.cpp (1.51):
+
+	A kind of cleanup.
+
+2007-01-25 13:54  dimitr
+
+	* firebird2/: src/common/config/config.cpp (1.75),
+	builds/install/misc/firebird.conf (1.26):
+
+	Resolved CORE-937.
+
 2007-01-24 20:48  dimitr
 
 	* firebird2/src/lock/lock.cpp (1.117):
