@@ -239,6 +239,21 @@
       Contributor(s):
         Adriano dos Santos Fernandes <adrianosf at uol.com.br>
 
+    * Improvement CORE-958
+        Increase the maximum number of hash slots for the Lock Manager.
+      Note(s):
+        The new limit is 64K slots (the old one was 2048).
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Improvement CORE-937
+        Change default lock manager settings -- increase table memory and number of slots.
+      Note(s):
+        The default lock table size has been increased to 1MB on all platforms,
+        the new default number of hash slots is 1009.
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
     * Improvement CORE-863
         INSERT without values
       Example(s):
