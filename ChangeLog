@@ -1,3 +1,29 @@
+2007-01-26 23:17  hvlad
+
+	* firebird2/src/jrd/utl.cpp (1.98):
+
+	Fixed CORE-1110 : isc_get_client_xxx_version not fully compatible
+	with IB's gds32.dll
+
+2007-01-26 11:31  alexpeshkoff
+
+	* firebird2/src/jrd/jrd.h (1.184):
+
+	Fixed results of copyNpaste technique - thanks to Adriano.
+
+2007-01-26 11:16  asfernandes
+
+	* firebird2/src/dsql/pass1.cpp (1.302):
+
+	No need to generated a outer join if WHEN NOT MATCHED is not
+	present in MERGE
+
+2007-01-26 08:48  dimitr
+
+	* firebird2/doc/WhatsNew (1.112):
+
+	Updated docs.
+
 2007-01-26 02:24  asfernandes
 
 	* firebird2/src/: auth/trusted/AuthSspi.h (1.8), jrd/jrd.cpp
