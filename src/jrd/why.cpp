@@ -350,7 +350,7 @@ inline Transaction* findTransaction(FB_API_HANDLE* public_handle, Attachment *a)
 
 static int get_database_info(ISC_STATUS *, Transaction*, TEXT **);
 static const PTR get_entrypoint(int, int);
-static USHORT sqlda_buffer_size(XSQLDA*, USHORT);
+static USHORT sqlda_buffer_size(USHORT, XSQLDA*, USHORT);
 static ISC_STATUS get_transaction_info(ISC_STATUS *, Transaction*, TEXT **);
 
 static void iterative_sql_info(ISC_STATUS *, FB_API_HANDLE*, SSHORT, const SCHAR *, SSHORT,
@@ -413,6 +413,9 @@ static USHORT subsystem_FPE_reset = FPE_RESET_INIT_ONLY;
 const int MAXERRORSTRINGLENGTH	= 250;
 static TEXT glbstr1[MAXERRORSTRINGLENGTH];
 static const TEXT glbunknown[10] = "<unknown>";
+
+const USHORT PREPARE_BUFFER_SIZE	= 32768;	// size of buffer used in isc_dsql_prepare call
+const USHORT DESCRIBE_BUFFER_SIZE	= 1024;		// size of buffer used in isc_dsql_describe_xxx call
 
 namespace 
 {
@@ -2231,8 +2234,8 @@ ISC_STATUS API_ROUTINE isc_dsql_describe(ISC_STATUS * user_status,
 		}
 		else
 		{
-			Firebird::HalfStaticArray<SCHAR, 512> local_buffer;
-			USHORT buffer_len = sqlda_buffer_size(sqlda, dialect);
+			Firebird::HalfStaticArray<SCHAR, DESCRIBE_BUFFER_SIZE> local_buffer;
+			USHORT buffer_len = sqlda_buffer_size(DESCRIBE_BUFFER_SIZE, sqlda, dialect);
 			SCHAR *buffer = local_buffer.getBuffer(buffer_len);
 
 			if (!GDS_DSQL_SQL_INFO(	status,
@@ -2283,14 +2286,14 @@ ISC_STATUS API_ROUTINE isc_dsql_describe_bind(ISC_STATUS * user_status,
 		Statement* statement = translate<Statement>(stmt_handle);
 
 		sqlda_sup::dasup_clause& clause = 
-			statement->das.dasup_clauses[DASUP_CLAUSE_select];
+			statement->das.dasup_clauses[DASUP_CLAUSE_bind];
 
 		if (clause.dasup_info_len && clause.dasup_info_buf)
 		{
 			iterative_sql_info(	status,
 								stmt_handle,
-								sizeof(describe_select_info),
-								describe_select_info,
+								sizeof(describe_bind_info),
+								describe_bind_info,
 								clause.dasup_info_len,
 								clause.dasup_info_buf,
 								dialect,
@@ -2298,8 +2301,8 @@ ISC_STATUS API_ROUTINE isc_dsql_describe_bind(ISC_STATUS * user_status,
 		}
 		else
 		{
-			Firebird::HalfStaticArray<SCHAR, 512> local_buffer;
-			USHORT buffer_len = sqlda_buffer_size(sqlda, dialect);
+			Firebird::HalfStaticArray<SCHAR, DESCRIBE_BUFFER_SIZE> local_buffer;
+			USHORT buffer_len = sqlda_buffer_size(DESCRIBE_BUFFER_SIZE, sqlda, dialect);
 			SCHAR *buffer = local_buffer.getBuffer(buffer_len);
 
 			if (!GDS_DSQL_SQL_INFO(	status,
@@ -3349,7 +3352,7 @@ ISC_STATUS API_ROUTINE GDS_DSQL_PREPARE(ISC_STATUS* user_status,
 		SCHAR *buffer;
 		sqlda_sup& dasup = statement->das;
 
-		buffer_len = sqlda_buffer_size(sqlda, dialect);
+		buffer_len = sqlda_buffer_size(PREPARE_BUFFER_SIZE, sqlda, dialect);
 		Attachment*	database = statement->parent;
 		buffer = database->db_prepare_buffer.getBuffer(buffer_len);
 
@@ -5588,8 +5591,8 @@ static const PTR get_entrypoint(int proc,
 }
 
 
-static USHORT sqlda_buffer_size(XSQLDA * sqlda,
-								 USHORT dialect)
+static USHORT sqlda_buffer_size(USHORT min_buffer_size, XSQLDA * sqlda,
+								USHORT dialect)
 {
 /**************************************
  *
@@ -5621,6 +5624,8 @@ static USHORT sqlda_buffer_size(XSQLDA * sqlda,
 		n_variables = ((SQLDA *) sqlda)->sqln;
 
 	ULONG length = 32 + n_variables * 172;
+	if (length < min_buffer_size)
+		length = min_buffer_size;
 
 	return (USHORT)((length > 65500L) ? 65500L : length);
 }
