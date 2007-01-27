@@ -1471,7 +1471,6 @@ ISC_STATUS API_ROUTINE GDS_COMMIT_RETAINING(ISC_STATUS * user_status,
 	try 
 	{
 		Transaction* transaction = translate<Transaction>(tra_handle);
-		Transaction* sub;
 		status.setPrimaryHandle(transaction);
 
 		for (Transaction* sub = transaction; sub; sub = sub->next)
