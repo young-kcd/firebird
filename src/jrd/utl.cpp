@@ -945,7 +945,7 @@ void API_ROUTINE isc_get_client_version(SCHAR *buffer)
  **************************************/
 
 	if (buffer)
-		strcpy(buffer, FB_VERSION);
+		strcpy(buffer, ISC_VERSION);
 }
 
 
@@ -961,7 +961,7 @@ int API_ROUTINE isc_get_client_major_version()
  *
  **************************************/
 
-	return atoi(FB_MAJOR_VER);
+	return atoi(ISC_MAJOR_VER);
 }
 
 
@@ -977,7 +977,7 @@ int API_ROUTINE isc_get_client_minor_version()
  *
  **************************************/
 
-	return atoi(FB_MINOR_VER);
+	return atoi(ISC_MINOR_VER);
 }
 
 
