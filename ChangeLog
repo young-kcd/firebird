@@ -1,3 +1,10 @@
+2007-01-27 16:28  hvlad
+
+	* firebird2/src/jrd/utl.cpp (1.90.4.1):
+
+	Fixed CORE-1110 : isc_get_client_xxx_version not fully compatible
+	with IB's gds32.dll
+
 2007-01-24 11:02  paul_reeves
 
 	*
