@@ -2806,7 +2806,7 @@ static bool delete_procedure(	thread_db*	tdbb,
 					 0);
 			*/
 			gds__log("Deleting procedure %s which is currently in use by active user requests",
-					 work->dfw_name);
+					 work->dfw_name.c_str());
 			MET_delete_dependencies(tdbb, work->dfw_name, obj_procedure);
 
 			if (procedure->prc_existence_lock) {
@@ -4221,7 +4221,7 @@ static bool modify_procedure(	thread_db*	tdbb,
 					 0);
 			*/
 			gds__log("Modifying procedure %s which is currently in use by active user requests",
-					 work->dfw_name);
+					 work->dfw_name.c_str());
 
 			USHORT prc_alter_count = procedure->prc_alter_count;
 			if (prc_alter_count > MAX_PROC_ALTER)
