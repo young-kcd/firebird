@@ -1,3 +1,22 @@
+2007-01-27 16:40  hvlad
+
+	* firebird2/src/jrd/jrd.cpp (1.301):
+
+	GTT related bugfix
+
+2007-01-27 16:38  hvlad
+
+	* firebird2/src/jrd/why.cpp (1.121):
+
+	Restore broken logic of isc_dsql_prepare, bugfix in
+	isc_dsql_describe_bind
+
+2007-01-27 16:04  asfernandes
+
+	* firebird2/src/jrd/why.cpp (1.120):
+
+	Removed unused variable
+
 2007-01-26 23:17  hvlad
 
 	* firebird2/src/jrd/utl.cpp (1.98):
