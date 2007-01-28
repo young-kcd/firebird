@@ -5101,7 +5101,7 @@ ISC_STATUS compile_request(ISC_STATUS* user_status,
 		request->req_request = attachment->att_requests;
 		attachment->att_requests = request;
 
-		request->req_sql_text = Firebird::string(string, string_length);
+		request->req_sql_text.assign(string, string_length);
 		request->req_stats.setParent(&attachment->att_stats);
 	
 		DEBUG;
@@ -6476,21 +6476,22 @@ static ISC_STATUS shutdown_dbb(thread_db* tdbb, Database* dbb, Attachment** rele
 			ISC_STATUS_ARRAY user_status;
 			tdbb->tdbb_status_vector = user_status;
 
+			V4_JRD_MUTEX_LOCK(dbb->dbb_mutexes + DBB_MUTX_init_fini);
 			try 
 			{
 				// purge attachment, rollback any open transactions
-				V4_JRD_MUTEX_LOCK(dbb->dbb_mutexes + DBB_MUTX_init_fini);
 				purge_attachment(tdbb, user_status, attach, true);
-				V4_JRD_MUTEX_UNLOCK(databases_mutex);
 			}
 			catch (const Firebird::Exception& ex) 
 			{
+				V4_JRD_MUTEX_UNLOCK(databases_mutex);
 				if (released)
 				{
 					*released = 0;
 				}
 				return error(user_status, ex);
 			}
+			V4_JRD_MUTEX_UNLOCK(databases_mutex);
 			
 			// attach became invalid pointer
 			// if we have someone interested in that fact, inform him
@@ -6547,6 +6548,9 @@ static ISC_STATUS shutdown_all()
 			{
 				JRD_SS_MUTEX_UNLOCK;
 			}
+
+			JRD_restore_context();
+
 			return rc;
 		}
 	}
