@@ -3625,7 +3625,7 @@ static jrd_nod* pass1(thread_db* tdbb,
 
 					for (NodeStack::iterator i(stack); i.hasData(); ++i)
 					{
-						jrd_nod* new_node = PAR_make_node(tdbb, 1);
+						jrd_nod* new_node = PAR_make_node(tdbb, 3);
 						new_node->nod_type = nod_value_if;
 						new_node->nod_count = 3;
 
