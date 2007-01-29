@@ -1705,7 +1705,7 @@ event_argument_opt	: /*',' value
 
 singleton_select	: select INTO variable_list
 			{ $$ = make_node (nod_for_select, (int) e_flp_count, $1,
-					  make_list ($3), NULL, NULL); }
+					  make_list ($3), NULL, NULL, NULL); }
 		;
 
 variable	: ':' symbol_variable_name
