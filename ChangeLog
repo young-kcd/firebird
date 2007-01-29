@@ -1,3 +1,46 @@
+2007-01-29 04:17  dimitr
+
+	* firebird2/src/dsql/parse.y (1.233):
+
+	Let's always initialize node arguments. Thanks to Claudio and David
+	Rushby.
+
+2007-01-29 04:03  dimitr
+
+	* firebird2/src/jrd/evl.cpp (1.214):
+
+	Fixed one more related issue for CORE-1112.
+
+2007-01-29 04:00  dimitr
+
+	* firebird2/src/jrd/: evl.cpp (1.213), par.cpp (1.157):
+
+	Fixed both bugs mentioned in CORE-1112.
+
+2007-01-28 17:23  alexpeshkoff
+
+	* firebird2/src/jrd/cmp.cpp (1.247):
+
+	Fix for CORE-1111 - memory was overwritten
+
+2007-01-28 16:35  alexpeshkoff
+
+	* firebird2/builds/posix/Makefile.in.intl (1.29):
+
+	fixed posix build
+
+2007-01-28 13:17  alexpeshkoff
+
+	* firebird2/src/jrd/jrd.cpp (1.302):
+
+	Fixed some problems, noticed by Claudio.
+
+2007-01-28 08:03  dimitr
+
+	* firebird2/src/jrd/dfw.epp (1.201):
+
+	Fixed bug in the ported code.
+
 2007-01-27 16:40  hvlad
 
 	* firebird2/src/jrd/jrd.cpp (1.301):
