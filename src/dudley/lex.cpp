@@ -66,7 +66,7 @@ const SCHAR CHR_LETTER = CHR_letter | CHR_ident;
 const SCHAR CHR_DIGIT = CHR_digit | CHR_ident;
 const SCHAR CHR_QUOTE = CHR_quote;
 const SCHAR CHR_WHITE = CHR_white;
-const SCHAR CHR_EOL = CHR_eol; // CHR_white;
+const SCHAR CHR_EOL = CHR_white;
 
 
 static SCHAR classes_array[256] = {
