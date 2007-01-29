@@ -1,3 +1,9 @@
+2007-01-28 08:03  dimitr
+
+	* firebird2/src/jrd/dfw.epp (1.178.2.4):
+
+	Fixed bug in the ported code.
+
 2007-01-27 16:28  hvlad
 
 	* firebird2/src/jrd/utl.cpp (1.90.4.1):
