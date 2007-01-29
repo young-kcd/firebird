@@ -4492,7 +4492,7 @@ static bool string_boolean(thread_db* tdbb, jrd_nod* node, dsc* desc1,
 		}
 
 		USHORT xtype1;
-		const SSHORT l1 =
+		const USHORT l1 =
 			MOV_get_string_ptr(desc1, &xtype1, &p1,
 							   reinterpret_cast<vary*>(temp1),
 							   sizeof(temp1));
