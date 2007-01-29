@@ -4400,11 +4400,11 @@ static bool sleuth(thread_db* tdbb, jrd_nod* node, const dsc* desc1, const dsc* 
 
 	UCHAR* p1;
 	MoveBuffer sleuth_str;
-	SSHORT l1 = MOV_make_string2(desc3, ttype, &p1, sleuth_str);
+	USHORT l1 = MOV_make_string2(desc3, ttype, &p1, sleuth_str);
 /* Get address and length of search string */
 	UCHAR* p2;
 	MoveBuffer match_str;
-	SSHORT l2 = MOV_make_string2(desc2, ttype, &p2, match_str);
+	USHORT l2 = MOV_make_string2(desc2, ttype, &p2, match_str);
 
 /* Merge search and control strings */
 	UCHAR control[BUFFER_SMALL];
