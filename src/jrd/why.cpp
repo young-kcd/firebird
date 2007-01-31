@@ -3031,39 +3031,51 @@ ISC_STATUS API_ROUTINE GDS_DSQL_FETCH2(ISC_STATUS* user_status,
  *	Fetch next record from a dynamic SQL cursor
  *
  **************************************/
-	ISC_STATUS s, *status;
-	ISC_STATUS_ARRAY local;
-	WHY_STMT statement;
-	USHORT blr_length, msg_type, msg_length;
-	sqlda_sup* dasup;
-
-	GET_STATUS;
-	TRANSLATE_HANDLE(*stmt_handle, statement, HANDLE_statement, isc_bad_stmt_handle);
-
-	if (!(dasup = statement->das))
-		return bad_handle(user_status, isc_unprepared_stmt);
-
-	if (UTLD_parse_sqlda(status, dasup, &blr_length, &msg_type, &msg_length,
-						 dialect, sqlda, DASUP_CLAUSE_select))
-		return error2(status, local);
-
-	if ((s = GDS_DSQL_FETCH2_M(status, stmt_handle, blr_length,
-							   dasup->dasup_clauses[DASUP_CLAUSE_select].dasup_blr,
-							   0, msg_length,
-							   dasup->dasup_clauses[DASUP_CLAUSE_select].dasup_msg,
-							   direction, offset))
-							   && s != 101)
+	Status status(user_status);
+	try
 	{
-		CHECK_STATUS(status);
-		return s;
+		if (!sqlda) 
+		{
+			Firebird::status_exception::raise(isc_dsql_sqlda_err, isc_arg_end);
+		}
+
+		Statement* statement = translate<Statement>(stmt_handle);
+
+		statement->checkPrepared();
+		sqlda_sup& dasup = statement->das;
+
+		USHORT blr_length, msg_type, msg_length;
+
+		if (UTLD_parse_sqlda(status, &dasup, &blr_length, &msg_type, &msg_length,
+						 dialect, sqlda, DASUP_CLAUSE_select))
+		{
+			return status[1];
+		}
+
+		ISC_STATUS s = GDS_DSQL_FETCH2_M(status, stmt_handle, blr_length,
+							   dasup.dasup_clauses[DASUP_CLAUSE_select].dasup_blr,
+							   0, msg_length,
+							   dasup.dasup_clauses[DASUP_CLAUSE_select].dasup_msg,
+							   direction, offset);
+		if (s && s != 101)
+		{
+			status.ok();
+			return s;
+		}
+
+		if (UTLD_parse_sqlda(status, &dasup, NULL, NULL, NULL,
+							 dialect, sqlda, DASUP_CLAUSE_select))
+		{
+			return status[1];
+		}
+		status.ok();
+	}
+	catch (const Firebird::Exception& e)
+	{
+		e.stuff_exception(status);
 	}
 
-	if (UTLD_parse_sqlda(status, dasup, NULL, NULL, NULL,
-						 dialect, sqlda, DASUP_CLAUSE_select))
-			return error2(status, local);
-
-	CHECK_STATUS(status);
-	return s;
+	return status[1];
 }
 #endif
 
@@ -3096,21 +3108,23 @@ ISC_STATUS API_ROUTINE GDS_DSQL_FETCH_M(ISC_STATUS* user_status,
 #ifndef NO_LOCAL_DSQL
 			(statement->flags & HANDLE_STATEMENT_local) ?
 				dsql8_fetch(status, &statement->handle, blr_length, blr, 
-							msg_type, msg_length, msg) :
+							msg_type, msg_length, msg
 #ifdef SCROLLABLE_CURSORS
-							, (USHORT) 0, (ULONG) 1) :
+							, (USHORT) 0, (ULONG) 1
 #endif // SCROLLABLE_CURSORS
+							) :
 #endif // NO_LOCAL_DSQL
 			CALL(PROC_DSQL_FETCH, statement->implementation) (status,
 															  &statement->handle,
 															  blr_length, blr,
 															  msg_type,
-															  msg_length, msg);
+															  msg_length, msg
 #ifdef SCROLLABLE_CURSORS
 															  ,
 															  (USHORT) 0,
-															  (ULONG) 1);
+															  (ULONG) 1
 #endif // SCROLLABLE_CURSORS
+															  );
 
 		if (s == 100 || s == 101)
 		{
@@ -3148,23 +3162,20 @@ ISC_STATUS API_ROUTINE GDS_DSQL_FETCH2_M(ISC_STATUS* user_status,
  *	Fetch next record from a dynamic SQL cursor
  *
  **************************************/
-	ISC_STATUS s, *status;
-	ISC_STATUS_ARRAY local;
-	WHY_STMT statement;
+	YEntry status(user_status);
+	try 
+	{
+		Statement* statement = translate<Statement>(stmt_handle);
+		status.setPrimaryHandle(statement);
 
-	GET_STATUS;
-	TRANSLATE_HANDLE(*stmt_handle, statement, HANDLE_statement, isc_bad_stmt_handle);
-
-	subsystem_enter();
-
+		ISC_STATUS s =
 #ifndef NO_LOCAL_DSQL
-	if (statement->flags & HANDLE_STATEMENT_local)
-		s = dsql8_fetch(status,
+			(statement->flags & HANDLE_STATEMENT_local) ?
+			dsql8_fetch(status,
 						&statement->handle, blr_length, blr, msg_type,
-						msg_length, msg, direction, offset);
-	else
+						msg_length, msg, direction, offset) :
 #endif
-		s = CALL(PROC_DSQL_FETCH, statement->implementation) (status,
+			CALL(PROC_DSQL_FETCH, statement->implementation) (status,
 															  &statement->
 															  handle,
 															  blr_length, blr,
@@ -3173,15 +3184,18 @@ ISC_STATUS API_ROUTINE GDS_DSQL_FETCH2_M(ISC_STATUS* user_status,
 															  direction,
 															  offset);
 
-	subsystem_exit();
+		if (s == 100 || s == 101)
+		{
+			status.ok();
+			return s;
+		}
+	}
+	catch (const Firebird::Exception& e)
+	{
+		e.stuff_exception(status);
+	}
 
-	CHECK_STATUS(status);
-	if (s == 100 || s == 101)
-		return s;
-	else if (s)
-		return error2(status, local);
-
-	return FB_SUCCESS;
+	return status[1];
 }
 #endif
 
@@ -4215,7 +4229,7 @@ ISC_STATUS API_ROUTINE GDS_RECEIVE(ISC_STATUS* user_status,
 
 #ifdef SCROLLABLE_CURSORS
 ISC_STATUS API_ROUTINE GDS_RECEIVE2(ISC_STATUS* user_status,
-									WHY_REQ* req_handle,
+									FB_API_HANDLE* req_handle,
 									USHORT msg_type,
 									USHORT msg_length,
 									SCHAR* msg,
