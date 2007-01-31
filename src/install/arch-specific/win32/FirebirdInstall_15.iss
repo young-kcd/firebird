@@ -116,7 +116,7 @@ AppName={cm:MyAppName}
 ;The following is important - all ISS install packages should
 ;duplicate this for v1.5. See the InnoSetup help for details.
 AppID=FBDBServer_{#BaseVer}
-AppVerName=Firebird 1.5.0
+AppVerName=Firebird 1.5.4
 AppPublisher=Firebird Project
 AppPublisherURL={#FirebirdURL}
 AppSupportURL={#FirebirdURL}

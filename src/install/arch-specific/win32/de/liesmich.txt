@@ -2,7 +2,6 @@
 ==================================
 Firebird 1.5.4       (Win32 Build)
 ==================================
-(Release Candidate 1)
 
 o Einführung
 o Stabilität

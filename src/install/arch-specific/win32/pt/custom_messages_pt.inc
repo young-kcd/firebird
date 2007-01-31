@@ -40,7 +40,7 @@ pt.InstallSummaryCancel1= Se continuar com esta instalação o Firebird será insta
 pt.InstallSummaryCancel2= Terá que completar a instalação manualmente.
 pt.InstallSummaryCancel3= Pretende CANCELAR esta instalação?
 
-pt.InstalledProducts='A análise de reinstalação indica que foram encontradas %s instalações Firebird ou Interbase.
+pt.InstalledProducts=A análise de reinstalação indica que foram encontradas %s instalações Firebird ou Interbase.
 pt.InstalledProdCountSingular=versão tem
 pt.InstalledProdCountPlural=versões têm
 
@@ -67,4 +67,4 @@ pt.RunCSWithGuardian=Executar o Servidor Firebird Classic (com guardian)
 pt.RunISQL=Executar a ferramenta de linha-de-comandos SQL Interactivo
 
 pt.ReadmeFile=leia-me.txt
-pt.InstallationReadmeFile=instalação_leia-me.txt
+pt.InstallationReadmeFile=instalacao_leia-me.txt

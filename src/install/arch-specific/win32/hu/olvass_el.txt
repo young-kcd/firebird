@@ -1,178 +1,150 @@
 
-======================================
-Firebird 1.5.3       (Win32 Felépítés)
-======================================
+==================================
+Firebird 1.5.4       (Win32 Build)
+==================================
+
+o Introduction
+o Stability
+o Installation of the binary package
+o Installing from the zip package
+o Installation of the embedded server
+o Known Issues
+o SQL Language documentation
+o Reporting Bugs
+o Requesting New Features
 
 
-o Bevezetés
-o Stabilitás
-o Telepítés öntelepítõ állományból
-o Telepítés zip csomagokból
-o A beágyazott szerver telepítése
-o Ismert problémák
-o Az SQL Nyelv dokumentációja
-o Hibák jelentése
-o Új képességek igénylése
+Introduction
+============
+
+Welcome to Firebird 1.5.4. Full details of the fixes and
+minor enhancements in this release are contained in the
+release notes. These are in the doc/ directory.
 
 
-Bevezetés
+Stability
 =========
 
-Üdvözöljük a Firebird 1.5.3 világában.  A
-javítások és apróbb fejlesztések részletes listáját a
-"Firebird 1.5 - Újdonságok" dokumentumban találja meg. A
-dokumentumokat a .\doc\ mappában lelheti fel.
+There is no reason to be concerned about using this
+maintenance release in a production environment.
+However, before installing ANY new software into a
+production environment it should be always be tested
+properly on a development system. This is standard
+practice.
 
 
-Stabilitás
-==========
+Installing the self-installing executable
+=========================================
 
-A Firebird 1.5 az elsõ olyan verziója a Firebird 
-családnak, amelyet C++ nyelven írtak és fordítottak le.
-Az igen hosszú béta és kiadás elõtti fejlesztési
-ciklusnak köszönhetõen, büszkén kijelenthetjük, hogy
-ez a verzió legalább olyan stabil mint a nagy elõd, a
-Firebird 1.0.3. Komolyabb hibát nem fedeztek fel az 
-eredeti Firebird 1.5.0 kiadása óta.
+Please run the executable and read the accompanying
+installation instructions that are contained within the
+setup wizard. After installation you will find this
+document as doc/installation_readme.txt. More detailed
+information is in the release notes.
 
-Nincs különösebb ok, hogy ne javasoljuk ezt a 
-karbantartó kiadást üzemi - éles - környezetben. Ámbár,
-mielõtt BÁRMILYEN új szoftvert telepít üzemi
-környezetben, ajánlatos alaposan letesztelni a
-fejlesztõi rendszeren. Ez az általános gyakorlat.
+Many changes have been implemented in this release. If
+you have an existing installation of Firebird
+(including a v.1.5 beta or release candidate) you must
+read the latest release notes and understand the new
+names and locations of all binaries and associated
+files. This applies to both server and client
+installations.
 
-
-Telepítés öntelepítõ állományból
-================================
-
-Kérem futtassa a telepítõ programot, majd olvassa el a 
-telepítõ varázsló által megjelenített telepítési
-segédletet.  A telepítés befejezése után ezt a
-dokumentumot a:
-.\doc\installation_readme.txt
-helyen találja. További részletes információk a
-"Firebird 1.5 - Újdonságok" dokumentumban vannak.
-
-Rengeteg változtatás lépett életbe ebben a kiadásban. Ha
-Önnek van már egy létezõ Firebird telepítése (amely 
-lehet Firebird 1.5 béta vagy kiadás elõtt változat is) 
-mindenképpen ajánlott átböngésznie a legfrissebb
-"Újdonságok"-ról szóló dokumentumot és érdemes lenne
-megjegyeznie  a futtatható és a hozzá társuló
-állományok új neveit, helyét. Ez mind a Szerver, mind
-a Kliens telepítésre igaz.
-
-Ne telepítse ezt a változatot egy már létezõ Firebird 
-vagy Interbase telepítés "tetejére"!
+Do not install this version "over the top" of an
+existing Firebird or InterBase installation.
 
 
-Telepítés zip csomagokból
-=========================
-
-Kövesse a:
-.\doc\README_installation.txt
-dokumentumban található utasításokat a zip csomagból 
-történõ telepítéshez. (Ez a dokumentum csak a zip 
-csomagolású terjesztés mellett található meg.)
-
-
-A beágyazott szerver telepítése
+Installing from the zip package
 ===============================
 
-A beágyazott szerver úgy készült, hogy egy létezõ 
-alkalmazás részeként üzemeljen. A beágyazott szerver
-telepítési leírásáért, valamint további információkért
-olvassa el a:
-.\doc\README_embedded.txt
-dokumentumot. (Ez a dokumentum csak a beágyazott
-szervert tartalmazó csomag mellett található meg.)
+Please follow the instructions in
+doc/README_installation.txt for installing the zip
+package. (This document is only shipped with the zip
+package.)
 
 
-Ismert problémák
-================
+Installation of the embedded server
+===================================
 
-Kliens könyvtár
----------------
-Néhány örökölt Windowsos program nem ismeri fel az
-fbclient.dll kliens könyvtárat és/vagy nem találja meg
-az  alapértelmezett helyén. Ez az alapértelmezett hely
-most  a .\bin mappa közvetlenül a Firebird
-gyökérkönyvtár  alatt. Példának okáért a Borland
-IBConsole program nem fog mûködni a fbclient.dll 
-kliens könyvtárral egészen addig, amíg azt át nem
-másolja a rendszer <system> mappába és át nem nevezi
-"gds32.dll"-re.
+The embedded server is designed to be installed as part
+of an existing application. See doc/README_embedded.txt
+for more information on how to deploy the embedded
+server. (This document is only shipped with the
+embedded package.)
 
-A Windows-os készlet tartalmaz egy instclient.exe 
-nevezetû programot, amely arra használhat, hogy az 
-örökölt programokkal kompatibilis gds32.dll fájlt
-hozhat vele létre, és opcionálisan ezt a fájlt a
-rendszer <system> mappában helyezheti el. Ebben az 
-esetben lényeges, hogy elolvassa a "Firebird 1.5 -
-Újdonságok"  dokumentumot valamint a mellékelt:
-.\doc\README_library_install.txt
-dokumentumot, mielõtt végrehajtja ezeket a
-változtatásokat.
 
-UDF-ek és BLOB Szûrõk
+Known Issues
+============
+
+Client library
+--------------
+Some legacy Windows tools will not recognise the client
+library fbclient.dll and/or will not find it in its
+default location, now the ..\bin directory beneath the
+Firebird root. For example, the Borland IBConsole
+program will not work with fbclient.dll, even if it is
+copied to the system directory and renamed to
+gds32.dll.
+
+The Windows kits contain a program named instclient.exe
+that can be used to build a "legacy-compatible"
+gds32.dll and optionally install it to your system
+directory. It is essential to read the release notes
+and the accompanying README_library_install.txt (in the
+..\doc subdirectory) before performing this change.
+
+UDFs and Blob Filters
 ---------------------
-A biztonsági beállításokban történt változtatás miatt
-ebben a verzióban elõfordulhat, hogy az egyedileg
-használt UDF könyvtárak elérhetetlenné válnak a szerver 
-számára, amíg az UDF könyvtárak elérési útjait meg nem 
-adja a firebird.conf konfigurációs állomány megfelelõ 
-szakaszában. További információkért olvassa el a 
-megjegyzéseket a firebird.conf konfigurációs állományban 
-valamint a "Firebird 1.5 - Újdonságok" dokumentumban.
+Security changes in this version may cause your UDFs to
+be invisible to the server until their location is
+configured in firebird.conf. For more information, read
+the annotations in firebird.conf and the documentation
+in the release notes.
 
 
-Az SQL Nyelv dokumentációja
-===========================
-Új nyelvi szolgáltatások, kulcsszavak, kiterjesztések 
-valamint korlátozások kerültek bevezetésre ebben a
-verzióban. A részletekrõl a "Firebird 1.5 - Újdonságok"
-dokumentumból tudhat meg  többet.
+SQL Language Documentation
+==========================
+New language features, keywords, extensions and
+restrictions introduced in this release are documented
+in detail in the release notes.
 
 
-Hibák jelentése
-===============
+Reporting Bugs
+==============
 
-o Biztosan érti, hogy hogyan mûködik a Firebird?
+o Are you sure you understand how Firebird works?
 
-  Például Önt a rendszer helyes viselkedése érdekli, és
-  igazából technikai támogatás jellegû kérdése van. 
-  Ebben az esetben forduljon bizalommal a Firebird
-  technikai támogatást nyújtó listájához.
+  Perhaps you are seeing the correct behaviour and you
+  really have a support question. In this case contact
+  the firebird-support list server.
 
-  Feliratkozni a következõ helyen tud:
+  You may subscribe here:
 
     mailto:firebird-support-subscribe@yahoogroups.com
-    
-  (e-mail küldésével)
 
+o Still think it is a bug?
 
-o Továbbra is úgy gondolja, hogy egy hibát talált?
+  First check the issue tracker here:
 
-  Nézze át a még meglévõ hibák listáját. Ezt 
-  megteheti a Firebird hibakövetõ rendszerében:
+    http://tracker.firebirdsql.org/secure/BrowseProject.jspa
 
-    http://sourceforge.net/tracker/?group_id=9028&atid=109028
+Please do not use the issue tracker to get technical
+support. If in doubt subscribe to the support list 
+first at
 
-Egyébként, ha Ön egészen biztos benne, hogy hibát
-talált, próbáljon meg felépíteni egy olyan
-teszthelyzetet ahol a hiba reprodukálható. Ennek
-részletes leírását már elküldheti a hibakövetõ
-rendszerbe.
+  mailto:firebird-support-subscribe@yahoogroups.com
+  
+and ask your question there.
 
-
-Új képességek igénylése
+	
+Requesting New Features
 =======================
 
-Mielõtt új képességekkel kapcsolatos igénylést nyújtana 
-be, kérjük tekintse át a jelenlegi igényléseket. Az 
-esély igen nagy, hogy valaki gondolt az Ön által is 
-felvetett hiányosságra. Az alábbi linken megtekintheti a 
-már benyújtott igényléseket és új kérést nyújthat be, 
-amennyiben az valóban szükségszerû.
+Before submitting feature requests please review the
+existing feature request list. Chances are that someone
+has already thought of it. Existing feature requests
+can be browsed here:
 
-  http://sourceforge.net/tracker/?group_id=9028&atid=359028
+  http://tracker.firebirdsql.org/secure/CreateIssue!default.jspa
+
+

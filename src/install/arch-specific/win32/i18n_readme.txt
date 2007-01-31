@@ -79,13 +79,6 @@ o Three files are required:
     minute documentation changes as well as general notes on using
     firebird. It is displayed at the end of the installation process.
 
-    The readme file is always subject to change from one beta or 
-    pre-release to the next (or final release.) For this reason the 
-    translated readme should always explain that the english language 
-    readme.txt is the definitive version. This is because it will 
-    not be possible to hold up a release while waiting for translators 
-    to complete their work.
-
   * installation_readme.txt
 
     This filename can be translated or left with the original english
@@ -93,6 +86,8 @@ o Three files are required:
     near the beginning of the installation process. The installation 
     readme is usually static and only changes from point release to 
     point release.
+
+o Indicating whether a file is out of date.
 
 
 o Issues to bear in mind

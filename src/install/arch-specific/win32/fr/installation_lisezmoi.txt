@@ -1,6 +1,5 @@
 Firebird Serveur de bases de données 1.5.4
 ==================================================
-(Release Candidate 1)
 
 Ce document est un guide pour l'installation de
 Firebird 1.5 sur la plateforme Win32. Ces notes sont

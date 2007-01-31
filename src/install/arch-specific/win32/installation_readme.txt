@@ -1,6 +1,5 @@
 Firebird Database Server 1.5.4
 ==============================
-(Release Candidate 1)
 
 This document is a guide to installing this package of 
 Firebird 1.5 on the Win32 platform. These notes refer 

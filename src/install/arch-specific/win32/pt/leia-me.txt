@@ -1,6 +1,6 @@
 
 ==================================
-Firebird 1.5.3       (Versão Win32)
+Firebird 1.5.4       (Versão Win32)
 ==================================
 
 
@@ -18,7 +18,7 @@ o Pedido de Novas Funcionalidades
 Introdução
 ==========
 
-Bemvindo ao Firebird 1.5.3. Detalhes completos das 
+Bemvindo ao Firebird 1.5.4. Detalhes completos das 
 correcções e pequenas melhorias desta versão estão 
 relatadas nas Notas de Lançamento. Estas encontram-se 
 disponíveis na pasta doc/.
@@ -26,14 +26,6 @@ disponíveis na pasta doc/.
 
 Estabilidade
 ============
-
-O Firebird 1.5 é a primeira versão do Firebird compilada com o C++.
-Foi sujeito a um longo processo de testes com versões beta e versões
-"Release candidate" e pode ser considerado tão estável como o seu
-predecessor, Firebird 1.0.3.
-Nenhum problema significativo foi descoberto desde a versão original do
-Firebird 1.5.0 e como tal é considerado tão ou mais estável que a versão
-anterior do Firebird 1 (v1.0.3).
 
 Não existe nenhuma razão que impeça que esta versão possa ser usada em
 ambientes de produção. Contudo, antes de instalar qualquer novo software
@@ -47,7 +39,7 @@ Instalando o executável de auto-instalação
 Por favor corra o executável e leia as notas de instalação que o acompanham
 e que estão contidas dentro do assistente de instalação. Após a instalação
 encontrará este documento em
-  doc/instalação_leia-me.txt.
+  doc/instalacao_leia-me.txt.
 Para informação mais detalhada recorra às notas de instalação.
 
 Muitas modificações foram implementadas nesta versão. Se possuir uma
@@ -127,7 +119,7 @@ o Ainda assim pensa que se trata dum erro?
   Verifique primeiro a lista de Erros Abertos. Esta poderá ser encontrada no
   Firebird "bug tracker":
 
-    http://sourceforge.net/tracker/?group_id=9028&atid=109028
+    http://tracker.firebirdsql.org/secure/BrowseProject.jspa
 
 Se todavia, está convicto que encontrou um erro, então tente construir primeiro
 código ou um contexto de teste para o erro. E então reporte-o no "bug tracker".
@@ -141,4 +133,4 @@ primeiro a lista ja existente. Existe a probabilidade de que alguém já
 tenha pensado primeiro pensado em tal. Use o seguinte link para rever a
 lista actual e submeter novos pedidos, se necessário, em:
 
-  http://sourceforge.net/tracker/?group_id=9028&atid=3590288
+  http://tracker.firebirdsql.org/secure/CreateIssue!default.jspa
