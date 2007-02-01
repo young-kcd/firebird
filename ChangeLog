@@ -1,3 +1,10 @@
+2007-01-31 13:51  alexpeshkoff
+
+	* firebird2/src/jrd/why.cpp (1.122):
+
+	Restored compilability of why.cpp with SCROLLABLE_CURSORS defined
+	(according to Claudio request)
+
 2007-01-29 08:34  alexpeshkoff
 
 	* firebird2/src/dudley/lex.cpp (1.34):
