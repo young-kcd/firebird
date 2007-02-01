@@ -2505,7 +2505,8 @@ OBJCT rem_port::get_id(BLK block)
 
 	rem_vec* vector = this->port_object_vector;
 	if (!vector) {
-		return REMOTE_set_object(this, block, (OBJCT) 1);
+		return (this->port_last_object_id = 
+			REMOTE_set_object(this, block, (OBJCT) 1));
 	}
 
 	// Search vector for an empty slot.  If we find one, use it
