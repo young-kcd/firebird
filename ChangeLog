@@ -1,3 +1,43 @@
+2007-01-31 15:26  paul_reeves
+
+	* firebird2/: builds/win32/make_examples.bat (1.4.2.4),
+	src/install/arch-specific/win32/FirebirdInstall_15.iss (1.5.2.27),
+	src/install/arch-specific/win32/Readme.txt (1.2.2.10),
+	src/install/arch-specific/win32/i18n_readme.txt (1.1.2.6),
+	src/install/arch-specific/win32/installation_readme.txt (1.2.2.14),
+	src/install/arch-specific/win32/ba/Instalacija_ProcitajMe.txt
+	(1.1.2.2), src/install/arch-specific/win32/ba/ProcitajMe.txt
+	(1.1.2.2),
+	src/install/arch-specific/win32/de/installation_liesmich.txt
+	(1.1.2.6), src/install/arch-specific/win32/de/liesmich.txt
+	(1.1.2.6), src/install/arch-specific/win32/es/leame.txt (1.1.2.2),
+	src/install/arch-specific/win32/es/leame_instalacion.txt (1.1.2.2),
+	src/install/arch-specific/win32/fr/installation_lisezmoi.txt
+	(1.1.2.7), src/install/arch-specific/win32/fr/lisezmoi.txt
+	(1.1.2.6), src/install/arch-specific/win32/hu/olvass_el.txt
+	(1.1.2.4),
+	src/install/arch-specific/win32/hu/telepitesi_segedlet.txt
+	(1.1.2.3), src/install/arch-specific/win32/it/leggimi.txt
+	(1.1.2.2),
+	src/install/arch-specific/win32/it/leggimi_installazione.txt
+	(1.1.2.2), src/install/arch-specific/win32/pl/czytajto.txt
+	(1.1.2.2),
+	src/install/arch-specific/win32/pl/instalacja_czytajto.txt
+	(1.1.2.2),
+	src/install/arch-specific/win32/pt/custom_messages_pt.inc
+	(1.1.2.5),
+	src/install/arch-specific/win32/pt/instalacao_leia-me.txt
+	(1.1.2.2), src/install/arch-specific/win32/pt/leia-me.txt
+	(1.1.2.5), src/install/arch-specific/win32/ru/Readme.txt (1.1.2.2),
+	src/install/arch-specific/win32/ru/installation_readme.txt
+	(1.1.2.2),
+	src/install/arch-specific/win32/si/instalacija_precitajMe.txt
+	(1.1.2.4):
+
+	Remove references to RC1 Replace unmaintained i18n files with
+	english language versions Misc changes to prepare for release of
+	1.5.4
+
 2007-01-29 19:12  dimitr
 
 	* firebird2/doc/WhatsNew (1.36.2.62):
