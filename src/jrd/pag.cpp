@@ -269,6 +269,9 @@ const SSHORT CLASS		= CLASS_LINUX_I386;
 #ifdef sparc
 const SSHORT CLASS		= CLASS_LINUX_SPARC;
 #endif
+#ifdef PPC
+const SSHORT CLASS		= CLASS_LINUX_PPC;
+#endif
 #endif
 
 #ifdef FREEBSD
