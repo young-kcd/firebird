@@ -234,7 +234,7 @@ static const TEXT* const impl_implementation[] = {
     "Firebird/linux Sparc",	/* 65 */
     "Firebird/linux AMD64",	/* 66 */
     "Firebird/FreeBSD/amd64",	/* 67 */
-    // "Firebird/x86-64/Windows NT",   /* 68 */		//Windows/amd64 - not ported yet
+    NULL, // "Firebird/x86-64/Windows NT",   /* 68 */		//Windows/amd64 - not ported yet
     "Firebird/linux PowerPC"	/* 69 */
 };
 
