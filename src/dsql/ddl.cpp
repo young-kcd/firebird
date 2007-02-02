@@ -2661,13 +2661,13 @@ static void define_procedure( dsql_req* request, NOD_TYPE op)
 	if (inputs)
 	{
 		parameters = procedure_node->nod_arg[e_prc_inputs];
-		dsql_nod** ptr = parameters->nod_arg;
+		const dsql_nod* const* ptr = parameters->nod_arg;
 		for (const dsql_nod* const* const end = ptr + parameters->nod_count;
 			 ptr < end; ptr++)
 		{
-			dsql_nod* parameter = *ptr;
-			dsql_var* variable = (dsql_var*) parameter->nod_arg[e_var_variable];
-			dsql_fld* field = variable->var_field;
+			const dsql_nod* parameter = *ptr;
+			const dsql_var* variable = (dsql_var*) parameter->nod_arg[e_var_variable];
+			const dsql_fld* field = variable->var_field;
 
 			if (field->fld_full_domain || field->fld_not_nullable)
 			{

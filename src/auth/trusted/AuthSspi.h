@@ -38,7 +38,7 @@ private:
 	INITIALIZE_SECURITY_CONTEXT_FN_A fInitializeSecurityContext;
 	ACCEPT_SECURITY_CONTEXT_FN fAcceptSecurityContext;
 
-	bool checkAdminPrivilege(PCtxtHandle phContext);
+	bool checkAdminPrivilege(PCtxtHandle phContext) const;
 	bool initEntries();
 
 public:

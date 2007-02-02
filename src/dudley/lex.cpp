@@ -69,7 +69,7 @@ const SCHAR CHR_WHITE = CHR_white;
 const SCHAR CHR_EOL = CHR_white;
 
 
-static SCHAR classes_array[256] = {
+static const SCHAR classes_array[256] = {
 	0, 0, 0, 0, 0, 0, 0, 0,
 	0, CHR_WHITE, CHR_EOL, 0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 0,

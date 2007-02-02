@@ -59,7 +59,7 @@ static bool extend_file(jrd_file*, ISC_STATUS *);
 static jrd_file* seek_file(jrd_file*, BufferDesc*, int *);
 static jrd_file* setup_file(Database*, const TEXT*, USHORT, USHORT, struct NAM*);
 static void setup_trace(jrd_file*, SSHORT);
-static void trace_event(jrd_file*, SSHORT, SCHAR *, SSHORT);
+static void trace_event(jrd_file*, SSHORT, const SCHAR*, SSHORT);
 static bool vms_io_error(ISC_STATUS*, TEXT*, ISC_STATUS, int, jrd_file*);
 
 const SSHORT DVI$_DEVLOCKNAM	= 240;
@@ -882,7 +882,7 @@ static void setup_trace(jrd_file* file, SSHORT event)
 }
 
 
-static void trace_event(jrd_file* file, SSHORT type, SCHAR * ptr, SSHORT length)
+static void trace_event(jrd_file* file, SSHORT type, const SCHAR* ptr, SSHORT length)
 {
 /**************************************
  *

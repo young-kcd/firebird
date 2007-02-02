@@ -85,7 +85,7 @@ AuthSspi::~AuthSspi()
 	}
 }
 
-bool AuthSspi::checkAdminPrivilege(PCtxtHandle phContext)
+bool AuthSspi::checkAdminPrivilege(PCtxtHandle phContext) const
 {
 #if defined(_MSC_VER) && _MSC_VER <= 1200
 	// CVC: MSVC6 hack.

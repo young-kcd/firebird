@@ -992,7 +992,7 @@ static jrd_file* setup_file(Database*					dbb,
 	file->fil_length = file_name.length();
 	file->fil_max_page = (ULONG) -1;
 #ifdef SUPERSERVER_V2
-	memset(file->fil_io_events, 0, MAX_FILE_IO * sizeof(SLONG));
+	memset(file->fil_io_events, 0, MAX_FILE_IO * sizeof(void*));
 #endif
 	MOVE_FAST(file_name.c_str(), file->fil_string, file_name.length());
 	file->fil_string[file_name.length()] = 0;
@@ -1057,7 +1057,7 @@ static jrd_file* setup_file(Database*					dbb,
 		while (!LCK_lock(tdbb, lock, LCK_SW, -1)) {
 			tdbb->tdbb_status_vector[0] = 0; // Clean status vector from lock manager error code
 			// If we are in a single-threaded maintenance mode then clean up and stop waiting
-			SCHAR spare_memory[MIN_PAGE_SIZE*2];
+			SCHAR spare_memory[MIN_PAGE_SIZE * 2];
 			SCHAR *header_page_buffer = (SCHAR*) FB_ALIGN((IPTR)spare_memory, MIN_PAGE_SIZE);
 		
 			pageSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);

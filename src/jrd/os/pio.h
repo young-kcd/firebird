@@ -45,7 +45,7 @@ class jrd_file : public pool_alloc_rpt<SCHAR, type_fil>
 	USHORT fil_sequence;		/* Sequence number of file */
 	USHORT fil_fudge;			/* Fudge factor for page relocation */
 	int fil_desc;
-	int *fil_trace;				/* Trace file, if any */
+	//int *fil_trace;				/* Trace file, if any */
 	MUTX_T fil_mutex[1];
 	USHORT fil_flags;
 	USHORT fil_length;			/* Length of expanded file name */
@@ -92,7 +92,7 @@ class jrd_file : public pool_alloc_rpt<SCHAR, type_fil>
 	USHORT fil_fudge;			/* Fudge factor for page relocation */
 	SLONG fil_desc;
 	SLONG fil_force_write_desc;	/* Handle of force write open */
-	int *fil_trace;				/* Trace file, if any */
+	//int *fil_trace;				/* Trace file, if any */
 	MUTX_T fil_mutex[1];
 #ifdef SUPERSERVER_V2
 	void* fil_io_events[MAX_FILE_IO];	/* Overlapped I/O events */
@@ -119,6 +119,7 @@ const SSHORT trace_close	= 6;
 
 // Physical I/O status block, used only in SS v2 for Win32
 
+#ifdef SUPERSERVER_V2
 struct phys_io_blk {
 	jrd_file* piob_file;				/* File being read/written */
 	SLONG piob_desc;			/* File descriptor */
@@ -133,6 +134,7 @@ struct phys_io_blk {
 const UCHAR PIOB_error		= 1;	/* I/O error occurred */
 const UCHAR PIOB_success	= 2;	/* I/O successfully completed */
 const UCHAR PIOB_pending	= 4;	/* Asynchronous I/O not yet completed */
+#endif
 
 } //namespace Jrd
 
