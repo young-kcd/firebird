@@ -479,7 +479,7 @@ namespace
 
 #ifndef SERVER_SHUTDOWN		// appears this macro has now nothing with shutdown
 
-	int totalAttachmentCount() const
+	int totalAttachmentCount()
 	{
 		return attachments().getCount();
 	}
