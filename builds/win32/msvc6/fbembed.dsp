@@ -42,8 +42,8 @@ RSC=rc.exe
 # PROP Intermediate_Dir "..\..\..\temp\release\fbembed"
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
-# ADD BASE CPP /nologo /MT /W3 /GR /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "fbembed_EXPORTS" /YX /FD /c
-# ADD CPP /nologo /MD /W3 /GR- /GX /Ot /Og /Oi /Op /Oy /Ob1 /I "../../../src/include" /I "../../../src/include/gen" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "_X86_" /D "SUPERSERVER" /D "EMBEDDED" /YX /FD /EHc- /c
+# ADD BASE CPP /nologo /MT /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "fbembed_EXPORTS" /YX /FD /c
+# ADD CPP /nologo /MD /W3 /GX /Ot /Og /Oi /Op /Oy /Ob1 /I "../../../src/include" /I "../../../src/include/gen" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "_X86_" /D "SUPERSERVER" /D "EMBEDDED" /YX /FD /EHc- /c
 # ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x419 /d "NDEBUG"
@@ -69,8 +69,8 @@ LINK32=link.exe
 # PROP Intermediate_Dir "..\..\..\temp\debug\fbembed"
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
-# ADD BASE CPP /nologo /MTd /W3 /Gm /GR /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "fbembed_EXPORTS" /YX /FD /GZ /c
-# ADD CPP /nologo /MDd /W3 /Gm /GR- /GX /ZI /Od /I "../../../src/include" /I "../../../src/include/gen" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "_X86_" /D "SUPERSERVER" /D "DEV_BUILD" /D "EMBEDDED" /FD /GZ /c
+# ADD BASE CPP /nologo /MTd /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "fbembed_EXPORTS" /YX /FD /GZ /c
+# ADD CPP /nologo /MDd /W3 /Gm /GX /ZI /Od /I "../../../src/include" /I "../../../src/include/gen" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "_X86_" /D "SUPERSERVER" /D "DEV_BUILD" /D "EMBEDDED" /FD /GZ /c
 # SUBTRACT CPP /YX
 # ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "_DEBUG" /mktyplib203 /win32
@@ -300,6 +300,18 @@ SOURCE=..\..\..\src\utilities\gstat\ppg.cpp
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\version.rc
+# End Source File
+# End Group
+# Begin Group "AuthSspi"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\..\src\auth\trusted\AuthSspi.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\auth\trusted\AuthSspi.h
 # End Source File
 # End Group
 # Begin Source File
