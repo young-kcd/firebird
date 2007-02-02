@@ -245,14 +245,13 @@ namespace YValve
 			: Handle(hType(), pub, par), 
 			  next(0), handle(h)
 		{
-			toParent(parent->transactions, this);
+			toParent<Transaction>(parent->transactions, this);
 		}
 
 		Transaction(FB_API_HANDLE* pub, USHORT implementation)
 			: Handle(hType(), pub, 0, implementation), 
 			  next(0), handle(0)
 		{
-			// toParent(parent->transactions, this);
 		}
 
 		~Transaction()
@@ -260,7 +259,7 @@ namespace YValve
 			cleanup.call(public_handle);
 			if (parent)
 			{
-				fromParent(parent->transactions, this);
+				fromParent<Transaction>(parent->transactions, this);
 			}
 		}
 	};
@@ -284,12 +283,12 @@ namespace YValve
 		Request(StReq* h, FB_API_HANDLE* pub, Attachment* par)
 			: Handle(hType(), pub, par), handle(h)
 		{
-			toParent(parent->requests, this);
+			toParent<Request>(parent->requests, this);
 		}
 
 		~Request() 
 		{ 
-			fromParent(parent->requests, this);
+			fromParent<Request>(parent->requests, this);
 		}
 	};
 	
@@ -312,12 +311,12 @@ namespace YValve
 		Blob(StBlb* h, FB_API_HANDLE* pub, Attachment* par)
 			: Handle(hType(), pub, par), handle(h)
 		{
-			toParent(parent->blobs, this);
+			toParent<Blob>(parent->blobs, this);
 		}
 
 		~Blob() 
 		{ 
-			fromParent(parent->blobs, this);
+			fromParent<Blob>(parent->blobs, this);
 		}
 	};
 	
@@ -341,7 +340,7 @@ namespace YValve
 		Statement(StStm* h, FB_API_HANDLE* pub, Attachment* par)
 			: Handle(hType(), pub, par), handle(h)
 		{
-			toParent(parent->statements, this);
+			toParent<Statement>(parent->statements, this);
 			memset(&das, 0, sizeof das);
 		}
 
@@ -355,7 +354,7 @@ namespace YValve
 
 		~Statement() 
 		{ 
-			fromParent(parent->statements, this);
+			fromParent<Statement>(parent->statements, this);
 		}
 	};
 

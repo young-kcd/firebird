@@ -316,14 +316,14 @@ namespace YValve
 		  db_path(*getDefaultMemoryPool()),
 		  db_prepare_buffer(*getDefaultMemoryPool())
 	{
-		toParent(attachments(), this);
+		toParent<Attachment>(attachments(), this);
 		parent = this;
 	}
 
 	Attachment::~Attachment()
 	{
 		cleanup.call(&public_handle);
-		fromParent(attachments(), this);
+		fromParent<Attachment>(attachments(), this);
 	}
 
 }
@@ -479,7 +479,7 @@ namespace
 
 #ifndef SERVER_SHUTDOWN		// appears this macro has now nothing with shutdown
 
-	int totalAttachmentCount()
+	int totalAttachmentCount() const
 	{
 		return attachments().getCount();
 	}
@@ -669,7 +669,7 @@ namespace
 			}
 		}
 		
-		bool fatal()
+		bool fatal() const
 		{
 			return vector[0] == isc_arg_gds && 
 				(vector[1] == isc_shutdown ||
@@ -4967,7 +4967,8 @@ ISC_STATUS API_ROUTINE GDS_START_MULTIPLE(ISC_STATUS * user_status,
 		Transaction** ptr;
 		USHORT n;
 		for (n = 0, ptr = &transaction; n < count;
-									n++, ptr = &(*ptr)->next, vector++) {
+			n++, ptr = &(*ptr)->next, vector++)
+		{
 			dbb = translate<Attachment>(vector->teb_database);
 
 			if (CALL(PROC_START_TRANSACTION, dbb->implementation) (status,
@@ -5684,9 +5685,13 @@ static ISC_STATUS get_transaction_info(ISC_STATUS* user_status,
 		const TEXT* q = buffer + 3;
 		*p++ = TDR_TRANSACTION_ID;
 
-		const USHORT length = 
-				(USHORT)gds__vax_integer(reinterpret_cast<UCHAR*>(buffer + 1), 2);
-		*p++ = length; // Warning: USHORT coerced to char
+		USHORT length = (USHORT)gds__vax_integer(reinterpret_cast<UCHAR*>(buffer + 1), 2);
+				
+		// Prevent information out of sync.
+		if (length > MAX_UCHAR)
+			length = MAX_UCHAR;
+			
+		*p++ = length;
 		memcpy(p, q, length);
 		*ptr = p + length;
 	}
