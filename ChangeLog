@@ -1,3 +1,39 @@
+2007-02-03 02:21  asfernandes
+
+	* firebird2/src/jrd/cvt.cpp (1.80):
+
+	Fixed CORE-1120 - Conversion from string to number is not standard
+	compliant
+
+2007-02-02 13:48  alexpeshkoff
+
+	* firebird2/src/jrd/why.cpp (1.124):
+
+	Fixed gcc compilation
+
+2007-02-02 11:58  robocop
+
+	* firebird2/builds/win32/msvc6/: fbclient.dsp (1.55), fbembed.dsp
+	(1.38), remote.dsp (1.24), remote_classic.dsp (1.21):
+
+	Integrating Alex's Win32 NTLM authentication in VC6.
+
+2007-02-02 11:56  robocop
+
+	* firebird2/src/: auth/trusted/AuthSspi.cpp (1.6),
+	auth/trusted/AuthSspi.h (1.9), dsql/ddl.cpp (1.197), dudley/lex.cpp
+	(1.35), jrd/os/pio.h (1.7), jrd/os/vms/vms.cpp (1.27),
+	jrd/os/win32/winnt.cpp (1.40):
+
+	Misc.
+
+2007-02-02 11:51  robocop
+
+	* firebird2/src/jrd/: why.cpp (1.123), y_handle.h (1.17):
+
+	I had to be explicit to overcome the dreaded "internal compiler
+	error". Greetings to William Gates III.
+
 2007-02-01 23:05  hvlad
 
 	* firebird2/src/remote/server.cpp (1.143):
