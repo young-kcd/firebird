@@ -2323,6 +2323,7 @@ static void gen_event_init( const act* action)
 //  get change in event counts, copying event parameter block for reuse 
 
 	PATTERN_expand(column, pattern3, &args);
+	fprintf(gpreGlob.out_file, "\n");
 	set_sqlcode(action);
 }
 
@@ -2380,6 +2381,7 @@ static void gen_event_wait( const act* action)
 
 	PATTERN_expand(column, pattern1, &args);
 	PATTERN_expand(column, pattern2, &args);
+	fprintf(gpreGlob.out_file, "\n");
 	set_sqlcode(action);
 }
 
