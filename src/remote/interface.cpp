@@ -1782,6 +1782,7 @@ ISC_STATUS GDS_DSQL_EXECUTE_IMMED2(ISC_STATUS * user_status,
 	RETURN_SUCCESS;
 }
 
+
 ISC_STATUS GDS_DSQL_FETCH(ISC_STATUS * user_status,
 					  RSR * stmt_handle,
 					  USHORT blr_length,

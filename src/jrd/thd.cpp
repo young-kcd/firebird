@@ -1899,7 +1899,7 @@ static int thread_start(
     // AIX has a default of PTHREAD_SCOPE_PROCESS
     pthread_attr_setscope(&pattr, PTHREAD_SCOPE_SYSTEM);
     // AIX default stack size is PTHREAD_STACK_MIN which is too small
-    pthread_attr_setstacksize(&pattr, 1024*1024);
+    pthread_attr_setstacksize(&pattr, 1024 * 1024);
     state = pthread_create(&thread, &pattr, (void*(*)(void*))routine, arg);
     pthread_attr_destroy(&pattr);
     return state;

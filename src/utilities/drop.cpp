@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: drop.cpp,v 1.19.2.2 2007-01-22 12:27:58 paulbeach Exp $
+ * $Id: drop.cpp,v 1.19.2.3 2007-02-03 08:35:55 robocop Exp $
  *
  * 2002.10.27 Sean Leyne - Completed removal of obsolete "DELTA" port
  * 2002.10.27 Sean Leyne - Completed removal of obsolete "IMP" port
@@ -261,7 +261,7 @@ static void remove_resource(
 	}
 #endif
 
-		 if ((key = get_key(expanded_filename)) == -1) {
+	if ((key = get_key(expanded_filename)) == -1) {
 		ib_printf("\n***Unable to get the key value of the %s file.\n",
 				  label);
 		return;

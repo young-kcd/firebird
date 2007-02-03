@@ -49,7 +49,7 @@
  *
  */
 /*
-$Id: common.h,v 1.73.2.5 2006-11-05 14:38:09 alexpeshkoff Exp $
+$Id: common.h,v 1.73.2.6 2007-02-03 08:35:49 robocop Exp $
 */
 
 #ifndef JRD_COMMON_H
@@ -545,7 +545,7 @@ typedef RETSIGTYPE (*SIG_FPTR) ();
 #endif /* IBM PowerPC */
 
 typedef RETSIGTYPE (*SIG_FPTR) (int);
-#define WCOREDUMP(x) (((x)&0x80) != 0)
+#define WCOREDUMP(x) (((x) & 0x80) != 0)
 
 #endif /* IBM AIX */
 
