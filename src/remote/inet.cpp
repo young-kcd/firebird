@@ -41,7 +41,7 @@
  *
  */
 /*
-$Id: inet.cpp,v 1.70.2.10 2007-01-23 15:04:20 paulbeach Exp $
+$Id: inet.cpp,v 1.70.2.11 2007-02-03 08:41:59 robocop Exp $
 */
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -97,7 +97,7 @@ $Id: inet.cpp,v 1.70.2.10 2007-01-23 15:04:20 paulbeach Exp $
 #endif
 #endif
 
-#if (defined DARWIN || HPUX)
+#if (defined DARWIN || defined HPUX)
 extern "C" int innetgr(const char *, const char *, const char *, const char *);
 #endif
 

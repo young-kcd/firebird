@@ -10,7 +10,7 @@ SRCROOT=`dirname $0`/../..
 # Set the CVS root from the local checkout if possible
 ROOT=`cat $SRCROOT/CVS/Root`
 if [ "x$ROOT" == 'x' ]; then
-    ROOT=":pserver:anonymous@cvs.sourceforge.net:/cvsroot/firebird"
+    ROOT=":pserver:anonymous@firebird.cvs.sourceforge.net:/cvsroot/firebird"
 fi
 
 # Set the tag or branch based on the current checkout, if possible

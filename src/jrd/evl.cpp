@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
-  * $Id: evl.cpp,v 1.34.2.10 2006-11-30 09:06:29 alexpeshkoff Exp $ 
+  * $Id: evl.cpp,v 1.34.2.11 2007-02-03 08:41:53 robocop Exp $ 
  */
 
 /*
@@ -4234,7 +4234,7 @@ static DSC *multiply2(DSC * desc, VLU value, JRD_NOD node)
 
 	const UINT64 u1 = (i1 >= 0) ? i1 : -i1;	/* abs(i1) */
 	const UINT64 u2 = (i2 >= 0) ? i2 : -i2;	/* abs(i2) */
-	const UINT64 u_limit = ((i1 ^ i2) >= 0) ? MAX_SINT64 : MAX_SINT64 + 1;	/* largest product */
+	const UINT64 u_limit = ((i1 ^ i2) >= 0) ? MAX_SINT64 : UINT64(MAX_SINT64) + 1;	/* largest product */
 
 	if ((u1 != 0) && ((u_limit / u1) < u2)) {
 		ERR_post(isc_exception_integer_overflow, 0);
