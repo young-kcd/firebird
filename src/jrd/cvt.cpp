@@ -126,8 +126,6 @@ double MTH$CVT_D_G(), MTH$CVT_G_D();
 #define SHORT_LIMIT     ((1 << 14) / 5)
 #define LONG_LIMIT      ((1L << 30) / 5)
 
-#define COMMA           ','
-
 /* NOTE: The syntax for the below line may need modification to ensure
  *	 the result of 1 << 62 is a quad
  */
@@ -339,10 +337,13 @@ double CVT_get_double(const dsc* desc, FPTR_ERROR err)
 			SSHORT sign = 0;
 			bool digit_seen = false, past_sign = false, fraction = false;
 			const char* const end = p + length;
+
+			// skip initial spaces
+			for (; p < end && *p == ' '; p++)
+				;
+
 			for (; p < end; p++) {
-				if (*p == COMMA)
-					continue;
-				else if (DIGIT(*p)) {
+				if (DIGIT(*p)) {
 					digit_seen = true;
 					past_sign = true;
 					if (fraction)
@@ -366,7 +367,17 @@ double CVT_get_double(const dsc* desc, FPTR_ERROR err)
 				}
 				else if (*p == 'e' || *p == 'E')
 					break;
-				else if (*p != ' ')
+				else if (*p == ' ')
+				{
+					// skip spaces
+					for (; p < end && *p == ' '; p++)
+						;
+
+					// throw if there is something after the spaces
+					if (p < end)
+						conversion_error(desc, err);
+				}
+				else
 					conversion_error(desc, err);
 			}
 
@@ -400,7 +411,17 @@ double CVT_get_double(const dsc* desc, FPTR_ERROR err)
 						sign = -1;
 					else if (*p == '+' && !digit_seen && !sign)
 						sign = 1;
-					else if (*p != ' ')
+					else if (*p == ' ')
+					{
+						// skip spaces
+						for (; p < end && *p == ' '; p++)
+							;
+
+						// throw if there is something after the spaces
+						if (p < end)
+							conversion_error(desc, err);
+					}
+					else
 						conversion_error(desc, err);
 				}
 				if (!digit_seen)
@@ -621,29 +642,22 @@ SLONG CVT_get_long(const dsc* desc, SSHORT scale, FPTR_ERROR err)
 /* Last, but not least, adjust for scale */
 
 	if (scale > 0) {
-		if (DTYPE_IS_EXACT(desc->dsc_dtype)) {
-			SLONG fraction = 0;
-			do {
-				if (scale == 1)
-					fraction = value % 10;
-				value /= 10;
-			} while (--scale);
-			if (fraction > 4)
-				value++;
-			/*
-			 * The following 2 lines are correct for platforms where
-			 * ((-85 / 10 == -8) && (-85 % 10 == -5)).  If we port to
-			 * a platform where ((-85 / 10 == -9) && (-85 % 10 == 5)),
-			 * we'll have to change this depending on the platform.
-			 */
-			else if (fraction < -4)
-				value--;
-		}
-		else {
-			do {
-				value /= 10;
-			} while (--scale);
-		}
+		SLONG fraction = 0;
+		do {
+			if (scale == 1)
+				fraction = value % 10;
+			value /= 10;
+		} while (--scale);
+		if (fraction > 4)
+			value++;
+		/*
+		 * The following 2 lines are correct for platforms where
+		 * ((-85 / 10 == -8) && (-85 % 10 == -5)).  If we port to
+		 * a platform where ((-85 / 10 == -9) && (-85 % 10 == 5)),
+		 * we'll have to change this depending on the platform.
+		 */
+		else if (fraction < -4)
+			value--;
 	}
 	else if (scale < 0) {
 		do {
@@ -891,31 +905,22 @@ SQUAD CVT_get_quad(const dsc* desc, SSHORT scale, FPTR_ERROR err)
 	(*err)(isc_badblk, 0);	/* internal error */
 #else
 	if (scale > 0) {
-		if (desc->dsc_dtype == dtype_short ||
-			desc->dsc_dtype == dtype_long || desc->dsc_dtype == dtype_quad)
-		{
-			SLONG fraction = 0;
-			do {
-				if (scale == 1)
-					fraction = value % 10;
-				value /= 10;
-			} while (--scale);
-			if (fraction > 4)
-				value++;
-			/*
-			 * The following 2 lines are correct for platforms where
-			 * ((-85 / 10 == -8) && (-85 % 10 == -5)).  If we port to
-			 * a platform where ((-85 / 10 == -9) && (-85 % 10 == 5)),
-			 * we'll have to change this depending on the platform.
-			 */
-			else if (fraction < -4)
-				value--;
-		}
-		else {
-			do {
-				value /= 10;
-			} while (--scale);
-		}
+		SLONG fraction = 0;
+		do {
+			if (scale == 1)
+				fraction = value % 10;
+			value /= 10;
+		} while (--scale);
+		if (fraction > 4)
+			value++;
+		/*
+		 * The following 2 lines are correct for platforms where
+		 * ((-85 / 10 == -8) && (-85 % 10 == -5)).  If we port to
+		 * a platform where ((-85 / 10 == -9) && (-85 % 10 == 5)),
+		 * we'll have to change this depending on the platform.
+		 */
+		else if (fraction < -4)
+			value--;
 	}
 	else {
 		do {
@@ -1046,31 +1051,22 @@ SINT64 CVT_get_int64(const dsc* desc, SSHORT scale, FPTR_ERROR err)
 /* Last, but not least, adjust for scale */
 
 	if (scale > 0) {
-		if (desc->dsc_dtype == dtype_short ||
-			desc->dsc_dtype == dtype_long || desc->dsc_dtype == dtype_int64)
-		{
-			SLONG fraction = 0;
-			do {
-				if (scale == 1)
-					fraction = (SLONG) (value % 10);
-				value /= 10;
-			} while (--scale);
-			if (fraction > 4)
-				value++;
-			/*
-			 * The following 2 lines are correct for platforms where
-			 * ((-85 / 10 == -8) && (-85 % 10 == -5)).  If we port to
-			 * a platform where ((-85 / 10 == -9) && (-85 % 10 == 5)),
-			 * we'll have to change this depending on the platform.
-			 */
-			else if (fraction < -4)
-				value--;
-		}
-		else {
-			do {
-				value /= 10;
-			} while (--scale);
-		}
+		SLONG fraction = 0;
+		do {
+			if (scale == 1)
+				fraction = (SLONG) (value % 10);
+			value /= 10;
+		} while (--scale);
+		if (fraction > 4)
+			value++;
+		/*
+		 * The following 2 lines are correct for platforms where
+		 * ((-85 / 10 == -8) && (-85 % 10 == -5)).  If we port to
+		 * a platform where ((-85 / 10 == -9) && (-85 % 10 == 5)),
+		 * we'll have to change this depending on the platform.
+		 */
+		else if (fraction < -4)
+			value--;
 	}
 	else if (scale < 0) {
 		do {
@@ -1942,11 +1938,14 @@ static SSHORT decompose(const char* string,
 
 	const char* p = string;
 	const char* const end = p + length;
+
+	// skip initial spaces
+	for (; p < end && *p == ' '; p++)
+		;
+
 	for (; p < end; p++)
 	{
-		if (*p == ',')
-			continue;
-		else if (DIGIT(*p)) {
+		if (DIGIT(*p)) {
 			digit_seen = true;
 
 			/* Before computing the next value, make sure there will be
@@ -1981,10 +1980,19 @@ static SSHORT decompose(const char* string,
 			sign = 1;
 		else if (*p == 'e' || *p == 'E')
 			break;
-		else if (*p != ' ')
+		else if (*p == ' ')
+		{
+			// skip spaces
+			for (; p < end && *p == ' '; p++)
+				;
+
+			// throw if there is something after the spaces
+			if (p < end)
+				conversion_error(&errd, err);
+		}
+		else
 			conversion_error(&errd, err);
 	}
-
 
 	if (!digit_seen)
 		conversion_error(&errd, err);
@@ -2014,7 +2022,17 @@ static SSHORT decompose(const char* string,
 				sign = -1;
 			else if (*p == '+' && !digit_seen && !sign)
 				sign = 1;
-			else if (*p != ' ')
+			else if (*p == ' ')
+			{
+				// skip spaces
+				for (; p < end && *p == ' '; p++)
+					;
+
+				// throw if there is something after the spaces
+				if (p < end)
+					conversion_error(&errd, err);
+			}
+			else
 				conversion_error(&errd, err);
 		}
 		if (sign == -1)
