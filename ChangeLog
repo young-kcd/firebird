@@ -1,3 +1,18 @@
+2007-02-03 11:40  robocop
+
+	* firebird2/src/gpre/rmc.cpp (1.2):
+
+	Patch by Stephen Boyd: he found a small bug in the RM/Cobol support
+	in GPRE he did months ago.  It wasn't generating the code for EVENT
+	INIT and EVENT WAIT statements properly.
+
+2007-02-03 11:38  robocop
+
+	* firebird2/builds/install/arch-specific/win32/i18n_readme.txt
+	(1.5):
+
+	Corrections.
+
 2007-02-03 02:21  asfernandes
 
 	* firebird2/src/jrd/cvt.cpp (1.80):
