@@ -4408,9 +4408,7 @@ static bool sleuth(thread_db* tdbb, jrd_nod* node, const dsc* desc1, const dsc* 
 
 /* Merge search and control strings */
 	UCHAR control[BUFFER_SMALL];
-	l2 = obj->sleuth_merge(tdbb, p2, l2, p1, l1, control, BUFFER_SMALL);
-
-/* l2 is result's byte-count */
+	SLONG control_length = obj->sleuth_merge(tdbb, p2, l2, p1, l1, control, BUFFER_SMALL);
 
 /* Note: resulting string from sleuth_merge is either USHORT or UCHAR
    and never Multibyte (see note in EVL_mb_sleuth_check) */
@@ -4422,7 +4420,7 @@ static bool sleuth(thread_db* tdbb, jrd_nod* node, const dsc* desc1, const dsc* 
 		/* Source is not a blob, do a simple search */
 
 		l1 = MOV_make_string2(desc1, ttype, &p1, data_str);
-		ret_val = obj->sleuth_check(tdbb, 0, p1, l1, control, l2);
+		ret_val = obj->sleuth_check(tdbb, 0, p1, l1, control, control_length);
 	}
 	else {
 		/* Source string is a blob, things get interesting */
@@ -4436,7 +4434,7 @@ static bool sleuth(thread_db* tdbb, jrd_nod* node, const dsc* desc1, const dsc* 
 		while (!(blob->blb_flags & BLB_eof))
 		{
 			l1 = BLB_get_segment(tdbb, blob, buffer, sizeof(buffer));
-			if (obj->sleuth_check(tdbb, 0, buffer, l1, control, l2))
+			if (obj->sleuth_check(tdbb, 0, buffer, l1, control, control_length))
 			{
 				ret_val = true;
 				break;
