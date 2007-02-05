@@ -1050,13 +1050,14 @@ MemoryPool* MemoryPool::internal_create(size_t instance_size, MemoryPool* parent
 	// difficult to make memory pass through any delayed free list in this case
 	if (parent) {
 		parent->lock.enter();
-		void* mem = parent->internal_alloc(instance_size + sizeof(MemoryRedirectList), TYPE_POOL);
+		const size_t size = MEM_ALIGN(instance_size + sizeof(MemoryRedirectList));
+		void* mem = parent->internal_alloc(size, TYPE_POOL);
 		if (!mem) {
 			parent->lock.leave();
 			Firebird::BadAlloc::raise();
 		}
 		pool = new(mem) MemoryPool(parent, stats, NULL, NULL);
-		
+
 		MemoryBlock* blk = ptrToBlock(mem);
 		blk->mbk_pool = pool;
 		blk->mbk_flags |= MBK_PARENT;
