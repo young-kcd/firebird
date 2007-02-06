@@ -2085,6 +2085,12 @@ void invalidate_and_release_buffer(thread_db* tdbb, BufferDesc* bdb)
 void update_write_direction(thread_db* tdbb, BufferDesc* bdb)
 {
 	Database* dbb = tdbb->tdbb_database;
+	// If we block the backup process, we must flush all dirty pages ASAP.
+	// In order to achieve that, all dirty pages are marked with a "must write" flag.
+	if (dbb->dbb_backup_manager->is_blocking()) {
+		fb_assert(bdb->bdb_flags & (BDB_dirty | BDB_db_dirty));
+		bdb->bdb_flags |= BDB_must_write;
+	}
 	// Determine location of the page in difference file and write destination
 	// so BufferDesc AST handlers and write_page routine can safely use this information
 	if (!dbb->dbb_backup_manager->lock_state(tdbb, true)) {

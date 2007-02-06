@@ -78,6 +78,23 @@ public:
 typedef Firebird::BePlusTree<AllocItem, ULONG, MemoryPool, AllocItem> AllocItemTree;
 
 
+// Flags manipulated normally
+const UATOM NBAK_state_in_use = 1;
+const UATOM NBAK_alloc_in_use = 2;
+
+// Flags manipulated at AST level
+const UATOM NBAK_state_blocking		= 1;
+const UATOM NBAK_alloc_blocking		= 2;
+const UATOM NBAK_database_blocking	= 4;
+const UATOM NBAK_alloc_dirty		= 8;
+
+// Note this flags MUST correspond with backup mask in ods.h
+const SATOM nbak_state_normal	= 0x0;     // Normal mode. Changes are simply written to main files
+const SATOM nbak_state_stalled	= 0x400;   // Main files are locked. Changes are written to diff file
+const SATOM nbak_state_merge	= 0x800;   // Merging changes from diff file into main files
+const SATOM nbak_state_unknown	= -1;      // State is unknown. Needs to be read from disk
+
+
 class BackupManager {
 public:
 	// Subsystem initialization
@@ -92,6 +109,14 @@ public:
 	bool lock_state(thread_db* tdbb, bool thread_exit) throw();
 	// Remove our interest in consistent backup state
 	void unlock_state(thread_db* tdbb) throw();
+	// Return whether we block someone
+	bool is_blocking() const throw() {
+#ifdef SUPERSERVER
+		return false;
+#else
+		return (ast_flags & NBAK_database_blocking);
+#endif
+	}
 	// Return current backup state
 	int get_state() const throw() {
 		return backup_state;
@@ -199,22 +224,6 @@ private:
 	bool actualize_state(thread_db* tdbb) throw();
 	bool actualize_alloc(thread_db* tdbb) throw();
 };
-
-// Flags manipulated normally
-const UATOM NBAK_state_in_use = 1;
-const UATOM NBAK_alloc_in_use = 2;
-
-// Flags manipulated at AST level
-const UATOM NBAK_state_blocking		= 1;
-const UATOM NBAK_alloc_blocking		= 2;
-const UATOM NBAK_database_blocking	= 4;
-const UATOM NBAK_alloc_dirty		= 8;
-
-// Note this flags MUST correspond with backup mask in ods.h
-const SATOM nbak_state_normal	= 0x0;     // Normal mode. Changes are simply written to main files
-const SATOM nbak_state_stalled	= 0x400;   // Main files are locked. Changes are written to diff file
-const SATOM nbak_state_merge	= 0x800;   // Merging changes from diff file into main files
-const SATOM nbak_state_unknown	= -1;      // State is unknown. Needs to be read from disk
 
 } //namespace Jrd
 
