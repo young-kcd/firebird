@@ -1879,7 +1879,9 @@ static void list_domain_table(const SCHAR* table_name,
 			char_sets[0] = 0;
 			if ((FLD.RDB$CHARACTER_SET_ID != default_char_set_id) ||
 				(!FLD.RDB$COLLATION_ID.NULL && FLD.RDB$COLLATION_ID != 0))
+			{
 				ISQL_get_character_sets (FLD.RDB$CHARACTER_SET_ID, 0, false, char_sets);
+			}
 			if (char_sets[0])
 				isqlGlob.prints(char_sets);
 		}

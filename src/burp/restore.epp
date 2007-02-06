@@ -7590,8 +7590,7 @@ void store_blr_gen_id (const TEXT*	gen_name,	// TEXT GDS_NAME[GDS_NAME_LEN]
 
 	if (!value)
 	{
-#pragma FB_COMPILER_MESSAGE("BRS: casting SINT64 to SLONG")
-		BURP_verbose (185, gen_name, (void*) (IPTR) value, NULL, NULL, NULL);
+		BURP_verbose (185, gen_name, 0, NULL, NULL, NULL);
 		// msg 185 restoring generator %s value: %ld 
 		return;
 	}
@@ -7651,6 +7650,7 @@ void store_blr_gen_id (const TEXT*	gen_name,	// TEXT GDS_NAME[GDS_NAME_LEN]
 	add_byte(blr, blr_eoc);
 
 	const SSHORT blr_length = blr - blr_buffer;
+	fb_assert(blr_length <= sizeof(blr_buffer));
 	
 	ISC_STATUS_ARRAY status_vector;
 	if (isc_compile_request (status_vector, &DB, &gen_id_reqh,

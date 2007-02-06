@@ -4946,15 +4946,15 @@ static bool get_numeric(const UCHAR* string,
 			// tricky: the value doesn't always become negative after an
 			// overflow!
 
-			if (value >= INT64_LIMIT) {
+			if (value > INT64_LIMIT)
+				return false;
+
+			if (value == INT64_LIMIT)
+			{
 				// possibility of an overflow 
-				if (value > INT64_LIMIT)
-					break;
-				else if (((*p > '8') && (sign == -1))
-						 || ((*p > '7') && (sign != -1)))
-				{	
-					break;
-				}
+
+				if ((*p > '8' && sign == -1) || (*p > '7' && sign != -1))
+					return false;
 			}
 
 			// Force the subtraction to be performed before the addition,
@@ -4963,11 +4963,12 @@ static bool get_numeric(const UCHAR* string,
 			if (fraction)
 				--local_scale;
 		}
-		else if (*p == '.') {
+		else if (*p == '.')
+		{
 			if (fraction)
 				return false;
-			else
-				fraction = true;
+				
+			fraction = true;
 		}
 		else if (*p == '-' && !digit_seen && !sign && !fraction)
 			sign = -1;
