@@ -1782,7 +1782,6 @@ void DLL_EXPORT CVT_move(DSC * from, DSC * to, FPTR_VOID err)
 #ifdef HPUX
 		double d_value = CVT_get_double(from, err);
 		MOVE_FAST(&d_value, p, sizeof(double));
-#endif
 #else
 		*(double *) p = CVT_get_double(from, err);
 #endif
