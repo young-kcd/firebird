@@ -1,3 +1,15 @@
+2007-02-05 14:33  dimitr
+
+	* firebird2/src/common/classes/alloc.cpp (1.86):
+
+	Fixed allocator assertion for some platflorms with ALIGNMENT == 8.
+
+2007-02-05 10:13  dimitr
+
+	* firebird2/src/jrd/evl.cpp (1.215):
+
+	Addressed issue spotted by Claudio.
+
 2007-02-03 11:40  robocop
 
 	* firebird2/src/gpre/rmc.cpp (1.2):
