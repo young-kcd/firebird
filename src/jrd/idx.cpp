@@ -266,7 +266,7 @@ void IDX_create_index(
 	// and only for ODS11 and higer.
 
 	const int nullIndLen = isODS11 && !isDescending && (idx->idx_count == 1) ? 1 : 0;
-	const USHORT key_length = ROUNDUP(BTR_key_length(tdbb, relation, idx) + nullIndLen, sizeof(SLONG));
+	const USHORT key_length = ROUNDUP(BTR_key_length(tdbb, relation, idx) + nullIndLen, sizeof(SINT64));
 
 	const USHORT max_key_size =
 		isODS11 ? MAX_KEY_LIMIT : MAX_KEY_PRE_ODS11;
