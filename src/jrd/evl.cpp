@@ -860,10 +860,18 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* const node)
 			if (impure->vlu_desc.dsc_dtype == dtype_text)
 				adjust_text_descriptor(tdbb, &impure->vlu_desc);
 
-			EVL_validate(tdbb,
-				Item(nod_argument, (IPTR) node->nod_arg[e_arg_message]->nod_arg[e_msg_number],
-					(IPTR) node->nod_arg[e_arg_number]),
-				&impure->vlu_desc, request->req_flags & req_null);
+			USHORT* impure_flags = (USHORT*) ((UCHAR *) request +
+				(IPTR) message->nod_arg[e_msg_impure_flags] +
+				(sizeof(USHORT) * (IPTR) node->nod_arg[e_arg_number]));
+
+			if (!(*impure_flags & VLU_checked))
+			{
+				EVL_validate(tdbb,
+					Item(nod_argument, (IPTR) node->nod_arg[e_arg_message]->nod_arg[e_msg_number],
+						(IPTR) node->nod_arg[e_arg_number]),
+					&impure->vlu_desc, request->req_flags & req_null);
+				*impure_flags |= VLU_checked;
+			}
 
 			return &impure->vlu_desc;
 		}
@@ -1037,8 +1045,12 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* const node)
 			if (impure->vlu_desc.dsc_dtype == dtype_text)
 				adjust_text_descriptor(tdbb, &impure->vlu_desc);
 
-			EVL_validate(tdbb, Item(nod_variable, (IPTR) node->nod_arg[e_var_id]),
-				&impure->vlu_desc, impure->vlu_desc.dsc_flags & DSC_null);
+			if (!(impure2->vlu_flags & VLU_checked))
+			{
+				EVL_validate(tdbb, Item(nod_variable, (IPTR) node->nod_arg[e_var_id]),
+					&impure->vlu_desc, impure->vlu_desc.dsc_flags & DSC_null);
+				impure2->vlu_flags |= VLU_checked;
+			}
 
 			return &impure->vlu_desc;
 		}

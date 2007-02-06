@@ -291,11 +291,15 @@ void EXE_assignment(thread_db* tdbb, jrd_nod* node)
 		null = -1;
 	}
 
+	USHORT* impure_flags = NULL;
+
 	switch (to->nod_type)
 	{
 		case nod_variable:
 			EVL_validate(tdbb, Item(nod_variable, (IPTR) to->nod_arg[e_var_id]),
 				from_desc, null == -1);
+			impure_flags = &((impure_value*) ((SCHAR *) request +
+				to->nod_arg[e_var_variable]->nod_impure))->vlu_flags;
 			break;
 
 		case nod_argument:
@@ -303,8 +307,14 @@ void EXE_assignment(thread_db* tdbb, jrd_nod* node)
 				Item(nod_argument, (IPTR) to->nod_arg[e_arg_message]->nod_arg[e_msg_number],
 					(IPTR) to->nod_arg[e_arg_number]),
 				from_desc, null == -1);
+			impure_flags = (USHORT*) ((UCHAR *) request +
+				(IPTR) to->nod_arg[e_arg_message]->nod_arg[e_msg_impure_flags] +
+				(sizeof(USHORT) * (IPTR) to->nod_arg[e_arg_number]));
 			break;
 	}
+
+	if (impure_flags != NULL)
+		*impure_flags |= VLU_checked;
 
 /* If the value is non-missing, move/convert it.  Otherwise fill the
    field with appropriate nulls. */
@@ -2501,9 +2511,20 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 
 			if (transaction->tra_flags & TRA_autocommit)
 				transaction->tra_flags |= TRA_perform_autocommit;
-		case nod_message:
+
 			if (request->req_operation == jrd_req::req_evaluate)
 				request->req_operation = jrd_req::req_return;
+			node = node->nod_parent;
+			break;
+
+		case nod_message:
+			if (request->req_operation == jrd_req::req_evaluate)
+			{
+				const Format* format = (Format*) node->nod_arg[e_msg_format];
+				USHORT* impure_flags = (USHORT*) ((UCHAR *) request + (IPTR) node->nod_arg[e_msg_impure_flags]);
+				memset(impure_flags, 0, sizeof(USHORT) * format->fmt_count);
+				request->req_operation = jrd_req::req_return;
+			}
 			node = node->nod_parent;
 			break;
 

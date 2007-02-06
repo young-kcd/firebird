@@ -2892,6 +2892,7 @@ static jrd_nod* copy(thread_db* tdbb,
 		node->nod_count = input->nod_count;
 		node->nod_arg[e_msg_number] = input->nod_arg[e_msg_number];
 		node->nod_arg[e_msg_format] = input->nod_arg[e_msg_format];
+		node->nod_arg[e_msg_impure_flags] = input->nod_arg[e_msg_impure_flags];
 		// dimitr: hmmm, cannot find where the following one is used...
 		node->nod_arg[e_msg_next] =
 			copy(tdbb, csb, input->nod_arg[e_msg_next], remap, field_id,
@@ -4955,6 +4956,9 @@ static jrd_nod* pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node
 			const Format* format = (Format*) node->nod_arg[e_msg_format];
 			if (!((tdbb->tdbb_flags & TDBB_prc_being_dropped) && !format)) {
 				csb->csb_impure += FB_ALIGN(format->fmt_length, 2);
+
+				node->nod_arg[e_msg_impure_flags] = (jrd_nod*)(IPTR) CMP_impure(csb, 0);
+				csb->csb_impure += sizeof(USHORT) * format->fmt_count;
 			}
 		}
 		break;

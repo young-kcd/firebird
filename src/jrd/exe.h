@@ -226,9 +226,9 @@ struct impure_value_ex : public impure_value {
 };
 
 
-const int VLU_computed	= 1;		/* An invariant sub-query has been computed */
-const int VLU_null		= 2;		/* An invariant sub-query computed to null */
-
+const int VLU_computed	= 1;	// An invariant sub-query has been computed
+const int VLU_null		= 2;	// An invariant sub-query computed to null
+const int VLU_checked	= 4;	// Constraint already checked in first read or assignment to argument/variable
 
 /* Inversion (i.e. nod_index) impure area */
 
@@ -258,10 +258,11 @@ const int e_arg_message		= 2;
 const int e_arg_number		= 3;
 const int e_arg_length		= 4;
 
-const int e_msg_number		= 0;
-const int e_msg_format		= 1;
-const int e_msg_next		= 2;
-const int e_msg_length		= 3;
+const int e_msg_number			= 0;
+const int e_msg_format			= 1;
+const int e_msg_next			= 2;
+const int e_msg_impure_flags	= 3;
+const int e_msg_length			= 4;
 
 const int e_fld_stream		= 0;
 const int e_fld_id			= 1;
