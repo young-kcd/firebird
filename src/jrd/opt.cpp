@@ -5341,21 +5341,21 @@ static RecordSource* gen_sort(thread_db* tdbb,
 		map_item->smb_stream = stream;
 		map_item->smb_flag_offset = flag_offset++;
 		map_item->smb_desc = *desc;
-		map_item->smb_desc.dsc_address = (UCHAR *) (IPTR)map_length;
+		map_item->smb_desc.dsc_address = (UCHAR *) (IPTR) map_length;
 		map_length += desc->dsc_length;
 		map_item++;
 	}
 
 /* Make fields for record numbers record for all streams */
 
-	map_length = ROUNDUP(map_length, sizeof(SLONG));
+	map_length = ROUNDUP(map_length, sizeof(SINT64));
 	for (ptr = &streams[1]; ptr <= end_ptr; ptr++, map_item++) {
 		map_item->smb_field_id = SMB_DBKEY;
 		map_item->smb_stream = *ptr;
 		dsc* desc = &map_item->smb_desc;
 		desc->dsc_dtype = dtype_int64;
 		desc->dsc_length = sizeof(SINT64);
-		desc->dsc_address = (UCHAR *)(IPTR)map_length;
+		desc->dsc_address = (UCHAR *) (IPTR) map_length;
 		map_length += desc->dsc_length;
 	}
 
@@ -5367,12 +5367,12 @@ static RecordSource* gen_sort(thread_db* tdbb,
 		dsc* desc = &map_item->smb_desc;
 		desc->dsc_dtype = dtype_long;
 		desc->dsc_length = sizeof(SLONG);
-		desc->dsc_address = (UCHAR *) (IPTR)map_length;
+		desc->dsc_address = (UCHAR *) (IPTR) map_length;
 		map_length += desc->dsc_length;
 	}
 
 	if (dbkey_streams) {
-        ptr = &dbkey_streams[1];
+		ptr = &dbkey_streams[1];
 		for (const UCHAR* const end_ptrL = dbkey_streams + dbkey_streams[0];
 			ptr <= end_ptrL; ptr++, map_item++)
 		{
@@ -5381,7 +5381,7 @@ static RecordSource* gen_sort(thread_db* tdbb,
 			dsc* desc = &map_item->smb_desc;
 			desc->dsc_dtype = dtype_int64;
 			desc->dsc_length = sizeof(SINT64);
-			desc->dsc_address = (UCHAR *)(IPTR)map_length;
+			desc->dsc_address = (UCHAR *) (IPTR) map_length;
 			map_length += desc->dsc_length;
 		}
 	}
