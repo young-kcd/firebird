@@ -1,3 +1,10 @@
+    * HPUX Ports
+	  Fix Core Dump on HPUX when using SQL Dialect 1 and 
+	  select distinct(1.0/1) from rdb$database. Alignment
+	  issue.
+      Contributor(s):
+	Paul Beach (pbeach at ibphoenix.com)
+
   **************
   * v1.5.4
   **************
