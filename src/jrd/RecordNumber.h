@@ -158,9 +158,9 @@ public:
 			(((UINT64) bid_number[0]) << 32);
 	}
 
-	inline void setValid(bool value)
+	inline void setValid(bool to_value)
 	{
-		valid = value;
+		valid = to_value;
 	}
 
 private:

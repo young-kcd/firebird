@@ -325,7 +325,7 @@ AC_ARG_WITH(gpre-ada,
 AC_ARG_WITH(gpre-cobol,
   [  --with-gpre-cobol       support COBOL in gpre (default=no)],
   [case "$withval" in
-     yes) XE_APPEND(cob.cpp,GPRE_LANGUAGE_MODULES)
+     yes) XE_APPEND(cob.cpp rmc.cpp,GPRE_LANGUAGE_MODULES)
           AC_DEFINE(GPRE_COBOL, 1, [Define this if GPRE should support COBOL]);;
      no)  ;;
      *)   AC_MSG_ERROR(bad value '${withval}' for --with-gpre-cobol);;
@@ -762,6 +762,7 @@ dnl #### TEMP ######### directories for .o and .d
 dnl # by module name
 
 mkdir -p temp/boot/alice
+mkdir -p temp/boot/auth/trusted
 mkdir -p temp/boot/burp
 mkdir -p temp/boot/common/classes
 mkdir -p temp/boot/common/config
@@ -795,6 +796,7 @@ mkdir -p temp/boot/utilities/rebuild
 mkdir -p temp/boot/vulcan
 
 mkdir -p temp/std/alice
+mkdir -p temp/std/auth/trusted
 mkdir -p temp/std/burp
 mkdir -p temp/std/common/classes
 mkdir -p temp/std/common/config
@@ -829,6 +831,7 @@ mkdir -p temp/std/vulcan
 mkdir -p temp/std/extern/editline
 
 mkdir -p temp/superclient/alice
+mkdir -p temp/superclient/auth/trusted
 mkdir -p temp/superclient/burp
 mkdir -p temp/superclient/common/classes
 mkdir -p temp/superclient/common/config
@@ -862,6 +865,7 @@ mkdir -p temp/superclient/utilities/rebuild
 mkdir -p temp/superclient/vulcan
 
 mkdir -p temp/superserver/alice
+mkdir -p temp/superserver/auth/trusted
 mkdir -p temp/superserver/burp
 mkdir -p temp/superserver/common/classes
 mkdir -p temp/superserver/common/config

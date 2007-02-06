@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.client.gpre,v 1.21 2005-12-20 12:14:52 alexpeshkoff Exp $
+#  $Id: Makefile.in.client.gpre,v 1.22 2007-02-06 12:18:03 aafemt Exp $
 #
 ROOT=..
 ObjModuleType=std
@@ -43,7 +43,7 @@ GPRE_Other_Sources = jrd/dsc.cpp jrd/isc.cpp
 GPRE_Files = gpre_meta.epp \
 		cmd.cpp cme.cpp cmp.cpp c_cxx.cpp exp.cpp gpre.cpp \
 		hsh.cpp int_cxx.cpp jrdmet.cpp movg.cpp msc.cpp par.cpp \
-		pat.cpp pretty.cpp sqe.cpp sql.cpp cob.cpp \
+		pat.cpp pretty.cpp sqe.cpp sql.cpp \
 		@GPRE_LANGUAGE_MODULES@
 
 GPRE_Sources = $(addprefix gpre/, $(GPRE_Files)) $(GPRE_Other_Sources)
