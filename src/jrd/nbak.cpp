@@ -537,10 +537,10 @@ void BackupManager::begin_backup(thread_db* tdbb)
 {
 	NBAK_TRACE(("begin_backup"));
 
+	// Lock header page first to prevent possible deadlock
 	WIN window(HEADER_PAGE);
-	Ods::header_page* header = NULL;
-	bool state_locked = false, database_locked = false;
-
+	Ods::header_page* header = (Ods::header_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
+	bool state_locked = false, header_locked = true, database_locked = false;
 	try {
 #ifndef SUPERSERVER
 		// Send AST's to flush other caches. While this lock is taken no pages may have
@@ -562,6 +562,7 @@ void BackupManager::begin_backup(thread_db* tdbb)
 		if (backup_state != nbak_state_normal) {
 			NBAK_TRACE(("end backup - invalid state %d", backup_state));
 			unlock_state_write(tdbb);
+			CCH_RELEASE(tdbb, &window);
 			return;
 		}
 		// Create file
@@ -601,8 +602,6 @@ void BackupManager::begin_backup(thread_db* tdbb)
 		GenerateGuid(&guid);
 		tdbb->tdbb_flags |= TDBB_set_backup_state;
 		// Set state in database header page. All changes are written to main database file yet.
-		Ods::header_page* header =
-			(Ods::header_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
 		CCH_MARK_MUST_WRITE(tdbb, &window);
 		int newState = nbak_state_stalled;
 		header->hdr_flags = (header->hdr_flags & ~Ods::hdr_backup_mask) | newState;
@@ -613,10 +612,10 @@ void BackupManager::begin_backup(thread_db* tdbb)
 		PAG_replace_entry_first(header, Ods::HDR_backup_guid, sizeof(guid), 
 			reinterpret_cast<const UCHAR*>(&guid));
 
-		header = NULL;
+		header_locked = false;
 		CCH_RELEASE(tdbb, &window);
 		tdbb->tdbb_flags &= ~TDBB_set_backup_state;
-
+	
 		backup_state = newState;
 		current_scn = adjusted_scn;
 		// This is essential for SuperServer to prevent multi-threading issues
@@ -632,7 +631,7 @@ void BackupManager::begin_backup(thread_db* tdbb)
 		tdbb->tdbb_flags &= ~TDBB_set_backup_state;
 		if (state_locked)
 			unlock_state_write(tdbb);
-		if (header)
+		if (header_locked)
 			CCH_RELEASE(tdbb, &window);
 #ifndef SUPERSERVER
 		if (database_locked)
@@ -667,13 +666,15 @@ void BackupManager::end_backup(thread_db* tdbb, bool recover)
 						// for some instants and anything is possible at
 						// that times.
 
+	// Lock header page first to prevent possible deadlock
 	WIN window(HEADER_PAGE);
-	Ods::header_page* header = NULL;
-	bool state_locked = false;
+	Ods::header_page* header = (Ods::header_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
+	bool state_locked = false, header_locked = true;
 
 	try {
 		if (recover) {
 			if (!try_lock_state_write(tdbb)) {
+				CCH_RELEASE(tdbb, &window);
 				return;
 			}
 		}
@@ -687,6 +688,7 @@ void BackupManager::end_backup(thread_db* tdbb, bool recover)
 		{
 			NBAK_TRACE(("invalid state %d", backup_state));
 			unlock_state_write(tdbb);
+			CCH_RELEASE(tdbb, &window);
 			return;
 		}
 		NBAK_TRACE(("difference file %s", diff_name));
@@ -696,7 +698,6 @@ void BackupManager::end_backup(thread_db* tdbb, bool recover)
 		backup_state = nbak_state_merge;
 		adjusted_scn = ++current_scn;
 		NBAK_TRACE(("New state is getting to become %d", backup_state));
-		header = (Ods::header_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
 		CCH_MARK_MUST_WRITE(tdbb, &window);
 		NBAK_TRACE(("New state is getting to become after fetches %d", backup_state));
 		// Generate new SCN
@@ -704,7 +705,7 @@ void BackupManager::end_backup(thread_db* tdbb, bool recover)
 		NBAK_TRACE(("new SCN=%d is getting written to header", header->hdr_header.pag_scn));
 		// Adjust state
 		header->hdr_flags = (header->hdr_flags & ~Ods::hdr_backup_mask) | backup_state;
-		header = NULL;
+		header_locked = false;
 		CCH_RELEASE(tdbb, &window);
 		tdbb->tdbb_flags &= ~TDBB_set_backup_state;
 		NBAK_TRACE(("Set state %d in header page", backup_state));
@@ -713,14 +714,14 @@ void BackupManager::end_backup(thread_db* tdbb, bool recover)
 		tdbb->tdbb_flags &= ~TDBB_set_backup_state;
 		if (state_locked)
 			unlock_state_write(tdbb);
-		if (header)
+		if (header_locked)
 			CCH_RELEASE(tdbb, &window);
 		throw;
 	}
-
-
+	
+	
 	// Here comes the dirty work. We need to reapply all changes from difference file to database
-
+	
 	// Release write state lock and get read lock. 
 	// Merge process should not inhibit normal operations.
 	tdbb->tdbb_flags &= ~TDBB_set_backup_state;
@@ -740,9 +741,9 @@ void BackupManager::end_backup(thread_db* tdbb, bool recover)
 			ERR_punt();
 		NBAK_TRACE(("Allocation table %p is current.", alloc_table));
 		AllocItemTree::Accessor all(alloc_table);
-
+		
 		tdbb->tdbb_flags |= TDBB_set_backup_state | TDBB_backup_merge;
-
+		
 		if (all.getFirst()) {
 			do {
 				WIN window2(all.current().db_page);
@@ -754,21 +755,22 @@ void BackupManager::end_backup(thread_db* tdbb, bool recover)
 			} while (all.getNext());
 		}
 		CCH_flush(tdbb, FLUSH_ALL, 0); // Really write changes to main database file
-
+		
 		tdbb->tdbb_flags &= ~(TDBB_set_backup_state | TDBB_backup_merge);
 		unlock_state(tdbb);
-
+		
 	} catch(const std::exception&) {
 		tdbb->tdbb_flags &= ~(TDBB_set_backup_state | TDBB_backup_merge);
 		unlock_state(tdbb);
 		throw;
 	}
-
+	
 	// We finished. We need to reflect it in our database header page
 	window.win_page = HEADER_PAGE;
 	window.win_flags = 0;
 	header = (Ods::header_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
 	state_locked = false;
+	header_locked = true;
 	try {
 		lock_state_write(tdbb, true);
 		state_locked = true;
@@ -789,15 +791,15 @@ void BackupManager::end_backup(thread_db* tdbb, bool recover)
 		// Generate new SCN
 		header->hdr_header.pag_scn = ++current_scn;
 		NBAK_TRACE(("new SCN=%d is getting written to header", header->hdr_header.pag_scn));
-		header = NULL;
+		header_locked = false;
 		CCH_RELEASE(tdbb, &window);
 		tdbb->tdbb_flags &= ~TDBB_set_backup_state;
-
+		
 		// Page allocation table cache is no longer valid
 		delete alloc_table;
 		alloc_table = NULL;
 		last_allocated_page = 0;
-
+		
 		if (diff_file) {
 #ifndef SUPERSERVER
 			diff_generation++;
@@ -806,7 +808,7 @@ void BackupManager::end_backup(thread_db* tdbb, bool recover)
 			diff_file = NULL;
 		}
 		unlink(diff_name.c_str());
-
+		
 		unlock_state_write(tdbb);
 		NBAK_TRACE(("backup ended"));
 	} catch (const std::exception&) {
@@ -814,7 +816,7 @@ void BackupManager::end_backup(thread_db* tdbb, bool recover)
 		tdbb->tdbb_flags &= ~TDBB_set_backup_state;
 		if (state_locked)
 			unlock_state_write(tdbb);
-		if (header)
+		if (header_locked)
 			CCH_RELEASE(tdbb, &window);
 		throw;
 	}
@@ -1083,9 +1085,9 @@ bool BackupManager::actualize_state(thread_db* tdbb) throw()
 	// State is unknown. We need to read it from the disk.
 	// We cannot use CCH for this because of likely recursion.
 	NBAK_TRACE(("actualize_state"));	
-
+	
 	ISC_STATUS *status = tdbb->tdbb_status_vector;
-
+			
 	// Read original page from database file or shadows.
 	SSHORT retryCount = 0;
 	Ods::header_page* header = reinterpret_cast<Ods::header_page*>(spare_buffer);
@@ -1136,7 +1138,7 @@ bool BackupManager::actualize_state(thread_db* tdbb) throw()
 	}
 	if (!fname_found)
 		generate_filename();
-
+		
 	if (new_backup_state == nbak_state_normal || missed_cycle) {
 		if (diff_file)
 			diff_pending_close = true;
