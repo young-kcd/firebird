@@ -76,12 +76,12 @@ namespace YValve
 	};
 	
 	// stored handle types
-	typedef Jrd::jrd_tra StTra;
-	typedef void StReq;
-	typedef void StBlb;
-	typedef Jrd::Attachment StAtt;
-	typedef dsql_req StStm;
-	typedef void StSvc;
+	typedef Jrd::jrd_tra StoredTra;
+	typedef void StoredReq;
+	typedef void StoredBlb;
+	typedef Jrd::Attachment StoredAtt;
+	typedef dsql_req StoredStm;
+	typedef void StoredSvc;
 
 	template <typename CleanupRoutine, typename CleanupArg>
 	class Clean : public DefaultMemory
@@ -128,7 +128,7 @@ namespace YValve
 		}
 	};
 
-	class Handle : public DefaultMemory
+	class BaseHandle : public DefaultMemory
 	{
 	public:
 		UCHAR			type;
@@ -139,16 +139,16 @@ namespace YValve
     	FB_API_HANDLE*	user_handle;
 		
 	protected:
-		Handle(UCHAR t, FB_API_HANDLE* pub, Attachment* par, USHORT imp = ~0);
+		BaseHandle(UCHAR t, FB_API_HANDLE* pub, Attachment* par, USHORT imp = ~0);
 		
 	public:
-		static Handle* translate(FB_API_HANDLE);
+		static BaseHandle* translate(FB_API_HANDLE);
 		Jrd::Attachment* getAttachmentHandle();
 		void cancel();
-		~Handle();
+		~BaseHandle();
 
 		// required to put pointers to it into the tree
-		static const FB_API_HANDLE& generate(const void* sender, Handle* value) {
+		static const FB_API_HANDLE& generate(const void* sender, BaseHandle* value) {
 			return value->public_handle;
 		}
 	};
@@ -181,7 +181,7 @@ namespace YValve
 	{
 		if (handle && *handle)
 		{
-			Handle* rc = Handle::translate(*handle);
+			BaseHandle* rc = BaseHandle::translate(*handle);
 			if (rc && rc->type == ToHandle::hType())
 			{
 				return reinterpret_cast<ToHandle*>(rc);
@@ -194,7 +194,7 @@ namespace YValve
 		return 0;
 	}
 
-	class Attachment : public Handle
+	class Attachment : public BaseHandle
 	{
 	public:
 		Firebird::SortedArray<Transaction*> transactions;
@@ -203,7 +203,7 @@ namespace YValve
 		Firebird::SortedArray<Statement*> statements;
 
 		Clean<AttachmentCleanupRoutine, FB_API_HANDLE*> cleanup;
-		StAtt* handle;
+		StoredAtt* handle;
 		Firebird::PathName db_path;
 		Firebird::Array<SCHAR> db_prepare_buffer;
 
@@ -218,17 +218,17 @@ namespace YValve
 		}
 
 	public:
-		Attachment(StAtt*, FB_API_HANDLE*, USHORT);
+		Attachment(StoredAtt*, FB_API_HANDLE*, USHORT);
 		void cancel2();
 		~Attachment();
 	};
 
-	class Transaction : public Handle
+	class Transaction : public BaseHandle
 	{
 	public:
 		Clean<TransactionCleanupRoutine, FB_API_HANDLE> cleanup;
 		Transaction* next;
-		StTra* handle;
+		StoredTra* handle;
 
 		static ISC_STATUS hError()
 		{
@@ -241,15 +241,15 @@ namespace YValve
 		}
 
 	public:
-		Transaction(StTra* h, FB_API_HANDLE* pub, Attachment* par)
-			: Handle(hType(), pub, par), 
+		Transaction(StoredTra* h, FB_API_HANDLE* pub, Attachment* par)
+			: BaseHandle(hType(), pub, par), 
 			  next(0), handle(h)
 		{
 			toParent<Transaction>(parent->transactions, this);
 		}
 
 		Transaction(FB_API_HANDLE* pub, USHORT implementation)
-			: Handle(hType(), pub, 0, implementation), 
+			: BaseHandle(hType(), pub, 0, implementation), 
 			  next(0), handle(0)
 		{
 		}
@@ -264,10 +264,10 @@ namespace YValve
 		}
 	};
 	
-	class Request : public Handle
+	class Request : public BaseHandle
 	{
 	public:
-		StReq* handle;
+		StoredReq* handle;
 
 		static ISC_STATUS hError()
 		{
@@ -280,8 +280,8 @@ namespace YValve
 		}
 
 	public:
-		Request(StReq* h, FB_API_HANDLE* pub, Attachment* par)
-			: Handle(hType(), pub, par), handle(h)
+		Request(StoredReq* h, FB_API_HANDLE* pub, Attachment* par)
+			: BaseHandle(hType(), pub, par), handle(h)
 		{
 			toParent<Request>(parent->requests, this);
 		}
@@ -292,10 +292,10 @@ namespace YValve
 		}
 	};
 	
-	class Blob : public Handle
+	class Blob : public BaseHandle
 	{
 	public:
-		StBlb* handle;
+		StoredBlb* handle;
 
 		static ISC_STATUS hError()
 		{
@@ -308,8 +308,8 @@ namespace YValve
 		}
 
 	public:
-		Blob(StBlb* h, FB_API_HANDLE* pub, Attachment* par)
-			: Handle(hType(), pub, par), handle(h)
+		Blob(StoredBlb* h, FB_API_HANDLE* pub, Attachment* par)
+			: BaseHandle(hType(), pub, par), handle(h)
 		{
 			toParent<Blob>(parent->blobs, this);
 		}
@@ -320,10 +320,10 @@ namespace YValve
 		}
 	};
 	
-	class Statement : public Handle
+	class Statement : public BaseHandle
 	{
 	public:
-		StStm* handle;
+		StoredStm* handle;
 		struct sqlda_sup das;
 
 		static ISC_STATUS hError()
@@ -337,8 +337,8 @@ namespace YValve
 		}
 
 	public:
-		Statement(StStm* h, FB_API_HANDLE* pub, Attachment* par)
-			: Handle(hType(), pub, par), handle(h)
+		Statement(StoredStm* h, FB_API_HANDLE* pub, Attachment* par)
+			: BaseHandle(hType(), pub, par), handle(h)
 		{
 			toParent<Statement>(parent->statements, this);
 			memset(&das, 0, sizeof das);
@@ -358,11 +358,11 @@ namespace YValve
 		}
 	};
 
-	class Service : public Handle
+	class Service : public BaseHandle
 	{
 	public:
 		Clean<AttachmentCleanupRoutine, FB_API_HANDLE*> cleanup;
-		StSvc* handle;
+		StoredSvc* handle;
 
 		static ISC_STATUS hError()
 		{
@@ -375,8 +375,8 @@ namespace YValve
 		}
 
 	public:
-		Service(StSvc* h, FB_API_HANDLE* pub, USHORT impl)
-			: Handle(hType(), pub, 0, impl), handle(h)
+		Service(StoredSvc* h, FB_API_HANDLE* pub, USHORT impl)
+			: BaseHandle(hType(), pub, 0, impl), handle(h)
 			  
 		{
 		}

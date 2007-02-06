@@ -200,7 +200,7 @@ static void free_block(void*);
 
 namespace YValve
 {
-	typedef Firebird::BePlusTree<Handle*, FB_API_HANDLE, MemoryPool, Handle> HandleMapping;
+	typedef Firebird::BePlusTree<BaseHandle*, FB_API_HANDLE, MemoryPool, BaseHandle> HandleMapping;
 
 	static Firebird::AutoPtr<HandleMapping> handleMapping;
 	static ULONG handle_sequence_number = 0;
@@ -208,7 +208,7 @@ namespace YValve
 
 	static Firebird::InitInstance<Firebird::SortedArray<Attachment*> > attachments;
 
-	Handle::Handle(UCHAR t, FB_API_HANDLE* pub, Attachment* par, USHORT imp)
+	BaseHandle::BaseHandle(UCHAR t, FB_API_HANDLE* pub, Attachment* par, USHORT imp)
 		: type(t), flags(0), implementation(par ? par->implementation : imp), 
 		  parent(par), user_handle(0)
 	{
@@ -247,7 +247,7 @@ namespace YValve
 		}
 	}
 
-	Handle* Handle::translate(FB_API_HANDLE handle) {
+	BaseHandle* BaseHandle::translate(FB_API_HANDLE handle) {
 		Firebird::ReadLockGuard sync(handleMappingLock);
 
 		if (handleMapping) 
@@ -255,7 +255,7 @@ namespace YValve
 			HandleMapping::Accessor accessor(handleMapping);
 			if (accessor.locate(handle))
 			{
-				Handle* h = accessor.current();
+				BaseHandle* h = accessor.current();
 				if (h->flags & HANDLE_shutdown)
 				{
 					Firebird::status_exception::raise(isc_shutdown, isc_arg_string,
@@ -269,12 +269,12 @@ namespace YValve
 		return 0;
 	}
 
-	Jrd::Attachment* Handle::getAttachmentHandle()
+	Jrd::Attachment* BaseHandle::getAttachmentHandle()
 	{
 		return parent ? parent->handle : 0;
 	}
 
-	void Handle::cancel()
+	void BaseHandle::cancel()
 	{
 		if (!parent)
 		{
@@ -283,7 +283,7 @@ namespace YValve
 		parent->cancel2();
 	}
 
-	Handle::~Handle()
+	BaseHandle::~BaseHandle()
 	{
 		if (user_handle)
 		{
@@ -306,8 +306,8 @@ namespace YValve
 #endif
 	}
 
-	Attachment::Attachment(StAtt* h, FB_API_HANDLE* pub, USHORT impl)
-		: Handle(hType(), pub, 0, impl), 
+	Attachment::Attachment(StoredAtt* h, FB_API_HANDLE* pub, USHORT impl)
+		: BaseHandle(hType(), pub, 0, impl), 
 		  transactions(*getDefaultMemoryPool()),
 		  requests(*getDefaultMemoryPool()),
 		  blobs(*getDefaultMemoryPool()),
@@ -541,7 +541,7 @@ namespace
 			}
 		}
 
-		void setPrimaryHandle(Handle* h)
+		void setPrimaryHandle(BaseHandle* h)
 		{
 			handle = h;
 		}
@@ -588,7 +588,7 @@ namespace
 		bool recursive;				// loopback call from ExecState, Udf, etc.
 
 		static bool inside;
-		static Handle* handle;
+		static BaseHandle* handle;
 		static ISC_STATUS* vector;
 		static bool init;
 		static int killed;
@@ -679,7 +679,7 @@ namespace
 
 	bool YEntry::init = false;
 	bool YEntry::inside = false;
-	Handle* YEntry::handle = 0;
+	BaseHandle* YEntry::handle = 0;
 	ISC_STATUS* YEntry::vector = 0;
 	int YEntry::killed = 0;
 	bool YEntry::proc2 = false;
@@ -695,7 +695,7 @@ namespace
 			subsystem_enter();
 		}
 
-		void setPrimaryHandle(Handle* h)
+		void setPrimaryHandle(BaseHandle* h)
 		{ 
 		}
 
@@ -1075,7 +1075,7 @@ ISC_STATUS API_ROUTINE GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
  **************************************/
 	ISC_STATUS *ptr;
 	ISC_STATUS_ARRAY temp;
-	StAtt* handle = 0;
+	StoredAtt* handle = 0;
 	Attachment* database = 0;
 	USHORT n;
 
@@ -1406,7 +1406,7 @@ ISC_STATUS API_ROUTINE GDS_COMMIT(ISC_STATUS * user_status,
 		status.setPrimaryHandle(transaction);
 
 		if (transaction->implementation != SUBSYSTEMS) {
-			// Handle single transaction case
+			// BaseHandle single transaction case
 			if (CALL(PROC_COMMIT, transaction->implementation) (status,
 															&transaction->
 															handle))
@@ -1415,7 +1415,7 @@ ISC_STATUS API_ROUTINE GDS_COMMIT(ISC_STATUS * user_status,
 			}
 		}
 		else {
-			// Handle two phase commit.  Start by putting everybody into
+			// BaseHandle two phase commit.  Start by putting everybody into
 			// limbo.  If anybody fails, punt
 			if (!(transaction->flags & HANDLE_TRANSACTION_limbo))
 			{
@@ -1514,7 +1514,7 @@ ISC_STATUS API_ROUTINE GDS_COMPILE(ISC_STATUS* user_status,
  **************************************/
 	YEntry status(user_status);
 	Attachment* dbb = 0;
-	StReq* rq = 0;
+	StoredReq* rq = 0;
 	try 
 	{
 		dbb = translate<Attachment>(db_handle);
@@ -1647,7 +1647,7 @@ ISC_STATUS API_ROUTINE GDS_CREATE_DATABASE(ISC_STATUS* user_status,
  **************************************/
 	ISC_STATUS *ptr;
 	ISC_STATUS_ARRAY temp;
-	StAtt* handle = 0;
+	StoredAtt* handle = 0;
 	Attachment* database = 0;
 	USHORT n;
 
@@ -2136,7 +2136,7 @@ ISC_STATUS API_ROUTINE GDS_DSQL_ALLOCATE(ISC_STATUS * user_status,
  **************************************/
 	YEntry status(user_status);
 	Attachment* dbb = 0;
-	StStm* stmt_handle = 0;
+	StoredStm* stmt_handle = 0;
 	UCHAR flag = 0;
 
 	try 
@@ -2486,7 +2486,7 @@ ISC_STATUS API_ROUTINE GDS_DSQL_EXECUTE2_M(ISC_STATUS* user_status,
 		{
 			transaction = translate<Transaction>(tra_handle);
 		}
-		StTra *handle = 0;
+		StoredTra *handle = 0;
 		PTR entry;
 
 #ifndef NO_LOCAL_DSQL
@@ -2877,7 +2877,7 @@ ISC_STATUS API_ROUTINE GDS_DSQL_EXEC_IMM3_M(ISC_STATUS* user_status,
 		status.setPrimaryHandle(dbb);
 
 		Transaction* transaction = 0;
-		StTra* handle = 0;
+		StoredTra* handle = 0;
 
 		if (*tra_handle) 
 		{
@@ -3495,7 +3495,7 @@ ISC_STATUS API_ROUTINE GDS_DSQL_PREPARE_M(ISC_STATUS* user_status,
 		Statement* statement = translate<Statement>(stmt_handle);
 		status.setPrimaryHandle(statement);
 
-		StTra *handle = 0;
+		StoredTra *handle = 0;
 		if (*tra_handle) 
 		{
 			Transaction* transaction = translate<Transaction>(tra_handle);
@@ -3792,7 +3792,7 @@ ISC_STATUS API_ROUTINE GDS_INTERNAL_COMPILE(ISC_STATUS* user_status,
 {
 	YEntry status(user_status);
 	Attachment* dbb = 0;
-	StReq* rq = 0;
+	StoredReq* rq = 0;
 
 	try
 	{
@@ -4291,7 +4291,7 @@ ISC_STATUS API_ROUTINE GDS_RECONNECT(ISC_STATUS* user_status,
  *
  **************************************/
 	YEntry status(user_status);
-	StTra* handle = 0;
+	StoredTra* handle = 0;
 
 	try
 	{
@@ -4635,7 +4635,7 @@ ISC_STATUS API_ROUTINE GDS_SERVICE_ATTACH(ISC_STATUS* user_status,
  *	that recognizes it.
  *
  **************************************/
-	StSvc* handle = 0;
+	StoredSvc* handle = 0;
 	Service* service = 0;
 	ISC_STATUS_ARRAY temp;
 	USHORT n;
@@ -4950,7 +4950,7 @@ ISC_STATUS API_ROUTINE GDS_START_MULTIPLE(ISC_STATUS * user_status,
 	ISC_STATUS_ARRAY temp;
 	Transaction* transaction = 0;
 	Attachment* dbb = 0;
-	StTra* handle = 0;
+	StoredTra* handle = 0;
 	
 	YEntry status(user_status);
 
@@ -5775,7 +5775,7 @@ static ISC_STATUS open_blob(ISC_STATUS* user_status,
  *
  **************************************/
 	YEntry status(user_status);
-	StBlb* blob_handle = 0;
+	StoredBlb* blob_handle = 0;
 	try 
 	{
 		nullCheck(public_blob_handle, isc_bad_segstr_handle);
