@@ -78,6 +78,23 @@ public:
 typedef Firebird::BePlusTree<AllocItem, ULONG, MemoryPool, AllocItem> AllocItemTree;
 
 
+// Flags manipulated normally
+const UATOM NBAK_state_in_use = 1;
+const UATOM NBAK_alloc_in_use = 2;
+
+// Flags manipulated at AST level
+const UATOM NBAK_state_blocking		= 1;
+const UATOM NBAK_alloc_blocking		= 2;
+const UATOM NBAK_database_blocking	= 4;
+const UATOM NBAK_alloc_dirty		= 8;
+
+// Note this flags MUST correspond with backup mask in ods.h
+const SATOM nbak_state_normal	= 0x0;     // Normal mode. Changes are simply written to main files
+const SATOM nbak_state_stalled	= 0x400;   // Main files are locked. Changes are written to diff file
+const SATOM nbak_state_merge	= 0x800;   // Merging changes from diff file into main files
+const SATOM nbak_state_unknown	= -1;      // State is unknown. Needs to be read from disk
+
+
 class BackupManager {
 public:
 	// Subsystem initialization
@@ -92,6 +109,14 @@ public:
 	bool lock_state(thread_db* tdbb, bool thread_exit) throw();
 	// Remove our interest in consistent backup state
 	void unlock_state(thread_db* tdbb) throw();
+	// Return whether we block someone
+	bool is_blocking() const throw() {
+#ifdef SUPERSERVER
+		return false;
+#else
+		return (ast_flags & NBAK_database_blocking);
+#endif
+	}
 	// Return current backup state
 	int get_state() const throw() {
 		return backup_state;
@@ -100,20 +125,20 @@ public:
 	ULONG get_current_scn() const throw() {
 		return current_scn;
 	}
-	
+
 	// Return the amount of pages in locked database files
 	SLONG get_backup_pages() const throw() {
 		return backup_pages;
 	}
-	
+
 	// Initialize and open difference file for writing
 	void begin_backup(thread_db* tdbb);
-	
+
 	// Merge difference file to main files (if needed) and unlink() difference 
 	// file then. If merge is already in progress method silently returns false and 
 	// does nothing (so it can be used for recovery on database startup). 
 	void end_backup(thread_db* tdbb, bool recover);
-	
+
 	// Prevent allocation table from modification by other threads/processes
 	// You may or may not call unlock function in case this functions fail
 	bool lock_alloc(thread_db* tdbb, bool thread_exit) throw();
@@ -126,13 +151,13 @@ public:
 	ULONG get_page_index(ULONG db_page) const throw();
 	// Return next page index in the difference file to be allocated
 	ULONG allocate_difference_page(thread_db* tdbb, ULONG db_page) throw();
-	
+
 	// Must have ISC_STATUS because it is called from write_page
 	bool write_difference(ISC_STATUS* status, ULONG diff_page, Ods::pag* page) throw();
-	
+
 	bool read_difference(thread_db* tdbb, ULONG diff_page, Ods::pag* page) throw();
-	
-	
+
+
 	// Routines to declare and release interest in the main database file
 	bool get_sw_database_lock(thread_db* tdbb, bool enable_signals) throw();
 	void release_sw_database_lock(thread_db* tdbb) throw();
@@ -186,7 +211,7 @@ private:
 	volatile SATOM database_use_count;
 	volatile SATOM diff_use_count;
 	volatile SATOM diff_generation;
-	
+
 	static int backup_state_ast(void *ast_object) throw();
 	static int alloc_table_ast(void *ast_object) throw();
 	static int backup_database_ast(void *ast_object) throw();
@@ -199,22 +224,6 @@ private:
 	bool actualize_state(thread_db* tdbb) throw();
 	bool actualize_alloc(thread_db* tdbb) throw();
 };
-
-// Flags manipulated normally
-const UATOM NBAK_state_in_use = 1;
-const UATOM NBAK_alloc_in_use = 2;
-
-// Flags manipulated at AST level
-const UATOM NBAK_state_blocking		= 1;
-const UATOM NBAK_alloc_blocking		= 2;
-const UATOM NBAK_database_blocking	= 4;
-const UATOM NBAK_alloc_dirty		= 8;
-
-// Note this flags MUST correspond with backup mask in ods.h
-const SATOM nbak_state_normal	= 0x0;     // Normal mode. Changes are simply written to main files
-const SATOM nbak_state_stalled	= 0x400;   // Main files are locked. Changes are written to diff file
-const SATOM nbak_state_merge	= 0x800;   // Merging changes from diff file into main files
-const SATOM nbak_state_unknown	= -1;      // State is unknown. Needs to be read from disk
 
 } //namespace Jrd
 
