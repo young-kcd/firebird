@@ -119,7 +119,7 @@ getInitScriptLocation() {
 #  stop super server if it is running
 
 stopSuperServerIfRunning() {
-    checkString=`ps -efww| egrep "(fbserver|fbguard)" |grep -v grep`
+    checkString=`ps -efww| egrep "\b(fbserver|fbguard)\b" |grep -v grep`
 
     if [ ! -z "$checkString" ]
     then
