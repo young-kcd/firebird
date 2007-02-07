@@ -1,3 +1,16 @@
+2007-02-06 13:17  paulbeach
+
+	* firebird2/src/jrd/cvt.cpp (1.20.2.4):
+
+	Oops.
+
+2007-02-06 12:45  paulbeach
+
+	* firebird2/: doc/WhatsNew (1.36.2.63), src/jrd/cvt.cpp (1.20.2.3):
+
+	Fix alignment issue for HPUX, which generates core dump - SQL
+	Dialect 1 and select distinct(1.0/1) from rdb$database
+
 2007-02-03 09:41  robocop
 
 	* firebird2/src/: jrd/evl.cpp (1.34.2.11),
