@@ -399,7 +399,7 @@ int BackupManager::backup_state_ast(void *ast_object) throw()
 	tdbb->tdbb_transaction = NULL;
 
 	NBAK_TRACE_AST("NBAK, backup_state_ast");
-	
+
 	if (new_dbb->dbb_backup_manager->flags & NBAK_state_in_use)
 		new_dbb->dbb_backup_manager->ast_flags |= NBAK_state_blocking;
 	else {
@@ -448,7 +448,7 @@ int BackupManager::alloc_table_ast(void *ast_object) throw()
 	tdbb->tdbb_quantum = QUANTUM;
 	tdbb->tdbb_request = NULL;
 	tdbb->tdbb_transaction = NULL;
-	
+
 	NBAK_TRACE_AST("NBAK, alloc_table_ast");
 
 	if (new_dbb->dbb_backup_manager->flags & NBAK_alloc_in_use)
@@ -503,7 +503,7 @@ int BackupManager::backup_database_ast(void *ast_object) throw()
 	tdbb->tdbb_status_vector = ast_status;
 
 	NBAK_TRACE_AST("NBAK, backup_database_ast");
-	
+
 	if (new_dbb->dbb_backup_manager->database_use_count) {
 		new_dbb->dbb_backup_manager->ast_flags |= NBAK_database_blocking;
 		ast_status[1] = 0;
@@ -615,7 +615,7 @@ void BackupManager::begin_backup(thread_db* tdbb)
 		header_locked = false;
 		CCH_RELEASE(tdbb, &window);
 		tdbb->tdbb_flags &= ~TDBB_set_backup_state;
-	
+
 		backup_state = newState;
 		current_scn = adjusted_scn;
 		// This is essential for SuperServer to prevent multi-threading issues
@@ -718,10 +718,10 @@ void BackupManager::end_backup(thread_db* tdbb, bool recover)
 			CCH_RELEASE(tdbb, &window);
 		throw;
 	}
-	
-	
+
+
 	// Here comes the dirty work. We need to reapply all changes from difference file to database
-	
+
 	// Release write state lock and get read lock. 
 	// Merge process should not inhibit normal operations.
 	tdbb->tdbb_flags &= ~TDBB_set_backup_state;
@@ -741,9 +741,9 @@ void BackupManager::end_backup(thread_db* tdbb, bool recover)
 			ERR_punt();
 		NBAK_TRACE(("Allocation table %p is current.", alloc_table));
 		AllocItemTree::Accessor all(alloc_table);
-		
+
 		tdbb->tdbb_flags |= TDBB_set_backup_state | TDBB_backup_merge;
-		
+
 		if (all.getFirst()) {
 			do {
 				WIN window2(all.current().db_page);
@@ -755,16 +755,16 @@ void BackupManager::end_backup(thread_db* tdbb, bool recover)
 			} while (all.getNext());
 		}
 		CCH_flush(tdbb, FLUSH_ALL, 0); // Really write changes to main database file
-		
+
 		tdbb->tdbb_flags &= ~(TDBB_set_backup_state | TDBB_backup_merge);
 		unlock_state(tdbb);
-		
+
 	} catch(const std::exception&) {
 		tdbb->tdbb_flags &= ~(TDBB_set_backup_state | TDBB_backup_merge);
 		unlock_state(tdbb);
 		throw;
 	}
-	
+
 	// We finished. We need to reflect it in our database header page
 	window.win_page = HEADER_PAGE;
 	window.win_flags = 0;
@@ -808,7 +808,7 @@ void BackupManager::end_backup(thread_db* tdbb, bool recover)
 			diff_file = NULL;
 		}
 		unlink(diff_name.c_str());
-		
+
 		unlock_state_write(tdbb);
 		NBAK_TRACE(("backup ended"));
 	} catch (const std::exception&) {
@@ -822,7 +822,7 @@ void BackupManager::end_backup(thread_db* tdbb, bool recover)
 	}
 	return;
 }
-	
+
 bool BackupManager::actualize_alloc(thread_db* tdbb) throw()
 {
 	if (alloc_table
@@ -843,7 +843,7 @@ bool BackupManager::actualize_alloc(thread_db* tdbb) throw()
 			// Difference file pointer pages have one ULONG as number of pages allocated on the page and
 			// then go physical numbers of pages from main database file. Offsets of numbers correspond
 			// to difference file pages.
-		
+
 			// Get offset of pointer page. We can do so because page sizes are powers of 2
 			temp_bdb.bdb_page = last_allocated_page & ~(database->dbb_page_size / sizeof(ULONG) - 1);
 			temp_bdb.bdb_dbb = database;
@@ -914,7 +914,7 @@ ULONG BackupManager::allocate_difference_page(thread_db* tdbb, ULONG db_page) th
 	temp_bdb.bdb_buffer = reinterpret_cast<Ods::pag*>(empty_buffer);
 	if (!PIO_write(diff_file, &temp_bdb, (Ods::pag*)empty_buffer, status_vector))
 		return 0;
-	
+
 	const bool alloc_page_full = alloc_buffer[0] == database->dbb_page_size / sizeof(ULONG) - 2;
 	if (alloc_page_full) {
 		// Pointer page is full. Its time to create new one.
@@ -950,7 +950,7 @@ ULONG BackupManager::allocate_difference_page(thread_db* tdbb, ULONG db_page) th
 		memset(alloc_buffer, 0, database->dbb_page_size);
 		return last_allocated_page - 1;
 	}
-	
+
 	return last_allocated_page;
 }
 
@@ -964,7 +964,7 @@ bool BackupManager::write_difference(ISC_STATUS* status, ULONG diff_page, Ods::p
 		return false;
 	return true;
 }
-	
+
 bool BackupManager::read_difference(thread_db* tdbb, ULONG diff_page, Ods::pag* page) throw()
 {
 	BufferDesc temp_bdb;
@@ -975,11 +975,11 @@ bool BackupManager::read_difference(thread_db* tdbb, ULONG diff_page, Ods::pag* 
 		return false;
 	return true;
 }
-	
+
 BackupManager::BackupManager(thread_db* tdbb, Database* _database, int ini_state) :
 	database(_database), diff_file(NULL), alloc_table(NULL), 
 	backup_state(ini_state), last_allocated_page(0),
-	current_scn(0), backup_pages(0), diff_name(*_database->dbb_permanent),  diff_pending_close(false)
+	current_scn(0), backup_pages(0), diff_name(*_database->dbb_permanent), diff_pending_close(false)
 {
 	// Allocate various database page buffers needed for operation
 	temp_buffers_space = FB_NEW(*database->dbb_permanent) BYTE[database->dbb_page_size * 3 + MIN_PAGE_SIZE];
@@ -987,12 +987,11 @@ BackupManager::BackupManager(thread_db* tdbb, Database* _database, int ini_state
 	BYTE *temp_buffers = reinterpret_cast<BYTE*>(
 		FB_ALIGN(reinterpret_cast<U_IPTR>(temp_buffers_space), MIN_PAGE_SIZE));
 	memset(temp_buffers, 0, database->dbb_page_size * 3);
-		
+
 	empty_buffer = reinterpret_cast<ULONG*>(temp_buffers);
 	spare_buffer = reinterpret_cast<ULONG*>(temp_buffers + database->dbb_page_size);
-	alloc_buffer = reinterpret_cast<ULONG*>(temp_buffers + database->dbb_page_size + 2);
+	alloc_buffer = reinterpret_cast<ULONG*>(temp_buffers + database->dbb_page_size * 2);
 
-	
 #ifdef SUPERSERVER
 	alloc_lock = FB_NEW(*_database->dbb_permanent) Firebird::RWLock();
 	state_lock = FB_NEW(*_database->dbb_permanent) Firebird::RWLock();	
@@ -1004,7 +1003,7 @@ BackupManager::BackupManager(thread_db* tdbb, Database* _database, int ini_state
 	database_use_count = 0;
 	diff_use_count = 0;
 	diff_generation = 0;
-	
+
 	state_lock = FB_NEW_RPT(*database->dbb_permanent, 0) Lock();
 	state_lock->lck_type = LCK_backup_state;
 	state_lock->lck_owner_handle = LCK_get_owner_handle(tdbb, state_lock->lck_type);
@@ -1085,9 +1084,9 @@ bool BackupManager::actualize_state(thread_db* tdbb) throw()
 	// State is unknown. We need to read it from the disk.
 	// We cannot use CCH for this because of likely recursion.
 	NBAK_TRACE(("actualize_state"));	
-	
+
 	ISC_STATUS *status = tdbb->tdbb_status_vector;
-			
+
 	// Read original page from database file or shadows.
 	SSHORT retryCount = 0;
 	Ods::header_page* header = reinterpret_cast<Ods::header_page*>(spare_buffer);
@@ -1138,7 +1137,7 @@ bool BackupManager::actualize_state(thread_db* tdbb) throw()
 	}
 	if (!fname_found)
 		generate_filename();
-		
+
 	if (new_backup_state == nbak_state_normal || missed_cycle) {
 		if (diff_file)
 			diff_pending_close = true;
