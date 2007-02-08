@@ -1807,7 +1807,6 @@ void CCH_mark_must_write(thread_db* tdbb, WIN * window)
 	bdb->bdb_flags |= (BDB_dirty | BDB_must_write);
 
 	CCH_MARK(tdbb, window);
-	update_write_direction(tdbb, bdb);
 }
 
 
@@ -1831,9 +1830,7 @@ void CCH_must_write(WIN * window)
 	}
 
 	bdb->bdb_flags |= (BDB_dirty | BDB_must_write);
-	update_write_direction(JRD_get_thread_data(), bdb);
 }
-
 
 
 Lock* CCH_page_lock(thread_db* tdbb)
