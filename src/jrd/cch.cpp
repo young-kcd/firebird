@@ -1386,7 +1386,7 @@ void CCH_flush_database(thread_db* tdbb)
 	// Redirect pages to the difference file
 
 	// Need to reconsider this protection for possible deadlocks when MT-safety is implemented
-//	BCB_MUTEX_ACQUIRE; 
+	// BCB_MUTEX_ACQUIRE; 
 	for (ULONG i = 0; (bcb = dbb->dbb_bcb) && i < bcb->bcb_count; i++) {
 		BufferDesc* bdb = bcb->bcb_rpt[i].bcb_bdb;
 		if (bdb->bdb_write_direction != BDB_write_normal &&
@@ -1397,11 +1397,11 @@ void CCH_flush_database(thread_db* tdbb)
 		NBAK_TRACE(("Redirect page=%d use=%d flags=%d", bdb->bdb_page, bdb->bdb_use_count, bdb->bdb_flags));
 		update_write_direction(tdbb, bdb);
 	}
-//	BCB_MUTEX_RELEASE;
+	// BCB_MUTEX_RELEASE;
 #else		
-	/* Do some fancy footwork to make sure that pages are
-	   not removed from the btc tree at AST level.  Then
-	   restore the flag to whatever it was before. */
+	// Do some fancy footwork to make sure that pages are
+	// not removed from the btc tree at AST level.  Then
+	// restore the flag to whatever it was before.
 
 	const bool keep_pages = bcb->bcb_flags & BCB_keep_pages;
 	dbb->dbb_bcb->bcb_flags |= BCB_keep_pages;
@@ -4823,7 +4823,7 @@ static void invalidate_and_release_buffer(thread_db* tdbb, BufferDesc* bdb)
  *
  **************************************/
 	// This function should be called before difference processing is done.
-	// So there should be no need to no need to release difference locks though
+	// So there should be no need to release difference locks though
 	Database* dbb = tdbb->tdbb_database;
 	bdb->bdb_flags |= BDB_not_valid;
 	bdb->bdb_flags &= ~BDB_dirty;

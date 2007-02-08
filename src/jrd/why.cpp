@@ -1406,7 +1406,7 @@ ISC_STATUS API_ROUTINE GDS_COMMIT(ISC_STATUS * user_status,
 		status.setPrimaryHandle(transaction);
 
 		if (transaction->implementation != SUBSYSTEMS) {
-			// BaseHandle single transaction case
+			// Handle single transaction case
 			if (CALL(PROC_COMMIT, transaction->implementation) (status,
 															&transaction->
 															handle))
@@ -1415,7 +1415,7 @@ ISC_STATUS API_ROUTINE GDS_COMMIT(ISC_STATUS * user_status,
 			}
 		}
 		else {
-			// BaseHandle two phase commit.  Start by putting everybody into
+			// Handle two phase commit.  Start by putting everybody into
 			// limbo.  If anybody fails, punt
 			if (!(transaction->flags & HANDLE_TRANSACTION_limbo))
 			{

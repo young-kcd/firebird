@@ -89,10 +89,10 @@ const UATOM NBAK_database_blocking	= 4;
 const UATOM NBAK_alloc_dirty		= 8;
 
 // Note this flags MUST correspond with backup mask in ods.h
-const SATOM nbak_state_normal	= 0x0;     // Normal mode. Changes are simply written to main files
-const SATOM nbak_state_stalled	= 0x400;   // Main files are locked. Changes are written to diff file
-const SATOM nbak_state_merge	= 0x800;   // Merging changes from diff file into main files
-const SATOM nbak_state_unknown	= -1;      // State is unknown. Needs to be read from disk
+const SATOM nbak_state_normal	= 0x000;	// Normal mode. Changes are simply written to main files
+const SATOM nbak_state_stalled	= 0x400;	// Main files are locked. Changes are written to diff file
+const SATOM nbak_state_merge	= 0x800;	// Merging changes from diff file into main files
+const SATOM nbak_state_unknown	= -1;		// State is unknown. Needs to be read from disk
 
 
 class BackupManager {

@@ -27,7 +27,6 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.client.gpre,v 1.22 2007-02-06 12:18:03 aafemt Exp $
 #
 ROOT=..
 ObjModuleType=std
