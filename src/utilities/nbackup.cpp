@@ -793,15 +793,14 @@ void nbackup::restore_database(int filecount, const char* const* files)
 						return;
 					}
 					try {
-						open_backup_scan();
+#ifdef WIN_NT
+						if (curLevel)
+#endif
+							open_backup_scan();
 						break;
 					} catch (const std::exception& e) {
 						printf("%s\n", e.what());
 					}
-#ifdef WIN_NT
-					if (curLevel)
-						close_backup();
-#endif
 				}
 			}
 			else {
@@ -906,7 +905,10 @@ void nbackup::restore_database(int filecount, const char* const* files)
 				// We are likely to have normal database here
 				delete_database = false;
 			}
-			close_backup();
+#ifdef WIN_NT
+			if (curLevel)
+#endif
+				close_backup();
 			curLevel++;
 		}
 	} catch(const std::exception& ex) {
