@@ -43,8 +43,8 @@ public:
 	static Collation* createInstance(MemoryPool& pool, TTYPE_ID id, texttype* tt, CharSet* cs);
 
 protected:
-	Collation(TTYPE_ID id, texttype *tt, CharSet* cs)
-		: TextType(id, tt, cs),
+	Collation(TTYPE_ID id, texttype *a_tt, CharSet* a_cs)
+		: TextType(id, a_tt, a_cs),
 		  useCount(0),
 		  existenceLock(NULL),
 		  obsolete(false)

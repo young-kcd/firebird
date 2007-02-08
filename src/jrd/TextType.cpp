@@ -101,7 +101,7 @@ namespace Jrd {
 
 
 TextType::TextType(TTYPE_ID _type, texttype *_tt, CharSet* _cs)
-	: type(_type), tt(_tt), cs(_cs)
+	: tt(_tt), cs(_cs), type(_type)
 {
 	canonical(cs->getSqlMatchAnyLength(), cs->getSqlMatchAny(), sizeof(sqlMatchAnyCanonic), sqlMatchAnyCanonic);
 	canonical(cs->getSqlMatchOneLength(), cs->getSqlMatchOne(), sizeof(sqlMatchOneCanonic), sqlMatchOneCanonic);

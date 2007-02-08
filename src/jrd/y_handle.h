@@ -248,8 +248,8 @@ namespace YValve
 			toParent<Transaction>(parent->transactions, this);
 		}
 
-		Transaction(FB_API_HANDLE* pub, USHORT implementation)
-			: BaseHandle(hType(), pub, 0, implementation), 
+		Transaction(FB_API_HANDLE* pub, USHORT a_implementation)
+			: BaseHandle(hType(), pub, 0, a_implementation), 
 			  next(0), handle(0)
 		{
 		}
