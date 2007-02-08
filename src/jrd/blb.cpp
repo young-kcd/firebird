@@ -931,7 +931,7 @@ void BLB_move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, jrd_nod* field)
 	else
 		fb_assert(false);
 
-	bool onlyMove = true;
+	bool simpleMove = true;
 
 	// If the target node is a field, we need more work to do.
 	if (field)
@@ -939,7 +939,10 @@ void BLB_move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, jrd_nod* field)
 		switch (field->nod_type)
 		{
 			case nod_field:
-				onlyMove = false;
+				// We should not materialize the blob if the destination field
+				// stream (nod_union, for example) don't have a relation.
+				simpleMove = tdbb->tdbb_request->
+					req_rpb[(IPTR)field->nod_arg[e_fld_stream]].rpb_relation == NULL;
 				break;
 			case nod_argument:
 			case nod_variable:
@@ -959,7 +962,7 @@ void BLB_move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, jrd_nod* field)
 
 	// If the target node is not a field, just copy the blob id
 	// and return.
-	if (onlyMove)
+	if (simpleMove)
 	{
 		// But if the sub_type or charset is diferrent, create a new blob.
 		if (DTYPE_IS_BLOB_OR_QUAD(from_desc->dsc_dtype) &&
