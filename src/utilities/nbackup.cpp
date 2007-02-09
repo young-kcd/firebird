@@ -786,7 +786,7 @@ void nbackup::restore_database(int filecount, const char* const* files)
 					}
 					try {
 #ifdef WIN_NT
-					if (curLevel)
+						if (curLevel)
 #endif
 							open_backup_scan();
 						break;
