@@ -111,7 +111,7 @@ if not DEFINED FB_EXTERNAL_DOCS (
  goto :EOF
 )
 
-sed -V | findstr version > nul
+sed --version | findstr version > nul
 @if %ERRORLEVEL% GEQ 1 (
     call :ERROR Could not locate sed
     goto :EOF
