@@ -940,7 +940,7 @@ void BLB_move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, jrd_nod* field)
 		{
 			case nod_field:
 				// We should not materialize the blob if the destination field
-				// stream (nod_union, for example) don't have a relation.
+				// stream (nod_union, for example) doesn't have a relation.
 				simpleMove = tdbb->tdbb_request->
 					req_rpb[(IPTR)field->nod_arg[e_fld_stream]].rpb_relation == NULL;
 				break;
@@ -964,7 +964,7 @@ void BLB_move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, jrd_nod* field)
 	// and return.
 	if (simpleMove)
 	{
-		// But if the sub_type or charset is diferrent, create a new blob.
+		// But if the sub_type or charset is different, create a new blob.
 		if (DTYPE_IS_BLOB_OR_QUAD(from_desc->dsc_dtype) &&
 			DTYPE_IS_BLOB_OR_QUAD(to_desc->dsc_dtype) &&
 			to_desc->dsc_sub_type != isc_blob_untyped &&

@@ -420,14 +420,11 @@ ISC_STATUS API_ROUTINE gds__decode(ISC_STATUS code, USHORT* fac, USHORT*
  **************************************/
 
 	if (!code)
-	{
 		return FB_SUCCESS;
-	}
-	else if ((code & ISC_MASK) != ISC_MASK)
-	{
-		/* not an ISC error message */
+		
+	// not an ISC error message
+	if ((code & ISC_MASK) != ISC_MASK)
 		return code;
-	}
 
 	*fac = GET_FACILITY(code);
 	*code_class = GET_CLASS(code);
@@ -1104,7 +1101,9 @@ void API_ROUTINE gds__trace_raw(const char* text, unsigned int length)
 	// Note: signal-safe code
 	gds__prefix(name, LOGFILE);
 	int file = open(name, O_CREAT | O_APPEND | O_WRONLY, 0660);
-	if (file == -1) return;
+	if (file == -1)
+		return;
+		
 	write(file, text, length);
 	close(file);
 #endif
@@ -2688,12 +2687,10 @@ int unlink(const SCHAR* file)
 			break;
 	}
 
-	if (!status)
+	if (!status || status == RMS$_FNF)
 		return 0;
-	else if (status != RMS$_FNF)
-		return -1;
-	else
-		return 0;
+
+	return -1;
 }
 #endif
 

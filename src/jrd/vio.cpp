@@ -5070,12 +5070,7 @@ static void verb_post(
 			if (same_tx) {
 				data->rec_flags |= REC_same_tx;
 			}
-			UCHAR* p = data->rec_data;
-			const UCHAR* q = old_data->rec_data;
-			for (const UCHAR* const end = q + old_data->rec_length; q < end; q++)
-			{
-				*p++ = *q;
-			}
+			memcpy(data->rec_data, old_data->rec_data, old_data->rec_length);
 			if (!action->vct_undo) {
 				action->vct_undo = new UndoItemTree(tdbb->getDefaultPool());
 			}

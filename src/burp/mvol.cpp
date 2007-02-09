@@ -757,13 +757,8 @@ static void bad_attribute(int attribute, USHORT type)
 	gds__msg_format(0, 12, type, sizeof(name), name, 0, 0, 0, 0, 0);
 	BURP_print(80, name, (void*) (IPTR) attribute, NULL, NULL, NULL);
 	// msg 80  don't recognize %s attribute %ld -- continuing 
-	int l = get(tdgbl);
-	if (l)
-	{
-		do {
-			get(tdgbl);
-		} while (--l);
-	}
+	for (int l = get(tdgbl); l; --l)
+		get(tdgbl);
 }
 
 
