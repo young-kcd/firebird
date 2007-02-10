@@ -1,3 +1,31 @@
+2007-02-09 09:34  robocop
+
+	* firebird2/src/: jrd/blb.cpp (1.133), jrd/gds.cpp (1.213),
+	jrd/vio.cpp (1.187), burp/mvol.cpp (1.45):
+
+	Misc.
+
+2007-02-09 09:29  dchri
+
+	*
+	firebird2/builds/install/arch-specific/win32/BuildExecutableInstall.bat
+	(1.17):
+
+	Changed sed "discovery" switch to a compatible but more widely used
+	switch.
+
+2007-02-09 09:22  dimitr
+
+	* firebird2/src/utilities/nbackup.cpp (1.54):
+
+	Formatting.
+
+2007-02-09 09:11  dimitr
+
+	* firebird2/src/utilities/nbackup.cpp (1.53):
+
+	Fixed CORE-1124.
+
 2007-02-08 15:46  asfernandes
 
 	* firebird2/src/jrd/blb.cpp (1.132):
