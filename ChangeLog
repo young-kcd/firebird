@@ -1,3 +1,12 @@
+2007-02-09 09:42  dchri
+
+	*
+	firebird2/builds/install/arch-specific/win32/BuildExecutableInstall.bat
+	(1.15.2.9):
+
+	Changed sed "discovery" switch to a compatible but more widely used
+	switch.
+
 2007-02-08 18:27  dimitr
 
 	* firebird2/src/utilities/nbackup.cpp (1.48.4.2):
