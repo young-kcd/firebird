@@ -1699,7 +1699,7 @@ void *ISC_make_signal(
 		return CreateEvent(NULL, man_rst, FALSE, NULL);
 
 	TEXT event_name[64];
-	sprintf(event_name, "_interbase_process%u_signal%d", process_idL, signal_number);
+	sprintf(event_name, "_firebird_process%u_signal%d", process_idL, signal_number);
 
 	HANDLE hEvent;
 	if (create_flag) {
