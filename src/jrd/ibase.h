@@ -67,7 +67,7 @@
 #include "types_pub.h"
 
 /********************************/
-/* InterBase Handle Definitions */
+/* Firebird Handle Definitions */
 /********************************/
 
 typedef FB_API_HANDLE isc_att_handle;

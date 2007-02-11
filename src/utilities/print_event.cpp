@@ -53,7 +53,7 @@ int main(int argc, char *argv[])
  *
  * Functional description
  *	This is a simple utility program to print out the current
- *	contents of the InterBase event table file.
+ *	contents of the Firebird event table file.
  *
  **************************************/
 	ISC_STATUS_ARRAY status_vector;

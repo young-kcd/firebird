@@ -63,7 +63,7 @@ static BOOL bServerApp = FALSE;	// Flag indicating if Server application
 static char szService[SERVICE_LEN];	// To store the service path
 
 // Window procedure
-LRESULT APIENTRY InterbasePage(HWND, UINT, WPARAM, LPARAM);
+LRESULT APIENTRY FirebirdPage(HWND, UINT, WPARAM, LPARAM);
 LRESULT APIENTRY OSPage(HWND, UINT, WPARAM, LPARAM);
 
 // Static functions for reading and writing settings
@@ -136,18 +136,18 @@ void AddConfigPages(HWND hPropSheet, HINSTANCE hInst)
 	IBPage.hInstance = hInst;
 	IBPage.pszTemplate = MAKEINTRESOURCE(CONFIG_DLG);
 	IBPage.pszTitle = "FB Settings";
-	IBPage.pfnDlgProc = (DLGPROC) InterbasePage;
+	IBPage.pfnDlgProc = (DLGPROC) FirebirdPage;
 	IBPage.pfnCallback = NULL;
 
 	PropSheet_AddPage(hPropSheet, CreatePropertySheetPage(&IBPage));
 }
 
-LRESULT CALLBACK InterbasePage(HWND hDlg, UINT unMsg, WPARAM wParam,
+LRESULT CALLBACK FirebirdPage(HWND hDlg, UINT unMsg, WPARAM wParam,
 							   LPARAM lParam)
 {
 /******************************************************************************
  *
- *  I n t e r B a s e P a g e
+ *  F i r e b i r d P a g e
  *
  ******************************************************************************
  *

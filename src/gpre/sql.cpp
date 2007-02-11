@@ -3808,7 +3808,7 @@ static act* act_open_blob( ACT_T act_op, gpre_sym* symbol)
 
 		/*
 		 *  Even if no FILTER was specified, we set one up for the special
-		 *  case of InterBase TEXT blobs, in order to do character set
+		 *  case of Firebird TEXT blobs, in order to do character set
 		 *  transliteration from the column-declared character set of the
 		 *  blob to the process character set (CS_dynamic).
 		 *

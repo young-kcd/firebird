@@ -4928,7 +4928,7 @@ static SSHORT latch_bdb(
 			}
 		}
 		else {
-			/* Note that InterBase often 'hands-off' to the same page, for both
+			/* Note that Firebird often 'hands-off' to the same page, for both
 			   shared and exlusive latches. */
 			/* Check is we own already an exclusive latch. */
 			for (i = 0; (i < BDB_max_shared) && (bdb->bdb_shared[i] != tdbb);
@@ -4975,7 +4975,7 @@ static SSHORT latch_bdb(
 		   by a mark latch, which then would wait behind the io latch. */
 		/* Note that the ail-code latches the same buffer multiple times
 		   in shared and exclusive */
-		/* Note that InterBase often 'hands-off' to the same page, for both
+		/* Note that Firebird often 'hands-off' to the same page, for both
 		   shared and exlusive latches. */
 		if (bdb->bdb_use_count && (bdb->bdb_exclusive != tdbb)) {
 			break;
@@ -4989,7 +4989,7 @@ static SSHORT latch_bdb(
 		if (bdb->bdb_exclusive != tdbb) {
 			cache_bugcheck(295);	/* inconsistent LATCH_mark call */
 		}
-		/* Some InterBase code marks a buffer more than once. */
+		/* Some Firebird code marks a buffer more than once. */
 		if (bdb->bdb_io && (bdb->bdb_io != tdbb)) {
 			break;
 		}

@@ -1,6 +1,6 @@
 /*
- *	PROGRAM:	UNIX signal relay program
- *	MODULE:		relay.c
+ *	PROGRAM:		UNIX signal relay program
+ *	MODULE:			relay.cpp
  *	DESCRIPTION:	Signal relay program
  *
  * The contents of this file are subject to the Interbase Public
@@ -53,10 +53,6 @@ int CLIB_ROUTINE main( int argc, char **argv)
  *	Wait on a pipe for a message, then forward a signal.
  *
  **************************************/
-	SLONG msg[3];
-	int fd, n;
-	TEXT **end, *p, c;
-
 #ifndef DEBUG
 	if (setreuid(0, 0) < 0)
 		printf("gds_relay: couldn't set uid to superuser\n");
@@ -76,26 +72,31 @@ int CLIB_ROUTINE main( int argc, char **argv)
 #endif /* !DEBUG */
 
 /* Get the file descriptor ID - if it is present - make sure it's valid */
+	int fd;
 	if (argc < 2 || (!(fd = atoi(argv[1])) && strcmp(argv[1], "0")))
 		fd = -1;
 
-	end = argv + argc;
+	TEXT** end = argv + argc;
 	while (argv < end) {
-		p = *argv++;
+		TEXT* p = *argv++;
 		if (*p++ == '-')
+		{
+			TEXT c;
 			while (c = *p++)
 				switch (UPPER(c)) {
 				case 'Z':
-					printf("Interbase relay version %s\n", GDS_VERSION);
+					printf("Firebird relay version %s\n", GDS_VERSION);
 					exit(FINI_OK);
 				}
+		}
 	}
 
 	if (fd == -1)
 		exit(FINI_OK);
 
 /* Close all files, except for the pipe input */
-	for (n = 0; n < NOFILE; n++)
+	for (int n = 0; n < NOFILE; n++)
+	{
 #ifdef DEV_BUILD
 		/* Don't close stderr - we might need to report something */
 		if ((n != fd) && (n != 2))
@@ -103,7 +104,9 @@ int CLIB_ROUTINE main( int argc, char **argv)
 		if (n != fd)
 #endif
 			close(n);
+	}
 
+	SLONG msg[3];
 	while (read(fd, msg, sizeof(msg)) == sizeof(msg)) {
 #ifdef DEV_BUILD
 		/* This is #ifdef for DEV_BUILD just in case a V3 client will

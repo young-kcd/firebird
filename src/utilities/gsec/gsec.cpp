@@ -192,9 +192,9 @@ int common_main(int argc,
 	tdsec->tsec_user_data = &u;
 
 	try {
-/* Perform some special handling when run as an Interbase service.  The
-   first switch can be "-svc" (lower case!) or it can be "-svc_re" followed
-   by 3 file descriptors to use in re-directing stdin, stdout, and stderr. */
+	// Perform some special handling when run as a Firebird service.  The
+	// first switch can be "-svc" (lower case!) or it can be "-svc_re" followed
+	// by 3 file descriptors to use in re-directing stdin, stdout, and stderr.
 
 	tdsec->tsec_throw = true;
 	tdsec->tsec_interactive = true;

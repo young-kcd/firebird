@@ -53,16 +53,11 @@ int CLIB_ROUTINE main( int argc, char **argv)
  *	Run the shared cache manager.
  *
  **************************************/
-	TEXT c, *p, **end;
-	SLONG db_handle;
-	ISC_STATUS status;
-	ISC_STATUS_ARRAY status_vector;
-
 #ifdef VMS
 	argc = VMS_parse(&argv, argc);
 #endif
 
-/* Perform some special handling when run as an Interbase service.  The
+/* Perform some special handling when run as a Firebird service.  The
    first switch can be "-svc" (lower case!) or it can be "-svc_re" followed
    by 3 file descriptors to use in re-directing stdin, stdout, and stderr. */
 
@@ -114,11 +109,12 @@ int CLIB_ROUTINE main( int argc, char **argv)
 
 	const TEXT* sw_database = "";
 
-	for (end = argv++ + argc; argv < end;) {
-		p = *argv++;
+	for (TEXT** end = argv++ + argc; argv < end;) {
+		TEXT* p = *argv++;
 		if (*p != '-')
 			sw_database = p;
 		else {
+			TEXT c;
 			while (c = *++p)
 				switch (UPPER(c)) {
 				case 'D':
@@ -135,8 +131,10 @@ int CLIB_ROUTINE main( int argc, char **argv)
 
 	gds__disable_subsystem("REMINT");
 
+	ISC_STATUS status;
 	do {
-		db_handle = NULL;
+		isc_db_handle db_handle = NULL;
+		ISC_STATUS_ARRAY status_vector;
 		status = isc_attach_database(status_vector, 0, sw_database, &db_handle,
 									  sizeof(cache_dpb), cache_dpb);
 

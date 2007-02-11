@@ -1025,8 +1025,8 @@ ISC_STATUS SVC_query2(Service* service,
 #endif /* SERVER_SHUTDOWN */
 
 			/* The following 3 service commands (or items) stuff the response
-			   buffer 'info' with values of environment variable INTERBASE,
-			   INTERBASE_LOCK or INTERBASE_MSG. If the environment variable
+			   buffer 'info' with values of environment variable FIREBIRD,
+			   FIREBIRD_LOCK or FIREBIRD_MSG. If the environment variable
 			   is not set then default value is returned.
 			 */
 		case isc_info_svc_get_env:
@@ -1135,7 +1135,7 @@ ISC_STATUS SVC_query2(Service* service,
 			break;
 
 		case isc_info_svc_implementation:
-			/* The server implementation - e.g. Interbase/sun4 */
+			/* The server implementation - e.g. Firebird/sun4 */
 			isc_format_implementation(IMPLEMENTATION, sizeof(buffer), buffer,
 									  0, 0, NULL);
 			info = INF_put_item(item, strlen(buffer), buffer, info, end);
@@ -1447,8 +1447,8 @@ void SVC_query(Service*		service,
 #endif /* SERVER_SHUTDOWN */
 
 			/* The following 3 service commands (or items) stuff the response
-			   buffer 'info' with values of environment variable INTERBASE,
-			   INTERBASE_LOCK or INTERBASE_MSG. If the environment variable
+			   buffer 'info' with values of environment variable FIREBIRD,
+			   FIREBIRD_LOCK or FIREBIRD_MSG. If the environment variable
 			   is not set then default value is returned.
 			 */
 		case isc_info_svc_get_env:
@@ -1566,7 +1566,7 @@ void SVC_query(Service*		service,
 			}
 
 		case isc_info_svc_implementation:
-			/* The server implementation - e.g. Interbase/sun4 */
+			/* The server implementation - e.g. Firebird/sun4 */
 
 			p = buffer;
 			*p++ = 1;			/* Count */

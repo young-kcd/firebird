@@ -126,7 +126,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
  **************************************/
 	OUTFILE outfile = stdout;
 
-/* Perform some special handling when run as an Interbase service.  The
+/* Perform some special handling when run as a Firebird service.  The
    first switch can be "-svc" (lower case!) or it can be "-svc_re" followed
    by 3 file descriptors to use in re-directing stdin, stdout, and stderr. */
 

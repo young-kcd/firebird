@@ -105,8 +105,8 @@ static const char MSG_FILE_LANG[]= "[sysmsg]firebird_%.10s.dat";
 const int LOCALE_MAX	= 10;
 static const char* LOGFILE		= "[syserr]firebird.log";
 
-static const char ISC_LOGICAL[]	= "interbase:";
-static const char ISC_LOGICAL_LOCK[]	= "interbase_lock:";
+static const char ISC_LOGICAL[]	= "firebird:";
+static const char ISC_LOGICAL_LOCK[]	= "firebird_lock:";
 
 struct isc_vms_prefix
 {

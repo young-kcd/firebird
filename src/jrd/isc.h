@@ -40,7 +40,7 @@
 const USHORT ISC_SEM_REMOVE		= 1;
 const USHORT ISC_MEM_REMOVE		= 2; // tested but never set
 
-/* InterBase platform-specific synchronization data structures */
+// Firebird platform-specific synchronization data structures
 
 #ifdef VMS
 struct itm {

@@ -63,7 +63,7 @@
 #include "../common/config/config.h"
 
 
-/* InterBase provides transparent conversion from string to date in
+/* Firebird provides transparent conversion from string to date in
  * contexts where it makes sense.  This macro checks a descriptor to
  * see if it is something that *could* represent a date value
  */

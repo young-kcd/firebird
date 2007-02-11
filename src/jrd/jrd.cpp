@@ -3504,7 +3504,7 @@ ISC_STATUS GDS_SERVICE_ATTACH(ISC_STATUS* user_status,
  **************************************
  *
  * Functional description
- *	Connect to an Interbase service.
+ *	Connect to a Firebird service.
  *
  **************************************/
 	api_entry_point_init(user_status);

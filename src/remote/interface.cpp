@@ -3925,7 +3925,7 @@ ISC_STATUS GDS_SERVICE_ATTACH(ISC_STATUS* user_status,
  **************************************
  *
  * Functional description
- *	Connect to an Interbase service.
+ *	Connect to a Firebird service.
  *
  **************************************/
 	trdb thd_context(user_status);
@@ -4006,7 +4006,7 @@ ISC_STATUS GDS_SERVICE_DETACH(ISC_STATUS * user_status, RDB * handle)
  **************************************
  *
  * Functional description
- *	Close down a connection to an Interbase service.
+ *	Close down a connection to a Firebird service.
  *
  **************************************/
 	trdb thd_context(user_status);
@@ -4125,7 +4125,7 @@ ISC_STATUS GDS_SERVICE_START(ISC_STATUS * user_status,
  **************************************
  *
  * Functional description
- *	Start an InterBase service
+ *	Start a Firebird service
  *
  * 	NOTE: The parameter RESERVED must not be used
  *	for any purpose as there are networking issues

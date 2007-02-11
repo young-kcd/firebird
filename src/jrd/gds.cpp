@@ -137,16 +137,16 @@ static const char* FB_PID_FILE = "fb_%d";
 #undef leave
 #endif /* WIN_NT */
 
-static char ib_prefix_val[MAXPATHLEN];
-static char ib_prefix_lock_val[MAXPATHLEN];
-static char ib_prefix_msg_val[MAXPATHLEN];
+static char fb_prefix_val[MAXPATHLEN];
+static char fb_prefix_lock_val[MAXPATHLEN];
+static char fb_prefix_msg_val[MAXPATHLEN];
 static char fbTempDir[MAXPATHLEN];
 #ifdef EMBEDDED
 static char fbEmbeddedRoot[MAXPATHLEN];
 #endif
-static char *ib_prefix = 0;
-static char *ib_prefix_lock = 0;
-static char *ib_prefix_msg = 0;
+static char *fb_prefix = 0;
+static char *fb_prefix_lock = 0;
+static char *fb_prefix_msg = 0;
 static void gdsPrefixInit();
 
 #include "gen/msgs.h"
@@ -1669,11 +1669,11 @@ SLONG API_ROUTINE gds__get_prefix(SSHORT arg_type, const TEXT* passed_string)
  **************************************
  *
  * Functional description
- *	Find appropriate InterBase command line arguments 
+ *	Find appropriate Firebird command line arguments
  *	for Interbase file prefix.
  *
- *      arg_type is 0 for $INTERBASE, 1 for $INTERBASE_LOCK 
- *      and 2 for $INTERBASE_MSG
+ *      arg_type is 0 for $FIREBIRD, 1 for $FIREBIRD_LOCK
+ *      and 2 for $FIREBIRD_MSG
  *
  *      Function returns 0 on success and -1 on failure
  **************************************/
@@ -1687,18 +1687,20 @@ SLONG API_ROUTINE gds__get_prefix(SSHORT arg_type, const TEXT* passed_string)
 	char* prefix_ptr;
 	switch (arg_type) {
 	case IB_PREFIX_TYPE:
-		prefix_ptr = ib_prefix = ib_prefix_val;
+		prefix_ptr = fb_prefix = fb_prefix_val;
 		break;
 	case IB_PREFIX_LOCK_TYPE:
-		prefix_ptr = ib_prefix_lock = ib_prefix_lock_val;
+		prefix_ptr = fb_prefix_lock = fb_prefix_lock_val;
 		break;
 	case IB_PREFIX_MSG_TYPE:
-		prefix_ptr = ib_prefix_msg = ib_prefix_msg_val;
+		prefix_ptr = fb_prefix_msg = fb_prefix_msg_val;
 		break;
 	default:
 		return ((SLONG) - 1);
 	}
-/* the command line argument was 'H' for interbase home */
+
+	// the command line argument was 'H' for Firebird home
+	// (Not sure what this comment means.)
 	while (*prefix_ptr++ = *passed_string++) {
 		/* if the next character is space, newline or carriage return OR
 		   number of characters exceeded */
@@ -1735,7 +1737,7 @@ void API_ROUTINE gds__prefix(TEXT* resultString, const TEXT* file)
 
 	gdsPrefixInit();
 
-	strcpy(resultString, ib_prefix);	// safe - no BO
+	strcpy(resultString, fb_prefix);	// safe - no BO
 	safe_concat_path(resultString, file);
 }
 #endif /* !defined(VMS) */
@@ -1751,9 +1753,9 @@ void API_ROUTINE gds__prefix(TEXT* string, const TEXT* root)
  **************************************
  *
  * Functional description
- *	Find appropriate InterBase file prefix.
+ *	Find appropriate Firebird file prefix.
  *	Override conditional defines with
- *	the enviroment variable INTERBASE if it is set.
+ *	the enviroment variable FIREBIRD if it is set.
  *
  **************************************/
 	if (*root != '[') {
@@ -1761,7 +1763,7 @@ void API_ROUTINE gds__prefix(TEXT* string, const TEXT* root)
 		return;
 	}
 
-/* Check for the existence of an InterBase logical name.  If there is 
+/* Check for the existence of a Firebird logical name.  If there is
    one use it, otherwise use the system directories. */
 	TEXT temp[256];
 	if (ISC_expand_logical_once(ISC_LOGICAL, sizeof(ISC_LOGICAL) - 2, temp, sizeof(temp)))
@@ -1812,7 +1814,7 @@ void API_ROUTINE gds__prefix_lock(TEXT* string, const TEXT* root)
 	root = buf;
 #endif
 
-	strcpy(string, ib_prefix_lock);	// safe - no BO
+	strcpy(string, fb_prefix_lock);	// safe - no BO
 	safe_concat_path(string, root);
 }
 #endif
@@ -1886,7 +1888,7 @@ void API_ROUTINE gds__prefix_msg(TEXT* string, const TEXT* root)
 
 	gdsPrefixInit();
 
-	strcpy(string, ib_prefix_msg);	// safe - no BO
+	strcpy(string, fb_prefix_msg);	// safe - no BO
 	safe_concat_path(string, root);
 }
 #endif
@@ -1912,7 +1914,7 @@ void API_ROUTINE gds__prefix_msg(TEXT* string, const TEXT* root)
 	}
 
 
-/* Check for the existence of an InterBase logical name.  If there is
+/* Check for the existence of a Firebird logical name.  If there is
    one use it, otherwise use the system directories. */
 
 /* ISC_LOGICAL_MSG macro needs to be defined, check non VMS version of routine
@@ -2470,7 +2472,7 @@ BOOLEAN API_ROUTINE gds__validate_lib_path(const TEXT* module,
  **************************************
  *
  * Functional description
- *	Find the InterBase external library path variable.
+ *	Find the Firebird external library path variable.
  *	Validate that the path to the library module name 
  *	in the path specified.  If the external lib path
  *	is not defined then accept any path, and return true.
@@ -2482,7 +2484,7 @@ BOOLEAN API_ROUTINE gds__validate_lib_path(const TEXT* module,
 	TEXT abs_module_path[MAXPATHLEN];
 	TEXT abs_module[MAXPATHLEN];
 
-/* Check for the existence of an InterBase logical name.  If there is 
+/* Check for the existence of a Firebird logical name.  If there is
    one use it, otherwise use the system directories. */
 
 	COMPILER ERROR ! BEFORE DOING A VMS POST PLEASE
@@ -3541,7 +3543,7 @@ class InitPrefix
 public:
 	static void init()
 	{
-		// Get ib_prefix value from config file
+		// Get fb_prefix value from config file
 		// CVC: I put this protection block because we can't raise exceptions
 		// if exceptions are already raised due to the same reason:
 		// config file not found.
@@ -3558,8 +3560,8 @@ public:
 			if (!GetProgramFilesDir(prefix))
 				prefix = FB_PREFIX;
 		}
-		prefix.copyTo(ib_prefix_val, sizeof(ib_prefix_val));
-		ib_prefix = ib_prefix_val;
+		prefix.copyTo(fb_prefix_val, sizeof(fb_prefix_val));
+		fb_prefix = fb_prefix_val;
 
 		// Find appropiate temp directory
 		Firebird::PathName tempDir;
@@ -3601,8 +3603,8 @@ public:
 			lockPrefix = prefix;
 #endif
 		}
-		lockPrefix.copyTo(ib_prefix_lock_val, sizeof(ib_prefix_lock_val));
-		ib_prefix_lock = ib_prefix_lock_val;
+		lockPrefix.copyTo(fb_prefix_lock_val, sizeof(fb_prefix_lock_val));
+		fb_prefix_lock = fb_prefix_lock_val;
 
 		// Find appropriate Firebird message file prefix.
 		Firebird::PathName msgPrefix;
@@ -3610,8 +3612,8 @@ public:
 		{
 			msgPrefix = prefix;
 		}
-		msgPrefix.copyTo(ib_prefix_msg_val, sizeof(ib_prefix_msg_val));
-		ib_prefix_msg = ib_prefix_msg_val;
+		msgPrefix.copyTo(fb_prefix_msg_val, sizeof(fb_prefix_msg_val));
+		fb_prefix_msg = fb_prefix_msg_val;
 	}
 	static void cleanup()
 	{
@@ -3629,7 +3631,7 @@ static void gdsPrefixInit()
  **************************************
  *
  * Functional description
- *	Initialize all data in various ib_prefixes.
+ *	Initialize all data in various fb_prefixes.
  *	Calling it before any signal can be caught (from init())
  *	makes gds__prefix* family of functions signal-safe.
  *	In order not to break external API, call to gdsPrefixInit

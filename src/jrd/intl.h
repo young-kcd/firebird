@@ -114,7 +114,7 @@ inline USHORT INTL_TEXT_TYPE(const dsc& desc)
 
 
 /*
- * There are several ways text types are used internally to InterBase
+ * There are several ways text types are used internally to Firebird
  *  1) As a CHARACTER_SET_ID & COLLATION_ID pair (in metadata).
  *  2) As a CHARACTER_SET_ID (when collation isn't relevent, like UDF parms)
  *  3) As an index type - (btr.h)

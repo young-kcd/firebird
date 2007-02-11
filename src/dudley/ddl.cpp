@@ -123,7 +123,8 @@ int CLIB_ROUTINE main( int argc, char* argv[])
 	argc = VMS_parse(&argv, argc);
 #endif
 
-/* Perform some special handling when run as an Interbase service.  The
+// CVC: Notice that gdef is NEVER run as a service! It doesn't make sense.
+/* Perform some special handling when run as a Firebird service.  The
    first switch can be "-svc" (lower case!) or it can be "-svc_re" followed
    by 3 file descriptors to use in re-directing stdin, stdout, and stderr. */
 

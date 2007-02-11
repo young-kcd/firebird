@@ -174,8 +174,8 @@ LRESULT CALLBACK WindowFunc(HWND hWnd,
  *  Return: FALSE indicates that the message has not been handled
  *          TRUE indicates the message has been handled 
  *
- *  Description: This is main window procedure for the Interbase server. This
- *               traps all the interbase significant messages and processes
+ *  Description: This is main window procedure for the Firebird server. This
+ *               traps all the Firebird significant messages and processes
  *               them.
  *****************************************************************************/
 	static ULONG ulLastMask = 0L;

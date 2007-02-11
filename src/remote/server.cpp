@@ -4870,7 +4870,7 @@ ISC_STATUS rem_port::service_attach(const char* service_name,
  **************************************
  *
  * Functional description
- *	Connect to an Interbase service.
+ *	Connect to a Firebird service.
  *
  **************************************/
 	sendL->p_operation = op_accept;

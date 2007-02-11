@@ -821,7 +821,7 @@ static int translate_status(
 	}
 
 	if (*gds++ != isc_arg_gds)
-		bugcheck(239);			/* msg 239 Interbase status vector inconsistent */
+		bugcheck(239);			/* msg 239 Firebird status vector inconsistent */
 
 	USHORT fac = 0, dummy_class = 0;
 	ISC_STATUS code = gds__decode(*gds, &fac, &dummy_class);
@@ -864,7 +864,7 @@ static int translate_status(
 		case 'U':
 		case 'S':
 			if ((*gds++) != isc_arg_number)
-				bugcheck(240);	/* msg 240 Interbase/RdB message parameter inconsistency */
+				bugcheck(240);	/* msg 240 Firebird/RdB message parameter inconsistency */
 			*rdb++ = *gds++;
 			++count;
 			break;
@@ -890,7 +890,7 @@ static int translate_status(
 				break;
 
 			default:
-				bugcheck(240);	/* msg 240 Interbase/RdB message parameter inconsistency */
+				bugcheck(240);	/* msg 240 Firebird/RdB message parameter inconsistency */
 			}
 
 			switch (*p)

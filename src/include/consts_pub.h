@@ -286,13 +286,13 @@
 #define isc_info_svc_get_license_mask 52	/* Retrieves a bitmask representing licensed options on the server */
 #define isc_info_svc_get_config       53	/* Retrieves the parameters and values for IB_CONFIG */
 #define isc_info_svc_version          54	/* Retrieves the version of the services manager */
-#define isc_info_svc_server_version   55	/* Retrieves the version of the InterBase server */
-#define isc_info_svc_implementation   56	/* Retrieves the implementation of the InterBase server */
+#define isc_info_svc_server_version   55	/* Retrieves the version of the Firebird server */
+#define isc_info_svc_implementation   56	/* Retrieves the implementation of the Firebird server */
 #define isc_info_svc_capabilities     57	/* Retrieves a bitmask representing the server's capabilities */
 #define isc_info_svc_user_dbpath      58	/* Retrieves the path to the security database in use by the server */
-#define isc_info_svc_get_env	      59	/* Retrieves the setting of $INTERBASE */
-#define isc_info_svc_get_env_lock     60	/* Retrieves the setting of $INTERBASE_LCK */
-#define isc_info_svc_get_env_msg      61	/* Retrieves the setting of $INTERBASE_MSG */
+#define isc_info_svc_get_env	      59	/* Retrieves the setting of $FIREBIRD */
+#define isc_info_svc_get_env_lock     60	/* Retrieves the setting of $FIREBIRD_LCK */
+#define isc_info_svc_get_env_msg      61	/* Retrieves the setting of $FIREBIRD_MSG */
 #define isc_info_svc_line             62	/* Retrieves 1 line of service output per call */
 #define isc_info_svc_to_eof           63	/* Retrieves as much of the server output as will fit in the supplied buffer */
 #define isc_info_svc_timeout          64	/* Sets / signifies a timeout value for reading service information */

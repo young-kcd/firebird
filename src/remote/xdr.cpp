@@ -83,8 +83,9 @@ inline void DEBUG_XDR_FREE(XDR* xdrs, const void* xdrvar, const void* addr, ULON
 #endif /* DEBUG_XDR_MEMORY */
 
 /* Sun's XDR documentation says this should be "MAXUNSIGNED", but
-   for InterBase purposes, limiting strings to 65K is more than
+   for Firebird purposes, limiting strings to 65K is more than
    sufficient. */
+// This setting may be related to our max DSQL statement size.
 
 const u_int MAXSTRING_FOR_WRAPSTRING	= 65535;
 

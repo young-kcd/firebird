@@ -492,7 +492,7 @@ int rdb$ddl(
  *
  * Functional description
  *    Support RDB metadata BLR (MBLR) through
- *    translation to InterBase DYN, or pass
+ *    translation to Firebird DYN, or pass
  *    it through as before to RDB.
  *
  **************************************/

@@ -314,7 +314,7 @@ void TRN_translate(void)
 		fprintf(output_file,
 				   "isc_dyn_length: short_integer := %d;\n", length);
 		fprintf(output_file,
-				   "isc_dyn	: CONSTANT interbase.blr (1..%d) := (\n", length);
+				   "isc_dyn	: CONSTANT firebird.blr (1..%d) := (\n", length);
 		raw_ada(dyn);
 		break;
 

@@ -20,7 +20,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: builtin.cpp,v 1.9 2004-05-24 17:28:32 brodsom Exp $
+ * $Id: builtin.cpp,v 1.10 2007-02-11 09:03:56 robocop Exp $
  */
 
 #include "firebird.h"
@@ -64,12 +64,12 @@ FPTR_INT BUILTIN_entrypoint(const TEXT* module, const TEXT* entrypoint)
  *	entrypoint names are null terminated, but may contain
  *	insignificant trailing blanks.
  *
- *	Builtin functions may reside under the InterBase install
- *	location.  The module name may be prefixed with $INTERBASE.
+ *	Builtin functions may reside under the Firebird install
+ *	location.  The module name may be prefixed with $FIREBIRD.
  *
  **************************************/
 
-/* Strip off any preceeding $INTERBASE path location from the 
+/* Strip off any preceeding $FIREBIRD path location from the
  * requested module name.
  */
 

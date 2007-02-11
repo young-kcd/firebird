@@ -846,7 +846,7 @@ static void build_other_headers(void)
 	fprintf(sql_codes, "\tSSHORT sql_code;\n");
 	fprintf(sql_codes, "} gds__sql_code[] = {\n");
 
-	const int DEFAULT_SQL_CODE = -999;	// InterBase error
+	const int DEFAULT_SQL_CODE = -999;	// Firebird error
 
 	i = 0;
 	FOR E IN SYSTEM_ERRORS SORTED BY E.FAC_CODE, E.NUMBER

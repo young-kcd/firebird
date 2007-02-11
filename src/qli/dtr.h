@@ -320,10 +320,10 @@ const USHORT DBB_prepared	= 32;		// User transaction has been prepared
 // Bits in dbb_capabilities 
 
 const ULONG DBB_cap_extern_file		= 1;	// supports the concept of external files 
-const ULONG DBB_cap_files			= 2;	// uses the Interbase concept of multi-file 
-const ULONG DBB_cap_security		= 4;	// InterBase style security classes 
+const ULONG DBB_cap_files			= 2;	// uses the Firebird concept of multi-file
+const ULONG DBB_cap_security		= 4;	// Firebird style security classes
 /* const ULONG DBB_cap_triggers		= 8;	-- OBSOLETE: triggers (old style) */
-const ULONG DBB_cap_idx_inactive	= 16;	// Interbase index inactive flag 
+const ULONG DBB_cap_idx_inactive	= 16;	// Firebird index inactive flag
 const ULONG DBB_cap_multi_trans		= 32;	// Database supports multiple transactions 
 const ULONG DBB_cap_single_trans	= 64;	// Database supports only a single transaction 
 const ULONG DBB_cap_dudley			= 128;	// We're authorized for meta-data updates 

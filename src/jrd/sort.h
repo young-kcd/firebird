@@ -43,7 +43,7 @@ struct merge_control;
    longwords(32 bits).   For 16 bit Windows, this must be a huge pointer. 
 
    Use this definition whenever doing pointer arithmetic, as
-   interbase variables (eg. scb->scb_longs) are in 32 - bit longwords. */
+   Firebird variables (eg. scb->scb_longs) are in 32 - bit longwords. */
 
 typedef ULONG SORTP;
 

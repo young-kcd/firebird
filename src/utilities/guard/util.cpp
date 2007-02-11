@@ -1,5 +1,5 @@
 /*
- *      PROGRAM:        InterBase Utility programs
+ *      PROGRAM:        Firebird Utility programs
  *      MODULE:         util.cpp
  *      DESCRIPTION:    Utility routines for fbguard & fbserver
  *

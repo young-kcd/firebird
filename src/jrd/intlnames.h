@@ -28,7 +28,7 @@
  * 	CHARSET (name, ID, default_subtype, max_bytes_per_char, num_chars,
  *           cs_symbol, coll_symbol, coll_attributes)
  *
- *	Note: "name" is official name per InterBase
+ *	Note: "name" is official name per Firebird
  *
  */
 
@@ -48,7 +48,7 @@
  *
  *	COLLATION (name, country, charset_id, subtype_id, symbol, attributes)
  *
- *	Note: "name" is official name per InterBase
+ *	Note: "name" is official name per Firebird
  */
 
 #ifndef INTL_COMPONENT_FB

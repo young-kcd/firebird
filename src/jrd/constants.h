@@ -31,7 +31,7 @@
 
 /* Subtypes < 0  are user defined 
  * Subtype  0    means "untyped" 
- * Subtypes > 0  are InterBase defined 
+ * Subtypes > 0  are Firebird defined
  */
 
 // BRS 29-Apr-2004

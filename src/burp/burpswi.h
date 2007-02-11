@@ -135,13 +135,13 @@ static in_sw_tab_t burp_in_sw_table [] =
     {IN_SW_BURP_P,    isc_spb_res_page_size,	"PAGE_SIZE",	    0, 0, 0, FALSE, 101, 0, NULL},
                 // msg 101: %sPAGE_SIZE override default page size 
     {IN_SW_BURP_PASS, 0,				"PASSWORD",	    0, 0, 0, FALSE, 190, 0, NULL},
-                // msg 190: %sPA(SSWORD) InterBase password 
+                // msg 190: %sPA(SSWORD) Firebird password
     {IN_SW_BURP_RECREATE, 0,	"RECREATE_DATABASE", 0, 0, 0, FALSE, 284, 0, NULL},
                 // msg 284: %sR(ECREATE_DATABASE) [O(VERWRITE)] create (or replace if OVERWRITE used) database from backup file 
     {IN_SW_BURP_R,    isc_spb_res_replace,	"REPLACE_DATABASE", 0, 0, 0, FALSE, 112, 0, NULL},
                 // msg 112: %sREP(LACE_DATABASE) replace database from backup file 
 /**************************************************************
-** msg 252: %sRO(LE) InterBase SQL role
+** msg 252: %sRO(LE) Firebird SQL role
 ***************************************************************/
     {IN_SW_BURP_ROLE, isc_spb_sql_role_name,	"ROLE",		    0, 0, 0, FALSE, 252, 0, NULL},
     {IN_SW_BURP_S,    0,				"SKIP_BAD_DATA",    0, 0, 0, FALSE, 0, 0, NULL},
@@ -155,7 +155,7 @@ static in_sw_tab_t burp_in_sw_table [] =
     {IN_SW_BURP_US,   isc_spb_res_use_all_space,	"USE_ALL_SPACE",    0, 0, 0, FALSE, 276, 0, NULL},
                 // msg 276: %sUSE_(ALL_SPACE) do not reserve space for record versions 
     {IN_SW_BURP_USER, 0,				"USER",		    0, 0, 0, FALSE, 191, 0, NULL},
-                // msg 191: %sUSER InterBase user name 
+                // msg 191: %sUSER Firebird user name
 #ifdef TRUSTED_SERVICES
     {IN_SW_BURP_TRUSTED_USER, 0,		"TRUSTED",	    0, 0, 0, FALSE, 0, 0, NULL},
 #endif

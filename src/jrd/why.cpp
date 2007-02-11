@@ -372,7 +372,7 @@ static SLONG why_enabled = 0;
 
 /* subsystem_usage is used to count how many active ATTACHMENTs are 
  * running though the why valve.  For the first active attachment
- * request we reset the InterBase FPE handler.
+ * request we reset the Firebird FPE handler.
  * This counter is incremented for each ATTACH DATABASE, ATTACH SERVER,
  * or CREATE DATABASE.  This counter is decremented for each 
  * DETACH DATABASE, DETACH SERVER, or DROP DATABASE.
@@ -4411,7 +4411,7 @@ SLONG API_ROUTINE isc_reset_fpe(USHORT fpe_status)
  **************************************
  *
  * Functional description
- *	API to be used to tell InterBase to reset it's
+ *	API to be used to tell Firebird to reset it's
  *	FPE handler - eg: client has an FPE of it's own
  *	and just changed it.
  *

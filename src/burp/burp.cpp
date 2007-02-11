@@ -474,7 +474,7 @@ static int api_gbak(int argc,
 	USHORT spblen = spb_ptr - spb;
 
 	FB_API_HANDLE svc_handle = 0;
-	if (isc_service_attach(status, 0, svc_name, (&svc_handle), spblen, spb))
+	if (isc_service_attach(status, 0, svc_name, &svc_handle, spblen, spb))
 	{
 		BURP_print_status(status);
 		gds__free(spb);
@@ -493,7 +493,7 @@ static int api_gbak(int argc,
 		status[1] = isc_virmemexh;
 		status[2] = isc_arg_end;
 		BURP_print_status(status);
-		isc_service_detach(status, (&svc_handle));
+		isc_service_detach(status, &svc_handle);
 		gds__free(spb);
 		gds__free(svc_name);
 		BURP_print(83, 0, 0, 0, 0, 0);
@@ -512,13 +512,13 @@ static int api_gbak(int argc,
 
 	USHORT thdlen = thd_ptr - thd;
 
-	if (isc_service_start(status, (&svc_handle), NULL, thdlen, thd))
+	if (isc_service_start(status, &svc_handle, NULL, thdlen, thd))
 	{
 		BURP_print_status(status);
 		gds__free(spb);
 		gds__free(svc_name);
 		gds__free(thd);
-		isc_service_detach(status, (&svc_handle));
+		isc_service_detach(status, &svc_handle);
 		BURP_print(83, 0, 0, 0, 0, 0);	// msg 83 Exiting before completion due to errors 
 		return FINI_ERROR;
 	}
@@ -527,7 +527,7 @@ static int api_gbak(int argc,
 	char respbuf[1024];
 	const char* sl;
 	do {
-		if (isc_service_query(status, (&svc_handle), NULL, 0, NULL,
+		if (isc_service_query(status, &svc_handle, NULL, 0, NULL,
 								sizeof(sendbuf), sendbuf,
 								sizeof(respbuf), respbuf))
 		{
@@ -535,7 +535,7 @@ static int api_gbak(int argc,
 			gds__free(spb);
 			gds__free(svc_name);
 			gds__free(thd);
-			isc_service_detach(status, (&svc_handle));
+			isc_service_detach(status, &svc_handle);
 			BURP_print(83, 0, 0, 0, 0, 0);	// msg 83 Exiting before completion due to errors 
 			return FINI_ERROR;
 		}
@@ -563,7 +563,7 @@ static int api_gbak(int argc,
 	gds__free(spb);
 	gds__free(svc_name);
 	gds__free(thd);
-	isc_service_detach(status, (&svc_handle));
+	isc_service_detach(status, &svc_handle);
 	return FINI_OK;
 }
 
@@ -616,7 +616,7 @@ int common_main(int		argc,
 	argc = VMS_parse(&argv, argc);
 #endif
 
-/* Perform some special handling when run as an Interbase service.  The
+/* Perform some special handling when run as a Firebird service.  The
    first switch can be "-svc" (lower case!) or it can be "-svc_re" followed
    by 3 file descriptors to use in re-directing stdin, stdout, and stderr.
 
