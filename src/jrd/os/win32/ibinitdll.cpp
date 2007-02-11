@@ -1,5 +1,5 @@
 /*
- *      PROGRAM:        Firebird Window platforms
+ *      PROGRAM:        Firebird Windows platforms
  *      MODULE:         ibinitdll.cpp
  *      DESCRIPTION:    DLL entry/exit function
  *

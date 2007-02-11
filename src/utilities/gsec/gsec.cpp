@@ -194,7 +194,7 @@ int common_main(int argc,
 	try {
 	// Perform some special handling when run as a Firebird service.  The
 	// first switch can be "-svc" (lower case!) or it can be "-svc_re" followed
-	// by 3 file descriptors to use in re-directing stdin, stdout, and stderr.
+	// by 3 file descriptors to use in re-directing stdin, stdout and stderr.
 
 	tdsec->tsec_throw = true;
 	tdsec->tsec_interactive = true;
