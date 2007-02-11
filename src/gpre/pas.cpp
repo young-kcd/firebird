@@ -1193,9 +1193,9 @@ static void gen_database( const act* action, int column)
 
 	fprintf(gpreGlob.out_file, "\n(**** GPRE Preprocessor Definitions ****)\n");
 #ifdef VMS
-	fprintf(gpreGlob.out_file, "%%include 'interbase:[syslib]gds.pas'\n");
+	fprintf(gpreGlob.out_file, "%%include 'firebird:[syslib]gds.pas'\n");
 #else
-	fprintf(gpreGlob.out_file, "%%include '/interbase/include/gds.ins.pas';\n");
+	fprintf(gpreGlob.out_file, "%%include '/firebird/include/gds.ins.pas';\n");
 #endif
 
 	indent = column + INDENT;

@@ -160,7 +160,7 @@ static bool global_first_flag = false;
 static adl* array_decl_list;
 
 #ifdef VMS
-const char* const INCLUDE_ISC_FTN	= "       include  'interbase:[syslib]gds.for\' \n\n";
+const char* const INCLUDE_ISC_FTN	= "       include  'firebird:[syslib]gds.for\' \n\n";
 const char* const DOUBLE_DCL		= "DOUBLE PRECISION";
 const char* const I2CONST_1			= "%VAL(";
 const char* const I2CONST_2			= ")";
@@ -210,7 +210,7 @@ const char* const COMMENT			= "*     ";
 const char* const INLINE_COMMENT	= "\n*                ";
 const char* const COMMA				= ",";
 #elif defined(SINIXZ)
-const char* const INCLUDE_ISC_FTN	= "       INCLUDE  '/usr/interbase/include/gds.f\' \n\n";
+const char* const INCLUDE_ISC_FTN	= "       INCLUDE  '/usr/firebird/include/gds.f\' \n\n";
 const char* const INCLUDE_FTN_FILE	= "include/gds.f";
 const char* const DOUBLE_DCL		= "DOUBLE PRECISION";
 const char* const I2CONST_1			= "";
@@ -227,7 +227,7 @@ const char* const COMMENT			= "*     ";
 const char* const INLINE_COMMENT	= "\n*                ";
 const char* const COMMA				= ",";
 #elif defined(LINUX)
-const char* const INCLUDE_ISC_FTN	= "       INCLUDE  '/usr/interbase/include/gds.f\' \n\n";
+const char* const INCLUDE_ISC_FTN	= "       INCLUDE  '/usr/firebird/include/gds.f\' \n\n";
 const char* const INCLUDE_FTN_FILE	= "include/gds.f";
 const char* const DOUBLE_DCL		= "DOUBLE PRECISION";
 const char* const I2CONST_1			= "";
@@ -261,7 +261,7 @@ const char* const COMMENT			= "*     ";
 const char* const INLINE_COMMENT	= "\n*                ";
 const char* const COMMA				= ",";
 #elif (defined FREEBSD || defined NETBSD)
-const char* const INCLUDE_ISC_FTN	= "       INCLUDE  '/usr/interbase/include/gds.f\' \n\n";
+const char* const INCLUDE_ISC_FTN	= "       INCLUDE  '/usr/firebird/include/gds.f\' \n\n";
 const char* const INCLUDE_FTN_FILE	= "include/gds.f";
 const char* const DOUBLE_DCL		= "DOUBLE PRECISION";
 const char* const I2CONST_1			= "";
