@@ -20,7 +20,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: builtin.cpp,v 1.10 2007-02-11 09:03:56 robocop Exp $
+ *
  */
 
 #include "firebird.h"
