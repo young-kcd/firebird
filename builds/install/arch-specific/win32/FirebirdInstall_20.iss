@@ -171,7 +171,7 @@ hu.BeveledLabel=Magyar
 it.BeveledLabel=Italiano
 pl.BeveledLabel=Polski
 pt.BeveledLabel=Português
-ru.BeveledLabel=<0420><0443><0441><0441><043A><0438><0439>
+ru.BeveledLabel=Ğóññêèé
 si.BeveledLabel=Slovenski
 #endif
 
