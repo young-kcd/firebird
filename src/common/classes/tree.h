@@ -122,6 +122,8 @@ public:
 	}
 
 	void clear() {
+		defaultAccessor.curr = NULL;
+
 		// Do not deallocate root page if tree is shallow
 		if (level == 0) {
 			if (root) {
