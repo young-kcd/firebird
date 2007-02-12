@@ -1424,7 +1424,14 @@ static void store_global_field(thread_db* tdbb, const gfld* gfield, jrd_req** ha
 			else if (gfield->gfld_dtype == dtype_long)
 				X.RDB$FIELD_TYPE = (int) blr_long;
 			else
-				X.RDB$FIELD_TYPE = (int) blr_int64;
+			{
+				// Workaround to allow fld_counter domain
+				// in dialect 1 databases
+				if (dbb->dbb_flags & DBB_DB_SQL_dialect_3)
+					X.RDB$FIELD_TYPE = (int) blr_int64;
+				else
+					X.RDB$FIELD_TYPE = (int) blr_double;
+			}
 			if ((gfield->gfld_sub_type == dsc_num_type_numeric) ||
 				(gfield->gfld_sub_type == dsc_num_type_decimal))
 			{
