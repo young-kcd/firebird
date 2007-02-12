@@ -1,3 +1,64 @@
+2007-02-11 17:57  asfernandes
+
+	* firebird2/src/: jrd/os/win32/ibinitdll.cpp (1.12),
+	utilities/gsec/gsec.cpp (1.63), utilities/gstat/dba.epp (1.73):
+
+	Misc
+
+2007-02-11 10:31  robocop
+
+	* firebird2/src/gpre/: ada.cpp (1.51), ftn.cpp (1.58), pas.cpp
+	(1.52):
+
+	More IB->FB changes.
+
+2007-02-11 10:23  robocop
+
+	* firebird2/src/gpre/sdltable.h (1.2):
+
+	Misc.
+
+2007-02-11 10:09  robocop
+
+	* firebird2/src/jrd/isc_sync.cpp (1.105):
+
+	Did this IB->FB change separately in case it causes problems.
+
+2007-02-11 10:09  robocop
+
+	* firebird2/src/jrd/builtin.cpp (1.11):
+
+	Misc.
+
+2007-02-11 10:03  robocop
+
+	* firebird2/src/: alice/alice.cpp (1.89), burp/burp.cpp (1.119),
+	burp/burpswi.h (1.17), dsql/make.cpp (1.128), dudley/ddl.cpp
+	(1.37), dudley/trn.cpp (1.37), gpre/sql.cpp (1.64),
+	include/consts_pub.h (1.10), jrd/builtin.cpp (1.10), jrd/cch.cpp
+	(1.143), jrd/cmp.cpp (1.249), jrd/constants.h (1.41),
+	jrd/file_params.h (1.28), jrd/flu.cpp (1.57), jrd/gds.cpp (1.214),
+	jrd/ibase.h (1.125), jrd/intl.h (1.16), jrd/intlnames.h (1.26),
+	jrd/isc.h (1.25), jrd/jrd.cpp (1.304), jrd/qatest.cpp (1.18),
+	jrd/sort.h (1.30), jrd/svc.cpp (1.177), jrd/svc_undoc.h (1.5),
+	jrd/why.cpp (1.127), jrd/os/vms/map.cpp (1.14), jrd/os/vms/rdb.cpp
+	(1.16), jrd/os/win32/ibinitdll.cpp (1.11), lock/print.cpp (1.52),
+	misc/codes.epp (1.21), msgs/build_file.epp (1.29),
+	msgs/change_msgs.epp (1.19), msgs/check_msgs.epp (1.13),
+	msgs/enter_msgs.epp (1.16), msgs/modify_msgs.epp (1.14), qli/dtr.h
+	(1.25), remote/interface.cpp (1.129), remote/server.cpp (1.144),
+	remote/xdr.cpp (1.23), remote/os/win32/ibconfig.cpp (1.20),
+	remote/os/win32/window.cpp (1.18), utilities/cache.cpp (1.17),
+	utilities/print_event.cpp (1.8), utilities/print_pool.cpp (1.10),
+	utilities/relay.cpp (1.8), utilities/run_service.cpp (1.13),
+	utilities/gsec/gsec.cpp (1.62), utilities/gstat/dba.epp (1.72),
+	utilities/guard/util.cpp (1.12), utilities/ibmgr/ibmgr.cpp (1.22),
+	utilities/ibmgr/ibmgr.h (1.14), utilities/ibmgr/srvrmgr.cpp (1.32),
+	utilities/ibmgr/srvrmgr_proto.h (1.4),
+	utilities/install/install_reg.cpp (1.14):
+
+	Misc and replaced "IB" by "FB" where it made sense to me.
+
 2007-02-09 09:34  robocop
 
 	* firebird2/src/: jrd/blb.cpp (1.133), jrd/gds.cpp (1.213),
