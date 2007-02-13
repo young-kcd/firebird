@@ -2758,6 +2758,8 @@ static THREAD_ENTRY_DECLARE sweep_database(THREAD_ENTRY_PARAM database)
 	dpb.insertString(isc_dpb_password, 
 		szPassword, strlen(szPassword));
 	dpb.insertByte(isc_dpb_sweep, isc_dpb_records);
+	// sometimes security database is also to be sweeped
+	dpb.insertByte(isc_dpb_gsec_attach, 1);
 
 	ISC_STATUS_ARRAY status_vector;
 
