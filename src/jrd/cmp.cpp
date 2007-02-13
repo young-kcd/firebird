@@ -1688,6 +1688,33 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC * de
 
 	case nod_literal:
 		*desc = ((Literal*) node)->lit_desc;
+
+		// ASF: I expect only dtype_text could occur here.
+		// But I'll treat all string types for sure.
+		if (DTYPE_IS_TEXT(desc->dsc_dtype))
+		{
+			const UCHAR* p;
+			USHORT adjust = 0;
+
+			if (desc->dsc_dtype == dtype_varying)
+			{
+				p = desc->dsc_address + sizeof(USHORT);
+				adjust = 2;
+			}
+			else
+			{
+				p = desc->dsc_address;
+
+				if (desc->dsc_dtype == dtype_cstring)
+					adjust = 1;
+			}
+
+			// Do the same thing which DSQL does.
+			// Increase descriptor size to evaluate dependent expressions correctly.
+			CharSet* cs = INTL_charset_lookup(tdbb, desc->getCharSet());
+			desc->dsc_length = (cs->length(desc->dsc_length - adjust, p, true) *
+				cs->maxBytesPerChar()) + adjust;
+		}
 		return;
 
 	case nod_cast:
