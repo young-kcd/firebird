@@ -1,3 +1,19 @@
+2007-02-12 18:23  dimitr
+
+	* firebird2/builds/install/arch-specific/win32/ru/: Readme.txt
+	(1.1.2.2), custom_messages_ru.inc (1.1.2.3),
+	installation_readme.txt (1.1.2.2):
+
+	Fixes to the Russian installer stuff.
+
+2007-02-12 16:00  dimitr
+
+	*
+	firebird2/builds/install/arch-specific/win32/FirebirdInstall_20.iss
+	(1.12.2.10):
+
+	Fixes to the Russian installer stuff.
+
 2007-02-09 09:42  dchri
 
 	*
