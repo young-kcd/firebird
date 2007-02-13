@@ -1,3 +1,34 @@
+2007-02-13 02:17  asfernandes
+
+	* firebird2/src/jrd/cmp.cpp (1.250):
+
+	Fixed CORE-1126 - UNION vs UTF8 literals : arithmetic exception is
+	thrown
+
+2007-02-12 16:52  alexpeshkoff
+
+	* firebird2/src/jrd/tra.cpp (1.134):
+
+	Fixed unregistered bug, reported privately by Adriano
+
+2007-02-12 11:18  dimitr
+
+	* firebird2/src/jrd/tra.cpp (1.133):
+
+	Misc.
+
+2007-02-12 11:01  dimitr
+
+	* firebird2/src/jrd/ini.epp (1.89):
+
+	Allow the monitoring feature for Dialect 1 databases.
+
+2007-02-12 10:31  hvlad
+
+	* firebird2/src/common/classes/tree.h (1.60):
+
+	Bugfix after sparse bitmap optimization
+
 2007-02-11 17:57  asfernandes
 
 	* firebird2/src/: jrd/os/win32/ibinitdll.cpp (1.12),
