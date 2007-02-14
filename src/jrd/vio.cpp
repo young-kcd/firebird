@@ -768,6 +768,17 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb, RecordSource* 
 				CCH_RELEASE(tdbb, &rpb->rpb_window);
 				return false;
 			}
+
+			// hvlad: if i'm garbage collector i don't need to read backversion of active
+			// record. Just do notify self about it (if background policy enabled)
+			if (attachment->att_flags & ATT_garbage_collector)
+			{
+				// VIO_chase_record_version
+				notify_garbage_collector(tdbb, rpb);
+				CCH_RELEASE(tdbb, &rpb->rpb_window);
+				return false;
+			}
+
 			if (!(rpb->rpb_flags & rpb_delta)) {
 				rpb->rpb_prior = NULL;
 				/* Fetch a back version.  If a latch timeout occurs, refetch the
