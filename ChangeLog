@@ -1,3 +1,16 @@
+2007-02-13 11:16  alexpeshkoff
+
+	* firebird2/src/jrd/tra.cpp (1.117.2.2):
+
+	backported fix for security database sweep
+
+2007-02-13 09:24  makowski
+
+	* firebird2/builds/install/arch-specific/win32/fr/:
+	installation_lisezmoi.txt (1.1.6.2), lisezmoi.txt (1.1.6.2):
+
+	updated for 2.0.1
+
 2007-02-12 18:23  dimitr
 
 	* firebird2/builds/install/arch-specific/win32/ru/: Readme.txt
