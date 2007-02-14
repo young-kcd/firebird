@@ -52,6 +52,7 @@
 #include "../common/classes/locks.h"
 #include "../common/classes/timestamp.h"
 #include "../common/classes/init.h"
+#include "../common/classes/TempFile.h"
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -2356,6 +2357,59 @@ void API_ROUTINE gds__sqlcode_s(const ISC_STATUS* status_vector, ULONG* sqlcode)
  **************************************/
 
 	*sqlcode = gds__sqlcode(status_vector);
+}
+
+
+void* API_ROUTINE gds__temp_file(
+					 BOOLEAN stdio_flag, const TEXT* string,
+					 TEXT* expanded_string, TEXT* dir, BOOLEAN unlink_flag)
+{
+/**************************************
+ *
+ *      g d s _ _ t e m p _ f i l e
+ *
+ **************************************
+ *
+ * Functional description
+ *      Create and open a temp file with a given location.
+ *      Unless the address of a buffer for the expanded file name string is
+ *      given, make up the file "pre-deleted". Return -1 on failure.
+ *      If unlink_flag is TRUE than file is marked as pre-deleted even if 
+ *      expanded_string is not NULL.
+ * NOTE 
+ *      Function returns untyped handle that needs to be casted to either FILE
+ *      or used as file descriptor. This is ugly and needs to be fixed probably 
+ *      via introducing two functions with different return types.
+ *
+ **************************************/
+	try {
+
+	// This legacy wrapper cannot process these parameters.
+	// Fortunately, utilities never pass non-default values.
+	fb_assert(!dir && !unlink_flag);
+
+	Firebird::PathName filename = TempFile::create(string);
+
+	if (expanded_string)
+	{
+		strcpy(expanded_string, filename.c_str());
+	}
+
+	if (stdio_flag)
+	{
+		FILE* result = fopen(filename.c_str(), "w+b");
+		return result ? result : (void*) -1;
+	}
+	else
+	{
+		return (void*) open(filename.c_str(), O_RDWR | O_EXCL | O_TRUNC);
+	}
+
+	}
+	catch (const Firebird::Exception&)
+	{
+		return (void*) -1;
+	}
 }
 
 
