@@ -620,11 +620,11 @@ int INF_database_info(const SCHAR* items,
 			err_att = tdbb->tdbb_attachment;
 			if (err_att->att_val_errors) {
 				err_val =
-					(*err_att->att_val_errors)[VAL_INDEX_PAGE_CORRUPT]
-					+
+					(*err_att->att_val_errors)[VAL_INDEX_PAGE_CORRUPT] +
 					(*err_att->att_val_errors)[VAL_INDEX_ROOT_MISSING] +
 					(*err_att->att_val_errors)[VAL_INDEX_MISSING_ROWS] +
-					(*err_att->att_val_errors)[VAL_INDEX_ORPHAN_CHILD];
+					(*err_att->att_val_errors)[VAL_INDEX_ORPHAN_CHILD] +
+					(*err_att->att_val_errors)[VAL_INDEX_CYCLE];
 			}
 			else
 				err_val = 0;
