@@ -647,7 +647,8 @@ static const TEXT msg_table[VAL_MAX_ERROR][66] =
 	"Transaction inventory pages confused, sequence %ld",
 	"Relation has %ld orphan backversions (%ld in use)",
 	"Index %d is corrupt (missing entries)",
-	"Index %d has orphan child page at page %ld"
+	"Index %d has orphan child page at page %ld",
+	"Index %d has a circular reference at page %ld"
 };
 
 
@@ -1431,12 +1432,17 @@ static RTN walk_index(thread_db* tdbb, vdr* control, jrd_rel* relation,
 	UCHAR flags = 0;
 	UCHAR* pointer;
 	IndexNode node, lastNode;
+	PageBitmap visited_pages; // used to check circular page references, Diane Downie 2/9/07
 
 	while (next)
 	{
 		WIN window(DB_PAGE_SPACE, -1);
 		btree_page* page = 0;
 		fetch_page(tdbb, control, next, pag_index, &window, &page);
+		
+		// remember each page for circular reference detection 
+		visited_pages.set(next); 
+		
 		if ((next != page_number) &&
 			(page->btr_header.pag_flags & BTR_FLAG_COPY_MASK) !=
 			(flags & BTR_FLAG_COPY_MASK))
@@ -1688,6 +1694,13 @@ static RTN walk_index(thread_db* tdbb, vdr* control, jrd_rel* relation,
 			nullKeyHandled = !(unique && null_key);
 		}
 
+		// check for circular referenes
+		if (next && visited_pages.test(next)) 
+		{
+			corrupt(tdbb, control, VAL_INDEX_CYCLE, relation,
+					id + 1, next);
+			next = 0;
+		}
 		CCH_RELEASE(tdbb, &window);
 	}
 

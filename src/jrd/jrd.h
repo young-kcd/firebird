@@ -472,7 +472,8 @@ const int VAL_TIP_CONFUSED				= 21;
 const int VAL_REL_CHAIN_ORPHANS			= 22;
 const int VAL_INDEX_MISSING_ROWS		= 23;
 const int VAL_INDEX_ORPHAN_CHILD		= 24;
-const int VAL_MAX_ERROR					= 25;
+const int VAL_INDEX_CYCLE				= 25;
+const int VAL_MAX_ERROR					= 26;
 
 
 #ifndef SUPERSERVER
