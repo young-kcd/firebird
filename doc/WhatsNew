@@ -2,6 +2,17 @@
   * v2.0.1
   **************************
 
+    * Fixed bug CORE-1127
+        Circular index references in corrupt database causes fbserver to loop infinitely
+      Contributor(s):
+        Diane Downie <diane dot downie at citrix dot com>
+        Vlad Horsun <horsun at kdb.dp.ua>
+
+    * Improvement CORE-1071
+        Background garbage collector don't need to read backversion of active record
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
+
     * Fixed bug CORE-1094
         isc_dsql_sql_info() returns unordered SQLVAR descriptors
       Contributor(s):
