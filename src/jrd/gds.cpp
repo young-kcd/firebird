@@ -1557,7 +1557,7 @@ SSHORT API_ROUTINE gds__msg_lookup(void* handle,
 				status = -1;
 				break;
 			}
-			else if (leaf->msgrec_code == code) {
+			if (leaf->msgrec_code == code) {
 				/* We found the correct message, so return it to the user */
 				const USHORT n = MIN(length - 1, leaf->msgrec_length);
 				memcpy(buffer, leaf->msgrec_text, n);
