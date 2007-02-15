@@ -1699,7 +1699,7 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC * de
 			if (desc->dsc_dtype == dtype_varying)
 			{
 				p = desc->dsc_address + sizeof(USHORT);
-				adjust = 2;
+				adjust = sizeof(USHORT);
 			}
 			else
 			{
