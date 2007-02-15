@@ -1432,7 +1432,7 @@ static RTN walk_index(thread_db* tdbb, vdr* control, jrd_rel* relation,
 	UCHAR flags = 0;
 	UCHAR* pointer;
 	IndexNode node, lastNode;
-	PageBitmap visited_pages; // used to check circular page references, Diane Downie 2/9/07
+	PageBitmap visited_pages; // used to check circular page references, Diane Downie 2007-02-09
 
 	while (next)
 	{
