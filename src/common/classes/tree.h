@@ -336,7 +336,7 @@ public:
 public:
 	class Accessor {
 	public:
-		Accessor(BePlusTree* _tree) : tree(_tree), curr(NULL), curPos(0) {}		
+		Accessor(BePlusTree* _tree) : curr(NULL), tree(_tree), curPos(0) {}
 	
 		// Remove item. Current position moves to next item after this call. 
 		// If next item doesn't exist method returns false
@@ -539,9 +539,10 @@ public:
 				KeyOfValue::generate(this, current()) == key);
 		}
 
+		ItemList *curr;
+		
 	private:
 		BePlusTree* tree;
-		ItemList *curr;
   		size_t curPos;
 
 		friend class BePlusTree;
