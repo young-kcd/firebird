@@ -946,14 +946,14 @@ static SLONG safe_interpret(char* const s, const size_t bufsize,
 
 #ifdef WIN_NT
 	case isc_arg_win32:
-		if (!FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM,
+		if (!FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_MAX_WIDTH_MASK,
 										 NULL,
 										 code,
 										 GetUserDefaultLangID(),
 										 s,
 										 bufsize,
-						                 NULL)
-		  && !FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM,
+										 NULL)
+		  && !FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_MAX_WIDTH_MASK,
 										 NULL,
 										 code,
 										 0, // TMN: Fallback to system known language

@@ -1375,14 +1375,14 @@ static void db_error( SLONG status)
 	tdba* tddba = tdba::getSpecific();
 	tddba->page_number = -1;
 
-	if (!FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM,
+	if (!FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_MAX_WIDTH_MASK,
 						NULL,
 						status,
 						GetUserDefaultLangID(),
 						s,
 						sizeof(s),
 						NULL)
-		&& !FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM,
+		&& !FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_MAX_WIDTH_MASK,
 						NULL,
 						status,
 						0, // TMN: Fallback to system known language
