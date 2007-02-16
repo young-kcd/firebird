@@ -1,3 +1,41 @@
+2007-02-15 15:41  asfernandes
+
+	* firebird2/src/jrd/cmp.cpp (1.251):
+
+	Misc
+
+2007-02-15 11:35  robocop
+
+	* firebird2/src/: utilities/gstat/dba.epp (1.74), jrd/gds.cpp
+	(1.217):
+
+	Apply solution for CORE-1129. Thanks to Bill Oliver.  I didn't
+	change install_reg, install_svc and fbcpl's fbdialog.
+
+2007-02-15 11:21  robocop
+
+	* firebird2/src/common/classes/tree.h (1.61):
+
+	Fixing previous hack for VC6.
+
+2007-02-15 11:21  robocop
+
+	* firebird2/src/jrd/validation.cpp (1.27):
+
+	Let's use Universal Date Format yyyy-mm-dd for comments, please.
+
+2007-02-15 11:20  robocop
+
+	* firebird2/src/jrd/gds.cpp (1.216):
+
+	Misc.
+
+2007-02-15 08:20  dimitr
+
+	* firebird2/src/jrd/opt.cpp (1.287):
+
+	Fixed CORE-1130.
+
 2007-02-14 12:37  dimitr
 
 	* firebird2/: src/jrd/gds.cpp (1.215), src/jrd/gds_proto.h (1.44),
