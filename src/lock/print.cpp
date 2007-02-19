@@ -372,8 +372,15 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 	if ((LOCK_header->lhb_version != SS_LHB_VERSION) &&
 		(LOCK_header->lhb_version != CLASSIC_LHB_VERSION))
 	{
-		FPRINTF(outfile, "\tUnable to read lock table version %d.\n",
+		if (LOCK_header->lhb_type == 0 && LOCK_header->lhb_version == 0) 
+		{
+			FPRINTF(outfile, "\tLock table is empty.\n");
+		}
+		else 
+		{
+			FPRINTF(outfile, "\tUnable to read lock table version %d.\n",
 				LOCK_header->lhb_version);
+		};
 		exit(FINI_OK);
 	}
 

@@ -53,6 +53,7 @@ void	ISC_wake_init(void);
 #ifdef WIN_NT
 bool	ISC_is_WinNT();
 struct _SECURITY_ATTRIBUTES* ISC_get_security_desc(void);
+void	ISC_prefix_object_name(char*, size_t);
 /* Disabled. Not found anywhere.
 TEXT*	ISC_prefix_interbase(TEXT*, TEXT*);
 */
