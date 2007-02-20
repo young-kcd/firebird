@@ -380,7 +380,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 		{
 			FPRINTF(outfile, "\tUnable to read lock table version %d.\n",
 				LOCK_header->lhb_version);
-		};
+		}
 		exit(FINI_OK);
 	}
 
