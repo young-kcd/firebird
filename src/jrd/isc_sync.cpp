@@ -70,6 +70,7 @@
 #include "../jrd/thread_proto.h"
 #include "../jrd/jrd_pwd.h"
 #include "../common/config/config.h"
+#include "../common/utils_proto.h"
 
 #if defined(SIG_RESTART) || defined(UNIX) 
 static ULONG inhibit_restart;
@@ -4196,7 +4197,7 @@ static void make_object_name(
 	// misunderstanding between processes
 	strlwr(buffer);
 
-	ISC_prefix_object_name(buffer, bufsize);
+	fb_utils::prefix_kernel_object_name(buffer, bufsize);
 }
 #endif
 

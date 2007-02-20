@@ -30,8 +30,6 @@
 #include <stdlib.h>
 #endif
 
-#include "../../jrd/isc_proto.h"
-
 // config_file works with OS case-sensitivity
 typedef Firebird::PathName string;
 
@@ -186,7 +184,7 @@ ConfigImpl::ConfigImpl(MemoryPool& p) : ConfigRoot(p)
 
 	strncpy(defIpcName, FB_IPC_NAME, sizeof(defIpcName));
 #ifdef WIN_NT
-	ISC_prefix_object_name(defIpcName, sizeof(defIpcName));
+	fb_utils::prefix_kernel_object_name(defIpcName, sizeof(defIpcName));
 #endif
 
 	/* Iterate through the known configuration entries */
