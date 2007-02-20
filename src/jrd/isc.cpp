@@ -1133,7 +1133,7 @@ LPSECURITY_ATTRIBUTES ISC_get_security_desc()
 }
 
 
-bool validateProductSuite (LPSTR lpszSuiteToValidate);
+bool validateProductSuite (LPCSTR lpszSuiteToValidate);
 bool isTerminalServicesEnabled();
 
 // hvlad: begins from Windows 2000 we can safely add 'Global\' prefix for 
@@ -1164,7 +1164,7 @@ void ISC_prefix_object_name(char* name, size_t bufsize)
 			(bufsize - len_name) : len_prefix;
 
 		memmove(name + move_prefix, name, len_name);
-		memmove(name, prefix, move_prefix);
+		memcpy(name, prefix, move_prefix);
 	}
 }
 
@@ -1253,16 +1253,18 @@ bool isTerminalServicesEnabled()
 //
 ////////////////////////////////////////////////////////////
 
-bool validateProductSuite (LPSTR lpszSuiteToValidate) 
+bool validateProductSuite (LPCSTR lpszSuiteToValidate) 
 {
 	bool fValidated = false;
 	HKEY hKey = NULL;
 	DWORD dwType = 0;
 	DWORD dwSize = 0;
+	LPSTR lpszProductSuites = 0;
+	LPCSTR lpszSuite = 0;
 
 	// Open the ProductOptions key.
-	LONG lResult = RegOpenKeyA(HKEY_LOCAL_MACHINE,
-		"System\\CurrentControlSet\\Control\\ProductOptions", &hKey);
+	LONG lResult = RegOpenKeyExA(HKEY_LOCAL_MACHINE,
+		"System\\CurrentControlSet\\Control\\ProductOptions", 0, KEY_QUERY_VALUE, &hKey);
 	if (lResult != ERROR_SUCCESS)
 		goto exit;
 
@@ -1272,7 +1274,7 @@ bool validateProductSuite (LPSTR lpszSuiteToValidate)
 		goto exit;
 
 	// Allocate buffer.
-	LPSTR lpszProductSuites = (LPSTR) LocalAlloc(LPTR, dwSize);
+	lpszProductSuites = (LPSTR) LocalAlloc(LPTR, dwSize);
 	if (!lpszProductSuites)
 		goto exit;
 
@@ -1283,15 +1285,15 @@ bool validateProductSuite (LPSTR lpszSuiteToValidate)
 		goto exit;
 
 	// Search for suite name in array of strings.
-	LPSTR lpszSuite = lpszProductSuites;
-	while (*lpszSuite) 
+	lpszSuite = lpszProductSuites;
+	while (*lpszSuite)
 	{
-		if (lstrcmpA(lpszSuite, lpszSuiteToValidate) == 0) 
+		if (lstrcmpA(lpszSuite, lpszSuiteToValidate) == 0)
 		{
 			fValidated = true;
 			break;
 		}
-		lpszSuite += (lstrlenA( lpszSuite ) + 1);
+		lpszSuite += (lstrlenA(lpszSuite) + 1);
 	}
 
 exit:
