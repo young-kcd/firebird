@@ -221,8 +221,8 @@ int snprintf(char* buffer, size_t count, const char* format...)
 
 #ifdef WIN_NT
 
-bool validateProductSuite (LPCSTR lpszSuiteToValidate);
-bool isTerminalServicesEnabled();
+static bool validateProductSuite (LPCSTR lpszSuiteToValidate);
+static bool isTerminalServicesEnabled();
 
 // hvlad: begins from Windows 2000 we can safely add 'Global\' prefix for 
 // names of all kernel objects we use. For Win9x we must not add this prefix. 
@@ -261,7 +261,7 @@ void prefix_kernel_object_name(char* name, size_t bufsize)
 // and slightly adapted for our coding style
 
 // -------------------------------------------------------------
-//   Note that the validateProductSuite and IsTerminalServices
+//   Note that the validateProductSuite and isTerminalServices
 //   functions use ANSI versions of the functions to maintain
 //   compatibility with Windows Me/98/95.
 //   ------------------------------------------------------------- 
