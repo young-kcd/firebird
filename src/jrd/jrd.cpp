@@ -812,7 +812,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 		dbb->dbb_flags |= DBB_lck_init_done;
 		INI_init();
 		dbb->dbb_file =
-			PIO_open(dbb, expanded_name, options.dpb_trace != 0, NULL, file_name);
+			PIO_open(dbb, expanded_name, options.dpb_trace != 0, NULL, file_name, false);
 		SHUT_init(dbb);
 		PAG_header_init();
 		INI_init2();
@@ -1946,7 +1946,7 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 	try
 	{
 		// try to create with overwrite = false
-		dbb->dbb_file = PIO_create(dbb, expanded_name, false);
+		dbb->dbb_file = PIO_create(dbb, expanded_name, false, false);
 	}
 	catch (Firebird::status_exception)
 	{
@@ -1976,7 +1976,7 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 			{
 				// file is a database and the user (SYSDBA or owner) has right to overwrite
 				dbb->dbb_file =
-					PIO_create(dbb, expanded_name, options.dpb_overwrite);
+					PIO_create(dbb, expanded_name, options.dpb_overwrite, false);
 			}
 			else
 			{

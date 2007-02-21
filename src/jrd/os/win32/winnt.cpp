@@ -108,7 +108,7 @@ int PIO_add_file(Database* dbb, jrd_file* main_file, const Firebird::PathName& f
  *	sequence of 0.
  *
  **************************************/
-	jrd_file* new_file = PIO_create(dbb, file_name, false);
+	jrd_file* new_file = PIO_create(dbb, file_name, false, false);
 	if (!new_file) {
 		return 0;
 	}
@@ -181,7 +181,7 @@ int PIO_connection(const Firebird::PathName& file_name)
 
 
 
-jrd_file* PIO_create(Database* dbb, const Firebird::PathName& string, bool overwrite)
+jrd_file* PIO_create(Database* dbb, const Firebird::PathName& string, bool overwrite, bool share_delete)
 {
 /**************************************
  *
@@ -195,9 +195,12 @@ jrd_file* PIO_create(Database* dbb, const Firebird::PathName& string, bool overw
  **************************************/
 	const TEXT* file_name = string.c_str();
 
+	if (!ISC_is_WinNT())
+		share_delete = false;
+
 	const HANDLE desc = CreateFile(file_name,
 					  GENERIC_READ | GENERIC_WRITE,
-					  g_dwShareFlags,
+					  g_dwShareFlags | (share_delete ? FILE_SHARE_DELETE : 0),
 					  NULL,
 					  (overwrite ? CREATE_ALWAYS : CREATE_NEW),
 					  FILE_ATTRIBUTE_NORMAL |
@@ -478,7 +481,8 @@ jrd_file* PIO_open(Database* dbb,
 			 const Firebird::PathName& string,
 			 bool trace_flag,
 			 blk* connection, 
-			 const Firebird::PathName& file_name)
+			 const Firebird::PathName& file_name,
+			 bool share_delete)
 {
 /**************************************
  *
@@ -494,9 +498,12 @@ jrd_file* PIO_open(Database* dbb,
  **************************************/
 	const TEXT* ptr = (string.hasData() ? string : file_name).c_str();
 
+	if (!ISC_is_WinNT())
+		share_delete = false;
+
 	HANDLE desc = CreateFile(ptr,
 					  GENERIC_READ | GENERIC_WRITE,
-					  g_dwShareFlags,
+					  g_dwShareFlags | (share_delete ? FILE_SHARE_DELETE : 0),
 					  NULL,
 					  OPEN_EXISTING,
 					  FILE_ATTRIBUTE_NORMAL |
@@ -1070,18 +1077,19 @@ static jrd_file* setup_file(Database*					dbb,
 	if (!LCK_lock(NULL, lock, LCK_EX, LCK_NO_WAIT)) {
 		dbb->dbb_flags &= ~DBB_exclusive;
 		thread_db* tdbb = JRD_get_thread_data();
-		
+
 		while (!LCK_lock(tdbb, lock, LCK_SW, -1)) {
 			tdbb->tdbb_status_vector[0] = 0; // Clean status vector from lock manager error code
 			// If we are in a single-threaded maintenance mode then clean up and stop waiting
-			SCHAR spare_memory[MIN_PAGE_SIZE*2];
-			SCHAR *header_page_buffer = (SCHAR*) FB_ALIGN((IPTR)spare_memory, MIN_PAGE_SIZE);
-		
+			SCHAR spare_memory[MIN_PAGE_SIZE * 2];
+			SCHAR *header_page_buffer = (SCHAR*) FB_ALIGN((IPTR) spare_memory, MIN_PAGE_SIZE);
+			Ods::header_page* header = reinterpret_cast<Ods::header_page*>(header_page_buffer);
+
 			try {
 				dbb->dbb_file = file;
 				PIO_header(dbb, header_page_buffer, MIN_PAGE_SIZE);
-				if ((reinterpret_cast<Ods::header_page*>(header_page_buffer)->hdr_flags & Ods::hdr_shutdown_mask) == Ods::hdr_shutdown_single)
-					ERR_post(isc_shutdown, isc_arg_cstring, file_name.length(), ERR_cstring(file_name), 0);
+				if ((header->hdr_flags & Ods::hdr_shutdown_mask) == Ods::hdr_shutdown_single)
+					ERR_post(isc_shutdown, isc_arg_string, ERR_string(file_name), 0);
 				dbb->dbb_file = NULL; // Will be set again later by the caller				
 			} catch(const std::exception&) {
 				delete dbb->dbb_lock;

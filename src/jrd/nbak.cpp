@@ -567,7 +567,7 @@ void BackupManager::begin_backup(thread_db* tdbb)
 		}
 		// Create file
 		NBAK_TRACE(("Creating difference file %s", diff_name));
-		diff_file = PIO_create(database, diff_name, true);
+		diff_file = PIO_create(database, diff_name, true, true);
 #ifdef UNIX 
 		// adjust difference file access rights to make it match main DB ones
 		if (diff_file && geteuid() == 0) {
@@ -1193,7 +1193,7 @@ bool BackupManager::actualize_state(thread_db* tdbb) throw()
 #endif
 		try {
 			NBAK_TRACE(("Open difference file"));
-			diff_file = PIO_open(database, diff_name, false, NULL, diff_name);
+			diff_file = PIO_open(database, diff_name, false, NULL, diff_name, true);
 		} catch(const std::exception& ex) {
 #ifdef SUPERSERVER
 			adjust_state_lock->leave();

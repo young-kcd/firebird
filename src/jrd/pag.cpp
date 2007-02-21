@@ -1496,7 +1496,7 @@ void PAG_init2(USHORT shadow_number)
 				isc_arg_end);
 		}
 
-		file->fil_next = PIO_open(dbb, file_name, false, 0, file_name);
+		file->fil_next = PIO_open(dbb, file_name, false, 0, file_name, false);
 		file->fil_max_page = last_page;
 		file = file->fil_next;
 		if (dbb->dbb_flags & DBB_force_write)
