@@ -227,7 +227,7 @@ fichier batch avec les paramêtres suivants:
   Décoche la case de création d'icônes.
 
 /COMPONENTS="liste de noms de composant séparés par des
-  points virgule"
+  virgules, sans espace"
 
   Choisir dans - SuperServerComponent,
                  ClassicServerComponent,
