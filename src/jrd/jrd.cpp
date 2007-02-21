@@ -794,7 +794,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 	{
 		first = true;
 		dbb->dbb_filename = expanded_name;
-		
+
 		// NS: Use alias as database ID only if accessing database using file name is not possible.
 		//
 		// This way we:
@@ -805,7 +805,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 			dbb->dbb_database_name = file_name;
 		else
 			dbb->dbb_database_name = expanded_name;
-			
+
 		/* Extra LCK_init() done to keep the lock table until the
 		   database is shutdown() after the last detach. */
 		LCK_init(tdbb, LCK_OWNER_database);
@@ -814,20 +814,21 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 		dbb->dbb_file =
 			PIO_open(dbb, expanded_name, options.dpb_trace != 0, NULL, file_name);
 		SHUT_init(dbb);
-		PAG_header(file_name.c_str(), file_name.length(), false);
+		PAG_header_init();
 		INI_init2();
 		PAG_init();
 		if (options.dpb_set_page_buffers) {
 			dbb->dbb_page_buffers = options.dpb_page_buffers;
 		}
 		CCH_init(tdbb, (ULONG) options.dpb_buffers);
-		
+
 		// Initialize backup difference subsystem. This must be done before WAL and shadowing
 		// is enabled because nbackup it is a lower level subsystem
 		dbb->dbb_backup_manager = FB_NEW(*dbb->dbb_permanent) BackupManager(tdbb, dbb, nbak_state_unknown);
-		
+
 		PAG_init2(0);		
-		
+		PAG_header(false);
+
 #ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
 		LOG_init(expanded_name, length_expanded);
 #endif
