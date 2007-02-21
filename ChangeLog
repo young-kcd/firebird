@@ -1,3 +1,39 @@
+2007-02-21 01:02  asfernandes
+
+	* firebird2/src/common/utils.cpp (1.20):
+
+	Misc
+
+2007-02-20 16:38  hvlad
+
+	* firebird2/src/: common/utils.cpp (1.19), common/utils_proto.h
+	(1.13), common/config/config.cpp (1.77), jrd/isc.cpp (1.66),
+	jrd/isc_proto.h (1.16), jrd/isc_sync.cpp (1.107):
+
+	Moved ISC_prefix_object_name into
+	fb_utils::prefix_kernel_object_name to avoid a need to add isc.cpp
+	to all projects which can read config file
+
+2007-02-20 09:44  robocop
+
+	* firebird2/src/jrd/isc.cpp (1.65):
+
+	Fixing two programming mistakes: - MSDN says This function
+	[RegOpenKey] is provided only for compatibility with 16-bit
+	versions of Windows. Applications should use the RegOpenKeyEx
+	function. Since it uses the default security access mask to open a
+	key it may/will fail on Windows Vista.	- It's illegal to jump via
+	goto to a label that skips initialization of a variable. In the
+	case of an early error, the code was trying to free an
+	uninitialized variable.
+
+2007-02-20 09:40  robocop
+
+	* firebird2/src/: extlib/fbudf/fbudf.sql (1.10), lock/print.cpp
+	(1.54):
+
+	Totally misc.
+
 2007-02-19 14:05  hvlad
 
 	* firebird2/src/: common/config/config.cpp (1.76), jrd/isc.cpp
