@@ -748,7 +748,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 	}
 
 	tdbb->tdbb_attachment = attachment = FB_NEW(*dbb->dbb_permanent) Attachment(dbb);
-	attachment->att_filename = expanded_name;
+	attachment->att_filename = is_alias ? file_name : expanded_name;
 	attachment->att_network_protocol = options.dpb_network_protocol;
 	attachment->att_remote_address = options.dpb_remote_address;
 
@@ -1858,7 +1858,7 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 	}
 
 	tdbb->tdbb_attachment = attachment = FB_NEW(*dbb->dbb_permanent) Attachment(dbb);
-	attachment->att_filename = expanded_name;
+	attachment->att_filename = is_alias ? file_name : expanded_name;
 	attachment->att_network_protocol = options.dpb_network_protocol;
 	attachment->att_remote_address = options.dpb_remote_address;
 	attachment->att_next = dbb->dbb_attachments;
