@@ -98,17 +98,17 @@ double EXPORT IB_UDF_atan2( double *a, double *b)
 	return (atan2(*a, *b));
 }
 
-long EXPORT IB_UDF_bin_and( long *a, long *b)
+int EXPORT IB_UDF_bin_and( int *a, int *b)
 {
 	return (*a & *b);
 }
 
-long EXPORT IB_UDF_bin_or( long *a, long *b)
+int EXPORT IB_UDF_bin_or( int *a, int *b)
 {
 	return (*a | *b);
 }
 
-long EXPORT IB_UDF_bin_xor( long *a, long *b)
+int EXPORT IB_UDF_bin_xor( int *a, int *b)
 {
 	return (*a ^ *b);
 }
@@ -133,7 +133,7 @@ double EXPORT IB_UDF_cot( double *a)
 	return (1.0 / tan(*a));
 }
 
-double EXPORT IB_UDF_div( long *a, long *b)
+double EXPORT IB_UDF_div( int *a, int *b)
 {
 	if (*b != 0) {
 		div_t div_result = div(*a, *b);
@@ -196,18 +196,18 @@ char *EXPORT IB_UDF_lower(const char *s)
 	return buf;
 }
 
-char *EXPORT IB_UDF_lpad( const char *s, long *a, const char *c)
+char *EXPORT IB_UDF_lpad( const char *s, int *a, const char *c)
 {
 	if (!s || !c)
 		return 0;
 
-	const long avalue = *a;
+	const int avalue = *a;
 	
 	if (avalue >= 0) {
-		long current = 0;
-		const long length = strlen(s);
-		const long padlength = strlen(c);
-		const long stop = avalue < length ? avalue : length;
+		int current = 0;
+		const int length = strlen(s);
+		const int padlength = strlen(c);
+		const int stop = avalue < length ? avalue : length;
 		char* buf = (char*) ib_util_malloc(avalue + 1);
 
 		if (padlength)
@@ -245,7 +245,7 @@ char *EXPORT IB_UDF_ltrim( const char *s)
 	return buf;
 }
 
-double EXPORT IB_UDF_mod( long *a, long *b)
+double EXPORT IB_UDF_mod( int *a, int *b)
 {
 	if (*b != 0) {
 		div_t div_result = div(*a, *b);
@@ -274,17 +274,17 @@ double EXPORT IB_UDF_rand()
 	return ((float) rand() / (float) RAND_MAX);
 }
 
-char *EXPORT IB_UDF_rpad( const char *s, long *a, const char *c)
+char *EXPORT IB_UDF_rpad( const char *s, int *a, const char *c)
 {
 	if (!s || !c)
 		return 0;
 		
-	const long avalue = *a;
+	const int avalue = *a;
 
 	if (avalue >= 0) {
-		const long length = strlen(s);
-		long current = (avalue - length) < 0 ? avalue : length;
-		const long padlength = strlen(c);
+		const int length = strlen(s);
+		int current = (avalue - length) < 0 ? avalue : length;
+		const int padlength = strlen(c);
 		char* buf = (char*) ib_util_malloc (avalue + 1);
 		memcpy(buf, s, current);
 
