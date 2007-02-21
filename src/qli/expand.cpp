@@ -2268,8 +2268,12 @@ static int generate_fields( qli_ctx* context, qli_lls* values, qli_syntax* rse)
  *	input to a store or update.
  *
  **************************************/
+	
+	if (context->ctx_type == CTX_VARIABLE)
+		return 0;
 	if (context->ctx_type == CTX_AGGREGATE)
 		return 0;
+
 	qli_syntax* group_list = rse->syn_arg[s_rse_group_by];
 	qli_rel* relation = context->ctx_relation;
 	int count = 0;

@@ -2,6 +2,12 @@
   * v2.1 Alpha 1
   **************
 
+    * QLI crash
+	  Fix problem with QLI where a crash occurs using the following SQL
+	  insert into relationx select * from relationy
+      Contributor(s):
+	Paul Beach (pbeach at ibphoenix.com)
+
     * Bugfix CORE-1098
         Races in cch.cpp, leading to AV during cache_writer startup
       Contributor(s):
