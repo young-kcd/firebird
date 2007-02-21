@@ -2608,8 +2608,11 @@ static int generate_fields( QLI_CTX context, LLS values, SYN rse)
 	QLI_FLD field;
 	SYN value, group_list;
 
+	if (context->ctx_type == CTX_VARIABLE)
+		return 0;
 	if (context->ctx_type == CTX_AGGREGATE)
 		return 0;
+	
 	group_list = rse->syn_arg[s_rse_group_by];
 	relation = context->ctx_relation;
 	count = 0;
