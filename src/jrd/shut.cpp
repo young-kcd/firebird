@@ -58,7 +58,8 @@ union shutdown_data {
 // matches current. Logic of jrd8_create_database may need attention in this case too
 const bool IGNORE_SAME_MODE = false;
 
-static bool bad_mode(bool ignore);
+static bool bad_mode(thread_db*, bool);
+static void check_backup_state(thread_db*);
 static bool notify_shutdown(Database*, SSHORT, SSHORT);
 static bool shutdown_locks(Database*, SSHORT);
 
@@ -158,32 +159,41 @@ bool SHUT_database(Database* dbb, SSHORT flag, SSHORT delay)
 	switch (shut_mode) {
 	case isc_dpb_shut_full:
 		if (dbb->dbb_ast_flags & DBB_shutdown_full) 
-			return bad_mode(IGNORE_SAME_MODE);
+			return bad_mode(tdbb, IGNORE_SAME_MODE);
 		break;
 	case isc_dpb_shut_multi:
 		if ((dbb->dbb_ast_flags & DBB_shutdown_full) ||
 			(dbb->dbb_ast_flags & DBB_shutdown_single))
 		{
-			return bad_mode(false);
+			return bad_mode(tdbb, false);
 		}
 		if (dbb->dbb_ast_flags & DBB_shutdown)
-			return bad_mode(IGNORE_SAME_MODE);
+			return bad_mode(tdbb, IGNORE_SAME_MODE);
 		break;
 	case isc_dpb_shut_single:
 		if (dbb->dbb_ast_flags & DBB_shutdown_full)
-			return bad_mode(false);
+			return bad_mode(tdbb, false);
 		if (dbb->dbb_ast_flags & DBB_shutdown_single)
-			return bad_mode(IGNORE_SAME_MODE);
+			return bad_mode(tdbb, IGNORE_SAME_MODE);
 		break;
 	case isc_dpb_shut_normal:	
 		if (!(dbb->dbb_ast_flags & DBB_shutdown))
-			return bad_mode(IGNORE_SAME_MODE);
-		return bad_mode(false);
+			return bad_mode(tdbb, IGNORE_SAME_MODE);
+		return bad_mode(tdbb, false);
 	default:
-		return bad_mode(false); // unexpected mode
+		return bad_mode(tdbb, false); // unexpected mode
 	}
 	
 	try {
+
+	// Reject exclusive and single-user shutdown attempts
+	// for a physically locked database
+
+	if (shut_mode == isc_dpb_shut_full ||
+		shut_mode == isc_dpb_shut_single)
+	{
+		check_backup_state(tdbb);
+	}
 
 	attachment->att_flags |= ATT_shutdown_manager;
 	--dbb->dbb_use_count;
@@ -327,35 +337,43 @@ bool SHUT_online(Database* dbb, SSHORT flag)
 	switch (shut_mode) {
 	case isc_dpb_shut_normal:
 		if (!(dbb->dbb_ast_flags & DBB_shutdown)) 
-			return bad_mode(IGNORE_SAME_MODE); // normal -> normal
+			return bad_mode(tdbb, IGNORE_SAME_MODE); // normal -> normal
 		break;
 	case isc_dpb_shut_multi:
 		if (!(dbb->dbb_ast_flags & DBB_shutdown))
-			return bad_mode(false); // normal -> multi
+			return bad_mode(tdbb, false); // normal -> multi
 		if (!(dbb->dbb_ast_flags & DBB_shutdown_full) && 
 		    !(dbb->dbb_ast_flags & DBB_shutdown_single)) 
 		{
-			return bad_mode(IGNORE_SAME_MODE); // multi -> multi
+			return bad_mode(tdbb, IGNORE_SAME_MODE); // multi -> multi
 		}
 		break;
 	case isc_dpb_shut_single:		
 		if (dbb->dbb_ast_flags & DBB_shutdown_single)
-			return bad_mode(IGNORE_SAME_MODE); //single -> single
+			return bad_mode(tdbb, IGNORE_SAME_MODE); //single -> single
 		if (!(dbb->dbb_ast_flags & DBB_shutdown_full))
-			return bad_mode(false); // !full -> single
+			return bad_mode(tdbb, false); // !full -> single
 		break;		
 	case isc_dpb_shut_full:
 		if (dbb->dbb_ast_flags & DBB_shutdown_full)
 		{
-			return bad_mode(IGNORE_SAME_MODE); // full -> full
+			return bad_mode(tdbb, IGNORE_SAME_MODE); // full -> full
 		}
-		return bad_mode(false);
+		return bad_mode(tdbb, false);
 	default: // isc_dpb_shut_full
-		return bad_mode(false); // unexpected mode
+		return bad_mode(tdbb, false); // unexpected mode
 	}
 	
-
 	try {
+
+	// Reject exclusive and single-user shutdown attempts
+	// for a physically locked database
+
+	if (shut_mode == isc_dpb_shut_full ||
+		shut_mode == isc_dpb_shut_single)
+	{
+		check_backup_state(tdbb);
+	}
 
 	/* Clear shutdown flag on database header page */
 
@@ -399,21 +417,43 @@ bool SHUT_online(Database* dbb, SSHORT flag)
 }
 
 
-static bool bad_mode(bool ignore) {
+static bool bad_mode(thread_db* tdbb, bool ignore) {
 	if (!ignore) {
-		thread_db* tdbb = JRD_get_thread_data();
-		
+		Database* dbb = tdbb->tdbb_database;
 		ISC_STATUS* status = tdbb->tdbb_status_vector;
 		*status++ = isc_arg_gds;
 		*status++ = isc_bad_shutdown_mode;
 		*status++ = isc_arg_string;
-		*status++ = (ISC_STATUS) (IPTR) 
-			ERR_cstring(reinterpret_cast<const TEXT*>(tdbb->tdbb_database->dbb_filename.c_str()));
+		*status++ = (ISC_STATUS) (IPTR) ERR_cstring(dbb->dbb_filename.c_str());
 		*status++ = isc_arg_end;
 	}
 	return ignore;
 }
 
+
+static void check_backup_state(thread_db* tdbb)
+{
+	Database* dbb = tdbb->tdbb_database;
+
+	if (!dbb->dbb_backup_manager->lock_state(tdbb, true))
+		ERR_punt();
+
+	try {
+		if (dbb->dbb_backup_manager->get_state() != nbak_state_normal)
+		{
+			ERR_post(isc_bad_shutdown_mode,
+					 isc_arg_string,
+					 ERR_cstring(dbb->dbb_filename.c_str()),
+					 0);
+		}
+	}
+	catch(const std::exception&) {
+		dbb->dbb_backup_manager->unlock_state(tdbb);
+		throw;
+	}
+
+	dbb->dbb_backup_manager->unlock_state(tdbb);
+}
 
 static bool notify_shutdown(Database* dbb, SSHORT flag, SSHORT delay)
 {
