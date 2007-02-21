@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Access Method
  *	MODULE:		err_proto.h
- *	DESCRIPTION:	Prototype header file for err.cpp
+ *	DESCRIPTION:	Prototype header file for err.c
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -24,74 +24,57 @@
 #ifndef JRD_ERR_PROTO_H
 #define JRD_ERR_PROTO_H
 
-#include "../common/classes/fb_string.h"
-#include "../common/classes/MetaName.h"
-
 #ifndef REQUESTER
-
-namespace Jrd {
+/*#include "../jrd/jrd.h"
+#include "../jrd/btr.h"*/
+#include "../include/fb_types.h"
 
 /* Index error types */
 
-enum idx_e {
-	idx_e_ok = 0,
-	idx_e_duplicate,
-	idx_e_keytoobig,
-	idx_e_conversion,
-	idx_e_foreign_target_doesnt_exist,
-	idx_e_foreign_references_present
-};
+typedef enum idx_e {
+    idx_e_ok = 0,
+    idx_e_duplicate,
+    idx_e_keytoobig,
+    idx_e_conversion,
+    idx_e_foreign
+} IDX_E;
 
-typedef idx_e IDX_E;
+#define BUGCHECK(number)        ERR_bugcheck (number)
+#define CORRUPT(number)         ERR_corrupt (number)
+#define IBERROR(number)         ERR_error (number)
 
-class jrd_rel;
-} //namespace Jrd
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-bool	ERR_post_warning(ISC_STATUS, ...);
-void	ERR_assert(const TEXT*, int);
-void	ERR_bugcheck(int, const TEXT* = NULL, int = 0);
-void	ERR_bugcheck_msg(const TEXT*);
-void	ERR_corrupt(int);
-void	ERR_duplicate_error(Jrd::idx_e, const Jrd::jrd_rel*, USHORT);
-void	ERR_error(int);
-void	ERR_error_msg(const TEXT*);
-void	ERR_post(ISC_STATUS, ...);
-void	ERR_post_nothrow(ISC_STATUS, ...);
-void	ERR_punt(void);
-void	ERR_warning(ISC_STATUS, ...);
-void	ERR_log(int, int, const TEXT*);
+BOOLEAN DLL_EXPORT ERR_post_warning(ISC_STATUS, ...);
+void ERR_assert(const TEXT*, int);
+void DLL_EXPORT ERR_bugcheck(int);
+void DLL_EXPORT ERR_bugcheck_msg(const TEXT*);
+void DLL_EXPORT ERR_corrupt(int);
+void DLL_EXPORT ERR_duplicate_error(enum idx_e, struct jrd_rel*, USHORT);
+void DLL_EXPORT ERR_error(int);
+void DLL_EXPORT ERR_error_msg(const TEXT *);
+void DLL_EXPORT ERR_post(ISC_STATUS, ...);
+void DLL_EXPORT ERR_punt(void);
+void DLL_EXPORT ERR_warning(ISC_STATUS, ...);
+void DLL_EXPORT ERR_log(int, int, const TEXT *);
+
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif /* REQUESTER */
 
-const TEXT*		ERR_cstring(const TEXT*);
-inline const TEXT*		ERR_cstring(const Firebird::string& in_string)
-{
-	return ERR_cstring(in_string.c_str());
-}
-inline const TEXT*		ERR_cstring(const Firebird::PathName& in_string)
-{
-	return ERR_cstring(in_string.c_str());
-}
-inline const TEXT*		ERR_cstring(const Firebird::MetaName& in_string)
-{
-	return ERR_cstring(in_string.c_str());
-}
-inline const TEXT*		ERR_string(const Firebird::string& in_string)
-{
-	return ERR_cstring(in_string.c_str());
-}
-inline const TEXT*		ERR_string(const Firebird::PathName& in_string)
-{
-	return ERR_cstring(in_string.c_str());
-}
-inline const TEXT*		ERR_string(const Firebird::MetaName& in_string)
-{
-	return ERR_cstring(in_string.c_str());
-}
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-// AP: used ?
+const TEXT* DLL_EXPORT ERR_cstring(const TEXT*);
+const TEXT* DLL_EXPORT ERR_string(const TEXT*, int);
 
-const TEXT*		ERR_string(const TEXT*, int);
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif /* JRD_ERR_PROTO_H */
-

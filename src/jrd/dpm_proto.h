@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Access Method
  *	MODULE:		dpm_proto.h
- *	DESCRIPTION:	Prototype header file for dpm.cpp
+ *	DESCRIPTION:	Prototype header file for dpm.c
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -24,49 +24,41 @@
 #ifndef JRD_DPM_PROTO_H
 #define JRD_DPM_PROTO_H
 
-#include "../jrd/RecordNumber.h"
-#include "../jrd/sbm.h"
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 // fwd. decl.
-namespace Jrd {
-	class blb;
-	class jrd_rel;
-	struct record_param;
-	class Record;
-	class jrd_tra;
-	struct win;
-}
-namespace Ods {
-	struct pag;
-	struct data_page;
-}
+class blb;
 
-Ods::pag* DPM_allocate(Jrd::thread_db*, Jrd::win*);
-void	DPM_backout(Jrd::thread_db*, Jrd::record_param*);
-double	DPM_cardinality(Jrd::thread_db*, Jrd::jrd_rel*, const Jrd::Format*);
-bool	DPM_chain(Jrd::thread_db*, Jrd::record_param*, Jrd::record_param*);
-int		DPM_compress(Jrd::thread_db*, Ods::data_page*);
-void	DPM_create_relation(Jrd::thread_db*, Jrd::jrd_rel*);
-SLONG	DPM_data_pages(Jrd::thread_db*, Jrd::jrd_rel*);
-void	DPM_delete(Jrd::thread_db*, Jrd::record_param*, SLONG);
-void	DPM_delete_relation(Jrd::thread_db*, Jrd::jrd_rel*);
-bool	DPM_fetch(Jrd::thread_db*, Jrd::record_param*, USHORT);
-SSHORT	DPM_fetch_back(Jrd::thread_db*, Jrd::record_param*, USHORT, SSHORT);
-void	DPM_fetch_fragment(Jrd::thread_db*, Jrd::record_param*, USHORT);
-SINT64	DPM_gen_id(Jrd::thread_db*, SLONG, bool, SINT64);
-bool	DPM_get(Jrd::thread_db*, Jrd::record_param*, SSHORT);
-ULONG	DPM_get_blob(Jrd::thread_db*, Jrd::blb*, RecordNumber, bool, SLONG);
-bool	DPM_next(Jrd::thread_db*, Jrd::record_param*, USHORT, bool, bool);
-void	DPM_pages(Jrd::thread_db*, SSHORT, int, ULONG, SLONG);
-SLONG	DPM_prefetch_bitmap(Jrd::thread_db*, Jrd::jrd_rel*, Jrd::PageBitmap*, SLONG);
-void	DPM_scan_pages(Jrd::thread_db*);
-void	DPM_store(Jrd::thread_db*, Jrd::record_param*, Jrd::PageStack&, USHORT);
-RecordNumber DPM_store_blob(Jrd::thread_db*, Jrd::blb*, Jrd::Record*);
-void	DPM_rewrite_header(Jrd::thread_db*, Jrd::record_param*);
-void	DPM_update(Jrd::thread_db*, Jrd::record_param*, Jrd::PageStack*, const Jrd::jrd_tra*);
+struct pag* DPM_allocate(TDBB, struct win*);
+void	DPM_backout(TDBB, struct rpb *);
+int		DPM_chain(TDBB, struct rpb *, struct rpb *);
+int		DPM_compress(TDBB, struct dpg *);
+void	DPM_create_relation(TDBB, struct jrd_rel *);
+SLONG	DPM_data_pages(TDBB, struct jrd_rel *);
+void	DPM_delete(TDBB, struct rpb *, SLONG);
+void	DPM_delete_relation(TDBB, struct jrd_rel *);
+BOOLEAN	DPM_fetch(TDBB, struct rpb *, USHORT);
+SSHORT	DPM_fetch_back(TDBB, struct rpb *, USHORT, SSHORT);
+void	DPM_fetch_fragment(TDBB, struct rpb *, USHORT);
+SINT64	DPM_gen_id(TDBB, SLONG, USHORT, SINT64);
+int		DPM_get(TDBB, struct rpb *, SSHORT);
+ULONG	DPM_get_blob(TDBB, blb*, ULONG, USHORT, SLONG);
+BOOLEAN	DPM_next(TDBB, struct rpb *, USHORT, BOOLEAN,
+					BOOLEAN);
+void	DPM_pages(TDBB, SSHORT, int, ULONG, SLONG);
+SLONG	DPM_prefetch_bitmap(struct tdbb *, struct jrd_rel *, struct sbm *,
+								 SLONG);
+void	DPM_scan_pages(TDBB);
+void	DPM_store(TDBB, struct rpb *, struct lls **, USHORT);
+SLONG	DPM_store_blob(TDBB, blb*, struct rec *);
+void	DPM_rewrite_header(TDBB, struct rpb *);
+void	DPM_update(TDBB, struct rpb *, struct lls **,
+					   struct jrd_tra *);
 
-void DPM_create_relation_pages(Jrd::thread_db*, Jrd::jrd_rel*, Jrd::RelationPages*);
-void DPM_delete_relation_pages(Jrd::thread_db*, Jrd::jrd_rel*, Jrd::RelationPages*);
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
-#endif // JRD_DPM_PROTO_H
-
+#endif /* JRD_DPM_PROTO_H */

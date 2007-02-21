@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Command Oriented Query Language
  *	MODULE:		comma_proto.h
- *	DESCRIPTION:	Prototype header file for command.cpp
+ *	DESCRIPTION:	Prototype header file for command.c
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -21,20 +21,19 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef QLI_COMMA_PROTO_H
-#define QLI_COMMA_PROTO_H
+#ifndef _QLI_COMMA_PROTO_H_
+#define _QLI_COMMA_PROTO_H_
 
-bool	CMD_check_ready(void);
-void	CMD_copy_procedure(qli_syntax*);
-void	CMD_define_procedure(qli_syntax*);
-void	CMD_delete_proc(qli_syntax*);
-void	CMD_edit_proc(qli_syntax*);
-void	CMD_extract(qli_syntax*);
-void	CMD_finish(qli_syntax*);
-void	CMD_rename_proc(qli_syntax*);
-void	CMD_set(qli_syntax*);
-void	CMD_shell(qli_syntax*);
-void	CMD_transaction(qli_syntax*);
+extern int	CMD_check_ready (void);
+extern void	CMD_copy_procedure (struct syn *);
+extern void	CMD_define_procedure (struct syn *);
+extern void	CMD_delete_proc (struct syn *);
+extern void	CMD_edit_proc (struct syn *);
+extern void	CMD_extract (struct syn *);
+extern void	CMD_finish (struct syn *);
+extern void	CMD_rename_proc (struct syn *);
+extern void	CMD_set (struct syn *);
+extern void	CMD_shell (struct syn *);
+extern void	CMD_transaction (struct syn *);
 
-#endif // QLI_COMMA_PROTO_H
-
+#endif /* _QLI_COMMA_PROTO_H_ */

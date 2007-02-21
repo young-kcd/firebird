@@ -20,7 +20,7 @@
 			CharacterSet="2">
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalOptions="/EHsc-"
+				AdditionalOptions="/EHc- "
 				Optimization="4"
 				GlobalOptimizations="TRUE"
 				InlineFunctionExpansion="1"
@@ -28,10 +28,8 @@
 				FavorSizeOrSpeed="1"
 				OmitFramePointers="TRUE"
 				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
-				PreprocessorDefinitions="NDEBUG,_CONSOLE,SUPERCLIENT,WIN32,_X86_,BOOT_BUILD"
-				ExceptionHandling="FALSE"
+				PreprocessorDefinitions="NDEBUG,_CONSOLE,SUPERCLIENT,WIN32,_X86_"
 				RuntimeLibrary="2"
-				RuntimeTypeInfo="FALSE"
 				PrecompiledHeaderFile="..\..\..\temp\release\gpre_boot/gpre_boot.pch"
 				AssemblerListingLocation="..\..\..\temp\release\gpre_boot/"
 				ObjectFile="..\..\..\temp\release\gpre_boot/"
@@ -39,7 +37,6 @@
 				BrowseInformation="1"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
-				DebugInformationFormat="3"
 				CompileAs="0"/>
 			<Tool
 				Name="VCCustomBuildTool"/>
@@ -50,7 +47,7 @@
 				OutputFile="..\..\..\temp\release\firebird/bin/gpre_boot.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
-				GenerateDebugInformation="TRUE"
+				ProgramDatabaseFile="..\..\..\temp\release\gpre_boot/gpre_boot.pdb"
 				SubSystem="1"/>
 			<Tool
 				Name="VCMIDLTool"
@@ -86,14 +83,11 @@
 			CharacterSet="2">
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalOptions="/EHsc-"
 				Optimization="0"
 				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
-				PreprocessorDefinitions="_DEBUG,_CONSOLE,SUPERCLIENT,WIN32,_X86_,DEV_BUILD,_WINDOWS,_USRDLL,CLIENT,BOOT_BUILD"
-				ExceptionHandling="FALSE"
+				PreprocessorDefinitions="_DEBUG,_CONSOLE,SUPERCLIENT,WIN32,_X86_,DEV_BUILD,_WINDOWS,_USRDLL,CLIENT"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				RuntimeTypeInfo="FALSE"
 				PrecompiledHeaderFile="..\..\..\temp\debug\gpre_boot/gpre_boot.pch"
 				AssemblerListingLocation="..\..\..\temp\debug\gpre_boot/"
 				ObjectFile="..\..\..\temp\debug\gpre_boot/"
@@ -147,6 +141,9 @@
 			Name="GPRE files"
 			Filter="cpp;c;cxx;rc;def;r;odl;idl;hpj;bat">
 			<File
+				RelativePath="..\..\..\src\gpre\ada.cpp">
+			</File>
+			<File
 				RelativePath="..\..\..\src\gpre\c_cxx.cpp">
 			</File>
 			<File
@@ -159,7 +156,13 @@
 				RelativePath="..\..\..\src\gpre\cmp.cpp">
 			</File>
 			<File
+				RelativePath="..\..\..\src\gpre\cob.cpp">
+			</File>
+			<File
 				RelativePath="..\..\..\src\gpre\exp.cpp">
+			</File>
+			<File
+				RelativePath="..\..\..\src\common\fb_exception.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\src\gpre\gpre.cpp">
@@ -183,7 +186,13 @@
 				RelativePath="..\..\..\src\gpre\msc.cpp">
 			</File>
 			<File
+				RelativePath="..\..\..\src\gpre\noform.cpp">
+			</File>
+			<File
 				RelativePath="..\..\..\src\gpre\par.cpp">
+			</File>
+			<File
+				RelativePath="..\..\..\src\gpre\pas.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\src\gpre\pat.cpp">
@@ -202,22 +211,25 @@
 			Name="JRD files"
 			Filter="h;c">
 			<File
+				RelativePath="..\..\..\src\jrd\dls.cpp">
+			</File>
+			<File
 				RelativePath="..\..\..\src\jrd\dsc.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\dsc.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\dsc_pub.h">
+				RelativePath="..\..\..\src\jrd\gds.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\gds.cpp">
+				RelativePath="..\..\..\src\jrd\init.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\isc.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\os\win32\isc_ipc.cpp">
+				RelativePath="..\..\..\src\jrd\isc_ipc.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\isc_sync.cpp">
@@ -248,6 +260,15 @@
 				RelativePath="..\..\..\src\gpre\exp_proto.h">
 			</File>
 			<File
+				RelativePath="..\..\..\src\gpre\form.h">
+			</File>
+			<File
+				RelativePath="..\..\..\src\gpre\form__proto.h">
+			</File>
+			<File
+				RelativePath="..\..\..\src\gpre\form_proto.h">
+			</File>
+			<File
 				RelativePath="..\..\..\src\gpre\gpre.h">
 			</File>
 			<File
@@ -264,6 +285,9 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\gpre\hsh_proto.h">
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\init.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\gpre\jrdme_proto.h">
@@ -302,9 +326,6 @@
 				RelativePath="..\..\..\src\gpre\sql_proto.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\common\classes\TempFile.h">
-			</File>
-			<File
 				RelativePath="..\..\..\src\gpre\words.h">
 			</File>
 		</Filter>
@@ -325,13 +346,6 @@
 						Name="VCResourceCompilerTool"
 						AdditionalIncludeDirectories="..\..\..\src\jrd;$(NoInherit)"/>
 				</FileConfiguration>
-			</File>
-		</Filter>
-		<Filter
-			Name="OTHER files"
-			Filter="">
-			<File
-				RelativePath="..\..\..\src\common\classes\TempFile.cpp">
 			</File>
 		</Filter>
 	</Files>

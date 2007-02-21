@@ -27,7 +27,6 @@
 				ExceptionHandling="FALSE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				RuntimeTypeInfo="FALSE"
 				PrecompiledHeaderFile="..\..\..\temp\debug\utilities_cs/utilities_classic.pch"
 				AssemblerListingLocation="..\..\..\temp\debug\utilities_cs/"
 				ObjectFile="..\..\..\temp\debug\utilities_cs/"
@@ -40,7 +39,7 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile="..\..\..\temp\debug\utilities_cs\utilities.lib"
+				OutputFile="debug\utilities_cs\utilities.lib"
 				SuppressStartupBanner="TRUE"/>
 			<Tool
 				Name="VCMIDLTool"/>
@@ -85,7 +84,6 @@
 				PreprocessorDefinitions="NDEBUG,_LIB,WIN32,_X86_"
 				ExceptionHandling="FALSE"
 				RuntimeLibrary="2"
-				RuntimeTypeInfo="FALSE"
 				PrecompiledHeaderFile="..\..\..\temp\release\utilities_cs/utilities_classic.pch"
 				AssemblerListingLocation="..\..\..\temp\release\utilities_cs/"
 				ObjectFile="..\..\..\temp\release\utilities_cs/"
@@ -98,7 +96,7 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile="..\..\..\temp\release\utilities_cs\utilities.lib"
+				OutputFile="release\utilities_cs\utilities.lib"
 				SuppressStartupBanner="TRUE"/>
 			<Tool
 				Name="VCMIDLTool"/>
@@ -129,13 +127,10 @@
 			Name="UTILITIES files"
 			Filter="cpp;c;cxx;rc;def;r;odl;idl;hpj;bat">
 			<File
-				RelativePath="..\..\..\src\utilities\gsec\call_service.cpp">
+				RelativePath="..\..\..\src\utilities\cmd_util.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\src\utilities\common\cmd_util.cpp">
-			</File>
-			<File
-				RelativePath="..\..\..\src\utilities\gsec\gsec.cpp">
+				RelativePath="..\..\..\src\utilities\gsec.cpp">
 			</File>
 			<Filter
 				Name="epp files"
@@ -157,7 +152,7 @@
 				Name="Generated files"
 				Filter="">
 				<File
-					RelativePath="..\..\..\gen\utilities\gsec\security.cpp">
+					RelativePath="..\..\..\gen\utilities\security.cpp">
 				</File>
 			</Filter>
 		</Filter>
@@ -168,10 +163,10 @@
 				RelativePath="..\..\..\src\utilities\common\cmd_util_proto.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\utilities\gsec\gsec.h">
+				RelativePath="..\..\..\src\utilities\gsec.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\utilities\install\registry.h">
+				RelativePath="..\..\..\src\utilities\registry.h">
 			</File>
 		</Filter>
 	</Files>

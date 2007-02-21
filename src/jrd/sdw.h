@@ -21,45 +21,38 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef JRD_SDW_H
-#define JRD_SDW_H
+#ifndef _JRD_SDW_H_
+#define _JRD_SDW_H_
 
 #include "../jrd/jrd_blks.h"
 #include "../include/fb_blk.h"
 
-namespace Jrd {
-	class jrd_file;
-
 /* Shadowing block */
 
-class Shadow : public pool_alloc<type_sdw>
+class sdw : public pool_alloc<type_sdw>
 {
     public:
-	Shadow* sdw_next;				// next in linked list
-	jrd_file* sdw_file;				// Stack of shadow files
-	USHORT sdw_number;				// number of shadow
+	struct sdw *sdw_next;		/* next in linked list */
+	struct fil *sdw_file;		/* Stack of shadow files */
+	USHORT sdw_number;			/* number of shadow */
 	USHORT sdw_flags;
 };
+typedef sdw *SDW;
 
-// sdw_flags
-
-const USHORT SDW_dumped	= 1;		/* bit set when file has been copied */
-const USHORT SDW_shutdown	= 2;		/* stop shadowing on next cache flush */
-const USHORT SDW_manual	= 4;		/* shadow is a manual shadow--don't delete */
-const USHORT SDW_delete	= 8;		/* delete the shadow at the next shutdown */
-const USHORT SDW_found		= 16;		/* flag to mark shadow found in database */
-const USHORT SDW_rollover	= 32;		/* this shadow was rolled over to when the main db file went away */
-const USHORT SDW_conditional	= 64;	/* shadow to be used if another shadow becomes unavailable */
+#define SDW_dumped	1			/* bit set when file has been copied */
+#define SDW_shutdown	2		/* stop shadowing on next cache flush */
+#define SDW_manual	4			/* shadow is a manual shadow--don't delete */
+#define	SDW_delete	8			/* delete the shadow at the next shutdown */
+#define SDW_found	16			/* flag to mark shadow found in database */
+#define SDW_rollover	32		/* this shadow was rolled over to when the main db file went away */
+#define SDW_conditional	64		/* shadow to be used if another shadow becomes unavailable */
 
 /* these macros are a convenient combination of switches: 
    the first specifies the shadow is invalid for writing to;
    the second specifies that the shadow no SLONGer exists and the
    shadow block simply hasn't been cleared out yet */
 
-const USHORT SDW_INVALID	= (SDW_shutdown | SDW_delete | SDW_rollover | SDW_conditional);
-const USHORT SDW_IGNORE	= (SDW_shutdown | SDW_delete);
+#define SDW_INVALID	(SDW_shutdown | SDW_delete | SDW_rollover | SDW_conditional)
+#define SDW_IGNORE	(SDW_shutdown | SDW_delete)
 
-} //namespace Jrd
-
-#endif // JRD_SDW_H
-
+#endif /* _JRD_SDW_H_ */

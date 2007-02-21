@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Access Method
  *	MODULE:		dfw_proto.h
- *	DESCRIPTION:	Prototype header file for dfw.cpp
+ *	DESCRIPTION:	Prototype header file for dfw.c
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -21,18 +21,25 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef JRD_DFW_PROTO_H
-#define JRD_DFW_PROTO_H
+#ifndef _JRD_DFW_PROTO_H_
+#define _JRD_DFW_PROTO_H_
 
-USHORT DFW_assign_index_type(Jrd::DeferredWork*, SSHORT, SSHORT);
-void DFW_delete_deferred(Jrd::jrd_tra*, SLONG);
-void DFW_merge_work(Jrd::jrd_tra*, SLONG, SLONG);
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+USHORT DFW_assign_index_type(struct dfw *, SSHORT, SSHORT);
+void DFW_delete_deferred(struct jrd_tra *, SLONG);
+void DFW_merge_work(struct jrd_tra *, SLONG, SLONG);
 void DFW_perform_system_work(void);
-void DFW_perform_work(Jrd::jrd_tra*);
-void DFW_perform_post_commit_work(Jrd::jrd_tra*);
-Jrd::DeferredWork* DFW_post_work(Jrd::jrd_tra*, enum Jrd::dfw_t, const dsc*, USHORT);
-Jrd::DeferredWork* DFW_post_work_arg(Jrd::jrd_tra*, Jrd::DeferredWork*, const dsc*, USHORT);
-void DFW_update_index(const TEXT*, USHORT, const Jrd::SelectivityList&);
+void DFW_perform_work(struct jrd_tra *);
+void DFW_perform_post_commit_work(struct jrd_tra *);
+class dfw * DFW_post_work(struct jrd_tra *, ENUM dfw_t, struct dsc *, USHORT);
+void DFW_post_work_arg(struct jrd_tra *, class dfw *, struct dsc *, USHORT);
+void DFW_update_index(struct dfw *, USHORT, float);
 
-#endif // JRD_DFW_PROTO_H
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
+#endif /* _JRD_DFW_PROTO_H_ */

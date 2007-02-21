@@ -8,22 +8,41 @@
 
 #include "../jrd/common.h"
 #include "../jrd/enc_proto.h"
-#include "../jrd/gdsassert.h"
-#include "../common/classes/locks.h"
 
-/*
+#ifdef HAVE_CRYPT_H
+#include <crypt.h>
+#endif
+
 #ifdef HAVE_UNISTD_H
 #ifdef LINUX
-// prevent compiler warning
-#undef _XOPEN_SOURCE
 #define _XOPEN_SOURCE
 #endif
 #include <unistd.h>
 #endif
- */
+
 
 extern "C" {
 
+
+#ifdef HAVE_CRYPT
+/* Changed prototype from DLL_EXPORT to API_ROUTINE - Jeevan */
+TEXT *DLL_EXPORT ENC_crypt(TEXT *string, TEXT *salt)
+{
+/**************************************
+ *
+ *	E N C _ c r y p t
+ *
+ **************************************
+ *
+ * Functional description
+ *	Encrypt a string.   If the string is over
+ *	8 bytes, the remaining bytes are not significant.
+ *
+ **************************************/
+
+	return crypt(string, salt);
+}
+#else /* !HAVE_CRYPT */
 /*
  * Copyright (c) 1989 The Regents of the University of California.
  * All rights reserved.
@@ -60,8 +79,12 @@ extern "C" {
  * SUCH DAMAGE.
  */
 
-int des_setkey(const char* key);
-int des_cipher(const char* in, char* out, SLONG salt, int num_iter);
+#ifndef NULL
+#define NULL		((char*) 0)
+#endif
+
+int des_setkey(const char *key);
+int des_cipher(const char *in, char *out, long salt, int num_iter);
 
 /*
  * UNIX password, and DES, encryption.
@@ -93,6 +116,12 @@ int des_cipher(const char* in, char* out, SLONG salt, int num_iter);
 #error C_block structure assumes 8 bit characters
 #endif
 #endif
+
+/*
+ * define "LONG_IS_32_BITS" only if sizeof(long)==4.
+ * This avoids use of bit fields (your compiler may be sloppy with them).
+ */
+#define	LONG_IS_32_BITS
 
 /* compile with "-DSTATIC=int" when profiling */
 #ifndef STATIC
@@ -215,14 +244,19 @@ int des_cipher(const char* in, char* out, SLONG salt, int num_iter);
  * 8% performance penalty.
  */
 
-union C_block{
+typedef union {
 	unsigned char b[8];
 	struct {
+#if defined(LONG_IS_32_BITS)
 		/* long is often faster than a 32-bit bit field */
-		SLONG i0;
-		SLONG i1;
+		long i0;
+		long i1;
+#else
+		long i0:32;
+		long i1:32;
+#endif
 	} b32;
-};
+} C_block;
 
 
 /*
@@ -246,7 +280,7 @@ union C_block{
 #define	LOADREG(d,d0,d1,s,s0,s1)	d0 = s0, d1 = s1
 #define	OR(d,d0,d1,bl)			d0 |= (bl).b32.i0, d1 |= (bl).b32.i1
 #define	STORE(s,s0,s1,bl)		(bl).b32.i0 = s0, (bl).b32.i1 = s1
-#define	DCL_BLOCK(d,d0,d1)		SLONG d0, d1
+#define	DCL_BLOCK(d,d0,d1)		long d0, d1
 
 	/* "small data" */
 #define	LGCHUNKBITS	2
@@ -265,11 +299,13 @@ STATIC void init_perm(C_block perm[64 / CHUNKBITS][1 << CHUNKBITS],
 STATIC void permute(unsigned char *cp, C_block * out, C_block * p, int chars_in)
 {
 	DCL_BLOCK(D, D0, D1);
+	C_block *tp;
+	int t;
 
 	ZERO(D, D0, D1);
 	do {
-		int t = *cp++;
-		C_block* tp = &p[t & 0xf];
+		t = *cp++;
+		tp = &p[t & 0xf];
 		OR(D, D0, D1, *tp);
 		p += (1 << CHUNKBITS);
 		tp = &p[t >> 4];
@@ -281,7 +317,7 @@ STATIC void permute(unsigned char *cp, C_block * out, C_block * p, int chars_in)
 
 /* =====  (mostly) Standard DES Tables ==================== */
 
-static const unsigned char IP[] = {	/* initial permutation */
+static unsigned char IP[] = {	/* initial permutation */
 	58, 50, 42, 34, 26, 18, 10, 2,
 	60, 52, 44, 36, 28, 20, 12, 4,
 	62, 54, 46, 38, 30, 22, 14, 6,
@@ -294,7 +330,7 @@ static const unsigned char IP[] = {	/* initial permutation */
 
 /* The final permutation is the inverse of IP - no table is necessary */
 
-static const unsigned char ExpandTr[] = {	/* expansion operation */
+static unsigned char ExpandTr[] = {	/* expansion operation */
 	32, 1, 2, 3, 4, 5,
 	4, 5, 6, 7, 8, 9,
 	8, 9, 10, 11, 12, 13,
@@ -334,7 +370,7 @@ static unsigned char PC2[] = {	/* permuted choice table 2 */
 	0, 0, 46, 42, 50, 36, 29, 32,
 };
 
-static const unsigned char S[8][64] = {	/* 48->32 bit substitution tables */
+static unsigned char S[8][64] = {	/* 48->32 bit substitution tables */
 	/* S[1]         */
 	{14, 4, 13, 1, 2, 15, 11, 8, 3, 10, 6, 12, 5, 9, 0, 7,
 	0, 15, 7, 4, 14, 2, 13, 1, 10, 6, 12, 11, 9, 5, 3, 8,
@@ -419,7 +455,7 @@ static C_block PC2ROT[2][64 / CHUNKBITS][1 << CHUNKBITS];
 static C_block IE3264[32 / CHUNKBITS][1 << CHUNKBITS];
 
 /* Table that combines the S, P, and E operations.  */
-static SLONG SPE[2][8][64];
+static long SPE[2][8][64];
 
 /* compressed/interleaved => final permutation table */
 static C_block CF6464[64 / CHUNKBITS][1 << CHUNKBITS];
@@ -427,24 +463,24 @@ static C_block CF6464[64 / CHUNKBITS][1 << CHUNKBITS];
 
 /* ==================================== */
 
-static Firebird::Mutex cryptMutex;
 
 static C_block constdatablock;	/* encryption constant */
-const static size_t RESULT_SIZE = (1 + 4 + 4 + 11 + 1);
+static char cryptresult[1 + 4 + 4 + 11 + 1];	/* encrypted result */
 #define _PASSWORD_EFMT1 '#'
 /*
- * Create data consisting of the "setting" followed by 
- * an encryption produced by the "key" and "setting".
+ * Return a pointer to static data consisting of the "setting"
+ * followed by an encryption produced by the "key" and "setting".
  */
-void ENC_crypt(TEXT* buf, size_t bufSize, const TEXT* key, const TEXT* setting)
+/* Changed prototype from DLL_EXPORT to API_ROUTINE - Jeevan */
+TEXT* DLL_EXPORT ENC_crypt(TEXT *key, TEXT *setting)
 {
-	fb_assert(bufSize >= RESULT_SIZE);
-	Firebird::MutexLockGuard guard(cryptMutex);
-
-	SLONG i;
+	unsigned long a, b, d;
+	char *encp;
+	long i;
 	int t;
+	long salt;
 	int num_iter, salt_size;
-	C_block keyblock;
+	C_block keyblock, rsltblock;
 
 	for (i = 0; i < 8; i++)
 	{
@@ -453,33 +489,24 @@ void ENC_crypt(TEXT* buf, size_t bufSize, const TEXT* key, const TEXT* setting)
 		keyblock.b[i] = t;
 	}
 	if (des_setkey((char *) keyblock.b))	/* also initializes "a64toi" */
-	{
-		buf[0] = 0;
-		return;
-	}
+		return (NULL);
 
-	char* encp = buf;
+	encp = &cryptresult[0];
 	switch (*setting) {
 	case _PASSWORD_EFMT1:
 		/*
 		 * Involve the rest of the password 8 characters at a time.
 		 */
 		while (*key) {
-			if (des_cipher((const char*) &keyblock, (char*) &keyblock, 0L, 1))
-			{
-				buf[0] = 0;
-				return;
-			}
+			if (des_cipher((char *) &keyblock, (char *) &keyblock, 0L, 1))
+				return (NULL);
 			for (i = 0; i < 8; i++) {
 				if ((t = 2 * (unsigned char) (*key)) != 0)
 					key++;
 				keyblock.b[i] ^= t;
 			}
 			if (des_setkey((char *) keyblock.b))
-			{
-				buf[0] = 0;
-				return;
-			}
+				return (NULL);
 		}
 
 		*encp++ = *setting++;
@@ -501,7 +528,7 @@ void ENC_crypt(TEXT* buf, size_t bufSize, const TEXT* key, const TEXT* setting)
 		salt_size = 2;
 	}
 
-	SLONG salt = 0;
+	salt = 0;
 	for (i = salt_size; --i >= 0;) {
 		if ((t = (unsigned char) setting[i]) == '\0')
 			t = '.';
@@ -509,24 +536,19 @@ void ENC_crypt(TEXT* buf, size_t bufSize, const TEXT* key, const TEXT* setting)
 		salt = (salt << 6) | a64toi[t];
 	}
 	encp += salt_size;
-	C_block rsltblock;
-	if (des_cipher((const char*) &constdatablock, (char*) &rsltblock,
-				   salt, num_iter))
-	{
-		buf[0] = 0;
-		return;
-	}
+	if (des_cipher((char *) &constdatablock, (char *) &rsltblock,
+				   salt, num_iter)) return (NULL);
 
 	/*
 	 * Encode the 64 cipher bits as 11 ascii characters.
 	 */
-	/* i = ((SLONG)((rsltblock.b[0]<<8) | rsltblock.b[1])<<8) | rsltblock.b[2]; */
-	ULONG a = rsltblock.b[0];
+	/* i = ((long)((rsltblock.b[0]<<8) | rsltblock.b[1])<<8) | rsltblock.b[2]; */
+	a = rsltblock.b[0];
 	a = a << 8;
-	ULONG b = rsltblock.b[1];
+	b = rsltblock.b[1];
 	b |= a;
 	b = b << 8;
-	ULONG d = rsltblock.b[2];
+	d = rsltblock.b[2];
 	b |= d;
 	i = b;
 	encp[3] = itoa64[i & 0x3f];
@@ -538,7 +560,7 @@ void ENC_crypt(TEXT* buf, size_t bufSize, const TEXT* key, const TEXT* setting)
 	encp[0] = itoa64[i];
 	encp += 4;
 
-	/* i = ((SLONG)((rsltblock.b[3]<<8) | rsltblock.b[4])<<8) | rsltblock.b[5]; */
+	/* i = ((long)((rsltblock.b[3]<<8) | rsltblock.b[4])<<8) | rsltblock.b[5]; */
 	a = rsltblock.b[3];
 	a = a << 8;
 	b = rsltblock.b[4];
@@ -556,7 +578,7 @@ void ENC_crypt(TEXT* buf, size_t bufSize, const TEXT* key, const TEXT* setting)
 	encp[0] = itoa64[i];
 	encp += 4;
 
-/*	i = ((SLONG)((rsltblock.b[6])<<8) | rsltblock.b[7])<<2; */
+/*	i = ((long)((rsltblock.b[6])<<8) | rsltblock.b[7])<<2; */
 	a = rsltblock.b[6];
 	a = a << 8;
 	b = rsltblock.b[7];
@@ -571,7 +593,7 @@ void ENC_crypt(TEXT* buf, size_t bufSize, const TEXT* key, const TEXT* setting)
 
 	encp[3] = 0;
 
-	return;
+	return (cryptresult);
 }
 
 
@@ -587,20 +609,22 @@ static C_block KS[KS_SIZE];
 int des_setkey(const char *key)
 {
 	DCL_BLOCK(K, K0, K1);
-	static bool des_ready = false;
+	C_block *ptabp;
+	int i;
+	static int des_ready = 0;
 
 	if (!des_ready) {
 		init_des();
-		des_ready = true;
+		des_ready = 1;
 	}
 
 	PERM6464(K, K0, K1, (unsigned char *) key, (C_block *) PC1ROT);
 	key = (char *) &KS[0];
 	STORE(K & ~0x03030303L, K0 & ~0x03030303L, K1, *(C_block *) key);
-	for (int i = 1; i < 16; i++) {
+	for (i = 1; i < 16; i++) {
 		key += sizeof(C_block);
 		STORE(K, K0, K1, *(C_block *) key);
-		C_block* ptabp = (C_block *) PC2ROT[Rotates[i] - 1];
+		ptabp = (C_block *) PC2ROT[Rotates[i] - 1];
 		PERM6464(K, K0, K1, (unsigned char *) key, ptabp);
 		STORE(K & ~0x03030303L, K0 & ~0x03030303L, K1, *(C_block *) key);
 	}
@@ -615,13 +639,15 @@ int des_setkey(const char *key)
  * NOTE: the performance of this routine is critically dependent on your
  * compiler and machine architecture.
  */
-int des_cipher(const char* in, char* out, SLONG salt, int num_iter)
+int des_cipher(const char *in, char *out, long salt, int num_iter)
 {
 	/* variables that we want in registers, most important first */
-	SLONG L1;
+	long L0, L1, R0, R1, k;
+	C_block *kp;
+	int ks_inc, loop_count;
 	C_block B;
 
-	SLONG L0 = salt;
+	L0 = salt;
 	TO_SIX_BIT(salt, L0);		/* convert to 4*(6+2) format */
 
 #define	SALT salt
@@ -639,7 +665,6 @@ int des_cipher(const char* in, char* out, SLONG salt, int num_iter)
 #else
 	LOAD(L, L0, L1, *(C_block *) in);
 #endif
-	SLONG R0, R1;
 	LOADREG(R, R0, R1, L, L0, L1);
 	L0 &= 0x55555555L;
 	L1 &= 0x55555555L;
@@ -651,9 +676,6 @@ int des_cipher(const char* in, char* out, SLONG salt, int num_iter)
 	PERM3264(L, L0, L1, B.b, (C_block *) IE3264);	/* even bits */
 	PERM3264(R, R0, R1, B.b + 4, (C_block *) IE3264);	/* odd bits */
 
-	C_block *kp;
-	int ks_inc;
-	
 	if (num_iter >= 0) {		/* encryption */
 		kp = &KS[0];
 		ks_inc = sizeof(*kp);
@@ -664,20 +686,19 @@ int des_cipher(const char* in, char* out, SLONG salt, int num_iter)
 		ks_inc = -(int) sizeof(*kp);
 	}
 
-	SLONG k;
 	while (--num_iter >= 0) {
-		int loop_count = 8;
+		loop_count = 8;
 		do {
 
-#define	SPTAB(t, i)	(*(SLONG *)((unsigned char *)t + i * (sizeof(SLONG) / 4)))
+#define	SPTAB(t, i)	(*(long *)((unsigned char *)t + i*(sizeof(long)/4)))
 			/* use this if "k" is allocated to a register ... */
-#define	DOXOR(x,y,i)	k = B.b[i]; x ^= SPTAB(SPE[0][i], k); y ^= SPTAB(SPE[1][i], k);
+#define	DOXOR(x,y,i)	k=B.b[i]; x^=SPTAB(SPE[0][i],k); y^=SPTAB(SPE[1][i],k);
 
 #define	CRUNCH(p0, p1, q0, q1)	\
 			k = (q0 ^ q1) & SALT;	\
 			B.b32.i0 = k ^ q0 ^ kp->b32.i0;		\
 			B.b32.i1 = k ^ q1 ^ kp->b32.i1;		\
-			kp = (C_block *)((char *)kp + ks_inc);	\
+			kp = (C_block *)((char *)kp+ks_inc);	\
 							\
 			DOXOR(p0, p1, 0);		\
 			DOXOR(p0, p1, 1);		\
@@ -732,8 +753,9 @@ int des_cipher(const char* in, char* out, SLONG salt, int num_iter)
 STATIC void init_des()
 {
 	int i, j;
-	SLONG k;
-	static unsigned char perm[64];	/* "static" for speed */
+	long k;
+	int tableno;
+	static unsigned char perm[64], tmp32[32];	/* "static" for speed */
 
 	/*
 	 * table that converts chars "./0-9A-Za-z"to integers 0-63.
@@ -822,11 +844,9 @@ STATIC void init_des()
 	/*
 	 * SPE table
 	 */
-	static unsigned char tmp32[32];	/* "static" for speed */
-	
 	for (i = 0; i < 48; i++)
 		perm[i] = P32Tr[ExpandTr[i] - 1];
-	for (int tableno = 0; tableno < 8; tableno++) {
+	for (tableno = 0; tableno < 8; tableno++) {
 		for (j = 0; j < 64; j++) {
 			k = (((j >> 0) & 01) << 5) |
 				(((j >> 1) & 01) << 3) |
@@ -865,18 +885,69 @@ STATIC void
 init_perm(C_block perm[64 / CHUNKBITS][1 << CHUNKBITS],
 		  unsigned char p[64], int chars_in, int chars_out)
 {
-	for (int k = 0; k < chars_out * 8; k++) {	/* each output bit position */
-		int l = p[k] - 1;			/* where this bit comes from */
+	int i, j, k, l;
+
+	for (k = 0; k < chars_out * 8; k++) {	/* each output bit position */
+		l = p[k] - 1;			/* where this bit comes from */
 		if (l < 0)
 			continue;			/* output bit is always 0 */
-		int i = l >> LGCHUNKBITS;	/* which chunk this bit comes from */
+		i = l >> LGCHUNKBITS;	/* which chunk this bit comes from */
 		l = 1 << (l & (CHUNKBITS - 1));	/* mask for this bit */
-		for (int j = 0; j < (1 << CHUNKBITS); j++) {	/* each chunk value */
+		for (j = 0; j < (1 << CHUNKBITS); j++) {	/* each chunk value */
 			if ((j & l) != 0)
 				perm[i][j].b[k >> 3] |= 1 << (k & 07);
 		}
 	}
 }
+
+/*
+ * "setkey" routine (for backwards compatibility)
+ */
+int setkey(const char *key)
+{
+	int i, j, k;
+	C_block keyblock;
+
+	for (i = 0; i < 8; i++) {
+		k = 0;
+		for (j = 0; j < 8; j++) {
+			k <<= 1;
+			k |= (unsigned char) *key++;
+		}
+		keyblock.b[i] = k;
+	}
+	return (des_setkey((char *) keyblock.b));
+}
+
+/*
+ * "encrypt" routine (for backwards compatibility)
+ */
+int encrypt(char *block, int flag)
+{
+	int i, j, k;
+	C_block cblock;
+
+	for (i = 0; i < 8; i++) {
+		k = 0;
+		for (j = 0; j < 8; j++) {
+			k <<= 1;
+			k |= (unsigned char) *block++;
+		}
+		cblock.b[i] = k;
+	}
+	if (des_cipher((char *) &cblock, (char *) &cblock, 0L, (flag ? -1 : 1)))
+		return (1);
+	for (i = 7; i >= 0; i--) {
+		k = cblock.b[i];
+		for (j = 7; j >= 0; j--) {
+			*--block = k & 01;
+			k >>= 1;
+		}
+	}
+	return (0);
+}
+#endif /* !HAVE_CRYPT */
+
 
 }	// extern "C"
 

@@ -3,30 +3,34 @@
  *	MODULE:		dir_list.h
  *	DESCRIPTION:	Directory listing config file operation
  *
- * The contents of this file are subject to the Interbase Public
- * License Version 1.0 (the "License"); you may not use this file
- * except in compliance with the License. You may obtain a copy
- * of the License at http://www.Inprise.com/IPL.html
+ *  The contents of this file are subject to the Initial
+ *  Developer's Public License Version 1.0 (the "License");
+ *  you may not use this file except in compliance with the
+ *  License. You may obtain a copy of the License at
+ *  http://www.ibphoenix.com/main.nfs?a=ibphoenix&page=ibp_idpl.
  *
- * Software distributed under the License is distributed on an
- * "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express
- * or implied. See the License for the specific language governing
- * rights and limitations under the License.
+ *  Software distributed under the License is distributed AS IS,
+ *  WITHOUT WARRANTY OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing rights
+ *  and limitations under the License.
  *
- * Created by: Alex Peshkov <AlexPeshkov@users.sourceforge.net>
+ *  The Original Code was created by Alexander Peshkoff
+ *  for the Firebird Open Source RDBMS project.
  *
- * All Rights Reserved.
- * Contributor(s): ______________________________________.
+ *  Copyright (c) 2003 Alexander Peshkoff <peshkoff@mail.ru>
+ *  and all contributors signed below.
+ *
+ *  All Rights Reserved.
+ *  Contributor(s): ______________________________________.
  */
 
-#ifndef CONFIG_DIR_LIST_H
-#define CONFIG_DIR_LIST_H
+#ifndef DIR_LIST_H
+#define DIR_LIST_H
 
 #include "fb_types.h"
-#include "../common/classes/fb_string.h"
+#include "fb_string.h"
+#include "fb_vector.h"
 #include "../common/config/config_file.h"
-
-namespace Firebird {
 
 //
 // This class is used internally by DirectoryList
@@ -36,109 +40,107 @@ namespace Firebird {
 // Because of it's internal nature it has only
 // internally required subset of possible operators.
 //
-class ParsedPath : public ObjectsArray<PathName>
-{
-	typedef ObjectsArray<PathName> inherited;
+class ParsedPath {
+	Firebird::PathName * PathElem;
+	int nElem;
+	Firebird::PathName SubPath(int n) const;
 public:
-	explicit ParsedPath(MemoryPool& p) : ObjectsArray<PathName>(p) { }
-	ParsedPath(MemoryPool& p, const PathName& path)
-		: ObjectsArray<PathName>(p) 
-	{ 
-		parse(path);
-	}
-	ParsedPath() : ObjectsArray<PathName>() { }
-	explicit ParsedPath(const PathName& path)
-		: ObjectsArray<PathName>() 
-	{ 
-		parse(path);
-	}
+	ParsedPath(void);
+	ParsedPath(const Firebird::PathName& path);
+	~ParsedPath();
 	// Take new path inside
-	void parse(const PathName& path);
+	void Parse(const Firebird::PathName& path);
 	// Convert internal representation to traditional one
-	operator PathName() const;
+	operator Firebird::PathName() const;
 	// Compare with path given by constant
-	bool operator==(const char* path) const
-	{
-		return PathName(*this) == path;
-	}
+	bool operator==(const char* path) const;
 	// Check, whether pPath lies inside directory tree,
 	// specified by *this ParsedPath. Also checks against
 	// possible symbolic links.
-	bool contains(const ParsedPath& pPath) const;
-	// Returns path, containing elements from 0 to n-1
-	PathName subPath(int n) const;
+	bool Contains(const ParsedPath& pPath) const;
 };
 
-	
-class DirectoryList : public ObjectsArray<ParsedPath> {
+class DirectoryList {
 private:
-	typedef ObjectsArray<ParsedPath> inherited;
 	// ListMode must be changed together with ListKeys in dir_list.cpp
 	enum ListMode {NotInitialized = -1, 
 		None = 0, Restrict = 1, Full = 2, SimpleList = 3};
-	ListMode mode;
+	ListMode Mode;
+	ParsedPath * ConfigDirs;
+	int nDirs;
+	// Clear allocated memory and reinitialize
+	void Clear(void) {
+		delete[] ConfigDirs;
+		ConfigDirs = 0;
+		nDirs = 0;
+		Mode = NotInitialized;
+	}
 	// Check, whether Value begins with Key, 
 	// followed by any character from Next.
 	// If Next is empty, Value shoult exactly match Key.
 	// If Key found, sets Mode to KeyMode and returns true.
-	bool keyword(const ListMode keyMode, PathName& value, 
-		PathName key, PathName next);
+	bool KeyWord(const ListMode KeyMode, Firebird::PathName& Value, 
+		Firebird::PathName Key, Firebird::PathName Next);
 protected:
-	// Clear allocated memory and reinitialize
-	void clear(void) {
-		((inherited*)this)->clear();
-		mode = NotInitialized;
-	}
 	// Used for various configuration parameters - 
 	// returns parameter PathName from Config Manager.
-	virtual const PathName getConfigString(void) const = 0;
+	virtual const Firebird::PathName GetConfigString(void) const = 0;
 	// Initialize loads data from Config Manager.
 	// With simple mutex add-on may be easily used to 
 	// load them dynamically. Now called locally
 	// when IsPathInList() invoked first time.
-	void initialize(bool simple_mode = false);
+	void Initialize(bool simple_mode = false);
+	// May be used in derived classes for custom behaviour
+	size_t DirCount() { return nDirs; }
+	const ParsedPath* DirList() { return ConfigDirs; }
 public:
-	explicit DirectoryList(MemoryPool& p) 
-		: ObjectsArray<ParsedPath>(p), mode(NotInitialized) { }
-	DirectoryList() 
-		: ObjectsArray<ParsedPath>(), mode(NotInitialized) { }
-	virtual ~DirectoryList() {clear();}
+	DirectoryList();
+	virtual ~DirectoryList();
 
-	// Check, whether Path is inside this DirectoryList
-	bool isPathInList(const PathName& path) const;
+	// TODO
+	// All functions, checking DirectoryList contents,
+	// should be const. But with today's implementation
+	// of Config manager, thay have to call Initialize.
 
-	// Search for file Name in all directories of DirectoryList.
+	// Check, whether Path inside this DirectoryList
+	bool IsPathInList(const Firebird::PathName & Path);
+	// Search for file Name in all direcories of DirectoryList.
 	// If found, return full path to it in Path. 
 	// Otherwise Path = Name.
-	bool expandFileName(PathName& path, 
-						const PathName& name) const;
+	// Last parameter defines required access rights
+	// to the file - like access().
+	void ExpandFileName(Firebird::PathName & Path, 
+						const Firebird::PathName & Name,
+						int Access);
 
-	// Use first directory in this directory list
-	// to build default full name for a file
-	bool defaultName(PathName& path, 
-						const PathName& name) const;
+	// Temporary - while we use STL basic_string 
+	// for PathName representation we don't have this
+	static void Trim(Firebird::PathName & s) {
+		ConfigFile::stripLeadingWhiteSpace(s);
+		ConfigFile::stripTrailingWhiteSpace(s);
+	}
 };
 
-class TempDirectoryList : public DirectoryList {
+class TempDirectoryList : private DirectoryList {
 public:
-	explicit TempDirectoryList(MemoryPool& p) 
-		: DirectoryList(p)
-	{
-		initTemp();
-	}
-	TempDirectoryList()
-	{
-		initTemp();
-	}
+	// directory list item
+	struct Item {
+		Firebird::PathName dir;
+		size_t size;
+	};
+
+	// public functions
+	size_t Count() const;
+	const Item& operator[](size_t) const;
+
+	TempDirectoryList();
 
 private:
 	// implementation of the inherited function
-	const PathName getConfigString() const;
+	const Firebird::PathName GetConfigString() const;
 	
-	// load items from DirectoryList
-	void initTemp();
+	// private data
+	Firebird::vector<Item> items;
 };
 
-} //namespace Firebird
-
-#endif //	CONFIG_DIR_LIST_H
+#endif //	DIR_LIST_H

@@ -27,7 +27,6 @@
 				ExceptionHandling="FALSE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				RuntimeTypeInfo="FALSE"
 				PrecompiledHeaderFile="..\..\..\temp\debug\ib_udf/ib_udf.pch"
 				AssemblerListingLocation="..\..\..\temp\debug\ib_udf/"
 				ObjectFile="..\..\..\temp\debug\ib_udf/"
@@ -42,20 +41,20 @@
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
 				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
-				OutputFile="..\..\..\temp\debug\firebird\udf\ib_udf.dll"
+				OutputFile="debug/firebird/udf/ib_udf.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				ModuleDefinitionFile="..\defs\ib_udf.def"
 				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile="..\..\..\temp\debug\ib_udf\ib_udf.pdb"
-				ImportLibrary="..\..\..\temp\debug\ib_udf\ib_udf.lib"/>
+				ProgramDatabaseFile="..\..\..\temp\debug\ib_udf/ib_udf.pdb"
+				ImportLibrary="..\..\..\temp\debug\ib_udf/ib_udf.lib"/>
 			<Tool
 				Name="VCMIDLTool"
 				PreprocessorDefinitions="_DEBUG"
 				MkTypLibCompatible="TRUE"
 				SuppressStartupBanner="TRUE"
 				TargetEnvironment="1"
-				TypeLibraryName="..\..\..\temp\debug\ib_udf\ib_udf.tlb"/>
+				TypeLibraryName="..\..\..\temp\debug\ib_udf/ib_udf.tlb"/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool
@@ -99,7 +98,6 @@
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL"
 				ExceptionHandling="FALSE"
 				RuntimeLibrary="2"
-				RuntimeTypeInfo="FALSE"
 				PrecompiledHeaderFile="..\..\..\temp\release\ib_udf/ib_udf.pch"
 				AssemblerListingLocation="..\..\..\temp\release\ib_udf/"
 				ObjectFile="..\..\..\temp\release\ib_udf/"
@@ -114,19 +112,20 @@
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
 				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
-				OutputFile="..\..\..\temp\release\firebird\udf\ib_udf.dll"
+				OutputFile="release/firebird/udf/ib_udf.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				ModuleDefinitionFile="..\defs\ib_udf.def"
 				GenerateDebugInformation="TRUE"
-				ImportLibrary="..\..\..\temp\release\ib_udf\ib_udf.lib"/>
+				ProgramDatabaseFile="..\..\..\temp\release\ib_udf/ib_udf.pdb"
+				ImportLibrary="..\..\..\temp\release\ib_udf/ib_udf.lib"/>
 			<Tool
 				Name="VCMIDLTool"
 				PreprocessorDefinitions="_DEBUG"
 				MkTypLibCompatible="TRUE"
 				SuppressStartupBanner="TRUE"
 				TargetEnvironment="1"
-				TypeLibraryName="..\..\..\temp\release\ib_udf\ib_udf.tlb"/>
+				TypeLibraryName="..\..\..\temp\release\ib_udf/ib_udf.tlb"/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool
@@ -156,7 +155,7 @@
 			Name="EXTLIB files"
 			Filter="cpp;c;cxx;rc;def;r;odl;idl;hpj;bat">
 			<File
-				RelativePath="..\..\..\src\extlib\ib_udf.cpp">
+				RelativePath="..\..\..\src\extlib\ib_udf.c">
 			</File>
 		</Filter>
 		<Filter

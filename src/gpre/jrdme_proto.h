@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	Preprocessor
  *	MODULE:		jrdme_proto.h
- *	DESCRIPTION:	Prototype header file for jrdmet.cpp
+ *	DESCRIPTION:	Prototype header file for jrdmet.c
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -21,10 +21,17 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef GPRE_JRDME_PROTO_H
-#define GPRE_JRDME_PROTO_H
+#ifndef _GPRE_JRDME_PROTO_H_
+#define _GPRE_JRDME_PROTO_H_
 
-void	JRDMET_init(DBB);
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-#endif // GPRE_JRDME_PROTO_H
+extern void JRDMET_init(DBB);
 
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
+
+#endif /* _GPRE_JRDME_PROTO_H_ */

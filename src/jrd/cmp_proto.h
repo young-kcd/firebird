@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Access Method
  *	MODULE:		cmp_proto.h
- *	DESCRIPTION:	Prototype header file for cmp.cpp
+ *	DESCRIPTION:	Prototype header file for cmp.c
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -25,29 +25,37 @@
 #define JRD_CMP_PROTO_H
 
 #include "../jrd/req.h"
-// req.h includes exe.h => Jrd::CompilerScratch and Jrd::CompilerScratch::csb_repeat.
-#include "../jrd/scl.h"
 
-bool CMP_clone_is_active(const Jrd::jrd_req*);
-Jrd::jrd_nod* CMP_clone_node(Jrd::thread_db*, Jrd::CompilerScratch*, Jrd::jrd_nod*);
-Jrd::jrd_req* CMP_clone_request(Jrd::thread_db*, Jrd::jrd_req*, USHORT, bool);
-Jrd::jrd_req* CMP_compile(USHORT, const UCHAR*, USHORT);
-Jrd::jrd_req* CMP_compile2(Jrd::thread_db*, const UCHAR*, USHORT, USHORT = 0, const UCHAR* = NULL);
-Jrd::CompilerScratch::csb_repeat* CMP_csb_element(Jrd::CompilerScratch*, USHORT);
-void CMP_decrement_prc_use_count(Jrd::thread_db*, Jrd::jrd_prc*);
-Jrd::jrd_req* CMP_find_request(Jrd::thread_db*, USHORT, USHORT);
-void CMP_fini(Jrd::thread_db*);
-Jrd::Format* CMP_format(Jrd::thread_db*, Jrd::CompilerScratch*, USHORT);
-void CMP_get_desc(Jrd::thread_db*, Jrd::CompilerScratch*, Jrd::jrd_nod*, dsc*);
-Jrd::IndexLock* CMP_get_index_lock(Jrd::thread_db*, Jrd::jrd_rel*, USHORT);
-SLONG CMP_impure(Jrd::CompilerScratch*, USHORT);
-Jrd::jrd_req* CMP_make_request(Jrd::thread_db*, Jrd::CompilerScratch*);
-void CMP_post_access(Jrd::thread_db*, Jrd::CompilerScratch*, const Firebird::MetaName&, SLONG,
-					 Jrd::SecurityClass::flags_t, const TEXT*, const Firebird::MetaName&);
-void CMP_post_resource(Jrd::ResourceList*, void*, Jrd::Resource::rsc_s, USHORT);
-void CMP_release(Jrd::thread_db*, Jrd::jrd_req*);
-void CMP_shutdown_database(Jrd::thread_db*);
-void CMP_verify_access(Jrd::thread_db* tdbb, Jrd::jrd_req* request);
-
-#endif // JRD_CMP_PROTO_H
-
+int DLL_EXPORT CMP_clone_active(struct jrd_req*);
+struct jrd_nod* DLL_EXPORT CMP_clone_node(TDBB, struct Csb*,
+											 struct jrd_nod*);
+struct jrd_req* DLL_EXPORT CMP_clone_request(TDBB, struct jrd_req*, USHORT,
+												BOOLEAN);
+struct jrd_req* DLL_EXPORT CMP_compile(USHORT, UCHAR*, USHORT);
+struct jrd_req* DLL_EXPORT CMP_compile2(TDBB, UCHAR*, USHORT);
+struct csb_repeat* DLL_EXPORT CMP_csb_element(struct Csb**, USHORT);
+extern "C" void DLL_EXPORT CMP_expunge_transaction(struct jrd_tra*);
+void DLL_EXPORT CMP_decrement_prc_use_count(TDBB, JRD_PRC);
+struct jrd_req* DLL_EXPORT CMP_find_request(TDBB, USHORT, USHORT);
+void DLL_EXPORT CMP_fini(TDBB);
+struct fmt* DLL_EXPORT CMP_format(TDBB, struct Csb*, USHORT);
+void DLL_EXPORT CMP_get_desc(TDBB, struct Csb*,
+									struct jrd_nod*, struct dsc*);
+struct idl* DLL_EXPORT CMP_get_index_lock(TDBB, struct jrd_rel*, USHORT);
+SLONG DLL_EXPORT CMP_impure(struct Csb*, USHORT);
+struct jrd_req* DLL_EXPORT CMP_make_request(TDBB, struct Csb**);
+void CMP_post_access(TDBB,
+								  struct Csb*,
+								  const TEXT*,
+								  SLONG,
+								  USHORT,
+								  const TEXT*,
+								  const TEXT*);
+void DLL_EXPORT CMP_post_resource(ResourceList*, BLK, Resource::rsc_s, USHORT);
+#ifdef PC_ENGINE
+void DLL_EXPORT CMP_release_resource(ResourceList&, Resource::rsc_s, USHORT);
+#endif
+void DLL_EXPORT CMP_release(TDBB, struct jrd_req*);
+void DLL_EXPORT CMP_shutdown_database(TDBB);
+void CMP_verify_access(TDBB, jrd_req*);
+#endif /* JRD_CMP_PROTO_H */

@@ -27,11 +27,11 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.embed.lockmgr,v 1.10 2005-12-18 17:56:43 alexpeshkoff Exp $
+#  $Id: Makefile.in.embed.lockmgr,v 1.5.2.2 2006-11-05 14:37:29 alexpeshkoff Exp $
 #
 ROOT=..
-ObjModuleType=boot
-CFLAGS += -DBOOT_BUILD
+ObjModuleName=embed.lockmgr
+CFLAGS := -DBOOT_BUILD
 
 include     $(ROOT)/gen/make.defaults
 include     $(ROOT)/gen/make.platform
@@ -46,7 +46,7 @@ LOCKMGR_Sources = $(addprefix lock/, $(LOCKMGR_Files))
 LOCKMGR_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(LOCKMGR_Sources))))
 
 AllObjects = $(LOCKMGR_Objects)
-Dependencies = $(AllObjects:.o=.d) 
+Dependencies=$(AllObjects:.o=.$(DEP_EXT))
 
 
 .PHONY: lock_mgr
@@ -56,8 +56,8 @@ all : lock_mgr
 
 lock_mgr : $(BIN)/fb_lock_mgr
 
-$(BIN)/fb_lock_mgr: $(LOCKMGR_Objects) $(COMMON_Objects) $(LIBFBSTATIC_A)
-	$(CXX) $(LINK_OPTS) $(LOCKMGR_Objects) -o $@ -L$(LIB) -lfbstatic $(COMMON_Objects) $(LINK_LIBS)
+$(BIN)/fb_lock_mgr: $(LOCKMGR_Objects) $(LIBFBCOMMON_A) $(LIBFBSTATIC_A)
+	$(CXX) $(LINK_OPTS) $(LOCKMGR_Objects) -o $@ -L$(LIB) -lfbstatic -lfbcommon $(LINK_LIBS)
 
 
 include $(ROOT)/gen/make.shared.targets

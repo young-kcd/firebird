@@ -25,27 +25,31 @@
 //
 //____________________________________________________________
 //
-//	$Id: hsh.cpp,v 1.22 2005-05-27 22:42:15 asfernandes Exp $
+//	$Id: hsh.cpp,v 1.10 2003-02-10 13:28:18 eku Exp $
 //
 
 #include "firebird.h"
 #include "../gpre/gpre.h"
+#include "../gpre/parse.h"
 #include "../gpre/hsh_proto.h"
 #include "../gpre/gpre_proto.h"
 #include "../gpre/msc_proto.h"
 
 
-static int hash(const SCHAR*);
-static bool scompare(const SCHAR*, const SCHAR*);
-static bool scompare2(const SCHAR*, const SCHAR*);
+extern "C" {
 
-const int HASH_SIZE = 211;
 
-static gpre_sym* hash_table[HASH_SIZE];
-static gpre_sym* key_symbols;
+static int hash(SCHAR *);
+static BOOLEAN scompare(SCHAR *, SCHAR *);
+static BOOLEAN scompare2(SCHAR *, SCHAR *);
+
+#define HASH_SIZE 211
+
+static SYM hash_table[HASH_SIZE];
+static SYM key_symbols;
 
 static struct word {
-	const char* keyword;
+	SCHAR *keyword;
 	enum kwwords id;
 }  keywords[] = {
 #include "../gpre/hsh.h"
@@ -59,11 +63,13 @@ static struct word {
 
 void HSH_fini(void)
 {
+	SYM symbol;
+
 	while (key_symbols) {
-		gpre_sym* symbol = key_symbols;
-		key_symbols = (gpre_sym*) key_symbols->sym_object;
+		symbol = key_symbols;
+		key_symbols = (SYM) key_symbols->sym_object;
 		HSH_remove(symbol);
-		MSC_free((UCHAR *) symbol);
+		FREE((UCHAR *) symbol);
 	}
 }
 
@@ -76,23 +82,23 @@ void HSH_fini(void)
 
 void HSH_init(void)
 {
-	//const char *string;
+	SCHAR *string;
+	SYM symbol, *ptr;
+	int i;
+	struct word *word;
 
-	int i = 0;
-	for (gpre_sym** ptr = hash_table; i < HASH_SIZE; i++)
+	for (ptr = hash_table, i = 0; i < HASH_SIZE; i++)
 		*ptr++ = NULL;
 
 	fflush(stdout);
-	const word* a_word;
-	for (i = 0, a_word = keywords; i < FB_NELEM(keywords); i++, a_word++) {
-		// Unused code: SYM_LEN is used always.
-		//for (string = a_word->keyword; *string; string++);
-		gpre_sym* symbol = (gpre_sym*) MSC_alloc(SYM_LEN);
+	for (i = 0, word = keywords; i < FB_NELEM(keywords); i++, word++) {
+		for (string = word->keyword; *string; string++);
+		symbol = (SYM) ALLOC(SYM_LEN);
 		symbol->sym_type = SYM_keyword;
-		symbol->sym_string = a_word->keyword;
-		symbol->sym_keyword = (int) a_word->id;
+		symbol->sym_string = word->keyword;
+		symbol->sym_keyword = (int) word->id;
 		HSH_insert(symbol);
-		symbol->sym_object = (gpre_ctx*) key_symbols;
+		symbol->sym_object = (GPRE_CTX) key_symbols;
 		key_symbols = symbol;
 	}
 }
@@ -103,19 +109,23 @@ void HSH_init(void)
 //		Insert a symbol into the hash table.
 //  
 
-void HSH_insert( gpre_sym* symbol)
+void HSH_insert( SYM symbol)
 {
-	const int h = hash(symbol->sym_string);
+	int h;
+	SYM *next;
+	SYM ptr;
 
-	for (gpre_sym** next = &hash_table[h]; *next; next = &(*next)->sym_collision) {
-		for (const gpre_sym* ptr = *next; ptr; ptr = ptr->sym_homonym)
+	h = hash(symbol->sym_string);
+
+	for (next = &hash_table[h]; *next; next = &(*next)->sym_collision) {
+		for (ptr = *next; ptr; ptr = ptr->sym_homonym)
 			if (ptr == symbol)
 				return;
 
 		if (scompare(symbol->sym_string, (*next)->sym_string)) {
 			/* insert in most recently seen order; 
 			   This is important for alias resolution in subqueries.
-			   BUT insert tokens AFTER keyword!
+			   BUT insert tokens AFTER KEYWORD!
 			   In a lookup, keyword should be found first.
 			   This assumes that KEYWORDS are inserted before any other token.
 			   No one should be using a keywords as an alias anyway. */
@@ -145,14 +155,13 @@ void HSH_insert( gpre_sym* symbol)
 //		Perform a string lookup against hash table.
 //  
 
-gpre_sym* HSH_lookup(const SCHAR* string)
+SYM HSH_lookup(SCHAR * string)
 {
-	for (gpre_sym* symbol = hash_table[hash(string)]; symbol;
+	SYM symbol;
+
+	for (symbol = hash_table[hash(string)]; symbol;
 		 symbol = symbol->sym_collision)
-	{
-		if (scompare(string, symbol->sym_string)) 
-			return symbol;
-	}
+			if (scompare(string, symbol->sym_string)) return symbol;
 
 	return NULL;
 }
@@ -164,14 +173,13 @@ gpre_sym* HSH_lookup(const SCHAR* string)
 //		compare.
 //  
 
-gpre_sym* HSH_lookup2(const SCHAR* string)
+SYM HSH_lookup2(SCHAR * string)
 {
-	for (gpre_sym* symbol = hash_table[hash(string)]; symbol;
+	SYM symbol;
+
+	for (symbol = hash_table[hash(string)]; symbol;
 		 symbol = symbol->sym_collision)
-	{
-		if (scompare2(string, symbol->sym_string)) 
-			return symbol;
-	}
+			if (scompare2(string, symbol->sym_string)) return symbol;
 
 	return NULL;
 }
@@ -182,14 +190,14 @@ gpre_sym* HSH_lookup2(const SCHAR* string)
 //		Remove a symbol from the hash table.
 //  
 
-void HSH_remove( gpre_sym* symbol)
+void HSH_remove( SYM symbol)
 {
-	gpre_sym** ptr;
-	gpre_sym* homonym;
+	int h;
+	SYM *next, *ptr, homonym;
 
-	const int h = hash(symbol->sym_string);
+	h = hash(symbol->sym_string);
 
-	for (gpre_sym** next = &hash_table[h]; *next; next = &(*next)->sym_collision)
+	for (next = &hash_table[h]; *next; next = &(*next)->sym_collision)
 		if (symbol == *next)
 			if (homonym = symbol->sym_homonym) {
 				homonym->sym_collision = symbol->sym_collision;
@@ -201,8 +209,8 @@ void HSH_remove( gpre_sym* symbol)
 				return;
 			}
 		else
-			for (ptr = &(*next)->sym_homonym; *ptr; ptr = &(*ptr)->sym_homonym)
-				if (symbol == *ptr) {
+			for (ptr = &(*next)->sym_homonym; *ptr;
+				 ptr = &(*ptr)->sym_homonym) if (symbol == *ptr) {
 					*ptr = symbol->sym_homonym;
 					return;
 				}
@@ -216,11 +224,12 @@ void HSH_remove( gpre_sym* symbol)
 //		Returns the hash function of a string.
 //  
 
-static int hash(const SCHAR* string)
+static int hash( SCHAR * string)
 {
+	SLONG value;
 	SCHAR c;
 
-	SLONG value = 0;
+	value = 0;
 
 	while (c = *string++)
 		value = (value << 1) + UPPER(c);
@@ -234,18 +243,17 @@ static int hash(const SCHAR* string)
 //		case sensitive Compare 
 //  
 
-static bool scompare(const SCHAR* string1,
-					 const SCHAR* string2)
+static BOOLEAN scompare( SCHAR * string1, SCHAR * string2)
 {
 
 	while (*string1)
 		if (*string1++ != *string2++)
-			return false;
+			return FALSE;
 
 	if (*string2)
-		return false;
+		return FALSE;
 
-	return true;
+	return TRUE;
 }
 
 //____________________________________________________________
@@ -253,17 +261,18 @@ static bool scompare(const SCHAR* string1,
 //		Compare two strings
 //  
 
-static bool scompare2(const SCHAR* string1,
-					  const SCHAR* string2)
+static BOOLEAN scompare2( SCHAR * string1, SCHAR * string2)
 {
 	SCHAR c1, c2;
 
 	while (c1 = *string1++)
 		if (!(c2 = *string2++) || (UPPER(c1) != UPPER(c2)))
-			return false;
+			return FALSE;
 	if (*string2)
-		return false;
+		return FALSE;
 
-	return true;
+	return TRUE;
 }
 
+
+} // extern "C"

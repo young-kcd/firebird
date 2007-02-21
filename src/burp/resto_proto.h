@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Backup and Restore Program
  *	MODULE:		resto_proto.h
- *	DESCRIPTION:	Prototype Header file for restore.epp
+ *	DESCRIPTION:	Prototype Header file for restore.e
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -21,10 +21,17 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef BURP_RESTO_PROTO_H
-#define BURP_RESTO_PROTO_H
+#ifndef _BURP_RESTO_PROTO_H_
+#define _BURP_RESTO_PROTO_H_
 
-int	RESTORE_restore(const TEXT*, const TEXT*);
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-#endif	// BURP_RESTO_PROTO_H
+extern int	RESTORE_restore (TEXT *, TEXT *);
 
+#ifdef __cplusplus
+}	/* extern "C" */
+#endif
+
+#endif	/* _BURP_RESTO_PROTO_H_ */

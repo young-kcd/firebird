@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Access Method
  *	MODULE:		evl_proto.h
- *	DESCRIPTION:	Prototype header file for evl.cpp
+ *	DESCRIPTION:	Prototype header file for evl.c
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -21,22 +21,72 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef JRD_EVL_PROTO_H
-#define JRD_EVL_PROTO_H
+#ifndef _JRD_EVL_PROTO_H_
+#define _JRD_EVL_PROTO_H_
 
 #include "../jrd/intl_classes.h"
 
-// Implemented in evl.cpp
-dsc*		EVL_assign_to(Jrd::thread_db* tdbb, Jrd::jrd_nod*);
-Jrd::RecordBitmap**	EVL_bitmap(Jrd::thread_db* tdbb, Jrd::jrd_nod*, Jrd::RecordBitmap*);
-bool		EVL_boolean(Jrd::thread_db* tdbb, Jrd::jrd_nod*);
-dsc*		EVL_expr(Jrd::thread_db* tdbb, Jrd::jrd_nod* const);
-bool		EVL_field(Jrd::jrd_rel*, Jrd::Record*, USHORT, dsc*);
-USHORT		EVL_group(Jrd::thread_db* tdbb, Jrd::RecordSource*, Jrd::jrd_nod* const, USHORT);
-void		EVL_make_value(Jrd::thread_db* tdbb, const dsc*, Jrd::impure_value*);
-void		EVL_validate(Jrd::thread_db*, const Jrd::Item&, dsc*, bool);
-void		EVL_validate(Jrd::thread_db*, const Jrd::Item&, const Jrd::ItemInfo*, dsc*, bool);
+extern struct dsc *DLL_EXPORT EVL_assign_to(TDBB tdbb, struct jrd_nod *);
 
+extern struct sbm **DLL_EXPORT EVL_bitmap(TDBB tdbb, struct jrd_nod *);
 
-#endif // JRD_EVL_PROTO_H
+extern BOOLEAN DLL_EXPORT EVL_boolean(TDBB tdbb, struct jrd_nod *);
 
+extern struct dsc *DLL_EXPORT EVL_expr(TDBB tdbb, struct jrd_nod *);
+
+extern BOOLEAN DLL_EXPORT EVL_field(struct jrd_rel *,
+									struct rec *,
+									USHORT, DSC *);
+
+extern USHORT DLL_EXPORT EVL_group
+	(TDBB tdbb, struct blk *, struct jrd_nod *, USHORT);
+
+extern USHORT DLL_EXPORT EVL_mb_contains
+	(TDBB tdbb, TextType*, UCHAR *, USHORT, UCHAR *, USHORT);
+
+extern USHORT DLL_EXPORT EVL_mb_like
+	(TDBB tdbb, TextType*, UCHAR *, SSHORT, UCHAR *, SSHORT, USHORT);
+
+extern USHORT DLL_EXPORT EVL_mb_matches
+	(TDBB tdbb, TextType*, UCHAR *, SSHORT, UCHAR *, SSHORT);
+
+extern USHORT DLL_EXPORT EVL_mb_sleuth_check
+	(TDBB tdbb, TextType*, USHORT, UCHAR *, USHORT, UCHAR *, USHORT);
+
+extern USHORT DLL_EXPORT EVL_mb_sleuth_merge
+	(TDBB tdbb, TextType*, UCHAR *, USHORT, UCHAR *, USHORT, UCHAR *, USHORT);
+
+extern void DLL_EXPORT EVL_make_value(TDBB tdbb, struct dsc *, struct vlu *);
+
+extern USHORT DLL_EXPORT EVL_nc_contains
+	(TDBB tdbb, TextType*, UCHAR *, USHORT, UCHAR *, USHORT);
+
+extern USHORT EVL_nc_like
+	(TDBB tdbb, TextType*, UCHAR *, SSHORT, UCHAR *, SSHORT, USHORT);
+
+extern USHORT EVL_nc_matches
+	(TDBB tdbb, TextType*, UCHAR *, SSHORT, UCHAR *, SSHORT);
+
+extern USHORT EVL_nc_sleuth_check
+	(TDBB tdbb, TextType*, USHORT, UCHAR *, USHORT, UCHAR *, USHORT);
+
+extern USHORT EVL_nc_sleuth_merge
+	(TDBB tdbb, TextType*, UCHAR *, USHORT, UCHAR *, USHORT, UCHAR *, USHORT);
+
+extern USHORT DLL_EXPORT EVL_wc_contains
+	(TDBB tdbb, TextType*, USHORT *, USHORT, USHORT *, USHORT);
+
+extern USHORT EVL_wc_like
+	(TDBB tdbb, TextType*, USHORT *, SSHORT, USHORT *, SSHORT, USHORT);
+
+extern USHORT EVL_wc_matches
+	(TDBB tdbb, TextType*, USHORT *, SSHORT, USHORT *, SSHORT);
+
+extern USHORT EVL_wc_sleuth_check
+	(TDBB tdbb, TextType*, USHORT, USHORT *, USHORT, USHORT *, USHORT);
+
+extern USHORT EVL_wc_sleuth_merge
+	(TDBB tdbb,
+	 TextType*, USHORT *, USHORT, USHORT *, USHORT, USHORT *, USHORT);
+
+#endif /* _JRD_EVL_PROTO_H_ */

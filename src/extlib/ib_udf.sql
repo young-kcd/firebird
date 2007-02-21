@@ -15,6 +15,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ * $Id: ib_udf.sql,v 1.4.2.1 2004-08-30 15:56:22 skidder Exp $
  * Revision 1.2  2000/11/28 06:47:52  fsg
  * Changed declaration of ascii_char in ib_udf.sql
  * to get correct result as proposed by Claudio Valderrama
@@ -602,7 +603,7 @@ DECLARE EXTERNAL FUNCTION substr
  *****************************************
  *
  * Functional description:
- *	substrlen(s,i,l) returns the substring
+ *	substr(s,i,l) returns the substring 
  *	of s which starts at position i and
  *	ends at position i+l-1, being l the length.
  *	Note: This function is NOT limited to

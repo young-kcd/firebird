@@ -2,21 +2,21 @@
 #
 # Run this to generate all the initial makefiles, etc.
 #
-# $Id: autogen.sh,v 1.12 2005-05-27 22:14:40 asfernandes Exp $
+# $Id: autogen.sh,v 1.8.2.3 2006-12-06 16:07:31 alexpeshkoff Exp $
 
 PKG_NAME=Firebird2
 SRCDIR=`dirname $0`
 DIE=0
 
-if [ -z $AUTOCONF ]
+if [ -z "$AUTOCONF" ]
 then
   AUTOCONF=autoconf
 fi
-if [ -z $LIBTOOL ]
+if [ -z "$LIBTOOL" ]
 then
   LIBTOOL=libtool
 fi
-if [ -z $LIBTOOLIZE ]
+if [ -z "$LIBTOOLIZE" ]
 then
   LIBTOOLIZE=libtoolize
 fi
@@ -24,14 +24,13 @@ fi
 echo "AUTOCONF="$AUTOCONF
 echo "LIBTOOL="$LIBTOOL
 echo "LIBTOOLiZE="$LIBTOOLIZE
-AUTOHEADER=`echo $AUTOCONF |sed 's/conf/header/'`
 
 VER=`$AUTOCONF --version|grep '^[Aa]utoconf'|sed 's/^[^0-9]*//'`
 case "$VER" in
  0* | 1\.* | 2\.[0-9] | 2\.[0-9][a-z]* | \
- 2\.[1-4][0-9] | 2\.5[0-5][a-z]* )
+ 2\.[1-4][0-9] | 2\.5[0-2]* )
   echo
-  echo "**Error**: You must have autoconf 2.56 or later installed."
+  echo "**Error**: You must have autoconf 2.53 or later installed."
   echo "Download the appropriate package for your distribution/OS,"
   echo "or get the source tarball at ftp://ftp.gnu.org/pub/gnu/autoconf/"
   DIE=1
@@ -52,7 +51,6 @@ esac
 
 # Put other tests for programs here!
 
-
 # If anything failed, exit now.
 if test "$DIE" -eq 1; then
   exit 1
@@ -66,6 +64,20 @@ if test -z "$*" -a x$NOCONFIGURE = x; then
   echo
 fi
 
+if [ `uname -s` = AIX ]; then
+	export CC=xlc_r7
+	export CXX=xlC_r7
+
+#convert version files to aix export format
+#this is not general format converter and may fail in case of vers file(s) changes
+	mkdir gen
+	for i in builds/posix/*.vers
+	do
+		to="gen/`basename $i`"
+		grep \;\$ $i | grep -v '[\#\*\}]' | awk -F';' '{print $1;}' >$to
+	done
+fi
+
 # Generate configure from configure.in
 echo "Running libtoolize ..."
 LIBTOOL_M4=`$LIBTOOLIZE --copy --force --dry-run|grep 'You should add the contents of'|sed "s,^[^/]*\(/[^']*\).*$,\1,"`
@@ -74,9 +86,6 @@ if test "x$LIBTOOL_M4" != "x"; then
  cp $LIBTOOL_M4 aclocal.m4
 fi
 $LIBTOOLIZE --copy --force || exit 1
-
-echo "Running autoheader ..."
-$AUTOHEADER || exit 1
 
 echo "Running autoconf ..."
 $AUTOCONF || exit 1

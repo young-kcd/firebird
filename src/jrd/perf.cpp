@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Access Method
- *	MODULE:		perf.cpp
+ *	MODULE:		perf.c
  *	DESCRIPTION:	Performance monitoring routines
  *
  * The contents of this file are subject to the Interbase Public
@@ -28,11 +28,11 @@
  */
 
 #include "firebird.h"
-#include <stdio.h>
+#include "../jrd/ib_stdio.h"
 #include <limits.h>
-#include "../common/classes/timestamp.h"
+#include "../jrd/jrd_time.h"
 #include "../jrd/common.h"
-#include "../jrd/ibase.h"
+#include "../jrd/gds.h"
 #include "../jrd/perf.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/perf_proto.h"
@@ -46,21 +46,21 @@
 #endif
 
 
-static SLONG get_parameter(const SCHAR**);
+extern "C" {
+
+
+static SLONG get_parameter(SCHAR **);
 #ifndef HAVE_TIMES
-static void times(struct tms*);
+static void times(struct tms *);
 #endif
 
-static const SCHAR items[] = {
-	isc_info_reads,
-	isc_info_writes,
-	isc_info_fetches,
+static SCHAR items[] = { isc_info_reads, isc_info_writes, isc_info_fetches,
 	isc_info_marks,
 	isc_info_page_size, isc_info_num_buffers,
 	isc_info_current_memory, isc_info_max_memory
 };
 
-static const SCHAR* report =
+static SCHAR *report =
 	"elapsed = !e cpu = !u reads = !r writes = !w fetches = !f marks = !m$";
 
 #ifdef VMS
@@ -72,20 +72,25 @@ extern void ftime();
 #define TICK	100
 #endif
 
-/* EKU: TICK (sys/param.h) and CLOCKS_PER_SEC (time.h) may both be defined */
-#if !defined(TICK) && defined(CLOCKS_PER_SEC)
-#define TICK ((SLONG)CLOCKS_PER_SEC)
+#if defined(CLOCKS_PER_SEC)
+#define TICK CLOCKS_PER_SEC
 #endif
 
 #ifndef TICK
-#define TICK	((SLONG)CLK_TCK)
+#define TICK	CLK_TCK
+#endif
+
+#ifdef SHLIB_DEFS
+#define times		(*_libgds_times)
+
+extern clock_t times();
 #endif
 
 
 int API_ROUTINE perf_format(
-						const PERF* before,
-						const PERF* after,
-						const SCHAR* string, SCHAR* buffer, SSHORT* buf_len)
+						PERF * before,
+						PERF * after,
+						SCHAR * string, SCHAR * buffer, SSHORT * buf_len)
 {
 /**************************************
  *
@@ -99,16 +104,16 @@ int API_ROUTINE perf_format(
  *	formatting output.
  *
  **************************************/
-	SCHAR c;
+	SLONG delta, buffer_length, length;
+	SCHAR *p, c;
 
-	SLONG buffer_length = (buf_len) ? *buf_len : 0;
-	SCHAR* p = buffer;
+	buffer_length = (buf_len) ? *buf_len : 0;
+	p = buffer;
 
-	while ((c = *string++) && c != '$') {
+	while ((c = *string++) && c != '$')
 		if (c != '!')
 			*p++ = c;
 		else {
-			SLONG delta;
 			switch (c = *string++) {
 			case 'r':
 				delta = after->perf_reads - before->perf_reads;
@@ -154,7 +159,6 @@ int API_ROUTINE perf_format(
 				while (*p)
 					p++;
 			}
-
 			switch (c) {
 			case 'r':
 			case 'w':
@@ -189,19 +193,19 @@ int API_ROUTINE perf_format(
 				break;
 			}
 		}
-	}
 
 	*p = 0;
-	const int length = p - buffer;
-	if (buffer_length && (buffer_length -= length) >= 0) {
-		memset(p, ' ', buffer_length);
-	}
+	length = p - buffer;
+	if (buffer_length && (buffer_length -= length) >= 0)
+		do
+			*p++ = ' ';
+		while (--buffer_length);
 
 	return length;
 }
 
 
-void API_ROUTINE perf_get_info(FB_API_HANDLE* handle, PERF* perf)
+void API_ROUTINE perf_get_info(FRBRD **handle, PERF * perf)
 {
 /**************************************
  *
@@ -214,7 +218,8 @@ void API_ROUTINE perf_get_info(FB_API_HANDLE* handle, PERF* perf)
  *	from the system and some from the database.
  *
  **************************************/
-	SSHORT buffer_length, item_length;
+	SCHAR *p, buffer[256];
+	SSHORT l, buffer_length, item_length;
 	ISC_STATUS_ARRAY jrd_status;
 #ifdef HAVE_GETTIMEOFDAY
 	struct timeval tp;
@@ -226,7 +231,11 @@ void API_ROUTINE perf_get_info(FB_API_HANDLE* handle, PERF* perf)
 /* If there isn't a database, zero everything out */
 
 	if (!*handle) {
-		memset(perf, 0, sizeof(PERF));
+		p = (SCHAR *) perf;
+		l = sizeof(PERF);
+		do
+			*p++ = 0;
+		while (--l);
 	}
 
 /* Get system times */
@@ -234,7 +243,11 @@ void API_ROUTINE perf_get_info(FB_API_HANDLE* handle, PERF* perf)
 	times(&perf->perf_times);
 
 #ifdef HAVE_GETTIMEOFDAY
-	GETTIMEOFDAY(&tp);
+#ifdef GETTIMEOFDAY_RETURNS_TIMEZONE
+	(void)gettimeofday(&tp, (struct timezone *)0);
+#else
+	(void)gettimeofday(&tp);
+#endif
 	perf->perf_elapsed = tp.tv_sec * 100 + tp.tv_usec / 10000;
 #else
 	ftime(&time_buffer);
@@ -245,16 +258,15 @@ void API_ROUTINE perf_get_info(FB_API_HANDLE* handle, PERF* perf)
 	if (!*handle)
 		return;
 
-	SCHAR buffer[256];
 	buffer_length = sizeof(buffer);
 	item_length = sizeof(items);
 	isc_database_info(jrd_status,
 					  handle,
 					  item_length, items, buffer_length, buffer);
 
-	const char* p = buffer;
+	p = buffer;
 
-	while (true)
+	while (1)
 		switch (*p++) {
 		case isc_info_reads:
 			perf->perf_reads = get_parameter(&p);
@@ -299,10 +311,11 @@ void API_ROUTINE perf_get_info(FB_API_HANDLE* handle, PERF* perf)
 			else if (p[2] == isc_info_max_memory)
 				perf->perf_max_memory = 0;
 			{
-				const SLONG temp = isc_vax_integer(p, 2);
-				fb_assert(temp <= MAX_SSHORT);
-				p += temp + 2;
+				SLONG temp = isc_vax_integer(p, 2);
+				assert(temp <= MAX_SSHORT);
+				l = (SSHORT) temp;
 			}
+			p += l + 2;
 			perf->perf_marks = 0;
 			break;
 
@@ -313,8 +326,8 @@ void API_ROUTINE perf_get_info(FB_API_HANDLE* handle, PERF* perf)
 
 
 void API_ROUTINE perf_report(
-							 const PERF* before,
-							 const PERF* after, SCHAR* buffer, SSHORT* buf_len)
+							 PERF * before,
+							 PERF * after, SCHAR * buffer, SSHORT * buf_len)
 {
 /**************************************
  *
@@ -331,7 +344,7 @@ void API_ROUTINE perf_report(
 }
 
 
-static SLONG get_parameter(const SCHAR** ptr)
+static SLONG get_parameter(SCHAR ** ptr)
 {
 /**************************************
  *
@@ -344,9 +357,12 @@ static SLONG get_parameter(const SCHAR** ptr)
  *	and return.
  *
  **************************************/
-	SSHORT l = *(*ptr)++;
+	SLONG parameter;
+	SSHORT l;
+
+	l = *(*ptr)++;
 	l += (*(*ptr)++) << 8;
-	const SLONG parameter = isc_vax_integer(*ptr, l);
+	parameter = isc_vax_integer(*ptr, l);
 	*ptr += l;
 
 	return parameter;
@@ -354,7 +370,7 @@ static SLONG get_parameter(const SCHAR** ptr)
 
 
 #ifndef HAVE_TIMES
-static void times(struct tms* buffer)
+static void times(struct tms *buffer)
 {
 /**************************************
  *
@@ -372,3 +388,4 @@ static void times(struct tms* buffer)
 #endif
 
 
+} // extern "C"

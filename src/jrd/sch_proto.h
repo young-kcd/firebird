@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Access method
  *	MODULE:		sch_proto.h
- *	DESCRIPTION:	Prototype Header file for sch.cpp
+ *	DESCRIPTION:	Prototype Header file for sch.c
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -21,55 +21,37 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef JRD_SCH_PROTO_H
-#define JRD_SCH_PROTO_H
+#ifndef _JRD_SCH_PROTO_H_
+#define _JRD_SCH_PROTO_H_
 
 #include "../jrd/isc.h"
 
+#ifdef __cplusplus
 extern "C" {
+#endif
 
-/* AST actions taken by SCH_ast() */
-
-enum ast_t
-{
-	AST_alloc,
-	AST_init,
-	AST_fini,
-	AST_check,
-	AST_disable,
-	AST_enable,
-	AST_enter,
-	AST_exit
-};
-
-int		API_ROUTINE gds__thread_enable(int);
-void	API_ROUTINE gds__thread_enter(void);
-void	API_ROUTINE gds__thread_exit(void);
+extern int API_ROUTINE gds__thread_enable(int);
+extern void API_ROUTINE gds__thread_enter(void);
+extern void API_ROUTINE gds__thread_exit(void);
+extern void SCH_abort(void);
+extern void SCH_ast(enum ast_t);
+extern struct sch_thread *SCH_current_thread(void);
+extern void SCH_enter(void);
+extern void SCH_exit(void);
+extern void SCH_hiber(void);
+extern void SCH_init(void);
+extern int SCH_schedule(void);
+extern BOOLEAN SCH_thread_enter_check(void);
+extern BOOLEAN SCH_validate(void);
+extern void SCH_wake(struct sch_thread *);
 #ifdef VMS
-int		API_ROUTINE gds__ast_active(void);
-void	API_ROUTINE gds__completion_ast(void);
-int		API_ROUTINE gds__thread_wait(int (*)(), SLONG);
-#endif // VMS
+extern int API_ROUTINE gds__ast_active(void);
+extern void API_ROUTINE gds__completion_ast(void);
+extern int API_ROUTINE gds__thread_wait(int (*)(), SLONG);
+#endif /* VMS  */
 
-} // extern "C"
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
-struct thread;
-
-void	SCH_abort(void);
-
-extern "C" 
-void	SCH_ast(enum ast_t);
-
-thread*	SCH_current_thread(void);
-void	SCH_enter(void);
-void	SCH_exit(void);
-void	SCH_hiber(void);
-void	SCH_init(void);
-bool	SCH_schedule(void);
-bool	SCH_thread_enter_check(void);
-bool	SCH_validate(void);
-void	SCH_wake(thread*);
-
-
-#endif // JRD_SCH_PROTO_H
-
+#endif /* _JRD_SCH_PROTO_H_ */

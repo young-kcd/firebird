@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Remote Interface/Server
  *	MODULE:		cntl_proto.h
- *	DESCRIPTION:	Prototpe header file for cntl.cpp
+ *	DESCRIPTION:	Prototpe header file for cntl.c
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -21,17 +21,14 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef REMOTE_CNTL_PROTO_H
-#define REMOTE_CNTL_PROTO_H
+#ifndef _REMOTE_CNTL_PROTO_H_
+#define _REMOTE_CNTL_PROTO_H_
 
-#include "../jrd/thd.h"
+extern void CNTL_init(FPTR_VOID, TEXT *);
+extern void *CNTL_insert_thread(void);
+extern void CNTL_main_thread(SLONG, SCHAR *[]);
+extern void CNTL_remove_thread(void *);
+extern void CNTL_shutdown_service(TEXT *);
+extern void CNTL_stop_service(TEXT *);
 
-void	CNTL_init(ThreadEntryPoint*, const TEXT*);
-void*	CNTL_insert_thread(void);
-void	WINAPI CNTL_main_thread(DWORD, char* []);
-void	CNTL_remove_thread(void*);
-void	CNTL_shutdown_service(const TEXT*);
-void	CNTL_stop_service(const TEXT*);
-
-#endif // REMOTE_CNTL_PROTO_H
-
+#endif /* _REMOTE_CNTL_PROTO_H */

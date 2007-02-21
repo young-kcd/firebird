@@ -27,23 +27,22 @@
 
 #include "../jrd/common.h"
 
-const char BLANK				= ' ';
-const int FILE_IS_FULL			= -9;
-//const int FILE_NM_ARR_LEN		= 20;
-//const char* GSPLIT_HDR_REC_NM	= "InterBase/Gsplit";
+#define	BLANK					' '
+#define	BURP_ALLOC_ZERO(size)	MISC_alloc_burp((ULONG) size)
+#define	FILE_IS_FULL			-9
+#define	FILE_NM_ARR_LEN			20
+#define	GSPLIT_HDR_REC_NM		"InterBase/Gsplit"
 
-const int K_BYTES				= 1024;
-const int IO_BUFFER_SIZE		= (16 * K_BYTES);
+#define	IO_BUFFER_SIZE			(16 * K_BYTES)
 
-const int M_BYTES				= (K_BYTES * K_BYTES);
-const int G_BYTES				= (K_BYTES * M_BYTES);
-const size_t MAX_FILE_NM_LEN		= 27;	// size of header_rec.fl_name 
-const int MAX_NUM_OF_FILES		= 9999;
-const int MIN_FILE_SIZE			= M_BYTES;
-const char NEW_LINE				= '\n';
-const char TERMINAL				= '\0';
+#define	K_BYTES					1024
+#define	M_BYTES					(K_BYTES * K_BYTES)
+#define	G_BYTES					(K_BYTES * M_BYTES)
+#define	MAX_FILE_NM_LEN			27		/* size of header_rec.fl_name */
+#define	MAX_NUM_OF_FILES		9999
+#define	MIN_FILE_SIZE			M_BYTES
+#define	NEW_LINE				'\n'
+#define	NULL_B_FIL				((B_FIL) NULL)
+#define	TERMINAL				'\0'
 
-typedef int FILE_DESC;
-
-const FILE_DESC GBAK_STDIN_DESC		= 0;	// standard input file descriptor
-const FILE_DESC GBAK_STDOUT_DESC	= 1;	// standard output file descriptor
+typedef	int	FILE_DESC;

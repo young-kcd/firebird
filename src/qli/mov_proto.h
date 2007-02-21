@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Command Oriented Query Language
  *	MODULE:		mov_proto.h
- *	DESCRIPTION:	Prototype header file for mov.cpp
+ *	DESCRIPTION:	Prototype header file for mov.c
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -21,19 +21,18 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef QLI_MOV_PROTO_H
-#define QLI_MOV_PROTO_H
+#ifndef _QLI_MOV_PROTO_H_
+#define _QLI_MOV_PROTO_H_
 
-int			MOVQ_compare(const dsc*, const dsc*);
-double		MOVQ_date_to_double(const dsc*);
-int			MOVQ_decompose (const TEXT*, USHORT, SLONG *);
-void		MOVQ_double_to_date (double, SLONG [2]);
-void		MOVQ_fast (const SCHAR*, SCHAR*, ULONG);
-double		MOVQ_get_double(const dsc*);
-SLONG		MOVQ_get_long(const dsc*, SSHORT);
-int			MOVQ_get_string(const dsc*, const TEXT**, vary*, USHORT);
-void		MOVQ_move(const dsc*, dsc*);
-void		MOVQ_terminate (const SCHAR*, SCHAR*, USHORT, USHORT);
+extern int			MOVQ_compare (struct dsc *, struct dsc *);
+extern double		MOVQ_date_to_double (struct dsc *);
+extern int			MOVQ_decompose (TEXT *, USHORT, SLONG *);
+extern void			MOVQ_double_to_date (double, SLONG [2]);
+extern void			MOVQ_fast (SCHAR *, SCHAR *, ULONG);
+extern double		MOVQ_get_double (struct dsc *);
+extern SLONG		MOVQ_get_long (struct dsc *, SSHORT);
+extern int			MOVQ_get_string (struct dsc *, TEXT **, struct vary *, USHORT);
+extern void			MOVQ_move (struct dsc *, struct dsc *);
+extern void			MOVQ_terminate (SCHAR *, SCHAR *, SSHORT, SSHORT);
 
-#endif // QLI_MOV_PROTO_H
-
+#endif /* _QLI_MOV_PROTO_H_ */

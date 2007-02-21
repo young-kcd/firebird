@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Access Method
  *	MODULE:		opt_proto.h
- *	DESCRIPTION:	Prototype header file for opt.cpp
+ *	DESCRIPTION:	Prototype header file for opt.c
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -21,36 +21,26 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef JRD_OPT_PROTO_H
-#define JRD_OPT_PROTO_H
+#ifndef _JRD_OPT_PROTO_H_
+#define _JRD_OPT_PROTO_H_
 
 #include "../jrd/jrd.h"
 #include "../jrd/btr.h"
 #include "../jrd/rse.h"
 #include "../jrd/lls.h"
 
-namespace Jrd {
-	class jrd_req;
-	class jrd_rel;
-	class jrd_nod;
-	class RecordSelExpr;
-	class RecordSource;
-	struct index_desc;
-	class CompilerScratch;
-	class OptimizerBlk;
-}
 
-bool OPT_access_path(const Jrd::jrd_req*, SCHAR*, SSHORT, USHORT*);
-Jrd::RecordSource* OPT_compile(Jrd::thread_db*, Jrd::CompilerScratch*,
-							   Jrd::RecordSelExpr*, Jrd::NodeStack*);
-							   
-// Begin only exported for VMS
-Jrd::jrd_nod* OPT_make_dbkey(Jrd::OptimizerBlk*, Jrd::jrd_nod*,
+extern BOOLEAN OPT_access_path(struct jrd_req *, SCHAR *, SSHORT, USHORT *);
+extern class Rsb *OPT_compile(TDBB, class Csb *,
+							   struct rse *, struct lls *);
+extern struct jrd_nod *OPT_make_dbkey(struct opt *, struct jrd_nod *,
 								  USHORT);
-Jrd::jrd_nod* OPT_make_index(Jrd::thread_db*, Jrd::OptimizerBlk*, Jrd::jrd_rel*,
-								  Jrd::index_desc*);
-int OPT_match_index(Jrd::OptimizerBlk*, USHORT, Jrd::index_desc*);
-// End only exported for VMS
+extern struct jrd_nod *OPT_make_index(TDBB, struct opt *, struct jrd_rel *,
+								  struct idx *);
+extern int OPT_match_index(struct opt *, USHORT, struct idx *);
+#ifdef PC_ENGINE
+extern void OPT_set_index(TDBB, struct jrd_req *, class Rsb **, struct jrd_rel *,
+						  struct idx *);
+#endif
 
-#endif // JRD_OPT_PROTO_H
-
+#endif /* _JRD_OPT_PROTO_H_ */

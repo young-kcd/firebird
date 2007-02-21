@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Access Method
  *	MODULE:		sdl_proto.h
- *	DESCRIPTION:	Prototype header file for sdl.cpp
+ *	DESCRIPTION:	Prototype header file for sdl.c
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -24,22 +24,21 @@
 #ifndef JRD_SDL_PROTO_H
 #define JRD_SDL_PROTO_H
 
-namespace Ods {
-	struct InternalArrayDesc;
-}
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-struct sdl_info;
-struct array_alice;
+extern SLONG DLL_EXPORT SDL_compute_subscript(ISC_STATUS *, struct ads *, USHORT,
+											  SLONG *);
+extern ISC_STATUS API_ROUTINE SDL_info(ISC_STATUS *, UCHAR *, struct sdl_info *,
+								   SLONG *);
+extern UCHAR *DLL_EXPORT SDL_prepare_slice(UCHAR *, USHORT);
+extern int DLL_EXPORT SDL_walk(ISC_STATUS *, UCHAR *, USHORT, UCHAR *,
+							   struct ads *, SLONG *, FPTR_VOID,
+							   struct slice *);
 
-UCHAR* SDL_clone_sdl(const UCHAR*, size_t, UCHAR*, size_t);
-SLONG	SDL_compute_subscript(ISC_STATUS*, const Ods::InternalArrayDesc*,
-							  USHORT, const SLONG*);
-ISC_STATUS SDL_info(ISC_STATUS*, const UCHAR*, sdl_info*, SLONG*);
-const UCHAR* SDL_prepare_slice(const UCHAR*, USHORT);
-int		SDL_walk(ISC_STATUS*, const UCHAR*, //bool,
-				UCHAR*,
-				Ods::InternalArrayDesc*, SLONG*,
-				SDL_walk_callback, array_slice*);
+#ifdef __cplusplus
+}	// extern "C"
+#endif
 
-#endif // JRD_SDL_PROTO_H
-
+#endif /* JRD_SDL_PROTO_H */

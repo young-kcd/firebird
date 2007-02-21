@@ -27,35 +27,51 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.fbserver,v 1.22 2005-12-18 17:56:43 alexpeshkoff Exp $
+#  $Id: Makefile.in.fbserver,v 1.11.2.7 2006-11-05 14:37:30 alexpeshkoff Exp $
 #
 ROOT=..
-ObjModuleType=superserver
-CFLAGS+=-DSUPERSERVER @PTHREAD_CFLAGS@
-ArchType=super
+ObjModuleName=fbserver
+
+SUPER_FLAG = -DSUPERSERVER @PTHREAD_CFLAGS@
 
 include     $(ROOT)/gen/make.defaults
 include     $(ROOT)/gen/make.platform
 include     $(ROOT)/gen/make.rules
 include     $(ROOT)/gen/make.shared.variables
 
+
 @SET_MAKE@
 
-SERVER_Files = $(OS_ServerFiles) server.cpp server_stub.cpp
+IPSERVER_Files = $(WIN_IPSERVER_Files)
+IPSERVER_Sources =  $(addprefix ipserver/, $(IPSERVER_Files))
+IPSERVER_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(IPSERVER_Sources))))
+
+SERVER_Files = $(OS_ServerFiles) server.cpp server_stub.cpp 
 SERVER_Sources = $(addprefix remote/, $(SERVER_Files))
-SERVER_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(SERVER_Sources)))) $(LIBFBSERVER_Objects) $(COMMON_Objects)
+SERVER_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(SERVER_Sources))))
+
+AllObjects = $(SERVER_Objects)
+
+Dependencies=$(AllObjects:.o=.$(DEP_EXT))
+
+
 
 .PHONY: fbserver
 
 
 fbserver : $(FB_SUPER_SERVER)
 
-$(FB_SUPER_SERVER):	$(SERVER_Objects)
-	$(LD) $(LINK_OPTS) $^ -o $@ -L$(LIB) $(LIB_GUI) $(LINK_LIBS) @PTHREAD_CFLAGS@ @PTHREAD_LIBS@ $(ICU_LIBS)
+$(FB_SUPER_SERVER):	$(SERVER_Objects) $(IPSERVER_Objects) -lfbserver
+#	$(LD) $(LINK_OPTS) $^ -o $@ -L$(LIB) $(LIB_GUI) $(LINK_LIBS) 
+	$(LIB_LINK) $(LIB_LINK_OPTS) $^ -o $@ -L$(LIB) $(LIB_GUI) $(LINK_LIBS) \
+@PTHREAD_CFLAGS@ @PTHREAD_LIBS@
+#	$(CHMOD_S7) $@
 
-AllObjects = $(SERVER_Objects)
+#$(LIB)/libalice.a \
+#		$(LIB)/libburp.a $(LIB)/libcommon.a
 
-Dependencies = $(AllObjects:.o=.d)
+
+
 
 include $(ROOT)/gen/make.shared.targets
 

@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	Preprocessor
  *	MODULE:		cme_proto.h
- *	DESCRIPTION:	Prototype header file for cme.cpp
+ *	DESCRIPTION:	Prototype header file for cme.c
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -21,13 +21,12 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef GPRE_CME_PROTO_H
-#define GPRE_CME_PROTO_H
+#ifndef _GPRE_CME_PROTO_H_
+#define _GPRE_CME_PROTO_H_
 
-void	CME_expr(GPRE_NOD, gpre_req*);
-void	CME_get_dtype(const gpre_nod*, gpre_fld*);
-void	CME_relation(gpre_ctx*, gpre_req*);
-void	CME_rse(gpre_rse*, gpre_req*);
+extern void CME_expr(GPRE_NOD, GPRE_REQ);
+extern void CME_get_dtype(GPRE_NOD, GPRE_FLD);
+extern void CME_relation(GPRE_CTX, GPRE_REQ);
+extern void CME_rse(RSE, GPRE_REQ);
 
-#endif // GPRE_CME_PROTO_H
-
+#endif /* _GPRE_CME_PROTO_H_ */

@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Command Oriented Query Language
- *	MODULE:		all.cpp
+ *	MODULE:		all.c
  *	DESCRIPTION:	Internal block allocator
  *
  * The contents of this file are subject to the Interbase Public
@@ -20,6 +20,9 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  */
+/*
+$Id: all.cpp,v 1.14.2.1 2006-11-05 14:38:22 alexpeshkoff Exp $
+*/
 
 /***************************************************
    THIS MODULE HAS SEVERAL KISSING COUSINS; IF YOU
@@ -27,31 +30,26 @@
    LIST, PLEASE BE SURE TO CHECK THE OTHERS FOR
    SIMILAR CHANGES:
 
-                  /dsql/all.cpp
-                  /jrd/all.cpp
-                  /pipe/allp.cpp
-                  /qli/all.cpp
-                  /remote/allr.cpp
-                  /gpre/msc.cpp
+                  /dsql/all.c
+                  /jrd/all.c
+                  /pipe/allp.c
+                  /qli/all.c
+                  /remote/allr.c
+                  /gpre/msc.c
 
    - THANK YOU
 ***************************************************/
 
 #include "firebird.h"
 #include <string.h>
-#include "../qli/dtr.h"
-#include "../qli/parse.h"
-#include "../qli/compile.h"
-#include "../qli/exe.h"
-#include "../qli/report.h"
-#include "../qli/format.h"
+#include "../qli/everything.h"
 #include "../qli/all_proto.h"
 #include "../qli/err_proto.h"
 #include "../qli/mov_proto.h"
 #include "../jrd/gds_proto.h"
 
 
-#define BLKDEF(type, root, tail) { sizeof(root), tail },
+#define BLKDEF(type, root, tail) { sizeof (struct root), tail },
 
 static struct {
 	SSHORT typ_root_length;
@@ -59,15 +57,15 @@ static struct {
 } block_sizes[] = {
 	{0, 0},
 #include "../qli/blk.h"
-};
+0};
 
 #undef BLKDEF
 
 static void extend_pool(PLB, USHORT);
 
-static qli_vec* global_pools;
+static VEC pools;
 
-const int MIN_ALLOCATION	= 1024;
+#define MIN_ALLOCATION	1024
 
 
 BLK ALLQ_alloc( PLB pool, UCHAR type, int count)
@@ -83,42 +81,43 @@ BLK ALLQ_alloc( PLB pool, UCHAR type, int count)
  *	This is the primary block allocation routine.
  *
  **************************************/
+	FRB block;
+	FRB free, *best, *ptr;
+	USHORT l;
+	USHORT size;
+	SLONG best_tail, tail;
+
 	if (type <= (SCHAR) type_MIN || type >= (SCHAR) type_MAX)
-		ERRQ_bugcheck(1);			// Msg1 bad block type
+		BUGCHECK(1);			/* Msg1 bad block type */
 
-// Compute block length
+/* Compute block length */
 
-	size_t size = block_sizes[type].typ_root_length;
+	size = block_sizes[type].typ_root_length;
 
-	SLONG tail = block_sizes[type].typ_tail_length;
-	if (tail)
+	if (tail = block_sizes[type].typ_tail_length)
 		size += count * tail;
 
 #ifndef VMS
-	size = FB_ALIGN(size, ALIGNMENT);
+	size = FB_ALIGN(size, FB_ALIGNMENT);
 #else
-	size = ((size + ALIGNMENT - 1) & ~(ALIGNMENT - 1));
+	size = ((size + FB_ALIGNMENT - 1) & ~(FB_ALIGNMENT - 1));
 #endif
 
 	if (size <= 4 || size > 65535)
-		ERRQ_bugcheck(2);			// Msg2 bad block size
+		BUGCHECK(2);			/* Msg2 bad block size */
 
 /* Find best fit.  Best fit is defined to be the free block of SHORTest
    tail.  If there isn't a fit, extend the pool and try, try again. */
 
-	FRB free;
-	FRB* best;
-	size_t best_tail;
-
-	while (true) {
+	while (TRUE) {
 		best = NULL;
 		best_tail = 32767;
-		for (FRB* ptr = &pool->plb_free; (free = *ptr); ptr = &free->frb_next)
-			if (free->frb_next && (SCHAR *) free >= (SCHAR *) free->frb_next)
-				ERRQ_bugcheck(434);	// memory pool free list is incorrect
+		for (ptr = &pool->plb_free; (free = *ptr); ptr = &free->frb_next)
+			if (free->frb_next
+				&& (SCHAR *) free >=
+				(SCHAR *) free->frb_next) BUGCHECK(434);	/* memory pool free list is incorrect */
 			else if ((tail = free->frb_header.blk_length - size) >= 0
-					 && tail < static_cast<SLONG>(best_tail))
-			{
+					 && tail < best_tail) {
 				best = ptr;
 				best_tail = tail;
 				if (tail == 0)
@@ -134,9 +133,8 @@ BLK ALLQ_alloc( PLB pool, UCHAR type, int count)
    the entire free block as our block (a little extra won't hurt). */
 
 	free = *best;
-	FRB block;
-	if (best_tail > sizeof(frb)) {
-		USHORT l = free->frb_header.blk_length - size;
+	if (best_tail > sizeof(struct frb)) {
+		l = free->frb_header.blk_length - size;
 		block = (FRB) ((SCHAR *) free + l);
 		free->frb_header.blk_length -= size;
 	}
@@ -150,8 +148,8 @@ BLK ALLQ_alloc( PLB pool, UCHAR type, int count)
 	block->frb_header.blk_pool_id = pool->plb_pool_id;
 	block->frb_header.blk_length = size;
 
-	if (size -= sizeof(blk))
-		memset((SCHAR *) block + sizeof(blk), 0, size);
+	if (size -= sizeof(struct blk))
+		memset((SCHAR *) block + sizeof(struct blk), 0, size);
 
 	return (BLK) block;
 }
@@ -169,18 +167,21 @@ BLK ALLQ_extend(BLK * pointer, int size)
  *	Extend a repeating block, copying the constant part.
  *
  **************************************/
-	BLK block = *pointer;
-	BLK new_blk = (BLK) ALLQ_alloc((PLB) global_pools->vec_object[block->blk_pool_id],
+	BLK block, new_blk;
+	int length;
+
+	block = *pointer;
+	new_blk = (BLK) ALLQ_alloc((PLB) pools->vec_object[block->blk_pool_id],
 						   block->blk_type, size);
-	const int length = MIN(block->blk_length, new_blk->blk_length) - sizeof(blk);
-	MOVQ_fast((SCHAR*) block + sizeof(blk),
-			  (SCHAR*) new_blk + sizeof(blk), length);
+	length = MIN(block->blk_length, new_blk->blk_length) - sizeof(struct blk);
+	MOVQ_fast((SCHAR *) block + sizeof(struct blk),
+			  (SCHAR *) new_blk + sizeof(struct blk), length);
 	ALLQ_release((FRB) block);
 
 	if (new_blk->blk_type == (SCHAR) type_vec)
-		((qli_vec*) new_blk)->vec_count = size;
+		((VEC) new_blk)->vec_count = size;
 	else if (new_blk->blk_type == (SCHAR) type_vcl)
-		((qli_vcl*) new_blk)->vcl_count = size;
+		((VCL) new_blk)->vcl_count = size;
 
 	*pointer = new_blk;
 
@@ -200,20 +201,16 @@ void ALLQ_fini(void)
  *	Get rid of everything.
  *
  **************************************/
-	PLB* vector = (PLB*) global_pools->vec_object + global_pools->vec_count;
-	PLB* until = (PLB*) global_pools->vec_object;
-	while (--vector >= until)
-	{
-	    PLB pool = *vector;
-		if (pool)
-		{
-			HNK hunks, hunk;
+	PLB pool, *vector, *until;
+	HNK hunks, hunk;
+
+	for (vector = (PLB *) pools->vec_object + pools->vec_count,
+		 until = (PLB *) pools->vec_object; --vector >= until;)
+		if (pool = *vector)
 			for (hunks = pool->plb_hunks; hunk = hunks;) {
 				hunks = hunk->hnk_next;
 				ALLQ_free(hunk->hnk_address);
 			}
-		}
-	}
 }
 
 
@@ -247,16 +244,16 @@ void ALLQ_init(void)
  *
  **************************************/
 	ISC_STATUS_ARRAY temp_vector;
+	PLB pool;
 
-	global_pools = (qli_vec*) temp_vector;
-	global_pools->vec_count = 1;
-	global_pools->vec_object[0] = NULL;
+	pools = (VEC) temp_vector;
+	pools->vec_count = 1;
+	pools->vec_object[0] = NULL;
 
-    PLB pool = ALLQ_pool();
-	QLI_default_pool = QLI_permanent_pool = pool;
-	global_pools = (qli_vec*) ALLQ_alloc(pool, type_vec, 10);
-	global_pools->vec_count = 10;
-	global_pools->vec_object[0] = (BLK) pool;
+	QLI_default_pool = QLI_permanent_pool = pool = ALLQ_pool();
+	pools = (VEC) ALLQ_alloc(pool, type_vec, 10);
+	pools->vec_count = 10;
+	pools->vec_object[0] = (BLK) pool;
 }
 
 
@@ -272,16 +269,16 @@ SCHAR *ALLQ_malloc(SLONG size)
  *	Get memory from system.
  *
  **************************************/
-	SCHAR *memory = (SCHAR*) gds__alloc(size);
+	SCHAR *memory;
 
-	if (memory) {
+	if (memory = (SCHAR *) gds__alloc(size)) {
 #ifdef DEBUG_GDS_ALLOC
-		gds_alloc_flag_unfreed((void *) memory);	// Don't care about QLI leaks
+		gds_alloc_flag_unfreed((void *) memory);	/* Don't care about QLI leaks */
 #endif
 		return memory;
 	}
 
-	IBERROR(5);					// Msg5 "memory gonzo"
+	IBERROR(5);					/* Msg5 "memory gonzo" */
 	return 0;
 }
 
@@ -300,30 +297,31 @@ PLB ALLQ_pool(void)
  *	In SHORT, by mirrors.
  *
  **************************************/
-	USHORT pool_id;
+	struct plb temp_pool;
+	PLB pool;
+	int pool_id;
 
-// Start by assigning a pool id
+/* Start by assigning a pool id */
 
-	for (pool_id = 0; pool_id < global_pools->vec_count; pool_id++)
-		if (!(global_pools->vec_object[pool_id]))
+	for (pool_id = 0; pool_id < pools->vec_count; pool_id++)
+		if (!(pools->vec_object[pool_id]))
 			break;
 
-	if (pool_id >= global_pools->vec_count)
-		ALLQ_extend((BLK*) &global_pools, pool_id + 10);
+	if (pool_id >= pools->vec_count)
+		ALLQ_extend((BLK*) &pools, pool_id + 10);
 
-	plb temp_pool;
-	global_pools->vec_object[pool_id] = (BLK) &temp_pool;
+	pools->vec_object[pool_id] = (BLK) & temp_pool;
 	temp_pool.plb_free = NULL;
 	temp_pool.plb_hunks = NULL;
 	temp_pool.plb_pool_id = pool_id;
 	if (pool_id == 0)
 		QLI_permanent_pool = &temp_pool;
 
-	PLB pool = (PLB) ALLQ_alloc(&temp_pool, type_plb, 0);
+	pool = (PLB) ALLQ_alloc(&temp_pool, type_plb, 0);
 	pool->plb_pool_id = pool_id;
 	pool->plb_free = temp_pool.plb_free;
 	pool->plb_hunks = temp_pool.plb_hunks;
-	global_pools->vec_object[pool_id] = (BLK) pool;
+	pools->vec_object[pool_id] = (BLK) pool;
 
 	if (pool_id == 0)
 		QLI_permanent_pool = pool;
@@ -332,7 +330,7 @@ PLB ALLQ_pool(void)
 }
 
 
-void ALLQ_push( BLK object, qli_lls** stack)
+void ALLQ_push( BLK object, LLS * stack)
 {
 /**************************************
  *
@@ -341,16 +339,18 @@ void ALLQ_push( BLK object, qli_lls** stack)
  **************************************
  *
  * Functional description
- *	Push an object on a qli_lls stack.
+ *	Push an object on an LLS stack.
  *
  **************************************/
-	PLB pool = QLI_default_pool;
+	LLS node;
+	PLB pool;
 
-    qli_lls* node = pool->plb_lls;
-	if (node)
+	pool = QLI_default_pool;
+
+	if (node = pool->plb_lls)
 		pool->plb_lls = node->lls_next;
 	else
-		node = (qli_lls*) ALLQ_alloc(pool, type_lls, 0);
+		node = (LLS) ALLQ_alloc(pool, type_lls, 0);
 
 	node->lls_object = object;
 	node->lls_next = *stack;
@@ -358,7 +358,7 @@ void ALLQ_push( BLK object, qli_lls** stack)
 }
 
 
-BLK ALLQ_pop(qli_lls** stack)
+BLK ALLQ_pop(LLS * stack)
 {
 /**************************************
  *
@@ -371,8 +371,11 @@ BLK ALLQ_pop(qli_lls** stack)
  *	further use.
  *
  **************************************/
-	qli_lls* node = *stack;
-	PLB pool = (PLB) global_pools->vec_object[node->lls_header.blk_pool_id];
+	LLS node;
+	PLB pool;
+
+	node = *stack;
+	pool = (PLB) pools->vec_object[node->lls_header.blk_pool_id];
 	*stack = node->lls_next;
 	node->lls_next = pool->plb_lls;
 	pool->plb_lls = node;
@@ -396,57 +399,55 @@ void ALLQ_release( FRB block)
  *	of addresses).
  *
  **************************************/
-	block->frb_header.blk_type = (SCHAR) type_frb;
-	UCHAR pool_id = block->frb_header.blk_pool_id;
-
+	FRB prior, free;
+	FRB *ptr;
 	PLB pool;
-	if (pool_id >= global_pools->vec_count ||
-		!(pool = (PLB) global_pools->vec_object[pool_id]))
-	{
-		ERRQ_bugcheck(4);
-		// Msg4 bad pool id
-	}
+	int pool_id;
 
-	FRB prior = NULL;
-	FRB free;
-	FRB* ptr;
+	block->frb_header.blk_type = (SCHAR) type_frb;
+	pool_id = block->frb_header.blk_pool_id;
+
+	if (pool_id >= pools->vec_count ||
+		!(pool = (PLB) pools->vec_object[pool_id])) BUGCHECK(4);	/* Msg4 bad pool id */
+
+	prior = NULL;
 	for (ptr = &pool->plb_free; free = *ptr;
-		 prior = free, ptr = &free->frb_next)
-	{
-		if ((SCHAR *) block <= (SCHAR *) free)
-			break;
-	}
+		 prior = free, ptr =
+		 &free->frb_next) if ((SCHAR *) block <=
+							  (SCHAR *) free) break;
 
 	if ((SCHAR *) block == (SCHAR *) free)
-		ERRQ_bugcheck(435);			// block released twice
+		BUGCHECK(435);			/* block released twice */
 
-// Merge block into list first, then try to combine blocks
+/* Merge block into list first, then try to combine blocks */
 
 	block->frb_next = free;
 	*ptr = block;
 
-// Try to merge the free block with the next one down.
+/* Try to merge the free block with the next one down. */
 
 	if (free) {
-		if ((SCHAR *) block + block->frb_header.blk_length == (SCHAR *) free)
-		{
+		if ((SCHAR *) block + block->frb_header.blk_length ==
+			(SCHAR *) free) {
 			block->frb_header.blk_length += free->frb_header.blk_length;
 			block->frb_next = free->frb_next;
 		}
-		else if ((SCHAR *) block + block->frb_header.blk_length > (SCHAR *) free)
-			ERRQ_bugcheck(436);		// released block overlaps following free block
+		else if ((SCHAR *) block + block->frb_header.blk_length >
+				 (SCHAR *) free)
+			BUGCHECK(436);		/* released block overlaps following free block */
 	}
 
-// Try and merge the block with the prior free block
+/* Try and merge the block with the prior free block */
 
 	if (prior) {
-		if ((SCHAR *) prior + prior->frb_header.blk_length == (SCHAR *) block)
-		{
+		if ((SCHAR *) prior + prior->frb_header.blk_length ==
+			(SCHAR *) block) {
 			prior->frb_header.blk_length += block->frb_header.blk_length;
 			prior->frb_next = block->frb_next;
 		}
-		else if ((SCHAR *) prior + prior->frb_header.blk_length > (SCHAR *) block)
-			ERRQ_bugcheck(437);		// released block overlaps prior free block
+		else if ((SCHAR *) prior + prior->frb_header.blk_length >
+				 (SCHAR *) block)
+			BUGCHECK(437);		/* released block overlaps prior free block */
 	}
 }
 
@@ -464,9 +465,10 @@ void ALLQ_rlpool( PLB pool)
  *	hunks to the free hunk list.
  *
  **************************************/
-	global_pools->vec_object[pool->plb_pool_id] = NULL;
-
 	HNK hunk, hunks;
+
+	pools->vec_object[pool->plb_pool_id] = NULL;
+
 	for (hunks = pool->plb_hunks; hunk = hunks;) {
 		hunks = hunk->hnk_next;
 		gds__free(hunk->hnk_address);
@@ -487,23 +489,26 @@ static void extend_pool( PLB pool, USHORT count)
  *	of given size.
  *
  **************************************/
-	const SLONG size =
-		(count + sizeof(hnk) + MIN_ALLOCATION - 1) & ~(MIN_ALLOCATION - 1);
+	HNK hunk;
+	BLK block;
+	SLONG size;
+
+	size =
+		(count + sizeof(struct hnk) + MIN_ALLOCATION - 1) & ~(MIN_ALLOCATION -
+															  1);
 
 	if ((USHORT) size < count)
-		IBERROR(481);			// msg 481 unsuccessful attempt to extend pool beyond 64KB
+		IBERROR(481);			/* msg 481 unsuccessful attempt to extend pool beyond 64KB */
 
-	BLK block = (BLK) ALLQ_malloc(size);
+	block = (BLK) ALLQ_malloc(size);
 	block->blk_length = size;
 	block->blk_type = (SCHAR) type_frb;
 	block->blk_pool_id = pool->plb_pool_id;
 	ALLQ_release((FRB) block);
 
-	HNK hunk = (HNK) ALLQ_alloc(pool, type_hnk, 0);
+	hunk = (HNK) ALLQ_alloc(pool, type_hnk, 0);
 	hunk->hnk_address = (SCHAR *) block;
 	hunk->hnk_length = size;
 	hunk->hnk_next = pool->plb_hunks;
 	pool->plb_hunks = hunk;
 }
-
-

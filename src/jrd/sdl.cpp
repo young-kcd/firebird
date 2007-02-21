@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Access Method
- *	MODULE:		sdl.cpp
+ *	MODULE:		sdl.c
  *	DESCRIPTION:	Array slice manipulator
  *
  * The contents of this file are subject to the Interbase Public
@@ -28,82 +28,83 @@
 #ifndef REQUESTER
 #include "../jrd/jrd.h"
 #endif
-#include "../jrd/ibase.h"
+#include "../jrd/gds.h"
 #include "../jrd/val.h"
 #include "../jrd/sdl.h"
 #include "../jrd/intl.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/sdl_proto.h"
 
-const int COMPILE_SIZE	= 256;
+#ifndef DEV_BUILD
+#undef _assert
+#define _assert(ex)
+#undef assert
+#define assert(ex)
 
-using namespace Jrd;
+#else	// DEV_BUILD
 
-struct sdl_arg {
-	//USHORT sdl_arg_mode; // unused
-	Ods::InternalArrayDesc* sdl_arg_desc;
-	const UCHAR* sdl_arg_sdl;
-	UCHAR* sdl_arg_array;
-	SLONG* sdl_arg_variables;
-	SDL_walk_callback sdl_arg_callback;
-	array_slice* sdl_arg_argument;
-	ISC_STATUS* sdl_arg_status_vector;
+#include "../jrd/ib_stdio.h"
+#ifdef _assert
+#undef _assert
+#endif
+#ifdef __LINE__IS_INT
+#define _assert(ex)	{if (!(ex)){(void) ib_fprintf (ib_stderr, "assert failure: %s %d\n", __FILE__, __LINE__);}}
+#else
+#define _assert(ex)	{if (!(ex)){(void) ib_fprintf (ib_stderr, "assert failure: %s %ld\n", __FILE__, __LINE__);}}
+#endif
+#ifdef assert
+#undef assert
+#endif
+#define assert(ex)	_assert(ex)
+
+#endif	// DEV_BUILD
+
+
+#define COMPILE_SIZE	256
+
+typedef struct sdl_arg {
+	USHORT sdl_arg_mode;
+	ADS sdl_arg_desc;
+	UCHAR *sdl_arg_sdl;
+	UCHAR *sdl_arg_array;
+	SLONG *sdl_arg_variables;
+	void (*sdl_arg_callback) ();
+	SLICE sdl_arg_argument;
+	ISC_STATUS *sdl_arg_status_vector;
 	IPTR sdl_arg_compiled[COMPILE_SIZE];
-	IPTR* sdl_arg_next;
-	const IPTR* sdl_arg_end;
-};
+	IPTR *sdl_arg_next;
+	IPTR *sdl_arg_end;
+} *SDL_ARG;
 
 /* Structure to computes ranges */
 
-// Let's stop this insanity! The header rng.h defined rng for the purposes
-// of refresh range and emulation of file-based data formats like Pdx.
-// Therefore, I renamed this struct array_range.
-struct array_range {
+typedef struct rng {
 	SLONG rng_minima[64];
 	SLONG rng_maxima[64];
-	sdl_info* rng_info;
-};
+	SDL_INFO rng_info;
+} *RNG;
 
-static const UCHAR* compile(const UCHAR*, sdl_arg*);
-static ISC_STATUS error(ISC_STATUS*, ...);
-static bool execute(sdl_arg*);
-static const UCHAR* get_range(const UCHAR*, array_range*, SLONG*, SLONG*);
-
-inline SSHORT get_word(const UCHAR*& ptr)
-{
-/**************************************
- *
- * g e t _ w o r d
- *
- **************************************
- *
- * Functional description
- *	gather a int16 from two little-endian
- *  unsigned chars and advance the pointer
- *
- **************************************/
-	SSHORT n = *ptr++;
-	n |= (*ptr++) << 8;
-
-	return n;
-}
-
-static const UCHAR* sdl_desc(const UCHAR*, DSC*);
-static IPTR* stuff(IPTR, sdl_arg*);
+static UCHAR *compile(UCHAR *, SDL_ARG);
+static ISC_STATUS error(ISC_STATUS *, ...);
+static BOOLEAN execute(SDL_ARG);
+static UCHAR *get_range(UCHAR *, RNG, SLONG *, SLONG *);
+static SSHORT get_word(UCHAR **);
+static UCHAR *sdl_desc(UCHAR *, DSC *);
+static IPTR *stuff(IPTR, SDL_ARG);
 
 
-const int op_literal	= 1;
-const int op_variable	= 2;
-const int op_add		= 3;
-const int op_subtract	= 4;
-const int op_multiply	= 5;
-const int op_divide		= 6;
-const int op_iterate	= 7;
-const int op_goto		= 8;
-const int op_element	= 9;
-const int op_loop		= 10;
-const int op_exit		= 11;
-const int op_scalar		= 12;
+#define op_literal	1
+#define op_variable	2
+#define op_add		3
+#define op_subtract	4
+#define op_multiply	5
+#define op_divide	6
+#define op_iterate	7
+#define op_goto		8
+#define op_element	9
+#define op_loop		10
+#define op_exit		11
+#define op_scalar	12
 
 /*
    The structure for a loop is:
@@ -116,32 +117,10 @@ const int op_scalar		= 12;
 */
 
 
-// CVC: This is a routine that merely copies binary slice description buffer
-// to new place and if the new place's size it's not enough, allocates a buffer.
-// Typically, "target" is a static buffer with limited size for the small cases.
-// Was made for "remote/interface.cpp" to ensure input buffers aren't overwritten.
-UCHAR* SDL_clone_sdl(const UCHAR* origin, size_t origin_size,
-	UCHAR* target, size_t target_size)
-{
-	UCHAR* temp_sdl = target;
-	if (origin_size > target_size) {
-		temp_sdl = (UCHAR*)gds__alloc((SLONG) origin_size);
-		// FREE: apparently never freed, the caller is responsible.
-		if (!temp_sdl)
-		{	// NOMEM: ignore operation
-			fb_assert_continue(FALSE);	// no real error handling
-			return 0;
-		}
-	}
-	memcpy(temp_sdl, origin, origin_size);
-	return temp_sdl;
-}
-
-
-SLONG SDL_compute_subscript(ISC_STATUS* status_vector,
-							const Ods::InternalArrayDesc* desc,
-							USHORT dimensions,
-							const SLONG* subscripts)
+SLONG DLL_EXPORT SDL_compute_subscript(
+									   ISC_STATUS * status_vector,
+									   ADS desc,
+									   USHORT dimensions, SLONG * subscripts)
 {
 /**************************************
  *
@@ -154,33 +133,35 @@ SLONG SDL_compute_subscript(ISC_STATUS* status_vector,
  *	reference. 
  *
  **************************************/
-	if (dimensions != desc->iad_dimensions) {
-		error(status_vector, isc_invalid_dimension,
-			  isc_arg_number, (SLONG) desc->iad_dimensions,
-			  isc_arg_number, (SLONG) dimensions, 0);
+	SLONG subscript, n;
+	ads::ads_repeat * range;
+	ads::ads_repeat * end;
+
+	if (dimensions != desc->ads_dimensions) {
+		error(status_vector, gds_invalid_dimension,
+			  gds_arg_number, (SLONG) desc->ads_dimensions,
+			  gds_arg_number, (SLONG) dimensions, 0);
 		return -1;
 	}
 
-	SLONG subscript = 0;
+	subscript = 0;
 
-	const Ods::InternalArrayDesc::iad_repeat* range = desc->iad_rpt;
-	for (const Ods::InternalArrayDesc::iad_repeat* const end = range + desc->iad_dimensions;
-		 range < end; ++range)
-	{
-		const SLONG n = *subscripts++;
-		if (n < range->iad_lower || n > range->iad_upper) {
-			error(status_vector, isc_out_of_bounds, 0);
+	for (range = desc->ads_rpt, end = range + desc->ads_dimensions;
+		 range < end; ++range) {
+		n = *subscripts++;
+		if (n < range->ads_lower || n > range->ads_upper) {
+			error(status_vector, gds_out_of_bounds, 0);
 			return -1;
 		}
-		subscript += (n - range->iad_lower) * range->iad_length;
+		subscript += (n - range->ads_lower) * range->ads_length;
 	}
 
 	return subscript;
 }
 
 
-ISC_STATUS SDL_info(ISC_STATUS* status_vector,
-							const UCHAR* sdl, sdl_info* info, SLONG* vector)
+ISC_STATUS API_ROUTINE SDL_info(ISC_STATUS * status_vector,
+							UCHAR * sdl, SDL_INFO info, SLONG * vector)
 {
 /**************************************
  *
@@ -193,49 +174,52 @@ ISC_STATUS SDL_info(ISC_STATUS* status_vector,
  *	element descriptor.
  *
  **************************************/
+	UCHAR *p;
+	TEXT *q;
 	USHORT n, offset;
-	array_range range;
+	SLONG min, max;
+	struct rng range;
 
-	const UCHAR* p = sdl;
+	p = sdl;
 	info->sdl_info_fid = info->sdl_info_rid = 0;
-	info->sdl_info_relation = info->sdl_info_field = "";
+	info->sdl_info_relation[0] = info->sdl_info_field[0] = 0;
 
-	if (*p++ != isc_sdl_version1)
-		return error(status_vector, isc_invalid_sdl,
-					 isc_arg_number, (SLONG) 0, 0);
+	if (*p++ != gds_sdl_version1)
+		return error(status_vector, gds_invalid_sdl,
+					 gds_arg_number, (SLONG) 0, 0);
 
 	for (;;)
 		switch (*p++) {
-		case isc_sdl_struct:
+		case gds_sdl_struct:
 			n = *p++;
 			if (n != 1)
-				return error(status_vector, isc_invalid_sdl,
-							 isc_arg_number, (SLONG) (p - sdl - 1), 0);
+				return error(status_vector, gds_invalid_sdl,
+							 gds_arg_number, (SLONG) (p - sdl - 1), 0);
 			offset = p - sdl;
 			if (!(p = sdl_desc(p, &info->sdl_info_element)))
-				return error(status_vector, isc_invalid_sdl,
-							 isc_arg_number, (SLONG) offset, 0);
+				return error(status_vector, gds_invalid_sdl,
+							 gds_arg_number, (SLONG) offset, 0);
 			info->sdl_info_element.dsc_address = 0;
 			break;
 
-		case isc_sdl_fid:
-			info->sdl_info_fid = get_word(p);
+		case gds_sdl_fid:
+			info->sdl_info_fid = get_word(&p);
 			break;
 
-		case isc_sdl_rid:
-			info->sdl_info_rid = get_word(p);
+		case gds_sdl_rid:
+			info->sdl_info_rid = get_word(&p);
 			break;
 
-		case isc_sdl_field:
-			n = *p++;
-			info->sdl_info_field.assign(reinterpret_cast<const char *>(p), n);
-			p += n;
+		case gds_sdl_field:
+			for (n = *p++, q = info->sdl_info_field; n; --n)
+				*q++ = (TEXT) * p++;
+			*q = 0;
 			break;
 
-		case isc_sdl_relation:
-			n = *p++;
-			info->sdl_info_relation.assign(reinterpret_cast<const char *>(p), n);
-			p += n;
+		case gds_sdl_relation:
+			for (n = *p++, q = info->sdl_info_relation; n; --n)
+				*q++ = (TEXT) * p++;
+			*q = 0;
 			break;
 
 		default:
@@ -244,20 +228,17 @@ ISC_STATUS SDL_info(ISC_STATUS* status_vector,
 				memcpy(range.rng_minima, vector, sizeof(range.rng_minima));
 				memcpy(range.rng_maxima, vector, sizeof(range.rng_maxima));
 				range.rng_info = info;
-				SLONG min = -1, max = -1;
+				min = max = -1;
 				if (!(p = get_range(p - 1, &range, &min, &max))
-					|| (*p != isc_sdl_eoc))
-				{
+					|| (((UCHAR) * p) != gds_sdl_eoc))
 					info->sdl_info_dimensions = 0;
-				}
 			}
 			return FB_SUCCESS;
 		}
 }
 
 
-// CVC: May revisit this function's tricky constness later.
-const UCHAR* SDL_prepare_slice(const UCHAR* sdl, USHORT sdl_length)
+UCHAR *DLL_EXPORT SDL_prepare_slice(UCHAR * sdl, USHORT sdl_length)
 {
 /**************************************
  *
@@ -270,56 +251,52 @@ const UCHAR* SDL_prepare_slice(const UCHAR* sdl, USHORT sdl_length)
  *	blr_d_float to blr_double.
  *
  **************************************/
-	DSC	junk;
+	UCHAR*	new_sdl;
+	UCHAR*	old_sdl;
+	DSC		junk;
 	USHORT	n;
 
-	const UCHAR* const old_sdl = sdl;
-	const UCHAR* new_sdl = sdl;
+	new_sdl = old_sdl = sdl;
 
-	if (*sdl++ != isc_sdl_version1)
+	if (*sdl++ != gds_sdl_version1)
 		return old_sdl;
 
-	while (*sdl != isc_sdl_eoc)
+	while ((UCHAR) * sdl != gds_sdl_eoc)
 	{
 		switch (*sdl++)
 		{
-		case isc_sdl_struct:
+		case gds_sdl_struct:
 			for (n = *sdl++; n; --n)
 			{
 				if (*sdl == blr_d_float)
 				{
 					if (new_sdl == old_sdl)
 					{
-						UCHAR* temp_sdl = (UCHAR*)gds__alloc((SLONG) sdl_length);
+						new_sdl = (UCHAR*)gds__alloc((SLONG) sdl_length);
 						/* FREE: apparently never freed */
-						if (!temp_sdl)
+						if (!new_sdl)
 						{	/* NOMEM: ignore operation */
-							fb_assert_continue(FALSE);	/* no real error handling */
+							assert(FALSE);	/* no real error handling */
 							return old_sdl;
 						}
-						memcpy(temp_sdl, old_sdl, sdl_length);
-						new_sdl = temp_sdl;
+						memcpy(new_sdl, old_sdl, sdl_length);
 						sdl = new_sdl + (sdl - old_sdl);
 					}
-					// CVC: At this time, sdl points to new_sdl, so
-					// throwing the constness away is safe.
-					*const_cast<UCHAR*>(sdl) = blr_double;
+					*sdl = blr_double;
 				}
 
-				// const_cast makes sense since we passed non-const object
-				// to sdl_desc, so we got just another position in the same string.
 				if (!(sdl = sdl_desc(sdl, &junk)))
 					return new_sdl;
 			}
 			break;
 
-		case isc_sdl_fid:
-		case isc_sdl_rid:
+		case gds_sdl_fid:
+		case gds_sdl_rid:
 			sdl += 2;
 			break;
 
-		case isc_sdl_field:
-		case isc_sdl_relation:
+		case gds_sdl_field:
+		case gds_sdl_relation:
 			n = *sdl++;
 			sdl += n;
 			break;
@@ -333,14 +310,12 @@ const UCHAR* SDL_prepare_slice(const UCHAR* sdl, USHORT sdl_length)
 }
 
 
-int	SDL_walk(ISC_STATUS* status_vector,
-		const UCHAR* sdl,
-		//bool mode, // Unused, always got true, passed to sdl_arg_mode that's unused
-		UCHAR* array,
-		Ods::InternalArrayDesc* array_desc,
-		SLONG* variables,
-		SDL_walk_callback callback,
-		array_slice* argument)
+int DLL_EXPORT SDL_walk(
+						ISC_STATUS * status_vector,
+						UCHAR * sdl,
+						USHORT mode,
+						UCHAR * array,
+ADS array_desc, SLONG * variables, void (*callback) (), SLICE argument)
 {
 /**************************************
  *
@@ -352,11 +327,12 @@ int	SDL_walk(ISC_STATUS* status_vector,
  *	Walk a slice.  
  *
  **************************************/
+	UCHAR *p;
 	DSC junk;
 	USHORT n, offset;
-	sdl_arg arg;
+	struct sdl_arg arg;
 
-	//arg.sdl_arg_mode = mode ? TRUE: FALSE; // Unused
+	arg.sdl_arg_mode = mode;
 	arg.sdl_arg_array = array;
 	arg.sdl_arg_sdl = sdl;
 	arg.sdl_arg_desc = array_desc;
@@ -364,37 +340,39 @@ int	SDL_walk(ISC_STATUS* status_vector,
 	arg.sdl_arg_callback = callback;
 	arg.sdl_arg_argument = argument;
 	arg.sdl_arg_status_vector = status_vector;
-	const UCHAR* p = sdl + 1;
+	p = sdl + 1;
 
-	while (*p != isc_sdl_eoc) {
+	while ((UCHAR) * p != gds_sdl_eoc) {
 		switch (*p++) {
-		case isc_sdl_struct:
+		case gds_sdl_struct:
 			for (n = *p++; n; --n) {
 				offset = p - sdl - 1;
 				if (!(p = sdl_desc(p, &junk))) 
-					return error(status_vector, isc_invalid_sdl,
-								 isc_arg_number, (SLONG) offset, 0);
+					return error(status_vector, gds_invalid_sdl,
+								 gds_arg_number, (SLONG) offset, 0);
 			}
 			break;
 
-		case isc_sdl_fid:
-		case isc_sdl_rid:
+		case gds_sdl_fid:
+		case gds_sdl_rid:
 			p += 2;
 			break;
 
-		case isc_sdl_field:
-		case isc_sdl_relation:
+		case gds_sdl_field:
+		case gds_sdl_relation:
 			n = *p++;
 			p += n;
 			break;
 
 		default:
 			/* Check that element is in range of valid SDL */
-			fb_assert_continue(*(p - 1) >= isc_sdl_version1
-								&& *(p - 1) <= isc_sdl_element);
+			assert(*(p - 1) >= gds_sdl_version1
+				   && *(p - 1) <= gds_sdl_element);
 
 			arg.sdl_arg_next = arg.sdl_arg_compiled;
-			arg.sdl_arg_end = arg.sdl_arg_compiled + COMPILE_SIZE;
+			arg.sdl_arg_end =
+				(IPTR *) ((SCHAR *) arg.sdl_arg_compiled +
+						  sizeof(arg.sdl_arg_compiled));
 			if (!(p = compile(p - 1, &arg)))
 				return FB_FAILURE;
 			if (!stuff((IPTR) op_exit, &arg))
@@ -409,7 +387,7 @@ int	SDL_walk(ISC_STATUS* status_vector,
 }
 
 
-static const UCHAR* compile(const UCHAR* sdl, sdl_arg* arg)
+static UCHAR *compile(UCHAR * sdl, SDL_ARG arg)
 {
 /**************************************
  *
@@ -422,31 +400,28 @@ static const UCHAR* compile(const UCHAR* sdl, sdl_arg* arg)
  *	is null, parse, but do not generate anything.
  *
  **************************************/
-	SLONG n, count, variable, value, sdl_operator;
-	IPTR* label;
-	const UCHAR* expressions[MAX_ARRAY_DIMENSIONS];
-	const UCHAR** expr;
+	SLONG n, count, variable, value, op, operator_;
+	IPTR *label;
+	UCHAR *p, *ptr1, *expressions[16], **expr;
 
 #define STUFF(word, arg)	if (!stuff ((IPTR) word, arg)) return NULL
 #define COMPILE(p, arg)		if (!(p = compile (p, arg))) return NULL
 
-	const UCHAR* ptr1;
-	const UCHAR* p = sdl;
+	p = sdl;
 
-	UCHAR op = *p++;
-	switch (op) {
-	case isc_sdl_do1:
-	case isc_sdl_do2:
-	case isc_sdl_do3:
+	switch (op = *p++) {
+	case gds_sdl_do1:
+	case gds_sdl_do2:
+	case gds_sdl_do3:
 		variable = *p++;
-		if (op == isc_sdl_do1)
+		if (op == gds_sdl_do1)
 			ptr1 = NULL;
 		else {
 			ptr1 = p;
 			COMPILE(p, 0);		/* skip over lower bound */
 		}
 		COMPILE(p, arg);		/* upper bound */
-		if (op == isc_sdl_do3) {
+		if (op == gds_sdl_do3) {
 			COMPILE(p, arg);	/* increment */
 		}
 		else {
@@ -473,53 +448,54 @@ static const UCHAR* compile(const UCHAR* sdl, sdl_arg* arg)
 			label[2] = (IPTR) arg->sdl_arg_next;
 		return p;
 
-	case isc_sdl_variable:
+	case gds_sdl_variable:
 		STUFF(op_variable, arg);
 		STUFF(*p++, arg);
 		return p;
 
-	case isc_sdl_tiny_integer:
+	case gds_sdl_tiny_integer:
 		value = (SCHAR) * p++;
 		STUFF(op_literal, arg);
 		STUFF(value, arg);
 		return p;
 
-	case isc_sdl_short_integer:
+	case gds_sdl_short_integer:
 		value = (SSHORT) (p[0] | (p[1] << 8));
 		STUFF(op_literal, arg);
 		STUFF(value, arg);
 		return p + 2;
 
-	case isc_sdl_long_integer:
-		value = (SLONG) (p[0] | (p[1] << 8) | ((SLONG) p[2] << 16) |
-		        ((SLONG) p[3] << 24));
+	case gds_sdl_long_integer:
+		value =
+			(SLONG) (p[0] | (p[1] << 8) | ((SLONG) p[2] << 16) |
+					 ((SLONG) p[3] << 24));
 		STUFF(op_literal, arg);
 		STUFF(value, arg);
 		return p + 4;
 
-	case isc_sdl_add:
-		sdl_operator = op_add;
-	case isc_sdl_subtract:
-		if (!sdl_operator)
-			sdl_operator = op_subtract;
-	case isc_sdl_multiply:
-		if (!sdl_operator)
-			sdl_operator = op_multiply;
-	case isc_sdl_divide:
-		if (!sdl_operator)
-			sdl_operator = op_divide;
+	case gds_sdl_add:
+		operator_ = op_add;
+	case gds_sdl_subtract:
+		if (!operator_)
+			operator_ = op_subtract;
+	case gds_sdl_multiply:
+		if (!operator_)
+			operator_ = op_multiply;
+	case gds_sdl_divide:
+		if (!operator_)
+			operator_ = op_divide;
 		COMPILE(p, arg);
 		COMPILE(p, arg);
-		STUFF(sdl_operator, arg);
+		STUFF(operator_, arg);
 		return p;
 
-	case isc_sdl_scalar:
+	case gds_sdl_scalar:
 		op = *p++;
 		count = *p++;
-		if (arg && count != arg->sdl_arg_desc->iad_dimensions) {
-			error(arg->sdl_arg_status_vector, isc_invalid_dimension,
-				  isc_arg_number, (SLONG) arg->sdl_arg_desc->iad_dimensions,
-				  isc_arg_number, (SLONG) count, 0);
+		if (arg && count != arg->sdl_arg_desc->ads_dimensions) {
+			error(arg->sdl_arg_status_vector, gds_invalid_dimension,
+				  gds_arg_number, (SLONG) arg->sdl_arg_desc->ads_dimensions,
+				  gds_arg_number, (SLONG) count, 0);
 			return NULL;
 		}
 		expr = expressions;
@@ -535,10 +511,10 @@ static const UCHAR* compile(const UCHAR* sdl, sdl_arg* arg)
 		STUFF(count, arg);
 		return p;
 
-	case isc_sdl_element:
+	case gds_sdl_element:
 		count = *p++;
 		if (arg && count != 1) {
-			error(arg->sdl_arg_status_vector, isc_datnotsup, isc_arg_end);
+			error(arg->sdl_arg_status_vector, gds_datnotsup, gds_arg_end);
 			/* Msg107: "data operation not supported" (arrays of structures) */
 			return NULL;
 		}
@@ -555,8 +531,8 @@ static const UCHAR* compile(const UCHAR* sdl, sdl_arg* arg)
 		return p;
 
 	default:
-		error(arg->sdl_arg_status_vector, isc_invalid_sdl,
-			  isc_arg_number, (SLONG) (p - arg->sdl_arg_sdl - 1), 0);
+		error(arg->sdl_arg_status_vector, gds_invalid_sdl,
+			  gds_arg_number, (SLONG) (p - arg->sdl_arg_sdl - 1), 0);
 		return NULL;
 	}
 }
@@ -583,52 +559,51 @@ static ISC_STATUS error(ISC_STATUS * status_vector, ...)
 /* Get the addresses of the argument vector and the status vector, and do
    word-wise copy. */
 
-	va_start(args, status_vector);
+	VA_START(args, status_vector);
 	p = status_vector;
 
 /* Copy first argument */
 
-	*p++ = isc_arg_gds;
+	*p++ = gds_arg_gds;
 	*p++ = va_arg(args, ISC_STATUS);
 
 /* Pick up remaining args */
 
 	while (*p++ = type = va_arg(args, int))
 		switch (type) {
-		case isc_arg_gds:
+		case gds_arg_gds:
 			*p++ = (ISC_STATUS) va_arg(args, ISC_STATUS);
 			break;
 
-		case isc_arg_string:
-		case isc_arg_interpreted:
+		case gds_arg_string:
+		case gds_arg_interpreted:
 			*p++ = (ISC_STATUS) va_arg(args, TEXT *);
 			break;
 
 /****
-	case isc_arg_cstring:
+	case gds_arg_cstring:
 	    *p++ = (ISC_STATUS) va_arg (args, int);
 	    *p++ = (ISC_STATUS) va_arg (args, TEXT*);
 	    break;
 ****/
 
-		case isc_arg_number:
+		case gds_arg_number:
 			*p++ = va_arg(args, SLONG);
 			break;
 
 		default:
-			fb_assert_continue(FALSE);
-		case isc_arg_vms:
-		case isc_arg_unix:
+			assert(FALSE);
+		case gds_arg_vms:
+		case gds_arg_unix:
 			*p++ = va_arg(args, int);
 			break;
 		}
-		
-	va_end(args);
+
 	return status_vector[1];
 }
 
 
-static bool execute(sdl_arg* arg)
+static BOOLEAN execute(SDL_ARG arg)
 {
 /**************************************
  *
@@ -640,20 +615,23 @@ static bool execute(sdl_arg* arg)
  *	Execute compiled slice description language.
  *
  **************************************/
-	SLONG* variable;
-	SLONG stack[64];
-	SLONG value, count;
-	dsc element_desc;
+	SLONG *variables, *variable, stack[64], *stack_ptr,
+		value, count, n, subscript, x;
+	IPTR *next;
+	ADS array_desc;
+	DSC element_desc;
+	ads::ads_repeat * range;
+	ads::ads_repeat * range_end;
+	DSC *slice_desc;
 
-	Ods::InternalArrayDesc* array_desc = arg->sdl_arg_desc;
-	const Ods::InternalArrayDesc::iad_repeat* const range_end = 
-		array_desc->iad_rpt + array_desc->iad_dimensions;
-	SLONG* variables = arg->sdl_arg_variables;
-	const IPTR* next = arg->sdl_arg_compiled;
-	SLONG* stack_ptr = stack + FB_NELEM(stack);
+	array_desc = arg->sdl_arg_desc;
+	range_end = array_desc->ads_rpt + array_desc->ads_dimensions;
+	variables = arg->sdl_arg_variables;
+	next = arg->sdl_arg_compiled;
+	stack_ptr = stack + 64;
 
 	for (;;) {
-		const SLONG x = *next++;
+		x = *next++;
 		switch (x) {
 		case op_literal:
 			*--stack_ptr = *next++;
@@ -684,14 +662,14 @@ static bool execute(sdl_arg* arg)
 			break;
 
 		case op_goto:
-			next = (IPTR*) *next;
+			next = (IPTR *) * next;
 			break;
 
 		case op_loop:
 			variable = variables + next[1];
 			*variable = *stack_ptr++;
 			if (*variable > stack_ptr[1]) {
-				next = (IPTR*) next[2];
+				next = (IPTR *) next[2];
 				stack_ptr += 2;
 			}
 			else
@@ -710,57 +688,56 @@ static bool execute(sdl_arg* arg)
 			break;
 
 		case op_scalar:
-			{
-				value = *next++;
-				next++;				/* Skip count, unsupported. */
-				SLONG subscript = 0;
-				for (const Ods::InternalArrayDesc::iad_repeat* range = array_desc->iad_rpt;
-					 range < range_end; ++range)
-				{
-					const SLONG n = *stack_ptr++;
-					if (n < range->iad_lower || n > range->iad_upper) {
-						error(arg->sdl_arg_status_vector, isc_out_of_bounds, 0);
-						return false;
-					}
-					subscript += (n - range->iad_lower) * range->iad_length;
+			value = *next++;
+			next++;				/* Skip count, unsupported. */
+			for (range = array_desc->ads_rpt, subscript = 0;
+				 range < range_end; ++range) {
+				n = *stack_ptr++;
+				if (n < range->ads_lower || n > range->ads_upper) {
+					error(arg->sdl_arg_status_vector, gds_out_of_bounds, 0);
+					return FALSE;
 				}
-				element_desc = array_desc->iad_rpt[value].iad_desc;
-				element_desc.dsc_address = arg->sdl_arg_array +
-					(IPTR) element_desc.dsc_address +
-					(array_desc->iad_element_length * subscript);
+				subscript += (n - range->ads_lower) * range->ads_length;
+			}
+			element_desc = array_desc->ads_rpt[value].ads_desc;
+			element_desc.dsc_address = (BLOB_PTR *) arg->sdl_arg_array +
+				(SLONG) element_desc.dsc_address +
+				(array_desc->ads_element_length * subscript);
 
-				/* Is this element within the array bounds? */
-				fb_assert_continue(element_desc.dsc_address >=
-									arg->sdl_arg_array);
-				fb_assert_continue(element_desc.dsc_address +
-									element_desc.dsc_length <=
-									arg->sdl_arg_array +
-									array_desc->iad_total_length);
-				}
+			/* Is this element within the array bounds? */
+			assert((BLOB_PTR *) element_desc.dsc_address >=
+				   (BLOB_PTR *) arg->sdl_arg_array);
+			assert((BLOB_PTR *) element_desc.dsc_address +
+				   element_desc.dsc_length <=
+				   (BLOB_PTR *) arg->sdl_arg_array +
+				   array_desc->ads_total_length);
 			break;
 
 		case op_element:
 			count = *next++;
-			if (arg->sdl_arg_argument->slice_direction == array_slice::slc_writing_array) {
+			if (arg->sdl_arg_argument->slice_direction) {
 				/* Storing INTO array */
 
-				 (*arg->sdl_arg_callback) (arg->sdl_arg_argument,
-										count,
-										&element_desc);
+#pragma FB_COMPILER_MESSAGE("Fix. Bad function pointer cast.")
+
+				((void (*)(...)) (*arg->sdl_arg_callback)) (arg->sdl_arg_argument,
+															count,
+															&element_desc);
 			}
 			else {
 				/* Fetching FROM array */
 
-				if (element_desc.dsc_address <
-					arg->sdl_arg_argument->slice_high_water)
-				{
+				if ((BLOB_PTR *) element_desc.dsc_address <
+					(BLOB_PTR *) arg->sdl_arg_argument->slice_high_water) {
 
-					(*arg->sdl_arg_callback) (arg->sdl_arg_argument,
-										count,
-										&element_desc);
+#pragma FB_COMPILER_MESSAGE("Fix. Bad function pointer cast.")
+
+					((void (*)(...)) (*arg->sdl_arg_callback)) (arg->sdl_arg_argument,
+																count,
+																&element_desc);
 				}
 				else {
-					dsc* slice_desc = &arg->sdl_arg_argument->slice_desc;
+					slice_desc = &arg->sdl_arg_argument->slice_desc;
 					slice_desc->dsc_address +=
 						arg->sdl_arg_argument->slice_element_length;
 				}
@@ -768,18 +745,17 @@ static bool execute(sdl_arg* arg)
 			break;
 
 		case op_exit:
-			return true;
+			return TRUE;
 
 		default:
-			fb_assert_continue(FALSE);
-			return false;
+			assert(FALSE);
+			return FALSE;
 		}
 	}
 }
 
 
-static const UCHAR* get_range(const UCHAR* sdl, array_range* arg, 
-							  SLONG* min, SLONG* max)
+static UCHAR *get_range(UCHAR * sdl, RNG arg, SLONG * min, SLONG * max)
 {
 /**************************************
  *
@@ -793,17 +769,17 @@ static const UCHAR* get_range(const UCHAR* sdl, array_range* arg,
  *
  **************************************/
 	SLONG n, variable, value, min1, max1, min2, max2, junk1, junk2;
-	sdl_info* info;
+	UCHAR *p, op;
+	SDL_INFO info;
 
-	const UCHAR* p = sdl;
+	p = sdl;
 
-	const UCHAR op = *p++;
-	switch (op) {
-	case isc_sdl_do1:
-	case isc_sdl_do2:
-	case isc_sdl_do3:
+	switch (op = *p++) {
+	case gds_sdl_do1:
+	case gds_sdl_do2:
+	case gds_sdl_do3:
 		variable = *p++;
-		if (op == isc_sdl_do1)
+		if (op == gds_sdl_do1)
 			arg->rng_minima[variable] = 1;
 		else {
 			if (!(p = get_range(p, arg, &arg->rng_minima[variable], &junk1)))
@@ -811,94 +787,111 @@ static const UCHAR* get_range(const UCHAR* sdl, array_range* arg,
 		}
 		if (!(p = get_range(p, arg, &junk1, &arg->rng_maxima[variable])))
 			return NULL;
-		if (op == isc_sdl_do3) {
+		if (op == gds_sdl_do3) {
 			if (!(p = get_range(p, arg, &junk1, &junk2)))
 				return NULL;
 		}
 		return get_range(p, arg, min, max);
 
-	case isc_sdl_variable:
+	case gds_sdl_variable:
 		variable = *p++;
 		*min = arg->rng_minima[variable];
 		*max = arg->rng_maxima[variable];
 		return p;
 
-	case isc_sdl_tiny_integer:
+	case gds_sdl_tiny_integer:
 		value = (SCHAR) * p++;
 		*min = *max = value;
 		return p;
 
-	case isc_sdl_short_integer:
+	case gds_sdl_short_integer:
 		value = (SSHORT) (p[0] | (p[1] << 8));
 		*min = *max = value;
 		return p + 2;
 
-	case isc_sdl_long_integer:
-		value = (SLONG) (p[0] | (p[1] << 8) | ((SLONG) p[2] << 16) |
-		        ((SLONG) p[3] << 24));
+	case gds_sdl_long_integer:
+		value =
+			(SLONG) (p[0] | (p[1] << 8) | ((SLONG) p[2] << 16) |
+					 ((SLONG) p[3] << 24));
 		*min = *max = value;
 		return p + 4;
 
-	case isc_sdl_add:
-	case isc_sdl_subtract:
-	case isc_sdl_multiply:
-	case isc_sdl_divide:
+	case gds_sdl_add:
+	case gds_sdl_subtract:
+	case gds_sdl_multiply:
+	case gds_sdl_divide:
 		if (!(p = get_range(p, arg, &min1, &max1)))
 			return NULL;
 		if (!(p = get_range(p, arg, &min2, &max2)))
 			return NULL;
 		switch (op) {
-		case isc_sdl_add:
+		case gds_sdl_add:
 			*min = min1 + min2;
 			*max = max1 + max2;
 			break;
 
-		case isc_sdl_subtract:
+		case gds_sdl_subtract:
 			*min = min1 - max2;
 			*max = max1 - min2;
 			break;
 
-		case isc_sdl_multiply:
+		case gds_sdl_multiply:
 			*min = min1 * min2;
 			*max = max1 * max2;
 			break;
 
-		case isc_sdl_divide:
+		case gds_sdl_divide:
 			return NULL;
 		}
 		return p;
 
-	case isc_sdl_scalar:
+	case gds_sdl_scalar:
 		p++;
 		info = arg->rng_info;
 		info->sdl_info_dimensions = *p++;
 		for (n = 0; n < info->sdl_info_dimensions; n++)
-		{
 			if (!
 				(p =
 				 get_range(p, arg, &info->sdl_info_lower[n],
-						   &info->sdl_info_upper[n])))
-			{
-					return NULL;
-			}
-		}
+						   &info->sdl_info_upper[n]))) return NULL;
 		return p;
 
-	case isc_sdl_element:
+	case gds_sdl_element:
 		for (n = *p++; n; --n)
 			if (!(p = get_range(p, arg, min, max)))
 				return NULL;
 		return p;
 
 	default:
-		fb_assert_continue(FALSE);
+		assert(FALSE);
 		return NULL;
 	}
 }
 
 
+static SSHORT get_word(UCHAR ** ptr)
+{
+/**************************************
+ *
+ *	g e t _ w o r d
+ *
+ **************************************
+ *
+ * Functional description
+ *
+ **************************************/
+	UCHAR *p;
+	SSHORT n;
 
-static const UCHAR* sdl_desc(const UCHAR* ptr, DSC* desc)
+	p = *ptr;
+	n = p[0] | (p[1] << 8);
+	*ptr += 2;
+
+	return n;
+}
+
+
+static UCHAR *sdl_desc(UCHAR * ptr, DSC * desc)
 {
 /**************************************
  *
@@ -911,7 +904,9 @@ static const UCHAR* sdl_desc(const UCHAR* ptr, DSC* desc)
  *	Return updated pointer is successful, otherwise NULL.
  *
  **************************************/
-	const UCHAR* sdl = ptr;
+	UCHAR *sdl;
+
+	sdl = ptr;
 	desc->dsc_scale = 0;
 	desc->dsc_length = 0;
 	desc->dsc_sub_type = 0;
@@ -920,7 +915,7 @@ static const UCHAR* sdl_desc(const UCHAR* ptr, DSC* desc)
 	switch (*sdl++) {
 	case blr_text2:
 		desc->dsc_dtype = dtype_text;
-		INTL_ASSIGN_TTYPE(desc, get_word(sdl));
+		INTL_ASSIGN_TTYPE(desc, get_word(&sdl));
 		break;
 
 	case blr_text:
@@ -931,7 +926,7 @@ static const UCHAR* sdl_desc(const UCHAR* ptr, DSC* desc)
 
 	case blr_cstring2:
 		desc->dsc_dtype = dtype_cstring;
-		INTL_ASSIGN_TTYPE(desc, get_word(sdl));
+		INTL_ASSIGN_TTYPE(desc, get_word(&sdl));
 		break;
 
 	case blr_cstring:
@@ -942,7 +937,7 @@ static const UCHAR* sdl_desc(const UCHAR* ptr, DSC* desc)
 
 	case blr_varying2:
 		desc->dsc_dtype = dtype_cstring;
-		INTL_ASSIGN_TTYPE(desc, get_word(sdl));
+		INTL_ASSIGN_TTYPE(desc, get_word(&sdl));
 		desc->dsc_length = sizeof(USHORT);
 		break;
 
@@ -970,7 +965,7 @@ static const UCHAR* sdl_desc(const UCHAR* ptr, DSC* desc)
 
 	case blr_quad:
 		desc->dsc_dtype = dtype_quad;
-		desc->dsc_length = sizeof(ISC_QUAD);
+		desc->dsc_length = sizeof(GDS__QUAD);
 		break;
 
 	case blr_float:
@@ -995,7 +990,7 @@ static const UCHAR* sdl_desc(const UCHAR* ptr, DSC* desc)
 
 	case blr_timestamp:
 		desc->dsc_dtype = dtype_timestamp;
-		desc->dsc_length = sizeof(ISC_QUAD);
+		desc->dsc_length = sizeof(GDS__QUAD);
 		break;
 
 	case blr_sql_date:
@@ -1009,7 +1004,7 @@ static const UCHAR* sdl_desc(const UCHAR* ptr, DSC* desc)
 		break;
 
 	default:
-		fb_assert_continue(FALSE);
+		assert(FALSE);
 		return NULL;
 	}
 
@@ -1018,13 +1013,14 @@ static const UCHAR* sdl_desc(const UCHAR* ptr, DSC* desc)
 	case dtype_long:
 	case dtype_quad:
 	case dtype_int64:
-		desc->dsc_scale = static_cast<SCHAR>(*sdl++);
+		desc->dsc_scale = *((SCHAR *) sdl);
+		++sdl;
 		break;
 
 	case dtype_text:
 	case dtype_cstring:
 	case dtype_varying:
-		desc->dsc_length += get_word(sdl);
+		desc->dsc_length += get_word(&sdl);
 		break;
 
 	default:
@@ -1035,7 +1031,7 @@ static const UCHAR* sdl_desc(const UCHAR* ptr, DSC* desc)
 }
 
 
-static IPTR* stuff(IPTR value, sdl_arg* arg)
+static IPTR *stuff(IPTR value, SDL_ARG arg)
 {
 /**************************************
  *
@@ -1049,14 +1045,13 @@ static IPTR* stuff(IPTR value, sdl_arg* arg)
  **************************************/
 
 	if (!arg)
-		return (IPTR*) TRUE;
+		return (IPTR *) TRUE;
 
 	if (arg->sdl_arg_next >= arg->sdl_arg_end)
-		error(arg->sdl_arg_status_vector, isc_virmemexh, isc_arg_end);
+		error(arg->sdl_arg_status_vector, gds_virmemexh, gds_arg_end);
 	/* unable to allocate memory from operating system */
 
 	*(arg->sdl_arg_next)++ = value;
 
 	return arg->sdl_arg_next - 1;
 }
-

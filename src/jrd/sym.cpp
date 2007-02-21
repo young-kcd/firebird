@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD access method
- *	MODULE:		hsh.cpp
+ *	MODULE:		hsh.c
  *	DESCRIPTION:	Hash table and symbol manager
  *
  * The contents of this file are subject to the Interbase Public
@@ -23,21 +23,20 @@
 
 #include "firebird.h"
 #include <string.h>
-#include "../jrd/common.h"
 #include "../jrd/jrd.h"
 #include "../jrd/val.h"
 #include "../jrd/err_proto.h"
-#include "../jrd/sym.h"
-#include "../jrd/thd.h"
+#include "../jrd/sym_proto.h"
+#include "../jrd/thd_proto.h"
 
 
-using namespace Jrd;
+extern "C" {
 
-namespace {
-	SSHORT hash_func(const Firebird::MetaName&);
-}
 
-void Symbol::insert()
+static SSHORT hash_func(SCHAR *);
+
+
+void SYM_insert(SYM symbol)
 {
 /**************************************
  *
@@ -49,26 +48,27 @@ void Symbol::insert()
  *	Insert a symbol into the hash table.
  *
  **************************************/
-	Database* dbb = GET_DBB();
+	DBB dbb;
+	int h;
+	SYM old;
 
-	const int h = hash_func(sym_string);
+	dbb = GET_DBB;
 
-	for (Symbol* old = dbb->dbb_hash_table[h]; old; old = old->sym_collision)
-	{
-		if (sym_string == old->sym_string)
-		{
-			sym_homonym = old->sym_homonym;
-			old->sym_homonym = this;
+	h = hash_func(symbol->sym_string);
+
+	for (old = dbb->dbb_hash_table[h]; old; old = old->sym_collision)
+		if (!strcmp(symbol->sym_string, old->sym_string)) {
+			symbol->sym_homonym = old->sym_homonym;
+			old->sym_homonym = symbol;
 			return;
 		}
-	}
 
-	sym_collision = dbb->dbb_hash_table[h];
-	dbb->dbb_hash_table[h] = this;
+	symbol->sym_collision = dbb->dbb_hash_table[h];
+	dbb->dbb_hash_table[h] = symbol;
 }
 
 
-Symbol* Symbol::lookup(const Firebird::MetaName& string)
+SYM SYM_lookup(TEXT * string)
 {
 /**************************************
  *
@@ -80,20 +80,20 @@ Symbol* Symbol::lookup(const Firebird::MetaName& string)
  *	Perform a string lookup against hash table.
  *
  **************************************/
-	Database* dbb = GET_DBB();
+	DBB dbb;
+	SYM symbol;
 
-	for (Symbol* symbol = dbb->dbb_hash_table[hash_func(string)]; symbol;
+	dbb = GET_DBB;
+
+	for (symbol = dbb->dbb_hash_table[hash_func(string)]; symbol;
 		 symbol = symbol->sym_collision)
-	{
-		if (string == symbol->sym_string) 
-			return symbol;
-	}
+			if (!strcmp(string, symbol->sym_string)) return symbol;
 
 	return NULL;
 }
 
 
-void Symbol::remove()
+void SYM_remove(SYM symbol)
 {
 /**************************************
  *
@@ -105,43 +105,37 @@ void Symbol::remove()
  *	Remove a symbol from the hash table.
  *
  **************************************/
-	Database* dbb = GET_DBB();
+	DBB dbb;
+	int h;
+	SYM *next, *ptr, homonym;
 
-	const int h = hash_func(sym_string);
+	dbb = GET_DBB;
 
-	for (Symbol** next = &dbb->dbb_hash_table[h]; *next;
-		 next = &(*next)->sym_collision)
-	{
-		if (this == *next) {
-			Symbol* homonym = sym_homonym;
-			if (homonym) {
-				homonym->sym_collision = sym_collision;
+	h = hash_func(symbol->sym_string);
+
+	for (next = &dbb->dbb_hash_table[h]; *next;
+		 next = &(*next)->sym_collision) if (symbol == *next)
+			if ( (homonym = symbol->sym_homonym) ) {
+				homonym->sym_collision = symbol->sym_collision;
 				*next = homonym;
 				return;
 			}
 			else {
-				*next = sym_collision;
+				*next = symbol->sym_collision;
 				return;
 			}
-		}
-		else {
-			for (Symbol** ptr = &(*next)->sym_homonym; *ptr;
-				 ptr = &(*ptr)->sym_homonym)
-			{
-				if (this == *ptr) {
-					*ptr = sym_homonym;
+		else
+			for (ptr = &(*next)->sym_homonym; *ptr;
+				 ptr = &(*ptr)->sym_homonym) if (symbol == *ptr) {
+					*ptr = symbol->sym_homonym;
 					return;
 				}
-			}
-		}
-	}
 
 	BUGCHECK(164);				/* msg 164 failed to remove symbol from hash table */
 }
 
-namespace {
 
-SSHORT hash_func(const Firebird::MetaName& str)
+static SSHORT hash_func(SCHAR * string)
 {
 /**************************************
  *
@@ -153,18 +147,19 @@ SSHORT hash_func(const Firebird::MetaName& str)
  *	Returns the hash function of a string.
  *
  **************************************/
+	int value;
+	SCHAR c;
 
 /* It is OK to not Internationalize this function as it is for
    internal optimization of symbol lookup */
 
-	int value = 0;
+	value = 0;
 
-	for (const char *s = str.c_str(); *s; s++)
-	{
-		value = (value << 1) + UPPER7(*s);
-	}
+	while ( (c = *string++) )
+		value = (value << 1) + UPPER7(c);
 
 	return ((value >= 0) ? value : -value) % HASH_SIZE;
 }
 
-} //noname namespace
+
+} // extern "C"

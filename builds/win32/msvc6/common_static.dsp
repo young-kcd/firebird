@@ -125,15 +125,7 @@ SOURCE=..\..\..\src\common\config\dir_list.cpp
 # PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=..\..\..\src\common\classes\fb_string.cpp
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\src\jrd\os\win32\fbsyslog.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\common\classes\MetaName.cpp
 # End Source File
 # Begin Source File
 
@@ -142,18 +134,6 @@ SOURCE=..\..\..\src\jrd\os\win32\mod_loader.cpp
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\os\win32\path_utils.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\common\classes\TempFile.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\common\classes\timestamp.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\common\utils.cpp
 # End Source File
 # End Group
 # Begin Group "Header files"
@@ -190,34 +170,6 @@ SOURCE=..\..\..\src\common\config\dir_list.h
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\os\fbsyslog.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\common\classes\MetaName.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\common\classes\TempFile.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\common\classes\timestamp.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\common\utils_proto.h
-# End Source File
-# End Group
-# Begin Group "CLUMPLET files"
-
-# PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=..\..\..\src\common\classes\ClumpletReader.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\common\classes\ClumpletWriter.cpp
 # End Source File
 # End Group
 # End Target

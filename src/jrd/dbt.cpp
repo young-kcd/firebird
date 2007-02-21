@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Access Method
- *	MODULE:		dbt.cpp
+ *	MODULE:		dbt.c
  *	DESCRIPTION:	Debugging routines
  *
  * The contents of this file are subject to the Interbase Public
@@ -22,100 +22,72 @@
  */
 
 #include "firebird.h"
-#include <stdio.h>
+#include "../jrd/ib_stdio.h"
+#include "../jrd/y_ref.h"
 #include "../jrd/ibase.h"
-// Those includes until the END comment comes from everything.h and was moved
-// here when the file was removed. 
-// Most probably only a few of the includes are needed
-#include "../jrd/common.h"
-#include "../jrd/isc.h"
-#include "../jrd/jrd.h"
-#include "../jrd/lck.h"
-#include "../jrd/ods.h"
-#include "../jrd/cch.h"
-#include "../jrd/all.h"
-#include "../jrd/os/pio.h"
-#include "../jrd/pag.h"
-#include "../jrd/val.h"
-#include "../jrd/exe.h"
-#include "../jrd/req.h"
-#include "../jrd/lls.h"
-#include "../jrd/rse.h"
-#include "../jrd/sbm.h"
-#include "../jrd/tra.h"
-#include "../jrd/sqz.h"
-#include "../jrd/blb.h"
-#include "../jrd/btr.h"
-#include "../jrd/scl.h"
-#include "../jrd/ext.h"
-#include "../jrd/met.h"
-#include "../jrd/sdw.h"
-#ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
-#include "../jrd/log.h"
-#endif
-#include "../jrd/intl.h"
-#include "../jrd/intl_classes.h"
-#include "../jrd/fil.h"
-#include "../jrd/tpc.h"
-#include "../jrd/svc.h"
-#include "../jrd/blob_filter.h"
-// END
+#include "../jrd/everything.h"
 #include "../jrd/dbg.h"
 
-#define FLD(struct, string, field) string, (SCHAR*) OFFSET (struct, field), (SCHAR*) sizeof (((struct) NULL)->field)
+#define FLD(struct, string, field) string, (SCHAR*) OFFSET (struct, field), (SCHAR*) sizeof (((struct) 0)->field)
+
+extern "C" {
 
 
-typedef SCHAR* TEXT_PTR;
+typedef SCHAR *TEXT_PTR;
 
-int* ptr;
+int
+ *ptr;
 
 TEXT_PTR dbt_window[] = {
-	FLD(WIN*, "Page: %ld", win_page),
-	FLD(WIN*, "Buffer: %x", win_buffer),
-	FLD(WIN*, "BufferDesc: %x", win_bdb),
-	FLD(WIN*, "Scans: %d", win_scans),
-	FLD(WIN*, "Flags: %x", win_flags),
+	FLD(WIN *, "Page: %ld", win_page),
+	FLD(WIN *, "Buffer: %x", win_buffer),
+	FLD(WIN *, "BDB: %x", win_bdb),
+	FLD(WIN *, "Scans: %d", win_scans),
+	FLD(WIN *, "Flags: %x", win_flags),
 	0
 },
-dbt_record_param[] = {
-	FLD(record_param*, "Relation %x", rpb_relation),
-	FLD(record_param*, "Number %"SQUADFORMAT, rpb_number.getValue()),
-	FLD(record_param*, "Trans %ld", rpb_transaction_nr),
-	FLD(record_param*, "Page %ld", rpb_page),
-	FLD(record_param*, "Line %x", rpb_line),
-	FLD(record_param*, "Back page %ld", rpb_b_page),
-	FLD(record_param*, "Line %x", rpb_b_line),
-	FLD(record_param*, "Fragment page %ld", rpb_f_page),
-	FLD(record_param*, "Line %x", rpb_f_line),
-	FLD(record_param*, "Format %x", rpb_format_number),
-	FLD(record_param*, "Address: %x ", rpb_address),
-	FLD(record_param*, "Length %x", rpb_length),
-	FLD(record_param*, "Record %x", rpb_record),
-	FLD(record_param*, "Flags %x", rpb_flags),
+dbt_rpb[] = {
+
+	FLD(RPB *, "Relation %x", rpb_relation),
+	FLD(RPB *, "Number %ld", rpb_number),
+	FLD(RPB *, "Trans %ld", rpb_transaction),
+	FLD(RPB *, "Page %ld", rpb_page),
+	FLD(RPB *, "Line %x", rpb_line),
+	FLD(RPB *, "Back page %ld", rpb_b_page),
+	FLD(RPB *, "Line %x", rpb_b_line),
+	FLD(RPB *, "Fragment page %ld", rpb_f_page),
+	FLD(RPB *, "Line %x", rpb_f_line),
+	FLD(RPB *, "Format %x", rpb_format_number),
+	FLD(RPB *, "Address: %x ", rpb_address),
+	FLD(RPB *, "Length %x", rpb_length),
+	FLD(RPB *, "Record %x", rpb_record),
+	FLD(RPB *, "Flags %x", rpb_flags),
 	0
 };
 
 static TEXT_PTR dbb_stuff[] = {
 	"DATABASE",
-	FLD(Database*, "BCB: %x", dbb_bcb),
-	FLD(Database*, "Relations: %x", dbb_relations),
-	FLD(Database*, "Lock: %x", dbb_lock),
-	FLD(Database*, "File: %x", dbb_file),
-	FLD(Database*, "Permanent: %x", dbb_permanent),
-	FLD(Database*, "Pools: %x", dbb_pools),
-	FLD(Database*, "Page_size: %d", dbb_page_size),
-	FLD(Database*, "dp_per_pp: %d", dbb_dp_per_pp),
+	FLD(DBB, "BCB: %x", dbb_bcb),
+	FLD(DBB, "Relations: %x", dbb_relations),
+	FLD(DBB, "Lock: %x", dbb_lock),
+	FLD(DBB, "File: %x", dbb_file),
+	FLD(DBB, "Permanent: %x", dbb_permanent),
+	FLD(DBB, "Pools: %x", dbb_pools),
+	FLD(DBB, "Page_size: %d", dbb_page_size),
+	FLD(DBB, "dp_per_pp: %d", dbb_dp_per_pp),
 	0
 },
 vec[] = {
 	"VECTOR",
-	FLD(vec<void**>*, "Count %d", count()),
+// TMN: FIXFIX! John?
+//	FLD(VEC, "Count %d", vec_count),
 	"Count %d", (SCHAR*)4, (SCHAR*)4,
 	0
 },
 vcl[] = {
 	"VECTOR OF ULONGS",
-	FLD(vcl*, "Count %d", count()),
+// TMN: FIXFIX! John?
+//	FLD(VCL, "Count %d", vcl_count),
 	"Count %d", (SCHAR*)4, (SCHAR*)4,
 	0
 };
@@ -142,104 +114,104 @@ vcl[] = {
 		0
 };*/
 
-static TEXT_PTR BufferControl[] = {
+static TEXT_PTR bcb[] = {
 	"BUFFER CONTROL",
-		FLD(BufferControl*, "Count: %x", bcb_count),
+		FLD(BCB, "Count: %x", bcb_count),
 		0
 },
-BufferDesc[] = {
+bdb[] = {
 	"BUFFER DESCRIPTOR",
-		FLD(BufferDesc*, "Page: %ld", bdb_page),
-		FLD(BufferDesc*, "Lock: %x", bdb_lock),
-		FLD(BufferDesc*, "Buffer: %x", bdb_buffer),
-		FLD(BufferDesc*, "Use count: %x", bdb_use_count),
-		FLD(BufferDesc*, "Flags: %x", bdb_flags),
+		FLD(BDB, "Page: %ld", bdb_page),
+		FLD(BDB, "Lock: %x", bdb_lock),
+		FLD(BDB, "Buffer: %x", bdb_buffer),
+		FLD(BDB, "Use count: %x", bdb_use_count),
+		FLD(BDB, "Flags: %x", bdb_flags),
 		0
 },
-Precedence[] = {
+pre[] = {
 	"PRECEDENCE",
-		FLD(Precedence*, "Flags: %x", pre_flags),
-		FLD(Precedence*, "Low: %x", pre_low),
-		FLD(Precedence*, "High: %x", pre_hi),
+		FLD(PRE, "Flags: %x", pre_flags),
+		FLD(PRE, "Low: %x", pre_low),
+		FLD(PRE, "High: %x", pre_hi),
 		0
 },
-Lock[] = {
+lck[] = {
 	"LOCK",
-		FLD(Lock*, "Parent: %x", lck_parent),
-		FLD(Lock*, "Object: %x", lck_object),
-		FLD(Lock*, "Type: %x", lck_type),
-		FLD(Lock*, "Physical: %x", lck_physical),
-		FLD(Lock*, "Logical: %x", lck_logical),
-		FLD(Lock*, "Length: %x", lck_length),
+		FLD(LCK, "Parent: %x", lck_parent),
+		FLD(LCK, "Object: %x", lck_object),
+		FLD(LCK, "Type: %x", lck_type),
+		FLD(LCK, "Physical: %x", lck_physical),
+		FLD(LCK, "Logical: %x", lck_logical),
+		FLD(LCK, "Length: %x", lck_length),
 		0
 },
-jrd_file[] = {
+fil[] = {
 	"FILE",
-		FLD(jrd_file*, "File desc: %x", fil_desc),
+		FLD(FIL, "File desc: %x", fil_desc),
 		0
 },
-PageControl[] = {
+pgc[] = {
 	"PAGE CONTROL",
-		FLD(PageControl*, "High water: %d", pgc_high_water),
-		FLD(PageControl*, "Pages/PIP: %x", pgc_ppp),
-		FLD(PageControl*, "First PIP: %x", pgc_pip),
-		FLD(PageControl*, "Bytes/PIP: %x", pgc_bytes),
+		FLD(PGC, "High water: %d", pgc_high_water),
+		FLD(PGC, "Pages/PIP: %x", pgc_ppp),
+		FLD(PGC, "First PIP: %x", pgc_pip),
+		FLD(PGC, "Bytes/PIP: %x", pgc_bytes),
 		0
 },
 
 jrd_rel[] = {
 	"RELATION",
-		FLD(jrd_rel*, "%s", rel_name.c_str()),
-		FLD(jrd_rel*, "Id: %d", rel_id),
-		FLD(jrd_rel*, "Current format: %x", rel_current_format),
-		FLD(jrd_rel*, "Formats: %x", rel_formats),
-		FLD(jrd_rel*, "Pages: %x", rel_pages),
-		FLD(jrd_rel*, "Root: %ld", rel_index_root),
+		FLD(JRD_REL, "%s", rel_name),
+		FLD(JRD_REL, "Id: %d", rel_id),
+		FLD(JRD_REL, "Current format: %x", rel_current_format),
+		FLD(JRD_REL, "Formats: %x", rel_formats),
+		FLD(JRD_REL, "Pages: %x", rel_pages),
+		FLD(JRD_REL, "Root: %ld", rel_index_root),
 		0
 },
-Format[] = {
+fmt[] = {
 	"FORMAT",
-		FLD(Format*, "Count: %d", fmt_count),
-		FLD(Format*, "Length: %d", fmt_length),
-		FLD(Format*, "Version: %d", fmt_version),
+		FLD(FMT, "Count: %d", fmt_count),
+		FLD(FMT, "Length: %d", fmt_length),
+		FLD(FMT, "Version: %d", fmt_version),
 		0
 },
 jrd_req[] = {
 	"REQUEST",
-		FLD(jrd_req*, "COUNT: %x", req_count),
-		FLD(jrd_req*, "Impure: %x", req_impure_size),
-		FLD(jrd_req*, "Incarn: %x", req_incarnation),
-		FLD(jrd_req*, "Pool: %x", req_pool),
-		FLD(jrd_req*, "Sub req: %x", req_sub_requests),
-		FLD(jrd_req*, "Trans: %x", req_transaction),
-		FLD(jrd_req*, "Next req: %x", req_request),
-		FLD(jrd_req*, "Msg: %x", req_message),
-		FLD(jrd_req*, "Length: %x", req_length),
-		//FLD(jrd_req*, "#msgs: %x", req_nmsgs),
-		//FLD(jrd_req*, "Max send: %x", req_msend),
-		//FLD(jrd_req*, "Max receive: %x", req_mreceive),
-		FLD(jrd_req*, "Top: %x", req_top_node),
-		FLD(jrd_req*, "Next: %x", req_next),
-		FLD(jrd_req*, "Label: %x", req_label),
-		FLD(jrd_req*, "Op: %x", req_operation),
-		FLD(jrd_req*, "Flags: %x", req_flags),
+		FLD(JRD_REQ, "COUNT: %x", req_count),
+		FLD(JRD_REQ, "Impure: %x", req_impure_size),
+		FLD(JRD_REQ, "Incarn: %x", req_incarnation),
+		FLD(JRD_REQ, "Pool: %x", req_pool),
+		FLD(JRD_REQ, "Sub req: %x", req_sub_requests),
+		FLD(JRD_REQ, "Trans: %x", req_transaction),
+		FLD(JRD_REQ, "Next req: %x", req_request),
+		FLD(JRD_REQ, "Msg: %x", req_message),
+		FLD(JRD_REQ, "Length: %x", req_length),
+		FLD(JRD_REQ, "#msgs: %x", req_nmsgs),
+		FLD(JRD_REQ, "Max send: %x", req_msend),
+		FLD(JRD_REQ, "Max receive: %x", req_mreceive),
+		FLD(JRD_REQ, "Top: %x", req_top_node),
+		FLD(JRD_REQ, "Next: %x", req_next),
+		FLD(JRD_REQ, "Label: %x", req_label),
+		FLD(JRD_REQ, "Op: %x", req_operation),
+		FLD(JRD_REQ, "Flags: %x", req_flags),
 		0
 },
 jrd_tra[] = {
 	"TRANSACTION",
-		FLD(jrd_tra*, "Number: %ld", tra_number),
-		FLD(jrd_tra*, "Oldest: %ld", tra_oldest),
-		FLD(jrd_tra*, "Next: %x", tra_next),
-		FLD(jrd_tra*, "Pool: %x", tra_pool),
-		FLD(jrd_tra*, "Lock: %x", tra_lock),
-		FLD(jrd_tra*, "Locks: %x", tra_relation_locks),
-		FLD(jrd_tra*, "Flags: %x", tra_flags),
+		FLD(JRD_TRA, "Number: %ld", tra_number),
+		FLD(JRD_TRA, "Oldest: %ld", tra_oldest),
+		FLD(JRD_TRA, "Next: %x", tra_next),
+		FLD(JRD_TRA, "Pool: %x", tra_pool),
+		FLD(JRD_TRA, "Lock: %x", tra_lock),
+		FLD(JRD_TRA, "Locks: %x", tra_relation_locks),
+		FLD(JRD_TRA, "Flags: %x", tra_flags),
 		0
 },
 jrd_nod[] = {
 	"NODE",
-		FLD(jrd_nod*, "Type: %x", nod_type),
-		FLD(jrd_nod*, "Impure: %x", nod_impure),
+		FLD(JRD_NOD, "Type: %x", nod_type),
+		FLD(JRD_NOD, "Impure: %x", nod_impure),
 		0
 },
 lls[] = {
@@ -248,45 +220,45 @@ lls[] = {
 		FLD(LLS, "Next: %x", lls_next),
 		0
 },
-VerbAction[] = {
+rec[] = {
 	"RECORD",
-		FLD(Record*, "Format: %x", rec_format),
+		FLD(REC, "Format: %x", rec_format),
 		0
 },
-RecordSource[] = {
+Rsb[] = {
 	"RECORD SOURCE BLOCK",
-		FLD(RecordSource*, "Type: %x", rsb_type),
-		FLD(RecordSource*, "Stream: %x", rsb_stream),
-		FLD(RecordSource*, "Relation: %x", rsb_relation),
-		FLD(RecordSource*, "Next: %x", rsb_next),
-		FLD(RecordSource*, "Count: %x", rsb_count),
+		FLD(RSB, "Type: %x", rsb_type),
+		FLD(RSB, "Stream: %x", rsb_stream),
+		FLD(RSB, "Relation: %x", rsb_relation),
+		FLD(RSB, "Next: %x", rsb_next),
+		FLD(RSB, "Count: %x", rsb_count),
 		0
 },
-OptimizerBlk[] = {
+opt[] = {
 	"OPTIMIZER",
-		FLD(OptimizerBlk*, "CompilerScratch*: %x", opt_csb),
-		FLD(OptimizerBlk*, "Cnt: %x", opt_count),
+		FLD(OPT, "CSB: %x", opt_csb),
+		FLD(OPT, "Cnt: %x", opt_count),
 		0
 },
-BitmapSegment[] = {
+bms[] = {
 	"BIT MAP SEGMENT",
-		FLD(BitmapSegment*, "Min: %x", bms_min),
-		FLD(BitmapSegment*, "Max: %x", bms_max),
+		FLD(BMS, "Min: %x", bms_min),
+		FLD(BMS, "Max: %x", bms_max),
 		0
 },
-DeferredWork[] = {
+dfw[] = {
 	"DEFERRED WORK BLOCK",
-		FLD(DeferredWork*, "type: %d", dfw_type),
-		FLD(DeferredWork*, "next: %x", dfw_next),
-		FLD(DeferredWork*, "name: %s", dfw_name.c_str()),
+		FLD(DFW, "type: %d", dfw_type),
+		FLD(DFW, "next: %x", dfw_next),
+		FLD(DFW, "name: %s", dfw_name),
 		0
 },
-TemporaryField[] = {
-	"TEMPORARY FIELD BLOCK",
-		FLD(TemporaryField*, "id: %d", tfb_id),
-		FLD(TemporaryField*, "dtype: %d", tfb_desc.dsc_dtype),
-		FLD(TemporaryField*, "scale: %d", tfb_desc.dsc_scale),
-		FLD(TemporaryField*, "len: %d", tfb_desc.dsc_length),
+tfb[] = {
+	"TEMPORY FIELD BLOCK",
+		FLD(TFB, "id: %d", tfb_id),
+		FLD(TFB, "dtype: %d", tfb_desc.dsc_dtype),
+		FLD(TFB, "scale: %d", tfb_desc.dsc_scale),
+		FLD(TFB, "len: %d", tfb_desc.dsc_length),
 		0
 },
 str[] = {
@@ -294,96 +266,93 @@ str[] = {
 		FLD(STR, "length: %d", str_length),
 		0
 },
-DataComprControl[] = {
+Dcc[] = {
 	"DATA COMPRESSION CONTROL",
-		FLD(DataComprControl*, "next: %x", dcc_next),
-		FLD(DataComprControl*, "end: %x", dcc_end),
+		FLD(DCC, "next: %x", dcc_next),
+		FLD(DCC, "end: %x", dcc_end),
 		0
 },
-SparseBitmap[] = {
-	"SPARSE BIT MAP",
-		FLD(SparseBitmap*, "state: %d", sbm_state),
-		FLD(SparseBitmap*, "count: %d", sbm_count),
-		FLD(SparseBitmap*, "used: %d", sbm_used),
-		FLD(SparseBitmap*, "high water: %d", sbm_high_water),
-		FLD(SparseBitmap*, "number: %d", sbm_number),
+sbm[] = {
+	"SPARE BIT MAP",
+		FLD(SBM, "state: %d", sbm_state),
+		FLD(SBM, "count: %d", sbm_count),
+		FLD(SBM, "used: %d", sbm_used),
+		FLD(SBM, "high water: %d", sbm_high_water),
+		FLD(SBM, "number: %d", sbm_number),
 		0
 },
-SortMap[] = {
+smb[] = {
 	"SORT MAP",
-		FLD(SortMap*, "count: %d", smb_count),
-		FLD(SortMap*, "keys: %d", smb_keys),
-		FLD(SortMap*, "length: %d", smb_length),
-		FLD(SortMap*, "sort key: %x", smb_key_desc),
+		FLD(SMB, "count: %d", smb_count),
+		FLD(SMB, "keys: %d", smb_keys),
+		FLD(SMB, "length: %d", smb_length),
+		FLD(SMB, "sort key: %x", smb_key_desc),
 		0
 },
 blb[] = {
 	"BLOB",
-		FLD(blb*, "Relation: %x", blb_relation),
-		FLD(blb*, "Count: %d", blb_count),
-		FLD(blb*, "Length: %d", blb_length),
-		FLD(blb*, "Max seg: %d", blb_max_segment),
-		FLD(blb*, "Flags: %x", blb_flags),
-		FLD(blb*, "Trans: %x", blb_transaction),
-		FLD(blb*, "Next: %x", blb_segment),
+		FLD(BLB, "Relation: %x", blb_relation),
+		FLD(BLB, "Count: %d", blb_count),
+		FLD(BLB, "Length: %d", blb_length),
+		FLD(BLB, "Max seg: %d", blb_max_segment),
+		FLD(BLB, "Flags: %x", blb_flags),
+		FLD(BLB, "Trans: %x", blb_transaction),
+		FLD(BLB, "Next: %x", blb_segment),
 		0
 },
-IndexRetrieval[] = {
+irb[] = {
+
 	"INDEX RETRIEVAL",
-		FLD(IndexRetrieval*, "index: %d", irb_index),
-		FLD(IndexRetrieval*, "relation: %x", irb_relation),
-		FLD(IndexRetrieval*, "lower bounds: %d", irb_lower_count),
-		FLD(IndexRetrieval*, "upper boudns: %d", irb_upper_count),
+		FLD(IRB, "index: %d", irb_index),
+		FLD(IRB, "relation: %x", irb_relation),
+		FLD(IRB, "lower bounds: %d", irb_lower_count),
+		FLD(IRB, "upper boudns: %d", irb_upper_count),
 		0
 },
-BlobControl[] = {
+ctl[] = {
 	"BLOB CONTROL", 0
 };
 
-static TEXT_PTR SecurityClass[] = {	"SECURITY CLASS", 0};
-static TEXT_PTR jrd_fld[] = {	"FIELD", 0};
-static TEXT_PTR ExternalFile[] = {	"EXTERNAL FILE", 0};
-static TEXT_PTR merge_file[] = {	"MERGE EQUIVALENCE FILE BLOCK", 0};
-static TEXT_PTR River[] = {	"SORT MERGE RIVER", 0};
-static TEXT_PTR UserId[] = {	"USER IDENTIFICATION BLOCK ", 0};
-static TEXT_PTR Attachment[] = {	"ATTACHMENT BLOCK", 0};
-static TEXT_PTR Symbol[] = {	"SYMBOL", 0};
-static TEXT_PTR UserFunction[] = {	"FUNCTION", 0};
-static TEXT_PTR IndexedRelationship[] = {	"INDEXED RELATIONSHIP", 0};
-static TEXT_PTR AccessItem[] = {	"ACCESS", 0};
-static TEXT_PTR Resource[] = {	"RESOURCE", 0};
-static TEXT_PTR IndexLock[] = {	"INDEX LOCK", 0};
-static TEXT_PTR Shadow[] = {	"SHADOW", 0};
-static TEXT_PTR Savepoint[] = {	"SAVE POINT", 0};
-static TEXT_PTR VerbAction[] = {	"VERB", 0};
-static TEXT_PTR BlockingThread[] = {	"BLOCKED THREAD", 0};
-static TEXT_PTR BlobFilter[] = {	"BLOB FILTER", 0};
-static TEXT_PTR ArrayField[] = {	"ARRAY DESCRIPTION", 0};
-static TEXT_PTR blb_map[] = {	"MAP BLOCK", 0};
-#ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
-static TEXT_PTR fblog[] = {	"LOG BLOCK", 0};
-#endif
-static TEXT_PTR dir_list[] = {	"DIR LIST BLOCK", 0};
-static TEXT_PTR jrd_prc[] =
-{
+static TEXT_PTR jrn[] = {	"JOURNAL", 0};
+static TEXT_PTR scl[] = {	"SECURITY CLASS", 0};
+static TEXT_PTR fld[] = {	"FIELD", 0};
+static TEXT_PTR ext[] = {	"EXTERNAL FILE", 0};
+static TEXT_PTR mfb[] = {	"MERGE EQUIVALENCE FILE BLOCK", 0};
+static TEXT_PTR riv[] = {	"SORT MERGE RIVER", 0};
+static TEXT_PTR plc[] = {	"PAGE/LOCK SERVER CONNECTION", 0};
+static TEXT_PTR usr[] = {	"USER IDENTIFICATION BLOCK ", 0};
+static TEXT_PTR att[] = {	"ATTACHMENT BLOCK", 0};
+static TEXT_PTR sym[] = {	"SYMBOL", 0};
+static TEXT_PTR fun[] = {	"FUNCTION", 0};
+static TEXT_PTR irl[] = {	"INDEXED RELATIONSHIP", 0};
+static TEXT_PTR acc[] = {	"ACCESS", 0};
+static TEXT_PTR Rsc[] = {	"RESOURCE", 0};
+static TEXT_PTR idl[] = {	"INDEX LOCK", 0};
+static TEXT_PTR sdw[] = {	"SHADOW", 0};
+static TEXT_PTR sav[] = {	"SAVE POINT", 0};
+static TEXT_PTR vct[] = {	"VERB", 0};
+static TEXT_PTR btb[] = {	"BLOCKED THREAD", 0};
+static TEXT_PTR blf[] = {	"BLOB FILTER", 0};
+static TEXT_PTR arr[] = {	"ARRAY DESCRIPTION", 0};
+static TEXT_PTR map[] = {	"MAP BLOCK", 0};
+static TEXT_PTR log[] = {	"LOG BLOCK", 0};
+static TEXT_PTR dls[] = {	"DIR LIST BLOCK", 0};
+static TEXT_PTR jrd_prc[] = {
 	"PROCEDURE",
-		FLD(jrd_prc*, "%s", prc_name.c_str()),
-		FLD(jrd_prc*, "Id: %d", prc_id), 0
-};
-static TEXT_PTR Parameter[] = {	"PARAMETER", FLD(PRM, "%s", prm_name.c_str()), 0};
-static TEXT_PTR IndexBlock[] = {	"INDEX BLOCK", 0};
-//static TEXT_PTR Bookmark[] = {	"BOOKMARK BLOCK", 0};
-//static TEXT_PTR RefreshRange[] = {	"REFRESH RANGE BLOCK", 0};
-static TEXT_PTR TxPageCache[] = {	"TIP CACHE BLOCK", 0};
-static TEXT_PTR PsqlException[] = {	"EXCEPTION LIST BLOCK", 0};
-static TEXT_PTR OptimizerBlk[] = {	"OPTIMIZATION BLOCK", 0};
-#ifdef SUPERSERVER_V2
-static TEXT_PTR Prefetch[] = {	"PRF", 0};
-#endif
-static TEXT_PTR RecordSelExpr[] = {	"RECORD SELECTION EXPRESSION", 0};
-static TEXT_PTR Literal[] = {	"LITERAL", 0};
-static TEXT_PTR AggregateSort[] = {	"AggregateSort", 0};
-//static TEXT_PTR srl[] = {	"SRL", 0}; // Obsolete.
+		FLD(JRD_PRC, "%s", prc_name),
+		FLD(JRD_PRC, "Id: %d", prc_id), 0};
+static TEXT_PTR prm[] = {	"PARAMETER", FLD(PRM, "%s", prm_name), 0};
+static TEXT_PTR idb[] = {	"INDEX BLOCK", 0};
+static TEXT_PTR bkm[] = {	"BOOKMARK BLOCK", 0};
+static TEXT_PTR rng[] = {	"REFRESH RANGE BLOCK", 0};
+static TEXT_PTR tpc[] = {	"TIP CACHE BLOCK", 0};
+static TEXT_PTR xcp[] = {	"EXCEPTION LIST BLOCK", 0};
+static TEXT_PTR Opt[] = {	"OPTIMIZATION BLOCK", 0};
+static TEXT_PTR prf[] = {	"PRF", 0};
+static TEXT_PTR rse[] = {	"RECORD SELECTION EXPRESSION", 0};
+static TEXT_PTR lit[] = {	"LITERAL", 0};
+static TEXT_PTR asb[] = {	"ASB", 0};
+static TEXT_PTR srl[] = {	"SRL", 0};
 
 	/* xxx
 	   x [] = {
@@ -391,13 +360,13 @@ static TEXT_PTR AggregateSort[] = {	"AggregateSort", 0};
 	   FLD (x, "x: %x", x),
 	   0},
 	 */
-static TEXT_PTR CompilerScratch[] = {
+static TEXT_PTR Csb[] = {
 	"COMPILE SCRATCH BLOCK",
-		FLD(CompilerScratch*, "Count: %x", csb_count),
-		FLD(CompilerScratch*, "Node: %x", csb_node),
-		FLD(CompilerScratch*, "Streams: %x", csb_n_stream),
-		FLD(CompilerScratch*, "Running: %x", csb_running),
-		FLD(CompilerScratch*, "BLR: %x", csb_blr),
+		FLD(CSB, "Count: %x", csb_count),
+		FLD(CSB, "Node: %x", csb_node),
+		FLD(CSB, "Streams: %x", csb_n_stream),
+		FLD(CSB, "Running: %x", csb_running),
+		FLD(CSB, "BLR: %x", csb_blr),
 		0
 };
 
@@ -413,31 +382,33 @@ static TEXT_PTR texttype[] = {
 };
 static TEXT_PTR charset[] = {
 /*	"INTL Character Set",
-		FLD(charset*, "Name: %s", charset_name),
-		FLD(charset*, "Vers: %d", charset_version),
-		FLD(charset*, "ID:   %d", charset_id),
-		FLD(charset*, "B/Ch: %d", charset_max_bytes_per_char),
-		FLD(charset*, "B/Ch: %d", charset_min_bytes_per_char),
-		FLD(charset*, "Flags:%d", charset_flags), */
+		FLD(CHARSET, "Name: %s", charset_name),
+		FLD(CHARSET, "Vers: %d", charset_version),
+		FLD(CHARSET, "ID:   %d", charset_id),
+		FLD(CHARSET, "B/Ch: %d", charset_max_bytes_per_char),
+		FLD(CHARSET, "B/Ch: %d", charset_min_bytes_per_char),
+		FLD(CHARSET, "Flags:%d", charset_flags), */
 		0
 };
 static TEXT_PTR csconvert[] = {
 /*	"INTL Character set converter",
-		FLD(csconvert*, "Name: %s", csconvert_name),
-		FLD(csconvert*, "from: %d", csconvert_from),
-		FLD(csconvert*, "to:   %d", csconvert_to), */
+		FLD(CSCONVERT, "Name: %s", csconvert_name),
+		FLD(CSCONVERT, "from: %d", csconvert_from),
+		FLD(CSCONVERT, "to:   %d", csconvert_to), */
 		0
 };
-static TEXT_PTR thread_db[] = {
+static TEXT_PTR tdbb[] = {
+
 	"THREAD DATA BLOCK",
-		FLD(thread_db*, "Status vec: %x", tdbb_status_vector),
-		FLD(thread_db*, "Default: %x", getDefaultPool()),
+		FLD(TDBB, "Status vec: %x", tdbb_status_vector),
+		FLD(TDBB, "Default: %x", tdbb_default),
 		0
 };
-static TEXT_PTR Service[] =		{	"SERVICE MANAGER BLOCK", 0};
-static TEXT_PTR LatchWait[] =		{	"LATCH WAIT BLOCK", 0};
-static TEXT_PTR ViewContext[] =		{	"VIEW CONTEXT BLOCK", 0};
-static TEXT_PTR SaveRecordParam[] =	{	"RPB BLOCK", 0};
+static TEXT_PTR logfiles[] = {	"WRITE AHEAD LOG FILE", 0};
+static TEXT_PTR svc[] =		{	"SERVICE MANAGER BLOCK", 0};
+static TEXT_PTR lwt[] =		{	"LATCH WAIT BLOCK", 0};
+static TEXT_PTR vcx[] =		{	"VIEW CONTEXT BLOCK", 0};
+static TEXT_PTR srpb[] =	{	"RPB BLOCK", 0};
 
 
 static int (*dbg_all) (), (*dbg_block) (), (*dbg_examine) (), (*dbg_eval) (),
@@ -445,7 +416,7 @@ static int (*dbg_all) (), (*dbg_block) (), (*dbg_examine) (), (*dbg_eval) (),
 	(*dbg_window) (), (*dbg_rpb) (), (*dbg_bdbs) (), (*dbg_analyze) (),
 	(*dbg_check) (), (*dmp_page) (), (*dmp_active) (), (*dmp_dirty) (),
 	(*dbg_verify) ();
-
+#define SYM(struct, name)	"name", OFFSET (struct, name), 0, symb_offset, sizeof (((struct) 0)->name),
 
 struct symb dbt_symbols[] = {
 	{"blk", &dbg_block, symb_printer, sizeof(int)},
@@ -467,39 +438,38 @@ struct symb dbt_symbols[] = {
 	{"bdbs", &dbg_bdbs, symb_routine, 0},
 	{"verify", &dbg_verify, symb_routine, 0},
 
-//
-//#define SYM(struct, name)	"name", OFFSET (struct, name), 0, symb_offset, sizeof (((struct) NULL)->name),
-//    "Database", &Database, symb_absolute, sizeof(Database),
-//    SYM (Database*, dbb_bcb)
-//    SYM (Database*, dbb_relations)
-//    SYM (Database*, dbb_pools)
-//    SYM (Database*, dbb_requests)
-//    SYM (REL, rel_formats)
-//    SYM (REL, rel_pages)
-//    SYM (jrd_req*, req_top_node)
-//    SYM (jrd_req*, req_next)
-//
-	{NULL, 0, symb_routine, 0}
+/*
+    "dbb", &dbb, symb_absolute, sizeof (dbb),
+    SYM (DBB, dbb_bcb)
+    SYM (DBB, dbb_relations)
+    SYM (DBB, dbb_pools)
+    SYM (DBB, dbb_requests)
+    SYM (REL, rel_formats)
+    SYM (REL, rel_pages)
+    SYM (JRD_REQ, req_top_node)
+    SYM (JRD_REQ, req_next)
+*/
+	(SCHAR *) 0, 0, symb_routine, 0
 };
 
 #define BLKDEF(type, name, tail) (TEXT*) name,
 
-#define Database dbb_stuff
+#define dbb dbb_stuff
 
-TEXT* dbt_blocks[] =
-{
-	0,
+TEXT* dbt_blocks[] = { 0,
 #include "../jrd/blk.h"
 	0
 };
 #undef BLKDEF
 
 
+} // extern "C"
+
 
 const char* DBT_jrd_type_map(int type)
 {
 #define BLKDEF(enum_c, str_c, ext) case enum_c: return str_c[0];
-	switch (type)
+	switch(type)
 	{
 	#include "../jrd/blk.h"
 	default:

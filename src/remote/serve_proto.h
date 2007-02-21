@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Remote server  
  *	MODULE:		serve_proto.h
- *	DESCRIPTION:	Prototype Header file for server.cpp
+ *	DESCRIPTION:	Prototype Header file for server.c
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -21,31 +21,23 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef REMOTE_SERVE_PROTO_H
-#define REMOTE_SERVE_PROTO_H
+#ifndef _REMOTE_SERVE_PROTO_H_
+#define _REMOTE_SERVE_PROTO_H_
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+#ifdef WINDOWS_ROUTER
+extern void	SRVR_WinMain (struct port *, USHORT, HINSTANCE, HINSTANCE, int);
+#else	/* WINDOWS_ROUTER */
+extern void	SRVR_main (struct port *, USHORT);
+#endif	/* WINDOWS_ROUTER */
 
 #ifdef NO_PORT
-#define rem_port void
+#define PORT void*
 #endif
 
-#include "../jrd/thd.h"
+extern void	SRVR_multi_thread (struct port *, USHORT);
+extern ULONG SRVR_xnet_start_thread(ULONG);
+extern SLONG	check_license (void);
+extern BOOLEAN	process_packet (PORT, PACKET *, PACKET *, PORT *);
+extern void	set_server (PORT, USHORT);
 
-void SRVR_main(rem_port*, USHORT);
-
-void SRVR_multi_thread(rem_port*, USHORT);
-bool process_packet(rem_port*, PACKET *, PACKET *, rem_port**);
-void set_server(rem_port*, USHORT);
-THREAD_ENTRY_DECLARE process_connection_thread(THREAD_ENTRY_PARAM);
-void SRVR_shutdown();
-
-#ifdef __cplusplus
-} // extern "C"
-#endif
-
-
-#endif	// REMOTE_SERVE_PROTO_H
-
+#endif	/* _REMOTE_SERVE_PROTO_H_ */

@@ -21,22 +21,18 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef JRD_ISC_SIGNAL_H
-#define JRD_ISC_SIGNAL_H
+#ifndef _JRD_ISC_SIGNAL_H_
+#define _JRD_ISC_SIGNAL_H_
 
 #ifdef WIN_NT
 /* There is no interprocess signaling on Windows NT.  We simulate it
    by sending messages through named pipes. */
+
 #define BLOCKING_SIGNAL		1000	/* Lock manager */
 #define WAKEUP_SIGNAL		1100	/* Lock manager */
 #define EVENT_SIGNAL		1200	/* Event manager */
 #define CACHE_SIGNALS		1300	/* Shared cache */
-#else
-#	define BLOCKING_SIGNAL SIGUSR1 // from lock.h
-#	ifdef UNIX // from event.cpp
-#		define EVENT_SIGNAL	SIGUSR2
-#	endif
+#define WAL_SIGNALS		1400	/* Write ahead log */
 #endif
 
-#endif /* JRD_ISC_SIGNAL_H */
-
+#endif /* _JRD_ISC_SIGNAL_H_ */

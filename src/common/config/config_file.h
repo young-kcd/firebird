@@ -1,32 +1,36 @@
 /*
- *  The contents of this file are subject to the Initial
- *  Developer's Public License Version 1.0 (the "License");
- *  you may not use this file except in compliance with the
- *  License. You may obtain a copy of the License at
- *  http://www.ibphoenix.com/main.nfs?a=ibphoenix&page=ibp_idpl.
+ *	PROGRAM:	Client/Server Common Code
+ *	MODULE:		config_file.h
+ *	DESCRIPTION:	Configuration manager (file handling)
  *
- *  Software distributed under the License is distributed AS IS,
- *  WITHOUT WARRANTY OF ANY KIND, either express or implied.
- *  See the License for the specific language governing rights
- *  and limitations under the License.
+ * The contents of this file are subject to the Interbase Public
+ * License Version 1.0 (the "License"); you may not use this file
+ * except in compliance with the License. You may obtain a copy
+ * of the License at http://www.Inprise.com/IPL.html
  *
- *  The Original Code was created by Dmitry Yemanov
- *  for the Firebird Open Source RDBMS project.
+ * Software distributed under the License is distributed on an
+ * "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express
+ * or implied. See the License for the specific language governing
+ * rights and limitations under the License.
  *
- *  Copyright (c) 2002 Dmitry Yemanov <dimitr@users.sf.net>
- *  and all contributors signed below.
+ * The Original Code was created by Inprise Corporation
+ * and its predecessors. Portions created by Inprise Corporation are
+ * Copyright (C) Inprise Corporation.
  *
- *  All Rights Reserved.
- *  Contributor(s): ______________________________________.
+ * Created by: Mark O'Donohue <mark.odonohue@ludwig.edu.au>
+ *
+ * All Rights Reserved.
+ * Contributor(s): ______________________________________.
  */
 
-#ifndef CONFIG_CONFIG_FILE_H
-#define CONFIG_CONFIG_FILE_H
+#ifndef CONFIG_FILE_H
+#define CONFIG_FILE_H
+
+#include <functional>
+#include <map>
 
 #include "../../common/classes/alloc.h"
-#include "../../common/classes/fb_pair.h"
-#include "../../common/classes/objects_array.h"
-#include "../common/classes/fb_string.h"
+#include "fb_string.h"
 
 /**
 	Since the original (isc.cpp) code wasn't able to provide powerful and
@@ -45,28 +49,28 @@
 	(common/config/config.cpp) and server-side alias manager (jrd/db_alias.cpp).
 **/
 
-class ConfigFile : public Firebird::AutoStorage
+class ConfigFile
 {
-	// config_file works with OS case-sensitivity
-	typedef Firebird::PathName string;
+	typedef Firebird::string string;
 
-	typedef Firebird::Pair<Firebird::Full<string, string> > Parameter;
+	// used to provide proper filename handling in various OS
+	class key_compare : public std::binary_function<const string&, const string&, bool>
+	{
+	public:
+		key_compare() {}
+		bool operator()(const string&, const string&) const;
+	};
 
-    typedef Firebird::SortedObjectsArray <Parameter, 
-		Firebird::InlineStorage<Parameter *, 100>,
-		string, Firebird::FirstPointerKey<Parameter> > mymap_t;
+    typedef std::map <string, string, key_compare,
+		Firebird::allocator <std::pair <const string, string> > > mymap_t;
 
 public:
-	ConfigFile(MemoryPool& p, bool ExceptionOnError) 
-		: AutoStorage(p), isLoadedFlg(false), 
-		  fExceptionOnError(ExceptionOnError), parameters(getPool()) {}
-    explicit ConfigFile(bool ExceptionOnError) 
-		: AutoStorage(), isLoadedFlg(false), 
-		  fExceptionOnError(ExceptionOnError), parameters(getPool()) {}
+    ConfigFile(bool ExitOnError) 
+		: isLoadedFlg(false), fExitOnError(ExitOnError) {}
 
 	// configuration file management
-    const string getConfigFilePath() const { return configFile; }
-    void setConfigFilePath(const string& newFile) { configFile = newFile; }
+    const string getConfigFile() { return configFile; }
+    void setConfigFile(const string& newFile) { configFile = newFile; }
 
     bool isLoaded() const { return isLoadedFlg; }
 
@@ -78,6 +82,8 @@ public:
     string getString(const string&);
 
 	// utilities
+	static void stripLeadingWhiteSpace(string&);
+	static void stripTrailingWhiteSpace(string&);
 	static void stripComments(string&);
 	static string parseKeyFrom(const string&, string::size_type&);
 	static string parseValueFrom(string, string::size_type);
@@ -85,8 +91,8 @@ public:
 private:
     string configFile;
     bool isLoadedFlg;
-	bool fExceptionOnError;
+	bool fExitOnError;
     mymap_t parameters;
 };
 
-#endif	// CONFIG_CONFIG_FILE_H
+#endif	// CONFIG_FILE_H

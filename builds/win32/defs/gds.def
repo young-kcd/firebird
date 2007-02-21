@@ -1,0 +1,275 @@
+;  The contents of this file are subject to the Interbase Public
+;  License Version 1.0 (the "License"); you may not use this file
+;  except in compliance with the License. You may obtain a copy
+;  of the License at http://www.Inprise.com/IPL.html
+; 
+;  Software distributed under the License is distributed on an
+;  "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express
+;  or implied. See the License for the specific language governing
+;  rights and limitations under the License.
+; 
+;  The Original Code was created by Inprise Corporation
+;  and its predecessors. Portions created by Inprise Corporation are
+;  Copyright (C) Inprise Corporation.
+; 
+;  All Rights Reserved.
+;  Contributor(s): ______________________________________.
+;------------------------------------------------------------
+;  WHY DLL MODULE DEFINITION FILE
+;------------------------------------------------------------
+
+LIBRARY     GDS
+
+DESCRIPTION 'WHY VALVE AND DSQL INTERBASE MODULE'
+CODE MOVEABLE
+DATA MOVEABLE SINGLE
+SEGMENTS
+        _TEXT           DISCARDABLE
+        ALT_TEXT        DISCARDABLE
+        FLU_TEXT        PRELOAD
+        GDSWEP_TEXT     PRELOAD
+        LICENSE_TEXT    DISCARDABLE
+        WHY_TEXT        DISCARDABLE
+        PERF_TEXT       DISCARDABLE
+        UTL_TEXT        DISCARDABLE
+        THIN_TEXT       DISCARDABLE
+        PREPARSE_TEXT   DISCARDABLE
+        USER_DSQ_TEXT   DISCARDABLE
+        BLOB_TEXT       DISCARDABLE
+        ARRAY_TEXT      DISCARDABLE
+        DLLSHELL_TEXT   PRELOAD
+EXPORTS
+; All ordinals > 254 are new to GDS
+; Highest ordinal:  266
+; ALT.C
+	_gds__extend_dpb		    @127
+
+	_isc_attach_database		    @61
+	_isc_blob_display		    @142
+	_isc_blob_dump                      @143
+	_isc_blob_edit                      @144
+	_isc_blob_info			    @62
+	_isc_blob_load                      @145
+	_isc_cancel_blob		    @63
+	_isc_cancel_events		    @244
+	_isc_close_blob                     @64
+	_isc_commit_retaining               @65
+	_isc_commit_transaction             @66
+	_isc_compile_request                @67
+	_isc_compile_request2               @68
+	_isc_create_blob                    @69
+	_isc_create_blob2                   @70
+	_isc_create_database                @71
+	_isc_database_cleanup		    @146
+	_isc_database_info                  @72
+	_isc_ddl                            @73
+	_isc_decode_date               	    @74
+	_isc_detach_database           	    @75
+	_isc_encode_date		    @90
+	_isc_event_block                    @91
+	_isc_event_block_a                  @147
+	_isc_event_block_s                  @148
+	_isc_event_counts                   @92
+	_isc_free			    @222
+	_isc_ftof                           @93
+	_isc_get_segment                    @94
+	_isc_get_slice                      @95
+	_isc_interprete                     @96
+	_isc_open_blob                      @97
+	_isc_open_blob2                     @98
+	_isc_prepare_transaction            @99
+	_isc_prepare_transaction2           @100
+	_isc_print_blr                      @101
+	_isc_print_status                   @102
+	_isc_put_segment                    @103
+	_isc_put_slice                      @104
+	_isc_qtoq                           @105
+	_isc_que_events			    @216
+	_isc_receive                        @106
+	_isc_reconnect_transaction          @107
+	_isc_release_request                @108
+	_isc_request_info                   @109
+	_isc_rollback_transaction           @110
+	_isc_seek_blob                      @111
+	_isc_send                           @112
+	_isc_set_debug                      @113
+	_isc_sqlcode			    @115
+	_isc_sqlcode_s			    @149
+	_isc_start_and_send		    @116
+	_isc_start_multiple                 @117
+	_isc_start_request                  @118
+	_isc_start_transaction              @119
+	_isc_transaction_info               @120
+	_isc_unwind_request                 @121
+	_isc_vax_integer                    @122
+	_isc_version                        @123
+	_isc_vtof                           @124
+	_isc_vtov                           @125
+
+; ../JRD/LICENSE.C
+	_LICENSE_mask			    @126
+
+; ../DSQL/PREPARSE.C
+	_PREPARSE_execute		    @255
+
+; ../DSQL/USER_DSQ.C
+	_gds__close			    @167
+	_gds__declare                       @168
+	_gds__describe                      @169
+	_gds__describe_bind                 @170
+	_gds__dsql_finish                   @171
+	_gds__execute                       @172
+	_gds__execute_immediate             @173
+	_gds__fetch                         @174
+	_gds__fetch_a                       @175
+	_gds__open                          @176
+	_gds__prepare                       @177
+	_gds__to_sqlda                      @178
+
+	_isc_close                          @179
+	_isc_declare                        @180
+	_isc_describe                       @181
+	_isc_describe_bind                  @182
+	_isc_dsql_fetch_a                   @183
+	_isc_dsql_finish                    @184
+	_isc_dsql_release                   @185
+	_isc_embed_dsql_close               @130
+	_isc_embed_dsql_declare             @131
+	_isc_embed_dsql_descr_bind          @186
+	_isc_embed_dsql_describe            @132
+	_isc_embed_dsql_describe_bind       @133
+	_isc_embed_dsql_exec_immed          @187
+	_isc_embed_dsql_exec_immed2         @256
+	_isc_embed_dsql_execute             @134
+	_isc_embed_dsql_execute2            @265
+	_isc_embed_dsql_execute_immed       @135
+	_isc_embed_dsql_fetch               @136
+	_isc_embed_dsql_fetch_a             @188
+	_isc_embed_dsql_insert              @257
+	_isc_embed_dsql_length              @189
+	_isc_embed_dsql_open                @137
+	_isc_embed_dsql_open2               @258
+	_isc_embed_dsql_prepare             @138
+	_isc_embed_dsql_release             @139
+	_isc_execute                        @190
+	_isc_execute_immediate		    @191
+	_isc_fetch                          @192
+	_isc_fetch_a                        @193
+	_isc_open                           @194
+	_isc_prepare                        @195
+	_isc_to_sqlda                       @196
+
+; ../JRD/WHY.C
+	_gds__attach_database               @19
+	_gds__blob_info                     @199
+	_gds__cancel_blob                   @200
+	_gds__cancel_events                 @250
+	_gds__close_blob                    @21
+	_gds__commit_retaining              @22
+	_gds__commit_transaction            @23
+	_gds__compile_request               @24
+	_gds__compile_request2              @25
+	_gds__create_blob                   @26
+	_gds__create_blob2                  @201
+	_gds__create_database               @27
+	_gds__database_cleanup              @28
+	_gds__database_info                 @29
+	_gds__ddl                           @30
+	_gds__detach_database               @32
+	_gds__disable_subsystem             @202
+	_gds__enable_subsystem              @203
+	_gds__event_wait                    @259
+	_gds__get_segment                   @37
+	_gds__get_slice                     @204
+	_gds__open_blob                     @40
+	_gds__open_blob2                    @41
+	_gds__prepare_transaction           @42
+	_gds__prepare_transaction2          @205
+	_gds__put_segment                   @45
+	_gds__put_slice                     @206
+	_gds__que_events                    @249
+	_gds__receive                       @46
+	_gds__reconnect_transaction         @207
+	_gds__release_request               @48
+	_gds__request_info                  @208
+	_gds__rollback_transaction          @49
+	_gds__seek_blob                     @209
+	_gds__send                          @50
+	_gds__start_and_send                @51
+	_gds__start_multiple                @210
+	_gds__start_request                 @52
+	_gds__start_transaction             @53
+	_gds__transaction_cleanup           @211
+	_gds__transaction_info              @212
+	_gds__unwind_request                @56
+
+	_isc_drop_database		    @231
+	_isc_dsql_alloc_statement      	    @260
+	_isc_dsql_alloc_statement2          @223
+	_isc_dsql_allocate_statement        @76
+	_isc_dsql_describe             	    @77
+	_isc_dsql_describe_bind        	    @78
+	_isc_dsql_exec_immed2               @220
+	_isc_dsql_exec_immed2_m             @261
+	_isc_dsql_exec_immed3_m             @253
+	_isc_dsql_exec_immediate	    @262
+	_isc_dsql_exec_immediate_m          @263
+	_isc_dsql_execute              	    @79
+	_isc_dsql_execute_immediate    	    @80
+	_isc_dsql_execute_immediate_m  	    @81
+	_isc_dsql_execute_m            	    @82
+	_isc_dsql_execute2                  @221
+	_isc_dsql_execute2_m                @252
+	_isc_dsql_fetch                	    @83
+	_isc_dsql_fetch_m              	    @84
+	_isc_dsql_free_statement       	    @85
+	_isc_dsql_insert                    @264
+	_isc_dsql_insert_m                  @254
+	_isc_dsql_prepare              	    @86
+	_isc_dsql_prepare_m      	    @87
+	_isc_dsql_set_cursor_name           @88
+	_isc_dsql_sql_info                  @89
+	_isc_service_attach                 @217
+	_isc_service_detach                 @218
+	_isc_service_query                  @219
+	_isc_service_start		    @266
+	_isc_transact_request		    @243
+
+; ../DSQL/BLOB.C
+	_isc_blob_default_desc         @235
+	_isc_blob_gen_bpb              @236
+	_isc_blob_lookup_desc          @234
+	_isc_blob_set_desc             @242
+
+; PERF.C
+	_perf_format                   @232
+	_perf_get_info                 @233
+
+; UTL.C
+	_BLOB_close                    @7
+	_BLOB_get                      @197
+	_BLOB_display                  @2
+	_BLOB_dump                     @3
+	_BLOB_edit                     @4
+	_BLOB_load                     @5
+	_BLOB_open                     @198
+	_BLOB_put                      @6
+	_Bopen                         @8
+
+	_gds__blob_size                @20
+	_gds__edit                     @33
+	_gds__version                  @58
+
+	_isc_expand_dpb                @224
+	_isc_format_implementation     @237
+
+; ..\DSQL\ARRAY.C
+	_isc_array_gen_sdl		@225
+	_isc_array_get_slice		@226
+	_isc_array_lookup_bounds	@227
+	_isc_array_lookup_desc		@228
+	_isc_array_set_desc		@229
+	_isc_array_put_slice		@230
+;-------------------------------------------
+		WEP                            	@1   RESIDENTNAME
+

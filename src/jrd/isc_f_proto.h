@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Access Method
  *	MODULE:		isc_f_proto.h
- *	DESCRIPTION:	Prototype header file for isc_file.cpp
+ *	DESCRIPTION:	Prototype header file for isc_file.c
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -24,43 +24,28 @@
  *
  */
 
-#ifndef JRD_ISC_FILE_PROTO_H
-#define JRD_ISC_FILE_PROTO_H
+#ifndef _JRD_ISC_FILE_PROTO_H_
+#define _JRD_ISC_FILE_PROTO_H_
 
-#include "../common/classes/fb_string.h"
-
-#ifndef NO_NFS
-bool		ISC_analyze_nfs(Firebird::PathName&, Firebird::PathName&);
+#ifdef __cplusplus
+extern "C" {
 #endif
-bool		ISC_analyze_pclan(Firebird::PathName&, Firebird::PathName&);
-bool		ISC_analyze_tcp(Firebird::PathName&, Firebird::PathName&);
-bool		ISC_analyze_xnet(Firebird::PathName&, Firebird::PathName&);
-bool		ISC_check_if_remote(const Firebird::PathName&, bool);
-enum		iscProtocol {ISC_PROTOCOL_LOCAL, ISC_PROTOCOL_TCPIP, ISC_PROTOCOL_WLAN};
-iscProtocol	ISC_extract_host(Firebird::PathName&, Firebird::PathName&, bool);
-bool		ISC_expand_filename(Firebird::PathName&, bool);
 
-// This form of ISC_expand_filename makes epp files happy
-inline bool	ISC_expand_filename(const TEXT* unexpanded, 
-								USHORT len_unexpanded, 
-								TEXT* expanded, 
-								size_t len_expanded, 
-								bool expand_share) 
-{
-	Firebird::PathName pn(unexpanded, 
-			len_unexpanded ? len_unexpanded : strlen(unexpanded));
-	ISC_expand_filename(pn, expand_share);
-	// What do I return here if the previous call returns false?
-	return (pn.copyTo(expanded, len_expanded) != 0);
-}
+extern int ISC_analyze_nfs(TEXT *, TEXT *);
+extern int ISC_analyze_pclan(TEXT *, TEXT *);
+extern int DLL_EXPORT ISC_analyze_tcp(TEXT *, TEXT *);
+extern int ISC_analyze_xnet(TEXT *, TEXT *);
+extern BOOLEAN DLL_EXPORT ISC_check_if_remote(TEXT *, BOOLEAN);
+extern int ISC_expand_filename(TEXT *, USHORT, TEXT *);
+extern int ISC_expand_logical(TEXT *, USHORT, TEXT *);
+extern int ISC_expand_share(TEXT *, TEXT *);
+extern int ISC_file_lock(SSHORT);
+extern int ISC_file_unlock(SSHORT);
+extern int ISC_strip_filename(TEXT *);
+extern bool ISC_verify_database_access(TEXT *);
 
-#ifdef VMS
-int			ISC_expand_logical(const TEXT*, USHORT, TEXT*);
+#ifdef __cplusplus
+} /* extern "C" */
 #endif
-void		ISC_expand_share(Firebird::PathName&);
-int			ISC_file_lock(SSHORT);
-int			ISC_file_unlock(SSHORT);
-bool		ISC_verify_database_access(const Firebird::PathName&);
 
-#endif // JRD_ISC_FILE_PROTO_H
-
+#endif /* _JRD_ISC_FILE_PROTO_H_ */

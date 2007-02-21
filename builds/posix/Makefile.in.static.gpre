@@ -27,11 +27,11 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.static.gpre,v 1.19 2005-12-18 17:56:43 alexpeshkoff Exp $
+#  $Id: Makefile.in.static.gpre,v 1.10.2.3 2006-11-05 14:37:30 alexpeshkoff Exp $
 #
 ROOT=..
-ObjModuleType=boot
-CFLAGS += -DBOOT_BUILD
+ObjModuleName=static.gpre
+CFLAGS := -DBOOT_BUILD
 
 include     $(ROOT)/gen/make.defaults
 include     $(ROOT)/gen/make.platform
@@ -43,7 +43,8 @@ include     $(ROOT)/gen/make.shared.variables
 
 GPRECOMMON_Files += cmd.cpp cme.cpp cmp.cpp c_cxx.cpp exp.cpp \
 		gpre.cpp hsh.cpp int_cxx.cpp jrdmet.cpp movg.cpp \
-		msc.cpp par.cpp pat.cpp sqe.cpp sql.cpp
+		msc.cpp par.cpp pat.cpp sqe.cpp sql.cpp noform.cpp \
+		@GPRE_LANGUAGE_MODULES@
 
 GPRESTATIC_Files = $(GPRECOMMON_Files) gpre_meta.epp
 GPRESTATIC_Sources = $(addprefix gpre/, $(GPRESTATIC_Files))
@@ -51,7 +52,7 @@ GPRESTATIC_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(GPRESTATI
 
 
 AllObjects = $(GPRESTATIC_Objects)
-Dependencies = $(AllObjects:.o=.d) 
+Dependencies=$(AllObjects:.o=.$(DEP_EXT))
 
 
 .PHONY: gpre_static 
@@ -60,8 +61,8 @@ all : gpre_static
 
 gpre_static : $(GPRE_STATIC)
 
-$(GPRE_STATIC):	$(GPRESTATIC_Objects) $(COMMON_Objects)
-	$(LD) $(LINK_OPTS) $^ -o $@ -L$(LIB) -lfbstatic $(LINK_LIBS) $(ICU_LIBS)
+$(GPRE_STATIC):	$(GPRESTATIC_Objects) $(LIBFBCOMMON_A) $(LIBFBSTATIC_A)  
+	$(LD) $(LINK_OPTS) $(GPRESTATIC_Objects) -o $@ -L$(LIB) -lfbstatic -lfbcommon $(LINK_LIBS)
 	-$(RM) $(GPRE_CURRENT)
 	(cd $(@D); $(LN) $(@F) $(notdir $(GPRE_CURRENT)))
 

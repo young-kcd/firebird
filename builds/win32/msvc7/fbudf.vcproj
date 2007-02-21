@@ -29,10 +29,9 @@
 				FavorSizeOrSpeed="1"
 				OmitFramePointers="TRUE"
 				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
-				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;SUPERCLIENT;FBUDF_EXPORTS"
+				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;FBUDF_EXPORTS"
 				ExceptionHandling="FALSE"
 				RuntimeLibrary="2"
-				RuntimeTypeInfo="FALSE"
 				PrecompiledHeaderFile="..\..\..\temp\release\fbudf/fbudf.pch"
 				AssemblerListingLocation="..\..\..\temp\release\fbudf/"
 				ObjectFile="..\..\..\temp\release\fbudf/"
@@ -46,18 +45,19 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
-				OutputFile="..\..\..\temp\release\firebird\udf\fbudf.dll"
+				AdditionalDependencies="odbc32.lib odbccp32.lib"
+				OutputFile="release/firebird/udf/fbudf.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				GenerateDebugInformation="TRUE"
-				ImportLibrary="..\..\..\temp\release\fbudf\fbudf.lib"/>
+				ImportLibrary="..\..\..\temp\release\fbudf/fbudf.lib"/>
 			<Tool
 				Name="VCMIDLTool"
 				PreprocessorDefinitions="NDEBUG"
 				MkTypLibCompatible="TRUE"
 				SuppressStartupBanner="TRUE"
 				TargetEnvironment="1"
-				TypeLibraryName="..\..\..\temp\release\fbudf\fbudf.tlb"/>
+				TypeLibraryName="..\..\..\temp\release\fbudf/fbudf.tlb"/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool
@@ -92,12 +92,11 @@
 				AdditionalOptions="/EHsc-"
 				Optimization="0"
 				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
-				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;SUPERCLIENT;FBUDF_EXPORTS;DEV_BUILD"
+				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;FBUDF_EXPORTS"
 				ExceptionHandling="FALSE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				RuntimeTypeInfo="FALSE"
-				PrecompiledHeaderFile="..\..\..\temp\debug\fbudf\fbudf.pch"
+				PrecompiledHeaderFile="..\..\..\temp\debug\fbudf/fbudf.pch"
 				AssemblerListingLocation="..\..\..\temp\debug\fbudf/"
 				ObjectFile="..\..\..\temp\debug\fbudf/"
 				ProgramDataBaseFileName="..\..\..\temp\debug\fbudf/"
@@ -110,19 +109,21 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
-				OutputFile="..\..\..\temp\debug\firebird\udf\fbudf.dll"
+				AdditionalDependencies="odbc32.lib odbccp32.lib"
+				OutputFile="debug/firebird/udf/fbudf.dll"
 				LinkIncremental="2"
 				SuppressStartupBanner="TRUE"
+				AdditionalLibraryDirectories="H:\ibdev\fbbuild\interbase\interbase\lib"
 				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile="..\..\..\temp\debug\fbudf\fbudf.pdb"
-				ImportLibrary="..\..\..\temp\debug\fbudf\fbudf.lib"/>
+				ProgramDatabaseFile="..\..\..\temp\debug\fbudf/fbudf.pdb"
+				ImportLibrary="..\..\..\temp\debug\fbudf/fbudf.lib"/>
 			<Tool
 				Name="VCMIDLTool"
 				PreprocessorDefinitions="_DEBUG"
 				MkTypLibCompatible="TRUE"
 				SuppressStartupBanner="TRUE"
 				TargetEnvironment="1"
-				TypeLibraryName="..\..\..\temp\debug\fbudf\fbudf.tlb"/>
+				TypeLibraryName="..\..\..\temp\debug\fbudf/fbudf.tlb"/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool
@@ -157,9 +158,6 @@
 			<File
 				RelativePath="..\..\..\src\extlib\fbudf\stdafx.cpp">
 			</File>
-			<File
-				RelativePath="..\..\..\src\common\classes\timestamp.cpp">
-			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"
@@ -172,9 +170,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\extlib\fbudf\stdafx.h">
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\classes\timestamp.h">
 			</File>
 		</Filter>
 		<Filter

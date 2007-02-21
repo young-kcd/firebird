@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Remote Interface/Server
  *      MODULE:         xnet_proto.h
- *      DESCRIPTION:    Prototpe header file for xnet.cpp
+ *      DESCRIPTION:    Prototpe header file for xnet.c
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -19,25 +19,27 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- *
- * 2003.05.01 Victor Seryodkin, Dmitry Yemanov: Completed XNET implementation
  */
 
-#ifndef REMOTE_XNET_PROTO_H
-#define REMOTE_XNET_PROTO_H
+#ifndef _REMOTE_XNET_PROTO_H_
+#define _REMOTE_XNET_PROTO_H_
 
-#include "../common/classes/fb_string.h"
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #ifdef NO_PORT
-#define rem_port void
+#define PORT void*
 #endif
 
-rem_port* XNET_analyze(Firebird::PathName&, ISC_STATUS*, const TEXT*, const TEXT*, bool);
-rem_port* XNET_connect(const TEXT*, struct packet*, ISC_STATUS*, USHORT);
+extern PORT     XNET_analyze( TEXT *, USHORT *, ISC_STATUS *, TEXT *, TEXT *, USHORT);
+extern PORT     XNET_connect( TEXT *, struct packet *, ISC_STATUS *, USHORT);
+extern USHORT   XNET_init( HWND, USHORT, USHORT, USHORT);
+extern void		XNET_release_all(void);
+extern PORT     XNET_start_thread( ULONG, ULONG *);
 
-#ifndef SUPERCLIENT
-rem_port* XNET_reconnect(ULONG, ISC_STATUS*);
+#ifdef __cplusplus
+}	/* extern "C" */
 #endif
 
-#endif // REMOTE_XNET_PROTO_H
-
+#endif /* _REMOTE_XNET_PROTO_H */ 

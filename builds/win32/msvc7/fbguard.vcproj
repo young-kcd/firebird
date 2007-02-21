@@ -29,10 +29,9 @@
 				FavorSizeOrSpeed="1"
 				OmitFramePointers="TRUE"
 				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
-				PreprocessorDefinitions="NDEBUG,WIN32,_WINDOWS,SUPERCLIENT"
+				PreprocessorDefinitions="NDEBUG,WIN32,_WINDOWS,SERVER_SHUTDOWN,SUPERSERVER"
 				ExceptionHandling="FALSE"
 				RuntimeLibrary="2"
-				RuntimeTypeInfo="FALSE"
 				PrecompiledHeaderFile="..\..\..\temp\release\fbguard/fbguard.pch"
 				AssemblerListingLocation="..\..\..\temp\release\fbguard/"
 				ObjectFile="..\..\..\temp\release\fbguard/"
@@ -47,10 +46,11 @@
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
 				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
-				OutputFile="..\..\..\temp\release\firebird\bin\fbguard.exe"
+				OutputFile="release/firebird/bin/fbguard.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				GenerateDebugInformation="TRUE"
+				ProgramDatabaseFile="..\..\..\temp\release\fbguard/fbguard.pdb"
 				SubSystem="2"
 				OptimizeForWindows98="2"/>
 			<Tool
@@ -59,7 +59,7 @@
 				MkTypLibCompatible="TRUE"
 				SuppressStartupBanner="TRUE"
 				TargetEnvironment="1"
-				TypeLibraryName="..\..\..\temp\release\fbguard\fbguard.tlb"/>
+				TypeLibraryName="..\..\..\temp\release\fbguard/fbguard.tlb"/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool
@@ -94,11 +94,10 @@
 				AdditionalOptions="/EHsc-"
 				Optimization="0"
 				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
-				PreprocessorDefinitions="_DEBUG,WIN32,_WINDOWS,SUPERCLIENT,DEV_BUILD"
+				PreprocessorDefinitions="_DEBUG,WIN32,_WINDOWS,SERVER_SHUTDOWN,SUPERSERVER,DEV_BUILD"
 				ExceptionHandling="FALSE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				RuntimeTypeInfo="FALSE"
 				PrecompiledHeaderFile="..\..\..\temp\debug\fbguard/fbguard.pch"
 				AssemblerListingLocation="..\..\..\temp\debug\fbguard/"
 				ObjectFile="..\..\..\temp\debug\fbguard/"
@@ -113,11 +112,11 @@
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
 				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
-				OutputFile="..\..\..\temp\debug\firebird\bin\fbguard.exe"
+				OutputFile="debug/firebird/bin/fbguard.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile="..\..\..\temp\debug\fbguard\fbguard.pdb"
+				ProgramDatabaseFile="..\..\..\temp\debug\fbguard/fbguard.pdb"
 				SubSystem="2"
 				OptimizeForWindows98="2"/>
 			<Tool
@@ -126,7 +125,7 @@
 				MkTypLibCompatible="TRUE"
 				SuppressStartupBanner="TRUE"
 				TargetEnvironment="1"
-				TypeLibraryName="..\..\..\temp\debug\fbguard\fbguard.tlb"/>
+				TypeLibraryName="..\..\..\temp\debug\fbguard/fbguard.tlb"/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool
@@ -166,7 +165,7 @@
 			Name="REMOTE files"
 			Filter="">
 			<File
-				RelativePath="..\..\..\src\remote\os\win32\chop.cpp">
+				RelativePath="..\..\..\src\remote\chop.cpp">
 			</File>
 		</Filter>
 		<Filter
@@ -199,18 +198,6 @@
 						Name="VCResourceCompilerTool"
 						AdditionalIncludeDirectories="..\..\..\src\iscguard;$(NoInherit)"/>
 				</FileConfiguration>
-			</File>
-		</Filter>
-		<Filter
-			Name="COMMON files">
-			<File
-				RelativePath="..\..\..\src\common\classes\alloc.cpp">
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\config\config_file.cpp">
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\os\win32\config_root.cpp">
 			</File>
 		</Filter>
 	</Files>

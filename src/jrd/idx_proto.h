@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Access Method
  *	MODULE:		idx_proto.h
- *	DESCRIPTION:	Prototype header file for idx.cpp
+ *	DESCRIPTION:	Prototype header file for idx.c
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -21,45 +21,39 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef JRD_IDX_PROTO_H
-#define JRD_IDX_PROTO_H
+#ifndef _JRD_IDX_PROTO_H_
+#define _JRD_IDX_PROTO_H_
 
 #include "../jrd/btr.h"
 #include "../jrd/exe.h"
 #include "../jrd/req.h"
 
-namespace Jrd {
-	class jrd_rel;
-	class jrd_tra;
-	struct record_param;
-	class IndexBlock;
-	enum idx_e;
-	struct index_desc;
-	class CompilerScratch;
-	class jrd_fld;
-	class Record;
-}
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-void IDX_check_access(Jrd::thread_db*, Jrd::CompilerScratch*, Jrd::jrd_rel*, Jrd::jrd_rel*,
-							 Jrd::jrd_fld*);
-bool IDX_check_master_types (Jrd::thread_db*, Jrd::index_desc&, Jrd::jrd_rel*, int&);
-void IDX_create_index(Jrd::thread_db*, Jrd::jrd_rel*, Jrd::index_desc*, const TEXT*,
-					  USHORT*, Jrd::jrd_tra*, Jrd::SelectivityList&);
-Jrd::IndexBlock* IDX_create_index_block(Jrd::thread_db*, Jrd::jrd_rel*, USHORT);
-void IDX_delete_index(Jrd::thread_db*, Jrd::jrd_rel*, USHORT);
-void IDX_delete_indices(Jrd::thread_db*, Jrd::jrd_rel*, Jrd::RelationPages*);
-Jrd::idx_e IDX_erase(Jrd::thread_db*, Jrd::record_param*, Jrd::jrd_tra*, Jrd::jrd_rel**,
-							USHORT*);
-void IDX_garbage_collect(Jrd::thread_db*, Jrd::record_param*, Jrd::RecordStack&, Jrd::RecordStack&);
-Jrd::idx_e IDX_modify(Jrd::thread_db*, Jrd::record_param*, Jrd::record_param*,
-							 Jrd::jrd_tra*, Jrd::jrd_rel**, USHORT *);
-Jrd::idx_e IDX_modify_check_constraints(Jrd::thread_db*, Jrd::record_param*, Jrd::record_param*,
-											  Jrd::jrd_tra*, Jrd::jrd_rel**,
+extern void IDX_check_access(TDBB, class Csb *, struct jrd_rel *, struct jrd_rel *,
+							 struct jrd_fld *);
+extern void IDX_create_index(TDBB, struct jrd_rel *, struct idx *, UCHAR *,
+							 USHORT *, struct jrd_tra *, float *);
+extern struct idb *IDX_create_index_block(TDBB, struct jrd_rel *, USHORT);
+extern void IDX_delete_index(TDBB, struct jrd_rel *, USHORT);
+extern void IDX_delete_indices(TDBB, struct jrd_rel *);
+extern enum idx_e IDX_erase(TDBB, struct rpb *, struct jrd_tra *, struct jrd_rel **,
+							USHORT *);
+extern void IDX_garbage_collect(TDBB, struct rpb *, struct lls *,
+								struct lls *);
+extern enum idx_e IDX_modify(struct tdbb *, struct rpb *, struct rpb *,
+							 struct jrd_tra *, struct jrd_rel **, USHORT *);
+extern enum idx_e IDX_modify_check_constraints(TDBB, struct rpb *, struct rpb *,
+											  struct jrd_tra *, struct jrd_rel **,
 											  USHORT *);
-void IDX_statistics(Jrd::thread_db*, Jrd::jrd_rel*, USHORT, Jrd::SelectivityList&);
-Jrd::idx_e IDX_store(Jrd::thread_db*, Jrd::record_param*, Jrd::jrd_tra*,
-							Jrd::jrd_rel**, USHORT*);
+extern float IDX_statistics(TDBB, struct jrd_rel *, USHORT);
+extern enum idx_e IDX_store(struct tdbb *, struct rpb *, struct jrd_tra *,
+							struct jrd_rel **, USHORT *);
 
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
-#endif // JRD_IDX_PROTO_H
-
+#endif /* _JRD_IDX_PROTO_H_ */

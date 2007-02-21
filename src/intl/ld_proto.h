@@ -28,18 +28,15 @@
 extern "C" {
 #endif
 
-INTL_BOOL FB_DLL_EXPORT LD_lookup_charset(charset* cs, const ASCII* name);
-INTL_BOOL FB_DLL_EXPORT LD_lookup_texttype(texttype* tt, const ASCII* texttype_name, const ASCII* charset_name,
-										   USHORT attributes, const UCHAR* specific_attributes,
-										   ULONG specific_attributes_length, INTL_BOOL ignore_attributes);
+#ifdef DEV_BUILD
+void DLL_EXPORT LD_assert(const SCHAR*, int);
+#endif
 
-INTL_BOOL FB_DLL_EXPORT LD2_lookup_charset(charset* cs, const ASCII* name);
-INTL_BOOL FB_DLL_EXPORT LD2_lookup_texttype(texttype* tt, const ASCII* texttype_name, const ASCII* charset_name,
-											USHORT attributes, const UCHAR* specific_attributes,
-											ULONG specific_attributes_length, INTL_BOOL ignore_attributes);
+USHORT DLL_EXPORT LD_lookup(USHORT, FPTR_SHORT*, SSHORT, SSHORT);
+USHORT DLL_EXPORT LD2_lookup(USHORT, FPTR_SHORT*, SSHORT, SSHORT);
 
 #ifdef __cplusplus
-} /* extern "C" */
+} // extern "C"
 #endif
 
 #endif /* _INTL_LD_PROTO_H_ */

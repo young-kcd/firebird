@@ -3,7 +3,6 @@
 	ProjectType="Visual C++"
 	Version="7.10"
 	Name="dsql_server"
-	ProjectGUID="{2200CB02-7AED-423E-9484-9D149FD79B24}"
 	SccProjectName=""
 	SccLocalPath="">
 	<Platforms>
@@ -33,7 +32,6 @@
 				PreprocessorDefinitions="NDEBUG,_LIB,_WINDOWS,SUPERSERVER,WIN32,_X86_"
 				ExceptionHandling="FALSE"
 				RuntimeLibrary="2"
-				RuntimeTypeInfo="FALSE"
 				PrecompiledHeaderFile="..\..\..\temp\release\dsql_server_ss/dsql_server.pch"
 				AssemblerListingLocation="..\..\..\temp\release\dsql_server_ss/"
 				ObjectFile="..\..\..\temp\release\dsql_server_ss/"
@@ -86,7 +84,6 @@
 				ExceptionHandling="FALSE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				RuntimeTypeInfo="FALSE"
 				PrecompiledHeaderFile="..\..\..\temp\debug\dsql_server_ss/dsql_server.pch"
 				AssemblerListingLocation="..\..\..\temp\debug\dsql_server_ss/"
 				ObjectFile="..\..\..\temp\debug\dsql_server_ss/"

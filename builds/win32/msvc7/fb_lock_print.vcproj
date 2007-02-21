@@ -32,7 +32,6 @@
 				PreprocessorDefinitions="NDEBUG,_WINDOWS,CLIENT,SUPERCLIENT,WIN32,_X86_"
 				ExceptionHandling="FALSE"
 				RuntimeLibrary="2"
-				RuntimeTypeInfo="FALSE"
 				PrecompiledHeaderFile="..\..\..\temp\release\fb_lock_print/fb_lock_print.pch"
 				AssemblerListingLocation="..\..\..\temp\release\fb_lock_print/"
 				ObjectFile="..\..\..\temp\release\fb_lock_print/"
@@ -47,14 +46,15 @@
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
 				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
-				OutputFile="..\..\..\temp\release\firebird\bin\fb_lock_print.exe"
+				OutputFile="release/firebird/bin/fb_lock_print.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				GenerateDebugInformation="TRUE"
+				ProgramDatabaseFile="..\..\..\temp\release\fb_lock_print/fb_lock_print.pdb"
 				SubSystem="1"/>
 			<Tool
 				Name="VCMIDLTool"
-				TypeLibraryName="..\..\..\temp\release\fb_lock_print\fb_lock_print.tlb"/>
+				TypeLibraryName="..\..\..\temp\release\fb_lock_print/fb_lock_print.tlb"/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool
@@ -93,7 +93,6 @@
 				ExceptionHandling="FALSE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				RuntimeTypeInfo="FALSE"
 				PrecompiledHeaderFile="..\..\..\temp\debug\fb_lock_print/fb_lock_print.pch"
 				AssemblerListingLocation="..\..\..\temp\debug\fb_lock_print/"
 				ObjectFile="..\..\..\temp\debug\fb_lock_print/"
@@ -108,15 +107,15 @@
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
 				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
-				OutputFile="..\..\..\temp\debug\firebird\bin\fb_lock_print.exe"
+				OutputFile="debug/firebird/bin/fb_lock_print.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile="..\..\..\temp\debug\fb_lock_print\fb_lock_print.pdb"
+				ProgramDatabaseFile="..\..\..\temp\debug\fb_lock_print/fb_lock_print.pdb"
 				SubSystem="1"/>
 			<Tool
 				Name="VCMIDLTool"
-				TypeLibraryName="..\..\..\temp\debug\fb_lock_print\fb_lock_print.tlb"/>
+				TypeLibraryName="..\..\..\temp\debug\fb_lock_print/fb_lock_print.tlb"/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool
@@ -153,13 +152,19 @@
 			Name="JRD files"
 			Filter="">
 			<File
+				RelativePath="..\..\..\src\jrd\dls.cpp">
+			</File>
+			<File
 				RelativePath="..\..\..\src\jrd\gds.cpp">
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\init.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\isc.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\os\win32\isc_ipc.cpp">
+				RelativePath="..\..\..\src\jrd\isc_ipc.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\isc_sync.cpp">
@@ -190,6 +195,9 @@
 		<Filter
 			Name="Header files"
 			Filter="h;hpp;hxx;hm;inl">
+			<File
+				RelativePath="..\..\..\src\jrd\init.h">
+			</File>
 		</Filter>
 	</Files>
 	<Globals>

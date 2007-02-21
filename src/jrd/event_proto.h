@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Access method
  *	MODULE:		event_proto.h
- *	DESCRIPTION:	Prototype Header file for event.cpp
+ *	DESCRIPTION:	Prototype Header file for event.c
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -24,17 +24,24 @@
  *
  */
 
-#ifndef JRD_EVENT_PROTO_H
-#define JRD_EVENT_PROTO_H
+#ifndef _JRD_EVENT_PROTO_H_
+#define _JRD_EVENT_PROTO_H_
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 void EVENT_cancel(SLONG);
-SLONG EVENT_create_session(ISC_STATUS*);
+SLONG EVENT_create_session(ISC_STATUS *);
 void EVENT_delete_session(SLONG);
 void EVENT_deliver();
-struct evh* EVENT_init(ISC_STATUS*);
-int EVENT_post(ISC_STATUS*, USHORT, const TEXT*, USHORT, const TEXT*, USHORT);
-SLONG EVENT_que(ISC_STATUS*, SLONG, USHORT, const TEXT*, USHORT, const UCHAR*,
-				FPTR_EVENT_CALLBACK, void*);
+struct evh *EVENT_init(ISC_STATUS *, USHORT);
+int EVENT_post(ISC_STATUS *, USHORT, TEXT *, USHORT, TEXT *, USHORT);
+SLONG EVENT_que(ISC_STATUS *, SLONG, USHORT, TEXT *, USHORT, UCHAR *, FPTR_VOID,
+				void *);
 
-#endif // JRD_EVENT_PROTO_H
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
+#endif /* _JRD_EVENT_PROTO_H_ */

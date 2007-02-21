@@ -41,7 +41,7 @@ RSC=rc.exe
 # PROP Intermediate_Dir "..\..\..\temp\debug\remote_ss"
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_MBCS" /D "_LIB" /YX /FD /GZ /c
-# ADD CPP /nologo /MDd /W3 /Gm /GX /ZI /Od /I "../../../src/include" /I "../../../src/include/gen" /D "_DEBUG" /D "_LIB" /D "SUPERSERVER" /D "WIN32" /D "_MBCS" /D "_X86_" /D "DEV_BUILD" /FD /GZ /c
+# ADD CPP /nologo /MDd /W3 /Gm /GX /ZI /Od /I "../../../src/include" /I "../../../src/include/gen" /D "_DEBUG" /D "_LIB" /D "SUPERSERVER" /D "SERVER_SHUTDOWN" /D "IPSERVER" /D "WIN32" /D "_MBCS" /D "_X86_" /D "DEV_BUILD" /FD /GZ /c
 # ADD BASE RSC /l 0x41d /d "_DEBUG"
 # ADD RSC /l 0x41d /d "_DEBUG"
 BSC32=bscmake.exe
@@ -63,9 +63,9 @@ LIB32=link.exe -lib
 # PROP Output_Dir "..\..\..\temp\release\remote_ss"
 # PROP Intermediate_Dir "..\..\..\temp\release\remote_ss"
 # PROP Target_Dir ""
-# ADD BASE CPP /nologo /MDd /W3 /GX /Ot /Oi /Op /Oy /Ob2 /I "../../../src/include" /I "../../../src/include/gen" /D "_DEBUG" /D "_LIB" /D "WIN32" /D "_MBCS" /D "NOMSG" /D "_X86_" /FD /GZ /c
+# ADD BASE CPP /nologo /MDd /W3 /GX /Ot /Oi /Op /Oy /Ob2 /I "../../../src/include" /I "../../../src/include/gen" /D "_DEBUG" /D "_LIB" /D "SUPERCLIENT" /D "WIN32" /D "_MBCS" /D "NOMSG" /D "_X86_" /FD /GZ /c
 # SUBTRACT BASE CPP /YX
-# ADD CPP /nologo /MD /W3 /GX /Ot /Og /Oi /Op /Oy /Ob1 /I "../../../src/include" /I "../../../src/include/gen" /D "NDEBUG" /D "_LIB" /D "SUPERSERVER" /D "WIN32" /D "_MBCS" /D "_X86_" /FD /EHc- /c
+# ADD CPP /nologo /MD /W3 /GX /Zi /Ot /Og /Oi /Op /Oy /Ob1 /I "../../../src/include" /I "../../../src/include/gen" /D "NDEBUG" /D "_LIB" /D "SUPERSERVER" /D "SERVER_SHUTDOWN" /D "IPSERVER" /D "WIN32" /D "_MBCS" /D "_X86_" /FD /EHc- /c
 # ADD BASE RSC /l 0x41d /d "_DEBUG"
 # ADD RSC /l 0x41d /d "_DEBUG"
 BSC32=bscmake.exe
@@ -90,15 +90,15 @@ SOURCE=..\..\..\src\remote\allr.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\remote\os\win32\chop.cpp
+SOURCE=..\..\..\src\remote\chop.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\remote\os\win32\cntl.cpp
+SOURCE=..\..\..\src\remote\cntl.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\remote\os\win32\ibconfig.cpp
+SOURCE=..\..\..\src\remote\ibconfig.cpp
 # End Source File
 # Begin Source File
 
@@ -118,7 +118,7 @@ SOURCE=..\..\..\src\remote\parser.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\remote\os\win32\property.cpp
+SOURCE=..\..\..\src\remote\property.cpp
 # End Source File
 # Begin Source File
 
@@ -134,15 +134,15 @@ SOURCE=..\..\..\src\remote\server.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\remote\os\win32\srvr_w32.cpp
+SOURCE=..\..\..\src\remote\srvr_w32.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\remote\os\win32\window.cpp
+SOURCE=..\..\..\src\remote\window.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\remote\os\win32\wnet.cpp
+SOURCE=..\..\..\src\remote\wnet.cpp
 # End Source File
 # Begin Source File
 
@@ -170,15 +170,7 @@ SOURCE=..\..\..\src\remote\merge_proto.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\remote\proto_proto.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\src\remote\protocol.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\remote\remot_proto.h
 # End Source File
 # Begin Source File
 
@@ -198,7 +190,7 @@ SOURCE=..\..\..\src\remote\spxnet32_proto.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\remote\os\win32\wnet_proto.h
+SOURCE=..\..\..\src\remote\wnet_proto.h
 # End Source File
 # Begin Source File
 
@@ -211,18 +203,6 @@ SOURCE=..\..\..\src\remote\xnet.h
 # Begin Source File
 
 SOURCE=..\..\..\src\remote\xnet_proto.h
-# End Source File
-# End Group
-# Begin Group "AuthSspi"
-
-# PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=..\..\..\src\auth\trusted\AuthSspi.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\auth\trusted\AuthSspi.h
 # End Source File
 # End Group
 # End Target

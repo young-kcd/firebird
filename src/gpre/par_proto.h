@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	Preprocessor
  *	MODULE:		par_proto.h
- *	DESCRIPTION:	Prototype header file for par.cpp
+ *	DESCRIPTION:	Prototype header file for par.c
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -21,26 +21,33 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef GPRE_PAR_PROTO_H
-#define GPRE_PAR_PROTO_H
+#ifndef _GPRE_PAR_PROTO_H_
+#define _GPRE_PAR_PROTO_H_
 
-act*	PAR_action(const TEXT*);
-SSHORT	PAR_blob_subtype(DBB);
-act*	PAR_database(bool, const TEXT*);
-bool	PAR_end(void);
-void	PAR_error(const TEXT*);
-act*	PAR_event_init(bool);
-act*	PAR_event_wait(bool);
-void	PAR_fini(void);
-TOK		PAR_get_token(void);
-void	PAR_init(void);
-TEXT*	PAR_native_value(bool, bool);
-gpre_fld* PAR_null_field(void);
-void	PAR_reserving(USHORT, bool);
-gpre_req* PAR_set_up_dpb_info(rdy*, act*, USHORT);
-gpre_sym*		PAR_symbol(enum sym_t);
-void	PAR_unwind(void);
-void	PAR_using_db(void);
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-#endif // GPRE_PAR_PROTO_H
+extern ACT PAR_action(TEXT*);
+extern SSHORT PAR_blob_subtype(DBB);
+extern ACT PAR_database(USHORT,TEXT*);
+extern BOOLEAN PAR_end(void);
+extern void PAR_error(TEXT *);
+extern ACT PAR_event_init(USHORT);
+extern ACT PAR_event_wait(USHORT);
+extern void PAR_fini(void);
+extern TOK PAR_get_token(void);
+extern void PAR_init(void);
+extern TEXT *PAR_native_value(USHORT, USHORT);
+extern GPRE_FLD PAR_null_field(void);
+extern void PAR_reserving(USHORT, SSHORT);
+extern GPRE_REQ PAR_set_up_dpb_info(RDY, ACT, USHORT);
+extern SYM PAR_symbol(enum sym_t);
+extern void PAR_unwind(void);
+extern void PAR_using_db(void);
 
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
+
+#endif /* _GPRE_PAR_PROTO_H_ */

@@ -26,21 +26,21 @@
 #endif
 
 #include "firebird.h"
-#include <stdio.h>
+#include "../jrd/ib_stdio.h"
 #include "../jrd/common.h"
 
-const UCHAR CHR_LETTER	= 1;
-const UCHAR CHR_DIGIT	= 2;
-const UCHAR CHR_IDENT	= 4;
-const UCHAR CHR_QUOTE	= 8;
-const UCHAR CHR_WHITE	= 16;
-const UCHAR CHR_HEX		= 32;
+#define CHR_LETTER	1
+#define CHR_DIGIT	2
+#define CHR_IDENT	4
+#define CHR_QUOTE	8
+#define CHR_WHITE	16
+#define CHR_HEX		32
 
 extern struct symb dbt_symbols[];
 
-static const SSHORT symb_types[] = { ROUTINE, OFFSET, PRINTER, SYMBOL };
+static SSHORT symb_types[] = { ROUTINE, OFFSET, PRINTER, SYMBOL };
 
-static const SCHAR classes[] = {
+static SCHAR classes[] = {
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 16, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 16, 0, 8, 0, 4, 0, 0, 8,
 	0, 0, 0, 0, 0, 0, 0, 0, 38, 38, 38, 38, 38, 38, 38, 38, 38, 38,
@@ -65,25 +65,23 @@ static int yylex(void)
  *
  **************************************/
 	SYMB symbol;
-	SCHAR *p;
-	const char* q;
-	SCHAR string[31];
+	SCHAR *p, *q;
+	SCHAR class_, string[31];
 	SSHORT c;
 	SLONG number;
 
-	SCHAR char_class;
-	while (((char_class = classes[c = getchar()]) & CHR_WHITE) && c != -1);
+	while (((class_ = classes[c = ib_getchar()]) & CHR_WHITE) && c != -1);
 
 	if (c == -1)
 		return c;
 
-	if (char_class & CHR_LETTER) {
+	if (class_ & CHR_LETTER) {
 		p = string;
 		*p++ = c;
-		while (classes[c = getchar()] & CHR_IDENT)
+		while (classes[c = ib_getchar()] & CHR_IDENT)
 			*p++ = c;
 		*p = 0;
-		ungetc(c, stdin);
+		ib_ungetc(c, ib_stdin);
 		for (symbol = dbt_symbols; q = symbol->symb_string; symbol++) {
 			for (p = string; *p;)
 				if (*p++ != *q++)
@@ -93,13 +91,13 @@ static int yylex(void)
 				return symb_types[(int) symbol->symb_type];
 			}
 		}
-		printf("*** %s undefined ***\n", string);
+		ib_printf("*** %s undefined ***\n", string);
 		return OTHER;
 	}
 
 	if (c == '0') {
 		number = 0;
-		while (classes[c = getchar()] & CHR_HEX) {
+		while (classes[c = ib_getchar()] & CHR_HEX) {
 			if (c >= 'a' && c <= 'f')
 				c = c - 'a' + 10;
 			else if (c >= 'A' && c <= 'F')
@@ -108,26 +106,25 @@ static int yylex(void)
 				c = c - '0';
 			number = number * 16 + c;
 		}
-		ungetc(c, stdin);
+		ib_ungetc(c, ib_stdin);
 		yylval = number;
 		return NUMBER;
 	}
 
-	if (char_class & CHR_DIGIT) {
+	if (class_ & CHR_DIGIT) {
 		number = c - '0';
-		while (classes[c = getchar()] & CHR_DIGIT)
+		while (classes[c = ib_getchar()] & CHR_DIGIT)
 			number = number * 10 + (c - '0');
-		ungetc(c, stdin);
+		ib_ungetc(c, ib_stdin);
 		yylval = number;
 		return NUMBER;
 	}
 
 	if (c == '-')
-		if ((c = getchar()) == '>')
+		if ((c = ib_getchar()) == '>')
 			return ARROW;
 		else
-			ungetc(c, stdin);
+			ib_ungetc(c, ib_stdin);
 
 	return c;
 }
-

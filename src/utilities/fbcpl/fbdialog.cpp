@@ -1,8 +1,8 @@
 /*
- *	PROGRAM:	Firebird 2.0 control panel applet
+ *	PROGRAM:	Firebird 1.5 control panel applet
  *	MODULE:		fbdialog.cpp
  *	DESCRIPTION:	Main file to provide GUI based server control functions
- *					for Firebird 2.0 Super Server
+ *					for Firebird 1.5 Super Server
  *
  *  The contents of this file are subject to the Initial Developer's 
  *  Public License Version 1.0 (the "License"); you may not use this 
@@ -18,7 +18,7 @@
  *  
  *  The Initial Developer of the Original Code is Paul Reeves.
  *
- *  The Original Code is (C) 2003 Paul Reeves.
+ *  The Original Code is (C) 2003 Paul Reeves .
  *
  *  All Rights Reserved.
  *  
@@ -38,10 +38,9 @@
 
 
 #include "stdafx.h"
-//#include "FBPanel.h"
 #include "FBDialog.h"
 
-//#include "../../common/config/config.h"
+#include "../../common/config/config.h"
 
 #ifdef _DEBUG
 #undef THIS_FILE
@@ -71,17 +70,17 @@ CFBDialog::CFBDialog(CWnd* pParent /*=NULL*/)
 	m_CS_Server_Name	= REMOTE_CS_EXECUTABLE; 
 #endif
 
-	fb_status.AutoStart = false;
-	fb_status.ServicesAvailable = false;
+	fb_status.AutoStart = 0;
+	fb_status.ServicesAvailable = 0;
 	fb_status.ServerStatus = 0;
-	fb_status.UseGuardian = false;
-	fb_status.UseService = false;
-	fb_status.WasRunning  = false;
+	fb_status.UseGuardian = 0;
+	fb_status.UseService = 0;
+	fb_status.WasRunning  = 0;
 #ifdef MANAGE_CLASSIC
-	fb_status.UseClassic = false;
+	fb_status.UseClassic = 0;
 #endif
-	fb_status.SystemLogin = true;
-	fb_status.SufficientUserRights = true;
+	fb_status.SystemLogin = 1;
+	fb_status.SufficientUserRights = 1;
 	fb_status.ServerName = "";
 
 	new_settings = fb_status;
@@ -193,7 +192,7 @@ void CFBDialog::UpdateServerStatus()
 
 
 #ifdef MANAGE_CLASSIC
-	if (fb_status.WasRunning && !fb_status.UseService)
+	if ((fb_status.WasRunning) && (!fb_status.UseService))
 	{ 
 		fb_status.UseClassic = (bool) GetClassicServerHandle();
 	}
@@ -258,9 +257,12 @@ void CFBDialog::UpdateServerStatus()
 
 bool CFBDialog::CheckServiceInstalled( LPCTSTR service )
 {
+	SC_HANDLE hService = NULL;
+	bool result;
+	
 	OpenServiceManager( GENERIC_READ );
-	SC_HANDLE hService = OpenService (hScManager, service, GENERIC_READ );
-	bool result = (bool) hService;
+	hService = OpenService (hScManager, service, GENERIC_READ );
+	result = hService;
 	if (hService)
 		CloseServiceHandle( hService );
 	CloseServiceManager();
@@ -273,23 +275,15 @@ bool CFBDialog::ValidateInstalledServices()
 // If Guardian installed but not Server service 
 // then return false;
 {
-	fb_status.UseService =
-		CheckServiceInstalled(GetServiceName(REMOTE_SERVICE));
-	fb_status.UseGuardian =
-		CheckServiceInstalled(GetServiceName(ISCGUARD_SERVICE));
+	fb_status.UseService = CheckServiceInstalled(REMOTE_SERVICE);
+	fb_status.UseGuardian = CheckServiceInstalled(ISCGUARD_SERVICE);	
 
-	if (!fb_status.UseService && fb_status.UseGuardian)
+	if ((!fb_status.UseService) && (fb_status.UseGuardian))
 		return false;
 	else
 		return true;
 }
 
-CString CFBDialog::GetServiceName(const char* name) const
-{
-	CString serviceName;
-	serviceName.Format(name, DEFAULT_INSTANCE);
-	return serviceName;
-}
 
 int CFBDialog::GetServerStatus()
 // This is called by UpdateServerStatus, 
@@ -304,39 +298,53 @@ int CFBDialog::GetServerStatus()
 {
 	int result = IDS_APPLICATION_STOPPED;
 
-	const CString serviceName = GetServiceName(REMOTE_SERVICE);
-	fb_status.UseService = CheckServiceInstalled(serviceName);
+	fb_status.UseService = CheckServiceInstalled(REMOTE_SERVICE);
 
 	if ( fb_status.UseService )
 	{
+		SC_HANDLE hService = NULL;
 		OpenServiceManager( GENERIC_READ );
-		SC_HANDLE hService = OpenService (hScManager, serviceName, GENERIC_READ );
+		hService = OpenService (hScManager, REMOTE_SERVICE, GENERIC_READ );
 		QueryServiceStatus( hService, &service_status ); 
 		CloseServiceHandle ( hService );
 		CloseServiceManager();
 		switch ( service_status.dwCurrentState )
 		{
 			case SERVICE_STOPPED :
+			{
 				result = IDS_SERVICE_STOPPED;
 				break;
+			}
 			case SERVICE_START_PENDING :
+			{
 				result = IDS_SERVICE_START_PENDING;
 				break;
+			}
 			case SERVICE_STOP_PENDING : 
+			{
 				result = IDS_SERVICE_STOP_PENDING;
 				break;
+			}
 			case SERVICE_RUNNING : 
+			{
 				result = IDS_SERVICE_RUNNING;
 				break;
+			}
 			case SERVICE_CONTINUE_PENDING :
+			{
 				result = IDS_SERVICE_CONTINUE_PENDING;
 				break;
+			}
 			case SERVICE_PAUSE_PENDING : 
+			{
 				result = IDS_SERVICE_PAUSE_PENDING;
 				break;
+			}
 			case SERVICE_PAUSED :
+			{
 				result = IDS_SERVICE_PAUSED;
 				break;
+			}
 		}
 	}
 	else
@@ -357,7 +365,7 @@ int CFBDialog::GetServerStatus()
 
 	// If running as an application and not set to run automatically on start up 
 	// we still don't  know if we the guardian is running.
-	if (fb_status.WasRunning && !fb_status.UseService)
+	if ((fb_status.WasRunning) && (!fb_status.UseService) )
 	{ 
 		fb_status.UseGuardian = (bool) GetGuardianHandle();
 	}
@@ -378,33 +386,35 @@ void CFBDialog::ViewRegistryEntries()
 //	fb_status.ServerName
 {
 	
-	fb_status.AutoStart = false;
+	fb_status.AutoStart = 0;
 
-	fb_status.UseService =
-		CheckServiceInstalled(GetServiceName(REMOTE_SERVICE));
-	
+	fb_status.UseService = CheckServiceInstalled(REMOTE_SERVICE);
 	if ( fb_status.UseService )
 	{
+	    LPQUERY_SERVICE_CONFIG status_info;
+		SC_HANDLE hService = 0;
+		DWORD dwBytesNeeded; 
 		OpenServiceManager( GENERIC_READ );
 
-		CString service = GetServiceName(ISCGUARD_SERVICE);
-		CString display_name = GetServiceName(ISCGUARD_DISPLAY_NAME);
-		SC_HANDLE hService = OpenService (hScManager, service, SERVICE_QUERY_CONFIG);
+		char * service = "";
+		char * display_name = "";
+		service = ISCGUARD_SERVICE;
+		display_name = ISCGUARD_DISPLAY_NAME;
+		hService = OpenService (hScManager, service, SERVICE_QUERY_CONFIG);
 		fb_status.UseGuardian = hService;
 		if (hService != NULL) // then we are running as a Service
 		{
-			DWORD dwBytesNeeded; 
-			LPQUERY_SERVICE_CONFIG status_info = (LPQUERY_SERVICE_CONFIG) LocalAlloc(LPTR, 4096); 
-			if (!QueryServiceConfig(hService, status_info, 4096, &dwBytesNeeded))
+			status_info = (LPQUERY_SERVICE_CONFIG) LocalAlloc(LPTR, 4096); 
+			if (!QueryServiceConfig(hService,status_info,4096,&dwBytesNeeded))
 			{	
 				LocalFree( status_info );
-				HandleError(false, "ViewRegistryEntries - Cannot query Guardian service.");
+				HandleError(0, "ViewRegistryEntries - Cannot query Guardian service.");
 			}
 			else
 			{
 				if (status_info->dwStartType == SERVICE_AUTO_START )
 				{
-					fb_status.AutoStart = true;
+					fb_status.AutoStart = 1;
 				}
 			}
 			CloseServiceHandle (hService);
@@ -413,18 +423,17 @@ void CFBDialog::ViewRegistryEntries()
 		}
 
 		//Now do the same again, but this time only look at the server itself
-		service = GetServiceName(REMOTE_SERVICE);
-		display_name = GetServiceName(REMOTE_DISPLAY_NAME);
+		service = REMOTE_SERVICE;
+		display_name = REMOTE_DISPLAY_NAME;
 		hService = OpenService (hScManager, service, SERVICE_QUERY_CONFIG);
 		CloseServiceManager();
 		if (hService != NULL) // then we are running as a Service
 		{
-			DWORD dwBytesNeeded; 
-			LPQUERY_SERVICE_CONFIG status_info = (LPQUERY_SERVICE_CONFIG) LocalAlloc(LPTR, 4096); 
-			if (!QueryServiceConfig(hService, status_info, 4096, &dwBytesNeeded))
+			status_info = (LPQUERY_SERVICE_CONFIG) LocalAlloc(LPTR, 4096); 
+			if (!QueryServiceConfig(hService,status_info,4096,&dwBytesNeeded))
 			{
 				LocalFree( status_info );
-				HandleError(false, "ViewRegistryEntries - Cannot query server service.");
+				HandleError(0, "ViewRegistryEntries - Cannot query server service.");
 			}
 			else
 			{
@@ -454,9 +463,8 @@ void CFBDialog::ViewRegistryEntries()
 			DWORD dwType;
 			DWORD dwSize = MAX_PATH;
 			fb_status.AutoStart = (RegQueryValueEx(hkey, "Firebird", NULL, 
-				&dwType, (LPBYTE) fb_status.ServerName.GetBuffer(dwSize / sizeof(TCHAR)), 
+				&dwType, (LPBYTE) fb_status.ServerName.GetBuffer(dwSize/sizeof(TCHAR)), 
 				&dwSize) == ERROR_SUCCESS );
-			fb_status.ServerName.ReleaseBuffer(-1);
 			if (fb_status.AutoStart)
 				fb_status.UseGuardian = ( fb_status.ServerName.Find("fbguard") == ERROR_SUCCESS );
 				
@@ -479,7 +487,7 @@ void CFBDialog::ViewRegistryEntries()
 	{
 		// Nothing is stored in the registry so we must look to see if 
 		// Firebird.conf has a preference
-		fb_status.UseClassic = (bool) GetPreferredArchitecture();
+		fb_status.UseClassic = GetPreferredArchitecture();
 	}
 #endif
 }
@@ -523,7 +531,7 @@ void CFBDialog::ApplyChanges()
 			else
 			{
 			//If we can't stop the server we should give up.
-				HandleError(false, "Failed to stop server. New settings will not be applied.");
+				HandleError(0,"Failed to stop server. New settings will not be applied.");
 				throw;
 			}
 		}
@@ -532,8 +540,9 @@ void CFBDialog::ApplyChanges()
 	//Stage 2 - Gather details of changes to make
 
 		//Manage change to startup - from/to manual or auto
-		bool ChangeStartType = (	( fb_status.AutoStart &&  m_Manual_Start.GetCheck() ) || 
-			( !fb_status.AutoStart &&  m_Auto_Start.GetCheck() ) );
+		bool ChangeStartType = false;
+		ChangeStartType = (	( (bool) fb_status.AutoStart &&  m_Manual_Start.GetCheck() ) || 
+			((bool)  !fb_status.AutoStart &&  m_Auto_Start.GetCheck() ) );
 		
 		if ( ChangeStartType )
 			new_settings.AutoStart = !fb_status.AutoStart;
@@ -542,8 +551,9 @@ void CFBDialog::ApplyChanges()
 		
 #ifdef MANAGE_CLASSIC
 		//Do we use Super Server or Classic
-		bool ChangeServerArchitecture = ( ( !fb_status.UseClassic && m_Classic_Server.GetCheck() ) || 
-			( fb_status.UseClassic && m_Super_Server.GetCheck() ) );
+		bool ChangeServerArchitecture = false;
+		ChangeServerArchitecture = ( ( (bool) !fb_status.UseClassic && m_Classic_Server.GetCheck() ) || 
+			( (bool) fb_status.UseClassic && m_Super_Server.GetCheck() ) );
 		if ( ChangeServerArchitecture )
 			new_settings.UseClassic = !fb_status.UseClassic;
 		else
@@ -560,16 +570,18 @@ void CFBDialog::ApplyChanges()
 #endif
 
 		//Do we change Guardian Usage?
-		bool ChangeGuardianUse = ( ( !fb_status.UseGuardian && m_Use_Guardian.GetCheck() ) || 
-			( fb_status.UseGuardian && !m_Use_Guardian.GetCheck() ) );
+		bool ChangeGuardianUse = false;
+		ChangeGuardianUse = ( ( (bool) !fb_status.UseGuardian && m_Use_Guardian.GetCheck() ) || 
+			( (bool) fb_status.UseGuardian && !m_Use_Guardian.GetCheck() ) );
 		if ( ChangeGuardianUse )
 			new_settings.UseGuardian = !fb_status.UseGuardian;
 		else
 			new_settings.UseGuardian = fb_status.UseGuardian;
 
 		//Finally, test for change between service and application usage.
-		bool ChangeRunStyle = ( ( fb_status.UseService && m_Run_As_Application.GetCheck() )  ||
-			( !fb_status.UseService && m_Run_As_Service.GetCheck() ) );
+		bool ChangeRunStyle = false;
+		ChangeRunStyle = ( ( (bool) fb_status.UseService && m_Run_As_Application.GetCheck() )  ||
+			( !(bool) fb_status.UseService && m_Run_As_Service.GetCheck() ) );
 		if (ChangeRunStyle)
 			new_settings.UseService = !fb_status.UseService;
 		else
@@ -645,7 +657,7 @@ void CFBDialog::ApplyChanges()
 			DisableApplyButton();
 
 		// Update fb_status if we are running as an application
-		if (!new_settings.UseService && ChangeGuardianUse)
+		if (( !new_settings.UseService ) && (ChangeGuardianUse))
 			fb_status.UseGuardian = !fb_status.UseGuardian;
 
 		//And finally reset the m_error_status to zero;
@@ -699,7 +711,7 @@ void CFBDialog::ResetCheckBoxes(CFBDialog::STATUS status)
 	m_Use_Guardian.SetCheck(status.UseGuardian);
 
 #ifdef MANAGE_CLASSIC
-	if (status.UseClassic)
+	if ((status.UseClassic) )
 	{
 		m_Classic_Server.SetCheck(1);
 		m_Super_Server.SetCheck(0);
@@ -750,17 +762,17 @@ bool CFBDialog::ServerStart( CFBDialog::STATUS status )
 
 	if ( status.UseService ) 
 	{
-		CString service;
-		CString display_name;
+		char * service = "";
+		char * display_name = "";
 		if (status.UseGuardian)
 		{
-			service = GetServiceName(ISCGUARD_SERVICE);
-			display_name = GetServiceName(ISCGUARD_DISPLAY_NAME);
+			service = ISCGUARD_SERVICE;
+			display_name = ISCGUARD_DISPLAY_NAME;
 		}
 		else
 		{
-			service = GetServiceName(REMOTE_SERVICE);
-			display_name = GetServiceName(REMOTE_DISPLAY_NAME);
+			service = REMOTE_SERVICE;
+			display_name = REMOTE_DISPLAY_NAME;
 		}
 
 		OpenServiceManager(GENERIC_READ | GENERIC_EXECUTE | GENERIC_WRITE);
@@ -772,7 +784,7 @@ bool CFBDialog::ServerStart( CFBDialog::STATUS status )
 				if (m_Error_Status == FB_SUCCESS)
 					result = true;
 			}
-			catch ( ... )
+			catch( ... ) 
 			{
 			}
 		}
@@ -791,19 +803,15 @@ bool CFBDialog::ServerStart( CFBDialog::STATUS status )
 			sa.lpSecurityDescriptor = NULL;
 			sa.bInheritHandle = TRUE;
 			
-			char full_name[MAX_PATH + 15] = "";
+			char full_name[MAX_PATH] = "";
 			GetFullAppPath( status, full_name );
 			
 			if (!CreateProcess (NULL, full_name, &sa, NULL, FALSE, 0, NULL, NULL, &si, &pi))
-				HandleError(false, "Application Start");
-			else 
-			{
+				HandleError(0,"Application Start");
+			else
 				result = true;
-				CloseHandle(pi.hProcess);
-				CloseHandle(pi.hThread);
-			}
 		}
-		catch ( ... )
+		catch( ... )
 		{
 		}
 	}
@@ -812,7 +820,7 @@ bool CFBDialog::ServerStart( CFBDialog::STATUS status )
     EndWaitCursor();
 #endif
 
-	return result;
+return result;
 }
 
 
@@ -831,19 +839,10 @@ bool CFBDialog::ServerStop()
 #endif
 				OpenServiceManager( GENERIC_READ | GENERIC_EXECUTE | GENERIC_WRITE );
 
-				CString service;
-				CString display_name;
 				if (fb_status.UseGuardian)
-				{
-					service = GetServiceName(ISCGUARD_SERVICE);
-					display_name = GetServiceName(ISCGUARD_DISPLAY_NAME);
-				}
+					m_Error_Status = SERVICES_stop(hScManager, ISCGUARD_SERVICE, ISCGUARD_DISPLAY_NAME, svc_error);
 				else
-				{
-					service = GetServiceName(REMOTE_SERVICE);
-					display_name = GetServiceName(REMOTE_DISPLAY_NAME);
-				}
-				m_Error_Status = SERVICES_stop(hScManager, service, display_name, svc_error);
+					m_Error_Status = SERVICES_stop(hScManager, REMOTE_SERVICE, REMOTE_DISPLAY_NAME, svc_error);
 
 				result = !m_Error_Status;
 		
@@ -908,24 +907,18 @@ void CFBDialog::KillApp()
 
 bool CFBDialog::ServiceInstall( CFBDialog::STATUS status )
 {				   
+	char * ServerPath = const_cast<char *> ((LPCTSTR)m_Root_Path);
+
 	OpenServiceManager( GENERIC_READ | GENERIC_EXECUTE | GENERIC_WRITE );
 
 	if (hScManager)
 	{
-		const char* ServerPath = m_Root_Path;
-
-		CString guard_service = GetServiceName(ISCGUARD_SERVICE);
-		CString guard_display_name = GetServiceName(ISCGUARD_DISPLAY_NAME);
-		CString remote_service = GetServiceName(REMOTE_SERVICE);
-		CString remote_display_name = GetServiceName(REMOTE_DISPLAY_NAME);
-
 		if (new_settings.UseGuardian) 
 		{
-			m_Error_Status = SERVICES_install (hScManager,
-				guard_service, guard_display_name,
-				ISCGUARD_DISPLAY_DESCR, ISCGUARD_EXECUTABLE,
-				ServerPath, NULL, NULL, status.AutoStart,
-				NULL, NULL, false, svc_error);
+			m_Error_Status = SERVICES_install (hScManager, ISCGUARD_SERVICE,
+				ISCGUARD_DISPLAY_NAME, ISCGUARD_DISPLAY_DESCR,
+				ISCGUARD_EXECUTABLE, ServerPath, NULL, status.AutoStart,
+				NULL, NULL, svc_error);
 			if (m_Error_Status != FB_SUCCESS)
 			{
 				CloseServiceManager();
@@ -937,11 +930,11 @@ bool CFBDialog::ServiceInstall( CFBDialog::STATUS status )
 			
 		}
 		/* do the install of server */
-		m_Error_Status = SERVICES_install (hScManager,
-			remote_service, remote_display_name,
-			REMOTE_DISPLAY_DESCR, (LPCTSTR) status.ServiceExecutable, 
-			ServerPath, NULL, NULL, status.AutoStart, 
-			NULL, NULL, false, svc_error);
+		m_Error_Status = SERVICES_install (hScManager, REMOTE_SERVICE,
+			REMOTE_DISPLAY_NAME, REMOTE_DISPLAY_DESCR,
+			const_cast<char *> ((LPCTSTR) status.ServiceExecutable), 
+			ServerPath, NULL, status.AutoStart, 
+			NULL, NULL, svc_error);
 		if (m_Error_Status != FB_SUCCESS)
 		{
 			CloseServiceManager();
@@ -971,21 +964,16 @@ bool CFBDialog::ServiceRemove()
 	OpenServiceManager( GENERIC_READ | GENERIC_EXECUTE | GENERIC_WRITE );
 	if (hScManager)
 	{
-		CString guard_service = GetServiceName(ISCGUARD_SERVICE);
-		CString guard_display_name = GetServiceName(ISCGUARD_DISPLAY_NAME);
-		CString remote_service = GetServiceName(REMOTE_SERVICE);
-		CString remote_display_name = GetServiceName(REMOTE_DISPLAY_NAME);
-
-		m_Error_Status = SERVICES_remove (hScManager, guard_service, 
-			guard_display_name, svc_error);
+		m_Error_Status = SERVICES_remove (hScManager, ISCGUARD_SERVICE, 
+			ISCGUARD_DISPLAY_NAME, svc_error);
 		if (m_Error_Status == IB_SERVICE_RUNNING)
 		{
 			CloseServiceManager();
 			return false;
 		}
 		
-		m_Error_Status = SERVICES_remove (hScManager, remote_service, 
-			remote_display_name, svc_error);
+		m_Error_Status = SERVICES_remove (hScManager, REMOTE_SERVICE, 
+			REMOTE_DISPLAY_NAME, svc_error);
 		if (m_Error_Status == IB_SERVICE_RUNNING)
 		{
 			CloseServiceManager();
@@ -1021,17 +1009,17 @@ bool CFBDialog::ConfigureRegistryForApp(CFBDialog::STATUS status)
 			0, KEY_WRITE, &hkey) == ERROR_SUCCESS)
 		{
 			
-			char full_name[MAX_PATH + 15] = "";
+			char full_name[MAX_PATH] = "";
 			GetFullAppPath( status, full_name);
-			if (!RegSetValueEx (hkey, "Firebird", 0,REG_SZ, (CONST BYTE*) full_name, sizeof(full_name) ) == ERROR_SUCCESS)
+			if (!RegSetValueEx (hkey, "Firebird", 0,REG_SZ, (unsigned char *) full_name, sizeof(full_name) )  == ERROR_SUCCESS)
 			{
-				HandleError(false, "AppInstall");
+				HandleError(0, "AppInstall");
 				return false;
 			}
 		}
 		else
 		{
-			HandleError(false, "AppInstall");
+			HandleError(0, "AppInstall");
 			return false;
 		}
 	}
@@ -1051,7 +1039,7 @@ bool CFBDialog::ConfigureRegistryForApp(CFBDialog::STATUS status)
 					return true;
 				else
 				{
-					HandleError(false, "Removing registry entry to stop autorun failed.");
+					HandleError(0, "Removing registry entry to stop autorun failed.");
 					return false;
 				}
 			}
@@ -1065,7 +1053,7 @@ bool CFBDialog::ConfigureRegistryForApp(CFBDialog::STATUS status)
 		else
 		{
 			//Things are really bad - perhaps user has screwed up their registry?
-			HandleError(false, "Could not find HKLM\\Software\\Microsoft\\Windows\\CurrentVersion\\Run in the registry.");
+			HandleError(0, "Could not find HKLM\\Software\\Microsoft\\Windows\\CurrentVersion\\Run in the registry.");
 			return false;
 		}
 	}
@@ -1080,7 +1068,7 @@ bool CFBDialog::AppRemove()
 }
 
 
-static USHORT svc_error (SLONG	error_status, const TEXT* string, SC_HANDLE service)
+static USHORT svc_error (SLONG	error_status, TEXT *string, SC_HANDLE service)
 //This code is for use with the SERVICES_ functions
 {
 	bool RaiseError = true;
@@ -1090,15 +1078,12 @@ static USHORT svc_error (SLONG	error_status, const TEXT* string, SC_HANDLE servi
 	{
 		case ERROR_SERVICE_CANNOT_ACCEPT_CTRL:
 			RaiseError = false;
-			break;
 
 		case ERROR_SERVICE_ALREADY_RUNNING:
 			RaiseError = false;
-			break;
 
 		case ERROR_SERVICE_DOES_NOT_EXIST:
 			RaiseError = false;
-			break;
 	}
 
 	if (RaiseError)
@@ -1130,7 +1115,7 @@ void CFBDialog::ProcessMessages()
 }
 
 
-void CFBDialog::HandleSvcError(SLONG error_status, const TEXT* string )
+void CFBDialog::HandleSvcError(SLONG error_status, TEXT *string )
 // This method supports the static svc_error() function
 // and essentially duplicates HandleError. Oh to be rid of the 
 // legacy code.
@@ -1138,10 +1123,11 @@ void CFBDialog::HandleSvcError(SLONG error_status, const TEXT* string )
 	if (!error_status)
 		error_status = GetLastError();
 
-	LPTSTR lpMsgBuf = 0;
+	LPTSTR lpMsgBuf;
+	DWORD Size;
 	CString error_title = "";
 	
-	const DWORD Size = FormatMessage( 
+	Size = FormatMessage( 
 		FORMAT_MESSAGE_ALLOCATE_BUFFER | 
 		FORMAT_MESSAGE_FROM_SYSTEM | 
 		FORMAT_MESSAGE_IGNORE_INSERTS,
@@ -1150,18 +1136,15 @@ void CFBDialog::HandleSvcError(SLONG error_status, const TEXT* string )
 		MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), // Default language
 		(LPTSTR) &lpMsgBuf,	0, NULL );
 	
-	if (Size)
-		error_title.Format("Error '%s' raised in %s", lpMsgBuf, string);
-	else
-		error_title.Format("Error Code %d raised in %s", error_status, string );
+	error_title.Format("Error Code %d raised in %s",error_status, (LPCTSTR) string );
 	::MessageBox( NULL, lpMsgBuf, (LPCTSTR) error_title, MB_OK | MB_ICONINFORMATION );
 	LocalFree( lpMsgBuf );
 }
 
 
-void CFBDialog::HandleError(bool silent, const TEXT *string )
+void CFBDialog::HandleError(bool silent, TEXT *string )
 {
-	const DWORD error_code = GetLastError();
+	DWORD error_code = GetLastError();
 	if (error_code == m_Error_Status)
 	{
 		//Always be silent if error has not already been thrown.
@@ -1178,10 +1161,11 @@ void CFBDialog::HandleError(bool silent, const TEXT *string )
 	}
 	else
 	{
-		LPTSTR lpMsgBuf = 0;
+		LPTSTR lpMsgBuf;
+		DWORD Size;
 		CString error_title = "";
 
-		const DWORD Size = FormatMessage( 
+		Size = FormatMessage( 
 			FORMAT_MESSAGE_ALLOCATE_BUFFER | 
 			FORMAT_MESSAGE_FROM_SYSTEM | 
 			FORMAT_MESSAGE_IGNORE_INSERTS,
@@ -1190,10 +1174,7 @@ void CFBDialog::HandleError(bool silent, const TEXT *string )
 			MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), // Default language
 			(LPTSTR) &lpMsgBuf,	0, NULL );
 	
-		if (Size)
-			error_title.Format("Error '%s' raised in %s", lpMsgBuf, string);			
-		else
-			error_title.Format("Error Code %d raised in %s", error_code, string );
+		error_title.Format("Error Code %d raised in %s",error_code, (LPCTSTR) string );
 
 		ShowError(lpMsgBuf, error_title);
 
@@ -1245,7 +1226,7 @@ void CFBDialog::DisableApplyButton()
 }
 
 
-void CFBDialog::OnTimer(UINT_PTR nIDEvent) 
+void CFBDialog::OnTimer(UINT nIDEvent) 
 {
 	UpdateServerStatus();
 }
@@ -1331,7 +1312,7 @@ void CFBDialog::SetGuardianUseInConf( bool UseGuardian )
 	}
 	else
 	{
-		HandleError(false, "SetGuardianUseInConf");
+		HandleError(0,"SetGuardianUseInConf");
 		return;
 	}
 }
@@ -1358,7 +1339,7 @@ void CFBDialog::SetPreferredArchitectureInConf( bool UseClassic )
 	}
 	else
 	{
-		HandleError(false, "SetPreferredArchitectureInConf");
+		HandleError(0,"SetPreferredArchitectureInConf");
 		return;
 	}
 }
@@ -1366,22 +1347,25 @@ void CFBDialog::SetPreferredArchitectureInConf( bool UseClassic )
 
 bool CFBDialog::UpdateFirebirdConf(CString option, CString value)
 {
+	bool result = false;
+	
 	CStdioFile FbConfFile, FbConfFileNew;
 	CString FirebirdConfFilename = m_Root_Path + "firebird.conf";
 	CString FirebirdConfNewname = FirebirdConfFilename + ".new";
 	CString FirebirdConfOldname = FirebirdConfFilename + ".old";
 	CString FirebirdConfLine = "";
 
-	if (!FbConfFile.Open(FirebirdConfFilename, CFile::modeReadWrite))
-		return false;
-	if (!FbConfFileNew.Open(FirebirdConfNewname, CFile::modeCreate | 
-							CFile::shareExclusive | CFile::modeWrite))
-	{
-		return false;
-	}
+	bool res;
 
+	res = FbConfFile.Open(FirebirdConfFilename, CFile::modeReadWrite); 
+	res = FbConfFileNew.Open(FirebirdConfNewname, CFile::modeCreate | 
+							CFile::shareExclusive | CFile::modeWrite); 
 	try
 	{
+
+		bool Found = false;
+		int i = 0;
+
 		while (FbConfFile.ReadString(FirebirdConfLine) != NULL)
 		{
 
@@ -1403,14 +1387,14 @@ bool CFBDialog::UpdateFirebirdConf(CString option, CString value)
 	}
 	
 
-	bool result = false;
 	FbConfFile.Close();
 	FbConfFileNew.Close();
 
+	CFile::Rename(FirebirdConfFilename, FirebirdConfFilename + ".old");
+	
 	try
 	{
-		CFile::Rename(FirebirdConfFilename, FirebirdConfOldname);
-		CFile::Rename(FirebirdConfNewname, FirebirdConfFilename);
+		CFile::Rename(FirebirdConfNewname, FirebirdConfFilename );
 		
 		//If we get this far then all is well and we can return good news
 		result = true;
@@ -1432,42 +1416,47 @@ void CFBDialog::SetAutoStart( CFBDialog::STATUS status )
 {
 	if (status.UseService)
 	{
+		SC_LOCK sclLock; 
+		DWORD dwStartType; 
+		SC_HANDLE hService;
+		
 		OpenServiceManager( GENERIC_READ | GENERIC_EXECUTE | GENERIC_WRITE );
 		// Need to acquire database lock before reconfiguring. 
 		if (hScManager)
 		{
-			SC_LOCK sclLock = LockServiceDatabase(hScManager); 
+			sclLock = LockServiceDatabase(hScManager); 
 			
 			// If the database cannot be locked, report the details. 
 			if (sclLock == NULL) 
 			{
-				HandleError(false, "SetAutoStart - Could not lock service database"); 
+				HandleError(NULL,"SetAutoStart - Could not lock service database"); 
 				return;
 			}
 			
 			// The database is locked, so it is safe to make changes. 
 			
-			CString service;
-			CString display_name;
-			if (status.UseGuardian)
+			char * service = "";
+			char * display_name = "";
+			
+			if ( status.UseGuardian )
 			{
-				service = GetServiceName(ISCGUARD_SERVICE);
-				display_name = GetServiceName(ISCGUARD_DISPLAY_NAME);
+				service = ISCGUARD_SERVICE;
+				display_name = ISCGUARD_DISPLAY_NAME;
 			}
 			else
 			{
-				service = GetServiceName(REMOTE_SERVICE);
-				display_name = GetServiceName(REMOTE_DISPLAY_NAME);
+				service = REMOTE_SERVICE;
+				display_name = REMOTE_DISPLAY_NAME;
 			}
 			
 			// Open a handle to the service. 
-			SC_HANDLE hService = OpenService( 
+			hService = OpenService( 
 				hScManager,				// SCManager database 
 				service,				// name of service 
 				SERVICE_CHANGE_CONFIG);	// need CHANGE access 
 			if (hService) 
 			{		
-				DWORD dwStartType = status.AutoStart ? SERVICE_AUTO_START : SERVICE_DEMAND_START; 
+				dwStartType = ( status.AutoStart ) ? SERVICE_AUTO_START : SERVICE_DEMAND_START; 
 				
 				if (! ChangeServiceConfig( 
 					hService,			// handle of service 
@@ -1482,11 +1471,11 @@ void CFBDialog::SetAutoStart( CFBDialog::STATUS status )
 					NULL,				// password: no change 
 					display_name ) )
 				{
-					HandleError(false, "ChangeServiceConfig in SetAutoStart"); 
+					HandleError(0,"ChangeServiceConfig in SetAutoStart"); 
 				}
 			}
 			else
-				HandleError(false, "OpenService in SetAutoStart"); 
+				HandleError(0,"OpenService in SetAutoStart"); 
 			
 			// Release the database lock. 
 			UnlockServiceDatabase(sclLock); 
@@ -1513,16 +1502,17 @@ bool CFBDialog::FirebirdRunning()
 	bool result = (bool) GetFirebirdHandle();
 	bool guardian_running = (bool) GetGuardianHandle();;
 
-	if (result && guardian_running)
+	if ((result) && ( guardian_running ))
 		fb_status.UseGuardian = guardian_running;
 
 	return result;
 }
 
 
-HWND CFBDialog::GetFirebirdHandle() const
+HWND CFBDialog::GetFirebirdHandle()
 {
-	HWND result = GetSuperServerHandle();
+	HWND result = NULL;
+	result = GetSuperServerHandle();
 #ifdef MANAGE_CLASSIC
 	if ( !result )
 	{
@@ -1533,14 +1523,14 @@ HWND CFBDialog::GetFirebirdHandle() const
 }
 
 
-HWND CFBDialog::GetSuperServerHandle() const
+HWND CFBDialog::GetSuperServerHandle()
 {
 	return ::FindWindow(szClassName, szWindowName);
 }
 
 
 #ifdef MANAGE_CLASSIC
-HWND CFBDialog::GetClassicServerHandle() const
+HWND CFBDialog::GetClassicServerHandle()
 {
 	// oops - hard-coded string that is liable to change
 	// Plus, the original definition is hidden locally
@@ -1549,20 +1539,20 @@ HWND CFBDialog::GetClassicServerHandle() const
 }
 #endif
 
-HWND CFBDialog::GetGuardianHandle() const
+HWND CFBDialog::GetGuardianHandle()
 {
 	return ::FindWindow(GUARDIAN_CLASS_NAME, GUARDIAN_APP_LABEL);
 }
 
 
-bool CFBDialog::ServiceSupportAvailable() const
+bool CFBDialog::ServiceSupportAvailable()
 {
 	OSVERSIONINFO   OsVersionInfo;
 
 	/* need to set the sizeof this structure for NT to work */
 	OsVersionInfo.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
 
-	GetVersionEx (&OsVersionInfo);
+	GetVersionEx ((LPOSVERSIONINFO) &OsVersionInfo);
 
 	/* true for NT family, false for 95 family */
 	return (OsVersionInfo.dwPlatformId == VER_PLATFORM_WIN32_NT);
@@ -1574,12 +1564,9 @@ bool CFBDialog::OpenServiceManager( DWORD DesiredAccess )
 	if (!fb_status.ServicesAvailable)
 		return false;
 
-	if (DesiredAccess == 0)
+	if (DesiredAccess == NULL)
 		DesiredAccess = GENERIC_READ | GENERIC_EXECUTE | GENERIC_WRITE;
 
-	// If the svc mgr is already opened, this function will return true since
-	// it has no way to know if the new access is the same that opened the svc mgr
-	// previously.
 	if (hScManager == NULL)
 		hScManager = OpenSCManager (NULL, SERVICES_ACTIVE_DATABASE, DesiredAccess );
 
@@ -1634,11 +1621,11 @@ void CFBDialog::GetFullAppPath( CFBDialog::STATUS status, char * app)
 		GetServerName( status, AppName );
 	}
 
-	::strcat(app, AppName);
+	::strcat(app,AppName);
 }
 
 
-void CFBDialog::GetServerName( CFBDialog::STATUS status, CString& AppName) const
+void CFBDialog::GetServerName( CFBDialog::STATUS status, CString& AppName)
 {
 #ifdef MANAGE_CLASSIC
 	if ( status.UseClassic )
@@ -1662,7 +1649,7 @@ bool CFBDialog::GetPreferredArchitecture()
 	if (!initialised)
 		option = Config::getPreferredArchitecture();
 	else
-		if (new_settings.UseClassic != fb_status.UseClassic)
+		if ((new_settings.UseClassic) != (fb_status.UseClassic))
 			option = new_settings.UseClassic;
 		else
 			option = fb_status.UseClassic;
@@ -1674,7 +1661,7 @@ bool CFBDialog::GetPreferredArchitecture()
 
 bool CFBDialog::UserHasSufficientRights()
 {
-	bool HasRights = OpenServiceManager(0);
+	bool HasRights = OpenServiceManager( NULL );
 	CloseServiceManager();
 	return HasRights;
 }

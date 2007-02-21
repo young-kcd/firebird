@@ -32,7 +32,6 @@
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;GDS32"
 				ExceptionHandling="FALSE"
 				RuntimeLibrary="2"
-				RuntimeTypeInfo="FALSE"
 				PrecompiledHeaderFile="..\..\..\temp\release\gds32/gds32.pch"
 				AssemblerListingLocation="..\..\..\temp\release\gds32/"
 				ObjectFile="..\..\..\temp\release\gds32/"
@@ -47,19 +46,20 @@
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
 				AdditionalDependencies="msvcrt.lib"
-				OutputFile="..\..\..\temp\release\firebird\bin\gds32.dll"
+				OutputFile="release/firebird/bin/gds32.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				ModuleDefinitionFile="..\defs\gds32.def"
 				GenerateDebugInformation="TRUE"
-				ImportLibrary="..\..\..\temp\release\gds32\gds32.lib"/>
+				ProgramDatabaseFile="..\..\..\temp\release\gds32/gds32.pdb"
+				ImportLibrary="..\..\..\temp\release\gds32/gds32.lib"/>
 			<Tool
 				Name="VCMIDLTool"
 				PreprocessorDefinitions="_DEBUG"
 				MkTypLibCompatible="TRUE"
 				SuppressStartupBanner="TRUE"
 				TargetEnvironment="1"
-				TypeLibraryName="..\..\..\temp\release\gds32\gds32.tlb"/>
+				TypeLibraryName="..\..\..\temp\release\gds32/gds32.tlb"/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool
@@ -98,7 +98,6 @@
 				ExceptionHandling="FALSE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				RuntimeTypeInfo="FALSE"
 				PrecompiledHeaderFile="..\..\..\temp\debug\gds32/gds32.pch"
 				AssemblerListingLocation="..\..\..\temp\debug\gds32/"
 				ObjectFile="..\..\..\temp\debug\gds32/"
@@ -113,20 +112,20 @@
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
 				AdditionalDependencies="msvcrt.lib"
-				OutputFile="..\..\..\temp\debug\firebird\bin\gds32.dll"
+				OutputFile="debug/firebird/bin/gds32.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
-				ModuleDefinitionFile="..\defs\gds32.def"
+				ModuleDefinitionFile="..\defs\gds32_debug.def"
 				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile="..\..\..\temp\debug\gds32\gds32.pdb"
-				ImportLibrary="..\..\..\temp\debug\gds32\gds32.lib"/>
+				ProgramDatabaseFile="..\..\..\temp\debug\gds32/gds32.pdb"
+				ImportLibrary="..\..\..\temp\debug\gds32/gds32.lib"/>
 			<Tool
 				Name="VCMIDLTool"
 				PreprocessorDefinitions="_DEBUG"
 				MkTypLibCompatible="TRUE"
 				SuppressStartupBanner="TRUE"
 				TargetEnvironment="1"
-				TypeLibraryName="..\..\..\temp\debug\gds32\gds32.tlb"/>
+				TypeLibraryName="..\..\..\temp\debug\gds32/gds32.tlb"/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool
@@ -156,7 +155,7 @@
 			Name="JRD files"
 			Filter="">
 			<File
-				RelativePath="..\..\..\src\jrd\os\win32\ibinitdll.cpp">
+				RelativePath="..\..\..\src\jrd\ibinitdll.cpp">
 			</File>
 		</Filter>
 		<Filter
@@ -178,17 +177,11 @@
 				</FileConfiguration>
 			</File>
 		</Filter>
-		<Filter
-			Name="COMMON files">
-			<File
-				RelativePath="..\..\..\src\common\classes\alloc.cpp">
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\fb_exception.cpp">
-			</File>
-		</Filter>
 		<File
 			RelativePath="..\defs\gds32.def">
+		</File>
+		<File
+			RelativePath="..\defs\gds32_debug.def">
 		</File>
 	</Files>
 	<Globals>

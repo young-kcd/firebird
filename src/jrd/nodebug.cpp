@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Access Method
- *	MODULE:		nodebug.cpp
+ *	MODULE:		nodebug.c
  *	DESCRIPTION:	Non-debugging placeholder for debugging routines
  *
  * The contents of this file are subject to the Interbase Public
@@ -23,8 +23,10 @@
 
 #include "firebird.h"
 #include "../jrd/common.h"
+#include "../jrd/dbg_proto.h"
 
 int DBG_supervisor(int arg)
 {
+
 	return TRUE;
 }

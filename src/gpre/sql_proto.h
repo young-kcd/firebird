@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	Preprocessor
  *	MODULE:		sql_proto.h
- *	DESCRIPTION:	Prototype header file for sql.cpp
+ *	DESCRIPTION:	Prototype header file for sql.c
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -21,20 +21,27 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef GPRE_SQL_PROTO_H
-#define GPRE_SQL_PROTO_H
+#ifndef _GPRE_SQL_PROTO_H_
+#define _GPRE_SQL_PROTO_H_
 
-act*	SQL_action(const TEXT*);
-void	SQL_adjust_field_dtype(gpre_fld*);
-void	SQL_dialect1_bad_type(USHORT);
-void	SQL_init(void);
-void	SQL_par_field_collate(gpre_req*, gpre_fld*);
-void	SQL_par_field_dtype(gpre_req*, gpre_fld*, bool);
-gpre_prc* SQL_procedure(gpre_req*, const TEXT*, const TEXT*, const TEXT*, bool);
-gpre_rel* SQL_relation(gpre_req*, const TEXT*, const TEXT*, const TEXT*, bool);
-void	SQL_relation_name(TEXT*, TEXT*, TEXT*);
-void	SQL_resolve_identifier(const TEXT*, TEXT*, int in_size);
-TEXT*	SQL_var_or_string(bool);
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-#endif // GPRE_SQL_PROTO_H
+extern ACT SQL_action(TEXT*);
+extern void SQL_adjust_field_dtype(GPRE_FLD);
+extern void SQL_init(void);
+extern void SQL_par_field_collate(GPRE_REQ, GPRE_FLD);
+extern void SQL_par_field_dtype(GPRE_REQ, GPRE_FLD, BOOLEAN);
+extern GPRE_PRC SQL_procedure(GPRE_REQ, TEXT *, TEXT *, TEXT *, BOOLEAN);
+extern GPRE_REL SQL_relation(GPRE_REQ, TEXT *, TEXT *, TEXT *, BOOLEAN);
+extern void SQL_resolve_identifier(TEXT *, TEXT *);
+extern GPRE_REL SQL_view(GPRE_REQ, TEXT *, TEXT *, TEXT *, BOOLEAN);
+extern void SQL_relation_name(TEXT *, TEXT *, TEXT *);
+extern TEXT *SQL_var_or_string(BOOLEAN);
 
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
+
+#endif /* _GPRE_SQL_PROTO_H_ */

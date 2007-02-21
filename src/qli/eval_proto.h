@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Command Oriented Query Language
  *	MODULE:		eval_proto.h
- *	DESCRIPTION:	Prototype header file for eval.cpp
+ *	DESCRIPTION:	Prototype header file for eval.c
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -21,18 +21,14 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef QLI_EVAL_PROTO_H
-#define QLI_EVAL_PROTO_H
+#ifndef _QLI_EVAL_PROTO_H_
+#define _QLI_EVAL_PROTO_H_
 
-struct qli_nod;
-struct dsc;
+extern int		EVAL_boolean (struct qli_nod *);
+extern void		EVAL_break_compute (struct qli_nod *);
+extern void		EVAL_break_increment (struct qli_nod *);
+extern void		EVAL_break_init (struct qli_nod *);
+extern struct dsc	*EVAL_parameter (struct par *);
+extern struct dsc	*EVAL_value (struct qli_nod *);
 
-int		EVAL_boolean (qli_nod*);
-void	EVAL_break_compute (qli_nod*);
-void	EVAL_break_increment (qli_nod*);
-void	EVAL_break_init (qli_nod*);
-dsc*	EVAL_parameter (qli_par*);
-dsc*	EVAL_value (qli_nod*);
-
-#endif // QLI_EVAL_PROTO_H
-
+#endif /* _QLI_EVAL_PROTO_H_ */

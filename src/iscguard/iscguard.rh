@@ -50,6 +50,7 @@ iscguard.rh
 #define IDM_INTRSVRPROPERTIES	 	12
 #define IDM_SVRPROPERTIES		13
 #define IDM_GUARDED			14
+#define IDM_SET_SERVER_PID		15
 
 /* Defines for String Table */
 #define IDS_QUIT			201

@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Remote Interface/Server
  *	MODULE:		parse_proto.h
- *	DESCRIPTION:	Prototpe header file for parse.cpp
+ *	DESCRIPTION:	Prototpe header file for parse.c
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -21,10 +21,10 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef REMOTE_PARSE_PROTO_H
-#define REMOTE_PARSE_PROTO_H
+#ifndef _REMOTE_PARSE_PROTO_H_
+#define _REMOTE_PARSE_PROTO_H_
 
-struct message*	PARSE_messages(const UCHAR*, USHORT);
-const UCHAR*			PARSE_prepare_messages(const UCHAR*, USHORT);
+extern struct message	* DLL_EXPORT PARSE_messages (UCHAR *, USHORT);
+extern UCHAR		*PARSE_prepare_messages (UCHAR *, USHORT);
 
-#endif // REMOTE_PARSE_PROTO_H
+#endif /* _REMOTE_PARSE_PROTO_H */ 

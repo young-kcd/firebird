@@ -27,7 +27,6 @@
 				ExceptionHandling="FALSE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				RuntimeTypeInfo="FALSE"
 				PrecompiledHeaderFile="..\..\..\temp\debug\instreg/instreg.pch"
 				AssemblerListingLocation="..\..\..\temp\debug\instreg/"
 				ObjectFile="..\..\..\temp\debug\instreg/"
@@ -42,15 +41,15 @@
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
 				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
-				OutputFile="..\..\..\temp\debug\firebird\bin\instreg.exe"
+				OutputFile="debug/firebird/bin/instreg.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile="..\..\..\temp\debug\instreg\instreg.pdb"
+				ProgramDatabaseFile="..\..\..\temp\debug\instreg/instreg.pdb"
 				SubSystem="1"/>
 			<Tool
 				Name="VCMIDLTool"
-				TypeLibraryName="..\..\..\temp\debug\instreg\instreg.tlb"/>
+				TypeLibraryName="..\..\..\temp\debug\instreg/instreg.tlb"/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool
@@ -94,7 +93,6 @@
 				PreprocessorDefinitions="WIN32,NDEBUG,_CONSOLE"
 				ExceptionHandling="FALSE"
 				RuntimeLibrary="2"
-				RuntimeTypeInfo="FALSE"
 				PrecompiledHeaderFile="..\..\..\temp\release\instreg/instreg.pch"
 				AssemblerListingLocation="..\..\..\temp\release\instreg/"
 				ObjectFile="..\..\..\temp\release\instreg/"
@@ -109,14 +107,15 @@
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
 				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
-				OutputFile="..\..\..\temp\release\firebird\bin\instreg.exe"
+				OutputFile="release/firebird/bin/instreg.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				GenerateDebugInformation="TRUE"
+				ProgramDatabaseFile="..\..\..\temp\release\instreg/instreg.pdb"
 				SubSystem="1"/>
 			<Tool
 				Name="VCMIDLTool"
-				TypeLibraryName="..\..\..\temp\release\instreg\instreg.tlb"/>
+				TypeLibraryName="..\..\..\temp\release\instreg/instreg.tlb"/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool
@@ -146,20 +145,20 @@
 			Name="UTILITIES files"
 			Filter="cpp;c;cxx;rc;def;r;odl;idl;hpj;bat">
 			<File
-				RelativePath="..\..\..\src\utilities\install\install_reg.cpp">
+				RelativePath="..\..\..\src\utilities\install_reg.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\src\utilities\install\registry.cpp">
+				RelativePath="..\..\..\src\utilities\registry.cpp">
 			</File>
 		</Filter>
 		<Filter
 			Name="Header files"
 			Filter="h;hpp;hxx;hm;inl">
 			<File
-				RelativePath="..\..\..\src\utilities\install\regis_proto.h">
+				RelativePath="..\..\..\src\utilities\regis_proto.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\utilities\install\registry.h">
+				RelativePath="..\..\..\src\utilities\registry.h">
 			</File>
 		</Filter>
 		<Filter

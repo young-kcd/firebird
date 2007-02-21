@@ -1,8 +1,8 @@
-FirebirdSQL
+Firebird
 
-Welcome to FirebirdSQL.
+Welcome to Firebird
 
-FirebirdSQL is a relational database offering many ANSI SQL-92 features that 
+Firebird is a relational database offering many ANSI SQL-92 features that 
 runs on Linux, Windows, and a variety of Unix platforms. Firebird offers 
 excellent concurrency, high performance, and powerful language support for 
 stored procedures and triggers. It has been used in production systems, under 

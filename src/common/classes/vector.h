@@ -3,30 +3,39 @@
  *	MODULE:		vector.h
  *	DESCRIPTION:	static array of simple elements
  *
- *  The contents of this file are subject to the Initial
- *  Developer's Public License Version 1.0 (the "License");
- *  you may not use this file except in compliance with the
- *  License. You may obtain a copy of the License at
- *  http://www.ibphoenix.com/main.nfs?a=ibphoenix&page=ibp_idpl.
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ * You may obtain a copy of the Licence at
+ * http://www.gnu.org/licences/lgpl.html
+ * 
+ * As a special exception this file can also be included in modules
+ * with other source code as long as that source code has been 
+ * released under an Open Source Initiative certificed licence.  
+ * More information about OSI certification can be found at: 
+ * http://www.opensource.org 
+ * 
+ * This module is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public Licence for more details.
+ * 
+ * This module was created by members of the firebird development 
+ * team.  All individual contributions remain the Copyright (C) of 
+ * those individuals and all rights are reserved.  Contributors to 
+ * this file are either listed below or can be obtained from a CVS 
+ * history command.
  *
- *  Software distributed under the License is distributed AS IS,
- *  WITHOUT WARRANTY OF ANY KIND, either express or implied.
- *  See the License for the specific language governing rights
- *  and limitations under the License.
+ *  Created by: Nickolay Samofatov <skidder@bssys.com>
  *
- *  The Original Code was created by Nickolay Samofatov
- *  for the Firebird Open Source RDBMS project.
+ *  Contributor(s):
+ * 
  *
- *  Copyright (c) 2004 Nickolay Samofatov <nickolay@broadviewsoftware.com>
- *  and all contributors signed below.
- *
- *  All Rights Reserved.
- *  Contributor(s): ______________________________________.
- *
- *
+ *  $Id: vector.h,v 1.1.2.2 2004-09-14 22:01:42 skidder Exp $
  *
  */
-
+ 
 #ifndef VECTOR_H
 #define VECTOR_H
 
@@ -36,62 +45,46 @@
 namespace Firebird {
 
 // Very fast static array of simple types
-template <typename T, size_t Capacity>
+template <typename T, int Capacity>
 class Vector {
 public:
 	Vector() : count(0) {}
-
-	T& operator[](size_t index) {
-  		fb_assert(index < count);
-  		return data[index];
-	}
-	const T& operator[](size_t index) const {
-  		fb_assert(index < count);
+	void clear() { count = 0; };
+	T& operator[](int index) {
+  		fb_assert(index >= 0 && index < count);
   		return data[index];
 	}
 	T* begin() { return data; }
 	T* end() { return data + count; }
-	const T* begin() const { return data; }
-	const T* end() const { return data + count; }
-	size_t getCount() const { return count; }
-	size_t getCapacity() const { return Capacity; }
-
-	void clear() { count = 0; }
-	void insert(size_t index, const T& item) {
-	  fb_assert(index <= count);
+	void insert(int index, const T& item) {
+	  fb_assert(index >= 0 && index <= count);
 	  fb_assert(count < Capacity);
 	  memmove(data + index + 1, data + index, sizeof(T) * (count++ - index));
 	  data[index] = item;
 	}
-	size_t add(const T& item) {
+
+	int add(const T& item) {
 		fb_assert(count < Capacity);
 		data[count++] = item;
   		return count;
-	}
-	T* remove(size_t index) {
-  		fb_assert(index < count);
+	};
+	void remove(int index) {
+  		fb_assert(index >= 0 && index < count);
   		memmove(data + index, data + index + 1, sizeof(T) * (--count - index));
-		return &data[index];
 	}
-	void shrink(size_t newCount) {
+	void shrink(int newCount) {
 		fb_assert(newCount <= count);
 		count = newCount;
-	}
-	void join(const Vector<T, Capacity>& L) {
+	};
+	void join(Vector<T, Capacity>& L) {
 		fb_assert(count + L.count <= Capacity);
 		memcpy(data + count, L.data, sizeof(T) * L.count);
 		count += L.count;
 	}
-
-	// prepare vector to be used as a buffer of capacity items
-	T* getBuffer(size_t capacityL) {
-		fb_assert(capacityL <= Capacity);
-		count = capacityL;
-		return data;
-	}
-
+	int getCount() const { return count; }
+	int getCapacity() const { return Capacity; }
 protected:
-	size_t count;
+	int count;
 	T data[Capacity];
 };
 
@@ -113,16 +106,16 @@ public:
 
 // Fast sorted array of simple objects
 // It is used for B+ tree nodes lower, but can still be used by itself
-template <typename Value, size_t Capacity, typename Key = Value,
-	typename KeyOfValue = DefaultKeyValue<Value>,
+template <typename Value, int Capacity, typename Key = Value, 
+	typename KeyOfValue = DefaultKeyValue<Value>, 
 	typename Cmp = DefaultComparator<Key> >
 class SortedVector : public Vector<Value, Capacity> {
 public:
 	SortedVector() : Vector<Value, Capacity>() {}
-	bool find(const Key& item, size_t& pos) const {
-		size_t highBound = this->count, lowBound = 0;
+	bool find(const Key& item, int& pos) const {
+		int highBound = this->count, lowBound = 0;
 		while (highBound > lowBound) {
-			const size_t temp = (highBound + lowBound) >> 1;
+			const int temp = (highBound + lowBound) >> 1;
 			if (Cmp::greaterThan(item, KeyOfValue::generate(this, this->data[temp])))
 				lowBound = temp + 1;
 			else
@@ -132,8 +125,8 @@ public:
 		return highBound != this->count &&
 			!Cmp::greaterThan(KeyOfValue::generate(this, this->data[lowBound]), item);
 	}
-	size_t add(const Value& item) {
-	    size_t pos;
+	int add(const Value& item) {
+	    int pos;
   	    find(KeyOfValue::generate(this, item), pos);
 		insert(pos, item);
 		return pos;

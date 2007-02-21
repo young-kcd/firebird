@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Command Oriented Query Language
- *	MODULE:		nounix.cpp
+ *	MODULE:		nounix.c
  *	DESCRIPTION:	Dummy routines
  *
  * The contents of this file are subject to the Interbase Public
@@ -32,4 +32,3 @@ int vfork(void)
 {
 	return -1;
 }
-

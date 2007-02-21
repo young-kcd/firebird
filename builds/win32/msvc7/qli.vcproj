@@ -27,7 +27,6 @@
 				ExceptionHandling="FALSE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				RuntimeTypeInfo="FALSE"
 				PrecompiledHeaderFile="..\..\..\temp\debug\qli/qli.pch"
 				AssemblerListingLocation="..\..\..\temp\debug\qli/"
 				ObjectFile="..\..\..\temp\debug\qli/"
@@ -42,15 +41,15 @@
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
 				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
-				OutputFile="..\..\..\temp\debug\firebird\bin\qli.exe"
+				OutputFile="debug/firebird/bin/qli.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile="..\..\..\temp\debug\qli\qli.pdb"
+				ProgramDatabaseFile="..\..\..\temp\debug\qli/qli.pdb"
 				SubSystem="1"/>
 			<Tool
 				Name="VCMIDLTool"
-				TypeLibraryName="..\..\..\temp\debug\qli\qli.tlb"/>
+				TypeLibraryName="..\..\..\temp\debug\qli/qli.tlb"/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool
@@ -94,7 +93,6 @@
 				PreprocessorDefinitions="WIN32,NDEBUG,_CONSOLE,SUPERCLIENT"
 				ExceptionHandling="FALSE"
 				RuntimeLibrary="2"
-				RuntimeTypeInfo="FALSE"
 				PrecompiledHeaderFile="..\..\..\temp\release\qli/qli.pch"
 				AssemblerListingLocation="..\..\..\temp\release\qli/"
 				ObjectFile="..\..\..\temp\release\qli/"
@@ -109,14 +107,15 @@
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
 				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
-				OutputFile="..\..\..\temp\release\firebird\bin\qli.exe"
+				OutputFile="release/firebird/bin/qli.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				GenerateDebugInformation="TRUE"
+				ProgramDatabaseFile="..\..\..\temp\release\qli/qli.pdb"
 				SubSystem="1"/>
 			<Tool
 				Name="VCMIDLTool"
-				TypeLibraryName="..\..\..\temp\release\qli\qli.tlb"/>
+				TypeLibraryName="..\..\..\temp\release\qli/qli.tlb"/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool
@@ -185,6 +184,9 @@
 				RelativePath="..\..\..\src\qli\mov.cpp">
 			</File>
 			<File
+				RelativePath="..\..\..\src\qli\noform.cpp">
+			</File>
+			<File
 				RelativePath="..\..\..\src\qli\parse.cpp">
 			</File>
 			<File
@@ -242,6 +244,12 @@
 				RelativePath="..\..\..\src\jrd\isc_file.cpp">
 			</File>
 			<File
+				RelativePath="..\..\..\src\jrd\llio.cpp">
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\misc.cpp">
+			</File>
+			<File
 				RelativePath="..\..\..\src\jrd\status.cpp">
 			</File>
 		</Filter>
@@ -294,6 +302,12 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\qli\expan_proto.h">
+			</File>
+			<File
+				RelativePath="..\..\..\src\qli\form.h">
+			</File>
+			<File
+				RelativePath="..\..\..\src\qli\form_proto.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\qli\forma_proto.h">

@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Access Method
  *	MODULE:		fun_proto.h
- *	DESCRIPTION:	Prototype header file for fun.cpp
+ *	DESCRIPTION:	Prototype header file for fun.c
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -21,14 +21,22 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef JRD_FUN_PROTO_H
-#define JRD_FUN_PROTO_H
+#ifndef _JRD_FUN_PROTO_H_
+#define _JRD_FUN_PROTO_H_
 
-class Jrd::CompilerScratch;
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-void		FUN_evaluate(Jrd::UserFunction*, Jrd::jrd_nod*, Jrd::impure_value*);
-Jrd::UserFunction*	FUN_lookup_function(const Firebird::MetaName&, bool ShowAccessError);
-Jrd::UserFunction*	FUN_resolve(Jrd::CompilerScratch*, Jrd::UserFunction*, Jrd::jrd_nod*);
+extern void DLL_EXPORT FUN_evaluate(struct fun *, struct jrd_nod *, struct vlu *);
+extern void DLL_EXPORT FUN_fini(struct tdbb *);
+extern void DLL_EXPORT FUN_init(void);
+extern struct fun *DLL_EXPORT FUN_lookup_function(TEXT *, bool ShowAccessError);
+extern struct fun *DLL_EXPORT FUN_resolve(class Csb *, struct fun *,
+										  struct jrd_nod *);
 
-#endif // JRD_FUN_PROTO_H
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
+#endif /* _JRD_FUN_PROTO_H_ */

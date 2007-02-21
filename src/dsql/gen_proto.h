@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	Dynamic SQL runtime support
  *	MODULE:		gen_proto.h
- *	DESCRIPTION:	Prototype Header file for gen.cpp
+ *	DESCRIPTION:	Prototype Header file for gen.c
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -21,21 +21,15 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef DSQL_GEN_PROTO_H
-#define DSQL_GEN_PROTO_H
+#ifndef _DSQL_GEN_PROTO_H_
+#define _DSQL_GEN_PROTO_H_
 
-void	GEN_expr(dsql_req*, dsql_nod*);
-void	GEN_port(dsql_req*, dsql_msg*);
-void	GEN_request(dsql_req*, dsql_nod*);
-void	GEN_return(dsql_req*, const dsql_nod*, bool);
-void	GEN_start_transaction(dsql_req*, const dsql_nod*);
-void	GEN_statement(dsql_req*, dsql_nod*);
+extern UCHAR GEN_expand_buffer(struct dsql_req *, UCHAR);
+extern void GEN_expr(struct dsql_req *, struct dsql_nod *);
+extern void GEN_port(struct dsql_req *, struct dsql_msg *);
+extern void GEN_request(struct dsql_req *, struct dsql_nod *);
+extern void GEN_return(DSQL_REQ, DSQL_NOD, BOOLEAN);
+extern void GEN_start_transaction(struct dsql_req *, struct dsql_nod *);
+extern void GEN_statement(struct dsql_req *, struct dsql_nod *);
 
-inline UCHAR stuff(dsql_req* request, const UCHAR byte)
-{
-	request->req_blr_data.add(byte);
-	return byte;
-}
-
-#endif //  DSQL_GEN_PROTO_H
-
+#endif /*  _DSQL_GEN_PROTO_H_  */
