@@ -5939,6 +5939,15 @@ static bool set_write_direction(thread_db* tdbb, Database* dbb, BufferDesc* bdb,
  *	Establish the I/O source or destination for the given page.
  *
  **************************************/
+	// No locking is required for temporary pages,
+	// we just update the page I/O direction.
+	if (bdb->bdb_page.isTemporary()) {
+		fb_assert(direction == BDB_write_normal ||
+				  direction == BDB_write_undefined);
+		bdb->bdb_write_direction = direction;
+		return true;
+	}
+
 #ifdef SUPERSERVER
 	NBAK_TRACE(("set_write_direction page=%d old=%d new=%d", bdb->bdb_page,
 		bdb->bdb_write_direction, direction));
@@ -6049,12 +6058,21 @@ static void update_write_direction(thread_db* tdbb, BufferDesc* bdb)
  *
  **************************************/
 	Database* dbb = tdbb->tdbb_database;
+
+	// Simplified processing for temporary pages.
+	// We don't need to know the backup state for them.
+	if (bdb->bdb_page.isTemporary()) {
+		set_write_direction(tdbb, dbb, bdb, BDB_write_normal);
+		return;
+	}
+
 	// If we block the backup process, we must flush all dirty pages ASAP.
 	// In order to achieve that, all dirty pages are marked with a "must write" flag.
 	if (dbb->dbb_backup_manager->is_blocking()) {
 		fb_assert(bdb->bdb_flags & (BDB_dirty | BDB_db_dirty));
 		bdb->bdb_flags |= BDB_must_write;
 	}
+
 	// Determine location of the page in difference file and write destination
 	// so BufferDesc AST handlers and write_page routine can safely use this information
 	if (!dbb->dbb_backup_manager->lock_state(tdbb, true)) {
@@ -6073,31 +6091,25 @@ static void update_write_direction(thread_db* tdbb, BufferDesc* bdb)
 	SSHORT write_direction;
 	const int backup_state = dbb->dbb_backup_manager->get_state();
 
-	const bool isTempPage = (bdb->bdb_page.getPageSpaceID() >= TEMP_PAGE_SPACE);
-	if (isTempPage) {
-		write_direction = BDB_write_normal;
-	}
-	else 
-	{
-		switch (backup_state) {
-		case nbak_state_normal:
-			write_direction = BDB_write_normal; 
-			break;
-		case nbak_state_stalled:
-			write_direction = BDB_write_diff;
-			break;
-		case nbak_state_merge:
-			if (tdbb->tdbb_flags & TDBB_backup_merge || 
-				bdb->bdb_page.getPageNum() < dbb->dbb_backup_manager->get_backup_pages())
-			{
-				write_direction = BDB_write_normal;
-			}
-			else {
-				write_direction = BDB_write_both;
-			}
-			break;
+	switch (backup_state) {
+	case nbak_state_normal:
+		write_direction = BDB_write_normal; 
+		break;
+	case nbak_state_stalled:
+		write_direction = BDB_write_diff;
+		break;
+	case nbak_state_merge:
+		if (tdbb->tdbb_flags & TDBB_backup_merge || 
+			bdb->bdb_page.getPageNum() < dbb->dbb_backup_manager->get_backup_pages())
+		{
+			write_direction = BDB_write_normal;
 		}
+		else {
+			write_direction = BDB_write_both;
+		}
+		break;
 	}
+
 	switch (write_direction) {
 	case BDB_write_diff:
 		if (!dbb->dbb_backup_manager->lock_alloc(tdbb, true)) {
@@ -6146,11 +6158,13 @@ static void update_write_direction(thread_db* tdbb, BufferDesc* bdb)
 		}
 		break;
 	}
+
 	if (!set_write_direction(tdbb, dbb, bdb, write_direction)) {
 		dbb->dbb_backup_manager->unlock_state(tdbb);
 		invalidate_and_release_buffer(tdbb, bdb);
 		CCH_unwind(tdbb, true);
 	}
+
 	dbb->dbb_backup_manager->unlock_state(tdbb);
 }
 

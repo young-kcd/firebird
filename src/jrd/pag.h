@@ -170,6 +170,10 @@ public:
 		return pageSpaceID;
 	} 
 
+	inline bool isTemporary() const {
+		return (pageSpaceID >= TEMP_PAGE_SPACE);
+	}
+
 	inline static SSHORT getLockLen() {
 		return sizeof(SLONG) + sizeof(USHORT);
 	}
