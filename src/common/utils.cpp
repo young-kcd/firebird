@@ -297,8 +297,7 @@ bool isTerminalServicesEnabled()
 
 				if (pfnVerSetCondition != NULL) 
 				{
-					DWORDLONG dwlCondition = 
-						(*pfnVerSetCondition) (dwlCondition, VER_SUITENAME, VER_AND);
+					DWORDLONG dwlCondition = (*pfnVerSetCondition) (0, VER_SUITENAME, VER_AND);
 
 					// Get a VerifyVersionInfo pointer.
 					HMODULE hmodK32 = GetModuleHandleA( "KERNEL32.DLL" );
@@ -333,6 +332,115 @@ bool isTerminalServicesEnabled()
 	return false;
 }
 
+
+// This is a very basic registry querying class. Not much validation, but avoids
+// leaving the registry open by mistake.
+
+class NTRegQuery
+{
+public:
+	NTRegQuery();
+	~NTRegQuery();
+	bool OpenForRead(const char* key);
+	bool ReadValueSize(const char* value);
+	// Assumes previous call to ReadValueSize.
+	bool ReadValueData(LPSTR data);
+	void Close();
+	DWORD getDataType() const;
+	DWORD getDataSize() const;
+private:
+	HKEY m_hKey;
+	DWORD m_dwType;
+	DWORD m_dwSize;
+	const char* m_value;
+};
+
+inline NTRegQuery::NTRegQuery()
+	: m_hKey(NULL), m_dwType(0), m_dwSize(0)
+{
+}
+
+inline NTRegQuery::~NTRegQuery()
+{
+	Close();
+}
+
+bool NTRegQuery::OpenForRead(const char* key)
+{
+	return RegOpenKeyExA(HKEY_LOCAL_MACHINE, key, 0, KEY_QUERY_VALUE, &m_hKey) == ERROR_SUCCESS;
+}
+
+bool NTRegQuery::ReadValueSize(const char* value)
+{
+	m_value = value;
+	return RegQueryValueExA(m_hKey, value, NULL, &m_dwType, NULL, &m_dwSize) == ERROR_SUCCESS;
+}
+
+bool NTRegQuery::ReadValueData(LPSTR data)
+{
+	return RegQueryValueExA(m_hKey, m_value, NULL, &m_dwType, (LPBYTE) data, &m_dwSize) == ERROR_SUCCESS;
+}
+
+void NTRegQuery::Close()
+{
+	if (m_hKey)
+		RegCloseKey(m_hKey);
+		
+	m_hKey = NULL;
+}
+
+inline DWORD NTRegQuery::getDataType() const
+{
+	return m_dwType;
+}
+
+inline DWORD NTRegQuery::getDataSize() const
+{
+	return m_dwSize;
+}
+
+
+// This class represents the local allocation of dynamic memory in Windows.
+
+class NTLocalString
+{
+public:
+	explicit NTLocalString(DWORD dwSize);
+	LPCSTR c_str() const;
+	LPSTR getString();
+	bool allocated() const;
+	~NTLocalString();
+private:
+	LPSTR m_string;
+};
+
+NTLocalString::NTLocalString(DWORD dwSize)
+{
+	m_string = (LPSTR) LocalAlloc(LPTR, dwSize);
+}
+
+NTLocalString::~NTLocalString()
+{
+	if (m_string)
+		LocalFree(m_string);
+}
+
+inline LPCSTR NTLocalString::c_str() const
+{
+	return m_string;
+}
+
+inline LPSTR NTLocalString::getString()
+{
+	return m_string;
+}
+
+inline bool NTLocalString::allocated() const
+{
+	return m_string != 0;
+}
+
+		
 ////////////////////////////////////////////////////////////
 // validateProductSuite function
 //
@@ -343,38 +451,33 @@ bool isTerminalServicesEnabled()
 
 bool validateProductSuite (LPCSTR lpszSuiteToValidate) 
 {
-	bool fValidated = false;
-	HKEY hKey = NULL;
-	DWORD dwType = 0;
-	DWORD dwSize = 0;
-	LPSTR lpszProductSuites = 0;
-	LPCSTR lpszSuite = 0;
+	NTRegQuery query;
 
 	// Open the ProductOptions key.
-	LONG lResult = RegOpenKeyExA(HKEY_LOCAL_MACHINE,
-		"System\\CurrentControlSet\\Control\\ProductOptions", 0, KEY_QUERY_VALUE, &hKey);
-	if (lResult != ERROR_SUCCESS)
-		goto exit;
+	if (!query.OpenForRead("System\\CurrentControlSet\\Control\\ProductOptions"))
+		return false;
 
 	// Determine required size of ProductSuite buffer.
-	lResult = RegQueryValueExA(hKey, "ProductSuite", NULL, &dwType, NULL, &dwSize);
-	if (lResult != ERROR_SUCCESS || !dwSize)
-		goto exit;
+	// If we get size == 1 it means multi string data with only a terminator.
+	if (!query.ReadValueSize("ProductSuite") || query.getDataSize() < 2)
+		return false;
 
 	// Allocate buffer.
-	lpszProductSuites = (LPSTR) LocalAlloc(LPTR, dwSize);
-	if (!lpszProductSuites)
-		goto exit;
+	NTLocalString lpszProductSuites(query.getDataSize());
+	if (!lpszProductSuites.allocated())
+		return false;
 
 	// Retrieve array of product suite strings.
-	lResult = RegQueryValueExA(hKey, "ProductSuite", NULL, &dwType, 
-		(LPBYTE) lpszProductSuites, &dwSize);
-	if (lResult != ERROR_SUCCESS || dwType != REG_MULTI_SZ)
-		goto exit;
+	if (!query.ReadValueData(lpszProductSuites.getString()) || query.getDataType() != REG_MULTI_SZ)
+		return false;
 
+	query.Close();  // explicit but redundant.
+	
 	// Search for suite name in array of strings.
-	lpszSuite = lpszProductSuites;
-	while (*lpszSuite)
+	bool fValidated = false;
+	LPCSTR lpszSuite = lpszProductSuites.c_str();
+	LPCSTR end = lpszSuite + query.getDataSize(); // paranoid check
+	while (*lpszSuite && lpszSuite < end)
 	{
 		if (lstrcmpA(lpszSuite, lpszSuiteToValidate) == 0)
 		{
@@ -382,15 +485,6 @@ bool validateProductSuite (LPCSTR lpszSuiteToValidate)
 			break;
 		}
 		lpszSuite += (lstrlenA(lpszSuite) + 1);
-	}
-
-exit:
-	if (lpszProductSuites) {
-		LocalFree(lpszProductSuites);
-	}
-
-	if (hKey) {
-		RegCloseKey(hKey);
 	}
 
 	return fValidated;
