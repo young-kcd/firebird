@@ -1,3 +1,19 @@
+2007-02-21 18:00  makowski
+
+	*
+	firebird2/src/install/arch-specific/win32/fr/installation_lisezmoi.txt
+	(1.1.2.8):
+
+	[no log message]
+
+2007-02-21 11:42  paulbeach
+
+	* firebird2/: doc/WhatsNew (1.36.2.64), src/qli/expand.cpp
+	(1.12.2.2):
+
+	Fix crash in QLI using the following SQL command. insert into
+	relationx select * from relationy
+
 2007-02-06 13:17  paulbeach
 
 	* firebird2/src/jrd/cvt.cpp (1.20.2.4):
