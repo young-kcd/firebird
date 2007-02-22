@@ -5959,11 +5959,11 @@ static bool set_write_direction(thread_db* tdbb, Database* dbb, BufferDesc* bdb,
 	}
 	else {
 		if (direction == BDB_write_normal || direction == BDB_write_both)		
-			dbb->dbb_backup_manager->get_sw_database_lock(tdbb, true);
+			dbb->dbb_backup_manager->get_sw_database_lock(tdbb, 0);
 	}
 	bdb->bdb_write_direction = direction;
 #else
-	LCK_ast_inhibit();
+	AstInhibit aiHolder;
 	switch (bdb->bdb_write_direction) {
 	case BDB_write_normal:
 	case BDB_write_both:
@@ -5984,11 +5984,10 @@ static bool set_write_direction(thread_db* tdbb, Database* dbb, BufferDesc* bdb,
 			dbb->dbb_backup_manager->decrement_diff_use_count();
 			bdb->bdb_write_direction = direction;
 			// We ask this function to enable signals
-			if (!dbb->dbb_backup_manager->get_sw_database_lock(tdbb, true)) {
+			if (!dbb->dbb_backup_manager->get_sw_database_lock(tdbb, &aiHolder)) {
 				bdb->bdb_write_direction = BDB_write_undefined;
 				return false;
 			}
-			return true;
 		case BDB_write_undefined:
 			dbb->dbb_backup_manager->decrement_diff_use_count();
 		}
@@ -6002,16 +6001,14 @@ static bool set_write_direction(thread_db* tdbb, Database* dbb, BufferDesc* bdb,
 		case BDB_write_both:
 			bdb->bdb_write_direction = direction;
 			// We ask this function to enable signals
-			if (!dbb->dbb_backup_manager->get_sw_database_lock(tdbb, true)) {
+			if (!dbb->dbb_backup_manager->get_sw_database_lock(tdbb, &aiHolder)) {
 				bdb->bdb_write_direction = BDB_write_undefined;
 				return false;
 			}
-			return true;
 		}
 		break;
 	}
 	bdb->bdb_write_direction = direction;
-	LCK_ast_enable();
 #endif
 	return true;
 }

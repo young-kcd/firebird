@@ -40,8 +40,6 @@ SLONG	LOCK_read_data2(SLONG, USHORT, const UCHAR*, USHORT, SLONG);
 void	LOCK_re_post(lock_ast_t, void*, SLONG);
 bool	LOCK_shut_manager(void);
 SLONG	LOCK_write_data(SLONG, SLONG);
-void LOCK_ast_inhibit();
-void LOCK_ast_enable();
 
 #endif /* LOCK_LOCK_PROTO_H */
 

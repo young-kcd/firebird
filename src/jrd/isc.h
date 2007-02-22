@@ -35,6 +35,9 @@
 #include "../jrd/common.h"
 #include "../jrd/sch_proto.h"
 
+// For AstInhibit
+#include "../jrd/os/isc_i_proto.h"
+
 /* Defines for semaphore and shared memory removal */
 
 const USHORT ISC_SEM_REMOVE		= 1;
@@ -313,6 +316,59 @@ inline void AST_ENTER() {
 inline void AST_EXIT() {
 }
 #endif
+
+
+namespace Jrd {
+#ifdef MULTI_THREAD
+	class AstInhibit
+	//
+	// This class inhibits AST processing.
+	//
+	{
+	public:
+		// Constructor inhibits processing.
+		AstInhibit() : enabled(false)
+		{
+			AST_DISABLE();
+		}
+
+		// Destructor re-enables processing.
+		~AstInhibit()
+		{
+			enable();
+		}
+
+		// Let one re-enable processing in advance.
+		void enable()
+		{
+			if (enabled)
+				return;
+
+			enabled = true;
+
+			AST_ENABLE();
+		}
+
+	private:
+		// Forbid copy constructor
+		AstInhibit(const AstInhibit&);
+		bool enabled;
+	};
+#else
+	class AstInhibit : public SignalInhibit
+	//
+	// This class inhibits signals' processing.
+	//
+	{
+	public:
+		AstInhibit() { }
+
+	private:
+		// Forbid copy constructor
+		AstInhibit(const AstInhibit&);
+	};
+#endif
+}
 
 
 #endif /* JRD_ISC_H */

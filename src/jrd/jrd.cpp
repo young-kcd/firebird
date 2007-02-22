@@ -6093,18 +6093,18 @@ static void release_attachment(Attachment* attachment)
 /* bug #7781, need to null out the attachment pointer of all locks which
    were hung off this attachment block, to ensure that the attachment
    block doesn't get dereferenced after it is released */
-
-	// Disable delivery of ASTs for the moment while queue of locks is in flux
-	LCK_ast_inhibit();
-	Lock* long_lock = attachment->att_long_locks;
-	while (long_lock) {
-		Lock* next = long_lock->lck_next;
-		long_lock->lck_attachment = NULL;
-		long_lock->lck_next = NULL;
-		long_lock->lck_prior = NULL;
-		long_lock = next;
+	{
+		// Disable delivery of ASTs for the moment while queue of locks is in flux
+		AstInhibit aiHolder;
+		Lock* long_lock = attachment->att_long_locks;
+		while (long_lock) {
+			Lock* next = long_lock->lck_next;
+			long_lock->lck_attachment = NULL;
+			long_lock->lck_next = NULL;
+			long_lock->lck_prior = NULL;
+			long_lock = next;
+		}
 	}
-	LCK_ast_enable();
 
 	if (attachment->att_flags & ATT_lck_init_done) {
 		LCK_fini(tdbb, LCK_OWNER_attachment);	// For the attachment

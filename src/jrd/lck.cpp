@@ -235,15 +235,6 @@ inline bool checkLock(const Lock* l)
 #define LCK_CHECK_LOCK(x)		(TRUE)	/* nothing */
 #endif
 
-// Is there any reason why cch, jrd and nbak don't call LOCK_ast... directly?
-void LCK_ast_inhibit() {
-	LOCK_ast_inhibit();
-}
-
-void LCK_ast_enable() {
-	LOCK_ast_enable();
-}
-
 void LCK_assert(thread_db* tdbb, Lock* lock)
 {
 /**************************************
@@ -1650,7 +1641,7 @@ static void set_lock_attachment(Lock* lock, Attachment* attachment)
 		return;
 
 	// Disable delivery of ASTs for the moment while queue of locks is in flux
-	LCK_ast_inhibit();
+	AstInhibit aiHolder;
 
 	// If lock has an attachment it must not be a part of linked list
 	fb_assert(!lock->lck_attachment ? !lock->lck_prior && !lock->lck_next : true);
@@ -1695,8 +1686,6 @@ static void set_lock_attachment(Lock* lock, Attachment* attachment)
 		if (next)
 			next->lck_prior = lock;
 	}
-
-	LCK_ast_enable();
 
 	lock->lck_attachment = attachment;
 }
