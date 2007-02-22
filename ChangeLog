@@ -1,3 +1,10 @@
+2007-02-21 11:51  paulbeach
+
+	* firebird2/: doc/WhatsNew (1.113), src/qli/expand.cpp (1.32):
+
+	Fix crash in QLI using the following SQL command. insert into
+	relationx select * from relationy
+
 2007-02-21 01:02  asfernandes
 
 	* firebird2/src/common/utils.cpp (1.20):
