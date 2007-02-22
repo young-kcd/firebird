@@ -152,14 +152,10 @@ bool CMP_node_match( const qli_nod* node1, const qli_nod* node2)
 			{
 				return false;
 			}
-			const UCHAR* p1 = node1->nod_desc.dsc_address;
-			const UCHAR* p2 = node2->nod_desc.dsc_address;
-			USHORT l = node1->nod_desc.dsc_length;
+			int l = node1->nod_desc.dsc_length;
 			if (l)
-				do {
-					if (*p1++ != *p2++)
-						return false;
-				} while (--l);
+				return memcmp(node1->nod_desc.dsc_address, node2->nod_desc.dsc_address, l) == 0;
+
 			return true;
 		}
 

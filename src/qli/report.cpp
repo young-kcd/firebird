@@ -259,21 +259,23 @@ static bool test_break(qli_brk* control,
  *	Check to see if there has been a control break for an expression.
  *
  **************************************/
-	DSC desc1, desc2, *ptr1, *ptr2;
-	UCHAR *p2;
+	DSC desc1, desc2;
 
 // Evaluate the two versions of the expression
 
-	if (ptr1 = EVAL_value((qli_nod*) control->brk_field))
+	dsc* ptr1 = EVAL_value((qli_nod*) control->brk_field);
+	if (ptr1)
 		desc1 = *ptr1;
 
-	UCHAR* p1 = message->msg_buffer;
+	UCHAR* const buf = message->msg_buffer;
 	message->msg_buffer = report->rpt_buffer;
 
-	if (ptr2 = EVAL_value((qli_nod*) control->brk_field))
+	dsc* ptr2 = EVAL_value((qli_nod*) control->brk_field);
+	if (ptr2)
 		desc2 = *ptr2;
 
-	message->msg_buffer = p1;
+	// An error in EVAL_value will prevent msg_buffer from being restored to its old value.
+	message->msg_buffer = buf;
 
 // Check for consistently missing
 
@@ -283,18 +285,15 @@ static bool test_break(qli_brk* control,
 /* Both fields are present.  Check values.  Luckily, there's no need
    to worry about datatypes. */
 
-	p1 = desc1.dsc_address;
-	p2 = desc2.dsc_address;
+	const UCHAR* p1 = desc1.dsc_address;
+	const UCHAR* p2 = desc2.dsc_address;
 	USHORT l = desc1.dsc_length;
 
 	if (desc1.dsc_dtype == dtype_varying)
 		l = 2 + *(USHORT *) p1;
 
 	if (l)
-		do {
-			if (*p1++ != *p2++)
-				return true;
-		} while (--l);
+		return memcmp(p1, p2, l) != 0;
 
 	return false;
 }

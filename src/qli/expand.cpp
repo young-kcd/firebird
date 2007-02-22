@@ -267,21 +267,15 @@ static bool compare_names( const nam* name, const qli_symbol* symbol)
  *	Compare a name node to a symbol.  If they are equal, return true.
  *
  **************************************/
-	USHORT l;
+	if (!symbol)
+		return false;
 
-	if (!symbol || (l = name->nam_length) != symbol->sym_length)
+	int l = name->nam_length;
+	if (l != symbol->sym_length)
 		return false;
 
 	if (l)
-	{
-		const TEXT* p = symbol->sym_string;
-		const TEXT* q = name->nam_string;
-
-		do {
-			if (*p++ != *q++)
-				return false;
-		} while (--l);
-	}
+		return memcmp(symbol->sym_string, name->nam_string, l) == 0;
 
 	return true;
 }
@@ -302,20 +296,12 @@ static bool compare_symbols( const qli_symbol* symbol1, const qli_symbol* symbol
 	if (!symbol1 || !symbol2)
 		return false;
 
-	USHORT l = symbol1->sym_length;
+	int l = symbol1->sym_length;
 	if (l != symbol2->sym_length)
 		return false;
 
 	if (l)
-	{
-		const TEXT* p = symbol1->sym_string;
-		const TEXT* q = symbol2->sym_string;
-
-		do {
-			if (*p++ != *q++)
-				return false;
-		} while (--l);
-	}
+		return memcmp(symbol1->sym_string, symbol2->sym_string, l) == 0;
 
 	return true;
 }
@@ -583,7 +569,7 @@ static qli_nod* expand_boolean( qli_syntax* input, qli_lls* stack)
 	qli_nod* value = expand_expression(input->syn_arg[0], stack);
 	*ptr++ = value;
 
-	SSHORT i;
+	int i;
 	for (i = 1; i < input->syn_count; i++, ptr++)
 	{
 		if (!(*ptr = possible_literal(input->syn_arg[i], stack, true)))
@@ -773,7 +759,7 @@ static qli_nod* expand_erase( qli_syntax* input, qli_lls* right, qli_lls* left)
 	}
 
 // Loop thru contexts counting them.
-	USHORT count = 0;
+	int count = 0;
 	qli_ctx* context = NULL;
 	for (qli_lls* contexts = right; contexts; contexts = contexts->lls_next) {
 		context = (qli_ctx*) contexts->lls_object;
@@ -981,7 +967,7 @@ static qli_nod* expand_expression( qli_syntax* input, qli_lls* stack)
 	node = make_node(input->syn_type, input->syn_count);
 	qli_nod** ptr = node->nod_arg;
 
-	for (SSHORT i = 0; i < input->syn_count; i++)
+	for (int i = 0; i < input->syn_count; i++)
 		*ptr++ = expand_expression(input->syn_arg[i], stack);
 
 	return node;
@@ -2161,18 +2147,19 @@ static void expand_values( qli_syntax* input, qli_lls* right)
 
 	qli_lls* fields = (qli_lls*) input->syn_arg[s_sto_fields];
 	qli_lls* stack;
-	SSHORT field_count = 0;
+	int field_count = 0;
 	for (stack = fields; stack; stack = stack->lls_next)
 		field_count++;
 
 // We're going to want the values in the order listed in the command
 
 	qli_lls* values = (qli_lls*) input->syn_arg[s_sto_values];
-	for (; values; ALLQ_push(ALLQ_pop(&values), &stack));
+	while (values)
+		ALLQ_push(ALLQ_pop(&values), &stack);
 
 // now go through, count, and expand where needed
 
-	SSHORT value_count = 0;
+	int value_count = 0;
 	while (stack) {
 		qli_syntax* value = (qli_syntax*) ALLQ_pop(&stack);
 		if (input->syn_arg[s_sto_rse] && value->syn_type == nod_prompt) {
