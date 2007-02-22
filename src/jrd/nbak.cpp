@@ -1041,6 +1041,9 @@ BackupManager::BackupManager(thread_db* tdbb, Database* _database, int ini_state
 	database_lock->lck_object = reinterpret_cast<blk*>(database);
 	database_lock->lck_ast = backup_database_ast;
 #endif
+
+	if (backup_state != nbak_state_unknown)
+		generate_filename();
 }
 
 void BackupManager::shutdown_locks(thread_db* tdbb) throw()
