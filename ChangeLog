@@ -1,3 +1,9 @@
+2007-02-22 16:37  dimitr
+
+	* firebird2/src/jrd/nbak.cpp (1.52.2.5):
+
+	Fixed CORE-1136.
+
 2007-02-21 13:52  dimitr
 
 	* firebird2/src/extlib/ib_udf.cpp (1.6.6.1):
