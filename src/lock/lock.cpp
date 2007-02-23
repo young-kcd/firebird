@@ -1203,7 +1203,7 @@ void LOCK_re_post( lock_ast_t ast, void* arg, SRQ_PTR owner_offset)
 	owner->own_flags &= ~OWN_signal;
 	owner->own_ast_flags |= OWN_signaled;
 	DEBUG_DELAY;
-	{
+	{	// scope for siHolder
 		SignalInhibit siHolder;
 		DEBUG_DELAY;
 		blocking_action2(owner_offset, (SRQ_PTR) NULL);
@@ -3861,7 +3861,7 @@ static void release_mutex(void)
  **************************************/
 
 	DEBUG_DELAY;
-	{
+	{	// scope for siHolder
 		SignalInhibit siHolder;
 		DEBUG_DELAY;
 
@@ -4096,7 +4096,7 @@ static int signal_owner( own* blocking_owner, SRQ_PTR blocked_owner_offset)
 #ifndef USE_BLOCKING_THREAD
 	if (blocking_owner->own_process_id == LOCK_pid) {
 		DEBUG_DELAY;
-		{
+		{	// scope for siHolder
 			SignalInhibit siHolder;
 			DEBUG_DELAY;
 			blocking_action2(SRQ_REL_PTR(blocking_owner), blocked_owner_offset);
@@ -4796,7 +4796,7 @@ static USHORT wait_for_request(
 		/* Before starting to wait - look to see if someone resolved
 		   the request for us - if so we're out easy! */
 
-		{
+		{	// scope for siHolder
 			SignalInhibit siHolder;
 			request = (LRQ) SRQ_ABS_PTR(request_offset);
 			if (!(request->lrq_flags & LRQ_pending)) {
@@ -4903,7 +4903,7 @@ static USHORT wait_for_request(
 
 		/* If somebody else has resolved the lock, we're done */
 
-		{
+		{	// scope for siHolder
 			SignalInhibit siHolder;
 			request = (LRQ) SRQ_ABS_PTR(request_offset);
 			if (!(request->lrq_flags & LRQ_pending)) {

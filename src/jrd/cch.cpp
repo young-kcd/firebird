@@ -5988,6 +5988,7 @@ static bool set_write_direction(thread_db* tdbb, Database* dbb, BufferDesc* bdb,
 				bdb->bdb_write_direction = BDB_write_undefined;
 				return false;
 			}
+			// fall through
 		case BDB_write_undefined:
 			dbb->dbb_backup_manager->decrement_diff_use_count();
 		}

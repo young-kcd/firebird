@@ -354,7 +354,7 @@ namespace Jrd {
 		AstInhibit(const AstInhibit&);
 		bool enabled;
 	};
-#else
+#else // MULTI_THREAD
 	class AstInhibit : public SignalInhibit
 	//
 	// This class inhibits signals' processing.
@@ -367,9 +367,8 @@ namespace Jrd {
 		// Forbid copy constructor
 		AstInhibit(const AstInhibit&);
 	};
-#endif
-}
+#endif // MULTI_THREAD
+} // namespace Jrd
 
 
-#endif /* JRD_ISC_H */
-
+#endif // JRD_ISC_H

@@ -6093,7 +6093,7 @@ static void release_attachment(Attachment* attachment)
 /* bug #7781, need to null out the attachment pointer of all locks which
    were hung off this attachment block, to ensure that the attachment
    block doesn't get dereferenced after it is released */
-	{
+	{	// scope for aiHolder
 		// Disable delivery of ASTs for the moment while queue of locks is in flux
 		AstInhibit aiHolder;
 		Lock* long_lock = attachment->att_long_locks;

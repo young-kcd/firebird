@@ -75,4 +75,4 @@ private:
 #endif
 };
 
-#endif /* JRD_ISC_I_PROTO_H */
+#endif // JRD_ISC_I_PROTO_H
