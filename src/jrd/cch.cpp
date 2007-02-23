@@ -141,7 +141,7 @@ static void prefetch_prologue(Prefetch*, SLONG *);
 #endif
 static SSHORT related(const BufferDesc*, const BufferDesc*, SSHORT);
 static void release_bdb(thread_db*, BufferDesc*, const bool, const bool, const bool);
-static bool set_write_direction(thread_db*, Database*, BufferDesc*, SSHORT);
+static bool set_write_direction(thread_db*, Database*, BufferDesc*, const SSHORT);
 static void unmark(thread_db*, WIN *);
 static void update_write_direction(thread_db*, BufferDesc*);
 static bool writeable(const BufferDesc*);
@@ -5927,7 +5927,8 @@ static void release_bdb(
 #endif
 
 
-static bool set_write_direction(thread_db* tdbb, Database* dbb, BufferDesc* bdb, SSHORT direction)
+static bool set_write_direction(thread_db* tdbb, Database* dbb, BufferDesc* bdb,
+	const SSHORT direction)
 {
 /**************************************
  *

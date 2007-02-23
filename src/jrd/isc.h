@@ -320,10 +320,10 @@ inline void AST_EXIT() {
 
 namespace Jrd {
 #ifdef MULTI_THREAD
-	class AstInhibit
-	//
+
 	// This class inhibits AST processing.
-	//
+
+	class AstInhibit
 	{
 	public:
 		// Constructor inhibits processing.

@@ -341,11 +341,11 @@ class NTRegQuery
 public:
 	NTRegQuery();
 	~NTRegQuery();
-	bool OpenForRead(const char* key);
-	bool ReadValueSize(const char* value);
-	// Assumes previous call to ReadValueSize.
-	bool ReadValueData(LPSTR data);
-	void Close();
+	bool openForRead(const char* key);
+	bool readValueSize(const char* value);
+	// Assumes previous call to readValueSize.
+	bool readValueData(LPSTR data);
+	void close();
 	DWORD getDataType() const;
 	DWORD getDataSize() const;
 private:
@@ -362,26 +362,26 @@ inline NTRegQuery::NTRegQuery()
 
 inline NTRegQuery::~NTRegQuery()
 {
-	Close();
+	close();
 }
 
-bool NTRegQuery::OpenForRead(const char* key)
+bool NTRegQuery::openForRead(const char* key)
 {
 	return RegOpenKeyExA(HKEY_LOCAL_MACHINE, key, 0, KEY_QUERY_VALUE, &m_hKey) == ERROR_SUCCESS;
 }
 
-bool NTRegQuery::ReadValueSize(const char* value)
+bool NTRegQuery::readValueSize(const char* value)
 {
 	m_value = value;
 	return RegQueryValueExA(m_hKey, value, NULL, &m_dwType, NULL, &m_dwSize) == ERROR_SUCCESS;
 }
 
-bool NTRegQuery::ReadValueData(LPSTR data)
+bool NTRegQuery::readValueData(LPSTR data)
 {
 	return RegQueryValueExA(m_hKey, m_value, NULL, &m_dwType, (LPBYTE) data, &m_dwSize) == ERROR_SUCCESS;
 }
 
-void NTRegQuery::Close()
+void NTRegQuery::close()
 {
 	if (m_hKey)
 		RegCloseKey(m_hKey);
@@ -454,12 +454,12 @@ bool validateProductSuite (LPCSTR lpszSuiteToValidate)
 	NTRegQuery query;
 
 	// Open the ProductOptions key.
-	if (!query.OpenForRead("System\\CurrentControlSet\\Control\\ProductOptions"))
+	if (!query.openForRead("System\\CurrentControlSet\\Control\\ProductOptions"))
 		return false;
 
 	// Determine required size of ProductSuite buffer.
 	// If we get size == 1 it means multi string data with only a terminator.
-	if (!query.ReadValueSize("ProductSuite") || query.getDataSize() < 2)
+	if (!query.readValueSize("ProductSuite") || query.getDataSize() < 2)
 		return false;
 
 	// Allocate buffer.
@@ -468,10 +468,10 @@ bool validateProductSuite (LPCSTR lpszSuiteToValidate)
 		return false;
 
 	// Retrieve array of product suite strings.
-	if (!query.ReadValueData(lpszProductSuites.getString()) || query.getDataType() != REG_MULTI_SZ)
+	if (!query.readValueData(lpszProductSuites.getString()) || query.getDataType() != REG_MULTI_SZ)
 		return false;
 
-	query.Close();  // explicit but redundant.
+	query.close();  // explicit but redundant.
 	
 	// Search for suite name in array of strings.
 	bool fValidated = false;
@@ -490,7 +490,7 @@ bool validateProductSuite (LPCSTR lpszSuiteToValidate)
 	return fValidated;
 }
 
-#endif
+#endif // WIN_NT
 } // namespace fb_utils
 
 
