@@ -1460,7 +1460,7 @@ static rem_port* aux_connect(rem_port* port, PACKET* packet, t_event_ast ast)
 	THREAD_ENTER();
 
 	if (status < 0) {
-		inet_error(port, "connect", isc_net_event_connect_err, INET_ERRNO);
+		inet_error(port, "aux connect", isc_net_event_connect_err, INET_ERRNO);
 		SOCLOSE(n);
 		return NULL;
 	}
