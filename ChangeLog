@@ -1,3 +1,10 @@
+2007-02-23 06:55  robocop
+
+	* firebird2/src/: jrd/cch.cpp (1.147), jrd/isc.h (1.28),
+	qli/mov.cpp (1.40), common/utils.cpp (1.22):
+
+	Misc.
+
 2007-02-23 02:42  asfernandes
 
 	* firebird2/src/: jrd/cch.cpp (1.146), jrd/isc.h (1.27),
