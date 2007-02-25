@@ -317,6 +317,8 @@ struct ri_actions {
 
 static processing_state add_row(TEXT*);
 static processing_state blobedit(const TEXT*, const TEXT* const*);
+static processing_state bulk_insert_hack(const char* command, XSQLDA** sqldap);
+static bool bulk_insert_retriever(bool& done, const char* prompt);
 static bool check_date(const tm& times);
 static bool check_time(const tm& times);
 static bool check_timestamp(const tm& times, const int msec);
@@ -963,23 +965,20 @@ void ISQL_copy_SQL_id(const TEXT* in_str,
 		// Cannot rely on ANSI functions that may be localized. 
 		bool need_quotes = *in_str < 'A' || *in_str > 'Z';
 		TEXT* q1 = output_str;
-		for (const TEXT* p1 = in_str; *p1 && !need_quotes; ++p1, ++q1) {
+		for (const TEXT* p1 = in_str; *p1 && !need_quotes; ++p1, ++q1)
+		{
 			if ((*p1 < 'A' || *p1 > 'Z') && (*p1 < '0' || *p1 > '9')
 				&& *p1 != '_' && *p1 != '$')
 			{
 				need_quotes = true;
+				break;
 			}
 			*q1 = *p1;
 		}
-		if (!need_quotes) {
-			if (KEYWORD_stringIsAToken(in_str)) {
-				need_quotes = true;
-			}
-
-			if (!need_quotes) {
-				*q1 = '\0';
-				return;
-			}
+		if (!need_quotes && !KEYWORD_stringIsAToken(in_str))
+		{
+			*q1 = '\0';
+			return;
 		}
 	}
 
@@ -1973,6 +1972,7 @@ static processing_state add_row(TEXT* tabname)
 	sprintf(string, "SELECT * FROM %s", tabname);
 
 	XSQLDA* sqlda = (XSQLDA*) ISQL_ALLOC((SLONG) (XSQLDA_LENGTH(20)));
+	memset(sqlda, 0, XSQLDA_LENGTH(20));
 	sqlda->version = SQLDA_VERSION1;
 	sqlda->sqln = 20;
 	if (isc_dsql_prepare(isc_status, &D__trans, &global_Stmt, 0, string,
@@ -1991,6 +1991,7 @@ static processing_state add_row(TEXT* tabname)
 	if (sqlda->sqld > sqlda->sqln) {
 		ISQL_FREE(sqlda);
 		sqlda = (XSQLDA*) ISQL_ALLOC((SLONG) (XSQLDA_LENGTH(n_cols)));
+		memset(sqlda, 0, XSQLDA_LENGTH(n_cols));
 		sqlda->version = SQLDA_VERSION1;
 		sqlda->sqld = sqlda->sqln = n_cols;
 
@@ -2006,7 +2007,7 @@ static processing_state add_row(TEXT* tabname)
 	}
 	isc_dsql_free_statement(isc_status, &global_Stmt, DSQL_close);
 
-	// Array for storing select/insert column mapping , colcheck sets it up
+	// Array for storing select/insert column mapping, colcheck sets it up
 	SSHORT* colnumber = (SSHORT*) ISQL_ALLOC((SLONG) (n_cols * sizeof(SSHORT)));
 	col_check(tabname, colnumber);
 
@@ -2014,7 +2015,7 @@ static processing_state add_row(TEXT* tabname)
 
 	SCHAR* insertstring = (SCHAR*) ISQL_ALLOC((SLONG) (40 + (QUOTEDLENGTH + 4) * n_cols));
 
-	// There is a question marker for each column known updatable column
+	// There is a question mark for each column that's known to be updatable.
 
 	sprintf(insertstring, "INSERT INTO %s (", tabname);
 
@@ -2182,11 +2183,9 @@ static processing_state add_row(TEXT* tabname)
 				switch (type) {
 				case SQL_BLOB:
 
-					blobid =
-						(ISC_QUAD*) ISQL_ALLOC((SLONG) sizeof(ISC_QUAD));
+					blobid = (ISC_QUAD*) ISQL_ALLOC((SLONG) sizeof(ISC_QUAD));
 
-					if (!strcmp(cmd, "EDIT"))
-						// If edit, we edit a temp file 
+					if (!strcmp(cmd, "EDIT")) // If edit, we edit a temp file.
 					{
 						Firebird::PathName ftmp = TempFile::create(SCRATCH);
 						if (ftmp.empty())
@@ -2343,7 +2342,7 @@ static processing_state add_row(TEXT* tabname)
 						pi64 = (SINT64*) ISQL_ALLOC(sizeof(SINT64));
 						ivar->sqldata = (SCHAR*) pi64;
 					}
-					if (var->sqlscale < 0)
+					if (ivar->sqlscale < 0)
 					{
 						SSHORT lscale = 0;
 						if (get_numeric((UCHAR*) lastInputLine, length, &lscale, &n) != true) {
@@ -2351,12 +2350,12 @@ static processing_state add_row(TEXT* tabname)
 							done = true;
 						}
 						else {
-							SSHORT dscale = var->sqlscale - lscale;
+							int dscale = ivar->sqlscale - lscale;
 							if (dscale > 0) {
 								TEXT err_buf[256];
 								sprintf(err_buf,
 										"input error: input scale %d exceeds the field's scale %d",
-										-lscale, -var->sqlscale);
+										-lscale, -ivar->sqlscale);
 								STDERROUT(err_buf);
 								done = true;
 							}
@@ -2488,6 +2487,799 @@ static processing_state blobedit(const TEXT* action,
 		rc = ps_ERR;
 
 	return rc;
+}
+
+
+// Helper class for the bulk insertion tricks.
+// It does automatic resource management
+// and appends starting with newline when there's anything already in the buffer.
+// Calling alloc() again with a bigger buffer size simply forgets the old data.
+// Calling alloc() always resets the usage counter to zero, hence the first
+// call to append() after alloc() always work as a simple copy.
+// Using the object is only valid after the first append() call.
+// This class can be used with binary data that includes the null terminator,
+// although it was designed for text (see the newline inserted by append()).
+class Extender
+{
+public:
+	Extender() : m_buf(0), m_size(0), m_pos(0) {}
+	~Extender()
+	{
+		delete[] m_buf;
+	}
+	void alloc(size_t n) // assumes n > 0
+	{
+		if (m_size < n)
+		{
+			delete[] m_buf;
+
+			m_buf = new char[m_size = n];
+			m_buf[0] = 0;
+		}
+		m_pos = m_buf;
+	}
+	size_t append(const char* s, size_t s_size)
+	{
+		if (m_pos - m_buf >= m_size) // Full buffer?
+			return 0;
+
+		const size_t extra = m_buf < m_pos ? 1 : 0;
+
+		if (m_pos + s_size + extra > m_buf + m_size)
+			s_size = m_buf + m_size - m_pos - extra;
+
+		// Do not append newline if there's nothing before.
+		if (extra)
+			*m_pos++ = '\n';
+
+		memcpy(m_pos, s, s_size);
+		m_pos += s_size;
+		return s_size + extra;
+	}
+	char* getBuffer()
+	{
+		return m_buf;
+	}
+	size_t getUsed() const
+	{
+		return m_pos - m_buf;
+	}
+private:
+	char* m_buf;
+	size_t m_size;
+	char* m_pos;
+};
+
+
+// *******************************
+// b u l k _ i n s e r t _ h a c k
+// *******************************
+// Primitive processing for prepared insertions. Invocation is
+// SET BULK_INSERT <insert_statement>
+// (val1, ..., valN)
+// (val1, ..., valN)
+// <finish with an empty line or anything different than an opening parenthesis>
+// Tuples must go in a single line. Only quoted strings can span more than one line.
+// Only single quote accepted. Strings without special characters can go unquoted.
+// Use the default question mark (?) to designate parameters.
+static processing_state bulk_insert_hack(const char* command, XSQLDA** sqldap)
+{
+	// Skip "SET BULK_INSERT" part.
+	for (int j = 0; j < 2; ++j)
+	{
+		while (*command && *command != 0x20)
+			++command;
+		while (*command && *command == 0x20)
+			++command;
+	}
+	if (!*command)
+		return ps_ERR;
+
+	processing_state ret = SKIP;
+
+	// We received the address of the sqlda in case we realloc it
+	XSQLDA* sqlda = *sqldap;
+
+	// If somebody did a commit or rollback, we are out of a transaction
+
+	if (!M__trans)
+		if (isc_start_transaction(isc_status, &M__trans, 1, &DB, 0, NULL))
+			ISQL_errmsg(isc_status);
+
+	// No need to start a default transaction unless there is no current one
+
+	if (!D__trans)
+		if (isc_start_transaction(isc_status, &D__trans, 1, &DB, 5, default_tpb))
+		{
+			ISQL_errmsg(isc_status);
+		}
+
+	// If statistics are requested, then reserve them here
+
+	perf perf_before;
+	if (Stats)
+		perf_get_info(&DB, &perf_before);
+
+	// Prepare the dynamic query stored in string.
+	// But put this on the DDL transaction to get maximum visibility of
+	// metadata.
+
+	FB_API_HANDLE prepare_trans;
+	if (Autocommit)
+		prepare_trans = D__trans;
+	else
+		prepare_trans = M__trans;
+
+	if (isc_dsql_prepare(isc_status, &prepare_trans, &global_Stmt, 0, command,
+						 isqlGlob.SQL_dialect, sqlda))
+	{
+		if (isqlGlob.SQL_dialect == SQL_DIALECT_V6_TRANSITION && Input_file) {
+			isqlGlob.printf("%s%s%s%s%s%s",
+							NEWLINE,
+							"**** Error preparing statement:",
+							NEWLINE,
+							NEWLINE,
+							command,
+							NEWLINE);
+		}
+		ISQL_errmsg(isc_status);
+		return ps_ERR;
+	}
+
+	// check for warnings
+	if (isc_status[2] == isc_arg_warning)
+		ISQL_warning(isc_status);
+
+	// Find out what kind of statement this is
+	const SSHORT statement_type = process_request_type();
+	if (!statement_type)
+		return ps_ERR;
+
+	if (statement_type != isc_info_sql_stmt_insert)
+	{
+		isqlGlob.printf("Only INSERT commands are accepted in bulk mode.%s", NEWLINE);
+		return ps_ERR;
+	}
+
+//#ifdef DEV_BUILD
+	if (Sqlda_display)
+	{
+		const bool can_have_input_parameters =
+			statement_type == isc_info_sql_stmt_select ||
+			statement_type == isc_info_sql_stmt_insert ||
+			statement_type == isc_info_sql_stmt_update ||
+			statement_type == isc_info_sql_stmt_delete ||
+			statement_type == isc_info_sql_stmt_exec_procedure ||
+			statement_type == isc_info_sql_stmt_select_for_upd;
+
+		if (print_sqlda_input(can_have_input_parameters) == ps_ERR)
+			return ps_ERR;
+	}
+//#endif // DEV_BUILD
+
+	if (isc_dsql_describe_bind(isc_status, &global_Stmt, isqlGlob.SQL_dialect, sqlda)) {
+		ISQL_errmsg(isc_status);
+		return ps_ERR;
+	}
+
+	// check for warnings
+	if (isc_status[2] == isc_arg_warning)
+		ISQL_warning(isc_status);
+
+	if (!sqlda->sqld) // No input parameters, doesn't make sense for bulk insertions.
+	{
+		isqlGlob.printf("There must be at least one parameter in the statement.%s", NEWLINE);
+		return ps_ERR;
+	}
+
+	if (sqlda->sqld > sqlda->sqln) {
+		const USHORT n_columns = sqlda->sqld;
+		ISQL_FREE(sqlda);
+		*sqldap = sqlda = (XSQLDA*) ISQL_ALLOC((SLONG) (XSQLDA_LENGTH(n_columns)));
+		memset(sqlda, 0, XSQLDA_LENGTH(n_columns));
+		sqlda->version = SQLDA_VERSION1;
+		sqlda->sqld = sqlda->sqln = n_columns;
+		if (isc_dsql_describe_bind(isc_status, &global_Stmt, isqlGlob.SQL_dialect,
+								   sqlda))
+		{
+			ISQL_errmsg(isc_status);
+			return ps_ERR;
+		}
+		else if (isc_status[2] == isc_arg_warning)
+			ISQL_warning(isc_status);
+	}
+	else
+	{
+		// Our dear process_statement doesn't clean the global sqlda after using it,
+		// although it deallocates the sqldata in a single continuous memory section.
+		const int n_cols = sqlda->sqln;
+		XSQLVAR* ivar = sqlda->sqlvar;
+		for (int i = 0; i < n_cols; ++i, ++ivar)
+			if (ivar->sqldata)
+			{
+				//ISQL_FREE(ivar->sqldata); Assume everything was deallocated.
+				ivar->sqldata = 0;
+			}
+	}
+	
+	// if PLAN is set, print out the plan now
+
+	if (Plan) {
+		process_plan();
+		if (Planonly)
+		{
+			return ret;	// do not execute
+		}
+	}
+
+	const int n_cols = sqlda->sqld;
+	SSHORT* nullind = (SSHORT*) ISQL_ALLOC((SLONG) (n_cols * sizeof(SSHORT)));
+	
+	Extender* stringBuffers = 0; // used to optimize allocations to text fields.
+	{ // scope
+		int textFieldCounter = 0;
+		for (int i = 0; i < n_cols; ++i)
+		{
+			switch (sqlda->sqlvar[i].sqltype & ~1)
+			{
+				case SQL_TEXT:
+				case SQL_VARYING:
+				    ++textFieldCounter;
+				    break;
+			}
+		}
+
+		if (textFieldCounter)
+			stringBuffers = new Extender[textFieldCounter];
+	} // scope
+
+	char infobuf[BUFFER_LENGTH180] = "";
+	ISQL_msg_get(BULK_PROMPT, sizeof(infobuf), infobuf, NULL);
+
+	// Lookup the continuation prompt once
+	TEXT con_prompt[MSG_LENGTH];
+	ISQL_msg_get(CON_PROMPT, con_prompt, NULL);
+
+	TEXT msg[MSG_LENGTH];
+	bool done = false;
+	while (!done)
+	{
+		if (bulk_insert_retriever(done, infobuf))
+			continue;
+
+		const char* insert = lastInputLine;
+		while (*insert && *insert != '(')
+			++insert;
+
+		if (!*insert || *insert != '(')
+			break;
+
+		++insert;
+
+		while (*insert == 0x20 || *insert == '\n' || *insert == '\r' || *insert == '\t')
+			++insert;
+
+		if (!*insert)
+			break;
+
+		const char* lastPos = insert;
+		Extender extender; // Used only for multi-line tuples.
+
+		SSHORT* nullp = nullind;
+		for (int i = 0, textFieldCounter = 0; i < n_cols && !done; ++i)
+		{
+			XSQLVAR* const ivar = &sqlda->sqlvar[i];
+			*nullp = 0;
+			ivar->sqlind = nullp++;
+			//ivar->sqldata = NULL; Not here because we are reusing fixed size elements.
+
+			const SSHORT type = ivar->sqltype & ~1;
+			const SSHORT nullable = ivar->sqltype & 1;
+
+			const char* finder = 0;
+			int subtract = 0;
+			const bool quote = *insert == SINGLE_QUOTE;
+			if (quote)
+			{
+				subtract = 2; // Ignore the quotes at the beginning and end.
+				bool finished = false; // Did the string close?
+				++insert;
+				while (*insert)
+				{
+					if (*insert == SINGLE_QUOTE)
+					{
+						++insert;
+						if (*insert == SINGLE_QUOTE)
+							++subtract;
+						else
+						{
+							finished = true;
+							break;
+						}
+					}
+					++insert;
+				}
+				if (!finished)
+				{
+					extender.alloc(MAX_USHORT);
+					extender.append(lastPos, insert - lastPos);
+					while (!finished && !bulk_insert_retriever(done, con_prompt))
+					{
+						finder = lastInputLine;
+						while (*finder)
+						{
+							if (*finder == SINGLE_QUOTE)
+							{
+								++finder;
+								if (*finder == SINGLE_QUOTE)
+									++subtract;
+								else
+								{
+									finished = true;
+									break;
+								}
+							}
+							++finder;
+						}
+						size_t how_many = finder - lastInputLine;
+						if (extender.append(lastInputLine, how_many) <= how_many)
+						{
+							done = true;
+							break;
+						}
+					}
+					if (done)
+						continue;
+
+					lastPos = extender.getBuffer();
+					insert = extender.getBuffer() + extender.getUsed();
+				}
+
+				if (subtract > 2)
+				{
+					// Get rid of pairs of single quotes; they are a syntax artifact.
+					const char* view = lastPos + 1;
+					// We are working over lastInputLine or Extender's buffer, so "unconst" is safe.
+					char* mover = const_cast<char*>(lastPos + 1);
+					for (int counter = subtract; view < insert; ++view, ++mover)
+					{
+						*mover = *view;
+						if (*view == SINGLE_QUOTE && view[1] == SINGLE_QUOTE && counter > 2)
+						{
+							++view;
+							--counter;
+						}
+					}
+				}
+			}
+			else
+			{
+				for (bool go = true; go && *insert; ++insert)
+				{
+					switch (*insert)
+					{
+					case 0x20:
+					case '\n':
+					case '\r':
+					case '\t':
+					case ',':
+					case ')':
+						go = false;
+						--insert;
+						break;
+					}
+				}
+			}
+
+			SCHAR cmd[5] = "";
+			const USHORT length = insert - lastPos - subtract;
+			if (quote)
+				++lastPos;
+			else
+			{
+				// Convert first 4 chars to upper case for comparison
+				strncpy(cmd, lastPos, 4);
+				cmd[4] = '\0';
+				ISQL_make_upper(cmd);
+			}
+
+			// If the user writes NULL, put a null in the column
+
+			if (!strcmp(cmd, "NULL"))
+				*ivar->sqlind = -1;
+			else
+			{
+				*ivar->sqlind = 0;
+				// Data types
+				SSHORT* smallint;
+				SLONG* integer;
+				SINT64* pi64;
+				SINT64 n;
+				float* fvalue;
+				double* dvalue;
+				tm times;
+				// Initialize the time structure
+				memset(&times, 0, sizeof(times));
+				char msec_str[5] = "";
+				int msec = 0;
+				ISC_QUAD* blobid;
+
+				switch (type)
+				{
+				case SQL_BLOB:
+
+					if (ivar->sqldata)
+						blobid = (ISC_QUAD*) ivar->sqldata;
+					else
+						blobid = (ISC_QUAD*) ISQL_ALLOC(sizeof(ISC_QUAD));
+
+					{ // scope
+						// Segments are at 1024, hardcoded.
+						bstream* bs = Bopen(blobid, DB, M__trans, "w");
+						if (!bs)
+						{
+							STDERROUT("Unable to create blob");
+							done = true;
+							break; // quit the switch()
+						}
+
+						bool go = true;
+						if (bs->bstr_cnt >= length) // go faster if possible
+						{
+							memcpy(bs->bstr_ptr, lastPos, length);
+							bs->bstr_cnt -= length;
+							bs->bstr_ptr += length;
+						}
+						else for (int localLen = length; go && localLen; --localLen)
+						{
+							// We use binary put because we don't want \n to create segments.
+							go = putbx(*lastPos, bs);
+						}
+						if (!go)
+						{
+							STDERROUT("Unable to write to blob");
+							done = true;
+						}
+						if (!BLOB_close(bs)) // It may cause a put_segment.
+						{
+							STDERROUT("Unable to close blob");
+							done = true;
+						}
+					} // scope
+
+					ivar->sqldata = (SCHAR*) blobid;
+					break;
+
+				case SQL_FLOAT:
+					if (ivar->sqldata)
+						fvalue = (float*) ivar->sqldata;
+					else
+						fvalue = (float*) ISQL_ALLOC(sizeof(float));
+
+					if (sscanf(lastPos, "%g", fvalue) != 1) {
+						STDERROUT("Input parsing problem");
+						done = true;
+					}
+					ivar->sqldata = (SCHAR*) fvalue;
+					break;
+
+				case SQL_DOUBLE:
+					if (ivar->sqldata)
+						dvalue = (double*) ivar->sqldata;
+					else
+						dvalue = (double*) ISQL_ALLOC(sizeof(double));
+
+					if (sscanf(lastPos, "%lg", dvalue) != 1) {
+						STDERROUT("Input parsing problem");
+						done = true;
+					}
+					ivar->sqldata = (SCHAR*) dvalue;
+					break;
+
+				case SQL_TYPE_DATE:
+					if (3 != sscanf(lastPos, "%d/%d/%d", &times.tm_year,
+									&times.tm_mon, &times.tm_mday)
+						|| !check_date(times))
+					{
+						ISQL_msg_get(DATE_ERR, msg, lastPos);
+						STDERROUT(msg);	// Bad date %s\n
+						done = true;
+					}
+					else {
+						--times.tm_mon;
+						times.tm_year -= 1900; // tm_year is 1900-based.
+						ISC_DATE* date = (ISC_DATE*) ivar->sqldata;
+						if (!date)
+							date = (ISC_DATE*) ISQL_ALLOC((SLONG) ivar->sqllen);
+
+						isc_encode_sql_date(&times, date);
+						ivar->sqldata = (char*) date;
+					}
+					break;
+
+				case SQL_TYPE_TIME:
+					if (3 != sscanf(lastPos, "%d:%d:%d", &times.tm_hour,
+									&times.tm_min, &times.tm_sec)
+						|| !check_time(times))
+					{
+						ISQL_msg_get(TIME_ERR, msg, lastPos);
+						STDERROUT(msg);	// Bad time %s\n
+						done = true;
+					}
+					else {
+						ISC_TIME* vtime =  (ISC_TIME*) ivar->sqldata;
+						if (!vtime)
+							vtime = (ISC_TIME*) ISQL_ALLOC((SLONG) ivar->sqllen);
+
+						isc_encode_sql_time(&times, vtime);
+						ivar->sqldata = (char*) vtime;
+					}
+					break;
+
+				case SQL_TIMESTAMP:
+					if (6 <= sscanf(lastPos, "%d/%d/%d %d:%d:%d.%4s",
+									&times.tm_year, &times.tm_mon, &times.tm_mday,
+									&times.tm_hour, &times.tm_min, &times.tm_sec,
+									msec_str))
+					{
+						int count = 0;
+						for (; count < 4; ++count)
+						{
+							if (fb_isdigit(msec_str[count]))
+								msec = msec * 10 + msec_str[count] - '0';
+							else
+								break;
+						}
+						if (count != strlen(msec_str))
+							done = true;
+						else
+						{
+							while (count++ < 4)
+								msec *= 10;
+							done = !check_timestamp(times, msec);
+						}
+					}
+					else
+						done = true;
+					if (done)
+					{
+						ISQL_msg_get(TIMESTAMP_ERR, msg, lastPos);
+						STDERROUT(msg);	// Bad timestamp %s\n
+					}
+					else
+					{
+						--times.tm_mon;
+						times.tm_year -= 1900;
+						ISC_TIMESTAMP* datetime = (ISC_TIMESTAMP*) ivar->sqldata;
+						if (!datetime)
+							datetime = (ISC_TIMESTAMP*) ISQL_ALLOC((SLONG) ivar->sqllen);
+
+						isc_encode_timestamp(&times, datetime);
+						datetime->timestamp_time += msec;
+						ivar->sqldata = (char*) datetime;
+					}
+					break;
+
+				case SQL_TEXT:
+					// Force all text to varying
+					ivar->sqltype = SQL_VARYING + nullable;
+					// Fall into:
+
+				case SQL_VARYING:
+					{
+						Extender& field = stringBuffers[textFieldCounter++];
+						field.alloc(length + sizeof(USHORT));
+						vary* avary = reinterpret_cast<vary*>(field.getBuffer());
+						avary->vary_length = length;
+						strncpy(avary->vary_string, lastPos, length);
+						ivar->sqldata = (SCHAR*) avary;
+						ivar->sqllen = length + sizeof(USHORT);
+						break;
+					}
+
+				case SQL_SHORT:
+				case SQL_LONG:
+					if (type == SQL_SHORT) {
+						if (ivar->sqldata)
+							smallint = (SSHORT*) ivar->sqldata;
+						else
+							smallint = (SSHORT*) ISQL_ALLOC(sizeof(SSHORT));
+
+						ivar->sqldata = (SCHAR*) smallint;
+					}
+					else if (type == SQL_LONG) {
+						if (ivar->sqldata)
+							integer = (SLONG*) ivar->sqldata;
+						else
+							integer = (SLONG*) ISQL_ALLOC(sizeof(SLONG));
+
+						ivar->sqldata = (SCHAR*) integer;
+					}
+					// Fall into:
+
+					// Fall through from SQL_SHORT and SQL_LONG ...
+				case SQL_INT64:
+					if (type == SQL_INT64) {
+						if (ivar->sqldata)
+							pi64 = (SINT64*) ivar->sqldata;
+						else
+							pi64 = (SINT64*) ISQL_ALLOC(sizeof(SINT64));
+
+						ivar->sqldata = (SCHAR*) pi64;
+					}
+					if (ivar->sqlscale < 0)
+					{
+						SSHORT lscale = 0;
+						if (get_numeric((UCHAR*) lastPos, length, &lscale, &n) != true) {
+							STDERROUT("Input parsing problem");
+							done = true;
+						}
+						else {
+							int dscale = ivar->sqlscale - lscale;
+							if (dscale > 0) {
+								TEXT err_buf[256];
+								sprintf(err_buf,
+										"input error: input scale %d exceeds the field's scale %d",
+										-lscale, -ivar->sqlscale);
+								STDERROUT(err_buf);
+								done = true;
+							}
+							while (dscale++ < 0)
+								n *= 10;
+						}
+					}
+					// sscanf assumes a 64-bit integer target
+					else if (sscanf(lastPos, "%" SQUADFORMAT, &n) != 1)
+					{
+						STDERROUT("Input parsing problem");
+						done = true;
+					}
+					if (type == SQL_INT64)
+						*pi64 = n;
+					else if (type == SQL_SHORT)
+					{
+						*smallint = n;
+						if (SINT64(*smallint) != n)
+						{
+							STDERROUT("Value too big");
+							done = true;
+						}
+					}
+					else if (type == SQL_LONG)
+					{
+						*integer = n;
+						if (SINT64(*integer) != n)
+						{
+							STDERROUT("Value too big");
+							done = true;
+						}
+					}
+					break;
+
+				default:
+					done = true;
+					STDERROUT("Unexpected SQLTYPE in bulk_insert_hack()");
+					break;
+				}
+			}
+
+
+			// Restore "insert" pointer if we needed multi-line hack.
+			if (finder)
+				insert = finder;
+
+			while (*insert && *insert != ',' && *insert != ')')
+				++insert;
+
+			for (bool go = true; go && *insert; ++insert)
+			{
+				switch (*insert)
+				{
+				case 0x20:
+				case '\n':
+				case '\r':
+				case '\t':
+				case ',':
+				case ')':
+					break;
+				default:
+					go = false;
+					--insert;
+					break;
+				}
+			}
+
+			lastPos = insert;
+
+		} // for
+
+		if (!done)
+		{
+			// Having completed all columns, try the insert statement with the sqlda
+			//  This is a non-select DML statement or trans
+
+			if (isc_dsql_execute(isc_status, &M__trans, &global_Stmt, isqlGlob.SQL_dialect, sqlda))
+			{
+				ISQL_errmsg(isc_status);
+				// CVC: Make this conditional if it causes problems. For example
+				// if (BailOnError)
+				ret = ps_ERR;
+				done = true;
+			}
+
+			// check for warnings
+			if (isc_status[2] == isc_arg_warning)
+				ISQL_warning(isc_status);
+		}
+
+		// No need to release each of the variables for next time.
+		// Tex is handled by an array of Extender and the others are fixed size
+		// and therefore allocated only once.
+		
+	} // while (!done)
+
+	// Release each of the variables for next usage.
+	// The text variables are deallocated separately.
+	XSQLVAR* ivar = sqlda->sqlvar;
+	for (int i = 0; i < n_cols; ++i, ++ivar)
+		if ((ivar->sqltype & ~1) != SQL_VARYING && ivar->sqldata)
+		{
+			ISQL_FREE(ivar->sqldata);
+			ivar->sqldata = 0;
+		}
+		
+	delete[] stringBuffers;
+
+	if (nullind)
+		ISQL_FREE(nullind);
+
+	// Get rid of the statement handle.
+	isc_dsql_free_statement(isc_status, &global_Stmt, DSQL_close);
+		
+	// Statistics printed here upon request
+
+	if (Stats)
+		print_performance(&perf_before);
+
+	return ret;
+}
+
+
+// *****************************************
+// b u l k _ i n s e r t _ r e t r i e v e r
+// *****************************************
+// Helper to the previous bulk_insert_hack to get more lines of input.
+static bool bulk_insert_retriever(bool& done, const char* prompt)
+{
+	readNextInputLine(prompt);
+	getColumn = -1; // We are bypassing getNextInputChar().
+
+	// Stop at the first blank line.
+	if (lastInputLine == NULL) {
+		done = true;
+		//continue;
+	}
+	else
+	{
+		const USHORT length = (USHORT) strlen(lastInputLine);
+		/*
+		if (length == 0)
+		{
+			done = true;
+			//continue;
+		}
+		*/
+		if (length > MAX_USHORT - 2)
+		{
+			TEXT msg[MSG_LENGTH];
+			ISQL_msg_get(BUFFER_OVERFLOW, msg, NULL);
+			STDERROUT(msg);
+			done = true;
+			//break;
+		}
+	}
+
+	return done;
 }
 
 
@@ -3232,6 +4024,7 @@ static void do_isql()
 	//  will realloc the sqlda as needed
 
 	global_sqlda = (XSQLDA*) ISQL_ALLOC((SLONG) (XSQLDA_LENGTH(20)));
+	memset(global_sqlda, 0, XSQLDA_LENGTH(20));
 	global_sqlda->version = SQLDA_VERSION1;
 	global_sqlda->sqln = 20;
 
@@ -4126,6 +4919,13 @@ static processing_state frontend_set(const char* cmd, const char* const* parms,
 		ret = do_set_command(parms[2], &Heading);
 	else if (!strcmp(parms[1], "BAIL"))
 		ret = do_set_command(parms[2], &BailOnError);
+	else if (!strcmp(parms[1], "BULK_INSERT"))
+	{
+		if (*parms[2])
+			ret = bulk_insert_hack(cmd, global_sqldap);
+		else
+			ret = ps_ERR;
+	}
 	else
 		ret = ps_ERR;
 	return ret;
@@ -6686,6 +7486,7 @@ static processing_state print_sqlda_input(const bool can_have_input_parameters)
 {
 	// Describe the input
 	XSQLDA* input_sqlda = (XSQLDA*) ISQL_ALLOC((SLONG) (XSQLDA_LENGTH(10)));
+	memset(input_sqlda, 0, XSQLDA_LENGTH(10));
 	input_sqlda->version = SQLDA_VERSION1;
 	input_sqlda->sqld = input_sqlda->sqln = 10;
 
@@ -6703,6 +7504,7 @@ static processing_state print_sqlda_input(const bool can_have_input_parameters)
 		ISQL_FREE(input_sqlda);
 		input_sqlda =
 			(XSQLDA*) ISQL_ALLOC((SLONG) (XSQLDA_LENGTH(n_columns)));
+		memset(input_sqlda, 0, XSQLDA_LENGTH(n_columns));
 		input_sqlda->version = SQLDA_VERSION1;
 		input_sqlda->sqld = input_sqlda->sqln = n_columns;
 		if (isc_dsql_describe_bind(isc_status, &global_Stmt, isqlGlob.SQL_dialect,
@@ -7308,6 +8110,7 @@ static int process_statement(const TEXT* string,
 	if (n_cols > sqlda->sqln) {
 		ISQL_FREE(sqlda);
 		sqlda = (XSQLDA*) ISQL_ALLOC((SLONG) (XSQLDA_LENGTH(n_cols)));
+		memset(sqlda, 0, XSQLDA_LENGTH(n_cols));
 		*sqldap = sqlda;
 		sqlda->version = SQLDA_VERSION1;
 		sqlda->sqld = sqlda->sqln = n_cols;
@@ -7510,6 +8313,7 @@ static int process_statement(const TEXT* string,
 					ISQL_FREE(header2);
 				if (line)
 					ISQL_FREE(line);
+
 				return (ps_ERR);
 			}
 
