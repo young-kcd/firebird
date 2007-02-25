@@ -3941,7 +3941,7 @@ static processing_state create_db(const TEXT* statement,
 				ISQL_errmsg(isc_status);
 			if (D__trans)
 				commit_trans(&D__trans);
-			if (isc_start_transaction(isc_status, &D__trans, 1, &DB, 5, default_tpb))
+			if (Autocommit && isc_start_transaction(isc_status, &D__trans, 1, &DB, 5, default_tpb))
 				ISQL_errmsg(isc_status);
 		}
 
@@ -6182,7 +6182,7 @@ static processing_state newdb(TEXT* dbname,
 				ISQL_errmsg(isc_status);
 			if (D__trans)
 				commit_trans(&D__trans);
-			if (isc_start_transaction(isc_status, &D__trans, 1, &DB, 5, default_tpb))
+			if (Autocommit && isc_start_transaction(isc_status, &D__trans, 1, &DB, 5, default_tpb))
 				ISQL_errmsg(isc_status);
 		}
 
@@ -7239,8 +7239,9 @@ processing_state ISQL_print_item_blob(FILE* fp,
 		// CVC: Adriano changed trans to D__trans with the following comment:
 		// Fix a bug that occur when a BLOB column is added after the start
 		// of the DML transaction.
+		// ASF: But use M__trans if D__trans is not started;
 		if (!var->relname[0] ||
-			isc_blob_lookup_desc(isc_status, &DB, &D__trans,
+			isc_blob_lookup_desc(isc_status, &DB, (D__trans ? &D__trans : &M__trans),
 				(const UCHAR*) var->relname, (const UCHAR*) var->sqlname,
 				&from_desc, NULL) == 0)
 		{
@@ -7933,11 +7934,13 @@ static int process_statement(const TEXT* string,
 
 	// No need to start a default transaction unless there is no current one
 
-	if (!D__trans)
+	if (Autocommit && !D__trans)
+	{
 		if (isc_start_transaction(isc_status, &D__trans, 1, &DB, 5, default_tpb))
 		{
 			ISQL_errmsg(isc_status);
 		}
+	}
 
 	// If statistics are requested, then reserve them here
 
@@ -8078,7 +8081,7 @@ static int process_statement(const TEXT* string,
 			(statement_type == isc_info_sql_stmt_rollback))
 		{
 			// CVC: Commit may fail with AUTO-DDL off and DDL changes rejected by DFW.
-			if (!commit_trans(&D__trans))
+			if (D__trans && !commit_trans(&D__trans))
 			{
 				ISQL_errmsg(isc_status);
 				ret = ps_ERR;
