@@ -2234,8 +2234,8 @@ static processing_state add_row(TEXT* tabname)
 
 				case SQL_TYPE_DATE:
 					if (3 != sscanf(lastInputLine, "%d/%d/%d", &times.tm_year,
-									&times.tm_mon, &times.tm_mday)
-						|| !check_date(times))
+									&times.tm_mon, &times.tm_mday) ||
+						!check_date(times))
 					{
 						ISQL_msg_get(DATE_ERR, msg, lastInputLine);
 						STDERROUT(msg);	// Bad date %s\n
@@ -2252,8 +2252,8 @@ static processing_state add_row(TEXT* tabname)
 
 				case SQL_TYPE_TIME:
 					if (3 != sscanf(lastInputLine, "%d:%d:%d", &times.tm_hour,
-									&times.tm_min, &times.tm_sec)
-						|| !check_time(times))
+									&times.tm_min, &times.tm_sec) ||
+						!check_time(times))
 					{
 						ISQL_msg_get(TIME_ERR, msg, lastInputLine);
 						STDERROUT(msg);	// Bad time %s\n
@@ -2407,11 +2407,14 @@ static processing_state add_row(TEXT* tabname)
 				ISQL_errmsg(isc_status);
 				break;
 			}
+
 			// Release each of the variables for next time
 			XSQLVAR* ivar = isqlda->sqlvar;
 			for (i = 0; i < i_cols; i++, ivar++)
+			{
 				if (ivar->sqldata)
 					ISQL_FREE(ivar->sqldata);
+			}
 		}
 	}
 
@@ -2583,16 +2586,20 @@ static processing_state bulk_insert_hack(const char* command, XSQLDA** sqldap)
 	// If somebody did a commit or rollback, we are out of a transaction
 
 	if (!M__trans)
+	{
 		if (isc_start_transaction(isc_status, &M__trans, 1, &DB, 0, NULL))
 			ISQL_errmsg(isc_status);
+	}
 
 	// No need to start a default transaction unless there is no current one
 
 	if (!D__trans)
+	{
 		if (isc_start_transaction(isc_status, &D__trans, 1, &DB, 5, default_tpb))
 		{
 			ISQL_errmsg(isc_status);
 		}
+	}
 
 	// If statistics are requested, then reserve them here
 
@@ -2695,11 +2702,13 @@ static processing_state bulk_insert_hack(const char* command, XSQLDA** sqldap)
 		const int n_cols = sqlda->sqln;
 		XSQLVAR* ivar = sqlda->sqlvar;
 		for (int i = 0; i < n_cols; ++i, ++ivar)
+		{
 			if (ivar->sqldata)
 			{
 				//ISQL_FREE(ivar->sqldata); Assume everything was deallocated.
 				ivar->sqldata = 0;
 			}
+		}
 	}
 	
 	// if PLAN is set, print out the plan now
@@ -3213,7 +3222,7 @@ static processing_state bulk_insert_hack(const char* command, XSQLDA** sqldap)
 		}
 
 		// No need to release each of the variables for next time.
-		// Tex is handled by an array of Extender and the others are fixed size
+		// Text is handled by an array of Extender and the others are fixed size
 		// and therefore allocated only once.
 		
 	} // while (!done)

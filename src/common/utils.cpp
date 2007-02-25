@@ -492,5 +492,3 @@ bool validateProductSuite (LPCSTR lpszSuiteToValidate)
 
 #endif // WIN_NT
 } // namespace fb_utils
-
-
