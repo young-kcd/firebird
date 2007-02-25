@@ -214,7 +214,7 @@ rec_err:
 			tdbb->tdbb_status_vector[0] = isc_arg_gds;
 			tdbb->tdbb_status_vector[1] = isc_exec_sql_invalid_var;
 			tdbb->tdbb_status_vector[2] = isc_arg_number;
-			tdbb->tdbb_status_vector[3] = i;
+			tdbb->tdbb_status_vector[3] = i + 1;
 			tdbb->tdbb_status_vector[4] = isc_arg_string;
 			tdbb->tdbb_status_vector[5] = 
 				(ISC_STATUS)(U_IPTR) ERR_cstring(StartOfSqlOperator);
