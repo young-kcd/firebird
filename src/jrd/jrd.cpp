@@ -5765,6 +5765,17 @@ static Database* init(thread_db*	tdbb,
 	// If this is the first time through, initialize local mutexes and set
 	// up a cleanup handler.  Regardless, then lock the database mutex.
 
+	// Initialize standard random generator.
+	// MSVC (at least since version 7) have per-thread random seed.
+	// As you don't know who uses per-thread seed, this should work for both cases.
+	static bool first_rand = true;
+	static int first_rand_value = rand();
+
+	if (first_rand || (rand() == first_rand_value))
+		srand(time(NULL));
+
+	first_rand = false;
+
 	if (!initialized)
 	{
 		THREAD_EXIT();

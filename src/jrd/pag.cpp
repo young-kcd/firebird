@@ -2165,7 +2165,8 @@ USHORT PageManager::getTempPageSpaceID(thread_db* tdbb)
 		lock->lck_length = sizeof(USHORT);
 		lock->lck_dbb = dbb;
 
-		srand(PAG_attachment_id(tdbb));
+		PAG_attachment_id(tdbb);
+
 		while (true)
 		{
 			const double tmp = rand() * (MAX_USHORT - TEMP_PAGE_SPACE - 1.0) / (RAND_MAX + 1.0);
