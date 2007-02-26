@@ -1,39 +1,81 @@
-:: This bat sets the environment values
-:: ROOT_PATH dos format path of the main directory
-:: DB_PATH unix format path of the main directory
+:: This batch file sets the environment values
+:: FB_ROOT_PATH dos format path of the main directory
+:: FB_DB_PATH unix format path of the main directory
+:: (We probably don't need this anymore. Anyone got time to check?)
 :: VS_VER VisualStudio version (msvc6|msvc7|msvc8)
 :: SERVER_NAME server needed to connect to firebird (could include port)
 ::   Example : localhost/3051
 :: (Note - SERVER_NAME is almost deprecated - it is only used by
 ::   make_examples.bat
-
+::
+:: Note for VS8 and 64-bit build environment: The assumption is that a
+:: 64-bit host is available and builds are targeted at either the native
+:: 64-bit environment or the 32-bit WOW64 environment. Cross-compiling 64-bit
+:: from a 32-bit host is not currently supported from this set of batch files.
+::
 
 @echo off
+
+::===============================
+::Set up the compiler environment
+if DEFINED VS80COMNTOOLS (
+@devenv /? >nul 2>nul
+@if errorlevel 9009 (call "%VS80COMNTOOLS%\..\..\VC\vcvarsall.bat" %PROCESSOR_ARCHITECTURE%) else ( echo    The file: & @echo      "%VS80COMNTOOLS%\..\..\VC\vcvarsall.bat" %PROCESSOR_ARCHITECTURE% & echo    has already been executed.)
+) else (
+if DEFINED VS71COMNTOOLS (
+@devenv /? >nul 2>nul
+@if errorlevel 9009 (call "%VS71COMNTOOLS%vsvars32.bat") else ( echo    The file: & echo      "%VS71COMNTOOLS%vsvars32.bat" & echo    has already been executed.)
+) else (
+@msdev /? >nul 2>nul
+@if errorlevel 9009 (call "C:\Program Files\Microsoft Visual Studio\VC98\Bin\vcvars32.bat") else (echo MSVC6 vcvars.bat has already been executed.)
+)
+)
+@echo.
+
+
 ::=================
 :SET_DB_DIR
 
 @SET SERVER_NAME=localhost
 
-@set PLATFORM=win32
-@if %PROCESSOR_ARCHITECTURE%==x86 (set PLATFORM=win32)
-@if %PROCESSOR_ARCHITECTURE%==AMD64 (set PLATFORM=x64)
-
 @cd ..\..
-@for /f "delims=" %%a in ('@cd') do (set ROOT_PATH=%%a)
+@for /f "delims=" %%a in ('@cd') do (set FB_ROOT_PATH=%%a)
 @cd %~dp0
-@for /f "tokens=*" %%a in ('@echo %ROOT_PATH:\=/%') do (set DB_PATH=%%a)
+@for /f "tokens=*" %%a in ('@echo %FB_ROOT_PATH:\=/%') do (set FB_DB_PATH=%%a)
+
+
+::=================
+:SET_MSVC_VER
 
 @vcexpress /? >nul 2>nul
-@if not errorlevel 9009 ((set MSVC_VERSION=8) & (set VS_VER=msvc8) & (set VS_VER_EXPRESS=1) & (goto :END))
+@if not errorlevel 9009 ((set MSVC_VERSION=8) & (set VS_VER=msvc8) & (set VS_VER_EXPRESS=1) & (goto :SET_FB_TARGET_PLATFORM))
 
 @set VS_VER_EXPRESS=
 
 @for /f "delims=." %%a in ('@devenv /?') do (
-  @for /f "tokens=6" %%b in ("%%a") do ((set MSVC_VERSION=%%b) & (set VS_VER=msvc%%b) & (goto :END))
+  @for /f "tokens=6" %%b in ("%%a") do ((set MSVC_VERSION=%%b) & (set VS_VER=msvc%%b) & (goto :SET_FB_TARGET_PLATFORM))
 )
 
 @msdev /? >nul 2>nul
-@if not errorlevel 9009 ((set MSVC_VERSION=6) & (set VS_VER=msvc6) & (goto :END))
+@if not errorlevel 9009 ((set MSVC_VERSION=6) & (set VS_VER=msvc6) & (goto :SET_FB_TARGET_PLATFORM))
+
+@if not defined MSVC_VERSION goto :HELP
+
+:SET_FB_TARGET_PLATFORM
+@set FB_TARGET_PLATFORM=win32
+:: If MSVC >= 8 then we can test for processor architecture
+:: We certainly don't want to try and set platform=x64 if MSVC7 is installed
+@if %MSVC_VERSION% GEQ 8 (
+@if "%PROCESSOR_ARCHITECTURE%"=="x86" (set FB_TARGET_PLATFORM=win32)
+@if "%PROCESSOR_ARCHITECTURE%"=="AMD64" (set FB_TARGET_PLATFORM=x64)
+)
+
+
+@set FB_OUTPUT_DIR=%FB_ROOT_PATH%\output_%FB_TARGET_PLATFORM%
+@set FB_TEMP_DIR=%FB_ROOT_PATH%\temp\%FB_TARGET_PLATFORM%
+@set FB_INSTALL_SCRIPTS=%FB_ROOT_PATH%\builds\install\arch-specific\win32
+
+goto :END
 
 
 ::===========
@@ -46,29 +88,29 @@
 @echo    You need MS Visual Studio 6, 7 or 8 to build Firebird
 @echo    from these batch files.
 @echo.
-@echo    Perhaps you need to run something like:
-@echo.
-@echo      %%VS71COMNTOOLS%%\vsvars32.bat
-@echo.
-@echo    or
-@echo      %%VS80COMNTOOLS%%\vsvars32.bat
-@echo.
-@echo    depending on the version of Visual Studio.
+@echo    A properly installed version of Visual Studio will set
+@echo    an environment variable such as %%VS71COMNTOOLS%% or
+@echo    %%VS80COMNTOOLS%%. We use that variable to run the
+@echo    appropriate batch file to set up the build environment.
 @echo.
 :: set errorlevel
 @exit /B 1
 
 :END
+@echo.
 @echo    Setting Environment Variables thus...
 @echo.
 @echo    vs_ver=%VS_VER%
+if defined VS_VER_EXPRESS (
 @echo    vs_ver_express=%VS_VER_EXPRESS%
-@echo    platform=%PLATFORM%
+)
+@echo    platform=%FB_TARGET_PLATFORM%
 @echo    msvc_version=%MSVC_VERSION%
-@echo    db_path=%DB_PATH%
-@echo    root_path=%ROOT_PATH%
+@echo    db_path=%FB_DB_PATH%
+@echo    root_path=%FB_ROOT_PATH%
 @echo    server_name=%SERVER_NAME%
 @echo.
 @echo    (End of %0)
+@echo.
 
 @exit /B 0

@@ -5,33 +5,33 @@
 
 @if "%1"=="msg" goto MSG
 
-@if exist "%DB_PATH%\gen\dbs\msg.fdb" del "%DB_PATH%\gen\dbs\msg.fdb"
+@if exist "%FB_DB_PATH%\gen\dbs\msg.fdb" del "%FB_DB_PATH%\gen\dbs\msg.fdb"
 
-@echo create database '%DB_PATH%\gen\dbs\msg.fdb'; | "%ROOT_PATH%\gen\isql_embed" -q
-@set MSG_ISQL=@"%ROOT_PATH%\gen\isql_embed" -q %DB_PATH%\gen\dbs\msg.fdb -i %ROOT_PATH%\src\msgs\
-@%MSG_ISQL%msg.sql
-@%MSG_ISQL%facilities.sql
+@echo create database '%FB_DB_PATH%\gen\dbs\msg.fdb'; | "%FB_ROOT_PATH%\gen\isql_embed" -q
+@set FB_MSG_ISQL=@"%FB_ROOT_PATH%\gen\isql_embed" -q %FB_DB_PATH%\gen\dbs\msg.fdb -i %FB_ROOT_PATH%\src\msgs\
+@%FB_MSG_ISQL%msg.sql
+@%FB_MSG_ISQL%facilities.sql
 @echo.
 @echo loading locales
-@%MSG_ISQL%locales.sql
+@%FB_MSG_ISQL%locales.sql
 @echo loading history
-@%MSG_ISQL%history.sql
+@%FB_MSG_ISQL%history.sql
 @echo loading messages
-@%MSG_ISQL%messages.sql
+@%FB_MSG_ISQL%messages.sql
 @echo loading symbols
-@%MSG_ISQL%symbols.sql
+@%FB_MSG_ISQL%symbols.sql
 @echo loading system errors
-@%MSG_ISQL%system_errors.sql
+@%FB_MSG_ISQL%system_errors.sql
 @echo loading French translation
-@%MSG_ISQL%transmsgs.fr_FR.sql
+@%FB_MSG_ISQL%transmsgs.fr_FR.sql
 @echo loading German translation
-@%MSG_ISQL%transmsgs.de_DE.sql
+@%FB_MSG_ISQL%transmsgs.de_DE.sql
 
 @if "%1"=="db" goto END
 
 :MSG
 @echo Building message file and codes header...
-@%ROOT_PATH%\gen\build_msg -f %DB_PATH%/gen/firebird.msg -D %DB_PATH%/gen/dbs/msg.fdb
-@%ROOT_PATH%\gen\codes %ROOT_PATH%\src\include\gen %ROOT_PATH%\lang_helpers
+@%FB_ROOT_PATH%\gen\build_msg -f %FB_DB_PATH%/gen/firebird.msg -D %FB_DB_PATH%/gen/dbs/msg.fdb
+@%FB_ROOT_PATH%\gen\codes %FB_ROOT_PATH%\src\include\gen %FB_ROOT_PATH%\lang_helpers
 
 :END

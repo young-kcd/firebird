@@ -1,17 +1,20 @@
 @echo off
-
 ::==============
 :: compile.bat solution, output, [projects...]
 ::   Note: MSVC7/8 don't accept more than one project
+::
+::   Note2: Our MSVC8 projects create object files in temp/$platform/$config
+::     but we call devenv with $config|$platform (note variable in reverse order
+::      and odd syntax.) This extended syntax for devenv does not seem to be
+::      supported in MSVC7 (despite documentation to the contrary.)
 
 setlocal
-
 set solution=%1
 set output=%2
-set projects=""
+set projects=
 
-@if "%DBG%"=="" (
-	if "%VS_VER%"=="msvc6" (
+@if "%FB_DBG%"=="" (
+	if "%VS_VER%"=="msvc6" 	(
 		set config=Release
 	) else (
 		set config=release
@@ -23,6 +26,9 @@ set projects=""
 		set config=debug
 	)
 )
+if %MSVC_VERSION% GEQ 8 (
+	set config="%config%|%FB_TARGET_PLATFORM%"
+)
 
 if "%VS_VER%"=="msvc6" (
 	set exec=msdev
@@ -30,11 +36,7 @@ if "%VS_VER%"=="msvc6" (
 	if "%VS_VER_EXPRESS%"=="1" (
 		set exec=vcexpress
 	) else (
-		set exec=devenv
-	)
-
-	if "%VS_VER%"=="msvc8" (
-		set config="%config%|%PLATFORM%"
+		set exec=devenv /USEENV
 	)
 )
 
@@ -63,11 +65,10 @@ if "%VS_VER%"=="msvc6" (
 		set projects=/MAKE "all - Win32 %config%"
 	)
 )
-
 if "%VS_VER%"=="msvc6" (
-	%exec% %solution%.dsw %projects% %CLEAN% /OUT %output%
+	%exec% %solution%.dsw %projects% %FB_CLEAN% /OUT %output%
 ) else (
-	%exec% %solution%.sln %projects% %CLEAN% %config% /OUT %output%
+%exec% %solution%.sln %projects% %FB_CLEAN% %config% /OUT %output%
 )
 
 endlocal
