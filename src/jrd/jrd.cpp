@@ -133,16 +133,6 @@
 
 using namespace Jrd;
 
-#ifdef SERVER_SHUTDOWN
-struct db_file {
-	db_file* dbf_next;
-	USHORT dbf_length;
-	TEXT dbf_data[2];
-};
-
-//#include "../jrd/sort.h"
-#endif // SERVER_SHUTDOWN
-
 const SSHORT WAIT_PERIOD	= -1;
 
 #ifdef SUPPORT_RAW_DEVICES
@@ -817,7 +807,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 		// 1. Ensure uniqueness of ID even in presence of multiple processes
 		// 2. Make sure that ID value can be used to connect back to database
 		//
-		if (is_alias && vdn == vdnFail)
+		if (is_alias && vdn == vdnFail) 
 			dbb->dbb_database_name = file_name;
 		else
 			dbb->dbb_database_name = expanded_name;
@@ -6617,10 +6607,9 @@ TEXT* JRD_num_attachments(TEXT* const buf, USHORT buf_len, USHORT flag,
 
 	ULONG num_dbs = 0;
 	ULONG num_att = 0;
-	USHORT total = 0;
 	ULONG drive_mask = 0L;
-	db_file* dbf = NULL;
-	db_file* dbfp = NULL;
+	USHORT total = 0;
+	Firebird::HalfStaticArray<Firebird::PathName, 8> dbFiles;
 
 	THREAD_ENTER();
 
@@ -6646,37 +6635,8 @@ TEXT* JRD_num_attachments(TEXT* const buf, USHORT buf_len, USHORT flag,
 		{
 			num_dbs++;
 			if (flag == JRD_info_dbnames) {
-				if (dbfp == NULL) {
-					dbfp = (db_file*) gds__alloc((SLONG) (sizeof(db_file) +
-													 sizeof(TEXT) *
-													 dbb->dbb_filename.length()));
-					if (!dbfp)
-					{
-						Firebird::BadAlloc::raise();
-					}
-					dbf = dbfp;
-				}
-				else {
-					dbfp->dbf_next = (db_file*)
-						gds__alloc((SLONG)
-								   (sizeof(db_file) +
-									sizeof(TEXT) *
-									dbb->dbb_filename.length()));
-					if (!dbfp->dbf_next)
-					{
-						Firebird::BadAlloc::raise();
-					}
-					dbfp = dbfp->dbf_next;
-				}
-				if (dbfp) {
-					dbfp->dbf_length = dbb->dbb_filename.length();
-					dbfp->dbf_next = NULL;
-					MOVE_FAST(dbb->dbb_filename.c_str(), dbfp->dbf_data,
-							  dbfp->dbf_length);
-					total += sizeof(USHORT) + dbfp->dbf_length;
-				}
-				else
-					flag = 0;
+				dbFiles.push(dbb->dbb_database_name);
+				total += sizeof(USHORT) + dbb->dbb_database_name.length();
 			}
 
 			for (const Attachment* attach = dbb->dbb_attachments; attach;
@@ -6704,7 +6664,7 @@ TEXT* JRD_num_attachments(TEXT* const buf, USHORT buf_len, USHORT flag,
 	*atts = num_att;
 	*dbs = num_dbs;
 
-	if (dbf)
+	if (dbFiles.getCount() > 0)
 	{
 		if (flag == JRD_info_dbnames)
 		{
@@ -6729,24 +6689,18 @@ TEXT* JRD_num_attachments(TEXT* const buf, USHORT buf_len, USHORT flag,
 
 				lbufp += sizeof(USHORT);
 				total = 0;
-				for (dbfp = dbf; dbfp; dbfp = dbfp->dbf_next) {
-					*lbufp++ = (TEXT) dbfp->dbf_length;
-					*lbufp++ = dbfp->dbf_length >> 8;
-					MOVE_FAST(dbfp->dbf_data, lbufp, dbfp->dbf_length);
-					lbufp += dbfp->dbf_length;
+				for (size_t n = 0; n < dbFiles.getCount(); ++n) {
+					*lbufp++ = (TEXT) dbFiles[n].length();
+					*lbufp++ = (TEXT) (dbFiles[n].length() >> 8);
+					MOVE_FAST(dbFiles[n].c_str(), lbufp, dbFiles[n].length());
+					lbufp += dbFiles[n].length();
 					total++;
 				}
 				fb_assert(total == num_dbs);
 				lbufp = lbuf;
 				*lbufp++ = (TEXT) total;
-				*lbufp++ = total >> 8;
+				*lbufp++ = (TEXT) (total >> 8);
 			}
-		}
-
-		for (dbfp = dbf; dbfp;) {
-			db_file* x = dbfp->dbf_next;
-			gds__free(dbfp);
-			dbfp = x;
 		}
 	}
 
