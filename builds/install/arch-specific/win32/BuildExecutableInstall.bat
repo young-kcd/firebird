@@ -32,6 +32,8 @@ set FBBUILD_ZIP_PACK=0
 set FBBUILD_ISX_PACK=0
 set FBBUILD_EMB_PACK=0
 
+if not defined FB2_SNAPSHOT (set FB2_SNAPSHOT=0)
+
 :: Set our package number at 0 and increment every
 :: time we rebuild in a single session
 if not defined FBBUILD_PACKAGE_NUMBER (
@@ -64,28 +66,26 @@ for %%v in ( %* )  do (
 
 ::Are we doing a snapshot build? If so we always do less work.
 if "%FB2_SNAPSHOT%"=="1" (
-  (set ISS_EXAMPLES=noexamples)
+  (set FB_ISS_EXAMPLES=noexamples)
   (set FBBUILD_ISX_PACK=0)
   (set FBBUILD_EMB_PACK=0)
 )
 
 
 :: Set up our final destination
-set FBBUILD_INSTALL_IMAGES=%ROOT_PATH%\builds\install_images
+set FBBUILD_INSTALL_IMAGES=%FB_ROOT_PATH%\builds\install_images
 if not exist %FBBUILD_INSTALL_IMAGES% (mkdir %FBBUILD_INSTALL_IMAGES%)
 
-:: Location of most of the build that we are creating the
-:: installation kits from. This subdir is created by make_all.bat
-set FBBUILD_OUTPUT=%ROOT_PATH%\output
+
 
 :: Determine Product Status
 set FBBUILD_PROD_STATUS=
-@type %ROOT_PATH%\src\jrd\build_no.h | findstr /I UNSTABLE  > nul && (
-set FBBUILD_PROD_STATUS=DEV) || type %ROOT_PATH%\src\jrd\build_no.h | findstr /I ALPHA > nul && (
-set FBBUILD_PROD_STATUS=DEV) || type %ROOT_PATH%\src\jrd\build_no.h | findstr /I BETA > nul && (
-set FBBUILD_PROD_STATUS=PROD) || type %ROOT_PATH%\src\jrd\build_no.h | findstr /I "Release Candidate" > nul && (
-set FBBUILD_PROD_STATUS=PROD) || type %ROOT_PATH%\src\jrd\build_no.h | findstr "RC" > nul && (
-set FBBUILD_PROD_STATUS=PROD) || type %ROOT_PATH%\src\jrd\build_no.h | findstr /I "Final" > nul && (
+@type %FB_ROOT_PATH%\src\jrd\build_no.h | findstr /I UNSTABLE  > nul && (
+set FBBUILD_PROD_STATUS=DEV) || type %FB_ROOT_PATH%\src\jrd\build_no.h | findstr /I ALPHA > nul && (
+set FBBUILD_PROD_STATUS=DEV) || type %FB_ROOT_PATH%\src\jrd\build_no.h | findstr /I BETA > nul && (
+set FBBUILD_PROD_STATUS=PROD) || type %FB_ROOT_PATH%\src\jrd\build_no.h | findstr /I "Release Candidate" > nul && (
+set FBBUILD_PROD_STATUS=PROD) || type %FB_ROOT_PATH%\src\jrd\build_no.h | findstr "RC" > nul && (
+set FBBUILD_PROD_STATUS=PROD) || type %FB_ROOT_PATH%\src\jrd\build_no.h | findstr /I "Final" > nul && (
 set FBBUILD_PROD_STATUS=PROD)
 
 
@@ -113,22 +113,22 @@ if not DEFINED FB_EXTERNAL_DOCS (
 
 sed --version | findstr version > nul
 @if %ERRORLEVEL% GEQ 1 (
-    call :ERROR Could not locate sed
-    goto :EOF
+	call :ERROR Could not locate sed
+	goto :EOF
 ) else (@echo     o sed found.)
 
 if %FBBUILD_ZIP_PACK% EQU 1 (
   if not defined SEVENZIP (
-    call :ERROR SEVENZIP environment variable is not defined.
-    @goto :EOF
+	call :ERROR SEVENZIP environment variable is not defined.
+	@goto :EOF
   ) else (@echo     o Compression utility found.)
 )
 
 
 if %FBBUILD_ISX_PACK% EQU 1 (
   if NOT DEFINED INNO_SETUP_PATH (
-    call :ERROR INNO_SETUP_PATH variable not defined
-    @goto :EOF
+	call :ERROR INNO_SETUP_PATH variable not defined
+	@goto :EOF
   ) else (@echo     o Inno Setup found at %INNO_SETUP_PATH%.)
 )
 
@@ -144,9 +144,11 @@ if %FBBUILD_ISX_PACK% EQU 1 (
 :: the path this will fail! Use of the cygwin tools has not
 :: been tested and may produce unexpected results.
 ::========================================================
-find "#define PRODUCT_VER_STRING" %ROOT_PATH%\src\jrd\build_no.h > %temp%.\b$1.txt
+find "#define PRODUCT_VER_STRING" %FB_ROOT_PATH%\src\jrd\build_no.h > %temp%.\b$1.txt
 sed -n -e s/\"//g -e s/"#define PRODUCT_VER_STRING "//w%temp%.\b$2.txt %temp%.\b$1.txt
 for /f "tokens=*" %%a in ('type %temp%.\b$2.txt') do set PRODUCT_VER_STRING=%%a
+
+set FBBUILD_FILE_ID=%PRODUCT_VER_STRING%-%FBBUILD_PACKAGE_NUMBER%_%FB_TARGET_PLATFORM%
 
 @echo s/-2.0.0-/-%PRODUCT_VER_STRING%-/ > %temp%.\b$3.txt
 @echo s/define release/define %FBBUILD_BUILDTYPE%/ >> %temp%.\b$3.txt
@@ -158,8 +160,9 @@ for /f "tokens=*" %%a in ('type %temp%.\b$2.txt') do set PRODUCT_VER_STRING=%%a
 @echo s/define compression/define %ISS_COMPRESS%/ >> %temp%.\b$3.txt
 @echo s/PRODUCT_VER_STRING/%PRODUCT_VER_STRING%/ >> %temp%.\b$3.txt
 
-sed -f  %temp%.\b$3.txt FirebirdInstall_20.iss > FirebirdInstall_%PRODUCT_VER_STRING%-%FBBUILD_PACKAGE_NUMBER%.iss
+sed -f  %temp%.\b$3.txt FirebirdInstall_20.iss > FirebirdInstall_%FBBUILD_FILE_ID%.iss
 del %temp%.\b$?.txt
+
 
 ::End of SED_MAGIC
 ::----------------
@@ -169,20 +172,25 @@ del %temp%.\b$?.txt
 :COPY_XTRA
 :: system dll's we need
 :: (You may need to download and extract the
-:: vcredist stuff to your MSDevDir for this to work.
+:: vcredist stuff to your MSDevDir for this to work with MSVC6.
+:: MSVC7 requires the Framework SDK v1.1 to be installed.
+:: MSVC8 should be installed with redistributable packages.
 ::=====================
-if not exist %FBBUILD_OUTPUT%\system32 (mkdir %FBBUILD_OUTPUT%\system32)
+if not exist %FB_OUTPUT_DIR%\system32 (mkdir %FB_OUTPUT_DIR%\system32)
 @if DEFINED MSDevDir (
   @if %MSVC_VERSION% EQU 6 (
-    @copy "%MSDevDir%\vcredist\msvcrt.dll" %FBBUILD_OUTPUT%\bin\ > nul
-    @copy "%MSDevDir%\vcredist\msvcp%MSVC_VERSION%0.dll" %FBBUILD_OUTPUT%\bin\ > nul
+	@copy "%MSDevDir%\vcredist\msvcrt.dll" %FB_OUTPUT_DIR%\bin\ > nul
+	@copy "%MSDevDir%\vcredist\msvcp%MSVC_VERSION%0.dll" %FB_OUTPUT_DIR%\bin\ > nul
   )
 ) else (
-  @if DEFINED MSVCDir (
-    @if %MSVC_VERSION% EQU 7 (
-      @copy "%FrameworkSDKDir%\bin\msvcp%MSVC_VERSION%?.dll" %FBBUILD_OUTPUT%\bin\ > nul
-      @copy "%FrameworkSDKDir%\bin\msvcr%MSVC_VERSION%?.dll" %FBBUILD_OUTPUT%\bin\ > nul
-    )
+  if %MSVC_VERSION% EQU 8 (
+	@copy "%VCINSTALLDIR%\redist\%PROCESSOR_ARCHITECTURE%\Microsoft.VC80.CRT\msvcp%MSVC_VERSION%?.dll" %FB_OUTPUT_DIR%\bin\ > nul
+	@copy "%VCINSTALLDIR%\redist\%PROCESSOR_ARCHITECTURE%\Microsoft.VC80.CRT\msvcr%MSVC_VERSION%?.dll" %FB_OUTPUT_DIR%\bin\ > nul
+  ) else (
+	if %MSVC_VERSION% EQU 7 (
+	  @copy "%FrameworkSDKDir%\bin\msvcp%MSVC_VERSION%?.dll" %FB_OUTPUT_DIR%\bin\ > nul
+	  @copy "%FrameworkSDKDir%\bin\msvcr%MSVC_VERSION%?.dll" %FB_OUTPUT_DIR%\bin\ > nul
+	)
   )
 )
 @if %ERRORLEVEL% GEQ 1 ( (call :ERROR Copying MSVC runtime library failed with error %ERRORLEVEL% ) & (goto :EOF))
@@ -190,12 +198,12 @@ if not exist %FBBUILD_OUTPUT%\system32 (mkdir %FBBUILD_OUTPUT%\system32)
 :: grab some missing bits'n'pieces from different parts of the source tree
 ::=========================================================================
 @echo   Copying firebird.conf
-@copy %ROOT_PATH%\builds\install\misc\firebird.conf %FBBUILD_OUTPUT%\ > nul
+@copy %FB_ROOT_PATH%\builds\install\misc\firebird.conf %FB_OUTPUT_DIR%\ > nul
 @if %ERRORLEVEL% GEQ 1 ( (call :ERROR COPY of firebird.conf failed with errorlevel %ERRORLEVEL% ) & (goto :EOF))
 
 @echo   Copying ib_util etc
-copy %ROOT_PATH%\src\extlib\ib_util.h %FBBUILD_OUTPUT%\include > nul || (call :WARNING Copying ib_util.h failed.)
-copy %ROOT_PATH%\lang_helpers\ib_util.pas %FBBUILD_OUTPUT%\include > nul || (call :WARNING Copying ib_util.pas failed.)
+copy %FB_ROOT_PATH%\src\extlib\ib_util.h %FB_OUTPUT_DIR%\include > nul || (call :WARNING Copying ib_util.h failed.)
+copy %FB_ROOT_PATH%\lang_helpers\ib_util.pas %FB_OUTPUT_DIR%\include > nul || (call :WARNING Copying ib_util.pas failed.)
 
 
 @echo   Copying fbclient lib etc
@@ -203,32 +211,34 @@ copy %ROOT_PATH%\lang_helpers\ib_util.pas %FBBUILD_OUTPUT%\include > nul || (cal
 :: so the || branch is only executed if copy throws a real error, even though the errorlevel is set.
 :: Just another of those fabulous msdos idiosyncracies.
 for %%v in (fbclient ib_util) do (
-@copy /Y %ROOT_PATH%\temp\%FBBUILD_BUILDTYPE%\%%v\%%v.lib %FBBUILD_OUTPUT%\lib\%%v_ms.lib || @if %ERRORLEVEL% GEQ 1 (call :ERROR Copying %%v to %%v_ms.lib failed with error %ERRORLEVEL%) & (goto :EOF))
+@copy /Y %FB_TEMP_DIR%\%FBBUILD_BUILDTYPE%\%%v\%%v.lib %FB_OUTPUT_DIR%\lib\%%v_ms.lib || @if %ERRORLEVEL% GEQ 1 (call :ERROR Copying %%v to %%v_ms.lib failed with error %ERRORLEVEL%) & (goto :EOF))
 )
 
 @implib.exe | findstr "Borland" > nul
 @if errorlevel 0 (
+if "%PROCESSOR_ARCHITECTURE%"=="x86" (
   @echo   Generating fbclient_bor.lib
-  @implib %FBBUILD_OUTPUT%\lib\fbclient_bor.lib %FBBUILD_OUTPUT%\bin\fbclient.dll > nul
+  @implib %FB_OUTPUT_DIR%\lib\fbclient_bor.lib %FB_OUTPUT_DIR%\bin\fbclient.dll > nul
+)
 )
 
 @if "%FBBUILD_SHIP_PDB%"=="ship_pdb" (
   @echo   Copying pdb files...
   for %%v in ( fbembed fb_inet_server fbserver fbclient ) do (
-    @copy %ROOT_PATH%\temp\%FBBUILD_BUILDTYPE%\%%v\%%v.pdb %FBBUILD_OUTPUT%\bin > nul
-    @if %ERRORLEVEL% GEQ 1 (
-      call :ERROR Copying %%v.pdb files failed
-      goto :EOF
-    )
+	@copy %FB_TEMP_DIR%\%FBBUILD_BUILDTYPE%\%%v\%%v.pdb %FB_OUTPUT_DIR%\bin > nul
+	@if %ERRORLEVEL% GEQ 1 (
+	  call :ERROR Copying %%v.pdb files failed
+	  goto :EOF
+	)
   )
 )
-::  @copy %ROOT_PATH%\temp\%FBBUILD_BUILDTYPE%\firebird\bin\*.pdb %FBBUILD_OUTPUT%\bin > nul
+::  @copy %FB_TEMP_DIR%\%FBBUILD_BUILDTYPE%\firebird\bin\*.pdb %FB_OUTPUT_DIR%\bin > nul
 
 @echo   Started copying docs...
-@rmdir /S /Q %ROOT_PATH%\output\doc 2>nul
-@mkdir %ROOT_PATH%\output\doc
-@copy %ROOT_PATH%\ChangeLog %ROOT_PATH%\output\doc\ChangeLog.txt >nul
-@copy %ROOT_PATH%\doc\*.* %FBBUILD_OUTPUT%\doc\ > nul
+@rmdir /S /Q %FB_OUTPUT_DIR%\doc 2>nul
+@mkdir %FB_OUTPUT_DIR%\doc
+@copy %FB_ROOT_PATH%\ChangeLog %FB_OUTPUT_DIR%\doc\ChangeLog.txt >nul
+@copy %FB_ROOT_PATH%\doc\*.* %FB_OUTPUT_DIR%\doc\ > nul
 @if %ERRORLEVEL% GEQ 1 (
   call :ERROR COPY of main documentation tree failed with error %ERRORLEVEL%
   goto :EOF
@@ -236,78 +246,78 @@ for %%v in (fbclient ib_util) do (
 
 @echo   Copying udf library scripts...
 for %%v in ( ib_udf.sql ib_udf2.sql ) do (
-  copy %ROOT_PATH%\src\extlib\%%v  %FBBUILD_OUTPUT%\UDF\%%v > nul
+  copy %FB_ROOT_PATH%\src\extlib\%%v  %FB_OUTPUT_DIR%\UDF\%%v > nul
   @if %ERRORLEVEL% GEQ 1 (
-    call :ERROR Copying %ROOT_PATH%\src\extlib\%%v failed.
-    goto :EOF
+	call :ERROR Copying %FB_ROOT_PATH%\src\extlib\%%v failed.
+	goto :EOF
   )
 )
 
 for %%v in ( fbudf.sql fbudf.txt ) do (
-  copy %ROOT_PATH%\src\extlib\fbudf\%%v  %FBBUILD_OUTPUT%\UDF\%%v > nul
+  copy %FB_ROOT_PATH%\src\extlib\fbudf\%%v  %FB_OUTPUT_DIR%\UDF\%%v > nul
   @if %ERRORLEVEL% GEQ 1 (
-    call :ERROR Copying %ROOT_PATH%\src\extlib\%%v failed with error %ERRORLEVEL%
-    goto :EOF
+	call :ERROR Copying %FB_ROOT_PATH%\src\extlib\%%v failed with error %ERRORLEVEL%
+	goto :EOF
   )
 )
 
 ::UDF upgrade script and doc
-mkdir %FBBUILD_OUTPUT%\misc\upgrade\ib_udf 2>nul
-@copy %ROOT_PATH%\src\misc\upgrade\v2\ib_udf*.* %FBBUILD_OUTPUT%\misc\upgrade\ib_udf\
+mkdir %FB_OUTPUT_DIR%\misc\upgrade\ib_udf 2>nul
+@copy %FB_ROOT_PATH%\src\misc\upgrade\v2\ib_udf*.* %FB_OUTPUT_DIR%\misc\upgrade\ib_udf\
 
 ::INTL script
-@copy %ROOT_PATH%\src\misc\intl.sql %FBBUILD_OUTPUT%\misc\
+@copy %FB_ROOT_PATH%\src\misc\intl.sql %FB_OUTPUT_DIR%\misc\
 
 
 @echo   Copying other documentation...
-@copy %ROOT_PATH%\builds\install\arch-specific\win32\installation_readme.txt %FBBUILD_OUTPUT%\doc\installation_readme.txt > nul
-@copy %FBBUILD_OUTPUT%\doc\WhatsNew %FBBUILD_OUTPUT%\doc\WhatsNew.txt > nul
-@del %FBBUILD_OUTPUT%\doc\WhatsNew
+@copy %FB_ROOT_PATH%\builds\install\arch-specific\win32\installation_readme.txt %FB_OUTPUT_DIR%\doc\installation_readme.txt > nul
+@copy %FB_OUTPUT_DIR%\doc\WhatsNew %FB_OUTPUT_DIR%\doc\WhatsNew.txt > nul
+@del %FB_OUTPUT_DIR%\doc\WhatsNew
 
 
 :: If we are not doing a final release then include stuff that is
 :: likely to be of use to testers, especially as our release notes
 :: may be incomplete or non-existent
 @if /I "%FBBUILD_PROD_STATUS%"=="DEV" (
-  @copy %ROOT_PATH%\ChangeLog %FBBUILD_OUTPUT%\doc\ChangeLog.txt  > nul
+  @copy %FB_ROOT_PATH%\ChangeLog %FB_OUTPUT_DIR%\doc\ChangeLog.txt  > nul
 )
 
 
-@mkdir %FBBUILD_OUTPUT%\doc\sql.extensions 2>nul
+@mkdir %FB_OUTPUT_DIR%\doc\sql.extensions 2>nul
 @if %ERRORLEVEL% GEQ 2 ( (call :ERROR MKDIR for doc\sql.extensions dir failed) & (@goto :EOF))
-@copy %ROOT_PATH%\doc\sql.extensions\*.* %FBBUILD_OUTPUT%\doc\sql.extensions\ > nul
+@copy %FB_ROOT_PATH%\doc\sql.extensions\*.* %FB_OUTPUT_DIR%\doc\sql.extensions\ > nul
 @if %ERRORLEVEL% GEQ 1 ( (call :ERROR Copying doc\sql.extensions failed  ) & (goto :EOF))
 
 @echo   Copying pdf docs...
-@for %%v in ( Firebird-2.0-QuickStart.pdf Firebird_v1.5.3.ReleaseNotes.pdf Firebird_v2.0.0.ReleaseNotes.pdf ) do (
+@for %%v in ( Firebird-2.0-QuickStart.pdf Firebird_v1.5.4.ReleaseNotes.pdf Firebird_v2.0.1.ReleaseNotes.pdf ) do (
   @echo     ... %%v
-  (@copy /Y %FB_EXTERNAL_DOCS%\%%v %FBBUILD_OUTPUT%\doc\%%v > nul) || (call :WARNING Copying %FB_EXTERNAL_DOCS%\%%v failed.)
+  (@copy /Y %FB_EXTERNAL_DOCS%\%%v %FB_OUTPUT_DIR%\doc\%%v > nul) || (call :WARNING Copying %FB_EXTERNAL_DOCS%\%%v failed.)
 )
 
 :: Clean out text notes that are either not relevant to Windows or
 :: are only of use to engine developers.
 @for %%v in (  README.makefiles README.user README.user.embedded README.user.troubleshooting README.build.mingw.html README.build.msvc.html fb2-todo.txt cleaning-todo.txt install_win32.txt README.coding.style emacros-cross_ref.html *.*~) do (
-  @del %FBBUILD_OUTPUT%\doc\%%v 2>nul
+  @del %FB_OUTPUT_DIR%\doc\%%v 2>nul
 )
 
 :: Add license
 for %%v in (IPLicense.txt IDPLicense.txt ) do (
-	@copy %ROOT_PATH%\builds\install\misc\%%v %FBBUILD_OUTPUT%\%%v > nul
+	@copy %FB_ROOT_PATH%\builds\install\misc\%%v %FB_OUTPUT_DIR%\%%v > nul
 )
 
 :: And readme
-@copy %ROOT_PATH%\builds\install\arch-specific\win32\readme.txt %FBBUILD_OUTPUT%\ > nul
+@copy %FB_ROOT_PATH%\builds\install\arch-specific\win32\readme.txt %FB_OUTPUT_DIR%\ > nul
 
 ::  Walk through all docs and transform any that are not .txt, .pdf or .html to .txt
 echo   Setting .txt filetype to ascii docs.
-for /R %FBBUILD_OUTPUT%\doc %%v in (.) do (
+for /R %FB_OUTPUT_DIR%\doc %%v in (.) do (
   pushd %%v
   for /F %%W in ( 'dir /B /A-D' ) do (
 	if /I "%%~xW" NEQ ".txt" (
-      if /I "%%~xW" NEQ ".pdf" (
-        if /I "%%~xW" NEQ ".htm" (
-          if /I "%%~xW" NEQ ".html" (
-            ren %%W %%W.txt
+	  if /I "%%~xW" NEQ ".pdf" (
+		if /I "%%~xW" NEQ ".htm" (
+		  if /I "%%~xW" NEQ ".html" (
+			ren %%W %%W.txt
 		  )
 		)
 	  )
@@ -339,9 +349,9 @@ for /R %FBBUILD_OUTPUT%\doc %%v in (.) do (
 ::      http://sed.sourceforge.net/grabbag/scripts/testo.htm
 
 setlocal
-set OUTPATH=%FBBUILD_OUTPUT%\include
-copy %ROOT_PATH%\src\jrd\ibase.h %OUTPATH%\ibase.h > nul
-for %%v in ( %ROOT_PATH%\src\include\types_pub.h %ROOT_PATH%\src\dsql\sqlda_pub.h %ROOT_PATH%\src\jrd\dsc_pub.h %ROOT_PATH%\src\jrd\inf_pub.h %ROOT_PATH%\src\jrd\blr.h ) do (
+set OUTPATH=%FB_OUTPUT_DIR%\include
+copy %FB_ROOT_PATH%\src\jrd\ibase.h %OUTPATH%\ibase.h > nul
+for %%v in ( %FB_ROOT_PATH%\src\include\types_pub.h %FB_ROOT_PATH%\src\dsql\sqlda_pub.h %FB_ROOT_PATH%\src\jrd\dsc_pub.h %FB_ROOT_PATH%\src\jrd\inf_pub.h %FB_ROOT_PATH%\src\jrd\blr.h ) do (
   del %OUTPATH%\%%~nxv 2> nul
   copy %%v %OUTPATH%\%%~nxv > nul
   sed -n -f strip_comments.sed %OUTPATH%\%%~nxv > %OUTPATH%\%%~nv.more
@@ -361,14 +371,14 @@ endlocal
 :: Generate a sample aliases file
 ::===============================
 @echo   Creating sample aliases.conf
-@echo # > %FBBUILD_OUTPUT%\aliases.conf
-@echo # List of known database aliases >> %FBBUILD_OUTPUT%\aliases.conf
-@echo # ------------------------------ >> %FBBUILD_OUTPUT%\aliases.conf
-@echo # >> %FBBUILD_OUTPUT%\aliases.conf
-@echo # Examples: >> %FBBUILD_OUTPUT%\aliases.conf
-@echo # >> %FBBUILD_OUTPUT%\aliases.conf
-@echo #   dummy = c:\data\dummy.fdb >> %FBBUILD_OUTPUT%\aliases.conf
-@echo #  >> %FBBUILD_OUTPUT%\aliases.conf
+@echo # > %FB_OUTPUT_DIR%\aliases.conf
+@echo # List of known database aliases >> %FB_OUTPUT_DIR%\aliases.conf
+@echo # ------------------------------ >> %FB_OUTPUT_DIR%\aliases.conf
+@echo # >> %FB_OUTPUT_DIR%\aliases.conf
+@echo # Examples: >> %FB_OUTPUT_DIR%\aliases.conf
+@echo # >> %FB_OUTPUT_DIR%\aliases.conf
+@echo #   dummy = c:\data\dummy.fdb >> %FB_OUTPUT_DIR%\aliases.conf
+@echo #  >> %FB_OUTPUT_DIR%\aliases.conf
 
 ::End of ALIAS_CONF
 ::-----------------
@@ -376,20 +386,20 @@ endlocal
 
 
 :GBAK_SEC_DB
-@echo   Let's make sure that we have a backup of the security database handy.
+::@echo   Let's make sure that we have a backup of the security database handy.
 ::======================================================================
-::@copy %ROOT_PATH%\builds\misc\security.gbak %FBBUILD_OUTPUT%\security2.fbk > nul
+::@copy %FB_ROOT_PATH%\builds\misc\security.gbak %FB_OUTPUT_DIR%\security2.fbk > nul
 ::@if %ERRORLEVEL% GEQ 1 ( (call :ERROR copy security2.fbk failed ) & (goto :EOF))
 
 ::Migration from old security db to new one
-mkdir %FBBUILD_OUTPUT%\misc\upgrade\security 2>nul
-@copy %ROOT_PATH%\src\misc\upgrade\v2\security_database.* %FBBUILD_OUTPUT%\misc\upgrade\security
+mkdir %FB_OUTPUT_DIR%\misc\upgrade\security 2>nul
+@copy %FB_ROOT_PATH%\src\misc\upgrade\v2\security_database.* %FB_OUTPUT_DIR%\misc\upgrade\security
 
 :: Make sure that qli's help.fdb is available
 ::===============================================
-@if not exist %FBBUILD_OUTPUT%\help\help.fdb (
+@if not exist %FB_OUTPUT_DIR%\help\help.fdb (
 	(@echo   Copying help.fdb for qli support)
-	(@copy %ROOT_PATH%\gen\dbs\help.fdb %FBBUILD_OUTPUT%\help\help.fdb > nul)
+	(@copy %FB_ROOT_PATH%\gen\dbs\help.fdb %FB_OUTPUT_DIR%\help\help.fdb > nul)
 	(@if %ERRORLEVEL% GEQ 1 ( (call :ERROR Could not copy qli help database ) & (goto :EOF)))
 )
 
@@ -403,8 +413,8 @@ mkdir %FBBUILD_OUTPUT%\misc\upgrade\security 2>nul
 :: firebird.msg is generated as part of the build process
 :: in builds\win32 by build_msg.bat. Copying from there to output dir
 ::=================================================================
-@if not exist %FBBUILD_OUTPUT%\firebird.msg (
-	(@copy %ROOT_PATH%\gen\firebird.msg %FBBUILD_OUTPUT%\firebird.msg > nul)
+@if not exist %FB_OUTPUT_DIR%\firebird.msg (
+	(@copy %FB_ROOT_PATH%\gen\firebird.msg %FB_OUTPUT_DIR%\firebird.msg > nul)
 	(@if %ERRORLEVEL% GEQ 1 ( (call :ERROR Could not copy firebird.msg ) & (goto :EOF)))
 )
 
@@ -419,7 +429,7 @@ mkdir %FBBUILD_OUTPUT%\misc\upgrade\security 2>nul
 :: Note 2: MS documentation was incorrectly interpreted. .local files should not be created
 ::         for libraries, they should be created for executables.
 :: Create libname.local files for each locally installed library
-::for %%v in ( fbclient msvcrt msvcp%VS_VER%0 )  do touch %FBBUILD_OUTPUT%\bin\%%v.local
+::for %%v in ( fbclient msvcrt msvcp%VS_VER%0 )  do touch %FB_OUTPUT_DIR%\bin\%%v.local
 ::@goto :EOF
 
 
@@ -427,26 +437,25 @@ mkdir %FBBUILD_OUTPUT%\misc\upgrade\security 2>nul
 ::======
 if %FBBUILD_ZIP_PACK% EQU 0 goto :EOF
 :: Generate the directory tree to be zipped
-set FBBUILD_ZIP_PACK_ROOT=%ROOT_PATH%\builds\zip_pack
+set FBBUILD_ZIP_PACK_ROOT=%FB_ROOT_PATH%\builds\zip_pack_%FB_TARGET_PLATFORM%
 if not exist %FBBUILD_ZIP_PACK_ROOT% @mkdir %FBBUILD_ZIP_PACK_ROOT% 2>nul
 @del /s /q %FBBUILD_ZIP_PACK_ROOT%\ > nul
-@copy /Y %FBBUILD_OUTPUT% %FBBUILD_ZIP_PACK_ROOT% > nul
+@copy /Y %FB_OUTPUT_DIR% %FBBUILD_ZIP_PACK_ROOT% > nul
 for %%v in (bin doc doc\sql.extensions help include intl lib udf examples misc misc\upgrade misc\upgrade\ib_udf misc\upgrade\security system32 ) do (
 	@mkdir %FBBUILD_ZIP_PACK_ROOT%\%%v 2>nul
-	@copy /Y %FBBUILD_OUTPUT%\%%v\*.* %FBBUILD_ZIP_PACK_ROOT%\%%v\ > nul
+	@copy /Y %FB_OUTPUT_DIR%\%%v\*.* %FBBUILD_ZIP_PACK_ROOT%\%%v\ > nul
 )
 :: Now remove stuff that is not needed.
 setlocal
-set RM_FILE_LIST=doc\installation_readme.txt bin\gpre_boot.exe bin\gpre_static.exe bin\gpre_embed.exe bin\gbak_embed.exe bin\isql_embed.exe bin\gds32.dll
-if %FB2_SNAPSHOT% EQU 0 (set RM_FILE_LIST=bin\fbembed.dll bin\fbembed.pdb %RM_FILE_LIST%)
-
-for %%v in ( %RM_FILE_LIST% ) do (
+set FB_RM_FILE_LIST=doc\installation_readme.txt bin\gpre_boot.exe bin\gpre_static.exe bin\gpre_embed.exe bin\gbak_embed.exe bin\isql_embed.exe bin\gds32.dll
+if %FB2_SNAPSHOT% EQU 0 (set FB_RM_FILE_LIST=bin\fbembed.dll bin\fbembed.pdb %FB_RM_FILE_LIST%)
+for %%v in ( %FB_RM_FILE_LIST% ) do (
   @del %FBBUILD_ZIP_PACK_ROOT%\%%v > nul 2>&1
 )
 endlocal
 
 if %FB2_SNAPSHOT% EQU 1 (
-  @copy %ROOT_PATH%\builds\install\arch-specific\win32\readme_snapshot.txt %FBBUILD_ZIP_PACK_ROOT%\readme_snapshot.txt > nul
+  @copy %FB_ROOT_PATH%\builds\install\arch-specific\win32\readme_snapshot.txt %FBBUILD_ZIP_PACK_ROOT%\readme_snapshot.txt > nul
 )
 
 if not "%FBBUILD_SHIP_PDB%"=="ship_pdb" (
@@ -454,7 +463,7 @@ if not "%FBBUILD_SHIP_PDB%"=="ship_pdb" (
 )
 
 :: grab install notes for zip pack
-@copy %ROOT_PATH%\doc\install_win32.txt %FBBUILD_ZIP_PACK_ROOT%\doc\README_installation.txt > nul
+@copy %FB_ROOT_PATH%\doc\install_win32.txt %FBBUILD_ZIP_PACK_ROOT%\doc\README_installation.txt > nul
 
 ::End of GEN_ZIP
 ::--------------
@@ -465,16 +474,16 @@ goto :EOF
 ::=======
 if %FBBUILD_ZIP_PACK% EQU 0 goto :EOF
 if "%FBBUILD_SHIP_PDB%" == "ship_pdb" (
-    if exist %FBBUILD_INSTALL_IMAGES%\Firebird-%PRODUCT_VER_STRING%-%FBBUILD_PACKAGE_NUMBER%_win32.zip (
-      del %FBBUILD_INSTALL_IMAGES%\Firebird-%PRODUCT_VER_STRING%-%FBBUILD_PACKAGE_NUMBER%_win32_pdb.zip
+	if exist %FBBUILD_INSTALL_IMAGES%\Firebird-%FBBUILD_FILE_ID%.zip (
+	  del %FBBUILD_INSTALL_IMAGES%\Firebird-%FBBUILD_FILE_ID%_pdb.zip
 	)
-	set FBBUILD_ZIPFILE=%FBBUILD_INSTALL_IMAGES%\Firebird-%PRODUCT_VER_STRING%-%FBBUILD_PACKAGE_NUMBER%_win32_pdb.zip
+	set FBBUILD_ZIPFILE=%FBBUILD_INSTALL_IMAGES%\Firebird-%FBBUILD_FILE_ID%_pdb.zip
 
 ) else (
-    if exist %FBBUILD_INSTALL_IMAGES%\Firebird-%PRODUCT_VER_STRING%-%FBBUILD_PACKAGE_NUMBER%_win32.zip (
-      del %FBBUILD_INSTALL_IMAGES%\Firebird-%PRODUCT_VER_STRING%-%FBBUILD_PACKAGE_NUMBER%_win32.zip
-    )
-    set FBBUILD_ZIPFILE=%FBBUILD_INSTALL_IMAGES%\Firebird-%PRODUCT_VER_STRING%-%FBBUILD_PACKAGE_NUMBER%_win32.zip
+	if exist %FBBUILD_INSTALL_IMAGES%\Firebird-%FBBUILD_FILE_ID%.zip (
+	  del %FBBUILD_INSTALL_IMAGES%\Firebird-%FBBUILD_FILE_ID%.zip
+	)
+	set FBBUILD_ZIPFILE=%FBBUILD_INSTALL_IMAGES%\Firebird-%FBBUILD_FILE_ID%.zip
 )
 
 @%SEVENZIP%\7z.exe a -r -tzip -mx9 %FBBUILD_ZIPFILE% %FBBUILD_ZIP_PACK_ROOT%\*.*
@@ -488,40 +497,40 @@ if "%FBBUILD_SHIP_PDB%" == "ship_pdb" (
 ::===========
 :: Generate the directory tree for the embedded zip pack
 if %FBBUILD_EMB_PACK% EQU 0 goto :EOF
-set FBBUILD_EMB_PACK_ROOT=%ROOT_PATH%\builds\emb_pack
+set FBBUILD_EMB_PACK_ROOT=%FB_ROOT_PATH%\builds\emb_pack
 @mkdir %FBBUILD_EMB_PACK_ROOT% 2>nul
 @del /s /q %FBBUILD_EMB_PACK_ROOT%\ > nul
 
-for %%v in (aliases.conf firebird.conf firebird.msg) do (	@copy /Y %FBBUILD_OUTPUT%\%%v %FBBUILD_EMB_PACK_ROOT%\%%v > nul)
+for %%v in (aliases.conf firebird.conf firebird.msg) do (	@copy /Y %FB_OUTPUT_DIR%\%%v %FBBUILD_EMB_PACK_ROOT%\%%v > nul)
 
 for %%v in ( doc intl udf ) do (@mkdir %FBBUILD_EMB_PACK_ROOT%\%%v 2>nul)
 
-@copy /Y %ROOT_PATH%\temp\release\firebird\bin\fbembed.* %FBBUILD_EMB_PACK_ROOT% > nul
-@copy /Y %ROOT_PATH%\extern\icu\bin\icudt30.dll %FBBUILD_EMB_PACK_ROOT% > nul
-@copy /Y %ROOT_PATH%\extern\icu\bin\icuin30.dll %FBBUILD_EMB_PACK_ROOT% > nul
-@copy /Y %ROOT_PATH%\extern\icu\bin\icuuc30.dll %FBBUILD_EMB_PACK_ROOT% > nul
-@copy /Y %ROOT_PATH%\temp\release\firebird\bin\ib_util.dll %FBBUILD_EMB_PACK_ROOT% > nul
-@copy /Y %FBBUILD_OUTPUT%\doc\Firebird*.pdf %FBBUILD_EMB_PACK_ROOT%\doc\ > nul
-@copy /Y %FBBUILD_OUTPUT%\intl\*.* %FBBUILD_EMB_PACK_ROOT%\intl\ > nul
-@copy /Y %FBBUILD_OUTPUT%\udf\*.* %FBBUILD_EMB_PACK_ROOT%\udf\ > nul
-@copy /Y %FBBUILD_OUTPUT%\bin\msvc*.* %FBBUILD_EMB_PACK_ROOT% > nul
+@copy /Y %FB_TEMP_DIR%\%FBBUILD_BUILDTYPE%\firebird\bin\fbembed.* %FBBUILD_EMB_PACK_ROOT% > nul
+@copy /Y %FB_ROOT_PATH%\extern\icu\bin\icudt30.dll %FBBUILD_EMB_PACK_ROOT% > nul
+@copy /Y %FB_ROOT_PATH%\extern\icu\bin\icuin30.dll %FBBUILD_EMB_PACK_ROOT% > nul
+@copy /Y %FB_ROOT_PATH%\extern\icu\bin\icuuc30.dll %FBBUILD_EMB_PACK_ROOT% > nul
+@copy /Y %FB_TEMP_DIR%\%FBBUILD_BUILDTYPE%\firebird\bin\ib_util.dll %FBBUILD_EMB_PACK_ROOT% > nul
+@copy /Y %FB_OUTPUT_DIR%\doc\Firebird*.pdf %FBBUILD_EMB_PACK_ROOT%\doc\ > nul
+@copy /Y %FB_OUTPUT_DIR%\intl\*.* %FBBUILD_EMB_PACK_ROOT%\intl\ > nul
+@copy /Y %FB_OUTPUT_DIR%\udf\*.* %FBBUILD_EMB_PACK_ROOT%\udf\ > nul
+@copy /Y %FB_OUTPUT_DIR%\bin\msvc*.* %FBBUILD_EMB_PACK_ROOT% > nul
 
 if "%FBBUILD_SHIP_PDB%"=="ship_pdb" (
-  @copy /Y %ROOT_PATH%\temp\release\fbembed\fbembed.pdb %FBBUILD_EMB_PACK_ROOT% > nul
+  @copy /Y %FB_TEMP_DIR%\%FBBUILD_BUILDTYPE%\fbembed\fbembed.pdb %FBBUILD_EMB_PACK_ROOT% > nul
 )
 
 
 :: grab install notes for embedded zip pack
-@copy %ROOT_PATH%\doc\README.user.embedded %FBBUILD_EMB_PACK_ROOT%\doc\README_embedded.txt > nul
-@copy %ROOT_PATH%\doc\WhatsNew %FBBUILD_EMB_PACK_ROOT%\doc\WhatsNew.txt > nul
+@copy %FB_ROOT_PATH%\doc\README.user.embedded %FBBUILD_EMB_PACK_ROOT%\doc\README_embedded.txt > nul
+@copy %FB_ROOT_PATH%\doc\WhatsNew %FBBUILD_EMB_PACK_ROOT%\doc\WhatsNew.txt > nul
 
 :: Add license
 for %%v in (IPLicense.txt IDPLicense.txt ) do (
-	@copy %ROOT_PATH%\builds\install\misc\%%v %FBBUILD_EMB_PACK_ROOT%\%%v > nul
+	@copy %FB_ROOT_PATH%\builds\install\misc\%%v %FBBUILD_EMB_PACK_ROOT%\%%v > nul
 )
 
 :: And readme
-@copy %ROOT_PATH%\builds\install\arch-specific\win32\readme.txt %FBBUILD_EMB_PACK_ROOT%\ > nul
+@copy %FB_ROOT_PATH%\builds\install\arch-specific\win32\readme.txt %FBBUILD_EMB_PACK_ROOT%\ > nul
 
 
 ::End of GEN_EMBEDDED
@@ -535,11 +544,11 @@ if %FBBUILD_EMB_PACK% EQU 0 goto :EOF
 @echo Now building embedded package
 :: Now we can zip it up and copy the package to the install images directory.
 if "%FBBUILD_SHIP_PDB%" == "ship_pdb" (
-  @del %FBBUILD_INSTALL_IMAGES%\Firebird-%PRODUCT_VER_STRING%-%FBBUILD_PACKAGE_NUMBER%_embed_win32_pdb.zip > nul
-  set FBBUILD_EMBFILE=%FBBUILD_INSTALL_IMAGES%\Firebird-%PRODUCT_VER_STRING%-%FBBUILD_PACKAGE_NUMBER%_embed_win32_pdb.zip
+  @del %FBBUILD_INSTALL_IMAGES%\%FBBUILD_FILE_ID%_embed_win32_pdb.zip > nul
+  set FBBUILD_EMBFILE=%FBBUILD_INSTALL_IMAGES%\Firebird-%FBBUILD_FILE_ID%_embed_pdb.zip
 ) else (
-  @del %FBBUILD_INSTALL_IMAGES%\Firebird-%PRODUCT_VER_STRING%-%FBBUILD_PACKAGE_NUMBER%_embed_win32.zip > nul
-  set FBBUILD_EMBFILE=%FBBUILD_INSTALL_IMAGES%\Firebird-%PRODUCT_VER_STRING%-%FBBUILD_PACKAGE_NUMBER%_embed_win32.zip
+  @del %FBBUILD_INSTALL_IMAGES%\Firebird-%FBBUILD_FILE_ID%_embed.zip > nul
+  set FBBUILD_EMBFILE=%FBBUILD_INSTALL_IMAGES%\Firebird-%FBBUILD_FILE_ID%_embed.zip
 )
 
 @%SEVENZIP%\7z.exe a -r -tzip -mx9 %FBBUILD_EMBFILE% %FBBUILD_EMB_PACK_ROOT%\*.*
@@ -558,9 +567,9 @@ goto :EOF
 setlocal
 set TIMESTRING=0%PRODUCT_VER_STRING:~0,1%:0%PRODUCT_VER_STRING:~2,1%:0%PRODUCT_VER_STRING:~4,1%
 @if /I "%BUILDTYPE%"=="release" (
-	(@echo Touching release build files with %TIMESTRING% timestamp) & (touch -s -D -t%TIMESTRING% %FBBUILD_OUTPUT%\*.*)
-	(if %FBBUILD_EMB_PACK% EQU 1 (@echo Touching release build files with %TIMESTRING% timestamp) & (touch -s -D -t%TIMESTRING% %ROOT_PATH%\emb_pack\*.*) )
-	(if %FBBUILD_ZIP_PACK% EQU 1 (@echo Touching release build files with %TIMESTRING% timestamp) & (touch -s -D -t%TIMESTRING% %ROOT_PATH%\zip_pack\*.*) )
+	(@echo Touching release build files with %TIMESTRING% timestamp) & (touch -s -D -t%TIMESTRING% %FB_OUTPUT_DIR%\*.*)
+	(if %FBBUILD_EMB_PACK% EQU 1 (@echo Touching release build files with %TIMESTRING% timestamp) & (touch -s -D -t%TIMESTRING% %FB_ROOT_PATH%\emb_pack\*.*) )
+	(if %FBBUILD_ZIP_PACK% EQU 1 (@echo Touching release build files with %TIMESTRING% timestamp) & (touch -s -D -t%TIMESTRING% %FB_ROOT_PATH%\zip_pack\*.*) )
 )
 endlocal
 ::End of TOUCH_ALL
@@ -575,7 +584,7 @@ endlocal
 if %FBBUILD_ISX_PACK% NEQ 1 goto :EOF
 @Echo Now let's compile the InnoSetup scripts
 @Echo.
-"%INNO_SETUP_PATH%"\iscc %ROOT_PATH%\builds\install\arch-specific\win32\FirebirdInstall_%PRODUCT_VER_STRING%-%FBBUILD_PACKAGE_NUMBER%.iss
+"%INNO_SETUP_PATH%"\iscc %FB_ROOT_PATH%\builds\install\arch-specific\win32\FirebirdInstall_%FBBUILD_FILE_ID%.iss
 @echo.
 
 ::End of ISX_PACK
