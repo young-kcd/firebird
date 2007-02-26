@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="8,00"
+	Version="8.00"
 	Name="engine_embed"
 	ProjectGUID="{F55ACA54-70DF-4343-8E16-FA97C757CCF6}"
 	>
@@ -18,10 +18,8 @@
 	<Configurations>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory="..\..\..\temp\release\engine_es"
-			IntermediateDirectory="..\..\..\temp\release\engine_es"
 			ConfigurationType="4"
-			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
+			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops;.\firebird2.vsprops"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
 			CharacterSet="2"
@@ -43,26 +41,14 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalOptions="/EHsc-"
 				Optimization="2"
 				InlineFunctionExpansion="1"
 				EnableIntrinsicFunctions="true"
 				FavorSizeOrSpeed="1"
-				OmitFramePointers="true"
 				AdditionalIncludeDirectories="../../../src/include;../../../src/include/gen;../../../extern/icu/include;../../../src/vulcan"
 				PreprocessorDefinitions="WIN32,NDEBUG,_WINDOWS,_LIB,SUPERSERVER,EMBEDDED,NAMESPACE=Vulcan"
-				ExceptionHandling="0"
 				RuntimeLibrary="2"
-				RuntimeTypeInfo="false"
 				UsePrecompiledHeader="0"
-				PrecompiledHeaderFile="..\..\..\temp\release\engine_es/engine_embed.pch"
-				AssemblerListingLocation="..\..\..\temp\release\engine_es/"
-				ObjectFile="..\..\..\temp\release\engine_es/"
-				ProgramDataBaseFileName="..\..\..\temp\release\engine_es/"
-				WarningLevel="3"
-				SuppressStartupBanner="true"
-				DebugInformationFormat="3"
-				CompileAs="0"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -77,8 +63,6 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile="..\..\..\temp\release\engine_es\engine.lib"
-				SuppressStartupBanner="true"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -98,10 +82,8 @@
 		</Configuration>
 		<Configuration
 			Name="Release|x64"
-			OutputDirectory="$(PlatformName)\$(ConfigurationName)"
-			IntermediateDirectory="$(PlatformName)\$(ConfigurationName)"
 			ConfigurationType="4"
-			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
+			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops;.\firebird2.vsprops"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
 			CharacterSet="2"
@@ -124,26 +106,14 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalOptions="/EHsc-"
 				Optimization="2"
 				InlineFunctionExpansion="1"
 				EnableIntrinsicFunctions="true"
 				FavorSizeOrSpeed="1"
-				OmitFramePointers="true"
 				AdditionalIncludeDirectories="../../../src/include;../../../src/include/gen;../../../extern/icu/include;../../../src/vulcan"
 				PreprocessorDefinitions="WIN32,NDEBUG,_WINDOWS,_LIB,SUPERSERVER,EMBEDDED,NAMESPACE=Vulcan"
-				ExceptionHandling="0"
 				RuntimeLibrary="2"
-				RuntimeTypeInfo="false"
 				UsePrecompiledHeader="0"
-				PrecompiledHeaderFile="..\..\..\temp\release\engine_es/engine_embed.pch"
-				AssemblerListingLocation="..\..\..\temp\release\engine_es/"
-				ObjectFile="..\..\..\temp\release\engine_es/"
-				ProgramDataBaseFileName="..\..\..\temp\release\engine_es/"
-				WarningLevel="3"
-				SuppressStartupBanner="true"
-				DebugInformationFormat="3"
-				CompileAs="0"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -158,8 +128,6 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile="..\..\..\temp\release\engine_es\engine.lib"
-				SuppressStartupBanner="true"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -179,10 +147,8 @@
 		</Configuration>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory="..\..\..\temp\debug\engine_es"
-			IntermediateDirectory="..\..\..\temp\debug\engine_es"
 			ConfigurationType="4"
-			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
+			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops;.\firebird2.vsprops"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
 			CharacterSet="2"
@@ -204,22 +170,11 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalOptions="/EHsc-"
 				Optimization="0"
 				AdditionalIncludeDirectories="../../../src/include;../../../src/include/gen;../../../extern/icu/include;../../../src/vulcan"
 				PreprocessorDefinitions="WIN32,_DEBUG,_WINDOWS,_LIB,SUPERSERVER,DEV_BUILD,EMBEDDED,NAMESPACE=Vulcan"
-				ExceptionHandling="0"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				RuntimeTypeInfo="false"
-				PrecompiledHeaderFile="..\..\..\temp\debug\engine_es/engine_embed.pch"
-				AssemblerListingLocation="..\..\..\temp\debug\engine_es/"
-				ObjectFile="..\..\..\temp\debug\engine_es/"
-				ProgramDataBaseFileName="..\..\..\temp\debug\engine_es/"
-				WarningLevel="3"
-				SuppressStartupBanner="true"
-				DebugInformationFormat="3"
-				CompileAs="0"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -234,8 +189,6 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile="..\..\..\temp\debug\engine_es\engine.lib"
-				SuppressStartupBanner="true"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -255,10 +208,8 @@
 		</Configuration>
 		<Configuration
 			Name="Debug|x64"
-			OutputDirectory="$(PlatformName)\$(ConfigurationName)"
-			IntermediateDirectory="$(PlatformName)\$(ConfigurationName)"
 			ConfigurationType="4"
-			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
+			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops;.\firebird2.vsprops"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
 			CharacterSet="2"
@@ -281,23 +232,12 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalOptions="/EHsc-"
 				Optimization="0"
 				AdditionalIncludeDirectories="../../../src/include;../../../src/include/gen;../../../extern/icu/include;../../../src/vulcan"
 				PreprocessorDefinitions="WIN32,_DEBUG,_WINDOWS,_LIB,SUPERSERVER,DEV_BUILD,EMBEDDED,NAMESPACE=Vulcan"
-				ExceptionHandling="0"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				RuntimeTypeInfo="false"
-				PrecompiledHeaderFile="..\..\..\temp\debug\engine_es/engine_embed.pch"
-				AssemblerListingLocation="..\..\..\temp\debug\engine_es/"
-				ObjectFile="..\..\..\temp\debug\engine_es/"
-				ProgramDataBaseFileName="..\..\..\temp\debug\engine_es/"
-				WarningLevel="3"
-				SuppressStartupBanner="true"
 				Detect64BitPortabilityProblems="true"
-				DebugInformationFormat="3"
-				CompileAs="0"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -312,8 +252,6 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile="..\..\..\temp\debug\engine_es\engine.lib"
-				SuppressStartupBanner="true"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -1596,6 +1534,4 @@
 			</File>
 		</Filter>
 	</Files>
-	<Globals>
-	</Globals>
 </VisualStudioProject>

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="8,00"
+	Version="8.00"
 	Name="fbguard"
 	ProjectGUID="{BBD83ED3-8A48-4FE8-B4B7-CB27730986B2}"
 	>
@@ -18,10 +18,8 @@
 	<Configurations>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory="..\..\..\temp\release\fbguard"
-			IntermediateDirectory="..\..\..\temp\release\fbguard"
 			ConfigurationType="1"
-			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
+			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops;.\firebird2.vsprops"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
 			CharacterSet="2"
@@ -42,31 +40,16 @@
 				Name="VCMIDLTool"
 				PreprocessorDefinitions="_DEBUG"
 				MkTypLibCompatible="true"
-				SuppressStartupBanner="true"
 				TargetEnvironment="1"
-				TypeLibraryName="..\..\..\temp\release\fbguard\fbguard.tlb"
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalOptions="/EHsc-"
 				Optimization="2"
 				InlineFunctionExpansion="1"
 				EnableIntrinsicFunctions="true"
 				FavorSizeOrSpeed="1"
-				OmitFramePointers="true"
-				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
 				PreprocessorDefinitions="NDEBUG,WIN32,_WINDOWS,SUPERCLIENT"
-				ExceptionHandling="0"
 				RuntimeLibrary="2"
-				RuntimeTypeInfo="false"
-				PrecompiledHeaderFile="..\..\..\temp\release\fbguard/fbguard.pch"
-				AssemblerListingLocation="..\..\..\temp\release\fbguard/"
-				ObjectFile="..\..\..\temp\release\fbguard/"
-				ProgramDataBaseFileName="..\..\..\temp\release\fbguard/"
-				WarningLevel="3"
-				SuppressStartupBanner="true"
-				DebugInformationFormat="3"
-				CompileAs="0"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -82,10 +65,8 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
-				OutputFile="..\..\..\temp\release\firebird\bin\fbguard.exe"
+				OutputFile="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\firebird\bin\$(ProjectName).exe"
 				LinkIncremental="1"
-				SuppressStartupBanner="true"
-				GenerateDebugInformation="true"
 				SubSystem="2"
 				OptimizeForWindows98="2"
 			/>
@@ -116,10 +97,8 @@
 		</Configuration>
 		<Configuration
 			Name="Release|x64"
-			OutputDirectory="$(PlatformName)\$(ConfigurationName)"
-			IntermediateDirectory="$(PlatformName)\$(ConfigurationName)"
 			ConfigurationType="1"
-			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
+			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops;.\firebird2.vsprops"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
 			CharacterSet="2"
@@ -140,31 +119,16 @@
 				Name="VCMIDLTool"
 				PreprocessorDefinitions="_DEBUG"
 				MkTypLibCompatible="true"
-				SuppressStartupBanner="true"
 				TargetEnvironment="3"
-				TypeLibraryName="..\..\..\temp\release\fbguard\fbguard.tlb"
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalOptions="/EHsc-"
 				Optimization="2"
 				InlineFunctionExpansion="1"
 				EnableIntrinsicFunctions="true"
 				FavorSizeOrSpeed="1"
-				OmitFramePointers="true"
-				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
 				PreprocessorDefinitions="NDEBUG,WIN32,_WINDOWS,SUPERCLIENT"
-				ExceptionHandling="0"
 				RuntimeLibrary="2"
-				RuntimeTypeInfo="false"
-				PrecompiledHeaderFile="..\..\..\temp\release\fbguard/fbguard.pch"
-				AssemblerListingLocation="..\..\..\temp\release\fbguard/"
-				ObjectFile="..\..\..\temp\release\fbguard/"
-				ProgramDataBaseFileName="..\..\..\temp\release\fbguard/"
-				WarningLevel="3"
-				SuppressStartupBanner="true"
-				DebugInformationFormat="3"
-				CompileAs="0"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -180,10 +144,8 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
-				OutputFile="..\..\..\temp\release\firebird\bin\fbguard.exe"
+				OutputFile="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\firebird\bin\$(ProjectName).exe"
 				LinkIncremental="1"
-				SuppressStartupBanner="true"
-				GenerateDebugInformation="true"
 				SubSystem="2"
 				OptimizeForWindows98="2"
 				TargetMachine="17"
@@ -215,10 +177,8 @@
 		</Configuration>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory="..\..\..\temp\debug\fbguard"
-			IntermediateDirectory="..\..\..\temp\debug\fbguard"
 			ConfigurationType="1"
-			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
+			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops;.\firebird2.vsprops"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
 			CharacterSet="2"
@@ -239,28 +199,14 @@
 				Name="VCMIDLTool"
 				PreprocessorDefinitions="_DEBUG"
 				MkTypLibCompatible="true"
-				SuppressStartupBanner="true"
 				TargetEnvironment="1"
-				TypeLibraryName="..\..\..\temp\debug\fbguard\fbguard.tlb"
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalOptions="/EHsc-"
 				Optimization="0"
-				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
 				PreprocessorDefinitions="_DEBUG,WIN32,_WINDOWS,SUPERCLIENT,DEV_BUILD"
-				ExceptionHandling="0"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				RuntimeTypeInfo="false"
-				PrecompiledHeaderFile="..\..\..\temp\debug\fbguard/fbguard.pch"
-				AssemblerListingLocation="..\..\..\temp\debug\fbguard/"
-				ObjectFile="..\..\..\temp\debug\fbguard/"
-				ProgramDataBaseFileName="..\..\..\temp\debug\fbguard/"
-				WarningLevel="3"
-				SuppressStartupBanner="true"
-				DebugInformationFormat="3"
-				CompileAs="0"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -276,11 +222,8 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
-				OutputFile="..\..\..\temp\debug\firebird\bin\fbguard.exe"
+				OutputFile="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\firebird\bin\$(ProjectName).exe"
 				LinkIncremental="1"
-				SuppressStartupBanner="true"
-				GenerateDebugInformation="true"
-				ProgramDatabaseFile="..\..\..\temp\debug\fbguard\fbguard.pdb"
 				SubSystem="2"
 				OptimizeForWindows98="2"
 			/>
@@ -311,10 +254,8 @@
 		</Configuration>
 		<Configuration
 			Name="Debug|x64"
-			OutputDirectory="$(PlatformName)\$(ConfigurationName)"
-			IntermediateDirectory="$(PlatformName)\$(ConfigurationName)"
 			ConfigurationType="1"
-			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
+			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops;.\firebird2.vsprops"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
 			CharacterSet="2"
@@ -335,29 +276,15 @@
 				Name="VCMIDLTool"
 				PreprocessorDefinitions="_DEBUG"
 				MkTypLibCompatible="true"
-				SuppressStartupBanner="true"
 				TargetEnvironment="3"
-				TypeLibraryName="..\..\..\temp\debug\fbguard\fbguard.tlb"
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalOptions="/EHsc-"
 				Optimization="0"
-				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
 				PreprocessorDefinitions="_DEBUG,WIN32,_WINDOWS,SUPERCLIENT,DEV_BUILD"
-				ExceptionHandling="0"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				RuntimeTypeInfo="false"
-				PrecompiledHeaderFile="..\..\..\temp\debug\fbguard/fbguard.pch"
-				AssemblerListingLocation="..\..\..\temp\debug\fbguard/"
-				ObjectFile="..\..\..\temp\debug\fbguard/"
-				ProgramDataBaseFileName="..\..\..\temp\debug\fbguard/"
-				WarningLevel="3"
-				SuppressStartupBanner="true"
 				Detect64BitPortabilityProblems="true"
-				DebugInformationFormat="3"
-				CompileAs="0"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -373,11 +300,8 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
-				OutputFile="..\..\..\temp\debug\firebird\bin\fbguard.exe"
+				OutputFile="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\firebird\bin\$(ProjectName).exe"
 				LinkIncremental="1"
-				SuppressStartupBanner="true"
-				GenerateDebugInformation="true"
-				ProgramDatabaseFile="..\..\..\temp\debug\fbguard\fbguard.pdb"
 				SubSystem="2"
 				OptimizeForWindows98="2"
 				TargetMachine="17"

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="8,00"
+	Version="8.00"
 	Name="fbrmclib"
 	ProjectGUID="{FAF9AD25-8238-49E9-9AC9-8C56E190440A}"
 	>
@@ -15,10 +15,8 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory="..\..\..\temp\debug\fbrmclib"
-			IntermediateDirectory="..\..\..\temp\debug\fbrmclib"
 			ConfigurationType="2"
-			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
+			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops;.\firebird2.vsprops"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
 			CharacterSet="2"
@@ -39,29 +37,15 @@
 				Name="VCMIDLTool"
 				PreprocessorDefinitions="_DEBUG"
 				MkTypLibCompatible="true"
-				SuppressStartupBanner="true"
 				TargetEnvironment="1"
-				TypeLibraryName="..\..\..\temp\debug\fbrmclib\fbrmclib.tlb"
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalOptions="/EHsc-"
 				Optimization="0"
-				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
 				PreprocessorDefinitions="_DEBUG;DEV_BUILD;_WINDOWS;_USRDLL;CLIENT;SUPERCLIENT;GOVERNOR;WIN32;_X86_;GDS32_EXPORTS"
-				ExceptionHandling="0"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				RuntimeTypeInfo="false"
-				PrecompiledHeaderFile="..\..\..\temp\debug\fbrmclib/fbrmclib.pch"
-				AssemblerListingLocation="..\..\..\temp\debug\fbrmclib/"
-				ObjectFile="..\..\..\temp\debug\fbrmclib/"
-				ProgramDataBaseFileName="..\..\..\temp\debug\fbrmclib/"
 				BrowseInformation="1"
-				WarningLevel="3"
-				SuppressStartupBanner="true"
-				DebugInformationFormat="3"
-				CompileAs="0"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -78,13 +62,9 @@
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
 				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
-				OutputFile="..\..\..\temp\debug\firebird\bin\fbrmclib.dll"
+				OutputFile="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\firebird\bin\$(ProjectName).dll"
 				LinkIncremental="1"
-				SuppressStartupBanner="true"
 				ModuleDefinitionFile="..\defs\fbrmclib.def"
-				GenerateDebugInformation="true"
-				ProgramDatabaseFile="..\..\..\temp\debug\fbrmclib\fbrmclib.pdb"
-				ImportLibrary="..\..\..\temp\debug\fbrmclib\fbrmclib.lib"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -113,10 +93,8 @@
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory="..\..\..\temp\release\fbrmclib"
-			IntermediateDirectory="..\..\..\temp\release\fbrmclib"
 			ConfigurationType="2"
-			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
+			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops;.\firebird2.vsprops"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
 			CharacterSet="2"
@@ -137,32 +115,17 @@
 				Name="VCMIDLTool"
 				PreprocessorDefinitions="_DEBUG"
 				MkTypLibCompatible="true"
-				SuppressStartupBanner="true"
 				TargetEnvironment="1"
-				TypeLibraryName="..\..\..\temp\release\fbrmclib\fbrmclib.tlb"
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalOptions="/EHsc-"
 				Optimization="4"
 				InlineFunctionExpansion="1"
 				EnableIntrinsicFunctions="true"
 				FavorSizeOrSpeed="1"
-				OmitFramePointers="true"
-				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
 				PreprocessorDefinitions="NDEBUG;_WINDOWS;_USRDLL;CLIENT;SUPERCLIENT;GOVERNOR;I386;_X86_=1;WIN32;_X86_;GDS32_EXPORTS"
-				ExceptionHandling="0"
 				RuntimeLibrary="2"
-				RuntimeTypeInfo="false"
-				PrecompiledHeaderFile="..\..\..\temp\release\fbrmclib\fbrmclib.pch"
-				AssemblerListingLocation="..\..\..\temp\release\fbrmclib/"
-				ObjectFile="..\..\..\temp\release\fbrmclib/"
-				ProgramDataBaseFileName="..\..\..\temp\release\fbrmclib/"
 				BrowseInformation="1"
-				WarningLevel="3"
-				SuppressStartupBanner="true"
-				DebugInformationFormat="3"
-				CompileAs="0"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -179,12 +142,9 @@
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
 				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
-				OutputFile="..\..\..\temp\release\firebird\bin\fbrmclib.dll"
+				OutputFile="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\firebird\bin\$(ProjectName).dll"
 				LinkIncremental="1"
-				SuppressStartupBanner="true"
 				ModuleDefinitionFile="..\defs\fbrmclib.def"
-				GenerateDebugInformation="true"
-				ImportLibrary="..\..\..\temp\release\fbrmclib\fbrmclib.lib"
 			/>
 			<Tool
 				Name="VCALinkTool"
