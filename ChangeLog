@@ -1,3 +1,44 @@
+2007-02-26 03:13  asfernandes
+
+	* firebird2/src/jrd/jrd.cpp (1.308):
+
+	Misc
+
+2007-02-26 02:01  asfernandes
+
+	* firebird2/src/jrd/: jrd.cpp (1.307), pag.cpp (1.120):
+
+	Initialize random seed when necessary
+
+2007-02-25 22:25  asfernandes
+
+	* firebird2/src/: common/utils.cpp (1.23), isql/isql.epp (1.212):
+
+	Misc
+
+2007-02-25 15:28  asfernandes
+
+	* firebird2/src/isql/isql.epp (1.211):
+
+	Minimize usage of DDL transaction when AUTO_DDL is false: - it easy
+	makes database with transaction triggers unusable because the
+	read_commited no_rec_version of DDL transaction.
+
+2007-02-25 13:03  robocop
+
+	* firebird2/src/: msgs/facilities.sql (1.96), msgs/messages.sql
+	(1.114), isql/isql.epp (1.210), isql/isql.h (1.63):
+
+	Commit undocumented, primitive facility to deal with prepared
+	statements and feed data to them. I need it to play with the
+	messages.sql file.  Did other misc changes.
+
+2007-02-25 09:53  alexpeshkoff
+
+	* firebird2/src/jrd/execute_statement.cpp (1.18):
+
+	make error message SQL-traditions compliant
+
 2007-02-24 12:28  alexpeshkoff
 
 	* firebird2/src/jrd/cch.cpp (1.148):
