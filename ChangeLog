@@ -1,3 +1,15 @@
+2007-02-25 10:49  alexpeshkoff
+
+	* firebird2/src/common/classes/ClumpletReader.cpp (1.18.2.5):
+
+	Backported fix from HEAD - make DEV_BUILD compilable with gcc 3.4.x
+
+2007-02-25 09:54  alexpeshkoff
+
+	* firebird2/src/jrd/execute_statement.cpp (1.14.4.3):
+
+	backport: make error message SQL-traditions compliant
+
 2007-02-22 16:37  dimitr
 
 	* firebird2/src/jrd/nbak.cpp (1.52.2.5):
