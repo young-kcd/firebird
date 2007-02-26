@@ -80,6 +80,9 @@ namespace fb_utils
 #endif
 	}
 
+#ifdef WIN_NT
+	void prefix_kernel_object_name(char*, size_t);
+#endif 
 } // namespace fb_utils
 
 #endif // INCLUDE_UTILS_PROTO_H

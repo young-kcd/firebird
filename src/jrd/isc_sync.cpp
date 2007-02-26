@@ -70,6 +70,7 @@
 #include "../jrd/thread_proto.h"
 #include "../jrd/jrd_pwd.h"
 #include "../common/config/config.h"
+#include "../common/utils_proto.h"
 
 #if defined(SIG_RESTART) || defined(UNIX) 
 static ULONG inhibit_restart;
@@ -196,7 +197,7 @@ static BOOLEAN mutex_test(MTX);
 #endif
 
 #if defined(WIN_NT)
-static void make_object_name(TEXT*, const TEXT*, const TEXT*);
+static void make_object_name(TEXT*, size_t, const TEXT*, const TEXT*);
 #endif
 
 #if defined FREEBSD || defined NETBSD || defined DARWIN
@@ -1197,7 +1198,7 @@ int ISC_event_init_shared(
 
 	TEXT event_name[MAXPATHLEN], type_name[16];
 	sprintf(type_name, "_event%d", type);
-	make_object_name(event_name, name, type_name);
+	make_object_name(event_name, sizeof(event_name), name, type_name);
 	if (!
 		(lcl_event->event_handle =
 		 CreateEvent(ISC_get_security_desc(), TRUE, FALSE,
@@ -2587,7 +2588,7 @@ UCHAR* ISC_map_file(
 /* Create an event that can be used to determine if someone has already
    initialized shared memory. */
 
-	make_object_name(expanded_filename, filename, "_event");
+	make_object_name(expanded_filename, sizeof(expanded_filename), filename, "_event");
 	if (!ISC_is_WinNT())
 		event_handle =
 			CreateMutex(ISC_get_security_desc(), TRUE, expanded_filename);
@@ -2686,7 +2687,7 @@ UCHAR* ISC_map_file(
 /* Create a file mapping object that will be used to make remapping possible.
    The current length of real mapped file and its name are saved in it. */
 
-	make_object_name(expanded_filename, filename, "_mapping");
+	make_object_name(expanded_filename, sizeof(expanded_filename), filename, "_mapping");
 
 	HANDLE header_obj = CreateFileMapping ((HANDLE) -1,
 				ISC_get_security_desc(),
@@ -3376,7 +3377,7 @@ int ISC_mutex_init(MTX mutex, const TEXT* mutex_name)
  **************************************/
 	char name_buffer[MAXPATHLEN];
 
-	make_object_name(name_buffer, mutex_name, "_mutex");
+	make_object_name(name_buffer, sizeof(name_buffer), mutex_name, "_mutex");
 	mutex->mtx_handle =
 		CreateMutex(ISC_get_security_desc(), FALSE, name_buffer);
 
@@ -4161,6 +4162,7 @@ static BOOLEAN mutex_test(MTX mutex)
 #ifdef WIN_NT
 static void make_object_name(
 			     TEXT* buffer,
+				 size_t bufsize,
 			     const TEXT* object_name,
 			     const TEXT* object_type)
 {
@@ -4176,7 +4178,8 @@ static void make_object_name(
  *
  **************************************/
 	char hostname[64];
-	sprintf(buffer, object_name, ISC_get_host(hostname, sizeof(hostname)));
+	_snprintf(buffer, bufsize, object_name, ISC_get_host(hostname, sizeof(hostname)));
+	buffer[bufsize - 1] = 0;
 	
 	char* p;
 	char c;
@@ -4188,9 +4191,11 @@ static void make_object_name(
 	// hvlad: windows file systems use case-insensitive file names
 	// while kernel objects such as events use case-sensitive names. 
 	// Since we use root directory as part of kernel objects names 
-	// we must user lower (or upper) register for object name to avoid
+	// we must use lower (or upper) register for object name to avoid
 	// misunderstanding between processes
 	strlwr(buffer);
+
+	fb_utils::prefix_kernel_object_name(buffer, bufsize);
 }
 #endif
 

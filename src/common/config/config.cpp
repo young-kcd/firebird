@@ -30,8 +30,6 @@
 #include <stdlib.h>
 #endif
 
-#include "../jrd/gdsassert.h"
-
 // config_file works with OS case-sensitivity
 typedef Firebird::PathName string;
 
@@ -48,6 +46,8 @@ const char*	GCPolicyDefault	= GCPolicyCombined;
 #else
 const char*	GCPolicyDefault	= GCPolicyCooperative;
 #endif
+
+char defIpcName[MAXPATHLEN]; 
 
 const ConfigImpl::ConfigEntry ConfigImpl::entries[] =
 {
@@ -97,7 +97,7 @@ const ConfigImpl::ConfigEntry ConfigImpl::entries[] =
 	{TYPE_STRING,		"RemoteServiceName",		(ConfigValue) FB_SERVICE_NAME},
 	{TYPE_INTEGER,		"RemoteServicePort",		(ConfigValue) 0},
 	{TYPE_STRING,		"RemotePipeName",			(ConfigValue) FB_PIPE_NAME},
-	{TYPE_STRING,		"IpcName",					(ConfigValue) FB_IPC_NAME},
+	{TYPE_STRING,		"IpcName",					(ConfigValue) defIpcName},
 #ifdef WIN_NT
 	{TYPE_INTEGER,		"MaxUnflushedWrites",		(ConfigValue) 100},
 	{TYPE_INTEGER,		"MaxUnflushedWriteTime",	(ConfigValue) 5},
@@ -178,6 +178,11 @@ ConfigImpl::ConfigImpl(MemoryPool& p) : ConfigRoot(p)
 
 	string val_sep = ",";
 	file.setConfigFilePath(getConfigFilePath());
+
+	strncpy(defIpcName, FB_IPC_NAME, sizeof(defIpcName));
+#ifdef WIN_NT
+	fb_utils::prefix_kernel_object_name(defIpcName, sizeof(defIpcName));
+#endif
 
 	/* Iterate through the known configuration entries */
 
