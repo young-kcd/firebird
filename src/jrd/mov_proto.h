@@ -50,7 +50,7 @@ GDS_DATE	MOV_get_sql_date(const dsc*);
 GDS_TIME	MOV_get_sql_time(const dsc*);
 GDS_TIMESTAMP	MOV_get_timestamp(const dsc*);
 int		MOV_make_string(const dsc*, USHORT, const char**, vary*, USHORT);
-int		MOV_make_string2(const dsc*, USHORT, UCHAR**, Jrd::MoveBuffer&);
+int		MOV_make_string2(Jrd::thread_db*, const dsc*, USHORT, UCHAR**, Jrd::MoveBuffer&);
 void	MOV_move(const dsc*, dsc*);
 
 #endif // JRD_MOV_PROTO_H

@@ -121,7 +121,7 @@ void ExecuteStatement::Open(thread_db* tdbb, jrd_nod* sql, SSHORT nVars, bool Si
 
 	fb_assert(tdbb->tdbb_transaction->tra_pool);
 	Firebird::string SqlText;
-	getString(SqlText, EVL_expr(tdbb, sql), tdbb->tdbb_request);
+	getString(tdbb, SqlText, EVL_expr(tdbb, sql), tdbb->tdbb_request);
 	memcpy(StartOfSqlOperator, SqlText.c_str(), sizeof(StartOfSqlOperator) - 1);
 	StartOfSqlOperator[sizeof(StartOfSqlOperator) - 1] = 0;
 
@@ -365,15 +365,13 @@ ULONG ExecuteStatement::ParseSqlda(void)
     return offset;
 }
 
-void ExecuteStatement::getString(Firebird::string& s, const dsc* d, const jrd_req* r)
+void ExecuteStatement::getString(thread_db* tdbb, Firebird::string& s, const dsc* d, const jrd_req* r)
 {
-	char buffer[BUFFER_LARGE + sizeof(vary)];
-	vary* v = reinterpret_cast<vary*>(buffer);
-	v->vary_length = BUFFER_LARGE;
+	MoveBuffer buffer;
 
 	UCHAR* p = 0;
 	const SSHORT l = (d && !(r->req_flags & req_null)) ?
-		MOV_get_string(d, &p, v, BUFFER_LARGE) : 0; // !!! How call Msgs ?
+		MOV_make_string2(tdbb, d, d->getTextType(), &p, buffer) : 0; // !!! How call Msgs ?
 	if (! p) {
 		ERR_post(isc_exec_sql_invalid_arg, 0);
 	}

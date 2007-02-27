@@ -1411,7 +1411,7 @@ static void exec_sql(thread_db* tdbb, jrd_req* request, DSC* dsc)
 	}
 
 	Firebird::string SqlStatementText;
-	ExecuteStatement::getString(SqlStatementText, dsc, request);
+	ExecuteStatement::getString(tdbb, SqlStatementText, dsc, request);
 		
 	ISC_STATUS_ARRAY local;
 	memset(local, 0, sizeof(local));

@@ -2400,7 +2400,7 @@ static void move_from_string(thread_db* tdbb, const dsc* from_desc, dsc* to_desc
 	MOVE_CLEAR(&blob_desc, sizeof(blob_desc));
 
 	MoveBuffer buffer;
-	int length = MOV_make_string2(from_desc, ttype, &fromstr, buffer);
+	int length = MOV_make_string2(tdbb, from_desc, ttype, &fromstr, buffer);
 
 	UCharBuffer bpb;
 	BLB_gen_bpb_from_descs(from_desc, to_desc, bpb);

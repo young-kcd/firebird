@@ -31,9 +31,11 @@
 #include "../jrd/jrd.h"
 #include "../jrd/val.h"
 #include "../jrd/intl.h"
+#include "../jrd/blb_proto.h"
 #include "../jrd/cvt_proto.h"
 #include "../jrd/cvt2_proto.h"
 #include "../jrd/err_proto.h"
+#include "../jrd/intl_proto.h"
 #include "../jrd/mov_proto.h"
 
 
@@ -525,7 +527,7 @@ int MOV_make_string(const dsc*	     desc,
 }
 
 
-int MOV_make_string2(
+int MOV_make_string2(Jrd::thread_db* tdbb,
 					 const dsc* desc,
 					 USHORT ttype,
 					 UCHAR** address, 
@@ -544,7 +546,40 @@ int MOV_make_string2(
  *
  **************************************/
 
-	return CVT2_make_string2(desc, ttype, address, buffer, ERR_post);
+	if (desc->isBlob())
+	{
+		// fake descriptor
+		dsc temp;
+		temp.dsc_dtype = dtype_text;
+		temp.setTextType(ttype);
+
+		Firebird::UCharBuffer bpb;
+		BLB_gen_bpb_from_descs(desc, &temp, bpb);
+
+		Jrd::blb* blob = BLB_open2(tdbb, tdbb->tdbb_request->req_transaction,
+			reinterpret_cast<Jrd::bid*>(desc->dsc_address), bpb.getCount(), bpb.begin());
+
+		int size;
+
+		if (temp.getCharSet() == desc->getCharSet())
+			size = blob->blb_length;
+		else
+		{
+			size = (blob->blb_length / INTL_charset_lookup(tdbb, desc->getCharSet())->minBytesPerChar()) *
+				INTL_charset_lookup(tdbb, temp.getCharSet())->maxBytesPerChar();
+		}
+
+		*address = buffer.getBuffer(size);
+
+		size = BLB_get_data(tdbb, blob, *address, size, true);
+
+		if (size > MAX_COLUMN_SIZE)
+			ERR_post(isc_arith_except, 0);
+
+		return size;
+	}
+	else
+		return CVT2_make_string2(desc, ttype, address, buffer, ERR_post);
 }
 
 

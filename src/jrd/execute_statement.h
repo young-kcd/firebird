@@ -51,7 +51,7 @@ public:
 	void Open(Jrd::thread_db* tdbb, Jrd::jrd_nod* sql, SSHORT nVars, bool SingleTon);
 	bool Fetch(Jrd::thread_db* tdbb, Jrd::jrd_nod** FirstVar);
 	void Close(Jrd::thread_db* tdbb);
-	static void getString(Firebird::string&, const dsc* d, const Jrd::jrd_req* r);
+	static void getString(Jrd::thread_db*, Firebird::string&, const dsc* d, const Jrd::jrd_req* r);
 };
 
 #endif // JRD_EXECUTE_STATEMENT_H

@@ -1135,8 +1135,7 @@ USHORT INTL_string_to_key(thread_db* tdbb,
 
 	MoveBuffer temp;
 	UCHAR* src;
-	USHORT len =
-		MOV_make_string2(pString, ttype, &src, temp);
+	USHORT len = MOV_make_string2(tdbb, pString, ttype, &src, temp);
 
 	USHORT outlen;
 	char* dest = reinterpret_cast<char*>(pByte->dsc_address);

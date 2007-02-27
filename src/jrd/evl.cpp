@@ -3028,14 +3028,14 @@ static dsc* concatenate(thread_db* tdbb,
 	USHORT length1 = 0;
 
 	if (!value1->isBlob())
-		length1 = MOV_make_string2(value1, desc.getTextType(), &address1, temp1);
+		length1 = MOV_make_string2(tdbb, value1, desc.getTextType(), &address1, temp1);
 
 	MoveBuffer temp2;
 	UCHAR* address2 = NULL;
 	USHORT length2 = 0;
 
 	if (!value2->isBlob())
-		length2 = MOV_make_string2(value2, desc.getTextType(), &address2, temp2);
+		length2 = MOV_make_string2(tdbb, value2, desc.getTextType(), &address2, temp2);
 
 	if (address1 && address2)
 	{
@@ -4412,11 +4412,11 @@ static bool sleuth(thread_db* tdbb, jrd_nod* node, const dsc* desc1, const dsc* 
 
 	UCHAR* p1;
 	MoveBuffer sleuth_str;
-	USHORT l1 = MOV_make_string2(desc3, ttype, &p1, sleuth_str);
+	USHORT l1 = MOV_make_string2(tdbb, desc3, ttype, &p1, sleuth_str);
 /* Get address and length of search string */
 	UCHAR* p2;
 	MoveBuffer match_str;
-	USHORT l2 = MOV_make_string2(desc2, ttype, &p2, match_str);
+	USHORT l2 = MOV_make_string2(tdbb, desc2, ttype, &p2, match_str);
 
 /* Merge search and control strings */
 	UCHAR control[BUFFER_SMALL];
@@ -4431,7 +4431,7 @@ static bool sleuth(thread_db* tdbb, jrd_nod* node, const dsc* desc1, const dsc* 
 	{
 		/* Source is not a blob, do a simple search */
 
-		l1 = MOV_make_string2(desc1, ttype, &p1, data_str);
+		l1 = MOV_make_string2(tdbb, desc1, ttype, &p1, data_str);
 		ret_val = obj->sleuth_check(tdbb, 0, p1, l1, control, control_length);
 	}
 	else {
@@ -4498,7 +4498,7 @@ static bool string_boolean(thread_db* tdbb, jrd_nod* node, dsc* desc1,
 		/* Get address and length of search string - convert to datatype of data */
 
 		if (!computed_invariant) {
-			l2 = MOV_make_string2(desc2, type1, &p2, match_str);
+			l2 = MOV_make_string2(tdbb, desc2, type1, &p2, match_str);
 		}
 
 		USHORT xtype1;
@@ -4534,7 +4534,7 @@ static bool string_boolean(thread_db* tdbb, jrd_nod* node, dsc* desc1,
 			} 
 			else {
 				l2 =
-					MOV_make_string2(desc2, type1, &p2, match_str);
+					MOV_make_string2(tdbb, desc2, type1, &p2, match_str);
 			}
 		}
 
@@ -5147,7 +5147,7 @@ static dsc* trim(thread_db* tdbb, jrd_nod* node, impure_value* impure)
 	if (characters)
 	{
 		UCHAR* tempAddress = 0;
-		charactersLength = MOV_make_string2(characters, ttype, &tempAddress,
+		charactersLength = MOV_make_string2(tdbb, characters, ttype, &tempAddress,
 								charactersBuffer);
 		charactersAddress = tempAddress;
 	}
@@ -5179,7 +5179,7 @@ static dsc* trim(thread_db* tdbb, jrd_nod* node, impure_value* impure)
 		valueLength = BLB_get_data(tdbb, blob, valueAddress, blob->blb_length, true);
 	}
 	else
-		valueLength = MOV_make_string2(value, ttype, &valueAddress, valueBuffer);
+		valueLength = MOV_make_string2(tdbb, value, ttype, &valueAddress, valueBuffer);
 
 	Firebird::HalfStaticArray<UCHAR, BUFFER_SMALL> valueCanonical;
 	valueCanonical.getBuffer(valueLength / cs->minBytesPerChar() * tt->getCanonicalWidth());
