@@ -2,25 +2,9 @@
   * v2.0.1
   **************************
 
-    * Fixed bug CORE-1127
-        Circular index references in corrupt database causes fbserver to loop infinitely
-      Contributor(s):
-        Diane Downie <diane dot downie at citrix dot com>
-        Vlad Horsun <horsun at kdb.dp.ua>
-
     * Improvement CORE-1071
-        Background garbage collector don't need to read backversion of active record
-      Contributor(s):
-        Vlad Horsun <horsun at kdb.dp.ua>
-
-    * Fixed bug CORE-1094
-        isc_dsql_sql_info() returns unordered SQLVAR descriptors
-      Contributor(s):
-        Dmitry Yemanov <yemanov at yandex.ru>
-
-    * Fixed bug CORE-1080
-        Bugcheck 167 (invalid SEND request) in SS when many parallel attachments begin 
-        to execute trigger not loaded into metadata cache
+        Background garbage collector doesn't need to read backversions
+        of the active record
       Contributor(s):
         Vlad Horsun <horsun at kdb.dp.ua>
 
@@ -30,9 +14,82 @@
         Alex Peshkov <peshkoff at mail.ru>
 
     * Improvement CORE-1012
-        IBO problems with FB >= 1.5.3 "Error with joins and auto-generated search query"
+        IBO problems with FB >= 1.5.3 "Error with joins
+        and auto-generated search query"
       Contributor(s):
         Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Fixed bug CORE-1140
+        Server crashes when performing GC during index creation
+        (related to existence of expression indices on the same table)
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed bug CORE-1139
+        NBackup doesn't delete the delta file after successful backup
+        on Win32 CS
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed bug CORE-1136
+        NBackup cannot backup a recently created database
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed bug CORE-1133
+        XNET (IPC) communication protocol does not work across sessions
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
+
+    * Fixed bug CORE-1130
+        Bad optimization: <procedure> left join <subquery> (or <view>)
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed bug CORE-1127
+        Circular index references in corrupt database causes fbserver
+        to loop infinitely
+      Contributor(s):
+        Diane Downie <diane.downie at citrix.com>
+        Vlad Horsun <horsun at kdb.dp.ua>
+
+    * Fixed bug CORE-1126
+        UNION vs UTF8 literals: arithmetic exception is thrown
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Fixed bug CORE-1124
+        NBackup doesn't work in the interactive mode on Windows
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed bug CORE-1121
+        NBackup: Page-level deadlock (bugcheck 215) when attempting
+        to lock/backup a database under load
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+        George Sergeev <georgy.sergeev at inbox.ru>
+
+    * Fixed bug CORE-1110
+        isc_get_client_xxx_version not fully compatible with IB's gds32.dll
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
+
+    * Fixed bug CORE-1104
+        Linux install fails when x0rfbserver program is running
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Fixed bug CORE-1094
+        isc_dsql_sql_info() returns unordered SQLVAR descriptors
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed bug CORE-1080
+        Bugcheck 167 (invalid SEND request) in SS when many parallel attachments
+        begin to execute trigger not loaded into metadata cache
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
 
     * Fixed bug CORE-1068
         ISQL doesn't print not-nullable blobs
@@ -45,7 +102,8 @@
         Adriano dos Santos Fernandes <adrianosf at uol.com.br>
 
     * Fixed bug CORE-1063
-        Server hangs eating CPU and performs huge I/O copying different codepage fields
+        Server hangs eating CPU and performs huge I/O
+        copying different codepage fields
       Contributor(s):
         Vlad Horsun <horsun at kdb.dp.ua>
 
@@ -66,7 +124,7 @@
         Dmitry Yemanov <yemanov at yandex.ru>
 
     * Fixed bug CORE-1053
-        Invalid results in SELECT, when index is used to evaluate\
+        Invalid results in SELECT, when index is used to evaluate
         "greater" operator in WHERE clause
       Contributor(s):
         Alex Peshkov <peshkoff at mail.ru>
@@ -101,12 +159,14 @@
         Adriano dos Santos Fernandes <adrianosf at uol.com.br>
 
     * Fixed bug CORE-1029
-        Bad plan in outer joins with IS NULL clauses (dependent on order of predicates)
+        Bad plan in outer joins with IS NULL clauses
+        (dependent on order of predicates)
       Contributor(s):
         Dmitry Yemanov <yemanov at yandex.ru>
 
-    * Fixed bug CORE-1020
-        Server crashes at runtime when an explicit MERGE plan is specified over a few JOIN ones
+    * Fixed bug CORE-1025
+        Server crashes at runtime when an explicit MERGE plan
+        is specified over a few JOIN ones
       Contributor(s):
         Dmitry Yemanov <yemanov at yandex.ru>
 
@@ -116,9 +176,16 @@
         Paul Reeves <preeves at ibphoenix.com>
 
     * Fixed bug CORE-1017
-        Service attachments (over presumably Xnet) fail when Classic started with -x -i parameters
+        Service attachments (over presumably Xnet) fail
+        when Classic started with -x -i parameters
       Contributor(s):
         Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed bug CORE-1016
+        UdfAccess check is performed after loading the library
+        and executing its startup code
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
 
     * Fixed bug CORE-1011
         Server crashes when being connected to via InterBase gds32.dll
@@ -188,6 +255,11 @@
       Contributor(s):
         Alex Peshkov <peshkoff at mail.ru>
 
+    * Fixed bug CORE-943
+        Incorrect shutdown, when database is in the phisical backup mode
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
     * Fixed bug CORE-888
         DDL - object in use
       Contributor(s):
@@ -198,7 +270,8 @@
   **************************
 
     * Fixed RC5 bug (CORE-980)
-        NO WAIT is implied instead of WAIT when the host application doesn't provide TPB
+        NO WAIT is implied instead of WAIT when the host application
+        doesn't provide TPB
       Contributor(s):
         Dmitry Yemanov <yemanov at yandex.ru>
 
@@ -239,7 +312,8 @@
         Alex Peshkov <peshkoff at mail.ru>
 
     * Fixed bug (CORE-911)
-        AV in Classic server after long idle period when using long running read committed readonly transaction
+        AV in Classic server after long idle period when using long running
+        read committed readonly transaction
       Contributor(s):
         Vlad Horsun <horsun at kdb.dp.ua>
 
@@ -275,7 +349,8 @@
   **************************
 
     * Fixed RC3 bug (CORE-839)
-        Instclient failed to install gds32 over an existing version from V1.5.1 or later
+        Instclient failed to install gds32 over an existing version
+        from V1.5.1 or later
       Contributor:
         Paul Reeves <preeves at ibphoenix.com>
 
@@ -335,7 +410,8 @@
         Dmitry Yemanov <yemanov at yandex.ru>
 
     * Added new collation
-        ES_ES_CI_AI (case- and accent-insensitive) for ISO8859_1 charset (Spanish language)
+        ES_ES_CI_AI (case- and accent-insensitive) for ISO8859_1 charset
+        (Spanish language)
       Contributor(s):
         Adriano dos Santos Fernandes <adrianosf at uol.com.br>
 
@@ -381,7 +457,8 @@
         Alex Peshkov <peshkoff at mail.ru>
 
     * Fixed RC2 bug
-        Suboptimal execution path is chosen if an explicit plan presents for a complex inner join
+        Suboptimal execution path is chosen if an explicit plan presents
+        for a complex inner join
       Contributor(s):
         Dmitry Yemanov <yemanov at yandex.ru>
 
@@ -415,12 +492,14 @@
         Dmitry Yemanov <yemanov at yandex.ru>
 
     * Fixed RC1 bug
-        Embedded server cannot connect via TCP, error "connection rejected by remote interface"
+        Embedded server cannot connect via TCP,
+        error "connection rejected by remote interface"
       Contributor(s):
         Vlad Horsun <horsun at kdb.dp.ua>
 
     * Fixed RC1 bug
-        Error "operating system directive ReleaseSemaphore failed" under heavy concurrent load
+        Error "operating system directive ReleaseSemaphore failed"
+        under heavy concurrent load
       Contributor(s):
         Christian Barheine <cbarheine at sympatec.com>
         Dmitry Yemanov <yemanov at yandex.ru>
@@ -431,8 +510,8 @@
         Dmitry Yemanov <yemanov at yandex.ru>
 
     * Configuration file change
-        Option CreateInternalWindow is no longer required to run a few server instances
-        and it has been removed
+        Option CreateInternalWindow is no longer required to run
+        a few server instances and it has been removed
       Contributor(s):
         Dmitry Yemanov <yemanov at yandex.ru>
 
@@ -509,7 +588,8 @@
         Alex Peshkov <peshkoff at mail.ru>
 
     * Fixed unregistered bug
-        Error "invalid transaction handle" when calling isc_array_lookup_bounds() from multiple threads
+        Error "invalid transaction handle" when calling isc_array_lookup_bounds()
+        from multiple threads
       Contributor(s):
         Dmitry Yemanov <yemanov at yandex.ru>
 
@@ -539,12 +619,14 @@
         Vlad Horsun <horsun at kdb.dp.ua>
 
     * Fixed unregistered bug
-        Improperly allowed assignments to columns deleted by a concurrent transaction
+        Improperly allowed assignments to columns deleted
+        by a concurrent transaction
       Contributor(s):
         Dmitry Yemanov <yemanov at yandex.ru>
 
     * Fixed RC1 bug
-        Permission checks performed in the wrong order (column level before table level)
+        Permission checks performed in the wrong order
+        (column level before table level)
       Contributor(s):
         Dmitry Yemanov <yemanov at yandex.ru>
 
@@ -660,7 +742,8 @@
         Alex Peshkov <peshkoff at mail.ru>
 
     * Fixed Beta 2 bug
-        Server crashes due to bug in the Knuth-Morris-Pratt algorithm (LIKE implementation)
+        Server crashes due to bug in the Knuth-Morris-Pratt algorithm
+        (LIKE implementation)
       Contributor(s):
         Adriano dos Santos Fernandes <adrianosf at uol.com.br>
 
@@ -670,8 +753,8 @@
         Vlad Horsun <horsun at kdb.dp.ua>
 
     * Fixed Beta2 bug
-        Wrong processing (missing records) of GREATER-THAN operator for compound indices
-        in some cases
+        Wrong processing (missing records) of GREATER-THAN operator
+        for compound indices in some cases
       Contributor(s):
         Vlad Horsun <horsun at kdb.dp.ua>
 
@@ -682,24 +765,29 @@
         Dmitry Yemanov <yemanov at yandex.ru>
 
     * Fixed Beta 2 bug (SF #$1433583)
-        Unexpected error "key size exceeds implementation restriction" for UTF-8 charset
+        Unexpected error "key size exceeds implementation restriction"
+        for UTF-8 charset
       Contributor(s):
         Adriano dos Santos Fernandes <adrianosf at uol.com.br>
 
     * Fixed unregistered bug
-        Indices used in explicit plans inside PSQL could be dropped, thus causing restore issues
+        Indices used in explicit plans inside PSQL could be dropped,
+        thus causing restore issues
       Contributor(s):
         Adriano dos Santos Fernandes <adrianosf at uol.com.br>
 
     * Fixed unregistered bug
         fb_lock_print fails with message:
-        "the requested operation cannot be performed on a file with a user-mapped section open".
+        "the requested operation cannot be performed on a file
+        with a user-mapped section open".
       Contributor(s):
         Vlad Horsun <horsun at kdb.dp.ua>
 
     * Information API enhancements
-        1) isc_info_active_transactions_count returns number of active transactions (SF #1315814)
-        2) isc_transaction_info returns transaction isolation level and options (SF #1089646)
+        1) isc_info_active_transactions_count returns number
+           of active transactions (SF #1315814)
+        2) isc_transaction_info returns transaction isolation level
+           and options (SF #1089646)
         3) isc_info_creation_date returns creation date of the database
       See also:
         /doc/sql.extensions/README.isc_info_xxx
@@ -707,7 +795,8 @@
         Vlad Horsun <horsun at kdb.dp.ua>
 
     * Fixed unregistered bug
-        Transaction ID cannot silently (and dangerously) overflow anymore (the limit is still 2^31)
+        Transaction ID cannot silently (and dangerously) overflow anymore
+        (the limit is still 2^31)
       Contributor(s):
         Vlad Horsun <horsun at kdb.dp.ua>
 
@@ -818,14 +907,17 @@
         Arno Brinkman <firebird at abvisie.nl>
 
     * Added new collations
-        WIN_CZ for WIN1250 charset (Czech language, case-insensitive)
-        WIN_CZ_CI_AI for WIN1250 charset (Czech language, case-insensitive, accent-insensitive)
+        WIN_CZ for WIN1250 charset
+        (Czech language, case-insensitive)
+        WIN_CZ_CI_AI for WIN1250 charset
+        (Czech language, case-insensitive, accent-insensitive)
       Contributor(s):
         Ivan Prenosil <Ivan.Prenosil at seznam.cz>
         Adriano dos Santos Fernandes <adrianosf at uol.com.br>
 
     * Fixed unregistered bug
-        The client library doesn't react on setting envvars via SetEnvironmentVariable()
+        The client library doesn't react on setting envvars
+        via SetEnvironmentVariable()
       Contributor(s):
         Claudio Valderrama <cvalde at usa.net>
 
@@ -835,8 +927,8 @@
         Dmitry Yemanov <yemanov at yandex.ru>
 
     * Fixed Beta 1 bug
-        Remote connections to the Services API performed with a wrong host are in fact served
-        by the local protocol instead of throwing an error
+        Remote connections to the Services API performed with a wrong host
+        are in fact served by the local protocol instead of throwing an error
       Contributor(s):
         Dmitry Yemanov <yemanov at yandex.ru>
 
@@ -861,7 +953,8 @@
         Alex Peshkov <peshkoff at mail.ru>
 
     * Fixed unregistered bug
-        Made the server version information human readable in ISQL when using the -z flag
+        Made the server version information human readable in ISQL
+        when using the -z flag
       Contributor(s):
         Claudio Valderrama <cvalde at usa.net>
 
@@ -872,7 +965,8 @@
         Dmitry Yemanov <yemanov at yandex.ru>
 
     * Fixed Beta 1 bug
-        An infinite fetch from explicit PSQL cursors based on a navigationally sorted stream
+        An infinite fetch from explicit PSQL cursors
+        based on a navigationally sorted stream
       Contributor(s):
         Dmitry Yemanov <yemanov at yandex.ru>
 
@@ -903,7 +997,8 @@
         Claudio Valderrama <cvalde at usa.net>
 
     * Fixed Beta 1 bug
-        Incorrect report by GFIX validation about corruption of primary/unique indices
+        Incorrect report by GFIX validation about corruption
+        of primary/unique indices
       Contributor(s):
         Arno Brinkman <firebird at abvisie.nl>
 
@@ -1105,7 +1200,8 @@
         Nickolay Samofatov <nickolay at broadviewsoftware.com>
 
     * Fixed unregistered bug
-        Server crash when attempting to restore a database backup with corrupted VARCHAR data
+        Server crash when attempting to restore a database backup
+        with corrupted VARCHAR data
       Contributor(s):
         Dmitry Yemanov <yemanov at yandex.ru>
 
@@ -1161,7 +1257,8 @@
         Arno Brinkman <firebird at abvisie.nl>
 
     * Fixed Beta 1 bug
-        ALTER TABLE SET DEFAULT incorrectly modifies RDB$FIELDS instead of RDB$RELATION_FIELDS
+        ALTER TABLE SET DEFAULT incorrectly modifies RDB$FIELDS
+        instead of RDB$RELATION_FIELDS
       Contributor(s):
         Claudio Valderrama <cvalde at usa.net>
 
@@ -1231,7 +1328,8 @@
         Alex Peshkov <peshkoff at mail.ru>
 
     * Fixed Beta 1 bug
-        OLD/NEW context references are improperly recognized as matching another table
+        OLD/NEW context references are improperly recognized
+        as matching another table
       Contributor(s):
         Arno Brinkman <firebird at abvisie.nl>
 
