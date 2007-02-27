@@ -183,9 +183,31 @@ typedef sh_mem *SH_MEM;
 
 #ifdef WIN_NT
 #define MTX_STRUCTURE_DEFINED
+
+#include <windows.h>
+
+typedef struct _FAST_MUTEX_SHARED_SECTION
+{
+	SLONG   fInitialized;
+	SLONG   lSpinLock;
+	SLONG   lThreadsWaiting;
+	SLONG   lAvailable;
+#ifdef _DEBUG
+	DWORD  dwThreadId;
+#endif
+} FAST_MUTEX_SHARED_SECTION;
+
+typedef struct _FAST_MUTEX
+{
+	HANDLE hEvent;
+	HANDLE hFileMap;
+	ULONG  lSpinCount;
+	volatile FAST_MUTEX_SHARED_SECTION* lpSharedInfo;
+} FAST_MUTEX;
+
 struct mtx
 {
-	void*	mtx_handle;
+	FAST_MUTEX mtx_fast;
 };
 
 typedef mtx MTX_T;

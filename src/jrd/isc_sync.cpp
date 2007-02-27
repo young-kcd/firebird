@@ -3365,6 +3365,277 @@ int ISC_mutex_unlock(MTX mutex)
 
 #ifdef WIN_NT
 #define MUTEX
+
+static const LPCSTR FAST_MUTEX_EVT_NAME	= "%s_FM_EVT";
+static const LPCSTR FAST_MUTEX_MAP_NAME	= "%s_FM_MAP";
+
+static const int DEFAULT_INTERLOCKED_SPIN_COUNT	= 0;
+static const int DEFAULT_INTERLOCKED_SPIN_COUNT_SMP	= 200;
+
+typedef WINBASEAPI BOOL (WINAPI *pfnSwitchToThread) ();
+static inline BOOL _switchToThread()
+{
+	static pfnSwitchToThread fnSwitchToThread = NULL;
+	static bool bInit = false;
+
+	if (!bInit)
+	{
+		HMODULE hLib = GetModuleHandle("kernel32.dll");
+		if (hLib) {
+			fnSwitchToThread = (pfnSwitchToThread) GetProcAddress(hLib, "SwitchToThread");
+		}
+		bInit = true;
+	}
+
+	if (fnSwitchToThread)
+		return (*fnSwitchToThread) ();
+	else
+		return FALSE;
+}
+
+
+static inline void lockSharedSection(volatile FAST_MUTEX_SHARED_SECTION* lpSect, ULONG SpinCount)
+{
+	while (InterlockedExchange(&lpSect->lSpinLock, 1) != 0)
+	{
+		ULONG j = SpinCount; 
+		while (j != 0)
+		{
+			if (lpSect->lSpinLock == 0)
+				goto next;
+			j--;
+		}
+		_switchToThread();
+next:;
+	}
+}
+
+static inline bool tryLockSharedSection(volatile FAST_MUTEX_SHARED_SECTION* lpSect)
+{
+	return (InterlockedExchange(&lpSect->lSpinLock, 1) == 0);
+}
+
+static inline void unlockSharedSection(volatile FAST_MUTEX_SHARED_SECTION* lpSect)
+{
+	InterlockedExchange(&lpSect->lSpinLock, 0);
+}
+
+static DWORD enterFastMutex(FAST_MUTEX* lpMutex, DWORD dwMilliseconds)
+{
+	volatile FAST_MUTEX_SHARED_SECTION* lpSect = lpMutex->lpSharedInfo;
+
+	while (TRUE)
+	{
+		DWORD dwResult;
+		
+		if (dwMilliseconds == 0) {
+			if (!tryLockSharedSection(lpSect))
+				return WAIT_TIMEOUT;
+		}
+		else {
+			lockSharedSection(lpSect, lpMutex->lSpinCount);
+		}
+
+		if (lpSect->lAvailable > 0)
+		{
+			lpSect->lAvailable--;
+#ifdef _DEBUG
+			lpSect->dwThreadId = GetCurrentThreadId();
+#endif
+			unlockSharedSection(lpSect);
+			return WAIT_OBJECT_0;
+		}
+
+#ifdef _DEBUG
+		if (lpSect->dwThreadId == GetCurrentThreadId())
+			DebugBreak();
+#endif
+		if (dwMilliseconds == 0)
+		{
+			unlockSharedSection(lpSect);
+			return WAIT_TIMEOUT;
+		}
+
+		InterlockedIncrement(&lpSect->lThreadsWaiting);
+		unlockSharedSection(lpSect);
+		
+		// TODO actual timeout can be of any length
+		dwResult = WaitForSingleObject(lpMutex->hEvent, dwMilliseconds);
+		InterlockedDecrement(&lpSect->lThreadsWaiting);
+		
+		if (dwResult != WAIT_OBJECT_0)
+			return dwResult;
+	}
+}
+
+static bool leaveFastMutex(FAST_MUTEX* lpMutex)
+{
+	volatile FAST_MUTEX_SHARED_SECTION* lpSect = lpMutex->lpSharedInfo;
+
+	lockSharedSection(lpSect, lpMutex->lSpinCount);
+	if (lpSect->lAvailable >= 1)
+	{
+		unlockSharedSection(lpSect);
+		SetLastError(ERROR_INVALID_PARAMETER);
+		return false;
+	}
+	lpSect->lAvailable++;
+	if (lpSect->lThreadsWaiting)
+		SetEvent(lpMutex->hEvent);
+	unlockSharedSection(lpSect);
+
+	return true;
+}
+
+static inline void deleteFastMutex(FAST_MUTEX* lpMutex)
+{
+	UnmapViewOfFile((FAST_MUTEX_SHARED_SECTION*)lpMutex->lpSharedInfo);
+	CloseHandle(lpMutex->hFileMap);
+	CloseHandle(lpMutex->hEvent);
+}
+
+static inline void setupMutex(FAST_MUTEX* lpMutex)
+{
+	SYSTEM_INFO si;
+	GetSystemInfo(&si);
+
+	if (si.dwNumberOfProcessors > 1)
+		lpMutex->lSpinCount = DEFAULT_INTERLOCKED_SPIN_COUNT_SMP;
+	else
+		lpMutex->lSpinCount = DEFAULT_INTERLOCKED_SPIN_COUNT;
+}
+
+static bool initializeFastMutex(FAST_MUTEX* lpMutex, LPSECURITY_ATTRIBUTES lpAttributes, 
+								BOOL bInitialState, LPCSTR lpName)
+{
+	char sz[MAXPATHLEN];
+	LPCSTR name = lpName;
+	DWORD dwLastError; 
+
+	if (strlen(lpName) + strlen(FAST_MUTEX_EVT_NAME) - 2 >= MAXPATHLEN)
+	{
+		// this is the same error which CreateEvent will return for long name
+		SetLastError(ERROR_FILENAME_EXCED_RANGE);
+		return false;
+	}
+
+	setupMutex(lpMutex);
+
+	if (lpName)
+	{
+		sprintf(sz, FAST_MUTEX_EVT_NAME, lpName);
+		name = sz;
+	}
+
+	lpMutex->hEvent = CreateEvent(lpAttributes, FALSE, FALSE, name);
+	dwLastError = GetLastError();
+
+	if (lpMutex->hEvent)
+	{
+		if (lpName)
+			sprintf(sz, FAST_MUTEX_MAP_NAME, lpName);
+		
+		lpMutex->hFileMap = CreateFileMapping(
+			INVALID_HANDLE_VALUE, 
+			NULL, 
+			PAGE_READWRITE, 
+			0, 
+			sizeof(FAST_MUTEX_SHARED_SECTION), 
+			name);
+		
+		dwLastError = GetLastError();
+		
+		if (lpMutex->hFileMap)
+		{
+			lpMutex->lpSharedInfo = (FAST_MUTEX_SHARED_SECTION*) 
+				MapViewOfFile(lpMutex->hFileMap, FILE_MAP_WRITE, 0, 0, 0);
+		    
+			if (lpMutex->lpSharedInfo)
+			{
+				if (dwLastError != ERROR_ALREADY_EXISTS)
+				{
+					lpMutex->lpSharedInfo->lSpinLock = 0;
+					lpMutex->lpSharedInfo->lThreadsWaiting = 0;
+					lpMutex->lpSharedInfo->lAvailable = bInitialState ? 0 : 1;
+					InterlockedExchange((LPLONG)&lpMutex->lpSharedInfo->fInitialized, 1);
+				}
+				else
+				{
+					while (!lpMutex->lpSharedInfo->fInitialized) 
+						_switchToThread();
+				}
+				
+				SetLastError(dwLastError);
+				return true;
+			}
+			CloseHandle(lpMutex->hFileMap);
+		}
+		CloseHandle(lpMutex->hEvent);
+	}
+
+	SetLastError(dwLastError);
+	return false;
+}
+
+static bool openFastMutex(FAST_MUTEX* lpMutex, DWORD DesiredAccess, LPCSTR lpName)
+{
+	char sz[MAXPATHLEN];
+	LPCSTR name = lpName;
+	DWORD dwLastError; 
+
+	if (strlen(lpName) + strlen(FAST_MUTEX_EVT_NAME) - 2 >= MAXPATHLEN)
+	{
+		SetLastError(ERROR_FILENAME_EXCED_RANGE);
+		return false;
+	}
+
+	setupMutex(lpMutex);
+
+	if (lpName)
+	{
+		sprintf(sz, FAST_MUTEX_EVT_NAME, lpName);
+		name = sz;
+	}
+	
+	lpMutex->hEvent = OpenEvent(EVENT_ALL_ACCESS, FALSE, name);
+	
+	dwLastError = GetLastError();
+	
+	if (lpMutex->hEvent)
+	{
+		if (lpName)
+			sprintf(sz, FAST_MUTEX_MAP_NAME, lpName);
+		
+		lpMutex->hFileMap = OpenFileMapping(
+			FILE_MAP_ALL_ACCESS, 
+			FALSE, 
+			name);
+		
+		dwLastError = GetLastError();
+	
+		if (lpMutex->hFileMap)
+		{
+			lpMutex->lpSharedInfo = (FAST_MUTEX_SHARED_SECTION*) 
+				MapViewOfFile(lpMutex->hFileMap, FILE_MAP_WRITE, 0, 0, 0);
+			
+			if (lpMutex->lpSharedInfo)
+				return true;
+
+			CloseHandle(lpMutex->hFileMap);
+		}
+		CloseHandle(lpMutex->hEvent);
+	}
+
+	SetLastError(dwLastError);
+	return false;
+}
+
+static inline void setFastMutexSpinCount(FAST_MUTEX* lpMutex, ULONG SpinCount)
+{
+	lpMutex->lSpinCount = SpinCount;
+}
+
+
 int ISC_mutex_init(MTX mutex, const TEXT* mutex_name)
 {
 /**************************************
@@ -3380,10 +3651,28 @@ int ISC_mutex_init(MTX mutex, const TEXT* mutex_name)
 	char name_buffer[MAXPATHLEN];
 
 	make_object_name(name_buffer, sizeof(name_buffer), mutex_name, "_mutex");
-	mutex->mtx_handle =
-		CreateMutex(ISC_get_security_desc(), FALSE, name_buffer);
 
-	return (mutex->mtx_handle) ? 0 : 1;
+	if (ISC_is_WinNT())
+	{
+		return !initializeFastMutex(&mutex->mtx_fast, 
+			ISC_get_security_desc(), FALSE, name_buffer);
+	}
+	else
+	{
+		memset(&mutex->mtx_fast, 0, sizeof(FAST_MUTEX));
+
+		mutex->mtx_fast.hEvent =
+			CreateMutex(ISC_get_security_desc(), FALSE, name_buffer);
+
+		return (mutex->mtx_fast.hEvent) ? 0 : 1;
+	}
+}
+
+
+void ISC_mutex_fini (struct mtx *mutex)
+{
+	if (mutex->mtx_fast.lpSharedInfo)
+		deleteFastMutex(&mutex->mtx_fast);
 }
 
 
@@ -3400,8 +3689,11 @@ int ISC_mutex_lock(MTX mutex)
  *
  **************************************/
 
-	const DWORD status = WaitForSingleObject(mutex->mtx_handle, INFINITE);
-	return (!status || status == WAIT_ABANDONED) ? 0 : 1;
+	const DWORD status = (mutex->mtx_fast.lpSharedInfo) ?
+		enterFastMutex(&mutex->mtx_fast, INFINITE) :
+		WaitForSingleObject(mutex->mtx_fast.hEvent, INFINITE);
+
+    return (status == WAIT_OBJECT_0 || status == WAIT_ABANDONED) ? 0 : 1;
 }
 
 
@@ -3418,8 +3710,11 @@ int ISC_mutex_lock_cond(MTX mutex)
  *
  **************************************/
 
-	const DWORD status = WaitForSingleObject (mutex->mtx_handle, 0L);
-	return (!status || status == WAIT_ABANDONED) ? 0 : 1;
+	const DWORD status = (mutex->mtx_fast.lpSharedInfo) ? 
+		enterFastMutex(&mutex->mtx_fast, 0) :
+		WaitForSingleObject (mutex->mtx_fast.hEvent, 0L);
+
+    return (status == WAIT_OBJECT_0 || status == WAIT_ABANDONED) ? 0 : 1;
 }
 
 
@@ -3436,9 +3731,22 @@ int ISC_mutex_unlock(MTX mutex)
  *
  **************************************/
 
-	return !ReleaseMutex(mutex->mtx_handle);
+	if (mutex->mtx_fast.lpSharedInfo) {
+		return !leaveFastMutex(&mutex->mtx_fast);
+	}
+	else {
+		return !ReleaseMutex(mutex->mtx_fast.hEvent);
+	}
 }
-#endif
+
+
+void ISC_mutex_set_spin_count (struct mtx *mutex, ULONG spins)
+{
+	if (mutex->mtx_fast.lpSharedInfo) 
+		setFastMutexSpinCount(&mutex->mtx_fast, spins);
+}
+
+#endif // WIN_NT
 
 
 #ifndef MUTEX
