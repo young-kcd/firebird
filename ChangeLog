@@ -1,3 +1,87 @@
+2007-02-27 03:36  asfernandes
+
+	* firebird2/src/jrd/: blb.cpp (1.134), evl.cpp (1.217), exe.cpp
+	(1.209), execute_statement.cpp (1.19), execute_statement.h (1.8),
+	intl.cpp (1.96), mov.cpp (1.27), mov_proto.h (1.13), opt.cpp
+	(1.288):
+
+	Allow BLOBs in EXECUTE STATEMENT and possibly in others unkown
+	cases
+
+2007-02-26 17:17  alexpeshkoff
+
+	* firebird2/src/jrd/jrd.cpp (1.309):
+
+	Fixed CORE-1091 - isc_service_query() showed full db file name
+
+2007-02-26 16:20  paul_reeves
+
+	*
+	firebird2/builds/install/arch-specific/win32/BuildExecutableInstall.bat
+	(1.18):
+
+	Start bringing main install script into line with requirements to
+	build x64 and Win32 targets.  The ZIP option works for now. Other
+	options are temporarily broken.
+
+2007-02-26 16:18  paul_reeves
+
+	* firebird2/builds/win32/: clean_all.bat (1.13), compile.bat (1.3),
+	create_msgs.bat (1.3), make_all.bat (1.46), make_boot.bat (1.35),
+	make_examples.bat (1.21), make_icu.bat (1.14), parse.bat (1.9),
+	install_classic.bat (1.3), install_super.bat (1.3), preprocess.bat
+	(1.37), run_all.bat (1.8), set_build_target.bat (1.1),
+	setenvvar.bat (1.15), uninstall.bat (1.3):
+
+	Prefix (almost) all env vars with FB.  Refactor common code (mostly
+	into set_build_target.bat).  Ensure that all VS2005 x64 output is
+	clearly generated into x64 directories,  and likewise for Win32
+	output
+
+2007-02-26 16:13  paul_reeves
+
+	* firebird2/builds/win32/msvc7/empbuild.vcproj (1.2):
+
+	Minor changes caused by other modifications to the build process
+
+2007-02-26 16:12  paul_reeves
+
+	* firebird2/builds/win32/msvc8/: Firebird2_Examples.sln (1.2),
+	alice.vcproj (1.4), alice_classic.vcproj (1.4), btyacc.vcproj
+	(1.3), build_msg.vcproj (1.4), burp.vcproj (1.4),
+	burp_classic.vcproj (1.4), codes.vcproj (1.3), common.vcproj (1.4),
+	common_classic.vcproj (1.4), common_static.vcproj (1.3),
+	config.vcproj (1.4), dsql_server.vcproj (1.4),
+	dsql_server_classic.vcproj (1.4), empbuild.vcproj (1.3),
+	engine.vcproj (1.8), engine_classic.vcproj (1.8),
+	engine_embed.vcproj (1.8), fb2control.vcproj (1.3),
+	fb_inet_server.vcproj (1.7), fb_lock_print.vcproj (1.4),
+	fbclient.vcproj (1.7), fbclient_static.vcproj (1.3), fbembed.vcproj
+	(1.7), fbguard.vcproj (1.4), fbrmclib.vcproj (1.3), fbserver.vcproj
+	(1.7), fbudf.vcproj (1.5), gbak.vcproj (1.4), gbak_embed.vcproj
+	(1.3), gdef.vcproj (1.4), gds32.vcproj (1.4), gfix.vcproj (1.4),
+	gpre.vcproj (1.6), gpre_boot.vcproj (1.4), gpre_embed.vcproj (1.4),
+	gpre_static.vcproj (1.3), gsec.vcproj (1.4), firebird2.vsprops
+	(1.1), gsplit.vcproj (1.4), gstat.vcproj (1.4), ib_udf.vcproj
+	(1.4), ib_util.vcproj (1.4), instclient.vcproj (1.4),
+	instreg.vcproj (1.4), instsvc.vcproj (1.4), intl.vcproj (1.8),
+	intlbuild.vcproj (1.3), isql.vcproj (1.4), isql_embed.vcproj (1.3),
+	lock.vcproj (1.4), lock_classic.vcproj (1.4), nbackup.vcproj (1.4),
+	qli.vcproj (1.4), remote.vcproj (1.5), remote_classic.vcproj (1.5),
+	utilities.vcproj (1.4), utilities_classic.vcproj (1.4),
+	utilities_embed.vcproj (1.4), v5_examples.vcproj (1.3):
+
+	Use a property sheet for VS2005 builds Fully separate the win32
+	output from the x64 output
+
+2007-02-26 16:08  paul_reeves
+
+	* firebird2/builds/install/arch-specific/win32/:
+	install_classic.bat (1.1), install_super.bat (1.1), uninstall.bat
+	(1.1):
+
+	Move install scripts to the install script directory.
+
 2007-02-26 03:13  asfernandes
 
 	* firebird2/src/jrd/jrd.cpp (1.308):
