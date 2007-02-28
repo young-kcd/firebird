@@ -111,9 +111,12 @@ EXPORTS
 	perf_format@20				PRIVATE
 	perf_get_info@8				PRIVATE
 
+	Bopen@16					PRIVATE
+	BLOB_close@4				PRIVATE
 	BLOB_dump@16				PRIVATE
 	BLOB_edit@16				PRIVATE
 	BLOB_load@16				PRIVATE
+	BLOB_put@8					PRIVATE
 	BLOB_text_load@16			PRIVATE
 
 	_ZN6Config17getGuardianOptionEv PRIVATE
