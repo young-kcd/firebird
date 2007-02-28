@@ -167,18 +167,46 @@ static MUTX_T databases_mutex;
 #ifdef SUPERSERVER
 
 extern SLONG trace_pools;
-static REC_MUTX_T databases_rec_mutex;
 
-#define JRD_SS_INIT_MUTEX       THD_rec_mutex_init(&databases_rec_mutex)
-#define JRD_SS_DESTROY_MUTEX    THD_rec_mutex_destroy(&databases_rec_mutex)
+namespace
+{
+	REC_MUTX_T databases_rec_mutex;
+
+	class DatabasesInit
+	{
+	public:
+		static void init()
+		{
+			THD_rec_mutex_init(&databases_rec_mutex);
+		}
+		static void cleanup()
+		{
+			THD_rec_mutex_destroy(&databases_rec_mutex);
+		}
+	};
+
+	class DatabasesInitInstance : public Firebird::InitMutex<DatabasesInit>
+	{
+	public:
+		DatabasesInitInstance()
+		{
+			init();
+		}
+		~DatabasesInitInstance()
+		{
+			cleanup();
+		}
+	};
+
+	DatabasesInitInstance holder;
+}
+
 #define JRD_SS_MUTEX_LOCK       {THREAD_EXIT();\
                                  THD_rec_mutex_lock(&databases_rec_mutex);\
                                  THREAD_ENTER();}
 #define JRD_SS_MUTEX_UNLOCK     THD_rec_mutex_unlock(&databases_rec_mutex)
 
 #else
-#define JRD_SS_INIT_MUTEX
-#define JRD_SS_DESTROY_MUTEX
 #define JRD_SS_MUTEX_LOCK
 #define JRD_SS_MUTEX_UNLOCK
 #endif
@@ -3508,15 +3536,19 @@ ISC_STATUS GDS_SERVICE_ATTACH(ISC_STATUS* user_status,
 	tdbb->tdbb_status_vector = user_status;
 	tdbb->tdbb_database = NULL;
 
+	JRD_SS_MUTEX_LOCK;
+
 	try
 	{
 		*svc_handle = SVC_attach(service_length, service_name, spb_length, spb);
 	}
 	catch (const Firebird::Exception& ex)
 	{
+		JRD_SS_MUTEX_UNLOCK;
 		return error(user_status, ex);
 	}
 
+	JRD_SS_MUTEX_UNLOCK;
 	return return_success(tdbb);
 }
 
@@ -4975,7 +5007,6 @@ static void cleanup(void* arg)
  *	Exit handler for image exit.
  *
  **************************************/
-	JRD_SS_DESTROY_MUTEX;
 	initialized = false;
 	databases = NULL;
 }
@@ -5774,7 +5805,6 @@ static Database* init(thread_db*	tdbb,
 
 		if (!initialized)
 		{
-			JRD_SS_INIT_MUTEX;
 			gds__register_cleanup(cleanup, 0);
 			initialized = true;
 
