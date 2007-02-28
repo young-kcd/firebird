@@ -1,3 +1,15 @@
+2007-02-27 10:59  hvlad
+
+	* firebird2/src/jrd/: isc.h (1.29), isc_sync.cpp (1.108):
+
+	Ported implementation of a fast mutex for NT platform from Yaffil
+
+2007-02-27 10:22  hvlad
+
+	* firebird2/doc/WhatsNew (1.114):
+
+	Change my e-mail to more appropriate
+
 2007-02-27 03:36  asfernandes
 
 	* firebird2/src/jrd/: blb.cpp (1.134), evl.cpp (1.217), exe.cpp
