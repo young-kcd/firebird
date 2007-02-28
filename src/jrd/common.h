@@ -607,7 +607,7 @@ typedef unsigned __int64 UINT64;
    not permit the LL suffix which some other platforms require, but it
    handles numbers up to the largest 64-bit integer correctly without such
    a suffix, so the macro definition is trivial. */
-#ifdef MINGW // needed for gcc 3.3.1
+#ifdef __GNUC__ // needed for gcc 3.3.1
 #define QUADCONST(n) (n##LL)
 #else
 #define QUADCONST(n) (n)
