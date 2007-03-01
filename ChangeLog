@@ -1,3 +1,35 @@
+2007-03-01 01:44  asfernandes
+
+	* firebird2/src/jrd/: jrd.cpp (1.311), opt.cpp (1.289):
+
+	Misc
+
+2007-02-28 15:31  dimitr
+
+	* firebird2/src/jrd/idx.cpp (1.121):
+
+	Fixed CORE-1145.
+
+2007-02-28 13:43  aafemt
+
+	* firebird2/builds/win32/defs/fbclient_s.def (1.5):
+
+	More mangled exports because Claudio decided to use this
+	undocumented thing in isql
+
+2007-02-28 12:21  aafemt
+
+	* firebird2/src/jrd/common.h (1.145):
+
+	Compiler-specific check, not platform
+
+2007-02-28 09:40  alexpeshkoff
+
+	* firebird2/src/jrd/jrd.cpp (1.310):
+
+	Fix for CORE-900: Deadlock when attaching simultaneously with
+	services and standard APIs
+
 2007-02-27 10:59  hvlad
 
 	* firebird2/src/jrd/: isc.h (1.29), isc_sync.cpp (1.108):
