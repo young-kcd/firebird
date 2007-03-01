@@ -184,7 +184,7 @@ namespace YValve
 			BaseHandle* rc = BaseHandle::translate(*handle);
 			if (rc && rc->type == ToHandle::hType())
 			{
-				return reinterpret_cast<ToHandle*>(rc);
+				return static_cast<ToHandle*>(rc);
 			}
 		}
 
