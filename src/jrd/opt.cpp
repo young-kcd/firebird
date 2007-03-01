@@ -7170,8 +7170,7 @@ static jrd_nod* optimize_like(thread_db* tdbb, CompilerScratch* csb, jrd_nod* li
 
 		MoveBuffer escape_buffer;
 
-		p_count =
-			MOV_make_string2(tdbb, escape_desc, INTL_TTYPE(&match_desc), &p, escape_buffer);
+		p_count = MOV_make_string2(tdbb, escape_desc, INTL_TTYPE(&match_desc), &p, escape_buffer);
 
 		first_len = matchCharset->substring(p_count, p, sizeof(first_ch), first_ch, 0, 1);
 		matchTextType->canonical(first_len, p, sizeof(escape_canonic), escape_canonic);
@@ -7179,8 +7178,7 @@ static jrd_nod* optimize_like(thread_db* tdbb, CompilerScratch* csb, jrd_nod* li
 
 	MoveBuffer pattern_buffer;
 
-	p_count =
-		MOV_make_string2(tdbb, pattern_desc, INTL_TTYPE(&match_desc), &p, pattern_buffer);
+	p_count = MOV_make_string2(tdbb, pattern_desc, INTL_TTYPE(&match_desc), &p, pattern_buffer);
 
 	first_len = matchCharset->substring(p_count, p, sizeof(first_ch), first_ch, 0, 1);
 

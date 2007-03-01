@@ -5785,7 +5785,7 @@ static Database* init(thread_db*	tdbb,
 
 	// Initialize standard random generator.
 	// MSVC (at least since version 7) have per-thread random seed.
-	// As you don't know who uses per-thread seed, this should work for both cases.
+	// As we don't know who uses per-thread seed, this should work for both cases.
 	static bool first_rand = true;
 	static int first_rand_value = rand();
 
