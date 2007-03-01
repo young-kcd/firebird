@@ -96,17 +96,15 @@ namespace Firebird {
 				return rc;
 			}
 
-			bool hasMore(int value) const
+			bool hasMore(size_t value) const
 			{
-				fb_assert(value >= 0);
-				
-				if ((size_t) value <= inherited::getCount())
+				if (value < inherited::getCount())
 					return true;
 
-				for (const Entry* stk = this; stk && value > 0; stk = stk->next)
+				for (const Entry* stk = this; stk && value >= 0; stk = stk->next)
 					value -= stk->getCount();
 
-				return (value <= 0);
+				return (value < 0);
 			}
 
 		}; // class Entry
@@ -210,16 +208,14 @@ namespace Firebird {
 				return *this;
 			}
 
-			bool hasMore(int value) const
+			bool hasMore(size_t value) const
 			{
-				fb_assert(value >= 0);
-
 				if (elem)
 				{
-					if ((size_t) value < elem)
+					if (value < elem)
 						return true;
 				
-					value -= elem - 1;
+					value -= elem;
 				}
 
 				if (stk && stk->next)
@@ -315,16 +311,14 @@ namespace Firebird {
 				return *this;
 			}
 
-			bool hasMore(int value) const
+			bool hasMore(size_t value) const
 			{
-				fb_assert(value >= 0);
-
 				if (elem)
 				{
 					if (value < elem)
 						return true;
 
-					value -= elem - 1;
+					value -= elem;
 				}
 
 				if (stk && stk->next)
@@ -521,9 +515,8 @@ namespace Firebird {
 			return rc;
 		}
 
-		bool hasMore(int value) const
+		bool hasMore(size_t value) const
 		{
-			fb_assert(value >= 0);
 			return (stk && stk->hasMore(value));
 		}
 
