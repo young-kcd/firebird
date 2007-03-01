@@ -98,13 +98,17 @@ namespace Firebird {
 
 			bool hasMore(size_t value) const
 			{
-				if (value < inherited::getCount())
-					return true;
+				for (const Entry* stk = this; stk; stk = stk->next)
+				{
+					size_t c = static_cast<const inherited*>(stk)->getCount();
+					if (value < c)
+					{
+						return true;
+					}
+					value -= c;
+				}
 
-				for (const Entry* stk = this; stk && value >= 0; stk = stk->next)
-					value -= stk->getCount();
-
-				return (value < 0);
+				return false;
 			}
 
 		}; // class Entry
