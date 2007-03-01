@@ -2170,7 +2170,7 @@ static USHORT distribute_equalities(NodeStack& org_stack, CompilerScratch* csb, 
 /* Start by making a pass distributing field equalities */
 
 	for (eq_class = classes.begin(); eq_class != classes.end(); ++eq_class) {
-		if (eq_class->hasMore(3)) {
+		if (eq_class->hasMore(2)) {
 			for (NodeStack::iterator outer(*eq_class); outer.hasData(); ++outer) {
 				for (NodeStack::iterator inner(outer); (++inner).hasData(); ) {
 					jrd_nod* boolean =
