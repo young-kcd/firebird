@@ -3394,9 +3394,17 @@ static inline BOOL _switchToThread()
 }
 
 
+// VC6 has the wrong declaration for the operating system function.
+#if (defined(_MSC_VER) && (_MSC_VER <= 1200))
+#define FIX_TYPE(arg) const_cast<LPLONG>(arg)
+#else
+#define FIX_TYPE(arg) arg
+#endif
+
+
 static inline void lockSharedSection(volatile FAST_MUTEX_SHARED_SECTION* lpSect, ULONG SpinCount)
 {
-	while (InterlockedExchange(&lpSect->lSpinLock, 1) != 0)
+	while (InterlockedExchange(FIX_TYPE(&lpSect->lSpinLock), 1) != 0)
 	{
 		ULONG j = SpinCount; 
 		while (j != 0)
@@ -3412,19 +3420,19 @@ next:;
 
 static inline bool tryLockSharedSection(volatile FAST_MUTEX_SHARED_SECTION* lpSect)
 {
-	return (InterlockedExchange(&lpSect->lSpinLock, 1) == 0);
+	return (InterlockedExchange(FIX_TYPE(&lpSect->lSpinLock), 1) == 0);
 }
 
 static inline void unlockSharedSection(volatile FAST_MUTEX_SHARED_SECTION* lpSect)
 {
-	InterlockedExchange(&lpSect->lSpinLock, 0);
+	InterlockedExchange(FIX_TYPE(&lpSect->lSpinLock), 0);
 }
 
 static DWORD enterFastMutex(FAST_MUTEX* lpMutex, DWORD dwMilliseconds)
 {
 	volatile FAST_MUTEX_SHARED_SECTION* lpSect = lpMutex->lpSharedInfo;
 
-	while (TRUE)
+	while (true)
 	{
 		DWORD dwResult;
 		
@@ -3456,12 +3464,12 @@ static DWORD enterFastMutex(FAST_MUTEX* lpMutex, DWORD dwMilliseconds)
 			return WAIT_TIMEOUT;
 		}
 
-		InterlockedIncrement(&lpSect->lThreadsWaiting);
+		InterlockedIncrement(FIX_TYPE(&lpSect->lThreadsWaiting));
 		unlockSharedSection(lpSect);
 		
 		// TODO actual timeout can be of any length
 		dwResult = WaitForSingleObject(lpMutex->hEvent, dwMilliseconds);
-		InterlockedDecrement(&lpSect->lThreadsWaiting);
+		InterlockedDecrement(FIX_TYPE(&lpSect->lThreadsWaiting));
 		
 		if (dwResult != WAIT_OBJECT_0)
 			return dwResult;
@@ -3557,7 +3565,7 @@ static bool initializeFastMutex(FAST_MUTEX* lpMutex, LPSECURITY_ATTRIBUTES lpAtt
 					lpMutex->lpSharedInfo->lSpinLock = 0;
 					lpMutex->lpSharedInfo->lThreadsWaiting = 0;
 					lpMutex->lpSharedInfo->lAvailable = bInitialState ? 0 : 1;
-					InterlockedExchange((LPLONG)&lpMutex->lpSharedInfo->fInitialized, 1);
+					InterlockedExchange(FIX_TYPE(&lpMutex->lpSharedInfo->fInitialized), 1);
 				}
 				else
 				{
