@@ -894,7 +894,7 @@ static void readNextInputLine(const char* prompt)
 
 static void readNextInputLine()
 {
-	readNextInputLine(userPrompt); //.c_str());
+	readNextInputLine(userPrompt);
 	if (Echo && (lastInputLine != NULL)) {
 		isqlGlob.printf("%s%s", lastInputLine, NEWLINE);
 	}
@@ -2369,6 +2369,8 @@ static processing_state add_row(TEXT* tabname)
 						STDERROUT("Input parsing problem");
 						done = true;
 					}
+					if (done)
+						break; // Nothing else, we found an error.
 					if (type == SQL_INT64)
 						*pi64 = n;
 					else if (type == SQL_SHORT)
@@ -2593,7 +2595,7 @@ static processing_state bulk_insert_hack(const char* command, XSQLDA** sqldap)
 
 	// No need to start a default transaction unless there is no current one
 
-	if (!D__trans)
+	if (Autocommit && !D__trans)
 	{
 		if (isc_start_transaction(isc_status, &D__trans, 1, &DB, 5, default_tpb))
 		{
@@ -2756,16 +2758,46 @@ static processing_state bulk_insert_hack(const char* command, XSQLDA** sqldap)
 		if (bulk_insert_retriever(done, infobuf))
 			continue;
 
+		// We only support single line comments and they should be at the first column,
+		// no spaces before, etc.
+		if (lastInputLine[0] == '-' && lastInputLine[1] == '-')
+			continue;
+		
 		const char* insert = lastInputLine;
 		while (*insert && *insert != '(')
 			++insert;
 
 		if (!*insert || *insert != '(')
-			break;
+		{
+			// Again, we are strict, we need COMMIT or COMMIT WORK exactly at the beginning
+			// and it will be the only command in the line.
+			if (fb_utils::strnicmp(lastInputLine, "COMMIT", 6) == 0 ||
+				fb_utils::strnicmp(lastInputLine, "COMMIT WORK", 11) == 0)
+			{
+				if (isc_commit_transaction(isc_status, &M__trans) ||
+					isc_start_transaction(isc_status, &M__trans, 1, &DB, 0, NULL))
+				{
+					ISQL_errmsg(isc_status);
+					ret = ps_ERR;
+					break; // We failed to commit, quit the bulk insertion.
+				}
+
+				// CVC: Commit may fail with AUTO-DDL off and DDL changes rejected by DFW.
+				if (D__trans && commit_trans(&D__trans) &&
+					isc_start_transaction(isc_status, &D__trans, 1, &DB, 5, default_tpb))
+				{
+					ISQL_errmsg(isc_status);
+					ret = ps_ERR;
+					break; // We failed to commit, quit the bulk insertion.
+				}
+				continue; // Go to read another line.
+			}
+			break; // For example, STOP.
+		}
 
 		++insert;
 
-		while (*insert == 0x20 || *insert == '\n' || *insert == '\r' || *insert == '\t')
+		while (*insert == 0x20 || *insert == '\r' || *insert == '\t')
 			++insert;
 
 		if (!*insert)
@@ -2868,7 +2900,7 @@ static processing_state bulk_insert_hack(const char* command, XSQLDA** sqldap)
 					switch (*insert)
 					{
 					case 0x20:
-					case '\n':
+					//case '\n':
 					case '\r':
 					case '\t':
 					case ',':
@@ -3026,7 +3058,7 @@ static processing_state bulk_insert_hack(const char* command, XSQLDA** sqldap)
 					break;
 
 				case SQL_TIMESTAMP:
-					if (6 <= sscanf(lastPos, "%d/%d/%d %d:%d:%d.%4s",
+					if (6 <= sscanf(lastPos, "%d-%d-%d %d:%d:%d.%4s",
 									&times.tm_year, &times.tm_mon, &times.tm_mday,
 									&times.tm_hour, &times.tm_min, &times.tm_sec,
 									msec_str))
@@ -3143,7 +3175,9 @@ static processing_state bulk_insert_hack(const char* command, XSQLDA** sqldap)
 						STDERROUT("Input parsing problem");
 						done = true;
 					}
-					if (type == SQL_INT64)
+					if (done)
+						break; // Nothing else, we found an error.
+					else if (type == SQL_INT64)
 						*pi64 = n;
 					else if (type == SQL_SHORT)
 					{
@@ -3185,7 +3219,7 @@ static processing_state bulk_insert_hack(const char* command, XSQLDA** sqldap)
 				switch (*insert)
 				{
 				case 0x20:
-				case '\n':
+				//case '\n':
 				case '\r':
 				case '\t':
 				case ',':
@@ -7938,8 +7972,10 @@ static int process_statement(const TEXT* string,
 	// If somebody did a commit or rollback, we are out of a transaction
 
 	if (!M__trans)
+	{
 		if (isc_start_transaction(isc_status, &M__trans, 1, &DB, 0, NULL))
 			ISQL_errmsg(isc_status);
+	}
 
 	// No need to start a default transaction unless there is no current one
 
@@ -8036,7 +8072,8 @@ static int process_statement(const TEXT* string,
 
 		// If this is an autocommit, put the DDL stmt on a special trans
 
-		if (Autocommit && (statement_type == isc_info_sql_stmt_ddl)) {
+		if (Autocommit && (statement_type == isc_info_sql_stmt_ddl))
+		{
 			if (isc_dsql_execute_immediate(isc_status, &DB, &D__trans, 0,
 										   string, isqlGlob.SQL_dialect, NULL))
 			{
@@ -8046,10 +8083,7 @@ static int process_statement(const TEXT* string,
 			// CVC: DDL statements that aren't syntax errors are caught by DFW
 			// only at commit time, so we need to check here.
 			if (!commit_trans(&D__trans))
-			{
-				ISQL_errmsg(isc_status);
 				ret = ps_ERR;
-			}
 
 			// check for warnings 
 			if (isc_status[2] == isc_arg_warning)
@@ -8091,10 +8125,7 @@ static int process_statement(const TEXT* string,
 		{
 			// CVC: Commit may fail with AUTO-DDL off and DDL changes rejected by DFW.
 			if (D__trans && !commit_trans(&D__trans))
-			{
-				ISQL_errmsg(isc_status);
 				ret = ps_ERR;
-			}
 		}
 
 		// Print statistics report 
