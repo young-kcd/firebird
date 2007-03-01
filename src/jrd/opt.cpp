@@ -710,12 +710,12 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 	}
 
 	// Deoptimize some conjuncts in advance
-	for (i = 0; i < opt->opt_conjuncts.getCount(); i++)
+	for (size_t iter = 0; iter < opt->opt_conjuncts.getCount(); iter++)
 	{
-		if (opt->opt_conjuncts[i].opt_conjunct_node->nod_flags & nod_deoptimize)
+		if (opt->opt_conjuncts[iter].opt_conjunct_node->nod_flags & nod_deoptimize)
 		{
 			// Fake an index match for them
-			opt->opt_conjuncts[i].opt_conjunct_flags |= opt_conjunct_matched;
+			opt->opt_conjuncts[iter].opt_conjunct_flags |= opt_conjunct_matched;
 		}
 	}
 
@@ -2061,7 +2061,7 @@ static SLONG decompose(thread_db*		tdbb,
 		if (decompose(tdbb, boolean_node->nod_arg[0], or_stack, csb) >= 2)
 		{
 			boolean_node->nod_arg[0] = or_stack.pop();
-			while (or_stack.hasMore(0))
+			while (or_stack.hasData())
 			{
 				boolean_node->nod_arg[0] =
 					OPT_make_binary_node(nod_and, boolean_node->nod_arg[0], or_stack.pop(), true);
@@ -2072,7 +2072,7 @@ static SLONG decompose(thread_db*		tdbb,
 		if (decompose(tdbb, boolean_node->nod_arg[1], or_stack, csb) >= 2)
 		{
 			boolean_node->nod_arg[1] = or_stack.pop();
-			while (or_stack.hasMore(0))
+			while (or_stack.hasData())
 			{
 				boolean_node->nod_arg[1] =	
 					OPT_make_binary_node(nod_and, boolean_node->nod_arg[1], or_stack.pop(), true);				
