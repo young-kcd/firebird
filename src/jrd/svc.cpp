@@ -65,6 +65,7 @@
 #include "../common/classes/ClumpletWriter.h"
 #include "../jrd/ibase.h"
 #include "../common/utils_proto.h"
+#include "../jrd/scl.h"
 
 #ifdef SERVER_SHUTDOWN
 #include "../jrd/jrd_proto.h"
@@ -94,7 +95,6 @@
 #include <fcntl.h>
 #endif
 
-const char* SYSDBA_USER_NAME	= "SYSDBA";
 const int SVC_user_dba			= 2;
 const int SVC_user_any			= 1;
 const int SVC_user_none			= 0;
@@ -1736,8 +1736,6 @@ void* SVC_start(Service* service, USHORT spb_length, const SCHAR* spb_data)
 
 	isc_resv_handle reserved = (isc_resv_handle)0;	/* Reserved for future functionality */
 
-	try {
-	
 	Firebird::ClumpletReader spb(Firebird::ClumpletReader::SpbStart, 
 		reinterpret_cast<const UCHAR*>(spb_data), spb_length);
 
@@ -1839,10 +1837,17 @@ void* SVC_start(Service* service, USHORT spb_length, const SCHAR* spb_data)
 
 // All services except for get_ib_log require switches
 	spb.rewind();
-	if ((!service->svc_switches.hasData()) && svc_id != isc_action_svc_get_fb_log) {
+	if ((!service->svc_switches.hasData()) && svc_id != isc_action_svc_get_fb_log) 
+	{
 		ERR_post(isc_bad_spb_form, 0);
 	}
-		
+
+// Do not let everyone look at server log
+	if (svc_id == isc_action_svc_get_fb_log && !(service->svc_user_flag & SVC_user_dba))
+    {
+       	ERR_post(isc_adm_task_denied, 0);
+    }
+
 #ifndef SERVICE_THREAD
 	TEXT service_path[MAXPATHLEN];
 
@@ -1917,12 +1922,6 @@ void* SVC_start(Service* service, USHORT spb_length, const SCHAR* spb_data)
 	}
 
 #endif /* SERVICE_THREAD */
-
-	}	// try
-	catch (const Firebird::Exception&) {
-		delete service;
-		throw;
-	}
 
 	return reinterpret_cast<void*>(reserved);
 }
