@@ -27,7 +27,7 @@ static const struct {
 	{335544324, -904}, /*   4 bad_db_handle                    */
 	{335544325, -924}, /*   5 bad_dpb_content                  */
 	{335544326, -901}, /*   6 bad_dpb_form                     */
-	{335544327, -501}, /*   7 bad_req_handle                   */
+	{335544327, -901}, /*   7 bad_req_handle                   */
 	{335544328, -901}, /*   8 bad_segstr_handle                */
 	{335544329, -901}, /*   9 bad_segstr_id                    */
 	{335544330, -901}, /*  10 bad_tpb_content                  */
