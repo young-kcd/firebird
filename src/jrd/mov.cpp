@@ -583,7 +583,7 @@ int MOV_make_string2(Jrd::thread_db* tdbb,
 }
 
 
-void MOV_move(const dsc* from, dsc* to)
+void MOV_move(Jrd::thread_db* tdbb, /*const*/ dsc* from, dsc* to)
 {
 /**************************************
  *
@@ -596,5 +596,11 @@ void MOV_move(const dsc* from, dsc* to)
  *
  **************************************/
 
-	CVT_move(from, to, ERR_post);
+	if (DTYPE_IS_BLOB_OR_QUAD(from->dsc_dtype) ||
+		DTYPE_IS_BLOB_OR_QUAD(to->dsc_dtype))
+	{
+		BLB_move(tdbb, from, to, NULL);
+	}
+	else
+		CVT_move(from, to, ERR_post);
 }

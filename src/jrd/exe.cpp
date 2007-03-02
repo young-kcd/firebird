@@ -265,7 +265,7 @@ void EXE_assignment(thread_db* tdbb, jrd_nod* node)
 
 /* Get descriptors of receiving and sending fields/parameters, variables, etc. */
 
-	const dsc* missing = NULL;
+	dsc* missing = NULL;
 	if (node->nod_arg[e_asgn_missing]) {
 		missing = EVL_expr(tdbb, node->nod_arg[e_asgn_missing]);
 	}
@@ -345,7 +345,7 @@ void EXE_assignment(thread_db* tdbb, jrd_nod* node)
 			}
 
 			temp.dsc_address = (UCHAR *) &len;
-			MOV_move(&temp, indicator);
+			MOV_move(tdbb, &temp, indicator);
 
 			if (len) {
 				temp = *from_desc;
@@ -388,10 +388,12 @@ void EXE_assignment(thread_db* tdbb, jrd_nod* node)
 		if (DTYPE_IS_BLOB_OR_QUAD(from_desc->dsc_dtype) ||
 			DTYPE_IS_BLOB_OR_QUAD(to_desc->dsc_dtype))
 		{
+			// ASF: Don't let MOV_move call BLB_move because MOV
+			// will not pass the destination field to BLB_move.
 			BLB_move(tdbb, from_desc, to_desc, to);
 		}
 		else if (!DSC_EQUIV(from_desc, to_desc, false))
-			MOV_move(from_desc, to_desc);
+			MOV_move(tdbb, from_desc, to_desc);
 		else if (from_desc->dsc_dtype == dtype_short)
 		{
 			*((SSHORT *) to_desc->dsc_address) =
@@ -423,7 +425,7 @@ void EXE_assignment(thread_db* tdbb, jrd_nod* node)
 	else if (node->nod_arg[e_asgn_missing2] &&
 			 (missing = EVL_expr(tdbb, node->nod_arg[e_asgn_missing2])))
 	{
-		MOV_move(missing, to_desc);
+		MOV_move(tdbb, missing, to_desc);
 		to_desc->dsc_flags |= DSC_null;
 	}
 	else
@@ -499,10 +501,10 @@ void EXE_assignment(thread_db* tdbb, jrd_nod* node)
 		temp.dsc_scale = 0;
 		temp.dsc_sub_type = 0;
 		temp.dsc_address = (UCHAR *) & null;
-		MOV_move(&temp, to_desc);
+		MOV_move(tdbb, &temp, to_desc);
 		if (null && to->nod_arg[e_arg_indicator]) {
 			to_desc = EVL_assign_to(tdbb, to->nod_arg[e_arg_indicator]);
-			MOV_move(&temp, to_desc);
+			MOV_move(tdbb, &temp, to_desc);
 		}
 	}
 
@@ -2631,7 +2633,7 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 						if (value && !(request->req_flags & req_null))
 						{
 							to_desc->dsc_flags &= ~DSC_null;
-							MOV_move(value, to_desc);
+							MOV_move(tdbb, value, to_desc);
 						}
 					}
 				}
@@ -2970,7 +2972,7 @@ static jrd_nod* modify(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 					(org_rpb->rpb_relation, org_record, i,
 					 &org_desc))
 				{
-					MOV_move(&org_desc, &new_desc);
+					MOV_move(tdbb, &org_desc, &new_desc);
 				}
 				else {
 					SET_NULL(new_record, i);

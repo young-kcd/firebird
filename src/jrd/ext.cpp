@@ -443,6 +443,8 @@ void EXT_store(record_param* rpb, jrd_tra* transaction)
  *	Update an external file.
  *
  **************************************/
+	thread_db* tdbb = JRD_get_thread_data();
+
 	jrd_rel* relation = rpb->rpb_relation;
 	ExternalFile* file = relation->rel_file;
 	Record* record = rpb->rpb_record;
@@ -454,7 +456,7 @@ void EXT_store(record_param* rpb, jrd_tra* transaction)
 /* check if file is read only if read only then
    post error we cannot write to this file */
 	if (file->ext_flags & EXT_readonly) {
-		Database* dbb = GET_DBB();
+		Database* dbb = tdbb->tdbb_database;
 		CHECK_DBB(dbb);
 		/* Distinguish error message for a ReadOnly database */
 		if (dbb->dbb_flags & DBB_read_only)
@@ -481,11 +483,11 @@ void EXT_store(record_param* rpb, jrd_tra* transaction)
 			TEST_NULL(record, i))
 		{
 			UCHAR* p = record->rec_data + (IPTR) desc_ptr->dsc_address;
-			const Literal* literal = (Literal*) field->fld_missing_value;
+			Literal* literal = (Literal*) field->fld_missing_value;
 			if (literal) {
 				desc = *desc_ptr;
 				desc.dsc_address = p;
-				MOV_move(&literal->lit_desc, &desc);
+				MOV_move(tdbb, &literal->lit_desc, &desc);
 			}
 			else {
 				const UCHAR pad = (desc_ptr->dsc_dtype == dtype_text) ? ' ' : 0;

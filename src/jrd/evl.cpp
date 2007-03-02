@@ -1671,7 +1671,7 @@ USHORT EVL_group(thread_db* tdbb, RecordSource* rsb, jrd_nod *const node, USHORT
 							 reinterpret_cast<ULONG**>(&data));
 					MOVE_CLEAR(data, ROUNDUP_LONG(asb->asb_key_desc->skd_length));
 					asb->asb_desc.dsc_address = data;
-					MOV_move(desc, &asb->asb_desc);
+					MOV_move(tdbb, desc, &asb->asb_desc);
 					break;
 				}
 
@@ -1739,7 +1739,7 @@ USHORT EVL_group(thread_db* tdbb, RecordSource* rsb, jrd_nod *const node, USHORT
 				SET_NULL(record, id);
 			}
 			else {
-				MOV_move(&impure->vlu_desc, EVL_expr(tdbb, field));
+				MOV_move(tdbb, &impure->vlu_desc, EVL_expr(tdbb, field));
 				CLEAR_NULL(record, id);
 			}
 			break;
@@ -1759,7 +1759,7 @@ USHORT EVL_group(thread_db* tdbb, RecordSource* rsb, jrd_nod *const node, USHORT
 			temp.dsc_sub_type = 0;
 			temp.dsc_address = (UCHAR *) & d;
 			d = MOV_get_double(&impure->vlu_desc) / impure->vlux_count;
-			MOV_move(&temp, EVL_expr(tdbb, field));
+			MOV_move(tdbb, &temp, EVL_expr(tdbb, field));
 			break;
 
 		case nod_agg_average_distinct2:
@@ -1787,7 +1787,7 @@ USHORT EVL_group(thread_db* tdbb, RecordSource* rsb, jrd_nod *const node, USHORT
 				temp.dsc_address = (UCHAR *) & d;
 				d = MOV_get_double(&impure->vlu_desc) / impure->vlux_count;
 			}
-			MOV_move(&temp, EVL_expr(tdbb, field));
+			MOV_move(tdbb, &temp, EVL_expr(tdbb, field));
 			break;
 
 		default:	// Shut up some compiler warnings
@@ -2903,7 +2903,7 @@ static dsc* cast(thread_db* tdbb, dsc* value, const jrd_nod* node, impure_value*
 	if (DTYPE_IS_BLOB(value->dsc_dtype) || DTYPE_IS_BLOB(impure->vlu_desc.dsc_dtype))
 		BLB_move(tdbb, value, &impure->vlu_desc, NULL);
 	else
-		MOV_move(value, &impure->vlu_desc);
+		MOV_move(tdbb, value, &impure->vlu_desc);
 
 	if (impure->vlu_desc.dsc_dtype == dtype_text)
 		adjust_text_descriptor(tdbb, &impure->vlu_desc);

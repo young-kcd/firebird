@@ -441,7 +441,7 @@ void FUN_evaluate(UserFunction* function, jrd_nod* node, impure_value* value)
 				}
 				else
 				{
-					MOV_move(input, &temp_desc);
+					MOV_move(tdbb, input, &temp_desc);
 				}
 				break;
 
@@ -458,13 +458,13 @@ void FUN_evaluate(UserFunction* function, jrd_nod* node, impure_value* value)
 				}
 				else
 				{
-					MOV_move(input, &temp_desc);
+					MOV_move(tdbb, input, &temp_desc);
 				}
 				break;
 
 			case dtype_quad:
 			case dtype_array:
-				MOV_move(input, &temp_desc);
+				MOV_move(tdbb, input, &temp_desc);
 				break;
 
 			case dtype_blob:
@@ -516,7 +516,7 @@ void FUN_evaluate(UserFunction* function, jrd_nod* node, impure_value* value)
 
 			default:
 				fb_assert(FALSE);
-				MOV_move(input, &temp_desc);
+				MOV_move(tdbb, input, &temp_desc);
 				break;
 
 			}
@@ -869,7 +869,7 @@ static SLONG get_scalar_array(fun_repeat*	arg,
 			for (; n; --n, to.dsc_address += to.dsc_length,
 				 from.dsc_address += array_desc->iad_element_length)
 			{
-				MOV_move(&from, &to);
+				MOV_move(tdbb, &from, &to);
 			}
 		}
 		catch (const Firebird::Exception&)
@@ -1048,7 +1048,7 @@ static void invoke(UserFunction* function,
 			else
 			if (return_dsc)
 			{
-				MOV_move(return_dsc, &value->vlu_desc);
+				MOV_move(tdbb, return_dsc, &value->vlu_desc);
 			}
 			else
 			{
@@ -1087,7 +1087,7 @@ static void invoke(UserFunction* function,
 				case dtype_text:
 					temp_desc = value->vlu_desc;
 					temp_desc.dsc_address = temp_ptr;
-					MOV_move(&temp_desc, &value->vlu_desc);
+					MOV_move(tdbb, &temp_desc, &value->vlu_desc);
 					break;
 
 				case dtype_cstring:
@@ -1097,7 +1097,7 @@ static void invoke(UserFunction* function,
 					temp_desc.dsc_address = temp_ptr;
 					temp_desc.dsc_length =
 						strlen(reinterpret_cast<char*>(temp_ptr)) + 1;
-					MOV_move(&temp_desc, &value->vlu_desc);
+					MOV_move(tdbb, &temp_desc, &value->vlu_desc);
 					break;
 
 				case dtype_varying:
@@ -1105,7 +1105,7 @@ static void invoke(UserFunction* function,
 					temp_desc.dsc_address = temp_ptr;
 					temp_desc.dsc_length =
 						reinterpret_cast<vary*>(temp_ptr)->vary_length + sizeof(USHORT);
-					MOV_move(&temp_desc, &value->vlu_desc);
+					MOV_move(tdbb, &temp_desc, &value->vlu_desc);
 					break;
 
 				case dtype_timestamp:

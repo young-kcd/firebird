@@ -2509,7 +2509,7 @@ static void move_to_string(thread_db* tdbb, dsc* fromDesc, dsc* toDesc)
 	blobAsText.dsc_address = buffer.begin();
 	blobAsText.dsc_length = (USHORT)len;
 
-	MOV_move(&blobAsText, toDesc);
+	MOV_move(tdbb, &blobAsText, toDesc);
 }
 
 
@@ -2574,6 +2574,8 @@ static void slice_callback(array_slice* arg, ULONG count, DSC* descriptors)
  *      Perform slice assignment.
  *
  **************************************/
+	thread_db* tdbb = JRD_get_thread_data();
+
 	dsc* array_desc = descriptors;
 	dsc* slice_desc = &arg->slice_desc;
 	BLOB_PTR* const next =
@@ -2627,7 +2629,7 @@ static void slice_callback(array_slice* arg, ULONG count, DSC* descriptors)
 		}
 		else
 		{
-			MOV_move(slice_desc, array_desc);
+			MOV_move(tdbb, slice_desc, array_desc);
 		}
 		const BLOB_PTR* const end =
 			array_desc->dsc_address + array_desc->dsc_length;
@@ -2662,10 +2664,10 @@ static void slice_callback(array_slice* arg, ULONG count, DSC* descriptors)
 						  sizeof(USHORT));
 				temp_desc.dsc_address =
 					array_desc->dsc_address + sizeof(USHORT);
-				MOV_move(&temp_desc, slice_desc);
+				MOV_move(tdbb, &temp_desc, slice_desc);
 			}
 			else
-				MOV_move(array_desc, slice_desc);
+				MOV_move(tdbb, array_desc, slice_desc);
 			++arg->slice_count;
 		}
 		else {

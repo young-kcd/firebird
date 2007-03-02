@@ -121,7 +121,7 @@ static int prepare_update(thread_db*, jrd_tra*, SLONG, record_param*,
 static void purge(thread_db*, record_param*);
 static Record* replace_gc_record(jrd_rel*, Record**, USHORT);
 static void replace_record(thread_db*, record_param*, PageStack*, const jrd_tra*);
-static void set_system_flag(record_param*, USHORT, SSHORT);
+static void set_system_flag(thread_db*, record_param*, USHORT, SSHORT);
 static void update_in_place(thread_db*, jrd_tra*, record_param*, record_param*);
 static void verb_post(thread_db*, jrd_tra*, record_param*, Record*, record_param*,
 					  const bool, const bool);
@@ -2649,7 +2649,7 @@ void VIO_store(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 			EVL_field(0, rpb->rpb_record, f_rel_name, &desc);
 			DFW_post_work(transaction, dfw_create_relation, &desc, 0);
 			DFW_post_work(transaction, dfw_update_format, &desc, 0);
-			set_system_flag(rpb, f_rel_sys_flag, 0);
+			set_system_flag(tdbb, rpb, f_rel_sys_flag, 0);
 			break;
 
 		case rel_procedures:
@@ -2671,7 +2671,7 @@ void VIO_store(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 				if (check_blr)
 					DFW_post_work_arg(transaction, work, NULL, 0)->dfw_type = dfw_arg_check_blr;
 			} // scope
-			set_system_flag(rpb, f_prc_sys_flag, 0);
+			set_system_flag(tdbb, rpb, f_prc_sys_flag, 0);
 			break;
 
 		case rel_indices:
@@ -2692,7 +2692,7 @@ void VIO_store(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 			EVL_field(0, rpb->rpb_record, f_rfr_rname, &desc);
 			SCL_check_relation(&desc, SCL_control);
 			DFW_post_work(transaction, dfw_update_format, &desc, 0);
-			set_system_flag(rpb, f_rfr_sys_flag, 0);
+			set_system_flag(tdbb, rpb, f_rfr_sys_flag, 0);
 			break;
 
 		case rel_classes:
@@ -2702,7 +2702,7 @@ void VIO_store(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 
 		case rel_fields:
 			check_control(tdbb);
-			set_system_flag(rpb, f_fld_sys_flag, 0);
+			set_system_flag(tdbb, rpb, f_fld_sys_flag, 0);
 			break;
 
 		case rel_files:
@@ -4836,7 +4836,7 @@ static void replace_record(thread_db*		tdbb,
 
 
 
-static void set_system_flag(record_param* rpb, USHORT field_id, SSHORT flag)
+static void set_system_flag(thread_db* tdbb, record_param* rpb, USHORT field_id, SSHORT flag)
 {
 /**************************************
  *
@@ -4861,7 +4861,7 @@ static void set_system_flag(record_param* rpb, USHORT field_id, SSHORT flag)
 	desc2.dsc_scale = 0;
 	desc2.dsc_sub_type = 0;
 	desc2.dsc_address = (UCHAR *) & flag;
-	MOV_move(&desc2, &desc1);
+	MOV_move(tdbb, &desc2, &desc1);
 	CLEAR_NULL(record, field_id);
 }
 

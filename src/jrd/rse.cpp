@@ -111,11 +111,11 @@ static bool get_record(thread_db*, RecordSource*, RecordSource*, RSE_GET_MODE);
 static bool get_union(thread_db*, RecordSource*, IRSB);
 static void invalidate_child_rpbs(thread_db*, RecordSource*);
 static void join_to_nulls(thread_db*, RecordSource*, StreamStack*);
-static void map_sort_data(jrd_req*, SortMap*, UCHAR *);
+static void map_sort_data(thread_db*, jrd_req*, SortMap*, UCHAR *);
 static void open_merge(thread_db*, RecordSource*, irsb_mrg*);
 static void open_procedure(thread_db*, RecordSource*, irsb_procedure*);
 static void open_sort(thread_db*, RecordSource*, irsb_sort*, UINT64);
-static void proc_assignment(const dsc*, const dsc*, UCHAR*, dsc*, SSHORT, Record*);
+static void proc_assignment(thread_db*, const dsc*, const dsc*, UCHAR*, dsc*, SSHORT, Record*);
 static void pop_rpbs(jrd_req*, RecordSource*);
 static void push_rpbs(thread_db*, jrd_req*, RecordSource*);
 static ULONG read_merge_block(thread_db*, merge_file*, ULONG);
@@ -1182,7 +1182,7 @@ static bool get_merge_fetch(
 	current record in the record parameter block */
 
 	merge_file* mfb = &tail->irsb_mrg_file;
-	map_sort_data(tdbb->tdbb_request, (SortMap*) sub_rsb->rsb_arg[0],
+	map_sort_data(tdbb, tdbb->tdbb_request, (SortMap*) sub_rsb->rsb_arg[0],
 			  get_merge_data(tdbb, mfb, record));
 
 	return true;
@@ -1221,7 +1221,7 @@ static bool get_merge_fetch(thread_db* tdbb, RecordSource* rsb, SSHORT stream)
 	tail->irsb_mrg_equal_current = record;
 
 	merge_file* mfb = &tail->irsb_mrg_file;
-	map_sort_data(tdbb->tdbb_request, (SortMap*) sub_rsb->rsb_arg[0],
+	map_sort_data(tdbb, tdbb->tdbb_request, (SortMap*) sub_rsb->rsb_arg[0],
 				  get_merge_data(tdbb, mfb, record));
 
 	return true;
@@ -1311,7 +1311,7 @@ static bool get_merge_join(
 
 		/* Map data into target records and do comparison */
 
-		map_sort_data(request, map, get_merge_data(tdbb, mfb, record));
+		map_sort_data(tdbb, request, map, get_merge_data(tdbb, mfb, record));
 		const int result = compare(tdbb, highest_ptr[1], ptr[1]);
 		if (ptr != highest_ptr)
 		{
@@ -1356,7 +1356,7 @@ static bool get_merge_join(
 						get_merge_record(tdbb, sort_rsb, tail, mode);
 					if (record < 0)
 						return false;
-					map_sort_data(request, (SortMap*) sort_rsb->rsb_arg[0],
+					map_sort_data(tdbb, request, (SortMap*) sort_rsb->rsb_arg[0],
 								  get_merge_data(tdbb, mfb, record));
 				}
 			}
@@ -1517,7 +1517,7 @@ static bool get_merge_join(thread_db* tdbb, RecordSource* rsb, irsb_mrg* impure)
 
 		/* Map data into target records and do comparison */
 
-		map_sort_data(request, map, get_merge_data(tdbb, mfb, record));
+		map_sort_data(tdbb, request, map, get_merge_data(tdbb, mfb, record));
 		if (ptr != highest_ptr &&
 			compare(tdbb, (jrd_nod*) highest_ptr[1], (jrd_nod*) ptr[1]) < 0)
 		{
@@ -1551,7 +1551,7 @@ static bool get_merge_join(thread_db* tdbb, RecordSource* rsb, irsb_mrg* impure)
 					const SLONG record = get_merge_record(tdbb, sort_rsb, tail);
 					if (record < 0)
 						return false;
-					map_sort_data(request, (SortMap*) sort_rsb->rsb_arg[0],
+					map_sort_data(tdbb, request, (SortMap*) sort_rsb->rsb_arg[0],
 								  get_merge_data(tdbb, mfb, record));
 				}
 			}
@@ -1770,13 +1770,14 @@ static bool get_procedure(thread_db*			tdbb,
 	eos_desc.dsc_sub_type = 0;
 	eos_desc.dsc_flags = 0;
 	eos_desc.dsc_address = (UCHAR *) & eos;
-	MOV_move(&desc, &eos_desc);
+	MOV_move(tdbb, &desc, &eos_desc);
 	if (!eos)
 		return false;
 
 	for (int i = 0; i < rec_format->fmt_count; i++)
 	{
-		proc_assignment(&msg_format->fmt_desc[2 * i],
+		proc_assignment(tdbb,
+						&msg_format->fmt_desc[2 * i],
 						&msg_format->fmt_desc[2 * i + 1],
 						om,
 						&rec_format->fmt_desc[i],
@@ -2334,7 +2335,7 @@ static bool get_record(thread_db*	tdbb,
 				return false;
 			}
 
-			map_sort_data(request, (SortMap*) rsb->rsb_arg[0], data);
+			map_sort_data(tdbb, request, (SortMap*) rsb->rsb_arg[0], data);
 
 #ifdef SCROLLABLE_CURSORS
 			/* fix up the sort data in case we need to retrieve it again */
@@ -2689,7 +2690,7 @@ static void join_to_nulls(thread_db* tdbb, RecordSource* rsb, StreamStack* strea
 }
 
 
-static void map_sort_data(jrd_req* request, SortMap* map, UCHAR * data)
+static void map_sort_data(thread_db* tdbb, jrd_req* request, SortMap* map, UCHAR * data)
 {
 /**************************************
  *
@@ -2767,7 +2768,7 @@ static void map_sort_data(jrd_req* request, SortMap* map, UCHAR * data)
 		if (flag)
 			SET_NULL(record, id);
 		else {
-			MOV_move(&from, &to);
+			MOV_move(tdbb, &from, &to);
 			CLEAR_NULL(record, id);
 		}
 	}
@@ -3015,7 +3016,7 @@ static void open_sort(thread_db* tdbb, RecordSource* rsb, irsb_sort* impure, UIN
 									   from, &to, INTL_KEY_SORT);
 				}
 				else
-					MOV_move(from, &to);
+					MOV_move(tdbb, from, &to);
 			}
 		}
 	}
@@ -3054,7 +3055,7 @@ static void open_sort(thread_db* tdbb, RecordSource* rsb, irsb_sort* impure, UIN
 }
 
 
-static void proc_assignment(
+static void proc_assignment(thread_db* tdbb,
 							const dsc* from_desc,
 							const dsc* flag_desc,
 							UCHAR* msg, // this param is logically const
@@ -3082,7 +3083,7 @@ static void proc_assignment(
 	dsc desc1;
 	desc1 = *flag_desc;
 	desc1.dsc_address = msg + (IPTR) flag_desc->dsc_address;
-	MOV_move(&desc1, &desc2);
+	MOV_move(tdbb, &desc1, &desc2);
 	if (indicator) {
 		SET_NULL(record, to_id);
 		const USHORT l = to_desc->dsc_length;
@@ -3127,7 +3128,7 @@ static void proc_assignment(
 		desc2 = *to_desc;
 		desc2.dsc_address = record->rec_data + (IPTR) desc2.dsc_address;
 		if (!DSC_EQUIV((&desc1), (&desc2), false))
-			MOV_move(&desc1, &desc2);
+			MOV_move(tdbb, &desc1, &desc2);
 
 		else if (desc1.dsc_dtype == dtype_short)
 			*((SSHORT *) desc2.dsc_address) = *((SSHORT *) desc1.dsc_address);
