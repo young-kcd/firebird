@@ -1,7 +1,8 @@
 
 ==================================
-Firebird 2.0.0       (Win32 Build)
+Firebird 2.0.1       (Win32 Build)
 ==================================
+(Release Candidate 2)
 
 o Einführung
 o Verwendungszweck
@@ -16,13 +17,13 @@ o Neue Features vorschlagen
 Einführung
 ==========
 
-Willkommen zu Firebird 2.0.
+Willkommen zu Firebird 2.0.1
 
 
 Verwendungszweck
 ================
 
-Firebird 2.0 wurde intensiven Tests unterzogen und ist nun für
+Firebird 2.0.1 wurde intensiven Tests unterzogen und ist nun für
 die breite Verwendung in Produktionsumgebungen bestimmt. Dennoch
 wird darauf hingewiesen, dass eine Standardvorgehen eingehalten
 wird, das wie folgt aussehen kann.
@@ -32,7 +33,7 @@ wird, das wie folgt aussehen kann.
 
  o Wenn Sie wichtige Daten haben, vergessen Sie nicht,
    vor dem Einsatz dieses Release ein Backup durchzuführen.
-   
+
  o Es wird empfohlen, dass eine frühere Version vor der
    Installation entfernt wird. Die Deinstallation entfernt
    keine Konfigurations- oder Log-Dateien.
@@ -40,20 +41,20 @@ wird, das wie folgt aussehen kann.
  o Es wird empfohlen, dass Sie eigene Tests in einer
    Entwicklungsumgebung durchführen, bevor es an eine
    Produktionsumgebung weitergegeben wird.
-   
-   
+
+
 
 
 Features in diesem Release (alle Plattformen)
 =============================================
 
-Nähere Informationen finden Sie in doc/Firebird_v2.0.0.ReleaseNotes.pdf.
+Nähere Informationen finden Sie in doc/Firebird_v2.0.1.ReleaseNotes.pdf.
 
 
 Beseitigte Fehler in diesem Release (alle Plattformen)
 ======================================================
 
-Nähere Informationen finden Sie in doc/Firebird_v2.0.0.ReleaseNotes.pdf.
+Nähere Informationen finden Sie in doc/Firebird_v2.0.1.ReleaseNotes.pdf.
 
 
 Installation der selbst-installierenden Datei
@@ -84,21 +85,21 @@ o Sind Sie sicher, dass Sie verstehen, wie Firebird arbeitet?
 
   Dieser können Sie hier beitreten:
 
-    mailto:firebird-support-subscribe@yahoogroups.com
+	mailto:firebird-support-subscribe@yahoogroups.com
 
 o Denken Sie nach wie vor, dass es sich um einen Fehler handelt?
 
   Überprüfen Sie die Liste der offenen Fehler. Diese kann hier
   gefunden werden:
 
-    http://tracker.firebirdsql.org/secure/BrowseProject.jspa
+	http://tracker.firebirdsql.org/secure/BrowseProject.jspa
 
 Verwenden Sie bitte den Issue Tracker nicht dazu, um technische
 Unterstützung zu erhalten. Wenn Sie sich nicht sicher sind, so
 treten Sie der Support-Liste bei:
 
   mailto:firebird-support-subscribe@yahoogroups.com
-  
+
 und stellen Sie Ihre Fragen dort.
 
 

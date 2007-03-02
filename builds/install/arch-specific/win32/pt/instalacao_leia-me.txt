@@ -1,18 +1,20 @@
-Servidor SQL Firebird 2.0
 ==================================================
+Servidor SQL Firebird 2.0.1
+==================================================
+(Release Candidate 2)
 
   ** IMPORTANTE **
 
-  A ODS foi modificada desde o Firebird 1.5. Consulte 
-  as notas abaixo relativas à nova ODS e instalação 
+  A ODS foi modificada desde o Firebird 1.5. Consulte
+  as notas abaixo relativas à nova ODS e instalação
   sobre versões anteriores do Firebird.
 
   ** ********* **
 
 Este documento constitui um guia para instalar o kit do
-Firebird 2.0 na plataforma Win32. Estas notas 
-referem-se ao próprio kit de instalação, em vez do 
-Firebird 2.0 em geral.
+Firebird 2.0.1 na plataforma Win32. Estas notas
+referem-se ao próprio kit de instalação, em vez do
+Firebird 2.0.1 em geral.
 
 
 Conteúdo
@@ -32,7 +34,7 @@ o Instalação a partir de um ficheiro batch
 Antes de Instalar
 -------------------
 
-Recomenda-se que REMOVA quaisquer versões prévias do 
+Recomenda-se que REMOVA quaisquer versões prévias do
 Firebird ou InterBase antes de instalar este kit.
 É também importante verificar se o fbclient.dll e o
 gds32.dll são removidos do <system32>.
@@ -42,14 +44,14 @@ Nova ODS 11.0
 ------------
 
 O Firebird 2.0 introduz uma nova ODS 11.0 a qual é totalmente
-incompatível com a ODS 11.0 usada por versões alfa 
+incompatível com a ODS 11.0 usada por versões alfa
 anteriores.
 
-Se está a instalar o Firebird 2.0 pela primeira vez e já 
+Se está a instalar o Firebird 2.0 pela primeira vez e já
 possui um Firebird 2 alfa instalado, recomenda-se que
 proceda à instalação sobre uma pasta vazia.
 Tal deve-se à remoção de uma instalação preservar
-a base de dados existente security2. Como essa 
+a base de dados existente security2. Como essa
 versão anterior usa uma ODS incompatível, tal impedirá
 que consiga estabelecer ligação com o servidor.
 
@@ -57,30 +59,30 @@ que consiga estabelecer ligação com o servidor.
 Instalação em sistemas com o Firebird 1.5
 -----------------------------------------
 
-A base de dados de segurança foi modificada. A nova 
+A base de dados de segurança foi modificada. A nova
 base de dados foi renomeada para security2.fdb e usa um
-algoritmo reforçado de encriptação de palavras-passes. 
+algoritmo reforçado de encriptação de palavras-passes.
 Poderá encontrar mais informações acerca das novas
 funcionalidades de segurança nas notas de lançamento.
 
 A nova estrutura da base de dados e a nova encriptação
 apresentam algumas dificuldades de migração para sítios
-que possuam muitos id de utilizador. 
-O programa de instalação não efectua qualquer tentativa 
-de migração, que deverá ser feita manualmente. Uma técnica 
-possível de migração encontra--se disponível em 
-misc/upgrade/security/. 
+que possuam muitos id de utilizador.
+O programa de instalação não efectua qualquer tentativa
+de migração, que deverá ser feita manualmente. Uma técnica
+possível de migração encontra--se disponível em
+misc/upgrade/security/.
 
 
 Instalação em sistemas com o Firebird 2.0
 -----------------------------------------
 
-Além da modificação da ODS há a considerar que o 
-processo de instalação não consegue detectar se um 
-servidor de uma versão Firebird 2.0 Alfa se 
+Além da modificação da ODS há a considerar que o
+processo de instalação não consegue detectar se um
+servidor de uma versão Firebird 2.0 Alfa se
 encontra activo como um serviço. Como tal não receberá
-qualquer aviso até que o programa de instalação tente 
-sobrepor um ficheiro activo. Este problema pode ser 
+qualquer aviso até que o programa de instalação tente
+sobrepor um ficheiro activo. Este problema pode ser
 evitado se remover a instalação anterior primeiro.
 
 
@@ -88,7 +90,7 @@ Novas funcionalidades de instalação
 -----------------------------------
 
 o Se um firebird.conf anterior for detectado o programa
-  de instalação instalará o ficheiro conf por omissão 
+  de instalação instalará o ficheiro conf por omissão
   como:
 
   firebird.conf.default.
@@ -98,12 +100,12 @@ o Se um firebird.conf anterior for detectado o programa
   mantenham após a nova instalação.
 
 
-o Foi adicionado ao programa de instalação suporte para 
+o Foi adicionado ao programa de instalação suporte para
   diversas linguagens. Este suporte SÓ foi implementado
   para o processo de instalação.
 
   NOTA: As linguagens disponíveis são determinadas pela
-  localização da versão do Windows que está a correr. 
+  localização da versão do Windows que está a correr.
   Assim, e como exemplo, é natural que utilizadores da
   zona Western Europe não vejam as linguagens eslavas.
 
@@ -123,13 +125,13 @@ o É preferível que este kit seja removido correctamente
   Alternativamente poderá ser removido executando o
   unins000.exe directamente a partir da pasta de
   instalação.
-  
+
 o Se o Firebird se encontrar em execução como aplicação
   (em vez de um serviço) recomenda-se que o interrompa
-  manualmente antes de proceder à remoção. O motivo é 
-  porque o programa de remoção não pode parar uma 
+  manualmente antes de proceder à remoção. O motivo é
+  porque o programa de remoção não pode parar uma
   aplicação em execução. Se um servidor se encontrar em
-  execução durante a remoção o processo terminará com 
+  execução durante a remoção o processo terminará com
   erros.
   Terá que remover o restante manualmente.
 
@@ -142,23 +144,23 @@ o A remoção não apaga os seguintes ficheiros da pasta
   - security2.fdb
 
   Tal é intencional. Estes ficheiros são potencialmente
-  modificáveis pelos utilizadores e poderão ser 
-  necessários caso o Firebird volte a ser reinstalado. 
-  Poderão contudo ser apagados manualmente caso não 
+  modificáveis pelos utilizadores e poderão ser
+  necessários caso o Firebird volte a ser reinstalado.
+  Poderão contudo ser apagados manualmente caso não
   pretenda usá-los mais.
 
 
 Outras Notas
 ------------
 
-  O Firebird requer o WinSock2. Todas as plataformas 
-  Win32 deverão possui-lo, excepto para o Win95. 
+  O Firebird requer o WinSock2. Todas as plataformas
+  Win32 deverão possui-lo, excepto para o Win95.
   Um teste sobre a sua presença é feito durante o pro-
   cesso de instalação.
   Se não for encontrado a instalação fracassará. Poderá
   visitar este link:
 
-    http://support.microsoft.com/default.aspx?scid=kb;EN-US;q177719
+	http://support.microsoft.com/default.aspx?scid=kb;EN-US;q177719
 
   para obter informação sobre a sua instalação.
 
@@ -166,11 +168,11 @@ Outras Notas
 Instalação a partir de um ficheiro batch
 ----------------------------------------
 
-O programa de configuração poderá ser executado a 
+O programa de configuração poderá ser executado a
 partir de um ficheiro batch.
 Por favor consulte este documento:
 
-    installation_scripted.txt
+	installation_scripted.txt
 
 para mais detalhes.
 

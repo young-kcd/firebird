@@ -2,7 +2,7 @@
 ==================================
 Firebird 2.0.1       (Win32 Build)
 ==================================
-(Release Candidate 1)
+(Release Candidate 2)
 
 o Introduction
 o Avertissements
@@ -23,22 +23,22 @@ Bienvenue dans le monde de Firebird 2.0.1
 Avertissements
 ==============
 
-Firebird 2.0.1 a été testé intensivement 
-et peut être utiliseé en production. Toutefois, les  
-utilisateurs sont invités à suivre ces prescriptions avant de 
+Firebird 2.0.1 a été testé intensivement
+et peut être utiliseé en production. Toutefois, les
+utilisateurs sont invités à suivre ces prescriptions avant de
 déployer cette version en production. ie:
 
  o Lisez les notes de version et le fichier installation_lisezmoi.txt.
 
  o N'oubliez pas de sauvegarder vos données.
-   
+
  o Il est recommandé de faire d'abors une désinstallation.
    Une désinstallation conserve vos fichier de log et de configuration.
 
  o Il est recommandé de faire vos propres tests
    avant tout déploiement en production.
-   
-   
+
+
 Fonctionnalités nouvelles (toutes platformes)
 =============================================
 
@@ -80,25 +80,25 @@ o Etes vous certain de comprendre comment Firebird
 
   Vous pouvez vous inscrire ici:
 
-    mailto:firebird-support-subscribe@yahoogroups.com
+	mailto:firebird-support-subscribe@yahoogroups.com
 
   Il existe aussi des news en français à :
 
-    news://news.vienneinfo.org/nzn.fr.interbase
+	news://news.vienneinfo.org/nzn.fr.interbase
 
 o Vous pensez toujours que c'est un bug?
 
   Regardez la liste des bugs ouverts. Vous trouverez
   cette liste à:
 
-    http://tracker.firebirdsql.org/secure/BrowseProject.jspa
+	http://tracker.firebirdsql.org/secure/BrowseProject.jspa
 
 Toutefois, si vous pensez raisonablement que c'est un
 bug, alors s'il vous plait, essayez de créer un test
 reproductible. Vous pourrez alors le soumetttre au
 traceur de bug.
 
-	
+
 Demander des nouvelles fonctionnalités
 ======================================
 

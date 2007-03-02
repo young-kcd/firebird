@@ -1,3 +1,5 @@
+
+==================================================
 Firebird Database Server 2.0.1
 ==================================================
 (Release Candidate 1)
@@ -5,13 +7,13 @@ Firebird Database Server 2.0.1
   ** IMPORTANT **
 
   The ODS has changed since Firebird 1.5. See the notes
-  below regarding the new ODS and installation over 
+  below regarding the new ODS and installation over
   older versions of Firebird.
 
   ** ********* **
 
 This document is a guide to installing this package of
-Firebird 2.0.1 on the Win32 platform. These notes refer 
+Firebird 2.0.1 on the Win32 platform. These notes refer
 to the installation package itself, rather than
 Firebird 2.0.1 in general.
 
@@ -46,12 +48,12 @@ Firebird 2.0 features a new ODS 11.0 which is wholly
 incompatible with the ODS 11.0 used by the previous
 alpha releases.
 
-If you are installing this release of Firebird 2.0 for 
-the first time over a previously installed Firebird 2 
-alpha it is recommended that you install into a fresh 
-directory. This is because an uninstall will preserve 
-the existing security2 database. However this older 
-version uses an incompatible ODS so you will be unable 
+If you are installing this release of Firebird 2.0 for
+the first time over a previously installed Firebird 2
+alpha it is recommended that you install into a fresh
+directory. This is because an uninstall will preserve
+the existing security2 database. However this older
+version uses an incompatible ODS so you will be unable
 to connect to the server.
 
 
@@ -67,9 +69,9 @@ the release notes.
 The new database structure and the changed encryption
 presents several migration problems for sites that have
 many user ids. The installer makes no attempt to carry
-out this migration.  This must be done manually. A 
-possible migration technique is available in 
-misc/upgrade/security/. 
+out this migration.  This must be done manually. A
+possible migration technique is available in
+misc/upgrade/security/.
 
 
 Installing on systems with Firebird 2.0
@@ -100,10 +102,10 @@ o If an existing firebird.conf is detected the
 o Support for several languages has been added to the
   installer. This support extends ONLY to the
   installation process.
-  
+
   NOTE: The available languages are determined by
-  the localized version of Windows that you are 
-  running. This means, for example, that Western 
+  the localized version of Windows that you are
+  running. This means, for example, that Western
   European users will not normally see the slavic
   languages available.
 
@@ -155,7 +157,7 @@ Other Notes
   not found the install will fail. You can visit
   this link:
 
-    http://support.microsoft.com/default.aspx?scid=kb;EN-US;q177719
+	http://support.microsoft.com/default.aspx?scid=kb;EN-US;q177719
 
   to find out how to go about upgrading.
 
@@ -166,7 +168,7 @@ Installation from a batch file
 The setup program can be run from a batch file.
 Please see this document:
 
-    installation_scripted.txt
+	installation_scripted.txt
 
 for full details.
 

@@ -1,17 +1,19 @@
-Firebird Serwer Baz Danych 2.0
 ==================================================
+Firebird Serwer Baz Danych 2.0.1
+==================================================
+(Release Candidate 2)
 
   ** WA¯NE **
 
-  ODS (On Disc Strukture - struktura bazy na dysku) zmieni³a siê 
-  w stosunku do Firebird 1.5. Zobacz informacje poni¿ej dotycz¹ce 
+  ODS (On Disc Strukture - struktura bazy na dysku) zmieni³a siê
+  w stosunku do Firebird 1.5. Zobacz informacje poni¿ej dotycz¹ce
   nowego ODS i instalacji na systemach ze starszymi wersjami Firebird'a.
 
   ** ********* **
 
-Ten dokument jest przewodnikiem instalacji Firebird 2.0
+Ten dokument jest przewodnikiem instalacji Firebird 2.0.1
 na platformie Win32. Poni¿sze informacje dotycz¹
-raczej tego pakietu instalacyjnego ni¿ Firebirda 2.0 w ogóle.
+raczej tego pakietu instalacyjnego ni¿ Firebirda 2.0.1 w ogóle.
 
 
 Spis treœci
@@ -33,21 +35,21 @@ Przed instalacj¹
 
 Zalecane jest ODINSTALOWANIE wszystkich wczeœniejszych
 wersji Firebirda lub InterBasea przed instalacj¹ tego pakietu.
-Szczególnie wa¿ne jest zweryfikowanie ¿e fbclient.dll 
+Szczególnie wa¿ne jest zweryfikowanie ¿e fbclient.dll
 i gds32.dll s¹ usuniête z <system32>.
 
 
 Nowy ODS 11.0
 -------------
 
-Firebird 2.0 wprowadza nowy ODS 11.0, który jest zupe³nie 
-niekompatybilny z ODS 11.0 u¿ywanego przez poprzednie alfa 
+Firebird 2.0 wprowadza nowy ODS 11.0, który jest zupe³nie
+niekompatybilny z ODS 11.0 u¿ywanego przez poprzednie alfa
 emisje.
 
-Jeœli instalujesz to wydanie Firebird 2.0 pierwszy raz na 
+Jeœli instalujesz to wydanie Firebird 2.0 pierwszy raz na
 wczeœniej zainstalowanego Firebird 2.0 rekomenduje siê instalacjê
 do nowego katalogu. Poniewa¿ odinstalowanie zachowuje istniej¹c¹
-bazê security2. Natomiast wczeœniejsze wersje u¿ywa³y 
+bazê security2. Natomiast wczeœniejsze wersje u¿ywa³y
 niekompatybilnego ODS i nie bêdziesz móg³ po³¹czyæ siê do serwera.
 
 
@@ -68,24 +70,24 @@ Przysz³e wydania testowe bêd¹ rozwi¹zywa³y ten problem w wiêkszym
 zakresie.
 
 
-Instalacja w systemach z Firebird 2.0 
+Instalacja w systemach z Firebird 2.0
 ----------------------------------------------
 
-Oprócz zmian w ODS nale¿y wzi¹æ pod uwagê ¿e instalator 
+Oprócz zmian w ODS nale¿y wzi¹æ pod uwagê ¿e instalator
 nie potrafi automatycznie wykryæ czy jest uruchomiony
 serwer Firebird 2.0 Beta 1. Tak wiêc nie pojawi siê ¿adne
 ostrze¿enie dopóki nie spróbuje nadpisaæ aktywny plik.
 Unikniesz tego jeœli instalujesz po raz pierwszy.
 
 
-Nowe funkcjonalnoœci instalatora 
+Nowe funkcjonalnoœci instalatora
 -----------------------------------------------
 
 o Jeœli zostanie wykryty istniej¹cy firebird.conf to
   instalator zainstaluje domyœlny plik konfiguracyjny jako:
-  
-  firebird.conf.default. 
-    
+
+  firebird.conf.default.
+
   Istniej¹cy firebird.conf pozostanie nietkniêty.
   Zapewnia to zachowanie ograniczej dostêpu po upgradzie.
 
@@ -121,11 +123,11 @@ o Odinstalowanie pozostawia cztery pliki w katalogu instalacyjnym:
   - firebird.log
   - security2.fdb
 
-  To jest zamierzone. Te pliki s¹ potencjalnie modyfikowane przez 
-  u¿ytkowników i mog¹ byæ wymagane jeœli Firebird zosatnie 
-  ponownie zainstalowany. Mog¹ zostaæ usuniête jeœli ju¿ wiêcej 
+  To jest zamierzone. Te pliki s¹ potencjalnie modyfikowane przez
+  u¿ytkowników i mog¹ byæ wymagane jeœli Firebird zosatnie
+  ponownie zainstalowany. Mog¹ zostaæ usuniête jeœli ju¿ wiêcej
   nie bêd¹ potrzebne.
- 
+
 
 Pozosta³e informacje
 --------------------
@@ -136,7 +138,7 @@ Pozosta³e informacje
   instalator nie zainstaluje Firebirda. Na poni¿szej stronie
   mo¿esz dowiedzieæ siê jak zainstalowaæ wymagan¹ bibliotekê:
 
-    http://support.microsoft.com/default.aspx?scid=kb;EN-US;q177719
+	http://support.microsoft.com/default.aspx?scid=kb;EN-US;q177719
 
 
 Instalacja z pliku wsadowego
@@ -145,6 +147,6 @@ Instalacja z pliku wsadowego
 Program instalatora mo¿e zostaæ uruchomiony z pliku wsadowego.
 Zobacz ten dokument:
 
-    installation_scripted.txt
+	installation_scripted.txt
 
 w celu uzyskania dodatkowych informacji.

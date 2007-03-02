@@ -1,5 +1,7 @@
-Firebird Datenbank Server 2.0
+Firebird Datenbank Server 2.0.1
 ==================================================
+(Release Candidate 2)
+
 
   ** WICHTIG **
 
@@ -11,9 +13,9 @@ Firebird Datenbank Server 2.0
   ** ******* **
 
 Dieses Dokument ist eine Hilfestellung um dieses Paket
-von Firebird 2.0 auf einer Win32 Plattform zu installieren.
+von Firebird 2.0.1 auf einer Win32 Plattform zu installieren.
 Diese Hinweise beziehen sich ausschließlich auf das
-Installationspaket, und nicht auf Firebird 2.0 allgemein.
+Installationspaket, und nicht auf Firebird 2.0.1 allgemein.
 
 
 Inhalt
@@ -98,7 +100,7 @@ o Falls eine existierende firebird.conf vorgefunden wird,
 
 o Mehrsprachigkeit wurde dem Installer hinzugefügt. Dies betrifft
   allerdings NUR den Installationsprozess.
-  
+
   HINWEIS: Die verfügbaren Sprachen werden anhand der verwendeten
   lokalisierten Windows Version ermittelt. Dies bedeutet zum
   Beispiel, dass für Benutzer in Westeuropa gewöhnlich die
@@ -151,7 +153,7 @@ Weitere Hinweise
   wird, so wird die Installation fehlschlagen. Sie können diesen Link
   besuchen:
 
-    http://support.microsoft.com/default.aspx?scid=kb;EN-US;q177719
+	http://support.microsoft.com/default.aspx?scid=kb;EN-US;q177719
 
   um herauszufinden, wie ein Upgrade erfolgen kann.
 
@@ -162,7 +164,7 @@ Installation mit einer Batch-Datei
 Das Setup-Programm kann von einer Batch-Datei aus verwendet werden.
 Nähere Informationen dazu finden Sie in:
 
-    installation_scripted.txt
+	installation_scripted.txt
 
 
 

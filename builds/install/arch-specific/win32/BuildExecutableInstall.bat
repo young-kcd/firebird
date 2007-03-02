@@ -113,22 +113,22 @@ if not DEFINED FB_EXTERNAL_DOCS (
 
 sed --version | findstr version > nul
 @if %ERRORLEVEL% GEQ 1 (
-    call :ERROR Could not locate sed
-    goto :EOF
+	call :ERROR Could not locate sed
+	goto :EOF
 ) else (@echo     o sed found.)
 
 if %FBBUILD_ZIP_PACK% EQU 1 (
   if not defined SEVENZIP (
-    call :ERROR SEVENZIP environment variable is not defined.
-    @goto :EOF
+	call :ERROR SEVENZIP environment variable is not defined.
+	@goto :EOF
   ) else (@echo     o Compression utility found.)
 )
 
 
 if %FBBUILD_ISX_PACK% EQU 1 (
   if NOT DEFINED INNO_SETUP_PATH (
-    call :ERROR INNO_SETUP_PATH variable not defined
-    @goto :EOF
+	call :ERROR INNO_SETUP_PATH variable not defined
+	@goto :EOF
   ) else (@echo     o Inno Setup found at %INNO_SETUP_PATH%.)
 )
 
@@ -174,15 +174,15 @@ del %temp%.\b$?.txt
 if not exist %FBBUILD_OUTPUT%\system32 (mkdir %FBBUILD_OUTPUT%\system32)
 @if DEFINED MSDevDir (
   @if %MSVC_VERSION% EQU 6 (
-    @copy "%MSDevDir%\vcredist\msvcrt.dll" %FBBUILD_OUTPUT%\bin\ > nul
-    @copy "%MSDevDir%\vcredist\msvcp%MSVC_VERSION%0.dll" %FBBUILD_OUTPUT%\bin\ > nul
+	@copy "%MSDevDir%\vcredist\msvcrt.dll" %FBBUILD_OUTPUT%\bin\ > nul
+	@copy "%MSDevDir%\vcredist\msvcp%MSVC_VERSION%0.dll" %FBBUILD_OUTPUT%\bin\ > nul
   )
 ) else (
   @if DEFINED MSVCDir (
-    @if %MSVC_VERSION% EQU 7 (
-      @copy "%FrameworkSDKDir%\bin\msvcp%MSVC_VERSION%?.dll" %FBBUILD_OUTPUT%\bin\ > nul
-      @copy "%FrameworkSDKDir%\bin\msvcr%MSVC_VERSION%?.dll" %FBBUILD_OUTPUT%\bin\ > nul
-    )
+	@if %MSVC_VERSION% EQU 7 (
+	  @copy "%FrameworkSDKDir%\bin\msvcp%MSVC_VERSION%?.dll" %FBBUILD_OUTPUT%\bin\ > nul
+	  @copy "%FrameworkSDKDir%\bin\msvcr%MSVC_VERSION%?.dll" %FBBUILD_OUTPUT%\bin\ > nul
+	)
   )
 )
 @if %ERRORLEVEL% GEQ 1 ( (call :ERROR Copying MSVC runtime library failed with error %ERRORLEVEL% ) & (goto :EOF))
@@ -215,11 +215,11 @@ for %%v in (fbclient ib_util) do (
 @if "%FBBUILD_SHIP_PDB%"=="ship_pdb" (
   @echo   Copying pdb files...
   for %%v in ( fbembed fb_inet_server fbserver fbclient ) do (
-    @copy %ROOT_PATH%\temp\%FBBUILD_BUILDTYPE%\%%v\%%v.pdb %FBBUILD_OUTPUT%\bin > nul
-    @if %ERRORLEVEL% GEQ 1 (
-      call :ERROR Copying %%v.pdb files failed
-      goto :EOF
-    )
+	@copy %ROOT_PATH%\temp\%FBBUILD_BUILDTYPE%\%%v\%%v.pdb %FBBUILD_OUTPUT%\bin > nul
+	@if %ERRORLEVEL% GEQ 1 (
+	  call :ERROR Copying %%v.pdb files failed
+	  goto :EOF
+	)
   )
 )
 ::  @copy %ROOT_PATH%\temp\%FBBUILD_BUILDTYPE%\firebird\bin\*.pdb %FBBUILD_OUTPUT%\bin > nul
@@ -238,16 +238,16 @@ for %%v in (fbclient ib_util) do (
 for %%v in ( ib_udf.sql ib_udf2.sql ) do (
   copy %ROOT_PATH%\src\extlib\%%v  %FBBUILD_OUTPUT%\UDF\%%v > nul
   @if %ERRORLEVEL% GEQ 1 (
-    call :ERROR Copying %ROOT_PATH%\src\extlib\%%v failed.
-    goto :EOF
+	call :ERROR Copying %ROOT_PATH%\src\extlib\%%v failed.
+	goto :EOF
   )
 )
 
 for %%v in ( fbudf.sql fbudf.txt ) do (
   copy %ROOT_PATH%\src\extlib\fbudf\%%v  %FBBUILD_OUTPUT%\UDF\%%v > nul
   @if %ERRORLEVEL% GEQ 1 (
-    call :ERROR Copying %ROOT_PATH%\src\extlib\%%v failed with error %ERRORLEVEL%
-    goto :EOF
+	call :ERROR Copying %ROOT_PATH%\src\extlib\%%v failed with error %ERRORLEVEL%
+	goto :EOF
   )
 )
 
@@ -304,10 +304,10 @@ for /R %FBBUILD_OUTPUT%\doc %%v in (.) do (
   pushd %%v
   for /F %%W in ( 'dir /B /A-D' ) do (
 	if /I "%%~xW" NEQ ".txt" (
-      if /I "%%~xW" NEQ ".pdf" (
-        if /I "%%~xW" NEQ ".htm" (
-          if /I "%%~xW" NEQ ".html" (
-            ren %%W %%W.txt
+	  if /I "%%~xW" NEQ ".pdf" (
+		if /I "%%~xW" NEQ ".htm" (
+		  if /I "%%~xW" NEQ ".html" (
+			ren %%W %%W.txt
 		  )
 		)
 	  )
@@ -465,16 +465,16 @@ goto :EOF
 ::=======
 if %FBBUILD_ZIP_PACK% EQU 0 goto :EOF
 if "%FBBUILD_SHIP_PDB%" == "ship_pdb" (
-    if exist %FBBUILD_INSTALL_IMAGES%\Firebird-%PRODUCT_VER_STRING%-%FBBUILD_PACKAGE_NUMBER%_win32.zip (
-      del %FBBUILD_INSTALL_IMAGES%\Firebird-%PRODUCT_VER_STRING%-%FBBUILD_PACKAGE_NUMBER%_win32_pdb.zip
+	if exist %FBBUILD_INSTALL_IMAGES%\Firebird-%PRODUCT_VER_STRING%-%FBBUILD_PACKAGE_NUMBER%_win32.zip (
+	  del %FBBUILD_INSTALL_IMAGES%\Firebird-%PRODUCT_VER_STRING%-%FBBUILD_PACKAGE_NUMBER%_win32_pdb.zip
 	)
 	set FBBUILD_ZIPFILE=%FBBUILD_INSTALL_IMAGES%\Firebird-%PRODUCT_VER_STRING%-%FBBUILD_PACKAGE_NUMBER%_win32_pdb.zip
 
 ) else (
-    if exist %FBBUILD_INSTALL_IMAGES%\Firebird-%PRODUCT_VER_STRING%-%FBBUILD_PACKAGE_NUMBER%_win32.zip (
-      del %FBBUILD_INSTALL_IMAGES%\Firebird-%PRODUCT_VER_STRING%-%FBBUILD_PACKAGE_NUMBER%_win32.zip
-    )
-    set FBBUILD_ZIPFILE=%FBBUILD_INSTALL_IMAGES%\Firebird-%PRODUCT_VER_STRING%-%FBBUILD_PACKAGE_NUMBER%_win32.zip
+	if exist %FBBUILD_INSTALL_IMAGES%\Firebird-%PRODUCT_VER_STRING%-%FBBUILD_PACKAGE_NUMBER%_win32.zip (
+	  del %FBBUILD_INSTALL_IMAGES%\Firebird-%PRODUCT_VER_STRING%-%FBBUILD_PACKAGE_NUMBER%_win32.zip
+	)
+	set FBBUILD_ZIPFILE=%FBBUILD_INSTALL_IMAGES%\Firebird-%PRODUCT_VER_STRING%-%FBBUILD_PACKAGE_NUMBER%_win32.zip
 )
 
 @%SEVENZIP%\7z.exe a -r -tzip -mx9 %FBBUILD_ZIPFILE% %FBBUILD_ZIP_PACK_ROOT%\*.*
