@@ -1,3 +1,77 @@
+2007-03-02 01:46  asfernandes
+
+	* firebird2/src/jrd/: blb.cpp (1.135), evl.cpp (1.218), exe.cpp
+	(1.210), ext.cpp (1.71), fun.epp (1.78), mov.cpp (1.28),
+	mov_proto.h (1.14), rse.cpp (1.127), vio.cpp (1.189):
+
+	Make MOV_move know how to move blobs.  This fixes CORE-1147: Blobs
+	are not converted to string in UDF parameters.
+
+2007-03-01 16:33  alexpeshkoff
+
+	* firebird2/src/msgs/system_errors.sql (1.52):
+
+	Fixed SQL error code
+
+2007-03-01 16:08  dimitr
+
+	* firebird2/src/jrd/opt.cpp (1.291):
+
+	Adjusted the logic accordingly to the Alex's fix.
+
+2007-03-01 14:34  hvlad
+
+	* firebird2/src/jrd/rse.cpp (1.126):
+
+	Fixed CORE-1146 : AV in rse\invalidate_child_rpbs for recursive
+	queies
+
+2007-03-01 14:20  alexpeshkoff
+
+	* firebird2/src/jrd/y_handle.h (1.20):
+
+	Avoid reinterpret_cast when possible
+
+2007-03-01 14:20  robocop
+
+	* firebird2/src/jrd/vio.cpp (1.188):
+
+	Fix for CORE-1142.  Someone hijacked my little function
+	dfw_should_know() for more purposes than it was intended and thus
+	the original logic was defeated.  :-)
+
+2007-03-01 14:09  alexpeshkoff
+
+	* firebird2/src/jrd/opt.cpp (1.290):
+
+	Use faster and more clear method when possible
+
+2007-03-01 14:07  alexpeshkoff
+
+	* firebird2/src/common/classes/stack.h (1.22):
+
+	fixed bug in my previous commit
+
+2007-03-01 13:31  alexpeshkoff
+
+	* firebird2/src/common/classes/stack.h (1.21):
+
+	1. Fixed different behavior of hasMore() in stack and it's
+	iterator.  2. Use size_t as hasMore() parameter avoiding asserts
+	and casts
+
+2007-03-01 12:40  robocop
+
+	* firebird2/src/isql/isql.epp (1.213):
+
+	Corrections.
+
+2007-03-01 11:35  robocop
+
+	* firebird2/src/jrd/isc_sync.cpp (1.109):
+
+	Hack, hack, haaack!
+
 2007-03-01 01:44  asfernandes
 
 	* firebird2/src/jrd/: jrd.cpp (1.311), opt.cpp (1.289):
