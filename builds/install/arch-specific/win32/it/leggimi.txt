@@ -18,7 +18,7 @@ o Richiesta di nuove funzionalità
 Introduzione
 ============
 
-Benvenuti in Firebird 2.0..1
+Benvenuti in Firebird 2.0.1
 
 
 A chi è rivolta questa versione
