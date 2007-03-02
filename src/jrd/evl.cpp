@@ -1085,9 +1085,15 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* const node)
 			 ptr < end;)
 		{
 			*v++ = EVL_expr(tdbb, *ptr++);
-			// ASF: CAST target type may be constrained
-			if (node->nod_type != nod_cast && (request->req_flags & req_null))
-				return NULL;
+
+			if (request->req_flags & req_null)
+			{
+				// ASF: CAST target type may be constrained
+				if (node->nod_type == nod_cast)
+					*(v - 1) = NULL;
+				else
+					return NULL;
+			}
 		}
 	}
 
