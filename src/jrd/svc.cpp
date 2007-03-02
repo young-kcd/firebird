@@ -1644,8 +1644,6 @@ void* SVC_start(Service* service, USHORT spb_length, const SCHAR* spb_data)
 
 	isc_resv_handle reserved = (isc_resv_handle)0;	/* Reserved for future functionality */
 
-	try {
-	
 	Firebird::ClumpletReader spb(Firebird::ClumpletReader::SpbStart, 
 		reinterpret_cast<const UCHAR*>(spb_data), spb_length);
 
@@ -1737,7 +1735,13 @@ void* SVC_start(Service* service, USHORT spb_length, const SCHAR* spb_data)
 	if ((!service->svc_switches.hasData()) && svc_id != isc_action_svc_get_fb_log) {
 		ERR_post(isc_bad_spb_form, 0);
 	}
-		
+
+// Do not let everyone look at server log
+	if (svc_id == isc_action_svc_get_fb_log && !(service->svc_user_flag & SVC_user_dba))
+	{
+		ERR_post(isc_adm_task_denied, 0);
+	}
+
 #ifndef SERVICE_THREAD
 	TEXT service_path[MAXPATHLEN];
 
@@ -1883,12 +1887,6 @@ void* SVC_start(Service* service, USHORT spb_length, const SCHAR* spb_data)
 	}
 
 #endif /* SERVICE_THREAD */
-
-	}	// try
-	catch (const std::exception&) {
-		delete service;
-		throw;
-	}
 
 	return reinterpret_cast<void*>(reserved);
 }
