@@ -1,3 +1,22 @@
+2007-03-02 16:22  asfernandes
+
+	* firebird2/src/jrd/evl.cpp (1.219):
+
+	Fixed CORE-1150 - Error conversion error from string " " using
+	outer join on int64 and int fields
+
+2007-03-02 12:14  robocop
+
+	* firebird2/src/include/gen/sql_code.h (1.65):
+
+	Update generated file after Alex changes.
+
+2007-03-02 10:04  alexpeshkoff
+
+	* firebird2/src/jrd/svc.cpp (1.178):
+
+	Fixes for CORE-1148 and CORE-1149
+
 2007-03-02 01:46  asfernandes
 
 	* firebird2/src/jrd/: blb.cpp (1.135), evl.cpp (1.218), exe.cpp
