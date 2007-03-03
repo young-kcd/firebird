@@ -1,3 +1,33 @@
+2007-03-02 15:06  alexpeshkoff
+
+	* firebird2/src/jrd/svc.cpp (1.166.2.5):
+
+	Backported fix for CORE-1148 and CORE-1149
+
+2007-03-02 12:48  paul_reeves
+
+	* firebird2/builds/install/arch-specific/win32/it/leggimi.txt
+	(1.1.2.4):
+
+	Typo
+
+2007-03-02 12:01  paul_reeves
+
+	* firebird2/builds/install/arch-specific/win32/:
+	BuildExecutableInstall.bat (1.15.2.10), Readme.txt (1.9.2.6),
+	installation_readme.txt (1.9.2.7), ba/Instalacija_ProcitajMe.txt
+	(1.4.4.2), ba/ProcitajMe.txt (1.2.4.2),
+	de/installation_liesmich.txt (1.3.4.2), de/liesmich.txt (1.3.4.2),
+	es/leame.txt (1.1.6.3), es/leame_instalacion.txt (1.1.6.2),
+	fr/lisezmoi.txt (1.1.6.3), hu/custom_messages_hu.inc (1.2.6.4),
+	hu/olvass_el.txt (1.1.6.3), hu/telepitesi_segedlet.txt (1.1.6.3),
+	it/leggimi.txt (1.1.2.3), it/leggimi_installazione.txt (1.1.2.2),
+	pl/czytajto.txt (1.2.4.3), pl/instalacja_czytajto.txt (1.3.4.3),
+	pt/instalacao_leia-me.txt (1.3.2.3), pt/leia-me.txt (1.2.2.2),
+	ru/Readme.txt (1.1.2.3), ru/installation_readme.txt (1.1.2.3):
+
+	Update windows readme docs to 2.0.1 and RC2
+
 2007-02-28 15:31  dimitr
 
 	* firebird2/src/jrd/idx.cpp (1.103.4.3):
