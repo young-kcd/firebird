@@ -1,3 +1,24 @@
+2007-03-04 02:41  asfernandes
+
+	* firebird2/src/utilities/nbackup.cpp (1.55):
+
+	Added option to nbackup not run database triggers
+
+2007-03-04 02:27  asfernandes
+
+	* firebird2/src/burp/restore.epp (1.115):
+
+	Always restore with database triggers turned off.  The contrary
+	doesn't make sense, and old engines (at least V2.0) accepts unkown
+	DPB.
+
+2007-03-03 05:22  robocop
+
+	* firebird2/src/msgs/facilities.sql (1.97):
+
+	The usage of the SQLWARN facility is bizarre, but at least it
+	should be consistent.
+
 2007-03-02 16:22  asfernandes
 
 	* firebird2/src/jrd/evl.cpp (1.219):
