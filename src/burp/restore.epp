@@ -600,8 +600,7 @@ int RESTORE_restore (const TEXT* file_name,
 							 strlen(tdgbl->gbl_sw_password));
 	}
 
-	if (tdgbl->gbl_sw_nodbtriggers)
-		dpb.insertByte(isc_dpb_no_db_triggers, 1);
+	dpb.insertByte(isc_dpb_no_db_triggers, 1);
 
 	// set forced writes to the value which was in the header
 	dpb.insertByte(isc_dpb_force_write, tdgbl->hdr_forced_writes);
@@ -647,9 +646,7 @@ int RESTORE_restore (const TEXT* file_name,
 		}
 
 		dpb.insertByte(isc_dpb_set_db_readonly, TRUE);
-
-		if (tdgbl->gbl_sw_nodbtriggers)
-			dpb.insertByte(isc_dpb_no_db_triggers, 1);
+		dpb.insertByte(isc_dpb_no_db_triggers, 1);
 
 		if (isc_attach_database (tdgbl->status_vector, 0, database_name,
 				  &db_handle, dpb.getBufferLength(), 
@@ -1030,8 +1027,7 @@ void create_database (const TEXT* file_name)
 	dpb.insertInt(isc_dpb_shutdown_delay, 0);
 	dpb.insertInt(isc_dpb_overwrite, tdgbl->gbl_sw_overwrite);
 
-	if (tdgbl->gbl_sw_nodbtriggers)
-		dpb.insertByte(isc_dpb_no_db_triggers, 1);
+	dpb.insertByte(isc_dpb_no_db_triggers, 1);
 
 	ISC_STATUS_ARRAY status_vector;
 
