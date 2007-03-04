@@ -27,6 +27,10 @@
 #include <string.h>
 #endif
 
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
 #endif
@@ -40,6 +44,8 @@
 #else
 int errno = -1;
 #endif
+
+#include <time.h>
 
 #include "../jrd/common.h"
 #include "../jrd/divorce.h"
@@ -173,6 +179,8 @@ int CLIB_ROUTINE main( int argc, char **argv)
 // detach from controlling tty
 	divorce_terminal(0);
 
+	time_t timer = 0;
+
 	do {
 		int ret_code;
 
@@ -180,6 +188,18 @@ int CLIB_ROUTINE main( int argc, char **argv)
 			// don't start a child
 			break;
 		}
+
+		if (timer == time(0))
+		{
+			// don't let fbserver restart too often - avoid log overflow
+#ifdef WIN_NT
+			Sleep(1000);
+#else
+			sleep(1);
+#endif
+			continue;
+		}
+		timer = time(0);
 
 		gds__log("%s: guardian starting %s\n",
 				 prog_name, SUPER_SERVER_BINARY);
