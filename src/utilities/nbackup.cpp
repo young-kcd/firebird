@@ -86,6 +86,7 @@ void usage()
 		"  -R <database> [<file0> [<file1>...]]  Restore incremental backup\n"
 		"  -U <user>                             User name\n"
 		"  -P <password>                         Password\n"
+		"  -T                                    Do not run database triggers\n"
 		"Notes:\n"
 		"  <database> may specify database alias\n"
 		"  incremental backups of multi-file databases are not supported yet\n"
@@ -156,11 +157,12 @@ struct inc_header {
 
 class nbackup {
 public:
-	nbackup(const char* _database, const char* _username, const char* _password)
+	nbackup(const char* _database, const char* _username, const char* _password, bool _run_db_triggers)
 	{
 		if (_username) username = _username;
 		if (_password) password = _password;
 		database = _database;
+		run_db_triggers = _run_db_triggers;
 
 		dbase = 0;
 		backup = 0;
@@ -189,6 +191,7 @@ private:
 	Firebird::PathName database;
 	Firebird::string username;
 	Firebird::string password;
+	bool run_db_triggers;
 
 	Firebird::PathName dbname; // Database file name
 	Firebird::PathName bakname;
@@ -441,6 +444,9 @@ void nbackup::attach_database()
 	if (!password.isEmpty()) {
 		dpb.insertString(isc_dpb_password, password);
 	}
+
+	if (!run_db_triggers)
+		dpb.insertByte(isc_dpb_no_db_triggers, 1);
 
 	if (isc_attach_database(status, 0, database.c_str(), &newdb, 
 		dpb.getBufferLength(), reinterpret_cast<const char*>(dpb.getBuffer())))
@@ -926,6 +932,7 @@ int main( int argc, char *argv[] )
 	NbOperation op = nbNone;
 	const char *username = NULL, *password = NULL, *database = NULL, 
 		*filename = NULL;
+	bool run_db_triggers = true;
 	const char* const* backup_files = NULL;
 	int level;
 	int filecount;
@@ -952,6 +959,10 @@ int main( int argc, char *argv[] )
 					missing_parameter_for_switch(argp[-1]);
 
 				password = *argp;
+				break;
+
+			case 'T':
+				run_db_triggers = false;
 				break;
 
 			case 'F':
@@ -1036,23 +1047,23 @@ int main( int argc, char *argv[] )
 				break;
 
 			case nbLock:
-				nbackup(database, username, password).lock_database();
+				nbackup(database, username, password, run_db_triggers).lock_database();
 				break;
 
 			case nbUnlock:
-				nbackup(database, username, password).unlock_database();
+				nbackup(database, username, password, run_db_triggers).unlock_database();
 				break;
 
 			case nbFixup:
-				nbackup(database, username, password).fixup_database();
+				nbackup(database, username, password, run_db_triggers).fixup_database();
 				break;
 
 			case nbBackup:
-				nbackup(database, username, password).backup_database(level, filename);
+				nbackup(database, username, password, run_db_triggers).backup_database(level, filename);
 				break;
 
 			case nbRestore:
-				nbackup(database, username, password).restore_database(filecount, backup_files);
+				nbackup(database, username, password, run_db_triggers).restore_database(filecount, backup_files);
 				break;
 		}
 	}
