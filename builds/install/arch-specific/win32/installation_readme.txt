@@ -2,7 +2,7 @@
 ==================================================
 Firebird Database Server 2.0.1
 ==================================================
-(Release Candidate 1)
+(Release Candidate 2)
 
   ** IMPORTANT **
 
