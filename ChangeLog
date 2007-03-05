@@ -1,3 +1,16 @@
+2007-03-04 21:33  asfernandes
+
+	* firebird2/src/jrd/exe.cpp (1.211):
+
+	Fixed a problem reported by Dmitry where UPDATE and DELETE was not
+	working with views with triggers.
+
+2007-03-04 12:04  alexpeshkoff
+
+	* firebird2/src/utilities/guard/guard.cpp (1.15):
+
+	Prevent guardian from to often server restarts
+
 2007-03-04 02:41  asfernandes
 
 	* firebird2/src/utilities/nbackup.cpp (1.55):
