@@ -3615,7 +3615,7 @@ static jrd_nod* store(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 		   so that previous remnants don't defeat compression efficiency. */
 
 		/* CVC: The code that was here was moved to its own routine: cleanup_rpb()
-				and replaced by the call shown above. */
+				and replaced by the call shown below. */
 
 		cleanup_rpb(tdbb, rpb);
 
