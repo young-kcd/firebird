@@ -99,7 +99,7 @@ static void delete_record(thread_db*, record_param*, SLONG, JrdMemoryPool*);
 static UCHAR* delete_tail(thread_db*, record_param*, SLONG, UCHAR*, const UCHAR*);
 static void expunge(thread_db*, record_param*, const jrd_tra*, SLONG);
 static bool dfw_should_know(record_param* org_rpb, record_param* new_rpb,
-	USHORT irrelevant_field);
+	USHORT irrelevant_field, bool void_update_is_relevant);
 static void garbage_collect(thread_db*, record_param*, SLONG, RecordStack&);
 static void garbage_collect_idx(thread_db*, record_param*, record_param*, Record*);
 #ifdef GARBAGE_THREAD
@@ -2197,7 +2197,7 @@ void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb,
 				// We won't accept modifying sys generators and for user gens,
 				// only the description.
 				// This is poor man's version of a trigger discovering changed fields.
-				bool important_change = dfw_should_know(org_rpb, new_rpb, f_gen_desc);
+				bool important_change = dfw_should_know(org_rpb, new_rpb, f_gen_desc, false);
 				DFW_post_work(transaction, dfw_modify_generator, &desc1, (USHORT) important_change);
 			}
 			break;
@@ -2231,7 +2231,7 @@ void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb,
 			EVL_field(0, new_rpb->rpb_record, f_idx_relation, &desc1);
 			SCL_check_relation(&desc1, SCL_control);
 			EVL_field(0, new_rpb->rpb_record, f_idx_name, &desc1);
-			if (dfw_should_know(org_rpb, new_rpb, f_idx_desc))
+			if (dfw_should_know(org_rpb, new_rpb, f_idx_desc, true))
 			{
 				if (EVL_field(0, new_rpb->rpb_record, f_idx_exp_blr, &desc2)) {
 					DFW_post_work(transaction, dfw_create_expression_index,
@@ -3432,7 +3432,7 @@ static UCHAR* delete_tail(
 // if relevant field changed or if no fields changed. Or we must 
 // return false if only irrelevant field changed 
 static bool dfw_should_know(record_param* org_rpb, record_param* new_rpb,
-	USHORT irrelevant_field)
+	USHORT irrelevant_field, bool void_update_is_relevant)
 {
 	dsc desc2, desc3;
 	bool irrelevant_changed = false;
@@ -3443,15 +3443,13 @@ static bool dfw_should_know(record_param* org_rpb, record_param* new_rpb,
 		const bool b = EVL_field(0, new_rpb->rpb_record, iter, &desc3);
 		if (a != b || MOV_compare(&desc2, &desc3)) 
 		{
-			if (iter != irrelevant_field) {
+			if (iter != irrelevant_field)
 				return true;
-			}
-			else {
-				irrelevant_changed = true;
-			}
+
+			irrelevant_changed = true;
 		}
 	}
-	return !irrelevant_changed;
+	return void_update_is_relevant ? !irrelevant_changed : false;
 }
 
 
