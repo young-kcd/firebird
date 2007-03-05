@@ -379,6 +379,8 @@ DatabaseSnapshot::DatabaseSnapshot(thread_db* tdbb, MemoryPool& pool, jrd_tra* t
 		allocBuffer(tdbb, pool, rel_mon_transactions);
 	RecordBuffer* stmt_buffer =
 		allocBuffer(tdbb, pool, rel_mon_statements);
+	RecordBuffer* call_buffer =
+		allocBuffer(tdbb, pool, rel_mon_calls);
 
 	Database* dbb = tdbb->tdbb_database;
 	fb_assert(dbb);
@@ -448,6 +450,9 @@ DatabaseSnapshot::DatabaseSnapshot(thread_db* tdbb, MemoryPool& pool, jrd_tra* t
 					break;
 				case rel_mon_statements:
 					buffer = stmt_buffer;
+					break;
+				case rel_mon_calls:
+					buffer = call_buffer;
 					break;
 				default:
 					fb_assert(false);
@@ -686,6 +691,19 @@ const char* DatabaseSnapshot::checkNull(int rid, int fid, const char* source, si
 			break;
 		}
 		break;
+	case rel_mon_calls:
+		switch (fid) {
+		case f_mon_call_caller_id:
+		case f_mon_call_type:
+		case f_mon_call_src_line:
+		case f_mon_call_src_column:
+			return (*(SLONG*) source) ? source : NULL;
+		case f_mon_call_name:
+			return length ? source : NULL;
+		default:
+			break;
+		}
+		break;
 	default:
 		break;
 	}
@@ -752,6 +770,22 @@ ClumpletReader* DatabaseSnapshot::dumpData(thread_db* tdbb, bool locksmith)
 			if (!(request->req_flags & (req_internal | req_sys_trigger)))
 			{
 				putRequest(request, *writer);
+			}
+		}
+
+		// Call stack information
+
+		for (jrd_tra* transaction = attachment->att_transactions;
+			transaction; transaction = transaction->tra_next)
+		{
+			for (jrd_req* request = transaction->tra_requests;
+				request; request = request->req_tra_next)
+			{
+				if (!(request->req_flags & (req_internal | req_sys_trigger)) &&
+					request->req_caller)
+				{
+					putCall(request, *writer);
+				}
 			}
 		}
 	}
@@ -861,14 +895,14 @@ void DatabaseSnapshot::putAttachment(Attachment* attachment,
 
 	writer.insertByte(TAG_RECORD, rel_mon_attachments);
 
-	int temp = att_s_idle;
+	int temp = mon_state_idle;
 
 	for (jrd_tra* transaction_itr = attachment->att_transactions;
 		 transaction_itr; transaction_itr = transaction_itr->tra_next)
 	{
 		if (transaction_itr->tra_requests)
 		{
-			temp = att_s_active;
+			temp = mon_state_active;
 			break;
 		}
 	}
@@ -922,7 +956,7 @@ void DatabaseSnapshot::putTransaction(jrd_tra* new_transaction,
 	writer.insertInt(f_mon_tra_att_id,
 					 new_transaction->tra_attachment->att_attachment_id);
 	// state
-	temp = new_transaction->tra_requests ? tra_s_active : tra_s_idle;
+	temp = new_transaction->tra_requests ? mon_state_active : mon_state_idle;
 	writer.insertInt(f_mon_tra_state, temp);
 	// timestamp
 	writer.insertBytes(f_mon_tra_timestamp,
@@ -965,8 +999,6 @@ void DatabaseSnapshot::putRequest(jrd_req* request,
 
 	writer.insertByte(TAG_RECORD, rel_mon_statements);
 
-	int temp;
-
 	// request id
 	writer.insertInt(f_mon_stmt_id, request->req_id);
 	// attachment id
@@ -977,24 +1009,77 @@ void DatabaseSnapshot::putRequest(jrd_req* request,
 	else {
 		writer.insertInt(f_mon_stmt_att_id, 0);
 	}
-	// transaction id
-	if (request->req_transaction) {
-		writer.insertInt(f_mon_stmt_tra_id,
-						 request->req_transaction->tra_number);
+	// state, transaction ID, timestamp
+	if (request->req_flags & req_active) {
+		writer.insertInt(f_mon_stmt_state, mon_state_active);
+		const int tra_id = request->req_transaction ?
+			request->req_transaction->tra_number : 0;
+		writer.insertInt(f_mon_stmt_tra_id, tra_id);
+		writer.insertBytes(f_mon_stmt_timestamp,
+						   (UCHAR*) &request->req_timestamp.value(),
+						   sizeof(ISC_TIMESTAMP));
 	}
 	else {
+		writer.insertInt(f_mon_stmt_state, mon_state_idle);
 		writer.insertInt(f_mon_stmt_tra_id, 0);
+		ISC_TIMESTAMP empty = {0, 0};
+		writer.insertBytes(f_mon_stmt_timestamp,
+						   (UCHAR*) &empty,
+						   sizeof(ISC_TIMESTAMP));
 	}
-	// timestamp
-	writer.insertBytes(f_mon_stmt_timestamp,
-					   (UCHAR*) &request->req_timestamp.value(),
-					   sizeof(ISC_TIMESTAMP));
-	// state
-	if (request->req_flags & req_active)
-		temp = stmt_s_active;
-	else
-		temp = stmt_s_idle;
-	writer.insertInt(f_mon_stmt_state, temp);
 	// sql text
 	writer.insertString(f_mon_stmt_sql_text, request->req_sql_text);
+}
+
+
+void DatabaseSnapshot::putCall(jrd_req* request,
+							   ClumpletWriter& writer)
+{
+	fb_assert(request);
+
+	jrd_req* statement = request->req_caller;
+	while (statement->req_caller)
+		statement = statement->req_caller;
+	fb_assert(statement);
+
+	writer.insertByte(TAG_RECORD, rel_mon_calls);
+
+	// call id
+	writer.insertInt(f_mon_call_id, request->req_id);
+	// statement id
+	writer.insertInt(f_mon_call_stmt_id,
+					 statement->req_id);
+	// caller id
+	if (statement == request->req_caller) {
+		writer.insertInt(f_mon_call_caller_id, 0);
+	}
+	else {
+		writer.insertInt(f_mon_call_caller_id,
+						 request->req_caller->req_id);
+	}
+	// object name/type
+	if (request->req_procedure) {
+		writer.insertString(f_mon_call_name,
+							request->req_procedure->prc_name.c_str());
+		writer.insertInt(f_mon_call_type, obj_procedure);
+	}
+	else if (!request->req_trg_name.isEmpty()) {
+		writer.insertString(f_mon_call_name,
+							request->req_trg_name.c_str());
+		writer.insertInt(f_mon_call_type, obj_trigger);
+	}
+	else {
+		// we should never be here...
+		fb_assert(false);
+		// ... but just in case it happened...
+		writer.insertString(f_mon_call_name, "");
+		writer.insertInt(f_mon_call_type, 0);
+	}
+	// timestamp
+	writer.insertBytes(f_mon_call_timestamp,
+					   (UCHAR*) &request->req_timestamp.value(),
+					   sizeof(ISC_TIMESTAMP));
+	// source line/column
+	writer.insertInt(f_mon_call_src_line, request->req_src_line);
+	writer.insertInt(f_mon_call_src_column, request->req_src_column);
 }

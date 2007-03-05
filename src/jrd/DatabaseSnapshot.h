@@ -99,6 +99,7 @@ private:
 	static void putAttachment(Attachment*, Firebird::ClumpletWriter&);
 	static void putTransaction(jrd_tra*, Firebird::ClumpletWriter&);
 	static void putRequest(jrd_req*, Firebird::ClumpletWriter&);
+	static void putCall(jrd_req*, Firebird::ClumpletWriter&);
 
 	static Firebird::Mutex initMutex;
 	static SharedMemory* dump;

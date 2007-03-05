@@ -112,16 +112,8 @@ TYPE ("EXECUTABLE", prc_executable, nam_prc_type)
 TYPE("NORMAL", prm_mech_normal, nam_prm_mechanism)
 TYPE("TYPE OF", prm_mech_type_of, nam_prm_mechanism)
 
-TYPE ("IDLE", att_s_idle, nam_mon_att_state)
-TYPE ("ACTIVE", att_s_active, nam_mon_att_state)
-TYPE ("KILLED", att_s_killed, nam_mon_att_state)
-
-TYPE ("IDLE", tra_s_idle, nam_mon_tra_state)
-TYPE ("ACTIVE", tra_s_active, nam_mon_tra_state)
-
-TYPE ("IDLE", stmt_s_idle, nam_mon_stmt_state)
-TYPE ("ACTIVE", stmt_s_active, nam_mon_stmt_state)
-TYPE ("KILLED", stmt_s_killed, nam_mon_stmt_state)
+TYPE ("IDLE", mon_state_idle, nam_mon_state)
+TYPE ("ACTIVE", mon_state_active, nam_mon_state)
 
 TYPE ("ONLINE", shut_mode_online, nam_mon_shut_mode)
 TYPE ("MULTI_USER_SHUTDOWN", shut_mode_multi, nam_mon_shut_mode)

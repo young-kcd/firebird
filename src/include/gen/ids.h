@@ -355,5 +355,14 @@ enum fids {
 	f_mon_stmt_tra_id,
 	f_mon_stmt_state,
 	f_mon_stmt_timestamp,
-	f_mon_stmt_sql_text
+	f_mon_stmt_sql_text,
+
+	f_mon_call_id = 0,
+	f_mon_call_stmt_id,
+	f_mon_call_caller_id,
+	f_mon_call_name,
+	f_mon_call_type,
+	f_mon_call_timestamp,
+	f_mon_call_src_line,
+	f_mon_call_src_column
 };

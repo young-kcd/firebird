@@ -190,21 +190,9 @@ enum prm_mech_t {
 
 // states
 
-enum att_state_t {
-	att_s_idle = 0,
-	att_s_active = 1,
-	att_s_killed = 2
-};
-
-enum tra_state_t {
-	tra_s_idle = 0,
-	tra_s_active = 1
-};
-
-enum stmt_state_t {
-	stmt_s_idle = 0,
-	stmt_s_active = 1,
-	stmt_s_killed = 2
+enum mon_state_t {
+	mon_state_idle = 0,
+	mon_state_active = 1
 };
 
 // shutdown modes

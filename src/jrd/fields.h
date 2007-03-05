@@ -125,6 +125,7 @@
 
 	FIELD(fld_att_id		, nam_att_id		, dtype_long	, sizeof(SLONG)	, 0						, 0, NULL)
 	FIELD(fld_stmt_id		, nam_stmt_id		, dtype_long	, sizeof(SLONG)	, 0						, 0, NULL)
+	FIELD(fld_call_id		, nam_call_id		, dtype_long	, sizeof(SLONG)	, 0						, 0, NULL)
 
 	FIELD(fld_pid			, nam_pid			, dtype_long	, sizeof(SLONG)	, 0						, 0, NULL)
 	FIELD(fld_state			, nam_state			, dtype_short	, sizeof(SSHORT), 0						, 0, NULL)
@@ -144,3 +145,4 @@
 
 	FIELD(fld_debug_info	, nam_debug_info	, dtype_blob	, BLOB_SIZE		, isc_blob_debug_info	, 0, NULL)
 	FIELD(fld_prm_mechanism	, nam_prm_mechanism	, dtype_short	, sizeof(SSHORT), 0						, 0, NULL)
+	FIELD(fld_src_info		, nam_src_info		, dtype_long	, sizeof(SLONG)	, 0						, 0, NULL)
