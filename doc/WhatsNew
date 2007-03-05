@@ -2,11 +2,30 @@
   * v2.1 Alpha 1
   **************
 
-    * QLI crash
-	  Fix problem with QLI where a crash occurs using the following SQL
-	  insert into relationx select * from relationy
+    * Bugfix CORE-1149
+        DoS attack on server using services API
       Contributor(s):
-	Paul Beach (pbeach at ibphoenix.com)
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-1145
+        Server locks up while attempting to commit a deletion of an expression index
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-1142
+        Cannot alter generator's comment to the same value
+      Contributor(s):
+        Claudio Valderrama <cvalde at usa.net>
+
+    * Bugfix CORE-1120
+        Conversion from string to number is not standard compliant
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-1112
+        Crash when dealing with a string literal longer than 32K
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
 
     * Bugfix CORE-1098
         Races in cch.cpp, leading to AV during cache_writer startup
@@ -23,10 +42,20 @@
       Contributor(s):
         Dmitry Yemanov <dimitr at firebirdsql.org>
 
+    * Bugfix CORE-1056
+        A query could produce different results, depending on the presence of an index
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
     * Bugfix CORE-1039
         Memory statistics does not include the buffer cache size
       Contributor(s):
         Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-1031
+        fb_lock_print.exe fails on Windows 2003 R2 / XP SP2
+      Contributor(s):
+        Vlad Horsun <hvlad at users.sourceforge.net>
 
     * Bugfix CORE-1009
         Restoring RDB$BASE_FIELD for expression
@@ -43,26 +72,10 @@
       Contributor(s):
         Adriano dos Santos Fernandes <adrianosf at uol.com.br>
 
-    * Bugfix CORE-966
-        Bug in socket binding for database event
+    * Bugfix CORE-968
+        Lost connection with Firebird Server
       Contributor(s):
-        Paul Beach <pbeach at ibphoenix.com>
-        Dmitry Yemanov <dimitr at firebirdsql.org>
-
-    * More dependencies (unregistered)
-        Fixed untracked collation dependencies in PSQL
-      Contributor(s):
-        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
-
-    * Bugfix CORE-870
-        Engine crashes while trying to backup a logically corrupt database
-      Contributor(s):
-        Claudio Valderrama <cvalde at usa.net>
-
-    * Bugfix CORE-200
-        Empty column names with aggregate functions
-      Contributor(s):
-        Claudio Valderrama <cvalde at usa.net>
+        Alex Peshkov <peshkoff at mail.ru>
 
     * Bugfix CORE-967
         SQL with incorrect characters (outside the ASCII range) may be processed wrongly
@@ -74,93 +87,8 @@
       Contributor(s):
         Dmitry Yemanov <dimitr at firebirdsql.org>
 
-    * Bugfix CORE-925
-        ALL predicate works incorrectly for some subqueries
-      Contributor(s):
-        Dmitry Yemanov <dimitr at firebirdsql.org>
-
-    * Bugfix CORE-833
-        Connection issues with very long hostname
-      Contributor(s):
-        Dmitry Yemanov <dimitr at firebirdsql.org>
-
-    * Bugfix CORE-850
-        DYN layer allows to set defaults for computed fields when altering a field
-      Contributor(s):
-        Claudio Valderrama <cvalde at usa.net>
-
-    * Bugfix CORE-104
-        Dropping and recreating a table in the same transaction disables the primary key
-      Contributor(s):
-        Dmitry Yemanov <dimitr at firebirdsql.org>
-
-    * Bugfix CORE-91
-        Recreate and self-referencing indexes
-      Contributor(s):
-        Dmitry Yemanov <dimitr at firebirdsql.org>
-
-    * Bugfixes CORE-86, CORE-88 and CORE-99
-        Select/join on different datatypes produces undesired results
-      Contributor(s):
-        Dmitry Yemanov <dimitr at firebirdsql.org>
-
-    * Bugfix CORE-202
-        ORDER BY works wrong with collate PT_PT
-      Contributor(s):
-        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
-
-    * Bugfix CORE-866
-        Removing a NOT NULL constraint is not visible until reconnect
-      Contributor(s):
-        Dmitry Yemanov <dimitr at firebirdsql.org>
-
     * Bugfix CORE-954
         Server crashes while grouping by PSQL variable
-      Contributor(s):
-        Dmitry Yemanov <dimitr at firebirdsql.org>
-
-    * Bugfix CORE-881
-        Singleton is not respected in COMPUTED BY expressions
-      Contributor(s):
-        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
-
-    * Bugfix CORE-859
-        Sorting is allowed for blobs
-      Contributor(s):
-        Dmitry Yemanov <dimitr at firebirdsql.org>
-
-    * Bugfix CORE-842
-        Specific query crashing the server
-      Contributor(s):
-        Dmitry Yemanov <dimitr at firebirdsql.org>
-
-    * Bugfix CORE-152
-        Sqlsubtype incorrect on timestamp difference
-      Contributor(s):
-        Claudio Valderrama <cvalde at usa.net>
-
-    * Bugfix CORE-87
-        Bug in libfbclient under Linux with SA_SIGINFO
-      Contributor(s):
-        Alex Peshkov <peshkoff at mail.ru>
-
-    * Bugfix CORE-847
-        Computed field cannot be changed to non-computed using ALTER TABLE ALTER COLUMN TYPE <datatype>
-      Contributor(s):
-        Claudio Valderrama <cvalde at usa.net>
-
-    * Bugfix CORE-347
-        Input of invalid dates through DSQL parameters
-      Contributor(s):
-        Dmitry Yemanov <dimitr at firebirdsql.org>
-
-    * Bugfix CORE-84
-        NBACKUP and security
-      Contributor(s):
-        Alex Peshkov <peshkoff at mail.ru>
-
-    * Bugfix CORE-878
-        Problem when dropping column that is a primary key
       Contributor(s):
         Dmitry Yemanov <dimitr at firebirdsql.org>
 
@@ -175,25 +103,20 @@
       Contributor(s):
         Adriano dos Santos Fernandes <adrianosf at uol.com.br>
 
-    * Bugfix CORE-851
-        Field can be used multiple times in multi-segment index definition
+    * Bugfix CORE-925
+        ALL predicate works incorrectly for some subqueries
       Contributor(s):
-        Claudio Valderrama <cvalde at usa.net>
+        Dmitry Yemanov <dimitr at firebirdsql.org>
 
     * Bugfix CORE-908
         Garbage in plan output of complex statement
       Contributor(s):
         Vlad Horsun <hvlad at users.sourceforge.net>
 
-    * Bugfix CORE-871
-        Incorrect handling of NULL within views - returns 0
+    * Bugfix CORE-900
+        Deadlock when attaching simultaneously with services and standard APIs
       Contributor(s):
-        Claudio Valderrama <cvalde at usa.net>
-
-    * Bugfix CORE-880
-        Malformed characters are accepted in character set GB2312
-      Contributor(s):
-        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+        Alex Peshkov <peshkoff at mail.ru>
 
     * Bugfix CORE-899
         Problems with explicit PSQL cursors in unwanted states
@@ -204,6 +127,145 @@
         SUBSTRING with NULL offset or length doesn't return NULL
       Contributor(s):
         Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-881
+        Singleton is not respected in COMPUTED BY expressions
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-880
+        Malformed characters are accepted in character set GB2312
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-878
+        Problem when dropping column that is a primary key
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-871
+        Incorrect handling of NULL within views - returns 0
+      Contributor(s):
+        Claudio Valderrama <cvalde at usa.net>
+
+    * Bugfix CORE-870
+        Engine crashes while trying to backup a logically corrupt database
+      Contributor(s):
+        Claudio Valderrama <cvalde at usa.net>
+
+    * Bugfix CORE-866
+        Removing a NOT NULL constraint is not visible until reconnect
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-859
+        Sorting is allowed for blobs
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-851
+        Field can be used multiple times in multi-segment index definition
+      Contributor(s):
+        Claudio Valderrama <cvalde at usa.net>
+
+    * Bugfix CORE-850
+        DYN layer allows to set defaults for computed fields when altering a field
+      Contributor(s):
+        Claudio Valderrama <cvalde at usa.net>
+
+    * Bugfix CORE-847
+        Computed field cannot be changed to non-computed using ALTER TABLE ALTER COLUMN TYPE <datatype>
+      Contributor(s):
+        Claudio Valderrama <cvalde at usa.net>
+
+    * Bugfix CORE-842
+        Specific query crashing the server
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-833
+        Connection issues with very long hostname
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-347
+        Input of invalid dates through DSQL parameters
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-202
+        ORDER BY works wrong with collate PT_PT
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-200
+        Empty column names with aggregate functions
+      Contributor(s):
+        Claudio Valderrama <cvalde at usa.net>
+
+    * Bugfix CORE-152
+        Sqlsubtype incorrect on timestamp difference
+      Contributor(s):
+        Claudio Valderrama <cvalde at usa.net>
+
+    * Bugfix CORE-104
+        Dropping and recreating a table in the same transaction disables the primary key
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-91
+        Recreate and self-referencing indexes
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-87
+        Bug in libfbclient under Linux with SA_SIGINFO
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfixes CORE-86, CORE-88 and CORE-99
+        Select/join on different datatypes produces undesired results
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-84
+        NBACKUP and security
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * QLI crash (unregistered)
+        Fix problem with QLI where a crash occurs using the following SQL:
+        INSERT INTO relationx SELECT * FROM relationy
+      Contributor(s):
+        Paul Beach (pbeach at ibphoenix.com)
+
+    * More dependencies (unregistered)
+        Fixed untracked collation dependencies in PSQL
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Security fix (unregistered)
+        Tricky paths can allow a directory traversal attack bypassing config file
+        settings for DB creation dir, for example.
+      Contributor(s):
+        Claudio Valderrama <cvalde at usa.net>
+
+    * Various BOF fixes (unregistered)
+      Contributor(s):
+        Claudio Valderrama <cvalde at usa.net>
+        Alex Peshkov <peshkoff at mail.ru>
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Improvement CORE-1148
+        Regular users are not allowed to retrieve the server log using Services API
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Improvement CORE-1091
+        isc_service_query() should return an alias name instead of a full database file name
+        in the case of configured "DatabaseAccess = None"
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
 
     * Improvement CORE-1071
         Background garbage collector doesn't need to read backversion of active record
@@ -220,21 +282,6 @@
       Contributor(s):
         Vlad Horsun <hvlad at users.sourceforge.net>
 
-    * Improvement CORE-711
-        Make syntax for "CREATE TRIGGER" compliant with SQL2003
-      Contributor(s):
-        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
-
-    * Improvement CORE-976
-        Synchronization of DSQL metadata cache objects in classic-server
-      Contributor(s):
-        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
-
-    * Improvement CORE-977
-        Put blob charset in XSQLVAR::sqlscale
-      Contributor(s):
-        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
-
     * Improvement CORE-979
         Make RDB$DB_KEY in outer joins returns NULL when appropriate
       Contributor(s):
@@ -244,6 +291,40 @@
         Extend ISQL SHOW SYSTEM command
       Contributor(s):
         Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Improvement CORE-977
+        Put blob charset in XSQLVAR::sqlscale
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Improvement CORE-976
+        Synchronization of DSQL metadata cache objects in classic-server
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Improvement CORE-972
+        Case-insensitive collation for UTF-8
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Improvement CORE-971
+        Improve network protocol performance
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+        Vlad Horsun <hvlad at users.sourceforge.net>
+
+    * Improvement CORE-970
+        Show line/column numbers in PSQL error stack trace
+      Contributor(s):
+        Vlad Horsun <hvlad at users.sourceforge.net>
+
+    * Improvement CORE-969
+        Deprecate page sizes of 1K and 2K as being inefficient
+      Note(s):
+        This applies to new databases only. Old ones can be attached
+        regardless of their page size.
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
 
     * Improvement CORE-958
         Increase the maximum number of hash slots for the Lock Manager.
@@ -267,21 +348,11 @@
       Contributor(s):
         Dmitry Yemanov <dimitr at firebirdsql.org>
 
-    * Improvement CORE-970
-        Show line/column numbers in PSQL error stack trace
-      Contributor(s):
-        Vlad Horsun <hvlad at users.sourceforge.net>
-
-    * Improvement CORE-972
-        Case-insensitive collation for UTF-8
-      Contributor(s):
-        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
-
-    * Improvement CORE-969
-        Deprecate page sizes of 1K and 2K as being inefficient
-      Note(s):
-        This applies to new databases only. Old ones can be attached
-        regardless of their page size.
+    * Improvement CORE-831
+        Column aliases are processed as column names in the view definition
+      Example(s):
+        CREATE VIEW V_TEST AS
+          SELECT ID, COL1 AS CODE, COL2 AS NAME FROM TAB;
       Contributor(s):
         Dmitry Yemanov <dimitr at firebirdsql.org>
 
@@ -296,29 +367,31 @@
       Contributor(s):
         Dmitry Yemanov <dimitr at firebirdsql.org>
 
-    * Improvement CORE-831
-        Column aliases are processed as column names in the view definition
-      Example(s):
-        CREATE VIEW V_TEST AS
-          SELECT ID, COL1 AS CODE, COL2 AS NAME FROM TAB;
+    * Improvement CORE-711
+        Make syntax for "CREATE TRIGGER" compliant with SQL2003
       Contributor(s):
-        Dmitry Yemanov <dimitr at firebirdsql.org>
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
 
     * Improvement CORE-673
         instsvc.exe now supports multi-instance installations
       Contributor(s):
         Dmitry Yemanov <dimitr at firebirdsql.org>
 
-    * Improvement CORE-971
-        Improve network protocol performance
-      Contributor(s):
-        Dmitry Yemanov <dimitr at firebirdsql.org>
-        Vlad Horsun <hvlad at users.sourceforge.net>
-
     * GBAK improvement (unregistered)
         Now it's possible to use v2.1's GBAK to restore on any FB version
       Contributor(s):
         Claudio Valderrama <cvalde at usa.net>
+
+     * INTL improvements (unregistered)
+        1) Ability to use: ICU charsets through fbintl
+        2) UNICODE collation (charset_UNICODE) is available for all fbintl charsets
+        3) Collation attributes
+        4) CREATE/DROP COLLATION statements
+        5) SHOW COLLATION and collation extraction in ISQL
+      See also:
+        /doc/README.intl.txt
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
 
     * Feature CORE-1018
         Provide mechanism to get engine version without needing to call API function
@@ -328,79 +401,10 @@
       Contributor(s):
         Dmitry Yemanov <dimitr at firebirdsql.org>
 
-    * Features CORE-645 and CORE-745
-        Database triggers
-      See also:
-        /doc/sql.extensions/README.db_triggers.txt
-      Contributor(s):
-        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
-
-    * Features CORE-794
-        Kill a query on client request
-      Contributor(s):
-        Dmitry Yemanov <dimitr at firebirdsql.org>
-
-   * Feature CORE-655
-        BLOB SUB_TYPE TEXT datatype fully compatible with VAR[CHAR]
-      Contributor(s):
-        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
-
-    * Features CORE-746, CORE-774 and CORE-1019
-        Runtime database monitoring via SQL
-      See also:
-        /doc/README.monitoring_tables
-      Contributor(s):
-        Dmitry Yemanov <dimitr at firebirdsql.org>
-
-    * Features CORE-682 and CORE-819
-        Port to Windows 64-bit platform (AMD64 and Intel EM64T)
-      Contributor(s):
-        Dmitry Yemanov <dimitr at firebirdsql.org>
-
-    * Feature CORE-684
-        Collations allowed in PSQL parameters and variables
-      Contributor(s):
-        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
-
-    * Feature CORE-704
-        Ctrl-C to be used to cancel interactive ISQL output
-      Contributor(s):
-        Michal Kubecek <mike at mk-sys.cz>
-        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
-
-    * Feature CORE-815
-        UPDATE OR INSERT and MERGE statements
-      See also:
-        /doc/sql.extensions/README.update_or_insert.txt
-        /doc/sql.extensions/README.merge.txt
-      Contributor(s):
-        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
-
-    * Feature CORE-660
-        Domains allowed to be used in PSQL parameters and variables
-      Contributor(s):
-        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
-
-    * Feature CORE-795
-        Unicode collations
-      Contributor(s):
-        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
-
-    * Feature CORE-864
-        Chinese character set GBK
-      Contributor(s):
-        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
-
     * Feature CORE-975
         Thai character set TIS620
       Contributor(s):
         Adriano dos Santos Fernandes <adrianosf at uol.com.br>
-
-    * Security fix (unregistered)
-        Tricky paths can allow a directory traversal attack bypassing config file
-        settings for DB creation dir, for example.
-      Contributor(s):
-        Claudio Valderrama <cvalde at usa.net>
 
     * Feature CORE-964
         Aggregate function LIST (string concatenation)
@@ -417,21 +421,67 @@
       Contributor(s):
         Vlad Horsun <hvlad at users.sourceforge.net>
 
-     * INTL improvements (unregistered)
-        1) Ability to use: ICU charsets through fbintl
-        2) UNICODE collation (charset_UNICODE) is available for all fbintl charsets
-        3) Collation attributes
-        4) CREATE/DROP COLLATION statements
-        5) SHOW COLLATION and collation extraction in ISQL
-      See also:
-        /doc/README.intl.txt
+    * Feature CORE-864
+        Chinese character set GBK
       Contributor(s):
         Adriano dos Santos Fernandes <adrianosf at uol.com.br>
 
-    * Various BOF fixes
+    * Feature CORE-815
+        UPDATE OR INSERT and MERGE statements
+      See also:
+        /doc/sql.extensions/README.update_or_insert.txt
+        /doc/sql.extensions/README.merge.txt
       Contributor(s):
-        Claudio Valderrama <cvalde at usa.net>
-        Alex Peshkov <peshkoff at mail.ru>
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Feature CORE-795
+        Unicode collations
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Feature CORE-794
+        Kill a query on client request
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Features CORE-746, CORE-774 and CORE-1019
+        Runtime database monitoring via SQL
+      See also:
+        /doc/README.monitoring_tables
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Feature CORE-704
+        Ctrl-C to be used to cancel interactive ISQL output
+      Contributor(s):
+        Michal Kubecek <mike at mk-sys.cz>
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Feature CORE-684
+        Collations allowed in PSQL parameters and variables
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Features CORE-682 and CORE-819
+        Port to Windows 64-bit platform (AMD64 and Intel EM64T)
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Feature CORE-660
+        Domains allowed to be used in PSQL parameters and variables
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+   * Feature CORE-655
+        BLOB SUB_TYPE TEXT datatype fully compatible with VAR[CHAR]
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Features CORE-645 and CORE-745
+        Database triggers
+      See also:
+        /doc/sql.extensions/README.db_triggers.txt
+      Contributor(s):
         Adriano dos Santos Fernandes <adrianosf at uol.com.br>
 
     * Generic cleanup
