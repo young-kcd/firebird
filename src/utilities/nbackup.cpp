@@ -159,8 +159,12 @@ class nbackup {
 public:
 	nbackup(const char* _database, const char* _username, const char* _password, bool _run_db_triggers)
 	{
-		if (_username) username = _username;
-		if (_password) password = _password;
+		if (_username)
+			username = _username;
+			
+		if (_password)
+			password = _password;
+			
 		database = _database;
 		run_db_triggers = _run_db_triggers;
 
@@ -184,9 +188,9 @@ public:
 	void backup_database(int level, const char* fname);
 	void restore_database(int filecount, const char* const* files);
 private:
-    ISC_STATUS_ARRAY status; /* status vector */
-	isc_db_handle newdb; /* database handle */
-    isc_tr_handle trans; /* transaction handle */
+    ISC_STATUS_ARRAY status; // status vector
+	isc_db_handle newdb; // database handle
+    isc_tr_handle trans; // transaction handle
 
 	Firebird::PathName database;
 	Firebird::string username;
@@ -376,7 +380,7 @@ void nbackup::create_backup()
 		b_error::raise("Error (%d) creating backup file: %s", GetLastError(), bakname.c_str());
 #else
 	if (bakname == "stdout") {
-		backup = 1 /* Posix file handle for stdout */;
+		backup = 1; // Posix file handle for stdout
 	}
 	else {
 		backup = open(bakname.c_str(), O_WRONLY | O_CREAT | O_EXCL | O_LARGEFILE, 0660);
@@ -553,7 +557,7 @@ void nbackup::backup_database(int level, const char* fname)
 				pr_error(status, "execute history query");
 
 			switch (isc_dsql_fetch(status, &stmt, 1, out_sqlda)) {
-			case 100: /* No more records available */
+			case 100: // No more records available
 				b_error::raise("Cannot find record for database \"%s\" backup level %d "
 					"in the backup history", database.c_str(), level - 1);
 			case 0: 
