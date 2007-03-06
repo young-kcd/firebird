@@ -22,6 +22,8 @@
  * Toni Martir: Verbose records restored as RESTORE_VERBOSE_INTERVAL,
  * also verbose restoring indexes as DEFERRED when verbose
  * 2003.08.17 Claudio Valderrama: Fix SF Bug #750659.
+ * Adriano dos Santos Fernandes
+ *
  */
 
 #include "firebird.h"

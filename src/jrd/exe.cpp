@@ -39,6 +39,8 @@
  * 2002.10.29 Nickolay Samofatov: Added support for savepoints
  * 2002.10.30 Sean Leyne - Removed support for obsolete "PC_PLATFORM" define
  * 2003.10.05 Dmitry Yemanov: Added support for explicit cursors in PSQL
+ * Adriano dos Santos Fernandes
+ *
  */
 
 #include "firebird.h"
