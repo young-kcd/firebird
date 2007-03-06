@@ -1,3 +1,37 @@
+2007-03-06 03:29  asfernandes
+
+	* firebird2/src/: burp/restore.epp (1.116), jrd/exe.cpp (1.213),
+	utilities/nbackup.cpp (1.57):
+
+	Misc
+
+2007-03-05 13:36  dimitr
+
+	* firebird2/doc/WhatsNew (1.115):
+
+	Updated docs.
+
+2007-03-05 08:49  dimitr
+
+	* firebird2/src/: jrd/DatabaseSnapshot.cpp (1.24),
+	jrd/DatabaseSnapshot.h (1.5), jrd/constants.h (1.42), jrd/fields.h
+	(1.14), jrd/names.h (1.12), jrd/relations.h (1.17), jrd/types.h
+	(1.15), include/gen/ids.h (1.21):
+
+	Added MON$CALL_STACK plus some minor monitoring-related changes.
+
+2007-03-05 07:40  robocop
+
+	* firebird2/src/utilities/nbackup.cpp (1.56):
+
+	Totally misc.
+
+2007-03-05 07:30  robocop
+
+	* firebird2/src/jrd/exe.cpp (1.212):
+
+	Totally misc.
+
 2007-03-04 21:33  asfernandes
 
 	* firebird2/src/jrd/exe.cpp (1.211):
