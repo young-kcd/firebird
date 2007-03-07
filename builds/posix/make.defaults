@@ -26,7 +26,7 @@
 #   Contributor(s):
 # 
 # 
-#   $Id: make.defaults,v 1.44.4.1 2007-03-07 15:04:16 paulbeach Exp $
+#   $Id: make.defaults,v 1.44.4.2 2007-03-07 16:32:05 alexpeshkoff Exp $
 # 
 
 
@@ -201,7 +201,7 @@ LIB_LINK_OPTIONS = $(LDFLAGS) -shared
 LIB_LINK_RPATH = -Wl,-rpath,
 LIB_LINK_SONAME = -Wl,-soname,
 LIB_LINK_MAPFILE= -Wl,--version-script,
-FBEMBED_LINK= $(LIB) -lfbembed
+FBEMBED_LINK= -L$(LIB) -lfbembed
 
 LINK_FIREBIRD_SYMBOLS = $(LIB_LINK_MAPFILE)$(ROOT)/builds/posix/firebird.vers
 LINK_FBINTL_SYMBOLS = $(LIB_LINK_MAPFILE)$(ROOT)/builds/posix/fbintl.vers

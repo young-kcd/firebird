@@ -224,7 +224,7 @@ static ArchitectureType archMatrix[CLASS_MAX + 1] = {
 	archLittleEndian, // CLASS_LINUX_AMD64
 	archLittleEndian, // CLASS_FREEBSD_AMD64
 	archLittleEndian, // CLASS_WINDOWS_AMD64
-	archBigEndian     // CLASS_LINUX_PPC
+	archBigEndian,    // CLASS_LINUX_PPC
 	archLittleEndian  // CLASS_DARWIN_I386
 };
 
