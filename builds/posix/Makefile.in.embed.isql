@@ -48,6 +48,9 @@ ISQL_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(ISQL_Sources)))
 
 AllObjects = $(ISQL_Objects) $(CLUMPLETS_Objects)
 
+ifeq ($(PLATFORM),DARWIN)
+LINK_LIBS+=$(ICU_LIBS)
+endif
 Dependencies = $(AllObjects:.o=.d) 
 
 
@@ -58,7 +61,7 @@ Dependencies = $(AllObjects:.o=.d)
 isql : $(LIBFBEMBED_SO) $(ISQL)
 
 $(ISQL):	$(ISQL_Objects) $(CLUMPLETS_Objects) $(FBCOMMON_Objects) $(FBCLASSES_Objects)
-	$(LD) $(LINK_OPTS) $^ -o $@ -L$(LIB) -lfbembed $(LINK_LIBS)
+	$(LD) $(LINK_OPTS) $^ -o $@ $(FBEMBED_LINK) $(LINK_LIBS)
 
 
 include $(ROOT)/gen/make.shared.targets

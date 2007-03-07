@@ -110,6 +110,14 @@ const char INET_FLAG		= ':';
 #define GETWD(buf)		fb_getcwd(buf)
 #endif /* SUPERSERVER */
 
+#ifdef DARWIN
+#ifdef HAVE_SYS_PARAM_H
+#include <sys/param.h>
+#endif
+#ifdef HAVE_SYS_MOUNT_H
+#include <sys/mount.h>
+#endif
+#endif /*DARWIN*/
 
 /* Unix/NFS specific stuff */
 #ifndef NO_NFS
@@ -163,8 +171,7 @@ const char* MTAB		= "/etc/mtab";
 
 #endif /* NO_NFS */
 
-#ifdef hpux
-/* RITTER - added HP11 to the pre-processor condition below */
+#ifdef HPUX 
 #if !(defined HP10 || defined HP11)
 #include <cluster.h>
 #endif
@@ -213,11 +220,22 @@ namespace {
 
 	class Mnt {
 	private:
+#ifdef DARWIN
+	struct statfs * mnt_info;
+	int mnt_cnt;
+	int mnt_i;
+#else
 		osMtab mtab;
+#endif /*DARWIN*/
 	public:
 /*		Mnt() : AutoMemory(), mtab(), node(getPool()), 
 				mount(getPool()), path(getPool()) { } */
+#ifdef DARWIN
+		Mnt();
+		bool ok() const {return this->mnt_cnt > 0;}
+#else
 		bool ok() const { return mtab.ok(); }
+#endif /*DARWIN*/
 		bool get();
 		tstring node,  /* remote server name */
 			mount, /* local mount point */
@@ -240,7 +258,6 @@ static bool get_full_path(const tstring&, tstring&);
 #endif
 
 #ifdef hpux
-/* RITTER - added HP11 to the pre-processor condition below */
 #if !(defined HP10 || defined HP11)
 static bool get_server(tstring&, tstring&);
 #endif
@@ -1621,6 +1638,36 @@ bool Mnt::get()
 }
 #endif //Solaris
 
+#ifdef DARWIN
+#define GET_MOUNTS
+Mnt::Mnt() : mnt_i(0)
+{
+	this->mnt_info = NULL;
+	this->mnt_cnt = getmntinfo(&this->mnt_info, MNT_NOWAIT);
+}
+
+bool Mnt::get()
+{
+	if (this->mnt_i >= this->mnt_cnt) {
+		return false;
+	}
+
+	const char * start = this->mnt_info[this->mnt_i].f_mntfromname;
+	const char * iflag = strchr(this->mnt_info[this->mnt_i].f_mntfromname, ':');
+
+	if (iflag) {
+		node = tstring(start, size_t(iflag - start));
+		path = tstring(++iflag);
+	}
+	else {
+		node.erase();
+		path.erase();
+	}
+	mount = this->mnt_info[this->mnt_i].f_mntonname;
+	this->mnt_i++;
+	return true;
+}
+#endif /*DARWIN*/
 #ifndef GET_MOUNTS
 bool Mnt::get()
 {

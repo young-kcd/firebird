@@ -52,6 +52,9 @@ GDEF_Files=	exe.epp extract.epp \
 GDEF_Sources = $(addprefix dudley/, $(GDEF_Files)) $(GDEF_Other_Sources)
 GDEF_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(GDEF_Sources))))
 
+ifeq ($(PLATFORM),DARWIN)
+LINK_LIBS+=$(ICU_LIBS)
+endif
 AllObjects = $(GDEF_Objects) $(CLUMPLETS_Objects)
 Dependencies = $(AllObjects:.o=.d)
 
@@ -63,7 +66,7 @@ all:	gdef
 gdef:   $(GDEF)
 
 $(GDEF): $(GDEF_Objects) $(CLUMPLETS_Objects) $(FBCOMMON_Objects) $(FBCLASSES_Objects)
-	$(LD) $(LINK_OPTS) $^ -o $@ -L$(LIB) -lfbembed $(LINK_LIBS)
+	$(LD) $(LINK_OPTS) $^ -o $@ $(FBEMBED_LINK) $(LINK_LIBS)
 
 
 

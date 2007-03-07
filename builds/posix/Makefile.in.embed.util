@@ -74,8 +74,7 @@ DROP_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(DROP_Sources)))
 
 GSEC_Other_Sources = jrd/enc.cpp jrd/sha.cpp jrd/guid.cpp \
 jrd/isc_file.cpp common/config/config.cpp common/config/config_file.cpp \
-jrd/os/posix/path_utils.cpp jrd/os/posix/config_root.cpp jrd/os/posix/fbsyslog.cpp \
-common/config/dir_list.cpp
+common/config/dir_list.cpp $(OS_SPECIFIC_SOURCES)
 
 GSEC_Files =  gsec.cpp security.cpp call_service.cpp
 GSEC_Sources = $(addprefix utilities/gsec/, $(GSEC_Files)) $(GSEC_Other_Sources)
@@ -108,6 +107,9 @@ RELAY_Files =  relay.cpp
 RELAY_Sources = $(addprefix utilities/, $(RELAY_Files))
 RELAY_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(RELAY_Sources))))
 
+ifeq ($(PLATFORM),DARWIN)
+LINK_LIBS+=$(ICU_LIBS)
+endif
 
 AllObjects = $(CREATEDB_Object) $(DROP_Object) \
 			 $(GSEC_Objects) $(GSTAT_Object) $(IBGUARD_Objects) \
@@ -138,47 +140,47 @@ $(CREATE_DB):	$(CREATEDB_Objects) $(LIBFBSTATIC_A) $(COMMON_Objects)
 nbackup: $(LIBFBEMBED_SO) $(NBACKUP)
 
 $(NBACKUP):	$(NBACKUP_Objects) $(CLUMPLETS_Objects) $(COMMON_Objects)
-	$(LD) $(LINK_OPTS) $^ -o $@ -L$(LIB) -lfbembed $(LINK_LIBS)
+	$(LD) $(LINK_OPTS) $^ -o $@ $(FBEMBED_LINK) $(LINK_LIBS)
 
 fb_lock_print: $(LIBFBEMBED_SO) $(LOCKPRINT)
 
 $(LOCKPRINT):	$(LOCKPRINT_Objects) $(COMMON_Objects)
-	$(LD) $(LINK_OPTS) $^ -o $@ -L$(LIB) -lfbembed $(LINK_LIBS)
+	$(LD) $(LINK_OPTS) $^ -o $@ $(FBEMBED_LINK) $(LINK_LIBS)
 
 
 gstat : $(LIBFBEMBED_SO) $(GSTAT)
 
 $(GSTAT):	$(GSTAT_Objects) $(CLUMPLETS_Objects) $(COMMON_Objects)
-	$(LD) $(LINK_OPTS) $^ -o $@ -L$(LIB) -lfbembed $(LINK_LIBS)
+	$(LD) $(LINK_OPTS) $^ -o $@ $(FBEMBED_LINK) $(LINK_LIBS)
 
 
 
 gds_drop: $(GDS_DROP)
 
 $(GDS_DROP):	$(DROP_Objects) $(FBCOMMON_Objects) $(FBCLASSES_Objects)
-	$(LD) $(LINK_OPTS) $^ -o $@ -L$(LIB) -lfbembed $(LINK_LIBS)
+	$(LD) $(LINK_OPTS) $^ -o $@ $(FBEMBED_LINK) $(LINK_LIBS)
 
 
 gds_relay: $(GDS_RELAY)
 
 $(GDS_RELAY):	$(RELAY_Objects) $(LIBFBEMBED_SO)
-	$(LD) $(LINK_OPTS) $(RELAY_Objects) -o $@ -L$(LIB) -lfbembed $(LINK_LIBS)
+	$(LD) $(LINK_OPTS) $(RELAY_Objects) -o $@ $(FBEMBED_LINK) $(LINK_LIBS)
 
 
 gsec: $(GSEC)
 
 $(GSEC):	$(GSEC_Objects) $(CLUMPLETS_Objects) $(COMMON_Objects)
-	$(LD) $(LINK_OPTS) $^ -o $@ -L$(LIB) -lfbembed $(LINK_LIBS)
+	$(LD) $(LINK_OPTS) $^ -o $@ $(FBEMBED_LINK) $(LINK_LIBS)
 
 ibguard: $(IBGUARD)
 
 $(IBGUARD):	$(IBGUARD_Objects) $(LIBFBEMBED_SO)  
-	$(LD) $(LINK_OPTS) $(IBGUARD_Objects) -o $@ -L$(LIB) -lfbembed $(LINK_LIBS)
+	$(LD) $(LINK_OPTS) $(IBGUARD_Objects) -o $@ $(FBEMBED_LINK) $(LINK_LIBS)
 
 ibmgr_bin: $(IBMGR_BIN)
 
 $(IBMGR_BIN):	$(IBMGR_Objects) $(LIBFBEMBED_SO)  
-	$(LD) $(LINK_OPTS) $(IBMGR_Objects) -o $@ -L$(LIB) -lfbembed $(LINK_LIBS)
+	$(LD) $(LINK_OPTS) $(IBMGR_Objects) -o $@ $(FBEMBED_LINK) $(LINK_LIBS)
 
 
 # This one needs a bit of work.
@@ -186,7 +188,7 @@ $(IBMGR_BIN):	$(IBMGR_Objects) $(LIBFBEMBED_SO)
 rebuild: $(GDS_REBUILD)
 
 $(GDS_REBUILD):	$(REBUILD_Objects) $(LIBFBEMBED_SO)  
-	$(LD) $(LINK_OPTS) $(REBUILD_Objects) -o $@ -L$(LIB) -lfbembed $(LINK_LIBS)
+	$(LD) $(LINK_OPTS) $(REBUILD_Objects) -o $@ $(FBEMBED_LINK) $(LINK_LIBS)
 
 include $(ROOT)/gen/make.shared.targets
 

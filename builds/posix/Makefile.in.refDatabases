@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.refDatabases,v 1.29 2005-12-18 17:56:43 alexpeshkoff Exp $
+#  $Id: Makefile.in.refDatabases,v 1.29.4.1 2007-03-07 15:04:16 paulbeach Exp $
 #
 ROOT=..
 ObjModuleType=std
@@ -44,8 +44,6 @@ include     $(ROOT)/gen/make.shared.variables
 #
 unexport ISC_USER
 unexport ISC_PASSWORD
-export DYLD_FRAMEWORK_PATH
-DYLD_FRAMEWORK_PATH=	$(OBJS)/firebird
 export INTERBASE
 
 MSG_SCRIPTS = msg.sql facilities.sql locales.sql history.sql messages.sql \
