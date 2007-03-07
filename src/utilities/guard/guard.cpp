@@ -192,11 +192,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 		if (timer == time(0))
 		{
 			// don't let fbserver restart too often - avoid log overflow
-#ifdef WIN_NT
-			Sleep(1000);
-#else
 			sleep(1);
-#endif
 			continue;
 		}
 		timer = time(0);
