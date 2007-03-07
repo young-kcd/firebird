@@ -1,3 +1,16 @@
+2007-03-06 16:54  asfernandes
+
+	* firebird2/src/dsql/pass1.cpp (1.303):
+
+	Fixed CORE-1156 - Prepare fails when having a parameter in a DSQL
+	statement before a sub query
+
+2007-03-06 09:21  paul_reeves
+
+	* firebird2/builds/install/misc/firebird.conf (1.27):
+
+	Document Vista requirement.
+
 2007-03-06 03:29  asfernandes
 
 	* firebird2/src/: burp/restore.epp (1.116), jrd/exe.cpp (1.213),
