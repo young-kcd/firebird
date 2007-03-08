@@ -1,3 +1,66 @@
+2007-03-08 03:07  asfernandes
+
+	* firebird2/src/: jrd/jrd.cpp (1.237.2.11), remote/xdr.cpp
+	(1.22.2.3):
+
+	Misc
+
+2007-03-07 17:32  alexpeshkoff
+
+	* firebird2/: builds/posix/Makefile.in.embed.util (1.28.4.2),
+	builds/posix/make.defaults (1.44.4.2), src/jrd/pag.cpp (1.98.4.9):
+
+	misc fixes after MacOS port
+
+2007-03-07 16:04  paulbeach
+
+	* firebird2/: builds/install/arch-specific/darwin/Description.plist
+	(1.1.2.1), builds/install/arch-specific/darwin/FB.info (1.1.2.1),
+	builds/install/arch-specific/darwin/Info.plist (1.1.2.1),
+	builds/install/arch-specific/darwin/License.txt (1.1.2.1),
+	builds/install/arch-specific/darwin/Makefile.in (1.1.12.1),
+	builds/install/arch-specific/darwin/PkgInfo (1.1.2.1),
+	builds/install/arch-specific/darwin/Readme.txt (1.1.2.1),
+	builds/install/arch-specific/darwin/Welcome.txt (1.1.2.1),
+	builds/install/arch-specific/darwin/buildsuffix.c (1.1.2.1),
+	builds/install/arch-specific/darwin/fullvers.c (1.1.2.1),
+	builds/install/arch-specific/darwin/install-script (1.1.2.1),
+	builds/install/arch-specific/darwin/installer_background.pdf
+	(1.1.2.1),
+	builds/install/arch-specific/darwin/installer_background.psd
+	(1.1.2.1), builds/install/arch-specific/darwin/majorvers.c
+	(1.1.2.1), builds/install/arch-specific/darwin/minorvers.c
+	(1.1.2.1), builds/install/arch-specific/darwin/preinstall-script
+	(1.1.2.1), builds/install/arch-specific/darwin/preupgrade-script
+	(1.1.2.1), builds/posix/Makefile.in.client.fbudf (1.10.2.1),
+	builds/posix/Makefile.in.embed.fbudf (1.4.4.1),
+	builds/posix/Makefile.in.embed.gbak (1.15.4.1),
+	builds/posix/Makefile.in.embed.gdef (1.11.4.1),
+	builds/posix/Makefile.in.embed.gfix (1.18.4.1),
+	builds/posix/Makefile.in.embed.gpre (1.20.4.1),
+	builds/posix/Makefile.in.embed.isql (1.12.4.1),
+	builds/posix/Makefile.in.embed.qli (1.19.2.1),
+	builds/posix/Makefile.in.embed.util (1.28.4.1),
+	builds/posix/Makefile.in.examples (1.8.4.1),
+	builds/posix/Makefile.in.extlib (1.20.4.1),
+	builds/posix/Makefile.in.firebird (1.67.4.1),
+	builds/posix/Makefile.in.inet_server (1.14.12.1),
+	builds/posix/Makefile.in.intl (1.23.4.1),
+	builds/posix/Makefile.in.libfbclient (1.29.4.1),
+	builds/posix/Makefile.in.libfbembed (1.22.4.1),
+	builds/posix/Makefile.in.refDatabases (1.29.4.1),
+	builds/posix/make.defaults (1.44.4.1), builds/posix/make.rules
+	(1.28.4.1), builds/posix/postfix.darwin (1.1.4.2),
+	builds/posix/prefix.darwin (1.14.12.1), configure.in (1.241.2.7),
+	doc/WhatsNew (1.95.2.30), extern/icu/source/config/mh-darwin
+	(1.2.4.1), src/include/firebird.h (1.38.4.1), src/jrd/common.h
+	(1.137.2.2), src/jrd/inf_pub.h (1.9.4.2), src/jrd/isc_file.cpp
+	(1.98.4.1), src/jrd/license.h (1.31.12.1), src/jrd/pag.cpp
+	(1.98.4.8), src/jrd/utl.cpp (1.90.4.4), src/remote/xdr.cpp
+	(1.22.2.2):
+
+	Firebird 2.0 MacOS Classic Intel Build
+
 2007-03-06 09:21  paul_reeves
 
 	* firebird2/builds/install/misc/firebird.conf (1.20.4.4):
@@ -27658,6 +27721,13 @@
 	iberror.h (or remove) -Move gds__vax_integer and gds__event_block*
 	to alt.cpp and isc_ to gds.cpp -Use ISC_QUAD internally -Use
 	isc_vax_integer internally
+
+2003-11-11 01:27  paulbeach
+
+	* firebird2/builds/posix/postfix.darwin (1.1.4.1):
+
+	file postfix.darwin was added on branch B2_0_Release on 2007-03-07
+	15:04:16 +0000
 
 2003-11-10 12:25  aafemt
 
