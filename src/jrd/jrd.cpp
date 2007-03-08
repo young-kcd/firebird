@@ -191,35 +191,35 @@ extern SLONG trace_pools;
 
 namespace
 {
-       REC_MUTX_T databases_rec_mutex;
+	REC_MUTX_T databases_rec_mutex;
 
-       class DatabasesInit
-       {
-       public:
-               static void init()
-               {
-                       THD_rec_mutex_init(&databases_rec_mutex);
-               }
-               static void cleanup()
-               {
-                       THD_rec_mutex_destroy(&databases_rec_mutex);
-               }
-       };
-
-       class DatabasesInitInstance : public Firebird::InitMutex<DatabasesInit>
-       {
-       public:
-               DatabasesInitInstance()
-               {
-                       init();
-               }
-               ~DatabasesInitInstance()
-               {
-                       cleanup();
-               }
-       };
-
-       DatabasesInitInstance holder;
+	class DatabasesInit
+	{
+	public:
+		static void init()
+		{
+			THD_rec_mutex_init(&databases_rec_mutex);
+		}
+		static void cleanup()
+		{
+			THD_rec_mutex_destroy(&databases_rec_mutex);
+		}
+	};
+	
+	class DatabasesInitInstance : public Firebird::InitMutex<DatabasesInit>
+	{
+	public:
+		DatabasesInitInstance()
+		{
+			init();
+		}
+		~DatabasesInitInstance()
+		{
+			cleanup();
+		}
+	};
+	
+	DatabasesInitInstance holder;
 }
 
 #define JRD_SS_MUTEX_LOCK       {THREAD_EXIT();\
