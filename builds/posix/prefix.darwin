@@ -15,8 +15,11 @@
 # All Rights Reserved.
 # Contributor(s): ______________________________________.
 # Start of file prefix.darwin:	$(VERSION)	@PLATFORM@
-#$Id: prefix.darwin,v 1.14.12.1 2007-03-07 15:04:16 paulbeach Exp $
+#$Id: prefix.darwin,v 1.14.12.2 2007-03-08 09:19:13 paulbeach Exp $
 # 2 Oct 2002, Nickolay Samofatov - Major Cleanup
+
+DYLD_LIBRARY_PATH=$(FIREBIRD)/lib
+export DYLD_LIBRARY_PATH
 
 OS_ServerFiles=inet_server.cpp
 
