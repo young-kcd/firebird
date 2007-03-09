@@ -2735,22 +2735,11 @@ static void map_sort_data(thread_db* tdbb, jrd_req* request, SortMap* map, UCHAR
 		if (id < 0)
 		{
 			if (id == SMB_TRANS_ID)
-				
-				//rpb->rpb_transaction_nr = *(SLONG *) (from.dsc_address);
-				copy_fromptr(rpb->rpb_transaction_nr, from.dsc_address); 
+				rpb->rpb_transaction_nr = *(SLONG *) (from.dsc_address);
 			else if (id == SMB_DBKEY)
-			{
-				SINT64 tmp;
-				copy_fromptr(tmp, from.dsc_address);
-				//rpb->rpb_number.setValue(*(SINT64 *) (from.dsc_address));
-				rpb->rpb_number.setValue(tmp);
-			}
+				rpb->rpb_number.setValue(*(SINT64 *) (from.dsc_address));
 			else if (id == SMB_DBKEY_VALID)
-			{
-				UCHAR tmp;
-				copy_fromptr(tmp, from.dsc_address);
-				rpb->rpb_number.setValid((bool) tmp);
-			}
+				rpb->rpb_number.setValid((bool) *(UCHAR *) (from.dsc_address));
 			else
 				fb_assert(false);
 			rpb->rpb_stream_flags |= RPB_s_refetch;
@@ -2979,19 +2968,11 @@ static void open_sort(thread_db* tdbb, RecordSource* rsb, irsb_sort* impure, UIN
 				record_param* rpb = &request->req_rpb[item->smb_stream];
 				if (item->smb_field_id < 0) {
 					if (item->smb_field_id == SMB_TRANS_ID)
-					{
-						//*(SLONG *) (to.dsc_address) = rpb->rpb_transaction_nr;
-						copy_toptr(to.dsc_address, rpb->rpb_transaction_nr);
-					}
+						*(SLONG *) (to.dsc_address) = rpb->rpb_transaction_nr;
 					else if (item->smb_field_id == SMB_DBKEY)
-					{
-						//*(SINT64 *) (to.dsc_address) = rpb->rpb_number.getValue();
-						copy_toptr(to.dsc_address, rpb->rpb_number.getValue());
-					}
+						*(SINT64 *) (to.dsc_address) = rpb->rpb_number.getValue();
 					else if (item->smb_field_id == SMB_DBKEY_VALID)
-					{
-						copy_toptr(to.dsc_address, (UCHAR) rpb->rpb_number.isValid());
-					}
+						*(UCHAR *) (to.dsc_address) = (UCHAR) rpb->rpb_number.isValid();
 					else
 						fb_assert(false);
 					continue;
