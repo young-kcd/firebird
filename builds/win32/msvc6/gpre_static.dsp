@@ -321,5 +321,17 @@ SOURCE=..\..\..\src\gpre\words.h
 SOURCE=..\..\..\src\jrd\version.rc
 # End Source File
 # End Group
+# Begin Group "AuthSspi"
+
+# PROP Default_Filter "cpp;h"
+# Begin Source File
+
+SOURCE=..\..\..\src\auth\trusted\AuthSspi.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\auth\trusted\AuthSspi.h
+# End Source File
+# End Group
 # End Target
 # End Project
