@@ -240,6 +240,7 @@ namespace {
 			mount, /* local mount point */
 			path;  /* path on remote server */
 	};
+#endif /*DARWIN*/
 #endif //NO_NFS
 } // anonymous namespace 
 
