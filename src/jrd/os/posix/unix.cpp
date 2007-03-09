@@ -158,7 +158,7 @@ int PIO_add_file(Database* dbb, jrd_file* main_file, const Firebird::PathName& f
  *	have been locked before entry.
  *
  **************************************/
-	jrd_file* new_file = PIO_create(dbb, file_name, false, false);
+	jrd_file* new_file = PIO_create(dbb, file_name, false, false, false);
 	if (!new_file)
 		return 0;
 
@@ -205,7 +205,7 @@ void PIO_close(jrd_file* main_file)
 }
 
 
-jrd_file* PIO_create(Database* dbb, const Firebird::PathName& string, bool overwrite, bool /*temporary*/)
+jrd_file* PIO_create(Database* dbb, const Firebird::PathName& string, bool overwrite, bool /*temporary*/, bool /*share_delete*/)
 {
 /**************************************
  *
@@ -536,7 +536,8 @@ SLONG PIO_act_alloc(Database* dbb)
 jrd_file* PIO_open(Database* dbb,
 			 const Firebird::PathName& string,
 			 bool trace_flag,
-			 const Firebird::PathName& file_name)
+			 const Firebird::PathName& file_name,
+			 bool /*share_delete*/)
 {
 /**************************************
  *

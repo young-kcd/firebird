@@ -110,7 +110,7 @@ int PIO_add_file(Database* dbb, jrd_file* main_file, const Firebird::PathName& f
  *	sequence of 0.
  *
  **************************************/
-	jrd_file* new_file = PIO_create(dbb, file_name, false, false);
+	jrd_file* new_file = PIO_create(dbb, file_name, false, false, false);
 	if (!new_file) {
 		return 0;
 	}
@@ -161,7 +161,8 @@ void PIO_close(jrd_file* main_file)
 }
 
 
-jrd_file* PIO_create(Database* dbb, const Firebird::PathName& string, bool overwrite, bool temporary)
+jrd_file* PIO_create(Database* dbb, const Firebird::PathName& string,
+					 bool overwrite, bool temporary, bool share_delete)
 {
 /**************************************
  *
@@ -175,14 +176,23 @@ jrd_file* PIO_create(Database* dbb, const Firebird::PathName& string, bool overw
  **************************************/
 	const TEXT* file_name = string.c_str();
 
+	if (!ISC_is_WinNT())
+		share_delete = false;
+
+	DWORD dwShareMode = (temporary ? g_dwShareTempFlags : g_dwShareFlags);
+	if (share_delete)
+		dwShareMode |= FILE_SHARE_DELETE;
+
+	DWORD dwFlagsAndAttributes = FILE_ATTRIBUTE_NORMAL | g_dwExtraFlags;
+	if (temporary)
+		dwFlagsAndAttributes |= g_dwExtraTempFlags;
+
 	const HANDLE desc = CreateFile(file_name,
 					  GENERIC_READ | GENERIC_WRITE,
-					  (temporary ? g_dwShareTempFlags : g_dwShareFlags),
+					  dwShareMode,
 					  NULL,
 					  (overwrite ? CREATE_ALWAYS : CREATE_NEW),
-					  FILE_ATTRIBUTE_NORMAL |
-					  g_dwExtraFlags | 
-					  (temporary ? g_dwExtraTempFlags : 0),
+					  dwFlagsAndAttributes,
 					  0);
 
 	if (desc == INVALID_HANDLE_VALUE)
@@ -458,9 +468,10 @@ SLONG PIO_act_alloc(Database* dbb)
 
 
 jrd_file* PIO_open(Database* dbb,
-			 const Firebird::PathName& string,
-			 bool trace_flag,
-			 const Firebird::PathName& file_name)
+				   const Firebird::PathName& string,
+				   bool trace_flag,
+				   const Firebird::PathName& file_name,
+				   bool share_delete)
 {
 /**************************************
  *
@@ -474,9 +485,12 @@ jrd_file* PIO_open(Database* dbb,
  **************************************/
 	const TEXT* ptr = (string.hasData() ? string : file_name).c_str();
 
+	if (!ISC_is_WinNT())
+		share_delete = false;
+
 	HANDLE desc = CreateFile(ptr,
 					  GENERIC_READ | GENERIC_WRITE,
-					  g_dwShareFlags,
+					  g_dwShareFlags | (share_delete ? FILE_SHARE_DELETE : 0),
 					  NULL,
 					  OPEN_EXISTING,
 					  FILE_ATTRIBUTE_NORMAL |

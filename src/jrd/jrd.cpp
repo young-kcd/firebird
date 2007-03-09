@@ -849,7 +849,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 
 		PageSpace* pageSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
 		pageSpace->file =
-			PIO_open(dbb, expanded_name, options.dpb_trace != 0, file_name);
+			PIO_open(dbb, expanded_name, options.dpb_trace != 0, file_name, false);
 		SHUT_init(dbb);
 		PAG_header(file_name.c_str(), file_name.length(), false);
 		INI_init2();
@@ -1955,7 +1955,7 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 	try
 	{
 		// try to create with overwrite = false
-		pageSpace->file = PIO_create(dbb, expanded_name, false, false);
+		pageSpace->file = PIO_create(dbb, expanded_name, false, false, false);
 	}
 	catch (Firebird::status_exception)
 	{
@@ -1985,7 +1985,7 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 			{
 				// file is a database and the user (SYSDBA or owner) has right to overwrite
 				pageSpace->file =
-					PIO_create(dbb, expanded_name, options.dpb_overwrite, false);
+					PIO_create(dbb, expanded_name, options.dpb_overwrite, false, false);
 			}
 			else
 			{
