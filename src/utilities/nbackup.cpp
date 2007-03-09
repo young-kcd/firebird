@@ -576,6 +576,7 @@ void nbackup::backup_database(int level, const char* fname)
 		// Lock database for backup
 		internal_lock_database();
 		database_locked = true;	
+		detach_database();
 
 		time_t _time = time(NULL);
 		const struct tm *today = localtime(&_time);
@@ -703,6 +704,7 @@ void nbackup::backup_database(int level, const char* fname)
 
 		delete_backup = false; // Backup file is consistent. No need to delete it
 
+		attach_database();
 		// Write about successful backup to backup history table
 	    if (isc_start_transaction(status, &trans, 1, &newdb, 0, NULL))
 			pr_error(status, "start transaction");
@@ -743,6 +745,7 @@ void nbackup::backup_database(int level, const char* fname)
 		in_sqlda->sqlvar[3].sqlind = &null_flag;
 		if (isc_dsql_execute(status, &trans, &stmt, 1, in_sqlda))
 			pr_error(status, "execute history insert");
+		isc_dsql_free_statement(status, &stmt, DSQL_drop);
 		if (isc_commit_transaction(status, &trans))
 			pr_error(status, "commit history insert");
 
@@ -754,11 +757,18 @@ void nbackup::backup_database(int level, const char* fname)
 			if (isc_rollback_transaction(status, &trans))
 				pr_error(status, "rollback transaction");
 		}
-		if (database_locked)
+		if (database_locked) {
+			if (!newdb)
+				attach_database();
 			internal_unlock_database();
-		detach_database();
+		}
+		if (newdb)
+			detach_database();
 		throw;
 	}
+
+	if (!newdb)
+		attach_database();
 	internal_unlock_database();
 	detach_database();
 }
