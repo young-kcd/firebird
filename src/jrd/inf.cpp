@@ -476,9 +476,7 @@ int INF_database_info(const SCHAR* items,
 		case isc_info_forced_writes:
 			if (!header_refreshed)
 			{
-				PageSpace* pageSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
-				const jrd_file* file = pageSpace->file;
-				PAG_header(file->fil_string, file->fil_length, true);
+				PAG_header(true);
 				header_refreshed = true;
 			}
 			*p++ = (dbb->dbb_flags & DBB_force_write) ? 1 : 0;
@@ -725,9 +723,7 @@ int INF_database_info(const SCHAR* items,
 		case isc_info_oldest_transaction:
 			if (!header_refreshed)
 			{
-				PageSpace* pageSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
-				const jrd_file* file = pageSpace->file;
-				PAG_header(file->fil_string, file->fil_length, true);
+				PAG_header(true);
 				header_refreshed = true;
 			}
 			length = INF_convert(dbb->dbb_oldest_transaction, buffer);
@@ -736,9 +732,7 @@ int INF_database_info(const SCHAR* items,
 		case isc_info_oldest_active:
 			if (!header_refreshed)
 			{
-				PageSpace* pageSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
-				const jrd_file* file = pageSpace->file;
-				PAG_header(file->fil_string, file->fil_length, true);
+				PAG_header(true);
 				header_refreshed = true;
 			}
 		    length = INF_convert(dbb->dbb_oldest_active, buffer);
@@ -747,9 +741,7 @@ int INF_database_info(const SCHAR* items,
 		case isc_info_oldest_snapshot:
 			if (!header_refreshed)
 			{
-				PageSpace* pageSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
-				const jrd_file* file = pageSpace->file;
-				PAG_header(file->fil_string, file->fil_length, true);
+				PAG_header(true);
 				header_refreshed = true;
 			}
 			length = INF_convert(dbb->dbb_oldest_snapshot, buffer);
@@ -758,9 +750,7 @@ int INF_database_info(const SCHAR* items,
 		case isc_info_next_transaction:
 			if (!header_refreshed)
 			{
-				PageSpace* pageSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
-				const jrd_file* file = pageSpace->file;
-				PAG_header(file->fil_string, file->fil_length, true);
+				PAG_header(true);
 				header_refreshed = true;
 			}
 			length = INF_convert(dbb->dbb_next_transaction, buffer);

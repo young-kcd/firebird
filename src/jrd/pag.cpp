@@ -932,7 +932,7 @@ int PAG_delete_clump_entry(SLONG page_num, USHORT type)
 }
 
 
-void PAG_format_header(void)
+void PAG_format_header()
 {
 /**************************************
  *
@@ -984,7 +984,7 @@ void PAG_format_header(void)
 
 // CVC: This function is mostly obsolete. Ann requested to keep it and the code that calls it.
 // We won't read the log, anyway.
-void PAG_format_log(void)
+void PAG_format_log()
 {
 /***********************************************
  *
@@ -1098,7 +1098,7 @@ bool PAG_get_clump(SLONG page_num, USHORT type, USHORT* len, UCHAR* entry)
 }
 
 
-void PAG_header(const TEXT* file_name, USHORT file_length, bool info)
+void PAG_header(bool info)
 {
 /**************************************
  *
@@ -1108,12 +1108,135 @@ void PAG_header(const TEXT* file_name, USHORT file_length, bool info)
  *
  * Functional description
  *	Checkout database header page.
+ *  Done through the page cache.
  *
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = tdbb->tdbb_database;
 
-/* allocate a spare buffer which is large enough,
+	Attachment* attachment = tdbb->tdbb_attachment;
+	fb_assert(attachment);
+
+	WIN window(HEADER_PAGE_NUMBER);
+	header_page* header =
+		(header_page*) CCH_FETCH(tdbb, &window, LCK_read, pag_header);
+
+	try {
+
+	if (header->hdr_next_transaction) {
+		if (header->hdr_oldest_active > header->hdr_next_transaction)
+			BUGCHECK(266);		/*next transaction older than oldest active */
+
+		if (header->hdr_oldest_transaction > header->hdr_next_transaction)
+			BUGCHECK(267);		/* next transaction older than oldest transaction */
+	}
+
+	if (header->hdr_flags & hdr_SQL_dialect_3)
+		dbb->dbb_flags |= DBB_DB_SQL_dialect_3;
+
+	jrd_rel* relation = MET_relation(tdbb, 0);
+	RelationPages* relPages = relation->getBasePages();
+	if (!relPages->rel_pages) {
+		// 21-Dec-2003 Nickolay Samofatov
+		// No need to re-set first page for RDB$PAGES relation since 
+		// current code cannot change its location after database creation.
+		// Currently, this change only affects isc_database_info call,
+		// the only call which may call PAG_header multiple times.
+		// In fact, this isc_database_info behavior seems dangerous to me,
+		// but let somebody else fix that problem, I just fix the memory leak.
+		vcl* vector = vcl::newVector(*dbb->dbb_permanent, 1);
+		relPages->rel_pages = vector;
+		(*vector)[0] = header->hdr_PAGES;
+	}
+
+	dbb->dbb_next_transaction = header->hdr_next_transaction;
+
+	if (!info || dbb->dbb_oldest_transaction < header->hdr_oldest_transaction) {
+		dbb->dbb_oldest_transaction = header->hdr_oldest_transaction;
+	}
+	if (!info || dbb->dbb_oldest_active < header->hdr_oldest_active) {
+		dbb->dbb_oldest_active = header->hdr_oldest_active;
+	}
+	if (!info || dbb->dbb_oldest_snapshot < header->hdr_oldest_snapshot) {
+		dbb->dbb_oldest_snapshot = header->hdr_oldest_snapshot;
+	}
+
+	dbb->dbb_attachment_id = header->hdr_attachment_id;
+	dbb->dbb_creation_date = *(ISC_TIMESTAMP*) header->hdr_creation_date;
+
+	if (header->hdr_flags & hdr_read_only) {
+		/* If Header Page flag says the database is ReadOnly, gladly accept it. */
+		dbb->dbb_flags &= ~DBB_being_opened_read_only;
+		dbb->dbb_flags |= DBB_read_only;
+	}
+
+/* If hdr_read_only is not set... */
+	if (!(header->hdr_flags & hdr_read_only)
+		&& (dbb->dbb_flags & DBB_being_opened_read_only)) 
+	{
+		/* Looks like the Header page says, it is NOT ReadOnly!! But the database
+		 * file system permission gives only ReadOnly access. Punt out with
+		 * isc_no_priv error (no privileges)
+		 */
+		ERR_post(isc_no_priv,
+				 isc_arg_string, "read-write",
+				 isc_arg_string, "database",
+				 isc_arg_string, ERR_string(attachment->att_filename),
+				 0);
+	}
+
+	if (header->hdr_flags & hdr_force_write) {
+		dbb->dbb_flags |= DBB_force_write;
+
+		PageSpace* pageSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
+		if (!(header->hdr_flags & hdr_read_only))
+			PIO_force_write(pageSpace->file, true);
+	}
+
+	if (header->hdr_flags & hdr_no_reserve)
+		dbb->dbb_flags |= DBB_no_reserve;
+
+	const USHORT sd_flags = header->hdr_flags & hdr_shutdown_mask;
+	if (sd_flags) {
+		dbb->dbb_ast_flags |= DBB_shutdown;
+		if (sd_flags == hdr_shutdown_full)
+			dbb->dbb_ast_flags |= DBB_shutdown_full;
+		else if (sd_flags == hdr_shutdown_single)
+			dbb->dbb_ast_flags |= DBB_shutdown_single;
+	}
+
+	}	// try
+	catch (const Firebird::Exception&) {
+		CCH_RELEASE(tdbb, &window);
+		throw;
+	}
+
+	CCH_RELEASE(tdbb, &window);
+}
+
+
+void PAG_header_init()
+{
+/**************************************
+ *
+ *	P A G _ h e a d e r _ i n i t
+ *
+ **************************************
+ *
+ * Functional description
+ *	Checkout the core part of the database header page.
+ *  It includes the fields required to setup the I/O layer:
+ *    ODS version, page size, page buffers.
+ *  Done using a physical page read.
+ *
+ **************************************/
+	thread_db* tdbb = JRD_get_thread_data();
+	Database* dbb = tdbb->tdbb_database;
+
+	Attachment* attachment = tdbb->tdbb_attachment;
+	fb_assert(attachment);
+
+/* Allocate a spare buffer which is large enough,
    and set up to release it in case of error; note
    that dbb_page_size has not been set yet, so we
    can't depend on this.
@@ -1123,9 +1246,7 @@ void PAG_header(const TEXT* file_name, USHORT file_length, bool info)
    sector for raw disk access. */
 
 	SCHAR* const temp_buffer = FB_NEW(*getDefaultMemoryPool()) SCHAR[2 * MIN_PAGE_SIZE];
-	SCHAR* temp_page =
-		(SCHAR *) (((U_IPTR) temp_buffer + MIN_PAGE_SIZE - 1) &
-				   ~((U_IPTR) MIN_PAGE_SIZE - 1));
+	SCHAR* temp_page = (SCHAR *) FB_ALIGN((IPTR) temp_buffer, MIN_PAGE_SIZE);
 
 	try {
 
@@ -1134,8 +1255,8 @@ void PAG_header(const TEXT* file_name, USHORT file_length, bool info)
 
 	if (header->hdr_header.pag_type != pag_header || header->hdr_sequence) {
 		ERR_post(isc_bad_db_format,
-				 isc_arg_cstring, file_length, ERR_string(file_name,
-														  file_length), 0);
+				 isc_arg_string, ERR_string(attachment->att_filename),
+				 0);
 	}
 
 	const USHORT ods_version = header->hdr_ods_version & ~ODS_FIREBIRD_FLAG;
@@ -1143,8 +1264,7 @@ void PAG_header(const TEXT* file_name, USHORT file_length, bool info)
 	if (!Ods::isSupported(header->hdr_ods_version, header->hdr_ods_minor))
 	{
 		ERR_post(isc_wrong_ods,
-				 isc_arg_cstring, file_length, ERR_string(file_name,
-														  file_length),
+				 isc_arg_string, ERR_string(attachment->att_filename),
 				 isc_arg_number, (SLONG) ods_version,
 				 isc_arg_number, (SLONG) header->hdr_ods_minor,
 				 isc_arg_number, (SLONG) ODS_VERSION,
@@ -1179,119 +1299,37 @@ is accessed with engine built for another architecture. - Nickolay 9-Feb-2005
 		   archMatrix[header->hdr_implementation] != archMatrix[CLASS])
 	   )
 	{
-	    ERR_post (isc_bad_db_format,
-			isc_arg_cstring, file_length,  ERR_string(file_name, file_length), 0);
+	    ERR_post(isc_bad_db_format,
+				 isc_arg_string, ERR_string(attachment->att_filename),
+				 0);
 	}
 
 	if (header->hdr_page_size < MIN_PAGE_SIZE ||
 		header->hdr_page_size > MAX_PAGE_SIZE) 
 	{
-			ERR_post(isc_bad_db_format,
-					 isc_arg_cstring, file_length, ERR_string(file_name,
-															  file_length),
-					 0);
-	}
-
-	if (header->hdr_next_transaction) {
-		if (header->hdr_oldest_active > header->hdr_next_transaction)
-			BUGCHECK(266);		/*next transaction older than oldest active */
-
-		if (header->hdr_oldest_transaction > header->hdr_next_transaction)
-			BUGCHECK(267);		/* next transaction older than oldest transaction */
+		ERR_post(isc_bad_db_format,
+				 isc_arg_string, ERR_string(attachment->att_filename),
+				 0);
 	}
 
 	dbb->dbb_ods_version = ods_version;
 	dbb->dbb_minor_version = header->hdr_ods_minor;
 	dbb->dbb_minor_original = header->hdr_ods_minor_original;
 
-	if (header->hdr_flags & hdr_SQL_dialect_3)
-		dbb->dbb_flags |= DBB_DB_SQL_dialect_3;
-
-	jrd_rel* relation = MET_relation(tdbb, 0);
-	RelationPages* relPages = relation->getBasePages();
-	if (!relPages->rel_pages) {
-		// 21-Dec-2003 Nickolay Samofatov
-		// No need to re-set first page for RDB$PAGES relation since 
-		// current code cannot change its location after database creation
-		// Currently, this change only affects isc_database_info call,
-		// the only call which may call PAG_header multiple times.
-		// In fact, this isc_database_info behavior seems dangerous to me,
-		// but let somebody else fix that problem, I just fix the memory leak.
-		vcl* vector = vcl::newVector(*dbb->dbb_permanent, 1);
-		relPages->rel_pages = vector;
-		(*vector)[0] = header->hdr_PAGES;
-	}
-
 	dbb->dbb_page_size = header->hdr_page_size;
 	dbb->dbb_page_buffers = header->hdr_page_buffers;
-	dbb->dbb_next_transaction = header->hdr_next_transaction;
 
-	if (!info || dbb->dbb_oldest_transaction < header->hdr_oldest_transaction) {
-		dbb->dbb_oldest_transaction = header->hdr_oldest_transaction;
-	}
-	if (!info || dbb->dbb_oldest_active < header->hdr_oldest_active) {
-		dbb->dbb_oldest_active = header->hdr_oldest_active;
-	}
-	if (!info || dbb->dbb_oldest_snapshot < header->hdr_oldest_snapshot) {
-		dbb->dbb_oldest_snapshot = header->hdr_oldest_snapshot;
-	}
-
-	dbb->dbb_attachment_id = header->hdr_attachment_id;
-	dbb->dbb_creation_date = *(ISC_TIMESTAMP*) header->hdr_creation_date;
-
-	if (header->hdr_flags & hdr_read_only) {
-		/* If Header Page flag says the database is ReadOnly, gladly accept it. */
-		dbb->dbb_flags &= ~DBB_being_opened_read_only;
-		dbb->dbb_flags |= DBB_read_only;
-	}
-
-/* If hdr_read_only is not set... */
-	if (!(header->hdr_flags & hdr_read_only)
-		&& (dbb->dbb_flags & DBB_being_opened_read_only)) 
-	{
-		/* Looks like the Header page says, it is NOT ReadOnly!! But the database
-		 * file system permission gives only ReadOnly access. Punt out with
-		 * isc_no_priv error (no privileges)
-		 */
-		ERR_post(isc_no_priv,
-				 isc_arg_string, "read-write",
-				 isc_arg_string, "database",
-				 isc_arg_cstring, file_length, ERR_string(file_name,
-														  file_length), 0);
-	}
-
-	if (header->hdr_flags & hdr_force_write) {
-		dbb->dbb_flags |= DBB_force_write;
-
-		PageSpace* pageSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
-		if (!(header->hdr_flags & hdr_read_only))
-			PIO_force_write(pageSpace->file, true);
-	}
-
-	if (header->hdr_flags & hdr_no_reserve)
-		dbb->dbb_flags |= DBB_no_reserve;
-
-	const USHORT sd_flags = header->hdr_flags & hdr_shutdown_mask;
-	if (sd_flags) {
-		dbb->dbb_ast_flags |= DBB_shutdown;
-		if (sd_flags == hdr_shutdown_full)
-			dbb->dbb_ast_flags |= DBB_shutdown_full;
-		else if (sd_flags == hdr_shutdown_single)
-			dbb->dbb_ast_flags |= DBB_shutdown_single;
-	}
-
-	if (temp_buffer)
-		delete[] temp_buffer;
 	}	// try
-	catch (const Firebird::Exception&) {
-		if (temp_buffer)
-			delete[] temp_buffer;
-		throw;
-	}
+ 	catch (const Firebird::Exception&) {
+		delete[] temp_buffer;
+ 		throw;
+ 	}
+
+	delete[] temp_buffer;
 }
+	
 
-
-void PAG_init(void)
+void PAG_init()
 {
 /**************************************
  *
@@ -1529,7 +1567,7 @@ void PAG_init2(USHORT shadow_number)
 }
 
 
-SLONG PAG_last_page(void)
+SLONG PAG_last_page()
 {
 /**************************************
  *
@@ -1848,7 +1886,7 @@ void PAG_sweep_interval(SLONG interval)
 
 
 /*
-int PAG_unlicensed(void)
+int PAG_unlicensed()
 {
 // **************************************
 // *

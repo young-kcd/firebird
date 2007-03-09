@@ -851,7 +851,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 		pageSpace->file =
 			PIO_open(dbb, expanded_name, options.dpb_trace != 0, file_name, false);
 		SHUT_init(dbb);
-		PAG_header(file_name.c_str(), file_name.length(), false);
+		PAG_header_init();
 		INI_init2();
 		PAG_init();
 		if (options.dpb_set_page_buffers) {
@@ -865,8 +865,9 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 		// Initialize backup difference subsystem. This must be done before WAL and shadowing
 		// is enabled because nbackup it is a lower level subsystem
 		dbb->dbb_backup_manager = FB_NEW(*dbb->dbb_permanent) BackupManager(tdbb, dbb, nbak_state_unknown);
-		
-		PAG_init2(0);		
+
+		PAG_init2(0);
+		PAG_header(false);
 
 #ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
 		LOG_init(expanded_name, length_expanded);

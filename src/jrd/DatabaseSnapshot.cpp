@@ -833,7 +833,7 @@ void DatabaseSnapshot::putDatabase(Database* database,
 	const PageSpace* const pageSpace =
 		database->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
 	const jrd_file* const file = pageSpace->file;
-	PAG_header(file->fil_string, file->fil_length, true);
+	PAG_header(true);
 
 	int temp;
 
