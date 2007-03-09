@@ -139,7 +139,7 @@ export LD_LIBRARY_PATH
 # either _classic or _super.
 
 
-firebird : firebird_@FIREBIRD_ARCH_TYPE@
+firebird : firebird_@FIREBIRD_ARCH_TYPE@ $(PLATFORM_POSTBUILD_TARGET)
 
 firebird_classic firebird_embedded: firebird_basic classic_targets
 firebird_super firebird_server: firebird_basic super_targets
@@ -333,7 +333,7 @@ otherfiles: misc_files
 .PHONY: libfbembed inet_server embed_gfix embed_gbak embed_isql 
 .PHONY: embed_gpre embed_util
 
-classic_targets: libfbembed inet_server embed_gfix embed_gbak embed_isql \
+classic_targets: $(PLAT_CLASSIC_PRE_TARGET) libfbembed inet_server embed_gfix embed_gbak embed_isql \
 	embed_gpre embed_util embed_gdef embed_qli embed_fbudf libfbclient
 
 libfbembed:
@@ -584,4 +584,5 @@ clean_gpre_gen:
 	
 
 #___________________________________________________________________________
-# 
+# Extra platform specific targets
+@POSTFIX_INCLUDE@ 

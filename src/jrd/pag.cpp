@@ -148,9 +148,9 @@ static const int CLASS_LINUX_AMD64 = 24;  // LINUX on AMD64 systems
 static const int CLASS_FREEBSD_AMD64 = 25;// FreeBSD/amd64
 static const int CLASS_WINDOWS_AMD64 = 26;// Windows/amd64
 static const int CLASS_LINUX_PPC = 27;    // LINUX/PowerPC
-
+static const int CLASS_DARWIN_I386 = 28;	//Darwin/Intel
 static const int CLASS_MAX10 = CLASS_LINUX_AMD64;	// This should not be changed, no new ports with ODS10
-static const int CLASS_MAX = CLASS_LINUX_PPC;
+static const int CLASS_MAX = CLASS_DARWIN_I386;
 
 // ARCHITECTURE COMPATIBILITY CLASSES
 
@@ -233,7 +233,8 @@ static ArchitectureType archMatrix[CLASS_MAX + 1] = {
 	archLittleEndian, // CLASS_LINUX_AMD64
 	archLittleEndian, // CLASS_FREEBSD_AMD64
 	archLittleEndian, // CLASS_WINDOWS_AMD64
-	archBigEndian     // CLASS_LINUX_PPC
+	archBigEndian,    // CLASS_LINUX_PPC
+	archLittleEndian  // CLASS_DARWIN_I386
 };
 
 #ifdef sun
@@ -303,9 +304,13 @@ const SSHORT CLASS		= CLASS_NETBSD_I386;
 #endif
 
 #ifdef DARWIN
+#ifdef i386
+const SSHORT CLASS		= CLASS_DARWIN_I386;
+#endif
+#ifdef powerpc
 const SSHORT CLASS		= CLASS_DARWIN_PPC;
 #endif
-
+#endif
 static const char* const SCRATCH = "fb_table_";
 
 // CVC: Since nobody checks the result from this function (strange!), I changed

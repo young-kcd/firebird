@@ -80,7 +80,11 @@ IsProdTypeBuild = @PROD_BUILD_FLG@
                            # release with debug and optimization
 
 
+ifeq ($(PLATFORM),DARWIN)
+FirebirdInstallPrefix =
+else
 FirebirdInstallPrefix = @prefix@
+endif
 CpuType=@CPU_TYPE@
 
 PLATFORM=@PLATFORM@
@@ -232,6 +236,7 @@ LIB_LINK_OPTIONS = $(LDFLAGS) -shared
 LIB_LINK_RPATH = -Wl,-rpath,
 LIB_LINK_SONAME = -Wl,-soname,
 LIB_LINK_MAPFILE= -Wl,--version-script,
+FBEMBED_LINK= -L$(LIB) -lfbembed
 
 LINK_FIREBIRD_SYMBOLS = $(LIB_LINK_MAPFILE)$(ROOT)/builds/posix/firebird.vers
 LINK_FBINTL_SYMBOLS = $(LIB_LINK_MAPFILE)$(ROOT)/builds/posix/fbintl.vers

@@ -63,7 +63,7 @@ Dependencies = $(AllObjects:.o=.d)
 all: lib_fbudf
 
 
-# The libraires in this directory could do with a bit more work, since they
+# The libraries in this directory could do with a bit more work, since they
 # the previous code (presumably by John) that does the ar crv stuff, might
 # work still, even if the .o files have directory prefixes on them.
 # And the udf stuff doesn't want to do .$(SHRLIB_EXT).X.X.X extensions in UDF directory
@@ -82,6 +82,10 @@ $(UDF)/fbudf.$(SHRLIB_EXT):	$(AllObjects)
 ifeq ($(PLATFORM),win32)
 	$(LIB_LINK) $(LIB_LINK_OPTIONS) $(LIB_LINK_SONAME)fbudf.$(SHRLIB_EXT) \
 -o $@ $^ @PTHREAD_CFLAGS@ @PTHREAD_LIBS@
+endif
+ifeq ($(PLATFORM),DARWIN)
+	$(LIB_LINK) $(LIB_BUNDLE_OPTIONS) \
+-L$(LIB) -lm -o $@ $^ @PTHREAD_CFLAGS@ @PTHREAD_LIBS@
 else
 	$(LIB_LINK) $(LIB_LINK_OPTIONS) $(LIB_LINK_SONAME)fbudf.$(SHRLIB_EXT) \
 $(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/lib -L$(LIB) -lm -o $@ $^ @PTHREAD_CFLAGS@ @PTHREAD_LIBS@
