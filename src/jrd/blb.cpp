@@ -31,6 +31,8 @@
  * 2002.10.28 Sean Leyne - Code cleanup, removed obsolete "MPEXL" port
  * 2002.10.28 Sean Leyne - Code cleanup, removed obsolete "DecOSF" port
  *
+ * Adriano dos Santos Fernandes
+ *
  */
 
 #include "firebird.h"
@@ -233,11 +235,17 @@ blb* BLB_create2(thread_db* tdbb,
 
 	bool filter_required = false;
 	BlobFilter* filter = NULL;
-	if (to && from != to) {
-		filter = find_filter(tdbb, from, to);
-		filter_required = true;
+	if (to && from != to)
+	{
+		// ASF: filter_text is not supported for write operations
+		if (!(from == 0 && to == 1))
+		{
+			filter = find_filter(tdbb, from, to);
+			filter_required = true;
+		}
 	}
-	else if (to == isc_blob_text && (from_charset != to_charset)) {
+	else if (to == isc_blob_text && (from_charset != to_charset))
+	{
 		if (from_charset == CS_dynamic)
 			from_charset = tdbb->tdbb_attachment->att_charset;
 		if (to_charset == CS_dynamic)
