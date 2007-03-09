@@ -5063,6 +5063,7 @@ static ISC_STATUS commit(
 		next = transaction->tra_sibling;
 		check_database(tdbb, transaction->tra_attachment, user_status);
 		tdbb->tdbb_status_vector = ptr;
+		tdbb->tdbb_transaction = transaction;
 		TRA_commit(tdbb, transaction, retaining_flag);
 		Database* dbb = tdbb->tdbb_database;
 		--dbb->dbb_use_count;
@@ -6269,7 +6270,7 @@ static bool rollback(thread_db*	tdbb,
 			}
 
 			tdbb->tdbb_status_vector = status_vector;
-
+			tdbb->tdbb_transaction = transaction;
 			TRA_rollback(tdbb, transaction, retaining_flag, false);
 			Database* dbb = tdbb->tdbb_database;
 			--dbb->dbb_use_count;

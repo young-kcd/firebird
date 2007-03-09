@@ -1750,6 +1750,7 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 
 	jrd_req* old_request = tdbb->tdbb_request;
 	tdbb->tdbb_request = request;
+	jrd_tra* old_transaction = tdbb->tdbb_transaction;
 	tdbb->tdbb_transaction = transaction;
     fb_assert(request->req_caller == NULL);
 	request->req_caller = old_request;
@@ -2726,8 +2727,8 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 	}
 
 	request->req_next = node;
-	tdbb->tdbb_transaction = (tdbb->tdbb_request = old_request) ?
-		old_request->req_transaction : NULL;
+	tdbb->tdbb_transaction = old_transaction;
+	tdbb->tdbb_request = old_request;
 	fb_assert(request->req_caller == old_request);
 	request->req_caller = NULL;
 
