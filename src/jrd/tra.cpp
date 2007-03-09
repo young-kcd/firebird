@@ -221,7 +221,7 @@ bool TRA_active_transactions(thread_db* tdbb, Database* dbb)
 		active = MAX(dbb->dbb_oldest_active, dbb->dbb_oldest_transaction);
 	}
 	else {
-		WIN window(HEADER_PAGE);
+		WIN window(HEADER_PAGE_NUMBER);
 		const header_page* header = (header_page*) CCH_FETCH(tdbb, &window, LCK_read, pag_header);
 		number = header->hdr_next_transaction;
 		oldest = header->hdr_oldest_transaction;
@@ -703,7 +703,7 @@ void TRA_header_write(thread_db* tdbb, Database* dbb, SLONG number)
 /* If transaction number is already on disk just return. */
 
 	if (!number || dbb->dbb_last_header_write < number) {
-		WIN window(HEADER_PAGE);
+		WIN window(HEADER_PAGE_NUMBER);
 		header_page* header = (header_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
 
 		if (header->hdr_next_transaction) {
