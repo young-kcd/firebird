@@ -30,7 +30,7 @@ TryAddUser() {
 	
     if [ -z "$testStr" ]
       then
-        useradd $AdditionalParameter -M -d $FBRootDir -s /bin/false \
+        useradd $AdditionalParameter -d $FBRootDir -s /bin/false \
             -c "Firebird Database Owner" -g firebird firebird 
     fi
 
@@ -44,6 +44,10 @@ addFirebirdUser() {
 	TryAddGroup "-r" >/dev/null 2>&1
 	TryAddGroup " "
 	
+	TryAddUser "-u 84 -r -M" >/dev/null 2>&1
+	TryAddUser "-u 84 -M" >/dev/null 2>&1
+	TryAddUser "-r -M" >/dev/null 2>&1
+	TryAddUser "-M"
 	TryAddUser "-u 84 -r" >/dev/null 2>&1
 	TryAddUser "-u 84" >/dev/null 2>&1
 	TryAddUser "-r" >/dev/null 2>&1
@@ -115,7 +119,7 @@ getInitScriptLocation() {
 #  stop super server if it is running
 
 stopSuperServerIfRunning() {
-    checkString=`ps -efww| egrep "(fbserver|fbguard)" |grep -v grep`
+    checkString=`ps -efww| egrep "\b(fbserver|fbguard)\b" |grep -v grep`
 
     if [ ! -z "$checkString" ]
     then

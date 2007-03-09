@@ -44,7 +44,7 @@ fixFilePermissions() {
     
     # Root SUID is still needed for group direct access.  
 	# General users cannot run though.
-    for i in fb_lock_mgr gds_drop
+    for i in fb_lock_mgr
     do
 		if [ -f $i ]
 		then
@@ -54,10 +54,15 @@ fixFilePermissions() {
 		fi
     done
 	
-	# set up defaults for libraries
+	# set up libraries
 	cd $FBRootDir
 	cd lib
 	chmod a=rx lib*
+
+	# set up include files
+	cd $FBRootDir
+	cd include
+	chmod a=r *
 
     # Fix lock files
     cd $FBRootDir

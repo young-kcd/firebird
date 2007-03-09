@@ -14,6 +14,6 @@ case "$1" in
 			echo $FIREBIRD/bin/fbmgr -pidfile $pidfile -start -forever | su $FBRunUser ;;
 	'stop')		echo -n "Stopping Firebird server: "
 			if [ -f $pidfile ]; then kill `cat $pidfile`; fi ;;
-	'restart')	$0 stop ; $0 start ;;
+	'restart')	$0 stop ; sleep 1; $0 start ;;
 	*)		echo "usage $0 start|stop|restart" ;;
 esac
