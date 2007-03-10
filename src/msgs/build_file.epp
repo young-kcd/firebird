@@ -348,20 +348,14 @@ static USHORT do_msgs( const TEXT* filename, const TEXT* locale, bool sw_warning
 			propagate(buckets, nodes, prior_code, position);
 			leaf_node = leaf;
 		}
-		leaf_node->msgrec_code = prior_code =
-			MSG_NUMBER(X.FAC_CODE, X.NUMBER);
+		leaf_node->msgrec_code = prior_code = MSG_NUMBER(X.FAC_CODE, X.NUMBER);
 
 		leaf_node->msgrec_length = len;
 		leaf_node->msgrec_flags = X.FLAGS;
-		n = OFFSETA(MSGREC, msgrec_text) + len; // useless? See assignment below.
+		//n = OFFSETA(MSGREC, msgrec_text) + len; // useless? See assignment below.
 		TEXT* p = leaf_node->msgrec_text;
-		if (len) {
-			const TEXT* q = msg_text;
-			do {
-				*p++ = *q++;
-			} while (--len);
-		}
-		n = p - (SCHAR *) leaf;
+		memcpy(p, msg_text, len);
+		n = p + len - (SCHAR*) leaf; // For the next iteration.
 		leaf_node = NEXT_LEAF(leaf_node);
 	END_FOR;
 
