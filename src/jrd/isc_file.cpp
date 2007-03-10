@@ -1742,8 +1742,8 @@ bool Mnt::get()
 		return false;
 	}
 
-	const char * start = this->mnt_info[this->mnt_i].f_mntfromname;
-	const char * iflag = strchr(this->mnt_info[this->mnt_i].f_mntfromname, ':');
+	const char* start = this->mnt_info[this->mnt_i].f_mntfromname;
+	const char* iflag = strchr(this->mnt_info[this->mnt_i].f_mntfromname, ':');
 
 	if (iflag) {
 		node = tstring(start, size_t(iflag - start));
