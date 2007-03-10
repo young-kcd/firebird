@@ -1,3 +1,124 @@
+2007-03-09 16:42  asfernandes
+
+	* firebird2/src/jrd/blb.cpp (1.136):
+
+	Allow conversions from numbers to blobs
+
+2007-03-09 14:32  alexpeshkoff
+
+	* firebird2/builds/install/:
+	arch-specific/linux/misc/firebird.init.d.generic.in (1.5),
+	arch-specific/linux/misc/firebird.init.d.gentoo.in (1.4),
+	arch-specific/linux/misc/firebird.init.d.mandrake.in (1.6),
+	arch-specific/linux/misc/firebird.init.d.slackware.in (1.3),
+	arch-specific/linux/misc/firebird.init.d.suse.in (1.7),
+	arch-specific/linux/misc/linuxLibrary.sh.in (1.6),
+	misc/classicLibrary.sh.in (1.7), misc/posixLibrary.sh.in (1.8):
+
+	front-ported various fixes from B2_0_Release
+
+2007-03-09 12:35  alexpeshkoff
+
+	* firebird2/src/jrd/isc_file.cpp (1.106):
+
+	fixed compilation on linux
+
+2007-03-09 12:35  robocop
+
+	* firebird2/builds/win32/msvc6/gpre_static.dsp (1.11):
+
+	Include more files to be able to link.
+
+2007-03-09 11:32  paulbeach
+
+	* firebird2/: builds/install/arch-specific/darwin/Description.plist
+	(1.2), builds/install/arch-specific/darwin/FB.info (1.2),
+	builds/install/arch-specific/darwin/Info.plist (1.2),
+	builds/install/arch-specific/darwin/Makefile.in (1.2),
+	builds/install/arch-specific/darwin/License.txt (1.2),
+	builds/install/arch-specific/darwin/PkgInfo (1.2),
+	builds/install/arch-specific/darwin/Readme.txt (1.2),
+	builds/install/arch-specific/darwin/Welcome.txt (1.2),
+	builds/install/arch-specific/darwin/buildsuffix.c (1.2),
+	builds/install/arch-specific/darwin/fullvers.c (1.2),
+	builds/install/arch-specific/darwin/install-script (1.2),
+	builds/install/arch-specific/darwin/installer_background.pdf (1.2),
+	builds/install/arch-specific/darwin/installer_background.psd (1.2),
+	builds/install/arch-specific/darwin/majorvers.c (1.2),
+	builds/install/arch-specific/darwin/minorvers.c (1.2),
+	builds/install/arch-specific/darwin/preinstall-script (1.2),
+	builds/install/arch-specific/darwin/preupgrade-script (1.2),
+	builds/posix/Makefile.in.client.fbudf (1.11),
+	builds/posix/Makefile.in.embed.fbudf (1.5),
+	builds/posix/Makefile.in.embed.gbak (1.17),
+	builds/posix/Makefile.in.embed.gdef (1.12),
+	builds/posix/Makefile.in.embed.gfix (1.20),
+	builds/posix/Makefile.in.embed.gpre (1.21),
+	builds/posix/Makefile.in.embed.isql (1.13),
+	builds/posix/Makefile.in.embed.qli (1.20),
+	builds/posix/Makefile.in.embed.util (1.30),
+	builds/posix/Makefile.in.examples (1.9),
+	builds/posix/Makefile.in.extlib (1.21),
+	builds/posix/Makefile.in.firebird (1.74),
+	builds/posix/Makefile.in.inet_server (1.15),
+	builds/posix/Makefile.in.intl (1.30),
+	builds/posix/Makefile.in.libfbclient (1.33),
+	builds/posix/Makefile.in.libfbembed (1.23),
+	builds/posix/make.defaults (1.49), builds/posix/make.rules (1.31),
+	builds/posix/postfix.darwin (1.2), builds/posix/prefix.darwin
+	(1.18), configure.in (1.252), src/jrd/common.h (1.146),
+	src/jrd/inf_pub.h (1.15), src/jrd/isc_file.cpp (1.105),
+	src/jrd/license.h (1.32), src/jrd/pag.cpp (1.123), src/jrd/utl.cpp
+	(1.99):
+
+	Firebird 2.0 MacOS Classic Intel Build
+
+2007-03-09 09:56  dimitr
+
+	* firebird2/src/jrd/tra.cpp (1.135):
+
+	Misc.
+
+2007-03-09 09:55  dimitr
+
+	* firebird2/src/jrd/: DatabaseSnapshot.cpp (1.25), inf.cpp (1.69),
+	jrd.cpp (1.314), pag.cpp (1.122), pag_proto.h (1.17):
+
+	Front-ported fix for CORE-943.
+
+2007-03-09 09:27  dimitr
+
+	* firebird2/src/jrd/shut.cpp (1.45):
+
+	Front-ported fix for CORE-943.
+
+2007-03-09 09:21  dimitr
+
+	* firebird2/src/utilities/nbackup.cpp (1.58):
+
+	Front-ported fix for CORE-943.
+
+2007-03-09 09:16  dimitr
+
+	* firebird2/src/jrd/: exe.cpp (1.214), jrd.cpp (1.313):
+
+	Front-ported fix for CORE-1140.
+
+2007-03-09 09:10  dimitr
+
+	* firebird2/src/jrd/: opt.cpp (1.292), rse.cpp (1.128), idx.cpp
+	(1.122):
+
+	Front-ported RISC-specific fixes.
+
+2007-03-09 08:57  dimitr
+
+	* firebird2/src/jrd/: jrd.cpp (1.312), nbak.cpp (1.63), pag.cpp
+	(1.121), sdw.cpp (1.67), os/pio_proto.h (1.20), os/win32/winnt.cpp
+	(1.41), os/posix/unix.cpp (1.53):
+
+	Front-ported fix for CORE-1139.
+
 2007-03-07 14:12  alexpeshkoff
 
 	* firebird2/src/utilities/guard/guard.cpp (1.16):
