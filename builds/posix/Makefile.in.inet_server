@@ -27,7 +27,6 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.inet_server,v 1.15 2007-03-09 10:32:48 paulbeach Exp $
 #
 ROOT=..
 ObjModuleType=std

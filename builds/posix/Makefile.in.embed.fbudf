@@ -27,7 +27,6 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.embed.fbudf,v 1.5 2007-03-09 10:32:47 paulbeach Exp $
 #
 ROOT=..
 ObjModuleType=superclient
