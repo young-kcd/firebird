@@ -117,7 +117,7 @@ const char INET_FLAG		= ':';
 #ifdef HAVE_SYS_MOUNT_H
 #include <sys/mount.h>
 #endif
-#endif /*DARWIN*/
+#endif // DARWIN
 
 /* Unix/NFS specific stuff */
 #ifndef NO_NFS
@@ -221,18 +221,18 @@ namespace {
 	class Mnt {
 	private:
 #ifdef DARWIN
-	struct statfs * mnt_info;
+	struct statfs* mnt_info;
 	int mnt_cnt;
 	int mnt_i;
 #else
 		osMtab mtab;
-#endif /*DARWIN*/
+#endif // DARWIN
 	public:
 /*		Mnt() : AutoMemory(), mtab(), node(getPool()), 
 				mount(getPool()), path(getPool()) { } */
 #ifdef DARWIN
 		Mnt();
-		bool ok() const {return this->mnt_cnt > 0;}
+		bool ok() const { return this->mnt_cnt > 0; }
 #else
 		bool ok() const { return mtab.ok(); }
 		bool get();
@@ -240,7 +240,7 @@ namespace {
 			mount, /* local mount point */
 			path;  /* path on remote server */
 	};
-#endif /*DARWIN*/
+#endif // DARWIN
 #endif //NO_NFS
 } // anonymous namespace 
 
@@ -1757,7 +1757,7 @@ bool Mnt::get()
 	this->mnt_i++;
 	return true;
 }
-#endif /*DARWIN*/
+#endif // DARWIN
 #ifndef GET_MOUNTS
 bool Mnt::get()
 {

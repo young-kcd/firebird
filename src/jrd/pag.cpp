@@ -1241,14 +1241,14 @@ void PAG_header_init()
 	Attachment* attachment = tdbb->tdbb_attachment;
 	fb_assert(attachment);
 
-/* Allocate a spare buffer which is large enough,
-   and set up to release it in case of error; note
-   that dbb_page_size has not been set yet, so we
-   can't depend on this.
-
-   Make sure that buffer is aligned on a page boundary
-   and unit of transfer is a multiple of physical disk
-   sector for raw disk access. */
+	// Allocate a spare buffer which is large enough,
+	// and set up to release it in case of error; note
+	// that dbb_page_size has not been set yet, so we
+	// can't depend on this.
+	//
+	// Make sure that buffer is aligned on a page boundary
+	// and unit of transfer is a multiple of physical disk
+	// sector for raw disk access.
 
 	SCHAR* const temp_buffer = FB_NEW(*getDefaultMemoryPool()) SCHAR[2 * MIN_PAGE_SIZE];
 	SCHAR* temp_page = (SCHAR *) FB_ALIGN((IPTR) temp_buffer, MIN_PAGE_SIZE);
@@ -1277,21 +1277,19 @@ void PAG_header_init()
 				 0);
 	}
 
-/****
-Note that if this check is turned on, it should be recoded in order that
-the Intel platforms can share databases.  At present (Feb 95) it is possible
-to share databases between Windows and NT, but not with NetWare.  Sharing
-databases with OS/2 is unknown and needs to be investigated.  The CLASS was
-initially 8 for all Intel platforms, but was changed after 4.0 was released
-in order to allow differentiation between databases created on various
-platforms.  This should allow us in future to identify where databases were
-created.  Even when we get to the stage where databases created on PC platforms
-are sharable between all platforms, it would be useful to identify where they
-were created for debugging purposes.  - Deej 2/6/95
-
-Re-enable and recode the check to avoid BUGCHECK messages when database
-is accessed with engine built for another architecture. - Nickolay 9-Feb-2005
-****/
+	// Note that if this check is turned on, it should be recoded in order that
+	// the Intel platforms can share databases.  At present (Feb 95) it is possible
+	// to share databases between Windows and NT, but not with NetWare.  Sharing
+	// databases with OS/2 is unknown and needs to be investigated.  The CLASS was
+	// initially 8 for all Intel platforms, but was changed after 4.0 was released
+	// in order to allow differentiation between databases created on various
+	// platforms.  This should allow us in future to identify where databases were
+	// created.  Even when we get to the stage where databases created on PC platforms
+	// are sharable between all platforms, it would be useful to identify where they
+	// were created for debugging purposes.  - Deej 2/6/95
+	//
+	// Re-enable and recode the check to avoid BUGCHECK messages when database
+	// is accessed with engine built for another architecture. - Nickolay 9-Feb-2005
 
 	if (header->hdr_implementation != CLASS &&
 		ods_version < ODS_VERSION11 ?  
