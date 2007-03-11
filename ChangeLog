@@ -1,3 +1,33 @@
+2007-03-11 04:13  robocop
+
+	* firebird2/src/dsql/pass1.cpp (1.304):
+
+	Misc (some spaces mixed with tabs).
+
+2007-03-11 03:45  asfernandes
+
+	* firebird2/src/jrd/: isc_file.cpp (1.108), pag.cpp (1.124):
+
+	Misc
+
+2007-03-10 11:49  robocop
+
+	* firebird2/src/jrd/license.h (1.33):
+
+	Misc.
+
+2007-03-10 11:46  robocop
+
+	* firebird2/src/jrd/isc_file.cpp (1.107):
+
+	Misc.
+
+2007-03-10 10:33  robocop
+
+	* firebird2/src/msgs/build_file.epp (1.30):
+
+	Simpler code.
+
 2007-03-09 16:42  asfernandes
 
 	* firebird2/src/jrd/blb.cpp (1.136):
