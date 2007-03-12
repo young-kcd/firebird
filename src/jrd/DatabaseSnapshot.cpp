@@ -756,11 +756,13 @@ ClumpletReader* DatabaseSnapshot::dumpData(thread_db* tdbb, bool locksmith)
 
 		// Transaction information
 
-		for (jrd_tra* transaction = attachment->att_transactions;
-			transaction; transaction = transaction->tra_next)
-		{
-			putTransaction(transaction, *writer);
-		}
+		{ // Scope for MSVC6
+			for (jrd_tra* transaction = attachment->att_transactions;
+				transaction; transaction = transaction->tra_next)
+			{
+				putTransaction(transaction, *writer);
+			}
+		} // Scope for MSVC6
 
 		// Request information
 
