@@ -54,12 +54,12 @@ private:
 		Block(Block*, size_t);
 		virtual ~Block() {}
 
-		virtual size_t read(size_t, void*, size_t) = 0;
-		virtual size_t write(size_t, void*, size_t) = 0;
+		virtual size_t read(offset_t, void*, size_t) = 0;
+		virtual size_t write(offset_t, void*, size_t) = 0;
 
 		Block *prev;
 		Block *next;
-		size_t size;
+		offset_t size;
 	};
 
 	class MemoryBlock : public Block {
@@ -67,8 +67,8 @@ private:
 		MemoryBlock(MemoryPool&, Block*, size_t);
 		~MemoryBlock();
 
-		size_t read(size_t, void*, size_t);
-		size_t write(size_t, void*, size_t);
+		size_t read(offset_t, void*, size_t);
+		size_t write(offset_t, void*, size_t);
 		
 	private:
 		char* ptr;
@@ -79,12 +79,12 @@ private:
 		FileBlock(TempFile*, Block*, size_t);
 		~FileBlock();
 
-		size_t read(size_t, void*, size_t);
-		size_t write(size_t, void*, size_t);
+		size_t read(offset_t, void*, size_t);
+		size_t write(offset_t, void*, size_t);
 
 	private:
 		TempFile* file;
-		size_t seek;
+		offset_t seek;
 	};
 
 	Block* findBlock(offset_t&);

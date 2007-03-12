@@ -67,7 +67,7 @@ TempSpace::MemoryBlock::~MemoryBlock()
 	delete[] ptr;
 }
 
-size_t TempSpace::MemoryBlock::read(size_t offset, void* buffer, size_t length)
+size_t TempSpace::MemoryBlock::read(offset_t offset, void* buffer, size_t length)
 {
 	if (offset + length > size)
 	{
@@ -77,7 +77,7 @@ size_t TempSpace::MemoryBlock::read(size_t offset, void* buffer, size_t length)
 	return length;
 }
 
-size_t TempSpace::MemoryBlock::write(size_t offset, void* buffer, size_t length)
+size_t TempSpace::MemoryBlock::write(offset_t offset, void* buffer, size_t length)
 {
 	if (offset + length > size)
 	{
@@ -105,7 +105,7 @@ TempSpace::FileBlock::~FileBlock()
 {
 }
 
-size_t TempSpace::FileBlock::read(size_t offset, void* buffer, size_t length)
+size_t TempSpace::FileBlock::read(offset_t offset, void* buffer, size_t length)
 {
 	if (offset + length > size)
 	{
@@ -115,7 +115,7 @@ size_t TempSpace::FileBlock::read(size_t offset, void* buffer, size_t length)
 	return file->read(offset, buffer, length);
 }
 
-size_t TempSpace::FileBlock::write(size_t offset, void* buffer, size_t length)
+size_t TempSpace::FileBlock::write(offset_t offset, void* buffer, size_t length)
 {
 	if (offset + length > size)
 	{
