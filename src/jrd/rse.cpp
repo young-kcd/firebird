@@ -2735,11 +2735,11 @@ static void map_sort_data(thread_db* tdbb, jrd_req* request, SortMap* map, UCHAR
 		if (id < 0)
 		{
 			if (id == SMB_TRANS_ID)
-				rpb->rpb_transaction_nr = *(SLONG *) (from.dsc_address);
+				rpb->rpb_transaction_nr = *reinterpret_cast<SLONG*>(from.dsc_address);
 			else if (id == SMB_DBKEY)
-				rpb->rpb_number.setValue(*(SINT64 *) (from.dsc_address));
+				rpb->rpb_number.setValue(*reinterpret_cast<SINT64*>(from.dsc_address));
 			else if (id == SMB_DBKEY_VALID)
-				rpb->rpb_number.setValid((bool) *(UCHAR *) (from.dsc_address));
+				rpb->rpb_number.setValid(*from.dsc_address != 0);
 			else
 				fb_assert(false);
 			rpb->rpb_stream_flags |= RPB_s_refetch;
@@ -2968,11 +2968,11 @@ static void open_sort(thread_db* tdbb, RecordSource* rsb, irsb_sort* impure, UIN
 				record_param* rpb = &request->req_rpb[item->smb_stream];
 				if (item->smb_field_id < 0) {
 					if (item->smb_field_id == SMB_TRANS_ID)
-						*(SLONG *) (to.dsc_address) = rpb->rpb_transaction_nr;
+						*reinterpret_cast<SLONG*>(to.dsc_address) = rpb->rpb_transaction_nr;
 					else if (item->smb_field_id == SMB_DBKEY)
-						*(SINT64 *) (to.dsc_address) = rpb->rpb_number.getValue();
+						*reinterpret_cast<SINT64*>(to.dsc_address) = rpb->rpb_number.getValue();
 					else if (item->smb_field_id == SMB_DBKEY_VALID)
-						*(UCHAR *) (to.dsc_address) = (UCHAR) rpb->rpb_number.isValid();
+						*to.dsc_address = (UCHAR) rpb->rpb_number.isValid();
 					else
 						fb_assert(false);
 					continue;
@@ -3092,7 +3092,7 @@ static void proc_assignment(thread_db* tdbb,
 			break;
 
 		case dtype_varying:
-			*(SSHORT *) p = 0;
+			*reinterpret_cast<SSHORT*>(p) = 0;
 			break;
 
 		default:
@@ -3108,17 +3108,17 @@ static void proc_assignment(thread_db* tdbb,
 		desc1.dsc_address = msg + (IPTR) desc1.dsc_address;
 		desc2 = *to_desc;
 		desc2.dsc_address = record->rec_data + (IPTR) desc2.dsc_address;
-		if (!DSC_EQUIV((&desc1), (&desc2), false))
+		if (!DSC_EQUIV(&desc1, &desc2, false))
 			MOV_move(tdbb, &desc1, &desc2);
 
 		else if (desc1.dsc_dtype == dtype_short)
-			*((SSHORT *) desc2.dsc_address) = *((SSHORT *) desc1.dsc_address);
+			*reinterpret_cast<SSHORT*>(desc2.dsc_address) = *reinterpret_cast<SSHORT*>(desc1.dsc_address);
 
 		else if (desc1.dsc_dtype == dtype_long)
-			*((SLONG *) desc2.dsc_address) = *((SLONG *) desc1.dsc_address);
+			*reinterpret_cast<SLONG*>(desc2.dsc_address) = *reinterpret_cast<SLONG*>(desc1.dsc_address);
 
 		else if (desc1.dsc_dtype == dtype_int64)
-			*((SINT64 *) desc2.dsc_address) = *((SINT64 *) desc1.dsc_address);
+			*reinterpret_cast<SINT64*>(desc2.dsc_address) = *reinterpret_cast<SINT64*>(desc1.dsc_address);
 
 		else if (((U_IPTR) desc1.dsc_address & (ALIGNMENT - 1)) ||
 				 ((U_IPTR) desc2.dsc_address & (ALIGNMENT - 1)))
@@ -3126,8 +3126,7 @@ static void proc_assignment(thread_db* tdbb,
 			MOVE_FAST(desc1.dsc_address, desc2.dsc_address, desc1.dsc_length);
 		}
 		else
-			MOVE_FASTER(desc1.dsc_address, desc2.dsc_address,
-						desc1.dsc_length);
+			MOVE_FASTER(desc1.dsc_address, desc2.dsc_address, desc1.dsc_length);
 	}
 }
 
