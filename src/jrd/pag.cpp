@@ -1250,10 +1250,8 @@ void PAG_header_init()
 	// and unit of transfer is a multiple of physical disk
 	// sector for raw disk access.
 
-	SCHAR* const temp_buffer = FB_NEW(*getDefaultMemoryPool()) SCHAR[2 * MIN_PAGE_SIZE];
+	SCHAR temp_buffer[2 * MIN_PAGE_SIZE];
 	SCHAR* temp_page = (SCHAR *) FB_ALIGN((IPTR) temp_buffer, MIN_PAGE_SIZE);
-
-	try {
 
 	header_page* header = (header_page*) temp_page;
 	PIO_header(dbb, temp_page, MIN_PAGE_SIZE);
@@ -1321,14 +1319,6 @@ void PAG_header_init()
 
 	dbb->dbb_page_size = header->hdr_page_size;
 	dbb->dbb_page_buffers = header->hdr_page_buffers;
-
-	}	// try
- 	catch (const Firebird::Exception&) {
-		delete[] temp_buffer;
- 		throw;
- 	}
-
-	delete[] temp_buffer;
 }
 	
 
