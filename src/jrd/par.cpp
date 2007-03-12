@@ -1003,7 +1003,7 @@ static PsqlException* par_conditions(thread_db* tdbb, CompilerScratch* csb)
 			dep_node = PAR_make_node(tdbb, e_dep_length);
 			dep_node->nod_type = nod_dependency;
 			dep_node->nod_arg[e_dep_object] =
-				(jrd_nod*) (IPTR)exception_list->xcp_rpt[0].xcp_code;
+				(jrd_nod*) (IPTR)exception_list->xcp_rpt[i].xcp_code;
 			dep_node->nod_arg[e_dep_object_type] = (jrd_nod*)(IPTR) obj_exception;
 			csb->csb_dependencies.push(dep_node);
 			break;
