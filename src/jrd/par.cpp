@@ -908,35 +908,34 @@ static PsqlException* par_condition(thread_db* tdbb, CompilerScratch* csb)
 
 	PsqlException* exception_list = FB_NEW_RPT(*tdbb->getDefaultPool(), 1) PsqlException();
 	exception_list->xcp_count = 1;
+	xcp_repeat& item = exception_list->xcp_rpt[0];
 	
 	switch (code_type) {
 	case blr_sql_code:
-		exception_list->xcp_rpt[0].xcp_type = xcp_sql_code;
-		exception_list->xcp_rpt[0].xcp_code = (SSHORT) BLR_WORD;
+		item.xcp_type = xcp_sql_code;
+		item.xcp_code = (SSHORT) BLR_WORD;
 		break;
 
 	case blr_gds_code:
-		exception_list->xcp_rpt[0].xcp_type = xcp_gds_code;
+		item.xcp_type = xcp_gds_code;
 		par_name(csb, name);
 		name.lower7();
 		code_number = PAR_symbol_to_gdscode(name);
 		if (code_number)
-			exception_list->xcp_rpt[0].xcp_code = code_number;
+			item.xcp_code = code_number;
 		else
 			error(csb, isc_codnotdef, isc_arg_string, ERR_cstring(name), 0);
 		break;
 
 	case blr_exception:
 	case blr_exception_msg:
-		exception_list->xcp_rpt[0].xcp_type = xcp_xcp_code;
+		item.xcp_type = xcp_xcp_code;
 		par_name(csb, name);
-		if (!(exception_list->xcp_rpt[0].xcp_code =
-			  MET_lookup_exception_number(tdbb, name)))
+		if (!(item.xcp_code = MET_lookup_exception_number(tdbb, name)))
 			error(csb, isc_xcpnotdef, isc_arg_string, ERR_cstring(name), 0);
 		dep_node = PAR_make_node(tdbb, e_dep_length);
 		dep_node->nod_type = nod_dependency;
-		dep_node->nod_arg[e_dep_object] =
-			(jrd_nod*)(IPTR) exception_list->xcp_rpt[0].xcp_code;
+		dep_node->nod_arg[e_dep_object] = (jrd_nod*)(IPTR) item.xcp_code;
 		dep_node->nod_arg[e_dep_object_type] = (jrd_nod*)(IPTR) obj_exception;
 		csb->csb_dependencies.push(dep_node);
 		break;
@@ -975,42 +974,40 @@ static PsqlException* par_conditions(thread_db* tdbb, CompilerScratch* csb)
 	exception_list->xcp_count = n;
 	for (int i = 0; i < n; i++) {
 		const USHORT code_type = BLR_BYTE;
+		xcp_repeat& item = exception_list->xcp_rpt[i];
+		
 		switch (code_type) {
 		case blr_sql_code:
-			exception_list->xcp_rpt[i].xcp_type = xcp_sql_code;
-			exception_list->xcp_rpt[i].xcp_code = (SSHORT) BLR_WORD;
+			item.xcp_type = xcp_sql_code;
+			item.xcp_code = (SSHORT) BLR_WORD;
 			break;
 
 		case blr_gds_code:
-			exception_list->xcp_rpt[i].xcp_type = xcp_gds_code;
+			item.xcp_type = xcp_gds_code;
 			par_name(csb, name);
 			name.lower7();
 			code_number = PAR_symbol_to_gdscode(name);
 			if (code_number)
-				exception_list->xcp_rpt[i].xcp_code = code_number;
+				item.xcp_code = code_number;
 			else
-				error(csb, isc_codnotdef,
-					  isc_arg_string, ERR_cstring(name), 0);
+				error(csb, isc_codnotdef, isc_arg_string, ERR_cstring(name), 0);
 			break;
 
 		case blr_exception:
-			exception_list->xcp_rpt[i].xcp_type = xcp_xcp_code;
+			item.xcp_type = xcp_xcp_code;
 			par_name(csb, name);
-			if (!(exception_list->xcp_rpt[i].xcp_code =
-				  MET_lookup_exception_number(tdbb, name)))
-				error(csb, isc_xcpnotdef,
-					  isc_arg_string, ERR_cstring(name), 0);
+			if (!(item.xcp_code = MET_lookup_exception_number(tdbb, name)))
+				error(csb, isc_xcpnotdef, isc_arg_string, ERR_cstring(name), 0);
 			dep_node = PAR_make_node(tdbb, e_dep_length);
 			dep_node->nod_type = nod_dependency;
-			dep_node->nod_arg[e_dep_object] =
-				(jrd_nod*) (IPTR)exception_list->xcp_rpt[i].xcp_code;
+			dep_node->nod_arg[e_dep_object] = (jrd_nod*) (IPTR)item.xcp_code;
 			dep_node->nod_arg[e_dep_object_type] = (jrd_nod*)(IPTR) obj_exception;
 			csb->csb_dependencies.push(dep_node);
 			break;
 
 		case blr_default_code:
-			exception_list->xcp_rpt[i].xcp_type = xcp_default;
-			exception_list->xcp_rpt[i].xcp_code = 0;
+			item.xcp_type = xcp_default;
+			item.xcp_code = 0;
 			break;
 
 		default:
