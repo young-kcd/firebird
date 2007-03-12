@@ -1,3 +1,17 @@
+2007-03-12 01:42  asfernandes
+
+	* firebird2/src/jrd/pag.cpp (1.125):
+
+	Simplification
+
+2007-03-11 04:52  robocop
+
+	* firebird2/builds/posix/: Makefile.in.embed.fbudf (1.6),
+	Makefile.in.examples (1.10), Makefile.in.extlib (1.22),
+	Makefile.in.inet_server (1.16), prefix.darwin (1.19):
+
+	Misc.
+
 2007-03-11 04:13  robocop
 
 	* firebird2/src/dsql/pass1.cpp (1.304):
