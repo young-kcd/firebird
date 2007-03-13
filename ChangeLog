@@ -1,3 +1,48 @@
+2007-03-13 03:33  asfernandes
+
+	* firebird2/src/jrd/par.cpp (1.160):
+
+	Misc
+
+2007-03-12 12:49  robocop
+
+	* firebird2/src/msgs/msg.sql (1.7):
+
+	Let anyone read the tables in msg.fdb.
+
+2007-03-12 12:48  robocop
+
+	* firebird2/src/jrd/par.cpp (1.159):
+
+	Simplification.
+
+2007-03-12 11:13  robocop
+
+	* firebird2/src/jrd/par.cpp (1.158):
+
+	Fix for CORE-1165 is just one byte change in the source code. :-)
+
+2007-03-12 10:39  dimitr
+
+	* firebird2/src/jrd/: TempSpace.cpp (1.8), TempSpace.h (1.4):
+
+	Fixed 64-bit I/O for sort space.
+
+2007-03-12 10:13  robocop
+
+	* firebird2/src/jrd/rse.cpp (1.129):
+
+	Misc: - DSC_EQUIV is no longer a macro; no need to wrap arguments
+	in extra parenthesis.  - Make reinterpret's explicit.  - No need to
+	cast dsc_address to UCHAR* since it's already of this type.  Hope I
+	didn't screw someone.
+
+2007-03-12 10:10  robocop
+
+	* firebird2/src/jrd/DatabaseSnapshot.cpp (1.26):
+
+	Hack, sorry.
+
 2007-03-12 01:42  asfernandes
 
 	* firebird2/src/jrd/pag.cpp (1.125):
