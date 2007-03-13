@@ -1000,7 +1000,7 @@ static PsqlException* par_conditions(thread_db* tdbb, CompilerScratch* csb)
 				error(csb, isc_xcpnotdef, isc_arg_string, ERR_cstring(name), 0);
 			dep_node = PAR_make_node(tdbb, e_dep_length);
 			dep_node->nod_type = nod_dependency;
-			dep_node->nod_arg[e_dep_object] = (jrd_nod*) (IPTR)item.xcp_code;
+			dep_node->nod_arg[e_dep_object] = (jrd_nod*)(IPTR) item.xcp_code;
 			dep_node->nod_arg[e_dep_object_type] = (jrd_nod*)(IPTR) obj_exception;
 			csb->csb_dependencies.push(dep_node);
 			break;
