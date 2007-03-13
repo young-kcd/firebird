@@ -38,8 +38,8 @@ void open(Jrd::thread_db*, Jrd::RecordSource*);
 Jrd::RecordSource* optimize(Jrd::thread_db*, Jrd::OptimizerBlk*, SSHORT);
 void store(Jrd::thread_db*, Jrd::record_param*);
 
-}; // namespace VirtualTable
+} // namespace VirtualTable
 
-}; // namespace Jrd
+} // namespace Jrd
 
 #endif // JRD_VIRTUAL_TABLE_H
