@@ -80,11 +80,7 @@ IsProdTypeBuild = @PROD_BUILD_FLG@
                            # release with debug and optimization
 
 
-ifeq ($(PLATFORM),DARWIN)
-FirebirdInstallPrefix =
-else
 FirebirdInstallPrefix = @prefix@
-endif
 CpuType=@CPU_TYPE@
 
 PLATFORM=@PLATFORM@
