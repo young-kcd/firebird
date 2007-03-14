@@ -469,6 +469,8 @@
 
     * Feature CORE-660
         Domains allowed to be used in PSQL parameters and variables
+      See also:
+        /doc/sql.extensions/README.domains_psql.txt
       Contributor(s):
         Adriano dos Santos Fernandes <adrianosf at uol.com.br>
 
