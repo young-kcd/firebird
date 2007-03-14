@@ -1,3 +1,17 @@
+2007-03-13 06:33  aafemt
+
+	* firebird2/src/jrd/: DebugInterface.h (1.5), VirtualTable.h (1.4),
+	isc_sync.cpp (1.110):
+
+	Fix MinGW build
+
+2007-03-13 06:28  aafemt
+
+	* firebird2/builds/posix/: make.defaults (1.50), make.rules (1.32),
+	prefix.darwin (1.20):
+
+	Move some of darwin hacks to appropriate place
+
 2007-03-13 03:33  asfernandes
 
 	* firebird2/src/jrd/par.cpp (1.160):
