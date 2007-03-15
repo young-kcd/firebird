@@ -21,14 +21,14 @@
 @echo.
 @echo Building %FB_OBJ_DIR%
 if "%VS_VER%"=="msvc6" (
-	@compile.bat %FB_ROOT_PATH%\builds\win32\%VS_VER%\Firebird2 examples.log empbuild intlbld
+	@call compile.bat %FB_ROOT_PATH%\builds\win32\%VS_VER%\Firebird2 examples.log empbuild intlbld
 ) else (
-	@compile.bat %FB_ROOT_PATH%\builds\win32\%VS_VER%\Firebird2_Examples empbuild.log empbuild
-	if defined FB2_INTLEMP (
-	  @compile.bat %FB_ROOT_PATH%\builds\win32\%VS_VER%\Firebird2_Examples intlbuild.log intlbuild
+	@call compile.bat %FB_ROOT_PATH%\builds\win32\%VS_VER%\Firebird2_Examples empbuild.log empbuild
+	@if defined FB2_INTLEMP (
+	  @call compile.bat %FB_ROOT_PATH%\builds\win32\%VS_VER%\Firebird2_Examples intlbuild.log intlbuild
 	)
 )
-
+@echo.
 @call :MOVE
 @call :BUILD_EMPLOYEE
 @call :MOVE2
@@ -103,15 +103,15 @@ if defined FB2_INTLEMP (
 @copy %FB_ROOT_PATH%\src\extlib\ib_udf* %FB_OUTPUT_DIR%\examples\udf > nul
 @copy %FB_ROOT_PATH%\src\extlib\fbudf\* %FB_OUTPUT_DIR%\examples\udf > nul
 
-:: @copy %FB_ROOT_PATH%\gen\examples\empbuild.c %FB_OUTPUT_DIR%\examples\empbuild\ > nul
-@copy %FB_ROOT_PATH%\temp\%FB_OBJ_DIR%\examples\empbuild.exe %FB_ROOT_PATH%\gen\examples\empbuild.exe > nul
-if defined FB2_INTLEMP (
-if "%VS_VER%"=="msvc6" (
-@copy %FB_ROOT_PATH%\temp\%FB_OBJ_DIR%\examples\intlbld.exe %FB_ROOT_PATH%\gen\examples\intlbuild.exe > nul
-) else (
-@copy %FB_ROOT_PATH%\temp\%FB_OBJ_DIR%\examples\intlbuild.exe %FB_ROOT_PATH%\gen\examples\intlbuild.exe > nul
-)
-)
+::@copy %FB_ROOT_PATH%\gen\examples\empbuild.c %FB_OUTPUT_DIR%\examples\empbuild\ > nul
+::@copy %FB_ROOT_PATH%\temp\%FB_OBJ_DIR%\examples\empbuild.exe %FB_ROOT_PATH%\gen\examples\empbuild.exe > nul
+::if defined FB2_INTLEMP (
+::if "%VS_VER%"=="msvc6" (
+::@copy %FB_ROOT_PATH%\temp\%FB_OBJ_DIR%\examples\intlbld.exe %FB_ROOT_PATH%\gen\examples\intlbuild.exe > nul
+::) else (
+::@copy %FB_ROOT_PATH%\temp\%FB_OBJ_DIR%\examples\intlbuild.exe %FB_ROOT_PATH%\gen\examples\intlbuild.exe > nul
+::)
+::)
 @goto :EOF
 
 ::===========
@@ -123,9 +123,9 @@ if "%VS_VER%"=="msvc6" (
 :: and empbuild.exe uses isql
 @cd %FB_ROOT_PATH%\gen\examples
 @del %FB_ROOT_PATH%\gen\examples\employee.fdb 2>nul
-@%FB_ROOT_PATH%\gen\examples\empbuild.exe %FB_DB_PATH%/gen/examples/employee.fdb
+@%FB_ROOT_PATH%\temp\%FB_OBJ_DIR%\empbuild\empbuild.exe %FB_DB_PATH%/gen/examples/employee.fdb
 
-if defined FB2_INTLEMP (
+@if defined FB2_INTLEMP (
 @echo Building intlemp.fdb
   @del %FB_ROOT_PATH%\gen\examples\intlemp.fdb 2>nul
   @del isql.tmp 2>nul
@@ -139,11 +139,11 @@ if defined FB2_INTLEMP (
 
 ::==============
 :MOVE2
-@copy %FB_ROOT_PATH%\gen\examples\employee.fdb %FB_ROOT_PATH%\output\examples\empbuild\ > nul
+@copy %FB_ROOT_PATH%\gen\examples\employee.fdb %FB_OUTPUT_DIR%\examples\empbuild\ > nul
 
 if defined FB2_INTLEMP (
   if exist %FB_ROOT_PATH%\gen\examples\intlemp.fdb (
-  @copy %FB_ROOT_PATH%\gen\examples\intlemp.fdb %FB_ROOT_PATH%\output\examples\empbuild\ > nul
+  @copy %FB_ROOT_PATH%\gen\examples\intlemp.fdb %FB_OUTPUT_DIR%\examples\empbuild\ > nul
   )
 )
 
