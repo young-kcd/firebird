@@ -968,6 +968,14 @@ void BLB_move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, jrd_nod* field)
 	if (*source == *destination)
 		return;
 
+	bool needFilter =
+		(from_desc->dsc_sub_type != isc_blob_untyped &&
+		 to_desc->dsc_sub_type != isc_blob_untyped &&
+		 (from_desc->dsc_sub_type != to_desc->dsc_sub_type ||
+		 (from_desc->dsc_sub_type == isc_blob_text &&
+		   from_desc->dsc_scale != to_desc->dsc_scale &&
+		   to_desc->dsc_scale != CS_NONE && to_desc->dsc_scale != CS_BINARY)));
+
 	// If the target node is not a field, just copy the blob id
 	// and return.
 	if (simpleMove)
@@ -975,10 +983,7 @@ void BLB_move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, jrd_nod* field)
 		// But if the sub_type or charset is different, create a new blob.
 		if (DTYPE_IS_BLOB_OR_QUAD(from_desc->dsc_dtype) &&
 			DTYPE_IS_BLOB_OR_QUAD(to_desc->dsc_dtype) &&
-			to_desc->dsc_sub_type != isc_blob_untyped &&
-			(from_desc->dsc_sub_type != to_desc->dsc_sub_type ||
-			 (from_desc->dsc_scale != to_desc->dsc_scale &&
-			  to_desc->dsc_scale != CS_NONE && to_desc->dsc_scale != CS_BINARY)))
+			needFilter)
 		{
 			UCharBuffer bpb;
 			BLB_gen_bpb_from_descs(from_desc, to_desc, bpb);
@@ -1034,13 +1039,14 @@ void BLB_move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, jrd_nod* field)
 	bool materialized_blob; // Set if we materialized temporary blob in this routine
 
 	UCharBuffer bpb;
-	BLB_gen_bpb_from_descs(from_desc, to_desc, bpb);
+	if (needFilter)
+		BLB_gen_bpb_from_descs(from_desc, to_desc, bpb);
 
 	while (true) 
 	{
 		materialized_blob = false;
 		blobIndex = NULL;
-		if (source->bid_internal.bid_relation_id)
+		if (source->bid_internal.bid_relation_id || needFilter)
 		{
 			blob = copy_blob(tdbb, source, destination,
 				bpb.getCount(), bpb.begin(), relPages->rel_pg_space_id);
@@ -1081,7 +1087,7 @@ void BLB_move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, jrd_nod* field)
 						ERR_post(isc_bad_segstr_id, 0);
 					}
 
-					if (blob->blb_level && 
+					if (blob->blb_level &&
 						(blob->blb_pg_space_id != relPages->rel_pg_space_id))
 					{
 						const ULONG oldTempID = blob->blb_temp_id;
