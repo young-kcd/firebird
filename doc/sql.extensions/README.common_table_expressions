@@ -10,9 +10,9 @@ Function:
 From the engine point of view CTE is a derived table so no intermediate 
 materialization is performed. 
 
-	Recursive CTE allow to create recursive queries. It works as below :
-engine start execution from non-recursive members,
-for each evaluated row engine start execution of each recursive member using 
+	Recursive CTEs allow to create recursive queries. It works as below :
+engine starts execution from non-recursive members,
+for each evaluated row engine starts execution of each recursive member using 
 current row values as parameters,
 if current instance of recursive member produced no rows engine returns one 
 step back and get next row from previous resultset 
@@ -65,11 +65,11 @@ Rules of non-recursive common table expressions :
 	Table expressions can be used within any part of main query or another 
 table expression
 	The same table expression can be used several times in main query
-	Table expressions can be used in INSERT, UPDATE and DELETE 	statements 
+	Table expressions can be used in INSERT, UPDATE and DELETE statements 
 (as subqueries of course)
 	Table expressions can be used in procedure language also 
 	WITH statements can not be nested 
-	References between expressions should not have a loops
+	References between expressions should not have loops
 
 
 Example of non-recursive common table expressions :
@@ -98,20 +98,20 @@ WHERE EXISTS (SELECT * FROM PROJ_DEPT_BUDGET B WHERE D.DEPT_NO = B.DEPT_NO)
 
 Rules of recursive common table expressions :
 
-	Recursive CTE have reference to itself
+	Recursive CTE has reference to itself
 	Recursive CTE is an UNION of recursive and non-recursive members	
 	At least one non-recursive member (anchor) must be present
 	Non-recursive members are placed first in UNION
-	Recursive members are separated from an anchor members and from each 
+	Recursive members are separated from anchor members and from each 
 other with UNION ALL clause
-	References between CTE’s should not have a loops
+	References between CTE’s should not have loops
 	Aggregates (DISTINCT, GROUP BY, HAVING) and aggregate functions (SUM, 
 COUNT, MAX etc) are not allowed in recursive members
 	Recursive member can have only one reference to itself and only in FROM clause
 	Recursive reference can not participate in outer joins
 
 
-Example of recursive common table expressions
+Example of recursive common table expressions :
 
 WITH RECURSIVE
   DEPT_YEAR_BUDGET AS
