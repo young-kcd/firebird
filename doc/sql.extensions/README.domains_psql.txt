@@ -25,6 +25,6 @@ Examples:
     END
 
 Notes:
-    1. TYPE OF gets only the type of the domain. It don't use constraints and default values.
+    1. TYPE OF gets only the type of the domain. It doesn't use constraints and default values.
     2. A new field RDB$VALID_BLR was added in RDB$RELATIONS and RDB$TRIGGERS to store if the procedure/trigger is valid or not after an ALTER DOMAIN.
-    3. The value of RDB$VALID_BLR is showed in ISQL commands SHOW PROCEDURE/TRIGGER.
+    3. The value of RDB$VALID_BLR is shown in ISQL commands SHOW PROCEDURE/TRIGGER.
