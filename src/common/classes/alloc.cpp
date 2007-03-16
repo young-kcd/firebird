@@ -1057,7 +1057,8 @@ MemoryPool* MemoryPool::internal_create(size_t instance_size, MemoryPool* parent
 	// difficult to make memory pass through any delayed free list in this case
 	if (parent) {
 		parent->lock.enter();
-		void* mem = parent->internal_alloc(instance_size + sizeof(MemoryRedirectList), TYPE_POOL);
+		const size_t size = MEM_ALIGN(instance_size + sizeof(MemoryRedirectList));
+		void* mem = parent->internal_alloc(size, TYPE_POOL);
 		if (!mem) {
 			parent->lock.leave();
 			pool_out_of_memory();
