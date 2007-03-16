@@ -413,11 +413,15 @@
 
     * Feature CORE-963
         Common table expressions and recursive queries
+      See also:
+        /doc/README.common_table_expressions
       Contributor(s):
         Vlad Horsun <hvlad at users.sourceforge.net>
 
     * Feature CORE-962
         Global temporary tables
+      See also:
+        /doc/README.global_temporary_tables
       Contributor(s):
         Vlad Horsun <hvlad at users.sourceforge.net>
 
