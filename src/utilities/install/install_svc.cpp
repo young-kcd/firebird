@@ -606,7 +606,7 @@ static void usage_exit(void)
 	printf("                    [ -a[uto]* | -d[emand] ]\n");
 	printf("                    [ -g[uardian] ]\n");
 	printf("                    [ -l[ogin] username [password] ]\n");
-	printf("                    [ -n[ame] ]\n");
+	printf("                    [ -n[ame] instance ]\n");
 	printf("                    [ -i[nteractive] ]\n\n");
 	printf("          sta[rt]   [ -b[oostpriority] ]\n");
 	printf("          sto[p]\n");
