@@ -91,7 +91,7 @@ USHORT	DYN_get_string(const TEXT**, TEXT*, size_t, bool);
 
 bool	DYN_is_it_sql_role(Jrd::Global*, const Firebird::MetaName&, Firebird::MetaName&, Jrd::thread_db*);
 USHORT	DYN_put_blr_blob(Jrd::Global*, const UCHAR**, Jrd::bid*);
-USHORT	DYN_put_text_blob(Jrd::Global*, const UCHAR**, Jrd::bid*, USHORT bpb_length = 0, const UCHAR* bpb = NULL);
+USHORT	DYN_put_text_blob(Jrd::Global*, const UCHAR**, Jrd::bid*);
 
 void	DYN_rundown_request(Jrd::jrd_req*, SSHORT);
 USHORT	DYN_skip_attribute(const UCHAR**);
