@@ -1,3 +1,15 @@
+2007-03-16 11:24  dimitr
+
+	* firebird2/src/jrd/opt.cpp (1.261.2.10):
+
+	One more RISC-related adjustment (ported from HEAD).
+
+2007-03-16 06:06  dimitr
+
+	* firebird2/src/common/classes/alloc.cpp (1.80.2.1):
+
+	Backported fix for bugcheck reported by Damyan.
+
 2007-03-08 10:19  paulbeach
 
 	* firebird2/builds/posix/prefix.darwin (1.14.12.2):
