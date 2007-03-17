@@ -15,4 +15,4 @@
 # SJIS (Windows cp932), EUC-JP
 # EUC-KR, KS C 5601, Windows cp949
 
-UCM_SOURCE_CORE=
+UCM_SOURCE_CORE=ibm-1386_P100-2002.ucm

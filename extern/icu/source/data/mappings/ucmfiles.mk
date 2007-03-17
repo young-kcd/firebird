@@ -25,5 +25,6 @@
 # ucmebcdic.mk from the <icu>/source/data directory
 #
 
-UCM_SOURCE_FILES = icu-internal-25546.ucm
-
+UCM_SOURCE_FILES = icu-internal-25546.ucm\
+windows-874-2000.ucm\
+windows-936-2000.ucm
