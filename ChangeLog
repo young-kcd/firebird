@@ -1,3 +1,10 @@
+2007-03-17 22:08  asfernandes
+
+	* firebird2/extern/icu/source/data/mappings/: ucmcore.mk (1.3),
+	ucmfiles.mk (1.3):
+
+	Activate TIS620 and GBK (CORE-1167)
+
 2007-03-16 12:49  paul_reeves
 
 	* firebird2/builds/install/arch-specific/win32/:
