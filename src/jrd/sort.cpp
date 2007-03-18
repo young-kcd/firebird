@@ -90,6 +90,13 @@ const ULONG MAX_SORT_BUFFER_SIZE	= SORT_BUFFER_CHUNK_SIZE * 32;
 
 const ULONG MAX_TEMPFILE_SIZE		= 1073741824;	// 1GB
 
+// the size of sr_bckptr (everything before sort_record) in bytes
+#define SIZEOF_SR_BCKPTR  OFFSET(sr*, sr_sort_record)
+// the size of sr_bckptr in # of 32 bit longwords
+#define SIZEOF_SR_BCKPTR_IN_LONGS  (SIZEOF_SR_BCKPTR / sizeof(SLONG))
+// offset in array of pointers to back record pointer (sr_bckptr)
+#define BACK_OFFSET (-(ALIGNMENT / sizeof(SLONG*)))
+
 #define DIFF_LONGS(a, b)         ((a) - (b))
 #define SWAP_LONGS(a, b, t)       {t = a; a = b; b = t;}
 
@@ -725,7 +732,7 @@ sort_context* SORT_init(ISC_STATUS* status_vector,
 	scb->scb_status_vector = status_vector;
 	//scb->scb_length = record_length;
 	scb->scb_longs =
-		ROUNDUP(record_length + sizeof(SLONG*), sizeof(SLONG*)) >> SHIFTLONG;
+		ROUNDUP(record_length + ALIGNMENT, ALIGNMENT) >> SHIFTLONG;
 	scb->scb_dup_callback = call_back;
 	scb->scb_dup_callback_arg = user_arg;
 	scb->scb_keys = keys;
@@ -768,7 +775,7 @@ sort_context* SORT_init(ISC_STATUS* status_vector,
 		if (scb->scb_size_memory < MIN_SORT_BUFFER_SIZE)
 			break;
 		else if ( (scb->scb_memory =
-			 (SORTP *) gds__alloc((SLONG) scb->scb_size_memory)) )
+	     		   (SORTP *) gds__alloc((SLONG) scb->scb_size_memory)) )
 		{
 		// FREE: scb_memory is freed by local_fini()
 			break;
@@ -2470,6 +2477,16 @@ static void merge_runs(sort_context* scb, USHORT n)
 	scb->scb_longs += SIZEOF_SR_BCKPTR_IN_LONGS;
 }
 
+void inline swap(SORTP** a, SORTP** b)
+{
+	SORTP* temp;
+	((SORTP ***) (*a))[BACK_OFFSET] = b;
+	((SORTP ***) (*b))[BACK_OFFSET] = a;
+	temp = *a;
+	*a = *b;
+	*b = temp;
+}
+
 
 static void quick(SLONG size, SORTP** pointers, ULONG length)
 {
@@ -2503,10 +2520,6 @@ static void quick(SLONG size, SORTP** pointers, ULONG length)
  *      PROCESSING BEFORE IT MAY BE USED!
  *
  **************************************/
-	SORTP* temp;
-
-#define exchange(x, y)  {temp = x; x = y; y = temp;}
-
 	SORTP** stack_lower[50];
 	SORTP*** sl = stack_lower;
 
@@ -2533,9 +2546,7 @@ static void quick(SLONG size, SORTP** pointers, ULONG length)
 		// middle record. This isn't perfect, but it is cheap.
 
 		SORTP** i = r + interval / 2;
-		((SORTP ***) (*r))[-1] = i;
-		((SORTP ***) (*i))[-1] = r;
-		exchange(*r, *i);
+		swap(i, r);
 
 		// Prepare to do the partition. Pick up the first longword of the
 		// key to speed up comparisons.
@@ -2582,9 +2593,7 @@ static void quick(SLONG size, SORTP** pointers, ULONG length)
 				}
 			if (i >= j)
 				break;
-			((SORTP ***) (*i))[-1] = j;
-			((SORTP ***) (*j))[-1] = i;
-			exchange(*i, *j);
+			swap(i, j);
 			i++;
 			j--;
 		}
@@ -2593,9 +2602,7 @@ static void quick(SLONG size, SORTP** pointers, ULONG length)
 		// initial record "r". Exchange the record currently in the
 		// slot with "r".
 
-		((SORTP ***) (*r))[-1] = j;
-		((SORTP ***) (*j))[-1] = r;
-		exchange(*r, *j);
+		swap(j, r);
 
 		// Finally, stack the two intervals, longest first
 
@@ -2842,11 +2849,7 @@ static void sort(sort_context* scb)
 				tl--;
 			}
 			if (tl && *p > *q) {
-				((SORTP ***) (*i))[-1] = j;
-				((SORTP ***) (*j))[-1] = i;
-				temp = *i;
-				*i = *j;
-				*j = temp;
+				swap(i, j);
 			}
 		}
 	}
@@ -2888,7 +2891,7 @@ static void sort(sort_context* scb)
 #endif
 			if ((*scb->scb_dup_callback) ((const UCHAR*) *i, (const UCHAR*) *j, scb->scb_dup_callback_arg))
 			{
-				((SORTP ***) (*i))[-1] = NULL;
+				((SORTP ***) (*i))[BACK_OFFSET] = NULL;
 				*i = NULL;
 			}
 			else
@@ -2925,7 +2928,7 @@ static void validate(sort_context* scb)
 		 ptr < (SORTP **) scb->scb_next_pointer; ptr++)
 	{
 		SORTP* record = *ptr;
-		if (record[-1] != (SORTP) ptr) {
+		if (record[-SIZEOF_SR_BCKPTR_IN_LONGS] != (SORTP) ptr) {
 			ISC_STATUS* status_vector = scb->scb_status_vector;
 			*status_vector++ = isc_arg_gds;
 			*status_vector++ = isc_crrp_data_err; // Msg360: corruption in data structure
