@@ -28,7 +28,6 @@
 
 #include "firebird.h"
 #include "common.h"
-#include "isc.h"
 #include "jrd.h"
 #include "nbak.h"
 #include "ods.h"
@@ -91,7 +90,7 @@ void BackupManager::decrement_diff_use_count() throw()
 }
 #endif
 
-bool BackupManager::get_sw_database_lock(thread_db* tdbb, AstInhibit* enable_signals) throw()
+bool BackupManager::get_sw_database_lock(thread_db* tdbb, bool enable_signals) throw()
 {
 #ifdef SUPERSERVER
 #ifdef WIN_NT
@@ -105,7 +104,7 @@ bool BackupManager::get_sw_database_lock(thread_db* tdbb, AstInhibit* enable_sig
 	NBAK_TRACE(("get_sw_database_lock %d", database_use_count));
 	database_use_count++;
 	if (enable_signals)
-		enable_signals->enable();
+		LCK_ast_enable();
 	if (database_lock->lck_physical >= LCK_SW)
 		return true;
 	if (!LCK_lock(tdbb, database_lock, LCK_SW, LCK_WAIT)) {
@@ -449,7 +448,7 @@ int BackupManager::alloc_table_ast(void *ast_object) throw()
 	tdbb->tdbb_quantum = QUANTUM;
 	tdbb->tdbb_request = NULL;
 	tdbb->tdbb_transaction = NULL;
-	
+
 	NBAK_TRACE_AST("NBAK, alloc_table_ast");
 
 	if (new_dbb->dbb_backup_manager->flags & NBAK_alloc_in_use)
@@ -510,10 +509,7 @@ int BackupManager::backup_database_ast(void *ast_object) throw()
 		ast_status[1] = 0;
 		CCH_flush_database(tdbb); // This may release database lock
 		if (ast_status[1])
-		{
-			jrd_file* main_file = new_dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE)->file;
-			gds__log_status(main_file->fil_string, ast_status);
-		}
+			gds__log_status(new_dbb->dbb_file->fil_string, ast_status);				
 	} 
 	else {
 		LCK_release(tdbb, lock);
@@ -542,7 +538,7 @@ void BackupManager::begin_backup(thread_db* tdbb)
 	NBAK_TRACE(("begin_backup"));
 
 	// Lock header page first to prevent possible deadlock
-	WIN window(HEADER_PAGE_NUMBER);
+	WIN window(HEADER_PAGE);
 	Ods::header_page* header = (Ods::header_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
 	bool state_locked = false, header_locked = true, database_locked = false;
 	try {
@@ -571,12 +567,12 @@ void BackupManager::begin_backup(thread_db* tdbb)
 		}
 		// Create file
 		NBAK_TRACE(("Creating difference file %s", diff_name));
-		diff_file = PIO_create(database, diff_name, true, false, true);
+		diff_file = PIO_create(database, diff_name, true, true);
 #ifdef UNIX 
 		// adjust difference file access rights to make it match main DB ones
 		if (diff_file && geteuid() == 0) {
 			struct stat st;
-			while (fstat(database->dbb_page_manager.findPageSpace(DB_PAGE_SPACE)->file->fil_desc, &st) != 0) {
+			while (fstat(database->dbb_file->fil_desc, &st) != 0) {
 				if (errno != EINTR) {
 					Firebird::system_call_failed::raise("fstat");
 				}
@@ -630,8 +626,7 @@ void BackupManager::begin_backup(thread_db* tdbb)
 		actualize_alloc(tdbb); 
 #endif
 		unlock_state_write(tdbb);
-	}
-	catch (const Firebird::Exception&) {
+	} catch (const std::exception&) {
 		backup_state = nbak_state_unknown;
 		tdbb->tdbb_flags &= ~TDBB_set_backup_state;
 		if (state_locked)
@@ -672,7 +667,7 @@ void BackupManager::end_backup(thread_db* tdbb, bool recover)
 						// that times.
 
 	// Lock header page first to prevent possible deadlock
-	WIN window(HEADER_PAGE_NUMBER);
+	WIN window(HEADER_PAGE);
 	Ods::header_page* header = (Ods::header_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
 	bool state_locked = false, header_locked = true;
 
@@ -714,8 +709,7 @@ void BackupManager::end_backup(thread_db* tdbb, bool recover)
 		CCH_RELEASE(tdbb, &window);
 		tdbb->tdbb_flags &= ~TDBB_set_backup_state;
 		NBAK_TRACE(("Set state %d in header page", backup_state));
-	}
-	catch (const Firebird::Exception&) {
+	} catch (const std::exception&) {
 		backup_state = nbak_state_unknown;
 		tdbb->tdbb_flags &= ~TDBB_set_backup_state;
 		if (state_locked)
@@ -724,6 +718,7 @@ void BackupManager::end_backup(thread_db* tdbb, bool recover)
 			CCH_RELEASE(tdbb, &window);
 		throw;
 	}
+
 
 	// Here comes the dirty work. We need to reapply all changes from difference file to database
 
@@ -751,7 +746,7 @@ void BackupManager::end_backup(thread_db* tdbb, bool recover)
 
 		if (all.getFirst()) {
 			do {
-				WIN window2(DB_PAGE_SPACE, all.current().db_page); //vlad ??
+				WIN window2(all.current().db_page);
 				NBAK_TRACE(("Merge page %d, diff=%d", all.current().db_page, all.current().diff_page));
 				Ods::pag* page = CCH_FETCH(tdbb, &window2, LCK_write, pag_undefined);
 				if (page->pag_scn != current_scn)
@@ -760,19 +755,18 @@ void BackupManager::end_backup(thread_db* tdbb, bool recover)
 			} while (all.getNext());
 		}
 		CCH_flush(tdbb, FLUSH_ALL, 0); // Really write changes to main database file
-		
+
 		tdbb->tdbb_flags &= ~(TDBB_set_backup_state | TDBB_backup_merge);
 		unlock_state(tdbb);
 
-	}
-	catch (const Firebird::Exception&) {
+	} catch(const std::exception&) {
 		tdbb->tdbb_flags &= ~(TDBB_set_backup_state | TDBB_backup_merge);
 		unlock_state(tdbb);
 		throw;
 	}
 
 	// We finished. We need to reflect it in our database header page
-	window.win_page = HEADER_PAGE_NUMBER;
+	window.win_page = HEADER_PAGE;
 	window.win_flags = 0;
 	header = (Ods::header_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
 	state_locked = false;
@@ -800,12 +794,12 @@ void BackupManager::end_backup(thread_db* tdbb, bool recover)
 		header_locked = false;
 		CCH_RELEASE(tdbb, &window);
 		tdbb->tdbb_flags &= ~TDBB_set_backup_state;
-
+		
 		// Page allocation table cache is no longer valid
 		delete alloc_table;
 		alloc_table = NULL;
 		last_allocated_page = 0;
-
+		
 		if (diff_file) {
 #ifndef SUPERSERVER
 			diff_generation++;
@@ -817,8 +811,7 @@ void BackupManager::end_backup(thread_db* tdbb, bool recover)
 
 		unlock_state_write(tdbb);
 		NBAK_TRACE(("backup ended"));
-	}
-	catch (const Firebird::Exception&) {
+	} catch (const std::exception&) {
 		backup_state = nbak_state_unknown;
 		tdbb->tdbb_flags &= ~TDBB_set_backup_state;
 		if (state_locked)
@@ -855,15 +848,13 @@ bool BackupManager::actualize_alloc(thread_db* tdbb) throw()
 			temp_bdb.bdb_page = last_allocated_page & ~(database->dbb_page_size / sizeof(ULONG) - 1);
 			temp_bdb.bdb_dbb = database;
 			temp_bdb.bdb_buffer = reinterpret_cast<Ods::pag*>(alloc_buffer);
-
+		
 			if (!PIO_read(diff_file, &temp_bdb, temp_bdb.bdb_buffer, status_vector))
 				return false;
-			for (ULONG i = last_allocated_page - temp_bdb.bdb_page.getPageNum(); 
-					i < alloc_buffer[0]; i++)
+			for (ULONG i = last_allocated_page - temp_bdb.bdb_page; i < alloc_buffer[0]; i++)
 			{
 				NBAK_TRACE(("alloc item page=%d, diff=%d", alloc_buffer[i + 1], temp_bdb.bdb_page + i + 1));
-				if (!alloc_table->add(AllocItem(alloc_buffer[i + 1], 
-						temp_bdb.bdb_page.getPageNum() + i + 1)))
+				if (!alloc_table->add(AllocItem(alloc_buffer[i + 1], temp_bdb.bdb_page + i + 1)))
 				{
 					database->dbb_flags |= DBB_bugcheck;
 					status_vector[0] = isc_arg_gds;
@@ -875,7 +866,7 @@ bool BackupManager::actualize_alloc(thread_db* tdbb) throw()
 					return false;
 				}
 			}
-			last_allocated_page = temp_bdb.bdb_page.getPageNum() + alloc_buffer[0];
+			last_allocated_page = temp_bdb.bdb_page + alloc_buffer[0];
 			if (alloc_buffer[0] == database->dbb_page_size / sizeof(ULONG) - 1)
 				// if page is full adjust position for next pointer page
 				last_allocated_page++;
@@ -883,8 +874,7 @@ bool BackupManager::actualize_alloc(thread_db* tdbb) throw()
 				// We finished reading allocation table
 				break;		
 		}
-	}
-	catch (const Firebird::Exception& ex) {
+	} catch (const std::exception& ex) {
 		// Handle out of memory error, etc
 		delete alloc_table;
 		Firebird::stuff_exception(status_vector, ex);
@@ -946,8 +936,7 @@ ULONG BackupManager::allocate_difference_page(thread_db* tdbb, ULONG db_page) th
 	// Register new page in the alloc table
 	try {
 		alloc_table->add(AllocItem(db_page, last_allocated_page));
-	}
-	catch (const Firebird::Exception& ex) {
+	} catch(const std::exception& ex) {
 		// Handle out of memory error
 		delete alloc_table;
 		alloc_table = NULL;
@@ -990,7 +979,7 @@ bool BackupManager::read_difference(thread_db* tdbb, ULONG diff_page, Ods::pag* 
 BackupManager::BackupManager(thread_db* tdbb, Database* _database, int ini_state) :
 	database(_database), diff_file(NULL), alloc_table(NULL), 
 	backup_state(ini_state), last_allocated_page(0),
-	current_scn(0), backup_pages(0), diff_name(*_database->dbb_permanent),  diff_pending_close(false)
+	current_scn(0), backup_pages(0), diff_name(*_database->dbb_permanent), diff_pending_close(false)
 {
 	// Allocate various database page buffers needed for operation
 	temp_buffers_space = FB_NEW(*database->dbb_permanent) BYTE[database->dbb_page_size * 3 + MIN_PAGE_SIZE];
@@ -1075,7 +1064,7 @@ BackupManager::~BackupManager()
 void BackupManager::set_difference(thread_db* tdbb, const char* filename) 
 {
 	if (filename) {
-		WIN window(HEADER_PAGE_NUMBER);
+		WIN window(HEADER_PAGE);
 		Ods::header_page* header =
 			(Ods::header_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
 		CCH_MARK_MUST_WRITE(tdbb, &window);
@@ -1105,18 +1094,17 @@ bool BackupManager::actualize_state(thread_db* tdbb) throw()
 	SSHORT retryCount = 0;
 	Ods::header_page* header = reinterpret_cast<Ods::header_page*>(spare_buffer);
 	BufferDesc temp_bdb;
-	temp_bdb.bdb_page = HEADER_PAGE_NUMBER;
+	temp_bdb.bdb_page = HEADER_PAGE;
 	temp_bdb.bdb_dbb = database;
 	temp_bdb.bdb_buffer = reinterpret_cast<Ods::pag*>(header);
-	PageSpace* pageSpace = database->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
-	jrd_file* file = pageSpace->file;
+	jrd_file* file = database->dbb_file;
 	while (!PIO_read(file, &temp_bdb, temp_bdb.bdb_buffer, status)) {
 		if (!CCH_rollover_to_shadow(database, file, false)) {
 			NBAK_TRACE(("Shadow change error"));
 			return false;
 		}
-		if (file != pageSpace->file)
-			file = pageSpace->file;
+		if (file != database->dbb_file)
+			file = database->dbb_file;
 		else {
 			if (retryCount++ == 3) {
 				NBAK_TRACE(("IO error"));
@@ -1152,7 +1140,7 @@ bool BackupManager::actualize_state(thread_db* tdbb) throw()
 	}
 	if (!fname_found)
 		generate_filename();
-		
+
 	if (new_backup_state == nbak_state_normal || missed_cycle) {
 		if (diff_file)
 			diff_pending_close = true;
@@ -1208,9 +1196,8 @@ bool BackupManager::actualize_state(thread_db* tdbb) throw()
 #endif
 		try {
 			NBAK_TRACE(("Open difference file"));
-			diff_file = PIO_open(database, diff_name, false, diff_name, true);
-		}
-		catch (const Firebird::Exception& ex) {
+			diff_file = PIO_open(database, diff_name, false, NULL, diff_name, true);
+		} catch(const std::exception& ex) {
 #ifdef SUPERSERVER
 			adjust_state_lock->leave();
 #endif

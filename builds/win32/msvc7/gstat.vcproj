@@ -27,7 +27,7 @@
 				ExceptionHandling="FALSE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				RuntimeTypeInfo="FALSE"
+				RuntimeTypeInfo="TRUE"
 				PrecompiledHeaderFile="..\..\..\temp\debug\gstat/gstat.pch"
 				AssemblerListingLocation="..\..\..\temp\debug\gstat/"
 				ObjectFile="..\..\..\temp\debug\gstat/"
@@ -94,7 +94,7 @@
 				PreprocessorDefinitions="NDEBUG,WIN32,_CONSOLE,SUPERCLIENT,CLIENT"
 				ExceptionHandling="FALSE"
 				RuntimeLibrary="2"
-				RuntimeTypeInfo="FALSE"
+				RuntimeTypeInfo="TRUE"
 				PrecompiledHeaderFile="..\..\..\temp\release\gstat/gstat.pch"
 				AssemblerListingLocation="..\..\..\temp\release\gstat/"
 				ObjectFile="..\..\..\temp\release\gstat/"
@@ -204,6 +204,16 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\ods.cpp">
+			</File>
+		</Filter>
+		<Filter
+			Name="COMMON files"
+			Filter="">
+			<File
+				RelativePath="..\..\..\src\common\config\config.cpp">
+			</File>
+			<File
+				RelativePath="..\..\..\src\common\config\config_file.cpp">
 			</File>
 		</Filter>
 	</Files>

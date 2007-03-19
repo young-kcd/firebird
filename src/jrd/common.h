@@ -19,6 +19,8 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ * Added TCP_NO_DELAY option for superserver on Linux
+ * FSG 16.03.2001
  *
  * 2001.07.06 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
  *                         conditionals, as the engine now fully supports
@@ -82,10 +84,9 @@
 # endif
 #endif
 
-#define CANCEL_OPERATION
-
 #ifdef SUPERSERVER
 #define GOVERNOR
+#define CANCEL_OPERATION
 #define FB_ARCHITECTURE isc_info_db_class_server_access
 #else
 #define FB_ARCHITECTURE isc_info_db_class_classic_access
@@ -111,13 +112,17 @@
 //format for __LINE__
 #define LINEFORMAT "d"
 
+#ifdef SUPERSERVER
+#define SET_TCP_NO_DELAY
+#endif
+
 //#define KILLER_SIGNALS
 
 #define UNIX
 #define IEEE
 
 #ifdef AMD64
-#define IMPLEMENTATION  isc_info_db_impl_linux_amd64 /* 66 */
+#define IMPLEMENTATION  isc_info_db_impl_linux_amd64 /* 66  next higher unique number, See you later  */
 #endif
 
 #ifdef PPC
@@ -126,7 +131,7 @@
 
 #ifdef i386
 #define I386
-#define IMPLEMENTATION  isc_info_db_impl_i386 /* 60 */
+#define IMPLEMENTATION  isc_info_db_impl_i386 /* 60  next higher unique number, See you later  */
 #endif /* i386 */
 
 #ifdef sparc
@@ -219,6 +224,10 @@ static inline int sinixz_sigaction(int sig, const struct sinixz_sigaction *act,
 //#define ALIGNMENT	4
 //#define DOUBLE_ALIGN	8
 
+#ifdef SUPERSERVER
+#define SET_TCP_NO_DELAY
+#endif
+
 //#define KILLER_SIGNALS
 
 #define UNIX
@@ -270,16 +279,11 @@ static inline int sinixz_sigaction(int sig, const struct sinixz_sigaction *act,
 //#define DOUBLE_ALIGN    4
 //#define BSD_UNIX
 #define UNIX
-#ifdef powerpc 
-#define IMPLEMENTATION isc_info_db_impl_darwin_ppc /* 63 */
-#endif
-#ifdef i386
-#define I386
-#define IMPLEMENTATION isc_info_db_imp_darwin_x86 /* 70 */
-#endif
+#define IMPLEMENTATION  63
 #define IEEE
 #define QUADCONST(n) (n##LL)
 #define QUADFORMAT "q"
+#define MAP_ANONYMOUS
 #define MAP_ANNON
 
 #define MEMMOVE(from, to, length)		memmove ((void *)to, (void *)from, (size_t)length)
@@ -377,8 +381,11 @@ static inline int sinixz_sigaction(int sig, const struct sinixz_sigaction *act,
  * in Solaris
  */
 #define SOLARIS_MT
-#define MULTI_THREAD
 
+#ifdef SOLARIS_MT
+#define ANY_THREADING
+#define MULTI_THREAD
+#endif
 /*  Define the following only on platforms whose standard I/O
  *  implementation is so weak that we wouldn't be able to fopen
  *  a file whose underlying file descriptor would be > 255.
@@ -612,15 +619,13 @@ typedef unsigned __int64 UINT64;
    not permit the LL suffix which some other platforms require, but it
    handles numbers up to the largest 64-bit integer correctly without such
    a suffix, so the macro definition is trivial. */
-#ifdef __GNUC__ // needed for gcc 3.3.1
+#ifdef MINGW // needed for gcc 3.3.1
 #define QUADCONST(n) (n##LL)
 #else
 #define QUADCONST(n) (n)
 #endif
 
-#ifdef AMD64
-#define IMPLEMENTATION  isc_info_db_impl_winnt_amd64 /* 68 */
-#else
+#ifdef _X86_
 #ifndef I386
 #define I386
 #endif

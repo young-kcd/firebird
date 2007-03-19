@@ -34,7 +34,6 @@
 //  
 //  TMN (Mike Nordell) 11.APR.2001 - Reduce compiler warnings
 //  
-//  2006.10.12 Stephen W. Boyd			- Added support for FOR UPDATE WITH LOCK
 //
 //____________________________________________________________
 //
@@ -103,7 +102,6 @@ static void par_terminating_parens(USHORT *, USHORT *);
 static GPRE_NOD par_udf(gpre_req*);
 static GPRE_NOD par_udf_or_field(gpre_req*, bool);
 static GPRE_NOD par_udf_or_field_with_collate(gpre_req*, bool, USHORT *, bool *);
-static void par_update(gpre_rse*, bool, bool);
 static GPRE_NOD post_fields(GPRE_NOD, map*);
 static GPRE_NOD post_map(GPRE_NOD, MAP);
 static GPRE_NOD post_select_list(GPRE_NOD, map*);
@@ -364,7 +362,7 @@ GPRE_NOD SQE_field(gpre_req* request,
 	}
 
 
-//  Note: We *always* want to make a deferred name block - to handle
+//  Note: We *always* want to make a defered name block - to handle
 //  scoping of alias names in subselects properly, when we haven't
 //  seen the list of relations (& aliases for them).  This occurs
 //  during the select list, but by the time we see the having, group,
@@ -376,10 +374,10 @@ GPRE_NOD SQE_field(gpre_req* request,
 //  1994-October-03 David Schnepper 
 //  
 
-//  if the request is null, make a deferred name block
+//  if the request is null, make a defered name block 
 
 	if (!request || !request->req_contexts || request->req_in_select_list) {
-		node = MSC_node(nod_deferred, 3);
+		node = MSC_node(nod_defered, 3);
 		node->nod_count = 0;
 		TOK f_token = (TOK) MSC_alloc(TOK_LEN);
 		node->nod_arg[0] = (GPRE_NOD) f_token;
@@ -816,7 +814,7 @@ void SQE_post_field( GPRE_NOD input, gpre_fld* field)
 
 	case nod_field:
 	case nod_literal:
-	case nod_deferred:
+	case nod_defered:
 	case nod_array:
 		return;
 
@@ -978,7 +976,7 @@ bool SQE_resolve(GPRE_NOD node,
 		return result;
 // ** End date/time/timestamp support *
 
-	case nod_deferred:
+	case nod_defered:
 		break;
 
 	default:
@@ -1036,7 +1034,7 @@ bool SQE_resolve(GPRE_NOD node,
 	reference->ref_slice = (slc*) slice_action;
 
 //  donot reinit if this is a nod_deffered type 
-	if (node->nod_type != nod_deferred)
+	if (node->nod_type != nod_defered)
 		node->nod_count = 0;
 
 
@@ -1125,7 +1123,6 @@ gpre_rse* SQE_select(gpre_req* request,
 	++request->req_in_order_by_clause;
 	par_order(request, select, have_union, view_flag);
 	--request->req_in_order_by_clause;
-	par_update(select, have_union, view_flag);
 	request->req_map = old_map;
 
 	return select;
@@ -2152,6 +2149,17 @@ static void par_order(gpre_req* request,
 
 	assert_IS_REQ(request);
 
+//  This doesn't really belong here, but it's convenient.  Parse the
+//  SQL "FOR UPDATE OF ..." clause.  Just eat it and ignore it. 
+
+	if (MSC_match(KW_FOR)) {
+		MSC_match(KW_UPDATE);
+		MSC_match(KW_OF);
+		do {
+			CPR_token();
+		} while (MSC_match(KW_COMMA));
+	}
+
 	if (!MSC_match(KW_ORDER))
 		return;
 	if (view_flag)
@@ -3163,45 +3171,6 @@ static GPRE_NOD par_udf_or_field_with_collate(gpre_req* request,
 	return node;
 }
 
-
-//____________________________________________________________
-//
-//		Parse FOR UPDATE WITH LOCK clause
-//
-
-static void par_update(gpre_rse *select, bool have_union, bool view_flag)
-{
-	// Parse FOR UPDATE if present
-	if (MSC_match(KW_FOR)) {
-		if (! MSC_match(KW_UPDATE)) {
-			CPR_s_error("UPDATE");
-			return;
-		}
-		if (MSC_match(KW_OF)) {
-			do {
-				CPR_token();
-			} while (MSC_match(KW_COMMA));
-		}
-		select->rse_flags |= RSE_for_update;
-	}
-
-	// Parse WITH LOCK if present
-	if (MSC_match(KW_WITH)) {
-		if (! MSC_match(KW_LOCK)) {
-			CPR_s_error("LOCK");
-			return;
-		}
-		if (have_union) {
-			PAR_error("WITH LOCK in UNION");
-			return;
-		}
-		if (view_flag) {
-			PAR_error("WITH LOCK in VIEW");
-			return;
-		}
-		select->rse_flags |= RSE_with_lock;
-	}
-}
 
 //____________________________________________________________
 //  

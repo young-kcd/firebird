@@ -289,7 +289,6 @@ bool_t xdr_protocol(XDR* xdrs, PACKET* p)
 	P_SQLST *prep_stmt;
 	P_SQLDATA *sqldata;
 	P_TRRQ *trrq;
-	P_TRAU *trau;
 #ifdef DEBUG
 	xdr_save_size = xdrs->x_handy;
 #endif
@@ -787,42 +786,14 @@ bool_t xdr_protocol(XDR* xdrs, PACKET* p)
 		DEBUG_PRINTSIZE(xdrs, p->p_operation);
 		return P_TRUE(xdrs, p);
 
-	// the following added to have formal vulcan compatibility
-	case op_update_account_info:
-		{
-		p_update_account *stuff = &p->p_account_update;
-		MAP(xdr_short, reinterpret_cast < SSHORT & >(stuff->p_account_database));
-		MAP(xdr_cstring_const, stuff->p_account_apb);
-		DEBUG_PRINTSIZE(xdrs, p->p_operation);
-
-		return P_TRUE(xdrs, p);
-		}
-			
-	case op_authenticate_user:
-		{
-		p_authenticate *stuff = &p->p_authenticate_user;
-		MAP(xdr_short, reinterpret_cast < SSHORT & >(stuff->p_auth_database));
-		MAP(xdr_cstring_const, stuff->p_auth_dpb);
-		MAP(xdr_cstring, stuff->p_auth_items);
-		MAP(xdr_short, reinterpret_cast < SSHORT & >(stuff->p_auth_buffer_length));
-		DEBUG_PRINTSIZE(xdrs, p->p_operation);
-
-		return P_TRUE(xdrs, p);
-		}
-
-	case op_trusted_auth:
-		trau = &p->p_trau;
-		MAP(xdr_cstring, trau->p_trau_data);
-		DEBUG_PRINTSIZE(xdrs, p->p_operation);
-
-		return P_TRUE(xdrs, p);
-
 	default:
-#ifdef DEV_BUILD
+#ifdef DEBUG
 		if (xdrs->x_op != XDR_FREE)
-		{
-			gds__log("xdr_packet: operation %d not recognized\n", p->p_operation);
-		}
+			fprintf(stderr, "xdr_packet: operation %d not recognized\n",
+					   p->p_operation);
+#endif
+#ifndef SOLARIS
+		fb_assert(xdrs->x_op == XDR_FREE);
 #endif
 		return P_FALSE(xdrs, p);
 	}
@@ -1329,10 +1300,10 @@ static bool_t xdr_quad( XDR* xdrs, struct bid* ip)
 	switch (xdrs->x_op) {
 	case XDR_ENCODE:
 		if ((*xdrs->x_ops->x_putlong)
-			(xdrs, reinterpret_cast<SLONG*>(&ip->bid_quad_high))
+			(xdrs, reinterpret_cast<SLONG*>(&ip->bid_relation_id))
 			&& (*xdrs->x_ops->x_putlong) (xdrs,
 										  reinterpret_cast<
-										  SLONG*>(&ip->bid_quad_low)))
+										  SLONG*>(&ip->bid_number)))
 		{
 			return TRUE;
 		}
@@ -1341,12 +1312,12 @@ static bool_t xdr_quad( XDR* xdrs, struct bid* ip)
 	case XDR_DECODE:
 		if (!(*xdrs->x_ops->x_getlong)
 			(xdrs,
-			 reinterpret_cast<SLONG*>(&ip->bid_quad_high)))
+			 reinterpret_cast<SLONG*>(&ip->bid_relation_id)))
 		{
 			return FALSE;
 		}
 		return (*xdrs->x_ops->x_getlong) (xdrs,
-										  reinterpret_cast<SLONG*>(&ip->bid_quad_low));
+										  reinterpret_cast<SLONG*>(&ip->bid_number));
 
 	case XDR_FREE:
 		return TRUE;

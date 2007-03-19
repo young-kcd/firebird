@@ -108,8 +108,6 @@ NODE(nod_asn_list, asn_list, "")
 			NODE(nod_agg_count_distinct, agg_count_distinct, "")
 			NODE(nod_agg_total_distinct, agg_total_distinct, "")
 			NODE(nod_agg_average_distinct, agg_average_distinct, "")
-			NODE(nod_agg_list, agg_list, "")
-			NODE(nod_agg_list_distinct, agg_list_distinct, "")
 			NODE(nod_asb, AggregateSort, "")
 			NODE(nod_relation, relation, "")
 			NODE(nod_rse, RecordSelExpr, "")
@@ -175,8 +173,8 @@ NODE(nod_asn_list, asn_list, "")
           NODE(nod_current_role, current_role, "")
           NODE(nod_breakleave, breakleave, "")
 
-/* EXECUTE STATEMENT */
-		  NODE(nod_exec_sql, exec_sql, "EXECUTE STATEMENT")
+/* EXECUTE VARCHAR */
+		  NODE(nod_exec_sql, exec_sql, "EXECUTE VARCHAR")
 
 /* Internal engine info */
 		  NODE(nod_internal_info, internal_info, "INTERNAL INFO")
@@ -190,7 +188,3 @@ NODE(nod_asn_list, asn_list, "")
 		  NODE(nod_equiv, equiv, " == ")
 
 		  NODE(nod_strlen, strlen, "STRLEN")
-
-		  NODE(nod_src_info, source_info, "")
-		  NODE(nod_init_variable, init_variable, "")
-		  NODE(nod_domain_validation, domain_validation, "")

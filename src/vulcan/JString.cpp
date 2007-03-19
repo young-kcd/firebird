@@ -27,7 +27,6 @@
  */
 
 #include "firebird.h"
-#include "../common/classes/alloc.h"
 #include "../jrd/common.h"
 #include <memory.h>
 #include <string.h>

@@ -24,6 +24,7 @@
  *  Contributor(s): ______________________________________.
  *
  *
+ *  $Id: vector.h,v 1.15 2005-05-27 22:38:23 asfernandes Exp $
  *
  */
 
@@ -68,10 +69,9 @@ public:
 		data[count++] = item;
   		return count;
 	}
-	T* remove(size_t index) {
+	void remove(size_t index) {
   		fb_assert(index < count);
   		memmove(data + index, data + index + 1, sizeof(T) * (--count - index));
-		return &data[index];
 	}
 	void shrink(size_t newCount) {
 		fb_assert(newCount <= count);

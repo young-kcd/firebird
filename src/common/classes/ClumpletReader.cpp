@@ -72,10 +72,10 @@ protected:
 
 void ClumpletReader::dump() const
 {
+	// Avoid infinite recursion during dump
 	static int dmp = 0;
 	gds__log("*** DUMP ***");
 	if (dmp) {
-		// Avoid infinite recursion during dump
 		gds__log("recursion");
 		return;
 	}
@@ -83,7 +83,7 @@ void ClumpletReader::dump() const
 	
 	try {
 		ClumpletDump d(kind, getBuffer(), getBufferLength());
-		int t = (kind == SpbStart || kind == UnTagged || kind == WideUnTagged) ? -1 : d.getBufferTag();
+		int t = (kind == SpbStart || kind == UnTagged) ? -1 : d.getBufferTag();
 		gds__log("Tag=%d Offset=%d Length=%d Eof=%d\n", t, getCurOffset(), getBufferLength(), isEof());
 		for (d.rewind(); !(d.isEof()); d.moveNext())
 		{
@@ -91,7 +91,7 @@ void ClumpletReader::dump() const
 				ClumpletDump::hexString(d.getBytes(), d.getClumpLength()).c_str());
 		}
 	}
-	catch (const fatal_exception& x) {
+	catch(const fatal_exception& x) {
 		gds__log("Fatal exception during clumplet dump: %s", x.what());
 		size_t l = getBufferLength() - getCurOffset();
 		const UCHAR *p = getBuffer() + getCurOffset();
@@ -108,12 +108,6 @@ namespace Firebird {
 
 ClumpletReader::ClumpletReader(Kind k, const UCHAR* buffer, size_t buffLen) :
 	kind(k), static_buffer(buffer), static_buffer_end(buffer + buffLen) 
-{
-	rewind();	// this will set cur_offset and spbState
-}
-
-ClumpletReader::ClumpletReader(MemoryPool& pool, Kind k, const UCHAR* buffer, size_t buffLen) :
-	AutoStorage(pool), kind(k), static_buffer(buffer), static_buffer_end(buffer + buffLen) 
 {
 	rewind();	// this will set cur_offset and spbState
 }
@@ -143,7 +137,6 @@ UCHAR ClumpletReader::getBufferTag() const
 	{
 	case Tpb:
 	case Tagged:
-	case WideTagged:
 		if (buffer_end - buffer_start == 0) 
 		{
 			invalid_structure("empty buffer");
@@ -152,7 +145,6 @@ UCHAR ClumpletReader::getBufferTag() const
 		return buffer_start[0];
 	case SpbStart:
 	case UnTagged:
-	case WideUnTagged:
 		usage_mistake("buffer is not tagged");
 		return 0;
 	case SpbAttach:
@@ -193,9 +185,6 @@ ClumpletReader::ClumpletType ClumpletReader::getClumpletType(UCHAR tag) const
 	case UnTagged:
 	case SpbAttach:
 		return TraditionalDpb;
-	case WideTagged:
-	case WideUnTagged:
-		return Wide;
 	case Tpb:
 		switch (tag)
 		{
@@ -354,24 +343,7 @@ size_t ClumpletReader::getClumpletSize(bool wTag, bool wLength, bool wData) cons
 	
 	switch (getClumpletType(clumplet[0]))
 	{
-
-	// This form allows clumplets of virtually any size
-	case Wide:
-		// Check did we receive length component for clumplet
-		if (buffer_end - clumplet < 5) {
-			invalid_structure("buffer end before end of clumplet - no length component");
-			return rc;
-		}
-		lengthSize = 4;
-		dataSize = clumplet[4];
-		dataSize <<= 8;
-		dataSize += clumplet[3];
-		dataSize <<= 8;
-		dataSize += clumplet[2];
-		dataSize <<= 8;
-		dataSize += clumplet[1];
-		break;
-
+	
 	// This is the most widely used form
 	case TraditionalDpb:
 		// Check did we receive length component for clumplet
@@ -382,7 +354,7 @@ size_t ClumpletReader::getClumpletSize(bool wTag, bool wLength, bool wData) cons
 		lengthSize = 1;
 		dataSize = clumplet[1];
 		break;
-
+		
 	// Almost all TPB parameters are single bytes
 	case SingleTpb:
 		break;
@@ -399,7 +371,7 @@ size_t ClumpletReader::getClumpletSize(bool wTag, bool wLength, bool wData) cons
 		dataSize <<= 8;
 		dataSize += clumplet[1];
 		break;
-
+		
 	// Used in SPB for 4-byte integers
 	case IntSpb:
 		dataSize = 4;
@@ -420,7 +392,7 @@ size_t ClumpletReader::getClumpletSize(bool wTag, bool wLength, bool wData) cons
 		else
 			dataSize -= delta;
 	}
-
+	
 	if (wLength) {
 		rc += lengthSize;
 	}
@@ -446,7 +418,7 @@ void ClumpletReader::rewind()
 		spbState = 0;
 		return;
 	}
-	if (kind == UnTagged || kind == WideUnTagged || kind == SpbStart)
+	if (kind == UnTagged || kind == SpbStart)
 		cur_offset = 0;
 	else if (kind == SpbAttach && getBufferLength() > 0 
 						 && getBuffer()[0] != isc_spb_version1)
@@ -545,10 +517,6 @@ string& ClumpletReader::getString(string& str) const
 	size_t length = getClumpLength();
 	str.assign(reinterpret_cast<const char*>(ptr), length);
 	str.recalculate_length();
-	if (str.length() + 1 < length)
-	{
-		invalid_structure("string length doesn't match with clumplet");
-	}
 	return str;
 }
 
@@ -558,10 +526,6 @@ PathName& ClumpletReader::getPath(PathName& str) const
 	size_t length = getClumpLength();
 	str.assign(reinterpret_cast<const char*>(ptr), length);
 	str.recalculate_length();
-	if (str.length() + 1 < length)
-	{
-		invalid_structure("path length doesn't match with clumplet");
-	}
 	return str;
 }
 

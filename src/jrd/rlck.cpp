@@ -32,6 +32,7 @@
 #include "../jrd/req.h"
 #include "gen/iberror.h"
 #include "../jrd/all.h"
+#include "../jrd/all_proto.h"
 #include "../jrd/err_proto.h"
 #include "../jrd/isc_proto.h"
 
@@ -170,13 +171,10 @@ static Lock* allocate_relation_lock(MemoryPool* pool, jrd_rel* relation)
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = tdbb->tdbb_database;
-
-	SSHORT	relLockLen = relation->getRelLockKeyLength();
-
-	Lock* lock = FB_NEW_RPT(*pool, relLockLen) Lock();
+	Lock* lock = FB_NEW_RPT(*pool, sizeof(SLONG)) Lock();
 	lock->lck_dbb = dbb;
-	lock->lck_length = relLockLen;
-	relation->getRelLockKey(tdbb, &lock->lck_key.lck_string[0]);
+	lock->lck_length = sizeof(SLONG);
+	lock->lck_key.lck_long = relation->rel_id;
 	lock->lck_type = LCK_relation;
 	lock->lck_owner_handle = LCK_get_owner_handle(tdbb, lock->lck_type);
 	lock->lck_parent = dbb->dbb_lock;

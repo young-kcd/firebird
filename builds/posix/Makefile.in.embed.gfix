@@ -32,7 +32,7 @@ ROOT=..
 SERVICES_THREADED=@service_thread_CS@
 ifeq ($(SERVICES_THREADED),true)
     ObjModuleType=superclient
-    CFLAGS+=-DSTD_UTIL -DSUPERCLIENT
+    CFLAGS+=-DSTD_UTIL
 else
     ObjModuleType=std
 endif
@@ -55,9 +55,6 @@ GFIX_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(GFIX_Sources)))
 
 AllObjects = $(GFIX_Objects) $(CLUMPLETS_Objects)
 
-ifeq ($(PLATFORM),DARWIN)
-LINK_LIBS+=$(ICU_LIBS)
-endif
 Dependencies = $(AllObjects:.o=.d) 
 
 
@@ -67,7 +64,7 @@ Dependencies = $(AllObjects:.o=.d)
 gfix : $(LIBFBEMBED_SO) $(GFIX)
 
 $(GFIX):	$(GFIX_Objects) $(CLUMPLETS_Objects) $(FBCOMMON_Objects) $(FBCLASSES_Objects)
-	$(LD) $(LINK_OPTS) $^ -o $@ $(FBEMBED_LINK) $(LINK_LIBS)
+	$(LD) $(LINK_OPTS) $^ -o $@ -L$(LIB) -lfbembed $(LINK_LIBS)
 
 
 include $(ROOT)/gen/make.shared.targets

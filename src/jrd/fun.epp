@@ -47,6 +47,7 @@
 #include "../jrd/common.h"
 #include "../jrd/ibsetjmp.h"
 #include "../jrd/irq.h"
+#include "../jrd/all_proto.h"
 #include "../jrd/blb_proto.h"
 #include "../jrd/cmp_proto.h"
 #include "../jrd/dsc_proto.h"
@@ -96,52 +97,6 @@ struct udf_blob {
 	SLONG (*blob_seek) (blb*, USHORT, SLONG);
 };
 
-
-class OwnedBlobStack : public Firebird::Stack<blb*>
-{
-public:
-	OwnedBlobStack(thread_db* in_tdbb) :
-		m_blob_created(0), m_tdbb(in_tdbb) {}
-	~OwnedBlobStack();
-	void close();
-	void setBlobCreated(blb* b)
-	{
-		m_blob_created = b;
-	}
-private:
-	blb* m_blob_created;
-	thread_db* m_tdbb;
-};
-
-OwnedBlobStack::~OwnedBlobStack()
-{
-	while (this->hasData())
-	{
-		// We want to close blobs opened for reading
-		// and cancel blobs opened for writing.
-		blb* aux = this->pop();
-		try
-		{
-			if (aux != m_blob_created)
-				BLB_close(m_tdbb, aux);
-			else
-				BLB_cancel(m_tdbb, aux);
-		}
-		catch (const Firebird::Exception&)
-		{
-			// Ignore exception.
-		}
-	}
-}
-
-void OwnedBlobStack::close()
-{
-	while (this->hasData())
-		BLB_close(m_tdbb, this->pop());
-}
-
-
-
 static SSHORT blob_get_segment(blb*, UCHAR*, USHORT, USHORT*);
 static void blob_put_segment(blb*, const UCHAR*, USHORT);
 static SLONG blob_lseek(blb*, USHORT, SLONG);
@@ -181,9 +136,7 @@ void FUN_evaluate(UserFunction* function, jrd_nod* node, impure_value* value)
 
 	MOVE_CLEAR(args, sizeof(args));
 	UDF_ARG* arg_ptr = args;
-	//Firebird::Stack<blb*> blob_stack;
-	//blb* blob_created = 0;
-	OwnedBlobStack blob_stack(tdbb);
+	Firebird::Stack<blb*> blob_stack;
 	UCharStack array_stack;
 	
 	jrd_req* request = tdbb->tdbb_request;
@@ -441,7 +394,7 @@ void FUN_evaluate(UserFunction* function, jrd_nod* node, impure_value* value)
 				}
 				else
 				{
-					MOV_move(tdbb, input, &temp_desc);
+					MOV_move(input, &temp_desc);
 				}
 				break;
 
@@ -458,13 +411,13 @@ void FUN_evaluate(UserFunction* function, jrd_nod* node, impure_value* value)
 				}
 				else
 				{
-					MOV_move(tdbb, input, &temp_desc);
+					MOV_move(input, &temp_desc);
 				}
 				break;
 
 			case dtype_quad:
 			case dtype_array:
-				MOV_move(tdbb, input, &temp_desc);
+				MOV_move(input, &temp_desc);
 				break;
 
 			case dtype_blob:
@@ -479,7 +432,6 @@ void FUN_evaluate(UserFunction* function, jrd_nod* node, impure_value* value)
 							BLB_create(tdbb, tdbb->tdbb_request->req_transaction,
 									   (bid*) &value->vlu_misc);
 						return_blob_struct = blob_desc;
-						blob_stack.setBlobCreated(blob);
 					}
 					else
 					{
@@ -516,7 +468,7 @@ void FUN_evaluate(UserFunction* function, jrd_nod* node, impure_value* value)
 
 			default:
 				fb_assert(FALSE);
-				MOV_move(tdbb, input, &temp_desc);
+				MOV_move(input, &temp_desc);
 				break;
 
 			}
@@ -554,21 +506,25 @@ void FUN_evaluate(UserFunction* function, jrd_nod* node, impure_value* value)
 	}
 	else
 		request->req_flags &= ~req_null;
-		
-	while (array_stack.hasData())
-	{
-		delete[] array_stack.pop();
-	}
-	blob_stack.close();
 
 	} // try
-	catch (const Firebird::Exception&)
+	catch (const std::exception&) 
 	{
+		// CVC: Maybe we should loop here trying to close blobs from blob_stack, too.
 		while (array_stack.hasData()) {
 			delete[] array_stack.pop();
 		}
-
 		throw;
+	}
+
+	while (blob_stack.hasData())
+	{
+		BLB_close(tdbb, blob_stack.pop());
+	}
+
+	while (array_stack.hasData())
+	{
+		delete[] array_stack.pop();
 	}
 
 	if (null_flag)
@@ -594,9 +550,15 @@ UserFunction* FUN_lookup_function(const Firebird::MetaName& name, bool ShowAcces
 	Database* dbb = tdbb->tdbb_database;
 
 /* Start by looking for already defined symbol */
+#ifdef V4_THREADING
+	V4_JRD_MUTEX_LOCK(dbb->dbb_mutexes + DBB_MUTX_udf);
+#endif
 	for (Symbol* symbol = Symbol::lookup(name); symbol; symbol = symbol->sym_homonym)
 	{
 		//if (symbol->sym_type == Symbol::fun) {
+#ifdef V4_THREADING
+			V4_JRD_MUTEX_UNLOCK(dbb->dbb_mutexes + DBB_MUTX_udf);
+#endif
 			return (UserFunction*) symbol->sym_object;
 		//}
 	}
@@ -684,6 +646,9 @@ UserFunction* FUN_lookup_function(const Firebird::MetaName& name, bool ShowAcces
 	if (!REQUEST(irq_l_args))
 		REQUEST(irq_l_args) = request_arg;
 
+#ifdef V4_THREADING
+	V4_JRD_MUTEX_UNLOCK(dbb->dbb_mutexes + DBB_MUTX_udf);
+#endif
 	return prior;
 }
 
@@ -864,21 +829,11 @@ static SLONG get_scalar_array(fun_repeat*	arg,
 		from.dsc_address = data;
 		
 		// This loop may call ERR_post indirectly.
-		try
+		for (; n; --n, to.dsc_address += to.dsc_length,
+			 from.dsc_address += array_desc->iad_element_length)
 		{
-			for (; n; --n, to.dsc_address += to.dsc_length,
-				 from.dsc_address += array_desc->iad_element_length)
-			{
-				MOV_move(tdbb, &from, &to);
-			}
+			MOV_move(&from, &to);
 		}
-		catch (const Firebird::Exception&)
-		{
-			delete[] data;
-			delete[] temp;
-			throw;
-		}
-		
 		delete[] data;
 		data = temp;
 	}
@@ -1048,7 +1003,7 @@ static void invoke(UserFunction* function,
 			else
 			if (return_dsc)
 			{
-				MOV_move(tdbb, return_dsc, &value->vlu_desc);
+				MOV_move(return_dsc, &value->vlu_desc);
 			}
 			else
 			{
@@ -1087,7 +1042,7 @@ static void invoke(UserFunction* function,
 				case dtype_text:
 					temp_desc = value->vlu_desc;
 					temp_desc.dsc_address = temp_ptr;
-					MOV_move(tdbb, &temp_desc, &value->vlu_desc);
+					MOV_move(&temp_desc, &value->vlu_desc);
 					break;
 
 				case dtype_cstring:
@@ -1097,7 +1052,7 @@ static void invoke(UserFunction* function,
 					temp_desc.dsc_address = temp_ptr;
 					temp_desc.dsc_length =
 						strlen(reinterpret_cast<char*>(temp_ptr)) + 1;
-					MOV_move(tdbb, &temp_desc, &value->vlu_desc);
+					MOV_move(&temp_desc, &value->vlu_desc);
 					break;
 
 				case dtype_varying:
@@ -1105,7 +1060,7 @@ static void invoke(UserFunction* function,
 					temp_desc.dsc_address = temp_ptr;
 					temp_desc.dsc_length =
 						reinterpret_cast<vary*>(temp_ptr)->vary_length + sizeof(USHORT);
-					MOV_move(tdbb, &temp_desc, &value->vlu_desc);
+					MOV_move(&temp_desc, &value->vlu_desc);
 					break;
 
 				case dtype_timestamp:

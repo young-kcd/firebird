@@ -47,22 +47,18 @@ const char*	GCPolicyDefault	= GCPolicyCombined;
 const char*	GCPolicyDefault	= GCPolicyCooperative;
 #endif
 
-const char*	AmNative	= "native";
-const char*	AmTrusted	= "trusted";
-const char*	AmMixed		= "mixed";
-
 char defIpcName[MAXPATHLEN]; 
 
 const ConfigImpl::ConfigEntry ConfigImpl::entries[] =
 {
 	{TYPE_STRING,		"RootDirectory",			(ConfigValue) 0},
-	{TYPE_INTEGER,		"TempBlockSize",			(ConfigValue) 1048576},		// bytes
+	{TYPE_INTEGER,		"SortMemBlockSize",			(ConfigValue) 1048576},		// bytes
 #ifdef SUPERSERVER
-	{TYPE_INTEGER,		"TempCacheLimit",			(ConfigValue) 67108864},	// bytes
+	{TYPE_INTEGER,		"SortMemUpperLimit",		(ConfigValue) 67108864},	// bytes
 #elif defined(WIN_NT) // win32 CS
-	{TYPE_INTEGER,		"TempCacheLimit",			(ConfigValue) 8388608},		// bytes
+	{TYPE_INTEGER,		"SortMemUpperLimit",		(ConfigValue) 8388608},		// bytes
 #else // non-win32 CS
-	{TYPE_INTEGER,		"TempCacheLimit",			(ConfigValue) 0},			// bytes
+	{TYPE_INTEGER,		"SortMemUpperLimit",		(ConfigValue) 0},			// bytes
 #endif
 	{TYPE_BOOLEAN,		"RemoteFileOpenAbility",	(ConfigValue) false},
 	{TYPE_INTEGER,		"GuardianOption",			(ConfigValue) 1},
@@ -77,7 +73,11 @@ const ConfigImpl::ConfigEntry ConfigImpl::entries[] =
 #endif
 	{TYPE_INTEGER,		"ConnectionTimeout",		(ConfigValue) 180},			// seconds
 	{TYPE_INTEGER,		"DummyPacketInterval",		(ConfigValue) 0},			// seconds
+#if defined(WIN_NT) && !defined(SUPERSERVER)
 	{TYPE_INTEGER,		"LockMemSize",				(ConfigValue) 1048576},		// bytes
+#else
+	{TYPE_INTEGER,		"LockMemSize",				(ConfigValue) 262144},		// bytes
+#endif
 #if defined(SINIXZ) || defined(FREEBSD) || defined(NETBSD)
 	{TYPE_INTEGER,		"LockSemCount",				(ConfigValue) 25},			// semaphores
 #else
@@ -85,7 +85,7 @@ const ConfigImpl::ConfigEntry ConfigImpl::entries[] =
 #endif
 	{TYPE_INTEGER,		"LockSignal",				(ConfigValue) 16},			// signal #
 	{TYPE_BOOLEAN,		"LockGrantOrder",			(ConfigValue) true},
-	{TYPE_INTEGER,		"LockHashSlots",			(ConfigValue) 1009},		// slots
+	{TYPE_INTEGER,		"LockHashSlots",			(ConfigValue) 101},			// slots
 	{TYPE_INTEGER,		"LockAcquireSpins",			(ConfigValue) 0},
 	{TYPE_INTEGER,		"EventMemSize",				(ConfigValue) 65536},		// bytes
 	{TYPE_INTEGER,		"DeadlockTimeout",			(ConfigValue) 10},			// seconds
@@ -106,7 +106,6 @@ const ConfigImpl::ConfigEntry ConfigImpl::entries[] =
 	{TYPE_INTEGER,		"MaxUnflushedWriteTime",	(ConfigValue) -1},
 #endif
 	{TYPE_INTEGER,		"ProcessPriorityLevel",		(ConfigValue) 0},
-	{TYPE_BOOLEAN,		"CreateInternalWindow",		(ConfigValue) true},
 	{TYPE_BOOLEAN,		"CompleteBooleanEvaluation", (ConfigValue) false},
 	{TYPE_INTEGER,		"RemoteAuxPort",			(ConfigValue) 0},
 	{TYPE_STRING,		"RemoteBindAddress",		(ConfigValue) 0},
@@ -123,8 +122,7 @@ const ConfigImpl::ConfigEntry ConfigImpl::entries[] =
 	{TYPE_BOOLEAN,		"LegacyHash",				(ConfigValue) true},	// let use old passwd hash verification
 	{TYPE_STRING,		"GCPolicy",					(ConfigValue) GCPolicyDefault},	// garbage collection policy
 	{TYPE_BOOLEAN,		"Redirection",				(ConfigValue) false},
-	{TYPE_BOOLEAN,		"OldColumnNaming",			(ConfigValue) false},	// if true use old style concatenation
-	{TYPE_STRING,		"Authentication",			(ConfigValue) AmMixed}	// use native, trusted or mixed
+	{TYPE_BOOLEAN,		"OldColumnNaming",			(ConfigValue) false}	// if true use old style concatenation
 };
 
 /******************************************************************************
@@ -149,8 +147,7 @@ const ConfigImpl& ConfigImpl::instance()
 			if (!sys_config) {
 				sys_config = FB_NEW(*getDefaultMemoryPool()) ConfigImpl(*getDefaultMemoryPool());
 			}
-		}
-		catch (const Firebird::Exception&) {
+		} catch(const std::exception&) {
 			config_init_lock.leave();
 			throw;
 		}
@@ -285,14 +282,14 @@ const char* Config::getRootDirectory()
 	return result ? result : sysConfig.root_dir;
 }
 
-int Config::getTempBlockSize()
+int Config::getSortMemBlockSize()
 {
-	return (int) sysConfig.values[KEY_TEMP_BLOCK_SIZE];
+	return (int) sysConfig.values[KEY_SORT_MEM_BLOCK_SIZE];
 }
 
-int Config::getTempCacheLimit()
+int Config::getSortMemUpperLimit()
 {
-	return (int) sysConfig.values[KEY_TEMP_CACHE_LIMIT];
+	return (int) sysConfig.values[KEY_SORT_MEM_UPPER_LIMIT];
 }
 
 bool Config::getRemoteFileOpenAbility()
@@ -453,11 +450,6 @@ int Config::getProcessPriorityLevel()
 	return (int) sysConfig.values[KEY_PROCESS_PRIORITY_LEVEL];
 }
 
-bool Config::getCreateInternalWindow()
-{
-	return (bool) sysConfig.values[KEY_CREATE_INTERNAL_WINDOW];
-}
-
 bool Config::getCompleteBooleanEvaluation()
 {
 	return (bool) sysConfig.values[KEY_COMPLETE_BOOLEAN_EVALUATION];
@@ -527,7 +519,3 @@ bool Config::getOldColumnNaming()
 	return (bool) sysConfig.values[KEY_OLD_COLUMN_NAMING];
 }
 
-const char *Config::getAuthMethod()
-{
-	return (const char *) sysConfig.values[KEY_AUTH_METHOD];
-}

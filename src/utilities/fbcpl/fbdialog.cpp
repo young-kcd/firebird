@@ -273,10 +273,8 @@ bool CFBDialog::ValidateInstalledServices()
 // If Guardian installed but not Server service 
 // then return false;
 {
-	fb_status.UseService =
-		CheckServiceInstalled(GetServiceName(REMOTE_SERVICE));
-	fb_status.UseGuardian =
-		CheckServiceInstalled(GetServiceName(ISCGUARD_SERVICE));
+	fb_status.UseService = CheckServiceInstalled(REMOTE_SERVICE);
+	fb_status.UseGuardian = CheckServiceInstalled(ISCGUARD_SERVICE);	
 
 	if (!fb_status.UseService && fb_status.UseGuardian)
 		return false;
@@ -284,12 +282,6 @@ bool CFBDialog::ValidateInstalledServices()
 		return true;
 }
 
-CString CFBDialog::GetServiceName(const char* name) const
-{
-	CString serviceName;
-	serviceName.Format(name, DEFAULT_INSTANCE);
-	return serviceName;
-}
 
 int CFBDialog::GetServerStatus()
 // This is called by UpdateServerStatus, 
@@ -304,13 +296,12 @@ int CFBDialog::GetServerStatus()
 {
 	int result = IDS_APPLICATION_STOPPED;
 
-	const CString serviceName = GetServiceName(REMOTE_SERVICE);
-	fb_status.UseService = CheckServiceInstalled(serviceName);
+	fb_status.UseService = CheckServiceInstalled(REMOTE_SERVICE);
 
 	if ( fb_status.UseService )
 	{
 		OpenServiceManager( GENERIC_READ );
-		SC_HANDLE hService = OpenService (hScManager, serviceName, GENERIC_READ );
+		SC_HANDLE hService = OpenService (hScManager, REMOTE_SERVICE, GENERIC_READ );
 		QueryServiceStatus( hService, &service_status ); 
 		CloseServiceHandle ( hService );
 		CloseServiceManager();
@@ -380,15 +371,13 @@ void CFBDialog::ViewRegistryEntries()
 	
 	fb_status.AutoStart = false;
 
-	fb_status.UseService =
-		CheckServiceInstalled(GetServiceName(REMOTE_SERVICE));
-	
+	fb_status.UseService = CheckServiceInstalled(REMOTE_SERVICE);
 	if ( fb_status.UseService )
 	{
 		OpenServiceManager( GENERIC_READ );
 
-		CString service = GetServiceName(ISCGUARD_SERVICE);
-		CString display_name = GetServiceName(ISCGUARD_DISPLAY_NAME);
+		const char* service = ISCGUARD_SERVICE;
+		const char* display_name = ISCGUARD_DISPLAY_NAME;
 		SC_HANDLE hService = OpenService (hScManager, service, SERVICE_QUERY_CONFIG);
 		fb_status.UseGuardian = hService;
 		if (hService != NULL) // then we are running as a Service
@@ -413,8 +402,8 @@ void CFBDialog::ViewRegistryEntries()
 		}
 
 		//Now do the same again, but this time only look at the server itself
-		service = GetServiceName(REMOTE_SERVICE);
-		display_name = GetServiceName(REMOTE_DISPLAY_NAME);
+		service = REMOTE_SERVICE;
+		display_name = REMOTE_DISPLAY_NAME;
 		hService = OpenService (hScManager, service, SERVICE_QUERY_CONFIG);
 		CloseServiceManager();
 		if (hService != NULL) // then we are running as a Service
@@ -750,17 +739,17 @@ bool CFBDialog::ServerStart( CFBDialog::STATUS status )
 
 	if ( status.UseService ) 
 	{
-		CString service;
-		CString display_name;
+		const char * service = "";
+		const char * display_name = "";
 		if (status.UseGuardian)
 		{
-			service = GetServiceName(ISCGUARD_SERVICE);
-			display_name = GetServiceName(ISCGUARD_DISPLAY_NAME);
+			service = ISCGUARD_SERVICE;
+			display_name = ISCGUARD_DISPLAY_NAME;
 		}
 		else
 		{
-			service = GetServiceName(REMOTE_SERVICE);
-			display_name = GetServiceName(REMOTE_DISPLAY_NAME);
+			service = REMOTE_SERVICE;
+			display_name = REMOTE_DISPLAY_NAME;
 		}
 
 		OpenServiceManager(GENERIC_READ | GENERIC_EXECUTE | GENERIC_WRITE);
@@ -772,7 +761,7 @@ bool CFBDialog::ServerStart( CFBDialog::STATUS status )
 				if (m_Error_Status == FB_SUCCESS)
 					result = true;
 			}
-			catch ( ... )
+			catch( ... ) 
 			{
 			}
 		}
@@ -803,7 +792,7 @@ bool CFBDialog::ServerStart( CFBDialog::STATUS status )
 				CloseHandle(pi.hThread);
 			}
 		}
-		catch ( ... )
+		catch( ... )
 		{
 		}
 	}
@@ -831,19 +820,10 @@ bool CFBDialog::ServerStop()
 #endif
 				OpenServiceManager( GENERIC_READ | GENERIC_EXECUTE | GENERIC_WRITE );
 
-				CString service;
-				CString display_name;
 				if (fb_status.UseGuardian)
-				{
-					service = GetServiceName(ISCGUARD_SERVICE);
-					display_name = GetServiceName(ISCGUARD_DISPLAY_NAME);
-				}
+					m_Error_Status = SERVICES_stop(hScManager, ISCGUARD_SERVICE, ISCGUARD_DISPLAY_NAME, svc_error);
 				else
-				{
-					service = GetServiceName(REMOTE_SERVICE);
-					display_name = GetServiceName(REMOTE_DISPLAY_NAME);
-				}
-				m_Error_Status = SERVICES_stop(hScManager, service, display_name, svc_error);
+					m_Error_Status = SERVICES_stop(hScManager, REMOTE_SERVICE, REMOTE_DISPLAY_NAME, svc_error);
 
 				result = !m_Error_Status;
 		
@@ -913,18 +893,11 @@ bool CFBDialog::ServiceInstall( CFBDialog::STATUS status )
 	if (hScManager)
 	{
 		const char* ServerPath = m_Root_Path;
-
-		CString guard_service = GetServiceName(ISCGUARD_SERVICE);
-		CString guard_display_name = GetServiceName(ISCGUARD_DISPLAY_NAME);
-		CString remote_service = GetServiceName(REMOTE_SERVICE);
-		CString remote_display_name = GetServiceName(REMOTE_DISPLAY_NAME);
-
 		if (new_settings.UseGuardian) 
 		{
-			m_Error_Status = SERVICES_install (hScManager,
-				guard_service, guard_display_name,
-				ISCGUARD_DISPLAY_DESCR, ISCGUARD_EXECUTABLE,
-				ServerPath, NULL, NULL, status.AutoStart,
+			m_Error_Status = SERVICES_install (hScManager, ISCGUARD_SERVICE,
+				ISCGUARD_DISPLAY_NAME, ISCGUARD_DISPLAY_DESCR,
+				ISCGUARD_EXECUTABLE, ServerPath, NULL, status.AutoStart,
 				NULL, NULL, false, svc_error);
 			if (m_Error_Status != FB_SUCCESS)
 			{
@@ -937,10 +910,10 @@ bool CFBDialog::ServiceInstall( CFBDialog::STATUS status )
 			
 		}
 		/* do the install of server */
-		m_Error_Status = SERVICES_install (hScManager,
-			remote_service, remote_display_name,
-			REMOTE_DISPLAY_DESCR, (LPCTSTR) status.ServiceExecutable, 
-			ServerPath, NULL, NULL, status.AutoStart, 
+		m_Error_Status = SERVICES_install (hScManager, REMOTE_SERVICE,
+			REMOTE_DISPLAY_NAME, REMOTE_DISPLAY_DESCR,
+			(LPCTSTR) status.ServiceExecutable, 
+			ServerPath, NULL, status.AutoStart, 
 			NULL, NULL, false, svc_error);
 		if (m_Error_Status != FB_SUCCESS)
 		{
@@ -971,21 +944,16 @@ bool CFBDialog::ServiceRemove()
 	OpenServiceManager( GENERIC_READ | GENERIC_EXECUTE | GENERIC_WRITE );
 	if (hScManager)
 	{
-		CString guard_service = GetServiceName(ISCGUARD_SERVICE);
-		CString guard_display_name = GetServiceName(ISCGUARD_DISPLAY_NAME);
-		CString remote_service = GetServiceName(REMOTE_SERVICE);
-		CString remote_display_name = GetServiceName(REMOTE_DISPLAY_NAME);
-
-		m_Error_Status = SERVICES_remove (hScManager, guard_service, 
-			guard_display_name, svc_error);
+		m_Error_Status = SERVICES_remove (hScManager, ISCGUARD_SERVICE, 
+			ISCGUARD_DISPLAY_NAME, svc_error);
 		if (m_Error_Status == IB_SERVICE_RUNNING)
 		{
 			CloseServiceManager();
 			return false;
 		}
 		
-		m_Error_Status = SERVICES_remove (hScManager, remote_service, 
-			remote_display_name, svc_error);
+		m_Error_Status = SERVICES_remove (hScManager, REMOTE_SERVICE, 
+			REMOTE_DISPLAY_NAME, svc_error);
 		if (m_Error_Status == IB_SERVICE_RUNNING)
 		{
 			CloseServiceManager();
@@ -1245,7 +1213,7 @@ void CFBDialog::DisableApplyButton()
 }
 
 
-void CFBDialog::OnTimer(UINT_PTR nIDEvent) 
+void CFBDialog::OnTimer(UINT nIDEvent) 
 {
 	UpdateServerStatus();
 }
@@ -1447,17 +1415,18 @@ void CFBDialog::SetAutoStart( CFBDialog::STATUS status )
 			
 			// The database is locked, so it is safe to make changes. 
 			
-			CString service;
-			CString display_name;
-			if (status.UseGuardian)
+			const char* service = "";
+			const char* display_name = "";
+			
+			if ( status.UseGuardian )
 			{
-				service = GetServiceName(ISCGUARD_SERVICE);
-				display_name = GetServiceName(ISCGUARD_DISPLAY_NAME);
+				service = ISCGUARD_SERVICE;
+				display_name = ISCGUARD_DISPLAY_NAME;
 			}
 			else
 			{
-				service = GetServiceName(REMOTE_SERVICE);
-				display_name = GetServiceName(REMOTE_DISPLAY_NAME);
+				service = REMOTE_SERVICE;
+				display_name = REMOTE_DISPLAY_NAME;
 			}
 			
 			// Open a handle to the service. 

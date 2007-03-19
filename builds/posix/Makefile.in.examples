@@ -27,6 +27,7 @@
 #  Contributor(s):
 # 
 #
+#  $Id: Makefile.in.examples,v 1.8 2005-12-18 17:56:43 alexpeshkoff Exp $
 #
 ROOT=../..
 ObjModuleType=std
@@ -47,13 +48,9 @@ include     $(ROOT)/gen/make.shared.variables
 PATH := ./:$(BIN):$(PATH)
 export PATH
 
-ifeq ($(PLATFORM),DARWIN)
-DYLD_LIBRARY_PATH := $(GEN_ROOT)/firebird/lib
-export DYLD_LIBRARY_PATH
-else
 LD_LIBRARY_PATH := $(GEN_ROOT)/firebird/lib
 export LD_LIBRARY_PATH
-endif
+
 GPRE_FLAGS=	-r -m -z -n
 
 EXAMPLES_DEST=	$(GEN_ROOT)/examples

@@ -72,6 +72,11 @@ void PPG_print_header(const header_page* header, SLONG page, bool nocreation,
  *	Print database header page.
  *
  **************************************/
+	SLONG number;
+	struct tm time;
+	TEXT temp[257];
+	SSHORT flag_count = 0;
+
 	if (page == HEADER_PAGE)
 		FPRINTF(outfile, "Database header page information:\n");
 	else
@@ -127,7 +132,6 @@ void PPG_print_header(const header_page* header, SLONG page, bool nocreation,
 			FPRINTF(outfile, "\tDatabase dialect\t1\n");
 
 		if (!nocreation) {
-			struct tm time;
 			isc_decode_timestamp(reinterpret_cast<const ISC_TIMESTAMP*>(header->hdr_creation_date),
 							&time);
 			FPRINTF(outfile, "\tCreation date\t\t%s %d, %d %d:%02d:%02d\n",
@@ -136,8 +140,7 @@ void PPG_print_header(const header_page* header, SLONG page, bool nocreation,
 		}
 	}
 
-	ULONG flags;
-	int flag_count = 0;
+	USHORT flags;
 
 	if ((page == HEADER_PAGE) && (flags = header->hdr_flags)) {
 		FPRINTF(outfile, "\tAttributes\t\t");
@@ -202,9 +205,6 @@ void PPG_print_header(const header_page* header, SLONG page, bool nocreation,
 	}
 
 	FPRINTF(outfile, "\n    Variable header data:\n");
-
-	SLONG number;
-	TEXT temp[257];
 
 	const UCHAR* p = header->hdr_data;
 	for (const UCHAR* const end = p + header->hdr_page_size;

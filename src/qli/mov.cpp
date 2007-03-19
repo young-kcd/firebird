@@ -469,7 +469,9 @@ void MOVQ_fast(const SCHAR* from,
  **************************************/
 
 	if (length)
-		memcpy(to, from, length);
+		do {
+			*to++ = *from++;
+		} while (--length);
 }
 
 
@@ -518,7 +520,7 @@ double MOVQ_get_double(const dsc* desc)
 
 // Last, but not least, adjust for scale
 
-	int scale = desc->dsc_scale;
+	SSHORT scale = desc->dsc_scale;
 	if (scale == 0)
 		return value;
 
@@ -618,9 +620,9 @@ SLONG MOVQ_get_long(const dsc* desc, SSHORT scale)
 		return value;
 
 	if (scale > 0) {
-		if ((desc->dsc_dtype == dtype_short) || (desc->dsc_dtype == dtype_long))
-		{
-			int fraction = 0;
+		if ((desc->dsc_dtype == dtype_short)
+			|| (desc->dsc_dtype == dtype_long)) {
+			SSHORT fraction = 0;
 			do {
 				if (scale == 1)
 					fraction = value % 10;
@@ -726,8 +728,9 @@ if (((ALT_DSC*) from)->dsc_combined_type == ((ALT_DSC*) to)->dsc_combined_type)
 */
 	{
 		if (length)
-			memcpy(p, q, length);
-			
+			do {
+				*p++ = *q++;
+			} while (--length);
 		return;
 	}
 
@@ -974,7 +977,7 @@ static double double_from_text(const dsc* desc)
 {
 	const TEXT* p;
 	const SSHORT length = MOVQ_get_string(desc, &p, 0, 0);
-	int scale = 0;
+	SSHORT scale = 0;
 	bool fraction = false, sign = false;
 	double value = 0;
 	const TEXT* const end = p + length;
@@ -1009,14 +1012,13 @@ static double double_from_text(const dsc* desc)
 
 	if (p < end) {
 		sign = false;
-		int exp = 0;
+		SSHORT exp = 0;
 		for (p++; p < end; p++) {
 			if (DIGIT(*p))
 				exp = exp * 10 + *p - '0';
 			else if (*p == '-' && !exp)
 				sign = true;
-			else if (*p == '+' && !exp)
-				;
+			else if (*p == '+' && !exp);
 			else if (*p != ' ')
 				IBERROR(54);	// Msg 54 conversion error
 		}
@@ -1357,7 +1359,7 @@ static void string_to_date(const TEXT* string, USHORT length, SLONG date[2])
 	const time_t clock = time(0);
 	tm* today = localtime(&clock);
 
-	int i;
+	USHORT i;
 	USHORT components[7];
 	for (i = 0; i < 7; i++)
 		components[i] = 0;
@@ -1523,7 +1525,7 @@ static void string_to_time(const TEXT* string, USHORT length, SLONG date[2])
 	const time_t clock = time(0);
 	const tm* today = localtime(&clock);
 
-	int i;
+	USHORT i;
 	USHORT components[7];
 	for (i = 0; i < 7; i++)
 		components[i] = 0;

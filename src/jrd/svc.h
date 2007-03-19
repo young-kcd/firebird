@@ -35,7 +35,6 @@
 
 #include "../jrd/jrd_blks.h"
 #include "../include/fb_blk.h"
-#include "../common/classes/array.h"
 
 void SVC_STATUS_ARG(ISC_STATUS*& status, USHORT type, const void* value);
 
@@ -81,9 +80,6 @@ const USHORT isc_action_max				= 14;
 #else
 #define SERVICE_THD_PARAM "-svc"
 #endif
-#ifdef TRUSTED_AUTH
-#define TRUSTED_USER_SWITCH "-TRUSTED"
-#endif
 
 /* Macro used to store services thread specific data */
 /* Currently we store empty string, see bug #10394 */
@@ -106,8 +102,6 @@ class Service : public pool_alloc<type_svc>
 {
 private:
 	ISC_STATUS_ARRAY svc_status_array;
-	Firebird::string svc_parsed_sw;		// Here point elements of svc_argv
-
 public:
 	Service(serv_entry *se, Firebird::MemoryPool& p);
 	~Service();
@@ -119,7 +113,7 @@ public:
 	ULONG	svc_stdout_head;
 	ULONG	svc_stdout_tail;
 	UCHAR*	svc_stdout;
-	Firebird::HalfStaticArray<const char*, 20>	svc_argv;
+	TEXT**	svc_argv;
 	ULONG	svc_argc;
 	event_t	svc_start_event[1];	/* fired once service has started successfully */
 	serv_entry*	svc_service;
@@ -133,15 +127,11 @@ public:
 	bool	svc_do_shutdown;
 	Firebird::string	svc_username;
 	Firebird::string	svc_enc_password;
-#ifdef TRUSTED_AUTH
-	Firebird::string	svc_trusted_login;
-#endif
 	Firebird::string	svc_switches;	// Full set of switches
 	Firebird::string	svc_perm_sw;	// Switches, taken from services table 
 										// and/or passed using spb_command_line
 	
 	void	svc_started();
-	void	parseSwitches();			// Create svc_argv, svc_argc and svc_parsed_sw
 };
 
 /* Bitmask values for the svc_flags variable */

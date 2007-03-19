@@ -265,12 +265,6 @@ EXPORTS
     isc_encode_sql_time=fbclient.isc_encode_sql_time @265
     isc_encode_timestamp=fbclient.isc_encode_timestamp @266
     CVT_move=fbclient.CVT_move @267
-    isc_embed_dsql_length=fbclient.isc_embed_dsql_length @268
-    isc_event_block_a=fbclient.isc_event_block_a @269
-    isc_event_block_s=fbclient.isc_event_block_s @270
-    isc_baddress=fbclient.isc_baddress @271
-    isc_badress_s=fbclient.isc_baddress_s @272
-    isc_sqlcode_s=fbclient.isc_sqlcode_s @273
     _isc_start_transaction=fbclient._isc_start_transaction
     _isc_expand_dpb=fbclient._isc_expand_dpb
     _isc_event_block=fbclient._isc_event_block

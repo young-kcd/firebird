@@ -1,6 +1,6 @@
 /*
- *	PROGRAM:		Firebird server manager
- *	MODULE:			ibmgr.h
+ *	PROGRAM:	InterBase server manager
+ *	MODULE:		ibmgr.h
  *	DESCRIPTION:	Header file for the FBMGR program
  *
  * The contents of this file are subject to the Interbase Public

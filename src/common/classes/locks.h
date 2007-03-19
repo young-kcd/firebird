@@ -51,18 +51,20 @@ namespace Firebird {
 #ifdef MULTI_THREAD
 #ifdef WIN_NT
 
-// Generic process-local mutex and spinlock. The latter
-// is used to manage memory heaps in a threaded environment.
-
+// Process-local spinlock. Used to manage memory heaps in threaded environment.
 // Windows version of the class
 
+typedef WINBASEAPI DWORD WINAPI tSetCriticalSectionSpinCount (
+	LPCRITICAL_SECTION lpCriticalSection,
+	DWORD dwSpinCount
+);
+
 class Mutex {
-protected:
+private:
 	CRITICAL_SECTION spinlock;
+	static tSetCriticalSectionSpinCount* SetCriticalSectionSpinCount;
 public:
-	Mutex() {
-		InitializeCriticalSection(&spinlock);
-	}
+	Mutex();
 	~Mutex() {
 		DeleteCriticalSection(&spinlock);
 	}
@@ -72,18 +74,6 @@ public:
 	void leave() {
 		LeaveCriticalSection(&spinlock);
 	}
-};
-
-typedef WINBASEAPI DWORD WINAPI tSetCriticalSectionSpinCount (
-	LPCRITICAL_SECTION lpCriticalSection,
-	DWORD dwSpinCount
-);
-
-class Spinlock : public Mutex {
-private:
-	static tSetCriticalSectionSpinCount* SetCriticalSectionSpinCount;
-public:
-	Spinlock();
 };
 
 #else //WIN_NT
@@ -112,8 +102,6 @@ public:
 	}
 };
 
-typedef Mutex Spinlock;
-
 #else  //SOLARIS_MT
 
 // Pthreads version of the class
@@ -139,28 +127,6 @@ public:
 	}
 };
 
-class Spinlock {
-private:
-	pthread_spinlock_t spinlock;
-public:
-	Spinlock() {
-		if (pthread_spin_init(&spinlock, false))
-			system_call_failed::raise("pthread_spin_init");
-	}
-	~Spinlock() {
-		if (pthread_spin_destroy(&spinlock))
-			system_call_failed::raise("pthread_spin_destroy");
-	}
-	void enter() {
-		if (pthread_spin_lock(&spinlock))
-			system_call_failed::raise("pthread_spin_lock");
-	}
-	void leave() {
-		if (pthread_spin_unlock(&spinlock))
-			system_call_failed::raise("pthread_spin_unlock");
-	}
-};
-
 #endif //SOLARIS_MT
 
 #endif //WIN_NT
@@ -179,8 +145,6 @@ public:
 	void leave() {
 	}
 };
-
-typedef Mutex Spinlock;
 
 #endif //MULTI_THREAD
 

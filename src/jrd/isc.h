@@ -19,7 +19,8 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- *
+ * Added TCP_NO_DELAY option for superserver on Linux
+ * FSG 16.03.2001 
  * 26-Sept-2001 Paul Beach - External File Directory Config. Parameter
  * 17-Oct-2001  Mike Nordell - CPU affinity
  * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
@@ -35,15 +36,12 @@
 #include "../jrd/common.h"
 #include "../jrd/sch_proto.h"
 
-// For AstInhibit
-#include "../jrd/os/isc_i_proto.h"
-
 /* Defines for semaphore and shared memory removal */
 
 const USHORT ISC_SEM_REMOVE		= 1;
 const USHORT ISC_MEM_REMOVE		= 2; // tested but never set
 
-// Firebird platform-specific synchronization data structures
+/* InterBase platform-specific synchronization data structures */
 
 #ifdef VMS
 struct itm {
@@ -132,7 +130,7 @@ typedef struct sh_mem* SH_MEM;
 #define MUTEX_STRUCT SCHAR
 #endif
 
-#ifdef MULTI_THREAD
+#ifdef ANY_THREADING
 struct mtx {
 	MUTEX_STRUCT mtx_mutex[1];
 };
@@ -147,9 +145,9 @@ struct mtx {
 };
 typedef mtx MTX_T;
 typedef mtx* MTX;
-#endif // MULTI_THREAD
+#endif // ANY_THREADING
 
-#ifdef MULTI_THREAD
+#ifdef ANY_THREADING
 struct event_t
 {
 	SLONG event_semid;
@@ -164,7 +162,7 @@ struct event_t
 	SLONG event_count;
 	SSHORT event_semnum;
 };
-#endif // MULTI_THREAD
+#endif // ANY_THREADING
 
 
 #define SH_MEM_STRUCTURE_DEFINED
@@ -183,31 +181,9 @@ typedef sh_mem *SH_MEM;
 
 #ifdef WIN_NT
 #define MTX_STRUCTURE_DEFINED
-
-#include <windows.h>
-
-typedef struct _FAST_MUTEX_SHARED_SECTION
-{
-	SLONG   fInitialized;
-	SLONG   lSpinLock;
-	SLONG   lThreadsWaiting;
-	SLONG   lAvailable;
-#ifdef _DEBUG
-	DWORD  dwThreadId;
-#endif
-} FAST_MUTEX_SHARED_SECTION;
-
-typedef struct _FAST_MUTEX
-{
-	HANDLE hEvent;
-	HANDLE hFileMap;
-	ULONG  lSpinCount;
-	volatile FAST_MUTEX_SHARED_SECTION* lpSharedInfo;
-} FAST_MUTEX;
-
 struct mtx
 {
-	FAST_MUTEX mtx_fast;
+	void*	mtx_handle;
 };
 
 typedef mtx MTX_T;
@@ -340,57 +316,5 @@ inline void AST_EXIT() {
 #endif
 
 
-namespace Jrd {
-#ifdef MULTI_THREAD
+#endif /* JRD_ISC_H */
 
-	// This class inhibits AST processing.
-
-	class AstInhibit
-	{
-	public:
-		// Constructor inhibits processing.
-		AstInhibit() : enabled(false)
-		{
-			AST_DISABLE();
-		}
-
-		// Destructor re-enables processing.
-		~AstInhibit()
-		{
-			enable();
-		}
-
-		// Let one re-enable processing in advance.
-		void enable()
-		{
-			if (enabled)
-				return;
-
-			enabled = true;
-
-			AST_ENABLE();
-		}
-
-	private:
-		// Forbid copy constructor
-		AstInhibit(const AstInhibit&);
-		bool enabled;
-	};
-#else // MULTI_THREAD
-	class AstInhibit : public SignalInhibit
-	//
-	// This class inhibits signals' processing.
-	//
-	{
-	public:
-		AstInhibit() { }
-
-	private:
-		// Forbid copy constructor
-		AstInhibit(const AstInhibit&);
-	};
-#endif // MULTI_THREAD
-} // namespace Jrd
-
-
-#endif // JRD_ISC_H

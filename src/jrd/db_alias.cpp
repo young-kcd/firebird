@@ -21,6 +21,7 @@
  */
 
 #include "firebird.h"
+#include <algorithm>
 #include "../common/config/config.h"
 #include "../common/config/config_file.h"
 #include "../jrd/os/path_utils.h"
@@ -30,19 +31,6 @@ typedef Firebird::PathName string;
 
 const char* ALIAS_FILE = "aliases.conf";
 
-static void replace_dir_sep(string& s)
-{
-	const char correct_dir_sep = PathUtils::dir_sep;
-	const char incorrect_dir_sep = (correct_dir_sep == '/') ? '\\' : '/';
-	for (char* itr = s.begin(); itr < s.end(); ++itr)
-	{
-		if (*itr == incorrect_dir_sep)
-		{
-			*itr = correct_dir_sep;
-		}
-	}
-}
-
 bool ResolveDatabaseAlias(const string& alias, string& database)
 {
 	string alias_filename;
@@ -50,14 +38,16 @@ bool ResolveDatabaseAlias(const string& alias, string& database)
 	ConfigFile aliasConfig(false);
 	aliasConfig.setConfigFilePath(alias_filename);
 
+	const char correct_dir_sep = PathUtils::dir_sep;
+	const char incorrect_dir_sep = (correct_dir_sep == '/') ? '\\' : '/';
 	string corrected_alias = alias;
-	replace_dir_sep(corrected_alias);
+	std::replace(corrected_alias.begin(), corrected_alias.end(), incorrect_dir_sep, correct_dir_sep);
 	
 	database = aliasConfig.getString(corrected_alias);
 
 	if (!database.empty())
 	{
-		replace_dir_sep(database);
+		std::replace(database.begin(), database.end(), incorrect_dir_sep, correct_dir_sep);
 		if (PathUtils::isRelative(database)) {
 			gds__log("Value %s configured for alias %s "
 				"is not a fully qualified path name, ignored", 

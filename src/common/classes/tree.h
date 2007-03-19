@@ -30,6 +30,7 @@
 #ifndef CLASSES_TREE_H
 #define CLASSES_TREE_H
 
+#include <exception>
 #include "../jrd/gdsassert.h"
 #include <string.h>
 #ifdef HAVE_STDLIB_H
@@ -37,6 +38,7 @@
 					   stdlib.h (EKU) */
 #endif
 #include "vector.h"
+#include <new>
 
 namespace Firebird {
 
@@ -105,32 +107,11 @@ template <typename Value, typename Key = Value, typename Allocator = MallocAlloc
 	int NodeCount = NODE_PAGE_SIZE / sizeof(void*)>
 class BePlusTree {
 public:
-	BePlusTree(Allocator *_pool)
-		: pool(_pool), level(0), root(NULL), defaultAccessor(this)
-	{ }
-
-	BePlusTree(Allocator *_pool, const BePlusTree& from)
-		: pool(_pool), level(0), root(NULL), defaultAccessor(this)
-	{
-		append(from);
-	}
-
-	BePlusTree& operator =(BePlusTree& from) {
-		clear();
-		append(from);
-		return *this;
-	}
+	BePlusTree(Allocator *_pool) : pool(_pool), level(0), root(NULL), defaultAccessor(this)	{ }
 
 	void clear() {
-		defaultAccessor.curr = NULL;
-
-		// Do not deallocate root page if tree is shallow
-		if (level == 0) {
-			if (root) {
-				((ItemList*) root)->clear();
-			}
-			return;
-		}
+		// We delete tree which was not fully created
+		if (!root) return;
 		
 		// Find first items page
 		void *temp = root;
@@ -166,7 +147,6 @@ public:
 
     ~BePlusTree() {
 		clear();
-		pool->deallocate(root);
 	}
 
 	bool isEmpty() const {
@@ -180,8 +160,6 @@ public:
 	// Remove item. Current position moves to next item after this call. 
 	// If next item doesn't exist method returns false
     bool fastRemove() { return defaultAccessor.fastRemove(); }
-
-	bool isPositioned(const Key& key) const { return defaultAccessor.isPositioned(key); }
 	
 	bool locate(const Key& key) { return defaultAccessor.locate(locEqual, key); }
 	
@@ -249,18 +227,7 @@ public:
 		fb_assert(bytes_per_node);
 		return ((NodeList*)root)->getCount() * bytes_per_node;
 	}
-
-	void append(BePlusTree& from) {
-		// This is slow approach especially when used for assignment. 
-		// Optimize it when need arises.
-		Accessor accessor(&from);
-		if (accessor.getFirst()) {
-			do {
-				add(accessor.current());
-			} while (accessor.getNext());
-		}
-	}
-
+	
 private:
 	BePlusTree(Allocator *_pool, void *rootPage) : 	pool(_pool), level(0), 
 		root(new(rootPage) ItemList()), defaultAccessor(this) {}
@@ -336,16 +303,11 @@ public:
 public:
 	class Accessor {
 	public:
-		Accessor(BePlusTree* _tree) : curr(NULL), tree(_tree), curPos(0) {}
+		Accessor(BePlusTree* _tree) : tree(_tree), curr(NULL), curPos(0) {}		
 	
 		// Remove item. Current position moves to next item after this call. 
 		// If next item doesn't exist method returns false
 		bool fastRemove() {
-			// invalidate current position of defaultAccessor 
-			// if i'm not a defaultAccessor
-			if (this != &tree->defaultAccessor)
-				tree->defaultAccessor.curr = NULL;
-			
 			if ( !tree->level ) {
 				curr->remove(curPos);
 				return curPos < curr->getCount();
@@ -407,7 +369,7 @@ public:
 			}
 			return true;
 		}
-
+	
 		bool locate(const Key& key) {
 			return locate(locEqual, key);
 		}
@@ -518,34 +480,11 @@ public:
 				curPos--;
 			return true;
 		}
-
 	    Value& current() const { return (*curr)[curPos]; }
-
-		// CVC: Here making this public is hack for MSVC6 that didn't acknowledge the
-		// friend declaration.
-#if defined(_MSC_VER) && _MSC_VER <= 1200
-	public:
-#else
-	private:
-#endif
-	
-		// Returns true if current position is valid and already points to the given key.
-		// Note that we can't guarantie validity of current position if tree is accessed 
-		// by different Accessor's. Therefore this method is private and can be used only 
-		// via tree::defaultAccessor. 
-		bool isPositioned(const Key& key) const 
-		{
-			return (curr && curPos < curr->getCount() && 
-				KeyOfValue::generate(this, current()) == key);
-		}
-
-		ItemList *curr;
-		
 	private:
 		BePlusTree* tree;
+		ItemList *curr;
   		size_t curPos;
-
-		friend class BePlusTree;
 	}; // class Accessor
 
 private:
@@ -736,8 +675,7 @@ bool BePlusTree<Value, Key, Allocator, KeyOfValue, Cmp, LeafCount, NodeCount>::a
 		nodeList->add(newNode);
 		this->root = nodeList;
 		this->level++;
-	}
-	catch (const Firebird::Exception&) {
+	} catch(const std::exception&) {
 		// Recover tree to innocent state
 		while (curLevel) {
 			NodeList *itemL = reinterpret_cast<NodeList*>(newNode);

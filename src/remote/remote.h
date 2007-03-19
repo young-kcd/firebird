@@ -33,9 +33,6 @@
 #include "../remote/remote_def.h"
 #include "../jrd/thd.h"
 #include "../common/classes/objects_array.h"
-#include "../auth/trusted/AuthSspi.h"
-#include "../common/classes/fb_string.h"
-#include "../common/classes/ClumpletWriter.h"
 
 /* Include some apollo include files for tasking */
 
@@ -301,7 +298,6 @@ const USHORT RSR_eof		= 2;		/* End-of-stream encountered */
 const USHORT RSR_blob		= 4;		/* Statement relates to blob op */
 const USHORT RSR_no_batch	= 8;		/* Do not batch fetch rows */
 const USHORT RSR_stream_err	= 16;		/* There is an error pending in the batched rows */
-const USHORT RSR_lazy		= 32;		/* To be allocated at the first reference */
 
 
 enum blk_t
@@ -356,35 +352,6 @@ typedef int HANDLE;
 // fwd. decl.
 struct p_cnct;
 struct rmtque;
-
-/* Queue of deferred packets */
-
-struct rem_que_packet
-{
-	PACKET packet;
-	bool sent;
-};
-
-typedef Firebird::Array<rem_que_packet> PacketQueue;
-
-#ifdef TRUSTED_AUTH
-// delayed authentication block for trusted auth callback
-class ServerAuth
-{
-public:
-	typedef void Part2(rem_port*, P_OP, const char* fName, int fLen, const UCHAR* pb, int pbLen, PACKET*);
-	Firebird::PathName fileName;
-	Firebird::HalfStaticArray<UCHAR, 128> clumplet;
-	AuthSspi* authSspi;
-	Part2* part2;
-	P_OP operation;
-
-	ServerAuth(const char* fName, int fLen, const Firebird::ClumpletWriter& pb, Part2* p2, P_OP op);
-	~ServerAuth();
-};
-#endif // TRUSTED_AUTH
-
-/* Port itself */
 
 class port_interface
 {
@@ -454,15 +421,10 @@ struct rem_port
 #ifdef VMS
 	USHORT			port_iosb[4];
 #endif
-	void*			port_xcc;				/* interprocess structure */
-	PacketQueue*	port_deferred_packets;	/* queue of deferred packets */
-	OBJCT			port_last_object_id;	/* cached last id */
+	void*			port_xcc;              /* interprocess structure */
 #ifdef SUPERSERVER
 	Firebird::ObjectsArray< Firebird::Array< char > >*	port_queue;
 	size_t			port_qoffset;			// current packet in the queue
-#endif
-#ifdef TRUSTED_AUTH
-	ServerAuth*		port_trusted_auth;
 #endif
 	UCHAR			port_buffer[1];
 
@@ -510,8 +472,8 @@ struct rem_port
 	ISC_STATUS	receive_msg(P_DATA*, PACKET*);
 	ISC_STATUS	seek_blob(P_SEEK*, PACKET*);
 	ISC_STATUS	send_msg(P_DATA*, PACKET*);
-	ISC_STATUS	send_response(PACKET*, OBJCT, USHORT, const ISC_STATUS*, bool);
-	ISC_STATUS	service_attach(const char*, const USHORT, Firebird::ClumpletWriter&, PACKET*);
+	ISC_STATUS	send_response(PACKET*, OBJCT, USHORT, const ISC_STATUS*);
+	ISC_STATUS	service_attach(P_ATCH*, PACKET*);
 	ISC_STATUS	service_end(P_RLSE*, PACKET*);
 	ISC_STATUS	service_start(P_INFO*, PACKET*);
 	ISC_STATUS	set_cursor(P_SQLCUR*, PACKET*);
@@ -519,6 +481,7 @@ struct rem_port
 	ISC_STATUS	start_and_send(P_OP, P_DATA*, PACKET*);
 	ISC_STATUS	start_transaction(P_OP, P_STTR*, PACKET*);
 	ISC_STATUS	transact_request(P_TRRQ *, PACKET*);
+
 };
 
 // port_flags
@@ -535,8 +498,7 @@ const USHORT PORT_not_trusted	= 256;	/* Connection is from an untrusted node */
 // This is tested only in wnet.cpp but never set.
 //const USHORT PORT_impersonate	= 512;	// A remote user is being impersonated
 const USHORT PORT_dummy_pckt_set= 1024;	/* A dummy packet interval is set  */
-const USHORT PORT_partial_data	= 2048;	/* Physical packet doesn't contain all API packet */
-const USHORT PORT_lazy			= 4096;	/* Deferred operations are allowed */
+const USHORT PORT_partial_data  = 2048;	/* Physical packet doesn't contain all API packet */
 
 
 /* Misc declarations */

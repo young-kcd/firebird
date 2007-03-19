@@ -38,7 +38,6 @@ int		LCK_convert_opt(Jrd::thread_db*, Jrd::Lock*, USHORT);
 int		LCK_downgrade(Jrd::thread_db*, Jrd::Lock*);
 void	LCK_fini(Jrd::thread_db*, Jrd::lck_owner_t);
 SLONG	LCK_get_owner_handle(Jrd::thread_db*, Jrd::lck_t);
-SLONG	LCK_increment(Jrd::thread_db*, Jrd::Lock*);
 void	LCK_init(Jrd::thread_db*, Jrd::lck_owner_t);
 int		LCK_lock(Jrd::thread_db*, Jrd::Lock*, USHORT, SSHORT);
 int		LCK_lock_non_blocking(Jrd::thread_db*, Jrd::Lock*, USHORT, SSHORT);
@@ -48,6 +47,8 @@ SLONG	LCK_read_data(Jrd::Lock*);
 void	LCK_release(Jrd::thread_db*, Jrd::Lock*);
 void	LCK_re_post(Jrd::Lock*);
 void	LCK_write_data(Jrd::Lock*, SLONG);
+void	LCK_ast_inhibit();
+void	LCK_ast_enable();
 
 #endif // JRD_LCK_PROTO_H
 

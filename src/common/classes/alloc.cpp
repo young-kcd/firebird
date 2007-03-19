@@ -131,6 +131,13 @@ const size_t REDIRECT_THRESHOLD = 32768;
 // Declare thread-specific variable for context memory pool
 TLS_DECLARE(MemoryPool*, contextPool);
 
+// Helper function to reduce code size, since many compilers
+// generate quite a bit of code at the point of the throw.
+void pool_out_of_memory()
+{
+	throw std::bad_alloc();
+}
+
 // Support for memory mapping facilities
 #if defined(WIN_NT)
 size_t get_page_size()
@@ -515,7 +522,7 @@ void* MemoryPool::tree_alloc(size_t size) {
 			spareLeafs.getCount()) 
 		{
 			if (!spareLeafs.getCount())
-				Firebird::BadAlloc::raise();
+				pool_out_of_memory();
 			void *temp = spareLeafs[spareLeafs.getCount() - 1];
 			spareLeafs.shrink(spareLeafs.getCount() - 1);
 			needSpare = true;
@@ -523,7 +530,7 @@ void* MemoryPool::tree_alloc(size_t size) {
 		}
 	if (size == sizeof(FreeBlocksTree::NodeList)) {
 		if (!spareNodes.getCount())
-			Firebird::BadAlloc::raise();
+			pool_out_of_memory();
 		void *temp = spareNodes[spareNodes.getCount() - 1];
 		spareNodes.shrink(spareNodes.getCount() - 1);
 		needSpare = true;
@@ -727,7 +734,7 @@ void* MemoryPool::allocate(size_t size, SSHORT type
 #endif
 	);
 	if (!result)
-		Firebird::BadAlloc::raise();
+		pool_out_of_memory();
 	return result;
 }
 
@@ -1050,14 +1057,13 @@ MemoryPool* MemoryPool::internal_create(size_t instance_size, MemoryPool* parent
 	// difficult to make memory pass through any delayed free list in this case
 	if (parent) {
 		parent->lock.enter();
-		const size_t size = MEM_ALIGN(instance_size + sizeof(MemoryRedirectList));
-		void* mem = parent->internal_alloc(size, TYPE_POOL);
+		void* mem = parent->internal_alloc(instance_size + sizeof(MemoryRedirectList), TYPE_POOL);
 		if (!mem) {
 			parent->lock.leave();
-			Firebird::BadAlloc::raise();
+			pool_out_of_memory();
 		}
 		pool = new(mem) MemoryPool(parent, stats, NULL, NULL);
-
+		
 		MemoryBlock* blk = ptrToBlock(mem);
 		blk->mbk_pool = pool;
 		blk->mbk_flags |= MBK_PARENT;
@@ -1089,7 +1095,7 @@ MemoryPool* MemoryPool::internal_create(size_t instance_size, MemoryPool* parent
 		fb_assert(ext_size == EXTENT_SIZE); // Make sure exent size is a multiply of page size
 	
 		if (!mem)
-			Firebird::BadAlloc::raise();
+			pool_out_of_memory();
 		((MemoryExtent *)mem)->mxt_next = NULL;
 		((MemoryExtent *)mem)->mxt_prev = NULL;
 		
@@ -1440,8 +1446,7 @@ inline void MemoryPool::addFreeBlock(MemoryBlock *blk)
 	BlockInfo info = {blk->small.mbk_length, fragmentToAdd};
 	try {
 		freeBlocks.add(info);
-	}
-	catch (const Firebird::Exception&) {
+	} catch(const std::exception&) {
 		// Add item to the list of pending free blocks in case of critically-low memory condition
 		PendingFreeBlock* temp = blockToPtr<PendingFreeBlock*>(blk);
 		temp->next = pendingFree;
@@ -1773,3 +1778,44 @@ void AutoStorage::ProbeStack() const {
 #endif
 
 } // namespace Firebird
+
+/******************************** Global functions *****************************/
+
+void* operator new(size_t s) THROW_BAD_ALLOC
+{
+#if defined(DEV_BUILD)
+// Do not complain here. It causes client tools to crash on Red Hat 8.0
+//	fprintf(stderr, "You MUST allocate all memory from a pool.  Don't use the default global new().\n");
+#endif	// DEV_BUILD
+//	return getDefaultMemoryPool()->calloc(s, 0
+	return getDefaultMemoryPool()->allocate(s, 0
+#ifdef DEBUG_GDS_ALLOC
+	  ,__FILE__, __LINE__
+#endif
+	);
+}
+
+void* operator new[](size_t s) THROW_BAD_ALLOC
+{
+#if defined(DEV_BUILD)
+// Do not complain here. It causes client tools to crash on Red Hat 8.0
+//	fprintf(stderr, "You MUST allocate all memory from a pool.  Don't use the default global new[]().\n");
+#endif	// DEV_BUILD
+//	return getDefaultMemoryPool()->->calloc(s, 0
+	return getDefaultMemoryPool()->allocate(s, 0
+#ifdef DEBUG_GDS_ALLOC
+	  ,__FILE__, __LINE__
+#endif
+	);
+}
+
+void operator delete(void* mem) throw()
+{
+	Firebird::MemoryPool::globalFree(mem);
+}
+
+void operator delete[](void* mem) throw()
+{
+	Firebird::MemoryPool::globalFree(mem);
+}
+

@@ -20,6 +20,8 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
+ * Added TCP_NO_DELAY option for superserver on Linux
+ * FSG 16.03.2001
  * Solaris x86 changes - Konstantin Kuznetsov, Neil McCalden
  * 26-Sept-2001 Paul Beach - External File Directory Config. Parameter
  * 17-Oct-2001 Mike Nordell: CPU affinity
@@ -54,6 +56,23 @@
 #include "../jrd/isc_proto.h"
 #include "../jrd/jrd_proto.h"
 
+/* Temporary file management specific stuff */
+
+#include "../jrd/fil.h"
+#include "../jrd/dls_proto.h"
+
+// I can't find where these are used.
+//static BOOLEAN dls_init = FALSE;
+//#if defined(SUPERSERVER) || !defined(SUPERCLIENT)
+//static BOOLEAN dls_flag = FALSE;
+//#endif
+//static BOOLEAN fdls_init = FALSE;
+//#ifdef SUPERSERVER
+//static BOOLEAN fdls_flag = FALSE;
+//#endif
+
+/* End of temporary file management specific stuff */
+
 #ifdef SOLARIS
 #include <sys/utsname.h>
 #endif
@@ -71,6 +90,10 @@
 
 static USHORT os_type;
 static SECURITY_ATTRIBUTES security_attr;
+
+//static TEXT interbase_directory[MAXPATHLEN];
+
+static bool check_user_privilege();
 
 #endif // WIN_NT
 
@@ -97,7 +120,6 @@ static USHORT ast_count;
 
 static POKE pokes;
 static lock_status wake_lock;
-
 #endif /* of ifdef VMS */
 
 #ifdef HAVE_SIGNAL_H
@@ -372,7 +394,7 @@ TEXT* ISC_get_host(TEXT* string, USHORT length)
 #endif
 
 #ifdef UNIX
-bool ISC_get_user(TEXT*	name,
+int ISC_get_user(TEXT*	name,
 									  int*	id,
 									  int*	group,
 									  TEXT*	project,
@@ -449,7 +471,7 @@ bool ISC_get_user(TEXT*	name,
 
 
 #ifdef VMS
-bool ISC_get_user(
+int ISC_get_user(
 									  TEXT* name,
 									  int* id,
 									  int* group,
@@ -551,7 +573,7 @@ bool ISC_get_user(
 #endif
 
 #ifdef WIN_NT
-bool ISC_get_user(TEXT*	name,
+int ISC_get_user(TEXT*	name,
 									  int*	id,
 									  int*	group,
 									  TEXT*	project,
@@ -587,22 +609,153 @@ bool ISC_get_user(TEXT*	name,
 	if (name)
 	{
 		name[0] = 0;
-		DWORD name_len = 128;
+		DWORD  name_len = 128;
 		if (GetUserName(name, &name_len))
 		{
 			name[name_len] = 0;
 
-			// NT user name is case insensitive
+			/* NT user name is case insensitive */
+
 			for (DWORD i = 0; i < name_len; i++)
 			{
 				name[i] = UPPER7(name[i]);
 			}
+
+/* This check is not internationalized, the security model needs to be
+ * reengineered, especially on SUPERSERVER where none of these local
+ * user (in process) assumptions are valid.
+			if (!strcmp(name, "ADMINISTRATOR"))
+			{
+				if (id)
+					*id = 0;
+
+				if (group)
+					*group = 0;
+			}
+ */
 		}
 	}
 
-	return false;
+	return check_user_privilege();
 }
-#endif //WIN_NT
+
+
+//____________________________________________________________
+//
+// Check to see if the user belongs to the administrator group.
+//
+// This routine was adapted from code in routine RunningAsAdminstrator
+// in \mstools\samples\regmpad\regdb.c.
+//
+static bool check_user_privilege()
+{
+	HANDLE tkhandle;
+	SID_IDENTIFIER_AUTHORITY system_sid_authority = {SECURITY_NT_AUTHORITY};
+
+	// First we must open a handle to the access token for this thread.
+
+	if (!OpenThreadToken(GetCurrentThread(), TOKEN_QUERY, FALSE, &tkhandle))
+	{
+		if (GetLastError() == ERROR_NO_TOKEN)
+		{
+			// If the thread does not have an access token, we'll examine the
+			// access token associated with the process.
+
+			if (!OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY, &tkhandle))
+			{
+				CloseHandle(tkhandle);
+				return false;
+			}
+		}
+		else
+		{
+			return false;
+		}
+	}
+
+	TOKEN_GROUPS*	ptg       = NULL;
+	DWORD			token_len = 0;
+
+	while (true)
+	{
+		/* Then we must query the size of the group information associated with
+		   the token.  This is guarenteed to fail the first time through
+		   because there is no buffer. */
+
+		if (GetTokenInformation(tkhandle,
+								TokenGroups,
+								ptg,
+								token_len,
+								&token_len))
+		{
+			break;
+		}
+
+		/* If there had been a buffer, it's either too small or something
+		   else is wrong.  Either way, we can dispose of it. */
+
+		if (ptg)
+		{
+			gds__free(ptg);
+		}
+
+		/* Here we verify that GetTokenInformation failed for lack of a large
+		   enough buffer. */
+
+		if (GetLastError() != ERROR_INSUFFICIENT_BUFFER)
+		{
+			CloseHandle(tkhandle);
+			return false;
+		}
+
+		// Allocate a buffer for the group information.
+		ptg = (TOKEN_GROUPS *) gds__alloc((SLONG) token_len);
+
+		if (!ptg)
+		{
+			CloseHandle(tkhandle);
+			return false;		/* NOMEM: */
+		}
+		// FREE: earlier in this loop, and at procedure return
+	}
+
+	// Create a System Identifier for the Admin group.
+
+	PSID admin_sid;
+
+	if (!AllocateAndInitializeSid(&system_sid_authority, 2,
+								  SECURITY_BUILTIN_DOMAIN_RID,
+								  DOMAIN_ALIAS_RID_ADMINS,
+								  0, 0, 0, 0, 0, 0, &admin_sid))
+	{
+		gds__free(ptg);
+		CloseHandle(tkhandle);
+		return false;
+	}
+
+	// Finally we'll iterate through the list of groups for this access
+	// token looking for a match against the SID we created above.
+
+	bool admin_priv = false;
+
+	for (DWORD i = 0; i < ptg->GroupCount; i++)
+	{
+		if (EqualSid(ptg->Groups[i].Sid, admin_sid))
+		{
+			admin_priv = true;
+			break;
+		}
+	}
+
+	// Deallocate the SID we created.
+
+	FreeSid(admin_sid);
+	gds__free(ptg);
+	CloseHandle(tkhandle);
+	return admin_priv;
+}
+#endif
+
 
 #ifdef VMS
 int ISC_make_desc(const TEXT* string, struct dsc$descriptor* desc, USHORT length)
@@ -1082,7 +1235,7 @@ LPSECURITY_ATTRIBUTES ISC_get_security_desc()
     EXPLICIT_ACCESS ea;
     memset(&ea, 0, sizeof(EXPLICIT_ACCESS));
     ea.grfAccessPermissions = SYNCHRONIZE;
-    ea.grfAccessMode = GRANT_ACCESS;
+    ea.grfAccessMode = SET_ACCESS;
     ea.grfInheritance = NO_INHERITANCE;
     ea.Trustee.TrusteeForm = TRUSTEE_IS_SID;
     ea.Trustee.TrusteeType = TRUSTEE_IS_WELL_KNOWN_GROUP;
@@ -1133,3 +1286,4 @@ LPSECURITY_ATTRIBUTES ISC_get_security_desc()
 }
 
 #endif
+

@@ -31,12 +31,13 @@
 #include "../jrd/jrd.h"
 #include "../jrd/val.h"
 #include "../jrd/intl.h"
-#include "../jrd/blb_proto.h"
 #include "../jrd/cvt_proto.h"
 #include "../jrd/cvt2_proto.h"
 #include "../jrd/err_proto.h"
-#include "../jrd/intl_proto.h"
+#include "../jrd/gds_proto.h"
 #include "../jrd/mov_proto.h"
+#include "gen/iberror.h"
+#include "../common/classes/timestamp.h"
 
 
 int MOV_compare(const dsc* arg1, const dsc* arg2)
@@ -527,7 +528,7 @@ int MOV_make_string(const dsc*	     desc,
 }
 
 
-int MOV_make_string2(Jrd::thread_db* tdbb,
+int MOV_make_string2(
 					 const dsc* desc,
 					 USHORT ttype,
 					 UCHAR** address, 
@@ -546,44 +547,11 @@ int MOV_make_string2(Jrd::thread_db* tdbb,
  *
  **************************************/
 
-	if (desc->isBlob())
-	{
-		// fake descriptor
-		dsc temp;
-		temp.dsc_dtype = dtype_text;
-		temp.setTextType(ttype);
-
-		Firebird::UCharBuffer bpb;
-		BLB_gen_bpb_from_descs(desc, &temp, bpb);
-
-		Jrd::blb* blob = BLB_open2(tdbb, tdbb->tdbb_request->req_transaction,
-			reinterpret_cast<Jrd::bid*>(desc->dsc_address), bpb.getCount(), bpb.begin());
-
-		int size;
-
-		if (temp.getCharSet() == desc->getCharSet())
-			size = blob->blb_length;
-		else
-		{
-			size = (blob->blb_length / INTL_charset_lookup(tdbb, desc->getCharSet())->minBytesPerChar()) *
-				INTL_charset_lookup(tdbb, temp.getCharSet())->maxBytesPerChar();
-		}
-
-		*address = buffer.getBuffer(size);
-
-		size = BLB_get_data(tdbb, blob, *address, size, true);
-
-		if (size > MAX_COLUMN_SIZE)
-			ERR_post(isc_arith_except, 0);
-
-		return size;
-	}
-	else
-		return CVT2_make_string2(desc, ttype, address, buffer, ERR_post);
+	return CVT2_make_string2(desc, ttype, address, buffer, ERR_post);
 }
 
 
-void MOV_move(Jrd::thread_db* tdbb, /*const*/ dsc* from, dsc* to)
+void MOV_move(const dsc* from, dsc* to)
 {
 /**************************************
  *
@@ -596,11 +564,27 @@ void MOV_move(Jrd::thread_db* tdbb, /*const*/ dsc* from, dsc* to)
  *
  **************************************/
 
-	if (DTYPE_IS_BLOB_OR_QUAD(from->dsc_dtype) ||
-		DTYPE_IS_BLOB_OR_QUAD(to->dsc_dtype))
-	{
-		BLB_move(tdbb, from, to, NULL);
-	}
-	else
-		CVT_move(from, to, ERR_post);
+	CVT_move(from, to, ERR_post);
+}
+
+
+void MOV_time_stamp(GDS_TIMESTAMP* datetime)
+{
+/**************************************
+ *
+ *	M O V _ t i m e _ s t a m p
+ *
+ **************************************
+ *
+ * Functional description
+ *	Get the current timestamp in gds format.
+ *
+ **************************************/
+
+	*datetime = Firebird::TimeStamp().value();
+	// CVC: This function is used only by PAG_add_file (for raw devices support)
+	// and PAG_format_header. In late FB v2, timestamp started returning
+	// milliseconds, so if some unexpected incompatbility arises, uncomment
+	// the following line that will get rid of the milliseconds.
+	//Firebird::TimeStamp::round_time(datetime->timestamp_time, 0);
 }

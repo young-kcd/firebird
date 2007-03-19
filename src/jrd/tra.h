@@ -41,8 +41,6 @@
 #include "../jrd/blb.h" // For bid structure
 #include "../jrd/sbm.h" // For bid structure
 
-#include "../jrd/DatabaseSnapshot.h"
-
 namespace Jrd {
 
 class blb;
@@ -80,8 +78,6 @@ typedef Firebird::BePlusTree<BlobIndex, ULONG, MemoryPool, BlobIndex> BlobIndexT
 
 /* Transaction block */
 
-const int DEFAULT_LOCK_TIMEOUT = -1; // infinite
-
 class jrd_tra : public pool_alloc_rpt<SCHAR, type_tra>
 {
     public:
@@ -91,14 +87,7 @@ class jrd_tra : public pool_alloc_rpt<SCHAR, type_tra>
 		tra_wait
 	};
 
-	jrd_tra(MemoryPool& p) :
-		tra_blobs(&p),
-		tra_resources(p),
-		tra_context_vars(p),
-		tra_lock_timeout(DEFAULT_LOCK_TIMEOUT),
-		tra_stats(p)
-	{}
-
+	jrd_tra(MemoryPool& p) : tra_blobs(&p), tra_resources(p), tra_context_vars(p) {}
 	Attachment* tra_attachment;	/* database attachment */
 	SLONG tra_number;			/* transaction number */
 	SLONG tra_top;				/* highest transaction in snapshot */
@@ -111,11 +100,9 @@ class jrd_tra : public pool_alloc_rpt<SCHAR, type_tra>
 	BlobIndexTree tra_blobs;		/* list of active blobs */
 	ArrayField*	tra_arrays;		/* Linked list of active arrays */
 	Lock*		tra_lock;		/* lock for transaction */
-	Lock*		tra_cancel_lock;	/* lock to cancel the active request */
 	vec<Lock*>*		tra_relation_locks;	/* locks for relations */
 	UInt32Bitmap*	tra_commit_sub_trans;	/* commited sub-transactions */
-	Savepoint*	tra_save_point;	/* list of savepoints */
-	Savepoint*	tra_save_free;	/* free savepoints */
+	Savepoint*	tra_save_point;	/* list of savepoints  */
 	SLONG tra_save_point_number;	/* next save point number to use */
 	ULONG tra_flags;
 	class DeferredWork*	tra_deferred_work;	/* work deferred to commit time */
@@ -126,10 +113,7 @@ class jrd_tra : public pool_alloc_rpt<SCHAR, type_tra>
 	UCHAR tra_callback_count;	/* callback count for 'execute statement' */
 	SSHORT tra_lock_timeout;	/* in seconds, -1 means infinite, 0 means NOWAIT */
 	ULONG tra_next_blob_id;     // ID of the previous blob or array created in this transaction
-	Firebird::TimeStamp tra_timestamp; // transaction start time
 	jrd_req* tra_requests;		// Doubly linked list of requests active in this transaction
-	DatabaseSnapshot* tra_db_snapshot; // Database state snapshot (for monitoring purposes)
-	RuntimeStatistics tra_stats;
 	UCHAR tra_transactions[1];
 
 	SSHORT getLockWait() const
@@ -166,7 +150,8 @@ const ULONG TRA_perform_autocommit	= 262144L;	/* indicates autocommit is necessa
 const ULONG TRA_rec_version			= 524288L;	/* don't wait for uncommitted versions */
 const ULONG TRA_restart_requests	= 1048576L;	/* restart all requests in attachment */
 const ULONG TRA_no_auto_undo		= 2097152L;	/* don't start a savepoint in TRA_start */
-const ULONG TRA_cancel_request		= 4194304L;	// cancel active request, if any
+// Obsolete, this was for LIBS on 16-bit.
+//const ULONG TRA_sweep_at_startup	= 4194304L;	// sweep done at startup 
 const ULONG TRA_precommitted		= 8388608L;	/* transaction committed at startup */
 
 const int TRA_MASK				= 3;
@@ -203,7 +188,6 @@ class Savepoint : public pool_alloc<type_sav>
 {
     public:
 	VerbAction*		sav_verb_actions;	/* verb action list */
-	VerbAction*		sav_verb_free;		/* free verb actions */
 	USHORT			sav_verb_count;		/* Active verb count */
 	SLONG			sav_number;			/* save point number */
 	Savepoint*		sav_next;
@@ -256,7 +240,6 @@ enum dfw_t {
 	dfw_modify_procedure,
 	dfw_delete_procedure,
 	dfw_delete_prm, 
-	dfw_delete_collation,
 	dfw_delete_exception, 
 	//dfw_unlink_file,
 	dfw_delete_generator,
@@ -270,11 +253,7 @@ enum dfw_t {
 	// deferred works argument types
 	dfw_arg_index_name,		// index name for dfw_delete_expression_index, mandatory
 	dfw_arg_partner_rel_id,	// partner relation id for dfw_delete_index if index is FK, optional
-	dfw_arg_proc_name,		// procedure name for dfw_delete_prm, mandatory
-	dfw_arg_force_computed,	// we need to drop dependencies from a field that WAS computed
-	dfw_arg_check_blr,		// check if BLR is still compilable
-	dfw_arg_rel_name,		// relation name of a trigger
-	dfw_arg_trg_type		// trigger type
+	dfw_arg_proc_name		// procedure name for dfw_delete_prm, mandatory
 };
 
 class DeferredWork : public pool_alloc<type_dfw>

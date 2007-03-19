@@ -1,6 +1,6 @@
 /*
  *
- *      PROGRAM:        Firebird server manager
+ *      PROGRAM:        InterBase server manager
  *      MODULE:         ibmgr.cpp
  *      DESCRIPTION:    server manager's routines
  *

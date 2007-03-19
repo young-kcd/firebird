@@ -86,6 +86,26 @@ const char* const OLD_CONTEXT		= "OLD";
 const char* const NEW_CONTEXT		= "NEW";
 const char* const TEMP_CONTEXT		= "TEMP";
 
+//! macros and block used to implement a generic stack mechanism
+#ifdef NOT_USED_OR_REPLACED
+class dsql_lls : public pool_alloc<dsql_type_lls>
+{
+public:
+	blk* lls_object;
+	dsql_lls* lls_next;
+};
+
+inline void LLS_PUSH(blk* object, dsql_lls** stack)
+{
+	DsqlMemoryPool::ALLD_push(object, stack);
+}
+
+inline blk* LLS_POP(dsql_lls** stack)
+{
+	return DsqlMemoryPool::ALLD_pop(stack);
+}
+#endif
+
 class dsql_ctx;
 class dsql_str;
 class dsql_nod;
@@ -104,31 +124,28 @@ typedef Firebird::Stack<dsql_nod*> DsqlNodStack;
 
 //! internal DSQL requests
 enum irq_type_t {
-    irq_relation,		//!< lookup a relation
-    irq_fields,			//!< lookup a relation's fields
-    irq_dimensions,		//!< lookup a field's dimensions
-    irq_primary_key,	//!< lookup a primary key
-    irq_view,			//!< lookup a view's base relations
-    irq_view_base,		//!< lookup a view's base relations
-    irq_view_base_flds,	//!< lookup a view's base fields
-    irq_function,		//!< lookup a user defined function
-    irq_func_return,	//!< lookup a function's return argument
-    irq_procedure,		//!< lookup a stored procedure
-    irq_parameters,		//!< lookup a procedure's parameters
-    irq_parameters2,	//!< lookup a procedure's parameters (ODS 11.1)
-    irq_collation,		//!< lookup a collation name
-    irq_charset,		//!< lookup a character set
-    irq_trigger,		//!< lookup a trigger
-    irq_domain,			//!< lookup a domain
-    irq_type,			//!< lookup a symbolic name in RDB$TYPES
-    irq_col_default,	//!< lookup default for a column
-    irq_domain_2,		//!< lookup a domain
-    irq_exception,		//!< lookup an exception
-	irq_cs_name,		//!< lookup a charset name
-	irq_default_cs,		//!< lookup the default charset
-	irq_rel_ids,		//!< check relation/field ids
+    irq_relation    = 0,     //!< lookup a relation                     
+    irq_fields      = 1,     //!< lookup a relation's fields            
+    irq_dimensions  = 2,     //!< lookup a field's dimensions           
+    irq_primary_key = 3,     //!< lookup a primary key                  
+    irq_view        = 4,     //!< lookup a view's base relations        
+    irq_function    = 5,     //!< lookup a user defined function        
+    irq_func_return = 6,     //!< lookup a function's return argument   
+    irq_procedure   = 7,     //!< lookup a stored procedure             
+    irq_parameters  = 8,     //!< lookup a procedure's parameters       
+    irq_collation   = 9,     //!< lookup a collation name               
+    irq_charset     = 10,    //!< lookup a character set
+    irq_trigger     = 11,    //!< lookup a trigger                      
+    irq_domain      = 12,    //!< lookup a domain                       
+    irq_type        = 13,    //!< lookup a symbolic name in RDB$TYPES   
+    irq_col_default = 14,    //!< lookup default for a column           
+    irq_domain_2    = 15,    //!< lookup a domain
+    irq_exception   = 16,    //!< lookup an exception
+	irq_cs_name     = 17,    //!< lookup a charset name
+	irq_default_cs  = 18,    //!< lookup the default charset
+	irq_rel_ids		= 19,    //!< check relation/field ids
 
-    irq_MAX
+    irq_MAX         = 20
 };
 
 // dsql_nod definition
@@ -162,8 +179,6 @@ public:
 	USHORT			dbb_db_SQL_dialect;
 	SSHORT			dbb_att_charset;	//!< characterset at time of attachment
 	IntlSymArray	dbb_charsets_by_id;	// charsets sorted by charset_id
-	USHORT			dbb_ods_version;	// major ODS version number
-	USHORT			dbb_minor_version;	// minor ODS version number
 
 	dsql_dbb(DsqlMemoryPool& p) : 
 		dbb_charsets_by_id(p, 16) 
@@ -226,10 +241,6 @@ public:
 	SSHORT		fld_character_set_id;	//!< ID of field's character set
 	SSHORT		fld_collation_id;		//!< ID of field's collation
 	SSHORT		fld_ttype;				//!< ID of field's language_driver
-	TEXT*		fld_type_of_name;		//!< TYPE OF
-	bool		fld_explicit_collation;	//!< COLLATE was explicit specified
-	bool		fld_not_nullable;		//!< NOT NULL was explicit specified
-	bool		fld_full_domain;		//!< Domain name without TYPE OF prefix
 	TEXT		fld_name[2];
 };
 
@@ -241,6 +252,8 @@ enum fld_flags_vals {
 	FLD_nullable	= 4,
 	FLD_system		= 8
 };
+
+const int MAX_ARRAY_DIMENSIONS = 16; //!< max array dimensions
 
 //! database/log/cache file block
 class dsql_fil : public pool_alloc<dsql_type_fil>
@@ -348,11 +361,13 @@ public:
 	{ return Item->intlsym_charset_id; }
 };
 
-// values used in intlsym_flags
-
-enum intlsym_flags_vals {
-	INTLSYM_dropped	= 1  //!< intlsym has been dropped
+// values used in intlsym_type
+enum dsql_intlsym_type_vals {
+	DSQL_INTLSYM_collation	= 1,
+	DSQL_INTLSYM_charset	= 2
 };
+
+// values used in intlsym_flags
 
 
 // Forward declaration.
@@ -392,13 +407,6 @@ public:
 													const dsql_nod* prim_columns,
 													const char*	for_rel_name,
 													const dsql_nod* for_columns);
-
-	void	begin_debug();
-	void	end_debug();
-	void	put_debug_src_info(USHORT, USHORT);
-	void	put_debug_variable(USHORT, const TEXT*);
-	void	put_debug_argument(UCHAR, USHORT, const TEXT*);
-	void	append_debug_info();
 	// end - member functions that should be private
 
 	dsql_req(DsqlMemoryPool& p) 
@@ -409,11 +417,7 @@ public:
 		req_dt_context(p), 
 		req_blr_data(p),
 		req_labels(p), 
-		req_cursors(p),
-		req_debug_data(p),
-		req_curr_ctes(p),
-		req_ctes(p),
-		req_cte_aliases(p) { }
+		req_cursors(p) { }
 
 	dsql_req*	req_parent;		//!< Source request, if cursor update
 	dsql_req*	req_sibling;	//!< Next sibling request, if cursor update
@@ -471,44 +475,10 @@ public:
 	USHORT	req_in_outer_join;	//!< processing inside outer-join part
 	dsql_str*		req_alias_relation_prefix;	//!< prefix for every relation-alias.
 
-	Firebird::HalfStaticArray<BLOB_PTR, 128> req_debug_data;
-
-	void addCTEs(dsql_nod* list);
-	dsql_nod* findCTE(const dsql_str* name);
-	void clearCTEs();
-
-	// hvlad: each member of recursive CTE can refer to CTE itself (only once) via 
-	// CTE name or via alias. We need to substitute this aliases when processing CTE 
-	// member to resolve field names. Therefore we store all aliases in order of 
-	// occurence and later use it in backward order (since our parser is right-to-left). 
-	// We also need to repeat this process if main select expression contains union with 
-	// recursive CTE
-	void addCTEAlias(const dsql_str* alias) 
-	{
-		req_cte_aliases.add(alias);
-	}
-	const dsql_str* getNextCTEAlias()
-	{
-		return *(--req_curr_cte_alias);
-	}
-	void resetCTEAlias()
-	{
-		req_curr_cte_alias = req_cte_aliases.end();
-	}
-
-	DsqlNodStack req_curr_ctes;			// current processing CTE's
-	class dsql_ctx* req_recursive_ctx;	// context of recursive CTE
-	USHORT req_recursive_ctx_id;		// id of recursive union stream context
-
 private:
 	// Request should never be destroyed using delete.
 	// It dies together with it's pool in release_request().
 	~dsql_req();
-
-	Firebird::HalfStaticArray<dsql_nod*, 4> req_ctes; // common table expressions
-	Firebird::HalfStaticArray<const dsql_str*, 4> req_cte_aliases; // CTE aliases in recursive members
-	const dsql_str* const* req_curr_cte_alias;
-
 	// To avoid posix warning about missing public destructor declare 
 	// MemoryPool as friend class. In fact IT releases request memory!
 	friend class MemoryPool;
@@ -529,9 +499,7 @@ enum req_flags_vals {
 	REQ_backwards			= 512,
 	REQ_blr_version4		= 1024,
 	REQ_blr_version5		= 2048,
-	REQ_block				= 4096,
-	REQ_selectable			= 8192,
-	REQ_CTE_recursive		= 16384
+	REQ_block				= 4096
 };
 
 //! Blob

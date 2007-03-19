@@ -64,7 +64,7 @@ ThreadData* gdbb;
 
 #include "../common/classes/locks.h"
 #include "../common/classes/rwlock.h"
-Firebird::Mutex global_mutex;
+Firebird::Mutex ib_mutex;
 
 namespace {
 
@@ -94,7 +94,7 @@ int API_ROUTINE gds__thread_start(
 	try {
 		ThreadData::start(entrypoint, arg, priority, flags, thd_id);
 	}
-	catch (const Firebird::status_exception& status) {
+	catch(const Firebird::status_exception& status) {
 		rc = status.value()[1];
 	}
 	return rc;
@@ -288,7 +288,7 @@ THREAD_ENTRY_DECLARE threadStart(THREAD_ENTRY_PARAM arg) {
 } // anonymous namespace 
 
 
-#ifdef MULTI_THREAD
+#ifdef ANY_THREADING
 #ifdef USE_POSIX_THREADS
 #define START_THREAD
 void ThreadData::start(ThreadEntryPoint* routine,
@@ -507,7 +507,7 @@ void ThreadData::start(ThreadEntryPoint* routine,
 #endif
 
 
-#ifdef MULTI_THREAD
+#ifdef ANY_THREADING
 #ifdef VMS
 #ifndef USE_POSIX_THREADS
 #define START_THREAD

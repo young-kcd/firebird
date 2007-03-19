@@ -21,14 +21,11 @@
  * Contributor(s): ______________________________________.
  */
 
-namespace
+struct CsConvertImpl
 {
-	struct CsConvertImpl
-	{
-		const BYTE* csconvert_datatable;
-		const BYTE* csconvert_misc;
-	};
-}
+	const BYTE* csconvert_datatable;
+	const BYTE* csconvert_misc;
+};
 
 void CV_convert_init(csconvert* csptr,
 		pfn_INTL_convert cvt_fn, const void *datatable, const void *datatable2);

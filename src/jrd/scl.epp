@@ -48,6 +48,7 @@
 #include "../jrd/req.h"
 #include "../jrd/tra.h"
 #include "../jrd/gdsassert.h"
+#include "../jrd/all_proto.h"
 #include "../jrd/blb_proto.h"
 #include "../jrd/cmp_proto.h"
 #include "../jrd/enc_proto.h"
@@ -62,8 +63,6 @@
 #include "../jrd/constants.h"
 #include "../include/fb_exception.h"
 #include "../common/utils_proto.h"
-#include "../common/classes/array.h"
-#include "../common/config/config.h"
 
 
 #ifdef VMS
@@ -92,7 +91,7 @@ static TEXT* save_string(const TEXT*, TEXT**);
 static SecurityClass::flags_t walk_acl(thread_db*, const UCHAR*, const jrd_rel*,
 	const Firebird::MetaName&, const Firebird::MetaName&, const ULONG);
 
-static inline void check_and_move(UCHAR*& to, UCHAR from, Firebird::UCharBuffer& start, ULONG* length_ptr)
+static inline void check_and_move(UCHAR*& to, UCHAR from, UCharBuffer& start, ULONG* length_ptr)
 {
 	if ((start.begin() + *length_ptr) < (to + 1))
 	{
@@ -337,7 +336,7 @@ void SCL_check_index(thread_db* tdbb, const Firebird::MetaName& index_name, UCHA
 
 	CMP_release(tdbb, request);
 	}
-	catch (const Firebird::Exception&) {
+	catch (const std::exception&) {
 		if (request) {
 			CMP_release(tdbb, request);
 		}
@@ -556,9 +555,6 @@ void SCL_init(bool create,
 			  const TEXT* password,
 			  const TEXT* password_enc,
 			  const TEXT* sql_role,
-#ifdef TRUSTED_AUTH
-			  const TEXT* trusted_user,
-#endif
 			  thread_db* tdbb)
 {
 /**************************************
@@ -597,43 +593,30 @@ void SCL_init(bool create,
 #else
 	bool wheel = false;
 	if (!user_name) {
-       wheel = ISC_get_user(name,
-                            &id,
-                            &group,
-                            project,
-                            organization,
-                            &node_id,
-                            sys_user_name);
+       wheel = (bool) ISC_get_user(name,
+                           &id,
+                           &group,
+                           project,
+                           organization,
+                           &node_id,
+                           sys_user_name);
 	}
 
 	if (user_name || (id == -1))
 	{
+		if (!user_name || (!password_enc && !password))
+		{
+			ERR_post(isc_login, 0);
+		}
+
 		if (!JRD_get_thread_security_disabled())
 		{
-#ifdef TRUSTED_AUTH
-			static AmCache useTrusted = AM_UNKNOWN;
-			if (useTrusted == AM_UNKNOWN)
-			{
-				Firebird::PathName authMethod(Config::getAuthMethod());
-				useTrusted = (authMethod == AmTrusted || authMethod == AmMixed) ? 
-					AM_ENABLED : AM_DISABLED;
-			}
-
-			if (trusted_user && (useTrusted == AM_ENABLED))
-			{
-				strncpy(name, trusted_user, sizeof name);
-				name[sizeof name - 1] = 0;
-			}
-			else
-#endif
-			{
-				Attachment* att = tdbb->tdbb_attachment;
-				Firebird::string remote = att->att_network_protocol + 
-					(att->att_network_protocol.isEmpty() || att->att_remote_address.isEmpty() ? "" : "/") +
-					att->att_remote_address;
-				SecurityDatabase::verifyUser(name, user_name, password, password_enc,
-											 &id, &group, &node_id, remote);
-			}
+			Attachment* att = tdbb->tdbb_attachment;
+			Firebird::string remote = att->att_network_protocol + 
+				(att->att_network_protocol.isEmpty() || att->att_remote_address.isEmpty() ? "" : "/") +
+				att->att_remote_address;
+			SecurityDatabase::verifyUser(name, user_name, password, password_enc,
+										 &id, &group, &node_id, remote);
 		}
 		else
 		{
@@ -814,7 +797,7 @@ void SCL_init(bool create,
 
 
 void SCL_move_priv(UCHAR** acl_ptr, SecurityClass::flags_t mask,
-	Firebird::UCharBuffer& start_ptr, ULONG* length_ptr)
+	UCharBuffer& start_ptr, ULONG* length_ptr)
 {
 /**************************************
  *
@@ -1015,7 +998,7 @@ static bool check_user_group(const UCHAR* acl,
 		}
 		else				// processing group name
 		{
-			Firebird::UCharBuffer buffer;
+			UCharBuffer buffer;
 			UCHAR* user_group_name = buffer.getBuffer(length);
 			do {
 				const TEXT one_char = *acl++;
@@ -1074,7 +1057,7 @@ static SecurityClass::flags_t compute_access(thread_db* tdbb,
  *	access permissions.  Return a flag word of recognized privileges.
  *
  **************************************/
-	Firebird::UCharBuffer str_buffer;
+	UCharBuffer str_buffer;
 	UCHAR* buffer = str_buffer.getBuffer(BLOB_BUFFER_SIZE);
 
 	SLONG length = BLOB_BUFFER_SIZE;
@@ -1205,7 +1188,7 @@ static SecurityClass::flags_t walk_acl(thread_db* tdbb,
 		BUGCHECK(160);	// msg 160 wrong ACL version
 	}
 
-	if (user.locksmith())
+	if (user.usr_flags & USR_locksmith)
 	{
 		return -1 & ~SCL_corrupt;
 	}

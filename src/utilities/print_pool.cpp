@@ -33,7 +33,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 **************************************
 *
 *Functional Description
-*  This utility uses the Firebird service api to inform the server
+*  This utility uses the interbase service api to inform the server
 *  to print out the memory pool information into a specified file.
 *  is utilitiy is for WIN_NT only, In case of UNIX ibmgr utility will
 *  should be used.

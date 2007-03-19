@@ -29,8 +29,6 @@ struct blk;
 namespace Jrd {
 
 class BlockingThread;
-class Database;
-class Attachment;
 
 /* Lock types */
 
@@ -55,14 +53,7 @@ enum lck_t {
 	LCK_backup_state,           /* Lock to synchronize for objects depending on backup status */
 	LCK_backup_alloc,           /* Lock for page allocation table in backup spare file */
 	LCK_backup_database,        /* Lock to protect writing to database file */
-	LCK_rel_partners,			/* Relation partners lock */
-	LCK_page_space,				/* Page space ID lock */
-	LCK_dsql_cache,				/* DSQL cache lock */
-	LCK_counter,				/* Lock holding a cross-process counter */
-	LCK_monitor,				/* Lock to dump the monitoring data */
-	LCK_instance,				/* Lock to identify a dbb instance */
-	LCK_tt_exist,				/* TextType existence lock */
-	LCK_cancel					/* Cancellation lock */
+	LCK_rel_partners			/* Relation partners lock */
 };
 
 /* Lock owner types */
@@ -70,14 +61,13 @@ enum lck_t {
 enum lck_owner_t {
 	LCK_OWNER_process = 1,		/* A process is the owner of the lock */
 	LCK_OWNER_database,			/* A database is the owner of the lock */
-	LCK_OWNER_attachment,		/* An attachment is the owner of the lock */
+	LCK_OWNER_attachment,		/* An atttachment is the owner of the lock */
 	LCK_OWNER_transaction		/* A transaction is the owner of the lock */
 };
 
-// This is defined in dbt.cpp and nobody calls it.
 void MP_GDB_print(MemoryPool*);
 
-class Lock : public pool_alloc_rpt<UCHAR, type_lck>
+class Lock : public pool_alloc_rpt<SCHAR, type_lck>
 {
 public:
 	Lock()
@@ -116,12 +106,12 @@ public:
 	Lock*	lck_prior;
 	Lock*	lck_collision;	/* collisions in compatibility table */
 	Lock*	lck_identical;	/* identical locks in compatibility table */
-	Database*	lck_dbb;	/* database object is contained in */
+	class Database*	lck_dbb;		/* database object is contained in */
 	blk*	lck_object;		/* argument to be passed to ast */
 	blk*	lck_owner;		/* Logical owner block (transaction, etc.) */
 	blk*	lck_compatible;	/* Enter into internal_enqueue() and treat as compatible */
 	blk*	lck_compatible2;	/* Sub-level for internal compatibility */
-	Attachment* lck_attachment;	/* Attachment that owns lock, set only using set_lock_attachment */
+	class Attachment* lck_attachment;	/* Attachment that owns lock, set only using set_lock_attachment */
 	BlockingThread* lck_blocked_threads;	/* Threads blocked by lock */
 	lock_ast_t	lck_ast;	        /* Blocking AST routine */
 	SLONG		lck_id;				/* Lock id from lock manager */
@@ -133,10 +123,10 @@ public:
 	SLONG		lck_data;				/* Data associated with a lock */
 	enum lck_t lck_type;
 	union {
-		UCHAR lck_string[1];
+		SCHAR lck_string[1];
 		SLONG lck_long;
 	} lck_key;
-	UCHAR lck_tail[1];			/* Makes the allocator happy */
+	SCHAR lck_tail[1];			/* Makes the allocator happy */
 };
 
 } //namespace Jrd

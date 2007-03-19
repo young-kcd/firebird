@@ -28,7 +28,6 @@
 #include "../jrd/os/pio.h"
 #ifdef SUPERSERVER_V2
 #include "../jrd/sbm.h"
-#include "../jrd/pag.h"
 #endif
 
 struct exp_index_buf;
@@ -90,7 +89,7 @@ public:
 const int BCB_keep_pages	= 1;	/* set during btc_flush(), pages not removed from dirty binary tree */
 const int BCB_cache_writer	= 2;	/* cache writer thread has been started */
 //const int BCB_checkpoint_db	= 4;	// WAL has requested a database checkpoint
-const int BCB_writer_start  = 4;    // cache writer thread is starting now
+const int BCB_writer_start	= 4;	// cache writer thread is starting now
 const int BCB_writer_active	= 8;	/* no need to post writer event count */
 #ifdef SUPERSERVER_V2
 const int BCB_cache_reader	= 16;	/* cache reader thread has been started */
@@ -105,9 +104,7 @@ const int BDB_max_shared	= 20;	/* maximum number of shared latch owners per Buff
 
 class BufferDesc : public pool_alloc<type_bdb>
 {
-public:
-	BufferDesc() : bdb_page(0, 0) {};
-
+    public:
 	Database*	bdb_dbb;				/* Database block (for ASTs) */
 	Lock*		bdb_lock;				/* Lock block for buffer */
 	que			bdb_que;				/* Buffer que */
@@ -115,8 +112,7 @@ public:
 	Ods::pag*	bdb_buffer;				/* Actual buffer */
 	exp_index_buf*	bdb_expanded_buffer;	/* expanded index buffer */
 	//BlockingThread*	bdb_blocked;		// Blocked attachments block 
-//	SLONG		bdb_page;				/* Database page number in buffer */
-	PageNumber	bdb_page;				/* Database page number in buffer */
+	SLONG		bdb_page;				/* Database page number in buffer */
 	SLONG		bdb_incarnation;
 	ULONG		bdb_transactions;		/* vector of dirty flags to reduce commit overhead */
 	SLONG		bdb_mark_transaction;	/* hi-water mark transaction to defer header page I/O */

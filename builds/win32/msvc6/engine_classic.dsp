@@ -40,8 +40,8 @@ RSC=rc.exe
 # PROP Output_Dir "..\..\..\temp\release\engine_cs"
 # PROP Intermediate_Dir "..\..\..\temp\release\engine_cs"
 # PROP Target_Dir ""
-# ADD BASE CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_MBCS" /D "_LIB" /YX /FD /c
-# ADD CPP /nologo /MD /W3 /GX /Ot /Og /Oi /Op /Oy /Ob1 /I "../../../src/include" /I "../../../src/include/gen" /I "../../../extern/icu/include" /I "../../../src/vulcan" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_LIB" /D "_X86_" /D NAMESPACE=Vulcan /YX /FD /EHc- /c
+# ADD BASE CPP /nologo /W3 /GR /GX /O2 /D "WIN32" /D "NDEBUG" /D "_MBCS" /D "_LIB" /YX /FD /c
+# ADD CPP /nologo /MD /W3 /GR /GX /Ot /Og /Oi /Op /Oy /Ob1 /I "../../../src/include" /I "../../../src/include/gen" /I "../../../extern/icu/include" /I "../../../src/vulcan" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_LIB" /D "_X86_" /D NAMESPACE=Vulcan /YX /FD /EHc- /c
 # ADD BASE RSC /l 0x419 /d "NDEBUG"
 # ADD RSC /l 0x419 /d "NDEBUG"
 BSC32=bscmake.exe
@@ -63,8 +63,8 @@ LIB32=link.exe -lib
 # PROP Output_Dir "..\..\..\temp\debug\engine_cs"
 # PROP Intermediate_Dir "..\..\..\temp\debug\engine_cs"
 # PROP Target_Dir ""
-# ADD BASE CPP /nologo /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_MBCS" /D "_LIB" /YX /FD /GZ /c
-# ADD CPP /nologo /MDd /W3 /Gm /GX /ZI /Od /I "../../../src/include" /I "../../../src/include/gen" /I "../../../extern/icu/include" /I "../../../src/vulcan" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_LIB" /D "_X86_" /D "DEV_BUILD" /D NAMESPACE=Vulcan /FD /GZ /c
+# ADD BASE CPP /nologo /W3 /Gm /GR /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_MBCS" /D "_LIB" /YX /FD /GZ /c
+# ADD CPP /nologo /MDd /W3 /Gm /GR /GX /ZI /Od /I "../../../src/include" /I "../../../src/include/gen" /I "../../../extern/icu/include" /I "../../../src/vulcan" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_LIB" /D "_X86_" /D "DEV_BUILD" /D NAMESPACE=Vulcan /FD /GZ /c
 # ADD BASE RSC /l 0x419 /d "_DEBUG"
 # ADD RSC /l 0x419 /d "_DEBUG"
 BSC32=bscmake.exe
@@ -187,15 +187,7 @@ SOURCE=..\..\..\src\jrd\cch.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\CharSet.cpp
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\src\jrd\cmp.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\jrd\Collation.cpp
 # End Source File
 # Begin Source File
 
@@ -207,19 +199,11 @@ SOURCE=..\..\..\src\jrd\cvt2.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\DatabaseSnapshot.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\jrd\DataTypeUtil.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\jrd\DebugInterface.cpp
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\src\jrd\divorce.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\dls.cpp
 # End Source File
 # Begin Source File
 
@@ -309,10 +293,6 @@ SOURCE=..\..\..\src\jrd\intl_builtin.cpp
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\IntlManager.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\jrd\IntlUtil.cpp
 # End Source File
 # Begin Source File
 
@@ -419,14 +399,6 @@ SOURCE=..\..\..\src\jrd\pwd.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\RecordBuffer.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\jrd\Relation.cpp
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\src\jrd\rlck.cpp
 # End Source File
 # Begin Source File
@@ -436,10 +408,6 @@ SOURCE=..\..\..\src\jrd\rpb_chain.cpp
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\rse.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\jrd\RuntimeStatistics.cpp
 # End Source File
 # Begin Source File
 
@@ -476,6 +444,10 @@ SOURCE=..\..\..\src\jrd\sort.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\src\jrd\sort_mem.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\src\jrd\sqz.cpp
 # End Source File
 # Begin Source File
@@ -489,14 +461,6 @@ SOURCE=..\..\..\src\jrd\svc.cpp
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\sym.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\jrd\TempSpace.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\jrd\TextType.cpp
 # End Source File
 # Begin Source File
 
@@ -536,10 +500,6 @@ SOURCE=..\..\..\src\jrd\vio.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\VirtualTable.cpp
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\src\jrd\why.cpp
 
 !IF  "$(CFG)" == "engine_classic - Win32 Release"
@@ -574,6 +534,10 @@ SOURCE=..\..\..\src\jrd\align.h
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\all.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\all_proto.h
 # End Source File
 # Begin Source File
 
@@ -637,19 +601,11 @@ SOURCE=..\..\..\src\jrd\cdefs.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\CharSet.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\src\jrd\cmp_proto.h
 # End Source File
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\codetext.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\jrd\Collation.h
 # End Source File
 # Begin Source File
 
@@ -661,23 +617,11 @@ SOURCE=..\..\..\src\jrd\constants.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\CsConvert.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\src\jrd\cvt2_proto.h
 # End Source File
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\cvt_proto.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\jrd\DatabaseSnapshot.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\jrd\DataTypeUtil.h
 # End Source File
 # Begin Source File
 
@@ -693,10 +637,6 @@ SOURCE=..\..\..\src\jrd\dbg_proto.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\DebugInterface.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\src\jrd\dflt.h
 # End Source File
 # Begin Source File
@@ -706,6 +646,10 @@ SOURCE=..\..\..\src\jrd\dfw_proto.h
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\divorce.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\dls_proto.h
 # End Source File
 # Begin Source File
 
@@ -926,10 +870,6 @@ SOURCE=..\..\..\src\jrd\intlnames.h
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\intlobj_new.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\jrd\IntlUtil.h
 # End Source File
 # Begin Source File
 
@@ -1165,14 +1105,6 @@ SOURCE=..\..\..\src\jrd\que.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\RecordBuffer.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\jrd\Relation.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\src\jrd\relations.h
 # End Source File
 # Begin Source File
@@ -1194,10 +1126,6 @@ SOURCE=..\..\..\src\jrd\rse.h
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\rse_proto.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\jrd\RuntimeStatistics.h
 # End Source File
 # Begin Source File
 
@@ -1293,15 +1221,7 @@ SOURCE=..\..\..\src\jrd\sym.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\TempSpace.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\src\jrd\termtype.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\jrd\TextType.h
 # End Source File
 # Begin Source File
 
@@ -1354,10 +1274,6 @@ SOURCE=..\..\..\src\jrd\vio_debug.h
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\vio_proto.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\jrd\VirtualTable.h
 # End Source File
 # Begin Source File
 

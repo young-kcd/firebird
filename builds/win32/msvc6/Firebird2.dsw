@@ -111,6 +111,21 @@ Package=<4>
 
 ###############################################################################
 
+Project: "empbuild"=.\empbuild.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name fbclient
+    End Project Dependency
+}}}
+
+###############################################################################
+
 Project: "engine"=.\engine.dsp - Package Owner=<4>
 
 Package=<5>
@@ -155,21 +170,6 @@ Package=<5>
 
 Package=<4>
 {{{
-}}}
-
-###############################################################################
-
-Project: "fb_event_print"=.\fb_event_print.dsp - Package Owner=<4>
-
-Package=<5>
-{{{
-}}}
-
-Package=<4>
-{{{
-    Begin Project Dependency
-    Project_Dep_Name common
-    End Project Dependency
 }}}
 
 ###############################################################################
@@ -290,21 +290,6 @@ Package=<4>
     Begin Project Dependency
     Project_Dep_Name common
     End Project Dependency
-    Begin Project Dependency
-    Project_Dep_Name fbclient
-    End Project Dependency
-}}}
-
-###############################################################################
-
-Project: "fbrmclib"=.\fbrmclib.dsp - Package Owner=<4>
-
-Package=<5>
-{{{
-}}}
-
-Package=<4>
-{{{
     Begin Project Dependency
     Project_Dep_Name fbclient
     End Project Dependency
@@ -575,6 +560,21 @@ Package=<5>
 
 Package=<4>
 {{{
+}}}
+
+###############################################################################
+
+Project: "intlbld"=.\intlbld.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name fbclient
+    End Project Dependency
 }}}
 
 ###############################################################################

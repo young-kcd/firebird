@@ -33,7 +33,7 @@
 #include "lc_ascii.h"
 #include "cv_gb2312.h"
 
-static inline bool FAMILY_MULTIBYTE(texttype* cache,
+static inline bool FAMILY_MULTIBYTE(TEXTTYPE cache,
 									SSHORT country,
 									const ASCII* POSIX,
 									USHORT attributes,

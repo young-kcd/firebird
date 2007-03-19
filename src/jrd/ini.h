@@ -60,8 +60,8 @@ static const TEXT* const names[] =
 //******************************
 // fields.h
 //******************************
-const USHORT BLOB_SIZE		= 8;
-const USHORT TIMESTAMP_SIZE	= 8;
+const UCHAR BLOB_SIZE		= 8;
+const UCHAR TIMESTAMP_SIZE	= 8;
 
 /* Pick up global ids */
 
@@ -77,17 +77,15 @@ typedef gflds GFLDS;
 /* Pick up actual global fields */
 
 #ifndef GPRE
-#define FIELD(type,name,dtype,length,sub_type,ods,dflt_blr)	\
-	{ (int) type, (int) name, dtype, length, sub_type, ods, dflt_blr, sizeof(dflt_blr) },
+#define FIELD(type,name,dtype,length,sub_type,ods,dflt_blr)	{ (UCHAR) type, (UCHAR) name, dtype, length, sub_type, ods, dflt_blr, sizeof (dflt_blr) },
 #else
-#define FIELD(type,name,dtype,length,sub_type,ods,dflt_blr)	\
-	{ (int) type, (int) name, dtype, length, sub_type, ods, NULL, 0 },
+#define FIELD(type,name,dtype,length,sub_type,ods,dflt_blr)	{ (UCHAR) type, (UCHAR) name, dtype, length, sub_type, ods, NULL, 0 },
 #endif
 
 struct gfld
 {
-	int gfld_type;
-	int gfld_name;
+	UCHAR gfld_type;
+	UCHAR gfld_name;
 	UCHAR gfld_dtype;
 	USHORT gfld_length;
 	UCHAR gfld_sub_type;	// mismatch; dsc2.h uses SSHORT.
@@ -108,7 +106,7 @@ static const struct gfld gfields[] = {
 
 /* Pick up relation ids */
 
-#define RELATION(name, id, ods, type) id,
+#define RELATION(name, id, ods) id,
 #define FIELD(symbol, name, id, update, ods, upd_id, upd_ods)
 #define END_RELATION
 enum rids {
@@ -122,16 +120,15 @@ typedef rids RIDS;
 
 /* Pick up relations themselves */
 
-#define RELATION(name, id, ods, type)	(int) name, (int) id, ods, type,
+#define RELATION(name, id, ods)	(UCHAR) name,(UCHAR) id, ods,
 #define FIELD(symbol, name, id, update, ods, upd_id, upd_ods)\
-				(int) name, (int) id, update, ods, (int) upd_id, upd_ods,
+				(UCHAR) name, (UCHAR) id, update, ods, (UCHAR) upd_id, upd_ods,
 #define END_RELATION		0,
 
 const int RFLD_R_NAME	= 0;
 const int RFLD_R_ID		= 1;
-const int RFLD_R_ODS	= 2;
-const int RFLD_R_TYPE	= 3;
-const int RFLD_RPT		= 4;
+const int RFLD_R_MINOR	= 2;
+const int RFLD_RPT		= 3;
 
 const int RFLD_F_NAME	= 0;
 const int RFLD_F_ID		= 1;
@@ -141,7 +138,7 @@ const int RFLD_F_UPD_ID	= 4;
 const int RFLD_F_UPD_MINOR	= 5;
 const int RFLD_F_LENGTH	= 6;
 
-static const int relfields[] =
+static const UCHAR relfields[] =
 {
 #include "../jrd/relations.h"
 	0
@@ -168,7 +165,7 @@ struct rtyp {
 #define CHARSET(name, cs_id, coll_id, bytes, num, s1, s2, attr) \
 				{(name), (cs_id),   (UCHAR) nam_charset_name},
 #define CSALIAS(name, cs_id)	{(name), (cs_id),   (UCHAR) nam_charset_name},
-#define COLLATION(name, base_name, cc_id, cs_id, coll_id, sym, attr)
+#define COLLATION(name, cc_id, cs_id, coll_id, sym, attr)
 #define END_CHARSET
 
 static const rtyp types[] = {
@@ -198,7 +195,7 @@ typedef initcharset CS_TYPE;
 #define CHARSET(name, cs_id, coll_id, bytes, num, s1, s2, attr) \
 	{ (const UCHAR *) (name), (cs_id), (bytes)},
 #define CSALIAS(name, cs_id)
-#define COLLATION(name, base_name, cc_id, cs_id, coll_id, sym, attr)
+#define COLLATION(name, cc_id, cs_id, coll_id, sym, attr)
 #define END_CHARSET
 
 static const CS_TYPE cs_types[] = {
@@ -212,7 +209,6 @@ static const CS_TYPE cs_types[] = {
 
 struct initcollation {
 	const UCHAR *init_collation_name;
-	const UCHAR *init_collation_base_name;
 	SSHORT init_collation_charset;
 	SSHORT init_collation_id;
 	USHORT init_collation_attributes;
@@ -221,10 +217,10 @@ struct initcollation {
 typedef initcollation COLL_TYPE;
 
 #define CHARSET(name, cs_id, coll_id, bytes, num, s1, s2, attr) \
-	{ (const UCHAR *) (name), NULL, (cs_id), (coll_id), (attr) },
+	{ (const UCHAR *) (name), (cs_id), (coll_id), (attr) },
 #define CSALIAS(name, cs_id)
-#define COLLATION(name, base_name, cc_id, cs_id, coll_id, sym, attr) \
-	{ (const UCHAR *) (name), (const UCHAR *) (base_name), (cs_id), (coll_id), (attr) },
+#define COLLATION(name, cc_id, cs_id, coll_id, sym, attr) \
+	{ (const UCHAR *) (name), (cs_id), (coll_id), (attr) },
 #define END_CHARSET
 
 static const COLL_TYPE coll_types[] = {

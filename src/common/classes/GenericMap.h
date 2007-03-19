@@ -67,28 +67,6 @@ public:
 	GenericMap() : tree(&getPool()), mCount(0) { }
 	GenericMap(MemoryPool& a_pool) : AutoStorage(a_pool), tree(&getPool()), mCount(0) { }
 	~GenericMap() {
-		clear();
-	}
-
-	void takeOwnership(GenericMap& from) {
-		clear();
-
-		tree = from.tree;
-		mCount = from.mCount;
-
-		if (from.tree.getFirst()) {
-			while (true) {
-				bool haveMore = from.tree.fastRemove();
-				if (!haveMore)
-					break;
-			}
-		}
-
-		from.mCount = 0;
-	}
-
-	// Clear the map
-	void clear() {
 		if (tree.getFirst()) {
 			while (true) {
 				KeyValuePair* temp = tree.current();
@@ -97,8 +75,6 @@ public:
 				if (!haveMore) break;
 			}
 		}
-
-		mCount = 0;
 	}
 
 	// Returns true if value existed
@@ -139,16 +115,6 @@ public:
 
 		return false;
 	}
-
-	bool getFirst() { return tree.getFirst(); }
-	
-	bool getLast() { return tree.getLast(); }
-	
-	bool getNext() { return tree.getNext(); }
-	
-	bool getPrev() { return tree.getPrev(); }
-
-	KeyValuePair* current() const { return tree.current(); }
 
 	bool exist(const KeyType& key)
 	{

@@ -31,7 +31,7 @@
 				PreprocessorDefinitions="GPRE_FORTRAN,GPRE_PASCAL,GPRE_COBOL,GPRE_ADA,NDEBUG,_CONSOLE,SUPERCLIENT,WIN32,_X86_"
 				ExceptionHandling="FALSE"
 				RuntimeLibrary="2"
-				RuntimeTypeInfo="FALSE"
+				RuntimeTypeInfo="TRUE"
 				PrecompiledHeaderFile="..\..\..\temp\release\gpre/gpre.pch"
 				AssemblerListingLocation="..\..\..\temp\release\gpre/"
 				ObjectFile="..\..\..\temp\release\gpre/"
@@ -93,7 +93,7 @@
 				ExceptionHandling="FALSE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				RuntimeTypeInfo="FALSE"
+				RuntimeTypeInfo="TRUE"
 				PrecompiledHeaderFile="..\..\..\temp\debug\gpre/gpre.pch"
 				AssemblerListingLocation="..\..\..\temp\debug\gpre/"
 				ObjectFile="..\..\..\temp\debug\gpre/"
@@ -199,9 +199,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\gpre\pretty.cpp">
-			</File>
-			<File
-				RelativePath="..\..\..\src\gpre\rmc.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\src\gpre\sqe.cpp">

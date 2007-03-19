@@ -36,6 +36,8 @@
  *
  */
 
+ /* $Id: isc_ipc.cpp,v 1.17 2005-09-15 16:42:34 alexpeshkoff Exp $ */
+
 #include "firebird.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -48,7 +50,6 @@
 #include "../jrd/os/isc_i_proto.h"
 #include "../jrd/isc_s_proto.h"
 #include "../jrd/thd.h"
-#include "../common/classes/locks.h"
 
 #ifdef HAVE_VFORK_H
 #include <vfork.h>
@@ -90,14 +91,12 @@ struct sig {
 	int sig_signal;
 	union {
 		FPTR_VOID_PTR user;
-		void (*client1) (int);
-		void (*client3) (int, siginfo_t *, void *);
+		void (*client) (int);
 		FPTR_INT_VOID_PTR informs;
 		FPTR_VOID untyped;
 	} sig_routine;
 	void* sig_arg;
 	USHORT sig_flags;
-	USHORT sig_w_siginfo;
 };
 
 typedef sig *SIG;
@@ -128,11 +127,11 @@ static int volatile relay_pipe = 0;
 
 
 static void cleanup(void* arg);
-static bool isc_signal2(int signal, FPTR_VOID handler, void* arg, ULONG);
+static void isc_signal2(int signal, FPTR_VOID handler, void* arg, ULONG);
 static SLONG overflow_handler(void* arg);
-static SIG que_signal(int signal, FPTR_VOID handler, void* arg, int flags, bool w_siginfo);
+static SIG que_signal(int signal, FPTR_VOID handler, void* arg, int flags);
 
-static void CLIB_ROUTINE signal_action(int number, siginfo_t *siginfo, void *context);
+static void CLIB_ROUTINE signal_handler(int number);
 
 #ifndef SIG_HOLD
 #define SIG_HOLD	SIG_DFL
@@ -167,17 +166,23 @@ void ISC_enter(void)
 #endif
 }
 
-namespace {
-	volatile sig_atomic_t inhibit_counter = 0;
-	sigset_t saved_sigmask;
-	Firebird::Mutex inhibitMutex;
-}
+volatile sig_atomic_t inhibit_counter = 0;
+sigset_t saved_sigmask;
 
-SignalInhibit::SignalInhibit() throw()
-	: enabled(false) 
+void ISC_inhibit() throw()
 {
-	Firebird::MutexLockGuard lock(inhibitMutex);
-
+/**************************************
+ *
+ *	I S C _ i n h i b i t
+ *
+ **************************************
+ *
+ * Functional description
+ *	Inhibit process of signals.  Signals will be
+ *	retained until signals are eventually re-enabled,
+ *	then re-posted.
+ *
+ **************************************/
 	if (inhibit_counter == 0) {
 		sigset_t set, oset;
 		sigfillset(&set);
@@ -186,15 +191,19 @@ SignalInhibit::SignalInhibit() throw()
 	inhibit_counter++;
 }
 
-void SignalInhibit::enable() throw()
+
+void ISC_enable() throw()
 {
-	if (enabled)
-		return;
-
-	enabled = true;
-
-	Firebird::MutexLockGuard lock(inhibitMutex);
-
+/**************************************
+ *
+ *	I S C _ e n a b l e
+ *
+ **************************************
+ *
+ * Functional description
+ *	Enable signal processing.  Re-post any pending signals.
+ *
+ **************************************/
 	fb_assert(inhibit_counter > 0);
 	inhibit_counter--;
 	if (inhibit_counter == 0) {
@@ -202,7 +211,8 @@ void SignalInhibit::enable() throw()
 		// call to ISC_inhibit
 		sigprocmask(SIG_SETMASK, &saved_sigmask, NULL);
 	}
-}		
+}
+
 
 void ISC_exit(void)
 {
@@ -234,9 +244,6 @@ int ISC_kill(SLONG pid, SLONG signal_number)
  *	Notify somebody else.
  *
  **************************************/
-	if (! pid)
-		pid = getpid();
-
 	for (;;) {
 		const int status = kill(pid, signal_number);
 
@@ -297,7 +304,7 @@ int ISC_kill(SLONG pid, SLONG signal_number)
 }
 
 
-bool ISC_signal(int signal_number, FPTR_VOID_PTR handler, void* arg)
+void ISC_signal(int signal_number, FPTR_VOID_PTR handler, void* arg)
 {
 /**************************************
  *
@@ -309,11 +316,11 @@ bool ISC_signal(int signal_number, FPTR_VOID_PTR handler, void* arg)
  *	Multiplex multiple handers into single signal.
  *
  **************************************/
-	return isc_signal2(signal_number, reinterpret_cast<FPTR_VOID>(handler), arg, SIG_user);
+	isc_signal2(signal_number, reinterpret_cast<FPTR_VOID>(handler), arg, SIG_user);
 }
 
 
-static bool isc_signal2(
+static void isc_signal2(
 						int signal_number,
 						FPTR_VOID handler, void* arg, ULONG flags)
 {
@@ -348,38 +355,38 @@ static bool isc_signal2(
    the old action was SIG_DFL, SIG_HOLD, SIG_IGN or our
    multiplexor, there is no need to save it. */
 
-	bool old_sig_w_siginfo = false;
-	bool rc = false;
 	if (!sig) {
 		struct sigaction act, oact;
 
-		act.sa_sigaction = signal_action;
-		act.sa_flags = SA_RESTART | SA_SIGINFO;
+		act.sa_handler = signal_handler;
+		act.sa_flags = SA_RESTART;
 		sigemptyset(&act.sa_mask);
 		sigaddset(&act.sa_mask, signal_number);
 		sigaction(signal_number, &act, &oact);
-		old_sig_w_siginfo = oact.sa_flags & SA_SIGINFO;
-		
-		if (oact.sa_sigaction != signal_action &&
-			oact.sa_handler != SIG_DFL &&
-			oact.sa_handler != SIG_HOLD &&
-			oact.sa_handler != SIG_IGN)
+
+		if (
+#ifdef SA_SIGINFO
+			// Do not queue user handlers requesting information.
+			// There is no easy and portable way to support them.
+			// Either Firebird or application should be adjusted to use another signal
+			!(oact.sa_flags & SA_SIGINFO) &&
+#endif
+			 oact.sa_handler != signal_handler &&
+			 oact.sa_handler != SIG_DFL &&
+			 oact.sa_handler != SIG_HOLD &&
+			 oact.sa_handler != SIG_IGN
+		   )
 		{
-			que_signal(signal_number, old_sig_w_siginfo ?
-				reinterpret_cast<FPTR_VOID>(oact.sa_sigaction) :
-				reinterpret_cast<FPTR_VOID>(oact.sa_handler),
-				NULL, SIG_client, old_sig_w_siginfo);
-			rc = true;
+			que_signal(signal_number, reinterpret_cast<FPTR_VOID>(oact.sa_handler), 
+				NULL, SIG_client);
 		}
 	}
 
 	/* Que up the new ISC signal handler routine */
 
-	que_signal(signal_number, handler, arg, flags, old_sig_w_siginfo);
+	que_signal(signal_number, handler, arg, flags);
 
 	THD_MUTEX_UNLOCK(&sig_mutex);
-	
-	return rc;
 }
 
 
@@ -486,7 +493,7 @@ static SLONG overflow_handler(void* arg)
 
 /* If we're within ISC world (inside why-value) when the FPE occurs
  * we handle it (basically by ignoring it).  If it occurs outside of
- * ISC world, return back a code that tells signal_action to call any
+ * ISC world, return back a code that tells signal_handler to call any
  * customer provided handler.
  */
 	if (isc_enter_count) {
@@ -495,22 +502,20 @@ static SLONG overflow_handler(void* arg)
 		fprintf(stderr, "SIGFPE in isc code ignored %d\n",
 				   overflow_count);
 #endif
-		/* We've "handled" the FPE - let signal_action know not to chain
+		/* We've "handled" the FPE - let signal_handler know not to chain
 		   the signal to other handlers */
 		return SIG_informs_stop;
 	}
 	else {
-		/* We've NOT "handled" the FPE - let signal_action know to chain
+		/* We've NOT "handled" the FPE - let signal_handler know to chain
 		   the signal to other handlers */
 		return SIG_informs_continue;
 	}
 }
 
-static SIG que_signal(int signal_number,
-					  FPTR_VOID handler, 
-					  void* arg, 
-					  int flags,
-					  bool sig_w_siginfo)
+static SIG que_signal(
+					  int signal_number,
+					  FPTR_VOID handler, void* arg, int flags)
 {
 /**************************************
  *
@@ -541,7 +546,6 @@ static SIG que_signal(int signal_number,
 	sig->sig_routine.untyped = handler;
 	sig->sig_arg = arg;
 	sig->sig_flags = flags;
-	sig->sig_w_siginfo = sig_w_siginfo;
 
 	sig->sig_next = signals;
 	signals = sig;
@@ -550,11 +554,11 @@ static SIG que_signal(int signal_number,
 }
 
 
-static void CLIB_ROUTINE signal_action(int number, siginfo_t *siginfo, void *context)
+static void CLIB_ROUTINE signal_handler(int number)
 {
 /**************************************
  *
- *	s i g n a l _ a c t i o n
+ *	s i g n a l _ h a n d l e r	( G E N E R I C )
  *
  **************************************
  *
@@ -565,33 +569,15 @@ static void CLIB_ROUTINE signal_action(int number, siginfo_t *siginfo, void *con
 	/* Invoke everybody who may have expressed an interest. */
 
 	for (SIG sig = signals; sig; sig = sig->sig_next)
-	{
 		if (sig->sig_signal == number)
-		{
 			if (sig->sig_flags & SIG_client)
-			{
-				if (sig->sig_w_siginfo)
-				{
-					(*sig->sig_routine.client3)(number, siginfo, context);
-				}
-				else
-				{
-					(*sig->sig_routine.client1)(number);
-				}
-			}
-			else if (sig->sig_flags & SIG_informs) 
-			{
+				(*sig->sig_routine.client)(number);
+			else if (sig->sig_flags & SIG_informs) {
 				/* Routine will tell us whether to chain the signal to other handlers */
 				if ((*sig->sig_routine.informs)(sig->sig_arg) == SIG_informs_stop)
-				{
 					break;
-				}
 			}
 			else
-			{
 				(*sig->sig_routine.user) (sig->sig_arg);
-			}
-		}
-	}
 }
 

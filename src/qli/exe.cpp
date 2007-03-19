@@ -504,39 +504,39 @@ static DSC *assignment(	qli_nod*		from_node,
 
 	try {
 
-		memcpy(QLI_env, old_env, sizeof(QLI_env));
-		dsc* from_desc = EVAL_value(from_node);
+	memcpy(QLI_env, old_env, sizeof(QLI_env));
+	dsc* from_desc = EVAL_value(from_node);
 
-		if (from_desc->dsc_missing & DSC_initial) {
-			from_desc = EVAL_value(initial);
-		}
+	if (from_desc->dsc_missing & DSC_initial) {
+		from_desc = EVAL_value(initial);
+	}
 
 /* If there is a value present, do any assignment; otherwise null fill */
 
-		if (*missing_flag = to_desc->dsc_missing = from_desc->dsc_missing) {
-			UCHAR* p = from_desc->dsc_address;
-			USHORT l = from_desc->dsc_length;
-			if (l) {
-				do {
-					*p++ = 0;
-				} while (--l);
-			}
+	if (*missing_flag = to_desc->dsc_missing = from_desc->dsc_missing) {
+		UCHAR* p = from_desc->dsc_address;
+		USHORT l = from_desc->dsc_length;
+		if (l) {
+			do {
+				*p++ = 0;
+			} while (--l);
 		}
-		else {
-			MOVQ_move(from_desc, to_desc);
-		}
-
-		if (validation && EVAL_boolean(validation) <= 0) {
-			IBERROR(39);			// Msg39 field validation error
-		}
-
-		QLI_reprompt = FALSE;
-		memcpy(QLI_env, old_env, sizeof(QLI_env));
-
-		return from_desc;
-
 	}
-	catch (const Firebird::Exception&) {
+	else {
+		MOVQ_move(from_desc, to_desc);
+	}
+
+	if (validation && EVAL_boolean(validation) <= 0) {
+		IBERROR(39);			// Msg39 field validation error
+	}
+
+	QLI_reprompt = FALSE;
+	memcpy(QLI_env, old_env, sizeof(QLI_env));
+
+	return from_desc;
+
+	}	// try
+	catch (const std::exception&) {
 		if (QLI_abort || !QLI_prompt_count) {
 			memcpy(QLI_env, old_env, sizeof(QLI_env));
 			throw;
@@ -942,7 +942,7 @@ static void execute_output( qli_nod* node)
 	qli_prt* print = (qli_prt*) node->nod_arg[e_out_print];
 	print->prt_file = EXEC_open_output(node);
 
-	// Set up error handling
+// Set up error handling
 
 	jmp_buf old_env;
 	jmp_buf env;
@@ -951,14 +951,14 @@ static void execute_output( qli_nod* node)
 
 	try {
 
-		// Finally, execute the query
+// Finally, execute the query
 
-		EXEC_execute(node->nod_arg[e_out_statement]);
-		memcpy(QLI_env, old_env, sizeof(QLI_env));
-		fclose((FILE *) print->prt_file);
+	EXEC_execute(node->nod_arg[e_out_statement]);
+	memcpy(QLI_env, old_env, sizeof(QLI_env));
+	fclose((FILE *) print->prt_file);
 
-	}
-	catch (const Firebird::Exception&) {
+	}	// try
+	catch (const std::exception&) {
 		if (print->prt_file) {
 			fclose((FILE *) print->prt_file);
 		}

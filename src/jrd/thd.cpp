@@ -54,6 +54,153 @@
 #include <signal.h>
 #endif
 
+#ifdef NOT_USED_OR_REPLACED
+#ifdef VMS
+// THE SOLE PURPOSE OF THE FOLLOWING DECLARATION IS TO ALLOW THE VMS KIT TO
+// COMPILE.  IT IS NOT CORRECT AND MUST BE REMOVED AT SOME POINT.
+ThreadData* gdbb;
+#endif
+
+#ifdef VMS
+#define THREAD_MUTEXES_DEFINED
+int THD_mutex_destroy(MUTX_T * mutex)
+{
+/**************************************
+ *
+ *	T H D _ m u t e x _ d e s t r o y	( V M S )
+ *
+ **************************************
+ *
+ * Functional description
+ *
+ **************************************/
+
+	return 0;
+}
+
+
+int THD_mutex_init(MUTX_T * mutex)
+{
+/**************************************
+ *
+ *	T H D _ m u t e x _ i n i t		( V M S )
+ *
+ **************************************
+ *
+ * Functional description
+ *
+ **************************************/
+
+	return ISC_mutex_init(mutex, 0);
+}
+
+
+int THD_mutex_lock(MUTX_T * mutex)
+{
+/**************************************
+ *
+ *	T H D _ m u t e x _ l o c k		( V M S )
+ *
+ **************************************
+ *
+ * Functional description
+ *
+ **************************************/
+
+	return ISC_mutex_lock(mutex);
+}
+
+
+int THD_mutex_unlock(MUTX_T * mutex)
+{
+/**************************************
+ *
+ *	T H D _ m u t e x _ u n l o c k		( V M S )
+ *
+ **************************************
+ *
+ * Functional description
+ *
+ **************************************/
+
+	return ISC_mutex_unlock(mutex);
+}
+#endif //VMS
+#endif //NOT_USED_OR_REPLACED
+
+
+#ifdef V4_THREADING
+int THD_wlck_lock(wlck_t* wlock, WLCK_type type)
+{
+/**************************************
+ *
+ *	T H D _ w l c k _ l o c k
+ *
+ **************************************
+ *
+ * Functional description
+ *
+ **************************************/
+
+	switch (type)
+	{
+	case WLCK_read:
+#ifdef DEBUG_THREAD
+		fprintf(stderr, "calling rwlock_rdlock %x\n", wlock);
+#endif
+		wlock->rwLock.beginRead();
+		break;
+
+	case WLCK_write:
+#ifdef DEBUG_THREAD
+		fprintf(stderr, "calling rwlock_wrlock %x\n", wlock);
+#endif
+		wlock->rwLock.beginWrite();
+		break;
+
+#ifdef DEV_BUILD
+	default:
+		fb_assert(false);
+		break;
+#endif
+	}
+
+	wlock->type = type;
+	return 0;
+}
+
+
+int THD_wlck_unlock(wlck_t* wlock)
+{
+/**************************************
+ *
+ *	T H D _ w l c k _ u n l o c k
+ *
+ **************************************
+ *
+ * Functional description
+ *
+ **************************************/
+
+#ifdef DEBUG_THREAD
+	fprintf(stderr, "calling rwlock_unlock %x\n", wlock);
+#endif
+
+	switch (wlock->type)
+	{
+	case WLCK_read:
+		wlock->rwLock.endRead();
+		break;
+
+	case WLCK_write:
+		wlock->rwLock.endWrite();
+		break;
+	}
+
+	return 0;
+}
+#endif // V4_THREADING
+
 
 #ifdef SUPERSERVER
 int THD_rec_mutex_destroy(REC_MUTX_T * rec_mutex)
@@ -153,7 +300,7 @@ int THD_rec_mutex_unlock(REC_MUTX_T * rec_mutex)
 	}
 	return 0;
 }
-#endif // SUPERSERVER
+#endif /* SUPERSERVER */
 
 
 #ifdef WIN_NT
@@ -254,7 +401,7 @@ void THD_sleep(ULONG milliseconds)
 	SleepEx(milliseconds, FALSE);
 #else
 
-#ifdef MULTI_THREAD
+#ifdef ANY_THREADING
 	event_t timer;
 	event_t* timer_ptr = &timer;
 
@@ -263,7 +410,7 @@ void THD_sleep(ULONG milliseconds)
 
 	ISC_event_wait(1, &timer_ptr, &count, milliseconds * 1000, NULL, 0);
 	ISC_event_fini(&timer);
-#else // MULTI_THREAD
+#else /* !ANY_THREADING */
 	int seconds;
 
 /* Insure that process sleeps some amount of time. */
@@ -275,9 +422,9 @@ void THD_sleep(ULONG milliseconds)
 
 	while (seconds = sleep(seconds));
 
-#endif // MULTI_THREAD
+#endif /* !ANY_THREADING */
 
-#endif // WIN_NT
+#endif /* !WIN_NT */
 }
 
 
@@ -293,7 +440,7 @@ void THD_yield(void)
  *	Thread relinquishes the processor.
  *
  **************************************/
-#ifdef MULTI_THREAD
+#ifdef ANY_THREADING
 
 #ifdef USE_POSIX_THREADS
 /* use sched_yield() instead of pthread_yield(). Because pthread_yield() 
@@ -309,7 +456,7 @@ void THD_yield(void)
 	sched_yield();
 #else
 	pthread_yield();
-#endif // _POSIX_PRIORITY_SCHEDULING
+#endif /* _POSIX_PRIORITY_SCHEDULING */
 #endif
 
 #ifdef SOLARIS_MT
@@ -319,5 +466,27 @@ void THD_yield(void)
 #ifdef WIN_NT
 	SleepEx(0, FALSE);
 #endif
-#endif // MULTI_THREAD
+#endif /* ANY_THREADING */
 }
+
+#ifdef ANY_THREADING
+#ifdef VMS
+#ifndef USE_POSIX_THREADS
+#define START_THREAD
+/**************************************
+ *
+ *	t h r e a d _ s t a r t		( V M S )
+ *
+ **************************************
+ *
+ * Functional description
+ *	Start a new thread.  Return 0 if successful,
+ *	status if not.  This routine is coded in macro.
+ *
+ **************************************/
+#endif
+#endif
+#endif
+
+
+

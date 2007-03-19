@@ -27,6 +27,7 @@
 #  Contributor(s):
 # 
 #
+#  $Id: Makefile.in.firebird,v 1.67 2005-12-18 17:56:17 alexpeshkoff Exp $
 #
 
 ROOT=..
@@ -130,7 +131,7 @@ export LD_LIBRARY_PATH
 # MOD 28-July-2002)
 .PHONY: all firebird firebird_boot firebird_basic 
 .PHONY: firebird_embedded firebird_server classic_programs super_programs
-.PHONY: firebird_super firebird_classic btyacc_binary
+.PHONY: firebird_super firebird_classic
 
 
 # The main targets are firebird_embedded or firebird_server
@@ -139,7 +140,7 @@ export LD_LIBRARY_PATH
 # either _classic or _super.
 
 
-firebird : firebird_@FIREBIRD_ARCH_TYPE@ $(PLATFORM_POSTBUILD_TARGET)
+firebird : firebird_@FIREBIRD_ARCH_TYPE@
 
 firebird_classic firebird_embedded: firebird_basic classic_targets
 firebird_super firebird_server: firebird_basic super_targets
@@ -154,7 +155,7 @@ firebird_super firebird_server: firebird_basic super_targets
 # some complications particularly for super in needing to start the server
 # that you are currently building. MOD 28-July-2002
 
-firebird_basic: btyacc_binary external_libraries firebird_boot basic_targets
+firebird_basic: external_libraries firebird_boot basic_targets
 
 firebird_boot: updateBuildNum boot_phase1 boot_phase2 
 
@@ -189,11 +190,6 @@ external_libraries:
 ifeq ($(EDITLINE_FLG),Y)
 	$(MAKE) -f $(GEN_ROOT)/Makefile.extern.editline
 endif
-
-btyacc_binary: $(BTYACC)
-
-$(BTYACC): 
-	$(MAKE) -C $(ROOT)/extern/btyacc
 
 #---------------------------------------------------------------------------
 # Phase1: make a gpre_static from scratch so we can parse .e and .epp files
@@ -267,7 +263,7 @@ $(CREATE_DB):
 $(GBAK_STATIC): @MANAGER_PROCESS_TARGET@
 	$(MAKE) -f $(GEN_ROOT)/Makefile.static.gbak $@
 
-$(ISQL_STATIC): @MANAGER_PROCESS_TARGET@
+$(ISQL_STATIC): 
 	$(MAKE) -f $(GEN_ROOT)/Makefile.static.isql $@
 
 empty_db :
@@ -333,7 +329,7 @@ otherfiles: misc_files
 .PHONY: libfbembed inet_server embed_gfix embed_gbak embed_isql 
 .PHONY: embed_gpre embed_util
 
-classic_targets: $(PLAT_CLASSIC_PRE_TARGET) libfbembed inet_server embed_gfix embed_gbak embed_isql \
+classic_targets: libfbembed inet_server embed_gfix embed_gbak embed_isql \
 	embed_gpre embed_util embed_gdef embed_qli embed_fbudf libfbclient
 
 libfbembed:
@@ -433,7 +429,7 @@ include_generic: $(INCLUDE_DEST)/ib_util.h  \
 # All these files are #includes in ibase.h here we cat them all together
 # and remove the embedded #includes to make it simpler for external usage.
 
-IBASE_ExtraFiles = include/types_pub.h include/consts_pub.h dsql/sqlda_pub.h jrd/dsc_pub.h jrd/ibase.h jrd/inf_pub.h jrd/blr.h include/gen/iberror.h 
+IBASE_ExtraFiles = include/types_pub.h dsql/sqlda_pub.h jrd/dsc_pub.h jrd/ibase.h jrd/inf_pub.h jrd/blr.h include/gen/iberror.h 
 SRC_IBASE_ExtraFiles = $(addprefix $(SRC_ROOT)/, $(IBASE_ExtraFiles))
 MAKE_HEADER_Src = $(addprefix $(SRC_ROOT)/, misc/makeHeader.cpp)
 MAKE_HEADER_Bin = ./makeHeader
@@ -449,6 +445,7 @@ $(INCLUDE_DEST)/ibase.h: $(SRC_IBASE_ExtraFiles)
 
 OtherDistribHeaders = extlib/ib_util.h \
 	               jrd/perf.h  \
+	               jrd/blr.h \
 	               include/gen/iberror.h
 
 SRC_OtherDistribHeaders = $(addprefix $(SRC_ROOT)/, $(OtherDistribHeaders))
@@ -535,7 +532,6 @@ clean_config clean_all: clean clean_makefiles
 	$(RM) $(ROOT)/config.log
 	$(RM) $(ROOT)/config.status
 	$(RM) $(ROOT)/libtool
-	$(RM_R) $(ROOT)/autom4te.cache
 
 clean_dbs:
 	$(RM) *.fdb *.FDB msg.timestamp
@@ -584,5 +580,4 @@ clean_gpre_gen:
 	
 
 #___________________________________________________________________________
-# Extra platform specific targets
-@POSTFIX_INCLUDE@ 
+# 

@@ -34,8 +34,8 @@
 #include <objbase.h>
 #include <stdio.h>
 
-#include "firebird.h"
 #include "../jrd/os/guid.h"
+#include "firebird.h"
 #include "fb_exception.h"
 
 void GenerateRandomBytes(void* buffer, size_t size)
@@ -51,7 +51,7 @@ void GenerateRandomBytes(void* buffer, size_t size)
 			// To create a key container, call CryptAcquireContext 
 			// using the CRYPT_NEWKEYSET flag. 
 			if (! CryptAcquireContext(&hProv, NULL, NULL, PROV_RSA_FULL,
-					CRYPT_VERIFYCONTEXT | CRYPT_NEWKEYSET))
+						CRYPT_VERIFYCONTEXT | CRYPT_NEWKEYSET))
 			{
 				Firebird::system_call_failed::raise("CryptAcquireContext");
 			}

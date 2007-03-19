@@ -1,7 +1,7 @@
 /*
  *
- *	PROGRAM:		Firebird server manager
- *	MODULE:			ibmgr.cpp
+ *	PROGRAM:	InterBase server manager
+ *	MODULE:		ibmgr.cpp
  *	DESCRIPTION:	Main routine and parser
  *
  * The contents of this file are subject to the Interbase Public

@@ -1344,10 +1344,9 @@ static bool string_function(
 	if (node->nod_type == nod_starts) {
 		if (l1 < l2)
 			return false;
-			
-		if (l2)
-			return memcmp(p1, p2, l2) == 0;
-
+		while (--l2 >= 0)
+			if (*p1++ != *p2++)
+				return false;
 		return true;
 	}
 

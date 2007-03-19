@@ -50,7 +50,7 @@ struct sdl_arg {
 	ISC_STATUS* sdl_arg_status_vector;
 	IPTR sdl_arg_compiled[COMPILE_SIZE];
 	IPTR* sdl_arg_next;
-	const IPTR* sdl_arg_end;
+	IPTR* sdl_arg_end;
 };
 
 /* Structure to computes ranges */
@@ -424,7 +424,7 @@ static const UCHAR* compile(const UCHAR* sdl, sdl_arg* arg)
  **************************************/
 	SLONG n, count, variable, value, sdl_operator;
 	IPTR* label;
-	const UCHAR* expressions[MAX_ARRAY_DIMENSIONS];
+	const UCHAR* expressions[16];
 	const UCHAR** expr;
 
 #define STUFF(word, arg)	if (!stuff ((IPTR) word, arg)) return NULL

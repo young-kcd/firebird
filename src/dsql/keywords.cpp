@@ -51,7 +51,9 @@ static const TOK tokens[] =
 	{EQL, "=", 1, false},
 	{GTR, ">", 1, false},
 	{GEQ, ">=", 1, false},
+#ifdef FB_NEW_INTL_ALLOW_NOT_READY
 	{ACCENT, "ACCENT", 2, true},
+#endif
 	{ACTION, "ACTION", 1, true},
 	{ACTIVE, "ACTIVE", 1, false},
 	{ADD, "ADD", 1, false},
@@ -96,7 +98,6 @@ static const TOK tokens[] =
 	{COMMITTED, "COMMITTED", 1, false},
 	{COMPUTED, "COMPUTED", 1, false},
 	{CONDITIONAL, "CONDITIONAL", 1, false},
-	{CONNECT, "CONNECT", 2, false},
 	{CONSTRAINT, "CONSTRAINT", 1, false},
 	{CONTAINING, "CONTAINING", 1, false},
 	{COUNT, "COUNT", 1, false},
@@ -126,7 +127,6 @@ static const TOK tokens[] =
 	{DESC, "DESCENDING", 1, false},
 	{KW_DESCRIPTOR,	"DESCRIPTOR", 2, true},
 	{KW_DIFFERENCE, "DIFFERENCE", 2, true},
-	{DISCONNECT, "DISCONNECT", 2, false},
 	{DISTINCT, "DISTINCT", 1, false},
 	{DO, "DO", 1, false},
 	{DOMAIN, "DOMAIN", 1, false},
@@ -156,7 +156,6 @@ static const TOK tokens[] =
 	{GDSCODE, "GDSCODE", 1, false},
 	{GENERATOR, "GENERATOR", 1, false},
 	{GEN_ID, "GEN_ID", 1, false},
-	{GLOBAL, "GLOBAL", 2, false},
 	{GRANT, "GRANT", 1, false},
 	{GROUP, "GROUP", 1, false},
 	{HAVING, "HAVING", 1, false},
@@ -169,7 +168,9 @@ static const TOK tokens[] =
 	{INDEX, "INDEX", 1, false},
 	{INNER, "INNER", 1, false},
 	{INPUT_TYPE, "INPUT_TYPE", 1, false},
+#ifdef FB_NEW_INTL_ALLOW_NOT_READY
 	{INSENSITIVE, "INSENSITIVE", 2, false},
+#endif
 	{INSERT, "INSERT", 1, false},
 	{INSERTING, "INSERTING", 2, true},
 	{KW_INT, "INT", 1, false},
@@ -187,16 +188,14 @@ static const TOK tokens[] =
 	{LEVEL, "LEVEL", 1, false},
 	{LIKE, "LIKE", 1, false},
 	{LIMBO, "LIMBO", 2, true},
-	{LIST, "LIST", 2, false},
 	{LOCK, "LOCK", 2, true},
 	{KW_LONG, "LONG", 1, false},
 	{KW_LOWER, "LOWER", 2, false},
 	{MANUAL, "MANUAL", 1, false},
-	{MATCHED, "MATCHED", 2, false},
-	{MATCHING, "MATCHING", 2, false},
 	{MAXIMUM, "MAX", 1, false},
 	{MAX_SEGMENT, "MAXIMUM_SEGMENT", 1, false},
 	{MERGE, "MERGE", 1, false},
+	{MESSAGE, "MESSAGE", 1, false},
 	{MINIMUM, "MIN", 1, false},
 	{MINUTE, "MINUTE", 2, false},
 	{MODULE_NAME, "MODULE_NAME", 1, false},
@@ -223,7 +222,9 @@ static const TOK tokens[] =
 	{OUTER, "OUTER", 1, false},
 	{OUTPUT_TYPE, "OUTPUT_TYPE", 1, false},
 	{OVERFLOW, "OVERFLOW", 1, false},
+#ifdef FB_NEW_INTL_ALLOW_NOT_READY
 	{PAD, "PAD", 2, true},
+#endif
 	{PAGE, "PAGE", 1, false},
 	{PAGES, "PAGES", 1, false},
 	{KW_PAGE_SIZE, "PAGE_SIZE", 1, false},
@@ -233,7 +234,6 @@ static const TOK tokens[] =
 	{POSITION, "POSITION", 1, false},
 	{POST_EVENT, "POST_EVENT", 1, false},
 	{PRECISION, "PRECISION", 1, false},
-	{PRESERVE, "PRESERVE", 2, false},
 	{PRIMARY, "PRIMARY", 1, false},
 	{PRIVILEGES, "PRIVILEGES", 1, false},
 	{PROCEDURE, "PROCEDURE", 1, false},
@@ -243,7 +243,6 @@ static const TOK tokens[] =
 	{REAL, "REAL", 1, false},
 	{VERSION, "RECORD_VERSION", 1, false},
 	{RECREATE, "RECREATE", 2, false},
-	{RECURSIVE, "RECURSIVE", 2, false},
 	{REFERENCES, "REFERENCES", 1, false},
 	{RELEASE, "RELEASE", 2, false},
 	{REQUESTS, "REQUESTS", 2, true},
@@ -267,7 +266,9 @@ static const TOK tokens[] =
 	{SECOND, "SECOND", 2, false},
 	{SEGMENT, "SEGMENT", 1, false},
 	{SELECT, "SELECT", 1, false},
+#ifdef FB_NEW_INTL_ALLOW_NOT_READY
 	{SENSITIVE, "SENSITIVE", 2, false},
+#endif
 	{SEQUENCE, "SEQUENCE", 2, true},
 	{SET, "SET", 1, false},
 	{SHADOW, "SHADOW", 1, false},
@@ -279,10 +280,11 @@ static const TOK tokens[] =
 	{SNAPSHOT, "SNAPSHOT", 1, false},
 	{SOME, "SOME", 1, false},
 	{SORT, "SORT", 1, false},
+#ifdef FB_NEW_INTL_ALLOW_NOT_READY
 	{SPACE, "SPACE", 2, true},
+#endif
 	{SQLCODE, "SQLCODE", 1, false},
 	{STABILITY, "STABILITY", 1, false},
-	{START, "START", 2, false},
 	{STARTING, "STARTING", 1, false},
 	{STARTING, "STARTS", 1, false},	// Alias of STARTING
 	{STATEMENT, "STATEMENT", 2, true},
@@ -292,7 +294,6 @@ static const TOK tokens[] =
 	{SUM, "SUM", 1, false},
 	{SUSPEND, "SUSPEND", 1, false},
 	{TABLE, "TABLE", 1, false},
-	{TEMPORARY, "TEMPORARY", 2, false},
 	{THEN, "THEN", 1, false},
 	{TIME, "TIME", 2, false},
 	{TIMESTAMP, "TIMESTAMP", 2, false},

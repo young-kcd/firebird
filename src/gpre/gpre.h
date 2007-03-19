@@ -54,8 +54,6 @@
  *
  * 2002.10.30 Sean Leyne - Removed support for obsolete "PC_PLATFORM" define
  *
- * 2006.08.31 Stephen W. Boyd        - Added support for RM/Cobol
- * 2006.10.12 Stephen W. Boyd        - Added support for FOR UPDATE WITH LOCK
  */
 
 #ifndef GPRE_GPRE_H
@@ -66,7 +64,6 @@
 #include <stdio.h>
 #include "../jrd/common.h"
 #include "../jrd/ibase.h"
-#include "../jrd/constants.h"
 
 #ifdef GPRE_FORTRAN
 #if defined AIX || defined AIX_PPC || defined sun
@@ -106,9 +103,9 @@ const int MAX_EVENT_SIZE = 16; // event names use 15 chars from old docs.
 // Values for SQL dialects.
 #include "../dsql/sqlda_pub.h"
 
-// Language options
+/* Language options */
 
-enum lang_t
+typedef enum lang_t
 {
 	lang_undef,
 	lang_internal,
@@ -123,16 +120,7 @@ enum lang_t
 	lang_cplusplus,
 	lang_cpp,
 	lang_internal_cxx
-};
-
-// Cobol dialect options
-enum cob_t
-{
-	cob_vms,					// VMS
-	cob_ansi,					// ANSI-85
-	cob_rmc						// RM/Cobol
-};
-
+} LANG_T;
 
 //___________________________________________________________________
 // Test if input language is cpp based.
@@ -148,8 +136,7 @@ enum cob_t
 // and lang_internal.
 //
 
-bool isLangCpp(lang_t lang);
-bool isAnsiCobol(cob_t dialect);
+bool isLangCpp(LANG_T lang);
 
 
 /* Structure used by Fortran and Basic to determine whether or not
@@ -241,7 +228,7 @@ typedef enum nod_t {
 	nod_label, nod_leave, nod_loop,
 	nod_max, nod_min, nod_count,
 	nod_total, nod_average, nod_list,
-	nod_deferred, nod_missing, nod_between,
+	nod_defered, nod_missing, nod_between,
 	nod_union, nod_map, nod_starting,
 	nod_like, nod_agg_count, nod_agg_max,
 	nod_agg_min, nod_agg_total, nod_agg_average,
@@ -356,6 +343,8 @@ const size_t VAL_LEN = sizeof(val);
 /* Array information block.  Used to hold info about an array field.
    Note: the dimension (dim) block used to hold dimension information.
    The preferred mechanism is the repeating tail on the array block. */
+
+const int MAX_ARRAY_DIMENSIONS = 16;
 
 struct ary {
 	USHORT ary_dtype;			/* data type of array */
@@ -934,9 +923,7 @@ inline size_t RSE_LEN(const size_t cnt)
 }
 
 enum rse_flags_vals {
-	RSE_singleton = 1,
-	RSE_for_update = 2,
-	RSE_with_lock = 4
+	RSE_singleton = 1
 };
 
 
@@ -1463,7 +1450,7 @@ enum udf_flags_vals {
 };
 
 
-// Update block -- used for (at least) MODIFY
+/* Update block -- used for (at least) MODIFY */
 
 struct upd {
 	USHORT upd_level;			/* reference level */
@@ -1482,12 +1469,11 @@ const size_t UPD_LEN = sizeof(upd);
 #include "../jrd/dsc.h"
 #include "parse.h"
 
-// GPRE wide globals
+/* GPRE wide globals */
 
 struct GpreGlobals
 {
-	cob_t sw_cob_dialect;
-	const TEXT* sw_cob_dformat;
+	bool sw_ansi;
 	bool sw_auto;
 	bool sw_sql;
 	bool sw_raw;
@@ -1517,20 +1503,20 @@ struct GpreGlobals
 	gpre_req* requests;
 	gpre_lls* events;
 	FILE *out_file;
-	lang_t sw_language;
+	LANG_T sw_language;
 	int errors_global;
 	act* global_functions;
 	dbd global_db_list[MAX_DATABASES];
 	USHORT global_db_count;
 	INTLSYM text_subtypes;
 
-	// ada_flags fields definition
+/* ada_flags fields definition */
 
 	int ADA_create_database;	// the flag is set when there is a
-								// create database SQL statement in
-								// user program, and is used to
-								// generate additional "with" and
-								// "function" declarations
+									// create database SQL statement in
+									// user program, and is used to
+									// generate additional "with" and
+									// "function" declarations
 
 	USHORT ada_flags;
 	// from gpre.cpp
@@ -1553,7 +1539,6 @@ struct GpreGlobals
 
 extern GpreGlobals gpreGlob;
 
-
 #ifndef fb_assert
 #ifdef DEV_BUILD
 #undef fb_assert
@@ -1570,7 +1555,7 @@ extern GpreGlobals gpreGlob;
 #define assert_IS_ACT(x) fb_assert(!(x) || ((x)->act_type >= 0 && (x)->act_type < ACT_LASTACT))
 
 
-class gpre_exception: public Firebird::LongJump
+class gpre_exception: public std::exception
 {
 	char msg[MAXPATHLEN << 1];
 public:
@@ -1585,7 +1570,7 @@ public:
 	}
 	const char* what() const throw()
 	{
-		return msg[0] ? msg : "gpre_exception";
+		return msg;
 	}
 };
 

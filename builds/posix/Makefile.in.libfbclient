@@ -27,6 +27,7 @@
 #  Contributor(s):
 # 
 #
+#  $Id: Makefile.in.libfbclient,v 1.29 2005-05-27 22:16:08 asfernandes Exp $
 #
 ROOT=..
 ObjModuleType=superclient
@@ -62,9 +63,8 @@ DSQL_ClientSources = $(addprefix dsql/, $(DSQL_ClientFiles))
 DSQL_ClientObjects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(DSQL_ClientSources))))
 
 
-#REMOTE_ClientSources = $(addprefix remote/, $(REMOTE_ClientFiles))
-#REMOTE_ClientObjects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(REMOTE_ClientSources))))
-REMOTE_ClientObjects = $(INTERFACE_Objects)
+REMOTE_ClientSources = $(addprefix remote/, $(REMOTE_ClientFiles))
+REMOTE_ClientObjects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(REMOTE_ClientSources))))
 
 
 GPRELIB_ClientSources = $(addprefix gpre/, $(GPRELIB_ClientFiles))
@@ -115,15 +115,10 @@ $(LIBFBCLIENT_SONAME):	$(LIBFBCLIENT_SOBASENAME)
 endif
 
 $(LIBFBCLIENT_SO):	$(FBCLIENT_Objects)
-ifeq ($(PLATFORM),DARWIN)
-	$(LIB_LINK) $(LINK_FIREBIRD_SYMBOLS) $(LIB_LINK_OPTIONS) $(LIB_LINK_IMPLIB) \
-$(LIB_CLIENT_LINK_OPTIONS) $(LIB_LINK_SONAME) \
--o $@ $^ $(SO_LINK_LIBS) @PTHREAD_CFLAGS@ @PTHREAD_LIBS@
-else
 	$(LIB_LINK) $(LINK_FIREBIRD_SYMBOLS) $(LIB_LINK_OPTIONS) $(LIB_LINK_IMPLIB) \
 $(LIB_LINK_SONAME)$(ClientLibraryNameMajor) $(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/lib \
--o $@ $^ $(SO_LINK_LIBS) @PTHREAD_CFLAGS@ @PTHREAD_LIBS@ -lsupc++
-endif
+-o $@ $^ $(SO_LINK_LIBS) @PTHREAD_CFLAGS@ @PTHREAD_LIBS@
+
 
 AllObjects = $(FBCLIENT_Objects)
 Dependencies = $(AllObjects:.o=.d)

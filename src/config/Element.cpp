@@ -33,7 +33,6 @@
 //#include <stdlib.h>
 //#include "Engine.h"
 #include "firebird.h"
-#include "../common/classes/alloc.h"
 #include "Element.h"
 #include "Stream.h"
 #include "InputStream.h"
@@ -344,10 +343,10 @@ void Element::addAttribute(JString attributeName)
 	addAttribute (new Element (attributeName));
 }
 
-Element* Element::addAttribute(JString attributeName, int attributeValue)
+Element* Element::addAttribute(JString attributeName, int value)
 {
 	char buffer [32];
-	sprintf (buffer, "%d", attributeValue);
+	sprintf (buffer, "%d", value);
 	
 	return addAttribute (attributeName, buffer);
 }

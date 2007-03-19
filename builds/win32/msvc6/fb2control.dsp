@@ -43,7 +43,7 @@ RSC=rc.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MT /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_WINDLL" /Yu"stdafx.h" /FD /c
-# ADD CPP /nologo /MD /W3 /GX /Zi /Ox /Ow /Og /Os /I "../../../src/include" /I "../../../src/include/gen" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "SUPERSERVER" /D "_WINDLL" /D "_AFXDLL" /FR /YX /FD /c
+# ADD CPP /nologo /MD /W3 /GR /GX /Zi /Ox /Ow /Og /Os /I "../../../src/include" /I "../../../src/include/gen" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "SUPERSERVER" /D "_WINDLL" /D "_AFXDLL" /FR /YX /FD /c
 # ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x809 /d "NDEBUG"
@@ -72,7 +72,7 @@ LINK32=link.exe
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MTd /W3 /Gm /GX /ZI /Od /I "../../../src/include" /I "../../../src/include/gen" /D "_DEBUG" /D "_WINDOWS" /D "WIN32" /D "_MBCS" /D "_X86_" /D "DEV_BUILD" /D "_USRDLL" /D "CPL_APPLET" /D "_WINDLL" /U "TRACE" /FR /YX /FD /GZ /c
 # SUBTRACT BASE CPP /X
-# ADD CPP /nologo /MDd /W3 /GX /Zi /Od /I "../../../src/include" /I "../../../src/include/gen" /D "_DEBUG" /D "_WINDOWS" /D "WIN32" /D "_MBCS" /D "DEV_BUILD" /D "_USRDLL" /D "CPL_APPLET" /D "_WINDLL" /D "_AFXDLL" /U "TRACE" /FR /FD /GZ /c
+# ADD CPP /nologo /MDd /W3 /GR /GX /Zi /Od /I "../../../src/include" /I "../../../src/include/gen" /D "_DEBUG" /D "_WINDOWS" /D "WIN32" /D "_MBCS" /D "DEV_BUILD" /D "_USRDLL" /D "CPL_APPLET" /D "_WINDLL" /D "_AFXDLL" /U "TRACE" /FR /FD /GZ /c
 # SUBTRACT CPP /Gy /X /YX
 # ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "_DEBUG" /mktyplib203 /win32

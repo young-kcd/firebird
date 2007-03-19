@@ -69,10 +69,8 @@ const int MAXSTUFF	= 1000;		/* longest interactive command line */
 class tsec *gdsec;
 #endif
 
-static int common_main(int, const char**, Jrd::pfn_svc_output, Jrd::Service*);
+static int common_main(int, char**, Jrd::pfn_svc_output, Jrd::Service*);
 static void util_output(const SCHAR*, ...);
-static int util_print(const SCHAR*, ...);
-static int vutil_print(SCHAR*, va_list);
 
 static void data_print(void*, const internal_user_data*, bool);
 static bool get_line(int*, SCHAR**, TEXT*, size_t);
@@ -88,7 +86,7 @@ void inline gsec_exit(int code, tsec* tdsec)
 {
 	tdsec->tsec_exit_code = code;
 	if (tdsec->tsec_throw)
-		Firebird::LongJump::raise();
+		Firebird::status_exception::raise();
 }
 
 #ifdef SERVICE_THREAD
@@ -103,7 +101,7 @@ THREAD_ENTRY_DECLARE GSEC_main(THREAD_ENTRY_PARAM arg)
  *   Entrypoint for GSEC via the services manager
  **********************************************/
 	Jrd::Service* service = (Jrd::Service*)arg;
-	const int exit_code = common_main(service->svc_argc, service->svc_argv.begin(),
+	const int exit_code = common_main(service->svc_argc, service->svc_argv,
 						  SVC_output, service);
 
 /* Mark service thread as finished. */
@@ -115,7 +113,7 @@ THREAD_ENTRY_DECLARE GSEC_main(THREAD_ENTRY_PARAM arg)
 
 #else
 
-int CLIB_ROUTINE main( int argc, const char* argv[])
+int CLIB_ROUTINE main( int argc, char* argv[])
 {
 /**************************************
  *
@@ -162,7 +160,7 @@ inline void envPick(TEXT* dest, size_t size, const TEXT* var)
 #endif /* SERVICE_THREAD */
 
 int common_main(int argc,
-				const char* argv[],
+				char* argv[],
 				Jrd::pfn_svc_output output_proc,
 				Jrd::Service* output_data)
 {
@@ -192,9 +190,9 @@ int common_main(int argc,
 	tdsec->tsec_user_data = &u;
 
 	try {
-	// Perform some special handling when run as a Firebird service.  The
-	// first switch can be "-svc" (lower case!) or it can be "-svc_re" followed
-	// by 3 file descriptors to use in re-directing stdin, stdout and stderr.
+/* Perform some special handling when run as an Interbase service.  The
+   first switch can be "-svc" (lower case!) or it can be "-svc_re" followed
+   by 3 file descriptors to use in re-directing stdin, stdout, and stderr. */
 
 	tdsec->tsec_throw = true;
 	tdsec->tsec_interactive = true;
@@ -238,8 +236,8 @@ int common_main(int argc,
 		argc -= 4;
 	}
 
-	ISC_STATUS* status = tdsec->tsec_status;
 	SSHORT ret = parse_cmd_line(argc, argv, tdsec);
+
 	Firebird::PathName databaseName;
 	bool databaseNameEntered = user_data->database_name_entered;
 	if (user_data->database_name_entered)
@@ -273,6 +271,7 @@ int common_main(int argc,
 	}
 	databaseName.copyTo(user_data->database_name, sizeof(user_data->database_name));
 	
+	ISC_STATUS* status = tdsec->tsec_status;
 #ifdef SUPERCLIENT
 	useServices = true;
 #else //SUPERCLIENT
@@ -283,27 +282,15 @@ int common_main(int argc,
 		Firebird::ClumpletWriter dpb(Firebird::ClumpletReader::Tagged, MAX_DPB_SIZE, isc_dpb_version1);
 		dpb.insertByte(isc_dpb_gsec_attach, 1); // not 0 - yes, I'm gsec
 
-#ifdef TRUSTED_SERVICES
-		if (user_data->dba_trust_user_name_entered) 
-		{
-			dpb.insertString(isc_dpb_trusted_auth, 
-				user_data->dba_trust_user_name, strlen(user_data->dba_trust_user_name));
+		if (user_data->dba_user_name_entered) {
+			dpb.insertString(isc_dpb_user_name, 
+				user_data->dba_user_name, strlen(user_data->dba_user_name));
 		}
-		else
-#endif
-		{
-			if (user_data->dba_user_name_entered) 
-			{
-				dpb.insertString(isc_dpb_user_name, 
-					user_data->dba_user_name, strlen(user_data->dba_user_name));
-			}
 
-			if (user_data->dba_password_entered) 
-			{
-				dpb.insertString(tdsec->tsec_service_gsec ? 
-								isc_dpb_password_enc : isc_dpb_password, 
-					user_data->dba_password, strlen(user_data->dba_password));
-			}
+		if (user_data->dba_password_entered) {
+			dpb.insertString(tdsec->tsec_service_gsec ? 
+							isc_dpb_password_enc : isc_dpb_password, 
+				user_data->dba_password, strlen(user_data->dba_password));
 		}
 
 		if (user_data->sql_role_name_entered) {
@@ -442,26 +429,29 @@ int common_main(int argc,
 	return ret;					// silence compiler warning
 
 	}	// try
-	catch (const Firebird::LongJump&) {
-		/* All calls to gsec_exit(), normal and error exits, wind up here */
-		const int exit_code = tdsec->tsec_exit_code;
+	catch (const std::exception& e) {
+		/* 
+		 * All exceptions and calls to gsec_exit(), 
+		 * normal and error exits, wind up here 
+		 */
+		int exit_code = tdsec->tsec_exit_code;
+
+		ISC_STATUS_ARRAY status;
+		memset(status, 0, sizeof status);
+		Firebird::stuff_exception(status, e);
 
 		tdsec->tsec_service_blk->svc_started();
 		tdsec->tsec_throw = false;
+		
+		if (status[0]) {
+			// We have real exception, gsec_exit() was not called
+			GSEC_print_status(status);
+			memcpy(tdsec->tsec_status, status, sizeof status);
+			exit_code = 127;
+		}
 
+		/* All returns occur from this point - even normal returns */
 		return exit_code;
-	}
-	catch (const Firebird::Exception& e) {
-		// Real exceptions are coming here
-		ISC_STATUS *status = tdsec->tsec_status;
-		e.stuff_exception(status);
-
-		tdsec->tsec_service_blk->svc_started();
-		tdsec->tsec_throw = false;
-
-		GSEC_print_status(status, false);
-
-		return 127;
 	}
 }
 
@@ -724,12 +714,6 @@ static bool get_switches(
 				strncpy(user_data->sql_role_name, string, sizeof(user_data->sql_role_name));
 				user_data->sql_role_name_entered = true;
 				break;
-#ifdef TRUSTED_SERVICES
-			case IN_SW_GSEC_DBA_TRUST_USER:
-				strncpy(user_data->dba_trust_user_name, string, sizeof(user_data->dba_trust_user_name));
-				user_data->dba_trust_user_name_entered = true;
-				break;
-#endif
 			case IN_SW_GSEC_Z:
 			case IN_SW_GSEC_0:
 #ifdef SERVICE_THREAD
@@ -831,9 +815,6 @@ static bool get_switches(
 			case IN_SW_GSEC_MNAME:
 			case IN_SW_GSEC_LNAME:
 			case IN_SW_GSEC_DATABASE:
-#ifdef TRUSTED_SERVICES
-			case IN_SW_GSEC_DBA_TRUST_USER:
-#endif
 			case IN_SW_GSEC_DBA_USER_NAME:
 			case IN_SW_GSEC_DBA_PASSWORD:
 			case IN_SW_GSEC_SQL_ROLE_NAME:
@@ -919,16 +900,6 @@ static bool get_switches(
 					user_data->dba_user_name_specified = true;
 					user_data->dba_user_name[0] = '\0';
 					break;
-#ifdef TRUSTED_SERVICES
-				case IN_SW_GSEC_DBA_TRUST_USER:
-					if (user_data->dba_trust_user_name_specified) {
-						err_msg_no = GsecMsg79;
-						break;
-					}
-					user_data->dba_trust_user_name_specified = true;
-					user_data->dba_trust_user_name[0] = '\0';
-					break;
-#endif
 				case IN_SW_GSEC_DBA_PASSWORD:
 					if (user_data->dba_password_specified) {
 						err_msg_no = GsecMsg80;
@@ -1233,7 +1204,7 @@ static SSHORT parse_cmd_line(int argc, const TEXT* const* argv, tsec* tdsec)
 	return ret;
 }
 
-void GSEC_print_status(const ISC_STATUS* status_vector, bool exitOnError)
+void GSEC_print_status(const ISC_STATUS* status_vector)
 {
 /**************************************
  *
@@ -1264,84 +1235,46 @@ void GSEC_print_status(const ISC_STATUS* status_vector, bool exitOnError)
 		const char* nl = vector[0] == isc_arg_interpreted ? "" : "\n";
 		if (fb_interpret(s, sizeof(s), &vector)) {
 			TRANSLATE_CP(s);
-			int exitCode = util_print("%s%s", s, nl);
-			if (exitOnError && exitCode != 0) {
-				gsec_exit(exitCode, tsec::getSpecific());
-			}
+			util_output("%s%s", s, nl);
 			while (fb_interpret(s, sizeof(s), &vector)) {
 				TRANSLATE_CP(s);
-				exitCode = util_print("%s%s", s, nl);
-				if (exitOnError && exitCode != 0) {
-					gsec_exit(exitCode, tsec::getSpecific());
-				}
+				util_output("%s%s", s, nl);
 			}
 		}
 	}
 }
 
-static int vutil_print(const SCHAR* format, va_list arglist)
+static void util_output( const SCHAR* format, ...)
 {
 /**************************************
  *
- *	v u t i l _ p r i n t
+ *	u t i l _ o u t p u t
  *
  **************************************
  *
  * Functional description
  *	Platform independent output routine.
- *  Varargs function.
  *
  **************************************/
+	int exit_code;
+
 	tsec* tdsec = tsec::getSpecific();
 
-	Firebird::string buf;
-	buf.vprintf(format, arglist);
-	
-	return tdsec->tsec_output_proc(tdsec->tsec_output_data, (UCHAR*)(buf.c_str()));
-}
-
-static void util_output(const SCHAR* format, ...)
-{
-/**************************************
- *
- *	u t i l _ o u t p u t
- *
- **************************************
- *
- * Functional description
- *	Platform independent output routine.
- *  Exit on output error
- *
- **************************************/
-	va_list arglist;
-	va_start(arglist, format);
-	int exit_code = vutil_print(format, arglist);
-	va_end(arglist);
-
-	if (exit_code != 0) 
-	{
-		gsec_exit(exit_code, tsec::getSpecific());
+	if (format[0] == '\0') {
+		exit_code = tdsec->tsec_output_proc(tdsec->tsec_output_data,
+									(UCHAR * )(""));
 	}
-}
+	else {
+		UCHAR buf[1000];
+		va_list arglist;
+		va_start(arglist, format);
+		VSNPRINTF((char *) buf, sizeof(buf), format, arglist);
+		va_end(arglist);
+		exit_code = tdsec->tsec_output_proc(tdsec->tsec_output_data, buf);
+	}
 
-static int util_print(const SCHAR* format, ...)
-{
-/**************************************
- *
- *	u t i l _ o u t p u t
- *
- **************************************
- *
- * Functional description
- *	Platform independent output routine.
- *
- **************************************/
-	va_list arglist;
-	va_start(arglist, format);
-	int exit_code = vutil_print(format, arglist);
-	va_end(arglist);
-
-	return exit_code;
+	if (exit_code != 0)
+		gsec_exit(exit_code, tdsec);
 }
 
 void GSEC_error_redirect(const ISC_STATUS* status_vector,
@@ -1378,8 +1311,8 @@ void GSEC_error(
  *	Format and print an error message, then punt.
  *
  **************************************/
-	tsec* tdsec = tsec::getSpecific();
 #ifdef SERVICE_THREAD
+	tsec* tdsec = tsec::getSpecific();
 	ISC_STATUS* status = tdsec->tsec_service_blk->svc_status;
 
 	CMD_UTIL_put_svc_status(status, GSEC_MSG_FAC, errcode,
@@ -1388,6 +1321,8 @@ void GSEC_error(
 							isc_arg_string, arg3,
 							isc_arg_string, arg4, isc_arg_string, arg5);
 	tdsec->tsec_service_blk->svc_started();
+#else
+	tsec* tdsec = tsec::getSpecific();
 #endif
 
 	GSEC_print(errcode, arg1, arg2, arg3, arg4, arg5);

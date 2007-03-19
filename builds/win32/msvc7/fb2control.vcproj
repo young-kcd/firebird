@@ -17,7 +17,7 @@
 			OutputDirectory=".\..\..\..\temp\release\fb2control"
 			IntermediateDirectory=".\..\..\..\temp\release\fb2control"
 			ConfigurationType="2"
-			UseOfMFC="2"
+			UseOfMFC="1"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE"
 			CharacterSet="2">
 			<Tool
@@ -30,8 +30,7 @@
 				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;SUPERSERVER;WINVER=0x400"
 				ExceptionHandling="FALSE"
-				RuntimeLibrary="2"
-				RuntimeTypeInfo="FALSE"
+				RuntimeLibrary="0"
 				UsePrecompiledHeader="2"
 				PrecompiledHeaderFile=".\..\..\..\temp\release\fb2control/fb2control.pch"
 				AssemblerListingLocation=".\..\..\..\temp\release\fb2control/"
@@ -90,7 +89,7 @@
 			OutputDirectory=".\..\..\..\temp\debug\fb2control"
 			IntermediateDirectory=".\..\..\..\temp\debug\fb2control"
 			ConfigurationType="2"
-			UseOfMFC="2"
+			UseOfMFC="1"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE"
 			CharacterSet="2">
 			<Tool
@@ -101,8 +100,7 @@
 				PreprocessorDefinitions="_DEBUG;_WINDOWS;WIN32;DEV_BUILD;_USRDLL;CPL_APPLET;WINVER=0x400"
 				ExceptionHandling="FALSE"
 				BasicRuntimeChecks="3"
-				RuntimeLibrary="3"
-				RuntimeTypeInfo="FALSE"
+				RuntimeLibrary="1"
 				AssemblerListingLocation=".\..\..\..\temp\debug\fb2control/"
 				ObjectFile=".\..\..\..\temp\debug\fb2control/"
 				ProgramDataBaseFileName=".\..\..\..\temp\debug\fb2control/"

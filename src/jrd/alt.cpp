@@ -47,7 +47,6 @@
 
 #include "../jrd/event.h"
 #include "../jrd/alt_proto.h"
-#include "../jrd/constants.h"
 
 #if !defined(SUPERSERVER) || defined(EMBEDDED) || defined(SUPERCLIENT)
 #if !defined(BOOT_BUILD)
@@ -118,9 +117,8 @@ SLONG API_ROUTINE_VARARG isc_event_block(UCHAR** event_buffer,
 		const char* q = va_arg(ptr, SCHAR *);
 
 		/* Strip the blanks from the ends */
-		const char* end = q + strlen(q);
-		while (--end >= q && *end == ' ')
-			;
+		const char* end;
+		for (end = q + strlen(q); --end >= q && *end == ' ';);
 		*p++ = end - q + 1;
 		while (q <= end)
 			*p++ = *q++;
@@ -165,9 +163,8 @@ const int MAX_NAME_LENGTH		= 31;
 		const TEXT* const q = *nb++;
 
 		/* Strip trailing blanks from string */
-		const char* end = q + MAX_NAME_LENGTH;
-		while (--end >= q && *end == ' ')
-			;
+		const char* end;
+		for (end = q + MAX_NAME_LENGTH; --end >= q && *end == ' ';);
 		length += end - q + 1 + 5;
 	}
 
@@ -199,9 +196,8 @@ const int MAX_NAME_LENGTH		= 31;
 		const TEXT* q = *nb++;
 
 		/* Strip trailing blanks from string */
-		const char* end = q + MAX_NAME_LENGTH;
-		while (--end >= q && *end == ' ')
-			;
+		const char* end;
+		for (end = q + MAX_NAME_LENGTH; --end >= q && *end == ' ';);
 		*p++ = end - q + 1;
 		while (q <= end)
 			*p++ = *q++;
@@ -243,17 +239,20 @@ ISC_STATUS API_ROUTINE_VARARG gds__start_transaction(
 												 FB_API_HANDLE* tra_handle,
 												 SSHORT count, ...)
 {
-	// This infamous structure is defined several times in different places
-	struct teb_t {
-		FB_API_HANDLE* teb_database;
-		int teb_tpb_length;
-		UCHAR* teb_tpb;
-	};
+// This infamous structure is defined several times in different places/
+struct teb_t {
+	FB_API_HANDLE* teb_database;
+	int teb_tpb_length;
+	UCHAR* teb_tpb;
+};
 
 	teb_t tebs[16];
-	teb_t* teb = tebs;
+	teb_t* teb;
+	va_list ptr;
 
-	if (count > FB_NELEM(tebs))
+	if (count <= FB_NELEM(tebs))
+		teb = tebs;
+	else
 		teb = (teb_t*) gds__alloc(((SLONG) sizeof(teb_t) * count));
 	/* FREE: later in this module */
 
@@ -265,7 +264,6 @@ ISC_STATUS API_ROUTINE_VARARG gds__start_transaction(
 	}
 
 	const teb_t* const end = teb + count;
-	va_list ptr;
 	va_start(ptr, count);
 
 	for (teb_t* teb_iter = teb; teb_iter < end; ++teb_iter) {
@@ -384,7 +382,7 @@ ISC_STATUS API_ROUTINE gds__create_database(ISC_STATUS* status_vector,
 
 ISC_STATUS API_ROUTINE gds__database_cleanup(ISC_STATUS * status_vector,
 										FB_API_HANDLE* db_handle,
-										AttachmentCleanupRoutine *routine, void* arg)
+										DatabaseCleanupRoutine *routine, void* arg)
 {
 
 	return isc_database_cleanup(status_vector, db_handle, routine, arg);

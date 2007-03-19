@@ -46,7 +46,7 @@
 #include "../jrd/ext.h"
 #include "../jrd/tra.h"
 #include "gen/iberror.h"
-#include "../jrd/cmp_proto.h"
+#include "../jrd/all_proto.h"
 #include "../jrd/err_proto.h"
 #include "../jrd/ext_proto.h"
 #include "../jrd/gds_proto.h"
@@ -54,6 +54,7 @@
 #include "../jrd/mov_proto.h"
 #include "../jrd/thd.h"
 #include "../jrd/vio_proto.h"
+#include "../jrd/dls_proto.h"
 #include "../common/config/config.h"
 #include "../common/config/dir_list.h"
 #include "../jrd/os/path_utils.h"
@@ -112,7 +113,7 @@ void EXT_close(RecordSource* rsb)
 }
 
 
-void EXT_erase(record_param* rpb, jrd_tra* transaction)
+void EXT_erase(record_param* rpb, int* transaction)
 {
 /**************************************
  *
@@ -253,12 +254,8 @@ bool EXT_get(RecordSource* rsb)
 	UCHAR* p = record->rec_data + offset;
 	SSHORT l = record->rec_length - offset;
 
-	// hvlad: fseek will flush file buffer and degrade performance, so don't 
-	// call it if it is not necessary. Note that we must flush file buffer if we 
-	// do read after write
-	if (file->ext_ifi == 0 || 
-		( (ftell(file->ext_ifi) != rpb->rpb_ext_pos || !(file->ext_flags & EXT_last_read)) &&
-		 (fseek(file->ext_ifi, rpb->rpb_ext_pos, 0) != 0)) )
+	if (file->ext_ifi == 0 ||
+		(fseek(file->ext_ifi, rpb->rpb_ext_pos, 0) != 0))
 	{
 		ERR_post(isc_io_error,
 				 isc_arg_string, "fseek",
@@ -267,13 +264,13 @@ bool EXT_get(RecordSource* rsb)
 				 isc_arg_gds, isc_io_open_err, SYS_ERR, errno, 0);
 	}
 
-	if (!fread(p, l, 1, file->ext_ifi))
-		return false;
-
-	rpb->rpb_ext_pos += l;
-
-	file->ext_flags |= EXT_last_read;
-	file->ext_flags &= ~EXT_last_write;
+	while (l--) {
+		const SSHORT c = getc(file->ext_ifi);
+		if (c == EOF)
+			return false;
+		*p++ = c;
+	}
+	rpb->rpb_ext_pos = ftell(file->ext_ifi);
 
 /* Loop thru fields setting missing fields to either blanks/zeros
    or the missing value */
@@ -303,7 +300,7 @@ bool EXT_get(RecordSource* rsb)
 }
 
 
-void EXT_modify(record_param* old_rpb, record_param* new_rpb, jrd_tra* transaction)
+void EXT_modify(record_param* old_rpb, record_param* new_rpb, int* transaction)
 {
 /**************************************
  *
@@ -406,11 +403,15 @@ if (opt->opt_count)
 	}
 */
 
+
 	RecordSource* rsb = FB_NEW_RPT(*tdbb->getDefaultPool(), 0) RecordSource;
 	rsb->rsb_type = rsb_ext_sequential;
+	const SSHORT size = sizeof(irsb);
+
 	rsb->rsb_stream = stream;
 	rsb->rsb_relation = relation;
-	rsb->rsb_impure = CMP_impure(csb, sizeof(irsb));
+	rsb->rsb_impure = csb->csb_impure;
+	csb->csb_impure += size;
 
 	return rsb;
 }
@@ -431,7 +432,7 @@ void EXT_ready(jrd_rel* relation)
 }
 
 
-void EXT_store(record_param* rpb, jrd_tra* transaction)
+void EXT_store(record_param* rpb, int* transaction)
 {
 /**************************************
  *
@@ -443,8 +444,6 @@ void EXT_store(record_param* rpb, jrd_tra* transaction)
  *	Update an external file.
  *
  **************************************/
-	thread_db* tdbb = JRD_get_thread_data();
-
 	jrd_rel* relation = rpb->rpb_relation;
 	ExternalFile* file = relation->rel_file;
 	Record* record = rpb->rpb_record;
@@ -456,7 +455,7 @@ void EXT_store(record_param* rpb, jrd_tra* transaction)
 /* check if file is read only if read only then
    post error we cannot write to this file */
 	if (file->ext_flags & EXT_readonly) {
-		Database* dbb = tdbb->tdbb_database;
+		Database* dbb = GET_DBB();
 		CHECK_DBB(dbb);
 		/* Distinguish error message for a ReadOnly database */
 		if (dbb->dbb_flags & DBB_read_only)
@@ -483,11 +482,11 @@ void EXT_store(record_param* rpb, jrd_tra* transaction)
 			TEST_NULL(record, i))
 		{
 			UCHAR* p = record->rec_data + (IPTR) desc_ptr->dsc_address;
-			Literal* literal = (Literal*) field->fld_missing_value;
+			const Literal* literal = (Literal*) field->fld_missing_value;
 			if (literal) {
 				desc = *desc_ptr;
 				desc.dsc_address = p;
-				MOV_move(tdbb, &literal->lit_desc, &desc);
+				MOV_move(&literal->lit_desc, &desc);
 			}
 			else {
 				const UCHAR pad = (desc_ptr->dsc_dtype == dtype_text) ? ' ' : 0;
@@ -500,27 +499,16 @@ void EXT_store(record_param* rpb, jrd_tra* transaction)
 	const UCHAR* p = record->rec_data + offset;
 	USHORT l = record->rec_length - offset;
 
-	// hvlad: fseek will flush file buffer and degrade performance, so don't 
-	// call it if it is not necessary.	Note that we must flush file buffer if we 
-	// do write after read
-	if (file->ext_ifi == 0 || 
-		(!(file->ext_flags & EXT_last_write) && fseek(file->ext_ifi, (SLONG) 0, 2) != 0) )
+	if (file->ext_ifi == 0
+		|| (fseek(file->ext_ifi, (SLONG) 0, 2) != 0))
 	{
 		ERR_post(isc_io_error, isc_arg_string, "fseek", isc_arg_string,
 				 ERR_cstring(reinterpret_cast<const char*>(file->ext_filename)),
 				 isc_arg_gds, isc_io_open_err, SYS_ERR, errno, 0);
 	}
-
-	if (!fwrite(p, l, 1, file->ext_ifi))
-	{
-		ERR_post(isc_io_error, isc_arg_string, "fwrite", isc_arg_string,
-				 ERR_cstring(reinterpret_cast<const char*>(file->ext_filename)),
-				 isc_arg_gds, isc_io_open_err, SYS_ERR, errno, 0);
-	}
-
-	// fflush(file->ext_ifi);
-	file->ext_flags |= EXT_last_write;
-	file->ext_flags &= ~EXT_last_read;
+	for (; l--; ++p)
+		putc(*p, file->ext_ifi);
+	fflush(file->ext_ifi);
 }
 
 

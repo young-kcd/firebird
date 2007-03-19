@@ -1,5 +1,5 @@
 /*
- *      PROGRAM:        Firebird server manager
+ *      PROGRAM:        InterBase server manager
  *      MODULE:         srvrmgr_proto.h
  *      DESCRIPTION:    Prototype header file for srvrmgr.cpp
  *
