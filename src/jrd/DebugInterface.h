@@ -107,4 +107,4 @@ struct DbgInfo
 void DBG_parse_debug_info(Jrd::thread_db*, Jrd::bid*, Firebird::DbgInfo&);
 void DBG_parse_debug_info(USHORT, const UCHAR*, Firebird::DbgInfo&);
 
-#endif //DEBUG_INTERFACE_H
+#endif // DEBUG_INTERFACE_H

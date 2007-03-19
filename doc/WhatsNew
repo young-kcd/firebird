@@ -383,7 +383,7 @@
         Claudio Valderrama <cvalde at usa.net>
 
      * INTL improvements (unregistered)
-        1) Ability to use: ICU charsets through fbintl
+        1) Ability to use ICU charsets through fbintl
         2) UNICODE collation (charset_UNICODE) is available for all fbintl charsets
         3) Collation attributes
         4) CREATE/DROP COLLATION statements
