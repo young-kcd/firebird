@@ -3395,6 +3395,11 @@ void MET_release_existence( jrd_rel* relation)
 		if (relation->rel_flags & REL_blocking) {
 			LCK_re_post(relation->rel_existence_lock);
 		}
+		
+		if (relation->rel_file) {
+			// close external file
+			EXT_fini(relation, true);
+		}
 	}
 }
 

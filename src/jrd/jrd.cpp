@@ -6377,7 +6377,7 @@ static void shutdown_database(Database* dbb, const bool release_pools)
 		{
 			if (*ptr && (*ptr)->rel_file)
 			{
-				EXT_fini(*ptr);
+				EXT_fini(*ptr, false);
 			}
 		}
 	}

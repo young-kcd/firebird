@@ -513,7 +513,7 @@ void RSE_open(thread_db* tdbb, RecordSource* rsb)
 		case rsb_ext_sequential:
 		case rsb_ext_indexed:
 		case rsb_ext_dbkey:
-			EXT_open(rsb);
+			EXT_open(tdbb, rsb);
 			return;
 
 		case rsb_virt_sequential:
@@ -2417,7 +2417,7 @@ static bool get_record(thread_db*	tdbb,
 	case rsb_ext_sequential:
 	case rsb_ext_indexed:
 	case rsb_ext_dbkey:
-		if (!EXT_get(rsb))
+		if (!EXT_get(tdbb, rsb))
 		{
 			rpb->rpb_number.setValid(false);
 			return false;

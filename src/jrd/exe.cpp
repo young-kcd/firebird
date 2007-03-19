@@ -3623,7 +3623,7 @@ static jrd_nod* store(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 		cleanup_rpb(tdbb, rpb);
 
 		if (relation->rel_file) {
-			EXT_store(rpb, transaction);
+			EXT_store(tdbb, rpb, transaction);
 		}
 		else if (relation->isVirtual()) {
 			VirtualTable::store(tdbb, rpb);

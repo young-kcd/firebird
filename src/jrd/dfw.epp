@@ -3014,7 +3014,7 @@ static bool delete_relation(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 		}
 #endif
 		if (relation->rel_file) {
-		    EXT_fini (relation);
+		    EXT_fini (relation, false);
 		}
 
 		RelationPages* relPages = relation->getBasePages();

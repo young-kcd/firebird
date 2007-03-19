@@ -61,8 +61,18 @@
 
 using namespace Jrd;
 
+
 namespace {
-	FILE *ext_fopen(const char *filename, const char *mode);
+
+#ifdef WIN_NT
+	static const char* FOPEN_TYPE		= "a+b";
+	static const char* FOPEN_READ_ONLY	= "rb";
+#else
+	static const char* FOPEN_TYPE		= "a+";
+	static const char* FOPEN_READ_ONLY	= "rb";
+#endif
+
+	FILE *ext_fopen(Database* dbb, ExternalFile* ext_file);
 
 	class ExternalFileDirectoryList : public Firebird::DirectoryList
 	{
@@ -78,24 +88,42 @@ namespace {
 	};
 	Firebird::InitInstance<ExternalFileDirectoryList> iExternalFileDirectoryList;
 
-	FILE *ext_fopen(const char *filename, const char *mode) {
-		if (!iExternalFileDirectoryList().isPathInList(filename))
+	FILE *ext_fopen(Database* dbb, ExternalFile* ext_file) 
+	{
+		const char* file_name = (char*) &ext_file->ext_filename[0];
+
+		if (!iExternalFileDirectoryList().isPathInList(file_name))
 			ERR_post(isc_conf_access_denied,
 				isc_arg_string, "external file",
-				isc_arg_string, ERR_cstring(filename),
+				isc_arg_string, ERR_cstring(file_name),
 				isc_arg_end);
 
-		return fopen(filename, mode);
+		// If the database is updateable, then try opening the external files in
+		// RW mode. If the DB is ReadOnly, then open the external files only in
+		// ReadOnly mode, thus being consistent.
+		if (!(dbb->dbb_flags & DBB_read_only))
+			ext_file->ext_ifi = fopen(file_name, FOPEN_TYPE);
+
+		if (!ext_file->ext_ifi)
+		{
+			// could not open the file as read write attempt as read only 
+			if (!(ext_file->ext_ifi = fopen(file_name, FOPEN_READ_ONLY)))
+			{
+				ERR_post(isc_io_error,
+						isc_arg_string, "fopen",
+						isc_arg_string,
+						ERR_cstring(file_name),
+						isc_arg_gds, isc_io_open_err, SYS_ERR, errno, 0);
+			}
+			else {
+				ext_file->ext_flags |= EXT_readonly;
+			}
+		}
+
+		return ext_file->ext_ifi;
 	}
 } // namespace
 
-#ifdef WIN_NT
-static const char* FOPEN_TYPE		= "a+b";
-static const char* FOPEN_READ_ONLY	= "rb";
-#else
-static const char* FOPEN_TYPE		= "a+";
-static const char* FOPEN_READ_ONLY	= "rb";
-#endif
 
 void EXT_close(RecordSource* rsb)
 {
@@ -148,7 +176,7 @@ ExternalFile* EXT_file(jrd_rel* relation, const TEXT* file_name, bid* descriptio
 /* if we already have a external file associated with this relation just
  * return the file structure */
 	if (relation->rel_file) {
-		EXT_fini(relation);
+		EXT_fini(relation, false);
 	}
 
 #ifdef WIN_NT
@@ -175,33 +203,11 @@ ExternalFile* EXT_file(jrd_rel* relation, const TEXT* file_name, bid* descriptio
 	file->ext_flags = 0;
 	file->ext_ifi = NULL;
 
-/* If the database is updateable, then try opening the external files in
- * RW mode. If the DB is ReadOnly, then open the external files only in
- * ReadOnly mode, thus being consistent.
- */
-	if (!(dbb->dbb_flags & DBB_read_only))
-		file->ext_ifi = ext_fopen(file_name, FOPEN_TYPE);
-	if (!(file->ext_ifi))
-	{
-		/* could not open the file as read write attempt as read only */
-		if (!(file->ext_ifi = ext_fopen(file_name, FOPEN_READ_ONLY)))
-		{
-			ERR_post(isc_io_error,
-					 isc_arg_string, "fopen",
-					 isc_arg_string,
-					 ERR_cstring(reinterpret_cast<const char*>(file->ext_filename)),
-					isc_arg_gds, isc_io_open_err, SYS_ERR, errno, 0);
-		}
-		else {
-			file->ext_flags |= EXT_readonly;
-		}
-	}
-
 	return file;
 }
 
 
-void EXT_fini(jrd_rel* relation)
+void EXT_fini(jrd_rel* relation, bool close_only)
 {
 /**************************************
  *
@@ -216,15 +222,22 @@ void EXT_fini(jrd_rel* relation)
 	if (relation->rel_file) {
 		ExternalFile* file = relation->rel_file;
 		if (file->ext_ifi)
+		{
 			fclose(file->ext_ifi);
-		/* before zeroing out the rel_file we need to deallocate the memory */
-		delete file;
-		relation->rel_file = 0;
+			file->ext_ifi = NULL;
+		}
+
+		// before zeroing out the rel_file we need to deallocate the memory 
+		if (!close_only)
+		{
+			delete file;
+			relation->rel_file = 0;
+		}
 	}
 }
 
 
-bool EXT_get(RecordSource* rsb)
+bool EXT_get(thread_db* tdbb, RecordSource* rsb)
 {
 /**************************************
  *
@@ -236,14 +249,16 @@ bool EXT_get(RecordSource* rsb)
  *	Get a record from an external file.
  *
  **************************************/
- 	thread_db* tdbb = JRD_get_thread_data();
-
 	jrd_rel* relation = rsb->rsb_relation;
 	ExternalFile* file = relation->rel_file;
 	jrd_req* request = tdbb->tdbb_request;
 
 	if (request->req_flags & req_abort)
 		return false;
+
+	if (!file->ext_ifi) {
+		ext_fopen(tdbb->tdbb_database, file);
+	}
 
 	record_param* rpb = &request->req_rpb[rsb->rsb_stream];
 	Record* record = rpb->rpb_record;
@@ -287,7 +302,7 @@ bool EXT_get(RecordSource* rsb)
 	{
 	    const jrd_fld* field = *itr;
 		SET_NULL(record, i);
-		if (!desc_ptr->dsc_length || !field)
+		if (!desc_ptr->dsc_length || !field) 
 			continue;
 		const Literal* literal = (Literal*) field->fld_missing_value;
 		if (literal) {
@@ -321,7 +336,7 @@ void EXT_modify(record_param* old_rpb, record_param* new_rpb, jrd_tra* transacti
 }
 
 
-void EXT_open(RecordSource* rsb)
+void EXT_open(thread_db* tdbb, RecordSource* rsb)
 {
 /**************************************
  *
@@ -333,11 +348,14 @@ void EXT_open(RecordSource* rsb)
  *	Open a record stream for an external file.
  *
  **************************************/
-	thread_db* tdbb = JRD_get_thread_data();
-
 	jrd_rel* relation = rsb->rsb_relation;
+	ExternalFile* file = relation->rel_file;
 	jrd_req* request = tdbb->tdbb_request;
 	record_param* rpb = &request->req_rpb[rsb->rsb_stream];
+
+	if (!file->ext_ifi) {
+		ext_fopen(tdbb->tdbb_database, file);
+	}
 
 	const Format* format;
 	Record* record = rpb->rpb_record;
@@ -431,7 +449,7 @@ void EXT_ready(jrd_rel* relation)
 }
 
 
-void EXT_store(record_param* rpb, jrd_tra* transaction)
+void EXT_store(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 {
 /**************************************
  *
@@ -443,12 +461,14 @@ void EXT_store(record_param* rpb, jrd_tra* transaction)
  *	Update an external file.
  *
  **************************************/
-	thread_db* tdbb = JRD_get_thread_data();
-
 	jrd_rel* relation = rpb->rpb_relation;
 	ExternalFile* file = relation->rel_file;
 	Record* record = rpb->rpb_record;
 	const Format* format = record->rec_format;
+
+	if (!file->ext_ifi) {
+		ext_fopen(tdbb->tdbb_database, file);
+	}
 
 /* Loop thru fields setting missing fields to either blanks/zeros
    or the missing value */
