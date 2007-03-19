@@ -1,3 +1,9 @@
+2007-03-19 01:28  asfernandes
+
+	* firebird2/: doc/WhatsNew (1.118), src/jrd/DebugInterface.h (1.6):
+
+	Misc
+
 2007-03-17 22:08  asfernandes
 
 	* firebird2/extern/icu/source/data/mappings/: ucmcore.mk (1.3),
