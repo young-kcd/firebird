@@ -2,7 +2,6 @@
 ==================================
 Firebird 2.0.1       (Win32 Build)
 ==================================
-(Release Candidate 2)
 
 o Introduction
 o Intended Users

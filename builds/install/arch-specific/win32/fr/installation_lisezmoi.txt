@@ -1,6 +1,5 @@
 Firebird Serveur Bases de données 2.0.1
 ==================================================
-(Release Candidate 1)
 
   ** IMPORTANT **
 
