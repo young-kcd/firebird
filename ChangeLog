@@ -1,3 +1,9 @@
+2007-03-18 18:16  alexpeshkoff
+
+	* firebird2/src/jrd/: sort.cpp (1.79.4.1), sort.h (1.26.4.1):
+
+	Fixes to make firebird2 work on Sparc
+
 2007-03-16 11:24  dimitr
 
 	* firebird2/src/jrd/opt.cpp (1.261.2.10):
