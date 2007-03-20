@@ -3302,7 +3302,7 @@ static SLONG fast_load(thread_db* tdbb,
 				record, isr->isr_key_length);
 
 			// set node values
-			BTreeNode::setNode(&newNode, prefix, isr->isr_key_length - prefix, isr->isr_record_number);
+			BTreeNode::setNode(&newNode, prefix, isr->isr_key_length - prefix, RecordNumber(isr->isr_record_number));
 			newNode.data = record + prefix;
 
 			// If the length of the new node will cause us to overflow the bucket, 

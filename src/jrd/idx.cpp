@@ -475,7 +475,7 @@ void IDX_create_index(
 				p += l;
 			}
 			index_sort_record* isr = (index_sort_record*) p;
-			isr->isr_record_number = primary.rpb_number;
+			isr->isr_record_number = primary.rpb_number.getValue();
 			isr->isr_key_length = key.key_length;
 			isr->isr_flags = (stack.hasData() ? ISR_secondary : 0) | (key_is_null ? ISR_null : 0);
 			if (record != gc_record)
