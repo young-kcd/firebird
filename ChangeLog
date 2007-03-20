@@ -1,3 +1,26 @@
+2007-03-19 18:26  alexpeshkoff
+
+	* firebird2/builds/posix/: prefix.linux_generic (1.2.4.1),
+	prefix.linux_ppc (1.1.2.2):
+
+	let this platforms also have correct debug info
+
+2007-03-19 16:38  paul_reeves
+
+	* firebird2/builds/install/arch-specific/win32/: Readme.txt
+	(1.9.2.7), installation_readme.txt (1.9.2.9),
+	ba/Instalacija_ProcitajMe.txt (1.4.4.3), ba/ProcitajMe.txt
+	(1.2.4.3), de/installation_liesmich.txt (1.3.4.3), de/liesmich.txt
+	(1.3.4.3), es/leame.txt (1.1.6.4), es/leame_instalacion.txt
+	(1.1.6.3), fr/installation_lisezmoi.txt (1.1.6.3), fr/lisezmoi.txt
+	(1.1.6.4), hu/olvass_el.txt (1.1.6.4), hu/telepitesi_segedlet.txt
+	(1.1.6.4), it/leggimi.txt (1.1.2.5), it/leggimi_installazione.txt
+	(1.1.2.3), pl/czytajto.txt (1.2.4.4), pl/instalacja_czytajto.txt
+	(1.3.4.4), pt/instalacao_leia-me.txt (1.3.2.4), pt/leia-me.txt
+	(1.2.2.3):
+
+	Remove references to RC2
+
 2007-03-18 18:16  alexpeshkoff
 
 	* firebird2/src/jrd/: sort.cpp (1.79.4.1), sort.h (1.26.4.1):
