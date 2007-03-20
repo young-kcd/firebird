@@ -75,7 +75,7 @@ Monitoring tables
     MON$ATTACHMENTS (connected attachments)
       - MON$ATTACHMENT_ID (attachment ID)
       - MON$SERVER_PID (server process ID)
-      - MON$ATTACHMENT_STATE (attachment state)
+      - MON$STATE (attachment state)
           0: idle
           1: active
       - MON$ATTACHMENT_NAME (connection string)
@@ -91,7 +91,7 @@ Monitoring tables
     MON$TRANSACTIONS (started transactions)
       - MON$TRANSACTION_ID (transaction ID)
       - MON$ATTACHMENT_ID (attachment ID)
-      - MON$TRANSACTION_STATE (transaction state)
+      - MON$STATE (transaction state)
           0: idle
           1: active
       - MON$TIMESTAMP (transaction start date/time)
@@ -115,7 +115,7 @@ Monitoring tables
       - MON$STATEMENT_ID (statement ID)
       - MON$ATTACHMENT_ID (attachment ID)
       - MON$TRANSACTION_ID (transaction ID)
-      - MON$STATEMENT_STATE (statement state)
+      - MON$STATE (statement state)
           0: idle
           1: active
           2: cancelled
@@ -140,7 +140,7 @@ Monitoring tables
         SELECT MON$SERVER_PID
         FROM MON$ATTACHMENTS
         WHERE MON$ATTACHMENT_ID <> CURRENT_CONNECTION
-          AND MON$ATTACHMENT_STATE = 1
+          AND MON$STATE = 1
 
     2) Retrieve information about client applications
         SELECT MON$USER, MON$REMOTE_ADDRESS, MON$REMOTE_PID, MON$TIMESTAMP
@@ -148,7 +148,7 @@ Monitoring tables
         WHERE MON$ATTACHMENT_ID <> CURRENT_CONNECTION
 
     3) Get isolation level of the current transaction
-        SELECT MON$ISOLATION_LEVEL
+        SELECT MON$ISOLATION_MODE
         FROM MON$TRANSACTIONS
         WHERE MON$TRANSACTION_ID = CURRENT_TRANSACTION
 
@@ -157,4 +157,4 @@ Monitoring tables
         FROM MON$ATTACHMENTS ATT
           JOIN MON$STATEMENTS STMT ON ATT.MON$ATTACHMENT_ID = STMT.MON$ATTACHMENT_ID
         WHERE ATT.MON$ATTACHMENT_ID <> CURRENT_CONNECTION
-          AND STMT.MON$STATEMENT_STATE = 1
+          AND STMT.MON$STATE = 1
