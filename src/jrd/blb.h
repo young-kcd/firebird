@@ -60,9 +60,17 @@ struct bid {
 			ULONG bid_quad_high;
 			ULONG bid_quad_low;
 		} bid_quad;
-
-		UINT64 bid_int64;
 	};
+	
+	void setInt64(UINT64 value) {
+	    memcpy(this, &value, sizeof *this);
+	}
+	
+	UINT64 getInt64() const {
+	    UINT64 value;
+	    memcpy(&value, this, sizeof value);
+	    return value;
+	}
 
 	ULONG& bid_temp_id() {
 		// Make sure that compiler packed structure like we wanted

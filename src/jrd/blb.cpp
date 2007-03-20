@@ -331,7 +331,7 @@ void BLB_garbage_collect(
 				EVL_field(0, rec, id, &desc))
 			{
 				const bid* blob = (bid*) desc.dsc_address;
-				bmGoing.set(blob->bid_int64);
+				bmGoing.set(blob->getInt64());
 				cntGoing++;
 			}
 		}
@@ -355,9 +355,9 @@ void BLB_garbage_collect(
 				EVL_field(0, rec, id, &desc))
 			{
 				const bid* blob = (bid*) desc.dsc_address;
-				if (bmGoing.test(blob->bid_int64)) 
+				if (bmGoing.test(blob->getInt64())) 
 				{
-					bmGoing.clear(blob->bid_int64);
+					bmGoing.clear(blob->getInt64());
 					if (!--cntGoing)
 						return;
 				}
@@ -368,10 +368,8 @@ void BLB_garbage_collect(
 	// Get rid of blob
 	if (bmGoing.getFirst()) {
 		do {
-			UINT64 id = bmGoing.current();
-
 			bid blob;
-			blob.bid_int64 = id;
+			blob.setInt64(bmGoing.current());
 
 			delete_blob_id(tdbb, &blob, prior_page, relation);
 		} while (bmGoing.getNext());

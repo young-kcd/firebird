@@ -119,9 +119,10 @@ public:
 
 	void* alloc(SLONG count) {
 		void* result;
-		if (allocated + count <= STATIC_PATTERN_BUFFER) {
+		SLONG localCount = ROUNDUP(count, ALIGNMENT);
+		if (allocated + localCount <= STATIC_PATTERN_BUFFER) {
 			result = allocBuffer + allocated;
-			allocated += count;		
+			allocated += localCount;		
 		}
 		else {
 			result = pool.allocate(count);

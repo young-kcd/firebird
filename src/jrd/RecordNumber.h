@@ -24,7 +24,7 @@
  *  Contributor(s): ______________________________________.
  *
  *
- *  $Id: RecordNumber.h,v 1.5 2005-05-27 22:43:14 asfernandes Exp $
+ *  $Id: RecordNumber.h,v 1.5.4.1 2007-03-20 13:28:40 alexpeshkoff Exp $
  *
  */
 
@@ -86,6 +86,10 @@ public:
 	inline SINT64 getValue() const { return value; }
 
 	inline void setValue(SINT64 avalue) { value = avalue; }
+
+	inline void getValueToPtr(void* to) const { memcpy(to, &value, sizeof value); }
+
+	inline void setValueFromPtr(void* from) { memcpy(&value, from, sizeof value); }
 
 	bool isBof() const { return value == BOF_NUMBER; }
 
