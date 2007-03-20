@@ -1,3 +1,20 @@
+2007-03-19 22:34  hvlad
+
+	* firebird2/src/jrd/: dfw.epp (1.202), exe.cpp (1.215), ext.cpp
+	(1.72), ext_proto.h (1.17), jrd.cpp (1.315), met.epp (1.219),
+	rse.cpp (1.130):
+
+	Close external table's file when relation is not used by the
+	engine.  This is simplest fix for bug CORE-132 (Restore fails on
+	external table) and CORE-961(Free external tables)
+
+2007-03-19 18:26  alexpeshkoff
+
+	* firebird2/builds/posix/: prefix.linux_generic (1.6),
+	prefix.linux_sparc32 (1.10):
+
+	let this platforms also have correct debug info
+
 2007-03-19 01:28  asfernandes
 
 	* firebird2/: doc/WhatsNew (1.118), src/jrd/DebugInterface.h (1.6):
