@@ -408,6 +408,8 @@
 
     * Feature CORE-964
         Aggregate function LIST (string concatenation)
+      See also:
+        /doc/sql.extensions/README.list
       Contributor(s):
         Dmitry Yemanov <dimitr at firebirdsql.org>
 
