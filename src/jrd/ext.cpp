@@ -231,7 +231,7 @@ void EXT_fini(jrd_rel* relation, bool close_only)
 		if (!close_only)
 		{
 			delete file;
-			relation->rel_file = 0;
+			relation->rel_file = NULL;
 		}
 	}
 }
@@ -256,9 +256,7 @@ bool EXT_get(thread_db* tdbb, RecordSource* rsb)
 	if (request->req_flags & req_abort)
 		return false;
 
-	if (!file->ext_ifi) {
-		ext_fopen(tdbb->tdbb_database, file);
-	}
+	fb_assert(file->ext_ifi);
 
 	record_param* rpb = &request->req_rpb[rsb->rsb_stream];
 	Record* record = rpb->rpb_record;
@@ -271,7 +269,7 @@ bool EXT_get(thread_db* tdbb, RecordSource* rsb)
 	// hvlad: fseek will flush file buffer and degrade performance, so don't 
 	// call it if it is not necessary. Note that we must flush file buffer if we 
 	// do read after write
-	if (file->ext_ifi == 0 || 
+	if (file->ext_ifi == NULL || 
 		( (ftell(file->ext_ifi) != rpb->rpb_ext_pos || !(file->ext_flags & EXT_last_read)) &&
 		 (fseek(file->ext_ifi, rpb->rpb_ext_pos, 0) != 0)) )
 	{
@@ -523,7 +521,7 @@ void EXT_store(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 	// hvlad: fseek will flush file buffer and degrade performance, so don't 
 	// call it if it is not necessary.	Note that we must flush file buffer if we 
 	// do write after read
-	if (file->ext_ifi == 0 || 
+	if (file->ext_ifi == NULL || 
 		(!(file->ext_flags & EXT_last_write) && fseek(file->ext_ifi, (SLONG) 0, 2) != 0) )
 	{
 		ERR_post(isc_io_error, isc_arg_string, "fseek", isc_arg_string,
