@@ -119,7 +119,7 @@ static const XDR::xdr_ops mem_ops =
 static SCHAR zeros[4] = { 0, 0, 0, 0 };
 
 
-bool_t xdr_hyper( XDR * xdrs, SINT64 * pi64)
+bool_t xdr_hyper( XDR * xdrs, void * pi64)
 {
 /**************************************
  *
@@ -141,23 +141,20 @@ bool_t xdr_hyper( XDR * xdrs, SINT64 * pi64)
  *      Handles "swapping" of the 2 long's to be "Endian" sensitive.
  *
  **************************************/
-	union {
-		SINT64 temp_int64;
-		SLONG temp_long[2];
-	} temp;
+	SLONG temp_long[2];
 
 	switch (xdrs->x_op) {
 	case XDR_ENCODE:
-		temp.temp_int64 = *pi64;
+		memcpy(temp_long, pi64, sizeof temp_long);
 #ifndef WORDS_BIGENDIAN
-		if ((*xdrs->x_ops->x_putlong) (xdrs, &temp.temp_long[1]) &&
-			(*xdrs->x_ops->x_putlong) (xdrs, &temp.temp_long[0]))
+		if ((*xdrs->x_ops->x_putlong) (xdrs, &temp_long[1]) &&
+			(*xdrs->x_ops->x_putlong) (xdrs, &temp_long[0]))
 		{
 			return TRUE;
 		}
 #else
-		if ((*xdrs->x_ops->x_putlong) (xdrs, &temp.temp_long[0]) &&
-			(*xdrs->x_ops->x_putlong) (xdrs, &temp.temp_long[1]))
+		if ((*xdrs->x_ops->x_putlong) (xdrs, &temp_long[0]) &&
+			(*xdrs->x_ops->x_putlong) (xdrs, &temp_long[1]))
 		{
 			return TRUE;
 		}
@@ -166,19 +163,19 @@ bool_t xdr_hyper( XDR * xdrs, SINT64 * pi64)
 
 	case XDR_DECODE:
 #ifndef WORDS_BIGENDIAN
-		if (!(*xdrs->x_ops->x_getlong) (xdrs, &temp.temp_long[1]) ||
-			!(*xdrs->x_ops->x_getlong) (xdrs, &temp.temp_long[0]))
+		if (!(*xdrs->x_ops->x_getlong) (xdrs, &temp_long[1]) ||
+			!(*xdrs->x_ops->x_getlong) (xdrs, &temp_long[0]))
 		{
 			return FALSE;
 		}
 #else
-		if (!(*xdrs->x_ops->x_getlong) (xdrs, &temp.temp_long[0]) ||
-			!(*xdrs->x_ops->x_getlong) (xdrs, &temp.temp_long[1]))
+		if (!(*xdrs->x_ops->x_getlong) (xdrs, &temp_long[0]) ||
+			!(*xdrs->x_ops->x_getlong) (xdrs, &temp_long[1]))
 		{
 			return FALSE;
 		}
 #endif
-		*pi64 = temp.temp_int64;
+		memcpy(pi64, temp_long, sizeof temp_long);
 		return TRUE;
 
 	case XDR_FREE:

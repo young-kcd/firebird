@@ -47,7 +47,7 @@ bool_t	xdr_u_long (XDR *, ULONG *);
 bool_t	xdr_u_short (XDR *, u_short *);
 int		xdr_union (XDR *, enum xdr_op *, SCHAR *, struct xdr_discrim *, xdrproc_t);
 bool_t	xdr_wrapstring (XDR *, SCHAR **);
-bool_t	xdr_hyper(XDR *, SINT64 *);
+bool_t	xdr_hyper(XDR *, void *);
 
 #endif	/* REMOTE_XDR_PROTO_H */
 
