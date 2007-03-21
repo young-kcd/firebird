@@ -1,3 +1,13 @@
+2007-03-20 14:28  alexpeshkoff
+
+	* firebird2/src/jrd/: RecordNumber.h (1.5.4.1), blb.cpp
+	(1.117.2.1), blb.h (1.22.4.1), evl_string.h (1.22.4.2), rse.cpp
+	(1.104.2.4):
+
+	Second part of sparc-related changes.  It solves most of problems,
+	detected by FbTcs, except remote protocol and may be compatibility
+	with ODS10.
+
 2007-03-19 18:26  alexpeshkoff
 
 	* firebird2/builds/posix/: prefix.linux_generic (1.2.4.1),
