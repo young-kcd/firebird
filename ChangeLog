@@ -1,3 +1,49 @@
+2007-03-20 19:02  hvlad
+
+	* firebird2/src/jrd/: btr.cpp (1.189), btr.h (1.44), idx.cpp
+	(1.123):
+
+	Let store plain 64-bit record number in index_sort_record (and in
+	sort scratch file) and became independent of additional fields of
+	RecordNumber class.  Also pack index_sort_record structure to avoid
+	compiler added padding which unnecessary grow sort scratch file
+
+2007-03-20 15:26  hvlad
+
+	* firebird2/src/jrd/ext.cpp (1.73):
+
+	Misc (replace 0 by NULL when necessary)
+
+2007-03-20 14:25  paul_reeves
+
+	*
+	firebird2/builds/install/arch-specific/win32/BuildExecutableInstall.bat
+	(1.21):
+
+	Don't include fbrmclib.dll in standard kits until we a) agree
+	otherwise, and b) produce an x64 library.
+
+2007-03-20 14:11  paul_reeves
+
+	*
+	firebird2/builds/install/arch-specific/win32/BuildExecutableInstall.bat
+	(1.20):
+
+	Include the Fb 2.1 pdf file in the Windows kits.
+
+2007-03-20 14:01  paul_reeves
+
+	* firebird2/doc/README.monitoring_tables (1.2):
+
+	Bring up-to-date with current table definitions.
+
+2007-03-20 10:18  dimitr
+
+	* firebird2/doc/: sql.extensions/README.list (1.1), WhatsNew
+	(1.119):
+
+	Docs.
+
 2007-03-19 22:34  hvlad
 
 	* firebird2/src/jrd/: dfw.epp (1.202), exe.cpp (1.215), ext.cpp
