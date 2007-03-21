@@ -121,6 +121,16 @@ Monitoring tables
       - MON$TIMESTAMP (statement start date/time)
       - MON$SQL_TEXT (statement text, if appropriate)
 
+    MON$CALL_STACK (call stack of active PSQL requests)
+      - MON$CALL_ID (request ID)
+      - MON$STATEMENT_ID (top-level DSQL statement ID)
+      - MON$CALLER_ID (caller request ID)
+      - MON$OBJECT_NAME (PSQL object name)
+      - MON$OBJECT_TYPE (PSQL object type)
+      - MON$TIMESTAMP (request start date/time)
+      - MON$SOURCE_LINE (SQL source line number)
+      - MON$SOURCE_COLUMN (SQL source column number)
+
   Notes:
     1) Textual descriptions of all "state" and "mode" values can be found
        in the system table RDB$TYPES
@@ -133,6 +143,13 @@ Monitoring tables
       - column MON$SQL_TEXT contains NULL for GDML statements
       - columns MON$TRANSACTION_ID and MON$TIMESTAMP contain valid values
         for active statements only
+
+    4) For table MON$CALL_STACK:
+      - column MON$STATEMENT_ID groups call stacks by the top-level DSQL statement
+        that initiated the call chain. This ID represents an active statement
+        record in the table MON$STATEMENTS.
+      - columns MON$SOURCE_LINE and MON$SOURCE_COLUMN contain line/column information
+        related to the PSQL statement being currently executed
 
   Example(s):
     1) Retrieve IDs of all CS processes loading CPU at the moment
@@ -157,3 +174,20 @@ Monitoring tables
           JOIN MON$STATEMENTS STMT ON ATT.MON$ATTACHMENT_ID = STMT.MON$ATTACHMENT_ID
         WHERE ATT.MON$ATTACHMENT_ID <> CURRENT_CONNECTION
           AND STMT.MON$STATE = 1
+
+    5) Retrieve call stacks for all connections
+        WITH RECURSIVE
+          HEAD AS
+        (
+          SELECT CALL.MON$STATEMENT_ID, CALL.MON$CALL_ID, CALL.MON$OBJECT_NAME, CALL.MON$OBJECT_TYPE
+          FROM MON$CALL_STACK CALL
+          WHERE CALL.MON$CALLER_ID IS NULL
+          UNION ALL
+          SELECT CALL.MON$STATEMENT_ID, CALL.MON$CALL_ID, CALL.MON$OBJECT_NAME, CALL.MON$OBJECT_TYPE
+          FROM MON$CALL_STACK CALL
+            JOIN HEAD ON CALL.MON$CALLER_ID = HEAD.MON$CALL_ID
+        )
+        SELECT MON$ATTACHMENT_ID, MON$OBJECT_NAME, MON$OBJECT_TYPE
+        FROM HEAD
+          JOIN MON$STATEMENTS STMT ON STMT.MON$STATEMENT_ID = HEAD.MON$STATEMENT_ID
+        WHERE STMT.MON$ATTACHMENT_ID <> CURRENT_CONNECTION
