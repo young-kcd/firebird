@@ -118,7 +118,6 @@ Monitoring tables
       - MON$STATE (statement state)
           0: idle
           1: active
-          2: cancelled
       - MON$TIMESTAMP (statement start date/time)
       - MON$SQL_TEXT (statement text, if appropriate)
 
