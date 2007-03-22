@@ -431,10 +431,16 @@ set FBBUILD_ZIP_PACK_ROOT=%ROOT_PATH%\builds\zip_pack
 if not exist %FBBUILD_ZIP_PACK_ROOT% @mkdir %FBBUILD_ZIP_PACK_ROOT% 2>nul
 @del /s /q %FBBUILD_ZIP_PACK_ROOT%\ > nul
 @copy /Y %FBBUILD_OUTPUT% %FBBUILD_ZIP_PACK_ROOT% > nul
-for %%v in (bin doc doc\sql.extensions help include intl lib udf examples misc misc\upgrade misc\upgrade\ib_udf misc\upgrade\security system32 ) do (
+for %%v in (bin doc doc\sql.extensions help include intl lib udf misc misc\upgrade misc\upgrade\ib_udf misc\upgrade\security system32 ) do (
 	@mkdir %FBBUILD_ZIP_PACK_ROOT%\%%v 2>nul
 	@copy /Y %FBBUILD_OUTPUT%\%%v\*.* %FBBUILD_ZIP_PACK_ROOT%\%%v\ > nul
 )
+
+@if %FB2_EXAMPLES% equ 1 for %%v in (examples examples\api examples\dyn examples\empbuild examples\include examples\stat examples\udf examples\build_win32 ) do (
+	@mkdir %FBBUILD_ZIP_PACK_ROOT%\%%v 2>nul
+	@copy /Y %FB_OUTPUT_DIR%\%%v\*.* %FBBUILD_ZIP_PACK_ROOT%\%%v\ > nul
+)
+
 :: Now remove stuff that is not needed.
 setlocal
 set RM_FILE_LIST=doc\installation_readme.txt bin\gpre_boot.exe bin\gpre_static.exe bin\gpre_embed.exe bin\gbak_embed.exe bin\isql_embed.exe bin\gds32.dll
