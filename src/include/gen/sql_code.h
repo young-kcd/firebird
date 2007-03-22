@@ -284,7 +284,7 @@ static const struct {
 	{335544581, -204}, /* 261 dsql_procedure_err               */
 	{335544582, -518}, /* 262 dsql_request_err                 */
 	{335544583, -804}, /* 263 dsql_sqlda_err                   */
-	{335544584, 16384}, /* 264 dsql_var_count_err               */
+	{335544584, -804}, /* 264 dsql_var_count_err               */
 	{335544585, -826}, /* 265 dsql_stmt_handle                 */
 	{335544586, -804}, /* 266 dsql_function_err                */
 	{335544587, -206}, /* 267 dsql_blob_err                    */
