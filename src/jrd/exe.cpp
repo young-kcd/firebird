@@ -3064,9 +3064,8 @@ static void release_blobs(thread_db* tdbb, jrd_req* request)
 				const ULONG blob_temp_id = request->req_blobs.current();
 				if (transaction->tra_blobs.locate(blob_temp_id)) {
 					BlobIndex *current = &transaction->tra_blobs.current();
-					if (current->bli_materialized)
-						transaction->tra_blobs.fastRemove();
-					else {
+					if (!current->bli_materialized)
+					{
 						// Blob was created by request, is accounted for internal needs, 
 						// but is not materialized. Get rid of it.
 						BLB_cancel(tdbb, current->bli_blob_object);

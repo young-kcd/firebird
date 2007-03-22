@@ -1261,7 +1261,10 @@ blb* BLB_open2(thread_db* tdbb,
 		return blob;
 	}
 
+	BlobIndex* current = NULL;
+
 	if (!blob_id->bid_internal.bid_relation_id)
+	{
 		if (blob_id->isEmpty())
 		{
 			blob->blb_flags |= BLB_eof;
@@ -1279,36 +1282,42 @@ blb* BLB_open2(thread_db* tdbb,
 			/* Search the index of transaction blobs for a match */
 			const blb* new_blob = NULL;
 			if (transaction->tra_blobs.locate(blob_id->bid_temp_id())) {
-				BlobIndex *current = &transaction->tra_blobs.current();
+				current = &transaction->tra_blobs.current();
 				if (!current->bli_materialized)
 					new_blob = current->bli_blob_object;
+				else
+					blob_id = &current->bli_blob_id;
 			}
 
-			if (!new_blob || !(new_blob->blb_flags & BLB_temporary)) {
-				ERR_post(isc_bad_segstr_id, 0);
-			}
+			if (!current || !current->bli_materialized)
+			{
+				if (!new_blob || !(new_blob->blb_flags & BLB_temporary)) {
+					ERR_post(isc_bad_segstr_id, 0);
+				}
 
-			blob->blb_lead_page = new_blob->blb_lead_page;
-			blob->blb_max_sequence = new_blob->blb_max_sequence;
-			blob->blb_count = new_blob->blb_count;
-			blob->blb_length = new_blob->blb_length;
-			blob->blb_max_segment = new_blob->blb_max_segment;
-			blob->blb_level = new_blob->blb_level;
-			blob->blb_flags = new_blob->blb_flags & BLB_stream;
-			blob->blb_pg_space_id = new_blob->blb_pg_space_id;
-			const vcl* pages = new_blob->blb_pages;
-			if (pages) {
-				vcl* new_pages = vcl::newVector(*transaction->tra_pool, *pages);
-				blob->blb_pages = new_pages;
+				blob->blb_lead_page = new_blob->blb_lead_page;
+				blob->blb_max_sequence = new_blob->blb_max_sequence;
+				blob->blb_count = new_blob->blb_count;
+				blob->blb_length = new_blob->blb_length;
+				blob->blb_max_segment = new_blob->blb_max_segment;
+				blob->blb_level = new_blob->blb_level;
+				blob->blb_flags = new_blob->blb_flags & BLB_stream;
+				blob->blb_pg_space_id = new_blob->blb_pg_space_id;
+				const vcl* pages = new_blob->blb_pages;
+				if (pages) {
+					vcl* new_pages = vcl::newVector(*transaction->tra_pool, *pages);
+					blob->blb_pages = new_pages;
+				}
+				if (blob->blb_level == 0) {
+					blob->blb_space_remaining =
+						new_blob->blb_clump_size - new_blob->blb_space_remaining;
+					blob->blb_segment =
+						(UCHAR *) ((blob_page*) new_blob->blb_data)->blp_page;
+				}
+				return blob;
 			}
-			if (blob->blb_level == 0) {
-				blob->blb_space_remaining =
-					new_blob->blb_clump_size - new_blob->blb_space_remaining;
-				blob->blb_segment =
-					(UCHAR *) ((blob_page*) new_blob->blb_data)->blp_page;
-			}
-			return blob;
 		}
+	}
 
 /* Ordinarily, we would call MET_relation to get the relation id.
    However, since the blob id must be consider suspect, this is
