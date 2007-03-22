@@ -7834,24 +7834,21 @@ static void pass1_udf_args(dsql_req* request, dsql_nod* input,
 {
 	DEV_BLKCHK(request, dsql_type_req);
 	DEV_BLKCHK(input, dsql_type_nod);
-    DEV_BLKCHK (userFunc, dsql_type_udf);
+	DEV_BLKCHK (userFunc, dsql_type_udf);
 
 	if (input->nod_type != nod_list) {
-        dsql_nod* temp = PASS1_node (request, input, proc_flag);
-        dsql_nod* args = userFunc->udf_arguments;
-        if (temp->nod_type == nod_parameter) {
-            if (args && args->nod_count > arg_pos) {
-                set_parameter_type(request, temp, args->nod_arg[arg_pos], false);
-            }
-            else {
-                ;
-                /* We should complain here in the future! The parameter is
-                   out of bounds or the function doesn't declare input params. */
-            }
-        }
-        stack.push(temp);
+		dsql_nod* temp = PASS1_node (request, input, proc_flag);
+		dsql_nod* args = userFunc->udf_arguments;
+		if (args && args->nod_count > arg_pos) {
+			set_parameter_type(request, temp, args->nod_arg[arg_pos], false);
+		}
+		else {
+			// We should complain here in the future! The parameter is
+			// out of bounds or the function doesn't declare input params.
+		}
+		stack.push(temp);
 		arg_pos++;
-        return;
+		return;
 	}
 
 	dsql_nod** ptr = input->nod_arg;
