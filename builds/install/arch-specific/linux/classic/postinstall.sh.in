@@ -63,8 +63,6 @@
     #    replaceLineInFile "$FileName" "$newLine" "$oldLine"
     fi
 
-    updateHostsDotFile
-
     # add Firebird user
     if [ $RunUser = "firebird" ]
       then

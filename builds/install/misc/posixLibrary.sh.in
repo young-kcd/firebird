@@ -423,39 +423,6 @@ changeDBAPassword() {
 
 
 #------------------------------------------------------------------------
-# UpdateHostsDotEquivFile
-# The /etc/hosts.equiv file is needed to allow local access for super server
-# from processes on the machine to port 3050 on the local machine.
-# The two host names that are needed there are 
-# localhost.localdomain and whatever hostname returns.
-
-# Automatically adding /etc/hosts.equiv file was security risk,
-# therefore it was disabled. But in order to let anonymous
-# services operate, we need /etc/gds_hosts.equiv instead.
-# I hope nobody except firebird understands it.
-
-updateHostsDotFile() {
-	hostEquivFile=/etc/gds_hosts.equiv
-
-	if [ ! -f $hostEquivFile ]
-	then
-		touch $hostEquivFile
-		chown root:root $hostEquivFile
-		chmod u=rw,go=r $hostEquivFile
-	fi
-
-	newLine="localhost"
-	replaceLineInFile "$hostEquivFile" "$newLine" "^$newLine\$"
-
-	newLine="localhost.localdomain"
-	replaceLineInFile "$hostEquivFile" "$newLine" "^$newLine\$"
-
-	newLine="`hostname`"
-	replaceLineInFile "$hostEquivFile" "$newLine" "^$newLine\$"
-}
-
-
-#------------------------------------------------------------------------
 #  buildUninstallFile
 #  This will work only for the .tar.gz install and it builds an
 #  uninstall shell script.  The RPM system, if present, takes care of it's own.

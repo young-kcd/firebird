@@ -14,15 +14,6 @@ FBRunUser=firebird
 pidfile=/var/run/firebird/`basename $0`.pid
 FB_OPTS="-pidfile $pidfile -start -forever"
 
-#  NOTE: Normally firebird installation creates /etc/gds_hosts.equiv,
-#  making it possible normal startup procedure to run. 
-#  In case of manually copying, make sure you have localhost in your 
-#  /etc/gds_hosts.equiv (or hosts.equiv) file.
-#  See next 2 lines for example of hosts.equiv contents:
-#localhost.localdomain
-#localhost
-
-
 export FIREBIRD
 
 MANAGER=$FIREBIRD/bin/fbmgr.bin
