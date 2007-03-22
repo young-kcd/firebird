@@ -1,3 +1,10 @@
+2007-03-21 11:51  alexpeshkoff
+
+	* firebird2/src/remote/: protocol.cpp (1.52.2.4), xdr.cpp
+	(1.22.2.4), xdr_proto.h (1.11.12.1):
+
+	Fixed alignment issue in remote on sparc
+
 2007-03-20 14:28  alexpeshkoff
 
 	* firebird2/src/jrd/: RecordNumber.h (1.5.4.1), blb.cpp
