@@ -79,6 +79,8 @@ Usage:
                     |
    CURRENT_ROLE     | Current role for the connection. Returned value is the
                     | same as of CURRENT_ROLE pseudo-variable
+                    |
+   ENGINE_VERSION   | Engine version number, e.g. "2.1.0" (since V2.1)
 
 Notes:
    To prevent DoS attacks against Firebird Server you are not allowed to have
