@@ -41,7 +41,7 @@ they are:
  o Use of domains for Trigger/SP variable definition
  o Numerous monitoring facilities available via
      SQL statements
- o Global temporing tables
+ o Global temporary tables
  o Query termination
  o Unicode collations
  o MERGE and UPDATE or INSERT statements
