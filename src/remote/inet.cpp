@@ -84,6 +84,7 @@
 
 #if !(defined VMS || defined WIN_NT)
 #include <netinet/tcp.h>
+#include <netinet/in.h>
 #include <netdb.h>
 #include <arpa/inet.h>
 /* EKU: SINIX-Z does not define INADDR_NONE */
@@ -1638,6 +1639,10 @@ static int check_host(
 
 	if (getpeername((int) port->port_handle, (struct sockaddr*)&address, &length) == -1)
 		return 0;
+
+	// If source address is in the loopback net - trust it
+	if((ntohl(address.sin_addr.s_addr) >> IN_CLASSA_NSHIFT) == IN_LOOPBACKNET)
+		return 1;
 
 	const struct hostent* host = gethostbyaddr((SCHAR *) & address.sin_addr,
 							   sizeof(address.sin_addr), address.sin_family);
