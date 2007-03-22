@@ -90,7 +90,7 @@ namespace {
 
 	FILE *ext_fopen(Database* dbb, ExternalFile* ext_file) 
 	{
-		const char* file_name = (char*) &ext_file->ext_filename[0];
+		const char* file_name = (char*) ext_file->ext_filename;
 
 		if (!iExternalFileDirectoryList().isPathInList(file_name))
 			ERR_post(isc_conf_access_denied,
