@@ -44,11 +44,9 @@ void RuntimeStatistics::setParent(RuntimeStatistics* p)
 
 void RuntimeStatistics::bumpValue(size_t index)
 {
-	fb_assert(index < values.getCount());
-	values[index]++;
-
-	if (parent) {
-		parent->bumpValue(index);
+	for (RuntimeStatistics* stats = this; stats; stats = stats->parent) {
+		fb_assert(index < stats->values.getCount());
+		stats->values[index]++;
 	}
 }
 
