@@ -1,3 +1,60 @@
+2007-03-22 15:03  robocop
+
+	* firebird2/src/include/gen/sql_code.h (1.66):
+
+	Correct error code (forgot this generated file in the previous
+	commit).
+
+2007-03-22 14:25  alexpeshkoff
+
+	* firebird2/builds/install/:
+	arch-specific/linux/classic/postinstall.sh.in (1.16),
+	arch-specific/linux/misc/firebird.init.d.gentoo.in (1.5),
+	arch-specific/linux/super/postinstall.sh.in (1.11),
+	misc/posixLibrary.sh.in (1.9):
+
+	Removed unneeded any more creation of equiv file
+
+2007-03-22 14:13  alexpeshkoff
+
+	* firebird2/src/remote/inet.cpp (1.184):
+
+	Patch by Damyan Ivanov - accept localhost connections without
+	/etc/host.equiv
+
+2007-03-22 14:07  asfernandes
+
+	* firebird2/doc/sql.extensions/README.context_variables2 (1.6):
+
+	Document the new context variable - thanks to Maicon Ferraça
+
+2007-03-22 13:53  dimitr
+
+	* firebird2/src/dsql/pass1.cpp (1.305):
+
+	Fixed CORE-1175.
+
+2007-03-22 10:26  hvlad
+
+	* firebird2/src/jrd/ext.cpp (1.74):
+
+	Misc
+
+2007-03-22 10:10  paul_reeves
+
+	*
+	firebird2/builds/install/arch-specific/win32/BuildExecutableInstall.bat
+	(1.22):
+
+	Include consts_pub.h in ibase.h Create the examples directories
+	before trying to copy files into them.
+
+2007-03-22 05:20  robocop
+
+	* firebird2/builds/install/arch-specific/win32/Readme.txt (1.12):
+
+	Misc.
+
 2007-03-22 02:42  asfernandes
 
 	* firebird2/src/jrd/: blb.cpp (1.138), exe.cpp (1.216):
