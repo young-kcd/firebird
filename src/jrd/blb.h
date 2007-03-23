@@ -63,8 +63,6 @@ struct bid {
 			ULONG bid_quad_high;
 			ULONG bid_quad_low;
 		} bid_quad;
-
-		UINT64 bid_int64;
 	};
 
 	ULONG& bid_temp_id() {

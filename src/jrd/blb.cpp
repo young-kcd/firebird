@@ -333,7 +333,7 @@ void BLB_garbage_collect(
  **************************************/
 	SET_TDBB(tdbb);
 
-	Firebird::SparseBitmap<UINT64> bmGoing;
+	RecordBitmap bmGoing;
 	ULONG cntGoing = 0;
 
 	// Loop thru records on the way out looking for blobs to garbage collect 
@@ -352,7 +352,8 @@ void BLB_garbage_collect(
 				EVL_field(0, rec, id, &desc))
 			{
 				const bid* blob = (bid*) desc.dsc_address;
-				bmGoing.set(blob->bid_int64);
+				const RecordNumber number = blob->get_permanent_number();
+				bmGoing.set(number.getValue());
 				cntGoing++;
 			}
 		}
@@ -376,9 +377,10 @@ void BLB_garbage_collect(
 				EVL_field(0, rec, id, &desc))
 			{
 				const bid* blob = (bid*) desc.dsc_address;
-				if (bmGoing.test(blob->bid_int64)) 
+				const RecordNumber number = blob->get_permanent_number();
+				if (bmGoing.test(number.getValue())) 
 				{
-					bmGoing.clear(blob->bid_int64);
+					bmGoing.clear(number.getValue());
 					if (!--cntGoing)
 						return;
 				}
@@ -389,10 +391,10 @@ void BLB_garbage_collect(
 	// Get rid of blob
 	if (bmGoing.getFirst()) {
 		do {
-			UINT64 id = bmGoing.current();
+			const UINT64 id = bmGoing.current();
 
 			bid blob;
-			blob.bid_int64 = id;
+			blob.set_permanent(relation->rel_id, RecordNumber(id));
 
 			delete_blob_id(tdbb, &blob, prior_page, relation);
 		} while (bmGoing.getNext());
