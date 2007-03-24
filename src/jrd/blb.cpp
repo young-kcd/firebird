@@ -2453,6 +2453,9 @@ static void move_from_string(thread_db* tdbb, const dsc* from_desc, dsc* to_desc
 	// solely via checking that destination field belongs to updatable
 	// view, but direct check that blob is fully materialized should be
 	// more future proof.
+	// ASF: Blob ID could now be stored in any descriptor of parameters or
+	// variables. - 2007-03-24
+
 	jrd_tra* transaction = tdbb->tdbb_request->req_transaction;
 	if (transaction->tra_blobs.locate(blob_temp_id)) {
 		BlobIndex* current = &transaction->tra_blobs.current();

@@ -1627,7 +1627,7 @@ static int check_host(
  **************************************
  *
  * Functional description
- *	Check the host on the other end of the socket to see it
+ *	Check the host on the other end of the socket to see if
  *	it's an equivalent host.
  * NB.: First check the ~/.rhosts then the HOSTS_FILE - both have
  *	the same line formats (see parse_line)

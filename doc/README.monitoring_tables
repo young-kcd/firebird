@@ -34,7 +34,7 @@ Monitoring tables
 
     System variables CURRENT_CONNECTION and CURRENT_TRANSACTION could be used
     to select data about the current (for the caller) connection and transaction
-    respectfully. These variables correspond to the ID columns of the appropriate
+    respectively. These variables correspond to the ID columns of the appropriate
     monitoring tables.
 
   Security:
