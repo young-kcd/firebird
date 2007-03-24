@@ -3179,7 +3179,7 @@ ISC_STATUS GDS_RECEIVE(ISC_STATUS * user_status,
 #endif
 	
 		EXE_receive(tdbb, request, msg_type, msg_length,
-					reinterpret_cast<UCHAR*>(msg));
+					reinterpret_cast<UCHAR*>(msg), true);
 	
 		check_autocommit(request, tdbb);
 	

@@ -660,7 +660,8 @@ void EXE_receive(thread_db*		tdbb,
 				 jrd_req*		request,
 				 USHORT		msg,
 				 USHORT		length,
-				 UCHAR*		buffer)
+				 UCHAR*		buffer,
+				 bool		top_level)
 {
 /**************************************
  *
@@ -737,6 +738,34 @@ void EXE_receive(thread_db*		tdbb,
 		MOVE_FAST((SCHAR *) request + message->nod_impure, buffer, length);
 	else
 		MOVE_FASTER((SCHAR *) request + message->nod_impure, buffer, length);
+
+	// ASF: temporary blobs returned to the client should not be released
+	// with the request, but in the transaction end.
+	if (top_level)
+	{
+		for (int i = 0; i < format->fmt_count; ++i)
+		{
+			const DSC* desc = &format->fmt_desc[i];
+
+			if (desc->isBlob())
+			{
+				const bid* id = (bid*)
+					((UCHAR*)request + message->nod_impure + (ULONG)(IPTR)desc->dsc_address);
+
+				if (transaction->tra_blobs.locate(id->bid_temp_id()))
+				{
+					BlobIndex* current = &transaction->tra_blobs.current();
+
+					if (current->bli_request &&
+						current->bli_request->req_blobs.locate(id->bid_temp_id()))
+					{
+						current->bli_request->req_blobs.fastRemove();
+						current->bli_request = NULL;
+					}
+				}
+			}
+		}
+	}
 
 	execute_looper(tdbb, request, transaction, jrd_req::req_proceed);
 

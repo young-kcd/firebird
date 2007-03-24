@@ -35,7 +35,7 @@ namespace Jrd {
 void EXE_assignment(Jrd::thread_db*, Jrd::jrd_nod*);
 void EXE_execute_db_triggers(Jrd::thread_db*, Jrd::jrd_tra*, enum Jrd::jrd_req::req_ta);
 Jrd::jrd_req* EXE_find_request(Jrd::thread_db*, Jrd::jrd_req*, bool);
-void EXE_receive(Jrd::thread_db*, Jrd::jrd_req*, USHORT, USHORT, UCHAR*);
+void EXE_receive(Jrd::thread_db*, Jrd::jrd_req*, USHORT, USHORT, UCHAR*, bool = false);
 void EXE_send(Jrd::thread_db*, Jrd::jrd_req*, USHORT, USHORT, const UCHAR*);
 void EXE_start(Jrd::thread_db*, Jrd::jrd_req*, Jrd::jrd_tra*);
 void EXE_unwind(Jrd::thread_db*, Jrd::jrd_req*);

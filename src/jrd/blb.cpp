@@ -2443,10 +2443,6 @@ static void move_from_string(thread_db* tdbb, const dsc* from_desc, dsc* to_desc
 	ULONG blob_temp_id = blob->blb_temp_id;
 	BLB_move(tdbb, &blob_desc, to_desc, field);
 
-	// finish if we're just moving values in descriptors
-	if (!field || field->nod_type != nod_field)
-		return;
-
 	// 14-June-2004. Nickolay Samofatov
 	// The code below saves a lot of memory when bunches of records are
 	// converted to blobs from strings. If BLB_move is materialized blob we
@@ -2479,9 +2475,14 @@ static void move_from_string(thread_db* tdbb, const dsc* from_desc, dsc* to_desc
 		}
 		else {
 			// But even in bad case when we cannot free blob immediately
-			// we may still bind lifetime of blob to current request.
-			if (!current->bli_request) {
-				current->bli_request = tdbb->tdbb_request;
+			// we may still bind lifetime of blob to current top level request.
+			if (!current->bli_request)
+			{
+				jrd_req* blob_request = tdbb->tdbb_request;
+				while (blob_request->req_caller)
+					blob_request = blob_request->req_caller;
+
+				current->bli_request = blob_request;
 				current->bli_request->req_blobs.add(blob_temp_id);
 			}
 		}
