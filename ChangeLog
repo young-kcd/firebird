@@ -1,3 +1,12 @@
+2007-03-23 12:35  dimitr
+
+	* firebird2/src/jrd/: blb.cpp (1.117.2.2), blb.h (1.22.4.2):
+
+	An alternative attempt to fix the alignment issue. We don't need to
+	track the entire blob_id, the record number part is enough. Hence
+	there's no need to read the whole blob_id as int64.  Discussed with
+	Vlad and Alex, tested on SPARC.
+
 2007-03-22 10:26  paul_reeves
 
 	*
