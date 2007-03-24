@@ -1,3 +1,26 @@
+2007-03-24 04:00  asfernandes
+
+	* firebird2/src/jrd/: blb.cpp (1.140), exe.cpp (1.217), exe_proto.h
+	(1.16), jrd.cpp (1.316):
+
+	Don't leak memory after conversion to blob for store the value in a
+	variable or parameter
+
+2007-03-23 14:50  dimitr
+
+	* firebird2/src/jrd/RuntimeStatistics.cpp (1.2):
+
+	Small optimization.
+
+2007-03-23 12:25  dimitr
+
+	* firebird2/src/jrd/: blb.cpp (1.139), blb.h (1.25):
+
+	An alternative attempt to fix the alignment issue. We don't need to
+	track the entire blob_id, the record number part is enough. Hence
+	there's no need to read the whole blob_id as int64.  Discussed with
+	Vlad and Alex, tested on SPARC.
+
 2007-03-22 15:03  robocop
 
 	* firebird2/src/include/gen/sql_code.h (1.66):
