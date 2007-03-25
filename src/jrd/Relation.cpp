@@ -190,8 +190,6 @@ RelationPages* jrd_rel::getPagesInternal(thread_db* tdbb, SLONG tran, bool alloc
 				pool = JrdMemoryPool::createPool();
 			Jrd::ContextPoolHolder context(tdbb, pool);
 
-			SelectivityList selectivity(*pool);
-
 			USHORT idx_id = 0;
 			while (true) 
 			{
@@ -203,6 +201,7 @@ RelationPages* jrd_rel::getPagesInternal(thread_db* tdbb, SLONG tran, bool alloc
 				MET_lookup_index(tdbb, idx_name, this->rel_name, idx_id + 1);
 
 				idx.idx_root = 0;
+				SelectivityList selectivity(*pool);
 				IDX_create_index(tdbb, this, &idx, idx_name.c_str(), NULL, 
 					tdbb->tdbb_transaction, selectivity);
 
