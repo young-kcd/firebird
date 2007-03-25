@@ -24,7 +24,7 @@
  *  Contributor(s): ______________________________________.
  *
  *
- *  $Id: RecordNumber.h,v 1.5.4.1 2007-03-20 13:28:40 alexpeshkoff Exp $
+ *  $Id: RecordNumber.h,v 1.5.4.2 2007-03-25 10:12:36 alexpeshkoff Exp $
  *
  */
 
@@ -39,6 +39,59 @@ const SINT64 BOF_NUMBER = QUADCONST(-1);
 // compiler check errors on our migration path from 32-bit to 64-bit record 
 // numbers.
 class RecordNumber {
+
+public:
+	// Packed record number represents common layout of RDB$DB_KEY and BLOB ID.
+	// To ensure binary compatibility with old (pre-ODS11) databases it differs 
+	// for big- and little-endian machines.
+	class Packed
+	{
+#ifdef WORDS_BIGENDIAN
+	private:
+		UCHAR bid_number_up;				// Upper byte of 40-bit record number
+		UCHAR bid_reserved_for_relation;	// Reserved for future
+	public:
+		USHORT bid_relation_id;				// Relation id (or null)
+	private:
+		ULONG bid_number;					// Lower bytes of 40-bit record number
+											// or 32-bit temporary ID of blob or array
+#else
+	public:
+		USHORT bid_relation_id;		/* Relation id (or null) */
+
+	private:
+		UCHAR bid_reserved_for_relation;	/* Reserved for future expansion of relation space. */
+		UCHAR bid_number_up;				// Upper byte of 40-bit record number
+		ULONG bid_number;					// Lower bytes of 40-bit record number
+											// or 32-bit temporary ID of blob or array
+#endif
+	public:
+		ULONG& bid_temp_id() 
+		{
+			return bid_number;
+		}
+
+		ULONG bid_temp_id() const 
+		{
+			return bid_number;
+		}
+		
+		// Handle encoding of record number for RDB$DB_KEY and BLOB ID structure.
+		// BLOB ID is stored in database thus we do encode large record numbers 
+		// in a manner which preserves backward compatibility with older ODS. 
+		// The same applies to bid_decode routine below.
+		inline void bid_encode(SINT64 value) {
+			// Store lower 32 bits of number
+			bid_number = value;
+			// Store high 8 bits of number
+			bid_number_up = value >> 32;
+		}
+
+		inline SINT64 bid_decode() const {
+			return bid_number + (((UINT64) bid_number_up) << 32);
+		}
+	};
+	
 public:
 	// Default constructor.
 	inline RecordNumber() : value(EMPTY_NUMBER) {}
@@ -86,10 +139,6 @@ public:
 	inline SINT64 getValue() const { return value; }
 
 	inline void setValue(SINT64 avalue) { value = avalue; }
-
-	inline void getValueToPtr(void* to) const { memcpy(to, &value, sizeof value); }
-
-	inline void setValueFromPtr(void* from) { memcpy(&value, from, sizeof value); }
 
 	bool isBof() const { return value == BOF_NUMBER; }
 
@@ -140,25 +189,12 @@ public:
 	}
 
 	// Handle encoding of record number for RDB$DB_KEY and BLOB ID structure.
-	// bid_number array has special alignment requirement - its second byte must
-	// be 4-byte aligned. This is generally not a problem because this routine is
-	// called for BID or DB_KEY structure member which is already aligned 
-	// appropriately.
-	inline void bid_encode(UCHAR* bid_number) const {
-		// BLOB ID is stored in database thus we do encode large record numbers 
-		// in a manner which preserves backward compatibility with older ODS. 
-		// The same applies to bid_decode routine below.
-
-		// Store lower 32 bits of number
-		*reinterpret_cast<ULONG*>(bid_number + 1) = value;
-		// Store high 8 bits of number
-		bid_number[0] = value >> 32;
+	inline void bid_encode(Packed* recno) const {
+		recno->bid_encode(value);
 	}
 
-	inline void bid_decode(const UCHAR* bid_number) {
-		value = 
-			*reinterpret_cast<const ULONG*>(bid_number + 1) +
-			(((UINT64) bid_number[0]) << 32);
+	inline void bid_decode(const Packed* recno) {
+		value = recno->bid_decode();
 	}
 
 private:

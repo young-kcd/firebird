@@ -2548,7 +2548,7 @@ static void map_sort_data(jrd_req* request, SortMap* map, UCHAR * data)
 			if (id == SMB_TRANS_ID)
 				rpb->rpb_transaction_nr = *(SLONG *) (from.dsc_address);
 			else
-				rpb->rpb_number.setValueFromPtr(from.dsc_address);
+				rpb->rpb_number.setValue(*(SINT64 *) (from.dsc_address));
 			rpb->rpb_stream_flags |= RPB_s_refetch;
 			continue;
 		}
@@ -2612,7 +2612,7 @@ static void open_merge(thread_db* tdbb, RecordSource* rsb, irsb_mrg* impure)
 		merge_file* mfb = &tail->irsb_mrg_file;
 		mfb->mfb_equal_records = 0;
 		mfb->mfb_current_block = 0;
-		mfb->mfb_record_size = ROUNDUP_LONG(map->smb_length);
+		mfb->mfb_record_size = ROUNDUP(map->smb_length, ALIGNMENT);
 		mfb->mfb_block_size = MAX(mfb->mfb_record_size, MERGE_BLOCK_SIZE);
 		mfb->mfb_blocking_factor = mfb->mfb_block_size / mfb->mfb_record_size;
 		if (!mfb->mfb_block_data)
@@ -2781,7 +2781,7 @@ static void open_sort(thread_db* tdbb, RecordSource* rsb, irsb_sort* impure, UIN
 					if (item->smb_field_id == SMB_TRANS_ID)
 						*(SLONG *) (to.dsc_address) = rpb->rpb_transaction_nr;
 					else
-						rpb->rpb_number.getValueToPtr(to.dsc_address);
+						*(SINT64 *) (to.dsc_address) = rpb->rpb_number.getValue();
 					continue;
 				}
 				if (!EVL_field
