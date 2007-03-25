@@ -50,12 +50,7 @@ class vcl;
 struct bid {
 	union {
 		// Internal decomposition of the structure
-		struct {
-			USHORT bid_relation_id;		/* Relation id (or null) */
-			UCHAR bid_reserved_for_relation;	/* Reserved for future expansion of relation space. */
-			UCHAR bid_number[5]; // This is either record number encoded as 40-bit record number
-								 // or 32-bit temporary ID of blob or array prefixed with zero byte
-		} bid_internal;
+		RecordNumber::Packed bid_internal;
 
 		// This is how bid structure represented in public API.
 		// Must be present to enforce alignment rules when structure is declared on stack
@@ -69,14 +64,14 @@ struct bid {
 		// Make sure that compiler packed structure like we wanted
 		fb_assert(sizeof(*this) == 8);
 
-		return *reinterpret_cast<ULONG*>(bid_internal.bid_number + 1);
+		return bid_internal.bid_temp_id();
 	}
 
 	ULONG bid_temp_id() const {
 		// Make sure that compiler packed structure like we wanted
 		fb_assert(sizeof(*this) == 8);
 
-		return *reinterpret_cast<const ULONG*>(bid_internal.bid_number + 1);
+		return bid_internal.bid_temp_id();
 	}
 
 	bool isEmpty() const { 
@@ -108,7 +103,7 @@ struct bid {
 
 		clear();
 		bid_internal.bid_relation_id = relation_id;
-		num.bid_encode(bid_internal.bid_number);
+		num.bid_encode(&bid_internal);
 	}
 
 	RecordNumber get_permanent_number() const {
@@ -116,7 +111,7 @@ struct bid {
 		fb_assert(sizeof(*this) == 8);
 
 		RecordNumber temp;
-		temp.bid_decode(bid_internal.bid_number);
+		temp.bid_decode(&bid_internal);
 		return temp;
 	}
 

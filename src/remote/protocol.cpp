@@ -1142,7 +1142,7 @@ static bool_t xdr_datum( XDR* xdrs, DSC* desc, BLOB_PTR* buffer)
 
 	case dtype_int64:
 		fb_assert(desc->dsc_length >= sizeof(SINT64));
-		if (!xdr_hyper(xdrs, (SINT64 *) p))
+		if (!xdr_hyper(xdrs, p))
 			return FALSE;
 		break;
 

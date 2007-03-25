@@ -54,11 +54,6 @@ typedef ULONG SORTP;
 
 typedef IPTR sort_ptr_t;
 
-// # of 32 bit longs in a pointer (ie 1 on 32 bit machines 2 on 64 bit)
-#define LONGS_PER_POINTER       (sizeof (SLONG*) / sizeof (SLONG))
-// the size of sr_bckptr in # of 32 bit longwords
-#define SIZEOF_SR_BCKPTR_IN_LONGS  LONGS_PER_POINTER
-
 #define PREV_RUN_RECORD(record) (((SORTP *) record - scb->scb_longs))
 #define NEXT_RUN_RECORD(record) (((SORTP *) record + scb->scb_longs))
 
@@ -78,7 +73,10 @@ typedef IPTR sort_ptr_t;
 
 struct sort_record
 {
-	ULONG sort_record_key[1];
+	union {
+		ULONG sort_record_key[1];
+		UINT64 dummy_alignment_force;
+	};
 	/* Sorting key.  Mangled by diddle_key to
 	   compare using ULONG word compares (size
 	   is rounded upwards if necessary).

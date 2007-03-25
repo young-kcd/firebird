@@ -326,11 +326,10 @@ RecordBitmap** EVL_bitmap(thread_db* tdbb, jrd_nod* node, RecordBitmap* bitmap_a
 			impure_inversion* impure = (impure_inversion*) ((SCHAR *) tdbb->tdbb_request + node->nod_impure);
 			RecordBitmap::reset(impure->inv_bitmap);
 			const dsc* desc = EVL_expr(tdbb, node->nod_arg[0]);
-			const USHORT id = 1 + 2 * (USHORT)(IPTR) node->nod_arg[1];
-			const UCHAR* numbers = desc->dsc_address;
-			numbers += id * sizeof(SLONG) - 1; // Use 40 bits for the record number
+			const USHORT id = (USHORT)(IPTR) node->nod_arg[1];
+			RecordNumber::Packed* numbers = reinterpret_cast<RecordNumber::Packed*>(desc->dsc_address);
 			RecordNumber rel_dbkey;
-			rel_dbkey.bid_decode(numbers);
+			rel_dbkey.bid_decode(&numbers[id]);
 			// NS: Why the heck we decrement record number here? I have no idea, but retain the algorithm for now.
 			// hvlad: because from the user point of view db_key's begins from 1 
 			rel_dbkey.decrement();
@@ -3189,7 +3188,7 @@ static dsc* dbkey(thread_db* tdbb, const jrd_nod* node, impure_value* impure)
 		// NS: Encode 40-bit record number. Again, I have no idea why we
 		// increment it by one, but retain algorithm as it were before
 		RecordNumber temp(rpb->rpb_number.getValue() + 1);
-		temp.bid_encode(((UCHAR*)impure->vlu_misc.vlu_dbkey) + 3);
+		temp.bid_encode(reinterpret_cast<RecordNumber::Packed*>(impure->vlu_misc.vlu_dbkey));
 	}
 
 	// Initialize descriptor

@@ -2805,7 +2805,7 @@ static void open_merge(thread_db* tdbb, RecordSource* rsb, irsb_mrg* impure)
 		merge_file* mfb = &tail->irsb_mrg_file;
 		mfb->mfb_equal_records = 0;
 		mfb->mfb_current_block = 0;
-		mfb->mfb_record_size = ROUNDUP_LONG(map->smb_length);
+		mfb->mfb_record_size = ROUNDUP(map->smb_length, ALIGNMENT);
 		mfb->mfb_block_size = MAX(mfb->mfb_record_size, MERGE_BLOCK_SIZE);
 		mfb->mfb_blocking_factor = mfb->mfb_block_size / mfb->mfb_record_size;
 		if (!mfb->mfb_block_data)
