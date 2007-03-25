@@ -1,3 +1,10 @@
+2007-03-24 18:43  asfernandes
+
+	* firebird2/: doc/README.monitoring_tables (1.5), src/jrd/blb.cpp
+	(1.141), src/remote/inet.cpp (1.185):
+
+	Misc
+
 2007-03-24 04:00  asfernandes
 
 	* firebird2/src/jrd/: blb.cpp (1.140), exe.cpp (1.217), exe_proto.h
