@@ -284,7 +284,7 @@ static inline int sinixz_sigaction(int sig, const struct sinixz_sigaction *act,
 #endif
 #ifdef i386
 #define I386
-#define IMPLEMENTATION isc_info_db_imp_darwin_x86 /* 70 */
+#define IMPLEMENTATION isc_info_db_impl_darwin_x86 /* 70 */
 #endif
 #define IEEE
 #define QUADCONST(n) (n##LL)
