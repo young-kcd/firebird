@@ -1,3 +1,10 @@
+2007-03-25 12:12  alexpeshkoff
+
+	* firebird2/src/jrd/: RecordNumber.h (1.5.4.2), blb.h (1.22.4.3),
+	evl.cpp (1.165.2.4), rse.cpp (1.104.2.5):
+
+	last fixes for sparc
+
 2007-03-23 12:35  dimitr
 
 	* firebird2/src/jrd/: blb.cpp (1.117.2.2), blb.h (1.22.4.2):
