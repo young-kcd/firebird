@@ -367,6 +367,14 @@ int BACKUP_backup(const TEXT* dbb_file, const TEXT* file_name)
 		write_collations();
 	}
 
+	if (tdgbl->BCK_capabilities & BCK_ffmptt)
+	{
+		// Write functions 
+		BURP_verbose(148, NULL, NULL, NULL, NULL, NULL);
+		// msg 148 writing functions 
+		write_functions();
+	}
+
 	// Write relations 
 
 	BURP_verbose(154, NULL, NULL, NULL, NULL, NULL);
@@ -376,11 +384,6 @@ int BACKUP_backup(const TEXT* dbb_file, const TEXT* file_name)
 
 	if (tdgbl->BCK_capabilities & BCK_ffmptt)
 	{
-		// Write functions 
-		BURP_verbose(148, NULL, NULL, NULL, NULL, NULL);
-		// msg 148 writing functions 
-		write_functions();
-
 		// Write types 
 		BURP_verbose(161, NULL, NULL, NULL, NULL, NULL);
 		// msg 161  writing types 
