@@ -15,7 +15,7 @@
 # All Rights Reserved.
 # Contributor(s): ______________________________________.
 # Start of file prefix.darwin:	$(VERSION)	DARWIN
-#$Id: postfix.darwin,v 1.1.4.2 2007-03-07 15:04:16 paulbeach Exp $
+#$Id: postfix.darwin,v 1.1.4.3 2007-03-27 09:39:15 paulbeach Exp $
 # 2 Oct 2002, Nickolay Samofatov - Major Cleanup
 
 
@@ -43,7 +43,6 @@ darwin_setup_framework:
 #sed "s/__VERSION__/`$(VERS_UTIL)`/g" source/firebird/bellardo/darwin/FrameworkInfo.plist > source/interbase/Firebird.framework/Resources/Info.plist
 
 darwin_finish_cs_framework: FB_FW = ../gen/firebird/frameworks/FirebirdCS.framework
-#darwin_finish_cs_framework: extlib
 darwin_finish_cs_framework:
 	-$(RM) -rf $(FB_FW)
 	mkdir -p $(FB_FW)/Versions/A/Resources/English.lproj/var
@@ -95,7 +94,6 @@ darwin_finish_cs_framework:
 	cp ../builds/install/arch-specific/darwin/FrameworkInfo.plist \
 			$(FB_FW)/Resources/Info.plist
 	cp ../gen/firebird/misc/firebird.conf $(FB_FW)/Resources/English.lproj/var
-	#sed "s/__VERSION__/`$(VERS_UTIL)`/g" source/firebird/bellardo/darwin/FrameworkInfo.plist > source/interbase/Firebird.framework/Resources/Info.plist
 
 darwin_finish_ss_framework: FB_FW = ../gen/firebird/frameworks/FirebirdSS.framework
 darwin_finish_ss_framework: extlib

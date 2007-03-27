@@ -23,8 +23,7 @@ FB_MAJOR_VERS:=$(shell cpp -DDARWIN -I.  ../builds/install/arch-specific/darwin/
 FB_MINOR_VERS:=$(shell cpp -DDARWIN -I.  ../builds/install/arch-specific/darwin/minorvers.c | tail -1 | sed -e 's/" "//g' -e 's/"//g')
 FB_PLATFORM:=$(shell uname -p)
 
-package packages dist: package_@FIREBIRD_ARCH_TYPE@
-#package packages dist: package_classic
+package packages dist: package_classic
 
 package_classic package_embedded: INST_NM=Firebird-CS-$(FB_INST_VERS).$(FB_MINOR_VERS)-$(FB_PLATFORM)
 package_classic package_embedded: BLOCKSIZE=1048576
@@ -153,7 +152,7 @@ package_super package_server:
 # cpp -DDARWIN -I. install/arch-specific/darwin/fullvers.c | tail -1 | sed -e 's/" "//g' -e 's/"//g'
 	
 
-install: install_@FIREBIRD_ARCH_TYPE@
+install: install_classic
 	
 install_super install_server:
 	installer -verbose -dumplog -pkg \
