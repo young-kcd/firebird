@@ -1,3 +1,33 @@
+2007-03-26 17:53  paulbeach
+
+	*
+	firebird2/builds/install/arch-specific/darwin/Firebird.startupitem/:
+	Firebird (1.1.2.1), StartupParameters.plist (1.1.2.1),
+	Resources/English.lproj/Localizable.strings (1.1.2.1):
+
+	Firebird 2.0 MacOS Classic Intel Build - Missed 1st time round
+
+2007-03-26 17:10  paulbeach
+
+	* firebird2/src/jrd/os/darwin/: config_root.cpp (1.5.4.2),
+	mod_loader.cpp (1.5.6.2):
+
+	Firebird 2.0 MacOS Classic Intel Build - Missed 1st time round
+
+2007-03-26 15:51  paulbeach
+
+	* firebird2/: configure.in (1.241.2.8), src/jrd/common.h
+	(1.137.2.3):
+
+	Firebird 2.0 MacOS Classic Intel Build - Missed 1st time round
+
+2007-03-26 13:36  paulbeach
+
+	* firebird2/src/jrd/os/darwin/: config_root.cpp (1.5.4.1),
+	mod_loader.cpp (1.5.6.1):
+
+	Firebird 2.0 MacOS Classic Intel Build - Missed 1st time round
+
 2007-03-25 12:12  alexpeshkoff
 
 	* firebird2/src/jrd/: RecordNumber.h (1.5.4.2), blb.h (1.22.4.3),
