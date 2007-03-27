@@ -73,10 +73,7 @@ typedef IPTR sort_ptr_t;
 
 struct sort_record
 {
-	union {
-		ULONG sort_record_key[1];
-		UINT64 dummy_alignment_force;
-	};
+	ULONG sort_record_key[1];
 	/* Sorting key.  Mangled by diddle_key to
 	   compare using ULONG word compares (size
 	   is rounded upwards if necessary).
@@ -111,7 +108,10 @@ const ULONG MAX_SORT_RECORD		= 65535;	/* bytes */
 typedef struct sr
 {
 	sort_record**	sr_bckptr;	/* Pointer back to sort list entry */
-	sort_record		sr_sort_record;
+	union {
+		sort_record		sr_sort_record;
+		UINT64 dummy_alignment_force;
+	};
 } SR;
 
 /* scb_longs includes the size of sr_bckptr.  */

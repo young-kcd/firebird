@@ -96,7 +96,7 @@ const ULONG MAX_TEMPFILE_SIZE		= 1073741824;	// 1GB
 // the size of sr_bckptr in # of 32 bit longwords
 #define SIZEOF_SR_BCKPTR_IN_LONGS (SIZEOF_SR_BCKPTR / sizeof(SLONG))
 // offset in array of pointers to back record pointer (sr_bckptr)
-#define BACK_OFFSET (-(ALIGNMENT / sizeof(SLONG*)))
+#define BACK_OFFSET (-(SIZEOF_SR_BCKPTR / sizeof(SLONG*)))
 
 #define DIFF_LONGS(a, b)         ((a) - (b))
 #define SWAP_LONGS(a, b, t)       {t = a; a = b; b = t;}
@@ -692,7 +692,7 @@ sort_context* SORT_init(thread_db* tdbb,
 	scb->scb_status_vector = status_vector;
 	//scb->scb_length = record_length;
 	scb->scb_longs =
-		ROUNDUP(record_length + ALIGNMENT, ALIGNMENT) >> SHIFTLONG;
+		ROUNDUP(record_length + SIZEOF_SR_BCKPTR, ALIGNMENT) >> SHIFTLONG;
 	scb->scb_dup_callback = call_back;
 	scb->scb_dup_callback_arg = user_arg;
 	scb->scb_keys = keys;
@@ -2598,11 +2598,7 @@ static void sort(sort_context* scb)
 				tl--;
 			}
 			if (tl && *p > *q) {
-				((SORTP ***) (*i))[-1] = j;
-				((SORTP ***) (*j))[-1] = i;
-				temp = *i;
-				*i = *j;
-				*j = temp;
+				swap(i, j);
 			}
 		}
 	}
