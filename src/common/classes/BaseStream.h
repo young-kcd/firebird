@@ -37,7 +37,7 @@ namespace MsgFormat
 {
 
 // This is the abstract base class that is used by the MsgPrint routines.
-// It doesn't own the strean, thus is doesn't open, check or close it.
+// It doesn't own the stream, thus it doesn't open, check or close it.
 // The desired functionality can be added in the derived classes.
 // This approach is taken because the most sought usage is to work with the
 // predefined output streams and these aren't closed typically by a program.
