@@ -74,7 +74,7 @@ ModuleLoader::Module *ModuleLoader::loadModule(const Firebird::PathName& modPath
 	
 	/* Create an object file image from the given path */
 	retVal = NSCreateObjectFileImageFromFile(modPath.c_str(), &image);
-	if(retVal != NSObjectFileImageSuccess)
+	if (retVal != NSObjectFileImageSuccess)
 	{
 		switch(retVal)
 		{
@@ -137,7 +137,7 @@ DarwinModule::~DarwinModule()
 
 void *DarwinModule::findSymbol(const Firebird::string& symName)
 {
-	NSSymbol symbol;  
+	NSSymbol symbol;
 
 	symbol = NSLookupSymbolInModule(module, symName.c_str());
 	if (symbol == NULL)
