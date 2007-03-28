@@ -25,6 +25,7 @@
 // Localized messages type-safe printing facility.
 
 #include "firebird.h"
+#include "../jrd/common.h"
 #include "BaseStream.h"
 #include "MsgPrint.h"
 #include <string.h>

@@ -29,6 +29,7 @@
 // Localized messages type-safe printing facility.
 
 #include "firebird.h"
+#include "../jrd/common.h"
 #include "SafeArg.h"
 
 namespace MsgFormat
@@ -165,18 +166,18 @@ SafeArg& SafeArg::operator<<(unsigned long int c)
 	return *this;
 }
 
-SafeArg& SafeArg::operator<<(int64_t c)
+SafeArg& SafeArg::operator<<(SINT64 c)
 {
 	if (m_count < SAFEARG_MAX_ARG)
 	{
-		m_arguments[m_count].i_value = c;
+		m_arguments[m_count].i_value = static_cast<int64_t>(c);
 		m_arguments[m_count].type = safe_cell::at_int64;
 		++m_count;
 	}
 	return *this;
 }
 
-SafeArg& SafeArg::operator<<(uint64_t c)
+SafeArg& SafeArg::operator<<(UINT64 c)
 {
 	if (m_count < SAFEARG_MAX_ARG)
 	{

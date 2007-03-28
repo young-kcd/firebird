@@ -61,7 +61,7 @@ namespace MsgFormat
 {
 
 // For now we allow 7 parameters; @1..@7 in MsgPrint.
-const int SAFEARG_MAX_ARG = 7;
+const size_t SAFEARG_MAX_ARG = 7;
 
 // This is the unit that represents one parameter in the format routines.
 // The user of the routines rarely needs to be concerned with it.
@@ -177,8 +177,8 @@ public:
 	SafeArg& operator<<(unsigned int c);
 	SafeArg& operator<<(long int c);
 	SafeArg& operator<<(unsigned long int c);
-	SafeArg& operator<<(int64_t c);
-	SafeArg& operator<<(uint64_t c);
+	SafeArg& operator<<(SINT64 c);
+	SafeArg& operator<<(UINT64 c);
 	//SafeArg& operator<<(long c);
 	SafeArg& operator<<(SINT128 c);
 	SafeArg& operator<<(double c);
