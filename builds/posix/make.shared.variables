@@ -215,7 +215,8 @@ FBUTIL_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(FBUTIL_Source
 #
 # common/classes
 
-FBCLASSES_ClientFiles=alloc.cpp locks.cpp fb_string.cpp timestamp.cpp TempFile.cpp
+FBCLASSES_ClientFiles=alloc.cpp locks.cpp fb_string.cpp timestamp.cpp \
+	TempFile.cpp SafeArg.cpp MsgPrint.cpp BaseStream.cpp UserBlob.cpp 
 FBCLASSES_ServerFiles=
 
 FBCLASSES_Files= $(FBCLASSES_ClientFiles) $(FBCLASSES_ServerFiles)

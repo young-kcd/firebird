@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.refDatabases,v 1.29 2005-12-18 17:56:43 alexpeshkoff Exp $
+#  $Id: Makefile.in.refDatabases,v 1.30 2007-03-28 11:32:13 alexpeshkoff Exp $
 #
 ROOT=..
 ObjModuleType=std
@@ -48,8 +48,8 @@ export DYLD_FRAMEWORK_PATH
 DYLD_FRAMEWORK_PATH=	$(OBJS)/firebird
 export INTERBASE
 
-MSG_SCRIPTS = msg.sql facilities.sql locales.sql history.sql messages.sql \
-              symbols.sql system_errors.sql transmsgs.fr_FR.sql transmsgs.de_DE.sql
+MSG_SCRIPTS = msg.sql facilities2.sql locales.sql history2.sql messages2.sql \
+              symbols2.sql system_errors2.sql transmsgs.fr_FR.sql transmsgs.de_DE.sql
 MSG_FILES = $(addprefix $(SRC_ROOT)/msgs/, $(MSG_SCRIPTS))
 
 .PHONY: empty_db refDatabases
