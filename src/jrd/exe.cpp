@@ -3093,18 +3093,24 @@ static void release_blobs(thread_db* tdbb, jrd_req* request)
 				const ULONG blob_temp_id = request->req_blobs.current();
 				if (transaction->tra_blobs.locate(blob_temp_id)) {
 					BlobIndex *current = &transaction->tra_blobs.current();
-					if (!current->bli_materialized)
+					if (current->bli_materialized)
+					{
+						request->req_blobs.fastRemove();
+						current->bli_request = NULL;
+					}
+					else
 					{
 						// Blob was created by request, is accounted for internal needs, 
 						// but is not materialized. Get rid of it.
 						BLB_cancel(tdbb, current->bli_blob_object);
 						// Since the routine above modifies req_blobs 
 						// we need to reestablish accessor position
-						if (request->req_blobs.locate(Firebird::locGreat, blob_temp_id))
-							continue;
-						else
-							break;
 					}
+
+					if (request->req_blobs.locate(Firebird::locGreat, blob_temp_id))
+						continue;
+					else
+						break;
 				} 
 				else {
 					// Blob accounting inconsistent
