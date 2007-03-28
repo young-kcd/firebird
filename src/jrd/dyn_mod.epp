@@ -103,6 +103,7 @@ static bool field_exists(thread_db*, Database*, Global*,
 static bool domain_exists(thread_db*, Database*, Global*, const Firebird::MetaName&);
 static void get_domain_type(thread_db*, Database*, Global*, dyn_fld&);
 static ULONG check_update_fld_type(const dyn_fld&, const dyn_fld&);
+static ULONG check_update_numeric_type(const dyn_fld&, const dyn_fld&);
 static void modify_err_punt(thread_db*, ULONG, const dyn_fld&, const dyn_fld&);
 
 
@@ -3364,7 +3365,7 @@ static ULONG check_update_fld_type(const dyn_fld& orig_fld,
 				// if (new_fld.dyn_dsc.dsc_length < maxflen)
 				if (new_len < maxflen)
 					return isc_dyn_char_fld_too_small;
-				/* New size specified for column %s must be greater than %d characters. */
+				// msg 208: New size specified for column %s must be at least %d characters.
 			}
 			break;
 
@@ -3420,7 +3421,7 @@ static ULONG check_update_fld_type(const dyn_fld& orig_fld,
 				// if (new_fld.dyn_dsc.dsc_length < maxflen)
 				if (DSC_string_length(&new_fld.dyn_dsc) < maxflen)
 					return isc_dyn_char_fld_too_small;
-				/* New size specified for column %s must be greater than %d characters. */
+				// msg 208: New size specified for column %s must be at least %d characters.
 			}
 
 			break;
@@ -3458,7 +3459,9 @@ static ULONG check_update_fld_type(const dyn_fld& orig_fld,
 		case blr_short:
 			switch (orig_fld.dyn_dtype) {
 			case blr_short:
+				return check_update_numeric_type(orig_fld, new_fld);
 				break;
+				
 			default:
 				return isc_dyn_invalid_dtype_conversion;
 				/* Cannot change datatype for column %s.  Conversion from base type %s to base type %s is not supported. */
@@ -3469,7 +3472,9 @@ static ULONG check_update_fld_type(const dyn_fld& orig_fld,
 			switch (orig_fld.dyn_dtype) {
 			case blr_long:
 			case blr_short:
+				return check_update_numeric_type(orig_fld, new_fld);
 				break;
+				
 			default:
 				return isc_dyn_invalid_dtype_conversion;
 				/* Cannot change datatype for column %s.  Conversion from base type %s to base type %s is not supported. */
@@ -3493,6 +3498,7 @@ static ULONG check_update_fld_type(const dyn_fld& orig_fld,
 			case blr_int64:
 			case blr_long:
 			case blr_short:
+				return check_update_numeric_type(orig_fld, new_fld);
 				break;
 
 			default:
@@ -3529,7 +3535,7 @@ static ULONG check_update_fld_type(const dyn_fld& orig_fld,
 				// if (new_fld.dyn_dsc.dsc_length < maxflen)
 				if (DSC_string_length(&new_fld.dyn_dsc) < maxflen)
 					return isc_dyn_char_fld_too_small;
-				/* New size specified for column %s must be greater than %d characters. */
+				// msg 208: New size specified for column %s must be at least %d characters.
 			}
 			break;
 
@@ -3542,6 +3548,38 @@ static ULONG check_update_fld_type(const dyn_fld& orig_fld,
 	default:
 		fb_assert(FALSE);
 		return 87;				/* MODIFY RDB$FIELDS FAILED */
+	}
+	return FB_SUCCESS;
+}
+
+
+static ULONG check_update_numeric_type(const dyn_fld& orig_fld,
+										const dyn_fld& new_fld)
+{
+/**************************************
+ *
+ *	c h e c k _ u p d a t e _ n u m e r i c _ t y p e
+ *
+ **************************************
+ *
+ * Functional description
+ *	Compare the original field type with the new field type to
+ *      determine if the original type can be changed to the new type.
+ *  The types should be integral, since it tests only numeric/decimal subtypes
+ *      to ensure the scale is not being widened at the expense of the precision,
+ *      because the old stored values should fit in the new definition.
+ *
+ *  This function returns an error code if the conversion can not be
+ *  made.  If the conversion can be made, FB_SUCCESS is returned.
+ **************************************/
+
+ 	// Since dsc_scale is negative, the sum of precision and scale produces
+	// the width of the integral part.
+	if (orig_fld.dyn_dsc.dsc_sub_type && new_fld.dyn_dsc.dsc_sub_type &&
+		orig_fld.dyn_precision + orig_fld.dyn_dsc.dsc_scale >
+		new_fld.dyn_precision + new_fld.dyn_dsc.dsc_scale)
+	{
+		return isc_dyn_scale_too_big;
 	}
 	return FB_SUCCESS;
 }
@@ -3566,23 +3604,44 @@ static void modify_err_punt(thread_db* tdbb,
  *	DYN_modify_sql_field
  **************************************/
 
-	switch (errorcode) {
+	switch (errorcode)
+	{
 	case isc_dyn_dtype_invalid:
-		DYN_error_punt(false, 207, orig_fld_def.dyn_fld_name.c_str());
+		DYN_error_punt(false, errorcode, orig_fld_def.dyn_fld_name.c_str());
 		/* Cannot change datatype for column %s.The operation cannot be performed on DATE, BLOB, or ARRAY columns. */
 		break;
 
 	case isc_dyn_dtype_conv_invalid:
-		DYN_error_punt(false, 210, orig_fld_def.dyn_fld_name.c_str());
+		DYN_error_punt(false, errorcode, orig_fld_def.dyn_fld_name.c_str());
 		/* Cannot convert column %s from character to non-character data. */
 		break;
 
 	case isc_dyn_char_fld_too_small:
 		DYN_error_punt(false,
-						208,
+						errorcode,
 						SafeArg() << orig_fld_def.dyn_fld_name.c_str() <<
 						DSC_string_length(&orig_fld_def.dyn_dsc));
-		/* msg 208: New size specified for column %s must be greater than %d characters. */
+		// msg 208: New size specified for column %s must be at least %d characters.
+		break;
+		
+	case isc_dyn_scale_too_big:
+		{
+			int code = errorcode;
+			int diff = new_fld_def.dyn_precision -
+				(orig_fld_def.dyn_precision + orig_fld_def.dyn_dsc.dsc_scale);
+			if (diff < 0)
+			{
+				// If new scale becomes negative externally, the message is useless for the user.
+				// (The scale is always zero or negative for us but externally is non-negative.)
+				// Let's ask the user to widen the precision, then. Example: numeric(4, 0) -> numeric(1, 1).
+				code = isc_dyn_precision_too_small;
+				diff = new_fld_def.dyn_precision - new_fld_def.dyn_dsc.dsc_scale - diff;
+			}
+			DYN_error_punt(false, code,
+							SafeArg() << orig_fld_def.dyn_fld_name.c_str() << diff);
+			// scale_too_big: New scale specified for column @1 must be at most @2.
+			// precision_too_small: New precision specified for column @1 must be at least @2.
+		}
 		break;
 
 	case isc_dyn_invalid_dtype_conversion:
@@ -3594,11 +3653,12 @@ static void modify_err_punt(thread_db* tdbb,
 			DSC_get_dtype_name(&new_fld_def.dyn_dsc, new_type,
 							   sizeof(new_type));
 
-			DYN_error_punt(false, 209, SafeArg() << orig_fld_def.dyn_fld_name.c_str() <<
+			DYN_error_punt(false, errorcode,
+							SafeArg() << orig_fld_def.dyn_fld_name.c_str() <<
 							orig_type << new_type);
 			// Cannot change datatype for @1.  Conversion from base type @2 to @3 is not supported.
-			break;
 		}
+		break;
 
 	default:
 		DYN_error_punt(true, 95);

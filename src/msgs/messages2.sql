@@ -658,6 +658,8 @@ without specifying a character set.', NULL);
 ('key_too_big', 'IDX_create_index', 'idx.cpp', NULL, 0, 557, NULL, 'index key too big', NULL, NULL);
 ('concurrent_transaction', NULL, 'vio.cpp', NULL, 0, 558, NULL, 'concurrent transaction number is @1', NULL, NULL);
 COMMIT WORK;
+-- Do not change the arguments of the previous JRD messages.
+-- Write the new JRD messages here.
 ('not_valid_for_var', 'EVL_validate', 'evl.cpp', NULL, 0, 559, NULL, 'validation error for variable @1, value "@2"', NULL, NULL);
 ('not_valid_for', 'EVL_validate', 'evl.cpp', NULL, 0, 560, NULL, 'validation error for @1, value "@2"', NULL, NULL);
 -- QLI
@@ -1247,6 +1249,8 @@ type <cr> for next topic or <EOF> to stop: ', NULL, NULL);
 (NULL, 'parse_sql_dtype', 'parse.cpp', NULL, 1, 510, NULL, 'Field scale exceeds allowed range', NULL, NULL);
 (NULL, 'parse_sql_dtype', 'parse.cpp', NULL, 1, 511, NULL, 'Field length exceeds allowed range', NULL, NULL);
 (NULL, 'parse_sql_dtype', 'parse.cpp', NULL, 1, 512, NULL, 'Field length should be greater than zero', NULL, NULL);
+-- Do not change the arguments of the previous QLI messages.
+-- Write the new QLI messages here.
 -- GDEF
 (NULL, 'main', 'DDL.C', NULL, 2, 0, NULL, 'gdef version @1', NULL, NULL);
 (NULL, 'main', 'DDL.C', NULL, 2, 1, NULL, 'gdef: unknown switch @1', NULL, NULL);
@@ -1621,6 +1625,8 @@ for user @4 does not exist', NULL, NULL);
 ('', 'DDL_yes_no', 'ddl.c', NULL, 2, 342, NULL, 'YES', NULL, NULL);
 ('', 'DDL_yes_no', 'ddl.c', NULL, 2, 343, NULL, 'NO', NULL, NULL);
 ('', 'DDL_yes_no', 'ddl.c', NULL, 2, 344, NULL, 'Please respond with YES or NO.', NULL, NULL);
+-- Do not change the arguments of the previous GDEF messages.
+-- Write the new GDEF messages here.
 -- GFIX
 ('gfix_db_name', 'ALICE_gfix', 'alice.c', NULL, 3, 1, NULL, 'data base file name (@1) already given', NULL, NULL);
 ('gfix_invalid_sw', 'ALICE_gfix', 'alice.c', NULL, 3, 2, NULL, 'invalid switch @1', NULL, NULL);
@@ -1739,6 +1745,8 @@ COMMIT WORK;
 ('gfix_SQL_dialect', 'ALICE_gfix', 'alice.c', NULL, 3, 112, NULL, 'database SQL dialect must be one of ''@1''', NULL, NULL);
 ('gfix_dialect_req', 'ALICE_gfix', 'alice.c', NULL, 3, 113, NULL, 'dialect number required', NULL, NULL);
 ('gfix_pzval_req', 'ALICE_gfix', 'alice.cpp', NULL, 3, 114, NULL, 'positive or zero numeric value required', NULL, NULL);
+-- Do not change the arguments of the previous GFIX messages.
+-- Write the new GFIX messages here.
 -- DSQL
 ('dsql_dbkey_from_non_table', 'MAKE_desc', 'make.c', NULL, 7, 2, NULL, 'Cannot SELECT RDB$DB_KEY from a stored procedure.', NULL, NULL);
 ('dsql_transitional_numeric', 'dsql_yyparse', 'parse.y', NULL, 7, 3, NULL, 'Precision 10 to 18 changed from DOUBLE PRECISION in SQL dialect 1 to 64-bit scaled integer in SQL dialect 3', NULL, NULL);
@@ -1770,6 +1778,8 @@ COMMIT WORK;
 ('upd_ins_with_complex_view', 'pass1_update_or_insert', 'pass1.cpp', NULL, 7, 29, NULL, 'UPDATE OR INSERT without MATCHING could not be used with views based on more than one table', NULL, NULL);
 ('dsql_incompatible_trigger_type', 'define_trigger', 'ddl.cpp', NULL, 7, 30, NULL, 'Incompatible trigger type', NULL, NULL);
 ('dsql_db_trigger_type_cant_change', 'define_trigger', 'ddl.cpp', NULL, 7, 31, NULL, 'Database trigger type can''t be changed', NULL, NULL);
+-- Do not change the arguments of the previous DSQL messages.
+-- Write the new DSQL messages here.
 -- DYN
 (NULL, NULL, 'dyn.c', NULL, 8, 1, NULL, 'ODS version not supported by DYN', NULL, NULL);
 (NULL, NULL, 'dyn.c', NULL, 8, 2, NULL, 'unsupported DYN verb', NULL, NULL);
@@ -2006,10 +2016,16 @@ COMMIT WORK;
 (NULL, 'DYN_define_index', 'dyn_def.epp', NULL, 8, 241, NULL, 'Table @1 not found', NULL, NULL);
 (NULL, 'DYN_define_index', 'dyn_def.epp', NULL, 8, 242, NULL, 'attempt to reference a view (@1) in a foreign key', NULL, NULL);
 (NULL, 'DYN_delete_collation', 'dyn_del.epp', NULL, 8, 243, NULL, 'Collation @1 is used in procedure @2 (parameter name @3) and cannot be dropped', NULL, NULL);
+-- Do not change the arguments of the previous DYN messages.
+-- Write the new DYN messages here.
+('dyn_scale_too_big', 'check_update_numeric_type', 'dyn_mod.epp', NULL, 8, 244, NULL, 'New scale specified for column @1 must be at most @2.', NULL, NULL);
+('dyn_precision_too_small', 'check_update_numeric_type', 'dyn_mod.epp', NULL, 8, 245, NULL, 'New precision specified for column @1 must be at least @2.', NULL, NULL);
 COMMIT WORK;
 -- TEST
 (NULL, 'main', 'test.c', NULL, 11, 0, 0, 'This is a modified text message', NULL, NULL);
 (NULL, NULL, NULL, NULL, 11, 3, 0, 'This is a test message', NULL, NULL);
+-- Do not change the arguments of the previous TEST messages.
+-- Write the new TEST messages here.
 -- GBAK
 (NULL, NULL, 'burp.c', NULL, 12, 0, NULL, 'could not locate appropriate error message', NULL, NULL);
 ('gbak_unknown_switch', '', 'burp.c', NULL, 12, 1, NULL, 'found unknown switch', NULL, NULL);
@@ -2313,6 +2329,8 @@ ERROR: Backup incomplete', NULL, NULL);
 (NULL, 'get_ref_constraint', 'restore.epp', NULL, 12, 292, NULL, 'referential constraint', NULL, NULL);
 (NULL, 'get_type', 'restore.epp', NULL, 12, 293, NULL, 'type (in RDB$TYPES)', NULL, NULL);
 (NULL, '', 'burp.cpp', NULL, 12, 294, NULL, '	@1NO_D(BTRIGGERS)      do not run database triggers', NULL, NULL);
+-- Do not change the arguments of the previous GBAK messages.
+-- Write the new GBAK messages here.
 -- SQLERR
 (NULL, NULL, NULL, NULL, 13, 1, NULL, 'Firebird error', NULL, NULL);
 (NULL, NULL, NULL, NULL, 13, 74, NULL, 'Rollback not performed', NULL, NULL);
@@ -2502,11 +2520,15 @@ constrained - no 2 table rows can have duplicate column values', NULL, NULL);
 ('dsql_cte_union_all', 'pass1_recursive_cte', 'dsql.cpp', NULL, 13, 944, NULL, 'Recursive members of CTE (@1) must be linked with another members via UNION ALL', NULL, NULL);
 ('dsql_cte_miss_nonrecursive', 'pass1_recursive_cte', 'dsql.cpp', NULL, 13, 945, NULL, 'Non-recursive member is missing in CTE ''@1''', NULL, NULL);
 ('dsql_cte_nested_with', 'dsql_req::addCTEs', 'dsql.cpp', NULL, 13, 946, NULL, 'WITH clause can''t be nested', NULL, NULL);
+-- Do not change the arguments of the previous SQLERR messages.
+-- Write the new SQLERR messages here.
 -- SQLWARN
 (NULL, NULL, NULL, NULL, 14, 100, NULL, 'Row not found for fetch, update or delete, or the result of a query is an empty table.', NULL, NULL);
 (NULL, NULL, NULL, NULL, 14, 101, NULL, 'segment buffer length shorter than expected', NULL, NULL);
 (NULL, NULL, NULL, NULL, 14, 301, NULL, 'Datatype needs modification', NULL, NULL);
 (NULL, NULL, NULL, NULL, 14, 612, NULL, 'Duplicate column or domain name found.', NULL, NULL);
+-- Do not change the arguments of the previous SQLWARN messages.
+-- Write the new SQLWARN messages here.
 -- JRD_BUGCHK
 ('', 'BLKCHK', 'jrd.h', NULL, 15, 147, NULL, 'invalid block type encountered', NULL, NULL);
 (NULL, 'most', 'apollo.c', NULL, 15, 148, NULL, 'wrong packet type', NULL, 'Error message not currently in use.');
@@ -2669,6 +2691,8 @@ COMMIT WORK;
 ('rdb$triggers_rdb$flags_corrupt', 'MET_load_trigger', 'met.e', NULL, 15, 304, NULL, 'RDB$FLAGS for trigger @1 in RDB$TRIGGERS is corrupted', NULL, NULL);
 (NULL, NULL, NULL, NULL, 15, 305, NULL, 'Blobs accounting is inconsistent', NULL, NULL);
 (NULL, 'CMP_get_desc', 'cmp.cpp', NULL, 15, 306, NULL, 'Found array data type with more than 16 dimensions', NULL, NULL);
+-- Do not change the arguments of the previous JRD_BUGCHK messages.
+-- Write the new JRD_BUGCHK messages here.
 -- ISQL
 ('GEN_ERR', 'errmsg', 'isql.e', NULL, 17, 0, NULL, 'Statement failed, SQLCODE = @1', NULL, NULL);
 ('USAGE', 'ISQL_main', 'isql.epp', NULL, 17, 1, NULL, 'usage:    isql [options] [<database>]', NULL, NULL);
@@ -2856,6 +2880,8 @@ Fetches = !f', NULL, NULL);
 ('USAGE_NODBTRIGGERS', 'ISQL_main', 'isql.epp', NULL, 17, 154, NULL, '	-nod(btriggers)         do not run database triggers', NULL, NULL);
 ('USAGE_TRUSTED', 'ISQL_main', 'isql.epp', NULL, 17, 155, NULL, '	-tr(usted)              use Windows trusted authentication', NULL, NULL);
 ('BULK_PROMPT', 'bulk_insert_hack', 'isql.epp', NULL, 17, 156, NULL, 'BULK> ', NULL, NULL);
+-- Do not change the arguments of the previous ISQL messages.
+-- Write the new ISQL messages here.
 -- GSEC
 ('GsecMsg1', 'get_line', 'gsec.e', NULL, 18, 1, NULL, 'GSEC>', NULL, NULL);
 ('GsecMsg2', 'printhelp', 'gsec.e', 'This message is used in the Help display. It should be the same as number 1 (but in lower case).', 18, 2, NULL, 'gsec', NULL, NULL);
@@ -2947,6 +2973,8 @@ Fetches = !f', NULL, NULL);
 ('GsecMsg88', 'printhelp', 'gsec.c', NULL, 18, 88, NULL, '-z', NULL, NULL);
 ('GsecMsg89', 'printhelp', 'gsec.c', NULL, 18, 89, NULL, 'displaying version number:', NULL, NULL);
 ('GsecMsg90', 'printhelp', 'gsec.c', NULL, 18, 90, NULL, 'z (interactive only)', NULL, NULL);
+-- Do not change the arguments of the previous GSEC messages.
+-- Write the new GSEC messages here.
 -- LICENSE
 ('license_no_file', 'NODE_license', 'jrd/node.c', NULL, 19, 0, NULL, 'The license file does not exist or could not be opened for read', NULL, NULL);
 ('stop_stop_1', 'not_licensed', 'jrd/node.c', 'This message has 20 leading space characters (2 tab chars and 4 '' '') in
@@ -3011,6 +3039,8 @@ by 4 spaces, or sometimes 8 (one tab).', 19, 1, NULL, '                 S T O P 
 ('eval_server_license', 'cert_item structure', 'license.h', NULL, 19, 57, NULL, 'Evaluation InterBase Server license and simultaneous user license for five (5) users.', NULL, NULL);
 ('custom_license', 'certIitem structure', 'license.h', NULL, 19, 58, NULL, 'Customized license entry created by means other than entering a certificate ID/key.', NULL, NULL);
 ('license_eval_exists', 'isc_license_add', 'licentool.c', NULL, 19, 59, NULL, 'The evaluation license has already been used on this server.  You need to purchase a non-evaluation license.', NULL, NULL);
+-- Do not change the arguments of the previous LICENSE messages.
+-- Write the new LICENSE messages here.
 -- DOS
 ('tcp_wsaeconnrefused', 'several', 'remote/inet.c', NULL, 20, 0, NULL, 'The connection request was refused.  This can occur if the Firebird server is not started on the host machine.', NULL, NULL);
 ('tcp_wsaeintr', 'several', 'remote/inet.c', NULL, 20, 1, NULL, 'The request was canceled before completing.', NULL, NULL);
@@ -3086,6 +3116,8 @@ by 4 spaces, or sometimes 8 (one tab).', 19, 1, NULL, '                 S T O P 
 ('TRA_SWEEP_MESSAGE', 'TRA_start', 'tra.c', NULL, 20, 71, NULL, 'Beginning database sweep, which can take a long time.  This can be controlled by varying the sweep interval.  Sweep?', NULL, NULL);
 ('TRA_MUST_SWEEP', 'TRA_start', 'tra.c', NULL, 20, 72, NULL, 'A sweep must be performed on this database before it can be started.  Sweep?', NULL, NULL);
 ('dos_loc_not_enough_disk_space', '', 'jrd/windows.c', NULL, 20, 73, NULL, 'Not enough disk space remaining', NULL, NULL);
+-- Do not change the arguments of the previous DOS messages.
+-- Write the new DOS messages here.
 -- GSTAT
 ('gstat_unknown_switch', 'main', 'dba.e', NULL, 21, 1, NULL, 'found unknown switch', NULL, NULL);
 ('gstat_retry', 'main', 'dba.e', NULL, 21, 2, NULL, 'please retry, giving a database name', NULL, NULL);
@@ -3126,6 +3158,8 @@ Analyzing database pages ...', NULL, NULL);
 ('gstat_password', '', 'dba.e', NULL, 21, 33, NULL, '    -p      password', NULL, NULL);
 ('', 'main', 'dba.e', NULL, 21, 34, NULL, '    -r      analyze average record and version length', NULL, NULL);
 ('', 'main', 'dba.e', NULL, 21, 35, NULL, '    -t      tablename', NULL, NULL);
+-- Do not change the arguments of the previous GSTAT messages.
+-- Write the new GSTAT messages here.
 stop
 
 COMMIT WORK;

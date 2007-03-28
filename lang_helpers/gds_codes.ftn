@@ -1324,6 +1324,10 @@ C --
       PARAMETER (GDS__dyn_zero_len_id                  = 336068820)
       INTEGER*4 GDS__dyn_wrong_gtt_scope             
       PARAMETER (GDS__dyn_wrong_gtt_scope              = 336068840)
+      INTEGER*4 GDS__dyn_scale_too_big               
+      PARAMETER (GDS__dyn_scale_too_big                = 336068852)
+      INTEGER*4 GDS__dyn_precision_too_small         
+      PARAMETER (GDS__dyn_precision_too_small          = 336068853)
       INTEGER*4 GDS__gbak_unknown_switch             
       PARAMETER (GDS__gbak_unknown_switch              = 336330753)
       INTEGER*4 GDS__gbak_page_size_missing          

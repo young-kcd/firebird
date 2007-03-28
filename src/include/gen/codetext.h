@@ -658,6 +658,8 @@ static const struct {
 	{"dyn_dtype_conv_invalid", 336068818},
 	{"dyn_zero_len_id", 336068820},
 	{"dyn_wrong_gtt_scope", 336068840},
+	{"dyn_scale_too_big", 336068852},
+	{"dyn_precision_too_small", 336068853},
 	{"gbak_unknown_switch", 336330753},
 	{"gbak_page_size_missing", 336330754},
 	{"gbak_page_size_toobig", 336330755},

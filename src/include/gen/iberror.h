@@ -691,6 +691,8 @@ const ISC_LONG isc_dyn_invalid_dtype_conversion     = 336068817L;
 const ISC_LONG isc_dyn_dtype_conv_invalid           = 336068818L;
 const ISC_LONG isc_dyn_zero_len_id                  = 336068820L;
 const ISC_LONG isc_dyn_wrong_gtt_scope              = 336068840L;
+const ISC_LONG isc_dyn_scale_too_big                = 336068852L;
+const ISC_LONG isc_dyn_precision_too_small          = 336068853L;
 const ISC_LONG isc_gbak_unknown_switch              = 336330753L;
 const ISC_LONG isc_gbak_page_size_missing           = 336330754L;
 const ISC_LONG isc_gbak_page_size_toobig            = 336330755L;
@@ -864,7 +866,7 @@ const ISC_LONG isc_gstat_unexpected_eof             = 336920580L;
 const ISC_LONG isc_gstat_open_err                   = 336920605L;
 const ISC_LONG isc_gstat_read_err                   = 336920606L;
 const ISC_LONG isc_gstat_sysmemex                   = 336920607L;
-const ISC_LONG isc_err_max                          = 809;
+const ISC_LONG isc_err_max                          = 811;
 
 #else /* c definitions */
 
@@ -1525,6 +1527,8 @@ const ISC_LONG isc_err_max                          = 809;
 #define isc_dyn_dtype_conv_invalid           336068818L
 #define isc_dyn_zero_len_id                  336068820L
 #define isc_dyn_wrong_gtt_scope              336068840L
+#define isc_dyn_scale_too_big                336068852L
+#define isc_dyn_precision_too_small          336068853L
 #define isc_gbak_unknown_switch              336330753L
 #define isc_gbak_page_size_missing           336330754L
 #define isc_gbak_page_size_toobig            336330755L
@@ -1698,7 +1702,7 @@ const ISC_LONG isc_err_max                          = 809;
 #define isc_gstat_open_err                   336920605L
 #define isc_gstat_read_err                   336920606L
 #define isc_gstat_sysmemex                   336920607L
-#define isc_err_max                          809
+#define isc_err_max                          811
 
 #endif
 
