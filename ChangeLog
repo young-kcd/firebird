@@ -1,3 +1,22 @@
+2007-03-28 04:16  asfernandes
+
+	* firebird2/src/jrd/exe.cpp (1.218):
+
+	Fixed crashes while restoring - reported privately by Alex
+
+2007-03-27 13:46  alexpeshkoff
+
+	* firebird2/src/jrd/: sort.cpp (1.90), sort.h (1.32):
+
+	Fixed problems with windows build and database restore - thanks to
+	Dmitry and Vlad
+
+2007-03-27 12:29  aafemt
+
+	* firebird2/src/burp/backup.epp (1.98):
+
+	Fix CORE-949
+
 2007-03-25 18:08  alexpeshkoff
 
 	* firebird2/src/: jrd/RecordNumber.h (1.9), jrd/blb.h (1.26),
