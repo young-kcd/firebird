@@ -3316,6 +3316,9 @@ static dsql_nod* pass1_any( dsql_req* request, dsql_nod* input, NOD_TYPE ntype)
 	select_expr->nod_arg[e_sel_query_spec] = query_spec;
 
 	const DsqlContextStack::iterator base(*request->req_context);
+	const DsqlContextStack::iterator baseDT(request->req_dt_context);
+	const DsqlContextStack::iterator baseUnion(request->req_union_context);
+
 	dsql_nod* rse = PASS1_rse(request, select_expr, NULL);
 
 	// create a conjunct to be injected
@@ -3330,6 +3333,8 @@ static dsql_nod* pass1_any( dsql_req* request, dsql_nod* input, NOD_TYPE ntype)
 	node->nod_arg[0] = rse;
 
 	// Finish off by cleaning up contexts
+	request->req_union_context.clear(baseUnion);
+	request->req_dt_context.clear(baseDT);
 	request->req_context->clear(base);
 
 	return node;
