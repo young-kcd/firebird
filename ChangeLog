@@ -1,3 +1,18 @@
+2007-03-27 13:42  alexpeshkoff
+
+	* firebird2/src/jrd/: sort.cpp (1.79.4.2), sort.h (1.26.4.2):
+
+	Fixed problems with windows build and database restore - thanks to
+	Dmitry and Vlad
+
+2007-03-27 11:39  paulbeach
+
+	* firebird2/builds/: install/arch-specific/darwin/Makefile.in
+	(1.1.12.2), posix/Makefile.in.firebird (1.67.4.2),
+	posix/postfix.darwin (1.1.4.3):
+
+	Firebird 2.0 MacOS Classic Intel Build - Missed 1st time round
+
 2007-03-26 17:53  paulbeach
 
 	*
