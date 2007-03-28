@@ -40,6 +40,10 @@
 #include "../dudley/parse_proto.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/isc_f_proto.h"
+#include "../common/classes/MsgPrint.h"
+
+using MsgFormat::SafeArg;
+
 
 const char* const PROMPT			= "GDEF> ";
 const char* const CONTINUATION	= "CON>  ";
@@ -172,7 +176,7 @@ void PARSE_actions(void)
 	parse_action();
 	while (!dudleyGlob.DDL_eof && dudleyGlob.DDL_errors < 20) {
 		if ((!dudleyGlob.database || !dudleyGlob.database->dbb_handle) && (!dudleyGlob.DDL_drop_database)) {
-			DDL_err(111, NULL, NULL, NULL, NULL, NULL);	/* msg 111: no database declared */
+			DDL_err(111);	/* msg 111: no database declared */
 			if (dudleyGlob.database) {
 				gds__free(dudleyGlob.database);
 				dudleyGlob.database = NULL;
@@ -180,7 +184,7 @@ void PARSE_actions(void)
 			if (dudleyGlob.DDL_interactive)
 				parse_action();
 			else {
-				DDL_err(112, NULL, NULL, NULL, NULL, NULL);	/* msg 112: ceasing processing */
+				DDL_err(112);	/* msg 112: ceasing processing */
 				break;
 			}
 		}
@@ -205,7 +209,7 @@ void PARSE_error( USHORT number, const TEXT* arg1, const TEXT* arg2)
  *
  **************************************/
 
-	DDL_err(number, arg1, arg2, NULL, NULL, NULL);
+	DDL_err(number, SafeArg() << arg1 << arg2);
 	Firebird::LongJump::raise();
 }
 
@@ -651,7 +655,7 @@ static void define_database( enum act_t action_type)
  *
  **************************************/
 	if (dudleyGlob.database)
-		DDL_error_abort(0, 120, NULL, NULL, NULL, NULL, NULL);
+		DDL_error_abort(0, 120);
 		// msg 120: GDEF processes only one database at a time 
 
 	dudleyGlob.database = (DBB) DDL_alloc(sizeof(dbb));
@@ -1920,7 +1924,7 @@ static SYM gen_trigger_name( TRG_T type, DUDLEY_REL relation)
 		break;
 
 	default:
-		DDL_err(156, NULL, NULL, NULL, NULL, NULL);	/* msg 156: gen_trigger_name: invalid trigger type */
+		DDL_err(156);	/* msg 156: gen_trigger_name: invalid trigger type */
 	}
 
 	while (*q && p < end)
@@ -3780,7 +3784,7 @@ static int parse_page_size(void)
 		PARSE_error(210, (TEXT *)(IPTR) n1, (TEXT *)(IPTR) MAX_PAGE_LEN);
 	/* msg 210: PAGE_SIZE specified (%d) longer than limit of %d bytes */
 	if (n1 != n2)
-		DDL_msg_put(211, (TEXT *)(IPTR) n1, (TEXT *)(IPTR) n2, NULL, NULL, NULL);
+		DDL_msg_put(211, SafeArg() << n1 << n2);
 	/* msg 211: PAGE_SIZE specified (%d) was rounded up to %d bytes\n */
 
 	return n2;
@@ -4094,30 +4098,24 @@ static void validate_field( DUDLEY_FLD field)
  *	together.
  *
  **************************************/
-	TEXT option[128];
-
-	*option = 0;
+	static const SafeArg dummy;
+	TEXT option[128] = "";
 
 	if (field->fld_flags & fld_local) {
 		if (field->fld_validation)
-			gds__msg_format(0, DDL_MSG_FAC, 221, sizeof(option), option, NULL,
-							NULL, NULL, NULL, NULL);
+			fb_msg_format(0, DDL_MSG_FAC, 221, sizeof(option), option, dummy);
 		/* msg 221 /'valid if/' */
 		if (field->fld_missing)
-			gds__msg_format(0, DDL_MSG_FAC, 222, sizeof(option), option, NULL,
-							NULL, NULL, NULL, NULL);
+			fb_msg_format(0, DDL_MSG_FAC, 222, sizeof(option), option, dummy);
 		/* msg 222: missing value */
 		if ((field->fld_dtype) && !(field->fld_computed))
-			gds__msg_format(0, DDL_MSG_FAC, 223, sizeof(option), option, NULL,
-							NULL, NULL, NULL, NULL);
+			fb_msg_format(0, DDL_MSG_FAC, 223, sizeof(option), option, dummy);
 		/* msg 223: data type */
 		if ((field->fld_has_sub_type) && !(field->fld_computed))
-			gds__msg_format(0, DDL_MSG_FAC, 224, sizeof(option), option, NULL,
-							NULL, NULL, NULL, NULL);
+			fb_msg_format(0, DDL_MSG_FAC, 224, sizeof(option), option, dummy);
 		/* msg 224: sub type */
 		if ((field->fld_segment_length) && !(field->fld_computed))
-			gds__msg_format(0, DDL_MSG_FAC, 225, sizeof(option), option, NULL,
-							NULL, NULL, NULL, NULL);
+			fb_msg_format(0, DDL_MSG_FAC, 225, sizeof(option), option, dummy);
 		/* msg 225: segment_length */
 		if (*option)
 			PARSE_error(226, option, 0);	/* msg 226: %s is a global, not local, attribute */

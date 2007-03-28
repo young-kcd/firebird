@@ -209,7 +209,7 @@ void LEX_get_text(UCHAR * buffer, TXT text)
 
 	if (fseek(trace_file, start, 0)) {
 		fseek(trace_file, 0, 2);
-		DDL_err(275, NULL, NULL, NULL, NULL, NULL);
+		DDL_err(275);
 		/* msg 275: fseek failed */
 	}
 
@@ -239,7 +239,7 @@ void LEX_init( void *file)
 	trace_file = fopen(trace_file_name, "w+b");
 	if (!trace_file)
 	{
-		DDL_err(276, NULL, NULL, NULL, NULL, NULL);
+		DDL_err(276);
 		/* msg 276: couldn't open scratch file */
 	}
 
@@ -274,7 +274,7 @@ void LEX_put_text (FB_API_HANDLE blob, TXT text)
 
 	if (fseek(trace_file, start, 0)) {
 		fseek(trace_file, 0, 2);
-		DDL_err(275, NULL, NULL, NULL, NULL, NULL);	
+		DDL_err(275);
 		/* msg 275: fseek failed */
 	}
 
@@ -288,7 +288,7 @@ void LEX_put_text (FB_API_HANDLE blob, TXT text)
 		}
 		if (l = p - buffer)
 			if (isc_put_segment(status_vector, &blob, l, buffer))
-				DDL_err(277, NULL, NULL, NULL, NULL, NULL);	
+				DDL_err(277);
 		/* msg 277: isc_put_segment failed */
 	}
 
@@ -375,7 +375,7 @@ TOK LEX_token(void)
 		token->tok_type = tok_quoted;
 		do {
 			if (!(next = nextchar()) || next == '\n') {
-				DDL_err(278, NULL, NULL, NULL, NULL, NULL);
+				DDL_err(278);
 				/* msg 278: unterminated quoted string */
 				break;
 			}
@@ -446,7 +446,7 @@ static int nextchar(void)
 			if (DDL_char < end)
 				*DDL_char++ = c;
 			else
-				DDL_err(279, NULL, NULL, NULL, NULL, NULL);
+				DDL_err(279);
 				/* msg 279: line too SLONG */
 			if (c == '\n')
 				break;

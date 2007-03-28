@@ -15,13 +15,13 @@
 @echo loading locales
 @%FB_MSG_ISQL%locales.sql
 @echo loading history
-@%FB_MSG_ISQL%history.sql
+@%FB_MSG_ISQL%history2.sql
 @echo loading messages
-@%FB_MSG_ISQL%messages.sql
+@%FB_MSG_ISQL%messages2.sql
 @echo loading symbols
-@%FB_MSG_ISQL%symbols.sql
+@%FB_MSG_ISQL%symbols2.sql
 @echo loading system errors
-@%FB_MSG_ISQL%system_errors.sql
+@%FB_MSG_ISQL%system_errors2.sql
 @echo loading French translation
 @%FB_MSG_ISQL%transmsgs.fr_FR.sql
 @echo loading German translation

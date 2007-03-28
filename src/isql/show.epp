@@ -58,6 +58,9 @@
 #include <ctype.h>
 #endif
 
+using MsgFormat::SafeArg;
+
+
 DATABASE DB = EXTERN COMPILETIME "yachts.lnk";
 
 
@@ -405,12 +408,12 @@ bool SHOW_dbb_parameters(FB_API_HANDLE db_handle,
 		const SCHAR item = *d++;
 		const int length = isc_vax_integer(d, 2);
 		d += 2;
-/*
- * This is not the best solution but it fixes the lack of <LF> characters
- * in Windows ISQL.  This will need to remain until we modify the messages
- * to remove the '\n' (on the PC its '\n\r').
- * CVC: WISQL is dead. I've restored the the missing newlines for isql.
- */
+		/*
+		 * This is not the best solution but it fixes the lack of <LF> characters
+		 * in Windows ISQL.  This will need to remain until we modify the messages
+		 * to remove the '\n' (on the PC its '\n\r').
+		 * CVC: WISQL is dead. I've restored the missing newlines for isql.
+		 */
 		switch (item) {
 		case isc_info_end:
 			break;
@@ -423,7 +426,7 @@ bool SHOW_dbb_parameters(FB_API_HANDLE db_handle,
 		case isc_info_db_size_in_pages:
 			value_out = isc_vax_integer(d, length);
 			if (translate) {
-				ISQL_msg_get(NUMBER_PAGES, msg, (TEXT*) (IPTR)value_out);
+				ISQL_msg_get(NUMBER_PAGES, msg, SafeArg() << value_out);
 				sprintf(info, "%s%s", msg, NEWLINE);
 			}
 			else
@@ -434,7 +437,7 @@ bool SHOW_dbb_parameters(FB_API_HANDLE db_handle,
 		case isc_info_sweep_interval:
 			value_out = isc_vax_integer(d, length);
 			if (translate) {
-				ISQL_msg_get(SWEEP_INTERV, msg, (TEXT*)(IPTR) value_out);
+				ISQL_msg_get(SWEEP_INTERV, msg, SafeArg() << value_out);
 				sprintf(info, "%s%s", msg, NEWLINE);
 			}
 			else
@@ -469,7 +472,7 @@ bool SHOW_dbb_parameters(FB_API_HANDLE db_handle,
 		case isc_info_base_level:
 			value_out = isc_vax_integer(d, length);
 			if (translate) {
-				ISQL_msg_get(BASE_LEVEL, msg, (TEXT*)(IPTR)value_out);
+				ISQL_msg_get(BASE_LEVEL, msg, SafeArg() << value_out);
 				sprintf(info, "%s%s", msg, NEWLINE);
 			}
 			else
@@ -479,7 +482,7 @@ bool SHOW_dbb_parameters(FB_API_HANDLE db_handle,
 		case isc_info_limbo:
 			value_out = isc_vax_integer(d, length);
 			if (translate) {
-				ISQL_msg_get(LIMBO, msg, (TEXT*)(IPTR)value_out);
+				ISQL_msg_get(LIMBO, msg, SafeArg() << value_out);
 				sprintf(info, "%s%s", msg, NEWLINE);
 			}
 			else
@@ -1086,12 +1089,12 @@ processing_state SHOW_metadata(const SCHAR* const* cmd,
 	if ((!strcmp(cmd[1], "VERSION")) || (!strcmp(cmd[1], "VER")))
 	{
 		TEXT msg_string[MSG_LENGTH];
-		ISQL_msg_get(VERSION, msg_string, FB_VERSION);
+		ISQL_msg_get(VERSION, msg_string, SafeArg() << FB_VERSION);
 		isqlGlob.printf("%s%s", msg_string, NEWLINE);
 		isqlGlob.printf("Server version:%s", NEWLINE);
 		if (isc_version(&DB, local_fprintf, NULL))
 		{
-			ISQL_msg_get(CANNOT_GET_SRV_VER, msg_string, NULL);
+			ISQL_msg_get(CANNOT_GET_SRV_VER, msg_string);
 			STDERROUT(msg_string);
 		}
 	}
@@ -1220,12 +1223,12 @@ processing_state SHOW_metadata(const SCHAR* const* cmd,
 		else
 		{
 			TEXT msg[MSG_LENGTH];
-			ISQL_msg_get(MSG_TABLES, msg, NULL);
+			ISQL_msg_get(MSG_TABLES, msg);
 			isqlGlob.printf("%s%s", msg, NEWLINE);
 			show_all_tables(1);
-			ISQL_msg_get(MSG_FUNCTIONS, msg, NULL);
+			ISQL_msg_get(MSG_FUNCTIONS, msg);
 			show_functions("", 1, msg);
-			ISQL_msg_get(MSG_COLLATIONS, msg, NULL);
+			ISQL_msg_get(MSG_COLLATIONS, msg);
 			show_collations("", 1, msg, true);
 		}
 		break;
@@ -1525,9 +1528,9 @@ processing_state SHOW_metadata(const SCHAR* const* cmd,
 	if (ret == OBJECT_NOT_FOUND) {
 		TEXT key_string[MSG_LENGTH];
 		if (*cmd[2] == '"')
-			ISQL_msg_get(key, key_string, lcmd[2]);
+			ISQL_msg_get(key, key_string, SafeArg() << lcmd[2]);
 		else
-			ISQL_msg_get(key, key_string, cmd[2]);
+			ISQL_msg_get(key, key_string, SafeArg() << cmd[2]);
 		STDERROUT(key_string);
 	}
 

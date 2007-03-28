@@ -39,6 +39,8 @@
 #include "../jrd/gds_proto.h"
 #include "../jrd/utl_proto.h"
 
+using MsgFormat::SafeArg;
+
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -284,7 +286,7 @@ file* EXEC_open_output(qli_nod* node)
 		if (out_file)
 			return (file*) out_file;
 
-		ERRQ_print_error(42, filename, NULL, NULL, NULL, NULL);
+		ERRQ_print_error(42, filename);
 		// Msg42 Can't open output file %s
 	}
 
@@ -325,7 +327,7 @@ file* EXEC_open_output(qli_nod* node)
 		dup(pair[0]);
 		close(pair[0]);
 		execvp(argv[0], argv);
-		ERRQ_msg_put(43, filename, NULL, NULL, NULL, NULL);	// Msg43 Couldn't run %s
+		ERRQ_msg_put(43, filename);	// Msg43 Couldn't run %s
 		_exit(-1);
 	}
 
@@ -593,8 +595,7 @@ static void commit_retaining( qli_nod* node)
 			if ((node->nod_type == nod_commit_retaining)
 				&& !(database->dbb_flags & DBB_prepared))
 			{
-				ERRQ_msg_put(465, database->dbb_symbol->sym_string, NULL,
-							 NULL, NULL, NULL);
+				ERRQ_msg_put(465, database->dbb_symbol->sym_string);
 			}
 			else if (node->nod_type == nod_prepare)
 				database->dbb_flags |= DBB_prepared;
@@ -611,8 +612,7 @@ static void commit_retaining( qli_nod* node)
 		if ((node->nod_type == nod_commit_retaining) &&
 			!(database->dbb_flags & DBB_prepared))
 		{
-			ERRQ_msg_put(465, database->dbb_symbol->sym_string, NULL, NULL,
-						 NULL, NULL);
+			ERRQ_msg_put(465, database->dbb_symbol->sym_string);
 		}
 		else if (node->nod_type == nod_prepare)
 			database->dbb_flags |= DBB_prepared;
@@ -789,7 +789,7 @@ static void execute_abort( qli_nod* node)
 
 		UCHAR msg[128];
 		MOVQ_terminate(ptr, (SCHAR*) msg, l, sizeof(msg));
-		ERRQ_error(40, (TEXT*) msg, NULL, NULL, NULL, NULL);
+		ERRQ_error(40, SafeArg() << msg);
 		// Msg40 Request terminated by statement: %s
 	}
 

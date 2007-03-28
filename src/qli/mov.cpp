@@ -32,6 +32,9 @@
 #include "../jrd/gdsassert.h"
 #include "../qli/mov_proto.h"
 
+using MsgFormat::SafeArg;
+
+
 static void date_error(const TEXT*, const USHORT);
 static double double_from_text(const dsc* desc);
 static void timestamp_to_text(SLONG[2], DSC *);
@@ -384,7 +387,7 @@ int MOVQ_decompose(const TEXT* string, USHORT length, SLONG* return_value)
 		else if (*p == '.')
 			if (fraction) {
 				MOVQ_terminate(string, temp, length, sizeof(temp));
-				ERRQ_error(411, temp, NULL, NULL, NULL, NULL);
+				ERRQ_error(411, temp);
 			}
 			else
 				fraction = true;
@@ -396,7 +399,7 @@ int MOVQ_decompose(const TEXT* string, USHORT length, SLONG* return_value)
 			break;
 		else if (*p != ' ') {
 			MOVQ_terminate(string, temp, length, sizeof(temp));
-			ERRQ_error(411, temp, NULL, NULL, NULL, NULL);
+			ERRQ_error(411, temp);
 		}
 	}
 
@@ -418,7 +421,7 @@ int MOVQ_decompose(const TEXT* string, USHORT length, SLONG* return_value)
 				continue;
 			else if (*p != ' ') {
 				MOVQ_terminate(string, temp, length, sizeof(temp));
-				ERRQ_error(411, temp, NULL, NULL, NULL, NULL);
+				ERRQ_error(411, temp);
 			}
 		}
 		if (sign)
@@ -965,7 +968,7 @@ static void date_error(const TEXT* string, const USHORT length)
 	SCHAR temp[128];
 
 	MOVQ_terminate(string, temp, length, sizeof(temp));
-	ERRQ_error(56, temp, NULL, NULL, NULL, NULL);
+	ERRQ_error(56, temp);
 	// Msg 56 Error converting string \"%s\" to date
 }
 
@@ -1173,7 +1176,7 @@ static void mover_error( int pattern, USHORT in_type, USHORT out_type)
  **************************************/
 	TEXT in_name[25], out_name[25], msg_unknown[40];
 
-	ERRQ_msg_get(504, msg_unknown);	// Msg504 unknown datatype %d
+	ERRQ_msg_get(504, msg_unknown, sizeof(msg_unknown));	// Msg504 unknown datatype %d
 
 	const TEXT* in = type_name(in_type);
 	if (!in) {
@@ -1187,7 +1190,7 @@ static void mover_error( int pattern, USHORT in_type, USHORT out_type)
 		sprintf(out_name, msg_unknown, out_type);
 	}
 
-	ERRQ_error(pattern, in, out, NULL, NULL, NULL);
+	ERRQ_error(pattern, SafeArg() << in << out);
 }
 
 

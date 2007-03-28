@@ -82,7 +82,10 @@
 #include "../jrd/IntlManager.h"
 #include "../jrd/IntlUtil.h"
 
+using MsgFormat::SafeArg;
+
 using namespace Jrd;
+
 
 typedef Firebird::ObjectsArray<Firebird::MetaName> MetaNameArray;
 
@@ -149,7 +152,7 @@ void DYN_define_collation( Global* gbl, const UCHAR** ptr)
 
 	if (ENCODE_ODS(major_version, minor_original) < ODS_11_0)
 	{
-		DYN_error_punt(false, 220, NULL, NULL, NULL, NULL, NULL);
+		DYN_error_punt(false, 220);
 		// msg 220: "CREATE COLLATION statement is not supported in older versions of the database.
 		//			 A backup and restore is required."
 	}
@@ -160,7 +163,7 @@ void DYN_define_collation( Global* gbl, const UCHAR** ptr)
 	GET_STRING(ptr, collation_name);
 
 	if (!collation_name.length())
-		DYN_error_punt(false, 212, NULL, NULL, NULL, NULL, NULL);
+		DYN_error_punt(false, 212);
 	/* msg 212: "Zero length identifiers not allowed" */
 
 	jrd_req* request = CMP_find_request(tdbb, drq_s_colls, DYN_REQUESTS);
@@ -236,7 +239,7 @@ void DYN_define_collation( Global* gbl, const UCHAR** ptr)
 
 						if (X.RDB$COLLATION_ID.NULL)
 						{
-							DYN_error_punt(false, 221, NULL, NULL, NULL, NULL, NULL);
+							DYN_error_punt(false, 221);
 							// msg 221: "Maximum number of collations per character set exceeded"
 						}
 
@@ -341,7 +344,7 @@ void DYN_define_collation( Global* gbl, const UCHAR** ptr)
 					!Firebird::IntlUtil::parseSpecificAttributes(
 						cs, specific_attributes.getCount(), specific_attributes.begin(), &map))
 				{
-					DYN_error_punt(false, 222, NULL, NULL, NULL, NULL, NULL);
+					DYN_error_punt(false, 222);
 					// msg: 222: "Invalid collation attributes"
 				}
 
@@ -380,7 +383,7 @@ void DYN_define_collation( Global* gbl, const UCHAR** ptr)
 				// But do not allow invalid attributes here.
 				if (!INTL_texttype_validate(tdbb, &info))
 				{
-					DYN_error_punt(false, 222, NULL, NULL, NULL, NULL, NULL);
+					DYN_error_punt(false, 222);
 					// msg: 222: "Invalid collation attributes"
 				}
 			}
@@ -397,7 +400,7 @@ void DYN_define_collation( Global* gbl, const UCHAR** ptr)
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		if (b_ending_store) {
 			DYN_rundown_request(request, drq_s_colls);
-			DYN_error_punt(true, 219, NULL, NULL, NULL, NULL, NULL);
+			DYN_error_punt(true, 219);
 			// msg 219: "DEFINE COLLATION failed"
 		}
 		throw;
@@ -439,7 +442,7 @@ void DYN_define_constraint(Global*		gbl,
 	}
 	if (constraint_name.length() == 0)
 	{
-		DYN_error_punt(false, 212, NULL, NULL, NULL, NULL, NULL);
+		DYN_error_punt(false, 212);
 	/* msg 212: "Zero length identifiers not allowed" */
 	}
 
@@ -536,11 +539,7 @@ void DYN_define_constraint(Global*		gbl,
 
 		DYN_error_punt(true,
 						number,
-						number == 124 ? constraint_name.c_str() : NULL,
-						NULL,
-						NULL,
-						NULL,
-						NULL);
+						number == 124 ? constraint_name.c_str() : NULL);
 	}
 
 	if (verb == isc_dyn_def_trigger)
@@ -611,7 +610,7 @@ void DYN_define_constraint(Global*		gbl,
 	}
 
 	if (!not_null) {
-		DYN_error_punt(false, 123, null_field_name.c_str(), NULL, NULL, NULL, NULL);
+		DYN_error_punt(false, 123, null_field_name.c_str());
 		/* msg 123: "Field: %s not defined as NOT NULL - can't be used in PRIMARY KEY constraint definition" */
 	}
 
@@ -782,22 +781,18 @@ void DYN_define_constraint(Global*		gbl,
 
 		DYN_error_punt(true,
 						number,
-						number == 124 ? constraint_name.c_str() : NULL,
-						NULL,
-						NULL,
-						NULL,
-						NULL);
+						number == 124 ? constraint_name.c_str() : NULL);
 	}
 
 	return;
 
 dyn_punt_false_124:
-	DYN_error_punt(false, 124, constraint_name.c_str(), NULL, NULL, NULL, NULL);
+	DYN_error_punt(false, 124, constraint_name.c_str());
 	/* msg 124: "A column name is repeated in the definition of constraint: %s" */
 	return;
 
 dyn_punt_false_126:
-	DYN_error_punt(false, 126, NULL, NULL, NULL, NULL, NULL);
+	DYN_error_punt(false, 126);
 	/* msg 126: "Same set of columns cannot be used in more than one PRIMARY KEY and/or UNIQUE constraint definition" */
 }
 
@@ -871,7 +866,7 @@ void DYN_define_dimension(Global*		gbl,
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		if (b_ending_store) {
 			DYN_rundown_request(request, drq_s_dims);
-			DYN_error_punt(true, 3, NULL, NULL, NULL, NULL, NULL);
+			DYN_error_punt(true, 3);
 			/* msg 3: "STORE RDB$FIELD_DIMENSIONS failed" */
 		}
 		throw;
@@ -903,7 +898,7 @@ void DYN_define_exception( Global* gbl, const UCHAR** ptr)
 	GET_STRING(ptr, exception_name);
 
 	if (exception_name.length() == 0) {
-		DYN_error_punt(false, 212, NULL, NULL, NULL, NULL, NULL);
+		DYN_error_punt(false, 212);
 	/* msg 212: "Zero length identifiers not allowed" */
 	}
 
@@ -947,7 +942,7 @@ void DYN_define_exception( Global* gbl, const UCHAR** ptr)
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		if (b_ending_store) {
 			DYN_rundown_request(request, drq_s_trg_msgs);
-			DYN_error_punt(true, 142, NULL, NULL, NULL, NULL, NULL);
+			DYN_error_punt(true, 142);
 			/* msg 142: "DEFINE EXCEPTION failed" */
 		}
 		throw;
@@ -993,14 +988,14 @@ void DYN_define_file(Global*		gbl,
 	GET_STRING(ptr, temp_f);
 	if (!ISC_expand_filename(temp_f, false))
 	{
-		DYN_error_punt(false, 231, NULL, NULL, NULL, NULL, NULL);
+		DYN_error_punt(false, 231);
 		// File name is invalid.
 	}
 
 	request = CMP_find_request(tdbb, id = drq_l_files, DYN_REQUESTS);
 
 	if (dbb->dbb_filename == temp_f) {
-		DYN_error_punt(false, 166, NULL, NULL, NULL, NULL, NULL);
+		DYN_error_punt(false, 166);
 	}
 
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
@@ -1008,7 +1003,7 @@ void DYN_define_file(Global*		gbl,
 			if (!DYN_REQUEST(drq_l_files))
 				DYN_REQUEST(drq_l_files) = request;
 
-			DYN_error_punt(false, 166, NULL, NULL, NULL, NULL, NULL);
+			DYN_error_punt(false, 166);
 	END_FOR;
 	
 	if (!DYN_REQUEST(drq_l_files))
@@ -1072,14 +1067,14 @@ void DYN_define_file(Global*		gbl,
 		if (id == drq_l_files)
 		{
 			DYN_rundown_request(request, drq_l_files);
-			DYN_error_punt(false, 166, NULL, NULL, NULL, NULL, NULL);
+			DYN_error_punt(false, 166);
 		}
 		else
 		{
 			if (id != -1)
 				DYN_rundown_request(request, drq_s_files);
 
-			DYN_error_punt(true, msg, NULL, NULL, NULL, NULL, NULL);
+			DYN_error_punt(true, msg);
 		}
 	}
 
@@ -1153,13 +1148,13 @@ void DYN_define_difference(Global*		gbl,
 		if (id == drq_s_difference)
 		{
 			DYN_rundown_request(request, drq_s_difference);
-			DYN_error_punt(true, 150, NULL, NULL, NULL, NULL, NULL);
+			DYN_error_punt(true, 150);
 			/* msg 150: STORE RDB$FILES failed */
 		}
 		else
 		{
 			DYN_rundown_request(request, drq_l_difference);
-			DYN_error_punt(true, 156, NULL, NULL, NULL, NULL, NULL);
+			DYN_error_punt(true, 156);
 			/* msg 156: Difference file lookup failed */
 		}
 	}
@@ -1167,7 +1162,7 @@ void DYN_define_difference(Global*		gbl,
 	return;
 
 dyn_punt_216:
-	DYN_error_punt(false, 216, NULL, NULL, NULL, NULL, NULL);
+	DYN_error_punt(false, 216);
 	/* msg 216: "Difference file is already defined" */
 }
 
@@ -1192,7 +1187,7 @@ void DYN_define_filter( Global* gbl, const UCHAR** ptr)
 	GET_STRING(ptr, filter_name);
 
 	if (filter_name.length() == 0) {
-		DYN_error_punt(false, 212, NULL, NULL, NULL, NULL, NULL);
+		DYN_error_punt(false, 212);
 	/* msg 212: "Zero length identifiers not allowed" */
 	}
 
@@ -1258,7 +1253,7 @@ void DYN_define_filter( Global* gbl, const UCHAR** ptr)
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		if (b_ending_store) {
 			DYN_rundown_request(request, drq_s_filters);
-			DYN_error_punt(true, 7, NULL, NULL, NULL, NULL, NULL);
+			DYN_error_punt(true, 7);
 			/* msg 7: "DEFINE BLOB FILTER failed" */
 		}
 		throw;
@@ -1286,7 +1281,7 @@ void DYN_define_function( Global* gbl, const UCHAR** ptr)
 	GET_STRING(ptr, function_name);
 
 	if (function_name.length() == 0)
-		DYN_error_punt(false, 212, NULL, NULL, NULL, NULL, NULL);
+		DYN_error_punt(false, 212);
 	/* msg 212: "Zero length identifiers not allowed" */
 
 	jrd_req* request = CMP_find_request(tdbb, drq_s_funcs, DYN_REQUESTS);
@@ -1315,7 +1310,7 @@ void DYN_define_function( Global* gbl, const UCHAR** ptr)
 					X.RDB$RETURN_ARGUMENT = (SSHORT)DYN_get_number(ptr);
 					X.RDB$RETURN_ARGUMENT.NULL = FALSE;
 					if (X.RDB$RETURN_ARGUMENT > MAX_UDF_ARGUMENTS)
-						DYN_error_punt(true, 10, NULL, NULL, NULL, NULL, NULL);
+						DYN_error_punt(true, 10);
 					/* msg 10: "DEFINE FUNCTION failed" */
 					break;
 
@@ -1357,7 +1352,7 @@ void DYN_define_function( Global* gbl, const UCHAR** ptr)
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		if (b_ending_store) {
 			DYN_rundown_request(request, drq_s_funcs);
-			DYN_error_punt(true, 10, NULL, NULL, NULL, NULL, NULL);
+			DYN_error_punt(true, 10);
 			/* msg 10: "DEFINE FUNCTION failed" */
 		}
 		throw;
@@ -1395,7 +1390,7 @@ void DYN_define_function_arg(Global* gbl, const UCHAR** ptr, Firebird::MetaName*
 		X.RDB$ARGUMENT_POSITION = (SSHORT)DYN_get_number(ptr);
 
 		if (X.RDB$ARGUMENT_POSITION > MAX_UDF_ARGUMENTS)
-			DYN_error_punt(true, 12, NULL, NULL, NULL, NULL, NULL);
+			DYN_error_punt(true, 12);
 		/* msg 12: "DEFINE FUNCTION ARGUMENT failed" */
 
 		if (function_name) {
@@ -1489,7 +1484,7 @@ void DYN_define_function_arg(Global* gbl, const UCHAR** ptr, Firebird::MetaName*
 		if (request) {
 			DYN_rundown_request(request, drq_s_func_args);
 		}
-		DYN_error_punt(true, 12, NULL, NULL, NULL, NULL, NULL);
+		DYN_error_punt(true, 12);
 		/* msg 12: "DEFINE FUNCTION ARGUMENT failed" */
 	}
 }
@@ -1515,7 +1510,7 @@ void DYN_define_generator( Global* gbl, const UCHAR** ptr)
 	GET_STRING(ptr, generator_name);
 
 	if (generator_name.length() == 0) {
-		DYN_error_punt(false, 212, NULL, NULL, NULL, NULL, NULL);
+		DYN_error_punt(false, 212);
 	/* msg 212: "Zero length identifiers not allowed" */
 	}
 
@@ -1542,7 +1537,7 @@ void DYN_define_generator( Global* gbl, const UCHAR** ptr)
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		if (b_ending_store) {
 			DYN_rundown_request(request, drq_s_gens);
-			DYN_error_punt(true, 8, NULL, NULL, NULL, NULL, NULL);
+			DYN_error_punt(true, 8);
 			/* msg 8: "DEFINE GENERATOR failed" */
 		}
 		throw;
@@ -1550,7 +1545,7 @@ void DYN_define_generator( Global* gbl, const UCHAR** ptr)
 
 	if (*(*ptr)++ != isc_dyn_end)
 	{
-		DYN_error_punt(true, 9, NULL, NULL, NULL, NULL, NULL);
+		DYN_error_punt(true, 9);
 		/* msg 9: "DEFINE GENERATOR unexpected dyn verb" */
 	}
 }
@@ -1587,7 +1582,7 @@ void DYN_define_global_field(Global*		gbl,
 	}
 	if (global_field_name.length() == 0)
 	{
-		DYN_error_punt(false, 212, NULL, NULL, NULL, NULL, NULL);
+		DYN_error_punt(false, 212);
 	/* msg 212: "Zero length identifiers not allowed" */
 	}
 
@@ -1743,7 +1738,7 @@ void DYN_define_global_field(Global*		gbl,
 			case isc_dyn_fld_default_value:
 				if (has_dimensions)
 				{
-					DYN_error_punt(false, 226, global_field_name.c_str(), NULL, NULL, NULL, NULL);
+					DYN_error_punt(false, 226, global_field_name.c_str());
 					// msg 226: "Default value is not allowed for array type in domain %s"
 				}
 				has_default = true;
@@ -1754,7 +1749,7 @@ void DYN_define_global_field(Global*		gbl,
 			case isc_dyn_fld_default_source:
 				if (has_dimensions)
 				{
-					DYN_error_punt(false, 226, global_field_name.c_str(), NULL, NULL, NULL, NULL);
+					DYN_error_punt(false, 226, global_field_name.c_str());
 					// msg 226: "Default value is not allowed for array type in domain %s"
 				}
 				has_default = true;
@@ -1785,7 +1780,7 @@ void DYN_define_global_field(Global*		gbl,
 			case isc_dyn_fld_dimensions:
 				if (has_default)
 				{
-					DYN_error_punt(false, 226, global_field_name.c_str(), NULL, NULL, NULL, NULL);
+					DYN_error_punt(false, 226, global_field_name.c_str());
 					// msg 226: "Default value is not allowed for array type in domain %s"
 				}
 				has_dimensions = true;
@@ -1816,7 +1811,7 @@ void DYN_define_global_field(Global*		gbl,
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		if (b_ending_store) {
 			DYN_rundown_request(request, drq_s_gfields);
-			DYN_error_punt(true, 13, NULL, NULL, NULL, NULL, NULL);
+			DYN_error_punt(true, 13);
 			/* msg 13: "STORE RDB$FIELDS failed" */
 		}
 		throw;
@@ -1864,7 +1859,7 @@ void DYN_define_index(Global*		gbl,
 		DYN_UTIL_generate_index_name(tdbb, gbl, index_name, index_type);
 	}
 	if (index_name.length() == 0) {
-		DYN_error_punt(false, 212, NULL, NULL, NULL, NULL, NULL);
+		DYN_error_punt(false, 212);
 	/* msg 212: "Zero length identifiers not allowed" */
 	}
 
@@ -1897,7 +1892,7 @@ void DYN_define_index(Global*		gbl,
 		else if (*(*ptr)++ == isc_dyn_rel_name)
 			GET_STRING(ptr, IDX.RDB$RELATION_NAME);
 		else
-			DYN_error_punt(false, 14, NULL, NULL, NULL, NULL, NULL);
+			DYN_error_punt(false, 14);
 		/* msg 14: "No relation specified for index" */
 
 		IDX.RDB$RELATION_NAME.NULL = FALSE;
@@ -1919,7 +1914,7 @@ void DYN_define_index(Global*		gbl,
 				DYN_REQUEST(drq_l_view_idx) = request;
 				
 			if (!VREL.RDB$VIEW_BLR.NULL)
-				DYN_error_punt(false, 181, NULL, NULL, NULL, NULL, NULL);
+				DYN_error_punt(false, 181);
 			/* msg 181: "attempt to index a view" */
 
 		END_FOR;
@@ -1967,8 +1962,8 @@ void DYN_define_index(Global*		gbl,
 					{
 						if (seg_list[iter] == str)
 						{
-							DYN_error_punt(false, 240, str.c_str(),
-								IDX.RDB$INDEX_NAME, NULL, NULL, NULL);
+							DYN_error_punt(false, 240, SafeArg() << str.c_str() <<
+								IDX.RDB$INDEX_NAME);
 							// msg 240 "Field %s cannot be used twice in index %s"
 						}
 					}
@@ -1990,20 +1985,17 @@ void DYN_define_index(Global*		gbl,
 						fld_count++;
 						if (GF.RDB$FIELD_TYPE == blr_blob)
 						{
-						DYN_error_punt(false, 116, IDX.RDB$INDEX_NAME, NULL,
-										   NULL, NULL, NULL);
+						DYN_error_punt(false, 116, IDX.RDB$INDEX_NAME);
 							/* msg 116 "attempt to index blob field in index %s" */
 						}
 						else if (!GF.RDB$DIMENSIONS.NULL)
 						{
-						DYN_error_punt(false, 117, IDX.RDB$INDEX_NAME, NULL,
-										   NULL, NULL, NULL);
+						DYN_error_punt(false, 117, IDX.RDB$INDEX_NAME);
 							/* msg 117 "attempt to index array field in index %s" */
 						}
 						else if (!GF.RDB$COMPUTED_BLR.NULL)
 						{
-						DYN_error_punt(false, 179, IDX.RDB$INDEX_NAME, NULL,
-										   NULL, NULL, NULL);
+						DYN_error_punt(false, 179, IDX.RDB$INDEX_NAME);
 							/* msg 179 "attempt to index COMPUTED BY field in index %s" */
 						}
 						else if (GF.RDB$FIELD_TYPE == blr_varying ||
@@ -2073,7 +2065,7 @@ void DYN_define_index(Global*		gbl,
 			case isc_dyn_idx_foreign_key:
 				GET_STRING(ptr, referenced_relation);
 				if (referenced_relation.length() == 0) {
-					DYN_error_punt(false, 212, NULL, NULL, NULL, NULL, NULL);
+					DYN_error_punt(false, 212);
 				/* msg 212: "Zero length identifiers not allowed" */
 				}
 				break;
@@ -2202,14 +2194,12 @@ void DYN_define_index(Global*		gbl,
 
 		key_length = ROUNDUP(key_length, sizeof(SLONG));
 		if (key_length >= MAX_KEY)
-			DYN_error_punt(false, 118, IDX.RDB$INDEX_NAME, NULL, NULL, NULL,
-						   NULL);
+			DYN_error_punt(false, 118, IDX.RDB$INDEX_NAME);
 		/* msg 118 "key size too big for index %s" */
 
 		if (seg_count) {
 			if (seg_count != fld_count)
-				DYN_error_punt(false, 120, IDX.RDB$INDEX_NAME, NULL, NULL,
-							   NULL, NULL);
+				DYN_error_punt(false, 120, IDX.RDB$INDEX_NAME);
 			/* msg 118 "Unknown fields in index %s" */
 
 			old_request = request;
@@ -2232,7 +2222,7 @@ void DYN_define_index(Global*		gbl,
 		}
 		else if (IDX.RDB$EXPRESSION_BLR.NULL)
 		{
-			DYN_error_punt(false, 119, IDX.RDB$INDEX_NAME, NULL, NULL, NULL, NULL);
+			DYN_error_punt(false, 119, IDX.RDB$INDEX_NAME);
 			// msg 119 "no keys for index %s"
 		}
 
@@ -2240,7 +2230,7 @@ void DYN_define_index(Global*		gbl,
 			/* If referring columns count <> referred columns return error */
 
 			if (seg_count != referred_cols)
-				DYN_error_punt(true, 133, NULL, NULL, NULL, NULL, NULL);
+				DYN_error_punt(true, 133);
 			/* msg 133: "Number of referencing columns do not equal number of referenced columns */
 
 			/* lookup a unique index in the referenced relation with the
@@ -2325,18 +2315,18 @@ void DYN_define_index(Global*		gbl,
 
 				if (isView)
 				{
-					DYN_error_punt(false, 242, referenced_relation.c_str(), NULL, NULL, NULL, NULL);
+					DYN_error_punt(false, 242, referenced_relation.c_str());
 					// msg 242: "attempt to reference a view (%s) in a foreign key"
 				}
 
 				if (found)
 				{
-					DYN_error_punt(false, 18, referenced_relation.c_str(), NULL, NULL, NULL, NULL);
+					DYN_error_punt(false, 18, referenced_relation.c_str());
 					// msg 18: "could not find UNIQUE or PRIMARY KEY constraint in table %s with specified columns"
 				}
 				else
 				{
-					DYN_error_punt(false, 241, referenced_relation.c_str(), NULL, NULL, NULL, NULL);
+					DYN_error_punt(false, 241, referenced_relation.c_str());
 					// msg 241: "Table %s not found"
 				}
 			}
@@ -2360,7 +2350,7 @@ void DYN_define_index(Global*		gbl,
 				   of columns in referring index */
 
 				if (seg_count != IND.RDB$SEGMENT_COUNT)
-					DYN_error_punt(true, 133, NULL, NULL, NULL, NULL, NULL);
+					DYN_error_punt(true, 133);
 				/* msg 133: "Number of referencing columns do not equal number of referenced columns" */
 
 				fb_utils::exact_name_limit(IND.RDB$INDEX_NAME, sizeof(IND.RDB$INDEX_NAME));
@@ -2377,7 +2367,7 @@ void DYN_define_index(Global*		gbl,
 
 			if (IDX.RDB$FOREIGN_KEY.NULL)
 			{
-				DYN_error_punt(false, 20, referenced_relation.c_str(), NULL, NULL, NULL, NULL);
+				DYN_error_punt(false, 20, referenced_relation.c_str());
 				// msg 20: "could not find PRIMARY KEY index in specified table %s"
 			}
 		}
@@ -2394,12 +2384,12 @@ void DYN_define_index(Global*		gbl,
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		if (id == drq_s_indices) {
 			DYN_rundown_request(request, id);
-			DYN_error_punt(true, 21, NULL, NULL, NULL, NULL, NULL);
+			DYN_error_punt(true, 21);
 			/* msg 21: "STORE RDB$INDICES failed" */
 		}
 		else if (id == drq_s_idx_segs) {
 			DYN_rundown_request(request, id);
-			DYN_error_punt(true, 15, NULL, NULL, NULL, NULL, NULL);
+			DYN_error_punt(true, 15);
 			/* msg 15: "STORE RDB$INDICES failed" */
 		}
 
@@ -2407,19 +2397,19 @@ void DYN_define_index(Global*		gbl,
 		switch (id)
 		{
 		case drq_l_lfield:
-			DYN_error_punt(true, 15, NULL, NULL, NULL, NULL, NULL);
+			DYN_error_punt(true, 15);
 			/* msg 15: "STORE RDB$INDICES failed" */
 			break;
 		case drq_l_unq_idx:
-			DYN_error_punt(true, 17, NULL, NULL, NULL, NULL, NULL);
+			DYN_error_punt(true, 17);
 			/* msg 17: "Primary Key field lookup failed" */
 			break;
 		case drq_l_view_idx:
-			DYN_error_punt(true, 180, NULL, NULL, NULL, NULL, NULL);
+			DYN_error_punt(true, 180);
 			/* msg 180: "Table Name lookup failed" */
 			break;
 		default:
-			DYN_error_punt(true, 19, NULL, NULL, NULL, NULL, NULL);
+			DYN_error_punt(true, 19);
 			/* msg 19: "Primary Key lookup failed" */
 			break;
 		}
@@ -2455,7 +2445,7 @@ void DYN_define_local_field(Global*		gbl,
 	GET_STRING(ptr, local_field_name);
 
 	if (local_field_name.length() == 0) {
-		DYN_error_punt(false, 212, NULL, NULL, NULL, NULL, NULL);
+		DYN_error_punt(false, 212);
 	/* msg 212: "Zero length identifiers not allowed" */
 	}
 
@@ -2649,7 +2639,7 @@ void DYN_define_local_field(Global*		gbl,
 
 		if (has_default && DYN_UTIL_is_array(tdbb, gbl, RFR.RDB$FIELD_SOURCE))
 		{
-			DYN_error_punt(false, 226, RFR.RDB$FIELD_SOURCE, NULL, NULL, NULL, NULL);
+			DYN_error_punt(false, 226, RFR.RDB$FIELD_SOURCE);
 			// msg 226: "Default value is not allowed for array type in domain %s"
 		}
 
@@ -2746,12 +2736,12 @@ void DYN_define_local_field(Global*		gbl,
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		if (id == drq_s_lfields) {
 			DYN_rundown_request(request, id);
-			DYN_error_punt(true, 23, NULL, NULL, NULL, NULL, NULL);
+			DYN_error_punt(true, 23);
 			/* msg 23: "STORE RDB$RELATION_FIELDS failed" */
 		}
 		else {
 			DYN_rundown_request(request, id);
-			DYN_error_punt(true, 22, NULL, NULL, NULL, NULL, NULL);
+			DYN_error_punt(true, 22);
 			/* msg 22: "STORE RDB$FIELDS failed" */
 		}
 	}
@@ -2788,7 +2778,7 @@ void DYN_define_parameter( Global* gbl, const UCHAR** ptr, Firebird::MetaName* p
 	GET_STRING(ptr, parameter_name);
 
 	if (parameter_name.length() == 0) {
-		DYN_error_punt(false, 212, NULL, NULL, NULL, NULL, NULL);
+		DYN_error_punt(false, 212);
 	/* msg 212: "Zero length identifiers not allowed" */
 	}
 
@@ -3054,12 +3044,12 @@ void DYN_define_parameter( Global* gbl, const UCHAR** ptr, Firebird::MetaName* p
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		if (id == drq_s_prms) {
 			DYN_rundown_request(request, drq_s_prms);
-			DYN_error_punt(true, 136, NULL, NULL, NULL, NULL, NULL);
+			DYN_error_punt(true, 136);
 			/* msg 163: "STORE RDB$PROCEDURE_PARAMETERS failed" */
 		}
 		else if (id == drq_s_prm_src) {
 			DYN_rundown_request(request, drq_s_prm_src);
-			DYN_error_punt(true, 136, NULL, NULL, NULL, NULL, NULL);
+			DYN_error_punt(true, 136);
 			/* msg 136: "STORE RDB$PROCEDURE_PARAMETERS failed" */
 		}
 		DYN_rundown_request(request, -1);
@@ -3067,7 +3057,7 @@ void DYN_define_parameter( Global* gbl, const UCHAR** ptr, Firebird::MetaName* p
 		/* Control should never reach this point,
 		   because id should always have one of the values tested above.  */
 		fb_assert(0);
-		DYN_error_punt(true, 0, NULL, NULL, NULL, NULL, NULL);
+		DYN_error_punt(true, 0);
 	}
 }
 
@@ -3092,7 +3082,7 @@ void DYN_define_procedure( Global* gbl, const UCHAR** ptr)
 	GET_STRING(ptr, procedure_name);
 
 	if (procedure_name.length() == 0)
-		DYN_error_punt(false, 212, NULL, NULL, NULL, NULL, NULL);
+		DYN_error_punt(false, 212);
 	/* msg 212: "Zero length identifiers not allowed" */
 
 	jrd_req* request = NULL;
@@ -3209,7 +3199,7 @@ void DYN_define_procedure( Global* gbl, const UCHAR** ptr)
 	if (sql_prot) {
 		Firebird::MetaName owner_name;
 		if (!get_who(tdbb, gbl, owner_name))
-			DYN_error_punt(true, 134, NULL, NULL, NULL, NULL, NULL);
+			DYN_error_punt(true, 134);
 		/* msg 134: "STORE RDB$PROCEDURES failed" */
 
 		for (const TEXT* p = ALL_PROC_PRIVILEGES; *p; p++) {
@@ -3236,25 +3226,25 @@ void DYN_define_procedure( Global* gbl, const UCHAR** ptr)
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		if (id == drq_s_prcs) {
 			DYN_rundown_request(request, id);
-			DYN_error_punt(true, 134, NULL, NULL, NULL, NULL, NULL);
+			DYN_error_punt(true, 134);
 			/* msg 134: "STORE RDB$PROCEDURES failed" */
 		}
 		else if (id == drq_s_prc_usr_prvs) {
 			DYN_rundown_request(request, id);
-			DYN_error_punt(true, 25, NULL, NULL, NULL, NULL, NULL);
+			DYN_error_punt(true, 25);
 			/* msg 25: "STORE RDB$USER_PRIVILEGES failed defining a relation" */
 		}
 
 		DYN_rundown_request(request, -1);
 		if (id == drq_l_prc_name) {
-			DYN_error_punt(true, 134, NULL, NULL, NULL, NULL, NULL);
+			DYN_error_punt(true, 134);
 			/* msg 134: "STORE RDB$PROCEDURES failed" */
 		}
 
 		/* Control should never reach this point, because id should have
 		   one of the values tested-for above. */
 		fb_assert(0);
-		DYN_error_punt(true, 0, NULL, NULL, NULL, NULL, NULL);
+		DYN_error_punt(true, 0);
 	}
 }
 
@@ -3281,7 +3271,7 @@ void DYN_define_relation( Global* gbl, const UCHAR** ptr)
 
 	if (relation_name.length() == 0)
 	{
-		DYN_error_punt(false, 212, NULL, NULL, NULL, NULL, NULL);
+		DYN_error_punt(false, 212);
 	/* msg 212: "Zero length identifiers not allowed" */
 	}
 
@@ -3351,7 +3341,7 @@ void DYN_define_relation( Global* gbl, const UCHAR** ptr)
 			case isc_dyn_rel_ext_file:
 				GET_STRING(ptr, REL.RDB$EXTERNAL_FILE);
 				if (ISC_check_if_remote(REL.RDB$EXTERNAL_FILE, false))
-					DYN_error_punt(true, 163, NULL, NULL, NULL, NULL, NULL);
+					DYN_error_punt(true, 163);
 
 				// Check for any path, present in filename.
 				// If miss it, file will be searched in External Tables Dirs,
@@ -3404,7 +3394,7 @@ void DYN_define_relation( Global* gbl, const UCHAR** ptr)
 		
 		if (sql_prot) {
 			if (!get_who(tdbb, gbl, owner_name))
-				DYN_error_punt(true, 115, NULL, NULL, NULL, NULL, NULL);
+				DYN_error_punt(true, 115);
 			/* msg 115: "CREATE VIEW failed" */
 
 			if (rel_type == rel_view) {
@@ -3430,8 +3420,7 @@ void DYN_define_relation( Global* gbl, const UCHAR** ptr)
 						{
 							// I think this should be the responsability of DFW
 							// or the user will find ways to circumvent DYN.
-							DYN_error_punt(true, 115, NULL, NULL, NULL, NULL,
-										   NULL);
+							DYN_error_punt(true, 115);
 							/* msg 115: "CREATE VIEW failed" */
 						}
 
@@ -3449,8 +3438,7 @@ void DYN_define_relation( Global* gbl, const UCHAR** ptr)
 							*s++ = (ISC_STATUS) ERR_cstring(PREL.RDB$RELATION_NAME);
 							*s = 0;
 							/* msg 32: no permission for %s access to %s %s */
-							DYN_error_punt(true, 115, NULL, NULL, NULL, NULL,
-										   NULL);
+							DYN_error_punt(true, 115);
 							/* msg 115: "CREATE VIEW failed" */
 						}
 					}
@@ -3507,21 +3495,21 @@ void DYN_define_relation( Global* gbl, const UCHAR** ptr)
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		if (id == drq_s_rels) {
 			DYN_rundown_request(request, id);
-			DYN_error_punt(true, 24, NULL, NULL, NULL, NULL, NULL);
+			DYN_error_punt(true, 24);
 			/* msg 24: "STORE RDB$RELATIONS failed" */
 		}
 		else if (id == drq_s_usr_prvs) {
 			DYN_rundown_request(request, id);
-			DYN_error_punt(true, 25, NULL, NULL, NULL, NULL, NULL);
+			DYN_error_punt(true, 25);
 			/* msg 25: "STORE RDB$USER_PRIVILEGES failed defining a relation" */
 		}
 
 		DYN_rundown_request(request, -1);
 		if (id == drq_l_rel_name)
-			DYN_error_punt(true, 24, NULL, NULL, NULL, NULL, NULL);
+			DYN_error_punt(true, 24);
 		/* msg 24: "STORE RDB$RELATIONS failed" */
 		else if (id == drq_l_view_rels)
-			DYN_error_punt(true, 115, NULL, NULL, NULL, NULL, NULL);
+			DYN_error_punt(true, 115);
 		/* msg 115: "CREATE VIEW failed" */
 		else if (id == drq_l_rel_info2)
 			ERR_punt();
@@ -3529,7 +3517,7 @@ void DYN_define_relation( Global* gbl, const UCHAR** ptr)
 		/* Control should never reach this point, because id should
 		   always have one of the values test-for above. */
 		fb_assert(0);
-		DYN_error_punt(true, 0, NULL, NULL, NULL, NULL, NULL);
+		DYN_error_punt(true, 0);
 	}
 }
 
@@ -3558,7 +3546,7 @@ void DYN_define_role( Global* gbl, const UCHAR** ptr)
 
 	if (ENCODE_ODS(major_version, minor_original) < ODS_9_0)
 	{
-		DYN_error(false, 196, NULL, NULL, NULL, NULL, NULL);
+		DYN_error(false, 196);
 		ERR_punt();
 	}
 
@@ -3574,7 +3562,7 @@ void DYN_define_role( Global* gbl, const UCHAR** ptr)
 		** user name could not be used for SQL role
 		**
 		*************************************************/
-		DYN_error(false, 193, owner_name.c_str(), NULL, NULL, NULL, NULL);
+		DYN_error(false, 193, SafeArg() << owner_name.c_str());
 		ERR_punt();
 	}
 
@@ -3584,7 +3572,7 @@ void DYN_define_role( Global* gbl, const UCHAR** ptr)
 		** keyword NONE could not be used as SQL role name
 		**
 		*************************************************/
-		DYN_error(false, 195, role_name.c_str(), NULL, NULL, NULL, NULL);
+		DYN_error(false, 195, SafeArg() << role_name.c_str());
 		ERR_punt();
 	}
 
@@ -3596,7 +3584,7 @@ void DYN_define_role( Global* gbl, const UCHAR** ptr)
 			** user name could not be used for SQL role
 			**
 			*************************************************/
-			DYN_error(false, 193, role_name.c_str(), NULL, NULL, NULL, NULL);
+			DYN_error(false, 193, SafeArg() << role_name.c_str());
 			goto do_err_punt;
 		}
 
@@ -3607,7 +3595,7 @@ void DYN_define_role( Global* gbl, const UCHAR** ptr)
 			** SQL role already exist
 			**
 			*************************************************/
-			DYN_error(false, 194, role_name.c_str(), NULL, NULL, NULL, NULL);
+			DYN_error(false, 194, SafeArg() << role_name.c_str());
 			goto do_err_punt;
 		}
 
@@ -3645,7 +3633,7 @@ void DYN_define_role( Global* gbl, const UCHAR** ptr)
 		if (request) {
 			DYN_rundown_request(request, drq_role_gens);
 		}
-		DYN_error_punt(true, 8, NULL, NULL, NULL, NULL, NULL);
+		DYN_error_punt(true, 8);
 		/* msg 8: "DEFINE ROLE failed" */
 	}
 
@@ -3656,7 +3644,7 @@ do_err_punt:
 	return;
 
 do_error_punt_9:
-	DYN_error_punt(true, 9, NULL, NULL, NULL, NULL, NULL);
+	DYN_error_punt(true, 9);
 	/* msg 9: "DEFINE ROLE unexpected dyn verb" */
 }
 
@@ -3720,7 +3708,7 @@ void DYN_define_security_class( Global* gbl, const UCHAR** ptr)
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		if (b_ending_store) {
 			DYN_rundown_request(request, drq_s_classes);
-			DYN_error_punt(true, 27, NULL, NULL, NULL, NULL, NULL);
+			DYN_error_punt(true, 27);
 			/* msg 27: "STORE RDB$RELATIONS failed" */
 		}
 		throw;
@@ -3755,7 +3743,7 @@ void DYN_define_sql_field(Global*		gbl,
 	GET_STRING(ptr, sql_field_name);
 
 	if (sql_field_name.length() == 0) {
-		DYN_error_punt(false, 212, NULL, NULL, NULL, NULL, NULL);
+		DYN_error_punt(false, 212);
 	/* msg 212: "Zero length identifiers not allowed" */
 	}
 
@@ -3876,7 +3864,7 @@ void DYN_define_sql_field(Global*		gbl,
 				case isc_dyn_fld_default_value:
 					if (has_dimensions)
 					{
-						DYN_error_punt(false, 225, sql_field_name.c_str(), NULL, NULL, NULL, NULL);
+						DYN_error_punt(false, 225, sql_field_name.c_str());
 						// msg 225: "Default value is not allowed for array type in field %s"
 					}
 					has_default = true;
@@ -3887,7 +3875,7 @@ void DYN_define_sql_field(Global*		gbl,
 				case isc_dyn_fld_default_source:
 					if (has_dimensions)
 					{
-						DYN_error_punt(false, 225, sql_field_name.c_str(), NULL, NULL, NULL, NULL);
+						DYN_error_punt(false, 225, sql_field_name.c_str());
 						// msg 225: "Default value is not allowed for array type in field %s"
 					}
 					has_default = true;
@@ -3978,7 +3966,7 @@ void DYN_define_sql_field(Global*		gbl,
 				case isc_dyn_fld_dimensions:
 					if (has_default)
 					{
-						DYN_error_punt(false, 225, sql_field_name.c_str(), NULL, NULL, NULL, NULL);
+						DYN_error_punt(false, 225, sql_field_name.c_str());
 						// msg 225: "Default value is not allowed for array type in field %s"
 					}
 					has_dimensions = true;
@@ -4025,12 +4013,12 @@ void DYN_define_sql_field(Global*		gbl,
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		if (id == drq_s_sql_lfld) {
 			DYN_rundown_request(request, id);
-			DYN_error_punt(true, 29, NULL, NULL, NULL, NULL, NULL);
+			DYN_error_punt(true, 29);
 			/* msg 29: "STORE RDB$RELATION_FIELDS failed" */
 		}
 		else {
 			DYN_rundown_request(request, id);
-			DYN_error_punt(true, 28, NULL, NULL, NULL, NULL, NULL);
+			DYN_error_punt(true, 28);
 			/* msg 28: "STORE RDB$FIELDS failed" */
 		}
 	}
@@ -4076,13 +4064,12 @@ void DYN_define_shadow( Global* gbl, const UCHAR** ptr)
 	catch (const Firebird::Exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, drq_l_shadow);
-		DYN_error_punt(true, 164, NULL, NULL, NULL, NULL, NULL);
+		DYN_error_punt(true, 164);
 		/* msg 164: "Shadow lookup failed" */
 	}
 
 	if (found) {
-		DYN_error_punt(false, 165, (TEXT*)(IPTR)shadow_number, NULL, NULL, NULL,
-					   NULL);
+		DYN_error_punt(false, 165, SafeArg() << shadow_number);
 		/* msg 165: "Shadow %ld already exists" */
 	}
 
@@ -4140,7 +4127,7 @@ void DYN_define_trigger(Global*						gbl,
 
 	if (t.length() == 0)
 	{
-		DYN_error_punt(false, 212, NULL, NULL, NULL, NULL, NULL);
+		DYN_error_punt(false, 212);
 	/* msg 212: "Zero length identifiers not allowed" */
 	}
 
@@ -4303,7 +4290,7 @@ void DYN_define_trigger(Global*						gbl,
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		if (b_ending_store) {
 			DYN_rundown_request(request, drq_s_triggers);
-			DYN_error_punt(true, 31, NULL, NULL, NULL, NULL, NULL);
+			DYN_error_punt(true, 31);
 			/* msg 31: "DEFINE TRIGGER failed" */
 		}
 		throw;
@@ -4377,7 +4364,7 @@ void DYN_define_trigger_msg(Global* gbl, const UCHAR** ptr, const Firebird::Meta
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		if (b_ending_store) {
 			DYN_rundown_request(request, drq_s_trg_msgs);
-			DYN_error_punt(true, 33, NULL, NULL, NULL, NULL, NULL);
+			DYN_error_punt(true, 33);
 			/* msg 33: "DEFINE TRIGGER MESSAGE failed" */
 		}
 		throw;
@@ -4403,7 +4390,7 @@ void DYN_define_view_relation( Global* gbl, const UCHAR** ptr, const Firebird::M
 
 	fb_assert(view);
 	if (view->length() == 0) {
-		DYN_error_punt(false, 212, NULL, NULL, NULL, NULL, NULL);
+		DYN_error_punt(false, 212);
 	/* msg 212: "Zero length identifiers not allowed" */
 	}
 
@@ -4481,12 +4468,12 @@ void DYN_define_view_relation( Global* gbl, const UCHAR** ptr, const Firebird::M
 			DYN_rundown_request(request, id);
 			if (id == drq_s_view_rels)
 			{
-				DYN_error_punt(true, 34, NULL, NULL, NULL, NULL, NULL);
+				DYN_error_punt(true, 34);
 				/* msg 34: "STORE RDB$VIEW_RELATIONS failed" */
 			}
 			else if (id == drq_e_view_rels)
 			{
-				DYN_error_punt(true, 59, NULL, NULL, NULL, NULL, NULL);
+				DYN_error_punt(true, 59);
 				/* msg 59: "ERASE RDB$VIEW_RELATIONS failed" */
 			}
 		}
@@ -4557,19 +4544,20 @@ static void check_unique_name(	thread_db*	tdbb,
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1);
 		if (!proc_flag)
-			DYN_error_punt(true, 24, NULL, NULL, NULL, NULL, NULL);
+			DYN_error_punt(true, 24);
 		/* msg 24: "STORE RDB$RELATIONS failed" */
-		DYN_error_punt(true, 134, NULL, NULL, NULL, NULL, NULL);
+
+		DYN_error_punt(true, 134);
 	}
 
 	if (found) {
-		DYN_error_punt(false, 135, object_name.c_str(), NULL, NULL, NULL, NULL);
+		DYN_error_punt(false, 135, object_name.c_str());
 	}
 
 	return;
 
 local_punt_false_132:
-	DYN_error_punt(false, 132, object_name.c_str(), NULL, NULL, NULL, NULL);
+	DYN_error_punt(false, 132, object_name.c_str());
 }
 
 
@@ -4655,7 +4643,7 @@ static bool find_field_source(thread_db*	tdbb,
 	catch (const Firebird::Exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1);
-		DYN_error_punt(true, 80, NULL, NULL, NULL, NULL, NULL);
+		DYN_error_punt(true, 80);
 		/* msg 80: "Specified domain or source field does not exist" */
 	}
 
@@ -4874,7 +4862,7 @@ static void check_foreign_key_temp_scope(thread_db* tdbb, Global* gbl,
 
 	if (bErr) {
 		DYN_error_punt(false, 232, // Msg 232 : "%s can't reference %s"
-			sChild.c_str(), sMaster.c_str(), NULL, NULL, NULL);
+			SafeArg() << sChild.c_str() << sMaster.c_str());
 	}
 }
 
@@ -4944,7 +4932,7 @@ static void check_relation_temp_scope(thread_db* tdbb, Global* gbl,
 
 	if (bErr) {
 		DYN_error_punt(false, 232, // Msg 232 : "%s can't reference %s"
-			sChild.c_str(), sMaster.c_str(), NULL, NULL, NULL);
+			SafeArg() << sChild.c_str() << sMaster.c_str());
 	}
 }
 

@@ -37,6 +37,9 @@
 #include "../qli/meta_proto.h"
 #include "../qli/show_proto.h"
 
+using MsgFormat::SafeArg;
+
+
 static bool compare_names(const nam*, const qli_symbol*);
 static bool compare_symbols(const qli_symbol*, const qli_symbol*);
 static qli_symbol* copy_symbol(const qli_symbol*);
@@ -500,8 +503,7 @@ static qli_nod* expand_assignment( qli_syntax* input, qli_lls* right, qli_lls* l
 	if (to->nod_type == nod_field || to->nod_type == nod_variable) {
 		qli_fld* field = (qli_fld*) to->nod_arg[e_fld_field];
 		if (field->fld_flags & FLD_computed) {
-			ERRQ_print_error(138, field->fld_name->sym_string, NULL, NULL,
-							 NULL, NULL);
+			ERRQ_print_error(138, field->fld_name->sym_string);
 			// Msg138 can't do assignment to computed field
 		}
 		if (from->nod_type == nod_prompt)
@@ -862,7 +864,7 @@ static qli_nod* expand_expression( qli_syntax* input, qli_lls* stack)
 				break;
 		}
 		if (!stack)
-			ERRQ_print_error(454, NULL, NULL, NULL, NULL, NULL);
+			ERRQ_print_error(454);
 			// could not resolve context for aggregate
 /* count2
 	if (value = input->syn_arg [s_stt_value])
@@ -957,7 +959,7 @@ static qli_nod* expand_expression( qli_syntax* input, qli_lls* stack)
 
 	case nod_star:
 		name = (NAM) input->syn_arg[0];
-		ERRQ_print_error(141, name->nam_string, NULL, NULL, NULL, NULL);
+		ERRQ_print_error(141, name->nam_string);
 		// Msg141 can't be used when a single element is required
 
 	default:
@@ -1010,10 +1012,10 @@ static qli_nod* expand_field( qli_syntax* input, qli_lls* stack, qli_syntax* sub
 		}
 		*--p = 0;
 		if (field)
-			ERRQ_print_error(467, s, NULL, NULL, NULL, NULL);
+			ERRQ_print_error(467, s);
 			// Msg467 "%s" is not a field and so may not be subscripted
 		else
-			ERRQ_print_error(142, s, NULL, NULL, NULL, NULL);
+			ERRQ_print_error(142, s);
 			// Msg142 "%s" is undefined or used out of context
 	}
 
@@ -1142,8 +1144,7 @@ static qli_nod* expand_function( qli_syntax* input, qli_lls* stack)
 
 	if (!symbol) {
 		symbol = (qli_symbol*) input->syn_arg[s_fun_function];
-		ERRQ_error(412, symbol->sym_string, database->dbb_filename, NULL,
-				   NULL, NULL);
+		ERRQ_error(412, SafeArg() << symbol->sym_string << database->dbb_filename);
 	}
 
 	node->nod_arg[e_fun_function] = (qli_nod*) function;

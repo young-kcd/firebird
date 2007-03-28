@@ -9,13 +9,10 @@ THREAD_ENTRY_DECLARE GSEC_main(THREAD_ENTRY_PARAM);
 
 // Output reporting utilities
 void	GSEC_print_status(const ISC_STATUS*, bool exitOnError = true);
-void	GSEC_error_redirect(const ISC_STATUS*, USHORT, const TEXT*, const TEXT*);
-void	GSEC_error(USHORT, const TEXT*, const TEXT*, const TEXT*, const TEXT*,
-	const TEXT*);
-void	GSEC_print(USHORT, const TEXT*, const TEXT*, const TEXT*, const TEXT*,
-	const TEXT*);
-void	GSEC_print_partial(USHORT, const TEXT*, const TEXT*, const TEXT*,
-	const TEXT*, const TEXT*);
+void	GSEC_error_redirect(const ISC_STATUS*, USHORT);
+void	GSEC_error(USHORT);
+void	GSEC_print(USHORT, const char* str = 0);
+void	GSEC_print_partial(USHORT);
 
 #endif // GSEC_PROTO_H
 

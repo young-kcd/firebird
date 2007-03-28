@@ -75,6 +75,9 @@
 #include "../jrd/thread_proto.h"
 #include "../common/utils_proto.h"
 
+using MsgFormat::SafeArg;
+
+
 DATABASE DB = STATIC "ODS.RDB";
 
 using namespace Jrd;
@@ -165,11 +168,7 @@ void DYN_ddl(Attachment* attachment, jrd_tra* transaction, USHORT length,
 
 void DYN_error(bool	status_flag,
 			   USHORT	number,
-			   const TEXT*	arg1,
-			   const TEXT*	arg2,
-			   const TEXT*	arg3,
-			   const TEXT*	arg4,
-			   const TEXT*	arg5)
+			   const SafeArg& sarg)
 {
 /**************************************
  *
@@ -189,9 +188,8 @@ void DYN_error(bool	status_flag,
 	TEXT error_buffer[BUFFER_MEDIUM];
 
 	if (number)
-		gds__msg_format(NULL, DYN_MSG_FAC, number,
-						sizeof(error_buffer), error_buffer, arg1,
-						arg2, arg3, arg4, arg5);
+		fb_msg_format(NULL, DYN_MSG_FAC, number,
+						sizeof(error_buffer), error_buffer, sarg);
 
 	ISC_STATUS_ARRAY local_status;
 	ISC_STATUS* v1 = local_status;
@@ -231,11 +229,7 @@ void DYN_error(bool	status_flag,
 
 void DYN_error_punt(bool	status_flag,
 					USHORT	number,
-					const TEXT*	arg1,
-					const TEXT*	arg2,
-					const TEXT*	arg3,
-					const TEXT*	arg4,
-					const TEXT*	arg5)
+					const SafeArg& arg)
 {
 /**************************************
  *
@@ -248,7 +242,47 @@ void DYN_error_punt(bool	status_flag,
  *
  **************************************/
 
-	DYN_error(status_flag, number, arg1, arg2, arg3, arg4, arg5);
+	DYN_error(status_flag, number, arg);
+	ERR_punt();
+}
+
+
+void DYN_error_punt(bool	status_flag,
+					USHORT	number,
+					const char* str)
+{
+/**************************************
+ *
+ *	D Y N _ e r r o r _ p u n t
+ *
+ **************************************
+ *
+ * Functional description
+ *	DDL failed.
+ *
+ **************************************/
+
+	DYN_error(status_flag, number, SafeArg() << str);
+	ERR_punt();
+}
+
+
+void DYN_error_punt(bool	status_flag,
+					USHORT	number)
+{
+/**************************************
+ *
+ *	D Y N _ e r r o r _ p u n t
+ *
+ **************************************
+ *
+ * Functional description
+ *	DDL failed.
+ *
+ **************************************/
+
+	static const SafeArg dummy;
+	DYN_error(status_flag, number, dummy);
 	ERR_punt();
 }
 
@@ -313,7 +347,8 @@ void DYN_unsupported_verb(void)
  *
  **************************************/
 
-	DYN_error_punt(false, 2, NULL, NULL, NULL, NULL, NULL);	/* msg 2: "unsupported DYN verb" */
+	static const SafeArg dummy;
+	DYN_error_punt(false, 2, dummy);	/* msg 2: "unsupported DYN verb" */
 }
 
 
@@ -648,7 +683,7 @@ USHORT DYN_get_string(const TEXT** ptr, TEXT* field, size_t size, bool translite
 
 	if (l) {
 		if (length >= size) {
-			DYN_error_punt(false, 159, NULL, NULL, NULL, NULL, NULL);
+			DYN_error_punt(false, 159);
 			// msg 159: Name longer than database field size
 		}
 
@@ -693,7 +728,7 @@ USHORT DYN_get_string(const TEXT** ptr, Firebird::MetaName& field, size_t, bool 
 	
 	if (length > MAX_SQL_IDENTIFIER_LEN)
 	{
-		DYN_error_punt(false, 159, NULL, NULL, NULL, NULL, NULL);
+		DYN_error_punt(false, 159);
 		// msg 159: Name longer than database field size
 	}
 	field.assign(p, length);
@@ -831,7 +866,7 @@ USHORT DYN_put_blr_blob(Global* gbl, const UCHAR** ptr, bid* blob_id)
 	}
 	catch (const Firebird::Exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
-		DYN_error_punt(true, 106, NULL, NULL, NULL, NULL, NULL);
+		DYN_error_punt(true, 106);
 		/* msg 106: "Create metadata blob failed" */
 	}
 
@@ -906,7 +941,7 @@ USHORT DYN_put_text_blob(Global* gbl, const UCHAR** ptr, bid* blob_id)
 	}
 	catch (const Firebird::Exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
-		DYN_error_punt(true, 106, NULL, NULL, NULL, NULL, NULL);
+		DYN_error_punt(true, 106);
 		/* msg 106: "Create metadata blob failed" */
 	}
 
@@ -1054,7 +1089,7 @@ static void grant( Global* gbl, const UCHAR** ptr)
 				if (DYN_is_it_sql_role(gbl, user, dummy_name, tdbb)) {
 					user_type = obj_sql_role;
 					if (user == NULL_ROLE) {
-						DYN_error_punt(false, 195, user.c_str(), NULL, NULL, NULL, NULL);
+						DYN_error_punt(false, 195, user.c_str());
 					/* msg 195: keyword NONE could not be used as SQL role name. */
 					}
 				}
@@ -1075,25 +1110,25 @@ static void grant( Global* gbl, const UCHAR** ptr)
 		    user_type = obj_sql_role;
 		    GET_STRING(ptr, user);
 			if (!DYN_is_it_sql_role(gbl, user, dummy_name, tdbb)) {
-				DYN_error_punt(false, 188, user.c_str(), NULL, NULL, NULL, NULL);
+				DYN_error_punt(false, 188, user.c_str());
 			/* msg 188: Role doesn't exist. */
 			}
 			if (user == NULL_ROLE) {
-				DYN_error_punt(false, 195, user.c_str(), NULL, NULL, NULL, NULL);
+				DYN_error_punt(false, 195, user.c_str());
 			/* msg 195: keyword NONE could not be used as SQL role name. */
 			}
 			break;
 
 		case isc_dyn_sql_role_name:	/* role name in role_name_list */
 			if (ENCODE_ODS(major_version, minor_original) < ODS_9_0) {
-                DYN_error_punt(false, 196, NULL, NULL, NULL, NULL, NULL);
+                DYN_error_punt(false, 196);
 			}
 			else {
 				obj_type = obj_sql_role;
 				GET_STRING(ptr, object);
 				grant_role_stmt = true;
 				if (object == NULL_ROLE) {
-					DYN_error_punt(false, 195, object.c_str(), NULL, NULL, NULL, NULL);
+					DYN_error_punt(false, 195, object.c_str());
 				/* msg 195: keyword NONE could not be used as SQL role name. */
 				}
 			}
@@ -1208,7 +1243,7 @@ static void grant( Global* gbl, const UCHAR** ptr)
 		{
 			if (ENCODE_ODS(major_version, minor_original) < ODS_9_0)
 			{
-	            DYN_error_punt(false, 196, NULL, NULL, NULL, NULL, NULL);
+	            DYN_error_punt(false, 196);
 			}
 			id = drq_get_role_nm;
 
@@ -1228,7 +1263,7 @@ static void grant( Global* gbl, const UCHAR** ptr)
             ** could be reused for blocking cycles of role grants
             **
             *****************************************************/
-	            DYN_error_punt(false, 192, user.c_str(), NULL, NULL, NULL, NULL);
+	            DYN_error_punt(false, 192, user.c_str());
 			}
 		}
 		else
@@ -1277,11 +1312,11 @@ static void grant( Global* gbl, const UCHAR** ptr)
 		switch (id)
 		{
 		case drq_l_grant1:
-			DYN_error_punt(true, 77, NULL, NULL, NULL, NULL, NULL);
+			DYN_error_punt(true, 77);
 			// msg 77: "SELECT RDB$USER_PRIVILEGES failed in grant"
 			break;
 		case drq_l_grant2:
-			DYN_error_punt(true, 78, NULL, NULL, NULL, NULL, NULL);
+			DYN_error_punt(true, 78);
 			// msg 78: "SELECT RDB$USER_PRIVILEGES failed in grant"
 			break;
 		case drq_s_grant:
@@ -1295,7 +1330,7 @@ static void grant( Global* gbl, const UCHAR** ptr)
 			break;
 		default:
 			fb_assert(id == drq_gcg1);
-			DYN_error_punt(true, 78, NULL, NULL, NULL, NULL, NULL);
+			DYN_error_punt(true, 78);
 			// msg 78: "SELECT RDB$USER_PRIVILEGES failed in grant"
 			break;
 		}
@@ -1354,7 +1389,7 @@ static bool grantor_can_grant(Global*					gbl,
 	if (!DYN_REQUEST(drq_gcg4))
 		DYN_REQUEST(drq_gcg4) = request;
 	if (!relation_exists) {
-		DYN_error(false, 175, relation_name.c_str(), NULL, NULL, NULL, NULL);
+		DYN_error(false, 175, SafeArg() << relation_name.c_str());
 		/* table/view .. does not exist */
 		return false;
 	}
@@ -1379,8 +1414,7 @@ static bool grantor_can_grant(Global*					gbl,
 		if (!DYN_REQUEST(drq_gcg5))
 			DYN_REQUEST(drq_gcg5) = request;
 		if (!field_exists) {
-			DYN_error(false, 176, field_name.c_str(), relation_name.c_str(), NULL, NULL,
-					  NULL);
+			DYN_error(false, 176, SafeArg() << field_name.c_str() << relation_name.c_str());
 			/* column .. does not exist in table/view .. */
 			return false;
 		}
@@ -1468,11 +1502,9 @@ static bool grantor_can_grant(Global*					gbl,
 		{
 			DYN_error(false,
 					(USHORT)(top_level ? 167 : 168),
-					privilege,
-					field_name.c_str(),
-					relation_name.c_str(),
-					NULL,
-					NULL);
+					SafeArg() << privilege <<
+					field_name.c_str() <<
+					relation_name.c_str());
 			/* no grant option for privilege .. on column .. of [base] table/view .. */
 			return false;
 		}
@@ -1482,11 +1514,9 @@ static bool grantor_can_grant(Global*					gbl,
 			{
 				DYN_error(false,
 						(USHORT)(top_level ? 169 : 170),
-						privilege,
-						relation_name.c_str(),
-						field_name.c_str(),
-						NULL,
-						NULL);
+						SafeArg() << privilege <<
+						relation_name.c_str() <<
+						field_name.c_str());
 				/* no grant option for privilege .. on [base] table/view .. (for column ..) */
 				return false;
 			}
@@ -1494,11 +1524,9 @@ static bool grantor_can_grant(Global*					gbl,
 			{
 				DYN_error(false,
 						(USHORT)(top_level ? 171 : 172),
-						privilege,
-						relation_name.c_str(),
-						field_name.c_str(),
-						NULL,
-						NULL);
+						SafeArg() << privilege <<
+						relation_name.c_str() <<
+						field_name.c_str());
 				/* no .. privilege with grant option on [base] table/view .. (for column ..) */
 				return false;
 			}
@@ -1508,13 +1536,13 @@ static bool grantor_can_grant(Global*					gbl,
 	{
 		if (go_rel == 0)
 		{
-			DYN_error(false, 173, privilege, relation_name.c_str(), NULL, NULL, NULL);
+			DYN_error(false, 173, SafeArg() << privilege << relation_name.c_str());
 			/* no grant option for privilege .. on table/view ..  */
 			return false;
 		}
 		else if (go_rel == -1)
 		{
-			DYN_error(false, 174, privilege, relation_name.c_str(), NULL, NULL, NULL);
+			DYN_error(false, 174, SafeArg() << privilege << relation_name.c_str());
 			/* no .. privilege with grant option on table/view .. */
 			return false;
 		}
@@ -1577,7 +1605,7 @@ static bool grantor_can_grant(Global*					gbl,
 	catch (const Firebird::Exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1);
-		DYN_error_punt(true, err_num, NULL, NULL, NULL, NULL, NULL);
+		DYN_error_punt(true, err_num);
 		/* msg 77: "SELECT RDB$USER_PRIVILEGES failed in grant" */
 
 		return false;
@@ -1625,7 +1653,7 @@ static bool grantor_can_grant_role(	thread_db*	tdbb,
 		**  role name not exist.
 		**
 		*****************************************************/
-		DYN_error(false, 188, role_name.c_str(), NULL, NULL, NULL, NULL);
+		DYN_error(false, 188, SafeArg() << role_name.c_str());
 		return false;
 	}
 
@@ -1653,7 +1681,7 @@ static bool grantor_can_grant_role(	thread_db*	tdbb,
 			**  user have no admin option.
 			**
 			*****************************************************/
-			DYN_error(false, 189, grantor.c_str(), role_name.c_str(), NULL, NULL, NULL);
+			DYN_error(false, 189, SafeArg() << grantor.c_str() << role_name.c_str());
 			return false;
 		}
 
@@ -1669,7 +1697,7 @@ static bool grantor_can_grant_role(	thread_db*	tdbb,
 		**  user is not a member of the role.
 		**
 		*****************************************************/
-		DYN_error(false, 190, grantor.c_str(), role_name.c_str(), NULL, NULL, NULL);
+		DYN_error(false, 190, SafeArg() << grantor.c_str() << role_name.c_str());
 		return false;
 	}
 
@@ -1752,7 +1780,7 @@ static void revoke_permission(Global* gbl, const UCHAR** ptr)
 			if (DYN_is_it_sql_role(gbl, user, dummy_name, tdbb)) {
 				user_type = obj_sql_role;
 				if (user == NULL_ROLE) {
-					DYN_error_punt(false, 195, user.c_str(), NULL, NULL, NULL, NULL);
+					DYN_error_punt(false, 195, user.c_str());
 				/* msg 195: keyword NONE could not be used as SQL role name. */
 				}
 			}
@@ -1772,25 +1800,25 @@ static void revoke_permission(Global* gbl, const UCHAR** ptr)
 			user_type = obj_sql_role;
 			GET_STRING(ptr, user);
 			if (!DYN_is_it_sql_role(gbl, user, dummy_name, tdbb)) {
-				DYN_error_punt(false, 188, user.c_str(), NULL, NULL, NULL, NULL);
+				DYN_error_punt(false, 188, user.c_str());
 			/* msg 188: Role doesn't exist. */
 			}
 			if (user == NULL_ROLE) {
-				DYN_error_punt(false, 195, user.c_str(), NULL, NULL, NULL, NULL);
+				DYN_error_punt(false, 195, user.c_str());
 			/* msg 195: keyword NONE could not be used as SQL role name. */
 			}
 		    break;
 
 		case isc_dyn_sql_role_name:	/* role name in role_name_list */
 			if (ENCODE_ODS(major_version, minor_original) < ODS_9_0) {
-                DYN_error_punt(false, 196, NULL, NULL, NULL, NULL, NULL);
+                DYN_error_punt(false, 196);
 			}
 			else {
 				obj_type = obj_sql_role;
 				GET_STRING(ptr, object);
 /* CVC: Make this a warning in the future.
 				if (object == NULL_ROLE)
-					DYN_error_punt(false, 195, object.c_str(), NULL, NULL, NULL, NULL);
+					DYN_error_punt(false, 195, object.c_str());
 */
 				/* msg 195: keyword NONE could not be used as SQL role name. */
 			}
@@ -1914,12 +1942,12 @@ static void revoke_permission(Global* gbl, const UCHAR** ptr)
 							-1);
 		if (id == drq_e_grant1)
 		{
-			DYN_error_punt(true, 111, NULL, NULL, NULL, NULL, NULL);
+			DYN_error_punt(true, 111);
 			/* msg 111: "ERASE RDB$USER_PRIVILEGES failed in revoke(1)" */
 		}
 		else if (id == drq_e_grant2)
 		{
-			DYN_error_punt(true, 113, NULL, NULL, NULL, NULL, NULL);
+			DYN_error_punt(true, 113);
 			/* msg 113: "ERASE RDB$USER_PRIVILEGES failed in revoke (3)" */
 		}
 		else
@@ -2043,7 +2071,7 @@ static void store_privilege(Global*						gbl,
 	catch (const Firebird::Exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1);
-		DYN_error_punt(true, 79, NULL, NULL, NULL, NULL, NULL);
+		DYN_error_punt(true, 79);
 		/* msg 79: "STORE RDB$USER_PRIVILEGES failed in grant" */
 	}
 }

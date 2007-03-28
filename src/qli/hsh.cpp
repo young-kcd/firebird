@@ -198,7 +198,7 @@ void HSH_remove( qli_symbol* symbol)
 				}
 		}
 
-	ERRQ_error(27, NULL, NULL, NULL, NULL, NULL);	// Msg 27 HSH_remove failed
+	ERRQ_error(27);	// Msg 27 HSH_remove failed
 }
 
 

@@ -26,16 +26,15 @@
 #define ALICE_ALICE_PROTO_H
 
 #include "../jrd/thd.h"
+#include "../common/classes/MsgPrint.h"
 
 #ifdef SERVICE_THREAD
 THREAD_ENTRY_DECLARE ALICE_main(THREAD_ENTRY_PARAM);
 #endif
 
 void	ALICE_down_case(const TEXT*, TEXT*, const size_t);
-void	ALICE_print(USHORT, const TEXT*, const TEXT*, const TEXT*,
-	const TEXT*, const TEXT*);
-void	ALICE_error(USHORT, const TEXT*, const TEXT*, const TEXT*,
-	const TEXT*, const TEXT*);
+void	ALICE_print(USHORT, const MsgFormat::SafeArg& arg = MsgFormat::SafeArg());
+void	ALICE_error(USHORT, const MsgFormat::SafeArg& arg = MsgFormat::SafeArg());
 void	ALICE_print_status(const ISC_STATUS*);
 
 #endif // ALICE_ALICE_PROTO_H

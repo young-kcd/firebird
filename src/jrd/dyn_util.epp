@@ -57,6 +57,8 @@
 #include "../jrd/thd.h"
 #include "../jrd/vio_proto.h"
 
+using MsgFormat::SafeArg;
+
 using namespace Jrd;
 
 DATABASE DB = STATIC "ODS.RDB";
@@ -210,7 +212,7 @@ void DYN_UTIL_generate_constraint_name( thread_db* tdbb, Global* gbl, Firebird::
 	catch (const Firebird::Exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, id);
-		DYN_error_punt(true, 131, NULL, NULL, NULL, NULL, NULL);
+		DYN_error_punt(true, 131);
 		/* msg 131: "Generation of constraint name failed" */
 	}
 }
@@ -286,7 +288,7 @@ void DYN_UTIL_generate_field_name( thread_db* tdbb, Global* gbl, Firebird::MetaN
 	catch (const Firebird::Exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, id);
-		DYN_error_punt(true, 81, NULL, NULL, NULL, NULL, NULL);
+		DYN_error_punt(true, 81);
 		/* msg 81: "Generation of field name failed" */
 	}
 }
@@ -338,7 +340,7 @@ void DYN_UTIL_generate_field_position(
 	catch (const Firebird::Exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1);
-		DYN_error_punt(true, 162, NULL, NULL, NULL, NULL, NULL);
+		DYN_error_punt(true, 162);
 		/* msg 162: "Looking up field position failed" */
 	}
 }
@@ -403,7 +405,7 @@ void DYN_UTIL_generate_index_name(thread_db* tdbb, Global* gbl,
 	catch (const Firebird::Exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, id);
-		DYN_error_punt(true, 82, NULL, NULL, NULL, NULL, NULL);
+		DYN_error_punt(true, 82);
 		/* msg 82: "Generation of index name failed" */
 	}
 }
@@ -460,7 +462,7 @@ void DYN_UTIL_generate_trigger_name( thread_db* tdbb, Global* gbl, Firebird::Met
 	catch (const Firebird::Exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, id);
-		DYN_error_punt(true, 83, NULL, NULL, NULL, NULL, NULL);
+		DYN_error_punt(true, 83);
 		/* msg 83: "Generation of trigger name failed" */
 	}
 }
@@ -553,7 +555,7 @@ void DYN_UTIL_store_check_constraints(thread_db*				tdbb,
 	catch (const Firebird::Exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, drq_s_chk_con);
-		DYN_error_punt(true, 122, NULL, NULL, NULL, NULL, NULL);
+		DYN_error_punt(true, 122);
 		/* msg 122: "STORE RDB$CHECK_CONSTRAINTS failed" */
 	}
 }
@@ -599,7 +601,7 @@ bool DYN_UTIL_is_array(thread_db* tdbb,
 	{
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, drq_dom_is_array);
-		DYN_error_punt(true, 227, domain_name.c_str(), NULL, NULL, NULL, NULL);
+		DYN_error_punt(true, 227, domain_name.c_str());
 		// msg 227: "DYN_UTIL_is_array failed for domain %s"
 		return false; // Keep compiler happy.
 	}
@@ -751,7 +753,7 @@ void DYN_UTIL_copy_domain(thread_db* tdbb,
 	{
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1); //drq_dom_copy);
-		DYN_error_punt(true, 228, org_name.c_str(), NULL, NULL, NULL, NULL);
+		DYN_error_punt(true, 228, org_name.c_str());
 		// msg 228: "DYN_UTIL_copy_domain failed for domain %s"
 	}
 }

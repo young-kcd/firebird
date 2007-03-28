@@ -39,6 +39,9 @@
 #include "../qli/mov_proto.h"
 #include "../qli/picst_proto.h"
 
+using MsgFormat::SafeArg;
+
+
 #ifdef DEV_BUILD
 //extern bool QLI_hex_output; decl already done in dtr.h
 
@@ -269,8 +272,7 @@ TEXT* FMT_format(qli_lls* stack)
 	const ULONG size = (max_offset + 1) * (number_segments + 1) + 2;
 
 	if (size >= 60000)
-		ERRQ_print_error(482, (TEXT *)(IPTR) max_offset,
-						 (TEXT *)(IPTR) (number_segments + 1), NULL, NULL, NULL);
+		ERRQ_print_error(482, SafeArg() << max_offset << (number_segments + 1));
 
 	qli_str* header = (qli_str*) ALLOCDV(type_str, size);
 	TEXT* p = header->str_data;
@@ -1074,8 +1076,8 @@ static void format_value( qli_print_item* item, int flags)
 		if (node->nod_type == nod_field) {
 			field = (qli_fld*) node->nod_arg[e_fld_field];
 			if ((field->fld_flags & FLD_array) && !node->nod_arg[e_fld_subs])
-				ERRQ_print_error(480, field->fld_name->sym_string, NULL, NULL,
-								 NULL, NULL);	// msg 480 can not format unsubscripted array %s
+				ERRQ_print_error(480, field->fld_name->sym_string);
+				// msg 480 can not format unsubscripted array %s
 		}
 
 		if (!(item->itm_picture->pic_missing) &&

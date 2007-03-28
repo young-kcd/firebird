@@ -105,6 +105,10 @@ SOURCE=..\..\..\src\isql\show.epp
 # End Group
 # Begin Source File
 
+SOURCE=..\..\..\src\isql\Extender.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\gen\isql\extract.cpp
 # End Source File
 # Begin Source File

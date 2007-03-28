@@ -197,8 +197,9 @@ void SRVRMGR_msg_get( USHORT number, TEXT * msg)
 
 /* The following line will be the future of this function
 
-gds__msg_format (0, MSG_FAC, number, MSG_LEN, msg,
-    NULL, NULL, NULL, NULL, NULL);
+	static const SafeArg arg;
+	fb_msg_format (0, MSG_FAC, number, MSG_LEN, msg, arg);
+
 */
 
 	const char* rs = 0;

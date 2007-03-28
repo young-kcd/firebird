@@ -36,6 +36,9 @@
 #include "../qli/parse_proto.h"
 #include "../qli/proc_proto.h"
 
+using MsgFormat::SafeArg;
+
+
 DATABASE DB1 = EXTERN FILENAME "yachts.lnk";
 DATABASE DB = EXTERN FILENAME "yachts.lnk";
 
@@ -141,7 +144,7 @@ void PRO_copy_procedure(
 		old_blob = PRO_fetch_procedure(old_database, old_name);
 
 	if (!old_blob)
-		ERRQ_print_error(70, old_name, NULL, NULL, NULL, NULL);
+		ERRQ_print_error(70, old_name);
 // Msg 70 procedure \"%s\" is undefined 
 
 	if (new_database != old_database)
@@ -408,8 +411,7 @@ void PRO_invoke( DBB database, const TEXT* name)
 	if (database) {
 		if (!(blob = PRO_fetch_procedure(database, name)))
 		{
-			ERRQ_print_error(71, name, database->dbb_symbol->sym_string, NULL,
-							 NULL, NULL);
+			ERRQ_print_error(71, SafeArg() << name << database->dbb_symbol->sym_string);
 		}
 // Msg 71 procedure \"%s\" is undefined in database %s 
 	}
@@ -422,7 +424,7 @@ void PRO_invoke( DBB database, const TEXT* name)
 		}
 
 	if (!blob)
-		ERRQ_print_error(72, name, NULL, NULL, NULL, NULL);
+		ERRQ_print_error(72, name);
 // Msg 72 procedure \"%s\" is undefined 
 
 	LEX_procedure((dbb*)database, blob);
@@ -853,8 +855,7 @@ static void probe( DBB database, const TEXT* name)
 	if (blob) {
 		ISC_STATUS_ARRAY status_vector;
 		isc_close_blob(status_vector, &blob);
-		ERRQ_print_error(76, name, database->dbb_symbol->sym_string, NULL,
-						 NULL, NULL);
+		ERRQ_print_error(76, SafeArg() << name << database->dbb_symbol->sym_string);
 		// Msg 76 procedure name \"%s\" in use in database %s
 	}
 }

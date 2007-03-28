@@ -125,6 +125,10 @@ SOURCE=..\..\..\src\common\config\dir_list.cpp
 # PROP Default_Filter ""
 # Begin Source File
 
+SOURCE=..\..\..\src\common\classes\BaseStream.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\src\common\classes\fb_string.cpp
 # End Source File
 # Begin Source File
@@ -141,7 +145,15 @@ SOURCE=..\..\..\src\jrd\os\win32\mod_loader.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\src\common\classes\MsgPrint.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\src\jrd\os\win32\path_utils.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\common\classes\SafeArg.cpp
 # End Source File
 # Begin Source File
 

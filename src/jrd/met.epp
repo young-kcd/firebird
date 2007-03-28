@@ -100,6 +100,8 @@
 #include "../common/utils_proto.h"
 
 #include "../../src/jrd/DebugInterface.h"
+#include "../common/classes/MsgPrint.h"
+
 
 #ifdef HAVE_CTYPE_H
 #include <ctype.h>
@@ -1506,9 +1508,8 @@ void MET_load_trigger(thread_db* tdbb,
 		if ((TRG.RDB$FLAGS & TRG_ignore_perm) &&
 			!verify_TRG_ignore_perm(tdbb, trigger_name))
 		{
-			gds__msg_format(NULL, JRD_BUGCHK, 304, sizeof(errmsg),
-							errmsg, trigger_name.c_str(), NULL, NULL,
-							NULL, NULL);
+			fb_msg_format(NULL, JRD_BUGCHK, 304, sizeof(errmsg),
+							errmsg, MsgFormat::SafeArg() << trigger_name.c_str());
 			ERR_log(JRD_BUGCHK, 304, errmsg);
 
 			trig_flags &= ~TRG_ignore_perm;
@@ -5015,10 +5016,8 @@ static bool verify_TRG_ignore_perm(thread_db* tdbb, const Firebird::MetaName& tr
 		{
 			return true;
 		}
-		else
-		{
-			return false;
-		}
+
+		return false;
 	END_FOR;
 
 	if (!REQUEST(irq_c_trg_perm))

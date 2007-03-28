@@ -404,12 +404,12 @@ static CON make_numeric_constant( const TEXT* string, USHORT length)
 			else if (*p == '.') {
 				*q++ = *p;
 				if (fraction)
-					DDL_err(237, NULL, NULL, NULL, NULL, NULL);	/* msg 237: too many decimal points */
+					DDL_err(237);	/* msg 237: too many decimal points */
 				else
 					fraction = true;
 			}
 			else
-				DDL_err(238, NULL, NULL, NULL, NULL, NULL);	/* msg 238: unrecognized character in numeric string */
+				DDL_err(238);	/* msg 238: unrecognized character in numeric string */
 	}
 	return constant;
 }

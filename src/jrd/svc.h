@@ -36,8 +36,10 @@
 #include "../jrd/jrd_blks.h"
 #include "../include/fb_blk.h"
 #include "../common/classes/array.h"
+#include "../common/classes/SafeArg.h"
 
-void SVC_STATUS_ARG(ISC_STATUS*& status, USHORT type, const void* value);
+void SVC_STATUS_ARG(ISC_STATUS*& status, const MsgFormat::safe_cell& value);
+void SVC_STATUS_ARG(ISC_STATUS*& status, const char* value);
 
 namespace Jrd {
 

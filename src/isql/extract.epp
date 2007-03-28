@@ -60,6 +60,9 @@
 #include "../common/utils_proto.h"
 #include "../jrd/constants.h"
 
+using MsgFormat::SafeArg;
+
+
 DATABASE DB = EXTERN COMPILETIME "yachts.lnk";
 
 static void list_all_grants();
@@ -176,7 +179,7 @@ int EXTRACT_ddl(LegacyTables flag,
 		if (EXTRACT_list_table(tabname, NULL, true, default_char_set_id))
 		{
 			SCHAR errbuf[MSG_LENGTH];
-			ISQL_msg_get(NOT_FOUND_MSG, errbuf, tabname);
+			ISQL_msg_get(NOT_FOUND_MSG, errbuf, SafeArg() << tabname);
 			STDERROUT(errbuf);
 			ret_code = FINI_ERROR;
 		}
@@ -1204,7 +1207,7 @@ static void list_all_procs()
 
 	END_FOR
 	ON_ERROR
-		ISQL_msg_get(GEN_ERR, msg, (TEXT*) (IPTR) isc_sqlcode(gds_status));
+		ISQL_msg_get(GEN_ERR, msg, SafeArg() << isc_sqlcode(gds_status));
 		STDERROUT(msg);			// Statement failed, SQLCODE = %d\n\n
 		ISQL_errmsg(gds_status);
 		return;

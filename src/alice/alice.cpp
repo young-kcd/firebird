@@ -67,6 +67,9 @@
 #include "../utilities/common/cmd_util_proto.h"
 #endif
 
+using MsgFormat::SafeArg;
+
+
 static const USHORT val_err_table[] = {
 	0,
 	55,				// msg 55: \n\tNumber of record level errors\t: %ld
@@ -99,7 +102,6 @@ static inline void exit_local(int code, AliceGlobals* tdgbl)
 static bool fAnsiCP = false;
 #endif
 
-static void ALICE_error(USHORT number);	// overloaded to keep down param count
 static inline void translate_cp(TEXT* sz);
 static void expand_filename(const TEXT*, TEXT*);
 #ifndef SERVICE_THREAD
@@ -274,7 +276,7 @@ int common_main(int					argc,
 		if ((*argv)[0] != '-')
 		{
 			if (database) {
-				ALICE_error(1, database, 0, 0, 0, 0);
+				ALICE_error(1, SafeArg() << database);
 				// msg 1: "data base file name (%s) already given",
 			}
 			database = *argv++;
@@ -299,7 +301,7 @@ int common_main(int					argc,
 		{
 			const TEXT* p = (TEXT*) table->in_sw_name;
 			if (!p) {
-				ALICE_print(2, *--argv, 0, 0, 0, 0);	// msg 2: invalid switch %s
+				ALICE_print(2, SafeArg() << (*--argv));	// msg 2: invalid switch %s
 				error = true;
 				break;
 			}
@@ -319,7 +321,7 @@ int common_main(int					argc,
 			tdgbl->ALICE_data.ua_debug++;
 		}
 		if (table->in_sw_value == sw_z) {
-			ALICE_print(3, GDS_VERSION, 0, 0, 0, 0);	// msg 3: gfix version %s
+			ALICE_print(3, SafeArg() << GDS_VERSION);	// msg 3: gfix version %s
 		}
 #ifdef TRUSTED_SERVICES
 		if (strcmp(table->in_sw_name, "trusted") == 0) {
@@ -333,7 +335,7 @@ int common_main(int					argc,
 		if ((table->in_sw_incompatibilities & switches) ||
 			(table->in_sw_requires && !(table->in_sw_requires & switches)))
 		{
-			ALICE_print(4, 0, 0, 0, 0, 0);	// msg 4: incompatible switch combination
+			ALICE_print(4);	// msg 4: incompatible switch combination
 			error = true;
 			break;
 		}
@@ -542,25 +544,24 @@ int common_main(int					argc,
 
 	if (!switches || !(switches & ~(sw_user | sw_password))) {
 #ifndef SERVICE_THREAD
-		ALICE_print(20, 0, 0, 0, 0, 0);	// msg 20: please retry, specifying an option
+		ALICE_print(20);	// msg 20: please retry, specifying an option
 #endif
 		error = true;
 	}
 
 	if (error) {
 #ifdef SERVICE_THREAD
-		CMD_UTIL_put_svc_status(tdgbl->service_blk->svc_status, ALICE_MSG_FAC,
-								20, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+		CMD_UTIL_put_svc_status(tdgbl->service_blk->svc_status, ALICE_MSG_FAC, 20);
 
 		tdgbl->service_blk->svc_started();
 #else
-		ALICE_print(21, 0, 0, 0, 0, 0);	// msg 21: plausible options are:\n
+		ALICE_print(21);	// msg 21: plausible options are:\n
 		for (table = alice_in_sw_table; table->in_sw_msg; table++)
 		{
 			if (table->in_sw_msg)
-				ALICE_print(table->in_sw_msg, 0, 0, 0, 0, 0);
+				ALICE_print(table->in_sw_msg);
 		}
-		ALICE_print(22, 0, 0, 0, 0, 0);	// msg 22: \n    qualifiers show the major option in parenthesis
+		ALICE_print(22);	// msg 22: \n    qualifiers show the major option in parenthesis
 #endif
 		exit_local(FINI_ERROR, tdgbl);
 	}
@@ -596,12 +597,12 @@ int common_main(int					argc,
 			}
 
 			if (any_error) {
-				ALICE_print(24, 0, 0, 0, 0, 0);	// msg 24: Summary of validation errors\n
+				ALICE_print(24);	// msg 24: Summary of validation errors\n
 
 				for (int i = 0; i < MAX_VAL_ERRORS; ++i) {
 					if (ua_val_errors[i]) {
 						TEXT* szErr = reinterpret_cast<TEXT*>(ua_val_errors[i]);
-						ALICE_print(val_err_table[i], szErr, 0, 0, 0, 0);
+						ALICE_print(val_err_table[i], SafeArg() << szErr);
 					}
 				}
 			}
@@ -665,16 +666,11 @@ void ALICE_down_case(const TEXT* in, TEXT* out, const size_t buf_size)
 //
 
 void ALICE_print(USHORT	number,
-				 const TEXT*	arg1,
-				 const TEXT*	arg2,
-				 const TEXT*	arg3,
-				 const TEXT*	arg4,
-				 const TEXT*	arg5)
+				 const SafeArg& arg)
 {
 	TEXT buffer[256];
 
-	gds__msg_format(0, ALICE_MSG_FAC, number, sizeof(buffer), buffer, arg1,
-					arg2, arg3, arg4, arg5);
+	fb_msg_format(0, ALICE_MSG_FAC, number, sizeof(buffer), buffer, arg);
 	translate_cp(buffer);
 	alice_output("%s\n", buffer);
 }
@@ -730,41 +726,20 @@ void ALICE_print_status(const ISC_STATUS* status_vector)
 //
 
 void ALICE_error(USHORT	number,
-				 const TEXT*	arg1,
-				 const TEXT*	arg2,
-				 const TEXT*	arg3,
-				 const TEXT*	arg4,
-				 const TEXT*	arg5)
+				 const SafeArg& arg)
 {
 	AliceGlobals* tdgbl = AliceGlobals::getSpecific();
 	TEXT buffer[256];
 
 #ifdef SERVICE_THREAD
 	ISC_STATUS* status = tdgbl->service_blk->svc_status;
-
-	CMD_UTIL_put_svc_status(status, ALICE_MSG_FAC, number,
-							isc_arg_string, arg1,
-							isc_arg_string, arg2,
-							isc_arg_string, arg3,
-							isc_arg_string, arg4,
-							isc_arg_string, arg5);
+	CMD_UTIL_put_svc_status(status, ALICE_MSG_FAC, number, arg);
 #endif
 
-	gds__msg_format(0, ALICE_MSG_FAC, number, sizeof(buffer), buffer, arg1,
-					arg2, arg3, arg4, arg5);
+	fb_msg_format(0, ALICE_MSG_FAC, number, sizeof(buffer), buffer, arg);
 	translate_cp(buffer);
 	alice_output("%s\n", buffer);
 	exit_local(FINI_ERROR, tdgbl);
-}
-
-
-
-//
-// Overload of ALICE_error to keep down parameter count.
-//
-static void ALICE_error(USHORT number)
-{
-	ALICE_error(number, 0, 0, 0, 0, 0);
 }
 
 

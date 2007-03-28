@@ -367,7 +367,7 @@ static TDR get_description(ISC_QUAD* blob_id)
 			break;
 
 		default:
-			ALICE_print(108, 0, 0, 0, 0, 0);
+			ALICE_print(108);
 			// msg 108: Transaction description item unknown.
 
 			if (length) {

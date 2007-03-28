@@ -24,6 +24,8 @@
 #ifndef	JRD_DYN_H
 #define JRD_DYN_H
 
+#include "../common/classes/MsgPrint.h"
+
 const char* const ALL_PRIVILEGES = "SIUDR";
 		/* all applicable grant/revoke privileges */
 const char* const ALL_PROC_PRIVILEGES = "X";
@@ -78,10 +80,10 @@ public:
 
 } //namespace Jrd
 
-void	DYN_error(bool, USHORT, const TEXT*, const TEXT*, const TEXT*,
-				const TEXT*, const TEXT*);
-void	DYN_error_punt(bool, USHORT, const TEXT*, const TEXT*,
-				const TEXT*, const TEXT*, const TEXT*);
+void	DYN_error(bool, USHORT, const MsgFormat::SafeArg& sarg = MsgFormat::SafeArg());
+void	DYN_error_punt(bool, USHORT, const MsgFormat::SafeArg& arg);
+void	DYN_error_punt(bool, USHORT, const char* str);
+void	DYN_error_punt(bool, USHORT);
 void	DYN_execute(Jrd::Global*, const UCHAR**, const Firebird::MetaName*, Firebird::MetaName*, Firebird::MetaName*, Firebird::MetaName*, Firebird::MetaName*);
 SLONG	DYN_get_number(const UCHAR**);
 USHORT	DYN_get_string(const TEXT**, Firebird::MetaName&, size_t, bool);

@@ -377,28 +377,44 @@ THREAD_ENTRY_DECLARE main_gstat(THREAD_ENTRY_PARAM arg);
 #endif
 
 
-void SVC_STATUS_ARG(ISC_STATUS*& status, USHORT type, const void* value)
+void SVC_STATUS_ARG(ISC_STATUS*& status, const MsgFormat::safe_cell& value)
 {
-	if (value)
+	using MsgFormat::safe_cell;
+    
+	switch (value.type)
 	{
-		switch (type)
+	case safe_cell::at_int64:
+	case safe_cell::at_uint64:
+		*status++ = isc_arg_number;
+		*status++ = static_cast<SLONG>(value.i_value); // May truncate number!
+		break;
+	case safe_cell::at_str:
 		{
-		case isc_arg_number:
-			*status++ = type;
-			*status++ = reinterpret_cast<ISC_STATUS>(value);
-			break;
-		case isc_arg_string:
-			{
-				*status++ = type;
-				const char* s = static_cast<const char*>(value);
-				*status++ = (ISC_STATUS) error_string(s, strlen(s));
-			}
-			break;
-		default:
-			break;
+			*status++ = isc_arg_string;
+			const char* s = value.st_value.s_string;
+			*status++ = (ISC_STATUS) error_string(s, s ? strlen(s) : 0);
 		}
+		break;
+	case safe_cell::at_counted_str:
+		{
+			*status++ = isc_arg_string;
+			const char* s = value.st_value.s_string;
+			*status++ = (ISC_STATUS) error_string(s, value.st_value.s_len);
+		}
+		break;
+
+	default:
+		break;
 	}
 }
+
+
+void SVC_STATUS_ARG(ISC_STATUS*& status, const char* value)
+{
+	*status++ = isc_arg_string;
+	*status++ = (ISC_STATUS) error_string(value, value ? strlen(value) : 0);
+}
+
 
 /* Entries which have a NULL serv_executable field will not fork
    a process on the server, but will establish a valid connection
@@ -1972,10 +1988,10 @@ THREAD_ENTRY_DECLARE SVC_read_fb_log(THREAD_ENTRY_PARAM arg)
 #ifdef SERVICE_THREAD
 		*status++ = isc_sys_request;
 		if (!file) {
-			SVC_STATUS_ARG(status, isc_arg_string, "fopen");
+			SVC_STATUS_ARG(status, "fopen");
 		}
 		else {
-			SVC_STATUS_ARG(status, isc_arg_string, "fgets");
+			SVC_STATUS_ARG(status, "fgets");
 		}
 		*status++ = SYS_ARG;
 		*status++ = errno;
@@ -2653,8 +2669,15 @@ static const TEXT* error_string(const TEXT* data, USHORT length)
  * Functional Description:
  *     Uses ERR_string to save string data for the
  *     status vector
+ * CVC: None of the callees check the pointer, so we do here as paranoid measure.
+ * The chain is error_string->ERR_string->status_nstring->InterlockedStringsBuffer::alloc
+ *   ->CircularBuffer::alloc->memcpy
  ********************************************/
-	return ERR_string(data, length);
+	if (data)
+		return ERR_string(data, length);
+
+	data = "(null string)";
+	return ERR_string(data, strlen(data));
 }
 
 

@@ -162,6 +162,9 @@ const SLONG GENERIC_SQLCODE		= -999;
 #include "../jrd/jrd.h"
 #include "../common/utils_proto.h"
 
+#include "../common/classes/SafeArg.h"
+#include "../common/classes/MsgPrint.h"
+
 using Firebird::TimeStamp;
 
 // This structure is used to parse the firebird.msg file.
@@ -799,6 +802,8 @@ static SLONG safe_interpret(char* const s, const size_t bufsize,
 	const TEXT** arg = args;
 	const char* const* const argend = arg + FB_NELEM(args);
 
+	MsgFormat::SafeArg safe;
+
 	// Parse and collect any arguments that may be present
 	
 	TEXT* p = 0;
@@ -817,8 +822,15 @@ static SLONG safe_interpret(char* const s, const size_t bufsize,
 		switch (x)
 		{
 		case isc_arg_string:
+			*arg++ = (TEXT*) *v;
+			safe << (TEXT*) *v;
+			++v;
+			continue;
+
 		case isc_arg_number:
-			*arg++ = (TEXT*) *v++;
+			*arg++ = (TEXT*) *v;
+			safe << *v;
+			++v;
 			continue;
 
 		case isc_arg_cstring:
@@ -843,14 +855,18 @@ static SLONG safe_interpret(char* const s, const size_t bufsize,
 				// the loop changes "len".
 				temp_len -= len;
 				*arg++ = p;
+				safe << p;
 				// We'll silently truncate the parameter to our available space.
 				while (--len) // CVC: Decrement first to make room for the null terminator.
 					*p++ = *q++;
 					
 				*p++ = 0;
 			}
-			else // No space at all, pass the empty string.
+			else  // No space at all, pass the empty string.
+			{
 				*arg++ = "";
+				safe << "";
+			}
 				
 			continue;
 
@@ -872,19 +888,19 @@ static SLONG safe_interpret(char* const s, const size_t bufsize,
 			    
 			USHORT fac = 0, dummy_class = 0;
 			const ISC_STATUS decoded = gds__decode(code, &fac, &dummy_class);
-			if (gds__msg_format(0, fac, (USHORT) decoded, bufsize, s,
-								args[0], args[1], args[2], args[3], args[4]) < 0)
+			if (fb_msg_format(0, fac, (USHORT) decoded, bufsize, s, safe) < 0)
 			{
 				bool found = false;
 
 				for (int i = 0; messages[i].code_number; ++i) {
 					if (code == messages[i].code_number) {
-						if (legacy)
+						if (legacy && strchr(messages[i].code_text, '%'))
+						{
 							sprintf(s, messages[i].code_text,
 									args[0], args[1], args[2], args[3], args[4]);
+						}
 						else
-							fb_utils::snprintf(s, bufsize, messages[i].code_text,
-									args[0], args[1], args[2], args[3], args[4]);
+							MsgFormat::MsgPrint(s, bufsize, messages[i].code_text, safe);
 						found = true;
 						break;
 					}
@@ -1394,7 +1410,7 @@ SSHORT API_ROUTINE gds__msg_format(void*       handle,
 
 	size = (size < length) ? length : size;
 
-	TEXT* formatted = (TEXT *) gds__alloc((SLONG) size);
+	TEXT* formatted = (TEXT *) gds__alloc(size);
 
 	if (!formatted)				/* NOMEM: */
 		return -1;
@@ -1417,8 +1433,9 @@ SSHORT API_ROUTINE gds__msg_format(void*       handle,
 			s += "message text not found";
 		else if (n == -2) {
 			s += "message file ";
-			gds__prefix_msg(formatted, MSG_FILE);
-			s += formatted;
+			TEXT temp[MAXPATHLEN];
+			gds__prefix_msg(temp, MSG_FILE);
+			s += temp;
 			s += " not found";
 		}
 		else {
@@ -1437,7 +1454,7 @@ SSHORT API_ROUTINE gds__msg_format(void*       handle,
 	*buffer = 0;
 
 	gds__free(formatted);
-	return ((n > 0) ? l : -l);
+	return (n > 0 ? l : -l);
 }
 
 
@@ -1445,7 +1462,8 @@ SSHORT API_ROUTINE gds__msg_lookup(void* handle,
 								   USHORT facility,
 								   USHORT number,
 								   USHORT length,
-								   TEXT* buffer, USHORT* flags)
+								   TEXT* buffer,
+								   USHORT* flags)
 {
 /**************************************
  *
@@ -1627,15 +1645,13 @@ int API_ROUTINE gds__msg_open(void** handle, const TEXT* filename)
 	messageL->msg_levels = header.msghdr_levels;
 	messageL->msg_top_tree = header.msghdr_top_tree;
 
-
 	*handle = messageL;
 
 	return 0;
 }
 
 
-void API_ROUTINE gds__msg_put(
-							  void* handle,
+void API_ROUTINE gds__msg_put(void* handle,
 							  USHORT facility,
 							  USHORT number,
 							  const TEXT* arg1, const TEXT* arg2,
@@ -1651,6 +1667,7 @@ void API_ROUTINE gds__msg_put(
  * Functional description
  *	Lookup and format message.  Return as much of formatted string
  *	as fits in callers buffer.
+ *  This function will misbehave with the new format and we can't solve it.
  *
  **************************************/
 	TEXT formatted[BUFFER_MEDIUM];
@@ -2706,16 +2723,15 @@ void API_ROUTINE isc_sql_interprete(
  *
  *	NOTE: As of 21-APR-1999, sqlmessages HAVE arguments hence use
  *	      an empty string instead of NULLs.
+ * (Obsolete comment with the new SafeArg class.)
  *	      
  **************************************/
-	const TEXT* str = "";
+	static const MsgFormat::SafeArg arg;
 
 	if (sqlcode < 0)
-		gds__msg_format(0, 13, (USHORT) (1000 + sqlcode), length, buffer,
-						str, str, str, str, str);
+		fb_msg_format(0, 13, (USHORT) (1000 + sqlcode), length, buffer, arg);
 	else
-		gds__msg_format(0, 14, sqlcode, length, buffer,
-						str, str, str, str, str);
+		fb_msg_format(0, 14, sqlcode, length, buffer, arg);
 }
 
 

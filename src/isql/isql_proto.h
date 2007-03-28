@@ -24,6 +24,8 @@
 #ifndef ISQL_ISQL_PROTO_H
 #define ISQL_ISQL_PROTO_H
 
+#include "../common/classes/SafeArg.h"
+
 void	ISQL_array_dimensions(const TEXT*);
 TEXT*	ISQL_blankterm2(const TEXT* input, TEXT* output);
 void	ISQL_build_table_list(void**, FILE*, FILE*, FILE*);
@@ -57,10 +59,10 @@ bool	ISQL_is_domain(const TEXT*);
 #endif
 int		ISQL_main(int, char**);
 void	ISQL_make_upper(TEXT*);
-void	ISQL_msg_get(USHORT number, TEXT* msg, const TEXT* arg1, const TEXT* arg2 = 0,
-	const TEXT* arg3 = 0, const TEXT* arg4 = 0, const TEXT* arg5 = 0);
-void ISQL_msg_get(USHORT number, USHORT size, TEXT* msg, const TEXT* arg1,
-	const TEXT* arg2 = 0, const TEXT* arg3 = 0, const TEXT* arg4 = 0, const TEXT* arg5 = 0);
+void	ISQL_msg_get(USHORT number, TEXT* msg, 
+					 const MsgFormat::SafeArg& args = MsgFormat::SafeArg());
+void	ISQL_msg_get(USHORT number, USHORT size, TEXT* msg, 
+					 const MsgFormat::SafeArg& args = MsgFormat::SafeArg());
 void	ISQL_print_validation(FILE*, ISC_QUAD*, bool, FB_API_HANDLE);
 void	ISQL_printf(FILE*, const char*);
 void	ISQL_printf2(FILE*, const char*, ...);

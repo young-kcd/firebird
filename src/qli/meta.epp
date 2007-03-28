@@ -43,6 +43,9 @@
 #include "../common/utils_proto.h"
 #include "../common/classes/ClumpletWriter.h"
 
+using MsgFormat::SafeArg;
+
+
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
@@ -195,7 +198,8 @@ void MET_define_field( DBB database, qli_fld* field)
 
 	if (check_global_field(database, NULL, field->fld_name->sym_string)) {
 		rollback_update(database);
-		ERRQ_print_error(233, field->fld_name->sym_string, NULL, NULL, NULL, NULL);	// Msg233 global field %s already exists
+		ERRQ_print_error(233, field->fld_name->sym_string);
+		// Msg233 global field %s already exists
 	}
 
 	define_global_field(database, field, field->fld_name);
@@ -226,7 +230,7 @@ void MET_define_index( qli_syntax* node)
 
 	FOR(REQUEST_HANDLE database->dbb_requests[REQ_def_index1])
 		X IN DB.RDB$INDICES WITH X.RDB$INDEX_NAME EQ symbol->sym_string
-			ERRQ_print_error(235, symbol->sym_string, NULL, NULL, NULL, NULL);
+			ERRQ_print_error(235, symbol->sym_string);
 			// Msg235 Index %s already exists
 	END_FOR
 	ON_ERROR
@@ -286,8 +290,8 @@ void MET_define_index( qli_syntax* node)
 
 		if (!present) {
 			rollback_update(database);
-			ERRQ_print_error(236, (*ptr)->nam_string,
-							 relation->rel_symbol->sym_string, NULL, NULL, NULL);
+			ERRQ_print_error(236, SafeArg() << (*ptr)->nam_string <<
+							 relation->rel_symbol->sym_string);
 			// Msg236 Field %s does not occur in relation %s
 		}
 
@@ -330,15 +334,15 @@ void MET_define_relation( qli_rel* relation, qli_rel* source)
 	if (source) {
 		source->rel_database = setup_update(source->rel_database);
 		if (!(check_relation(source)))
-			ERRQ_print_error(483, source->rel_symbol->sym_string, NULL, NULL,
-							 NULL, NULL);	// Msg 483 Relation %s does not exist
+			ERRQ_print_error(483, source->rel_symbol->sym_string);
+			// Msg 483 Relation %s does not exist
 	}
 
 	DBB database = setup_update(relation->rel_database);
 	relation->rel_database = database;
 
 	if (check_relation(relation))
-		ERRQ_print_error(237, symbol->sym_string, NULL, NULL, NULL, NULL);	// Msg237 Relation %s already exists
+		ERRQ_print_error(237, symbol->sym_string);	// Msg237 Relation %s already exists
 
 
 	STORE(REQUEST_HANDLE database->dbb_requests[REQ_store_relation])
@@ -408,7 +412,7 @@ void MET_define_sql_relation( qli_rel* relation)
 
 	FOR(REQUEST_HANDLE database->dbb_requests[REQ_relation_def])
 		X IN DB.RDB$RELATIONS WITH X.RDB$RELATION_NAME EQ symbol->sym_string
-			ERRQ_print_error(237, symbol->sym_string, NULL, NULL, NULL, NULL);
+			ERRQ_print_error(237, symbol->sym_string);
 			// Msg237 Relation %s already exists
 	END_FOR
 	ON_ERROR
@@ -550,12 +554,12 @@ void MET_delete_database( DBB dbb)
 	while (stack) {
 		qli_str* sstring = (qli_str*) ALLQ_pop(&stack);
 		if (unlink(sstring->str_data))
-			ERRQ_print_error(431, sstring->str_data, NULL, NULL, NULL, NULL);
+			ERRQ_print_error(431, sstring->str_data);
 			// Msg431 Could not drop database file "%s"
 	}
 
 	if (unlink(dbb->dbb_filename))
-		ERRQ_print_error(431, dbb->dbb_filename, NULL, NULL, NULL, NULL);
+		ERRQ_print_error(431, dbb->dbb_filename);
 		// Msg431 Could not drop database file "%s"
 }
 
@@ -580,7 +584,7 @@ void MET_delete_field( DBB database, NAM name)
 		WITH RFR.RDB$FIELD_SOURCE EQ name->nam_string
 		REDUCED TO RFR.RDB$RELATION_NAME
 		if (!count)
-			  ERRQ_msg_put(238, name->nam_string, NULL, NULL, NULL, NULL);	// Msg238 Field %s is in use in the following relations:
+			  ERRQ_msg_put(238, name->nam_string);	// Msg238 Field %s is in use in the following relations:
 		printf("\t%s\n", RFR.RDB$RELATION_NAME);
 		count++;
 	END_FOR
@@ -589,8 +593,8 @@ void MET_delete_field( DBB database, NAM name)
 	END_ERROR;
 
 	if (count)
-		ERRQ_print_error(239, name->nam_string, database->dbb_filename, NULL,
-						 NULL, NULL);	// Msg239 Field %s is in use in database %s
+		ERRQ_print_error(239, SafeArg() << name->nam_string << database->dbb_filename);
+		// Msg239 Field %s is in use in database %s
 
 	FOR(REQUEST_HANDLE database->dbb_requests[REQ_erase_fld])
 		FLD IN DB.RDB$FIELDS WITH FLD.RDB$FIELD_NAME EQ name->nam_string
@@ -616,8 +620,8 @@ void MET_delete_field( DBB database, NAM name)
 	END_ERROR;
 
 	if (!count)
-		ERRQ_print_error(240, name->nam_string, database->dbb_filename, NULL,
-						 NULL, NULL);	// Msg240 Field %s is not defined in database %s
+		ERRQ_print_error(240, SafeArg() << name->nam_string << database->dbb_filename);
+		// Msg240 Field %s is not defined in database %s
 
 	MET_meta_commit(database);
 }
@@ -653,8 +657,8 @@ void MET_delete_index( DBB database, NAM name)
 	END_ERROR;
 
 	if (!count)
-		ERRQ_print_error(241, name->nam_string, database->dbb_filename, NULL,
-						 NULL, NULL);	// Msg241 Index %s is not defined in database %s
+		ERRQ_print_error(241, SafeArg() << name->nam_string << database->dbb_filename);
+		// Msg241 Index %s is not defined in database %s
 
 	FOR(REQUEST_HANDLE database->dbb_requests[REQ_erase_segments])
 		SEG IN DB.RDB$INDEX_SEGMENTS WITH SEG.RDB$INDEX_NAME EQ name->nam_string
@@ -1209,7 +1213,7 @@ void MET_modify_field( DBB database, qli_fld* field)
 		// Msg245 global field %s is not defined
 		// Msg468 Datatype of field %s may not be changed to or from blob
 		const USHORT nErr = flag ? 468 : 245;
-		ERRQ_print_error(flag, field_name->sym_string, NULL, NULL, NULL, NULL);
+		ERRQ_print_error(flag, field_name->sym_string);
 	}
 
 	MET_meta_commit(database);
@@ -1291,8 +1295,8 @@ void MET_modify_index( qli_syntax* node)
 	END_ERROR;
 
 	if (!count)
-		ERRQ_print_error(246, name->nam_string, database->dbb_filename, NULL,
-						 NULL, NULL);	// Msg246 Index %s does not exist
+		ERRQ_print_error(246, SafeArg() << name->nam_string << database->dbb_filename);
+		// Msg246 Index %s does not exist
 
 	MET_meta_commit(database);
 }
@@ -1336,8 +1340,7 @@ void MET_modify_relation( qli_rel* relation, qli_fld* fields)
 			END_ERROR;
 			if (!count) {
 				rollback_update(database);
-				ERRQ_print_error(247, field_name->sym_string, NULL, NULL,
-								 NULL, NULL);	// Msg247 field %s doesn't exist
+				ERRQ_print_error(247, field_name->sym_string);	// Msg247 field %s doesn't exist
 			}
 		}
 		else if (field->fld_flags & FLD_modify)
@@ -1508,7 +1511,7 @@ void MET_sql_alter_table( qli_rel* relation, qli_fld* fields)
 		ERRQ_database_error(database, gds_status);
 	END_ERROR;
 	if (!count)
-		ERRQ_print_error(414, symbol->sym_string, NULL, NULL, NULL, NULL);	// Msg237 Relation %s is lost
+		ERRQ_print_error(414, symbol->sym_string);	// Msg237 Relation %s is lost
 
 
 	qli_rlb* rlb = NULL;
@@ -1683,8 +1686,8 @@ static void add_field( qli_rel* relation, qli_fld* field, USHORT position)
 			X.RDB$RELATION_NAME EQ relation_name->sym_string AND
 			X.RDB$FIELD_NAME EQ field_name->sym_string
 		rollback_update(relation->rel_database);
-		ERRQ_print_error(251, field_name->sym_string,
-						 relation_name->sym_string, NULL, NULL, NULL);
+		ERRQ_print_error(251, SafeArg() << field_name->sym_string <<
+						 relation_name->sym_string);
 		// Msg251 Field %s already exists in relation %s
 	END_FOR
 	ON_ERROR
@@ -1762,8 +1765,9 @@ static void add_sql_field( qli_rel* relation, qli_fld* field, USHORT position,
 			X.RDB$RELATION_NAME EQ relation_name->sym_string AND
 			X.RDB$FIELD_NAME EQ field_name->sym_string
 		rollback_update(relation->rel_database);
-		ERRQ_print_error(251, field_name->sym_string,
-						 relation_name->sym_string, NULL, NULL, NULL);	// Msg251 Field %s already exists in relation %s
+		ERRQ_print_error(251, SafeArg() << field_name->sym_string <<
+						 relation_name->sym_string);
+		// Msg251 Field %s already exists in relation %s
 	END_FOR
 	ON_ERROR
 		ERRQ_database_error(database, gds_status);
@@ -1915,7 +1919,7 @@ static void change_field( qli_rel* relation, qli_fld* field)
 
 	if (field->fld_dtype) {
 		rollback_update(database);
-		ERRQ_print_error(252, NULL, NULL, NULL, NULL, NULL);
+		ERRQ_print_error(252);
 		// Msg252 datatype can not be changed locally
 	}
 
@@ -1924,7 +1928,7 @@ static void change_field( qli_rel* relation, qli_fld* field)
 		!(check_global_field(database, NULL, global_field->sym_string)))
 	{
 		rollback_update(database);
-		ERRQ_print_error(253, global_field->sym_string, NULL, NULL, NULL, NULL);
+		ERRQ_print_error(253, global_field->sym_string);
 		// Msg253 global field %s does not exist
 	}
 
@@ -1957,8 +1961,7 @@ static void change_field( qli_rel* relation, qli_fld* field)
 
 	if (!count) {
 		rollback_update(database);
-		ERRQ_print_error(254, field_name->sym_string,
-						 relation_name->sym_string, NULL, NULL, NULL);
+		ERRQ_print_error(254, SafeArg() << field_name->sym_string << relation_name->sym_string);
 		// Msg254 field %s not found in relation %s
 	}
 }
@@ -1996,7 +1999,8 @@ static bool check_global_field(DBB database,
 				 X.RDB$FIELD_SCALE != field->fld_scale))
 			{
 				rollback_update(database);
-				ERRQ_print_error(255, name, NULL, NULL, NULL, NULL);	// Msg255 Datatype conflict with existing global field %s
+				ERRQ_print_error(255, name);
+				// Msg255 Datatype conflict with existing global field %s
 			}
 			field->fld_dtype = MET_get_datatype(X.RDB$FIELD_TYPE);
 			field->fld_length =
@@ -2323,7 +2327,7 @@ static void clone_global_fields( qli_rel* target, qli_rel* source)
 					strcpy(name, Y.RDB$FIELD_NAME);
 					rollback_update(target->rel_database);
 					// CVC: When is this memory deallocated?
-					ERRQ_error(413, name, NULL, NULL, NULL, NULL);
+					ERRQ_error(413, name);
 					// conflicting previous definition
 				}
 			else
@@ -2502,7 +2506,7 @@ static void define_global_field( DBB database, qli_fld* field, qli_symbol* name)
  **************************************/
 	if (!field->fld_dtype) {
 		rollback_update(database);
-		ERRQ_print_error(256, name->sym_string, NULL, NULL, NULL, NULL);	// Msg256 No datatype specified for field %s
+		ERRQ_print_error(256, name->sym_string);	// Msg256 No datatype specified for field %s
 	}
 
 	STORE(REQUEST_HANDLE database->dbb_requests[REQ_store_field])
@@ -2711,7 +2715,7 @@ static void get_database_type( DBB new_dbb)
 		}
 
 		default:
-			ERRQ_error(257, NULL, NULL, NULL, NULL, NULL);
+			ERRQ_error(257);
 			// Msg257 database info call failed
 		}
 		p += l;
@@ -3267,7 +3271,7 @@ static qli_syntax* parse_blr( UCHAR ** ptr, qli_symbol* symbol)
 		break;
 
 	default:
-		ERRQ_print_error(258, (TEXT*)(IPTR) op, NULL, NULL, NULL, NULL);	// Msg258 don't understand BLR operatr %d
+		ERRQ_print_error(258, SafeArg() << op);	// Msg258 don't understand BLR operatr %d
 	}
 
 	if (!node) {

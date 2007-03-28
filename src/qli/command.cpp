@@ -41,6 +41,9 @@
 #include <descrip.h>
 #endif
 
+using MsgFormat::SafeArg;
+
+
 static void dump_procedure(DBB, FILE*, const TEXT*, USHORT, FB_API_HANDLE);
 static void extract_procedure(void*, const TEXT*, USHORT, DBB, ISC_QUAD*);
 
@@ -66,7 +69,7 @@ bool CMD_check_ready(void)
 	if (QLI_databases)
 		return false;
 
-	ERRQ_msg_put(95, NULL, NULL, NULL, NULL, NULL);	// Msg95 No databases are currently ready
+	ERRQ_msg_put(95);	// Msg95 No databases are currently ready
 
 	return true;
 }
@@ -138,9 +141,8 @@ void CMD_delete_proc( qli_syntax* node)
 	if (PRO_delete_procedure(proc->qpr_database, proc->qpr_name->nam_string))
 		return;
 
-	ERRQ_msg_put(88, proc->qpr_name->nam_string,	// Msg88 Procedure %s not found in database %s
-				 proc->qpr_database->dbb_symbol->sym_string, NULL, NULL,
-				 NULL);
+	ERRQ_msg_put(88, SafeArg() << proc->qpr_name->nam_string <<	// Msg88 Procedure %s not found in database %s
+				 proc->qpr_database->dbb_symbol->sym_string);
 }
 
 
@@ -193,9 +195,8 @@ void CMD_extract( qli_syntax* node)
 			FB_API_HANDLE blob = PRO_fetch_procedure(database, name->nam_string);
 			if (!blob) {
 				ERRQ_msg_put(89,	// Msg89 Procedure %s not found in database %s
-							 name->nam_string,
-							 database->dbb_symbol->sym_string, NULL, NULL,
-							 NULL);
+							 SafeArg() << name->nam_string <<
+							 database->dbb_symbol->sym_string);
 				continue;
 			}
 			dump_procedure(database, file, name->nam_string, name->nam_length,
@@ -276,8 +277,7 @@ void CMD_rename_proc( qli_syntax* node)
 	}
 
 	ERRQ_error(85,				// Msg85 Procedure %s not found in database %s
-			   old_name->nam_string, database->dbb_symbol->sym_string, NULL,
-			   NULL, NULL);
+			   SafeArg() << old_name->nam_string << database->dbb_symbol->sym_string);
 }
 
 
@@ -343,7 +343,7 @@ void CMD_set( qli_syntax* node)
 		case set_prompt:
 			string = (qli_const*) value;
 			if (string->con_desc.dsc_length > sizeof(QLI_prompt_string))
-				ERRQ_error(86, NULL, NULL, NULL, NULL, NULL);	// Msg86 substitute prompt string too long
+				ERRQ_error(86);	// Msg86 substitute prompt string too long
 			strncpy(QLI_prompt_string, (char*) string->con_data,
 					string->con_desc.dsc_length);
 			QLI_prompt_string[string->con_desc.dsc_length] = 0;
@@ -352,7 +352,7 @@ void CMD_set( qli_syntax* node)
 		case set_continuation:
 			string = (qli_const*) value;
 			if (string->con_desc.dsc_length > sizeof(QLI_cont_string))
-				ERRQ_error(87, NULL, NULL, NULL, NULL, NULL);	// Msg87 substitute prompt string too long
+				ERRQ_error(87);	// Msg87 substitute prompt string too long
 			strncpy(QLI_cont_string, (char*) string->con_data,
 					string->con_desc.dsc_length);
 			QLI_cont_string[string->con_desc.dsc_length] = 0;
@@ -527,8 +527,7 @@ void CMD_transaction( qli_syntax* node)
 			if ((node->syn_type == nod_commit)
 				&& !(db_iter->dbb_flags & DBB_prepared))
 			{
-				ERRQ_msg_put(465, db_iter->dbb_symbol->sym_string,
-							NULL, NULL, NULL, NULL);
+				ERRQ_msg_put(465, db_iter->dbb_symbol->sym_string);
 			}
 			else if (node->syn_type == nod_prepare)
 				db_iter->dbb_flags |= DBB_prepared;
@@ -550,8 +549,7 @@ void CMD_transaction( qli_syntax* node)
 		if ((node->syn_type == nod_commit) &&
 			!(database->dbb_flags & DBB_prepared))
 		{
-				ERRQ_msg_put(465, database->dbb_symbol->sym_string, NULL,
-							 NULL, NULL, NULL);
+				ERRQ_msg_put(465, database->dbb_symbol->sym_string);
 		}
 		else if (node->syn_type == nod_prepare)
 			database->dbb_flags |= DBB_prepared;

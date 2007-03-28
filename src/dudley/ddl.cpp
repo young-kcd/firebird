@@ -48,6 +48,11 @@
 #include <io.h> // isatty
 #endif
 
+#include "../common/classes/MsgPrint.h"
+
+using MsgFormat::SafeArg;
+
+
 DudleyGlobals dudleyGlob;
 
 static dudley_lls* free_stack;
@@ -267,7 +272,7 @@ int CLIB_ROUTINE main( int argc, char* argv[])
 			break;
 
 		case IN_SW_GDEF_Z:
-			DDL_msg_put(0, GDS_VERSION, 0, 0, 0, 0);	/* msg 0: gdef version %s\n */
+			DDL_msg_put(0, SafeArg() << GDS_VERSION);	/* msg 0: gdef version %s\n */
 			dudleyGlob.DDL_version = true;
 			break;
 
@@ -287,14 +292,14 @@ int CLIB_ROUTINE main( int argc, char* argv[])
 
 		case IN_SW_GDEF_0:
 			if (*string != '?')
-				DDL_msg_put(1, string, 0, 0, 0, 0);	/* msg 1: gdef: unknown switch %s */
-			DDL_msg_put(2, 0, 0, 0, 0, 0);	/* msg 2: \tlegal switches are: */
+				DDL_msg_put(1, SafeArg() << string);	/* msg 1: gdef: unknown switch %s */
+			DDL_msg_put(2);	/* msg 2: \tlegal switches are: */
 			for (const in_sw_tab_t* in_sw_tab = gdef_in_sw_table;
 				in_sw_tab->in_sw; in_sw_tab++)
 			{
 				if (in_sw_tab->in_sw_text) {
-					DDL_msg_put(3, in_sw_tab->in_sw_name,
-								in_sw_tab->in_sw_text, 0, 0, 0);	/* msg 3: %s%s */
+					DDL_msg_put(3, SafeArg() << in_sw_tab->in_sw_name <<
+								in_sw_tab->in_sw_text);	/* msg 3: %s%s */
 				}
 			}
 			DDL_exit(FINI_ERROR);
@@ -307,7 +312,7 @@ int CLIB_ROUTINE main( int argc, char* argv[])
 		strcpy(dudleyGlob.DB_file_string, file_name_1);
 		strcpy(dudleyGlob.DDL_file_string, file_name_2);
 		if (!*dudleyGlob.DB_file_string) {
-			DDL_msg_put(4, 0, 0, 0, 0, 0);	/* msg 4: gdef: Database name is required for extract */
+			DDL_msg_put(4);	/* msg 4: gdef: Database name is required for extract */
 			DDL_exit(FINI_ERROR);
 		}
 		dudleyGlob.DB_file_name = dudleyGlob.DB_file_string;
@@ -349,7 +354,8 @@ int CLIB_ROUTINE main( int argc, char* argv[])
 				if (!*p) {
 					input_file = fopen(dudleyGlob.DDL_file_name, FOPEN_INPUT_TYPE);
 					if (!input_file) {
-						DDL_msg_put(5, dudleyGlob.DDL_file_name, 0, 0, 0, 0);	/* msg 5: gdef: can't open %s */
+						DDL_msg_put(5, SafeArg() << dudleyGlob.DDL_file_name);
+						/* msg 5: gdef: can't open %s */
 						DDL_exit(FINI_ERROR);
 					}
 				}
@@ -366,7 +372,7 @@ int CLIB_ROUTINE main( int argc, char* argv[])
 			else {
 				input_file = fopen(dudleyGlob.DDL_file_name, FOPEN_INPUT_TYPE);
 				if (!input_file)
-					DDL_msg_put(6, dudleyGlob.DDL_file_name, file_name_1, 0, 0, 0);
+					DDL_msg_put(6, SafeArg() << dudleyGlob.DDL_file_name << file_name_1);
 				/* msg 6: gdef: can't open %s or %s */
 			}
 		}
@@ -385,11 +391,11 @@ int CLIB_ROUTINE main( int argc, char* argv[])
 		rewind(stdin);
 		//*buffer = 0;
 		if (dudleyGlob.DDL_errors > 1)
-			DDL_msg_partial(7, (TEXT *) (IPTR) dudleyGlob.DDL_errors, 0, 0, 0, 0);	/* msg 7: \n%d errors during input. */
+			DDL_msg_partial(7, SafeArg() << dudleyGlob.DDL_errors);	/* msg 7: \n%d errors during input. */
 		else if (dudleyGlob.DDL_errors)
-			DDL_msg_partial(9, 0, 0, 0, 0, 0);	/* msg 9: \n1 error during input. */
+			DDL_msg_partial(9);	/* msg 9: \n1 error during input. */
 		else
-			DDL_msg_partial(8, 0, 0, 0, 0, 0);	/* msg 8: \nNo errors. */
+			DDL_msg_partial(8);	/* msg 8: \nNo errors. */
 		if (DDL_yes_no(10)) { // msg 10 : save changes before exiting?
 			dudleyGlob.DDL_quit = false;
 			dudleyGlob.DDL_errors = 0;
@@ -418,9 +424,9 @@ int CLIB_ROUTINE main( int argc, char* argv[])
 
 	if (dudleyGlob.DDL_actions && (dudleyGlob.DDL_errors || dudleyGlob.DDL_quit))
 		if (dudleyGlob.DDL_errors)
-			DDL_msg_put(307, 0, 0, 0, 0, 0);	/* msg 307: Ceasing processing because of errors. */
+			DDL_msg_put(307);	/* msg 307: Ceasing processing because of errors. */
 		else
-			DDL_msg_put(308, 0, 0, 0, 0, 0);	/* msg 308: Ceasing processing. */
+			DDL_msg_put(308);	/* msg 308: Ceasing processing. */
 
 	EXE_fini(dudleyGlob.database);
 
@@ -462,7 +468,7 @@ UCHAR *DDL_alloc(int size)
 #endif
 
 	if (!p)
-		DDL_err(14, 0, 0, 0, 0, 0);	/* msg 14: memory exhausted */
+		DDL_err(14);	/* msg 14: memory exhausted */
 	else
 		do {
 			*p++ = 0;
@@ -472,12 +478,9 @@ UCHAR *DDL_alloc(int size)
 }
 
 
-int DDL_db_error(
-				 ISC_STATUS* status_vector,
+int DDL_db_error(ISC_STATUS* status_vector,
 				 USHORT number,
-				 const TEXT* arg1,
-				 const TEXT* arg2, const TEXT* arg3,
-				 const TEXT* arg4, const TEXT* arg5)
+				 const SafeArg& arg)
 {
 /**************************************
  *
@@ -492,14 +495,12 @@ int DDL_db_error(
 
 	gds__print_status(status_vector);
 
-	return DDL_err(number, arg1, arg2, arg3, arg4, arg5);
+	return DDL_err(number, arg);
 }
 
 
-int DDL_err(
-			USHORT number,
-			const TEXT* arg1, const TEXT* arg2, const TEXT* arg3,
-			const TEXT* arg4, const TEXT* arg5)
+int DDL_err(USHORT number,
+			const SafeArg& arg)
 {
 /**************************************
  *
@@ -512,11 +513,13 @@ int DDL_err(
  *
  **************************************/
 
-	DDL_msg_partial(15, dudleyGlob.DDL_file_name, (TEXT *) (IPTR) dudleyGlob.DDL_line, 0, 0, 0);	/*msg 15: %s:%d: */
-	DDL_msg_put(number, arg1, arg2, arg3, arg4, arg5);
+	SafeArg temp;
+	DDL_msg_partial(15, temp << dudleyGlob.DDL_file_name << dudleyGlob.DDL_line);	/*msg 15: %s:%d: */
+	DDL_msg_put(number, arg);
 	if (dudleyGlob.DDL_errors++ > MAX_ERRORS) {
-		DDL_msg_put(16, (TEXT *) (SLONG) MAX_ERRORS, 0, 0, 0, 0);	/* msg 16: error count exceeds limit (%d) */
-		DDL_msg_put(17, 0, 0, 0, 0, 0);	/* msg 17: what we have here is a failure to communicate! */
+		temp.clear();
+		DDL_msg_put(16, temp << MAX_ERRORS);	/* msg 16: error count exceeds limit (%d) */
+		DDL_msg_put(17);	/* msg 17: what we have here is a failure to communicate! */
 		if (dudleyGlob.database && (dudleyGlob.database->dbb_flags & DBB_create_database))
 			unlink(dudleyGlob.DB_file_name);
 		DDL_exit(FINI_ERROR);
@@ -526,12 +529,9 @@ int DDL_err(
 }
 
 
-void DDL_error_abort(
-					 ISC_STATUS* status_vector,
+void DDL_error_abort(ISC_STATUS* status_vector,
 					 USHORT number,
-					 const TEXT* arg1,
-					 const TEXT* arg2, const TEXT* arg3, 
-					 const TEXT* arg4, const TEXT* arg5)
+					 const SafeArg& arg)
 {
 /**************************************
  *
@@ -548,7 +548,7 @@ void DDL_error_abort(
 	if (status_vector)
 		gds__print_status(status_vector);
 
-	DDL_err(number, arg1, arg2, arg3, arg4, arg5);
+	DDL_err(number, arg);
 	DDL_exit(FINI_ERROR);
 }
 
@@ -571,11 +571,8 @@ void DDL_exit( int stat)
 }
 
 
-void DDL_msg_partial(
-					 USHORT number,
-					 const TEXT* arg1,
-					 const TEXT* arg2, const TEXT* arg3,
-					 const TEXT* arg4, const TEXT* arg5)
+void DDL_msg_partial(USHORT number,
+					 const SafeArg& arg)
 {
 /**************************************
  *
@@ -589,17 +586,13 @@ void DDL_msg_partial(
  *
  **************************************/
 
-	gds__msg_format(0, DDL_MSG_FAC, number, sizeof(DDL_message), DDL_message,
-					arg1, arg2, arg3, arg4, arg5);
+	fb_msg_format(0, DDL_MSG_FAC, number, sizeof(DDL_message), DDL_message, arg);
 	printf("%s", DDL_message);
 }
 
 
-void DDL_msg_put(
-				 USHORT number,
-				 const TEXT* arg1,
-				 const TEXT* arg2, const TEXT* arg3,
-				 const TEXT* arg4, const TEXT* arg5)
+void DDL_msg_put(USHORT number,
+				 const SafeArg& arg)
 {
 /**************************************
  *
@@ -612,8 +605,7 @@ void DDL_msg_put(
  *
  **************************************/
 
-	gds__msg_format(0, DDL_MSG_FAC, number, sizeof(DDL_message), DDL_message,
-					arg1, arg2, arg3, arg4, arg5);
+	fb_msg_format(0, DDL_MSG_FAC, number, sizeof(DDL_message), DDL_message, arg);
 	printf("%s\n", DDL_message);
 }
 
@@ -680,24 +672,23 @@ bool DDL_yes_no( USHORT number)
  *
  **************************************/
 	TEXT prompt[128], reprompt[128], yes_ans[128], no_ans[128];
+	
+	static const SafeArg dummy;
 
-	gds__msg_format(0, DDL_MSG_FAC, number, sizeof(prompt), prompt, NULL,
-					NULL, NULL, NULL, NULL);
+	fb_msg_format(0, DDL_MSG_FAC, number, sizeof(prompt), prompt, dummy);
 
 	USHORT yes_num = 342;				/* Msg342 YES   */
 	USHORT no_num = 343;				/* Msg343 NO    */
 	USHORT re_num = 344;				/* Msg344 Please respond with YES or NO. */
 	reprompt[0] = '\0';
 
-	if (gds__msg_format
-		(0, DDL_MSG_FAC, no_num, sizeof(no_ans), no_ans, NULL, NULL, NULL,
-		 NULL, NULL) <= 0)
+	if (fb_msg_format
+		(0, DDL_MSG_FAC, no_num, sizeof(no_ans), no_ans, dummy) <= 0)
 	{
 		strcpy(no_ans, "NO");	/* default if msg_format fails */
 	}
-	if (gds__msg_format
-		(0, DDL_MSG_FAC, yes_num, sizeof(yes_ans), yes_ans, NULL, NULL, NULL,
-		 NULL, NULL) <= 0)
+	if (fb_msg_format
+		(0, DDL_MSG_FAC, yes_num, sizeof(yes_ans), yes_ans, dummy) <= 0)
 	{
 		strcpy(yes_ans, "YES");
 	}
@@ -723,8 +714,8 @@ bool DDL_yes_no( USHORT number)
 		if (UPPER(c) == UPPER(no_ans[0]))
 			return false;
 		if (!reprompt
-			&& gds__msg_format(0, DDL_MSG_FAC, re_num, sizeof(reprompt),
-							   reprompt, NULL, NULL, NULL, NULL, NULL) <= 0)
+			&& fb_msg_format(0, DDL_MSG_FAC, re_num, sizeof(reprompt),
+							   reprompt, dummy) <= 0)
 		{
 			sprintf(reprompt, "Please respond with YES or NO.");	/* default if msg_format fails */
 		}

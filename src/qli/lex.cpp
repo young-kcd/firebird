@@ -42,6 +42,9 @@
 #include "../common/utils_proto.h"
 #include "../common/classes/TempFile.h"
 
+using MsgFormat::SafeArg;
+
+
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
@@ -676,7 +679,7 @@ bool LEX_push_file(const TEXT* filename,
 		sprintf(buffer, "%s.com", filename);
 		if (!(file = fopen(buffer, FOPEN_INPUT_TYPE))) {
 			if (error_flag)
-				ERRQ_msg_put(67, filename, NULL, NULL, NULL, NULL);
+				ERRQ_msg_put(67, filename);
 				// Msg 67 can't open command file \"%s\"\n
 			return false;
 		}
@@ -873,7 +876,7 @@ qli_tok* LEX_token(void)
 			}
 			*p++ = next;
 			if ((p - token->tok_string) >= MAXSYMLEN)
-				ERRQ_msg_put(470, (TEXT *) (IPTR) MAXSYMLEN, NULL, NULL, NULL, NULL);	// Msg 470 literal too long
+				ERRQ_msg_put(470, SafeArg() << MAXSYMLEN);	// Msg 470 literal too long
 
 			// If there are 2 quotes in a row, interpret 2nd as a literal
 
@@ -1106,12 +1109,10 @@ static void next_line(const bool eof_ok)
 		// this is an unexpected end of file
 
 		if (QLI_line->line_type == line_blob)
-			ERRQ_print_error(64, QLI_line->line_source_name, NULL, NULL, NULL,
-							 NULL);
+			ERRQ_print_error(64, QLI_line->line_source_name);
 		// Msg 64 unexpected end of procedure in procedure %s
 		else if (QLI_line->line_type == line_file)
-			ERRQ_print_error(65, QLI_line->line_source_name, NULL, NULL, NULL,
-							 NULL);
+			ERRQ_print_error(65, QLI_line->line_source_name);
 		// Msg 65 unexpected end of file in file %s
 		else {
 			if (QLI_line->line_type == line_string)
