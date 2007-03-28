@@ -114,6 +114,7 @@ enum literal_string_type
 #include "../jrd/gdsassert.h"
 #include "../isql/Extender.h"
 #include "../isql/PtrSentry.h"
+#include "../common/classes/UserBlob.h"
 #include "../common/classes/MsgPrint.h"
 
 using MsgFormat::SafeArg;
@@ -1813,20 +1814,19 @@ void ISQL_print_validation(FILE* fp,
 	if (blobid->gds_quad_high == 0)
 		return;
 
-	TEXT buffer[BUFFER_LENGTH512];
-
-	FB_API_HANDLE blob = 0;
-	if (isc_open_blob(isc_status, &DB, &trans, &blob, blobid)) {
+	UserBlob blob(isc_status);
+	if (!blob.open(DB, trans, *blobid))
+	{
 		ISQL_errmsg(isc_status);
 		return;
 	}
 
 	bool issql = false;
 	bool firsttime = true;
-	USHORT length;
-	while (!isc_get_segment(isc_status, &blob, &length,
-							(USHORT) (BUFFER_LENGTH512 - 1),
-							buffer) || isc_status[1] == isc_segment)
+	TEXT buffer[BUFFER_LENGTH512];
+	
+	size_t length;
+	while (blob.getSegment(sizeof(buffer) - 1, length, buffer))
 	{
 		buffer[length] = 0;
 		const TEXT* p = buffer;
@@ -1859,9 +1859,7 @@ void ISQL_print_validation(FILE* fp,
 		ISQL_printf2(fp, "%s", (isComputedField ? " */" : ")"));
 	}
 
-	isc_close_blob(isc_status, &blob);
-
-	if (isc_status[1])
+	if (isc_status[1] && isc_status[1] != isc_segstr_eof)
 		ISQL_errmsg(isc_status);
 }
 
@@ -2954,35 +2952,26 @@ static processing_state bulk_insert_hack(const char* command, XSQLDA** sqldap)
 						blobid = (ISC_QUAD*) ISQL_ALLOC(sizeof(ISC_QUAD));
 
 					{ // scope
-						// Segments are at 1024, hardcoded.
-						bstream* bs = Bopen(blobid, DB, M__trans, "w");
-						if (!bs)
+						UserBlob bs(isc_status);
+						if (!bs.create(DB, M__trans, *blobid))
 						{
 							STDERROUT("Unable to create blob");
+							ISQL_errmsg(isc_status);
 							done = true;
 							break; // Quit the switch()
 						}
 
-						bool go = true;
-						if (bs->bstr_cnt >= length) // go faster if possible
-						{
-							memcpy(bs->bstr_ptr, lastPos, length);
-							bs->bstr_cnt -= length;
-							bs->bstr_ptr += length;
-						}
-						else for (int localLen = length; go && localLen; --localLen)
-						{
-							// We use binary put because we don't want \n to create segments.
-							go = putbx(*lastPos, bs);
-						}
-						if (!go)
+						size_t real_len;
+						if (!bs.putData(length, real_len, lastPos) || real_len != length)
 						{
 							STDERROUT("Unable to write to blob");
+							ISQL_errmsg(isc_status);
 							done = true;
 						}
-						if (!BLOB_close(bs)) // It may cause a put_segment.
+						if (!bs.close())
 						{
 							STDERROUT("Unable to close blob");
+							ISQL_errmsg(isc_status);
 							done = true;
 						}
 					} // scope
@@ -7343,14 +7332,13 @@ processing_state ISQL_print_item_blob(FILE* fp,
  *	any BLOB selected in a show or extract command)
  *
  **************************************/
-	TEXT buffer[BUFFER_LENGTH512];
 	TEXT msg[MSG_LENGTH];
 
 	ISC_QUAD* blobid = (ISC_QUAD*) var->sqldata;
 
 	// Don't bother with null blobs
 
-	if (blobid->gds_quad_high == 0 && blobid->gds_quad_low == 0)
+	if (UserBlob::blobIsNull(*blobid))
 		return CONT;
 
 	if ((var->sqlsubtype != subtype) && (subtype != ALL_BLOBS)) {
@@ -7403,18 +7391,16 @@ processing_state ISQL_print_item_blob(FILE* fp,
 		set_bpb_for_translation(blob_subtype);
 	}
 
-	FB_API_HANDLE blob = 0;
-	if (isc_open_blob2(isc_status, &DB, &trans, &blob, blobid, bpb_length,
-					   bpb))
+	UserBlob blob(isc_status);
+	if (!blob.open(DB, trans, *blobid, bpb_length, bpb))
 	{
 		ISQL_errmsg(isc_status);
 		return ps_ERR;
 	}
 
-	USHORT length;
-	while (!isc_get_segment(isc_status, &blob, &length,
-							(USHORT) (BUFFER_LENGTH512 - 1), buffer)
-							|| isc_status[1] == isc_segment)
+	TEXT buffer[BUFFER_LENGTH512];
+	size_t length;
+	while (blob.getSegment(sizeof(buffer) - 1, length, buffer))
 	{
 		// Special displays for blr or acl subtypes 
 
@@ -7435,9 +7421,8 @@ processing_state ISQL_print_item_blob(FILE* fp,
 		}
 	}
 
-	if (isc_status[1] == isc_segstr_eof)
-		isc_close_blob(isc_status, &blob);
-	else if (isc_status[1]) {
+	if (isc_status[1] && isc_status[1] != isc_segstr_eof)
+	{
 		ISQL_errmsg(isc_status);
 		return ps_ERR;
 	}

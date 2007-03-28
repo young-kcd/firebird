@@ -53,6 +53,7 @@
 #include "../isql/extra_proto.h"
 #include "../common/utils_proto.h"
 #include "../jrd/constants.h"
+#include "../common/classes/UserBlob.h"
 
 #ifdef HAVE_CTYPE_H
 #include <ctype.h>
@@ -256,12 +257,6 @@ const char* trigger_action(int type)
 
 	return buffer;
 }
-
-inline bool blobIsNull(const ISC_QUAD* blobid)
-{
-	return blobid->gds_quad_high == 0 && blobid->gds_quad_low == 0;
-}
-
 
 // There was too much string comparison inside SHOW_metadata.
 // Handle all cases except VERSION and SQL DIALECT inside this class.
@@ -1016,12 +1011,11 @@ void SHOW_print_metadata_text_blob(FILE* fp,
  **************************************/
 
 	// Don't bother with null blobs
-	if (blobIsNull(blobid))
+	if (UserBlob::blobIsNull(*blobid))
 		return;
 
-	isc_blob_handle blob_handle = 0;
-	if (isc_open_blob2(isc_status, &DB, &gds_trans, &blob_handle, blobid,
-					   sizeof(metadata_text_bpb), metadata_text_bpb))
+	UserBlob blob(isc_status);
+	if (!blob.open(DB, gds_trans, *blobid, sizeof(metadata_text_bpb), metadata_text_bpb))
 	{
 		ISQL_errmsg(isc_status);
 		return;
@@ -1029,10 +1023,8 @@ void SHOW_print_metadata_text_blob(FILE* fp,
 
 	SCHAR buffer[BUFFER_LENGTH512];
 
-	USHORT length = 0;
-	while (!isc_get_segment(isc_status, &blob_handle, &length,
-							(USHORT) (BUFFER_LENGTH512 - 1), buffer) ||
-		   isc_status[1] == isc_segment)
+	size_t length = 0;
+	while (blob.getSegment(sizeof(buffer) - 1, length, buffer))
 	{
 		// Need to step through the buffer until we hit a '\n' and then print the
 		// line.  This is because '\n' are included in blob text.
@@ -1055,8 +1047,6 @@ void SHOW_print_metadata_text_blob(FILE* fp,
 
 	if (isc_status[1] && isc_status[1] != isc_segstr_eof)
 		ISQL_errmsg(isc_status);
-
-	isc_close_blob(isc_status, &blob_handle);
 }
 
 
@@ -2087,7 +2077,7 @@ static processing_state show_comments(const commentMode showextract, const char*
 		AND (RL.RDB$SYSTEM_FLAG EQ 0 OR RL.RDB$SYSTEM_FLAG MISSING)
 		SORTED BY RL.RDB$RELATION_NAME
 
-		if (!RL.RDB$DESCRIPTION.NULL && !blobIsNull(&RL.RDB$DESCRIPTION))
+		if (!RL.RDB$DESCRIPTION.NULL && !UserBlob::blobIsNull(RL.RDB$DESCRIPTION))
 		{
 			show_comment("TABLE", RL.RDB$RELATION_NAME, 0, &RL.RDB$DESCRIPTION,
 				showextract, first ? banner : 0);
@@ -2119,7 +2109,7 @@ static processing_state show_comments(const commentMode showextract, const char*
 		AND (VW.RDB$SYSTEM_FLAG EQ 0 OR VW.RDB$SYSTEM_FLAG MISSING)
 		SORTED BY VW.RDB$RELATION_NAME
 
-		if (!VW.RDB$DESCRIPTION.NULL && !blobIsNull(&VW.RDB$DESCRIPTION))
+		if (!VW.RDB$DESCRIPTION.NULL && !UserBlob::blobIsNull(VW.RDB$DESCRIPTION))
 		{
 			show_comment("VIEW", VW.RDB$RELATION_NAME, 0 , &VW.RDB$DESCRIPTION,
 				showextract, first ? banner : 0);
@@ -2150,7 +2140,7 @@ static processing_state show_comments(const commentMode showextract, const char*
 		WITH (PR.RDB$SYSTEM_FLAG EQ 0 OR PR.RDB$SYSTEM_FLAG MISSING)
 		SORTED BY PR.RDB$PROCEDURE_NAME
 
-		if (!PR.RDB$DESCRIPTION.NULL && !blobIsNull(&PR.RDB$DESCRIPTION))
+		if (!PR.RDB$DESCRIPTION.NULL && !UserBlob::blobIsNull(PR.RDB$DESCRIPTION))
 		{
 			show_comment("PROCEDURE", PR.RDB$PROCEDURE_NAME, 0, &PR.RDB$DESCRIPTION,
 				showextract, first ? banner : 0);
@@ -2195,6 +2185,11 @@ static processing_state show_comments(const commentMode showextract, const char*
 		WITH UD.RDB$DESCRIPTION NOT MISSING
 		AND (UD.RDB$SYSTEM_FLAG EQ 0 OR UD.RDB$SYSTEM_FLAG MISSING)
 		SORTED BY UD.RDB$FUNCTION_NAME
+
+		// Avoid syntax error when extracting scripts due to an historical bug in gbak.
+		// See CORE-1174.
+		if (UserBlob::blobIsNull(UD.RDB$DESCRIPTION))
+			continue;
 
 		show_comment("EXTERNAL FUNCTION", UD.RDB$FUNCTION_NAME, 0,
 			&UD.RDB$DESCRIPTION, showextract, first ? banner : 0);

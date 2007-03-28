@@ -121,6 +121,10 @@ SOURCE=..\..\..\gen\isql\show.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\src\common\classes\UserBlob.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\src\common\utils.cpp
 # End Source File
 # End Group
