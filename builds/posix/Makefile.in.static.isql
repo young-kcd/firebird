@@ -27,7 +27,6 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.static.isql,v 1.12 2007-03-28 11:32:13 alexpeshkoff Exp $
 #
 ROOT=..
 ObjModuleType=boot

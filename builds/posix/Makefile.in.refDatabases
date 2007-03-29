@@ -27,7 +27,6 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.refDatabases,v 1.30 2007-03-28 11:32:13 alexpeshkoff Exp $
 #
 ROOT=..
 ObjModuleType=std

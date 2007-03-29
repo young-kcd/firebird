@@ -27,7 +27,6 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.client.gfix,v 1.18 2007-03-29 06:08:47 aafemt Exp $
 #
 ROOT=..
 ObjModuleType=std
