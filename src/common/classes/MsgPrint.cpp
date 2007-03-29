@@ -68,20 +68,24 @@ int decode(uint64_t value, char* const rc, int radix)
 
 	if (radix == 10) // go faster for this option
 	{
-		do
+		while (true)
 		{
 			rc[rev--] = static_cast<unsigned char>(value % 10) + '0';
 			value /= 10;
-		} while (value);
+			if (!value)
+				break;
+		}
 	}
 	else
 	{
-		do
+		while (true)
 		{
 			int temp = static_cast<int>(value % radix);
 			rc[rev--] = static_cast<unsigned char>(temp < 10 ? temp + '0' : temp - 10 + 'A');
 			value /= radix;
-		} while (value);
+			if (!value)
+				break;
+		}
 	}
 
 	return adjust_prefix(radix, rev, false, rc);
@@ -101,21 +105,25 @@ int decode(int64_t value, char* const rc, int radix)
 	// The remainder with negative values is not consistent across compilers.
 	if (radix == 10) // go faster for this option
 	{
-		do
+		while (true)
 		{
 			int64_t temp = (value / 10) * 10 - value;
 			rc[rev--] = static_cast<unsigned char>(temp) + '0';
 			value /= 10;
-		} while (value);
+			if (!value)
+				break;
+		}
 	}
 	else
 	{
-		do
+		while (true)
 		{
 			int64_t temp = (value / radix) * radix - value;
 			rc[rev--] = static_cast<unsigned char>(temp < 10 ? temp + '0' : temp - 10 + 'A');
 			value /= radix;
-		} while (value);
+			if (!value)
+				break;
+		}
 	}
 
 	return adjust_prefix(radix, rev, true, rc);
@@ -390,3 +398,4 @@ int fb_msg_format(void*        handle,
 
 	return (n > 0 ? total_msg : -total_msg);
 }
+
