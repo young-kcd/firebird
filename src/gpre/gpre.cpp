@@ -42,6 +42,11 @@
 //
 // Added support for RM/Cobol
 // Stephen W. Boyd 31.Aug.2006
+//
+// Added -noqli switch to suppress parsing of QLI keywords.  This was
+// causing problems with Cobol programs since the QLI and Cobol reserved word
+// lists intersect.
+// Stephen W. Boyd 21.Mar.2007
 //____________________________________________________________
 //
 //
@@ -340,6 +345,7 @@ int main(int argc, char* argv[])
 	sw_standard_out				= false;
 	gpreGlob.sw_cob_dialect     = cob_vms;
 	gpreGlob.sw_cob_dformat		= "";
+	gpreGlob.sw_no_qli			= false;
 	gpreGlob.sw_version			= false;
 	gpreGlob.sw_d_float			= false;
 	gpreGlob.sw_sql_dialect		= SQL_DIALECT_V5;
@@ -551,6 +557,10 @@ int main(int argc, char* argv[])
 
 		case IN_SW_GPRE_E:
 			gpreGlob.sw_case = true;
+			break;
+
+		case IN_SW_NO_QLI:
+			gpreGlob.sw_no_qli = true;
 			break;
 
 #ifndef BOOT_BUILD

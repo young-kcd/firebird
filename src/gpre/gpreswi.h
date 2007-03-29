@@ -34,8 +34,14 @@
  *
  * Added support for RM/Cobol
  * SWB 31.Aug.2006
+ *
  * Added support for user specifiable date format for Cobol programs
  * SWB 15.Sep.2006
+ *
+ * Added -noqli switch to suppress parsing of QLI keywords.  This was
+ * causing problems with Cobol programs since the QLI and Cobol reserved word
+ * lists intersect.
+ * Stephen W. Boyd 21.Mar.2007
  */
 
 
@@ -108,7 +114,12 @@ enum gpre_cmd_switch
 	 * deliver dates to Cobol programs
 	 */
 	IN_SW_GPRE_DATE_FMT,
-
+	/*
+	 * Added to allow QLI processing the be suppressed.  QLI and COBOL reserved word lists
+	 * intersect and since QLI reserved words are recognized no matter where the occur in the
+	 * source stream this was causing bogus errors while parsing COBOL programs.
+	 */
+	IN_SW_NO_QLI,
 	/* As mentioned above: This should always be one larger than the largest 
 	   switch value.
 	   FSG 14.Nov.2000
@@ -184,5 +195,6 @@ static const in_sw_tab_t gpre_in_sw_table[] =
 	{IN_SW_GPRE_Z		, 0, "Z"			, 0, 0, 0, FALSE, 0, 0, "\t\tprint software version"},
 	{IN_SW_GPRE_BASE	, 0, "BASE"			, 0, 0, 0, FALSE, 0, 0, "\t\tbase directory for compiletime DB"},
 	{IN_SW_GPRE_DATE_FMT, 0, "DFM"			, 0, 0, 0, FALSE, 0, 0, "\t\tCobol date format"},
+	{IN_SW_NO_QLI		, 0, "NOQLI"		, 0, 0, 0, FALSE, 0, 0, "\t\tsupress QLI syntax"},
 	{IN_SW_GPRE_0		, 0, NULL			, 0, 0, 0, FALSE, 0, 0, NULL}
 };

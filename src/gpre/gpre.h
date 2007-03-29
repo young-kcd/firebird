@@ -56,7 +56,12 @@
  *
  * 2006.08.31 Stephen W. Boyd        - Added support for RM/Cobol
  * 2006.10.12 Stephen W. Boyd        - Added support for FOR UPDATE WITH LOCK
- */
+ *
+ * Added -noqli switch to suppress parsing of QLI keywords.  This was
+ * causing problems with Cobol programs since the QLI and Cobol reserved word
+ * lists intersect.
+ * Stephen W. Boyd 21.Mar.2007
+*/
 
 #ifndef GPRE_GPRE_H
 #define GPRE_GPRE_H
@@ -1498,6 +1503,7 @@ struct GpreGlobals
 	bool sw_external;
 	bool sw_version;
 	bool sw_d_float;
+	bool sw_no_qli;
 	USHORT sw_sql_dialect;
 	USHORT sw_know_interp;
 	USHORT sw_server_version;
