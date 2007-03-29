@@ -1,3 +1,15 @@
+2007-03-28 11:42  dimitr
+
+	* firebird2/src/dsql/pass1.cpp (1.260.2.3):
+
+	Fixed CORE-1183.
+
+2007-03-28 04:25  asfernandes
+
+	* firebird2/src/jrd/os/darwin/mod_loader.cpp (1.5.6.3):
+
+	Misc
+
 2007-03-27 13:42  alexpeshkoff
 
 	* firebird2/src/jrd/: sort.cpp (1.79.4.2), sort.h (1.26.4.2):
