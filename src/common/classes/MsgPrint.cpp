@@ -68,24 +68,20 @@ int decode(uint64_t value, char* const rc, int radix)
 
 	if (radix == 10) // go faster for this option
 	{
-		while (true)
+		do
 		{
 			rc[rev--] = static_cast<unsigned char>(value % 10) + '0';
 			value /= 10;
-			if (!value)
-				break;
-		}
+		} while (value);
 	}
 	else
 	{
-		while (true)
+		do
 		{
 			int temp = static_cast<int>(value % radix);
 			rc[rev--] = static_cast<unsigned char>(temp < 10 ? temp + '0' : temp - 10 + 'A');
 			value /= radix;
-			if (!value)
-				break;
-		}
+		} while (value);
 	}
 
 	return adjust_prefix(radix, rev, false, rc);
@@ -105,25 +101,21 @@ int decode(int64_t value, char* const rc, int radix)
 	// The remainder with negative values is not consistent across compilers.
 	if (radix == 10) // go faster for this option
 	{
-		while (true)
+		do
 		{
 			int64_t temp = (value / 10) * 10 - value;
 			rc[rev--] = static_cast<unsigned char>(temp) + '0';
 			value /= 10;
-			if (!value)
-				break;
-		}
+		} while (value);
 	}
 	else
 	{
-		while (true)
+		do
 		{
 			int64_t temp = (value / radix) * radix - value;
 			rc[rev--] = static_cast<unsigned char>(temp < 10 ? temp + '0' : temp - 10 + 'A');
 			value /= radix;
-			if (!value)
-				break;
-		}
+		} while (value);
 	}
 
 	return adjust_prefix(radix, rev, true, rc);
@@ -219,7 +211,7 @@ int MsgPrintHelper(BaseStream& out_stream, const safe_cell& item)
 				
 			return out_stream.write(s, n);
 		}
-		case safe_cell::at_counted_str:
+	case safe_cell::at_counted_str:
 		{
 			size_t n = item.st_value.s_len;
 			const char* s = item.st_value.s_string;
@@ -292,8 +284,8 @@ int MsgPrint(BaseStream& out_stream, const char* format, const SafeArg& arg)
 			}
 			break;
 		}
-
 	}
+
 	return 0;
 }
 
@@ -398,4 +390,3 @@ int fb_msg_format(void*        handle,
 
 	return (n > 0 ? total_msg : -total_msg);
 }
-

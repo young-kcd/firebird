@@ -68,7 +68,7 @@ class BaseStream;
 // Now we clean the structure and start fresh:
 // MsgPrint("New argument is @1\n", sa.clear() << 3.55);
 // It's possible to address more data types as targets to be filled by MsgPrint
-// by creating a derivative of BaseStream and a creating a shortcut MsgPrint like D
+// by creating a derivative of BaseStream and creating a shortcut MsgPrint like D
 // that handles the creation of the new BaseStream object internally.
 //
 // The routine fb_msg_format is the safe type replacement of gds__msg_format and
@@ -105,4 +105,3 @@ int fb_msg_format(void*        handle,
 				  const        MsgFormat::SafeArg& arg);
 
 #endif // FB_MSGPRINT_H
-
