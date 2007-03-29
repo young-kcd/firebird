@@ -1,3 +1,149 @@
+2007-03-29 03:49  asfernandes
+
+	* firebird2/src/common/classes/: MsgPrint.cpp (1.3), MsgPrint.h
+	(1.2):
+
+	Misc
+
+2007-03-28 18:03  alexpeshkoff
+
+	* firebird2/src/common/classes/: MsgPrint.cpp (1.2), SafeArg.cpp
+	(1.2), SafeArg.h (1.2):
+
+	Use 64-bit integer types, known to work cross-platform in all other
+	places
+
+2007-03-28 17:52  asfernandes
+
+	* firebird2/src/common/classes/BaseStream.h (1.2):
+
+	Misc
+
+2007-03-28 13:54  alexpeshkoff
+
+	* firebird2/src/common/classes/BaseStream.cpp (1.2):
+
+	fixed posix build
+
+2007-03-28 13:32  alexpeshkoff
+
+	* firebird2/builds/posix/: Makefile.in.client.isql (1.14),
+	Makefile.in.embed.isql (1.14), Makefile.in.refDatabases (1.30),
+	Makefile.in.static.isql (1.12), make.shared.variables (1.70):
+
+	fixed posix built after latest changes
+
+2007-03-28 11:47  dimitr
+
+	* firebird2/src/dsql/pass1.cpp (1.307):
+
+	Fixed CORE-1183.
+
+2007-03-28 11:27  dimitr
+
+	* firebird2/src/dsql/pass1.cpp (1.306):
+
+	Small improvement partially related to CORE-1181. It allows to keep
+	the field name if the cast source is an aggregated column.
+
+2007-03-28 09:14  robocop
+
+	* firebird2/: builds/win32/msvc6/isql.dsp (1.26),
+	builds/win32/msvc6/isql_embed.dsp (1.4),
+	src/common/classes/UserBlob.cpp (1.1),
+	src/common/classes/UserBlob.h (1.1), src/isql/isql.epp (1.215),
+	src/isql/show.epp (1.115):
+
+	Handle blob in user side with a class and optimize blob handling
+	for bulk insertion in isql.
+
+2007-03-28 06:53  robocop
+
+	* firebird2/src/burp/restore.epp (1.118):
+
+	Fix CORE-1174
+
+2007-03-28 06:51  robocop
+
+	* firebird2/: lang_helpers/gds_codes.ftn (1.54),
+	lang_helpers/gds_codes.pas (1.54), src/include/gen/codetext.h
+	(1.62), src/include/gen/iberror.h (1.63), src/include/gen/msgs.h
+	(1.80), src/include/gen/rdb_codes.h (1.59),
+	src/include/gen/sql_code.h (1.67), src/jrd/dyn_mod.epp (1.87),
+	src/msgs/facilities2.sql (1.2), src/msgs/messages2.sql (1.2),
+	src/msgs/system_errors2.sql (1.3):
+
+	Fix CORE-1162
+
+2007-03-28 06:49  robocop
+
+	* firebird2/src/msgs/: msg.sql (1.8), system_errors2.sql (1.2):
+
+	Put messages and system_errors table in sync: facility code,
+	message number in this order (until now, system_errors used message
+	number, code).
+
+2007-03-28 06:19  robocop
+
+	* firebird2/: builds/win32/create_msgs.bat (1.4),
+	builds/win32/msvc6/common_static.dsp (1.13),
+	builds/win32/msvc6/fb_event_print.dsp (1.3),
+	builds/win32/msvc6/fb_inet_server.dsp (1.24),
+	builds/win32/msvc6/fb_lock_print.dsp (1.22),
+	builds/win32/msvc6/fbclient.dsp (1.56),
+	builds/win32/msvc6/fbembed.dsp (1.39),
+	builds/win32/msvc6/fbserver.dsp (1.38), builds/win32/msvc6/gbak.dsp
+	(1.23), builds/win32/msvc6/gdef.dsp (1.20),
+	builds/win32/msvc6/gfix.dsp (1.22), builds/win32/msvc6/gsec.dsp
+	(1.20), builds/win32/msvc6/gstat.dsp (1.21),
+	builds/win32/msvc6/isql.dsp (1.25),
+	builds/win32/msvc6/isql_embed.dsp (1.3), builds/win32/msvc6/qli.dsp
+	(1.19), src/alice/alice.cpp (1.90), src/alice/alice_meta.epp
+	(1.49), src/alice/alice_proto.h (1.12), src/alice/tdr.cpp (1.51),
+	src/burp/backup.epp (1.99), src/burp/burp.cpp (1.120),
+	src/burp/burp_proto.h (1.21), src/burp/misc.cpp (1.18),
+	src/burp/mvol.cpp (1.46), src/burp/restore.epp (1.117),
+	src/common/classes/BaseStream.cpp (1.1),
+	src/common/classes/BaseStream.h (1.1),
+	src/common/classes/MsgPrint.cpp (1.1),
+	src/common/classes/MsgPrint.h (1.1), src/common/classes/SafeArg.cpp
+	(1.1), src/common/classes/SafeArg.h (1.1), src/dudley/ddl.cpp
+	(1.38), src/dudley/ddl_proto.h (1.11), src/dudley/exe.epp (1.62),
+	src/dudley/expand.cpp (1.28), src/dudley/expr.cpp (1.27),
+	src/dudley/extract.epp (1.44), src/dudley/generate.cpp (1.21),
+	src/dudley/hsh.cpp (1.18), src/dudley/lex.cpp (1.36),
+	src/dudley/parse.cpp (1.50), src/dudley/trn.cpp (1.38),
+	src/include/gen/msgs.h (1.79), src/isql/Extender.cpp (1.1),
+	src/isql/Extender.h (1.1), src/isql/PtrSentry.h (1.1),
+	src/isql/extract.epp (1.80), src/isql/isql.epp (1.214),
+	src/isql/isql_proto.h (1.24), src/isql/show.epp (1.114),
+	src/jrd/cch.cpp (1.149), src/jrd/dyn.epp (1.101), src/jrd/dyn.h
+	(1.35), src/jrd/dyn_def.epp (1.150), src/jrd/dyn_del.epp (1.69),
+	src/jrd/dyn_mod.epp (1.86), src/jrd/dyn_util.epp (1.45),
+	src/jrd/gds.cpp (1.218), src/jrd/met.epp (1.220), src/jrd/svc.cpp
+	(1.179), src/jrd/svc.h (1.41), src/msgs/facilities2.sql (1.1),
+	src/msgs/history2.sql (1.1), src/msgs/messages2.sql (1.1),
+	src/msgs/symbols2.sql (1.1), src/msgs/system_errors2.sql (1.1),
+	src/qli/command.cpp (1.25), src/qli/dtr.cpp (1.43), src/qli/dtr.h
+	(1.26), src/qli/err.cpp (1.20), src/qli/err_proto.h (1.8),
+	src/qli/eval.cpp (1.47), src/qli/exe.cpp (1.51), src/qli/expand.cpp
+	(1.34), src/qli/format.cpp (1.34), src/qli/help.epp (1.24),
+	src/qli/hsh.cpp (1.18), src/qli/lex.cpp (1.39), src/qli/meta.epp
+	(1.63), src/qli/mov.cpp (1.41), src/qli/parse.cpp (1.42),
+	src/qli/proc.epp (1.28), src/qli/show.epp (1.42),
+	src/utilities/common/cmd_util.cpp (1.12),
+	src/utilities/common/cmd_util_proto.h (1.5),
+	src/utilities/gsec/gsec.cpp (1.64), src/utilities/gsec/gsec_proto.h
+	(1.14), src/utilities/gstat/dba.epp (1.75),
+	src/utilities/ibmgr/srvrmgr.cpp (1.33):
+
+	This is the full SafeArg implementation for getting rid of the
+	fixed parameter types in the messages db. Alas, the legacy messages
+	(before FB2.1) can't be changed in number of arguments neither the
+	types of arguments sent by callers of the MsgPrint family or the
+	fb_msg_format functions can be changed because old clients know
+	these legacy messages and would crash.
+
 2007-03-28 04:16  asfernandes
 
 	* firebird2/src/jrd/exe.cpp (1.218):
