@@ -55,7 +55,8 @@ GPRE_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(GPRE_Sources)))
 
 
 
-GPREBOOT_Objects = $(JRDBOOT_Objects) $(GPRE_Objects) $(OS_SPECIFIC_Objects) $(FBCONFIG_Objects)
+GPREBOOT_Objects = $(JRDBOOT_Objects) $(GPRE_Objects) $(OS_SPECIFIC_Objects) \
+ $(FBCOMMON_Objects) $(FBCONFIG_Objects) $(FBCLASSES_ClientObjects) $(FBCLASSES_MsgObjects)
 
 AllObjects = $(GPREBOOT_Objects)
 
@@ -68,7 +69,7 @@ Dependencies = $(AllObjects:.o=.d)
 
 gpre_boot : $(GPRE_BOOT)
 
-$(GPRE_BOOT):	$(GPREBOOT_Objects) $(COMMON_Objects)
+$(GPRE_BOOT):	$(GPREBOOT_Objects)
 	$(LD) $(LINK_OPTS) $^ -o $@ -L$(LIB) $(LINK_LIBS)
 	-$(RM) $(GPRE_CURRENT)
 	(cd $(@D); $(LN) $(@F) $(notdir $(GPRE_CURRENT)))

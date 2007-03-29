@@ -81,9 +81,6 @@ FBUTIL_ClientObjects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(FBUTIL_
 FBCOMMON_ClientSources = $(addprefix common/, $(FBCOMMON_ClientFiles))
 FBCOMMON_ClientObjects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(FBCOMMON_ClientSources))))
 
-FBCLASSES_ClientSources = $(addprefix common/classes/, $(FBCLASSES_ClientFiles))
-FBCLASSES_ClientObjects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(FBCLASSES_ClientSources))))
-
 
 FBCLIENT_Objects =  $(JRD_ClientObjects) \
 					$(DSQL_ClientObjects) \
@@ -93,6 +90,7 @@ FBCLIENT_Objects =  $(JRD_ClientObjects) \
 					$(FBUTIL_ClientObjects) \
 					$(FBCOMMON_ClientObjects)\
 					$(FBCLASSES_ClientObjects)\
+					$(FBCLASSES_MsgObjects)\
 					$(OS_SPECIFIC_Objects)\
 					$(FBCONFIG_Objects) \
 					$(CLUMPLETS_Objects) \

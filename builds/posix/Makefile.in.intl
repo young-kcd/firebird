@@ -75,7 +75,7 @@ all : libfbintl
 
 libfbintl : $(LIBFBINTL_SO)
 
-$(LIBFBINTL_SO):	$(INTL_Objects) $(FBCOMMON_Objects) $(FBCLASSES_Objects)
+$(LIBFBINTL_SO):	$(INTL_Objects) $(FBCOMMON_Objects) $(FBCLASSES_ClientObjects)
 ifeq ($(PLATFORM),DARWIN)
 	$(LIB_LINK) $(LIB_BUNDLE_OPTIONS) \
 -o $@ $^ $(SO_LINK_LIBS) @PTHREAD_CFLAGS@ @PTHREAD_LIBS@

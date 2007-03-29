@@ -215,14 +215,19 @@ FBUTIL_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(FBUTIL_Source
 #
 # common/classes
 
-FBCLASSES_ClientFiles=alloc.cpp locks.cpp fb_string.cpp timestamp.cpp \
-	TempFile.cpp SafeArg.cpp MsgPrint.cpp BaseStream.cpp UserBlob.cpp 
-FBCLASSES_ServerFiles=
+FBCLASSES_ClientFiles=alloc.cpp locks.cpp fb_string.cpp timestamp.cpp TempFile.cpp
+FBCLASSES_MsgFiles=SafeArg.cpp MsgPrint.cpp BaseStream.cpp
+FBCLASSES_ServerFiles=UserBlob.cpp
 
-FBCLASSES_Files= $(FBCLASSES_ClientFiles) $(FBCLASSES_ServerFiles)
+FBCLASSES_ClientSources = $(addprefix common/classes/, $(FBCLASSES_ClientFiles))
+FBCLASSES_MsgSources = $(addprefix common/classes/, $(FBCLASSES_MsgFiles))
+FBCLASSES_ServerSources = $(addprefix common/classes/, $(FBCLASSES_ServerFiles))
 
-FBCLASSES_Sources = $(addprefix common/classes/, $(FBCLASSES_Files))
-FBCLASSES_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(FBCLASSES_Sources))))
+FBCLASSES_ClientObjects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(FBCLASSES_ClientSources))))
+FBCLASSES_MsgObjects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(FBCLASSES_MsgSources))))
+FBCLASSES_ServerObjects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(FBCLASSES_ServerSources))))
+
+FBCLASSES_Objects = $(FBCLASSES_ClientObjects) $(FBCLASSES_ServerObjects) $(FBCLASSES_MsgObjects)
 
 #________________________________________________________________________
 #

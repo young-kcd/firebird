@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.client.gfix,v 1.17 2005-12-20 12:14:52 alexpeshkoff Exp $
+#  $Id: Makefile.in.client.gfix,v 1.18 2007-03-29 06:08:47 aafemt Exp $
 #
 ROOT=..
 ObjModuleType=std
@@ -47,7 +47,8 @@ GFIX_Files = alice_meta.epp alice.cpp all.cpp exe.cpp tdr.cpp
 GFIX_Sources = $(addprefix alice/, $(GFIX_Files)) $(GFIX_Other_Sources)
 GFIX_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(GFIX_Sources))))
 
-AllObjects = $(GFIX_Objects) $(CLUMPLETS_Objects)
+AllObjects = $(GFIX_Objects) $(CLUMPLETS_Objects) $(FBCOMMON_Objects) \
+ $(FBCLASSES_ClientObjects) $(FBCLASSES_MsgObjects)
 
 Dependencies = $(AllObjects:.o=.d) 
 
@@ -57,7 +58,7 @@ Dependencies = $(AllObjects:.o=.d)
 
 gfix : $(LIBFBCLIENT_SO) $(GFIX)
 
-$(GFIX):	$(GFIX_Objects) $(CLUMPLETS_Objects) $(FBCOMMON_Objects) $(FBCLASSES_Objects)
+$(GFIX):	$(AllObjects)
 	$(LD) $(LINK_OPTS) $^ -o $@ -L$(LIB) -lfbclient $(LINK_LIBS) @PTHREAD_CFLAGS@ @PTHREAD_LIBS@
 
 
