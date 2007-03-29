@@ -289,8 +289,10 @@ void SafeArg::dump(const TEXT* target[], size_t v_size) const
 		switch (m_arguments[i].type)
 		{
 		case safe_cell::at_char:
-		case safe_cell::at_uchar:
 			target[i] = reinterpret_cast<TEXT*>((IPTR) m_arguments[i].c_value);
+			break;
+		case safe_cell::at_uchar:
+			target[i] = reinterpret_cast<TEXT*>((U_IPTR) m_arguments[i].c_value);
 			break;
 		case safe_cell::at_int64:
 			target[i] = reinterpret_cast<TEXT*>((IPTR) m_arguments[i].i_value);
