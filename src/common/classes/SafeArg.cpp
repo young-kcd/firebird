@@ -271,21 +271,52 @@ SafeArg& SafeArg::operator<<(void* c)
 	return *this;
 }
 
-// Dump the parameters to the target buffer. If this simple method (using one
-// member of the union in safe_cell) crashes some platform, then a switch will
-// be needed on each data type to use the specific member of the union.
+// Dump the parameters to the target buffer.
 // Note that parameters of type pointer (void*) and counted_string may crash
-// the caller if not prepared to handle them. Supposedly, the caller has
+// the caller if not prepared to handle them. Therefore, counted_string is being
+// converted to null pointer and void* to TEXT*. Supposedly, the caller has
 // information on the real types of the values. This can be done with a loop
 // using getCount() and getCell() and looking at the safe_cell's type data member.
 void SafeArg::dump(const TEXT* target[], size_t v_size) const
 {
 	for (size_t i = 0; i < v_size; ++i)
 	{
-		if (i < m_count)
-			target[i] = static_cast<TEXT*>(m_arguments[i].p_value);
-		else
+		if (i >= m_count)
+		{
 			target[i] = 0;
+			continue;
+		}
+		switch (m_arguments[i].type)
+		{
+		case safe_cell::at_char:
+		case safe_cell::at_uchar:
+			target[i] = reinterpret_cast<TEXT*>((IPTR) m_arguments[i].c_value);
+			break;
+		case safe_cell::at_int64:
+			target[i] = reinterpret_cast<TEXT*>((IPTR) m_arguments[i].i_value);
+			break;
+		case safe_cell::at_uint64:
+			target[i] = reinterpret_cast<TEXT*>((U_IPTR) m_arguments[i].i_value);
+			break;
+		case safe_cell::at_int128:
+			target[i] = reinterpret_cast<TEXT*>((IPTR) m_arguments[i].i128_value.high);
+			break;
+		case safe_cell::at_double:
+			target[i] = reinterpret_cast<TEXT*>((IPTR) m_arguments[i].d_value);
+			break;
+		case safe_cell::at_str:
+			target[i] = m_arguments[i].st_value.s_string;
+			break;
+		case safe_cell::at_counted_str:
+			target[i] = 0; // We can't represent them here.
+			break;
+		case safe_cell::at_ptr:
+			target[i] = static_cast<TEXT*>(m_arguments[i].p_value);
+			break;
+		default: // safe_cell::at_none and whatever out of range.
+			target[i] = 0;
+			break;
+		}
 	}
 }
 
