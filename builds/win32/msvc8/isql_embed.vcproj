@@ -337,6 +337,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\isql\Extender.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\gen\isql\isql.cpp"
 				>
 			</File>
@@ -366,6 +370,10 @@
 			Name="Header files"
 			Filter="h;hpp;hxx;hm;inl"
 			>
+			<File
+				RelativePath="..\..\..\src\isql\Extender.h"
+				>
+			</File>
 			<File
 				RelativePath="..\..\..\src\isql\extra_proto.h"
 				>

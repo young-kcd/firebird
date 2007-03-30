@@ -314,6 +314,10 @@
 			Name="OTHER files"
 			>
 			<File
+				RelativePath="..\..\..\src\common\classes\BaseStream.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\common\classes\ClumpletReader.cpp"
 				>
 			</File>
@@ -342,11 +346,23 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\common\classes\MsgPrint.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\jrd\os\win32\path_utils.cpp"
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\common\classes\SafeArg.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\common\classes\timestamp.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\common\classes\UserBlob.cpp"
 				>
 			</File>
 			<File
@@ -364,6 +380,10 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\common\classes\array.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\common\classes\BaseStream.h"
 				>
 			</File>
 			<File
@@ -407,7 +427,19 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\common\classes\MsgPrint.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\common\classes\SafeArg.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\common\classes\timestamp.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\common\classes\UserBlob.h"
 				>
 			</File>
 		</Filter>
