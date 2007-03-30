@@ -875,7 +875,7 @@ int common_main(int		argc,
 					++argv;
 				if (!redirect)
 					BURP_error(4, true);
-				// msg 4 redirect location for output is not specified 
+					// msg 4 redirect location for output is not specified 
 
 				const TEXT *p = redirect;
 				TEXT c;
@@ -934,7 +934,7 @@ int common_main(int		argc,
 		{
 			if (!strcmp(file->fil_name, file_list->fil_name))
 				BURP_error(9, true);
-			// msg 9 mutiple sources or destinations specified 
+				// msg 9 mutiple sources or destinations specified 
 		}
 
 	}
@@ -951,14 +951,14 @@ int common_main(int		argc,
 			case (IN_SW_BURP_B):
 				if (sw_replace)
 					BURP_error(5, true);
-				// msg 5 conflicting switches for backup/restore 
+					// msg 5 conflicting switches for backup/restore 
 				sw_replace = IN_SW_BURP_B;
 				break;
 
 			case (IN_SW_BURP_C):
 				if (sw_replace == IN_SW_BURP_B)
 					BURP_error(5, true);
-				// msg 5 conflicting switches for backup/restore 
+					// msg 5 conflicting switches for backup/restore 
 				if (sw_replace != IN_SW_BURP_R)
 					sw_replace = IN_SW_BURP_C;
 				break;
@@ -1030,7 +1030,7 @@ int common_main(int		argc,
 			case (IN_SW_BURP_R):
 				if (sw_replace == IN_SW_BURP_B)
 					BURP_error(5, true);
-				// msg 5 conflicting switches for backup/restore 
+					// msg 5 conflicting switches for backup/restore 
 				sw_replace = IN_SW_BURP_R;
 				break;
 
@@ -1089,7 +1089,7 @@ int common_main(int		argc,
 	{
 		if (sw_replace == IN_SW_BURP_B)
 			BURP_error(8, true);
-		// msg 8 page size is allowed only on restore or create 
+			// msg 8 page size is allowed only on restore or create 
 		int temp = tdgbl->gbl_sw_page_size;
 		{
 			int curr_pg_size = 1024;
@@ -1116,7 +1116,7 @@ int common_main(int		argc,
 	if (tdgbl->gbl_sw_page_buffers) {
 		if (sw_replace == IN_SW_BURP_B)
 			BURP_error(260, true);
-		// msg 260 page buffers is allowed only on restore or create 
+			// msg 260 page buffers is allowed only on restore or create 
 	}
 
 	if (!tdgbl->gbl_sw_blk_factor || sw_replace != IN_SW_BURP_B)
@@ -1124,11 +1124,11 @@ int common_main(int		argc,
 
 	if (!file2)
 		BURP_error(10, true);
-	// msg 10 requires both input and output filenames 
+		// msg 10 requires both input and output filenames 
 
 	if (!strcmp(file1, file2))
 		BURP_error(11, true);
-	// msg 11 input and output have the same name.  Disallowed. 
+		// msg 11 input and output have the same name.  Disallowed. 
 
 	const time_t clock = time(NULL);
 	strcpy(tdgbl->gbl_backup_start_time, ctime(&clock));

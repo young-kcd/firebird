@@ -2821,7 +2821,7 @@ void write_database( const TEXT* dbb_file)
 	put_asciz(att_file_name, dbb_file);
 
 	BURP_verbose(77, SafeArg() << dbb_file << page_size);
-// msg 77 database %s has a page size of %ld bytes. 
+	// msg 77 database %s has a page size of %ld bytes. 
 
 	put(tdgbl, (UCHAR) (att_end));
 
