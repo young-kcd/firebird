@@ -496,12 +496,18 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 				
 //				gds__log("queue=%d", port->port_queue->getCount());
 				if (dataSize) {
+					void* packetStart = port->port_receive.x_private;
 					port->receive(&request->req_receive);
 					port->port_qoffset = 0;
 //					gds__log("dats=%d", dataSize);
 					if (request->req_receive.p_operation == op_partial)
 					{
-//						gds__log("Partial");
+//						gds__log("Partial, len=%d", port->port_queue->getCount());
+						if (! port->port_queue->getCount())
+						{
+							memcpy(port->port_queue->add().getBuffer(dataSize), 
+								   packetStart, dataSize);
+						}
 						free_request(request);
 						request = 0;
 						port = 0;
