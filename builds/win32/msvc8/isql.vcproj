@@ -338,6 +338,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\isql\Extender.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\gen\isql\isql.cpp"
 				>
 			</File>
