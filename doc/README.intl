@@ -182,6 +182,9 @@ Syntax:
 		[ ACCENT SENSITIVE | ACCENT INSENSITIVE ]
 		[ '<specific-attributes>' ]
 
+Notes:
+	1) Specific attributes should be separed by semicolon.
+
 Examples:
 	1) CREATE COLLATION UNICODE_ENUS_CI
 			FOR UTF8
