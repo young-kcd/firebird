@@ -21,8 +21,8 @@
  *
  */
 
+#include "firebird.h"
 #include "Extender.h"
-#include "../include/gen/autoconfig.h"
 #include "../common/classes/alloc.h"
 
 // Dynamic allocation. This is a destructive operation if the requested size
