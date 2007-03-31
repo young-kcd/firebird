@@ -8169,7 +8169,7 @@ static void pass1_union_auto_cast(dsql_nod* input, const dsc& desc,
 								cast_node->nod_arg[e_cast_source] = select_item;
 							}
 							// When a cast is created we're losing our fieldname, thus
-							// create a alias to keep it.
+							// create an alias to keep it.
 							const dsql_nod* name_node = select_item;
 							while (name_node->nod_type == nod_map) {
 								// skip all the nod_map nodes
