@@ -1,3 +1,42 @@
+2007-03-30 17:15  alexpeshkoff
+
+	* firebird2/autogen.sh (1.13):
+
+	make it compatible with wider range of shells
+
+2007-03-30 16:52  alexpeshkoff
+
+	* firebird2/src/jrd/common.h (1.147):
+
+	no need to have incompatible ODS on sparc
+
+2007-03-30 15:11  asfernandes
+
+	* firebird2/doc/README.intl (1.6):
+
+	Added info re more than one attribute
+
+2007-03-30 14:56  alexpeshkoff
+
+	* firebird2/src/remote/server.cpp (1.145):
+
+	fixed unregistered bug, reported by Dmitry privately - partial and
+	full XDR packets may be mixed now in network packets in any way
+
+2007-03-30 04:48  asfernandes
+
+	* firebird2/builds/win32/msvc8/: common_static.vcproj (1.4),
+	isql.vcproj (1.6), isql_embed.vcproj (1.4):
+
+	Integrating new classes in MSVC8 build
+
+2007-03-30 04:18  asfernandes
+
+	* firebird2/builds/win32/msvc8/: common.vcproj (1.5),
+	common_classic.vcproj (1.5), isql.vcproj (1.5):
+
+	Integrating new classes in MSVC8 build
+
 2007-03-30 03:57  asfernandes
 
 	* firebird2/src/burp/: backup.epp (1.100), burp.cpp (1.121),
