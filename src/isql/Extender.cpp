@@ -22,6 +22,8 @@
  */
 
 #include "Extender.h"
+#include "../include/gen/autoconfig.h"
+#include "../common/classes/alloc.h"
 
 // Dynamic allocation. This is a destructive operation if the requested size
 // is bigger than the existing one. Otherwise, no reallocation happens.
