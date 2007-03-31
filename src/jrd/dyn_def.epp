@@ -443,7 +443,7 @@ void DYN_define_constraint(Global*		gbl,
 	if (constraint_name.length() == 0)
 	{
 		DYN_error_punt(false, 212);
-	/* msg 212: "Zero length identifiers not allowed" */
+		// msg 212: "Zero length identifiers not allowed"
 	}
 
 	jrd_req* request = NULL;
@@ -899,7 +899,7 @@ void DYN_define_exception( Global* gbl, const UCHAR** ptr)
 
 	if (exception_name.length() == 0) {
 		DYN_error_punt(false, 212);
-	/* msg 212: "Zero length identifiers not allowed" */
+		// msg 212: "Zero length identifiers not allowed"
 	}
 
 	jrd_req* request = CMP_find_request(tdbb, drq_s_xcp, DYN_REQUESTS);
@@ -943,7 +943,7 @@ void DYN_define_exception( Global* gbl, const UCHAR** ptr)
 		if (b_ending_store) {
 			DYN_rundown_request(request, drq_s_trg_msgs);
 			DYN_error_punt(true, 142);
-			/* msg 142: "DEFINE EXCEPTION failed" */
+			// msg 142: "DEFINE EXCEPTION failed"
 		}
 		throw;
 	}
@@ -1281,8 +1281,10 @@ void DYN_define_function( Global* gbl, const UCHAR** ptr)
 	GET_STRING(ptr, function_name);
 
 	if (function_name.length() == 0)
+	{
 		DYN_error_punt(false, 212);
-	/* msg 212: "Zero length identifiers not allowed" */
+		// msg 212: "Zero length identifiers not allowed"
+	}
 
 	jrd_req* request = CMP_find_request(tdbb, drq_s_funcs, DYN_REQUESTS);
 
@@ -1311,7 +1313,7 @@ void DYN_define_function( Global* gbl, const UCHAR** ptr)
 					X.RDB$RETURN_ARGUMENT.NULL = FALSE;
 					if (X.RDB$RETURN_ARGUMENT > MAX_UDF_ARGUMENTS)
 						DYN_error_punt(true, 10);
-					/* msg 10: "DEFINE FUNCTION failed" */
+						/* msg 10: "DEFINE FUNCTION failed" */
 					break;
 
 				case isc_dyn_func_module_name:
@@ -1391,7 +1393,7 @@ void DYN_define_function_arg(Global* gbl, const UCHAR** ptr, Firebird::MetaName*
 
 		if (X.RDB$ARGUMENT_POSITION > MAX_UDF_ARGUMENTS)
 			DYN_error_punt(true, 12);
-		/* msg 12: "DEFINE FUNCTION ARGUMENT failed" */
+			/* msg 12: "DEFINE FUNCTION ARGUMENT failed" */
 
 		if (function_name) {
 			strcpy(X.RDB$FUNCTION_NAME, function_name->c_str());
@@ -1511,7 +1513,7 @@ void DYN_define_generator( Global* gbl, const UCHAR** ptr)
 
 	if (generator_name.length() == 0) {
 		DYN_error_punt(false, 212);
-	/* msg 212: "Zero length identifiers not allowed" */
+		/* msg 212: "Zero length identifiers not allowed" */
 	}
 
 	jrd_req* request = CMP_find_request(tdbb, drq_s_gens, DYN_REQUESTS);
@@ -1583,7 +1585,7 @@ void DYN_define_global_field(Global*		gbl,
 	if (global_field_name.length() == 0)
 	{
 		DYN_error_punt(false, 212);
-	/* msg 212: "Zero length identifiers not allowed" */
+		/* msg 212: "Zero length identifiers not allowed" */
 	}
 
 	jrd_req* request = CMP_find_request(tdbb, drq_s_gfields, DYN_REQUESTS);
@@ -1860,7 +1862,7 @@ void DYN_define_index(Global*		gbl,
 	}
 	if (index_name.length() == 0) {
 		DYN_error_punt(false, 212);
-	/* msg 212: "Zero length identifiers not allowed" */
+		/* msg 212: "Zero length identifiers not allowed" */
 	}
 
 	jrd_req* request = NULL;
@@ -1893,7 +1895,7 @@ void DYN_define_index(Global*		gbl,
 			GET_STRING(ptr, IDX.RDB$RELATION_NAME);
 		else
 			DYN_error_punt(false, 14);
-		/* msg 14: "No relation specified for index" */
+			/* msg 14: "No relation specified for index" */
 
 		IDX.RDB$RELATION_NAME.NULL = FALSE;
 		IDX.RDB$SYSTEM_FLAG = 0;
@@ -1915,7 +1917,7 @@ void DYN_define_index(Global*		gbl,
 				
 			if (!VREL.RDB$VIEW_BLR.NULL)
 				DYN_error_punt(false, 181);
-			/* msg 181: "attempt to index a view" */
+				/* msg 181: "attempt to index a view" */
 
 		END_FOR;
 		if (!DYN_REQUEST(drq_l_view_idx))
@@ -1964,7 +1966,7 @@ void DYN_define_index(Global*		gbl,
 						{
 							DYN_error_punt(false, 240, SafeArg() << str.c_str() <<
 								IDX.RDB$INDEX_NAME);
-							// msg 240 "Field %s cannot be used twice in index %s"
+								// msg 240 "Field %s cannot be used twice in index %s"
 						}
 					}
 						
@@ -1985,17 +1987,17 @@ void DYN_define_index(Global*		gbl,
 						fld_count++;
 						if (GF.RDB$FIELD_TYPE == blr_blob)
 						{
-						DYN_error_punt(false, 116, IDX.RDB$INDEX_NAME);
+							DYN_error_punt(false, 116, IDX.RDB$INDEX_NAME);
 							/* msg 116 "attempt to index blob field in index %s" */
 						}
 						else if (!GF.RDB$DIMENSIONS.NULL)
 						{
-						DYN_error_punt(false, 117, IDX.RDB$INDEX_NAME);
+							DYN_error_punt(false, 117, IDX.RDB$INDEX_NAME);
 							/* msg 117 "attempt to index array field in index %s" */
 						}
 						else if (!GF.RDB$COMPUTED_BLR.NULL)
 						{
-						DYN_error_punt(false, 179, IDX.RDB$INDEX_NAME);
+							DYN_error_punt(false, 179, IDX.RDB$INDEX_NAME);
 							/* msg 179 "attempt to index COMPUTED BY field in index %s" */
 						}
 						else if (GF.RDB$FIELD_TYPE == blr_varying ||
@@ -2066,7 +2068,7 @@ void DYN_define_index(Global*		gbl,
 				GET_STRING(ptr, referenced_relation);
 				if (referenced_relation.length() == 0) {
 					DYN_error_punt(false, 212);
-				/* msg 212: "Zero length identifiers not allowed" */
+					/* msg 212: "Zero length identifiers not allowed" */
 				}
 				break;
 
@@ -2195,12 +2197,12 @@ void DYN_define_index(Global*		gbl,
 		key_length = ROUNDUP(key_length, sizeof(SLONG));
 		if (key_length >= MAX_KEY)
 			DYN_error_punt(false, 118, IDX.RDB$INDEX_NAME);
-		/* msg 118 "key size too big for index %s" */
+			/* msg 118 "key size too big for index %s" */
 
 		if (seg_count) {
 			if (seg_count != fld_count)
 				DYN_error_punt(false, 120, IDX.RDB$INDEX_NAME);
-			/* msg 118 "Unknown fields in index %s" */
+				/* msg 118 "Unknown fields in index %s" */
 
 			old_request = request;
 			old_id = id;
@@ -2231,7 +2233,7 @@ void DYN_define_index(Global*		gbl,
 
 			if (seg_count != referred_cols)
 				DYN_error_punt(true, 133);
-			/* msg 133: "Number of referencing columns do not equal number of referenced columns */
+				/* msg 133: "Number of referencing columns do not equal number of referenced columns */
 
 			/* lookup a unique index in the referenced relation with the
 			   referenced fields mentioned */
@@ -2446,7 +2448,7 @@ void DYN_define_local_field(Global*		gbl,
 
 	if (local_field_name.length() == 0) {
 		DYN_error_punt(false, 212);
-	/* msg 212: "Zero length identifiers not allowed" */
+		/* msg 212: "Zero length identifiers not allowed" */
 	}
 
 	jrd_req* request = NULL;
@@ -2779,7 +2781,7 @@ void DYN_define_parameter( Global* gbl, const UCHAR** ptr, Firebird::MetaName* p
 
 	if (parameter_name.length() == 0) {
 		DYN_error_punt(false, 212);
-	/* msg 212: "Zero length identifiers not allowed" */
+		/* msg 212: "Zero length identifiers not allowed" */
 	}
 
 	jrd_req* request = CMP_find_request(tdbb, drq_s_prms, DYN_REQUESTS);
@@ -3083,7 +3085,7 @@ void DYN_define_procedure( Global* gbl, const UCHAR** ptr)
 
 	if (procedure_name.length() == 0)
 		DYN_error_punt(false, 212);
-	/* msg 212: "Zero length identifiers not allowed" */
+		/* msg 212: "Zero length identifiers not allowed" */
 
 	jrd_req* request = NULL;
 	SSHORT id = -1;
@@ -3200,7 +3202,7 @@ void DYN_define_procedure( Global* gbl, const UCHAR** ptr)
 		Firebird::MetaName owner_name;
 		if (!get_who(tdbb, gbl, owner_name))
 			DYN_error_punt(true, 134);
-		/* msg 134: "STORE RDB$PROCEDURES failed" */
+			/* msg 134: "STORE RDB$PROCEDURES failed" */
 
 		for (const TEXT* p = ALL_PROC_PRIVILEGES; *p; p++) {
 			request = CMP_find_request(tdbb, drq_s_prc_usr_prvs, DYN_REQUESTS);
@@ -3272,7 +3274,7 @@ void DYN_define_relation( Global* gbl, const UCHAR** ptr)
 	if (relation_name.length() == 0)
 	{
 		DYN_error_punt(false, 212);
-	/* msg 212: "Zero length identifiers not allowed" */
+		/* msg 212: "Zero length identifiers not allowed" */
 	}
 
 	jrd_req* request = NULL;
@@ -3507,10 +3509,10 @@ void DYN_define_relation( Global* gbl, const UCHAR** ptr)
 		DYN_rundown_request(request, -1);
 		if (id == drq_l_rel_name)
 			DYN_error_punt(true, 24);
-		/* msg 24: "STORE RDB$RELATIONS failed" */
+			/* msg 24: "STORE RDB$RELATIONS failed" */
 		else if (id == drq_l_view_rels)
 			DYN_error_punt(true, 115);
-		/* msg 115: "CREATE VIEW failed" */
+			/* msg 115: "CREATE VIEW failed" */
 		else if (id == drq_l_rel_info2)
 			ERR_punt();
 
@@ -3744,7 +3746,7 @@ void DYN_define_sql_field(Global*		gbl,
 
 	if (sql_field_name.length() == 0) {
 		DYN_error_punt(false, 212);
-	/* msg 212: "Zero length identifiers not allowed" */
+		/* msg 212: "Zero length identifiers not allowed" */
 	}
 
 	jrd_req* request = NULL;
@@ -4128,7 +4130,7 @@ void DYN_define_trigger(Global*						gbl,
 	if (t.length() == 0)
 	{
 		DYN_error_punt(false, 212);
-	/* msg 212: "Zero length identifiers not allowed" */
+		/* msg 212: "Zero length identifiers not allowed" */
 	}
 
 	if (trigger_name) {
@@ -4545,7 +4547,7 @@ static void check_unique_name(	thread_db*	tdbb,
 		DYN_rundown_request(request, -1);
 		if (!proc_flag)
 			DYN_error_punt(true, 24);
-		/* msg 24: "STORE RDB$RELATIONS failed" */
+			/* msg 24: "STORE RDB$RELATIONS failed" */
 
 		DYN_error_punt(true, 134);
 	}

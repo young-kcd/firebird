@@ -254,7 +254,7 @@ void DYN_delete_constraint (Global* gbl, const UCHAR** ptr, const Firebird::Meta
 
 	if (!delete_constraint_records(gbl, constraint, rel_name))
 		DYN_error_punt(false, 130, constraint.c_str());
-	/* msg 130: "CONSTRAINT %s does not exist." */
+		/* msg 130: "CONSTRAINT %s does not exist." */
 }
 
 
