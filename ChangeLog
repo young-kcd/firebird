@@ -1,3 +1,9 @@
+2007-03-30 17:06  alexpeshkoff
+
+	* firebird2/src/jrd/common.h (1.137.2.4):
+
+	no need to have incompatible ODS on sparc
+
 2007-03-28 11:42  dimitr
 
 	* firebird2/src/dsql/pass1.cpp (1.260.2.3):
