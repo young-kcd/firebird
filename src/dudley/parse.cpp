@@ -214,6 +214,24 @@ void PARSE_error( USHORT number, const TEXT* arg1, const TEXT* arg2)
 }
 
 
+void PARSE_error( USHORT number, int arg1, int arg2)
+{
+/**************************************
+ *
+ *	P A R S E _ e r r o r
+ *
+ **************************************
+ *
+ * Functional description
+ *	Generate a syntax error.
+ *
+ **************************************/
+
+	DDL_err(number, SafeArg() << arg1 << arg2);
+	Firebird::LongJump::raise();
+}
+
+
 FUNC PARSE_function(int existingFunction)
 {
 /**************************************
@@ -632,7 +650,7 @@ static FIL define_cache(void)
 
 	if (PARSE_match(KW_LENGTH)) {
 		if ((file->fil_length = PARSE_number()) < MIN_CACHE_BUFFERS)
-			PARSE_error(339, (TEXT *) MIN_CACHE_BUFFERS, 0);	/* msg 339: minimum of %d cache pages required */
+			PARSE_error(339, MIN_CACHE_BUFFERS);	/* msg 339: minimum of %d cache pages required */
 		PARSE_match(KW_PAGES);
 	}
 	else
@@ -1428,7 +1446,7 @@ static void define_trigger(void)
 			trigmsg->trgmsg_trg_name = trigger->trg_name;
 			trigmsg->trgmsg_number = PARSE_number();
 			if (trigmsg->trgmsg_number > 255)
-				PARSE_error(142, (TEXT *)(IPTR)(trigmsg->trgmsg_number), 0);
+				PARSE_error(142, trigmsg->trgmsg_number);
 			/* msg 142: message number %d exceeds 255 */
 			PARSE_match(KW_COLON);
 			trigmsg->trgmsg_text = PARSE_symbol(tok_quoted);
@@ -2316,7 +2334,9 @@ static ACT make_global_field( DUDLEY_FLD field)
 	if (symbol = HSH_typed_lookup(symbol->sym_string,
 								  symbol->sym_length,
 								  SYM_global))
-			PARSE_error(164, symbol->sym_string, 0);	/* msg 164: global field %s already exists */
+	{
+		PARSE_error(164, symbol->sym_string, 0);	/* msg 164: global field %s already exists */
+	}
 
 	HSH_insert(field->fld_name);
 
@@ -2707,7 +2727,7 @@ static void modify_trigger(void)
 			trigmsg->trgmsg_trg_name = trigger->trg_name;
 			trigmsg->trgmsg_number = PARSE_number();
 			if (trigmsg->trgmsg_number > 255)
-				PARSE_error(178, (TEXT *)(IPTR) trigmsg->trgmsg_number, 0);
+				PARSE_error(178, trigmsg->trgmsg_number, 0);
 			/* msg 178: message number %d exceeds 255 */
 			if (msg_type == trgmsg_drop)
 				make_action(act_d_trigger_msg, (DBB) trigmsg);
@@ -3552,7 +3572,8 @@ static FUNCARG parse_function_arg( FUNC function, USHORT * position)
 	else {
 		if (func_arg->funcarg_mechanism == FUNCARG_mechanism_sc_array_desc)
 			PARSE_error(295, 0, 0);	/* msg 295: "Functions can't return arrays." */
-		switch (PARSE_keyword()) {
+		switch (PARSE_keyword())
+		{
 		case KW_RETURN_VALUE:
 			--(*position);
 			LEX_token();
@@ -3781,7 +3802,7 @@ static int parse_page_size(void)
 	else if (n1 <= 8192)
 		n2 = 8192;
 	else
-		PARSE_error(210, (TEXT *)(IPTR) n1, (TEXT *)(IPTR) MAX_PAGE_LEN);
+		PARSE_error(210, n1, MAX_PAGE_LEN);
 	/* msg 210: PAGE_SIZE specified (%d) longer than limit of %d bytes */
 	if (n1 != n2)
 		DDL_msg_put(211, SafeArg() << n1 << n2);
@@ -3811,7 +3832,8 @@ static SLONG parse_privileges(void)
 		const TEXT* p = dudleyGlob.DDL_token.tok_string;
 		TEXT c;
 		while (c = *p++)
-			switch (UPPER(c)) {
+			switch (UPPER(c))
+			{
 			case 'P':
 				privileges |= 1 << priv_protect;
 				break;
@@ -3837,8 +3859,11 @@ static SLONG parse_privileges(void)
 				break;
 
 			default:
-				PARSE_error(212, (TEXT *)(IPTR) p[-1], 0);
-				/* msg 212: Unrecognized privilege \"%c\" or unrecognized identifier */
+				{
+					char s[2] = { p[-1], '\0' };
+					PARSE_error(212, s, 0);
+					/* msg 212: Unrecognized privilege \"%c\" or unrecognized identifier */
+				}
 			}
 		LEX_token();
 	}
@@ -4131,7 +4156,9 @@ static void validate_field( DUDLEY_FLD field)
 	if ((field->fld_has_sub_type) &&
 		(field->fld_dtype != blr_blob) &&
 		(field->fld_dtype != blr_text) && (field->fld_dtype != blr_varying))
+	{
 		PARSE_error(228, 0, 0);	/* msg 228: subtypes are valid only for blobs and text */
+	}
 
 	if (field->fld_segment_length && (field->fld_dtype != blr_blob))
 		PARSE_error(229, 0, 0);	/* msg 229: segment length is valid only for blobs */

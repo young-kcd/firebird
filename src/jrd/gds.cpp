@@ -2723,10 +2723,9 @@ void API_ROUTINE isc_sql_interprete(
  *
  *	NOTE: As of 21-APR-1999, sqlmessages HAVE arguments hence use
  *	      an empty string instead of NULLs.
- * (Obsolete comment with the new SafeArg class.)
- *	      
+ *
  **************************************/
-	static const MsgFormat::SafeArg arg;
+	static const MsgFormat::SafeArg arg = MsgFormat::SafeArg() << "" << "" << "" << "" << "";
 
 	if (sqlcode < 0)
 		fb_msg_format(0, 13, (USHORT) (1000 + sqlcode), length, buffer, arg);
