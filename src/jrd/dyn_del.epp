@@ -1647,8 +1647,10 @@ void DYN_delete_security_class( Global* gbl, const UCHAR** ptr)
 	GET_STRING(ptr, security_class);
 
 	if (!delete_security_class2(gbl, security_class))
+	{
 		DYN_error_punt(false, 75);
-	/* msg 75: "Security class not found" */
+		/* msg 75: "Security class not found" */
+	}
 
 	while (*(*ptr)++ != isc_dyn_end) {
 		--(*ptr);
@@ -1895,8 +1897,10 @@ void DYN_delete_trigger_msg( Global* gbl, const UCHAR** ptr, Firebird::MetaName*
 	else if (*(*ptr)++ == isc_dyn_trg_name)
 		GET_STRING(ptr, t);
 	else
+	{
 		DYN_error_punt(false, 70);
-	/* msg 70: "TRIGGER NAME expected" */
+		// msg 70: "TRIGGER NAME expected"
+	}
 
 	jrd_req* request = CMP_find_request(tdbb, drq_e_trg_msg, DYN_REQUESTS);
 

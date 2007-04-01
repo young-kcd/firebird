@@ -365,5 +365,3 @@ void ERRQ_syntax( USHORT number)
 	ERRQ_error(13, SafeArg() << s << QLI_token->tok_string);
 	// Msg13 expected %s, encountered %s
 }
-
-

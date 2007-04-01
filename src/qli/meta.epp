@@ -344,7 +344,6 @@ void MET_define_relation( qli_rel* relation, qli_rel* source)
 	if (check_relation(relation))
 		ERRQ_print_error(237, symbol->sym_string);	// Msg237 Relation %s already exists
 
-
 	STORE(REQUEST_HANDLE database->dbb_requests[REQ_store_relation])
 		X IN DB.RDB$RELATIONS
 		strcpy(X.RDB$RELATION_NAME, symbol->sym_string);
@@ -584,7 +583,7 @@ void MET_delete_field( DBB database, NAM name)
 		WITH RFR.RDB$FIELD_SOURCE EQ name->nam_string
 		REDUCED TO RFR.RDB$RELATION_NAME
 		if (!count)
-			  ERRQ_msg_put(238, name->nam_string);	// Msg238 Field %s is in use in the following relations:
+			ERRQ_msg_put(238, name->nam_string);	// Msg238 Field %s is in use in the following relations:
 		printf("\t%s\n", RFR.RDB$RELATION_NAME);
 		count++;
 	END_FOR
@@ -1512,7 +1511,6 @@ void MET_sql_alter_table( qli_rel* relation, qli_fld* fields)
 	END_ERROR;
 	if (!count)
 		ERRQ_print_error(414, symbol->sym_string);	// Msg237 Relation %s is lost
-
 
 	qli_rlb* rlb = NULL;
 	rlb = CHECK_RLB(rlb);

@@ -1109,12 +1109,17 @@ static void next_line(const bool eof_ok)
 		// this is an unexpected end of file
 
 		if (QLI_line->line_type == line_blob)
+		{
 			ERRQ_print_error(64, QLI_line->line_source_name);
-		// Msg 64 unexpected end of procedure in procedure %s
+			// Msg 64 unexpected end of procedure in procedure %s
+		}
 		else if (QLI_line->line_type == line_file)
+		{
 			ERRQ_print_error(65, QLI_line->line_source_name);
-		// Msg 65 unexpected end of file in file %s
-		else {
+			// Msg 65 unexpected end of file in file %s
+		}
+		else
+		{
 			if (QLI_line->line_type == line_string)
 				LEX_pop_line();
 			IBERROR(66);		// Msg 66 unexpected eof

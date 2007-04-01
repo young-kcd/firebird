@@ -2110,8 +2110,10 @@ void DYN_modify_view( Global* gbl, const UCHAR** ptr)
 	GET_STRING(ptr, view_name);
 
 	if (view_name.length() == 0)
+	{
 		DYN_error_punt(false, 212);
-	/* msg 212: "Zero length identifiers not allowed" */
+		/* msg 212: "Zero length identifiers not allowed" */
+	}
 	
 	jrd_req* request = NULL;
 	bool found = false;
@@ -3460,7 +3462,6 @@ static ULONG check_update_fld_type(const dyn_fld& orig_fld,
 			switch (orig_fld.dyn_dtype) {
 			case blr_short:
 				return check_update_numeric_type(orig_fld, new_fld);
-				break;
 				
 			default:
 				return isc_dyn_invalid_dtype_conversion;
@@ -3473,7 +3474,6 @@ static ULONG check_update_fld_type(const dyn_fld& orig_fld,
 			case blr_long:
 			case blr_short:
 				return check_update_numeric_type(orig_fld, new_fld);
-				break;
 				
 			default:
 				return isc_dyn_invalid_dtype_conversion;
@@ -3499,7 +3499,6 @@ static ULONG check_update_fld_type(const dyn_fld& orig_fld,
 			case blr_long:
 			case blr_short:
 				return check_update_numeric_type(orig_fld, new_fld);
-				break;
 
 			default:
 				return isc_dyn_invalid_dtype_conversion;

@@ -1053,7 +1053,7 @@ static int show_field_instances( DBB database, const TEXT * field_name)
 		}
 		fb_utils::exact_name(RFR.RDB$FIELD_NAME);
 		fb_utils::exact_name(RFR.RDB$RELATION_NAME);
-		ERRQ_msg_put(336, SafeArg() << RFR.RDB$FIELD_NAME << RFR.RDB$RELATION_NAME);	
+		ERRQ_msg_put(336, SafeArg() << RFR.RDB$FIELD_NAME << RFR.RDB$RELATION_NAME);
 		// Msg336 %s in relation %s
 	END_FOR;
 
