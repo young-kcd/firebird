@@ -96,7 +96,7 @@ const ULONG MAX_TEMPFILE_SIZE		= 1073741824;	// 1GB
 // the size of sr_bckptr in # of 32 bit longwords
 #define SIZEOF_SR_BCKPTR_IN_LONGS (SIZEOF_SR_BCKPTR / sizeof(SLONG))
 // offset in array of pointers to back record pointer (sr_bckptr)
-#define BACK_OFFSET (-(SIZEOF_SR_BCKPTR / sizeof(SLONG*)))
+#define BACK_OFFSET (-static_cast<int>(SIZEOF_SR_BCKPTR / sizeof(SLONG*)))
 
 #define DIFF_LONGS(a, b)         ((a) - (b))
 #define SWAP_LONGS(a, b, t)       {t = a; a = b; b = t;}
@@ -2565,8 +2565,6 @@ static void sort(sort_context* scb)
  *      been requested, detect and handle them.
  *
  **************************************/
-	SORTP* temp;
-
 	// Check out the engine
 
 	THREAD_EXIT();
