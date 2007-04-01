@@ -39,7 +39,7 @@
 // The simpliest way to check it is to issue
 // "select abs(2.0/3.0) from rdb$database" from correct client
 // It will return big strange value in case of invalid define
-#if defined(i386) || defined(I386) || defined(_M_IX86) || defined(AMD64)
+#if defined(i386) || defined(I386) || defined(_M_IX86) || defined(AMD64) || defined(MIPSEL)
 #define		SWAP_DOUBLE
 #elif defined(sparc) || defined(PowerPC)
 #undef		SWAP_DOUBLE

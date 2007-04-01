@@ -133,6 +133,10 @@
 #define IMPLEMENTATION  isc_info_db_impl_linux_sparc /* 65  */
 #endif /* sparc */
 
+#ifdef MIPSEL
+#define IMPLEMENTATION  isc_info_db_impl_linux_mipsel /* 71  */
+#endif /* mipsel */
+
 #define MEMMOVE(from, to, length)		memmove ((void *)to, (void *)from, (size_t) length)
 #define MOVE_FAST(from, to, length)       memcpy (to, from, (int) (length))
 #define MOVE_FASTER(from, to, length)     memcpy (to, from, (int) (length))

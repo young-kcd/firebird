@@ -149,8 +149,9 @@ static const int CLASS_FREEBSD_AMD64 = 25;// FreeBSD/amd64
 static const int CLASS_WINDOWS_AMD64 = 26;// Windows/amd64
 static const int CLASS_LINUX_PPC = 27;    // LINUX/PowerPC
 static const int CLASS_DARWIN_I386 = 28;	//Darwin/Intel
+static const int CLASS_LINUX_MIPSEL = 29;    // LINUX/MIPS
 static const int CLASS_MAX10 = CLASS_LINUX_AMD64;	// This should not be changed, no new ports with ODS10
-static const int CLASS_MAX = CLASS_DARWIN_I386;
+static const int CLASS_MAX = CLASS_LINUX_MIPSEL;
 
 // ARCHITECTURE COMPATIBILITY CLASSES
 
@@ -234,7 +235,8 @@ static ArchitectureType archMatrix[CLASS_MAX + 1] = {
 	archLittleEndian, // CLASS_FREEBSD_AMD64
 	archLittleEndian, // CLASS_WINDOWS_AMD64
 	archBigEndian,    // CLASS_LINUX_PPC
-	archLittleEndian  // CLASS_DARWIN_I386
+	archLittleEndian, // CLASS_DARWIN_I386
+	archLittleEndian  // CLASS_LINUX_MIPSEL
 };
 
 #ifdef sun
@@ -284,6 +286,8 @@ const SSHORT CLASS		= CLASS_LINUX_SPARC;
 const SSHORT CLASS		= CLASS_LINUX_AMD64;
 #elif defined(PPC)
 const SSHORT CLASS		= CLASS_LINUX_PPC;
+#elif defined(MIPSEL)
+const SSHORT CLASS		= CLASS_LINUX_MIPSEL;
 #else
 #error no support on other hardware for Linux
 #endif
