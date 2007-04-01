@@ -340,7 +340,7 @@ static const TEXT* vnames[] = {
 	"ISC_WINDOW",
 	"ISC_WIDTH",
 	"ISC_HEIGHT",
-	"RDB$K_DB_TYPE_GDS",
+	"RDB_K_DB_TYPE_GDS",
 	"ISC_ARRAY_LENGTH",
 	"     ",					// column 
 	"*    ",					// comment 
@@ -406,7 +406,7 @@ enum {
 	ISC_WINDOW,
 	ISC_WIDTH,
 	ISC_HEIGHT,
-	RDB$K_DB_TYPE_GDS,
+	RDB_K_DB_TYPE_GDS,
 	ISC_ARRAY_LENGTH,
 	COLUMN,
 	COMMENT,
