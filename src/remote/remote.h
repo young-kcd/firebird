@@ -302,6 +302,7 @@ const USHORT RSR_blob		= 4;		/* Statement relates to blob op */
 const USHORT RSR_no_batch	= 8;		/* Do not batch fetch rows */
 const USHORT RSR_stream_err	= 16;		/* There is an error pending in the batched rows */
 const USHORT RSR_lazy		= 32;		/* To be allocated at the first reference */
+const USHORT RSR_defer_execute	= 64;		// op_execute can be deferred
 
 
 enum blk_t
@@ -476,7 +477,63 @@ struct rem_port
 	rem_port*	connect(PACKET* pckt, t_event_ast);
 	rem_port*	request(PACKET* pckt);
 	rem_port*   select_multi(UCHAR* buffer, SSHORT bufsize, SSHORT* length);
-	
+
+	bool haveRecvData() const
+	{
+		return (port_receive.x_handy > 0 
+#ifdef SUPERSERVER
+			|| port_queue && (port_qoffset < port_queue->getCount())
+#endif
+			);
+	}
+
+	void clearRecvQue()
+	{
+#ifdef SUPERSERVER
+		if (port_queue)
+			port_queue->clear();
+		port_qoffset = 0; 
+#endif
+		port_receive.x_private = port_receive.x_base;
+	}
+
+	class RecvQueState
+	{
+	public:
+		int save_handy;
+		size_t save_private;
+		size_t save_qoffset;
+
+		RecvQueState(rem_port* port)
+		{ 
+			save_handy = port->port_receive.x_handy;
+			save_private = port->port_receive.x_private - port->port_receive.x_base;
+#ifdef SUPERSERVER
+			save_qoffset = port->port_qoffset;
+#endif
+		}
+	};
+
+	RecvQueState getRecvState()
+	{
+		return RecvQueState(this);
+	}
+
+	void setRecvState(RecvQueState& rs)
+	{
+#ifdef SUPERSERVER
+		if (rs.save_qoffset > 0 && (rs.save_qoffset != port_qoffset))
+		{
+			Firebird::Array<char> &q = (*port_queue)[rs.save_qoffset-1];
+			memcpy(port_receive.x_base, q.begin(), q.getCount());
+		}
+		port_qoffset = rs.save_qoffset;
+#endif
+		port_receive.x_private = port_receive.x_base + rs.save_private;
+		port_receive.x_handy = rs.save_handy;
+	}
+
+
 	/* TMN: The following member functions are conceptually private
 	 *      to server.cpp and should be _made_ private in due time!
 	 *      That is, if we don't factor these method out.
@@ -537,6 +594,7 @@ const USHORT PORT_not_trusted	= 256;	/* Connection is from an untrusted node */
 const USHORT PORT_dummy_pckt_set= 1024;	/* A dummy packet interval is set  */
 const USHORT PORT_partial_data	= 2048;	/* Physical packet doesn't contain all API packet */
 const USHORT PORT_lazy			= 4096;	/* Deferred operations are allowed */
+const USHORT PORT_buzy			= 8192;	// disable receive - port is buzy now
 
 
 /* Misc declarations */

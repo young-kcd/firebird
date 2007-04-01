@@ -214,11 +214,11 @@ static ULONG remote_event_id = 0;
 
 #define SET_OBJECT(rdb, object, id) REMOTE_set_object (rdb->rdb_port, (struct blk *) object, id)
 
-inline bool defer_packet(rem_port* port, const PACKET* packet, ISC_STATUS* status)
+inline bool defer_packet(rem_port* port, const PACKET* packet, ISC_STATUS* status, bool sent = false)
 {
 	rem_que_packet p;
 	p.packet = *packet;
-	p.sent = false;
+	p.sent = sent;
 	port->port_deferred_packets->add(p);
 
 	return clear_queue(port, status);
@@ -1448,8 +1448,24 @@ ISC_STATUS GDS_DSQL_EXECUTE2(ISC_STATUS*	user_status,
 		sqldata->p_sqldata_out_blr.cstr_address = out_blr;
 		sqldata->p_sqldata_out_message_number = out_msg_type;
 
-		if (!send_packet(port, packet, user_status))
-			return error(user_status);
+		if (out_msg_length || !(statement->rsr_flags & RSR_defer_execute))
+		{
+			if (!send_packet(port, packet, user_status))
+				return error(user_status);
+		}
+		else
+		{
+			if (!send_partial_packet(port, packet, user_status))
+				return error(user_status);
+			
+			user_status[1] = 0;
+			
+			if (!defer_packet(port, packet, user_status, true))
+				return error(user_status);
+
+			message->msg_address = NULL;
+			return FB_SUCCESS;
+		}
 
 		/* Set up the response packet.  We may receive an SQL response followed
 		   by a normal response packet or simply a response packet. */
@@ -1457,7 +1473,7 @@ ISC_STATUS GDS_DSQL_EXECUTE2(ISC_STATUS*	user_status,
 		message->msg_address = NULL;
 		if (out_msg_length)
 			port->port_statement->rsr_message->msg_address = out_msg;
-
+		
 		packet->p_resp.p_resp_status_vector = rdb->rdb_status_vector;
 
 		if (!receive_packet(port, packet, user_status))
@@ -2309,8 +2325,12 @@ ISC_STATUS GDS_DSQL_PREPARE(ISC_STATUS * user_status, RTR * rtr_handle, RSR * st
 
 		bool status = receive_response(rdb, packet);
 
-		if (response->p_resp_object)
+		if (response->p_resp_object & STMT_BLOB) {
 			statement->rsr_flags |= RSR_blob;
+		}
+		if (response->p_resp_object & STMT_DEFER_EXECUTE) {
+			statement->rsr_flags |= RSR_defer_execute;
+		}
 		response->p_resp_data = temp;
 		if (!status) {
 			return error(user_status);
@@ -6319,13 +6339,22 @@ static bool receive_packet_noqueue(rem_port* port,
 
 	// Receive responses for all deferred packets that were already sent
 
+	RDB rdb = port->port_context;
 	while (port->port_deferred_packets->getCount())
 	{
 		rem_que_packet* p = port->port_deferred_packets->begin();
+		p->packet.p_resp.p_resp_status_vector = rdb->rdb_status_vector;
+		const bool bCheckResponse = (p->packet.p_operation == op_execute);
+
 		if (!p->sent)
 			break;
-		if (!port->receive(packet))
+		if (!port->receive(&p->packet))
 			return FALSE;
+
+		if (bCheckResponse) 
+			if (!check_response(rdb, &p->packet))
+				return false;
+
 		port->port_deferred_packets->remove(p);
 	}
 

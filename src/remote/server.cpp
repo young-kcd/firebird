@@ -109,10 +109,6 @@
 	}
 
 
-const USHORT STMT_BLOB		= 1;
-const USHORT STMT_NO_BATCH	= 2;
-const USHORT STMT_OTHER		= 0;
-
 typedef struct server_req_t
 {
 	server_req_t*	req_next;
@@ -466,112 +462,101 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 			// When this loop exits, the server will no longer receive requests
 			while (true)
 			{
-
-				// Allocate a memory block to store the request in
-				request = alloc_request();
-
 				// We have a request block - now get some information to stick into it
 				const size_t MAX_PACKET_SIZE = 32767;
 				UCHAR buffer[MAX_PACKET_SIZE];
 				SSHORT dataSize = main_port->port_buff_size > sizeof(buffer) ? 
 								  sizeof(buffer) : main_port->port_buff_size;
-				if (!port) 
+				if (!(port = main_port->select_multi(buffer, dataSize, &dataSize)))
 				{
-					if (!(port = main_port->select_multi(buffer, dataSize, &dataSize)))
-					{
-						gds__log("SRVR_multi_thread/RECEIVE: error on main_port, shutting down");
-						THREAD_EXIT();
-						REM_restore_thread_data();
-						return;
-					}
-					if (dataSize)
-					{
-						memcpy(port->port_queue->add().getBuffer(dataSize), buffer, dataSize);
-					}
+					gds__log("SRVR_multi_thread/RECEIVE: error on main_port, shutting down");
+					THREAD_EXIT();
+					REM_restore_thread_data();
+					return;
 				}
-				else
+				if (dataSize)
 				{
-					dataSize = port->port_receive.x_handy;
+					memcpy(port->port_queue->add().getBuffer(dataSize), buffer, dataSize);
 				}
-				
-//				gds__log("queue=%d", port->port_queue->getCount());
-				if (dataSize) {
-					void* packetStart = port->port_receive.x_private;
-					port->receive(&request->req_receive);
-					port->port_qoffset = 0;
-//					gds__log("dats=%d", dataSize);
-					if (request->req_receive.p_operation == op_partial)
+			
+				if (!(port->port_flags & PORT_buzy) || !dataSize)
+				{
+					// Allocate a memory block to store the request in
+					request = alloc_request();
+
+	//				gds__log("queue=%d", port->port_queue->getCount());
+					if (dataSize) 
 					{
-//						gds__log("Partial, len=%d", port->port_queue->getCount());
-						if (! port->port_queue->getCount())
+						rem_port::RecvQueState recvState = port->getRecvState();
+						port->receive(&request->req_receive);
+	//					gds__log("dats=%d", dataSize);
+						if (request->req_receive.p_operation == op_partial)
 						{
-							memcpy(port->port_queue->add().getBuffer(dataSize), 
-								   packetStart, dataSize);
+							port->setRecvState(recvState);
+
+	//						gds__log("Partial");
+							free_request(request);
+							request = 0;
+							port = 0;
+							continue;
 						}
-						free_request(request);
-						request = 0;
-						port = 0;
-						continue;
 					}
-				}
-				else
-				{
-					request->req_receive.p_operation = op_exit;
-				}
-//				gds__log("op=%d ds=%d", request->req_receive.p_operation, dataSize);
+					else
+					{
+						request->req_receive.p_operation = op_exit;
+					}
+	//				gds__log("op=%d ds=%d", request->req_receive.p_operation, dataSize);
 
-				port->port_queue->clear();
-				request->req_port = port;
+					if (!port->haveRecvData())
+						port->clearRecvQue();
 
-				// If port has an active request, link this one in
-				if ((!link_request(active_requests, port, request, "ACTIVE ")) &&
-					// If port has a pending request, link this one in
-					(!link_request(request_que, port, request, "PENDING")))
-				{
-					/* No port to assign request to, add it to the waiting queue and wake up a
-					 * thread to handle it 
-					 */
-					REMOTE_TRACE(("Enqueue request %p", request));
-					pending_requests = append_request_next(request, &request_que);
-					request = 0;
-					port->port_requests_queued++;
+					request->req_port = port;
+
+					// If port has an active request, link this one in
+					if ((!link_request(active_requests, port, request, "ACTIVE ")) &&
+						// If port has a pending request, link this one in
+						(!link_request(request_que, port, request, "PENDING")))
+					{
+						/* No port to assign request to, add it to the waiting queue and wake up a
+						* thread to handle it 
+						*/
+						REMOTE_TRACE(("Enqueue request %p", request));
+						pending_requests = append_request_next(request, &request_que);
+						request = 0;
+						port->port_requests_queued++;
 #ifdef DEBUG_REMOTE_MEMORY
-					printf
-						("SRVR_multi_thread    APPEND_PENDING     request_queued %d\n",
-						 port->port_requests_queued);
-					fflush(stdout);
+						printf
+							("SRVR_multi_thread    APPEND_PENDING     request_queued %d\n",
+							port->port_requests_queued);
+						fflush(stdout);
 #endif
 
-					/* 
-					 * NOTE: we really *should* have something that limits how many
-					 * total threads we allow in the system.  As each thread will
-					 * eat up memory that other threads could use to complete their work
-					 *
-					 * NOTE: The setting up of extra_threads variable is done below to let waiting
-					 * threads know if their services may be needed for the current set
-					 * of requests.  Otherwise, some idle threads may leave the system 
-					 * freeing up valuable memory.
-					 */
-					extra_threads = threads_waiting - pending_requests;
-					if (extra_threads < 0) {
-						gds__thread_start(	loopThread,
-											(void*)(IPTR) flags,
-											THREAD_medium,
-											THREAD_ast,
-											0);
+						/* 
+						* NOTE: we really *should* have something that limits how many
+						* total threads we allow in the system.  As each thread will
+						* eat up memory that other threads could use to complete their work
+						*
+						* NOTE: The setting up of extra_threads variable is done below to let waiting
+						* threads know if their services may be needed for the current set
+						* of requests.  Otherwise, some idle threads may leave the system 
+						* freeing up valuable memory.
+						*/
+						extra_threads = threads_waiting - pending_requests;
+						if (extra_threads < 0) {
+							gds__thread_start(	loopThread,
+												(void*)(IPTR) flags,
+												THREAD_medium,
+												THREAD_ast,
+												0);
+						}
+
+						REMOTE_TRACE(("Post event"));
+						requests_semaphore.release();
 					}
-
-					REMOTE_TRACE(("Post event"));
-					requests_semaphore.release();
+					request = 0;
 				}
-				request = 0;
 
-				// Port may have some data in xdr buffer. 
-				// If not, we will select another one.
-				if (port->port_receive.x_handy <= 0)
-				{
-					port = 0;
-				}
+				port = 0;
 			}
 
 		}
@@ -1302,7 +1287,7 @@ static USHORT check_statement_type( RSR statement)
  **************************************/
 	UCHAR buffer[16];
 	ISC_STATUS_ARRAY local_status;
-	USHORT ret = STMT_OTHER;
+	USHORT ret = 0;
 	bool done = false;
 
 	THREAD_EXIT();
@@ -1320,13 +1305,17 @@ static USHORT check_statement_type( RSR statement)
 				if (type == isc_info_sql_stmt_get_segment ||
 					type == isc_info_sql_stmt_put_segment)
 				{
-					ret = STMT_BLOB;
-					done = true;
+					ret |= STMT_BLOB;
+				}
+				else if (type == isc_info_sql_stmt_select ||
+					type == isc_info_sql_stmt_select_for_upd)
+				{
+					ret |= STMT_DEFER_EXECUTE;
 				}
 				break;
 			case isc_info_sql_batch_fetch:
 				if (type == 0)
-					ret = STMT_NO_BATCH;
+					ret |= STMT_NO_BATCH;
 				break;
 			case isc_info_error:
 			case isc_info_truncated:
@@ -2198,11 +2187,13 @@ ISC_STATUS rem_port::execute_statement(P_OP op, P_SQLDATA* sqldata, PACKET* send
 		statement->rsr_rtr = transaction;
 	}
 
+	const bool defer = this->haveRecvData();
+
 	return this->send_response(	sendL,
 								(OBJCT) (transaction ? transaction->rtr_id : 0),
 								0,
 								status_vector, 
-								false);
+								defer);
 }
 
 
@@ -3313,12 +3304,16 @@ ISC_STATUS rem_port::prepare_statement(P_SQLST * prepareL, PACKET* sendL)
 	REMOTE_reset_statement(statement);
 
 	statement->rsr_flags &= ~(RSR_blob | RSR_no_batch);
-	USHORT state = check_statement_type(statement);
-	if (state == STMT_BLOB)
+	const USHORT state = check_statement_type(statement);
+	if (state & STMT_BLOB) {
 		statement->rsr_flags |= RSR_blob;
-	else if (state == STMT_NO_BATCH)
+	}
+	if (state & STMT_NO_BATCH) {
 		statement->rsr_flags |= RSR_no_batch;
-	state = (state == STMT_BLOB) ? 1 : 0;
+	}
+	if (state & STMT_DEFER_EXECUTE) {
+		statement->rsr_flags |= RSR_defer_execute;
+	}
 
 /* Send a response that includes the info requested. */
 
@@ -3350,8 +3345,31 @@ ISC_STATUS rem_port::prepare_statement(P_SQLST * prepareL, PACKET* sendL)
 	return status;
 }
 
+bool _process_packet(rem_port* port,
+					PACKET* sendL,
+					PACKET* receive,
+					rem_port** result);
 
 bool process_packet(rem_port* port,
+					PACKET* sendL,
+					PACKET* receive,
+					rem_port** result)
+{
+	port->port_flags |= PORT_buzy;
+	bool res;
+	try {
+		res = _process_packet(port, sendL, receive, result);
+		port->port_flags &= ~PORT_buzy;
+		return res;
+	}
+	catch(...)
+	{
+		port->port_flags &= ~PORT_buzy;
+		throw;
+	}
+}
+
+bool _process_packet(rem_port* port,
 					PACKET* sendL,
 					PACKET* receive,
 					rem_port** result)
@@ -5364,6 +5382,40 @@ static THREAD_ENTRY_DECLARE loopThread(THREAD_ENTRY_PARAM flags)
 				{
 					port = NULL;
 				}
+
+#ifdef SUPERSERVER
+				// With lazy port feature enabled we can have more received and
+				// not handled data in receive queue. Handle it now if it contains
+				// whole request packet. If it contain partial packet don't clear
+				// request queue, restore receive buffer state to state before
+				// reading packet and wait until rest of data arrives
+				if (port && port->haveRecvData())
+				{
+					SERVER_REQ new_request = alloc_request();
+					
+					rem_port::RecvQueState recvState = port->getRecvState();
+					port->receive(&new_request->req_receive);
+
+					if (new_request->req_receive.p_operation == op_partial)
+					{
+//						gds__log("Partial");
+						free_request(new_request);
+						port->setRecvState(recvState);
+					}
+					else
+					{
+						if (!port->haveRecvData())
+							port->clearRecvQue();
+
+						new_request->req_port = port;
+
+						const bool ok = 
+							link_request(active_requests, port, new_request, "ACTIVE ") ||
+							link_request(request_que, port, new_request, "PENDING"); 
+						fb_assert(ok);
+					}
+				}
+#endif
 
 				/* Take request out of list of active requests */
 
