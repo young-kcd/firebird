@@ -26,8 +26,9 @@
 #
 #  Contributor(s):
 # 
+#	Alex Peshkov
 #
-#  $Id: Makefile.in.embed.lockmgr,v 1.10 2005-12-18 17:56:43 alexpeshkoff Exp $
+#  $Id: Makefile.in.embed.lockmgr,v 1.11 2007-04-02 07:58:58 alexpeshkoff Exp $
 #
 ROOT=..
 ObjModuleType=boot
@@ -45,7 +46,7 @@ LOCKMGR_Files = manager.cpp
 LOCKMGR_Sources = $(addprefix lock/, $(LOCKMGR_Files))
 LOCKMGR_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(LOCKMGR_Sources))))
 
-AllObjects = $(LOCKMGR_Objects)
+AllObjects = $(LOCKMGR_Objects) $(FBCLASSES_ClientObjects) $(FBCLASSES_MsgObjects) $(FBCOMMON_Objects)
 Dependencies = $(AllObjects:.o=.d) 
 
 
@@ -56,8 +57,8 @@ all : lock_mgr
 
 lock_mgr : $(BIN)/fb_lock_mgr
 
-$(BIN)/fb_lock_mgr: $(LOCKMGR_Objects) $(COMMON_Objects) $(LIBFBSTATIC_A)
-	$(CXX) $(LINK_OPTS) $(LOCKMGR_Objects) -o $@ -L$(LIB) -lfbstatic $(COMMON_Objects) $(LINK_LIBS)
+$(BIN)/fb_lock_mgr: $(AllObjects) $(LIBFBSTATIC_A)
+	$(CXX) $(LINK_OPTS) $(AllObjects) -o $@ -L$(LIB) -lfbstatic $(LINK_LIBS)
 
 
 include $(ROOT)/gen/make.shared.targets
