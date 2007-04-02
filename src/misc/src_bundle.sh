@@ -1,47 +1,71 @@
 #/bin/sh
 #
-# Script to checkout a clean copy of the sourcecode from CVS
-# and prepare it as an official "source distribution"
+#  The contents of this file are subject to the Initial
+#  Developer's Public License Version 1.0 (the "License");
+#  you may not use this file except in compliance with the
+#  License. You may obtain a copy of the License at
+#  http://www.ibphoenix.com/main.nfs?a=ibphoenix&page=ibp_idpl.
+#
+#  Software distributed under the License is distributed AS IS,
+#  WITHOUT WARRANTY OF ANY KIND, either express or implied.
+#  See the License for the specific language governing rights
+#  and limitations under the License.
+#
+#  The Original Code was created by Claudio Valderrama on 25-Dec-2003
+#  for the Firebird Open Source RDBMS project.
+#
+#  Copyright (c) 2007 Claudio Valderrama
+#  and all contributors signed below.
+#
+#  All Rights Reserved.
+#  Contributor(s): ______________________________________.
+#
+#
+#
+#
+# Script to prepare an "official source distribution"
+# User is responsible to have clean tree with no foreign files.
+# Using such tarball does not require presence of auto-tools.
 #
 
 # Determine root of local checkout
 SRCROOT=`dirname $0`/../..
+MODULE=$SRCROOT/temp/src
+MEMBERS=`awk -F / <$SRCROOT/CVS/Entries '{print $2;}'`
 
-# Set the CVS root from the local checkout if possible
-ROOT=`cat $SRCROOT/CVS/Root`
-if [ "x$ROOT" == 'x' ]; then
-    ROOT=":pserver:anonymous@firebird.cvs.sourceforge.net:/cvsroot/firebird"
-fi
-
-# Set the tag or branch based on the current checkout, if possible
-CVSTAG='$Name: not supported by cvs2svn $'
-TAG=`echo $CVSTAG | sed -e 's/\\$Name: not supported by cvs2svn $/\1/' | sed -e 's/ //'`
-if [ "x$TAG" == 'x' ]; then
-    TAG="HEAD"
-fi
-
-MODULE=firebird2
-NAME=firebird
+# Cleanup
 rm -rf $MODULE
 
-echo "Checking out $MODULE from $ROOT using $TAG"
-cvs -z9 -d $ROOT export -r $TAG $MODULE
+echo "Copying to new tree"
+mkdir $MODULE
+pushd $SRCROOT >/dev/null 2>&1
+MAKEFILES=`echo gen/[Mm]ake*`
+popd >/dev/null 2>&1
+tar -C $SRCROOT -cf - $MEMBERS $MAKEFILES | tar -C $MODULE -xf -
 
-# Load version information from the new checkout
+# Load version information from the tree
 source $MODULE/src/misc/writeBuildNum.sh
-DIRNAME="$NAME-$PRODUCT_VER_STRING"
+PACKNAME="Firebird-$PRODUCT_VER_STRING-$FIREBIRD_PACKAGE_VERSION"
+DIRNAME="$SRCROOT/temp/$PACKNAME"
 
-echo "Creating tarball for $DIRNAME"
+echo "Cleaning up"
 rm -rf $DIRNAME
 mv $MODULE $DIRNAME
-cd $DIRNAME
+pushd $DIRNAME >/dev/null 2>&1
 
-echo "Generating configure script"
-NOCONFIGURE=1 . ./autogen.sh > /dev/null
-rm -Rf autom4te.cache
-rm -f aclocal.m4
+# Remove CVS information
+rm -rf `find . -name CVS -print`
+
+# Clean gpre-generated files and extern
+cd gen
+make clean
 cd ..
-tar -cjf $DIRNAME.tar.bz2 $DIRNAME
-echo "New tarball is $DIRNAME.tar.bz2"
-rm -rf $DIRNAME
+rm -rf gen
 
+# Copy configure script
+cp $SRCROOT/configure .
+
+echo "Creating tarball for $PACKNAME"
+cd ..
+tar cjf ../gen/$PACKNAME.tar.bz2 $PACKNAME
+popd >/dev/null 2>&1
