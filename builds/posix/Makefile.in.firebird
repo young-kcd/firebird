@@ -523,7 +523,7 @@ $(SrcTarFile) :
 
 
 clean: clean_objects clean_dependancies clean_extern_objects clean_build \
-		clean_gpre_gen clean_icu clean_dbs clean_examples
+		clean_yacc_gen clean_gpre_gen clean_icu clean_dbs clean_examples
 
 ifeq ($(EDITLINE_FLG),Y)
 clean: clean_editline
@@ -581,7 +581,9 @@ clean_makefiles:
 	
 clean_gpre_gen:
 	-$(RM) `find $(SRC_ROOT) -type f -name '*.epp' -print | sed 's/epp$$/cpp/'`
-	
+
+clean_yacc_gen:
+	$(RM) $(ROOT)/src/dsql/parse.cpp $(ROOT)/src/dsql/dsql.tab.h
 
 #___________________________________________________________________________
 # Extra platform specific targets
