@@ -11,10 +11,10 @@
 #  See the License for the specific language governing rights
 #  and limitations under the License.
 #
-#  The Original Code was created by Claudio Valderrama on 25-Dec-2003
+#  The Original Code was created by Alexander Peshkov on 2-Apr-2007
 #  for the Firebird Open Source RDBMS project.
 #
-#  Copyright (c) 2007 Claudio Valderrama
+#  Copyright (c) 2007 Alexander Peshkov
 #  and all contributors signed below.
 #
 #  All Rights Reserved.
