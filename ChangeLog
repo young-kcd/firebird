@@ -1,3 +1,78 @@
+2007-04-01 23:42  hvlad
+
+	* firebird2/src/remote/: interface.cpp (1.130), protocol.h (1.35),
+	remote.h (1.52), server.cpp (1.146):
+
+	Implement one more LazyPort feature : defer op_execute packet when
+	it possible
+
+2007-04-01 19:14  asfernandes
+
+	* firebird2/src/jrd/utl.cpp (1.101):
+
+	Correction
+
+2007-04-01 17:50  asfernandes
+
+	* firebird2/src/jrd/Optimizer.cpp (1.72):
+
+	Fixed CORE-1153 - Activating index change "STARTING" working as
+	"LIKE" in join condition
+
+2007-04-01 16:52  asfernandes
+
+	* firebird2/src/jrd/sort.cpp (1.92):
+
+	Misc
+
+2007-04-01 15:04  robocop
+
+	* firebird2/src/gpre/: cob.cpp (1.64), rmc.cpp (1.3):
+
+	Get rid of the $ symbol in var names.
+
+2007-04-01 15:02  robocop
+
+	* firebird2/src/: dudley/parse.cpp (1.51), dudley/parse_proto.h
+	(1.10), jrd/gds.cpp (1.219), qli/dtr.cpp (1.44):
+
+	Corrections from Adriano.
+
+2007-04-01 14:32  mkubecek
+
+	* firebird2/builds/install/arch-specific/linux/:
+	classic/tarinstall.sh.in (1.3), super/tarinstall.sh.in (1.5):
+
+	fix for CORE-1189
+
+2007-04-01 12:34  alexpeshkoff
+
+	* firebird2/builds/posix/: prefix.darwin (1.21), prefix.example
+	(1.10), prefix.freebsd (1.16), prefix.linux (1.31),
+	prefix.linux_amd64 (1.9), prefix.linux_generic (1.7),
+	prefix.linux_mipsel (1.3), prefix.linux_powerpc (1.2),
+	prefix.linux_sparc32 (1.11), prefix.netbsd (1.4), prefix.sinixz
+	(1.28), prefix.solaris (1.22), prefix.solaris-64SCC (1.6),
+	prefix.solaris-64gcc (1.7), prefix.solx86 (1.27), prefix.solx86gcc
+	(1.20):
+
+	remove unneeded, insecure gds_relay from all builds
+
+2007-04-01 12:06  alexpeshkoff
+
+	* firebird2/builds/posix/prefix.linux_mipsel (1.2):
+
+	last minute change
+
+2007-04-01 12:01  alexpeshkoff
+
+	* firebird2/: src/remote/xdr.cpp (1.25), src/jrd/common.h (1.148),
+	src/jrd/inf_pub.h (1.16), src/jrd/pag.cpp (1.126), src/jrd/utl.cpp
+	(1.100), configure.in (1.253), builds/posix/prefix.linux_mipsel
+	(1.1):
+
+	Patch by Damyan Ivanov for Mipsel
+
 2007-04-01 04:04  asfernandes
 
 	* firebird2/src/remote/xdr_proto.h (1.13):
