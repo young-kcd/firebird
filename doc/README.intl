@@ -183,7 +183,7 @@ Syntax:
 		[ '<specific-attributes>' ]
 
 Notes:
-	1) Specific attributes should be separated by semicolon.
+	1) Specific attributes should be separated by semicolon and are case sensitive.
 
 Examples:
 	1) CREATE COLLATION UNICODE_ENUS_CI

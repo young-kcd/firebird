@@ -93,7 +93,7 @@
 
 
 /*****************************************************
-* Linux for Intel platforms 
+* Linux platforms 
 *****************************************************/
 #ifdef LINUX
 #define QUADFORMAT "ll"

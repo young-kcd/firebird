@@ -286,6 +286,7 @@ void SafeArg::dump(const TEXT* target[], size_t v_size) const
 			target[i] = 0;
 			continue;
 		}
+
 		switch (m_arguments[i].type)
 		{
 		case safe_cell::at_char:

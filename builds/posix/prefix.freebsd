@@ -15,7 +15,7 @@
 # All Rights Reserved.
 # Contributor(s): ______________________________________.
 # Start of file prefix.freebsd:	$(VERSION)	@PLATFORM@
-#$Id: prefix.freebsd,v 1.16 2007-04-01 10:34:24 alexpeshkoff Exp $
+#
 # 2 Oct 2002, Nickolay Samofatov - Major Cleanup
 
 OS_ServerFiles=inet_server.cpp

@@ -28,7 +28,6 @@
 # 
 #	Alex Peshkov
 #
-#  $Id: Makefile.in.embed.lockmgr,v 1.11 2007-04-02 07:58:58 alexpeshkoff Exp $
 #
 ROOT=..
 ObjModuleType=boot

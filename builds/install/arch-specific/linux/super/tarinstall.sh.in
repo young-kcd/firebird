@@ -31,7 +31,6 @@
 #   Contributor(s):
 #  
 # 
-#   $Id: tarinstall.sh.in,v 1.5 2007-04-01 12:32:53 mkubecek Exp $
 # 
 
 # THe way this works is that the buildroot file is stored relative to the root

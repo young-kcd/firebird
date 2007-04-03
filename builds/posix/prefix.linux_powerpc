@@ -15,7 +15,7 @@
 # All Rights Reserved.
 # Contributor(s): ______________________________________.
 # Start of file prefix.linux:	$(VERSION)	$(PLATFORM)
-#$Id: prefix.linux_powerpc,v 1.2 2007-04-01 10:34:25 alexpeshkoff Exp $
+#
 # 2 Oct 2002, Nickolay Samofatov - Major cleanup
 
 PROD_FLAGS=-ggdb -fno-omit-frame-pointer -fsigned-char -DNDEBUG -DLINUX -pipe -MMD -fPIC -fmessage-length=0 -DLINUX -DPowerPC -DPPC -O3 -mcpu=powerpc
