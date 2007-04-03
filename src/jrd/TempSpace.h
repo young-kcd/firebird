@@ -31,11 +31,11 @@
 
 class TempSpace : public Firebird::File {
 public:
-	TempSpace(MemoryPool&, const Firebird::PathName&);
+	TempSpace(MemoryPool& pool, const Firebird::PathName& prefix);
 	virtual ~TempSpace();
 
-	size_t read(offset_t, void*, size_t);
-	size_t write(offset_t, void*, size_t);
+	size_t read(offset_t offset, void* buffer, size_t length);
+	size_t write(offset_t offset, void* buffer, size_t length);
 
 	void unlink() {}
 
@@ -44,18 +44,38 @@ public:
 		return logicalSize;
 	}
 
-	void extend(size_t);
+	void extend(size_t size);
 
+	offset_t allocateSpace(size_t size);
+	void releaseSpace(offset_t offset, size_t size);
+
+	char* inMemory(offset_t offset, size_t size) const;
+
+	struct SegmentInMemory {
+		char* memory;
+		offset_t position;
+		size_t size;
+	};
+
+	typedef Firebird::Array<SegmentInMemory> Segments;
+
+	size_t allocateBatch(size_t count, size_t minSize, size_t maxSize, 
+		Segments& segments);
+
+	bool validate(offset_t& freeSize) const;
 private:
 
 	// Generic space block
 	class Block {
 	public:
-		Block(Block*, size_t);
+		Block(Block* tail, size_t length);
 		virtual ~Block() {}
 
-		virtual size_t read(offset_t, void*, size_t) = 0;
-		virtual size_t write(offset_t, void*, size_t) = 0;
+		virtual size_t read(offset_t offset, void* buffer, size_t length) = 0;
+		virtual size_t write(offset_t offset, void* buffer, size_t length) = 0;
+
+		virtual char* inMemory(offset_t offset, size_t size) const = 0;
+		virtual bool sameFile(const TempFile* file) const = 0; 
 
 		Block *prev;
 		Block *next;
@@ -64,35 +84,115 @@ private:
 
 	class MemoryBlock : public Block {
 	public:
-		MemoryBlock(MemoryPool&, Block*, size_t);
+		MemoryBlock(MemoryPool& pool, Block* tail, size_t length);
 		~MemoryBlock();
 
-		size_t read(offset_t, void*, size_t);
-		size_t write(offset_t, void*, size_t);
+		size_t read(offset_t offset, void* buffer, size_t length);
+		size_t write(offset_t offset, void* buffer, size_t length);
+
+		char* inMemory(offset_t offset, size_t _size) const
+		{
+			if ((offset < this->size) && (offset + _size <= this->size))
+				return ptr + offset;
+			else
+				return NULL;
+		}
 		
+		bool sameFile(const TempFile* file) const
+		{
+			return false;
+		}
+
 	private:
 		char* ptr;
 	};
 
 	class FileBlock : public Block {
 	public:
-		FileBlock(TempFile*, Block*, size_t);
+		FileBlock(TempFile* file, Block* tail, size_t length);
 		~FileBlock();
 
-		size_t read(offset_t, void*, size_t);
-		size_t write(offset_t, void*, size_t);
+		size_t read(offset_t offset, void* buffer, size_t length);
+		size_t write(offset_t offset, void* buffer, size_t length);
+
+		char* inMemory(offset_t offset, size_t size) const
+		{
+			return NULL;
+		}
+
+		bool sameFile(const TempFile* aFile) const
+		{
+			return (aFile == this->file);
+		}
 
 	private:
 		TempFile* file;
 		offset_t seek;
 	};
 
-	Block* findBlock(offset_t&);
-	TempFile* setupFile(size_t);
+	Block* findBlock(offset_t& offset) const;
+	TempFile* setupFile(size_t size);
 
 	virtual bool adjustCacheSize(long) const
 	{
 		return false;
+	}
+
+	char* findMemory(offset_t& begin, offset_t end, size_t size) const;
+
+	//  free/used segments management
+	class Segment {
+	public:
+		Segment(Segment* _next, offset_t _position, offset_t _size) :
+			next(_next), position(_position), size(_size) 
+		{};
+
+		Segment* next;
+		offset_t position;
+		offset_t size;
+	};
+
+	// return not used Segment instance or allocate new one
+	Segment* getSegment(offset_t position, size_t size)
+	{
+		Segment* result = notUsedSegments;
+
+		if (result) 
+		{
+			notUsedSegments = result->next;
+
+			result->next = NULL;
+			result->position = position;
+			result->size = size;
+		}
+		else 
+		{
+			result = (Segment*) FB_NEW(pool) Segment(NULL, position, size);
+		}
+		return result;
+	}
+
+	// extend existing segment and join it with adjacent segment 
+	void joinSegment(Segment* seg, offset_t position, size_t size)
+	{
+		if (position + size == seg->position)
+		{
+			seg->position -= size;
+			seg->size += size;
+		}
+		else
+		{
+			seg->size += size;
+			Segment* next = seg->next;
+			if (next && next->position == seg->position + seg->size)
+			{
+				seg->next = next->next;
+				seg->size += next->size;
+
+				next->next = notUsedSegments;
+				notUsedSegments = next;
+			}
+		}
 	}
 
 	MemoryPool& pool;
@@ -103,6 +203,9 @@ private:
 	Block* head;
 	Block* tail;
 	Firebird::Array<TempFile*> tempFiles;
+
+	Segment* freeSegments;
+	Segment* notUsedSegments;
 
 	static Firebird::Mutex initMutex;
 	static Firebird::TempDirectoryList* tempDirs;

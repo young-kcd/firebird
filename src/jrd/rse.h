@@ -145,7 +145,7 @@ const int RSB_LEFT_count			= 4;
 // Merge (equivalence) file block
 
 struct merge_file {
-	sort_work_file*	mfb_sfb;			// merge file uses SORT I/O routines
+	TempSpace*	mfb_space;				// merge file uses SORT I/O routines
 	ULONG mfb_equal_records;			// equality group cardinality
 	ULONG mfb_record_size;				// matches sort map length
 	ULONG mfb_current_block;			// current merge block in buffer

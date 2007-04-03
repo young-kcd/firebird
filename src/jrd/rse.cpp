@@ -578,11 +578,10 @@ static void close_merge(thread_db* tdbb, RecordSource* rsb, irsb_mrg* impure)
 		   if one exists. */
 
 		merge_file* mfb = &tail->irsb_mrg_file;
-		sort_work_file* sfb = mfb->mfb_sfb;
-		if (sfb) {
-			delete sfb->sfb_space;
-			delete sfb;
-			mfb->mfb_sfb = 0;
+		TempSpace* space = mfb->mfb_space;
+		if (space) {
+			delete space;
+			mfb->mfb_space = NULL;
 		}
 		if (mfb->mfb_block_data) {
 			delete[] mfb->mfb_block_data;
@@ -2805,7 +2804,7 @@ static void open_merge(thread_db* tdbb, RecordSource* rsb, irsb_mrg* impure)
 		merge_file* mfb = &tail->irsb_mrg_file;
 		mfb->mfb_equal_records = 0;
 		mfb->mfb_current_block = 0;
-		mfb->mfb_record_size = ROUNDUP(map->smb_length, ALIGNMENT);
+		mfb->mfb_record_size = ROUNDUP_LONG(map->smb_length);
 		mfb->mfb_block_size = MAX(mfb->mfb_record_size, MERGE_BLOCK_SIZE);
 		mfb->mfb_blocking_factor = mfb->mfb_block_size / mfb->mfb_record_size;
 		if (!mfb->mfb_block_data)
@@ -3372,9 +3371,9 @@ static ULONG read_merge_block(thread_db* tdbb, merge_file* mfb, ULONG block)
  *
  **************************************/
 
-	fb_assert(mfb->mfb_sfb);
+	fb_assert(mfb->mfb_space);
 
-	SORT_read_block(tdbb->tdbb_status_vector, mfb->mfb_sfb,
+	SORT_read_block(tdbb->tdbb_status_vector, mfb->mfb_space,
 					mfb->mfb_block_size * block,
 					mfb->mfb_block_data,
 					mfb->mfb_block_size);
@@ -3575,15 +3574,12 @@ static void write_merge_block(thread_db* tdbb, merge_file* mfb, ULONG block)
  *	the file doesn't exist, by all means, create one.
  *
  **************************************/
-	sort_work_file* sfb = mfb->mfb_sfb;
-	if (!sfb) {
+	if (!mfb->mfb_space) {
 		MemoryPool& pool = *getDefaultMemoryPool();
-		sfb = mfb->mfb_sfb = FB_NEW(pool) sort_work_file;
-		memset(sfb, 0, sizeof(sort_work_file));
-		sfb->sfb_space = FB_NEW(pool) TempSpace(pool, SCRATCH);
+		mfb->mfb_space = FB_NEW(pool) TempSpace(pool, SCRATCH);
 	}
 
-	SORT_write_block(tdbb->tdbb_status_vector, sfb,
+	SORT_write_block(tdbb->tdbb_status_vector, mfb->mfb_space,
 					 mfb->mfb_block_size * block,
 					 mfb->mfb_block_data,
 					 mfb->mfb_block_size);

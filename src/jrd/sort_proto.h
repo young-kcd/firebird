@@ -34,10 +34,10 @@ namespace Jrd {
 #ifdef SCROLLABLE_CURSORS
 void SORT_diddle_key(UCHAR *, Jrd::sort_context*, bool);
 void SORT_get(Jrd::thread_db*, Jrd::sort_context*, ULONG **, RSE_GET_MODE);
-void SORT_read_block(ISC_STATUS*, Jrd::sort_work_file*, UINT64, BLOB_PTR *, ULONG);
+void SORT_read_block(ISC_STATUS*, TempSpace*, UINT64, BLOB_PTR *, ULONG);
 #else
 void SORT_get(Jrd::thread_db*, Jrd::sort_context*, ULONG **);
-UINT64 SORT_read_block(ISC_STATUS*, Jrd::sort_work_file*, UINT64, BLOB_PTR *, ULONG);
+UINT64 SORT_read_block(ISC_STATUS*, TempSpace*, UINT64, BLOB_PTR *, ULONG);
 #endif
 
 void SORT_fini(Jrd::sort_context*, Jrd::Attachment*);
@@ -46,6 +46,6 @@ Jrd::sort_context* SORT_init(Jrd::thread_db*, USHORT, USHORT, USHORT, const Jrd:
 void SORT_put(Jrd::thread_db*, Jrd::sort_context*, ULONG **);
 void SORT_shutdown(Jrd::Attachment*);
 void SORT_sort(Jrd::thread_db*, Jrd::sort_context*);
-UINT64 SORT_write_block(ISC_STATUS*, Jrd::sort_work_file*, UINT64, BLOB_PTR *, ULONG);
+UINT64 SORT_write_block(ISC_STATUS*, TempSpace*, UINT64, BLOB_PTR *, ULONG);
 
 #endif // JRD_SORT_PROTO_H

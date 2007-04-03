@@ -210,6 +210,9 @@ struct run_control
 	SORTP*		run_buffer;			/* Run buffer */
 	SORTP*		run_end_buffer;		/* End of buffer */
 	bool		run_buff_alloc;		/* Allocated buffer flag */
+	bool		run_buff_cache;		// run buffer is already in cache
+	UINT64		run_mem_seek;		// position of run's buffer in in-memory part of sort file
+	ULONG		run_mem_size;		// size of run's buffer in in-memory part of sort file
 };
 
 /* Merge control block */
@@ -223,23 +226,6 @@ struct merge_control
 	run_merge_hdr*	mrg_stream_b;
 };
 
-/* Work file space control block */
-
-struct work_file_space
-{
-	work_file_space*	wfs_next;
-	UINT64			wfs_position;	/* Starting position of free space */
-	UINT64			wfs_size;		/* Length of free space */
-};
-
-/* Sort work file control block */
-
-struct sort_work_file
-{
-	work_file_space* sfb_file_space;	/* ALLOC: Available space in work file */
-	work_file_space* sfb_free_wfs;		/* ALLOC: Free space in work file */
-	TempSpace* sfb_space;
-};
 
 /* Sort Context Block */
 // Context or Control???
@@ -267,7 +253,7 @@ struct sort_context
 	ULONG scb_unique_length;	/* Unique key length, used when duplicates eliminated */
 	ULONG scb_records;			/* Number of records */
 	//UINT64 scb_max_records;		// Maximum number of records to store. Unused.
-	sort_work_file*	scb_sfb;		/* ALLOC: List of scratch files, if open */
+	TempSpace*		scb_space;		// temporary space for scratch file
 	run_control*	scb_runs;		/* ALLOC: Run on scratch file, if any */
 	merge_control*	scb_merge;		/* Top level merge block */
 	run_control*	scb_free_runs;	/* ALLOC: Currently unused run blocks */
