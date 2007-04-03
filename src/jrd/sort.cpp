@@ -89,8 +89,6 @@ const ULONG SORT_BUFFER_CHUNK_SIZE	= 4096;
 const ULONG MIN_SORT_BUFFER_SIZE	= SORT_BUFFER_CHUNK_SIZE * 4;
 const ULONG MAX_SORT_BUFFER_SIZE	= SORT_BUFFER_CHUNK_SIZE * 32;
 
-const ULONG MAX_TEMPFILE_SIZE		= 1073741824;	// 1GB
-
 // the size of sr_bckptr (everything before sort_record) in bytes
 #define SIZEOF_SR_BCKPTR OFFSET(sr*, sr_sort_record)
 // the size of sr_bckptr in # of 32 bit longwords
@@ -132,20 +130,32 @@ static void diddle_key(UCHAR *, sort_context*, bool);
 static sort_record*	get_merge(merge_control*, sort_context*);
 #endif
 
+static ULONG allocate_memory(sort_context*, ULONG, ULONG, bool);
 static void error_memory(sort_context*);
-static UINT64 find_file_space(sort_context*, ULONG);
-static void free_file_space(sort_context*, sort_work_file*, UINT64, ULONG);
+static inline UINT64 find_file_space(sort_context*, ULONG);
+static inline void free_file_space(sort_context*, UINT64, ULONG);
 static void init(sort_context*);
 static bool local_fini(sort_context*, Attachment*);
 static void merge_runs(sort_context*, USHORT);
 static void quick(SLONG, SORTP **, ULONG);
 static ULONG order(sort_context*);
+static void order_and_save(sort_context*);
 static void put_run(sort_context*);
 static void sort(sort_context*);
+static void sort_runs_by_seek(sort_context*, int);
 #ifdef NOT_USED_OR_REPLACED
 #ifdef DEBUG
 static void validate(sort_context*);
 #endif
+#endif
+
+#ifdef DEV_BUILD
+static void check_file(sort_context*, run_control*);
+#define CHECK_FILE(a) check_file((a), NULL);
+#define CHECK_FILE2(a, b) check_file((a), (b));
+#else
+#define CHECK_FILE(a)
+#define CHECK_FILE2(a, b)
 #endif
 
 static const char* SCRATCH = "fb_sort_";
@@ -751,9 +761,7 @@ sort_context* SORT_init(thread_db* tdbb,
 
 	// Set up the temp space
 
-	scb->scb_sfb = (sort_work_file*) FB_NEW(*pool) sort_work_file;
-	memset(scb->scb_sfb, 0, sizeof(sort_work_file));
-	scb->scb_sfb->sfb_space = FB_NEW(*pool) TempSpace(*pool, SCRATCH);
+	scb->scb_space = FB_NEW(*pool) TempSpace(*pool, SCRATCH);
 
 	// Set up to receive the first record
 
@@ -868,7 +876,7 @@ void SORT_read_block(
 UINT64 SORT_read_block(
 #endif
 						ISC_STATUS* status_vector,
-						sort_work_file* sfb,
+						TempSpace* tmp_space,
 						UINT64 seek,
 						BLOB_PTR* address,
 						ULONG length)
@@ -884,7 +892,7 @@ UINT64 SORT_read_block(
  *
  **************************************/
 	try {
-		const size_t bytes = sfb->sfb_space->read(seek, address, length);
+		const size_t bytes = tmp_space->read(seek, address, length);
 		fb_assert(bytes == length);
 		seek += bytes;
 	}
@@ -976,11 +984,30 @@ void SORT_sort(thread_db* tdbb, sort_context* scb)
 
 	put_run(scb);
 
+	CHECK_FILE(scb);
+
+	// Merge runs of low depth to free memory part of temp space 
+	// they use and to make total runs count lower. This is fast
+	// because low depth runs usually sit in memory
+	ULONG run_count = 0, low_depth_cnt = 0;
+	for (run = scb->scb_runs; run; run = run->run_next) {
+		++run_count;
+		if (run->run_depth < MAX_MERGE_LEVEL)
+			low_depth_cnt++;
+	}
+
+	if (low_depth_cnt > 1 && low_depth_cnt < run_count)
+	{
+		merge_runs(scb, low_depth_cnt);
+		init(scb);
+
+		CHECK_FILE(scb);
+	}
+
 	// Build a merge tree for the run_control blocks. Start by laying them all out
 	// in a vector. This is done to allow us to build a merge tree from the
 	// bottom up, ensuring that a balanced tree is built.
 
-	ULONG run_count;
 	for (run_count = 0, run = scb->scb_runs; run; run = run->run_next) {
 		if (run->run_buff_alloc) {
 			delete run->run_buffer;
@@ -1069,6 +1096,7 @@ void SORT_sort(thread_db* tdbb, sort_context* scb)
 	// Divvy up the sort space among buffers for runs. Although something slightly
 	// better could be arranged, for now give them all the same size hunk.
 
+/**
 	ULONG size;
 	const ULONG temp = DIFF_LONGS(scb->scb_end_memory, buffer);
 	count = temp / (scb->scb_longs * run_count);
@@ -1089,6 +1117,7 @@ void SORT_sort(thread_db* tdbb, sort_context* scb)
 		buffer += size;
 		run->run_record =
 			reinterpret_cast<sort_record*>(run->run_end_buffer = buffer);
+		run->run_buff_cache = false;
 	}
 
 	// If there was not enough buffer space, get some more for the remaining runs
@@ -1100,8 +1129,49 @@ void SORT_sort(thread_db* tdbb, sort_context* scb)
 		run->run_buff_alloc = true;
 		run->run_record =
 			reinterpret_cast<sort_record*>(run->run_end_buffer =
-										   run->run_buffer + size);
+										run->run_buffer + size);
+			run->run_buff_cache = false;
 	}
+**/
+	// Allocate space for runs. The more memory we assign to each run the 
+	// faster we will read scratch file and return sorted records to caller.
+	// At first try to reuse free memory from temp space. Note that temp space
+	// itself allocated memory by at least TempSpace::getMinBlockSize chunks.
+	// As we need contiguous memory don't ask for bigger parts
+	ULONG allocSize = MAX_SORT_BUFFER_SIZE * RUN_GROUP;
+	ULONG allocated = allocate_memory(scb, run_count, allocSize, true);
+
+	if (allocated < run_count)
+	{
+		const USHORT rec_size = scb->scb_longs << SHIFTLONG;
+		allocSize = MAX_SORT_BUFFER_SIZE * RUN_GROUP;
+		for (run = scb->scb_runs; run; run = run->run_next)
+		{
+			if (!run->run_buffer)
+			{
+				int mem_size = MIN(allocSize / rec_size, run->run_records) * rec_size;
+				char* mem = NULL;
+				try {
+					mem = (char*) scb->scb_pool->allocate(mem_size);
+				}
+				catch (const Firebird::BadAlloc&) {
+					mem_size = (mem_size / (2 * rec_size)) * rec_size;
+					if (!mem_size)
+						throw;
+					mem = (char*) scb->scb_pool->allocate(mem_size);
+				}
+				run->run_buff_alloc = true;
+				run->run_buff_cache = false;
+
+				run->run_buffer = reinterpret_cast<SORTP*> (mem);
+				mem += mem_size;
+				run->run_record = reinterpret_cast<sort_record*>(mem);
+				run->run_end_buffer = reinterpret_cast<SORTP*> (mem);
+			}
+		}
+	}
+
+	sort_runs_by_seek(scb, run_count);
 
 	scb->scb_flags |= scb_sorted;
 	RuntimeStatistics::bumpValue(tdbb, RuntimeStatistics::SORTS);
@@ -1114,7 +1184,7 @@ void SORT_sort(thread_db* tdbb, sort_context* scb)
 
 
 UINT64 SORT_write_block(ISC_STATUS* status_vector,
-						sort_work_file* sfb,
+						TempSpace* tmp_space,
 						UINT64 seek,
 						BLOB_PTR* address,
 						ULONG length)
@@ -1130,7 +1200,7 @@ UINT64 SORT_write_block(ISC_STATUS* status_vector,
  *
  **************************************/
 	try {
-		const size_t bytes = sfb->sfb_space->write(seek, address, length);
+		const size_t bytes = tmp_space->write(seek, address, length);
 		fb_assert(bytes == length);
 		seek += bytes;
 	}
@@ -1515,7 +1585,7 @@ static void error_memory(sort_context* scb)
 }
 
 
-static UINT64 find_file_space(sort_context* scb, ULONG size)
+static inline UINT64 find_file_space(sort_context* scb, ULONG size)
 {
 /**************************************
  *
@@ -1529,58 +1599,12 @@ static UINT64 find_file_space(sort_context* scb, ULONG size)
  *      available, allocate space at the end.
  *
  **************************************/
-	// Find the best available space. This is defined as the smallest free space
-	// that is big enough. This preserves large blocks.
-
-	work_file_space** best = NULL;
-
-	// Search through the available space in the work file list
-
-	sort_work_file* sfb = scb->scb_sfb;
-	work_file_space* space;
-
-	for (work_file_space** ptr = &sfb->sfb_file_space; (space = *ptr);
-		 ptr = &(*ptr)->wfs_next)
-	{
-		// If this is smaller than our previous best, use it
-
-		if (space->wfs_size >= size &&
-			(!best || (space->wfs_size < (*best)->wfs_size)))
-		{
-			best = ptr;
-		}
-	}
-
-	// If we didn't find any space, allocate it at the end of the file
-
-	if (!best) {
-		sfb->sfb_space->extend(size);
-		return sfb->sfb_space->getSize() - size;
-	}
-
-	// Set up the return parameters
-
-	space = *best;
-
-	// If the hunk was an exact fit, remove the work file space block from the
-	// list and splice it into the free list
-
-	if (space->wfs_size == size) {
-		*best = space->wfs_next;
-		space->wfs_next = sfb->sfb_free_wfs;
-		sfb->sfb_free_wfs = space;
-		return space->wfs_position;
-	}
-
-	// The best block is too big - chop the needed space off the end
-
-	space->wfs_size -= size;
-	return space->wfs_position + space->wfs_size;
+	
+	return scb->scb_space->allocateSpace(size);
 }
 
 
-static void free_file_space(sort_context* scb, sort_work_file* sfb,
-							UINT64 position, ULONG size)
+static inline void free_file_space(sort_context* scb, UINT64 position, ULONG size)
 {
 /**************************************
  *
@@ -1592,71 +1616,10 @@ static void free_file_space(sort_context* scb, sort_work_file* sfb,
  *      Release a segment of work file.
  *
  **************************************/
-	fb_assert(size > 0);
-	fb_assert(position < sfb->sfb_space->getSize());	// Block starts in file
-	const ULONG end = position + size;
-	fb_assert(end <= sfb->sfb_space->getSize());		// Block ends in file
 
-	try {
-
-	work_file_space** ptr;
-	work_file_space* space = NULL;
-
-	// Search through work file space blocks looking for an adjacent block
-
-	for (ptr = &sfb->sfb_file_space;
-		(space = *ptr); ptr = &space->wfs_next)
+	try 
 	{
-		if (end >= space->wfs_position)
-			break;
-	}
-
-	if (space) {
-		// may have found an adjacent block - try to join them together
-
-		if (end == space->wfs_position) {
-			// newly freed block starts just before previously freed
-			space->wfs_position -= size;
-			space->wfs_size += size;
-			return;
-		}
-
-		if (position == space->wfs_position + space->wfs_size) {
-			// newly freed block starts just after previously freed
-			space->wfs_size += size;
-
-			work_file_space* next = space->wfs_next;
-			if (next && end == next->wfs_position) {
-				// The NEXT freed block is adjacent, join it too
-				space->wfs_size += next->wfs_size;
-				space->wfs_next = next->wfs_next;
-				next->wfs_next = sfb->sfb_free_wfs;
-				sfb->sfb_free_wfs = next;
-			}
-			return;
-		}
-
-		// Blocks weren't adjacent - just nearby
-
-		// Check that block to free doesn't overlap existing free block
-		fb_assert(position >= space->wfs_position + space->wfs_size);
-	}
-
-	// Block didn't seem to append nicely to an existing block
-
-	if ( (space = sfb->sfb_free_wfs) ) {
-		sfb->sfb_free_wfs = space->wfs_next;
-	}
-	else {
-		space = (work_file_space*) FB_NEW(*scb->scb_pool) work_file_space;
-		memset(space, 0, sizeof(work_file_space));
-	}
-
-	space->wfs_next = *ptr;
-	*ptr = space;
-	space->wfs_size = size;
-	space->wfs_position = position;
-
+		scb->scb_space->releaseSpace(position, size);
 	}
 	catch (const Firebird::BadAlloc&) {
 		error_memory(scb);
@@ -1723,6 +1686,7 @@ static sort_record* get_merge(merge_control* merge, sort_context* scb
 			if (mode == RSE_get_forward) {
 				run->run_record = NEXT_RUN_RECORD(run->run_record);
 #endif
+
 				if ((record = (sort_record*) run->run_record) <
 					(sort_record*) run->run_end_buffer)
 				{
@@ -1743,7 +1707,7 @@ static sort_record* get_merge(merge_control* merge, sort_context* scb
 				n = run->run_records * scb->scb_longs * sizeof(ULONG);
 				l = MIN(l, n);
 				run->run_seek =
-					SORT_read_block(scb->scb_status_vector, scb->scb_sfb,
+					SORT_read_block(scb->scb_status_vector, scb->scb_space,
 									run->run_seek, (UCHAR*) run->run_buffer, l);
 #else
 			}
@@ -1936,6 +1900,41 @@ static void init(sort_context* scb)
  *
  **************************************/
 
+	// If we have run of MAX_MERGE_LEVEL then we have a relatively big sort.
+	// Grow sort buffer space to make count of final runs lower and to
+	// read\write scratch file by bigger chunks
+	// At this point we already allocated some memory for temp space so
+	// growing sort buffer space is not a big compared to that
+
+	if (scb->scb_size_memory <= MAX_SORT_BUFFER_SIZE && scb->scb_runs && 
+		scb->scb_runs->run_depth == MAX_MERGE_LEVEL)
+	{
+		void* mem = NULL;
+		const ULONG mem_size = MAX_SORT_BUFFER_SIZE * RUN_GROUP;
+		try {
+			mem = scb->scb_pool->allocate(mem_size);
+		}
+		catch (const Firebird::BadAlloc&) {
+			// do nothing
+		}
+
+		if (mem)
+		{
+			scb->scb_pool->deallocate(scb->scb_memory);
+
+			scb->scb_memory = (SORTP *) mem;
+			scb->scb_size_memory = mem_size;
+
+			scb->scb_end_memory =
+				(SORTP *) ((BLOB_PTR *) scb->scb_memory + scb->scb_size_memory);
+			scb->scb_first_pointer = (sort_record**) scb->scb_memory;
+
+			run_control *run = scb->scb_runs;
+			for (; run; run = run->run_next)
+				run->run_depth--;
+		}
+	}
+
 	scb->scb_next_pointer = scb->scb_first_pointer;
 	scb->scb_last_record = (SR *) scb->scb_end_memory;
 
@@ -1955,7 +1954,6 @@ static bool local_fini(sort_context* scb, Attachment* att)
  *      Finish sort, and release all resources.
  *
  **************************************/
-	work_file_space* space;
 	ULONG** merge_buf;
 	sort_context** ptr;
 
@@ -1989,19 +1987,7 @@ static bool local_fini(sort_context* scb, Attachment* att)
 
 	// Loop through the sfb list and close work files
 
-	delete scb->scb_sfb->sfb_space;
-
-	while ( (space = scb->scb_sfb->sfb_free_wfs) ) {
-		scb->scb_sfb->sfb_free_wfs = space->wfs_next;
-		delete space;
-	}
-
-	while ( (space = scb->scb_sfb->sfb_file_space) ) {
-		scb->scb_sfb->sfb_file_space = space->wfs_next;
-		delete space;
-	}
-
-	delete scb->scb_sfb;
+	delete scb->scb_space;
 
 	// Get rid of extra merge space
 
@@ -2046,6 +2032,107 @@ static bool local_fini(sort_context* scb, Attachment* att)
 	return true;
 }
 
+#ifdef DEV_BUILD
+static void check_file(sort_context* scb, run_control* temp_run)
+{
+/**************************************
+ *
+ *      c h e c k _ f i l e
+ *
+ **************************************
+ *
+ * Functional description
+ *      Validate memory and file space allocation
+ *
+ **************************************/
+	UINT64 runs = temp_run ? temp_run->run_size : 0, free = 0, run_mem = 0;
+
+	bool ok = scb->scb_space->validate(free);
+	fb_assert(ok);
+
+	run_control* run = scb->scb_runs;
+	for (; run; run = run->run_next)
+	{
+		runs += run->run_size;
+		run_mem += run->run_mem_size;
+	}
+
+	ok = (runs + run_mem + free) == scb->scb_space->getSize();
+	fb_assert(ok);
+}
+#endif
+
+
+static ULONG allocate_memory(sort_context* scb, ULONG n, ULONG chunkSize, bool useFreeSpace)
+{
+/**************************************
+ *
+ *      a l l o c a t e _ m e m o r y
+ *
+ **************************************
+ *
+ * Functional description
+ *      Allocate memory for first n runs 
+ *
+ **************************************/
+	const USHORT rec_size = scb->scb_longs << SHIFTLONG;
+	ULONG allocated = 0, count;
+	run_control* run;
+	TempSpace* tempSpace = scb->scb_space;
+
+	// if some run's already in memory cache - use this memory
+	for (run = scb->scb_runs, count = 0; count < n; run = run->run_next, count++)
+	{
+		run->run_buffer = 0;
+
+		char* mem = 0;
+		if (mem = tempSpace->inMemory(run->run_seek, run->run_size))
+		{
+			run->run_buffer = reinterpret_cast<SORTP*> (mem);
+			run->run_record = reinterpret_cast<sort_record*>(mem);
+			mem += run->run_size;
+			run->run_end_buffer = reinterpret_cast<SORTP*> (mem);
+			run->run_seek += run->run_size; // emulate read
+			allocated++;
+		}
+		run->run_buff_cache = (mem != NULL);
+	}
+
+	if (allocated == n || !useFreeSpace)
+		return allocated;
+
+	// try to use free blocks from memory cache of work file
+
+	TempSpace::Segments segments(*scb->scb_pool, n - allocated);
+	allocated += tempSpace->allocateBatch(n - allocated, 
+		MAX_SORT_BUFFER_SIZE, chunkSize, segments);
+
+	if (segments.getCount())
+	{
+		TempSpace::SegmentInMemory *seg = segments.begin(), *lastSeg = segments.end();
+		for (run = scb->scb_runs, count = 0; count < n; run = run->run_next, count++)
+		{
+			if (!run->run_buffer)
+			{
+				const size_t runSize = MIN(seg->size / rec_size, run->run_records) * rec_size;			
+				char* mem = seg->memory;
+
+				run->run_mem_seek = seg->position;
+				run->run_mem_size = seg->size;
+				run->run_buffer = reinterpret_cast<SORTP*> (mem);
+				mem += runSize;
+				run->run_record = reinterpret_cast<sort_record*>(mem);
+				run->run_end_buffer = reinterpret_cast<SORTP*> (mem);
+
+				seg++;
+				if (seg == lastSeg)
+					break;
+			}
+		}
+	}
+
+	return allocated;
+}
 
 static void merge_runs(sort_context* scb, USHORT n)
 {
@@ -2060,8 +2147,10 @@ static void merge_runs(sort_context* scb, USHORT n)
  *      the resulting run back onto the sort control block.
  *
  **************************************/
-	USHORT count;
-	merge_control blks[32];
+
+	// the only place we call merge_runs with n != RUN_GROUP is SORT_sort
+	// and there n < RUN_GROUP * MAX_MERGE_LEVEL 
+	merge_control blks[RUN_GROUP * MAX_MERGE_LEVEL];
 
 	fb_assert((n - 1) <= FB_NELEM(blks));	// stack var big enough?
 
@@ -2071,20 +2160,36 @@ static void merge_runs(sort_context* scb, USHORT n)
 	// space requirements, and filling in a vector of streams with run pointers
 
 	const USHORT rec_size = scb->scb_longs << SHIFTLONG;
-	const USHORT buffers = scb->scb_size_memory / rec_size;
-	ULONG size = rec_size * (buffers / (USHORT) (2 * n));
+	//const USHORT buffers = scb->scb_size_memory / rec_size;
+	//ULONG size = rec_size * (buffers / (USHORT) (2 * n));
 	BLOB_PTR* buffer = (BLOB_PTR *) scb->scb_first_pointer;
 	run_control temp_run;
+	memset(&temp_run, 0, sizeof(run_control));
+
 	temp_run.run_end_buffer =
 		(SORTP *) (buffer + (scb->scb_size_memory / rec_size) * rec_size);
 	temp_run.run_size = 0;
 	temp_run.run_buff_alloc = false;
 
-	run_merge_hdr* streams[32];
+	run_merge_hdr* streams[RUN_GROUP * MAX_MERGE_LEVEL];
 	run_merge_hdr** m1 = streams;
 
-	run_control* run;
+	sort_runs_by_seek(scb, n);
 
+	// get memory for run's
+	run_control* run = scb->scb_runs;
+
+	CHECK_FILE(scb);
+	USHORT allocated = 
+		allocate_memory(scb, n, MAX_SORT_BUFFER_SIZE, (run->run_depth > 0));
+	CHECK_FILE(scb);
+
+	const USHORT buffers = scb->scb_size_memory / rec_size;
+	USHORT count;
+	ULONG size = 0;
+	if (n > allocated) {
+		size = rec_size * (buffers / (USHORT) (2 * (n - allocated)));
+	}
 	for (run = scb->scb_runs, count = 0; count < n;
 		 run = run->run_next, count++)
 	{
@@ -2093,28 +2198,32 @@ static void merge_runs(sort_context* scb, USHORT n)
 		// size = 0 indicates the record is too big to divvy up the
 		// big sort buffer, so separate buffers must be allocated
 
-		if (!size) {
-			if (!run->run_buff_alloc) {
-				run->run_buffer =
-					(ULONG*) scb->scb_pool->allocate(rec_size * 2);
-				run->run_buff_alloc = true;
+		if (!run->run_buffer)
+		{
+			if (!size) {
+				if (!run->run_buff_alloc) {
+					run->run_buffer =
+						(ULONG*) scb->scb_pool->allocate(rec_size * 2);
+					run->run_buff_alloc = true;
+				}
+				run->run_end_buffer =
+					reinterpret_cast<ULONG*>((BLOB_PTR *) run->run_buffer + (rec_size * 2));
+				run->run_record =
+					reinterpret_cast<sort_record*>(run->run_end_buffer);
 			}
-			run->run_end_buffer =
-				reinterpret_cast<ULONG*>((BLOB_PTR *) run->run_buffer + (rec_size * 2));
-			run->run_record =
-				reinterpret_cast<sort_record*>(run->run_end_buffer);
-		}
-		else {
-			run->run_buffer = (ULONG *) buffer;
-			buffer += size;
-			run->run_record =
-				reinterpret_cast<sort_record*>(run->run_end_buffer =
-												   (ULONG *) buffer);
+			else {
+				run->run_buffer = (ULONG *) buffer;
+				buffer += size;
+				run->run_record =
+					reinterpret_cast<sort_record*>(run->run_end_buffer =
+													(ULONG *) buffer);
+			}
 		}
 		temp_run.run_size += run->run_size;
 	}
 	temp_run.run_record = reinterpret_cast<sort_record*>(buffer);
 	temp_run.run_buffer = reinterpret_cast<ULONG*>(temp_run.run_record);
+	temp_run.run_buff_cache = false;
 
 	// Build merge tree bottom up.
 	//
@@ -2153,10 +2262,13 @@ static void merge_runs(sort_context* scb, USHORT n)
 	merge->mrg_header.rmh_parent = NULL;
 
 	// Merge records into run
+	CHECK_FILE(scb);
 
 	sort_record* q = reinterpret_cast<sort_record*>(temp_run.run_buffer);
 	UINT64 seek = temp_run.run_seek = find_file_space(scb, temp_run.run_size);
 	temp_run.run_records = 0;
+
+	CHECK_FILE2(scb, &temp_run);
 
 	const sort_record* p;
 #ifdef SCROLLABLE_CURSORS
@@ -2167,7 +2279,7 @@ static void merge_runs(sort_context* scb, USHORT n)
 	{
 		if (q >= (sort_record*) temp_run.run_end_buffer) {
 			size = (BLOB_PTR *) q - (BLOB_PTR *) temp_run.run_buffer;
-			seek = SORT_write_block(scb->scb_status_vector, scb->scb_sfb,
+			seek = SORT_write_block(scb->scb_status_vector, scb->scb_space,
 									seek, (UCHAR*) temp_run.run_buffer, size);
 			q = reinterpret_cast<sort_record*>(temp_run.run_buffer);
 		}
@@ -2184,15 +2296,14 @@ static void merge_runs(sort_context* scb, USHORT n)
 	// Write the tail of the new run and return any unused space
 
 	if ( (size = (BLOB_PTR *) q - (BLOB_PTR *) temp_run.run_buffer) )
-		seek = SORT_write_block(scb->scb_status_vector, scb->scb_sfb,
+		seek = SORT_write_block(scb->scb_status_vector, scb->scb_space,
 								seek, (UCHAR*) temp_run.run_buffer, size);
 
 	// If the records did not fill the allocated run (such as when duplicates are
 	// rejected), then free the remainder and diminish the size of the run accordingly
 
 	if (seek - temp_run.run_seek < temp_run.run_size) {
-		free_file_space(scb, scb->scb_sfb, seek,
-						temp_run.run_seek + temp_run.run_size - seek);
+		free_file_space(scb, seek, temp_run.run_seek + temp_run.run_size - seek);
 		temp_run.run_size = seek - temp_run.run_seek;
 	}
 
@@ -2209,7 +2320,16 @@ static void merge_runs(sort_context* scb, USHORT n)
 #endif
 		// Free the sort file space associated with the run
 
-		free_file_space(scb, scb->scb_sfb, seek, run->run_size);
+		free_file_space(scb, seek, run->run_size);
+
+		if (run->run_mem_size)
+		{
+			free_file_space(scb, run->run_mem_seek, run->run_mem_size);
+			run->run_mem_seek = run->run_mem_size = 0;
+		}
+
+		run->run_buff_cache = false;
+		run->run_buffer = NULL;
 
 		// Add run descriptor to list of unused run descriptor blocks
 
@@ -2224,12 +2344,15 @@ static void merge_runs(sort_context* scb, USHORT n)
 	}
 	temp_run.run_header.rmh_type = RMH_TYPE_RUN;
 	temp_run.run_depth = run->run_depth;
+	temp_run.run_buff_cache = false;
+	temp_run.run_buffer = NULL;
 	*run = temp_run;
-	run->run_next = scb->scb_runs;
 	++run->run_depth;
+	run->run_next = scb->scb_runs;
 	scb->scb_runs = run;
-
 	scb->scb_longs += SIZEOF_SR_BCKPTR_IN_LONGS;
+
+	CHECK_FILE(scb);
 }
 
 
@@ -2242,8 +2365,8 @@ void inline swap(SORTP** a, SORTP** b)
 	*a = *b;
 	*b = temp;
 }
- 
- 
+
+
 static void quick(SLONG size, SORTP** pointers, ULONG length)
 {
 /**************************************
@@ -2401,8 +2524,9 @@ static ULONG order(sort_context* scb)
 	sort_record* output = reinterpret_cast<sort_record*>(scb->scb_last_record);
 	sort_ptr_t* lower_limit = reinterpret_cast<sort_ptr_t*>(output);
 
-	SORTP* buffer =
-		(SORTP*) scb->scb_pool->allocate(scb->scb_longs * sizeof(ULONG));
+	Firebird::HalfStaticArray<ULONG, 1024> record_buffer(*scb->scb_pool);
+	SORTP* buffer = record_buffer.getBuffer(scb->scb_longs);
+		//(SORTP*) scb->scb_pool->allocate(scb->scb_longs * sizeof(ULONG));
 
 	// Check out the engine
 
@@ -2473,7 +2597,7 @@ static ULONG order(sort_context* scb)
 			reinterpret_cast<sort_record*>((sort_ptr_t*) ((SORTP *) output + length));
 	}
 
-	delete buffer;
+	//delete buffer;
 
 	// Check back into the engine
 
@@ -2484,6 +2608,64 @@ static ULONG order(sort_context* scb)
 												 SIZEOF_SR_BCKPTR_IN_LONGS);
 }
 
+static void order_and_save(sort_context* scb)
+{
+	THREAD_EXIT();
+
+	run_control* run = scb->scb_runs;
+	run->run_records = 0;
+
+	sort_record** ptr = scb->scb_first_pointer + 1; // 1st ptr is low key 
+	// scb_next_pointer points to the end of pointer memory or the beginning of records 
+	while (ptr < scb->scb_next_pointer)
+	{
+		// If the next pointer is null, it's record has been eliminated as a
+		// duplicate.  This is the only easy case. 
+		if (!(*ptr++))
+			continue;
+
+		run->run_records++;
+	}
+
+	const ULONG key_length = 
+		(scb->scb_longs - SIZEOF_SR_BCKPTR_IN_LONGS) * sizeof(ULONG);
+	run->run_size = run->run_records * key_length;
+	UINT64 seek = run->run_seek = find_file_space(scb, run->run_size);
+
+	TempSpace* tmpSpace = scb->scb_space;
+	char* mem = tmpSpace->inMemory(run->run_seek, run->run_size);
+
+	if (mem)
+	{
+		ptr = scb->scb_first_pointer + 1;
+		while (ptr < scb->scb_next_pointer)
+		{
+			SR* record = (SR*) (*ptr++);
+			
+			if (!record)
+				continue;
+
+			// make record point back to the starting of SR struct.
+			// as all scb_*_pointer point to the key_id locations! 
+			record = (SR*) (((SORTP*)record) - SIZEOF_SR_BCKPTR_IN_LONGS);
+
+			memcpy(mem, record->sr_sort_record.sort_record_key, key_length);
+			mem += key_length;
+		}
+	}
+	else 
+	{
+		THREAD_ENTER();
+		order(scb);
+		THREAD_EXIT();
+
+		SORT_write_block(scb->scb_status_vector, scb->scb_space,
+						run->run_seek, (UCHAR*) scb->scb_last_record,
+						run->run_size);
+	}
+
+	THREAD_ENTER();
+}
 
 static void put_run(sort_context* scb)
 {
@@ -2509,8 +2691,8 @@ static void put_run(sort_context* scb)
 	}
 	else {
 		run = (run_control*) FB_NEW(*scb->scb_pool) run_control;
-		memset(run, 0, sizeof(run_control));
 	}
+	memset(run, 0, sizeof(run_control));
 
 	run->run_next = scb->scb_runs;
 	scb->scb_runs = run;
@@ -2528,9 +2710,6 @@ static void put_run(sort_context* scb)
 #ifdef SCROLLABLE_CURSORS
 	run->run_records = run->run_max_records = order(scb);
 	run->run_cached = 0;
-#else
-	run->run_records = order(scb);
-#endif
 
 	// Write records to scratch file. Keep track of the number of bytes
 	// written, etc.
@@ -2539,10 +2718,26 @@ static void put_run(sort_context* scb)
 		run->run_records * (scb->scb_longs -
 							SIZEOF_SR_BCKPTR_IN_LONGS) * sizeof(ULONG);
 	run->run_seek = find_file_space(scb, run->run_size);
-	SORT_write_block(scb->scb_status_vector, scb->scb_sfb,
+	SORT_write_block(scb->scb_status_vector, scb->scb_space,
 					 run->run_seek, (UCHAR*) scb->scb_last_record,
 					 run->run_size);
+#else
+	order_and_save(scb);
+/*
+	run->run_records = order(scb);
 
+	// Write records to scratch file. Keep track of the number of bytes
+	// written, etc.
+
+	run->run_size =
+		run->run_records * (scb->scb_longs -
+							SIZEOF_SR_BCKPTR_IN_LONGS) * sizeof(ULONG);
+	run->run_seek = find_file_space(scb, run->run_size);
+	SORT_write_block(scb->scb_status_vector, scb->scb_space,
+					 run->run_seek, (UCHAR*) scb->scb_last_record,
+					 run->run_size);
+*/
+#endif
 	}
 	catch (const Firebird::BadAlloc&) {
 		error_memory(scb);
@@ -2565,6 +2760,7 @@ static void sort(sort_context* scb)
  *      been requested, detect and handle them.
  *
  **************************************/
+
 	// Check out the engine
 
 	THREAD_EXIT();
@@ -2656,6 +2852,55 @@ static void sort(sort_context* scb)
 
 	THREAD_ENTER();
 }
+
+
+class RunSort
+{
+public:
+	RunSort(run_control* run) : _run(run) {};
+	RunSort() : _run(NULL) {};
+
+	static const UINT64 generate(const void*, const RunSort& item) 
+	{ return item._run->run_seek; }
+
+	run_control* _run;
+};
+
+static void sort_runs_by_seek(sort_context* scb, int n)
+{
+/**************************************
+ *
+ *      s o r t _ r u n s _ b y _ s e e k
+ *
+ **************************************
+ *
+ * Functional description
+ *      Sort first n runs by its seek position in scratch file
+ *		This allows to order file reads and make merge faster
+ *
+ **************************************/
+
+	Firebird::SortedArray<
+		RunSort, Firebird::InlineStorage<RunSort, RUN_GROUP>, UINT64, RunSort
+	> 
+	runs(*scb->scb_pool, n);
+	
+	run_control* run;
+	for (run = scb->scb_runs; run && n; run = run->run_next, n--) {
+		runs.add(RunSort(run));
+	}
+	run_control* tail = run;
+
+	RunSort* rs = runs.begin();
+	run = scb->scb_runs = rs->_run;
+	for (rs++; rs < runs.end(); rs++)
+	{
+		run->run_next = rs->_run;
+		run = rs->_run;
+	}
+	run->run_next = tail;
+}
+
 
 #ifdef NOT_USED_OR_REPLACED
 #ifdef DEBUG
