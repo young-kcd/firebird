@@ -540,6 +540,9 @@ clean_config clean_all: clean clean_makefiles
 	$(RM) $(ROOT)/config.status
 	$(RM) $(ROOT)/libtool
 	$(RM_R) $(ROOT)/autom4te.cache
+	-make -C $(ROOT)/extern/editline distclean
+	-make -C $(ROOT)/extern/icu/source distclean
+	-make -C $(ROOT)/extern/btyacc distclean
 
 clean_dbs:
 	$(RM) *.fdb *.FDB msg.timestamp
@@ -582,7 +585,7 @@ clean_makefiles:
 	$(RM) $(GEN_ROOT)/make*
 	$(RM) $(ROOT)/Makefile
 	$(RM) $(SRC_ROOT)/include/gen/autoconfig.h
-	
+
 clean_gpre_gen:
 	-$(RM) `find $(SRC_ROOT) -type f -name '*.epp' -print | sed 's/epp$$/cpp/'`
 
