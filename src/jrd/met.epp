@@ -1256,7 +1256,7 @@ jrd_nod* MET_get_dependencies(thread_db*				tdbb,
 						view_csb,
 						&csb,
 						request,
-						(type == obj_trigger),
+						(type == obj_trigger && relation != NULL),
 						0);
 	}
 	else
@@ -1264,7 +1264,7 @@ jrd_nod* MET_get_dependencies(thread_db*				tdbb,
 		node =
 			MET_parse_blob(tdbb, relation, blob_id,
 						   &csb, request,
-						   (type == obj_trigger));
+						   (type == obj_trigger && relation != NULL));
 	}
 
 	if (type == obj_computed)

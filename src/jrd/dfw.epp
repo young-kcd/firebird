@@ -3555,7 +3555,7 @@ static void get_trigger_dependencies( DeferredWork* work)
 	bid blob_id;
 	blob_id.clear();
 
-	UCHAR type = 0;
+	USHORT type = 0;
 
 	jrd_req* handle = CMP_find_request(tdbb, irq_c_trigger, IRQ_REQUESTS);
 
@@ -3565,7 +3565,7 @@ static void get_trigger_dependencies( DeferredWork* work)
         if (!REQUEST(irq_c_trigger))
             REQUEST(irq_c_trigger) = handle;
 		blob_id = X.RDB$TRIGGER_BLR;
-		type = (UCHAR) X.RDB$TRIGGER_TYPE;
+		type = (USHORT) X.RDB$TRIGGER_TYPE;
 		relation = MET_lookup_relation(tdbb, X.RDB$RELATION_NAME);
 
 	END_FOR;
@@ -3575,7 +3575,8 @@ static void get_trigger_dependencies( DeferredWork* work)
 
 /* get any dependencies now by parsing the blr */
 
-	if (relation && !blob_id.isEmpty())
+	if ((relation || (type & TRIGGER_TYPE_MASK) == TRIGGER_TYPE_DB) &&
+		!blob_id.isEmpty())
 	{
 		/* Nickolay Samofatov: allocate statement memory pool... */
 		JrdMemoryPool* new_pool = JrdMemoryPool::createPool();
