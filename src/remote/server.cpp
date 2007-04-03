@@ -137,12 +137,12 @@ namespace {
 }
 
 #ifdef SUPERSERVER
-static void free_request(SERVER_REQ);
+static void		free_request(SERVER_REQ);
 static SERVER_REQ alloc_request();
-static bool link_request(SERVER_REQ, rem_port*, SERVER_REQ, const char *);
+static bool		link_request(SERVER_REQ, rem_port*, SERVER_REQ, const char *);
 #endif
 
-static bool	accept_connection(rem_port*, P_CNCT*, PACKET*);
+static bool		accept_connection(rem_port*, P_CNCT*, PACKET*);
 static ISC_STATUS	allocate_statement(rem_port*, P_RLSE*, PACKET*);
 #ifdef MULTI_THREAD
 static SLONG	append_request_chain(SERVER_REQ, SERVER_REQ*);
@@ -166,38 +166,43 @@ static ISC_STATUS	cancel_events(rem_port*, P_EVENT*, PACKET*);
 static void		addClumplets(Firebird::ClumpletWriter&, const ParametersSet&, const rem_port*);
 
 #ifdef CANCEL_OPERATION
-static void	cancel_operation(rem_port*);
+static void		cancel_operation(rem_port*);
 #endif
 
-static bool	check_request(rrq*, USHORT, USHORT);
+static bool		check_request(rrq*, USHORT, USHORT);
 static USHORT	check_statement_type(RSR);
 
 #ifdef SCROLLABLE_CURSORS
-static REM_MSG		dump_cache(rrq::rrq_repeat*);
+static REM_MSG	dump_cache(rrq::rrq_repeat*);
 #endif
 
 static bool		get_next_msg_no(rrq*, USHORT, USHORT*);
 static RTR		make_transaction(RDB, FB_API_HANDLE);
+static bool		process_packet2(rem_port* port,
+								PACKET* sendL,
+								PACKET* receive,
+								rem_port** result);
 
-static void	release_blob(RBL);
-static void	release_event(RVNT);
-static void	release_request(rrq*);
-static void	release_statement(RSR*);
-static void	release_sql_request(RSR);
-static void	release_transaction(RTR);
+static void		release_blob(RBL);
+static void		release_event(RVNT);
+static void		release_request(rrq*);
+static void		release_statement(RSR*);
+static void		release_sql_request(RSR);
+static void		release_transaction(RTR);
 
 #ifdef SCROLLABLE_CURSORS
 static REM_MSG	scroll_cache(rrq::rrq_repeat*, USHORT *, ULONG *);
 #endif
 
-static void	server_ast(void*, USHORT, const UCHAR*);
+static void		server_ast(void*, USHORT, const UCHAR*);
 static void		success(ISC_STATUS*);
 #ifdef MULTI_THREAD
 static THREAD_ENTRY_DECLARE loopThread(THREAD_ENTRY_PARAM);
 #endif
 static void		zap_packet(PACKET*, bool);
 
-static bool bad_port_context(ISC_STATUS*, RDB, const ISC_LONG);
+static bool		bad_port_context(ISC_STATUS*, RDB, const ISC_LONG);
+
 
 inline bool bad_db(ISC_STATUS* status_vector, RDB rdb)
 {
@@ -479,7 +484,7 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 					memcpy(port->port_queue->add().getBuffer(dataSize), buffer, dataSize);
 				}
 			
-				if (!(port->port_flags & PORT_buzy) || !dataSize)
+				if (!(port->port_flags & PORT_busy) || !dataSize)
 				{
 					// Allocate a memory block to store the request in
 					request = alloc_request();
@@ -487,7 +492,7 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 	//				gds__log("queue=%d", port->port_queue->getCount());
 					if (dataSize) 
 					{
-						rem_port::RecvQueState recvState = port->getRecvState();
+						const rem_port::RecvQueState recvState = port->getRecvState();
 						port->receive(&request->req_receive);
 	//					gds__log("dats=%d", dataSize);
 						if (request->req_receive.p_operation == op_partial)
@@ -3345,38 +3350,36 @@ ISC_STATUS rem_port::prepare_statement(P_SQLST * prepareL, PACKET* sendL)
 	return status;
 }
 
-bool _process_packet(rem_port* port,
-					PACKET* sendL,
-					PACKET* receive,
-					rem_port** result);
 
+// Declared in serve_proto.h
 bool process_packet(rem_port* port,
 					PACKET* sendL,
 					PACKET* receive,
 					rem_port** result)
 {
-	port->port_flags |= PORT_buzy;
+	port->port_flags |= PORT_busy;
 	bool res;
 	try {
-		res = _process_packet(port, sendL, receive, result);
-		port->port_flags &= ~PORT_buzy;
+		res = process_packet2(port, sendL, receive, result);
+		port->port_flags &= ~PORT_busy;
 		return res;
 	}
 	catch(...)
 	{
-		port->port_flags &= ~PORT_buzy;
+		port->port_flags &= ~PORT_busy;
 		throw;
 	}
 }
 
-bool _process_packet(rem_port* port,
-					PACKET* sendL,
-					PACKET* receive,
-					rem_port** result)
+
+static bool process_packet2(rem_port* port,
+							PACKET* sendL,
+							PACKET* receive,
+							rem_port** result)
 {
 /**************************************
  *
- *	p r o c e s s _ p a c k e t
+ *	p r o c e s s _ p a c k e t 2
  *
  **************************************
  *
@@ -5393,7 +5396,7 @@ static THREAD_ENTRY_DECLARE loopThread(THREAD_ENTRY_PARAM flags)
 				{
 					SERVER_REQ new_request = alloc_request();
 					
-					rem_port::RecvQueState recvState = port->getRecvState();
+					const rem_port::RecvQueState recvState = port->getRecvState();
 					port->receive(&new_request->req_receive);
 
 					if (new_request->req_receive.p_operation == op_partial)

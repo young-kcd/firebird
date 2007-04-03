@@ -6349,11 +6349,13 @@ static bool receive_packet_noqueue(rem_port* port,
 		if (!p->sent)
 			break;
 		if (!port->receive(&p->packet))
-			return FALSE;
+			return false;
 
 		if (bCheckResponse) 
+		{
 			if (!check_response(rdb, &p->packet))
 				return false;
+		}
 
 		port->port_deferred_packets->remove(p);
 	}

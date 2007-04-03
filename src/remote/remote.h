@@ -502,7 +502,9 @@ struct rem_port
 	public:
 		int save_handy;
 		size_t save_private;
+#ifdef SUPERSERVER
 		size_t save_qoffset;
+#endif
 
 		RecvQueState(rem_port* port)
 		{ 
@@ -519,12 +521,12 @@ struct rem_port
 		return RecvQueState(this);
 	}
 
-	void setRecvState(RecvQueState& rs)
+	void setRecvState(const RecvQueState& rs)
 	{
 #ifdef SUPERSERVER
 		if (rs.save_qoffset > 0 && (rs.save_qoffset != port_qoffset))
 		{
-			Firebird::Array<char> &q = (*port_queue)[rs.save_qoffset-1];
+			Firebird::Array<char>& q = (*port_queue)[rs.save_qoffset - 1];
 			memcpy(port_receive.x_base, q.begin(), q.getCount());
 		}
 		port_qoffset = rs.save_qoffset;
@@ -594,7 +596,7 @@ const USHORT PORT_not_trusted	= 256;	/* Connection is from an untrusted node */
 const USHORT PORT_dummy_pckt_set= 1024;	/* A dummy packet interval is set  */
 const USHORT PORT_partial_data	= 2048;	/* Physical packet doesn't contain all API packet */
 const USHORT PORT_lazy			= 4096;	/* Deferred operations are allowed */
-const USHORT PORT_buzy			= 8192;	// disable receive - port is buzy now
+const USHORT PORT_busy			= 8192;	// disable receive - port is busy now
 
 
 /* Misc declarations */
