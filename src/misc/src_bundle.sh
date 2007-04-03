@@ -58,7 +58,7 @@ rm -rf `find . -name CVS -print`
 
 # Clean gpre-generated files and extern
 cd gen
-make clean
+make clean_all
 cd ..
 rm -rf gen
 
