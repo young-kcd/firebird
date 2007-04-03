@@ -45,6 +45,7 @@ public:
 	bool putSegment(size_t len, size_t& real_len, const void* buffer);
 	bool putData(size_t len, size_t& real_len, const void* buffer);
 	bool isOpen() const;
+	ISC_STATUS getCode() const;
 	bool getInfo(size_t items_size, const UCHAR* blr_items, size_t info_size, UCHAR* blob_info) const;
 	static bool blobIsNull(const ISC_QUAD& blobid);
 private:
@@ -75,6 +76,12 @@ inline UserBlob::~UserBlob()
 inline bool UserBlob::isOpen() const
 {
 	return m_blob != 0 && m_direction != dir_none;
+}
+
+// Do not call it after close(true) unless you did open() or create() again!!!
+inline ISC_STATUS UserBlob::getCode() const
+{
+	return m_status[1];
 }
 
 inline bool UserBlob::blobIsNull(const ISC_QUAD& blobid)
