@@ -58,7 +58,7 @@ Dependencies = $(AllObjects:.o=.d)
 isql : $(LIBFBCLIENT_SO) $(ISQL)
 
 $(ISQL):	$(ISQL_Objects) $(CLUMPLETS_Objects) $(FBCOMMON_Objects) $(FBCLASSES_Objects)
-	$(LD) $(LINK_OPTS) $^ -o $@ -L$(LIB) -lfbclient $(LINK_LIBS) @PTHREAD_CFLAGS@ @PTHREAD_LIBS@
+	$(LD) $(LINK_OPTS) $^ -o $@ -L$(LIB) -lfbclient $(LINK_LIBS) @PTHREAD_CFLAGS@ @PTHREAD_LIBS@ $(LIBEDITLINE)
 
 
 include $(ROOT)/gen/make.shared.targets

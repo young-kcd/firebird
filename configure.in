@@ -39,6 +39,9 @@ dnl Should Classic Server run services as thread or as process?
 dnl Default - run as processes (empty value).
 service_thread_CS=""
 
+dnl Should system editline and/or icu be used 
+STD_EDITLINE=false
+STD_ICU=false
 
 case "$target" in
   *-*-darwin*)
@@ -304,7 +307,32 @@ AC_ARG_WITH(editline,
      no)  EDITLINE_FLG=N;;
      *)   AC_MSG_ERROR(bad value '${withval}' for --with-editline);;
    esac])
+AC_ARG_WITH(system-editline,
+  [  --with-system-editline  use OS supplied libeditline],
+  [case "$withval" in
+     yes) STD_EDITLINE=true;;
+     no)  STD_EDITLINE=false;;
+     *)   AC_MSG_ERROR(bad value '${withval}' for --with-system-editline);;
+   esac])
+
+# not need editline in default libs, but need to test for it's ptresence
+saveLIBS=$LIBS
+if test "$STD_EDITLINE" = "true"; then
+  AC_CHECK_LIB(editline, readline, EDITLINE_FLG=Y, STD_EDITLINE=false)
+fi
+LIBS=$saveLIBS
+
+AC_SUBST(STD_EDITLINE)
 AC_SUBST(EDITLINE_FLG)
+
+AC_ARG_WITH(system-icu,
+  [  --with-system-icu       use OS supplied ICU],
+  [case "$withval" in
+     yes) STD_ICU=true;;
+     no)  STD_ICU=false;;
+     *)   AC_MSG_ERROR(bad value '${withval}' for --with-system-icu);;
+   esac])
+AC_SUBST(STD_ICU)
 
 FB_SERVICE_NAME=gds_db
 FB_SERVICE_PORT=3050
@@ -417,7 +445,7 @@ AC_CHECK_HEADERS(signal.h sys/signal.h sys/siginfo.h)
 if test "$EDITLINE_FLG" = "Y"; then
   AC_CHECK_HEADERS(termio.h termios.h)
   AC_HEADER_DIRENT
-  AC_DEFINE(HAVE_EDITLINE_H, 1, [Define this if internal editline.h is in use])
+  AC_DEFINE(HAVE_EDITLINE_H, 1, [Define this if editline is in use])
 fi
 AC_CHECK_HEADERS(unistd.h)
 if test "$ac_cv_header_unistd_h" = "yes"; then
@@ -458,7 +486,6 @@ if test "$EDITLINE_FLG" = "Y"; then
 			AC_CHECK_LIB(termcap, tgetent, , \
 				AC_CHECK_LIB(tinfo, tgetent, , \
 					AC_MSG_ERROR(termcap support not found)))))  
-	AC_SUBST(EDITLINE_A, -leditline)
 fi
 dnl AC_CHECK_LIB(stdc++, main,,, $LIBS)
 
@@ -845,7 +872,6 @@ mkdir -p temp/std/utilities/ibmgr
 mkdir -p temp/std/utilities/install
 mkdir -p temp/std/utilities/rebuild
 mkdir -p temp/std/vulcan
-mkdir -p temp/std/extern/editline
 
 mkdir -p temp/superclient/alice
 mkdir -p temp/superclient/auth/trusted
@@ -1061,9 +1087,13 @@ gen/Makefile.embed.qli:${MAKE_SRC_DIR}/Makefile.in.embed.qli
 gen/Makefile.embed.gpre:${MAKE_SRC_DIR}/Makefile.in.embed.gpre
 gen/Makefile.install:builds/install/arch-specific/${INSTALL_PREFIX}/Makefile.in
 Makefile:Makefile.in
-gen/Makefile.extern.editline:${MAKE_SRC_DIR}/Makefile.in.extern.editline
-gen/Makefile.extern.icu:${MAKE_SRC_DIR}/Makefile.in.extern.icu
 )
+if test "$STD_EDITLINE" = "false"; then
+  AC_CONFIG_FILES(gen/Makefile.extern.editline:${MAKE_SRC_DIR}/Makefile.in.extern.editline)
+fi
+if test "$STD_ICU" = "false"; then
+  AC_CONFIG_FILES(gen/Makefile.extern.icu:${MAKE_SRC_DIR}/Makefile.in.extern.icu)
+fi
 
 
 
@@ -1071,11 +1101,14 @@ if test "$PROD_BUILD_FLG" = N; then
   DEBUG_ICU=--enable-debug
 fi
 
+if test "$STD_ICU" = "true"; then
+AC_OUTPUT
+else
 AC_OUTPUT
 (cd extern/icu/source
 chmod +x runConfigureICU configure install-sh
 ./runConfigureICU "$ICU_PLATFORM" "$DEBUG_ICU" --prefix=`pwd`/..)
-
+fi
 
 dnl Print out the build configuration (the most interesting thing)
 echo

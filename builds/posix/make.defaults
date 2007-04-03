@@ -92,7 +92,8 @@ endif
 
 # link with readline libraries - set by configure
 EDITLINE_FLG=@EDITLINE_FLG@
-
+STD_EDITLINE=@STD_EDITLINE@
+STD_ICU=@STD_ICU@
 
 # Default programs and tools to be used in the build process
 
@@ -146,9 +147,9 @@ STATICLIB_LINK= ar cruvs
 EXE_LINK = @CXX@
 STATICEXE_LINK = @CXX@
 
-LINK_LIBS = @LIBS@ @EDITLINE_A@
+LINK_LIBS = @LIBS@
 ICU_LIBS = -licuuc -licudata -licui18n
-STATICLINK_LIBS = @LIBS@ @EDITLINE_A@
+STATICLINK_LIBS = @LIBS@
 SO_LINK_LIBS = @LIBS@
 
 # Default extensions
@@ -215,7 +216,15 @@ LIBFBCLIENT_SONAME=$(LIB)/$(ClientLibraryName)
 LIBFBINTL_SO = $(FIREBIRD)/intl/$(LIB_PREFIX)fbintl.$(SHRLIB_EXT)
 
 LIBFBSTATIC_A = $(LIB)/libfbstatic.a
-LIBEDITLINE_A = $(LIB)/libeditline.a
+
+ifeq ($(EDITLINE_FLG),Y)
+  ifeq ($(STD_EDITLINE), true)
+	LIBEDITLINE := -leditline
+  else
+	LIBEDITLINE := $(LIB)/libeditline.a
+  endif
+endif
+
 LIBICU_SO = $(LIB)/$(LIB_PREFIX)icuuc.$(SHRLIB_EXT) \
 			$(LIB)/$(LIB_PREFIX)icudata.$(SHRLIB_EXT) \
 			$(LIB)/$(LIB_PREFIX)icui18n.$(SHRLIB_EXT)
