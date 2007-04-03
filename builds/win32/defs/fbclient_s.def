@@ -98,6 +98,7 @@ EXPORTS
 	gds__get_prefix@8			PRIVATE
 	gds__log@0					PRIVATE
 	gds__msg_format@40			PRIVATE
+	gds__msg_lookup@24			PRIVATE
 	gds__prefix@8				PRIVATE
 	gds__prefix_lock@8			PRIVATE
 	gds__prefix_msg@8			PRIVATE
