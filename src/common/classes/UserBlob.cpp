@@ -201,7 +201,7 @@ bool UserBlob::putData(size_t len, size_t& real_len, const void* buffer)
 
 	real_len = 0;
 	const char* buf2 = static_cast<const char*>(buffer);
-	do // Allow for zero-length segments, use the infamous do-while.
+	while (len)
 	{
 		USHORT ilen = len > SEGMENT_LIMIT ? SEGMENT_LIMIT : static_cast<USHORT>(len);
 		if (isc_put_segment(m_status, &m_blob, ilen, buf2))
@@ -210,7 +210,7 @@ bool UserBlob::putData(size_t len, size_t& real_len, const void* buffer)
 		len -= ilen;
 		buf2 += ilen;
 		real_len += ilen;
-	} while (len);
+	}
 	return true;
 }
 
@@ -220,6 +220,7 @@ bool UserBlob::getInfo(size_t items_size, const UCHAR* blr_items,
 	if (!m_blob || m_direction != dir_read)
 		return false;
 
+	// We have to cater for the API limitations.
 	SSHORT in_len = items_size > MAX_SSHORT ? MAX_SSHORT : static_cast<SSHORT>(items_size);
 	SSHORT out_len = info_size > MAX_SSHORT ? MAX_SSHORT : static_cast<SSHORT>(info_size);
 	// That the API declares the second param as non const is a bug.
