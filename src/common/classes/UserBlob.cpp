@@ -105,11 +105,13 @@ bool UserBlob::close(bool force_internal_SV)
 
 bool UserBlob::getSegment(size_t len, void* buffer, size_t& real_len)
 {
+#ifdef DEV_BUILD
 	if (!m_blob || m_direction == dir_write)
 		return false;
 
 	if (!len || !buffer)
 		return false;
+#endif
 
 	real_len = 0;
 	USHORT olen = 0;
@@ -162,11 +164,13 @@ bool UserBlob::getData(size_t len, void* buffer, size_t& real_len,
 
 bool UserBlob::putSegment(size_t len, const void* buffer)
 {
+#ifdef DEV_BUILD
 	if (!m_blob || m_direction == dir_read)
 		return false;
 
 	if (len > 0 && !buffer)
 		return false;
+#endif
 
 	USHORT ilen = len > SEGMENT_LIMIT ? SEGMENT_LIMIT : static_cast<USHORT>(len);
 	const char* buf2 = static_cast<const char*>(buffer);
@@ -175,11 +179,13 @@ bool UserBlob::putSegment(size_t len, const void* buffer)
 
 bool UserBlob::putSegment(size_t len, const void* buffer, size_t& real_len)
 {
+#ifdef DEV_BUILD
 	if (!m_blob || m_direction == dir_read)
 		return false;
 
 	if (len > 0 && !buffer)
 		return false;
+#endif
 
 	real_len = 0;
 	USHORT ilen = len > SEGMENT_LIMIT ? SEGMENT_LIMIT : static_cast<USHORT>(len);
