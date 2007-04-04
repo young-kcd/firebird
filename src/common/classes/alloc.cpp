@@ -176,7 +176,6 @@ inline size_t get_map_page_size()
 	if (! map_page_size) 
 	{
 		map_page_size = get_page_size();
-		printf("map_page_size=%d\n", map_page_size);
 	}
 	return map_page_size;
 }
