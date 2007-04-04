@@ -7608,7 +7608,6 @@ void update_global_field(BurpGlobals* tdgbl)
  *	The blobs have been created already.
  *
  **************************************/
-	USHORT		length;
 	isc_req_handle  req_handle1 = 0;
 
 	for (gfld* gfield = tdgbl->gbl_global_fields; gfield; )
@@ -7620,34 +7619,19 @@ void update_global_field(BurpGlobals* tdgbl)
 				if (gfield->gfld_flags & GFLD_validation_blr)
 				{
 					X.RDB$VALIDATION_BLR.NULL = FALSE;
-
-					length = sizeof(ISC_QUAD);
-					UCHAR* p = (UCHAR *)&X.RDB$VALIDATION_BLR;
-					const UCHAR* q = (UCHAR *)&gfield->gfld_vb;
-
-					do { *p++ = *q++; } while (--length);
+					memcpy(&X.RDB$VALIDATION_BLR, &gfield->gfld_vb, sizeof(ISC_QUAD));
 				}
 
 				if (gfield->gfld_flags & GFLD_validation_source)
 				{
 					X.RDB$VALIDATION_SOURCE.NULL = FALSE;
-
-					length = sizeof(ISC_QUAD);
-					UCHAR* p = (UCHAR *)&X.RDB$VALIDATION_SOURCE;
-					const UCHAR* q = (UCHAR *)&gfield->gfld_vs;
-
-					do { *p++ = *q++; } while (--length);
+					memcpy(&X.RDB$VALIDATION_SOURCE, &gfield->gfld_vs, sizeof(ISC_QUAD));
 				}
 
 				if (gfield->gfld_flags & GFLD_validation_source2)
 				{
 					X.RDB$VALIDATION_SOURCE.NULL = FALSE;
-
-					length = sizeof(ISC_QUAD);
-					UCHAR* p = (UCHAR *)&X.RDB$VALIDATION_SOURCE;
-					const UCHAR* q = (UCHAR *)&gfield->gfld_vs2;
-
-					do { *p++ = *q++; } while (--length);
+					memcpy(&X.RDB$VALIDATION_SOURCE, &gfield->gfld_vs2, sizeof(ISC_QUAD));
 				}
 
 			END_MODIFY;
