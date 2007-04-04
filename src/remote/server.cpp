@@ -3309,15 +3309,18 @@ ISC_STATUS rem_port::prepare_statement(P_SQLST * prepareL, PACKET* sendL)
 	REMOTE_reset_statement(statement);
 
 	statement->rsr_flags &= ~(RSR_blob | RSR_no_batch);
-	const USHORT state = check_statement_type(statement);
+	USHORT state = check_statement_type(statement);
 	if (state & STMT_BLOB) {
 		statement->rsr_flags |= RSR_blob;
 	}
 	if (state & STMT_NO_BATCH) {
 		statement->rsr_flags |= RSR_no_batch;
 	}
-	if (state & STMT_DEFER_EXECUTE) {
+	if (state & STMT_DEFER_EXECUTE && (port_flags & PORT_lazy)) {
 		statement->rsr_flags |= RSR_defer_execute;
+	}
+	if (!(port_flags & PORT_lazy)) {
+		state = (state & STMT_BLOB) ? 1 : 0;
 	}
 
 /* Send a response that includes the info requested. */

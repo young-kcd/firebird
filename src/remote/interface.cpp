@@ -2325,12 +2325,21 @@ ISC_STATUS GDS_DSQL_PREPARE(ISC_STATUS * user_status, RTR * rtr_handle, RSR * st
 
 		bool status = receive_response(rdb, packet);
 
-		if (response->p_resp_object & STMT_BLOB) {
-			statement->rsr_flags |= RSR_blob;
+		if (rdb->rdb_port->port_flags & PORT_lazy)
+		{
+			if (response->p_resp_object & STMT_BLOB) {
+				statement->rsr_flags |= RSR_blob;
+			}
+			if (response->p_resp_object & STMT_DEFER_EXECUTE) {
+				statement->rsr_flags |= RSR_defer_execute;
+			}
 		}
-		if (response->p_resp_object & STMT_DEFER_EXECUTE) {
-			statement->rsr_flags |= RSR_defer_execute;
+		else
+		{
+			if (response->p_resp_object)
+				statement->rsr_flags |= RSR_blob;
 		}
+
 		response->p_resp_data = temp;
 		if (!status) {
 			return error(user_status);
