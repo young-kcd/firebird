@@ -315,7 +315,7 @@ AC_ARG_WITH(system-editline,
      *)   AC_MSG_ERROR(bad value '${withval}' for --with-system-editline);;
    esac])
 
-# not need editline in default libs, but need to test for it's ptresence
+# not need editline in default libs, but need to test for its presence
 saveLIBS=$LIBS
 if test "$STD_EDITLINE" = "true"; then
   AC_CHECK_LIB(editline, readline, EDITLINE_FLG=Y, STD_EDITLINE=false)
