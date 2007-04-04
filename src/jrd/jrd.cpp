@@ -4571,11 +4571,10 @@ bool JRD_reschedule(thread_db* tdbb, SLONG quantum, bool punt)
 
 	if (attachment)
 	{
-		Firebird::PathName file_name = attachment->att_filename;
-
 		if (dbb->dbb_ast_flags & DBB_shutdown &&
 			attachment->att_flags & ATT_shutdown)
 		{
+			Firebird::PathName &file_name = attachment->att_filename;
 			if (punt) {
 				CCH_unwind(tdbb, false);
 				ERR_post(isc_shutdown, isc_arg_string,
