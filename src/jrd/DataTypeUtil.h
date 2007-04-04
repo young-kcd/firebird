@@ -32,6 +32,9 @@ struct dsc;
 class DataTypeUtilBase
 {
 public:
+	virtual ~DataTypeUtilBase() {}
+
+public:
 	static SSHORT getResultBlobSubType(const dsc* value1, const dsc* value2);
 	static USHORT getResultTextType(const dsc* value1, const dsc* value2);
 
