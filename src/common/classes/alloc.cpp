@@ -162,12 +162,25 @@ int dev_zero_fd = -1; /* Cached file descriptor for /dev/zero. */
 #endif
 
 #if defined(WIN_NT) || defined(HAVE_MMAP)
-const size_t map_page_size = get_page_size();
 // Extents cache is not used when DEBUG_GDS_ALLOC or USE_VALGRIND is enabled.
 // This slows down things a little due to frequent syscalls mapping/unmapping 
 // memory but allows to detect more allocation errors
 Firebird::Vector<void*, MAP_CACHE_SIZE> extents_cache;
 Mutex cache_mutex;
+
+// avoid races during initialization
+inline size_t get_map_page_size()
+{
+	static size_t map_page_size = 0;
+
+	if (! map_page_size) 
+	{
+		map_page_size = get_page_size();
+		printf("map_page_size=%d\n", map_page_size);
+	}
+	return map_page_size;
+}
+
 #endif
 
 #ifdef USE_VALGRIND
@@ -341,7 +354,7 @@ void MemoryPool::updateSpare()
 void* MemoryPool::external_alloc(size_t &size)
 {
 	// This method is assumed to return NULL in case it cannot alloc
-	size = FB_ALIGN(size, map_page_size);
+	size = FB_ALIGN(size, get_map_page_size());
 	void *result = mmap(NULL, size, PROT_READ | PROT_WRITE, 
 		MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 	// Let Valgrind forget that block was zero-initialized
@@ -356,7 +369,7 @@ void MemoryPool::external_free(void *blk, size_t &size, bool pool_destroying)
 	// Set access protection for block to prevent memory from deleted pool being accessed
 	int handle = VALGRIND_MAKE_NOACCESS(blk, size);
 
-	size = FB_ALIGN(size, map_page_size);
+	size = FB_ALIGN(size, get_map_page_size());
 
 	void* unmapBlockPtr = blk;
 	size_t unmapBlockSize = size;
@@ -429,11 +442,11 @@ void* MemoryPool::external_alloc(size_t &size)
 	}
 # endif
 # if defined WIN_NT
-	size = FB_ALIGN(size, map_page_size);
+	size = FB_ALIGN(size, get_map_page_size());
 	return VirtualAlloc(NULL, size, MEM_COMMIT, 
 						PAGE_READWRITE);
 # elif defined (HAVE_MMAP) && !defined(SOLARIS)
-	size = FB_ALIGN(size, map_page_size);
+	size = FB_ALIGN(size, get_map_page_size());
 #  ifdef MAP_ANONYMOUS
 	return  mmap(NULL, size, PROT_READ | PROT_WRITE, 
 				MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
@@ -451,7 +464,7 @@ void* MemoryPool::external_alloc(size_t &size)
 //Solaris 2.9 #define MAP_FAILED      ((void *) -1)
 
 
-	size = FB_ALIGN(size, map_page_size);
+	size = FB_ALIGN(size, get_map_page_size());
 	void *result = NULL;
 #  ifdef MAP_ANONYMOUS
     
@@ -495,11 +508,11 @@ void MemoryPool::external_free(void *blk, size_t &size, bool pool_destroying) {
 	}
 # endif
 # if defined WIN_NT
-	size = FB_ALIGN(size, map_page_size);
+	size = FB_ALIGN(size, get_map_page_size());
 	if (!VirtualFree(blk, 0, MEM_RELEASE))
 		system_call_failed::raise("VirtualFree");
 # elif defined HAVE_MMAP
-	size = FB_ALIGN(size, map_page_size);
+	size = FB_ALIGN(size, get_map_page_size());
 #  if (defined SOLARIS) && (defined HAVE_CADDR_T)
 	if (munmap((caddr_t) blk, size))
 		system_call_failed::raise("munmap");
@@ -890,7 +903,7 @@ bool MemoryPool::verify_pool(bool fast_checks_only) {
 			blk_used_memory += large->mbk_large_length - MEM_ALIGN(sizeof(MemoryRedirectList));
 
 #if defined(WIN_NT) || defined(HAVE_MMAP)
-		blk_mapped_memory += FB_ALIGN(large->mbk_large_length, map_page_size);
+		blk_mapped_memory += FB_ALIGN(large->mbk_large_length, get_map_page_size());
 #else
 		blk_mapped_memory += large->mbk_large_length;
 #endif
