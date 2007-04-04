@@ -1,3 +1,104 @@
+2007-04-04 02:39  asfernandes
+
+	* firebird2/src/jrd/DataTypeUtil.h (1.5):
+
+	Warning in GCC
+
+2007-04-03 17:41  asfernandes
+
+	* firebird2/src/jrd/: dfw.epp (1.203), met.epp (1.221):
+
+	Fixed problem of not storing dependencies for database triggers -
+	reported privately by Dmitry
+
+2007-04-03 17:01  hvlad
+
+	* firebird2/src/jrd/sort.cpp (1.93):
+
+	Forgotten file, thanks to Adriano
+
+2007-04-03 15:06  hvlad
+
+	* firebird2/src/jrd/rse.cpp (1.133):
+
+	Restored accidentally broken alignment rules
+
+2007-04-03 14:57  hvlad
+
+	* firebird2/src/jrd/: TempSpace.cpp (1.9), TempSpace.h (1.5),
+	rse.cpp (1.132), rse.h (1.51), sort.h (1.33), sort_proto.h (1.18):
+
+	a) Refactor sort module. All related sort_work_file management
+	moved into TempSpace class now. Former sort_work_file is now
+	TempSpace::Segment b) Add parameter names to declarations of
+	TempSpace methods. It make sources much more readable, i believe,
+	and allow IntelliSense to make useful hints c) Reworked sort module
+	to use more memory for merge buffers. It significantly increased
+	speed of large sorts. Memory mostly reused from TempSpace memory
+	blocks
+
+2007-04-03 14:31  alexpeshkoff
+
+	* firebird2/src/misc/src_bundle.sh (1.6):
+
+	clean better before making tarball
+
+2007-04-03 14:30  alexpeshkoff
+
+	* firebird2/builds/posix/Makefile.in.firebird (1.77):
+
+	make clean_all should clean as much as possible
+
+2007-04-03 12:41  aafemt
+
+	* firebird2/builds/win32/defs/fbclient_s.def (1.6):
+
+	Another mangled export to please new modules
+
+2007-04-03 10:25  alexpeshkoff
+
+	* firebird2/: configure.in (1.254),
+	builds/posix/Makefile.in.client.isql (1.16),
+	builds/posix/Makefile.in.embed.isql (1.15),
+	builds/posix/Makefile.in.firebird (1.76),
+	builds/posix/Makefile.in.static.isql (1.14),
+	builds/posix/make.defaults (1.51), builds/posix/make.rules (1.33):
+
+	Added configure switches to build with OS-wide editline and/or ICU
+
+2007-04-03 10:19  robocop
+
+	* firebird2/src/common/classes/UserBlob.cpp (1.2):
+
+	Drop useless functionality.
+
+2007-04-03 10:19  robocop
+
+	* firebird2/src/common/classes/UserBlob.h (1.2):
+
+	Convenience.
+
+2007-04-03 10:18  robocop
+
+	* firebird2/src/remote/: interface.cpp (1.131), remote.h (1.53),
+	server.cpp (1.147):
+
+	Minor corrections.
+
+2007-04-03 04:30  asfernandes
+
+	* firebird2/: autogen.sh (1.14),
+	builds/install/arch-specific/linux/classic/tarinstall.sh.in (1.4),
+	builds/install/arch-specific/linux/super/tarinstall.sh.in (1.6),
+	builds/posix/Makefile.in.embed.lockmgr (1.12),
+	builds/posix/prefix.freebsd (1.17),
+	builds/posix/prefix.linux_powerpc (1.3), builds/posix/prefix.netbsd
+	(1.5), builds/posix/prefix.solx86 (1.28),
+	builds/posix/prefix.solx86gcc (1.21), doc/README.intl (1.8),
+	src/common/classes/SafeArg.cpp (1.5), src/jrd/common.h (1.149):
+
+	Misc
+
 2007-04-02 15:11  alexpeshkoff
 
 	* firebird2/src/misc/src_bundle.sh (1.5):
