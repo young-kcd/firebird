@@ -152,48 +152,8 @@ private:
 		offset_t size;
 	};
 
-	// return not used Segment instance or allocate new one
-	Segment* getSegment(offset_t position, size_t size)
-	{
-		Segment* result = notUsedSegments;
-
-		if (result) 
-		{
-			notUsedSegments = result->next;
-
-			result->next = NULL;
-			result->position = position;
-			result->size = size;
-		}
-		else 
-		{
-			result = (Segment*) FB_NEW(pool) Segment(NULL, position, size);
-		}
-		return result;
-	}
-
-	// extend existing segment and join it with adjacent segment 
-	void joinSegment(Segment* seg, offset_t position, size_t size)
-	{
-		if (position + size == seg->position)
-		{
-			seg->position -= size;
-			seg->size += size;
-		}
-		else
-		{
-			seg->size += size;
-			Segment* next = seg->next;
-			if (next && next->position == seg->position + seg->size)
-			{
-				seg->next = next->next;
-				seg->size += next->size;
-
-				next->next = notUsedSegments;
-				notUsedSegments = next;
-			}
-		}
-	}
+	Segment* getSegment(offset_t position, size_t size);
+	void joinSegment(Segment* seg, offset_t position, size_t size);
 
 	MemoryPool& pool;
 	Firebird::PathName filePrefix;

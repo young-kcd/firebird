@@ -674,3 +674,58 @@ size_t TempSpace::allocateBatch(size_t count, size_t minSize, size_t maxSize, Se
 
 	return segments.getCount();
 }
+
+
+//
+// TempSpace::getSegment
+//
+// Return not used Segment instance or allocate new one
+// 
+
+TempSpace::Segment* TempSpace::getSegment(offset_t position, size_t size)
+{
+	Segment* result = notUsedSegments;
+
+	if (result) 
+	{
+		notUsedSegments = result->next;
+
+		result->next = NULL;
+		result->position = position;
+		result->size = size;
+	}
+	else 
+	{
+		result = (Segment*) FB_NEW(pool) Segment(NULL, position, size);
+	}
+	return result;
+}
+
+
+//
+// TempSpace::joinSegment
+//
+// Extend existing segment and join it with adjacent segment 
+// 
+
+void TempSpace::joinSegment(Segment* seg, offset_t position, size_t size)
+{
+	if (position + size == seg->position)
+	{
+		seg->position -= size;
+		seg->size += size;
+	}
+	else
+	{
+		seg->size += size;
+		Segment* next = seg->next;
+		if (next && next->position == seg->position + seg->size)
+		{
+			seg->next = next->next;
+			seg->size += next->size;
+
+			next->next = notUsedSegments;
+			notUsedSegments = next;
+		}
+	}
+}
