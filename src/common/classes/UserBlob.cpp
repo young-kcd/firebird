@@ -103,7 +103,7 @@ bool UserBlob::close(bool force_internal_SV)
 	return rc;
 }
 
-bool UserBlob::getSegment(size_t len, size_t& real_len, void* buffer)
+bool UserBlob::getSegment(size_t len, void* buffer, size_t& real_len)
 {
 	if (!m_blob || m_direction == dir_write)
 		return false;
@@ -124,7 +124,7 @@ bool UserBlob::getSegment(size_t len, size_t& real_len, void* buffer)
 	return false;
 }
 
-bool UserBlob::getData(size_t len, size_t& real_len, void* buffer,
+bool UserBlob::getData(size_t len, void* buffer, size_t& real_len,
 						bool use_sep, const UCHAR separator)
 {
 	if (!m_blob || m_direction == dir_write)
@@ -173,7 +173,7 @@ bool UserBlob::putSegment(size_t len, const void* buffer)
 	return !isc_put_segment(m_status, &m_blob, ilen, buf2);
 }
 
-bool UserBlob::putSegment(size_t len, size_t& real_len, const void* buffer)
+bool UserBlob::putSegment(size_t len, const void* buffer, size_t& real_len)
 {
 	if (!m_blob || m_direction == dir_read)
 		return false;
@@ -191,7 +191,7 @@ bool UserBlob::putSegment(size_t len, size_t& real_len, const void* buffer)
 	return true;
 }
 
-bool UserBlob::putData(size_t len, size_t& real_len, const void* buffer)
+bool UserBlob::putData(size_t len, const void* buffer, size_t& real_len)
 {
 	if (!m_blob || m_direction == dir_read)
 		return false;

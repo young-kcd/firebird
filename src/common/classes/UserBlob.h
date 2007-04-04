@@ -39,11 +39,11 @@ public:
 	bool create(FB_API_HANDLE& db, FB_API_HANDLE& trans, ISC_QUAD& blobid,
 				USHORT bpb_len, const UCHAR* bpb);
 	bool close(bool force_internal_SV = false);
-	bool getSegment(size_t len, size_t& real_len, void* buffer);
-	bool getData(size_t len, size_t& real_len, void* buffer, bool use_sep, const UCHAR separator);
+	bool getSegment(size_t len, void* buffer, size_t& real_len);
+	bool getData(size_t len, void* buffer, size_t& real_len, bool use_sep, const UCHAR separator);
 	bool putSegment(size_t len, const void* buffer);
-	bool putSegment(size_t len, size_t& real_len, const void* buffer);
-	bool putData(size_t len, size_t& real_len, const void* buffer);
+	bool putSegment(size_t len, const void* buffer, size_t& real_len);
+	bool putData(size_t len, const void* buffer, size_t& real_len);
 	bool isOpen() const;
 	ISC_STATUS getCode() const;
 	bool getInfo(size_t items_size, const UCHAR* blr_items, size_t info_size, UCHAR* blob_info) const;

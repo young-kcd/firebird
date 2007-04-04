@@ -1024,7 +1024,7 @@ void SHOW_print_metadata_text_blob(FILE* fp,
 	SCHAR buffer[BUFFER_LENGTH512];
 
 	size_t length = 0;
-	while (blob.getSegment(sizeof(buffer) - 1, length, buffer))
+	while (blob.getSegment(sizeof(buffer) - 1, buffer, length))
 	{
 		// Need to step through the buffer until we hit a '\n' and then print the
 		// line.  This is because '\n' are included in blob text.

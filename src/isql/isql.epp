@@ -1826,7 +1826,7 @@ void ISQL_print_validation(FILE* fp,
 	TEXT buffer[BUFFER_LENGTH512];
 	
 	size_t length;
-	while (blob.getSegment(sizeof(buffer) - 1, length, buffer))
+	while (blob.getSegment(sizeof(buffer) - 1, buffer, length))
 	{
 		buffer[length] = 0;
 		const TEXT* p = buffer;
@@ -2962,7 +2962,7 @@ static processing_state bulk_insert_hack(const char* command, XSQLDA** sqldap)
 						}
 
 						size_t real_len;
-						if (!bs.putData(length, real_len, lastPos) || real_len != length)
+						if (!bs.putData(length, lastPos, real_len) || real_len != length)
 						{
 							STDERROUT("Unable to write to blob");
 							ISQL_errmsg(isc_status);
@@ -7400,7 +7400,7 @@ processing_state ISQL_print_item_blob(FILE* fp,
 
 	TEXT buffer[BUFFER_LENGTH512];
 	size_t length;
-	while (blob.getSegment(sizeof(buffer) - 1, length, buffer))
+	while (blob.getSegment(sizeof(buffer) - 1, buffer, length))
 	{
 		// Special displays for blr or acl subtypes 
 
