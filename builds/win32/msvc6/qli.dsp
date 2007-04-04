@@ -229,19 +229,7 @@ SOURCE=..\..\..\src\gpre\pretty.cpp
 # PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=..\..\..\src\common\classes\BaseStream.cpp
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\src\common\fb_exception.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\common\classes\MsgPrint.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\common\classes\SafeArg.cpp
 # End Source File
 # End Group
 # Begin Group "Header files"

@@ -165,6 +165,10 @@ SOURCE=..\..\..\src\common\classes\timestamp.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\src\common\classes\UserBlob.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\src\common\utils.cpp
 # End Source File
 # End Group
@@ -178,6 +182,10 @@ SOURCE=..\..\..\src\common\classes\alloc.h
 # Begin Source File
 
 SOURCE=..\..\..\src\common\classes\array.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\common\classes\BaseStream.h
 # End Source File
 # Begin Source File
 
@@ -209,11 +217,23 @@ SOURCE=..\..\..\src\common\classes\MetaName.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\src\common\classes\MsgPrint.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\common\classes\SafeArg.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\src\common\classes\TempFile.h
 # End Source File
 # Begin Source File
 
 SOURCE=..\..\..\src\common\classes\timestamp.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\common\classes\UserBlob.h
 # End Source File
 # Begin Source File
 

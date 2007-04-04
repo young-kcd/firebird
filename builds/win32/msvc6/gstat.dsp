@@ -140,21 +140,5 @@ SOURCE=..\..\..\src\utilities\gstat\ppg_proto.h
 SOURCE=..\..\..\src\jrd\version.rc
 # End Source File
 # End Group
-# Begin Group "COMMON files"
-
-# PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=..\..\..\src\common\classes\BaseStream.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\common\classes\MsgPrint.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\common\classes\SafeArg.cpp
-# End Source File
-# End Group
 # End Target
 # End Project

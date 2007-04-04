@@ -125,6 +125,10 @@ SOURCE=..\..\..\src\common\config\dir_list.cpp
 # PROP Default_Filter ""
 # Begin Source File
 
+SOURCE=..\..\..\src\common\classes\BaseStream.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\src\jrd\db_alias.cpp
 # End Source File
 # Begin Source File
@@ -145,7 +149,15 @@ SOURCE=..\..\..\src\jrd\os\win32\mod_loader.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\src\common\classes\MsgPrint.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\src\jrd\os\win32\path_utils.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\common\classes\SafeArg.cpp
 # End Source File
 # Begin Source File
 
@@ -154,6 +166,10 @@ SOURCE=..\..\..\src\common\classes\TempFile.cpp
 # Begin Source File
 
 SOURCE=..\..\..\src\common\classes\timestamp.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\common\classes\UserBlob.cpp
 # End Source File
 # Begin Source File
 
@@ -174,6 +190,10 @@ SOURCE=..\..\..\src\common\classes\array.h
 # Begin Source File
 
 SOURCE=..\..\..\src\common\classes\auto.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\common\classes\BaseStream.h
 # End Source File
 # Begin Source File
 
@@ -217,7 +237,15 @@ SOURCE=..\..\..\src\common\classes\MetaName.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\src\common\classes\MsgPrint.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\src\common\classes\objects_array.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\common\classes\SafeArg.h
 # End Source File
 # Begin Source File
 
@@ -226,6 +254,10 @@ SOURCE=..\..\..\src\common\classes\TempFile.h
 # Begin Source File
 
 SOURCE=..\..\..\src\common\classes\timestamp.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\common\classes\UserBlob.h
 # End Source File
 # Begin Source File
 
