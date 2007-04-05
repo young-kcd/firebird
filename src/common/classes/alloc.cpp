@@ -169,10 +169,10 @@ Firebird::Vector<void*, MAP_CACHE_SIZE> extents_cache;
 Mutex cache_mutex;
 
 // avoid races during initialization
+size_t map_page_size = 0;
+
 inline size_t get_map_page_size()
 {
-	static size_t map_page_size = 0;
-
 	if (! map_page_size) 
 	{
 		map_page_size = get_page_size();
