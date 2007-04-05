@@ -1896,7 +1896,7 @@ void put_data(burp_rel* relation)
 				!(field->fld_flags & FLD_array))
 			{
 				put_blob(field,
-						 *(ISC_QUAD*) (buffer + field-> fld_offset),
+						 *(ISC_QUAD*) (buffer + field->fld_offset),
 						 records);
 			}
 		}

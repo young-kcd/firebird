@@ -4805,7 +4805,7 @@ bool get_procedure(BurpGlobals* tdgbl)
 	return true;
 }
 
-bool get_procedure_prm (BurpGlobals* tdgbl, GDS_NAME	procptr)
+bool get_procedure_prm (BurpGlobals* tdgbl, GDS_NAME procptr)
 {
 /**************************************
  *
