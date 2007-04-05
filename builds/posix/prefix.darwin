@@ -15,7 +15,7 @@
 # All Rights Reserved.
 # Contributor(s): ______________________________________.
 # Start of file prefix.darwin:	$(VERSION)	@PLATFORM@
-#$Id: prefix.darwin,v 1.14.12.2 2007-03-08 09:19:13 paulbeach Exp $
+#$Id: prefix.darwin,v 1.14.12.3 2007-04-05 11:30:23 paulbeach Exp $
 # 2 Oct 2002, Nickolay Samofatov - Major Cleanup
 
 DYLD_LIBRARY_PATH=$(FIREBIRD)/lib
@@ -33,9 +33,9 @@ PLATFORM_PATH=os/darwin
 
 LINK_OPTS:=
 LIB_BUNDLE_OPTIONS:=$(LD_FLAGS) -bundle -flat_namespace -undefined suppress
-LIB_LINK_OPTIONS:=$(LD_FLAGS) -dynamiclib  -flat_namespace
+LIB_LINK_OPTIONS:=$(LD_FLAGS) -dynamiclib -flat_namespace
 LIB_LINK_SONAME:=-current_version 2.0.0 -compatibility_version 2.0.0 -seg1addr 0x30000000
-LIB_LINK_MAPFILE:=-unexported_symbols_list
+LIB_LINK_MAPFILE:=-Wl,-exported_symbols_list 
 
 LIB_LINK_RPATH:=-install_name /Firebird.framework/Versions/A/Libraries/
 LIB_EMBED_LINK_OPTIONS:= -install_name Firebird.framework/Versions/A/Firebird
