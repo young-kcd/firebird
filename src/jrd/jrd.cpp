@@ -2462,7 +2462,7 @@ ISC_STATUS GDS_DROP_DATABASE(ISC_STATUS* user_status, Attachment** handle)
 		tdbb->tdbb_status_vector = user_status;
 		try
 		{
-			Firebird::PathName file_name = tdbb->tdbb_attachment->att_filename;
+			const Firebird::PathName& file_name = tdbb->tdbb_attachment->att_filename;
 
 			if (!attachment->locksmith())
 				ERR_post(isc_no_priv,
@@ -4574,7 +4574,7 @@ bool JRD_reschedule(thread_db* tdbb, SLONG quantum, bool punt)
 		if (dbb->dbb_ast_flags & DBB_shutdown &&
 			attachment->att_flags & ATT_shutdown)
 		{
-			Firebird::PathName &file_name = attachment->att_filename;
+			const Firebird::PathName& file_name = attachment->att_filename;
 			if (punt) {
 				CCH_unwind(tdbb, false);
 				ERR_post(isc_shutdown, isc_arg_string,
