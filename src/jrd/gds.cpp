@@ -1694,47 +1694,50 @@ SLONG API_ROUTINE gds__get_prefix(SSHORT arg_type, const TEXT* passed_string)
  *      and 2 for $FIREBIRD_MSG
  *
  *      Function returns 0 on success and -1 on failure
+ *		it has very strange name, but to keep API as is leave it
  **************************************/
 	int count = 0;
+	
+	if (! passed_string)
+		return -1;
 
-	if (arg_type < IB_PREFIX_TYPE || arg_type > IB_PREFIX_MSG_TYPE)
-		return ((SLONG) - 1);
+	Firebird::PathName prefix(passed_string);
+	prefix.erase(MAXPATHLEN);
+	for (size_t n = 0; n < prefix.length(); ++n)
+	{
+		switch(prefix[n])
+		{
+		case ' ':
+		case '\n':	// don't know exact reason - just keep
+		case '\r':	// old API call behavior
+			prefix.erase(n);
+			break;	// will also leave for() due to length change
+		}
+	}
+
+	if (arg_type == IB_PREFIX_TYPE)
+	{
+		// it's very important to do it BEFORE gdsPrefixInit()
+		Config::setRootDirectoryFromCommandLine(prefix);
+	}
 
 	gdsPrefixInit();
 
-	char* prefix_ptr;
 	switch (arg_type) {
 	case IB_PREFIX_TYPE:
-		prefix_ptr = fb_prefix = fb_prefix_val;
+		prefix.copyTo(fb_prefix_val, sizeof fb_prefix_val);
 		break;
 	case IB_PREFIX_LOCK_TYPE:
-		prefix_ptr = fb_prefix_lock = fb_prefix_lock_val;
+		prefix.copyTo(fb_prefix_lock_val, sizeof fb_prefix_lock_val);
 		break;
 	case IB_PREFIX_MSG_TYPE:
-		prefix_ptr = fb_prefix_msg = fb_prefix_msg_val;
+		prefix.copyTo(fb_prefix_msg_val, sizeof fb_prefix_msg_val);
 		break;
 	default:
-		return ((SLONG) - 1);
+		return -1;
 	}
 
-	// the command line argument was 'H' for Firebird home
-	// (Not sure what this comment means.)
-	while (*prefix_ptr++ = *passed_string++) {
-		/* if the next character is space, newline or carriage return OR
-		   number of characters exceeded */
-		if (*passed_string == ' ' || *passed_string == 10
-			|| *passed_string == 13 || (count == MAXPATHLEN))
-		{
-			*(prefix_ptr++) = '\0';
-			break;
-		}
-		count++;
-	}
-	if (!count) {
-		prefix_ptr = NULL;
-		return ((SLONG) - 1);
-	}
-	return ((SLONG) 0);
+	return 0;
 }
 
 

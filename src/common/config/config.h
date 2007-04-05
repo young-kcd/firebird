@@ -124,6 +124,16 @@ class Config
 public:
 
 	/*
+	 Interface to support command line root specification.
+	*
+	 This ugly solution was required to make it possible to specify root
+	 in command line to load firebird.conf from that root, though in other 
+	 cases firebird.conf may be also used to specify root.
+	*/
+	static void setRootDirectoryFromCommandLine(const Firebird::PathName& newRoot);
+	static const Firebird::PathName* getCommandLineRootDirectory();
+
+	/*
 		Installation directory
 	*/
 	static const char* getInstallDirectory();

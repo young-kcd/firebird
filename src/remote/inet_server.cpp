@@ -226,7 +226,7 @@ int CLIB_ROUTINE server_main( int argc, char** argv)
 #endif /* SUPERSERVER */
 
 				case 'E':
-					if (ISC_get_prefix(p) == -1)
+					if (ISC_set_prefix(p, *argv) == -1)
 						printf("Invalid argument Ignored\n");
 					else
 						argv++;	/* do not skip next argument if this one
@@ -258,9 +258,9 @@ int CLIB_ROUTINE server_main( int argc, char** argv)
 					printf("  -h|? : print this help\n");
                     printf("\n");
                     printf("  (The following -e options used to be -h options)\n");
-					printf("  -e<firebird_root_dir>   : set firebird_root path\n");            
-					printf("  -el<firebird_lock_dir>   : set runtime firebird_lock dir\n");            
-					printf("  -em<firebird_msg_dir>   : set firebird_msg dir path\n");            
+					printf("  -e <firebird_root_dir>   : set firebird_root path\n");            
+					printf("  -el <firebird_lock_dir>  : set runtime firebird_lock dir\n");            
+					printf("  -em <firebird_msg_dir>   : set firebird_msg dir path\n");            
 					printf("  -z   : print version\n");            
 
 					exit(FINI_OK);
@@ -273,6 +273,10 @@ int CLIB_ROUTINE server_main( int argc, char** argv)
 					break;
 			}
 	}
+
+	// activate paths set with -e family of switches
+	ISC_set_prefix(0, 0);
+
 #if (defined SUPERSERVER && defined UNIX )
 	/* set_signal(SIGPIPE, signal_sigpipe_handler); */
 	set_signal(SIGPIPE, signal_handler);

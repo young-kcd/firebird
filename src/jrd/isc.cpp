@@ -636,43 +636,93 @@ int ISC_make_desc(const TEXT* string, struct dsc$descriptor* desc, USHORT length
 }
 #endif
 
-
-SLONG ISC_get_prefix(const TEXT* passed_string)
+inline void setPrefixIfNotEmpty(const Firebird::PathName& prefix, SSHORT arg_type)
 {
 /**************************************
  *
- *      i s c _ g e t _ p r e f i x   
+ *         s e t P r e f i x I f N o t E m p t y
  *
  **************************************
  *
  * Functional description
- *      Parse the 'H' argument further for 'HL' 'HM' or 'H'
+ *      Helper for ISC_set_prefix
+ *
+ **************************************/
+	if (prefix.hasData()) 
+	{
+		// ignore here return value of gds__get_prefix(): 
+		// it will never fail with our good arguments
+		gds__get_prefix(arg_type, prefix.c_str());
+	}
+}
+
+SLONG ISC_set_prefix(const TEXT* sw, const TEXT* path)
+{
+/**************************************
+ *
+ *      i s c _ s e t _ p r e f i x   
+ *
+ **************************************
+ *
+ * Functional description
+ *      Parse the 'E' argument further for 'EL' 'EM' or 'E'
  *
  **************************************/
 
-	const char c = *passed_string;
-	int arg_type;
+	/* 
+	 * We can't call gds__get_prefix() at once when switch is found.
+	 * gds__get_prefix() invokes gdsPrefixInit(), which in turn causes 
+	 * config file to be loaded. And in case when -el or -em is given
+	 * before -e, this leads to use of wrong firebird.conf.
+	 * To avoid it accumulate values for switches locally, 
+	 * and finally when called with sw==0, use them in correct order.
+	 */
+	static struct ESwitches {
+		Firebird::PathName prefix, lockPrefix, msgPrefix;
+		ESwitches(MemoryPool& p) : prefix(p), lockPrefix(p), msgPrefix(p) { }
+	}* eSw = 0;
+	
+	if (! sw)
+	{
+		if (eSw)
+		{
+			setPrefixIfNotEmpty(eSw->prefix, IB_PREFIX_TYPE);
+			setPrefixIfNotEmpty(eSw->lockPrefix, IB_PREFIX_LOCK_TYPE);
+			setPrefixIfNotEmpty(eSw->msgPrefix, IB_PREFIX_MSG_TYPE);
 
-	switch (UPPER(c)) {
-	case '\0':
-		arg_type = IB_PREFIX_TYPE;
-		break;
+			delete eSw;
+			eSw = 0;
+		}
 
-	case 'L':
-		arg_type = IB_PREFIX_LOCK_TYPE;
-		++passed_string;
-		break;
-
-	case 'M':
-		arg_type = IB_PREFIX_MSG_TYPE;
-		++passed_string;
-		break;
-
-	default:
-		return (-1);
-		break;
+		return 0;
 	}
-	return (gds__get_prefix(arg_type, ++passed_string));
+	
+	if ((!path) || (path[0] <= ' '))
+	{
+		return -1;
+	}
+
+	if (! eSw)
+	{
+		eSw = FB_NEW(*getDefaultMemoryPool()) ESwitches(*getDefaultMemoryPool());
+	}
+
+	switch(UPPER(*sw))
+	{
+	case '\0':
+		eSw->prefix = path;
+		break;
+	case 'L':
+		eSw->lockPrefix = path;
+		break;
+	case 'M':
+		eSw->msgPrefix = path;
+		break;
+	default:
+		return -1;
+	}
+
+	return 0;
 }
 
 

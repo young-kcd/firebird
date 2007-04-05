@@ -37,7 +37,7 @@ bool	ISC_get_user(TEXT*, int*, int*, TEXT*,
 					 TEXT*, int*, const TEXT*);
 SLONG	ISC_get_user_group_id(const TEXT*);
 void	ISC_set_user(const TEXT*);
-SLONG	ISC_get_prefix(const TEXT*);
+SLONG	ISC_set_prefix(const TEXT*, const TEXT*);
 void	ISC_prefix(TEXT*, const TEXT*);
 void	ISC_prefix_lock(TEXT*, const TEXT*);
 void	ISC_prefix_msg(TEXT*, const TEXT*);

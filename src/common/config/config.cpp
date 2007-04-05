@@ -279,8 +279,28 @@ const char* Config::getInstallDirectory()
 	return sysConfig.getInstallDirectory();
 }
 
+static Firebird::PathName* rootFromCommandLine = 0;
+
+void Config::setRootDirectoryFromCommandLine(const Firebird::PathName& newRoot)
+{
+	delete rootFromCommandLine;
+	rootFromCommandLine = FB_NEW(*getDefaultMemoryPool()) 
+		Firebird::PathName(*getDefaultMemoryPool(), newRoot);
+}
+
+const Firebird::PathName* Config::getCommandLineRootDirectory()
+{
+	return rootFromCommandLine;
+}
+
 const char* Config::getRootDirectory()
 {
+	// must check it here - command line must override any other root settings, including firebird.conf
+	if (rootFromCommandLine)
+	{
+		return rootFromCommandLine->c_str();
+	}
+
 	const char* result = (char*) sysConfig.values[KEY_ROOT_DIRECTORY];
 	return result ? result : sysConfig.root_dir;
 }
