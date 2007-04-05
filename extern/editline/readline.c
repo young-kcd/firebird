@@ -1,2139 +1,1194 @@
-/*	$NetBSD: readline.c,v 1.46 2004/02/27 14:52:18 christos Exp $	*/
+/* readline.c -- a general facility for reading lines of input
+   with emacs style editing and completion. */
 
-/*-
- * Copyright (c) 1997 The NetBSD Foundation, Inc.
- * All rights reserved.
- *
- * This code is derived from software contributed to The NetBSD Foundation
- * by Jaromir Dolecek.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in the
- *    documentation and/or other materials provided with the distribution.
- * 3. All advertising materials mentioning features or use of this software
- *    must display the following acknowledgement:
- *	This product includes software developed by the NetBSD
- *	Foundation, Inc. and its contributors.
- * 4. Neither the name of The NetBSD Foundation nor the names of its
- *    contributors may be used to endorse or promote products derived
- *    from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE NETBSD FOUNDATION, INC. AND CONTRIBUTORS
- * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
- * TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
- * PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE FOUNDATION OR CONTRIBUTORS
- * BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- */
+/* Copyright (C) 1987-2005 Free Software Foundation, Inc.
 
-#include "config.h"
-#if !defined(lint) && !defined(SCCSID)
-__RCSID("$NetBSD: readline.c,v 1.46 2004/02/27 14:52:18 christos Exp $");
-#endif /* not lint && not SCCSID */
+   This file is part of the GNU Readline Library, a library for
+   reading lines of text with interactive input and history editing.
+
+   The GNU Readline Library is free software; you can redistribute it
+   and/or modify it under the terms of the GNU General Public License
+   as published by the Free Software Foundation; either version 2, or
+   (at your option) any later version.
+
+   The GNU Readline Library is distributed in the hope that it will be
+   useful, but WITHOUT ANY WARRANTY; without even the implied warranty
+   of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+
+   The GNU General Public License is often shipped with GNU software, and
+   is generally kept in a file called COPYING or LICENSE.  If you do not
+   have a copy of the license, write to the Free Software Foundation,
+   59 Temple Place, Suite 330, Boston, MA 02111 USA. */
+#define READLINE_LIBRARY
+
+#if defined (HAVE_CONFIG_H)
+#  include <config.h>
+#endif
 
 #include <sys/types.h>
-#include <sys/stat.h>
-#include <stdio.h>
-#include <dirent.h>
-#include <string.h>
-#include <pwd.h>
-#include <ctype.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <limits.h>
-#include <errno.h>
+#include "posixstat.h"
 #include <fcntl.h>
-#ifdef HAVE_VIS_H
-#include <vis.h>
+#if defined (HAVE_SYS_FILE_H)
+#  include <sys/file.h>
+#endif /* HAVE_SYS_FILE_H */
+
+#if defined (HAVE_UNISTD_H)
+#  include <unistd.h>
+#endif /* HAVE_UNISTD_H */
+
+#if defined (HAVE_STDLIB_H)
+#  include <stdlib.h>
 #else
-#include "np/vis.h"
+#  include "ansi_stdlib.h"
+#endif /* HAVE_STDLIB_H */
+
+#if defined (HAVE_LOCALE_H)
+#  include <locale.h>
 #endif
-#ifdef HAVE_ALLOCA_H
-#include <alloca.h>
+
+#include <stdio.h>
+#include "posixjmp.h"
+
+/* System-specific feature definitions and include files. */
+#include "rldefs.h"
+#include "rlmbutil.h"
+
+#if defined (__EMX__)
+#  define INCL_DOSPROCESS
+#  include <os2.h>
+#endif /* __EMX__ */
+
+/* Some standard library routines. */
+#include "readline.h"
+#include "history.h"
+
+#include "rlprivate.h"
+#include "rlshell.h"
+#include "xmalloc.h"
+
+#ifndef RL_LIBRARY_VERSION
+#  define RL_LIBRARY_VERSION "5.1"
 #endif
-#include "el.h"
-#include "fcns.h"		/* for EL_NUM_FCNS */
-#include "histedit.h"
-#include "readline/readline.h"
 
-/* for rl_complete() */
-#define TAB		'\r'
+#ifndef RL_READLINE_VERSION
+#  define RL_READLINE_VERSION	0x0501
+#endif
 
-/* see comment at the #ifdef for sense of this */
-/* #define GDB_411_HACK */
+extern void _rl_free_history_entry PARAMS((HIST_ENTRY *));
 
-/* readline compatibility stuff - look at readline sources/documentation */
-/* to see what these variables mean */
-const char *rl_library_version = "EditLine wrapper";
-static char empty[] = { '\0' };
-static char expand_chars[] = { ' ', '\t', '\n', '=', '(', '\0' };
-static char break_chars[] = { ' ', '\t', '\n', '"', '\\', '\'', '`', '@', '$',
-    '>', '<', '=', ';', '|', '&', '{', '(', '\0' };
-char *rl_readline_name = empty;
-FILE *rl_instream = NULL;
-FILE *rl_outstream = NULL;
-int rl_point = 0;
-int rl_end = 0;
-char *rl_line_buffer = NULL;
-VFunction *rl_linefunc = NULL;
-int rl_done = 0;
-VFunction *rl_event_hook = NULL;
+/* Forward declarations used in this file. */
+static char *readline_internal PARAMS((void));
+static void readline_initialize_everything PARAMS((void));
 
-int history_base = 1;		/* probably never subject to change */
-int history_length = 0;
-int max_input_history = 0;
-char history_expansion_char = '!';
-char history_subst_char = '^';
-char *history_no_expand_chars = expand_chars;
-Function *history_inhibit_expansion_function = NULL;
-char *history_arg_extract(int start, int end, const char *str);
+static void bind_arrow_keys_internal PARAMS((Keymap));
+static void bind_arrow_keys PARAMS((void));
 
-int rl_inhibit_completion = 0;
-int rl_attempted_completion_over = 0;
-char *rl_basic_word_break_characters = break_chars;
-char *rl_completer_word_break_characters = NULL;
-char *rl_completer_quote_characters = NULL;
-Function *rl_completion_entry_function = NULL;
-CPPFunction *rl_attempted_completion_function = NULL;
-Function *rl_pre_input_hook = NULL;
-Function *rl_startup1_hook = NULL;
-Function *rl_getc_function = NULL;
-char *rl_terminal_name = NULL;
+static void readline_default_bindings PARAMS((void));
+static void reset_default_bindings PARAMS((void));
+
+static int _rl_subseq_result PARAMS((int, Keymap, int, int));
+static int _rl_subseq_getchar PARAMS((int));
+
+/* **************************************************************** */
+/*								    */
+/*			Line editing input utility		    */
+/*								    */
+/* **************************************************************** */
+
+const char *rl_library_version = RL_LIBRARY_VERSION;
+
+int rl_readline_version = RL_READLINE_VERSION;
+
+/* True if this is `real' readline as opposed to some stub substitute. */
+int rl_gnu_readline_p = 1;
+
+/* A pointer to the keymap that is currently in use.
+   By default, it is the standard emacs keymap. */
+Keymap _rl_keymap = emacs_standard_keymap;
+
+
+/* The current style of editing. */
+int rl_editing_mode = emacs_mode;
+
+/* The current insert mode:  input (the default) or overwrite */
+int rl_insert_mode = RL_IM_DEFAULT;
+
+/* Non-zero if we called this function from _rl_dispatch().  It's present
+   so functions can find out whether they were called from a key binding
+   or directly from an application. */
+int rl_dispatching;
+
+/* Non-zero if the previous command was a kill command. */
+int _rl_last_command_was_kill = 0;
+
+/* The current value of the numeric argument specified by the user. */
+int rl_numeric_arg = 1;
+
+/* Non-zero if an argument was typed. */
+int rl_explicit_arg = 0;
+
+/* Temporary value used while generating the argument. */
+int rl_arg_sign = 1;
+
+/* Non-zero means we have been called at least once before. */
+static int rl_initialized;
+
+#if 0
+/* If non-zero, this program is running in an EMACS buffer. */
+static int running_in_emacs;
+#endif
+
+/* Flags word encapsulating the current readline state. */
+int rl_readline_state = RL_STATE_NONE;
+
+/* The current offset in the current input line. */
+int rl_point;
+
+/* Mark in the current input line. */
+int rl_mark;
+
+/* Length of the current input line. */
+int rl_end;
+
+/* Make this non-zero to return the current input_line. */
+int rl_done;
+
+/* The last function executed by readline. */
+rl_command_func_t *rl_last_func = (rl_command_func_t *)NULL;
+
+/* Top level environment for readline_internal (). */
+procenv_t readline_top_level;
+
+/* The streams we interact with. */
+FILE *_rl_in_stream, *_rl_out_stream;
+
+/* The names of the streams that we do input and output to. */
+FILE *rl_instream = (FILE *)NULL;
+FILE *rl_outstream = (FILE *)NULL;
+
+/* Non-zero means echo characters as they are read.  Defaults to no echo;
+   set to 1 if there is a controlling terminal, we can get its attributes,
+   and the attributes include `echo'.  Look at rltty.c:prepare_terminal_settings
+   for the code that sets it. */
+int readline_echoing_p = 0;
+
+/* Current prompt. */
+char *rl_prompt = (char *)NULL;
+int rl_visible_prompt_length = 0;
+
+/* Set to non-zero by calling application if it has already printed rl_prompt
+   and does not want readline to do it the first time. */
 int rl_already_prompted = 0;
-int rl_filename_completion_desired = 0;
-int rl_ignore_completion_duplicates = 0;
-int rl_catch_signals = 1;
-VFunction *rl_redisplay_function = NULL;
-Function *rl_startup_hook = NULL;
-VFunction *rl_completion_display_matches_hook = NULL;
-VFunction *rl_prep_term_function = NULL;
-VFunction *rl_deprep_term_function = NULL;
 
-/*
- * The current prompt string.
- */
-char *rl_prompt = NULL;
-/*
- * This is set to character indicating type of completion being done by
- * rl_complete_internal(); this is available for application completion
- * functions.
- */
-int rl_completion_type = 0;
+/* The number of characters read in order to type this complete command. */
+int rl_key_sequence_length = 0;
 
-/*
- * If more than this number of items results from query for possible
- * completions, we ask user if they are sure to really display the list.
- */
-int rl_completion_query_items = 100;
+/* If non-zero, then this is the address of a function to call just
+   before readline_internal_setup () prints the first prompt. */
+rl_hook_func_t *rl_startup_hook = (rl_hook_func_t *)NULL;
 
-/*
- * List of characters which are word break characters, but should be left
- * in the parsed text when it is passed to the completion function.
- * Shell uses this to help determine what kind of completing to do.
- */
-char *rl_special_prefixes = (char *)NULL;
+/* If non-zero, this is the address of a function to call just before
+   readline_internal_setup () returns and readline_internal starts
+   reading input characters. */
+rl_hook_func_t *rl_pre_input_hook = (rl_hook_func_t *)NULL;
 
-/*
- * This is the character appended to the completed words if at the end of
- * the line. Default is ' ' (a space).
- */
-int rl_completion_append_character = ' ';
+/* What we use internally.  You should always refer to RL_LINE_BUFFER. */
+static char *the_line;
 
-/* stuff below is used internally by libedit for readline emulation */
+/* The character that can generate an EOF.  Really read from
+   the terminal driver... just defaulted here. */
+int _rl_eof_char = CTRL ('D');
 
-/* if not zero, non-unique completions always show list of possible matches */
-static int _rl_complete_show_all = 0;
+/* Non-zero makes this the next keystroke to read. */
+int rl_pending_input = 0;
 
-static History *h = NULL;
-static EditLine *e = NULL;
-static Function *map[256];
-static int el_rl_complete_cmdnum = 0;
+/* Pointer to a useful terminal name. */
+const char *rl_terminal_name = (const char *)NULL;
 
-/* internal functions */
-static unsigned char	 _el_rl_complete(EditLine *, int);
-static unsigned char	 _el_rl_tstp(EditLine *, int);
-static char		*_get_prompt(EditLine *);
-static HIST_ENTRY	*_move_history(int);
-static int		 _history_expand_command(const char *, size_t, size_t,
-    char **);
-static char		*_rl_compat_sub(const char *, const char *,
-    const char *, int);
-static int		 rl_complete_internal(int);
-static int		 _rl_qsort_string_compare(const void *, const void *);
-static int		 _rl_event_read_char(EditLine *, char *);
+/* Non-zero means to always use horizontal scrolling in line display. */
+int _rl_horizontal_scroll_mode = 0;
 
+/* Non-zero means to display an asterisk at the starts of history lines
+   which have been modified. */
+int _rl_mark_modified_lines = 0;  
 
-/* ARGSUSED */
+/* The style of `bell' notification preferred.  This can be set to NO_BELL,
+   AUDIBLE_BELL, or VISIBLE_BELL. */
+int _rl_bell_preference = AUDIBLE_BELL;
+     
+/* String inserted into the line by rl_insert_comment (). */
+char *_rl_comment_begin;
+
+/* Keymap holding the function currently being executed. */
+Keymap rl_executing_keymap;
+
+/* Keymap we're currently using to dispatch. */
+Keymap _rl_dispatching_keymap;
+
+/* Non-zero means to erase entire line, including prompt, on empty input lines. */
+int rl_erase_empty_line = 0;
+
+/* Non-zero means to read only this many characters rather than up to a
+   character bound to accept-line. */
+int rl_num_chars_to_read;
+
+/* Line buffer and maintenence. */
+char *rl_line_buffer = (char *)NULL;
+int rl_line_buffer_len = 0;
+
+/* Key sequence `contexts' */
+_rl_keyseq_cxt *_rl_kscxt = 0;
+
+/* Forward declarations used by the display, termcap, and history code. */
+
+/* **************************************************************** */
+/*								    */
+/*			`Forward' declarations  		    */
+/*								    */
+/* **************************************************************** */
+
+/* Non-zero means do not parse any lines other than comments and
+   parser directives. */
+unsigned char _rl_parsing_conditionalized_out = 0;
+
+/* Non-zero means to convert characters with the meta bit set to
+   escape-prefixed characters so we can indirect through
+   emacs_meta_keymap or vi_escape_keymap. */
+int _rl_convert_meta_chars_to_ascii = 1;
+
+/* Non-zero means to output characters with the meta bit set directly
+   rather than as a meta-prefixed escape sequence. */
+int _rl_output_meta_chars = 0;
+
+/* Non-zero means to look at the termios special characters and bind
+   them to equivalent readline functions at startup. */
+int _rl_bind_stty_chars = 1;
+
+/* **************************************************************** */
+/*								    */
+/*			Top Level Functions			    */
+/*								    */
+/* **************************************************************** */
+
+/* Non-zero means treat 0200 bit in terminal input as Meta bit. */
+int _rl_meta_flag = 0;	/* Forward declaration */
+
+/* Set up the prompt and expand it.  Called from readline() and
+   rl_callback_handler_install (). */
+int
+rl_set_prompt (prompt)
+     const char *prompt;
+{
+  FREE (rl_prompt);
+  rl_prompt = prompt ? savestring (prompt) : (char *)NULL;
+
+  rl_visible_prompt_length = rl_expand_prompt (rl_prompt);
+  return 0;
+}
+  
+/* Read a line of input.  Prompt with PROMPT.  An empty PROMPT means
+   none.  A return value of NULL means that EOF was encountered. */
+char *
+readline (prompt)
+     const char *prompt;
+{
+  char *value;
+
+  /* If we are at EOF return a NULL string. */
+  if (rl_pending_input == EOF)
+    {
+      rl_clear_pending_input ();
+      return ((char *)NULL);
+    }
+
+  rl_set_prompt (prompt);
+
+  rl_initialize ();
+  if (rl_prep_term_function)
+    (*rl_prep_term_function) (_rl_meta_flag);
+
+#if defined (HANDLE_SIGNALS)
+  rl_set_signals ();
+#endif
+
+  value = readline_internal ();
+  if (rl_deprep_term_function)
+    (*rl_deprep_term_function) ();
+
+#if defined (HANDLE_SIGNALS)
+  rl_clear_signals ();
+#endif
+
+  return (value);
+}
+
+#if defined (READLINE_CALLBACKS)
+#  define STATIC_CALLBACK
+#else
+#  define STATIC_CALLBACK static
+#endif
+
+STATIC_CALLBACK void
+readline_internal_setup ()
+{
+  char *nprompt;
+
+  _rl_in_stream = rl_instream;
+  _rl_out_stream = rl_outstream;
+
+  if (rl_startup_hook)
+    (*rl_startup_hook) ();
+
+  /* If we're not echoing, we still want to at least print a prompt, because
+     rl_redisplay will not do it for us.  If the calling application has a
+     custom redisplay function, though, let that function handle it. */
+  if (readline_echoing_p == 0 && rl_redisplay_function == rl_redisplay)
+    {
+      if (rl_prompt && rl_already_prompted == 0)
+	{
+	  nprompt = _rl_strip_prompt (rl_prompt);
+	  fprintf (_rl_out_stream, "%s", nprompt);
+	  fflush (_rl_out_stream);
+	  free (nprompt);
+	}
+    }
+  else
+    {
+      if (rl_prompt && rl_already_prompted)
+	rl_on_new_line_with_prompt ();
+      else
+	rl_on_new_line ();
+      (*rl_redisplay_function) ();
+    }
+
+#if defined (VI_MODE)
+  if (rl_editing_mode == vi_mode)
+    rl_vi_insertion_mode (1, 'i');
+#endif /* VI_MODE */
+
+  if (rl_pre_input_hook)
+    (*rl_pre_input_hook) ();
+}
+
+STATIC_CALLBACK char *
+readline_internal_teardown (eof)
+     int eof;
+{
+  char *temp;
+  HIST_ENTRY *entry;
+
+  /* Restore the original of this history line, iff the line that we
+     are editing was originally in the history, AND the line has changed. */
+  entry = current_history ();
+
+  if (entry && rl_undo_list)
+    {
+      temp = savestring (the_line);
+      rl_revert_line (1, 0);
+      entry = replace_history_entry (where_history (), the_line, (histdata_t)NULL);
+      _rl_free_history_entry (entry);
+
+      strcpy (the_line, temp);
+      free (temp);
+    }
+
+  /* At any rate, it is highly likely that this line has an undo list.  Get
+     rid of it now. */
+  if (rl_undo_list)
+    rl_free_undo_list ();
+
+  /* Restore normal cursor, if available. */
+  _rl_set_insert_mode (RL_IM_INSERT, 0);
+
+  return (eof ? (char *)NULL : savestring (the_line));
+}
+
+void
+_rl_internal_char_cleanup ()
+{
+#if defined (VI_MODE)
+  /* In vi mode, when you exit insert mode, the cursor moves back
+     over the previous character.  We explicitly check for that here. */
+  if (rl_editing_mode == vi_mode && _rl_keymap == vi_movement_keymap)
+    rl_vi_check ();
+#endif /* VI_MODE */
+
+  if (rl_num_chars_to_read && rl_end >= rl_num_chars_to_read)
+    {
+      (*rl_redisplay_function) ();
+      _rl_want_redisplay = 0;
+      rl_newline (1, '\n');
+    }
+
+  if (rl_done == 0)
+    {
+      (*rl_redisplay_function) ();
+      _rl_want_redisplay = 0;
+    }
+
+  /* If the application writer has told us to erase the entire line if
+     the only character typed was something bound to rl_newline, do so. */
+  if (rl_erase_empty_line && rl_done && rl_last_func == rl_newline &&
+      rl_point == 0 && rl_end == 0)
+    _rl_erase_entire_line ();
+}
+
+STATIC_CALLBACK int
+#if defined (READLINE_CALLBACKS)
+readline_internal_char ()
+#else
+readline_internal_charloop ()
+#endif
+{
+  static int lastc, eof_found;
+  int c, code, lk;
+
+  lastc = -1;
+  eof_found = 0;
+
+#if !defined (READLINE_CALLBACKS)
+  while (rl_done == 0)
+    {
+#endif
+      lk = _rl_last_command_was_kill;
+
+      code = setjmp (readline_top_level);
+
+      if (code)
+	{
+	  (*rl_redisplay_function) ();
+	  _rl_want_redisplay = 0;
+	  /* If we get here, we're not being called from something dispatched
+	     from _rl_callback_read_char(), which sets up its own value of
+	     readline_top_level (saving and restoring the old, of course), so
+	     we can just return here. */
+	  if (RL_ISSTATE (RL_STATE_CALLBACK))
+	    return (0);
+	}
+
+      if (rl_pending_input == 0)
+	{
+	  /* Then initialize the argument and number of keys read. */
+	  _rl_reset_argument ();
+	  rl_key_sequence_length = 0;
+	}
+
+      RL_SETSTATE(RL_STATE_READCMD);
+      c = rl_read_key ();
+      RL_UNSETSTATE(RL_STATE_READCMD);
+
+      /* EOF typed to a non-blank line is a <NL>. */
+      if (c == EOF && rl_end)
+	c = NEWLINE;
+
+      /* The character _rl_eof_char typed to blank line, and not as the
+	 previous character is interpreted as EOF. */
+      if (((c == _rl_eof_char && lastc != c) || c == EOF) && !rl_end)
+	{
+#if defined (READLINE_CALLBACKS)
+	  RL_SETSTATE(RL_STATE_DONE);
+	  return (rl_done = 1);
+#else
+	  eof_found = 1;
+	  break;
+#endif
+	}
+
+      lastc = c;
+      _rl_dispatch ((unsigned char)c, _rl_keymap);
+
+      /* If there was no change in _rl_last_command_was_kill, then no kill
+	 has taken place.  Note that if input is pending we are reading
+	 a prefix command, so nothing has changed yet. */
+      if (rl_pending_input == 0 && lk == _rl_last_command_was_kill)
+	_rl_last_command_was_kill = 0;
+
+      _rl_internal_char_cleanup ();
+
+#if defined (READLINE_CALLBACKS)
+      return 0;
+#else
+    }
+
+  return (eof_found);
+#endif
+}
+
+#if defined (READLINE_CALLBACKS)
+static int
+readline_internal_charloop ()
+{
+  int eof = 1;
+
+  while (rl_done == 0)
+    eof = readline_internal_char ();
+  return (eof);
+}
+#endif /* READLINE_CALLBACKS */
+
+/* Read a line of input from the global rl_instream, doing output on
+   the global rl_outstream.
+   If rl_prompt is non-null, then that is our prompt. */
 static char *
-_get_prompt(EditLine *el __attribute__((__unused__)))
+readline_internal ()
 {
-	rl_already_prompted = 1;
-	return (rl_prompt);
+  int eof;
+
+  readline_internal_setup ();
+  eof = readline_internal_charloop ();
+  return (readline_internal_teardown (eof));
 }
 
-
-/*
- * generic function for moving around history
- */
-static HIST_ENTRY *
-_move_history(int op)
-{
-	HistEvent ev;
-	static HIST_ENTRY rl_he;
-
-	if (history(h, &ev, op) != 0)
-		return (HIST_ENTRY *) NULL;
-
-	rl_he.line = ev.str;
-	rl_he.data = NULL;
-
-	return (&rl_he);
-}
-
-
-/*
- * READLINE compatibility stuff
- */
-
-/*
- * initialize rl compat stuff
- */
-int
-rl_initialize(void)
-{
-	HistEvent ev;
-	const LineInfo *li;
-	int i;
-	int editmode = 1;
-	struct termios t;
-
-	if (e != NULL)
-		el_end(e);
-	if (h != NULL)
-		history_end(h);
-
-	if (!rl_instream)
-		rl_instream = stdin;
-	if (!rl_outstream)
-		rl_outstream = stdout;
-
-	/*
-	 * See if we don't really want to run the editor
-	 */
-	if (tcgetattr(fileno(rl_instream), &t) != -1 && (t.c_lflag & ECHO) == 0)
-		editmode = 0;
-
-	e = el_init(rl_readline_name, rl_instream, rl_outstream, stderr);
-
-	if (!editmode)
-		el_set(e, EL_EDITMODE, 0);
-
-	h = history_init();
-	if (!e || !h)
-		return (-1);
-
-	history(h, &ev, H_SETSIZE, INT_MAX);	/* unlimited */
-	history_length = 0;
-	max_input_history = INT_MAX;
-	el_set(e, EL_HIST, history, h);
-
-	/* for proper prompt printing in readline() */
-	rl_prompt = strdup("");
-	if (rl_prompt == NULL) {
-		history_end(h);
-		el_end(e);
-		return -1;
-	}
-	el_set(e, EL_PROMPT, _get_prompt);
-	el_set(e, EL_SIGNAL, rl_catch_signals);
-
-	/* set default mode to "emacs"-style and read setting afterwards */
-	/* so this can be overriden */
-	el_set(e, EL_EDITOR, "emacs");
-	if (rl_terminal_name != NULL)
-		el_set(e, EL_TERMINAL, rl_terminal_name);
-	else
-		el_get(e, EL_TERMINAL, &rl_terminal_name);
-
-	/*
-	 * Word completion - this has to go AFTER rebinding keys
-	 * to emacs-style.
-	 */
-	el_set(e, EL_ADDFN, "rl_complete",
-	    "ReadLine compatible completion function",
-	    _el_rl_complete);
-	el_set(e, EL_BIND, "^I", "rl_complete", NULL);
-
-	/*
-	 * Send TSTP when ^Z is pressed.
-	 */
-	el_set(e, EL_ADDFN, "rl_tstp",
-	    "ReadLine compatible suspend function",
-	    _el_rl_tstp);
-	el_set(e, EL_BIND, "^Z", "rl_tstp", NULL);
-
-	/*
-	 * Find out where the rl_complete function was added; this is
-	 * used later to detect that lastcmd was also rl_complete.
-	 */
-	for(i=EL_NUM_FCNS; i < e->el_map.nfunc; i++) {
-		if (e->el_map.func[i] == _el_rl_complete) {
-			el_rl_complete_cmdnum = i;
-			break;
-		}
-	}
-		
-	/* read settings from configuration file */
-	el_source(e, NULL);
-
-	/*
-	 * Unfortunately, some applications really do use rl_point
-	 * and rl_line_buffer directly.
-	 */
-	li = el_line(e);
-	/* a cheesy way to get rid of const cast. */
-	rl_line_buffer = memchr(li->buffer, *li->buffer, 1);
-	rl_point = rl_end = 0;
-
-	if (rl_startup_hook)
-		(*rl_startup_hook)(NULL, 0);
-
-	return (0);
-}
-
-
-/*
- * read one line from input stream and return it, chomping
- * trailing newline (if there is any)
- */
-char *
-readline(const char *prompt)
-{
-	HistEvent ev;
-	int count;
-	const char *ret;
-	char *buf;
-	static int used_event_hook;
-
-	if (e == NULL || h == NULL)
-		rl_initialize();
-
-	rl_done = 0;
-
-	/* update prompt accordingly to what has been passed */
-	if (!prompt)
-		prompt = "";
-	if (strcmp(rl_prompt, prompt) != 0) {
-		free(rl_prompt);
-		rl_prompt = strdup(prompt);
-		if (rl_prompt == NULL)
-			return NULL;
-	}
-
-	if (rl_pre_input_hook)
-		(*rl_pre_input_hook)(NULL, 0);
-
-	if (rl_event_hook && !(e->el_flags&NO_TTY)) {
-		el_set(e, EL_GETCFN, _rl_event_read_char);
-		used_event_hook = 1;
-	}
-
-	if (!rl_event_hook && used_event_hook) {
-		el_set(e, EL_GETCFN, EL_BUILTIN_GETCFN);
-		used_event_hook = 0;
-	}
-
-	rl_already_prompted = 0;
-
-	/* get one line from input stream */
-	ret = el_gets(e, &count);
-
-	if (ret && count > 0) {
-		int lastidx;
-
-		buf = strdup(ret);
-		if (buf == NULL)
-			return NULL;
-		lastidx = count - 1;
-		if (buf[lastidx] == '\n')
-			buf[lastidx] = '\0';
-	} else
-		buf = NULL;
-
-	history(h, &ev, H_GETSIZE);
-	history_length = ev.num;
-
-	return buf;
-}
-
-/*
- * history functions
- */
-
-/*
- * is normally called before application starts to use
- * history expansion functions
- */
 void
-using_history(void)
+_rl_init_line_state ()
 {
-	if (h == NULL || e == NULL)
-		rl_initialize();
+  rl_point = rl_end = rl_mark = 0;
+  the_line = rl_line_buffer;
+  the_line[0] = 0;
 }
 
-
-/*
- * substitute ``what'' with ``with'', returning resulting string; if
- * globally == 1, substitutes all occurrences of what, otherwise only the
- * first one
- */
-static char *
-_rl_compat_sub(const char *str, const char *what, const char *with,
-    int globally)
+void
+_rl_set_the_line ()
 {
-	const	char	*s;
-	char	*r, *result;
-	size_t	len, with_len, what_len;
-
-	len = strlen(str);
-	with_len = strlen(with);
-	what_len = strlen(what);
-
-	/* calculate length we need for result */
-	s = str;
-	while (*s) {
-		if (*s == *what && !strncmp(s, what, what_len)) {
-			len += with_len - what_len;
-			if (!globally)
-				break;
-			s += what_len;
-		} else
-			s++;
-	}
-	r = result = malloc(len + 1);
-	if (result == NULL)
-		return NULL;
-	s = str;
-	while (*s) {
-		if (*s == *what && !strncmp(s, what, what_len)) {
-			(void)strncpy(r, with, with_len);
-			r += with_len;
-			s += what_len;
-			if (!globally) {
-				(void)strcpy(r, s);
-				return(result);
-			}
-		} else
-			*r++ = *s++;
-	}
-	*r = 0;
-	return(result);
+  the_line = rl_line_buffer;
 }
 
-static	char	*last_search_pat;	/* last !?pat[?] search pattern */
-static	char	*last_search_match;	/* last !?pat[?] that matched */
-
-const char *
-get_history_event(const char *cmd, int *cindex, int qchar)
+#if defined (READLINE_CALLBACKS)
+_rl_keyseq_cxt *
+_rl_keyseq_cxt_alloc ()
 {
-	int idx, sign, sub, num, begin, ret;
-	size_t len;
-	char	*pat;
-	const char *rptr;
-	HistEvent ev;
+  _rl_keyseq_cxt *cxt;
 
-	idx = *cindex;
-	if (cmd[idx++] != history_expansion_char)
-		return(NULL);
+  cxt = (_rl_keyseq_cxt *)xmalloc (sizeof (_rl_keyseq_cxt));
 
-	/* find out which event to take */
-	if (cmd[idx] == history_expansion_char || cmd[idx] == 0) {
-		if (history(h, &ev, H_FIRST) != 0)
-			return(NULL);
-		*cindex = cmd[idx]? (idx + 1):idx;
-		return(ev.str);
-	}
-	sign = 0;
-	if (cmd[idx] == '-') {
-		sign = 1;
-		idx++;
-	}
+  cxt->flags = cxt->subseq_arg = cxt->subseq_retval = 0;
 
-	if ('0' <= cmd[idx] && cmd[idx] <= '9') {
-		HIST_ENTRY *rl_he;
+  cxt->okey = 0;
+  cxt->ocxt = _rl_kscxt;
+  cxt->childval = 42;		/* sentinel value */
 
-		num = 0;
-		while (cmd[idx] && '0' <= cmd[idx] && cmd[idx] <= '9') {
-			num = num * 10 + cmd[idx] - '0';
-			idx++;
-		}
-		if (sign)
-			num = history_length - num + 1;
-
-		if (!(rl_he = history_get(num)))
-			return(NULL);
-
-		*cindex = idx;
-		return(rl_he->line);
-	}
-	sub = 0;
-	if (cmd[idx] == '?') {
-		sub = 1;
-		idx++;
-	}
-	begin = idx;
-	while (cmd[idx]) {
-		if (cmd[idx] == '\n')
-			break;
-		if (sub && cmd[idx] == '?')
-			break;
-		if (!sub && (cmd[idx] == ':' || cmd[idx] == ' '
-				    || cmd[idx] == '\t' || cmd[idx] == qchar))
-			break;
-		idx++;
-	}
-	len = idx - begin;
-	if (sub && cmd[idx] == '?')
-		idx++;
-	if (sub && len == 0 && last_search_pat && *last_search_pat)
-		pat = last_search_pat;
-	else if (len == 0)
-		return(NULL);
-	else {
-		if ((pat = malloc(len + 1)) == NULL)
-			return NULL;
-		(void)strncpy(pat, cmd + begin, len);
-		pat[len] = '\0';
-	}
-
-	if (history(h, &ev, H_CURR) != 0) {
-		if (pat != last_search_pat)
-			free(pat);
-		return (NULL);
-	}
-	num = ev.num;
-
-	if (sub) {
-		if (pat != last_search_pat) {
-			if (last_search_pat)
-				free(last_search_pat);
-			last_search_pat = pat;
-		}
-		ret = history_search(pat, -1);
-	} else
-		ret = history_search_prefix(pat, -1);
-
-	if (ret == -1) {
-		/* restore to end of list on failed search */
-		history(h, &ev, H_FIRST);
-		(void)fprintf(rl_outstream, "%s: Event not found\n", pat);
-		if (pat != last_search_pat)
-			free(pat);
-		return(NULL);
-	}
-
-	if (sub && len) {
-		if (last_search_match && last_search_match != pat)
-			free(last_search_match);
-		last_search_match = pat;
-	}
-
-	if (pat != last_search_pat)
-		free(pat);
-
-	if (history(h, &ev, H_CURR) != 0)
-		return(NULL);
-	*cindex = idx;
-	rptr = ev.str;
-
-	/* roll back to original position */
-	(void)history(h, &ev, H_SET, num);
-
-	return rptr;
+  return cxt;
 }
 
-/*
- * the real function doing history expansion - takes as argument command
- * to do and data upon which the command should be executed
- * does expansion the way I've understood readline documentation
- *
- * returns 0 if data was not modified, 1 if it was and 2 if the string
- * should be only printed and not executed; in case of error,
- * returns -1 and *result points to NULL
- * it's callers responsibility to free() string returned in *result
- */
-static int
-_history_expand_command(const char *command, size_t offs, size_t cmdlen,
-    char **result)
+void
+_rl_keyseq_cxt_dispose (cxt)
+    _rl_keyseq_cxt *cxt;
 {
-	char *tmp, *search = NULL, *aptr;
-	const char *ptr, *cmd;
-	static char *from = NULL, *to = NULL;
-	int start, end, idx, has_mods = 0;
-	int p_on = 0, g_on = 0;
-
-	*result = NULL;
-	aptr = NULL;
-	ptr = NULL;
-
-	/* First get event specifier */
-	idx = 0;
-
-	if (strchr(":^*$", command[offs + 1])) {
-		char str[4];
-		/*
-		* "!:" is shorthand for "!!:".
-		* "!^", "!*" and "!$" are shorthand for
-		* "!!:^", "!!:*" and "!!:$" respectively.
-		*/
-		str[0] = str[1] = '!';
-		str[2] = '0';
-		ptr = get_history_event(str, &idx, 0);
-		idx = (command[offs + 1] == ':')? 1:0;
-		has_mods = 1;
-	} else {
-		if (command[offs + 1] == '#') {
-			/* use command so far */
-			if ((aptr = malloc(offs + 1)) == NULL)
-				return -1;
-			(void)strncpy(aptr, command, offs);
-			aptr[offs] = '\0';
-			idx = 1;
-		} else {
-			int	qchar;
-
-			qchar = (offs > 0 && command[offs - 1] == '"')? '"':0;
-			ptr = get_history_event(command + offs, &idx, qchar);
-		}
-		has_mods = command[offs + idx] == ':';
-	}
-
-	if (ptr == NULL && aptr == NULL)
-		return(-1);
-
-	if (!has_mods) {
-		*result = strdup(aptr? aptr : ptr);
-		if (aptr)
-			free(aptr);
-		return(1);
-	}
-
-	cmd = command + offs + idx + 1;
-
-	/* Now parse any word designators */
-
-	if (*cmd == '%')	/* last word matched by ?pat? */
-		tmp = strdup(last_search_match? last_search_match:"");
-	else if (strchr("^*$-0123456789", *cmd)) {
-		start = end = -1;
-		if (*cmd == '^')
-			start = end = 1, cmd++;
-		else if (*cmd == '$')
-			start = -1, cmd++;
-		else if (*cmd == '*')
-			start = 1, cmd++;
-	       else if (*cmd == '-' || isdigit((unsigned char) *cmd)) {
-			start = 0;
-			while (*cmd && '0' <= *cmd && *cmd <= '9')
-				start = start * 10 + *cmd++ - '0';
-
-			if (*cmd == '-') {
-				if (isdigit((unsigned char) cmd[1])) {
-					cmd++;
-					end = 0;
-					while (*cmd && '0' <= *cmd && *cmd <= '9')
-						end = end * 10 + *cmd++ - '0';
-				} else if (cmd[1] == '$') {
-					cmd += 2;
-					end = -1;
-				} else {
-					cmd++;
-					end = -2;
-				}
-			} else if (*cmd == '*')
-				end = -1, cmd++;
-			else
-				end = start;
-		}
-		tmp = history_arg_extract(start, end, aptr? aptr:ptr);
-		if (tmp == NULL) {
-			(void)fprintf(rl_outstream, "%s: Bad word specifier",
-			    command + offs + idx);
-			if (aptr)
-				free(aptr);
-			return(-1);
-		}
-	} else
-		tmp = strdup(aptr? aptr:ptr);
-
-	if (aptr)
-		free(aptr);
-
-	if (*cmd == 0 || (cmd - (command + offs) >= cmdlen)) {
-		*result = tmp;
-		return(1);
-	}
-
-	for (; *cmd; cmd++) {
-		if (*cmd == ':')
-			continue;
-		else if (*cmd == 'h') {		/* remove trailing path */
-			if ((aptr = strrchr(tmp, '/')) != NULL)
-				*aptr = 0;
-		} else if (*cmd == 't') {	/* remove leading path */
-			if ((aptr = strrchr(tmp, '/')) != NULL) {
-				aptr = strdup(aptr + 1);
-				free(tmp);
-				tmp = aptr;
-			}
-		} else if (*cmd == 'r') {	/* remove trailing suffix */
-			if ((aptr = strrchr(tmp, '.')) != NULL)
-				*aptr = 0;
-		} else if (*cmd == 'e') {	/* remove all but suffix */
-			if ((aptr = strrchr(tmp, '.')) != NULL) {
-				aptr = strdup(aptr);
-				free(tmp);
-				tmp = aptr;
-			}
-		} else if (*cmd == 'p')		/* print only */
-			p_on = 1;
-		else if (*cmd == 'g')
-			g_on = 2;
-		else if (*cmd == 's' || *cmd == '&') {
-			char *what, *with, delim;
-			size_t len, from_len;
-			size_t size;
-
-			if (*cmd == '&' && (from == NULL || to == NULL))
-				continue;
-			else if (*cmd == 's') {
-				delim = *(++cmd), cmd++;
-				size = 16;
-				what = realloc(from, size);
-				if (what == NULL) {
-					free(from);
-					return 0;
-				}
-				len = 0;
-				for (; *cmd && *cmd != delim; cmd++) {
-					if (*cmd == '\\' && cmd[1] == delim)
-						cmd++;
-					if (len >= size) {
-						char *nwhat;
-						nwhat = realloc(what,
-								(size <<= 1));
-						if (nwhat == NULL) {
-							free(what);
-							return 0;
-						}
-						what = nwhat;
-					}
-					what[len++] = *cmd;
-				}
-				what[len] = '\0';
-				from = what;
-				if (*what == '\0') {
-					free(what);
-					if (search) {
-						from = strdup(search);
-						if (from == NULL)
-							return 0;
-					} else {
-						from = NULL;
-						return (-1);
-					}
-				}
-				cmd++;	/* shift after delim */
-				if (!*cmd)
-					continue;
-
-				size = 16;
-				with = realloc(to, size);
-				if (with == NULL) {
-					free(to);
-					return -1;
-				}
-				len = 0;
-				from_len = strlen(from);
-				for (; *cmd && *cmd != delim; cmd++) {
-					if (len + from_len + 1 >= size) {
-						char *nwith;
-						size += from_len + 1;
-						nwith = realloc(with, size);
-						if (nwith == NULL) {
-							free(with);
-							return -1;
-						}
-						with = nwith;
-					}
-					if (*cmd == '&') {
-						/* safe */
-						(void)strcpy(&with[len], from);
-						len += from_len;
-						continue;
-					}
-					if (*cmd == '\\'
-					    && (*(cmd + 1) == delim
-						|| *(cmd + 1) == '&'))
-						cmd++;
-					with[len++] = *cmd;
-				}
-				with[len] = '\0';
-				to = with;
-			}
-
-			aptr = _rl_compat_sub(tmp, from, to, g_on);
-			if (aptr) {
-				free(tmp);
-				tmp = aptr;
-			}
-			g_on = 0;
-		}
-	}
-	*result = tmp;
-	return (p_on? 2:1);
+  free (cxt);
 }
 
-
-/*
- * csh-style history expansion
- */
-int
-history_expand(char *str, char **output)
+void
+_rl_keyseq_chain_dispose ()
 {
-	int ret = 0;
-	size_t idx, i, size;
-	char *tmp, *result;
+  _rl_keyseq_cxt *cxt;
 
-	if (h == NULL || e == NULL)
-		rl_initialize();
-
-	if (history_expansion_char == 0) {
-		*output = strdup(str);
-		return(0);
-	}
-
-	*output = NULL;
-	if (str[0] == history_subst_char) {
-		/* ^foo^foo2^ is equivalent to !!:s^foo^foo2^ */
-		*output = malloc(strlen(str) + 4 + 1);
-		if (*output == NULL)
-			return 0;
-		(*output)[0] = (*output)[1] = history_expansion_char;
-		(*output)[2] = ':';
-		(*output)[3] = 's';
-		(void)strcpy((*output) + 4, str);
-		str = *output;
-	} else {
-		*output = strdup(str);
-		if (*output == NULL)
-			return 0;
-	}
-
-#define ADD_STRING(what, len)						\
-	{								\
-		if (idx + len + 1 > size) {				\
-			char *nresult = realloc(result, (size += len + 1));\
-			if (nresult == NULL) {				\
-				free(*output);				\
-				return 0;				\
-			}						\
-			result = nresult;				\
-		}							\
-		(void)strncpy(&result[idx], what, len);			\
-		idx += len;						\
-		result[idx] = '\0';					\
-	}
-
-	result = NULL;
-	size = idx = 0;
-	for (i = 0; str[i];) {
-		int qchar, loop_again;
-		size_t len, start, j;
-
-		qchar = 0;
-		loop_again = 1;
-		start = j = i;
-loop:
-		for (; str[j]; j++) {
-			if (str[j] == '\\' &&
-			    str[j + 1] == history_expansion_char) {
-				(void)strcpy(&str[j], &str[j + 1]);
-				continue;
-			}
-			if (!loop_again) {
-				if (isspace((unsigned char) str[j])
-				    || str[j] == qchar)
-					break;
-			}
-			if (str[j] == history_expansion_char
-			    && !strchr(history_no_expand_chars, str[j + 1])
-			    && (!history_inhibit_expansion_function ||
-			    (*history_inhibit_expansion_function)(str,
-			    (int)j) == 0))
-				break;
-		}
-
-		if (str[j] && loop_again) {
-			i = j;
-			qchar = (j > 0 && str[j - 1] == '"' )? '"':0;
-			j++;
-			if (str[j] == history_expansion_char)
-				j++;
-			loop_again = 0;
-			goto loop;
-		}
-		len = i - start;
-		tmp = &str[start];
-		ADD_STRING(tmp, len);
-
-		if (str[i] == '\0' || str[i] != history_expansion_char) {
-			len = j - i;
-			tmp = &str[i];
-			ADD_STRING(tmp, len);
-			if (start == 0)
-				ret = 0;
-			else
-				ret = 1;
-			break;
-		}
-		ret = _history_expand_command (str, i, (j - i), &tmp);
-		if (ret > 0 && tmp) {
-			len = strlen(tmp);
-			ADD_STRING(tmp, len);
-			free(tmp);
-		}
-		i = j;
-	}
-
-	/* ret is 2 for "print only" option */
-	if (ret == 2) {
-		add_history(result);
-#ifdef GDB_411_HACK
-		/* gdb 4.11 has been shipped with readline, where */
-		/* history_expand() returned -1 when the line	  */
-		/* should not be executed; in readline 2.1+	  */
-		/* it should return 2 in such a case		  */
-		ret = -1;
+  while (_rl_kscxt)
+    {
+      cxt = _rl_kscxt;
+      _rl_kscxt = _rl_kscxt->ocxt;
+      _rl_keyseq_cxt_dispose (cxt);
+    }
+}
 #endif
-	}
-	free(*output);
-	*output = result;
 
-	return (ret);
-}
-
-/*
-* Return a string consisting of arguments of "str" from "start" to "end".
-*/
-char *
-history_arg_extract(int start, int end, const char *str)
+static int
+_rl_subseq_getchar (key)
+     int key;
 {
-	size_t  i, len, max;
-	char	**arr, *result;
+  int k;
 
-	arr = history_tokenize(str);
-	if (!arr)
-		return(NULL);
-	if (arr && *arr == NULL) {
-		free(arr);
-		return(NULL);
-	}
+  if (key == ESC)
+    RL_SETSTATE(RL_STATE_METANEXT);
+  RL_SETSTATE(RL_STATE_MOREINPUT);
+  k = rl_read_key ();
+  RL_UNSETSTATE(RL_STATE_MOREINPUT);
+  if (key == ESC)
+    RL_UNSETSTATE(RL_STATE_METANEXT);
 
-	for (max = 0; arr[max]; max++)
-		continue;
-	max--;
-
-	if (start == '$')
-		start = max;
-	if (end == '$')
-		end = max;
-	if (end < 0)
-		end = max + end + 1;
-	if (start < 0)
-		start = end;
-
-	if (start < 0 || end < 0 || start > max || end > max || start > end)
-		return(NULL);
-
-	for (i = start, len = 0; i <= end; i++)
-		len += strlen(arr[i]) + 1;
-	len++;
-	result = malloc(len);
-	if (result == NULL)
-		return NULL;
-
-	for (i = start, len = 0; i <= end; i++) {
-		(void)strcpy(result + len, arr[i]);
-		len += strlen(arr[i]);
-		if (i < end)
-			result[len++] = ' ';
-	}
-	result[len] = 0;
-
-	for (i = 0; arr[i]; i++)
-		free(arr[i]);
-	free(arr);
-
-	return(result);
+  return k;
 }
 
-/*
- * Parse the string into individual tokens,
- * similar to how shell would do it.
- */
-char **
-history_tokenize(const char *str)
-{
-	int size = 1, idx = 0, i, start;
-	size_t len;
-	char **result = NULL, *temp, delim = '\0';
-
-	for (i = 0; str[i];) {
-		while (isspace((unsigned char) str[i]))
-			i++;
-		start = i;
-		for (; str[i];) {
-			if (str[i] == '\\') {
-				if (str[i+1] != '\0')
-					i++;
-			} else if (str[i] == delim)
-				delim = '\0';
-			else if (!delim &&
-				    (isspace((unsigned char) str[i]) ||
-				strchr("()<>;&|$", str[i])))
-				break;
-			else if (!delim && strchr("'`\"", str[i]))
-				delim = str[i];
-			if (str[i])
-				i++;
-		}
-
-		if (idx + 2 >= size) {
-			char **nresult;
-			size <<= 1;
-			nresult = realloc(result, size * sizeof(char *));
-			if (nresult == NULL) {
-				free(result);
-				return NULL;
-			}
-			result = nresult;
-		}
-		len = i - start;
-		temp = malloc(len + 1);
-		if (temp == NULL) {
-			for (i = 0; i < idx; i++)
-				free(result[i]);
-			free(result);
-			return NULL;
-		}
-		(void)strncpy(temp, &str[start], len);
-		temp[len] = '\0';
-		result[idx++] = temp;
-		result[idx] = NULL;
-		if (str[i])
-			i++;
-	}
-	return (result);
-}
-
-
-/*
- * limit size of history record to ``max'' events
- */
-void
-stifle_history(int max)
-{
-	HistEvent ev;
-
-	if (h == NULL || e == NULL)
-		rl_initialize();
-
-	if (history(h, &ev, H_SETSIZE, max) == 0)
-		max_input_history = max;
-}
-
-
-/*
- * "unlimit" size of history - set the limit to maximum allowed int value
- */
+#if defined (READLINE_CALLBACKS)
 int
-unstifle_history(void)
+_rl_dispatch_callback (cxt)
+     _rl_keyseq_cxt *cxt;
 {
-	HistEvent ev;
-	int omax;
-
-	history(h, &ev, H_SETSIZE, INT_MAX);
-	omax = max_input_history;
-	max_input_history = INT_MAX;
-	return (omax);		/* some value _must_ be returned */
-}
-
-
-int
-history_is_stifled(void)
-{
-
-	/* cannot return true answer */
-	return (max_input_history != INT_MAX);
-}
-
-
-/*
- * read history from a file given
- */
-int
-read_history(const char *filename)
-{
-	HistEvent ev;
-
-	if (h == NULL || e == NULL)
-		rl_initialize();
-	return (history(h, &ev, H_LOAD, filename));
-}
-
-
-/*
- * write history to a file given
- */
-int
-write_history(const char *filename)
-{
-	HistEvent ev;
-
-	if (h == NULL || e == NULL)
-		rl_initialize();
-	return (history(h, &ev, H_SAVE, filename));
-}
-
-
-/*
- * returns history ``num''th event
- *
- * returned pointer points to static variable
- */
-HIST_ENTRY *
-history_get(int num)
-{
-	static HIST_ENTRY she;
-	HistEvent ev;
-	int curr_num;
-
-	if (h == NULL || e == NULL)
-		rl_initialize();
-
-	/* save current position */
-	if (history(h, &ev, H_CURR) != 0)
-		return (NULL);
-	curr_num = ev.num;
-
-	/* start from most recent */
-	if (history(h, &ev, H_FIRST) != 0)
-		return (NULL);	/* error */
-
-	/* look backwards for event matching specified offset */
-	if (history(h, &ev, H_NEXT_EVENT, num))
-		return (NULL);
-
-	she.line = ev.str;
-	she.data = NULL;
-
-	/* restore pointer to where it was */
-	(void)history(h, &ev, H_SET, curr_num);
-
-	return (&she);
-}
-
-
-/*
- * add the line to history table
- */
-int
-add_history(const char *line)
-{
-	HistEvent ev;
-
-	if (h == NULL || e == NULL)
-		rl_initialize();
-
-	(void)history(h, &ev, H_ENTER, line);
-	if (history(h, &ev, H_GETSIZE) == 0)
-		history_length = ev.num;
-
-	return (!(history_length > 0)); /* return 0 if all is okay */
-}
-
-
-/*
- * clear the history list - delete all entries
- */
-void
-clear_history(void)
-{
-	HistEvent ev;
-
-	history(h, &ev, H_CLEAR);
-}
-
-
-/*
- * returns offset of the current history event
- */
-int
-where_history(void)
-{
-	HistEvent ev;
-	int curr_num, off;
-
-	if (history(h, &ev, H_CURR) != 0)
-		return (0);
-	curr_num = ev.num;
-
-	history(h, &ev, H_FIRST);
-	off = 1;
-	while (ev.num != curr_num && history(h, &ev, H_NEXT) == 0)
-		off++;
-
-	return (off);
-}
-
-
-/*
- * returns current history event or NULL if there is no such event
- */
-HIST_ENTRY *
-current_history(void)
-{
-
-	return (_move_history(H_CURR));
-}
-
-
-/*
- * returns total number of bytes history events' data are using
- */
-int
-history_total_bytes(void)
-{
-	HistEvent ev;
-	int curr_num, size;
-
-	if (history(h, &ev, H_CURR) != 0)
-		return (-1);
-	curr_num = ev.num;
-
-	history(h, &ev, H_FIRST);
-	size = 0;
-	do
-		size += strlen(ev.str);
-	while (history(h, &ev, H_NEXT) == 0);
-
-	/* get to the same position as before */
-	history(h, &ev, H_PREV_EVENT, curr_num);
-
-	return (size);
-}
-
-
-/*
- * sets the position in the history list to ``pos''
- */
-int
-history_set_pos(int pos)
-{
-	HistEvent ev;
-	int curr_num;
-
-	if (pos > history_length || pos < 0)
-		return (-1);
-
-	history(h, &ev, H_CURR);
-	curr_num = ev.num;
-
-	if (history(h, &ev, H_SET, pos)) {
-		history(h, &ev, H_SET, curr_num);
-		return(-1);
-	}
-	return (0);
-}
-
-
-/*
- * returns previous event in history and shifts pointer accordingly
- */
-HIST_ENTRY *
-previous_history(void)
-{
-
-	return (_move_history(H_PREV));
-}
-
-
-/*
- * returns next event in history and shifts pointer accordingly
- */
-HIST_ENTRY *
-next_history(void)
-{
-
-	return (_move_history(H_NEXT));
-}
-
-
-/*
- * searches for first history event containing the str
- */
-int
-history_search(const char *str, int direction)
-{
-	HistEvent ev;
-	const char *strp;
-	int curr_num;
-
-	if (history(h, &ev, H_CURR) != 0)
-		return (-1);
-	curr_num = ev.num;
-
-	for (;;) {
-		if ((strp = strstr(ev.str, str)) != NULL)
-			return (int) (strp - ev.str);
-		if (history(h, &ev, direction < 0 ? H_NEXT:H_PREV) != 0)
-			break;
-	}
-	history(h, &ev, H_SET, curr_num);
-	return (-1);
-}
-
-
-/*
- * searches for first history event beginning with str
- */
-int
-history_search_prefix(const char *str, int direction)
-{
-	HistEvent ev;
-
-	return (history(h, &ev, direction < 0? H_PREV_STR:H_NEXT_STR, str));
-}
-
-
-/*
- * search for event in history containing str, starting at offset
- * abs(pos); continue backward, if pos<0, forward otherwise
- */
-/* ARGSUSED */
-int
-history_search_pos(const char *str,
-		   int direction __attribute__((__unused__)), int pos)
-{
-	HistEvent ev;
-	int curr_num, off;
-
-	off = (pos > 0) ? pos : -pos;
-	pos = (pos > 0) ? 1 : -1;
-
-	if (history(h, &ev, H_CURR) != 0)
-		return (-1);
-	curr_num = ev.num;
-
-	if (history_set_pos(off) != 0 || history(h, &ev, H_CURR) != 0)
-		return (-1);
-
-
-	for (;;) {
-		if (strstr(ev.str, str))
-			return (off);
-		if (history(h, &ev, (pos < 0) ? H_PREV : H_NEXT) != 0)
-			break;
-	}
-
-	/* set "current" pointer back to previous state */
-	history(h, &ev, (pos < 0) ? H_NEXT_EVENT : H_PREV_EVENT, curr_num);
-
-	return (-1);
-}
-
-
-/********************************/
-/* completion functions */
-
-/*
- * does tilde expansion of strings of type ``~user/foo''
- * if ``user'' isn't valid user name or ``txt'' doesn't start
- * w/ '~', returns pointer to strdup()ed copy of ``txt''
- *
- * it's callers's responsibility to free() returned string
- */
-char *
-tilde_expand(char *txt)
-{
-	struct passwd *pass;
-	char *temp;
-	size_t len = 0;
-
-	if (txt[0] != '~')
-		return (strdup(txt));
-
-	temp = strchr(txt + 1, '/');
-	if (temp == NULL) {
-		temp = strdup(txt + 1);
-		if (temp == NULL)
-			return NULL;
-	} else {
-		len = temp - txt + 1;	/* text until string after slash */
-		temp = malloc(len);
-		if (temp == NULL)
-			return NULL;
-		(void)strncpy(temp, txt + 1, len - 2);
-		temp[len - 2] = '\0';
-	}
-	pass = getpwnam(temp);
-	free(temp);		/* value no more needed */
-	if (pass == NULL)
-		return (strdup(txt));
-
-	/* update pointer txt to point at string immedially following */
-	/* first slash */
-	txt += len;
-
-	temp = malloc(strlen(pass->pw_dir) + 1 + strlen(txt) + 1);
-	if (temp == NULL)
-		return NULL;
-	(void)sprintf(temp, "%s/%s", pass->pw_dir, txt);
-
-	return (temp);
-}
-
-
-/*
- * return first found file name starting by the ``text'' or NULL if no
- * such file can be found
- * value of ``state'' is ignored
- *
- * it's caller's responsibility to free returned string
- */
-char *
-filename_completion_function(const char *text, int state)
-{
-	static DIR *dir = NULL;
-	static char *filename = NULL, *dirname = NULL;
-	static size_t filename_len = 0;
-	struct dirent *entry;
-	char *temp;
-	size_t len;
-
-	if (state == 0 || dir == NULL) {
-		temp = strrchr(text, '/');
-		if (temp) {
-			char *nptr;
-			temp++;
-			nptr = realloc(filename, strlen(temp) + 1);
-			if (nptr == NULL) {
-				free(filename);
-				return NULL;
-			}
-			filename = nptr;
-			(void)strcpy(filename, temp);
-			len = temp - text;	/* including last slash */
-			nptr = realloc(dirname, len + 1);
-			if (nptr == NULL) {
-				free(filename);
-				return NULL;
-			}
-			dirname = nptr;
-			(void)strncpy(dirname, text, len);
-			dirname[len] = '\0';
-		} else {
-			if (*text == 0)
-				filename = NULL;
-			else {
-				filename = strdup(text);
-				if (filename == NULL)
-					return NULL;
-			}
-			dirname = NULL;
-		}
-
-		/* support for ``~user'' syntax */
-		if (dirname && *dirname == '~') {
-			char *nptr;
-			temp = tilde_expand(dirname);
-			if (temp == NULL)
-				return NULL;
-			nptr = realloc(dirname, strlen(temp) + 1);
-			if (nptr == NULL) {
-				free(dirname);
-				return NULL;
-			}
-			dirname = nptr;
-			(void)strcpy(dirname, temp);	/* safe */
-			free(temp);	/* no longer needed */
-		}
-		/* will be used in cycle */
-		filename_len = filename ? strlen(filename) : 0;
-
-		if (dir != NULL) {
-			(void)closedir(dir);
-			dir = NULL;
-		}
-		dir = opendir(dirname ? dirname : ".");
-		if (!dir)
-			return (NULL);	/* cannot open the directory */
-	}
-	/* find the match */
-	while ((entry = readdir(dir)) != NULL) {
-		/* skip . and .. */
-		if (entry->d_name[0] == '.' && (!entry->d_name[1]
-		    || (entry->d_name[1] == '.' && !entry->d_name[2])))
-			continue;
-		if (filename_len == 0)
-			break;
-		/* otherwise, get first entry where first */
-		/* filename_len characters are equal	  */
-		if (entry->d_name[0] == filename[0]
-#if defined(__SVR4) || defined(__linux__)
-		    && strlen(entry->d_name) >= filename_len
+  int nkey, r;
+
+  /* For now */
+#if 1
+  /* The first time this context is used, we want to read input and dispatch
+     on it.  When traversing the chain of contexts back `up', we want to use
+     the value from the next context down.  We're simulating recursion using
+     a chain of contexts. */
+  if ((cxt->flags & KSEQ_DISPATCHED) == 0)
+    {
+      nkey = _rl_subseq_getchar (cxt->okey);
+      r = _rl_dispatch_subseq (nkey, cxt->dmap, cxt->subseq_arg);
+      cxt->flags |= KSEQ_DISPATCHED;
+    }
+  else
+    r = cxt->childval;
 #else
-		    && entry->d_namlen >= filename_len
+  r = _rl_dispatch_subseq (nkey, cxt->dmap, cxt->subseq_arg);
 #endif
-		    && strncmp(entry->d_name, filename,
-			filename_len) == 0)
-			break;
-	}
 
-	if (entry) {		/* match found */
+  /* For now */
+  r = _rl_subseq_result (r, cxt->oldmap, cxt->okey, (cxt->flags & KSEQ_SUBSEQ));
 
-		struct stat stbuf;
-#if defined(__SVR4) || defined(__linux__)
-		len = strlen(entry->d_name) +
-#else
-		len = entry->d_namlen +
+  if (r == 0)			/* success! */
+    {
+      _rl_keyseq_chain_dispose ();
+      RL_UNSETSTATE (RL_STATE_MULTIKEY);
+      return r;
+    }
+
+  if (r != -3)			/* magic value that says we added to the chain */
+    _rl_kscxt = cxt->ocxt;
+  if (_rl_kscxt)
+    _rl_kscxt->childval = r;
+  if (r != -3)
+    _rl_keyseq_cxt_dispose (cxt);
+
+  return r;
+}
+#endif /* READLINE_CALLBACKS */
+  
+/* Do the command associated with KEY in MAP.
+   If the associated command is really a keymap, then read
+   another key, and dispatch into that map. */
+int
+_rl_dispatch (key, map)
+     register int key;
+     Keymap map;
+{
+  _rl_dispatching_keymap = map;
+  return _rl_dispatch_subseq (key, map, 0);
+}
+
+int
+_rl_dispatch_subseq (key, map, got_subseq)
+     register int key;
+     Keymap map;
+     int got_subseq;
+{
+  int r, newkey;
+  char *macro;
+  rl_command_func_t *func;
+#if defined (READLINE_CALLBACKS)
+  _rl_keyseq_cxt *cxt;
 #endif
-		    ((dirname) ? strlen(dirname) : 0) + 1 + 1;
-		temp = malloc(len);
-		if (temp == NULL)
-			return NULL;
-		(void)sprintf(temp, "%s%s",
-		    dirname ? dirname : "", entry->d_name);	/* safe */
 
-		/* test, if it's directory */
-		if (stat(temp, &stbuf) == 0 && S_ISDIR(stbuf.st_mode))
-			strcat(temp, "/");	/* safe */
-	} else {
-		(void)closedir(dir);
-		dir = NULL;
-		temp = NULL;
+  if (META_CHAR (key) && _rl_convert_meta_chars_to_ascii)
+    {
+      if (map[ESC].type == ISKMAP)
+	{
+	  if (RL_ISSTATE (RL_STATE_MACRODEF))
+	    _rl_add_macro_char (ESC);
+	  map = FUNCTION_TO_KEYMAP (map, ESC);
+	  key = UNMETA (key);
+	  rl_key_sequence_length += 2;
+	  return (_rl_dispatch (key, map));
 	}
+      else
+	rl_ding ();
+      return 0;
+    }
 
-	return (temp);
-}
+  if (RL_ISSTATE (RL_STATE_MACRODEF))
+    _rl_add_macro_char (key);
 
+  r = 0;
+  switch (map[key].type)
+    {
+    case ISFUNC:
+      func = map[key].function;
+      if (func)
+	{
+	  /* Special case rl_do_lowercase_version (). */
+	  if (func == rl_do_lowercase_version)
+	    return (_rl_dispatch (_rl_to_lower (key), map));
 
-/*
- * a completion generator for usernames; returns _first_ username
- * which starts with supplied text
- * text contains a partial username preceded by random character
- * (usually '~'); state is ignored
- * it's callers responsibility to free returned value
- */
-char *
-username_completion_function(const char *text, int state)
-{
-	struct passwd *pwd;
+	  rl_executing_keymap = map;
 
-	if (text[0] == '\0')
-		return (NULL);
+	  rl_dispatching = 1;
+	  RL_SETSTATE(RL_STATE_DISPATCHING);
+	  r = (*map[key].function)(rl_numeric_arg * rl_arg_sign, key);
+	  RL_UNSETSTATE(RL_STATE_DISPATCHING);
+	  rl_dispatching = 0;
 
-	if (*text == '~')
-		text++;
-
-	if (state == 0)
-		setpwent();
-
-	while ((pwd = getpwent()) && text[0] == pwd->pw_name[0]
-	    && strcmp(text, pwd->pw_name) == 0);
-
-	if (pwd == NULL) {
-		endpwent();
-		return (NULL);
+	  /* If we have input pending, then the last command was a prefix
+	     command.  Don't change the state of rl_last_func.  Otherwise,
+	     remember the last command executed in this variable. */
+	  if (rl_pending_input == 0 && map[key].function != rl_digit_argument)
+	    rl_last_func = map[key].function;
 	}
-	return (strdup(pwd->pw_name));
-}
-
-
-/*
- * el-compatible wrapper around rl_complete; needed for key binding
- */
-/* ARGSUSED */
-static unsigned char
-_el_rl_complete(EditLine *el __attribute__((__unused__)), int ch)
-{
-	return (unsigned char) rl_complete(0, ch);
-}
-
-/*
- * el-compatible wrapper to send TSTP on ^Z
- */
-/* ARGSUSED */
-static unsigned char
-_el_rl_tstp(EditLine *el __attribute__((__unused__)), int ch __attribute__((__unused__)))
-{
-	(void)kill(0, SIGTSTP);
-	return CC_NORM;
-}
-
-/*
- * returns list of completions for text given
- */
-char **
-completion_matches(const char *text, CPFunction *genfunc)
-{
-	char **match_list = NULL, *retstr, *prevstr;
-	size_t match_list_len, max_equal, which, i;
-	size_t matches;
-
-	if (h == NULL || e == NULL)
-		rl_initialize();
-
-	matches = 0;
-	match_list_len = 1;
-	while ((retstr = (*genfunc) (text, (int)matches)) != NULL) {
-		/* allow for list terminator here */
-		if (matches + 3 >= match_list_len) {
-			char **nmatch_list;
-			while (matches + 3 >= match_list_len)
-				match_list_len <<= 1;
-			nmatch_list = realloc(match_list,
-			    match_list_len * sizeof(char *));
-			if (nmatch_list == NULL) {
-				free(match_list);
-				return NULL;
-			}
-			match_list = nmatch_list;
-
-		}
-		match_list[++matches] = retstr;
+      else if (map[ANYOTHERKEY].function)
+	{
+	  /* OK, there's no function bound in this map, but there is a
+	     shadow function that was overridden when the current keymap
+	     was created.  Return -2 to note  that. */
+	  _rl_unget_char  (key);
+	  return -2;
 	}
-
-	if (!match_list)
-		return NULL;	/* nothing found */
-
-	/* find least denominator and insert it to match_list[0] */
-	which = 2;
-	prevstr = match_list[1];
-	max_equal = strlen(prevstr);
-	for (; which <= matches; which++) {
-		for (i = 0; i < max_equal &&
-		    prevstr[i] == match_list[which][i]; i++)
-			continue;
-		max_equal = i;
+      else if (got_subseq)
+	{
+	  /* Return -1 to note that we're in a subsequence, but  we don't
+	     have a matching key, nor was one overridden.  This means
+	     we need to back up the recursion chain and find the last
+	     subsequence that is bound to a function. */
+	  _rl_unget_char (key);
+	  return -1;
 	}
-
-	retstr = malloc(max_equal + 1);
-	if (retstr == NULL) {
-		free(match_list);
-		return NULL;
+      else
+	{
+#if defined (READLINE_CALLBACKS)
+	  RL_UNSETSTATE (RL_STATE_MULTIKEY);
+	  _rl_keyseq_chain_dispose ();
+#endif
+	  _rl_abort_internal ();
+	  return -1;
 	}
-	(void)strncpy(retstr, match_list[1], max_equal);
-	retstr[max_equal] = '\0';
-	match_list[0] = retstr;
+      break;
 
-	/* add NULL as last pointer to the array */
-	match_list[matches + 1] = (char *) NULL;
+    case ISKMAP:
+      if (map[key].function != 0)
+	{
+#if defined (VI_MODE)
+	  /* The only way this test will be true is if a subsequence has been
+	     bound starting with ESC, generally the arrow keys.  What we do is
+	     check whether there's input in the queue, which there generally
+	     will be if an arrow key has been pressed, and, if there's not,
+	     just dispatch to (what we assume is) rl_vi_movement_mode right
+	     away.  This is essentially an input test with a zero timeout. */
+	  if (rl_editing_mode == vi_mode && key == ESC && map == vi_insertion_keymap
+	      && _rl_input_queued (0) == 0)
+	    return (_rl_dispatch (ANYOTHERKEY, FUNCTION_TO_KEYMAP (map, key)));
+#endif
 
-	return (match_list);
-}
+	  rl_key_sequence_length++;
+	  _rl_dispatching_keymap = FUNCTION_TO_KEYMAP (map, key);
 
-/*
- * Sort function for qsort(). Just wrapper around strcasecmp().
- */
-static int
-_rl_qsort_string_compare(i1, i2)
-	const void *i1, *i2;
-{
-	const char *s1 = ((const char * const *)i1)[0];
-	const char *s2 = ((const char * const *)i2)[0];
+	  /* Allocate new context here.  Use linked contexts (linked through
+	     cxt->ocxt) to simulate recursion */
+#if defined (READLINE_CALLBACKS)
+	  if (RL_ISSTATE (RL_STATE_CALLBACK))
+	    {
+	      /* Return 0 only the first time, to indicate success to
+		 _rl_callback_read_char.  The rest of the time, we're called
+		 from _rl_dispatch_callback, so we return 3 to indicate
+		 special handling is necessary. */
+	      r = RL_ISSTATE (RL_STATE_MULTIKEY) ? -3 : 0;
+	      cxt = _rl_keyseq_cxt_alloc ();
 
-	return strcasecmp(s1, s2);
-}
+	      if (got_subseq)
+		cxt->flags |= KSEQ_SUBSEQ;
+	      cxt->okey = key;
+	      cxt->oldmap = map;
+	      cxt->dmap = _rl_dispatching_keymap;
+	      cxt->subseq_arg = got_subseq || cxt->dmap[ANYOTHERKEY].function;
 
-/*
- * Display list of strings in columnar format on readline's output stream.
- * 'matches' is list of strings, 'len' is number of strings in 'matches',
- * 'max' is maximum length of string in 'matches'.
- */
-void
-rl_display_match_list (matches, len, max)
-     char **matches;
-     int len, max;
-{
-	int i, idx, limit, count;
-	int screenwidth = e->el_term.t_size.h;
+	      RL_SETSTATE (RL_STATE_MULTIKEY);
+	      _rl_kscxt = cxt;
 
-	/*
-	 * Find out how many entries can be put on one line, count
-	 * with two spaces between strings.
-	 */
-	limit = screenwidth / (max + 2);
-	if (limit == 0)
-		limit = 1;
+	      return r;		/* don't indicate immediate success */
+	    }
+#endif
 
-	/* how many lines of output */
-	count = len / limit;
-	if (count * limit < len)
-		count++;
+	  newkey = _rl_subseq_getchar (key);
+	  if (newkey < 0)
+	    {
+	      _rl_abort_internal ();
+	      return -1;
+	    }
 
-	/* Sort the items if they are not already sorted. */
-	qsort(&matches[1], (size_t)(len - 1), sizeof(char *),
-	    _rl_qsort_string_compare);
-
-	idx = 1;
-	for(; count > 0; count--) {
-		for(i = 0; i < limit && matches[idx]; i++, idx++)
-			(void)fprintf(e->el_outfile, "%-*s  ", max,
-			    matches[idx]);
-		(void)fprintf(e->el_outfile, "\n");
+	  r = _rl_dispatch_subseq (newkey, _rl_dispatching_keymap, got_subseq || map[ANYOTHERKEY].function);
+	  return _rl_subseq_result (r, map, key, got_subseq);
 	}
-}
-
-/*
- * Complete the word at or before point, called by rl_complete()
- * 'what_to_do' says what to do with the completion.
- * `?' means list the possible completions.
- * TAB means do standard completion.
- * `*' means insert all of the possible completions.
- * `!' means to do standard completion, and list all possible completions if
- * there is more than one.
- *
- * Note: '*' support is not implemented
- */
-static int
-rl_complete_internal(int what_to_do)
-{
-	Function *complet_func;
-	const LineInfo *li;
-	char *temp, **matches;
-	const char *ctemp;
-	size_t len;
-
-	rl_completion_type = what_to_do;
-
-	if (h == NULL || e == NULL)
-		rl_initialize();
-
-	complet_func = rl_completion_entry_function;
-	if (!complet_func)
-		complet_func = (Function *)(void *)filename_completion_function;
-
-	/* We now look backwards for the start of a filename/variable word */
-	li = el_line(e);
-	ctemp = (const char *) li->cursor;
-	while (ctemp > li->buffer
-	    && !strchr(rl_basic_word_break_characters, ctemp[-1])
-	    && (!rl_special_prefixes
-		|| !strchr(rl_special_prefixes, ctemp[-1]) ) )
-		ctemp--;
-
-	len = li->cursor - ctemp;
-	temp = alloca(len + 1);
-	(void)strncpy(temp, ctemp, len);
-	temp[len] = '\0';
-
-	/* these can be used by function called in completion_matches() */
-	/* or (*rl_attempted_completion_function)() */
-	rl_point = li->cursor - li->buffer;
-	rl_end = li->lastchar - li->buffer;
-
-	if (rl_attempted_completion_function) {
-		int end = li->cursor - li->buffer;
-		matches = (*rl_attempted_completion_function) (temp, (int)
-		    (end - len), end);
-	} else
-		matches = 0;
-	if (!rl_attempted_completion_function || !matches)
-		matches = completion_matches(temp, (CPFunction *)complet_func);
-
-	if (matches) {
-		int i, retval = CC_REFRESH;
-		int matches_num, maxlen, match_len, match_display=1;
-
-		/*
-		 * Only replace the completed string with common part of
-		 * possible matches if there is possible completion.
-		 */
-		if (matches[0][0] != '\0') {
-			el_deletestr(e, (int) len);
-			el_insertstr(e, matches[0]);
-		}
-
-		if (what_to_do == '?')
-			goto display_matches;
-
-		if (matches[2] == NULL && strcmp(matches[0], matches[1]) == 0) {
-			/*
-			 * We found exact match. Add a space after
-			 * it, unless we do filename completion and the
-			 * object is a directory.
-			 */
-			size_t alen = strlen(matches[0]);
-			if ((complet_func !=
-			    (Function *)filename_completion_function
-			      || (alen > 0 && (matches[0])[alen - 1] != '/'))
-			    && rl_completion_append_character) {
-				char buf[2];
-				buf[0] = rl_completion_append_character;
-				buf[1] = '\0';
-				el_insertstr(e, buf);
-			}
-		} else if (what_to_do == '!') {
-    display_matches:
-			/*
-			 * More than one match and requested to list possible
-			 * matches.
-			 */
-
-			for(i=1, maxlen=0; matches[i]; i++) {
-				match_len = strlen(matches[i]);
-				if (match_len > maxlen)
-					maxlen = match_len;
-			}
-			matches_num = i - 1;
-				
-			/* newline to get on next line from command line */
-			(void)fprintf(e->el_outfile, "\n");
-
-			/*
-			 * If there are too many items, ask user for display
-			 * confirmation.
-			 */
-			if (matches_num > rl_completion_query_items) {
-				(void)fprintf(e->el_outfile,
-				    "Display all %d possibilities? (y or n) ",
-				    matches_num);
-				(void)fflush(e->el_outfile);
-				if (getc(stdin) != 'y')
-					match_display = 0;
-				(void)fprintf(e->el_outfile, "\n");
-			}
-
-			if (match_display)
-				rl_display_match_list(matches, matches_num,
-					maxlen);
-			retval = CC_REDISPLAY;
-		} else if (matches[0][0]) {
-			/*
-			 * There was some common match, but the name was
-			 * not complete enough. Next tab will print possible
-			 * completions.
-			 */
-			el_beep(e);
-		} else {
-			/* lcd is not a valid object - further specification */
-			/* is needed */
-			el_beep(e);
-			retval = CC_NORM;
-		}
-
-		/* free elements of array and the array itself */
-		for (i = 0; matches[i]; i++)
-			free(matches[i]);
-		free(matches), matches = NULL;
-
-		return (retval);
+      else
+	{
+	  _rl_abort_internal ();
+	  return -1;
 	}
-	return (CC_NORM);
-}
+      break;
 
-
-/*
- * complete word at current point
- */
-int
-rl_complete(int ignore, int invoking_key)
-{
-	if (h == NULL || e == NULL)
-		rl_initialize();
-
-	if (rl_inhibit_completion) {
-		rl_insert(ignore, invoking_key);
-		return (CC_REFRESH);
-	} else if (e->el_state.lastcmd == el_rl_complete_cmdnum)
-		return rl_complete_internal('?');
-	else if (_rl_complete_show_all)
-		return rl_complete_internal('!');
-	else
-		return (rl_complete_internal(TAB));
-}
-
-
-/*
- * misc other functions
- */
-
-/*
- * bind key c to readline-type function func
- */
-int
-rl_bind_key(int c, int func(int, int))
-{
-	int retval = -1;
-
-	if (h == NULL || e == NULL)
-		rl_initialize();
-
-	if (func == rl_insert) {
-		/* XXX notice there is no range checking of ``c'' */
-		e->el_map.key[c] = ED_INSERT;
-		retval = 0;
+    case ISMACR:
+      if (map[key].function != 0)
+	{
+	  macro = savestring ((char *)map[key].function);
+	  _rl_with_macro_input (macro);
+	  return 0;
 	}
-	return (retval);
-}
+      break;
+    }
+#if defined (VI_MODE)
+  if (rl_editing_mode == vi_mode && _rl_keymap == vi_movement_keymap &&
+      key != ANYOTHERKEY &&
+      _rl_vi_textmod_command (key))
+    _rl_vi_set_last (key, rl_numeric_arg, rl_arg_sign);
+#endif
 
-
-/*
- * read one key from input - handles chars pushed back
- * to input stream also
- */
-int
-rl_read_key(void)
-{
-	char fooarr[2 * sizeof(int)];
-
-	if (e == NULL || h == NULL)
-		rl_initialize();
-
-	return (el_getc(e, fooarr));
-}
-
-
-/*
- * reset the terminal
- */
-/* ARGSUSED */
-void
-rl_reset_terminal(const char *p __attribute__((__unused__)))
-{
-
-	if (h == NULL || e == NULL)
-		rl_initialize();
-	el_reset(e);
-}
-
-
-/*
- * insert character ``c'' back into input stream, ``count'' times
- */
-int
-rl_insert(int count, int c)
-{
-	char arr[2];
-
-	if (h == NULL || e == NULL)
-		rl_initialize();
-
-	/* XXX - int -> char conversion can lose on multichars */
-	arr[0] = c;
-	arr[1] = '\0';
-
-	for (; count > 0; count--)
-		el_push(e, arr);
-
-	return (0);
-}
-
-/*ARGSUSED*/
-int
-rl_newline(int count, int c)
-{
-	/*
-	 * Readline-4.0 appears to ignore the args.
-	 */
-	return rl_insert(1, '\n');
-}
-
-/*ARGSUSED*/
-static unsigned char
-rl_bind_wrapper(EditLine *el, unsigned char c)
-{
-	if (map[c] == NULL)
-	    return CC_ERROR;
-	(*map[c])(NULL, c);
-
-	/* If rl_done was set by the above call, deal with it here */
-	if (rl_done)
-		return CC_EOF;
-
-	return CC_NORM;
-}
-
-int
-rl_add_defun(const char *name, Function *fun, int c)
-{
-	char dest[8];
-	if (c >= sizeof(map) / sizeof(map[0]) || c < 0)
-		return -1;
-	map[(unsigned char)c] = fun;
-	el_set(e, EL_ADDFN, name, name, rl_bind_wrapper);
-	vis(dest, c, VIS_WHITE|VIS_NOSLASH, 0);
-	el_set(e, EL_BIND, dest, name);
-	return 0;
-}
-
-void
-rl_callback_read_char()
-{
-	int count = 0, done = 0;
-	const char *buf = el_gets(e, &count);
-	char *wbuf;
-
-	if (buf == NULL || count-- <= 0)
-		return;
-	if (count == 0 && buf[0] == CTRL('d'))
-		done = 1;
-	if (buf[count] == '\n' || buf[count] == '\r')
-		done = 2;
-
-	if (done && rl_linefunc != NULL) {
-		el_set(e, EL_UNBUFFERED, 0);
-		if (done == 2) {
-		    if ((wbuf = strdup(buf)) != NULL)
-			wbuf[count] = '\0';
-		} else
-			wbuf = NULL;
-		(*(void (*)(const char *))rl_linefunc)(wbuf);
-	}
-}
-
-void 
-rl_callback_handler_install (const char *prompt, VFunction *linefunc)
-{
-	if (e == NULL) {
-		rl_initialize();
-	}
-	if (rl_prompt)
-		free(rl_prompt);
-	rl_prompt = prompt ? strdup(strchr(prompt, *prompt)) : NULL;
-	rl_linefunc = linefunc;
-	el_set(e, EL_UNBUFFERED, 1);
-}   
-
-void 
-rl_callback_handler_remove(void)
-{
-	el_set(e, EL_UNBUFFERED, 0);
-}
-
-void
-rl_redisplay(void)
-{
-	char a[2];
-	a[0] = CTRL('r');
-	a[1] = '\0';
-	el_push(e, a);
-}
-
-int
-rl_get_previous_history(int count, int key)
-{
-	char a[2];
-	a[0] = key;
-	a[1] = '\0';
-	while (count--)
-		el_push(e, a);
-	return 0;
-}
-
-void
-/*ARGSUSED*/
-rl_prep_terminal(int meta_flag)
-{
-	el_set(e, EL_PREP_TERM, 1);
-}
-
-void
-rl_deprep_terminal()
-{
-	el_set(e, EL_PREP_TERM, 0);
-}
-
-int
-rl_read_init_file(const char *s)
-{
-	return(el_source(e, s));
-}
-
-int
-rl_parse_and_bind(const char *line)
-{
-	const char **argv;
-	int argc;
-	Tokenizer *tok;
-
-	tok = tok_init(NULL);
-	tok_str(tok, line, &argc, &argv);
-	argc = el_parse(e, argc, argv);
-	tok_end(tok);
-	return (argc ? 1 : 0);
-}
-
-void
-rl_stuff_char(int c)
-{
-	char buf[2];
-
-	buf[0] = c;
-	buf[1] = '\0';
-	el_insertstr(e, buf);
+  return (r);
 }
 
 static int
-_rl_event_read_char(EditLine *el, char *cp)
+_rl_subseq_result (r, map, key, got_subseq)
+     int r;
+     Keymap map;
+     int key, got_subseq;
 {
-	int	n, num_read = 0;
+  Keymap m;
+  int type, nt;
+  rl_command_func_t *func, *nf;
+  
+  if (r == -2)
+    /* We didn't match anything, and the keymap we're indexed into
+       shadowed a function previously bound to that prefix.  Call
+       the function.  The recursive call to _rl_dispatch_subseq has
+       already taken care of pushing any necessary input back onto
+       the input queue with _rl_unget_char. */
+    {
+      m = _rl_dispatching_keymap;
+      type = m[ANYOTHERKEY].type;
+      func = m[ANYOTHERKEY].function;
+      if (type == ISFUNC && func == rl_do_lowercase_version)
+	r = _rl_dispatch (_rl_to_lower (key), map);
+      else if (type == ISFUNC && func == rl_insert)
+	{
+	  /* If the function that was shadowed was self-insert, we
+	     somehow need a keymap with map[key].func == self-insert.
+	     Let's use this one. */
+	  nt = m[key].type;
+	  nf = m[key].function;
 
-	*cp = 0;
-	while (rl_event_hook) {
+	  m[key].type = type;
+	  m[key].function = func;
+	  r = _rl_dispatch (key, m);
+	  m[key].type = nt;
+	  m[key].function = nf;
+	}
+      else
+	r = _rl_dispatch (ANYOTHERKEY, m);
+    }
+  else if (r && map[ANYOTHERKEY].function)
+    {
+      /* We didn't match (r is probably -1), so return something to
+	 tell the caller that it should try ANYOTHERKEY for an
+	 overridden function. */
+      _rl_unget_char (key);
+      _rl_dispatching_keymap = map;
+      return -2;
+    }
+  else if (r && got_subseq)
+    {
+      /* OK, back up the chain. */
+      _rl_unget_char (key);
+      _rl_dispatching_keymap = map;
+      return -1;
+    }
 
-		(*rl_event_hook)();
+  return r;
+}
 
-#if defined(FIONREAD)
-		if (ioctl(el->el_infd, FIONREAD, &n) < 0)
-			return(-1);
-		if (n)
-			num_read = read(el->el_infd, cp, 1);
-		else
-			num_read = 0;
-#elif defined(F_SETFL) && defined(O_NDELAY)
-		if ((n = fcntl(el->el_infd, F_GETFL, 0)) < 0)
-			return(-1);
-		if (fcntl(el->el_infd, F_SETFL, n|O_NDELAY) < 0)
-			return(-1);
-		num_read = read(el->el_infd, cp, 1);
-		if (fcntl(el->el_infd, F_SETFL, n))
-			return(-1);
-#else
-		/* not non-blocking, but what you gonna do? */
-		num_read = read(el->el_infd, cp, 1);
-		return(-1);
+/* **************************************************************** */
+/*								    */
+/*			Initializations 			    */
+/*								    */
+/* **************************************************************** */
+
+/* Initialize readline (and terminal if not already). */
+int
+rl_initialize ()
+{
+  /* If we have never been called before, initialize the
+     terminal and data structures. */
+  if (!rl_initialized)
+    {
+      RL_SETSTATE(RL_STATE_INITIALIZING);
+      readline_initialize_everything ();
+      RL_UNSETSTATE(RL_STATE_INITIALIZING);
+      rl_initialized++;
+      RL_SETSTATE(RL_STATE_INITIALIZED);
+    }
+
+  /* Initalize the current line information. */
+  _rl_init_line_state ();
+
+  /* We aren't done yet.  We haven't even gotten started yet! */
+  rl_done = 0;
+  RL_UNSETSTATE(RL_STATE_DONE);
+
+  /* Tell the history routines what is going on. */
+  _rl_start_using_history ();
+
+  /* Make the display buffer match the state of the line. */
+  rl_reset_line_state ();
+
+  /* No such function typed yet. */
+  rl_last_func = (rl_command_func_t *)NULL;
+
+  /* Parsing of key-bindings begins in an enabled state. */
+  _rl_parsing_conditionalized_out = 0;
+
+#if defined (VI_MODE)
+  if (rl_editing_mode == vi_mode)
+    _rl_vi_initialize_line ();
 #endif
 
-		if (num_read < 0 && errno == EAGAIN)
-			continue;
-		if (num_read == 0)
-			continue;
-		break;
-	}
-	if (!rl_event_hook)
-		el_set(el, EL_GETCFN, EL_BUILTIN_GETCFN);
-	return(num_read);
+  /* Each line starts in insert mode (the default). */
+  _rl_set_insert_mode (RL_IM_DEFAULT, 1);
+
+  return 0;
+}
+
+#if 0
+#if defined (__EMX__)
+static void
+_emx_build_environ ()
+{
+  TIB *tibp;
+  PIB *pibp;
+  char *t, **tp;
+  int c;
+
+  DosGetInfoBlocks (&tibp, &pibp);
+  t = pibp->pib_pchenv;
+  for (c = 1; *t; c++)
+    t += strlen (t) + 1;
+  tp = environ = (char **)xmalloc ((c + 1) * sizeof (char *));
+  t = pibp->pib_pchenv;
+  while (*t)
+    {
+      *tp++ = t;
+      t += strlen (t) + 1;
+    }
+  *tp = 0;
+}
+#endif /* __EMX__ */
+#endif
+
+/* Initialize the entire state of the world. */
+static void
+readline_initialize_everything ()
+{
+#if 0
+#if defined (__EMX__)
+  if (environ == 0)
+    _emx_build_environ ();
+#endif
+#endif
+
+#if 0
+  /* Find out if we are running in Emacs -- UNUSED. */
+  running_in_emacs = sh_get_env_value ("EMACS") != (char *)0;
+#endif
+
+  /* Set up input and output if they are not already set up. */
+  if (!rl_instream)
+    rl_instream = stdin;
+
+  if (!rl_outstream)
+    rl_outstream = stdout;
+
+  /* Bind _rl_in_stream and _rl_out_stream immediately.  These values
+     may change, but they may also be used before readline_internal ()
+     is called. */
+  _rl_in_stream = rl_instream;
+  _rl_out_stream = rl_outstream;
+
+  /* Allocate data structures. */
+  if (rl_line_buffer == 0)
+    rl_line_buffer = (char *)xmalloc (rl_line_buffer_len = DEFAULT_BUFFER_SIZE);
+
+  /* Initialize the terminal interface. */
+  if (rl_terminal_name == 0)
+    rl_terminal_name = sh_get_env_value ("TERM");
+  _rl_init_terminal_io (rl_terminal_name);
+
+  /* Bind tty characters to readline functions. */
+  readline_default_bindings ();
+
+  /* Initialize the function names. */
+  rl_initialize_funmap ();
+
+  /* Decide whether we should automatically go into eight-bit mode. */
+  _rl_init_eightbit ();
+      
+  /* Read in the init file. */
+  rl_read_init_file ((char *)NULL);
+
+  /* XXX */
+  if (_rl_horizontal_scroll_mode && _rl_term_autowrap)
+    {
+      _rl_screenwidth--;
+      _rl_screenchars -= _rl_screenheight;
+    }
+
+  /* Override the effect of any `set keymap' assignments in the
+     inputrc file. */
+  rl_set_keymap_from_edit_mode ();
+
+  /* Try to bind a common arrow key prefix, if not already bound. */
+  bind_arrow_keys ();
+
+  /* Enable the meta key, if this terminal has one. */
+  if (_rl_enable_meta)
+    _rl_enable_meta_key ();
+
+  /* If the completion parser's default word break characters haven't
+     been set yet, then do so now. */
+  if (rl_completer_word_break_characters == (char *)NULL)
+    rl_completer_word_break_characters = (char *)rl_basic_word_break_characters;
+}
+
+/* If this system allows us to look at the values of the regular
+   input editing characters, then bind them to their readline
+   equivalents, iff the characters are not bound to keymaps. */
+static void
+readline_default_bindings ()
+{
+  if (_rl_bind_stty_chars)
+    rl_tty_set_default_bindings (_rl_keymap);
+}
+
+/* Reset the default bindings for the terminal special characters we're
+   interested in back to rl_insert and read the new ones. */
+static void
+reset_default_bindings ()
+{
+  if (_rl_bind_stty_chars)
+    {
+      rl_tty_unset_default_bindings (_rl_keymap);
+      rl_tty_set_default_bindings (_rl_keymap);
+    }
+}
+
+/* Bind some common arrow key sequences in MAP. */
+static void
+bind_arrow_keys_internal (map)
+     Keymap map;
+{
+  Keymap xkeymap;
+
+  xkeymap = _rl_keymap;
+  _rl_keymap = map;
+
+#if defined (__MSDOS__)
+  rl_bind_keyseq_if_unbound ("\033[0A", rl_get_previous_history);
+  rl_bind_keyseq_if_unbound ("\033[0B", rl_backward_char);
+  rl_bind_keyseq_if_unbound ("\033[0C", rl_forward_char);
+  rl_bind_keyseq_if_unbound ("\033[0D", rl_get_next_history);
+#endif
+
+  rl_bind_keyseq_if_unbound ("\033[A", rl_get_previous_history);
+  rl_bind_keyseq_if_unbound ("\033[B", rl_get_next_history);
+  rl_bind_keyseq_if_unbound ("\033[C", rl_forward_char);
+  rl_bind_keyseq_if_unbound ("\033[D", rl_backward_char);
+  rl_bind_keyseq_if_unbound ("\033[H", rl_beg_of_line);
+  rl_bind_keyseq_if_unbound ("\033[F", rl_end_of_line);
+
+  rl_bind_keyseq_if_unbound ("\033OA", rl_get_previous_history);
+  rl_bind_keyseq_if_unbound ("\033OB", rl_get_next_history);
+  rl_bind_keyseq_if_unbound ("\033OC", rl_forward_char);
+  rl_bind_keyseq_if_unbound ("\033OD", rl_backward_char);
+  rl_bind_keyseq_if_unbound ("\033OH", rl_beg_of_line);
+  rl_bind_keyseq_if_unbound ("\033OF", rl_end_of_line);
+
+#if defined (__MINGW32__)
+  rl_bind_keyseq_if_unbound ("\340H", rl_get_previous_history);
+  rl_bind_keyseq_if_unbound ("\340P", rl_get_next_history);
+  rl_bind_keyseq_if_unbound ("\340M", rl_forward_char);
+  rl_bind_keyseq_if_unbound ("\340K", rl_backward_char);
+#endif
+
+  _rl_keymap = xkeymap;
+}
+
+/* Try and bind the common arrow key prefixes after giving termcap and
+   the inputrc file a chance to bind them and create `real' keymaps
+   for the arrow key prefix. */
+static void
+bind_arrow_keys ()
+{
+  bind_arrow_keys_internal (emacs_standard_keymap);
+
+#if defined (VI_MODE)
+  bind_arrow_keys_internal (vi_movement_keymap);
+  bind_arrow_keys_internal (vi_insertion_keymap);
+#endif
+}
+
+/* **************************************************************** */
+/*								    */
+/*		Saving and Restoring Readline's state		    */
+/*								    */
+/* **************************************************************** */
+
+int
+rl_save_state (sp)
+     struct readline_state *sp;
+{
+  if (sp == 0)
+    return -1;
+
+  sp->point = rl_point;
+  sp->end = rl_end;
+  sp->mark = rl_mark;
+  sp->buffer = rl_line_buffer;
+  sp->buflen = rl_line_buffer_len;
+  sp->ul = rl_undo_list;
+  sp->prompt = rl_prompt;
+
+  sp->rlstate = rl_readline_state;
+  sp->done = rl_done;
+  sp->kmap = _rl_keymap;
+
+  sp->lastfunc = rl_last_func;
+  sp->insmode = rl_insert_mode;
+  sp->edmode = rl_editing_mode;
+  sp->kseqlen = rl_key_sequence_length;
+  sp->inf = rl_instream;
+  sp->outf = rl_outstream;
+  sp->pendingin = rl_pending_input;
+  sp->macro = rl_executing_macro;
+
+  sp->catchsigs = rl_catch_signals;
+  sp->catchsigwinch = rl_catch_sigwinch;
+
+  return (0);
+}
+
+int
+rl_restore_state (sp)
+     struct readline_state *sp;
+{
+  if (sp == 0)
+    return -1;
+
+  rl_point = sp->point;
+  rl_end = sp->end;
+  rl_mark = sp->mark;
+  the_line = rl_line_buffer = sp->buffer;
+  rl_line_buffer_len = sp->buflen;
+  rl_undo_list = sp->ul;
+  rl_prompt = sp->prompt;
+
+  rl_readline_state = sp->rlstate;
+  rl_done = sp->done;
+  _rl_keymap = sp->kmap;
+
+  rl_last_func = sp->lastfunc;
+  rl_insert_mode = sp->insmode;
+  rl_editing_mode = sp->edmode;
+  rl_key_sequence_length = sp->kseqlen;
+  rl_instream = sp->inf;
+  rl_outstream = sp->outf;
+  rl_pending_input = sp->pendingin;
+  rl_executing_macro = sp->macro;
+
+  rl_catch_signals = sp->catchsigs;
+  rl_catch_sigwinch = sp->catchsigwinch;
+
+  return (0);
 }
