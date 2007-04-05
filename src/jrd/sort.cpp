@@ -150,7 +150,7 @@ static void validate(sort_context*);
 #endif
 
 #ifdef DEV_BUILD
-static void check_file(sort_context*, run_control*);
+static void check_file(const sort_context*, const run_control*);
 #define CHECK_FILE(a) check_file((a), NULL);
 #define CHECK_FILE2(a, b) check_file((a), (b));
 #else
@@ -1929,8 +1929,7 @@ static void init(sort_context* scb)
 				(SORTP *) ((BLOB_PTR *) scb->scb_memory + scb->scb_size_memory);
 			scb->scb_first_pointer = (sort_record**) scb->scb_memory;
 
-			run_control *run = scb->scb_runs;
-			for (; run; run = run->run_next)
+			for (run_control *run = scb->scb_runs; run; run = run->run_next)
 				run->run_depth--;
 		}
 	}
@@ -2032,8 +2031,9 @@ static bool local_fini(sort_context* scb, Attachment* att)
 	return true;
 }
 
+
 #ifdef DEV_BUILD
-static void check_file(sort_context* scb, run_control* temp_run)
+static void check_file(const sort_context* scb, const run_control* temp_run)
 {
 /**************************************
  *
@@ -2045,13 +2045,13 @@ static void check_file(sort_context* scb, run_control* temp_run)
  *      Validate memory and file space allocation
  *
  **************************************/
-	UINT64 runs = temp_run ? temp_run->run_size : 0, free = 0, run_mem = 0;
+	UINT64 runs = temp_run ? temp_run->run_size : 0;
+	UINT64 free = 0, run_mem = 0;
 
 	bool ok = scb->scb_space->validate(free);
 	fb_assert(ok);
 
-	run_control* run = scb->scb_runs;
-	for (; run; run = run->run_next)
+	for (const run_control* run = scb->scb_runs; run; run = run->run_next)
 	{
 		runs += run->run_size;
 		run_mem += run->run_mem_size;
@@ -2088,10 +2088,10 @@ static ULONG allocate_memory(sort_context* scb, ULONG n, ULONG chunkSize, bool u
 		char* mem = 0;
 		if (mem = tempSpace->inMemory(run->run_seek, run->run_size))
 		{
-			run->run_buffer = reinterpret_cast<SORTP*> (mem);
+			run->run_buffer = reinterpret_cast<SORTP*>(mem);
 			run->run_record = reinterpret_cast<sort_record*>(mem);
 			mem += run->run_size;
-			run->run_end_buffer = reinterpret_cast<SORTP*> (mem);
+			run->run_end_buffer = reinterpret_cast<SORTP*>(mem);
 			run->run_seek += run->run_size; // emulate read
 			allocated++;
 		}
@@ -2103,6 +2103,7 @@ static ULONG allocate_memory(sort_context* scb, ULONG n, ULONG chunkSize, bool u
 
 	// try to use free blocks from memory cache of work file
 
+	fb_assert(n > allocated);
 	TempSpace::Segments segments(*scb->scb_pool, n - allocated);
 	allocated += tempSpace->allocateBatch(n - allocated, 
 		MAX_SORT_BUFFER_SIZE, chunkSize, segments);
@@ -2119,10 +2120,10 @@ static ULONG allocate_memory(sort_context* scb, ULONG n, ULONG chunkSize, bool u
 
 				run->run_mem_seek = seg->position;
 				run->run_mem_size = seg->size;
-				run->run_buffer = reinterpret_cast<SORTP*> (mem);
+				run->run_buffer = reinterpret_cast<SORTP*>(mem);
 				mem += runSize;
 				run->run_record = reinterpret_cast<sort_record*>(mem);
-				run->run_end_buffer = reinterpret_cast<SORTP*> (mem);
+				run->run_end_buffer = reinterpret_cast<SORTP*>(mem);
 
 				seg++;
 				if (seg == lastSeg)
@@ -2133,6 +2134,7 @@ static ULONG allocate_memory(sort_context* scb, ULONG n, ULONG chunkSize, bool u
 
 	return allocated;
 }
+
 
 static void merge_runs(sort_context* scb, USHORT n)
 {
@@ -2356,7 +2358,7 @@ static void merge_runs(sort_context* scb, USHORT n)
 }
 
 
-void inline swap(SORTP** a, SORTP** b)
+inline void swap(SORTP** a, SORTP** b)
 {
 	SORTP* temp;
 	((SORTP ***) (*a))[BACK_OFFSET] = b;
@@ -2608,6 +2610,7 @@ static ULONG order(sort_context* scb)
 												 SIZEOF_SR_BCKPTR_IN_LONGS);
 }
 
+
 static void order_and_save(sort_context* scb)
 {
 	THREAD_EXIT();
@@ -2666,6 +2669,7 @@ static void order_and_save(sort_context* scb)
 
 	THREAD_ENTER();
 }
+
 
 static void put_run(sort_context* scb)
 {
@@ -2857,14 +2861,15 @@ static void sort(sort_context* scb)
 class RunSort
 {
 public:
-	RunSort(run_control* run) : _run(run) {};
-	RunSort() : _run(NULL) {};
+	RunSort(run_control* irun) : run(irun) {}
+	RunSort() : run(NULL) {}
 
 	static const UINT64 generate(const void*, const RunSort& item) 
-	{ return item._run->run_seek; }
+	{ return item.run->run_seek; }
 
-	run_control* _run;
+	run_control* run;
 };
+
 
 static void sort_runs_by_seek(sort_context* scb, int n)
 {
@@ -2892,11 +2897,11 @@ static void sort_runs_by_seek(sort_context* scb, int n)
 	run_control* tail = run;
 
 	RunSort* rs = runs.begin();
-	run = scb->scb_runs = rs->_run;
+	run = scb->scb_runs = rs->run;
 	for (rs++; rs < runs.end(); rs++)
 	{
-		run->run_next = rs->_run;
-		run = rs->_run;
+		run->run_next = rs->run;
+		run = rs->run;
 	}
 	run->run_next = tail;
 }

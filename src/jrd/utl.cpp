@@ -302,13 +302,13 @@ int API_ROUTINE gds__blob_size(
 		return FALSE;
 	}
 
-	const TEXT* p = buffer;
-	char item;
-	while ((item = *p++) != isc_info_end) {
-		const USHORT l =
-			gds__vax_integer(reinterpret_cast<const UCHAR*>(p), 2);
+	const UCHAR* p = reinterpret_cast<UCHAR*>(buffer);
+	UCHAR item;
+	while ((item = *p++) != isc_info_end)
+	{
+		const USHORT l = gds__vax_integer(p, 2);
 		p += 2;
-		const SLONG n = gds__vax_integer(reinterpret_cast<const UCHAR*>(p), l);
+		const SLONG n = gds__vax_integer(p, l);
 		p += l;
 		switch (item) {
 		case isc_info_blob_max_segment:

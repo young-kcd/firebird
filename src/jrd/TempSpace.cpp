@@ -528,7 +528,7 @@ void TempSpace::releaseSpace(offset_t position, size_t size)
 
 char* TempSpace::inMemory(offset_t begin, size_t size) const
 {
-	Block* block = findBlock(begin);
+	const Block* block = findBlock(begin);
 	if (block)
 		return block->inMemory(begin, size);
 	else
@@ -546,7 +546,7 @@ char* TempSpace::findMemory(offset_t& begin, offset_t end, size_t size) const
 {
 	offset_t local_offset = begin;
 	const offset_t save_begin = begin;
-	Block* block = findBlock(local_offset);
+	const Block* block = findBlock(local_offset);
 	while (block && (begin + size <= end))
 	{
 		char* mem = block->inMemory(local_offset, size);
@@ -574,17 +574,16 @@ char* TempSpace::findMemory(offset_t& begin, offset_t end, size_t size) const
 
 bool TempSpace::validate(offset_t& free) const
 {
-	Segment* spase = freeSegments;
 	free = 0;
-	for (; spase; spase = spase->next)
+	for (const Segment* space = freeSegments; space; space = space->next)
 	{
-		free += spase->size;
-		bool ok = !(spase->next) || (spase->next->position > spase->position);
+		free += space->size;
+		bool ok = !(space->next) || (space->next->position > space->position);
 		fb_assert(ok);
 	}
 
 	offset_t disk = 0;
-	for (int i=0; i < tempFiles.getCount(); i++)
+	for (int i = 0; i < tempFiles.getCount(); i++)
 		disk += tempFiles[i]->getSize();
 
 	return ((localCacheUsage + disk) == physicalSize);
