@@ -999,8 +999,6 @@ void SORT_sort(thread_db* tdbb, sort_context* scb)
 	if (low_depth_cnt > 1 && low_depth_cnt < run_count)
 	{
 		merge_runs(scb, low_depth_cnt);
-		init(scb);
-
 		CHECK_FILE(scb);
 	}
 
@@ -2613,6 +2611,21 @@ static ULONG order(sort_context* scb)
 
 static void order_and_save(sort_context* scb)
 {
+/**************************************
+ *
+ *      o r d e r _ a n d _ s a v e
+ *
+ **************************************
+ *
+ * Functional description
+ *		The memory full of record pointers have been sorted, but more
+ *		records remain, so the run will have to be written to scratch file. 
+ *		If target run can be allocated in contiguous chunk of memory then 
+ *		just memcpy records into it. Else call more expensive order() to
+ *		physically rearrange records in sort space and write its into
+ *		scratch file as one big chunk
+ *
+ **************************************/
 	THREAD_EXIT();
 
 	run_control* run = scb->scb_runs;

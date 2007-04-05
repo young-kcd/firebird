@@ -433,7 +433,7 @@ offset_t TempSpace::allocateSpace(size_t size)
 	// that is big enough. This preserves large blocks.
 	Segment** best = NULL, *space;
 
-	// Search through the available space in the free segments list
+	// Search through the available space in the not used segments list
 	for (Segment** ptr = &freeSegments; (space = *ptr);
 		 ptr = &(*ptr)->next)
 	{
@@ -454,7 +454,7 @@ offset_t TempSpace::allocateSpace(size_t size)
 	space = *best;
 
 	// If the hunk was an exact fit, remove the segment from the
-	// list and splice it into the free list
+	// list and splice it into the not used segments list
 	if (space->size == size) 
 	{
 		*best = space->next;
@@ -472,7 +472,7 @@ offset_t TempSpace::allocateSpace(size_t size)
 //
 // TempSpace::releaseSpace
 //
-// Return previously allocated segment back into free segments list and 
+// Return previously allocated segment back into not used segments list and 
 // join it with adjacent segments if found
 //
 
