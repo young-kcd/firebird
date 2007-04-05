@@ -1,3 +1,15 @@
+2007-04-04 14:17  alexpeshkoff
+
+	* firebird2/src/common/classes/alloc.cpp (1.80.2.3):
+
+	sorry, debugging code in previous commit
+
+2007-04-04 14:15  alexpeshkoff
+
+	* firebird2/src/common/classes/alloc.cpp (1.80.2.2):
+
+	fixed races on Darwin/386 during init
+
 2007-03-30 17:06  alexpeshkoff
 
 	* firebird2/src/jrd/common.h (1.137.2.4):
