@@ -1705,7 +1705,7 @@ SLONG API_ROUTINE gds__get_prefix(SSHORT arg_type, const TEXT* passed_string)
 	prefix.erase(MAXPATHLEN);
 	for (size_t n = 0; n < prefix.length(); ++n)
 	{
-		switch(prefix[n])
+		switch (prefix[n])
 		{
 		case ' ':
 		case '\n':	// don't know exact reason - just keep
