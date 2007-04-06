@@ -37,6 +37,7 @@
 #include "../qli/picst_proto.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/utl_proto.h"
+#include "../common/classes/UserBlob.h"
 
 
 static SLONG execute_any(qli_nod*);
@@ -677,7 +678,7 @@ static DSC *execute_edit( qli_nod* node)
 	const TEXT* field_name = (TEXT *) node->nod_arg[e_edt_name];
 	BLOB_edit(id, dbb->dbb_handle, dbb->dbb_transaction, field_name);
 
-	node->nod_desc.dsc_missing = isNullBlob(id) ? DSC_missing : 0;
+	node->nod_desc.dsc_missing = UserBlob::blobIsNull(*id) ? DSC_missing : 0;
 
 	return &node->nod_desc;
 }

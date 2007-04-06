@@ -24,8 +24,10 @@
 #include "UserBlob.h"
 #include "../jrd/ibase.h"
 #include "../jrd/common.h"
+#include "../jrd/gds_proto.h"
 
 static const USHORT SEGMENT_LIMIT = 65535;
+//static SLONG fb_vax_integer(const UCHAR* ptr, int length);
 
 
 bool UserBlob::open(FB_API_HANDLE& db, FB_API_HANDLE& trans, ISC_QUAD& blobid)
@@ -235,4 +237,92 @@ bool UserBlob::getInfo(size_t items_size, const UCHAR* blr_items,
 							in_len, reinterpret_cast<const char*>(blr_items),
 							out_len, reinterpret_cast<char*>(blob_info));
 }
+
+
+bool fb_blob_size(	const UserBlob& b,
+					SLONG* size,
+					SLONG* seg_count,
+					SLONG* max_seg)
+{
+/**************************************
+ *
+ *	f b _ b l o b _ s i z e
+ *
+ **************************************
+ *
+ * Functional description
+ *	Get the size, number of segments, and max
+ *	segment length of a blob.  Return true
+ *	if it happens to succeed.
+ *
+ **************************************/
+	static const UCHAR blob_items[] =
+	{
+		isc_info_blob_max_segment,
+		isc_info_blob_num_segments,
+		isc_info_blob_total_length
+	};
+
+	UCHAR buffer[64];
+
+	if (!b.getInfo(sizeof(blob_items), blob_items, sizeof(buffer), buffer))
+		return false;
+
+	const UCHAR* p = buffer;
+	const UCHAR* const end = buffer + sizeof(buffer);
+	for (UCHAR item = *p++; item != isc_info_end && p < end; item = *p++)
+	{
+		const USHORT l = gds__vax_integer(p, 2);
+		p += 2;
+		const SLONG n = gds__vax_integer(p, l);
+		p += l;
+		switch (item)
+		{
+		case isc_info_blob_max_segment:
+			if (max_seg)
+				*max_seg = n;
+			break;
+
+		case isc_info_blob_num_segments:
+			if (seg_count)
+				*seg_count = n;
+			break;
+
+		case isc_info_blob_total_length:
+			if (size)
+				*size = n;
+			break;
+
+		default:
+			return false;
+		}
+	}
+
+	return true;
+}
+
+/* If someone sees the need to not depend on gds.cpp...
+static SLONG fb_vax_integer(const UCHAR* ptr, int length)
+{
+// **************************************
+// *
+// *	f b _ v a x _ i n t e g e r
+// *
+// **************************************
+// *
+// * Functional description
+// *	Pick up (and convert) a VAX style integer of length 1, 2, or 4 bytes.
+// *
+// **************************************
+	SLONG value = 0;
+	int shift = 0;
+
+	while (--length >= 0) {
+		value += ((SLONG) *ptr++) << shift;
+		shift += 8;
+	}
+
+	return value;
+}
+*/
 

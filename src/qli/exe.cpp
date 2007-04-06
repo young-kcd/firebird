@@ -38,6 +38,7 @@
 #include "../qli/repor_proto.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/utl_proto.h"
+#include "../common/classes/UserBlob.h"
 
 using MsgFormat::SafeArg;
 
@@ -664,17 +665,15 @@ static bool copy_blob( qli_nod* value, qli_par* parameter)
 		return false;
 	}
 
-// We've got a blob copy on our hands.
+	// We've got a blob copy on our hands.
 
 	if (!from_desc) {
 		*to_desc->dsc_address = 0;
 		return true;
 	}
 
-	FB_API_HANDLE to_blob = 0;
-	FB_API_HANDLE from_blob = 0;
 
-// Format blob parameter block for the existing blob
+	// Format blob parameter block for the existing blob
 
 	UCHAR bpb[20];
 	UCHAR* p = bpb;
@@ -690,23 +689,25 @@ static bool copy_blob( qli_nod* value, qli_par* parameter)
 	const USHORT bpb_length = p - bpb;
 
 	ISC_STATUS_ARRAY status_vector;
-	if (isc_create_blob(status_vector, &to_dbb->dbb_handle,
-						 &to_dbb->dbb_transaction, &to_blob,
-						 (ISC_QUAD*) to_desc->dsc_address))
+	UserBlob to_blob(status_vector);
+	UserBlob from_blob(status_vector);
+	
+	if (!to_blob.create(to_dbb->dbb_handle, to_dbb->dbb_transaction,
+						 *(ISC_QUAD*) to_desc->dsc_address))
 	{
 		ERRQ_database_error(to_dbb, status_vector);
 	}
 
-	if (isc_open_blob2(status_vector, &from_dbb->dbb_handle,
-						&from_dbb->dbb_transaction, &from_blob,
-						(ISC_QUAD*) from_desc->dsc_address, bpb_length,
+	if (!from_blob.open(from_dbb->dbb_handle, from_dbb->dbb_transaction,
+						*(ISC_QUAD*) from_desc->dsc_address, bpb_length,
 						bpb))
 	{
 		ERRQ_database_error(from_dbb, status_vector);
 	}
 
 	SLONG size, segment_count, max_segment;
-	gds__blob_size(&from_blob, &size, &segment_count, &max_segment);
+	if (!fb_blob_size(from_blob, &size, &segment_count, &max_segment))
+		ERRQ_database_error(from_dbb, status_vector);
 
     UCHAR fixed_buffer[4096];
 	UCHAR* buffer;
@@ -725,12 +726,10 @@ static bool copy_blob( qli_nod* value, qli_par* parameter)
 #endif
 	}
 
-	USHORT length;
-	while (!isc_get_segment(status_vector, &from_blob, &length, buffer_length,
-							 (char*) buffer))
+	size_t length;
+	while (from_blob.getSegment(buffer_length, buffer, length) && !from_blob.getCode())
 	{
-		if (isc_put_segment(status_vector, &to_blob, length,
-			reinterpret_cast<const char*>(buffer)))
+		if (!to_blob.putSegment(length, buffer))
 		{
 			ERRQ_database_error(to_dbb, status_vector);
 		}
@@ -739,10 +738,10 @@ static bool copy_blob( qli_nod* value, qli_par* parameter)
 	if (buffer != fixed_buffer)
 		gds__free(buffer);
 
-	if (isc_close_blob(status_vector, &from_blob))
+	if (!from_blob.close())
 		ERRQ_database_error(from_dbb, status_vector);
 
-	if (isc_close_blob(status_vector, &to_blob))
+	if (!to_blob.close())
 		ERRQ_database_error(to_dbb, status_vector);
 
 	return true;

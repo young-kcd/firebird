@@ -536,10 +536,5 @@ EXTERN qli_req*	QLI_requests;			// Requests in statement
 
 #include "../qli/all_proto.h"
 
-inline bool isNullBlob(const ISC_QUAD* id)
-{
-	return !id->gds_quad_high && !id->gds_quad_low;
-}
-
 #endif // QLI_DTR_H
 

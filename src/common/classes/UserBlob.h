@@ -46,6 +46,7 @@ public:
 	bool putData(size_t len, const void* buffer, size_t& real_len);
 	bool isOpen() const;
 	ISC_STATUS getCode() const;
+//	FB_API_HANDLE& getHandle();
 	bool getInfo(size_t items_size, const UCHAR* blr_items, size_t info_size, UCHAR* blob_info) const;
 	static bool blobIsNull(const ISC_QUAD& blobid);
 private:
@@ -84,10 +85,22 @@ inline ISC_STATUS UserBlob::getCode() const
 	return m_status[1];
 }
 
+//inline FB_API_HANDLE& UserBlob::getHandle()
+//{
+//	return m_blob;
+//}
+
 inline bool UserBlob::blobIsNull(const ISC_QUAD& blobid)
 {
 	return blobid.gds_quad_high == 0 && blobid.gds_quad_low == 0;
 }
+
+
+bool fb_blob_size(	const UserBlob& b,
+					SLONG* size,
+					SLONG* seg_count,
+					SLONG* max_seg);
+
 
 #endif // FB_USER_BLOB_H
 

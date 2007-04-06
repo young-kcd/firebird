@@ -156,7 +156,8 @@ void PRO_copy_procedure(
 
 	DB1 = new_database->dbb_handle;
 
-// create blob parameter block since procedure is a text blob
+	// create blob parameter block since procedure is a text blob
+	// But nothing was done! The bpb is empty.
 
 	UCHAR bpb[20];
 	UCHAR* p = bpb;

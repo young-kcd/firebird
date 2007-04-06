@@ -42,6 +42,7 @@
 #include "../jrd/utl_proto.h"
 #include "../common/utils_proto.h"
 #include "../common/classes/ClumpletWriter.h"
+#include "../common/classes/UserBlob.h"
 
 using MsgFormat::SafeArg;
 
@@ -55,7 +56,7 @@ DATABASE DB1 = FILENAME "yachts.lnk";
 
 static void add_field(qli_rel*, qli_fld*, USHORT);
 static void add_sql_field(qli_rel*, qli_fld*, USHORT, qli_rlb*);
-static void blob_copy(qli_rlb*, qli_rel*, ISC_QUAD*);
+static void blob_copy(qli_rlb*, qli_rel*, ISC_QUAD&);
 static void change_field(qli_rel*, qli_fld*);
 static bool check_global_field(DBB, qli_fld*, const TEXT*);
 static bool check_relation(qli_rel*);
@@ -67,14 +68,14 @@ static ISC_STATUS detach(ISC_STATUS *, DBB);
 static void execute_dynamic_ddl(DBB, qli_rlb*);
 static int field_length(USHORT, USHORT);
 static void get_database_type(DBB);
-static TEXT *get_query_header(DBB, ISC_QUAD*);
+static TEXT *get_query_header(DBB, ISC_QUAD&);
 static void install(dbb*);
 static qli_syntax* make_node(NOD_T, USHORT);
 static TEXT *make_string(TEXT*, SSHORT);
 static qli_symbol* make_symbol(TEXT *, SSHORT);
-static qli_const* missing_value(ISC_QUAD*, qli_symbol*);
+static qli_const* missing_value(ISC_QUAD&, qli_symbol*);
 static qli_syntax* parse_blr(UCHAR **, qli_symbol*);
-static qli_syntax* parse_blr_blob(ISC_QUAD*, qli_symbol*);
+static qli_syntax* parse_blr_blob(ISC_QUAD&, qli_symbol*);
 static void purge_relation(qli_rel*);
 static void put_dyn_string(qli_rlb*, const TEXT*);
 static void rollback_update(DBB);
@@ -801,13 +802,13 @@ void MET_fields( qli_rel* relation)
 		}
 
 		ISC_QUAD* blob = & RFR.RDB$QUERY_HEADER;
-		if (isNullBlob(blob))
+		if (UserBlob::blobIsNull(*blob))
 			blob = & RFL.RDB$QUERY_HEADER;
-		if (!isNullBlob(blob))
-			field->fld_query_header = get_query_header(database, blob);
+		if (!UserBlob::blobIsNull(*blob))
+			field->fld_query_header = get_query_header(database, *blob);
 
 		blob = & RFL.RDB$COMPUTED_BLR;
-		if (!isNullBlob(blob))
+		if (!UserBlob::blobIsNull(*blob))
 			field->fld_flags |= FLD_computed;
 
 		field->fld_dtype = MET_get_datatype(RFL.RDB$FIELD_TYPE);
@@ -820,14 +821,14 @@ void MET_fields( qli_rel* relation)
 
 		if (!RFL.RDB$MISSING_VALUE.NULL)
 			field->fld_missing =
-				missing_value(&RFL.RDB$MISSING_VALUE, field->fld_name);
+				missing_value(RFL.RDB$MISSING_VALUE, field->fld_name);
 
 		if (!(field->fld_edit_string =
 			  make_string(RFR.RDB$EDIT_STRING, sizeof(RFR.RDB$EDIT_STRING))))
 				field->fld_edit_string =
 				make_string(RFL.RDB$EDIT_STRING, sizeof(RFL.RDB$EDIT_STRING));
 		field->fld_validation =
-			parse_blr_blob(&RFL.RDB$VALIDATION_BLR, field->fld_name);
+			parse_blr_blob(RFL.RDB$VALIDATION_BLR, field->fld_name);
 		if (MET_dimensions(database, RFL.RDB$FIELD_NAME) > 0)
 			field->fld_flags |= FLD_array;
 	END_FOR
@@ -1824,7 +1825,7 @@ static void add_sql_field( qli_rel* relation, qli_fld* field, USHORT position,
 }
 
 
-static void blob_copy( qli_rlb* rlb, qli_rel* source, ISC_QUAD* source_blob_id)
+static void blob_copy( qli_rlb* rlb, qli_rel* source, ISC_QUAD& source_blob_id)
 {
 /**************************************
  *
@@ -1842,17 +1843,20 @@ static void blob_copy( qli_rlb* rlb, qli_rel* source, ISC_QUAD* source_blob_id)
 	DBB source_dbb =
 		(source->rel_database) ? source->rel_database : QLI_databases;
 	DB = source_dbb->dbb_handle;
-	FB_API_HANDLE source_blob = 0;
+	UserBlob source_blob(status_vector);
 
-	if (isc_open_blob(status_vector, &DB, &source_dbb->dbb_meta_trans,
-					   &source_blob, source_blob_id))
+	if (!source_blob.open(DB, source_dbb->dbb_meta_trans, source_blob_id))
 	{
 		rollback_update(source_dbb);
 		ERRQ_database_error(source_dbb, status_vector);
 	}
 
 	SLONG size, segment_count, max_segment;
-	gds__blob_size(&source_blob, (SLONG*) &size, &segment_count, &max_segment);
+	if (!fb_blob_size(source_blob, &size, &segment_count, &max_segment))
+	{
+		rollback_update(source_dbb);
+		ERRQ_database_error(source_dbb, status_vector);
+	}
 
     TEXT fixed_buffer[4096];
 	TEXT* buffer;
@@ -1868,9 +1872,8 @@ static void blob_copy( qli_rlb* rlb, qli_rel* source, ISC_QUAD* source_blob_id)
 
 	STUFF_WORD((USHORT) size);
 
-	USHORT length;
-	while (!isc_get_segment(status_vector, &source_blob, &length,
-							 buffer_length, buffer))
+	size_t length;
+	while (source_blob.getSegment(buffer_length, buffer, length) && !source_blob.getCode())
 	{
 		while (rlb->rlb_limit - rlb->rlb_data < length)
 			rlb = GEN_rlb_extend(rlb);
@@ -1889,7 +1892,7 @@ static void blob_copy( qli_rlb* rlb, qli_rel* source, ISC_QUAD* source_blob_id)
 	if (buffer != fixed_buffer)
 		gds__free(buffer);
 
-	if (isc_close_blob(status_vector, &source_blob)) {
+	if (!source_blob.close()) {
 		rollback_update(source_dbb);
 		ERRQ_database_error(source_dbb, status_vector);
 	}
@@ -2021,8 +2024,8 @@ static bool check_global_field(DBB database,
 			}
 			if (!field->fld_query_header)
 			{
-				ISC_QUAD* blob = &X.RDB$QUERY_HEADER;
-				if (!isNullBlob(blob))
+				ISC_QUAD& blob = X.RDB$QUERY_HEADER;
+				if (!UserBlob::blobIsNull(blob))
 				{
 					field->fld_query_header =
 						get_query_header(database, blob);
@@ -2139,7 +2142,7 @@ static void clone_fields( qli_rel* target, qli_rel* source)
 
 				if (!F.RDB$VALIDATION_BLR.NULL) {
 					STUFF(isc_dyn_fld_validation_blr);
-					blob_copy(rlb, source, &F.RDB$VALIDATION_BLR);
+					blob_copy(rlb, source, F.RDB$VALIDATION_BLR);
 				}
 		}
 		else
@@ -2177,17 +2180,17 @@ static void clone_fields( qli_rel* target, qli_rel* source)
 
 		if (!Y.RDB$QUERY_HEADER.NULL) {
 			STUFF(isc_dyn_fld_query_header);
-			blob_copy(rlb, source, &Y.RDB$QUERY_HEADER);
+			blob_copy(rlb, source, Y.RDB$QUERY_HEADER);
 		}
 
 		if (!Y.RDB$DESCRIPTION.NULL) {
 			STUFF(isc_dyn_description);
-			blob_copy(rlb, source, &Y.RDB$DESCRIPTION);
+			blob_copy(rlb, source, Y.RDB$DESCRIPTION);
 		}
 
 		if (!Y.RDB$DEFAULT_VALUE.NULL) {
 			STUFF(isc_dyn_fld_default_value);
-			blob_copy(rlb, source, &Y.RDB$DEFAULT_VALUE);
+			blob_copy(rlb, source, Y.RDB$DEFAULT_VALUE);
 		}
 
 		if ((source->rel_database->dbb_capabilities & DBB_cap_rfr_sys_flag) &&
@@ -2211,9 +2214,9 @@ static void clone_fields( qli_rel* target, qli_rel* source)
 		if (!F.RDB$COMPUTED_BLR.NULL)
 		{
 			STUFF(isc_dyn_fld_computed_blr);
-			blob_copy(rlb, source, &F.RDB$COMPUTED_BLR);
+			blob_copy(rlb, source, F.RDB$COMPUTED_BLR);
 			STUFF(isc_dyn_fld_computed_source);
-			blob_copy(rlb, source, &F.RDB$COMPUTED_SOURCE);
+			blob_copy(rlb, source, F.RDB$COMPUTED_SOURCE);
 
 			STUFF(isc_dyn_fld_type);
 			STUFF_WORD(2);
@@ -2391,32 +2394,32 @@ static void clone_global_fields( qli_rel* target, qli_rel* source)
 
 		if (!Y.RDB$MISSING_VALUE.NULL) {
 			STUFF(isc_dyn_fld_missing_value);
-			blob_copy(rlb, source, &Y.RDB$MISSING_VALUE);
+			blob_copy(rlb, source, Y.RDB$MISSING_VALUE);
 		}
 
 		if (!Y.RDB$DEFAULT_VALUE.NULL) {
 			STUFF(isc_dyn_fld_default_value);
-			blob_copy(rlb, source, &Y.RDB$DEFAULT_VALUE);
+			blob_copy(rlb, source, Y.RDB$DEFAULT_VALUE);
 		}
 
 		if (!Y.RDB$QUERY_HEADER.NULL) {
 			STUFF(isc_dyn_fld_query_header);
-			blob_copy(rlb, source, &Y.RDB$QUERY_HEADER);
+			blob_copy(rlb, source, Y.RDB$QUERY_HEADER);
 		}
 
 		if (!Y.RDB$DESCRIPTION.NULL) {
 			STUFF(isc_dyn_description);
-			blob_copy(rlb, source, &Y.RDB$DESCRIPTION);
+			blob_copy(rlb, source, Y.RDB$DESCRIPTION);
 		}
 
 		if (!Y.RDB$VALIDATION_BLR.NULL) {
 			STUFF(isc_dyn_fld_validation_blr);
-			blob_copy(rlb, source, &Y.RDB$VALIDATION_BLR);
+			blob_copy(rlb, source, Y.RDB$VALIDATION_BLR);
 		}
 
 		if (!Y.RDB$VALIDATION_SOURCE.NULL) {
 			STUFF(isc_dyn_fld_validation_source);
-			blob_copy(rlb, source, &Y.RDB$VALIDATION_SOURCE);
+			blob_copy(rlb, source, Y.RDB$VALIDATION_SOURCE);
 		}
 
 		if ((target->rel_database->dbb_capabilities & DBB_cap_dimensions) &&
@@ -2721,7 +2724,7 @@ static void get_database_type( DBB new_dbb)
 }
 
 
-static TEXT *get_query_header( DBB database, ISC_QUAD* blob_id)
+static TEXT *get_query_header( DBB database, ISC_QUAD& blob_id)
 {
 /**************************************
  *
@@ -2735,10 +2738,9 @@ static TEXT *get_query_header( DBB database, ISC_QUAD* blob_id)
  **************************************/
 	ISC_STATUS_ARRAY status_vector;
 	TEXT header[1024], buffer[1024];
-	FB_API_HANDLE blob = 0;
+	UserBlob blob(status_vector);
 
-	if (isc_open_blob(status_vector, &database->dbb_handle,
-					   &gds_trans, &blob, blob_id))
+	if (!blob.open(database->dbb_handle, gds_trans, blob_id))
 	{
 		ERRQ_database_error(database, status_vector);
 	}
@@ -2748,10 +2750,8 @@ static TEXT *get_query_header( DBB database, ISC_QUAD* blob_id)
 	// CVC: No bounds check here: it's assumed that 1024 is enough, but "p"
 	// might overflow "header" eventually.
 	for (;;) {
-		USHORT length;
-		ISC_STATUS status = isc_get_segment(status_vector, &blob, &length,
-								  sizeof(buffer), buffer);
-		if (status && status != isc_segment)
+		size_t length;
+		if (!blob.getSegment(sizeof(buffer), buffer, length))
 			break;
 		if (length && buffer[length - 1] == '\n')
 			--length;
@@ -2769,7 +2769,7 @@ static TEXT *get_query_header( DBB database, ISC_QUAD* blob_id)
 		}
 	}
 
-	if (isc_close_blob(status_vector, &blob))
+	if (!blob.close())
 		ERRQ_database_error(database, gds_status);
 
 	*p = 0;
@@ -3002,7 +3002,7 @@ static qli_symbol* make_symbol( TEXT* string, SSHORT length)
 }
 
 
-static qli_const* missing_value( ISC_QUAD* blob_id, qli_symbol* symbol)
+static qli_const* missing_value( ISC_QUAD& blob_id, qli_symbol* symbol)
 {
 /**************************************
  *
@@ -3286,7 +3286,7 @@ static qli_syntax* parse_blr( UCHAR ** ptr, qli_symbol* symbol)
 }
 
 
-static qli_syntax* parse_blr_blob(ISC_QUAD* blob_id, qli_symbol* symbol)
+static qli_syntax* parse_blr_blob(ISC_QUAD& blob_id, qli_symbol* symbol)
 {
 /**************************************
  *
@@ -3300,28 +3300,29 @@ static qli_syntax* parse_blr_blob(ISC_QUAD* blob_id, qli_symbol* symbol)
  **************************************/
 	ISC_STATUS_ARRAY status_vector;
 
-	if (isNullBlob(blob_id))
+	if (UserBlob::blobIsNull(blob_id))
 		return NULL;
 
-	FB_API_HANDLE handle = 0;
+	UserBlob handle(status_vector);
 
-	if (isc_open_blob(status_vector, &DB, &gds_trans, &handle, blob_id))
+	if (!handle.open(DB, gds_trans, blob_id))
 		return NULL;
 
 	UCHAR buffer[1024];
 	UCHAR* ptr = buffer;
 
 	for (;;) {
-		USHORT length = buffer + sizeof(buffer) - ptr;
+		size_t length = buffer + sizeof(buffer) - ptr;
 		if (!length)
 			break;
-		if (isc_get_segment(status_vector, &handle, &length, length,
-							 (char*) ptr))
+		// The old code considered getting a portion of a segment a bug.
+		// Anyway, 1024 is not much to contain the BLR stream, even for validation.
+		if (!handle.getSegment(length, ptr, length) || handle.getCode())
 			break;
 		ptr += length;
 	}
 
-	if (isc_close_blob(status_vector, &handle))
+	if (!handle.close())
 		return NULL;
 
 	if (ptr == buffer)
@@ -3467,8 +3468,10 @@ static void set_capabilities( DBB database)
 	}
 
 	if (req)
+	{
 		if (isc_release_request(gds_status, &req))
 			ERRQ_database_error(database, gds_status);
+	}
 
 }
 
