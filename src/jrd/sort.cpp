@@ -2871,17 +2871,20 @@ static void sort(sort_context* scb)
 }
 
 
-class RunSort
+namespace
 {
-public:
-	RunSort(run_control* irun) : run(irun) {}
-	RunSort() : run(NULL) {}
+	class RunSort
+	{
+	public:
+		RunSort(run_control* irun) : run(irun) {}
+		RunSort() : run(NULL) {}
 
-	static const UINT64 generate(const void*, const RunSort& item) 
-	{ return item.run->run_seek; }
+		static const UINT64 generate(const void*, const RunSort& item) 
+		{ return item.run->run_seek; }
 
-	run_control* run;
-};
+		run_control* run;
+	};
+} // namespace
 
 
 static void sort_runs_by_seek(sort_context* scb, int n)
