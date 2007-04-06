@@ -2618,11 +2618,11 @@ static void order_and_save(sort_context* scb)
  **************************************
  *
  * Functional description
- *		The memory full of record pointers have been sorted, but more
+ *		The memory full of record pointers has been sorted, but more
  *		records remain, so the run will have to be written to scratch file. 
  *		If target run can be allocated in contiguous chunk of memory then 
  *		just memcpy records into it. Else call more expensive order() to
- *		physically rearrange records in sort space and write its into
+ *		physically rearrange records in sort space and write its run into
  *		scratch file as one big chunk
  *
  **************************************/
