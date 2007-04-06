@@ -1543,6 +1543,8 @@ static void store_intlnames(thread_db* tdbb, Database* dbb)
 	CMP_release(tdbb, handle);
 	handle = NULL;
 
+	jrd_tra* trans = dbb->dbb_sys_trans;
+
 	for (const COLL_TYPE* collptr = coll_types; collptr->init_collation_name; collptr++)
 	{
 		STORE(REQUEST_HANDLE handle) X IN RDB$COLLATIONS USING
@@ -1560,6 +1562,20 @@ static void store_intlnames(thread_db* tdbb, Database* dbb)
 			X.RDB$COLLATION_ID = collptr->init_collation_id;
 			X.RDB$SYSTEM_FLAG = RDB_system;
 			X.RDB$COLLATION_ATTRIBUTES = collptr->init_collation_attributes;
+
+			if (collptr->init_collation_specific_attributes)
+			{
+				blb* blob = BLB_create(tdbb, trans, &X.RDB$SPECIFIC_ATTRIBUTES);
+				BLB_put_segment(tdbb,
+								blob,
+								reinterpret_cast<const UCHAR*>(collptr->init_collation_specific_attributes),
+								strlen(collptr->init_collation_specific_attributes));
+				BLB_close(tdbb, blob);
+				X.RDB$SPECIFIC_ATTRIBUTES.NULL = FALSE;
+			}
+			else
+				X.RDB$SPECIFIC_ATTRIBUTES.NULL = TRUE;
+
 		END_STORE;
 	}
 

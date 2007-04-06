@@ -304,7 +304,7 @@ INTL_BOOL FB_DLL_EXPORT LD_lookup_charset(charset* cs, const ASCII* name)
 			return lookup_symbol(cs, name);											\
 	}
 #define CSALIAS(name, cs_id)
-#define COLLATION(name, base_name, cc_id, cs_id, coll_id, symbol, attr)
+#define COLLATION(name, base_name, cc_id, cs_id, coll_id, symbol, attr, specific_attr)
 #define COLLATE_ALIAS(name, coll_id)
 #define END_CHARSET
 
@@ -359,7 +359,7 @@ INTL_BOOL FB_DLL_EXPORT LD_lookup_texttype(texttype* tt, const ASCII* texttype_n
 #define CSALIAS(name, cs_id)
 #define END_CHARSET	\
 	}
-#define COLLATION(tt_name, base_name, cc_id, cs_id, coll_id, symbol, coll_attr)	\
+#define COLLATION(tt_name, base_name, cc_id, cs_id, coll_id, symbol, coll_attr, specific_attr)	\
 	{																	\
 		EXTERN_texttype((*coll_lookup_symbol)) = symbol;				\
 																		\
@@ -368,8 +368,8 @@ INTL_BOOL FB_DLL_EXPORT LD_lookup_texttype(texttype* tt, const ASCII* texttype_n
 			INTL_BOOL ret = coll_lookup_symbol(							\
 				tt, &cs, texttype_name, charset_name,					\
 				(ignore_attributes ? coll_attr : attributes),			\
-				(ignore_attributes ? NULL : specific_attributes),		\
-				(ignore_attributes ? 0 : specific_attributes_length));	\
+				(ignore_attributes ? (UCHAR*) specific_attr : specific_attributes),	\
+				(ignore_attributes ? strlen(specific_attr) : specific_attributes_length));	\
 																		\
 			if (cs.charset_fn_destroy)									\
 				cs.charset_fn_destroy(&cs);								\
