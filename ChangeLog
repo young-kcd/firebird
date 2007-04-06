@@ -1,3 +1,23 @@
+2007-04-05 13:30  paulbeach
+
+	* firebird2/builds/posix/: fbintl.darwin.vers (1.1.2.1),
+	firebird.darwin.vers (1.1.2.1), make.defaults (1.44.4.3),
+	prefix.darwin (1.14.12.3):
+
+	Export symbols on Darwin properly.
+
+2007-04-05 12:11  paulbeach
+
+	* firebird2/builds/posix/Makefile.in.static.gbak (1.12.4.1):
+
+	Darwin stuff not needed anymore
+
+2007-04-05 10:55  alexpeshkoff
+
+	* firebird2/src/common/classes/alloc.cpp (1.80.2.4):
+
+	avoid static variable in inline function - thanks to Claudio
+
 2007-04-04 14:17  alexpeshkoff
 
 	* firebird2/src/common/classes/alloc.cpp (1.80.2.3):
