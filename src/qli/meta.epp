@@ -3472,7 +3472,6 @@ static void set_capabilities( DBB database)
 		if (isc_release_request(gds_status, &req))
 			ERRQ_database_error(database, gds_status);
 	}
-
 }
 
 
