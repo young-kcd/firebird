@@ -1745,6 +1745,7 @@ COMMIT WORK;
 ('gfix_SQL_dialect', 'ALICE_gfix', 'alice.c', NULL, 3, 112, NULL, 'database SQL dialect must be one of ''@1''', NULL, NULL);
 ('gfix_dialect_req', 'ALICE_gfix', 'alice.c', NULL, 3, 113, NULL, 'dialect number required', NULL, NULL);
 ('gfix_pzval_req', 'ALICE_gfix', 'alice.cpp', NULL, 3, 114, NULL, 'positive or zero numeric value required', NULL, NULL);
+('gfix_opt_trusted', 'ALICE_gfix', 'alice.c', NULL, 3, 115, NULL, '	-trusted	use trusted authentication', NULL, NULL);
 -- Do not change the arguments of the previous GFIX messages.
 -- Write the new GFIX messages here.
 -- DSQL
@@ -2329,6 +2330,7 @@ ERROR: Backup incomplete', NULL, NULL);
 (NULL, 'get_ref_constraint', 'restore.epp', NULL, 12, 292, NULL, 'referential constraint', NULL, NULL);
 (NULL, 'get_type', 'restore.epp', NULL, 12, 293, NULL, 'type (in RDB$TYPES)', NULL, NULL);
 (NULL, '', 'burp.cpp', NULL, 12, 294, NULL, '	@1NO_D(BTRIGGERS)      do not run database triggers', NULL, NULL);
+(NULL, '', 'burp.cpp', NULL, 12, 295, NULL, '	@1TRU(STED)            use trusted authentication', NULL, NULL);
 -- Do not change the arguments of the previous GBAK messages.
 -- Write the new GBAK messages here.
 -- SQLERR
@@ -2973,6 +2975,7 @@ Fetches = !f', NULL, NULL);
 ('GsecMsg88', 'printhelp', 'gsec.c', NULL, 18, 88, NULL, '-z', NULL, NULL);
 ('GsecMsg89', 'printhelp', 'gsec.c', NULL, 18, 89, NULL, 'displaying version number:', NULL, NULL);
 ('GsecMsg90', 'printhelp', 'gsec.c', NULL, 18, 90, NULL, 'z (interactive only)', NULL, NULL);
+('GsecMsg91', 'printhelp', 'gsec.c', NULL, 18, 91, NULL, '-trusted (use trusted authentication)', NULL, NULL);
 -- Do not change the arguments of the previous GSEC messages.
 -- Write the new GSEC messages here.
 -- LICENSE
@@ -3158,6 +3161,7 @@ Analyzing database pages ...', NULL, NULL);
 ('gstat_password', '', 'dba.e', NULL, 21, 33, NULL, '    -p      password', NULL, NULL);
 ('', 'main', 'dba.e', NULL, 21, 34, NULL, '    -r      analyze average record and version length', NULL, NULL);
 ('', 'main', 'dba.e', NULL, 21, 35, NULL, '    -t      tablename', NULL, NULL);
+('', 'main', 'dba.e', NULL, 21, 36, NULL, '    -tr     use trusted authentication', NULL, NULL);
 -- Do not change the arguments of the previous GSTAT messages.
 -- Write the new GSTAT messages here.
 stop

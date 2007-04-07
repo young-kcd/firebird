@@ -186,6 +186,9 @@ void EXE_create_database( DBB dbb)
 	if (p = dudleyGlob.DDL_default_password) {
 		dpb.insertString(isc_dpb_password, p, strlen(p));
 	}
+	if (dudleyGlob.DDL_trusted) {
+		dpb.insertTag(isc_dpb_trusted_auth);
+	}
 
 	const TEXT* file_name = dbb->dbb_name->sym_string;
 
@@ -353,6 +356,9 @@ void EXE_drop_database( DBB dbb)
 	}
 	if (p = dudleyGlob.DDL_default_password) {
 		dpb.insertString(isc_dpb_password, p, strlen(p));
+	}
+	if (dudleyGlob.DDL_trusted) {
+		dpb.insertTag(isc_dpb_trusted_auth);
 	}
 
 	if (isc_attach_database(gds_status, 0, dbb->dbb_name->sym_string, 
@@ -651,6 +657,9 @@ void EXE_modify_database( DBB dbb)
 	}
 	if (p = dudleyGlob.DDL_default_password) {
 		dpb.insertString(isc_dpb_password, p, strlen(p));
+	}
+	if (dudleyGlob.DDL_trusted) {
+		dpb.insertTag(isc_dpb_trusted_auth);
 	}
 
 /*

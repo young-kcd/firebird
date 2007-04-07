@@ -114,12 +114,19 @@ enum gpre_cmd_switch
 	 * deliver dates to Cobol programs
 	 */
 	IN_SW_GPRE_DATE_FMT,
+
 	/*
 	 * Added to allow QLI processing the be suppressed.  QLI and COBOL reserved word lists
 	 * intersect and since QLI reserved words are recognized no matter where the occur in the
 	 * source stream this was causing bogus errors while parsing COBOL programs.
 	 */
 	IN_SW_NO_QLI,
+
+	/*
+	 * Added to allow trusted authentication even with ISC_USER set in environment 
+	 */
+	IN_SW_GPRE_TRUSTED,
+
 	/* As mentioned above: This should always be one larger than the largest 
 	   switch value.
 	   FSG 14.Nov.2000
@@ -173,13 +180,16 @@ static const in_sw_tab_t gpre_in_sw_table[] =
 #ifdef GPRE_PASCAL
 	{IN_SW_GPRE_P		, 0, "PASCAL"		, 0, 0, 0, FALSE, 0, 0, "\t\textended PASCAL program"},
 #endif
-	{IN_SW_GPRE_PASSWORD	, 0, "PASSWORD"		, 0, 0, 0, FALSE, 0, 0, "\tdefault password"},
+	{IN_SW_GPRE_PASSWORD, 0, "PASSWORD"		, 0, 0, 0, FALSE, 0, 0, "\tdefault password"},
 	{IN_SW_GPRE_R		, 0, "RAW"			, 0, 0, 0, FALSE, 0, 0, "\t\tgenerate unformatted binary BLR"},
-	{IN_SW_GPRE_SQLDIALECT, 0, "SQL_DIALECT"	, 0, 0, 0, FALSE, 0, 0, "\tSQL dialect to use"},
+	{IN_SW_GPRE_SQLDIALECT, 0, "SQL_DIALECT", 0, 0, 0, FALSE, 0, 0, "\tSQL dialect to use"},
 	{IN_SW_GPRE_S		, 0, "STRINGS"		, 0, 0, 0, FALSE, 0, 0, NULL},
 	{IN_SW_GPRE_SQLDA	, 0, "SQLDA"		, 0, 0, 0, FALSE, 0, 0, "\t\t***** Deprecated feature. ********"},
 	{IN_SW_GPRE_T		, 0, "TRACE"		, 0, 0, 0, FALSE, 0, 0, NULL},
-	{IN_SW_GPRE_USER		, 0, "USER"			, 0, 0, 0, FALSE, 0, 0, "\t\tdefault user name"},
+#ifdef TRUSTED_AUTH
+	{IN_SW_GPRE_TRUSTED	, 0, "TRUSTED"		, 0, 0, 0, FALSE, 0, 0, "\t\tuse trusted authentication"},
+#endif
+	{IN_SW_GPRE_USER	, 0, "USER"			, 0, 0, 0, FALSE, 0, 0, "\t\tdefault user name"},
 /* FSG 14.Nov.2000 */
 	{IN_SW_GPRE_VERBOSE	, 0, "VERBOSE"		, 0, 0, 0, FALSE, 0, 0, "\t\tVerbose Output to stderr"},
 #ifdef VMS

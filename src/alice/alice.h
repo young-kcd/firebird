@@ -60,9 +60,8 @@ struct user_action
 	ULONG ua_switches;
 	const char* ua_user;
 	const char* ua_password;
-#ifdef TRUSTED_SERVICES
 	const char* ua_tr_user;
-#endif
+	bool ua_trusted;
 	bool ua_use;
 	bool ua_force;
 	bool ua_read_only;

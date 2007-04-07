@@ -1510,6 +1510,7 @@ struct GpreGlobals
 	USHORT sw_ods_version;
 	bool override_case;
 	bool dialect_specified;
+	bool trusted_auth;
 
 	SSHORT sw_interp;
 	USHORT compiletime_db_dialect;

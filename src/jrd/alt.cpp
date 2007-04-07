@@ -1216,6 +1216,7 @@ static ISC_STATUS executeSecurityCommand(
 				status,
 				input_user_data->dba_user_name,
 				input_user_data->dba_password,
+				false,
 				input_user_data->protocol, 
 				input_user_data->server);
 	if (handle)

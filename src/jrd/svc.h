@@ -83,8 +83,8 @@ const USHORT isc_action_max				= 14;
 #else
 #define SERVICE_THD_PARAM "-svc"
 #endif
-#ifdef TRUSTED_AUTH
-#define TRUSTED_USER_SWITCH "-TRUSTED"
+#ifdef TRUSTED_SERVICES
+#define TRUSTED_USER_SWITCH "-TRUSTED_SVC"
 #endif
 
 /* Macro used to store services thread specific data */
@@ -135,7 +135,7 @@ public:
 	bool	svc_do_shutdown;
 	Firebird::string	svc_username;
 	Firebird::string	svc_enc_password;
-#ifdef TRUSTED_AUTH
+#ifdef TRUSTED_SERVICES
 	Firebird::string	svc_trusted_login;
 #endif
 	Firebird::string	svc_switches;	// Full set of switches

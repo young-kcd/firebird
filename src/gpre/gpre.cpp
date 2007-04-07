@@ -366,6 +366,7 @@ int main(int argc, char* argv[])
 	gpreGlob.default_lc_ctype	= NULL;
 	gpreGlob.text_subtypes		= NULL;
 	gpreGlob.override_case		= false;
+	gpreGlob.trusted_auth		= false;
 
 	gpreGlob.sw_know_interp = FALSE;
 	gpreGlob.sw_interp = 0;
@@ -1991,6 +1992,12 @@ static bool get_switches(int			argc,
 			}
 			gpreGlob.default_password = *++argv;
 			break;
+
+#ifdef TRUSTED_AUTH
+		case IN_SW_GPRE_TRUSTED:
+			gpreGlob.trusted_auth = true;
+			break;
+#endif
 
 		case IN_SW_GPRE_INTERP:
 			if (!arg_is_string(

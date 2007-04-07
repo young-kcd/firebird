@@ -173,6 +173,11 @@ bool MET_database(dbb* database, bool print_version)
 	if ((p = database->dbb_c_password)) {
 		dpb.insertString(isc_dpb_password, p, strlen(p));
 	}
+#ifdef TRUSTED_AUTH
+	if (gpreGlob.trusted_auth) {
+		dpb.insertTag(isc_dpb_trusted_auth);
+	}
+#endif
 
 	if (isc_attach_database(gds_status, 0, database->dbb_filename, &DB, 
 							dpb.getBufferLength(), 

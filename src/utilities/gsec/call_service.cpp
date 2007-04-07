@@ -150,6 +150,7 @@ static void stuffSpb2(char*& spb, char param, const TEXT* value)
 isc_svc_handle attachRemoteServiceManager(ISC_STATUS* status,
 							  const TEXT* username,
 							  const TEXT* password, 
+							  bool trusted,
 							  int protocol, 
 							  const TEXT* server)
 {
@@ -189,7 +190,7 @@ isc_svc_handle attachRemoteServiceManager(ISC_STATUS* status,
 		return 0;
 	}
 
-	return attachRemoteServiceManager(status, username, password, service);
+	return attachRemoteServiceManager(status, username, password, trusted, service);
 }
 
 
@@ -210,6 +211,7 @@ isc_svc_handle attachRemoteServiceManager(ISC_STATUS* status,
 isc_svc_handle attachRemoteServiceManager(ISC_STATUS* status,
 							  const TEXT* username,
 							  const TEXT* password, 
+							  bool trusted,
 							  const TEXT* server)
 {
 	char service[SERVICE_SIZE];
@@ -225,10 +227,14 @@ isc_svc_handle attachRemoteServiceManager(ISC_STATUS* status,
 	char* spb = spb_buffer;
 	stuffSpbByte(spb, isc_spb_version);
 	stuffSpbByte(spb, isc_spb_current_version);
-	if (username && password)
+	if (username && password && username[0] && password[0])
 	{
 		stuffSpb(spb, isc_spb_user_name, username);
 		stuffSpb(spb, isc_spb_password, password);
+	}
+	else if (trusted)
+	{
+		stuffSpb(spb, isc_spb_trusted_auth, "");
 	}
 
 	fb_assert((size_t)(spb - spb_buffer) <= sizeof(spb_buffer));

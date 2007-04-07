@@ -255,9 +255,8 @@ int common_main(int					argc,
 
 	tdgbl->ALICE_data.ua_user = NULL;
 	tdgbl->ALICE_data.ua_password = NULL;
-#ifdef TRUSTED_SERVICES
 	tdgbl->ALICE_data.ua_tr_user = NULL;
-#endif
+	tdgbl->ALICE_data.ua_trusted = false;
 
 //  Start by parsing switches
 
@@ -320,11 +319,8 @@ int common_main(int					argc,
 		if (*table->in_sw_name == 'x') {
 			tdgbl->ALICE_data.ua_debug++;
 		}
-		if (table->in_sw_value == sw_z) {
-			ALICE_print(3, SafeArg() << GDS_VERSION);	// msg 3: gfix version %s
-		}
 #ifdef TRUSTED_SERVICES
-		if (strcmp(table->in_sw_name, "trusted") == 0) {
+		if (strcmp(table->in_sw_name, "trusted_svc") == 0) {
 			if (--argc <= 0) {
 				ALICE_error(13);	// msg 13: user name required
 			}
@@ -332,6 +328,15 @@ int common_main(int					argc,
 			continue;
 		}
 #endif
+#ifdef TRUSTED_AUTH
+		if (strcmp(table->in_sw_name, "trusted") == 0) {
+			tdgbl->ALICE_data.ua_trusted = true;
+			continue;
+		}
+#endif
+		if (table->in_sw_value == sw_z) {
+			ALICE_print(3, SafeArg() << GDS_VERSION);	// msg 3: gfix version %s
+		}
 		if ((table->in_sw_incompatibilities & switches) ||
 			(table->in_sw_requires && !(table->in_sw_requires & switches)))
 		{

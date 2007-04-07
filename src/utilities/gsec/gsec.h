@@ -105,6 +105,9 @@ struct internal_user_data {
 	TEXT	database_name [DATABASE_LEN];	/* database to manage name */
 	bool	database_name_entered;		/* database entered flag */
 	bool	database_name_specified;		/* database specified flag */
+#ifdef TRUSTED_AUTH
+	bool	trusted_auth;	/* use trusted authentication */
+#endif
 
 	// force NULLs in this ugly structure to avoid foolish bugs
 	internal_user_data() 
@@ -265,6 +268,7 @@ const USHORT GsecMsg87	= 87;	/* -database <security database> */
 const USHORT GsecMsg88	= 88;	/* -z */
 const USHORT GsecMsg89	= 89;	/* displaying version number: */
 const USHORT GsecMsg90	= 90;	/* z (interactive only) */
+const USHORT GsecMsg91	= 91;	/* -trusted (use trusted authentication) */
 
 #endif /* UTILITIES_GSEC_H */
 

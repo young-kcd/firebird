@@ -161,10 +161,18 @@ void DDL_ext(void)
 	else
 		output_file = stdout;
 
-	if (dudleyGlob.DDL_default_user || dudleyGlob.DDL_default_password)
-		READY DB USER dudleyGlob.DDL_default_user PASSWORD dudleyGlob.DDL_default_password;
+	if (!(dudleyGlob.DDL_default_user || dudleyGlob.DDL_default_password)) 
+	{
+		if (!dudleyGlob.DDL_trusted)
+			READY DB;
+		else
+		{
+			char dpb[] = {isc_dpb_version1, isc_dpb_trusted_auth, 0};
+			isc_attach_database (NULL, 0, dudleyGlob.DB_file_name, &DB, sizeof dpb, dpb);
+		}
+	}
 	else
-		READY DB;
+		READY DB USER dudleyGlob.DDL_default_user PASSWORD dudleyGlob.DDL_default_password;
 
 /* the database version number is useful during extract - this goes
    to stdout, not to the output_file */

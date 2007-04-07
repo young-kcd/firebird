@@ -81,8 +81,11 @@ const int IN_SW_BURP_HIDDEN_RDWRITE	= 37;
 
 const int IN_SW_BURP_RECREATE		= 38;      // recreate database 
 const int IN_SW_BURP_NOD			= 39;      // do not run database triggers
+#ifdef TRUSTED_AUTH
+const int IN_SW_BURP_TRUSTED_USER   = 40;      // force trusted auth
+#endif
 #ifdef TRUSTED_SERVICES
-const int IN_SW_BURP_TRUSTED_USER   = 40;      // trusted user name to use on attach 
+const int IN_SW_BURP_TRUSTED_SVC    = 41;      // trusted user name to use on attach 
 #endif
 /**************************************************************************/
     // used 0BCDEFGILMNOPRSTUVYZ    available AHJQWX 
@@ -146,9 +149,16 @@ static in_sw_tab_t burp_in_sw_table [] =
     {IN_SW_BURP_ROLE, isc_spb_sql_role_name,	"ROLE",		    0, 0, 0, FALSE, 252, 0, NULL},
     {IN_SW_BURP_S,    0,				"SKIP_BAD_DATA",    0, 0, 0, FALSE, 0, 0, NULL},
     {IN_SW_BURP_SE,   0,				"SERVICE",	    0, 0, 0, FALSE, 277, 0, NULL},
-		// msg 277: %sSE(RVICE) use services manager 
+				// msg 277: %sSE(RVICE) use services manager 
     {IN_SW_BURP_T,    0,				"TRANSPORTABLE",    0, 0, 0, FALSE, 175, 0, NULL},
-                // msg 175: %sTRANSPORTABLE transportable backup -- data in XDR format 
+				// msg 175: %sTRANSPORTABLE transportable backup -- data in XDR format 
+#ifdef TRUSTED_AUTH
+    {IN_SW_BURP_TRUSTED_USER, 0,		"TRUSTED",			0, 0, 0, FALSE, 295, 0, NULL},
+				// msg 295: @1TRU(STED)            use trusted authentication
+#endif
+#ifdef TRUSTED_SERVICES
+    {IN_SW_BURP_TRUSTED_SVC, 0,	 		"TRUSTED_SVC",	    0, 0, 0, FALSE, 0, 0, NULL},
+#endif
 /*
     {IN_SW_BURP_U,    0,				"UNPROTECTED",	    0, 0, 0, FALSE, 0, 0, NULL},
 */
@@ -156,9 +166,6 @@ static in_sw_tab_t burp_in_sw_table [] =
                 // msg 276: %sUSE_(ALL_SPACE) do not reserve space for record versions 
     {IN_SW_BURP_USER, 0,				"USER",		    0, 0, 0, FALSE, 191, 0, NULL},
                 // msg 191: %sUSER Firebird user name
-#ifdef TRUSTED_SERVICES
-    {IN_SW_BURP_TRUSTED_USER, 0,		"TRUSTED",	    0, 0, 0, FALSE, 0, 0, NULL},
-#endif
     {IN_SW_BURP_V,    isc_spb_verbose,		"VERBOSE",	    0, 0, 0, FALSE, 0, 0, NULL},
     {IN_SW_BURP_V,    0,				"VERIFY",	    0, 0, 0, FALSE, 113, 0, NULL},
                 // msg 113: %sVERIFY report each action taken 

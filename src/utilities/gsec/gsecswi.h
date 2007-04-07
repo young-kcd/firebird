@@ -55,6 +55,9 @@ const int IN_SW_GSEC_USERNAME		= 21;	/* placeholder for the username */
 #ifdef TRUSTED_SERVICES
 const int IN_SW_GSEC_DBA_TRUST_USER	= 22;	/* Database Admin. Trusted User name */
 #endif
+#ifdef TRUSTED_AUTH
+const int IN_SW_GSEC_TRUSTED_AUTH	= 23;	/* Use trusted authentication */
+#endif
 
 
 static struct in_sw_tab_t gsec_in_sw_table [] = {
@@ -78,7 +81,10 @@ static struct in_sw_tab_t gsec_in_sw_table [] = {
     {IN_SW_GSEC_DBA_PASSWORD, 	0,			"PASSWORD",	0, 0, 0, FALSE,	0,	2, NULL},	/* Database Admin. Password */
     {IN_SW_GSEC_SQL_ROLE_NAME,	isc_spb_sql_role_name,		"ROLE",		0, 0, 0, FALSE,	0,	2, NULL},	/* SQL Role to assume */
 #ifdef TRUSTED_SERVICES
-	{IN_SW_GSEC_DBA_TRUST_USER,	0,			"TRUSTED",	0, 0, 0, FALSE,	0,	1, NULL},	/* Database Admin. Trusted User name */
+	{IN_SW_GSEC_DBA_TRUST_USER,	0,			"TRUSTED_SVC",	0, 0, 0, FALSE,	0,	1, NULL},	/* Database Admin. Trusted User name */
+#endif
+#ifdef TRUSTED_AUTH
+	{IN_SW_GSEC_TRUSTED_AUTH,	0,			"TRUSTED",	0, 0, 0, FALSE,	0,	1, NULL},	/* Database Admin. Trusted User name */
 #endif
     {IN_SW_GSEC_0,		0,				NULL,		0, 0, 0, FALSE,	0,	0, NULL}		/* End of List */
 };

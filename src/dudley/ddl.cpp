@@ -80,6 +80,10 @@ enum in_sw_values
 	IN_SW_GDEF_CXX,			// source is C++
 	IN_SW_GDEF_USER = 17,	// user name for PC security
 	IN_SW_GDEF_PASSWORD		// password for PC security
+#ifdef TRUSTED_AUTH
+	,
+	IN_SW_GDEF_TRUSTED		// trusted auth
+#endif
 };
 
 static const in_sw_tab_t gdef_in_sw_table[] =
@@ -103,6 +107,10 @@ static const in_sw_tab_t gdef_in_sw_table[] =
 		"\t\tuser name to use in attaching database" },
 	{ IN_SW_GDEF_PASSWORD, 0, "PASSWORD", 0, 0, 0, FALSE, 0, 0,
 		"\t\tpassword to use with user name" },
+#ifdef TRUSTED_AUTH
+	{ IN_SW_GDEF_TRUSTED, 0, "TRUSTED", 0, 0, 0, FALSE, 0, 0,
+		"\t\tuse trusted authentication" },
+#endif
 	{ IN_SW_GDEF_Z, 0, "Z", 0, 0, 0, FALSE, 0, 0, "\t\tprint version number" },
 	{ IN_SW_GDEF_0, 0, NULL, 0, 0, 0, FALSE, 0, 0, NULL }
 };
@@ -171,6 +179,7 @@ int CLIB_ROUTINE main( int argc, char* argv[])
 	dudleyGlob.DDL_dynamic = false;
 	dudleyGlob.DDL_trace = false;
 	dudleyGlob.DDL_version = false;
+	dudleyGlob.DDL_trusted = false;
 	dudleyGlob.DDL_default_user = NULL;
 	dudleyGlob.DDL_default_password = NULL;
 
@@ -289,6 +298,12 @@ int CLIB_ROUTINE main( int argc, char* argv[])
 				argc--;
 			}
 			break;
+
+#ifdef TRUSTED_AUTH
+		case IN_SW_GDEF_TRUSTED:
+			dudleyGlob.DDL_trusted = true;
+			break;
+#endif
 
 		case IN_SW_GDEF_0:
 			if (*string != '?')

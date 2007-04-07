@@ -329,6 +329,13 @@ static void buildDpb(Firebird::ClumpletWriter& dpb, const ULONG switches)
 						 strlen(tdgbl->ALICE_data.ua_tr_user));
 	}
 #endif
+#ifdef TRUSTED_AUTH
+	if (tdgbl->ALICE_data.ua_trusted) {
+		if (!dpb.find(isc_dpb_trusted_auth)) {
+			dpb.insertTag(isc_dpb_trusted_auth);
+		}
+	}
+#endif
 }
 
 

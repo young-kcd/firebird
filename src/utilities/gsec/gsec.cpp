@@ -296,6 +296,12 @@ int common_main(int argc,
 		else
 #endif
 		{
+#ifdef TRUSTED_AUTH
+			if (user_data->trusted_auth) 
+			{
+				dpb.insertTag(isc_dpb_trusted_auth);
+			}
+#endif
 			if (user_data->dba_user_name_entered) 
 			{
 				dpb.insertString(isc_dpb_user_name, 
@@ -328,13 +334,23 @@ int common_main(int argc,
 	if (useServices)
 	{
 #ifndef SERVICE_THREAD
-		envPick(user_data->dba_user_name, sizeof user_data->dba_user_name, "ISC_USER");
-		envPick(user_data->dba_password, sizeof user_data->dba_password, "ISC_PASSWORD");
+#ifdef TRUSTED_AUTH
+		if (!(user_data->trusted_auth))
+#endif
+		{
+			envPick(user_data->dba_user_name, sizeof user_data->dba_user_name, "ISC_USER");
+			envPick(user_data->dba_password, sizeof user_data->dba_password, "ISC_PASSWORD");
+		}
 #endif //SERVICE_THREAD
 		sHandle = attachRemoteServiceManager(
 					status,
 					user_data->dba_user_name,
 					user_data->dba_password,
+#ifdef TRUSTED_AUTH
+					user_data->trusted_auth,
+#else
+					false,
+#endif
 					serverName.c_str());
 		if (! sHandle)
 		{
@@ -961,6 +977,11 @@ static bool get_switches(
 				}
 				tdsec->tsec_sw_version = true;
 				break;
+#ifdef TRUSTED_AUTH
+			case IN_SW_GSEC_TRUSTED_AUTH:
+				user_data->trusted_auth = true;
+				break;
+#endif
 			case IN_SW_GSEC_0:
 #ifdef SERVICE_THREAD
 				GSEC_error(GsecMsg40);
@@ -1070,6 +1091,10 @@ static void printhelp(void)
 	util_output("%s", "     ");
 	GSEC_print(GsecMsg86);
 /* -role <database administrator SQL role name> */
+
+	util_output("%s", "     ");
+	GSEC_print(GsecMsg91);
+/* -trusted (use trusted authentication) */
 
 	util_output("%s", "     ");
 	GSEC_print(GsecMsg87);

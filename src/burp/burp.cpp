@@ -134,7 +134,7 @@ static int common_main(int, char**, Jrd::pfn_svc_output, Jrd::Service*);
 #ifndef SERVICE_THREAD
 BurpGlobals* gdgbl;
 static int output_main(Jrd::Service*, const UCHAR*);
-static int api_gbak(int, char**, USHORT, TEXT*, TEXT*, TEXT *, bool, bool);
+static int api_gbak(int, char**, USHORT, TEXT*, TEXT*, TEXT *, bool, bool, bool);
 #endif
 static void burp_output(const SCHAR*, ...) ATTRIBUTE_FORMAT(1,2);
 static void burp_usage();
@@ -222,8 +222,8 @@ int CLIB_ROUTINE main(int argc, char* argv[])
 
 // Initialize data 
 	USHORT total = 0;
-	bool flag_restore, flag_verbose, err;
-	flag_restore = flag_verbose = err = false;
+	bool flag_restore, flag_verbose, flag_trusted, err;
+	flag_restore = flag_verbose = flag_trusted = err = false;
 	
 	TEXT *sw_user, *sw_password, *sw_service;
 	TEXT *d_user, *d_password, *d_service;
@@ -265,13 +265,13 @@ int CLIB_ROUTINE main(int argc, char* argv[])
 		}
 		switch (in_sw_tab->in_sw)
 		{
-		case IN_SW_BURP_C:			// create database 
-		case IN_SW_BURP_R:			// replace database 
-		case IN_SW_BURP_RECREATE:	// recreate database 
+		case IN_SW_BURP_C:				// create database 
+		case IN_SW_BURP_R:				// replace database 
+		case IN_SW_BURP_RECREATE:		// recreate database 
 			total += len;
 			flag_restore = true;
 			break;
-		case IN_SW_BURP_USER:	// default user name 
+		case IN_SW_BURP_USER:			// default user name 
 			if (argvp >= end)
 				err = true;
 			else {
@@ -279,7 +279,7 @@ int CLIB_ROUTINE main(int argc, char* argv[])
 				d_user = *argvp++;
 			}
 			break;
-		case IN_SW_BURP_PASS:	// default password 
+		case IN_SW_BURP_PASS:			// default password 
 			if (argvp >= end)
 				err = true;
 			else {
@@ -287,7 +287,7 @@ int CLIB_ROUTINE main(int argc, char* argv[])
 				d_password = *argvp++;
 			}
 			break;
-		case IN_SW_BURP_SE:	// service name 
+		case IN_SW_BURP_SE:				// service name 
 			if (argvp >= end) {
 				err = true;
 			}
@@ -296,10 +296,16 @@ int CLIB_ROUTINE main(int argc, char* argv[])
 				d_service = *argvp++;
 			}
 			break;
-		case IN_SW_BURP_V:		// verify actions 
+		case IN_SW_BURP_V:				// verify actions 
 			total += len;
 			flag_verbose = true;
 			break;
+#ifdef TRUSTED_AUTH
+		case IN_SW_BURP_TRUSTED_USER:	// use trusted auth
+			total += len;
+			flag_trusted = true;
+			break;
+#endif
 		default:
 			total += len;
 			break;
@@ -330,8 +336,8 @@ int CLIB_ROUTINE main(int argc, char* argv[])
 		if (sw_service)
 			*sw_service = '\0';
 
-		exit_code = api_gbak(argc, argv, total, d_password,
-							 d_user, d_service, flag_restore, flag_verbose);
+		exit_code = api_gbak(argc, argv, total, d_password, d_user, d_service, 
+							 flag_restore, flag_verbose, flag_trusted);
 	}
 	else
 		exit_code = common_main(argc, argv, output_main, NULL);
@@ -363,7 +369,8 @@ static int api_gbak(int argc,
 					TEXT* user,
 					TEXT* service,
 					bool restore,
-					bool verbose)
+					bool verbose,
+					bool trusted)
 {
 /**********************************************
  *
@@ -382,19 +389,34 @@ static int api_gbak(int argc,
 
     Firebird::string usr;
 	if (!user)
-		fb_utils::readenv("ISC_USER", usr);
+	{
+		if (!trusted)
+		{
+			fb_utils::readenv("ISC_USER", usr);
+		}
+	}
 	else
+	{
 		usr = user;
+	}
 
 	Firebird::string pswd;
 	if (!password)
-		fb_utils::readenv("ISC_PASSWORD", pswd);
+	{
+		if (!trusted)
+		{
+			fb_utils::readenv("ISC_PASSWORD", pswd);
+		}
+	}
 	else
+	{
 		pswd = password;
+	}
 
 	char *const spb = (char *) gds__alloc((SLONG) (2 + 2 + usr.length() +
 									   2 + pswd.length() +
-									   2 + length));
+									   2 + length +
+									   (trusted ? 2 : 0)));
 	/* 'isc_spb_version'
 	   'isc_spb_current_version'
 	   'isc_spb_user_name'
@@ -438,6 +460,13 @@ static int api_gbak(int argc,
 		if (password)
 			*password = '\0';
 	}
+
+	if (trusted)
+	{
+		*spb_ptr++ = isc_spb_trusted_auth;
+		*spb_ptr++ = 0;
+	}
+
 
 	char* const svc_name = (char *) gds__alloc((SLONG) (strlen(service) + 1));
 
@@ -833,7 +862,7 @@ int common_main(int		argc,
 				tdgbl->gbl_sw_user = *argv++;
 			}
 #ifdef TRUSTED_SERVICES
-			else if (in_sw_tab->in_sw == IN_SW_BURP_TRUSTED_USER) {
+			else if (in_sw_tab->in_sw == IN_SW_BURP_TRUSTED_SVC) {
 				if (argv >= end)
 					BURP_error(188, true);
 					// trusted user name parameter missing 
@@ -1060,10 +1089,22 @@ int common_main(int		argc,
 				break;
 
 #ifdef TRUSTED_SERVICES
-			case (IN_SW_BURP_TRUSTED_USER):
+			case (IN_SW_BURP_TRUSTED_SVC):
+				while(dpb.find(isc_dpb_trusted_auth))
+				{
+					dpb.deleteClumplet();
+				}
 				dpb.insertString(isc_dpb_trusted_auth, 
 								 tdgbl->gbl_sw_tr_user,
 								 strlen(tdgbl->gbl_sw_tr_user));
+				break;
+#endif
+#ifdef TRUSTED_AUTH
+			case (IN_SW_BURP_TRUSTED_USER):
+				if (!dpb.find(isc_dpb_trusted_auth))
+				{
+					dpb.insertTag(isc_dpb_trusted_auth);
+				}
 				break;
 #endif
 			case (IN_SW_BURP_V):
