@@ -1,3 +1,42 @@
+2007-04-06 20:02  asfernandes
+
+	* firebird2/src/qli/meta.epp (1.66):
+
+	Misc
+
+2007-04-06 18:19  asfernandes
+
+	* firebird2/src/jrd/gds.cpp (1.221):
+
+	Misc
+
+2007-04-06 17:47  asfernandes
+
+	* firebird2/src/intl/ld.cpp (1.28):
+
+	Correction
+
+2007-04-06 12:10  robocop
+
+	* firebird2/src/: common/classes/UserBlob.cpp (1.5),
+	common/classes/UserBlob.h (1.4), qli/dtr.h (1.27), qli/eval.cpp
+	(1.48), qli/exe.cpp (1.52), qli/meta.epp (1.65), qli/proc.epp
+	(1.29), qli/show.epp (1.44):
+
+	Inject UserBlob into QLI (not in all places).
+
+2007-04-06 10:48  robocop
+
+	* firebird2/src/jrd/sort.cpp (1.97):
+
+	Totally misc.
+
+2007-04-06 04:58  asfernandes
+
+	* firebird2/src/jrd/sort.cpp (1.96):
+
+	Misc
+
 2007-04-06 04:10  asfernandes
 
 	* firebird2/src/: intl/ld.cpp (1.27), jrd/ini.epp (1.90), jrd/ini.h
