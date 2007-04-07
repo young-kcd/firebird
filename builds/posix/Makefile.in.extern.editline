@@ -27,7 +27,6 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.extern.editline,v 1.7 2007-04-07 08:05:56 alexpeshkoff Exp $
 #
 ROOT=..
 #ObjModuleType=std

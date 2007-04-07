@@ -1090,7 +1090,7 @@ int common_main(int		argc,
 
 #ifdef TRUSTED_SERVICES
 			case (IN_SW_BURP_TRUSTED_SVC):
-				while(dpb.find(isc_dpb_trusted_auth))
+				while (dpb.find(isc_dpb_trusted_auth))
 				{
 					dpb.deleteClumplet();
 				}
