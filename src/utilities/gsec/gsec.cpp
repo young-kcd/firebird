@@ -76,7 +76,7 @@ class tsec *gdsec;
 static int common_main(int, const char**, Jrd::pfn_svc_output, Jrd::Service*);
 static void util_output(const SCHAR*, ...);
 static int util_print(const SCHAR*, ...);
-static int vutil_print(SCHAR*, va_list);
+static int vutil_print(const SCHAR*, va_list);
 
 static void data_print(void*, const internal_user_data*, bool);
 static bool get_line(int*, SCHAR**, TEXT*, size_t);

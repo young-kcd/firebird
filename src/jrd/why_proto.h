@@ -253,12 +253,10 @@ ISC_STATUS API_ROUTINE isc_wait_for_event(ISC_STATUS*, FB_API_HANDLE*, USHORT,
 #endif	/* JRD_IBASE_H */
 #endif	/* WHY_NO_API */
 
-#ifdef CANCEL_OPERATION
 #define CANCEL_disable	1
 #define CANCEL_enable	2
 #define CANCEL_raise	3
 ISC_STATUS API_ROUTINE gds__cancel_operation(ISC_STATUS*, FB_API_HANDLE*, USHORT);
-#endif
 
 typedef void AttachmentCleanupRoutine(FB_API_HANDLE*, void*);
 typedef void TransactionCleanupRoutine(FB_API_HANDLE, void*);

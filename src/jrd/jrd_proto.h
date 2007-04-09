@@ -48,13 +48,13 @@ ISC_STATUS jrd8_blob_info(ISC_STATUS*, Jrd::blb**, SSHORT,
 										const SCHAR*, SSHORT, SCHAR*);
 ISC_STATUS jrd8_cancel_blob(ISC_STATUS *, Jrd::blb **);
 ISC_STATUS jrd8_cancel_events(ISC_STATUS *, Jrd::Attachment**, SLONG *);
-#ifdef CANCEL_OPERATION
+
 #define CANCEL_disable	1
 #define CANCEL_enable	2
 #define CANCEL_raise	3
 ISC_STATUS jrd8_cancel_operation(ISC_STATUS *, Jrd::Attachment**,
 											   USHORT);
-#endif
+
 ISC_STATUS jrd8_close_blob(ISC_STATUS *, Jrd::blb **);
 ISC_STATUS jrd8_commit_transaction(ISC_STATUS *, Jrd::jrd_tra **);
 ISC_STATUS jrd8_commit_retaining(ISC_STATUS *, Jrd::jrd_tra **);

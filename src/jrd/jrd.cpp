@@ -1525,7 +1525,6 @@ ISC_STATUS GDS_CANCEL_EVENTS(ISC_STATUS*	user_status,
 }
 
 
-#ifdef CANCEL_OPERATION
 ISC_STATUS GDS_CANCEL_OPERATION(ISC_STATUS* user_status,
 								Attachment** handle,
 								USHORT option)
@@ -1585,7 +1584,6 @@ ISC_STATUS GDS_CANCEL_OPERATION(ISC_STATUS* user_status,
 
 	return FB_SUCCESS;
 }
-#endif
 
 
 ISC_STATUS GDS_CLOSE_BLOB(ISC_STATUS * user_status, blb** blob_handle)
@@ -2362,9 +2360,7 @@ ISC_STATUS GDS_DETACH(ISC_STATUS* user_status, Attachment** handle)
 
 	V4_JRD_MUTEX_LOCK(dbb->dbb_mutexes + DBB_MUTX_init_fini);
 
-#ifdef CANCEL_OPERATION
 	attachment->att_flags |= ATT_cancel_disable;
-#endif
 
 #ifdef GOVERNOR
 	const ULONG attachment_flags = attachment->att_flags;
@@ -2503,9 +2499,7 @@ ISC_STATUS GDS_DROP_DATABASE(ISC_STATUS* user_status, Attachment** handle)
 						isc_arg_string, "DATABASE", 0);
 			}
 
-#ifdef CANCEL_OPERATION
 			attachment->att_flags |= ATT_cancel_disable;
-#endif
 
 /* Here we have database locked in exclusive mode.
    Just mark the header page with an 0 ods version so that no other
@@ -4605,7 +4599,6 @@ bool JRD_reschedule(thread_db* tdbb, SLONG quantum, bool punt)
 				return true;
 			}
 		}
-#ifdef CANCEL_OPERATION
 
 		// If a cancel has been raised, defer its acknowledgement
 		// when executing in the context of an internal request or
@@ -4632,7 +4625,6 @@ bool JRD_reschedule(thread_db* tdbb, SLONG quantum, bool punt)
 				}
 			}
 		}
-#endif
 	}
 
 	// Handle request cancellation
@@ -4971,7 +4963,6 @@ static ISC_STATUS check_database(thread_db* tdbb, Attachment* attachment, ISC_ST
 		return error(user_status);
 	}
 
-#ifdef CANCEL_OPERATION
 	if ((attachment->att_flags & ATT_cancel_raise) &&
 		!(attachment->att_flags & ATT_cancel_disable))
 	{
@@ -4982,7 +4973,6 @@ static ISC_STATUS check_database(thread_db* tdbb, Attachment* attachment, ISC_ST
 		*ptr++ = isc_arg_end;
 		return error(user_status);
 	}
-#endif
 
 	// Enable signal handler for the monitoring stuff
 

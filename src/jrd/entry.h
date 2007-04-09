@@ -757,7 +757,7 @@ ENTRYPOINT("isc_rollback_retaining", jrd8_rollback_retaining,
    /****    PSI5_rollback_retaining    ***/ y_valve_no_entrypoint,
 			   "_jrd8_rollback_retaining",
 			   IPI_rollback_retaining, (ISC_STATUS *, jrd_tra**))
-#ifdef CANCEL_OPERATION
+
 ENTRYPOINT("gds_cancel_operation", jrd8_cancel_operation,
    /***    "jrd5_cancel_operation"  ***/ NULL,
    /***     REM_cancel_operation    ***/ y_valve_no_entrypoint,
@@ -769,20 +769,6 @@ ENTRYPOINT("gds_cancel_operation", jrd8_cancel_operation,
    /***    "_jrd8_cancel_operation" ***/ NULL,
    /***     IPI_cancel_operation    ***/ y_valve_no_entrypoint,
 			   (ISC_STATUS *, Attachment**, USHORT))
-#else
-ENTRYPOINT("gds_cancel_operation",
-   /***	    jrd8_cancel_operation   ***/ y_valve_no_entrypoint,
-   /***    "jrd5_cancel_operation"  ***/ NULL,
-   /***     REM_cancel_operation    ***/ y_valve_no_entrypoint,
-   /***    "REM_cancel_operation"   ***/ NULL,
-   /***     CSI_cancel_operation    ***/ y_valve_no_entrypoint,
-   /***     RDB_cancel_operation    ***/ y_valve_no_entrypoint,
-   /***     PSI_cancel_operation    ***/ y_valve_no_entrypoint,
-   /***     PSI5_cancel_operation   ***/ y_valve_no_entrypoint,
-   /***    "_jrd8_cancel_operation" ***/ NULL,
-   /***     IPI_cancel_operation    ***/ y_valve_no_entrypoint,
-			   (ISC_STATUS *, Attachment**, USHORT))
-#endif
 
 ENTRYPOINT("gds_intl_function", jrd8_intl_function,
    /***    "jrd5_intl_function"  ***/ NULL,
@@ -1451,7 +1437,6 @@ ENTRYPOINT( "isc_rollback_retaining",
           "_jrd8_rollback_retaining",
              IPI_rollback_retaining)
 
-#ifdef CANCEL_OPERATION
 ENTRYPOINT( "gds_cancel_operation",
             jrd8_cancel_operation,
    /***    "jrd5_cancel_operation"  ***/  NULL,
@@ -1463,19 +1448,6 @@ ENTRYPOINT( "gds_cancel_operation",
    /***     PSI5_cancel_operation   ***/  no_entrypoint,
    /***    "_jrd8_cancel_operation" ***/  NULL,
    /***     IPI_cancel_operation    ***/  no_entrypoint)
-#else
-ENTRYPOINT( "gds_cancel_operation",
-   /***	    jrd8_cancel_operation   ***/  no_entrypoint,
-   /***    "jrd5_cancel_operation"  ***/  NULL,
-   /***     REM_cancel_operation    ***/  no_entrypoint,
-   /***    "REM_cancel_operation"   ***/  NULL,
-   /***     CSI_cancel_operation    ***/  no_entrypoint,
-   /***     RDB_cancel_operation    ***/  no_entrypoint,
-   /***     PSI_cancel_operation    ***/  no_entrypoint,
-   /***     PSI5_cancel_operation   ***/  no_entrypoint,
-   /***    "_jrd8_cancel_operation" ***/  NULL,
-   /***     IPI_cancel_operation    ***/  no_entrypoint)
-#endif
 
 ENTRYPOINT( "gds_intl_function",
             jrd8_intl_function,

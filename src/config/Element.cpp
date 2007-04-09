@@ -52,9 +52,9 @@ static int foo = init();
 
 int init()
 {
-	charTable['<'] = quoted;
-	charTable['>'] = quoted;
-	charTable['&'] = quoted;
+	charTable[(UCHAR)'<'] = quoted;
+	charTable[(UCHAR)'>'] = quoted;
+	charTable[(UCHAR)'&'] = quoted;
 	
 	for (int n = 0; n < 10; ++n)
 		charTable[n] = illegal;

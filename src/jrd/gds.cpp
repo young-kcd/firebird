@@ -2418,17 +2418,17 @@ void* API_ROUTINE gds__temp_file(
 	if (stdio_flag)
 	{
 		FILE* result = fopen(filename.c_str(), "w+b");
-		return result ? result : (void*) -1;
+		return result ? result : (void*) (IPTR) (-1);
 	}
 	else
 	{
-		return (void*) open(filename.c_str(), O_RDWR | O_EXCL | O_TRUNC);
+		return (void*) (IPTR) open(filename.c_str(), O_RDWR | O_EXCL | O_TRUNC);
 	}
 
 	}
 	catch (const Firebird::Exception&)
 	{
-		return (void*) -1;
+		return (void*) (IPTR) (-1);
 	}
 }
 

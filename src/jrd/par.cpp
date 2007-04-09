@@ -112,7 +112,9 @@ static void par_procedure_parms(thread_db*, CompilerScratch*, jrd_prc*, jrd_nod*
 static jrd_nod* par_relation(thread_db*, CompilerScratch*, SSHORT, bool);
 static jrd_nod* par_rse(thread_db*, CompilerScratch*, SSHORT);
 static jrd_nod* par_sort(thread_db*, CompilerScratch*, bool);
+#ifdef NOT_USED_OR_REPLACED
 static jrd_nod* par_stream(thread_db*, CompilerScratch*);
+#endif
 static jrd_nod* par_union(thread_db*, CompilerScratch*);
 static USHORT par_word(CompilerScratch*);
 static jrd_nod* parse(thread_db*, CompilerScratch*, USHORT, USHORT expected_optional = 0);
@@ -2389,6 +2391,7 @@ static jrd_nod* par_sort(thread_db* tdbb, CompilerScratch* csb, bool flag)
 }
 
 
+#ifdef NOT_USED_OR_REPLACED
 static jrd_nod* par_stream(thread_db* tdbb, CompilerScratch* csb)
 {
 /**************************************
@@ -2422,6 +2425,7 @@ static jrd_nod* par_stream(thread_db* tdbb, CompilerScratch* csb)
 		}
 	}
 }
+#endif
 
 
 static jrd_nod* par_union(thread_db* tdbb, CompilerScratch* csb)

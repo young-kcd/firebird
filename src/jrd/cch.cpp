@@ -563,7 +563,6 @@ bool CCH_exclusive_attachment(thread_db* tdbb, USHORT level, SSHORT wait_flag)
 			THREAD_ENTER();
 		}
 
-#ifdef CANCEL_OPERATION
 		if (tdbb->tdbb_attachment->att_flags & ATT_cancel_raise) {
 			if (JRD_reschedule(tdbb, 0, false)) {
 				tdbb->tdbb_attachment->att_flags &=
@@ -571,7 +570,6 @@ bool CCH_exclusive_attachment(thread_db* tdbb, USHORT level, SSHORT wait_flag)
 				ERR_punt();
 			}
 		}
-#endif
 	}
 
 	tdbb->tdbb_attachment->att_flags &=

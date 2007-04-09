@@ -202,8 +202,10 @@ static void field_unknown(const TEXT*, const TEXT*, const dsql_nod*);
 static dsql_par* find_dbkey(const dsql_req*, const dsql_nod*);
 static dsql_par* find_record_version(const dsql_req*, const dsql_nod*);
 static dsql_ctx* get_context(const dsql_nod* node);
+#ifdef NOT_USED_OR_REPLACED
 static bool get_object_and_field(const dsql_nod* node,
 	const char** obj_name, const char** fld_name, bool do_collation);
+#endif
 static bool invalid_reference(const dsql_ctx*, const dsql_nod*,
 	const dsql_nod*, bool, bool);
 static bool node_match(const dsql_nod*, const dsql_nod*, bool);
@@ -825,7 +827,7 @@ dsql_nod* PASS1_node(dsql_req* request, dsql_nod* input, bool proc_flag)
 				// ordering behavior unconditionally.
 				(USHORT)(IPTR) input->nod_arg[e_par_index],
 				NULL);
-		node->nod_arg[e_par_index] = (dsql_nod*) ((dsql_par*) node->nod_arg[e_par_parameter])->par_index;
+		node->nod_arg[e_par_index] = (dsql_nod*) (IPTR) ((dsql_par*) node->nod_arg[e_par_parameter])->par_index;
 		return node;
 
 	case nod_param_val:
@@ -1049,7 +1051,7 @@ dsql_nod* PASS1_node(dsql_req* request, dsql_nod* input, bool proc_flag)
 			dsql_nod* const_node = input->nod_arg[0];
 			if (const_node) {
 				fb_assert(const_node->nod_type == nod_constant);
-				const int precision = (int)(IPTR) const_node->nod_arg[0];
+				const size_t precision = (size_t) (IPTR) const_node->nod_arg[0];
 				fb_assert(precision >= 0);
 				if (precision > MAX_TIME_PRECISION) {
 					ERRD_post(isc_invalid_time_precision,
@@ -2442,7 +2444,7 @@ static dsql_nod* explode_outputs( dsql_req* request, const dsql_prc* procedure)
 		p_node->nod_count = 0;
 		dsql_par* parameter =
 			MAKE_parameter(request->req_receive, true, true, 0, NULL);
-		p_node->nod_arg[e_par_index] = (dsql_nod*) parameter->par_index;
+		p_node->nod_arg[e_par_index] = (dsql_nod*) (IPTR) parameter->par_index;
 		p_node->nod_arg[e_par_parameter] = (dsql_nod*) parameter;
 		MAKE_desc_from_field(&parameter->par_desc, field);
 		parameter->par_name = parameter->par_alias = field->fld_name;
@@ -2703,6 +2705,7 @@ static dsql_ctx* get_context(const dsql_nod* node)
 }
 
 
+#ifdef NOT_USED_OR_REPLACED
 /**
 
  	get_object_and_field
@@ -2755,6 +2758,7 @@ static bool get_object_and_field(const dsql_nod* node,
 
 	return obj_name && fld_name;
 }
+#endif
 
 
 /**
@@ -3856,7 +3860,7 @@ static dsql_nod* pass1_cursor_reference( dsql_req* request,
 	temp->nod_count = 0;
 	dsql_par* parameter = request->req_dbkey =
 		MAKE_parameter(request->req_send, false, false, 0, NULL);
-	temp->nod_arg[e_par_index] = (dsql_nod*) parameter->par_index;
+	temp->nod_arg[e_par_index] = (dsql_nod*) (IPTR) parameter->par_index;
 	temp->nod_arg[e_par_parameter] = (dsql_nod*) parameter;
 	parameter->par_desc = source->par_desc;
 
@@ -3869,7 +3873,7 @@ static dsql_nod* pass1_cursor_reference( dsql_req* request,
 		temp->nod_count = 0;
 		parameter = request->req_rec_version =
 			MAKE_parameter(request->req_send, false, false, 0, NULL);
-		temp->nod_arg[e_par_index] = (dsql_nod*) parameter->par_index;
+		temp->nod_arg[e_par_index] = (dsql_nod*) (IPTR) parameter->par_index;
 		temp->nod_arg[e_par_parameter] = (dsql_nod*) parameter;
 		parameter->par_desc = rv_source->par_desc;
 
@@ -7057,7 +7061,7 @@ static dsql_nod* pass1_returning(dsql_req* request,
 
 			dsql_nod* p_node = MAKE_node(nod_parameter, e_par_count);
 			p_node->nod_count = 0;
-			p_node->nod_arg[e_par_index] = (dsql_nod*) parameter->par_index;
+			p_node->nod_arg[e_par_index] = (dsql_nod*) (IPTR) parameter->par_index;
 			p_node->nod_arg[e_par_parameter] = (dsql_nod*) parameter;
 
 			dsql_nod* temp = MAKE_node(nod_assign, e_asgn_count);
@@ -9432,7 +9436,7 @@ static bool set_parameter_type(dsql_req* request, dsql_nod* in_node, dsql_nod* n
 													true, true,
 													(USHORT)(IPTR) in_node->nod_arg[e_par_index],
 													NULL));
-					in_node->nod_arg[e_par_index] = (dsql_nod*) parameter->par_index;
+					in_node->nod_arg[e_par_index] = (dsql_nod*) (IPTR) parameter->par_index;
 				}
 
 				DEV_BLKCHK(parameter, dsql_type_par);
