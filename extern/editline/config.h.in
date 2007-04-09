@@ -1,238 +1,235 @@
-/* config.h.in.  Maintained by hand. */
+/* config.h.in.  Generated from configure.ac by autoheader.  */
 
-/* Define NO_MULTIBYTE_SUPPORT to not compile in support for multibyte
-   characters, even if the OS supports them. */
-#undef NO_MULTIBYTE_SUPPORT
+/* Define to 1 if the `closedir' function returns void instead of `int'. */
+#undef CLOSEDIR_VOID
 
-/* Define if on MINIX.  */
-#undef _MINIX
+/* Define to one of `_getb67', `GETB67', `getb67' for Cray-2 and Cray-YMP
+   systems. This function is required for `alloca.c' support on those systems.
+   */
+#undef CRAY_STACKSEG_END
 
-/* Define as the return type of signal handlers (int or void).  */
-#undef RETSIGTYPE
+/* Define to 1 if using `alloca.c'. */
+#undef C_ALLOCA
 
-#undef VOID_SIGHANDLER
+/* Define to 1 if you have `alloca', as a function or macro. */
+#undef HAVE_ALLOCA
 
-/* Characteristics of the compiler. */
-#undef const
+/* Define to 1 if you have <alloca.h> and it should be used (not on Ultrix).
+   */
+#undef HAVE_ALLOCA_H
 
-#undef size_t
+/* Define to 1 if you have the <curses.h> header file. */
+#undef HAVE_CURSES_H
 
-#undef ssize_t
-
-#undef PROTOTYPES
-
-#undef __CHAR_UNSIGNED__
-
-/* Define if the `S_IS*' macros in <sys/stat.h> do not work properly.  */
-#undef STAT_MACROS_BROKEN
-
-/* Define if you have the fcntl function. */
-#undef HAVE_FCNTL
-
-/* Define if you have the getpwent function. */
-#undef HAVE_GETPWENT
-
-/* Define if you have the getpwnam function. */
-#undef HAVE_GETPWNAM
-
-/* Define if you have the getpwuid function. */
-#undef HAVE_GETPWUID
-
-/* Define if you have the isascii function. */
-#undef HAVE_ISASCII
-
-/* Define if you have the isxdigit function. */
-#undef HAVE_ISXDIGIT
-
-/* Define if you have the kill function. */
-#undef HAVE_KILL
-
-/* Define if you have the lstat function. */
-#undef HAVE_LSTAT
-
-/* Define if you have the mbrlen function. */
-#undef HAVE_MBRLEN
-
-/* Define if you have the mbrtowc function. */
-#undef HAVE_MBRTOWC
-
-/* Define if you have the mbsrtowcs function. */
-#undef HAVE_MBSRTOWCS
-
-/* Define if you have the memmove function. */
-#undef HAVE_MEMMOVE
-
-/* Define if you have the putenv function.  */
-#undef HAVE_PUTENV
-
-/* Define if you have the select function.  */
-#undef HAVE_SELECT
-
-/* Define if you have the setenv function.  */
-#undef HAVE_SETENV
-
-/* Define if you have the setlocale function. */
-#undef HAVE_SETLOCALE
-
-/* Define if you have the strcasecmp function.  */
-#undef HAVE_STRCASECMP
-
-/* Define if you have the strcoll function.  */
-#undef HAVE_STRCOLL
-
-#undef STRCOLL_BROKEN
-
-/* Define if you have the strpbrk function.  */
-#undef HAVE_STRPBRK
-
-/* Define if you have the tcgetattr function.  */
-#undef HAVE_TCGETATTR
-
-/* Define if you have the vsnprintf function.  */
-#undef HAVE_VSNPRINTF
-
-/* Define if you have the wctomb function.  */
-#undef HAVE_WCTOMB 
-
-/* Define if you have the wcwidth function.  */
-#undef HAVE_WCWIDTH
-
-#undef STDC_HEADERS
-
-/* Define if you have the <dirent.h> header file.  */
+/* Define to 1 if you have the <dirent.h> header file, and it defines `DIR'.
+   */
 #undef HAVE_DIRENT_H
 
-/* Define if you have the <fcntl.h> header file.  */
+/* Define to 1 if you have the <dlfcn.h> header file. */
+#undef HAVE_DLFCN_H
+
+/* Define to 1 if you have the `endpwent' function. */
+#undef HAVE_ENDPWENT
+
+/* Define to 1 if you have the <fcntl.h> header file. */
 #undef HAVE_FCNTL_H
 
-/* Define if you have the <langinfo.h> header file.  */
-#undef HAVE_LANGINFO_H
+/* Define to 1 if you have the `fork' function. */
+#undef HAVE_FORK
 
-/* Define if you have the <limits.h> header file.  */
+/* Define to 1 if you have getpwnam_r and getpwuid_r that are draft POSIX.1
+   versions. */
+#undef HAVE_GETPW_R_DRAFT
+
+/* Define to 1 if you have getpwnam_r and getpwuid_r that are POSIX.1
+   compatible. */
+#undef HAVE_GETPW_R_POSIX
+
+/* Define to 1 if you have the <inttypes.h> header file. */
+#undef HAVE_INTTYPES_H
+
+/* Define to 1 if you have the `isascii' function. */
+#undef HAVE_ISASCII
+
+/* Define to 1 if you have the `issetugid' function. */
+#undef HAVE_ISSETUGID
+
+/* Define to 1 if you have the `curses' library (-lcurses). */
+#undef HAVE_LIBCURSES
+
+/* Define to 1 if you have the `ncurses' library (-lncurses). */
+#undef HAVE_LIBNCURSES
+
+/* Define to 1 if you have the <limits.h> header file. */
 #undef HAVE_LIMITS_H
 
-/* Define if you have the <locale.h> header file.  */
-#undef HAVE_LOCALE_H
+/* Define to 1 if you have the <malloc.h> header file. */
+#undef HAVE_MALLOC_H
 
-/* Define if you have the <memory.h> header file.  */
+/* Define to 1 if you have the `memchr' function. */
+#undef HAVE_MEMCHR
+
+/* Define to 1 if you have the <memory.h> header file. */
 #undef HAVE_MEMORY_H
 
-/* Define if you have the <ndir.h> header file.  */
+/* Define to 1 if you have the `memset' function. */
+#undef HAVE_MEMSET
+
+/* Define to 1 if you have the <ncurses.h> header file. */
+#undef HAVE_NCURSES_H
+
+/* Define to 1 if you have the <ndir.h> header file, and it defines `DIR'. */
 #undef HAVE_NDIR_H
 
-/* Define if you have the <pwd.h> header file.  */
-#undef HAVE_PWD_H
+/* Define to 1 if you have the `regcomp' function. */
+#undef HAVE_REGCOMP
 
-/* Define if you have the <stdarg.h> header file.  */
-#undef HAVE_STDARG_H
+/* Define to 1 if you have the `re_comp' function. */
+#undef HAVE_RE_COMP
 
-/* Define if you have the <stdlib.h> header file.  */
+/* Define to 1 if `stat' has the bug that it succeeds when given the
+   zero-length file name argument. */
+#undef HAVE_STAT_EMPTY_STRING_BUG
+
+/* Define to 1 if you have the <stdint.h> header file. */
+#undef HAVE_STDINT_H
+
+/* Define to 1 if you have the <stdlib.h> header file. */
 #undef HAVE_STDLIB_H
 
-/* Define if you have the <string.h> header file.  */
-#undef HAVE_STRING_H
+/* Define to 1 if you have the `strcasecmp' function. */
+#undef HAVE_STRCASECMP
 
-/* Define if you have the <strings.h> header file.  */
+/* Define to 1 if you have the `strchr' function. */
+#undef HAVE_STRCHR
+
+/* Define to 1 if you have the `strcspn' function. */
+#undef HAVE_STRCSPN
+
+/* Define to 1 if you have the `strdup' function. */
+#undef HAVE_STRDUP
+
+/* Define to 1 if you have the `strerror' function. */
+#undef HAVE_STRERROR
+
+/* Define to 1 if you have the <strings.h> header file. */
 #undef HAVE_STRINGS_H
 
-/* Define if you have the <sys/dir.h> header file.  */
+/* Define to 1 if you have the <string.h> header file. */
+#undef HAVE_STRING_H
+
+/* Define to 1 if you have the `strrchr' function. */
+#undef HAVE_STRRCHR
+
+/* Define to 1 if you have the `strstr' function. */
+#undef HAVE_STRSTR
+
+/* Define to 1 if you have the `strtol' function. */
+#undef HAVE_STRTOL
+
+/* Define to 1 if you have the <sys/cdefs.h> header file. */
+#undef HAVE_SYS_CDEFS_H
+
+/* Define to 1 if you have the <sys/dir.h> header file, and it defines `DIR'.
+   */
 #undef HAVE_SYS_DIR_H
 
-/* Define if you have the <sys/file.h> header file.  */
-#undef HAVE_SYS_FILE_H
+/* Define to 1 if you have the <sys/ioctl.h> header file. */
+#undef HAVE_SYS_IOCTL_H
 
-/* Define if you have the <sys/ndir.h> header file.  */
+/* Define to 1 if you have the <sys/ndir.h> header file, and it defines `DIR'.
+   */
 #undef HAVE_SYS_NDIR_H
 
-/* Define if you have the <sys/pte.h> header file.  */
-#undef HAVE_SYS_PTE_H
+/* Define to 1 if you have the <sys/param.h> header file. */
+#undef HAVE_SYS_PARAM_H
 
-/* Define if you have the <sys/ptem.h> header file.  */
-#undef HAVE_SYS_PTEM_H
+/* Define to 1 if you have the <sys/stat.h> header file. */
+#undef HAVE_SYS_STAT_H
 
-/* Define if you have the <sys/select.h> header file.  */
-#undef HAVE_SYS_SELECT_H
+/* Define to 1 if you have the <sys/types.h> header file. */
+#undef HAVE_SYS_TYPES_H
 
-/* Define if you have the <sys/stream.h> header file.  */
-#undef HAVE_SYS_STREAM_H
+/* Define to 1 if you have <sys/wait.h> that is POSIX.1 compatible. */
+#undef HAVE_SYS_WAIT_H
 
-/* Define if you have the <termcap.h> header file.  */
-#undef HAVE_TERMCAP_H
+/* Define to 1 if you have the <term.h> header file. */
+#undef HAVE_TERM_H
 
-/* Define if you have the <termio.h> header file.  */
-#undef HAVE_TERMIO_H
-
-/* Define if you have the <termios.h> header file.  */
-#undef HAVE_TERMIOS_H
-
-/* Define if you have the <unistd.h> header file.  */
+/* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H
 
-/* Define if you have the <varargs.h> header file.  */
-#undef HAVE_VARARGS_H
+/* Define to 1 if the system has the type `u_int32_t'. */
+#undef HAVE_U_INT32_T
 
-/* Define if you have the <wchar.h> header file.  */
-#undef HAVE_WCHAR_H
+/* Define to 1 if you have the `vfork' function. */
+#undef HAVE_VFORK
 
-/* Define if you have the <varargs.h> header file.  */
-#undef HAVE_WCTYPE_H
+/* Define to 1 if you have the <vfork.h> header file. */
+#undef HAVE_VFORK_H
 
-#undef HAVE_MBSTATE_T
+/* Define to 1 if `fork' works. */
+#undef HAVE_WORKING_FORK
 
-/* Define if you have <langinfo.h> and nl_langinfo(CODESET). */
-#undef HAVE_LANGINFO_CODESET
+/* Define to 1 if `vfork' works. */
+#undef HAVE_WORKING_VFORK
 
-/* Definitions pulled in from aclocal.m4. */
-#undef VOID_SIGHANDLER
+/* Define to 1 if `lstat' dereferences a symlink specified with a trailing
+   slash. */
+#undef LSTAT_FOLLOWS_SLASHED_SYMLINK
 
-#undef GWINSZ_IN_SYS_IOCTL
+/* Name of package */
+#undef PACKAGE
 
-#undef STRUCT_WINSIZE_IN_SYS_IOCTL
+/* Define to the address where bug reports for this package should be sent. */
+#undef PACKAGE_BUGREPORT
 
-#undef STRUCT_WINSIZE_IN_TERMIOS
+/* Define to the full name of this package. */
+#undef PACKAGE_NAME
 
-#undef TIOCSTAT_IN_SYS_IOCTL
+/* Define to the full name and version of this package. */
+#undef PACKAGE_STRING
 
-#undef FIONREAD_IN_SYS_IOCTL
+/* Define to the one symbol short name of this package. */
+#undef PACKAGE_TARNAME
 
-#undef SPEED_T_IN_SYS_TYPES
+/* Define to the version of this package. */
+#undef PACKAGE_VERSION
 
-#undef HAVE_GETPW_DECLS
+/* Define as the return type of signal handlers (`int' or `void'). */
+#undef RETSIGTYPE
 
-#undef STRUCT_DIRENT_HAS_D_INO
+/* If using the C implementation of alloca, define if you know the
+   direction of stack growth for your system; otherwise it will be
+   automatically deduced at runtime.
+	STACK_DIRECTION > 0 => grows toward higher addresses
+	STACK_DIRECTION < 0 => grows toward lower addresses
+	STACK_DIRECTION = 0 => direction of growth unknown */
+#undef STACK_DIRECTION
 
-#undef STRUCT_DIRENT_HAS_D_FILENO
+/* Define to 1 if you have the ANSI C header files. */
+#undef STDC_HEADERS
 
-#undef HAVE_BSD_SIGNALS
+/* Version number of package */
+#undef VERSION
 
-#undef HAVE_POSIX_SIGNALS
+/* Solaris's term.h does horrid things. */
+#undef _SUNOS
 
-#undef HAVE_USG_SIGHOLD
+/* Define to empty if `const' does not conform to ANSI C. */
+#undef const
 
-#undef MUST_REINSTALL_SIGHANDLERS
+/* Define to `int' if <sys/types.h> does not define. */
+#undef pid_t
 
-#undef HAVE_POSIX_SIGSETJMP
+/* Define to `unsigned int' if <sys/types.h> does not define. */
+#undef size_t
 
-#undef CTYPE_NON_ASCII
+/* Define as `fork' if `vfork' does not work. */
+#undef vfork
 
-/* modify settings or make new ones based on what autoconf tells us. */
 
-/* Ultrix botches type-ahead when switching from canonical to
-   non-canonical mode, at least through version 4.3 */
-#if !defined (HAVE_TERMIOS_H) || !defined (HAVE_TCGETATTR) || defined (ultrix)
-#  define TERMIOS_MISSING
-#endif
+#include <sys.h>
+#define SCCSID
+#undef LIBC_SCCS
 
-#if defined (STRCOLL_BROKEN)
-#  undef HAVE_STRCOLL
-#endif
-
-#if defined (__STDC__) && defined (HAVE_STDARG_H)
-#  define PREFER_STDARG
-#  define USE_VARARGS
-#else
-#  if defined (HAVE_VARARGS_H)
-#    define PREFER_VARARGS
-#    define USE_VARARGS
-#  endif
-#endif
