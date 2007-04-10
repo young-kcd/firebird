@@ -353,7 +353,7 @@ FB_API_HANDLE PRO_fetch_procedure( DBB database, const TEXT* proc)
 
 	FOR(REQUEST_HANDLE database->dbb_lookup_blob) X IN DB.QLI$PROCEDURES WITH
 		X.QLI$PROCEDURE_NAME EQ name
-        blob = PRO_open_blob(database, &X.QLI$PROCEDURE);
+        blob = PRO_open_blob(database, X.QLI$PROCEDURE);
 	END_FOR
 
 	return blob;
@@ -433,7 +433,7 @@ void PRO_invoke( DBB database, const TEXT* name)
 }
 
 
-FB_API_HANDLE PRO_open_blob( DBB database, ISC_QUAD* blob_id)
+FB_API_HANDLE PRO_open_blob( DBB database, ISC_QUAD& blob_id)
 {
 /**************************************
  *
@@ -454,7 +454,7 @@ FB_API_HANDLE PRO_open_blob( DBB database, ISC_QUAD* blob_id)
 	USHORT bpb_length = p - bpb;
 
 	if (isc_open_blob2(status_vector, &database->dbb_handle,
-						&database->dbb_proc_trans, &blob, blob_id,
+						&database->dbb_proc_trans, &blob, &blob_id,
 						bpb_length, bpb))
 	{
 		ERRQ_database_error(database, status_vector);
@@ -552,7 +552,7 @@ void PRO_scan( DBB database, extract_fn_t routine, void* arg)
 			p++;
 		}
         (*routine) (arg, X.QLI$PROCEDURE_NAME, p - X.QLI$PROCEDURE_NAME,
-			database, &X.QLI$PROCEDURE);
+			database, X.QLI$PROCEDURE);
 	END_FOR
 }
 

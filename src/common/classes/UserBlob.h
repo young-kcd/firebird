@@ -96,7 +96,7 @@ inline bool UserBlob::blobIsNull(const ISC_QUAD& blobid)
 }
 
 
-bool fb_blob_size(	const UserBlob& b,
+bool getBlobSize(	const UserBlob& b,
 					SLONG* size,
 					SLONG* seg_count,
 					SLONG* max_seg);

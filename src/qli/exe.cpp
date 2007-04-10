@@ -706,7 +706,7 @@ static bool copy_blob( qli_nod* value, qli_par* parameter)
 	}
 
 	SLONG size, segment_count, max_segment;
-	if (!fb_blob_size(from_blob, &size, &segment_count, &max_segment))
+	if (!getBlobSize(from_blob, &size, &segment_count, &max_segment))
 		ERRQ_database_error(from_dbb, status_vector);
 
     UCHAR fixed_buffer[4096];

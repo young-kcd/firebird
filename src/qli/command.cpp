@@ -45,7 +45,7 @@ using MsgFormat::SafeArg;
 
 
 static void dump_procedure(DBB, FILE*, const TEXT*, USHORT, FB_API_HANDLE);
-static void extract_procedure(void*, const TEXT*, USHORT, DBB, ISC_QUAD*);
+static void extract_procedure(void*, const TEXT*, USHORT, DBB, ISC_QUAD&);
 
 #ifdef NOT_USED_OR_REPLACED
 static SCHAR db_items[] =
@@ -590,7 +590,7 @@ static void dump_procedure(
 static void extract_procedure(
 							  void* file,
 							  const TEXT* name,
-							  USHORT length, DBB database, ISC_QUAD* blob_id)
+							  USHORT length, DBB database, ISC_QUAD& blob_id)
 {
 /**************************************
  *

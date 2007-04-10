@@ -337,8 +337,7 @@ int CLIB_ROUTINE main(int argc, char** argv)
 #endif
 
 #ifdef TRUSTED_AUTH
-	bool trusted_auth;
-	trusted_auth = false;
+	bool trusted_auth = false;
 #endif
 
 	tdba thd_context, *tddba;

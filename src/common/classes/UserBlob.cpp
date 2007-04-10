@@ -239,14 +239,14 @@ bool UserBlob::getInfo(size_t items_size, const UCHAR* blr_items,
 }
 
 
-bool fb_blob_size(	const UserBlob& b,
+bool getBlobSize(	const UserBlob& b,
 					SLONG* size,
 					SLONG* seg_count,
 					SLONG* max_seg)
 {
 /**************************************
  *
- *	f b _ b l o b _ s i z e
+ *	g e t B l o b S i z e
  *
  **************************************
  *
@@ -254,6 +254,7 @@ bool fb_blob_size(	const UserBlob& b,
  *	Get the size, number of segments, and max
  *	segment length of a blob.  Return true
  *	if it happens to succeed.
+ *	This is a clone of gds__blob_size.
  *
  **************************************/
 	static const UCHAR blob_items[] =

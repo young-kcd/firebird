@@ -47,14 +47,20 @@ static const int quoted = 1;
 static const int illegal = 2;
 
 static int charTable [256];
+
+inline void setCharTable(UCHAR pos, int val)
+{
+	charTable[pos] = val;
+}
+
 static int init();
 static int foo = init();
 
 int init()
 {
-	charTable[(UCHAR)'<'] = quoted;
-	charTable[(UCHAR)'>'] = quoted;
-	charTable[(UCHAR)'&'] = quoted;
+	setCharTable('<', quoted);
+	setCharTable('>', quoted);
+	setCharTable('&', quoted);
 	
 	for (int n = 0; n < 10; ++n)
 		charTable[n] = illegal;

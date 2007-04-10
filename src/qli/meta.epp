@@ -1852,7 +1852,7 @@ static void blob_copy( qli_rlb* rlb, qli_rel* source, ISC_QUAD& source_blob_id)
 	}
 
 	SLONG size, segment_count, max_segment;
-	if (!fb_blob_size(source_blob, &size, &segment_count, &max_segment))
+	if (!getBlobSize(source_blob, &size, &segment_count, &max_segment))
 	{
 		rollback_update(source_dbb);
 		ERRQ_database_error(source_dbb, status_vector);
