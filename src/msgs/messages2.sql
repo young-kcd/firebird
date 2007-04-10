@@ -1745,9 +1745,9 @@ COMMIT WORK;
 ('gfix_SQL_dialect', 'ALICE_gfix', 'alice.c', NULL, 3, 112, NULL, 'database SQL dialect must be one of ''@1''', NULL, NULL);
 ('gfix_dialect_req', 'ALICE_gfix', 'alice.c', NULL, 3, 113, NULL, 'dialect number required', NULL, NULL);
 ('gfix_pzval_req', 'ALICE_gfix', 'alice.cpp', NULL, 3, 114, NULL, 'positive or zero numeric value required', NULL, NULL);
-('gfix_opt_trusted', 'ALICE_gfix', 'alice.cpp', NULL, 3, 115, NULL, '	-trusted	use trusted authentication', NULL, NULL);
 -- Do not change the arguments of the previous GFIX messages.
 -- Write the new GFIX messages here.
+('gfix_opt_trusted', 'ALICE_gfix', 'alice.cpp', NULL, 3, 115, NULL, '	-trusted	use trusted authentication', NULL, NULL);
 -- DSQL
 ('dsql_dbkey_from_non_table', 'MAKE_desc', 'make.c', NULL, 7, 2, NULL, 'Cannot SELECT RDB$DB_KEY from a stored procedure.', NULL, NULL);
 ('dsql_transitional_numeric', 'dsql_yyparse', 'parse.y', NULL, 7, 3, NULL, 'Precision 10 to 18 changed from DOUBLE PRECISION in SQL dialect 1 to 64-bit scaled integer in SQL dialect 3', NULL, NULL);
@@ -2330,9 +2330,9 @@ ERROR: Backup incomplete', NULL, NULL);
 (NULL, 'get_ref_constraint', 'restore.epp', NULL, 12, 292, NULL, 'referential constraint', NULL, NULL);
 (NULL, 'get_type', 'restore.epp', NULL, 12, 293, NULL, 'type (in RDB$TYPES)', NULL, NULL);
 (NULL, '', 'burp.cpp', NULL, 12, 294, NULL, '	@1NO_D(BTRIGGERS)      do not run database triggers', NULL, NULL);
-(NULL, '', 'burp.cpp', NULL, 12, 295, NULL, '	@1TRU(STED)            use trusted authentication', NULL, NULL);
 -- Do not change the arguments of the previous GBAK messages.
 -- Write the new GBAK messages here.
+(NULL, '', 'burp.cpp', NULL, 12, 295, NULL, '	@1TRU(STED)            use trusted authentication', NULL, NULL);
 -- SQLERR
 (NULL, NULL, NULL, NULL, 13, 1, NULL, 'Firebird error', NULL, NULL);
 (NULL, NULL, NULL, NULL, 13, 74, NULL, 'Rollback not performed', NULL, NULL);
@@ -2975,9 +2975,9 @@ Fetches = !f', NULL, NULL);
 ('GsecMsg88', 'printhelp', 'gsec.c', NULL, 18, 88, NULL, '-z', NULL, NULL);
 ('GsecMsg89', 'printhelp', 'gsec.c', NULL, 18, 89, NULL, 'displaying version number:', NULL, NULL);
 ('GsecMsg90', 'printhelp', 'gsec.c', NULL, 18, 90, NULL, 'z (interactive only)', NULL, NULL);
-('GsecMsg91', 'printhelp', 'gsec.cpp', NULL, 18, 91, NULL, '-trusted (use trusted authentication)', NULL, NULL);
 -- Do not change the arguments of the previous GSEC messages.
 -- Write the new GSEC messages here.
+('GsecMsg91', 'printhelp', 'gsec.cpp', NULL, 18, 91, NULL, '-trusted (use trusted authentication)', NULL, NULL);
 -- LICENSE
 ('license_no_file', 'NODE_license', 'jrd/node.c', NULL, 19, 0, NULL, 'The license file does not exist or could not be opened for read', NULL, NULL);
 ('stop_stop_1', 'not_licensed', 'jrd/node.c', 'This message has 20 leading space characters (2 tab chars and 4 '' '') in
@@ -3161,9 +3161,9 @@ Analyzing database pages ...', NULL, NULL);
 ('gstat_password', '', 'dba.e', NULL, 21, 33, NULL, '    -p      password', NULL, NULL);
 ('', 'main', 'dba.e', NULL, 21, 34, NULL, '    -r      analyze average record and version length', NULL, NULL);
 ('', 'main', 'dba.e', NULL, 21, 35, NULL, '    -t      tablename', NULL, NULL);
-('', 'main', 'dba.epp', NULL, 21, 36, NULL, '    -tr     use trusted authentication', NULL, NULL);
 -- Do not change the arguments of the previous GSTAT messages.
 -- Write the new GSTAT messages here.
+('', 'main', 'dba.epp', NULL, 21, 36, NULL, '    -tr     use trusted authentication', NULL, NULL);
 stop
 
 COMMIT WORK;
