@@ -7,6 +7,9 @@ if $(eq $(ModuleName), "intl")
     LIB_LINK_OPTIONS := -assert pure-text -assert nosymbolic 
 endif
 
+# Firebird needs no RTTI
+CXXFLAGS:= $(CXXFLAGS) -fno-rtti
+
 OS_ServerFiles=inet_server.cpp
 
 EMBED_UTIL_TARGETS=gstat gds_drop gsec nbackup fb_lock_print
