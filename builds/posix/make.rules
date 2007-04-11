@@ -97,7 +97,7 @@ $(OBJ)/jrd/%.o: $(SRC_ROOT)/jrd/$(PLATFORM_PATH)/%.cpp
 	$(CXX) $(CXXFLAGS) -c $(firstword $<) -o $@
 
 $(OBJ)/%.o: $(SRC_ROOT)/%.c 
-	$(CC) $(CXXFLAGS) -c $(firstword $<) -o $@
+	$(CC) $(CFLAGS) -c $(firstword $<) -o $@
 
 $(OBJ)/%.o: $(SRC_ROOT)/%.cpp 
 	$(CXX) $(CXXFLAGS) -c $(firstword $<) -o $@
