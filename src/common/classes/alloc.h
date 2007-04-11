@@ -105,7 +105,7 @@ struct MemoryBlock {
 		  // Larger extents are not needed now, but this may be icreased later via using allocation units 
 		  USHORT mbk_length; // Actual block size: header not included, redirection list is included if applicable
 		  USHORT mbk_prev_length;
-		} small;
+		} mbk_small;
 		// Measured in bytes
 		ULONG mbk_large_length;
 	};
