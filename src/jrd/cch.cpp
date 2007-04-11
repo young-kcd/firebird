@@ -133,7 +133,7 @@ static BufferDesc* get_buffer(thread_db*, const PageNumber, LATCH, SSHORT);
 static void invalidate_and_release_buffer(thread_db*, BufferDesc*);
 static SSHORT latch_bdb(thread_db*, LATCH, BufferDesc*, const PageNumber, SSHORT);
 static SSHORT lock_buffer(thread_db*, BufferDesc*, SSHORT, SCHAR);
-static ULONG memory_init(thread_db*, BufferControl*, ULONG);
+static ULONG memory_init(thread_db*, BufferControl*, SLONG);
 static void page_validation_error(thread_db*, win*, SSHORT);
 #ifdef CACHE_READER
 static void prefetch_epilogue(Prefetch*, ISC_STATUS *);
@@ -1661,7 +1661,7 @@ void CCH_init(thread_db* tdbb, ULONG number)
 
 /* initialization of memory is system-specific */
 
-	bcb->bcb_count = memory_init(tdbb, bcb, number);
+	bcb->bcb_count = memory_init(tdbb, bcb, static_cast<SLONG>(number));
 	bcb->bcb_free_minimum = (SSHORT) MIN(bcb->bcb_count / 4, 128);
 
 	if (bcb->bcb_count < MIN_PAGE_BUFFERS) {
@@ -5285,7 +5285,7 @@ static SSHORT lock_buffer(
 }
 
 
-static ULONG memory_init(thread_db* tdbb, BufferControl* bcb, ULONG number)
+static ULONG memory_init(thread_db* tdbb, BufferControl* bcb, SLONG number)
 {
 /**************************************
  *

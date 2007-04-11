@@ -1875,7 +1875,7 @@ static void blob_copy( qli_rlb* rlb, qli_rel* source, ISC_QUAD& source_blob_id)
 	size_t length;
 	while (source_blob.getSegment(buffer_length, buffer, length) && !source_blob.getCode())
 	{
-		while (rlb->rlb_limit - rlb->rlb_data < length)
+		while (rlb->rlb_data + length > rlb->rlb_limit)
 			rlb = GEN_rlb_extend(rlb);
 		const TEXT* p = buffer;
 		while (length--)

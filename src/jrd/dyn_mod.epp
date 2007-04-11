@@ -2571,7 +2571,8 @@ static void modify_lfield_index(thread_db*	tdbb,
 
 		/* Set the index name to itself to tell the index to rebuild */
 		MODIFY IDX USING
-			MOVE_FASTER(IDX.RDB$INDEX_NAME, IDX.RDB$INDEX_NAME,
+			Firebird::MetaName iName(IDX.RDB$INDEX_NAME);
+			MOVE_FASTER(iName.c_str(), IDX.RDB$INDEX_NAME,
 						sizeof(IDX.RDB$INDEX_NAME));
 		END_MODIFY;
 	END_FOR;

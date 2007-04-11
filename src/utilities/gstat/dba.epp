@@ -1228,7 +1228,7 @@ static void analyze_index( dba_rel* relation, dba_idx* index)
 
 	bool firstLeafNode = true;
 	SLONG number;
-	SLONG duplicates = 0;
+	ULONG duplicates = 0;
 	// AB: In fact length for KEY should be MAX_KEY (1/4 of used page-size)
 	// This value should be kept equal with size declared in btr.h
 	//UCHAR key[4096];

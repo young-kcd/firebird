@@ -148,7 +148,7 @@ ISC_STATUS API_ROUTINE isc_blob_lookup_desc(ISC_STATUS* status,
  ***********************************************/
 	ISC_STATUS_ARRAY isc_status = {0};
 	isc_db_handle DB = *db_handle;
-	isc_req_handle handle = NULL;
+	isc_req_handle handle = 0;
 
     copy_exact_name (field_name, desc->blob_desc_field_name, 
                      sizeof(desc->blob_desc_field_name));
@@ -183,7 +183,7 @@ ISC_STATUS API_ROUTINE isc_blob_lookup_desc(ISC_STATUS* status,
 
 	if (!flag)
 	{
-		handle = NULL;
+		handle = 0;
 
 		FOR (REQUEST_HANDLE handle TRANSACTION_HANDLE *trans_handle)
 			X IN RDB$PROCEDURE_PARAMETERS CROSS Y IN RDB$FIELDS

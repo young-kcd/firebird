@@ -2825,7 +2825,7 @@ ISC_STATUS rem_port::info(P_OP op, P_INFO * stuff, PACKET* sendL)
 #endif
 
 	SCHAR info[1024], *info_buffer;
-	SSHORT info_len;
+	USHORT info_len;
 	UCHAR temp[1024];
 	UCHAR* temp_buffer;
 	temp_buffer = temp;
@@ -3248,7 +3248,7 @@ ISC_STATUS rem_port::prepare_statement(P_SQLST * prepareL, PACKET* sendL)
 		buffer = local_buffer;
 
 	// stuff isc_info_length in front of info items buffer
-	if (prepareL->p_sqlst_items.cstr_length + 1 > sizeof(info_buffer)) {
+	if (prepareL->p_sqlst_items.cstr_length + 1u > sizeof(info_buffer)) {
 		info = ALLR_alloc((SLONG) prepareL->p_sqlst_items.cstr_length + 1);
 	}
 	else {

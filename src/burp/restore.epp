@@ -7567,7 +7567,7 @@ void store_blr_gen_id(BurpGlobals*		tdgbl,
 	add_byte(blr, blr_end);
 	add_byte(blr, blr_eoc);
 
-	const SSHORT blr_length = blr - blr_buffer;
+	const USHORT blr_length = blr - blr_buffer;
 	fb_assert(blr_length <= sizeof(blr_buffer));
 	
 	ISC_STATUS_ARRAY status_vector;

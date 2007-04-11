@@ -5064,7 +5064,7 @@ static UCHAR* var_info(
 		}
 	}
 
-	for (int i = 0; i < parameters.getCount(); i++)
+	for (size_t i = 0; i < parameters.getCount(); i++)
 	{
 		const dsql_par* param = parameters[i];
 		fb_assert(param);

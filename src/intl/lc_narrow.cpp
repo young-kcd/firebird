@@ -228,7 +228,7 @@ USHORT LC_NARROW_string_to_key(texttype* obj, USHORT iInLen, const BYTE* pInChar
 			{
 				if ((coll->Primary != NULL_WEIGHT) &&
 					!(obj->texttype_impl->texttype_flags & TEXTTYPE_ignore_specials) &&
-					 lspecial + 1 < sizeof(special))
+					 lspecial + 1u < sizeof(special))
 				{
 					special[lspecial++] = (i + 1);	/* position */
 					special[lspecial++] = coll->Primary;

@@ -148,7 +148,11 @@ double EXPORT IB_UDF_div( ISC_LONG *a, ISC_LONG *b)
 		// This is a Kludge!  We need to return INF, 
 		// but this seems to be the only way to do 
 		// it since there seens to be no constant for it.
+#ifdef HAVE_INFINITY
+		return INFINITY;
+#else
 		return (1 / tan(0.0));
+#endif
 	}
 }
 
@@ -264,7 +268,11 @@ double EXPORT IB_UDF_mod( ISC_LONG *a, ISC_LONG *b)
 		// This is a Kludge!  We need to return INF, 
 		// but this seems to be the only way to do 
 		// it since there seens to be no constant for it.
+#ifdef HAVE_INFINITY
+		return INFINITY;
+#else
 		return (1 / tan(0.0));
+#endif
 	}
 }
 

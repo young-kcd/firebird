@@ -489,6 +489,13 @@ if test "$EDITLINE_FLG" = "Y"; then
 fi
 dnl AC_CHECK_LIB(stdc++, main,,, $LIBS)
 
+dnl check for INFINITY in math.h
+dnl _ISOC99_SOURCE is defined to emulate C++ compilation in plain-C conftest.c
+AC_TRY_COMPILE([#define _ISOC99_SOURCE 1
+#include <math.h>],
+    [double x = INFINITY;],
+    [AC_DEFINE(HAVE_INFINITY, 1,
+       [Define this if INFINITY is defined in math.h])])
 
 dnl Check for functions
 AC_CHECK_FUNCS(gettimeofday)

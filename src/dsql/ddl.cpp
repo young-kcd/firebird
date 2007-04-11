@@ -143,7 +143,7 @@ static void delete_procedure(dsql_req*, dsql_nod*, bool);
 static void delete_relation_view(dsql_req*, dsql_nod*, bool);
 static void delete_trigger(dsql_req*, dsql_nod*, bool);
 static const dsql_nod* find_pk_columns(const dsql_nod* def_rel_elements);
-static int find_start_of_body(const dsql_str* string);
+static ULONG find_start_of_body(const dsql_str* string);
 static void fix_default_source(dsql_str* string);
 static void foreign_key(dsql_req*, dsql_nod*, const char* index_name);
 static void generate_dyn(dsql_req*, dsql_nod*);
@@ -1159,7 +1159,7 @@ static void define_constraint_trigger(dsql_req* request, dsql_nod* node)
 	if (source)
 	{
 		fb_assert(source->str_length <= MAX_USHORT);
-		int j = find_start_of_body(source);
+		ULONG j = find_start_of_body(source);
 		if (j < source->str_length)
 		{
 			request->append_string(	isc_dyn_trg_source,
@@ -2479,7 +2479,7 @@ static void define_procedure( dsql_req* request, NOD_TYPE op)
 	if (source)
 	{
 		fb_assert(source->str_length <= MAX_USHORT);
-		int j = find_start_of_body(source);
+		ULONG j = find_start_of_body(source);
 		if (j < source->str_length)
 		{
 			request->append_string(	isc_dyn_prc_source,
@@ -3229,7 +3229,7 @@ static void define_trigger(dsql_req* request, NOD_TYPE op)
 	if (source && actions)
 	{
 		fb_assert(source->str_length <= MAX_USHORT);
-		int j = find_start_of_body(source);
+		ULONG j = find_start_of_body(source);
 		if (j < source->str_length)
 		{
 			request->append_string(	isc_dyn_trg_source,
@@ -4403,11 +4403,11 @@ const dsql_nod* find_pk_columns(const dsql_nod* def_rel_elements)
 //  @brief Find the start of a procedure body. Empty lines are irrelevant.
 //  @param string the source string to be searched.
 //
-static int find_start_of_body(const dsql_str* string)
+static ULONG find_start_of_body(const dsql_str* string)
 {
-	int j = 0;
+	ULONG j = 0;
 
-	for (int i = 0; i < string->str_length; ++i)
+	for (ULONG i = 0; i < string->str_length; ++i)
 	{
 		switch (string->str_data[i])
 		{
@@ -4452,7 +4452,7 @@ static void fix_default_source(dsql_str* string)
 	}
 #endif
 
-	for (int i = 7; i < string->str_length; ++i)
+	for (ULONG i = 7; i < string->str_length; ++i)
 	{
 		switch (string->str_data[i])
 		{

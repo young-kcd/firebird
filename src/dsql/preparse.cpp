@@ -430,7 +430,8 @@ static SSHORT get_next_token(
 
 	if (char_class & CHR_DIGIT) {
 		for (; s < stmt_end && (classes(c = *s) & CHR_DIGIT); ++s); // empty body
-		const ptrdiff_t length = (s - start_of_token);
+		fb_assert(s >= start_of_token);
+		const size_t length = (s - start_of_token);
 		*stmt = s;
 		if (length > MAX_TOKEN_SIZE) {
 			token.assign(start_of_token, MAX_TOKEN_SIZE);

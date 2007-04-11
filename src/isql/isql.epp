@@ -2266,7 +2266,7 @@ static processing_state add_row(TEXT* tabname)
 									&times.tm_hour, &times.tm_min, &times.tm_sec,
 									msec_str))
 					{
-						int count = 0;
+						unsigned int count = 0;
 						for (; count < 4; ++count)
 						{
 							if (fb_isdigit(msec_str[count]))
@@ -3055,7 +3055,7 @@ static processing_state bulk_insert_hack(const char* command, XSQLDA** sqldap)
 									&times.tm_hour, &times.tm_min, &times.tm_sec,
 									msec_str))
 					{
-						int count = 0;
+						unsigned int count = 0;
 						for (; count < 4; ++count)
 						{
 							if (fb_isdigit(msec_str[count]))
@@ -5220,9 +5220,9 @@ static processing_state get_statement(TEXT* const statement,
 
 	// Set count of characters to zero
 
-	int count = 0;
-	int valuable_count = 0; // counter of valuable (non-space) chars
-	const int term_length = Termlen - 1; // additional variable for decreasing calculation
+	size_t count = 0;
+	size_t valuable_count = 0; // counter of valuable (non-space) chars
+	const size_t term_length = Termlen - 1; // additional variable for decreasing calculation
 
 	Ifp.indev_line = Ifp.indev_aux;
 	bool done = false;

@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: gener.cpp,v 1.37 2005-05-27 22:44:54 asfernandes Exp $
+$Id: gener.cpp,v 1.38 2007-04-11 16:05:25 alexpeshkoff Exp $
 */
 
 #include "firebird.h"
@@ -140,7 +140,7 @@ qli_rlb* GEN_rlb_extend(qli_rlb* rlb)
 		rlb = (qli_rlb*) ALLOCD(type_rlb);
 
 	const UCHAR* old_string = rlb->rlb_base;
-	const ULONG l = (UCHAR *) rlb->rlb_data - (UCHAR *) rlb->rlb_base;
+	const ULONG l = rlb->rlb_data - rlb->rlb_base;
 	rlb->rlb_length += RLB_BUFFER_SIZE;
 	UCHAR* new_string = (UCHAR*) ALLQ_malloc((SLONG) rlb->rlb_length);
 	if (old_string) {

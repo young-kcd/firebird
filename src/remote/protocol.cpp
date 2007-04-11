@@ -1673,7 +1673,7 @@ static bool_t xdr_sql_blr(
 	rem_port* port = (rem_port*) xdrs->x_public;
 	RSR statement;
 	if (statement_id >= 0) {
-		if (statement_id >= port->port_object_vector->vec_count)
+		if (static_cast<ULONG>(statement_id) >= port->port_object_vector->vec_count)
 			return FALSE;
 		if (!(statement = (RSR) port->port_objects[statement_id]))
 			return FALSE;
@@ -1765,7 +1765,7 @@ static bool_t xdr_sql_message( XDR* xdrs, SLONG statement_id)
 
 	rem_port* port = (rem_port*) xdrs->x_public;
 	if (statement_id >= 0) {
-		if (statement_id >= port->port_object_vector->vec_count)
+		if (static_cast<ULONG>(statement_id) >= port->port_object_vector->vec_count)
 			return FALSE;
 		statement = (RSR) port->port_objects[statement_id];
 	}

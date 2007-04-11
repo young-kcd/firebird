@@ -2530,7 +2530,7 @@ static void move_to_string(thread_db* tdbb, dsc* fromDesc, dsc* toDesc)
 	Firebird::HalfStaticArray<UCHAR, BUFFER_SMALL> buffer;
 	buffer.getBuffer((blob->blb_length / fromCharSet->minBytesPerChar()) *
 		toCharSet->maxBytesPerChar());
-	SLONG len = BLB_get_data(tdbb, blob, buffer.begin(), buffer.getCapacity(), true);
+	ULONG len = BLB_get_data(tdbb, blob, buffer.begin(), buffer.getCapacity(), true);
 
 	if (len > MAX_COLUMN_SIZE - sizeof(USHORT))
 		ERR_post(isc_arith_except, 0);

@@ -1616,11 +1616,12 @@ int API_ROUTINE gds__msg_open(void** handle, const TEXT* filename)
 		close(n);
 		return -3;
 	}
-	// Trick to silence compiler when MSG_MINOR_VERSION == 0
-	const USHORT minor = MSG_MINOR_VERSION;
 
-	if (header.msghdr_major_version != MSG_MAJOR_VERSION ||
-		header.msghdr_minor_version < minor)
+	if (header.msghdr_major_version != MSG_MAJOR_VERSION
+#if FB_MSG_MINOR_VERSION > 0
+		|| header.msghdr_minor_version < MSG_MINOR_VERSION
+#endif
+		)
 	{
 		close(n);
 		return -4;

@@ -60,7 +60,7 @@ AdminException::AdminException(const char *txt, ...)
 		text = buffer;
 		delete [] buffer;
 		}
-	else if (ret >= sizeof (temp))
+	else if (static_cast<unsigned>(ret) >= sizeof (temp))
 		{
 		int l = ret + 1;
 		char *buffer = new char [l];

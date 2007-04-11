@@ -238,7 +238,7 @@ int dsql_yyparse(USHORT client_dialect, USHORT db_dialect, USHORT parser_version
       if (yychar <= YYMAXTOKEN) yys = yyname[yychar];
       if (!yys) yys = "illegal-symbol";
       printf("yydebug[%d,%p]: state %d, reading %d (%s)", 
-	     yydepth, yytrial, yystate, yychar, yys);
+	     int(yydepth), yytrial, yystate, yychar, yys);
 #ifdef YYDBPR
       printf("<");
       YYDBPR(yylval);
@@ -262,7 +262,7 @@ int dsql_yyparse(USHORT client_dialect, USHORT db_dialect, USHORT parser_version
 #if YYDEBUG
       if (yydebug) {
         printf("yydebug[%d,%p]: CONFLICT in state %d: following successful trial parse\n", 
-	       yydepth, yytrial, yystate);
+	       int(yydepth), yytrial, yystate);
       }
 #endif
       // Switch to the next conflict context
@@ -278,7 +278,7 @@ int dsql_yyparse(USHORT client_dialect, USHORT db_dialect, USHORT parser_version
 #if YYDEBUG
       if (yydebug) {
         printf("yydebug[%d,%p]: CONFLICT in state %d. ", 
-	       yydepth, yytrial, yystate);
+	       int(yydepth), yytrial, yystate);
         if(yyps->save) {
           printf("ALREADY in conflict. Continue trial parse.");
         } else {
@@ -338,7 +338,7 @@ int dsql_yyparse(USHORT client_dialect, USHORT db_dialect, USHORT parser_version
 #if YYDEBUG
       if (yydebug)
         printf("yydebug[%d,%p]: state %d, shifting to state %d\n",
-               yydepth, yytrial, yystate, yyctable[ctry]);
+               int(yydepth), yytrial, yystate, yyctable[ctry]);
 #endif
       if (yychar < 0)
         yylvp++, yylpp++, yylexp++;
@@ -362,7 +362,7 @@ int dsql_yyparse(USHORT client_dialect, USHORT db_dialect, USHORT parser_version
 #if YYDEBUG
     if (yydebug)
       printf("yydebug[%d,%p]: state %d, shifting to state %d\n",
-             yydepth, yytrial, yystate, yytable[yyn]);
+             int(yydepth), yytrial, yystate, yytable[yyn]);
 #endif
     yychar = (-1);
     if (yyps->errflag > 0)  --yyps->errflag;
@@ -399,7 +399,7 @@ yyerrhandler:
 #if YYDEBUG
     if (yydebug)
       printf("yydebug[%d,%p]: ERROR in state %d, CONFLICT BACKTRACKING to state %d, %d tokens\n",
-             yydepth, yytrial, yystate, yyps->save->state, yylvp - yylvals - yyps->save->lexeme);
+             int(yydepth), yytrial, yystate, yyps->save->state, int(yylvp - yylvals - yyps->save->lexeme));
 #endif
     // Memorize most forward-looking error state in case
     // it's really an error.
@@ -485,7 +485,7 @@ yyerrhandler:
 #if YYDEBUG
         if (yydebug)
           printf("yydebug[%d,%p]: state %d, ERROR recovery shifts to state %d\n",
-                 yydepth, yytrial, *(yyps->ssp), yytable[yyn]);
+                 int(yydepth), yytrial, *(yyps->ssp), yytable[yyn]);
 #endif
         /* Use label yyerrlab, so that compiler does not warn */
         if(yyps->errflag != yyps->errflag) goto yyerrlab;
@@ -495,7 +495,7 @@ yyerrhandler:
 #if YYDEBUG
         if (yydebug)
           printf("yydebug[%d,%p]: ERROR recovery discards state %d\n",
-                 yydepth, yytrial, *(yyps->ssp));
+                 int(yydepth), yytrial, *(yyps->ssp));
 #endif
         if (yyps->ssp <= yyps->ss) {
 	  goto yyabort;
@@ -517,7 +517,7 @@ yyerrhandler:
       if (yychar <= YYMAXTOKEN) yys = yyname[yychar];
       if (!yys) yys = "illegal-symbol";
       printf("yydebug[%d,%p]: state %d, ERROR recovery discards token %d (%s)\n",
-             yydepth, yytrial, yystate, yychar, yys); 
+             int(yydepth), yytrial, yystate, yychar, yys); 
     }
 #endif
     if(!yytrial) {
@@ -536,7 +536,7 @@ yyreduce:
 #if YYDEBUG
   if (yydebug) {
     printf("yydebug[%d,%p]: state %d, reducing by rule %d (%s)",
-           yydepth, yytrial, yystate, yyn, yyrule[yyn]);
+           int(yydepth), yytrial, yystate, yyn, yyrule[yyn]);
 #ifdef YYDBPR
     if (yym) {
       int i;
@@ -597,7 +597,7 @@ yyreduce:
 #if YYDEBUG
     if (yydebug) {
       printf("yydebug[%d,%p]: after reduction, shifting from state 0 to state %d\n", 
-	     yydepth, yytrial, YYFINAL);
+	     int(yydepth), yytrial, YYFINAL);
     }
 #endif
     yystate = YYFINAL;
@@ -616,7 +616,7 @@ yyreduce:
         if (yychar <= YYMAXTOKEN) yys = yyname[yychar];
         if (!yys) yys = "illegal-symbol";
         printf("yydebug[%d,%p]: state %d, reading %d (%s)\n", 
-	       yydepth, yytrial, YYFINAL, yychar, yys); 
+	       int(yydepth), yytrial, YYFINAL, yychar, yys); 
       }
 #endif
     }
@@ -633,7 +633,7 @@ yyreduce:
 #if YYDEBUG
   if (yydebug)
     printf("yydebug[%d,%p]: after reduction, shifting from state %d to state %d\n",
-           yydepth, yytrial, *(yyps->ssp), yystate);
+           int(yydepth), yytrial, *(yyps->ssp), yystate);
 #endif
   if (yyps->ssp >= yyps->ss + yyps->stacksize - 1) {
     YYMoreStack(yyps);
@@ -661,7 +661,7 @@ yyvalid:
 #if YYDEBUG
   if (yydebug)
     printf("yydebug[%d,%p]: CONFLICT trial successful, backtracking to state %d, %d tokens\n",
-           yydepth, yytrial, yypath->state, yylvp - yylvals - yypath->lexeme);
+           int(yydepth), yytrial, yypath->state, int(yylvp - yylvals - yypath->lexeme));
 #endif
   if(yyerrctx) {
     YYFreeState(yyerrctx); yyerrctx = NULL;

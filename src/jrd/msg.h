@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: msg.h,v 1.8 2005-05-27 22:44:02 asfernandes Exp $
+$Id: msg.h,v 1.9 2007-04-11 16:05:15 alexpeshkoff Exp $
 */
 
 #ifndef JRD_MSG_H
@@ -30,7 +30,9 @@ $Id: msg.h,v 1.8 2005-05-27 22:44:02 asfernandes Exp $
 #define MSG_NUMBER(facility, code)	((SLONG) facility * 10000 + code)
 const USHORT MSG_BUCKET			= 1024;
 const UCHAR MSG_MAJOR_VERSION	= 1;
-const UCHAR MSG_MINOR_VERSION	= 0;
+// trick to silence the compiler when FB_MSG_MINOR_VERSION is 0
+#define FB_MSG_MINOR_VERSION	0
+const UCHAR MSG_MINOR_VERSION	= FB_MSG_MINOR_VERSION;
 
 /* Message file header block */
 
