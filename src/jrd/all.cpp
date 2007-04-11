@@ -158,7 +158,7 @@ void ALL_print_memory_pool_info(FILE* fptr, Database* databases)
 		fprintf(fptr, "\n\t dbb%d -> %s\n", k, dbb->dbb_filename.c_str());
 		j = 0;
 		
-		int itr;
+		size_t itr;
 		for (itr = 0; itr < dbb->dbb_pools.getCount(); ++itr)
 		{
 			if (dbb->dbb_pools[itr]) 

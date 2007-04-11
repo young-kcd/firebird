@@ -126,7 +126,7 @@ public:
 
 	SLONG pagesPerPIP;			// Pages per pip 
 	ULONG bytesBitPIP;			// Number of bytes of bit in PIP 
-	ULONG transPerTIP;			// Transactions per TIP 
+	SLONG transPerTIP;			// Transactions per TIP 
 	ULONG gensPerPage;			// Generators per generator page 
 	PageSpace* dbPageSpace;		// database page space
 

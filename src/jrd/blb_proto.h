@@ -39,7 +39,7 @@ Jrd::blb*   BLB_create2(Jrd::thread_db*, Jrd::jrd_tra*, Jrd::bid*, USHORT, const
 void   BLB_garbage_collect(Jrd::thread_db*, Jrd::RecordStack&, Jrd::RecordStack&, SLONG, Jrd::jrd_rel*);
 void BLB_gen_bpb_from_descs(const dsc*, const dsc*, Firebird::UCharBuffer&);
 Jrd::blb*   BLB_get_array(Jrd::thread_db*, Jrd::jrd_tra*, const Jrd::bid*, Ods::InternalArrayDesc*);
-SLONG  BLB_get_data(Jrd::thread_db*, Jrd::blb*, UCHAR*, SLONG, bool = true);
+ULONG  BLB_get_data(Jrd::thread_db*, Jrd::blb*, UCHAR*, SLONG, bool = true);
 USHORT BLB_get_segment(Jrd::thread_db*, Jrd::blb*, UCHAR*, USHORT);
 SLONG  BLB_get_slice(Jrd::thread_db*, Jrd::jrd_tra*, const Jrd::bid*, const UCHAR*, USHORT,
 	const SLONG*, SLONG, UCHAR*);

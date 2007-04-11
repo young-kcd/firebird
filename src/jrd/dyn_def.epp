@@ -1960,7 +1960,7 @@ void DYN_define_index(Global*		gbl,
 					Firebird::MetaName& str = seg_list.add();
 					GET_STRING(ptr, str);
 					// The famous brute force approach.
-					for (int iter = 0; iter < seg_count; ++iter)
+					for (ULONG iter = 0; iter < seg_count; ++iter)
 					{
 						if (seg_list[iter] == str)
 						{
@@ -2351,7 +2351,8 @@ void DYN_define_index(Global*		gbl,
 				/* Number of columns in referred index should be same as number
 				   of columns in referring index */
 
-				if (seg_count != IND.RDB$SEGMENT_COUNT)
+				fb_assert(IND.RDB$SEGMENT_COUNT >= 0);
+				if (seg_count != ULONG(IND.RDB$SEGMENT_COUNT))
 					DYN_error_punt(true, 133);
 				/* msg 133: "Number of referencing columns do not equal number of referenced columns" */
 

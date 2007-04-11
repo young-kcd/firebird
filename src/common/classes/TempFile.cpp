@@ -286,7 +286,7 @@ size_t TempFile::read(offset_t offset, void* buffer, size_t length)
 	}
 #else
 	const int bytes = ::read(handle, buffer, length);
-	if (bytes != length)
+	if (bytes < 0 || size_t(bytes) != length)
 	{
 		Firebird::system_call_failed::raise("read");
 	}
@@ -314,7 +314,7 @@ size_t TempFile::write(offset_t offset, void* buffer, size_t length)
 	}
 #else
 	const int bytes = ::write(handle, buffer, length);
-	if (bytes != length)
+	if (bytes < 0 || size_t(bytes) != length)
 	{
 		Firebird::system_call_failed::raise("write");
 	}

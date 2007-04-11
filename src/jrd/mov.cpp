@@ -559,7 +559,7 @@ int MOV_make_string2(Jrd::thread_db* tdbb,
 		Jrd::blb* blob = BLB_open2(tdbb, tdbb->tdbb_request->req_transaction,
 			reinterpret_cast<Jrd::bid*>(desc->dsc_address), bpb.getCount(), bpb.begin());
 
-		int size;
+		ULONG size;
 
 		if (temp.getCharSet() == desc->getCharSet())
 			size = blob->blb_length;

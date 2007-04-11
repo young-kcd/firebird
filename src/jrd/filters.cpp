@@ -706,7 +706,7 @@ ISC_STATUS filter_transliterate_text(USHORT action, BlobControl* control)
 			// Also buffer must contain integer number of utf16 characters as we
 			// do transliteration via utf16 character set
 			// (see assert at start of UnicodeUtil::utf16ToUtf8 for example)
-			const SLONG max_seg = aux->ctlaux_obj1.convertLength(source->ctl_max_segment);
+			const ULONG max_seg = aux->ctlaux_obj1.convertLength(source->ctl_max_segment);
 			control->ctl_max_segment = MIN(MAX_USHORT - sizeof(ULONG) + 1, max_seg);
 
 			if (source->ctl_max_segment && control->ctl_max_segment)

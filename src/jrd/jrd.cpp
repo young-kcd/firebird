@@ -3945,7 +3945,7 @@ ISC_STATUS GDS_START_TRANSACTION(ISC_STATUS * user_status,
  **************************************/
 	api_entry_point_init(user_status);
 
-	if (count < 1 || count > MAX_DB_PER_TRANS)
+	if (count < 1 || USHORT(count) > MAX_DB_PER_TRANS)
 	{
 		thread_db thd_context;
 		thread_db* tdbb = JRD_MAIN_set_thread_data(thd_context);

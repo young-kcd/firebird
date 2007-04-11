@@ -1235,7 +1235,7 @@ static jrd_nod* par_field(thread_db* tdbb, CompilerScratch* csb, SSHORT blr_oper
  **************************************/
 	SET_TDBB(tdbb);
 
-	const SSHORT context = (unsigned int) BLR_BYTE;
+	const USHORT context = (unsigned int) BLR_BYTE;
 
 	// check if this is a VALUE of domain's check constraint
 	if (!csb->csb_domain_validation.isEmpty() && blr_operator == blr_fid && context == 0)
@@ -1648,7 +1648,7 @@ static jrd_nod* par_modify(thread_db* tdbb, CompilerScratch* csb, SSHORT blr_ope
 
 /* Parse the original and new contexts */
 
-	SSHORT context = (unsigned int) BLR_BYTE;
+	USHORT context = (unsigned int) BLR_BYTE;
 	if (context >= csb->csb_rpt.getCount() || 
 		!(csb->csb_rpt[context].csb_flags & csb_used))
 	{
@@ -1769,7 +1769,7 @@ static jrd_nod* par_plan(thread_db* tdbb, CompilerScratch* csb)
 		   itself is redundant except in the case of a view,
 		   in which case the base relation (and alias) must be specified */
 
-		SSHORT n = BLR_BYTE;
+		USHORT n = (unsigned int) BLR_BYTE;
 		if (n != blr_relation && n != blr_relation2 &&
 			n != blr_rid && n != blr_rid2)
 		{

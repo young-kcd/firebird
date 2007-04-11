@@ -1051,9 +1051,9 @@ dsql_nod* PASS1_node(dsql_req* request, dsql_nod* input, bool proc_flag)
 			dsql_nod* const_node = input->nod_arg[0];
 			if (const_node) {
 				fb_assert(const_node->nod_type == nod_constant);
-				const size_t precision = (size_t) (IPTR) const_node->nod_arg[0];
+				const int precision = (int) (IPTR) const_node->nod_arg[0];
 				fb_assert(precision >= 0);
-				if (precision > MAX_TIME_PRECISION) {
+				if (unsigned(precision) > MAX_TIME_PRECISION) {
 					ERRD_post(isc_invalid_time_precision,
 							  isc_arg_number, MAX_TIME_PRECISION, 0);
 				}

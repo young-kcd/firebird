@@ -275,7 +275,7 @@ void TempSpace::extend(size_t size)
 
 		Block* block = NULL;
 
-		if (globalCacheUsage + size <= Config::getTempCacheLimit())
+		if (globalCacheUsage + size <= size_t(Config::getTempCacheLimit()))
 		{
 			try
 			{
@@ -583,7 +583,7 @@ bool TempSpace::validate(offset_t& free) const
 	}
 
 	offset_t disk = 0;
-	for (int i = 0; i < tempFiles.getCount(); i++)
+	for (size_t i = 0; i < tempFiles.getCount(); i++)
 		disk += tempFiles[i]->getSize();
 
 	return ((localCacheUsage + disk) == physicalSize);

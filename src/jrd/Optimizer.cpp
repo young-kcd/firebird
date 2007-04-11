@@ -762,7 +762,7 @@ IndexScratchSegment::IndexScratchSegment(MemoryPool& p, IndexScratchSegment* seg
 	scope = segment->scope;
 	scanType = segment->scanType;
 
-	for (int i = 0; i < segment->matches.getCount(); i++) {
+	for (size_t i = 0; i < segment->matches.getCount(); i++) {
 		matches.add(segment->matches[i]);
 	}	
 }
@@ -791,7 +791,7 @@ IndexScratch::IndexScratch(MemoryPool& p, thread_db* tdbb, index_desc* ix,
 	segments.grow(idx->idx_count);
 
 	IndexScratchSegment** segment = segments.begin();
-	for (int i = 0; i < segments.getCount(); i++) {
+	for (size_t i = 0; i < segments.getCount(); i++) {
 		segment[i] = FB_NEW(p) IndexScratchSegment(p);
 	}
 
@@ -841,7 +841,7 @@ IndexScratch::IndexScratch(MemoryPool& p, const IndexScratch& scratch) :
 
 	IndexScratchSegment* const* scratchSegment = scratch.segments.begin();
 	IndexScratchSegment** segment = segments.begin();
-	for (int i = 0; i < segments.getCount(); i++) {
+	for (size_t i = 0; i < segments.getCount(); i++) {
 		segment[i] = FB_NEW(p) IndexScratchSegment(p, scratchSegment[i]);
 	}	
 }
@@ -858,7 +858,7 @@ IndexScratch::~IndexScratch()
  *
  **************************************/
 	IndexScratchSegment** segment = segments.begin();
-	for (int i = 0; i < segments.getCount(); i++) {
+	for (size_t i = 0; i < segments.getCount(); i++) {
 		delete segment[i];
 	}	
 }
@@ -941,7 +941,7 @@ OptimizerRetrieval::~OptimizerRetrieval()
  **************************************/
 	
 	InversionCandidate** invCandidate = inversionCandidates.begin();
-	for (int i = 0; i < inversionCandidates.getCount(); ++i) {
+	for (size_t i = 0; i < inversionCandidates.getCount(); ++i) {
 		delete inversionCandidates[i];
 	}
 }
@@ -1221,7 +1221,7 @@ InversionCandidate* OptimizerRetrieval::generateInversion(RecordSource** rsb)
 
 	// Add the streams where this stream is depending on.
 	if (invCandidate) {
-		for (int i = 0; i < invCandidate->matches.getCount(); i++) {
+		for (size_t i = 0; i < invCandidate->matches.getCount(); i++) {
 			findDependentFromStreams(invCandidate->matches[i], 
 				&invCandidate->dependentFromStreams);
 		}
@@ -1251,7 +1251,7 @@ InversionCandidate* OptimizerRetrieval::generateInversion(RecordSource** rsb)
 
 	// Clean up inversion list
 	InversionCandidate** inversion = inversions.begin();
-	for (int i = 0; i < inversions.getCount(); i++) {
+	for (size_t i = 0; i < inversions.getCount(); i++) {
 		delete inversion[i];
 	}
 
@@ -1276,7 +1276,7 @@ RecordSource* OptimizerRetrieval::generateNavigation()
 		return NULL;
 	}
 
-	int i = 0;
+	size_t i = 0;
 	for (; i < indexScratches.getCount(); ++i) {
 
 		index_desc* idx = indexScratches[i].idx;
@@ -1475,7 +1475,7 @@ bool OptimizerRetrieval::getInversionCandidates(InversionCandidateList* inversio
 
 	// Walk through indexes to calculate selectivity / candidate
 	Firebird::Array<jrd_nod*> matches;
-	int i = 0;
+	size_t i = 0;
 	for (i = 0; i < fromIndexScratches->getCount(); i++) {
 		IndexScratch& scratch = (*fromIndexScratches)[i];
 		scratch.scopeCandidate = false;
@@ -1619,7 +1619,7 @@ bool OptimizerRetrieval::getInversionCandidates(InversionCandidateList* inversio
 				invCandidate->indexes = 1;
 				invCandidate->scratch = &scratch;
 				invCandidate->matches.join(matches);
-				for (int k = 0; k < invCandidate->matches.getCount(); k++) {
+				for (size_t k = 0; k < invCandidate->matches.getCount(); k++) {
 					findDependentFromStreams(invCandidate->matches[k],
 						&invCandidate->dependentFromStreams);
 				}
@@ -1884,7 +1884,7 @@ InversionCandidate* OptimizerRetrieval::makeInversion(InversionCandidateList* in
 	// Force to always choose at least one index
 	bool firstCandidate = true;
 
-	int i = 0;
+	size_t i = 0;
 	InversionCandidate* invCandidate = NULL;
 	InversionCandidate** inversion = inversions->begin();
 	for (i = 0; i < inversions->getCount(); i++) {
@@ -1905,7 +1905,7 @@ InversionCandidate* OptimizerRetrieval::makeInversion(InversionCandidateList* in
 		InversionCandidate* bestCandidate = NULL;
 		bool restartLoop = false;
 
-		for (int currentPosition = 0; currentPosition < inversions->getCount(); ++currentPosition)
+		for (size_t currentPosition = 0; currentPosition < inversions->getCount(); ++currentPosition)
 		{
 			InversionCandidate* currentInv = inversion[currentPosition];
 			if (!currentInv->used)
@@ -1931,7 +1931,7 @@ InversionCandidate* OptimizerRetrieval::makeInversion(InversionCandidateList* in
 					invCandidate->matchedSegments = currentInv->matchedSegments;
 					invCandidate->dependencies = currentInv->dependencies;
 					matches.clear();
-					for (int j = 0; j < currentInv->matches.getCount(); j++) {
+					for (size_t j = 0; j < currentInv->matches.getCount(); j++) {
 						size_t pos;
 						if (!matches.find(currentInv->matches[j], pos)) {
 							matches.add(currentInv->matches[j]);
@@ -1947,7 +1947,7 @@ InversionCandidate* OptimizerRetrieval::makeInversion(InversionCandidateList* in
 		
 				// Look if a match is already used by previous matches.
 				bool anyMatchAlreadyUsed = false;
-				for (int k = 0; k < currentInv->matches.getCount(); k++) {
+				for (size_t k = 0; k < currentInv->matches.getCount(); k++) {
 					size_t pos;
 					if (matches.find(currentInv->matches[k], pos)) {
 						anyMatchAlreadyUsed = true;
@@ -1959,7 +1959,7 @@ InversionCandidate* OptimizerRetrieval::makeInversion(InversionCandidateList* in
 					currentInv->used = true;
 					// If a match on this index was already used by another 
 					// index, add also the other matches from this index.
-					for (int j = 0; j < currentInv->matches.getCount(); j++) {
+					for (size_t j = 0; j < currentInv->matches.getCount(); j++) {
 						size_t pos;
 						if (!matches.find(currentInv->matches[j], pos)) {
 							matches.add(currentInv->matches[j]);
@@ -2121,7 +2121,7 @@ InversionCandidate* OptimizerRetrieval::makeInversion(InversionCandidateList* in
 					invCandidate->nonFullMatchedSegments = 0;
 					invCandidate->matchedSegments = bestCandidate->matchedSegments;
 					invCandidate->dependencies = bestCandidate->dependencies;
-					for (int j = 0; j < bestCandidate->matches.getCount(); j++) {
+					for (size_t j = 0; j < bestCandidate->matches.getCount(); j++) {
 						size_t pos;
 						if (!matches.find(bestCandidate->matches[j], pos)) {
 							matches.add(bestCandidate->matches[j]);
@@ -2151,7 +2151,7 @@ InversionCandidate* OptimizerRetrieval::makeInversion(InversionCandidateList* in
 					invCandidate->matchedSegments = 
 						MAX(bestCandidate->matchedSegments, invCandidate->matchedSegments);
 					invCandidate->dependencies += bestCandidate->dependencies;
-					for (int j = 0; j < bestCandidate->matches.getCount(); j++) {
+					for (size_t j = 0; j < bestCandidate->matches.getCount(); j++) {
 						size_t pos;
 						if (!matches.find(bestCandidate->matches[j], pos)) {
 	                        matches.add(bestCandidate->matches[j]);
@@ -2487,7 +2487,7 @@ InversionCandidate* OptimizerRetrieval::matchOnIndexes(
 		IndexScratchList indexOrScratches;
 
 		// Copy information from caller
-		int i = 0;		
+		size_t i = 0;		
 		for (; i < inputIndexScratches->getCount(); i++) {
 			IndexScratch& scratch = (*inputIndexScratches)[i];
 			indexOrScratches.add(scratch);
@@ -2550,7 +2550,7 @@ InversionCandidate* OptimizerRetrieval::matchOnIndexes(
 			// Add matches conjunctions that exists in both left and right inversion
 			if ((invCandidate1->matches.getCount()) && (invCandidate2->matches.getCount())) {
 				Firebird::SortedArray<jrd_nod*> matches;
-				int j;
+				size_t j;
 				for (j = 0; j < invCandidate1->matches.getCount(); j++) {
 					matches.add(invCandidate1->matches[j]);
 				}				
@@ -2586,7 +2586,7 @@ InversionCandidate* OptimizerRetrieval::matchOnIndexes(
 	}
 
 	// Walk through indexes
-	for (int i = 0; i < inputIndexScratches->getCount(); i++) {
+	for (size_t i = 0; i < inputIndexScratches->getCount(); i++) {
 		IndexScratch& indexScratch = (*inputIndexScratches)[i];
 		// Try to match the boolean against a index.
 		if (!(indexScratch.idx->idx_runtime_flags & idx_plan_dont_use) ||
@@ -2853,7 +2853,7 @@ OptimizerInnerJoin::OptimizerInnerJoin(MemoryPool& p, OptimizerBlk* opt, UCHAR*	
 
 	innerStreams.grow(streams[0]);
 	InnerJoinStreamInfo** innerStream = innerStreams.begin();
-	for (int i = 0; i < innerStreams.getCount(); i++) {
+	for (size_t i = 0; i < innerStreams.getCount(); i++) {
 		innerStream[i] = FB_NEW(p) InnerJoinStreamInfo(p);
 		innerStream[i]->stream = streams[i + 1];
 	}
@@ -2875,8 +2875,8 @@ OptimizerInnerJoin::~OptimizerInnerJoin()
  *
  **************************************/
 
-	for (int i = 0; i < innerStreams.getCount(); i++) {
-		for (int j = 0; j < innerStreams[i]->indexedRelationships.getCount(); j++) {
+	for (size_t i = 0; i < innerStreams.getCount(); i++) {
+		for (size_t j = 0; j < innerStreams[i]->indexedRelationships.getCount(); j++) {
 			delete innerStreams[i]->indexedRelationships[j];
 		}
 		innerStreams[i]->indexedRelationships.clear();
@@ -2897,7 +2897,7 @@ void OptimizerInnerJoin::calculateCardinalities()
  *
  **************************************/
 
-	for (int i = 0; i < innerStreams.getCount(); i++) {		
+	for (size_t i = 0; i < innerStreams.getCount(); i++) {		
 		CompilerScratch::csb_repeat* csb_tail = &csb->csb_rpt[innerStreams[i]->stream];
 		fb_assert(csb_tail);
 		jrd_rel* relation = csb_tail->csb_relation;
@@ -2922,7 +2922,7 @@ void OptimizerInnerJoin::calculateStreamInfo()
  *
  **************************************/
 
-	int i = 0;
+	size_t i = 0;
 	// First get the base cost without any relation to an other inner join stream.
 	for (i = 0; i < innerStreams.getCount(); i++) {		
 		CompilerScratch::csb_repeat* csb_tail = &csb->csb_rpt[innerStreams[i]->stream];
@@ -2947,7 +2947,7 @@ void OptimizerInnerJoin::calculateStreamInfo()
 
 		// Find streams that have a indexed relationship to this 
 		// stream and add the information.
-		for (int j = 0; j < innerStreams.getCount(); j++) {		
+		for (size_t j = 0; j < innerStreams.getCount(); j++) {		
 			if (innerStreams[j]->stream != innerStreams[i]->stream) {
 				getIndexedRelationship(innerStreams[i], innerStreams[j]);
 			}
@@ -2962,7 +2962,7 @@ void OptimizerInnerJoin::calculateStreamInfo()
 		StreamInfoList tempStreams(pool);
 
 		for (i = 0; i < innerStreams.getCount(); i++) {
-			int index = 0;
+			size_t index = 0;
 			for (; index < tempStreams.getCount(); index++) {
 				// First those streams which can't be used by other streams
 				// or can't depend on a stream.
@@ -3095,7 +3095,7 @@ int OptimizerInnerJoin::findJoinOrder()
 	printStartOrder();
 #endif
 
-	int i = 0;
+	size_t i = 0;
 	remainingStreams = 0;
 	for (i = 0; i < innerStreams.getCount(); i++) {
 		if (!innerStreams[i]->used) {
@@ -3127,9 +3127,9 @@ int OptimizerInnerJoin::findJoinOrder()
 	}
 
 	// Mark streams as used
-	for (i = 0; i < optimizer->opt_best_count; i++) {
+	for (int stream = 0; stream < optimizer->opt_best_count; stream++) {
 		InnerJoinStreamInfo* streamInfo = 
-			getStreamInfo(optimizer->opt_streams[i].opt_best_stream);
+			getStreamInfo(optimizer->opt_streams[stream].opt_best_stream);
 		streamInfo->used = true;
 	}
 
@@ -3222,7 +3222,7 @@ void OptimizerInnerJoin::findBestOrder(int position, InnerJoinStreamInfo* stream
 
 	if (!done && !plan) {
 		// Add these relations to the processing list
-		int j = 0;
+		size_t j = 0;
 		for (j = 0; j < stream->indexedRelationships.getCount(); j++) {
 			IndexRelationship* relationship = stream->indexedRelationships[j];
 			InnerJoinStreamInfo* relationStreamInfo = 
@@ -3230,7 +3230,7 @@ void OptimizerInnerJoin::findBestOrder(int position, InnerJoinStreamInfo* stream
 			if (!relationStreamInfo->used) {
 				bool found = false;
 				IndexRelationship** processRelationship = processList->begin();
-				int index;
+				size_t index;
 				for (index = 0; index < processList->getCount(); index++) {
 					if (relationStreamInfo->stream == processRelationship[index]->stream) {
 						// If the cost of this relationship is cheaper then remove the
@@ -3274,7 +3274,7 @@ void OptimizerInnerJoin::findBestOrder(int position, InnerJoinStreamInfo* stream
 		// If a explicit PLAN was specific pick the next relation.
 		// The order in innerStreams is expected to be exactly the order as 
 		// specified in the explicit PLAN.
-		for (int j = 0; j < innerStreams.getCount(); j++) {
+		for (size_t j = 0; j < innerStreams.getCount(); j++) {
 			InnerJoinStreamInfo* nextStream = innerStreams[j];
 			if (!nextStream->used) {
 				findBestOrder(position, nextStream, processList, new_cost, new_cardinality);
@@ -3338,7 +3338,7 @@ void OptimizerInnerJoin::getIndexedRelationship(InnerJoinStreamInfo* baseStream,
 
 			// indexRelationship are kept sorted on cost and unique in the indexRelations array.
 			// The unique and cheapest indexed relatioships are on the first position.
-			int index = 0;
+			size_t index = 0;
 			for (; index < baseStream->indexedRelationships.getCount(); index++) {
 				if (cheaperRelationship(indexRelationship, baseStream->indexedRelationships[index])) {
 					break;
@@ -3367,7 +3367,7 @@ InnerJoinStreamInfo* OptimizerInnerJoin::getStreamInfo(int stream)
  *
  **************************************/
 
-	for (int i = 0; i < innerStreams.getCount(); i++) {
+	for (size_t i = 0; i < innerStreams.getCount(); i++) {
 		if (innerStreams[i]->stream == stream) {
 			return innerStreams[i];
 		}

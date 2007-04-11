@@ -150,7 +150,8 @@ void DatabaseSnapshot::SharedMemory::writeData(thread_db* tdbb, ClumpletWriter& 
 	const size_t length = writer.getBufferLength();
 
 	// Do we need to extend the allocated memory?
-	if (base->length + length > handle.sh_mem_length_mapped)
+	fb_assert(handle.sh_mem_length_mapped >= 0);
+	if (base->length + length > size_t(handle.sh_mem_length_mapped))
 	{
 		extend(base->length + length);
 	}

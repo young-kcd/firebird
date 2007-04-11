@@ -475,7 +475,7 @@ blb* BLB_get_array(thread_db* tdbb, jrd_tra* transaction, const bid* blob_id,
 }
 
 
-SLONG BLB_get_data(thread_db* tdbb, blb* blob, UCHAR* buffer, SLONG length, bool close)
+ULONG BLB_get_data(thread_db* tdbb, blb* blob, UCHAR* buffer, SLONG length, bool close)
 {
 /**************************************
  *
@@ -507,7 +507,7 @@ SLONG BLB_get_data(thread_db* tdbb, blb* blob, UCHAR* buffer, SLONG length, bool
 	if (close)
 		BLB_close(tdbb, blob);
 
-	return (SLONG) (p - buffer);
+	return (ULONG)(p - buffer);
 }
 
 

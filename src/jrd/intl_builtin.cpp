@@ -216,7 +216,7 @@ static ULONG internal_fss_to_unicode(texttype* obj,
 			*err_code = CS_BAD_INPUT;
 			break;
 		}
-		fb_assert(res <= src_len);
+		fb_assert(ULONG(res) <= src_len);
 		dest_ptr++;
 		dest_len -= sizeof(*dest_ptr);
 		src_ptr += res;
@@ -261,7 +261,7 @@ ULONG internal_unicode_to_fss(csconvert* obj,
 			break;
 		}
 		/* will the mb sequence fit into space left? */
-		if (res > fss_len) {
+		if (ULONG(res) > fss_len) {
 			*err_code = CS_TRUNCATION_ERROR;
 			break;
 		}
@@ -303,7 +303,7 @@ static ULONG internal_fss_length(charset* obj, ULONG srcLen, const UCHAR* src)
 		if (res == -1)
 			break;
 
-		fb_assert(res <= srcLen);
+		fb_assert(ULONG(res) <= srcLen);
 
 		src += res;
 		srcLen -= res;
@@ -361,7 +361,7 @@ static ULONG internal_fss_substring(charset* obj, ULONG srcLen, const UCHAR* src
 			res = 1;
 		}
 
-		fb_assert(res <= srcLen);
+		fb_assert(ULONG(res) <= srcLen);
 
 		src += res;
 		srcLen -= res;
@@ -389,7 +389,7 @@ static ULONG internal_fss_substring(charset* obj, ULONG srcLen, const UCHAR* src
 			res = 1;
 		}
 
-		fb_assert(res <= srcLen);
+		fb_assert(ULONG(res) <= srcLen);
 
 		src += res;
 		srcLen -= res;

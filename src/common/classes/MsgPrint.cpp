@@ -362,7 +362,7 @@ int fb_msg_format(void*        handle,
 	char msg[120] = "";
 	const int n = gds__msg_lookup(handle, facility, number, sizeof(msg), msg, NULL);
 
-	if (n > 0 && n < sizeof(msg))
+	if (n > 0 && unsigned(n) < sizeof(msg))
 	{
 		// Shameful bridge, gds__msg_format emulation for old format messages.
 		if (strchr(msg, '%'))

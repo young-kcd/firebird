@@ -50,7 +50,7 @@ enum pp_vals {
 };
 
 
-const int MAX_TOKEN_SIZE = 1024;
+const size_t MAX_TOKEN_SIZE = 1024;
 static void generate_error(ISC_STATUS*, const Firebird::string&, SSHORT, SSHORT);
 static SSHORT get_next_token(const SCHAR**, const SCHAR*, Firebird::string&);
 static SSHORT get_token(ISC_STATUS*, SSHORT, bool, const SCHAR**,
@@ -58,7 +58,7 @@ static SSHORT get_token(ISC_STATUS*, SSHORT, bool, const SCHAR**,
 
 struct pp_table {
 	SCHAR symbol[10];
-	SSHORT length;
+	USHORT length;
 	SSHORT code;
 };
 

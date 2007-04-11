@@ -121,7 +121,7 @@ const int MAX_INDEX_SEGMENTS = 16;
 // Maximum index key length
 // AB: If the maximum key-size will change, don't forget dyn.h and dba.epp 
 // which cannot use these defines.
-const int MAX_KEY			= 4096;		// Maximum page size possible divide by 4 (16384 / 4)
+const ULONG MAX_KEY			= 4096;		// Maximum page size possible divide by 4 (16384 / 4)
 const int MAX_KEY_PRE_ODS11	= 255;		// Max key-size before ODS11
 
 const USHORT SQL_MATCH_1_CHAR		= '_';	/* Not translatable */
@@ -158,7 +158,7 @@ const size_t MAX_ARRAY_DIMENSIONS = 16;
 
 const size_t MAX_SORT_ITEMS = 255; // ORDER BY f1,...,f255
 
-const size_t MAX_TABLE_VERSIONS = 255; // maybe this should be in ods.h.
+const int MAX_TABLE_VERSIONS = 255; // maybe this should be in ods.h.
 
 const size_t MAX_DB_PER_TRANS = 256; // A multi-db txn can span up to 256 dbs
 

@@ -976,7 +976,7 @@ void SQL_relation_name(TEXT* r_name,
 
 	gpre_sym* symbol = MSC_find_symbol(gpreGlob.token_global.tok_symbol, SYM_database);
 	if (symbol) {
-		if (strlen(symbol->sym_name) >= NAME_SIZE)
+		if (strlen(symbol->sym_name) >= unsigned(NAME_SIZE))
 			PAR_error("Database alias too long");
 			
 		strcpy(db_name, symbol->sym_name); // this is the alias, not the path
@@ -5181,7 +5181,7 @@ static void pair( GPRE_NOD expr, GPRE_NOD field_expr)
 
 static void par_array( gpre_fld* field)
 {
-	SSHORT i = 0;
+	USHORT i = 0;
 
 //  Pick up ranges 
 

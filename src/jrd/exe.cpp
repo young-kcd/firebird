@@ -1127,7 +1127,7 @@ void EXE_unwind(thread_db* tdbb, jrd_req* request)
 			jrd_tra* old_transaction = tdbb->tdbb_transaction;
 			tdbb->tdbb_transaction = request->req_transaction;
 
-			for (int i = 0; i < request->req_exec_sta.getCount(); ++i)
+			for (size_t i = 0; i < request->req_exec_sta.getCount(); ++i)
 			{
 				jrd_nod* node = request->req_exec_sta[i];
 				ExecuteStatement* impure =
