@@ -295,6 +295,7 @@ static HANDLE blocking_action_thread_handle;
 #endif
 
 #define SRQ_BASE                    ((UCHAR*) LOCK_header)
+#define TERMINATE_IDLE_LOCK_MANAGER
 
 static const UCHAR compatibility[] = {
 
