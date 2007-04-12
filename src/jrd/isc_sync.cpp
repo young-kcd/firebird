@@ -3543,7 +3543,7 @@ static inline bool tryEnterFastMutex(FAST_MUTEX* lpMutex)
 	return bLocked;
 }
 
-DWORD enterFastMutex(FAST_MUTEX* lpMutex, DWORD dwMilliseconds) 
+static DWORD enterFastMutex(FAST_MUTEX* lpMutex, DWORD dwMilliseconds) 
 {
 	volatile FAST_MUTEX_SHARED_SECTION* lpSect = lpMutex->lpSharedInfo;
 
