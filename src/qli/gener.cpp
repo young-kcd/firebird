@@ -19,10 +19,8 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
  */
-/*
-$Id: gener.cpp,v 1.38 2007-04-11 16:05:25 alexpeshkoff Exp $
-*/
 
 #include "firebird.h"
 #include <stdio.h>

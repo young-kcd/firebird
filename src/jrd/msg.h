@@ -19,10 +19,8 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
  */
-/*
-$Id: msg.h,v 1.9 2007-04-11 16:05:15 alexpeshkoff Exp $
-*/
 
 #ifndef JRD_MSG_H
 #define JRD_MSG_H
