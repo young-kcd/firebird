@@ -83,6 +83,7 @@
 #include "../jrd/execute_statement.h"
 
 #include "../jrd/DataTypeUtil.h"
+#include "../jrd/SysFunction.h"
 
 /* Pick up relation ids */
 #include "../jrd/ini.h"
@@ -1859,6 +1860,32 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC * de
 			}
 			return;
 		}
+
+	case nod_sys_function:
+		{
+			jrd_nod* nodeArgs = node->nod_arg[e_sysfun_args];
+			fb_assert(nodeArgs->nod_type == nod_list);
+
+			Firebird::Array<dsc*> args;
+
+			for (jrd_nod** p = nodeArgs->nod_arg;
+				 p < nodeArgs->nod_arg + nodeArgs->nod_count; ++p)
+			{
+				dsc* targetDesc = FB_NEW(*tdbb->getDefaultPool()) dsc();
+				args.push(targetDesc);
+				CMP_get_desc(tdbb, csb, *p, targetDesc);
+			}
+
+			DataTypeUtil dataTypeUtil(tdbb);
+			SysFunction* function = ((SysFunction*) node->nod_arg[e_sysfun_function]);
+
+			function->makeFunc(&dataTypeUtil, function,
+				desc, args.getCount(), const_cast<const dsc**>(args.begin()));
+
+			for (dsc** pArgs = args.begin(); pArgs != args.end(); ++pArgs)
+				delete *pArgs;
+		}
+		return;
 
 	case nod_variable:
 		{
@@ -5008,11 +5035,14 @@ static jrd_nod* pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node
 	case nod_list:
 		// We are using the same "node" always. The "end" was set in the middle
 		// of the two huge switch() statements (this is the second).
-		node->nod_type = nod_asn_list;
-		for (ptr = node->nod_arg; ptr < end; ptr++) {
-			if ((*ptr)->nod_type != nod_assignment) {
-				node->nod_type = nod_list;
-				break;
+		if (node->nod_count > 0)
+		{
+			node->nod_type = nod_asn_list;
+			for (ptr = node->nod_arg; ptr < end; ptr++) {
+				if ((*ptr)->nod_type != nod_assignment) {
+					node->nod_type = nod_list;
+					break;
+				}
 			}
 		}
 		// FALL INTO
@@ -5109,6 +5139,20 @@ static jrd_nod* pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node
 							function->fun_symbol->sym_string.c_str(), 0);
 				}
 			}
+			dsc descriptor_a;
+			CMP_get_desc(tdbb, csb, node, &descriptor_a);
+			csb->csb_impure += sizeof(impure_value);
+		}
+		break;
+
+	case nod_sys_function:
+		{
+			SysFunction* function = ((SysFunction*) node->nod_arg[e_sysfun_function]);
+			jrd_nod* nodeArgs = node->nod_arg[e_sysfun_args];
+			fb_assert(nodeArgs->nod_type == nod_list);
+
+			function->checkArgsMismatch(nodeArgs->nod_count);
+
 			dsc descriptor_a;
 			CMP_get_desc(tdbb, csb, node, &descriptor_a);
 			csb->csb_impure += sizeof(impure_value);

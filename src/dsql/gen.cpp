@@ -76,6 +76,7 @@ static void gen_select(dsql_req*, dsql_nod*);
 static void gen_simple_case(dsql_req*, const dsql_nod*);
 static void gen_sort(dsql_req*, dsql_nod*);
 static void gen_statement(dsql_req*, const dsql_nod*);
+static void gen_sys_function(dsql_req*, const dsql_nod*);
 static void gen_table_lock(dsql_req*, const dsql_nod*, USHORT);
 static void gen_udf(dsql_req*, const dsql_nod*);
 static void gen_union(dsql_req*, const dsql_nod*);
@@ -207,12 +208,16 @@ void GEN_expr( dsql_req* request, dsql_nod* node)
 		stuff(request, blr_current_date);
 		return;
 
-    case nod_current_role:
-        stuff(request, blr_current_role);
-        return;
+	case nod_current_role:
+		stuff(request, blr_current_role);
+		return;
 
 	case nod_udf:
 		gen_udf(request, node);
+		return;
+
+	case nod_sys_function:
+		gen_sys_function(request, node);
 		return;
 
 	case nod_variable:
@@ -2698,6 +2703,37 @@ static void gen_statement(dsql_req* request, const dsql_nod* node)
 	if (message) {
 		stuff(request, blr_end);
 	}
+}
+
+
+/**
+  
+ 	gen_sys_function
+  
+    @brief	Generate a system defined function.
+ 
+
+    @param request
+    @param node
+
+ **/
+static void gen_sys_function(dsql_req* request, const dsql_nod* node)
+{
+	stuff(request, blr_sys_function);
+	stuff_cstring(request, ((dsql_str*) node->nod_arg[e_sysfunc_name])->str_data);
+
+	const dsql_nod* list;
+	if ((node->nod_count == 2) && (list = node->nod_arg[e_sysfunc_args])) {
+		stuff(request, list->nod_count);
+		dsql_nod* const* ptr = list->nod_arg;
+		for (const dsql_nod* const* const end = ptr + list->nod_count;
+			ptr < end; ptr++)
+		{
+			GEN_expr(request, *ptr);
+		}
+	}
+	else
+		stuff(request, 0);
 }
 
 

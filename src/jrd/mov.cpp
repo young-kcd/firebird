@@ -531,7 +531,8 @@ int MOV_make_string2(Jrd::thread_db* tdbb,
 					 const dsc* desc,
 					 USHORT ttype,
 					 UCHAR** address, 
-					 Jrd::MoveBuffer& buffer)
+					 Jrd::MoveBuffer& buffer,
+					 bool limit)
 {
 /**************************************
  *
@@ -573,7 +574,7 @@ int MOV_make_string2(Jrd::thread_db* tdbb,
 
 		size = BLB_get_data(tdbb, blob, *address, size, true);
 
-		if (size > MAX_COLUMN_SIZE)
+		if (limit && size > MAX_COLUMN_SIZE)
 			ERR_post(isc_arith_except, 0);
 
 		return size;

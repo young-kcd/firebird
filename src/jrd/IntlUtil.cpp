@@ -335,6 +335,24 @@ bool IntlUtil::initUnicodeCollation(texttype* tt, charset* cs, const ASCII* name
 }
 
 
+bool IntlUtil::readOneChar(Jrd::CharSet* cs, const UCHAR** s, const UCHAR* end, ULONG* size)
+{
+	(*s) += *size;
+
+	if (*s >= end)
+	{
+		(*s) = end;
+		*size = 0;
+		return false;
+	}
+
+	UCHAR c[sizeof(ULONG)];
+	*size = cs->substring(end - *s, *s, sizeof(c), c, 0, 1);
+
+	return true;
+}
+
+
 string IntlUtil::escapeAttribute(Jrd::CharSet* cs, const string& s)
 {
 	string ret;
@@ -420,24 +438,6 @@ bool IntlUtil::readAttributeChar(Jrd::CharSet* cs, const UCHAR** s, const UCHAR*
 	}
 
 	return false;
-}
-
-
-bool IntlUtil::readOneChar(Jrd::CharSet* cs, const UCHAR** s, const UCHAR* end, ULONG* size)
-{
-	(*s) += *size;
-
-	if (*s >= end)
-	{
-		(*s) = end;
-		*size = 0;
-		return false;
-	}
-
-	UCHAR c[sizeof(ULONG)];
-	*size = cs->substring(end - *s, *s, sizeof(c), c, 0, 1);
-
-	return true;
 }
 
 

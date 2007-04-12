@@ -64,6 +64,7 @@
 #include "../jrd/par_proto.h"
 #include "../jrd/thd.h"
 #include "../common/utils_proto.h"
+#include "../jrd/SysFunction.h"
 
 
 /* blr type classes */
@@ -115,6 +116,7 @@ static jrd_nod* par_sort(thread_db*, CompilerScratch*, bool);
 #ifdef NOT_USED_OR_REPLACED
 static jrd_nod* par_stream(thread_db*, CompilerScratch*);
 #endif
+static jrd_nod* par_sys_function(thread_db*, CompilerScratch*);
 static jrd_nod* par_union(thread_db*, CompilerScratch*);
 static USHORT par_word(CompilerScratch*);
 static jrd_nod* parse(thread_db*, CompilerScratch*, USHORT, USHORT expected_optional = 0);
@@ -2428,6 +2430,42 @@ static jrd_nod* par_stream(thread_db* tdbb, CompilerScratch* csb)
 #endif
 
 
+static jrd_nod* par_sys_function(thread_db* tdbb, CompilerScratch* csb)
+{
+/**************************************
+ *
+ *	p a r _ s y s _ f u n c t i o n
+ *
+ **************************************
+ *
+ * Functional description
+ *	Parse a system function reference.
+ *
+ **************************************/
+	SET_TDBB(tdbb);
+	
+	Firebird::MetaName name;
+	const USHORT count = par_name(csb, name);
+
+	SysFunction* function = SysFunction::lookup(name);
+
+	if (!function)
+	{
+		csb->csb_running -= count;
+		error(csb, isc_funnotdef, isc_arg_string, ERR_cstring(name), 0);
+	}
+
+	const UCHAR* save_running = csb->csb_running;
+
+	jrd_nod* node = PAR_make_node(tdbb, e_sysfun_length);
+	node->nod_count = 1;
+	node->nod_arg[e_sysfun_args] = par_args(tdbb, csb, VALUE);
+	node->nod_arg[e_sysfun_function] = (jrd_nod*) function;
+
+	return node;
+}
+
+
 static jrd_nod* par_union(thread_db* tdbb, CompilerScratch* csb)
 {
 /**************************************
@@ -3103,6 +3141,10 @@ static jrd_nod* parse(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 				syntax_error(csb, "variable identifier");
 			}
 		}
+		break;
+
+	case blr_sys_function:
+		node = par_sys_function(tdbb, csb);
 		break;
 
 	default:

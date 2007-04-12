@@ -37,17 +37,15 @@ public:
 public:
 	static SSHORT getResultBlobSubType(const dsc* value1, const dsc* value2);
 	static USHORT getResultTextType(const dsc* value1, const dsc* value2);
-
-private:
-	static void clearDsc(dsc* desc);
+	static void makeFromList(dsc* result, const char* expressionName, int argsCount, const dsc** args);
 
 public:
 	ULONG convertLength(const dsc* src, const dsc* dst);
 	ULONG fixLength(const dsc* desc, ULONG length);
 
 	void makeConcatenate(dsc* result, const dsc* value1, const dsc* value2);
-	void makeNullString(dsc* result);
 	void makeSubstr(dsc* result, const dsc* value, const dsc* offset, const dsc* length);
+	void makeSysFunction(dsc* result, const char* name, int argsCount, const dsc** args);
 
 public:
 	virtual UCHAR maxBytesPerChar(UCHAR charSet) = 0;

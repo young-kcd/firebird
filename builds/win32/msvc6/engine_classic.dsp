@@ -492,6 +492,10 @@ SOURCE=..\..\..\src\jrd\sym.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\src\jrd\SysFunction.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\src\jrd\TempSpace.cpp
 # End Source File
 # Begin Source File
@@ -1290,6 +1294,10 @@ SOURCE=..\..\..\src\jrd\syidef.h
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\sym.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\SysFunction.h
 # End Source File
 # Begin Source File
 

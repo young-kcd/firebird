@@ -247,6 +247,7 @@ static dsql_nod* pass1_searched_case(dsql_req*, dsql_nod*, bool);
 static dsql_nod* pass1_sel_list(dsql_req*, dsql_nod*);
 static dsql_nod* pass1_simple_case(dsql_req*, dsql_nod*, bool);
 static dsql_nod* pass1_sort(dsql_req*, dsql_nod*, dsql_nod*);
+static dsql_nod* pass1_sys_function(dsql_req*, dsql_nod*, bool);
 static dsql_nod* pass1_udf(dsql_req*, dsql_nod*, bool);
 static void pass1_udf_args(dsql_req*, dsql_nod*, dsql_udf*, USHORT&, DsqlNodStack&,
 	bool);
@@ -855,6 +856,9 @@ dsql_nod* PASS1_node(dsql_req* request, dsql_nod* input, bool proc_flag)
 
 	case nod_udf:
 		return pass1_udf(request, input, proc_flag);
+
+	case nod_sys_function:
+		return pass1_sys_function(request, input, proc_flag);
 
 	case nod_equiv:
 	case nod_eql:
@@ -2129,6 +2133,7 @@ static bool aggregate_found2(const dsql_req* request, const dsql_nod* node,
 		case nod_gen_id:
 		case nod_gen_id2:
 		case nod_udf:
+		case nod_sys_function:
 			if (node->nod_count == 2) {
 				return (aggregate_found2(request, node->nod_arg[1], current_level,
 					deepest_level, ignore_sub_selects));
@@ -2891,7 +2896,8 @@ static bool invalid_reference(const dsql_ctx* context, const dsql_nod* node,
 		case nod_gen_id2:
 		case nod_cast:
 		case nod_udf:
-			// If there are no arguments given to the UDF then it's always valid
+		case nod_sys_function:
+			// If there are no arguments given to the UDF/SDF then it's always valid
 			if (node->nod_count == 2) {
 				invalid |= invalid_reference(context, node->nod_arg[1], list,
 					inside_own_map, inside_higher_map);
@@ -3221,9 +3227,10 @@ static bool node_match(const dsql_nod* node1, const dsql_nod* node2,
 		return node_match(map1->map_node, map2->map_node, ignore_map_cast);
 	}
 
-	if ((node1->nod_type == nod_gen_id)		||
-		(node1->nod_type == nod_gen_id2)	||
-		(node1->nod_type == nod_udf)		||
+	if ((node1->nod_type == nod_gen_id)			||
+		(node1->nod_type == nod_gen_id2)		||
+		(node1->nod_type == nod_udf)			||
+		(node1->nod_type == nod_sys_function)	||
 		(node1->nod_type == nod_cast))
 	{
 		if (node1->nod_arg[0] != node2->nod_arg[0]) {
@@ -5155,7 +5162,8 @@ static bool pass1_found_aggregate(const dsql_nod* node, USHORT check_scope_level
 		case nod_gen_id2:
 		case nod_cast:
 		case nod_udf:
-			// If arguments are given to the UDF then there's a node list
+		case nod_sys_function:
+			// If arguments are given to the UDF/SDF then there's a node list
 			if (node->nod_count == 2) {
 				found |= pass1_found_aggregate(node->nod_arg[1],
 					check_scope_level, match_type, current_scope_level_equal);
@@ -5391,7 +5399,8 @@ static bool pass1_found_field(const dsql_nod* node, USHORT check_scope_level,
 		case nod_gen_id2:
 		case nod_cast:
 		case nod_udf:
-			// If arguments are given to the UDF then there's a node list
+		case nod_sys_function:
+			// If arguments are given to the UDF/SDF then there's a node list
 			if (node->nod_count == 2) {
 				found |= pass1_found_field(node->nod_arg[1], check_scope_level,
 					match_type, field);
@@ -5584,7 +5593,8 @@ static bool pass1_found_sub_select(const dsql_nod* node)
 		case nod_gen_id2:
 		case nod_cast:
 		case nod_udf:
-			// If arguments are given to the UDF then there's a node list
+		case nod_sys_function:
+			// If arguments are given to the UDF/SDF then there's a node list
 			if (node->nod_count == 2) {
 				if (pass1_found_sub_select(node->nod_arg[1])) {
 					return true;
@@ -7786,6 +7796,49 @@ static dsql_nod* pass1_sort( dsql_req* request, dsql_nod* input, dsql_nod* selec
 
 /**
 
+ 	pass1_sys_function
+
+    @brief	Handle a reference to a system defined function.
+
+
+    @param request
+    @param input
+    @param proc_flag
+
+ **/
+static dsql_nod* pass1_sys_function(dsql_req* request, dsql_nod* input, bool proc_flag)
+{
+	DEV_BLKCHK(request, dsql_type_req);
+	DEV_BLKCHK(input, dsql_type_nod);
+
+	dsql_nod* node;
+
+	// Don't look for UDF if the system function has a special syntax
+	if (!(input->nod_flags & NOD_SPECIAL_SYNTAX))
+	{
+		const dsql_str* name = (dsql_str*) input->nod_arg[e_sysfunc_name];
+		dsql_udf* userFunc = METD_get_function(request, name);
+
+		if (userFunc)
+		{
+			node = MAKE_node(nod_udf, 2);
+			node->nod_arg[0] = (dsql_nod*) name;
+			node->nod_arg[1] = input->nod_arg[e_sysfunc_args];
+
+			return pass1_udf(request, node, proc_flag);
+		}
+	}
+
+	node = MAKE_node(input->nod_type, e_sysfunc_count);
+	node->nod_arg[e_sysfunc_name] = input->nod_arg[e_sysfunc_name];
+	node->nod_arg[e_sysfunc_args] = PASS1_node(request, input->nod_arg[e_sysfunc_args], proc_flag);
+
+	return node;
+}
+
+
+/**
+
  	pass1_udf
 
     @brief	Handle a reference to a user defined function.
@@ -7842,8 +7895,12 @@ static void pass1_udf_args(dsql_req* request, dsql_nod* input,
 	dsql_udf* userFunc, USHORT& arg_pos, DsqlNodStack& stack, bool proc_flag)
 {
 	DEV_BLKCHK(request, dsql_type_req);
+	DEV_BLKCHK(userFunc, dsql_type_udf);
+
+	if (!input)
+		return;
+
 	DEV_BLKCHK(input, dsql_type_nod);
-	DEV_BLKCHK (userFunc, dsql_type_udf);
 
 	if (input->nod_type != nod_list) {
 		dsql_nod* temp = PASS1_node (request, input, proc_flag);
@@ -9141,6 +9198,7 @@ static dsql_nod* remap_field(dsql_req* request, dsql_nod* field,
 		case nod_gen_id:
 		case nod_gen_id2:
 		case nod_udf:
+		case nod_sys_function:
 			if (field->nod_count == 2) {
 				field->nod_arg[1] = remap_field(request, field->nod_arg[1],
 					context, current_level);

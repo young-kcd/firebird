@@ -2769,6 +2769,16 @@ void DSQL_pretty(const dsql_nod* node, int column)
 		}
 		return;
 
+	case nod_sys_function:
+		trace_line("%ssystem function: \"", buffer);
+		string = (dsql_str*) node->nod_arg[e_sysfunc_name];
+		trace_line("%s\"\n", string->str_data);
+		ptr++;
+
+		if (node->nod_count == 2)
+			DSQL_pretty(*ptr, column + 1);
+		return;
+
 	case nod_cursor_open:
 		verb = "cursor_open";
 		break;

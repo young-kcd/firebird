@@ -119,6 +119,11 @@ typedef struct dsc
 		return dsc_dtype == dtype_blob || dsc_dtype == dtype_quad;
 	}
 
+	bool isExact() const
+	{
+		return ((dsc_dtype == dtype_int64) || (dsc_dtype == dtype_long) || (dsc_dtype == dtype_short));
+	}
+
 	bool isText() const
 	{
 		return (dsc_dtype >= dtype_text) && (dsc_dtype <= dtype_varying);
@@ -179,6 +184,85 @@ typedef struct dsc
 			dsc_scale = ttype & 0xFF;
 			dsc_flags = (dsc_flags & 0xFF) | (ttype & 0xFF00);
 		}
+	}
+
+	void clear()
+	{
+		memset(this, 0, sizeof(*this));
+	}
+
+	void makeBlob(SSHORT subType, USHORT ttype, ISC_QUAD* address = NULL)
+	{
+		clear();
+		dsc_dtype = dtype_blob;
+		dsc_length = sizeof(ISC_QUAD);
+		setBlobSubType(subType);
+		setTextType(ttype);
+		dsc_address = (UCHAR*) address;
+	}
+
+	void makeDouble(double* address = NULL)
+	{
+		clear();
+		dsc_dtype = dtype_double;
+		dsc_length = sizeof(double);
+		dsc_address = (UCHAR*) address;
+	}
+
+	void makeInt64(SCHAR scale, SINT64* address = NULL)
+	{
+		clear();
+		dsc_dtype = dtype_int64;
+		dsc_length = sizeof(SINT64);
+		dsc_scale = scale;
+		dsc_address = (UCHAR*) address;
+	}
+
+	void makeLong(SCHAR scale, SLONG* address = NULL)
+	{
+		clear();
+		dsc_dtype = dtype_long;
+		dsc_length = sizeof(SLONG);
+		dsc_scale = scale;
+		dsc_address = (UCHAR*) address;
+	}
+
+	void makeNullString()
+	{
+		clear();
+
+		// VARCHAR(1) CHARACTER SET NONE
+		dsc_dtype = dtype_varying;
+		setTextType(CS_NONE);
+		dsc_length = sizeof(USHORT) + 1;
+		dsc_flags = DSC_nullable | DSC_null;
+	}
+
+	void makeShort(SCHAR scale, SSHORT* address = NULL)
+	{
+		clear();
+		dsc_dtype = dtype_short;
+		dsc_length = sizeof(SSHORT);
+		dsc_scale = scale;
+		dsc_address = (UCHAR*) address;
+	}
+
+	void makeText(USHORT length, USHORT ttype, UCHAR* address = NULL)
+	{
+		clear();
+		dsc_dtype = dtype_text;
+		dsc_length = length;
+		setTextType(ttype);
+		dsc_address = address;
+	}
+
+	void makeVarying(USHORT length, USHORT ttype, UCHAR* address = NULL)
+	{
+		clear();
+		dsc_dtype = dtype_varying;
+		dsc_length = sizeof(USHORT) + length;
+		setTextType(ttype);
+		dsc_address = address;
 	}
 
 	int getStringLength() const;

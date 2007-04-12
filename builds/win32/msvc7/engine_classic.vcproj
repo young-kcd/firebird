@@ -385,6 +385,9 @@
 				RelativePath="..\..\..\src\jrd\sym.cpp">
 			</File>
 			<File
+				RelativePath="..\..\..\src\jrd\SysFunction.cpp">
+			</File>
+			<File
 				RelativePath="..\..\..\src\jrd\TempSpace.cpp">
 			</File>
 			<File
@@ -1008,6 +1011,9 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\sym_proto.h">
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\SysFunction.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\TempSpace.h">

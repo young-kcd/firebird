@@ -57,6 +57,8 @@ public:
 	static bool initUnicodeCollation(texttype* tt, charset* cs, const ASCII* name,
 		USHORT attributes, const UCharBuffer& specificAttributes);
 
+	static bool readOneChar(Jrd::CharSet* cs, const UCHAR** s, const UCHAR* end, ULONG* size);
+
 private:
 	static string escapeAttribute(Jrd::CharSet* cs, const string& s);
 	static string unescapeAttribute(Jrd::CharSet* cs, const string& s);
@@ -64,7 +66,6 @@ private:
 	static bool isAttributeEscape(Jrd::CharSet* cs, const UCHAR* s, ULONG size);
 
 	static bool readAttributeChar(Jrd::CharSet* cs, const UCHAR** s, const UCHAR* end, ULONG* size, bool returnEscape);
-	static bool readOneChar(Jrd::CharSet* cs, const UCHAR** s, const UCHAR* end, ULONG* size);
 };
 
 }	// namespace Firebird

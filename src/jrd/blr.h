@@ -344,5 +344,6 @@
 
 #define blr_init_variable	(unsigned char)184
 #define blr_recurse			(unsigned char)185
+#define blr_sys_function	(unsigned char)186
 
 #endif // JRD_BLR_H

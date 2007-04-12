@@ -70,6 +70,7 @@
 #include "firebird.h"
 #include <stdio.h>
 #include <string.h>
+#include "../jrd/SysFunction.h"
 #include "../common/classes/MetaName.h"
 #include "../dsql/dsql.h"
 #include "../jrd/ibase.h"
@@ -84,6 +85,7 @@
 #include "../dsql/make_proto.h"
 #include "../dsql/metd_proto.h"
 #include "../dsql/pass1_proto.h"
+#include "../dsql/utld_proto.h"
 #include "../jrd/sch_proto.h"
 #include "../jrd/thread_proto.h"
 #include "../jrd/gds_proto.h"
@@ -99,7 +101,7 @@ const int BLOB_BUFFER_SIZE    = 4096;	// to read in blr blob for default values
 
 
 static void assign_field_length(dsql_fld*, USHORT);
-static bool is_array_or_blob(const dsql_nod*);
+static bool is_array_or_blob(dsql_req*, const dsql_nod*);
 static void check_constraint(dsql_req*, dsql_nod*, bool);
 static void check_one_call(USHORT*, SSHORT, const TEXT*);
 static void create_view_triggers(dsql_req*, dsql_nod*, dsql_nod*);
@@ -750,7 +752,7 @@ static void assign_field_length (
 }
 
 
-static bool is_array_or_blob(const dsql_nod* node)
+static bool is_array_or_blob(dsql_req* request, const dsql_nod* node)
 {
 /**************************************
  *
@@ -785,12 +787,12 @@ static bool is_array_or_blob(const dsql_nod* node)
 		return false;
 
 	case nod_via:
-		return is_array_or_blob(node->nod_arg[e_via_value_1]);
+		return is_array_or_blob(request, node->nod_arg[e_via_value_1]);
 		
 	case nod_map:
 		{
 			const dsql_map* map = (dsql_map*) node->nod_arg[e_map_map];
-			return is_array_or_blob(map->map_node);
+			return is_array_or_blob(request, map->map_node);
 		}
 
 	case nod_agg_max:
@@ -803,7 +805,7 @@ static bool is_array_or_blob(const dsql_nod* node)
 	case nod_upcase:
 	case nod_lowcase:
 	case nod_negate:
-		return is_array_or_blob(node->nod_arg[0]);
+		return is_array_or_blob(request, node->nod_arg[0]);
 
 	case nod_cast:
 		{
@@ -811,7 +813,7 @@ static bool is_array_or_blob(const dsql_nod* node)
 			if (fld->fld_dtype == dtype_blob || fld->fld_dtype == dtype_array)
 				return true;
 		}
-		return is_array_or_blob(node->nod_arg[e_cast_source]);
+		return is_array_or_blob(request, node->nod_arg[e_cast_source]);
 
 	case nod_add:
 	case nod_subtract:
@@ -823,13 +825,13 @@ static bool is_array_or_blob(const dsql_nod* node)
 	case nod_multiply2:
 	case nod_divide2:
 
-		if (is_array_or_blob(node->nod_arg[0])) {
+		if (is_array_or_blob(request, node->nod_arg[0])) {
 			return true;
 		}
-		return is_array_or_blob(node->nod_arg[1]);
+		return is_array_or_blob(request, node->nod_arg[1]);
 
 	case nod_alias:
-		return is_array_or_blob(node->nod_arg[e_alias_value]);
+		return is_array_or_blob(request, node->nod_arg[e_alias_value]);
 
 	case nod_udf:
 		{
@@ -840,13 +842,37 @@ static bool is_array_or_blob(const dsql_nod* node)
 		// parameters to UDF don't need checking, a blob or array can be passed
 		return false;
 
+	case nod_sys_function:
+		{
+			const dsql_str* name = (dsql_str*) node->nod_arg[e_sysfunc_name];
+			dsql_nod* nodeArgs = node->nod_arg[e_sysfunc_args];
+			Firebird::Array<const dsc*> args;
+
+			if (nodeArgs)
+			{
+				fb_assert(nodeArgs->nod_type == nod_list);
+
+				for (dsql_nod** p = nodeArgs->nod_arg;
+					 p < nodeArgs->nod_arg + nodeArgs->nod_count; ++p)
+				{
+					MAKE_desc(request, &(*p)->nod_desc, *p, NULL);
+					args.add(&(*p)->nod_desc);
+				}
+			}
+
+			dsc desc;
+			DSqlDataTypeUtil(request).makeSysFunction(&desc, name->str_data, args.getCount(), args.begin());
+
+			return DTYPE_IS_BLOB_OR_QUAD(desc.dsc_dtype);
+		}
+
 	case nod_extract:
 	case nod_list:
 		{
 			const dsql_nod* const* const end = node->nod_arg + node->nod_count;
 			for (const dsql_nod* const* ptr = node->nod_arg; ptr < end; ++ptr)
 			{
-				if (is_array_or_blob(*ptr)) {
+				if (is_array_or_blob(request, *ptr)) {
 					return true;
 				}
 			}
@@ -865,7 +891,7 @@ static bool is_array_or_blob(const dsql_nod* node)
 		return false;
 
 	case nod_trim:
-		return is_array_or_blob(node->nod_arg[e_trim_value]);
+		return is_array_or_blob(request, node->nod_arg[e_trim_value]);
 
 	default:
 		fb_assert(false);
@@ -1061,7 +1087,7 @@ static void define_computed(dsql_req* request,
 
 	// check if array or blobs are used in expression
 
-	if (is_array_or_blob(input))
+	if (is_array_or_blob(request, input))
 	{
 		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -607,
 				  isc_arg_gds, isc_dsql_no_array_computed, 0);

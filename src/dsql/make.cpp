@@ -1117,6 +1117,28 @@ void MAKE_desc(dsql_req* request, dsc* desc, dsql_nod* node, dsql_nod* null_repl
 			return;
 		}
 
+	case nod_sys_function:
+		{
+			dsql_nod* nodeArgs = node->nod_arg[e_sysfunc_args];
+			Firebird::Array<const dsc*> args;
+
+			if (nodeArgs)
+			{
+				fb_assert(nodeArgs->nod_type == nod_list);
+
+				for (dsql_nod** p = nodeArgs->nod_arg;
+					 p < nodeArgs->nod_arg + nodeArgs->nod_count; ++p)
+				{
+					MAKE_desc(request, &(*p)->nod_desc, *p, NULL);
+					args.add(&(*p)->nod_desc);
+				}
+			}
+
+			const dsql_str* name = (dsql_str*) node->nod_arg[e_sysfunc_name];
+			DSqlDataTypeUtil(request).makeSysFunction(desc, name->str_data, args.getCount(), args.begin());
+			return;
+		}
+
 	case nod_gen_id:
 		MAKE_desc(request, &desc1, node->nod_arg[e_gen_id_value], NULL);
 		desc->dsc_dtype = dtype_long;
@@ -1348,378 +1370,25 @@ void MAKE_desc_from_list(dsql_req* request, dsc* desc, dsql_nod* node,
 						 dsql_nod* null_replacement,
 						 const TEXT* expression_name)
 {
-	//-------------------------------------------------------------------------- 
-	//  [Arno Brinkman] 2003-08-23
-	//  
-	//  This function is made to determine a output descriptor from a given list
-	//  of expressions according to the latest SQL-standard that was available.
-	//  (ISO/ANSI SQL:200n WG3:DRS-013 H2-2002-358 August, 2002) 
-	//  
-	//  If any datatype has a character type then :
-	//  - the output will always be a character type except unconvertable types.
-	//    (dtype_text, dtype_cstring, dtype_varying, dtype_blob sub_type TEXT)
-	//  !!  Currently engine cannot convert string to BLOB therefor BLOB isn't allowed. !!
-	//  - first character-set and collation are used as output descriptor.
-	//  - if all types have datatype CHAR then output should be CHAR else 
-	//    VARCHAR and with the maximum length used from the given list.
-	//  
-	//  If all of the datatypes are EXACT numeric then the output descriptor 
-	//  shall be EXACT numeric with the maximum scale and the maximum precision 
-	//  used. (dtype_byte, dtype_short, dtype_long, dtype_int64)
-	//  
-	//  If any of the datatypes is APPROXIMATE numeric then each datatype in the
-	//  list shall be numeric else a error is thrown and the output descriptor 
-	//  shall be APPROXIMATE numeric. (dtype_real, dtype_double, dtype_d_float)
-	//  
-	//  If any of the datatypes is a datetime type then each datatype in the
-	//  list shall be the same datetime type else a error is thrown.
-	//  numeric. (dtype_sql_date, dtype_sql_time, dtype_timestamp)
-	//  
-	//  If any of the datatypes is a BLOB datatype then :
-	//  - all types should be a BLOB else throw error.
-	//  - all types should have the same sub_type else throw error.
-	//  - when TEXT type then use first character-set and collation as output
-	//    descriptor.
-	//  (dtype_blob)
-	//  
-	//--------------------------------------------------------------------------
+	Firebird::Array<const dsc*> args;
 
-	// Initialize values.
-	UCHAR max_dtype = 0;
-	SCHAR max_scale = 0;
-	USHORT max_length = 0, max_dtype_length = 0, maxtextlength = 0, max_significant_digits = 0;
-	SSHORT max_sub_type = 0, first_sub_type, ttype = ttype_ascii; // default type if all nodes are nod_null.
-	SSHORT max_numeric_sub_type = 0;
-	bool firstarg = true, all_same_sub_type = true, all_equal = true, all_nulls = true;
-	bool all_numeric = true, any_numeric = false, any_approx = false, any_float = false;
-	bool all_text = true, any_text = false, any_varying = false;
-	bool all_date = true, all_time = true, all_timestamp = true, any_datetime = false;
-	bool all_blob = true, any_blob = false, any_text_blob = false;
-	bool nullable = false;
+	fb_assert(node->nod_type == nod_list);
 
-	// Walk through arguments list.
-	const dsql_nod* err_node = NULL;
-	dsql_nod** arg = node->nod_arg;
-	for (dsql_nod** end = arg + node->nod_count; arg < end; arg++) {
-		dsql_nod* tnod = *arg;
-
-		// If this is an alias pick the source datatype
-		if (tnod->nod_type == nod_alias) {
-			tnod = tnod->nod_arg[e_alias_value];
-		}
-
-		// do we have only literal NULLs?
-		if (tnod->nod_type != nod_null) {
-			if (!(tnod->nod_desc.dsc_flags & DSC_null)) {
-				all_nulls = false;
-			}
-		}
-		// ignore NULL and parameter value from walking
-		if (tnod->nod_type == nod_null || 
-			tnod->nod_desc.dsc_flags & DSC_null ||
-			tnod->nod_type == nod_parameter) 
-		{
-			nullable = true;
-			continue;
-		}
-
-		// Get the descriptor from current node.
-		dsc desc1;
-		MAKE_desc(request, &desc1, tnod, NULL);
-		if (!nullable) {
-			nullable = (desc1.dsc_flags & DSC_nullable);
-		}
-
-		// Check if we support this datatype.
-		if (!(DTYPE_IS_TEXT(desc1.dsc_dtype) || DTYPE_IS_NUMERIC(desc1.dsc_dtype) ||
-				DTYPE_IS_DATE(desc1.dsc_dtype) || DTYPE_IS_BLOB(desc1.dsc_dtype)))
-		{
-			// ERROR !!!!
-			// Unknown datatype
-			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 804,
-				isc_arg_gds, isc_dsql_datatype_err, 0);
-		}
-
-		// Initialize some values if this is the first time.
-		if (firstarg) {
-			max_scale = desc1.dsc_scale;
-			max_length = max_dtype_length = desc1.dsc_length;
-			max_sub_type = first_sub_type = desc1.dsc_sub_type;
-			max_dtype = desc1.dsc_dtype;
-			firstarg = false;
-		}
-		else {
-			if (all_equal) {
-				all_equal = 
-					(max_dtype == desc1.dsc_dtype) &&
-					(max_scale == desc1.dsc_scale) && 
-					(max_length == desc1.dsc_length) && 
-					(max_sub_type == desc1.dsc_sub_type);
-			}
-		}
-
-		// numeric datatypes :
-		if (DTYPE_IS_NUMERIC(desc1.dsc_dtype)) {
-			any_numeric = true;
-			// Is there any approximate numeric?
-			if (DTYPE_IS_APPROX(desc1.dsc_dtype)) {
-				any_approx = true;
-				// Dialect 1 NUMERIC and DECIMAL are stored as sub-types 
-				// 1 and 2 from float types dtype_real, dtype_double
-				if (!any_float) {
-					any_float = (desc1.dsc_sub_type == 0);
-				}
-			}
-			//
-			if (desc1.dsc_sub_type > max_numeric_sub_type) {
-				max_numeric_sub_type = desc1.dsc_sub_type;
-			}
-		}
-		else {
-			all_numeric = false;
-		}
-
-		// Get the max scale and length (precision)
-		// scale is negative so check less than < !
-		if (desc1.dsc_scale < max_scale) {
-			max_scale = desc1.dsc_scale;
-		}
-		if (desc1.dsc_length > max_length) {
-			max_length = desc1.dsc_length;
-		}
-		// Get max significant bits
-		if (type_significant_bits[desc1.dsc_dtype] > max_significant_digits) {
-			max_significant_digits = type_significant_bits[desc1.dsc_dtype];
-		}
-		// Get max dtype and sub_type
-		if (desc1.dsc_dtype > max_dtype) {
-			max_dtype = desc1.dsc_dtype;
-			max_dtype_length = desc1.dsc_length;
-		}
-		if (desc1.dsc_sub_type > max_sub_type) {
-			max_sub_type = desc1.dsc_sub_type;
-		}
-		if (desc1.dsc_sub_type != first_sub_type) {
-			all_same_sub_type = false;
-		}
-
-		// Is this a text type?
-		if (DTYPE_IS_TEXT(desc1.dsc_dtype))// ||
-				//((desc1.dsc_dtype == dtype_blob) && 
-					//(desc1.dsc_sub_type == 1))) // SUB_TYPE 1 = TEXT				
-				//
-				// AB: We should support TEXT BLOB in the near future, but
-				// currently we can't
-				//
-		{ 
-			const dsc* ptr = &desc1;
-			const USHORT cnvlength = TEXT_LEN(ptr);
-			if (cnvlength > maxtextlength) {
-				maxtextlength = cnvlength;
-			}
-			if (desc1.dsc_dtype == dtype_varying) {
-				any_varying = true;
-			}
-
-			// Pick first characterset-collate from args-list  
-			// 
-			// Is there an better way to determine the         
-			// characterset / collate from the list ?          
-			// Maybe first according SQL-standard which has an order 
-			// UTF32 -> UTF16 -> UTF8 then by a Firebird specified order
-			//
-			// At least give any first charset other then ASCII/NONE precedence
-			if (!any_text) {
-				ttype = desc1.dsc_ttype();
-			}
-			else {
-				if ((ttype == ttype_none) || (ttype == ttype_ascii)) {
-					ttype = desc1.dsc_ttype();
-				}
-			}
-			any_text = true;
-		}
-		else {
-			// Get max needed-length for not text types suchs as int64,timestamp etc..
-			const USHORT cnvlength = DSC_convert_to_text_length(desc1.dsc_dtype);
-			if (cnvlength > maxtextlength) {
-				maxtextlength = cnvlength;
-			}
-			all_text = false;
-		}
-
-		if (DTYPE_IS_DATE(desc1.dsc_dtype)) {
-			any_datetime = true;
-			if (desc1.dsc_dtype == dtype_sql_date) {
-				all_time = false;
-				all_timestamp = false;
-			} 
-			else if (desc1.dsc_dtype == dtype_sql_time) { 
-				all_date = false;
-				all_timestamp = false;
-			}
-			else if (desc1.dsc_dtype == dtype_timestamp) {
-				all_date = false;
-				all_time = false;
-			}
-		}
-		else {
-			all_date = false;
-			all_time = false;
-			all_timestamp = false;
-		}
-
-		if (desc1.dsc_dtype == dtype_blob) {
-			// When there was already another datatype raise immediately exception
-			if (!all_blob || !all_same_sub_type) {
-				err_node = tnod;
-				break;
-			}
-
-			any_blob = true;
-			if (desc1.dsc_sub_type == 1) {
-				// TEXT BLOB
-				if (!any_text_blob) {
-					// Save first characterset and collation
-					ttype = desc1.dsc_blob_ttype();
-				}
-				any_text_blob = true;
-			}
-		}
-		else {
-			all_blob = false;
-		}
+	for (dsql_nod** p = node->nod_arg; p < node->nod_arg + node->nod_count; ++p)
+	{
+		MAKE_desc(request, &(*p)->nod_desc, *p, NULL);
+		args.add(&(*p)->nod_desc);
 	}
 
-	// If any type is nullable then the general descriptor is nullable
-	if (nullable) {
-		desc->dsc_flags |= DSC_nullable;
-	}
-	else {
-		desc->dsc_flags &= ~DSC_nullable;
-	}
+	DSqlDataTypeUtil(request).makeFromList(desc, expression_name, args.getCount(), args.begin());
 
 	// If we have literal NULLs only, let the result be either
 	// CHAR(1) CHARACTER SET NONE or the context-provided datatype
-	if (all_nulls)
+	if (desc->isNull() && null_replacement)
 	{
-		if (null_replacement)
-		{
-			MAKE_desc(request, desc, null_replacement, NULL);
-		}
-		else
-		{
-			make_placeholder_null(desc);
-		}
+		MAKE_desc(request, desc, null_replacement, NULL);
 		desc->dsc_flags |= DSC_null;
 		return;
-	}
-
-	// If we haven't had a type at all then all values are NULL and/or parameter nodes.
-	if (firstarg) {
-		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 804,
-			isc_arg_gds, isc_dsql_datatype_err, 0);
-		// Dynamic SQL Error SQL error code = -804 Data type unknown
-	}
-
-	if (err_node) {
-		//TEXT error_info[45];
-		//sprintf(error_info, "%s at line %d, column %d.", expression_name,
-		//	(int) err_node->nod_line, (int) err_node->nod_column);
-		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
-			isc_arg_gds, isc_dsql_datatypes_not_comparable,
-			isc_arg_string, "",
-			isc_arg_string, expression_name, 0);
-		// "Datatypes %sare not comparable in expression %s"
-	}
-
-	// If all the datatypes we've seen are exactly the same, we're done
-	if (all_equal) {
-		desc->dsc_dtype = max_dtype;
-		desc->dsc_length = max_length;
-		desc->dsc_scale = max_scale;
-		desc->dsc_sub_type = max_sub_type;
-		return;
-	}
-
-	// If all of the arguments are from type text use a text type.
-	// Firebird behaves a little bit different than standard here, because
-	// any datatype (except BLOB) can be converted to a character-type we
-	// allow to use numeric and datetime types together with a 
-	// character-type, but output will always be varying !
-	if (all_text || (any_text && (any_numeric || any_datetime))) {
-		if (any_varying || (any_text && (any_numeric || any_datetime))) {
-			desc->dsc_dtype = dtype_varying;
-			maxtextlength += sizeof(USHORT);
-		}
-		else {
-			desc->dsc_dtype = dtype_text;
-		}
-		desc->dsc_ttype() = ttype;  // same as dsc_subtype
-		desc->dsc_length = maxtextlength;
-		desc->dsc_scale = 0;
-		return;
-	}
-	else if (all_numeric) {
-		// If all of the arguments are a numeric datatype.
-		if (any_approx) {
-			if (max_significant_digits <= type_significant_bits[dtype_real]) {
-				desc->dsc_dtype = dtype_real;
-				desc->dsc_length = type_lengths[desc->dsc_dtype];
-			}
-			else {
-				desc->dsc_dtype = dtype_double;
-				desc->dsc_length = type_lengths[desc->dsc_dtype];
-			}
-			if (any_float) {
-				desc->dsc_scale = 0;
-				desc->dsc_sub_type = 0;
-			}
-			else {
-				desc->dsc_scale = max_scale;
-				desc->dsc_sub_type = max_numeric_sub_type;
-			}
-		}
-		else {
-			desc->dsc_dtype = max_dtype;
-			desc->dsc_length = max_dtype_length;
-			desc->dsc_sub_type = max_numeric_sub_type;
-			desc->dsc_scale = max_scale;
-		}
-		return;
-	}
-	else if (all_date || all_time || all_timestamp) {
-		// If all of the arguments are the same datetime datattype.
-		desc->dsc_dtype  = max_dtype;
-		desc->dsc_length = max_dtype_length;
-		desc->dsc_scale = 0;
-		desc->dsc_sub_type = 0;
-		return;
-	}
-	else if (all_blob && all_same_sub_type) {
-		// If all of the arguments are the same BLOB datattype.
-		desc->dsc_dtype  = max_dtype;
-		desc->dsc_sub_type = max_sub_type;
-		if (max_sub_type == isc_blob_text) {
-			// TEXT BLOB
-			desc->dsc_scale = ttype;
-			desc->dsc_flags |= ttype & 0xFF00;	// collation
-		}
-		else {
-			desc->dsc_scale = max_scale;
-		}
-		desc->dsc_length = max_length;
-		return;
-	}
-	else {
-		// We couldn't do anything with this list, mostly because the
-		// datatypes aren't comparable.
-		// Let's try to give a usefull error message.
-		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
-			isc_arg_gds, isc_dsql_datatypes_not_comparable,
-			isc_arg_string, "",
-			isc_arg_string, expression_name, 0);
-		// "Datatypes %sare not comparable in expression %s"
 	}
 }
 
@@ -2243,6 +1912,9 @@ static void make_parameter_names(dsql_par* parameter, const dsql_nod* item)
 			name_alias = userFunc->udf_name;
 			break;
 		}
+	case nod_sys_function:
+		name_alias = ((dsql_str*) item->nod_arg[e_sysfunc_name])->str_data;
+		break;
 	case nod_gen_id:
 	case nod_gen_id2:
 		name_alias	= "GEN_ID";

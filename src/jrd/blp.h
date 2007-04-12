@@ -218,6 +218,7 @@ static const struct
 	{"trim", trim},
 	{"init_variable", variable},
 	{"recurse", union_ops},
+	{"sys_function", function},
 	{0, 0}
 };
 

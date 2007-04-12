@@ -146,15 +146,14 @@ ULONG FixedWidthCharSet::substring(ULONG srcLen, const UCHAR* src, ULONG dstLen,
 	{
 		fb_assert(src != NULL && dst != NULL);
 
-		if (dstLen < len * minBytesPerChar())
+		result = MIN(srcLen / minBytesPerChar() - startPos, len) * minBytesPerChar();
+
+		if (dstLen < result)
 			result = INTL_BAD_STR_LENGTH;
 		else if (startPos * minBytesPerChar() > srcLen)
 			result = 0;
 		else
-		{
-			result = MIN(srcLen / minBytesPerChar() - startPos, len) * minBytesPerChar();
 			memcpy(dst, src + startPos * minBytesPerChar(), result);
-		}
 	}
 
 	if (result == INTL_BAD_STR_LENGTH)

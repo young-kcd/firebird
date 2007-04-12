@@ -111,6 +111,7 @@
 #include "../jrd/misc_func_ids.h"
 #include "../common/config/config.h"
 #include "../jrd/evl_string.h"
+#include "../jrd/SysFunction.h"
 
 const int TEMP_LENGTH	= 128;
 
@@ -911,6 +912,12 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* const node)
 		FUN_evaluate(reinterpret_cast<UserFunction*>(node->nod_arg[e_fun_function]),
 				     node->nod_arg[e_fun_args], impure);
 		return &impure->vlu_desc;
+
+	case nod_sys_function:
+		{
+			SysFunction* sysFunction = reinterpret_cast<SysFunction*>(node->nod_arg[e_sysfun_function]);
+			return sysFunction->evlFunc(tdbb, sysFunction, node->nod_arg[e_sysfun_args], impure);
+		}
 
 	case nod_literal:
 		return &((Literal*) node)->lit_desc;
@@ -4964,152 +4971,7 @@ static dsc* substring(thread_db* tdbb, impure_value* impure,
  *      Perform substring function.
  *
  **************************************/
-	SET_TDBB(tdbb);
-
-	SLONG offset_arg = MOV_get_long(offset_value, 0);
-	SLONG length_arg = MOV_get_long(length_value, 0);
-
-	if (offset_arg < 0)
-		ERR_post(isc_bad_substring_offset, isc_arg_number, offset_arg + 1, 0);
-	else if (length_arg < 0)
-		ERR_post(isc_bad_substring_length, isc_arg_number, length_arg, 0);
-
-	dsc desc;
-	DataTypeUtil(tdbb).makeSubstr(&desc, value, offset_value, length_value);
-
-	ULONG offset = (ULONG) offset_arg;
-	ULONG length = (ULONG) length_arg;
-
-	if (desc.isText() && length > MAX_COLUMN_SIZE)
-		length = MAX_COLUMN_SIZE;
-
-	ULONG dataLen;
-
-	if (value->isBlob())
-	{
-		// Source string is a blob, things get interesting.
-
-		fb_assert(desc.dsc_dtype == dtype_blob);
-
-		desc.dsc_address = (UCHAR*)&impure->vlu_misc.vlu_bid;
-
-		blb* newBlob = BLB_create(tdbb, tdbb->tdbb_request->req_transaction,
-			&impure->vlu_misc.vlu_bid);
-
-		blb* blob = BLB_open(tdbb, tdbb->tdbb_request->req_transaction,
-							reinterpret_cast<bid*>(value->dsc_address));
-
-		Firebird::HalfStaticArray<UCHAR, BUFFER_LARGE> buffer;
-		CharSet* charSet = INTL_charset_lookup(tdbb, value->getCharSet());
-		const ULONG totLen = length * charSet->maxBytesPerChar();
-
-		if (charSet->isMultiByte())
-		{
-			buffer.getBuffer(MIN(blob->blb_length, (offset + length) * charSet->maxBytesPerChar()));
-			dataLen = BLB_get_data(tdbb, blob, buffer.begin(), buffer.getCount(), false);
-
-			Firebird::HalfStaticArray<UCHAR, BUFFER_LARGE> buffer2;
-			buffer2.getBuffer(dataLen);
-
-			dataLen = charSet->substring(dataLen, buffer.begin(),
-				buffer2.getCapacity(), buffer2.begin(), offset, length);
-			BLB_put_data(tdbb, newBlob, buffer2.begin(), dataLen);
-		}
-		else
-		{
-			offset *= charSet->maxBytesPerChar();
-			length *= charSet->maxBytesPerChar();
-
-			while (!(blob->blb_flags & BLB_eof) && offset)
-			{
-				// Both cases are the same for now. Let's see if we can optimize in the future.
-				ULONG l1 = BLB_get_data(tdbb, blob, buffer.begin(),
-					MIN(buffer.getCapacity(), offset), false);
-				offset -= l1;
-			}
-
-			while (!(blob->blb_flags & BLB_eof) && length)
-			{
-				dataLen = BLB_get_data(tdbb, blob, buffer.begin(),
-					MIN(length, buffer.getCapacity()), false);
-				length -= dataLen;
-
-				BLB_put_data(tdbb, newBlob, buffer.begin(), dataLen);
-			}
-		}
-
-		BLB_close(tdbb, blob);
-		BLB_close(tdbb, newBlob);
-
-		EVL_make_value(tdbb, &desc, impure);
-	}
-	else
-	{
-		fb_assert(desc.isText());
-
-		desc.dsc_dtype = dtype_text;
-
-		// CVC: I didn't bother to define a larger buffer because:
-		//		- Native types when converted to string don't reach 31 bytes plus terminator.
-		//		- String types do not need and do not use the buffer ("temp") to be pulled.
-		//		- The types that can cause an error() issued inside the low level MOV/CVT
-		//		routines because the "temp" is not enough are blob and array but at this time
-		//		they aren't accepted, so they will cause error() to be called anyway.
-		UCHAR temp[32];
-		USHORT ttype;
-		desc.dsc_length =
-			MOV_get_string_ptr(value, &ttype, &desc.dsc_address,
-							   reinterpret_cast<vary*>(temp), sizeof(temp));
-		desc.setTextType(ttype);
-
-		// CVC: Why bother? If the offset is greater or equal than the length in bytes,
-		// it's impossible that the offset be less than the length in an international charset.
-		if (offset >= desc.dsc_length || !length)
-		{
-			desc.dsc_length = 0;
-			EVL_make_value(tdbb, &desc, impure);
-		}
-		// CVC: God save the king if the engine doesn't protect itself against buffer overruns,
-		//		because intl.h defines UNICODE as the type of most system relations' string fields.
-		//		Also, the field charset can come as 127 (dynamic) when it comes from system triggers,
-		//		but it's resolved by INTL_obj_lookup() to UNICODE_FSS in the cases I observed. Here I cannot
-		//		distinguish between user calls and system calls. Unlike the original ASCII substring(),
-		//		this one will get correctly the amount of UNICODE characters requested.
-		else if (ttype == ttype_ascii || ttype == ttype_none || ttype == ttype_binary)
-		{
-			/* Redundant.
-			if (offset >= desc.dsc_length)
-				desc.dsc_length = 0;
-			else */
-			desc.dsc_address += offset;
-			desc.dsc_length -= offset;
-			if (length < desc.dsc_length)
-				desc.dsc_length = length;
-			EVL_make_value(tdbb, &desc, impure);
-		}
-		else
-		{
-			// CVC: ATTENTION:
-			// I couldn't find an appropriate message for this failure among current registered
-			// messages, so I will return empty.
-			// Finally I decided to use arithmetic exception or numeric overflow.
-			const UCHAR* p = desc.dsc_address;
-			USHORT pcount = desc.dsc_length;
-
-			CharSet* charSet = INTL_charset_lookup(tdbb, desc.getCharSet());
-
-			desc.dsc_address = NULL;
-			const ULONG totLen = MIN(MAX_COLUMN_SIZE, length * charSet->maxBytesPerChar());
-			desc.dsc_length = totLen;
-			EVL_make_value(tdbb, &desc, impure);
-
-			dataLen = charSet->substring(pcount, p, totLen,
-				impure->vlu_desc.dsc_address, offset, length);
-			impure->vlu_desc.dsc_length = static_cast<USHORT>(dataLen);
-		}
-	}
-
-	return &impure->vlu_desc;
+	return SysFunction::substring(tdbb, impure, value, offset_value, length_value);
 }
 
 

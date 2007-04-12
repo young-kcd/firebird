@@ -512,21 +512,67 @@ static LexerState lex;
 
 /* tokens added for Firebird 2.1 */
 
+%token ABS
 %token ACCENT
+%token ACOS
+%token ASCII_CHAR
+%token ASCII_VAL
+%token ASIN
+%token ATAN
+%token ATAN2
+%token BIN_AND
+%token BIN_OR
+%token BIN_SHL
+%token BIN_SHR
+%token BIN_XOR
+%token CEIL
 %token CONNECT
+%token COS
+%token COSH
+%token COT
+%token DATEADD
+%token DATEDIFF
+%token DECODE
 %token DISCONNECT
+%token EXP
+%token FLOOR
+%token GEN_UUID
 %token GLOBAL 
+%token HASH
 %token INSENSITIVE
 %token LIST
+%token LN
+%token LOG
+%token LOG10
+%token LPAD
 %token MATCHED
 %token MATCHING
+%token MAXVALUE
+%token MINVALUE
+%token MOD
+%token OVERLAY
 %token PAD
+%token PI
+%token PLACING
+%token POWER
 %token PRESERVE
+%token RAND
 %token RECURSIVE 
+%token REPLACE
+%token REVERSE
+%token ROUND
+%token RPAD
 %token SENSITIVE
+%token SIGN
+%token SIN
+%token SINH
 %token SPACE
+%token SQRT
 %token START
+%token TAN
+%token TANH
 %token TEMPORARY 
+%token TRUNC
 
 /* precedence declarations for expression evaluation */
 
@@ -1642,7 +1688,7 @@ simple_proc_statement	: assignment
 		| exec_procedure
 		| exec_sql
 		| exec_into
-		| exec_udf
+		| exec_function
 		| excp_statement
 		| raise_statement
 		| post_event
@@ -3649,9 +3695,12 @@ assignment	: update_column_name '=' value
 			{ $$ = make_node (nod_assign, e_asgn_count, $3, $1); }
 		;
 
-exec_udf	: udf
-			{ $$ = make_node (nod_assign, e_asgn_count, $1, make_node (nod_null, 0, NULL)); }
-		;
+exec_function
+	: udf
+		{ $$ = make_node (nod_assign, e_asgn_count, $1, make_node (nod_null, 0, NULL)); }
+	| non_aggregate_function
+		{ $$ = make_node (nod_assign, e_asgn_count, $1, make_node (nod_null, 0, NULL)); }
+	;
 
 
 /* BLOB get and put */
@@ -4037,6 +4086,12 @@ array_element   : column_name '[' value_list ']'
 			{ $$ = make_node (nod_array, (int) e_ary_count, $1, make_list ($3)); }
 		;
 
+value_list_opt
+	:	value_list
+	|	// nothing
+		{ $$ = NULL; }
+	;
+
 value_list	: value
 		| value_list ',' value
 			{ $$ = make_node (nod_list, 2, $1, $3); }
@@ -4181,8 +4236,13 @@ long_integer	: NUMBER
 
 /* functions */
 
-function	: aggregate_function
-	| numeric_value_function
+function
+	: aggregate_function
+	| non_aggregate_function
+	;
+
+non_aggregate_function
+	: numeric_value_function
 	| string_value_function
 	;
 	
@@ -4251,9 +4311,11 @@ delimiter_value	: sql_string
 		| variable
 		;
 
-numeric_value_function	: extract_expression
-		| length_expression
-		;
+numeric_value_function
+	: extract_expression
+	| length_expression
+	| system_function_expression
+	;
 
 extract_expression	: EXTRACT '(' timestamp_part FROM value ')'
 			{ $$ = make_node (nod_extract, (int) e_extract_count, $3, $5); }
@@ -4281,6 +4343,96 @@ octet_length_expression	: OCTET_LENGTH '(' value ')'
 			{ $$ = make_node(nod_strlen, (int) e_strlen_count,
 					MAKE_constant((dsql_str*)blr_strlen_octet, CONSTANT_SLONG), $3); }
 		;
+
+system_function_expression
+	: system_function_std_syntax '(' value_list_opt ')'
+		{ $$ = make_node(nod_sys_function, e_sysfunc_count, $1, make_list($3)); }
+	| system_function_special_syntax
+	;
+
+system_function_std_syntax
+	: ABS
+	| ACOS
+	| ASCII_CHAR
+	| ASCII_VAL
+	| ASIN
+	| ATAN
+	| ATAN2
+	| BIN_AND
+	| BIN_OR
+	| BIN_SHL
+	| BIN_SHR
+	| BIN_XOR
+	| CEIL
+	| COS
+	| COSH
+	| COT
+	| EXP
+	| FLOOR
+	| GEN_UUID
+	| HASH
+	| LEFT
+	| LN
+	| LOG
+	| LOG10
+	| LPAD
+	| MAXVALUE
+	| MINVALUE
+	| MOD
+	| PI
+	| POWER
+	| RAND
+	| REPLACE
+	| REVERSE
+	| RIGHT
+	| ROUND
+	| RPAD
+	| SIGN
+	| SIN
+	| SINH
+	| SQRT
+	| TAN
+	| TANH
+	| TRUNC
+	;
+
+system_function_special_syntax
+	: DATEADD '(' value timestamp_part FOR value ')'
+		{
+			$$ = make_flag_node(nod_sys_function, NOD_SPECIAL_SYNTAX, e_sysfunc_count,
+				$1, make_node(nod_list, 3, $3, $4, $6));
+		}
+	| DATEADD '(' timestamp_part ',' value ',' value ')'
+		{
+			$$ = make_flag_node(nod_sys_function, NOD_SPECIAL_SYNTAX, e_sysfunc_count,
+				$1, make_node(nod_list, 3, $5, $3, $7));
+		}
+	| DATEDIFF '(' timestamp_part FROM value FOR value ')'
+		{
+			$$ = make_flag_node(nod_sys_function, NOD_SPECIAL_SYNTAX, e_sysfunc_count,
+				$1, make_node(nod_list, 3, $3, $5, $7));
+		}
+	| DATEDIFF '(' timestamp_part ',' value ',' value ')'
+		{
+			$$ = make_flag_node(nod_sys_function, NOD_SPECIAL_SYNTAX, e_sysfunc_count,
+				$1, make_node(nod_list, 3, $3, $5, $7));
+		}
+	| OVERLAY '(' value PLACING value FROM value FOR value ')'
+		{
+			$$ = make_flag_node(nod_sys_function, NOD_SPECIAL_SYNTAX, e_sysfunc_count,
+				$1, make_node(nod_list, 4, $3, $5, $7, $9));
+		}
+	| OVERLAY '(' value PLACING value FROM value ')'
+		{
+			$$ = make_flag_node(nod_sys_function, NOD_SPECIAL_SYNTAX, e_sysfunc_count,
+				$1, make_node(nod_list, 3, $3, $5, $7));
+		}
+	| POSITION '(' value KW_IN value ')'
+		{
+			$$ = make_flag_node(nod_sys_function, NOD_SPECIAL_SYNTAX, e_sysfunc_count,
+				$1, make_node(nod_list, 2, $3, $5));
+		}
+	;
 
 string_value_function	:  substring_function
 		| trim_function
@@ -4350,6 +4502,10 @@ case_abbreviation	: NULLIF '(' value ',' value ')'
 				make_node (nod_list, 2, $3, $5), $7); }
 		| COALESCE '(' value ',' value_list ')'
 			{ $$ = make_node (nod_coalesce, 2, $3, $5); }
+		| DECODE '(' value ',' decode_pairs ')'
+			{ $$ = make_node(nod_simple_case, 3, $3, make_list($5), make_node(nod_null, 0, NULL)); }
+		| DECODE '(' value ',' decode_pairs ',' value ')'
+			{ $$ = make_node(nod_simple_case, 3, $3, make_list($5), $7); }
 		;
 
 case_specification	: simple_case
@@ -4388,6 +4544,13 @@ case_operand	: value
 
 case_result	: value
 		;
+
+decode_pairs
+	: value ',' value
+		{ $$ = make_node(nod_list, 2, $1, $3); }
+	| decode_pairs ',' value ',' value
+		{ $$ = make_node(nod_list, 2, $1, make_node(nod_list, 2, $3, $5)); }
+	;
 
 /* next value expression */
 
@@ -4566,14 +4729,60 @@ non_reserved_word :
 	| UNDO
 	| REQUESTS
 	| TIMEOUT
-	| ACCENT				/* added in FB 2.1 */
+	| ABS					/* added in FB 2.1 */
+	| ACCENT
+	| ACOS
+	| ASCII_CHAR
+	| ASCII_VAL
+	| ASIN
+	| ATAN
+	| ATAN2
+	| BIN_AND
+	| BIN_OR
+	| BIN_SHL
+	| BIN_SHR
+	| BIN_XOR
+	| CEIL
+	| COS
+	| COSH
+	| COT
+	| DATEADD
+	| DATEDIFF
+	| DECODE
+	| EXP
+	| FLOOR
+	| GEN_UUID
+	| HASH
 	| LIST
+	| LN
+	| LOG
+	| LOG10
+	| LPAD
 	| MATCHED
 	| MATCHING
+	| MAXVALUE
+	| MINVALUE
+	| MOD
+	| OVERLAY
 	| PAD
+	| PI
+	| PLACING
+	| POWER
 	| PRESERVE
+	| RAND
+	| REPLACE
+	| REVERSE
+	| ROUND
+	| RPAD
+	| SIGN
+	| SIN
+	| SINH
 	| SPACE
+	| SQRT
+	| TAN
+	| TANH
 	| TEMPORARY
+	| TRUNC
 	;
 
 %%

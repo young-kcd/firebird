@@ -419,6 +419,16 @@ bool OPT_expression_equal2(thread_db* tdbb, OptimizerBlk* opt,
 			}
 			break;
 
+		case nod_sys_function:
+			if (node1->nod_arg[e_sysfun_function] &&
+				(node1->nod_arg[e_sysfun_function] == node2->nod_arg[e_sysfun_function]) &&
+				OPT_expression_equal2(tdbb, opt, node1->nod_arg[e_sysfun_args],
+								  node2->nod_arg[e_sysfun_args], stream)) 
+			{
+				return true;
+			}
+			break;
+
 		case nod_literal:
 			{
 				const dsc* desc1 = EVL_expr(tdbb, node1);
