@@ -312,7 +312,8 @@ int Config::getTempBlockSize()
 
 int Config::getTempCacheLimit()
 {
-	return (int) sysConfig.values[KEY_TEMP_CACHE_LIMIT];
+	int v = (int) sysConfig.values[KEY_TEMP_CACHE_LIMIT];
+	return v < 0 ? 0 : v;
 }
 
 bool Config::getRemoteFileOpenAbility()
