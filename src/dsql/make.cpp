@@ -30,6 +30,7 @@
  * 2003.01.25 Dmitry Yemanov: Fixed problem with concatenation which
  *   trashed RDB$FIELD_LENGTH in the system tables. This change may
  *   potentially interfere with the one made by Claudio one year ago.
+ * Adriano dos Santos Fernandes
  */
  
 //This MUST be before any other includes

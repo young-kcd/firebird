@@ -65,6 +65,7 @@
  * 2002.09.12 Nickolay Samofatov: fixed cached metadata errors
  * 2004.01.16 Vlad Horsun: added support for default parameters and
  *   EXECUTE BLOCK statement
+ * Adriano dos Santos Fernandes
  */
 
 #include "firebird.h"

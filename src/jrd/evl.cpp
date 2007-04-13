@@ -57,6 +57,7 @@
  *                            exception handling in SPs/triggers,
  *                            implemented ROWS_AFFECTED system variable
  * 2003.08.10 Claudio Valderrama: Fix SF bug# 784121.
+ * Adriano dos Santos Fernandes
  */
 
 #include "firebird.h"

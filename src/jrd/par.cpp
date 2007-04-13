@@ -33,6 +33,7 @@
  * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
  * 2003.10.05 Dmitry Yemanov: Added support for explicit cursors in PSQL
  * 2004.01.16 Vlad Horsun: Added support for default parameters 
+ * Adriano dos Santos Fernandes
  */
 
 #include "firebird.h"
@@ -2454,8 +2455,6 @@ static jrd_nod* par_sys_function(thread_db* tdbb, CompilerScratch* csb)
 		csb->csb_running -= count;
 		error(csb, isc_funnotdef, isc_arg_string, ERR_cstring(name), 0);
 	}
-
-	const UCHAR* save_running = csb->csb_running;
 
 	jrd_nod* node = PAR_make_node(tdbb, e_sysfun_length);
 	node->nod_count = 1;

@@ -27,6 +27,7 @@
  * 2002.10.21 Nickolay Samofatov: Added support for explicit pessimistic locks
  * 2002.10.29 Nickolay Samofatov: Added support for savepoints
  * 2003.10.05 Dmitry Yemanov: Added support for explicit cursors in PSQL
+ * Adriano dos Santos Fernandes
  */
 
 #ifndef JRD_BLR_H

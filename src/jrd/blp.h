@@ -17,6 +17,7 @@
  * Contributor(s): ______________________________________.
  *
  * 2001.07.28: John Bellardo: Added skip and current_role to table.
+ * Adriano dos Santos Fernandes
  */
 static const struct
 {

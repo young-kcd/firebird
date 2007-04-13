@@ -22,7 +22,7 @@
  *
  *  All Rights Reserved.
  *  Contributor(s): ______________________________________.
- *
+ *  Adriano dos Santos Fernandes
  *
  */
 

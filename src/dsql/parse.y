@@ -71,6 +71,7 @@
  * 2003.10.05 Dmitry Yemanov: Added support for explicit cursors in PSQL.
  * 2004.01.16 Vlad Horsun: added support for default parameters and 
  *   EXECUTE BLOCK statement
+ * Adriano dos Santos Fernandes
  */
 
 #include "firebird.h"
@@ -4244,6 +4245,7 @@ function
 non_aggregate_function
 	: numeric_value_function
 	| string_value_function
+	| system_function_expression
 	;
 	
 aggregate_function	: COUNT '(' '*' ')'
@@ -4314,7 +4316,6 @@ delimiter_value	: sql_string
 numeric_value_function
 	: extract_expression
 	| length_expression
-	| system_function_expression
 	;
 
 extract_expression	: EXTRACT '(' timestamp_part FROM value ')'

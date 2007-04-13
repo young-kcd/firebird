@@ -21,6 +21,7 @@
  * Contributor(s): ______________________________________.
  * 2002.10.21 Nickolay Samofatov: Added support for explicit pessimistic locks
  * 2002.10.29 Nickolay Samofatov: Added support for savepoints
+ * Adriano dos Santos Fernandes
  */
 
 #include "firebird.h"

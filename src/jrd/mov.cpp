@@ -23,6 +23,7 @@
  * 2002.08.21 Dmitry Yemanov: fixed bug with a buffer overrun,
  *                            which at least caused invalid dependencies
  *                            to be stored (DB$xxx, for example)
+ * Adriano dos Santos Fernandes
  */
 
 #include "firebird.h"

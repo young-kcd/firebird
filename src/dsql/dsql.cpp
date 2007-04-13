@@ -27,10 +27,9 @@
  * and get_rsb_item() that caused a crash when plan info was requested.
  * 2001.6.9 Claudio Valderrama: Added nod_del_view, nod_current_role and nod_breakleave.
  * 2002.10.29 Nickolay Samofatov: Added support for savepoints
- *
  * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
- *
  * 2004.01.16 Vlad Horsun: added support for EXECUTE BLOCK statement
+ * Adriano dos Santos Fernandes
  */
 /**************************************************************
 V4 Multi-threading changes.

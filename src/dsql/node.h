@@ -32,6 +32,7 @@
  * 2002.10.29 Nickolay Samofatov: Added support for savepoints
  * 2004.01.16 Vlad Horsun: added support for default parameters and
  *   EXECUTE BLOCK statement
+ * Adriano dos Santos Fernandes
  */
 
 #ifndef DSQL_NODE_H
