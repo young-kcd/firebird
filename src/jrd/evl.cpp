@@ -1216,7 +1216,7 @@ bool EVL_field(jrd_rel* relation, Record* record, USHORT id, dsc* desc)
 			}
 
 			// CVC: With a corrupt db, the engine crashed doing backup.
-			jrd_fld* temp_field = 0;
+			jrd_fld* temp_field = NULL;
 			if (id < relation->rel_fields->count())
 				temp_field = (*relation->rel_fields)[id];
 

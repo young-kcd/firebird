@@ -1323,9 +1323,9 @@ static jrd_nod* par_field(thread_db* tdbb, CompilerScratch* csb, SSHORT blr_oper
 				}
 				else {
 					if (tdbb->tdbb_attachment->att_flags & ATT_gbak_attachment)
-							warning(csb, isc_fldnotdef, isc_arg_string,
-									ERR_cstring(name), isc_arg_string,
-									relation->rel_name.c_str(), 0);
+						warning(csb, isc_fldnotdef, isc_arg_string,
+								ERR_cstring(name), isc_arg_string,
+								relation->rel_name.c_str(), 0);
 					else if (relation->rel_name.length() > 0)
 						error(csb, isc_fldnotdef, isc_arg_string,
 							  ERR_cstring(name), isc_arg_string,
