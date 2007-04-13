@@ -1169,7 +1169,9 @@ bool EVL_field(jrd_rel* relation, Record* record, USHORT id, dsc* desc)
 				MET_scan_relation(tdbb, relation);
 			}
 
-			jrd_fld* temp_field = (*relation->rel_fields)[id];
+			jrd_fld* temp_field = NULL;
+			if (id < relation->rel_fields->count())
+				temp_field = (*relation->rel_fields)[id];
 
 			if (temp_field)
 			{
