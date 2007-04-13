@@ -3805,7 +3805,7 @@ void write_relations(void)
 			{
 				FOR (REQUEST_HANDLE req_handle5)
 					R IN RDB$RELATIONS WITH R.RDB$RELATION_NAME = X.RDB$RELATION_NAME
-					if (!X.RDB$RELATION_TYPE.NULL)
+					if (!R.RDB$RELATION_TYPE.NULL)
 						put_numeric (att_relation_type, R.RDB$RELATION_TYPE);
 				END_FOR;
 				ON_ERROR
