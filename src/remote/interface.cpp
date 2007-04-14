@@ -214,14 +214,22 @@ static ULONG remote_event_id = 0;
 
 #define SET_OBJECT(rdb, object, id) REMOTE_set_object (rdb->rdb_port, (struct blk *) object, id)
 
-inline bool defer_packet(rem_port* port, const PACKET* packet, ISC_STATUS* status, bool sent = false)
+inline bool defer_packet(rem_port* port, PACKET* packet, ISC_STATUS* status, bool sent = false)
 {
+	// hvlad: passed packet often is rdb->rdb_packet and therefore can be
+	// changed inside clear_queue. To not confuse caller we must preserve
+	// packet content
+
 	rem_que_packet p;
 	p.packet = *packet;
 	p.sent = sent;
-	port->port_deferred_packets->add(p);
 
-	return clear_queue(port, status);
+	if (!clear_queue(port, status)) 
+		return false;
+
+	*packet = p.packet;
+	port->port_deferred_packets->add(p);
+	return true;
 }
 
 #define GDS_ATTACH_DATABASE	REM_attach_database
