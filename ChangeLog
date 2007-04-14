@@ -1,3 +1,16 @@
+2007-04-13 14:21  dimitr
+
+	* firebird2/src/jrd/par.cpp (1.132.4.4):
+
+	Misc.
+
+2007-04-13 14:21  dimitr
+
+	* firebird2/src/jrd/evl.cpp (1.165.2.5):
+
+	Backported Claudio's fix for corrupted dbs. It also fixes CORE-1205
+	(on the server side).
+
 2007-04-11 18:39  dchri
 
 	* firebird2/src/common/classes/: alloc.cpp (1.80.2.5), alloc.h
