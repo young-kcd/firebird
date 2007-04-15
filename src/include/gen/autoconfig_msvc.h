@@ -169,6 +169,7 @@
 
 /* Types */
 #undef HAVE_SOCKLEN_T
+#undef HAVE_INFINITY
 
 /* gettimeofday accepts second (timezone) argument */
 #undef GETTIMEOFDAY_RETURNS_TIMEZONE
