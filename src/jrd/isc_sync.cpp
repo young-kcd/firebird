@@ -3375,9 +3375,21 @@ static const int DEFAULT_INTERLOCKED_SPIN_COUNT_SMP	= 200;
 // VC6 has the wrong declaration for the operating system function.
 // MinGW as well
 #if (defined(_MSC_VER) && (_MSC_VER <= 1200)) || defined __GNUC__
+// Cast away volatile
 #define FIX_TYPE(arg) const_cast<LPLONG>(arg)
 #else
 #define FIX_TYPE(arg) arg
+#endif
+
+#if (defined(_MSC_VER) && (_MSC_VER <= 1200)) || defined __GNUC__
+// Cast away volatile, convert SLONG to PVOID, SLONG* to PVOID* and PVOID to int.
+inline int OldILCompareExchange(volatile SLONG* arg1, int arg2, int arg3)
+{
+	PVOID* arg1n = reinterpret_cast<PVOID*>(const_cast<LPLONG>(arg1));
+	PVOID arg2n = reinterpret_cast<PVOID>(arg2);
+	PVOID arg3n = reinterpret_cast<PVOID>(arg3);
+	return reinterpret_cast<int>(InterlockedCompareExchange(arg1n, arg2n, arg3n));
+}
 #endif
 
 
@@ -3536,8 +3548,11 @@ static inline bool tryEnterFastMutex(FAST_MUTEX* lpMutex)
 
 	do 
 	{
-		bLocked = 
-			(InterlockedCompareExchange(FIX_TYPE(&lpSect->lAvailable), 0, 1) == 1); 
+#if (defined(_MSC_VER) && (_MSC_VER <= 1200)) || defined __GNUC__
+		bLocked = OldILCompareExchange(&lpSect->lAvailable, 0, 1) == 1;
+#else
+		bLocked = (InterlockedCompareExchange(&lpSect->lAvailable, 0, 1) == 1);
+#endif
 	} while (!bLocked && (dwSpinCount-- > 0));
 
 	return bLocked;
@@ -3565,9 +3580,14 @@ static DWORD enterFastMutex(FAST_MUTEX* lpMutex, DWORD dwMilliseconds)
 		if (res != WAIT_OBJECT_0)
 			return res;
 		
-		if (InterlockedCompareExchange(FIX_TYPE(&lpSect->lAvailable), 0, 1) == 1) {
+#if (defined(_MSC_VER) && (_MSC_VER <= 1200)) || defined __GNUC__
+		if (OldILCompareExchange(&lpSect->lAvailable, 0, 1) == 1)
+			return WAIT_OBJECT_0;
+#else
+		if (InterlockedCompareExchange(&lpSect->lAvailable, 0, 1) == 1) {
 			return WAIT_OBJECT_0;
 		}
+#endif
 		else if (dwMilliseconds != INFINITE) {
 			return WAIT_TIMEOUT;
 		}
@@ -3578,12 +3598,21 @@ static bool leaveFastMutex(FAST_MUTEX* lpMutex)
 {
 	volatile FAST_MUTEX_SHARED_SECTION* lpSect = lpMutex->lpSharedInfo;
 
-	if (InterlockedCompareExchange(FIX_TYPE(&lpSect->lAvailable), 1, 0) != 0)
+#if (defined(_MSC_VER) && (_MSC_VER <= 1200)) || defined __GNUC__
+	if (OldILCompareExchange(&lpSect->lAvailable, 1, 0) != 0)
 	{
 		gds__log("bug in leaveFastMutex");
 		SetLastError(ERROR_INVALID_PARAMETER);
 		return false;
 	}
+#else
+	if (InterlockedCompareExchange(&lpSect->lAvailable, 1, 0) != 0)
+	{
+		gds__log("bug in leaveFastMutex");
+		SetLastError(ERROR_INVALID_PARAMETER);
+		return false;
+	}
+#endif
 
 	if (lpSect->lThreadsWaiting)
 		SetEvent(lpMutex->hEvent);

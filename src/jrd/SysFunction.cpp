@@ -230,7 +230,7 @@ static void makeLongResult(DataTypeUtilBase* dataTypeUtil, SysFunction* function
 
 
 /***
- * This function don't work yet, because makeFromListResult isn't totally prepared for blobs vs strings.
+ * This function doesn't work yet, because makeFromListResult isn't totally prepared for blobs vs strings.
  *
 static void makeLongStringOrBlobResult(DataTypeUtilBase* dataTypeUtil, SysFunction* function, dsc* result, int argsCount, const dsc** args)
 {
@@ -2449,57 +2449,72 @@ static dsc* evlTrunc(Jrd::thread_db* tdbb, SysFunction* function, Jrd::jrd_nod* 
 }
 
 
+#if (defined(_MSC_VER) && (_MSC_VER <= 1200))
+SysFunction::SysFunction(const char* s, int mc, int MC, makeFunc_t mf, evlFunc_t ef, void* v)
+	: name(s), minArgCount(mc), maxArgCount(MC), makeFunc(mf), evlFunc(ef), misc(v)
+{
+}
+#endif
+
+
+#if (defined(_MSC_VER) && (_MSC_VER <= 1200))
+#define SF(a, b, c, d, e, f) SysFunction(a, b, c, d, e, f)
+#else
+#define SF(a, b, c, d, e, f) {a, b, c, d, e, f}
+#endif
+
+
 SysFunction SysFunction::functions[] =
 	{
-		{"ABS", 1, 1, makeAbs, evlAbs, NULL},
-		{"ACOS", 1, 1, makeDoubleResult, evlStdMath, (StdMathFunc) acos},
-		{"ASCII_CHAR", 1, 1, makeAsciiChar, evlAsciiChar, NULL},
-		{"ASCII_VAL", 1, 1, makeShortResult, evlAsciiVal, NULL},
-		{"ASIN", 1, 1, makeDoubleResult, evlStdMath, (StdMathFunc) asin},
-		{"ATAN", 1, 1, makeDoubleResult, evlStdMath, (StdMathFunc) atan},
-		{"ATAN2", 2, 2, makeDoubleResult, evlAtan2, NULL},
-		{"BIN_AND", 1, -1, makeBin, evlBin, (void*) funBinAnd},
-		{"BIN_OR", 1, -1, makeBin, evlBin, (void*) funBinOr},
-		{"BIN_SHL", 2, 2, makeBinShift, evlBinShift, (void*) funBinShl},
-		{"BIN_SHR", 2, 2, makeBinShift, evlBinShift, (void*) funBinShr},
-		{"BIN_XOR", 1, -1, makeBin, evlBin, (void*) funBinXor},
-		{"CEIL", 1, 1, makeCeilFloor, evlCeil, NULL},
-		{"CEILING", 1, 1, makeCeilFloor, evlCeil, NULL},
-		{"COS", 1, 1, makeDoubleResult, evlStdMath, (StdMathFunc) cos},
-		{"COSH", 1, 1, makeDoubleResult, evlStdMath, (StdMathFunc) cosh},
-		{"COT", 1, 1, makeDoubleResult, evlStdMath, (StdMathFunc) cot},
-		{"DATEADD", 3, 3, makeDateAdd, evlDateAdd, NULL},
-		{"DATEDIFF", 3, 3, makeInt64Result, evlDateDiff, NULL},
-		{"EXP", 1, 1, makeDoubleResult, evlExp, NULL},
-		{"FLOOR", 1, 1, makeCeilFloor, evlFloor, NULL},
-		{"GEN_UUID", 0, 0, makeGenUuid, evlGenUuid, NULL},
-		{"HASH", 1, 1, makeInt64Result, evlHash, NULL},
-		{"LEFT", 2, 2, makeLeftRight, evlLeft, NULL},
-		{"LN", 1, 1, makeDoubleResult, evlLn, NULL},
-		{"LOG", 2, 2, makeDoubleResult, evlLog, NULL},
-		{"LOG10", 1, 1, makeDoubleResult, evlStdMath, (StdMathFunc) log10},
-		{"LPAD", 2, 3, makePad, evlPad, (void*) funLPad},
-		{"MAXVALUE", 1, -1, makeFromListResult, evlMaxMinValue, (void*) funMaxValue},
-		{"MINVALUE", 1, -1, makeFromListResult, evlMaxMinValue, (void*) funMinValue},
-		{"MOD", 2, 2, makeMod, evlMod, NULL},
-		{"OVERLAY", 3, 4, makeOverlay, evlOverlay, NULL},
-		{"PI", 0, 0, makeDoubleResult, evlPi, NULL},
-		{"POSITION", 2, 2, makeLongResult, evlPosition, NULL},
-		{"POWER", 2, 2, makeDoubleResult, evlPower, NULL},
-		{"RAND", 0, 0, makeDoubleResult, evlRand, NULL},
-		{"REPLACE", 3, 3, makeReplace, evlReplace, NULL},
-		{"REVERSE", 1, 1, makeReverse, evlReverse, NULL},
-		{"RIGHT", 2, 2, makeLeftRight, evlRight, NULL},
-		{"ROUND", 2, 2, makeRound, evlRound, NULL},
-		{"RPAD", 2, 3, makePad, evlPad, (void*) funRPad},
-		{"SIGN", 1, 1, makeShortResult, evlSign, NULL},
-		{"SIN", 1, 1, makeDoubleResult, evlStdMath, (StdMathFunc) sin},
-		{"SINH", 1, 1, makeDoubleResult, evlStdMath, (StdMathFunc) sinh},
-		{"SQRT", 1, 1, makeDoubleResult, evlSqrt, NULL},
-		{"TAN", 1, 1, makeDoubleResult, evlStdMath, (StdMathFunc) tan},
-		{"TANH", 1, 1, makeDoubleResult, evlStdMath, (StdMathFunc) tanh},
-		{"TRUNC", 1, 1, makeTrunc, evlTrunc, NULL},
-		{"", 0, NULL, NULL, NULL}
+		SF("ABS", 1, 1, makeAbs, evlAbs, NULL),
+		SF("ACOS", 1, 1, makeDoubleResult, evlStdMath, (StdMathFunc) acos),
+		SF("ASCII_CHAR", 1, 1, makeAsciiChar, evlAsciiChar, NULL),
+		SF("ASCII_VAL", 1, 1, makeShortResult, evlAsciiVal, NULL),
+		SF("ASIN", 1, 1, makeDoubleResult, evlStdMath, (StdMathFunc) asin),
+		SF("ATAN", 1, 1, makeDoubleResult, evlStdMath, (StdMathFunc) atan),
+		SF("ATAN2", 2, 2, makeDoubleResult, evlAtan2, NULL),
+		SF("BIN_AND", 1, -1, makeBin, evlBin, (void*) funBinAnd),
+		SF("BIN_OR", 1, -1, makeBin, evlBin, (void*) funBinOr),
+		SF("BIN_SHL", 2, 2, makeBinShift, evlBinShift, (void*) funBinShl),
+		SF("BIN_SHR", 2, 2, makeBinShift, evlBinShift, (void*) funBinShr),
+		SF("BIN_XOR", 1, -1, makeBin, evlBin, (void*) funBinXor),
+		SF("CEIL", 1, 1, makeCeilFloor, evlCeil, NULL),
+		SF("CEILING", 1, 1, makeCeilFloor, evlCeil, NULL),
+		SF("COS", 1, 1, makeDoubleResult, evlStdMath, (StdMathFunc) cos),
+		SF("COSH", 1, 1, makeDoubleResult, evlStdMath, (StdMathFunc) cosh),
+		SF("COT", 1, 1, makeDoubleResult, evlStdMath, (StdMathFunc) cot),
+		SF("DATEADD", 3, 3, makeDateAdd, evlDateAdd, NULL),
+		SF("DATEDIFF", 3, 3, makeInt64Result, evlDateDiff, NULL),
+		SF("EXP", 1, 1, makeDoubleResult, evlExp, NULL),
+		SF("FLOOR", 1, 1, makeCeilFloor, evlFloor, NULL),
+		SF("GEN_UUID", 0, 0, makeGenUuid, evlGenUuid, NULL),
+		SF("HASH", 1, 1, makeInt64Result, evlHash, NULL),
+		SF("LEFT", 2, 2, makeLeftRight, evlLeft, NULL),
+		SF("LN", 1, 1, makeDoubleResult, evlLn, NULL),
+		SF("LOG", 2, 2, makeDoubleResult, evlLog, NULL),
+		SF("LOG10", 1, 1, makeDoubleResult, evlStdMath, (StdMathFunc) log10),
+		SF("LPAD", 2, 3, makePad, evlPad, (void*) funLPad),
+		SF("MAXVALUE", 1, -1, makeFromListResult, evlMaxMinValue, (void*) funMaxValue),
+		SF("MINVALUE", 1, -1, makeFromListResult, evlMaxMinValue, (void*) funMinValue),
+		SF("MOD", 2, 2, makeMod, evlMod, NULL),
+		SF("OVERLAY", 3, 4, makeOverlay, evlOverlay, NULL),
+		SF("PI", 0, 0, makeDoubleResult, evlPi, NULL),
+		SF("POSITION", 2, 2, makeLongResult, evlPosition, NULL),
+		SF("POWER", 2, 2, makeDoubleResult, evlPower, NULL),
+		SF("RAND", 0, 0, makeDoubleResult, evlRand, NULL),
+		SF("REPLACE", 3, 3, makeReplace, evlReplace, NULL),
+		SF("REVERSE", 1, 1, makeReverse, evlReverse, NULL),
+		SF("RIGHT", 2, 2, makeLeftRight, evlRight, NULL),
+		SF("ROUND", 2, 2, makeRound, evlRound, NULL),
+		SF("RPAD", 2, 3, makePad, evlPad, (void*) funRPad),
+		SF("SIGN", 1, 1, makeShortResult, evlSign, NULL),
+		SF("SIN", 1, 1, makeDoubleResult, evlStdMath, (StdMathFunc) sin),
+		SF("SINH", 1, 1, makeDoubleResult, evlStdMath, (StdMathFunc) sinh),
+		SF("SQRT", 1, 1, makeDoubleResult, evlSqrt, NULL),
+		SF("TAN", 1, 1, makeDoubleResult, evlStdMath, (StdMathFunc) tan),
+		SF("TANH", 1, 1, makeDoubleResult, evlStdMath, (StdMathFunc) tanh),
+		SF("TRUNC", 1, 1, makeTrunc, evlTrunc, NULL),
+		SF("", 0, NULL, NULL, NULL, NULL)
 	};
 
 
