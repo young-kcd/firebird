@@ -1,3 +1,16 @@
+2007-04-15 03:11  asfernandes
+
+	* firebird2/doc/sql.extensions/README.builtin_functions.txt (1.1):
+
+	Documentation for new builtin functions
+
+2007-04-14 10:26  hvlad
+
+	* firebird2/src/remote/interface.cpp (1.133):
+
+	Fixed CORE-1206 : 'Error reading data from connection' when Lazy
+	Port feature active and more that one active cursors present
+
 2007-04-13 15:21  dimitr
 
 	* firebird2/src/jrd/: evl.cpp (1.223), par.cpp (1.165):
