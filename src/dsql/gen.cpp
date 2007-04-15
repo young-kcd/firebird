@@ -2724,7 +2724,7 @@ static void gen_sys_function(dsql_req* request, const dsql_nod* node)
 	stuff_cstring(request, ((dsql_str*) node->nod_arg[e_sysfunc_name])->str_data);
 
 	const dsql_nod* list;
-	if ((node->nod_count == 2) && (list = node->nod_arg[e_sysfunc_args]))
+	if ((node->nod_count == e_sysfunc_args + 1) && (list = node->nod_arg[e_sysfunc_args]))
 	{
 		stuff(request, list->nod_count);
 		dsql_nod* const* ptr = list->nod_arg;

@@ -112,15 +112,16 @@ namespace {
 
 #define SLEUTH_insensitive	1
 
-static const UCHAR special[128] = {
+static const UCHAR special[128] =
+{
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 1, 1, 0, 1, 0, 0,	/* $%*+- (dollar, percent, star, plus, minus) */
-	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,	/* ?     (question) */
-	1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,	/* @     (at-sign) */
-	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0,	/* [     (open square) */
+	0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 1, 1, 0, 1, 0, 0,	// $%*+- (dollar, percent, star, plus, minus)
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,	// ?     (question)
+	1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,	// @     (at-sign)
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0,	// [     (open square)
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0,	/* ~     (tilde) */
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0	// ~     (tilde)
 };
 
 template <class MATCHESTYPE>
@@ -321,7 +322,7 @@ ULONG SLEUTH_MERGE_NAME(Jrd::thread_db* tdbb_dummy, Jrd::TextType* obj,
 		   quote it. */
 
 		else {
-			if ((((size_t) c) < sizeof(special)) && special[c] &&
+			if ((((size_t) c) < FB_NELEM(special)) && special[c] &&
 				comb > combined && comb[-1] != *(SLEUTHTYPE*)obj->getGdmlQuoteCanonic())
 			{
 				*comb++ = *(SLEUTHTYPE*)obj->getGdmlQuoteCanonic();
@@ -370,7 +371,7 @@ static bool SLEUTH_AUX(
 	while (match < end_match) {
 		SLEUTHTYPE c = *match++;
 		if ((c == *(SLEUTHTYPE*)obj->getGdmlQuoteCanonic() && (c = *match++)) ||
-			((((size_t) c) < sizeof(special)) && !special[c]))
+			((((size_t) c) < FB_NELEM(special)) && !special[c]))
 		{
 			if (match >= end_match || *match != *(SLEUTHTYPE*)obj->getGdmlMatchAnyCanonic()) {
 				if (search >= end_search)
@@ -382,79 +383,82 @@ static bool SLEUTH_AUX(
 			else {
 				++match;
 				for (;;)
-					if (SLEUTH_AUX
-						(obj, flags, search, end_search, match, end_match))
-					{
+				{
+					if (SLEUTH_AUX(obj, flags, search, end_search, match, end_match))
 						return true;
-					}
-					else if (search < end_search) {
+						
+					if (search < end_search)
+					{
 						const SLEUTHTYPE d = *search++;
 						if (c != d)
 							return false;
 					}
 					else
 						return false;
+				}
 			}
 		}
 		else if (c == *(SLEUTHTYPE*)obj->getGdmlMatchOneCanonic())
-			if (match >= end_match || *match != *(SLEUTHTYPE*)obj->getGdmlMatchAnyCanonic()) {
+		{
+			if (match >= end_match || *match != *(SLEUTHTYPE*)obj->getGdmlMatchAnyCanonic())
+			{
 				if (search >= end_search)
 					return false;
+					
 				search++;
 			}
 			else {
 				if (++match >= end_match)
 					return true;
+					
 				for (;;)
-					if (SLEUTH_AUX
-						(obj, flags, search, end_search, match,
-						 end_match))
-					{
+				{
+					if (SLEUTH_AUX(obj, flags, search, end_search, match, end_match))
 						return true;
-					}
-					else if (++search >= end_search)
+						
+					if (++search >= end_search)
 						return false;
+				}
 			}
-		else if (c == *(SLEUTHTYPE*)obj->getGdmlClassStartCanonic()) {
+		}
+		else if (c == *(SLEUTHTYPE*)obj->getGdmlClassStartCanonic())
+		{
 			const SLEUTHTYPE* const char_class = match;
 			while (*match++ != *(SLEUTHTYPE*)obj->getGdmlClassEndCanonic()) {
 				if (match >= end_match)
 					return false;
 			}
 			const SLEUTHTYPE* const end_class = match - 1;
-			if (match >= end_match || *match != *(SLEUTHTYPE*)obj->getGdmlMatchAnyCanonic()) {
-				if (!SLEUTH_CLASS_NAME
-					(obj, flags, char_class, end_class, *search++))
-				{
+			if (match >= end_match || *match != *(SLEUTHTYPE*)obj->getGdmlMatchAnyCanonic())
+			{
+				if (!SLEUTH_CLASS_NAME(obj, flags, char_class, end_class, *search++))
 					return false;
-				}
 			}
 			else {
 				++match;
 				for (;;)
-					if (SLEUTH_AUX
-						(obj, flags, search, end_search, match,
-						 end_match))
-					{
+				{
+					if (SLEUTH_AUX(obj, flags, search, end_search, match, end_match))
 						return true;
-					}
-					else if (search < end_search) {
-						if (!SLEUTH_CLASS_NAME
-							(obj, flags, char_class, end_class, *search++))
-						{
+						
+					if (search < end_search)
+					{
+						if (!SLEUTH_CLASS_NAME(obj, flags, char_class, end_class, *search++))
 							return false;
-						}
 					}
 					else
 						return false;
+				}
 			}
 		}
-		else if (c == *(SLEUTHTYPE*)obj->getGdmlFlagSetCanonic()) {
+		else if (c == *(SLEUTHTYPE*)obj->getGdmlFlagSetCanonic())
+		{
 			c = *match++;
 			if (c == *(SLEUTHTYPE*)obj->getGdmlLowerSCanonic() || c == *(SLEUTHTYPE*)obj->getGdmlUpperSCanonic())
 				flags &= ~SLEUTH_insensitive;
 		}
-		else if (c == *(SLEUTHTYPE*)obj->getGdmlFlagClearCanonic()) {
+		else if (c == *(SLEUTHTYPE*)obj->getGdmlFlagClearCanonic())
+		{
 			c = *match++;
 			if (c == *(SLEUTHTYPE*)obj->getGdmlLowerSCanonic() || c == *(SLEUTHTYPE*)obj->getGdmlUpperSCanonic())
 				flags |= SLEUTH_insensitive;
@@ -816,11 +820,9 @@ Collation* Collation::createInstance(MemoryPool& pool, TTYPE_ID id, texttype* tt
 				return FB_NEW(pool) CollationImpl<uchar_contains_direct, uchar_like_canonical,
 					uchar_matches_canonical, uchar_sleuth_canonical>(id, tt, cs);
 			}
-			else
-			{
-				return FB_NEW(pool) CollationImpl<uchar_contains_canonical, uchar_like_canonical,
-					uchar_matches_canonical, uchar_sleuth_canonical>(id, tt, cs);
-			}
+
+			return FB_NEW(pool) CollationImpl<uchar_contains_canonical, uchar_like_canonical,
+				uchar_matches_canonical, uchar_sleuth_canonical>(id, tt, cs);
 			break;
 
 		case 2:
@@ -829,11 +831,9 @@ Collation* Collation::createInstance(MemoryPool& pool, TTYPE_ID id, texttype* tt
 				return FB_NEW(pool) CollationImpl<uchar_contains_direct, ushort_like_canonical,
 					ushort_matches_canonical, ushort_sleuth_canonical>(id, tt, cs);
 			}
-			else
-			{
-				return FB_NEW(pool) CollationImpl<ushort_contains_canonical, ushort_like_canonical,
-					ushort_matches_canonical, ushort_sleuth_canonical>(id, tt, cs);
-			}
+
+			return FB_NEW(pool) CollationImpl<ushort_contains_canonical, ushort_like_canonical,
+				ushort_matches_canonical, ushort_sleuth_canonical>(id, tt, cs);
 			break;
 
 		case 4:
@@ -842,11 +842,9 @@ Collation* Collation::createInstance(MemoryPool& pool, TTYPE_ID id, texttype* tt
 				return FB_NEW(pool) CollationImpl<uchar_contains_direct, ulong_like_canonical,
 					ulong_matches_canonical, ulong_sleuth_canonical>(id, tt, cs);
 			}
-			else
-			{
-				return FB_NEW(pool) CollationImpl<ulong_contains_canonical, ulong_like_canonical,
-					ulong_matches_canonical, ulong_sleuth_canonical>(id, tt, cs);
-			}
+
+			return FB_NEW(pool) CollationImpl<ulong_contains_canonical, ulong_like_canonical,
+				ulong_matches_canonical, ulong_sleuth_canonical>(id, tt, cs);
 			break;
 	}
 

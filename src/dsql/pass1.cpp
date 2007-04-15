@@ -26,8 +26,6 @@
  *       "insert into tbl values(...)" sentence is issued.
  *
  * 2001.5.26: Claudio Valderrama: field names should be skimmed from trailing
- *
- * 2001.5.26: Claudio Valderrama: field names should be skimmed from trailing
  *		blanks to allow reliable comparisons in pass1_field. Same for table and
  *		and index names in plans.
  *

@@ -193,6 +193,7 @@ static const VERB verbs[] =
 	PAIR(nod_navigational, blr_navigational, 1, 1, ACCESS_TYPE, VALUE),
 	PAIR(nod_indices, blr_indices, 1, 0, ACCESS_TYPE, VALUE),
 	PAIR(nod_retrieve, blr_retrieve, 2, 0, ACCESS_TYPE, VALUE),
+
 	PAIR(nod_relation, blr_relation2, 0, 0, RELATION, OTHER),
 	PAIR(nod_relation, blr_rid2, 0, 0, RELATION, OTHER),
 	PAIR2(nod_set_generator, blr_set_generator, e_gen_length, 1, STATEMENT, VALUE),
@@ -209,6 +210,7 @@ static const VERB verbs[] =
 	PAIR(nod_current_time, blr_current_time2, e_current_time_length, 0, VALUE, OTHER),
 	PAIR(nod_current_timestamp, blr_current_timestamp, e_current_timestamp_length, 0, VALUE, OTHER),
 	PAIR(nod_current_timestamp, blr_current_timestamp2, e_current_timestamp_length, 0, VALUE, OTHER),
+
 	PAIR(nod_current_role, blr_current_role, 1, 0, VALUE, VALUE),
 	PAIR(nod_dcl_cursor, blr_dcl_cursor, e_dcl_cursor_length, 2, STATEMENT, OTHER),
 	PAIR(nod_cursor_stmt, blr_cursor_stmt, e_cursor_stmt_length, 0, STATEMENT, OTHER),
