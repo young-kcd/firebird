@@ -29,11 +29,16 @@
 
 #include "intlobj_new.h"
 #include "../jrd/IntlUtil.h"
+#include "../jrd/os/mod_loader.h"
 
 namespace Jrd {
 
 class UnicodeUtil
 {
+private:
+	struct ICU;
+	class ICUModules;
+
 public:
 	// routines semantically equivalent with intlobj_new.h
 
@@ -60,12 +65,17 @@ public:
 	static INTL_BOOL utf16WellFormed(ULONG len, const USHORT* str, ULONG* offending_position);
 	static INTL_BOOL utf32WellFormed(ULONG len, const ULONG* str, ULONG* offending_position);
 
+	static ICU* loadICU(const Firebird::string& icuVersion, const Firebird::string& configInfo);
+	static bool getCollVersion(const Firebird::string& icuVersion,
+		const Firebird::string& configInfo, Firebird::string& collVersion);
+
 	class Utf16Collation
 	{
 	public:
 		static Utf16Collation* create(
 			texttype* tt, USHORT attributes,
-			Firebird::IntlUtil::SpecificAttributesMap& specificAttributes);
+			Firebird::IntlUtil::SpecificAttributesMap& specificAttributes,
+			const Firebird::string& configInfo);
 
 		~Utf16Collation();
 
@@ -77,6 +87,11 @@ public:
 		ULONG canonical(ULONG srcLen, const USHORT* src, ULONG dstLen, ULONG* dst);
 
 	private:
+		static ICU* loadICU(const Firebird::string& collVersion, const Firebird::string& locale,
+			const Firebird::string& configInfo);
+
+	private:
+		ICU* icu;
 		texttype* tt;
 		USHORT attributes;
 		void* compareCollator;

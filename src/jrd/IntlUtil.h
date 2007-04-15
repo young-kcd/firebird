@@ -54,10 +54,21 @@ public:
 	static string convertAsciiToUtf16(const string& ascii);
 	static string convertUtf16ToAscii(const string& utf16, bool* error);
 
+	static ULONG cvtAsciiToUtf16(csconvert* obj, ULONG nSrc, const UCHAR* pSrc,
+		ULONG nDest, USHORT* pDest, USHORT* err_code, ULONG* err_position);
+	static ULONG cvtUtf16ToAscii(csconvert* obj, ULONG nSrc, const USHORT* pSrc,
+		ULONG nDest, UCHAR* pDest, USHORT* err_code, ULONG* err_position);
+
+	static void initAsciiCharset(charset* cs);
+	static void initConvert(csconvert* cvt, pfn_INTL_convert func);
+	static void initNarrowCharset(charset* cs, const ASCII* name);
 	static bool initUnicodeCollation(texttype* tt, charset* cs, const ASCII* name,
-		USHORT attributes, const UCharBuffer& specificAttributes);
+		USHORT attributes, const UCharBuffer& specificAttributes, const string& configInfo);
 
 	static bool readOneChar(Jrd::CharSet* cs, const UCHAR** s, const UCHAR* end, ULONG* size);
+
+	static bool setupIcuAttributes(charset* cs, const string& specificAttributes,
+		const string& configInfo, string& newSpecificAttributes);
 
 private:
 	static string escapeAttribute(Jrd::CharSet* cs, const string& s);

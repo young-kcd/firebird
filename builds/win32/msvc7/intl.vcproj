@@ -47,7 +47,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib icuuc.lib icuin.lib"
+				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib icuuc.lib"
 				OutputFile="..\..\..\temp\release\firebird\intl\fbintl.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
@@ -114,7 +114,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib icuuc.lib icuin.lib"
+				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib icuuc.lib"
 				OutputFile="..\..\..\temp\debug\firebird\intl\fbintl.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"

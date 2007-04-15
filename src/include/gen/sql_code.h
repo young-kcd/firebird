@@ -656,6 +656,8 @@ static const struct {
 	{336068817, -829}, /* 209 dyn_invalid_dtype_conversion     */
 	{336068818, -829}, /* 210 dyn_dtype_conv_invalid           */
 	{336068820, -901}, /* 212 dyn_zero_len_id                  */
+	{336068829, -829}, /* 221 max_coll_per_charset             */
+	{336068830, -829}, /* 222 invalid_coll_attr                */
 	{336068840, -901}, /* 232 dyn_wrong_gtt_scope              */
 	{336068852, -829}, /* 244 dyn_scale_too_big                */
 	{336068853, -829}, /* 245 dyn_precision_too_small          */

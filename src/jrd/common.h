@@ -1044,6 +1044,9 @@ void GDS_breakpoint(int);
 #define DOUBLE_DIVIDE(a, b)      (((double) (a)) / ((double) (b)))
 #endif
 
+#define STRINGIZE_AUX(x)	#x
+#define STRINGIZE(x)		STRINGIZE_AUX(x)
+
 /* switch name and state table.  This structure should be used in all
  * command line tools to facilitate parsing options.*/
 struct in_sw_tab_t {

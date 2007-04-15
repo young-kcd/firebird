@@ -60,8 +60,13 @@ public:
 			If the symbol can't be found or doesn't exist the function returns
 			NULL.
 		**/
-		virtual void *findSymbol(const Firebird::string&) = 0;
-		
+		virtual void* findSymbol(const Firebird::string&) = 0;
+
+		template <typename T> T& findSymbol(const Firebird::string& symbol, T& ptr)
+		{
+			return (ptr = reinterpret_cast<T>(findSymbol(symbol)));
+		}
+
 		/// Destructor
 		virtual ~Module() {}
 	protected:
@@ -82,7 +87,7 @@ public:
 		It is the callers responsibility to delete the returned module object
 		when it is no longer needed.
 	**/
-	static Module *loadModule(const Firebird::PathName&);
+	static Module* loadModule(const Firebird::PathName&);
 	
 	/** doctorModuleExtention modifies the given path name to add the platform
 		specific module extention.  This allows the user to provide the root name

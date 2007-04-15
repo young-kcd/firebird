@@ -690,6 +690,8 @@ const ISC_LONG isc_dyn_char_fld_too_small           = 336068816L;
 const ISC_LONG isc_dyn_invalid_dtype_conversion     = 336068817L;
 const ISC_LONG isc_dyn_dtype_conv_invalid           = 336068818L;
 const ISC_LONG isc_dyn_zero_len_id                  = 336068820L;
+const ISC_LONG isc_max_coll_per_charset             = 336068829L;
+const ISC_LONG isc_invalid_coll_attr                = 336068830L;
 const ISC_LONG isc_dyn_wrong_gtt_scope              = 336068840L;
 const ISC_LONG isc_dyn_scale_too_big                = 336068852L;
 const ISC_LONG isc_dyn_precision_too_small          = 336068853L;
@@ -866,7 +868,7 @@ const ISC_LONG isc_gstat_unexpected_eof             = 336920580L;
 const ISC_LONG isc_gstat_open_err                   = 336920605L;
 const ISC_LONG isc_gstat_read_err                   = 336920606L;
 const ISC_LONG isc_gstat_sysmemex                   = 336920607L;
-const ISC_LONG isc_err_max                          = 811;
+const ISC_LONG isc_err_max                          = 813;
 
 #else /* c definitions */
 
@@ -1526,6 +1528,8 @@ const ISC_LONG isc_err_max                          = 811;
 #define isc_dyn_invalid_dtype_conversion     336068817L
 #define isc_dyn_dtype_conv_invalid           336068818L
 #define isc_dyn_zero_len_id                  336068820L
+#define isc_max_coll_per_charset             336068829L
+#define isc_invalid_coll_attr                336068830L
 #define isc_dyn_wrong_gtt_scope              336068840L
 #define isc_dyn_scale_too_big                336068852L
 #define isc_dyn_precision_too_small          336068853L
@@ -1702,7 +1706,7 @@ const ISC_LONG isc_err_max                          = 811;
 #define isc_gstat_open_err                   336920605L
 #define isc_gstat_read_err                   336920606L
 #define isc_gstat_sysmemex                   336920607L
-#define isc_err_max                          811
+#define isc_err_max                          813
 
 #endif
 

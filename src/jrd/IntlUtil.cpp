@@ -29,6 +29,7 @@
 #include "../jrd/unicode_util.h"
 #include "../jrd/intl_classes.h"
 #include "../intl/country_codes.h"
+#include "../common/classes/auto.h"
 
 
 using Jrd::UnicodeUtil;
@@ -261,8 +262,125 @@ string IntlUtil::convertUtf16ToAscii(const string& utf16, bool* error)
 }
 
 
+ULONG IntlUtil::cvtAsciiToUtf16(csconvert* obj, ULONG nSrc, const UCHAR* pSrc,
+	ULONG nDest, USHORT* pDest, USHORT* err_code, ULONG* err_position)
+{
+/**************************************
+ *
+ *      c v t A s c i i T o U t f 1 6
+ *
+ **************************************
+ *
+ * Functional description
+ *      Convert CHARACTER SET ASCII to UTF-16.
+ *      Byte values below 128 treated as ASCII.
+ *      Byte values >= 128 create BAD_INPUT
+ *
+ *************************************/
+	fb_assert(obj != NULL);
+	fb_assert((pSrc != NULL) || (pDest == NULL));
+	fb_assert(err_code != NULL);
+
+	*err_code = 0;
+	if (pDest == NULL)			/* length estimate needed? */
+		return (2 * nSrc);
+
+	const USHORT* const pStart = pDest;
+	const UCHAR* const pStart_src = pSrc;
+	while (nDest >= sizeof(*pDest) && nSrc >= sizeof(*pSrc)) {
+		if (*pSrc > 127) {
+			*err_code = CS_BAD_INPUT;
+			break;
+		}
+		*pDest++ = *pSrc++;
+		nDest -= sizeof(*pDest);
+		nSrc -= sizeof(*pSrc);
+	}
+	if (!*err_code && nSrc) {
+		*err_code = CS_TRUNCATION_ERROR;
+	}
+	*err_position = (pSrc - pStart_src) * sizeof(*pSrc);
+
+	return ((pDest - pStart) * sizeof(*pDest));
+}
+
+
+ULONG IntlUtil::cvtUtf16ToAscii(csconvert* obj, ULONG nSrc, const USHORT* pSrc,
+	ULONG nDest, UCHAR* pDest, USHORT* err_code, ULONG* err_position)
+{
+/**************************************
+ *
+ *      c v t U t f 1 6 T o A s c i i
+ *
+ **************************************
+ *
+ * Functional description
+ *      Convert UTF16 to CHARACTER SET ASCII.
+ *      Byte values below 128 treated as ASCII.
+ *      Byte values >= 128 create CONVERT_ERROR
+ *
+ *************************************/
+	fb_assert(obj != NULL);
+	fb_assert((pSrc != NULL) || (pDest == NULL));
+	fb_assert(err_code != NULL);
+
+	*err_code = 0;
+	if (pDest == NULL)			/* length estimate needed? */
+		return (nSrc / 2);
+
+	const UCHAR* const pStart = pDest;
+	const USHORT* const pStart_src = pSrc;
+	while (nDest >= sizeof(*pDest) && nSrc >= sizeof(*pSrc)) {
+		if (*pSrc > 127) {
+			*err_code = CS_CONVERT_ERROR;
+			break;
+		}
+		*pDest++ = *pSrc++;
+		nDest -= sizeof(*pDest);
+		nSrc -= sizeof(*pSrc);
+	}
+	if (!*err_code && nSrc) {
+		*err_code = CS_TRUNCATION_ERROR;
+	}
+	*err_position = (pSrc - pStart_src) * sizeof(*pSrc);
+
+	return ((pDest - pStart) * sizeof(*pDest));
+}
+
+
+void IntlUtil::initAsciiCharset(charset* cs)
+{
+	initNarrowCharset(cs, "ASCII");
+	initConvert(&cs->charset_to_unicode, reinterpret_cast<pfn_INTL_convert>(cvtAsciiToUtf16));
+	initConvert(&cs->charset_from_unicode, reinterpret_cast<pfn_INTL_convert>(cvtUtf16ToAscii));
+}
+
+
+void IntlUtil::initConvert(csconvert* cvt, pfn_INTL_convert func)
+{
+	memset(cvt, 0, sizeof(*cvt));
+	cvt->csconvert_version = CSCONVERT_VERSION_1;
+	cvt->csconvert_name = (const ASCII*) "DIRECT";
+	cvt->csconvert_fn_convert = func;
+}
+
+
+void IntlUtil::initNarrowCharset(charset* cs, const ASCII* name)
+{
+	memset(cs, 0, sizeof(*cs));
+	cs->charset_version = CHARSET_VERSION_1;
+	cs->charset_name = name;
+	cs->charset_flags |= CHARSET_ASCII_BASED;
+	cs->charset_min_bytes_per_char = 1;
+	cs->charset_max_bytes_per_char = 1;
+	cs->charset_space_length = 1;
+	cs->charset_space_character = (const BYTE*) " ";
+	cs->charset_fn_well_formed = NULL;
+}
+
+
 bool IntlUtil::initUnicodeCollation(texttype* tt, charset* cs, const ASCII* name,
-	USHORT attributes, const UCharBuffer& specificAttributes)
+	USHORT attributes, const UCharBuffer& specificAttributes, const string& configInfo)
 {
 	// name comes from stack. Copy it.
 	ASCII* nameCopy = new ASCII[strlen(name) + 1];
@@ -321,7 +439,7 @@ bool IntlUtil::initUnicodeCollation(texttype* tt, charset* cs, const ASCII* name
 	}
 
 	UnicodeUtil::Utf16Collation* collation =
-		UnicodeUtil::Utf16Collation::create(tt, attributes, map16);
+		UnicodeUtil::Utf16Collation::create(tt, attributes, map16, configInfo);
 
 	if (!collation)
 		return false;
@@ -349,6 +467,37 @@ bool IntlUtil::readOneChar(Jrd::CharSet* cs, const UCHAR** s, const UCHAR* end, 
 	UCHAR c[sizeof(ULONG)];
 	*size = cs->substring(end - *s, *s, sizeof(c), c, 0, 1);
 
+	return true;
+}
+
+
+// Transform ICU-VERSION attribute (given by the user) in COLL-VERSION (to be stored).
+bool IntlUtil::setupIcuAttributes(charset* cs, const string& specificAttributes,
+	const string& configInfo, string& newSpecificAttributes)
+{
+	AutoPtr<Jrd::CharSet> charSet = Jrd::CharSet::createInstance(*getDefaultMemoryPool(), 0, cs);
+
+	IntlUtil::SpecificAttributesMap map;
+	if (!IntlUtil::parseSpecificAttributes(charSet, specificAttributes.length(),
+			(const UCHAR*) specificAttributes.begin(), &map))
+	{
+		return false;
+	}
+
+	string icuVersion;
+	map.get("ICU-VERSION", icuVersion);
+
+	string collVersion;
+	if (!UnicodeUtil::getCollVersion(icuVersion, configInfo, collVersion))
+		return false;
+
+	map.remove("ICU-VERSION");
+	map.remove("COLL-VERSION");
+
+	if (collVersion.hasData())
+		map.put("COLL-VERSION", collVersion);
+
+	newSpecificAttributes = IntlUtil::generateSpecificAttributes(charSet, map);
 	return true;
 }
 

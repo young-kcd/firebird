@@ -27,11 +27,16 @@
 #ifndef INTL_LC_ICU_H
 #define INTL_LC_ICU_H
 
+#include "../common/classes/fb_string.h"
+
+bool LCICU_setup_attributes(const ASCII* name, const ASCII* charSetName, const ASCII* configInfo,
+	const Firebird::string& specificAttributes, Firebird::string& newSpecificAttributes);
 bool LCICU_texttype_init(texttype* tt,
 						 const ASCII* name,
 						 const ASCII* charSetName,
 						 USHORT attributes,
 						 const UCHAR* specificAttributes,
-						 ULONG specificAttributesLength);
+						 ULONG specificAttributesLength,
+						 const ASCII* configInfo);
 
 #endif	// INTL_LC_ICU_H

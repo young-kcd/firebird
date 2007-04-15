@@ -19,9 +19,11 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ * Adriano dos Santos Fernandes
  */
 
 #include "firebird.h"
+#include "../jrd/IntlUtil.h"
 #include "../intl/ldcommon.h"
 #include "../intl/ld_proto.h"
 #include "../intl/cs_icu.h"
@@ -32,6 +34,8 @@
 #include <sys/param.h> /* for MAXPATHLEN */
 #endif
 #include <stdio.h>
+
+using namespace Firebird;
 
 /* Commented out to make Linux version work because it is inaccessiable on all
   known platforms. Nickolay Samofatov, 10 Sept 2002
@@ -292,8 +296,16 @@ EXTERN_convert(CVJIS_sjis_x_eucj);
 	    }
 #endif
 
-INTL_BOOL FB_DLL_EXPORT LD_lookup_charset(charset* cs, const ASCII* name)
+// ASF: FB 2.0 don't call LD_version function, then
+// version should be INTL_VERSION_1 by default.
+USHORT version = INTL_VERSION_1;
+
+
+INTL_BOOL FB_DLL_EXPORT LD_lookup_charset(charset* cs, const ASCII* name, const ASCII* config_info)
 {
+	// ASF: We can't read config_info if version < INTL_VERSION_2,
+	// since it wasn't pushed in the stack by the engine.
+
 	try
 	{
 #define CHARSET(cs_name, cs_id, coll_id, bytes, num, cs_symbol, cp_symbol, attr)	\
@@ -327,10 +339,21 @@ INTL_BOOL FB_DLL_EXPORT LD_lookup_charset(charset* cs, const ASCII* name)
 	}
 }
 
+
 INTL_BOOL FB_DLL_EXPORT LD_lookup_texttype(texttype* tt, const ASCII* texttype_name, const ASCII* charset_name,
 										   USHORT attributes, const UCHAR* specific_attributes,
-										   ULONG specific_attributes_length, INTL_BOOL ignore_attributes)
+										   ULONG specific_attributes_length, INTL_BOOL ignore_attributes,
+										   const ASCII* config_info)
 {
+	const ASCII* configInfo;
+
+	// ASF: We can't read config_info if version < INTL_VERSION_2,
+	// since it wasn't pushed in the stack by the engine.
+	if (version >= INTL_VERSION_2)
+		configInfo = config_info;
+	else
+		configInfo = "";
+
 	try
 	{
 #define CHARSET(cs_name, cs_id, coll_id, bytes, num, cs_symbol, cp_symbol, coll_attr)	\
@@ -394,7 +417,7 @@ INTL_BOOL FB_DLL_EXPORT LD_lookup_texttype(texttype* tt, const ASCII* texttype_n
 		return LCICU_texttype_init(
 			tt, texttype_name, charset_name, (ignore_attributes ? TEXTTYPE_ATTR_PAD_SPACE : attributes),
 			(ignore_attributes ? NULL : specific_attributes),
-			(ignore_attributes ? 0 : specific_attributes_length));
+			(ignore_attributes ? 0 : specific_attributes_length), configInfo);
 	}
 	catch (Firebird::BadAlloc)
 	{
@@ -406,3 +429,38 @@ INTL_BOOL FB_DLL_EXPORT LD_lookup_texttype(texttype* tt, const ASCII* texttype_n
 #undef DRIVER
 #undef CHARSET_INIT
 #undef CONVERT_INIT_BI
+
+
+ULONG FB_DLL_EXPORT LD_setup_attributes(
+	const ASCII* textTypeName, const ASCII* charSetName, const ASCII* configInfo,
+	ULONG srcLen, const UCHAR* src, ULONG dstLen, UCHAR* dst)
+{
+	Firebird::string specificAttributes((const char*) src, srcLen);
+	Firebird::string newSpecificAttributes = specificAttributes;
+	
+	if (!LCICU_setup_attributes(textTypeName, charSetName, configInfo,
+			specificAttributes, newSpecificAttributes))
+	{
+		return INTL_BAD_STR_LENGTH;
+	}
+
+	if (dstLen == 0)
+		return newSpecificAttributes.length();
+	else if (newSpecificAttributes.length() <= dstLen)
+	{
+		memcpy(dst, newSpecificAttributes.begin(), newSpecificAttributes.length());
+		return newSpecificAttributes.length();
+	}
+	else
+		return INTL_BAD_STR_LENGTH;
+}
+
+
+void FB_DLL_EXPORT LD_version(USHORT* version)
+{
+	// We support version 1 and 2.
+	if (*version != INTL_VERSION_1)
+		*version = INTL_VERSION_2;
+
+	::version = *version;
+}

@@ -4,11 +4,13 @@
 #include <unistd.h>
 #endif
 #include "../common/classes/alloc.h"
+#include "../common/classes/auto.h"
 #include "../jrd/intl.h"
 #include "../jrd/IntlUtil.h"
 #include "../intl/country_codes.h"
 #include "../jrd/gdsassert.h"
 #include "../jrd/jrd.h"
+#include "../jrd/intl_proto.h"
 #include "../jrd/err_proto.h"
 #include "../intl/charsets.h"
 
@@ -22,7 +24,7 @@ static SSHORT internal_compare(texttype*, ULONG, const UCHAR*, ULONG, const UCHA
 static ULONG internal_str_to_upper(texttype*, ULONG, const UCHAR*, ULONG, UCHAR*);
 static ULONG internal_str_to_lower(texttype*, ULONG, const UCHAR*, ULONG, UCHAR*);
 static void internal_destroy(texttype*);
-static INTL_BOOL cs_utf8_init(charset* csptr, const ASCII* charset_name);
+static INTL_BOOL cs_utf8_init(charset* csptr, const ASCII* charset_name, const ASCII* config_info);
 
 
 namespace
@@ -930,8 +932,8 @@ static ULONG wc_to_mb(csconvert* obj, ULONG nSrc, const USHORT* pSrc,
 }
 
 static INTL_BOOL ttype_ascii_init(texttype* tt, const ASCII* texttype_name, const ASCII* charset_name,
-								  USHORT attributes, const UCHAR* specific_attributes,
-								  ULONG specific_attributes_length)
+	USHORT attributes, const UCHAR* specific_attributes, ULONG specific_attributes_length,
+	INTL_BOOL ignore_attributes, const ASCII* config_info)
 {
 /**************************************
  *
@@ -949,8 +951,8 @@ static INTL_BOOL ttype_ascii_init(texttype* tt, const ASCII* texttype_name, cons
 
 
 static INTL_BOOL ttype_none_init(texttype* tt, const ASCII* texttype_name, const ASCII* charset_name,
-								 USHORT attributes, const UCHAR* specific_attributes,
-								 ULONG specific_attributes_length)
+	USHORT attributes, const UCHAR* specific_attributes, ULONG specific_attributes_length,
+	INTL_BOOL ignore_attributes, const ASCII* config_info)
 {
 /**************************************
  *
@@ -968,8 +970,8 @@ static INTL_BOOL ttype_none_init(texttype* tt, const ASCII* texttype_name, const
 
 
 static INTL_BOOL ttype_unicode_fss_init(texttype* tt, const ASCII* texttype_name, const ASCII* charset_name,
-										USHORT attributes, const UCHAR* specific_attributes,
-										ULONG specific_attributes_length)
+	USHORT attributes, const UCHAR* specific_attributes, ULONG specific_attributes_length,
+	INTL_BOOL ignore_attributes, const ASCII* config_info)
 {
 /**************************************
  *
@@ -995,8 +997,8 @@ static INTL_BOOL ttype_unicode_fss_init(texttype* tt, const ASCII* texttype_name
 
 
 static INTL_BOOL ttype_binary_init(texttype* tt, const ASCII* texttype_name, const ASCII* charset_name,
-								   USHORT attributes, const UCHAR* specific_attributes,
-								   ULONG specific_attributes_length)
+	USHORT attributes, const UCHAR* specific_attributes, ULONG specific_attributes_length,
+	INTL_BOOL ignore_attributes, const ASCII* config_info)
 {
 /**************************************
  *
@@ -1022,8 +1024,8 @@ static INTL_BOOL ttype_binary_init(texttype* tt, const ASCII* texttype_name, con
 
 
 static INTL_BOOL ttype_utf8_init(texttype* tt, const ASCII* texttype_name, const ASCII* charset_name,
-								 USHORT attributes, const UCHAR* specific_attributes,
-								 ULONG specific_attributes_length)
+	USHORT attributes, const UCHAR* specific_attributes, ULONG specific_attributes_length,
+	INTL_BOOL ignore_attributes, const ASCII* config_info)
 {
 /**************************************
  *
@@ -1041,8 +1043,8 @@ static INTL_BOOL ttype_utf8_init(texttype* tt, const ASCII* texttype_name, const
 
 
 static INTL_BOOL ttype_unicode8_init(texttype* tt, const ASCII* texttype_name, const ASCII* charset_name,
-									 USHORT attributes, const UCHAR* specific_attributes,
-									 ULONG specific_attributes_length)
+	USHORT attributes, const UCHAR* specific_attributes, ULONG specific_attributes_length,
+	INTL_BOOL ignore_attributes, const ASCII* config_info)
 {
 /**************************************
  *
@@ -1057,19 +1059,19 @@ static INTL_BOOL ttype_unicode8_init(texttype* tt, const ASCII* texttype_name, c
 
 	charset* cs = new charset;
 	memset(cs, 0, sizeof(*cs));
-	cs_utf8_init(cs, "UTF8");
+	cs_utf8_init(cs, "UTF8", config_info);
 
 	Firebird::UCharBuffer specificAttributes;
 	memcpy(specificAttributes.getBuffer(specific_attributes_length),
 		specific_attributes, specific_attributes_length);
 
-	return Firebird::IntlUtil::initUnicodeCollation(tt, cs, POSIX, attributes, specificAttributes);
+	return Firebird::IntlUtil::initUnicodeCollation(tt, cs, POSIX, attributes, specificAttributes, config_info);
 }
 
 
 static INTL_BOOL ttype_utf16_init(texttype* tt, const ASCII* texttype_name, const ASCII* charset_name,
-								  USHORT attributes, const UCHAR* specific_attributes,
-								  ULONG specific_attributes_length)
+	USHORT attributes, const UCHAR* specific_attributes, ULONG specific_attributes_length,
+	INTL_BOOL ignore_attributes, const ASCII* config_info)
 {
 /**************************************
  *
@@ -1097,8 +1099,8 @@ static INTL_BOOL ttype_utf16_init(texttype* tt, const ASCII* texttype_name, cons
 
 
 static INTL_BOOL ttype_utf32_init(texttype* tt, const ASCII* texttype_name, const ASCII* charset_name,
-								  USHORT attributes, const UCHAR* specific_attributes,
-								  ULONG specific_attributes_length)
+	USHORT attributes, const UCHAR* specific_attributes, ULONG specific_attributes_length,
+	INTL_BOOL ignore_attributes, const ASCII* config_info)
 {
 /**************************************
  *
@@ -1125,34 +1127,6 @@ static INTL_BOOL ttype_utf32_init(texttype* tt, const ASCII* texttype_name, cons
 /*
  *      Start of Character set definitions 
  */
-
-static void common_8bit_init(
-							 charset* csptr,
-							 const ASCII* name,
-							 const USHORT* to_unicode_tbl,
-							 const UCHAR* from_unicode_tbl1,
-							 const USHORT* from_unicode_tbl2)
-{
-/**************************************
- *
- *      c o m m o n _ 8 b i t _ i n i t
- *
- **************************************
- *
- * Functional description
- *
- *************************************/
-
-	csptr->charset_version = CHARSET_VERSION_1;
-	csptr->charset_name = name;
-	csptr->charset_flags |= CHARSET_ASCII_BASED;
-	csptr->charset_min_bytes_per_char = 1;
-	csptr->charset_max_bytes_per_char = 1;
-	csptr->charset_space_length = 1;
-	csptr->charset_space_character = (const BYTE*) " ";
-	csptr->charset_fn_well_formed = NULL;
-}
-
 
 static INTL_BOOL cs_utf8_well_formed(charset* cs, 
 									 ULONG len,
@@ -1258,26 +1232,6 @@ static INTL_BOOL cs_utf32_well_formed(charset* cs,
 	fb_assert(cs != NULL);
 
 	return UnicodeUtil::utf32WellFormed(len, reinterpret_cast<const ULONG*>(str), offending_position);
-}
-
-
-static void common_convert_init(
-								csconvert* csptr,
-								pfn_INTL_convert cvt_fn)
-{
-/**************************************
- *
- *      c o m m o n _ c o n v e r t _ i n i t
- *
- **************************************
- *
- * Functional description
- *
- **************************************/
-
-	csptr->csconvert_version = CSCONVERT_VERSION_1;
-	csptr->csconvert_name = (const ASCII*) "DIRECT";
-	csptr->csconvert_fn_convert = cvt_fn;
 }
 
 
@@ -1559,7 +1513,7 @@ static ULONG cvt_utf32_to_unicode(csconvert* obj,
 }
 
 
-static INTL_BOOL cs_ascii_init(charset* csptr, const ASCII* charset_name)
+static INTL_BOOL cs_ascii_init(charset* csptr, const ASCII* charset_name, const ASCII* config_info)
 {
 /**************************************
  *
@@ -1571,16 +1525,12 @@ static INTL_BOOL cs_ascii_init(charset* csptr, const ASCII* charset_name)
  *
  *************************************/
 
-	common_8bit_init(csptr, (const ASCII*) "ASCII", NULL, NULL, NULL);
-	common_convert_init(&csptr->charset_to_unicode,
-						reinterpret_cast<pfn_INTL_convert>(cvt_ascii_to_unicode));
-	common_convert_init(&csptr->charset_from_unicode,
-						reinterpret_cast<pfn_INTL_convert>(cvt_unicode_to_ascii));
+	IntlUtil::initAsciiCharset(csptr);
 	return true;
 }
 
 
-static INTL_BOOL cs_none_init(charset* csptr, const ASCII* charset_name)
+static INTL_BOOL cs_none_init(charset* csptr, const ASCII* charset_name, const ASCII* config_info)
 {
 /**************************************
  *
@@ -1592,20 +1542,17 @@ static INTL_BOOL cs_none_init(charset* csptr, const ASCII* charset_name)
  *
  *************************************/
 
-	common_8bit_init(csptr, (const ASCII*) "NONE", NULL, NULL, NULL);
-/*
-common_convert_init (&csptr->charset_to_unicode, CS_UTF16, id,
-	nc_to_wc, to_unicode_tbl, NULL);
-*/
-	common_convert_init(&csptr->charset_to_unicode,
+	IntlUtil::initNarrowCharset(csptr, (const ASCII*) "NONE");
+
+	IntlUtil::initConvert(&csptr->charset_to_unicode,
 						reinterpret_cast<pfn_INTL_convert>(cvt_none_to_unicode));
-	common_convert_init(&csptr->charset_from_unicode,
+	IntlUtil::initConvert(&csptr->charset_from_unicode,
 						reinterpret_cast<pfn_INTL_convert>(wc_to_nc));
 	return true;
 }
 
 
-static INTL_BOOL cs_unicode_fss_init(charset* csptr, const ASCII* charset_name)
+static INTL_BOOL cs_unicode_fss_init(charset* csptr, const ASCII* charset_name, const ASCII* config_info)
 {
 /**************************************
  *
@@ -1617,14 +1564,13 @@ static INTL_BOOL cs_unicode_fss_init(charset* csptr, const ASCII* charset_name)
  *
  *************************************/
 
-	common_8bit_init(csptr, (const ASCII*) "UNICODE_FSS", NULL,
-					 NULL, NULL);
+	IntlUtil::initNarrowCharset(csptr, (const ASCII*) "UNICODE_FSS");
 	csptr->charset_max_bytes_per_char = 3;
 	csptr->charset_flags |= CHARSET_LEGACY_SEMANTICS;
 
-	common_convert_init(&csptr->charset_to_unicode,
+	IntlUtil::initConvert(&csptr->charset_to_unicode,
 						reinterpret_cast<pfn_INTL_convert>(internal_fss_to_unicode));
-	common_convert_init(&csptr->charset_from_unicode,
+	IntlUtil::initConvert(&csptr->charset_from_unicode,
 						reinterpret_cast<pfn_INTL_convert>(internal_unicode_to_fss));
 	csptr->charset_fn_length = internal_fss_length;
 	csptr->charset_fn_substring = internal_fss_substring;
@@ -1633,7 +1579,7 @@ static INTL_BOOL cs_unicode_fss_init(charset* csptr, const ASCII* charset_name)
 }
 
 
-static INTL_BOOL cs_unicode_ucs2_init(charset* csptr, const ASCII* charset_name)
+static INTL_BOOL cs_unicode_ucs2_init(charset* csptr, const ASCII* charset_name, const ASCII* config_info)
 {
 /**************************************
  *
@@ -1655,16 +1601,16 @@ static INTL_BOOL cs_unicode_ucs2_init(charset* csptr, const ASCII* charset_name)
 	csptr->charset_space_character = (const BYTE*) & space;	/* 0x0020 */
 	csptr->charset_fn_well_formed = NULL;
 
-	common_convert_init(&csptr->charset_to_unicode,
+	IntlUtil::initConvert(&csptr->charset_to_unicode,
 						reinterpret_cast<pfn_INTL_convert>(cvt_unicode_to_unicode));
-	common_convert_init(&csptr->charset_from_unicode,
+	IntlUtil::initConvert(&csptr->charset_from_unicode,
 						reinterpret_cast<pfn_INTL_convert>(cvt_unicode_to_unicode));
 
 	return true;
 }
 
 
-static INTL_BOOL cs_binary_init(charset* csptr, const ASCII* charset_name)
+static INTL_BOOL cs_binary_init(charset* csptr, const ASCII* charset_name, const ASCII* config_info)
 {
 /**************************************
  *
@@ -1676,17 +1622,17 @@ static INTL_BOOL cs_binary_init(charset* csptr, const ASCII* charset_name)
  *
  *************************************/
 
-	common_8bit_init(csptr, (const ASCII*) "BINARY", NULL, NULL, NULL);
+	IntlUtil::initNarrowCharset(csptr, (const ASCII*) "BINARY");
 	csptr->charset_space_character = (const BYTE*) "\0";
-	common_convert_init(&csptr->charset_to_unicode,
+	IntlUtil::initConvert(&csptr->charset_to_unicode,
 						reinterpret_cast<pfn_INTL_convert>(mb_to_wc));
-	common_convert_init(&csptr->charset_from_unicode,
+	IntlUtil::initConvert(&csptr->charset_from_unicode,
 						reinterpret_cast<pfn_INTL_convert>(wc_to_mb));
 	return true;
 }
 
 
-static INTL_BOOL cs_utf8_init(charset* csptr, const ASCII* charset_name)
+static INTL_BOOL cs_utf8_init(charset* csptr, const ASCII* charset_name, const ASCII* config_info)
 {
 /**************************************
  *
@@ -1709,15 +1655,15 @@ static INTL_BOOL cs_utf8_init(charset* csptr, const ASCII* charset_name)
 	csptr->charset_space_character = (const BYTE*)&space;
 	csptr->charset_fn_well_formed = cs_utf8_well_formed;
 
-	common_convert_init(&csptr->charset_to_unicode,
+	IntlUtil::initConvert(&csptr->charset_to_unicode,
 						reinterpret_cast<pfn_INTL_convert>(cvt_utf8_to_unicode));
-	common_convert_init(&csptr->charset_from_unicode,
+	IntlUtil::initConvert(&csptr->charset_from_unicode,
 						reinterpret_cast<pfn_INTL_convert>(cvt_unicode_to_utf8));
 	return true;
 }
 
 
-static INTL_BOOL cs_utf16_init(charset* csptr, const ASCII* charset_name)
+static INTL_BOOL cs_utf16_init(charset* csptr, const ASCII* charset_name, const ASCII* config_info)
 {
 /**************************************
  *
@@ -1742,15 +1688,15 @@ static INTL_BOOL cs_utf16_init(charset* csptr, const ASCII* charset_name)
 	csptr->charset_fn_length = cs_utf16_length;
 	csptr->charset_fn_substring = cs_utf16_substring;
 
-	common_convert_init(&csptr->charset_to_unicode,
+	IntlUtil::initConvert(&csptr->charset_to_unicode,
 						reinterpret_cast<pfn_INTL_convert>(cvt_unicode_to_unicode));
-	common_convert_init(&csptr->charset_from_unicode,
+	IntlUtil::initConvert(&csptr->charset_from_unicode,
 						reinterpret_cast<pfn_INTL_convert>(cvt_unicode_to_unicode));
 	return true;
 }
 
 
-static INTL_BOOL cs_utf32_init(charset* csptr, const ASCII* charset_name)
+static INTL_BOOL cs_utf32_init(charset* csptr, const ASCII* charset_name, const ASCII* config_info)
 {
 /**************************************
  *
@@ -1773,9 +1719,9 @@ static INTL_BOOL cs_utf32_init(charset* csptr, const ASCII* charset_name)
 	csptr->charset_space_character = (const BYTE*)&space;
 	csptr->charset_fn_well_formed = cs_utf32_well_formed;
 
-	common_convert_init(&csptr->charset_to_unicode,
+	IntlUtil::initConvert(&csptr->charset_to_unicode,
 						reinterpret_cast<pfn_INTL_convert>(cvt_utf32_to_unicode));
-	common_convert_init(&csptr->charset_from_unicode,
+	IntlUtil::initConvert(&csptr->charset_from_unicode,
 						reinterpret_cast<pfn_INTL_convert>(cvt_unicode_to_utf32));
 	return true;
 }
@@ -1798,58 +1744,50 @@ static USHORT cvt_ascii_utf_init(csconvert* csptr)
  *
  *************************************/
 
-	common_convert_init(csptr, cvt_utffss_to_ascii);
+	IntlUtil::initConvert(csptr, cvt_utffss_to_ascii);
 	return true;
 }
 #endif
 
 
-INTL_BOOL INTL_builtin_lookup_charset(charset* cs, const ASCII* charset_name)
+INTL_BOOL INTL_builtin_lookup_charset(charset* cs, const ASCII* charset_name, const ASCII* config_info)
 {
-	if (strcmp(charset_name, "NONE") == 0)
-		return cs_none_init(cs, charset_name);
-	if (strcmp(charset_name, "ASCII") == 0 ||
-		strcmp(charset_name, "USASCII") == 0 ||
-		strcmp(charset_name, "ASCII7") == 0)
-	{
-		return cs_ascii_init(cs, charset_name);
-	}
-	if (strcmp(charset_name, "UNICODE_FSS") == 0 ||
-		strcmp(charset_name, "UTF_FSS") == 0 ||
-		strcmp(charset_name, "SQL_TEXT") == 0)
-	{
-		return cs_unicode_fss_init(cs, charset_name);
-	}
-	if (strcmp(charset_name, "UNICODE_UCS2") == 0)
-		return cs_unicode_ucs2_init(cs, charset_name);
-	if (strcmp(charset_name, "OCTETS") == 0 ||
-		strcmp(charset_name, "BINARY") == 0)
-	{
-		return cs_binary_init(cs, charset_name);
-	}
-	if (strcmp(charset_name, "UTF8") == 0 ||
-		strcmp(charset_name, "UTF-8") == 0)
-	{
-		return cs_utf8_init(cs, charset_name);
-	}
-	if (strcmp(charset_name, "UTF16") == 0 ||
-		strcmp(charset_name, "UTF-16") == 0)
-	{
-		return cs_utf16_init(cs, charset_name);
-	}
-	if (strcmp(charset_name, "UTF32") == 0 ||
-		strcmp(charset_name, "UTF-32") == 0)
-	{
-		return cs_utf32_init(cs, charset_name);
-	}
+	pfn_INTL_lookup_charset func = NULL;
 
-	return false;
+	if (strcmp(charset_name, "NONE") == 0)
+		func = cs_none_init;
+	else if (strcmp(charset_name, "ASCII") == 0 || strcmp(charset_name, "USASCII") == 0 ||
+			 strcmp(charset_name, "ASCII7") == 0)
+	{
+		func = cs_ascii_init;
+	}
+	else if (strcmp(charset_name, "UNICODE_FSS") == 0 || strcmp(charset_name, "UTF_FSS") == 0 ||
+			 strcmp(charset_name, "SQL_TEXT") == 0)
+	{
+		func = cs_unicode_fss_init;
+	}
+	else if (strcmp(charset_name, "UNICODE_UCS2") == 0)
+		func = cs_unicode_ucs2_init;
+	else if (strcmp(charset_name, "OCTETS") == 0 || strcmp(charset_name, "BINARY") == 0)
+		func = cs_binary_init;
+	else if (strcmp(charset_name, "UTF8") == 0 || strcmp(charset_name, "UTF-8") == 0)
+		func = cs_utf8_init;
+	else if (strcmp(charset_name, "UTF16") == 0 || strcmp(charset_name, "UTF-16") == 0)
+		func = cs_utf16_init;
+	else if (strcmp(charset_name, "UTF32") == 0 || strcmp(charset_name, "UTF-32") == 0)
+		func = cs_utf32_init;
+
+	if (func)
+		return func(cs, charset_name, config_info);
+	else
+		return false;
 }
 
 
 INTL_BOOL INTL_builtin_lookup_texttype(texttype* tt, const ASCII* texttype_name, const ASCII* charset_name,
 									   USHORT attributes, const UCHAR* specific_attributes,
-									   ULONG specific_attributes_length, INTL_BOOL ignore_attributes)
+									   ULONG specific_attributes_length, INTL_BOOL ignore_attributes,
+									   const ASCII* config_info)
 {
 	if (ignore_attributes)
 	{
@@ -1858,49 +1796,76 @@ INTL_BOOL INTL_builtin_lookup_texttype(texttype* tt, const ASCII* texttype_name,
 		specific_attributes_length = 0;
 	}
 
+	pfn_INTL_lookup_texttype func = NULL;
+
 	if (strcmp(texttype_name, "NONE") == 0)
+		func = ttype_none_init;
+	else if (strcmp(texttype_name, "ASCII") == 0)
+		func = ttype_ascii_init;
+	else if (strcmp(texttype_name, "UNICODE_FSS") == 0)
+		func = ttype_unicode_fss_init;
+	else if (strcmp(texttype_name, "OCTETS") == 0)
+		func = ttype_binary_init;
+	else if (strcmp(texttype_name, "UTF8") == 0 ||
+			 (strcmp(charset_name, "UTF8") == 0 && strcmp(texttype_name, "UCS_BASIC") == 0))
 	{
-		return ttype_none_init(tt, texttype_name, charset_name, attributes,
-							   specific_attributes, specific_attributes_length);
+		func = ttype_utf8_init;
 	}
-	if (strcmp(texttype_name, "ASCII") == 0)
+	else if ((strcmp(charset_name, "UTF8") == 0 && strcmp(texttype_name, "UNICODE") == 0))
+		func = ttype_unicode8_init;
+	else if (strcmp(texttype_name, "UTF16") == 0 ||
+			 (strcmp(charset_name, "UTF16") == 0 && strcmp(texttype_name, "UCS_BASIC") == 0))
 	{
-		return ttype_ascii_init(tt, texttype_name, charset_name, attributes,
-								specific_attributes, specific_attributes_length);
+		func = ttype_utf16_init;
 	}
-	if (strcmp(texttype_name, "UNICODE_FSS") == 0)
+	else if (strcmp(texttype_name, "UTF32") == 0 ||
+			 (strcmp(charset_name, "UTF32") == 0 && strcmp(texttype_name, "UCS_BASIC") == 0))
 	{
-		return ttype_unicode_fss_init(tt, texttype_name, charset_name, attributes,
-									  specific_attributes, specific_attributes_length);
-	}
-	if (strcmp(texttype_name, "OCTETS") == 0)
-	{
-		return ttype_binary_init(tt, texttype_name, charset_name, attributes,
-								 specific_attributes, specific_attributes_length);
-	}
-	if (strcmp(texttype_name, "UTF8") == 0 ||
-		(strcmp(charset_name, "UTF8") == 0 && strcmp(texttype_name, "UCS_BASIC") == 0))
-	{
-		return ttype_utf8_init(tt, texttype_name, charset_name, attributes,
-							   specific_attributes, specific_attributes_length);
-	}
-	if ((strcmp(charset_name, "UTF8") == 0 && strcmp(texttype_name, "UNICODE") == 0))
-	{
-		return ttype_unicode8_init(tt, texttype_name, charset_name, attributes,
-								   specific_attributes, specific_attributes_length);
-	}
-	if (strcmp(texttype_name, "UTF16") == 0 ||
-		(strcmp(charset_name, "UTF16") == 0 && strcmp(texttype_name, "UCS_BASIC") == 0))
-	{
-		return ttype_utf16_init(tt, texttype_name, charset_name, attributes,
-								specific_attributes, specific_attributes_length);
-	}
-	if (strcmp(texttype_name, "UTF32") == 0 ||
-		(strcmp(charset_name, "UTF32") == 0 && strcmp(texttype_name, "UCS_BASIC") == 0))
-	{
-		return ttype_utf32_init(tt, texttype_name, charset_name, attributes,
-								specific_attributes, specific_attributes_length);
+		func = ttype_utf32_init;
 	}
 
-	return false;
+	if (func)
+	{
+		return func(tt, texttype_name, charset_name, attributes,
+			specific_attributes, specific_attributes_length, ignore_attributes, config_info);
+	}
+	else
+		return false;
+}
+
+
+ULONG INTL_builtin_setup_attributes(const ASCII* textTypeName, const ASCII* charSetName,
+	const ASCII* configInfo, ULONG srcLen, const UCHAR* src, ULONG dstLen, UCHAR* dst)
+{
+	// We should better mark what's from ICU in intlnames.h, but this file is
+	// currently a nightmare.
+	// It should declare an array to be used in others places instead of use
+	// the preprocessor, but this is a task for another day.
+	if (strstr(textTypeName, "UNICODE") && strcmp(textTypeName, "UNICODE_FSS") != 0)
+	{
+		Firebird::AutoPtr<charset, Jrd::CharSet::Delete> cs = new charset;
+		memset(cs, 0, sizeof(*cs));
+
+		// test if that charset exist
+		if (!INTL_builtin_lookup_charset(cs, charSetName, configInfo))
+			return INTL_BAD_STR_LENGTH;
+
+		Firebird::string specificAttributes((const char*) src, srcLen);
+		Firebird::string newSpecificAttributes = specificAttributes;
+
+		if (IntlUtil::setupIcuAttributes(cs, specificAttributes, configInfo, newSpecificAttributes))
+		{
+			if (dstLen == 0)
+				return newSpecificAttributes.length();
+			else if (newSpecificAttributes.length() <= dstLen)
+			{
+				memcpy(dst, newSpecificAttributes.begin(), newSpecificAttributes.length());
+				return newSpecificAttributes.length();
+			}
+			else
+				return INTL_BAD_STR_LENGTH;
+		}
+	}
+
+	return INTL_BAD_STR_LENGTH;
 }

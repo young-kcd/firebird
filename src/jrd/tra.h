@@ -256,6 +256,7 @@ enum dfw_t {
 	dfw_modify_procedure,
 	dfw_delete_procedure,
 	dfw_delete_prm, 
+	dfw_create_collation,
 	dfw_delete_collation,
 	dfw_delete_exception, 
 	//dfw_unlink_file,

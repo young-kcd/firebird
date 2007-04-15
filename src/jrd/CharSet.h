@@ -43,6 +43,18 @@ namespace Jrd {
 class CharSet
 {
 public:
+	class Delete
+	{
+	public:
+		static void clear(charset* cs)
+		{
+			if (cs->charset_fn_destroy)
+				cs->charset_fn_destroy(cs);
+			delete cs;
+		}
+	};
+
+public:
 	static CharSet* createInstance(Firebird::MemoryPool& pool, USHORT id, charset* cs);
 
 protected:

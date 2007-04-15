@@ -2776,6 +2776,26 @@ void VIO_store(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 		}
 	}
 
+	// this should be scheduled even in database creation (system transaction)
+	switch ((RIDS) relation->rel_id)
+	{
+		case rel_collations:
+			{
+				EVL_field(0, rpb->rpb_record, f_coll_cs_id, &desc);
+				USHORT id = MOV_get_long(&desc, 0);
+
+				EVL_field(0, rpb->rpb_record, f_coll_id, &desc);
+				id = INTL_CS_COLL_TO_TTYPE(id, MOV_get_long(&desc, 0));
+
+				EVL_field(0, rpb->rpb_record, f_coll_name, &desc);
+				DFW_post_work(transaction, dfw_create_collation, &desc, id);
+			}
+			break;
+
+		default:	// Shut up compiler warnings
+			break;
+	}
+
 	rpb->rpb_b_page = 0;
 	rpb->rpb_b_line = 0;
 	rpb->rpb_flags = 0;

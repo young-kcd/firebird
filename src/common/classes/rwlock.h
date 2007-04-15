@@ -22,7 +22,7 @@
  *
  *  All Rights Reserved.
  *  Contributor(s): ______________________________________.
- * 
+ *  Adriano dos Santos Fernandes
  *
  */
 
@@ -58,6 +58,68 @@ private:
 
 	// Forbid copy constructor
 	RWLock(const RWLock& source);
+
+public:
+	// RAII holder of begin/end write
+	class ReadGuard
+	{
+	public:
+		explicit ReadGuard(RWLock& alock)
+			: lock(&alock)
+		{
+			lock->beginRead();
+		}
+
+		~ReadGuard()
+		{
+			release();
+		}
+
+		void release()
+		{
+			if (lock)
+			{
+				lock->endRead();
+				lock = NULL;
+			}
+		}
+
+	private:
+		// Forbid copy constructor
+		ReadGuard(const ReadGuard& source);
+		RWLock* lock;
+	};
+
+	// RAII holder of begin/end write
+	class WriteGuard
+	{
+	public:
+		explicit WriteGuard(RWLock& alock)
+			: lock(&alock)
+		{
+			lock->beginWrite();
+		}
+
+		~WriteGuard()
+		{
+			release();
+		}
+
+		void release()
+		{
+			if (lock)
+			{
+				lock->endWrite();
+				lock = NULL;
+			}
+		}
+
+	private:
+		// Forbid copy constructor
+		WriteGuard(const WriteGuard& source);
+		RWLock* lock;
+	};
+
 public:
 	RWLock() : lock(0), blockedReaders(0), blockedWriters(0)
 	{ 

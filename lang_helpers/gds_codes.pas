@@ -668,6 +668,8 @@ const
 	gds_dyn_invalid_dtype_conversion     = 336068817;
 	gds_dyn_dtype_conv_invalid           = 336068818;
 	gds_dyn_zero_len_id                  = 336068820;
+	gds_max_coll_per_charset             = 336068829;
+	gds_invalid_coll_attr                = 336068830;
 	gds_dyn_wrong_gtt_scope              = 336068840;
 	gds_dyn_scale_too_big                = 336068852;
 	gds_dyn_precision_too_small          = 336068853;

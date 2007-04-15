@@ -198,50 +198,22 @@ void DYN_define_collation( Global* gbl, const UCHAR** ptr)
 						
 						cs = INTL_charset_lookup(tdbb, X.RDB$CHARACTER_SET_ID);
 
-						// ASF: User collations are created with the last number available,
-						// to minimize the possibility of conflicts with future system collations.
-						// The greater available number is 126 to avoid signed/unsigned problems.
-
-						X.RDB$COLLATION_ID.NULL = TRUE;
-						X.RDB$COLLATION_ID = 126;
-
-						jrd_req* request2 = CMP_find_request(tdbb, drq_l_colls, DYN_REQUESTS);
+						jrd_req* request2 = CMP_find_request(tdbb, drq_l_charset, DYN_REQUESTS);
 
 						FOR(REQUEST_HANDLE request2
 							TRANSACTION_HANDLE gbl->gbl_transaction)
-							Y IN RDB$COLLATIONS CROSS
 							CS IN RDB$CHARACTER_SETS
-							WITH Y.RDB$CHARACTER_SET_ID = X.RDB$CHARACTER_SET_ID AND
-								 CS.RDB$CHARACTER_SET_ID EQ Y.RDB$CHARACTER_SET_ID
-							SORTED BY DESCENDING Y.RDB$COLLATION_ID
+							WITH CS.RDB$CHARACTER_SET_ID EQ X.RDB$CHARACTER_SET_ID
 
-							if (!DYN_REQUEST(drq_l_colls))
-								DYN_REQUEST(drq_l_colls) = request2;
+							if (!DYN_REQUEST(drq_l_charset))
+								DYN_REQUEST(drq_l_charset) = request2;
 
-							if (!X.RDB$COLLATION_ID.NULL)
-							{
-								EXE_unwind(tdbb, request2);
-								break;
-							}
-
-							if (Y.RDB$COLLATION_ID + 1 <= X.RDB$COLLATION_ID)
-							{
-								X.RDB$COLLATION_ID.NULL = FALSE;
-								charsetName = CS.RDB$CHARACTER_SET_NAME;
-							}
-							else
-								X.RDB$COLLATION_ID = Y.RDB$COLLATION_ID - 1;
+							charsetName = CS.RDB$CHARACTER_SET_NAME;
 
 						END_FOR
 
-						if (!DYN_REQUEST(drq_l_colls))
-							DYN_REQUEST(drq_l_colls) = request2;
-
-						if (X.RDB$COLLATION_ID.NULL)
-						{
-							DYN_error_punt(false, 221);
-							// msg 221: "Maximum number of collations per character set exceeded"
-						}
+						if (!DYN_REQUEST(drq_l_charset))
+							DYN_REQUEST(drq_l_charset) = request2;
 
 						break;
 					}
@@ -332,7 +304,22 @@ void DYN_define_collation( Global* gbl, const UCHAR** ptr)
 			}
 
 			strcpy(X.RDB$COLLATION_NAME, collation_name.c_str());
-			X.RDB$COLLATION_ATTRIBUTES = (info.attributes | attributes_on) & (~attributes_off);
+
+			info.charsetName = charsetName.c_str();
+			info.collationName = X.RDB$COLLATION_NAME;
+			if (X.RDB$BASE_COLLATION_NAME.NULL)
+				info.baseCollationName = info.collationName;
+			else
+				info.baseCollationName = X.RDB$BASE_COLLATION_NAME;
+			info.ignoreAttributes = false;
+
+			if (!IntlManager::collationInstalled(info.baseCollationName.c_str(),
+					info.charsetName.c_str()))
+			{
+				DYN_error_punt(false, 223,
+					SafeArg() << info.baseCollationName.c_str() << info.charsetName.c_str());
+				// msg: 223: "Collation @1 not installed for character set @2"
+			}
 
 			fb_assert(cs);
 			if (cs)
@@ -349,8 +336,22 @@ void DYN_define_collation( Global* gbl, const UCHAR** ptr)
 				}
 
 				Firebird::string s = Firebird::IntlUtil::generateSpecificAttributes(cs, map);
-				memcpy(info.specificAttributes.getBuffer(s.length()), s.begin(), s.length());
+				Firebird::string newSpecificAttributes;
+				
+				if (!IntlManager::setupCollationAttributes(
+						info.baseCollationName.c_str(), info.charsetName.c_str(), s,
+						newSpecificAttributes))
+				{
+					DYN_error_punt(false, 222);
+					// msg: 222: "Invalid collation attributes"
+				}
+
+				memcpy(info.specificAttributes.getBuffer(newSpecificAttributes.length()),
+					newSpecificAttributes.begin(), newSpecificAttributes.length());
 			}
+
+			info.attributes = (info.attributes | attributes_on) & (~attributes_off);
+			X.RDB$COLLATION_ATTRIBUTES = info.attributes;
 			
 			if (info.specificAttributes.getCount() != 0)
 			{
@@ -368,24 +369,11 @@ void DYN_define_collation( Global* gbl, const UCHAR** ptr)
 				BLB_close(tdbb, blob);
 			}
 
-			info.charsetName = charsetName.c_str();
-			info.collationName = X.RDB$COLLATION_NAME;
-			if (X.RDB$BASE_COLLATION_NAME.NULL)
-				info.baseCollationName = info.collationName;
-			else
-				info.baseCollationName = X.RDB$BASE_COLLATION_NAME;
-			info.attributes = X.RDB$COLLATION_ATTRIBUTES;
-			info.ignoreAttributes = false;
-
-			if (IntlManager::collationInstalled(info.baseCollationName.c_str(), info.charsetName.c_str()))
+			// Do not allow invalid attributes here.
+			if (!INTL_texttype_validate(tdbb, &info))
 			{
-				// Allow not yet installed collations be registered in the db.
-				// But do not allow invalid attributes here.
-				if (!INTL_texttype_validate(tdbb, &info))
-				{
-					DYN_error_punt(false, 222);
-					// msg: 222: "Invalid collation attributes"
-				}
+				DYN_error_punt(false, 222);
+				// msg: 222: "Invalid collation attributes"
 			}
 
 			b_ending_store = true;

@@ -25,19 +25,127 @@
  */
 
 #include "firebird.h"
+#include "../jrd/constants.h"
 #include "../jrd/unicode_util.h"
+#include "../jrd/CharSet.h"
 #include "../jrd/IntlUtil.h"
 #include "../jrd/gdsassert.h"
+#include "../common/classes/auto.h"
+#include "../common/classes/GenericMap.h"
+#include "../common/classes/init.h"
+#include "../common/classes/objects_array.h"
+#include "../common/classes/RWLock.h"
 #include "unicode/ustring.h"
 #include "unicode/uchar.h"
 #include "unicode/ucnv.h"
 #include "unicode/ucol.h"
 
 
-using Firebird::IntlUtil;
+using namespace Firebird;
 
 
 namespace Jrd {
+
+
+// encapsulate ICU collations libraries
+struct UnicodeUtil::ICU
+{
+private:
+	ICU(const ICU&);				// not implemented
+	ICU& operator =(const ICU&);	// not implemented
+
+public:
+	ICU()
+		: inModule(NULL),
+		  ucModule(NULL)
+	{
+	}
+
+	~ICU()
+	{
+		delete ucModule;
+		delete inModule;
+	}
+
+	ModuleLoader::Module* inModule;
+	ModuleLoader::Module* ucModule;
+	UVersionInfo collVersion;
+
+	void (U_EXPORT2 *uVersionToString)(UVersionInfo versionArray, char *versionString);
+
+	int32_t (U_EXPORT2 *ulocCountAvailable)();
+	const char* (U_EXPORT2 *ulocGetAvailable)(int32_t n);
+
+	void (U_EXPORT2 *usetClose)(USet* set);
+	int32_t (U_EXPORT2 *usetGetItem)(const USet* set, int32_t itemIndex,
+		UChar32* start, UChar32* end, UChar* str, int32_t strCapacity, UErrorCode* ec);
+	int32_t (U_EXPORT2 *usetGetItemCount)(const USet* set);
+	USet* (U_EXPORT2 *usetOpen)(UChar32 start, UChar32 end);
+
+	void (U_EXPORT2 *ucolClose)(UCollator* coll);
+	int32_t (U_EXPORT2 *ucolGetContractions)(const UCollator* coll, USet* conts, UErrorCode* status);
+	int32_t (U_EXPORT2 *ucolGetSortKey)(const UCollator* coll, const UChar* source,
+		int32_t sourceLength, uint8_t* result, int32_t resultLength);
+	UCollator* (U_EXPORT2 *ucolOpen)(const char* loc, UErrorCode* status);
+	void (U_EXPORT2 *ucolSetAttribute)(UCollator* coll, UColAttribute attr,
+		UColAttributeValue value, UErrorCode* status);
+	UCollationResult (U_EXPORT2 *ucolStrColl)(const UCollator* coll, const UChar* source,
+		int32_t sourceLength, const UChar* target, int32_t targetLength);
+	void (U_EXPORT2 *ucolGetVersion)(const UCollator* coll, UVersionInfo info);
+};
+
+
+// cache ICU module instances to not load and unload many times
+class UnicodeUtil::ICUModules
+{
+public:
+	~ICUModules()
+	{
+		for (bool found = modules().getFirst(); found; found = modules().getNext())
+			delete modules().current()->second;
+	}
+
+	InitInstance<GenericMap<Pair<Left<string, ICU*> > > > modules;
+	RWLock lock;
+} icuModules;
+
+
+static const char* const COLL_30_VERSION = "41.128.4.4";	// ICU 3.0 collator version
+
+
+static void getVersions(const string& configInfo, ObjectsArray<string>& versions)
+{
+	charset cs;
+	IntlUtil::initAsciiCharset(&cs);
+
+	AutoPtr<CharSet> ascii = Jrd::CharSet::createInstance(*getDefaultMemoryPool(), 0, &cs);
+
+	IntlUtil::SpecificAttributesMap config;
+	IntlUtil::parseSpecificAttributes(ascii, configInfo.length(),
+		(const UCHAR*) configInfo.c_str(), &config);
+
+	string versionsStr;
+	if (config.get("icu_versions", versionsStr))
+		versionsStr.trim();
+	else
+		versionsStr = "default";
+
+	versions.clear();
+
+	size_t start = 0;
+	size_t n;
+
+	for (size_t i = versionsStr.find(' '); i != versionsStr.npos; start = i + 1, i = versionsStr.find(' ', start))
+	{
+		if ((n = versionsStr.find_first_not_of(' ', start)) != versionsStr.npos)
+			start = n;
+		versions.add(versionsStr.substr(start, i - start));
+	}
+
+	if ((n = versionsStr.find_first_not_of(' ', start)) != versionsStr.npos)
+		start = n;
+	versions.add(versionsStr.substr(start));
+}
 
 
 // BOCU-1
@@ -549,86 +657,277 @@ INTL_BOOL UnicodeUtil::utf32WellFormed(ULONG len, const ULONG* str, ULONG* offen
 }
 
 
+UnicodeUtil::ICU* UnicodeUtil::loadICU(const Firebird::string& icuVersion,
+	const Firebird::string& configInfo)
+{
+#ifdef WIN_NT
+	const char* const inTemplate = "icuin%s%s.dll";
+	const char* const ucTemplate = "icuuc%s%s.dll";
+#else
+	const char* const inTemplate = "libicui18n.so.%s%s";
+	const char* const ucTemplate = "libicuuc.so.%s%s";
+#endif
+
+	ObjectsArray<string> versions;
+	getVersions(configInfo, versions);
+
+	string version = (icuVersion.isEmpty() ? versions[0] : icuVersion);
+	if (version == "default")
+		version.printf("%d.%d", U_ICU_VERSION_MAJOR_NUM, U_ICU_VERSION_MINOR_NUM);
+
+	for (ObjectsArray<string>::iterator i = versions.begin(); i != versions.end(); ++i)
+	{
+		string majorVersion;
+		string minorVersion;
+
+		if (*i == "default")
+		{
+			majorVersion = STRINGIZE(U_ICU_VERSION_MAJOR_NUM);
+			minorVersion = STRINGIZE(U_ICU_VERSION_MINOR_NUM);
+		}
+		else
+		{
+			size_t pos = i->find('.');
+			if (pos == i->npos)
+				continue;
+
+			majorVersion = i->substr(0, pos);
+			minorVersion = i->substr(pos + 1);
+		}
+
+		if (version != majorVersion + "." + minorVersion)
+			continue;
+
+		RWLock::ReadGuard readGuard(icuModules.lock);
+
+		ICU* icu;
+		if (icuModules.modules().get(version, icu))
+			return icu;
+
+		PathName filename;
+		filename.printf(ucTemplate, majorVersion.c_str(), minorVersion.c_str());
+
+		icu = new ICU();
+
+		icu->ucModule = ModuleLoader::loadModule(filename);
+		if (!icu->ucModule)
+		{
+			ModuleLoader::doctorModuleExtention(filename);
+			icu->ucModule = ModuleLoader::loadModule(filename);
+		}
+
+		if (!icu->ucModule)
+		{
+			delete icu;
+			continue;
+		}
+
+		filename.printf(inTemplate, majorVersion.c_str(), minorVersion.c_str());
+
+		icu->inModule = ModuleLoader::loadModule(filename);
+		if (!icu->inModule)
+		{
+			ModuleLoader::doctorModuleExtention(filename);
+			icu->inModule = ModuleLoader::loadModule(filename);
+		}
+
+		if (!icu->inModule)
+		{
+			delete icu;
+			continue;
+		}
+
+		string symbol;
+
+		symbol.printf("u_versionToString_%s_%s", majorVersion.c_str(), minorVersion.c_str());
+		icu->ucModule->findSymbol(symbol, icu->uVersionToString);
+
+		symbol.printf("uloc_countAvailable_%s_%s", majorVersion.c_str(), minorVersion.c_str());
+		icu->ucModule->findSymbol(symbol, icu->ulocCountAvailable);
+
+		symbol.printf("uloc_getAvailable_%s_%s", majorVersion.c_str(), minorVersion.c_str());
+		icu->ucModule->findSymbol(symbol, icu->ulocGetAvailable);
+
+		symbol.printf("uset_close_%s_%s", majorVersion.c_str(), minorVersion.c_str());
+		icu->ucModule->findSymbol(symbol, icu->usetClose);
+
+		symbol.printf("uset_getItem_%s_%s", majorVersion.c_str(), minorVersion.c_str());
+		icu->ucModule->findSymbol(symbol, icu->usetGetItem);
+
+		symbol.printf("uset_getItemCount_%s_%s", majorVersion.c_str(), minorVersion.c_str());
+		icu->ucModule->findSymbol(symbol, icu->usetGetItemCount);
+
+		symbol.printf("uset_open_%s_%s", majorVersion.c_str(), minorVersion.c_str());
+		icu->ucModule->findSymbol(symbol, icu->usetOpen);
+
+		symbol.printf("ucol_close_%s_%s", majorVersion.c_str(), minorVersion.c_str());
+		icu->inModule->findSymbol(symbol, icu->ucolClose);
+
+		symbol.printf("ucol_getContractions_%s_%s", majorVersion.c_str(), minorVersion.c_str());
+		icu->inModule->findSymbol(symbol, icu->ucolGetContractions);
+
+		symbol.printf("ucol_getSortKey_%s_%s", majorVersion.c_str(), minorVersion.c_str());
+		icu->inModule->findSymbol(symbol, icu->ucolGetSortKey);
+
+		symbol.printf("ucol_open_%s_%s", majorVersion.c_str(), minorVersion.c_str());
+		icu->inModule->findSymbol(symbol, icu->ucolOpen);
+
+		symbol.printf("ucol_setAttribute_%s_%s", majorVersion.c_str(), minorVersion.c_str());
+		icu->inModule->findSymbol(symbol, icu->ucolSetAttribute);
+
+		symbol.printf("ucol_strcoll_%s_%s", majorVersion.c_str(), minorVersion.c_str());
+		icu->inModule->findSymbol(symbol, icu->ucolStrColl);
+
+		symbol.printf("ucol_getVersion_%s_%s", majorVersion.c_str(), minorVersion.c_str());
+		icu->inModule->findSymbol(symbol, icu->ucolGetVersion);
+
+		if (!icu->uVersionToString || !icu->ulocCountAvailable || !icu->ulocGetAvailable ||
+			!icu->usetClose || !icu->usetGetItem || !icu->usetGetItemCount || !icu->usetOpen ||
+			!icu->ucolClose || !icu->ucolGetContractions || !icu->ucolGetSortKey || !icu->ucolOpen ||
+			!icu->ucolSetAttribute || !icu->ucolStrColl || !icu->ucolGetVersion)
+		{
+			delete icu;
+			continue;
+		}
+
+		UErrorCode status = U_ZERO_ERROR;
+
+		UCollator* collator = icu->ucolOpen("", &status);
+		if (!collator)
+		{
+			delete icu;
+			continue;
+		}
+
+		icu->ucolGetVersion(collator, icu->collVersion);
+		icu->ucolClose(collator);
+
+		// RWLock don't allow lock upgrade (read->write) so we
+		// release read and acquire a write lock.
+		readGuard.release();
+		RWLock::WriteGuard writeGuard(icuModules.lock);
+
+		// In this small amount of time, one may already loaded the
+		// same version, so withing the write lock we verify again.
+		ICU* icu2;
+		if (icuModules.modules().get(version, icu2))
+		{
+			delete icu;
+			return icu2;
+		}
+		else
+		{
+			icuModules.modules().put(version, icu);
+			return icu;
+		}
+	}
+
+	return NULL;
+}
+
+
+bool UnicodeUtil::getCollVersion(const Firebird::string& icuVersion,
+	const Firebird::string& configInfo, Firebird::string& collVersion)
+{
+	ICU* icu = loadICU(icuVersion, configInfo);
+
+	if (!icu)
+		return false;
+
+	char version[U_MAX_VERSION_STRING_LENGTH];
+	icu->uVersionToString(icu->collVersion, version);
+
+	if (string(COLL_30_VERSION) == version)
+		collVersion = "";
+	else
+		collVersion = version;
+
+	return true;
+}
+
 UnicodeUtil::Utf16Collation* UnicodeUtil::Utf16Collation::create(
 	texttype* tt, USHORT attributes,
-	Firebird::IntlUtil::SpecificAttributesMap& specificAttributes)
+	Firebird::IntlUtil::SpecificAttributesMap& specificAttributes, const Firebird::string& configInfo)
 {
-	Firebird::string locale;
+	string locale;
+	string collVersion;
 	int attributeCount = 0;
+	bool error;
 
 	if (specificAttributes.get(IntlUtil::convertAsciiToUtf16("LOCALE"), locale))
 		++attributeCount;
+	if (specificAttributes.get(IntlUtil::convertAsciiToUtf16("COLL-VERSION"), collVersion))
+	{
+		++attributeCount;
 
-	bool error;
+		collVersion = IntlUtil::convertUtf16ToAscii(collVersion, &error);
+		if (error)
+			return NULL;
+	}
+
 	locale = IntlUtil::convertUtf16ToAscii(locale, &error);
 	if (error)
-		return false;
+		return NULL;
 
 	if ((attributes & ~(TEXTTYPE_ATTR_PAD_SPACE | TEXTTYPE_ATTR_CASE_INSENSITIVE)) ||
 		(specificAttributes.count() - attributeCount) != 0)
 	{
-		return false;
+		return NULL;
 	}
+
+	if (collVersion.isEmpty())
+		collVersion = COLL_30_VERSION;
 
 	tt->texttype_pad_option = (attributes & TEXTTYPE_ATTR_PAD_SPACE) ? true : false;
 
+	ICU* icu = loadICU(collVersion, locale, configInfo);
+	if (!icu)
+		return NULL;
+
 	UErrorCode status = U_ZERO_ERROR;
 
-	if (locale.hasData())
-	{
-		int i = uloc_countAvailable();
-
-		while (--i >= 0)
-		{
-			if (locale == uloc_getAvailable(i))
-				break;
-		}
-
-		if (i < 0)
-			return false;
-	}
-
-	UCollator* compareCollator = ucol_open(locale.c_str(), &status);
+	UCollator* compareCollator = icu->ucolOpen(locale.c_str(), &status);
 	if (!compareCollator)
 		return NULL;
 
-	UCollator* partialCollator = ucol_open(locale.c_str(), &status);
+	UCollator* partialCollator = icu->ucolOpen(locale.c_str(), &status);
 	if (!partialCollator)
 	{
-		ucol_close(compareCollator);
+		icu->ucolClose(compareCollator);
 		return NULL;
 	}
 
-	UCollator* sortCollator = ucol_open(locale.c_str(), &status);
+	UCollator* sortCollator = icu->ucolOpen(locale.c_str(), &status);
 	if (!sortCollator)
 	{
-		ucol_close(compareCollator);
-		ucol_close(partialCollator);
+		icu->ucolClose(compareCollator);
+		icu->ucolClose(partialCollator);
 		return NULL;
 	}
 
-	ucol_setAttribute(partialCollator, UCOL_STRENGTH, UCOL_PRIMARY, &status);
+	icu->ucolSetAttribute(partialCollator, UCOL_STRENGTH, UCOL_PRIMARY, &status);
 
 	if (attributes & TEXTTYPE_ATTR_CASE_INSENSITIVE)
 	{
-		ucol_setAttribute(compareCollator, UCOL_STRENGTH, UCOL_SECONDARY, &status);
+		icu->ucolSetAttribute(compareCollator, UCOL_STRENGTH, UCOL_SECONDARY, &status);
 		tt->texttype_flags |= TEXTTYPE_SEPARATE_UNIQUE;
 		tt->texttype_canonical_width = 4;	// UTF-32
 	}
 	else
 		tt->texttype_flags = TEXTTYPE_DIRECT_MATCH;
 
-	USet* contractions = uset_open(0, 0);
-	ucol_getContractions(partialCollator, contractions, &status);
+	USet* contractions = icu->usetOpen(0, 0);
+	icu->ucolGetContractions(partialCollator, contractions, &status);
 
 	Utf16Collation* obj = new Utf16Collation();
+	obj->icu = icu;
 	obj->tt = tt;
 	obj->attributes = attributes;
 	obj->compareCollator = compareCollator;
 	obj->partialCollator = partialCollator;
 	obj->sortCollator = sortCollator;
 	obj->contractions = contractions;
-	obj->contractionsCount = uset_getItemCount(contractions);
+	obj->contractionsCount = icu->usetGetItemCount(contractions);
 
 	return obj;
 }
@@ -636,11 +935,13 @@ UnicodeUtil::Utf16Collation* UnicodeUtil::Utf16Collation::create(
 
 UnicodeUtil::Utf16Collation::~Utf16Collation()
 {
-	uset_close(static_cast<USet*>(contractions));
+	icu->usetClose(static_cast<USet*>(contractions));
 
-	ucol_close((UCollator*)compareCollator);
-	ucol_close((UCollator*)partialCollator);
-	ucol_close((UCollator*)sortCollator);
+	icu->ucolClose((UCollator*)compareCollator);
+	icu->ucolClose((UCollator*)partialCollator);
+	icu->ucolClose((UCollator*)sortCollator);
+
+	// ASF: we should not "delete icu"
 }
 
 
@@ -692,7 +993,7 @@ USHORT UnicodeUtil::Utf16Collation::stringToKey(USHORT srcLen, const USHORT* src
 			{
 				UChar str[10];
 				UErrorCode status = U_ZERO_ERROR;
-				int len = uset_getItem(static_cast<USet*>(contractions),
+				int len = icu->usetGetItem(static_cast<USet*>(contractions),
 					i, NULL, NULL, str, sizeof(str), &status);
 
 				if (len > srcLen)
@@ -725,7 +1026,7 @@ USHORT UnicodeUtil::Utf16Collation::stringToKey(USHORT srcLen, const USHORT* src
 
 	if (srcLen != 0)
 	{
-		return ucol_getSortKey(static_cast<const UCollator*>(coll),
+		return icu->ucolGetSortKey(static_cast<const UCollator*>(coll),
 			reinterpret_cast<const UChar*>(src), srcLen, dst, dstLen);
 	}
 	else
@@ -767,7 +1068,7 @@ SSHORT UnicodeUtil::Utf16Collation::compare(ULONG len1, const USHORT* str1,
 		len2 = pad - str2 + 1;
 	}
 
-	return (SSHORT)ucol_strcoll(static_cast<const UCollator*>(compareCollator),
+	return (SSHORT)icu->ucolStrColl(static_cast<const UCollator*>(compareCollator),
 								reinterpret_cast<const UChar*>(str1), len1, 
 								reinterpret_cast<const UChar*>(str2), len2);
 }
@@ -778,7 +1079,7 @@ ULONG UnicodeUtil::Utf16Collation::canonical(ULONG srcLen, const USHORT* src, UL
 	USHORT errCode;
 	ULONG errPosition;
 
-	Firebird::HalfStaticArray<UCHAR, BUFFER_SMALL> upperStr;
+	HalfStaticArray<UCHAR, BUFFER_SMALL> upperStr;
 
 	if (attributes & TEXTTYPE_ATTR_CASE_INSENSITIVE)
 	{
@@ -789,6 +1090,48 @@ ULONG UnicodeUtil::Utf16Collation::canonical(ULONG srcLen, const USHORT* src, UL
 
 	// convert UTF-16 to UTF-32
 	return utf16ToUtf32(srcLen, src, dstLen, dst, &errCode, &errPosition) / sizeof(ULONG);
+}
+
+
+UnicodeUtil::ICU* UnicodeUtil::Utf16Collation::loadICU(
+	const Firebird::string& collVersion, const Firebird::string& locale,
+	const Firebird::string& configInfo)
+{
+	ObjectsArray<string> versions;
+	getVersions(configInfo, versions);
+
+	for (ObjectsArray<string>::iterator i = versions.begin(); i != versions.end(); ++i)
+	{
+		ICU* icu = UnicodeUtil::loadICU(*i, configInfo);
+		if (!icu)
+			continue;
+
+		UErrorCode status = U_ZERO_ERROR;
+
+		if (locale.hasData())
+		{
+			int i = icu->ulocCountAvailable();
+
+			while (--i >= 0)
+			{
+				if (locale == icu->ulocGetAvailable(i))
+					break;
+			}
+
+			if (i < 0)
+				continue;
+		}
+
+		char version[U_MAX_VERSION_STRING_LENGTH];
+		icu->uVersionToString(icu->collVersion, version);
+
+		if (collVersion != version)
+			continue;
+
+		return icu;
+	}
+
+	return NULL;
 }
 
 

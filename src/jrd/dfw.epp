@@ -46,6 +46,8 @@
  *
  * 2002-02-24 Sean Leyne - Code Cleanup of old Win 3.1 port (WINDOWS_ONLY)
  *
+ * Adriano dos Santos Fernandes
+ *
  */
 
 #include "firebird.h"
@@ -106,6 +108,7 @@
 #include "../jrd/event_proto.h"
 #include "../jrd/nbak.h"
 #include "../jrd/trig.h"
+#include "../jrd/IntlManager.h"
 #include "../common/utils_proto.h"
 
 #ifdef HAVE_UNISTD_H
@@ -153,6 +156,7 @@ static bool scan_relation(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 static bool create_trigger(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 static bool delete_trigger(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 static bool modify_trigger(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
+static bool create_collation(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 static bool delete_collation(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 static bool delete_exception(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 static bool delete_generator(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
@@ -234,6 +238,7 @@ static const deferred_task task_table[] =
 	{ dfw_delete_procedure, delete_procedure },
 	{ dfw_modify_procedure, modify_procedure },
 	{ dfw_delete_prm, delete_parameter },
+	{ dfw_create_collation, create_collation },
 	{ dfw_delete_collation, delete_collation },
 	{ dfw_delete_exception, delete_exception },
     { dfw_delete_generator, delete_generator },
@@ -2138,6 +2143,144 @@ static bool create_trigger(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 		}
 		break;
 	}
+
+	return false;
+}
+
+
+static bool create_collation(thread_db* tdbb, SSHORT phase, DeferredWork* work,
+	jrd_tra* transaction)
+{
+/**************************************
+ *
+ *	c r e a t e _ c o l l a t i o n
+ *
+ **************************************
+ *
+ * Functional description
+ *	Get collation id or setup specific attributes.
+ *
+ **************************************/
+
+	SET_TDBB(tdbb);
+	Database* dbb = tdbb->tdbb_database;
+
+	switch (phase)
+	{
+	case 0:
+		return false;
+
+	case 1:
+		{
+			const USHORT charSetId = TTYPE_TO_CHARSET(work->dfw_id);
+			jrd_req* handle = NULL;
+
+			FOR(REQUEST_HANDLE handle)
+				COLL IN RDB$COLLATIONS
+				CROSS CS IN RDB$CHARACTER_SETS
+					OVER RDB$CHARACTER_SET_ID
+				WITH COLL.RDB$COLLATION_NAME EQ work->dfw_name.c_str() AND
+					 COLL.RDB$CHARACTER_SET_ID EQ charSetId
+
+				if (COLL.RDB$COLLATION_ID.NULL)
+				{
+					// ASF: User collations are created with the last number available,
+					// to minimize the possibility of conflicts with future system collations.
+					// The greater available number is 126 to avoid signed/unsigned problems.
+
+					SSHORT id = 126;
+
+					jrd_req* request = CMP_find_request(tdbb, irq_l_colls, IRQ_REQUESTS);
+
+					FOR(REQUEST_HANDLE request)
+						Y IN RDB$COLLATIONS
+						WITH Y.RDB$CHARACTER_SET_ID = COLL.RDB$CHARACTER_SET_ID
+						SORTED BY DESCENDING Y.RDB$COLLATION_ID
+
+						if (!REQUEST(irq_l_colls))
+							REQUEST(irq_l_colls) = request;
+
+						if (!COLL.RDB$COLLATION_ID.NULL)
+						{
+							EXE_unwind(tdbb, request);
+							break;
+						}
+
+						if (Y.RDB$COLLATION_ID + 1 <= id)
+							COLL.RDB$COLLATION_ID.NULL = FALSE;
+						else
+							id = Y.RDB$COLLATION_ID - 1;
+
+					END_FOR
+
+					if (!REQUEST(irq_l_colls))
+						REQUEST(irq_l_colls) = request;
+
+					if (COLL.RDB$COLLATION_ID.NULL)
+					{
+						ERR_post(isc_no_meta_update,
+								 isc_arg_gds, isc_max_coll_per_charset,
+								 0);
+					}
+					else
+					{
+						MODIFY COLL USING
+							COLL.RDB$COLLATION_ID = id;
+						END_MODIFY
+					}
+				}
+				else
+				{
+					SLONG length = 0;
+					Firebird::HalfStaticArray<UCHAR, BUFFER_SMALL> buffer;
+
+					if (!COLL.RDB$SPECIFIC_ATTRIBUTES.NULL)
+					{
+						blb* blob = BLB_open(tdbb, dbb->dbb_sys_trans, &COLL.RDB$SPECIFIC_ATTRIBUTES);
+						length = blob->blb_length + 10;
+						length = BLB_get_data(tdbb, blob, buffer.getBuffer(length), length);
+					}
+
+					Firebird::string specificAttributes =
+						Firebird::string((const char*) buffer.begin(), length);
+					Firebird::string newSpecificAttributes;
+
+					// ASF: If setupCollationAttributes fail we store the original
+					// attributes. This should be what we want for new databases
+					// and restores. CREATE COLLATION will fail in DYN.
+					if (IntlManager::setupCollationAttributes(
+							fb_utils::exact_name(COLL.RDB$BASE_COLLATION_NAME.NULL ?
+								COLL.RDB$COLLATION_NAME : COLL.RDB$BASE_COLLATION_NAME),
+							fb_utils::exact_name(CS.RDB$CHARACTER_SET_NAME),
+							specificAttributes, newSpecificAttributes))
+					{
+						// if nothing changed, we do nothing
+						if (newSpecificAttributes != specificAttributes)
+						{
+							MODIFY COLL USING
+								if (newSpecificAttributes.isEmpty())
+									COLL.RDB$SPECIFIC_ATTRIBUTES.NULL = TRUE;
+								else
+								{
+									COLL.RDB$SPECIFIC_ATTRIBUTES.NULL = FALSE;
+
+									blb* blob = BLB_create(tdbb, dbb->dbb_sys_trans, &COLL.RDB$SPECIFIC_ATTRIBUTES);
+									BLB_put_segment(tdbb, blob,
+										(const UCHAR*) newSpecificAttributes.begin(),
+										newSpecificAttributes.length());
+									BLB_close(tdbb, blob);
+								}
+							END_MODIFY;
+						}
+					}
+				}
+
+			END_FOR;
+			CMP_release(tdbb, handle);
+		}
+		
+		return true;
+    }
 
 	return false;
 }

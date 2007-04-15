@@ -29,7 +29,11 @@
 #include "ld_proto.h"
 #include "lc_icu.h"
 #include "cs_icu.h"
+#include "../jrd/CharSet.h"
 #include "../jrd/IntlUtil.h"
+#include "../common/classes/auto.h"
+
+using namespace Firebird;
 
 
 static void texttype_destroy(texttype* tt)
@@ -43,7 +47,8 @@ static bool texttype_default_init(texttype* tt,
 								  const ASCII* charSetName,
 								  USHORT attributes,
 								  const UCHAR* specificAttributes,
-								  ULONG specificAttributesLength)
+								  ULONG specificAttributesLength,
+								  const ASCII* configInfo)
 {
 	charset cs;
 	memset(&cs, 0, sizeof(cs));
@@ -84,15 +89,16 @@ static bool texttype_unicode_init(texttype* tt,
 								  const ASCII* charSetName,
 								  USHORT attributes,
 								  const UCHAR* specificAttributes,
-								  ULONG specificAttributesLength)
+								  ULONG specificAttributesLength,
+								  const ASCII* configInfo)
 {
 	charset* cs = new charset;
 	memset(cs, 0, sizeof(*cs));
 
 	// test if that charset exist
-	if (!LD_lookup_charset(cs, charSetName))
+	if (!LD_lookup_charset(cs, charSetName, configInfo))
 	{
-		delete cs;
+		Jrd::CharSet::Delete::clear(cs);
 		return false;
 	}
 
@@ -100,7 +106,29 @@ static bool texttype_unicode_init(texttype* tt,
 	memcpy(specificAttributesBuffer.getBuffer(specificAttributesLength),
 		specificAttributes, specificAttributesLength);
 
-	return Firebird::IntlUtil::initUnicodeCollation(tt, cs, name, attributes, specificAttributesBuffer);
+	return Firebird::IntlUtil::initUnicodeCollation(tt, cs, name,
+		attributes, specificAttributesBuffer, configInfo);
+}
+
+
+bool LCICU_setup_attributes(const ASCII* name, const ASCII* charSetName, const ASCII* configInfo,
+	const Firebird::string& specificAttributes, Firebird::string& newSpecificAttributes)
+{
+	int len = strlen(name);
+
+	if (len > 8 && strcmp(name + len - 8, "_UNICODE") == 0)
+	{
+		AutoPtr<charset, Jrd::CharSet::Delete> cs = new charset;
+		memset(cs, 0, sizeof(*cs));
+
+		// test if that charset exist
+		if (!LD_lookup_charset(cs, charSetName, configInfo))
+			return false;
+
+		return IntlUtil::setupIcuAttributes(cs, specificAttributes, configInfo, newSpecificAttributes);
+	}
+
+	return true;
 }
 
 
@@ -109,7 +137,8 @@ bool LCICU_texttype_init(texttype* tt,
 						 const ASCII* charSetName,
 						 USHORT attributes,
 						 const UCHAR* specificAttributes,
-						 ULONG specificAttributesLength)
+						 ULONG specificAttributesLength,
+						 const ASCII* configInfo)
 {
 	int len = strlen(name);
 
@@ -117,13 +146,13 @@ bool LCICU_texttype_init(texttype* tt,
 	{
 		return texttype_default_init(
 			tt, name, charSetName, attributes,
-			specificAttributes, specificAttributesLength);
+			specificAttributes, specificAttributesLength, configInfo);
 	}
 	else if (len > 8 && strcmp(name + len - 8, "_UNICODE") == 0)
 	{
 		return texttype_unicode_init(
 			tt, name, charSetName, attributes,
-			specificAttributes, specificAttributesLength);
+			specificAttributes, specificAttributesLength, configInfo);
 	}
 	else
 		return false;
