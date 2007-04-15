@@ -301,7 +301,7 @@ Format:
 Notes:
     1) Returns positive value if the second value is greater than the first one,
 	   negative when the first one is greater or zero when they are equal.
-    2) Comparation of date with time values is invalid.
+    2) Comparison of date with time values is invalid.
     3) YEAR, MONTH, DAY and WEEKDAY could not be used with time values.
     4) HOUR, MINUTE and SECOND could not be used with date values.
     5) All timestamp_part values could be used with timestamp values.
