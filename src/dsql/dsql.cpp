@@ -2097,9 +2097,6 @@ void DSQL_pretty(const dsql_nod* node, int column)
 	case nod_insert:
 		verb = "insert";
 		break;
-	case nod_merge:
-		verb = "merge";
-		break;
 	case nod_internal_info:
 		verb = "internal info";
 		break;
@@ -2768,16 +2765,6 @@ void DSQL_pretty(const dsql_nod* node, int column)
 		}
 		return;
 
-	case nod_sys_function:
-		trace_line("%ssystem function: \"", buffer);
-		string = (dsql_str*) node->nod_arg[e_sysfunc_name];
-		trace_line("%s\"\n", string->str_data);
-		ptr++;
-
-		if (node->nod_count == 2)
-			DSQL_pretty(*ptr, column + 1);
-		return;
-
 	case nod_cursor_open:
 		verb = "cursor_open";
 		break;
@@ -2854,6 +2841,32 @@ void DSQL_pretty(const dsql_nod* node, int column)
 	case nod_update_or_insert:
 		verb = "update_or_insert";
 		break;
+
+	case nod_merge:
+		verb = "merge";
+		break;
+
+	case nod_merge_when:
+		verb = "merge_when";
+		break;
+
+	case nod_merge_update:
+		verb = "merge_update";
+		break;
+
+	case nod_merge_insert:
+		verb = "merge_insert";
+		break;
+
+	case nod_sys_function:
+		trace_line("%ssystem function: \"", buffer);
+		string = (dsql_str*) node->nod_arg[e_sysfunc_name];
+		trace_line("%s\"\n", string->str_data);
+		ptr++;
+
+		if (node->nod_count == 2)
+			DSQL_pretty(*ptr, column + 1);
+		return;
 
 	default:
 		sprintf(s, "unknown type %d", node->nod_type);
