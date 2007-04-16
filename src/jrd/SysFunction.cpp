@@ -258,7 +258,13 @@ static void makeAbs(DataTypeUtilBase* dataTypeUtil, SysFunction* function, dsc* 
 	switch (value->dsc_dtype)
 	{
 		case dtype_short:
+			result->makeLong(result->dsc_scale);
+			break;
+
 		case dtype_long:
+			result->makeInt64(result->dsc_scale);
+			break;
+
 		case dtype_real:
 		case dtype_double:
 		case dtype_int64:
@@ -697,14 +703,6 @@ static dsc* evlAbs(Jrd::thread_db* tdbb, SysFunction* function, Jrd::jrd_nod* ar
 
 	switch (impure->vlu_desc.dsc_dtype)
 	{
-		case dtype_short:
-			impure->vlu_misc.vlu_short = abs(impure->vlu_misc.vlu_short);
-			break;
-
-		case dtype_long:
-			impure->vlu_misc.vlu_long = abs(impure->vlu_misc.vlu_long);
-			break;
-
 		case dtype_real:
 			impure->vlu_misc.vlu_float = fabs(impure->vlu_misc.vlu_float);
 			break;
@@ -713,9 +711,17 @@ static dsc* evlAbs(Jrd::thread_db* tdbb, SysFunction* function, Jrd::jrd_nod* ar
 			impure->vlu_misc.vlu_double = fabs(impure->vlu_misc.vlu_double);
 			break;
 
+		case dtype_short:
+		case dtype_long:
 		case dtype_int64:
-			if (impure->vlu_misc.vlu_int64 < 0) 
+			impure->vlu_misc.vlu_int64 = MOV_get_int64(value, value->dsc_scale);
+
+			if (impure->vlu_misc.vlu_int64 == MIN_SINT64)
+				status_exception::raise(isc_arith_except, 0);
+			else if (impure->vlu_misc.vlu_int64 < 0) 
 				impure->vlu_misc.vlu_int64 = -impure->vlu_misc.vlu_int64;
+
+			impure->vlu_desc.makeInt64(value->dsc_scale, &impure->vlu_misc.vlu_int64);
 			break;
 
 		default:
