@@ -2457,7 +2457,7 @@ static jrd_nod* par_sys_function(thread_db* tdbb, CompilerScratch* csb)
 	}
 
 	jrd_nod* node = PAR_make_node(tdbb, e_sysfun_length);
-	node->nod_count = 1;
+	node->nod_count = count_table[blr_sys_function];
 	node->nod_arg[e_sysfun_args] = par_args(tdbb, csb, VALUE);
 	node->nod_arg[e_sysfun_function] = (jrd_nod*) function;
 

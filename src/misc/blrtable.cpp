@@ -218,7 +218,7 @@ static const VERB verbs[] =
 	PAIR(nod_strlen, blr_strlen, e_strlen_length, e_strlen_count, VALUE, VALUE),
 	PAIR(nod_trim, blr_trim, e_trim_length, e_trim_count, VALUE, VALUE),
 	PAIR(nod_init_variable, blr_init_variable, e_init_var_length, 0, STATEMENT, OTHER),
-	PAIR(nod_sys_function, blr_sys_function, 0, 0, VALUE, VALUE),
+	PAIR(nod_sys_function, blr_sys_function, e_sysfun_length, e_sysfun_count, VALUE, VALUE),
 	{0, NULL, NULL, NULL, NULL, NULL, NULL}
 };
 

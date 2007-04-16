@@ -159,21 +159,31 @@ static double cot(double value)
 }
 
 
-static void makeDoubleResult(DataTypeUtilBase* dataTypeUtil, SysFunction* function, dsc* result, int argsCount, const dsc** args)
+static bool initResult(dsc* result, int argsCount, const dsc** args, bool* isNullable)
 {
-	bool isNullable = false;
+	*isNullable = false;
 
 	for (int i = 0; i < argsCount; ++i)
 	{
 		if (args[i]->isNull())
 		{
 			result->makeNullString();
-			return;
+			return true;
 		}
 
 		if (args[i]->isNullable())
-			isNullable = true;
+			*isNullable = true;
 	}
+
+	return false;
+}
+
+
+static void makeDoubleResult(DataTypeUtilBase* dataTypeUtil, SysFunction* function, dsc* result, int argsCount, const dsc** args)
+{
+	bool isNullable;
+	if (initResult(result, argsCount, args, &isNullable))
+		return;
 
 	result->makeDouble();
 	result->setNullable(isNullable);
@@ -189,19 +199,9 @@ static void makeFromListResult(DataTypeUtilBase* dataTypeUtil, SysFunction* func
 
 static void makeInt64Result(DataTypeUtilBase* dataTypeUtil, SysFunction* function, dsc* result, int argsCount, const dsc** args)
 {
-	bool isNullable = false;
-
-	for (int i = 0; i < argsCount; ++i)
-	{
-		if (args[i]->isNull())
-		{
-			result->makeNullString();
-			return;
-		}
-
-		if (args[i]->isNullable())
-			isNullable = true;
-	}
+	bool isNullable;
+	if (initResult(result, argsCount, args, &isNullable))
+		return;
 
 	result->makeInt64(0);
 	result->setNullable(isNullable);
@@ -210,19 +210,9 @@ static void makeInt64Result(DataTypeUtilBase* dataTypeUtil, SysFunction* functio
 
 static void makeLongResult(DataTypeUtilBase* dataTypeUtil, SysFunction* function, dsc* result, int argsCount, const dsc** args)
 {
-	bool isNullable = false;
-
-	for (int i = 0; i < argsCount; ++i)
-	{
-		if (args[i]->isNull())
-		{
-			result->makeNullString();
-			return;
-		}
-
-		if (args[i]->isNullable())
-			isNullable = true;
-	}
+	bool isNullable;
+	if (initResult(result, argsCount, args, &isNullable))
+		return;
 
 	result->makeLong(0);
 	result->setNullable(isNullable);
@@ -244,19 +234,9 @@ static void makeLongStringOrBlobResult(DataTypeUtilBase* dataTypeUtil, SysFuncti
 
 static void makeShortResult(DataTypeUtilBase* dataTypeUtil, SysFunction* function, dsc* result, int argsCount, const dsc** args)
 {
-	bool isNullable = false;
-
-	for (int i = 0; i < argsCount; ++i)
-	{
-		if (args[i]->isNull())
-		{
-			result->makeNullString();
-			return;
-		}
-
-		if (args[i]->isNullable())
-			isNullable = true;
-	}
+	bool isNullable;
+	if (initResult(result, argsCount, args, &isNullable))
+		return;
 
 	result->makeShort(0);
 	result->setNullable(isNullable);
@@ -487,19 +467,9 @@ static void makeOverlay(DataTypeUtilBase* dataTypeUtil, SysFunction* function, d
 {
 	fb_assert(argsCount >= function->minArgCount);
 
-	bool isNullable = false;
-
-	for (int i = 0; i < argsCount; ++i)
-	{
-		if (args[i]->isNull())
-		{
-			result->makeNullString();
-			return;
-		}
-
-		if (args[i]->isNullable())
-			isNullable = true;
-	}
+	bool isNullable;
+	if (initResult(result, argsCount, args, &isNullable))
+		return;
 
 	const dsc* value = args[0];
 	const dsc* placing = args[1];
@@ -532,19 +502,9 @@ static void makePad(DataTypeUtilBase* dataTypeUtil, SysFunction* function, dsc* 
 {
 	fb_assert(argsCount >= function->minArgCount);
 
-	bool isNullable = false;
-
-	for (int i = 0; i < argsCount; ++i)
-	{
-		if (args[i]->isNull())
-		{
-			result->makeNullString();
-			return;
-		}
-
-		if (args[i]->isNullable())
-			isNullable = true;
-	}
+	bool isNullable;
+	if (initResult(result, argsCount, args, &isNullable))
+		return;
 
 	const dsc* value1 = args[0];
 	const dsc* value2 = (argsCount >= 3 ? args[2] : NULL);
@@ -783,8 +743,8 @@ static dsc* evlAsciiChar(Jrd::thread_db* tdbb, SysFunction* function, Jrd::jrd_n
 	if (!(code >= 0 && code <= 255))
 		status_exception::raise(isc_arith_except, 0);
 
-	impure->vlu_misc.vlu_char = (SCHAR) code;
-	impure->vlu_desc.makeText(1, ttype_none, (UCHAR*) &impure->vlu_misc.vlu_char);
+	impure->vlu_misc.vlu_uchar = (UCHAR) code;
+	impure->vlu_desc.makeText(1, ttype_none, &impure->vlu_misc.vlu_uchar);
 
 	return &impure->vlu_desc;
 }

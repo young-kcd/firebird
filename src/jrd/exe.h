@@ -207,7 +207,7 @@ struct impure_value {
 	USHORT vlu_flags; // Computed/invariant flags
 	VaryingString* vlu_string;
 	union {
-		SCHAR vlu_char;
+		UCHAR vlu_uchar;
 		SSHORT vlu_short;
 		SLONG vlu_long;
 		SINT64 vlu_int64;
@@ -500,6 +500,7 @@ const int e_domval_length		= sizeof (DSC) / sizeof(::Jrd::jrd_nod*);	// Room for
 // System function expression
 const int e_sysfun_args		= 0;
 const int e_sysfun_function	= 1;
+const int e_sysfun_count	= 1;
 const int e_sysfun_length	= 2;
 
 // Request resources
