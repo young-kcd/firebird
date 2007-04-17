@@ -189,6 +189,7 @@ typedef sh_mem *SH_MEM;
 typedef struct _FAST_MUTEX_SHARED_SECTION
 {
 	SLONG   fInitialized;
+	SLONG   lSpinLock;
 	SLONG   lThreadsWaiting;
 	SLONG   lAvailable;
 #ifdef _DEBUG
