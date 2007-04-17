@@ -312,22 +312,6 @@ static const UCHAR compatibility[] = {
 
 #define COMPATIBLE(st1, st2)	compatibility [st1 * LCK_max + st2]
 
-void LOCK_ast_inhibit() {
-#ifdef MULTI_THREAD
-	AST_DISABLE();
-#else
-	ISC_inhibit();
-#endif
-}
-
-void LOCK_ast_enable() {
-#ifdef MULTI_THREAD
-	AST_ENABLE();
-#else
-	ISC_enable();
-#endif
-}
-
 bool LOCK_convert(SRQ_PTR		request_offset,
 				 UCHAR		type,
 				 SSHORT		lck_wait,
@@ -1221,11 +1205,12 @@ void LOCK_re_post( lock_ast_t ast, void* arg, SRQ_PTR owner_offset)
 	owner->own_flags &= ~OWN_signal;
 	owner->own_ast_flags |= OWN_signaled;
 	DEBUG_DELAY;
-	ISC_inhibit();
-	DEBUG_DELAY;
-	blocking_action2(owner_offset, (SRQ_PTR) NULL);
-	DEBUG_DELAY;
-	ISC_enable();
+	{
+		SignalInhibit siHolder;
+		DEBUG_DELAY;
+		blocking_action2(owner_offset, (SRQ_PTR) NULL);
+		DEBUG_DELAY;
+	}
 	DEBUG_DELAY;
 #endif
 	release(owner_offset);
@@ -3879,24 +3864,25 @@ static void release_mutex(void)
  **************************************/
 
 	DEBUG_DELAY;
-	ISC_inhibit();
-	DEBUG_DELAY;
+	{
+		SignalInhibit siHolder;
+		DEBUG_DELAY;
 
-	if (!LOCK_header->lhb_active_owner)
-		bug(NULL, "release when not active");
+		if (!LOCK_header->lhb_active_owner)
+			bug(NULL, "release when not active");
 
-	LOCK_header->lhb_active_owner = 0;
+		LOCK_header->lhb_active_owner = 0;
 
-	if (ISC_mutex_unlock(MUTEX))
-		bug(NULL, "semop failed (release)");
+		if (ISC_mutex_unlock(MUTEX))
+			bug(NULL, "semop failed (release)");
 
 #ifdef USE_BLOCKING_SIGNALS
-	DEBUG_DELAY;
-	--LOCK_asts;
+		DEBUG_DELAY;
+		--LOCK_asts;
 #endif
 
-	DEBUG_DELAY;
-	ISC_enable();
+		DEBUG_DELAY;
+	}
 	DEBUG_DELAY;
 }
 
@@ -4113,11 +4099,12 @@ static int signal_owner( OWN blocking_owner, SRQ_PTR blocked_owner_offset)
 #ifndef USE_BLOCKING_THREAD
 	if (blocking_owner->own_process_id == LOCK_pid) {
 		DEBUG_DELAY;
-		ISC_inhibit();
-		DEBUG_DELAY;
-		blocking_action2(SRQ_REL_PTR(blocking_owner), blocked_owner_offset);
-		DEBUG_DELAY;
-		ISC_enable();
+		{
+			SignalInhibit siHolder;
+			DEBUG_DELAY;
+			blocking_action2(SRQ_REL_PTR(blocking_owner), blocked_owner_offset);
+			DEBUG_DELAY;
+		}
 		DEBUG_DELAY;
 		return FB_SUCCESS;
 	}
@@ -4245,7 +4232,7 @@ static void validate_lhb( LHB lhb)
 	if (LOCK_bugcheck)
 		return;
 
-	ISC_inhibit();
+	SignalInhibit siHolder;
 
 	CHECK(lhb != NULL);
 
@@ -4306,8 +4293,6 @@ static void validate_lhb( LHB lhb)
 	CHECK(lhb->lhb_reserved[1] == 0);
 
 	DEBUG_MSG(0, ("validate_lhb completed:\n"));
-
-	ISC_enable();
 
 }
 #endif
@@ -4814,13 +4799,13 @@ static USHORT wait_for_request(
 		/* Before starting to wait - look to see if someone resolved
 		   the request for us - if so we're out easy! */
 
-		ISC_inhibit();
-		request = (LRQ) SRQ_ABS_PTR(request_offset);
-		if (!(request->lrq_flags & LRQ_pending)) {
-			ISC_enable();
-			break;
+		{
+			SignalInhibit siHolder;
+			request = (LRQ) SRQ_ABS_PTR(request_offset);
+			if (!(request->lrq_flags & LRQ_pending)) {
+				break;
+			}
 		}
-		ISC_enable();
 
 		/* recalculate when we next want to wake up, the lesser of a
 		   deadlock scan interval or when the lock request wanted a timeout */
@@ -4921,13 +4906,13 @@ static USHORT wait_for_request(
 
 		/* If somebody else has resolved the lock, we're done */
 
-		ISC_inhibit();
-		request = (LRQ) SRQ_ABS_PTR(request_offset);
-		if (!(request->lrq_flags & LRQ_pending)) {
-			ISC_enable();
-			break;
+		{
+			SignalInhibit siHolder;
+			request = (LRQ) SRQ_ABS_PTR(request_offset);
+			if (!(request->lrq_flags & LRQ_pending)) {
+				break;
+			}
 		}
-		ISC_enable();
 
 		/* See if we wokeup due to another owner deliberately waking us up
 		   ret==FB_SUCCESS --> we were deliberately worken up

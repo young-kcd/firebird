@@ -399,7 +399,7 @@ void PIO_header(Database* dbb, SCHAR * address, int length)
 
 	jrd_file* file = dbb->dbb_file;
 
-	ISC_inhibit();
+	SignalInhibit siHolder;
 
 	if (file->fil_desc == -1)
 		unix_error("PIO_header", file, isc_io_read_err, 0);
@@ -467,7 +467,6 @@ void PIO_header(Database* dbb, SCHAR * address, int length)
 #ifndef PREAD_PWRITE
 	THD_IO_MUTEX_UNLOCK(file->fil_mutex);
 #endif
-	ISC_enable();
 }
 
 
@@ -488,14 +487,12 @@ SLONG PIO_max_alloc(Database* dbb)
 	for (file = dbb->dbb_file; file->fil_next; file = file->fil_next);
 
 	if (file->fil_desc == -1) {
-		ISC_inhibit();
 		unix_error("fstat", file, isc_io_access_err, 0);
 		return (0);
 	}
 
 	struct stat statistics;
 	if (fstat(file->fil_desc, &statistics)) {
-		ISC_inhibit();
 		unix_error("fstat", file, isc_io_access_err, 0);
 	}
 
@@ -535,13 +532,11 @@ SLONG PIO_act_alloc(Database* dbb)
  **/
 	for (jrd_file* file = dbb->dbb_file; file != NULL; file = file->fil_next) {
 		if (file->fil_desc == -1) {
-			ISC_inhibit();
 			unix_error("fstat", file, isc_io_access_err, 0);
 			return (0);
 		}
 
 		if (fstat(file->fil_desc, &statistics)) {
-			ISC_inhibit();
 			unix_error("fstat", file, isc_io_access_err, 0);
 		}
 
@@ -655,7 +650,7 @@ bool PIO_read(jrd_file* file, BufferDesc* bdb, Ods::pag* page, ISC_STATUS* statu
 	int i;
 	UINT64 bytes, offset;
 
-	ISC_inhibit();
+	SignalInhibit siHolder;
 
 	if (file->fil_desc == -1)
 		return unix_error("read", file, isc_io_read_err, status_vector);
@@ -728,7 +723,6 @@ bool PIO_read(jrd_file* file, BufferDesc* bdb, Ods::pag* page, ISC_STATUS* statu
 		}
 	}
 
-	ISC_enable();
 	return true;
 }
 
@@ -749,7 +743,7 @@ bool PIO_write(jrd_file* file, BufferDesc* bdb, Ods::pag* page, ISC_STATUS* stat
 	SLONG bytes;
     UINT64 offset;
 
-	ISC_inhibit();
+	SignalInhibit siHolder;
 
 	if (file->fil_desc == -1)
 		return unix_error("write", file, isc_io_write_err, status_vector);
@@ -804,7 +798,6 @@ bool PIO_write(jrd_file* file, BufferDesc* bdb, Ods::pag* page, ISC_STATUS* stat
 	THD_IO_MUTEX_UNLOCK(file->fil_mutex);
 #endif
 
-	ISC_enable();
 	return true;
 }
 
@@ -829,7 +822,6 @@ static jrd_file* seek_file(jrd_file* file, BufferDesc* bdb, UINT64* offset,
 	for (;; file = file->fil_next)
 	{
 		if (!file) {
-			ISC_enable();
 			CORRUPT(158);		/* msg 158 database file not available */
 		}
 		else if (page >= file->fil_min_page && page <= file->fil_max_page)
@@ -985,8 +977,6 @@ static bool unix_error(
  *	to do something about it.  Harumph!
  *
  **************************************/
-	ISC_enable();
-
 	ISC_STATUS* status = status_vector;
 	if (status) {
 		*status++ = isc_arg_gds;

@@ -47,8 +47,6 @@ SLONG	LCK_read_data(Jrd::Lock*);
 void	LCK_release(Jrd::thread_db*, Jrd::Lock*);
 void	LCK_re_post(Jrd::Lock*);
 void	LCK_write_data(Jrd::Lock*, SLONG);
-void	LCK_ast_inhibit();
-void	LCK_ast_enable();
 
 #endif // JRD_LCK_PROTO_H
 

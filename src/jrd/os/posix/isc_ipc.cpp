@@ -36,7 +36,7 @@
  *
  */
 
- /* $Id: isc_ipc.cpp,v 1.17 2005-09-15 16:42:34 alexpeshkoff Exp $ */
+ /* $Id: isc_ipc.cpp,v 1.17.4.1 2007-04-17 09:03:49 alexpeshkoff Exp $ */
 
 #include "firebird.h"
 #include <stdio.h>
@@ -50,6 +50,7 @@
 #include "../jrd/os/isc_i_proto.h"
 #include "../jrd/isc_s_proto.h"
 #include "../jrd/thd.h"
+#include "../common/classes/locks.h"
 
 #ifdef HAVE_VFORK_H
 #include <vfork.h>
@@ -166,23 +167,17 @@ void ISC_enter(void)
 #endif
 }
 
-volatile sig_atomic_t inhibit_counter = 0;
-sigset_t saved_sigmask;
+namespace {
+	volatile sig_atomic_t inhibit_counter = 0;
+	sigset_t saved_sigmask;
+	Firebird::Mutex inhibitMutex;
+}
 
-void ISC_inhibit() throw()
+SignalInhibit::SignalInhibit() throw()
+	: enabled(false) 
 {
-/**************************************
- *
- *	I S C _ i n h i b i t
- *
- **************************************
- *
- * Functional description
- *	Inhibit process of signals.  Signals will be
- *	retained until signals are eventually re-enabled,
- *	then re-posted.
- *
- **************************************/
+	Firebird::MutexLockGuard lock(inhibitMutex);
+
 	if (inhibit_counter == 0) {
 		sigset_t set, oset;
 		sigfillset(&set);
@@ -192,18 +187,10 @@ void ISC_inhibit() throw()
 }
 
 
-void ISC_enable() throw()
+void SignalInhibit::enable() throw()
 {
-/**************************************
- *
- *	I S C _ e n a b l e
- *
- **************************************
- *
- * Functional description
- *	Enable signal processing.  Re-post any pending signals.
- *
- **************************************/
+	Firebird::MutexLockGuard lock(inhibitMutex);
+
 	fb_assert(inhibit_counter > 0);
 	inhibit_counter--;
 	if (inhibit_counter == 0) {

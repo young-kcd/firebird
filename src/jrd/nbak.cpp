@@ -28,6 +28,7 @@
 
 #include "firebird.h"
 #include "common.h"
+#include "isc.h"
 #include "jrd.h"
 #include "nbak.h"
 #include "ods.h"
@@ -90,7 +91,7 @@ void BackupManager::decrement_diff_use_count() throw()
 }
 #endif
 
-bool BackupManager::get_sw_database_lock(thread_db* tdbb, bool enable_signals) throw()
+bool BackupManager::get_sw_database_lock(thread_db* tdbb, AstInhibit* enable_signals) throw()
 {
 #ifdef SUPERSERVER
 #ifdef WIN_NT
@@ -104,7 +105,7 @@ bool BackupManager::get_sw_database_lock(thread_db* tdbb, bool enable_signals) t
 	NBAK_TRACE(("get_sw_database_lock %d", database_use_count));
 	database_use_count++;
 	if (enable_signals)
-		LCK_ast_enable();
+		enable_signals->enable();
 	if (database_lock->lck_physical >= LCK_SW)
 		return true;
 	if (!LCK_lock(tdbb, database_lock, LCK_SW, LCK_WAIT)) {

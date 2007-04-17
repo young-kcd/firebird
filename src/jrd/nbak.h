@@ -58,6 +58,7 @@ class Record;
 class thread_db;
 class Database;
 class jrd_file;
+class AstInhibit;
 
 class AllocItem {
 public:
@@ -158,7 +159,7 @@ public:
 
 
 	// Routines to declare and release interest in the main database file
-	bool get_sw_database_lock(thread_db* tdbb, bool enable_signals) throw();
+	bool get_sw_database_lock(thread_db* tdbb, AstInhibit* enable_signals) throw();
 	void release_sw_database_lock(thread_db* tdbb) throw();
 
 	void shutdown(thread_db* tdbb);
