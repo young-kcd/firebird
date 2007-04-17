@@ -60,7 +60,7 @@ private:
 	RWLock(const RWLock& source);
 
 public:
-	// RAII holder of begin/end write
+	// RAII holder of begin/end read
 	class ReadGuard
 	{
 	public:

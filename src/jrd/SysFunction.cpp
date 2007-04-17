@@ -2416,8 +2416,8 @@ static dsc* evlTrunc(Jrd::thread_db* tdbb, SysFunction* function, Jrd::jrd_nod* 
 
 
 #if (defined(_MSC_VER) && (_MSC_VER <= 1200))
-SysFunction::SysFunction(const char* s, int mc, int MC, makeFunc_t mf, evlFunc_t ef, void* v)
-	: name(s), minArgCount(mc), maxArgCount(MC), makeFunc(mf), evlFunc(ef), misc(v)
+SysFunction::SysFunction(const char* s, int minCount, int maxCount, MakeFunc mf, EvlFunc ef, void* v)
+	: name(s), minArgCount(minCount), maxArgCount(maxCount), makeFunc(mf), evlFunc(ef), misc(v)
 {
 }
 #endif
