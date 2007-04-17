@@ -4541,7 +4541,7 @@ bool JRD_reschedule(thread_db* tdbb, SLONG quantum, bool punt)
  *
  **************************************/
 
-#ifdef MULTI_THREAD
+#ifdef SUPERSERVER
 	// Force garbage collection activity to yield the
 	// processor in case client threads haven't had
 	// an opportunity to enter the scheduling queue.
@@ -4655,7 +4655,7 @@ bool JRD_reschedule(thread_db* tdbb, SLONG quantum, bool punt)
 	}
 
 	tdbb->tdbb_quantum = (tdbb->tdbb_quantum <= 0) ?
-#ifdef MULTI_THREAD
+#ifdef SUPERSERVER
 		(quantum ? quantum : (ThreadPriorityScheduler::boosted() ? 
 			Config::getPriorityBoost() : 1) * QUANTUM) :
 #else
