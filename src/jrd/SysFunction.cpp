@@ -406,7 +406,7 @@ static void makeGenUuid(DataTypeUtilBase* dataTypeUtil, SysFunction* function, d
 {
 	fb_assert(argsCount == function->minArgCount);
 
-	result->makeText(38, ttype_ascii);
+	result->makeText(16, ttype_binary);
 }
 
 
@@ -1328,14 +1328,12 @@ static dsc* evlGenUuid(Jrd::thread_db* tdbb, SysFunction* function, Jrd::jrd_nod
 	fb_assert(args->nod_count == 0);
 
 	FB_GUID guid;
+	fb_assert(sizeof(guid.data) == 16);
+
 	GenerateGuid(&guid);
 
-	char guidStr[39];
-	GuidToString(guidStr, &guid);
-	fb_assert(guidStr[38] == 0);
-
 	dsc result;
-	result.makeText(38, ttype_ascii, (UCHAR*) &guidStr);
+	result.makeText(16, ttype_binary, reinterpret_cast<UCHAR*>(guid.data));
 	EVL_make_value(tdbb, &result, impure);
 
 	return &impure->vlu_desc;
