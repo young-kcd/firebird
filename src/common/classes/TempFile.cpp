@@ -137,6 +137,7 @@ void TempFile::init(const Firebird::PathName& directory,
 	{
 		filename = getTempPath();
 	}
+	PathUtils::ensureSeparator(filename);
 
 #if defined(WIN_NT)
 	_timeb t;
