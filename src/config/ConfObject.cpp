@@ -79,7 +79,7 @@ bool ConfObject::matches(Element *element, const char* type, const char* string)
 	if (element->name != type)
 		return false;
 	
-	Element *attribute = element->findAttribute (0);
+	const Element *attribute = element->findAttribute (0);
 	
 	if (!attribute)
 		return false;
@@ -101,6 +101,9 @@ bool ConfObject::matches(Element *element, const char* type, const char* string)
 
 void ConfObject::putString(int position, const char* string, int stringLength)
 {
+	if (position >= MAX_STRINGS)
+		throw AdminException("ConfObject: string segments overflow");
+
 	strings [position ] = next;
 	
 	if (next + stringLength + 1 >= end)
@@ -128,7 +131,7 @@ bool ConfObject::match(int position, const char* pattern, const char* string)
 				return true;
 				}
 			for (; *s; ++s)
-				if (match (position + 1,  pattern+1, s))
+				if (match (position + 1,  pattern + 1, s))
 					{
 					putString (position, string, (int) (s - string));
 					return true;
@@ -364,3 +367,4 @@ ConfObject* ConfObject::findObject(const char* objectType, const char* objectNam
 {
 	return configFile->findObject(objectType, objectName);
 }
+

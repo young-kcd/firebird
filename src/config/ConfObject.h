@@ -61,12 +61,13 @@ protected:
 	virtual Element*	findAttribute(const char* attributeName);
 	virtual const char* getValue(const Element* attribute);
 
-protected:
 	virtual ~ConfObject();
 
 public:
-	ConfObject	*chain;
 	Element		*object;
+
+private:
+	ConfObject	*chain;
 	ConfigFile	*configFile;
 	JString		source;
 	JString		tempValue;

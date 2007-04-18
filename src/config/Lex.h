@@ -87,20 +87,22 @@ public:
 	Lex(const char *punctuation, int debugFlags);
 	virtual ~Lex();
 
-	InputStream	*inputStream;
-	InputStream	*tokenInputStream;
-	InputStream	*priorInputStream;
-	Stream		stuff;
-	bool		eol;
-	int			tokenOffset;
 	int			flags;
+	int			tokenType;
+	int			priorLineNumber;
+	bool		eol;
+	InputStream	*inputStream;
+	InputStream	*priorInputStream;
+
+private:
+	InputStream	*tokenInputStream;
+	Stream		stuff;
+	int			tokenOffset;
 	char		captureStart;
 	char		captureEnd;
 	char		token [maxToken];
-	int			tokenType;
 	int			lineNumber;
 	int			tokenLineNumber;
-	int			priorLineNumber;
 	const char	*ptr;
 	const char	*end;
 	const char	*lineComment;

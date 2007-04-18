@@ -316,6 +316,10 @@ const char* ConfigFile::translate(const char *value, Element *object)
 void ConfigFile::wildCardInclude(const char* fileName)
 {
 	char directory [256];
+	
+	if (strlen(fileName) >= sizeof(directory))
+		throw AdminException("Too long filename in wildCardInclude()");
+		
 	strcpy (directory, fileName);
 	const char *wildcard = fileName;
 	char *p = strrchr (directory, '/');
