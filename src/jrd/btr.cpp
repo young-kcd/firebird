@@ -510,7 +510,7 @@ static void checkForLowerKeySkip(
 
 			if (skipLowerKey && (node.length > lower.key_length))
 			{
-				// We've bigger data in the node than in the lowerKey, 
+				// We've bigger data in the node as the lowerKey, 
 				// now check the segment-number
 				const UCHAR *segp = node.data + lower.key_length;
 
@@ -725,9 +725,6 @@ void BTR_evaluate(thread_db* tdbb, IndexRetrieval* retrieval, RecordBitmap** bit
 			if (pointer > endPointer) {
 				BUGCHECK(204);	// msg 204 index inconsistent
 			}
-
-			checkForLowerKeySkip(skipLowerKey, partLower, node, 
-								 lower, idx, retrieval);
 		}
 	}
 
@@ -6694,6 +6691,71 @@ static bool scan(thread_db* tdbb, UCHAR* pointer, RecordBitmap** bitmap, RecordB
 				}
 			}
 
+			if (skipLowerKey) 
+			{
+				if (node->btn_prefix == 0)
+				{
+					// If the prefix is 0 we have a full key. 
+					// (first node on every new page for example has prefix zero)
+					if (partLower) 
+					{
+						// With multi-segment compare first part of data with lowerKey
+						skipLowerKey = 
+							((lowerKey.key_length <= node->btn_length) &&
+							(memcmp(node->btn_data, lowerKey.key_data, lowerKey.key_length) == 0));
+
+						if (skipLowerKey && (node->btn_length > lowerKey.key_length))
+						{
+							// We've bigger data in the node as the lowerKey, 
+							// now check the segment-number
+							const UCHAR *segp = node->btn_data + lowerKey.key_length;
+
+							const USHORT segnum = 
+								idx->idx_count - (UCHAR)((idx->idx_flags & idx_descending) ? 
+									((*segp) ^ -1) : *segp);
+
+							if (segnum < retrieval->irb_lower_count) 
+							{
+								skipLowerKey = false;
+							}						
+						}
+					}
+					else
+					{
+						// Compare full data with lowerKey
+						skipLowerKey = 
+							((lowerKey.key_length == node->btn_length) &&
+							(memcmp(node->btn_data, lowerKey.key_data, lowerKey.key_length) == 0));
+					}
+				}
+				else
+				{
+					// Check if we have a duplicate node (for the same page)
+					if (node->btn_prefix < lowerKey.key_length) {
+						skipLowerKey = false;
+					}
+					else if ((node->btn_prefix == lowerKey.key_length) && node->btn_length) 
+					{
+						// In case of multi-segment check segment-number else 
+						// it's a different key
+						if (partLower) 
+						{
+							const USHORT segnum = 
+								idx->idx_count - (UCHAR)((idx->idx_flags & idx_descending) ? 
+									(*node->btn_data) ^ -1 : *node->btn_data);
+
+							if (segnum < retrieval->irb_lower_count) {
+								skipLowerKey = false;
+							}
+						} 
+						else {
+							skipLowerKey = false;
+						}
+					}
+				}
+			}
+
+
 			if (!ignore && !skipLowerKey) {
 				if ((flag & irb_starting) || !count) {
 					if (!bitmap_and || bitmap_and->test(number))
@@ -6706,27 +6768,6 @@ static bool scan(thread_db* tdbb, UCHAR* pointer, RecordBitmap** bitmap, RecordB
 			}
 
 			node = NEXT_NODE(node);
-
-			if (skipLowerKey) {
-				if (node->btn_prefix < lowerKey.key_length) {
-					skipLowerKey = false;
-				}
-				else if ((node->btn_prefix == lowerKey.key_length) && node->btn_length) 
-				{
-					if (partLower) 
-					{
-						const USHORT segnum = idx->idx_count - 
-							(UCHAR)(descending ? (*node->btn_data) ^ -1 : *node->btn_data);
-
-						if (segnum < retrieval->irb_lower_count) {
-							skipLowerKey = false;
-						}
-					} 
-					else {
-						skipLowerKey = false;
-					}
-				}
-			}
 		}
 	}
 
