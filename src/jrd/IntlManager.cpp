@@ -366,9 +366,9 @@ Firebird::string IntlManager::getConfigInfo(const ConfObj& confObj)
 			values.append(el->getAttributeName(i));
 		}
 
-		if (configInfo.isEmpty())
+		if (!configInfo.isEmpty())
 			configInfo.append(";");
-		configInfo = string(el->name) + "=" + values;
+		configInfo.append(string(el->name) + "=" + values);
 	}
 
 	return configInfo;
