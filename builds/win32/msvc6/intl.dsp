@@ -577,6 +577,10 @@ SOURCE=..\..\..\src\intl\ldcommon.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\src\jrd\os\mod_loader.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\src\intl\collations\pd437intl.h
 # End Source File
 # Begin Source File
@@ -740,7 +744,23 @@ SOURCE=..\..\..\src\intl\collations\xx88592plk.h
 SOURCE=..\..\..\src\jrd\version.rc
 # End Source File
 # End Group
-# Begin Group "OTHER files"
+# Begin Group "JRD files"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\IntlUtil.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\os\win32\mod_loader.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\unicode_util.cpp
+# End Source File
+# End Group
+# Begin Group "COMMON files"
 
 # PROP Default_Filter ""
 # Begin Source File
@@ -754,14 +774,6 @@ SOURCE=..\..\..\src\common\fb_exception.cpp
 # Begin Source File
 
 SOURCE=..\..\..\src\common\classes\fb_string.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\jrd\IntlUtil.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\jrd\unicode_util.cpp
 # End Source File
 # End Group
 # End Target
