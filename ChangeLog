@@ -1,3 +1,31 @@
+2007-04-17 23:34  hvlad
+
+	* firebird2/src/jrd/: isc.h (1.31), isc_sync.cpp (1.114):
+
+	Restored Yaffil's fast mutex code and made thread priority
+	adjustment for classic server
+
+2007-04-17 17:27  asfernandes
+
+	* firebird2/src/jrd/SysFunction.cpp (1.6):
+
+	Change GEN_UUID to return CHAR(16) CHARACTER SET OCTETS
+
+2007-04-17 14:39  dimitr
+
+	* firebird2/src/jrd/jrd.cpp (1.321):
+
+	Correction for my old commit. Enforced rescheduling does very bad
+	job for classic, causing a major slowdown.
+
+2007-04-17 04:24  asfernandes
+
+	* firebird2/src/: common/classes/rwlock.h (1.28), intl/lc_icu.cpp
+	(1.6), jrd/SysFunction.cpp (1.5), jrd/SysFunction.h (1.3),
+	jrd/intlobj_new.h (1.17):
+
+	Misc
+
 2007-04-16 17:42  asfernandes
 
 	* firebird2/src/jrd/SysFunction.cpp (1.4):
