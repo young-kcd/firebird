@@ -96,7 +96,7 @@ bool IntlManager::initialize()
 		{
 			ConfigFile configFile(dir.getFilePath(), 0);
 
-			ConfObj builtinModule = configFile.findObject("intl_module", "builtin");
+			ConfObj builtinModule(configFile.findObject("intl_module", "builtin"));
 			string s = getConfigInfo(builtinModule);
 			if (!s.isEmpty())
 				builtinConfig = s;
@@ -113,7 +113,7 @@ bool IntlManager::initialize()
 					if (module)
 					{
 						JString moduleName(module->getAttributeName(0));
-						ConfObj objModule = configFile.findObject("intl_module", moduleName);
+						ConfObj objModule(configFile.findObject("intl_module", moduleName));
 						filename = objModule->getValue("filename", "");
 						configInfo = getConfigInfo(objModule);
 
@@ -347,14 +347,14 @@ bool IntlManager::setupCollationAttributes(
 }
 
 
-Firebird::string IntlManager::getConfigInfo(ConfObj& confObj)
+Firebird::string IntlManager::getConfigInfo(const ConfObj& confObj)
 {
-	if (!confObj)
+	if (!confObj.hasObject())
 		return "";
 
 	string configInfo;
 
-	for (Element* el = confObj->object->children; el; el = el->sibling)
+	for (const Element* el = confObj->object->children; el; el = el->sibling)
 	{
 		string values;
 

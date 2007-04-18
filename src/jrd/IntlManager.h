@@ -56,7 +56,7 @@ public:
 		const Firebird::string& specificAttributes, Firebird::string& newSpecificAttributes);
 
 private:
-	static Firebird::string getConfigInfo(ConfObj& confObj);
+	static Firebird::string getConfigInfo(const ConfObj& confObj);
 
 	static bool registerCharSetCollation(const Firebird::string& name,
 		const Firebird::PathName& filename, const Firebird::string& externalName,

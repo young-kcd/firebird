@@ -296,7 +296,7 @@ EXTERN_convert(CVJIS_sjis_x_eucj);
 	    }
 #endif
 
-// ASF: FB 2.0 don't call LD_version function, then
+// ASF: FB 2.0 doesn't call LD_version function, then
 // version should be INTL_VERSION_1 by default.
 USHORT version = INTL_VERSION_1;
 

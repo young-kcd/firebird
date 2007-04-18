@@ -48,21 +48,21 @@ public:
 	virtual const char*	getValue(int instanceNumber, const char* attributeName);
 	virtual bool		matches(Element *element, const char* type, const char* string);
 	virtual void		setChain(ConfObject* object);
-	virtual const char* getName(void);
+	virtual const char* getName();
 	virtual const char*	getConcatenatedValues(const char* attributeName);
 	virtual JString		expand(const char* rawValue);
 	virtual ConfObject*	findObject(const char* objectType, const char* objectName);
-	virtual ConfObject* getChain(void);
+	virtual ConfObject* getChain();
 
 protected:
 	virtual void		putString(int position, const char* string, int stringLength);
 	virtual bool		match(int position, const char* p1, const char* p2);
 	virtual JString		getValue(const char* attributeName);
 	virtual Element*	findAttribute(const char* attributeName);
-	virtual const char* getValue(Element* attribute);
+	virtual const char* getValue(const Element* attribute);
 
 protected:
-	virtual ~ConfObject(void);
+	virtual ~ConfObject();
 
 public:
 	ConfObject	*chain;

@@ -3409,6 +3409,7 @@ inline BOOL _switchToThread()
 // VC6 has the wrong declaration for the operating system function.
 // MinGW as well
 #if (defined(_MSC_VER) && (_MSC_VER <= 1200)) || defined __GNUC__
+// Cast away volatile
 #define FIX_TYPE(arg) const_cast<LPLONG>(arg)
 #else
 #define FIX_TYPE(arg) arg

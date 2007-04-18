@@ -54,7 +54,6 @@ public:
 		}
 	};
 
-public:
 	static CharSet* createInstance(Firebird::MemoryPool& pool, USHORT id, charset* cs);
 
 protected:

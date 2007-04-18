@@ -110,6 +110,7 @@ namespace Firebird
 		public:
 			const_iterator() : lst(0), pos(0) { }
 			explicit const_iterator(const iterator& it) : lst(it.lst), pos(it.pos) {}
+			explicit const_iterator(iterator& it) : lst(it.lst), pos(it.pos) {}
 /*
 			const_iterator& operator=(const ObjectsArray& a)
 			{

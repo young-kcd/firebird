@@ -187,6 +187,17 @@ Element* Element::findAttribute(int seq)
 	return NULL;
 }
 
+const Element* Element::findAttribute(int seq) const
+{
+	int n = 0;
+
+	for (const Element *attribute = attributes; attribute; attribute = attribute->sibling)
+		if (n++ == seq)
+			return attribute;
+
+	return NULL;
+}
+
 void Element::genXML(int level, Stream *stream)
 {
 	indent (level, stream);
@@ -274,9 +285,9 @@ Element* Element::findChildIgnoreCase(const char *childName)
 	return NULL;
 }
 
-const char* Element::getAttributeName(int position)
+const char* Element::getAttributeName(int position) const
 {
-	Element *element = findAttribute (position);
+	const Element *element = findAttribute (position);
 
 	if (!element)
 		return NULL;

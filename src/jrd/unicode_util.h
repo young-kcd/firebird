@@ -90,7 +90,6 @@ public:
 		static ICU* loadICU(const Firebird::string& collVersion, const Firebird::string& locale,
 			const Firebird::string& configInfo);
 
-	private:
 		ICU* icu;
 		texttype* tt;
 		USHORT attributes;
@@ -100,6 +99,8 @@ public:
 		void* contractions;
 		int contractionsCount;
 	};
+	
+	friend class Utf16Collation;
 };
 
 }	// namespace Jrd

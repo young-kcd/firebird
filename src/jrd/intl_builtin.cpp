@@ -1846,7 +1846,7 @@ ULONG INTL_builtin_setup_attributes(const ASCII* textTypeName, const ASCII* char
 		Firebird::AutoPtr<charset, Jrd::CharSet::Delete> cs = new charset;
 		memset(cs, 0, sizeof(*cs));
 
-		// test if that charset exist
+		// test if that charset exists
 		if (!INTL_builtin_lookup_charset(cs, charSetName, configInfo))
 			return INTL_BAD_STR_LENGTH;
 

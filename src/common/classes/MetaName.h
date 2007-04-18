@@ -104,7 +104,7 @@ public:
 	LoopMetaName(char* s) : Firebird::MetaName(s), 
 		flag(true), target(s) { }
 	~LoopMetaName() { strcpy(target, c_str()); }
-	operator bool() { return flag; }
+	operator bool() const { return flag; }
 	void stop() { flag = false; }
 };
 #define MetaTmp(x) for (Firebird::LoopMetaName tmp(x); tmp; tmp.stop())

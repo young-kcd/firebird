@@ -120,7 +120,6 @@ public:
 		RWLock* lock;
 	};
 
-public:
 	RWLock() : lock(0), blockedReaders(0), blockedWriters(0)
 	{ 
 		readers_semaphore = CreateSemaphore(NULL, 0 /*initial count*/, 

@@ -675,7 +675,7 @@ UnicodeUtil::ICU* UnicodeUtil::loadICU(const Firebird::string& icuVersion,
 	if (version == "default")
 		version.printf("%d.%d", U_ICU_VERSION_MAJOR_NUM, U_ICU_VERSION_MINOR_NUM);
 
-	for (ObjectsArray<string>::iterator i = versions.begin(); i != versions.end(); ++i)
+	for (ObjectsArray<string>::const_iterator i(versions.begin()); i != versions.end(); ++i)
 	{
 		string majorVersion;
 		string minorVersion;
@@ -1100,7 +1100,7 @@ UnicodeUtil::ICU* UnicodeUtil::Utf16Collation::loadICU(
 	ObjectsArray<string> versions;
 	getVersions(configInfo, versions);
 
-	for (ObjectsArray<string>::iterator i = versions.begin(); i != versions.end(); ++i)
+	for (ObjectsArray<string>::const_iterator i(versions.begin()); i != versions.end(); ++i)
 	{
 		ICU* icu = UnicodeUtil::loadICU(*i, configInfo);
 		if (!icu)
