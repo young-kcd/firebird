@@ -4195,7 +4195,9 @@ static void make_object_name(
 	// misunderstanding between processes
 	strlwr(buffer);
 
+#ifndef EMBEDDED
 	fb_utils::prefix_kernel_object_name(buffer, bufsize);
+#endif
 }
 #endif
 
