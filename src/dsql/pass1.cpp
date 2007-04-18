@@ -3694,8 +3694,7 @@ static dsql_ctx* pass1_cursor_context( dsql_req* request, const dsql_nod* cursor
 			DEV_BLKCHK(candidate, dsql_type_ctx);
 			const dsql_rel* relation = candidate->ctx_relation;
 			DEV_BLKCHK(rname, dsql_type_str);
-			if (!(relation->rel_flags & REL_view) &&
-				!strcmp(rname->str_data, relation->rel_name))
+			if (!strcmp(rname->str_data, relation->rel_name))
 			{
 				if (context)
 					ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 504,
