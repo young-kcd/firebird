@@ -1,3 +1,14 @@
+2007-04-17 11:03  alexpeshkoff
+
+	* firebird2/src/: jrd/cch.cpp (1.129.2.5), jrd/isc.h (1.22.4.1),
+	jrd/jrd.cpp (1.237.2.12), jrd/lck.cpp (1.51.4.1), jrd/lck_proto.h
+	(1.10.12.1), jrd/nbak.cpp (1.52.2.6), jrd/nbak.h (1.19.4.3),
+	jrd/os/isc_i_proto.h (1.4.12.1), jrd/os/posix/isc_ipc.cpp
+	(1.17.4.1), jrd/os/posix/unix.cpp (1.42.4.2), lock/lock.cpp
+	(1.114.4.1), lock/lock_proto.h (1.8.12.1):
+
+	backported fix for CORE-968
+
 2007-04-13 14:21  dimitr
 
 	* firebird2/src/jrd/par.cpp (1.132.4.4):
