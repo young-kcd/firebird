@@ -542,6 +542,18 @@ int INF_database_info(const SCHAR* items,
 			break;
 
 		case isc_info_user_names:
+			if (!(tdbb->tdbb_attachment->locksmith())) {
+				const UserId* user = tdbb->tdbb_attachment->att_user;
+				Firebird::string uname((user && user->usr_user_name) ? user->usr_user_name : "Unknown");
+				uname.insert(0, char(uname.length()));
+				info = INF_put_item(item, uname.length(), uname.c_str(), info, end);
+				if (!info) {
+					if (transaction)
+						TRA_commit(tdbb, transaction, false);
+					return FALSE;
+				}
+				continue;
+			}
 			for (att = dbb->dbb_attachments; att; att = att->att_next) {
 				if (att->att_flags & ATT_shutdown)
 					continue;

@@ -963,6 +963,7 @@ ISC_STATUS SVC_query2(Service* service,
 
 #ifdef SERVER_SHUTDOWN
 		case isc_info_svc_svr_db_info:
+			if (service->svc_user_flag & SVC_user_dba)
 			{
 				UCHAR dbbuf[1024];
 				ULONG num_dbs = 0;
@@ -1016,6 +1017,8 @@ ISC_STATUS SVC_query2(Service* service,
 				if (info < end)
 					*info++ = isc_info_flag_end;
 			}
+			else
+				need_admin_privs(&status, "isc_info_svc_svr_db_info");
 
 			break;
 
@@ -1164,15 +1167,20 @@ ISC_STATUS SVC_query2(Service* service,
 
 
 		case isc_info_svc_user_dbpath:
-			/* The path to the user security database (security2.fdb) */
-			SecurityDatabase::getPath(buffer);
-
-			if (!(info = INF_put_item(item, strlen(buffer), buffer,
-									  info, end)))
+			if (service->svc_user_flag & SVC_user_dba)
 			{
-				THREAD_ENTER();
-				return 0;
+				/* The path to the user security database (security2.fdb) */
+				SecurityDatabase::getPath(buffer);
+
+				if (!(info = INF_put_item(item, strlen(buffer), buffer,
+										  info, end)))
+				{
+					THREAD_ENTER();
+					return 0;
+				}
 			}
+			else
+				need_admin_privs(&status, "isc_info_svc_user_dbpath");
 			break;
 
 		case isc_info_svc_response:
@@ -1412,6 +1420,7 @@ void SVC_query(Service*		service,
 
 #ifdef SERVER_SHUTDOWN
 		case isc_info_svc_svr_db_info:
+			if (service->svc_user_flag & SVC_user_dba)
 			{
 				ULONG num_att = 0;
 				ULONG num_dbs = 0;
@@ -1437,6 +1446,11 @@ void SVC_query(Service*		service,
 					return;
 				}
 			}
+			/*
+			 * Can not return error for service v.1 => simply ignore request
+			else
+				need_admin_privs(&status, "isc_info_svc_svr_db_info");
+			 */
 			break;
 
 		case isc_info_svc_svr_online:
@@ -1520,8 +1534,11 @@ void SVC_query(Service*		service,
 				// TODO: reset the config values to defaults
 				THREAD_EXIT();
 			}
+			*
+			 * Can not return error for service v.1 => simply ignore request
 			else
-				need_admin_privs(&status, "isc_info_svc_default_config");
+				need_admin_privs(&status, "isc_info_svc_default_config:");
+			 *
 			break;
 
 		case isc_info_svc_set_config:
@@ -1531,9 +1548,11 @@ void SVC_query(Service*		service,
 				// TODO: set the config values
 				THREAD_EXIT();
 			}
-			else {
-				need_admin_privs(&status, "isc_info_svc_set_config");
-			}
+			*
+			 * Can not return error for service v.1 => simply ignore request
+			else
+				need_admin_privs(&status, "isc_info_svc_set_config:");
+			 *
 			break;
 */
 		case isc_info_svc_version:
@@ -1596,14 +1615,22 @@ void SVC_query(Service*		service,
 
 
 		case isc_info_svc_user_dbpath:
-			/* The path to the user security database (security2.fdb) */
-			SecurityDatabase::getPath(buffer);
+            if (service->svc_user_flag & SVC_user_dba)
+            {
+				/* The path to the user security database (security2.fdb) */
+				SecurityDatabase::getPath(buffer);
 
-			if (!(info = INF_put_item(item, strlen(buffer), buffer, info, end)))
-			{
-				THREAD_ENTER();
-				return;
+				if (!(info = INF_put_item(item, strlen(buffer), buffer, info, end)))
+				{
+					THREAD_ENTER();
+					return;
+				}
 			}
+			/*
+			 * Can not return error for service v.1 => simply ignore request
+			else
+				need_admin_privs(&status, "isc_info_svc_user_dbpath");
+			 */
 			break;
 
 		case isc_info_svc_response:
