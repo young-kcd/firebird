@@ -64,7 +64,7 @@ public:
 
 		template <typename T> T& findSymbol(const Firebird::string& symbol, T& ptr)
 		{
-			return (ptr = reinterpret_cast<T>(findSymbol(symbol)));
+			return (ptr = (T)(findSymbol(symbol)));
 		}
 
 		/// Destructor
