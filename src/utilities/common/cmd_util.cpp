@@ -73,7 +73,7 @@ void CMD_UTIL_put_svc_status(ISC_STATUS* svc_status,
 
 	// We preserve the five params of the old code.
 	// Don't want to overflow the status vector.
-	for (int loop = 0; loop < 5 && loop < arg.getCount(); ++loop)
+	for (unsigned int loop = 0; loop < 5 && loop < arg.getCount(); ++loop)
 	{
 		SVC_STATUS_ARG(status, arg.getCell(loop));
 		tmp_status_len += 2;
