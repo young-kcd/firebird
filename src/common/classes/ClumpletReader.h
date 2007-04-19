@@ -45,7 +45,7 @@ namespace Firebird {
 class ClumpletReader : protected AutoStorage
 {
 public:
-	enum Kind {Tagged, UnTagged, SpbAttach, SpbStart, Tpb/*, SpbInfo*/, WideTagged, WideUnTagged};
+	enum Kind {Tagged, UnTagged, SpbAttach, SpbStart, Tpb/*, SpbInfo*/, WideTagged, WideUnTagged, SpbItems};
 
 	// Constructor prepares an object from plain PB
 	ClumpletReader(Kind k, const UCHAR* buffer, size_t buffLen);
@@ -74,7 +74,8 @@ public:
 	size_t getBufferLength() const 
 	{
 		size_t rc = getBufferEnd() - getBuffer();
-		if (rc == 1 && kind != UnTagged && kind != SpbStart)
+		if (rc == 1 && kind != UnTagged     && kind != SpbStart 
+					&& kind != WideUnTagged && kind != SpbItems)
 		{
 			rc = 0;
 		}

@@ -153,6 +153,7 @@ UCHAR ClumpletReader::getBufferTag() const
 	case SpbStart:
 	case UnTagged:
 	case WideUnTagged:
+	case SpbItems:
 		usage_mistake("buffer is not tagged");
 		return 0;
 	case SpbAttach:
@@ -203,6 +204,8 @@ ClumpletReader::ClumpletType ClumpletReader::getClumpletType(UCHAR tag) const
         case isc_tpb_lock_read:
 			return TraditionalDpb;
 		}
+		return SingleTpb;
+	case SpbItems:
 		return SingleTpb;
 	case SpbStart:
 		switch (spbState) {
@@ -446,7 +449,7 @@ void ClumpletReader::rewind()
 		spbState = 0;
 		return;
 	}
-	if (kind == UnTagged || kind == WideUnTagged || kind == SpbStart)
+	if (kind == UnTagged || kind == WideUnTagged || kind == SpbStart || kind == SpbItems)
 		cur_offset = 0;
 	else if (kind == SpbAttach && getBufferLength() > 0 
 						 && getBuffer()[0] != isc_spb_version1)
