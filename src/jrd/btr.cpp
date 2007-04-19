@@ -510,7 +510,7 @@ static void checkForLowerKeySkip(
 
 			if (skipLowerKey && (node.length > lower.key_length))
 			{
-				// We've bigger data in the node as the lowerKey, 
+				// We've bigger data in the node than in the lowerKey, 
 				// now check the segment-number
 				const UCHAR *segp = node.data + lower.key_length;
 
@@ -6706,7 +6706,7 @@ static bool scan(thread_db* tdbb, UCHAR* pointer, RecordBitmap** bitmap, RecordB
 
 						if (skipLowerKey && (node->btn_length > lowerKey.key_length))
 						{
-							// We've bigger data in the node as the lowerKey, 
+							// We've bigger data in the node than in the lowerKey, 
 							// now check the segment-number
 							const UCHAR *segp = node->btn_data + lowerKey.key_length;
 
