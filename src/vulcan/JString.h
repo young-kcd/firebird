@@ -65,9 +65,14 @@ public:
 		return (string) ? string : "";
 		}
 
+	inline const char	*c_str() const
+		{
+		return getString();
+		}
+
 	inline 	operator const char*() const
 		{
-		return (string) ? string : "";
+		return getString();
 		}
 	
 	//void set (int length, const char *stuff);
