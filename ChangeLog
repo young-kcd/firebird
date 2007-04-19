@@ -1,3 +1,10 @@
+2007-04-18 10:22  hvlad
+
+	* firebird2/src/jrd/isc_sync.cpp (1.103.2.2):
+
+	Fixed CORE-1207 : FB embedded requires extra OS privileges This is
+	simplest fix we can do for 2.0.x version
+
 2007-04-17 11:03  alexpeshkoff
 
 	* firebird2/src/: jrd/cch.cpp (1.129.2.5), jrd/isc.h (1.22.4.1),
