@@ -475,7 +475,7 @@ bool IntlUtil::readOneChar(Jrd::CharSet* cs, const UCHAR** s, const UCHAR* end, 
 bool IntlUtil::setupIcuAttributes(charset* cs, const string& specificAttributes,
 	const string& configInfo, string& newSpecificAttributes)
 {
-	AutoPtr<Jrd::CharSet> charSet = Jrd::CharSet::createInstance(*getDefaultMemoryPool(), 0, cs);
+	AutoPtr<Jrd::CharSet> charSet(Jrd::CharSet::createInstance(*getDefaultMemoryPool(), 0, cs));
 
 	IntlUtil::SpecificAttributesMap map;
 	if (!IntlUtil::parseSpecificAttributes(charSet, specificAttributes.length(),

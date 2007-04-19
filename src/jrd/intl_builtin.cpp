@@ -1235,6 +1235,7 @@ static INTL_BOOL cs_utf32_well_formed(charset* cs,
 }
 
 
+#ifdef NOT_USED_OR_REPLACED
 static ULONG cvt_ascii_to_unicode(csconvert* obj, ULONG nSrc, const UCHAR* pSrc,
 								  ULONG nDest, USHORT* pDest,
 								  USHORT* err_code, ULONG* err_position)
@@ -1321,6 +1322,7 @@ static ULONG cvt_unicode_to_ascii(csconvert* obj, ULONG nSrc, const USHORT* pSrc
 
 	return ((pDest - pStart) * sizeof(*pDest));
 }
+#endif //NOT_USED_OR_REPLACED
 
 
 static ULONG cvt_none_to_unicode(csconvert* obj, ULONG nSrc, const UCHAR* pSrc,
@@ -1843,7 +1845,7 @@ ULONG INTL_builtin_setup_attributes(const ASCII* textTypeName, const ASCII* char
 	// the preprocessor, but this is a task for another day.
 	if (strstr(textTypeName, "UNICODE") && strcmp(textTypeName, "UNICODE_FSS") != 0)
 	{
-		Firebird::AutoPtr<charset, Jrd::CharSet::Delete> cs = new charset;
+		Firebird::AutoPtr<charset, Jrd::CharSet::Delete> cs(new charset);
 		memset(cs, 0, sizeof(*cs));
 
 		// test if that charset exists

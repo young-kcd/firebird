@@ -119,7 +119,7 @@ bool LCICU_setup_attributes(const ASCII* name, const ASCII* charSetName, const A
 
 	if (len > 8 && strcmp(name + len - 8, "_UNICODE") == 0)
 	{
-		AutoPtr<charset, Jrd::CharSet::Delete> cs = new charset;
+		AutoPtr<charset, Jrd::CharSet::Delete> cs(new charset);
 		memset(cs, 0, sizeof(*cs));
 
 		// test if that charset exist

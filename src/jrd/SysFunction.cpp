@@ -1361,7 +1361,7 @@ static dsc* evlHash(Jrd::thread_db* tdbb, SysFunction* function, Jrd::jrd_nod* a
 	{
 		impure->vlu_misc.vlu_int64 = (impure->vlu_misc.vlu_int64 << 4) + *address;
 
-		SINT64 n = impure->vlu_misc.vlu_int64 & 0xF000000000000000i64;
+		SINT64 n = impure->vlu_misc.vlu_int64 & CONST64(0xF000000000000000);
 		if (n)
 		  impure->vlu_misc.vlu_int64 ^= n >> 56;
 		impure->vlu_misc.vlu_int64 &= ~n;
@@ -1629,7 +1629,7 @@ static dsc* evlOverlay(Jrd::thread_db* tdbb, SysFunction* function, Jrd::jrd_nod
 
 	if (!value->isBlob() && !placing->isBlob())
 	{
-		if (len1 - length + len2 > MAX_COLUMN_SIZE - sizeof(USHORT))
+		if (len1 - length + len2 > static_cast<signed>(MAX_COLUMN_SIZE - sizeof(USHORT)))
 			status_exception::raise(isc_arith_except, 0);
 
 		dsc desc;
@@ -1716,7 +1716,7 @@ static dsc* evlPad(Jrd::thread_db* tdbb, SysFunction* function, Jrd::jrd_nod* ar
 	const dsc* padLenDsc = EVL_expr(tdbb, args->nod_arg[1]);
 	if (request->req_flags & req_null)	// return NULL if padLenDsc is NULL
 		return NULL;
-	SLONG padLen = MOV_get_long(padLenDsc, 0);
+	ULONG padLen = MOV_get_long(padLenDsc, 0);
 
 	const dsc* value2 = NULL;
 	if (args->nod_count >= 3)
@@ -1732,7 +1732,7 @@ static dsc* evlPad(Jrd::thread_db* tdbb, SysFunction* function, Jrd::jrd_nod* ar
 	MoveBuffer buffer1;
 	UCHAR* address1;
 	ULONG length1 = MOV_make_string2(tdbb, value1, ttype, &address1, buffer1, false);
-	SLONG charLength1 = cs->length(length1, address1, true);
+	ULONG charLength1 = cs->length(length1, address1, true);
 
 	MoveBuffer buffer2;
 	UCHAR* address2;
@@ -1746,7 +1746,7 @@ static dsc* evlPad(Jrd::thread_db* tdbb, SysFunction* function, Jrd::jrd_nod* ar
 	else
 		length2 = MOV_make_string2(tdbb, value2, ttype, &address2, buffer2, false);
 
-	SLONG charLength2 = cs->length(length2, address2, true);
+	ULONG charLength2 = cs->length(length2, address2, true);
 
 	blb* newBlob = NULL;
 
@@ -2062,9 +2062,9 @@ static dsc* evlReplace(Jrd::thread_db* tdbb, SysFunction* function, Jrd::jrd_nod
 	// make descriptor for return value
 	if (!firstBlob)
 	{
-		int searchedLen = canonicals[0].getCount() / canonicalWidth;
-		int findLen = canonicals[1].getCount() / canonicalWidth;
-		int replacementLen = lengths[2] / cs->minBytesPerChar();
+		unsigned int searchedLen = canonicals[0].getCount() / canonicalWidth;
+		unsigned int findLen = canonicals[1].getCount() / canonicalWidth;
+		unsigned int replacementLen = lengths[2] / cs->minBytesPerChar();
 
 		USHORT len = MIN(MAX_COLUMN_SIZE, cs->maxBytesPerChar() *
 			MAX(searchedLen, searchedLen +
@@ -2427,15 +2427,20 @@ SysFunction::SysFunction(const char* s, int minCount, int maxCount, MakeFunc mf,
 #define SF(a, b, c, d, e, f) {a, b, c, d, e, f}
 #endif
 
+#ifdef _MSC_VER
+typedef StdMathFunc VoidPtrStdMathFunc;
+#else
+typedef void* VoidPtrStdMathFunc;
+#endif
 
 SysFunction SysFunction::functions[] =
 	{
 		SF("ABS", 1, 1, makeAbs, evlAbs, NULL),
-		SF("ACOS", 1, 1, makeDoubleResult, evlStdMath, (StdMathFunc) acos),
+		SF("ACOS", 1, 1, makeDoubleResult, evlStdMath, (VoidPtrStdMathFunc) acos),
 		SF("ASCII_CHAR", 1, 1, makeAsciiChar, evlAsciiChar, NULL),
 		SF("ASCII_VAL", 1, 1, makeShortResult, evlAsciiVal, NULL),
-		SF("ASIN", 1, 1, makeDoubleResult, evlStdMath, (StdMathFunc) asin),
-		SF("ATAN", 1, 1, makeDoubleResult, evlStdMath, (StdMathFunc) atan),
+		SF("ASIN", 1, 1, makeDoubleResult, evlStdMath, (VoidPtrStdMathFunc) asin),
+		SF("ATAN", 1, 1, makeDoubleResult, evlStdMath, (VoidPtrStdMathFunc) atan),
 		SF("ATAN2", 2, 2, makeDoubleResult, evlAtan2, NULL),
 		SF("BIN_AND", 1, -1, makeBin, evlBin, (void*) funBinAnd),
 		SF("BIN_OR", 1, -1, makeBin, evlBin, (void*) funBinOr),
@@ -2444,9 +2449,9 @@ SysFunction SysFunction::functions[] =
 		SF("BIN_XOR", 1, -1, makeBin, evlBin, (void*) funBinXor),
 		SF("CEIL", 1, 1, makeCeilFloor, evlCeil, NULL),
 		SF("CEILING", 1, 1, makeCeilFloor, evlCeil, NULL),
-		SF("COS", 1, 1, makeDoubleResult, evlStdMath, (StdMathFunc) cos),
-		SF("COSH", 1, 1, makeDoubleResult, evlStdMath, (StdMathFunc) cosh),
-		SF("COT", 1, 1, makeDoubleResult, evlStdMath, (StdMathFunc) cot),
+		SF("COS", 1, 1, makeDoubleResult, evlStdMath, (VoidPtrStdMathFunc) cos),
+		SF("COSH", 1, 1, makeDoubleResult, evlStdMath, (VoidPtrStdMathFunc) cosh),
+		SF("COT", 1, 1, makeDoubleResult, evlStdMath, (VoidPtrStdMathFunc) cot),
 		SF("DATEADD", 3, 3, makeDateAdd, evlDateAdd, NULL),
 		SF("DATEDIFF", 3, 3, makeInt64Result, evlDateDiff, NULL),
 		SF("EXP", 1, 1, makeDoubleResult, evlExp, NULL),
@@ -2456,7 +2461,7 @@ SysFunction SysFunction::functions[] =
 		SF("LEFT", 2, 2, makeLeftRight, evlLeft, NULL),
 		SF("LN", 1, 1, makeDoubleResult, evlLn, NULL),
 		SF("LOG", 2, 2, makeDoubleResult, evlLog, NULL),
-		SF("LOG10", 1, 1, makeDoubleResult, evlStdMath, (StdMathFunc) log10),
+		SF("LOG10", 1, 1, makeDoubleResult, evlStdMath, (VoidPtrStdMathFunc) log10),
 		SF("LPAD", 2, 3, makePad, evlPad, (void*) funLPad),
 		SF("MAXVALUE", 1, -1, makeFromListResult, evlMaxMinValue, (void*) funMaxValue),
 		SF("MINVALUE", 1, -1, makeFromListResult, evlMaxMinValue, (void*) funMinValue),
@@ -2472,13 +2477,13 @@ SysFunction SysFunction::functions[] =
 		SF("ROUND", 2, 2, makeRound, evlRound, NULL),
 		SF("RPAD", 2, 3, makePad, evlPad, (void*) funRPad),
 		SF("SIGN", 1, 1, makeShortResult, evlSign, NULL),
-		SF("SIN", 1, 1, makeDoubleResult, evlStdMath, (StdMathFunc) sin),
-		SF("SINH", 1, 1, makeDoubleResult, evlStdMath, (StdMathFunc) sinh),
+		SF("SIN", 1, 1, makeDoubleResult, evlStdMath, (VoidPtrStdMathFunc) sin),
+		SF("SINH", 1, 1, makeDoubleResult, evlStdMath, (VoidPtrStdMathFunc) sinh),
 		SF("SQRT", 1, 1, makeDoubleResult, evlSqrt, NULL),
-		SF("TAN", 1, 1, makeDoubleResult, evlStdMath, (StdMathFunc) tan),
-		SF("TANH", 1, 1, makeDoubleResult, evlStdMath, (StdMathFunc) tanh),
+		SF("TAN", 1, 1, makeDoubleResult, evlStdMath, (VoidPtrStdMathFunc) tan),
+		SF("TANH", 1, 1, makeDoubleResult, evlStdMath, (VoidPtrStdMathFunc) tanh),
 		SF("TRUNC", 1, 1, makeTrunc, evlTrunc, NULL),
-		SF("", 0, NULL, NULL, NULL, NULL)
+		SF("", 0, 0, NULL, NULL, NULL)
 	};
 
 

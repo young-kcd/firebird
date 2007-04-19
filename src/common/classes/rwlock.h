@@ -60,66 +60,6 @@ private:
 	RWLock(const RWLock& source);
 
 public:
-	// RAII holder of begin/end read
-	class ReadGuard
-	{
-	public:
-		explicit ReadGuard(RWLock& alock)
-			: lock(&alock)
-		{
-			lock->beginRead();
-		}
-
-		~ReadGuard()
-		{
-			release();
-		}
-
-		void release()
-		{
-			if (lock)
-			{
-				lock->endRead();
-				lock = NULL;
-			}
-		}
-
-	private:
-		// Forbid copy constructor
-		ReadGuard(const ReadGuard& source);
-		RWLock* lock;
-	};
-
-	// RAII holder of begin/end write
-	class WriteGuard
-	{
-	public:
-		explicit WriteGuard(RWLock& alock)
-			: lock(&alock)
-		{
-			lock->beginWrite();
-		}
-
-		~WriteGuard()
-		{
-			release();
-		}
-
-		void release()
-		{
-			if (lock)
-			{
-				lock->endWrite();
-				lock = NULL;
-			}
-		}
-
-	private:
-		// Forbid copy constructor
-		WriteGuard(const WriteGuard& source);
-		RWLock* lock;
-	};
-
 	RWLock() : lock(0), blockedReaders(0), blockedWriters(0)
 	{ 
 		readers_semaphore = CreateSemaphore(NULL, 0 /*initial count*/, 
@@ -217,10 +157,7 @@ public:
 		if (lock.exchangeAdd(LOCK_WRITER_OFFSET) == -LOCK_WRITER_OFFSET)
 			unblockWaiting();
 	}
-};
 
-
-} // namespace Firebird
 
 #else
 
@@ -292,9 +229,6 @@ public:
 		if (rw_unlock(&lock))	
 			system_call_failed::raise("rw_unlock");
 	}
-};
-
-} // namespace Firebird
 
 
 
@@ -373,9 +307,6 @@ public:
 		if (pthread_rwlock_unlock(&lock))	
 			system_call_failed::raise("pthread_rwlock_unlock");
 	}
-};
-
-} // namespace Firebird
 
 #endif /*solaris threading (not posix)*/
 
@@ -399,15 +330,75 @@ public:
 	bool tryBeginWrite() { return true; }
 	void beginWrite() {	}
 	void endWrite() { }
-};
-
-} // namespace Firebird
 
 #endif /*MULTI_THREAD*/
 
 #endif /*!WIN_NT*/
 
-namespace Firebird {
+// common for all platforms part of class
+
+public:
+	// RAII holder of begin/end read
+	class ReadGuard
+	{
+	public:
+		explicit ReadGuard(RWLock& alock)
+			: lock(&alock)
+		{
+			lock->beginRead();
+		}
+
+		~ReadGuard()
+		{
+			release();
+		}
+
+		void release()
+		{
+			if (lock)
+			{
+				lock->endRead();
+				lock = NULL;
+			}
+		}
+
+	private:
+		// Forbid copy constructor
+		ReadGuard(const ReadGuard& source);
+		RWLock* lock;
+	};
+
+	// RAII holder of begin/end write
+	class WriteGuard
+	{
+	public:
+		explicit WriteGuard(RWLock& alock)
+			: lock(&alock)
+		{
+			lock->beginWrite();
+		}
+
+		~WriteGuard()
+		{
+			release();
+		}
+
+		void release()
+		{
+			if (lock)
+			{
+				lock->endWrite();
+				lock = NULL;
+			}
+		}
+
+	private:
+		// Forbid copy constructor
+		WriteGuard(const WriteGuard& source);
+		RWLock* lock;
+	};
+};
+
 
 // RAII holder of read lock
 class ReadLockGuard {

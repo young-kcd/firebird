@@ -1047,6 +1047,13 @@ void GDS_breakpoint(int);
 #define STRINGIZE_AUX(x)	#x
 #define STRINGIZE(x)		STRINGIZE_AUX(x)
 
+#ifdef _MSC_VER
+#define CONST64(a) (a##i64)
+#else
+#define CONST64(a) (a##L)
+#endif
+
+
 /* switch name and state table.  This structure should be used in all
  * command line tools to facilitate parsing options.*/
 struct in_sw_tab_t {

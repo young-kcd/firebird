@@ -34,7 +34,7 @@
 #include "../common/classes/GenericMap.h"
 #include "../common/classes/init.h"
 #include "../common/classes/objects_array.h"
-#include "../common/classes/RWLock.h"
+#include "../common/classes/rwlock.h"
 #include "unicode/ustring.h"
 #include "unicode/uchar.h"
 #include "unicode/ucnv.h"
@@ -118,7 +118,7 @@ static void getVersions(const string& configInfo, ObjectsArray<string>& versions
 	charset cs;
 	IntlUtil::initAsciiCharset(&cs);
 
-	AutoPtr<CharSet> ascii = Jrd::CharSet::createInstance(*getDefaultMemoryPool(), 0, &cs);
+	AutoPtr<CharSet> ascii(Jrd::CharSet::createInstance(*getDefaultMemoryPool(), 0, &cs));
 
 	IntlUtil::SpecificAttributesMap config;
 	IntlUtil::parseSpecificAttributes(ascii, configInfo.length(),
