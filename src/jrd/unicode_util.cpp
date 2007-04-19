@@ -1110,15 +1110,15 @@ UnicodeUtil::ICU* UnicodeUtil::Utf16Collation::loadICU(
 
 		if (locale.hasData())
 		{
-			int i = icu->ulocCountAvailable();
+			int avail = icu->ulocCountAvailable();
 
-			while (--i >= 0)
+			while (--avail >= 0)
 			{
-				if (locale == icu->ulocGetAvailable(i))
+				if (locale == icu->ulocGetAvailable(avail))
 					break;
 			}
 
-			if (i < 0)
+			if (avail < 0)
 				continue;
 		}
 

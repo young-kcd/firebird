@@ -459,10 +459,6 @@
 				RelativePath="..\..\..\src\intl\ld.cpp"
 				>
 			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\unicode_util.cpp"
-				>
-			</File>
 		</Filter>
 		<Filter
 			Name="Header files"
@@ -1050,6 +1046,10 @@
 			>
 			<File
 				RelativePath="..\..\..\src\jrd\IntlUtil.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\unicode_util.cpp"
 				>
 			</File>
 			<File
