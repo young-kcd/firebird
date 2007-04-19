@@ -65,6 +65,13 @@ DROP_Files= drop.cpp
 DROP_Sources = $(addprefix utilities/, $(DROP_Files)) $(DROP_Other_Sources)
 DROP_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(DROP_Sources))))
 
+GSERV_Files= gserv.cpp
+GSERV_Other_Sources = common/classes/fb_string.cpp common/classes/alloc.cpp \
+common/classes/ClumpletReader.cpp common/classes/ClumpletWriter.cpp \
+common/fb_exception.cpp
+GSERV_Sources = $(addprefix utilities/, $(GSERV_Files)) $(GSERV_Other_Sources)
+GSERV_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(GSERV_Sources))))
+
 GSTAT_Other_Sources = jrd/btn.cpp jrd/db_alias.cpp jrd/ods.cpp \
 common/config/config.cpp common/config/config_file.cpp $(OS_SPECIFIC_Sources)
 
@@ -72,7 +79,7 @@ GSTAT_Files =  dba.epp ppg.cpp
 GSTAT_Sources = $(addprefix utilities/gstat/, $(GSTAT_Files)) $(GSTAT_Other_Sources)
 GSTAT_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(GSTAT_Sources)))) $(CLUMPLETS_Objects)
 
-FBGUARD_Other_Sources = jrd/isc.cpp jrd/divorce.cpp
+FBGUARD_Other_Sources = jrd/isc.cpp jrd/divorce.cpp jrd/os/posix/path_utils.cpp
 FBGUARD_Files =  guard.cpp util.cpp
 FBGUARD_Sources = $(addprefix utilities/guard/, $(FBGUARD_Files)) $(FBGUARD_Other_Sources)
 FBGUARD_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(FBGUARD_Sources))))
@@ -84,8 +91,9 @@ IBGUARD_B_Files =  os/win32/chop.cpp
 IBGUARD_B_Sources = $(addprefix remote/, $(IBGUARD_B_Files))
 IBGUARD_B_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(IBGUARD_B_Sources))))
 
+FBMGR_Other_Sources = jrd/os/posix/path_utils.cpp
 FBMGR_Files =  	ibmgr.cpp srvrmgr.cpp
-FBMGR_Sources = $(addprefix utilities/ibmgr/, $(FBMGR_Files))
+FBMGR_Sources = $(addprefix utilities/ibmgr/, $(FBMGR_Files)) $(FBMGR_Other_Sources)
 FBMGR_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(FBMGR_Sources))))
 
 INSTREG_Files =  	install_reg.cpp registry.cpp
@@ -107,13 +115,13 @@ RELAY_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(RELAY_Sources)
 
 
 AllObjects = $(CREATEDB_Object) $(DROP_Object) $(GSTAT_Object) $(FBGUARD_Objects) \
-			 $(FBMGR_Objects) $(REBUILD_Objects) $(RELAY_Objects)
+			 $(FBMGR_Objects) $(REBUILD_Objects) $(RELAY_Objects) $(GSERV_Objects)
 
 
 Dependencies = $(AllObjects:.o=.d) 
 
 
-.PHONY: all gstat gsec fbguard fbmgr_bin nbackup gds_drop gds_relay create_db fb_lock_print
+.PHONY: all gstat gsec fbguard fbmgr_bin nbackup gds_drop gds_relay create_db fb_lock_print gserv
 
 all: $(CLIENT_UTIL_TARGETS)
 
@@ -146,6 +154,10 @@ gds_drop: $(GDS_DROP)
 $(GDS_DROP):	$(DROP_Objects) $(LIBFBCLIENT_SO)  
 	$(LD) $(LINK_OPTS) $(DROP_Objects) -o $@ -L$(LIB) -lfbclient $(LINK_LIBS) @PTHREAD_CFLAGS@ @PTHREAD_LIBS@
 
+gserv: $(LIBFBCLIENT_SO) $(GSERV)
+
+$(GSERV):	$(GSERV_Objects) $(LIBFBCLIENT_SO)
+	$(LD) $(LINK_OPTS) $^ -o $@ -L$(LIB) $(LINK_LIBS) @PTHREAD_CFLAGS@ @PTHREAD_LIBS@
 
 gds_relay: $(GDS_RELAY)
 
