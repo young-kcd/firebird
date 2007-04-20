@@ -123,7 +123,7 @@ void printNumeric(const char*& p, const char* text)
 
 void printInfo(const char* p)
 {
-	do
+	while (*p != isc_info_end)
 	{
 		switch (*p++)
 		{
@@ -173,13 +173,11 @@ void printInfo(const char* p)
 		case isc_info_truncated:
 			printf ("Truncated\n");
 			return;
-		case isc_info_end:
-			break;
 		default:
 			printf("Unknown code (%d)\n", p[-1]);
 			return;
 		}
-	}  while (*p);
+	}
 }
 
 int main(int ac, char **av)
