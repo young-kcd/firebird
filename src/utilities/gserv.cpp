@@ -1,3 +1,30 @@
+/*
+ *	PROGRAM:	JRD Access Method
+ *	MODULE:		gserv.cpp
+ *	DESCRIPTION:	Command line interface with services manager
+ *
+ *  The contents of this file are subject to the Initial
+ *  Developer's Public License Version 1.0 (the "License");
+ *  you may not use this file except in compliance with the
+ *  License. You may obtain a copy of the License at
+ *  http://www.ibphoenix.com/main.nfs?a=ibphoenix&page=ibp_idpl.
+ *
+ *  Software distributed under the License is distributed AS IS,
+ *  WITHOUT WARRANTY OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing rights
+ *  and limitations under the License.
+ *
+ *  The Original Code was created by Alex Peshkov
+ *  for the Firebird Open Source RDBMS project.
+ *
+ *  Copyright (c) 2007 Alex Peshkov <peshkoff@mail.ru>
+ *  and all contributors signed below.
+ *
+ *  All Rights Reserved.
+ *  Contributor(s): ______________________________________.
+ *
+ */
+
 #include "firebird.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -34,7 +61,7 @@ struct switches
 	unsigned char tag;
 };
 
-bool switchTable(char**& av, Firebird::ClumpletWriter& spb, const switches* sw)
+bool populateSpbFromSwitches(char**& av, Firebird::ClumpletWriter& spb, const switches* sw)
 {
 	if (! *av)
 		return false;
@@ -77,24 +104,82 @@ const switches infSwitch[] = {
 	{0, 0, 0}
 };
 
-void printString(char*& p, const char* text)
+void printString(const char*& p, const char* text)
 {
 	unsigned short length = (unsigned short)
 		isc_vax_integer (p, sizeof(unsigned short));
 	p += sizeof (unsigned short);
-	char x = p[length];
-	p[length] = 0;
-	printf ("%s: %s\n", text, p);
+	printf ("%s: %.*s\n", text, length, p);
 	p += length;
-	*p = x;
 }
 
-void printNumeric(char*& p, const char* text)
+void printNumeric(const char*& p, const char* text)
 {
 	unsigned int num = (unsigned int)
 		isc_vax_integer (p, sizeof(unsigned int));
 	p += sizeof (unsigned int);
 	printf ("%s: %d\n", text, num);
+}
+
+void printInfo(const char* p)
+{
+	do
+	{
+		switch (*p++)
+		{
+		case isc_info_svc_version:
+			printNumeric(p, "Service Manager Version");
+			break;
+		case isc_info_svc_server_version:
+			printString(p, "Server version");
+			break;
+		case isc_info_svc_implementation:
+			printString(p, "Server implementation");
+			break;
+		case isc_info_svc_get_env_msg:
+			printString(p, "Path to firebird.msg");
+			break;
+		case isc_info_svc_get_env:
+			printString(p, "Server root");
+			break;
+		case isc_info_svc_get_env_lock:
+			printString(p, "Path to lock files");
+			break;
+		case isc_info_svc_user_dbpath:
+			printString(p, "Security database");
+			break;
+
+		case isc_info_svc_svr_db_info:
+			printf ("Databases:\n");
+			do {
+				switch (*p++)
+				{
+				case isc_spb_dbname:
+				printString(p, "   Database in use");
+					break;
+				case isc_spb_num_att:
+					printNumeric(p, "   Number of attachments");
+					break;
+				case isc_spb_num_db:
+					printNumeric(p, "   Number of databases");
+					break;
+				default:
+					printf("Unknown code (%d) in info_svr_db_info\n", p[-1]);
+					return;
+				}
+			} while (*p != isc_info_flag_end);
+			break;
+
+		case isc_info_truncated:
+			printf ("Truncated\n");
+			return;
+		case isc_info_end:
+			break;
+		default:
+			printf("Unknown code (%d)\n", p[-1]);
+			return;
+		}
+	}  while (*p);
 }
 
 int main(int ac, char **av)
@@ -109,7 +194,7 @@ int main(int ac, char **av)
 	}	
 
 	Firebird::ClumpletWriter spbAtt(Firebird::ClumpletWriter::SpbAttach, 16384, isc_spb_current_version);
-	while (switchTable(av, spbAtt, attSwitch))
+	while (populateSpbFromSwitches(av, spbAtt, attSwitch))
 		;
 	isc_svc_handle svc_handle = 0;
 	if (isc_service_attach(status, 
@@ -122,7 +207,7 @@ int main(int ac, char **av)
 	}
 	
 	Firebird::ClumpletWriter spbItems(Firebird::ClumpletWriter::SpbItems, 256);
-	while (switchTable(av, spbItems, infSwitch))
+	while (populateSpbFromSwitches(av, spbItems, infSwitch))
 		;
 	if (spbItems.getBufferLength() > 0)
 	{
@@ -137,55 +222,7 @@ int main(int ac, char **av)
 			isc_service_detach(status, &svc_handle);
 			return 1;
 		}
-		
-		char *p = results;
-		do
-		{
-			switch (*p++)
-			{
-			case isc_info_truncated:
-				printf ("Truncated\n");
-				break;
-			case isc_info_svc_version:
-				printNumeric(p, "Service Manager Version");
-				break;
-			case isc_info_svc_server_version:
-				printString(p, "Server version");
-				break;
-			case isc_info_svc_implementation:
-				printString(p, "Server implementation");
-				break;
-			case isc_info_svc_get_env_msg:
-				printString(p, "Path to firebird.msg");
-				break;
-			case isc_info_svc_get_env:
-				printString(p, "Server root");
-				break;
-			case isc_info_svc_get_env_lock:
-				printString(p, "Path to lock files");
-				break;
-			case isc_info_svc_user_dbpath:
-				printString(p, "Security database");
-				break;
-			case isc_info_svc_svr_db_info:
-				printf ("Databases:\n");
-				do {
-					switch (*p++)
-					{
-					case isc_spb_dbname:
-						printString(p, "   Database in use");
-						break;
-					case isc_spb_num_att:
-						printNumeric(p, "   Number of attachments");
-						break;
-					case isc_spb_num_db:
-						printNumeric(p, "   Number of databases");
-						break;
-					}
-				} while (*p != isc_info_flag_end);
-				break;
-			}
-		}  while (*p);
+		printInfo(results);
 	}
 
 	isc_service_detach(status, &svc_handle);
