@@ -98,7 +98,7 @@ bool IntlManager::initialize()
 
 			ConfObj builtinModule(configFile.findObject("intl_module", "builtin"));
 			string s = getConfigInfo(builtinModule);
-			if (!s.isEmpty())
+			if (s.hasData())
 				builtinConfig = s;
 
 			for (Element* el = configFile.objects->children; el; el = el->sibling)

@@ -299,7 +299,7 @@ static void copy_p_cnct_repeat_array(	p_cnct::p_cnct_repeat*			pDest,
 static void		inet_copy(const void*, UCHAR*, int);
 static int		inet_destroy(XDR *);
 static void		inet_gen_error(rem_port*, ISC_STATUS, ...);
-#if !(defined(SUPERSERVER) && !defined(EMBEDDED))
+#if !defined(SUPERSERVER) || defined(EMBEDDED)
 static bool_t	inet_getbytes(XDR *, SCHAR *, u_int);
 #endif
 static bool_t	inet_getlong(XDR *, SLONG *);
@@ -355,10 +355,10 @@ static XDR::xdr_ops inet_ops =
 {
 	inet_getlong,
 	inet_putlong,
-#if defined(SUPERSERVER) && !defined(EMBEDDED)
-	REMOTE_getbytes,
-#else
+#if !defined(SUPERSERVER) || defined(EMBEDDED)
 	inet_getbytes,
+#else
+	REMOTE_getbytes,
 #endif
 	inet_putbytes,
 	inet_getpostn,
@@ -2846,7 +2846,7 @@ static void inet_gen_error( rem_port* port, ISC_STATUS status, ...)
 	}
 }
 
-#if !(defined(SUPERSERVER) && !defined(EMBEDDED))
+#if !defined(SUPERSERVER) || defined(EMBEDDED)
 static bool_t inet_getbytes( XDR * xdrs, SCHAR * buff, u_int count)
 {
 /**************************************

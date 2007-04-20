@@ -29,7 +29,7 @@ bool putSingleTag(char**&, Firebird::ClumpletWriter& spb, unsigned char tag)
 
 struct switches
 {
-	char* name;
+	const char* name;
 	PopulateFunction* populate;
 	unsigned char tag;
 };
@@ -59,13 +59,13 @@ bool switchTable(char**& av, Firebird::ClumpletWriter& spb, const switches* sw)
 	return false;
 }
 
-switches attSwitch[] = {
+const switches attSwitch[] = {
 	{"user", putStringArgument, isc_spb_user_name},
 	{"password", putStringArgument, isc_spb_password},
 	{0, 0, 0}
 };
 	
-switches infSwitch[] = {
+const switches infSwitch[] = {
 	{"info_server_version", putSingleTag, isc_info_svc_server_version},
 	{"info_implementation", putSingleTag, isc_info_svc_implementation},
 	{"info_user_dbpath", putSingleTag, isc_info_svc_user_dbpath},
@@ -109,7 +109,8 @@ int main(int ac, char **av)
 	}	
 
 	Firebird::ClumpletWriter spbAtt(Firebird::ClumpletWriter::SpbAttach, 16384, isc_spb_current_version);
-	while (switchTable(av, spbAtt, attSwitch));
+	while (switchTable(av, spbAtt, attSwitch))
+		;
 	isc_svc_handle svc_handle = 0;
 	if (isc_service_attach(status, 
 				0, name, &svc_handle, 
@@ -121,7 +122,8 @@ int main(int ac, char **av)
 	}
 	
 	Firebird::ClumpletWriter spbItems(Firebird::ClumpletWriter::SpbItems, 256);
-	while (switchTable(av, spbItems, infSwitch));
+	while (switchTable(av, spbItems, infSwitch))
+		;
 	if (spbItems.getBufferLength() > 0)
 	{
 		char results[16384];
