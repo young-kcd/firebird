@@ -1,3 +1,82 @@
+2007-04-19 17:27  asfernandes
+
+	* firebird2/src/: common/classes/rwlock.h (1.31),
+	jrd/unicode_util.cpp (1.16):
+
+	Avoid code duplication - thanks to Alex
+
+2007-04-19 11:19  alexpeshkoff
+
+	* firebird2/src/: common/classes/rwlock.h (1.30), intl/lc_icu.cpp
+	(1.7), jrd/IntlManager.cpp (1.16), jrd/IntlUtil.cpp (1.10),
+	jrd/SysFunction.cpp (1.7), jrd/common.h (1.152),
+	jrd/intl_builtin.cpp (1.34), jrd/unicode_util.cpp (1.15):
+
+	fixed posix build after latest changes
+
+2007-04-19 11:16  alexpeshkoff
+
+	* firebird2/src/common/classes/: ClumpletReader.cpp (1.25),
+	ClumpletReader.h (1.17):
+
+	Added one more clumplet style
+
+2007-04-19 11:14  alexpeshkoff
+
+	* firebird2/src/jrd/os/mod_loader.h (1.7):
+
+	support of gcc "feature" - it does not let reinterpret_cast between
+	data/void and function pointers
+
+2007-04-19 11:11  alexpeshkoff
+
+	* firebird2/src/: utilities/common/cmd_util.cpp (1.13),
+	remote/inet.cpp (1.186):
+
+	fixed gcc warning
+
+2007-04-19 11:10  alexpeshkoff
+
+	* firebird2/src/vulcan/JString.h (1.7):
+
+	make it behave a little closer to all C++ string support classes
+
+2007-04-19 11:09  alexpeshkoff
+
+	* firebird2/builds/posix/: Makefile.in.client.gbak (1.16),
+	Makefile.in.client.gfix (1.20), Makefile.in.client.gpre (1.24),
+	Makefile.in.client.isql (1.17), Makefile.in.client.qli (1.12),
+	Makefile.in.client.util (1.39), Makefile.in.embed.gbak (1.18),
+	Makefile.in.embed.gfix (1.21), Makefile.in.embed.gpre (1.22),
+	Makefile.in.embed.isql (1.16), Makefile.in.embed.qli (1.21),
+	make.defaults (1.52), prefix.linux_amd64 (1.11):
+
+	added path_utils to appropriate Makefiles
+
+2007-04-19 11:08  alexpeshkoff
+
+	* firebird2/src/utilities/gserv.cpp (1.1):
+
+	command line interface with services manager - work in progress
+
+2007-04-19 09:51  robocop
+
+	* firebird2/src/jrd/btr.cpp (1.191):
+
+	Totally misc.
+
+2007-04-19 09:50  robocop
+
+	* firebird2/src/msgs/system_errors2.sql (1.5):
+
+	Restore SQL codes.
+
+2007-04-19 09:30  alexpeshkoff
+
+	* firebird2/src/jrd/: inf.cpp (1.70), svc.cpp (1.181):
+
+	Fixed CORE-787 - disabled non-SYSDBA use of some parts of API
+
 2007-04-19 03:09  asfernandes
 
 	* firebird2/: builds/win32/msvc7/intl.vcproj (1.33),
