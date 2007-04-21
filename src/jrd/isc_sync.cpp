@@ -3372,8 +3372,9 @@ static const LPCSTR FAST_MUTEX_MAP_NAME	= "%s_FM_MAP";
 static const int DEFAULT_INTERLOCKED_SPIN_COUNT	= 0;
 static const int DEFAULT_INTERLOCKED_SPIN_COUNT_SMP	= 200;
 
+
 typedef WINBASEAPI BOOL (WINAPI *pfnSwitchToThread) ();
-inline BOOL _switchToThread()
+static inline BOOL switchToThread()
 {
 	static pfnSwitchToThread fnSwitchToThread = NULL;
 	static bool bInit = false;
@@ -3427,7 +3428,7 @@ static inline void lockSharedSection(volatile FAST_MUTEX_SHARED_SECTION* lpSect,
 				goto next;
 			j--;
 		}
-		_switchToThread();
+		switchToThread();
 next:;
 	}
 }
@@ -3584,7 +3585,7 @@ static bool initializeFastMutex(FAST_MUTEX* lpMutex, LPSECURITY_ATTRIBUTES lpAtt
 				else
 				{
 					while (!lpMutex->lpSharedInfo->fInitialized) 
-						_switchToThread();
+						switchToThread();
 				}
 				
 				SetLastError(dwLastError);

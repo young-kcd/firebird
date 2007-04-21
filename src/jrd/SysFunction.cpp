@@ -1716,7 +1716,10 @@ static dsc* evlPad(Jrd::thread_db* tdbb, SysFunction* function, Jrd::jrd_nod* ar
 	const dsc* padLenDsc = EVL_expr(tdbb, args->nod_arg[1]);
 	if (request->req_flags & req_null)	// return NULL if padLenDsc is NULL
 		return NULL;
-	ULONG padLen = MOV_get_long(padLenDsc, 0);
+	SLONG padLenArg = MOV_get_long(padLenDsc, 0);
+	if (padLenArg < 0)
+		status_exception::raise(isc_expression_eval_err, 0);
+	ULONG padLen = static_cast<ULONG>(padLenArg);
 
 	const dsc* value2 = NULL;
 	if (args->nod_count >= 3)

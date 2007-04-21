@@ -27,7 +27,6 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.client.gbak,v 1.16 2007-04-19 09:09:25 alexpeshkoff Exp $
 #
 
 ROOT=..

@@ -6708,7 +6708,7 @@ static bool scan(thread_db* tdbb, UCHAR* pointer, RecordBitmap** bitmap, RecordB
 						{
 							// We've bigger data in the node than in the lowerKey, 
 							// now check the segment-number
-							const UCHAR *segp = node->btn_data + lowerKey.key_length;
+							const UCHAR* segp = node->btn_data + lowerKey.key_length;
 
 							const USHORT segnum = 
 								idx->idx_count - (UCHAR)((idx->idx_flags & idx_descending) ? 

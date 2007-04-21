@@ -192,8 +192,10 @@ const Element* Element::findAttribute(int seq) const
 	int n = 0;
 
 	for (const Element *attribute = attributes; attribute; attribute = attribute->sibling)
+	{
 		if (n++ == seq)
 			return attribute;
+	}
 
 	return NULL;
 }

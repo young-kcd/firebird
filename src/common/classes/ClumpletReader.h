@@ -74,8 +74,8 @@ public:
 	size_t getBufferLength() const 
 	{
 		size_t rc = getBufferEnd() - getBuffer();
-		if (rc == 1 && kind != UnTagged     && kind != SpbStart 
-					&& kind != WideUnTagged && kind != SpbItems)
+		if (rc == 1 && kind != UnTagged     && kind != SpbStart &&
+					   kind != WideUnTagged && kind != SpbItems)
 		{
 			rc = 0;
 		}

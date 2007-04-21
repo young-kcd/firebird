@@ -8,7 +8,7 @@ excellent concurrency, high performance, and powerful language support for
 stored procedures and triggers. It has been used in production systems, under 
 a variety of names since 1981.
 
-Firebird is a opensource project developing and enhancing a multi-platform 
+Firebird is an open source project developing and enhancing a multi-platform 
 relational database management system based on the source code released by 
 Inprise Corp (now known again as Borland Software Corp).
 
