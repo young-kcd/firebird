@@ -182,16 +182,17 @@ void printInfo(const char* p)
 
 int main(int ac, char **av)
 {
+	const int maxbuf = 16384;
 	ISC_STATUS_ARRAY status;
 	av++;
 
-	char* name = *av;
+	const char* name = *av;
 	if (name)
 	{
 		av++;
 	}	
 
-	Firebird::ClumpletWriter spbAtt(Firebird::ClumpletWriter::SpbAttach, 16384, isc_spb_current_version);
+	Firebird::ClumpletWriter spbAtt(Firebird::ClumpletWriter::SpbAttach, maxbuf, isc_spb_current_version);
 	while (populateSpbFromSwitches(av, spbAtt, attSwitch))
 		;
 	isc_svc_handle svc_handle = 0;
@@ -209,7 +210,7 @@ int main(int ac, char **av)
 		;
 	if (spbItems.getBufferLength() > 0)
 	{
-		char results[16384];
+		char results[maxbuf];
 		if (isc_service_query(status,
 				&svc_handle, 0, 0, 0,
 				static_cast<USHORT>(spbItems.getBufferLength()), 
