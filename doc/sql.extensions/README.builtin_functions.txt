@@ -74,7 +74,8 @@ Format:
     ASCII_VAL( <string> )
 
 Notes:
-    Returns 0 if the string is empty.
+    1) Returns 0 if the string is empty.
+    2) Throw error if the first character is multi-byte.
 
 Example:
     select ascii_val(x) from y;
@@ -214,7 +215,8 @@ Format:
     { CEIL | CEILING }( <number> )
 
 Example:
-    select ceil(val) from x;
+    1) select ceil(val) from x;
+    2) select ceil(2.1), ceil(-2.1) from rdb$database;  -- returns 3, -2
 
 
 ---
@@ -291,8 +293,8 @@ DATEDIFF
 --------
 
 Function:
-    Returns the amount of time from the first date/time/timestamp value to the
-    second one.
+    Returns an exact numeric value representing the amount of time from the first
+    date/time/timestamp value to the second one.
 
 Format:
     DATEDIFF( <timestamp_part> FROM <date_time> FOR <date_time> )
@@ -347,7 +349,8 @@ Format:
     FLOOR( <number> )
 
 Example:
-    select floor(val) from x;
+    1) select floor(val) from x;
+    2) select floor(2.1), floor(-2.1) from rdb$database;  -- returns 2, -3
 
 
 --------
@@ -635,6 +638,10 @@ Function:
 Format:
     ROUND( <number>, <number> )
 
+Notes:
+    If the scale (second parameter) is negative, the integer part of
+    the value is rounded. Ex: ROUND(123.456, -1) returns 120.000.
+
 Examples:
     select round(salary * 1.1, 0) from people;
 
@@ -761,4 +768,5 @@ Format:
     TRUNC( <number> )
 
 Example:
-    select trunc(x) from y;
+    1) select trunc(x) from y;
+    2) select trunc(-2.8), floor(2.8) from rdb$database;  -- returns -2, 2
