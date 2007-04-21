@@ -1,3 +1,29 @@
+2007-04-20 18:26  alexpeshkoff
+
+	* firebird2/src/utilities/gserv.cpp (1.4):
+
+	avoid do-while loop
+
+2007-04-20 18:21  alexpeshkoff
+
+	* firebird2/src/utilities/gserv.cpp (1.3):
+
+	applied license and some more changes, suggested by Claudio
+
+2007-04-20 13:18  hvlad
+
+	* firebird2/src/jrd/why.cpp (1.129):
+
+	Fixed bug CORE-1218 : isc_dsql_info (isc_info_sql_stmt_type) not
+	set isc_info_end at the end of the passed user's buffer
+
+2007-04-20 11:47  robocop
+
+	* firebird2/src/: jrd/IntlManager.cpp (1.17), remote/inet.cpp
+	(1.187), utilities/gserv.cpp (1.2):
+
+	Misc.
+
 2007-04-19 17:27  asfernandes
 
 	* firebird2/src/: common/classes/rwlock.h (1.31),
