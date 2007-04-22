@@ -54,14 +54,14 @@ bool putSingleTag(char**&, Firebird::ClumpletWriter& spb, unsigned char tag)
 	return true;
 }
 
-struct switches
+struct Switches
 {
 	const char* name;
 	PopulateFunction* populate;
 	unsigned char tag;
 };
 
-bool populateSpbFromSwitches(char**& av, Firebird::ClumpletWriter& spb, const switches* sw)
+bool populateSpbFromSwitches(char**& av, Firebird::ClumpletWriter& spb, const Switches* sw)
 {
 	if (! *av)
 		return false;
@@ -86,13 +86,13 @@ bool populateSpbFromSwitches(char**& av, Firebird::ClumpletWriter& spb, const sw
 	return false;
 }
 
-const switches attSwitch[] = {
+const Switches attSwitch[] = {
 	{"user", putStringArgument, isc_spb_user_name},
 	{"password", putStringArgument, isc_spb_password},
 	{0, 0, 0}
 };
 	
-const switches infSwitch[] = {
+const Switches infSwitch[] = {
 	{"info_server_version", putSingleTag, isc_info_svc_server_version},
 	{"info_implementation", putSingleTag, isc_info_svc_implementation},
 	{"info_user_dbpath", putSingleTag, isc_info_svc_user_dbpath},
@@ -155,7 +155,7 @@ void printInfo(const char* p)
 				switch (*p++)
 				{
 				case isc_spb_dbname:
-				printString(p, "   Database in use");
+					printString(p, "   Database in use");
 					break;
 				case isc_spb_num_att:
 					printNumeric(p, "   Number of attachments");
@@ -195,6 +195,7 @@ int main(int ac, char **av)
 	Firebird::ClumpletWriter spbAtt(Firebird::ClumpletWriter::SpbAttach, maxbuf, isc_spb_current_version);
 	while (populateSpbFromSwitches(av, spbAtt, attSwitch))
 		;
+
 	isc_svc_handle svc_handle = 0;
 	if (isc_service_attach(status, 
 				0, name, &svc_handle, 
@@ -208,6 +209,7 @@ int main(int ac, char **av)
 	Firebird::ClumpletWriter spbItems(Firebird::ClumpletWriter::SpbItems, 256);
 	while (populateSpbFromSwitches(av, spbItems, infSwitch))
 		;
+
 	if (spbItems.getBufferLength() > 0)
 	{
 		char results[maxbuf];
