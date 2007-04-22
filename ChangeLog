@@ -1,3 +1,25 @@
+2007-04-21 23:27  asfernandes
+
+	* firebird2/doc/sql.extensions/README.builtin_functions.txt (1.3):
+
+	Some more info proposed by Claudio
+
+2007-04-21 10:18  robocop
+
+	* firebird2/src/utilities/gserv.cpp (1.5):
+
+	Misc.
+
+2007-04-21 05:27  asfernandes
+
+	* firebird2/: builds/posix/Makefile.in.client.gbak (1.17),
+	doc/README.user (1.3), src/common/classes/ClumpletReader.h (1.18),
+	src/config/Element.cpp (1.8), src/jrd/SysFunction.cpp (1.8),
+	src/jrd/btr.cpp (1.192), src/jrd/intl_builtin.cpp (1.35),
+	src/jrd/isc_sync.cpp (1.116):
+
+	Misc
+
 2007-04-20 18:26  alexpeshkoff
 
 	* firebird2/src/utilities/gserv.cpp (1.4):
