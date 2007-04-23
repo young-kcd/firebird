@@ -1,3 +1,9 @@
+2007-04-23 00:18  asfernandes
+
+	* firebird2/src/utilities/gserv.cpp (1.6):
+
+	Misc
+
 2007-04-21 23:27  asfernandes
 
 	* firebird2/doc/sql.extensions/README.builtin_functions.txt (1.3):
