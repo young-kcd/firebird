@@ -281,11 +281,20 @@ static void userInfoToSpb(char*& spb,
 	if (userInfo.first_name_entered) {
 		stuffSpb2(spb, isc_spb_sec_firstname, userInfo.first_name);
 	}
+	else if (userInfo.first_name_specified) {
+		stuffSpb2(spb, isc_spb_sec_firstname, "");
+	}
 	if (userInfo.middle_name_entered) {
 		stuffSpb2(spb, isc_spb_sec_middlename, userInfo.middle_name);
 	}
+	else if (userInfo.middle_name_specified) {
+		stuffSpb2(spb, isc_spb_sec_middlename, "");
+	}
 	if (userInfo.last_name_entered) {
 		stuffSpb2(spb, isc_spb_sec_lastname, userInfo.last_name);
+	}
+	else if (userInfo.last_name_specified) {
+		stuffSpb2(spb, isc_spb_sec_lastname, "");
 	}
 }
 
