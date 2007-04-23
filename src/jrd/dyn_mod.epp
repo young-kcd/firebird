@@ -2571,9 +2571,9 @@ static void modify_lfield_index(thread_db*	tdbb,
 
 		/* Set the index name to itself to tell the index to rebuild */
 		MODIFY IDX USING
-			Firebird::MetaName iName(IDX.RDB$INDEX_NAME);
-			MOVE_FASTER(iName.c_str(), IDX.RDB$INDEX_NAME,
-						sizeof(IDX.RDB$INDEX_NAME));
+			// This is to fool both gpre and gcc.
+			char* p = IDX.RDB$INDEX_NAME;
+			p[MAX_SQL_IDENTIFIER_LEN] = 0;
 		END_MODIFY;
 	END_FOR;
 
