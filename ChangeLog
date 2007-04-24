@@ -1,3 +1,24 @@
+2007-04-23 14:57  alexpeshkoff
+
+	* firebird2/src/utilities/gsec/call_service.cpp (1.13):
+
+	Fixed CORE-856 - Unable to set FName, MName, LName fields in
+	security to blank
+
+2007-04-23 13:35  alexpeshkoff
+
+	* firebird2/src/jrd/dyn_mod.epp (1.90):
+
+	better way to avoid warning, suggested by Claudio
+
+2007-04-23 13:01  hvlad
+
+	* firebird2/src/jrd/gds.cpp (1.224):
+
+	Fixed bug CORE-1223 : Wrong message in firebird.log on Open SuSe
+	Linux 10.2 : Open file limit increased from 1024 to 0. Thanks to
+	Ioannidis Dimitrios for help
+
 2007-04-23 00:18  asfernandes
 
 	* firebird2/src/utilities/gserv.cpp (1.6):
