@@ -332,7 +332,7 @@ void BackupManager::end_backup(thread_db* tdbb, bool recover)
 	GlobalRWLock endLock(tdbb, *database->dbb_permanent, LCK_backup_end, 0, NULL, LCK_OWNER_attachment, LCK_OWNER_attachment, false);
 
 	if (!endLock.lock(tdbb, LCK_write, LCK_NO_WAIT)) {
-		// Someboby hold llWrite lock on LCK_backup_end. We need not to do end_backup
+		// Someboby holds write lock on LCK_backup_end. We need not to do end_backup
 		return;
 	}
 
