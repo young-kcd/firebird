@@ -75,7 +75,7 @@ Format:
 
 Notes:
     1) Returns 0 if the string is empty.
-    2) Throw error if the first character is multi-byte.
+    2) Throws error if the first character is multi-byte.
 
 Example:
     select ascii_val(x) from y;
@@ -769,4 +769,4 @@ Format:
 
 Example:
     1) select trunc(x) from y;
-    2) select trunc(-2.8), floor(2.8) from rdb$database;  -- returns -2, 2
+    2) select trunc(-2.8), trunc(2.8) from rdb$database;  -- returns -2, 2
