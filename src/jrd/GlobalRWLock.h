@@ -64,7 +64,7 @@ struct ObjectOwnerData {
  * Architecture goals for the class
  * - Lock to protect intra-process cached resources with object-oriented interface:
  *   invalidate()/fetch()
- * - Two lock modes: llRead (LCK_PR) and llWrite (LCK_EX)
+ * - Two lock modes: LCK_read (LCK_PR) and LCK_write (LCK_EX)
  * - Support for lock recursion (multiple acquires of a lock by a given owner)
  * - Flexible execution environment
  * - Multiple threads

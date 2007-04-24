@@ -159,7 +159,7 @@ const SATOM nbak_state_unknown	= -1;      // State is unknown. Needs to be read 
  *  
  *  To change backup state, engine takes LCK_backup_database lock first, forcing all
  *  dirty pages to the disk, modifies the header page reflecting the state change,
- *  and releases the lock allowing transation processing to continue.
+ *  and releases the lock allowing transaction processing to continue.
  *  
  *  LCK_backup_alloc is used to protect mapping table between difference file
  *  (.delta) and the database. To add new page to the mapping attachment needs to
