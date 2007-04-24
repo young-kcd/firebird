@@ -2563,6 +2563,8 @@ static void gen_sort( dsql_req* request, dsql_nod* list)
 static void gen_statement(dsql_req* request, const dsql_nod* node)
 {
 	dsql_nod* rse = NULL;
+	const dsql_msg* message = NULL;
+	bool send_before_for = !(request->req_flags & REQ_dsql_upd_or_ins);
 
 	switch (node->nod_type) {
 	case nod_store:
@@ -2575,7 +2577,17 @@ static void gen_statement(dsql_req* request, const dsql_nod* node)
 		rse = node->nod_arg[e_era_rse];
 		break;
 	default:
+		send_before_for = false;
 		break;
+	}
+
+	if (request->req_type == REQ_EXEC_PROCEDURE && send_before_for)
+	{
+		if ((message = request->req_receive))
+		{
+			stuff(request, blr_send);
+			stuff(request, message->msg_number);
+		}
 	}
 
 	if (rse) {
@@ -2583,13 +2595,17 @@ static void gen_statement(dsql_req* request, const dsql_nod* node)
 		GEN_expr(request, rse);
 	}
 
-	const dsql_msg* message = NULL;
-
-	if (request->req_type == REQ_EXEC_PROCEDURE) {
-		if ( (message = request->req_receive) ) {
+	if (request->req_type == REQ_EXEC_PROCEDURE)
+	{
+		if ((message = request->req_receive))
+		{
 			stuff(request, blr_begin);
-			stuff(request, blr_send);
-			stuff(request, message->msg_number);
+
+			if (!send_before_for)
+			{
+				stuff(request, blr_send);
+				stuff(request, message->msg_number);
+			}
 		}
 	}
 

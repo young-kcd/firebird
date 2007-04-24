@@ -3563,9 +3563,9 @@ insert		: INSERT INTO simple_table_name ins_column_parens_opt
 				VALUES '(' value_list ')' returning_clause
 			{ $$ = make_node (nod_insert, (int) e_ins_count, 
 				$3, $4, make_list ($7), NULL, $9); }
-		| INSERT INTO simple_table_name ins_column_parens_opt select_expr
+		| INSERT INTO simple_table_name ins_column_parens_opt select_expr returning_clause
 			{ $$ = make_node (nod_insert, (int) e_ins_count,
-				$3, $4, NULL, $5, NULL); }
+				$3, $4, NULL, $5, $6); }
 		| INSERT INTO simple_table_name DEFAULT VALUES returning_clause
 			{ $$ = make_node (nod_insert, (int) e_ins_count,
 				$3, NULL, NULL, NULL, $6); }
@@ -3620,9 +3620,9 @@ delete		: delete_searched
 		;
 
 delete_searched	: KW_DELETE FROM table_name where_clause
-		plan_clause order_clause rows_clause
+		plan_clause order_clause rows_clause returning_clause
 			{ $$ = make_node (nod_delete, (int) e_del_count,
-				$3, $4, $5, $6, $7, NULL, NULL); }
+				$3, $4, $5, $6, $7, NULL, $8); }
 		;
 
 delete_positioned : KW_DELETE FROM table_name cursor_clause
@@ -3638,9 +3638,9 @@ update		: update_searched
 		;
 
 update_searched	: UPDATE table_name SET assignments where_clause
-		plan_clause order_clause rows_clause
+		plan_clause order_clause rows_clause returning_clause
 			{ $$ = make_node (nod_update, (int) e_upd_count,
-				$2, make_list ($4), $5, $6, $7, $8, NULL, NULL, NULL); }
+				$2, make_list ($4), $5, $6, $7, $8, NULL, $9, NULL); }
 		  	;
 
 update_positioned : UPDATE table_name SET assignments cursor_clause

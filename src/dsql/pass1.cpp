@@ -207,6 +207,7 @@ static bool get_object_and_field(const dsql_nod* node,
 static bool invalid_reference(const dsql_ctx*, const dsql_nod*,
 	const dsql_nod*, bool, bool);
 static bool node_match(const dsql_nod*, const dsql_nod*, bool);
+static dsql_nod* nullify_returning(dsql_nod* input, bool proc_flag);
 static dsql_nod* pass1_alias_list(dsql_req*, dsql_nod*);
 static dsql_ctx* pass1_alias(dsql_req*, DsqlContextStack&, dsql_str*);
 static dsql_str* pass1_alias_concat(const dsql_str*, const dsql_str*);
@@ -229,7 +230,7 @@ static bool pass1_found_aggregate(const dsql_nod*, USHORT, USHORT, bool);
 static bool pass1_found_field(const dsql_nod*, USHORT, USHORT, bool*);
 static bool pass1_found_sub_select(const dsql_nod*);
 static dsql_nod* pass1_group_by_list(dsql_req*, dsql_nod*, dsql_nod*);
-static dsql_nod* pass1_insert(dsql_req*, dsql_nod*, bool);
+static dsql_nod* pass1_insert(dsql_req*, dsql_nod*, bool, bool);
 static dsql_nod* pass1_join(dsql_req*, dsql_nod*, bool);
 static dsql_nod* pass1_label(dsql_req*, dsql_nod*);
 static dsql_nod* pass1_lookup_alias(dsql_req*, const dsql_str*, dsql_nod*);
@@ -252,7 +253,7 @@ static void pass1_udf_args(dsql_req*, dsql_nod*, dsql_udf*, USHORT&, DsqlNodStac
 static dsql_nod* pass1_union(dsql_req*, dsql_nod*, dsql_nod*, dsql_nod*, USHORT);
 static void pass1_union_auto_cast(dsql_nod*, const dsc&, SSHORT,
 	bool in_select_list = false);
-static dsql_nod* pass1_update(dsql_req*, dsql_nod*, bool);
+static dsql_nod* pass1_update(dsql_req*, dsql_nod*, bool, bool);
 static dsql_nod* pass1_update_or_insert(dsql_req*, dsql_nod*, bool);
 static dsql_nod* pass1_variable(dsql_req*, dsql_nod*);
 static dsql_nod* post_map(dsql_nod*, dsql_ctx*);
@@ -1596,7 +1597,7 @@ dsql_nod* PASS1_statement(dsql_req* request, dsql_nod* input, bool proc_flag)
 		return pass1_savepoint(request, node);
 
 	case nod_insert:
-		node = pass1_savepoint(request, pass1_insert(request, input, proc_flag));
+		node = pass1_savepoint(request, pass1_insert(request, input, proc_flag, false));
 		break;
 
 	case nod_merge:
@@ -1728,7 +1729,7 @@ dsql_nod* PASS1_statement(dsql_req* request, dsql_nod* input, bool proc_flag)
 		return input;
 
 	case nod_update:
-		node = pass1_savepoint(request, pass1_update(request, input, proc_flag));
+		node = pass1_savepoint(request, pass1_update(request, input, proc_flag, false));
 		break;
 
 	case nod_while:
@@ -3297,6 +3298,66 @@ static bool node_match(const dsql_nod* node1, const dsql_nod* node2,
 
 /**
 
+ 	nullify_returning
+
+    @brief	Create a compound statement to initialize returning parameters.
+
+    @param input
+    @param proc_flag
+
+ **/
+static dsql_nod* nullify_returning(dsql_nod* input, bool proc_flag)
+{
+	DEV_BLKCHK(input, dsql_type_nod);
+
+	dsql_nod* returning = NULL;
+
+	if (input->nod_type == nod_store)
+		returning = input->nod_arg[e_sto_return];
+	else if (input->nod_type == nod_modify)
+		returning = input->nod_arg[e_mod_return];
+	else if (input->nod_type == nod_erase)
+		returning = input->nod_arg[e_era_return];
+	else
+		fb_assert(false);
+
+	if (proc_flag || !returning)
+		return input;
+
+	// If this is a RETURNING in DSQL, we need to initialize the output
+	// parameters with NULL, to return in case of empty resultset.
+	// Note: this may be changed in the future, i.e. return empty resultset
+	// instead of NULLs. In this case, I suppose this function could be
+	// completely removed.
+
+	// nod_returning was already processed
+	fb_assert(returning->nod_type == nod_list);
+
+	dsql_nod* null_assign = MAKE_node(nod_list, returning->nod_count);
+
+	dsql_nod** ret_ptr = returning->nod_arg;
+	dsql_nod** null_ptr = null_assign->nod_arg;
+	dsql_nod* temp;
+
+	for (const dsql_nod* const* const end = ret_ptr + returning->nod_count;
+		ret_ptr < end; ++ret_ptr, ++null_ptr)
+	{
+		temp = MAKE_node(nod_assign, e_asgn_count);
+		temp->nod_arg[e_asgn_value] = MAKE_node(nod_null, 0);
+		temp->nod_arg[e_asgn_field] = (*ret_ptr)->nod_arg[1];
+		*null_ptr = temp;
+	}
+
+	temp = MAKE_node(nod_list, 2);
+	temp->nod_arg[0] = null_assign;
+	temp->nod_arg[1] = input;
+
+	return temp;
+}
+
+
+/**
+
  	pass1_any
 
     @brief	Compile a parsed request into something more interesting.
@@ -4010,6 +4071,9 @@ static dsql_nod* pass1_delete( dsql_req* request, dsql_nod* input, bool proc_fla
 			rse->nod_arg[e_rse_skip] =
 				PASS1_node(request, temp->nod_arg[e_rows_skip], false);
 		}
+
+		if (input->nod_arg[e_del_return])
+			rse->nod_flags |= NOD_SELECT_EXPR_SINGLETON;
 	}
 
 	node->nod_arg[e_era_rse] = rse;
@@ -4017,6 +4081,8 @@ static dsql_nod* pass1_delete( dsql_req* request, dsql_nod* input, bool proc_fla
 
 	node->nod_arg[e_era_return] =
 		process_returning(request, input->nod_arg[e_del_return], proc_flag);
+
+	node = nullify_returning(node, proc_flag);
 
 	request->req_context->pop();
 	return node;
@@ -5017,7 +5083,11 @@ static dsql_nod* pass1_field( dsql_req* request, dsql_nod* input,
 					if (indices) {
 						indices = PASS1_node(request, indices, false);
 					}
-					node = MAKE_field(context, field, indices);
+
+					if (context->ctx_flags & CTX_null)
+						node = MAKE_node(nod_null, 0);
+					else
+						node = MAKE_field(context, field, indices);
 				}
 			}
 			else if (is_derived_table) {
@@ -5793,7 +5863,7 @@ static dsql_nod* pass1_group_by_list(dsql_req* request, dsql_nod* input, dsql_no
 	@param proc_flag
 
  **/
-static dsql_nod* pass1_insert( dsql_req* request, dsql_nod* input, bool proc_flag)
+static dsql_nod* pass1_insert( dsql_req* request, dsql_nod* input, bool proc_flag, bool insert_or_update)
 {
 	DEV_BLKCHK(request, dsql_type_req);
 	DEV_BLKCHK(input, dsql_type_nod);
@@ -5806,6 +5876,9 @@ static dsql_nod* pass1_insert( dsql_req* request, dsql_nod* input, bool proc_fla
 	dsql_nod* values;
 	dsql_nod* rse = input->nod_arg[e_ins_select];
 	if (rse) {
+		if (input->nod_arg[e_ins_return])
+			rse->nod_flags |= NOD_SELECT_EXPR_SINGLETON;
+
 		node->nod_arg[e_sto_rse] = rse = PASS1_rse(request, rse, NULL);
 		values = rse->nod_arg[e_rse_items];
 	}
@@ -5889,11 +5962,43 @@ static dsql_nod* pass1_insert( dsql_req* request, dsql_nod* input, bool proc_fla
 	}
 
 	node->nod_arg[e_sto_statement] = MAKE_list(stack);
+
+	if (insert_or_update)
+	{
+		// clone the insert context and push with name "OLD" in the same scope level
+		dsql_ctx* old_context = FB_NEW(request->req_pool) dsql_ctx(request->req_pool);
+		*old_context = *context;
+		old_context->ctx_alias = old_context->ctx_internal_alias =
+			MAKE_cstring(OLD_CONTEXT)->str_data;
+		old_context->ctx_flags |= CTX_system | CTX_null;
+		request->req_context->push(old_context);
+
+		// clone the insert context and push with name "NEW" in a greater scope level
+		dsql_ctx* new_context = FB_NEW(request->req_pool) dsql_ctx(request->req_pool);
+		*new_context = *context;
+		new_context->ctx_scope_level = ++request->req_scope_level;
+		new_context->ctx_alias = new_context->ctx_internal_alias =
+			MAKE_cstring(NEW_CONTEXT)->str_data;
+		new_context->ctx_flags |= CTX_system;
+		request->req_context->push(new_context);
+
+	}
+
 	node->nod_arg[e_sto_return] =
 		process_returning(request, input->nod_arg[e_ins_return], proc_flag);
 
+	if (insert_or_update)
+	{
+		--request->req_scope_level;
+		request->req_context->pop();
+		request->req_context->pop();
+	}
+
 	set_parameters_name(node->nod_arg[e_sto_statement],
 						node->nod_arg[e_sto_relation]);
+
+	if (!insert_or_update)
+		node = nullify_returning(node, proc_flag);
 
 	request->req_context->pop();
 
@@ -6446,7 +6551,7 @@ static dsql_nod* pass1_merge(dsql_req* request, dsql_nod* input, bool proc_flag)
 			input->nod_arg[e_mrg_when]->nod_arg[e_mrg_when_not_matched]->nod_arg[e_mrg_insert_fields];
 		insert->nod_arg[e_ins_values] =
 			input->nod_arg[e_mrg_when]->nod_arg[e_mrg_when_not_matched]->nod_arg[e_mrg_insert_values];
-		insert = pass1_insert(request, insert, proc_flag);
+		insert = pass1_insert(request, insert, proc_flag, false);
 
 		// restore the scope level
 		request->req_scope_level--;
@@ -7065,6 +7170,7 @@ static dsql_nod* pass1_returning(dsql_req* request,
 				MAKE_parameter(request->req_receive, true, true, 0, *src);
 			parameter->par_node = *src;
 			MAKE_desc(request, &parameter->par_desc, *src, NULL);
+			parameter->par_desc.dsc_flags |= DSC_nullable;
 
 			dsql_nod* p_node = MAKE_node(nod_parameter, e_par_count);
 			p_node->nod_count = 0;
@@ -8343,7 +8449,7 @@ static void pass1_union_auto_cast(dsql_nod* input, const dsc& desc,
 	@param proc_flag
 
  **/
-static dsql_nod* pass1_update( dsql_req* request, dsql_nod* input, bool proc_flag)
+static dsql_nod* pass1_update( dsql_req* request, dsql_nod* input, bool proc_flag, bool insert_or_update)
 {
 	DEV_BLKCHK(request, dsql_type_req);
 	DEV_BLKCHK(input, dsql_type_nod);
@@ -8428,8 +8534,7 @@ static dsql_nod* pass1_update( dsql_req* request, dsql_nod* input, bool proc_fla
 
 	dsql_nod* node = MAKE_node(nod_modify, e_mod_count);
 	node->nod_arg[e_mod_update] = PASS1_node(request, relation, false);
-	node->nod_arg[e_mod_return] =
-		process_returning(request, input->nod_arg[e_upd_return], proc_flag);
+	dsql_ctx* mod_context = get_context(node->nod_arg[e_mod_update]);
 
 #ifndef SQL_COMPLIANT_UPDATE
 	// Process old context values
@@ -8455,10 +8560,13 @@ static dsql_nod* pass1_update( dsql_req* request, dsql_nod* input, bool proc_fla
 	else {
 		rse = MAKE_node(nod_rse, e_rse_count);
 		rse->nod_flags = (USHORT)(IPTR) input->nod_arg[e_upd_rse_flags];
+		if (input->nod_arg[e_upd_return])
+			rse->nod_flags |= NOD_SELECT_EXPR_SINGLETON;
 
 		dsql_nod* temp = MAKE_node(nod_list, 1);
 		rse->nod_arg[e_rse_streams] = temp;
 		temp->nod_arg[0] = PASS1_node(request, relation, false);
+		dsql_ctx* old_context = get_context(temp->nod_arg[0]);
 
 		if ( (temp = input->nod_arg[e_upd_boolean]) ) {
 			rse->nod_arg[e_rse_boolean] = PASS1_node(request, temp, false);
@@ -8477,6 +8585,41 @@ static dsql_nod* pass1_update( dsql_req* request, dsql_nod* input, bool proc_fla
 				PASS1_node(request, temp->nod_arg[e_rows_length], false);
 			rse->nod_arg[e_rse_skip] =
 				PASS1_node(request, temp->nod_arg[e_rows_skip], false);
+		}
+
+		if (input->nod_arg[e_upd_return])
+		{
+			// ASF: We have the RSE context in the stack.
+			// Then we change his name to "OLD".
+			TEXT* save_alias = old_context->ctx_alias;
+			old_context->ctx_alias = old_context->ctx_internal_alias =
+				MAKE_cstring(OLD_CONTEXT)->str_data;
+			old_context->ctx_flags |= CTX_system;
+
+			// push the modify context in the same scope level
+			request->req_context->push(mod_context);
+
+			// clone the modify context and push with name "NEW" in a greater scope level
+			dsql_ctx* new_context = FB_NEW(request->req_pool)
+				dsql_ctx(request->req_pool);
+			*new_context = *mod_context;
+			new_context->ctx_scope_level = ++request->req_scope_level;
+			new_context->ctx_alias = new_context->ctx_internal_alias =
+				MAKE_cstring(NEW_CONTEXT)->str_data;
+			new_context->ctx_flags |= CTX_system;
+			request->req_context->push(new_context);
+
+			// Process the RETURNING with the stack (NEW, (modify, OLD)),
+			// so unqualified or qualified by NEW or the table name fields be
+			// resolved to the changed record.
+			node->nod_arg[e_mod_return] =
+				process_returning(request, input->nod_arg[e_upd_return], proc_flag);
+
+			// restore the stack with only the RSE context
+			--request->req_scope_level;
+			request->req_context->pop();
+			request->req_context->pop();
+			old_context->ctx_alias = save_alias;
 		}
 	}
 
@@ -8517,6 +8660,9 @@ static dsql_nod* pass1_update( dsql_req* request, dsql_nod* input, bool proc_fla
 	set_parameters_name(node->nod_arg[e_mod_statement],
 						node->nod_arg[e_mod_update]);
 
+	if (!insert_or_update)
+		node = nullify_returning(node, proc_flag);
+
 	return node;
 }
 
@@ -8538,6 +8684,9 @@ static dsql_nod* pass1_update_or_insert(dsql_req* request, dsql_nod* input, bool
 	DEV_BLKCHK(request, dsql_type_req);
 	DEV_BLKCHK(input, dsql_type_nod);
 
+	if (!proc_flag)
+		request->req_flags |= REQ_dsql_upd_or_ins;
+
 	dsql_str* relation_name =
 		(dsql_str*) input->nod_arg[e_upi_relation]->nod_arg[e_rpn_name];
 	dsql_str* base_name = relation_name;
@@ -8550,7 +8699,7 @@ static dsql_nod* pass1_update_or_insert(dsql_req* request, dsql_nod* input, bool
 	insert->nod_arg[e_ins_fields] = input->nod_arg[e_upi_fields];
 	insert->nod_arg[e_ins_values] = values;
 	insert->nod_arg[e_ins_return] = input->nod_arg[e_upi_return];
-	insert = pass1_insert(request, insert, proc_flag);
+	insert = pass1_insert(request, insert, proc_flag, true);
 
 	// PASS1_statement will transform nod_insert to nod_store
 	fb_assert(insert->nod_type == nod_store);
@@ -8729,7 +8878,7 @@ static dsql_nod* pass1_update_or_insert(dsql_req* request, dsql_nod* input, bool
 		}
 	}
 
-	update = pass1_update(request, update, proc_flag);
+	update = pass1_update(request, update, proc_flag, true);
 
 	// PASS1_statement will transform nod_update to nod_modify
 	fb_assert(update->nod_type == nod_modify);
