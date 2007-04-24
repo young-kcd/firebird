@@ -158,6 +158,8 @@ public:
 		data[count++] = item;
   		return count;
 	}
+	// NOTE: remove method must be signal safe
+	// This function may be called in AST. The function doesn't wait.
 	T* remove(size_t index) {
   		fb_assert(index < count);
   		memmove(data + index, data + index + 1, sizeof(T) * (--count - index));
@@ -219,6 +221,8 @@ public:
 		memcpy(data + count, L.data, sizeof(T) * L.count);
 		count += L.count;
 	}
+	// NOTE: getCount method must be signal safe
+	// Used as such in GlobalRWLock::blockingAstHandler
 	size_t getCount() const { return count; }
 	size_t getCapacity() const { return capacity; }
 	void push(const T& item) {
@@ -283,6 +287,9 @@ public:
 	explicit SortedArray(MemoryPool& p) : Array<Value, Storage>(p) {}
 	explicit SortedArray(size_t s) : Array<Value, Storage>(s) {}
 	SortedArray() : Array<Value, Storage>() {}
+
+	// NOTE: find method must be signal safe
+	// Used as such in GlobalRWLock::blockingAstHandler
 	bool find(const Key& item, size_t& pos) const {
 		size_t highBound = this->count, lowBound = 0;
 		while (highBound > lowBound) {

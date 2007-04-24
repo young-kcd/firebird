@@ -92,7 +92,7 @@ static ULONG opn_event_clock;
 
 static void (*system_overflow_handler)(int);
 static void cleanup(void *);
-static void overflow_handler(int, int) throw();
+static void overflow_handler(int, int);
 
 // Not thread-safe 
 
@@ -260,7 +260,7 @@ static void cleanup(void *arg)
 #endif
 
 #ifndef REQUESTER
-static void overflow_handler(int signal, int code) throw()
+static void overflow_handler(int signal, int code)
 {
 /**************************************
  *

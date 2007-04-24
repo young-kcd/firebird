@@ -2012,6 +2012,7 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 	// is enabled because nbackup it is a lower level subsystem
 	dbb->dbb_backup_manager = FB_NEW(*dbb->dbb_permanent) BackupManager(tdbb, dbb, nbak_state_normal); 
 	
+	dbb->dbb_backup_manager->dbCreating = true;
 	PAG_format_header();
 	INI_init2();
 	PAG_format_log();
@@ -2124,6 +2125,8 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 	*handle = attachment;
 	CCH_flush(tdbb, FLUSH_FINI, 0);
 
+	dbb->dbb_backup_manager->dbCreating = false;
+
 	return return_success(tdbb);
 
 	}	// try
@@ -2158,6 +2161,8 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 		catch (const Firebird::Exception&) {}
 		tdbb->tdbb_status_vector = status;
 		JRD_SS_MUTEX_UNLOCK;
+		dbb->dbb_backup_manager->dbCreating = false;
+
 		return error(user_status, ex);
 	}
 }

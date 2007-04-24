@@ -31,6 +31,17 @@
 #include "../jrd/pag.h"
 #endif
 
+//#define CCH_DEBUG
+
+#ifdef CCH_DEBUG
+DEFINE_TRACE_ROUTINE(cch_trace);
+#define CCH_TRACE(args) cch_trace args
+#define CCH_TRACE_AST(message) gds__trace(message)
+#else
+#define CCH_TRACE(args) /* nothing */
+#define CCH_TRACEE_AST(message) /* nothing */
+#endif
+
 struct exp_index_buf;
 
 namespace Ods {
@@ -115,7 +126,6 @@ public:
 	Ods::pag*	bdb_buffer;				/* Actual buffer */
 	exp_index_buf*	bdb_expanded_buffer;	/* expanded index buffer */
 	//BlockingThread*	bdb_blocked;		// Blocked attachments block 
-//	SLONG		bdb_page;				/* Database page number in buffer */
 	PageNumber	bdb_page;				/* Database page number in buffer */
 	SLONG		bdb_incarnation;
 	ULONG		bdb_transactions;		/* vector of dirty flags to reduce commit overhead */
@@ -133,11 +143,8 @@ public:
 	USHORT		bdb_flags;
 	SSHORT		bdb_use_count;			/* Number of active users */
 	SSHORT		bdb_scan_count;			/* concurrent sequential scans */
-	USHORT		bdb_write_direction;    // Where to write buffer, NBAK
 	ULONG       bdb_difference_page;    // Number of page in difference file, NBAK
-	SLONG       bdb_diff_generation;    /* Number of backup lock/unlock (NBAK) cycle for 
-										   this database in current process.
-										   Used in CS only. */
+	SLONG		bdb_backup_lock_owner;	// Logical owner of database_lock for buffer
 	thread_db*	bdb_shared[BDB_max_shared];	/* threads holding shared latches */
 };
 
@@ -163,13 +170,6 @@ const int BDB_no_blocking_ast	= 32768;	/* No blocking AST registered with page l
 /* bdb_ast_flags */
 
 const int BDB_blocking 			= 1;	/* a blocking ast was sent while page locked */
-
-/* bdb_write_direction values */
-
-const int BDB_write_undefined	= 0;
-const int BDB_write_normal		= 1;
-const int BDB_write_diff		= 2;
-const int BDB_write_both		= 3;
 
 
 /* PRE -- Precedence block */

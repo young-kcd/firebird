@@ -104,7 +104,6 @@ void ERR_bugcheck_msg(const TEXT* msg)
 
 	dbb->dbb_flags |= DBB_bugcheck;
 	DEBUG;
-
 	CCH_shutdown_database(dbb);
 
 	ERR_post(isc_bug_check, isc_arg_string, ERR_cstring(msg), 0);

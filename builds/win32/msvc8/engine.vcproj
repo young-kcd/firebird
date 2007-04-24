@@ -425,6 +425,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\jrd\GlobalRWLock.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\gen\jrd\grant.cpp"
 				>
 			</File>
@@ -974,6 +978,10 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\gdsassert.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\GlobalRWLock.h"
 				>
 			</File>
 			<File
