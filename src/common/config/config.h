@@ -118,7 +118,8 @@ class Config
 		KEY_GC_POLICY,								// 43
 		KEY_REDIRECTION,							// 44
 		KEY_OLD_COLUMN_NAMING,						// 45
-		KEY_AUTH_METHOD								// 46
+		KEY_AUTH_METHOD,							// 46
+		KEY_DATABASE_GROWTH_INCREMENT				// 47
 	};
 
 public:
@@ -373,6 +374,7 @@ public:
 	*/
 	static const char *getAuthMethod();
 
+	static int getDatabaseGrowthIncrement();
 };
 
 namespace Firebird {

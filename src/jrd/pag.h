@@ -71,6 +71,7 @@ public:
 		pipHighWater = 0;
 		ppFirst = 0;
 		file = 0;
+		maxPageNumber = 0;
 	}
 
 	~PageSpace();
@@ -88,6 +89,18 @@ public:
 	static inline SLONG generate(const void* , const PageSpace* Item) {
 		return Item->pageSpaceID;
 	}
+
+	// how many pages allocated
+	ULONG actAlloc(const USHORT);
+
+	// number of last allocated page
+	ULONG maxAlloc(const USHORT);
+
+	// extend page space
+	bool extend(thread_db*, const ULONG);
+
+private:
+	ULONG	maxPageNumber;
 };
 
 class PageManager : public pool_alloc<type_PageManager>

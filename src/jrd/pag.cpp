@@ -68,6 +68,7 @@
 #include <process.h>
 #endif
 
+#include "../common/config/config.h"
 #include "../jrd/fil.h"
 #include "../jrd/jrd.h"
 #include "../jrd/pag.h"
@@ -75,6 +76,7 @@
 #include "../jrd/os/pio.h"
 #include "../jrd/os/path_utils.h"
 #include "../jrd/ibase.h"
+#include "../jrd/iberr.h"
 #include "../jrd/gdsassert.h"
 #include "../jrd/lck.h"
 #include "../jrd/sdw.h"
@@ -95,6 +97,7 @@
 #include "../jrd/pag_proto.h"
 #include "../jrd/os/pio_proto.h"
 #include "../jrd/thd.h"
+#include "../jrd/thread_proto.h"
 #include "../jrd/isc_f_proto.h"
 #include "../jrd/TempSpace.h"
 
@@ -773,10 +776,10 @@ PAG PAG_allocate(WIN * window)
 				bit = 1;
 				for (SLONG i = 0; i < 8; i++, bit <<= 1) {
 					if (bit & *bytes) {
-						relative_bit =
-							((bytes - pip_page->pip_bits) << 3) + i;
-						window->win_page =
-							relative_bit + sequence * pageMgr.pagesPerPIP;
+						relative_bit = ((bytes - pip_page->pip_bits) << 3) + i;
+						
+						const SLONG pageNum = relative_bit + sequence * pageMgr.pagesPerPIP;
+						window->win_page = pageNum;
 						new_page = CCH_fake(tdbb, window, 0);	/* don't wait on latch */
 						if (new_page)
 						{
@@ -804,6 +807,9 @@ PAG PAG_allocate(WIN * window)
 
 									new_page = CCH_fake(tdbb, window, 1);
 									fb_assert(new_page);
+								}
+								if (!(dbb->dbb_flags & DBB_no_reserve)) {
+									pageSpace->extend(tdbb, pageNum + 1);
 								}
 							}
 							break;	/* Found a page and successfully fake-ed it */
@@ -2179,6 +2185,120 @@ PageSpace::~PageSpace()
 	if (file) {
 		PIO_close(file);
 	}
+}
+
+ULONG PageSpace::actAlloc(const USHORT pageSize)
+{
+/**************************************
+ *
+ * Functional description
+ *  Compute actual number of physically allocated pages of database.
+ *
+ **************************************/
+
+	// Traverse the linked list of files and add up the 
+	// number of pages in each file
+	ULONG tot_pages = 0;
+	for (jrd_file* f = file; f != NULL; f = f->fil_next) {
+		tot_pages += PIO_get_number_of_pages(f, pageSize);
+	}
+
+	return tot_pages;
+}
+
+ULONG PageSpace::maxAlloc(const USHORT pageSize)
+{
+/**************************************
+ *
+ * Functional description
+ *	Compute last physically allocated page of database.
+ *
+ **************************************/
+	jrd_file* f = file;
+	while (f->fil_next) {
+		f = f->fil_next;
+	}
+
+	const ULONG nPages = f->fil_min_page - f->fil_fudge + 
+		PIO_get_number_of_pages(f, pageSize);
+
+	if (maxPageNumber < nPages)
+		maxPageNumber = nPages;
+
+	return nPages;
+}
+
+
+bool PageSpace::extend(thread_db* tdbb, const ULONG pageNum)
+{
+/**************************************
+ *
+ * Functional description
+ *	Extend database file(s) up to at least pageNum pages. Number of pages to 
+ *	extend can't be less than hardcoded value MIN_EXTEND_BYTES and more than
+ *	configured value "MaxDatabaseFileGrowth" (both values in bytes).
+ *	
+ *	If "MaxDatabaseFileGrowth" less than MIN_EXTEND_BYTES don't extend file(s)
+ *
+ **************************************/
+	const int MIN_EXTEND_BYTES = 128 * 1024;
+	const int MAX_EXTEND_BYTES = Config::getDatabaseGrowthIncrement();
+
+	if (pageNum < maxPageNumber || MAX_EXTEND_BYTES < MIN_EXTEND_BYTES)
+		return true;
+
+	Database* dbb = tdbb->tdbb_database;
+
+	Lock temp_lock;
+	temp_lock.lck_dbb = dbb;
+	temp_lock.lck_object = this;
+	temp_lock.lck_type = LCK_file_extend;
+	temp_lock.lck_owner_handle = LCK_get_owner_handle(tdbb, temp_lock.lck_type);
+	temp_lock.lck_parent = dbb->dbb_lock;
+	temp_lock.lck_length = sizeof(SLONG);
+	temp_lock.lck_key.lck_long = this->pageSpaceID;
+
+	LCK_lock(tdbb, &temp_lock, LCK_EX, LCK_WAIT);
+	if (pageNum >= maxAlloc(dbb->dbb_page_size))
+	{
+		const ULONG minExtendPages = MIN_EXTEND_BYTES / dbb->dbb_page_size;
+		const ULONG maxExtendPages = MAX_EXTEND_BYTES / dbb->dbb_page_size;
+		const ULONG reqPages = pageNum - maxPageNumber + 1;
+
+		ULONG extPages;
+		extPages = MIN(MAX(maxPageNumber / 16, minExtendPages), maxExtendPages);
+		extPages = MAX(reqPages, extPages);
+
+		THREAD_EXIT();
+
+		while (true)
+			try 
+			{
+				PIO_extend(file, extPages, dbb->dbb_page_size);
+				break;
+			}
+			catch (Firebird::status_exception) 
+			{
+				if (extPages > reqPages) 
+				{
+					extPages = MAX(reqPages, extPages / 2);
+					INIT_STATUS(tdbb->tdbb_status_vector);
+				}
+				else 
+				{
+					THREAD_ENTER();
+
+					gds__log("Error extending file \"%s\" by %lu page(s).\nCurrently allocated %lu pages, requested page number %lu", 
+						file->fil_string, extPages, maxPageNumber, pageNum);
+					LCK_release(tdbb, &temp_lock);
+					return false;
+				}
+			}
+		THREAD_ENTER();
+		maxPageNumber = 0; 
+	}
+	LCK_release(tdbb, &temp_lock);
+	return true;
 }
 
 PageSpace* PageManager::addPageSpace(const USHORT pageSpaceID)

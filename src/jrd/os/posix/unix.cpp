@@ -282,6 +282,23 @@ bool PIO_expand(const TEXT* file_name, USHORT file_length, TEXT* expanded_name, 
 }
 
 
+void PIO_extend(jrd_file* /*main_file*/, const ULONG /*extPages*/, const USHORT /*pageSize*/)
+{
+/**************************************
+ *
+ *	P I O _ e x t e n d
+ *
+ **************************************
+ *
+ * Functional description
+ *	Extend file by extPages pages of pageSize size. 
+ *
+ **************************************/
+	// not implemented
+	return;
+}
+
+
 void PIO_flush(jrd_file* main_file)
 {
 /**************************************
@@ -356,6 +373,43 @@ void PIO_force_write(jrd_file* file, bool flag)
 		}
 	}
 #endif
+}
+
+
+ULONG PIO_get_number_of_pages(const jrd_file* file, const USHORT pagesize)
+{
+/**************************************
+ *
+ *	P I O _ g e t _ n u m b e r _ o f _ p a g e s
+ *
+ **************************************
+ *
+ * Functional description
+ *	Compute number of pages in file, based only on file size.
+ *
+ **************************************/
+
+	if (file->fil_desc == -1) {
+		unix_error("fstat", file, isc_io_access_err, 0);
+		return (0);
+	}
+
+	struct stat statistics;
+	if (fstat(file->fil_desc, &statistics)) {
+		unix_error("fstat", file, isc_io_access_err, 0);
+	}
+
+	const UINT64 length = statistics.st_size;
+
+/****
+#ifndef sun
+length = statistics.st_size;
+#else
+length = statistics.st_blocks * statistics.st_blksize;
+#endif
+****/
+
+	return (length + pagesize - 1) / pagesize;
 }
 
 
@@ -462,34 +516,7 @@ SLONG PIO_max_alloc(Database* dbb)
  *
  **************************************/
 	PageSpace* pageSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
-	jrd_file* file = pageSpace->file;
-
-	while (file->fil_next) {
-		file = file->fil_next;
-	}
-
-	if (file->fil_desc == -1) {
-		unix_error("fstat", file, isc_io_access_err, 0);
-		return (0);
-	}
-
-	struct stat statistics;
-	if (fstat(file->fil_desc, &statistics)) {
-		unix_error("fstat", file, isc_io_access_err, 0);
-	}
-
-	UINT64 length = statistics.st_size;
-
-/****
-#ifndef sun
-length = statistics.st_size;
-#else
-length = statistics.st_blocks * statistics.st_blksize;
-#endif
-****/
-
-	return file->fil_min_page - file->fil_fudge +
-		(length + dbb->dbb_page_size - 1) / dbb->dbb_page_size;
+	return pageSpace->maxAlloc(dbb->dbb_page_size);
 }
 
 
@@ -505,31 +532,8 @@ SLONG PIO_act_alloc(Database* dbb)
  *  Compute actual number of physically allocated pages of database.
  *
  **************************************/
-	struct stat statistics;
-	ULONG tot_pages = 0;
-
-/**
- **  Traverse the linked list of files and add up the number of pages
- **  in each file
- **/
 	PageSpace* pageSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
-
-	for (jrd_file* file = pageSpace->file; file != NULL; file = file->fil_next) {
-		if (file->fil_desc == -1) {
-			unix_error("fstat", file, isc_io_access_err, 0);
-			return (0);
-		}
-
-		if (fstat(file->fil_desc, &statistics)) {
-			unix_error("fstat", file, isc_io_access_err, 0);
-		}
-
-		UINT64 length = statistics.st_size;
-
-		tot_pages += (length + dbb->dbb_page_size - 1) / dbb->dbb_page_size;
-	}
-
-	return tot_pages;
+	return pageSpace->actAlloc(dbb->dbb_page_size);
 }
 
 

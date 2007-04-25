@@ -68,7 +68,6 @@ const USHORT OS_CHICAGO		= 2;
 #ifdef SUPERSERVER_V2
 static void release_io_event(jrd_file*, OVERLAPPED*);
 #endif
-static ULONG get_number_of_pages(const jrd_file*, const USHORT);
 static bool	MaybeCloseFile(SLONG*);
 static jrd_file* seek_file(jrd_file*, BufferDesc*, ISC_STATUS*, OVERLAPPED*, OVERLAPPED**);
 static jrd_file* setup_file(Database*, const Firebird::PathName&, HANDLE);
@@ -239,6 +238,48 @@ bool PIO_expand(const TEXT* file_name, USHORT file_length, TEXT* expanded_name,
 
 	return ISC_expand_filename(file_name, file_length, 
 				expanded_name, len_expanded, false);
+}
+
+
+void PIO_extend(jrd_file* main_file, const ULONG extPages, const USHORT pageSize)
+{
+/**************************************
+ *
+ *	P I O _ e x t e n d
+ *
+ **************************************
+ *
+ * Functional description
+ *	Extend file by extPages pages of pageSize size. 
+ *
+ **************************************/
+	ULONG leftPages = extPages;
+	for (jrd_file* file = main_file; file && leftPages; file = file->fil_next)
+	{
+		ULONG filePages = PIO_get_number_of_pages(file, pageSize);
+		const ULONG fileMaxPages = (file->fil_max_page == MAX_ULONG) ? MAX_ULONG : 
+									file->fil_max_page - file->fil_min_page + 1;
+		if (filePages < fileMaxPages)
+		{
+			const ULONG extendBy = MIN(fileMaxPages - filePages + file->fil_fudge, leftPages);
+
+			HANDLE hFile = (HANDLE) ((file->fil_flags & FIL_force_write) ?
+							file->fil_force_write_desc : file->fil_desc);
+
+			LARGE_INTEGER newSize; 
+			newSize.QuadPart = (ULONGLONG) (filePages + extendBy) * pageSize;
+
+			const DWORD ret = SetFilePointer(hFile, newSize.LowPart, &newSize.HighPart, FILE_BEGIN);
+			if (ret == INVALID_SET_FILE_POINTER && GetLastError() != NO_ERROR) {
+				nt_error("SetFilePointer", file, isc_io_write_err, 0);
+			}
+			if (!SetEndOfFile(hFile)) {
+				nt_error("SetEndOfFile", file, isc_io_write_err, 0);
+			}
+
+			leftPages -= extendBy;
+		}
+	}
 }
 
 
@@ -428,15 +469,7 @@ SLONG PIO_max_alloc(Database* dbb)
  *
  **************************************/
 	PageSpace* pageSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
-	jrd_file* file = pageSpace->file;
-
-	while (file->fil_next) {
-		file = file->fil_next;
-	}
-
-	const ULONG nPages = get_number_of_pages(file, dbb->dbb_page_size);
-
-	return file->fil_min_page - file->fil_fudge + nPages;
+	return pageSpace->maxAlloc(dbb->dbb_page_size);
 }
 
 
@@ -452,18 +485,8 @@ SLONG PIO_act_alloc(Database* dbb)
  *  Compute actual number of physically allocated pages of database.
  *
  **************************************/
-	SLONG tot_pages = 0;
-
-/**
- **  Traverse the linked list of files and add up the number of pages
- **  in each file
- **/
 	PageSpace* pageSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
-	for (const jrd_file* file = pageSpace->file; file != NULL; file = file->fil_next) {
-		tot_pages += get_number_of_pages(file, dbb->dbb_page_size);
-	}
-
-	return tot_pages;
+	return pageSpace->actAlloc(dbb->dbb_page_size);
 }
 
 
@@ -839,12 +862,11 @@ bool PIO_write(jrd_file* file, BufferDesc* bdb, Ods::pag* page, ISC_STATUS* stat
 }
 
 
-
-static ULONG get_number_of_pages(const jrd_file* file, const USHORT pagesize)
+ULONG PIO_get_number_of_pages(const jrd_file* file, const USHORT pagesize)
 {
 /**************************************
  *
- *	g e t _ n u m b e r _ o f _ p a g e s
+ *	P I O _ g e t _ n u m b e r _ o f _ p a g e s
  *
  **************************************
  *

@@ -124,7 +124,8 @@ const ConfigImpl::ConfigEntry ConfigImpl::entries[] =
 	{TYPE_STRING,		"GCPolicy",					(ConfigValue) GCPolicyDefault},	// garbage collection policy
 	{TYPE_BOOLEAN,		"Redirection",				(ConfigValue) false},
 	{TYPE_BOOLEAN,		"OldColumnNaming",			(ConfigValue) false},	// if true use old style concatenation
-	{TYPE_STRING,		"Authentication",			(ConfigValue) AmMixed}	// use native, trusted or mixed
+	{TYPE_STRING,		"Authentication",			(ConfigValue) AmMixed},	// use native, trusted or mixed
+	{TYPE_INTEGER,		"DatabaseGrowthIncrement",	(ConfigValue) 128*1048576}	// bytes
 };
 
 /******************************************************************************
@@ -551,4 +552,9 @@ bool Config::getOldColumnNaming()
 const char *Config::getAuthMethod()
 {
 	return (const char *) sysConfig.values[KEY_AUTH_METHOD];
+}
+
+int Config::getDatabaseGrowthIncrement()
+{
+	return (int) sysConfig.values[KEY_DATABASE_GROWTH_INCREMENT];
 }
