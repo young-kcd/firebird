@@ -5965,7 +5965,8 @@ static dsql_nod* pass1_insert( dsql_req* request, dsql_nod* input, bool proc_fla
 
 	if (insert_or_update)
 	{
-		// clone the insert context and push with name "OLD" in the same scope level
+		// Clone the insert context, push with name "OLD" in the same scope level and
+		// marks it with CTX_null so all fields be resolved to NULL constant.
 		dsql_ctx* old_context = FB_NEW(request->req_pool) dsql_ctx(request->req_pool);
 		*old_context = *context;
 		old_context->ctx_alias = old_context->ctx_internal_alias =

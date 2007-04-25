@@ -727,8 +727,8 @@ pag* CCH_fetch(
 		tdbb->tdbb_database->dbb_backup_manager->lock_shared_database(tdbb, true);
 	}
 	
-//	CCH_TRACE(("FETCH PAGE=%d", window->win_page));
-/* FETCH_LOCK will return 0, 1, -1 or -2 */
+	//CCH_TRACE(("FETCH PAGE=%d", window->win_page));
+	// FETCH_LOCK will return 0, 1, -1 or -2
 	
 	const SSHORT fetch_lock_return =
 		CCH_FETCH_LOCK(tdbb, window, lock_type, LCK_WAIT, latch_wait,
@@ -736,7 +736,7 @@ pag* CCH_fetch(
 
 	if (fetch_lock_return == 1)
 	{
-//		CCH_TRACE(("FETCH FROM DISK PAGE=%d", window->win_page));
+		//CCH_TRACE(("FETCH FROM DISK PAGE=%d", window->win_page));
 		CCH_FETCH_PAGE(tdbb, window, checksum, read_shadow);	/* must read page from disk */
 	}
 	else if (fetch_lock_return == -2 || fetch_lock_return == -1) {
@@ -968,7 +968,7 @@ void CCH_fetch_page(
 			if (!CCH_rollover_to_shadow(dbb, file, false)) {
 				PAGE_LOCK_RELEASE(bdb->bdb_lock);
 				if (database_locked) {
-				dbb->dbb_backup_manager->unlock_shared_database(tdbb);
+					dbb->dbb_backup_manager->unlock_shared_database(tdbb);
 					database_locked = false;
 				}
 
@@ -983,7 +983,7 @@ void CCH_fetch_page(
 							   "IO error loop Unwind to avoid a hang\n");
 					PAGE_LOCK_RELEASE(bdb->bdb_lock);
 					if (database_locked) {
-					dbb->dbb_backup_manager->unlock_shared_database(tdbb);
+						dbb->dbb_backup_manager->unlock_shared_database(tdbb);
 						database_locked = false;
 					}
 					CCH_unwind(tdbb, true);
@@ -1001,7 +1001,7 @@ void CCH_fetch_page(
 		if (!dbb->dbb_backup_manager->read_difference(tdbb, diff_page, page)) {
 			PAGE_LOCK_RELEASE(bdb->bdb_lock);
 			if (database_locked) {
-			dbb->dbb_backup_manager->unlock_shared_database(tdbb);
+				dbb->dbb_backup_manager->unlock_shared_database(tdbb);
 				database_locked = false;
 			}
 			CCH_unwind(tdbb, true);
@@ -1022,7 +1022,7 @@ void CCH_fetch_page(
 				if (!CCH_rollover_to_shadow(dbb, file, false)) {
 					PAGE_LOCK_RELEASE(bdb->bdb_lock);
 					if (database_locked) {
-					dbb->dbb_backup_manager->unlock_shared_database(tdbb);
+						dbb->dbb_backup_manager->unlock_shared_database(tdbb);
 						database_locked = false;
 					}
 					CCH_unwind(tdbb, true);
@@ -1036,7 +1036,7 @@ void CCH_fetch_page(
 								   "IO error loop Unwind to avoid a hang\n");
 						PAGE_LOCK_RELEASE(bdb->bdb_lock);
 						if (database_locked) {
-						dbb->dbb_backup_manager->unlock_shared_database(tdbb);
+							dbb->dbb_backup_manager->unlock_shared_database(tdbb);
 							database_locked = false;
 						}
 						CCH_unwind(tdbb, true);
@@ -1050,7 +1050,7 @@ void CCH_fetch_page(
 	}
 	
 	if (database_locked) {
-	dbb->dbb_backup_manager->unlock_shared_database(tdbb);
+		dbb->dbb_backup_manager->unlock_shared_database(tdbb);
 		database_locked = false;
 	}
 
@@ -1409,12 +1409,11 @@ void CCH_flush_ast(thread_db* tdbb)
 	const bool keep_pages = bcb->bcb_flags & BCB_keep_pages;
 	dbb->dbb_bcb->bcb_flags |= BCB_keep_pages;
 
-		for (ULONG i = 0; (bcb = dbb->dbb_bcb) && i < bcb->bcb_count; i++) {
-			BufferDesc* bdb = bcb->bcb_rpt[i].bcb_bdb;
+	for (ULONG i = 0; (bcb = dbb->dbb_bcb) && i < bcb->bcb_count; i++) {
+		BufferDesc* bdb = bcb->bcb_rpt[i].bcb_bdb;
 		if (bdb->bdb_flags & (BDB_dirty | BDB_db_dirty)) 
-			{
+
 			down_grade(tdbb, bdb);
-		}
 	}
 
 	if (!keep_pages) {
@@ -1617,14 +1616,14 @@ void CCH_init(thread_db* tdbb, ULONG number)
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->tdbb_database;
 	
-//	CCH_TRACE(("INIT %s", dbb->dbb_filename.c_str()));
-/* Check for database-specific page buffers */
+	//CCH_TRACE(("INIT %s", dbb->dbb_filename.c_str()));
+	// Check for database-specific page buffers
 
 	if (dbb->dbb_page_buffers) {
 		number = dbb->dbb_page_buffers;
 	}
 
-/* Enforce page buffer cache constraints */
+	// Enforce page buffer cache constraints
 
 	if (number < MIN_PAGE_BUFFERS) {
 		number = MIN_PAGE_BUFFERS;
@@ -1635,7 +1634,7 @@ void CCH_init(thread_db* tdbb, ULONG number)
 
 	SLONG count = number;
 
-/* Allocate and initialize buffers control block */
+	// Allocate and initialize buffers control block
 	BufferControl* bcb = 0;
 	while (!bcb) {
 		try {
@@ -1662,7 +1661,7 @@ void CCH_init(thread_db* tdbb, ULONG number)
 	QUE_INIT(bcb->bcb_empty);
 	QUE_INIT(bcb->bcb_free_lwt);
 
-/* initialization of memory is system-specific */
+	// initialization of memory is system-specific
 
 	bcb->bcb_count = memory_init(tdbb, bcb, static_cast<SLONG>(number));
 	bcb->bcb_free_minimum = (SSHORT) MIN(bcb->bcb_count / 4, 128);
@@ -1671,7 +1670,7 @@ void CCH_init(thread_db* tdbb, ULONG number)
 		ERR_post(isc_cache_too_small, 0);
 	}
 
-/* Log if requested number of page buffers could not be allocated. */
+	// Log if requested number of page buffers could not be allocated.
 
 	if (count != (SLONG) bcb->bcb_count) {
 		gds__log
@@ -1750,7 +1749,7 @@ void CCH_mark(thread_db* tdbb, WIN * window, USHORT mark_system, USHORT must_wri
 		BUGCHECK(208);			/* msg 208 page not accessed for write */
 	}
 
-//	CCH_TRACE(("MARK PAGE=%d", window->win_page));
+	//CCH_TRACE(("MARK PAGE=%d", window->win_page));
 	SLONG attachment_lock_owner = BackupManager::attachment_lock_handle(tdbb);
 
 	bool was_marked = bdb->bdb_flags & BDB_marked;
@@ -6284,8 +6283,7 @@ static bool write_page(
 #endif
 
 			if (backup_state == nbak_state_stalled ||
-				(backup_state == nbak_state_merge)
-				) 
+				(backup_state == nbak_state_merge)) 
 			{
 				if (!dbb->dbb_backup_manager->write_difference(
 					status, bdb->bdb_difference_page, bdb->bdb_buffer)) 
