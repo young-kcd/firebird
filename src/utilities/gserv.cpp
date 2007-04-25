@@ -33,6 +33,7 @@
 #include "../jrd/gds_proto.h"
 #include "../jrd/ibase.h"
 #include "../common/classes/ClumpletWriter.h"
+#include "../common/utils_proto.h"
 
 typedef bool PopulateFunction(char**&, Firebird::ClumpletWriter&, unsigned char);
 
@@ -41,8 +42,30 @@ bool putStringArgument(char**& av, Firebird::ClumpletWriter& spb, unsigned char 
 	if (! *av)
 		return false;
 
-	Firebird::string s(*av++);
+	char* x = *av++;
+	Firebird::string s(tag == isc_spb_password ? fb_utils::get_passwd(x) : x);
 	spb.insertString(tag, s);
+
+	return true;
+}
+
+bool putNumericArgument(char**& av, Firebird::ClumpletWriter& spb, unsigned char tag)
+{
+	if (! *av)
+		return false;
+
+	int n = atoi(*av++);
+	spb.insertInt(tag, n);
+
+	return true;
+}
+
+bool putOption(char**& av, Firebird::ClumpletWriter& spb, unsigned char tag)
+{
+	if (! *av)
+		return false;
+
+	spb.insertInt(isc_spb_options, tag);
 
 	return true;
 }
@@ -58,10 +81,15 @@ struct Switches
 {
 	const char* name;
 	PopulateFunction* populate;
+	const Switches* options;
 	unsigned char tag;
+	unsigned char tagInf;
 };
 
-bool populateSpbFromSwitches(char**& av, Firebird::ClumpletWriter& spb, const Switches* sw)
+bool populateSpbFromSwitches(char**& av, 
+		Firebird::ClumpletWriter& spb, 
+		const Switches* sw, 
+		Firebird::ClumpletWriter* infoSpb)
 {
 	if (! *av)
 		return false;
@@ -78,7 +106,21 @@ bool populateSpbFromSwitches(char**& av, Firebird::ClumpletWriter& spb, const Sw
 		if (s == sw->name)
 		{
 			av++;
-			return sw->populate(av, spb, sw->tag);
+			if (sw->populate(av, spb, sw->tag))
+			{
+				if (infoSpb && sw->tagInf)
+				{
+					infoSpb->insertTag(sw->tagInf);
+				}
+				if (sw->options)
+				{
+					while (populateSpbFromSwitches(av, spb, sw->options, infoSpb))
+						;
+					return false;
+				}
+				return true;
+			}
+			return false;
 		}
 		++sw;
 	}
@@ -87,30 +129,76 @@ bool populateSpbFromSwitches(char**& av, Firebird::ClumpletWriter& spb, const Sw
 }
 
 const Switches attSwitch[] = {
-	{"user", putStringArgument, isc_spb_user_name},
-	{"password", putStringArgument, isc_spb_password},
-	{0, 0, 0}
+	{"user", putStringArgument, 0, isc_spb_user_name, 0},
+	{"password", putStringArgument, 0, isc_spb_password, 0},
+	{"trusted", putSingleTag, 0, isc_spb_trusted_auth, 0},
+	{0, 0, 0, 0, 0}
 };
 	
 const Switches infSwitch[] = {
-	{"info_server_version", putSingleTag, isc_info_svc_server_version},
-	{"info_implementation", putSingleTag, isc_info_svc_implementation},
-	{"info_user_dbpath", putSingleTag, isc_info_svc_user_dbpath},
-	{"info_get_env", putSingleTag, isc_info_svc_get_env},
-	{"info_get_env_lock", putSingleTag, isc_info_svc_get_env_lock},
-	{"info_get_env_msg", putSingleTag, isc_info_svc_get_env_msg},
-	{"info_svr_db_info", putSingleTag, isc_info_svc_svr_db_info},
-	{"info_version", putSingleTag, isc_info_svc_version},
-	{0, 0, 0}
+	{"info_server_version", putSingleTag, 0, isc_info_svc_server_version, 0},
+	{"info_implementation", putSingleTag, 0, isc_info_svc_implementation, 0},
+	{"info_user_dbpath", putSingleTag, 0, isc_info_svc_user_dbpath, 0},
+	{"info_get_env", putSingleTag, 0, isc_info_svc_get_env, 0},
+	{"info_get_env_lock", putSingleTag, 0, isc_info_svc_get_env_lock, 0},
+	{"info_get_env_msg", putSingleTag, 0, isc_info_svc_get_env_msg, 0},
+	{"info_svr_db_info", putSingleTag, 0, isc_info_svc_svr_db_info, 0},
+	{"info_version", putSingleTag, 0, isc_info_svc_version, 0},
+	{0, 0, 0, 0, 0}
 };
 
-void printString(const char*& p, const char* text)
+const Switches backupOptions[] = {
+	{"dbname", putStringArgument, 0, isc_spb_dbname, 0},
+	{"verbose", putSingleTag, 0, isc_spb_verbose, 0},
+	{"bkp_file", putStringArgument, 0, isc_spb_bkp_file, 0},
+	{"bkp_length", putNumericArgument, 0, isc_spb_bkp_length, 0},
+	{"bkp_factor", putNumericArgument, 0, isc_spb_bkp_factor, 0},
+	{"bkp_ignore_checksums", putOption, 0, isc_spb_bkp_ignore_checksums, 0},
+	{"bkp_ignore_limbo", putOption, 0, isc_spb_bkp_ignore_limbo, 0},
+	{"bkp_metadata_only", putOption, 0, isc_spb_bkp_metadata_only, 0},
+	{"bkp_no_garbage_collect", putOption, 0, isc_spb_bkp_no_garbage_collect, 0},
+	{"bkp_old_descriptions", putOption, 0, isc_spb_bkp_old_descriptions, 0},
+	{"bkp_non_transportable", putOption, 0, isc_spb_bkp_non_transportable, 0},
+	{"bkp_convert", putOption, 0, isc_spb_bkp_convert, 0},
+	{0, 0, 0, 0, 0}
+};
+
+const Switches actionSwitch[] = {
+	{"action_backup", putSingleTag, backupOptions, isc_action_svc_backup, isc_info_svc_line},
+	{"action_restore", putSingleTag, 0, isc_action_svc_restore, 0},
+	{"action_properties", putSingleTag, 0, isc_action_svc_properties, 0},
+	{"action_repair", putSingleTag, 0, isc_action_svc_repair, 0},
+	{"action_db_stats", putSingleTag, 0, isc_action_svc_db_stats, 0},
+	{"action_get_ib_log", putSingleTag, 0, isc_action_svc_get_ib_log, 0},
+	{"action_display_user", putSingleTag, 0, isc_action_svc_display_user, 0},
+	{"action_add_user", putSingleTag, 0, isc_action_svc_add_user, 0},
+	{"action_delete_user", putSingleTag, 0, isc_action_svc_delete_user, 0},
+	{"action_modify_user", putSingleTag, 0, isc_action_svc_modify_user, 0},
+	{0, 0, 0, 0, 0}
+};
+
+bool printLine(const char*& p)
 {
 	unsigned short length = (unsigned short)
 		isc_vax_integer (p, sizeof(unsigned short));
 	p += sizeof (unsigned short);
-	printf ("%s: %.*s\n", text, length, p);
+	if (! length)
+	{
+		return false;
+	}
+	
+	printf ("%.*s\n", length, p);
 	p += length;
+	return true;
+}
+
+void printString(const char*& p, const char* text)
+{
+	printf ("%s: ", text);
+	if (!printLine(p))
+	{
+		printf ("<no data>\n");
+	}
 }
 
 void printNumeric(const char*& p, const char* text)
@@ -121,7 +209,7 @@ void printNumeric(const char*& p, const char* text)
 	printf ("%s: %d\n", text, num);
 }
 
-void printInfo(const char* p)
+bool printInfo(const char* p)
 {
 	while (*p != isc_info_end)
 	{
@@ -165,67 +253,110 @@ void printInfo(const char* p)
 					break;
 				default:
 					printf("Unknown code (%d) in info_svr_db_info\n", p[-1]);
-					return;
+					return false;
 				}
 			} while (*p != isc_info_flag_end);
+			p++;
 			break;
 
+		case isc_info_svc_line:
+			return printLine(p);
 		case isc_info_truncated:
 			printf ("Truncated\n");
-			return;
+			return false;
 		default:
-			printf("Unknown code (%d)\n", p[-1]);
-			return;
+			printf("Unknown tag in isc_svc_query() results (%d)\n", p[-1]);
+			return false;
 		}
 	}
+
+	return false;
 }
 
 int main(int ac, char **av)
 {
-	const int maxbuf = 16384;
 	ISC_STATUS_ARRAY status;
-	av++;
 
-	const char* name = *av;
-	if (name)
-	{
+	try {
+		const int maxbuf = 16384;
 		av++;
-	}	
 
-	Firebird::ClumpletWriter spbAtt(Firebird::ClumpletWriter::SpbAttach, maxbuf, isc_spb_current_version);
-	while (populateSpbFromSwitches(av, spbAtt, attSwitch))
-		;
-
-	isc_svc_handle svc_handle = 0;
-	if (isc_service_attach(status, 
-				0, name, &svc_handle, 
-				static_cast<USHORT>(spbAtt.getBufferLength()), 
-				reinterpret_cast<const char*>(spbAtt.getBuffer())))
-	{
-		isc_print_status(status);
-		return 1;
-	}
-	
-	Firebird::ClumpletWriter spbItems(Firebird::ClumpletWriter::SpbItems, 256);
-	while (populateSpbFromSwitches(av, spbItems, infSwitch))
-		;
-
-	if (spbItems.getBufferLength() > 0)
-	{
-		char results[maxbuf];
-		if (isc_service_query(status,
-				&svc_handle, 0, 0, 0,
-				static_cast<USHORT>(spbItems.getBufferLength()), 
-				reinterpret_cast<const char*>(spbItems.getBuffer()),
-				sizeof(results), results))
+		const char* name = *av;
+		if (name)
 		{
-			isc_print_status(status);
-			isc_service_detach(status, &svc_handle);
+			av++;
+		}	
+
+		Firebird::ClumpletWriter spbAtt(Firebird::ClumpletWriter::SpbAttach, maxbuf, isc_spb_current_version);
+		while (populateSpbFromSwitches(av, spbAtt, attSwitch, 0))
+			;
+
+		Firebird::ClumpletWriter spbStart(Firebird::ClumpletWriter::SpbStart, maxbuf);
+		Firebird::ClumpletWriter spbItems(Firebird::ClumpletWriter::SpbItems, 256);
+		while (populateSpbFromSwitches(av, spbStart, actionSwitch, &spbItems))
+			;
+
+		if (spbStart.getBufferLength() == 0)
+		{
+			while (populateSpbFromSwitches(av, spbItems, infSwitch, 0))
+				;
+		}
+
+		//Here we are over with av parse, look - may be some unknown switch left
+		if (*av)
+		{
+			printf("Unknown switch '%s'\n", *av);
 			return 1;
 		}
-		printInfo(results);
-	}
 
-	isc_service_detach(status, &svc_handle);
-	return 0;
+		isc_svc_handle svc_handle = 0;
+		if (isc_service_attach(status, 
+					0, name, &svc_handle, 
+					static_cast<USHORT>(spbAtt.getBufferLength()), 
+					reinterpret_cast<const char*>(spbAtt.getBuffer())))
+		{
+			isc_print_status(status);
+			return 1;
+		}
+	
+		if (spbStart.getBufferLength() > 0)
+		{
+			if (isc_service_start(status,
+					&svc_handle, 0,
+					static_cast<USHORT>(spbStart.getBufferLength()), 
+					reinterpret_cast<const char*>(spbStart.getBuffer())))
+			{
+				isc_print_status(status);
+				isc_service_detach(status, &svc_handle);
+				return 1;
+			}
+		}
+
+		if (spbItems.getBufferLength() > 0)
+		{
+			char results[maxbuf];
+			do
+			{
+				if (isc_service_query(status,
+						&svc_handle, 0, 0, 0,
+						static_cast<USHORT>(spbItems.getBufferLength()), 
+						reinterpret_cast<const char*>(spbItems.getBuffer()),
+						sizeof(results), results))
+				{
+					isc_print_status(status);
+					isc_service_detach(status, &svc_handle);
+					return 1;
+				}
+			} while(printInfo(results));
+		}
+
+		isc_service_detach(status, &svc_handle);
+		return 0;
+	}
+	catch(const Firebird::Exception& e)
+	{
+		e.stuff_exception(status);
+		isc_print_status(status);
+	}
+	return 2;
 }
