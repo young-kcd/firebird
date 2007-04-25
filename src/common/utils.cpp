@@ -219,6 +219,36 @@ int snprintf(char* buffer, size_t count, const char* format...)
 	return rc;
 }
 
+// *******************
+// g e t _ p a s s w d
+// *******************
+// Copy password to newly allocated place and replace existing one in argv with stars.
+// Allocated space is released upon exit from utility.
+// This is planned leak of a few bytes of memory in utilities.
+ArgString get_passwd(ArgString arg)
+{
+	if (! arg) 
+	{
+		return arg;
+	}
+#ifdef SERVICE_THREAD
+	return arg;		// do nothing when running as service
+#else
+	int lpass = strlen(arg);
+	char* savePass = (char*) gds__alloc(lpass + 1);
+	if (! savePass)
+	{
+		// No clear idea, how will it work if there is no memory 
+		// for password, but let others think. As a minimum avoid AV.
+		return arg;
+	}
+	memcpy(savePass, arg, lpass + 1);
+	memset(arg, ' ', lpass);
+	return savePass;
+#endif
+}
+
+
 #ifdef WIN_NT
 
 static bool validateProductSuite (LPCSTR lpszSuiteToValidate);

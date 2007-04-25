@@ -26,6 +26,7 @@
  *  All Rights Reserved.
  *  Contributor(s): ______________________________________.
  *
+ *		Alex Peshkov
  */
 
 #ifndef INCLUDE_Firebird_H
@@ -125,6 +126,12 @@ using namespace NAMESPACE;
 
 #if defined(MULTI_THREAD) && !defined(SUPERCLIENT) && !defined(BOOT_BUILD) &&!defined (STD_UTIL)
 #define SERVICE_THREAD
+#endif
+
+#ifdef SERVICE_THREAD
+typedef const char* ArgString;
+#else
+typedef char* ArgString;
 #endif
 
 #if defined(WIN_NT)

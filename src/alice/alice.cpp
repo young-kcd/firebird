@@ -54,6 +54,7 @@
 #include "../jrd/svc_proto.h"
 #include "../jrd/thd.h"
 #include "../alice/alice_proto.h"
+#include "../common/utils_proto.h"
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -107,7 +108,7 @@ static void expand_filename(const TEXT*, TEXT*);
 #ifndef SERVICE_THREAD
 static int output_main(Jrd::Service*, const UCHAR*);
 #endif
-static int common_main(int, const char**, Jrd::pfn_svc_output, Jrd::Service*);
+static int common_main(int, ArgString*, Jrd::pfn_svc_output, Jrd::Service*);
 static void alice_output(const SCHAR*, ...) ATTRIBUTE_FORMAT(1,2);
 
 
@@ -157,7 +158,7 @@ THREAD_ENTRY_DECLARE ALICE_main(THREAD_ENTRY_PARAM arg)
 //      Call the 'real' main.
 //
 
-int CLIB_ROUTINE main(int argc, const char** argv)
+int CLIB_ROUTINE main(int argc, char** argv)
 {
 	const int exit_code = common_main(argc, argv, output_main, NULL);
 
@@ -185,7 +186,7 @@ static int output_main(Jrd::Service* output_data, const UCHAR* output_buf)
 //
 
 int common_main(int					argc,
-				const char*			argv[],
+				ArgString			argv[],
 				Jrd::pfn_svc_output	output_proc,
 				Jrd::Service*		output_data)
 {
@@ -485,7 +486,7 @@ int common_main(int					argc,
 			if (--argc <= 0) {
 				ALICE_error(14);	// msg 14: password required
 			}
-			tdgbl->ALICE_data.ua_password = *argv++;
+			tdgbl->ALICE_data.ua_password = fb_utils::get_passwd(*argv++);
 		}
 
 		if (table->in_sw_value & sw_disable) {

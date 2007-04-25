@@ -1990,7 +1990,7 @@ static bool get_switches(int			argc,
 			{
 				return false;
 			}
-			gpreGlob.default_password = *++argv;
+			gpreGlob.default_password = fb_utils::get_passwd(*++argv);
 			break;
 
 #ifdef TRUSTED_AUTH

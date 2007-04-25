@@ -6653,7 +6653,7 @@ static processing_state parse_arg(int argc,
 		{
 			switch_id swid = SWITCH_UNKNOWN;
 			int swarg_int = 0;
-			const char* swarg_str = NULL;
+			char* swarg_str = NULL;
 			size_t swlen = strlen(s + 1);
 
 			for (int j = 0; j < FB_NELEM(switches); j++) {
@@ -6670,6 +6670,7 @@ static processing_state parse_arg(int argc,
 					switch_used[swid] = true;
 					if (switches[j].argtype != SWARG_NONE)
 					{
+						// make sure swarg_str is really a pointer to argv, not something else !!
 						swarg_str = argv[++i];
 						if (!swarg_str || !*swarg_str) {
 							ISQL_msg_get(USAGE_NOARG, errbuf, SafeArg() << (s + 1));
@@ -6781,7 +6782,8 @@ static processing_state parse_arg(int argc,
 					break;
 
 				case SWITCH_PASSWORD:
-					STRARGNCPY(Password, swarg_str, sizeof(Password) - 1);
+					STRARGNCPY(Password, fb_utils::get_passwd(swarg_str), sizeof(Password) - 1);
+					// make sure swarg_str is really a pointer to argv, not something else !!
 					global_psw = true;
 					break;
 

@@ -73,15 +73,15 @@ const int MAXSTUFF	= 1000;		/* longest interactive command line */
 class tsec *gdsec;
 #endif
 
-static int common_main(int, const char**, Jrd::pfn_svc_output, Jrd::Service*);
+static int common_main(int, ArgString*, Jrd::pfn_svc_output, Jrd::Service*);
 static void util_output(const SCHAR*, ...);
 static int util_print(const SCHAR*, ...);
 static int vutil_print(const SCHAR*, va_list);
 
 static void data_print(void*, const internal_user_data*, bool);
 static bool get_line(int*, SCHAR**, TEXT*, size_t);
-static bool get_switches(int, const TEXT* const*, const in_sw_tab_t*, tsec*, bool*);
-static SSHORT parse_cmd_line(int, const TEXT* const*, tsec*);
+static bool get_switches(int, ArgString*, const in_sw_tab_t*, tsec*, bool*);
+static SSHORT parse_cmd_line(int, ArgString*, tsec*);
 static void printhelp(void);
 #ifndef SERVICE_THREAD
 static int output_main(Jrd::Service*, const UCHAR*);
@@ -119,7 +119,7 @@ THREAD_ENTRY_DECLARE GSEC_main(THREAD_ENTRY_PARAM arg)
 
 #else
 
-int CLIB_ROUTINE main( int argc, const char* argv[])
+int CLIB_ROUTINE main( int argc, char* argv[])
 {
 /**************************************
  *
@@ -166,7 +166,7 @@ inline void envPick(TEXT* dest, size_t size, const TEXT* var)
 #endif /* SERVICE_THREAD */
 
 int common_main(int argc,
-				const char* argv[],
+				ArgString argv[],
 				Jrd::pfn_svc_output output_proc,
 				Jrd::Service* output_data)
 {
@@ -393,9 +393,10 @@ int common_main(int argc,
 			}
 		}
 	}
+#ifndef SERVICE_THREAD
 	else {
 		int local_argc;
-		SCHAR* local_argv[MAXARGS];
+		char* local_argv[MAXARGS];
 		for (;;) {
 			/* Clear out user data each time through this loop. */
 			MOVE_CLEAR(tdsec->tsec_user_data, sizeof(internal_user_data));
@@ -436,6 +437,7 @@ int common_main(int argc,
 			}
 		}
 	}
+#endif
 
 #ifndef SUPERCLIENT
 	if (db_handle) {
@@ -633,7 +635,7 @@ static bool get_line(int* argc, SCHAR** argv, TEXT* stuff, size_t maxstuff)
 
 static bool get_switches(
 							int argc,
-							const TEXT* const* argv,
+							ArgString* argv,
 							const in_sw_tab_t* in_sw_table,
 							tsec* tdsec, bool* quitflag)
 {
@@ -663,7 +665,7 @@ static bool get_switches(
 	USHORT last_sw = IN_SW_GSEC_0;
 	tdsec->tsec_sw_version = false;
 	for (--argc; argc > 0; argc--) {
-		const TEXT* string = *++argv;
+		ArgString string = *++argv;
 		if (*string == '?')
 			user_data->operation = HELP_OPER;
 		else if (*string != '-') {
@@ -736,7 +738,7 @@ static bool get_switches(
 				user_data->dba_user_name_entered = true;
 				break;
 			case IN_SW_GSEC_DBA_PASSWORD:
-				strncpy(user_data->dba_password, string, sizeof(user_data->dba_password));
+				strncpy(user_data->dba_password, fb_utils::get_passwd(string), sizeof(user_data->dba_password));
 				user_data->dba_password_entered = true;
 				break;
 			case IN_SW_GSEC_SQL_ROLE_NAME:
@@ -1207,7 +1209,7 @@ static void printhelp(void)
 }
 
 
-static SSHORT parse_cmd_line(int argc, const TEXT* const* argv, tsec* tdsec)
+static SSHORT parse_cmd_line(int argc, ArgString* argv, tsec* tdsec)
 {
 /**************************************
  *

@@ -68,7 +68,7 @@ DROP_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(DROP_Sources)))
 GSERV_Files= gserv.cpp
 GSERV_Other_Sources = common/classes/fb_string.cpp common/classes/alloc.cpp \
 common/classes/ClumpletReader.cpp common/classes/ClumpletWriter.cpp \
-common/fb_exception.cpp
+common/fb_exception.cpp common/utils.cpp
 GSERV_Sources = $(addprefix utilities/, $(GSERV_Files)) $(GSERV_Other_Sources)
 GSERV_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(GSERV_Sources))))
 

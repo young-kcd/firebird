@@ -49,6 +49,7 @@
 #endif
 
 #include "../common/classes/MsgPrint.h"
+#include "../common/utils_proto.h"
 
 using MsgFormat::SafeArg;
 
@@ -287,7 +288,7 @@ int CLIB_ROUTINE main( int argc, char* argv[])
 
 		case IN_SW_GDEF_PASSWORD:
 			if (argc > 1) {
-				dudleyGlob.DDL_default_password = *++argv;
+				dudleyGlob.DDL_default_password = fb_utils::get_passwd(*++argv);
 				argc--;
 			}
 			break;

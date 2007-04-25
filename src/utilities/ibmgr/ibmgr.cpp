@@ -72,8 +72,8 @@ const SSHORT ACT_PROMPT	= 2;
 static void copy_str_upper(TEXT*, const TEXT*);
 static bool get_line(int*, SCHAR**, TEXT*);
 static SSHORT get_switches(int, const TEXT* const*, const in_sw_tab_t*,
-	ibmgr_data_t*, bool*);
-static SSHORT parse_cmd_line(int, const TEXT* const*);
+	ibmgr_data_t*, bool*, bool);
+static SSHORT parse_cmd_line(int, TEXT**, bool);
 static void print_config(void);
 static void print_help(void);
 
@@ -174,13 +174,13 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	if (argc == 2 &&
 		*argv[1] == '-' && (argv[1][1] == 'Z' || argv[1][1] == 'z'))
 	{
-		parse_cmd_line(argc, argv);
+		parse_cmd_line(argc, argv, false);
 		argc--;
 	}
 
 	SSHORT ret;
 	if (argc > 1) {
-		ret = parse_cmd_line(argc, argv);
+		ret = parse_cmd_line(argc, argv, true);
 		if (ret == FB_SUCCESS) {
 			ret = SRVRMGR_exec_line(&ibmgr_data);
 			if (ret) {
@@ -207,7 +207,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 		if (get_line(&local_argc, local_argv, stuff))
 			break;
 		if (local_argc > 1) {
-			ret = parse_cmd_line(local_argc, local_argv);
+			ret = parse_cmd_line(local_argc, local_argv, false);
 			if (ret == ACT_QUIT)
 				break;
 			if (ret == FB_SUCCESS) {
@@ -297,9 +297,9 @@ if (sw_service_gsec)
 
 static SSHORT get_switches(
 						   int argc,
-						   const TEXT* const* argv,
+						   TEXT** argv,
 						   const in_sw_tab_t* in_sw_table,
-						   ibmgr_data_t* ibmgr_data, bool * quitflag)
+						   ibmgr_data_t* ibmgr_data, bool * quitflag, bool zapPasswd)
 {
 /**************************************
  *
@@ -325,7 +325,7 @@ static SSHORT get_switches(
 	*quitflag = false;
 	USHORT last_sw = IN_SW_IBMGR_0;
 	for (--argc; argc > 0; argc--) {
-		const TEXT* string = *++argv;
+		TEXT* string = *++argv;
 		if (*string == '?')
 			ibmgr_data->operation = OP_HELP;
 		else if (*string != '-') {
@@ -361,6 +361,10 @@ static SSHORT get_switches(
 
 				/* If the password is the same, do nothing
 				 */
+				if (zapPasswd)
+				{
+					string = fb_utils::get_passwd(string);
+				}
 				if (strcmp(ibmgr_data->password, string)) {
 					strcpy(ibmgr_data->password, string);
 					ibmgr_data->reattach |= REA_PASSWORD;
@@ -810,7 +814,7 @@ static void print_help(void)
 }
 
 
-static SSHORT parse_cmd_line( int argc, const TEXT* const* argv)
+static SSHORT parse_cmd_line( int argc, TEXT** argv, bool zapPasswd)
 {
 /**************************************
  *
@@ -843,7 +847,7 @@ static SSHORT parse_cmd_line( int argc, const TEXT* const* argv)
 	ibmgr_data.par_entered = 0;
 
 	SSHORT ret =
-		get_switches(argc, argv, ibmgr_in_sw_table, &ibmgr_data, &quitflag);
+		get_switches(argc, argv, ibmgr_in_sw_table, &ibmgr_data, &quitflag, zapPasswd);
 	if (ret != FB_SUCCESS) {
 		if (ret == ERR_SYNTAX) {
 			SRVRMGR_msg_get(MSG_SYNTAX, msg);

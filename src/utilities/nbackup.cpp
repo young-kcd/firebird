@@ -42,6 +42,7 @@
 #include "../jrd/os/path_utils.h"
 #include "../jrd/os/guid.h"
 #include "../jrd/ibase.h"
+#include "../common/utils_proto.h"
 #include "../common/classes/array.h"
 #include "../common/classes/ClumpletWriter.h"
 
@@ -972,7 +973,7 @@ int main( int argc, char *argv[] )
 				if (++argp >= end)
 					missing_parameter_for_switch(argp[-1]);
 
-				password = *argp;
+				password = fb_utils::get_passwd(*argp);
 				break;
 
 			case 'T':

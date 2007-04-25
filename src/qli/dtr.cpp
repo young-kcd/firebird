@@ -204,7 +204,7 @@ int  CLIB_ROUTINE main( int argc, char **argv)
 						break;
 					TEXT* r = QLI_default_password;
 					const TEXT* const end = r + sizeof(QLI_default_password) - 1;
-					for (const TEXT* q = *argv++; *q && r < end;)
+					for (const TEXT* q = fb_utils::get_passwd(*argv++); *q && r < end;)
 						*r++ = *q++;
 					*r = 0;
 					break;

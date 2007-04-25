@@ -45,6 +45,7 @@ namespace fb_utils
 	bool readenv(const char* env_name, Firebird::string& env_value);
 	bool readenv(const char* env_name, Firebird::PathName& env_value);
 	int snprintf(char* buffer, size_t count, const char* format...);
+	ArgString get_passwd(ArgString arg);
 
 // Warning: Only wrappers:
 

@@ -336,7 +336,7 @@ int CLIB_ROUTINE main(int argc, char* argv[])
 		if (sw_service)
 			*sw_service = '\0';
 
-		exit_code = api_gbak(argc, argv, total, d_password, d_user, d_service, 
+		exit_code = api_gbak(argc, argv, total, fb_utils::get_passwd(d_password), d_user, d_service, 
 							 flag_restore, flag_verbose, flag_trusted);
 	}
 	else
@@ -853,7 +853,7 @@ int common_main(int		argc,
 				if (argv >= end)
 					BURP_error(189, true);
 					// password parameter missing 
-				tdgbl->gbl_sw_password = *argv++;
+				tdgbl->gbl_sw_password = fb_utils::get_passwd(*argv++);
 			}
 			else if (in_sw_tab->in_sw == IN_SW_BURP_USER) {
 				if (argv >= end)
