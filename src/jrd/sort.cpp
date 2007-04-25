@@ -685,7 +685,7 @@ sort_context* SORT_init(thread_db* tdbb,
  **************************************/
 	SET_TDBB(tdbb);
 
-	MemoryPool* const pool = tdbb->getDefaultPool();
+	MemoryPool* const pool = tdbb->tdbb_database->dbb_permanent;
 	ISC_STATUS* status_vector = tdbb->tdbb_status_vector;
 	sort_context* scb = NULL;
 
