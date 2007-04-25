@@ -74,6 +74,14 @@ GEN_SRC=$(OBJ)
 RealFirebirdPath = @NEW_FIREBIRD_DIR@
 
 #____________________________________________________________________________
+# From here we may set some global options to both compiler and linker.
+
+GLOB_OPTIONS=
+# Possible use - profiling.
+#GLOB_OPTIONS= -pg
+CFLAGS:= $(CFLAGS) $(GLOB_OPTIONS)
+
+#____________________________________________________________________________
 
 IsProdTypeBuild = @PROD_BUILD_FLG@
                            # If this is defined then we are building a production
@@ -142,10 +150,10 @@ LD =	@CXX@
 # if we decide to support different linkers directly in our build process. 
 # Alternatively we may use libtool here.
 
-LIB_LINK= @CC@
-STATICLIB_LINK= ar cruvs
-EXE_LINK = @CXX@
-STATICEXE_LINK = @CXX@
+LIB_LINK:= @CC@ $(GLOB_OPTIONS)
+STATICLIB_LINK:= ar cruvs
+EXE_LINK:= @CXX@ $(GLOB_OPTIONS)
+STATICEXE_LINK:= @CXX@ $(GLOB_OPTIONS)
 
 LINK_LIBS = @LIBS@
 ICU_LIBS = -licuuc -licudata -licui18n
