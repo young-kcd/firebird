@@ -762,11 +762,14 @@ PAG PAG_allocate(WIN * window)
 
 	SLONG relative_bit = -1;
 	SLONG sequence;
+	SLONG pipMin;
 	for (sequence = pageSpace->pipHighWater;; sequence++) {
 		pip_window.win_page = (sequence == 0) ?
 			pageSpace->ppFirst : sequence * dbb->dbb_page_manager.pagesPerPIP - 1;
 		page_inv_page* pip_page = 
 			(page_inv_page*) CCH_FETCH(tdbb, &pip_window, LCK_write, pag_pages);
+
+		pipMin = MAX_SLONG;
 		const UCHAR* end = (UCHAR*) pip_page + dbb->dbb_page_size;
 		for (bytes = &pip_page->pip_bits[pip_page->pip_min >> 3]; bytes < end;
 			 bytes++)
@@ -777,6 +780,7 @@ PAG PAG_allocate(WIN * window)
 				for (SLONG i = 0; i < 8; i++, bit <<= 1) {
 					if (bit & *bytes) {
 						relative_bit = ((bytes - pip_page->pip_bits) << 3) + i;
+						pipMin = MIN(pipMin, relative_bit);
 						
 						const SLONG pageNum = relative_bit + sequence * pageMgr.pagesPerPIP;
 						window->win_page = pageNum;
@@ -835,6 +839,9 @@ PAG PAG_allocate(WIN * window)
 		if (pip_page->pip_header.reserved < relative_bit + 1)
 			pip_page->pip_header.reserved = relative_bit + 1;
 	}
+	if (pipMin == relative_bit)
+		pipMin++;
+	pip_page->pip_min = pipMin;
 
 	if (relative_bit != pageMgr.pagesPerPIP - 1) {
 		CCH_RELEASE(tdbb, &pip_window);
