@@ -1,3 +1,59 @@
+2007-04-24 19:43  skidder
+
+	* firebird2/src/jrd/nbak.cpp (1.65):
+
+	Fix typo in comment
+
+2007-04-24 19:40  skidder
+
+	* firebird2/src/jrd/: GlobalRWLock.h (1.2), nbak.h (1.25):
+
+	Fix typos in comments
+
+2007-04-24 17:44  skidder
+
+	* firebird2/src/jrd/: GlobalRWLock.cpp (1.1), GlobalRWLock.h (1.1):
+
+	NBAK synchronization rework. This should fix CORE-1151 and other
+	Nbackup stability issues
+
+2007-04-24 17:21  asfernandes
+
+	* firebird2/: doc/sql.extensions/README.returning (1.5),
+	doc/sql.extensions/README.update_or_insert (1.2), src/dsql/dsql.h
+	(1.106), src/dsql/gen.cpp (1.119), src/dsql/parse.y (1.236),
+	src/dsql/pass1.cpp (1.314):
+
+	CORE-1226: Allow RETURNING in INSERT...SELECT, UPDATE and DELETE
+
+2007-04-24 16:05  skidder
+
+	* firebird2/: builds/posix/make.shared.variables (1.73),
+	builds/win32/msvc7/engine.vcproj (1.63),
+	builds/win32/msvc7/engine_classic.vcproj (1.63),
+	builds/win32/msvc7/engine_embed.vcproj (1.52),
+	builds/win32/msvc8/engine.vcproj (1.10),
+	builds/win32/msvc8/engine_classic.vcproj (1.10),
+	builds/win32/msvc8/engine_embed.vcproj (1.10),
+	builds/win32/msvc8/fbembed.vcproj (1.9), src/common/classes/alloc.h
+	(1.68), src/common/classes/array.h (1.40), src/jrd/cch.cpp (1.152),
+	src/jrd/cch.h (1.31), src/jrd/cch_proto.h (1.26), src/jrd/dfw.epp
+	(1.206), src/jrd/err.cpp (1.64), src/jrd/jrd.cpp (1.322),
+	src/jrd/jrd.h (1.187), src/jrd/lck.cpp (1.65), src/jrd/lck.h
+	(1.31), src/jrd/lck_proto.h (1.13), src/jrd/nbak.cpp (1.64),
+	src/jrd/nbak.h (1.24), src/jrd/shut.cpp (1.46),
+	src/jrd/os/win32/isc_ipc.cpp (1.18), src/lock/lock.cpp (1.121),
+	src/lock/lock.h (1.37), src/lock/lock_proto.h (1.10):
+
+	NBAK synchronization rework. This should fix CORE-1151 and other
+	Nbackup stability issues
+
+2007-04-24 08:11  robocop
+
+	* firebird2/doc/sql.extensions/README.builtin_functions.txt (1.4):
+
+	Misc.
+
 2007-04-23 14:57  alexpeshkoff
 
 	* firebird2/src/utilities/gsec/call_service.cpp (1.13):
