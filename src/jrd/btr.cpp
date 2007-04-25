@@ -3124,6 +3124,7 @@ static SLONG fast_load(thread_db* tdbb,
 		BTreeNode::setNode(&levelNode[i]);
 
 		windows[i].win_page.setPageSpaceID(pageSpaceID);
+		windows[i].win_bdb = NULL;
 	}
 
 	// leaf-page and pointer-page size limits, we always need to 
@@ -3193,58 +3194,58 @@ static SLONG fast_load(thread_db* tdbb,
 		}
 	}
 
-	// Allocate and format the first leaf level bucket.  Awkwardly,
-	// the bucket header has room for only a byte of index id and that's
-	// part of the ODS.  So, for now, we'll just record the first byte
-	// of the id and hope for the best.  Index buckets are (almost) always
-	// located through the index structure (dmp being an exception used 
-	// only for debug) so the id is actually redundant.
-	btree_page* bucket = (btree_page*) DPM_allocate(tdbb, &windows[0]);
-	bucket->btr_header.pag_type = pag_index;
-	bucket->btr_relation = relation->rel_id;
-	bucket->btr_id = (UCHAR)(idx->idx_id % 256);
-	bucket->btr_level = 0;
-	bucket->btr_length = BTR_SIZE;
-	bucket->btr_header.pag_flags |= flags;
-#ifdef DEBUG_BTR_PAGES
-	sprintf(debugtext, "\t new page (%d)", windows[0].win_page);
-	gds__log(debugtext);
-#endif
-
-	UCHAR* pointer;
-	if (useJumpInfo) {
-		pointer = BTreeNode::writeJumpInfo(bucket, &jumpInfo);
-		jumpInfo.firstNodeOffset = (USHORT)(pointer - (UCHAR*)bucket);
-		jumpInfo.jumpers = 0;
-		pointer = BTreeNode::writeJumpInfo(bucket, &jumpInfo);
-		bucket->btr_length = jumpInfo.firstNodeOffset;
-		newAreaPointers[0] = pointer + jumpInfo.firstNodeOffset;
-	}
-	else {
-		pointer = BTreeNode::getPointerFirstNode(bucket);
-	}
-
-	tdbb->tdbb_flags |= TDBB_no_cache_unwind;
-
-	buckets[0] = bucket;
-	buckets[1] = NULL;
-
 	WIN* window = 0;
 	bool error = false;
 	ULONG count = 0;
 	ULONG duplicates = 0;
 	const bool descending = (flags & btr_descending);
 	const ULONG segments = idx->idx_count;
-	// SSHORT segment, stuff_count, pos, i;
-	Firebird::HalfStaticArray<ULONG, 4> duplicatesList(*tdbb->getDefaultPool());
-	duplicatesList.grow(segments);
-	memset(duplicatesList.begin(), 0, segments * sizeof(ULONG));
 
 	// hvlad: look at IDX_create_index for explanations about NULL indicator below
 	const bool isODS11 = (dbb->dbb_ods_version >= ODS_VERSION11);
 	const int nullIndLen = isODS11 && !descending && (idx->idx_count == 1) ? 1 : 0;
 
+	Firebird::HalfStaticArray<ULONG, 4> duplicatesList(*tdbb->getDefaultPool());
+
 	try {
+		// Allocate and format the first leaf level bucket.  Awkwardly,
+		// the bucket header has room for only a byte of index id and that's
+		// part of the ODS.  So, for now, we'll just record the first byte
+		// of the id and hope for the best.  Index buckets are (almost) always
+		// located through the index structure (dmp being an exception used 
+		// only for debug) so the id is actually redundant.
+		btree_page* bucket = (btree_page*) DPM_allocate(tdbb, &windows[0]);
+		bucket->btr_header.pag_type = pag_index;
+		bucket->btr_relation = relation->rel_id;
+		bucket->btr_id = (UCHAR)(idx->idx_id % 256);
+		bucket->btr_level = 0;
+		bucket->btr_length = BTR_SIZE;
+		bucket->btr_header.pag_flags |= flags;
+#ifdef DEBUG_BTR_PAGES
+		sprintf(debugtext, "\t new page (%d)", windows[0].win_page);
+		gds__log(debugtext);
+#endif
+
+		UCHAR* pointer;
+		if (useJumpInfo) {
+			pointer = BTreeNode::writeJumpInfo(bucket, &jumpInfo);
+			jumpInfo.firstNodeOffset = (USHORT)(pointer - (UCHAR*)bucket);
+			jumpInfo.jumpers = 0;
+			pointer = BTreeNode::writeJumpInfo(bucket, &jumpInfo);
+			bucket->btr_length = jumpInfo.firstNodeOffset;
+			newAreaPointers[0] = pointer + jumpInfo.firstNodeOffset;
+		}
+		else {
+			pointer = BTreeNode::getPointerFirstNode(bucket);
+		}
+
+		tdbb->tdbb_flags |= TDBB_no_cache_unwind;
+
+		buckets[0] = bucket;
+		buckets[1] = NULL;
+
+		duplicatesList.grow(segments);
+		memset(duplicatesList.begin(), 0, segments * sizeof(ULONG));
 
 		// If there's an error during index construction, fall
 		// thru to release the last index bucket at each level
@@ -3860,8 +3861,6 @@ static SLONG fast_load(thread_db* tdbb,
 			delete (*itr3);
 		}
 		delete jumpKeys;
-
-
 	}	// try
 	catch (const Firebird::Exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
@@ -3877,9 +3876,19 @@ static SLONG fast_load(thread_db* tdbb,
 	// If the index delete fails, just go ahead and punt.
 	try {
 
-		if (error) {
-			delete_tree(tdbb, relation->rel_id, idx->idx_id, 
-				window->win_page, PageNumber(window->win_page.getPageSpaceID(), 0));
+		if (error) 
+		{
+			// CCH_unwind does not released page buffers (as we 
+			// set TDBB_no_cache_unwind flag), do it now
+			for (int i = 0; i < MAX_LEVELS; i++) {
+				if (windows[i].win_bdb)
+					CCH_RELEASE(tdbb, &windows[i]);
+			}
+
+			if (window) {
+				delete_tree(tdbb, relation->rel_id, idx->idx_id, 
+					window->win_page, PageNumber(window->win_page.getPageSpaceID(), 0));
+			}
 			ERR_punt();
 		}
 
