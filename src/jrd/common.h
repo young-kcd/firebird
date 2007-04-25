@@ -1050,7 +1050,7 @@ void GDS_breakpoint(int);
 #ifdef _MSC_VER
 #define CONST64(a) (a##i64)
 #else
-#define CONST64(a) (a##L)
+#define CONST64(a) (a##LL)
 #endif
 
 
