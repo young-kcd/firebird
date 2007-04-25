@@ -56,7 +56,6 @@
 #include "../jrd/isc_proto.h"
 #include "../jrd/isc_s_proto.h"
 #include "../jrd/jrd_proto.h"
-
 #include "../jrd/lck_proto.h"
 #include "../jrd/mov_proto.h"
 #include "../jrd/pag_proto.h"
@@ -68,7 +67,6 @@
 #include "../jrd/thread_proto.h"
 #include "../jrd/tra_proto.h"
 #include "../common/config/config.h"
-//#include "../common/classes/timestamp.h"
 #include "../common/classes/MsgPrint.h"
 
 
@@ -727,7 +725,8 @@ pag* CCH_fetch(
 		tdbb->tdbb_database->dbb_backup_manager->lock_shared_database(tdbb, true);
 	}
 	
-	//CCH_TRACE(("FETCH PAGE=%d", window->win_page));
+	CCH_TRACE(("FETCH PAGE=%d", window->win_page));
+	
 	// FETCH_LOCK will return 0, 1, -1 or -2
 	
 	const SSHORT fetch_lock_return =
@@ -736,7 +735,7 @@ pag* CCH_fetch(
 
 	if (fetch_lock_return == 1)
 	{
-		//CCH_TRACE(("FETCH FROM DISK PAGE=%d", window->win_page));
+		CCH_TRACE(("FETCH FROM DISK PAGE=%d", window->win_page));
 		CCH_FETCH_PAGE(tdbb, window, checksum, read_shadow);	/* must read page from disk */
 	}
 	else if (fetch_lock_return == -2 || fetch_lock_return == -1) {
@@ -1616,7 +1615,8 @@ void CCH_init(thread_db* tdbb, ULONG number)
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->tdbb_database;
 	
-	//CCH_TRACE(("INIT %s", dbb->dbb_filename.c_str()));
+	CCH_TRACE(("INIT %s", dbb->dbb_filename.c_str()));
+
 	// Check for database-specific page buffers
 
 	if (dbb->dbb_page_buffers) {
@@ -1749,7 +1749,8 @@ void CCH_mark(thread_db* tdbb, WIN * window, USHORT mark_system, USHORT must_wri
 		BUGCHECK(208);			/* msg 208 page not accessed for write */
 	}
 
-	//CCH_TRACE(("MARK PAGE=%d", window->win_page));
+	CCH_TRACE(("MARK PAGE=%d", window->win_page));
+
 	SLONG attachment_lock_owner = BackupManager::attachment_lock_handle(tdbb);
 
 	bool was_marked = bdb->bdb_flags & BDB_marked;
