@@ -39,6 +39,7 @@ Ods::pag*	CCH_fake(Jrd::thread_db*, Jrd::win*, SSHORT);
 Ods::pag*	CCH_fetch(Jrd::thread_db*, Jrd::win*, USHORT, SCHAR, SSHORT, SSHORT, bool);
 SSHORT		CCH_fetch_lock(Jrd::thread_db*, Jrd::win*, USHORT, SSHORT, SSHORT, SCHAR);
 void		CCH_fetch_page(Jrd::thread_db*, Jrd::win*, SSHORT, bool);
+void		CCH_forget_page(Jrd::thread_db*, Jrd::win*);
 void		CCH_fini(Jrd::thread_db*);
 void		CCH_flush(Jrd::thread_db*, USHORT, SLONG);
 bool		CCH_free_page(Jrd::thread_db*);

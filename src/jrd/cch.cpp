@@ -1085,6 +1085,56 @@ void CCH_fetch_page(
 }
 
 
+void CCH_forget_page(thread_db* tdbb, WIN * window)
+{
+/**************************************
+ *
+ *	C C H _ f o r g e t _ p a g e
+ *
+ **************************************
+ *
+ * Functional description
+ *	Page was faked but can't be written on disk. Most probably because
+ *	of out of disk space. Release page buffer and other resources and
+ *	unlink page from variuos queues
+ *
+ **************************************/
+	SET_TDBB(tdbb);
+	BufferDesc* bdb = window->win_bdb;
+	Database* dbb = tdbb->tdbb_database;
+
+	if (window->win_page != bdb->bdb_page ||
+		bdb->bdb_buffer->pag_type != pag_undefined) 
+	{
+		// buffer was reassigned or page was reused
+		return;
+	}
+
+	window->win_bdb = NULL;
+	if (tdbb->tdbb_flags & TDBB_no_cache_unwind) {
+		release_bdb(tdbb, bdb, false, false, false);
+	}
+
+	if (bdb->bdb_flags & BDB_io_error)  {
+		dbb->dbb_flags &= ~DBB_suspend_bgio;
+	}
+
+	if (bdb->bdb_flags & BDB_dirty) {
+		dbb->dbb_backup_manager->release_dirty_page(tdbb, bdb->bdb_backup_lock_owner);
+		bdb->bdb_backup_lock_owner = 0;
+	}
+	bdb->bdb_flags = 0;
+	BufferControl* bcb = dbb->dbb_bcb;
+
+	if (bdb->bdb_parent || (bdb == bcb->bcb_btree))
+		btc_remove(bdb);
+
+	QUE_DELETE(bdb->bdb_in_use);
+	QUE_DELETE(bdb->bdb_que);
+	QUE_INSERT(bcb->bcb_empty, bdb->bdb_que);
+}
+
+
 void CCH_fini(thread_db* tdbb)
 {
 /**************************************

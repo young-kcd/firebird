@@ -750,6 +750,11 @@ PAG PAG_allocate(WIN * window)
 	
 	pag* new_page = 0; // NULL before the search for a new page.
 
+	// in ODS 11.1 we store in pip_header.reserved number of pages allocated
+	// from this pointer page
+	const bool isODS11_1 = (dbb->dbb_ods_version == ODS_VERSION11 && 
+							dbb->dbb_minor_version == 1);
+
 /* Find an allocation page with something on it */
 
 	SLONG relative_bit = -1;
@@ -774,7 +779,35 @@ PAG PAG_allocate(WIN * window)
 							relative_bit + sequence * pageMgr.pagesPerPIP;
 						new_page = CCH_fake(tdbb, window, 0);	/* don't wait on latch */
 						if (new_page)
+						{
+							if (isODS11_1)
+							{
+								// ensure there are space on disk for faked page
+								if (relative_bit + 1 > pip_page->pip_header.reserved)
+								{
+									CCH_must_write(window);
+									try {
+										CCH_RELEASE(tdbb, window);
+									}
+									catch (Firebird::status_exception) 
+									{
+										// forget about this page as if we never tried to fake it
+										CCH_forget_page(tdbb, window);
+
+										// normally all page buffers now released by CCH_unwind 
+										// only exception is when TDBB_no_cache_unwind flag is set 
+										if (tdbb->tdbb_flags & TDBB_no_cache_unwind)
+											CCH_RELEASE(tdbb, &pip_window);
+
+										throw;
+									}
+
+									new_page = CCH_fake(tdbb, window, 1);
+									fb_assert(new_page);
+								}
+							}
 							break;	/* Found a page and successfully fake-ed it */
+						}
 					}
 				}
 			}
@@ -790,6 +823,12 @@ PAG PAG_allocate(WIN * window)
 
 	CCH_MARK(tdbb, &pip_window);
 	*bytes &= ~bit;
+	page_inv_page* pip_page = (page_inv_page*) pip_window.win_buffer;
+
+	if (isODS11_1) {
+		if (pip_page->pip_header.reserved < relative_bit + 1)
+			pip_page->pip_header.reserved = relative_bit + 1;
+	}
 
 	if (relative_bit != pageMgr.pagesPerPIP - 1) {
 		CCH_RELEASE(tdbb, &pip_window);

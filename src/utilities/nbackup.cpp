@@ -680,6 +680,18 @@ void nbackup::backup_database(int level, const char* fname)
 		}
 
 		ULONG curPage = 0;
+
+		// Starting from ODS 11.1 we can expand file but never use some last 
+		// pages in it. There are no need to backup this empty pages. More, 
+		// we can't be sure its not used pages have right SCN assigned.
+		// How many pages are really used we know from pip_header.reserved
+		// where stored number of pages allocated from this pointer page 
+		const bool isODS11_1 = ((header->hdr_ods_version & ~ODS_FIREBIRD_FLAG) == 11)
+							&& (header->hdr_ods_minor_original == 1);
+		ULONG lastPage = 1; // first PIP must be at page number 1
+		const ULONG pagesPerPIP = 
+			(header->hdr_page_size - OFFSETA(Ods::page_inv_page*, pip_bits)) * 8;
+
 		while (true) {
 			if (curPage && page_buff->pag_scn > backup_scn)
 				b_error::raise("Internal error. Database page %d had been changed during backup"
@@ -693,12 +705,32 @@ void nbackup::backup_database(int level, const char* fname)
 			}
 			else
 				write_file(backup, page_buff, header->hdr_page_size);
+		
 			const size_t bytesDone = read_file(dbase, page_buff, header->hdr_page_size);
 			if (bytesDone == 0)
 				break;
 			if (bytesDone != header->hdr_page_size)
 				b_error::raise("Database file size is not a multiply of page size");
 			curPage++;
+
+			if (isODS11_1 && curPage == lastPage)
+			{
+				if (page_buff->pag_type == pag_pages)
+				{
+					if (lastPage == 1)
+						lastPage = page_buff->reserved - 1;
+					else
+						lastPage += page_buff->reserved;
+
+					if (page_buff->reserved < pagesPerPIP)
+						lastPage++;
+				}
+				else
+				{
+					fb_assert(page_buff->pag_type == pag_undefined);
+					break;
+				}
+			}
 		}		
 		close_database();
 		close_backup();
