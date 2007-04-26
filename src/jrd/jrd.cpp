@@ -2161,7 +2161,6 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 		catch (const Firebird::Exception&) {}
 		tdbb->tdbb_status_vector = status;
 		JRD_SS_MUTEX_UNLOCK;
-		dbb->dbb_backup_manager->dbCreating = false;
 
 		return error(user_status, ex);
 	}
