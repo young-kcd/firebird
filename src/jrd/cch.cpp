@@ -150,6 +150,7 @@ static bool writeable(const BufferDesc*);
 static int write_buffer(thread_db*, BufferDesc*, const PageNumber, const bool, ISC_STATUS*, const bool);
 static bool write_page(thread_db*, BufferDesc*, const bool, ISC_STATUS*, const bool);
 static void set_diff_page(thread_db*, BufferDesc*);
+static void clear_page_dirty_flag(thread_db*, BufferDesc*);
 
 // comment this macro out to revert back to the old tree
 #define BALANCED_DIRTY_PAGE_TREE
@@ -939,7 +940,7 @@ void CCH_fetch_page(
 	fb_assert(bak_state != nbak_state_unknown);
 
 	ULONG diff_page = 0;
-	if (bak_state != nbak_state_normal) {
+	if (!isTempPage && bak_state != nbak_state_normal) {
 		dbb->dbb_backup_manager->lock_alloc(tdbb, true);
 		diff_page = dbb->dbb_backup_manager->get_page_index(tdbb, bdb->bdb_page.getPageNum());
 		dbb->dbb_backup_manager->unlock_alloc(tdbb);
@@ -952,7 +953,7 @@ void CCH_fetch_page(
 
 		// In merge mode, if we are reading past beyond old end of file and page is in .delta file
 		// then we maintain actual page in difference file. Always read it from there.
-	if (bak_state == nbak_state_normal || !diff_page) 
+	if (isTempPage || bak_state == nbak_state_normal || !diff_page) 
 	{
 		NBAK_TRACE(("Reading page %d, state=%d, diff page=%d from DISK",
 			bdb->bdb_page, bak_state, diff_page));
@@ -2048,6 +2049,12 @@ bool CCH_prefetch_pages(thread_db* tdbb)
 void set_diff_page(thread_db* tdbb, BufferDesc* bdb)
 {
 	Database* dbb = tdbb->tdbb_database;
+	// Temporary pages don't write to delta
+	PageSpace* pageSpace = 
+		dbb->dbb_page_manager.findPageSpace(bdb->bdb_page.getPageSpaceID());
+	fb_assert(pageSpace);
+	if (pageSpace->isTemporary())
+		return;
 	// Determine location of the page in difference file and write destination
 	// so BufferDesc AST handlers and write_page routine can safely use this information
 	if (bdb->bdb_page != HEADER_PAGE_NUMBER)
@@ -2324,7 +2331,8 @@ void CCH_shutdown_database(Database* dbb)
 			tail < end; tail++)
 		{
 			BufferDesc* bdb = tail->bcb_bdb;
-			bdb->bdb_flags &= ~(BDB_dirty | BDB_db_dirty);
+			clear_page_dirty_flag(tdbb, bdb);
+			bdb->bdb_flags &= ~BDB_db_dirty;
 			PAGE_LOCK_RELEASE(bdb->bdb_lock);
 		}
 	}
@@ -2393,13 +2401,8 @@ void CCH_unwind(thread_db* tdbb, bool punt)
 		{
 			++bdb->bdb_use_count;
 
-			if (bdb->bdb_flags & BDB_dirty) {
-				dbb->dbb_backup_manager->release_dirty_page(tdbb, bdb->bdb_backup_lock_owner);
-				bdb->bdb_backup_lock_owner = 0;
-			}
-
-			bdb->bdb_flags &= ~(BDB_dirty | 
-				BDB_writer | BDB_marked | BDB_faked | BDB_db_dirty);
+			clear_page_dirty_flag(tdbb, bdb);
+			bdb->bdb_flags &= ~(BDB_writer | BDB_marked | BDB_faked | BDB_db_dirty);
 			PAGE_LOCK_RELEASE(bdb->bdb_lock);
 			--bdb->bdb_use_count;
 		}
@@ -4347,13 +4350,11 @@ static void down_grade(thread_db* tdbb, BufferDesc* bdb)
 	if (dbb->dbb_flags & DBB_bugcheck) {
 		PAGE_LOCK_RELEASE(bdb->bdb_lock);
 		bdb->bdb_ast_flags &= ~BDB_blocking;
-		// Release backup pages lock as buffer is no longer dirty
-		if (bdb->bdb_flags & BDB_dirty) {
-			fb_assert(bdb->bdb_backup_lock_owner);
-			dbb->dbb_backup_manager->release_dirty_page(tdbb, bdb->bdb_backup_lock_owner);
-			bdb->bdb_backup_lock_owner = 0;
-			bdb->bdb_flags &= ~BDB_dirty;
-		}
+
+		// This will also release logical lock on LCK_backup_database as buffer
+		// is no longer dirty
+		clear_page_dirty_flag(tdbb, bdb);
+
 		return; // true;
 	}
 
@@ -4430,12 +4431,8 @@ static void down_grade(thread_db* tdbb, BufferDesc* bdb)
 		|| !write_page(tdbb, bdb, false, tdbb->tdbb_status_vector, true))
 	{
 		bdb->bdb_flags |= BDB_not_valid;
-		// Release backup pages lock
-		if (bdb->bdb_flags & BDB_dirty) {
-			dbb->dbb_backup_manager->release_dirty_page(tdbb, bdb->bdb_backup_lock_owner);
-			bdb->bdb_backup_lock_owner = 0;
-		}
-		bdb->bdb_flags &= ~BDB_dirty;
+		// This will also release logical lock on LCK_backup_database
+		clear_page_dirty_flag(tdbb, bdb);
 		bdb->bdb_ast_flags &= ~BDB_blocking;
 		TRA_invalidate(dbb, bdb->bdb_transactions);
 		bdb->bdb_transactions = 0;
@@ -4935,7 +4932,8 @@ static void invalidate_and_release_buffer(thread_db* tdbb, BufferDesc* bdb)
  **************************************/
 	Database* dbb = tdbb->tdbb_database;
 	bdb->bdb_flags |= BDB_not_valid;
-	bdb->bdb_flags &= ~BDB_dirty;
+	// This will also release logical lock on LCK_backup_database
+	clear_page_dirty_flag(tdbb, bdb);
 	TRA_invalidate(dbb, bdb->bdb_transactions);
 	bdb->bdb_transactions = 0;
 	release_bdb(tdbb, bdb, false, false, false);
@@ -6332,9 +6330,13 @@ static bool write_page(
 
 			gds__trace(buffer);
 #endif
+			PageSpace* pageSpace = 
+				dbb->dbb_page_manager.findPageSpace(bdb->bdb_page.getPageSpaceID());
+			fb_assert(pageSpace);
+			const bool isTempPage = pageSpace->isTemporary();
 
-			if (backup_state == nbak_state_stalled ||
-				(backup_state == nbak_state_merge)) 
+			if (!isTempPage && (backup_state == nbak_state_stalled ||
+				backup_state == nbak_state_merge) ) 
 			{
 				if (!dbb->dbb_backup_manager->write_difference(
 					status, bdb->bdb_difference_page, bdb->bdb_buffer)) 
@@ -6356,10 +6358,6 @@ static bool write_page(
 #ifdef SUPERSERVER
 				THREAD_EXIT();
 #endif
-				PageSpace* pageSpace = 
-					dbb->dbb_page_manager.findPageSpace(bdb->bdb_page.getPageSpaceID());
-				fb_assert(pageSpace);
-				const bool isTempPage = pageSpace->isTemporary();
 				jrd_file* file = pageSpace->file;
 				while (!PIO_write(file, bdb, page, status)) {
 #ifdef SUPERSERVER
@@ -6423,13 +6421,13 @@ static bool write_page(
 		{
 			btc_remove(bdb);
 		}
-		if (bdb->bdb_flags & BDB_dirty) {
-			fb_assert(bdb->bdb_backup_lock_owner == BackupManager::database_lock_handle(tdbb));
-			dbb->dbb_backup_manager->release_dirty_page(tdbb, bdb->bdb_backup_lock_owner);
-			bdb->bdb_backup_lock_owner = 0;
-		}
 
-		bdb->bdb_flags &= ~(BDB_dirty | BDB_must_write | BDB_system_dirty);
+		fb_assert(bdb->bdb_flags & BDB_dirty ? 
+			bdb->bdb_backup_lock_owner == BackupManager::database_lock_handle(tdbb) : 
+			true);
+		clear_page_dirty_flag(tdbb, bdb);
+
+		bdb->bdb_flags &= ~(BDB_must_write | BDB_system_dirty);
 
 		if (bdb->bdb_flags & BDB_io_error) {
 			/* If a write error has cleared, signal background threads
@@ -6444,3 +6442,12 @@ static bool write_page(
 	return result;
 }
 
+static void clear_page_dirty_flag(thread_db* tdbb, BufferDesc* bdb)
+{
+	if (bdb->bdb_flags & BDB_dirty) {
+		fb_assert(bdb->bdb_backup_lock_owner);
+		tdbb->tdbb_database->dbb_backup_manager->release_dirty_page(tdbb, bdb->bdb_backup_lock_owner);
+		bdb->bdb_backup_lock_owner = 0;
+		bdb->bdb_flags &= ~BDB_dirty;
+	}
+}

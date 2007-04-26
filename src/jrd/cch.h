@@ -150,6 +150,7 @@ public:
 
 /* bdb_flags */
 
+// to clear BDB_dirty use clear_page_dirty_flag()
 const int BDB_dirty				= 1;		/* page has been updated but not written yet */
 const int BDB_garbage_collect	= 2;		/* left by scan for garbage collector */
 const int BDB_writer			= 4;		/* someone is updating the page */
