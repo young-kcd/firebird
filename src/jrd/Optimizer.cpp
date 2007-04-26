@@ -94,6 +94,10 @@ bool OPT_computable(CompilerScratch* csb, jrd_nod* node, SSHORT stream,
 	// Recurse thru interesting sub-nodes
 	jrd_nod** ptr = node->nod_arg;
 
+	if (node->nod_flags & nod_deoptimize) {
+		return false;
+	}
+
 	if (node->nod_type == nod_procedure) {
 		return false;
 	}
