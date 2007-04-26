@@ -1,3 +1,99 @@
+2007-04-25 23:14  hvlad
+
+	* firebird2/src/jrd/pag.cpp (1.130):
+
+	Track page_inv_page::pip_min when new pages are allocated. This
+	improve performance a bit
+
+2007-04-25 23:08  hvlad
+
+	* firebird2/: builds/install/misc/firebird.conf (1.29),
+	src/common/config/config.cpp (1.80), src/common/config/config.h
+	(1.44), src/jrd/pag.cpp (1.129), src/jrd/pag.h (1.11),
+	src/jrd/os/pio_proto.h (1.21), src/jrd/os/posix/unix.cpp (1.54),
+	src/jrd/os/win32/winnt.cpp (1.42):
+
+	Implement CORE-1229 : Teach Firebird to allocate disk space by more
+	than one page at a time
+
+2007-04-25 22:58  hvlad
+
+	* firebird2/src/jrd/sort.cpp (1.98):
+
+	Sorting pool must be database pool (not transaction poll) else we
+	can't correctly free resources of unfinished sort's at disconnect
+
+2007-04-25 22:54  hvlad
+
+	* firebird2/src/jrd/btr.cpp (1.193):
+
+	Correct error handling in index creation code when no space left on
+	disk
+
+2007-04-25 22:44  hvlad
+
+	* firebird2/src/: jrd/cch.cpp (1.155), jrd/cch_proto.h (1.27),
+	jrd/pag.cpp (1.128), utilities/nbackup.cpp (1.60):
+
+	Fixed bug CORE-1228 : Database often became corrupted after an out
+	of disk space condition
+
+2007-04-25 16:09  alexpeshkoff
+
+	* firebird2/: builds/posix/Makefile.in.client.util (1.40),
+	src/alice/alice.cpp (1.92), src/burp/burp.cpp (1.124),
+	src/common/utils.cpp (1.24), src/common/utils_proto.h (1.14),
+	src/dudley/ddl.cpp (1.40), src/gpre/gpre.cpp (1.84),
+	src/include/firebird.h (1.41), src/isql/isql.epp (1.218),
+	src/qli/dtr.cpp (1.45), src/utilities/nbackup.cpp (1.59),
+	src/utilities/gsec/gsec.cpp (1.67), src/utilities/gstat/dba.epp
+	(1.79), src/utilities/ibmgr/ibmgr.cpp (1.23):
+
+	Fixed CORE-867 - all utilities now hide password from "ps" as soon
+	as possible
+
+2007-04-25 16:06  alexpeshkoff
+
+	* firebird2/src/utilities/gserv.cpp (1.7):
+
+	added action_backup support
+
+2007-04-25 16:03  alexpeshkoff
+
+	* firebird2/src/jrd/common.h (1.153):
+
+	fixed 32-bit build
+
+2007-04-25 16:02  alexpeshkoff
+
+	* firebird2/src/common/classes/ClumpletWriter.cpp (1.18):
+
+	fixed writing of SpbStart clumplet
+
+2007-04-25 16:00  alexpeshkoff
+
+	* firebird2/builds/posix/make.defaults (1.53):
+
+	added minimum support for easy profiling setup
+
+2007-04-25 08:32  dimitr
+
+	* firebird2/src/jrd/cch.cpp (1.154):
+
+	Minor cleanup.
+
+2007-04-25 04:31  asfernandes
+
+	* firebird2/builds/win32/msvc8/fbembed.vcproj (1.10):
+
+	This shouldn't belong to this project
+
+2007-04-25 04:26  asfernandes
+
+	* firebird2/src/: dsql/pass1.cpp (1.315), jrd/cch.cpp (1.153):
+
+	Misc
+
 2007-04-24 19:43  skidder
 
 	* firebird2/src/jrd/nbak.cpp (1.65):
