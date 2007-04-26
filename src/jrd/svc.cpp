@@ -2779,10 +2779,6 @@ static bool process_switches(Firebird::ClumpletReader&	spb,
  *   Loop through the appropriate switch table
  *   looking for the text for the given command switch.
  *
- *   Calling this function with switches = NULL returns
- *   the number of bytes to allocate for the switches and
- *   parameters.
- *
  **************************************/
 	if (spb.getBufferLength() == 0)
 		return false;
@@ -2791,6 +2787,8 @@ static bool process_switches(Firebird::ClumpletReader&	spb,
 	const UCHAR svc_action = spb.getClumpTag();
 	spb.moveNext();
 
+	Firebird::string burp_database, burp_backup;
+	int burp_options = 0;
 	bool found = false;
 
 	do 
@@ -2915,19 +2913,23 @@ static bool process_switches(Firebird::ClumpletReader&	spb,
 		case isc_action_svc_restore:
 			switch (spb.getClumpTag()) {
 			case isc_spb_bkp_file:
+                get_action_svc_string(spb, burp_backup);
+				break;
 			case isc_spb_dbname:
-			case isc_spb_sql_role_name:
-                get_action_svc_string(spb, switches);
+                get_action_svc_string(spb, burp_database);
 				break;
 			case isc_spb_options:
+				burp_options |= spb.getInt();
 				if (!get_action_svc_bitmask(spb, burp_in_sw_table, switches))
 				{
 					return false;
 				}
 				break;
 			case isc_spb_bkp_length:
+				get_action_svc_data(spb, burp_backup);
+				break;
 			case isc_spb_res_length:
-				get_action_svc_data(spb, switches);
+				get_action_svc_data(spb, burp_database);
 				break;
 			case isc_spb_bkp_factor:
 			case isc_spb_res_buffers:
@@ -3003,6 +3005,23 @@ static bool process_switches(Firebird::ClumpletReader&	spb,
 		
 		spb.moveNext();
 	} while (! spb.isEof());
+
+	// postfixes for burp
+	switch (svc_action)
+	{
+	case isc_action_svc_backup:
+		switches += (burp_database + burp_backup);
+		break;
+	case isc_action_svc_restore:
+		if (! (burp_options & (isc_spb_res_create | isc_spb_res_replace)))
+		{
+			// user not specified create or replace database
+			// default to create for restore
+			switches += "-CREATE_DATABASE ";
+		}
+		switches += (burp_backup + burp_database);
+		break;
+	}
 
 	switches.rtrim();
 	return switches.length() > 0;
