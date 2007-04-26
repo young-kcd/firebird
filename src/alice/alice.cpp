@@ -91,6 +91,12 @@ static const USHORT val_err_table[] = {
 AliceGlobals* gdgbl;
 #endif
 
+#ifdef SERVICE_THREAD
+typedef const char* ArgString;
+#else
+typedef char* ArgString;
+#endif
+
 const int ALICE_MSG_FAC = 3;
 
 static inline void exit_local(int code, AliceGlobals* tdgbl)

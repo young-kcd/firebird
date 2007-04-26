@@ -220,20 +220,18 @@ int snprintf(char* buffer, size_t count, const char* format...)
 }
 
 // *******************
-// g e t _ p a s s w d
+// c l e a n u p _ p a s s w d
 // *******************
 // Copy password to newly allocated place and replace existing one in argv with spaces.
 // Allocated space is released upon exit from utility.
 // This is planned leak of a few bytes of memory in utilities.
-ArgString get_passwd(ArgString arg)
+char* cleanup_passwd(char* arg)
 {
 	if (! arg) 
 	{
 		return arg;
 	}
-#ifdef SERVICE_THREAD
-	return arg;		// do nothing when running as service
-#else
+
 	int lpass = strlen(arg);
 	char* savePass = (char*) gds__alloc(lpass + 1);
 	if (! savePass)
@@ -245,7 +243,6 @@ ArgString get_passwd(ArgString arg)
 	memcpy(savePass, arg, lpass + 1);
 	memset(arg, ' ', lpass);
 	return savePass;
-#endif
 }
 
 

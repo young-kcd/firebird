@@ -73,6 +73,12 @@ const int MAXSTUFF	= 1000;		/* longest interactive command line */
 class tsec *gdsec;
 #endif
 
+#ifdef SERVICE_THREAD
+typedef const char* ArgString;
+#else
+typedef char* ArgString;
+#endif
+
 static int common_main(int, ArgString*, Jrd::pfn_svc_output, Jrd::Service*);
 static void util_output(const SCHAR*, ...);
 static int util_print(const SCHAR*, ...);

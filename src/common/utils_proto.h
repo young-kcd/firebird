@@ -31,7 +31,6 @@
 #include <string.h>
 #include "../common/classes/fb_string.h"
 
-
 namespace fb_utils
 {
 	char* exact_name(char* const str);
@@ -45,7 +44,18 @@ namespace fb_utils
 	bool readenv(const char* env_name, Firebird::string& env_value);
 	bool readenv(const char* env_name, Firebird::PathName& env_value);
 	int snprintf(char* buffer, size_t count, const char* format...);
-	ArgString get_passwd(ArgString arg);
+	char* cleanup_passwd(char* arg);
+#ifdef SERVICE_THREAD
+	inline const char* get_passwd(const char* arg)
+	{
+		return arg;
+	}
+#else
+	inline char* get_passwd(char* arg)
+	{
+		return cleanup_passwd(arg);
+	}
+#endif
 
 // Warning: Only wrappers:
 

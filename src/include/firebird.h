@@ -128,12 +128,6 @@ using namespace NAMESPACE;
 #define SERVICE_THREAD
 #endif
 
-#ifdef SERVICE_THREAD
-typedef const char* ArgString;
-#else
-typedef char* ArgString;
-#endif
-
 #if defined(WIN_NT)
 #define TRUSTED_AUTH
 #if defined(SERVICE_THREAD)
