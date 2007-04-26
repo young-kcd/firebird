@@ -222,7 +222,7 @@ int snprintf(char* buffer, size_t count, const char* format...)
 // *******************
 // g e t _ p a s s w d
 // *******************
-// Copy password to newly allocated place and replace existing one in argv with stars.
+// Copy password to newly allocated place and replace existing one in argv with spaces.
 // Allocated space is released upon exit from utility.
 // This is planned leak of a few bytes of memory in utilities.
 ArgString get_passwd(ArgString arg)
