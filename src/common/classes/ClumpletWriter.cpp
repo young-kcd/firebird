@@ -234,14 +234,18 @@ void ClumpletWriter::insertBytesLengthCheck(UCHAR tag, const UCHAR* bytes, size_
 	case IntSpb:
 		if (length != 4)
 		{
-        	usage_mistake("attempt to store %d bytes in clumplet, need 4");
+			string m;
+			m.printf("attempt to store %d bytes in a clumplet, need 4", length);
+			usage_mistake(m.c_str());
 			return;
 		}
 		break;
 	case ByteSpb:
 		if (length != 1)
 		{
-        	usage_mistake("attempt to store %d bytes in clumplet, need 1");
+			string m;
+			m.printf("attempt to store %d bytes in a clumplet, need 1", length);
+			usage_mistake(m.c_str());
 			return;
 		}
 		break;
