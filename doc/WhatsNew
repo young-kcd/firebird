@@ -39,6 +39,11 @@
       Contributor(s):
         Claudio Valderrama <cvalde at usa.net>
 
+    * Fixed bug CORE-968
+        Lost Connection with Firebird Server
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
     * Fixed bug CORE-900
         Deadlock when attaching simultaneously with services and standard APIs
       Contributor(s):
