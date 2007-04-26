@@ -1,7 +1,52 @@
+  **************************
+  * v2.0.2
+  **************************
+
+    * Improvement CORE-1148
+        Regular users are protected from viewing the server log using Services API.
+        This is now allowed for SYSDBA only.
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Fixed bug CORE-1207
+        FB Embedded requires extra OS privileges
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
+
+    * Fixed bug CORE-1205
+        v2.1 GBAK crashes the v2.0.x server when attempting to backup a database  
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+        Claudio Valderrama <cvalde at usa.net>
+
+    * Fixed bug CORE-1183
+        View cannot be created if its WHERE clause contains IN <subquery> with a procedure reference  
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed bug CORE-1149
+        DoS attack on server using Services API
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Fixed bug CORE-1145
+        Server locks up while attempting to commit a deletion of an expression index
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed bug CORE-1142
+        Cannot alter generator's comment to the same value
+      Contributor(s):
+        Claudio Valderrama <cvalde at usa.net>
+
+    * Fixed bug CORE-900
+        Deadlock when attaching simultaneously with services and standard APIs
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
     * MacOS Firebird Classic Intel Port
       Contributor(s):
         Paul Beach <pbeach at ibphoenix.com>
-
 
   **************************
   * v2.0.1
