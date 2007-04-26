@@ -35,9 +35,21 @@
 #include "../common/classes/ClumpletWriter.h"
 #include "../common/utils_proto.h"
 
-typedef bool PopulateFunction(char**&, Firebird::ClumpletWriter&, unsigned char);
+typedef bool PopulateFunction(char**&, Firebird::ClumpletWriter&, unsigned int);
 
-bool putStringArgument(char**& av, Firebird::ClumpletWriter& spb, unsigned char tag)
+Firebird::string prepareSwitch(const char* arg)
+{
+	Firebird::string s(arg);
+	if (s[0] == '-')
+	{
+		s.erase(0, 1);
+	}
+	s.lower();
+
+	return s;
+}
+
+bool putStringArgument(char**& av, Firebird::ClumpletWriter& spb, unsigned int tag)
 {
 	if (! *av)
 		return false;
@@ -49,7 +61,58 @@ bool putStringArgument(char**& av, Firebird::ClumpletWriter& spb, unsigned char 
 	return true;
 }
 
-bool putNumericArgument(char**& av, Firebird::ClumpletWriter& spb, unsigned char tag)
+bool putAccessMode(char**& av, Firebird::ClumpletWriter& spb, unsigned int tag)
+{
+	if (! *av)
+		return false;
+
+	Firebird::string s(prepareSwitch(*av++));
+	if (s == "prp_am_readonly")
+		spb.insertByte(tag, isc_spb_prp_am_readonly);
+	else if (s == "prp_am_readwrite")
+		spb.insertByte(tag, isc_spb_prp_am_readwrite);
+	else
+		Firebird::status_exception::raise(isc_random, isc_arg_string, 
+				"Wrong value for access mode", 0);
+
+	return true;
+}
+
+bool putWriteMode(char**& av, Firebird::ClumpletWriter& spb, unsigned int tag)
+{
+	if (! *av)
+		return false;
+
+	Firebird::string s(prepareSwitch(*av++));
+	if (s == "prp_wm_async")
+		spb.insertByte(tag, isc_spb_prp_wm_async);
+	else if (s == "prp_wm_sync")
+		spb.insertByte(tag, isc_spb_prp_wm_sync);
+	else
+		Firebird::status_exception::raise(isc_random, isc_arg_string, 
+				"Wrong value for write mode", 0);
+
+	return true;
+}
+
+bool putReserveSpace(char**& av, Firebird::ClumpletWriter& spb, unsigned int tag)
+{
+	if (! *av)
+		return false;
+
+	Firebird::string s(prepareSwitch(*av++));
+	if (s == "prp_res_use_full")
+		spb.insertByte(tag, isc_spb_prp_res_use_full);
+	else if (s == "prp_res")
+		spb.insertByte(tag, isc_spb_prp_res);
+	else
+		Firebird::status_exception::raise(isc_random, isc_arg_string, 
+				"Wrong value for reserve space", 0);
+
+	return true;
+}
+
+bool putNumericArgument(char**& av, Firebird::ClumpletWriter& spb, unsigned int tag)
 {
 	if (! *av)
 		return false;
@@ -60,17 +123,14 @@ bool putNumericArgument(char**& av, Firebird::ClumpletWriter& spb, unsigned char
 	return true;
 }
 
-bool putOption(char**& av, Firebird::ClumpletWriter& spb, unsigned char tag)
+bool putOption(char**&, Firebird::ClumpletWriter& spb, unsigned int tag)
 {
-	if (! *av)
-		return false;
-
 	spb.insertInt(isc_spb_options, tag);
 
 	return true;
 }
 
-bool putSingleTag(char**&, Firebird::ClumpletWriter& spb, unsigned char tag)
+bool putSingleTag(char**&, Firebird::ClumpletWriter& spb, unsigned int tag)
 {
 	spb.insertTag(tag);
 
@@ -82,7 +142,7 @@ struct Switches
 	const char* name;
 	PopulateFunction* populate;
 	const Switches* options;
-	unsigned char tag;
+	unsigned int tag;
 	unsigned char tagInf;
 };
 
@@ -94,12 +154,7 @@ bool populateSpbFromSwitches(char**& av,
 	if (! *av)
 		return false;
 
-	Firebird::string s(*av);
-	if (s[0] == '-')
-	{
-		s.erase(0, 1);
-	}
-	s.lower();
+	Firebird::string s(prepareSwitch(*av));
 
 	while (sw->name)
 	{
@@ -163,13 +218,71 @@ const Switches backupOptions[] = {
 	{0, 0, 0, 0, 0}
 };
 
+const Switches restoreOptions[] = {
+	{"bkp_file", putStringArgument, 0, isc_spb_bkp_file, 0},
+	{"dbname", putStringArgument, 0, isc_spb_dbname, 0},
+	{"res_length", putNumericArgument, 0, isc_spb_res_length, 0},
+	{"verbose", putSingleTag, 0, isc_spb_verbose, 0},
+	{"res_buffers", putNumericArgument, 0, isc_spb_res_buffers, 0},
+	{"res_page_size", putNumericArgument, 0, isc_spb_res_page_size, 0},
+	{"res_access_mode", putAccessMode, 0, isc_spb_res_access_mode, 0},
+	{"res_deactivate_idx", putOption, 0, isc_spb_res_deactivate_idx, 0},
+	{"res_no_shadow", putOption, 0, isc_spb_res_no_shadow, 0},
+	{"res_no_validity", putOption, 0, isc_spb_res_no_validity, 0},
+	{"res_one_at_a_time", putOption, 0, isc_spb_res_one_at_a_time, 0},
+	{"res_replace", putOption, 0, isc_spb_res_replace, 0},
+	{"res_create", putOption, 0, isc_spb_res_create, 0},
+	{"res_use_all_space", putOption, 0, isc_spb_res_use_all_space, 0},
+	{0, 0, 0, 0, 0}
+};
+
+const Switches propertiesOptions[] = {
+	{"dbname", putStringArgument, 0, isc_spb_dbname, 0},
+	{"prp_page_buffers", putNumericArgument, 0, isc_spb_prp_page_buffers, 0},
+	{"prp_sweep_interval", putNumericArgument, 0, isc_spb_prp_sweep_interval, 0},
+	{"prp_shutdown_db", putNumericArgument, 0, isc_spb_prp_shutdown_db, 0},
+	{"prp_deny_new_transactions", putNumericArgument, 0, isc_spb_prp_deny_new_transactions, 0},
+	{"prp_deny_new_attachments", putNumericArgument, 0, isc_spb_prp_deny_new_attachments, 0},
+	{"prp_set_sql_dialect", putNumericArgument, 0, isc_spb_prp_set_sql_dialect, 0},
+	{"prp_access_mode", putAccessMode, 0, isc_spb_prp_access_mode, 0},
+	{"prp_reserve_space", putReserveSpace, 0, isc_spb_prp_reserve_space, 0},
+	{"prp_write_mode", putWriteMode, 0, isc_spb_prp_write_mode, 0},
+	{"prp_activate", putOption, 0, isc_spb_prp_activate, 0},
+	{"prp_db_online", putOption, 0, isc_spb_prp_db_online, 0},
+	{0, 0, 0, 0, 0}
+};
+
+const Switches repairOptions[] = {
+	{"dbname", putStringArgument, 0, isc_spb_dbname, 0},
+	{"rpr_commit_trans", putNumericArgument, 0, isc_spb_rpr_commit_trans, 0},
+	{"rpr_rollback_trans", putNumericArgument, 0, isc_spb_rpr_rollback_trans, 0},
+	{"rpr_recover_two_phase", putNumericArgument, 0, isc_spb_rpr_recover_two_phase, 0},
+	{"rpr_check_db", putOption, 0, isc_spb_rpr_check_db, 0},
+	{"rpr_ignore_checksum", putOption, 0, isc_spb_rpr_ignore_checksum, 0},
+	{"rpr_kill_shadows", putOption, 0, isc_spb_rpr_kill_shadows, 0},
+	{"rpr_mend_db", putOption, 0, isc_spb_rpr_mend_db, 0},
+	{"rpr_validate_db", putOption, 0, isc_spb_rpr_validate_db, 0},
+	{"rpr_full", putOption, 0, isc_spb_rpr_full, 0},
+	{"rpr_sweep_db", putOption, 0, isc_spb_rpr_sweep_db, 0},
+	{0, 0, 0, 0, 0}
+};
+
+const Switches statisticsOptions[] = {
+	{"dbname", putStringArgument, 0, isc_spb_dbname, 0},
+	{"sts_data_pages", putOption, 0, isc_spb_sts_data_pages, 0},
+	{"sts_hdr_pages", putOption, 0, isc_spb_sts_hdr_pages, 0},
+	{"sts_idx_pages", putOption, 0, isc_spb_sts_idx_pages, 0},
+	{"sts_sys_relations", putOption, 0, isc_spb_sts_sys_relations, 0},
+	{0, 0, 0, 0, 0}
+};
+
 const Switches actionSwitch[] = {
 	{"action_backup", putSingleTag, backupOptions, isc_action_svc_backup, isc_info_svc_line},
-	{"action_restore", putSingleTag, 0, isc_action_svc_restore, 0},
-	{"action_properties", putSingleTag, 0, isc_action_svc_properties, 0},
-	{"action_repair", putSingleTag, 0, isc_action_svc_repair, 0},
-	{"action_db_stats", putSingleTag, 0, isc_action_svc_db_stats, 0},
-	{"action_get_ib_log", putSingleTag, 0, isc_action_svc_get_ib_log, 0},
+	{"action_restore", putSingleTag, restoreOptions, isc_action_svc_restore, isc_info_svc_line},
+	{"action_properties", putSingleTag, propertiesOptions, isc_action_svc_properties, 0},
+	{"action_repair", putSingleTag, repairOptions, isc_action_svc_repair, 0},
+	{"action_db_stats", putSingleTag, statisticsOptions, isc_action_svc_db_stats, isc_info_svc_line},
+	{"action_get_ib_log", putSingleTag, 0, isc_action_svc_get_ib_log, isc_info_svc_line},
 	{"action_display_user", putSingleTag, 0, isc_action_svc_display_user, 0},
 	{"action_add_user", putSingleTag, 0, isc_action_svc_add_user, 0},
 	{"action_delete_user", putSingleTag, 0, isc_action_svc_delete_user, 0},
@@ -293,8 +406,8 @@ int main(int ac, char **av)
 
 		Firebird::ClumpletWriter spbStart(Firebird::ClumpletWriter::SpbStart, maxbuf);
 		Firebird::ClumpletWriter spbItems(Firebird::ClumpletWriter::SpbItems, 256);
-		while (populateSpbFromSwitches(av, spbStart, actionSwitch, &spbItems))
-			;
+		// single action per one utility run, it may populate info items also
+		populateSpbFromSwitches(av, spbStart, actionSwitch, &spbItems);
 
 		if (spbStart.getBufferLength() == 0)
 		{
@@ -302,7 +415,7 @@ int main(int ac, char **av)
 				;
 		}
 
-		//Here we are over with av parse, look - may be some unknown switch left
+		//Here we are over with av parse, look - may be unknown switch left
 		if (*av)
 		{
 			printf("Unknown switch '%s'\n", *av);
