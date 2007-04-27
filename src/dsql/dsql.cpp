@@ -2994,7 +2994,7 @@ static void cleanup_database(FB_API_HANDLE* db_handle, void* flag)
  **/
 static void cleanup_transaction (FB_API_HANDLE tra_handle, void* arg)
 {
-	ISC_STATUS_ARRAY local_status;
+	ISC_STATUS_ARRAY local_status = {isc_arg_gds, FB_SUCCESS, isc_arg_end};
 
 // find this transaction/request pair in the list of pairs 
 
