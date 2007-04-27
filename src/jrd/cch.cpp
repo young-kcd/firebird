@@ -951,8 +951,8 @@ void CCH_fetch_page(
 	THREAD_EXIT();
 #endif
 
-		// In merge mode, if we are reading past beyond old end of file and page is in .delta file
-		// then we maintain actual page in difference file. Always read it from there.
+	// In merge mode, if we are reading past beyond old end of file and page is in .delta file
+	// then we maintain actual page in difference file. Always read it from there.
 	if (isTempPage || bak_state == nbak_state_normal || !diff_page) 
 	{
 		NBAK_TRACE(("Reading page %d, state=%d, diff page=%d from DISK",
@@ -1096,8 +1096,8 @@ void CCH_forget_page(thread_db* tdbb, WIN * window)
  *
  * Functional description
  *	Page was faked but can't be written on disk. Most probably because
- *	of out of disk space. Release page buffer and other resources and
- *	unlink page from variuos queues
+ *	of out of disk space. Release page buffer and others resources and
+ *	unlink page from various queues
  *
  **************************************/
 	SET_TDBB(tdbb);
@@ -6336,7 +6336,7 @@ static bool write_page(
 			const bool isTempPage = pageSpace->isTemporary();
 
 			if (!isTempPage && (backup_state == nbak_state_stalled ||
-				backup_state == nbak_state_merge) ) 
+					backup_state == nbak_state_merge) ) 
 			{
 				if (!dbb->dbb_backup_manager->write_difference(
 					status, bdb->bdb_difference_page, bdb->bdb_buffer)) 

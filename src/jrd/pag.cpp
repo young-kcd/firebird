@@ -2248,7 +2248,7 @@ bool PageSpace::extend(thread_db* tdbb, const ULONG pageNum)
  *	If "MaxDatabaseFileGrowth" less than MIN_EXTEND_BYTES don't extend file(s)
  *
  **************************************/
-	const int MIN_EXTEND_BYTES = 128 * 1024;
+	const int MIN_EXTEND_BYTES = 128 * 1024;	// 128KB
 	const int MAX_EXTEND_BYTES = Config::getDatabaseGrowthIncrement();
 
 	if (pageNum < maxPageNumber || MAX_EXTEND_BYTES < MIN_EXTEND_BYTES)
@@ -2279,6 +2279,7 @@ bool PageSpace::extend(thread_db* tdbb, const ULONG pageNum)
 		THREAD_EXIT();
 
 		while (true)
+		{
 			try 
 			{
 				PIO_extend(file, extPages, dbb->dbb_page_size);
@@ -2301,6 +2302,8 @@ bool PageSpace::extend(thread_db* tdbb, const ULONG pageNum)
 					return false;
 				}
 			}
+		}
+
 		THREAD_ENTER();
 		maxPageNumber = 0; 
 	}
