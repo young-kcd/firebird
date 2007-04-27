@@ -1,3 +1,56 @@
+2007-04-26 22:16  skidder
+
+	* firebird2/src/jrd/: cch.cpp (1.156), cch.h (1.32):
+
+	Cleanup as requested by Dmitry and Vlad - do not write pages of
+	temporary tables to the NBAK delta files (engine still does a lot
+	of unneeded locking and synchronization for temp pages, especially
+	in CS builds, but this is another problem) - refactor and clean up
+	potential problems in the logic of dirty page -> clean page
+	transition
+
+2007-04-26 21:29  skidder
+
+	* firebird2/src/: alice/alice.cpp (1.93), common/utils.cpp (1.26),
+	common/utils_proto.h (1.15), include/firebird.h (1.42),
+	utilities/gsec/gsec.cpp (1.68):
+
+	Fix MSVC8/Win32 build. IMO, these things where not nice: -
+	Target-dependent global typedefs - Target-dependent stuff in COMMON
+	.cpp files
+
+2007-04-26 19:25  skidder
+
+	* firebird2/src/jrd/jrd.cpp (1.323):
+
+	Fix server crash if database file cannot be created that was
+	introduced by our previous patch
+
+2007-04-26 18:16  alexpeshkoff
+
+	* firebird2/src/utilities/gserv.cpp (1.8):
+
+	support some more actions - work in progress
+
+2007-04-26 18:15  alexpeshkoff
+
+	* firebird2/src/common/classes/ClumpletWriter.cpp (1.19):
+
+	fixed diagnostics
+
+2007-04-26 16:59  alexpeshkoff
+
+	* firebird2/src/jrd/svc.cpp (1.182):
+
+	Fixed CORE-1232 - wrong behaviour of services manager during
+	backup/restore operations
+
+2007-04-26 10:51  alexpeshkoff
+
+	* firebird2/src/common/utils.cpp (1.25):
+
+	misc comment
+
 2007-04-25 23:14  hvlad
 
 	* firebird2/src/jrd/pag.cpp (1.130):
