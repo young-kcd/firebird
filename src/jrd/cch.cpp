@@ -1120,10 +1120,7 @@ void CCH_forget_page(thread_db* tdbb, WIN * window)
 		dbb->dbb_flags &= ~DBB_suspend_bgio;
 	}
 
-	if (bdb->bdb_flags & BDB_dirty) {
-		dbb->dbb_backup_manager->release_dirty_page(tdbb, bdb->bdb_backup_lock_owner);
-		bdb->bdb_backup_lock_owner = 0;
-	}
+	clear_page_dirty_flag(tdbb, bdb);
 	bdb->bdb_flags = 0;
 	BufferControl* bcb = dbb->dbb_bcb;
 
