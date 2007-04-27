@@ -26,6 +26,7 @@
  *
  */
 
+#include "firebird.h"
 #include "GlobalRWLock.h"
 #include "../lock/lock.h"
 #include "../lock/lock_proto.h"
