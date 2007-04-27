@@ -276,6 +276,26 @@ const Switches statisticsOptions[] = {
 	{0, 0, 0, 0, 0}
 };
 
+const Switches dispdelOptions[] = {
+	{"dbname", putStringArgument, 0, isc_spb_dbname, 0},
+	{"sec_username", putStringArgument, 0, isc_spb_sec_username, 0},
+	{"sql_role_name", putStringArgument, 0, isc_spb_sql_role_name, 0},
+	{0, 0, 0, 0, 0}
+};
+
+const Switches addmodOptions[] = {
+	{"dbname", putStringArgument, 0, isc_spb_dbname, 0},
+	{"sec_username", putStringArgument, 0, isc_spb_sec_username, 0},
+	{"sql_role_name", putStringArgument, 0, isc_spb_sql_role_name, 0},
+	{"sec_password", putStringArgument, 0, isc_spb_sec_password, 0},
+	{"sec_groupname", putStringArgument, 0, isc_spb_sec_groupname, 0},
+	{"sec_firstname", putStringArgument, 0, isc_spb_sec_firstname, 0},
+	{"sec_middlename", putStringArgument, 0, isc_spb_sec_middlename, 0},
+	{"sec_lastname", putStringArgument, 0, isc_spb_sec_lastname, 0},
+	{"sec_userid", putNumericArgument, 0, isc_spb_sec_userid, 0},
+	{"sec_groupid", putNumericArgument, 0, isc_spb_sec_groupid, 0},
+	{0, 0, 0, 0, 0}
+};
 const Switches actionSwitch[] = {
 	{"action_backup", putSingleTag, backupOptions, isc_action_svc_backup, isc_info_svc_line},
 	{"action_restore", putSingleTag, restoreOptions, isc_action_svc_restore, isc_info_svc_line},
@@ -283,26 +303,37 @@ const Switches actionSwitch[] = {
 	{"action_repair", putSingleTag, repairOptions, isc_action_svc_repair, 0},
 	{"action_db_stats", putSingleTag, statisticsOptions, isc_action_svc_db_stats, isc_info_svc_line},
 	{"action_get_ib_log", putSingleTag, 0, isc_action_svc_get_ib_log, isc_info_svc_line},
-	{"action_display_user", putSingleTag, 0, isc_action_svc_display_user, 0},
-	{"action_add_user", putSingleTag, 0, isc_action_svc_add_user, 0},
-	{"action_delete_user", putSingleTag, 0, isc_action_svc_delete_user, 0},
-	{"action_modify_user", putSingleTag, 0, isc_action_svc_modify_user, 0},
+	{"action_display_user", putSingleTag, dispdelOptions, isc_action_svc_display_user, isc_info_svc_get_users},
+	{"action_add_user", putSingleTag, addmodOptions, isc_action_svc_add_user, 0},
+	{"action_delete_user", putSingleTag, dispdelOptions, isc_action_svc_delete_user, 0},
+	{"action_modify_user", putSingleTag, addmodOptions, isc_action_svc_modify_user, 0},
 	{0, 0, 0, 0, 0}
 };
 
-bool printLine(const char*& p)
+bool getLine(Firebird::string& dest, const char*& p)
 {
 	unsigned short length = (unsigned short)
 		isc_vax_integer (p, sizeof(unsigned short));
 	p += sizeof (unsigned short);
-	if (! length)
-	{
-		return false;
-	}
-	
-	printf ("%.*s\n", length, p);
+	dest.assign(p, length);
 	p += length;
-	return true;
+	return length > 0;
+}
+
+int getNumeric(const char*& p)
+{
+	unsigned int num = (unsigned int)
+		isc_vax_integer (p, sizeof(unsigned int));
+	p += sizeof (unsigned int);
+	return num;
+}
+
+bool printLine(const char*& p)
+{
+	Firebird::string s;
+	bool rc = getLine(s, p);
+	printf ("%s\n", s.c_str());
+	return rc;
 }
 
 void printString(const char*& p, const char* text)
@@ -316,13 +347,49 @@ void printString(const char*& p, const char* text)
 
 void printNumeric(const char*& p, const char* text)
 {
-	unsigned int num = (unsigned int)
-		isc_vax_integer (p, sizeof(unsigned int));
-	p += sizeof (unsigned int);
-	printf ("%s: %d\n", text, num);
+	printf ("%s: %d\n", text, getNumeric(p));
 }
 
-bool printInfo(const char* p)
+class userPrint
+{
+public:
+	Firebird::string login, first, middle, last;
+	int gid, uid;
+
+private:
+	bool hasData;
+
+public:
+	userPrint() : hasData(false)
+	{
+		clear();
+	}
+
+	~userPrint()
+	{
+		print();
+	}
+
+	void clear()
+	{
+		login = first = middle = last = "";
+		gid = uid = 0;
+	}
+
+	void print()
+	{
+		if (!hasData)
+		{
+			hasData = true;
+			return;
+		}
+		printf("%-28.28s %-40.40s %4d %4d\n", login.c_str(),
+			(first + " " + middle + " " + last).c_str(), uid, gid);
+		clear();
+	}
+};
+
+bool printInfo(const char* p, userPrint& up)
 {
 	while (*p != isc_info_end)
 	{
@@ -372,11 +439,36 @@ bool printInfo(const char* p)
 			p++;
 			break;
 
+		case isc_info_svc_get_users:
+			p += sizeof(unsigned short);
+			break;
+		case isc_spb_sec_username:
+			up.print();
+			getLine(up.login, p);
+			break;
+		case isc_spb_sec_firstname:
+			getLine(up.first, p);
+			break;
+		case isc_spb_sec_middlename:
+			getLine(up.middle, p);
+			break;
+		case isc_spb_sec_lastname:
+			getLine(up.last, p);
+			break;
+		case isc_spb_sec_groupid:
+			up.gid = getNumeric(p);
+			break;
+		case isc_spb_sec_userid:
+			up.uid = getNumeric(p);
+			break;
+
 		case isc_info_svc_line:
 			return printLine(p);
+
 		case isc_info_truncated:
 			printf ("Truncated\n");
 			return false;
+
 		default:
 			printf("Unknown tag in isc_svc_query() results (%d)\n", p[-1]);
 			return false;
@@ -448,6 +540,7 @@ int main(int ac, char **av)
 		if (spbItems.getBufferLength() > 0)
 		{
 			char results[maxbuf];
+			userPrint up;
 			do
 			{
 				if (isc_service_query(status,
@@ -460,7 +553,7 @@ int main(int ac, char **av)
 					isc_service_detach(status, &svc_handle);
 					return 1;
 				}
-			} while(printInfo(results));
+			} while(printInfo(results, up));
 		}
 
 		isc_service_detach(status, &svc_handle);
