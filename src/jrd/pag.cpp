@@ -813,7 +813,10 @@ PAG PAG_allocate(WIN * window)
 									fb_assert(new_page);
 								}
 								if (!(dbb->dbb_flags & DBB_no_reserve)) {
-									pageSpace->extend(tdbb, pageNum + 1);
+									// At this point we sure database have at least pageNum + 1 pages
+									// allocated. To avoid file growth by one page when next page will
+									// be allocated extend file up to pageNum + 2 pages now
+									pageSpace->extend(tdbb, pageNum + 2);
 								}
 							}
 							break;	/* Found a page and successfully fake-ed it */
