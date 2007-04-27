@@ -1017,7 +1017,7 @@ void VIO_data(thread_db* tdbb, record_param* rpb, JrdMemoryPool* pool)
 	{
 		tail = differences;
 		tail_end = differences + sizeof(differences);
-		if (prior != record)
+		if (prior != record) {
 			if (record->rec_length < prior->rec_length) {
 				if (record->rec_flags & REC_gc_active) {
 					record = replace_gc_record(rpb->rpb_relation, 
@@ -1029,6 +1029,7 @@ void VIO_data(thread_db* tdbb, record_param* rpb, JrdMemoryPool* pool)
 			}
 			MOVE_FASTER(prior->rec_data, record->rec_data,
 						prior->rec_format->fmt_length);
+		}
 	}
 	else
 	{
