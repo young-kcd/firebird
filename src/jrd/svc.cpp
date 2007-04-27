@@ -2803,26 +2803,33 @@ static bool process_switches(Firebird::ClumpletReader&	spb,
 					return false;
 				}
 				else {
-					found = true;
-					/* in case of "display all users" the spb buffer contains
-					   nothing but isc_action_svc_display_user */
-					if (spb.isEof())
+					if (spb.isEof() && svc_action == isc_action_svc_display_user)
 					{
+						// in case of "display all users" the spb buffer contains
+						// nothing but isc_action_svc_display_user
 						break;
 					}
+					if (spb.getClumpTag() != isc_spb_sec_username) {
+						// unexpected item in service parameter block, expected @1
+						ERR_post(isc_unexp_spb_form, isc_arg_string,
+								 error_string(SPB_SEC_USERNAME,
+												strlen(SPB_SEC_USERNAME)),
+								 0);
+					}
+					found = true;
 				}
 			}
 
-			switch (spb.getClumpTag()) {
-			case isc_spb_sec_username:
-				get_action_svc_string(spb, switches);
-				break;
-
+			switch (spb.getClumpTag()) 
+			{
+			case isc_spb_sql_role_name:
 			case isc_spb_dbname:
 				if (!get_action_svc_parameter(spb.getClumpTag(), gsec_in_sw_table, switches))
 				{
 					return false;
 				}
+				// fall through ....
+			case isc_spb_sec_username:
 				get_action_svc_string(spb, switches);
 				break;
 				
@@ -2840,19 +2847,19 @@ static bool process_switches(Firebird::ClumpletReader&	spb,
 					return false;
 				}
 				else {
-					found = true;
 					if (spb.getClumpTag() != isc_spb_sec_username) {
-						/* unexpected service parameter block:
-						   expected %d, encountered %d */
+						// unexpected item in service parameter block, expected @1
 						ERR_post(isc_unexp_spb_form, isc_arg_string,
 								 error_string(SPB_SEC_USERNAME,
 												strlen(SPB_SEC_USERNAME)),
 								 0);
 					}
+					found = true;
 				}
 			}
 
-			switch (spb.getClumpTag()) {
+			switch (spb.getClumpTag()) 
+			{
 			case isc_spb_sec_userid:
 			case isc_spb_sec_groupid:
 				if (!get_action_svc_parameter(spb.getClumpTag(), gsec_in_sw_table, switches))
@@ -2862,10 +2869,6 @@ static bool process_switches(Firebird::ClumpletReader&	spb,
 				get_action_svc_data(spb, switches);
 				break;
 
-			case isc_spb_sec_username:
-				get_action_svc_string(spb, switches);
-				break;
-				
 			case isc_spb_sql_role_name:
 			case isc_spb_sec_password:
 			case isc_spb_sec_groupname:
@@ -2877,6 +2880,8 @@ static bool process_switches(Firebird::ClumpletReader&	spb,
 				{
 					return false;
 				}
+				// fall through ....
+			case isc_spb_sec_username:
 				get_action_svc_string(spb, switches);
 				break;
 
