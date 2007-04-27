@@ -236,28 +236,12 @@ ClumpletReader::ClumpletType ClumpletReader::getClumpletType(UCHAR tag) const
 			switch (tag) 
 			{
 			case isc_spb_dbname:
-			case isc_spb_tra_host_site:
-			case isc_spb_tra_remote_site:
-			case isc_spb_tra_db_path:
 				return StringSpb;
 			case isc_spb_options:
-			case isc_spb_tra_id:
-			case isc_spb_single_tra_id:
-			case isc_spb_multi_tra_id:
 			case isc_spb_rpr_commit_trans:
 			case isc_spb_rpr_rollback_trans:
 			case isc_spb_rpr_recover_two_phase:
 				return IntSpb;
-			case isc_spb_tra_state:
-			case isc_spb_tra_state_limbo:
-			case isc_spb_tra_state_commit:
-			case isc_spb_tra_state_rollback:
-			case isc_spb_tra_state_unknown:
-			case isc_spb_tra_advise:
-			case isc_spb_tra_advise_commit:
-			case isc_spb_tra_advise_rollback:
-			case isc_spb_tra_advise_unknown:
-				return SingleTpb;
 			}
 			invalid_structure("unknown parameter for repair");
 			break;
