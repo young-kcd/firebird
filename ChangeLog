@@ -1,3 +1,23 @@
+2007-04-26 16:13  dimitr
+
+	* firebird2/: src/jrd/isc_version.h (1.8.4.8), doc/WhatsNew
+	(1.95.2.32):
+
+	Update.
+
+2007-04-26 16:00  dimitr
+
+	* firebird2/doc/WhatsNew (1.95.2.31):
+
+	Update.
+
+2007-04-26 12:12  dimitr
+
+	* firebird2/src/jrd/: opt.cpp (1.261.2.11), Optimizer.cpp
+	(1.56.4.3):
+
+	Backported ANY/ALL related logic from HEAD.
+
 2007-04-18 10:22  hvlad
 
 	* firebird2/src/jrd/isc_sync.cpp (1.103.2.2):
