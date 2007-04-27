@@ -73,21 +73,15 @@ const int MAXSTUFF	= 1000;		/* longest interactive command line */
 class tsec *gdsec;
 #endif
 
-#ifdef SERVICE_THREAD
-typedef const char* ArgString;
-#else
-typedef char* ArgString;
-#endif
-
-static int common_main(int, ArgString*, Jrd::pfn_svc_output, Jrd::Service*);
+static int common_main(int, fb_utils::arg_string*, Jrd::pfn_svc_output, Jrd::Service*);
 static void util_output(const SCHAR*, ...);
 static int util_print(const SCHAR*, ...);
 static int vutil_print(const SCHAR*, va_list);
 
 static void data_print(void*, const internal_user_data*, bool);
 static bool get_line(int*, SCHAR**, TEXT*, size_t);
-static bool get_switches(int, ArgString*, const in_sw_tab_t*, tsec*, bool*);
-static SSHORT parse_cmd_line(int, ArgString*, tsec*);
+static bool get_switches(int, fb_utils::arg_string*, const in_sw_tab_t*, tsec*, bool*);
+static SSHORT parse_cmd_line(int, fb_utils::arg_string*, tsec*);
 static void printhelp(void);
 #ifndef SERVICE_THREAD
 static int output_main(Jrd::Service*, const UCHAR*);
@@ -172,7 +166,7 @@ inline void envPick(TEXT* dest, size_t size, const TEXT* var)
 #endif /* SERVICE_THREAD */
 
 int common_main(int argc,
-				ArgString argv[],
+				fb_utils::arg_string argv[],
 				Jrd::pfn_svc_output output_proc,
 				Jrd::Service* output_data)
 {
@@ -641,7 +635,7 @@ static bool get_line(int* argc, SCHAR** argv, TEXT* stuff, size_t maxstuff)
 
 static bool get_switches(
 							int argc,
-							ArgString* argv,
+							fb_utils::arg_string* argv,
 							const in_sw_tab_t* in_sw_table,
 							tsec* tdsec, bool* quitflag)
 {
@@ -671,7 +665,7 @@ static bool get_switches(
 	USHORT last_sw = IN_SW_GSEC_0;
 	tdsec->tsec_sw_version = false;
 	for (--argc; argc > 0; argc--) {
-		ArgString string = *++argv;
+		fb_utils::arg_string string = *++argv;
 		if (*string == '?')
 			user_data->operation = HELP_OPER;
 		else if (*string != '-') {
@@ -1215,7 +1209,7 @@ static void printhelp(void)
 }
 
 
-static SSHORT parse_cmd_line(int argc, ArgString* argv, tsec* tdsec)
+static SSHORT parse_cmd_line(int argc, fb_utils::arg_string* argv, tsec* tdsec)
 {
 /**************************************
  *

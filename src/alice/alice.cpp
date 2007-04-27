@@ -91,12 +91,6 @@ static const USHORT val_err_table[] = {
 AliceGlobals* gdgbl;
 #endif
 
-#ifdef SERVICE_THREAD
-typedef const char* ArgString;
-#else
-typedef char* ArgString;
-#endif
-
 const int ALICE_MSG_FAC = 3;
 
 static inline void exit_local(int code, AliceGlobals* tdgbl)
@@ -114,7 +108,7 @@ static void expand_filename(const TEXT*, TEXT*);
 #ifndef SERVICE_THREAD
 static int output_main(Jrd::Service*, const UCHAR*);
 #endif
-static int common_main(int, ArgString*, Jrd::pfn_svc_output, Jrd::Service*);
+static int common_main(int, fb_utils::arg_string*, Jrd::pfn_svc_output, Jrd::Service*);
 static void alice_output(const SCHAR*, ...) ATTRIBUTE_FORMAT(1,2);
 
 
@@ -191,10 +185,10 @@ static int output_main(Jrd::Service* output_data, const UCHAR* output_buf)
 //		Parse switches and do work
 //
 
-int common_main(int					argc,
-				ArgString			argv[],
-				Jrd::pfn_svc_output	output_proc,
-				Jrd::Service*		output_data)
+int common_main(int						argc,
+				fb_utils::arg_string 	argv[],
+				Jrd::pfn_svc_output		output_proc,
+				Jrd::Service*			output_data)
 {
 #if defined (WIN95)
 	fAnsiCP = (GetConsoleCP() == GetACP());

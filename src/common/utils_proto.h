@@ -50,11 +50,13 @@ namespace fb_utils
 	{
 		return arg;
 	}
+	typedef const char* arg_string;
 #else
 	inline char* get_passwd(char* arg)
 	{
 		return cleanup_passwd(arg);
 	}
+	typedef char* arg_string;
 #endif
 
 // Warning: Only wrappers:
