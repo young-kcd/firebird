@@ -72,8 +72,10 @@ bool putAccessMode(char**& av, Firebird::ClumpletWriter& spb, unsigned int tag)
 	else if (s == "prp_am_readwrite")
 		spb.insertByte(tag, isc_spb_prp_am_readwrite);
 	else
+	{
 		Firebird::status_exception::raise(isc_random, isc_arg_string, 
 				"Wrong value for access mode", 0);
+	}
 
 	return true;
 }
@@ -89,8 +91,10 @@ bool putWriteMode(char**& av, Firebird::ClumpletWriter& spb, unsigned int tag)
 	else if (s == "prp_wm_sync")
 		spb.insertByte(tag, isc_spb_prp_wm_sync);
 	else
+	{
 		Firebird::status_exception::raise(isc_random, isc_arg_string, 
 				"Wrong value for write mode", 0);
+	}
 
 	return true;
 }
@@ -106,8 +110,10 @@ bool putReserveSpace(char**& av, Firebird::ClumpletWriter& spb, unsigned int tag
 	else if (s == "prp_res")
 		spb.insertByte(tag, isc_spb_prp_res);
 	else
+	{
 		Firebird::status_exception::raise(isc_random, isc_arg_string, 
 				"Wrong value for reserve space", 0);
+	}
 
 	return true;
 }
@@ -350,7 +356,7 @@ void printNumeric(const char*& p, const char* text)
 	printf ("%s: %d\n", text, getNumeric(p));
 }
 
-class userPrint
+class UserPrint
 {
 public:
 	Firebird::string login, first, middle, last;
@@ -360,12 +366,12 @@ private:
 	bool hasData;
 
 public:
-	userPrint() : hasData(false)
+	UserPrint() : hasData(false)
 	{
 		clear();
 	}
 
-	~userPrint()
+	~UserPrint()
 	{
 		print();
 	}
@@ -389,7 +395,7 @@ public:
 	}
 };
 
-bool printInfo(const char* p, userPrint& up)
+bool printInfo(const char* p, UserPrint& up)
 {
 	while (*p != isc_info_end)
 	{
@@ -540,7 +546,7 @@ int main(int ac, char **av)
 		if (spbItems.getBufferLength() > 0)
 		{
 			char results[maxbuf];
-			userPrint up;
+			UserPrint up;
 			do
 			{
 				if (isc_service_query(status,
