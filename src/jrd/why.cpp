@@ -2185,7 +2185,7 @@ ISC_STATUS API_ROUTINE GDS_DSQL_ALLOCATE(ISC_STATUS * user_status,
 				dsql8_free_statement(status, &stmt_handle, DSQL_drop);
 			else
 #endif
-				CALL(PROC_DSQL_FREE, dbb->implementation) (status, stmt_handle,
+				CALL(PROC_DSQL_FREE, dbb->implementation) (status, &stmt_handle,
 													   DSQL_drop);
 		}
 		e.stuff_exception(status);
