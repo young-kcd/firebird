@@ -373,7 +373,8 @@ public:
 
 	~UserPrint()
 	{
-		print();
+		// print data, accumulated for last user
+		newUser();
 	}
 
 	void clear()
@@ -382,7 +383,7 @@ public:
 		gid = uid = 0;
 	}
 
-	void print()
+	void newUser()
 	{
 		if (!hasData)
 		{
@@ -449,7 +450,7 @@ bool printInfo(const char* p, UserPrint& up)
 			p += sizeof(unsigned short);
 			break;
 		case isc_spb_sec_username:
-			up.print();
+			up.newUser();
 			getLine(up.login, p);
 			break;
 		case isc_spb_sec_firstname:
