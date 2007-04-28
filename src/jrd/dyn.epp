@@ -1705,6 +1705,31 @@ static bool grantor_can_grant_role(	thread_db*	tdbb,
 }
 
 
+static const char* privilege_name(char symbol)
+{
+/**************************************
+ *
+ *	p r i v i l e g e _ n a m e
+ *
+ **************************************
+ *
+ * Functional description
+ *	Diagnostics print helper.
+ *
+ **************************************/
+	switch(UPPER7(symbol))
+	{
+	case 'A': return "All";
+	case 'I': return "Insert";
+	case 'U': return "Update";
+	case 'D': return "Delete";
+	case 'S': return "Select";
+	case 'X': return "Execute";
+	}
+	return "<Unknown>";
+}
+
+
 static void revoke_permission(Global* gbl, const UCHAR** ptr)
 {
 /**************************************
@@ -1781,7 +1806,7 @@ static void revoke_permission(Global* gbl, const UCHAR** ptr)
 				user_type = obj_sql_role;
 				if (user == NULL_ROLE) {
 					DYN_error_punt(false, 195, user.c_str());
-				/* msg 195: keyword NONE could not be used as SQL role name. */
+					// msg 195: keyword NONE could not be used as SQL role name.
 				}
 			}
 			else {
@@ -1860,6 +1885,7 @@ static void revoke_permission(Global* gbl, const UCHAR** ptr)
 	for (const TEXT* pr = privileges; (temp[0] = *pr); pr++)
 	{
 		bool grant_erased = false;
+		bool bad_grantor = false;
 
 		if (field.length())
 		{
@@ -1880,7 +1906,10 @@ static void revoke_permission(Global* gbl, const UCHAR** ptr)
 					ERASE PRIV;
 					grant_erased = true;
 				}
-
+				else
+				{
+					bad_grantor = true;
+				}
 			END_FOR;
 			if (!DYN_REQUEST(drq_e_grant1)) {
 				DYN_REQUEST(drq_e_grant1) = request;
@@ -1909,6 +1938,10 @@ static void revoke_permission(Global* gbl, const UCHAR** ptr)
 					ERASE PRIV;
 					grant_erased = true;
 				}
+				else
+				{
+					bad_grantor = true;
+				}
 			END_FOR;
 			if (!DYN_REQUEST(drq_e_grant2))
 				DYN_REQUEST(drq_e_grant2) = request;
@@ -1929,6 +1962,22 @@ static void revoke_permission(Global* gbl, const UCHAR** ptr)
 							0);
 
 			id = old_id;
+		}
+		
+		if (bad_grantor)
+		{
+			DYN_error_punt(false, 246, SafeArg() << revoking_user_name.c_str() << 
+				privilege_name(temp[0]) << object.c_str() << user.c_str());
+			// msg 246: @1 is not grantor of @2 on @3 to @4.
+		}
+		
+		if (!grant_erased)
+		{
+			ERR_post_warning(isc_dyn_miss_priv_warning, 
+							 isc_arg_string, privilege_name(temp[0]),
+							 isc_arg_string, ERR_string(object), 
+							 isc_arg_string, ERR_string(user), 0);
+			// msg 247: Warning: @1 on @2 is not granted to @3.
 		}
 	}
 

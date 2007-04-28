@@ -1332,6 +1332,8 @@ C --
       PARAMETER (GDS__dyn_scale_too_big                = 336068852)
       INTEGER*4 GDS__dyn_precision_too_small         
       PARAMETER (GDS__dyn_precision_too_small          = 336068853)
+      INTEGER*4 GDS__dyn_miss_priv_warning           
+      PARAMETER (GDS__dyn_miss_priv_warning            = 336068855)
       INTEGER*4 GDS__gbak_unknown_switch             
       PARAMETER (GDS__gbak_unknown_switch              = 336330753)
       INTEGER*4 GDS__gbak_page_size_missing          
