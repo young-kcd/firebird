@@ -4806,6 +4806,8 @@ static void grant_revoke( dsql_req* request)
 		}
 	}
 
+	request->append_uchar(isc_dyn_begin);
+
 	if (!process_grant_role)
 	{
 		dsql_nod* table = ddl_node->nod_arg[e_grant_table];
@@ -4813,8 +4815,6 @@ static void grant_revoke( dsql_req* request)
 		if (ddl_node->nod_arg[e_grant_grant]) {
 			option = 1; // with grant option
 		}
-
-		request->append_uchar(isc_dyn_begin);
 
 		uend = users->nod_arg + users->nod_count;
 		for (uptr = users->nod_arg; uptr < uend; ++uptr)
@@ -4830,7 +4830,6 @@ static void grant_revoke( dsql_req* request)
 		if (ddl_node->nod_arg[3]) {
 			option = 2; // with admin option
 		}
-		request->append_uchar(isc_dyn_begin);
 
 		dsql_nod** role_end = role_list->nod_arg + role_list->nod_count;
 		for (dsql_nod** role_ptr = role_list->nod_arg; role_ptr < role_end; ++role_ptr)
