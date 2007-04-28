@@ -8159,12 +8159,19 @@ static int process_statement(const TEXT* string,
 				ISQL_errmsg(isc_status);
 				ret = ps_ERR;
 			}
+			else if (isc_status[2] == isc_arg_warning)
+			{
+				// check for warnings 
+				ISQL_warning(isc_status);
+			}
+
 			// CVC: DDL statements that aren't syntax errors are caught by DFW
 			// only at commit time, so we need to check here.
+			// AP: isc_status will be cleaned in commit_trans()
 			if (!commit_trans(&D__trans))
 				ret = ps_ERR;
 
-			// check for warnings 
+			// check for warnings from COMMIT
 			if (isc_status[2] == isc_arg_warning)
 				ISQL_warning(isc_status);
 
