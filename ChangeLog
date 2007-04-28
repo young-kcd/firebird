@@ -1,3 +1,62 @@
+2007-04-27 18:27  dimitr
+
+	* firebird2/src/jrd/GlobalRWLock.cpp (1.2):
+
+	Misc.
+
+2007-04-27 17:53  dimitr
+
+	* firebird2/src/dsql/dsql.cpp (1.193):
+
+	Fixed the issue reported by grostoon in fb-devel.
+
+2007-04-27 17:09  alexpeshkoff
+
+	* firebird2/src/utilities/gserv.cpp (1.9):
+
+	Now works with all services v2, present in firebird
+
+2007-04-27 17:07  alexpeshkoff
+
+	* firebird2/src/jrd/svc.cpp (1.183):
+
+	Fixes to gsec-related part of services manager
+
+2007-04-27 17:06  alexpeshkoff
+
+	* firebird2/src/common/classes/ClumpletReader.cpp (1.26):
+
+	Removed tags, which never appear in any clumplet
+
+2007-04-27 11:19  alexpeshkoff
+
+	* firebird2/: builds/posix/Makefile.in.client.util (1.41),
+	src/alice/alice.cpp (1.94), src/common/utils_proto.h (1.16),
+	src/jrd/os/posix/unix.cpp (1.55), src/utilities/gsec/gsec.cpp
+	(1.69):
+
+
+	1. avoid code duplication defining arg_string 2. fix posix build
+
+2007-04-27 10:56  hvlad
+
+	* firebird2/src/jrd/pag.cpp (1.132):
+
+	Correct page pre-allocation logic
+
+2007-04-27 08:49  hvlad
+
+	* firebird2/src/jrd/cch.cpp (1.158):
+
+	Continue Nickolay's refactor : use clear_page_dirty_flag
+
+2007-04-27 04:28  asfernandes
+
+	* firebird2/: builds/install/misc/firebird.conf (1.30),
+	src/jrd/cch.cpp (1.157), src/jrd/pag.cpp (1.131):
+
+	Misc
+
 2007-04-26 22:16  skidder
 
 	* firebird2/src/jrd/: cch.cpp (1.156), cch.h (1.32):
