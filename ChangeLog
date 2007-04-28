@@ -1,3 +1,9 @@
+2007-04-27 17:21  dimitr
+
+	* firebird2/src/jrd/vio.cpp (1.151.2.7):
+
+	Fixed the issue reported by grostoon in fb-devel.
+
 2007-04-26 16:13  dimitr
 
 	* firebird2/: src/jrd/isc_version.h (1.8.4.8), doc/WhatsNew
