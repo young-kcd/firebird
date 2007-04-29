@@ -1717,14 +1717,14 @@ static const char* privilege_name(char symbol)
  *	Diagnostics print helper.
  *
  **************************************/
-	switch(UPPER7(symbol))
+	switch (UPPER7(symbol))
 	{
-	case 'A': return "All";
-	case 'I': return "Insert";
-	case 'U': return "Update";
-	case 'D': return "Delete";
-	case 'S': return "Select";
-	case 'X': return "Execute";
+		case 'A': return "All";
+		case 'I': return "Insert";
+		case 'U': return "Update";
+		case 'D': return "Delete";
+		case 'S': return "Select";
+		case 'X': return "Execute";
 	}
 	return "<Unknown>";
 }
