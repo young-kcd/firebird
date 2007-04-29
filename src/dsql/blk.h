@@ -45,6 +45,7 @@ enum blk_t {
 	dsql_type_prc,
 	dsql_type_intlsym,
 	dsql_type_vec,
+	dsql_type_imp_join,
 	dsql_type_MAX
 };
 

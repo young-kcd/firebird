@@ -28,6 +28,7 @@
  * 2002.10.29 Nickolay Samofatov: Added support for savepoints
  * 2004.01.16 Vlad Horsun: added support for default parameters and 
  *   EXECUTE BLOCK statement
+ * Adriano dos Santos Fernandes
  */
 
 #ifndef DSQL_DSQL_H
@@ -36,6 +37,8 @@
 #include "../jrd/common.h"
 #include "../dsql/all.h"
 #include "../common/classes/array.h"
+#include "../common/classes/GenericMap.h"
+#include "../common/classes/MetaName.h"
 #include "../common/classes/stack.h"
 #define REQUESTER
 #include "../jrd/val.h"  // Get rid of duplicated FUN_T enum.
@@ -566,13 +569,23 @@ public:
 	dsql_tra* tra_next;		//!< Next open transaction
 };
 
+//! Implicit (NATURAL and USING) joins
+class ImplicitJoin : public pool_alloc<dsql_type_imp_join>
+{
+public:
+	dsql_nod* value;
+	dsql_ctx* visibleInContext;
+};
 
 //! Context block used to create an instance of a relation reference
 class dsql_ctx : public pool_alloc<dsql_type_ctx>
 {
 public:
 	dsql_ctx(MemoryPool &p)
-		: ctx_childs_derived_table(p) {}
+		: ctx_childs_derived_table(p),
+	      ctx_imp_join(p)
+	{
+	}
 
 	dsql_req*			ctx_request;		//!< Parent request
 	dsql_rel*			ctx_relation;		//!< Relation for context
@@ -587,6 +600,8 @@ public:
 	USHORT				ctx_scope_level;	//!< Subquery level within this request
 	USHORT				ctx_flags;			//!< Various flag values
 	DsqlContextStack	ctx_childs_derived_table;	//!< Childs derived table context
+	Firebird::GenericMap<Firebird::Pair<Firebird::Left<
+		Firebird::MetaName, ImplicitJoin*> > > ctx_imp_join;	// Map of USING fieldname to ImplicitJoin
 
 	dsql_ctx& operator=(dsql_ctx& v)
 	{
@@ -605,6 +620,8 @@ public:
 
 		return *this;
 	}
+
+	bool getImplicitJoinField(const TEXT* name, dsql_nod*& node);
 };
 
 // Flag values for ctx_flags

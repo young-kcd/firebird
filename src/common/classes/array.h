@@ -21,6 +21,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ * Adriano dos Santos Fernandes
  */
  
 #ifndef CLASSES_ARRAY_H
@@ -303,6 +304,13 @@ public:
 		return highBound != this->count &&
 			!Cmp::greaterThan(KeyOfValue::generate(this, this->data[lowBound]), item);
 	}
+
+	bool exist(const Key& item) const
+	{
+		size_t pos;	// ignored
+		return find(item, pos);
+	}
+
 	size_t add(const Value& item) {
 	    size_t pos;
   	    find(KeyOfValue::generate(this, item), pos);

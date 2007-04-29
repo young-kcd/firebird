@@ -2526,6 +2526,8 @@ constrained - no 2 table rows can have duplicate column values', NULL, NULL);
 ('dsql_cte_nested_with', 'dsql_req::addCTEs', 'dsql.cpp', NULL, 13, 946, NULL, 'WITH clause can''t be nested', NULL, NULL);
 -- Do not change the arguments of the previous SQLERR messages.
 -- Write the new SQLERR messages here.
+('dsql_col_more_than_once_using', 'pass1_join', 'dsql.cpp', NULL, 13, 947, NULL, 'column @1 appears more than once in USING clause', NULL, NULL);
+('dsql_unsupp_feature_dialect', NULL, NULL, NULL, 13, 948, NULL, 'feature is not supported in dialect @1', NULL, NULL);
 -- SQLWARN
 (NULL, NULL, NULL, NULL, 14, 100, NULL, 'Row not found for fetch, update or delete, or the result of a query is an empty table.', NULL, NULL);
 (NULL, NULL, NULL, NULL, 14, 101, NULL, 'segment buffer length shorter than expected', NULL, NULL);

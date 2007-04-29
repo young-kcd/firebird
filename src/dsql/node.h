@@ -781,6 +781,7 @@ enum node_args {
 
 	e_alias_value = 0,		// nod_alias
 	e_alias_alias,
+	e_alias_imp_join,
 	e_alias_count,
 
 	e_rct_name = 0,			// nod_rel_constraint
@@ -984,7 +985,8 @@ enum node_args {
 	e_derived_field_value = 0,		// Contains the source expression
 	e_derived_field_name,			// Name for derived table field
 	e_derived_field_scope,			// Scope-level
-	e_derived_field_count = 4,
+	e_derived_field_context,		// context of derived table
+	e_derived_field_count,
 
 	e_cur_stmt_id = 0,
 	e_cur_stmt_seek,

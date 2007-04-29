@@ -776,6 +776,8 @@ static const struct {
 	{336397232, -104}, /* 944 dsql_cte_union_all               */
 	{336397233, -104}, /* 945 dsql_cte_miss_nonrecursive       */
 	{336397234, -104}, /* 946 dsql_cte_nested_with             */
+	{336397235, -104}, /* 947 dsql_col_more_than_once_using    */
+	{336397236, -901}, /* 948 dsql_unsupp_feature_dialect      */
 	{336723983, -901}, /*  15 gsec_cant_open_db                */
 	{336723984, -901}, /*  16 gsec_switches_error              */
 	{336723985, -901}, /*  17 gsec_no_op_spec                  */

@@ -810,6 +810,8 @@ const ISC_LONG isc_dsql_cte_wrong_clause            = 336397231L;
 const ISC_LONG isc_dsql_cte_union_all               = 336397232L;
 const ISC_LONG isc_dsql_cte_miss_nonrecursive       = 336397233L;
 const ISC_LONG isc_dsql_cte_nested_with             = 336397234L;
+const ISC_LONG isc_dsql_col_more_than_once_using    = 336397235L;
+const ISC_LONG isc_dsql_unsupp_feature_dialect      = 336397236L;
 const ISC_LONG isc_gsec_cant_open_db                = 336723983L;
 const ISC_LONG isc_gsec_switches_error              = 336723984L;
 const ISC_LONG isc_gsec_no_op_spec                  = 336723985L;
@@ -869,7 +871,7 @@ const ISC_LONG isc_gstat_unexpected_eof             = 336920580L;
 const ISC_LONG isc_gstat_open_err                   = 336920605L;
 const ISC_LONG isc_gstat_read_err                   = 336920606L;
 const ISC_LONG isc_gstat_sysmemex                   = 336920607L;
-const ISC_LONG isc_err_max                          = 814;
+const ISC_LONG isc_err_max                          = 816;
 
 #else /* c definitions */
 
@@ -1649,6 +1651,8 @@ const ISC_LONG isc_err_max                          = 814;
 #define isc_dsql_cte_union_all               336397232L
 #define isc_dsql_cte_miss_nonrecursive       336397233L
 #define isc_dsql_cte_nested_with             336397234L
+#define isc_dsql_col_more_than_once_using    336397235L
+#define isc_dsql_unsupp_feature_dialect      336397236L
 #define isc_gsec_cant_open_db                336723983L
 #define isc_gsec_switches_error              336723984L
 #define isc_gsec_no_op_spec                  336723985L
@@ -1708,7 +1712,7 @@ const ISC_LONG isc_err_max                          = 814;
 #define isc_gstat_open_err                   336920605L
 #define isc_gstat_read_err                   336920606L
 #define isc_gstat_sysmemex                   336920607L
-#define isc_err_max                          814
+#define isc_err_max                          816
 
 #endif
 

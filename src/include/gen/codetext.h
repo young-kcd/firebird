@@ -777,6 +777,8 @@ static const struct {
 	{"dsql_cte_union_all", 336397232},
 	{"dsql_cte_miss_nonrecursive", 336397233},
 	{"dsql_cte_nested_with", 336397234},
+	{"dsql_col_more_than_once_using", 336397235},
+	{"dsql_unsupp_feature_dialect", 336397236},
 	{"gsec_cant_open_db", 336723983},
 	{"gsec_switches_error", 336723984},
 	{"gsec_no_op_spec", 336723985},

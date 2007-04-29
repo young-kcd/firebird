@@ -762,6 +762,8 @@ COMMIT WORK;
 (-104, NULL, NULL, 13, 944, NULL, 'dsql_cte_union_all', NULL, NULL)
 (-104, NULL, NULL, 13, 945, NULL, 'dsql_cte_miss_nonrecursive', NULL, NULL)
 (-104, NULL, NULL, 13, 946, NULL, 'dsql_cte_nested_with', NULL, NULL)
+(-104, NULL, NULL, 13, 947, NULL, 'dsql_col_more_than_once_using', NULL, NULL)
+(-901, NULL, NULL, 13, 948, NULL, 'dsql_unsupp_feature_dialect', NULL, NULL)
 -- GSEC
 (-901, NULL, NULL, 18, 15, NULL, 'gsec_cant_open_db', NULL, NULL)
 (-901, NULL, NULL, 18, 16, NULL, 'gsec_switches_error', NULL, NULL)

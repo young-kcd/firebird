@@ -224,7 +224,7 @@ static dsql_nod* pass1_dbkey(dsql_req*, dsql_nod*);
 static dsql_nod* pass1_delete(dsql_req*, dsql_nod*, bool);
 static dsql_nod* pass1_derived_table(dsql_req*, dsql_nod*, bool, dsql_str*);
 static dsql_nod* pass1_expand_select_list(dsql_req*, dsql_nod*, dsql_nod*);
-static void pass1_expand_select_node(dsql_req*, dsql_nod*, DsqlNodStack&);
+static void pass1_expand_select_node(dsql_req*, dsql_nod*, DsqlNodStack&, bool);
 static dsql_nod* pass1_field(dsql_req*, dsql_nod*, const bool, dsql_nod*);
 static bool pass1_found_aggregate(const dsql_nod*, USHORT, USHORT, bool);
 static bool pass1_found_field(const dsql_nod*, USHORT, USHORT, bool*);
@@ -233,7 +233,7 @@ static dsql_nod* pass1_group_by_list(dsql_req*, dsql_nod*, dsql_nod*);
 static dsql_nod* pass1_insert(dsql_req*, dsql_nod*, bool, bool);
 static dsql_nod* pass1_join(dsql_req*, dsql_nod*, bool);
 static dsql_nod* pass1_label(dsql_req*, dsql_nod*);
-static dsql_nod* pass1_lookup_alias(dsql_req*, const dsql_str*, dsql_nod*);
+static dsql_nod* pass1_lookup_alias(dsql_req*, const dsql_str*, dsql_nod*, bool);
 static dsql_nod* pass1_make_derived_field(dsql_req*, tsql*, dsql_nod*);
 static dsql_nod* pass1_merge(dsql_req*, dsql_nod*, bool);
 static dsql_nod* pass1_not(dsql_req*, const dsql_nod*, bool, bool);
@@ -261,6 +261,8 @@ static dsql_nod* remap_field(dsql_req*, dsql_nod*, dsql_ctx*, USHORT);
 static dsql_nod* remap_fields(dsql_req*, dsql_nod*, dsql_ctx*);
 static void remap_streams_to_parent_context(dsql_nod*, dsql_ctx*);
 static dsql_fld* resolve_context(dsql_req*, const dsql_str*, dsql_ctx*, bool);
+static dsql_nod* resolve_using_field(dsql_req* request, dsql_str* name, DsqlNodStack& stack,
+	const dsql_nod* flawedNode, const TEXT* side, dsql_ctx*& ctx);
 static dsql_nod* resolve_variable_name(const dsql_nod* var_nodes, const dsql_str* var_name);
 static bool set_parameter_type(dsql_req*, dsql_nod*, dsql_nod*, bool);
 static void set_parameters_name(dsql_nod*, const dsql_nod*);
@@ -4686,9 +4688,17 @@ static dsql_nod* pass1_derived_table(dsql_req* request, dsql_nod* input, bool pr
 
 	int count;
 	// Check if all root select-items have a derived field else show a message.
-	for (count = 0; count < rse->nod_arg[e_rse_items]->nod_count; count++) {
-		const dsql_nod* select_item = rse->nod_arg[e_rse_items]->nod_arg[count];
-		if (select_item->nod_type != nod_derived_field) {
+	for (count = 0; count < rse->nod_arg[e_rse_items]->nod_count; count++)
+	{
+		dsql_nod* select_item = rse->nod_arg[e_rse_items]->nod_arg[count];
+
+		if (select_item->nod_type == nod_derived_field)
+		{
+			select_item->nod_arg[e_derived_field_context] =
+				reinterpret_cast<dsql_nod*>(context);
+		}
+		else
+		{
 			// no column name specified for column number %d in derived table %s
 
 			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
@@ -4790,7 +4800,7 @@ static dsql_nod* pass1_expand_select_list(dsql_req* request, dsql_nod* list,
 	for (const dsql_nod* const* const end = ptr + list->nod_count;
 		ptr < end; ptr++)
 	{
-		pass1_expand_select_node(request, *ptr, stack);
+		pass1_expand_select_node(request, *ptr, stack, true);
 	}
 	dsql_nod* node = MAKE_list(stack);
 	return node;
@@ -4808,17 +4818,20 @@ static dsql_nod* pass1_expand_select_list(dsql_req* request, dsql_nod* list,
     @param stack
 
  **/
-static void pass1_expand_select_node(dsql_req* request, dsql_nod* node, DsqlNodStack& stack)
+static void pass1_expand_select_node(dsql_req* request, dsql_nod* node, DsqlNodStack& stack,
+	bool hide_using)
 {
 	DEV_BLKCHK(node, dsql_type_nod);
 
 	if (node->nod_type == nod_join) {
-		pass1_expand_select_node(request, node->nod_arg[e_join_left_rel], stack);
-		pass1_expand_select_node(request, node->nod_arg[e_join_rght_rel], stack);
+		pass1_expand_select_node(request, node->nod_arg[e_join_left_rel], stack, true);
+		pass1_expand_select_node(request, node->nod_arg[e_join_rght_rel], stack, true);
 	}
 	else if (node->nod_type == nod_derived_table) {
 		// AB: Derived table support
 		tsql* tdsql = DSQL_get_thread_data();
+		dsql_ctx* context = (dsql_ctx*) node->nod_arg[e_derived_table_context];
+		DEV_BLKCHK(context, dsql_type_ctx);
 		dsql_nod* sub_items = node->nod_arg[e_derived_table_rse]->nod_arg[e_rse_items];
 		dsql_nod** ptr = sub_items->nod_arg;
 		for (const dsql_nod* const* const end = ptr + sub_items->nod_count;
@@ -4833,7 +4846,13 @@ static void pass1_expand_select_node(dsql_req* request, dsql_nod* node, DsqlNodS
 					  isc_arg_gds, isc_dsql_command_err,
 					  isc_arg_gds, isc_dsql_derived_alias_select, 0);
 			}
-			stack.push(select_item);
+
+			if (!hide_using ||
+				context->getImplicitJoinField(reinterpret_cast<dsql_str*>(
+					select_item->nod_arg[e_derived_field_name])->str_data, select_item))
+			{
+				stack.push(select_item);
+			}
 		}
 	}
 	else if (node->nod_type == nod_relation) {
@@ -4846,8 +4865,14 @@ static void pass1_expand_select_node(dsql_req* request, dsql_nod* node, DsqlNodS
 				field = field->fld_next)
 			{
 				DEV_BLKCHK(field, dsql_type_fld);
-				dsql_nod* select_item = MAKE_field(context, field, 0);
-				stack.push(select_item);
+
+				dsql_nod* select_item = NULL;
+				if (!hide_using || context->getImplicitJoinField(field->fld_name, select_item))
+				{
+					if (!select_item)
+						select_item = MAKE_field(context, field, 0);
+					stack.push(select_item);
+				}
 			}
 		}
 		else if (procedure = context->ctx_procedure) {
@@ -4855,15 +4880,21 @@ static void pass1_expand_select_node(dsql_req* request, dsql_nod* node, DsqlNodS
 				 field = field->fld_next)
 			{
 				DEV_BLKCHK(field, dsql_type_fld);
-				dsql_nod* select_item = MAKE_field(context, field, 0);
-				stack.push(select_item);
+
+				dsql_nod* select_item = NULL;
+				if (!hide_using || context->getImplicitJoinField(field->fld_name, select_item))
+				{
+					if (!select_item)
+						select_item = MAKE_field(context, field, 0);
+					stack.push(select_item);
+				}
 			}
 		}
 	}
 	else if (node->nod_type == nod_field_name) {
 		dsql_nod* select_item = pass1_field(request, node, true, NULL);
 		// The node could be a relation so call recursively.
-		pass1_expand_select_node(request, select_item, stack);
+		pass1_expand_select_node(request, select_item, stack, false);
 	}
 	else {
 		stack.push(node);
@@ -4979,7 +5010,7 @@ static dsql_nod* pass1_field( dsql_req* request, dsql_nod* input,
 		// AB: Check first against the select list for matching column.
 		// When no matches at all are found we go on with our
 		// normal way of field name lookup.
-		dsql_nod* node = pass1_lookup_alias(request, name, select_list);
+		dsql_nod* node = pass1_lookup_alias(request, name, select_list, true);
 		if (node) {
 			return node;
 		}
@@ -5035,8 +5066,23 @@ static dsql_nod* pass1_field( dsql_req* request, dsql_nod* input,
 					}
 				}
 
-				for (; field; field = field->fld_next) {
-					if (!strcmp(reinterpret_cast<const char*>(name->str_data), field->fld_name)) {
+				dsql_nod* using_field = NULL;
+
+				for (; field; field = field->fld_next)
+				{
+					if (!strcmp(reinterpret_cast<const char*>(name->str_data), field->fld_name))
+					{
+						if (!qualifier)
+						{
+							if (!context->getImplicitJoinField(field->fld_name, using_field))
+							{
+								field = NULL;
+								break;
+							}
+							else if (using_field)
+								field = NULL;
+						}
+
 						ambiguous_ctx_stack.push(context);
 						break;
 					}
@@ -5050,11 +5096,11 @@ static dsql_nod* pass1_field( dsql_req* request, dsql_nod* input,
 					break;
 				}
 
-				if (field) {
+				if (field || using_field) {
 					// Intercept any reference to a field with datatype that
 					// did not exist prior to V6 and post an error
 
-					if (request->req_client_dialect <= SQL_DIALECT_V5 &&
+					if (request->req_client_dialect <= SQL_DIALECT_V5 && field &&
 						(field->fld_dtype == dtype_sql_date ||
 						 field->fld_dtype == dtype_sql_time ||
 						 field->fld_dtype == dtype_int64))
@@ -5086,8 +5132,10 @@ static dsql_nod* pass1_field( dsql_req* request, dsql_nod* input,
 
 					if (context->ctx_flags & CTX_null)
 						node = MAKE_node(nod_null, 0);
-					else
+					else if (field)
 						node = MAKE_field(context, field, indices);
+					else
+						node = list ? using_field : PASS1_node(request, using_field, false);
 				}
 			}
 			else if (is_derived_table) {
@@ -6076,12 +6124,199 @@ static dsql_nod* pass1_join(dsql_req* request, dsql_nod* input, bool proc_flag)
 	dsql_nod* boolean = input->nod_arg[e_join_boolean];
 	if (boolean && (boolean->nod_type == nod_flag || boolean->nod_type == nod_list))
 	{
-		// Process NATURAL JOIN or USING clause
-		ERRD_post(isc_wish_list, 0);
+		if (request->req_client_dialect < SQL_DIALECT_V6)
+		{
+			ERRD_post(
+				isc_sqlerr, isc_arg_number, (SLONG) -901,
+				isc_arg_gds, isc_dsql_unsupp_feature_dialect,
+				isc_arg_number, request->req_client_dialect,
+				0);
+		}
+
+		DsqlNodStack leftStack, rightStack;
+
+		if (boolean->nod_type == nod_flag)	// NATURAL JOIN
+		{
+			StrArray leftNames(request->req_pool);
+			DsqlNodStack matched;
+
+			pass1_expand_select_node(request, node->nod_arg[e_join_left_rel], leftStack, true);
+			pass1_expand_select_node(request, node->nod_arg[e_join_rght_rel], rightStack, true);
+
+			// verify columns that exist in both sides
+			for (int i = 0; i < 2; ++i)
+			{
+				for (DsqlNodStack::const_iterator j(i == 0 ? leftStack : rightStack); j.hasData(); ++j)
+				{
+					const TEXT* name = NULL;
+					dsql_nod* item = j.object();
+
+					switch (item->nod_type)
+					{
+						case nod_alias:
+							name = reinterpret_cast<dsql_str*>(item->nod_arg[e_alias_alias])->str_data;
+							break;
+
+						case nod_field:
+							name = reinterpret_cast<dsql_fld*>(item->nod_arg[e_fld_field])->fld_name;
+							break;
+
+						case nod_derived_field:
+							name = reinterpret_cast<dsql_str*>(item->nod_arg[e_derived_field_name])->str_data;
+							break;
+
+						default:
+							break;
+					}
+
+					if (name)
+					{
+						if (i == 0)	// left
+							leftNames.add(name);
+						else	// right
+						{
+							if (leftNames.exist(name))
+							{
+								item = MAKE_node(nod_field_name, e_fln_count);
+								item->nod_arg[e_fln_name] =
+									reinterpret_cast<dsql_nod*>(MAKE_cstring(name));
+								matched.push(item);
+							}
+						}
+					}
+				}
+			}
+
+			if (matched.getCount() == 0)
+			{
+				// There is no match. Transform to CROSS JOIN.
+				node->nod_arg[e_join_type]->nod_type = nod_join_inner;
+				boolean = NULL;
+			}
+			else
+				boolean = MAKE_list(matched);	// Transform to USING
+		}
+
+		if (boolean && boolean->nod_type == nod_list)	// JOIN ... USING
+		{
+			dsql_nod* newBoolean = NULL;
+			StrArray usedColumns(request->req_pool);
+
+			for (int i = 0; i < boolean->nod_count; ++i)
+			{
+				dsql_nod* field = boolean->nod_arg[i];
+				dsql_str* fldName = reinterpret_cast<dsql_str*>(field->nod_arg[e_fln_name]);
+
+				// verify if the column was already used
+				if (usedColumns.exist(fldName->str_data))
+				{
+					ERRD_post(
+						isc_sqlerr, isc_arg_number, (SLONG) -104,
+						isc_arg_gds, isc_dsql_col_more_than_once_using,
+						isc_arg_string, fldName->str_data,
+						0);
+				}
+				else
+					usedColumns.add(fldName->str_data);
+
+				dsql_ctx* leftCtx = NULL;
+				dsql_ctx* rightCtx = NULL;
+
+				// clear the stacks for the next pass
+				leftStack.clear();
+				rightStack.clear();
+
+				// get the column names from both sides
+				pass1_expand_select_node(request, node->nod_arg[e_join_left_rel], leftStack, true);
+				pass1_expand_select_node(request, node->nod_arg[e_join_rght_rel], rightStack, true);
+
+				// create the boolean
+				dsql_nod* eqlNode = MAKE_node(nod_eql, 2);
+				eqlNode->nod_arg[0] = resolve_using_field(request,
+					fldName, leftStack, field, "left", leftCtx);
+				eqlNode->nod_arg[1] = resolve_using_field(request,
+					fldName, rightStack, field, "right", rightCtx);
+
+				fb_assert(leftCtx);
+				fb_assert(rightCtx);
+
+				// We should hide the (unqualified) column in one side
+				ImplicitJoin* impJoinLeft;
+				if (!leftCtx->ctx_imp_join.get(fldName->str_data, impJoinLeft))
+				{
+					impJoinLeft = FB_NEW(request->req_pool) ImplicitJoin();
+					impJoinLeft->value = eqlNode->nod_arg[0];
+					impJoinLeft->visibleInContext = leftCtx;
+				}
+				else
+					fb_assert(impJoinLeft->visibleInContext == leftCtx);
+
+				ImplicitJoin* impJoinRight;
+				if (!rightCtx->ctx_imp_join.get(fldName->str_data, impJoinRight))
+				{
+					impJoinRight = FB_NEW(request->req_pool) ImplicitJoin();
+					impJoinRight->value = eqlNode->nod_arg[1];
+				}
+				else
+					fb_assert(impJoinRight->visibleInContext == rightCtx);
+
+				// create the COALESCE
+				DsqlNodStack stack;
+
+				dsql_nod* temp;
+				if ((temp = impJoinLeft->value)->nod_type == nod_alias)
+					temp = temp->nod_arg[e_alias_value];
+				if (temp->nod_type == nod_coalesce)
+				{
+					pass1_put_args_on_stack(request, temp->nod_arg[0], stack, false);
+					pass1_put_args_on_stack(request, temp->nod_arg[1], stack, false);
+				}
+				else
+					pass1_put_args_on_stack(request, temp, stack, false);
+
+				if ((temp = impJoinRight->value)->nod_type == nod_alias)
+					temp = temp->nod_arg[e_alias_value];
+				if (temp->nod_type == nod_coalesce)
+				{
+					pass1_put_args_on_stack(request, temp->nod_arg[0], stack, false);
+					pass1_put_args_on_stack(request, temp->nod_arg[1], stack, false);
+				}
+				else
+					pass1_put_args_on_stack(request, temp, stack, false);
+
+				dsql_nod* coalesce = MAKE_node(nod_coalesce, 2);
+				coalesce->nod_arg[0] = stack.pop();
+				coalesce->nod_arg[1] = MAKE_list(stack);
+
+				impJoinLeft->value = MAKE_node(nod_alias, e_alias_count);
+				impJoinLeft->value->nod_arg[e_alias_value] = coalesce;
+				impJoinLeft->value->nod_arg[e_alias_alias] = reinterpret_cast<dsql_nod*>(fldName);
+				impJoinLeft->value->nod_arg[e_alias_imp_join] = reinterpret_cast<dsql_nod*>(impJoinLeft);
+
+				impJoinRight->visibleInContext = NULL;
+
+				// both sides should refer to the same ImplicitJoin
+				leftCtx->ctx_imp_join.put(fldName->str_data, impJoinLeft);
+				rightCtx->ctx_imp_join.put(fldName->str_data, impJoinLeft);
+
+				if (newBoolean)
+				{
+					temp = MAKE_node(nod_and, 2);
+					temp->nod_arg[0] = newBoolean;
+					temp->nod_arg[1] = eqlNode;
+					newBoolean = temp;
+				}
+				else
+					newBoolean = eqlNode;
+			}
+
+			boolean = newBoolean;
+		}
+		else if (boolean)
+			fb_assert(false);
 	}
 
-	node->nod_arg[e_join_boolean] =
-		PASS1_node(request, input->nod_arg[e_join_boolean], proc_flag);
+	node->nod_arg[e_join_boolean] = PASS1_node(request, boolean, proc_flag);
 
 	return node;
 }
@@ -6207,7 +6442,8 @@ static dsql_nod* pass1_label(dsql_req* request, dsql_nod* input)
     @param selectList
 
  **/
-static dsql_nod* pass1_lookup_alias(dsql_req* request, const dsql_str* name, dsql_nod* selectList)
+static dsql_nod* pass1_lookup_alias(dsql_req* request, const dsql_str* name, dsql_nod* selectList,
+									bool process)
 {
 	dsql_nod* returnNode = NULL;
 	dsql_nod** ptr = selectList->nod_arg;
@@ -6220,7 +6456,7 @@ static dsql_nod* pass1_lookup_alias(dsql_req* request, const dsql_str* name, dsq
 				{
 					dsql_str* alias = (dsql_str*) node->nod_arg[e_alias_alias];
 					if (!strcmp(alias->str_data, name->str_data)) {
-						matchingNode = PASS1_node(request, node, false);
+						matchingNode = node;
 					}
 				}
 				break;
@@ -6229,7 +6465,7 @@ static dsql_nod* pass1_lookup_alias(dsql_req* request, const dsql_str* name, dsq
 				{
 					dsql_fld* field = (dsql_fld*) node->nod_arg[e_fld_field];
 					if (!strcmp(field->fld_name, name->str_data)) {
-						matchingNode = PASS1_node(request, node, false);
+						matchingNode = node;
 					}
 				}
 				break;
@@ -6238,7 +6474,7 @@ static dsql_nod* pass1_lookup_alias(dsql_req* request, const dsql_str* name, dsq
 				{
 					dsql_str* alias = (dsql_str*) node->nod_arg[e_derived_field_name];
 					if (!strcmp(alias->str_data, name->str_data)) {
-						matchingNode = PASS1_node(request, node, false);
+						matchingNode = node;
 					}
 				}
 				break;
@@ -6247,6 +6483,9 @@ static dsql_nod* pass1_lookup_alias(dsql_req* request, const dsql_str* name, dsq
 				break;
 		}
 		if (matchingNode) {
+			if (process)
+				matchingNode = PASS1_node(request, matchingNode, false);
+
 			if (returnNode) {
 				// There was already a node matched, thus raise ambiguous field name error.
 				TEXT buffer1[256];
@@ -9567,6 +9806,36 @@ static dsql_fld* resolve_context( dsql_req* request, const dsql_str* qualifier,
 }
 
 
+// Resolve a field for JOIN USING purposes
+static dsql_nod* resolve_using_field(dsql_req* request, dsql_str* name, DsqlNodStack& stack,
+	const dsql_nod* flawedNode, const TEXT* side, dsql_ctx*& ctx)
+{
+	dsql_nod* list = MAKE_list(stack);
+	dsql_nod* node = pass1_lookup_alias(request, name, list, false);
+
+	if (!node)
+	{
+		Firebird::string qualifier;
+		qualifier.printf("<%s side of USING>", side);
+		field_unknown(qualifier.c_str(), name->str_data, flawedNode);
+	}
+
+	if (node->nod_type == nod_derived_field)
+		ctx = reinterpret_cast<dsql_ctx*>(node->nod_arg[e_derived_field_context]);
+	else if (node->nod_type == nod_field)
+		ctx = reinterpret_cast<dsql_ctx*>(node->nod_arg[e_fln_context]);
+	else if (node->nod_type == nod_alias)
+	{
+		fb_assert(node->nod_count >= (int) e_alias_imp_join - 1);
+		ctx = reinterpret_cast<ImplicitJoin*>(node->nod_arg[e_alias_imp_join])->visibleInContext;
+	}
+	else
+		fb_assert(false);
+
+	return node;
+}
+
+
 /**
 
  	set_parameter_type
@@ -9937,4 +10206,25 @@ void dsql_req::clearCTEs()
 	req_flags &= ~REQ_CTE_recursive;
 	req_ctes.clear();
 	req_cte_aliases.clear();
+}
+
+
+// Returns false for hidden fields and true for non-hidden.
+// For non-hidden, change "node" if the field is part of an
+// implicit join.
+bool dsql_ctx::getImplicitJoinField(const TEXT* name, dsql_nod*& node)
+{
+	ImplicitJoin* impJoin;
+	if (ctx_imp_join.get(name, impJoin))
+	{
+		if (impJoin->visibleInContext == this)
+		{
+			node = impJoin->value;
+			return true;
+		}
+		else
+			return false;
+	}
+
+	return true;
 }
