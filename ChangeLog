@@ -1,3 +1,23 @@
+2007-04-29 21:04  asfernandes
+
+	* firebird2/: lang_helpers/gds_codes.ftn (1.57),
+	lang_helpers/gds_codes.pas (1.57), src/common/classes/array.h
+	(1.41), src/dsql/blk.h (1.8), src/dsql/dsql.h (1.107),
+	src/dsql/node.h (1.88), src/dsql/pass1.cpp (1.316),
+	src/include/gen/codetext.h (1.65), src/include/gen/iberror.h
+	(1.66), src/include/gen/msgs.h (1.83), src/include/gen/rdb_codes.h
+	(1.62), src/include/gen/sql_code.h (1.70), src/msgs/facilities2.sql
+	(1.5), src/msgs/messages2.sql (1.8), src/msgs/system_errors2.sql
+	(1.7):
+
+	Implementation of CORE-1235: NATURAL JOIN and JOIN...USING
+
+2007-04-29 18:29  asfernandes
+
+	* firebird2/src/jrd/dyn.epp (1.103):
+
+	Misc
+
 2007-04-28 16:13  alexpeshkoff
 
 	* firebird2/: lang_helpers/gds_codes.ftn (1.56),
