@@ -1858,7 +1858,7 @@ void CCH_mark(thread_db* tdbb, WIN * window, USHORT mark_system, USHORT must_wri
 	if (!was_marked) {
 		if (was_dirty) {
 			// Mark can be called many times without release
-			// Backup lock owner can ba database or attachment
+			// Backup lock owner can be database or attachment
 			fb_assert(bdb->bdb_backup_lock_owner == BackupManager::database_lock_handle(tdbb));
 			dbb->dbb_backup_manager->release_dirty_page(tdbb, bdb->bdb_backup_lock_owner);
 		} else {
