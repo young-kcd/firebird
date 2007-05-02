@@ -1,2 +1,2 @@
 #include "../../../../src/jrd/license.h"
-FB_VERSION
+FB_BUILD_NO
