@@ -279,12 +279,12 @@ static inline int sinixz_sigaction(int sig, const struct sinixz_sigaction *act,
 //#define DOUBLE_ALIGN    4
 //#define BSD_UNIX
 #define UNIX
-#ifdef powerpc 
-#define IMPLEMENTATION isc_info_db_impl_darwin_ppc /* 63 */
-#endif
 #ifdef i386
 #define I386
 #define IMPLEMENTATION isc_info_db_impl_darwin_x86 /* 70 */
+#endif
+#ifdef __ppc__
+#define IMPLEMENTATION isc_info_db_impl_darwin_ppc /* 63 */
 #endif
 #define IEEE
 #define QUADCONST(n) (n##LL)

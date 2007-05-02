@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: license.h,v 1.31.12.1 2007-03-07 15:04:30 paulbeach Exp $
+ * $Id: license.h,v 1.31.12.2 2007-05-02 13:46:11 paulbeach Exp $
  * Revision 1.5  2000/12/08 16:18:21  fsg
  * Preliminary changes to get IB_BUILD_NO automatically
  * increased on commits.
@@ -136,9 +136,9 @@
 #ifdef i386
 #define FB_PLATFORM	"UI"	/* Darwin/Intel */
 #endif
-#ifdef powerpc
-#define FB_PLATFORM     "UP"	/* Darwin/PowerPC */
 #endif
+#if defined (DARWIN) && defined (__ppc__)
+#define FB_PLATFORM     "UP"	/* Darwin/PowerPC */
 #endif
 
 #ifndef FB_VERSION
