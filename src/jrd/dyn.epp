@@ -87,6 +87,7 @@ static void grant(Global*, const UCHAR**);
 static bool grantor_can_grant(Global*, const TEXT*, const TEXT*, const Firebird::MetaName&,
 	const Firebird::MetaName&, bool);
 static bool grantor_can_grant_role(thread_db*, Global*, const Firebird::MetaName&, const Firebird::MetaName&);
+static const char* privilege_name(char symbol);
 static void	revoke_permission(Global*, const UCHAR**);
 static void store_privilege(Global*, const Firebird::MetaName&, const Firebird::MetaName&, const Firebird::MetaName&,
 	const TEXT*, SSHORT, SSHORT, int);

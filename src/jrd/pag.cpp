@@ -813,7 +813,7 @@ PAG PAG_allocate(WIN * window)
 									fb_assert(new_page);
 								}
 								if (!(dbb->dbb_flags & DBB_no_reserve)) {
-									// At this point we sure database have at least pageNum + 1 pages
+									// At this point we ensure database has at least pageNum + 1 pages
 									// allocated. To avoid file growth by one page when next page will
 									// be allocated extend file up to pageNum + 2 pages now
 									pageSpace->extend(tdbb, pageNum + 2);
@@ -2209,7 +2209,7 @@ ULONG PageSpace::actAlloc(const USHORT pageSize)
 	// Traverse the linked list of files and add up the 
 	// number of pages in each file
 	ULONG tot_pages = 0;
-	for (jrd_file* f = file; f != NULL; f = f->fil_next) {
+	for (const jrd_file* f = file; f != NULL; f = f->fil_next) {
 		tot_pages += PIO_get_number_of_pages(f, pageSize);
 	}
 
@@ -2224,7 +2224,7 @@ ULONG PageSpace::maxAlloc(const USHORT pageSize)
  *	Compute last physically allocated page of database.
  *
  **************************************/
-	jrd_file* f = file;
+	const jrd_file* f = file;
 	while (f->fil_next) {
 		f = f->fil_next;
 	}
@@ -2248,7 +2248,7 @@ bool PageSpace::extend(thread_db* tdbb, const ULONG pageNum)
  *	extend can't be less than hardcoded value MIN_EXTEND_BYTES and more than
  *	configured value "MaxDatabaseFileGrowth" (both values in bytes).
  *	
- *	If "MaxDatabaseFileGrowth" less than MIN_EXTEND_BYTES don't extend file(s)
+ *	If "MaxDatabaseFileGrowth" is less than MIN_EXTEND_BYTES don't extend file(s)
  *
  **************************************/
 	const int MIN_EXTEND_BYTES = 128 * 1024;	// 128KB

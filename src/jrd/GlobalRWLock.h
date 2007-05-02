@@ -93,7 +93,7 @@ public:
 	~GlobalRWLock();
 
 	// As usual, 
-	// wait = 0 - try to lock a thing intantly (doesn't send ASTs)
+	// wait = 0 - try to lock a thing instantly (doesn't send ASTs)
 	// wait < 0 - timeout in seconds (doesn't deadlock)
 	// wait > 0 - infinite wait (may deadlock)
 	//

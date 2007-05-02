@@ -3314,14 +3314,20 @@ static dsql_nod* nullify_returning(dsql_nod* input, bool proc_flag)
 
 	dsql_nod* returning = NULL;
 
-	if (input->nod_type == nod_store)
-		returning = input->nod_arg[e_sto_return];
-	else if (input->nod_type == nod_modify)
-		returning = input->nod_arg[e_mod_return];
-	else if (input->nod_type == nod_erase)
-		returning = input->nod_arg[e_era_return];
-	else
-		fb_assert(false);
+	switch (input->nod_type)
+	{
+		case nod_store:
+			returning = input->nod_arg[e_sto_return];
+			break;
+		case nod_modify:
+			returning = input->nod_arg[e_mod_return];
+			break;
+		case nod_erase:
+			returning = input->nod_arg[e_era_return];
+			break;
+		default:
+			fb_assert(false);
+	}
 
 	if (proc_flag || !returning)
 		return input;

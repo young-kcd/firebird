@@ -253,6 +253,11 @@ void PIO_extend(jrd_file* main_file, const ULONG extPages, const USHORT pageSize
  *	Extend file by extPages pages of pageSize size. 
  *
  **************************************/
+ 
+#if (defined(_MSC_VER) && (_MSC_VER <= 1200)) // || defined __GNUC__
+	const DWORD INVALID_SET_FILE_POINTER = 0xFFFFFFFF;
+#endif
+
 	ULONG leftPages = extPages;
 	for (jrd_file* file = main_file; file && leftPages; file = file->fil_next)
 	{
