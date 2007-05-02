@@ -26,7 +26,7 @@
 #   Contributor(s):
 # 
 # 
-#   $Id: make.defaults,v 1.44.4.3 2007-04-05 11:30:23 paulbeach Exp $
+#   $Id: make.defaults,v 1.44.4.4 2007-05-02 13:30:25 paulbeach Exp $
 # 
 
 
@@ -203,13 +203,8 @@ LIB_LINK_SONAME = -Wl,-soname,
 LIB_LINK_MAPFILE= -Wl,--version-script,
 FBEMBED_LINK= -L$(LIB) -lfbembed
 
-ifeq ($(PLATFORM),DARWIN)
-LINK_FIREBIRD_SYMBOLS = $(LIB_LINK_MAPFILE)$(ROOT)/builds/posix/firebird.darwin.vers
-LINK_FBINTL_SYMBOLS = $(LIB_LINK_MAPFILE)$(ROOT)/builds/posix/fbintl.darwin.vers
-else
 LINK_FIREBIRD_SYMBOLS = $(LIB_LINK_MAPFILE)$(ROOT)/builds/posix/firebird.vers
 LINK_FBINTL_SYMBOLS = $(LIB_LINK_MAPFILE)$(ROOT)/builds/posix/fbintl.vers
-endif
 
 FB_SUPER_SERVER	= $(BIN)/fbserver$(EXEC_EXT)
 FB_CLASSIC_SERVER = $(BIN)/fb_inet_server$(EXEC_EXT)

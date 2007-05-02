@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.libfbclient,v 1.29.4.1 2007-03-07 15:04:16 paulbeach Exp $
+#  $Id: Makefile.in.libfbclient,v 1.29.4.2 2007-05-02 13:30:25 paulbeach Exp $
 #
 ROOT=..
 ObjModuleType=superclient
@@ -116,7 +116,7 @@ endif
 
 $(LIBFBCLIENT_SO):	$(FBCLIENT_Objects)
 ifeq ($(PLATFORM),DARWIN)
-	$(LIB_LINK) $(LINK_FIREBIRD_SYMBOLS) $(LIB_LINK_OPTIONS) $(LIB_LINK_IMPLIB) \
+	$(LIB_LINK) $(LINK_FIREBIRD_CLIENT_SYMBOLS) $(LIB_LINK_OPTIONS) $(LIB_LINK_IMPLIB) \
 $(LIB_CLIENT_LINK_OPTIONS) $(LIB_LINK_SONAME) \
 -o $@ $^ $(SO_LINK_LIBS) @PTHREAD_CFLAGS@ @PTHREAD_LIBS@
 else
