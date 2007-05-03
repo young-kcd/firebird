@@ -255,10 +255,11 @@ MemoryStats* MemoryPool::default_stats_group = 0;
 // At this point also set contextMemoryPool for main thread (or all
 // process in case of no threading).
 namespace {
-	char msBuffer[sizeof(MemoryStats)];
+	char msBuffer[sizeof(MemoryStats) + ALLOC_ALIGNMENT];
 	MemoryPool* createProcessMemoryPool()
 	{
-		MemoryPool::default_stats_group = new(&msBuffer) MemoryStats;
+		MemoryPool::default_stats_group = 
+			new((void*)(IPTR)MEM_ALIGN((size_t)(IPTR)(&msBuffer))) MemoryStats;
 		MemoryPool* p = MemoryPool::createPool();
 		fb_assert(p);
 #ifndef SUPERCLIENT
