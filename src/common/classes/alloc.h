@@ -294,17 +294,17 @@ protected:
 	
 	// Used to create MemoryPool descendants
 	static MemoryPool* internal_create(size_t instance_size, 
-		MemoryPool* parent = NULL, MemoryStats &stats = default_stats_group);
+		MemoryPool* parent = NULL, MemoryStats &stats = *default_stats_group);
 	
 public:
 	// Default statistics group for process
-	static MemoryStats default_stats_group;
+	static MemoryStats* default_stats_group;
 
 	// Pool created for process
 	static MemoryPool* processMemoryPool;
 	
 	// Create memory pool instance
-	static MemoryPool* createPool(MemoryPool* parent = NULL, MemoryStats &stats = default_stats_group) {
+	static MemoryPool* createPool(MemoryPool* parent = NULL, MemoryStats &stats = *default_stats_group) {
 		return internal_create(sizeof(MemoryPool), parent, stats);
 	}
 	
