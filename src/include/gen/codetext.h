@@ -838,5 +838,11 @@ static const struct {
 	{"gstat_open_err", 336920605},
 	{"gstat_read_err", 336920606},
 	{"gstat_sysmemex", 336920607},
+	{"fbsvcmgr_bad_am", 336986113},
+	{"fbsvcmgr_bad_wm", 336986114},
+	{"fbsvcmgr_bad_rs", 336986115},
+	{"fbsvcmgr_info_err", 336986116},
+	{"fbsvcmgr_query_err", 336986117},
+	{"fbsvcmgr_switch_unknown", 336986118},
 	{NULL, 0}
 };

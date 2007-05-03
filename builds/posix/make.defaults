@@ -260,7 +260,7 @@ FB_CLASSIC_SERVER = $(BIN)/fb_inet_server$(EXEC_EXT)
 # From utilities 
 CREATE_DB	= $(BIN)/create_db$(EXEC_EXT)
 GDS_DROP	= $(BIN)/gds_drop$(EXEC_EXT)
-GSERV		= $(BIN)/gserv$(EXEC_EXT)
+FBSVCMGR	= $(BIN)/fbsvcmgr$(EXEC_EXT)
 GSTAT		= $(BIN)/gstat$(EXEC_EXT)
 NBACKUP		= $(BIN)/nbackup$(EXEC_EXT)
 LOCKPRINT	= $(BIN)/fb_lock_print$(EXEC_EXT)

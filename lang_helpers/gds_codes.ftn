@@ -1684,3 +1684,15 @@ C --
       PARAMETER (GDS__gstat_read_err                   = 336920606)
       INTEGER*4 GDS__gstat_sysmemex                  
       PARAMETER (GDS__gstat_sysmemex                   = 336920607)
+      INTEGER*4 GDS__fbsvcmgr_bad_am                 
+      PARAMETER (GDS__fbsvcmgr_bad_am                  = 336986113)
+      INTEGER*4 GDS__fbsvcmgr_bad_wm                 
+      PARAMETER (GDS__fbsvcmgr_bad_wm                  = 336986114)
+      INTEGER*4 GDS__fbsvcmgr_bad_rs                 
+      PARAMETER (GDS__fbsvcmgr_bad_rs                  = 336986115)
+      INTEGER*4 GDS__fbsvcmgr_info_err               
+      PARAMETER (GDS__fbsvcmgr_info_err                = 336986116)
+      INTEGER*4 GDS__fbsvcmgr_query_err              
+      PARAMETER (GDS__fbsvcmgr_query_err               = 336986117)
+      INTEGER*4 GDS__fbsvcmgr_switch_unknown         
+      PARAMETER (GDS__fbsvcmgr_switch_unknown          = 336986118)

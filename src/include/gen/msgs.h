@@ -838,5 +838,11 @@ static const struct {
 	{336920605, "Can't open database file @1"},		/* 814, gstat_open_err */
 	{336920606, "Can't read a database page"},		/* 815, gstat_read_err */
 	{336920607, "System memory exhausted"},		/* 816, gstat_sysmemex */
+	{336986113, "Wrong value for access mode"},		/* 817, fbsvcmgr_bad_am */
+	{336986114, "Wrong value for write mode"},		/* 818, fbsvcmgr_bad_wm */
+	{336986115, "Wrong value for reserve space"},		/* 819, fbsvcmgr_bad_rs */
+	{336986116, "Unknown tag (@1) in info_svr_db_info block after isc_svc_query()"},		/* 820, fbsvcmgr_info_err */
+	{336986117, "Unknown tag (@1) in isc_svc_query() results"},		/* 821, fbsvcmgr_query_err */
+	{336986118, "Unknown switch \"@1\""},		/* 822, fbsvcmgr_switch_unknown */
 	{0, NULL}
 };

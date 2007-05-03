@@ -34,8 +34,32 @@
 #include "../jrd/ibase.h"
 #include "../common/classes/ClumpletWriter.h"
 #include "../common/utils_proto.h"
+#include "../common/classes/MsgPrint.h"
+
+// Here we define main control structure
 
 typedef bool PopulateFunction(char**&, Firebird::ClumpletWriter&, unsigned int);
+
+struct Switches
+{
+	const char* name;
+	PopulateFunction* populate;
+	const Switches* options;
+	unsigned int tag;
+	unsigned char tagInf;
+};
+
+// Get message from security database
+
+Firebird::string getMessage(int n)
+{
+	char buffer[256];
+	const int FACILITY = 22;
+
+	fb_msg_format(0, FACILITY, n, sizeof(buffer), buffer, MsgFormat::SafeArg());
+
+	return Firebird::string(buffer);
+}
 
 Firebird::string prepareSwitch(const char* arg)
 {
@@ -49,6 +73,8 @@ Firebird::string prepareSwitch(const char* arg)
 	return s;
 }
 
+// add string tag to spb
+
 bool putStringArgument(char**& av, Firebird::ClumpletWriter& spb, unsigned int tag)
 {
 	if (! *av)
@@ -61,62 +87,62 @@ bool putStringArgument(char**& av, Firebird::ClumpletWriter& spb, unsigned int t
 	return true;
 }
 
-bool putAccessMode(char**& av, Firebird::ClumpletWriter& spb, unsigned int tag)
+// add some special format tags to spb
+
+bool putSpecTag(char**& av, Firebird::ClumpletWriter& spb, unsigned int tag,
+				const Switches* sw, ISC_STATUS errorCode)
 {
 	if (! *av)
 		return false;
 
 	Firebird::string s(prepareSwitch(*av++));
-	if (s == "prp_am_readonly")
-		spb.insertByte(tag, isc_spb_prp_am_readonly);
-	else if (s == "prp_am_readwrite")
-		spb.insertByte(tag, isc_spb_prp_am_readwrite);
-	else
+	for (; sw->name; ++sw)
 	{
-		Firebird::status_exception::raise(isc_random, isc_arg_string, 
-				"Wrong value for access mode", 0);
+		if (s == sw->name)
+		{
+			spb.insertByte(tag, sw->tag);
+			return true;
+		}
 	}
 
-	return true;
+	Firebird::status_exception::raise(errorCode, 0);
+	return false;	// compiler warning silencer
 }
+
+const Switches amSwitch[] = {
+	{"prp_am_readonly", 0, 0, isc_spb_prp_am_readonly, 0},
+	{"prp_am_readwrite", 0, 0, isc_spb_prp_am_readwrite, 0},
+	{0, 0, 0, 0, 0}
+};
+
+bool putAccessMode(char**& av, Firebird::ClumpletWriter& spb, unsigned int tag)
+{
+	return putSpecTag(av, spb, tag, amSwitch, isc_fbsvcmgr_bad_am);
+}
+
+const Switches wmSwitch[] = {
+	{"prp_wm_async", 0, 0, isc_spb_prp_wm_async, 0},
+	{"prp_wm_sync", 0, 0, isc_spb_prp_wm_sync, 0},
+	{0, 0, 0, 0, 0}
+};
 
 bool putWriteMode(char**& av, Firebird::ClumpletWriter& spb, unsigned int tag)
 {
-	if (! *av)
-		return false;
-
-	Firebird::string s(prepareSwitch(*av++));
-	if (s == "prp_wm_async")
-		spb.insertByte(tag, isc_spb_prp_wm_async);
-	else if (s == "prp_wm_sync")
-		spb.insertByte(tag, isc_spb_prp_wm_sync);
-	else
-	{
-		Firebird::status_exception::raise(isc_random, isc_arg_string, 
-				"Wrong value for write mode", 0);
-	}
-
-	return true;
+	return putSpecTag(av, spb, tag, wmSwitch, isc_fbsvcmgr_bad_wm);
 }
+
+const Switches rsSwitch[] = {
+	{"prp_res_use_full", 0, 0, isc_spb_prp_res_use_full, 0},
+	{"prp_res", 0, 0, isc_spb_prp_res, 0},
+	{0, 0, 0, 0, 0}
+};
 
 bool putReserveSpace(char**& av, Firebird::ClumpletWriter& spb, unsigned int tag)
 {
-	if (! *av)
-		return false;
-
-	Firebird::string s(prepareSwitch(*av++));
-	if (s == "prp_res_use_full")
-		spb.insertByte(tag, isc_spb_prp_res_use_full);
-	else if (s == "prp_res")
-		spb.insertByte(tag, isc_spb_prp_res);
-	else
-	{
-		Firebird::status_exception::raise(isc_random, isc_arg_string, 
-				"Wrong value for reserve space", 0);
-	}
-
-	return true;
+	return putSpecTag(av, spb, tag, rsSwitch, isc_fbsvcmgr_bad_rs);
 }
+
+// add numeric (int32) tag to spb
 
 bool putNumericArgument(char**& av, Firebird::ClumpletWriter& spb, unsigned int tag)
 {
@@ -129,12 +155,16 @@ bool putNumericArgument(char**& av, Firebird::ClumpletWriter& spb, unsigned int 
 	return true;
 }
 
+// add boolean option to spb
+
 bool putOption(char**&, Firebird::ClumpletWriter& spb, unsigned int tag)
 {
 	spb.insertInt(isc_spb_options, tag);
 
 	return true;
 }
+
+// add argument-less tag to spb
 
 bool putSingleTag(char**&, Firebird::ClumpletWriter& spb, unsigned int tag)
 {
@@ -143,14 +173,8 @@ bool putSingleTag(char**&, Firebird::ClumpletWriter& spb, unsigned int tag)
 	return true;
 }
 
-struct Switches
-{
-	const char* name;
-	PopulateFunction* populate;
-	const Switches* options;
-	unsigned int tag;
-	unsigned char tagInf;
-};
+// populate spb with tags according to user-defined command line switches
+// and programmer-defined set of Switches array
 
 bool populateSpbFromSwitches(char**& av, 
 		Firebird::ClumpletWriter& spb, 
@@ -162,7 +186,7 @@ bool populateSpbFromSwitches(char**& av,
 
 	Firebird::string s(prepareSwitch(*av));
 
-	while (sw->name)
+	for (; sw->name; ++sw)
 	{
 		if (s == sw->name)
 		{
@@ -183,7 +207,6 @@ bool populateSpbFromSwitches(char**& av,
 			}
 			return false;
 		}
-		++sw;
 	}
 
 	return false;
@@ -302,6 +325,7 @@ const Switches addmodOptions[] = {
 	{"sec_groupid", putNumericArgument, 0, isc_spb_sec_groupid, 0},
 	{0, 0, 0, 0, 0}
 };
+
 const Switches actionSwitch[] = {
 	{"action_backup", putSingleTag, backupOptions, isc_action_svc_backup, isc_info_svc_line},
 	{"action_restore", putSingleTag, restoreOptions, isc_action_svc_restore, isc_info_svc_line},
@@ -315,6 +339,8 @@ const Switches actionSwitch[] = {
 	{"action_modify_user", putSingleTag, addmodOptions, isc_action_svc_modify_user, 0},
 	{0, 0, 0, 0, 0}
 };
+
+// print information, returned by isc_svc_query() call
 
 bool getLine(Firebird::string& dest, const char*& p)
 {
@@ -342,18 +368,18 @@ bool printLine(const char*& p)
 	return rc;
 }
 
-void printString(const char*& p, const char* text)
+void printString(const char*& p, int num)
 {
-	printf ("%s: ", text);
+	printf ("%s: ", getMessage(num).c_str());
 	if (!printLine(p))
 	{
 		printf ("<no data>\n");
 	}
 }
 
-void printNumeric(const char*& p, const char* text)
+void printNumeric(const char*& p, int num)
 {
-	printf ("%s: %d\n", text, getNumeric(p));
+	printf ("%s: %d\n", getMessage(num).c_str(), getNumeric(p));
 }
 
 class UserPrint
@@ -403,46 +429,46 @@ bool printInfo(const char* p, UserPrint& up)
 		switch (*p++)
 		{
 		case isc_info_svc_version:
-			printNumeric(p, "Service Manager Version");
+			printNumeric(p, 7);
 			break;
 		case isc_info_svc_server_version:
-			printString(p, "Server version");
+			printString(p, 8);
 			break;
 		case isc_info_svc_implementation:
-			printString(p, "Server implementation");
+			printString(p, 9);
 			break;
 		case isc_info_svc_get_env_msg:
-			printString(p, "Path to firebird.msg");
+			printString(p, 10);
 			break;
 		case isc_info_svc_get_env:
-			printString(p, "Server root");
+			printString(p, 11);
 			break;
 		case isc_info_svc_get_env_lock:
-			printString(p, "Path to lock files");
+			printString(p, 12);
 			break;
 		case isc_info_svc_user_dbpath:
-			printString(p, "Security database");
+			printString(p, 13);
 			break;
 
 		case isc_info_svc_svr_db_info:
-			printf ("Databases:\n");
-			do {
+			printf ("%s:\n", getMessage(14).c_str());
+			while (*p != isc_info_flag_end) {
 				switch (*p++)
 				{
 				case isc_spb_dbname:
-					printString(p, "   Database in use");
+					printString(p, 15);
 					break;
 				case isc_spb_num_att:
-					printNumeric(p, "   Number of attachments");
+					printNumeric(p, 16);
 					break;
 				case isc_spb_num_db:
-					printNumeric(p, "   Number of databases");
+					printNumeric(p, 17);
 					break;
 				default:
-					printf("Unknown code (%d) in info_svr_db_info\n", p[-1]);
-					return false;
+					Firebird::status_exception::raise(isc_fbsvcmgr_info_err, isc_arg_number, 
+						static_cast<unsigned char>(p[-1]), 0);
 				}
-			} while (*p != isc_info_flag_end);
+			}
 			p++;
 			break;
 
@@ -473,20 +499,38 @@ bool printInfo(const char* p, UserPrint& up)
 			return printLine(p);
 
 		case isc_info_truncated:
-			printf ("Truncated\n");
+			printf ("%s\n", getMessage(18).c_str());
 			return false;
 
 		default:
-			printf("Unknown tag in isc_svc_query() results (%d)\n", p[-1]);
-			return false;
+			Firebird::status_exception::raise(isc_fbsvcmgr_query_err, isc_arg_number, 
+				static_cast<unsigned char>(p[-1]), 0);
 		}
 	}
 
 	return false;
 }
 
+// short usage from firebird.msg
+
+void usage()
+{
+	for (int i=19; i<=33; ++i)
+	{
+		printf("%s\n", getMessage(i).c_str());
+	}
+}
+
+// simple main function
+
 int main(int ac, char **av)
 {
+	if (ac < 2)
+	{
+		usage();
+		return 1;
+	}
+
 	ISC_STATUS_ARRAY status;
 
 	try {
@@ -517,8 +561,7 @@ int main(int ac, char **av)
 		//Here we are over with av parse, look - may be unknown switch left
 		if (*av)
 		{
-			printf("Unknown switch '%s'\n", *av);
-			return 1;
+			Firebird::status_exception::raise(isc_fbsvcmgr_switch_unknown, isc_arg_string, *av, 0);
 		}
 
 		isc_svc_handle svc_handle = 0;

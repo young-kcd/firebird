@@ -3168,6 +3168,40 @@ Analyzing database pages ...', NULL, NULL);
 -- Do not change the arguments of the previous GSTAT messages.
 -- Write the new GSTAT messages here.
 ('', 'main', 'dba.epp', NULL, 21, 36, NULL, '    -tr     use trusted authentication', NULL, NULL);
+-- FBSVCMGR
+('fbsvcmgr_bad_am', 'putAccessMode', 'gserv.cpp', NULL, 22, 1, NULL, 'Wrong value for access mode', NULL, NULL);
+('fbsvcmgr_bad_wm', 'putWriteMode', 'gserv.cpp', NULL, 22, 2, NULL, 'Wrong value for write mode', NULL, NULL);
+('fbsvcmgr_bad_rs', 'putReserveSpace', 'gserv.cpp', NULL, 22, 3, NULL, 'Wrong value for reserve space', NULL, NULL);
+('fbsvcmgr_info_err', 'printInfo', 'gserv.cpp', NULL, 22, 4, NULL, 'Unknown tag (@1) in info_svr_db_info block after isc_svc_query()', NULL, NULL);
+('fbsvcmgr_query_err', 'printInfo', 'gserv.cpp', NULL, 22, 5, NULL, 'Unknown tag (@1) in isc_svc_query() results', NULL, NULL);
+('fbsvcmgr_switch_unknown', 'main', 'gserv.cpp', NULL, 22, 6, NULL, 'Unknown switch "@1"', NULL, NULL);
+('', 'printInfo', 'gserv.cpp', NULL, 22, 7, NULL, 'Service Manager Version', NULL, NULL);
+('', 'printInfo', 'gserv.cpp', NULL, 22, 8, NULL, 'Server version', NULL, NULL);
+('', 'printInfo', 'gserv.cpp', NULL, 22, 9, NULL, 'Server implementation', NULL, NULL);
+('', 'printInfo', 'gserv.cpp', NULL, 22, 10, NULL, 'Path to firebird.msg', NULL, NULL);
+('', 'printInfo', 'gserv.cpp', NULL, 22, 11, NULL, 'Server root', NULL, NULL);
+('', 'printInfo', 'gserv.cpp', NULL, 22, 12, NULL, 'Path to lock files', NULL, NULL);
+('', 'printInfo', 'gserv.cpp', NULL, 22, 13, NULL, 'Security database', NULL, NULL);
+('', 'printInfo', 'gserv.cpp', NULL, 22, 14, NULL, 'Databases', NULL, NULL);
+('', 'printInfo', 'gserv.cpp', NULL, 22, 15, NULL, '   Database in use', NULL, NULL);
+('', 'printInfo', 'gserv.cpp', NULL, 22, 16, NULL, '   Number of attachments', NULL, NULL);
+('', 'printInfo', 'gserv.cpp', NULL, 22, 17, NULL, '   Number of databases', NULL, NULL);
+('', 'printInfo', 'gserv.cpp', NULL, 22, 18, NULL, 'Information truncated', NULL, NULL);
+('', 'usage', 'gserv.cpp', NULL, 22, 19, NULL, 'Usage: fbsvcmgr manager-name switches...', NULL, NULL);
+('', 'usage', 'gserv.cpp', NULL, 22, 20, NULL, 'Manager-name should be service_mgr, may be prefixed with host name', NULL, NULL);
+('', 'usage', 'gserv.cpp', NULL, 22, 21, NULL, 'according to common rules (host:service_mgr, \\host\service_mgr).', NULL, NULL);
+('', 'usage', 'gserv.cpp', NULL, 22, 22, NULL, 'Switches exactly match SPB tags, used in abbreviated form.', NULL, NULL);
+('', 'usage', 'gserv.cpp', NULL, 22, 23, NULL, 'Remove isc_, spb_ and svc_ parts of tag and you will get the switch.', NULL, NULL);
+('', 'usage', 'gserv.cpp', NULL, 22, 24, NULL, 'For example: isc_action_svc_backup is specified as action_backup,', NULL, NULL);
+('', 'usage', 'gserv.cpp', NULL, 22, 25, NULL, '             isc_spb_dbname => dbname,', NULL, NULL);
+('', 'usage', 'gserv.cpp', NULL, 22, 26, NULL, '             isc_info_svc_implementation => info_implementation,', NULL, NULL);
+('', 'usage', 'gserv.cpp', NULL, 22, 27, NULL, '             isc_spb_prp_db_online => prp_db_online and so on.', NULL, NULL);
+('', 'usage', 'gserv.cpp', NULL, 22, 28, NULL, 'You may specify single action or multiple info items when calling fbsvcmgr once.', NULL, NULL);
+('', 'usage', 'gserv.cpp', NULL, 22, 29, NULL, 'Full command line samples:', NULL, NULL);
+('', 'usage', 'gserv.cpp', NULL, 22, 30, NULL, 'fbsvcmgr service_mgr user sysdba password masterke action_db_stats dbname employee sts_hdr_pages', NULL, NULL);
+('', 'usage', 'gserv.cpp', NULL, 22, 31, NULL, '  (will list header info in database employee on local machine)', NULL, NULL);
+('', 'usage', 'gserv.cpp', NULL, 22, 32, NULL, 'fbsvcmgr yourserver:service_mgr user sysdba password masterke info_server_version info_svr_db_info', NULL, NULL);
+('', 'usage', 'gserv.cpp', NULL, 22, 33, NULL, '  (will show firebird version and databases usage on yourserver)', NULL, NULL);
 stop
 
 COMMIT WORK;

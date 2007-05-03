@@ -871,7 +871,13 @@ const ISC_LONG isc_gstat_unexpected_eof             = 336920580L;
 const ISC_LONG isc_gstat_open_err                   = 336920605L;
 const ISC_LONG isc_gstat_read_err                   = 336920606L;
 const ISC_LONG isc_gstat_sysmemex                   = 336920607L;
-const ISC_LONG isc_err_max                          = 816;
+const ISC_LONG isc_fbsvcmgr_bad_am                  = 336986113L;
+const ISC_LONG isc_fbsvcmgr_bad_wm                  = 336986114L;
+const ISC_LONG isc_fbsvcmgr_bad_rs                  = 336986115L;
+const ISC_LONG isc_fbsvcmgr_info_err                = 336986116L;
+const ISC_LONG isc_fbsvcmgr_query_err               = 336986117L;
+const ISC_LONG isc_fbsvcmgr_switch_unknown          = 336986118L;
+const ISC_LONG isc_err_max                          = 822;
 
 #else /* c definitions */
 
@@ -1712,7 +1718,13 @@ const ISC_LONG isc_err_max                          = 816;
 #define isc_gstat_open_err                   336920605L
 #define isc_gstat_read_err                   336920606L
 #define isc_gstat_sysmemex                   336920607L
-#define isc_err_max                          816
+#define isc_fbsvcmgr_bad_am                  336986113L
+#define isc_fbsvcmgr_bad_wm                  336986114L
+#define isc_fbsvcmgr_bad_rs                  336986115L
+#define isc_fbsvcmgr_info_err                336986116L
+#define isc_fbsvcmgr_query_err               336986117L
+#define isc_fbsvcmgr_switch_unknown          336986118L
+#define isc_err_max                          822
 
 #endif
 

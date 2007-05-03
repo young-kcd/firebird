@@ -837,5 +837,11 @@ static const struct {
 	{336920605, -901}, /*  29 gstat_open_err                   */
 	{336920606, -901}, /*  30 gstat_read_err                   */
 	{336920607, -901}, /*  31 gstat_sysmemex                   */
+	{336986113, -901}, /*   1 fbsvcmgr_bad_am                  */
+	{336986114, -901}, /*   2 fbsvcmgr_bad_wm                  */
+	{336986115, -901}, /*   3 fbsvcmgr_bad_rs                  */
+	{336986116, -901}, /*   4 fbsvcmgr_info_err                */
+	{336986117, -901}, /*   5 fbsvcmgr_query_err               */
+	{336986118, -901}, /*   6 fbsvcmgr_switch_unknown          */
 	{0, 0}
 };

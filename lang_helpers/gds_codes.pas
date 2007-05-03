@@ -849,3 +849,9 @@ const
 	gds_gstat_open_err                   = 336920605;
 	gds_gstat_read_err                   = 336920606;
 	gds_gstat_sysmemex                   = 336920607;
+	gds_fbsvcmgr_bad_am                  = 336986113;
+	gds_fbsvcmgr_bad_wm                  = 336986114;
+	gds_fbsvcmgr_bad_rs                  = 336986115;
+	gds_fbsvcmgr_info_err                = 336986116;
+	gds_fbsvcmgr_query_err               = 336986117;
+	gds_fbsvcmgr_switch_unknown          = 336986118;

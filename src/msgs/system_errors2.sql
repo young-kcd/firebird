@@ -826,6 +826,13 @@ COMMIT WORK;
 (-901, NULL, NULL, 21, 29, NULL, 'gstat_open_err', NULL, NULL)
 (-901, NULL, NULL, 21, 30, NULL, 'gstat_read_err', NULL, NULL)
 (-901, NULL, NULL, 21, 31, NULL, 'gstat_sysmemex', NULL, NULL)
+-- FBSVCMGR
+(-901, NULL, NULL, 22, 1, NULL, 'fbsvcmgr_bad_am', NULL, NULL)
+(-901, NULL, NULL, 22, 2, NULL, 'fbsvcmgr_bad_wm', NULL, NULL)
+(-901, NULL, NULL, 22, 3, NULL, 'fbsvcmgr_bad_rs', NULL, NULL)
+(-901, NULL, NULL, 22, 4, NULL, 'fbsvcmgr_info_err', NULL, NULL)
+(-901, NULL, NULL, 22, 5, NULL, 'fbsvcmgr_query_err', NULL, NULL)
+(-901, NULL, NULL, 22, 6, NULL, 'fbsvcmgr_switch_unknown', NULL, NULL)
 --
 stop
 
