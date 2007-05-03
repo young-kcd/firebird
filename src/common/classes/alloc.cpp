@@ -249,14 +249,16 @@ MemoryPool* MemoryPool::getContextPool()
 }
 
 // Initialize default stats group
-MemoryStats MemoryPool::default_stats_group;
+MemoryStats* MemoryPool::default_stats_group = 0;
 
 // Initialize process memory pool to avoid possible race conditions.
 // At this point also set contextMemoryPool for main thread (or all
 // process in case of no threading).
 namespace {
+	char msBuffer[sizeof(MemoryStats)];
 	MemoryPool* createProcessMemoryPool()
 	{
+		MemoryPool::default_stats_group = new(&msBuffer) MemoryStats;
 		MemoryPool* p = MemoryPool::createPool();
 		fb_assert(p);
 #ifndef SUPERCLIENT

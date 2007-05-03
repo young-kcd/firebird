@@ -5609,7 +5609,7 @@ static Database* init(thread_db*	tdbb,
 	dbb = Database::newDbb(*perm);
 	perm->setStatsGroup(dbb->dbb_memory_stats);
 #else
-	JrdMemoryPool* perm = JrdMemoryPool::createDbPool(MemoryPool::default_stats_group);
+	JrdMemoryPool* perm = JrdMemoryPool::createDbPool(*MemoryPool::default_stats_group);
 	dbb = Database::newDbb(*perm);
 #endif
 	//temp.blk_type = type_dbb;

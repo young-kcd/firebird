@@ -299,11 +299,11 @@ int INF_database_info(const SCHAR* items,
 			break;
 #else
 		case isc_info_current_memory:
-			length = INF_convert(MemoryPool::default_stats_group.get_current_usage(), buffer);
+			length = INF_convert(MemoryPool::default_stats_group->get_current_usage(), buffer);
 			break;
 
 		case isc_info_max_memory:
-			length = INF_convert(MemoryPool::default_stats_group.get_maximum_usage(), buffer);
+			length = INF_convert(MemoryPool::default_stats_group->get_maximum_usage(), buffer);
 			break;
 #endif
 
