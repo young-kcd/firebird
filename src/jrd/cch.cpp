@@ -44,9 +44,6 @@
 #include "../jrd/tra.h"
 #include "../jrd/sbm.h"
 #include "../jrd/iberr.h"
-#include "../jrd/rse.h"
-#include "../jrd/btr.h"
-#include "../jrd/btn.h"
 #include "../jrd/nbak.h"
 #include "../jrd/gdsassert.h"
 #include "../jrd/cch_proto.h"
@@ -1956,6 +1953,11 @@ void CCH_precedence(thread_db* tdbb, WIN * window, PageNumber page)
 /* If the page is zero, the caller isn't really serious */
 
 	if (page.getPageNum() == 0) {
+		return;
+	}
+
+	// no need to support precedence for temporary pages 
+	if (page.isTemporary() || window->win_page.isTemporary()) {
 		return;
 	}
 
@@ -6340,15 +6342,23 @@ static bool write_page(
 			if (!isTempPage && (backup_state == nbak_state_stalled ||
 					backup_state == nbak_state_merge) ) 
 			{
-				if (!dbb->dbb_backup_manager->write_difference(
-					status, bdb->bdb_difference_page, bdb->bdb_buffer)) 
+#ifdef SUPERSERVER
+				THREAD_EXIT();
+#endif
+				const bool res = 
+					dbb->dbb_backup_manager->write_difference(status, 
+						bdb->bdb_difference_page, bdb->bdb_buffer);
+#ifdef SUPERSERVER
+				THREAD_ENTER();
+#endif
+				if (!res) 
 				{
 					bdb->bdb_flags |= BDB_io_error;
 					dbb->dbb_flags |= DBB_suspend_bgio;
 					return false;
 				}
 			}
-			if (backup_state == nbak_state_stalled) {
+			if (!isTempPage && backup_state == nbak_state_stalled) { 
 				// We finished. Adjust transaction accounting and get ready for exit
 				if (bdb->bdb_page == HEADER_PAGE_NUMBER) {
 					dbb->dbb_last_header_write =
