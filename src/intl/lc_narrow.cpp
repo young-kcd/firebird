@@ -34,6 +34,10 @@
 using namespace Firebird;
 
 
+static bool LC_NARROW_family2(texttype* tt, charset* cs, SSHORT country, USHORT flags,
+	const SortOrderTblEntry* noCaseOrderTbl, const BYTE* toUpperConversionTbl,
+	const BYTE* toLowerConversionTbl, const CompressPair* compressTbl, const ExpandChar* expansionTbl,
+	const ASCII* name, USHORT attributes, const UCHAR* specificAttributes, ULONG specificAttributesLength);
 static ULONG fam2_str_to_upper(texttype* obj, ULONG iLen, const BYTE* pStr, ULONG iOutLen, BYTE *pOutStr);
 static ULONG fam2_str_to_lower(texttype* obj, ULONG iLen, const BYTE* pStr, ULONG iOutLen, BYTE *pOutStr);
 

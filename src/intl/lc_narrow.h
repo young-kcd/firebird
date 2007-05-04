@@ -69,21 +69,6 @@ SSHORT LC_NARROW_compare(texttype* obj, ULONG l1, const BYTE* s1, ULONG l2, cons
 ULONG LC_NARROW_canonical(texttype* obj, ULONG srcLen, const UCHAR* src, ULONG dstLen, UCHAR* dst);
 void LC_NARROW_destroy(texttype* obj);
 
-bool LC_NARROW_family2(
-	texttype* tt,
-	charset* cs,
-	SSHORT country,
-	USHORT flags,
-	const SortOrderTblEntry* noCaseOrderTbl,
-	const BYTE* toUpperConversionTbl,
-	const BYTE* toLowerConversionTbl,
-	const CompressPair* compressTbl,
-	const ExpandChar* expansionTbl,
-	const ASCII* name,
-	USHORT attributes,
-	const UCHAR* specificAttributes,
-	ULONG specificAttributesLength);
-
 bool LC_NARROW_family3(
 	texttype* tt,
 	charset* cs,

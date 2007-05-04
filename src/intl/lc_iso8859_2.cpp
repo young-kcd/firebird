@@ -31,7 +31,7 @@ TEXTTYPE_ENTRY(ISO88592_c1_init)
 
 #include "../intl/collations/xx88592czech.h"
 
-	return LC_NARROW_family2(cache, cs, CC_CZECH, LDRV_TIEBREAK,
+	return LC_NARROW_family3(cache, cs, CC_CZECH, LDRV_TIEBREAK,
 			NoCaseOrderTbl, ToUpperConversionTbl, ToLowerConversionTbl,
 			CompressTbl, ExpansionTbl, POSIX, attributes, specific_attributes, specific_attributes_length);
 }
@@ -42,7 +42,7 @@ TEXTTYPE_ENTRY(ISO88592_c2_init)
 
 #include "../intl/collations/xx88592hun.h"
 
-	return LC_NARROW_family2(cache, cs, CC_HUNGARY, LDRV_TIEBREAK,
+	return LC_NARROW_family3(cache, cs, CC_HUNGARY, LDRV_TIEBREAK,
 			NoCaseOrderTbl, ToUpperConversionTbl, ToLowerConversionTbl,
 			CompressTbl, ExpansionTbl, POSIX, attributes, specific_attributes, specific_attributes_length);
 }
@@ -53,7 +53,7 @@ TEXTTYPE_ENTRY(ISO88592_c3_init)
 
 #include "../intl/collations/xx88592plk.h"
 
-	return LC_NARROW_family2(cache, cs, CC_POLAND, LDRV_TIEBREAK,
+	return LC_NARROW_family3(cache, cs, CC_POLAND, LDRV_TIEBREAK,
 			NoCaseOrderTbl, ToUpperConversionTbl, ToLowerConversionTbl,
 			CompressTbl, ExpansionTbl, POSIX, attributes, specific_attributes, specific_attributes_length);
 }
