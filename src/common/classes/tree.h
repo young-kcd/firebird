@@ -175,8 +175,15 @@ public:
 			(level == 0 && ((ItemList*)root)->getCount() == 0);
 	}
 	
-	bool add(const Value& item);
+	bool add(const Value& item) {return defaultAccessor.add(item); }
 	
+	class Accessor;
+	// If item already exists method sets accessor's current position
+	// to found item's location and returns false
+	// If item not exists method will add it to the tree and return true, 
+	// not touching accessor's current position
+	bool add(const Value& item, Accessor *accessor);
+
 	// Remove item. Current position moves to next item after this call. 
 	// If next item doesn't exist method returns false
     bool fastRemove() { return defaultAccessor.fastRemove(); }
@@ -338,6 +345,10 @@ public:
 	public:
 		Accessor(BePlusTree* _tree) : curr(NULL), tree(_tree), curPos(0) {}
 	
+		bool add(const Value& item) {
+			return tree->add(item, this);
+		}
+
 		// Remove item. Current position moves to next item after this call. 
 		// If next item doesn't exist method returns false
 		bool fastRemove() {
@@ -564,7 +575,7 @@ private:
 /************************ BePlusTree implementation ******************/
 
 template <typename Value, typename Key, typename Allocator, typename KeyOfValue, typename Cmp, int LeafCount, int NodeCount>
-bool BePlusTree<Value, Key, Allocator, KeyOfValue, Cmp, LeafCount, NodeCount>::add(const Value& item)
+bool BePlusTree<Value, Key, Allocator, KeyOfValue, Cmp, LeafCount, NodeCount>::add(const Value& item, Accessor *accessor)
 {
 	// Finish initialization of the tree if necessary
 	if (!root) root = new (pool->allocate(sizeof(ItemList))) ItemList();
@@ -582,7 +593,13 @@ bool BePlusTree<Value, Key, Allocator, KeyOfValue, Cmp, LeafCount, NodeCount>::a
 	ItemList *leaf = (ItemList *)vList;
 			
 	size_t pos;
-	if (leaf->find(key, pos)) return false;
+	if (leaf->find(key, pos)) {
+		if (accessor) {
+			accessor->curr = leaf;
+			accessor->curPos = pos;
+		}
+		return false;
+	}
 		
 	if (leaf->getCount() < LeafCount) {
 		leaf->insert(pos, item);

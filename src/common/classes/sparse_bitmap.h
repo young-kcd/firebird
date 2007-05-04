@@ -119,14 +119,14 @@ public:
 
 		const T val_aligned = value & ~(T) (BUNCH_BITS - 1);
 		const BUNCH_T bit_mask = BUNCH_ONE << (value - val_aligned);
-		if (tree.isPositioned(val_aligned) || tree.locate(val_aligned)) {
+
+		Bucket bucket;
+		bucket.start_value = val_aligned;
+		bucket.bits = bit_mask;
+		if (tree.isPositioned(val_aligned) || !tree.add(bucket)) 
+		{
+			fb_assert(tree.isPositioned(val_aligned));
 			tree.current().bits |= bit_mask;
-		}
-		else {
-			Bucket bucket;
-			bucket.start_value = val_aligned;
-			bucket.bits = bit_mask;
-			tree.add(bucket);
 		}
 	}
 
