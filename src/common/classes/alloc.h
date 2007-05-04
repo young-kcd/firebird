@@ -294,7 +294,7 @@ protected:
 	
 	// Used to create MemoryPool descendants
 	static MemoryPool* internal_create(size_t instance_size, 
-		MemoryPool* parent = NULL, MemoryStats &stats = *default_stats_group);
+		MemoryPool* parent = NULL, MemoryStats& stats = *default_stats_group);
 	
 public:
 	// Default statistics group for process
@@ -304,19 +304,19 @@ public:
 	static MemoryPool* processMemoryPool;
 	
 	// Create memory pool instance
-	static MemoryPool* createPool(MemoryPool* parent = NULL, MemoryStats &stats = *default_stats_group) {
+	static MemoryPool* createPool(MemoryPool* parent = NULL, MemoryStats& stats = *default_stats_group) {
 		return internal_create(sizeof(MemoryPool), parent, stats);
 	}
 	
 	// Set context pool for current thread of execution
-	static MemoryPool* setContextPool(MemoryPool *newPool);
+	static MemoryPool* setContextPool(MemoryPool* newPool);
 	
 	// Get context pool for current thread of execution
 	static MemoryPool* getContextPool();
 	
 	// Set statistics group for pool. Usage counters will be decremented from 
 	// previously set group and added to new
-	void setStatsGroup(MemoryStats &stats);
+	void setStatsGroup(MemoryStats& stats);
 
 	// Deallocate pool and all its contents
 	static void deletePool(MemoryPool* pool);

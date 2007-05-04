@@ -254,7 +254,7 @@ void PIO_extend(jrd_file* main_file, const ULONG extPages, const USHORT pageSize
  *
  **************************************/
  
-#if (defined(_MSC_VER) && (_MSC_VER <= 1200)) // || defined __GNUC__
+#if (defined(_MSC_VER) && (_MSC_VER <= 1200)) // || defined(MINGW)
 	const DWORD INVALID_SET_FILE_POINTER = 0xFFFFFFFF;
 #endif
 

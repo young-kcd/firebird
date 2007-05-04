@@ -228,7 +228,7 @@ inline void MemoryPool::decrement_mapping(size_t size)
 	mapped_memory -= size;
 }
 
-MemoryPool* MemoryPool::setContextPool(MemoryPool *newPool)
+MemoryPool* MemoryPool::setContextPool(MemoryPool* newPool)
 {
 	MemoryPool* old = TLS_GET(contextPool);
 	TLS_SET(contextPool, newPool);
@@ -251,7 +251,7 @@ namespace {
 	MemoryPool* createProcessMemoryPool()
 	{
 		MemoryPool::default_stats_group =
-			new((void*)(IPTR)MEM_ALIGN((size_t)(IPTR)(&msBuffer))) MemoryStats;
+			new((void*)(IPTR) MEM_ALIGN((size_t)(IPTR) (&msBuffer))) MemoryStats;
 		MemoryPool* p = MemoryPool::createPool();
 		fb_assert(p);
 #ifndef SUPERCLIENT
@@ -263,7 +263,7 @@ namespace {
 MemoryPool* MemoryPool::processMemoryPool = createProcessMemoryPool();
 
 
-void MemoryPool::setStatsGroup(MemoryStats &statsL)
+void MemoryPool::setStatsGroup(MemoryStats& statsL)
 {
 	// This locking pattern is necessary to ensure thread-safety of this routine.
 	// It is deadlock-free only as long other code takes locks in the same order.
