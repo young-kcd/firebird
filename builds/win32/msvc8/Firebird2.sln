@@ -1,5 +1,5 @@
 Microsoft Visual Studio Solution File, Format Version 9.00
-# Visual Studio 2005
+# Visual C++ Express 2005
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "alice", "alice.vcproj", "{0D616380-1A5A-4230-A80B-021360E4E669}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "alice_classic", "alice_classic.vcproj", "{C31DD0B9-ACEE-4F66-9CDE-DD92B0EB78E4}"
@@ -185,6 +185,12 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "utilities_embed", "utilitie
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "fbrmclib", "fbrmclib.vcproj", "{FAF9AD25-8238-49E9-9AC9-8C56E190440A}"
 	ProjectSection(ProjectDependencies) = postProject
+		{492E7BDA-8948-408D-A43E-4C0A5B86AFB8} = {492E7BDA-8948-408D-A43E-4C0A5B86AFB8}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "fbsvcmgr", "fbsvcmgr.vcproj", "{EFB07DBC-36E3-4C54-B941-3CDAFAACF47B}"
+	ProjectSection(ProjectDependencies) = postProject
+		{15605F44-BFFD-444F-AD4C-55DC9D704465} = {15605F44-BFFD-444F-AD4C-55DC9D704465}
 		{492E7BDA-8948-408D-A43E-4C0A5B86AFB8} = {492E7BDA-8948-408D-A43E-4C0A5B86AFB8}
 	EndProjectSection
 EndProject
@@ -562,6 +568,12 @@ Global
 		{FAF9AD25-8238-49E9-9AC9-8C56E190440A}.Release|Win32.ActiveCfg = Release|Win32
 		{FAF9AD25-8238-49E9-9AC9-8C56E190440A}.Release|Win32.Build.0 = Release|Win32
 		{FAF9AD25-8238-49E9-9AC9-8C56E190440A}.Release|x64.ActiveCfg = Release|Win32
+		{EFB07DBC-36E3-4C54-B941-3CDAFAACF47B}.Debug|Win32.ActiveCfg = Debug|Win32
+		{EFB07DBC-36E3-4C54-B941-3CDAFAACF47B}.Debug|Win32.Build.0 = Debug|Win32
+		{EFB07DBC-36E3-4C54-B941-3CDAFAACF47B}.Debug|x64.ActiveCfg = Debug|Win32
+		{EFB07DBC-36E3-4C54-B941-3CDAFAACF47B}.Release|Win32.ActiveCfg = Release|Win32
+		{EFB07DBC-36E3-4C54-B941-3CDAFAACF47B}.Release|Win32.Build.0 = Release|Win32
+		{EFB07DBC-36E3-4C54-B941-3CDAFAACF47B}.Release|x64.ActiveCfg = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
