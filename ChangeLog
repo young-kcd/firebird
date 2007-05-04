@@ -1,3 +1,24 @@
+2007-05-03 15:44  alexpeshkoff
+
+	* firebird2/src/common/classes/alloc.cpp (1.80.2.7):
+
+	fixed alignment issue in my previous commit - thanks to Adriano
+
+2007-05-03 14:50  alexpeshkoff
+
+	* firebird2/src/jrd/: inf.cpp (1.62.4.4), jrd.cpp (1.237.2.13):
+
+	Fixed CORE-1240 - any task, using libfbclient, hangs on exit on
+	Darwin/PPC
+
+2007-05-03 14:47  alexpeshkoff
+
+	* firebird2/src/: alice/all.h (1.12.10.1), common/classes/alloc.cpp
+	(1.80.2.6), common/classes/alloc.h (1.61.4.2):
+
+	Fixed CORE-1240 - any task, using libfbclient, hangs on exit on
+	Darwin/PPC
+
 2007-05-02 15:46  paulbeach
 
 	* firebird2/src/: common/classes/semaphore.h (1.24.2.3),
