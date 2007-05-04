@@ -133,8 +133,8 @@ bool GlobalRWLock::lock(thread_db* tdbb, locklevel_t level, SSHORT wait, SLONG o
 
 	COS_TRACE(("lock type=%i, level=%i, readerscount=%i, owner=%i", cached_lock->lck_type, level, readers.getCount(), owner_handle));
 	// Check if this is a recursion case
+	size_t n;
 	if (level == LCK_read) {
-		size_t n;
 		if (readers.find(owner_handle, n)) {
 			readers[n].entry_count++;
 			unlockCounters();
@@ -160,7 +160,7 @@ bool GlobalRWLock::lock(thread_db* tdbb, locklevel_t level, SSHORT wait, SLONG o
 			ObjectOwnerData ownerData;
 			ownerData.owner_handle = owner_handle;
 			ownerData.entry_count++;
-			readers.add(ownerData);
+			readers.insert(n, ownerData);
 		}
 		else
 		{
@@ -364,7 +364,7 @@ void GlobalRWLock::changeLockOwner(thread_db* tdbb, locklevel_t level, SLONG old
 				ObjectOwnerData ownerData;
 				ownerData.entry_count++;
 				ownerData.owner_handle = new_owner_handle;
-				readers.add(ownerData);
+				readers.insert(n, ownerData);
 			}
 		}
 		else {
