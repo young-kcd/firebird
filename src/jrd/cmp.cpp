@@ -2965,6 +2965,13 @@ static jrd_nod* copy(thread_db* tdbb,
 		*(dsc*) (node->nod_arg + e_domval_desc) = *(dsc*) (input->nod_arg + e_domval_desc);
 		return node;
 
+	case nod_dbkey:
+		node = PAR_make_node(tdbb, 1);
+		node->nod_type = input->nod_type;
+		node->nod_count = 0;
+		node->nod_arg[0] = input->nod_arg[0];
+		return node;
+
 	default:
 		break;
 	}
@@ -3537,14 +3544,6 @@ static jrd_nod* pass1(thread_db* tdbb,
 					break;
 			}
 
-			// dimitr:	if we reference view columns, we need to pass them
-			//			as belonging to a view (in order to compute the access
-			//			permissions properly).
-			if (relation->rel_view_rse) {
-				view = relation;
-				view_stream = stream;
-			}
-
 			UCHAR local_map[MAP_LENGTH];
 			UCHAR* map = tail->csb_map;
 			if (!map) {
@@ -3555,6 +3554,43 @@ static jrd_nod* pass1(thread_db* tdbb,
 				map[2] = stream + 2;
 			}
 			sub = copy(tdbb, csb, sub, map, 0, NULL, false);
+
+			if (relation->rel_view_rse)
+			{
+				// dimitr:	if we reference view columns, we need to pass them
+				//			as belonging to a view (in order to compute the access
+				//			permissions properly).
+				view = relation;
+				view_stream = stream;
+
+				if (!(tail->csb_flags & (csb_modify | csb_store)))
+				{
+					// ASF: If the view is in null state (with outer joins) we need to transform
+					// all view fields to NULL. (CORE-1245)
+
+					jrd_nod* new_node = PAR_make_node(tdbb, 3);
+					new_node->nod_type = nod_value_if;
+					new_node->nod_count = 3;
+
+					// build an IF (RDB$DB_KEY IS NOT NULL)
+					new_node->nod_arg[0] = PAR_make_node(tdbb, 1);
+					new_node->nod_arg[0]->nod_type = nod_not;
+					new_node->nod_arg[0]->nod_count = 1;
+					new_node->nod_arg[0]->nod_arg[0] = PAR_make_node(tdbb, 1);
+					new_node->nod_arg[0]->nod_arg[0]->nod_type = nod_missing;
+					new_node->nod_arg[0]->nod_arg[0]->nod_count = 1;
+					new_node->nod_arg[0]->nod_arg[0]->nod_arg[0] = PAR_make_node(tdbb, 1);
+					new_node->nod_arg[0]->nod_arg[0]->nod_arg[0]->nod_type = nod_dbkey;
+					new_node->nod_arg[0]->nod_arg[0]->nod_arg[0]->nod_arg[0] = (jrd_nod*)(IPTR) view_stream;
+
+					new_node->nod_arg[1] = sub;	// THEN: view.field
+					new_node->nod_arg[2] = PAR_make_node(tdbb, 0);	// ELSE: NULL
+					new_node->nod_arg[2]->nod_type = nod_null;
+
+					sub = new_node;
+				}
+			}
+
 			return pass1(tdbb, csb, sub, view, view_stream, validate_expr);
 		}
 
@@ -3671,11 +3707,13 @@ static jrd_nod* pass1(thread_db* tdbb,
 			expand_view_nodes(tdbb, csb, stream, stack, type);
 			if (stack.hasData())
 			{
+				size_t stackCount = stack.getCount();
+
 				// If that is a DB_KEY of a view, it's possible (in case of 
 				// outer joins) that some sub-stream have a NULL DB_KEY.
 				// In this case, we build a COALESCE(DB_KEY, _OCTETS ""),
 				// for the concatenation of sub DB_KEYs not result in NULL.
-				if (type == nod_dbkey && stack.getCount() > 1)
+				if (type == nod_dbkey && stackCount > 1)
 				{
 					NodeStack stack2;
 
@@ -3719,7 +3757,43 @@ static jrd_nod* pass1(thread_db* tdbb,
 						stack.push(i2.object());
 				}
 
-				return catenate_nodes(tdbb, stack);
+				node = catenate_nodes(tdbb, stack);
+
+				if (type == nod_dbkey && stackCount > 1)
+				{
+					// ASF: If the view is in null state (with outer joins) we need to transform
+					// the view RDB$KEY to NULL. (CORE-1245)
+
+					jrd_nod* new_node = PAR_make_node(tdbb, 3);
+					new_node->nod_type = nod_value_if;
+					new_node->nod_count = 3;
+
+					// build an IF (RDB$DB_KEY = '')
+					new_node->nod_arg[0] = PAR_make_node(tdbb, 2);
+					new_node->nod_arg[0]->nod_type = nod_eql;
+					new_node->nod_arg[0]->nod_flags = nod_comparison;
+					new_node->nod_arg[0]->nod_arg[0] =
+						copy(tdbb, csb, node, NULL, 0, NULL, false);
+					const SSHORT count = lit_delta +
+						(0 + sizeof(jrd_nod*) - 1) / sizeof(jrd_nod*);
+					new_node->nod_arg[0]->nod_arg[1] = PAR_make_node(tdbb, count);
+					new_node->nod_arg[0]->nod_arg[1]->nod_type = nod_literal;
+					new_node->nod_arg[0]->nod_arg[1]->nod_count = 0;
+					Literal* literal = (Literal*) new_node->nod_arg[0]->nod_arg[1];
+					literal->lit_desc.dsc_dtype = dtype_text;
+					literal->lit_desc.dsc_ttype() = CS_BINARY;
+					literal->lit_desc.dsc_scale = 0;
+					literal->lit_desc.dsc_length = 0;
+					literal->lit_desc.dsc_address = reinterpret_cast<UCHAR*>(literal->lit_data);
+
+					new_node->nod_arg[1] = PAR_make_node(tdbb, 0);	// THEN: NULL
+					new_node->nod_arg[1]->nod_type = nod_null;
+					new_node->nod_arg[2] = node;					// ELSE: RDB$DB_KEY
+
+					node = new_node;
+				}
+
+				return node;
 			}
 
 			// The user is asking for the dbkey/record version of an aggregate.
