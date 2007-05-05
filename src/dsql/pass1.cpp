@@ -4836,8 +4836,6 @@ static void pass1_expand_select_node(dsql_req* request, dsql_nod* node, DsqlNodS
 	else if (node->nod_type == nod_derived_table) {
 		// AB: Derived table support
 		tsql* tdsql = DSQL_get_thread_data();
-		dsql_ctx* context = (dsql_ctx*) node->nod_arg[e_derived_table_context];
-		DEV_BLKCHK(context, dsql_type_ctx);
 		dsql_nod* sub_items = node->nod_arg[e_derived_table_rse]->nod_arg[e_rse_items];
 		dsql_nod** ptr = sub_items->nod_arg;
 		for (const dsql_nod* const* const end = ptr + sub_items->nod_count;
@@ -4852,6 +4850,9 @@ static void pass1_expand_select_node(dsql_req* request, dsql_nod* node, DsqlNodS
 					  isc_arg_gds, isc_dsql_command_err,
 					  isc_arg_gds, isc_dsql_derived_alias_select, 0);
 			}
+
+			dsql_ctx* context = (dsql_ctx*) select_item->nod_arg[e_derived_field_context];
+			DEV_BLKCHK(context, dsql_type_ctx);
 
 			if (!hide_using ||
 				context->getImplicitJoinField(reinterpret_cast<dsql_str*>(
