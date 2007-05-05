@@ -1367,11 +1367,6 @@ USHORT EVL_group(thread_db* tdbb, RecordSource* rsb, jrd_nod *const node, USHORT
 	if (--tdbb->tdbb_quantum < 0)
 		JRD_reschedule(tdbb, 0, true);
 
-/* if we found the last record last time, we're all done  */
-
-	if (state == 2)
-		return 0;
-
 	impure_value vtemp;
 	vtemp.vlu_string = NULL;
 
@@ -1382,9 +1377,28 @@ USHORT EVL_group(thread_db* tdbb, RecordSource* rsb, jrd_nod *const node, USHORT
 	jrd_nod** ptr;
 	const jrd_nod* const* end;
 
+	// if we found the last record last time, we're all done
+
+	if (state == 2)
+	{
+		for (ptr = map->nod_arg, end = ptr + map->nod_count; ptr < end; ptr++)
+		{
+			const jrd_nod* from = (*ptr)->nod_arg[e_asgn_from];
+			impure_value_ex* impure = (impure_value_ex*) ((SCHAR *) request + from->nod_impure);
+
+			if ((from->nod_type == nod_agg_list || from->nod_type == nod_agg_list_distinct) &&
+				impure->vlu_blob)
+			{
+				BLB_close(tdbb, impure->vlu_blob);
+			}
+		}
+
+		return 0;
+	}
+
 	try {
 
-/* Initialize the aggregate record */
+	// Initialize the aggregate record
 
 	for (ptr = map->nod_arg, end = ptr + map->nod_count; ptr < end; ptr++) {
 		const jrd_nod* from = (*ptr)->nod_arg[e_asgn_from];
@@ -1477,11 +1491,11 @@ USHORT EVL_group(thread_db* tdbb, RecordSource* rsb, jrd_nod *const node, USHORT
 
 		case nod_agg_list:
 		case nod_agg_list_distinct:
-			impure->vlu_desc.dsc_dtype = dtype_text;
-			impure->vlu_desc.dsc_length = 0;
-			impure->vlu_desc.dsc_sub_type = 0;
-			impure->vlu_desc.dsc_scale = 0;
-			impure->vlu_desc.dsc_address = (UCHAR*) "";
+			// We don't know here what should be the sub-type and text-type.
+			// Defer blob creation for when first record is found.
+			impure->vlu_blob = NULL;
+			impure->vlu_desc.dsc_dtype = 0;
+
 			if (from->nod_type == nod_agg_list_distinct)
 				/* Initialize a sort to reject duplicate values */
 				init_agg_distinct(tdbb, from);
@@ -1647,9 +1661,23 @@ USHORT EVL_group(thread_db* tdbb, RecordSource* rsb, jrd_nod *const node, USHORT
 				break;
 
 			case nod_agg_list:
+			{
+				MoveBuffer buffer;
+				UCHAR* temp;
+				int len;
+
 				desc = EVL_expr(tdbb, from->nod_arg[0]);
 				if (request->req_flags & req_null)
 					break;
+
+				if (!impure->vlu_blob)
+				{
+					impure->vlu_blob = BLB_create(tdbb, tdbb->tdbb_request->req_transaction,
+						&impure->vlu_misc.vlu_bid);
+					impure->vlu_desc.makeBlob(desc->getBlobSubType(), desc->getTextType(),
+						(ISC_QUAD* ) &impure->vlu_misc.vlu_bid);
+				}
+
 				if (impure->vlux_count) {
 					const dsc* const delimiter = EVL_expr(tdbb, from->nod_arg[1]);
 					if (request->req_flags & req_null) {
@@ -1657,11 +1685,14 @@ USHORT EVL_group(thread_db* tdbb, RecordSource* rsb, jrd_nod *const node, USHORT
 						impure->vlu_desc.dsc_dtype = 0;
 						break;
 					}
-					concatenate(tdbb, &impure->vlu_desc, delimiter, impure);
+					len = MOV_make_string2(tdbb, delimiter, impure->vlu_desc.getTextType(), &temp, buffer, false);
+					BLB_put_data(tdbb, impure->vlu_blob, temp, len);
 				}
 				++impure->vlux_count;
-				concatenate(tdbb, &impure->vlu_desc, desc, impure);
+				len = MOV_make_string2(tdbb, desc, impure->vlu_desc.getTextType(), &temp, buffer, false);
+				BLB_put_data(tdbb, impure->vlu_blob, temp, len);
 				break;
+			}
 
 			case nod_agg_count_distinct:
 			case nod_agg_total_distinct:
@@ -2994,6 +3025,19 @@ static void compute_agg_distinct(thread_db* tdbb, jrd_nod* node)
 			break;
 
 		case nod_agg_list_distinct:
+		{
+			if (!impure->vlu_blob)
+			{
+				impure->vlu_blob = BLB_create(tdbb, tdbb->tdbb_request->req_transaction,
+					&impure->vlu_misc.vlu_bid);
+				impure->vlu_desc.makeBlob(desc->getBlobSubType(), desc->getTextType(),
+					(ISC_QUAD* ) &impure->vlu_misc.vlu_bid);
+			}
+
+			MoveBuffer buffer;
+			UCHAR* temp;
+			int len;
+
 			if (impure->vlux_count) {
 				const dsc* const delimiter = EVL_expr(tdbb, node->nod_arg[1]);
 				if (request->req_flags & req_null) {
@@ -3001,11 +3045,14 @@ static void compute_agg_distinct(thread_db* tdbb, jrd_nod* node)
 					impure->vlu_desc.dsc_dtype = 0;
 					break;
 				}
-				concatenate(tdbb, &impure->vlu_desc, delimiter, impure);
+				len = MOV_make_string2(tdbb, delimiter, impure->vlu_desc.getTextType(), &temp, buffer, false);
+				BLB_put_data(tdbb, impure->vlu_blob, temp, len);
 			}
 			++impure->vlux_count;
-			concatenate(tdbb, &impure->vlu_desc, desc, impure);
+			len = MOV_make_string2(tdbb, desc, impure->vlu_desc.getTextType(), &temp, buffer, false);
+			BLB_put_data(tdbb, impure->vlu_blob, temp, len);
 			break;
+		}
 
 		default:	// Shut up some warnings
 			break;

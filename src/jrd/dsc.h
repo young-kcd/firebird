@@ -134,10 +134,8 @@ typedef struct dsc
 	{
 		if (isBlob())
 			return dsc_sub_type;
-		else if (isText())
-			return isc_blob_text;
 		else
-			return isc_blob_untyped;
+			return isc_blob_text;
 	}
 
 	void setBlobSubType(SSHORT subType)

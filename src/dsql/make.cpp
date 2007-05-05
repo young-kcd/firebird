@@ -430,18 +430,8 @@ void MAKE_desc(dsql_req* request, dsc* desc, dsql_nod* node, dsql_nod* null_repl
 
 	case nod_agg_list:
 		MAKE_desc(request, desc, node->nod_arg[0], null_replacement);
-		if (DTYPE_IS_BLOB(desc->dsc_dtype))
-		{
-			ERRD_post(isc_expression_eval_err, 0);
-		}
-		if (!DTYPE_IS_TEXT(desc->dsc_dtype))
-		{
-			desc->dsc_ttype() = ttype_ascii;
-		}
-		desc->dsc_dtype = dtype_varying;
-		desc->dsc_length = MAX_COLUMN_SIZE;
-		desc->dsc_scale = 0;
-		desc->dsc_flags = DSC_nullable;
+		desc->makeBlob(desc->getBlobSubType(), desc->getTextType());
+		desc->setNullable(true);
 		return;
 
 	case nod_concatenate:

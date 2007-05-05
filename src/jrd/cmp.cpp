@@ -1028,13 +1028,7 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC * de
 	case nod_agg_list:
 	case nod_agg_list_distinct:
 		CMP_get_desc(tdbb, csb, node->nod_arg[0], desc);
-		if (!DTYPE_IS_TEXT(desc->dsc_dtype)) {
-			desc->dsc_ttype() = ttype_ascii;
-		}
-		desc->dsc_dtype = dtype_varying;
-		desc->dsc_length = MAX_COLUMN_SIZE;
-		desc->dsc_scale = 0;
-		desc->dsc_flags = 0;
+		desc->makeBlob(desc->getBlobSubType(), desc->getTextType());
 		return;
 
 	case nod_add:

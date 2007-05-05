@@ -225,6 +225,7 @@ struct impure_value {
 
 struct impure_value_ex : public impure_value {
 	SLONG vlux_count;
+	blb* vlu_blob;
 };
 
 
