@@ -5189,8 +5189,18 @@ static dsql_nod* pass1_field( dsql_req* request, dsql_nod* input,
 					if (node_select_item->nod_type == nod_derived_field) {
 						const dsql_str* string =
 							(dsql_str*) node_select_item->nod_arg[e_derived_field_name];
+
+						dsql_nod* using_field = NULL;
+
+						if (!qualifier)
+						{
+							if (!context->getImplicitJoinField(name->str_data, using_field))
+								break;
+						}
+
 						if (!strcmp(reinterpret_cast<const char*>(name->str_data),
-								reinterpret_cast<const char*>(string->str_data)))
+								reinterpret_cast<const char*>(string->str_data)) ||
+							using_field)
 						{
 
 							// This is a matching item so add the context to the ambiguous list.
@@ -5201,7 +5211,7 @@ static dsql_nod* pass1_field( dsql_req* request, dsql_nod* input,
 								break;
 							}
 
-							node = node_select_item;
+							node = using_field ? using_field : node_select_item;
 							break;
 						}
 					}
