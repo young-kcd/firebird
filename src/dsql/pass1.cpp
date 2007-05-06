@@ -3635,6 +3635,9 @@ static dsql_nod* pass1_constant( dsql_req* request, dsql_nod* input)
 	DEV_BLKCHK(request, dsql_type_req);
 	DEV_BLKCHK(input, dsql_type_nod);
 
+	if (request->req_in_outer_join)
+		input->nod_desc.dsc_flags = DSC_nullable;
+
 	if (input->nod_desc.dsc_dtype > dtype_any_text) {
 		return input;
 	}
@@ -7542,7 +7545,7 @@ static dsql_nod* pass1_rse_impl( dsql_req* request, dsql_nod* input, dsql_nod* o
 	}
 	else if (input->nod_type == nod_list)
 	{
-		fb_assert(input->nod_count > 1);
+		fb_assert(input->nod_count >= 1);
 
 		if (update_lock)
 			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104, isc_arg_gds,

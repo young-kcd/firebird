@@ -3206,7 +3206,9 @@ with_list	: with_item
 		;
 
 with_item	: symbol_table_alias_name derived_column_list AS '(' select_expr ')'
-				{ $$ = make_node (nod_derived_table, (int) e_derived_table_count, $5, $1, $2, NULL); }
+				{ $$ = make_node (nod_derived_table, (int) e_derived_table_count,
+					make_node (nod_select_expr, (int) e_sel_count, make_node(nod_list, 1, $5), NULL, NULL, NULL),
+					$1, $2, NULL); }
 		;
 
 column_select	: select_expr_body order_clause rows_clause
@@ -3317,7 +3319,9 @@ table_primary	: table_proc
 /* AB: derived table support */
 derived_table :
 		'(' select_expr ')' as_noise correlation_name derived_column_list
-			{ $$ = make_node(nod_derived_table, (int) e_derived_table_count, $2, $5, $6, NULL); }
+			{ $$ = make_node(nod_derived_table, (int) e_derived_table_count,
+				make_node (nod_select_expr, (int) e_sel_count, make_node(nod_list, 1, $2), NULL, NULL, NULL),
+				$5, $6, NULL); }
 		;
 
 correlation_name : symbol_table_alias_name
