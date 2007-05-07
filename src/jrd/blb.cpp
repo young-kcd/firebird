@@ -352,9 +352,24 @@ void BLB_garbage_collect(
 				EVL_field(0, rec, id, &desc))
 			{
 				const bid* blob = (bid*) desc.dsc_address;
-				const RecordNumber number = blob->get_permanent_number();
-				bmGoing.set(number.getValue());
-				cntGoing++;
+				if (!blob->isEmpty())
+				{
+					if (blob->bid_internal.bid_relation_id == relation->rel_id)
+					{
+						const RecordNumber number = blob->get_permanent_number();
+						bmGoing.set(number.getValue());
+						cntGoing++;
+					}
+					else 
+					{
+						// hvlad: blob_id in descriptor is not from our relation. Yes, it is 
+						// garbage in user data but we can handle it without bugcheck - just 
+						// ignore it. To be reconsider latter based on real user reports. 
+						// The same about staying blob few lines below
+						gds__log("going blob (%ld:%ld) is not owned by relation (id = %d), ignored", 
+							blob->bid_quad.bid_quad_high, blob->bid_quad.bid_quad_low, relation->rel_id);
+					}
+				}
 			}
 		}
 	}
@@ -377,12 +392,23 @@ void BLB_garbage_collect(
 				EVL_field(0, rec, id, &desc))
 			{
 				const bid* blob = (bid*) desc.dsc_address;
-				const RecordNumber number = blob->get_permanent_number();
-				if (bmGoing.test(number.getValue())) 
+				if (!blob->isEmpty())
 				{
-					bmGoing.clear(number.getValue());
-					if (!--cntGoing)
-						return;
+					if (blob->bid_internal.bid_relation_id == relation->rel_id)
+					{
+						const RecordNumber number = blob->get_permanent_number();
+						if (bmGoing.test(number.getValue())) 
+						{
+							bmGoing.clear(number.getValue());
+							if (!--cntGoing)
+								return;
+						}
+					}
+					else
+					{
+						gds__log("staying blob (%ld:%ld) is not owned by relation (id = %d), ignored", 
+							blob->bid_quad.bid_quad_high, blob->bid_quad.bid_quad_low, relation->rel_id);
+					}
 				}
 			}
 		}
