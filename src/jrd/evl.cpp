@@ -3647,7 +3647,11 @@ static SINT64 get_day_fraction(const dsc* d)
 #ifdef HAVE_LLRINT
 	return llrint(result_days * ISC_TICKS_PER_DAY);
 #else
-	return (SINT64)(result_days * ISC_TICKS_PER_DAY + 0.49999999999999);
+	const double eps = 0.49999999999999;
+	if (result_days >= 0)
+		return (SINT64)(result_days * ISC_TICKS_PER_DAY + eps);
+	else
+		return (SINT64)(result_days * ISC_TICKS_PER_DAY - eps);
 #endif
 }
 
