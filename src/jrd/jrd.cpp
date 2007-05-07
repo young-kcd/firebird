@@ -2341,6 +2341,7 @@ ISC_STATUS GDS_DETACH(ISC_STATUS* user_status, Attachment** handle)
 		dbb->dbb_flags |= DBB_not_in_use;
 	V4_JRD_MUTEX_UNLOCK(databases_mutex);
 
+	Jrd::ContextPoolHolder context(tdbb, dbb->dbb_permanent);
 	tdbb->tdbb_database = dbb;
 	tdbb->tdbb_attachment = attachment;
 	tdbb->tdbb_request = NULL;
