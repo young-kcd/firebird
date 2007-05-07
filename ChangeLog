@@ -1,3 +1,16 @@
+2007-05-06 23:30  asfernandes
+
+	* firebird2/src/dsql/: parse.y (1.237), pass1.cpp (1.320):
+
+	Fixed CORE-1246 - Incorrect column values with outer joins and
+	derived tables
+
+2007-05-06 18:45  asfernandes
+
+	* firebird2/src/dsql/pass1.cpp (1.319):
+
+	Fixed ambiguity problem in NATURAL/USING join and derived tables
+
 2007-05-05 21:28  asfernandes
 
 	* firebird2/src/: dsql/make.cpp (1.131), jrd/cmp.cpp (1.255),
