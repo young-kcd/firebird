@@ -119,15 +119,15 @@ public:
 
 		T val_aligned = value & ~(T) (BUNCH_BITS - 1);
 		BUNCH_T bit_mask = BUNCH_ONE << (value - val_aligned);
-		if (tree.locate(val_aligned)) {
+
+		Bucket bucket;
+		bucket.start_value = val_aligned;
+		bucket.bits = bit_mask;
+		if (!tree.add(bucket))
+		{
 			tree.current().bits |= bit_mask;
-		} 
-		else {
-			Bucket bucket;
-			bucket.start_value = val_aligned;
-			bucket.bits = bit_mask;
-			tree.add(bucket);
 		}
+									
 	}
 
 	bool clear(T value) {
