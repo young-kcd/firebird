@@ -251,7 +251,7 @@ namespace {
 	MemoryPool* createProcessMemoryPool()
 	{
 		MemoryPool::default_stats_group =
-			new((void*)(IPTR) MEM_ALIGN((size_t)(IPTR) (&msBuffer))) MemoryStats;
+			new((void*)(IPTR) MEM_ALIGN((size_t)(IPTR) msBuffer)) MemoryStats;
 		MemoryPool* p = MemoryPool::createPool();
 		fb_assert(p);
 #ifndef SUPERCLIENT
