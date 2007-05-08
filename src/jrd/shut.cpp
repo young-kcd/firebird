@@ -101,6 +101,8 @@ bool SHUT_blocking_ast(Database* dbb)
 		case isc_dpb_shut_full:
 			dbb->dbb_ast_flags |= DBB_shutdown | DBB_shutdown_full;
 			break;
+		default:
+			fb_assert(false);
 		}
 					
 		dbb->dbb_shutdown_delay = 0; // not tested anywhere
@@ -152,11 +154,12 @@ bool SHUT_database(Database* dbb, SSHORT flag, SSHORT delay)
 		return false;
 	}
 
+	const int shut_mode = flag & isc_dpb_shut_mode_mask;
+
 	// Check if requested shutdown mode is valid
 	// Note that if we are already in requested mode we just return true.
 	// This is required to ensure backward compatible behavior (gbak relies on that, 
 	// user-written scripts may rely on this behaviour too)
-	int shut_mode = flag & isc_dpb_shut_mode_mask;
 	switch (shut_mode) {
 	case isc_dpb_shut_full:
 		if (dbb->dbb_ast_flags & DBB_shutdown_full) 
@@ -243,15 +246,24 @@ bool SHUT_database(Database* dbb, SSHORT flag, SSHORT delay)
 
 	if (flag & isc_dpb_shut_transaction) {
 		exclusive = false;
-		flag = isc_dpb_shut_force | (flag & isc_dpb_shut_mode_mask);
+		flag = isc_dpb_shut_force | shut_mode;
 	}
 
 	dbb->dbb_ast_flags |= DBB_shutdown;
 	dbb->dbb_ast_flags &= ~(DBB_shutdown_single | DBB_shutdown_full);
-	if (flag & isc_dpb_shut_single)
+	switch (shut_mode) {
+	case isc_dpb_shut_normal:
+	case isc_dpb_shut_multi:
+		break;
+	case isc_dpb_shut_single:
 		dbb->dbb_ast_flags |= DBB_shutdown_single;
-	else if (flag & isc_dpb_shut_full)
+		break;
+	case isc_dpb_shut_full:
 		dbb->dbb_ast_flags |= DBB_shutdown_full;
+		break;
+	default:
+		fb_assert(false);
+	}
 
 	if (!exclusive && (flag & isc_dpb_shut_force)) {
 		// TMN: Ugly counting!
@@ -266,7 +278,7 @@ bool SHUT_database(Database* dbb, SSHORT flag, SSHORT delay)
 	CCH_MARK_MUST_WRITE(tdbb, &window);
 	// Set appropriate shutdown mode in database header
 	header->hdr_flags &= ~Ods::hdr_shutdown_mask;
-	switch (flag & isc_dpb_shut_mode_mask) {
+	switch (shut_mode) {
 	case isc_dpb_shut_normal:
 		break;
 	case isc_dpb_shut_multi:
@@ -278,6 +290,8 @@ bool SHUT_database(Database* dbb, SSHORT flag, SSHORT delay)
 	case isc_dpb_shut_full:
 		header->hdr_flags |= Ods::hdr_shutdown_full;
 		break;
+	default:
+		fb_assert(false);
 	}
 	CCH_RELEASE(tdbb, &window);
 	CCH_release_exclusive(tdbb);
@@ -333,8 +347,9 @@ bool SHUT_online(Database* dbb, SSHORT flag)
 		return false;
 	}
 	
+	const int shut_mode = flag & isc_dpb_shut_mode_mask;
+
 	// Check if requested shutdown mode is valid
-	int shut_mode = flag & isc_dpb_shut_mode_mask;
 	switch (shut_mode) {
 	case isc_dpb_shut_normal:
 		if (!(dbb->dbb_ast_flags & DBB_shutdown)) 
@@ -395,6 +410,8 @@ bool SHUT_online(Database* dbb, SSHORT flag)
 	case isc_dpb_shut_full:
 		header->hdr_flags |= Ods::hdr_shutdown_full;
 		break;
+	default:
+		fb_assert(false);
 	}
 	CCH_RELEASE(tdbb, &window);
 
@@ -484,8 +501,8 @@ static bool notify_shutdown(Database* dbb, SSHORT flag, SSHORT delay)
 
 /* Send blocking ASTs to database users */
 
-	bool exclusive =
-		CCH_exclusive(tdbb, LCK_PW, delay > 0 ? -SHUT_WAIT_TIME : LCK_NO_WAIT);
+	const bool exclusive =
+		CCH_exclusive(tdbb, LCK_PW, delay > 0 ? -SHUT_WAIT_TIME : -1);
 
 	if (exclusive && (delay != -1)) {
 		return shutdown_locks(dbb, flag);
@@ -523,6 +540,8 @@ static bool shutdown_locks(Database* dbb, SSHORT flag)
 	dbb->dbb_ast_flags &= ~(DBB_shutdown | DBB_shutdown_single | DBB_shutdown_full);
 	
 	switch (flag & isc_dpb_shut_mode_mask) {
+	case isc_dpb_shut_normal:
+		break;
 	case isc_dpb_shut_multi:
 		dbb->dbb_ast_flags |= DBB_shutdown;
 		break;
@@ -532,6 +551,8 @@ static bool shutdown_locks(Database* dbb, SSHORT flag)
 	case isc_dpb_shut_full:
 		dbb->dbb_ast_flags |= DBB_shutdown | DBB_shutdown_full;
 		break;
+	default:
+		fb_assert(false);
 	}
 
 	Attachment* attachment;
