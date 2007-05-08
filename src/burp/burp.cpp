@@ -336,7 +336,12 @@ int CLIB_ROUTINE main(int argc, char* argv[])
 		if (sw_service)
 			*sw_service = '\0';
 
-		exit_code = api_gbak(argc, argv, total, fb_utils::get_passwd(d_password), d_user, d_service, 
+		char* new_pass = fb_utils::get_passwd(d_password);
+		if (d_password)
+		{
+			*d_password = 0;
+		}
+		exit_code = api_gbak(argc, argv, total, new_pass, d_user, d_service, 
 							 flag_restore, flag_verbose, flag_trusted);
 	}
 	else
@@ -413,189 +418,142 @@ static int api_gbak(int argc,
 		pswd = password;
 	}
 
-	char *const spb = (char *) gds__alloc((SLONG) (2 + 2 + usr.length() +
-									   2 + pswd.length() +
-									   2 + length +
-									   (trusted ? 2 : 0)));
-	/* 'isc_spb_version'
-	   'isc_spb_current_version'
-	   'isc_spb_user_name'
-	   'length'
-	   "usr"
-	   'isc_spb_password'
-	   'length'
-	   "pswd"
-	   'isc_spb_options'
-	   'length'
-	   "options" */
 	ISC_STATUS_ARRAY status;
-	
-	if (spb == NULL) {
-		status[0] = isc_arg_gds;
-		status[1] = isc_virmemexh;
-		status[2] = isc_arg_end;
-		BURP_print_status(status);
-		BURP_print(83);	// msg 83 Exiting before completion due to errors
-		return FINI_ERROR;
-	}
-
-	char* spb_ptr = spb;
-	*spb_ptr++ = isc_spb_version;
-	*spb_ptr++ = isc_spb_current_version;
-
-	if (usr.length()) {
-		*spb_ptr++ = isc_spb_user_name;
-		*spb_ptr++ = usr.length();
-		MEMMOVE(usr.c_str(), spb_ptr, usr.length());
-		spb_ptr += usr.length();
-		if (user)
-			*user = '\0';
-	}
-
-	if (pswd.length()) {
-		*spb_ptr++ = isc_spb_password;
-		*spb_ptr++ = pswd.length();
-		MEMMOVE(pswd.c_str(), spb_ptr, pswd.length());
-		spb_ptr += pswd.length();
-		if (password)
-			*password = '\0';
-	}
-
-	if (trusted)
-	{
-		*spb_ptr++ = isc_spb_trusted_auth;
-		*spb_ptr++ = 0;
-	}
-
-
-	char* const svc_name = (char *) gds__alloc((SLONG) (strlen(service) + 1));
-
-	if (svc_name == NULL) {
-		status[0] = isc_arg_gds;
-		status[1] = isc_virmemexh;
-		status[2] = isc_arg_end;
-		BURP_print_status(status);
-		gds__free(spb);
-		BURP_print(83);	// msg 83 Exiting before completion due to errors
-		return FINI_ERROR;
-	}
-
-	if (service) {
-		strcpy(svc_name, service);
-		*service = '\0';
-	}
-
-
-// Fill command line options 
-
-	*spb_ptr++ = isc_spb_command_line;
-	const TEXT* const* const end = argv + argc;
-	argv++;
-
-	*spb_ptr++ = length;
-	const char* cmdline_begin = spb_ptr;
-
-	while (argv < end) {
-		if (**argv && spb_ptr > cmdline_begin)
-			*spb_ptr++ = ' ';
-		for (const TEXT* x = *argv++; *x;)
-			*spb_ptr++ = *x++;
-	}
-
-	USHORT spblen = spb_ptr - spb;
-
 	FB_API_HANDLE svc_handle = 0;
-	if (isc_service_attach(status, 0, svc_name, &svc_handle, spblen, spb))
+	
+	try
 	{
-		BURP_print_status(status);
-		gds__free(spb);
-		gds__free(svc_name);
-		BURP_print(83);
-		// msg 83 Exiting before completion due to errors 
-		return FINI_ERROR;
-	}
+		Firebird::ClumpletWriter spb(Firebird::ClumpletWriter::SpbAttach, 4096, isc_spb_current_version);
+	/* 
+	 * isc_spb_user_name
+	 * isc_spb_password
+	 * isc_spb_trusted_auth
+	 * isc_spb_options
+	 */
 
-	char *const thd = (char *) gds__alloc((SLONG) (2));
-	// 'isc_action_svc_restore/isc_action_svc_backup'
-	// 'isc_spb_verbose'
+		if (usr.length()) 
+		{
+			spb.insertString(isc_spb_user_name, usr);
+			if (user)
+			{
+				*user = '\0';
+			}
+		}
 
-	if (thd == NULL) {
-		status[0] = isc_arg_gds;
-		status[1] = isc_virmemexh;
-		status[2] = isc_arg_end;
-		BURP_print_status(status);
-		isc_service_detach(status, &svc_handle);
-		gds__free(spb);
-		gds__free(svc_name);
-		BURP_print(83);
-		// msg 83 Exiting before completion due to errors 
-		return FINI_ERROR;
-	}
+		if (pswd.length()) 
+		{
+			spb.insertString(isc_spb_password, pswd);
+		}
 
-	char *thd_ptr = thd;
-	if (restore)
-		*thd_ptr++ = isc_action_svc_restore;
-	else
-		*thd_ptr++ = isc_action_svc_backup;
+		if (trusted)
+		{
+			spb.insertTag(isc_spb_trusted_auth);
+		}
 
-	if (verbose)
-		*thd_ptr++ = isc_spb_verbose;
 
-	USHORT thdlen = thd_ptr - thd;
+		Firebird::string svc_name(service ? service : "");
+		if (service)
+		{
+			*service = 0;
+		}
 
-	if (isc_service_start(status, &svc_handle, NULL, thdlen, thd))
-	{
-		BURP_print_status(status);
-		gds__free(spb);
-		gds__free(svc_name);
-		gds__free(thd);
-		isc_service_detach(status, &svc_handle);
-		BURP_print(83);	// msg 83 Exiting before completion due to errors
-		return FINI_ERROR;
-	}
+		// Fill command line options 
+		Firebird::string options;
 
-    const char sendbuf[] = { isc_info_svc_line };
-	char respbuf[1024];
-	const char* sl;
-	do {
-		if (isc_service_query(status, &svc_handle, NULL, 0, NULL,
-								sizeof(sendbuf), sendbuf,
-								sizeof(respbuf), respbuf))
+		const TEXT* const* const end = argv + argc;
+		argv++;
+
+		while (argv < end) 
+		{
+			if (**argv && options.length() > 0)
+			{
+				options += ' ';
+			}
+			options += *argv++;
+		}
+
+		spb.insertString(isc_spb_command_line, options);
+
+		if (isc_service_attach(status, 0, svc_name.c_str(), &svc_handle, 
+							   spb.getBufferLength(), reinterpret_cast<const char*>(spb.getBuffer())))
 		{
 			BURP_print_status(status);
-			gds__free(spb);
-			gds__free(svc_name);
-			gds__free(thd);
+			BURP_print(83);
+			// msg 83 Exiting before completion due to errors 
+			return FINI_ERROR;
+		}
+
+		char thd[2];
+		// 'isc_action_svc_restore/isc_action_svc_backup'
+		// 'isc_spb_verbose'
+
+		char *thd_ptr = thd;
+		if (restore)
+			*thd_ptr++ = isc_action_svc_restore;
+		else
+			*thd_ptr++ = isc_action_svc_backup;
+
+		if (verbose)
+			*thd_ptr++ = isc_spb_verbose;
+
+		USHORT thdlen = thd_ptr - thd;
+
+		if (isc_service_start(status, &svc_handle, NULL, thdlen, thd))
+		{
+			BURP_print_status(status);
 			isc_service_detach(status, &svc_handle);
 			BURP_print(83);	// msg 83 Exiting before completion due to errors
 			return FINI_ERROR;
 		}
 
-		char* p = respbuf;
-		sl = p;
-
-		if (*p++ == isc_info_svc_line)
-		{
-			const ISC_USHORT len = (ISC_USHORT) isc_vax_integer(p, sizeof(ISC_USHORT));
-			p += sizeof(ISC_USHORT);
-			if (!len)
+		const char sendbuf[] = { isc_info_svc_line };
+		char respbuf[1024];
+		const char* sl;
+		do {
+			if (isc_service_query(status, &svc_handle, NULL, 0, NULL,
+								  sizeof(sendbuf), sendbuf,
+								  sizeof(respbuf), respbuf))
 			{
-				if (*p == isc_info_data_not_ready)
-					continue;
-				else if (*p == isc_info_end)
-					break;
+				BURP_print_status(status);
+				isc_service_detach(status, &svc_handle);
+				BURP_print(83);	// msg 83 Exiting before completion due to errors
+				return FINI_ERROR;
 			}
 
-			p[len] = '\0';
-			burp_output("%s\n", p);
-		}
-	} while (*sl == isc_info_svc_line);
+			char* p = respbuf;
+			sl = p;
 
-	gds__free(spb);
-	gds__free(svc_name);
-	gds__free(thd);
-	isc_service_detach(status, &svc_handle);
-	return FINI_OK;
+				if (*p++ == isc_info_svc_line)
+			{
+				const ISC_USHORT len = (ISC_USHORT) isc_vax_integer(p, sizeof(ISC_USHORT));
+				p += sizeof(ISC_USHORT);
+				if (!len)
+				{
+					if (*p == isc_info_data_not_ready)
+						continue;
+					else if (*p == isc_info_end)
+						break;
+				}
+
+				p[len] = '\0';
+				burp_output("%s\n", p);
+			}
+		} while (*sl == isc_info_svc_line);
+
+		isc_service_detach(status, &svc_handle);
+		return FINI_OK;
+	}
+	catch(const Firebird::Exception& e)
+	{
+		e.stuff_exception(status);
+		BURP_print_status(status);
+		if (svc_handle)
+		{
+			isc_service_detach(status, &svc_handle);
+		}
+		BURP_print(83);	// msg 83 Exiting before completion due to errors
+		return FINI_ERROR;
+	}
 }
 
 
