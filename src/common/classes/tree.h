@@ -305,9 +305,7 @@ public:
 
 public:
 	class Accessor {
-#ifndef _MSC_VER
 		friend class BePlusTree;
-#endif
 	public:
 		Accessor(BePlusTree* _tree) : tree(_tree), curr(NULL), curPos(0) {}		
 
