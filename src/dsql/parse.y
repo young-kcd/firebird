@@ -3205,6 +3205,7 @@ with_list	: with_item
 				{ $$ = make_node (nod_list, 2, $1, $3); }
 		;
 
+// ASF: Create derived table with nested union to fix CORE-1246
 with_item	: symbol_table_alias_name derived_column_list AS '(' select_expr ')'
 				{ $$ = make_node (nod_derived_table, (int) e_derived_table_count,
 					make_node (nod_select_expr, (int) e_sel_count, make_node(nod_list, 1, $5), NULL, NULL, NULL),
@@ -3316,7 +3317,8 @@ table_primary	: table_proc
 			{ $$ = $2; }
 		;
 
-/* AB: derived table support */
+// AB: derived table support
+// ASF: create derived table with nested union to fix CORE-1246
 derived_table :
 		'(' select_expr ')' as_noise correlation_name derived_column_list
 			{ $$ = make_node(nod_derived_table, (int) e_derived_table_count,
