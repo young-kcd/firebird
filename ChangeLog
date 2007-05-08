@@ -1,3 +1,11 @@
+2007-05-07 11:46  hvlad
+
+	* firebird2/src/jrd/blb.cpp (1.117.2.3):
+
+	Fixed CORE-1247 : Blobs garbage collector removed wrong blob if
+	going blob descriptor contains 0:0 (NULL value) but field's NULL
+	flag is not set
+
 2007-05-03 15:44  alexpeshkoff
 
 	* firebird2/src/common/classes/alloc.cpp (1.80.2.7):
