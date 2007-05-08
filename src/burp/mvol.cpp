@@ -529,7 +529,7 @@ DESC MVOL_open(const char * name, ULONG mode, ULONG create)
 UCHAR MVOL_write(UCHAR c, int *io_cnt, UCHAR ** io_ptr)
 {
 	UCHAR *ptr;
-	ULONG left, cnt;
+	SLONG left, cnt;
 
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
@@ -643,6 +643,13 @@ UCHAR MVOL_write(UCHAR c, int *io_cnt, UCHAR ** io_ptr)
 					cnt = 0;
 					continue;
 				}
+
+				if (tdgbl->gbl_sw_service_gbak)
+				{
+					BURP_error(270, true);
+					// msg 270 free disk space exhausted
+				}
+
 				// Note: there is an assumption here, that if header data is being
 				// written, it is really being rewritten, so at least all the
 				// header data will be written
