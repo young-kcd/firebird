@@ -521,7 +521,7 @@ DESC MVOL_open(const char * name, ULONG mode, ULONG create)
 UCHAR MVOL_write(UCHAR c, int *io_cnt, UCHAR ** io_ptr)
 {
 	UCHAR *ptr;
-	ULONG left, cnt;
+	SLONG left, cnt;
 
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
