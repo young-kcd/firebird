@@ -247,10 +247,12 @@ bool SHUT_database(Database* dbb, SSHORT flag, SSHORT delay)
 
 	dbb->dbb_ast_flags |= DBB_shutdown;
 	dbb->dbb_ast_flags &= ~(DBB_shutdown_single | DBB_shutdown_full);
-	if (flag & isc_dpb_shut_single)
+	switch (flag & isc_dpb_shut_mode_mask) {
+	case isc_dpb_shut_single:
 		dbb->dbb_ast_flags |= DBB_shutdown_single;
-	else if (flag & isc_dpb_shut_full)
+	case isc_dpb_shut_full:
 		dbb->dbb_ast_flags |= DBB_shutdown_full;
+	}
 
 	if (!exclusive && (flag & isc_dpb_shut_force)) {
 		// TMN: Ugly counting!
@@ -482,7 +484,7 @@ static bool notify_shutdown(Database* dbb, SSHORT flag, SSHORT delay)
 /* Send blocking ASTs to database users */
 
 	bool exclusive =
-		CCH_exclusive(tdbb, LCK_PW, delay > 0 ? -SHUT_WAIT_TIME : LCK_NO_WAIT);
+		CCH_exclusive(tdbb, LCK_PW, delay > 0 ? -SHUT_WAIT_TIME : -1);
 
 	if (exclusive && (delay != -1)) {
 		return shutdown_locks(dbb, flag);
@@ -532,7 +534,7 @@ static bool shutdown_locks(Database* dbb, SSHORT flag)
 	}
 
 	Attachment* attachment;
-	
+
 	for (attachment = dbb->dbb_attachments; attachment;
 		 attachment = attachment->att_next)
 	{
