@@ -1,3 +1,30 @@
+2007-05-07 17:33  asfernandes
+
+	* firebird2/src/misc/intl.sql (1.3):
+
+	Removed obsolete functions
+
+2007-05-07 15:23  hvlad
+
+	* firebird2/src/jrd/evl.cpp (1.225):
+
+	Fixed CORE-1248 : Incorrect timestamp arithmetic when one of
+	operands is negative number
+
+2007-05-07 15:09  hvlad
+
+	* firebird2/src/jrd/jrd.cpp (1.325):
+
+	Assing memory pool in tdbb at database detach.
+
+2007-05-07 11:39  hvlad
+
+	* firebird2/src/jrd/blb.cpp (1.144):
+
+	Fixed CORE-1247 : Blobs garbage collector removed wrong blob if
+	going blob descriptor contains 0:0 (NULL value) but field's NULL
+	flag is not set
+
 2007-05-06 23:30  asfernandes
 
 	* firebird2/src/dsql/: parse.y (1.237), pass1.cpp (1.320):
