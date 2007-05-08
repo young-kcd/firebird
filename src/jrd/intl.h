@@ -80,8 +80,8 @@
 #define INTL_GET_TTYPE(dsc)   \
 	  ((dsc)->dsc_sub_type)
 
-#define INTL_GET_CHARSET(dsc)	((SCHAR)((dsc)->dsc_sub_type & 0x00FF))
-#define INTL_GET_COLLATE(dsc)	((SCHAR)((dsc)->dsc_sub_type >> 8))
+#define INTL_GET_CHARSET(dsc)	((UCHAR)((dsc)->dsc_sub_type & 0x00FF))
+#define INTL_GET_COLLATE(dsc)	((UCHAR)((dsc)->dsc_sub_type >> 8))
 
 
 /* Define tests for international data */

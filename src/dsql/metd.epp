@@ -608,7 +608,10 @@ USHORT METD_get_charset_bpc(dsql_req* request, SSHORT charset_id)
 		Firebird::MetaName cs_name = METD_get_charset_name(request, charset_id);
 		cs_sym = METD_get_charset(request, cs_name.length(), cs_name.c_str());
 	}
-	return cs_sym->intlsym_bytes_per_char;
+	
+	fb_assert(cs_sym);
+	
+	return cs_sym ? cs_sym->intlsym_bytes_per_char : 0;
 }
 
 

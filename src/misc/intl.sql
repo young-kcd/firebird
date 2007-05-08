@@ -40,9 +40,13 @@ begin
 			break;
 	end
 
+	insert into rdb$types
+		(rdb$field_name, rdb$type, rdb$type_name, rdb$system_flag)
+		values ('RDB$CHARACTER_SET_NAME', :id, :name, 0);
+
 	insert into rdb$character_sets
-		(rdb$character_set_name, rdb$character_set_id, rdb$system_flag, rdb$bytes_per_character)
-		values (:name, :id, 0, :max_bytes_per_character);
+		(rdb$character_set_name, rdb$character_set_id, rdb$system_flag, rdb$bytes_per_character, rdb$default_collate_name)
+		values (:name, :id, 0, :max_bytes_per_character, :name);
 
 	insert into rdb$collations
 		(rdb$collation_name, rdb$collation_id, rdb$character_set_id, rdb$system_flag)
