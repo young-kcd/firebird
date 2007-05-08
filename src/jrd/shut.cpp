@@ -250,8 +250,10 @@ bool SHUT_database(Database* dbb, SSHORT flag, SSHORT delay)
 	switch (flag & isc_dpb_shut_mode_mask) {
 	case isc_dpb_shut_single:
 		dbb->dbb_ast_flags |= DBB_shutdown_single;
+		break;
 	case isc_dpb_shut_full:
 		dbb->dbb_ast_flags |= DBB_shutdown_full;
+		break;
 	}
 
 	if (!exclusive && (flag & isc_dpb_shut_force)) {
