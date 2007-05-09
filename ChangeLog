@@ -1,3 +1,43 @@
+2007-05-08 17:23  alexpeshkoff
+
+	* firebird2/src/burp/mvol.cpp (1.43.4.1):
+
+	Backported fix of incomplete backups when out of space
+
+2007-05-08 15:57  dimitr
+
+	* firebird2/src/common/classes/tree.h (1.50.2.2):
+
+	Fixed the MSVC build. Claudio, feel free to restore that
+	conditionally for VC6, if required.
+
+2007-05-08 14:50  alexpeshkoff
+
+	* firebird2/src/common/classes/: sparse_bitmap.h (1.14.2.1), tree.h
+	(1.50.2.1):
+
+	backported Vlad's optimization for SparseBitmap::set
+
+2007-05-08 14:35  dimitr
+
+	* firebird2/src/jrd/shut.cpp (1.38.4.3):
+
+	Fixed wrongly backported code. Thanks to Alex.
+
+2007-05-08 11:05  alexpeshkoff
+
+	* firebird2/src/common/classes/alloc.cpp (1.80.2.8):
+
+	misc
+
+2007-05-08 10:24  dimitr
+
+	* firebird2/src/jrd/: cch.cpp (1.129.2.6), shut.cpp (1.38.4.2):
+
+	Fixed CORE-1249 plus minor corrections for the single-user shutdown
+	mode.  The change in CCH allows to report isc_shutdown instead of
+	the LM error code in Classic (GFIX depends on this behaviour).
+
 2007-05-07 11:46  hvlad
 
 	* firebird2/src/jrd/blb.cpp (1.117.2.3):
