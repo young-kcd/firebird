@@ -1,3 +1,65 @@
+2007-05-09 04:03  asfernandes
+
+	* firebird2/src/burp/burp.cpp (1.126):
+
+	Misc
+
+2007-05-08 17:50  asfernandes
+
+	* firebird2/src/dsql/parse.y (1.239):
+
+	Use UNION ALL instead of UNION
+
+2007-05-08 17:34  asfernandes
+
+	* firebird2/doc/README.intl (1.9):
+
+	More INTL documentation
+
+2007-05-08 17:33  asfernandes
+
+	* firebird2/src/: dsql/metd.epp (1.100), jrd/intl.h (1.17),
+	misc/intl.sql (1.4):
+
+	Fixed registration and use of custom character sets
+
+2007-05-08 17:16  alexpeshkoff
+
+	* firebird2/src/burp/mvol.cpp (1.47):
+
+	1. Fixed ignored IO-errors (i.e. incomplete backups) on non-windows
+	platforms.  2. Fixed CORE-1237 - GBAK does not create backup in
+	service_mgr mode if there is no space on disk, no error reported.
+
+2007-05-08 17:13  alexpeshkoff
+
+	* firebird2/src/burp/burp.cpp (1.125):
+
+	use ClumpletWriter for spb
+
+2007-05-08 10:50  alexpeshkoff
+
+	* firebird2/src/common/classes/alloc.cpp (1.92):
+
+	misc
+
+2007-05-08 10:31  dimitr
+
+	* firebird2/src/jrd/: cch.cpp (1.162), shut.cpp (1.47):
+
+	Fixed CORE-1249 plus minor corrections for the single-user shutdown
+	mode.  The change in CCH allows to report isc_shutdown instead of
+	the LM error code in Classic (GFIX depends on this behaviour).
+	Also, refactored the SHUT logic a bit to assert on unexpected
+	shutdown modes.
+
+2007-05-08 04:31  asfernandes
+
+	* firebird2/src/: common/classes/tree.h (1.63), dsql/parse.y
+	(1.238):
+
+	Misc
+
 2007-05-07 17:33  asfernandes
 
 	* firebird2/src/misc/intl.sql (1.3):
