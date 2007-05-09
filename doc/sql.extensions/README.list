@@ -24,9 +24,8 @@ Syntax Rules:
 Notes:
     1) Numeric and datetime values are implicitly converted to strings
        during evaluation.
-    2) The result value is of type VARCHAR(32765), so the LIST function
-       should be used carefully, as Firebird limits the maximum
-       result set width by 64KB.
+    2) The result value is of type BLOB with SUB_TYPE TEXT for all cases
+       except list of BLOB with different subtype.
     3) Ordering of values within a group is implementation-defined.
 
 Examples:
