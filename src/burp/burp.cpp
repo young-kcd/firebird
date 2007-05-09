@@ -543,7 +543,7 @@ static int api_gbak(int argc,
 		isc_service_detach(status, &svc_handle);
 		return FINI_OK;
 	}
-	catch(const Firebird::Exception& e)
+	catch (const Firebird::Exception& e)
 	{
 		e.stuff_exception(status);
 		BURP_print_status(status);
