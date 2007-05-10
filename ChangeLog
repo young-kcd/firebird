@@ -1,3 +1,9 @@
+2007-05-09 17:23  asfernandes
+
+	* firebird2/doc/sql.extensions/README.list (1.2):
+
+	Updated LIST documentation - thanks to Maycon Ferraça
+
 2007-05-09 04:03  asfernandes
 
 	* firebird2/src/burp/burp.cpp (1.126):
