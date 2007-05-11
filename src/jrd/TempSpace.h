@@ -115,7 +115,7 @@ private:
 		size_t read(offset_t offset, void* buffer, size_t length);
 		size_t write(offset_t offset, void* buffer, size_t length);
 
-		char* inMemory(offset_t offset, size_t size) const
+		char* inMemory(offset_t offset, size_t a_size) const
 		{
 			return NULL;
 		}
