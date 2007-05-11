@@ -3933,16 +3933,11 @@ static RecordSource* gen_aggregate(thread_db* tdbb, OptimizerBlk* opt, jrd_nod* 
 			AggregateSort* asb = (AggregateSort*) PAR_make_node(tdbb, count);
 			asb->nod_type = nod_asb;
 			asb->nod_count = 0;
-			/* build the sort key definition. Turn varying text and
-			   cstrings into text */
+			// Build the sort key definition. Turn cstrings into varying text.
 			CMP_get_desc(tdbb, csb, from->nod_arg[0], desc);
-			if (desc->dsc_dtype == dtype_varying) {
-				desc->dsc_dtype = dtype_text;
-				desc->dsc_length -= sizeof(USHORT);
-			}
-			else if (desc->dsc_dtype == dtype_cstring) {
-				desc->dsc_dtype = dtype_text;
-				desc->dsc_length--;
+			if (desc->dsc_dtype == dtype_cstring) {
+				desc->dsc_dtype = dtype_varying;
+				desc->dsc_length++;
 			}
 
 			sort_key_def* sort_key = asb->asb_key_desc = (sort_key_def*) asb->asb_key_data;
@@ -3955,7 +3950,18 @@ static RecordSource* gen_aggregate(thread_db* tdbb, OptimizerBlk* opt, jrd_nod* 
 						 DSC_dtype_tostring(desc->dsc_dtype),
 						 0);
 			}
+
 			sort_key->skd_length = desc->dsc_length;
+
+			if (desc->dsc_dtype == dtype_varying)
+			{
+				// allocate space to store varying length
+				sort_key->skd_vary_offset = ROUNDUP(desc->dsc_length, sizeof(SLONG));
+				asb->asb_length = sort_key->skd_vary_offset + sizeof(USHORT);
+			}
+			else
+				asb->asb_length = sort_key->skd_length;
+
 			sort_key->skd_flags = SKD_ascending;
 			asb->nod_impure = CMP_impure(csb, sizeof(impure_agg_sort));
 			asb->asb_desc = *desc;
