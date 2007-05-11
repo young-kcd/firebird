@@ -33,6 +33,8 @@
  *				Honor explicit USER keyword in GRANTs and REVOKEs. *
  *    2002.08.10 Dmitry Yemanov: ALTER VIEW
  *    2002.10.29 Nickolay Samofatov: Added support for savepoints
+ *
+ *	Alex Peshkov
  */
 
 #include "firebird.h"
