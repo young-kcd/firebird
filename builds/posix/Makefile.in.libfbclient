@@ -78,9 +78,6 @@ SECURITY_ClientObjects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(SECUR
 FBUTIL_ClientSources = $(addprefix fbutil/, $(FBUTIL_ClientFiles))
 FBUTIL_ClientObjects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(FBUTIL_ClientSources))))
 
-FBCOMMON_ClientSources = $(addprefix common/, $(FBCOMMON_ClientFiles))
-FBCOMMON_ClientObjects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(FBCOMMON_ClientSources))))
-
 
 FBCLIENT_Objects =  $(JRD_ClientObjects) \
 					$(DSQL_ClientObjects) \
@@ -88,7 +85,7 @@ FBCLIENT_Objects =  $(JRD_ClientObjects) \
 					$(GPRELIB_ClientObjects) \
 					$(SECURITY_ClientObjects) \
 					$(FBUTIL_ClientObjects) \
-					$(FBCOMMON_ClientObjects)\
+					$(FBCOMMON_Objects)\
 					$(FBCLASSES_ClientObjects)\
 					$(FBCLASSES_MsgObjects)\
 					$(OS_SPECIFIC_Objects)\

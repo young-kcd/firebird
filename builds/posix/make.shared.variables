@@ -272,14 +272,13 @@ VULCAN_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(VULCAN_Source
 #
 # common
 
-FBCOMMON_ClientFiles = fb_exception.cpp utils.cpp classes/MetaName.cpp
-FBCOMMON_ServerFiles = 
+FBCOMMON_ClientFiles = fb_exception.cpp classes/MetaName.cpp
+FBCOMMON_ServerFiles = utils.cpp
 
-FBCOMMON_Files = $(FBCOMMON_ClientFiles) $(FBCOMMON_ServerFiles)
+FBCOMMON_ClientObjects = $(addprefix $(OBJ)/common/, $(addsuffix .o, $(basename $(FBCOMMON_ClientFiles))))
+FBCOMMON_ServerObjects = $(addprefix $(OBJ)/common/, $(addsuffix .o, $(basename $(FBCOMMON_ServerFiles))))
 
-FBCOMMON_Sources = $(addprefix common/, $(FBCOMMON_Files))
-FBCOMMON_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(FBCOMMON_Sources))))
-
+FBCOMMON_Objects = $(FBCOMMON_ClientObjects) $(FBCOMMON_ServerObjects)
 
 #________________________________________________________________________
 #

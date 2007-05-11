@@ -39,7 +39,7 @@ include     $(ROOT)/gen/make.shared.variables
 @SET_MAKE@
 
 
-QLI_Other_Sources = jrd/dsc.cpp gpre/pretty.cpp jrd/os/posix/path_utils.cpp
+QLI_Other_Sources = jrd/dsc.cpp gpre/pretty.cpp jrd/path_utils.cpp
 
 QLI_Files=	all.cpp command.cpp compile.cpp dtr.cpp err.cpp eval.cpp \
 		expand.cpp exe.cpp format.cpp gener.cpp help.cpp \

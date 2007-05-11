@@ -76,7 +76,6 @@ GSTAT_Files =  dba.epp ppg.cpp
 GSTAT_Sources = $(addprefix utilities/gstat/, $(GSTAT_Files)) $(GSTAT_Other_Sources)
 GSTAT_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(GSTAT_Sources)))) $(CLUMPLETS_Objects)
 
-
 FBSVCMGR_Files= fbsvcmgr.cpp
 FBSVCMGR_Other_Sources = common/classes/fb_string.cpp common/classes/alloc.cpp \
 common/fb_exception.cpp common/utils.cpp
@@ -86,7 +85,7 @@ FBSVCMGR_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(FBSVCMGR_So
 $(FBCLASSES_MsgObjects) $(CLUMPLETS_Objects)
 
 
-FBGUARD_Other_Sources = jrd/isc.cpp jrd/divorce.cpp jrd/os/posix/path_utils.cpp
+FBGUARD_Other_Sources = jrd/isc.cpp jrd/divorce.cpp jrd/path_utils.cpp
 FBGUARD_Files =  guard.cpp util.cpp
 FBGUARD_Sources = $(addprefix utilities/guard/, $(FBGUARD_Files)) $(FBGUARD_Other_Sources)
 FBGUARD_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(FBGUARD_Sources))))
@@ -99,8 +98,7 @@ IBGUARD_B_Files =  os/win32/chop.cpp
 IBGUARD_B_Sources = $(addprefix remote/, $(IBGUARD_B_Files))
 IBGUARD_B_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(IBGUARD_B_Sources))))
 
-
-FBMGR_Other_Sources = jrd/os/posix/path_utils.cpp
+FBMGR_Other_Sources = jrd/path_utils.cpp
 FBMGR_Files =  	ibmgr.cpp srvrmgr.cpp
 FBMGR_Sources = $(addprefix utilities/ibmgr/, $(FBMGR_Files)) $(FBMGR_Other_Sources)
 FBMGR_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(FBMGR_Sources))))
@@ -125,6 +123,8 @@ RELAY_Files =  relay.cpp
 RELAY_Sources = $(addprefix utilities/, $(RELAY_Files))
 RELAY_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(RELAY_Sources))))
 
+# Override shared variable to exclude TempFile.cpp
+FBCLASSES_ClientFiles=alloc.cpp locks.cpp fb_string.cpp timestamp.cpp
 
 AllObjects = $(CREATEDB_Object) $(DROP_Object) $(GSTAT_Object) $(FBGUARD_Objects) \
 			 $(FBMGR_Objects) $(REBUILD_Objects) $(RELAY_Objects) $(FBSVCMGR_Objects)
@@ -207,7 +207,7 @@ $(INSTREG):	$(INSTREG_Objects)
 instsvc: $(INSTSVC)
 
 $(INSTSVC):	$(INSTSVC_Objects)
-	$(LD) $(LINK_OPTS) $^ -o $@ -L$(LIB) $(FBCLASSES_ClientObjects) $(FBCOMMON_Objects) $(LINK_LIBS) 
+	$(LD) $(LINK_OPTS) $^ -o $@ -L$(LIB) $(FBCLASSES_ClientObjects) $(FBCOMMON_ClientObjects) $(LINK_LIBS) 
 
 # This one needs a bit of work.
 
