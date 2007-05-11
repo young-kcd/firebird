@@ -10,9 +10,9 @@ UPDATE OR INSERT statement
 
   Syntax rules:
     UPDATE OR INSERT INTO <table or view> [(<column_list>)]
-    	VALUES (<value_list>)
-		[MATCHING <column_list>]
-    	[RETURNING <column_list> [INTO <variable_list>]]
+        VALUES (<value_list>)
+        [MATCHING <column_list>]
+        [RETURNING <column_list> [INTO <variable_list>]]
 
   Scope:
     DSQL, PSQL
@@ -24,10 +24,9 @@ UPDATE OR INSERT statement
     4. UPDATE OR INSERT INTO EMPLOYEE (ID, NAME) VALUES (:ID, :NAME) RETURNING OLD.NAME;
 
   Notes:
-    1. Views are only allowed if it's based on only one table (i.e. no joins or unions).
-    2. When MATCHING is omitted, the existence of a primary key is required.
-    3. INSERT and UPDATE permissions are needed on <table or view>.
-    4. If the RETURNING clause is present, then the statement is described as
+    1. When MATCHING is omitted, the existence of a primary key is required.
+    2. INSERT and UPDATE permissions are needed on <table or view>.
+    3. If the RETURNING clause is present, then the statement is described as
        isc_info_sql_stmt_exec_procedure by the API. Otherwise it is described
        as isc_info_sql_stmt_insert.
 
