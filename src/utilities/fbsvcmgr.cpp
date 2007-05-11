@@ -214,8 +214,9 @@ bool populateSpbFromSwitches(char**& av,
 
 const Switches attSwitch[] = {
 	{"user", putStringArgument, 0, isc_spb_user_name, 0},
+	{"user_name", putStringArgument, 0, isc_spb_user_name, 0},
 	{"password", putStringArgument, 0, isc_spb_password, 0},
-	{"trusted", putSingleTag, 0, isc_spb_trusted_auth, 0},
+	{"trusted_auth", putSingleTag, 0, isc_spb_trusted_auth, 0},
 	{0, 0, 0, 0, 0}
 };
 	
