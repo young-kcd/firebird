@@ -1,3 +1,10 @@
+2007-05-11 04:07  asfernandes
+
+	* firebird2/src/jrd/: evl.cpp (1.226), exe.h (1.100), opt.cpp
+	(1.293):
+
+	Fixed CORE-1253 - LIST(DISTINCT) concatenate VARCHAR values as CHAR
+
 2007-05-09 17:23  asfernandes
 
 	* firebird2/doc/sql.extensions/README.list (1.2):
