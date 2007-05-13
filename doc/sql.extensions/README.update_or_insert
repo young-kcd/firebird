@@ -3,7 +3,7 @@ UPDATE OR INSERT statement
 -----------------
 
   Function:
-    Allow to update or insert a record based on the existence or not of it.
+    Allow to update or insert a record based on the existence (checked with IS NOT DISTINCT) or not of it.
 
   Author:
     Adriano dos Santos Fernandes <adrianosf@uol.com.br>

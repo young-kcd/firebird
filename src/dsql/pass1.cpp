@@ -8999,9 +8999,12 @@ static dsql_nod* pass1_update_or_insert(dsql_req* request, dsql_nod* input, bool
 	}
 
 	dsql_nod* matching = input->nod_arg[e_upi_matching];
+	nod_t equality_type;
 
 	if (matching)
 	{
+		equality_type = nod_equiv;
+
 		request->req_context->push(context);
 		request->req_scope_level++;
 
@@ -9014,6 +9017,8 @@ static dsql_nod* pass1_update_or_insert(dsql_req* request, dsql_nod* input, bool
 	}
 	else
 	{
+		equality_type = nod_eql;
+
 		matching = METD_get_primary_key(request, base_name);
 
 		if (!matching)
@@ -9079,7 +9084,7 @@ static dsql_nod* pass1_update_or_insert(dsql_req* request, dsql_nod* input, bool
 				{
 					++match_count;
 
-					dsql_nod* eql = MAKE_node(nod_eql, 2);
+					dsql_nod* eql = MAKE_node(equality_type, 2);
 					eql->nod_arg[0] = *field_ptr;
 					eql->nod_arg[1] = *value_ptr;
 
