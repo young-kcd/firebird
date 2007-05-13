@@ -1,3 +1,11 @@
+2007-05-13 03:37  asfernandes
+
+	* firebird2/src/: common/classes/GenericMap.h (1.12), dsql/dsql.h
+	(1.108), dsql/pass1.cpp (1.321):
+
+	Fixed CORE-1256 - Table columns hide destination variables of
+	RETURNING INTO, and others problems recent introduced
+
 2007-05-11 18:37  alexpeshkoff
 
 	* firebird2/doc/README.fbsvcmgr (1.1):
