@@ -70,6 +70,15 @@ public:
 		clear();
 	}
 
+	void assign(GenericMap& v)
+	{
+		for (bool found = v.getFirst(); found; found = v.getNext())
+		{
+			KeyValuePair* current = v.current();
+			put(current->first, current->second);
+		}
+	}
+
 	void takeOwnership(GenericMap& from) {
 		clear();
 

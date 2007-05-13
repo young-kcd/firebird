@@ -6039,7 +6039,7 @@ static dsql_nod* pass1_insert( dsql_req* request, dsql_nod* input, bool proc_fla
 		*old_context = *context;
 		old_context->ctx_alias = old_context->ctx_internal_alias =
 			MAKE_cstring(OLD_CONTEXT)->str_data;
-		old_context->ctx_flags |= CTX_system | CTX_null;
+		old_context->ctx_flags |= CTX_system | CTX_null | CTX_returning;
 		request->req_context->push(old_context);
 
 		// clone the insert context and push with name "NEW" in a greater scope level
@@ -6048,9 +6048,8 @@ static dsql_nod* pass1_insert( dsql_req* request, dsql_nod* input, bool proc_fla
 		new_context->ctx_scope_level = ++request->req_scope_level;
 		new_context->ctx_alias = new_context->ctx_internal_alias =
 			MAKE_cstring(NEW_CONTEXT)->str_data;
-		new_context->ctx_flags |= CTX_system;
+		new_context->ctx_flags |= CTX_system | CTX_returning;
 		request->req_context->push(new_context);
-
 	}
 
 	node->nod_arg[e_sto_return] =
@@ -7367,8 +7366,11 @@ static dsql_nod* pass1_returning(dsql_req* request,
 
 	dsql_nod* const source =
 		PASS1_node(request, input->nod_arg[e_ret_source], false);
+
+	request->req_flags |= REQ_returning_into;
 	dsql_nod* const target =
-		PASS1_node(request, input->nod_arg[e_ret_target], false);
+		PASS1_node(request, input->nod_arg[e_ret_target], proc_flag);
+	request->req_flags &= ~REQ_returning_into;
 
 	if (!proc_flag && target)
 	{
@@ -8852,9 +8854,12 @@ static dsql_nod* pass1_update( dsql_req* request, dsql_nod* input, bool proc_fla
 			// ASF: We have the RSE context in the stack.
 			// Then we change his name to "OLD".
 			TEXT* save_alias = old_context->ctx_alias;
+			TEXT* save_internal_alias = old_context->ctx_internal_alias;
+			USHORT save_flags = old_context->ctx_flags;
+
 			old_context->ctx_alias = old_context->ctx_internal_alias =
 				MAKE_cstring(OLD_CONTEXT)->str_data;
-			old_context->ctx_flags |= CTX_system;
+			old_context->ctx_flags |= CTX_system | CTX_returning;
 
 			// push the modify context in the same scope level
 			request->req_context->push(mod_context);
@@ -8866,7 +8871,7 @@ static dsql_nod* pass1_update( dsql_req* request, dsql_nod* input, bool proc_fla
 			new_context->ctx_scope_level = ++request->req_scope_level;
 			new_context->ctx_alias = new_context->ctx_internal_alias =
 				MAKE_cstring(NEW_CONTEXT)->str_data;
-			new_context->ctx_flags |= CTX_system;
+			new_context->ctx_flags |= CTX_system | CTX_returning;
 			request->req_context->push(new_context);
 
 			// Process the RETURNING with the stack (NEW, (modify, OLD)),
@@ -8879,6 +8884,9 @@ static dsql_nod* pass1_update( dsql_req* request, dsql_nod* input, bool proc_fla
 			--request->req_scope_level;
 			request->req_context->pop();
 			request->req_context->pop();
+
+			old_context->ctx_flags = save_flags;
+			old_context->ctx_internal_alias = save_internal_alias;
 			old_context->ctx_alias = save_alias;
 		}
 	}
@@ -9150,7 +9158,7 @@ static dsql_nod* pass1_update_or_insert(dsql_req* request, dsql_nod* input, bool
 		MAKE_constant((dsql_str*) internal_rows_affected, CONSTANT_SLONG);
 	eql->nod_arg[1] = MAKE_constant((dsql_str*) 0, CONSTANT_SLONG);
 
-	USHORT req_flags = request->req_flags;
+	ULONG req_flags = request->req_flags;
 	request->req_flags |= REQ_block;	// to compile ROW_COUNT
 	eql = PASS1_node(request, eql, proc_flag);
 	request->req_flags = req_flags;
@@ -9748,6 +9756,9 @@ static dsql_fld* resolve_context( dsql_req* request, const dsql_str* qualifier,
 	DEV_BLKCHK(request, dsql_type_req);
 	DEV_BLKCHK(qualifier, dsql_type_str);
 	DEV_BLKCHK(context, dsql_type_ctx);
+
+	if ((request->req_flags & REQ_returning_into) && (context->ctx_flags & CTX_returning))
+		return NULL;
 
 	dsql_rel* relation = context->ctx_relation;
 	dsql_prc* procedure = context->ctx_procedure;
