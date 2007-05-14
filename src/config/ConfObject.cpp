@@ -216,7 +216,7 @@ JString ConfObject::expand(const char* rawValue)
 		return "";
 
 	char temp [1024];
-	char *p = temp;
+	char *p = temp, *temp_end = temp + sizeof(temp) - 1;
 	bool changed = false;
 	
 	for (const char *s = rawValue; *s;)
@@ -228,14 +228,14 @@ JString ConfObject::expand(const char* rawValue)
 				{
 				++s;
 				char name [256], *n = name;
-				while (*s && (c = *s++) != ')')
+				while (*s && (c = *s++) != ')' && n < name + sizeof(name) - 1)
 					*n++ = c;
 				*n = 0;
 				const char *subst = configFile->translate (name, object);
 				if (!subst)
 					throw AdminException ("can't substitute for \"%s\"", name);
 				changed = true;
-				for (const char *t = subst; *t;)
+				for (const char *t = subst; *t && p < temp_end;)
 					*p++ = *t++;					
 				}
 			else
@@ -245,11 +245,11 @@ JString ConfObject::expand(const char* rawValue)
 					n = n * 10 + *s++ - '0';
 				if (n > numberStrings)
 					throw AdminException ("substitution index exceeds available segments");
-				for (const char *t = (n == 0) ? (const char*) source : strings [n - 1]; *t;)
+				for (const char *t = (n == 0) ? (const char*) source : strings [n - 1]; *t && p < temp_end;)
 					*p++ = *t++;
 				}
 			}
-		else
+		else if (p < temp_end)
 			*p++ = c;
 		}
 	
