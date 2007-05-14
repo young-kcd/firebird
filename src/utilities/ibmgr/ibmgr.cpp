@@ -705,6 +705,17 @@ static SSHORT get_switches(
 				fprintf(OUTFILE, "%s\n", msg);
 				return ERR_SYNTAX;
 
+			case IN_SW_IBMGR_PIDFILE:
+			{
+				if (ibmgr_data->pidfile[0])
+				{
+					SRVRMGR_msg_get(MSG_INVSWSW, msg);
+					fprintf(OUTFILE, "%s\n", msg);
+					return ERR_SYNTAX;
+				}
+				break;
+			}
+			
 			default:
 #ifdef DEV_BUILD
 				fprintf(OUTFILE, "ASSERT: file %s line %"LINEFORMAT": in_sw = %d\n",
