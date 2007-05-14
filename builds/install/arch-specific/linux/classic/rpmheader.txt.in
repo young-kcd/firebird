@@ -12,7 +12,7 @@ AutoReqProv: no
 # BuildRoot: /var/tmp/%{name}-buildroot
 BuildRoot: @BUILD_ROOT_DIR@/gen/buildroot
 Requires: libncurses.so.5 libstdc++.so.5
-Provides: libfbclient.so.2 libfbembed.so.2 libgds.so
+Provides: Firebird libfbclient.so.2@RPM64@ libfbembed.so.2@RPM64@ libgds.so
 
 %description
 Firebird is a powerful, high-performance relational database designed to be embedded into

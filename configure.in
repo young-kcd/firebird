@@ -42,6 +42,7 @@ service_thread_CS=""
 dnl Should system editline and/or icu be used 
 STD_EDITLINE=false
 STD_ICU=false
+RPM64=
 
 case "$target" in
   *-*-darwin*)
@@ -104,6 +105,7 @@ case "$target" in
     SHRLIB_EXT=so
     libdir=/usr/lib64
     CPU_TYPE=amd64
+	RPM64='()(64bit)'
     ;;
 
   sparc*-*-linux*)
@@ -228,6 +230,7 @@ AC_SUBST(SHRLIB_EXT)
 AC_SUBST(ICU_PLATFORM)
 AC_SUBST(service_thread_CS)
 AC_DEFINE(CASE_SENSITIVITY, false, [Define this if paths are case sensitive])
+AC_SUBST(RPM64)
 
 
 dnl Some controllable options
