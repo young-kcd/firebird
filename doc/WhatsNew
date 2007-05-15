@@ -2,9 +2,13 @@
   * v2.0.2
   **************************
 
-    * Improvement CORE-1148
-        Regular users are protected from viewing the server log using Services API.
-        This is now allowed for SYSDBA only.
+    * Fixed bug CORE-1249
+        Full shutdown mode doesn't work on Classic if there are other connections to the database
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed bug CORE-1240
+        Any task, using libfbclient, hangs on exit (Darwin PPC)
       Contributor(s):
         Alex Peshkov <peshkoff at mail.ru>
 
@@ -46,6 +50,12 @@
 
     * Fixed bug CORE-900
         Deadlock when attaching simultaneously with services and standard APIs
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Improvement CORE-1148
+        Regular users are protected from viewing the server log using Services API.
+        This is now allowed for SYSDBA only.
       Contributor(s):
         Alex Peshkov <peshkoff at mail.ru>
 
