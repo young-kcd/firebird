@@ -77,6 +77,7 @@
         v2.1 GBAK crashes the v2.0.x server when attempting to backup a database  
       Contributor(s):
         Dmitry Yemanov <dimitr at firebirdsql.org>
+        Claudio Valderrama <cvalde at usa.net>
 
     * Bugfix CORE-1196
         Long SQL statements break TCP/IP connection
@@ -491,7 +492,8 @@
         Adriano dos Santos Fernandes <adrianosf at uol.com.br>
 
     * Improvement CORE-1148
-        Regular users are not allowed to retrieve the server log using Services API
+        Regular users are protected from viewing the server log using Services API.
+        This is now allowed for SYSDBA only.
       Contributor(s):
         Alex Peshkov <peshkoff at mail.ru>
 
