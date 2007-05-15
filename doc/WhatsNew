@@ -1,4 +1,238 @@
   **************
+  * v2.1 Beta 1
+  **************
+
+    * Bugfix CORE-1256
+        Table columns hide destination variables of RETURNING INTO
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-1253
+        LIST(DISTINCT) concatenate VARCHAR values as CHAR
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-1249
+        Full shutdown mode doesn't work on Classic if there are other connections to the database
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-1248
+        Incorrect timestamp arithmetics when one of the operands is negative number
+      Contributor(s):
+        Vlad Horsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-1245, CORE-1246
+        Incorrect column values with outer joins and views or derived tables
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-1244
+        Server crash on "select * from <recursive CTE>"
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+        Vlad Horsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-1240
+        Any task, using libfbclient, hangs on exit (Darwin PPC)
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-1237
+        GBAK does not create backup in service_mgr mode if there is no space on disk, no error reported
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-1228
+        Database often became corrupted after an out of disk space condition
+      Contributor(s):
+        Vlad Horsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-1227
+        LIST() function seems not work if used twice or more in a query  
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-1223
+        Wrong message in firebird.log on Open SuSe Linux 10.2 : Open file limit increased from 1024 to 0
+      Contributor(s):
+        Vlad Horsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-1218
+        isc_dsql_info(isc_info_sql_stmt_type) doesn't set isc_info_end at the end of the passed user's buffer
+      Contributor(s):
+        Vlad Horsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-1215
+        Wrong SELECT query results using index to evaluate >= condition
+      Contributor(s):
+        Vlad Horsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-1207
+        FB embedded requires extra OS privileges
+      Contributor(s):
+        Vlad Horsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-1205
+        v2.1 GBAK crashes the v2.0.x server when attempting to backup a database  
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-1196
+        Long SQL statements break TCP/IP connection
+      Contributor(s):
+        Vlad Horsun <hvlad at users.sourceforge.net>
+        Alex Peshkov <peshkoff at mail.ru>
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-1183
+        View cannot be created if its WHERE clause contains IN <subquery> with a procedure reference  
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-1175
+        Error "Data type unknown" when any UDF argument is a built-in function
+        containing a DSQL parameter reference
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-1174
+        GBAK restores NULL rdb$description in rdb$functions as blob (0, 0)
+      Contributor(s):
+        Claudio Valderrama <cvalde at usa.net>
+
+    * Bugfix CORE-1167
+        CHARACTER SET GBK is not installed
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-1165
+        WHEN <list of exceptions> tracks only the dependency on the first exception in PSQL
+      Contributor(s):
+        Claudio Valderrama <cvalde at usa.net>
+
+    * Bugfix CORE-1162
+        Problem altering numeric field type
+      Contributor(s):
+        Claudio Valderrama <cvalde at usa.net>
+
+    * Bugfix CORE-1153
+        Activating index change "STARTING" working as "LIKE" in join condition
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-1151
+        Error "database file not available" when running NBackup
+      Contributor(s):
+        Nickolay Samofatov <skidder at users.sourceforge.net>
+
+    * Bugfix CORE-981
+        x86_64 RPM package missing "provides"  
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-949
+        Restore with UDF in 'COMPUTED BY' fields fails  
+      Contributor(s):
+        Dimitry Sibiryakov <sd at ibphoenix.com>
+
+    * Bugfix CORE-885
+        It is impossible to take away rights on update of a column
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-856
+        Unable to set FName, MName, LName fields in the security database to blank
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-703
+        Using DEL-Key in isql under Linux gives "~"
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-132
+        Restore fails on external table  
+      Contributor(s):
+        Vlad Horsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-107
+        Instance of fb_lock_mgr runs after build
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Improvement CORE-1232
+        Wrong behaviour of services manager during backup/restore operations
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Improvement CORE-1229
+        Allocate disk space by more than one page at a time
+      Contributor(s):
+        Vlad Horsun <hvlad at users.sourceforge.net>
+
+    * Improvement CORE-1226
+        Allow RETURNING in INSERT...SELECT, UPDATE and DELETE
+      See also:
+        /doc/README.returning
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Improvement CORE-1213
+        CURRENT OF is now allowed for views
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Improvement CORE-1179
+        "CH" and "LL" are not separate spanish alphabet letters since 1994
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Improvement CORE-1178
+        Standarize ES_ES_CI_AI collation
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Improvement CORE-1170
+        Conversion of DDL source from client charset to metadata charset  
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Improvement CORE-1169
+        Conversion of temporary blobs to the destination blob type when materializing  
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Improvement CORE-1091
+        isc_service_query(isc_info_svc_svr_db_info) no longer returns
+        full database file name if DatabaseAccess = None
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Improvement CORE-961
+        Free external tables as soon as they're no longer in use by user requests
+      Contributor(s):
+        Vlad Horsun <hvlad at users.sourceforge.net>
+
+    * Improvement CORE-867
+        GBAK should change param0 to not show username/password in ps axf
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Improvement CORE-787
+        Optionally disable non-SYSDBA use of Services API
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Feature CORE-1235
+        NATURAL JOIN and JOIN...USING
+      See also:
+        /doc/README.joins.txt
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+
+  **************
   * v2.1 Alpha 1
   **************
 
