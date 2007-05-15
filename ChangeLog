@@ -1,3 +1,23 @@
+2007-05-14 17:27  asfernandes
+
+	* firebird2/src/config/ConfObject.cpp (1.6):
+
+	Fixed BOs
+
+2007-05-14 13:40  alexpeshkoff
+
+	* firebird2/: configure.in (1.257),
+	builds/install/arch-specific/linux/classic/rpmheader.txt.in (1.6),
+	builds/install/arch-specific/linux/super/rpmheader.txt.in (1.7):
+
+	Fixed CORE-981 - x86_64 RPM package missing "provides"
+
+2007-05-14 11:27  alexpeshkoff
+
+	* firebird2/src/utilities/ibmgr/ibmgr.cpp (1.24):
+
+	Fixed assertion in DEV_BUILD
+
 2007-05-13 16:06  asfernandes
 
 	* firebird2/: doc/sql.extensions/README.update_or_insert (1.4),
