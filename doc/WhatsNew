@@ -226,6 +226,21 @@
       Contributor(s):
         Adriano dos Santos Fernandes <adrianosf at uol.com.br>
 
+    * Added a wide set of new built-in functions
+        ABS, ACOS, ASCII_CHAR, ASCII_VAL, ASIN, ATAN, ATAN2,
+        BIN_AND, BIN_OR, BIN_SHL, BIN_SHR, BIN_XOR,
+        CEIL, COS, COSH, COT, DATEADD, DATEDIFF, DECODE,
+        EXP, FLOOR, GEN_UUID, HASH, LEFT, LN, LOG, LOG10, LPAD,
+        MAXVALUE, MINVALUE, MOD, OVERLAY, PI, POSITION, POWER,
+        RAND, REPLACE, REVERSE, RIGHT, ROUND, RPAD,
+        SIGN, SIN, SINH, SQRT, TAN, TANH, TRUNC
+      See also:
+        /doc/README.builtin_functions.txt
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+        Oleg Loa <loa at mail.ru>
+        Alexey Karyakin <aleksey.karyakin at mail.ru>
+
 
   **************
   * v2.1 Alpha 1
