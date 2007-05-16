@@ -536,7 +536,7 @@ Firebird::PathName get_process_name()
 	const int len = 0;
 #endif
 
-	if (len < 0)
+	if (len <= 0)
 		buffer[0] = 0;
 	else if (len < sizeof(buffer))
 		buffer[len] = 0;
