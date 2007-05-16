@@ -54,8 +54,8 @@
         Alex Peshkov <peshkoff at mail.ru>
 
     * Improvement CORE-1148
-        Regular users are protected from viewing the server log using Services API.
-        This is now allowed for SYSDBA only.
+        Regular users are prevented from retrieving the server log
+        using Services API. This is now allowed for SYSDBA only.
       Contributor(s):
         Alex Peshkov <peshkoff at mail.ru>
 
