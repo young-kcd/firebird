@@ -204,12 +204,6 @@
       Contributor(s):
         Adriano dos Santos Fernandes <adrianosf at uol.com.br>
 
-    * Improvement CORE-1091
-        isc_service_query(isc_info_svc_svr_db_info) no longer returns
-        full database file name if DatabaseAccess = None
-      Contributor(s):
-        Alex Peshkov <peshkoff at mail.ru>
-
     * Improvement CORE-961
         Free external tables as soon as they're no longer in use by user requests
       Contributor(s):
@@ -492,14 +486,14 @@
         Adriano dos Santos Fernandes <adrianosf at uol.com.br>
 
     * Improvement CORE-1148
-        Regular users are protected from viewing the server log using Services API.
-        This is now allowed for SYSDBA only.
+        Regular users are prevented from retrieving the server log
+        using Services API. This is now allowed for SYSDBA only.
       Contributor(s):
         Alex Peshkov <peshkoff at mail.ru>
 
     * Improvement CORE-1091
-        isc_service_query() should return an alias name instead of a full database file name
-        in the case of configured "DatabaseAccess = None"
+        isc_service_query() should return an alias name instead of
+        a full database file name in the case of configured "DatabaseAccess = None"
       Contributor(s):
         Alex Peshkov <peshkoff at mail.ru>
 
