@@ -394,6 +394,7 @@ public:
 #ifdef TRUSTED_AUTH
 	Firebird::string	dpb_trusted_login;
 #endif
+	Firebird::PathName	dpb_remote_process;
 
 public:
 	DatabaseOptions()
@@ -785,6 +786,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 	attachment->att_network_protocol = options.dpb_network_protocol;
 	attachment->att_remote_address = options.dpb_remote_address;
 	attachment->att_remote_pid = options.dpb_remote_pid;
+	attachment->att_remote_process = options.dpb_remote_process;
 	attachment->att_next = dbb->dbb_attachments;
 
 	dbb->dbb_attachments = attachment;
@@ -1865,6 +1867,7 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 	attachment->att_network_protocol = options.dpb_network_protocol;
 	attachment->att_remote_address = options.dpb_remote_address;
 	attachment->att_remote_pid = options.dpb_remote_pid;
+	attachment->att_remote_process = options.dpb_remote_process;
 	attachment->att_next = dbb->dbb_attachments;
 
 	dbb->dbb_attachments = attachment;
@@ -5681,8 +5684,12 @@ void DatabaseOptions::get(const UCHAR* dpb, USHORT dpb_length)
 			}
 			break;
 
-		case isc_dpb_pid:
+		case isc_dpb_process_id:
 			dpb_remote_pid = rdr.getInt();
+			break;
+
+		case isc_dpb_process_name:
+			rdr.getPath(dpb_remote_process);
 			break;
 
 		case isc_dpb_no_db_triggers:

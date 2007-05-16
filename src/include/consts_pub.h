@@ -101,9 +101,10 @@
 #define isc_dpb_set_db_charset            68
 #define isc_dpb_gsec_attach               69
 #define isc_dpb_address_path              70
-#define isc_dpb_pid                       71
+#define isc_dpb_process_id                71
 #define isc_dpb_no_db_triggers            72
 #define isc_dpb_trusted_auth			  73
+#define isc_dpb_process_name              74
 
 /**************************************************/
 /* clumplet tags used inside isc_dpb_address_path */
@@ -251,8 +252,9 @@
 #define isc_spb_verbose                   107
 #define isc_spb_options                   108
 #define isc_spb_address_path              109
-#define isc_spb_pid                       110
+#define isc_spb_process_id                110
 #define isc_spb_trusted_auth			  111
+#define isc_spb_process_name              112
 
 
 #define isc_spb_connect_timeout           isc_dpb_connect_timeout

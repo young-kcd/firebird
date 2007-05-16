@@ -66,6 +66,7 @@
 #include "../jrd/thread_proto.h"
 #include "../common/classes/ClumpletWriter.h"
 #include "../common/config/config.h"
+#include "../common/utils_proto.h"
 #include "../auth/trusted/AuthSspi.h"
 
 #ifdef HAVE_UNISTD_H
@@ -111,7 +112,7 @@ namespace {
 	// for both services and databases attachments
 	struct ParametersSet {
 		UCHAR dummy_packet_interval, user_name, sys_user_name, 
-			  password, password_enc, address_path, pid, trusted_auth;
+			  password, password_enc, address_path, process_id, process_name, trusted_auth;
 	};
 	const ParametersSet dpbParam = {isc_dpb_dummy_packet_interval, 
 									isc_dpb_user_name, 
@@ -119,7 +120,8 @@ namespace {
 									isc_dpb_password, 
 									isc_dpb_password_enc,
 									isc_dpb_address_path,
-									isc_dpb_pid,
+									isc_dpb_process_id,
+									isc_dpb_process_name,
 									isc_dpb_trusted_auth};
 	const ParametersSet spbParam = {isc_spb_dummy_packet_interval, 
 									isc_spb_user_name, 
@@ -127,7 +129,8 @@ namespace {
 									isc_spb_password, 
 									isc_spb_password_enc,
 									isc_spb_address_path,
-									isc_spb_pid,
+									isc_spb_process_id,
+									isc_spb_process_name,
 									isc_spb_trusted_auth};
 }
 
@@ -5754,10 +5757,14 @@ static bool get_new_dpb(Firebird::ClumpletWriter& dpb,
 		}
 	}
 
-    if (dpb.find(par.pid)) {
+    if (dpb.find(par.process_id)) {
 		dpb.deleteClumplet();
 	}
-	dpb.insertInt(par.pid, getpid());
+	dpb.insertInt(par.process_id, getpid());
+
+    if (!dpb.find(par.process_name)) {
+		dpb.insertPath(par.process_name, fb_utils::get_process_name());
+	}
 
 #ifndef NO_PASSWORD_ENCRYPTION
 	if (dpb.find(par.password))

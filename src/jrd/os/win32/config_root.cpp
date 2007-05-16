@@ -76,28 +76,27 @@ void ConfigRoot::osConfigRoot()
 #endif
 
 	// get the pathname of the running executable
-	string bin_dir;
+	string bin_dir = fb_utils::get_process_name();
+	if (bin_dir.length() != 0)
 	{
-		// Given the current semantics of PathName, when "buffer" goes
-		// out of scope, it's already bitwise copied into bin_dir.
-		char buffer[MAXPATHLEN];
-		GetModuleFileName(NULL, buffer, sizeof(buffer));
-		bin_dir = buffer;
-	}
-	
-	// get rid of the filename
-	int index = bin_dir.rfind(PathUtils::dir_sep);
-	bin_dir = bin_dir.substr(0, index);
+		// get rid of the filename
+		int index = bin_dir.rfind(PathUtils::dir_sep);
+		bin_dir = bin_dir.substr(0, index);
 
-	// how should we decide to use bin_dir instead of root_dir? any ideas?
-	// ???
+		// how should we decide to use bin_dir instead of root_dir? any ideas?
+		// ???
 #if defined(EMBEDDED)
-	root_dir = bin_dir + PathUtils::dir_sep;
-	return;
+		root_dir = bin_dir + PathUtils::dir_sep;
+		return;
 #endif
 
-	// go to the parent directory
-	index = bin_dir.rfind(PathUtils::dir_sep, bin_dir.length());
-	root_dir = (index ? bin_dir.substr(0, index) : bin_dir) + PathUtils::dir_sep;
+		// go to the parent directory
+		index = bin_dir.rfind(PathUtils::dir_sep, bin_dir.length());
+		root_dir = (index ? bin_dir.substr(0, index) : bin_dir) + PathUtils::dir_sep;
+		return;
+	}
+
+    // As a last resort get it from the default install directory
+    root_dir = FB_PREFIX;
 }
 

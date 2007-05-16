@@ -97,6 +97,8 @@ namespace fb_utils
 #ifdef WIN_NT
 	void prefix_kernel_object_name(char*, size_t);
 #endif 
+
+	Firebird::PathName get_process_name();
 } // namespace fb_utils
 
 #endif // INCLUDE_UTILS_PROTO_H

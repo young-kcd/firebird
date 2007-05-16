@@ -500,7 +500,8 @@ public:
 		att_filename(*dbb->dbb_permanent),
 		att_context_vars(*dbb->dbb_permanent),
 		att_network_protocol(*dbb->dbb_permanent),
-		att_remote_address(*dbb->dbb_permanent)
+		att_remote_address(*dbb->dbb_permanent),
+		att_remote_process(*dbb->dbb_permanent)
 #ifndef SUPERSERVER
 		, att_dsql_cache(*dbb->dbb_permanent)
 #endif
@@ -564,6 +565,7 @@ public:
 	Firebird::string att_network_protocol;	// Network protocol used by client for connection
 	Firebird::string att_remote_address;	// Protocol-specific addess of remote client
 	SLONG att_remote_pid;					// Process id of remote client
+	Firebird::PathName att_remote_process;	// Process name of remote client
 #ifndef SUPERSERVER
 	Lock*		att_temp_pg_lock;			// temporary pagespace ID lock
 	Firebird::GenericMap<Firebird::Pair<Firebird::Left<

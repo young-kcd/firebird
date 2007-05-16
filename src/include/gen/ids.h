@@ -336,6 +336,7 @@ enum fids {
 	f_mon_att_charset_id,
 	f_mon_att_timestamp,
 	f_mon_att_gc,
+	f_mon_att_remote_process,
 
 	f_mon_tra_id = 0,
 	f_mon_tra_att_id,

@@ -377,6 +377,7 @@ RELATION(nam_mon_attachments, rel_mon_attachments, ODS_11_1, rel_virtual)
 	FIELD(f_mon_att_charset_id, nam_mon_charset_id, fld_charset_id, 0, 0, 0, 0)
 	FIELD(f_mon_att_timestamp, nam_mon_timestamp, fld_time, 0, 0, 0, 0)
 	FIELD(f_mon_att_gc, nam_mon_gc, fld_flag, 0, 0, 0, 0)
+	FIELD(f_mon_att_remote_process, nam_mon_remote_process, fld_file_name, 0, 0, 0, 0)
 END_RELATION
 RELATION(nam_mon_transactions, rel_mon_transactions, ODS_11_1, rel_virtual)
 	FIELD(f_mon_tra_id, nam_mon_tra_id, fld_trans_id, 0, 0, 0, 0)

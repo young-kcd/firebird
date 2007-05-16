@@ -518,4 +518,32 @@ bool validateProductSuite (LPCSTR lpszSuiteToValidate)
 }
 
 #endif // WIN_NT
+
+// *******************************
+// g e t _ p r o c e s s _ n a m e
+// *******************************
+// Return the name of the current process
+
+Firebird::PathName get_process_name()
+{
+	char buffer[MAXPATHLEN];
+
+#if defined(WIN_NT)
+	const int len = GetModuleFileName(NULL, buffer, sizeof(buffer));
+#elif defined(HAVE__PROC_SELF_EXE)
+    const int len = readlink("/proc/self/exe", buffer, sizeof(buffer));
+#else
+	const int len = 0;
+#endif
+
+	if (len < 0)
+		buffer[0] = 0;
+	else if (len < sizeof(buffer))
+		buffer[len] = 0;
+	else
+		buffer[len - 1] = 0;
+
+	return buffer;
+}
+
 } // namespace fb_utils

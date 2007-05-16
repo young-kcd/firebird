@@ -672,6 +672,7 @@ const char* DatabaseSnapshot::checkNull(int rid, int fid, const char* source, si
 		switch (fid) {
 		case f_mon_att_remote_proto:
 		case f_mon_att_remote_addr:
+		case f_mon_att_remote_process:
 			return length ? source : NULL;
 		case f_mon_att_remote_pid:
 			return (*(SLONG*) source) ? source : NULL;
@@ -932,6 +933,8 @@ void DatabaseSnapshot::putAttachment(Attachment* attachment,
 						attachment->att_remote_address);
 	// remote process id
 	writer.insertInt(f_mon_att_remote_pid, attachment->att_remote_pid);
+	// remote process name
+	writer.insertPath(f_mon_att_remote_process, attachment->att_remote_process);
 	// charset
 	writer.insertInt(f_mon_att_charset_id, attachment->att_charset);
 	// timestamp
