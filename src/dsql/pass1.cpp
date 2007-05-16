@@ -8855,7 +8855,7 @@ static dsql_nod* pass1_update( dsql_req* request, dsql_nod* input, bool proc_fla
 			// Then we change his name to "OLD".
 			TEXT* save_alias = old_context->ctx_alias;
 			TEXT* save_internal_alias = old_context->ctx_internal_alias;
-			USHORT save_flags = old_context->ctx_flags;
+			const USHORT save_flags = old_context->ctx_flags;
 
 			old_context->ctx_alias = old_context->ctx_internal_alias =
 				MAKE_cstring(OLD_CONTEXT)->str_data;

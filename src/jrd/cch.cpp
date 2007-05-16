@@ -5045,7 +5045,7 @@ static SSHORT latch_bdb(
 		else {
 			/* Note that Firebird often 'hands-off' to the same page, for both
 			   shared and exlusive latches. */
-			/* Check is we own already an exclusive latch. */
+			/* Check if we own already an exclusive latch. */
 			for (i = 0; (i < BDB_max_shared) && (bdb->bdb_shared[i] != tdbb);
 				 i++);
 			if (i >= BDB_max_shared) {	/* we don't own a shared latch yet */
@@ -5266,7 +5266,7 @@ static SSHORT lock_buffer(
  *						give up and return -1.
  *	      <negative number>		=> Lock timeout interval in seconds.
  *
- * return: 0  => buffer locked, page is already in memroy.
+ * return: 0  => buffer locked, page is already in memory.
  *	   1  => buffer locked, page needs to be read from disk.
  *	   -1 => timeout on lock occurred, see input parameter 'wait'.
  *
