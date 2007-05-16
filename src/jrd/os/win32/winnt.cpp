@@ -85,7 +85,7 @@ static const DWORD g_dwExtraFlags = FILE_FLAG_OVERLAPPED |
 #else
 #ifdef SUPERSERVER
 static const DWORD g_dwShareFlags = FILE_SHARE_READ;	// no write sharing
-static const DWORD g_dwExtraFlags = FILE_FLAG_RANDOM_ACCESS;
+static const DWORD g_dwExtraFlags = FILE_FLAG_RANDOM_ACCESS | FILE_FLAG_NO_BUFFERING;
 #else
 static const DWORD g_dwShareFlags = FILE_SHARE_READ | FILE_SHARE_WRITE;
 static const DWORD g_dwExtraFlags = FILE_FLAG_RANDOM_ACCESS;
@@ -128,7 +128,7 @@ int PIO_add_file(Database* dbb, jrd_file* main_file, const Firebird::PathName& f
 }
 
 
-void PIO_close(jrd_file* main_file)
+void PIO_close(jrd_file* file)
 {
 /**************************************
  *
@@ -139,7 +139,7 @@ void PIO_close(jrd_file* main_file)
  * Functional description
  *
  **************************************/
-	for (jrd_file* file = main_file; file; file = file->fil_next)
+	while (file)
 	{
 		if (MaybeCloseFile(&file->fil_desc) ||
 			MaybeCloseFile(&file->fil_force_write_desc))
@@ -155,6 +155,10 @@ void PIO_close(jrd_file* main_file)
 			}
 #endif
 		}
+
+		jrd_file* temp = file;
+		file = file->fil_next;
+		delete temp;
 	}
 }
 
