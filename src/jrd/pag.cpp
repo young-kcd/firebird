@@ -862,11 +862,8 @@ PAG PAG_allocate(WIN * window)
 
 	page_inv_page* new_pip_page = (page_inv_page*) new_page;
 	new_pip_page->pip_header.pag_type = pag_pages;
-	// CVC: If some tips on web sites are true, this can be improved by
-	// a pointer to ULONG setting memory to 0xffffffff.
 	const UCHAR* end = (UCHAR *) new_pip_page + dbb->dbb_page_size;
-	for (bytes = new_pip_page->pip_bits; bytes < end;)
-		*bytes++ = 0xff;
+	memset(new_pip_page->pip_bits, 0xff, end - new_pip_page->pip_bits);
 
 	CCH_must_write(window);
 	CCH_RELEASE(tdbb, window);
