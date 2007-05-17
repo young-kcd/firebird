@@ -294,6 +294,7 @@ const Switches repairOptions[] = {
 	{"rpr_validate_db", putOption, 0, isc_spb_rpr_validate_db, 0},
 	{"rpr_full", putOption, 0, isc_spb_rpr_full, 0},
 	{"rpr_sweep_db", putOption, 0, isc_spb_rpr_sweep_db, 0},
+	{"rpr_list_limbo_trans", putOption, 0, isc_spb_rpr_list_limbo_trans, isc_info_svc_limbo_trans},
 	{0, 0, 0, 0, 0}
 };
 
@@ -376,6 +377,11 @@ void printString(const char*& p, int num)
 	{
 		printf ("<no data>\n");
 	}
+}
+
+void printMessage(int num)
+{
+	printf ("%s\n", getMessage(num).c_str());
 }
 
 void printNumeric(const char*& p, int num)
@@ -464,6 +470,73 @@ bool printInfo(const char* p, UserPrint& up)
 					break;
 				case isc_spb_num_db:
 					printNumeric(p, 17);
+					break;
+				default:
+					Firebird::status_exception::raise(isc_fbsvcmgr_info_err, isc_arg_number, 
+						static_cast<unsigned char>(p[-1]), 0);
+				}
+			}
+			p++;
+			break;
+
+		case isc_info_svc_limbo_trans:
+			while (*p != isc_info_flag_end) {
+				switch (*p++)
+				{
+				case isc_spb_tra_host_site:
+					printString(p, 36);
+					break;
+				case isc_spb_tra_state:
+					switch(*p++)
+					{
+					case isc_spb_tra_state_limbo:
+			            printMessage(38);
+						break;
+					case isc_spb_tra_state_commit:
+			            printMessage(39);
+						break;
+					case isc_spb_tra_state_rollback:
+			            printMessage(40);
+						break;
+					case isc_spb_tra_state_unknown:
+			            printMessage(41);
+						break;
+					default:
+						Firebird::status_exception::raise(isc_fbsvcmgr_info_err, isc_arg_number, 
+							static_cast<unsigned char>(p[-1]), 0);
+					}
+					break;
+				case isc_spb_tra_remote_site:
+					printString(p, 42);
+					break;
+				case isc_spb_tra_db_path:
+					printString(p, 43);
+					break;
+				case isc_spb_tra_advise:
+					switch(*p++)
+					{
+					case isc_spb_tra_advise_commit:
+			            printMessage(44);
+						break;
+					case isc_spb_tra_advise_rollback:
+			            printMessage(45);
+						break;
+					case isc_spb_tra_advise_unknown:
+			            printMessage(46);
+						break;
+					default:
+						Firebird::status_exception::raise(isc_fbsvcmgr_info_err, isc_arg_number, 
+							static_cast<unsigned char>(p[-1]), 0);
+					}
+					break;
+				case isc_spb_multi_tra_id:
+					printNumeric(p, 35);
+					break;
+				case isc_spb_single_tra_id:
+					printNumeric(p, 34);
+					break;
+				case isc_spb_tra_id:
+					printNumeric(p, 37);
 					break;
 				default:
 					Firebird::status_exception::raise(isc_fbsvcmgr_info_err, isc_arg_number, 

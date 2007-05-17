@@ -3202,6 +3202,19 @@ Analyzing database pages ...', NULL, NULL);
 ('', 'usage', 'gserv.cpp', NULL, 22, 31, NULL, '  (will list header info in database employee on local machine)', NULL, NULL);
 ('', 'usage', 'gserv.cpp', NULL, 22, 32, NULL, 'fbsvcmgr yourserver:service_mgr user sysdba password masterke info_server_version info_svr_db_info', NULL, NULL);
 ('', 'usage', 'gserv.cpp', NULL, 22, 33, NULL, '  (will show firebird version and databases usage on yourserver)', NULL, NULL);
+('', 'printInfo', 'gserv.cpp', NULL, 22, 34, NULL, 'Transaction @1 is in limbo', NULL, NULL);
+('', 'printInfo', 'gserv.cpp', NULL, 22, 35, NULL, 'Multidatabase transaction @1 is in limbo', NULL, NULL);
+('', 'printInfo', 'gserv.cpp', NULL, 22, 36, NULL, 'Host Site: @1', NULL, NULL);
+('', 'printInfo', 'gserv.cpp', NULL, 22, 37, NULL, 'Transaction @1', NULL, NULL);
+('', 'printInfo', 'gserv.cpp', NULL, 22, 38, NULL, 'has been prepared', NULL, NULL);
+('', 'printInfo', 'gserv.cpp', NULL, 22, 39, NULL, 'has been committed', NULL, NULL);
+('', 'printInfo', 'gserv.cpp', NULL, 22, 40, NULL, 'has been rolled back', NULL, NULL);
+('', 'printInfo', 'gserv.cpp', NULL, 22, 41, NULL, 'is not available', NULL, NULL);
+('', 'printInfo', 'gserv.cpp', NULL, 22, 42, NULL, 'Remote Site: @1', NULL, NULL);
+('', 'printInfo', 'gserv.cpp', NULL, 22, 43, NULL, 'Database Path: @1', NULL, NULL);
+('', 'printInfo', 'gserv.cpp', NULL, 22, 44, NULL, 'Automated recovery would commit this transaction', NULL, NULL);
+('', 'printInfo', 'gserv.cpp', NULL, 22, 45, NULL, 'Automated recovery would rollback this transaction', NULL, NULL);
+('', 'printInfo', 'gserv.cpp', NULL, 22, 46, NULL, 'No idea should it be commited or rolled back', NULL, NULL);
 stop
 
 COMMIT WORK;

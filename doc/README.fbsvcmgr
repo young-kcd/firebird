@@ -64,10 +64,11 @@ first for correct form.
 
 3. Everything concerning licensing was removed from interbase 6.0 and therefore not supported here. 
 Config file view/modification is not supported in firebird since 1.5 and therefore is not implemented 
-here. isc_info_svc_limbo_trans and appropriate information items never worked in interbase 6.0, do 
-not work now in firebird and therefore not supported by fbsvcmgr.
+here. 
 
-4. Two new items, not mentioned by Borland beta documentation, were added to firebird 2.1 and are 
+4. isc_spb_rpr_list_limbo_trans was forgotten in Borland beta documentation, but present in fbsvcmgr.
+
+5. Two new items, not mentioned by Borland beta documentation, were added to firebird 2.1 and are 
 supported by fbsvcmgr. One of them works only for windows, this is isc_spb_trusted_auth, which (type 
 as trusted_auth) forces use of windows trusted authentication by firebird. Another one is 
 availability to set (isc_spb_)dbname parameter in all security database related actions, it's an 
