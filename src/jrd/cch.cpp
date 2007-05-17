@@ -111,9 +111,6 @@ static BufferDesc* alloc_bdb(thread_db*, BufferControl*, UCHAR **);
 #ifndef PAGE_LATCHING
 static int blocking_ast_bdb(void*);
 #endif
-static void btc_flush(thread_db*, SLONG, const bool, ISC_STATUS*);
-static bool btc_insert_balance(BufferDesc**, bool, SSHORT);
-static bool btc_remove_balance(BufferDesc**, bool, SSHORT);
 static void cache_bugcheck(int);
 #ifdef CACHE_READER
 static THREAD_ENTRY_DECLARE cache_reader(THREAD_ENTRY_PARAM);
@@ -149,6 +146,38 @@ static bool write_page(thread_db*, BufferDesc*, const bool, ISC_STATUS*, const b
 static void set_diff_page(thread_db*, BufferDesc*);
 static void clear_page_dirty_flag(thread_db*, BufferDesc*);
 
+#ifdef DIRTY_LIST
+
+inline void insertDirty(BufferControl* bcb, BufferDesc* bdb)
+{
+	if (bdb->bdb_dirty.que_forward == &bdb->bdb_dirty) 
+	{
+		bcb->bcb_dirty_count++;
+		QUE_INSERT(bcb->bcb_dirty, bdb->bdb_dirty);
+	}
+}
+
+inline void removeDirty(BufferControl* bcb, BufferDesc* bdb)
+{
+	if (bdb->bdb_dirty.que_forward != &bdb->bdb_dirty) 
+	{
+		fb_assert(bcb->bcb_dirty_count > 0);
+
+		bcb->bcb_dirty_count--;
+		QUE_DELETE(bdb->bdb_dirty);
+		QUE_INIT(bdb->bdb_dirty);
+	}
+}
+
+static void flushDirty(thread_db* tdbb, SLONG transaction_mask, const bool sys_only, ISC_STATUS* status);
+static void flushAll(thread_db* tdbb, USHORT flush_flag);
+
+#endif // DIRTY_LIST
+
+#ifdef DIRTY_TREE
+
+static void btc_flush(thread_db*, SLONG, const bool, ISC_STATUS*);
+
 // comment this macro out to revert back to the old tree
 #define BALANCED_DIRTY_PAGE_TREE
 
@@ -157,6 +186,9 @@ static void btc_insert_balanced(Database*, BufferDesc*);
 static void btc_remove_balanced(BufferDesc*);
 #define btc_insert btc_insert_balanced
 #define btc_remove btc_remove_balanced
+
+static bool btc_insert_balance(BufferDesc**, bool, SSHORT);
+static bool btc_remove_balance(BufferDesc**, bool, SSHORT);
 #else
 static void btc_insert_unbalanced(Database*, BufferDesc*);
 static void btc_remove_unbalanced(BufferDesc*);
@@ -165,6 +197,8 @@ static void btc_remove_unbalanced(BufferDesc*);
 #endif
 
 const int BTREE_STACK_SIZE = 40;
+
+#endif // DIRTY_TREE
 
 const SLONG MIN_BUFFER_SEGMENT = 65536;
 
@@ -1125,8 +1159,13 @@ void CCH_forget_page(thread_db* tdbb, WIN * window)
 	bdb->bdb_flags = 0;
 	BufferControl* bcb = dbb->dbb_bcb;
 
+#ifdef DIRTY_LIST
+	removeDirty(bcb, bdb);
+#endif
+#ifdef DIRTY_TREE
 	if (bdb->bdb_parent || (bdb == bcb->bcb_btree))
 		btc_remove(bdb);
+#endif
 
 	QUE_DELETE(bdb->bdb_in_use);
 	QUE_DELETE(bdb->bdb_que);
@@ -1314,9 +1353,19 @@ void CCH_flush(thread_db* tdbb, USHORT flush_flag, SLONG tra_number)
 		}
 		else
 #endif
+
+#ifdef DIRTY_LIST
+			flushDirty(tdbb, transaction_mask, sys_only, status);
+#endif
+#ifdef DIRTY_TREE
 			btc_flush(tdbb, transaction_mask, sys_only, status);
+#endif
 	}
 	else {
+#ifdef DIRTY_LIST
+		flushAll(tdbb, flush_flag);
+#endif
+#ifdef DIRTY_TREE
 		const bool all_flag = (flush_flag & FLUSH_ALL) != 0;
 		const bool release_flag = (flush_flag & FLUSH_RLSE) != 0;
 		const bool write_thru = release_flag;
@@ -1333,10 +1382,10 @@ void CCH_flush(thread_db* tdbb, USHORT flush_flag, SLONG tra_number)
 			if (latch == LATCH_exclusive
 				&& latch_bdb(tdbb, latch, bdb, bdb->bdb_page, 1) == -1)
 			{
-				cache_bugcheck(302);	/* msg 302 unexpected page change */
+				cache_bugcheck(302);	// msg 302 unexpected page change 
 			}
 			if (latch == LATCH_exclusive && bdb->bdb_use_count > 1)
-				cache_bugcheck(210);	/* msg 210 page in use during flush */
+				cache_bugcheck(210);	// msg 210 page in use during flush 
 #ifdef SUPERSERVER
 			if (bdb->bdb_flags & BDB_db_dirty) {
 				if (all_flag
@@ -1366,6 +1415,7 @@ void CCH_flush(thread_db* tdbb, USHORT flush_flag, SLONG tra_number)
 			if (latch == LATCH_exclusive)
 				release_bdb(tdbb, bdb, false, false, false);
 		}
+#endif // DIRTY_TREE
 	}
 
 	// 
@@ -1707,6 +1757,10 @@ void CCH_init(thread_db* tdbb, ULONG number)
 
 	dbb->dbb_bcb = bcb;
 	QUE_INIT(bcb->bcb_in_use);
+#ifdef DIRTY_LIST
+	QUE_INIT(bcb->bcb_dirty);
+	bcb->bcb_dirty_count = 0;
+#endif
 	QUE_INIT(bcb->bcb_empty);
 	QUE_INIT(bcb->bcb_free_lwt);
 
@@ -1841,9 +1895,14 @@ void CCH_mark(thread_db* tdbb, WIN * window, USHORT mark_system, USHORT must_wri
 	if (!(tdbb->tdbb_flags & TDBB_sweeper) ||
 		bdb->bdb_flags & BDB_system_dirty)
 	{
+#ifdef DIRTY_LIST
+		insertDirty(bcb, bdb);
+#endif
+#ifdef DIRTY_TREE
 		if (!bdb->bdb_parent && bdb != bcb->bcb_btree) {
 			btc_insert(dbb, bdb);
 		}
+#endif
 	}
 
 #ifdef SUPERSERVER
@@ -2161,7 +2220,6 @@ void CCH_release(thread_db* tdbb, WIN * window, bool release_tail)
 					bdb->bdb_backup_lock_owner, database_lock_handle);
 				bdb->bdb_backup_lock_owner = database_lock_handle;
 			}
-
 			release_bdb(tdbb, bdb, false, false, true);
 		}
 
@@ -2178,7 +2236,12 @@ void CCH_release(thread_db* tdbb, WIN * window, bool release_tail)
 								tdbb->tdbb_status_vector,
 								true))
 			{
+#ifdef DIRTY_LIST
+				insertDirty(dbb->dbb_bcb, bdb);
+#endif
+#ifdef DIRTY_TREE
 				btc_insert(dbb, bdb);	/* Don't lose track of must_write */
+#endif
 				CCH_unwind(tdbb, true);
 			}
 		}
@@ -2231,6 +2294,13 @@ void CCH_release(thread_db* tdbb, WIN * window, bool release_tail)
 #ifdef CACHE_WRITER
 				if (bdb->bdb_flags & (BDB_dirty | BDB_db_dirty))
 				{
+#ifdef DIRTY_LIST
+					if (bdb->bdb_dirty.que_forward != &bdb->bdb_dirty) 
+					{
+						QUE_DELETE(bdb->bdb_dirty);
+						QUE_APPEND(bcb->bcb_dirty, bdb->bdb_dirty);
+					}
+#endif
 					bcb->bcb_flags |= BCB_free_pending;
 					if (bcb->bcb_flags & BCB_cache_writer &&
 						!(bcb->bcb_flags & BCB_writer_active))
@@ -2676,6 +2746,9 @@ static BufferDesc* alloc_bdb(thread_db* tdbb, BufferControl* bcb, UCHAR** memory
 	QUE_INIT(bdb->bdb_lower);
 	QUE_INIT(bdb->bdb_waiters);
 	QUE_INSERT(bcb->bcb_empty, bdb->bdb_que);
+#ifdef DIRTY_LIST
+	QUE_INIT(bdb->bdb_dirty);
+#endif
 
 	return bdb;
 }
@@ -2750,6 +2823,216 @@ static int blocking_ast_bdb(void* ast_object)
 }
 #endif
 
+#ifdef DIRTY_LIST
+
+// Used in qsort below
+extern "C" 
+int cmpBdbs(const void* a, const void* b)
+{
+	const BufferDesc* bdbA = *(BufferDesc**) a;
+	const BufferDesc* bdbB = *(BufferDesc**) b;
+	if (bdbA->bdb_page > bdbB->bdb_page)
+		return 1;
+	else if (bdbA->bdb_page < bdbB->bdb_page)
+		return -1;
+	else
+		return 0;
+}
+
+
+// Remove cleared precedence blocks from high precedence queue 
+static void purgePrecedence(BufferControl* bcb, BufferDesc* bdb)
+{
+	QUE que_prec = bdb->bdb_higher.que_forward, next_prec;
+	for (; que_prec != &bdb->bdb_higher; que_prec = next_prec)
+	{
+		next_prec = que_prec->que_forward;
+
+		Precedence* precedence = BLOCK(que_prec, Precedence*, pre_higher);
+		if (precedence->pre_flags & PRE_cleared) 
+		{
+			QUE_DELETE(precedence->pre_higher);
+			QUE_DELETE(precedence->pre_lower);
+			precedence->pre_hi = (BufferDesc*) bcb->bcb_free;
+			bcb->bcb_free = precedence;
+		}
+	}
+}
+
+// Write pages modified by given or system transaction to disk. First sort all
+// corresponding pages by their numbers to make writes physically ordered and 
+// thus faster. At every iteration of while loop write pages which have no high
+// precedence pages to ensure order preserved. If after some iteration there are 
+// no such pages (i.e. all of not written yet pages have high precedence pages) 
+// then write them all at last iteration (of course write_buffer will also check 
+// for precedence before write)
+static void flushDirty(thread_db* tdbb,
+					  SLONG transaction_mask,
+					  const bool sys_only, ISC_STATUS* status)
+{
+	SET_TDBB(tdbb);
+	Database* dbb = tdbb->tdbb_database;
+	BufferControl* bcb = dbb->dbb_bcb;
+	Firebird::HalfStaticArray<BufferDesc*, 1024> flush;
+
+	QUE que_inst = bcb->bcb_dirty.que_forward, next;
+	for (; que_inst != &bcb->bcb_dirty; que_inst = next)
+	{
+		next = que_inst->que_forward;
+		BufferDesc* bdb = BLOCK(que_inst, BufferDesc*, bdb_dirty);
+
+		if (!(bdb->bdb_flags & BDB_dirty)) {
+			removeDirty(bcb, bdb);
+			continue;
+		}
+
+		if ((transaction_mask & bdb->bdb_transactions) ||
+			(bdb->bdb_flags & BDB_system_dirty) ||
+			(!transaction_mask && !sys_only) || (!bdb->bdb_transactions))
+		{
+			flush.add(bdb);
+		}
+	}
+	
+	qsort(flush.begin(), flush.getCount(), sizeof(BufferDesc*), cmpBdbs);
+	bool writeAll = false;
+	while (flush.getCount())
+	{
+		BufferDesc **ptr = flush.begin();
+		const size_t cnt = flush.getCount();
+		while (ptr < flush.end())
+		{
+			BufferDesc* bdb = *ptr;
+
+			if (!writeAll) {
+				purgePrecedence(bcb, bdb);
+			}
+			if (writeAll || QUE_EMPTY(bdb->bdb_higher))
+			{
+				const PageNumber page = bdb->bdb_page;
+#ifndef SUPERSERVER
+				if (bdb->bdb_use_count) {
+					cache_bugcheck(210);	// msg 210 page in use during flush 
+				}
+#endif
+				if (!write_buffer(tdbb, bdb, page, false, status, true)) {
+					CCH_unwind(tdbb, true);
+				}
+
+				// re-post the lock only if it was really written 
+				if ((bdb->bdb_ast_flags & BDB_blocking) &&
+					!(bdb->bdb_flags & BDB_dirty))
+				{
+					PAGE_LOCK_RE_POST(bdb->bdb_lock);
+				}
+
+				flush.remove(ptr);
+			}
+			else
+				ptr++;
+		}
+		if (cnt == flush.getCount())
+			writeAll = true;
+	}
+}
+
+
+// Write pages modified by garbage collector or all dirty pages or release page
+// locks - depending of flush_flag. See also comments in flushDirty
+static void flushAll(thread_db* tdbb, USHORT flush_flag)
+{
+	SET_TDBB(tdbb);
+	Database* dbb = tdbb->tdbb_database;
+	BufferControl* bcb = dbb->dbb_bcb;
+	ISC_STATUS* status = tdbb->tdbb_status_vector;
+	Firebird::HalfStaticArray<BufferDesc*, 1024> flush(bcb->bcb_dirty_count);
+
+	const bool all_flag = (flush_flag & FLUSH_ALL) != 0;
+	const bool release_flag = (flush_flag & FLUSH_RLSE) != 0;
+	const bool write_thru = release_flag;
+	const bool sweep_flag = (flush_flag & FLUSH_SWEEP) != 0;
+	LATCH latch = (release_flag) ? LATCH_exclusive : LATCH_none;
+
+	for (ULONG i = 0; (bcb = dbb->dbb_bcb) && i < bcb->bcb_count; i++) 
+	{
+		BufferDesc* bdb = bcb->bcb_rpt[i].bcb_bdb;
+
+#ifdef SUPERSERVER
+		if (bdb->bdb_flags & BDB_db_dirty) 
+		{
+			// pages modified by sweep\garbage collector are not in dirty list
+			const bool dirty_list = (bdb->bdb_dirty.que_forward != &bdb->bdb_dirty);
+
+			if (all_flag || (sweep_flag && !dirty_list)) {
+				flush.add(bdb);
+			}
+		}
+#else
+		if (bdb->bdb_flags & BDB_dirty) {
+			flush.add(bdb);
+		}
+#endif
+		else if (release_flag)
+		{
+			if (latch_bdb(tdbb, latch, bdb, bdb->bdb_page, 1) == -1) {
+				cache_bugcheck(302);	// msg 302 unexpected page change
+			}
+			if (bdb->bdb_use_count > 1) {
+				cache_bugcheck(210);	// msg 210 page in use during flush
+			}
+			PAGE_LOCK_RELEASE(bdb->bdb_lock);
+			release_bdb(tdbb, bdb, false, false, false);
+		}
+	}
+
+	qsort(flush.begin(), flush.getCount(), sizeof(BufferDesc*), cmpBdbs);
+	bool writeAll = false;
+	while (flush.getCount())
+	{
+		BufferDesc **ptr = flush.begin();
+		const size_t cnt = flush.getCount();
+		while (ptr < flush.end())
+		{
+			BufferDesc* bdb = *ptr;
+
+			if (!writeAll) {
+				purgePrecedence(bcb, bdb);
+			}
+			if (writeAll || QUE_EMPTY(bdb->bdb_higher))
+			{
+				if (release_flag)
+				{
+					if (latch_bdb(tdbb, latch, bdb, bdb->bdb_page, 1) == -1) {
+						cache_bugcheck(302);	// msg 302 unexpected page change 
+					}
+					if (bdb->bdb_use_count > 1) {
+						cache_bugcheck(210);	// msg 210 page in use during flush 
+					}
+				}
+				if (bdb->bdb_flags & (BDB_db_dirty | BDB_dirty)) 
+				{
+					if (!write_buffer(tdbb, bdb, bdb->bdb_page, false, status, true))
+					{
+						CCH_unwind(tdbb, true);
+					}
+				}
+				if (release_flag) 
+				{
+					PAGE_LOCK_RELEASE(bdb->bdb_lock);
+					release_bdb(tdbb, bdb, false, false, false);
+				}
+				flush.remove(ptr);
+			}
+			else
+				ptr++;
+		}
+		if (cnt == flush.getCount())
+			writeAll = true;
+	}
+}
+#endif // DIRTY_LIST
+
+#ifdef DIRTY_TREE
 
 static void btc_flush(thread_db* tdbb,
 					  SLONG transaction_mask,
@@ -3209,7 +3492,7 @@ static void btc_insert_unbalanced(Database* dbb, BufferDesc* bdb)
 /* insert the page sorted by page number;
    do this iteratively to minimize call overhead */
 
-	const SLONG page = bdb->bdb_page;
+	const PageNumber page = bdb->bdb_page;
 
 	while (true) {
 		if (page == node->bdb_page) {
@@ -3770,6 +4053,7 @@ static void btc_remove_unbalanced(BufferDesc* bdb)
 }
 #endif //!BALANCED_DIRTY_PAGE_TREE
 
+#endif // DIRTY_TREE
 
 static void cache_bugcheck(int number)
 {
@@ -4260,6 +4544,12 @@ static void check_precedence(thread_db* tdbb, WIN * window, PageNumber page)
 	precedence->pre_flags = 0;
 	QUE_INSERT(low->bdb_higher, precedence->pre_higher);
 	QUE_INSERT(high->bdb_lower, precedence->pre_lower);
+
+#ifdef DIRTY_LIST
+	// explicitly include high page in system transaction flush process
+	if (low->bdb_flags & BDB_system_dirty && high->bdb_flags & BDB_dirty)
+		high->bdb_flags |= BDB_system_dirty;
+#endif
 //	PRE_MUTEX_RELEASE;
 }
 
@@ -4531,7 +4821,14 @@ static void expand_buffers(thread_db* tdbb, ULONG number)
 
 /* point at the dirty page binary tree */
 
+#ifdef DIRTY_LIST
+	new_block->bcb_dirty_count = old->bcb_dirty_count;
+	QUE_INSERT(old->bcb_dirty, new_block->bcb_dirty);
+	QUE_DELETE(old->bcb_dirty);
+#endif
+#ifdef DIRTY_TREE
 	new_block->bcb_btree = old->bcb_btree;
+#endif
 
 /* point at the free precedence blocks */
 
@@ -4871,9 +5168,14 @@ static BufferDesc* get_buffer(thread_db* tdbb, const PageNumber page, LATCH latc
 			/* If the buffer is still in the dirty tree, remove it.
 			   In any case, release any lock it may have. */
 
+#ifdef DIRTY_LIST
+			removeDirty(bcb, bdb);
+#endif
+#ifdef DIRTY_TREE
 			if (bdb->bdb_parent || (bdb == bcb->bcb_btree)) {
 				btc_remove(bdb);
 			}
+#endif
 
 			/* if the page has an expanded index buffer, release it */
 
@@ -6066,7 +6368,6 @@ static void unmark(thread_db* tdbb, WIN * window)
 			tdbb->tdbb_database->dbb_backup_manager->change_dirty_page_owner(tdbb, 
 				bdb->bdb_backup_lock_owner, database_lock_handle);
 			bdb->bdb_backup_lock_owner = database_lock_handle;
-						
 			release_bdb(tdbb, bdb, false, false, true);
 		}
 	}
@@ -6432,11 +6733,18 @@ static bool write_page(
 		   clean regardless of which transactions have modified it */
 
 		bdb->bdb_transactions = bdb->bdb_mark_transaction = 0;
+#ifdef DIRTY_LIST
+		if (!(dbb->dbb_bcb->bcb_flags & BCB_keep_pages)) {
+			removeDirty(dbb->dbb_bcb, bdb);
+		}
+#endif
+#ifdef DIRTY_TREE
 		if (!(dbb->dbb_bcb->bcb_flags & BCB_keep_pages) &&
 			(bdb->bdb_parent || bdb == dbb->dbb_bcb->bcb_btree))
 		{
 			btc_remove(bdb);
 		}
+#endif
 
 		fb_assert(bdb->bdb_flags & BDB_dirty ? 
 			bdb->bdb_backup_lock_owner == BackupManager::database_lock_handle(tdbb) : 
