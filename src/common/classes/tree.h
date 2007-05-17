@@ -345,7 +345,7 @@ public:
 public:
 	class Accessor {
 	public:
-		Accessor(BePlusTree* _tree) : curr(NULL), tree(_tree), curPos(0) {}
+		Accessor(BePlusTree* _tree) : curr(NULL), curPos(0), tree(_tree) {}
 	
 		bool add(const Value& item) {
 			return tree->add(item, this);
