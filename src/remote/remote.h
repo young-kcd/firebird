@@ -36,6 +36,7 @@
 #include "../auth/trusted/AuthSspi.h"
 #include "../common/classes/fb_string.h"
 #include "../common/classes/ClumpletWriter.h"
+#include "../common/StatusHolder.h"
 
 /* Include some apollo include files for tasking */
 
@@ -284,7 +285,7 @@ typedef struct rsr
 	rem_fmt*		rsr_format;				/* Format of current message */
 	message*		rsr_message;			/* Next message to process */
 	message*		rsr_buffer;				/* Next buffer to use */
-	ISC_STATUS_ARRAY	rsr_status_vector;	/* saved status for buffered errors */
+	Firebird::StatusHolder* rsr_status;		/* saved status for buffered errors */
 	USHORT			rsr_id;
 	USHORT			rsr_flags;
 	USHORT			rsr_fmt_length;
@@ -304,6 +305,43 @@ const USHORT RSR_stream_err	= 16;		/* There is an error pending in the batched r
 const USHORT RSR_lazy		= 32;		/* To be allocated at the first reference */
 const USHORT RSR_defer_execute	= 64;		// op_execute can be deferred
 
+// will be methods of remote statement class
+inline void stmt_save_exception(RSR statement, const ISC_STATUS* status, bool overwrite)
+{
+	if (!statement->rsr_status) {
+		statement->rsr_status = new Firebird::StatusHolder();
+	}
+	if (overwrite || !statement->rsr_status->getError()) {
+		statement->rsr_status->save(status);
+	}
+}
+
+inline void stmt_clear_exception(RSR statement)
+{
+	if (statement->rsr_status)
+		statement->rsr_status->clear();
+}
+
+inline bool stmt_have_exception(RSR statement)
+{
+	return (statement->rsr_status &&
+		statement->rsr_status->getError());
+}
+
+inline void stmt_raise_exception(RSR statement)
+{
+	if (statement->rsr_status)
+		statement->rsr_status->raise();
+}
+
+inline void stmt_release_exception(RSR statement)
+{
+	if (statement->rsr_status) 
+	{
+		delete statement->rsr_status;
+		statement->rsr_status = NULL;
+	}
+}
 
 enum blk_t
 {

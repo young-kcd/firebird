@@ -231,6 +231,9 @@ inline bool defer_packet(rem_port* port, PACKET* packet, ISC_STATUS* status, boo
 		return false;
 
 	*packet = p.packet;
+
+	memset(p.packet.p_resp.p_resp_strings, 0, 
+		sizeof(p.packet.p_resp.p_resp_strings));
 	port->port_deferred_packets->add(p);
 	return true;
 }
@@ -1443,6 +1446,7 @@ ISC_STATUS GDS_DSQL_EXECUTE2(ISC_STATUS*	user_status,
 		message->msg_address = in_msg;
 		statement->rsr_flags &= ~RSR_fetched;
 		statement->rsr_format = statement->rsr_bind_format;
+		stmt_clear_exception(statement);
 
 		/* set up the packet for the other guy... */
 
@@ -1677,6 +1681,8 @@ ISC_STATUS GDS_DSQL_EXECUTE_IMMED2(ISC_STATUS* user_status,
 
 		message->msg_address = in_msg;
 
+		stmt_clear_exception(statement);
+
 		/* set up the packet for the other guy... */
 
 		PACKET* packet = &rdb->rdb_packet;
@@ -1783,14 +1789,16 @@ ISC_STATUS GDS_DSQL_FETCH(ISC_STATUS* user_status,
 			return unsupported(user_status);
 		}
 
+		stmt_raise_exception(statement);
+
 		/* On first fetch, clear the end-of-stream flag & reset the message buffers */
 
 		if (!(statement->rsr_flags & RSR_fetched))
 		{
 			statement->rsr_flags &= ~(RSR_eof | RSR_stream_err);
 			statement->rsr_rows_pending = 0;
-			memset(statement->rsr_status_vector, 0,
-				   sizeof(statement->rsr_status_vector));
+			stmt_clear_exception(statement);
+
 			REM_MSG message = statement->rsr_message;
 			if (message)
 			{
@@ -1877,7 +1885,7 @@ ISC_STATUS GDS_DSQL_FETCH(ISC_STATUS* user_status,
 				   /* We've reached eof or there was an error */
 				   !(statement->rsr_flags & (RSR_eof | RSR_stream_err)) &&
 				   /* No error pending */
-				   (!statement->rsr_status_vector[1])))
+				   (!stmt_have_exception(statement) )))
 		{
 			/* set up the packet for the other guy... */
 
@@ -1933,10 +1941,10 @@ ISC_STATUS GDS_DSQL_FETCH(ISC_STATUS* user_status,
 		/* We've either got data, or some is on the way, or we have an error, or we have EOF */
 
 		fb_assert(statement->rsr_msgs_waiting || (statement->rsr_rows_pending > 0)
-			   || statement->rsr_status_vector[1]
+			   || stmt_have_exception(statement)
 			   || statement->rsr_flags & (RSR_eof));
 
-		while (!(statement->rsr_status_vector[1])	/* received a database error */
+		while (!stmt_have_exception(statement)			/* received a database error */
 			   &&!(statement->rsr_flags & (RSR_eof))	/* reached end of cursor */
 			   &&!(statement->rsr_msgs_waiting >= 2)	/* Have looked ahead for end of batch */
 			   &&!(statement->rsr_rows_pending == 0))
@@ -1970,10 +1978,11 @@ ISC_STATUS GDS_DSQL_FETCH(ISC_STATUS* user_status,
 
 				statement->rsr_flags &= ~RSR_stream_err;
 
-				memcpy(user_status, statement->rsr_status_vector,
-					   sizeof(statement->rsr_status_vector));
-				memset(statement->rsr_status_vector, 0,
-					   sizeof(statement->rsr_status_vector));
+				if (statement->rsr_status) {
+					memcpy(user_status, statement->rsr_status->value(), 
+						sizeof(ISC_STATUS_ARRAY));
+					// don't clear rsr_status as it hold strings
+				}
 
 				return error(user_status);
 			}
@@ -2405,6 +2414,8 @@ ISC_STATUS GDS_DSQL_SET_CURSOR(ISC_STATUS* user_status,
 
 	try
 	{
+		stmt_raise_exception(statement);
+
 		/* make sure the protocol supports it */
 
 		if (rdb->rdb_port->port_protocol < PROTOCOL_VERSION7) {
@@ -2456,6 +2467,7 @@ ISC_STATUS GDS_DSQL_SET_CURSOR(ISC_STATUS* user_status,
 		if (!receive_response(rdb, packet)) {
 			return error(user_status);
 		}
+		stmt_raise_exception(statement);
 	}
 	catch (const Firebird::Exception& ex)
 	{
@@ -2498,6 +2510,8 @@ ISC_STATUS GDS_DSQL_SQL_INFO(ISC_STATUS* user_status,
 
 	try
 	{
+		stmt_raise_exception(statement);
+
 		/* make sure the protocol supports it */
 
 		if (rdb->rdb_port->port_protocol < PROTOCOL_VERSION7) {
@@ -2505,7 +2519,9 @@ ISC_STATUS GDS_DSQL_SQL_INFO(ISC_STATUS* user_status,
 		}
 
 		status = info(user_status, rdb, op_info_sql, statement->rsr_id, 0,
-					  item_length, items, 0, 0, buffer_length, buffer);
+					item_length, items, 0, 0, buffer_length, buffer);
+
+		stmt_raise_exception(statement);
 	}
 	catch (const Firebird::Exception& ex)
 	{
@@ -5085,9 +5101,8 @@ static bool batch_dsql_fetch(trdb*	tdrdb,
 
 			/* save the status vector in a safe place */
 
-			if (!statement->rsr_status_vector[1])
-				memcpy(statement->rsr_status_vector, tmp_status,
-					   sizeof(statement->rsr_status_vector));
+			stmt_save_exception(statement, tmp_status, false);
+
 			statement->rsr_rows_pending = 0;
 			--statement->rsr_batch_count;
 			dequeue_receive(port);
@@ -6363,27 +6378,42 @@ static bool receive_packet_noqueue(rem_port* port,
 
 	// Receive responses for all deferred packets that were already sent
 
+	ISC_STATUS_ARRAY tmp_status;
+	memset(tmp_status, 0, sizeof(tmp_status));
+
 	RDB rdb = port->port_context;
+	ISC_STATUS* save_status = rdb->rdb_status_vector;
 	while (port->port_deferred_packets->getCount())
 	{
 		rem_que_packet* p = port->port_deferred_packets->begin();
-		p->packet.p_resp.p_resp_status_vector = rdb->rdb_status_vector;
-		const bool bCheckResponse = (p->packet.p_operation == op_execute);
-
 		if (!p->sent)
 			break;
+
+		p->packet.p_resp.p_resp_status_vector = rdb->rdb_status_vector = tmp_status;
+		const bool bCheckResponse = (p->packet.p_operation == op_execute);
+		const OBJCT stmt_id = 
+			bCheckResponse ? p->packet.p_sqldata.p_sqldata_statement : 0;
+
 		if (!port->receive(&p->packet))
 			return false;
 
 		if (bCheckResponse) 
 		{
-			if (!check_response(rdb, &p->packet))
-				return false;
-		}
+			if (!check_response(rdb, &p->packet)) 
+			{
+				// save error within the corresponding statement
+				RSR statement = (RSR) port->port_objects[stmt_id];
+				CHECK_HANDLE(statement, type_rsr, isc_bad_req_handle);
 
+				stmt_save_exception(statement, 
+					p->packet.p_resp.p_resp_status_vector, false);
+			}
+		}
+		REMOTE_free_packet(port, &p->packet);
 		port->port_deferred_packets->remove(p);
 	}
 
+	rdb->rdb_status_vector = save_status;
 	return (port->receive(packet));
 }
 
@@ -6645,6 +6675,7 @@ static void release_statement( RSR* statement)
 	if ((*statement)->rsr_select_format) {
 		ALLR_release((*statement)->rsr_select_format);
 	}
+	stmt_release_exception(*statement);
 
 	REMOTE_release_messages((*statement)->rsr_message);
 	ALLR_release((*statement));

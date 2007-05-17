@@ -2243,8 +2243,7 @@ ISC_STATUS rem_port::fetch(P_SQLDATA * sqldata, PACKET* sendL)
 
 	if (!(statement->rsr_flags & RSR_fetched)) {
 		statement->rsr_flags &= ~(RSR_eof | RSR_stream_err);
-		memset(statement->rsr_status_vector, 0,
-			   sizeof(statement->rsr_status_vector));
+		stmt_clear_exception(statement);
 		REM_MSG message = statement->rsr_message;
 		if (message != NULL) {
 			statement->rsr_buffer = message;
@@ -2283,9 +2282,10 @@ ISC_STATUS rem_port::fetch(P_SQLDATA * sqldata, PACKET* sendL)
 		if ((statement->rsr_flags & RSR_stream_err)
 			&& !statement->rsr_msgs_waiting)
 		{
+			fb_assert(statement->rsr_status);
 			statement->rsr_flags &= ~RSR_stream_err;
 			return this->send_response(sendL, 0, 0,
-								 statement->rsr_status_vector,
+								 statement->rsr_status->value(),
 								 false);
 		}
 
@@ -2400,8 +2400,7 @@ ISC_STATUS rem_port::fetch(P_SQLDATA * sqldata, PACKET* sendL)
 				/* If already have an error queued, don't overwrite it */
 				if (!(statement->rsr_flags & RSR_stream_err)) {
 					statement->rsr_flags |= RSR_stream_err;
-					memcpy(statement->rsr_status_vector, status_vector,
-						   sizeof(statement->rsr_status_vector));
+					stmt_save_exception(statement, status_vector, true);
 				}
 			}
 			if (s == 100)
@@ -4347,7 +4346,10 @@ static void release_statement( RSR * statement)
 		ALLR_release((*statement)->rsr_select_format);
 	if ((*statement)->rsr_bind_format)
 		ALLR_release((*statement)->rsr_bind_format);
+
+	stmt_release_exception(*statement);
 	REMOTE_release_messages((*statement)->rsr_message);
+
 	ALLR_release((*statement));
 	*statement = NULL;
 }
