@@ -288,6 +288,10 @@
 				RelativePath="..\..\..\src\common\fb_exception.cpp"
 				>
 			</File>
+			<File
+				RelativePath="..\..\..\src\common\StatusHolder.cpp"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="CONFIG files"
@@ -435,6 +439,10 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\common\classes\SafeArg.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\common\StatusHolder.h"
 				>
 			</File>
 			<File
