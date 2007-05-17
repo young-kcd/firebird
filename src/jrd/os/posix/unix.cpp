@@ -191,16 +191,18 @@ void PIO_close(jrd_file* main_file)
  *
  **************************************/
 
-	for (jrd_file* file = main_file; file; file = file->fil_next) {
-		if (file->fil_desc == -1)
-			continue;			/* This really should be an error */
-		if (file->fil_desc) {
+	while (file) {
+		if (file->fil_desc && file->fil_desc != -1) {
 			close(file->fil_desc);
 			file->fil_desc = -1;
 #ifndef PREAD_PWRITE
 			THD_IO_MUTEX_DESTROY(file->fil_mutex);
 #endif
 		}
+
+		jrd_file* temp = file;
+		file = file->fil_next;
+		delete temp;
 	}
 }
 

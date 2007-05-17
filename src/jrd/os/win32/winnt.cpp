@@ -129,7 +129,7 @@ int PIO_add_file(Database* dbb, jrd_file* main_file, const Firebird::PathName& f
 }
 
 
-void PIO_close(jrd_file* main_file)
+void PIO_close(jrd_file* file)
 {
 /**************************************
  *
@@ -140,7 +140,7 @@ void PIO_close(jrd_file* main_file)
  * Functional description
  *
  **************************************/
-	for (jrd_file* file = main_file; file; file = file->fil_next)
+	while (file)
 	{
 		if (MaybeCloseFile(&file->fil_desc) ||
 			MaybeCloseFile(&file->fil_force_write_desc))
@@ -156,6 +156,10 @@ void PIO_close(jrd_file* main_file)
 			}
 #endif
 		}
+
+		jrd_file* temp = file;
+		file = file->fil_next;
+		delete temp;
 	}
 }
 
