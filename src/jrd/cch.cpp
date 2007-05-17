@@ -1034,6 +1034,9 @@ void CCH_fetch_page(
 		NBAK_TRACE(("Reading page %d, state=%d, diff page=%d from DIFFERENCE", 
 			bdb->bdb_page, bak_state, diff_page));
 		if (!dbb->dbb_backup_manager->read_difference(tdbb, diff_page, page)) {
+#ifdef SUPERSERVER
+			THREAD_ENTER();
+#endif
 			PAGE_LOCK_RELEASE(bdb->bdb_lock);
 			if (database_locked) {
 				dbb->dbb_backup_manager->unlock_shared_database(tdbb);
@@ -1084,6 +1087,10 @@ void CCH_fetch_page(
 		}
 	}
 	
+#ifdef SUPERSERVER
+	THREAD_ENTER();
+#endif
+
 	if (database_locked) {
 		dbb->dbb_backup_manager->unlock_shared_database(tdbb);
 		database_locked = false;
@@ -1095,9 +1102,6 @@ void CCH_fetch_page(
 		&& ((page->pag_checksum != CCH_checksum(bdb))
 			&& !(dbb->dbb_flags & DBB_damaged)))
 	{
-#ifdef SUPERSERVER
-		THREAD_ENTER();
-#endif
 		IBERR_build_status(tdbb->tdbb_status_vector,
 						   isc_db_corrupt,
 						   isc_arg_string, "",
@@ -1111,9 +1115,6 @@ void CCH_fetch_page(
 	}
 #endif /* NO_CHECKSUM */
 
-#ifdef SUPERSERVER
-	THREAD_ENTER();
-#endif
 	AST_CHECK();
 
 	bdb->bdb_flags &= ~(BDB_not_valid | BDB_read_pending);
