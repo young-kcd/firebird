@@ -2349,6 +2349,7 @@ void PageManager::closeAll()
 	for (size_t i = 0; i < pageSpaces.getCount(); i++)
 		if (pageSpaces[i]->file) {
 			PIO_close(pageSpaces[i]->file);
+			pageSpaces[i]->file = NULL;
 		}
 }
 
