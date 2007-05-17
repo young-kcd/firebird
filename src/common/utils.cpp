@@ -40,6 +40,10 @@
 #include "../common/utils_proto.h"
 #include "../jrd/constants.h"
 
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+
 namespace fb_utils
 {
 
