@@ -54,7 +54,7 @@ ISC_STATUS StatusHolder::save(const ISC_STATUS* status)
 				char *string = FB_NEW(*getDefaultMemoryPool()) char[len];
 				const char *temp = reinterpret_cast<const char*>(*from++);
 				memcpy(string, temp, len);
-				*to++ = (ISC_STATUS)(IPTR)(string);
+				*to++ = (ISC_STATUS)(IPTR) string;
 			}
 			break;
 

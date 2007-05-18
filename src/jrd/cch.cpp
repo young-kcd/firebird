@@ -2834,10 +2834,11 @@ int cmpBdbs(const void* a, const void* b)
 	const BufferDesc* bdbB = *(BufferDesc**) b;
 	if (bdbA->bdb_page > bdbB->bdb_page)
 		return 1;
-	else if (bdbA->bdb_page < bdbB->bdb_page)
+
+	if (bdbA->bdb_page < bdbB->bdb_page)
 		return -1;
-	else
-		return 0;
+
+	return 0;
 }
 
 
