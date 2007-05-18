@@ -2000,6 +2000,7 @@ void EVL_validate(thread_db* tdbb, const Item& item, const ItemInfo* itemInfo, d
 		fieldInfo.validation)
 	{
 		request->req_domain_validation = desc;
+		USHORT flags = request->req_flags;
 
 		if (!EVL_boolean(tdbb, fieldInfo.validation) &&
 			!(request->req_flags & req_null))
@@ -2018,6 +2019,8 @@ void EVL_validate(thread_db* tdbb, const Item& item, const ItemInfo* itemInfo, d
 
 			err = true;
 		}
+
+		request->req_flags = flags;
 	}
 
 	if (err)
