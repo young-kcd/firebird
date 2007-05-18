@@ -7547,7 +7547,7 @@ static dsql_nod* pass1_rse_impl( dsql_req* request, dsql_nod* input, dsql_nod* o
 	}
 	else if (input->nod_type == nod_list)
 	{
-		fb_assert(input->nod_count >= 1);
+		fb_assert(input->nod_count > 1);
 
 		if (update_lock)
 			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104, isc_arg_gds,
