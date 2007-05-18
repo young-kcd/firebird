@@ -99,6 +99,10 @@ SOURCE=..\..\..\src\common\classes\locks.cpp
 
 SOURCE=..\..\..\src\common\fb_exception.cpp
 # End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\common\StatusHolder.cpp
+# End Source File
 # End Group
 # Begin Group "CONFIG files"
 
@@ -246,6 +250,10 @@ SOURCE=..\..\..\src\common\classes\objects_array.h
 # Begin Source File
 
 SOURCE=..\..\..\src\common\classes\SafeArg.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\common\StatusHolder.h
 # End Source File
 # Begin Source File
 
