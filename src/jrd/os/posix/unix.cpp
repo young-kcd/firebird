@@ -176,7 +176,7 @@ int PIO_add_file(Database* dbb, jrd_file* main_file, const Firebird::PathName& f
 }
 
 
-void PIO_close(jrd_file* main_file)
+void PIO_close(jrd_file* file)
 {
 /**************************************
  *
