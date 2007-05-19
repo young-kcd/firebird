@@ -1,3 +1,22 @@
+2007-05-16 16:02  dimitr
+
+	* firebird2/src/jrd/os/win32/winnt.cpp (1.30.4.3):
+
+	Ooops, it wasn't intended for public :-)
+
+2007-05-16 15:32  dimitr
+
+	* firebird2/src/jrd/os/: win32/winnt.cpp (1.30.4.2), posix/unix.cpp
+	(1.42.4.3):
+
+	Fixed CORE-1265.
+
+2007-05-16 06:18  dimitr
+
+	* firebird2/doc/WhatsNew (1.95.2.34):
+
+	Misc.
+
 2007-05-15 10:13  dimitr
 
 	* firebird2/doc/WhatsNew (1.95.2.33):
