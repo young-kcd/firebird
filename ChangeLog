@@ -1,3 +1,15 @@
+2007-05-20 03:37  asfernandes
+
+	* firebird2/doc/WhatsNew (1.125):
+
+	Update
+
+2007-05-19 23:25  asfernandes
+
+	* firebird2/src/jrd/dfw.epp (1.207):
+
+	Fixed CORE-1271 - Creation of invalid procedures/triggers allowed
+
 2007-05-18 15:33  dimitr
 
 	* firebird2/doc/WhatsNew (1.124):
