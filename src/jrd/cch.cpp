@@ -2827,7 +2827,7 @@ static int blocking_ast_bdb(void* ast_object)
 #ifdef DIRTY_LIST
 
 // Used in qsort below
-extern "C" 
+extern "C" {
 static int cmpBdbs(const void* a, const void* b)
 {
 	const BufferDesc* bdbA = *(BufferDesc**) a;
@@ -2840,6 +2840,7 @@ static int cmpBdbs(const void* a, const void* b)
 		return -1;
 
 	return 0;
+}
 }
 
 
