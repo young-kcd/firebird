@@ -500,6 +500,11 @@
         Alex Peshkov <peshkoff at mail.ru>
         Adriano dos Santos Fernandes <adrianosf at uol.com.br>
 
+    * Improvement CORE-1266
+        Using blob filters in dynamic SQL
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
     * Improvement CORE-1148
         Regular users are prevented from retrieving the server log
         using Services API. This is now allowed for SYSDBA only.
