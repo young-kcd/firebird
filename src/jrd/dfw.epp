@@ -3634,7 +3634,8 @@ static void get_procedure_dependencies(DeferredWork* work, bool compile)
 	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = tdbb->tdbb_database;
 
-	compile = compile ? !(tdbb->tdbb_attachment->att_flags & ATT_gbak_attachment) : false;
+	if (compile)
+		compile = !(tdbb->tdbb_attachment->att_flags & ATT_gbak_attachment);
 
 	jrd_prc* procedure = NULL;
 	bid blob_id;
@@ -3706,7 +3707,8 @@ static void get_trigger_dependencies(DeferredWork* work, bool compile)
 	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = tdbb->tdbb_database;
 
-	compile = compile ? !(tdbb->tdbb_attachment->att_flags & ATT_gbak_attachment) : false;
+	if (compile)
+		compile = !(tdbb->tdbb_attachment->att_flags & ATT_gbak_attachment);
 
 	jrd_rel* relation = NULL;
 	bid blob_id;

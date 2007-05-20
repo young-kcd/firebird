@@ -148,7 +148,7 @@ static void clear_page_dirty_flag(thread_db*, BufferDesc*);
 
 #ifdef DIRTY_LIST
 
-inline void insertDirty(BufferControl* bcb, BufferDesc* bdb)
+static inline void insertDirty(BufferControl* bcb, BufferDesc* bdb)
 {
 	if (bdb->bdb_dirty.que_forward == &bdb->bdb_dirty) 
 	{
@@ -157,7 +157,7 @@ inline void insertDirty(BufferControl* bcb, BufferDesc* bdb)
 	}
 }
 
-inline void removeDirty(BufferControl* bcb, BufferDesc* bdb)
+static inline void removeDirty(BufferControl* bcb, BufferDesc* bdb)
 {
 	if (bdb->bdb_dirty.que_forward != &bdb->bdb_dirty) 
 	{
@@ -2828,10 +2828,11 @@ static int blocking_ast_bdb(void* ast_object)
 
 // Used in qsort below
 extern "C" 
-int cmpBdbs(const void* a, const void* b)
+static int cmpBdbs(const void* a, const void* b)
 {
 	const BufferDesc* bdbA = *(BufferDesc**) a;
 	const BufferDesc* bdbB = *(BufferDesc**) b;
+
 	if (bdbA->bdb_page > bdbB->bdb_page)
 		return 1;
 
@@ -2897,11 +2898,13 @@ static void flushDirty(thread_db* tdbb,
 	}
 	
 	qsort(flush.begin(), flush.getCount(), sizeof(BufferDesc*), cmpBdbs);
+
 	bool writeAll = false;
 	while (flush.getCount())
 	{
-		BufferDesc **ptr = flush.begin();
+		BufferDesc** ptr = flush.begin();
 		const size_t cnt = flush.getCount();
+
 		while (ptr < flush.end())
 		{
 			BufferDesc* bdb = *ptr;
@@ -2988,6 +2991,7 @@ static void flushAll(thread_db* tdbb, USHORT flush_flag)
 	}
 
 	qsort(flush.begin(), flush.getCount(), sizeof(BufferDesc*), cmpBdbs);
+
 	bool writeAll = false;
 	while (flush.getCount())
 	{

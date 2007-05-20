@@ -480,7 +480,8 @@ bool printInfo(const char* p, UserPrint& up)
 			break;
 
 		case isc_info_svc_limbo_trans:
-			while (*p != isc_info_flag_end) {
+			while (*p != isc_info_flag_end)
+			{
 				switch (*p++)
 				{
 				case isc_spb_tra_host_site:
@@ -589,7 +590,7 @@ bool printInfo(const char* p, UserPrint& up)
 
 void usage()
 {
-	for (int i=19; i<=33; ++i)
+	for (int i = 19; i <= 33; ++i)
 	{
 		printf("%s\n", getMessage(i).c_str());
 	}
