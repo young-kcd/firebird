@@ -1,3 +1,17 @@
+2007-05-20 14:34  mkubecek
+
+	* firebird2/src/jrd/cch.cpp (1.168):
+
+	C++ specification does not allow unbraced linkage specification
+	with storage class (and neither does GCC 4.1.2)
+
+2007-05-20 05:25  asfernandes
+
+	* firebird2/src/: jrd/cch.cpp (1.167), jrd/dfw.epp (1.208),
+	utilities/fbsvcmgr.cpp (1.4):
+
+	Misc
+
 2007-05-20 03:37  asfernandes
 
 	* firebird2/doc/WhatsNew (1.125):
