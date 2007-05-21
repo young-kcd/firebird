@@ -167,8 +167,12 @@ const SCHAR pag_ids			= 9;		/* Gen-ids */
 const SCHAR pag_log			= 10;		// Write ahead log information DEPRECATED
 const SCHAR pag_max			= 10;		/* Max page type */
 
-const SCHAR HEADER_PAGE		= 0;
-const SCHAR LOG_PAGE			= 2;
+/* Pre-defined page numbers */
+
+const SLONG HEADER_PAGE		= 0;
+const SLONG LOG_PAGE		= 2;
+
+/* Page size limits */
 
 const USHORT MIN_PAGE_SIZE		= 1024;
 const USHORT MAX_PAGE_SIZE		= 16384;
