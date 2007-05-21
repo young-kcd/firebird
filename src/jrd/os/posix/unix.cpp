@@ -177,7 +177,7 @@ int PIO_add_file(Database* dbb, jrd_file* main_file, const Firebird::PathName& f
 }
 
 
-void PIO_close(jrd_file* file)
+void PIO_close(jrd_file* main_file)
 {
 /**************************************
  *
@@ -192,7 +192,7 @@ void PIO_close(jrd_file* file)
  *
  **************************************/
 
-	while (file) {
+	for (jrd_file* file = main_file; file; file = file->fil_next) {
 		if (file->fil_desc && file->fil_desc != -1) {
 			close(file->fil_desc);
 			file->fil_desc = -1;
@@ -200,10 +200,6 @@ void PIO_close(jrd_file* file)
 			THD_IO_MUTEX_DESTROY(file->fil_mutex);
 #endif
 		}
-
-		jrd_file* temp = file;
-		file = file->fil_next;
-		delete temp;
 	}
 }
 

@@ -34,7 +34,7 @@
 #include "../jrd/dsc.h"
 #include "../jrd/all.h"
 #include "../jrd/btn.h"
-#include "../jrd/all.h"
+#include "../jrd/os/pio.h"
 #include "../jrd/jrd_proto.h"
 #if defined(UNIX) && defined(SUPERSERVER)
 #include <setjmp.h>
@@ -117,7 +117,6 @@ class Attachment;
 class jrd_tra;
 class jrd_req;
 class Lock;
-class jrd_file;
 class Format;
 class jrd_nod;
 class BufferControl;
@@ -295,6 +294,13 @@ private:
 
 	~Database()
 	{
+		for (jrd_file* file = dbb_file; file; )
+		{
+			jrd_file* next = file->fil_next;
+			delete file;
+			file = next;
+		}
+
 		destroyIntlObjects();
 
 		pool_vec_type::iterator itr = dbb_pools.begin();
