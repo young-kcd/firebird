@@ -919,6 +919,9 @@ void CCH_fetch_page(
    
 	if (!dbb->dbb_backup_manager->lock_state(tdbb, false)) 
 	{
+#ifdef SUPERSERVER
+		THREAD_ENTER();
+#endif
 		PAGE_LOCK_RELEASE(bdb->bdb_lock);
 		CCH_unwind(tdbb, true);
 	}
@@ -927,6 +930,9 @@ void CCH_fetch_page(
 	if (bak_state == nbak_state_stalled || bak_state == nbak_state_merge) {
 		if (!dbb->dbb_backup_manager->lock_alloc(tdbb, false)) 
 		{
+#ifdef SUPERSERVER
+			THREAD_ENTER();
+#endif
 			PAGE_LOCK_RELEASE(bdb->bdb_lock);
 			dbb->dbb_backup_manager->unlock_state(tdbb);
 			CCH_unwind(tdbb, true);
@@ -987,6 +993,9 @@ void CCH_fetch_page(
 		NBAK_TRACE(("Reading page %d, state=%d, diff page=%d from DIFFERENCE", 
 			bdb->bdb_page, bak_state, diff_page));
 		if (!dbb->dbb_backup_manager->read_difference(tdbb, diff_page, page)) {
+#ifdef SUPERSERVER
+			THREAD_ENTER();
+#endif
 			PAGE_LOCK_RELEASE(bdb->bdb_lock);
 			dbb->dbb_backup_manager->unlock_state(tdbb);
 			CCH_unwind(tdbb, true);
@@ -6331,8 +6340,15 @@ static bool write_page(
 #endif
 				)) 
 			{
-				if (!dbb->dbb_backup_manager->write_difference(
-					status, bdb->bdb_difference_page, bdb->bdb_buffer)) 
+#ifdef SUPERSERVER
+				THREAD_EXIT();
+#endif
+				const bool res = dbb->dbb_backup_manager->write_difference(
+					status, bdb->bdb_difference_page, bdb->bdb_buffer);
+#ifdef SUPERSERVER
+				THREAD_ENTER();
+#endif
+				if (!res) 
 				{
 					bdb->bdb_flags |= BDB_io_error;
 					dbb->dbb_flags |= DBB_suspend_bgio;
