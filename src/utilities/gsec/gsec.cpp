@@ -399,11 +399,19 @@ int common_main(int argc,
 		char* local_argv[MAXARGS];
 		for (;;) {
 			/* Clear out user data each time through this loop. */
-			MOVE_CLEAR(tdsec->tsec_user_data, sizeof(internal_user_data));
+			MOVE_CLEAR(user_data, sizeof(internal_user_data));
 			if (get_line(&local_argc, local_argv, stuff, sizeof(stuff)))
 				break;
 			if (local_argc > 1) {
 				ret = parse_cmd_line(local_argc, local_argv, tdsec);
+				if (user_data->dba_user_name_entered || 
+					user_data->dba_password_entered ||
+					user_data->database_name_entered)
+				{
+					GSEC_print(GsecMsg92);
+					continue;
+				}
+
 				databaseName.copyTo(user_data->database_name, sizeof(user_data->database_name));
 				user_data->database_name_entered = databaseNameEntered;
 				if (ret == 1)
