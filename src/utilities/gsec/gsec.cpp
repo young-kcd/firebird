@@ -406,7 +406,11 @@ int common_main(int argc,
 				ret = parse_cmd_line(local_argc, local_argv, tdsec);
 				if (user_data->dba_user_name_entered || 
 					user_data->dba_password_entered ||
-					user_data->database_name_entered)
+					user_data->database_name_entered
+#ifdef TRUSTED_AUTH
+					|| user_data->trusted_auth
+#endif
+					)
 				{
 					GSEC_print(GsecMsg92);
 					continue;
