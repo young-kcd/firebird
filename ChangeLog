@@ -1,3 +1,17 @@
+2007-05-21 21:31  hvlad
+
+	* firebird2/src/jrd/cch.cpp (1.129.2.7):
+
+	Add missed THREAD_ENTER calls
+
+2007-05-21 09:30  dimitr
+
+	* firebird2/src/jrd/: jrd.h (1.148.4.6), os/posix/unix.cpp
+	(1.42.4.4), os/win32/winnt.cpp (1.30.4.4):
+
+	A better fix for the previous issue. This time it doesn't crash on
+	DROP DATABASE :-)
+
 2007-05-16 16:02  dimitr
 
 	* firebird2/src/jrd/os/win32/winnt.cpp (1.30.4.3):
