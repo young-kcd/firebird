@@ -2035,7 +2035,11 @@ USHORT API_ROUTINE gds__parse_bpb2(USHORT bpb_length,
 								   SSHORT* source,
 								   SSHORT* target,
 								   USHORT* source_interp,
-								   USHORT* target_interp)
+								   USHORT* target_interp,
+								   bool* source_type_specified,
+								   bool* source_interp_specified,
+								   bool* target_type_specified,
+								   bool* target_interp_specified)
 {
 /**************************************
  *
@@ -2057,6 +2061,14 @@ USHORT API_ROUTINE gds__parse_bpb2(USHORT bpb_length,
 		*source_interp = 0;
 	if (target_interp)
 		*target_interp = 0;
+	if (source_type_specified)
+		*source_type_specified = false;
+	if (source_interp_specified)
+		*source_interp_specified = false;
+	if (target_type_specified)
+		*target_type_specified = false;
+	if (target_interp_specified)
+		*target_interp_specified = false;
 
 	if (!bpb_length || !bpb)
 		return type;
@@ -2073,10 +2085,14 @@ USHORT API_ROUTINE gds__parse_bpb2(USHORT bpb_length,
 		switch (op) {
 		case isc_bpb_source_type:
 			*source = (USHORT) gds__vax_integer(p, length);
+			if (source_type_specified)
+				*source_type_specified = true;
 			break;
 
 		case isc_bpb_target_type:
 			*target = (USHORT) gds__vax_integer(p, length);
+			if (target_type_specified)
+				*target_type_specified = true;
 			break;
 
 		case isc_bpb_type:
@@ -2087,11 +2103,15 @@ USHORT API_ROUTINE gds__parse_bpb2(USHORT bpb_length,
 		case isc_bpb_source_interp:
 			if (source_interp)
 				*source_interp = (USHORT) gds__vax_integer(p, length);
+			if (source_interp_specified)
+				*source_interp_specified = true;
 			break;
 
 		case isc_bpb_target_interp:
 			if (target_interp)
 				*target_interp = (USHORT) gds__vax_integer(p, length);
+			if (target_interp_specified)
+				*target_interp_specified = true;
 			break;
 
 		default:

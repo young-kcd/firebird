@@ -1614,10 +1614,15 @@ static void gen_descriptor( dsql_req* request, const dsc* desc, bool texttype)
 		stuff(request, blr_timestamp);
 		break;
 
-	case dtype_blob:
 	case dtype_array:
 		stuff(request, blr_quad);
 		stuff(request, 0);
+		break;
+
+	case dtype_blob:
+		stuff(request, blr_blob2);
+		stuff_word(request, desc->dsc_sub_type);
+		stuff_word(request, desc->getTextType());
 		break;
 
 	default:

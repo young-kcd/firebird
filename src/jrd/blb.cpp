@@ -428,43 +428,44 @@ void BLB_garbage_collect(
 }
 
 
-void BLB_gen_bpb_from_descs(const dsc* fromDesc, const dsc* toDesc, Firebird::UCharBuffer& bpb)
+void BLB_gen_bpb(SSHORT source, SSHORT target, UCHAR sourceCharset, UCHAR targetCharset, Firebird::UCharBuffer& bpb)
 {
 	bpb.resize(15);
 
 	UCHAR* p = bpb.begin();
 	*p++ = isc_bpb_version1;
 
-	SSHORT subType = fromDesc->getBlobSubType();
-	UCHAR charSet = fromDesc->getCharSet();
-
 	*p++ = isc_bpb_source_type;
 	*p++ = 2;
-	put_short(p, subType);
+	put_short(p, source);
 	p += 2;
-	if (subType == isc_blob_text)
+	if (source == isc_blob_text)
 	{
 		*p++ = isc_bpb_source_interp;
 		*p++ = 1;
-		*p++ = charSet;
+		*p++ = sourceCharset;
 	}
-
-	subType = toDesc->getBlobSubType();
-	charSet = toDesc->getCharSet();
 
 	*p++ = isc_bpb_target_type;
 	*p++ = 2;
-	put_short(p, subType);
+	put_short(p, target);
 	p += 2;
-	if (subType == isc_blob_text)
+	if (target == isc_blob_text)
 	{
 		*p++ = isc_bpb_target_interp;
 		*p++ = 1;
-		*p++ = charSet;
+		*p++ = targetCharset;
 	}
 
 	// set the array count to the number of bytes we used
 	bpb.shrink(p - bpb.begin());
+}
+
+
+void BLB_gen_bpb_from_descs(const dsc* fromDesc, const dsc* toDesc, Firebird::UCharBuffer& bpb)
+{
+	BLB_gen_bpb(fromDesc->getBlobSubType(), toDesc->getBlobSubType(),
+		fromDesc->getCharSet(), toDesc->getCharSet(), bpb);
 }
 
 
@@ -1153,6 +1154,8 @@ void BLB_move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, jrd_nod* field)
 	}
 
 	blob->blb_relation = relation;
+	blob->blb_sub_type = to_desc->getBlobSubType();
+	blob->blb_charset = to_desc->getCharSet();
 	destination->set_permanent(relation->rel_id, DPM_store_blob(tdbb, blob, record));
 	// This is the only place in the engine where blobs are materialized
 	// If new places appear code below should transform to common sub-routine
@@ -1210,7 +1213,8 @@ blb* BLB_open(thread_db* tdbb, jrd_tra* transaction, const bid* blob_id)
 
 blb* BLB_open2(thread_db* tdbb,
 			  jrd_tra* transaction, const bid* blob_id,
-			  USHORT bpb_length, const UCHAR* bpb)
+			  USHORT bpb_length, const UCHAR* bpb,
+			  bool external_call)
 {
 /**************************************
  *
@@ -1229,12 +1233,19 @@ blb* BLB_open2(thread_db* tdbb,
 /* Handle filter case */
 	SSHORT from, to;
 	SSHORT from_charset, to_charset;
+	bool from_type_specified;
+	bool from_charset_specified;
+	bool to_type_specified;
+	bool to_charset_specified;
+
 	gds__parse_bpb2(bpb_length,
 					bpb,
 					&from,
 					&to,
 					reinterpret_cast<USHORT*>(&from_charset),
-					reinterpret_cast<USHORT*>(&to_charset));
+					reinterpret_cast<USHORT*>(&to_charset),
+					&from_type_specified, &from_charset_specified,
+					&to_type_specified, &to_charset_specified);
 
 	blb* blob = allocate_blob(tdbb, transaction);
 
@@ -1244,61 +1255,15 @@ blb* BLB_open2(thread_db* tdbb,
 	get_replay_blob(tdbb, blob_id);
 #endif
 
-	blob->blb_target_interp = to_charset;
-	blob->blb_source_interp = from_charset;
-
-	BlobFilter* filter = NULL;
-	bool filter_required = false;
-	if (to && from != to) {
-		filter = find_filter(tdbb, from, to);
-		filter_required = true;
-	}
-	else if (to == isc_blob_text && (from_charset != to_charset)) {
-		if (from_charset == CS_dynamic)
-			from_charset = tdbb->tdbb_attachment->att_charset;
-		if (to_charset == CS_dynamic)
-			to_charset = tdbb->tdbb_attachment->att_charset;
-
-		if ((to_charset != CS_NONE) && (from_charset != CS_NONE) &&
-			(to_charset != CS_BINARY) && (from_charset != CS_BINARY) &&
-			(from_charset != to_charset))
-		{
-			filter = FB_NEW(*dbb->dbb_permanent) BlobFilter(*dbb->dbb_permanent);
-			filter->blf_filter = filter_transliterate_text;
-			filter_required = true;
-		}
-	}
-
-	if (filter_required) {
-		BlobControl* control = 0;
-		if (BLF_open_blob(tdbb,
-						  transaction,
-						  &control,
-						  blob_id,
-						  bpb_length,
-						  bpb,
-						  reinterpret_cast<FPTR_BFILTER_CALLBACK>(blob_filter),
-						  filter))
-		{
-			ERR_punt();
-		}
-		blob->blb_filter = control;
-		blob->blb_max_segment = control->ctl_max_segment;
-		blob->blb_count = control->ctl_number_segments;
-		blob->blb_length = control->ctl_total_length;
-		return blob;
-	}
-
+	bool try_relations = false;
 	BlobIndex* current = NULL;
 
 	if (!blob_id->bid_internal.bid_relation_id)
 	{
 		if (blob_id->isEmpty())
-		{
 			blob->blb_flags |= BLB_eof;
-			return blob;
-		}
-		else {
+		else
+		{
 			/* Note: Prior to 1991, we would immediately report bad_segstr_id here,
 			 * but then we decided to allow a newly created blob to be opened,
 			 * leaving the possibility of receiving a garbage blob ID from
@@ -1342,41 +1307,113 @@ blb* BLB_open2(thread_db* tdbb,
 					blob->blb_segment =
 						(UCHAR *) ((blob_page*) new_blob->blb_data)->blp_page;
 				}
-				return blob;
 			}
+			else
+				try_relations = true;
+		}
+	}
+	else
+		try_relations = true;
+
+	if (try_relations)
+	{
+		// Ordinarily, we would call MET_relation to get the relation id.
+		// However, since the blob id must be consider suspect, this is
+		// not a good idea.  On the other hand, if we don't already
+		// know about the relation, the blob id has got to be invalid
+		// anyway.
+
+		vec<jrd_rel*>* vector = dbb->dbb_relations;
+
+		if (blob_id->bid_internal.bid_relation_id >= vector->count() ||
+			!(blob->blb_relation = (*vector)[blob_id->bid_internal.bid_relation_id] ) )
+		{
+				ERR_post(isc_bad_segstr_id, 0);
+		}
+
+		blob->blb_pg_space_id = blob->blb_relation->getPages(tdbb)->rel_pg_space_id;
+		DPM_get_blob(tdbb, blob, blob_id->get_permanent_number(), false, (SLONG) 0);
+
+		// If the blob is known to be damaged, ignore it.
+
+		if (blob->blb_flags & BLB_damaged) {
+			if (!(dbb->dbb_flags & DBB_damaged))
+				IBERROR(194);	// msg 194 blob not found
+			blob->blb_flags |= BLB_eof;
+			return blob;
+		}
+
+		// Get first data page in anticipation of reading.
+
+		if (blob->blb_level == 0)
+			blob->blb_segment = blob->blb_data;
+	}
+
+	Firebird::UCharBuffer new_bpb;
+
+	if (external_call &&
+		ENCODE_ODS(dbb->dbb_ods_version, dbb->dbb_minor_original) >= ODS_11_1)
+	{
+		if (!from_type_specified)
+			from = blob->blb_sub_type;
+		if (!from_charset_specified)
+			from_charset = blob->blb_charset;
+
+		if (!to_type_specified && from == isc_blob_text)
+			to = isc_blob_text;
+		if (!to_charset_specified && from == isc_blob_text)
+			to_charset = CS_dynamic;
+
+		BLB_gen_bpb(from, to, from_charset, to_charset, new_bpb);
+		bpb = new_bpb.begin();
+		bpb_length = new_bpb.getCount();
+	}
+
+	blob->blb_target_interp = to_charset;
+	blob->blb_source_interp = from_charset;
+
+	BlobFilter* filter = NULL;
+	bool filter_required = false;
+	if (to && from != to) {
+		filter = find_filter(tdbb, from, to);
+		filter_required = true;
+	}
+	else if (to == isc_blob_text && (from_charset != to_charset)) {
+		if (from_charset == CS_dynamic)
+			from_charset = tdbb->tdbb_attachment->att_charset;
+		if (to_charset == CS_dynamic)
+			to_charset = tdbb->tdbb_attachment->att_charset;
+
+		if ((to_charset != CS_NONE) && (from_charset != CS_NONE) &&
+			(to_charset != CS_BINARY) && (from_charset != CS_BINARY) &&
+			(from_charset != to_charset))
+		{
+			filter = FB_NEW(*dbb->dbb_permanent) BlobFilter(*dbb->dbb_permanent);
+			filter->blf_filter = filter_transliterate_text;
+			filter_required = true;
 		}
 	}
 
-/* Ordinarily, we would call MET_relation to get the relation id.
-   However, since the blob id must be consider suspect, this is
-   not a good idea.  On the other hand, if we don't already
-   know about the relation, the blob id has got to be invalid
-   anyway. */
-
-	vec<jrd_rel*>* vector = dbb->dbb_relations;
-
-	if (blob_id->bid_internal.bid_relation_id >= vector->count() ||
-		!(blob->blb_relation = (*vector)[blob_id->bid_internal.bid_relation_id] ) )
+	if (filter_required)
 	{
-			ERR_post(isc_bad_segstr_id, 0);
-	}
-
-	blob->blb_pg_space_id = blob->blb_relation->getPages(tdbb)->rel_pg_space_id;
-	DPM_get_blob(tdbb, blob, blob_id->get_permanent_number(), false, (SLONG) 0);
-
-/* If the blob is known to be damaged, ignore it. */
-
-	if (blob->blb_flags & BLB_damaged) {
-		if (!(dbb->dbb_flags & DBB_damaged))
-			IBERROR(194);		/* msg 194 blob not found */
-		blob->blb_flags |= BLB_eof;
+		BlobControl* control = 0;
+		if (BLF_open_blob(tdbb,
+						  transaction,
+						  &control,
+						  blob_id,
+						  bpb_length,
+						  bpb,
+						  reinterpret_cast<FPTR_BFILTER_CALLBACK>(blob_filter),
+						  filter))
+		{
+			ERR_punt();
+		}
+		blob->blb_filter = control;
+		blob->blb_max_segment = control->ctl_max_segment;
+		blob->blb_count = control->ctl_number_segments;
+		blob->blb_length = control->ctl_total_length;
 		return blob;
 	}
-
-/* Get first data page in anticipation of reading. */
-
-	if (blob->blb_level == 0)
-		blob->blb_segment = blob->blb_data;
 
 	return blob;
 }

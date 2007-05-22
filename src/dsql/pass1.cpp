@@ -9902,39 +9902,47 @@ static bool set_parameter_type(dsql_req* request, dsql_nod* in_node, dsql_nod* n
 
 				MAKE_desc(request, &in_node->nod_desc, node, NULL);
 
-				if (in_node->nod_desc.dsc_dtype <= dtype_any_text &&
-					request->req_dbb->dbb_att_charset != CS_NONE &&
+				if (request->req_dbb->dbb_att_charset != CS_NONE &&
 					request->req_dbb->dbb_att_charset != CS_BINARY)
 				{
-					int diff = 0;
-					switch (in_node->nod_desc.dsc_dtype)
-					{
-					case dtype_varying:
-						diff = sizeof(USHORT);
-						break;
-					case dtype_cstring:
-						diff = 1;
-						break;
-					}
-					in_node->nod_desc.dsc_length -= diff;
-
-					USHORT fromCharSet = INTL_GET_CHARSET(&in_node->nod_desc);
+					USHORT fromCharSet = in_node->nod_desc.getCharSet();
 					USHORT toCharSet = (fromCharSet == CS_NONE || fromCharSet == CS_BINARY) ?
 						fromCharSet : request->req_dbb->dbb_att_charset;
 
-					if (toCharSet != fromCharSet)
+					if (in_node->nod_desc.dsc_dtype <= dtype_any_text)
 					{
-						USHORT fromCharSetBPC = METD_get_charset_bpc(request, fromCharSet);
-						USHORT toCharSetBPC = METD_get_charset_bpc(request, toCharSet);
+						int diff = 0;
+						switch (in_node->nod_desc.dsc_dtype)
+						{
+						case dtype_varying:
+							diff = sizeof(USHORT);
+							break;
+						case dtype_cstring:
+							diff = 1;
+							break;
+						}
+						in_node->nod_desc.dsc_length -= diff;
 
-						INTL_ASSIGN_TTYPE(&in_node->nod_desc, INTL_CS_COLL_TO_TTYPE(toCharSet,
-							(fromCharSet == toCharSet ? INTL_GET_COLLATE(&in_node->nod_desc) : 0)));
+						if (toCharSet != fromCharSet)
+						{
+							USHORT fromCharSetBPC = METD_get_charset_bpc(request, fromCharSet);
+							USHORT toCharSetBPC = METD_get_charset_bpc(request, toCharSet);
 
-						in_node->nod_desc.dsc_length =
-							UTLD_char_length_to_byte_length(in_node->nod_desc.dsc_length / fromCharSetBPC, toCharSetBPC);
+							INTL_ASSIGN_TTYPE(&in_node->nod_desc, INTL_CS_COLL_TO_TTYPE(toCharSet,
+								(fromCharSet == toCharSet ? INTL_GET_COLLATE(&in_node->nod_desc) : 0)));
+
+							in_node->nod_desc.dsc_length =
+								UTLD_char_length_to_byte_length(in_node->nod_desc.dsc_length / fromCharSetBPC, toCharSetBPC);
+						}
+
+						in_node->nod_desc.dsc_length += diff;
 					}
-
-					in_node->nod_desc.dsc_length += diff;
+					else if (in_node->nod_desc.dsc_dtype == dtype_blob &&
+							 in_node->nod_desc.dsc_sub_type == isc_blob_text &&
+							 fromCharSet != CS_NONE && fromCharSet != CS_BINARY)
+					{
+						in_node->nod_desc.setTextType(toCharSet);
+					}
 				}
 
 				dsql_par* parameter = (dsql_par*) in_node->nod_arg[e_par_parameter];

@@ -2921,7 +2921,7 @@ ISC_STATUS GDS_OPEN_BLOB2(ISC_STATUS* user_status,
 
 		jrd_tra* transaction =
 			find_transaction(tdbb, *tra_handle, isc_segstr_wrong_db);
-		blb* blob = BLB_open2(tdbb, transaction, blob_id, bpb_length, bpb);
+		blb* blob = BLB_open2(tdbb, transaction, blob_id, bpb_length, bpb, true);
 		*blob_handle = blob;
 	
 	#ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM

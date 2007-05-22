@@ -524,7 +524,8 @@ struct blh {
 	SLONG blh_count;			/* Total number of segments */
 	SLONG blh_length;			/* Total length of data */
 	USHORT blh_sub_type;		/* Blob sub-type */
-	USHORT blh_unused;
+	UCHAR blh_charset;			// Blob charset (since ODS 11.1)
+	UCHAR blh_unused;
 	SLONG blh_page[1];			/* Page vector for blob pages */
 };
 
