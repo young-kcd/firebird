@@ -501,40 +501,6 @@ void PIO_header(Database* dbb, SCHAR * address, int length)
 }
 
 
-SLONG PIO_max_alloc(Database* dbb)
-{
-/**************************************
- *
- *	P I O _ m a x _ a l l o c
- *
- **************************************
- *
- * Functional description
- *	Compute last physically allocated page of database.
- *
- **************************************/
-	PageSpace* pageSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
-	return pageSpace->maxAlloc(dbb->dbb_page_size);
-}
-
-
-SLONG PIO_act_alloc(Database* dbb)
-{
-/**************************************
- *
- *	P I O _ a c t  _ a l l o c
- *
- **************************************
- *
- * Functional description
- *  Compute actual number of physically allocated pages of database.
- *
- **************************************/
-	PageSpace* pageSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
-	return pageSpace->actAlloc(dbb->dbb_page_size);
-}
-
-
 jrd_file* PIO_open(Database* dbb,
 			 const Firebird::PathName& string,
 			 bool trace_flag,

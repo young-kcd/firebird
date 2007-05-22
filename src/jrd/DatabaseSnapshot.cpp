@@ -888,7 +888,7 @@ void DatabaseSnapshot::putDatabase(Database* database,
 					   (UCHAR*) &database->dbb_creation_date.value(),
 					   sizeof(ISC_TIMESTAMP));
 	// database size
-	writer.insertBigInt(f_mon_db_pages, PIO_act_alloc(database));
+	writer.insertBigInt(f_mon_db_pages, PageSpace::actAlloc(database));
 }
 
 

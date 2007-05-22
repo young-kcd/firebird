@@ -338,7 +338,7 @@ int INF_database_info(const SCHAR* items,
 
 		case isc_info_allocation:
 			CCH_flush(tdbb, FLUSH_ALL, 0L);
-			length = INF_convert(PIO_max_alloc(dbb), buffer);
+			length = INF_convert(PageSpace::maxAlloc(dbb), buffer);
 			break;
 
 		case isc_info_sweep_interval:
@@ -729,7 +729,7 @@ int INF_database_info(const SCHAR* items,
 
 		case isc_info_db_size_in_pages:
 			CCH_flush(tdbb, FLUSH_ALL, 0L);
-			length = INF_convert(PIO_act_alloc(dbb), buffer);
+			length = INF_convert(PageSpace::actAlloc(dbb), buffer);
 			break;
 
 		case isc_info_oldest_transaction:

@@ -91,10 +91,12 @@ public:
 	}
 
 	// how many pages allocated
-	ULONG actAlloc(const USHORT);
+	ULONG actAlloc(const USHORT pageSize);
+	static ULONG actAlloc(Database* dbb);
 
 	// number of last allocated page
-	ULONG maxAlloc(const USHORT);
+	ULONG maxAlloc(const USHORT pageSize);
+	static ULONG maxAlloc(Database* dbb);
 
 	// extend page space
 	bool extend(thread_db*, const ULONG);
