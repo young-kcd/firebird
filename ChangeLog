@@ -1,3 +1,47 @@
+2007-05-22 04:14  asfernandes
+
+	* firebird2/src/: dsql/gen.cpp (1.120), dsql/pass1.cpp (1.325),
+	jrd/blb.cpp (1.145), jrd/blb.h (1.27), jrd/blb_proto.h (1.28),
+	jrd/dpm.epp (1.73), jrd/gds.cpp (1.226), jrd/gds_proto.h (1.45),
+	jrd/jrd.cpp (1.327), jrd/ods.h (1.43):
+
+	Improvement CORE-1277 - Automatic transliteration of text blobs
+
+2007-05-21 22:25  hvlad
+
+	* firebird2/src/remote/inet.cpp (1.188):
+
+	Fix for CORE-1276: Sometime INET error reported as 0 in
+	firebird.log instead of real error code
+
+2007-05-21 14:10  alexpeshkoff
+
+	* firebird2/src/utilities/gsec/gsec.cpp (1.71):
+
+	misc
+
+2007-05-21 14:06  alexpeshkoff
+
+	* firebird2/src/: msgs/facilities2.sql (1.8), msgs/messages2.sql
+	(1.11), utilities/gsec/gsec.cpp (1.70), utilities/gsec/gsec.h
+	(1.28):
+
+	Fixed CORE-1263 - gsec incorrectly processes some switches
+
+2007-05-21 11:11  dimitr
+
+	* firebird2/src/jrd/ods.h (1.42):
+
+	Fixed the datatype.
+
+2007-05-21 09:42  dimitr
+
+	* firebird2/src/jrd/: pag.cpp (1.136), os/posix/unix.cpp (1.58),
+	os/win32/winnt.cpp (1.46):
+
+	A better fix for the previous issue. This time it doesn't crash on
+	DROP DATABASE :-)
+
 2007-05-20 14:34  mkubecek
 
 	* firebird2/src/jrd/cch.cpp (1.168):
