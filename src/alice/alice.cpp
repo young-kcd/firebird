@@ -607,8 +607,7 @@ int common_main(int						argc,
 
 				for (int i = 0; i < MAX_VAL_ERRORS; ++i) {
 					if (ua_val_errors[i]) {
-						TEXT* szErr = reinterpret_cast<TEXT*>(ua_val_errors[i]);
-						ALICE_print(val_err_table[i], SafeArg() << szErr);
+						ALICE_print(val_err_table[i], SafeArg() << ua_val_errors[i]);
 					}
 				}
 			}
