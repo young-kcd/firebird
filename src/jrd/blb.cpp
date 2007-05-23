@@ -160,7 +160,7 @@ void BLB_check_well_formed(Jrd::thread_db* tdbb, const dsc* desc, Jrd::blb* blob
 	{
 		ULONG len = BLB_get_data(tdbb, blob,
 			buffer.getBuffer(buffer.getCapacity()) + pos, buffer.getCapacity() - pos, false);
-		buffer.resize(len);
+		buffer.resize(pos + len);
 
 		if (charSet->wellFormed(pos + len, buffer.begin(), &pos))
 			pos = 0;
