@@ -1,3 +1,11 @@
+2007-05-22 13:52  hvlad
+
+	* firebird2/src/jrd/: DatabaseSnapshot.cpp (1.29), dfw.epp (1.209),
+	inf.cpp (1.72), pag.cpp (1.137), pag.h (1.12), os/pio_proto.h
+	(1.22), os/posix/unix.cpp (1.59), os/win32/winnt.cpp (1.47):
+
+	PIO_act_alloc and PIO_max_alloc moved into PageSpace static metods
+
 2007-05-22 04:14  asfernandes
 
 	* firebird2/src/: dsql/gen.cpp (1.120), dsql/pass1.cpp (1.325),
