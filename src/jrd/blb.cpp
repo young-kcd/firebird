@@ -267,7 +267,8 @@ blb* BLB_create2(thread_db* tdbb,
 						   &from,
 						   &to,
 						   reinterpret_cast<USHORT*>(&from_charset),
-						   reinterpret_cast<USHORT*>(&to_charset));
+						   reinterpret_cast<USHORT*>(&to_charset),
+						   NULL, NULL, NULL, NULL);
 	blb* blob = allocate_blob(tdbb, transaction);
 
 	if (type & isc_bpb_type_stream)

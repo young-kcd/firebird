@@ -350,7 +350,8 @@ static ISC_STATUS open_blob(
 
 	SSHORT from, to;
 	USHORT from_charset, to_charset;
-	gds__parse_bpb2(bpb_length, bpb, &from, &to, &from_charset, &to_charset);
+	gds__parse_bpb2(bpb_length, bpb, &from, &to, &from_charset, &to_charset,
+		NULL, NULL, NULL, NULL);
 
 	if ((!filter) || (!filter->blf_filter)) {
 		*user_status++ = isc_arg_gds;

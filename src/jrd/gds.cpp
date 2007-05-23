@@ -2026,7 +2026,8 @@ USHORT API_ROUTINE gds__parse_bpb(USHORT bpb_length,
 
   /* SIGN ERROR */
 
-	return gds__parse_bpb2(bpb_length, bpb, (SSHORT*)source, (SSHORT*)target, NULL, NULL);
+	return gds__parse_bpb2(bpb_length, bpb, (SSHORT*)source, (SSHORT*)target,
+		NULL, NULL, NULL, NULL, NULL, NULL);
 }
 
 

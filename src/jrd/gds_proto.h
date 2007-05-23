@@ -104,7 +104,7 @@ SLONG	API_ROUTINE gds__get_prefix(SSHORT, const TEXT*);
 ISC_STATUS	API_ROUTINE gds__print_status(const ISC_STATUS*);
 USHORT	API_ROUTINE gds__parse_bpb(USHORT, const UCHAR*, USHORT*, USHORT*);
 USHORT	API_ROUTINE gds__parse_bpb2(USHORT, const UCHAR*, SSHORT*, SSHORT*,
-	USHORT*, USHORT*, bool* = NULL, bool* = NULL, bool* = NULL, bool* = NULL);
+	USHORT*, USHORT*, bool*, bool*, bool*, bool*);
 SLONG API_ROUTINE gds__ftof(const SCHAR*, const USHORT length1, SCHAR*,
 							   const USHORT length2);
 int		API_ROUTINE gds__print_blr(const UCHAR*,
