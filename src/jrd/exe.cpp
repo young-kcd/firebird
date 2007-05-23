@@ -952,6 +952,20 @@ void EXE_send(thread_db*		tdbb,
 			if (!charSet->wellFormed(len, p))
 				ERR_post(isc_malformed_string, 0);
 		}
+		else if (desc->isBlob())
+		{
+			if (/*desc->dsc_address &&*/ desc->getCharSet() != CS_NONE && desc->getCharSet() != CS_BINARY)
+			{
+				const Jrd::bid* bid = (Jrd::bid*) ((UCHAR*)request +
+					message->nod_impure + (ULONG)(IPTR)desc->dsc_address);
+
+				if (!bid->isEmpty())
+				{
+					AutoBlb blob(tdbb, BLB_open(tdbb, tdbb->tdbb_transaction, bid));
+					BLB_check_well_formed(tdbb, desc, blob.getBlb());
+				}
+			}
+		}
 	}
 
 	execute_looper(tdbb, request, transaction, jrd_req::req_proceed);

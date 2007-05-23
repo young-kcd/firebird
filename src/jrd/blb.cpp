@@ -129,6 +129,58 @@ void BLB_cancel(thread_db* tdbb, blb* blob)
 }
 
 
+void BLB_check_well_formed(Jrd::thread_db* tdbb, const dsc* desc, Jrd::blb* blob)
+{
+/**************************************
+ *
+ *      B L B _ c h e c k _ w e l l _ f o r m e d
+ *
+ **************************************
+ *
+ * Functional description
+ *      Check if a text BLOB is well formed.
+ *
+ **************************************/
+
+	SET_TDBB(tdbb);
+
+	// Need to verify this to work in database creation, as the charsets didn't exist yet.
+	if (desc->getCharSet() == CS_NONE || desc->getCharSet() == CS_BINARY)
+		return;
+
+	CharSet* charSet = INTL_charset_lookup(tdbb, desc->getCharSet());
+
+	if (!charSet->shouldCheckWellFormedness())
+		return;
+
+	Firebird::HalfStaticArray<UCHAR, BUFFER_MEDIUM> buffer;
+	ULONG pos = 0;
+
+	while (!(blob->blb_flags & BLB_eof))
+	{
+		ULONG len = BLB_get_data(tdbb, blob,
+			buffer.getBuffer(buffer.getCapacity()) + pos, buffer.getCapacity() - pos, false);
+		buffer.resize(len);
+
+		if (charSet->wellFormed(pos + len, buffer.begin(), &pos))
+			pos = 0;
+		else
+		{
+			if (pos == 0)
+				Firebird::status_exception::raise(isc_malformed_string, 0);
+			else
+			{
+				buffer.removeCount(0, pos);
+				pos = buffer.getCount();
+			}
+		}
+	}
+
+	if (pos != 0)
+		Firebird::status_exception::raise(isc_malformed_string, 0);
+}
+
+
 void BLB_close(thread_db* tdbb, class blb* blob)
 {
 /**************************************
@@ -992,8 +1044,7 @@ void BLB_move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, jrd_nod* field)
 	bid* source = (bid*) from_desc->dsc_address;
 	bid* destination = (bid*) to_desc->dsc_address;
 
-	// If nothing changed, do nothing.  If it isn't broken,
-	// don't fix it.
+	// If nothing changed, do nothing.  If it isn't broken, don't fix it.
 	if (*source == *destination)
 		return;
 
@@ -1005,8 +1056,14 @@ void BLB_move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, jrd_nod* field)
 		   from_desc->dsc_scale != to_desc->dsc_scale &&
 		   to_desc->dsc_scale != CS_NONE && to_desc->dsc_scale != CS_BINARY)));
 
-	// If the target node is not a field, just copy the blob id
-	// and return.
+	if (!needFilter && to_desc->isBlob() &&
+		(from_desc->getCharSet() == CS_NONE || from_desc->getCharSet() == CS_BINARY))
+	{
+		AutoBlb blob(tdbb, BLB_open(tdbb, tdbb->tdbb_transaction, source));
+		BLB_check_well_formed(tdbb, to_desc, blob.getBlb());
+	}
+
+	// If the target node is not a field, just copy the blob id and return.
 	if (simpleMove)
 	{
 		// But if the sub_type or charset is different, create a new blob.
@@ -2479,7 +2536,7 @@ static void move_from_string(thread_db* tdbb, const dsc* from_desc, dsc* to_desc
  **************************************/
 	SET_TDBB (tdbb);
 
-	USHORT ttype = INTL_TEXT_TYPE(*from_desc);
+	UCHAR charSet = INTL_GET_CHARSET(from_desc);
 	blb* blob = 0;
 	UCHAR *fromstr = 0;
 	bid temp_bid;
@@ -2488,7 +2545,15 @@ static void move_from_string(thread_db* tdbb, const dsc* from_desc, dsc* to_desc
 	MOVE_CLEAR(&blob_desc, sizeof(blob_desc));
 
 	MoveBuffer buffer;
-	int length = MOV_make_string2(tdbb, from_desc, ttype, &fromstr, buffer);
+	int length = MOV_make_string2(tdbb, from_desc, charSet, &fromstr, buffer);
+	UCHAR toCharSet = to_desc->getCharSet();
+
+	if ((charSet == CS_NONE || charSet == CS_BINARY || charSet == toCharSet) &&
+		toCharSet != CS_NONE && toCharSet != CS_BINARY)
+	{
+		if (!INTL_charset_lookup(tdbb, toCharSet)->wellFormed(length, fromstr))
+			Firebird::status_exception::raise(isc_malformed_string, 0);
+	}
 
 	UCharBuffer bpb;
 	BLB_gen_bpb_from_descs(from_desc, to_desc, bpb);

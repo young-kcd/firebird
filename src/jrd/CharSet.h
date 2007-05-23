@@ -78,6 +78,7 @@ public:
 	UCHAR getSpaceLength() const { return cs->charset_space_length; }
 	const UCHAR* getSpace() const { return cs->charset_space_character; }
 	USHORT getFlags() const { return cs->charset_flags; }
+	bool shouldCheckWellFormedness() const { return cs->charset_fn_well_formed != NULL; }
 
 	bool isMultiByte() const
 	{

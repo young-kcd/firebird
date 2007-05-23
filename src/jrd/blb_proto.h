@@ -33,6 +33,7 @@
 #include "../common/classes/array.h"
 
 void   BLB_cancel(Jrd::thread_db*, Jrd::blb*);
+void   BLB_check_well_formed(Jrd::thread_db*, const dsc* desc, Jrd::blb*);
 void   BLB_close(Jrd::thread_db*, Jrd::blb*);
 Jrd::blb*   BLB_create(Jrd::thread_db*, Jrd::jrd_tra*, Jrd::bid*);
 Jrd::blb*   BLB_create2(Jrd::thread_db*, Jrd::jrd_tra*, Jrd::bid*, USHORT, const UCHAR*);
@@ -61,5 +62,38 @@ void BLB_scalar(Jrd::thread_db*, Jrd::jrd_tra*, const Jrd::bid*, USHORT, const S
 void BLB_map_blobs(Jrd::thread_db*, Jrd::blb*, Jrd::blb*);
 #endif
 
-#endif	// JRD_BLB_PROTO_H
+class AutoBlb
+{
+public:
+	AutoBlb(Jrd::thread_db* atdbb, Jrd::blb* ablob)
+		: tdbb(atdbb),
+		  blob(ablob)
+	{
+	}
 
+	~AutoBlb()
+	{
+		BLB_close(tdbb, blob);
+	}
+
+public:
+	Jrd::blb* getBlb()
+	{
+		return blob;
+	}
+
+	Jrd::blb* operator ->()
+	{
+		return blob;
+	}
+
+private:
+	AutoBlb(const AutoBlb&);				// not implemented
+	AutoBlb& operator =(const AutoBlb&);	// not implemented
+
+private:
+	Jrd::thread_db* tdbb;
+	Jrd::blb* blob;
+};
+
+#endif	// JRD_BLB_PROTO_H
