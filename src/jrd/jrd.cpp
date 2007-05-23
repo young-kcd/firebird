@@ -5546,19 +5546,24 @@ static Database* init(thread_db*	tdbb,
 /* If this is the first time through, initialize local mutexes and set
    up a cleanup handler.  Regardless, then lock the database mutex. */
 
-	if (!initialized) {
+	if (!initialized)
+	{
 		THD_INIT;
 		THREAD_EXIT();
 		THD_GLOBAL_MUTEX_LOCK;
 		THREAD_ENTER();
-		IntlManager::initialize();
-		PluginManager::load_engine_plugins();
-		if (!initialized) {
+
+		if (!initialized)
+		{
 #if defined(V4_THREADING) && !defined(SUPERSERVER)
 			V4_MUTEX_INIT(databases_mutex);
 #endif
 			gds__register_cleanup(cleanup, 0);
 			initialized = true;
+
+			IntlManager::initialize();
+			PluginManager::load_engine_plugins();
+
 			JRD_cache_default = Config::getDefaultDbCachePages();
 			if (JRD_cache_default < MIN_PAGE_BUFFERS)
 				JRD_cache_default = MIN_PAGE_BUFFERS;
