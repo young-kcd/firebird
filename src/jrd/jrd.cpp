@@ -4930,7 +4930,7 @@ static ISC_STATUS check_database(thread_db* tdbb, Attachment* attachment, ISC_ST
 	tdbb->tdbb_quantum = QUANTUM;
 	tdbb->tdbb_request = NULL;
 	tdbb->tdbb_transaction = NULL;
-	Jrd::ContextPoolHolder context(tdbb, 0);
+	Jrd::ContextPoolHolder context(tdbb, dbb->dbb_permanent);
 	tdbb->tdbb_flags = 0;
 
 	// Count active threads in database
@@ -6503,7 +6503,7 @@ static ISC_STATUS shutdown_dbb(thread_db* tdbb, Database* dbb, Attachment** rele
 			tdbb->tdbb_request = NULL;
 			tdbb->tdbb_transaction = NULL;
 			tdbb->tdbb_flags |= TDBB_shutdown_manager;
-			Jrd::ContextPoolHolder context(tdbb, 0);
+			Jrd::ContextPoolHolder context(tdbb, getDefaultMemoryPool());
 			++dbb->dbb_use_count;
 
 			// purge_attachment() below can do an ERR_post
