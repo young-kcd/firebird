@@ -954,7 +954,7 @@ void EXE_send(thread_db*		tdbb,
 		}
 		else if (desc->isBlob())
 		{
-			if (/*desc->dsc_address &&*/ desc->getCharSet() != CS_NONE && desc->getCharSet() != CS_BINARY)
+			if (desc->getCharSet() != CS_NONE && desc->getCharSet() != CS_BINARY)
 			{
 				const Jrd::bid* bid = (Jrd::bid*) ((UCHAR*)request +
 					message->nod_impure + (ULONG)(IPTR)desc->dsc_address);
