@@ -6503,7 +6503,7 @@ static ISC_STATUS shutdown_dbb(thread_db* tdbb, Database* dbb, Attachment** rele
 			tdbb->tdbb_request = NULL;
 			tdbb->tdbb_transaction = NULL;
 			tdbb->tdbb_flags |= TDBB_shutdown_manager;
-			Jrd::ContextPoolHolder context(tdbb, getDefaultMemoryPool());
+			Jrd::ContextPoolHolder context(tdbb, dbb->dbb_permanent);
 			++dbb->dbb_use_count;
 
 			// purge_attachment() below can do an ERR_post
