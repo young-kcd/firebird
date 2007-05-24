@@ -76,11 +76,11 @@ int GlobalRWLock::blocking_ast_cached_lock(void* ast_object)
 }
 
 GlobalRWLock::GlobalRWLock(thread_db* tdbb, MemoryPool& p, locktype_t lckType, 
-		size_t lockLen, UCHAR* lockStr, lck_owner_t physical_lock_owner,
-		lck_owner_t default_logical_lock_owner,	bool lock_caching): PermanentStorage(p), 
-		internal_blocking(0), external_blocking(false), readers(p), 
-		physicalLockOwner(physical_lock_owner), 
-		defaultLogicalLockOwner(default_logical_lock_owner), lockCaching(lock_caching)
+						   size_t lockLen, UCHAR* lockStr, lck_owner_t physical_lock_owner,
+						   lck_owner_t default_logical_lock_owner, bool lock_caching)
+	: PermanentStorage(p), internal_blocking(0), external_blocking(false), 
+	  physicalLockOwner(physical_lock_owner), defaultLogicalLockOwner(default_logical_lock_owner), 
+	  lockCaching(lock_caching), readers(p)
 {
 	SET_TDBB(tdbb);
 
