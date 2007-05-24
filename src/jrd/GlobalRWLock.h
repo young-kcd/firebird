@@ -90,7 +90,7 @@ public:
 					   lck_owner_t default_logical_lock_owner = LCK_OWNER_attachment,
 					   bool lock_caching = true);
 
-	~GlobalRWLock();
+	virtual ~GlobalRWLock();
 
 	// As usual, 
 	// wait = 0 - try to lock a thing instantly (doesn't send ASTs)

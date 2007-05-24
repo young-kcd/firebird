@@ -85,6 +85,8 @@ public:
 	ULONG flags; 
 
 	NBackupState(thread_db* tdbb, MemoryPool& p, BackupManager *bakMan);
+	virtual ~NBackupState() { }
+
 protected:
 	BackupManager *backup_manager;
 	virtual void blockingAstHandler(thread_db* tdbb);
@@ -97,6 +99,7 @@ class NBackupAlloc: public GlobalRWLock
 {
 public:
 	NBackupAlloc(thread_db* tdbb, MemoryPool& p, BackupManager *bakMan);
+	virtual ~NBackupAlloc() { }
 
 protected:
 	BackupManager *backup_manager;
