@@ -1,3 +1,10 @@
+2007-05-23 04:32  asfernandes
+
+	* firebird2/src/jrd/jrd.cpp (1.237.2.14):
+
+	Backport fix for CORE-1279 - Incorrect initialization of the engine
+	with many simultaneous attachments at first time.
+
 2007-05-21 21:31  hvlad
 
 	* firebird2/src/jrd/cch.cpp (1.129.2.7):
