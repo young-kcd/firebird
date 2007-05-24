@@ -3557,7 +3557,7 @@ static jrd_nod* pass1(thread_db* tdbb,
 				view = relation;
 				view_stream = stream;
 
-				if (!(tail->csb_flags & (csb_modify | csb_store)))
+				if (!(tail->csb_flags & (csb_modify | csb_store | csb_no_dbkey)))
 				{
 					// ASF: If the view is in null state (with outer joins) we need to transform
 					// all view fields to NULL. (CORE-1245)
