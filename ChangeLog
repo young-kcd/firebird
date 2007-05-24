@@ -1,3 +1,41 @@
+2007-05-24 02:39  asfernandes
+
+	* firebird2/src/jrd/exe.cpp (1.221):
+
+	Misc
+
+2007-05-23 17:29  asfernandes
+
+	* firebird2/src/jrd/: blb.cpp (1.148), blob_filter.cpp (1.32),
+	gds.cpp (1.227), gds_proto.h (1.46):
+
+	Misc
+
+2007-05-23 12:48  asfernandes
+
+	* firebird2/src/jrd/blb.cpp (1.147):
+
+	Correction
+
+2007-05-23 10:56  hvlad
+
+	* firebird2/src/alice/alice.cpp (1.95):
+
+	Correct invalid cast in SafeArg usage
+
+2007-05-23 08:49  robocop
+
+	* firebird2/src/msgs/facilities2.sql (1.9):
+
+	Misc.
+
+2007-05-23 04:26  asfernandes
+
+	* firebird2/src/jrd/: CharSet.h (1.4), blb.cpp (1.146), blb_proto.h
+	(1.29), exe.cpp (1.220):
+
+	Improvement CORE-1280 - Verify well-formedness of text blobs
+
 2007-05-22 13:52  hvlad
 
 	* firebird2/src/jrd/: DatabaseSnapshot.cpp (1.29), dfw.epp (1.209),
