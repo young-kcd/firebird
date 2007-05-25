@@ -427,17 +427,19 @@ void DataTypeUtilBase::makeFromList(dsc* result, const char* expressionName, int
 }
 
 
+ULONG DataTypeUtilBase::convertLength(ULONG len, USHORT srcCharSet, USHORT dstCharSet)
+{
+	if (dstCharSet == CS_NONE || dstCharSet == CS_BINARY)
+		return len;
+
+	return (len / maxBytesPerChar(srcCharSet)) * maxBytesPerChar(dstCharSet);
+}
+
+
 ULONG DataTypeUtilBase::convertLength(const dsc* src, const dsc* dst)
 {
 	fb_assert(dst->isText());
-
-	UCHAR dstCharSet = dst->getCharSet();
-
-	if (dstCharSet == CS_NONE || dstCharSet == CS_BINARY)
-		return src->getStringLength();
-
-	return (src->getStringLength() / maxBytesPerChar(src->getCharSet())) *
-		maxBytesPerChar(dstCharSet);
+	return convertLength(src->getStringLength(), src->getCharSet(), dst->getCharSet());
 }
 
 

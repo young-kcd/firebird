@@ -40,6 +40,7 @@ public:
 	static void makeFromList(dsc* result, const char* expressionName, int argsCount, const dsc** args);
 
 public:
+	ULONG convertLength(ULONG len, USHORT srcCharSet, USHORT dstCharSet);
 	ULONG convertLength(const dsc* src, const dsc* dst);
 	ULONG fixLength(const dsc* desc, ULONG length);
 

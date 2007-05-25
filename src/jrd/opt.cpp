@@ -77,6 +77,7 @@
 #include "../jrd/par_proto.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/dbg_proto.h"
+#include "../jrd/DataTypeUtil.h"
 #include "../jrd/VirtualTable.h"
 #include "../common/classes/array.h"
 #include "../common/classes/objects_array.h"
@@ -2318,13 +2319,21 @@ static bool dump_index(const jrd_nod* node,
 		MET_lookup_index(tdbb, index_name, retrieval->irb_relation->rel_name,
 						 (USHORT) (retrieval->irb_index + 1));
 
-		const SSHORT length = index_name.length();
+		SSHORT length = index_name.length();
+
+		MoveBuffer nameBuffer;
+		nameBuffer.getBuffer(DataTypeUtil(tdbb).convertLength(MAX_SQL_IDENTIFIER_LEN,
+			CS_METADATA, tdbb->tdbb_attachment->att_charset));
+		length = INTL_convert_bytes(tdbb,
+			tdbb->tdbb_attachment->att_charset, nameBuffer.begin(), nameBuffer.getCapacity(),
+			CS_METADATA, (const BYTE*) index_name.c_str(), length, ERR_post);
+
 		*buffer_length -= 1 + length;
 		if (*buffer_length < 0) {
 			return false;
 		}
 		*buffer++ = (SCHAR) length;
-		memcpy(buffer, index_name.c_str(), length);
+		memcpy(buffer, nameBuffer.begin(), length);
 		buffer += length;
 	}
 
@@ -2348,6 +2357,8 @@ static bool dump_rsb(const jrd_req* request,
  *	a particular rsb.
  *
  **************************************/
+	thread_db* tdbb = JRD_get_thread_data();
+
 	jrd_prc* procedure;
 
 	DEV_BLKCHK(rsb, type_rsb);
@@ -2376,16 +2387,23 @@ static bool dump_rsb(const jrd_req* request,
 		name = relation->rel_name.c_str();
 	}
 
+	MoveBuffer nameBuffer;
+	nameBuffer.getBuffer(DataTypeUtil(tdbb).convertLength(MAX_SQL_IDENTIFIER_LEN,
+		CS_METADATA, tdbb->tdbb_attachment->att_charset));
+
 	if (name) {
+		length = INTL_convert_bytes(tdbb,
+			tdbb->tdbb_attachment->att_charset, nameBuffer.begin(), nameBuffer.getCapacity(),
+			CS_METADATA, (const BYTE*) name, length, ERR_post);
+
 		*buffer_length -= 2 + length;
 		if (*buffer_length < 0) {
 			return false;
 		}
 		*buffer++ = isc_info_rsb_relation;
 		*buffer++ = (SCHAR) length;
-		while (length--) {
-			*buffer++ = *name++;
-		}
+		memcpy(buffer, nameBuffer.begin(), length);
+		buffer += length;
 	}
 
 /* print out the type followed immediately by any
@@ -2456,15 +2474,20 @@ static bool dump_rsb(const jrd_req* request,
 			procedure->prc_request->req_fors.getCount() == 0)
 		{
 			const Firebird::MetaName& n = procedure->prc_name;
-			*buffer_length -= 6 + n.length();
+
+			length = INTL_convert_bytes(tdbb,
+				tdbb->tdbb_attachment->att_charset, nameBuffer.begin(), nameBuffer.getCapacity(),
+				CS_METADATA, (const BYTE*) n.c_str(), n.length(), ERR_post);
+
+			*buffer_length -= 6 + length;
             if (*buffer_length < 0) {
                 return false;
 			}
             *buffer++ = isc_info_rsb_begin;
             *buffer++ = isc_info_rsb_relation;
-			*buffer++ = (SCHAR) n.length();
-			memcpy(buffer, n.c_str(), n.length());
-			buffer += n.length();
+			*buffer++ = (SCHAR) length;
+			memcpy(buffer, nameBuffer.begin(), length);
+			buffer += length;
             *buffer++ = isc_info_rsb_type;
             *buffer++ = isc_info_rsb_sequential;
             *buffer++ = isc_info_rsb_end;
