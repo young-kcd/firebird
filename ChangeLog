@@ -1,3 +1,49 @@
+2007-05-25 04:10  asfernandes
+
+	* firebird2/src/jrd/trig.h (1.20):
+
+	Allow object names with international text to use up to 31 bytes,
+	and not a "random" maximum number of bytes
+
+2007-05-24 22:05  hvlad
+
+	* firebird2/src/jrd/dyn.epp (1.106):
+
+	Don't convert to UNICODE_FSS metadata text blobs for ODS < 11.1 as
+	older engines didn't convert it back to attachment charset when
+	reading
+
+2007-05-24 17:39  asfernandes
+
+	* firebird2/src/jrd/cmp.cpp (1.256):
+
+	Apply fix by Dmitry to problem caused by fix for CORE-1245
+
+2007-05-24 14:49  alexpeshkoff
+
+	* firebird2/src/jrd/: GlobalRWLock.h (1.5), nbak.h (1.26):
+
+	some more gcc warnings
+
+2007-05-24 14:30  alexpeshkoff
+
+	* firebird2/src/jrd/GlobalRWLock.cpp (1.4):
+
+	fixed gcc warning, human readability also here
+
+2007-05-24 14:18  alexpeshkoff
+
+	* firebird2/src/jrd/jrd.cpp (1.329):
+
+	Much better pool may be used here
+
+2007-05-24 14:13  alexpeshkoff
+
+	* firebird2/src/jrd/jrd.cpp (1.328):
+
+	Fixed ContextPoolHolder usage - in non-AST cases pool should not be
+	0
+
 2007-05-24 02:39  asfernandes
 
 	* firebird2/src/jrd/exe.cpp (1.221):
