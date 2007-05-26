@@ -83,6 +83,8 @@ static void gen_udf(dsql_req*, const dsql_nod*);
 static void gen_union(dsql_req*, const dsql_nod*);
 static void stuff_context(dsql_req*, const dsql_ctx*);
 static void stuff_cstring(dsql_req*, const char*);
+static void stuff_meta_string(dsql_req*, const char*);
+static void stuff_string(dsql_req*, const char*, int);
 static void stuff_word(dsql_req*, USHORT);
 
 // STUFF is defined in dsql.h for use in common with ddl.c 
@@ -2036,7 +2038,7 @@ static void gen_relation( dsql_req* request, dsql_ctx* context)
 	const dsql_rel* relation = context->ctx_relation;
 	const dsql_prc* procedure = context->ctx_procedure;
 
-// if this is a trigger or procedure , don't want relation id used 
+	// if this is a trigger or procedure , don't want relation id used 
 	if (relation) {
 		if (DDL_ids(request)) {
 			if (context->ctx_alias)
@@ -2050,11 +2052,12 @@ static void gen_relation( dsql_req* request, dsql_ctx* context)
 				stuff(request, blr_relation2);
 			else
 				stuff(request, blr_relation);
-			stuff_cstring(request, relation->rel_name);
+			stuff_meta_string(request, relation->rel_name);
 		}
 
 		if (context->ctx_alias)
-			stuff_cstring(request, context->ctx_alias);
+			stuff_meta_string(request, context->ctx_alias);
+
 		stuff_context(request, context);
 	}
 	else if (procedure) {
@@ -2064,7 +2067,7 @@ static void gen_relation( dsql_req* request, dsql_ctx* context)
 		}
 		else {
 			stuff(request, blr_procedure);
-			stuff_cstring(request, procedure->prc_name);
+			stuff_meta_string(request, procedure->prc_name);
 		}
 		stuff_context(request, context);
 
@@ -2689,7 +2692,8 @@ static void gen_statement(dsql_req* request, const dsql_nod* node)
 	case nod_exec_procedure:
 		stuff(request, blr_exec_proc);
 		name = (dsql_str*) node->nod_arg[e_exe_procedure];
-		stuff_cstring(request, name->str_data);
+		stuff_meta_string(request, name->str_data);
+
 		// Input parameters
 		if ( (temp = node->nod_arg[e_exe_inputs]) ) {
 			stuff_word(request, temp->nod_count);
@@ -2932,11 +2936,59 @@ static void stuff_context(dsql_req* request, const dsql_ctx* context)
  **/
 static void stuff_cstring( dsql_req* request, const char* string)
 {
-	UCHAR c;
+	stuff_string(request, string, strlen(string));
+}
 
-	stuff(request, strlen(string));
-	while ((c = *string++))
-		stuff(request, c);
+
+/**
+  
+ 	stuff_meta_string
+  
+    @brief	Write out a string in metadata charset with one byte of length.
+ 
+
+    @param request
+    @param string
+
+ **/
+static void stuff_meta_string(dsql_req* request, const char* string)
+{
+	ISC_STATUS_ARRAY status_vector = {0};
+	Firebird::UCharBuffer nameBuffer;
+
+	THREAD_EXIT();
+	const ISC_STATUS s =
+		gds__intl_function(status_vector, &request->req_dbb->dbb_database_handle,
+			INTL_FUNCTION_CONV_TO_METADATA, CS_dynamic,
+			strlen(string), (const UCHAR*) string, &nameBuffer);
+	THREAD_ENTER();
+
+	if (s)
+		ERRD_punt(status_vector);
+
+	stuff_string(request, (const CHAR*) nameBuffer.begin(), nameBuffer.getCount());
+}
+
+
+/**
+  
+ 	stuff_string
+  
+    @brief	Write out a string with one byte of length.
+ 
+
+    @param request
+    @param string
+
+ **/
+static void stuff_string(dsql_req* request, const char* string, int len)
+{
+	fb_assert(len >= 0 && len <= 255);
+
+	stuff(request, len);
+
+	while (len--)
+		stuff(request, *string++);
 }
 
 

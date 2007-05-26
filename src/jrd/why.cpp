@@ -3727,7 +3727,7 @@ ISC_STATUS API_ROUTINE GDS_INTL_FUNCTION(ISC_STATUS * user_status,
 										 UCHAR charSetNumber,
 										 USHORT strLen,
 										 const UCHAR* str,
-										 USHORT* result)
+										 void* result)
 {
 /**************************************
  *

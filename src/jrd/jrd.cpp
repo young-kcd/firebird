@@ -71,6 +71,7 @@
 #include "../jrd/log.h"
 #endif
 #include "../jrd/fil.h"
+#include "../jrd/intl.h"
 #include "../jrd/sbm.h"
 #include "../jrd/svc.h"
 #include "../jrd/sdw.h"
@@ -2591,7 +2592,7 @@ ISC_STATUS GDS_DROP_DATABASE(ISC_STATUS* user_status, Attachment** handle)
 
 
 ISC_STATUS GDS_INTL_FUNCTION(ISC_STATUS* user_status, Attachment** handle,
-							 USHORT function, UCHAR charSetNumber, USHORT strLen, const UCHAR* str, USHORT* result)
+	USHORT function, UCHAR charSetNumber, USHORT strLen, const UCHAR* str, void* result)
 {
 /**************************************
  *
@@ -2631,8 +2632,16 @@ ISC_STATUS GDS_INTL_FUNCTION(ISC_STATUS* user_status, Attachment** handle,
 							isc_arg_gds, isc_malformed_string, 0);
 				}
 				else
-					*result = charSet->length(strLen, str, true);
+					*static_cast<USHORT*>(result) = charSet->length(strLen, str, true);
 
+				break;
+			}
+
+			case INTL_FUNCTION_CONV_TO_METADATA:
+			{
+				Firebird::UCharBuffer* buffer = static_cast<Firebird::UCharBuffer*>(result);
+				buffer->resize(INTL_convert_bytes(tdbb, CS_METADATA, buffer->getBuffer(strLen * 4),
+					strLen * 4,	charSetNumber, str, strLen, ERR_post));
 				break;
 			}
 
