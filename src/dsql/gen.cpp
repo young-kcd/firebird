@@ -2038,7 +2038,7 @@ static void gen_relation( dsql_req* request, dsql_ctx* context)
 	const dsql_rel* relation = context->ctx_relation;
 	const dsql_prc* procedure = context->ctx_procedure;
 
-	// if this is a trigger or procedure , don't want relation id used 
+	// if this is a trigger or procedure, don't want relation id used 
 	if (relation) {
 		if (DDL_ids(request)) {
 			if (context->ctx_alias)
