@@ -1,3 +1,18 @@
+2007-05-27 02:37  asfernandes
+
+	* firebird2/src/dsql/gen.cpp (1.122):
+
+	Misc
+
+2007-05-27 00:08  asfernandes
+
+	* firebird2/src/: dsql/gen.cpp (1.121), jrd/jrd.cpp (1.330),
+	jrd/jrd_proto.h (1.48), jrd/why.cpp (1.131), jrd/why_proto.h
+	(1.33):
+
+	Fix non-ASCII object names in: 1) aliases in PLANs 2) EXECUTE
+	PROCEDURE 3) SELECTs inside procedures/triggers
+
 2007-05-25 16:06  asfernandes
 
 	* firebird2/src/jrd/: DataTypeUtil.cpp (1.7), DataTypeUtil.h (1.7),
