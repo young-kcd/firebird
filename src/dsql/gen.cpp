@@ -2966,7 +2966,7 @@ static void stuff_meta_string(dsql_req* request, const char* string)
 	if (s)
 		ERRD_punt(status_vector);
 
-	stuff_string(request, (const CHAR*) nameBuffer.begin(), nameBuffer.getCount());
+	stuff_string(request, (const TEXT*) nameBuffer.begin(), nameBuffer.getCount());
 }
 
 
