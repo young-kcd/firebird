@@ -35,6 +35,7 @@ namespace Firebird {
 
 ISC_STATUS StatusHolder::save(const ISC_STATUS* status)
 {
+	fb_assert(m_status_vector[1] == 0 || m_raised);
 	if (m_raised) {
 		clear();
 	}
