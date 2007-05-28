@@ -2,6 +2,16 @@
   * v2.1 Beta 1
   **************
 
+    * Bugfix CORE-1271
+        Creation of invalid procedures/triggers allowed
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-1267
+        Small bug with default value for domains in PSQL
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
     * Bugfix CORE-1256
         Table columns hide destination variables of RETURNING INTO
       Contributor(s):
@@ -161,6 +171,16 @@
         Instance of fb_lock_mgr runs after build
       Contributor(s):
         Alex Peshkov <peshkoff at mail.ru>
+
+    * Improvement CORE-1280
+        Verify well-formedness of text blobs
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Improvement CORE-1277
+        Automatic transliteration of text blobs
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
 
     * Improvement CORE-1232
         Wrong behaviour of services manager during backup/restore operations
