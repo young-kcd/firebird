@@ -1789,12 +1789,12 @@ ISC_STATUS GDS_DSQL_FETCH(ISC_STATUS* user_status,
 			return unsupported(user_status);
 		}
 
-		stmt_raise_exception(statement);
-
 		/* On first fetch, clear the end-of-stream flag & reset the message buffers */
 
 		if (!(statement->rsr_flags & RSR_fetched))
 		{
+			stmt_raise_exception(statement);
+
 			statement->rsr_flags &= ~(RSR_eof | RSR_stream_err);
 			statement->rsr_rows_pending = 0;
 			stmt_clear_exception(statement);
