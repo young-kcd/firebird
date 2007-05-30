@@ -876,7 +876,7 @@ ISC_STATUS filter_transliterate_text(USHORT action, BlobControl* control)
 		USHORT bytes_read_from_source = 0;
 		status = caller(isc_blob_filter_get_segment,
 						control,
-						(USHORT) (aux->ctlaux_buffer1_len - length),
+						(USHORT) MIN((aux->ctlaux_buffer1_len - length), control->ctl_buffer_length),
 						aux->ctlaux_buffer1 + length,
 						&bytes_read_from_source);
 		if (status == isc_segment)	/* source has more segment bytes */
