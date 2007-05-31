@@ -1,3 +1,11 @@
+2007-05-30 17:28  hvlad
+
+	* firebird2/src/jrd/filters.cpp (1.55):
+
+	Fixed CORE-1291 : Can't transliterate character set when look at
+	procedure text in database just created from script (and thus in
+	ODS 11.1)
+
 2007-05-28 22:24  hvlad
 
 	* firebird2/src/common/StatusHolder.cpp (1.3):
