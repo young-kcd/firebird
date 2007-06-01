@@ -2324,7 +2324,7 @@ ISC_STATUS GDS_DSQL_PREPARE(ISC_STATUS * user_status, RTR * rtr_handle, RSR * st
 		if (!send_packet(rdb->rdb_port, packet, user_status))
 			return error(user_status);
 
-		statement->rsr_flags &= ~RSR_blob;
+		statement->rsr_flags &= ~(RSR_blob | RSR_defer_execute);
 
 		/* Set up for the response packet. */
 

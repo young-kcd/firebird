@@ -3307,7 +3307,7 @@ ISC_STATUS rem_port::prepare_statement(P_SQLST * prepareL, PACKET* sendL)
 
 	REMOTE_reset_statement(statement);
 
-	statement->rsr_flags &= ~(RSR_blob | RSR_no_batch);
+	statement->rsr_flags &= ~(RSR_blob | RSR_no_batch | RSR_defer_execute);
 	USHORT state = check_statement_type(statement);
 	if (state & STMT_BLOB) {
 		statement->rsr_flags |= RSR_blob;
