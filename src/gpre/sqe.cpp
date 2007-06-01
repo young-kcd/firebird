@@ -3050,7 +3050,7 @@ static GPRE_NOD par_udf( gpre_req* request)
 	}
 
 //  Check for DATE constants 
-// ** Begin date/time/timesamp *
+// ** Begin date/time/timestamp *
 	if (MSC_match(KW_CURRENT_DATE))
 		return MSC_node(nod_current_date, 0);
 	else if (MSC_match(KW_CURRENT_TIME))
@@ -3058,11 +3058,11 @@ static GPRE_NOD par_udf( gpre_req* request)
 	else if (MSC_match(KW_CURRENT_TIMESTAMP))
 		return MSC_node(nod_current_timestamp, 0);
 
-//  End date/time/timesamp *
+//  End date/time/timestamp *
 
 //  Check for SQL II defined functions 
 
-// ** Begin date/time/timesamp *
+// ** Begin date/time/timestamp *
 	if (MSC_match(KW_EXTRACT)) {
 		node = MSC_node(nod_extract, 2);
 		EXP_left_paren(0);
@@ -3083,7 +3083,7 @@ static GPRE_NOD par_udf( gpre_req* request)
 		return node;
 	}
 
-//  End date/time/timesamp *
+//  End date/time/timestamp *
 
 	if (MSC_match(KW_UPPER)) {
 		node = MSC_node(nod_upcase, 1);
