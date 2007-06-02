@@ -1,3 +1,28 @@
+2007-06-01 18:05  asfernandes
+
+	* firebird2/src/gpre/sqe.cpp (1.44):
+
+	Misc
+
+2007-06-01 15:16  alexpeshkoff
+
+	* firebird2/src/extlib/ib_udf.sql (1.8):
+
+	Builtin functions - same changes in legacy file
+
+2007-06-01 14:46  hvlad
+
+	* firebird2/src/remote/: interface.cpp (1.137), server.cpp (1.151):
+
+	Fixed bug with wrongly initialized remote statement when lazy_port
+	feature active.  It visible with TCS's test DSQL_DOMAIN_20
+
+2007-06-01 14:08  alexpeshkoff
+
+	* firebird2/src/extlib/ib_udf2.sql (1.10):
+
+	All this functions became builtin in fb2.1
+
 2007-05-30 17:28  hvlad
 
 	* firebird2/src/jrd/filters.cpp (1.55):
