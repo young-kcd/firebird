@@ -214,6 +214,7 @@ copyFiles() {
     
 #	Copy various upgrade stuff
     cp $BuildRootDir/src/misc/upgrade/v2/* $DestDir/upgrade/
+    cp $BuildRootDir/src/misc/upgrade/v2.1/* $DestDir/upgrade/
 
 #	Misc. config files
     cp $BuildRootDir/gen/install/misc/firebird.xinetd $DestDir/misc/

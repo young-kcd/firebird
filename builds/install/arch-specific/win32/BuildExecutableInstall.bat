@@ -395,6 +395,10 @@ endlocal
 mkdir %FB_OUTPUT_DIR%\misc\upgrade\security 2>nul
 @copy %FB_ROOT_PATH%\src\misc\upgrade\v2\security_database.* %FB_OUTPUT_DIR%\misc\upgrade\security
 
+::Metadata migration
+mkdir %FB_OUTPUT_DIR%\misc\upgrade\metadata 2>nul
+@copy %FB_ROOT_PATH%\src\misc\upgrade\v2.1\metadata_* %FB_OUTPUT_DIR%\misc\upgrade\metadata
+
 :: Make sure that qli's help.fdb is available
 ::===============================================
 @if not exist %FB_OUTPUT_DIR%\help\help.fdb (
@@ -441,7 +445,7 @@ set FBBUILD_ZIP_PACK_ROOT=%FB_ROOT_PATH%\builds\zip_pack_%FB_TARGET_PLATFORM%
 if not exist %FBBUILD_ZIP_PACK_ROOT% @mkdir %FBBUILD_ZIP_PACK_ROOT% 2>nul
 @del /s /q %FBBUILD_ZIP_PACK_ROOT%\ > nul
 @copy /Y %FB_OUTPUT_DIR% %FBBUILD_ZIP_PACK_ROOT% > nul
-for %%v in (bin doc doc\sql.extensions help include intl lib udf misc misc\upgrade misc\upgrade\ib_udf misc\upgrade\security system32 ) do (
+for %%v in (bin doc doc\sql.extensions help include intl lib udf misc misc\upgrade misc\upgrade\ib_udf misc\upgrade\security misc\upgrade\metadata system32 ) do (
 	@mkdir %FBBUILD_ZIP_PACK_ROOT%\%%v 2>nul
 	@copy /Y %FB_OUTPUT_DIR%\%%v\*.* %FBBUILD_ZIP_PACK_ROOT%\%%v\ > nul
 )
