@@ -107,6 +107,8 @@ bool UserBlob::close(bool force_internal_SV)
 
 bool UserBlob::getSegment(size_t len, void* buffer, size_t& real_len)
 {
+	real_len = 0;
+
 #ifdef DEV_BUILD
 	if (!m_blob || m_direction == dir_write)
 		return false;
@@ -115,7 +117,6 @@ bool UserBlob::getSegment(size_t len, void* buffer, size_t& real_len)
 		return false;
 #endif
 
-	real_len = 0;
 	USHORT olen = 0;
 	USHORT ilen = len > SEGMENT_LIMIT ? SEGMENT_LIMIT : static_cast<USHORT>(len);
 	char* buf2 = static_cast<char*>(buffer);
