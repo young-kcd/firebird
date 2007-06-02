@@ -1094,6 +1094,10 @@ static void define_computed(dsql_req* request,
 				  isc_arg_gds, isc_dsql_no_array_computed, 0);
 	}
 
+	// try to calculate size of the computed field. The calculated size
+	// may be ignored, but it will catch self references
+	dsc desc;
+	MAKE_desc(request, &desc, input, NULL);
 
 	// generate the blr expression
 
@@ -1101,11 +1105,6 @@ static void define_computed(dsql_req* request,
 	request->begin_blr(0);
 	GEN_expr(request, input);
 	request->end_blr();
-
-	// try to calculate size of the computed field. The calculated size
-	// may be ignored, but it will catch self references
-	dsc desc;
-	MAKE_desc(request, &desc, input, NULL);
 
 	if (save_desc.dsc_dtype) {
 		// restore the field size/type overrides
