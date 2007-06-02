@@ -67,6 +67,7 @@
 using namespace Jrd;
 using namespace Ods;
 
+//#define DEBUG_BTR_SPLIT
 
 /*********************************************
       eliminate this conversion - kk
@@ -920,12 +921,8 @@ void BTR_insert(thread_db* tdbb, WIN * root_window, index_insertion* insertion)
 	index_desc* idx = insertion->iib_descriptor;
 	RelationPages* relPages = insertion->iib_relation->getPages(tdbb);
 	WIN window(relPages->rel_pg_space_id, idx->idx_root);
-	btree_page* bucket = (btree_page*) CCH_FETCH(tdbb, &window, LCK_read, pag_index);
+	btree_page* bucket = (btree_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_index);
 
-	if (bucket->btr_level == 0) {
-		CCH_RELEASE(tdbb, &window);
-		CCH_FETCH(tdbb, &window, LCK_write, pag_index);
-	}
 	CCH_RELEASE(tdbb, root_window);
 
 	temporary_key key;
@@ -2225,22 +2222,39 @@ static SLONG add_node(thread_db* tdbb,
 			break;
 		}
 		bucket = (btree_page*) CCH_HANDOFF(tdbb, window, bucket->btr_sibling,
-			LCK_read, pag_index);
+			LCK_write, pag_index);
 	}
+
+	CCH_MARK(tdbb, window);
+	bucket->btr_header.pag_flags |= btr_dont_gc;
 
 	// Fetch the page at the next level down.  If the next level is leaf level, 
 	// fetch for write since we know we are going to write to the page (most likely).
 	const PageNumber index = window->win_page;
-	CCH_HANDOFF(tdbb, window, page,
-		(SSHORT) ((bucket->btr_level == 1) ? LCK_write : LCK_read), pag_index);
+	CCH_HANDOFF(tdbb, window, page, LCK_write, pag_index);
 
 	// now recursively try to insert the node at the next level down
 	index_insertion propagate;
 	SLONG split = add_node(tdbb, window, insertion, new_key,
 		new_record_number, &page, &propagate.iib_sibling);
-	if (split == NO_SPLIT) {
+
+	if (split == NO_SPLIT) 
+	{
+		window->win_page = index;
+		bucket = (btree_page*) CCH_FETCH(tdbb, window, LCK_write, pag_index);
+		CCH_MARK(tdbb, window);
+		bucket->btr_header.pag_flags &= ~btr_dont_gc;
+		CCH_RELEASE(tdbb, window);
+
 		return NO_SPLIT;
 	}
+
+#ifdef DEBUG_BTR_SPLIT
+	Firebird::string s;
+	s.printf("page %ld splitted. split %ld, right %ld, parent %ld", 
+		page, split, propagate.iib_sibling, index);
+	gds__trace(s.c_str());
+#endif
 
 	// The page at the lower level split, so we need to insert a pointer 
 	// to the new page to the page at this level.
@@ -2274,6 +2288,12 @@ static SLONG add_node(thread_db* tdbb,
 	// the split page on the lower level has been propogated, so we can go back to 
 	// the page it was split from, and mark it as garbage-collectable now
 	window->win_page = page;
+	bucket = (btree_page*) CCH_FETCH(tdbb, window, LCK_write, pag_index);
+	CCH_MARK(tdbb, window);
+	bucket->btr_header.pag_flags &= ~btr_dont_gc;
+	CCH_RELEASE(tdbb, window);
+
+	window->win_page = index;
 	bucket = (btree_page*) CCH_FETCH(tdbb, window, LCK_write, pag_index);
 	CCH_MARK(tdbb, window);
 	bucket->btr_header.pag_flags &= ~btr_dont_gc;
@@ -5061,6 +5081,12 @@ static CONTENTS garbage_collect(thread_db* tdbb, WIN * window, SLONG parent_numb
 			return contents_above_threshold;
 		}
 
+#ifdef DEBUG_BTR_SPLIT
+		Firebird::string s; 
+		s.printf("node with page %ld removed from parent page %ld", 
+			parentNode.pageNumber, parent_window.win_page.getPageNum());
+		gds__trace(s.c_str());
+#endif
 		// Update the parent first.  If the parent is not written out first, 
 		// we will be pointing to a page which is not in the doubly linked 
 		// sibling list, and therefore navigation back and forth won't work.
@@ -5134,6 +5160,14 @@ static CONTENTS garbage_collect(thread_db* tdbb, WIN * window, SLONG parent_numb
 		// we will be pointing to a page which is not in the doubly linked 
 		// sibling list, and therefore navigation back and forth won't work.
 		// AB: Parent is always a index pointer page.
+
+#ifdef DEBUG_BTR_SPLIT
+		Firebird::string s; 
+		s.printf("node with page %ld removed from parent page %ld", 
+			parentNode.pageNumber, parent_window.win_page.getPageNum());
+		gds__trace(s.c_str());
+#endif
+
 		result = delete_node(tdbb, &parent_window, parentNode.nodePointer);
 		CCH_RELEASE(tdbb, &parent_window);
 
@@ -5205,6 +5239,15 @@ static CONTENTS garbage_collect(thread_db* tdbb, WIN * window, SLONG parent_numb
 #endif
 
 	CCH_RELEASE(tdbb, &left_window);
+
+#ifdef DEBUG_BTR_SPLIT
+		Firebird::string s; 
+		s.printf("page %ld is removed from index. parent %ld, left %ld, right %ld", 
+			window->win_page.getPageNum(), parent_window.win_page.getPageNum(),
+			left_page ? left_window.win_page.getPageNum() : 0,
+			right_page ? right_window.win_page.getPageNum() : 0 );
+		gds__trace(s.c_str());
+#endif
 
 	// finally, release the page, and indicate that we should write the 
 	// previous page out before we write the TIP page out
