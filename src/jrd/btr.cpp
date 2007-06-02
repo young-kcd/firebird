@@ -5512,14 +5512,12 @@ static SLONG insert_node(thread_db* tdbb,
 		else {
 			// We have a equal node, so find the correct insertion point.
 			if (beforeInsertNode.isEndBucket) {
+				if (validateDuplicates) {
+					return NO_VALUE_PAGE;
+				}
 				if (allRecordNumber && 
 					(newRecordNumber < beforeInsertNode.recordNumber)) 
 				{
-					if (leafPage && validateDuplicates) {
-						// Save the duplicate so the main caller can validate them.
-						RBM_SET(tdbb->getDefaultPool(), &insertion->iib_duplicates, 
-							beforeInsertNode.recordNumber.getValue());
-					}
 					break;
 				}
 				else {
