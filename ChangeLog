@@ -1,3 +1,55 @@
+2007-06-02 21:51  hvlad
+
+	* firebird2/src/common/classes/UserBlob.cpp (1.7):
+
+	Fixed crash in DEV_BUILD when zero length blob is read by gbak.
+	Reported privately by Adriano
+
+2007-06-02 21:13  asfernandes
+
+	* firebird2/: doc/WhatsNew (1.127), src/dsql/ddl.cpp (1.202),
+	src/jrd/dyn_def.epp (1.154):
+
+	Fix for: CORE-1286 - Bug with COMPUTED BY fields CORE-1292 - Can't
+	create table using long username and UTF8 as attachment charset
+
+2007-06-02 21:11  asfernandes
+
+	* firebird2/builds/install/arch-specific/:
+	linux/classic/makeInstallImage.sh.in (1.21),
+	linux/super/makeInstallImage.sh.in (1.21),
+	win32/BuildExecutableInstall.bat (1.23):
+
+	Metadata charset upgrade scripts
+
+2007-06-02 20:42  asfernandes
+
+	* firebird2/src/misc/upgrade/v2.1/: metadata_charset.txt (1.1),
+	metadata_charset_create.sql (1.1), metadata_charset_drop.sql (1.1):
+
+	Metadata charset upgrade scripts
+
+2007-06-02 14:15  hvlad
+
+	* firebird2/src/jrd/btr.cpp (1.196):
+
+	Fixed CORE-1300 : Lower level index pages in missed from parent
+	page
+
+2007-06-02 14:10  hvlad
+
+	* firebird2/src/jrd/btr.cpp (1.195):
+
+	Fixed CORE-1299 : Wrong index entries order at non-leaf b-tree
+	pages
+
+2007-06-02 14:07  hvlad
+
+	* firebird2/src/jrd/btr.cpp (1.194):
+
+	Fixed CORE-1298 : BTR\garbage_collect code can make a deadlock in a
+	page cache
+
 2007-06-01 18:05  asfernandes
 
 	* firebird2/src/gpre/sqe.cpp (1.44):
