@@ -2549,6 +2549,10 @@ static rem_port* select_port( rem_port* main_port, SLCT * selct)
 #endif
 	for (rem_port* port = main_port; port; port = port->port_next) {
 		const int n = (int) port->port_handle;
+		if (n < 0 || n >= FD_SETSIZE) {
+			STOP_PORT_CRITICAL();
+			return port;
+		}		
 		if (n < selct->slct_width && FD_ISSET(n, &selct->slct_fdset)) {
 			port->port_dummy_timeout = port->port_dummy_packet_interval;
 			FD_CLR(n, &selct->slct_fdset);
@@ -2583,6 +2587,7 @@ static int select_wait( rem_port* main_port, SLCT * selct)
  **************************************/
 	TEXT msg[BUFFER_SMALL];
 	struct timeval timeout;
+	bool checkPorts = false;
 
 	for (;;)
 	{
@@ -2621,6 +2626,53 @@ static int select_wait( rem_port* main_port, SLCT * selct)
 					port->port_dummy_timeout -= delta_time;
 				}
 
+				if (checkPorts)
+				{
+					// select() returned EBADF\WSAENOTSOCK - we have a broken socket 
+					// in current fdset. Search and return it to caller to close
+					// broken connection correctly
+
+					struct linger lngr;
+					socklen_t optlen = sizeof(lngr);
+					const bool badSocket = 
+#ifdef WIN_NT
+						false;
+#else
+						((SOCKET) port->port_handle < 0) || 
+						((SOCKET) port->port_handle) >= FD_SETSIZE;
+#endif
+
+					if (badSocket || getsockopt((SOCKET) port->port_handle, 
+						SOL_SOCKET, SO_LINGER, (SCHAR*) &lngr, &optlen) != 0)
+					{
+#ifndef WIN_NT
+						if (badSocket || INET_ERRNO == EBADF)
+#else
+						if (badSocket || INET_ERRNO == WSAENOTSOCK)
+#endif
+						{
+							// not a socket, strange !
+							gds__log("INET/select_wait: found \"not a socket\" socket : %u", (SOCKET) port->port_handle);
+
+							// this will lead to receive() which will broke bad connection
+							selct->slct_count = selct->slct_width = 0;
+							FD_ZERO(&selct->slct_fdset);
+							if (!badSocket) 
+							{
+								FD_SET((SLONG) port->port_handle, &selct->slct_fdset);
+#ifdef WIN_NT
+								++selct->slct_width;
+#else
+								selct->slct_width = (int) port->port_handle + 1;
+#endif
+							}
+
+							STOP_PORT_CRITICAL();
+							return true;
+						}
+					}
+				}
+
 				FD_SET((SLONG) port->port_handle, &selct->slct_fdset);
 #ifdef WIN_NT
 				++selct->slct_width;
@@ -2631,6 +2683,7 @@ static int select_wait( rem_port* main_port, SLCT * selct)
 				found = true;
 			}
 		}
+		checkPorts = false;
 		STOP_PORT_CRITICAL();
 
 		if (!found)
@@ -2683,11 +2736,13 @@ static int select_wait( rem_port* main_port, SLCT * selct)
 				continue;
 #ifndef WIN_NT
 			else if (inetErrNo == EBADF)
-				break;
 #else
 			else if (inetErrNo == WSAENOTSOCK)
-				break;
 #endif
+			{
+				checkPorts = true;
+				break;
+			}
 			else {
 				THREAD_ENTER();
 				SNPRINTF(msg, FB_NELEM(msg),
