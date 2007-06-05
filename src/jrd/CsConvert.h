@@ -154,11 +154,24 @@ public:
 						 p < (const USHORT*) temp.end(); ++p)
 					{
 						if (*p != 0x20)	// space
-							Firebird::status_exception::raise(isc_arith_except, 0);
+						{
+							if (badInputPos)
+							{
+								*badInputPos = errPos;
+								break;
+							}
+							else
+								Firebird::status_exception::raise(isc_arith_except, 0);
+						}
 					}
 				}
 				else if (errCode == CS_TRUNCATION_ERROR)
-					Firebird::status_exception::raise(isc_arith_except, 0);
+				{
+					if (badInputPos)
+						*badInputPos = errPos;
+					else
+						Firebird::status_exception::raise(isc_arith_except, 0);
+				}
 				else
 				{
 					Firebird::status_exception::raise(
@@ -196,9 +209,22 @@ public:
 						if (memcmp(p, charSet1->charset_space_character,
 								charSet1->charset_space_length) != 0)
 						{
-							Firebird::status_exception::raise(isc_arith_except, 0);
+							if (badInputPos)
+							{
+								*badInputPos = errPos;
+								break;
+							}
+							else
+								Firebird::status_exception::raise(isc_arith_except, 0);
 						}
 					}
+				}
+				else if (errCode == CS_TRUNCATION_ERROR)
+				{
+					if (badInputPos)
+						*badInputPos = errPos;
+					else
+						Firebird::status_exception::raise(isc_arith_except, 0);
 				}
 				else
 				{
