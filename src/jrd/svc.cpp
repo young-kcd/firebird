@@ -142,7 +142,6 @@ namespace Jrd {
 		svc_switches(p), svc_perm_sw(p)
 
 	{
-		memset(svc_start_event, 0, sizeof svc_start_event);
 		memset(svc_status_array, 0, sizeof svc_status_array);
 	}
 	
@@ -241,6 +240,18 @@ namespace Jrd {
 } //namespace
 	
 using namespace Jrd;
+
+#ifdef SERVICE_THREAD
+
+void Service::svc_started()
+{
+	if (!(svc_flags & SVC_evnt_fired)) {
+		svc_flags |= SVC_evnt_fired;
+		svcStart.release();
+	}
+}
+
+#endif /* SERVICE_THREAD */
 
 /* This checks if the service has forked a process.  If not,
    it will post the isc_svcnoexe error. */
@@ -1924,36 +1935,29 @@ void* SVC_start(Service* service, USHORT spb_length, const SCHAR* spb_data)
 	}
 
 	if (serv->serv_thd) {
-		event_t* evnt_ptr =	service->svc_start_event;
-
+		service->svc_flags &= ~SVC_evnt_fired;
 		THREAD_EXIT();
-		/* create an event for the service.  The event will be signaled once the
-		 * particular service has reached a point in which it can start to return
-		 * information to the client.  This will allow isc_service_start to
-		 * include in its status vector information about the service's ability to
-		 * start.  This is needed since gds__thread_start will almost always
-		 * succeed.
-		 */
-		ISC_event_init(evnt_ptr, 0, 0);
-		SLONG count = ISC_event_clear(evnt_ptr);
 
 		gds__thread_start(serv->serv_thd, service, THREAD_medium, 0,
 						  (void *) &service->svc_handle);
 
-		/* check for the service being detached.  This will prevent the thread
-		 * from waiting infinitely if the client goes away
-		 */
-		while (!(service->svc_flags & SVC_detached)) {
-			if (ISC_event_wait(1, &evnt_ptr, &count, 60 * 1000, NULL, 0))
+		// Check for the service being detached. This will prevent the thread
+		// from waiting infinitely if the client goes away.
+		while (!(service->svc_flags & SVC_detached)) 
+		{
+			// The semaphore will be released once the particular service 
+			// has reached a point in which it can start to return
+			// information to the client.  This will allow isc_service_start
+			// to include in its status vector information about the service's
+			// ability to start. 
+			// This is needed since gds__thread_start will almost always succeed.
+			if (service->svcStart.tryEnter(60))
 			{
-				continue;
-			}
-			else {				/* the event was posted */
+				// svc_started was called
 				break;
 			}
 		}
 
-		ISC_event_fini(evnt_ptr);
 		THREAD_ENTER();
 	}
 	else
