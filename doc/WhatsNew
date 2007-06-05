@@ -2,16 +2,47 @@
   * v2.1 Beta 1
   **************
 
+    * Bugfix CORE-1303
+		Infinite loop in SS remote listener
+      Contributor(s):
+        Vlad Horsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-1300
+		Lower level index pages is missed from parent page
+      Contributor(s):
+        Vlad Horsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-1299
+		Wrong index entries order at non-leaf b-tree pages
+      Contributor(s):
+        Vlad Horsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-1298
+		BTR\garbage_collect code can make a deadlock in a page cache
+      Contributor(s):
+        Vlad Horsun <hvlad at users.sourceforge.net>
+
     * Bugfix CORE-1292
         Can't create table using long username and UTF8 as attachment charset
       Contributor(s):
         Adriano dos Santos Fernandes <adrianosf at uol.com.br>
 
+    * Bugfix CORE-1291
+		Can't transliterate character set when look at procedure text in database 
+		just created from script (and thus in ODS 11.1)
+      Contributor(s):
+        Vlad Horsun <hvlad at users.sourceforge.net>
+		
     * Bugfix CORE-1286
         Bug with COMPUTED BY fields
       Contributor(s):
         Adriano dos Santos Fernandes <adrianosf at uol.com.br>
 
+    * Bugfix CORE-1276
+		Sometime INET error reported as 0 in firebird.log instead of real error code
+      Contributor(s):
+        Vlad Horsun <hvlad at users.sourceforge.net>
+		
     * Bugfix CORE-1271
         Creation of invalid procedures/triggers allowed
       Contributor(s):
