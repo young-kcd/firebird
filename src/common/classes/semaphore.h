@@ -540,7 +540,22 @@ public:
 } // namespace Firebird
 
 #endif /* SEM_DEFINED */
-#endif /*MULTI_THREAD*/
+#else  /* MULTI_THREAD*/
+
+namespace Firebird {
+
+class Semaphore {
+public:
+	Semaphore() {}
+	~Semaphore() {}
+	bool tryEnter(int seconds = 0) {return true;}
+	void enter() {}
+	void release(SLONG count = 1) {}
+};
+
+} // namespace Firebird
+
+#endif /* MULTI_THREAD*/
 
 #endif /*!WIN_NT*/
 

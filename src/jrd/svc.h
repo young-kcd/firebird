@@ -32,6 +32,7 @@
 #include "../jrd/svc_undoc.h"
 #include "../jrd/svc_proto.h"
 #include "../jrd/isc_s_proto.h"
+#include "../common/classes/semaphore.h"
 
 #include "../jrd/jrd_blks.h"
 #include "../include/fb_blk.h"
@@ -115,7 +116,7 @@ public:
 	UCHAR*	svc_stdout;
 	TEXT**	svc_argv;
 	ULONG	svc_argc;
-	event_t	svc_start_event[1];	/* fired once service has started successfully */
+	Firebird::Semaphore	svcStart;
 	serv_entry*	svc_service;
 	UCHAR*	svc_resp_buf;
 	const UCHAR*	svc_resp_ptr;
@@ -153,17 +154,6 @@ const int SVC_cmd_line		= 128;
 inline void Service::svc_started()
 {
 	// null definition, no overhead.
-}
-
-#else /* SERVICE_THREAD */
-
-inline void Service::svc_started()
-{
-	event_t* evnt_ptr = svc_start_event;
-	if (!(svc_flags & SVC_evnt_fired)) {
-		svc_flags |= SVC_evnt_fired;
-		ISC_event_post(evnt_ptr);
-	}
 }
 
 #endif /* SERVICE_THREAD */
