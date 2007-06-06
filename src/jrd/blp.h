@@ -71,7 +71,7 @@ static const struct
 	{"via", three},
 	{"user_name", zero},
 	{"null", zero},
-	{NULL, NULL},
+	{"equiv", two},
 	{"eql", two},
 	{"neq", two},
 	{"gtr", two},
