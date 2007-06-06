@@ -329,7 +329,7 @@ void UTIL_ex_unlock( int fd_file)
 }
 
 
-int UTIL_set_handler(int sig, sighandler_t handler, bool restart)
+int UTIL_set_handler(int sig, void (*handler) (int), bool restart)
 {
 /**************************************
  *
@@ -355,8 +355,7 @@ int UTIL_set_handler(int sig, sighandler_t handler, bool restart)
 	if (sigaction(sig, &sig_action, NULL) < 0)
 		return -1;
 #else
-	sighandler_t old_handler = signal(SIGTERM, TERM_handler);
-	if (old_handler == SIG_ERR)
+	if (signal(sig, handler) == SIG_ERR)
 		return -1;
 #endif
 	return 0;
