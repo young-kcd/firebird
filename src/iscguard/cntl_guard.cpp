@@ -52,10 +52,6 @@ static SERVICE_STATUS_HANDLE service_handle;
 static Firebird::string* service_name = NULL;
 static Firebird::string* remote_name = NULL;
 static HANDLE stop_event_handle;
-#ifdef NOT_USED_OR_REPLACED
-static MUTX_T thread_mutex[1];
-static thread* threads;
-#endif
 
 
 void CNTL_init(ThreadEntryPoint* handler, const TEXT* name)
@@ -95,8 +91,6 @@ void WINAPI CNTL_main_thread( DWORD argc, char* argv[])
 	if (!service_handle)
 		return;
 
-// THD_mutex_init (thread_mutex);
-
 /* start everything, and wait here for ever, or at
  * least until we get the stop event indicating that
  * the service is stoping. */
@@ -135,8 +129,6 @@ void WINAPI CNTL_main_thread( DWORD argc, char* argv[])
 	CloseServiceHandle(hService);
 
 	report_status(SERVICE_STOPPED, last_error, 0, 0);
-
-// THD_mutex_destroy (thread_mutex);
 }
 
 void CNTL_shutdown_service(const TEXT* message)

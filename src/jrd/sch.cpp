@@ -76,13 +76,13 @@ static bool schedule(void);
 static bool schedule_active(bool);
 static void stall(THREAD);
 static void stall_ast(THREAD);
-static void sch_mutex_lock(Firebird::Mutex*);
-static void sch_mutex_unlock(Firebird::Mutex*);
+static void sch_mutex_lock(Firebird::Mutex&);
+static void sch_mutex_unlock(Firebird::Mutex&);
 
 static THREAD free_threads = NULL;
 static THREAD active_thread = NULL;
 static THREAD ast_thread = NULL;
-static MUTX_T thread_mutex[1];
+static Firebird::Mutex thread_mutex;
 volatile static bool init_flag = false;
 static USHORT enabled = FALSE;
 
@@ -780,7 +780,7 @@ static void cleanup(void *arg)
 
 #ifdef SUPERCLIENT
 /* use locks */
-	thread_mutex->enter();
+	thread_mutex.enter();
 
 	if (!init_flag)
 		return;
@@ -821,7 +821,7 @@ static void cleanup(void *arg)
 
 	}
 
-	thread_mutex->leave();
+	thread_mutex.leave();
 #endif /* SUPERCLIENT */
 
 	init_flag = false;
@@ -1027,7 +1027,7 @@ static void stall_ast(THREAD thread)
 }
 
 
-static void sch_mutex_lock(Firebird::Mutex* mtx)
+static void sch_mutex_lock(Firebird::Mutex& mtx)
 {
 /**************************************
  *
@@ -1041,7 +1041,7 @@ static void sch_mutex_lock(Firebird::Mutex* mtx)
  **************************************/
 	try
 	{
-		mtx->enter();
+		mtx.enter();
 	}
 	catch (const Firebird::system_call_failed& e)
 	{
@@ -1050,7 +1050,7 @@ static void sch_mutex_lock(Firebird::Mutex* mtx)
 }
 
 
-static void sch_mutex_unlock(Firebird::Mutex* mtx)
+static void sch_mutex_unlock(Firebird::Mutex& mtx)
 {
 /**************************************
  *
@@ -1064,7 +1064,7 @@ static void sch_mutex_unlock(Firebird::Mutex* mtx)
  **************************************/
 	try
 	{
-		mtx->leave();
+		mtx.leave();
 	}
 	catch (const Firebird::system_call_failed& e)
 	{

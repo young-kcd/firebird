@@ -55,7 +55,7 @@ static SERVICE_STATUS_HANDLE service_handle;
 static Firebird::string* service_name = NULL;
 static Firebird::string* mutex_name = NULL;
 static HANDLE stop_event_handle;
-static MUTX_T thread_mutex[1];
+static Firebird::Mutex thread_mutex;
 static THREAD threads;
 static HANDLE hMutex = NULL;
 static bool bGuarded = false;
@@ -103,10 +103,10 @@ void *CNTL_insert_thread(void)
 					GetCurrentProcess(), &new_thread->thread_handle, 0, FALSE,
 					DUPLICATE_SAME_ACCESS);
 
-	THD_mutex_lock(thread_mutex);
+	thread_mutex.enter();
 	new_thread->thread_next = threads;
 	threads = new_thread;
-	THD_mutex_unlock(thread_mutex);
+    thread_mutex.leave();
 
 	return new_thread;
 }
@@ -188,7 +188,7 @@ void CNTL_remove_thread( void *thread)
  * Functional description
  *
  **************************************/
-	THD_mutex_lock(thread_mutex);
+    thread_mutex.enter();
 	for (THREAD* thread_ptr = &threads;
 		 *thread_ptr; thread_ptr = &(*thread_ptr)->thread_next)
 	{
@@ -197,7 +197,7 @@ void CNTL_remove_thread( void *thread)
 			break;
 		}
 	}
-	THD_mutex_unlock(thread_mutex);
+    thread_mutex.leave();
 
 	THREAD this_thread = (THREAD) thread;
 	CloseHandle(this_thread->thread_handle);

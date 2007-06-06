@@ -157,10 +157,10 @@ const SSHORT WAIT_PERIOD	= -1;
 #ifdef V4_THREADING
 #ifndef SUPERSERVER
 
-static MUTX_T databases_mutex;
+static Firebird::Mutex databases_mutex;
 
-#define V4_JRD_MUTEX_LOCK(mutx) {THREAD_EXIT(); THD_JRD_MUTEX_LOCK(&mutx); THREAD_ENTER();}
-#define V4_JRD_MUTEX_UNLOCK(mutx) THD_JRD_MUTEX_UNLOCK(&mutx)
+#define V4_JRD_MUTEX_LOCK(mutx) {THREAD_EXIT(); mutx.enter(); THREAD_ENTER();}
+#define V4_JRD_MUTEX_UNLOCK(mutx) mutx.leave()
 
 #endif // SUPERSERVER
 #endif // V4_THREADING
@@ -4426,7 +4426,7 @@ bool JRD_getdir(Firebird::PathName& buf)
 #endif // SUPERSERVER
 
 
-void JRD_mutex_lock(MUTX_PTR mutex)
+void JRD_mutex_lock(Firebird::Mutex& mutex)
 {
 /**************************************
  *
@@ -4440,12 +4440,12 @@ void JRD_mutex_lock(MUTX_PTR mutex)
  *
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
-	INUSE_insert(&tdbb->tdbb_mutexes, mutex, true);
-	THD_MUTEX_LOCK(mutex);
+	INUSE_insert(&tdbb->tdbb_mutexes, &mutex, true);
+	mutex.enter();
 }
 
 
-void JRD_mutex_unlock(MUTX_PTR mutex)
+void JRD_mutex_unlock(Firebird::Mutex& mutex)
 {
 /**************************************
  *
@@ -4459,8 +4459,8 @@ void JRD_mutex_unlock(MUTX_PTR mutex)
  *
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
-	INUSE_remove(&tdbb->tdbb_mutexes, mutex, false);
-	THD_MUTEX_UNLOCK(mutex);
+	INUSE_remove(&tdbb->tdbb_mutexes, &mutex, false);
+	mutex.leave();
 }
 
 
@@ -5790,7 +5790,7 @@ static Database* init(thread_db*	tdbb,
  *	OPEN.
  *
  **************************************/
-	MUTX_T temp_mutx[DBB_MUTX_max];
+	Firebird::Mutex temp_mutx[DBB_MUTX_max];
 //	wlck_t temp_wlck[DBB_WLCK_max];
 
 	SET_TDBB(tdbb);
@@ -5891,7 +5891,7 @@ static Database* init(thread_db*	tdbb,
 	dbb->dbb_next = databases;
 	databases = dbb;
 
-	dbb->dbb_mutexes = FB_NEW(*dbb->dbb_permanent) MUTX_T[DBB_MUTX_max];
+	dbb->dbb_mutexes = FB_NEW(*dbb->dbb_permanent) Firebird::Mutex[DBB_MUTX_max];
 	dbb->dbb_internal = vec<jrd_req*>::newVector(*dbb->dbb_permanent, irq_MAX);
 	dbb->dbb_dyn_req = vec<jrd_req*>::newVector(*dbb->dbb_permanent, drq_MAX);
 	dbb->dbb_flags |= DBB_exclusive;

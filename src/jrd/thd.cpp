@@ -109,7 +109,7 @@ int THD_rec_mutex_lock(REC_MUTX_T * rec_mutex)
 	{
 	    try 
 		{
-			rec_mutex->rec_mutx_mtx->enter();
+			rec_mutex->rec_mutx_mtx.enter();
 		}
 		catch (const Firebird::system_call_failed& e)
 		{
@@ -144,7 +144,7 @@ int THD_rec_mutex_unlock(REC_MUTX_T * rec_mutex)
 		rec_mutex->rec_mutx_id = 0;
 	    try 
 		{
-			rec_mutex->rec_mutx_mtx->leave();
+			rec_mutex->rec_mutx_mtx.leave();
 		}
 		catch (const Firebird::system_call_failed& e)
 		{

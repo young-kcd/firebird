@@ -229,7 +229,7 @@ public:
 	trig_vec*	dbb_triggers[DB_TRIGGER_MAX];
 
 	DatabaseModules	modules;			// external function/filter modules
-	MUTX_T *dbb_mutexes;				// Database block mutexes
+	Firebird::Mutex *dbb_mutexes;		// Database block mutexes
 	REC_MUTX_T dbb_sp_rec_mutex;		// Recursive mutex for accessing/updating stored procedure metadata
 	//SLONG dbb_sort_size;				// Size of sort space per sort, unused for now
 

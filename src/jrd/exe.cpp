@@ -611,7 +611,7 @@ jrd_req* EXE_find_request(thread_db* tdbb, jrd_req* request, bool validate)
 	if (!request)
 		BUGCHECK /* REQUEST */ (167);	/* msg 167 invalid SEND request */
 
-	THD_MUTEX_LOCK(dbb->dbb_mutexes + DBB_MUTX_clone);
+	dbb->dbb_mutexes[DBB_MUTX_clone].enter();
 	jrd_req* clone = NULL;
 	USHORT count = 0;
 	if (!(request->req_flags & req_in_use))
@@ -642,7 +642,7 @@ jrd_req* EXE_find_request(thread_db* tdbb, jrd_req* request, bool validate)
 		}
 
 		if (count > MAX_CLONES) {
-			THD_MUTEX_UNLOCK(dbb->dbb_mutexes + DBB_MUTX_clone);
+			dbb->dbb_mutexes[DBB_MUTX_clone].leave();
 			ERR_post(isc_req_max_clones_exceeded, 0);
 		}
 		if (!clone)
@@ -651,7 +651,7 @@ jrd_req* EXE_find_request(thread_db* tdbb, jrd_req* request, bool validate)
 	clone->req_attachment = tdbb->tdbb_attachment;
 	clone->req_stats.setParent(&tdbb->tdbb_attachment->att_stats);
 	clone->req_flags |= req_in_use;
-	THD_MUTEX_UNLOCK(dbb->dbb_mutexes + DBB_MUTX_clone);
+	dbb->dbb_mutexes[DBB_MUTX_clone].leave();
 	return clone;
 }
 

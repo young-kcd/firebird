@@ -146,28 +146,32 @@ inline void make_event_name(char* buffer, size_t size, const char* format, ULONG
 	fb_utils::snprintf(buffer, size, format, Config::getIpcName(), arg1, arg2, arg3);
 }
 
-static MUTX_T xnet_mutex;
+static Firebird::Mutex	xnet_mutex;
 
 #if defined(SUPERCLIENT)
 
 inline void XNET_LOCK() {
-	THD_mutex_lock(&xnet_mutex);
+	xnet_mutex.enter();
 }
 inline void XNET_UNLOCK() {
-	THD_mutex_unlock(&xnet_mutex);
+	xnet_mutex.leave();
 }
 
 #elif defined(SUPERSERVER)
 
 inline void XNET_LOCK() {
 	if (!xnet_shutdown)
+	{
 		THREAD_EXIT();
-	THD_mutex_lock(&xnet_mutex);
+	}
+	xnet_mutex.enter();
 	if (!xnet_shutdown)
+	{
 		THREAD_ENTER();
+	}
 }
 inline void XNET_UNLOCK() {
-	THD_mutex_unlock(&xnet_mutex);
+	xnet_mutex.leave();
 }
 
 #else // CS
@@ -2125,7 +2129,7 @@ void release_all()
 	connect_fini();
 #endif
 
-	THD_mutex_lock(&xnet_mutex);
+	xnet_mutex.enter();
 
 	// release all map stuf left not released by broken ports
 
@@ -2139,7 +2143,7 @@ void release_all()
 
 	global_client_maps = NULL;
 
-	THD_mutex_unlock(&xnet_mutex);
+	xnet_mutex.leave();
 
 	xnet_initialized = false;
 }

@@ -115,9 +115,7 @@ static bool initialized_signals = false;
 static SIG volatile signals = NULL;
 static SLONG volatile overflow_count = 0;
 
-#ifdef MULTI_THREAD
-static MUTX_T sig_mutex;
-#endif
+static Firebird::Mutex sig_mutex;
 
 static int process_id = 0;
 
@@ -334,7 +332,7 @@ static bool isc_signal2(
 	if (!process_id)
 		process_id = getpid();
 
-	THD_MUTEX_LOCK(&sig_mutex);
+	sig_mutex.enter();
 
 /* See if this signal has ever been cared about before */
 
@@ -377,7 +375,7 @@ static bool isc_signal2(
 
 	que_signal(signal_number, handler, arg, flags, old_sig_w_siginfo);
 
-	THD_MUTEX_UNLOCK(&sig_mutex);
+	sig_mutex.leave();
 	
 	return rc;
 }
@@ -401,7 +399,7 @@ void ISC_signal_cancel(
 	SIG sig;
 	volatile SIG* ptr;
 
-	THD_MUTEX_LOCK(&sig_mutex);
+	sig_mutex.enter();
 
 	for (ptr = &signals; sig = *ptr;) {
 		if (sig->sig_signal == signal_number &&
@@ -415,7 +413,7 @@ void ISC_signal_cancel(
 			ptr = &(*ptr)->sig_next;
 	}
 
-	THD_MUTEX_UNLOCK(&sig_mutex);
+	sig_mutex.leave();
 
 }
 

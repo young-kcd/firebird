@@ -359,7 +359,7 @@ static ULONG shutdown_param = 0L;
 
 const char* const SPB_SEC_USERNAME = "isc_spb_sec_username";
 
-static MUTX_T svc_mutex[1], thd_mutex[1];
+static Firebird::Mutex svc_mutex, thd_mutex;
 
 /* Service Functions */
 #if defined(SERVICE_THREAD) && !defined(BOOT_BUILD)
@@ -1809,9 +1809,9 @@ void* SVC_start(Service* service, USHORT spb_length, const SCHAR* spb_data)
 		ERR_post(isc_bad_spb_form, 0);
 	}
 
-	THD_MUTEX_LOCK(thd_mutex);
+	thd_mutex.enter();
 	if (service->svc_flags & SVC_thd_running) {
-		THD_MUTEX_UNLOCK(thd_mutex);
+		thd_mutex.leave();
 		ERR_post(isc_svc_in_use, isc_arg_string,
 				 error_string(serv->serv_name, strlen(serv->serv_name)),
 				 0);
@@ -1825,7 +1825,7 @@ void* SVC_start(Service* service, USHORT spb_length, const SCHAR* spb_data)
 		service->svc_flags = 0;
 	}
 	service->svc_flags |= SVC_thd_running;
-	THD_MUTEX_UNLOCK(thd_mutex);
+	thd_mutex.leave();
 
 	thread_db* tdbb = JRD_get_thread_data();
 
@@ -2661,7 +2661,7 @@ void SVC_finish(Service* service, USHORT flag)
  *
  **************************************/
 
-	THD_MUTEX_LOCK(svc_mutex);
+	svc_mutex.enter();
 	if (service && ((flag == SVC_finished) || (flag == SVC_detached)))
 	{
 		service->svc_flags |= flag;
@@ -2685,7 +2685,7 @@ void SVC_finish(Service* service, USHORT flag)
 			service->svc_handle = 0;
 		}
 	}
-	THD_MUTEX_UNLOCK(svc_mutex);
+	svc_mutex.leave();
 }
 
 

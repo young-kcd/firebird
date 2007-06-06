@@ -36,9 +36,14 @@
 #include "../common/classes/alloc.h"
 
 #ifdef MULTI_THREAD
-inline void THD_mutex_lock(Firebird::Mutex* m) {
-	m->enter();
-}
+//
+//inline void THD_mutex_lock(Firebird::Mutex* m) {
+//	m->enter();
+//}
+//
+// THD_mutex_unlock is kept here to preserve INUSE_cleanup()
+// logic
+//
 inline void THD_mutex_unlock(Firebird::Mutex* m) {
 	m->leave();
 }
@@ -166,14 +171,9 @@ struct iuo {
 
 typedef iuo *IUO;
 
-/* Mutex structure */
-
-typedef Firebird::Mutex MUTX_T;
-typedef Firebird::Mutex* MUTX_PTR;
-
 /* Recursive mutex structure */
 struct rec_mutx_t {
-	MUTX_T rec_mutx_mtx[1];
+	Firebird::Mutex rec_mutx_mtx;
 	FB_THREAD_ID rec_mutx_id;
 	SLONG rec_mutx_count;
 };
@@ -184,13 +184,9 @@ typedef rec_mutx_t REC_MUTX_T;
 #ifdef MULTI_THREAD
 #define THD_GLOBAL_MUTEX_LOCK		THD_mutex_lock_global()
 #define THD_GLOBAL_MUTEX_UNLOCK		THD_mutex_unlock_global()
-#define THD_MUTEX_LOCK(mutx)		THD_mutex_lock(mutx)
-#define THD_MUTEX_UNLOCK(mutx)		THD_mutex_unlock(mutx)
 #else // MULTI_THREAD
 #define THD_GLOBAL_MUTEX_LOCK
 #define THD_GLOBAL_MUTEX_UNLOCK
-#define THD_MUTEX_LOCK(mutx)
-#define THD_MUTEX_UNLOCK(mutx)
 #endif // MULTI_THREAD
 
 extern "C" {

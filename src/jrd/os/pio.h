@@ -46,7 +46,7 @@ class jrd_file : public pool_alloc_rpt<SCHAR, type_fil>
 	USHORT fil_fudge;			/* Fudge factor for page relocation */
 	int fil_desc;
 	//int *fil_trace;				/* Trace file, if any */
-	MUTX_T fil_mutex[1];
+	Firebird::Mutex fil_mutex;
 	USHORT fil_flags;
 	USHORT fil_length;			/* Length of expanded file name */
 	SCHAR fil_string[1];		/* Expanded file name */
@@ -67,7 +67,7 @@ class jrd_file : public pool_alloc_rpt<SCHAR, type_fil>
 	USHORT fil_fudge;			/* Fudge factor for page relocation */
 	int fil_desc;
 	int fil_trace;				/* Trace file, if any */
-	MUTX_T fil_mutex[1];
+	Firebird::Mutex fil_mutex;
 	USHORT fil_length;			/* Length of expanded file name */
 	USHORT fil_fid[3];			/* File id */
 	USHORT fil_did[3];			/* Directory id */
@@ -93,7 +93,7 @@ class jrd_file : public pool_alloc_rpt<SCHAR, type_fil>
 	SLONG fil_desc;
 	SLONG fil_force_write_desc;	/* Handle of force write open */
 	//int *fil_trace;				/* Trace file, if any */
-	MUTX_T fil_mutex[1];
+	Firebird::Mutex fil_mutex;
 #ifdef SUPERSERVER_V2
 	void* fil_io_events[MAX_FILE_IO];	/* Overlapped I/O events */
 #endif

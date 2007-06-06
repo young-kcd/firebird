@@ -78,15 +78,11 @@ using namespace Jrd;
 #endif
 
 #ifdef SUPERSERVER
-#define THD_IO_MUTEX_INIT(mutx)		THD_MUTEX_INIT(mutx)
-#define THD_IO_MUTEX_LOCK(mutx)		THD_MUTEX_LOCK(mutx)
-#define THD_IO_MUTEX_UNLOCK(mutx)	THD_MUTEX_UNLOCK(mutx)
-#define THD_IO_MUTEX_DESTROY(mutx)	THD_MUTEX_DESTROY(mutx)
+#define THD_IO_MUTEX_LOCK(mutx)		mutx.enter()
+#define THD_IO_MUTEX_UNLOCK(mutx)	mutx.leave()
 #else
-#define THD_IO_MUTEX_INIT(mutx)
 #define THD_IO_MUTEX_LOCK(mutx)
 #define THD_IO_MUTEX_UNLOCK(mutx)
-#define THD_IO_MUTEX_DESTROY(mutx)
 #endif
 
 #define IO_RETRY	20
@@ -195,9 +191,6 @@ void PIO_close(jrd_file* main_file)
 		if (file->fil_desc && file->fil_desc != -1) {
 			close(file->fil_desc);
 			file->fil_desc = -1;
-#ifndef PREAD_PWRITE
-			THD_IO_MUTEX_DESTROY(file->fil_mutex);
-#endif
 		}
 	}
 }
@@ -835,9 +828,6 @@ static jrd_file* setup_file(Database* dbb, const Firebird::PathName& file_name, 
 	file->fil_max_page = -1UL;
 	MOVE_FAST(file_name.c_str(), file->fil_string, file_name.length());
 	file->fil_string[file_name.length()] = '\0';
-#ifndef PREAD_PWRITE
-	THD_IO_MUTEX_INIT(file->fil_mutex);
-#endif
 
 /* If this isn't the primary file, we're done */
 

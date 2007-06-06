@@ -68,7 +68,7 @@
 static USHORT initialized_signals = FALSE;
 static SLONG volatile overflow_count = 0;
 
-static MUTX_T sig_mutex;
+static Firebird::Mutex	sig_mutex;
 
 static int process_id = 0;
 

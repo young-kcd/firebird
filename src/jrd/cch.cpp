@@ -1436,7 +1436,7 @@ void CCH_flush(thread_db* tdbb, USHORT flush_flag, SLONG tra_number)
 	{
 		const time_t now = time(0);
 
-		THD_MUTEX_LOCK(dbb->dbb_mutexes + DBB_MUTX_flush_count);
+		dbb->dbb_mutexes[DBB_MUTX_flush_count].enter();
 		
 		// If this is the first commit set last_flushed_write to now
 		if (!dbb->last_flushed_write)
@@ -1461,7 +1461,7 @@ void CCH_flush(thread_db* tdbb, USHORT flush_flag, SLONG tra_number)
 			dbb->unflushed_writes++;
 		}
 
-		THD_MUTEX_UNLOCK(dbb->dbb_mutexes + DBB_MUTX_flush_count);
+		dbb->dbb_mutexes[DBB_MUTX_flush_count].leave();
 	}
 
 	if (doFlush)

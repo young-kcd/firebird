@@ -162,8 +162,8 @@ void	JRD_database_close(Jrd::Attachment**, Jrd::Attachment**);
 
 void	JRD_set_cache_default(ULONG *);
 void	JRD_blocked(Jrd::Attachment*, Jrd::BlockingThread**);
-void	JRD_mutex_lock(Firebird::Mutex*);
-void	JRD_mutex_unlock(Firebird::Mutex*);
+void	JRD_mutex_lock(Firebird::Mutex&);
+void	JRD_mutex_unlock(Firebird::Mutex&);
 bool	JRD_reschedule(Jrd::thread_db*, SLONG, bool);
 void	JRD_restore_context(void);
 void	JRD_set_context(Jrd::thread_db*);

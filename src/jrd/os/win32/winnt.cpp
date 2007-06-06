@@ -304,12 +304,12 @@ void PIO_flush(jrd_file* main_file)
 	{
 		if (ostype == OS_CHICAGO)
 		{
-			THD_MUTEX_LOCK(file->fil_mutex);
+			file->fil_mutex.enter();
 		}
 		FlushFileBuffers((HANDLE) file->fil_desc);
 		if (ostype == OS_CHICAGO)
 		{
-			THD_MUTEX_UNLOCK(file->fil_mutex);
+			file->fil_mutex.leave();
 		}
 	}
 }
@@ -392,10 +392,10 @@ void PIO_header(Database* dbb, SCHAR * address, int length)
 	OVERLAPPED overlapped, *overlapped_ptr;
 	if (ostype == OS_CHICAGO)
 	{
-		THD_MUTEX_LOCK(file->fil_mutex);
+		file->fil_mutex.enter();
 		if (SetFilePointer(desc, 0, NULL, FILE_BEGIN) == (DWORD) -1)
 		{
-			THD_MUTEX_UNLOCK(file->fil_mutex);
+			file->fil_mutex.leave();
 			nt_error("SetFilePointer", file, isc_io_read_err, 0);
 		}
 		overlapped_ptr = NULL;
@@ -421,7 +421,7 @@ void PIO_header(Database* dbb, SCHAR * address, int length)
 		{
 			if (ostype == OS_CHICAGO)
 			{
-				THD_MUTEX_UNLOCK(file->fil_mutex);
+				file->fil_mutex.leave();
 			}
 			nt_error("ReadFile", file, isc_io_read_err, 0);
 		}
@@ -444,7 +444,7 @@ void PIO_header(Database* dbb, SCHAR * address, int length)
 #else
 			if (ostype == OS_CHICAGO)
 			{
-				THD_MUTEX_UNLOCK(file->fil_mutex);
+				file->fil_mutex.leave();
 			}
 			nt_error("ReadFile", file, isc_io_read_err, 0);
 #endif
@@ -456,7 +456,7 @@ void PIO_header(Database* dbb, SCHAR * address, int length)
 #endif
 
 	if (ostype == OS_CHICAGO) {
-		THD_MUTEX_UNLOCK(file->fil_mutex);
+		file->fil_mutex.leave();
 	}
 }
 
@@ -569,7 +569,7 @@ bool PIO_read(jrd_file* file, BufferDesc* bdb, Ods::pag* page, ISC_STATUS* statu
 			|| actual_length != size)
 		{
 			if (ostype == OS_CHICAGO) {
-				THD_MUTEX_UNLOCK(file->fil_mutex);
+				file->fil_mutex.leave();
 			}
 			return nt_error("ReadFile", file, isc_io_read_err, status_vector);
 		}
@@ -593,7 +593,7 @@ bool PIO_read(jrd_file* file, BufferDesc* bdb, Ods::pag* page, ISC_STATUS* statu
 			}
 #else
 			if (ostype == OS_CHICAGO) {
-				THD_MUTEX_UNLOCK(file->fil_mutex);
+				file->fil_mutex.leave();
 			}
 			return nt_error("ReadFile", file, isc_io_read_err, status_vector);
 #endif
@@ -605,7 +605,7 @@ bool PIO_read(jrd_file* file, BufferDesc* bdb, Ods::pag* page, ISC_STATUS* statu
 #endif
 
 	if (ostype == OS_CHICAGO) {
-		THD_MUTEX_UNLOCK(file->fil_mutex);
+		file->fil_mutex.leave();
 	}
 
 	return true;
@@ -793,7 +793,7 @@ bool PIO_write(jrd_file* file, BufferDesc* bdb, Ods::pag* page, ISC_STATUS* stat
 			|| actual_length != size)
 		{
 			if (ostype == OS_CHICAGO) {
-				THD_MUTEX_UNLOCK(file->fil_mutex);
+				file->fil_mutex.leave();
 			}
 			return nt_error("WriteFile", file, isc_io_write_err, status_vector);
 		}
@@ -814,7 +814,7 @@ bool PIO_write(jrd_file* file, BufferDesc* bdb, Ods::pag* page, ISC_STATUS* stat
 			}
 #else
 			if (ostype == OS_CHICAGO) {
-				THD_MUTEX_UNLOCK(file->fil_mutex);
+				file->fil_mutex.leave();
 			}
 			return nt_error("WriteFile", file, isc_io_write_err, status_vector);
 #endif
@@ -826,7 +826,7 @@ bool PIO_write(jrd_file* file, BufferDesc* bdb, Ods::pag* page, ISC_STATUS* stat
 #endif
 
 	if (ostype == OS_CHICAGO) {
-		THD_MUTEX_UNLOCK(file->fil_mutex);
+		file->fil_mutex.leave();
 	}
 
 	return true;
@@ -878,14 +878,14 @@ static void release_io_event(jrd_file* file, OVERLAPPED* overlapped)
 	if (!overlapped || !overlapped->hEvent)
 		return;
 
-	THD_MUTEX_LOCK(file->fil_mutex);
+	file->fil_mutex.enter();
 	for (int i = 0; i < MAX_FILE_IO; i++)
 		if (!file->fil_io_events[i]) {
 			file->fil_io_events[i] = overlapped->hEvent;
 			overlapped->hEvent = NULL;
 			break;
 		}
-	THD_MUTEX_UNLOCK(file->fil_mutex);
+	file->fil_mutex.leave();
 
 	if (overlapped->hEvent)
 		CloseHandle(overlapped->hEvent);
@@ -929,7 +929,7 @@ static jrd_file* seek_file(jrd_file*			file,
 		UInt32x32To64((DWORD) page, (DWORD) dbb->dbb_page_size);
 
 	if (ostype == OS_CHICAGO) {
-		THD_MUTEX_LOCK(file->fil_mutex);
+		file->fil_mutex.enter();
 		HANDLE desc = (HANDLE) ((file->fil_flags & FIL_force_write) ?
 						 file->fil_force_write_desc : file->fil_desc);
 
@@ -937,7 +937,7 @@ static jrd_file* seek_file(jrd_file*			file,
 						   (LONG) liOffset.LowPart,
 						   &liOffset.HighPart, FILE_BEGIN) == 0xffffffff)
 		{
-			THD_MUTEX_UNLOCK(file->fil_mutex);
+			file->fil_mutex.leave();
 			nt_error("SetFilePointer", file, isc_io_access_err, status_vector);
 			return 0;
 		}
@@ -953,14 +953,14 @@ static jrd_file* seek_file(jrd_file*			file,
 		*overlapped_ptr = overlapped;
 
 #ifdef SUPERSERVER_V2
-		THD_MUTEX_LOCK(file->fil_mutex);
+		file->fil_mutex.enter();
 		for (USHORT i = 0; i < MAX_FILE_IO; i++) {
 			if (overlapped->hEvent = (HANDLE) file->fil_io_events[i]) {
 				file->fil_io_events[i] = 0;
 				break;
 			}
 		}
-		THD_MUTEX_UNLOCK(file->fil_mutex);
+		file->fil_mutex.leave();
 		if (!overlapped->hEvent &&
 			!(overlapped->hEvent = CreateEvent(NULL, TRUE, FALSE, NULL)))
 		{

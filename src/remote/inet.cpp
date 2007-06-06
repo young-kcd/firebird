@@ -406,33 +406,27 @@ static WSADATA INET_wsadata;
 
 #ifdef  SUPERSERVER
 
-static MUTX_T	port_mutex;
-static bool		port_mutex_inited = false;
+static Firebird::Mutex	port_mutex;
 
 #define DEFER_PORT_CLEANUP
 
-inline void START_PORT_CRITICAL()
+inline void START_PORT_CRITICAL() 
 {
-	if (!port_mutex_inited) {
-		port_mutex_inited = true;
-	}
 	THREAD_EXIT();
-	THD_mutex_lock (&port_mutex);
+	port_mutex.enter();
 	THREAD_ENTER();
 }
 
 inline void STOP_PORT_CRITICAL()
 {
 	THREAD_EXIT();
-	THD_mutex_unlock (&port_mutex);
+	port_mutex.leave();
 	THREAD_ENTER();
 }
 
 #else
-inline void START_PORT_CRITICAL() {
-}
-inline void STOP_PORT_CRITICAL() {
-}
+inline void START_PORT_CRITICAL() { }
+inline void STOP_PORT_CRITICAL() { }
 #endif
 
 

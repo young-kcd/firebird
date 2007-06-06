@@ -157,10 +157,8 @@ static const UCHAR sql_records_info[] = {
 	isc_info_sql_records
 };
 
-#ifdef MULTI_THREAD
-static MUTX_T databases_mutex;
-static MUTX_T cursors_mutex;
-#endif
+static Firebird::Mutex databases_mutex;
+static Firebird::Mutex cursors_mutex;
 
 
 #ifdef DSQL_DEBUG
@@ -589,10 +587,10 @@ ISC_STATUS	GDS_DSQL_EXECUTE_CPP(
 			request->req_open_cursor = open_cursor;
 			open_cursor->opn_request = request;
 			open_cursor->opn_transaction = *trans_handle;
-			THD_MUTEX_LOCK(&cursors_mutex);
+			cursors_mutex.enter();
 			open_cursor->opn_next = open_cursors;
 			open_cursors = open_cursor;
-			THD_MUTEX_UNLOCK(&cursors_mutex);
+			cursors_mutex.leave();
 			THREAD_EXIT();
 			ISC_STATUS_ARRAY local_status;
 			gds__transaction_cleanup(local_status,
@@ -841,7 +839,7 @@ ISC_STATUS callback_execute_immediate( ISC_STATUS* status,
 	dsql_dbb* database = 0;
 
 	THREAD_EXIT();
-	THD_MUTEX_LOCK (&databases_mutex);
+	databases_mutex.enter();
 	try 
 	{
 		// 1. Locate why_db_handle, corresponding to jrd_database_handle 
@@ -864,14 +862,14 @@ ISC_STATUS callback_execute_immediate( ISC_STATUS* status,
 	}
 	catch (const Firebird::Exception& e)
 	{
-		THD_MUTEX_UNLOCK(&databases_mutex);
+		databases_mutex.leave();
 		THREAD_ENTER();
 		return e.stuff_exception(status);
 	}
 
 
 	// 3. Call execute... function 
-	THD_MUTEX_UNLOCK (&databases_mutex);
+	databases_mutex.leave();
     THREAD_ENTER();
 	const ISC_STATUS rc = dsql8_execute_immediate_common(status,
 						&database->dbb_database_handle, &why_trans_handle->public_handle,
@@ -887,7 +885,7 @@ YValve::Attachment*	GetWhyAttachment(ISC_STATUS* status,
 									 Jrd::Attachment* jrd_attachment_handle)
 {
 	THREAD_EXIT();
-	THD_MUTEX_LOCK (&databases_mutex);
+	databases_mutex.enter();
 	dsql_dbb* database;
 	YValve::Attachment* db_handle = 0;
 	for (database = databases; database; database = database->dbb_next)
@@ -913,7 +911,7 @@ YValve::Attachment*	GetWhyAttachment(ISC_STATUS* status,
 		status[1] = isc_bad_db_handle;
 		status[2] = isc_arg_end;
 	}
-	THD_MUTEX_UNLOCK (&databases_mutex);
+	databases_mutex.leave();
 	THREAD_ENTER();
 	return database ? db_handle : 0;
 }
@@ -2943,7 +2941,7 @@ static void cleanup_database(FB_API_HANDLE* db_handle, void* flag)
 /*	if (flag)
 		THREAD_EXIT();*/
 
-	THD_MUTEX_LOCK(&databases_mutex);
+	databases_mutex.enter();
 
 	dsql_dbb* dbb;
 	for (dsql_dbb** dbb_ptr = &databases; dbb = *dbb_ptr; dbb_ptr = &dbb->dbb_next)
@@ -2976,7 +2974,7 @@ static void cleanup_database(FB_API_HANDLE* db_handle, void* flag)
 		cleanup(0);
 		gds__unregister_cleanup(cleanup, 0);
 	}
-	THD_MUTEX_UNLOCK(&databases_mutex);
+	databases_mutex.leave();
 }
 
 
@@ -2998,7 +2996,7 @@ static void cleanup_transaction (FB_API_HANDLE tra_handle, void* arg)
 
 // find this transaction/request pair in the list of pairs 
 
-	THD_MUTEX_LOCK(&cursors_mutex);
+	cursors_mutex.enter();
 	dsql_opn** open_cursor_ptr = &open_cursors;
 	dsql_opn* open_cursor;
 	while (open_cursor = *open_cursor_ptr)
@@ -3007,7 +3005,7 @@ static void cleanup_transaction (FB_API_HANDLE tra_handle, void* arg)
 			/* Found it, close the cursor but don't remove it from the list.
 			   The close routine will have done that. */
 
-			THD_MUTEX_UNLOCK(&cursors_mutex);
+			cursors_mutex.leave();
 			/*
 			 * we are expected to be within the subsystem when we do this
 			 * cleanup, for now do a thread_enter/thread_exit here.
@@ -3020,14 +3018,14 @@ static void cleanup_transaction (FB_API_HANDLE tra_handle, void* arg)
 								&open_cursor->opn_request,
 								DSQL_close);
 			THREAD_EXIT();
-			THD_MUTEX_LOCK(&cursors_mutex);
+			cursors_mutex.enter();
 			open_cursor_ptr = &open_cursors;
 		}
 		else
 			open_cursor_ptr = &open_cursor->opn_next;
 	}
 
-	THD_MUTEX_UNLOCK(&cursors_mutex);
+	cursors_mutex.leave();
 }
 
 
@@ -3061,7 +3059,7 @@ static void close_cursor( dsql_req* request)
 
 // Remove the open cursor from the list 
 
-	THD_MUTEX_LOCK(&cursors_mutex);
+	cursors_mutex.enter();
 	dsql_opn** open_cursor_ptr = &open_cursors;
 	dsql_opn* open_cursor;
 	for (; open_cursor = *open_cursor_ptr;
@@ -3073,7 +3071,7 @@ static void close_cursor( dsql_req* request)
 		}
 	}
 
-	THD_MUTEX_UNLOCK(&cursors_mutex);
+	cursors_mutex.leave();
 
 	if (open_cursor) {
 		delete open_cursor;
@@ -4200,7 +4198,7 @@ static bool get_rsb_item(SSHORT*		explain_length_ptr,
 static dsql_dbb* init(FB_API_HANDLE* db_handle)
 {
 	THREAD_EXIT();
-	THD_MUTEX_LOCK(&databases_mutex);
+	databases_mutex.enter();
 	THREAD_ENTER();
 
 	if (!init_flag)
@@ -4223,7 +4221,7 @@ static dsql_dbb* init(FB_API_HANDLE* db_handle)
 	}
 
 	if (!db_handle) {
-		THD_MUTEX_UNLOCK(&databases_mutex);
+		databases_mutex.leave();
 		return NULL;
 	}
 
@@ -4233,7 +4231,7 @@ static dsql_dbb* init(FB_API_HANDLE* db_handle)
 	for (database = databases; database; database = database->dbb_next)
 	{
 		if (database->dbb_database_handle == *db_handle) {
-			THD_MUTEX_UNLOCK(&databases_mutex);
+			databases_mutex.leave();
 			return database;
 		}
 	}
@@ -4244,7 +4242,7 @@ static dsql_dbb* init(FB_API_HANDLE* db_handle)
 	database->dbb_next = databases;
 	databases = database;
 	database->dbb_database_handle = *db_handle;
-	THD_MUTEX_UNLOCK(&databases_mutex);
+	databases_mutex.leave();
 
 	ISC_STATUS_ARRAY user_status;
 
