@@ -115,7 +115,7 @@ public:
 			system_call_failed::raise("mutex_init", err);
 		}
 		err = cond_init(&cv, USYNC_PROCESS, NULL);
-		if ( err != 0) {
+		if (err != 0) {
 			//gds__log("Error on semaphore.h: constructor");
 			system_call_failed::raise("cond_init", err);
 		}
