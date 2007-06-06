@@ -152,6 +152,7 @@ const char* GDS_HOSTS_FILE	= "/etc/gds_hosts.equiv";
 #define INET_RETRY_ERRNO	WSAEINPROGRESS
 #define INET_ADDR_IN_USE	WSAEADDRINUSE
 #define sleep(seconds)  Sleep ((seconds) * 1000)
+const int NOTASOCKET = WSAENOTSOCK;
 
 #else // WIN_NT
 
@@ -167,6 +168,7 @@ const char* GDS_HOSTS_FILE	= "/etc/gds_hosts.equiv";
 #ifndef INET_RETRY_ERRNO
 #define INET_RETRY_ERRNO TRY_AGAIN
 #endif
+const int NOTASOCKET = EBADF;
 
 #endif // WIN_NT
 
@@ -409,7 +411,8 @@ static bool		port_mutex_inited = false;
 
 #define DEFER_PORT_CLEANUP
 
-inline void START_PORT_CRITICAL() {
+inline void START_PORT_CRITICAL()
+{
 	if (!port_mutex_inited) {
 		port_mutex_inited = true;
 	}
@@ -418,7 +421,8 @@ inline void START_PORT_CRITICAL() {
 	THREAD_ENTER();
 }
 
-inline void STOP_PORT_CRITICAL() {
+inline void STOP_PORT_CRITICAL()
+{
 	THREAD_EXIT();
 	THD_mutex_unlock (&port_mutex);
 	THREAD_ENTER();
@@ -2645,16 +2649,12 @@ static int select_wait( rem_port* main_port, SLCT * selct)
 					if (badSocket || getsockopt((SOCKET) port->port_handle, 
 						SOL_SOCKET, SO_LINGER, (SCHAR*) &lngr, &optlen) != 0)
 					{
-#ifndef WIN_NT
-						if (badSocket || INET_ERRNO == EBADF)
-#else
-						if (badSocket || INET_ERRNO == WSAENOTSOCK)
-#endif
+						if (badSocket || INET_ERRNO == NOTASOCKET)
 						{
 							// not a socket, strange !
 							gds__log("INET/select_wait: found \"not a socket\" socket : %u", (SOCKET) port->port_handle);
 
-							// this will lead to receive() which will broke bad connection
+							// this will lead to receive() which will break bad connection
 							selct->slct_count = selct->slct_width = 0;
 							FD_ZERO(&selct->slct_fdset);
 							if (!badSocket) 
@@ -2734,11 +2734,7 @@ static int select_wait( rem_port* main_port, SLCT * selct)
 			}
 			else if (INTERRUPT_ERROR(inetErrNo))
 				continue;
-#ifndef WIN_NT
-			else if (inetErrNo == EBADF)
-#else
-			else if (inetErrNo == WSAENOTSOCK)
-#endif
+			else if (inetErrNo == NOTASOCKET)
 			{
 				checkPorts = true;
 				break;
