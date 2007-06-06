@@ -82,7 +82,7 @@ begin
             execute statement
                 'select first 1 1 from ' || table_name ||
                 '    where ' || field_name || ' is not null' ||
-                iif(system = 1, ' and coalesce(rdb$system_flag, 0) = 0', '')
+                iif(system = 1, ' and coalesce(rdb$system_flag, 0) in (0, 3)', '')
                 into :has_records;
 
             if (has_records = 1) then
@@ -93,7 +93,7 @@ begin
                     'update ' || table_name || ' set ' || field_name || ' = ' ||
                     '    cast(cast(' || field_name || ' as blob sub_type text character set none) as ' ||
                     '        blob sub_type text character set ' || charset || ') ' ||
-                    iif(system = 1, 'where coalesce(rdb$system_flag, 0) = 0', '');
+                    iif(system = 1, 'where coalesce(rdb$system_flag, 0) in (0, 3)', '');
             end
         end
         else
@@ -101,7 +101,7 @@ begin
             for execute statement
                     'select ' || field1 || ', ' || coalesce(field2, ' null') || ' from ' || table_name ||
                     '    where ' || field_name || ' is not null' ||
-                    iif(system = 1, ' and coalesce(rdb$system_flag, 0) = 0', '')
+                    iif(system = 1, ' and coalesce(rdb$system_flag, 0) in (0, 3)', '')
                 into :name1, :name2
             do
             begin
