@@ -1,15 +1,27 @@
-2007-06-05 07:14  alexpeshkoff
+2007-06-05 18:04  asfernandes
 
-	* firebird2/src/jrd/svc.cpp (1.184):
-	* firebird2/src/jrd/svc.h (1.43):
+	* firebird2/src/jrd/CsConvert.h (1.5):
 
-	Fixed CORE-1302 : Races during service startup
+	Fixed the problem found using RDB$FIX_METADATA reported by Yakov
+	Hrebtov
 
-2007-06-05 07:11  alexpeshkoff
+2007-06-05 10:52  hvlad
+
+	* firebird2/doc/WhatsNew (1.128):
+
+	Update WhatsNew
+
+2007-06-05 09:14  alexpeshkoff
+
+	* firebird2/src/jrd/: svc.cpp (1.184), svc.h (1.43):
+
+	Fixed CORE-1302: Races during service startup
+
+2007-06-05 09:11  alexpeshkoff
 
 	* firebird2/src/common/classes/semaphore.h (1.31):
 
-	Null implementation for single-threaded case added
+	Null implementation for ST case
 
 2007-06-04 16:17  hvlad
 
