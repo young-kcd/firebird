@@ -1,3 +1,4 @@
+divert(-1)
 /*
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -21,10 +22,10 @@ changequote([,])
 define(NEXT, [N define([N], incr(N))]) 
 
 define(RELATION, [define([N], 0)])
-define(FIELD, [divert(1)[const USHORT ] $1 [=] NEXT [;]
-divert(0)dnl])
+define(FIELD, [[const USHORT ] $1 [=] NEXT [;]
+dnl])
 define(END_RELATION, )
-
 define(FIELD_ODS8, )
 
+divert
 include(../src/jrd/relations.h)
