@@ -1850,7 +1850,7 @@ static const UCHAR trigger22[] = {
 	blr_end,
 	blr_begin,
 	// ASF: Instead of always throw error here as before, we now check if any (except
-	// RDB$DESCRIPTION and RDB$TRIGGER_SOURCE) was changed.
+	// RDB$DESCRIPTION and RDB$TRIGGER_SOURCE) field was changed.
 	// We need this to RDB$FIX_METADATA (from metadata charset upgrade script) work.
 	blr_if,
 	blr_not,

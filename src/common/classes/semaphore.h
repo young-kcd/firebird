@@ -241,7 +241,6 @@ public:
 			}
 			else 
 				system_call_failed::raise("mutex_lock", err2);
-
 	}
 	
 	void release(SLONG count = 1) {
@@ -560,4 +559,3 @@ public:
 #endif /*!WIN_NT*/
 
 #endif // CLASSES_SEMAPHORE_H
-
