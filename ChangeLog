@@ -1,3 +1,22 @@
+2007-06-06 15:12  alexpeshkoff
+
+	* firebird2/src/jrd/os/posix/unix.cpp (1.42.4.5):
+
+	Make it compilable when no PREAD_PWRITE present
+
+2007-06-06 10:41  alexpeshkoff
+
+	* firebird2/src/common/classes/semaphore.h (1.24.2.5):
+
+	misc
+
+2007-06-06 10:37  alexpeshkoff
+
+	* firebird2/src/: common/classes/semaphore.h (1.24.2.4),
+	jrd/svc.cpp (1.166.2.6), jrd/svc.h (1.38.4.1):
+
+	Backported fix for CORE-1302: Races during service startup
+
 2007-05-23 04:32  asfernandes
 
 	* firebird2/src/jrd/jrd.cpp (1.237.2.14):
