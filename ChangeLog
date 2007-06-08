@@ -1,3 +1,22 @@
+2007-06-08 04:19  asfernandes
+
+	* firebird2/: doc/WhatsNew (1.129), src/dsql/dsql.h (1.109),
+	src/dsql/make.cpp (1.132), src/dsql/node.h (1.89), src/dsql/parse.y
+	(1.241), src/dsql/pass1.cpp (1.326), src/jrd/Optimizer.cpp (1.76),
+	src/jrd/cmp.cpp (1.258):
+
+	Rework fix for CORE-1245 to fix: CORE-1246 - Incorrect column
+	values with outer joins and derived tables, CORE-1306 - Indices not
+	used for views
+
+2007-06-07 05:34  asfernandes
+
+	* firebird2/: builds/posix/Makefile.in.static.gbak (1.14),
+	src/common/classes/semaphore.h (1.33), src/jrd/jrd.h (1.191),
+	src/jrd/trig.h (1.22):
+
+	Misc
+
 2007-06-06 17:37  asfernandes
 
 	* firebird2/src/: jrd/trig.h (1.21),
