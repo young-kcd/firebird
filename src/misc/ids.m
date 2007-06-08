@@ -19,10 +19,9 @@ divert(-1)
  */
 
 changequote([,])
-define(NEXT, [N define([N], incr(N))]) 
 
 define(RELATION, [define([N], 0)])
-define(FIELD, [[const USHORT ] $1 [=] NEXT [;]
+define(FIELD, [[const USHORT ] $1 [=] N[;]define([N], incr(N))
 dnl])
 define(END_RELATION, )
 define(FIELD_ODS8, )
