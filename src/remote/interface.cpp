@@ -1960,6 +1960,20 @@ ISC_STATUS GDS_DSQL_FETCH(ISC_STATUS* user_status,
 		{
 			if (statement->rsr_flags & RSR_eof)
 			{
+				// hvlad: we had queued fetch packet but received EOF before start 
+				// handling of this packet. Handle it now. 
+				fb_assert(statement->rsr_batch_count == 0 || 
+						  statement->rsr_batch_count == 1);
+				while (statement->rsr_batch_count)
+				{
+					if (!receive_queued_packet(tdrdb, port, user_status, statement->rsr_id))
+						return error(user_status);
+
+					// We must receive isc_req_sync as we did fetch after EOF
+					fb_assert(stmt_have_exception(statement) == isc_req_sync);
+					stmt_clear_exception(statement);
+				}
+
 				statement->rsr_flags &= ~RSR_eof;
 
 				/* Set up status vector and REM_restore_thread_data in common return_success */

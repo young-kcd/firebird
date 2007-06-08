@@ -322,10 +322,10 @@ inline void stmt_clear_exception(RSR statement)
 		statement->rsr_status->clear();
 }
 
-inline bool stmt_have_exception(RSR statement)
+inline ISC_STATUS stmt_have_exception(RSR statement)
 {
-	return (statement->rsr_status &&
-		statement->rsr_status->getError());
+	return (statement->rsr_status ?	
+		statement->rsr_status->getError() : 0);
 }
 
 inline void stmt_raise_exception(RSR statement)
