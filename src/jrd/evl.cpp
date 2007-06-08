@@ -989,7 +989,7 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* const node)
 			const char* cur_user = 0;
 			if (tdbb->tdbb_attachment->att_user)
 			{
-				cur_user = tdbb->tdbb_attachment->att_user->usr_user_name;
+				cur_user = tdbb->tdbb_attachment->att_user->usr_user_name.c_str();
 				impure->vlu_desc.dsc_address = reinterpret_cast<UCHAR*>
 												(const_cast<char*>(cur_user));
 			}
@@ -1007,11 +1007,11 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* const node)
 			impure->vlu_desc.dsc_sub_type = 0;
 			impure->vlu_desc.dsc_scale = 0;
 			INTL_ASSIGN_TTYPE(&impure->vlu_desc, ttype_metadata);
-			char* cur_role = 0;
+			const char* cur_role = 0;
 			if (tdbb->tdbb_attachment->att_user)
 			{
-				cur_role = tdbb->tdbb_attachment->att_user->usr_sql_role_name;
-				impure->vlu_desc.dsc_address = reinterpret_cast<UCHAR*>(cur_role);
+				cur_role = tdbb->tdbb_attachment->att_user->usr_sql_role_name.c_str();
+				impure->vlu_desc.dsc_address = reinterpret_cast<UCHAR*>(const_cast<char*>(cur_role));
 			}
 			if (cur_role)
 				impure->vlu_desc.dsc_length = strlen(cur_role);
@@ -1248,15 +1248,15 @@ bool EVL_field(jrd_rel* relation, Record* record, USHORT id, dsc* desc)
 						INTL_ASSIGN_TTYPE(desc, ttype_metadata);
 						thread_db* tdbb = NULL;
 						SET_TDBB(tdbb);
-						char* rc_role = 0;
+						const char* rc_role = 0;
 						const UserId* att_user = tdbb->tdbb_attachment->att_user;
-						const char* cur_user = att_user ? att_user->usr_user_name : 0;
+						const char* cur_user = att_user ? att_user->usr_user_name.c_str() : 0;
 						if (cur_user && relation->rel_owner_name == cur_user)
-							rc_role = att_user->usr_sql_role_name;
+							rc_role = att_user->usr_sql_role_name.c_str();
 						else
-							rc_role = const_cast<char*>(NULL_ROLE);
+							rc_role = NULL_ROLE;
 
-						desc->dsc_address = (UCHAR*) rc_role;
+						desc->dsc_address = reinterpret_cast<UCHAR*>(const_cast<char*>(rc_role));
 						desc->dsc_length = strlen(rc_role);
 					}
 					else if (temp_nod_type == nod_current_date ||

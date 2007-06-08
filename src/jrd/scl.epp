@@ -88,7 +88,6 @@ static bool check_user_group(const UCHAR*, USHORT, const ULONG);
 static bool check_string(const UCHAR*, const Firebird::MetaName&);
 static SecurityClass::flags_t compute_access(thread_db*, const SecurityClass*,
 	const jrd_rel*,	const Firebird::MetaName&, const Firebird::MetaName&);
-static TEXT* save_string(const TEXT*, TEXT**);
 static SecurityClass::flags_t walk_acl(thread_db*, const UCHAR*, const jrd_rel*,
 	const Firebird::MetaName&, const Firebird::MetaName&, const ULONG);
 
@@ -551,14 +550,7 @@ SecurityClass::flags_t SCL_get_mask(const TEXT* relation_name, const TEXT* field
 
 
 void SCL_init(bool create,
-			  const TEXT* sys_user_name,
-			  const TEXT* user_name,
-			  const TEXT* password,
-			  const TEXT* password_enc,
-			  const TEXT* sql_role,
-#ifdef TRUSTED_AUTH
-			  const TEXT* trusted_user,
-#endif
+			  const UserId& tempId,
 			  thread_db* tdbb)
 {
 /**************************************
@@ -576,88 +568,18 @@ void SCL_init(bool create,
  *	in, encrypting if necessary.
  *
  **************************************/
-	jrd_req* request;
-	TEXT name[129], project[33], organization[33];
-	TEXT login_name[129];
-	Firebird::MetaName role_name;
-    bool preODS9;
-
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->tdbb_database;
 	const USHORT major_version = dbb->dbb_ods_version;
 	const USHORT minor_original = dbb->dbb_minor_original;
 
-	*project = *organization = *name = *login_name = '\0';
-
-	int node_id = 0;
-	int id = -1, group = -1;	// CVC: This var contained trash
-
-#ifdef NO_SECURITY
-	bool wheel = true;
-#else
-	bool wheel = false;
-	if (!user_name) {
-       wheel = ISC_get_user(name,
-                            &id,
-                            &group,
-                            project,
-                            organization,
-                            &node_id,
-                            sys_user_name);
-	}
-
-	if (user_name || (id == -1))
-	{
-		if (!JRD_get_thread_security_disabled())
-		{
-#ifdef TRUSTED_AUTH
-			static AmCache useTrusted = AM_UNKNOWN;
-			if (useTrusted == AM_UNKNOWN)
-			{
-				Firebird::PathName authMethod(Config::getAuthMethod());
-				useTrusted = (authMethod == AmTrusted || authMethod == AmMixed) ? 
-					AM_ENABLED : AM_DISABLED;
-			}
-
-			if (trusted_user && (useTrusted == AM_ENABLED))
-			{
-				strncpy(name, trusted_user, sizeof name);
-				name[sizeof name - 1] = 0;
-			}
-			else
-#endif
-			{
-				Attachment* att = tdbb->tdbb_attachment;
-				Firebird::string remote = att->att_network_protocol + 
-					(att->att_network_protocol.isEmpty() || att->att_remote_address.isEmpty() ? "" : "/") +
-					att->att_remote_address;
-				SecurityDatabase::verifyUser(name, user_name, password, password_enc,
-											 &id, &group, &node_id, remote);
-			}
-		}
-		else
-		{
-			strncpy(name, user_name, sizeof name);
-			name[sizeof name - 1] = 0;
-		}
-
-		// if the name from the user database is defined as SYSDBA,
-		// we define that user id as having system privileges
-
-		if (!strcmp(name, SYSDBA_USER_NAME))
-		{
-			wheel = true;
-		}
-	}
-#endif // NO_SECURITY
-
-	// In case we became WHEEL on an OS that didn't require name SYSDBA,
-	// (Like Unix) force the effective Database User name to be SYSDBA
-
-	if (wheel)
-	{
-		strcpy(name, SYSDBA_USER_NAME);
-	}
+	const TEXT* sql_role = tempId.usr_sql_role_name.nullStr();
+	Firebird::string loginName(tempId.usr_user_name);
+	loginName.upper();
+	const TEXT* login_name = loginName.c_str();
+	Firebird::MetaName role_name;
+    // CVC: Let's clean any role in pre-ODS9 attachments
+    bool preODS9 = true;
 
 /***************************************************************
 **
@@ -671,17 +593,11 @@ void SCL_init(bool create,
 
         preODS9 = false;
 
-		if (strlen(name) != 0)
+		if (strlen(login_name) != 0)
 		{
-			const char* q = name;
-			for (char* p = login_name; (*p++ = UPPER7(*q)); q++)
-			{
-				;
-			}
-
 			if (!create)
 			{
-				request = CMP_find_request(tdbb, irq_get_role_name,
+				jrd_req* request = CMP_find_request(tdbb, irq_get_role_name,
 										   IRQ_REQUESTS);
 
 				FOR(REQUEST_HANDLE request) X IN RDB$ROLES
@@ -706,10 +622,8 @@ void SCL_init(bool create,
         
         if (!create && sql_role && *sql_role && strcmp(sql_role, NULL_ROLE)) {
             bool found = false;
-            const char* q = name;
-            for (char* p = login_name; *p++ = UPPER7 (*q); q++);
             
-            request = CMP_find_request (tdbb, irq_verify_role_name, IRQ_REQUESTS);
+            jrd_req* request = CMP_find_request (tdbb, irq_verify_role_name, IRQ_REQUESTS);
 
             // CVC: The caller has hopefully uppercased the role or stripped quotes. Of course,
             // uppercase-UPPER7 should only happen if the role wasn't enclosed in quotes.
@@ -745,10 +659,6 @@ void SCL_init(bool create,
 			}
         }
     }
-    // CVC: Let's clean any role in pre-ODS9 attachments
-    else {
-        preODS9 = true;
-    }
 
 	if (sql_role) {
         if ((!preODS9) && (role_name != NULL_ROLE)) {
@@ -759,21 +669,9 @@ void SCL_init(bool create,
 		role_name = NULL_ROLE;
 	}
 
-	const USHORT length = strlen(name) + role_name.length() + strlen(project) +
-		strlen(organization) + 4;   /* for the terminating nulls */
-	UserId* user = FB_NEW_RPT(*dbb->dbb_permanent, length) UserId();
+	UserId* user = FB_NEW(*dbb->dbb_permanent) UserId(*dbb->dbb_permanent, tempId);
+	user->usr_sql_role_name = role_name.c_str();
 	tdbb->tdbb_attachment->att_user = user;
-	char* p = user->usr_data;
-	user->usr_user_name = save_string(name, &p);
-	user->usr_project_name = save_string(project, &p);
-	user->usr_org_name = save_string(organization, &p);
-	user->usr_sql_role_name = save_string(role_name.c_str(), &p);
-	user->usr_user_id = id;
-	user->usr_group_id = group;
-	user->usr_node_id = node_id;
-	if (wheel) {
-		user->usr_flags |= USR_locksmith;
-	}
 
 	jrd_req* handle = NULL;
 	jrd_req* handle1 = NULL;
@@ -793,8 +691,9 @@ void SCL_init(bool create,
 			WITH REL.RDB$RELATION_NAME EQ "RDB$DATABASE"
 
             if (!REL.RDB$OWNER_NAME.NULL && 
-				(u = user->usr_user_name) && *u)
+				(u = user->usr_user_name.nullStr()) && *u)
 			{
+				char name[129];
 				*name = strlen(u);
 				strcpy(name + 1, u);
 				if (!check_string(reinterpret_cast<const UCHAR*>(name), 
@@ -1134,34 +1033,6 @@ static SecurityClass::flags_t compute_access(thread_db* tdbb,
 }
 
 
-static TEXT* save_string(const TEXT* string, TEXT** ptr)
-{
-/**************************************
- *
- *	s a v e _ s t r i n g
- *
- **************************************
- *
- * Functional description
- *	If a string is non-null, copy it to a work area and return a
- *	pointer.
- *
- **************************************/
-	if (!*string)
-		return NULL;
-
-	TEXT* p = *ptr;
-	TEXT* const start = p;
-
-	while ( (*p++ = *string++) )
-		;
-
-	*ptr = p;
-
-	return start;
-}
-
-
 static SecurityClass::flags_t walk_acl(thread_db* tdbb,
 					  const UCHAR* acl,
 					  const jrd_rel* view,
@@ -1186,7 +1057,7 @@ static SecurityClass::flags_t walk_acl(thread_db* tdbb,
 	// Munch ACL. If we find a hit, eat up privileges.
 
 	UserId user = *tdbb->tdbb_attachment->att_user;
-	const TEXT* role_name = user.usr_sql_role_name;
+	const TEXT* role_name = user.usr_sql_role_name.nullStr();
 
 	if (view && (view->rel_flags & REL_sql_relation))
 	{
@@ -1225,17 +1096,17 @@ static SecurityClass::flags_t walk_acl(thread_db* tdbb,
 				switch (c)
 				{
 				case id_person:
-					if (!(p = user.usr_user_name) || check_string(acl, p))
+					if (!(p = user.usr_user_name.nullStr()) || check_string(acl, p))
 						hit = false;
 					break;
 
 				case id_project:
-					if (!(p = user.usr_project_name) || check_string(acl, p))
+					if (!(p = user.usr_project_name.nullStr()) || check_string(acl, p))
 						hit = false;
 					break;
 
 				case id_organization:
-					if (!(p = user.usr_org_name) || check_string(acl, p))
+					if (!(p = user.usr_org_name.nullStr()) || check_string(acl, p))
 						hit = false;
 					break;
 
@@ -1255,7 +1126,7 @@ static SecurityClass::flags_t walk_acl(thread_db* tdbb,
 					{
 						TEXT login_name[129];
 						TEXT* pln = login_name;
-						const TEXT* q = user.usr_user_name;
+						const TEXT* q = user.usr_user_name.c_str();
 						while (*pln++ = UPPER7(*q)) {
 							++q;
 						}
@@ -1268,7 +1139,7 @@ static SecurityClass::flags_t walk_acl(thread_db* tdbb,
 							(U.RDB$USER EQ login_name OR
 							 U.RDB$USER EQ "PUBLIC") AND
 								U.RDB$USER_TYPE EQ obj_user AND
-								U.RDB$RELATION_NAME EQ user.usr_sql_role_name AND
+								U.RDB$RELATION_NAME EQ user.usr_sql_role_name.c_str() AND
 								U.RDB$OBJECT_TYPE EQ obj_sql_role AND
 								U.RDB$PRIVILEGE EQ "M"
 

@@ -544,7 +544,7 @@ int INF_database_info(const SCHAR* items,
 		case isc_info_user_names:
 			if (!(tdbb->tdbb_attachment->locksmith())) {
 				const UserId* user = tdbb->tdbb_attachment->att_user;
-				Firebird::string uname((user && user->usr_user_name) ? user->usr_user_name : "Unknown");
+				Firebird::string uname((user && user->usr_user_name.hasData()) ? user->usr_user_name.c_str() : "<Unknown>");
 				uname.insert(0, char(uname.length()));
 				info = INF_put_item(item, uname.length(), uname.c_str(), info, end);
 				if (!info) {
@@ -560,8 +560,8 @@ int INF_database_info(const SCHAR* items,
                 
                 const UserId* user = att->att_user;
 				if (user) {
-					const char* user_name = user->usr_user_name ?
-						user->usr_user_name : "(Firebird Worker Thread)";
+					const char* user_name = user->usr_user_name.hasData() ?
+						user->usr_user_name.c_str() : "(Firebird Worker Thread)";
 					p = buffer;
 					SSHORT l = strlen (user_name);
 					*p++ = l;

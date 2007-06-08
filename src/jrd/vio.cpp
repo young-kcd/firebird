@@ -3430,7 +3430,7 @@ static bool check_user(thread_db* tdbb, const dsc* desc)
 
 	const TEXT* p = (TEXT *) desc->dsc_address;
 	const TEXT* const end = p + desc->dsc_length;
-	const TEXT* q = tdbb->tdbb_attachment->att_user->usr_user_name;
+	const TEXT* q = tdbb->tdbb_attachment->att_user->usr_user_name.c_str();
 
 /* It is OK to not internationalize this function for v4.00 as
  * User names are limited to 7-bit ASCII for v4.00
