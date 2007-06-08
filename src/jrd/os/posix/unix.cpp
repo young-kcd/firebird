@@ -80,8 +80,8 @@ using namespace Jrd;
 
 #ifdef SUPERSERVER
 #define THD_IO_MUTEX_INIT(mutx)
-#define THD_IO_MUTEX_LOCK(mutx)		mutx.enter()
-#define THD_IO_MUTEX_UNLOCK(mutx)	mutx.leave()
+#define THD_IO_MUTEX_LOCK(mutx)		mutx->enter()
+#define THD_IO_MUTEX_UNLOCK(mutx)	mutx->leave()
 #define THD_IO_MUTEX_DESTROY(mutx)
 #else
 #define THD_IO_MUTEX_INIT(mutx)
