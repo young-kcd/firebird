@@ -208,6 +208,7 @@ static bool invalid_reference(const dsql_ctx*, const dsql_nod*,
 	const dsql_nod*, bool, bool);
 static bool node_match(const dsql_nod*, const dsql_nod*, bool);
 static dsql_nod* nullify_returning(dsql_nod* input, bool proc_flag);
+static dsql_nod* maybe_null(dsql_req* request, dsql_nod* input);
 static dsql_nod* pass1_alias_list(dsql_req*, dsql_nod*);
 static dsql_ctx* pass1_alias(dsql_req*, DsqlContextStack&, dsql_str*);
 static dsql_str* pass1_alias_concat(const dsql_str*, const dsql_str*);
@@ -600,7 +601,7 @@ dsql_nod* PASS1_node(dsql_req* request, dsql_nod* input, bool proc_flag)
 		node->nod_arg[e_gen_id_value] =
 			PASS1_node(request, input->nod_arg[e_gen_id_value], proc_flag);
 		node->nod_arg[e_gen_id_name] = input->nod_arg[e_gen_id_name];
-		return node;
+		return maybe_null(request, node);
 
 	case nod_collate:
 		global_temp_collation_name = (dsql_str*) input->nod_arg[e_coll_target];
@@ -731,7 +732,7 @@ dsql_nod* PASS1_node(dsql_req* request, dsql_nod* input, bool proc_flag)
         node = MAKE_node (input->nod_type, e_var_count);
         node->nod_arg[0] = input->nod_arg[0];
         node->nod_desc = input->nod_desc;
-		return node;
+		return maybe_null(request, node);
 
 	case nod_var_name:
 		return pass1_variable(request, input);
@@ -811,7 +812,7 @@ dsql_nod* PASS1_node(dsql_req* request, dsql_nod* input, bool proc_flag)
 	}
 
 	case nod_constant:
-		return pass1_constant(request, input);
+		return maybe_null(request, pass1_constant(request, input));
 
 	case nod_parameter:
 		if (proc_flag)
@@ -830,7 +831,7 @@ dsql_nod* PASS1_node(dsql_req* request, dsql_nod* input, bool proc_flag)
 				(USHORT)(IPTR) input->nod_arg[e_par_index],
 				NULL);
 		node->nod_arg[e_par_index] = (dsql_nod*) (IPTR) ((dsql_par*) node->nod_arg[e_par_parameter])->par_index;
-		return node;
+		return maybe_null(request, node);
 
 	case nod_param_val:
 		node = MAKE_node(input->nod_type, e_prm_val_count);
@@ -856,10 +857,15 @@ dsql_nod* PASS1_node(dsql_req* request, dsql_nod* input, bool proc_flag)
 		return node;
 
 	case nod_udf:
-		return pass1_udf(request, input, proc_flag);
+		return maybe_null(request, pass1_udf(request, input, proc_flag));
 
 	case nod_sys_function:
-		return pass1_sys_function(request, input, proc_flag);
+	{
+		node = pass1_sys_function(request, input, proc_flag);
+		if (node->nod_count > 0)
+			node = maybe_null(request, node);
+		return node;
+	}
 
 	case nod_equiv:
 	case nod_eql:
@@ -1053,6 +1059,8 @@ dsql_nod* PASS1_node(dsql_req* request, dsql_nod* input, bool proc_flag)
 	case nod_current_time:
 	case nod_current_timestamp:
 		{
+			node = MAKE_node(input->nod_type, input->nod_count);
+
 			dsql_nod* const_node = input->nod_arg[0];
 			if (const_node) {
 				fb_assert(const_node->nod_type == nod_constant);
@@ -1062,7 +1070,12 @@ dsql_nod* PASS1_node(dsql_req* request, dsql_nod* input, bool proc_flag)
 					ERRD_post(isc_invalid_time_precision,
 							  isc_arg_number, MAX_TIME_PRECISION, 0);
 				}
+
+				const_node = pass1_constant(request, const_node);
 			}
+
+			node->nod_arg[0] = const_node;
+			return maybe_null(request, node);
 		}
 		break;
 
@@ -1091,6 +1104,14 @@ dsql_nod* PASS1_node(dsql_req* request, dsql_nod* input, bool proc_flag)
 		DEV_BLKCHK(*ptr, dsql_type_nod);
 		*ptr2++ = PASS1_node(request, *ptr, proc_flag);
 		DEV_BLKCHK(*(ptr2 - 1), dsql_type_nod);
+	}
+
+	switch (node->nod_type)
+	{
+		case nod_current_date:
+		case nod_current_role:
+		case nod_user_name:
+			return maybe_null(request, node);
 	}
 
 	// Try to match parameters against things of known data type.
@@ -1245,6 +1266,15 @@ dsql_nod* PASS1_statement(dsql_req* request, dsql_nod* input, bool proc_flag)
 
 	switch (input->nod_type)
 	{
+	case nod_def_view:
+	case nod_redef_view:
+	case nod_mod_view:
+	case nod_replace_view:
+    case nod_del_view:
+		request->req_type = REQ_DDL;
+		request->req_flags |= REQ_view;
+		return input;
+
 	case nod_def_relation:
     case nod_redef_relation:
 	case nod_mod_relation:
@@ -1252,11 +1282,6 @@ dsql_nod* PASS1_statement(dsql_req* request, dsql_nod* input, bool proc_flag)
 	case nod_def_index:
 	case nod_mod_index:
 	case nod_del_index:
-	case nod_def_view:
-	case nod_redef_view:
-	case nod_mod_view:
-	case nod_replace_view:
-    case nod_del_view:
 	case nod_def_constraint:
 	case nod_def_exception:
 	case nod_redef_exception:
@@ -3364,6 +3389,68 @@ static dsql_nod* nullify_returning(dsql_nod* input, bool proc_flag)
 }
 
 
+// Transforms a value (constant or constant expression) to NULL if all contexts is
+// in NULL (or EOF) state.
+// This is necessary with outer joins with derived tables and views.
+// See CORE-1245 and CORE-1246.
+static dsql_nod* maybe_null(dsql_req* request, dsql_nod* input)
+{
+	dsql_nod* output = input;
+
+	if (request->req_in_outer_join)
+		output->nod_desc.dsc_flags = DSC_nullable;
+
+	if (request->req_in_select_list && request->req_context->hasData() &&
+		(request->req_in_outer_join || (request->req_flags & REQ_view)))
+	{
+		dsql_nod* condition = NULL;
+
+		for (DsqlContextStack::iterator i(*request->req_context); i.hasData(); ++i)
+		{
+			dsql_ctx* ctx = i.object();
+			if (ctx->ctx_relation && ctx->ctx_scope_level > 0)
+			{
+				dsql_nod* rel_node = MAKE_node(nod_relation, e_rel_count);
+				rel_node->nod_arg[0] = (dsql_nod*) ctx;
+
+				dsql_nod* this_condition = MAKE_node(nod_missing, 1);
+				this_condition->nod_arg[0] = MAKE_node(nod_dbkey, 1);
+				this_condition->nod_arg[0]->nod_arg[0] = rel_node;
+
+				if (!condition)
+				{
+					condition = MAKE_node(nod_searched_case, 2);
+
+					condition->nod_arg[e_searched_case_search_conditions] = MAKE_node(nod_list, 1);
+					condition->nod_arg[e_searched_case_search_conditions]->nod_arg[0] = this_condition;
+
+					condition->nod_arg[e_searched_case_results] = MAKE_node(nod_list, 2);
+					condition->nod_arg[e_searched_case_results]->nod_arg[0] = MAKE_node(nod_null, 0);
+					condition->nod_arg[e_searched_case_results]->nod_arg[1] = output;
+				}
+				else
+				{
+					dsql_nod* node = MAKE_node(nod_and, 2);
+					node->nod_arg[0] = condition->nod_arg[e_searched_case_search_conditions]->nod_arg[0];
+					node->nod_arg[1] = this_condition;
+					condition->nod_arg[e_searched_case_search_conditions]->nod_arg[0] = node;
+				}
+			}
+		}
+
+		if (condition)
+		{
+			condition->nod_alias_substitute = output;
+			// Set describer for output node
+			MAKE_desc(request, &condition->nod_desc, condition, NULL);
+			output = condition;
+		}
+	}
+
+	return output;
+}
+
+
 /**
 
  	pass1_any
@@ -3631,16 +3718,11 @@ static dsql_nod* pass1_collate( dsql_req* request, dsql_nod* sub1,
  **/
 static dsql_nod* pass1_constant( dsql_req* request, dsql_nod* input)
 {
-
 	DEV_BLKCHK(request, dsql_type_req);
 	DEV_BLKCHK(input, dsql_type_nod);
 
-	if (request->req_in_outer_join)
-		input->nod_desc.dsc_flags = DSC_nullable;
-
-	if (input->nod_desc.dsc_dtype > dtype_any_text) {
+	if (input->nod_desc.dsc_dtype > dtype_any_text)
 		return input;
-	}
 
 	dsql_nod* constant = MAKE_node(input->nod_type, 1);
 	constant->nod_arg[0] = input->nod_arg[0];

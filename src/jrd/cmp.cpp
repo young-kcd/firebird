@@ -3556,33 +3556,6 @@ static jrd_nod* pass1(thread_db* tdbb,
 				//			permissions properly).
 				view = relation;
 				view_stream = stream;
-
-				if (!(tail->csb_flags & (csb_modify | csb_store | csb_no_dbkey)))
-				{
-					// ASF: If the view is in null state (with outer joins) we need to transform
-					// all view fields to NULL. (CORE-1245)
-
-					jrd_nod* new_node = PAR_make_node(tdbb, 3);
-					new_node->nod_type = nod_value_if;
-					new_node->nod_count = 3;
-
-					// build an IF (RDB$DB_KEY IS NOT NULL)
-					new_node->nod_arg[0] = PAR_make_node(tdbb, 1);
-					new_node->nod_arg[0]->nod_type = nod_not;
-					new_node->nod_arg[0]->nod_count = 1;
-					new_node->nod_arg[0]->nod_arg[0] = PAR_make_node(tdbb, 1);
-					new_node->nod_arg[0]->nod_arg[0]->nod_type = nod_missing;
-					new_node->nod_arg[0]->nod_arg[0]->nod_count = 1;
-					new_node->nod_arg[0]->nod_arg[0]->nod_arg[0] = PAR_make_node(tdbb, 1);
-					new_node->nod_arg[0]->nod_arg[0]->nod_arg[0]->nod_type = nod_dbkey;
-					new_node->nod_arg[0]->nod_arg[0]->nod_arg[0]->nod_arg[0] = (jrd_nod*)(IPTR) view_stream;
-
-					new_node->nod_arg[1] = sub;	// THEN: view.field
-					new_node->nod_arg[2] = PAR_make_node(tdbb, 0);	// ELSE: NULL
-					new_node->nod_arg[2]->nod_type = nod_null;
-
-					sub = new_node;
-				}
 			}
 
 			return pass1(tdbb, csb, sub, view, view_stream, validate_expr);

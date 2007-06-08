@@ -2602,7 +2602,7 @@ InversionCandidate* OptimizerRetrieval::matchOnIndexes(
 		if (!(indexScratch.idx->idx_runtime_flags & idx_plan_dont_use) ||
 			(indexScratch.idx->idx_runtime_flags & idx_plan_navigate)) 
 		{
-			matchBoolean(&indexScratch, boolean, scope); 
+			matchBoolean(&indexScratch, boolean, scope);
 		}
 	}
 	return NULL;
