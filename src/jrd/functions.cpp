@@ -195,13 +195,12 @@ vary* get_context(const vary* ns_vary, const vary* name_vary)
 
 		if (name_str == DATABASE_NAME) 
 		{
-			return make_result_str(dbb->dbb_database_name.c_str(),
-				dbb->dbb_database_name.length());
+			return make_result_str(dbb->dbb_database_name.ToString());
 		}
 
 		if (name_str == CURRENT_USER_NAME) 
 		{
-			if (!att->att_user || !att->att_user->usr_user_name)
+			if (!att->att_user || att->att_user->usr_user_name.isEmpty())
 				return NULL;
 
 			return make_result_str(att->att_user->usr_user_name);
@@ -209,7 +208,7 @@ vary* get_context(const vary* ns_vary, const vary* name_vary)
 
 		if (name_str == CURRENT_ROLE_NAME) 
 		{
-			if (!att->att_user || !att->att_user->usr_sql_role_name)
+			if (!att->att_user || att->att_user->usr_sql_role_name.isEmpty())
 				return NULL;
 
 			return make_result_str(att->att_user->usr_sql_role_name);

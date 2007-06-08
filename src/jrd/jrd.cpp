@@ -443,6 +443,7 @@ static bool		rollback(thread_db*, jrd_tra*, ISC_STATUS*, const bool);
 static void		shutdown_database(Database*, const bool);
 static void		strip_quotes(Firebird::string&);
 static void		purge_attachment(thread_db*, ISC_STATUS*, Attachment*, const bool);
+static void		getUserInfo(UserId&, const DatabaseOptions&);
 
 static bool		initialized = false;
 static Database*		databases = NULL;
@@ -723,6 +724,10 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 /* Process database parameter block */
 	DatabaseOptions options;
 	options.get(dpb, dpb_length);
+
+// First check for correct credentials supplied
+	UserId userId;
+	getUserInfo(userId, options);
 
 #ifndef NO_NFS
 /* Don't check nfs if single user */
@@ -1011,13 +1016,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 
 	options.dpb_sql_dialect = 0;
 
-	SCL_init(false,
-			 options.dpb_sys_user_name.nullStr(),
-			 options.dpb_user_name.nullStr(),
-			 options.dpb_password.nullStr(),
-			 options.dpb_password_enc.nullStr(),
-			 options.dpb_role_name.nullStr(),
-			 tdbb);
+	SCL_init(false, userId, tdbb);
 
 #if defined(V4_THREADING) && !defined(SUPERSERVER) 
 	initing_security = false;
@@ -1865,6 +1864,9 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 		options.dpb_sql_dialect = 0;
 	}
 
+// First check for correct credentials supplied
+	UserId userId;
+	getUserInfo(userId, options);
 
 #ifndef NO_NFS
 /* Don't check nfs if single user */
@@ -1958,13 +1960,7 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 	initing_security = true;
 #endif
 
-	SCL_init(true,
-			 options.dpb_sys_user_name.nullStr(),
-			 options.dpb_user_name.nullStr(),
-			 options.dpb_password.nullStr(),
-			 options.dpb_password_enc.nullStr(),
-			 options.dpb_role_name.nullStr(),
-			 tdbb);
+	SCL_init(true, userId, tdbb);
 
 #if defined(V4_THREADING) && !defined(SUPERSERVER) 
 	initing_security = false;
@@ -2039,7 +2035,7 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 	if (options.dpb_set_no_reserve)
 		PAG_set_no_reserve(dbb, options.dpb_no_reserve);
 
-	INI_format(attachment->att_user->usr_user_name, 
+	INI_format(attachment->att_user->usr_user_name.c_str(), 
 			   options.dpb_set_db_charset.c_str());
 
 	// There is no point to move database online at database creation since it is online by default.
@@ -6685,4 +6681,98 @@ static vdnResult verify_database_name(const Firebird::PathName& name, ISC_STATUS
 		return vdnFail;
 	}
 	return vdnOk;
+}
+
+
+/**
+  
+	getUserInfo
+  
+    @brief	Checks the userinfo database to validate
+    password to that passed in.
+    Takes into account possible trusted sithentication.
+	Fills UserId structure with resulting values.
+
+    @param user
+    @param options
+
+ **/
+static void getUserInfo(UserId& user, const DatabaseOptions& options)
+{
+	TEXT name[129] = "";
+	TEXT project[33] = "";
+	TEXT organization[33] = "";
+
+	int node_id = 0;
+	int id = -1, group = -1;	// CVC: This var contained trash
+
+#ifdef NO_SECURITY
+	bool wheel = true;
+#else
+	bool wheel = false;
+	if (options.dpb_user_name.isEmpty()) 
+	{
+       wheel = ISC_get_user(name,
+                            &id,
+                            &group,
+                            project,
+                            organization,
+                            &node_id,
+                            options.dpb_sys_user_name.nullStr());
+	}
+
+	if (options.dpb_user_name.hasData() || (id == -1))
+	{
+		if (!JRD_get_thread_security_disabled())
+		{
+			Firebird::string remote = options.dpb_network_protocol + 
+				(options.dpb_network_protocol.isEmpty() || options.dpb_remote_address.isEmpty() ? "" : "/") +
+				options.dpb_remote_address;
+			SecurityDatabase::verifyUser(name, 
+										 options.dpb_user_name.nullStr(), 
+										 options.dpb_password.nullStr(), 
+										 options.dpb_password_enc.nullStr(),
+										 &id, &group, &node_id, remote);
+		}
+		else 
+		{
+			if (options.dpb_user_name.hasData())
+			{
+				options.dpb_user_name.copyTo(name, sizeof name);
+			}
+			else
+			{
+				strcpy(name, "<Unknown>");
+			}
+		}
+
+		// if the name from the user database is defined as SYSDBA,
+		// we define that user id as having system privileges
+
+		if (!strcmp(name, SYSDBA_USER_NAME))
+		{
+			wheel = true;
+		}
+	}
+#endif // NO_SECURITY
+
+	// In case we became WHEEL on an OS that didn't require name SYSDBA,
+	// (Like Unix) force the effective Database User name to be SYSDBA
+
+	if (wheel)
+	{
+		strcpy(name, SYSDBA_USER_NAME);
+	}
+
+	user.usr_user_name = name;
+	user.usr_project_name = project;
+	user.usr_org_name = organization;
+	user.usr_sql_role_name = options.dpb_role_name;
+	user.usr_user_id = id;
+	user.usr_group_id = group;
+	user.usr_node_id = node_id;
+	if (wheel) 
+	{
+		user.usr_flags |= USR_locksmith;
+	}
 }

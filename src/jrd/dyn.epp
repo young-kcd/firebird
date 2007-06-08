@@ -1143,7 +1143,7 @@ static void grant( Global* gbl, const UCHAR** ptr)
 			{	/* relation or view because we cannot distinguish at this point. */
 				id = drq_gcg1;
 				if (!grantor_can_grant(gbl,
-										tdbb->tdbb_attachment->att_user->usr_user_name,
+										tdbb->tdbb_attachment->att_user->usr_user_name.c_str(),
 										priv,
 										object,
 										field,

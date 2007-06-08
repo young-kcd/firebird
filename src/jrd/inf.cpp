@@ -535,8 +535,8 @@ int INF_database_info(const SCHAR* items,
                 
                 const UserId* user = att->att_user;
 				if (user) {
-					const char* user_name = user->usr_user_name ?
-						user->usr_user_name : "(Firebird Worker Thread)";
+					const char* user_name = user->usr_user_name.hasData() ?
+						user->usr_user_name.c_str() : "(Firebird Worker Thread)";
 					p = buffer;
 					SSHORT l = strlen (user_name);
 					*p++ = l;

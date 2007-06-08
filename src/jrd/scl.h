@@ -56,24 +56,65 @@ const SecurityClass::flags_t SCL_execute		= 8192;
 
 /* information about the user */
 
-class UserId : public pool_alloc_rpt<SCHAR, type_usr>
-{
-    public:
-	const TEXT *usr_user_name;	/* User name */
-	TEXT *usr_sql_role_name;	/* Role name */
-	TEXT *usr_project_name;		/* Project name */
-	TEXT *usr_org_name;			/* Organization name */
-	//TEXT *usr_node_name;		// Network node name
-	USHORT usr_user_id;			/* User id */
-	USHORT usr_group_id;		/* Group id */
-	USHORT usr_node_id;			/* Node id */
-	USHORT usr_flags;			/* Misc. crud */
-	TEXT usr_data[2];
-};
-
 const USHORT USR_locksmith	= 1;		/* User has great karma */
 const USHORT USR_dba		= 2;		/* User has DBA privileges */
 const USHORT USR_owner		= 4;		/* User owns database */
+
+class UserId
+{
+public:
+	Firebird::string	usr_user_name;		/* User name */
+	Firebird::string	usr_sql_role_name;	/* Role name */
+	Firebird::string	usr_project_name;	/* Project name */
+	Firebird::string	usr_org_name;		/* Organization name */
+	USHORT				usr_user_id;		/* User id */
+	USHORT				usr_group_id;		/* Group id */
+	USHORT				usr_node_id;		/* Node id */
+	USHORT				usr_flags;			/* Misc. crud */
+	//TEXT *usr_node_name;		// Network node name
+
+	bool locksmith() const
+	{
+		return usr_flags & (USR_locksmith | USR_owner);
+	}
+
+	UserId() :	usr_user_id(0), usr_group_id(0), 
+				usr_node_id(0), usr_flags(0) { }
+
+	UserId(Firebird::MemoryPool& p, const UserId& ui)
+		: usr_user_name(p, ui.usr_user_name), 
+		  usr_sql_role_name(p, ui.usr_sql_role_name),
+		  usr_project_name(p, ui.usr_project_name), 
+		  usr_org_name(p, ui.usr_org_name),
+		  usr_user_id(ui.usr_user_id), 
+		  usr_group_id(ui.usr_group_id), 
+		  usr_node_id(ui.usr_node_id), 
+		  usr_flags(ui.usr_flags) { }
+
+	UserId& operator=(const UserId& ui)
+	{
+		usr_user_name = ui.usr_user_name;
+		usr_sql_role_name = ui.usr_sql_role_name;
+		usr_project_name = ui.usr_project_name;
+		usr_org_name = ui.usr_org_name;
+		usr_user_id = ui.usr_user_id;
+		usr_group_id = ui.usr_group_id;
+		usr_node_id = ui.usr_node_id;
+		usr_flags = ui.usr_flags;
+
+		return *this;
+	}
+
+	UserId(const UserId& ui)
+		: usr_user_name(ui.usr_user_name), 
+		  usr_sql_role_name(ui.usr_sql_role_name),
+		  usr_project_name(ui.usr_project_name), 
+		  usr_org_name(ui.usr_org_name),
+		  usr_user_id(ui.usr_user_id), 
+		  usr_group_id(ui.usr_group_id), 
+		  usr_node_id(ui.usr_node_id), 
+		  usr_flags(ui.usr_flags) { }
+};
 
 /*
  * User name assigned to any user granted USR_locksmith rights.
