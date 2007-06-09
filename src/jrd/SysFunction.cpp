@@ -69,14 +69,18 @@ void static add10msec(ISC_TIMESTAMP* v, int msec, SINT64 multiplier);
 static double cot(double value);
 
 // generic setParams functions
-static void setParamsInteger(DataTypeUtilBase* dataTypeUtil, SysFunction* function, int argsCount, dsc** args);
 static void setParamsDouble(DataTypeUtilBase* dataTypeUtil, SysFunction* function, int argsCount, dsc** args);
+static void setParamsFromList(DataTypeUtilBase* dataTypeUtil, SysFunction* function, int argsCount, dsc** args);
+static void setParamsInteger(DataTypeUtilBase* dataTypeUtil, SysFunction* function, int argsCount, dsc** args);
 static void setParamsSecondInteger(DataTypeUtilBase* dataTypeUtil, SysFunction* function, int argsCount, dsc** args);
 
 // specific setParams functions
 static void setParamsAsciiVal(DataTypeUtilBase* dataTypeUtil, SysFunction* function, int argsCount, dsc** args);
 static void setParamsDateAdd(DataTypeUtilBase* dataTypeUtil, SysFunction* function, int argsCount, dsc** args);
 static void setParamsDateDiff(DataTypeUtilBase* dataTypeUtil, SysFunction* function, int argsCount, dsc** args);
+static void setParamsOverlay(DataTypeUtilBase* dataTypeUtil, SysFunction* function, int argsCount, dsc** args);
+static void setParamsPosition(DataTypeUtilBase* dataTypeUtil, SysFunction* function, int argsCount, dsc** args);
+static void setParamsRound(DataTypeUtilBase* dataTypeUtil, SysFunction* function, int argsCount, dsc** args);
 
 // generic make functions
 static void makeDoubleResult(DataTypeUtilBase* dataTypeUtil, SysFunction* function, dsc* result, int argsCount, const dsc** args);
@@ -189,22 +193,35 @@ static bool initResult(dsc* result, int argsCount, const dsc** args, bool* isNul
 }
 
 
-static void setParamsInteger(DataTypeUtilBase* dataTypeUtil, SysFunction* function, int argsCount, dsc** args)
-{
-	for (int i = 0; i < argsCount; ++i)
-	{
-		if (args[i]->isUnknown())
-			args[i]->makeLong(0);
-	}
-}
-
-
 static void setParamsDouble(DataTypeUtilBase* dataTypeUtil, SysFunction* function, int argsCount, dsc** args)
 {
 	for (int i = 0; i < argsCount; ++i)
 	{
 		if (args[i]->isUnknown())
 			args[i]->makeDouble();
+	}
+}
+
+
+static void setParamsFromList(DataTypeUtilBase* dataTypeUtil, SysFunction* function, int argsCount, dsc** args)
+{
+	dsc desc;
+	dataTypeUtil->makeFromList(&desc, function->name.c_str(), argsCount, const_cast<const dsc**>(args));
+
+	for (int i = 0; i < argsCount; ++i)
+	{
+		if (args[i]->isUnknown())
+			*args[i] = desc;
+	}
+}
+
+
+static void setParamsInteger(DataTypeUtilBase* dataTypeUtil, SysFunction* function, int argsCount, dsc** args)
+{
+	for (int i = 0; i < argsCount; ++i)
+	{
+		if (args[i]->isUnknown())
+			args[i]->makeLong(0);
 	}
 }
 
@@ -249,6 +266,63 @@ static void setParamsDateDiff(DataTypeUtilBase* dataTypeUtil, SysFunction* funct
 			*args[1] = *args[2];
 		else if (args[2]->isUnknown())
 			*args[2] = *args[1];
+	}
+}
+
+
+static void setParamsOverlay(DataTypeUtilBase* dataTypeUtil, SysFunction* function, int argsCount, dsc** args)
+{
+	if (argsCount >= 3)
+	{
+		if (!(args[0]->isUnknown() && args[1]->isUnknown()))
+		{
+			if (args[1]->isUnknown())
+				*args[1] = *args[0];
+			else if (args[0]->isUnknown())
+				*args[0] = *args[1];
+		}
+
+		if (argsCount >= 4)
+		{
+			if (args[2]->isUnknown() && args[3]->isUnknown())
+			{
+				args[2]->makeLong(0);
+				args[3]->makeLong(0);
+			}
+			else if (args[2]->isUnknown())
+				*args[2] = *args[3];
+			else if (args[3]->isUnknown())
+				*args[3] = *args[2];
+		}
+
+		if (args[2]->isUnknown())
+			args[2]->makeLong(0);
+	}
+}
+
+
+static void setParamsPosition(DataTypeUtilBase* dataTypeUtil, SysFunction* function, int argsCount, dsc** args)
+{
+	if (argsCount >= 2)
+	{
+		if (args[0]->isUnknown())
+			*args[0] = *args[1];
+
+		if (args[1]->isUnknown())
+			*args[1] = *args[0];
+	}
+}
+
+
+static void setParamsRound(DataTypeUtilBase* dataTypeUtil, SysFunction* function, int argsCount, dsc** args)
+{
+	if (argsCount >= 2)
+	{
+		if (args[0]->isUnknown())
+			args[0]->makeDouble();
+
+		if (args[1]->isUnknown())
+			args[1]->makeLong(0);
 	}
 }
 
@@ -2542,18 +2616,18 @@ SysFunction SysFunction::functions[] =
 		SF("LOG", 2, 2, setParamsDouble, makeDoubleResult, evlLog, NULL),
 		SF("LOG10", 1, 1, setParamsDouble, makeDoubleResult, evlStdMath, (VoidPtrStdMathFunc) log10),
 		SF("LPAD", 2, 3, setParamsSecondInteger, makePad, evlPad, (void*) funLPad),
-		SF("MAXVALUE", 1, -1, NULL, makeFromListResult, evlMaxMinValue, (void*) funMaxValue),
-		SF("MINVALUE", 1, -1, NULL, makeFromListResult, evlMaxMinValue, (void*) funMinValue),
-		SF("MOD", 2, 2, NULL, makeMod, evlMod, NULL),
-		SF("OVERLAY", 3, 4, NULL, makeOverlay, evlOverlay, NULL),
+		SF("MAXVALUE", 1, -1, setParamsFromList, makeFromListResult, evlMaxMinValue, (void*) funMaxValue),
+		SF("MINVALUE", 1, -1, setParamsFromList, makeFromListResult, evlMaxMinValue, (void*) funMinValue),
+		SF("MOD", 2, 2, setParamsFromList, makeMod, evlMod, NULL),
+		SF("OVERLAY", 3, 4, setParamsOverlay, makeOverlay, evlOverlay, NULL),
 		SF("PI", 0, 0, NULL, makeDoubleResult, evlPi, NULL),
-		SF("POSITION", 2, 2, NULL, makeLongResult, evlPosition, NULL),
+		SF("POSITION", 2, 2, setParamsPosition, makeLongResult, evlPosition, NULL),
 		SF("POWER", 2, 2, setParamsDouble, makeDoubleResult, evlPower, NULL),
 		SF("RAND", 0, 0, NULL, makeDoubleResult, evlRand, NULL),
-		SF("REPLACE", 3, 3, NULL, makeReplace, evlReplace, NULL),
+		SF("REPLACE", 3, 3, setParamsFromList, makeReplace, evlReplace, NULL),
 		SF("REVERSE", 1, 1, NULL, makeReverse, evlReverse, NULL),
 		SF("RIGHT", 2, 2, setParamsSecondInteger, makeLeftRight, evlRight, NULL),
-		SF("ROUND", 2, 2, NULL, makeRound, evlRound, NULL),
+		SF("ROUND", 2, 2, setParamsRound, makeRound, evlRound, NULL),
 		SF("RPAD", 2, 3, setParamsSecondInteger, makePad, evlPad, (void*) funRPad),
 		SF("SIGN", 1, 1, setParamsDouble, makeShortResult, evlSign, NULL),
 		SF("SIN", 1, 1, setParamsDouble, makeDoubleResult, evlStdMath, (VoidPtrStdMathFunc) sin),
