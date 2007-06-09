@@ -1,3 +1,45 @@
+2007-06-08 15:24  hvlad
+
+	* firebird2/src/dsql/make.cpp (1.133):
+
+	Quick fix for CORE-1315 : Data type unknown. To be reviewed by
+	Adriano
+
+2007-06-08 14:41  hvlad
+
+	* firebird2/src/remote/: interface.cpp (1.138), remote.h (1.55):
+
+	Fixed CORE-1310 : Got "request synchronization error" when calling
+	isc_dsql_sql_info with isc_info_sql_records parameter after last
+	record fetched
+
+2007-06-08 12:24  alexpeshkoff
+
+	* firebird2/src/jrd/: dyn.epp (1.108), evl.cpp (1.229),
+	functions.cpp (1.27), inf.cpp (1.73), jrd.cpp (1.332), scl.epp
+	(1.81), scl.h (1.15), scl_proto.h (1.25), vio.cpp (1.192):
+
+	Fixed CORE-1312: A remote attacker can check, if a file is present
+	in the system, running firebird server
+
+2007-06-08 12:22  alexpeshkoff
+
+	* firebird2/src/misc/ids.m (1.4):
+
+	Fixed ids.h formatting - thanks to Claudio
+
+2007-06-08 10:40  robocop
+
+	* firebird2/src/include/gen/ids.h (1.25):
+
+	Misc.
+
+2007-06-08 10:40  robocop
+
+	* firebird2/src/common/classes/semaphore.h (1.34):
+
+	Fix wrong indentation.
+
 2007-06-08 04:19  asfernandes
 
 	* firebird2/: doc/WhatsNew (1.129), src/dsql/dsql.h (1.109),
