@@ -1795,7 +1795,7 @@ ISC_STATUS GDS_DSQL_FETCH(ISC_STATUS* user_status,
 		{
 			stmt_raise_exception(statement);
 
-			statement->rsr_flags &= ~(RSR_eof | RSR_stream_err);
+			statement->rsr_flags &= ~(RSR_eof | RSR_stream_err | RSR_past_eof);
 			statement->rsr_rows_pending = 0;
 			stmt_clear_exception(statement);
 
@@ -1812,6 +1812,14 @@ ISC_STATUS GDS_DSQL_FETCH(ISC_STATUS* user_status,
 					}
 				}
 			}
+		}
+		else if ((statement->rsr_flags & RSR_eof) && 
+				 (statement->rsr_flags & RSR_past_eof))
+		{
+			user_status[0] = isc_arg_gds;
+			user_status[1] = isc_req_sync;
+			user_status[2] = isc_arg_end;
+			return error(user_status);
 		}
 
 		/* Parse the blr describing the message, if there is any. */
@@ -1974,7 +1982,11 @@ ISC_STATUS GDS_DSQL_FETCH(ISC_STATUS* user_status,
 					stmt_clear_exception(statement);
 				}
 
-				statement->rsr_flags &= ~RSR_eof;
+				// hvlad: as we processed all queued packets at code above we can leave RSR_eof flag. 
+				// It allows us to return EOF for all subsequent isc_dsql_fetch calls until statement 
+				// will be re-executed (and without roundtrip to remote server).
+				//statement->rsr_flags &= ~RSR_eof;
+				statement->rsr_flags |= RSR_past_eof;
 
 				/* Set up status vector and REM_restore_thread_data in common return_success */
 

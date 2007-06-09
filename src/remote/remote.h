@@ -303,7 +303,8 @@ const USHORT RSR_blob		= 4;		/* Statement relates to blob op */
 const USHORT RSR_no_batch	= 8;		/* Do not batch fetch rows */
 const USHORT RSR_stream_err	= 16;		/* There is an error pending in the batched rows */
 const USHORT RSR_lazy		= 32;		/* To be allocated at the first reference */
-const USHORT RSR_defer_execute	= 64;		// op_execute can be deferred
+const USHORT RSR_defer_execute	= 64;	// op_execute can be deferred
+const USHORT RSR_past_eof	= 128;		// EOF was returned by fetch from this statement
 
 // will be methods of remote statement class
 inline void stmt_save_exception(RSR statement, const ISC_STATUS* status, bool overwrite)
