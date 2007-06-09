@@ -3389,7 +3389,7 @@ static dsql_nod* nullify_returning(dsql_nod* input, bool proc_flag)
 }
 
 
-// Transforms a value (constant or constant expression) to NULL if all contexts is
+// Transforms a value (constant or constant expression) to NULL if all contexts are
 // in NULL (or EOF) state.
 // This is necessary with outer joins with derived tables and views.
 // See CORE-1245 and CORE-1246.
@@ -3411,7 +3411,7 @@ static dsql_nod* maybe_null(dsql_req* request, dsql_nod* input)
 			if (ctx->ctx_relation && ctx->ctx_scope_level > 0)
 			{
 				dsql_nod* rel_node = MAKE_node(nod_relation, e_rel_count);
-				rel_node->nod_arg[0] = (dsql_nod*) ctx;
+				rel_node->nod_arg[e_rel_context] = (dsql_nod*) ctx;
 
 				dsql_nod* this_condition = MAKE_node(nod_missing, 1);
 				this_condition->nod_arg[0] = MAKE_node(nod_dbkey, 1);
