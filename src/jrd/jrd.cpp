@@ -7177,7 +7177,7 @@ bool Attachment::locksmith() const
   
     @brief	Checks the userinfo database to validate
     password to that passed in.
-    Takes into account possible trusted sithentication.
+    Takes into account possible trusted authentication.
 	Fills UserId structure with resulting values.
 
     @param user
