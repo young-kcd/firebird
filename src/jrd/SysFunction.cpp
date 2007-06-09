@@ -71,6 +71,7 @@ static double cot(double value);
 // generic setParams functions
 static void setParamsInteger(DataTypeUtilBase* dataTypeUtil, SysFunction* function, int argsCount, dsc** args);
 static void setParamsDouble(DataTypeUtilBase* dataTypeUtil, SysFunction* function, int argsCount, dsc** args);
+static void setParamsSecondInteger(DataTypeUtilBase* dataTypeUtil, SysFunction* function, int argsCount, dsc** args);
 
 // specific setParams functions
 static void setParamsAsciiVal(DataTypeUtilBase* dataTypeUtil, SysFunction* function, int argsCount, dsc** args);
@@ -204,6 +205,16 @@ static void setParamsDouble(DataTypeUtilBase* dataTypeUtil, SysFunction* functio
 	{
 		if (args[i]->isUnknown())
 			args[i]->makeDouble();
+	}
+}
+
+
+static void setParamsSecondInteger(DataTypeUtilBase* dataTypeUtil, SysFunction* function, int argsCount, dsc** args)
+{
+	if (argsCount >= 2)
+	{
+		if (args[1]->isUnknown())
+			args[1]->makeLong(0);
 	}
 }
 
@@ -1893,6 +1904,8 @@ static dsc* evlPad(Jrd::thread_db* tdbb, SysFunction* function, Jrd::jrd_nod* ar
 					impure->vlu_desc.dsc_length - (p - impure->vlu_desc.dsc_address), p,
 					0, padLen);
 			}
+
+			charLength2 = padLen;
 		}
 	}
 
@@ -2524,11 +2537,11 @@ SysFunction SysFunction::functions[] =
 		SF("FLOOR", 1, 1, setParamsDouble, makeCeilFloor, evlFloor, NULL),
 		SF("GEN_UUID", 0, 0, NULL, makeGenUuid, evlGenUuid, NULL),
 		SF("HASH", 1, 1, NULL, makeInt64Result, evlHash, NULL),
-		SF("LEFT", 2, 2, NULL, makeLeftRight, evlLeft, NULL),
+		SF("LEFT", 2, 2, setParamsSecondInteger, makeLeftRight, evlLeft, NULL),
 		SF("LN", 1, 1, setParamsDouble, makeDoubleResult, evlLn, NULL),
 		SF("LOG", 2, 2, setParamsDouble, makeDoubleResult, evlLog, NULL),
 		SF("LOG10", 1, 1, setParamsDouble, makeDoubleResult, evlStdMath, (VoidPtrStdMathFunc) log10),
-		SF("LPAD", 2, 3, NULL, makePad, evlPad, (void*) funLPad),
+		SF("LPAD", 2, 3, setParamsSecondInteger, makePad, evlPad, (void*) funLPad),
 		SF("MAXVALUE", 1, -1, NULL, makeFromListResult, evlMaxMinValue, (void*) funMaxValue),
 		SF("MINVALUE", 1, -1, NULL, makeFromListResult, evlMaxMinValue, (void*) funMinValue),
 		SF("MOD", 2, 2, NULL, makeMod, evlMod, NULL),
@@ -2539,16 +2552,16 @@ SysFunction SysFunction::functions[] =
 		SF("RAND", 0, 0, NULL, makeDoubleResult, evlRand, NULL),
 		SF("REPLACE", 3, 3, NULL, makeReplace, evlReplace, NULL),
 		SF("REVERSE", 1, 1, NULL, makeReverse, evlReverse, NULL),
-		SF("RIGHT", 2, 2, NULL, makeLeftRight, evlRight, NULL),
+		SF("RIGHT", 2, 2, setParamsSecondInteger, makeLeftRight, evlRight, NULL),
 		SF("ROUND", 2, 2, NULL, makeRound, evlRound, NULL),
-		SF("RPAD", 2, 3, NULL, makePad, evlPad, (void*) funRPad),
-		SF("SIGN", 1, 1, NULL, makeShortResult, evlSign, NULL),
+		SF("RPAD", 2, 3, setParamsSecondInteger, makePad, evlPad, (void*) funRPad),
+		SF("SIGN", 1, 1, setParamsDouble, makeShortResult, evlSign, NULL),
 		SF("SIN", 1, 1, setParamsDouble, makeDoubleResult, evlStdMath, (VoidPtrStdMathFunc) sin),
 		SF("SINH", 1, 1, setParamsDouble, makeDoubleResult, evlStdMath, (VoidPtrStdMathFunc) sinh),
 		SF("SQRT", 1, 1, setParamsDouble, makeDoubleResult, evlSqrt, NULL),
 		SF("TAN", 1, 1, setParamsDouble, makeDoubleResult, evlStdMath, (VoidPtrStdMathFunc) tan),
 		SF("TANH", 1, 1, setParamsDouble, makeDoubleResult, evlStdMath, (VoidPtrStdMathFunc) tanh),
-		SF("TRUNC", 1, 1, NULL, makeTrunc, evlTrunc, NULL),
+		SF("TRUNC", 1, 1, setParamsDouble, makeTrunc, evlTrunc, NULL),
 		SF("", 0, 0, NULL, NULL, NULL, NULL)
 	};
 
