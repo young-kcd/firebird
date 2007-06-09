@@ -1790,9 +1790,6 @@ static void make_parameter_names(dsql_par* parameter, const dsql_nod* item)
 
 	const char* name_alias = NULL;
 
-	while (item->nod_alias_substitute)
-		item = item->nod_alias_substitute;
-
 	switch (item->nod_type) {
 	case nod_field:
 		field = (dsql_fld*) item->nod_arg[e_fld_field];

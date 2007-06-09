@@ -536,8 +536,7 @@ enum req_flags_vals {
 	REQ_selectable			= 0x02000,
 	REQ_CTE_recursive		= 0x04000,
 	REQ_dsql_upd_or_ins		= 0x08000,
-	REQ_returning_into		= 0x10000,
-	REQ_view				= 0x20000
+	REQ_returning_into		= 0x10000
 };
 
 //! Blob

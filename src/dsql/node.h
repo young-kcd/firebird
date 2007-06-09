@@ -370,13 +370,9 @@ public:
 	USHORT nod_column;			// Source column of the statement.
 	USHORT nod_count;			// Number of arguments
 	USHORT nod_flags;
-	dsql_nod* nod_alias_substitute;
 	dsql_nod* nod_arg[1];
 
-	dsql_nod() :
-		nod_type(nod_unknown_type), nod_count(0), nod_flags(0), nod_alias_substitute(NULL)
-	{
-	}
+	dsql_nod() : nod_type(nod_unknown_type), nod_count(0), nod_flags(0) {}
 };
 
 // values of flags
