@@ -6690,7 +6690,7 @@ static vdnResult verify_database_name(const Firebird::PathName& name, ISC_STATUS
   
     @brief	Checks the userinfo database to validate
     password to that passed in.
-    Takes into account possible trusted sithentication.
+    Takes into account possible trusted authentication.
 	Fills UserId structure with resulting values.
 
     @param user
@@ -6706,7 +6706,7 @@ static void getUserInfo(UserId& user, const DatabaseOptions& options)
 	int node_id = 0;
 	int id = -1, group = -1;	// CVC: This var contained trash
 
-#ifdef NO_SECURITY
+#ifdef BOOT_BUILD
 	bool wheel = true;
 #else
 	bool wheel = false;
@@ -6754,7 +6754,7 @@ static void getUserInfo(UserId& user, const DatabaseOptions& options)
 			wheel = true;
 		}
 	}
-#endif // NO_SECURITY
+#endif // BOOT_BUILD
 
 	// In case we became WHEEL on an OS that didn't require name SYSDBA,
 	// (Like Unix) force the effective Database User name to be SYSDBA
