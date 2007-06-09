@@ -130,6 +130,11 @@ typedef struct dsc
 		return (dsc_dtype >= dtype_text) && (dsc_dtype <= dtype_varying);
 	}
 
+	bool isUnknown() const
+	{
+		return dsc_dtype == dtype_unknown;
+	}
+
 	SSHORT getBlobSubType() const
 	{
 		if (isBlob())
@@ -253,6 +258,15 @@ typedef struct dsc
 		dsc_length = length;
 		setTextType(ttype);
 		dsc_address = address;
+	}
+
+	void makeTimestamp(GDS_TIMESTAMP* address = NULL)
+	{
+		clear();
+		dsc_dtype = dtype_timestamp;
+		dsc_length = sizeof(GDS_TIMESTAMP);
+		dsc_scale = 0;
+		dsc_address = (UCHAR*) address;
 	}
 
 	void makeVarying(USHORT length, USHORT ttype, UCHAR* address = NULL)

@@ -2,6 +2,12 @@
   * v2.1 Beta 1
   **************
 
+    * Bugfix CORE-1315
+         Data type unknown
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+        Vlad Horsun <hvlad at users.sourceforge.net>
+
     * Bugfix CORE-1306
          Indices not used for views
       Contributor(s):

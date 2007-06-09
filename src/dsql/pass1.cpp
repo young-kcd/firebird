@@ -159,6 +159,7 @@
 #include "../jrd/dsc_proto.h"
 #include "../jrd/thread_proto.h"
 #include "../jrd/why_proto.h"
+#include "../jrd/SysFunction.h"
 #include "../common/classes/array.h"
 #include "../common/classes/auto.h"
 #include "../common/utils_proto.h"
@@ -860,12 +861,10 @@ dsql_nod* PASS1_node(dsql_req* request, dsql_nod* input, bool proc_flag)
 		return maybe_null(request, pass1_udf(request, input, proc_flag));
 
 	case nod_sys_function:
-	{
 		node = pass1_sys_function(request, input, proc_flag);
 		if (node->nod_count > 0)
 			node = maybe_null(request, node);
 		return node;
-	}
 
 	case nod_equiv:
 	case nod_eql:
@@ -1270,13 +1269,13 @@ dsql_nod* PASS1_statement(dsql_req* request, dsql_nod* input, bool proc_flag)
 	case nod_redef_view:
 	case nod_mod_view:
 	case nod_replace_view:
-    case nod_del_view:
+	case nod_del_view:
 		request->req_type = REQ_DDL;
 		request->req_flags |= REQ_view;
 		return input;
 
 	case nod_def_relation:
-    case nod_redef_relation:
+	case nod_redef_relation:
 	case nod_mod_relation:
 	case nod_del_relation:
 	case nod_def_index:
@@ -8279,6 +8278,34 @@ static dsql_nod* pass1_sys_function(dsql_req* request, dsql_nod* input, bool pro
 	node = MAKE_node(input->nod_type, e_sysfunc_count);
 	node->nod_arg[e_sysfunc_name] = input->nod_arg[e_sysfunc_name];
 	node->nod_arg[e_sysfunc_args] = PASS1_node(request, input->nod_arg[e_sysfunc_args], proc_flag);
+
+	if (node->nod_arg[e_sysfunc_args])
+	{
+		SysFunction* sf = SysFunction::lookup(((dsql_str*) node->nod_arg[e_sysfunc_name])->str_data);
+
+		if (sf && sf->setParamsFunc)
+		{
+			Firebird::Array<dsc*> args;
+
+			fb_assert(node->nod_arg[e_sysfunc_args]->nod_type == nod_list);
+
+			for (dsql_nod** p = node->nod_arg[e_sysfunc_args]->nod_arg;
+				 p < node->nod_arg[e_sysfunc_args]->nod_arg + node->nod_arg[e_sysfunc_args]->nod_count; ++p)
+			{
+				MAKE_desc(request, &(*p)->nod_desc, *p, *p);
+				args.add(&(*p)->nod_desc);
+			}
+
+			DSqlDataTypeUtil dataTypeUtil(request);
+			sf->setParamsFunc(&dataTypeUtil, sf, args.getCount(), args.begin());
+
+			for (dsql_nod** p = node->nod_arg[e_sysfunc_args]->nod_arg;
+				 p < node->nod_arg[e_sysfunc_args]->nod_arg + node->nod_arg[e_sysfunc_args]->nod_count; ++p)
+			{
+				set_parameter_type(request, *p, *p, false);
+			}
+		}
+	}
 
 	return node;
 }

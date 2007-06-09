@@ -1367,14 +1367,6 @@ void MAKE_desc_from_list(dsql_req* request, dsc* desc, dsql_nod* node,
 
 	for (dsql_nod** p = node->nod_arg; p < node->nod_arg + node->nod_count; ++p)
 	{
-		// ignore NULL and parameter value from walking
-		if ((*p)->nod_type == nod_null || 
-			(*p)->nod_desc.dsc_flags & DSC_null ||
-			(*p)->nod_type == nod_parameter) 
-		{
-			continue;
-		}
-
 		MAKE_desc(request, &(*p)->nod_desc, *p, NULL);
 		args.add(&(*p)->nod_desc);
 	}

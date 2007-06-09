@@ -131,7 +131,7 @@ void DataTypeUtilBase::makeFromList(dsc* result, const char* expressionName, int
 			all_nulls = false;
 
 		// ignore NULL and parameter value from walking
-		if (arg->isNull())
+		if (arg->isNull() || arg->isUnknown())
 		{
 			nullable = true;
 			continue;

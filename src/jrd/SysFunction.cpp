@@ -68,6 +68,15 @@ const static int oneDay = 86400;
 void static add10msec(ISC_TIMESTAMP* v, int msec, SINT64 multiplier);
 static double cot(double value);
 
+// generic setParams functions
+static void setParamsInteger(DataTypeUtilBase* dataTypeUtil, SysFunction* function, int argsCount, dsc** args);
+static void setParamsDouble(DataTypeUtilBase* dataTypeUtil, SysFunction* function, int argsCount, dsc** args);
+
+// specific setParams functions
+static void setParamsAsciiVal(DataTypeUtilBase* dataTypeUtil, SysFunction* function, int argsCount, dsc** args);
+static void setParamsDateAdd(DataTypeUtilBase* dataTypeUtil, SysFunction* function, int argsCount, dsc** args);
+static void setParamsDateDiff(DataTypeUtilBase* dataTypeUtil, SysFunction* function, int argsCount, dsc** args);
+
 // generic make functions
 static void makeDoubleResult(DataTypeUtilBase* dataTypeUtil, SysFunction* function, dsc* result, int argsCount, const dsc** args);
 static void makeFromListResult(DataTypeUtilBase* dataTypeUtil, SysFunction* function, dsc* result, int argsCount, const dsc** args);
@@ -176,6 +185,60 @@ static bool initResult(dsc* result, int argsCount, const dsc** args, bool* isNul
 	}
 
 	return false;
+}
+
+
+static void setParamsInteger(DataTypeUtilBase* dataTypeUtil, SysFunction* function, int argsCount, dsc** args)
+{
+	for (int i = 0; i < argsCount; ++i)
+	{
+		if (args[i]->isUnknown())
+			args[i]->makeLong(0);
+	}
+}
+
+
+static void setParamsDouble(DataTypeUtilBase* dataTypeUtil, SysFunction* function, int argsCount, dsc** args)
+{
+	for (int i = 0; i < argsCount; ++i)
+	{
+		if (args[i]->isUnknown())
+			args[i]->makeDouble();
+	}
+}
+
+
+static void setParamsAsciiVal(DataTypeUtilBase* dataTypeUtil, SysFunction* function, int argsCount, dsc** args)
+{
+	if (argsCount >= 1 && args[0]->isUnknown())
+		args[0]->makeText(1, CS_ASCII);
+}
+
+
+static void setParamsDateAdd(DataTypeUtilBase* dataTypeUtil, SysFunction* function, int argsCount, dsc** args)
+{
+	if (argsCount >= 1 && args[0]->isUnknown())
+		args[0]->makeLong(0);
+
+	if (argsCount >= 3 && args[2]->isUnknown())
+		args[2]->makeTimestamp();
+}
+
+
+static void setParamsDateDiff(DataTypeUtilBase* dataTypeUtil, SysFunction* function, int argsCount, dsc** args)
+{
+	if (argsCount >= 3)
+	{
+		if (args[1]->isUnknown() && args[2]->isUnknown())
+		{
+			args[1]->makeTimestamp();
+			args[2]->makeTimestamp();
+		}
+		else if (args[1]->isUnknown())
+			*args[1] = *args[2];
+		else if (args[2]->isUnknown())
+			*args[2] = *args[1];
+	}
 }
 
 
@@ -2417,17 +2480,17 @@ static dsc* evlTrunc(Jrd::thread_db* tdbb, SysFunction* function, Jrd::jrd_nod* 
 
 
 #if (defined(_MSC_VER) && (_MSC_VER <= 1200))
-SysFunction::SysFunction(const char* s, int minCount, int maxCount, MakeFunc mf, EvlFunc ef, void* v)
-	: name(s), minArgCount(minCount), maxArgCount(maxCount), makeFunc(mf), evlFunc(ef), misc(v)
+SysFunction::SysFunction(const char* s, int minCount, int maxCount, SetParamsFunc sp, MakeFunc mf, EvlFunc ef, void* v)
+	: name(s), minArgCount(minCount), maxArgCount(maxCount), setParamsFunc(sp), makeFunc(mf), evlFunc(ef), misc(v)
 {
 }
 #endif
 
 
 #if (defined(_MSC_VER) && (_MSC_VER <= 1200))
-#define SF(a, b, c, d, e, f) SysFunction(a, b, c, d, e, f)
+#define SF(a, b, c, d, e, f, g) SysFunction(a, b, c, d, e, f, g)
 #else
-#define SF(a, b, c, d, e, f) {a, b, c, d, e, f}
+#define SF(a, b, c, d, e, f, g) {a, b, c, d, e, f, g}
 #endif
 
 #ifdef _MSC_VER
@@ -2438,55 +2501,55 @@ typedef void* VoidPtrStdMathFunc;
 
 SysFunction SysFunction::functions[] =
 	{
-		SF("ABS", 1, 1, makeAbs, evlAbs, NULL),
-		SF("ACOS", 1, 1, makeDoubleResult, evlStdMath, (VoidPtrStdMathFunc) acos),
-		SF("ASCII_CHAR", 1, 1, makeAsciiChar, evlAsciiChar, NULL),
-		SF("ASCII_VAL", 1, 1, makeShortResult, evlAsciiVal, NULL),
-		SF("ASIN", 1, 1, makeDoubleResult, evlStdMath, (VoidPtrStdMathFunc) asin),
-		SF("ATAN", 1, 1, makeDoubleResult, evlStdMath, (VoidPtrStdMathFunc) atan),
-		SF("ATAN2", 2, 2, makeDoubleResult, evlAtan2, NULL),
-		SF("BIN_AND", 1, -1, makeBin, evlBin, (void*) funBinAnd),
-		SF("BIN_OR", 1, -1, makeBin, evlBin, (void*) funBinOr),
-		SF("BIN_SHL", 2, 2, makeBinShift, evlBinShift, (void*) funBinShl),
-		SF("BIN_SHR", 2, 2, makeBinShift, evlBinShift, (void*) funBinShr),
-		SF("BIN_XOR", 1, -1, makeBin, evlBin, (void*) funBinXor),
-		SF("CEIL", 1, 1, makeCeilFloor, evlCeil, NULL),
-		SF("CEILING", 1, 1, makeCeilFloor, evlCeil, NULL),
-		SF("COS", 1, 1, makeDoubleResult, evlStdMath, (VoidPtrStdMathFunc) cos),
-		SF("COSH", 1, 1, makeDoubleResult, evlStdMath, (VoidPtrStdMathFunc) cosh),
-		SF("COT", 1, 1, makeDoubleResult, evlStdMath, (VoidPtrStdMathFunc) cot),
-		SF("DATEADD", 3, 3, makeDateAdd, evlDateAdd, NULL),
-		SF("DATEDIFF", 3, 3, makeInt64Result, evlDateDiff, NULL),
-		SF("EXP", 1, 1, makeDoubleResult, evlExp, NULL),
-		SF("FLOOR", 1, 1, makeCeilFloor, evlFloor, NULL),
-		SF("GEN_UUID", 0, 0, makeGenUuid, evlGenUuid, NULL),
-		SF("HASH", 1, 1, makeInt64Result, evlHash, NULL),
-		SF("LEFT", 2, 2, makeLeftRight, evlLeft, NULL),
-		SF("LN", 1, 1, makeDoubleResult, evlLn, NULL),
-		SF("LOG", 2, 2, makeDoubleResult, evlLog, NULL),
-		SF("LOG10", 1, 1, makeDoubleResult, evlStdMath, (VoidPtrStdMathFunc) log10),
-		SF("LPAD", 2, 3, makePad, evlPad, (void*) funLPad),
-		SF("MAXVALUE", 1, -1, makeFromListResult, evlMaxMinValue, (void*) funMaxValue),
-		SF("MINVALUE", 1, -1, makeFromListResult, evlMaxMinValue, (void*) funMinValue),
-		SF("MOD", 2, 2, makeMod, evlMod, NULL),
-		SF("OVERLAY", 3, 4, makeOverlay, evlOverlay, NULL),
-		SF("PI", 0, 0, makeDoubleResult, evlPi, NULL),
-		SF("POSITION", 2, 2, makeLongResult, evlPosition, NULL),
-		SF("POWER", 2, 2, makeDoubleResult, evlPower, NULL),
-		SF("RAND", 0, 0, makeDoubleResult, evlRand, NULL),
-		SF("REPLACE", 3, 3, makeReplace, evlReplace, NULL),
-		SF("REVERSE", 1, 1, makeReverse, evlReverse, NULL),
-		SF("RIGHT", 2, 2, makeLeftRight, evlRight, NULL),
-		SF("ROUND", 2, 2, makeRound, evlRound, NULL),
-		SF("RPAD", 2, 3, makePad, evlPad, (void*) funRPad),
-		SF("SIGN", 1, 1, makeShortResult, evlSign, NULL),
-		SF("SIN", 1, 1, makeDoubleResult, evlStdMath, (VoidPtrStdMathFunc) sin),
-		SF("SINH", 1, 1, makeDoubleResult, evlStdMath, (VoidPtrStdMathFunc) sinh),
-		SF("SQRT", 1, 1, makeDoubleResult, evlSqrt, NULL),
-		SF("TAN", 1, 1, makeDoubleResult, evlStdMath, (VoidPtrStdMathFunc) tan),
-		SF("TANH", 1, 1, makeDoubleResult, evlStdMath, (VoidPtrStdMathFunc) tanh),
-		SF("TRUNC", 1, 1, makeTrunc, evlTrunc, NULL),
-		SF("", 0, 0, NULL, NULL, NULL)
+		SF("ABS", 1, 1, setParamsDouble, makeAbs, evlAbs, NULL),
+		SF("ACOS", 1, 1, setParamsDouble, makeDoubleResult, evlStdMath, (VoidPtrStdMathFunc) acos),
+		SF("ASCII_CHAR", 1, 1, setParamsInteger, makeAsciiChar, evlAsciiChar, NULL),
+		SF("ASCII_VAL", 1, 1, setParamsAsciiVal, makeShortResult, evlAsciiVal, NULL),
+		SF("ASIN", 1, 1, setParamsDouble, makeDoubleResult, evlStdMath, (VoidPtrStdMathFunc) asin),
+		SF("ATAN", 1, 1, setParamsDouble, makeDoubleResult, evlStdMath, (VoidPtrStdMathFunc) atan),
+		SF("ATAN2", 2, 2, setParamsDouble, makeDoubleResult, evlAtan2, NULL),
+		SF("BIN_AND", 1, -1, setParamsInteger, makeBin, evlBin, (void*) funBinAnd),
+		SF("BIN_OR", 1, -1, setParamsInteger, makeBin, evlBin, (void*) funBinOr),
+		SF("BIN_SHL", 2, 2, setParamsInteger, makeBinShift, evlBinShift, (void*) funBinShl),
+		SF("BIN_SHR", 2, 2, setParamsInteger, makeBinShift, evlBinShift, (void*) funBinShr),
+		SF("BIN_XOR", 1, -1, setParamsInteger, makeBin, evlBin, (void*) funBinXor),
+		SF("CEIL", 1, 1, setParamsDouble, makeCeilFloor, evlCeil, NULL),
+		SF("CEILING", 1, 1, setParamsDouble, makeCeilFloor, evlCeil, NULL),
+		SF("COS", 1, 1, setParamsDouble, makeDoubleResult, evlStdMath, (VoidPtrStdMathFunc) cos),
+		SF("COSH", 1, 1, setParamsDouble, makeDoubleResult, evlStdMath, (VoidPtrStdMathFunc) cosh),
+		SF("COT", 1, 1, setParamsDouble, makeDoubleResult, evlStdMath, (VoidPtrStdMathFunc) cot),
+		SF("DATEADD", 3, 3, setParamsDateAdd, makeDateAdd, evlDateAdd, NULL),
+		SF("DATEDIFF", 3, 3, setParamsDateDiff, makeInt64Result, evlDateDiff, NULL),
+		SF("EXP", 1, 1, setParamsDouble, makeDoubleResult, evlExp, NULL),
+		SF("FLOOR", 1, 1, setParamsDouble, makeCeilFloor, evlFloor, NULL),
+		SF("GEN_UUID", 0, 0, NULL, makeGenUuid, evlGenUuid, NULL),
+		SF("HASH", 1, 1, NULL, makeInt64Result, evlHash, NULL),
+		SF("LEFT", 2, 2, NULL, makeLeftRight, evlLeft, NULL),
+		SF("LN", 1, 1, setParamsDouble, makeDoubleResult, evlLn, NULL),
+		SF("LOG", 2, 2, setParamsDouble, makeDoubleResult, evlLog, NULL),
+		SF("LOG10", 1, 1, setParamsDouble, makeDoubleResult, evlStdMath, (VoidPtrStdMathFunc) log10),
+		SF("LPAD", 2, 3, NULL, makePad, evlPad, (void*) funLPad),
+		SF("MAXVALUE", 1, -1, NULL, makeFromListResult, evlMaxMinValue, (void*) funMaxValue),
+		SF("MINVALUE", 1, -1, NULL, makeFromListResult, evlMaxMinValue, (void*) funMinValue),
+		SF("MOD", 2, 2, NULL, makeMod, evlMod, NULL),
+		SF("OVERLAY", 3, 4, NULL, makeOverlay, evlOverlay, NULL),
+		SF("PI", 0, 0, NULL, makeDoubleResult, evlPi, NULL),
+		SF("POSITION", 2, 2, NULL, makeLongResult, evlPosition, NULL),
+		SF("POWER", 2, 2, setParamsDouble, makeDoubleResult, evlPower, NULL),
+		SF("RAND", 0, 0, NULL, makeDoubleResult, evlRand, NULL),
+		SF("REPLACE", 3, 3, NULL, makeReplace, evlReplace, NULL),
+		SF("REVERSE", 1, 1, NULL, makeReverse, evlReverse, NULL),
+		SF("RIGHT", 2, 2, NULL, makeLeftRight, evlRight, NULL),
+		SF("ROUND", 2, 2, NULL, makeRound, evlRound, NULL),
+		SF("RPAD", 2, 3, NULL, makePad, evlPad, (void*) funRPad),
+		SF("SIGN", 1, 1, NULL, makeShortResult, evlSign, NULL),
+		SF("SIN", 1, 1, setParamsDouble, makeDoubleResult, evlStdMath, (VoidPtrStdMathFunc) sin),
+		SF("SINH", 1, 1, setParamsDouble, makeDoubleResult, evlStdMath, (VoidPtrStdMathFunc) sinh),
+		SF("SQRT", 1, 1, setParamsDouble, makeDoubleResult, evlSqrt, NULL),
+		SF("TAN", 1, 1, setParamsDouble, makeDoubleResult, evlStdMath, (VoidPtrStdMathFunc) tan),
+		SF("TANH", 1, 1, setParamsDouble, makeDoubleResult, evlStdMath, (VoidPtrStdMathFunc) tanh),
+		SF("TRUNC", 1, 1, NULL, makeTrunc, evlTrunc, NULL),
+		SF("", 0, 0, NULL, NULL, NULL, NULL)
 	};
 
 

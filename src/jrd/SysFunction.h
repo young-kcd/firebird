@@ -46,16 +46,18 @@ namespace Jrd
 class SysFunction
 {
 public:
+	typedef void (*SetParamsFunc)(DataTypeUtilBase* dataTypeUtil, SysFunction* function, int, dsc**);
 	typedef void (*MakeFunc)(DataTypeUtilBase* dataTypeUtil, SysFunction* function, dsc*, int, const dsc**);
 	typedef dsc* (*EvlFunc)(Jrd::thread_db*, SysFunction* function, Jrd::jrd_nod*, Jrd::impure_value*);
 
 #if (defined(_MSC_VER) && (_MSC_VER <= 1200))
-	SysFunction(const char* s, int minCount, int maxCount, MakeFunc mf, EvlFunc ef, void* v);
+	SysFunction(const char* s, int minCount, int maxCount, SetParamsFunc sp, MakeFunc mf, EvlFunc ef, void* v);
 #endif
 
 	const Firebird::MetaName name;
 	int minArgCount;
 	int maxArgCount;	// -1 for no limit
+	SetParamsFunc setParamsFunc;
 	MakeFunc makeFunc;
 	EvlFunc evlFunc;
 	void* misc;
