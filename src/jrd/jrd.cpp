@@ -7221,9 +7221,9 @@ static void getUserInfo(UserId& user, const DatabaseOptions& options)
 					AM_ENABLED : AM_DISABLED;
 			}
 
-			if (options.dpb_trusted_user.hasData() && (useTrusted == AM_ENABLED))
+			if (options.dpb_trusted_login.hasData() && (useTrusted == AM_ENABLED))
 			{
-				options.dpb_trusted_user.copyTo(name, sizeof name);
+				options.dpb_trusted_login.copyTo(name, sizeof name);
 			}
 			else
 #endif
