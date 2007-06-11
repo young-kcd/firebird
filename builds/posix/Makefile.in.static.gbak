@@ -58,8 +58,6 @@ gbak_static : $(GBAK_STATIC)
 $(GBAK_STATIC) : $(GBAKSTATIC_Objects) $(COMMON_Objects) $(LIBFBSTATIC_A) 
 	$(CXX) $(LINK_OPTS) $^ -o $@ -L$(LIB) $(LINK_LIBS) $(ICU_LIBS)
 
-# Darwin may need this link as well
-#$(COREFOUNDATION_LINK)
 
 include $(ROOT)/gen/make.shared.targets
 

@@ -139,6 +139,7 @@ public:
 	}
 };
 
+#ifndef DARWIN
 class Spinlock {
 private:
 	pthread_spinlock_t spinlock;
@@ -160,6 +161,7 @@ public:
 			system_call_failed::raise("pthread_spin_unlock");
 	}
 };
+#endif //DARWIN
 
 #endif //SOLARIS_MT
 

@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# $Id: install-script,v 1.2 2007-03-09 10:32:41 paulbeach Exp $
+# $Id: install-script,v 1.3 2007-06-11 14:21:13 paulbeach Exp $
 #
 # Script args:
 # $0: full path to script
@@ -9,11 +9,12 @@
 # $3:  ????? Path to install Volume????
 # $4:  ?????
 
-FB_FW="$2/Firebird.framework"
+FB_FW="/Library/Frameworks/Firebird.framework"
 FB_RES="$FB_FW/Versions/A/Resources"
 INST_RES="$FB_RES/installer_files"
 
 # Install and start sysv semaphores
+echo "Install and start sysv semaphores"
 if test `uname -r | sed -e 's/\.[0-9]*//g'` -lt 6; then
 	if [ -e "SysV Semaphores" ]; then
 		mkdir -p /Library/StartupItems
@@ -28,6 +29,7 @@ fi
 #
 #
 # Start with the service entry
+echo "Start with the service entry"
 if niutil -list . /services/gds_db 2&>1 /dev/null ; then
 	echo -n
 else
@@ -38,6 +40,7 @@ fi
 
 # Now for the group.  If the firebird group already exists, remember the
 #  id if we need it to create the firebird user
+echo "Create the Firebird group"
 if niutil -list . /groups/firebird 2&>1 /dev/null; then
 	NEW_GID=`niutil -readprop . /groups/firebird gid`
 else
@@ -49,6 +52,7 @@ else
 fi
 
 # Now create the firebird user
+echo "Create the Firebird user"
 if niutil -list . /users/firebird 2&>1 /dev/null; then
 	echo -n
 else
@@ -64,31 +68,19 @@ else
 	niutil -createprop . /users/firebird realname "Firebird SQL Database"
 fi
 
-# set the permissions correctly
-if [ -f "$FB_FW/Versions/A/Resources/.SuperServer" ]; then
-	echo -n
-#else
-	$FB_FW/Resources/bin/fbmgr.bin -shut -user sysdba -password masterkey
-	rm -rf /System/Library/StartupItems/Firebird
-fi
-
 # Shutdown any existing servers
+echo "Shutdown any existing servers"
 if [ -x /sbin/service ]; then
 	service firebird stop
 fi
 
 # Install the framework
-# mkdir -p /Library/Frameworks
-# cp -r Firebird.framework $FB_FW
-#ln -s ../../bin $FB_FW/Versions/A/Resources/English.lproj/var/bin; \
-#ln -s Versions/Current/Headers $FB_FW/Headers
-#ln -s Versions/Current/Resources $FB_FW/Resources
-#ln -s Versions/Current/Firebird $FB_FW/Firebird
-#ln -s A $FB_FW/Versions/Current
+echo "Install the framework"
 chown -R firebird "$FB_FW"
 chgrp -R firebird "$FB_FW"
 
 # set the permissions correctly
+echo "Set the permissions correctly"
 if [ -f "$FB_FW/Versions/A/Resources/.SuperServer" ]; then
     chmod 777 "$FB_FW/Resources/English.lproj/var"
     chmod 777 "$FB_FW/Resources/English.lproj/var/security2.fdb"
@@ -98,36 +90,30 @@ else
     chmod 777 "$FB_FW/Resources/English.lproj/var/security2.fdb"
     chmod 777 "$FB_FW/Resources/English.lproj/var/help/help.fdb"
 
-#	 chmod a+s "$FB_FW/Resources/bin/gds_drop"
+    chmod a+s "$FB_FW/Resources/bin/gds_drop"
     chmod a+s "$FB_FW/Resources/bin/fb_lock_mgr"
     chmod a+s "$FB_FW/Resources/bin/fb_inet_server"
 
-#	 chown root "$FB_FW/Resources/bin/gds_drop"
+    chown root "$FB_FW/Resources/bin/gds_drop"
     chown root "$FB_FW/Resources/bin/fb_lock_mgr"
     chown root "$FB_FW/Resources/bin/fb_inet_server"
 fi
 
 # Install the startup item
+echo "Install the startup item"
 if [ -f "$FB_FW/Versions/A/Resources/.SuperServer" ]; then
 	if [ -e "$INST_RES/Firebird.startup" ]; then
-#		mkdir -p /Library/StartupItems
-		rm -rf /System/Library/StartupItems/Firebird
-		cp -r "$INST_RES/Firebird.startup" /System/Library/StartupItems/Firebird
+		rm -rf /Library/StartupItems/Firebird
+		cp -r "$INST_RES/Firebird" /Library/StartupItems/Firebird
 	fi
 else
-	rm -rf /System/Library/StartupItems/Firebird
+	rm -rf /Library/StartupItems/Firebird
 fi
-
-
-# Install FBConsole
-#if [ -e FBConsole.app ]; then
-#	mkdir -p /Applications
-#	cp -r FBConsole.app /Applications
-#fi
 
 #
 # Add gds_db to the services file, if available
 #
+echo "Add gds_db to the services file"
 HUPNEEDED='n'	# Relevant to Classic only
 if [ -f /etc/services ]; then
     grep -s gds_db /etc/services  > /dev/null 2>&1
@@ -144,7 +130,8 @@ if [ -f /etc/inetd.conf ]; then
 	cp /etc/inetd.conf /etc/inetd.conf.fbsave
 fi
 
-# Remove all traces of CS first
+# Remove all traces of Classic first
+echo "Remove all traces of Classic first"
 if [ -f /etc/inetd.conf ]; then
 	grep -s gds_db /etc/inetd.conf  > /dev/null 2>&1
 	if test $? != 0 ; then
@@ -159,12 +146,30 @@ if [ -f /etc/xinetd.d/firebird ]; then
 	HUPNEEDED='y'
 fi
 
-# Install ourselves in the correct place
+# Install ourselves in the correct place - SuperServer
+echo "Install ourselves in the correct place"
 if [ -f "$FB_FW/Versions/A/Resources/.SuperServer" ]; then
-	cp -r $1/Contents/Resources/StartupItem /System/Library/StartupItems/Firebird
+	cp -r $1/Contents/Resources/StartupItem /Library/StartupItems/Firebird
+fi
+
+# Install ourselves in the correct place - Classic 
+# inetd.d - older versions of MacOS
+
+if [ -f //var/run/inted.pid -a -d /etc/inetd.d ]; then
+	if [ -f /etc/inetd.conf ]; then
+	echo "gds_db stream  tcp     nowait  root $FB_FW/Resources/bin/fb_inet_server fb_inet_server" > /etc/.fb.inetd.conf.entry
+	cat /etc/inetd.conf /etc/.fb.inetd.conf.entry > /etc/.interbase.temp.install.inetd.conf
+	mv /etc/.interbase.temp.install.inetd.conf /etc/inetd.conf
+        rm -f /etc/.fb.inetd.conf.entry
+	HUPNEEDED='y'
+	fi
+fi
+
+# xinetd.d - Classic default
+if [ -f "$FB_FW/Versions/A/Resources/.SuperServer" ]; then
+echo -n
 else
-	if [ -f /var/run/xinetd.pid -a -d /etc/xinetd.d ]; then
-		cat > /etc/xinetd.d/firebird <<EOF
+cat > /etc/xinetd.d/firebird <<EOF
 service gds_db
 {
         disable		= no
@@ -172,25 +177,19 @@ service gds_db
         wait            = no
         user            = firebird
 EOF
-		echo "server          = $FB_RES/bin/fb_inet_server" >> /etc/xinetd.d/firebird
+		echo "server          = $FB_FW/Resources/bin/fb_inet_server" >> /etc/xinetd.d/firebird
 		cat >> /etc/xinetd.d/firebird << EOF
         groups          = yes
 }
 EOF
+
 	    HUPNEEDED='y'
-	else
-		if [ -f /etc/inetd.conf ]; then
-            echo "gds_db stream  tcp     nowait  root $FB_FW/Resources/bin/fb_inet_server fb_inet_server" > /etc/.fb.inetd.conf.entry
-	    	cat /etc/inetd.conf /etc/.fb.inetd.conf.entry > /etc/.interbase.temp.install.inetd.conf
-	    	mv /etc/.interbase.temp.install.inetd.conf /etc/inetd.conf
-            rm -f /etc/.fb.inetd.conf.entry
-	    	HUPNEEDED='y'
-		fi
-	fi
 fi
 
+# Placeholder for launchd
 
 # Make sure the hosts.equiv files are set correctly
+echo "Make sure hosts.equiv files are set correctly"
 cp /etc/hosts.equiv /etc/hosts.equiv.fbsave
 if grep -x "localhost" /etc/hosts.equiv > /dev/null; then                
 	echo -n
@@ -203,15 +202,15 @@ else
     echo "localhost.localdomain" >> /etc/hosts.equiv    
 fi    
 
-
 # Install the saved security database, if any
-if test -f /tmp/fb-security-database-update.fdb; then
-	mv -f /tmp/fb-security-database-update.fdb "$FB_RES/English.lproj/var/security2.fdb"
-	rm -f /tmp/fb-security-database-update.fdb
+echo "Install the saved security database"
+if test -f /tmp/fb-security-database-update2.fdb; then
+	mv -f /tmp/fb-security-database-update2.fdb "$FB_RES/English.lproj/var/security2.fdb"
+	rm -f /tmp/fb-security-database-update2.fdb
 fi
 
-
 # Tell inetd/xinetd to reload their configuration files.
+echo "Tell inetd/xinetd to reload configuration files"
 if [ "$HUPNEEDED" = 'y' ]
 then
     #INETPID=`ps -axe | grep inetd | awk '{print $1}'`
@@ -225,10 +224,8 @@ then
 	fi
 fi
 
-
-###
 # And last but not least, start the server
 if [ -f "$FB_FW/Versions/A/Resources/.SuperServer" ]; then
-	#echo Starting Firebird Database Server
-	/System/Library/StartupItems/Firebird/Firebird start
+	/Library/StartupItems/Firebird/Firebird start
 fi
+

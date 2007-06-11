@@ -235,12 +235,12 @@ namespace {
 		bool ok() const { return this->mnt_cnt > 0; }
 #else
 		bool ok() const { return mtab.ok(); }
+#endif /*DARWIN*/
 		bool get();
 		tstring node,  /* remote server name */
 			mount, /* local mount point */
 			path;  /* path on remote server */
 	};
-#endif // DARWIN
 #endif //NO_NFS
 } // anonymous namespace 
 
@@ -258,7 +258,6 @@ static bool get_full_path(const tstring&, tstring&);
 #endif
 
 #ifdef hpux
-/* RITTER - added HP11 to the pre-processor condition below */
 #if !(defined HP10 || defined HP11)
 static bool get_server(tstring&, tstring&);
 #endif

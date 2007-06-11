@@ -136,7 +136,7 @@
 #ifdef i386
 #define FB_PLATFORM	"UI"	/* Darwin/Intel */
 #endif
-#ifdef powerpc
+#if defined (DARWIN) && defined (_powerpc_)
 #define FB_PLATFORM     "UP"	/* Darwin/PowerPC */
 #endif
 #endif

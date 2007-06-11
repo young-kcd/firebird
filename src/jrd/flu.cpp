@@ -107,7 +107,7 @@ namespace {
 // always try to use module "as is"
 		{MOD_SUFFIX, "", false},
 
-#ifdef HP10
+#ifdef HPUX
 		{MOD_SUFFIX, ".sl", true},
 #endif
 
@@ -117,7 +117,7 @@ namespace {
 #endif
 
 #ifdef DARWIN
-		{MOD_SUFFIX, ".so", true},
+		{MOD_SUFFIX, ".dylib", true},
 #endif
 
 	};

@@ -31,14 +31,15 @@ CLIENT_UTIL_TARGETS=gds_drop gstat gsec fbguard fbmgr_bin nbackup fb_lock_print
 
 Physical_IO_Module=os/posix/unix.cpp
 PLATFORM_PATH=os/darwin
-FirebirdInstallPrefix =
 
-LIB_LINK=g++
 LINK_OPTS:=
 LIB_BUNDLE_OPTIONS:=$(LD_FLAGS) -bundle -flat_namespace -undefined suppress
-LIB_LINK_OPTIONS:=$(LD_FLAGS) -dynamiclib  -flat_namespace
-LIB_LINK_SONAME:=-current_version 2.0.0 -compatibility_version 2.0.0 -seg1addr 0x30000000
-LIB_LINK_MAPFILE:=-unexported_symbols_list
+LIB_LINK_OPTIONS:=$(LD_FLAGS) -dynamiclib -flat_namespace
+LIB_LINK_SONAME:=-current_version 2.1.0 -compatibility_version 2.1.0 -seg1addr 0x30000000
+LIB_LINK_MAPFILE:=-Wl,-exported_symbols_list,
+LINK_FIREBIRD_EMBED_SYMBOLS=$(LIB_LINK_MAPFILE)$(ROOT)/builds/posix/firebird.darwin.embed.vers
+LINK_FIREBIRD_CLIENT_SYMBOLS=$(LIB_LINK_MAPFILE)$(ROOT)/builds/posix/firebird.darwin.client.vers
+LINK_FBINTL_SYMBOLS=$(LIB_LINK_MAPFILE)$(ROOT)/builds/posix/fbintl.vers
 
 LIB_LINK_RPATH:=-install_name /Firebird.framework/Versions/A/Libraries/
 LIB_EMBED_LINK_OPTIONS:= -install_name Firebird.framework/Versions/A/Firebird
@@ -48,7 +49,7 @@ FBEMBED_LINK:=-F../gen/firebird -framework Firebird -L$(LIB) -lfbembed
 PLAT_CLASSIC_PRE_TARGET=darwin_setup_framework
 PLAT_CLASSIC_POST_TARGET=darwin_finish_cs_framework
 
-#PLAT_SUPER_PRE_TARGET=darwin_setup_framework
-#PLAT_SUPER_POST_TRAGET=darwin_finish_ss_framework
+PLAT_SUPER_PRE_TARGET=darwin_setup_framework
+PLAT_SUPER_POST_TRAGET=darwin_finish_ss_framework
 
 PLATFORM_POSTBUILD_TARGET=darwin_postbuild_target
