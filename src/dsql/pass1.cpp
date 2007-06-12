@@ -2053,14 +2053,14 @@ static bool aggregate_found2(const dsql_req* request, const dsql_nod* node,
 			return aggregate;
 
 		case nod_rse:
-			(*current_level)++;
+			++*current_level;
 			aggregate |= aggregate_found2(request, node->nod_arg[e_rse_streams], current_level,
 				deepest_level, ignore_sub_selects);
 			aggregate |= aggregate_found2(request, node->nod_arg[e_rse_boolean],
 				current_level, deepest_level, ignore_sub_selects);
 			aggregate |= aggregate_found2(request, node->nod_arg[e_rse_items],
 				current_level, deepest_level, ignore_sub_selects);
-			(*current_level)--;
+			--*current_level;
 			return aggregate;
 
 		case nod_order:
@@ -3211,14 +3211,8 @@ static bool node_match(const dsql_nod* node1, const dsql_nod* node2,
 		{
 			return false;
 		}
-		const UCHAR* p1 = node1->nod_desc.dsc_address;
-		const UCHAR* p2 = node2->nod_desc.dsc_address;
-		for (USHORT l = node1->nod_desc.dsc_length; l > 0; l--) {
-			if (*p1++ != *p2++) {
-				return false;
-			}
-		}
-		return true;
+		unsigned int len = node1->nod_desc.dsc_length;
+		return !memcmp(node1->nod_desc.dsc_address, node2->nod_desc.dsc_address, len);
 	}
 
 	if (node1->nod_type == nod_map) {
@@ -8207,22 +8201,23 @@ static dsql_nod* pass1_sys_function(dsql_req* request, dsql_nod* input, bool pro
 		{
 			Firebird::Array<dsc*> args;
 
-			fb_assert(node->nod_arg[e_sysfunc_args]->nod_type == nod_list);
+			dsql_nod* in_args = node->nod_arg[e_sysfunc_args];
+			fb_assert(in_args->nod_type == nod_list);
 
-			for (dsql_nod** p = node->nod_arg[e_sysfunc_args]->nod_arg;
-				 p < node->nod_arg[e_sysfunc_args]->nod_arg + node->nod_arg[e_sysfunc_args]->nod_count; ++p)
+			for (unsigned int i = 0; i < in_args->nod_count; ++i)
 			{
-				MAKE_desc(request, &(*p)->nod_desc, *p, *p);
-				args.add(&(*p)->nod_desc);
+				dsql_nod* p = in_args->nod_arg[i];
+				MAKE_desc(request, &p->nod_desc, p, p);
+				args.add(&p->nod_desc);
 			}
 
 			DSqlDataTypeUtil dataTypeUtil(request);
 			sf->setParamsFunc(&dataTypeUtil, sf, args.getCount(), args.begin());
 
-			for (dsql_nod** p = node->nod_arg[e_sysfunc_args]->nod_arg;
-				 p < node->nod_arg[e_sysfunc_args]->nod_arg + node->nod_arg[e_sysfunc_args]->nod_count; ++p)
+			for (unsigned int j = 0; j < in_args->nod_count; ++j)
 			{
-				set_parameter_type(request, *p, *p, false);
+				dsql_nod* p = in_args->nod_arg[j];
+				set_parameter_type(request, p, p, false);
 			}
 		}
 	}
