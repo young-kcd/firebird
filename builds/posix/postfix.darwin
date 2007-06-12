@@ -15,7 +15,6 @@
 # All Rights Reserved.
 # Contributor(s): ______________________________________.
 # Start of file prefix.darwin:	$(VERSION)	DARWIN
-#$Id: postfix.darwin,v 1.3 2007-06-11 14:21:17 paulbeach Exp $
 # 2 Oct 2002, Nickolay Samofatov - Major Cleanup
 
 
