@@ -681,16 +681,14 @@ void SCL_init(bool create,
 		END_FOR;
 		CMP_release(tdbb, handle);
 
-		const char* u;
 		FOR(REQUEST_HANDLE handle1)
 			FIRST 1 REL IN RDB$RELATIONS
 			WITH REL.RDB$RELATION_NAME EQ "RDB$DATABASE"
 
-            if (!REL.RDB$OWNER_NAME.NULL && 
-				(u = user->usr_user_name.nullStr()) && *u)
+            if (!REL.RDB$OWNER_NAME.NULL && user->usr_user_name.hasData())
 			{
 				char name[129];
-				*name = strlen(u);
+				*name = user->usr_user_name.length();
 				user->usr_user_name.copyTo(name + 1, sizeof(name) - 1);
 				if (!check_string(reinterpret_cast<const UCHAR*>(name), 
 								  REL.RDB$OWNER_NAME))
