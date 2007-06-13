@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:		JRD Module Loader
  *	MODULE:			mod_loader.cpp
- *	DESCRIPTION:	Darwin-specific class for loadable modules.
+ *	DESCRIPTION:	Darwin specific class for loadable modules.
  *
  *  The contents of this file are subject to the Initial
  *  Developer's Public License Version 1.0 (the "License");
@@ -24,9 +24,8 @@
  *  Contributor(s): ______________________________________.
  *
  */
-
 #include "../jrd/os/mod_loader.h"
-#include "common.h"
+#include "../../common.h"
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -45,7 +44,7 @@ private:
 	NSModule module;
 };
 
-bool ModuleLoader::isLoadableModule(const Firebird::string& module)
+bool ModuleLoader::isLoadableModule(const Firebird::PathName& module)
 {
 	struct stat sb;
 	if (-1 == stat(module.c_str(), &sb))
@@ -57,24 +56,27 @@ bool ModuleLoader::isLoadableModule(const Firebird::string& module)
 	return true;
 }
 
-void ModuleLoader::doctorModuleExtention(Firebird::string& name)
+void ModuleLoader::doctorModuleExtention(Firebird::PathName& name)
 {
-	Firebird::string::size_type pos = name.rfind(".dylib");
-	if (pos != Firebird::string::npos && pos == name.length() - 6)
+	Firebird::PathName::size_type pos = name.rfind(".dylib");
+	if (pos != Firebird::PathName::npos && pos == name.length() - 6)
 		return;		// No doctoring necessary
 	name += ".dylib";
 }
 
-ModuleLoader::Module *ModuleLoader::loadModule(const Firebird::string& modPath)
+ModuleLoader::Module *ModuleLoader::loadModule(const Firebird::PathName& modPath)
 {
 	NSObjectFileImage image;
-
+	NSObjectFileImageReturnCode retVal;
+	NSModule mod_handle;
+	NSSymbol initSym;
+	void (*init)(void);
+	
 	/* Create an object file image from the given path */
-	const NSObjectFileImageReturnCode retVal =
-		NSCreateObjectFileImageFromFile(modPath.c_str(), &image);
-	if (retVal != NSObjectFileImageSuccess)
+	retVal = NSCreateObjectFileImageFromFile(modPath.c_str(), &image);
+	if(retVal != NSObjectFileImageSuccess)
 	{
-		switch (retVal)
+		switch(retVal)
 		{
 			case NSObjectFileImageFailure:
 					/*printf("object file setup failure");*/
@@ -98,20 +100,18 @@ ModuleLoader::Module *ModuleLoader::loadModule(const Firebird::string& modPath)
 	}
 	
 	/* link the image */
-	NSModule mod_handle =
-		NSLinkModule(image, modPath.c_str(), NSLINKMODULE_OPTION_PRIVATE);
-	NSDestroyObjectFileImage(image);
-	if (mod_handle == NULL)
+	mod_handle = NSLinkModule(image, modPath.c_str(), NSLINKMODULE_OPTION_PRIVATE);
+	NSDestroyObjectFileImage(image) ;
+	if(mod_handle == NULL)
 	{
 		/*printf("NSLinkModule() failed for dlopen()");*/
 		// We should really throw an error here.
 		return 0;
 	}
 	
-	NSSymbol initSym = NSLookupSymbolInModule(mod_handle, "__init");
+	initSym = NSLookupSymbolInModule(mod_handle, "__init");
 	if (initSym != NULL)
 	{
-		void (*init)(void);
 		init = ( void (*)(void)) NSAddressOfSymbol(initSym);
 		init();
 	}
@@ -121,11 +121,13 @@ ModuleLoader::Module *ModuleLoader::loadModule(const Firebird::string& modPath)
 
 DarwinModule::~DarwinModule()
 {
+	NSSymbol symbol;  
+	void (*fini)(void);
+	
 	/* Make sure the fini function gets called, if there is one */
-	NSSymbol symbol = NSLookupSymbolInModule(module, "__fini");
+	symbol = NSLookupSymbolInModule(module, "__fini");
 	if (symbol != NULL)
 	{
-		void (*fini)(void);
 		fini = (void (*)(void)) NSAddressOfSymbol(symbol);
 		fini();
 	}   
@@ -135,7 +137,9 @@ DarwinModule::~DarwinModule()
 
 void *DarwinModule::findSymbol(const Firebird::string& symName)
 {
-	NSSymbol symbol = NSLookupSymbolInModule(module, symName.c_str());
+	NSSymbol symbol;  
+
+	symbol = NSLookupSymbolInModule(module, symName.c_str());
 	if (symbol == NULL)
 	{
 		Firebird::string newSym = '_' + symName;
@@ -148,4 +152,3 @@ void *DarwinModule::findSymbol(const Firebird::string& symName)
 	}
 	return NSAddressOfSymbol(symbol);
 }
-

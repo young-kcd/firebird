@@ -82,7 +82,7 @@ darwin_finish_cs_framework:
 	cp ../gen/firebird/bin/fb_lock_mgr $(FB_FW)/Resources/bin
 	cp ../gen/firebird/bin/fb_lock_print $(FB_FW)/Resources/bin
 	cp ../gen/firebird/bin/gds_drop $(FB_FW)/Resources/bin
-	cp ../gen/firebird/bin/gds_relay $(FB_FW)/Resources/bin
+	#cp ../gen/firebird/bin/gds_relay $(FB_FW)/Resources/bin
 	cp ../gen/firebird/bin/gsec $(FB_FW)/Resources/bin
 	cp ../gen/firebird/bin/gstat $(FB_FW)/Resources/bin
 	cp ../gen/firebird/bin/nbackup $(FB_FW)/Resources/bin
@@ -94,6 +94,7 @@ darwin_finish_cs_framework:
 	cp ../gen/firebird/misc/firebird.conf $(FB_FW)/Resources/English.lproj/var
 
 darwin_finish_ss_framework: FB_FW = ../gen/firebird/frameworks/FirebirdSS.framework
+darwin_finish_ss_framework:
 	-$(RM) -rf $(FB_FW)
 	mkdir -p $(FB_FW)/Versions/A/Resources/English.lproj/var
 	mkdir -p $(FB_FW)/Versions/A/Libraries
