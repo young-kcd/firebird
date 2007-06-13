@@ -915,7 +915,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 	}
 	invalid_client_SQL_dialect = false;
 
-	if (options.dpb_role_name.hasData())
+	if (userId.usr_sql_role_name.hasData())
 	{
 		switch (options.dpb_sql_dialect)
 		{
@@ -965,47 +965,47 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 		{
 		case SQL_DIALECT_V5:
 			{
-				strip_quotes(options.dpb_role_name);
-				options.dpb_role_name.upper();
+				strip_quotes(userId.usr_sql_role_name);
+				userId.usr_sql_role_name.upper();
 			}
 			break;
 		case SQL_DIALECT_V6_TRANSITION:
 		case SQL_DIALECT_V6:
 			{
-				if (options.dpb_role_name.hasData() && 
-					(options.dpb_role_name[0] == DBL_QUOTE ||
-					 options.dpb_role_name[0] == SINGLE_QUOTE))
+				if (userId.usr_sql_role_name.hasData() && 
+					(userId.usr_sql_role_name[0] == DBL_QUOTE ||
+					 userId.usr_sql_role_name[0] == SINGLE_QUOTE))
 				{
-					const char end_quote = options.dpb_role_name[0];
+					const char end_quote = userId.usr_sql_role_name[0];
 					/*
 					   ** remove the delimited quotes and escape quote
 					   ** from ROLE name
 					 */
-					options.dpb_role_name.erase(0, 1);
+					userId.usr_sql_role_name.erase(0, 1);
 					for (Firebird::string::iterator p = 
-								options.dpb_role_name.begin(); 
-						 p < options.dpb_role_name.end(); ++p)
+								userId.usr_sql_role_name.begin(); 
+						 p < userId.usr_sql_role_name.end(); ++p)
 					{
 						if (*p == end_quote)
 						{
-							if (++p < options.dpb_role_name.end() &&
+							if (++p < userId.usr_sql_role_name.end() &&
 								*p == end_quote)
 							{
 								// skip the escape quote here
-								options.dpb_role_name.erase(p--);
+								userId.usr_sql_role_name.erase(p--);
 							}
 							else
 							{
 								// delimited done
-								options.dpb_role_name.erase(--p, 
-									options.dpb_role_name.end());
+								userId.usr_sql_role_name.erase(--p, 
+									userId.usr_sql_role_name.end());
 							}
 						}
 					}
 				}
 				else
 				{
-					options.dpb_role_name.upper();
+					userId.usr_sql_role_name.upper();
 				}
 			}
 			break;
