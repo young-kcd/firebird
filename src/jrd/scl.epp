@@ -691,7 +691,7 @@ void SCL_init(bool create,
 			{
 				char name[129];
 				*name = strlen(u);
-				strcpy(name + 1, u);
+				user->usr_user_name.copyTo(name + 1, sizeof(name) - 1);
 				if (!check_string(reinterpret_cast<const UCHAR*>(name), 
 								  REL.RDB$OWNER_NAME))
 				{
