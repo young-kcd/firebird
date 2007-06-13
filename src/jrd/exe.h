@@ -825,7 +825,7 @@ public:
 		USHORT csb_indices;			/* Number of indices */
 
 		jrd_rel* csb_relation;
-		Firebird::MetaName* csb_alias;	/* SQL alias name for this instance of relation */
+		Firebird::string* csb_alias;	/* SQL alias name for this instance of relation */
 		jrd_prc* csb_procedure;
 		jrd_rel* csb_view;		/* parent view */
 
