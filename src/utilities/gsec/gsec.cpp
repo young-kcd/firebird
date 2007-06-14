@@ -182,7 +182,9 @@ int common_main(int argc,
  *	the specified argc/argv to SECURITY_exec_line (see below).
  *
  **************************************/
+#ifndef SERVICE_THREAD
 	TEXT stuff[MAXSTUFF];		/* a place to put stuff */
+#endif
 
 #ifdef VMS
 	argc = VMS_parse(&argv, argc);
