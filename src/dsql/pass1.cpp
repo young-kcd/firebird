@@ -6696,7 +6696,8 @@ static dsql_nod* pass1_merge(dsql_req* request, dsql_nod* input, bool proc_flag)
 	join->nod_arg[e_join_boolean] = input->nod_arg[e_mrg_condition];
 
 	dsql_nod* query_spec = MAKE_node(nod_query_spec, e_qry_count);
-	query_spec->nod_arg[e_qry_from] = join;
+	query_spec->nod_arg[e_qry_from] = MAKE_node(nod_list, 1);
+	query_spec->nod_arg[e_qry_from]->nod_arg[0] = join;
 
 	dsql_nod* select_expr = MAKE_node(nod_select_expr, e_sel_count);
 	select_expr->nod_arg[e_sel_query_spec] = query_spec;
@@ -6711,8 +6712,10 @@ static dsql_nod* pass1_merge(dsql_req* request, dsql_nod* input, bool proc_flag)
 	for_select = PASS1_statement(request, for_select, proc_flag);
 
 	// get the already processed relations
-	source = for_select->nod_arg[e_flp_select]->nod_arg[e_select_expr]->nod_arg[e_join_left_rel];
-	target = for_select->nod_arg[e_flp_select]->nod_arg[e_select_expr]->nod_arg[e_join_rght_rel];
+	source = for_select->nod_arg[e_flp_select]->nod_arg[e_select_expr]->
+		nod_arg[0]->nod_arg[e_join_left_rel];
+	target = for_select->nod_arg[e_flp_select]->nod_arg[e_select_expr]->
+		nod_arg[0]->nod_arg[e_join_rght_rel];
 
 	dsql_nod* modify = NULL;
 
