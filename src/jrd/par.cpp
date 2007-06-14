@@ -1742,13 +1742,11 @@ static size_t par_name(CompilerScratch* csb, Firebird::string& name)
  *
  * Functional description
  *	Parse a counted string of virtually unlimited size 
- *  (up to 64K), returning count.
+ *  (up to 64K, actually <= 255), returning count.
  *
  **************************************/
 	size_t l = BLR_BYTE;
-
-	name.assign(l, ' ');
-	char* s = name.begin();
+	char* s = name.getBuffer(l);
 
 	while (l--) 
 	{
