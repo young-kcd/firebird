@@ -508,6 +508,8 @@ public:
 		{
 		}
 
+	~Attachment();
+
 /*	Attachment()
 	:	att_database(0),
 		att_next(0),
