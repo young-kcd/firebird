@@ -24,6 +24,9 @@
  *  Contributor(s): ______________________________________.
  *
  */
+
+#include "firebird.h"
+
 #include "../jrd/os/mod_loader.h"
 #include "../../common.h"
 #include <unistd.h>
@@ -67,16 +70,13 @@ void ModuleLoader::doctorModuleExtention(Firebird::PathName& name)
 ModuleLoader::Module *ModuleLoader::loadModule(const Firebird::PathName& modPath)
 {
 	NSObjectFileImage image;
-	NSObjectFileImageReturnCode retVal;
-	NSModule mod_handle;
-	NSSymbol initSym;
-	void (*init)(void);
-	
+
 	/* Create an object file image from the given path */
-	retVal = NSCreateObjectFileImageFromFile(modPath.c_str(), &image);
-	if(retVal != NSObjectFileImageSuccess)
+	const NSObjectFileImageReturnCode retVal =
+		NSCreateObjectFileImageFromFile(modPath.c_str(), &image);
+	if (retVal != NSObjectFileImageSuccess)
 	{
-		switch(retVal)
+		switch (retVal)
 		{
 			case NSObjectFileImageFailure:
 					/*printf("object file setup failure");*/
@@ -100,18 +100,20 @@ ModuleLoader::Module *ModuleLoader::loadModule(const Firebird::PathName& modPath
 	}
 	
 	/* link the image */
-	mod_handle = NSLinkModule(image, modPath.c_str(), NSLINKMODULE_OPTION_PRIVATE);
-	NSDestroyObjectFileImage(image) ;
-	if(mod_handle == NULL)
+	NSModule mod_handle =
+		NSLinkModule(image, modPath.c_str(), NSLINKMODULE_OPTION_PRIVATE);
+	NSDestroyObjectFileImage(image);
+	if (mod_handle == NULL)
 	{
 		/*printf("NSLinkModule() failed for dlopen()");*/
 		// We should really throw an error here.
 		return 0;
 	}
 	
-	initSym = NSLookupSymbolInModule(mod_handle, "__init");
+	NSSymbol initSym = NSLookupSymbolInModule(mod_handle, "__init");
 	if (initSym != NULL)
 	{
+		void (*init)(void);
 		init = ( void (*)(void)) NSAddressOfSymbol(initSym);
 		init();
 	}
@@ -121,13 +123,11 @@ ModuleLoader::Module *ModuleLoader::loadModule(const Firebird::PathName& modPath
 
 DarwinModule::~DarwinModule()
 {
-	NSSymbol symbol;  
-	void (*fini)(void);
-	
 	/* Make sure the fini function gets called, if there is one */
-	symbol = NSLookupSymbolInModule(module, "__fini");
+	NSSymbol symbol = NSLookupSymbolInModule(module, "__fini");
 	if (symbol != NULL)
 	{
+		void (*fini)(void);
 		fini = (void (*)(void)) NSAddressOfSymbol(symbol);
 		fini();
 	}   
@@ -137,9 +137,7 @@ DarwinModule::~DarwinModule()
 
 void *DarwinModule::findSymbol(const Firebird::string& symName)
 {
-	NSSymbol symbol;  
-
-	symbol = NSLookupSymbolInModule(module, symName.c_str());
+	NSSymbol symbol = NSLookupSymbolInModule(module, symName.c_str());
 	if (symbol == NULL)
 	{
 		Firebird::string newSym = '_' + symName;
@@ -152,3 +150,4 @@ void *DarwinModule::findSymbol(const Firebird::string& symName)
 	}
 	return NSAddressOfSymbol(symbol);
 }
+

@@ -52,11 +52,6 @@ typedef Firebird::PathName string;
 
 void ConfigRoot::osConfigRoot()
 {
-	CFBundleRef fbFramework;
-	CFURLRef	msgFileUrl;
-	CFStringRef	msgFilePath;
-	char file_buff[MAXPATHLEN];
-
 	// Check the environment variable
 	const char* envPath = getenv("FIREBIRD");
 	if (envPath != NULL && strcmp("", envPath))
@@ -66,17 +61,20 @@ void ConfigRoot::osConfigRoot()
 	}
 
 	// Attempt to locate the Firebird.framework bundle
-	if ((fbFramework = CFBundleGetBundleWithIdentifier(
-			CFSTR(DARWIN_FRAMEWORK_ID)) ))
+	CFBundleRef fbFramework = CFBundleGetBundleWithIdentifier(CFSTR(DARWIN_FRAMEWORK_ID));
+	if (fbFramework)
 	{
-		if ((msgFileUrl = CFBundleCopyResourceURL( fbFramework,
-			CFSTR(DARWIN_GEN_DIR), NULL, NULL)))
+		CFURLRef msgFileUrl = CFBundleCopyResourceURL(fbFramework,
+			CFSTR(DARWIN_GEN_DIR), NULL, NULL);
+		if (msgFileUrl)
 		{
-			if ((msgFilePath = CFURLCopyFileSystemPath(msgFileUrl,
-				kCFURLPOSIXPathStyle)))
+			CFStringRef	msgFilePath = CFURLCopyFileSystemPath(msgFileUrl,
+				kCFURLPOSIXPathStyle);
+			if (msgFilePath)
 			{
-				if ((CFStringGetCString(msgFilePath, file_buff, MAXPATHLEN,
-					kCFStringEncodingMacRoman )) )
+				char file_buff[MAXPATHLEN];
+				if (CFStringGetCString(msgFilePath, file_buff, MAXPATHLEN,
+					kCFStringEncodingMacRoman))
 				{
 					root_dir = file_buff;
 					root_dir += PathUtils::dir_sep;
