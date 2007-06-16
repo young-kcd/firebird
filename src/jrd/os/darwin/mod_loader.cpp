@@ -67,7 +67,7 @@ void ModuleLoader::doctorModuleExtention(Firebird::PathName& name)
 	name += ".dylib";
 }
 
-ModuleLoader::Module *ModuleLoader::loadModule(const Firebird::PathName& modPath)
+ModuleLoader::Module* ModuleLoader::loadModule(const Firebird::PathName& modPath)
 {
 	NSObjectFileImage image;
 
