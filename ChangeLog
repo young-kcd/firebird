@@ -1,3 +1,22 @@
+2007-06-16 21:39  asfernandes
+
+	* firebird2/src/jrd/os/darwin/mod_loader.cpp (1.8):
+
+	Misc
+
+2007-06-15 11:28  alexpeshkoff
+
+	* firebird2/src/jrd/: jrd.cpp (1.337), jrd.h (1.192):
+
+	Fixed CORE-1323: NBAK not working
+
+2007-06-15 09:21  robocop
+
+	* firebird2/src/jrd/os/darwin/: config_root.cpp (1.7),
+	mod_loader.cpp (1.7):
+
+	Misc.
+
 2007-06-15 02:41  asfernandes
 
 	* firebird2/src/dsql/pass1.cpp (1.332):
