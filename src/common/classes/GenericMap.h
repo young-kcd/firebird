@@ -76,8 +76,8 @@ public:
 
 		for (bool found = v.getFirst(); found; found = v.getNext())
 		{
-			KeyValuePair* current = v.current();
-			put(current->first, current->second);
+			KeyValuePair* current_pair = v.current();
+			put(current_pair->first, current_pair->second);
 		}
 	}
 
