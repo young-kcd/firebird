@@ -93,7 +93,7 @@ AliceGlobals* gdgbl;
 
 const int ALICE_MSG_FAC = 3;
 
-static inline void exit_local(int code, AliceGlobals* tdgbl)
+void ALICE_exit(int code, AliceGlobals* tdgbl)
 {
 	tdgbl->exit_code = code;
     Firebird::LongJump::raise();
@@ -545,7 +545,7 @@ int common_main(int						argc,
 //  catch the case where -z is only command line option
 //  switches is unset since sw_z == 0
 	if (!switches && !error && table->in_sw_value == sw_z) {
-		exit_local(FINI_OK, tdgbl);
+		ALICE_exit(FINI_OK, tdgbl);
 	}
 
 	if (!switches || !(switches & ~(sw_user | sw_password))) {
@@ -569,7 +569,7 @@ int common_main(int						argc,
 		}
 		ALICE_print(22);	// msg 22: \n    qualifiers show the major option in parenthesis
 #endif
-		exit_local(FINI_ERROR, tdgbl);
+		ALICE_exit(FINI_ERROR, tdgbl);
 	}
 
 	if (!database) {
@@ -618,12 +618,12 @@ int common_main(int						argc,
 		ALICE_print_status(tdgbl->status);
 	}
 
-	exit_local(FINI_OK, tdgbl);
+	ALICE_exit(FINI_OK, tdgbl);
 
 	}	// try
 	catch (const Firebird::Exception&)
 	{
-		// All "calls" to exit_local(), normal and error exits, wind up here
+		// All "calls" to ALICE_exit(), normal and error exits, wind up here
 
 		tdgbl->service_blk->svc_started();
 
@@ -744,7 +744,7 @@ void ALICE_error(USHORT	number,
 	fb_msg_format(0, ALICE_MSG_FAC, number, sizeof(buffer), buffer, arg);
 	translate_cp(buffer);
 	alice_output("%s\n", buffer);
-	exit_local(FINI_ERROR, tdgbl);
+	ALICE_exit(FINI_ERROR, tdgbl);
 }
 
 
@@ -779,7 +779,7 @@ static void alice_output(const SCHAR* format, ...)
 	}
 
 	if (exit_code != 0) {
-		exit_local(exit_code, tdgbl);
+		ALICE_exit(exit_code, tdgbl);
 	}
 }
 

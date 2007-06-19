@@ -166,7 +166,7 @@ public:
 		: ThreadData(ThreadData::tddALICE), 
 		ALICE_default_pool(0),
 		exit_code(FINI_ERROR),	// prevent FINI_OK in case of unknown error thrown
-								// would be set to FINI_OK (==0) in exit_local
+								// would be set to FINI_OK (==0) in ALICE_exit
 		output_proc(outProc), 
 		output_data(outData),
 		output_file(NULL),
