@@ -1,3 +1,11 @@
+2007-06-19 09:35  alexpeshkoff
+
+	* firebird2/src/alice/: alice.cpp (1.96), alice.h (1.56),
+	alice_proto.h (1.13), tdr.cpp (1.52):
+
+	Fixed CORE-1328: unexpected end of input when running gfix in
+	dialog
+
 2007-06-18 14:52  aafemt
 
 	* firebird2/src/common/classes/GenericMap.h (1.14):
