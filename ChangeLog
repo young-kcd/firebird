@@ -1,3 +1,11 @@
+2007-06-19 09:37  alexpeshkoff
+
+	* firebird2/src/alice/: alice.cpp (1.83.2.2), alice.h (1.49.2.2),
+	alice_proto.h (1.11.4.1), tdr.cpp (1.48.2.1):
+
+	Backported fix for CORE-1328: unexpected end of input when running
+	gfix in dialog
+
 2007-06-13 16:14  alexpeshkoff
 
 	* firebird2/src/jrd/scl.epp (1.71.4.3):
