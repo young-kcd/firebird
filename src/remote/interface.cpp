@@ -987,17 +987,12 @@ ISC_STATUS GDS_DATABASE_INFO(ISC_STATUS*	user_status,
 		{
 			rem_port* port = rdb->rdb_port;
 
-			/* two bytes too much allocated, better safe than sorry */
-			const size_t nLen = strlen(GDS_VERSION) +
-								strlen(port->port_version->str_data) + 4;
-			char* version = (char*)ALLR_alloc(nLen);
-
-			sprintf(version, "%s/%s", GDS_VERSION, port->port_version->str_data);
+			Firebird::string version;
+			version.printf("%s/%s", GDS_VERSION, port->port_version->str_data);
 
 			MERGE_database_info(temp_buffer, (UCHAR *) buffer, buffer_length,
-								IMPLEMENTATION, 3, 1, (UCHAR*)version,
+								IMPLEMENTATION, 3, 1, (UCHAR*)(version.c_str()),
 								(UCHAR *) port->port_host->str_data, 0);
-			ALLR_free(version);
 		}
 
 		if (temp_buffer != temp) {

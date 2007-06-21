@@ -2890,12 +2890,12 @@ ISC_STATUS rem_port::info(P_OP op, P_INFO * stuff, PACKET* sendL)
 						  stuff->p_info_buffer_length /*sizeof (temp)*/,
 						  reinterpret_cast<char*>(temp_buffer) /*temp*/);
 		if (!status_vector[1]) {
-			TEXT version[256];
-			sprintf(version, "%s/%s", GDS_VERSION, this->port_version->str_data);
+			Firebird::string version;
+			version.printf("%s/%s", GDS_VERSION, this->port_version->str_data);
 			info_db_len = MERGE_database_info(temp_buffer /*temp*/, 
 								buffer, stuff->p_info_buffer_length,
 								IMPLEMENTATION, 4, 1,
-								reinterpret_cast<const UCHAR*>(version),
+								reinterpret_cast<const UCHAR*>(version.c_str()),
 								reinterpret_cast<UCHAR*>(this->port_host->str_data),
 								0);
 		}
@@ -3390,7 +3390,6 @@ static bool process_packet2(rem_port* port,
  *	sent.
  *
  **************************************/
-	TEXT msg[128];
 	trdb thd_context(port->port_status_vector);
 	// BRS: This is the same as REM_set_thread_data
 	trdb* tdrdb = &thd_context;
@@ -3404,19 +3403,15 @@ static bool process_packet2(rem_port* port,
 			if (!accept_connection(port, &receive->p_cnct, sendL)) {
 				rem_str* string = port->port_user_name;
 				if (string) {
-					sprintf(msg,
-							"SERVER/process_packet: connection rejected for %*.*s",
+					gds__log("SERVER/process_packet: connection rejected for %*.*s",
 							string->str_length, string->str_length,
 							string->str_data);
-					gds__log(msg, 0);
 				}
 				if (port->port_server->srvr_flags & SRVR_multi_client) {
 					port->port_state = state_broken;
 				}
 				else {
-					gds__log
-						("SERVER/process_packet: connect reject, server exiting",
-						 0);
+					gds__log("SERVER/process_packet: connect reject, server exiting");
 					ThreadData::restoreSpecific();
 					return false;
 				}
@@ -3643,9 +3638,8 @@ static bool process_packet2(rem_port* port,
 			break;
 
 		default:
-			sprintf(msg, "SERVER/process_packet: don't understand packet type %d",
+			gds__log("SERVER/process_packet: don't understand packet type %d",
 					receive->p_operation);
-			gds__log(msg, 0);
 			port->port_state = state_broken;
 			break;
 		}
