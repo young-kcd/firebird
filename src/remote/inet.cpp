@@ -658,39 +658,32 @@ rem_port* INET_connect(const TEXT* name,
 	ISC_tcp_setup(ISC_wait, gds__completion_ast);
 #endif
 
-	const TEXT* protocol = NULL;
-	TEXT temp[BUFFER_TINY];
+	Firebird::string host;
+	Firebird::string protocol;
 
 	if (name) {
-		strncpy(temp, name, sizeof(temp));
-		temp[sizeof(temp) - 1] = 0;
-		for (TEXT* p = temp; *p;) {
-			if (*p++ == '/') {
-				p[-1] = 0;
-				name = temp;
-				protocol = p;
-				break;
-			}
+		host = name;
+		const size_t pos = host.find("/");
+		if (pos != Firebird::string::npos) {
+			protocol = host.substr(pos + 1);
+			host = host.substr(0, pos);
 		}
 	}
 
-	if (name && *name) {
+	if (host.hasData()) {
 		if (port->port_connection) {
 			ALLR_free(port->port_connection);
 		}
-		port->port_connection = REMOTE_make_string(name);
+		port->port_connection = REMOTE_make_string(host.c_str());
 	}
 	else {
-		name = port->port_host->str_data;
+		host = port->port_host->str_data;
 	}
 
-	if (!protocol) {
+	if (protocol.isEmpty()) {
 		const unsigned short port2 = Config::getRemoteServicePort();
 		if (port2) {
-			// EKU: since temp is 128 byte long, the port number will always
-			// fit into the buffer, hence snprintf replaced with sprintf
-			sprintf(temp, "%hu", port2);
-			protocol = temp;
+			protocol.printf("%hu", port2);
 		}
 		else {
 			protocol = Config::getRemoteServiceName();
@@ -704,7 +697,7 @@ rem_port* INET_connect(const TEXT* name,
 
 #ifdef VMS
 	/* V M S */
-	if (getservport(protocol, "tcp", &address.sin_port) == -1) {
+	if (getservport(protocol.c_str(), "tcp", &address.sin_port) == -1) {
 		inet_error(port, "getservbyname", isc_net_connect_err, 0);
 		disconnect(port);
 		return NULL;
@@ -761,7 +754,7 @@ rem_port* INET_connect(const TEXT* name,
 
 	THREAD_EXIT();
 
-	const struct servent* service = getservbyname(protocol, "tcp");
+	const struct servent* service = getservbyname(protocol.c_str(), "tcp");
 #ifdef WIN_NT
 /* On Windows NT/9x, getservbyname can only accomodate
  * 1 call at a time.  In this case it returns the error
@@ -772,7 +765,7 @@ rem_port* INET_connect(const TEXT* name,
 	if (!service) {
 		if (H_ERRNO == INET_RETRY_ERRNO) {
 			for (int retry = 0; retry < INET_RETRY_CALL; retry++) {
-				if ( (service = getservbyname(protocol, "tcp")) )
+				if ( (service = getservbyname(protocol.c_str(), "tcp")) )
 					break;
 			}
 		}
@@ -789,7 +782,7 @@ rem_port* INET_connect(const TEXT* name,
     for zero-installation clients.
     */
 	if (!service) {
-		if (strcmp(protocol, FB_SERVICE_NAME) == 0) {
+		if (protocol == FB_SERVICE_NAME) {
 			/* apply hardwired translation */
 			address.sin_port = htons(FB_SERVICE_PORT);
 		}
@@ -800,7 +793,7 @@ rem_port* INET_connect(const TEXT* name,
 			 * let's see whether this is a port number
 			 * instead of a service name
 			 */
-			address.sin_port = htons(atoi(protocol));
+			address.sin_port = htons(atoi(protocol.c_str()));
 		}
 
 		if (address.sin_port == 0)
@@ -820,7 +813,7 @@ rem_port* INET_connect(const TEXT* name,
 						   isc_arg_gds,
 						   isc_service_unknown,
 						   isc_arg_string,
-						   protocol, isc_arg_string, "tcp", 0);
+						   protocol.c_str(), isc_arg_string, "tcp", 0);
 			return NULL;
 		}						/* else / not hardwired gds_db translation */
 	}

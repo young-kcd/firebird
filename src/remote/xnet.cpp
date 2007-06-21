@@ -199,16 +199,12 @@ static void xnet_log_error(int source_line_num, const char* err_msg, ULONG err_c
  *  Error logging when port isn;t yet allocated
  *
  **************************************/
-	char err_msg_buff[BUFFER_SMALL];
-
 	if (err_code)
-		sprintf(err_msg_buff, "XNET error (xnet:%d)  %s  Win32 error = %"ULONGFORMAT"\n",
+		gds__log("XNET error (xnet:%d)  %s  Win32 error = %"ULONGFORMAT"\n",
 			source_line_num, err_msg, err_code);
 	else
-		sprintf(err_msg_buff, "XNET error (xnet:%d)  %s\n",
+		gds__log("XNET error (xnet:%d)  %s\n",
 			source_line_num, err_msg);
-
-	gds__log(err_msg_buff);
 }
 
 
