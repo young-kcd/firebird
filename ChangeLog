@@ -1,3 +1,10 @@
+2007-06-21 14:06  alexpeshkoff
+
+	* firebird2/src/remote/: inet.cpp (1.160.2.6), interface.cpp
+	(1.119.4.1), server.cpp (1.126.2.4), xnet.cpp (1.70.4.3):
+
+	backported security fix
+
 2007-06-19 09:37  alexpeshkoff
 
 	* firebird2/src/alice/: alice.cpp (1.83.2.2), alice.h (1.49.2.2),
