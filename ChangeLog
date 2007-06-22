@@ -1,3 +1,27 @@
+2007-06-22 03:59  asfernandes
+
+	* firebird2/: builds/install/misc/fbintl.conf (1.15),
+	extern/icu/source/data/mappings/ucmcore.mk (1.4),
+	extern/icu/source/data/mappings/ucmfiles.mk (1.4),
+	src/intl/charsets.h (1.11), src/jrd/intlnames.h (1.29):
+
+	Feature request CORE-1324 - Japanese character set cp932 -- waiting
+	for user feedback on what ICU charset is best
+
+2007-06-21 14:04  alexpeshkoff
+
+	* firebird2/src/remote/xnet.cpp (1.86):
+
+	fixed bug in my last commit
+
+2007-06-21 10:40  alexpeshkoff
+
+	* firebird2/src/remote/: interface.cpp (1.140), server.cpp (1.152),
+	xnet.cpp (1.85):
+
+	fixed BOF during op_connect processing, avoid use of sprintf() in
+	remote
+
 2007-06-19 09:35  alexpeshkoff
 
 	* firebird2/src/alice/: alice.cpp (1.96), alice.h (1.56),
