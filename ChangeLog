@@ -1,3 +1,12 @@
+2007-06-22 14:21  paul_reeves
+
+	*
+	firebird2/builds/install/arch-specific/win32/BuildExecutableInstall.bat
+	(1.24):
+
+	Misc  upstream changes to support InnoSetup 5 and other
+	enhancements to innosetup install script.
+
 2007-06-22 03:59  asfernandes
 
 	* firebird2/: builds/install/misc/fbintl.conf (1.15),
