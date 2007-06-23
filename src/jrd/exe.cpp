@@ -265,29 +265,52 @@ void EXE_assignment(thread_db* tdbb, jrd_nod* node)
 	jrd_req* request = tdbb->tdbb_request;
 	BLKCHK(node, type_nod);
 
-/* Get descriptors of receiving and sending fields/parameters, variables, etc. */
+	request->req_flags &= ~req_null;
+	dsc* from_desc = EVL_expr(tdbb, node->nod_arg[e_asgn_from]);
+
+	EXE_assignment(tdbb, node->nod_arg[e_asgn_to], from_desc, (request->req_flags & req_null),
+		node->nod_arg[e_asgn_missing], node->nod_arg[e_asgn_missing2]);
+
+	request->req_operation = jrd_req::req_return;
+}
+
+
+void EXE_assignment(thread_db* tdbb, jrd_nod* to, dsc* from_desc, bool from_null,
+	jrd_nod* missing_node, jrd_nod* missing2_node)
+{
+/**************************************
+ *
+ *	E X E _ a s s i g n m e n t 2
+ *
+ **************************************
+ *
+ * Functional description
+ *	Perform an assignment
+ *
+ **************************************/
+	DEV_BLKCHK(node, type_nod);
+
+	SET_TDBB(tdbb);
+	jrd_req* request = tdbb->tdbb_request;
+
+	// Get descriptors of receiving and sending fields/parameters, variables, etc.
 
 	dsc* missing = NULL;
-	if (node->nod_arg[e_asgn_missing]) {
-		missing = EVL_expr(tdbb, node->nod_arg[e_asgn_missing]);
+	if (missing_node) {
+		missing = EVL_expr(tdbb, missing_node);
 	}
 
-	jrd_nod* to = node->nod_arg[e_asgn_to];
 	DSC* to_desc = EVL_assign_to(tdbb, to);
 
 	request->req_flags &= ~req_null;
 
-	dsc* from_desc = EVL_expr(tdbb, node->nod_arg[e_asgn_from]);
-
 	// NS: If we are assigning to NULL, we finished.
 	// This functionality is currently used to allow calling UDF routines
 	// without assigning resulting value anywhere.
-	if (!to_desc) {
-		request->req_operation = jrd_req::req_return;
+	if (!to_desc)
 		return;
-	}
 
-	SSHORT null = (request->req_flags & req_null) ? -1 : 0;
+	SSHORT null = from_null ? -1 : 0;
 
 	if (!null && missing && MOV_compare(missing, from_desc) == 0) {
 		null = -1;
@@ -318,13 +341,13 @@ void EXE_assignment(thread_db* tdbb, jrd_nod* node)
 	if (impure_flags != NULL)
 		*impure_flags |= VLU_checked;
 
-/* If the value is non-missing, move/convert it.  Otherwise fill the
-   field with appropriate nulls. */
+	// If the value is non-missing, move/convert it.  Otherwise fill the
+	// field with appropriate nulls.
 	dsc temp;
 
 	if (!null)
 	{
-		/* if necessary and appropriate, use the indicator variable */
+		// if necessary and appropriate, use the indicator variable
 
 		if (to->nod_type == nod_argument && to->nod_arg[e_arg_indicator])
 		{
@@ -424,8 +447,7 @@ void EXE_assignment(thread_db* tdbb, jrd_nod* node)
 		}
 		to_desc->dsc_flags &= ~DSC_null;
 	}
-	else if (node->nod_arg[e_asgn_missing2] &&
-			 (missing = EVL_expr(tdbb, node->nod_arg[e_asgn_missing2])))
+	else if (missing2_node && (missing = EVL_expr(tdbb, missing2_node)))
 	{
 		MOV_move(tdbb, missing, to_desc);
 		to_desc->dsc_flags |= DSC_null;
@@ -442,7 +464,7 @@ void EXE_assignment(thread_db* tdbb, jrd_nod* node)
 				const CHARSET_ID chid = DSC_GET_CHARSET(to_desc);
 				/*
 				CVC: I don't know if we have to check for dynamic-127 charset here.
-				If that is needed, the line above should be replaced by the ccmmented code here.
+				If that is needed, the line above should be replaced by the commented code here.
 				CHARSET_ID chid = INTL_TTYPE(to_desc);
 				if (chid == ttype_dynamic)
 					chid = INTL_charset(tdbb, chid);
@@ -467,7 +489,7 @@ void EXE_assignment(thread_db* tdbb, jrd_nod* node)
 		to_desc->dsc_flags |= DSC_null;
 	}
 
-/* Handle the null flag as appropriate for fields and message arguments. */
+	// Handle the null flag as appropriate for fields and message arguments.
 
 	if (to->nod_type == nod_field)
 	{
@@ -485,8 +507,8 @@ void EXE_assignment(thread_db* tdbb, jrd_nod* node)
 	{
 		to_desc = EVL_assign_to(tdbb, to->nod_arg[e_arg_flag]);
 
-		/* If the null flag is a string with an effective length of one,
-		   then -1 will not fit.  Therefore, store 1 instead. */
+		// If the null flag is a string with an effective length of one,
+		// then -1 will not fit.  Therefore, store 1 instead.
 
 		if (null &&
 			to_desc->dsc_dtype <= dtype_varying &&
@@ -509,8 +531,6 @@ void EXE_assignment(thread_db* tdbb, jrd_nod* node)
 			MOV_move(tdbb, &temp, to_desc);
 		}
 	}
-
-	request->req_operation = jrd_req::req_return;
 }
 
 
