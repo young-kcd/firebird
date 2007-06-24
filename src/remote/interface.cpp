@@ -991,8 +991,9 @@ ISC_STATUS GDS_DATABASE_INFO(ISC_STATUS*	user_status,
 			version.printf("%s/%s", GDS_VERSION, port->port_version->str_data);
 
 			MERGE_database_info(temp_buffer, (UCHAR *) buffer, buffer_length,
-								IMPLEMENTATION, 3, 1, (UCHAR*)(version.c_str()),
-								(UCHAR *) port->port_host->str_data, 0);
+								IMPLEMENTATION, 3, 1,
+								reinterpret_cast<const UCHAR*>(version.c_str()),
+								reinterpret_cast<const UCHAR*>(port->port_host->str_data), 0);
 		}
 
 		if (temp_buffer != temp) {
