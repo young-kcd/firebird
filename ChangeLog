@@ -1,3 +1,9 @@
+2007-06-24 10:53  robocop
+
+	* firebird2/src/remote/interface.cpp (1.141):
+
+	Misc (to match an almost identical code elsewhere).
+
 2007-06-23 20:48  asfernandes
 
 	* firebird2/src/: common/classes/fb_pair.h (1.15), jrd/exe.cpp
