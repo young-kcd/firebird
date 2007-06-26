@@ -157,7 +157,7 @@
 
 #define release
 #define no_pdb
-#define i18n
+;#define i18n
 
 ;If we are building the pdb package then
 ;we don't include files or examples.
@@ -325,8 +325,8 @@ Filename: {app}\bin\instclient.exe; Parameters: "install gds32"; StatusMsg: {cm:
 ;#endif
 
 ;If on NT/Win2k etc and 'Install and start service' requested
-Filename: {app}\bin\instsvc.exe; Parameters: "install {code:ServiceStartFlags|""""} "; StatusMsg: {cm:instsvcSetup}; MinVersion: 0,4.0; Components: ServerComponent; Flags: runminimized; Tasks: UseServiceTask; Check: ConfigureFirebird;
-Filename: {app}\bin\instsvc.exe; Description: {cm:instsvcStartQuestion}; Parameters: "start {code:ServiceName|""""}"; StatusMsg: {cm:instsvcStartMsg}; MinVersion: 0,4.0; Components: ServerComponent; Flags: runminimized postinstall; Tasks: UseServiceTask; Check: StartEngine
+Filename: {app}\bin\instsvc.exe; Parameters: "install {code:ServiceStartFlags} "; StatusMsg: {cm:instsvcSetup}; MinVersion: 0,4.0; Components: ServerComponent; Flags: runminimized; Tasks: UseServiceTask; Check: ConfigureFirebird;
+Filename: {app}\bin\instsvc.exe; Description: {cm:instsvcStartQuestion}; Parameters: "start {code:ServiceName} "; StatusMsg: {cm:instsvcStartMsg}; MinVersion: 0,4.0; Components: ServerComponent; Flags: runminimized postinstall; Tasks: UseServiceTask; Check: StartEngine
 ;If 'start as application' requested
 Filename: {code:StartApp|{app}\bin\fbserver.exe}; Description: {cm:instappStartQuestion}; Parameters: -a; StatusMsg: {cm:instappStartMsg}; MinVersion: 0,4.0; Components: ServerComponent; Flags: nowait postinstall; Tasks: UseApplicationTask; Check: StartEngine
 
@@ -478,8 +478,8 @@ Source: {#FilesDir}\bin\fbserver.pdb; DestDir: {app}\bin; Components: ServerComp
 #endif
 
 [UninstallRun]
-Filename: {app}\bin\instsvc.exe; Parameters: "stop {code:ServiceName|""""}"; StatusMsg: {cm:instsvcStopMsg}; MinVersion: 0,4.0; Components: ServerComponent; Flags: runminimized; Tasks: UseServiceTask; RunOnceId: StopService
-Filename: {app}\bin\instsvc.exe; Parameters: "remove {code:ServiceName|""""}"; StatusMsg: {cm:instsvcRemove}; MinVersion: 0,4.0; Components: ServerComponent; Flags: runminimized; Tasks: UseServiceTask; RunOnceId: RemoveService
+Filename: {app}\bin\instsvc.exe; Parameters: "stop {code:ServiceName} "; StatusMsg: {cm:instsvcStopMsg}; MinVersion: 0,4.0; Components: ServerComponent; Flags: runminimized; Tasks: UseServiceTask; RunOnceId: StopService
+Filename: {app}\bin\instsvc.exe; Parameters: "remove {code:ServiceName} "; StatusMsg: {cm:instsvcRemove}; MinVersion: 0,4.0; Components: ServerComponent; Flags: runminimized; Tasks: UseServiceTask; RunOnceId: RemoveService
 Filename: {app}\bin\instclient.exe; Parameters: " remove gds32"; StatusMsg: {cm:instclientDecLibCountGds32}; MinVersion: 4.0,4.0; Flags: runminimized;
 Filename: {app}\bin\instclient.exe; Parameters: " remove fbclient"; StatusMsg: {cm:instclientDecLibCountFbClient}; MinVersion: 4.0,4.0; Flags: runminimized;
 ;#if PlatformTarget == "x64"
@@ -794,10 +794,7 @@ begin
   else
     SvcParams := SvcParams + ServerType;
 
-  if Default='""' then
-    InstanceName := ' -n ' + DEFAULT_INSTANCE
-  else
-    InstanceName := ' -n ' + DEFAULT_INSTANCE;
+  InstanceName := ' -n DefaultInstance'
 
   SvcParams := SvcParams + InstanceName;
 
@@ -807,9 +804,10 @@ end;
 
 function ServiceName(Default: String): String;
 begin
-//If we were really good we would test Default for the -n string
-    Result := ' -n ' + Default;
+    Result := ' -n DefaultInstance' ;
 end;
+
+
 
 
 function InstallGuardianIcon(): Boolean;
