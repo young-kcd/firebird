@@ -19,12 +19,12 @@
 ;     of an existing install directory.
 ;     Simon Carter for the WinSock2 detection.
 ;     Philippe Makowski for internationalization and french translation
+;     Sergey Nikitin for migrating to ISS v5.
 
 ;   Usage Notes:
 ;
-;   This script has been designed to work with Inno Setup v4.2.7
-;   with Inno Setup Preprocessor v. 1.2.1.295. It is available
-;   as a quick start pack from here:
+;   This script has been designed to work with Inno Setup v5.1.10
+;   It is available as a quick start pack from here:
 ;     http://www.jrsoftware.org/isdl.php#qsp
 ;
 ;
@@ -36,69 +36,138 @@
 ;     application will not be stopped and the uninstall will not complete
 ;     cleanly.
 ;
-;     InnoSetup does not support script execution as part of uninstallation.
-;     And this feature is not likely to be added in the near future. Here is
-;     the definitive explanation from Jordan Russell, the developer of InnoSetup:
-;
-;       'The uninstaller currently relies on a 100% forward compatible uninstall
-;       log format. When an existing uninstall log is appended to, and the
-;       uninstaller EXE is replaced with a newer version, the previous log contents
-;       are guaranteed to be processed properly. There are no such guarantees of
-;       forward compatibility with the Pascal Scripting feature; some support
-;       functions might be removed at some point, their declarations might change,
-;       etc. For the uninstaller to support Pascal Scripting, it would likely have
-;       to abandon the uninstall-log-appending concept, and instead create multiple
-;       uninstaller EXEs (chained together somehow) and multiple uninstall logs.'
-;
-;     To work around this we will probably need to extend the instsvc/instreg
-;     utilities to support uninstallation of applications.
-;
-;
 ;   o The uninstaller does not know how to stop multiple instances of a classic
 ;     server. They must be stopped manually.
 ;
 ;
 ;
+#define MyAppPublisher "Firebird Project"
+#define MyAppURL "http://www.firebirdsql.org/"
+#define MyAppName "Firebird"
+#define MyAppId "FBDBServer"
 
-;-------Innosetup script debug flags
+#define FirebirdURL MyAppURL
+#define UninstallBinary "{app}\bin\fbserver.exe"
+
+;Hard code some defaults to aid debugging and running script standalone.
+;In practice, these values are set in the environment and we use the env vars.
+#define MajorVer "2"
+#define MinorVer "1"
+#define PointRelease "0"
+#define BuildNumber "0"
+#define PackageNumber "0"
+
+
+
+;-------Start of Innosetup script debug flags section
+
+; if iss_release is undefined then iss_debug is set
+; Setting iss_release implies that the defines for files,
+; examples and compression are set. If debug is set then the
+; iss_debug.inc file controls the settings of files, examples
+; and compression.
+
 ;A dynamically generated sed script sets the appropriate define
 ;See BuildExecutableInstall.bat for more details.
 
-;This define is not used in practice, but is retained for documentation
-;purposes. If set to iss_release it implies that the defines for files,
-;examples and compression are set.
-#define iss_release
-
-#define files
-#define examples
-#define compression
 
 ;#define iss_debug
 
+#ifndef iss_debug
+#define iss_release
+#endif
+
+#ifdef iss_release
+#define files
+#define examples
+#define compression
+#else
+#define iss_debug
+#endif
+
 #ifdef iss_debug
+;Be more verbose
+#pragma option -v+
+#pragma verboselevel 9
+
 ;Useful for cases where engine is built without examples.
 #undef examples
+;Useful when testing structure of script - adding files takes time.
+#undef files
 ;We speed up compilation (and hence testing) by not compressing contents.
 #undef compression
 #endif
 
+;------If necessary we can turn off i18n by uncommenting this undefine
+;#undef  i18n
 
 ;-------end of Innosetup script debug flags section
 
-
 ;-------Start of Innosetup script
-#define msvc_version 7
-#define FirebirdURL "http://www.firebirdsql.org"
-#define BaseVer "2_0"
-#define GroupnameVer "2.0"
+
+#define FB_MAJOR_VER GetEnv("FB_MAJOR_VER")
+#ifdef FB_MAJOR_VER
+#define MajorVer FB_MAJOR_VER
+#endif
+
+#define FB_MINOR_VER GetEnv("FB_MINOR_VER")
+#ifdef FB_MINOR_VER
+#define MinorVer FB_MINOR_VER
+#endif
+
+#define FB_REV_NO GetEnv("FB_REV_NO")
+#ifdef FB_REV_NO
+#define PointRelease FB_REV_NO
+#endif
+
+#define FB_BUILD_NO GetEnv("FB_BUILD_NO")
+#ifdef FB_BUILD_NO
+#define BuildNumber FB_BUILD_NO
+#endif
+
+#define FBBUILD_PACKAGE_NUMBER GetEnv("FBBUILD_PACKAGE_NUMBER")
+#ifdef FBBUILD_PACKAGE_NUMBER
+#define PackageNumber FBBUILD_PACKAGE_NUMBER
+#endif
+
+
+
+#if BuildNumber == "0"
+#define MyAppVerString MajorVer + "." + MinorVer + "." + PointRelease
+#else
+#define MyAppVerString MajorVer + "." + MinorVer + "." + PointRelease + "." + BuildNumber
+#endif
+#define MyAppVerName MyAppName + " " + MyAppVerString
+
+
+#define PlatformTarget GetEnv("FB_TARGET_PLATFORM")
+
+;This location is relative to SourceDir (declared below)
+#define FilesDir="output_" + PlatformTarget
+#if PlatformTarget == "x64"
+#define WOW64Dir="output_win32"
+#endif
+#define msvc_version 8
+
+;BaseVer should be used for all v2.n installs.
+;This allows us to upgrade silently from 2.0 to 2.1
+#define BaseVer MajorVer + "_0"
+#define AppVer MajorVer + "_" + MinorVer
+#define GroupnameVer MajorVer + "." + MinorVer
+
 #define release
 #define no_pdb
 #define i18n
 
-;------If necessary we can turn off i18n by uncommenting this undefine
-;#undef  i18n
+;If we are building the pdb package then
+;we don't include files or examples.
+#ifdef ship_pdb
+#undef files
+#undef examples
+#endif
 
-;Some strings to distinguish the name of final executable
+
+;Some more strings to distinguish the name of final executable
 #ifdef ship_pdb
 #define pdb_str="_pdb"
 #else
@@ -110,54 +179,69 @@
 #define debug_str=""
 #endif
 
-#define package_number="0"
-
 
 [Setup]
-AppName={cm:MyAppName}
+AppName={#MyAppName}
 ;The following is important - all ISS install packages should
 ;duplicate this. See the InnoSetup help for details.
-AppID=FBDBServer_{#BaseVer}
-AppVerName=Firebird 2.0.0
-AppPublisher=Firebird Project
-AppPublisherURL={#FirebirdURL}
-AppSupportURL={#FirebirdURL}
-AppUpdatesURL={#FirebirdURL}
-DefaultDirName={code:ChooseInstallDir|{pf}\Firebird\Firebird_{#BaseVer}}
-DefaultGroupName=Firebird {#GroupnameVer}
-AllowNoIcons=true
-SourceDir=..\..\..\..\
-LicenseFile=builds\install\misc\IPLicense.txt
-AlwaysShowComponentsList=true
-WizardImageFile=builds\install\arch-specific\win32\firebird_install_logo1.bmp
-PrivilegesRequired=admin
-UninstallDisplayIcon={code:ChooseUninstallIcon|{app}\bin\fbserver.exe}
-OutputDir=builds\install_images
-OutputBaseFilename=Firebird-2.0.0-{#package_number}-Win32{#debug_str}{#pdb_str}
-#ifdef compression
-Compression=lzma
-SolidCompression=true
+#if PlatformTarget == "x64"
+AppID={#MyAppId}_{#BaseVer}_{#PlatformTarget}
+AppVerName={#MyAppVerName} ({#PlatformTarget})
 #else
+AppID={#MyAppId}_{#BaseVer}
+AppVerName={#MyAppVerName}
+#endif
+AppPublisher={#MyAppPublisher}
+AppPublisherURL={#MyAppURL}
+AppSupportURL={#MyAppURL}
+AppUpdatesURL={#MyAppURL}
+AppVersion={#MyAppVerString}
+
+SourceDir=..\..\..\..\
+OutputBaseFilename={#MyAppName}-{#MyAppVerString}_{#PackageNumber}_{#PlatformTarget}{#debug_str}{#pdb_str}
+OutputManifestFile={#MyAppName}-{#MyAppVerString}_{#PackageNumber}_{#PlatformTarget}{#debug_str}{#pdb_str}_Setup-Manifest.txt
+OutputDir=builds\install_images
+;!!! These directories are as seen from SourceDir !!!
+#define ScriptsDir "builds\install\arch-specific\win32"
+#define LicensesDir "builds\install\misc"
+LicenseFile={#LicensesDir}\IPLicense.txt
+
+WizardImageFile={#ScriptsDir}\firebird_install_logo1.bmp
+WizardSmallImageFile={#ScriptsDir}\firebird_install_logo1.bmp
+
+DefaultDirName={code:ChooseInstallDir|{pf}\Firebird\Firebird_{#AppVer}}
+DefaultGroupName=Firebird {#GroupnameVer}
+
+UninstallDisplayIcon={code:ChooseUninstallIcon|{#UninstallBinary}}
+#ifndef compression
 Compression=none
-SolidCompression=false
+#else
+SolidCompression=yes
 #endif
 
-ShowTasksTreeLines=false
-LanguageDetectionMethod=uilanguage
+ShowUndisplayableLanguages={#defined iss_debug}
+AllowNoIcons=true
+AlwaysShowComponentsList=true
+PrivilegesRequired=admin
+
+
+#if PlatformTarget == "x64"
+ArchitecturesInstallIn64BitMode=x64
+#endif
 
 [Languages]
-Name: en; MessagesFile: compiler:Default.isl; InfoBeforeFile: builds\install\arch-specific\win32\installation_readme.txt; InfoAfterFile: builds\install\arch-specific\win32\readme.txt;
+Name: en; MessagesFile: compiler:Default.isl; InfoBeforeFile: {#ScriptsDir}\installation_readme.txt; InfoAfterFile: {#ScriptsDir}\readme.txt;
 #ifdef i18n
-Name: ba; MessagesFile: compiler:Languages\Bosnian.isl; InfoBeforeFile: builds\install\arch-specific\win32\ba\Instalacija_ProcitajMe.txt; InfoAfterFile: builds\install\arch-specific\win32\ba\ProcitajMe.txt;
-Name: fr; MessagesFile: compiler:Languages\French.isl; InfoBeforeFile: builds\install\arch-specific\win32\fr\installation_lisezmoi.txt; InfoAfterFile: builds\install\arch-specific\win32\fr\lisezmoi.txt;
-Name: de; MessagesFile: compiler:Languages\German.isl; InfoBeforeFile: builds\install\arch-specific\win32\de\installation_liesmich.txt; InfoAfterFile: builds\install\arch-specific\win32\de\liesmich.txt;
-Name: es; MessagesFile: compiler:Languages\Spanish.isl; InfoBeforeFile: builds\install\arch-specific\win32\es\leame_instalacion.txt; InfoAfterFile: builds\install\arch-specific\win32\es\leame.txt;
-Name: hu; MessagesFile: compiler:Languages\Hungarian.isl; InfoBeforeFile: builds\install\arch-specific\win32\hu\telepitesi_segedlet.txt; InfoAfterFile: builds\install\arch-specific\win32\hu\olvass_el.txt;
-Name: it; MessagesFile: compiler:Languages\Italian.isl; InfoBeforeFile: builds\install\arch-specific\win32\it\leggimi_installazione.txt; InfoAfterFile: builds\install\arch-specific\win32\it\leggimi.txt
-Name: pl; MessagesFile: compiler:Languages\Polish.isl; InfoBeforeFile: builds\install\arch-specific\win32\pl\instalacja_czytajto.txt; InfoAfterFile: builds\install\arch-specific\win32\pl\czytajto.txt;
-Name: pt; MessagesFile: compiler:Languages\PortugueseStd.isl; InfoBeforeFile: builds\install\arch-specific\win32\pt\instalacao_leia-me.txt; InfoAfterFile: builds\install\arch-specific\win32\pt\leia-me.txt
-Name: ru; MessagesFile: compiler:Languages\Russian.isl; InfoBeforeFile: builds\install\arch-specific\win32\ru\installation_readme.txt; InfoAfterFile: builds\install\arch-specific\win32\ru\readme.txt;
-Name: si; MessagesFile: compiler:Languages\Slovenian.isl; InfoBeforeFile: builds\install\arch-specific\win32\si\instalacija_precitajMe.txt; InfoAfterFile: builds\install\arch-specific\win32\readme.txt;
+Name: ba; MessagesFile: compiler:Languages\Bosnian.isl; InfoBeforeFile: {#ScriptsDir}\ba\Instalacija_ProcitajMe.txt; InfoAfterFile: {#ScriptsDir}\ba\ProcitajMe.txt;
+Name: fr; MessagesFile: compiler:Languages\French.isl; InfoBeforeFile: {#ScriptsDir}\fr\installation_lisezmoi.txt; InfoAfterFile: {#ScriptsDir}\fr\lisezmoi.txt;
+Name: de; MessagesFile: compiler:Languages\German.isl; InfoBeforeFile: {#ScriptsDir}\de\installation_liesmich.txt; InfoAfterFile: {#ScriptsDir}\de\liesmich.txt;
+Name: es; MessagesFile: compiler:Languages\Spanish.isl; InfoBeforeFile: {#ScriptsDir}\es\leame_instalacion.txt; InfoAfterFile: {#ScriptsDir}\es\leame.txt;
+Name: hu; MessagesFile: compiler:Languages\Hungarian.isl; InfoBeforeFile: {#ScriptsDir}\hu\telepitesi_segedlet.txt; InfoAfterFile: {#ScriptsDir}\hu\olvass_el.txt;
+Name: it; MessagesFile: compiler:Languages\Italian.isl; InfoBeforeFile: {#ScriptsDir}\it\leggimi_installazione.txt; InfoAfterFile: {#ScriptsDir}\it\leggimi.txt
+Name: pl; MessagesFile: compiler:Languages\Polish.isl; InfoBeforeFile: {#ScriptsDir}\pl\instalacja_czytajto.txt; InfoAfterFile: {#ScriptsDir}\pl\czytajto.txt;
+Name: pt; MessagesFile: compiler:Languages\Portuguese.isl; InfoBeforeFile: {#ScriptsDir}\pt\instalacao_leia-me.txt; InfoAfterFile: {#ScriptsDir}\pt\leia-me.txt
+;Name: ru; MessagesFile: compiler:Languages\Russian.isl; InfoBeforeFile: {#ScriptsDir}\ru\installation_readme.txt; InfoAfterFile: {#ScriptsDir}\ru\readme.txt;
+Name: si; MessagesFile: compiler:Languages\Slovenian.isl; InfoBeforeFile: {#ScriptsDir}\si\instalacija_precitajMe.txt; InfoAfterFile: {#ScriptsDir}\readme.txt;
 #endif
 
 [Messages]
@@ -171,7 +255,7 @@ hu.BeveledLabel=Magyar
 it.BeveledLabel=Italiano
 pl.BeveledLabel=Polski
 pt.BeveledLabel=Português
-ru.BeveledLabel=<0420><0443><0441><0441><043A><0438><0439>
+;ru.BeveledLabel=<0420><0443><0441><0441><043A><0438><0439>
 si.BeveledLabel=Slovenski
 #endif
 
@@ -186,7 +270,7 @@ si.BeveledLabel=Slovenski
 #include "it\custom_messages_it.inc"
 #include "pl\custom_messages_pl.inc"
 #include "pt\custom_messages_pt.inc"
-#include "ru\custom_messages_ru.inc"
+;#include "ru\custom_messages_ru.inc"
 #include "si\custom_messages_si.inc"
 #endif
 
@@ -235,12 +319,14 @@ Filename: {app}\bin\instreg.exe; Parameters: "install "; StatusMsg: {cm:instreg}
 
 Filename: {app}\bin\instclient.exe; Parameters: "install fbclient"; StatusMsg: {cm:instclientCopyFbClient}; MinVersion: 4.0,4.0; Components: ClientComponent; Flags: runminimized; Check: CopyFBClientLib;
 Filename: {app}\bin\instclient.exe; Parameters: "install gds32"; StatusMsg: {cm:instclientGenGds32}; MinVersion: 4.0,4.0; Components: ClientComponent; Flags: runminimized; Check: CopyGds32
-
+;#if PlatformTarget == "x64"
+;Filename: {app}\WOW64\instclient.exe; Parameters: "install fbclient"; StatusMsg: {cm:instclientCopyFbClient}; MinVersion: 4.0,4.0; Components: ClientComponent; Flags: runminimized 32bit; Check: CopyFBClientLib;
+;Filename: {app}\WOW64\instclient.exe; Parameters: "install gds32"; StatusMsg: {cm:instclientGenGds32}; MinVersion: 4.0,4.0; Components: ClientComponent; Flags: runminimized 32bit; Check: CopyGds32
+;#endif
 
 ;If on NT/Win2k etc and 'Install and start service' requested
 Filename: {app}\bin\instsvc.exe; Parameters: "install {code:ServiceStartFlags|""""} "; StatusMsg: {cm:instsvcSetup}; MinVersion: 0,4.0; Components: ServerComponent; Flags: runminimized; Tasks: UseServiceTask; Check: ConfigureFirebird;
-Filename: {app}\bin\instsvc.exe; Description: {cm:instsvcStartQuestion}; Parameters: start; StatusMsg: {cm:instsvcStartMsg}; MinVersion: 0,4.0; Components: ServerComponent; Flags: runminimized postinstall; Tasks: UseServiceTask; Check: StartEngine
-
+Filename: {app}\bin\instsvc.exe; Description: {cm:instsvcStartQuestion}; Parameters: "start {code:ServiceName|""""}"; StatusMsg: {cm:instsvcStartMsg}; MinVersion: 0,4.0; Components: ServerComponent; Flags: runminimized postinstall; Tasks: UseServiceTask; Check: StartEngine
 ;If 'start as application' requested
 Filename: {code:StartApp|{app}\bin\fbserver.exe}; Description: {cm:instappStartQuestion}; Parameters: -a; StatusMsg: {cm:instappStartMsg}; MinVersion: 0,4.0; Components: ServerComponent; Flags: nowait postinstall; Tasks: UseApplicationTask; Check: StartEngine
 
@@ -265,15 +351,11 @@ Name: {group}\Firebird Server; Filename: {app}\bin\fb_inet_server.exe; Parameter
 Name: {group}\Firebird Server; Filename: {app}\bin\fbserver.exe; Parameters: -a; Flags: runminimized; MinVersion: 4.0,4.0;  Check: InstallServerIcon; IconIndex: 0; Components: ServerComponent\SuperServerComponent; Comment: Run Firebird Superserver (without guardian)
 Name: {group}\Firebird Guardian; Filename: {app}\bin\fbguard.exe; Parameters: -a; Flags: runminimized; MinVersion: 4.0,4.0;  Check: InstallGuardianIcon; IconIndex: 1; Components: ServerComponent\SuperServerComponent; Comment: Run Firebird Super Server (with guardian)
 Name: {group}\Firebird ISQL Tool; Filename: {app}\bin\isql.exe; WorkingDir: {app}; MinVersion: 4.0,4.0;  Comment: {cm:RunISQL}
-#define App_Name = SetupSetting("AppName")
-Name: {group}\Firebird 2.0.0 Release Notes; Filename: {app}\doc\Firebird_v2.0.0.ReleaseNotes.pdf; MinVersion: 4.0,4.0;  Comment: {#App_Name} {cm:ReleaseNotes}
-Name: {group}\Firebird 1.5.3 Release Notes; Filename: {app}\doc\Firebird_v1.5.3.ReleaseNotes.pdf; MinVersion: 4.0,4.0;  Comment: {#App_Name} {cm:ReleaseNotes}
-Name: {group}\Firebird 2.0 Quick Start Guide; Filename: {app}\doc\Firebird-2.0-QuickStart.pdf; MinVersion: 4.0,4.0;  Comment: {#App_Name}
-;Name: {group}\Firebird 1.5.2 Release Notes; Filename: {app}\doc\Firebird_v1.5.2.ReleaseNotes.pdf; MinVersion: 4.0,4.0;  Comment: {#App_Name} {cm:ReleaseNotes}
-;Name: {group}\Firebird 1.5.1 Release Notes; Filename: {app}\doc\Firebird_v1.5.1.ReleaseNotes.pdf; MinVersion: 4.0,4.0;  Comment: {#App_Name} {cm:ReleaseNotes}
-;Name: {group}\Firebird 1.5 Release Notes; Filename: {app}\doc\Firebird_v1.5.ReleaseNotes.pdf; MinVersion: 4.0,4.0;  Comment: {#App_Name} {cm:ReleaseNotes}
+Name: {group}\Firebird 2.0.1 Release Notes; Filename: {app}\doc\Firebird_v2.0.1.ReleaseNotes.pdf; MinVersion: 4.0,4.0; Comment: {#MyAppName} {cm:ReleaseNotes}
+Name: {group}\Firebird 1.5.4 Release Notes; Filename: {app}\doc\Firebird_v1.5.4.ReleaseNotes.pdf; MinVersion: 4.0,4.0; Comment: {#MyAppName} {cm:ReleaseNotes}
+Name: {group}\Firebird 2.0 Quick Start Guide; Filename: {app}\doc\Firebird-2.0-QuickStart.pdf; MinVersion: 4.0,4.0; Comment: {#MyAppName}
 ;Always install the original english version
-Name: {group}\Firebird 2.0.0 Readme; Filename: {app}\readme.txt; MinVersion: 4.0,4.0;
+Name: {group}\Firebird 2.0.1 Readme; Filename: {app}\readme.txt; MinVersion: 4.0,4.0;
 #ifdef i18n
 ;And install translated readme.txt if non-default language is chosen.
 Name: {group}\{cm:IconReadme}; Filename: {app}\{cm:ReadMeFile}; MinVersion: 4.0,4.0; Components: DevAdminComponent; Check: NonDefaultLanguage;
@@ -282,113 +364,128 @@ Name: {group}\Uninstall Firebird; Filename: {uninstallexe}; Comment: Uninstall F
 
 [Files]
 #ifdef files
-Source: builds\install\misc\IPLicense.txt; DestDir: {app}; Components: ClientComponent; Flags: sharedfile ignoreversion;
-Source: builds\install\misc\IDPLicense.txt; DestDir: {app}; Components: ClientComponent; Flags: sharedfile ignoreversion
+Source: {#LicensesDir}\IPLicense.txt; DestDir: {app}; Components: ClientComponent; Flags: sharedfile ignoreversion;
+Source: {#LicensesDir}\IDPLicense.txt; DestDir: {app}; Components: ClientComponent; Flags: sharedfile ignoreversion
 ;Always install the original english version
-Source: builds\install\arch-specific\win32\readme.txt; DestDir: {app}; Components: DevAdminComponent; Flags: ignoreversion;
+Source: {#ScriptsDir}\readme.txt; DestDir: {app}; Components: DevAdminComponent; Flags: ignoreversion;
 #ifdef i18n
 ;Translated files
-Source: builds\install\arch-specific\win32\ba\*.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: ignoreversion; Languages: ba;
-Source: builds\install\arch-specific\win32\fr\*.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: ignoreversion; Languages: fr;
-Source: builds\install\arch-specific\win32\de\*.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: ignoreversion; Languages: de;
-Source: builds\install\arch-specific\win32\es\*.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: ignoreversion; Languages: es;
-Source: builds\install\arch-specific\win32\hu\*.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: ignoreversion; Languages: hu;
-Source: builds\install\arch-specific\win32\it\*.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: ignoreversion; Languages: it;
-Source: builds\install\arch-specific\win32\pl\*.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: ignoreversion; Languages: pl;
-Source: builds\install\arch-specific\win32\pt\*.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: ignoreversion; Languages: pt;
-Source: builds\install\arch-specific\win32\ru\*.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: ignoreversion; Languages: ru;
-Source: builds\install\arch-specific\win32\si\*.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: ignoreversion; Languages: si;
+Source: {#ScriptsDir}\ba\*.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: ignoreversion; Languages: ba;
+Source: {#ScriptsDir}\fr\*.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: ignoreversion; Languages: fr;
+Source: {#ScriptsDir}\de\*.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: ignoreversion; Languages: de;
+Source: {#ScriptsDir}\es\*.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: ignoreversion; Languages: es;
+Source: {#ScriptsDir}\hu\*.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: ignoreversion; Languages: hu;
+Source: {#ScriptsDir}\it\*.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: ignoreversion; Languages: it;
+Source: {#ScriptsDir}\pl\*.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: ignoreversion; Languages: pl;
+Source: {#ScriptsDir}\pt\*.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: ignoreversion; Languages: pt;
+;Source: {#ScriptsDir}\ru\*.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: ignoreversion; Languages: ru;
+Source: {#ScriptsDir}\si\*.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: ignoreversion; Languages: si;
 #endif
-Source: output\firebird.conf; DestDir: {app}; DestName: firebird.conf.default; Components: ServerComponent; check: FirebirdConfExists;
-Source: output\firebird.conf; DestDir: {app}; DestName: firebird.conf; Components: ServerComponent; Flags: uninsneveruninstall; check: NoFirebirdConfExists
-Source: output\aliases.conf; DestDir: {app}; Components: ClientComponent; Flags: uninsneveruninstall onlyifdoesntexist
-Source: output\security2.fdb; DestDir: {app}; Components: ServerComponent; Flags: uninsneveruninstall onlyifdoesntexist
-Source: output\firebird.msg; DestDir: {app}; Components: ClientComponent; Flags: sharedfile ignoreversion
-Source: output\firebird.log; DestDir: {app}; Components: ServerComponent; Flags: uninsneveruninstall skipifsourcedoesntexist external dontcopy
+Source: {#FilesDir}\firebird.conf; DestDir: {app}; DestName: firebird.conf.default; Components: ServerComponent; check: FirebirdConfExists;
+Source: {#FilesDir}\firebird.conf; DestDir: {app}; DestName: firebird.conf; Components: ServerComponent; Flags: uninsneveruninstall; check: NoFirebirdConfExists
+Source: {#FilesDir}\aliases.conf; DestDir: {app}; Components: ClientComponent; Flags: uninsneveruninstall onlyifdoesntexist
+Source: {#FilesDir}\security2.fdb; DestDir: {app}; Components: ServerComponent; Flags: uninsneveruninstall onlyifdoesntexist
+Source: {#FilesDir}\firebird.msg; DestDir: {app}; Components: ClientComponent; Flags: sharedfile ignoreversion
+Source: {#FilesDir}\firebird.log; DestDir: {app}; Components: ServerComponent; Flags: uninsneveruninstall skipifsourcedoesntexist external dontcopy
 
-Source: output\bin\gbak.exe; DestDir: {app}\bin; Components: DevAdminComponent; Flags: sharedfile ignoreversion
-Source: output\bin\gdef.exe; DestDir: {app}\bin; Components: DevAdminComponent; Flags: ignoreversion
-Source: output\bin\gfix.exe; DestDir: {app}\bin; Components: DevAdminComponent; Flags: sharedfile ignoreversion
-Source: output\bin\gpre.exe; DestDir: {app}\bin; Components: DevAdminComponent; Flags: ignoreversion
-Source: output\bin\gsec.exe; DestDir: {app}\bin; Components: DevAdminComponent; Flags: sharedfile ignoreversion
-Source: output\bin\gsplit.exe; DestDir: {app}\bin; Components: DevAdminComponent; Flags: sharedfile ignoreversion
-Source: output\bin\gstat.exe; DestDir: {app}\bin; Components: ServerComponent; Flags: sharedfile ignoreversion
-Source: output\bin\fbguard.exe; DestDir: {app}\bin; Components: ServerComponent\SuperServerComponent; Flags: sharedfile ignoreversion
-Source: output\bin\fb_inet_server.exe; DestDir: {app}\bin; Components: ServerComponent\ClassicServerComponent; Flags: sharedfile ignoreversion uninsrestartdelete
-Source: output\bin\fbserver.exe; DestDir: {app}\bin; Components: ServerComponent\SuperServerComponent; Flags: sharedfile ignoreversion
-Source: output\bin\fb_lock_print.exe; DestDir: {app}\bin; Components: ServerComponent; Flags: sharedfile ignoreversion
-Source: output\bin\ib_util.dll; DestDir: {app}\bin; Components: ServerComponent; Flags: sharedfile ignoreversion
-Source: output\bin\instclient.exe; DestDir: {app}\bin; Components: ClientComponent; Flags: sharedfile ignoreversion
-Source: output\bin\instreg.exe; DestDir: {app}\bin; Components: ClientComponent; Flags: sharedfile ignoreversion
-Source: output\bin\instsvc.exe; DestDir: {app}\bin; Components: ServerComponent; MinVersion: 0,4.0; Flags: sharedfile ignoreversion
-Source: output\bin\isql.exe; DestDir: {app}\bin; Components: DevAdminComponent; Flags: ignoreversion
-Source: output\bin\nbackup.exe; DestDir: {app}\bin; Components: DevAdminComponent; Flags: ignoreversion
-Source: output\bin\qli.exe; DestDir: {app}\bin; Components: DevAdminComponent; Flags: ignoreversion
-Source: output\bin\fbclient.dll; DestDir: {app}\bin; Components: ClientComponent; Flags: overwritereadonly sharedfile promptifolder
-Source: output\bin\icuuc30.dll; DestDir: {app}\bin; Components: ServerComponent; Flags: sharedfile ignoreversion
-Source: output\bin\icuin30.dll; DestDir: {app}\bin; Components: ServerComponent; Flags: sharedfile ignoreversion
-Source: output\bin\icudt30.dll; DestDir: {app}\bin; Components: ServerComponent; Flags: sharedfile ignoreversion
+Source: {#FilesDir}\bin\gbak.exe; DestDir: {app}\bin; Components: DevAdminComponent; Flags: sharedfile ignoreversion
+Source: {#FilesDir}\bin\gdef.exe; DestDir: {app}\bin; Components: DevAdminComponent; Flags: ignoreversion
+Source: {#FilesDir}\bin\gfix.exe; DestDir: {app}\bin; Components: DevAdminComponent; Flags: sharedfile ignoreversion
+Source: {#FilesDir}\bin\gpre.exe; DestDir: {app}\bin; Components: DevAdminComponent; Flags: ignoreversion
+Source: {#FilesDir}\bin\gsec.exe; DestDir: {app}\bin; Components: DevAdminComponent; Flags: sharedfile ignoreversion
+Source: {#FilesDir}\bin\gsplit.exe; DestDir: {app}\bin; Components: DevAdminComponent; Flags: sharedfile ignoreversion
+Source: {#FilesDir}\bin\gstat.exe; DestDir: {app}\bin; Components: ServerComponent; Flags: sharedfile ignoreversion
+Source: {#FilesDir}\bin\fbguard.exe; DestDir: {app}\bin; Components: ServerComponent\SuperServerComponent; Flags: sharedfile ignoreversion
+Source: {#FilesDir}\bin\fb_inet_server.exe; DestDir: {app}\bin; Components: ServerComponent\ClassicServerComponent; Flags: sharedfile ignoreversion uninsrestartdelete
+Source: {#FilesDir}\bin\fbserver.exe; DestDir: {app}\bin; Components: ServerComponent\SuperServerComponent; Flags: sharedfile ignoreversion
+Source: {#FilesDir}\bin\fb_lock_print.exe; DestDir: {app}\bin; Components: ServerComponent; Flags: sharedfile ignoreversion
+Source: {#FilesDir}\bin\ib_util.dll; DestDir: {app}\bin; Components: ServerComponent; Flags: sharedfile ignoreversion
+Source: {#FilesDir}\bin\instclient.exe; DestDir: {app}\bin; Components: ClientComponent; Flags: sharedfile ignoreversion
+Source: {#FilesDir}\bin\instreg.exe; DestDir: {app}\bin; Components: ClientComponent; Flags: sharedfile ignoreversion
+Source: {#FilesDir}\bin\instsvc.exe; DestDir: {app}\bin; Components: ServerComponent; MinVersion: 0,4.0; Flags: sharedfile ignoreversion
+Source: {#FilesDir}\bin\isql.exe; DestDir: {app}\bin; Components: DevAdminComponent; Flags: ignoreversion
+Source: {#FilesDir}\bin\nbackup.exe; DestDir: {app}\bin; Components: DevAdminComponent; Flags: ignoreversion
+Source: {#FilesDir}\bin\qli.exe; DestDir: {app}\bin; Components: DevAdminComponent; Flags: ignoreversion
+Source: {#FilesDir}\bin\fbclient.dll; DestDir: {app}\bin; Components: ClientComponent; Flags: overwritereadonly sharedfile promptifolder
+#if PlatformTarget == "x64"
+Source: {#WOW64Dir}\bin\fbclient.dll; DestDir: {app}\WOW64; Components: ClientComponent; Flags: overwritereadonly sharedfile promptifolder
+Source: {#WOW64Dir}\bin\instclient.exe; DestDir: {app}\WOW64; Components: ClientComponent; Flags: sharedfile ignoreversion
+#endif
+Source: {#FilesDir}\bin\icuuc30.dll; DestDir: {app}\bin; Components: ServerComponent; Flags: sharedfile ignoreversion
+Source: {#FilesDir}\bin\icuin30.dll; DestDir: {app}\bin; Components: ServerComponent; Flags: sharedfile ignoreversion
+Source: {#FilesDir}\bin\icudt30.dll; DestDir: {app}\bin; Components: ServerComponent; Flags: sharedfile ignoreversion
 
 ; Install MS libs locally if Win2K or later, else place in <sys> if NT4 or Win95/98/ME.
 ; NOTE: These dll's MUST never be sourced from the local system32 directory.
 ; Deploy libraries from vcredist if MSVC6 is used. Use %FrameworkSDKDir% is compiling with Visual Studio.
-; The BuildExecutableInstall.bat will attempt to locate them and place them in output\system32\
+; The BuildExecutableInstall.bat will attempt to locate them and place them in {#FilesDir}\system32\
 #if msvc_version == 6
-Source: output\bin\msvcrt.dll; DestDir: {app}\bin; Components: ClientComponent;
-Source: output\bin\msvcrt.dll; DestDir: {sys}; Components: ClientComponent; Flags: sharedfile onlyifdoesntexist uninsneveruninstall;
-#elif msvc_version == 7
-Source: output\bin\msvcr{#msvc_version}?.dll; DestDir: {app}\bin; Components: ClientComponent; Flags: sharedfile;
-Source: output\bin\msvcr{#msvc_version}?.dll; DestDir: {sys}; Components: ClientComponent; Flags: sharedfile uninsneveruninstall;
+Source: {#FilesDir}\bin\msvcrt.dll; DestDir: {app}\bin; Components: ClientComponent;
+Source: {#FilesDir}\bin\msvcrt.dll; DestDir: {sys}; Components: ClientComponent; Flags: sharedfile onlyifdoesntexist uninsneveruninstall;
+#elif msvc_version >= 7
+Source: {#FilesDir}\bin\msvcr{#msvc_version}?.dll; DestDir: {app}\bin; Components: ClientComponent; Flags: sharedfile;
+Source: {#FilesDir}\bin\msvcr{#msvc_version}?.dll; DestDir: {sys}; Components: ClientComponent; Flags: sharedfile uninsneveruninstall;
+Source: {#FilesDir}\bin\msvcp{#msvc_version}?.dll; DestDir: {app}\bin; Components: ClientComponent; Flags: sharedfile;
+Source: {#FilesDir}\bin\msvcp{#msvc_version}?.dll; DestDir: {sys}; Components: ClientComponent; Flags: sharedfile uninsneveruninstall;
+#if PlatformTarget == "x64"
+;If we are installing on x64 we need some 32-bit libraries for compatibility with 32-bit applications
+Source: {#WOW64Dir}\bin\msvcr{#msvc_version}?.dll; DestDir: {app}\WOW64; Components: ClientComponent; Flags: sharedfile;
+Source: {#WOW64Dir}\bin\msvcr{#msvc_version}?.dll; DestDir: {syswow64}; Components: ClientComponent; Flags: sharedfile uninsneveruninstall;
+Source: {#WOW64Dir}\bin\msvcp{#msvc_version}?.dll; DestDir: {app}\WOW64; Components: ClientComponent; Flags: sharedfile;
+Source: {#WOW64Dir}\bin\msvcp{#msvc_version}?.dll; DestDir: {syswow64}; Components: ClientComponent; Flags: sharedfile uninsneveruninstall;
 #endif
-Source: output\bin\msvcp{#msvc_version}?.dll; DestDir: {app}\bin; Components: ClientComponent; Flags: sharedfile;
-Source: output\bin\msvcp{#msvc_version}?.dll; DestDir: {sys}; Components: ClientComponent; Flags: sharedfile uninsneveruninstall;
+#endif
 
 ;Docs
-Source: builds\install\arch-specific\win32\installation_scripted.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: skipifsourcedoesntexist  ignoreversion
-Source: output\doc\*.*; DestDir: {app}\doc; Components: DevAdminComponent; Flags: skipifsourcedoesntexist  ignoreversion
-Source: output\doc\sql.extensions\*.*; DestDir: {app}\doc\sql.extensions; Components: DevAdminComponent; Flags: skipifsourcedoesntexist ignoreversion
+Source: {#ScriptsDir}\installation_scripted.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: skipifsourcedoesntexist  ignoreversion
+Source: {#FilesDir}\doc\*.*; DestDir: {app}\doc; Components: DevAdminComponent; Flags: skipifsourcedoesntexist  ignoreversion
+Source: {#FilesDir}\doc\sql.extensions\*.*; DestDir: {app}\doc\sql.extensions; Components: DevAdminComponent; Flags: skipifsourcedoesntexist ignoreversion
 
 ;Other stuff
-Source: output\help\*.*; DestDir: {app}\help; Components: DevAdminComponent; Flags: ignoreversion;
-Source: output\include\*.*; DestDir: {app}\include; Components: DevAdminComponent; Flags: ignoreversion;
-Source: output\intl\fbintl.dll; DestDir: {app}\intl; Components: ServerComponent; Flags: sharedfile ignoreversion;
-Source: output\intl\fbintl.conf; DestDir: {app}\intl; Components: ServerComponent; Flags: onlyifdoesntexist
-Source: output\lib\*.*; DestDir: {app}\lib; Components: DevAdminComponent; Flags: ignoreversion;
-Source: output\UDF\ib_udf.dll; DestDir: {app}\UDF; Components: ServerComponent; Flags: sharedfile ignoreversion;
-Source: output\UDF\fbudf.dll; DestDir: {app}\UDF; Components: ServerComponent; Flags: sharedfile ignoreversion;
-Source: output\UDF\*.sql; DestDir: {app}\UDF; Components: ServerComponent; Flags: ignoreversion;
+Source: {#FilesDir}\help\*.*; DestDir: {app}\help; Components: DevAdminComponent; Flags: ignoreversion;
+Source: {#FilesDir}\include\*.*; DestDir: {app}\include; Components: DevAdminComponent; Flags: ignoreversion;
+Source: {#FilesDir}\intl\fbintl.dll; DestDir: {app}\intl; Components: ServerComponent; Flags: sharedfile ignoreversion;
+Source: {#FilesDir}\intl\fbintl.conf; DestDir: {app}\intl; Components: ServerComponent; Flags: onlyifdoesntexist
+Source: {#FilesDir}\lib\*.*; DestDir: {app}\lib; Components: DevAdminComponent; Flags: ignoreversion;
+Source: {#FilesDir}\UDF\ib_udf.dll; DestDir: {app}\UDF; Components: ServerComponent; Flags: sharedfile ignoreversion;
+Source: {#FilesDir}\UDF\fbudf.dll; DestDir: {app}\UDF; Components: ServerComponent; Flags: sharedfile ignoreversion;
+Source: {#FilesDir}\UDF\*.sql; DestDir: {app}\UDF; Components: ServerComponent; Flags: ignoreversion;
 
-Source: output\misc\*.*; DestDir: {app}\misc; Components: ServerComponent; Flags: ignoreversion;
-Source: output\misc\upgrade\security\*.*; DestDir: {app}\misc\upgrade\security; Components: ServerComponent; Flags: ignoreversion;
-Source: output\misc\upgrade\ib_udf\*.*; DestDir: {app}\misc\upgrade\ib_udf; Components: ServerComponent; Flags: ignoreversion;
+Source: {#FilesDir}\misc\*.*; DestDir: {app}\misc; Components: ServerComponent; Flags: ignoreversion;
+Source: {#FilesDir}\misc\upgrade\security\*.*; DestDir: {app}\misc\upgrade\security; Components: ServerComponent; Flags: ignoreversion;
+Source: {#FilesDir}\misc\upgrade\ib_udf\*.*; DestDir: {app}\misc\upgrade\ib_udf; Components: ServerComponent; Flags: ignoreversion;
 
 ;Note - Win9x requires 8.3 filenames for the uninsrestartdelete option to work
-Source: output\system32\Firebird2Control.cpl; DestDir: {sys}; Components: ServerComponent\SuperServerComponent; MinVersion: 0,4.0; Flags: sharedfile ignoreversion promptifolder restartreplace uninsrestartdelete; Check: InstallCPLApplet
-Source: output\system32\Firebird2Control.cpl; DestDir: {sys}; Destname: FIREBI~1.CPL; Components: ServerComponent\SuperServerComponent; MinVersion: 4.0,0; Flags: sharedfile ignoreversion promptifolder restartreplace uninsrestartdelete; Check: InstallCPLApplet
+Source: {#FilesDir}\system32\Firebird2Control.cpl; DestDir: {sys}; Components: ServerComponent\SuperServerComponent; MinVersion: 0,4.0; Flags: sharedfile ignoreversion promptifolder restartreplace uninsrestartdelete; Check: InstallCPLApplet
+Source: {#FilesDir}\system32\Firebird2Control.cpl; DestDir: {sys}; Destname: FIREBI~1.CPL; Components: ServerComponent\SuperServerComponent; MinVersion: 4.0,0; Flags: sharedfile ignoreversion promptifolder restartreplace uninsrestartdelete; Check: InstallCPLApplet
 #endif
 
 #ifdef examples
-Source: output\examples\*.*; DestDir: {app}\examples; Components: DevAdminComponent;  Flags: ignoreversion;
-Source: output\examples\api\*.*; DestDir: {app}\examples\api; Components: DevAdminComponent;  Flags: ignoreversion;
-Source: output\examples\build_win32\*.*; DestDir: {app}\examples\build_win32; Components: DevAdminComponent;  Flags: ignoreversion;
-Source: output\examples\dyn\*.*; DestDir: {app}\examples\dyn; Components: DevAdminComponent;  Flags: ignoreversion;
-Source: output\examples\empbuild\*.*; DestDir: {app}\examples\empbuild; Components: DevAdminComponent;  Flags: ignoreversion;
-Source: output\examples\include\*.*; DestDir: {app}\examples\include; Components: DevAdminComponent;  Flags: ignoreversion;
-Source: output\examples\stat\*.*; DestDir: {app}\examples\stat; Components: DevAdminComponent;  Flags: ignoreversion;
-Source: output\examples\udf\*.*; DestDir: {app}\examples\udf; Components: DevAdminComponent;  Flags: ignoreversion;
+Source: {#FilesDir}\examples\*.*; DestDir: {app}\examples; Components: DevAdminComponent;  Flags: ignoreversion;
+Source: {#FilesDir}\examples\api\*.*; DestDir: {app}\examples\api; Components: DevAdminComponent;  Flags: ignoreversion;
+Source: {#FilesDir}\examples\build_win32\*.*; DestDir: {app}\examples\build_win32; Components: DevAdminComponent;  Flags: ignoreversion;
+Source: {#FilesDir}\examples\dyn\*.*; DestDir: {app}\examples\dyn; Components: DevAdminComponent;  Flags: ignoreversion;
+Source: {#FilesDir}\examples\empbuild\*.*; DestDir: {app}\examples\empbuild; Components: DevAdminComponent;  Flags: ignoreversion;
+Source: {#FilesDir}\examples\include\*.*; DestDir: {app}\examples\include; Components: DevAdminComponent;  Flags: ignoreversion;
+Source: {#FilesDir}\examples\stat\*.*; DestDir: {app}\examples\stat; Components: DevAdminComponent;  Flags: ignoreversion;
+Source: {#FilesDir}\examples\udf\*.*; DestDir: {app}\examples\udf; Components: DevAdminComponent;  Flags: ignoreversion;
 #endif
 
 #ifdef ship_pdb
-Source: output\bin\fbclient.pdb; DestDir: {app}\bin; Components: ClientComponent;
-Source: output\bin\fb_inet_server.pdb; DestDir: {app}\bin; Components: ServerComponent\ClassicServerComponent;
-Source: output\bin\fbserver.pdb; DestDir: {app}\bin; Components: ServerComponent\SuperServerComponent;
+Source: {#FilesDir}\bin\fbclient.pdb; DestDir: {app}\bin; Components: ClientComponent;
+Source: {#FilesDir}\bin\fb_inet_server.pdb; DestDir: {app}\bin; Components: ServerComponent\ClassicServerComponent;
+Source: {#FilesDir}\bin\fbserver.pdb; DestDir: {app}\bin; Components: ServerComponent\SuperServerComponent;
 #endif
 
 [UninstallRun]
-Filename: {app}\bin\instsvc.exe; Parameters: " stop"; StatusMsg: {cm:instsvcStopMsg}; MinVersion: 0,4.0; Components: ServerComponent; Flags: runminimized; Tasks: UseServiceTask; RunOnceId: StopService
-Filename: {app}\bin\instsvc.exe; Parameters: " remove"; StatusMsg: {cm:instsvcRemove}; MinVersion: 0,4.0; Components: ServerComponent; Flags: runminimized; Tasks: UseServiceTask; RunOnceId: RemoveService
+Filename: {app}\bin\instsvc.exe; Parameters: "stop {code:ServiceName|""""}"; StatusMsg: {cm:instsvcStopMsg}; MinVersion: 0,4.0; Components: ServerComponent; Flags: runminimized; Tasks: UseServiceTask; RunOnceId: StopService
+Filename: {app}\bin\instsvc.exe; Parameters: "remove {code:ServiceName|""""}"; StatusMsg: {cm:instsvcRemove}; MinVersion: 0,4.0; Components: ServerComponent; Flags: runminimized; Tasks: UseServiceTask; RunOnceId: RemoveService
 Filename: {app}\bin\instclient.exe; Parameters: " remove gds32"; StatusMsg: {cm:instclientDecLibCountGds32}; MinVersion: 4.0,4.0; Flags: runminimized;
 Filename: {app}\bin\instclient.exe; Parameters: " remove fbclient"; StatusMsg: {cm:instclientDecLibCountFbClient}; MinVersion: 4.0,4.0; Flags: runminimized;
+;#if PlatformTarget == "x64"
+;Filename: {app}\wow64\instclient.exe; Parameters: " remove gds32"; StatusMsg: {cm:instclientDecLibCountGds32}; MinVersion: 4.0,4.0; Flags: runminimized 32bit;
+;Filename: {app}\wow64\instclient.exe; Parameters: " remove fbclient"; StatusMsg: {cm:instclientDecLibCountFbClient}; MinVersion: 4.0,4.0; Flags: runminimized 32bit;
+;#endif
 Filename: {app}\bin\instreg.exe; Parameters: " remove"; StatusMsg: {cm:instreg}; MinVersion: 4.0,4.0; Flags: runminimized; RunOnceId: RemoveRegistryEntry
 
 [UninstallDelete]
@@ -451,8 +548,7 @@ if ProductsInstalledCount = 0 then
 SetArrayLength(InstallSummaryArray,ProductsInstalledCount);
 for product := 0 to MaxProdInstalled -1 do begin
   if (ProductsInstalledArray[product].InstallType <> NotInstalled) then begin
-      InstallSummaryArray[i] := Format1(ProductsInstalledArray[product].Description,
-            ProductsInstalledArray[product].ActualVersion);
+      InstallSummaryArray[i] := Format(ProductsInstalledArray[product].Description, [ProductsInstalledArray[product].ActualVersion]);
 
     if (ProductsInstalledArray[product].ServerVersion <> '') then begin
       if ((ProductsInstalledArray[product].InstallType AND ClassicServerInstall) = ClassicServerInstall) then
@@ -493,9 +589,9 @@ If ((ProductsInstalled AND FB2) = FB2) then
 ;
 
 if ProductsInstalledCount = 1 then
-  StatusDescription := Format2(ExpandConstant('{cm:InstalledProducts}'), IntToStr(ProductsInstalledCount), ExpandConstant('{cm:InstalledProdCountSingular}'))
+  StatusDescription := Format(ExpandConstant('{cm:InstalledProducts}'), [IntToStr(ProductsInstalledCount), ExpandConstant('{cm:InstalledProdCountSingular}')])
 else
-  StatusDescription := Format2(ExpandConstant('{cm:InstalledProducts}'), IntToStr(ProductsInstalledCount), ExpandConstant('{cm:InstalledProdCountPlural}'));
+  StatusDescription := Format(ExpandConstant('{cm:InstalledProducts}'), [IntToStr(ProductsInstalledCount), ExpandConstant('{cm:InstalledProdCountPlural}')]);
 
   Result := StatusDescription
     +#13
@@ -511,6 +607,7 @@ function AnalysisAssessment: boolean;
 var
   MsgText: String;
   MsgResult: Integer;
+  VerString: String;
 begin
   result := false;
 
@@ -525,19 +622,21 @@ begin
   //If Fb2.0 is installed then we can install over it.
   //unless we find the server running.
   if (ProductsInstalledCount = 1) AND
-    ((ProductsInstalled AND FB2) = FB2) then
-    if ( FirebirdDefaultServerRunning ) then begin
-      result := false;
-      MsgBox( #13+ExpandConstant('{cm:FbRunning1,2.0}')
-      +#13
-      +#13+ExpandConstant('{cm:FbRunning2}')
-      +#13+ExpandConstant('{cm:FbRunning3}')
-      +#13, mbError, MB_OK);
-      exit;
+    ((ProductsInstalled AND FB2) = FB2) then begin
+      VerString := ( FirebirdDefaultServerRunning );
+      if VerString <> '' then begin
+        result := false;
+        MsgBox( #13+Format(ExpandConstant('{cm:FbRunning1}'), [VerString])
+        +#13
+        +#13+ExpandConstant('{cm:FbRunning2}')
+        +#13+ExpandConstant('{cm:FbRunning3}')
+        +#13, mbError, MB_OK);
+        exit;
+        end
+      else begin
+        result := true;
+        exit;
       end
-    else begin
-      result := true;
-      exit;
     end
   ;
 
@@ -561,6 +660,7 @@ function InitializeSetup(): Boolean;
 var
   i: Integer;
   CommandLine: String;
+  VerString: String;
 begin
 
   result := true;
@@ -592,18 +692,20 @@ begin
   InitExistingInstallRecords;
   AnalyzeEnvironment;
   result := AnalysisAssessment;
-  if result then
+  if result then begin
     //There is a possibility that all our efforts to detect an
     //install were in vain and a server _is_ running...
-    if ( FirebirdDefaultServerRunning ) then begin
+    VerString := FirebirdDefaultServerRunning;
+    if ( VerString <> '' ) then begin
       result := false;
-      MsgBox( #13+ExpandConstant('{cm:FbRunning1, }')
+        MsgBox( #13+Format(ExpandConstant('{cm:FbRunning1}'), [VerString])
       +#13
       +#13+ExpandConstant('{cm:FbRunning2}')
       +#13+ExpandConstant('{cm:FbRunning3}')
       +#13, mbError, MB_OK);
       exit;
     end;
+  end;
 end;
 
 
@@ -616,7 +718,7 @@ begin
     // Ask user if they want to visit the Winsock2 update web page.
     if MsgBox(ExpandConstant('{cm:Winsock2Web1}')+#13#13+ExpandConstant('{cm:Winsock2Web2}'), mbInformation, MB_YESNO) = idYes then
       // User wants to visit the web page
-      InstShellExec(sMSWinsock2Update, '', '', SW_SHOWNORMAL, ErrCode);
+      ShellExec('open', sMSWinsock2Update, '', '', SW_SHOWNORMAL, ewNoWait, ErrCode);
 end;
 
 
@@ -673,6 +775,7 @@ function ServiceStartFlags(Default: String): String;
 var
   ServerType: String;
   SvcParams: String;
+  InstanceName: String;
 begin
   servertype := '';
   SvcParams := '';
@@ -681,39 +784,53 @@ begin
   else
     ServerType := ' -superserver ';
 
-
-  if ShouldProcessEntry('ServerComponent', 'AutoStartTask')= srYes then
+  if IsComponentSelected('ServerComponent') and IsTaskSelected('AutoStartTask') then
     SvcParams := ' -auto '
   else
     SvcParams := ' -demand ';
 
-  if ShouldProcessEntry('ServerComponent', 'UseGuardianTask')= srYes then
+  if IsComponentSelected('ServerComponent') and IsTaskSelected('UseGuardianTask') then
     SvcParams := SvcParams + ServerType + ' -guardian'
   else
     SvcParams := SvcParams + ServerType;
 
+  if Default='""' then
+    InstanceName := ' -n ' + DEFAULT_INSTANCE
+  else
+    InstanceName := ' -n ' + DEFAULT_INSTANCE;
+
+  SvcParams := SvcParams + InstanceName;
+
   Result := SvcParams;
 end;
+
+
+function ServiceName(Default: String): String;
+begin
+//If we were really good we would test Default for the -n string
+    Result := ' -n ' + Default;
+end;
+
 
 function InstallGuardianIcon(): Boolean;
 begin
   result := false;
-  if ShouldProcessEntry('ServerComponent', 'UseApplicationTask')= srYes then
-    if ShouldProcessEntry('ServerComponent', 'UseGuardianTask')= srYes then
+  if IsComponentSelected('ServerComponent') and IsTaskSelected('UseApplicationTask') then
+    if IsComponentSelected('ServerComponent') and IsTaskSelected('UseGuardianTask') then
       result := true;
 end;
 
 function InstallServerIcon(): Boolean;
 begin
   result := false;
-  if ShouldProcessEntry('ServerComponent', 'UseApplicationTask')= srYes then
-    if ShouldProcessEntry('ServerComponent', 'UseGuardianTask')= srNo then
+  if IsComponentSelected('ServerComponent') and IsTaskSelected('UseApplicationTask') then
+    if NOT (IsComponentSelected('ServerComponent') and IsTaskSelected('UseGuardianTask')) then
       result := true;
 end;
 
 function StartApp(Default: String): String;
 begin
-  if ShouldProcessEntry('ServerComponent', 'UseGuardianTask')= srYes then begin
+  if IsComponentSelected('ServerComponent') and IsTaskSelected('UseGuardianTask') then begin
     Result := GetAppPath+'\bin\fbguard.exe';
     if ClassicInstallChosen then
       Result := Result + ' -c';
@@ -731,8 +848,8 @@ function IsNotAutoStartApp: boolean;
 //Support function to help remove unwanted registry entry.
 begin
   result := true;
-  if ( ShouldProcessEntry('ServerComponent', 'AutoStartTask')= srYes) and
-    ( ShouldProcessEntry('ServerComponent', 'UseApplicationTask')= srYes ) then
+  if ( IsComponentSelected('ServerComponent') and IsTaskSelected('AutoStartTask') ) and
+    ( IsComponentSelected('ServerComponent') and IsTaskSelected('UseApplicationTask') ) then
   result := false;
 end;
 
@@ -764,7 +881,7 @@ begin
   //we are doing a server install, so the easiest way is to see if a
   //firebird.conf exists. If it doesn't then we don't care.
   if FileExists(GetAppPath+'\firebird.conf') then begin
-    if ShouldProcessEntry('ServerComponent', 'UseGuardianTask') = srNo  then
+    if NOT (IsComponentSelected('ServerComponent') and IsTaskSelected('UseGuardianTask')) then
       ReplaceLine(GetAppPath+'\firebird.conf','GuardianOption','GuardianOption = 0','#');
   end;
 end;
@@ -788,22 +905,22 @@ begin
 end;
 
 
-procedure CurStepChanged(CurStep: Integer);
+procedure CurStepChanged(CurStep: TSetupStep);
 var
   AppStr: String;
   ReadMeFileStr: String;
 begin
    case CurStep of
-    csCopy: begin
+    ssInstall: begin
               SetupSharedFilesArray;
               GetSharedLibCountBeforeCopy;
       end;
 
-    csFinished: begin
+    ssDone: begin
       //If user has chosen to install an app and run it automatically set up the registry accordingly
       //so that the server or guardian starts evertime they login.
-      if (ShouldProcessEntry('ServerComponent', 'AutoStartTask')= srYes) and
-              ( ShouldProcessEntry('ServerComponent', 'UseApplicationTask')= srYes ) then begin
+      if (IsComponentSelected('ServerComponent') and IsTaskSelected('AutoStartTask') ) and
+              ( IsComponentSelected('ServerComponent') and IsTaskSelected('UseApplicationTask') ) then begin
         AppStr := StartApp('')+' -a';
         RegWriteStringValue (HKLM, 'SOFTWARE\Microsoft\Windows\CurrentVersion\Run', 'Firebird', AppStr);
       end;

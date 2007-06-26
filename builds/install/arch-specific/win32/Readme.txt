@@ -3,7 +3,7 @@
 Firebird 2.1.0       (Windows Build)
 ====================================
 
-  *** Alpha 1 ***
+  *** Beta 1 ***
 
 o Introduction
 o Intended Users
@@ -16,13 +16,13 @@ o Reporting Bugs
 Introduction
 ============
 
-Welcome to the first Alpha release of Firebird 2.1
+Welcome to the first beta release of Firebird 2.1
 
 
 Intended Users
 ==============
 
-This alpha release is intended for experienced Firebird
+This beta release is intended for experienced Firebird
 users. It has not been thoroughly tested and new
 features are only sparsely documented. Do not use this
 release in a production environment.
@@ -31,9 +31,9 @@ release in a production environment.
 Features in this release
 ========================
 
-Apart from numerous bug fixes there are several major
-new features in this release. In no particular order
-they are:
+Apart from numerous bug fixes there are several
+major new features in Firebird 2.1. In no particular
+order they are:
 
  o Text blob compatibility with varchars
  o Database Triggers (connect, disconnect)
@@ -59,20 +59,21 @@ http://tracker.firebirdsql.org/secure/ReleaseNote.jspa?projectId=10000&styleName
 Improvements and New features are listed after the
 bug fixes.
 
-Full documentation is not yet available. (This is
-by design.) Full feature freeze will only occur when
-we go to beta. In the meantime, the doc directory and
-the doc\sql.extensions directory have some raw
-documentation on how to use some of the new features.
+We are in the process of documenting the new features
+and you can read more about them in the release notes.
 
 
 Installation
 ============
 
-A binary installer will not be available before beta 1.
-Please use the install_<server>.bat batch file to
-install this package. There is more info on
-manual installation in doc\install_windows_manually.txt
+Binary installation package are available, but they do
+not yet support multiple service instance installation.
+Neither are they fully 64-bit ready. The known
+limitations are discussed in installation_readme.txt.
+
+You can also use the zip packages to install Firebird
+manually. There is more info on manual installation
+in doc\install_windows_manually.txt.
 
 
 Reporting Bugs

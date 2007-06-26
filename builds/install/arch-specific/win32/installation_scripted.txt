@@ -105,8 +105,8 @@ Parameters specific to Firebird installs
 
 /COMPONENTS="comma separated list of component names"
 
-  Choose from - SuperServerComponent,
-                ClassicServerComponent,
+  Choose from - ServerComponent\SuperServerComponent,
+                ServerComponent\ClassicServerComponent,
                 ServerComponent,
                 DevAdminComponent and
                 ClientComponent
@@ -115,8 +115,8 @@ Parameters specific to Firebird installs
   parameter causes Setup to automatically select a custom type. A full
   install requires combining components. For example:
 
-  /COMPONENTS="SuperServerComponent, ServerComponent,
-               DevAdminComponent, ClientComponent"
+  /COMPONENTS="SuperServerComponent,ServerComponent,
+               DevAdminComponent,ClientComponent"
 
   would be required for a full install.
 
