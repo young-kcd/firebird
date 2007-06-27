@@ -81,7 +81,7 @@ const SSHORT sqlType[] =
 /* dtype_int64		*/ SQL_INT64
 };
 
-static Firebird::InitInstance<GenericMap<Pair<NonPooled<SSHORT, UCHAR> > > > sqlTypeToDscType;
+static InitInstance<GenericMap<Pair<NonPooled<SSHORT, UCHAR> > > > sqlTypeToDscType;
 
 void startCallback(thread_db* tdbb)
 {

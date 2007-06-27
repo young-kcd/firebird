@@ -265,6 +265,7 @@ void EXE_assignment(thread_db* tdbb, jrd_nod* node)
 	jrd_req* request = tdbb->tdbb_request;
 	BLKCHK(node, type_nod);
 
+	// Get descriptors of src field/parameter/variable, etc.
 	request->req_flags &= ~req_null;
 	dsc* from_desc = EVL_expr(tdbb, node->nod_arg[e_asgn_from]);
 
@@ -280,7 +281,7 @@ void EXE_assignment(thread_db* tdbb, jrd_nod* to, dsc* from_desc, bool from_null
 {
 /**************************************
  *
- *	E X E _ a s s i g n m e n t 2
+ *	E X E _ a s s i g n m e n t
  *
  **************************************
  *
@@ -300,6 +301,7 @@ void EXE_assignment(thread_db* tdbb, jrd_nod* to, dsc* from_desc, bool from_null
 		missing = EVL_expr(tdbb, missing_node);
 	}
 
+	// Get descriptor of target field/parameter/variable, etc.
 	DSC* to_desc = EVL_assign_to(tdbb, to);
 
 	request->req_flags &= ~req_null;
