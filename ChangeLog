@@ -1,3 +1,12 @@
+2007-06-27 03:49  asfernandes
+
+	* firebird2/src/: common/classes/fb_pair.h (1.14.6.1), jrd/exe.cpp
+	(1.176.2.3), jrd/exe_proto.h (1.14.4.1), jrd/execute_statement.cpp
+	(1.14.4.4):
+
+	Backport fix for CORE-1331 - Charset transliterations don't work
+	with EXECUTE STATEMENT
+
 2007-06-21 14:06  alexpeshkoff
 
 	* firebird2/src/remote/: inet.cpp (1.160.2.6), interface.cpp
