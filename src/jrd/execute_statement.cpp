@@ -39,53 +39,59 @@
 #include "../jrd/err_proto.h"
 #include "../jrd/mov_proto.h"
 #include "../jrd/evl_proto.h"
+#include "../jrd/exe_proto.h"
 #include "../jrd/sch_proto.h"
 #include "../jrd/thread_proto.h"
 #define	WHY_NO_API 
 #include "../jrd/why_proto.h"
 
 #include "../jrd/execute_statement.h"
+#include "../common/classes/GenericMap.h"
+#include "../common/classes/init.h"
 
 using namespace Jrd;
+using namespace Firebird;
 
 WHY_DBB GetWhyAttachment(ISC_STATUS* status,
 						  Attachment* jrd_attachment_handle);
 
-static const struct {
-	SSHORT SqlType;
-	SSHORT DataLength;
-} DscType2SqlType[] =
-{
-/* dtype_unknown		*/ {-1, 0},
-/* dtype_text		*/ {SQL_TEXT, 0},
-/* dtype_cstring	*/ {-1, 0},
-/* dtype_varying	*/ {SQL_VARYING, 0},
-/* dtype_none1		*/ {-1, 0},
-/* dtype_none2		*/ {-1, 0},
-/* dtype_packed		*/ {-1, 0},
-/* dtype_byte		*/ {-1, 0},
-/* dtype_short		*/ {SQL_SHORT, sizeof(short)},
-/* dtype_long		*/ {SQL_LONG, sizeof(long)},
-/* dtype_quad		*/ {SQL_QUAD, 
-#ifdef NATIVE_QUAD
-		sizeof(SQUAD)},
-#else
-		sizeof(SLONG) * 2},
-#endif
-/* dtype_real		*/ {SQL_FLOAT, sizeof(float)},
-/* dtype_double		*/ {SQL_DOUBLE, sizeof(double)},
-/* dtype_d_float	*/ {-1, 0}, // Fix to use in VMS
-/* dtype_sql_date	*/ {SQL_TYPE_DATE, sizeof(SLONG)},
-/* dtype_sql_time	*/ {SQL_TYPE_TIME, sizeof(SLONG)},
-/* dtype_timestamp	*/ {SQL_TIMESTAMP, sizeof(SLONG) * 2},
-/* dtype_blob		*/ {SQL_BLOB, 0}, 
-/* dtype_array		*/ {SQL_ARRAY, -1}, // Not supported for a while
-/* dtype_int64		*/ {SQL_INT64, sizeof(SINT64)},
-};
+static const SSHORT sqlType[] =
+ {
+/* dtype_unknown	*/ -1,
+/* dtype_text		*/ SQL_TEXT,
+/* dtype_cstring	*/ -1,
+/* dtype_varying	*/ SQL_VARYING,
+/* dtype_none1		*/ -1,
+/* dtype_none2		*/ -1,
+/* dtype_packed		*/ -1,
+/* dtype_byte		*/ -1,
+/* dtype_short		*/ SQL_SHORT,
+/* dtype_long		*/ SQL_LONG,
+/* dtype_quad		*/ SQL_QUAD,
+/* dtype_real		*/ SQL_FLOAT,
+/* dtype_double		*/ SQL_DOUBLE,
+/* dtype_d_float	*/ -1,				// Fix to use in VMS
+/* dtype_sql_date	*/ SQL_TYPE_DATE,
+/* dtype_sql_time	*/ SQL_TYPE_TIME,
+/* dtype_timestamp	*/ SQL_TIMESTAMP,
+/* dtype_blob		*/ SQL_BLOB,
+/* dtype_array		*/ SQL_ARRAY,		// Not supported for a while
+/* dtype_int64		*/ SQL_INT64
+ };
+
+static InitInstance<GenericMap<Pair<NonPooled<SSHORT, UCHAR> > > > sqlTypeToDscType;
 
 void ExecuteStatement::Open(thread_db* tdbb, jrd_nod* sql, SSHORT nVars, bool SingleTon)
 {
 	SET_TDBB(tdbb);
+
+	// initialize sqlTypeToDscType in the first call to this function
+	if (sqlTypeToDscType().count() == 0)
+	{
+		for (int i = 0; i < FB_NELEM(sqlType); ++i)
+			sqlTypeToDscType().put(sqlType[i], static_cast<UCHAR>(i));
+	}
+
 	if (tdbb->tdbb_transaction->tra_callback_count >= MAX_CALLBACKS) {
 		tdbb->tdbb_status_vector[0] = isc_arg_gds;
 		tdbb->tdbb_status_vector[1] = isc_exec_sql_max_call_exceeded;
@@ -207,8 +213,7 @@ bool ExecuteStatement::Fetch(thread_db* tdbb, jrd_nod** JrdVar)
 	const XSQLVAR *var = Sqlda->sqlvar;
 	for (int i = 0; i < Sqlda->sqld; i++, var++, JrdVar++) {
 		dsc* d = EVL_assign_to(tdbb, *JrdVar);
-		if (d->dsc_dtype >= 
-			  sizeof(DscType2SqlType) / sizeof(DscType2SqlType[0]))
+		if (d->dsc_dtype >= FB_NELEM(sqlType))
 		{
 rec_err:
 			tdbb->tdbb_status_vector[0] = isc_arg_gds;
@@ -222,52 +227,20 @@ rec_err:
 			Firebird::status_exception::raise(tdbb->tdbb_status_vector);
 		}
 
-		if (DscType2SqlType[d->dsc_dtype].SqlType < 0)
+		if (sqlType[d->dsc_dtype] < 0)
 			goto rec_err;
-		if (!((d->dsc_dtype == dtype_quad || d->dsc_dtype == dtype_blob) &&
-			((var->sqltype & ~1) == SQL_QUAD || (var->sqltype & ~1) == SQL_BLOB)))
-		{
-			if ((var->sqltype & ~1) != DscType2SqlType[d->dsc_dtype].SqlType) {
-				goto rec_err;
-			}
-		}
-		if ((var->sqltype & 1) && (*var->sqlind < 0)) {
-			d->dsc_flags |= DSC_null;
-			continue;
-		}
-		d->dsc_flags &= ~DSC_null;
-		SSHORT length = DscType2SqlType[d->dsc_dtype].DataLength;
-		if (! length) 
-		{
-			length = d->dsc_length;
-			SSHORT sqllen = var->sqllen;
-			if (d->dsc_dtype == dtype_varying)
-			{
-				sqllen += sizeof(SSHORT);
-			}
-			if (length > sqllen)
-			{
-				length = sqllen;
-			}
-		}
-		memcpy(d->dsc_address, var->sqldata, length);
-		if (d->dsc_scale != var->sqlscale) {
-			double DeltaPow = pow(10.0, var->sqlscale - d->dsc_scale);
-// To avoid compiler warning don't use the *= operator and cast the right side
-#			define ReScaleLike(t) *((t *)d->dsc_address) = static_cast<t>(*((t *)d->dsc_address) * DeltaPow)
-			switch (d->dsc_dtype) {
-			case dtype_short:
-				ReScaleLike(SSHORT);
-				break;
-			case dtype_long: 
-				ReScaleLike(SLONG);
-				break;
-			case dtype_int64:
-				ReScaleLike(ISC_INT64);
-				break;
-			}
-#			undef ReScaleLike
-		}
+
+		// build the src descriptor
+		dsc src;
+		memset(&src, 0, sizeof(src));
+		sqlTypeToDscType().get((var->sqltype & ~1), src.dsc_dtype);
+		src.dsc_length = var->sqllen;
+		src.dsc_scale = var->sqlscale;
+		src.dsc_sub_type = var->sqlsubtype;
+		src.dsc_address = (UCHAR*) var->sqldata;
+
+		// and assign to the target
+		EXE_assignment(tdbb, *JrdVar, &src, (var->sqltype & 1) && (*var->sqlind < 0), NULL, NULL);
     }
 
 	if (SingleMode) {

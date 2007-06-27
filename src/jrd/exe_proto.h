@@ -31,6 +31,8 @@ namespace Jrd {
 }
 
 void EXE_assignment(Jrd::thread_db*, Jrd::jrd_nod*);
+void EXE_assignment(Jrd::thread_db* tdbb, Jrd::jrd_nod* to, dsc* from_desc, bool from_null,
+	Jrd::jrd_nod* missing_node, Jrd::jrd_nod* missing2_node);
 Jrd::jrd_req* EXE_find_request(Jrd::thread_db*, Jrd::jrd_req*, bool);
 void EXE_receive(Jrd::thread_db*, Jrd::jrd_req*, USHORT, USHORT, UCHAR*);
 void EXE_send(Jrd::thread_db*, Jrd::jrd_req*, USHORT, USHORT, const UCHAR*);
