@@ -1,3 +1,28 @@
+2007-06-27 04:08  asfernandes
+
+	* firebird2/src/jrd/: exe.cpp (1.224), execute_statement.cpp
+	(1.21):
+
+	Misc
+
+2007-06-26 11:22  paul_reeves
+
+	*
+	firebird2/builds/install/arch-specific/win32/FirebirdInstall_20.iss
+	(1.15):
+
+	Tidy up a little.
+
+2007-06-26 10:43  paul_reeves
+
+	* firebird2/builds/install/arch-specific/win32/:
+	FirebirdInstallEnvironmentChecks.inc (1.6), FirebirdInstall_20.iss
+	(1.14), Readme.txt (1.13), custom_messages.inc (1.4),
+	installation_readme.txt (1.11), installation_scripted.txt (1.2):
+
+	Upgrade inno setup script to IS5 Add support for building 64-bit
+	installable binaries Update readme's for beta 1.
+
 2007-06-24 10:53  robocop
 
 	* firebird2/src/remote/interface.cpp (1.141):
