@@ -7357,32 +7357,35 @@ processing_state ISQL_print_item_blob(FILE* fp,
 	
 	const int blob_subtype = var->sqlsubtype;
 	if (blob_subtype == isc_blob_text) {
-		// Lookup the remaining descriptor information for the BLOB field,
-		// most specifically we're interested in the Character Set so
-		// we can set up a BPB that requests character set transliteration
-
-		// CVC: Adriano changed trans to D__trans with the following comment:
-		// Fix a bug that occur when a BLOB column is added after the start
-		// of the DML transaction.
-		// ASF: But use M__trans if D__trans is not started;
-		if (!var->relname[0] ||
-			isc_blob_lookup_desc(isc_status, &DB, (D__trans ? &D__trans : &M__trans),
-				(const UCHAR*) var->relname, (const UCHAR*) var->sqlname,
-				&from_desc, NULL) == 0)
+		if (isqlGlob.major_ods < ODS_VERSION11 || isqlGlob.minor_ods == 0)
 		{
-			if (!var->relname[0])
-			{
-				from_desc.blob_desc_subtype = var->sqlsubtype;
-				from_desc.blob_desc_charset = var->sqlscale;
-			}
+			// Lookup the remaining descriptor information for the BLOB field,
+			// most specifically we're interested in the Character Set so
+			// we can set up a BPB that requests character set transliteration
 
-			ISC_BLOB_DESC to_desc;
-			isc_blob_default_desc(&to_desc, (const UCHAR*) var->relname, (const UCHAR*) var->sqlname);
-			if (!isc_blob_gen_bpb
-				(isc_status, &to_desc, &from_desc, sizeof(bpb_buffer),
-					bpb_buffer, &bpb_length))
+			// CVC: Adriano changed trans to D__trans with the following comment:
+			// Fix a bug that occur when a BLOB column is added after the start
+			// of the DML transaction.
+			// ASF: But use M__trans if D__trans is not started;
+			if (!var->relname[0] ||
+				isc_blob_lookup_desc(isc_status, &DB, (D__trans ? &D__trans : &M__trans),
+					(const UCHAR*) var->relname, (const UCHAR*) var->sqlname,
+					&from_desc, NULL) == 0)
 			{
-				bpb = bpb_buffer;
+				if (!var->relname[0])
+				{
+					from_desc.blob_desc_subtype = var->sqlsubtype;
+					from_desc.blob_desc_charset = var->sqlscale;
+				}
+
+				ISC_BLOB_DESC to_desc;
+				isc_blob_default_desc(&to_desc, (const UCHAR*) var->relname, (const UCHAR*) var->sqlname);
+				if (!isc_blob_gen_bpb
+					(isc_status, &to_desc, &from_desc, sizeof(bpb_buffer),
+						bpb_buffer, &bpb_length))
+				{
+					bpb = bpb_buffer;
+				}
 			}
 		}
 	}

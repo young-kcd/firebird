@@ -611,7 +611,12 @@ void GEN_port( dsql_req* request, dsql_msg* message)
 	{
 		parameter->par_parameter = number++;
 
-		if (parameter->par_desc.dsc_dtype <= dtype_any_text && request->req_dbb->dbb_att_charset != CS_NONE &&
+		USHORT fromCharSet = parameter->par_desc.getCharSet();
+		USHORT toCharSet = (fromCharSet == CS_NONE || fromCharSet == CS_BINARY) ?
+			fromCharSet : request->req_dbb->dbb_att_charset;
+
+		if (parameter->par_desc.dsc_dtype <= dtype_any_text &&
+			request->req_dbb->dbb_att_charset != CS_NONE &&
 			request->req_dbb->dbb_att_charset != CS_BINARY)
 		{
 			USHORT adjust = 0;
@@ -621,10 +626,6 @@ void GEN_port( dsql_req* request, dsql_msg* message)
 				adjust = 1;
 
 			parameter->par_desc.dsc_length -= adjust;
-
-			USHORT fromCharSet = INTL_GET_CHARSET(&parameter->par_desc);
-			USHORT toCharSet = (fromCharSet == CS_NONE || fromCharSet == CS_BINARY) ?
-				fromCharSet : request->req_dbb->dbb_att_charset;
 
 			USHORT fromCharSetBPC = METD_get_charset_bpc(request, fromCharSet);
 			USHORT toCharSetBPC = METD_get_charset_bpc(request, toCharSet);
@@ -636,6 +637,16 @@ void GEN_port( dsql_req* request, dsql_msg* message)
 				UTLD_char_length_to_byte_length(parameter->par_desc.dsc_length / fromCharSetBPC, toCharSetBPC);
 
 			parameter->par_desc.dsc_length += adjust;
+		}
+		else if (ENCODE_ODS(request->req_dbb->dbb_ods_version,
+					request->req_dbb->dbb_minor_version) >= ODS_11_1 &&
+			parameter->par_desc.dsc_dtype == dtype_blob &&
+			parameter->par_desc.dsc_sub_type == isc_blob_text &&
+			request->req_dbb->dbb_att_charset != CS_NONE &&
+			request->req_dbb->dbb_att_charset != CS_BINARY)
+		{
+			if (fromCharSet != toCharSet)
+				parameter->par_desc.setTextType(toCharSet);
 		}
 
 		/* For older clients - generate an error should they try and
