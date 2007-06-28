@@ -7357,7 +7357,8 @@ processing_state ISQL_print_item_blob(FILE* fp,
 	
 	const int blob_subtype = var->sqlsubtype;
 	if (blob_subtype == isc_blob_text) {
-		if (isqlGlob.major_ods < ODS_VERSION11 || isqlGlob.minor_ods == 0)
+		if (isqlGlob.major_ods < ODS_VERSION11 ||
+			(isqlGlob.major_ods == ODS_VERSION11 && isqlGlob.minor_ods == 0))
 		{
 			// Lookup the remaining descriptor information for the BLOB field,
 			// most specifically we're interested in the Character Set so
