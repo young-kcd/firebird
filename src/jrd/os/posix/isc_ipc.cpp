@@ -36,7 +36,7 @@
  *
  */
 
- /* $Id: isc_ipc.cpp,v 1.17.4.1 2007-04-17 09:03:49 alexpeshkoff Exp $ */
+ /* $Id: isc_ipc.cpp,v 1.17.4.2 2007-06-28 12:24:45 alexpeshkoff Exp $ */
 
 #include "firebird.h"
 #include <stdio.h>
@@ -189,6 +189,11 @@ SignalInhibit::SignalInhibit() throw()
 
 void SignalInhibit::enable() throw()
 {
+	if (enabled)
+		return;
+
+	enabled = true;
+
 	Firebird::MutexLockGuard lock(inhibitMutex);
 
 	fb_assert(inhibit_counter > 0);
