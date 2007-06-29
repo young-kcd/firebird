@@ -1,3 +1,9 @@
+2007-06-28 14:24  alexpeshkoff
+
+	* firebird2/src/jrd/os/posix/isc_ipc.cpp (1.17.4.2):
+
+	fixed bug done by me when backporting fix from HEAD
+
 2007-06-27 03:49  asfernandes
 
 	* firebird2/src/: common/classes/fb_pair.h (1.14.6.1), jrd/exe.cpp
