@@ -1,3 +1,16 @@
+2007-06-28 17:30  asfernandes
+
+	* firebird2/src/isql/isql.epp (1.221):
+
+	Correction
+
+2007-06-28 17:27  asfernandes
+
+	* firebird2/src/: dsql/gen.cpp (1.124), isql/isql.epp (1.220):
+
+	Fixed CORE-1332 - Put the connection charset in sqlscale of blobs
+	when appropriate
+
 2007-06-27 04:08  asfernandes
 
 	* firebird2/src/jrd/: exe.cpp (1.224), execute_statement.cpp
