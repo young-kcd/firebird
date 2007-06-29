@@ -1640,8 +1640,7 @@ proc_block	: proc_statement
 
 full_proc_block	: stmt_start_line stmt_start_column BEGIN full_proc_block_body END
 			{ 
-				dsql_nod* src_info = make_node (nod_src_info, 2, $1, $2);
-				$$ = make_node (nod_list, 2, src_info, $4); 
+				$$ = make_node (nod_src_info, e_src_info_count, $1, $2, $4);
 			}
 		;
 
@@ -1660,13 +1659,11 @@ proc_statements	: proc_block
 
 proc_statement	: stmt_start_line stmt_start_column simple_proc_statement ';'
 			{ 
-				dsql_nod* src_info = make_node (nod_src_info, 2, $1, $2);
-				$$ = make_node (nod_list, 2, src_info, $3); 
+				$$ = make_node (nod_src_info, e_src_info_count, $1, $2, $3);
 			}
 		| stmt_start_line stmt_start_column complex_proc_statement
 			{ 
-				dsql_nod* src_info = make_node (nod_src_info, 2, $1, $2);
-				$$ = make_node (nod_list, 2, src_info, $3); 
+				$$ = make_node (nod_src_info, e_src_info_count, $1, $2, $3);
 			}
 		;
 

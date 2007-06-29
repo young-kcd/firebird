@@ -1258,6 +1258,7 @@ void GEN_statement( dsql_req* request, dsql_nod* node)
 
 	case nod_src_info:
 		request->put_debug_src_info(node->nod_line, node->nod_column);
+		GEN_statement(request, node->nod_arg[e_src_info_stmt]);
 		return;
 
 	default:

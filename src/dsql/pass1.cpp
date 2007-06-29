@@ -1851,8 +1851,9 @@ dsql_nod* PASS1_statement(dsql_req* request, dsql_nod* input, bool proc_flag)
 
 	case nod_src_info:
 		{
-			input->nod_line = (USHORT) (IPTR) input->nod_arg[0];
-			input->nod_column = (USHORT) (IPTR) input->nod_arg[1];
+			input->nod_line = (USHORT) (IPTR) input->nod_arg[e_src_info_line];
+			input->nod_column = (USHORT) (IPTR) input->nod_arg[e_src_info_column];
+			input->nod_arg[e_src_info_stmt] = PASS1_statement(request, input->nod_arg[e_src_info_stmt], proc_flag);
 			return input;
 		}
 
