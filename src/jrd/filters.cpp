@@ -116,11 +116,12 @@ static const TEXT dtypes[][36] = {
 	"FLOAT",
 	"DOUBLE",
 	"D_FLOAT",
-	"",
-	"",
 	"DATE",
+	"TIME",
+	"TIMESTAMP",
 	"BLOB",
-	"ARRAY"
+	"ARRAY",
+	"BIGINT, scale %d"
 };
 
 
@@ -289,7 +290,7 @@ ISC_STATUS filter_format(USHORT action, BlobControl* control)
 		value = desc.dsc_length;
 	else if (desc.dsc_dtype == dtype_varying)
 		value = desc.dsc_length - sizeof(SSHORT);
-	else if (desc.dsc_dtype > dtype_array) {
+	else if (desc.dsc_dtype > dtype_int64) {
 		p = "data type %d unknown";
 		value = desc.dsc_dtype;
 	}
