@@ -1,3 +1,11 @@
+2007-06-29 12:22  hvlad
+
+	* firebird2/src/dsql/: gen.cpp (1.125), node.h (1.91), parse.y
+	(1.242), pass1.cpp (1.333):
+
+	Improve implementation of nod_src_info to avoid generation of
+	additional blr_begin\blr_end pair
+
 2007-06-28 17:30  asfernandes
 
 	* firebird2/src/isql/isql.epp (1.221):
