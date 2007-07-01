@@ -1,3 +1,9 @@
+2007-06-30 11:45  hvlad
+
+	* firebird2/src/jrd/filters.cpp (1.56):
+
+	Correct blob filter for FORMATsub-type to show dialect 3 data types
+
 2007-06-29 12:22  hvlad
 
 	* firebird2/src/dsql/: gen.cpp (1.125), node.h (1.91), parse.y
