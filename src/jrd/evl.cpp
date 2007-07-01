@@ -328,15 +328,21 @@ RecordBitmap** EVL_bitmap(thread_db* tdbb, jrd_nod* node, RecordBitmap* bitmap_a
 			impure_inversion* impure = (impure_inversion*) ((SCHAR *) tdbb->tdbb_request + node->nod_impure);
 			RecordBitmap::reset(impure->inv_bitmap);
 			const dsc* desc = EVL_expr(tdbb, node->nod_arg[0]);
-			const USHORT id = (USHORT)(IPTR) node->nod_arg[1];
-			RecordNumber::Packed* numbers = reinterpret_cast<RecordNumber::Packed*>(desc->dsc_address);
-			RecordNumber rel_dbkey;
-			rel_dbkey.bid_decode(&numbers[id]);
-			// NS: Why the heck we decrement record number here? I have no idea, but retain the algorithm for now.
-			// hvlad: because from the user point of view db_key's begins from 1 
-			rel_dbkey.decrement();
-			if (!bitmap_and || bitmap_and->test(rel_dbkey.getValue()))
-				RBM_SET(tdbb->getDefaultPool(), &impure->inv_bitmap, rel_dbkey.getValue());
+
+			if (!(tdbb->tdbb_request->req_flags & req_null) &&
+				desc->dsc_length == sizeof(RecordNumber::Packed))
+			{
+				const USHORT id = (USHORT)(IPTR) node->nod_arg[1];
+				RecordNumber::Packed* numbers = reinterpret_cast<RecordNumber::Packed*>(desc->dsc_address);
+				RecordNumber rel_dbkey;
+				rel_dbkey.bid_decode(&numbers[id]);
+				// NS: Why the heck we decrement record number here? I have no idea, but retain the algorithm for now.
+				// hvlad: because from the user point of view db_key's begins from 1 
+				rel_dbkey.decrement();
+				if (!bitmap_and || bitmap_and->test(rel_dbkey.getValue()))
+					RBM_SET(tdbb->getDefaultPool(), &impure->inv_bitmap, rel_dbkey.getValue());
+			}
+
 			return &impure->inv_bitmap;
 		}
 
