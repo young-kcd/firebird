@@ -1031,11 +1031,10 @@ enum node_args {
 	e_sysfunc_args,
 	e_sysfunc_count,
 
-	e_src_info_line = 0,					// nod_src_info
+	e_src_info_line = 0,			// nod_src_info
 	e_src_info_column,
 	e_src_info_stmt,
 	e_src_info_count
 };
 
 #endif // DSQL_NODE_H
-
