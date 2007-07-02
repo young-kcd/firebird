@@ -527,7 +527,7 @@ if "%FBBUILD_SHIP_PDB%" == "ship_pdb" (
 ::===========
 :: Generate the directory tree for the embedded zip pack
 if %FBBUILD_EMB_PACK% EQU 0 goto :EOF
-set FBBUILD_EMB_PACK_ROOT=%FB_ROOT_PATH%\builds\emb_pack
+set FBBUILD_EMB_PACK_ROOT=%FB_ROOT_PATH%\builds\emb_pack_%FB_TARGET_PLATFORM%
 @mkdir %FBBUILD_EMB_PACK_ROOT% 2>nul
 @del /s /q %FBBUILD_EMB_PACK_ROOT%\ > nul
 
@@ -544,6 +544,10 @@ for %%v in ( doc intl udf ) do (@mkdir %FBBUILD_EMB_PACK_ROOT%\%%v 2>nul)
 @copy /Y %FB_OUTPUT_DIR%\intl\*.* %FBBUILD_EMB_PACK_ROOT%\intl\ > nul
 @copy /Y %FB_OUTPUT_DIR%\udf\*.* %FBBUILD_EMB_PACK_ROOT%\udf\ > nul
 @copy /Y %FB_OUTPUT_DIR%\bin\msvc*.* %FBBUILD_EMB_PACK_ROOT% > nul
+@copy /Y %FB_OUTPUT_DIR%\bin\msvc*.* %FBBUILD_EMB_PACK_ROOT% > nul
+if %MSVC_VERSION% EQU 8 (
+  @copy /Y %FB_OUTPUT_DIR%\bin\Microsoft.VC80.CRT.manifest %FBBUILD_EMB_PACK_ROOT% > nul
+)
 
 if "%FBBUILD_SHIP_PDB%"=="ship_pdb" (
   @copy /Y %FB_TEMP_DIR%\%FBBUILD_BUILDTYPE%\fbembed\fbembed.pdb %FBBUILD_EMB_PACK_ROOT% > nul
