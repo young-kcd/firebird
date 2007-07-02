@@ -2220,7 +2220,7 @@ ULONG PageSpace::actAlloc(const USHORT pageSize)
 	return tot_pages;
 }
 
-ULONG PageSpace::actAlloc(Database* dbb)
+ULONG PageSpace::actAlloc(const Database* dbb)
 {
 	PageSpace* pgSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
 	return pgSpace->actAlloc(dbb->dbb_page_size);
@@ -2248,7 +2248,7 @@ ULONG PageSpace::maxAlloc(const USHORT pageSize)
 	return nPages;
 }
 
-ULONG PageSpace::maxAlloc(Database* dbb)
+ULONG PageSpace::maxAlloc(const Database* dbb)
 {
 	PageSpace* pgSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
 	return pgSpace->maxAlloc(dbb->dbb_page_size);
@@ -2341,7 +2341,7 @@ PageSpace* PageManager::addPageSpace(const USHORT pageSpaceID)
 	return newPageSpace;
 }
 
-PageSpace* PageManager::findPageSpace(const USHORT pageSpace)
+PageSpace* PageManager::findPageSpace(const USHORT pageSpace) const
 {
 	size_t pos;
 	if (pageSpaces.find(pageSpace, pos)) {

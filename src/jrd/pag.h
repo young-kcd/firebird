@@ -92,11 +92,11 @@ public:
 
 	// how many pages allocated
 	ULONG actAlloc(const USHORT pageSize);
-	static ULONG actAlloc(Database* dbb);
+	static ULONG actAlloc(const Database* dbb);
 
 	// number of last allocated page
 	ULONG maxAlloc(const USHORT pageSize);
-	static ULONG maxAlloc(Database* dbb);
+	static ULONG maxAlloc(const Database* dbb);
 
 	// extend page space
 	bool extend(thread_db*, const ULONG);
@@ -132,7 +132,7 @@ public:
 	}
 
 	PageSpace* addPageSpace(const USHORT pageSpaceID);
-	PageSpace* findPageSpace(const USHORT pageSpaceID);
+	PageSpace* findPageSpace(const USHORT pageSpaceID) const;
 	void delPageSpace(const USHORT pageSpaceID);
 
 	USHORT getTempPageSpaceID(thread_db* tdbb);
