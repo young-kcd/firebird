@@ -544,7 +544,6 @@ for %%v in ( doc intl udf ) do (@mkdir %FBBUILD_EMB_PACK_ROOT%\%%v 2>nul)
 @copy /Y %FB_OUTPUT_DIR%\intl\*.* %FBBUILD_EMB_PACK_ROOT%\intl\ > nul
 @copy /Y %FB_OUTPUT_DIR%\udf\*.* %FBBUILD_EMB_PACK_ROOT%\udf\ > nul
 @copy /Y %FB_OUTPUT_DIR%\bin\msvc*.* %FBBUILD_EMB_PACK_ROOT% > nul
-@copy /Y %FB_OUTPUT_DIR%\bin\msvc*.* %FBBUILD_EMB_PACK_ROOT% > nul
 if %MSVC_VERSION% EQU 8 (
   @copy /Y %FB_OUTPUT_DIR%\bin\Microsoft.VC80.CRT.manifest %FBBUILD_EMB_PACK_ROOT% > nul
 )
