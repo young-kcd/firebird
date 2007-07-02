@@ -1,3 +1,16 @@
+2007-07-02 01:13  asfernandes
+
+	* firebird2/src/jrd/evl.cpp (1.230):
+
+	Fixed CORE-1334 - Joins with NULL RDB$DB_KEY crash the server
+
+2007-07-01 04:40  asfernandes
+
+	* firebird2/src/: dsql/gen.cpp (1.126), dsql/node.h (1.92),
+	isql/isql.epp (1.222):
+
+	Misc
+
 2007-06-30 11:45  hvlad
 
 	* firebird2/src/jrd/filters.cpp (1.56):
