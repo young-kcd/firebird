@@ -876,7 +876,6 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC * de
 		}
 		break;
 
-
 	case nod_prot_mask:
 	case nod_null:
 	case nod_agg_count:
@@ -2964,6 +2963,16 @@ static jrd_nod* copy(thread_db* tdbb,
 		node->nod_type = input->nod_type;
 		node->nod_count = 0;
 		node->nod_arg[0] = input->nod_arg[0];
+		return node;
+
+	case nod_sys_function:
+		node = PAR_make_node(tdbb, e_sysfun_length);
+		node->nod_type = input->nod_type;
+		node->nod_count = e_sysfun_count;
+		node->nod_arg[e_sysfun_args] =
+			copy(tdbb, csb, input->nod_arg[e_sysfun_args], remap, field_id,
+				 message, remap_fld);
+		node->nod_arg[e_sysfun_function] = input->nod_arg[e_sysfun_function];
 		return node;
 
 	default:
