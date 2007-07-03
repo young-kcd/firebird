@@ -762,11 +762,16 @@ TRUNC
 -----
 
 Function:
-    Returns the integral part of a number.
+    Returns the integral part (up to the specified scale) of a number.
 
 Format:
-    TRUNC( <number> )
+    TRUNC( <number> [, <number> ] )
+
+Notes:
+    If the scale (second parameter) is negative, the integer part of
+    the value is truncated. Ex: TRUNC(123.456, -1) returns 120.000.
 
 Example:
     1) select trunc(x) from y;
     2) select trunc(-2.8), trunc(2.8) from rdb$database;  -- returns -2, 2
+    3) select trunc(987.65, 1), trunc(987.65, -1) from rdb$database;  -- returns 987.60, 980.00

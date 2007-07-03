@@ -80,7 +80,7 @@ static void setParamsDateAdd(DataTypeUtilBase* dataTypeUtil, SysFunction* functi
 static void setParamsDateDiff(DataTypeUtilBase* dataTypeUtil, SysFunction* function, int argsCount, dsc** args);
 static void setParamsOverlay(DataTypeUtilBase* dataTypeUtil, SysFunction* function, int argsCount, dsc** args);
 static void setParamsPosition(DataTypeUtilBase* dataTypeUtil, SysFunction* function, int argsCount, dsc** args);
-static void setParamsRound(DataTypeUtilBase* dataTypeUtil, SysFunction* function, int argsCount, dsc** args);
+static void setParamsRoundTrunc(DataTypeUtilBase* dataTypeUtil, SysFunction* function, int argsCount, dsc** args);
 
 // generic make functions
 static void makeDoubleResult(DataTypeUtilBase* dataTypeUtil, SysFunction* function, dsc* result, int argsCount, const dsc** args);
@@ -314,15 +314,18 @@ static void setParamsPosition(DataTypeUtilBase* dataTypeUtil, SysFunction* funct
 }
 
 
-static void setParamsRound(DataTypeUtilBase* dataTypeUtil, SysFunction* function, int argsCount, dsc** args)
+static void setParamsRoundTrunc(DataTypeUtilBase* dataTypeUtil, SysFunction* function, int argsCount, dsc** args)
 {
-	if (argsCount >= 2)
+	if (argsCount >= 1)
 	{
 		if (args[0]->isUnknown())
 			args[0]->makeDouble();
 
-		if (args[1]->isUnknown())
-			args[1]->makeLong(0);
+		if (argsCount >= 2)
+		{
+			if (args[1]->isUnknown())
+				args[1]->makeLong(0);
+		}
 	}
 }
 
@@ -787,11 +790,11 @@ static void makeRound(DataTypeUtilBase* dataTypeUtil, SysFunction* function, dsc
 
 static void makeTrunc(DataTypeUtilBase* dataTypeUtil, SysFunction* function, dsc* result, int argsCount, const dsc** args)
 {
-	fb_assert(argsCount == function->minArgCount);
+	fb_assert(argsCount >= function->minArgCount);
 
 	const dsc* value = args[0];
 
-	if (value->isNull())
+	if (value->isNull() || (argsCount == 2 && args[1]->isNull()))
 	{
 		result->makeNullString();
 		return;
@@ -803,7 +806,8 @@ static void makeTrunc(DataTypeUtilBase* dataTypeUtil, SysFunction* function, dsc
 		case dtype_long:
 		case dtype_int64:
 			*result = *value;
-			result->dsc_scale = 0;
+			if (argsCount == 1)
+				result->dsc_scale = 0;
 			break;
 
 		default:
@@ -2531,7 +2535,7 @@ static dsc* evlSqrt(Jrd::thread_db* tdbb, SysFunction* function, Jrd::jrd_nod* a
 
 static dsc* evlTrunc(Jrd::thread_db* tdbb, SysFunction* function, Jrd::jrd_nod* args, Jrd::impure_value* impure)
 {
-	fb_assert(args->nod_count == 1);
+	fb_assert(args->nod_count >= 1);
 
 	jrd_req* request = tdbb->tdbb_request;
 
@@ -2540,10 +2544,27 @@ static dsc* evlTrunc(Jrd::thread_db* tdbb, SysFunction* function, Jrd::jrd_nod* 
 	if (request->req_flags & req_null)	// return NULL if value is NULL
 		return NULL;
 
+	SLONG resultScale = 0;
+	if (args->nod_count > 1)
+	{
+		dsc* scaleDsc = EVL_expr(tdbb, args->nod_arg[1]);
+		if (request->req_flags & req_null)	// return NULL if scaleDsc is NULL
+			return NULL;
+
+		resultScale = -MOV_get_long(scaleDsc, 0);
+		if (!(resultScale >= MIN_SCHAR && resultScale <= MAX_SCHAR))
+			status_exception::raise(isc_expression_eval_err, 0);
+	}
+
 	if (value->isExact())
 	{
 		SSHORT scale = value->dsc_scale;
 		impure->vlu_misc.vlu_int64 = MOV_get_int64(value, scale);
+
+		if (resultScale < scale)
+			resultScale = scale;
+
+		scale -= resultScale;
 
 		if (scale < 0)
 		{
@@ -2554,11 +2575,40 @@ static dsc* evlTrunc(Jrd::thread_db* tdbb, SysFunction* function, Jrd::jrd_nod* 
 			}
 		}
 
-		impure->vlu_desc.makeInt64(0, &impure->vlu_misc.vlu_int64);
+		impure->vlu_desc.makeInt64(resultScale, &impure->vlu_misc.vlu_int64);
 	}
 	else
 	{
-		modf(MOV_get_double(value), &impure->vlu_misc.vlu_double);
+		impure->vlu_misc.vlu_double = MOV_get_double(value);
+
+		SINT64 v = 1;
+
+		if (resultScale > 0)
+		{
+			while (resultScale > 0)
+			{
+				v *= 10;
+				--resultScale;
+			}
+
+			impure->vlu_misc.vlu_double /= v;
+			modf(impure->vlu_misc.vlu_double, &impure->vlu_misc.vlu_double);
+			impure->vlu_misc.vlu_double *= v;
+		}
+		else
+		{
+			double r = modf(impure->vlu_misc.vlu_double, &impure->vlu_misc.vlu_double);
+
+			if (resultScale != 0)
+			{
+				for (SLONG i = 0; i > resultScale; --i)
+					v *= 10;
+
+				modf(r * v, &r);
+				impure->vlu_misc.vlu_double += r / v;
+			}
+		}
+
 		impure->vlu_desc.makeDouble(&impure->vlu_misc.vlu_double);
 	}
 
@@ -2627,7 +2677,7 @@ SysFunction SysFunction::functions[] =
 		SF("REPLACE", 3, 3, setParamsFromList, makeReplace, evlReplace, NULL),
 		SF("REVERSE", 1, 1, NULL, makeReverse, evlReverse, NULL),
 		SF("RIGHT", 2, 2, setParamsSecondInteger, makeLeftRight, evlRight, NULL),
-		SF("ROUND", 2, 2, setParamsRound, makeRound, evlRound, NULL),
+		SF("ROUND", 2, 2, setParamsRoundTrunc, makeRound, evlRound, NULL),
 		SF("RPAD", 2, 3, setParamsSecondInteger, makePad, evlPad, (void*) funRPad),
 		SF("SIGN", 1, 1, setParamsDouble, makeShortResult, evlSign, NULL),
 		SF("SIN", 1, 1, setParamsDouble, makeDoubleResult, evlStdMath, (VoidPtrStdMathFunc) sin),
@@ -2635,7 +2685,7 @@ SysFunction SysFunction::functions[] =
 		SF("SQRT", 1, 1, setParamsDouble, makeDoubleResult, evlSqrt, NULL),
 		SF("TAN", 1, 1, setParamsDouble, makeDoubleResult, evlStdMath, (VoidPtrStdMathFunc) tan),
 		SF("TANH", 1, 1, setParamsDouble, makeDoubleResult, evlStdMath, (VoidPtrStdMathFunc) tanh),
-		SF("TRUNC", 1, 1, setParamsDouble, makeTrunc, evlTrunc, NULL),
+		SF("TRUNC", 1, 2, setParamsRoundTrunc, makeTrunc, evlTrunc, NULL),
 		SF("", 0, 0, NULL, NULL, NULL, NULL)
 	};
 
