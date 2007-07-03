@@ -1,3 +1,58 @@
+2007-07-03 02:09  asfernandes
+
+	* firebird2/: src/jrd/SysFunction.cpp (1.12),
+	doc/sql.extensions/README.builtin_functions.txt (1.5):
+
+	Improvement CORE-1340 - Add a scale parameter to TRUNC function
+
+2007-07-02 16:46  paul_reeves
+
+	*
+	firebird2/builds/install/arch-specific/win32/FirebirdInstall_20.iss
+	(1.17):
+
+	Make sure that manifest file is _really_ included, if it is needed.
+
+2007-07-02 16:36  paul_reeves
+
+	*
+	firebird2/builds/install/arch-specific/win32/FirebirdInstall_20.iss
+	(1.16):
+
+	Include link to 2.1.0 release notes Dynamically generate version
+	number for readme menuitem
+
+2007-07-02 16:25  paul_reeves
+
+	*
+	firebird2/builds/install/arch-specific/win32/BuildExecutableInstall.bat
+	(1.27):
+
+	Remove duplicate line
+
+2007-07-02 16:00  paul_reeves
+
+	*
+	firebird2/builds/install/arch-specific/win32/BuildExecutableInstall.bat
+	(1.26):
+
+	Make sure embedded packages are separated by platform.	Include
+	manifest if necessary.
+
+2007-07-02 14:28  paul_reeves
+
+	*
+	firebird2/builds/install/arch-specific/win32/BuildExecutableInstall.bat
+	(1.25):
+
+	Include the VC80 runtime manifest.
+
+2007-07-02 12:28  dimitr
+
+	* firebird2/src/jrd/: pag.cpp (1.138), pag.h (1.13):
+
+	Const safety.
+
 2007-07-02 01:13  asfernandes
 
 	* firebird2/src/jrd/evl.cpp (1.230):
