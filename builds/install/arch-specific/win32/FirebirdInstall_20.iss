@@ -98,12 +98,22 @@
 #undef compression
 #endif
 
-;------If necessary we can turn off i18n by uncommenting this undefine
-;#undef  i18n
 
 ;-------end of Innosetup script debug flags section
 
 ;-------Start of Innosetup script
+
+
+;---- These three defines need a bit of tidying up in the near future,
+;     but for now they must stay, as the BuildExecutableInstall.bat
+;     uses them.
+#define release
+#define no_pdb
+#define i18n
+
+
+;------If necessary we can turn off i18n by uncommenting this undefine
+;#undef  i18n
 
 #define FB_MAJOR_VER GetEnv("FB_MAJOR_VER")
 #ifdef FB_MAJOR_VER
@@ -155,9 +165,6 @@
 #define AppVer MajorVer + "_" + MinorVer
 #define GroupnameVer MajorVer + "." + MinorVer
 
-#define release
-#define no_pdb
-;#define i18n
 
 ;If we are building the pdb package then
 ;we don't include files or examples.
@@ -330,6 +337,8 @@ Filename: {app}\bin\instsvc.exe; Description: {cm:instsvcStartQuestion}; Paramet
 ;If 'start as application' requested
 Filename: {code:StartApp|{app}\bin\fbserver.exe}; Description: {cm:instappStartQuestion}; Parameters: -a; StatusMsg: {cm:instappStartMsg}; MinVersion: 0,4.0; Components: ServerComponent; Flags: nowait postinstall; Tasks: UseApplicationTask; Check: StartEngine
 
+;This is a preliminary test of jumping to a landing page. In practice, we are going to need to know the users language and the version number they have installed.
+Filename: "{#MyAppURL}/afterinstall"; Description: "After installation - What Next?"; Flags: postinstall shellexec skipifsilent; Components: ServerComponent DevAdminComponent;
 
 [Registry]
 ;If user has chosen to start as App they may well want to start automatically. That is handled by a function below.
@@ -355,6 +364,8 @@ Name: {group}\Firebird 2.1.0 Release Notes; Filename: {app}\doc\Firebird_v2.1.0.
 Name: {group}\Firebird 2.0.1 Release Notes; Filename: {app}\doc\Firebird_v2.0.1.ReleaseNotes.pdf; MinVersion: 4.0,4.0; Comment: {#MyAppName} {cm:ReleaseNotes}
 Name: {group}\Firebird 1.5.4 Release Notes; Filename: {app}\doc\Firebird_v1.5.4.ReleaseNotes.pdf; MinVersion: 4.0,4.0; Comment: {#MyAppName} {cm:ReleaseNotes}
 Name: {group}\Firebird 2.0 Quick Start Guide; Filename: {app}\doc\Firebird-2.0-QuickStart.pdf; MinVersion: 4.0,4.0; Comment: {#MyAppName}
+Name: "{group}\After Installation"; Filename: "{app}\doc\After_Installation.url"; Comment: "New User? Here's a quick guide to what you should do next."
+Name: "{group}\Firebird Web-site"; Filename: "{app}\doc\firebirdsql.org.url"
 ;Always install the original english version
 Name: {group}\Firebird {#MajorVer}.{#MinorVer}.{#PointRelease} Readme; Filename: {app}\readme.txt; MinVersion: 4.0,4.0;
 #ifdef i18n
@@ -367,6 +378,8 @@ Name: {group}\Uninstall Firebird; Filename: {uninstallexe}; Comment: Uninstall F
 #ifdef files
 Source: {#LicensesDir}\IPLicense.txt; DestDir: {app}; Components: ClientComponent; Flags: sharedfile ignoreversion;
 Source: {#LicensesDir}\IDPLicense.txt; DestDir: {app}; Components: ClientComponent; Flags: sharedfile ignoreversion
+Source: {#ScriptsDir}\After_Installation.url; DestDir: {app}\doc; Components: ServerComponent DevAdminComponent; Flags: sharedfile ignoreversion
+Source: {#ScriptsDir}\firebirdsql.org.url; DestDir: {app}\doc; Components: ServerComponent DevAdminComponent; Flags: sharedfile ignoreversion
 ;Always install the original english version
 Source: {#ScriptsDir}\readme.txt; DestDir: {app}; Components: DevAdminComponent; Flags: ignoreversion;
 #ifdef i18n
@@ -457,6 +470,7 @@ Source: {#FilesDir}\UDF\*.sql; DestDir: {app}\UDF; Components: ServerComponent; 
 Source: {#FilesDir}\misc\*.*; DestDir: {app}\misc; Components: ServerComponent; Flags: ignoreversion;
 Source: {#FilesDir}\misc\upgrade\security\*.*; DestDir: {app}\misc\upgrade\security; Components: ServerComponent; Flags: ignoreversion;
 Source: {#FilesDir}\misc\upgrade\ib_udf\*.*; DestDir: {app}\misc\upgrade\ib_udf; Components: ServerComponent; Flags: ignoreversion;
+Source: {#FilesDir}\misc\upgrade\metadata\*.*; DestDir: {app}\misc\upgrade\metadata; Components: ServerComponent; Flags: ignoreversion;
 
 ;Note - Win9x requires 8.3 filenames for the uninsrestartdelete option to work
 Source: {#FilesDir}\system32\Firebird2Control.cpl; DestDir: {sys}; Components: ServerComponent\SuperServerComponent; MinVersion: 0,4.0; Flags: sharedfile ignoreversion promptifolder restartreplace uninsrestartdelete; Check: InstallCPLApplet
