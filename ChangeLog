@@ -1,3 +1,33 @@
+2007-07-04 02:59  asfernandes
+
+	* firebird2/src/misc/upgrade/v2.1/metadata_charset_create.sql
+	(1.3):
+
+	Fixed CORE-1339 - Metadata charset upgrade script generates garbage
+	in descriptions
+
+2007-07-03 14:10  dimitr
+
+	* firebird2/doc/sql.extensions/README.order_by_expressions_nulls
+	(1.3):
+
+	Corrections for v2.0 and above.
+
+2007-07-03 11:08  paul_reeves
+
+	* firebird2/builds/install/arch-specific/win32/:
+	After_Installation.url (1.1), FirebirdInstall_20.iss (1.18),
+	firebirdsql.org.url (1.1):
+
+	Add link to landing page Make sure we include the metadata update
+	script.
+
+2007-07-03 07:19  dimitr
+
+	* firebird2/src/jrd/cmp.cpp (1.260):
+
+	Fixed CORE-1338.
+
 2007-07-03 02:09  asfernandes
 
 	* firebird2/: src/jrd/SysFunction.cpp (1.12),
