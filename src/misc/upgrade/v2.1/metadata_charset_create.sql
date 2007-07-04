@@ -112,7 +112,7 @@ begin
                     '    cast(cast(' || field_name || ' as blob sub_type text character set none) as ' ||
                     '        blob sub_type text character set ' || charset || ') ' ||
                     '    where ' || field1 || ' = ''' || name1 || '''' ||
-                    iif(name2 is null, '', ' and ' || field2 || ' = ' || field2);
+                    iif(name2 is null, '', ' and ' || field2 || ' = ''' || name2 || '''');
             end
         end
     end
