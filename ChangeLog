@@ -1,3 +1,9 @@
+2007-07-04 18:07  dimitr
+
+	* firebird2/src/jrd/met.epp (1.222):
+
+	Fixed CORE-1344.
+
 2007-07-04 02:59  asfernandes
 
 	* firebird2/src/misc/upgrade/v2.1/metadata_charset_create.sql
