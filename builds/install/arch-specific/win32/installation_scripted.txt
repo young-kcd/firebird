@@ -106,17 +106,16 @@ Parameters specific to Firebird installs
 /COMPONENTS="comma separated list of component names"
 
   Choose from - ServerComponent\SuperServerComponent,
-                ServerComponent\ClassicServerComponent,
-                ServerComponent,
-                DevAdminComponent and
-                ClientComponent
+				ServerComponent\ClassicServerComponent,
+				ServerComponent,
+				DevAdminComponent and
+				ClientComponent
 
   Overrides the default components settings. Using this command line
   parameter causes Setup to automatically select a custom type. A full
   install requires combining components. For example:
 
-  /COMPONENTS="SuperServerComponent,ServerComponent,
-               DevAdminComponent,ClientComponent"
+  /COMPONENTS="ServerComponent\SuperServerComponent,ServerComponent,DevAdminComponent,ClientComponent"
 
   would be required for a full install.
 
@@ -139,7 +138,7 @@ Parameters specific to Firebird installs
   reasons:
 
   o Installing/Uninstalling the CPL applet requires a system
-    restart on Windows 2000 (and perhaps some other platforms.)
+	restart on Windows 2000 (and perhaps some other platforms.)
 
   o You may wish to use an alternative cpl applet.
 
@@ -157,7 +156,7 @@ Parameters specific to Firebird installs
   accessing a single server version. If your client applications are
   likely to take advantage of accessing different server versions this
   is not recommended. See
-    doc/README.Win32LibraryInstallation.txt
+	doc/README.Win32LibraryInstallation.txt
   for more information.
 
 
