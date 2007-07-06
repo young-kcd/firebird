@@ -4224,8 +4224,11 @@ static bool string_boolean(thread_db* tdbb, jrd_nod* node, dsc* desc1,
 		blb* blob =	BLB_open(tdbb, request->req_transaction,
 						reinterpret_cast<bid*>(desc1->dsc_address));
 
-		if (charset->isMultiByte() && !(obj->getFlags() & TEXTTYPE_DIRECT_MATCH))
+		if (charset->isMultiByte() &&
+			(node->nod_type == nod_contains || !(obj->getFlags() & TEXTTYPE_DIRECT_MATCH)))
+		{
 			buffer.getBuffer(blob->blb_length);		// alloc space to put entire blob in memory
+		}
 
 		/* Performs the string_function on each segment of the blob until
 		   a positive result is obtained */
