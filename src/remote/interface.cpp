@@ -2014,6 +2014,12 @@ ISC_STATUS GDS_DSQL_FETCH(ISC_STATUS* user_status,
 		message = statement->rsr_message;
 		statement->rsr_message = message->msg_next;
 
+		if (statement->rsr_user_select_format->fmt_length != msg_length) {
+			Firebird::status_exception::raise(
+				isc_port_len,
+				isc_arg_number, (SLONG) msg_length,
+				isc_arg_number, (SLONG) statement->rsr_user_select_format->fmt_length, 0);
+		}
 		if (statement->rsr_user_select_format == statement->rsr_select_format) {
 			if ((U_IPTR) msg & (ALIGNMENT - 1))
 				memcpy(msg, message->msg_address, msg_length);
@@ -3555,6 +3561,13 @@ ISC_STATUS GDS_RECEIVE(ISC_STATUS * user_status,
 		}
 
 		/* Copy data from the message buffer to the client buffer */
+
+		if (tail->rrq_format->fmt_length != msg_length) {
+			Firebird::status_exception::raise(
+				isc_port_len,
+				isc_arg_number, (SLONG) msg_length,
+				isc_arg_number, (SLONG) tail->rrq_format->fmt_length, 0);
+		}
 
 		message = tail->rrq_message;
 		if ((U_IPTR) msg & (ALIGNMENT - 1))
