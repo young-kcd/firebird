@@ -1,3 +1,11 @@
+2007-07-06 14:46  hvlad
+
+	* firebird2/src/remote/interface.cpp (1.142):
+
+	Fixed bug CORE-1349 : Remote interface not checked in REM_receive
+	and REM_fetch client supplied message length against length of
+	format of message
+
 2007-07-05 17:39  asfernandes
 
 	* firebird2/src/jrd/evl.cpp (1.231):
