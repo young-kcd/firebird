@@ -611,8 +611,8 @@ void GEN_port( dsql_req* request, dsql_msg* message)
 	{
 		parameter->par_parameter = number++;
 
-		USHORT fromCharSet = parameter->par_desc.getCharSet();
-		USHORT toCharSet = (fromCharSet == CS_NONE || fromCharSet == CS_BINARY) ?
+		const USHORT fromCharSet = parameter->par_desc.getCharSet();
+		const USHORT toCharSet = (fromCharSet == CS_NONE || fromCharSet == CS_BINARY) ?
 			fromCharSet : request->req_dbb->dbb_att_charset;
 
 		if (parameter->par_desc.dsc_dtype <= dtype_any_text &&
@@ -640,10 +640,10 @@ void GEN_port( dsql_req* request, dsql_msg* message)
 		}
 		else if (ENCODE_ODS(request->req_dbb->dbb_ods_version,
 					request->req_dbb->dbb_minor_version) >= ODS_11_1 &&
-				 parameter->par_desc.dsc_dtype == dtype_blob &&
-				 parameter->par_desc.dsc_sub_type == isc_blob_text &&
-				 request->req_dbb->dbb_att_charset != CS_NONE &&
-				 request->req_dbb->dbb_att_charset != CS_BINARY)
+			parameter->par_desc.dsc_dtype == dtype_blob &&
+			parameter->par_desc.dsc_sub_type == isc_blob_text &&
+			request->req_dbb->dbb_att_charset != CS_NONE &&
+			request->req_dbb->dbb_att_charset != CS_BINARY)
 		{
 			if (fromCharSet != toCharSet)
 				parameter->par_desc.setTextType(toCharSet);
