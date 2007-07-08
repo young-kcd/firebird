@@ -2233,7 +2233,7 @@ bool OptimizerRetrieval::matchBoolean(IndexScratch* indexScratch,
 		if (!OPT_expression_equal(tdbb, optimizer, indexScratch->idx, match, stream) ||
 			(value && !OPT_computable(optimizer->opt_csb, value, stream, true, false)))
 		{
-			if (value &&
+			if (boolean->nod_type != nod_starts && value &&
 				OPT_expression_equal(tdbb, optimizer, indexScratch->idx, value, stream) &&
 				OPT_computable(optimizer->opt_csb, match, stream, true, false))
 			{
