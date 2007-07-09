@@ -1,3 +1,10 @@
+2007-07-08 16:27  asfernandes
+
+	* firebird2/src/jrd/Optimizer.cpp (1.56.4.4):
+
+	Backported fix for CORE-1153 - Activating index change "STARTING"
+	working as "LIKE" in join condition
+
 2007-07-06 03:32  asfernandes
 
 	* firebird2/src/jrd/evl.cpp (1.165.2.7):
