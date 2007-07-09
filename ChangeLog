@@ -1,3 +1,9 @@
+2007-07-08 10:43  robocop
+
+	* firebird2/src/dsql/gen.cpp (1.127):
+
+	Misc.
+
 2007-07-06 14:46  hvlad
 
 	* firebird2/src/remote/interface.cpp (1.142):
