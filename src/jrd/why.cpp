@@ -3400,8 +3400,14 @@ ISC_STATUS API_ROUTINE GDS_DSQL_PREPARE(ISC_STATUS* user_status,
 			das_select.dasup_info_buf = das_bind.dasup_info_buf = 0;
 			das_select.dasup_info_len = das_bind.dasup_info_len = 0;
 
+			SCHAR* buf_select = 0; // pointer in the buffer where isc_info_sql_select starts
+			USHORT len_select = 0; // length of isc_info_sql_select part
 			if (*p == isc_info_sql_select)
+			{
 				das_select.dasup_info_buf = p;
+				buf_select = p;
+				len_select = buffer_len - (buf_select - buffer);
+			}
 
 			das_bind.dasup_info_buf = UTLD_skip_sql_info(p);
 
@@ -3418,6 +3424,9 @@ ISC_STATUS API_ROUTINE GDS_DSQL_PREPARE(ISC_STATUS* user_status,
 					p2[len] = isc_info_end;
 					das_select.dasup_info_buf = p2;
 					das_select.dasup_info_len = len + 1;
+					
+					buf_select = das_select.dasup_info_buf;
+					len_select = das_select.dasup_info_len;
 				}
 				else 
 				{
@@ -3448,10 +3457,7 @@ ISC_STATUS API_ROUTINE GDS_DSQL_PREPARE(ISC_STATUS* user_status,
 			}
 
 			iterative_sql_info(status, stmt_handle, sizeof(sql_prepare_info),
-							   sql_prepare_info, // buffer_len, buffer, dialect,
-							   das_select.dasup_info_len,
-							   das_select.dasup_info_buf,
-							   dialect, sqlda);
+				sql_prepare_info, len_select, buf_select, dialect, sqlda);
 
 			// statement prepared OK
 			statement->flags |= HANDLE_STATEMENT_prepared;
