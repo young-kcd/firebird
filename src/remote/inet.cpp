@@ -157,6 +157,7 @@ const char* GDS_HOSTS_FILE	= "/etc/gds_hosts.equiv";
 #define INET_RETRY_ERRNO	WSAEINPROGRESS
 #define INET_ADDR_IN_USE	WSAEADDRINUSE
 #define sleep(seconds)  Sleep ((seconds) * 1000)
+const int NOTASOCKET = WSAENOTSOCK;
 
 #else // WIN_NT
 
@@ -172,6 +173,7 @@ const char* GDS_HOSTS_FILE	= "/etc/gds_hosts.equiv";
 #ifndef INET_RETRY_ERRNO
 #define INET_RETRY_ERRNO TRY_AGAIN
 #endif
+const int NOTASOCKET = EBADF;
 
 #endif // WIN_NT
 
@@ -846,11 +848,12 @@ rem_port* INET_connect(const TEXT* name,
 		THREAD_EXIT();
 		n = connect((SOCKET) port->port_handle,
 					(struct sockaddr *) &address, sizeof(address));
+		const int inetErrNo = INET_ERRNO;
 		THREAD_ENTER();
 		if (n != -1 && send_full(port, packet))
 			return port;
 		else {
-			inet_error(port, "connect", isc_net_connect_err, INET_ERRNO);
+			inet_error(port, "connect", isc_net_connect_err, inetErrNo);
 			disconnect(port);
 			return NULL;
 		}
@@ -947,9 +950,10 @@ rem_port* INET_connect(const TEXT* name,
 		socklen_t l = sizeof(address);
 		SOCKET s = accept((SOCKET) port->port_handle,
 				   (struct sockaddr *) &address, &l);
+		const int inetErrNo = INET_ERRNO;
 		if (s == INVALID_SOCKET) {
 			THREAD_ENTER();
-			inet_error(port, "accept", isc_net_connect_err, INET_ERRNO);
+			inet_error(port, "accept", isc_net_connect_err, inetErrNo);
 			disconnect(port);
 			return NULL;
 		}
@@ -1396,10 +1400,11 @@ static rem_port* aux_connect(rem_port* port, PACKET* packet, t_event_ast ast)
 	
 		THREAD_EXIT();
 		SOCKET n = accept(port->port_channel, (struct sockaddr *) &address, &l);
+		const int inetErrNo = INET_ERRNO;
 		THREAD_ENTER();
 		
 		if (n == INVALID_SOCKET) {
-			inet_error(port, "accept", isc_net_event_connect_err, INET_ERRNO);
+			inet_error(port, "accept", isc_net_event_connect_err, inetErrNo);
 			SOCLOSE(port->port_channel);
 			return NULL;
 		}
@@ -1448,10 +1453,11 @@ static rem_port* aux_connect(rem_port* port, PACKET* packet, t_event_ast ast)
 
 	THREAD_EXIT();
 	status = connect(n, (struct sockaddr *) &address, sizeof(address));
+	const int inetErrNo = INET_ERRNO;
 	THREAD_ENTER();
 
 	if (status < 0) {
-		inet_error(port, "connect", isc_net_event_connect_err, INET_ERRNO);
+		inet_error(port, "connect", isc_net_event_connect_err, inetErrNo);
 		SOCLOSE(n);
 		return NULL;
 	}
@@ -2524,6 +2530,10 @@ static rem_port* select_port( rem_port* main_port, SLCT * selct)
 #endif
 	for (rem_port* port = main_port; port; port = port->port_next) {
 		const int n = (int) port->port_handle;
+		if (n < 0 || n >= FD_SETSIZE) {
+			STOP_PORT_CRITICAL();
+			return port;
+		}		
 		if (n < selct->slct_width && FD_ISSET(n, &selct->slct_fdset)) {
 			port->port_dummy_timeout = port->port_dummy_packet_interval;
 			FD_CLR(n, &selct->slct_fdset);
@@ -2558,6 +2568,7 @@ static int select_wait( rem_port* main_port, SLCT * selct)
  **************************************/
 	TEXT msg[BUFFER_SMALL];
 	struct timeval timeout;
+	bool checkPorts = false;
 
 	for (;;)
 	{
@@ -2596,6 +2607,49 @@ static int select_wait( rem_port* main_port, SLCT * selct)
 					port->port_dummy_timeout -= delta_time;
 				}
 
+				if (checkPorts)
+				{
+					// select() returned EBADF\WSAENOTSOCK - we have a broken socket 
+					// in current fdset. Search and return it to caller to close
+					// broken connection correctly
+
+					struct linger lngr;
+					socklen_t optlen = sizeof(lngr);
+					const bool badSocket = 
+#ifdef WIN_NT
+						false;
+#else
+						((SOCKET) port->port_handle < 0) || 
+						((SOCKET) port->port_handle) >= FD_SETSIZE;
+#endif
+
+					if (badSocket || getsockopt((SOCKET) port->port_handle, 
+						SOL_SOCKET, SO_LINGER, (SCHAR*) &lngr, &optlen) != 0)
+					{
+						if (badSocket || INET_ERRNO == NOTASOCKET)
+						{
+							// not a socket, strange !
+							gds__log("INET/select_wait: found \"not a socket\" socket : %u", (SOCKET) port->port_handle);
+
+							// this will lead to receive() which will break bad connection
+							selct->slct_count = selct->slct_width = 0;
+							FD_ZERO(&selct->slct_fdset);
+							if (!badSocket) 
+							{
+								FD_SET((SLONG) port->port_handle, &selct->slct_fdset);
+#ifdef WIN_NT
+								++selct->slct_width;
+#else
+								selct->slct_width = (int) port->port_handle + 1;
+#endif
+							}
+
+							STOP_PORT_CRITICAL();
+							return true;
+						}
+					}
+				}
+
 				FD_SET((SLONG) port->port_handle, &selct->slct_fdset);
 #ifdef WIN_NT
 				++selct->slct_width;
@@ -2606,6 +2660,7 @@ static int select_wait( rem_port* main_port, SLCT * selct)
 				found = true;
 			}
 		}
+		checkPorts = false;
 		STOP_PORT_CRITICAL();
 
 		if (!found)
@@ -2632,6 +2687,7 @@ static int select_wait( rem_port* main_port, SLCT * selct)
 			selct->slct_count = select(selct->slct_width, &selct->slct_fdset,
 									   NULL, NULL, &timeout);
 #endif
+			const int inetErrNo = INET_ERRNO;
 			if (selct->slct_count != -1)
 			{
 				/* if selct->slct_count is zero it means that we timed out of
@@ -2653,20 +2709,18 @@ static int select_wait( rem_port* main_port, SLCT * selct)
 				THREAD_ENTER();
 				return TRUE;
 			}
-			else if (INTERRUPT_ERROR(INET_ERRNO))
+			else if (INTERRUPT_ERROR(inetErrNo))
 				continue;
-#ifndef WIN_NT
-			else if (INET_ERRNO == EBADF)
+			else if (inetErrNo == NOTASOCKET)
+			{
+				checkPorts = true;
 				break;
-#else
-			else if (INET_ERRNO == WSAENOTSOCK)
-				break;
-#endif
+			}
 			else {
 				THREAD_ENTER();
 				SNPRINTF(msg, FB_NELEM(msg),
 						 "INET/select_wait: select failed, errno = %d",
-						 INET_ERRNO);
+						 inetErrNo);
 				gds__log(msg, 0);
 				return FALSE;
 			}
@@ -3419,6 +3473,7 @@ static int packet_receive(
 #endif
 
 	int n = 0;
+	int inetErrNo;
 
 	for (;;)
 	{
@@ -3461,11 +3516,12 @@ static int packet_receive(
 					select((SOCKET) port->port_handle + 1, &slct_fdset,
 						   NULL, NULL, time_ptr);
 #endif
+				inetErrNo = INET_ERRNO;
 
 				// restore original timeout value FSG 3 MAY 2001
 				timeout = savetime;
 
-				if (slct_count != -1 || !INTERRUPT_ERROR(INET_ERRNO))
+				if (slct_count != -1 || !INTERRUPT_ERROR(inetErrNo))
 				{
 					break;
 				}
@@ -3475,7 +3531,7 @@ static int packet_receive(
 			if (slct_count == -1)
 			{
 				inet_error(port, "select in packet_receive",
-						   isc_net_read_err, INET_ERRNO);
+						   isc_net_read_err, inetErrNo);
 				return FALSE;
 			}
 
@@ -3508,13 +3564,14 @@ static int packet_receive(
 		n =
 			recv((SOCKET) port->port_handle,
 				 reinterpret_cast<char*>(buffer), buffer_length, 0);
+		inetErrNo = INET_ERRNO;
 		THREAD_ENTER();
-		if (n != -1 || !INTERRUPT_ERROR(INET_ERRNO))
+		if (n != -1 || !INTERRUPT_ERROR(inetErrNo))
 			break;
 	}
 
 	if (n == -1) {
-		inet_error(port, "read", isc_net_read_err, INET_ERRNO);
+		inet_error(port, "read", isc_net_read_err, inetErrNo);
 		return FALSE;
 	}
 
@@ -3612,6 +3669,7 @@ static bool_t packet_send( rem_port* port, const SCHAR* buffer, SSHORT buffer_le
 		THREAD_EXIT();
 		int count = 0;
 		SSHORT n;
+		int inetErrNo;
 #ifdef SINIXZ
 		char* b = const_cast<char*>(buffer);
 #else
@@ -3620,6 +3678,8 @@ static bool_t packet_send( rem_port* port, const SCHAR* buffer, SSHORT buffer_le
 		while ((n = send((SOCKET) port->port_handle, b, 1, MSG_OOB)) == -1 &&
 				(INET_ERRNO == ENOBUFS || INTERRUPT_ERROR(INET_ERRNO)))
 		{
+			inetErrNo = INET_ERRNO;
+
 			if (count++ > 20) {
 				break;
 			}
@@ -3667,7 +3727,7 @@ static bool_t packet_send( rem_port* port, const SCHAR* buffer, SSHORT buffer_le
 
 		THREAD_ENTER();
 		if (n == -1) {
-			inet_error(port, "send/oob", isc_net_write_err, INET_ERRNO);
+			inet_error(port, "send/oob", isc_net_write_err, inetErrNo);
 			return FALSE;
 		}
 	}
