@@ -1227,31 +1227,43 @@ LPSECURITY_ATTRIBUTES ISC_get_security_desc()
 	// This is our first call. Ensure that our process has
 	// the SYNCHRONIZE privilege granted to everyone.
 
-	SID_IDENTIFIER_AUTHORITY SIDAuth = SECURITY_WORLD_SID_AUTHORITY;
-    PSID pSID = NULL;
-    AllocateAndInitializeSid(&SIDAuth, 1, SECURITY_WORLD_RID,
-							 0, 0, 0, 0, 0, 0, 0, &pSID);
-
-    EXPLICIT_ACCESS ea;
-    memset(&ea, 0, sizeof(EXPLICIT_ACCESS));
-    ea.grfAccessPermissions = SYNCHRONIZE;
-    ea.grfAccessMode = SET_ACCESS;
-    ea.grfInheritance = NO_INHERITANCE;
-    ea.Trustee.TrusteeForm = TRUSTEE_IS_SID;
-    ea.Trustee.TrusteeType = TRUSTEE_IS_WELL_KNOWN_GROUP;
-    ea.Trustee.ptstrName  = (LPTSTR) pSID;
-
 	PACL pOldACL = NULL;
 	GetSecurityInfo(GetCurrentProcess(), SE_KERNEL_OBJECT,
 					DACL_SECURITY_INFORMATION,
 					NULL, NULL, &pOldACL, NULL, NULL);
 
-    PACL pNewACL = NULL;
-    SetEntriesInAcl(1, &ea, pOldACL, &pNewACL);
+	// NULL pOldACL means all privileges. If we assign pNewACL in this case 
+	// we'll lost all privileges except assigned SYNCHRONIZE
+	if (pOldACL) 
+	{
+		SID_IDENTIFIER_AUTHORITY SIDAuth = SECURITY_WORLD_SID_AUTHORITY;
+		PSID pSID = NULL;
+		AllocateAndInitializeSid(&SIDAuth, 1, SECURITY_WORLD_RID,
+								 0, 0, 0, 0, 0, 0, 0, &pSID);
 
-	SetSecurityInfo(GetCurrentProcess(), SE_KERNEL_OBJECT,
-					DACL_SECURITY_INFORMATION,
-					NULL, NULL, pNewACL, NULL);
+		EXPLICIT_ACCESS ea;
+		memset(&ea, 0, sizeof(EXPLICIT_ACCESS));
+		ea.grfAccessPermissions = SYNCHRONIZE;
+		ea.grfAccessMode = GRANT_ACCESS;
+		ea.grfInheritance = NO_INHERITANCE;
+		ea.Trustee.TrusteeForm = TRUSTEE_IS_SID;
+		ea.Trustee.TrusteeType = TRUSTEE_IS_WELL_KNOWN_GROUP;
+		ea.Trustee.ptstrName  = (LPTSTR) pSID;
+
+		PACL pNewACL = NULL;
+		SetEntriesInAcl(1, &ea, pOldACL, &pNewACL);
+	
+		SetSecurityInfo(GetCurrentProcess(), SE_KERNEL_OBJECT,
+						DACL_SECURITY_INFORMATION,
+						NULL, NULL, pNewACL, NULL);
+	
+		if (pSID) {
+			FreeSid(pSID);
+		}
+		if (pNewACL) {
+			LocalFree(pNewACL);
+		}
+	}
 
 	// Create and initialize the default security descriptor
 	// to be assigned to various IPC objects.
