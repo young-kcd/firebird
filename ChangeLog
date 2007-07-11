@@ -1,3 +1,9 @@
+2007-07-10 12:11  hvlad
+
+	* firebird2/src/jrd/why.cpp (1.132):
+
+	Fixed CORE-1196 : Long SQL statements break TCP/IP connection
+
 2007-07-08 10:43  robocop
 
 	* firebird2/src/dsql/gen.cpp (1.127):
