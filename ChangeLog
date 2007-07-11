@@ -1,3 +1,33 @@
+2007-07-10 19:42  hvlad
+
+	* firebird2/src/jrd/isc.cpp (1.58.4.1):
+
+	Backported fix for CORE-984 (and its duplicate CORE-1301) :
+	fbclient.dll changes the security descriptor of the calling process
+
+2007-07-10 19:34  hvlad
+
+	* firebird2/src/jrd/evl.cpp (1.165.2.8):
+
+	Backported fix for CORE-1248 : Incorrect timestamp arithmetic when
+	one of operands is negative number
+
+2007-07-10 19:29  hvlad
+
+	* firebird2/src/remote/interface.cpp (1.119.4.2):
+
+	Backported fix for CORE-1349 : Remote interface not checked in
+	REM_receive and REM_fetch client supplied message length against
+	length of format of message
+
+2007-07-10 19:20  hvlad
+
+	* firebird2/src/remote/inet.cpp (1.160.2.7):
+
+	Backported fixes for CORE-1276 : Sometime INET error reported as 0
+	in firebird.log instead of real error code, and CORE-1303 :
+	Infinite loop in SS remote listener
+
 2007-07-08 16:27  asfernandes
 
 	* firebird2/src/jrd/Optimizer.cpp (1.56.4.4):
