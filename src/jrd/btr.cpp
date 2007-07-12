@@ -895,12 +895,8 @@ void BTR_insert(thread_db* tdbb, WIN * root_window, index_insertion* insertion)
 
 	index_desc* idx = insertion->iib_descriptor;
 	WIN window(idx->idx_root);
-	btree_page* bucket = (btree_page*) CCH_FETCH(tdbb, &window, LCK_read, pag_index);
+	btree_page* bucket = (btree_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_index);
 
-	if (bucket->btr_level == 0) {
-		CCH_RELEASE(tdbb, &window);
-		CCH_FETCH(tdbb, &window, LCK_write, pag_index);
-	}
 	CCH_RELEASE(tdbb, root_window);
 
 	temporary_key key;
@@ -2188,20 +2184,29 @@ static SLONG add_node(thread_db* tdbb,
 			break;
 		}
 		bucket = (btree_page*) CCH_HANDOFF(tdbb, window, bucket->btr_sibling,
-			LCK_read, pag_index);
+			LCK_write, pag_index);
 	}
+
+	CCH_MARK(tdbb, window);
+	bucket->btr_header.pag_flags |= btr_dont_gc;
 
 	// Fetch the page at the next level down.  If the next level is leaf level, 
 	// fetch for write since we know we are going to write to the page (most likely).
 	const SLONG index = window->win_page;
-	CCH_HANDOFF(tdbb, window, page,
-		(SSHORT) ((bucket->btr_level == 1) ? LCK_write : LCK_read), pag_index);
+	CCH_HANDOFF(tdbb, window, page, LCK_write, pag_index);
 
 	// now recursively try to insert the node at the next level down
 	index_insertion propagate;
 	SLONG split = add_node(tdbb, window, insertion, new_key,
 		new_record_number, &page, &propagate.iib_sibling);
-	if (split == NO_SPLIT) {
+	if (split == NO_SPLIT) 
+	{
+		window->win_page = index;
+		bucket = (btree_page*) CCH_FETCH(tdbb, window, LCK_write, pag_index);
+		CCH_MARK(tdbb, window);
+		bucket->btr_header.pag_flags &= ~btr_dont_gc;
+		CCH_RELEASE(tdbb, window);
+
 		return NO_SPLIT;
 	}
 
@@ -2237,6 +2242,12 @@ static SLONG add_node(thread_db* tdbb,
 	// the split page on the lower level has been propogated, so we can go back to 
 	// the page it was split from, and mark it as garbage-collectable now
 	window->win_page = page;
+	bucket = (btree_page*) CCH_FETCH(tdbb, window, LCK_write, pag_index);
+	CCH_MARK(tdbb, window);
+	bucket->btr_header.pag_flags &= ~btr_dont_gc;
+	CCH_RELEASE(tdbb, window);
+
+	window->win_page = index;
 	bucket = (btree_page*) CCH_FETCH(tdbb, window, LCK_write, pag_index);
 	CCH_MARK(tdbb, window);
 	bucket->btr_header.pag_flags &= ~btr_dont_gc;
