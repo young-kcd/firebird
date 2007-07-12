@@ -821,9 +821,14 @@ dsql_nod* PASS1_node(dsql_req* request, dsql_nod* input, bool proc_flag)
 						rse->nod_arg[e_rse_items]->nod_arg[0];
 					temp->nod_arg[e_via_value_2] = MAKE_node(nod_null, (int) 0);
 
+					// Try to force sub1 to be same type as sub2 eg: ? = (select ...) case
+					sub1 = node->nod_arg[0];
+					sub2 = node->nod_arg[1];
+					set_parameter_type(request, sub1, sub2, false);
+ 
 					// Finish off by cleaning up contexts
+ 					request->req_context->clear(base);
 
-					request->req_context->clear(base);
 					return node;
 				}
 				else {
