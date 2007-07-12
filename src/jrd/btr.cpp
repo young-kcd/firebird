@@ -4754,6 +4754,56 @@ static CONTENTS garbage_collect(thread_db* tdbb, WIN * window, SLONG parent_numb
 		return contents_above_threshold;
 	}
 
+	// Find the node on the parent's level--the parent page could 
+	// have split while we didn't have it locked
+	UCHAR *parentPointer = BTreeNode::getPointerFirstNode(parent_page);
+	IndexNode parentNode;
+	while (true) {
+		const UCHAR flags = parent_page->btr_header.pag_flags;
+		parentPointer = BTreeNode::readNode(&parentNode, parentPointer, flags, false);
+		if (parentNode.isEndBucket) {
+			parent_page = (btree_page*) CCH_HANDOFF(tdbb, &parent_window,
+				parent_page->btr_sibling, LCK_write, pag_index);
+			parentPointer = BTreeNode::getPointerFirstNode(parent_page);
+			continue;
+		}
+
+		if (parentNode.pageNumber == window->win_page || 
+			parentNode.isEndLevel) 
+		{
+			break;
+		}
+
+	}
+
+	// we should always find the node, but just in case we don't, bow out gracefully
+	if (parentNode.isEndLevel) {
+		CCH_RELEASE(tdbb, &parent_window);
+#ifdef DEBUG_BTR
+		CORRUPT(204);	// msg 204 index inconsistent
+#endif
+		return contents_above_threshold;
+	}
+
+
+	// Fix for ARINC database corruption bug: in most cases we update the END_BUCKET 
+	// marker of the left sibling page to contain the END_BUCKET of the garbage-collected 
+	// page.  However, when this page is the first page on its parent, then the left 
+	// sibling page is the last page on its parent.  That means if we update its END_BUCKET 
+	// marker, its bucket of values will extend past that of its parent, causing trouble 
+	// down the line.  
+   
+	// So we never garbage-collect a page which is the first one on its parent.  This page 
+	// will have to wait until the parent page gets collapsed with the page to its left, 
+	// in which case this page itself will then be garbage-collectable.  Since there are 
+	// no more keys on this page, it will not be garbage-collected itself.  When the page 
+	// to the right falls below the threshold for garbage collection, it will be merged with 
+	// this page.
+	if (parentNode.nodePointer == BTreeNode::getPointerFirstNode(parent_page)) {
+		CCH_RELEASE(tdbb, &parent_window);
+		return contents_above_threshold;
+	}
+
 	// find the left sibling page by going one page to the left, 
 	// but if it does not recognize us as its right sibling, keep 
 	// going to the right until we find the page that is our real 
@@ -4818,65 +4868,6 @@ static CONTENTS garbage_collect(thread_db* tdbb, WIN * window, SLONG parent_numb
 		(flags & BTR_FLAG_COPY_MASK))
 	{
 		BUGCHECK(204);	// msg 204 index inconsistent
-	}
-
-	// Find the node on the parent's level--the parent page could 
-	// have split while we didn't have it locked
-	UCHAR *parentPointer = BTreeNode::getPointerFirstNode(parent_page);
-	IndexNode parentNode;
-	while (true) {
-		parentPointer = BTreeNode::readNode(&parentNode, parentPointer, flags, false);
-		if (parentNode.isEndBucket) {
-			parent_page = (btree_page*) CCH_HANDOFF(tdbb, &parent_window,
-				parent_page->btr_sibling, LCK_write, pag_index);
-			parentPointer = BTreeNode::getPointerFirstNode(parent_page);
-			continue;
-		}
-
-		if (parentNode.pageNumber == window->win_page || 
-			parentNode.isEndLevel) 
-		{
-			break;
-		}
-
-	}
-
-	// we should always find the node, but just in case we don't, bow out gracefully
-	if (parentNode.isEndLevel) {
-		CCH_RELEASE(tdbb, &left_window);
-		if (right_page) {
-			CCH_RELEASE(tdbb, &right_window);
-		}
-		CCH_RELEASE(tdbb, &parent_window);
-		CCH_RELEASE(tdbb, window);
-#ifdef DEBUG_BTR
-		CORRUPT(204);	// msg 204 index inconsistent
-#endif
-		return contents_above_threshold;
-	}
-
-
-	// Fix for ARINC database corruption bug: in most cases we update the END_BUCKET 
-	// marker of the left sibling page to contain the END_BUCKET of the garbage-collected 
-	// page.  However, when this page is the first page on its parent, then the left 
-	// sibling page is the last page on its parent.  That means if we update its END_BUCKET 
-	// marker, its bucket of values will extend past that of its parent, causing trouble 
-	// down the line.  
-   
-	// So we never garbage-collect a page which is the first one on its parent.  This page 
-	// will have to wait until the parent page gets collapsed with the page to its left, 
-	// in which case this page itself will then be garbage-collectable.  Since there are 
-	// no more keys on this page, it will not be garbage-collected itself.  When the page 
-	// to the right falls below the threshold for garbage collection, it will be merged with 
-	// this page.
-	if (parentNode.nodePointer == BTreeNode::getPointerFirstNode(parent_page)) {
-		CCH_RELEASE(tdbb, &left_window);
-		if (right_page) {
-			CCH_RELEASE(tdbb, &right_window);
-		}
-		CCH_RELEASE(tdbb, &parent_window);
-		CCH_RELEASE(tdbb, window);
-		return contents_above_threshold;
 	}
 
 	// find the last node on the left sibling and save its key value
