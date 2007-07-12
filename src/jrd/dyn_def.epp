@@ -103,7 +103,7 @@ static const UCHAR who_blr[] =
 	blr_version5,
 	blr_begin,
 	blr_message, 0, 1, 0,
-	blr_cstring, 32, 0,
+	blr_cstring2, 3, 0, 32, 0,
 	blr_begin,
 	blr_send, 0,
 	blr_begin,
