@@ -1,3 +1,19 @@
+2007-07-12 03:42  asfernandes
+
+	* firebird2/src/dsql/pass1.cpp (1.260.2.4):
+
+	Backported fix for CORE-1156 - Prepare fails when having a
+	parameter in a DSQL statement before a sub query.
+
+2007-07-12 02:43  asfernandes
+
+	* firebird2/src/: dsql/ddl.cpp (1.168.4.1), jrd/dyn_def.epp
+	(1.103.4.1):
+
+	Backported fixes for: 1) CORE-1286 - Bug with COMPUTED BY fields.
+	2) CORE-1292 - Can't create table using long username and UTF8 as
+	attachment charset.
+
 2007-07-10 19:42  hvlad
 
 	* firebird2/src/jrd/isc.cpp (1.58.4.1):
