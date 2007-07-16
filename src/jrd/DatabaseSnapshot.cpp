@@ -330,7 +330,7 @@ DatabaseSnapshot* DatabaseSnapshot::create(thread_db* tdbb)
 		// in the transaction block
 		MemoryPool& pool = *transaction->tra_pool;
 		transaction->tra_db_snapshot =
-			FB_NEW(pool) DatabaseSnapshot(tdbb, pool, transaction);
+			FB_NEW(pool) DatabaseSnapshot(tdbb, pool);
 	}
 
 	return transaction->tra_db_snapshot;
@@ -357,7 +357,7 @@ int DatabaseSnapshot::blockingAst(void* ast_object)
 	Jrd::ContextPoolHolder context(tdbb, dbb->dbb_permanent);
 
 	// Write the data to the shared memory
-	dumpData(tdbb, true);
+	dumpData(tdbb);
 
 	// Release the lock and mark dbb as requesting a new one
 	LCK_release(tdbb, lock);
@@ -368,8 +368,8 @@ int DatabaseSnapshot::blockingAst(void* ast_object)
 }
 
 
-DatabaseSnapshot::DatabaseSnapshot(thread_db* tdbb, MemoryPool& pool, jrd_tra* tran)
-	: transaction(tran), snapshot(pool)
+DatabaseSnapshot::DatabaseSnapshot(thread_db* tdbb, MemoryPool& pool)
+	: snapshot(pool)
 {
 	// Initialize record buffers
 	RecordBuffer* dbb_buffer =
@@ -386,24 +386,37 @@ DatabaseSnapshot::DatabaseSnapshot(thread_db* tdbb, MemoryPool& pool, jrd_tra* t
 	Database* dbb = tdbb->tdbb_database;
 	fb_assert(dbb);
 
-	// Dump data for our own dbb, as we won't be
-	// signalled by the LCK_convert call below
-	AutoPtr<ClumpletReader> reader(dumpData(tdbb, false));
+	Attachment* attachment = tdbb->tdbb_attachment;
+	fb_assert(attachment);
+
+	// Dump data for our own dbb
+	dumpData(tdbb);
+
+	// Release the lock and mark dbb as requesting a new one
+	LCK_release(tdbb, dbb->dbb_monitor_lock);
+	dbb->dbb_ast_flags |= DBB_monitor_off;
 
 	// This variable defines whether we're interested in the global data
 	// (i.e. all attachments) and hence should signal other processes
 	// or it's enough to return the local data (our own attachment) only.
-	const bool broadcast = (reader == NULL);
+	const bool broadcast = attachment->att_user->locksmith();
 
 	if (broadcast)
 	{
-		// Signal owners of other dbbs to dump their data as well
-		LCK_convert(tdbb, dbb->dbb_monitor_lock, LCK_EX, LCK_WAIT);
-		dump->acquire();
-		reader = dump->readData(tdbb);
+		Lock temp_lock, *lock = &temp_lock;
+		lock->lck_dbb = dbb;
+		lock->lck_length = sizeof(SLONG);
+		lock->lck_key.lck_long = 0;
+		lock->lck_type = LCK_monitor;
+		lock->lck_owner_handle = LCK_get_owner_handle(tdbb, lock->lck_type);
+		lock->lck_parent = dbb->dbb_lock;
+
+		LCK_lock(tdbb, lock, LCK_EX, LCK_WAIT);
+		LCK_release(tdbb, lock);
 	}
 
-	fb_assert(reader);
+	dump->acquire();
+	AutoPtr<ClumpletReader> reader(dump->readData(tdbb));
 	reader->rewind();
 
 	try {
@@ -413,6 +426,7 @@ DatabaseSnapshot::DatabaseSnapshot(thread_db* tdbb, MemoryPool& pool, jrd_tra* t
 
 		int rid = 0;
 		bool database_processed = false, database_seen = false;
+		bool self_processed = false;
 		bool fields_processed = false, allowed = false;
 
 		while (!reader->isEof())
@@ -476,6 +490,9 @@ DatabaseSnapshot::DatabaseSnapshot(thread_db* tdbb, MemoryPool& pool, jrd_tra* t
 				{
 					if (fid == f_mon_db_name)
 					{
+						if (self_processed && !broadcast)
+							break;
+
 						database_processed = database_seen;
 
 						// Do we look at our own database record?
@@ -493,6 +510,19 @@ DatabaseSnapshot::DatabaseSnapshot(thread_db* tdbb, MemoryPool& pool, jrd_tra* t
 						putField(record, fid, source, length);
 						fields_processed = true;
 					}
+				}
+				else if (rid == rel_mon_attachments)
+				{
+					if (fid == f_mon_att_id)
+					{
+						if (self_processed && !broadcast)
+							break;
+					}
+
+					self_processed = true;
+
+					putField(record, fid, source, length);
+					fields_processed = true;
 				}
 				// The generic logic that covers all relations
 				// except MON$DATABASE
@@ -514,12 +544,7 @@ DatabaseSnapshot::DatabaseSnapshot(thread_db* tdbb, MemoryPool& pool, jrd_tra* t
 		gds__log(ex.what());
 	}
 
-	// Release locks
-	if (broadcast)
-	{
-		dump->release();
-		LCK_convert(tdbb, dbb->dbb_monitor_lock, LCK_SR, LCK_WAIT);
-	}
+	dump->release();
 }
 
 
@@ -643,7 +668,8 @@ void DatabaseSnapshot::putField(Record* record, int id, const void* source, size
 			thread_db* tdbb = JRD_get_thread_data();
 
 			bid blob_id;
-			blb* blob = BLB_create2(tdbb, transaction, &blob_id, 0, NULL);
+			blb* blob = BLB_create2(tdbb, tdbb->tdbb_transaction,
+									&blob_id, 0, NULL);
 
 			length = MIN(length, MAX_USHORT);
 
@@ -714,61 +740,92 @@ const char* DatabaseSnapshot::checkNull(int rid, int fid, const char* source, si
 }
 
 
-ClumpletReader* DatabaseSnapshot::dumpData(thread_db* tdbb, bool locksmith)
+void DatabaseSnapshot::dumpData(thread_db* tdbb)
 {
 	fb_assert(tdbb);
 	Database* dbb = tdbb->tdbb_database;
 	fb_assert(dbb);
 
-	const Attachment* self_attachment = tdbb->tdbb_attachment;
-	fb_assert(self_attachment);
-
-	// Define whether we work in the global or local mode.
-	// The local one implies that we should dump our own
-	// attachment only and that the dump will be processed
-	// inside the caller process.
-	if (!locksmith)
-	{
-		locksmith = self_attachment->att_user->locksmith();
-	}
-
-	ClumpletWriter* writer = NULL;
-
 	try {
 
 	MemoryPool& pool = *tdbb->getDefaultPool();
-	writer = FB_NEW(pool)
+	ClumpletWriter* ptr = FB_NEW(pool)
 		ClumpletWriter(pool, ClumpletReader::WideUnTagged, MAX_ULONG);
+	AutoPtr<ClumpletWriter> writer(ptr);
 
 	writer->insertBytes(TAG_DBB, (UCHAR*) &dbb->dbb_guid, sizeof(FB_GUID));
+
+	const Attachment* self_attachment = tdbb->tdbb_attachment;
+	fb_assert(self_attachment);
+
+	jrd_tra* transaction = NULL;
+	jrd_req* request = NULL;
+	jrd_req* call = NULL;
 
 	// Database information
 
 	putDatabase(dbb, *writer);
 
-	// Attachment information
+	// Self attachment information
+
+	putAttachment(self_attachment, *writer);
+
+	// Self transactions information
+
+	for (transaction = self_attachment->att_transactions;
+		transaction; transaction = transaction->tra_next)
+	{
+		putTransaction(transaction, *writer);
+	}
+
+	// Self requests information
+
+	for (request = self_attachment->att_requests;
+		request; request = request->req_request)
+	{
+		if (!(request->req_flags & (req_internal | req_sys_trigger)))
+		{
+			putRequest(request, *writer);
+		}
+	}
+
+	// Self call stack information
+
+	for (transaction = self_attachment->att_transactions;
+		transaction; transaction = transaction->tra_next)
+	{
+		for (request = transaction->tra_requests;
+			request; request = request->req_tra_next)
+		{
+			if (!(request->req_flags & (req_internal | req_sys_trigger)) &&
+				request->req_caller)
+			{
+				putCall(request, *writer);
+			}
+		}
+	}
+
+	// Other attachments information
 
 	for (Attachment* attachment = dbb->dbb_attachments;
 		attachment; attachment = attachment->att_next)
 	{
-		if (!locksmith && self_attachment != attachment)
+		if (attachment == self_attachment)
 			continue;
 
 		putAttachment(attachment, *writer);
 
 		// Transaction information
 
-		{ // Scope for MSVC6
-			for (jrd_tra* transaction = attachment->att_transactions;
-				transaction; transaction = transaction->tra_next)
-			{
-				putTransaction(transaction, *writer);
-			}
-		} // Scope for MSVC6
+		for (transaction = attachment->att_transactions;
+			transaction; transaction = transaction->tra_next)
+		{
+			putTransaction(transaction, *writer);
+		}
 
 		// Request information
 
-		for (jrd_req* request = attachment->att_requests;
+		for (request = attachment->att_requests;
 			request; request = request->req_request)
 		{
 			if (!(request->req_flags & (req_internal | req_sys_trigger)))
@@ -779,10 +836,10 @@ ClumpletReader* DatabaseSnapshot::dumpData(thread_db* tdbb, bool locksmith)
 
 		// Call stack information
 
-		for (jrd_tra* transaction = attachment->att_transactions;
+		for (transaction = attachment->att_transactions;
 			transaction; transaction = transaction->tra_next)
 		{
-			for (jrd_req* request = transaction->tra_requests;
+			for (request = transaction->tra_requests;
 				request; request = request->req_tra_next)
 			{
 				if (!(request->req_flags & (req_internal | req_sys_trigger)) &&
@@ -794,39 +851,28 @@ ClumpletReader* DatabaseSnapshot::dumpData(thread_db* tdbb, bool locksmith)
 		}
 	}
 
-	if (locksmith)
+	if (!dump)
 	{
+		// Initialize the shared memory region
+		MutexLockGuard guard(initMutex);
 		if (!dump)
 		{
-			// Initialize the shared memory region
-			MutexLockGuard guard(initMutex);
-			if (!dump)
-			{
-				dump = FB_NEW(*getDefaultMemoryPool()) SharedMemory;
-			}
+			dump = FB_NEW(*getDefaultMemoryPool()) SharedMemory;
 		}
-
-		dump->acquire();
-		dump->writeData(tdbb, *writer);
-		dump->release();
 	}
+
+	dump->acquire();
+	dump->writeData(tdbb, *writer);
+	dump->release();
 
 	}
 	catch (const Firebird::Exception& ex) {
 		gds__log(ex.what());
 	}
-
-	if (locksmith)
-	{
-		delete writer;
-		writer = NULL;
-	}
-
-	return writer;
 }
 
 
-void DatabaseSnapshot::putDatabase(Database* database,
+void DatabaseSnapshot::putDatabase(const Database* database,
 								   ClumpletWriter& writer)
 {
 	fb_assert(database);
@@ -892,7 +938,7 @@ void DatabaseSnapshot::putDatabase(Database* database,
 }
 
 
-void DatabaseSnapshot::putAttachment(Attachment* attachment,
+void DatabaseSnapshot::putAttachment(const Attachment* attachment,
 									 ClumpletWriter& writer)
 {
 	fb_assert(attachment);
@@ -947,7 +993,7 @@ void DatabaseSnapshot::putAttachment(Attachment* attachment,
 }
 
 
-void DatabaseSnapshot::putTransaction(jrd_tra* new_transaction,
+void DatabaseSnapshot::putTransaction(const jrd_tra* new_transaction,
 									  ClumpletWriter& writer)
 {
 	fb_assert(new_transaction);
@@ -998,7 +1044,7 @@ void DatabaseSnapshot::putTransaction(jrd_tra* new_transaction,
 }
 
 
-void DatabaseSnapshot::putRequest(jrd_req* request,
+void DatabaseSnapshot::putRequest(const jrd_req* request,
 								  ClumpletWriter& writer)
 {
 	fb_assert(request);
@@ -1038,7 +1084,7 @@ void DatabaseSnapshot::putRequest(jrd_req* request,
 }
 
 
-void DatabaseSnapshot::putCall(jrd_req* request,
+void DatabaseSnapshot::putCall(const jrd_req* request,
 							   ClumpletWriter& writer)
 {
 	fb_assert(request);

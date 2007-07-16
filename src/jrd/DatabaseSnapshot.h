@@ -85,26 +85,25 @@ public:
 	static int blockingAst(void*);
 
 protected:
-	DatabaseSnapshot(thread_db*, MemoryPool&, jrd_tra*);
+	DatabaseSnapshot(thread_db*, MemoryPool&);
 
 private:
 	RecordBuffer* allocBuffer(thread_db*, MemoryPool&, int);
 	void clearRecord(Record*);
 	void putField(Record*, int, const void*, size_t);
 
-	static Firebird::ClumpletReader* dumpData(thread_db*, bool);
+	static void dumpData(thread_db*);
 	static const char* checkNull(int, int, const char*, size_t);
 
-	static void putDatabase(Database*, Firebird::ClumpletWriter&);
-	static void putAttachment(Attachment*, Firebird::ClumpletWriter&);
-	static void putTransaction(jrd_tra*, Firebird::ClumpletWriter&);
-	static void putRequest(jrd_req*, Firebird::ClumpletWriter&);
-	static void putCall(jrd_req*, Firebird::ClumpletWriter&);
+	static void putDatabase(const Database*, Firebird::ClumpletWriter&);
+	static void putAttachment(const Attachment*, Firebird::ClumpletWriter&);
+	static void putTransaction(const jrd_tra*, Firebird::ClumpletWriter&);
+	static void putRequest(const jrd_req*, Firebird::ClumpletWriter&);
+	static void putCall(const jrd_req*, Firebird::ClumpletWriter&);
 
 	static Firebird::Mutex initMutex;
 	static SharedMemory* dump;
 
-	jrd_tra* transaction;
 	Firebird::Array<RelationData> snapshot;
 };
 
