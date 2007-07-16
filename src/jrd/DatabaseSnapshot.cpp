@@ -667,9 +667,33 @@ void DatabaseSnapshot::putField(Record* record, int id, const void* source, size
 		{
 			thread_db* tdbb = JRD_get_thread_data();
 
+			Firebird::UCharBuffer bpb;
+			bpb.resize(15);
+
+			UCHAR* p = bpb.begin();
+			*p++ = isc_bpb_version1;
+
+			*p++ = isc_bpb_source_type;
+			*p++ = 2;
+			put_short(p, isc_blob_text);
+			p += 2;
+			*p++ = isc_bpb_source_interp;
+			*p++ = 1;
+			*p++ = tdbb->tdbb_attachment->att_charset;
+
+			*p++ = isc_bpb_target_type;
+			*p++ = 2;
+			put_short(p, isc_blob_text);
+			p += 2;
+			*p++ = isc_bpb_target_interp;
+			*p++ = 1;
+			*p++ = CS_METADATA;
+
+			bpb.shrink(p - bpb.begin());
+
 			bid blob_id;
-			blb* blob = BLB_create2(tdbb, tdbb->tdbb_transaction,
-									&blob_id, 0, NULL);
+			blb* blob = BLB_create2(tdbb, tdbb->tdbb_transaction, &blob_id,
+									bpb.getCount(), bpb.begin());
 
 			length = MIN(length, MAX_USHORT);
 
