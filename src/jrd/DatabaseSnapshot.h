@@ -76,6 +76,26 @@ class DatabaseSnapshot {
 		Header* base;
 	};
 
+	class DumpGuard {
+	public:
+		explicit DumpGuard(SharedMemory* ptr)
+			: dump(ptr)
+		{
+			dump->acquire();
+		}
+
+		~DumpGuard()
+		{
+			dump->release();
+		}
+
+	private:
+		DumpGuard(const DumpGuard&);
+		DumpGuard& operator=(const DumpGuard&);
+
+		SharedMemory* dump;
+	};
+
 public:
 	~DatabaseSnapshot();
 

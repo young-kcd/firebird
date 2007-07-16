@@ -92,6 +92,7 @@ DatabaseSnapshot::SharedMemory::SharedMemory()
 								  &handle);
 	if (!base)
 	{
+		gds__log("Cannot initialize the shared memory region");
 		status_exception::raise(statusVector);
 	}
 
@@ -356,12 +357,17 @@ int DatabaseSnapshot::blockingAst(void* ast_object)
 
 	Jrd::ContextPoolHolder context(tdbb, dbb->dbb_permanent);
 
-	// Write the data to the shared memory
-	dumpData(tdbb);
+	try {
+		// Write the data to the shared memory
+		dumpData(tdbb);
 
-	// Release the lock and mark dbb as requesting a new one
-	LCK_release(tdbb, lock);
-	dbb->dbb_ast_flags |= DBB_monitor_off;
+		// Release the lock and mark dbb as requesting a new one
+		LCK_release(tdbb, lock);
+		dbb->dbb_ast_flags |= DBB_monitor_off;
+	}
+	catch (const Exception&) {
+		gds__log("Unexpected exception at the AST level");
+	}
 
 	JRD_restore_thread_data();
 	return 0;
@@ -415,136 +421,129 @@ DatabaseSnapshot::DatabaseSnapshot(thread_db* tdbb, MemoryPool& pool)
 		LCK_release(tdbb, lock);
 	}
 
-	dump->acquire();
+	DumpGuard guard(dump);
 	AutoPtr<ClumpletReader> reader(dump->readData(tdbb));
 	reader->rewind();
 
-	try {
-		// Parse the dump
-		RecordBuffer* buffer = NULL;
-		Record* record = NULL;
+	// Parse the dump
+	RecordBuffer* buffer = NULL;
+	Record* record = NULL;
 
-		int rid = 0;
-		bool database_processed = false, database_seen = false;
-		bool self_processed = false;
-		bool fields_processed = false, allowed = false;
+	int rid = 0;
+	bool database_processed = false, database_seen = false;
+	bool self_processed = false;
+	bool fields_processed = false, allowed = false;
 
-		while (!reader->isEof())
+	while (!reader->isEof())
+	{
+		if (reader->getClumpTag() == TAG_DBB)
 		{
-			if (reader->getClumpTag() == TAG_DBB)
-			{
-				reader->moveNext();
+			reader->moveNext();
 
-				if (fields_processed)
-				{
-					buffer->store(record);
-					fields_processed = false;
-				}
+			if (fields_processed)
+			{
+				buffer->store(record);
+				fields_processed = false;
 			}
-			else if (reader->getClumpTag() == TAG_RECORD)
+		}
+		else if (reader->getClumpTag() == TAG_RECORD)
+		{
+			rid = reader->getInt();
+			reader->moveNext();
+
+			if (fields_processed)
 			{
-				rid = reader->getInt();
-				reader->moveNext();
-
-				if (fields_processed)
-				{
-					buffer->store(record);
-					fields_processed = false;
-				}
-
-				switch (rid)
-				{
-				case rel_mon_database:
-					buffer = dbb_buffer;
-					break;
-				case rel_mon_attachments:
-					buffer = att_buffer;
-					break;
-				case rel_mon_transactions:
-					buffer = tra_buffer;
-					break;
-				case rel_mon_statements:
-					buffer = stmt_buffer;
-					break;
-				case rel_mon_calls:
-					buffer = call_buffer;
-					break;
-				default:
-					fb_assert(false);
-				}
-
-				record = buffer->getTempRecord();
-				clearRecord(record);
+				buffer->store(record);
+				fields_processed = false;
 			}
-			else
+
+			switch (rid)
 			{
-				const int fid = reader->getClumpTag();
-				const size_t length = reader->getClumpLength();
+			case rel_mon_database:
+				buffer = dbb_buffer;
+				break;
+			case rel_mon_attachments:
+				buffer = att_buffer;
+				break;
+			case rel_mon_transactions:
+				buffer = tra_buffer;
+				break;
+			case rel_mon_statements:
+				buffer = stmt_buffer;
+				break;
+			case rel_mon_calls:
+				buffer = call_buffer;
+				break;
+			default:
+				fb_assert(false);
+			}
 
-				const char* source =
-					checkNull(rid, fid, (char*) reader->getBytes(), length);
+			record = buffer->getTempRecord();
+			clearRecord(record);
+		}
+		else
+		{
+			const int fid = reader->getClumpTag();
+			const size_t length = reader->getClumpLength();
 
-				reader->moveNext();
+			const char* source =
+				checkNull(rid, fid, (char*) reader->getBytes(), length);
 
-				if (rid == rel_mon_database)
+			reader->moveNext();
+
+			if (rid == rel_mon_database)
+			{
+				if (fid == f_mon_db_name)
 				{
-					if (fid == f_mon_db_name)
+					if (self_processed && !broadcast)
+						break;
+
+					database_processed = database_seen;
+
+					// Do we look at our own database record?
+					allowed = !dbb->dbb_database_name.compare(source, length);
+					if (allowed)
 					{
-						if (self_processed && !broadcast)
-							break;
-
-						database_processed = database_seen;
-
-						// Do we look at our own database record?
-						allowed = !dbb->dbb_database_name.compare(source, length);
-						if (allowed)
-						{
-							// Yep, we've seen it
-							database_seen = true;
-						}
-					}
-
-					// We need to return the database record only once
-					if (allowed && !database_processed)
-					{
-						putField(record, fid, source, length);
-						fields_processed = true;
+						// Yep, we've seen it
+						database_seen = true;
 					}
 				}
-				else if (rid == rel_mon_attachments)
-				{
-					if (fid == f_mon_att_id)
-					{
-						if (self_processed && !broadcast)
-							break;
-					}
 
-					self_processed = true;
-
-					putField(record, fid, source, length);
-					fields_processed = true;
-				}
-				// The generic logic that covers all relations
-				// except MON$DATABASE
-				else if (allowed)
+				// We need to return the database record only once
+				if (allowed && !database_processed)
 				{
 					putField(record, fid, source, length);
 					fields_processed = true;
 				}
 			}
-		}
+			else if (rid == rel_mon_attachments)
+			{
+				if (fid == f_mon_att_id)
+				{
+					if (self_processed && !broadcast)
+						break;
+				}
 
-		if (fields_processed)
-		{
-			buffer->store(record);
-			fields_processed = false;
+				self_processed = true;
+
+				putField(record, fid, source, length);
+				fields_processed = true;
+			}
+			// The generic logic that covers all relations
+			// except MON$DATABASE
+			else if (allowed)
+			{
+				putField(record, fid, source, length);
+				fields_processed = true;
+			}
 		}
 	}
-	catch (const Exception& ex) {
-		gds__log(ex.what());
-	}
 
-	dump->release();
+	if (fields_processed)
+	{
+		buffer->store(record);
+		fields_processed = false;
+	}
 }
 
 
@@ -667,7 +666,7 @@ void DatabaseSnapshot::putField(Record* record, int id, const void* source, size
 		{
 			thread_db* tdbb = JRD_get_thread_data();
 
-			Firebird::UCharBuffer bpb;
+			UCharBuffer bpb;
 			bpb.resize(15);
 
 			UCHAR* p = bpb.begin();
@@ -769,8 +768,6 @@ void DatabaseSnapshot::dumpData(thread_db* tdbb)
 	fb_assert(tdbb);
 	Database* dbb = tdbb->tdbb_database;
 	fb_assert(dbb);
-
-	try {
 
 	MemoryPool& pool = *tdbb->getDefaultPool();
 	ClumpletWriter* ptr = FB_NEW(pool)
@@ -885,14 +882,8 @@ void DatabaseSnapshot::dumpData(thread_db* tdbb)
 		}
 	}
 
-	dump->acquire();
+	DumpGuard guard(dump);
 	dump->writeData(tdbb, *writer);
-	dump->release();
-
-	}
-	catch (const Firebird::Exception& ex) {
-		gds__log(ex.what());
-	}
 }
 
 
