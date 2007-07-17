@@ -1,3 +1,23 @@
+2007-07-16 17:26  dimitr
+
+	* firebird2/src/jrd/: DatabaseSnapshot.cpp (1.32),
+	DatabaseSnapshot.h (1.7):
+
+	Fixed CORE-1359.
+
+2007-07-16 16:44  dimitr
+
+	* firebird2/src/jrd/DatabaseSnapshot.cpp (1.31):
+
+	Fixed CORE-1358.
+
+2007-07-16 16:41  dimitr
+
+	* firebird2/src/jrd/: DatabaseSnapshot.cpp (1.30),
+	DatabaseSnapshot.h (1.6):
+
+	Fixed CORE-1330 plus some code cleanup.
+
 2007-07-10 12:11  hvlad
 
 	* firebird2/src/jrd/why.cpp (1.132):
