@@ -1,3 +1,9 @@
+2007-07-17 12:12  dchri
+
+	* firebird2/src/jrd/gds.cpp (1.193.2.3):
+
+	Backported fix for CORE-1223.
+
 2007-07-12 11:47  hvlad
 
 	* firebird2/src/jrd/btr.cpp (1.162.2.12):
