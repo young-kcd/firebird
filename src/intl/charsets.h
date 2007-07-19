@@ -94,7 +94,7 @@ CS_737, CS_775, CS_858, CS_862, CS_864, CS_866, CS_869
 
 #define   CS_TIS620             66	/* TIS620 */
 #define   CS_GBK                67	/* GBK */
-#define   CS_CP932              68	/* CP932 */
+#define   CS_CP943C             68	/* CP943C */
 
 #define   CS_dynamic           127	/* Pseudo number for runtime charset */
 
