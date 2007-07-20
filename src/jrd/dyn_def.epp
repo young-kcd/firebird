@@ -2789,6 +2789,7 @@ void DYN_define_parameter( Global* gbl, const UCHAR** ptr, Firebird::MetaName* p
 
 	Firebird::MetaName prc_name;
 	prm_mech_t mechanism = prm_mech_normal;
+	bool explicit_domain = false;
 
 	STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		P IN RDB$PROCEDURE_PARAMETERS USING
@@ -2834,6 +2835,15 @@ void DYN_define_parameter( Global* gbl, const UCHAR** ptr, Firebird::MetaName* p
 				break;
 
 			case isc_dyn_fld_not_null:
+				if (ENCODE_ODS(dbb->dbb_ods_version, dbb->dbb_minor_original) < ODS_11_1)
+				{
+					// Feature not supported on ODS version older than %d.%d
+					ERR_post(isc_dsql_feature_not_supported_ods,
+							 isc_arg_number, 11,
+							 isc_arg_number, 1,
+							 0);
+				}
+
 				f_notnull = TRUE;
 				f_notnull_null = FALSE;
 				break;
@@ -2841,6 +2851,7 @@ void DYN_define_parameter( Global* gbl, const UCHAR** ptr, Firebird::MetaName* p
 			case isc_dyn_fld_source:
 				GET_STRING(ptr, P.RDB$FIELD_SOURCE);
 				P.RDB$FIELD_SOURCE.NULL = FALSE;
+				explicit_domain = true;
 				break;
 
 			case isc_dyn_fld_length:
@@ -2961,26 +2972,17 @@ void DYN_define_parameter( Global* gbl, const UCHAR** ptr, Firebird::MetaName* p
 				PS.RDB$CHARACTER_SET_ID = f_charset;
 				PS.RDB$CHARACTER_SET_ID.NULL = f_charset_null;
 
-				if (ENCODE_ODS(dbb->dbb_ods_version, dbb->dbb_minor_original) < ODS_11_1)
-				{
-					PS.RDB$COLLATION_ID = f_collation;
-					PS.RDB$COLLATION_ID.NULL = f_collation_null;
+				PS.RDB$COLLATION_ID = f_collation;
+				PS.RDB$COLLATION_ID.NULL = f_collation_null;
 
-					PS.RDB$DEFAULT_VALUE.NULL = (default_value_ptr == NULL) ? TRUE : FALSE;
-					if (default_value_ptr) {
-						DYN_put_blr_blob(gbl, &default_value_ptr, &PS.RDB$DEFAULT_VALUE);
-					}
-
-					PS.RDB$DEFAULT_SOURCE.NULL = (default_source_ptr == NULL) ? TRUE : FALSE;
-					if (default_source_ptr) {
-						DYN_put_text_blob(gbl, &default_source_ptr, &PS.RDB$DEFAULT_SOURCE);
-					}
+				PS.RDB$DEFAULT_VALUE.NULL = (default_value_ptr == NULL) ? TRUE : FALSE;
+				if (default_value_ptr) {
+					DYN_put_blr_blob(gbl, &default_value_ptr, &PS.RDB$DEFAULT_VALUE);
 				}
-				else
-				{
-					PS.RDB$COLLATION_ID.NULL = TRUE;
-					PS.RDB$DEFAULT_VALUE.NULL = TRUE;
-					PS.RDB$DEFAULT_SOURCE.NULL = TRUE;
+
+				PS.RDB$DEFAULT_SOURCE.NULL = (default_source_ptr == NULL) ? TRUE : FALSE;
+				if (default_source_ptr) {
+					DYN_put_text_blob(gbl, &default_source_ptr, &PS.RDB$DEFAULT_SOURCE);
 				}
 			END_STORE;
 			if (!DYN_REQUEST(drq_s_prm_src))
@@ -2993,41 +2995,51 @@ void DYN_define_parameter( Global* gbl, const UCHAR** ptr, Firebird::MetaName* p
 		DYN_REQUEST(drq_s_prms) = request;
 	}
 
-	if (ENCODE_ODS(dbb->dbb_ods_version, dbb->dbb_minor_original) >= ODS_11_1)
+	if (explicit_domain)
 	{
-		jrd_req* request2 = CMP_find_request(tdbb, drq_s_prms2, DYN_REQUESTS);
+		if (ENCODE_ODS(dbb->dbb_ods_version, dbb->dbb_minor_original) >= ODS_11_1)
+		{
+			jrd_req* request2 = CMP_find_request(tdbb, drq_s_prms2, DYN_REQUESTS);
 
-		FOR(REQUEST_HANDLE request2 TRANSACTION_HANDLE gbl->gbl_transaction)
-			P IN RDB$PROCEDURE_PARAMETERS WITH
-				P.RDB$PROCEDURE_NAME EQ prc_name.c_str() AND
-				P.RDB$PARAMETER_NAME EQ parameter_name.c_str()
+			FOR(REQUEST_HANDLE request2 TRANSACTION_HANDLE gbl->gbl_transaction)
+				P IN RDB$PROCEDURE_PARAMETERS WITH
+					P.RDB$PROCEDURE_NAME EQ prc_name.c_str() AND
+					P.RDB$PARAMETER_NAME EQ parameter_name.c_str()
+
+				if (!DYN_REQUEST(drq_s_prms2))
+					DYN_REQUEST(drq_s_prms2) = request2;
+
+				MODIFY P USING
+					P.RDB$COLLATION_ID.NULL = f_collation_null;
+					P.RDB$COLLATION_ID = f_collation;
+
+					P.RDB$DEFAULT_VALUE.NULL = (default_value_ptr == NULL) ? TRUE : FALSE;
+					if (default_value_ptr)
+						DYN_put_blr_blob(gbl, &default_value_ptr, &P.RDB$DEFAULT_VALUE);
+
+					P.RDB$DEFAULT_SOURCE.NULL = (default_source_ptr == NULL) ? TRUE : FALSE;
+					if (default_source_ptr)
+						DYN_put_text_blob(gbl, &default_source_ptr, &P.RDB$DEFAULT_SOURCE);
+
+					P.RDB$NULL_FLAG.NULL = f_notnull_null;
+					P.RDB$NULL_FLAG = f_notnull;
+
+					P.RDB$PARAMETER_MECHANISM.NULL = FALSE;
+					P.RDB$PARAMETER_MECHANISM = (USHORT) mechanism;
+				END_MODIFY
+			END_FOR
 
 			if (!DYN_REQUEST(drq_s_prms2))
 				DYN_REQUEST(drq_s_prms2) = request2;
-
-			MODIFY P USING
-				P.RDB$COLLATION_ID.NULL = f_collation_null;
-				P.RDB$COLLATION_ID = f_collation;
-
-				P.RDB$DEFAULT_VALUE.NULL = (default_value_ptr == NULL) ? TRUE : FALSE;
-				if (default_value_ptr)
-					DYN_put_blr_blob(gbl, &default_value_ptr, &P.RDB$DEFAULT_VALUE);
-
-				P.RDB$DEFAULT_SOURCE.NULL = (default_source_ptr == NULL) ? TRUE : FALSE;
-				if (default_source_ptr)
-					DYN_put_text_blob(gbl, &default_source_ptr, &P.RDB$DEFAULT_SOURCE);
-
-				// we don't support not-nullable parameters yet
-				P.RDB$NULL_FLAG.NULL = f_notnull_null;
-				P.RDB$NULL_FLAG = f_notnull;
-
-				P.RDB$PARAMETER_MECHANISM.NULL = FALSE;
-				P.RDB$PARAMETER_MECHANISM = (USHORT) mechanism;
-			END_MODIFY
-		END_FOR
-
-		if (!DYN_REQUEST(drq_s_prms2))
-			DYN_REQUEST(drq_s_prms2) = request2;
+		}
+		else
+		{
+			// Feature not supported on ODS version older than %d.%d
+			ERR_post(isc_dsql_feature_not_supported_ods,
+					 isc_arg_number, 11,
+					 isc_arg_number, 1,
+					 0);
+		}
 	}
 
 	}
