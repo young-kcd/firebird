@@ -828,7 +828,8 @@ ISC_STATUS callback_execute_immediate( ISC_STATUS* status,
 {
 	// Other requests appear to be incorrect in this context 
 	long requests = (1 << REQ_INSERT) | (1 << REQ_DELETE) | (1 << REQ_UPDATE)
-			      | (1 << REQ_DDL) | (1 << REQ_SET_GENERATOR) | (1 << REQ_EXEC_PROCEDURE);
+			      | (1 << REQ_DDL) | (1 << REQ_SET_GENERATOR) | (1 << REQ_EXEC_PROCEDURE)
+				  | (1 << REQ_EXEC_BLOCK);
 
 	if (check_for_create_database(sql_operator, "createdatabase") ||
 		check_for_create_database(sql_operator, "createschema"))
