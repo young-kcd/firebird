@@ -1351,36 +1351,34 @@ static int blocking_ast_collation(void* ast_object)
  *      and release the collation existence lock.
  *
  **************************************/
-	if (!ast_object)
-		return 0;
-
 	Collation* tt = static_cast<Collation*>(ast_object);
-	thread_db thd_context, *tdbb;
 
-	// Since this routine will be called asynchronously, we must establish
-	// a thread context.
-	JRD_set_thread_data(tdbb, thd_context);
-
-	tdbb->tdbb_database = tt->existenceLock->lck_dbb;
-	tdbb->tdbb_attachment = tt->existenceLock->lck_attachment;
-	tdbb->tdbb_quantum = QUANTUM;
-	tdbb->tdbb_request = NULL;
-	tdbb->tdbb_transaction = NULL;
-	Jrd::ContextPoolHolder context(tdbb, 0);
-
-	if (tt->useCount == 0)
+	if (tt && tt->useCount == 0)
 	{
 		tt->obsolete = true;
 
 		if (tt->existenceLock)
 		{
+			thread_db thd_context, *tdbb;
+
+			// Since this routine will be called asynchronously, we must establish
+			// a thread context.
+			JRD_set_thread_data(tdbb, thd_context);
+
+			tdbb->tdbb_database = tt->existenceLock->lck_dbb;
+			tdbb->tdbb_attachment = tt->existenceLock->lck_attachment;
+			tdbb->tdbb_quantum = QUANTUM;
+			tdbb->tdbb_request = NULL;
+			tdbb->tdbb_transaction = NULL;
+			Jrd::ContextPoolHolder context(tdbb, 0);
+
 			LCK_release(tdbb, tt->existenceLock);
 			tt->existenceLock = NULL;
+
+			// Restore the prior thread context
+			JRD_restore_thread_data();
 		}
 	}
-
-	// Restore the prior thread context
-	JRD_restore_thread_data();
 
 	return 0;
 }
