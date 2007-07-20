@@ -6434,14 +6434,21 @@ static bool receive_packet_noqueue(rem_port* port,
 
 		if (bCheckResponse) 
 		{
+			RSR statement = (RSR) port->port_objects[stmt_id];
+			CHECK_HANDLE(statement, type_rsr, isc_bad_req_handle);
+
 			if (!check_response(rdb, &p->packet)) 
 			{
 				// save error within the corresponding statement
-				RSR statement = (RSR) port->port_objects[stmt_id];
-				CHECK_HANDLE(statement, type_rsr, isc_bad_req_handle);
-
 				stmt_save_exception(statement, 
 					p->packet.p_resp.p_resp_status_vector, false);
+			}
+			else
+			{
+				// assign statement to transaction 
+				const OBJCT tran_id = p->packet.p_sqldata.p_sqldata_transaction;
+				RTR transaction = (RTR) port->port_objects[tran_id];
+				statement->rsr_rtr = transaction;
 			}
 		}
 		REMOTE_free_packet(port, &p->packet);
