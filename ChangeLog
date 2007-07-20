@@ -1,3 +1,10 @@
+2007-07-20 03:45  asfernandes
+
+	* firebird2/src/jrd/dyn_def.epp (1.155):
+
+	Fixed CORE-1369 - Downgrade from ODS11.1 misses default values of
+	procedure parameters
+
 2007-07-19 03:25  asfernandes
 
 	* firebird2/: builds/install/misc/fbintl.conf (1.16),
