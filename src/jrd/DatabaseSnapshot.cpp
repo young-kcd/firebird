@@ -621,7 +621,7 @@ void DatabaseSnapshot::putField(Record* record, int id, const void* source, size
 			const size_t max_length = desc.dsc_length;
 			length = MIN(length, max_length);
 			memcpy(address, string, length);
-			memcpy(address + length, " ", max_length - length);
+			memset(address + length, ' ', max_length - length);
 		}
 		break;
 	case dtype_varying:
