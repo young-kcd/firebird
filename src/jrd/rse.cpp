@@ -3707,8 +3707,14 @@ bool RSBRecurse::get(thread_db* tdbb, RecordSource* rsb, irsb_recurse* irsb)
 			for (; ptr < end; ptr++) 
 			{
 				record_param* rpb = request->req_rpb + (USHORT)(U_IPTR) *ptr;
+				Record* rec = rpb->rpb_record;
 				memmove(rpb, p, sizeof(record_param));
 				p += sizeof(record_param);
+
+				if (!rpb->rpb_record) {
+					rpb->rpb_record = rec;
+				}
+				fb_assert(rpb->rpb_record == rec);
 			}
 			delete[] tmp;
 		}
