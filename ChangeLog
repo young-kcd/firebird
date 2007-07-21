@@ -1,3 +1,29 @@
+2007-07-20 14:40  hvlad
+
+	* firebird2/src/remote/interface.cpp (1.143):
+
+	Fixed bug CORE-1372 : isc_dsql_fetch called after
+	isc_commit_transaction not raised error
+
+2007-07-20 11:35  alexpeshkoff
+
+	* firebird2/src/dsql/dsql.cpp (1.195):
+
+	Fixed CORE-1371: Execute block fails within execute statement
+
+2007-07-20 09:28  dimitr
+
+	* firebird2/src/jrd/intl.cpp (1.97):
+
+	Fixed possible AV caused by a NULL lock pointer.
+
+2007-07-20 06:40  dimitr
+
+	* firebird2/src/jrd/DatabaseSnapshot.cpp (1.33):
+
+	Fixed my dumb mistake in the code that caused unexpected embedded
+	NULLs in the CHAR strings.
+
 2007-07-20 03:45  asfernandes
 
 	* firebird2/src/jrd/dyn_def.epp (1.155):
