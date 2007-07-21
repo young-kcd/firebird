@@ -1,3 +1,10 @@
+2007-07-20 11:43  alexpeshkoff
+
+	* firebird2/src/dsql/dsql.cpp (1.162.4.2):
+
+	Backported fix for CORE-1371: Execute block fails within execute
+	statement
+
 2007-07-17 12:12  dchri
 
 	* firebird2/src/jrd/gds.cpp (1.193.2.3):
