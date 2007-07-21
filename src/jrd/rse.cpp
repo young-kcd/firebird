@@ -3598,11 +3598,17 @@ const USHORT RSBRecurse::MAX_RECURSE_LEVEL = 1024;
 //	4 - count of the streams that make up the union 
 //	5..5+rsb_arg[4]-1	- numbers of the streams that make up the union 
 //	5+rsb_arg[4]		- inner impure area size
+//	6+rsb_arg[4]		- number of stream for next level record
 void RSBRecurse::open(thread_db* tdbb, RecordSource* rsb, irsb_recurse* irsb)
 {
 	SET_TDBB(tdbb);
 	jrd_req* request = tdbb->tdbb_request;
 	record_param* rpb = &request->req_rpb[rsb->rsb_stream];
+	VIO_record(tdbb, rpb, rsb->rsb_format, request->req_pool);
+
+	const USHORT streams = (USHORT)(U_IPTR) rsb->rsb_arg[rsb->rsb_count];
+	const USHORT map_stream = (USHORT)(U_IPTR) rsb->rsb_arg[streams + rsb->rsb_count + 2];
+	rpb = &request->req_rpb[map_stream];
 	VIO_record(tdbb, rpb, rsb->rsb_format, request->req_pool);
 
 	// Set up our instance data
@@ -3612,7 +3618,6 @@ void RSBRecurse::open(thread_db* tdbb, RecordSource* rsb, irsb_recurse* irsb)
 	irsb->irsb_data  = NULL;
 
 	// Initialize the record number for both <root> and <child> stream
-	const USHORT streams = (USHORT)(U_IPTR) rsb->rsb_arg[rsb->rsb_count];
 	RecordSource** ptr = rsb->rsb_arg + rsb->rsb_count + 1;
 	const RecordSource* const* end = ptr + streams;
 	for (; ptr < end; ptr++) 
@@ -3632,8 +3637,12 @@ bool RSBRecurse::get(thread_db* tdbb, RecordSource* rsb, irsb_recurse* irsb)
 	const USHORT streams = (USHORT)(U_IPTR) rsb->rsb_arg[rsb->rsb_count];
 	const ULONG inner_size = (ULONG)(U_IPTR) rsb->rsb_arg[streams + rsb->rsb_count + 1]; 
 	const ULONG rpbs_size = sizeof(record_param) * streams;
+	const USHORT map_stream = (USHORT)(U_IPTR) rsb->rsb_arg[streams + rsb->rsb_count + 2];
 	RecordSource** rsb_ptr;
  
+	Record* record = request->req_rpb[rsb->rsb_stream].rpb_record;
+	Record* map_record = request->req_rpb[map_stream].rpb_record;
+
 	switch (irsb->irsb_mode) 
 	{
 	case root:
@@ -3661,7 +3670,6 @@ bool RSBRecurse::get(thread_db* tdbb, RecordSource* rsb, irsb_recurse* irsb)
 			}
 			irsb->irsb_stack = tmp;
 
-			Record* record = request->req_rpb[rsb->rsb_stream].rpb_record;
 			irsb->irsb_data = FB_NEW(*request->req_pool) char[record->rec_length];
 			memcpy(irsb->irsb_data, record->rec_data, record->rec_length);
 
@@ -3724,7 +3732,6 @@ bool RSBRecurse::get(thread_db* tdbb, RecordSource* rsb, irsb_recurse* irsb)
 			rsb_ptr = &rsb->rsb_arg[2];
 
 			// Reset our record data so that recursive WHERE clauses work
-			Record* record = request->req_rpb[rsb->rsb_stream].rpb_record;
 			memcpy(record->rec_data, irsb->irsb_data, record->rec_length);
 		}
 		else 
@@ -3741,6 +3748,8 @@ bool RSBRecurse::get(thread_db* tdbb, RecordSource* rsb, irsb_recurse* irsb)
 	for (; ptr < end; ptr++) {
 		EXE_assignment(tdbb, *ptr);
 	}
+	// copy target (next level) record into main (current level) record
+	memcpy(record->rec_data, map_record->rec_data, record->rec_length);
 
 	return true;
 }

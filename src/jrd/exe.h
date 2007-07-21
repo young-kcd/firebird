@@ -339,7 +339,8 @@ const int e_val_length		= 2;
 
 const int e_uni_stream		= 0;	// Stream for union
 const int e_uni_clauses		= 1;	// RecordSelExpr's for union
-const int e_uni_length		= 2;
+const int e_uni_map_stream	= 2;	// stream for next level record of recursive union
+const int e_uni_length		= 3;
 
 const int e_agg_stream		= 0;
 const int e_agg_rse			= 1;

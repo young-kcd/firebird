@@ -119,7 +119,7 @@ static jrd_nod* par_sort(thread_db*, CompilerScratch*, bool);
 static jrd_nod* par_stream(thread_db*, CompilerScratch*);
 #endif
 static jrd_nod* par_sys_function(thread_db*, CompilerScratch*);
-static jrd_nod* par_union(thread_db*, CompilerScratch*);
+static jrd_nod* par_union(thread_db*, CompilerScratch*, bool);
 static USHORT par_word(CompilerScratch*);
 static jrd_nod* parse(thread_db*, CompilerScratch*, USHORT, USHORT expected_optional = 0);
 static void syntax_error(CompilerScratch*, const TEXT*);
@@ -2491,7 +2491,7 @@ static jrd_nod* par_sys_function(thread_db* tdbb, CompilerScratch* csb)
 }
 
 
-static jrd_nod* par_union(thread_db* tdbb, CompilerScratch* csb)
+static jrd_nod* par_union(thread_db* tdbb, CompilerScratch* csb, bool recursive)
 {
 /**************************************
  *
@@ -2509,9 +2509,19 @@ static jrd_nod* par_union(thread_db* tdbb, CompilerScratch* csb)
    and get the number of sub-RecordSelExpr's. */
 
 	jrd_nod* node = PAR_make_node(tdbb, e_uni_length);
-	node->nod_count = 2;
+	node->nod_count = 3;
 	const USHORT stream = par_context(csb, 0);
 	node->nod_arg[e_uni_stream] = (jrd_nod*) (IPTR) stream;
+
+	// assign separate context for mapped record if union is recursive
+	USHORT map_stream = stream;
+	if (recursive)
+	{
+		node->nod_flags |= nod_recurse;
+		map_stream = par_context(csb, 0);
+		node->nod_arg[e_uni_map_stream] = (jrd_nod*) (IPTR) map_stream;
+	}
+
 	SSHORT count = (unsigned int) BLR_BYTE;
 
 /* Pick up the sub-RecordSelExpr's and maps */
@@ -2520,7 +2530,7 @@ static jrd_nod* par_union(thread_db* tdbb, CompilerScratch* csb)
 
 	while (--count >= 0) {
 		clauses.push(parse(tdbb, csb, TYPE_RSE));
-		clauses.push(par_map(tdbb, csb, stream));
+		clauses.push(par_map(tdbb, csb, map_stream));
 	}
 
 	node->nod_arg[e_uni_clauses] = PAR_make_list(tdbb, clauses);
@@ -2872,12 +2882,11 @@ static jrd_nod* parse(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 		break;
 
 	case blr_union:
-		node = par_union(tdbb, csb);
+		node = par_union(tdbb, csb, false);
 		break;
 
 	case blr_recurse:
-		node = par_union(tdbb, csb);
-		node->nod_flags |= nod_recurse;
+		node = par_union(tdbb, csb, true);
 		break;
 
 	case blr_aggregate:

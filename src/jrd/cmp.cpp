@@ -2918,7 +2918,7 @@ static jrd_nod* copy(thread_db* tdbb,
 			BUGCHECK(221);		// msg 221 (CMP) copy: cannot remap
 		node = PAR_make_node(tdbb, e_uni_length);
 		node->nod_type = input->nod_type;
-		node->nod_count = 2;
+		node->nod_count = 3;
 		node->nod_flags = input->nod_flags;
 		stream = (USHORT)(IPTR) input->nod_arg[e_uni_stream];
 		fb_assert(stream <= MAX_STREAMS);
@@ -2926,6 +2926,16 @@ static jrd_nod* copy(thread_db* tdbb,
 		node->nod_arg[e_uni_stream] = (jrd_nod*) (IPTR) new_stream;
 		remap[stream] = (UCHAR) new_stream;
 		CMP_csb_element(csb, new_stream);
+
+		if (node->nod_flags & nod_recurse)
+		{
+			stream = (USHORT)(IPTR) input->nod_arg[e_uni_map_stream];
+			fb_assert(stream <= MAX_STREAMS);
+			new_stream = csb->nextStream();
+			node->nod_arg[e_uni_map_stream] = (jrd_nod*) (IPTR) new_stream;
+			remap[stream] = (UCHAR) new_stream;
+			CMP_csb_element(csb, new_stream);
+		}
 
 		csb->csb_rpt[new_stream].csb_flags |=
 			csb->csb_rpt[stream].csb_flags & csb_no_dbkey;
@@ -5441,6 +5451,12 @@ static jrd_nod* pass2_union(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node
 		jrd_nod* map = *ptr++;
 		pass2(tdbb, csb, map, node);
 		process_map(tdbb, csb, map, format);
+	}
+
+	if (node->nod_flags & nod_recurse)
+	{
+		const USHORT map_id = (USHORT)(IPTR) node->nod_arg[e_uni_map_stream];
+		csb->csb_rpt[map_id].csb_format = *format;
 	}
 
 	return node;

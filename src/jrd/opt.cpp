@@ -5772,7 +5772,7 @@ static RecordSource* gen_union(thread_db* tdbb,
 	const bool recurse = (union_node->nod_flags & nod_recurse);
 	CompilerScratch* csb = opt->opt_csb;
 	RecordSource* rsb = 
-		FB_NEW_RPT(*tdbb->getDefaultPool(), count + nstreams + 1 + (recurse ? 1 : 0)) RecordSource();
+		FB_NEW_RPT(*tdbb->getDefaultPool(), count + nstreams + 1 + (recurse ? 2 : 0)) RecordSource();
 	if (recurse)
 	{
 		rsb->rsb_type   = rsb_recurse;
@@ -5820,9 +5820,11 @@ static RecordSource* gen_union(thread_db* tdbb,
 		*rsb_ptr++ = (RecordSource*)(IPTR) *streams++;
 	}
 
-	// hvlad: save size of inner impure area for recursive processing later
+	// hvlad: save size of inner impure area and context of mapped record
+	// for recursive processing later
 	if (recurse) {
-		*rsb_ptr = (RecordSource*)(IPTR) (csb->csb_impure - rsb->rsb_impure);
+		*rsb_ptr++ = (RecordSource*)(IPTR) (csb->csb_impure - rsb->rsb_impure);
+		*rsb_ptr = (RecordSource*) (IPTR) union_node->nod_arg[e_uni_map_stream];
 	}
 	return rsb;
 }

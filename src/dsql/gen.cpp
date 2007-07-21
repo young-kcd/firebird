@@ -2888,6 +2888,8 @@ static void gen_union( dsql_req* request, const dsql_nod* union_node)
 	}
 	dsql_ctx* union_context = (dsql_ctx*) map_item->nod_arg[e_map_context];
 	stuff_context(request, union_context);
+	// secondary context number must be present once in generated blr 
+	union_context->ctx_flags &= ~CTX_recursive;
 
 	dsql_nod* streams = union_node->nod_arg[e_rse_streams];
 	stuff(request, streams->nod_count);	// number of substreams 
@@ -2932,6 +2934,14 @@ static void stuff_context(dsql_req* request, const dsql_ctx* context)
 		ERRD_post(isc_too_many_contexts, 0);
 	}
 	stuff(request, context->ctx_context);
+
+	if (context->ctx_flags & CTX_recursive)
+	{
+		if (context->ctx_recursive > MAX_UCHAR) {
+			ERRD_post(isc_too_many_contexts, 0);
+		}
+		stuff(request, context->ctx_recursive);
+	}
 }
 
 

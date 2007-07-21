@@ -4539,6 +4539,7 @@ static dsql_nod* pass1_derived_table(dsql_req* request, dsql_nod* input, bool pr
 	dsql_nod* rse = NULL;
 	const bool isRecursive = 
 		(query->nod_type == nod_list) && (query->nod_flags & NOD_UNION_RECURSIVE);
+	USHORT recursive_map_ctx = 0;
 		
 	if (isRecursive)
 	{
@@ -4551,6 +4552,9 @@ static dsql_nod* pass1_derived_table(dsql_req* request, dsql_nod* input, bool pr
 
 		dsql_ctx* baseUnionCtx = request->req_union_context.hasData() ? 
 			request->req_union_context.object() : NULL;
+
+		// reserve extra context number for map's secondary context
+		recursive_map_ctx = request->req_context_number++;
 
 		request->req_recursive_ctx_id = request->req_context_number;
 		rse = pass1_union(request, query, NULL, NULL, 0);
@@ -4774,6 +4778,18 @@ static dsql_nod* pass1_derived_table(dsql_req* request, dsql_nod* input, bool pr
 		}
 
 		request->req_context = req_base;
+
+		// mark union's map context as recursive and assign 
+		// secondary context number to it
+		dsql_nod* items = rse->nod_arg[e_rse_items];
+		dsql_nod* map_item = items->nod_arg[0];
+		if (map_item->nod_type == nod_derived_field) {
+			map_item = map_item->nod_arg[e_alias_value]; 
+		}
+		dsql_ctx* map_context = (dsql_ctx*) map_item->nod_arg[e_map_context];
+
+		map_context->ctx_flags |= CTX_recursive;
+		map_context->ctx_recursive = recursive_map_ctx;
 	}
 
 	delete request->req_alias_relation_prefix;
