@@ -237,7 +237,7 @@ void declare(unsigned short codepoint, unsigned short unicode, char *name)
 		if (unicode < unicode_conversion.low_point)
 			unicode_conversion.low_point = unicode;
 		if (unicode > unicode_conversion.high_point)
-			codepoint_conversion.high_point = unicode;
+			unicode_conversion.high_point = unicode;
 		if (!unicode_conversion.table[unicode].exists++) {
 			unicode_conversion.table[unicode].codepoint = unicode;
 			if (unicode != UNICODE_REPLACEMENT_CHARACTER) {
