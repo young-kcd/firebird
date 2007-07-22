@@ -1,3 +1,19 @@
+2007-07-21 23:28  hvlad
+
+	* firebird2/src/: dsql/dsql.h (1.111), dsql/gen.cpp (1.128),
+	dsql/pass1.cpp (1.334), jrd/cmp.cpp (1.261), jrd/exe.h (1.102),
+	jrd/opt.cpp (1.295), jrd/par.cpp (1.169), jrd/rse.cpp (1.135):
+
+	Fixed bug CORE-1373 : Incorrect result of recursive CTE query when
+	recursive member's SELECT list contains expression using
+	self-referenced fields
+
+2007-07-21 22:47  hvlad
+
+	* firebird2/src/jrd/rse.cpp (1.134):
+
+	Fixed bug CORE-1370 : Memory leak when using CTE within procedure
+
 2007-07-20 14:40  hvlad
 
 	* firebird2/src/remote/interface.cpp (1.143):
