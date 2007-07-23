@@ -1,3 +1,15 @@
+2007-07-22 17:09  asfernandes
+
+	* firebird2/src/intl/utils/mapgen4.c (1.6):
+
+	Fixed CORE-1374
+
+2007-07-22 11:05  robocop
+
+	* firebird2/src/dsql/dsql.h (1.112):
+
+	Totally misc.
+
 2007-07-21 23:28  hvlad
 
 	* firebird2/src/: dsql/dsql.h (1.111), dsql/gen.cpp (1.128),
