@@ -140,6 +140,20 @@ public:
 		return false;
 	}
 
+	// Returns pointer to the added empty value or null when key already exists
+	ValueType* put(const KeyType& key) {
+
+		if (tree.locate(key)) {
+			return 0;
+		}
+
+		KeyValuePair *var = FB_NEW(getPool()) KeyValuePair(getPool());
+		var->first = key;
+		tree.add(var);
+		mCount++;
+		return &var->second;
+	}
+
 	// Returns true if value is found
 	bool get(const KeyType& key, ValueType& value) {
 
