@@ -5955,14 +5955,14 @@ static void put_dtype(dsql_req* request, const dsql_fld* field, bool use_subtype
 		{
 			request->append_uchar(blr_domain_name2);
 			request->append_uchar(field->fld_full_domain ? blr_domain_full : blr_domain_type_of);
-			request->append_cstring(0, field->fld_type_of_name);
+			request->append_meta_string(field->fld_type_of_name);
 			request->append_ushort(field->fld_ttype);
 		}
 		else
 		{
 			request->append_uchar(blr_domain_name);
 			request->append_uchar(field->fld_full_domain ? blr_domain_full : blr_domain_type_of);
-			request->append_cstring(0, field->fld_type_of_name);
+			request->append_meta_string(field->fld_type_of_name);
 		}
 
 		return;
@@ -6811,6 +6811,28 @@ void dsql_req::append_cstring(UCHAR verb, const char* string)
 {
 	const USHORT length = string ? strlen(string) : 0;
 	append_string(verb, string, length);
+}
+
+
+//
+// Write out a string in metadata charset with one byte of length.
+//
+void dsql_req::append_meta_string(const char* string)
+{
+	ISC_STATUS_ARRAY status_vector = {0};
+	Firebird::UCharBuffer nameBuffer;
+
+	THREAD_EXIT();
+	const ISC_STATUS s =
+		gds__intl_function(status_vector, &req_dbb->dbb_database_handle,
+			INTL_FUNCTION_CONV_TO_METADATA, CS_dynamic,
+			strlen(string), (const UCHAR*) string, &nameBuffer);
+	THREAD_ENTER();
+
+	if (s)
+		ERRD_punt(status_vector);
+
+	append_string(0, (const TEXT*) nameBuffer.begin(), nameBuffer.getCount());
 }
 
 

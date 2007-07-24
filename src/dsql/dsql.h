@@ -381,6 +381,7 @@ public:
 	inline void		append_ushort(USHORT val);
 	inline void		append_ulong(ULONG val);
 	void		append_cstring(UCHAR verb, const char* string);
+	void		append_meta_string(const char* string);
 	void		append_string(UCHAR verb, const char* string, USHORT len);
 	void		append_number(UCHAR verb, SSHORT number);
 	void		begin_blr(UCHAR verb);

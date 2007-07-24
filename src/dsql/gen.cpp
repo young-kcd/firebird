@@ -2975,20 +2975,7 @@ static void stuff_cstring( dsql_req* request, const char* string)
  **/
 static void stuff_meta_string(dsql_req* request, const char* string)
 {
-	ISC_STATUS_ARRAY status_vector = {0};
-	Firebird::UCharBuffer nameBuffer;
-
-	THREAD_EXIT();
-	const ISC_STATUS s =
-		gds__intl_function(status_vector, &request->req_dbb->dbb_database_handle,
-			INTL_FUNCTION_CONV_TO_METADATA, CS_dynamic,
-			strlen(string), (const UCHAR*) string, &nameBuffer);
-	THREAD_ENTER();
-
-	if (s)
-		ERRD_punt(status_vector);
-
-	stuff_string(request, (const TEXT*) nameBuffer.begin(), nameBuffer.getCount());
+	request->append_meta_string(string);
 }
 
 
