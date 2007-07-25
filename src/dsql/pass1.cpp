@@ -10078,7 +10078,6 @@ static bool set_parameter_type(dsql_req* request, dsql_nod* in_node, dsql_nod* n
 		case nod_upcase:
 		case nod_lowcase:
 		case nod_extract:
-		case nod_strlen:
 		case nod_limit:
 		case nod_rows:
 		case nod_agg_list:
