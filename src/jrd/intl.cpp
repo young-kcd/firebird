@@ -423,7 +423,10 @@ void Database::destroyIntlObjects()
 	for (size_t i = 0; i < dbb_charsets.getCount(); i++)
 	{
 		if (dbb_charsets[i])
+		{
 			dbb_charsets[i]->destroy();
+			dbb_charsets[i] = 0;
+		}
 	}
 }
 
