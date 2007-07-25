@@ -227,6 +227,7 @@ static void validate_shb(SRQ_PTR);
 static void validate_owner(SRQ_PTR, USHORT);
 static void validate_lock(SRQ_PTR, USHORT, SRQ_PTR);
 static void validate_request(SRQ_PTR, USHORT, USHORT);
+static void validate_parent(LHB, SRQ_PTR);
 //static void validate_block(SRQ_PTR);
 #endif
 
@@ -577,7 +578,9 @@ SLONG LOCK_enq(	SRQ_PTR		prior_request,
 					&request->lrq_lbl_requests);
 		release(owner_offset);
 		return 0;
+
 	}
+
 	lock->lbl_state = type;
 	lock->lbl_parent = parent;
 	fb_assert(series <= MAX_UCHAR);
@@ -3979,6 +3982,9 @@ static void release_request( LRQ request)
 	if (SRQ_EMPTY(lock->lbl_requests))
 	{
 		CHECK(lock->lbl_pending_lrq_count == 0);
+#ifdef VALIDATE_LOCK_TABLE
+		validate_parent(LOCK_header, request->lrq_lock);
+#endif
 		remove_que(&lock->lbl_lhb_hash);
 		remove_que(&lock->lbl_lhb_data);
 		lock->lbl_type = type_null;
@@ -4253,6 +4259,48 @@ static void validate_history( SRQ_PTR history_header)
 		if (history->his_next == history_header)
 			break;
 		CHECK(count <= HISTORY_BLOCKS);
+	}
+}
+#endif
+
+
+#ifdef VALIDATE_LOCK_TABLE
+static void validate_parent(LHB lhb, SRQ_PTR isSomeoneParent)
+{
+/**************************************
+ *
+ *	v a l i d a t e _ p a r e n t
+ *
+ **************************************
+ *
+ * Functional description
+ *	Validate lock under release not to be someone parent.
+ *
+ **************************************/
+	SignalInhibit siHolder;
+
+	if (lhb->lhb_active_owner == 0) 
+		return;
+
+	own* owner = (own*) SRQ_ABS_PTR(lhb->lhb_active_owner);
+
+	SRQ lock_srq;
+	SRQ_LOOP(owner->own_requests, lock_srq) 
+	{
+		LRQ request = (LRQ) ((UCHAR *) lock_srq - OFFSET(LRQ, lrq_own_requests));
+
+		if (!(request->lrq_flags & LRQ_repost)) 
+		{
+			if (request->lrq_lock != isSomeoneParent)
+			{
+				LBL lock = (LBL) SRQ_ABS_PTR(request->lrq_lock);
+
+				if (lock->lbl_parent == isSomeoneParent)
+				{
+					bug_assert ("deleting someone's parent", __LINE__);
+				}
+			}
+		}
 	}
 }
 #endif
