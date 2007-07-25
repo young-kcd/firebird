@@ -1,3 +1,17 @@
+2007-07-24 18:28  asfernandes
+
+	* firebird2/src/dsql/: ddl.cpp (1.203), dsql.h (1.113), gen.cpp
+	(1.129):
+
+	Fixed CORE-1378 - Domain names and charset issues
+
+2007-07-24 15:44  alexpeshkoff
+
+	* firebird2/src/common/classes/GenericMap.h (1.15):
+
+	Function to put pair to map, using default value, returning pointer
+	to it
+
 2007-07-22 17:09  asfernandes
 
 	* firebird2/src/intl/utils/mapgen4.c (1.6):
