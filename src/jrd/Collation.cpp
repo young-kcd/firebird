@@ -859,7 +859,27 @@ void Collation::destroy()
 		tt->texttype_fn_destroy(tt);
 
 	delete tt;
-	delete existenceLock;
+	if (existenceLock)
+	{
+		thread_db thd_context, *tdbb;
+
+		// Establish a thread context.
+		JRD_set_thread_data(tdbb, thd_context);
+
+		tdbb->tdbb_database = existenceLock->lck_dbb;
+		tdbb->tdbb_attachment = existenceLock->lck_attachment;
+		tdbb->tdbb_quantum = QUANTUM;
+		tdbb->tdbb_request = NULL;
+		tdbb->tdbb_transaction = NULL;
+		Jrd::ContextPoolHolder context(tdbb, 0);
+
+		LCK_release(tdbb, existenceLock);
+
+		delete existenceLock;
+
+		// Restore the prior thread context
+		JRD_restore_thread_data();
+	}
 }
 
 
