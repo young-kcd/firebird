@@ -68,7 +68,7 @@ const USHORT OS_CHICAGO		= 2;
 #ifdef SUPERSERVER_V2
 static void release_io_event(jrd_file*, OVERLAPPED*);
 #endif
-static bool	MaybeCloseFile(SLONG*);
+static bool	maybe_close_file(HANDLE&);
 static jrd_file* seek_file(jrd_file*, BufferDesc*, ISC_STATUS*, OVERLAPPED*, OVERLAPPED**);
 static jrd_file* setup_file(Database*, const Firebird::PathName&, HANDLE);
 static bool nt_error(TEXT*, const jrd_file*, ISC_STATUS, ISC_STATUS*);
@@ -142,8 +142,7 @@ void PIO_close(jrd_file* main_file)
  **************************************/
 	for (jrd_file* file = main_file; file; file = file->fil_next)
 	{
-		if (MaybeCloseFile(&file->fil_desc) ||
-			MaybeCloseFile(&file->fil_force_write_desc))
+		if (maybe_close_file(file->fil_desc))
 		{
 #ifdef SUPERSERVER_V2
 			for (int i = 0; i < MAX_FILE_IO; i++)
@@ -268,8 +267,7 @@ void PIO_extend(jrd_file* main_file, const ULONG extPages, const USHORT pageSize
 		{
 			const ULONG extendBy = MIN(fileMaxPages - filePages + file->fil_fudge, leftPages);
 
-			HANDLE hFile = (HANDLE) ((file->fil_flags & FIL_force_write) ?
-							file->fil_force_write_desc : file->fil_desc);
+			HANDLE hFile = file->fil_desc;
 
 			LARGE_INTEGER newSize; 
 			newSize.QuadPart = (ULONGLONG) (filePages + extendBy) * pageSize;
@@ -306,7 +304,7 @@ void PIO_flush(jrd_file* main_file)
 		{
 			file->fil_mutex.enter();
 		}
-		FlushFileBuffers((HANDLE) file->fil_desc);
+		FlushFileBuffers(file->fil_desc);
 		if (ostype == OS_CHICAGO)
 		{
 			file->fil_mutex.leave();
@@ -315,7 +313,7 @@ void PIO_flush(jrd_file* main_file)
 }
 
 
-void PIO_force_write(jrd_file* file, bool flag)
+void PIO_force_write(jrd_file* file, bool bForceWrite, bool bNotUseFSCache)
 {
 /**************************************
  *
@@ -329,22 +327,25 @@ void PIO_force_write(jrd_file* file, bool flag)
  **************************************/
 
 	const bool bOldForce = (file->fil_flags & FIL_force_write) != 0;
+	const bool bOldNotUseCache = (file->fil_flags & FIL_no_fs_cache) != 0;
 
-	if ((flag && !bOldForce) || (!flag && bOldForce)) {
-		SLONG& hOld = flag ? file->fil_desc : file->fil_force_write_desc;
-		HANDLE& hNew = reinterpret_cast<HANDLE&>(flag ? file->fil_force_write_desc : file->fil_desc);
-        const int force = flag ? FILE_FLAG_WRITE_THROUGH : 0;
+	if (bForceWrite != bOldForce || bNotUseFSCache != bOldNotUseCache)
+	{
+		const int force = bForceWrite ? FILE_FLAG_WRITE_THROUGH : 0;
+		const int fsCache = bNotUseFSCache ? FILE_FLAG_NO_BUFFERING : 0;
+		const int writeMode = (file->fil_flags & FIL_readonly) ? 0 : GENERIC_WRITE;
 
-		MaybeCloseFile(&hOld);
-		hNew = CreateFile(file->fil_string,
-						  GENERIC_READ | GENERIC_WRITE,
+        HANDLE &hFile = file->fil_desc;
+		maybe_close_file(hFile);
+		hFile = CreateFile(file->fil_string,
+						  GENERIC_READ | writeMode,
 						  g_dwShareFlags,
 						  NULL,
 						  OPEN_EXISTING,
-						  FILE_ATTRIBUTE_NORMAL | force | g_dwExtraFlags,
+						  FILE_ATTRIBUTE_NORMAL | force | fsCache | g_dwExtraFlags,
 						  0);
 
-		if (hNew == INVALID_HANDLE_VALUE)
+		if (hFile == INVALID_HANDLE_VALUE)
 		{
 			ERR_post(isc_io_error,
 					 isc_arg_string,
@@ -358,11 +359,17 @@ void PIO_force_write(jrd_file* file, bool flag)
 					 0);
 		}
 		
-		if (flag) {
-			file->fil_flags |= (FIL_force_write | FIL_force_write_init);
+		if (bForceWrite) {
+			file->fil_flags |= FIL_force_write;
 		}
 		else {
 			file->fil_flags &= ~FIL_force_write;
+		}
+		if (bNotUseFSCache) {
+			file->fil_flags |= FIL_no_fs_cache;
+		}
+		else {
+			file->fil_flags &= ~FIL_no_fs_cache;
 		}
 	}
 }
@@ -386,8 +393,7 @@ void PIO_header(Database* dbb, SCHAR * address, int length)
  **************************************/
 	PageSpace* pageSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
 	jrd_file* file = pageSpace->file;
-	HANDLE desc = (HANDLE) ((file->fil_flags & FIL_force_write) ?
-					 file->fil_force_write_desc : file->fil_desc);
+	HANDLE desc = file->fil_desc;
 
 	OVERLAPPED overlapped, *overlapped_ptr;
 	if (ostype == OS_CHICAGO)
@@ -478,6 +484,7 @@ jrd_file* PIO_open(Database* dbb,
  *
  **************************************/
 	const TEXT* ptr = (string.hasData() ? string : file_name).c_str();
+	bool bReadOnly = false;
 
 	if (!ISC_is_WinNT())
 		share_delete = false;
@@ -520,6 +527,7 @@ jrd_file* PIO_open(Database* dbb,
 			 * the Header Page flag setting to make sure that the database is set
 			 * ReadOnly.
 			 */
+			bReadOnly = true;
 			PageSpace* pageSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
 			if (!pageSpace->file)
 				dbb->dbb_flags |= DBB_being_opened_read_only;
@@ -529,6 +537,9 @@ jrd_file* PIO_open(Database* dbb,
 	jrd_file *file;
 	try {
 		file = setup_file(dbb, string, desc);
+
+		if (bReadOnly)
+			file->fil_flags |= FIL_readonly;
 	}
 	catch (const Firebird::Exception&) {
 		CloseHandle(desc);
@@ -557,8 +568,7 @@ bool PIO_read(jrd_file* file, BufferDesc* bdb, Ods::pag* page, ISC_STATUS* statu
 	if (!(file = seek_file(file, bdb, status_vector, &overlapped, &overlapped_ptr)))
 		return false;
 
-	HANDLE desc = (HANDLE) ((file->fil_flags & FIL_force_write) ?
-					 file->fil_force_write_desc : file->fil_desc);
+	HANDLE desc = file->fil_desc;
 
 	if (dbb->dbb_encrypt_key.hasData())
 	{
@@ -672,8 +682,7 @@ bool PIO_read_ahead(Database*		dbb,
 			--pages;
 		}
 
-		HANDLE desc = (HANDLE) ((file->fil_flags & FIL_force_write) ?
-						 file->fil_force_write_desc : file->fil_desc);
+		HANDLE desc = file->fil_desc;
 
 		DWORD actual_length;
 		if (ReadFile(	desc,
@@ -779,8 +788,7 @@ bool PIO_write(jrd_file* file, BufferDesc* bdb, Ods::pag* page, ISC_STATUS* stat
 		return false;
 	}
 
-	HANDLE desc = (HANDLE) ((file->fil_flags & FIL_force_write) ?
-					 file->fil_force_write_desc : file->fil_desc);
+	HANDLE desc = file->fil_desc;
 
 	if (dbb->dbb_encrypt_key.hasData()) {
 		SLONG spare_buffer[MAX_PAGE_SIZE / sizeof(SLONG)];
@@ -845,8 +853,7 @@ ULONG PIO_get_number_of_pages(const jrd_file* file, const USHORT pagesize)
  *	Compute number of pages in file, based only on file size.
  *
  **************************************/
-	HANDLE hFile = (HANDLE) ((file->fil_flags & FIL_force_write) ?
-		file->fil_force_write_desc : file->fil_desc);
+	HANDLE hFile = file->fil_desc;
 
 	DWORD dwFileSizeHigh;
 	const DWORD dwFileSizeLow = GetFileSize(hFile, &dwFileSizeHigh);
@@ -930,8 +937,7 @@ static jrd_file* seek_file(jrd_file*			file,
 
 	if (ostype == OS_CHICAGO) {
 		file->fil_mutex.enter();
-		HANDLE desc = (HANDLE) ((file->fil_flags & FIL_force_write) ?
-						 file->fil_force_write_desc : file->fil_desc);
+		HANDLE desc = file->fil_desc;
 
 		if (SetFilePointer(desc,
 						   (LONG) liOffset.LowPart,
@@ -993,9 +999,7 @@ static jrd_file* setup_file(Database*					dbb,
 /* Allocate file block and copy file name string */
 
 	jrd_file* file = FB_NEW_RPT(*dbb->dbb_permanent, file_name.length() + 1) jrd_file;
-	file->fil_desc = reinterpret_cast<SLONG>(desc);
-	file->fil_force_write_desc =
-		reinterpret_cast<SLONG>(INVALID_HANDLE_VALUE);
+	file->fil_desc = desc;
 	file->fil_length = file_name.length();
 	file->fil_max_page = (ULONG) -1;
 #ifdef SUPERSERVER_V2
@@ -1019,7 +1023,7 @@ static jrd_file* setup_file(Database*					dbb,
 /* Build unique lock string for file and construct lock block */
 
 	BY_HANDLE_FILE_INFORMATION file_info;
-	GetFileInformationByHandle((HANDLE) desc, &file_info);
+	GetFileInformationByHandle(desc, &file_info);
 	UCHAR lock_string[32];
 	UCHAR* p = lock_string;
 
@@ -1088,7 +1092,7 @@ static jrd_file* setup_file(Database*					dbb,
 	return file;
 }
 
-static bool MaybeCloseFile(SLONG* pFile)
+static bool maybe_close_file(HANDLE& hFile)
 {
 /**************************************
  *
@@ -1101,10 +1105,10 @@ static bool MaybeCloseFile(SLONG* pFile)
  *
  **************************************/
 
-	if (pFile && (HANDLE)*pFile != INVALID_HANDLE_VALUE)
+	if (hFile != INVALID_HANDLE_VALUE)
 	{
-		CloseHandle((HANDLE)*pFile);
-		*pFile = (SLONG) INVALID_HANDLE_VALUE;
+		CloseHandle(hFile);
+		hFile = INVALID_HANDLE_VALUE;
 		return true;
 	}
 	return false;

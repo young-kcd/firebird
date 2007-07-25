@@ -90,8 +90,7 @@ class jrd_file : public pool_alloc_rpt<SCHAR, type_fil>
 	ULONG fil_max_page;			/* Maximum page number in file */
 	USHORT fil_sequence;		/* Sequence number of file */
 	USHORT fil_fudge;			/* Fudge factor for page relocation */
-	SLONG fil_desc;
-	SLONG fil_force_write_desc;	/* Handle of force write open */
+	HANDLE fil_desc;
 	//int *fil_trace;				/* Trace file, if any */
 	Firebird::Mutex fil_mutex;
 #ifdef SUPERSERVER_V2
@@ -106,7 +105,8 @@ class jrd_file : public pool_alloc_rpt<SCHAR, type_fil>
 
 
 const USHORT FIL_force_write		= 1;
-const USHORT FIL_force_write_init	= 2;
+const USHORT FIL_no_fs_cache		= 2;	// not using file system cache
+const USHORT FIL_readonly			= 4;	// file opened in readonly mode
 
 /* Physical IO trace events */
 

@@ -498,8 +498,10 @@ USHORT PAG_add_file(const TEXT* file_name, SLONG start)
 
 	jrd_file* next = file->fil_next;
 
-	if (dbb->dbb_flags & DBB_force_write)
-		PIO_force_write(next, true);
+	if (dbb->dbb_flags & (DBB_force_write | DBB_no_fs_cache))
+		PIO_force_write(next, 
+			dbb->dbb_flags & DBB_force_write, 
+			dbb->dbb_flags & DBB_no_fs_cache);
 
 	WIN window(DB_PAGE_SPACE, next->fil_min_page);
 	header_page* header = (header_page*) CCH_fake(tdbb, &window, 1);
@@ -1246,12 +1248,17 @@ void PAG_header(bool info)
 				 0);
 	}
 
-	if (header->hdr_flags & hdr_force_write) {
-		dbb->dbb_flags |= DBB_force_write;
+	const bool bUseFSCache = dbb->dbb_bcb->bcb_count < Config::getMaxFileSystemCache();
+
+	if (header->hdr_flags & hdr_force_write || !bUseFSCache) {
+		dbb->dbb_flags |= 
+			(header->hdr_flags & hdr_force_write ? DBB_force_write : 0) | 
+			(bUseFSCache ? 0 : DBB_no_fs_cache);
 
 		PageSpace* pageSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
-		if (!(header->hdr_flags & hdr_read_only))
-			PIO_force_write(pageSpace->file, true);
+		PIO_force_write(pageSpace->file, 
+			(dbb->dbb_flags & DBB_force_write) && !(header->hdr_flags & hdr_read_only), 
+			dbb->dbb_flags & DBB_no_fs_cache);
 	}
 
 	if (header->hdr_flags & hdr_no_reserve)
@@ -1599,8 +1606,10 @@ void PAG_init2(USHORT shadow_number)
 		file->fil_next = PIO_open(dbb, file_name, false, file_name, false);
 		file->fil_max_page = last_page;
 		file = file->fil_next;
-		if (dbb->dbb_flags & DBB_force_write)
-			PIO_force_write(file, true);
+		if (dbb->dbb_flags & (DBB_force_write | DBB_no_fs_cache))
+			PIO_force_write(file, 
+				dbb->dbb_flags & DBB_force_write, 
+				dbb->dbb_flags & DBB_no_fs_cache);
 		file->fil_min_page = last_page + 1;
 		file->fil_sequence = sequence++;
 	}
@@ -1754,12 +1763,14 @@ void PAG_set_force_write(Database* dbb, SSHORT flag)
 	PageSpace* pageSpace = 
 		dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
 	for (jrd_file* file = pageSpace->file; file; file = file->fil_next) {
-		PIO_force_write(file, flag != 0);
+		PIO_force_write(file, flag != 0, 
+			dbb->dbb_flags & DBB_no_fs_cache);
 	}
 
 	for (Shadow* shadow = dbb->dbb_shadow; shadow; shadow = shadow->sdw_next) {
 		for (jrd_file* file = shadow->sdw_file; file; file = file->fil_next)
-			PIO_force_write(file, flag != 0);
+			PIO_force_write(file, flag != 0, 
+				dbb->dbb_flags & DBB_no_fs_cache);
 	}
 }
 

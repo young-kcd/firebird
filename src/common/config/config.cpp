@@ -125,7 +125,8 @@ const ConfigImpl::ConfigEntry ConfigImpl::entries[] =
 	{TYPE_BOOLEAN,		"Redirection",				(ConfigValue) false},
 	{TYPE_BOOLEAN,		"OldColumnNaming",			(ConfigValue) false},	// if true use old style concatenation
 	{TYPE_STRING,		"Authentication",			(ConfigValue) AmMixed},	// use native, trusted or mixed
-	{TYPE_INTEGER,		"DatabaseGrowthIncrement",	(ConfigValue) 128 * 1048576}	// bytes
+	{TYPE_INTEGER,		"DatabaseGrowthIncrement",	(ConfigValue) 128 * 1048576},	// bytes
+	{TYPE_INTEGER,		"MaxFileSystemCache",		(ConfigValue) 65536}	// page buffers
 };
 
 /******************************************************************************
@@ -557,4 +558,9 @@ const char *Config::getAuthMethod()
 int Config::getDatabaseGrowthIncrement()
 {
 	return (int) sysConfig.values[KEY_DATABASE_GROWTH_INCREMENT];
+}
+
+int Config::getMaxFileSystemCache()
+{
+	return (int) sysConfig.values[KEY_MAX_FILESYSTEM_CACHE];
 }

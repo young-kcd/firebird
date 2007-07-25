@@ -119,7 +119,8 @@ class Config
 		KEY_REDIRECTION,							// 44
 		KEY_OLD_COLUMN_NAMING,						// 45
 		KEY_AUTH_METHOD,							// 46
-		KEY_DATABASE_GROWTH_INCREMENT				// 47
+		KEY_DATABASE_GROWTH_INCREMENT,				// 47
+		KEY_MAX_FILESYSTEM_CACHE					// 48
 	};
 
 public:
@@ -375,6 +376,8 @@ public:
 	static const char *getAuthMethod();
 
 	static int getDatabaseGrowthIncrement();
+
+	static int getMaxFileSystemCache();
 };
 
 namespace Firebird {

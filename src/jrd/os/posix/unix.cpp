@@ -236,6 +236,8 @@ jrd_file* PIO_create(Database* dbb, const Firebird::PathName& string, bool overw
 				 isc_arg_gds, isc_io_create_err, isc_arg_unix, errno, 0);
 	}
 
+	// posix_fadvise(desc, 0, 0, POSIX_FADV_RANDOM);
+
 /* File open succeeded.  Now expand the file name. */
 
 	Firebird::PathName expanded_name(string);
@@ -318,7 +320,7 @@ void PIO_flush(jrd_file* main_file)
 }
 
 
-void PIO_force_write(jrd_file* file, bool flag)
+void PIO_force_write(jrd_file* file, bool flag, bool bNotUseFSCache)
 {
 /**************************************
  *
@@ -551,6 +553,8 @@ jrd_file* PIO_open(Database* dbb,
 		}
 	}
 
+	// posix_fadvise(desc, 0, 0, POSIX_FADV_RANDOM);
+
 #ifdef SUPPORT_RAW_DEVICES
 	/* At this point the file has successfully been opened in either RW or RO
 	 * mode. Check if it is a special file (i.e. raw block device) and if a
@@ -668,6 +672,7 @@ bool PIO_read(jrd_file* file, BufferDesc* bdb, Ods::pag* page, ISC_STATUS* statu
 		}
 	}
 
+	// posix_fadvise(file->desc, offset, size, POSIX_FADV_NOREUSE);
 	return true;
 }
 
@@ -743,6 +748,7 @@ bool PIO_write(jrd_file* file, BufferDesc* bdb, Ods::pag* page, ISC_STATUS* stat
 	THD_IO_MUTEX_UNLOCK(file->fil_mutex);
 #endif
 
+	// posix_fadvise(file->desc, offset, size, POSIX_FADV_DONTNEED);
 	return true;
 }
 
