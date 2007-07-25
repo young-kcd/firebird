@@ -424,6 +424,7 @@ static void		init_database_locks(thread_db*, Database*);
 static ISC_STATUS	handle_error(ISC_STATUS*, ISC_STATUS, thread_db*);
 static void		run_commit_triggers(thread_db* tdbb, jrd_tra* transaction);
 static void		verify_request_synchronization(jrd_req*& request, SSHORT level);
+static unsigned int purge_transactions(thread_db*, Attachment*, const bool, const ULONG);
 namespace {
 	enum vdnResult {vdnFail, vdnOk, vdnSecurity};
 }
@@ -2495,6 +2496,9 @@ ISC_STATUS GDS_DROP_DATABASE(ISC_STATUS* user_status, Attachment** handle)
 						isc_arg_string, "DATABASE", 0);
 			}
 
+			// Forced release of all transactions
+			purge_transactions(tdbb, attachment, true, attachment->att_flags);
+
 			attachment->att_flags |= ATT_cancel_disable;
 
 /* Here we have database locked in exclusive mode.
@@ -2681,10 +2685,9 @@ ISC_STATUS GDS_DSQL_CACHE(ISC_STATUS* user_status, Attachment** handle,
 		Firebird::string key((char*)&type, sizeof(type));
 		key.append(name);
 
-		DSqlCacheItem* item;
-		if (!tdbb->tdbb_attachment->att_dsql_cache.get(key, item))
+		DSqlCacheItem* item = tdbb->tdbb_attachment->att_dsql_cache.put(key);
+		if (item)
 		{
-			item = FB_NEW(*dbb->dbb_permanent) DSqlCacheItem;
 			item->obsolete = false;
 			item->locked = false;
 			item->lock = FB_NEW_RPT(*dbb->dbb_permanent, key.length()) Lock();
@@ -2697,8 +2700,10 @@ ISC_STATUS GDS_DSQL_CACHE(ISC_STATUS* user_status, Attachment** handle,
 			item->lock->lck_ast = blocking_ast_dsql_cache;
 			item->lock->lck_length = key.length();
 			memcpy(item->lock->lck_key.lck_string, key.c_str(), key.length());
-
-			tdbb->tdbb_attachment->att_dsql_cache.put(key, item);
+		}
+		else
+		{
+			item = &tdbb->tdbb_attachment->att_dsql_cache.current()->second;
 		}
 
 		if (obsolete)
@@ -6101,6 +6106,12 @@ static void release_attachment(Attachment* attachment)
 #ifndef SUPERSERVER
 	if (attachment->att_temp_pg_lock)
 		LCK_release(tdbb, attachment->att_temp_pg_lock);
+	for (bool getResult = attachment->att_dsql_cache.getFirst(); getResult; 
+			  getResult = attachment->att_dsql_cache.getNext())
+	
+ 	{
+		LCK_release(tdbb, attachment->att_dsql_cache.current()->second.lock);
+ 	}
 #endif
 
 	for (vcl** vector = attachment->att_counts;
@@ -6381,6 +6392,10 @@ static void shutdown_database(Database* dbb, const bool release_pools)
 
 	if (dbb->dbb_retaining_lock)
 		LCK_release(tdbb, dbb->dbb_retaining_lock);
+
+	// temporal measure to avoid unstable state of lock file -
+	// this is anyway called in ~Database()
+	dbb->destroyIntlObjects();
 
 	if (dbb->dbb_lock)
 		LCK_release(tdbb, dbb->dbb_lock);
@@ -6913,6 +6928,72 @@ found:
 #endif // SERVER_SHUTDOWN
 
 
+static unsigned int purge_transactions(thread_db*	tdbb,
+									   Attachment*	attachment,
+									   const bool	force_flag,
+									   const ULONG	att_flags)
+{
+/**************************************
+ *
+ *	p u r g e _ t r a n s a c t i o n s
+ *
+ **************************************
+ *
+ * Functional description
+ *	commit or rollback all transactions 
+ *	from an attachment
+ *
+ **************************************/
+
+	Database* dbb = attachment->att_database;
+	jrd_tra* trans_dbk = attachment->att_dbkey_trans;
+
+	unsigned int count = 0;
+	jrd_tra* next;
+	for (jrd_tra* transaction = attachment->att_transactions;
+		 transaction;
+		 transaction = next)
+	{
+		next = transaction->tra_next;
+		if (transaction != trans_dbk)
+		{
+			if (transaction->tra_flags & TRA_prepared ||
+				dbb->dbb_ast_flags & DBB_shutdown ||
+				att_flags & ATT_shutdown)
+			{
+				TRA_release_transaction(tdbb, transaction);
+			}
+			else if (force_flag)
+				TRA_rollback(tdbb, transaction, false, true);
+			else
+				++count;
+		}
+	}
+
+	if (count)
+	{
+		return count;
+	}
+
+	// If there's a side transaction for db-key scope, get rid of it
+	if (trans_dbk)
+	{
+		attachment->att_dbkey_trans = NULL;
+		if (dbb->dbb_ast_flags & DBB_shutdown ||
+			att_flags & ATT_shutdown)
+		{
+			TRA_release_transaction(tdbb, trans_dbk);
+		}
+		else
+		{
+			TRA_commit(tdbb, trans_dbk, false);
+		}
+	}
+
+	return 0;
+}
+
+
 static void purge_attachment(thread_db*		tdbb,
 							 ISC_STATUS*	user_status,
 							 Attachment*		attachment,
@@ -6993,47 +7074,10 @@ static void purge_attachment(thread_db*		tdbb,
 	if (!(dbb->dbb_flags & DBB_bugcheck))
 	{
 		// Check for any pending transactions
-
-		int count = 0;
-		jrd_tra* next;
-		for (jrd_tra* transaction = attachment->att_transactions;
-			 transaction;
-			 transaction = next)
-		{
-			next = transaction->tra_next;
-			if (transaction != attachment->att_dbkey_trans)
-			{
-				if (transaction->tra_flags & TRA_prepared ||
-					dbb->dbb_ast_flags & DBB_shutdown ||
-					att_flags & ATT_shutdown)
-				{
-					TRA_release_transaction(tdbb, transaction);
-				}
-				else if (force_flag)
-					TRA_rollback(tdbb, transaction, false, true);
-				else
-					++count;
-			}
-		}
-
+		unsigned int count = purge_transactions(tdbb, attachment, force_flag, att_flags);
 		if (count)
-			ERR_post(isc_open_trans, isc_arg_number, (SLONG) count, 0);
-
-		// If there's a side transaction for db-key scope, get rid of it
-
-		jrd_tra* trans_dbk = attachment->att_dbkey_trans;
-		if (trans_dbk)
 		{
-			attachment->att_dbkey_trans = NULL;
-			if (dbb->dbb_ast_flags & DBB_shutdown ||
-				att_flags & ATT_shutdown)
-			{
-				TRA_release_transaction(tdbb, trans_dbk);
-			}
-			else
-			{
-				TRA_commit(tdbb, trans_dbk, false);
-			}
+			ERR_post(isc_open_trans, isc_arg_number, (SLONG) count, 0);
 		}
 
 		SORT_shutdown(attachment);

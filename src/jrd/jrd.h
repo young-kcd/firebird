@@ -349,7 +349,11 @@ private:
 			JrdMemoryPool::deletePool(dbb_bufferpool);
 	}
 
+	// temporal measure to avoid unstable state of lock file -
+	// this is anyway called in ~Database(), and in theory should be private
+public:
 	void destroyIntlObjects();			// defined in intl.cpp
+private:
 
 	// The delete operators are no-oped because the Database memory is allocated from the
 	// Database's own permanent pool.  That pool has already been released by the Database
@@ -571,7 +575,7 @@ public:
 #ifndef SUPERSERVER
 	Lock*		att_temp_pg_lock;			// temporary pagespace ID lock
 	Firebird::GenericMap<Firebird::Pair<Firebird::Left<
-		Firebird::string, DSqlCacheItem*> > > att_dsql_cache;	// DSQL cache locks
+		Firebird::string, DSqlCacheItem> > > att_dsql_cache;	// DSQL cache locks
 #endif
 
 	bool locksmith() const;
