@@ -613,11 +613,15 @@ endlocal
 :ISX_PACK
 ::=======
 :: Now let's go and build the installable .exe
+::
+:: Note - define INNO5_SETUP_PATH with double quotes if it is installed into a path string using spaces.
+:: eg set INNO5_SETUP_PATH="C:\Program Files\Inno Setup 5"
+::
 ::=================================================
 if %FBBUILD_ISX_PACK% NEQ 1 goto :EOF
 @Echo Now let's compile the InnoSetup scripts
 @Echo.
-"%INNO5_SETUP_PATH%"\iscc %FB_ROOT_PATH%\builds\install\arch-specific\win32\FirebirdInstall_%FBBUILD_FILE_ID%.iss
+%INNO5_SETUP_PATH%\iscc %FB_ROOT_PATH%\builds\install\arch-specific\win32\FirebirdInstall_%FBBUILD_FILE_ID%.iss
 @echo.
 
 ::End of ISX_PACK
