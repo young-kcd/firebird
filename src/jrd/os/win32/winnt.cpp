@@ -328,7 +328,7 @@ void PIO_force_write(jrd_file* file, bool flag)
  *
  **************************************/
 
-	const bool bOldForce = (file->fil_flags & FIL_force_write_init) != 0;
+	const bool bOldForce = (file->fil_flags & FIL_force_write) != 0;
 
 	if ((flag && !bOldForce) || (!flag && bOldForce)) {
 		SLONG& hOld = flag ? file->fil_desc : file->fil_force_write_desc;
