@@ -879,6 +879,8 @@ void Collation::destroy()
 
 		// Restore the prior thread context
 		JRD_restore_thread_data();
+
+		existenceLock = 0;
 	}
 }
 
