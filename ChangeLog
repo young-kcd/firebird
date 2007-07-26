@@ -1,3 +1,107 @@
+2007-07-26 03:23  asfernandes
+
+	* firebird2/: builds/install/misc/firebird.conf (1.33),
+	src/common/classes/GenericMap.h (1.16), src/jrd/jrd.cpp (1.339),
+	src/jrd/pag.cpp (1.140), src/jrd/os/pio.h (1.10),
+	src/jrd/os/posix/unix.cpp (1.62), src/jrd/os/win32/winnt.cpp
+	(1.51), src/lock/lock.cpp (1.123):
+
+	Misc
+
+2007-07-25 20:51  hvlad
+
+	* firebird2/builds/install/misc/firebird.conf (1.32):
+
+	Implement CORE-1381 : Allow Firebird to not use filesystem cache
+	for database files
+
+2007-07-25 20:44  hvlad
+
+	* firebird2/src/: common/config/config.cpp (1.82),
+	common/config/config.h (1.45), jrd/pag.cpp (1.139), jrd/os/pio.h
+	(1.9), jrd/os/pio_proto.h (1.23), jrd/os/posix/unix.cpp (1.61),
+	jrd/os/win32/winnt.cpp (1.50):
+
+	Implement CORE-1381 : Allow Firebird to not use filesystem cache
+	for database files Implementation in unix.cpp is experimental and
+	commented out (calls of posix_fadvice) until testing Cleanup in
+	winnt.cpp : removed fil_force_write_desc
+
+2007-07-25 19:39  hvlad
+
+	* firebird2/src/jrd/os/win32/winnt.cpp (1.49):
+
+	Fixed bug CORE-1380 : IO errors after changing FW on already
+	attached database
+
+2007-07-25 17:46  asfernandes
+
+	* firebird2/src/dsql/pass1.cpp (1.335):
+
+	Fixed CORE-1379 - Invalid parameter type when using it in
+	CHAR_LENGTH function
+
+2007-07-25 16:43  paul_reeves
+
+	* firebird2/builds/install/arch-specific/win32/:
+	FirebirdInstall_20.iss (1.19), custom_messages.inc (1.5):
+
+	Remove some more hard-coded version numbers from the install
+	script.
+
+2007-07-25 16:41  paul_reeves
+
+	*
+	firebird2/builds/install/arch-specific/win32/BuildExecutableInstall.bat
+	(1.28):
+
+	Remove quotes around env var and document how to define it
+	correctly.
+
+2007-07-25 15:30  alexpeshkoff
+
+	* firebird2/src/jrd/Collation.cpp (1.8):
+
+	looks like it worked without it, but this way it will be better
+
+2007-07-25 15:26  alexpeshkoff
+
+	* firebird2/src/lock/lock.cpp (1.122):
+
+	Added one more check in DEV_BUILD
+
+2007-07-25 15:21  alexpeshkoff
+
+	* firebird2/src/jrd/: jrd.cpp (1.338), jrd.h (1.193):
+
+	Fixed unreleased (or released in wrong order) locks in: 1. Dsql
+	cache.	2. Transaction (table lock) - only when database dropped.
+	3. Collation - were released after database's lock.
+
+2007-07-25 15:18  alexpeshkoff
+
+	* firebird2/src/jrd/intl.cpp (1.98):
+
+	let it be called more than once
+
+2007-07-25 15:16  alexpeshkoff
+
+	* firebird2/src/jrd/Collation.cpp (1.7):
+
+	Make sure to release lock before delete
+
+2007-07-25 15:13  alexpeshkoff
+
+	* firebird2/builds/posix/Makefile.in.firebird (1.79):
+
+	Make build process slightly less artificial
+
+2007-07-25 15:04  paul_reeves
+
+	* firebird2/src/utilities/fbcpl/fbpanel.cpp (1.5):
+
+	Use constant instead of hard-coded string
+
 2007-07-24 18:28  asfernandes
 
 	* firebird2/src/dsql/: ddl.cpp (1.203), dsql.h (1.113), gen.cpp
