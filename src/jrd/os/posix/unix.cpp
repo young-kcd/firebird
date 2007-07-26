@@ -359,7 +359,7 @@ void PIO_force_write(jrd_file* file, bool flag, bool notUseFSCache)
 	else 
 	{
 		if (flag) {
-			file->fil_flags |= (FIL_force_write | FIL_force_write_init);
+			file->fil_flags |= FIL_force_write;
 		}
 		else {
 			file->fil_flags &= ~FIL_force_write;
