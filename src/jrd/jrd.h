@@ -380,6 +380,7 @@ const ULONG DBB_gc_pending			= 0x40L;	// garbage collection requested
 #endif
 const ULONG DBB_force_write			= 0x80L;	// Database is forced write
 const ULONG DBB_no_reserve			= 0x100L;	// No reserve space for versions
+const ULONG DBB_no_fs_cache			= 0x200L;	// Not using file system cache
 //const ULONG DBB_add_log				= 0x200L;	// write ahead log has been added
 //const ULONG DBB_delete_log			= 0x400L;	// write ahead log has been deleted
 //const ULONG DBB_cache_manager		= 0x800L;	// Shared cache manager

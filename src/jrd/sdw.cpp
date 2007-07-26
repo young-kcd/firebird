@@ -93,8 +93,10 @@ void SDW_add(const TEXT* file_name, USHORT shadow_number, USHORT file_flags)
 
 	jrd_file* shadow_file = PIO_create(dbb, file_name, false, false, false);
 
-	if (dbb->dbb_flags & DBB_force_write)
-		PIO_force_write(shadow_file, true);
+	if (dbb->dbb_flags & (DBB_force_write | DBB_no_fs_cache))
+		PIO_force_write(shadow_file, 
+			dbb->dbb_flags & DBB_force_write, 
+			dbb->dbb_flags & DBB_no_fs_cache);
 
 	Shadow* shadow = allocate_shadow(shadow_file, shadow_number, file_flags);
 
@@ -169,8 +171,10 @@ int SDW_add_file(const TEXT* file_name, SLONG start, USHORT shadow_number)
 
 	jrd_file* next = file->fil_next;
 
-	if (dbb->dbb_flags & DBB_force_write)
-		PIO_force_write(next, true);
+	if (dbb->dbb_flags & (DBB_force_write | DBB_no_fs_cache))
+		PIO_force_write(next, 
+			dbb->dbb_flags & DBB_force_write, 
+			dbb->dbb_flags & DBB_no_fs_cache);
 
 /* Always write the header page, even for a conditional
  * shadow that hasn't been activated.
@@ -976,8 +980,10 @@ void SDW_start(const TEXT* file_name,
 	shadow_file =
 		PIO_open(dbb, expanded_name, false, file_name, false);
 
-	if (dbb->dbb_flags & DBB_force_write) {
-		PIO_force_write(shadow_file, true);
+	if (dbb->dbb_flags & (DBB_force_write | DBB_no_fs_cache)) {
+		PIO_force_write(shadow_file, 
+			dbb->dbb_flags & DBB_force_write, 
+			dbb->dbb_flags & DBB_no_fs_cache);
 	}
 
 	if (!(file_flags & FILE_conditional))
