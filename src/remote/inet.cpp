@@ -705,7 +705,7 @@ rem_port* INET_connect(const TEXT* name,
 		return NULL;
 	}
 	if (packet) {
-		if (getaddr(name, &address) == -1) {
+		if (getaddr(host.c_str(), &address) == -1) {
 			inet_error(port, "gethostbyname", isc_net_connect_err, 0);
 			disconnect(port);
 			return NULL;
@@ -726,13 +726,13 @@ rem_port* INET_connect(const TEXT* name,
 
 	if (packet) {
 		// client connection
-		host_addr = get_host_address(name);
+		host_addr = get_host_address(host.c_str());
 
 		if (host_addr.s_addr == INADDR_NONE)
 		{
 			SNPRINTF(msg, FB_NELEM(msg),
 					"INET/INET_connect: gethostbyname (%s) failed, error code = %d",
-					name, H_ERRNO);
+					host.c_str(), H_ERRNO);
 			gds__log(msg, 0);
 			inet_gen_error(port,
 						   isc_network_error,
