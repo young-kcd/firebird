@@ -122,7 +122,7 @@ USHORT REGISTRY_remove(HKEY hkey_rootnode,
 		return (*err_handler) (status, "RegOpenKeyEx", NULL);
 	}
 
-	// Remove the DEFAULT_INSTANCE value
+	// Remove the FB_DEFAULT_INSTANCE value
 	if ((status = RegDeleteValue(hkey_instances, FB_DEFAULT_INSTANCE))
 		!= ERROR_SUCCESS)
 	{
@@ -155,7 +155,7 @@ static void cleanup_key(HKEY hkey_rootnode, const char* key)
  **************************************/
 
 	HKEY hkey;
-	
+
 	if (RegOpenKeyEx(hkey_rootnode, key, 0,
 			KEY_READ | KEY_WRITE, &hkey) == ERROR_SUCCESS)
 	{
@@ -226,7 +226,7 @@ static USHORT remove_subkeys(
 		if ((status = RegOpenKeyEx(hkey, sub_key,
 								   0,
 								   KEY_ENUMERATE_SUB_KEYS | KEY_QUERY_VALUE |
-								   KEY_WRITE, &hkey_sub)) != ERROR_SUCCESS) 
+								   KEY_WRITE, &hkey_sub)) != ERROR_SUCCESS)
 		{
 			p = "RegOpenKeyEx";
 			break;

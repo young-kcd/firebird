@@ -74,7 +74,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	USHORT sw_arch = ARCH_SS;
 	bool sw_interactive = false;
 
-	const TEXT *instance = DEFAULT_INSTANCE;
+	const TEXT *instance = FB_DEFAULT_INSTANCE;
 
 	TEXT *username = 0;
 	TEXT *password = 0;
@@ -368,7 +368,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 
 				if (status2 == FB_SUCCESS)
 				{
-				    printf("Service \"%s\" successfully deleted.\n",
+					printf("Service \"%s\" successfully deleted.\n",
 						   remote_display_name.c_str());
 				}
 				else if (status2 == IB_SERVICE_RUNNING)
@@ -400,7 +400,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 
 				if (status == FB_SUCCESS)
 				{
-				    printf("Service \"%s\" successfully started.\n",
+					printf("Service \"%s\" successfully started.\n",
 						   guard_display_name.c_str());
 				}
 			}

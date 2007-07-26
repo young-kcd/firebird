@@ -122,7 +122,7 @@ int WINAPI WinMain(
 	service_flag = (OsVersionInfo.dwPlatformId == VER_PLATFORM_WIN32_NT);
 
 	if (service_flag) {
-		strcpy(instance, DEFAULT_INSTANCE);
+		strcpy(instance, FB_DEFAULT_INSTANCE);
 		service_flag = parse_args(lpszCmdLine, instance);
 		MemoryPool& pool = *getDefaultMemoryPool();
 		service_name = FB_NEW(pool) Firebird::string(pool);
@@ -150,7 +150,7 @@ int WINAPI WinMain(
 			{NULL, NULL}
 		};
 
-		// BRS There is a error in MinGW (3.1.0) headers 
+		// BRS There is a error in MinGW (3.1.0) headers
 		// the parameter of StartServiceCtrlDispatcher is declared const in msvc headers
 #if defined(MINGW)
 		if (!StartServiceCtrlDispatcher(const_cast<SERVICE_TABLE_ENTRY*>(service_table)))
@@ -184,7 +184,7 @@ static bool parse_args(LPCSTR lpszArgs, TEXT* instance)
 * Returns
 *      A value of true or false depending on if -s is specified.
 *      CVC: Service is the default for NT, use -a for application.
-*      
+*
 *
 **************************************/
 	bool is_service = true;
@@ -231,16 +231,16 @@ static THREAD_ENTRY_DECLARE WINDOW_main(THREAD_ENTRY_PARAM)
  * Functional description
  *
  *      This function is where the actual service code starts.
- * Do all the window init stuff, then fork off a thread for starting 
+ * Do all the window init stuff, then fork off a thread for starting
  * the server.
  *
  **************************************/
- 
+
 	unsigned long thread_id = 0;
 
 /* If we're a service, don't create a window */
 	if (service_flag) {
-		gds__thread_start(start_and_watch_server, 0, 
+		gds__thread_start(start_and_watch_server, 0,
 				THREAD_medium, 0, &thread_id);
 
 		if (thread_id == (DWORD) -1) {
@@ -297,7 +297,7 @@ static THREAD_ENTRY_DECLARE WINDOW_main(THREAD_ENTRY_PARAM)
 	hWndGbl = hWnd;
 
 /* begin a new thread for calling the start_and_watch_server */
-	gds__thread_start(start_and_watch_server, 0, 
+	gds__thread_start(start_and_watch_server, 0,
 			THREAD_medium, 0, &thread_id);
 
 	if (thread_id == (DWORD) -1) {
@@ -313,7 +313,7 @@ static THREAD_ENTRY_DECLARE WINDOW_main(THREAD_ENTRY_PARAM)
 	SendMessage(hWnd, WM_COMMAND, IDM_CANCEL, 0);
 	UpdateWindow(hWnd);
 
-    MSG message;
+	MSG message;
 	while (GetMessage(&message, NULL, 0, 0)) {
 		if (hPSDlg) {			/* If property sheet dialog is open */
 			/* Check if the message is property sheet dialog specific */
@@ -432,7 +432,7 @@ static LRESULT CALLBACK WindowFunc(
 
 	case WM_SWITCHICONS:
 		nRestarts++;
-		gds__thread_start(swap_icons, hWnd, 
+		gds__thread_start(swap_icons, hWnd,
 				THREAD_medium, 0, &thread_id);
 		break;
 
@@ -459,7 +459,7 @@ static LRESULT CALLBACK WindowFunc(
 		if (!service_flag) {
 			HICON hIcon = (HICON) LoadImage(hInstance, MAKEINTRESOURCE(IDI_IBGUARD),
 									  IMAGE_ICON, 0, 0, LR_DEFAULTCOLOR);
-									  
+
 			NOTIFYICONDATA nid;
 			nid.cbSize = sizeof(NOTIFYICONDATA);
 			nid.hWnd = hWnd;
@@ -559,7 +559,7 @@ THREAD_ENTRY_DECLARE start_and_watch_server(THREAD_ENTRY_PARAM)
  *
  * Functional description
  *
- *      This function is where the server process is created and 
+ *      This function is where the server process is created and
  * the thread waits for this process to exit.
  *
  **************************************/
@@ -642,7 +642,7 @@ THREAD_ENTRY_DECLARE start_and_watch_server(THREAD_ENTRY_PARAM)
 				sa.lpSecurityDescriptor = NULL;
 				sa.bInheritHandle = TRUE;
 				success = CreateProcess(NULL, const_cast<char*>(prog_name.c_str()),
-										&sa, NULL, FALSE, 0, 
+										&sa, NULL, FALSE, 0,
 										NULL, NULL, &si, &pi);
 				if (success != TRUE)
 					error = GetLastError();
@@ -709,7 +709,7 @@ THREAD_ENTRY_DECLARE start_and_watch_server(THREAD_ENTRY_PARAM)
 				Sleep(100);
 			}
 
-       		const int ret_val = WaitForSingleObject(procHandle, INFINITE);
+			const int ret_val = WaitForSingleObject(procHandle, INFINITE);
 			if (ret_val == WAIT_ABANDONED)
 				exit_status = CRASHED;
 			else if (ret_val == WAIT_OBJECT_0)
@@ -843,7 +843,7 @@ LRESULT CALLBACK GeneralPage(HWND hDlg, UINT unMsg, WPARAM wParam,
  *  Description: This is the window procedure for the "General" page dialog
  *               of the property sheet dialog box. All the Property Sheet
  *               related events are passed as WM_NOTIFY messages and they
- *               are identified within the LPARAM which will be pointer to 
+ *               are identified within the LPARAM which will be pointer to
  *               the NMDR structure
  *****************************************************************************/
 	HINSTANCE hInstance = (HINSTANCE) GetWindowLongPtr(hDlg, GWLP_HINSTANCE);
@@ -862,7 +862,7 @@ LRESULT CALLBACK GeneralPage(HWND hDlg, UINT unMsg, WPARAM wParam,
 			 */
 			SetDlgItemInt(hDlg, IDC_RESTARTS, nRestarts, FALSE);
 
-			/* get the path to the exe.  
+			/* get the path to the exe.
 			   Make sure that it is null terminated */
 			GetModuleFileName(hInstance, szWindowText, sizeof(szWindowText));
 			char* pszPtr = strrchr(szWindowText, '\\');
@@ -913,8 +913,8 @@ LRESULT CALLBACK GeneralPage(HWND hDlg, UINT unMsg, WPARAM wParam,
 				ListView_InsertColumn(hWndLog, index, &lvC);
 			}
 
-            log_info* liTemp = log_entry->next;
-            LV_ITEM lvI;
+			log_info* liTemp = log_entry->next;
+			LV_ITEM lvI;
 			lvI.cchTextMax = sizeof(liTemp->log_action);
 			lvI.mask = LVIF_TEXT;
 			for (index = 0; liTemp->log_action;
@@ -1090,7 +1090,7 @@ void write_log(int log_action, const char* buff)
 			LoadString(hInstance_gbl, log_action + 1, tmp_buff,
 					   sizeof(tmp_buff));
 			sprintf(act_buff[0], "%s", buff);
-			
+
 			LPVOID lpMsgBuf;
 			FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER |
 						  FORMAT_MESSAGE_ARGUMENT_ARRAY |
@@ -1101,7 +1101,7 @@ void write_log(int log_action, const char* buff)
 					strlen(static_cast<const char*>(lpMsgBuf)) - 1);
 			LocalFree(lpMsgBuf);
 			WORD wLogType;
-			
+
 			switch (log_action) {
 			case IDS_LOG_START:
 			case IDS_LOG_STOP:
@@ -1110,7 +1110,7 @@ void write_log(int log_action, const char* buff)
 			default:
 				wLogType = EVENTLOG_ERROR_TYPE;
 			}
-			
+
 			if (!ReportEvent
 				(hLog, wLogType, 0, log_action + 1, NULL, 1, 0,
 				 const_cast<const char**>(act_buff), NULL))
@@ -1139,7 +1139,7 @@ void write_log(int log_action, const char* buff)
 void HelpCmd(HWND hWnd, HINSTANCE hInst, WPARAM wId)
 {
 /****************************************************************
- *                                              
+ *
  *  H e l p C m d
  *
  ****************************************************************
@@ -1150,7 +1150,7 @@ void HelpCmd(HWND hWnd, HINSTANCE hInst, WPARAM wId)
  *              nId       - The help message Id.
  *
  *  Description:  Invoke the Windows Help facility with context of nId.
- *      
+ *
  *****************************************************************/
 	char szPathFileName[1024 + 256 + 1];
 

@@ -29,6 +29,7 @@
 
 #include "../jrd/os/config_root.h"
 #include "../utilities/install/registry.h"
+#include "../utilities/install/install_nt.h"
 
 typedef Firebird::PathName string;
 
@@ -51,7 +52,7 @@ bool getRootFromRegistry(string& root)
 	DWORD bufsize = MAXPATHLEN;
 	char buffer[MAXPATHLEN];
 	DWORD type;
-	const long RegRC = RegQueryValueEx(hkey, FB_DEFAULT_INSTANCE, 
+	const long RegRC = RegQueryValueEx(hkey, FB_DEFAULT_INSTANCE,
 		NULL, &type, reinterpret_cast<UCHAR*>(buffer), &bufsize);
 	RegCloseKey(hkey);
 	if (RegRC == ERROR_SUCCESS) {
@@ -96,7 +97,7 @@ void ConfigRoot::osConfigRoot()
 		return;
 	}
 
-    // As a last resort get it from the default install directory
-    root_dir = FB_PREFIX;
+	// As a last resort get it from the default install directory
+	root_dir = FB_PREFIX;
 }
 
