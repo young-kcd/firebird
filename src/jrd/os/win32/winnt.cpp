@@ -313,7 +313,7 @@ void PIO_flush(jrd_file* main_file)
 }
 
 
-void PIO_force_write(jrd_file* file, bool bForceWrite, bool bNotUseFSCache)
+void PIO_force_write(jrd_file* file, bool forceWrite, bool notUseFSCache)
 {
 /**************************************
  *
@@ -326,16 +326,16 @@ void PIO_force_write(jrd_file* file, bool bForceWrite, bool bNotUseFSCache)
  *
  **************************************/
 
-	const bool bOldForce = (file->fil_flags & FIL_force_write) != 0;
-	const bool bOldNotUseCache = (file->fil_flags & FIL_no_fs_cache) != 0;
+	const bool oldForce = (file->fil_flags & FIL_force_write) != 0;
+	const bool oldNotUseCache = (file->fil_flags & FIL_no_fs_cache) != 0;
 
-	if (bForceWrite != bOldForce || bNotUseFSCache != bOldNotUseCache)
+	if (forceWrite != oldForce || notUseFSCache != oldNotUseCache)
 	{
-		const int force = bForceWrite ? FILE_FLAG_WRITE_THROUGH : 0;
-		const int fsCache = bNotUseFSCache ? FILE_FLAG_NO_BUFFERING : 0;
+		const int force = forceWrite ? FILE_FLAG_WRITE_THROUGH : 0;
+		const int fsCache = notUseFSCache ? FILE_FLAG_NO_BUFFERING : 0;
 		const int writeMode = (file->fil_flags & FIL_readonly) ? 0 : GENERIC_WRITE;
 
-        HANDLE &hFile = file->fil_desc;
+        HANDLE& hFile = file->fil_desc;
 		maybe_close_file(hFile);
 		hFile = CreateFile(file->fil_string,
 						  GENERIC_READ | writeMode,
@@ -359,13 +359,13 @@ void PIO_force_write(jrd_file* file, bool bForceWrite, bool bNotUseFSCache)
 					 0);
 		}
 		
-		if (bForceWrite) {
+		if (forceWrite) {
 			file->fil_flags |= FIL_force_write;
 		}
 		else {
 			file->fil_flags &= ~FIL_force_write;
 		}
-		if (bNotUseFSCache) {
+		if (notUseFSCache) {
 			file->fil_flags |= FIL_no_fs_cache;
 		}
 		else {
@@ -395,7 +395,9 @@ void PIO_header(Database* dbb, SCHAR * address, int length)
 	jrd_file* file = pageSpace->file;
 	HANDLE desc = file->fil_desc;
 
-	OVERLAPPED overlapped, *overlapped_ptr;
+	OVERLAPPED overlapped;
+	OVERLAPPED* overlapped_ptr;
+
 	if (ostype == OS_CHICAGO)
 	{
 		file->fil_mutex.enter();
@@ -484,7 +486,7 @@ jrd_file* PIO_open(Database* dbb,
  *
  **************************************/
 	const TEXT* ptr = (string.hasData() ? string : file_name).c_str();
-	bool bReadOnly = false;
+	bool readOnly = false;
 
 	if (!ISC_is_WinNT())
 		share_delete = false;
@@ -527,7 +529,7 @@ jrd_file* PIO_open(Database* dbb,
 			 * the Header Page flag setting to make sure that the database is set
 			 * ReadOnly.
 			 */
-			bReadOnly = true;
+			readOnly = true;
 			PageSpace* pageSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
 			if (!pageSpace->file)
 				dbb->dbb_flags |= DBB_being_opened_read_only;
@@ -538,7 +540,7 @@ jrd_file* PIO_open(Database* dbb,
 	try {
 		file = setup_file(dbb, string, desc);
 
-		if (bReadOnly)
+		if (readOnly)
 			file->fil_flags |= FIL_readonly;
 	}
 	catch (const Firebird::Exception&) {

@@ -499,9 +499,11 @@ USHORT PAG_add_file(const TEXT* file_name, SLONG start)
 	jrd_file* next = file->fil_next;
 
 	if (dbb->dbb_flags & (DBB_force_write | DBB_no_fs_cache))
+	{
 		PIO_force_write(next, 
 			dbb->dbb_flags & DBB_force_write, 
 			dbb->dbb_flags & DBB_no_fs_cache);
+	}
 
 	WIN window(DB_PAGE_SPACE, next->fil_min_page);
 	header_page* header = (header_page*) CCH_fake(tdbb, &window, 1);
@@ -1248,12 +1250,13 @@ void PAG_header(bool info)
 				 0);
 	}
 
-	const bool bUseFSCache = dbb->dbb_bcb->bcb_count < Config::getMaxFileSystemCache();
+	const bool useFSCache = dbb->dbb_bcb->bcb_count < Config::getMaxFileSystemCache();
 
-	if (header->hdr_flags & hdr_force_write || !bUseFSCache) {
+	if ((header->hdr_flags & hdr_force_write) || !useFSCache)
+	{
 		dbb->dbb_flags |= 
 			(header->hdr_flags & hdr_force_write ? DBB_force_write : 0) | 
-			(bUseFSCache ? 0 : DBB_no_fs_cache);
+			(useFSCache ? 0 : DBB_no_fs_cache);
 
 		PageSpace* pageSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
 		PIO_force_write(pageSpace->file, 
@@ -1607,9 +1610,11 @@ void PAG_init2(USHORT shadow_number)
 		file->fil_max_page = last_page;
 		file = file->fil_next;
 		if (dbb->dbb_flags & (DBB_force_write | DBB_no_fs_cache))
+		{
 			PIO_force_write(file, 
 				dbb->dbb_flags & DBB_force_write, 
 				dbb->dbb_flags & DBB_no_fs_cache);
+		}
 		file->fil_min_page = last_page + 1;
 		file->fil_sequence = sequence++;
 	}

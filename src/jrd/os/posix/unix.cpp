@@ -320,7 +320,7 @@ void PIO_flush(jrd_file* main_file)
 }
 
 
-void PIO_force_write(jrd_file* file, bool flag, bool bNotUseFSCache)
+void PIO_force_write(jrd_file* file, bool flag, bool notUseFSCache)
 {
 /**************************************
  *

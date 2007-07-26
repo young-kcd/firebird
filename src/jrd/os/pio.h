@@ -90,7 +90,7 @@ class jrd_file : public pool_alloc_rpt<SCHAR, type_fil>
 	ULONG fil_max_page;			/* Maximum page number in file */
 	USHORT fil_sequence;		/* Sequence number of file */
 	USHORT fil_fudge;			/* Fudge factor for page relocation */
-	HANDLE fil_desc;
+	HANDLE fil_desc;			// File descriptor
 	//int *fil_trace;				/* Trace file, if any */
 	Firebird::Mutex fil_mutex;
 #ifdef SUPERSERVER_V2

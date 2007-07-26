@@ -578,7 +578,6 @@ SLONG LOCK_enq(	SRQ_PTR		prior_request,
 					&request->lrq_lbl_requests);
 		release(owner_offset);
 		return 0;
-
 	}
 
 	lock->lbl_state = type;

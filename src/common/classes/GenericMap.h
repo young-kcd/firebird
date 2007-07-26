@@ -105,7 +105,8 @@ public:
 				KeyValuePair* temp = tree.current();
 				bool haveMore = tree.fastRemove();
 				delete temp;
-				if (!haveMore) break;
+				if (!haveMore)
+					break;
 			}
 		}
 
@@ -114,7 +115,6 @@ public:
 
 	// Returns true if value existed
 	bool remove(const KeyType& key) {
-
 		if (tree.locate(key)) {
 			KeyValuePair* var = tree.current();
 			tree.fastRemove();
@@ -128,13 +128,12 @@ public:
 
 	// Returns true if value existed previously
 	bool put(const KeyType& key, const ValueType& value) {
-
 		if (tree.locate(key)) {
 			tree.current()->second = value;
 			return true;
 		}
 
-		KeyValuePair *var = FB_NEW(getPool()) KeyValuePair(getPool(), key, value);
+		KeyValuePair* var = FB_NEW(getPool()) KeyValuePair(getPool(), key, value);
 		tree.add(var);
 		mCount++;
 		return false;
@@ -142,12 +141,11 @@ public:
 
 	// Returns pointer to the added empty value or null when key already exists
 	ValueType* put(const KeyType& key) {
-
 		if (tree.locate(key)) {
 			return 0;
 		}
 
-		KeyValuePair *var = FB_NEW(getPool()) KeyValuePair(getPool());
+		KeyValuePair* var = FB_NEW(getPool()) KeyValuePair(getPool());
 		var->first = key;
 		tree.add(var);
 		mCount++;
@@ -156,7 +154,6 @@ public:
 
 	// Returns true if value is found
 	bool get(const KeyType& key, ValueType& value) {
-
 		if (tree.locate(key)) {
 			value = tree.current()->second;
 			return true;

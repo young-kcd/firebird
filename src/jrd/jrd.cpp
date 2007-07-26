@@ -6108,7 +6108,6 @@ static void release_attachment(Attachment* attachment)
 		LCK_release(tdbb, attachment->att_temp_pg_lock);
 	for (bool getResult = attachment->att_dsql_cache.getFirst(); getResult; 
 			  getResult = attachment->att_dsql_cache.getNext())
-	
  	{
 		LCK_release(tdbb, attachment->att_dsql_cache.current()->second.lock);
  	}
@@ -6944,12 +6943,12 @@ static unsigned int purge_transactions(thread_db*	tdbb,
  *	from an attachment
  *
  **************************************/
-
 	Database* dbb = attachment->att_database;
 	jrd_tra* trans_dbk = attachment->att_dbkey_trans;
 
 	unsigned int count = 0;
 	jrd_tra* next;
+
 	for (jrd_tra* transaction = attachment->att_transactions;
 		 transaction;
 		 transaction = next)
@@ -6957,9 +6956,9 @@ static unsigned int purge_transactions(thread_db*	tdbb,
 		next = transaction->tra_next;
 		if (transaction != trans_dbk)
 		{
-			if (transaction->tra_flags & TRA_prepared ||
-				dbb->dbb_ast_flags & DBB_shutdown ||
-				att_flags & ATT_shutdown)
+			if ((transaction->tra_flags & TRA_prepared) ||
+				(dbb->dbb_ast_flags & DBB_shutdown) ||
+				(att_flags & ATT_shutdown))
 			{
 				TRA_release_transaction(tdbb, transaction);
 			}
@@ -6979,8 +6978,8 @@ static unsigned int purge_transactions(thread_db*	tdbb,
 	if (trans_dbk)
 	{
 		attachment->att_dbkey_trans = NULL;
-		if (dbb->dbb_ast_flags & DBB_shutdown ||
-			att_flags & ATT_shutdown)
+		if ((dbb->dbb_ast_flags & DBB_shutdown) ||
+			(att_flags & ATT_shutdown))
 		{
 			TRA_release_transaction(tdbb, trans_dbk);
 		}
