@@ -1,3 +1,10 @@
+2007-07-26 11:49  dimitr
+
+	* firebird2/src/remote/inet.cpp (1.160.2.8):
+
+	Fixed 2.0.2 after incomplete security backport that affected
+	connections using non-default TCP ports.
+
 2007-07-25 19:39  hvlad
 
 	* firebird2/src/jrd/os/win32/winnt.cpp (1.30.4.5):
