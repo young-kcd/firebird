@@ -260,7 +260,7 @@ USHORT LC_NARROW_string_to_key(texttype* obj, USHORT iInLen, const BYTE* pInChar
 						&((const SortOrderTblEntry*) obj->texttype_impl->
 						  texttype_collation_table)[exp->ExpCh2];
 				if (coll->Primary != NULL_WEIGHT && lprimary < iOutLen)
-					outbuff[lprimary++] = coll->Primary;
+					outbuff[lprimary++] = coll->Primary + obj->texttype_impl->primary_sum;
 				if (coll->Secondary != NULL_SECONDARY && lsecondary < sizeof(secondary))
 					secondary[lsecondary++] = coll->Secondary;
 				if (coll->Tertiary != NULL_TERTIARY && ltertiary < sizeof(tertiary))
@@ -294,7 +294,7 @@ USHORT LC_NARROW_string_to_key(texttype* obj, USHORT iInLen, const BYTE* pInChar
 			if (key_type != INTL_KEY_PARTIAL || complete)
 			{
 				if (coll->Primary != NULL_WEIGHT && lprimary < iOutLen)
-					outbuff[lprimary++] = coll->Primary;
+					outbuff[lprimary++] = coll->Primary + obj->texttype_impl->primary_sum;
 				if (coll->Secondary != NULL_SECONDARY && lsecondary < sizeof(secondary))
 					secondary[lsecondary++] = coll->Secondary;
 				if (coll->Tertiary != NULL_TERTIARY && ltertiary < sizeof(tertiary))
