@@ -742,23 +742,33 @@ ULONG LC_NARROW_canonical(texttype* obj, ULONG srcLen, const UCHAR* src, ULONG d
 		const SortOrderTblEntry* coll =
 			&((const SortOrderTblEntry*)obj->texttype_impl->texttype_collation_table)[*src];
 
+		USHORT primary = coll->Primary;
+
+		if (obj->texttype_impl->texttype_flags & TEXTTYPE_specials_first)
+		{
+			if (coll->IsExpand && coll->IsCompress)
+				primary += obj->texttype_impl->ignore_sum;
+			else
+				primary += obj->texttype_impl->primary_sum;
+		}
+
 		if ((obj->texttype_impl->texttype_flags & (TEXTTYPE_secondary_insensitive | TEXTTYPE_tertiary_insensitive)) == 0)
 		{
-			*reinterpret_cast<USHORT*>(dst) = (coll->Primary << 8) | (coll->Secondary << 4) | coll->Tertiary;
+			*reinterpret_cast<USHORT*>(dst) = (primary << 8) | (coll->Secondary << 4) | coll->Tertiary;
 			dst += sizeof(USHORT);
 		}
 		else if ((obj->texttype_impl->texttype_flags & TEXTTYPE_secondary_insensitive) == 0)
 		{
-			*reinterpret_cast<USHORT*>(dst) = (coll->Primary << 8) | coll->Secondary;
+			*reinterpret_cast<USHORT*>(dst) = (primary << 8) | coll->Secondary;
 			dst += sizeof(USHORT);
 		}
 		else if ((obj->texttype_impl->texttype_flags & TEXTTYPE_tertiary_insensitive) == 0)
 		{
-			*reinterpret_cast<USHORT*>(dst) = (coll->Primary << 8) | coll->Tertiary;
+			*reinterpret_cast<USHORT*>(dst) = (primary << 8) | coll->Tertiary;
 			dst += sizeof(USHORT);
 		}
 		else
-			*dst++ = coll->Primary;
+			*dst++ = primary;
 	}
 
 	return src - inbuff;
