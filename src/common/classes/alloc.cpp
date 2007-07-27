@@ -313,7 +313,8 @@ void MemoryPool::updateSpare()
 				return;
 			spareLeafs.add(temp);
 		}
-		while ( (int) spareNodes.getCount() <= freeBlocks.level ) {
+		while ( (int) spareNodes.getCount() <= freeBlocks.level + 1 &&
+				spareNodes.getCount() < spareNodes.getCapacity() ) {
 			void* temp = internal_alloc(MEM_ALIGN(sizeof(FreeBlocksTree::NodeList)), TYPE_TREEPAGE);
 			if (!temp)
 				return;
@@ -1236,10 +1237,11 @@ void MemoryPool::deletePool(MemoryPool* pool)
 #endif
 			parent->internal_deallocate((char*)redirected + MEM_ALIGN(sizeof(MemoryBlock)));
 			redirected = next;
+
+			if (parent->needSpare)
+				parent->updateSpare();
 		}
 		// Our pool does not exist at this point
-		if (parent->needSpare)
-			parent->updateSpare();
 		parent->lock.leave();
 	}
 }
