@@ -1,3 +1,23 @@
+2007-07-27 18:15  asfernandes
+
+	* firebird2/src/intl/lc_narrow.cpp (1.25):
+
+	Fixed incorrect order of compressions and expansions with
+	SPECIALS-FIRST=1 collations
+
+2007-07-27 17:34  asfernandes
+
+	* firebird2/src/intl/lc_narrow.cpp (1.24):
+
+	Fixed CORE-1384 - LIKE doesn't work correctly with collations using
+	SPECIALS-FIRST=1
+
+2007-07-27 15:40  alexpeshkoff
+
+	* firebird2/src/common/classes/alloc.cpp (1.93):
+
+	Backported fix for spare space in MemoryPool
+
 2007-07-26 14:58  paul_reeves
 
 	* firebird2/builds/win32/msvc8/fb2control.vcproj (1.4):
