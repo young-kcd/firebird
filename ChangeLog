@@ -1,3 +1,10 @@
+2007-07-27 15:31  alexpeshkoff
+
+	* firebird2/src/common/classes/: alloc.cpp (1.80.2.9), fb_tls.h
+	(1.15.4.1), vector.h (1.15.4.1):
+
+	Backported fix for spare space in MemoryPool
+
 2007-07-26 11:49  dimitr
 
 	* firebird2/src/remote/inet.cpp (1.160.2.8):
