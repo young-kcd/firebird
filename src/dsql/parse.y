@@ -932,6 +932,8 @@ recreate_clause	: PROCEDURE rprocedure_clause
 			{ $$ = $2; }
 		| TABLE rtable_clause
 			{ $$ = $2; }
+		| GLOBAL TEMPORARY TABLE gtt_recreate_clause
+			{ $$ = $4; }
 		| VIEW rview_clause
 			{ $$ = $2; }
 		| TRIGGER rtrigger_clause
@@ -1272,21 +1274,26 @@ table_clause	: simple_table_name external_file '(' table_elements ')'
 		;
 
 rtable_clause	: simple_table_name external_file '(' table_elements ')'
-			{ $$ = make_node (nod_redef_relation, 
+			{ $$ = make_flag_node (nod_redef_relation, NOD_PERMANENT_TABLE,
 				(int) e_drl_count, $1, make_list ($4), $2); }
 		;
 
-gtt_table_clause :	simple_table_name '(' table_elements ')'
-			{ $$ = make_flag_node (nod_def_relation, NOD_GLOBAL_TEMP_TABLE_DELETE_ROWS,
+gtt_table_clause :	simple_table_name '(' table_elements ')' gtt_scope
+			{ $$ = make_flag_node (nod_def_relation, (SSHORT) (IPTR) ($5),
 				(int) e_drl_count, $1, make_list ($3), NULL); }
+		;
 
-		|	simple_table_name '(' table_elements ')' ON COMMIT PRESERVE ROWS
-			{ $$ = make_flag_node (nod_def_relation, NOD_GLOBAL_TEMP_TABLE_PRESERVE_ROWS,
+gtt_recreate_clause	:	simple_table_name '(' table_elements ')' gtt_scope
+			{ $$ = make_flag_node (nod_redef_relation, (SSHORT) (IPTR) ($5),
 				(int) e_drl_count, $1, make_list ($3), NULL); }
+		;
 
-		|	simple_table_name '(' table_elements ')' ON COMMIT KW_DELETE ROWS
-			{ $$ = make_flag_node (nod_def_relation, NOD_GLOBAL_TEMP_TABLE_DELETE_ROWS,
-				(int) e_drl_count, $1, make_list ($3), NULL); }
+gtt_scope : ON COMMIT PRESERVE ROWS
+			{ $$ = (dsql_nod*) NOD_GLOBAL_TEMP_TABLE_PRESERVE_ROWS; }
+		|	ON COMMIT KW_DELETE ROWS
+			{ $$ = (dsql_nod*) NOD_GLOBAL_TEMP_TABLE_DELETE_ROWS; }
+		|
+			{ $$ = (dsql_nod*) NOD_GLOBAL_TEMP_TABLE_DELETE_ROWS; }
 		;
 
 external_file	: EXTERNAL KW_FILE sql_string
