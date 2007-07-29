@@ -22,6 +22,9 @@
 //  Contributor(s): ______________________________________.
 //  New module by Stephen W. Boyd 31.Aug.2006
 //
+// Modified by Stephen W. Boyd 31.May.2007
+//	Added support for ISC_TIME & ISC_DATE values
+//
 #include "firebird.h"
 #include <stdio.h>
 #include "../jrd/common.h"
@@ -710,41 +713,93 @@ static void asgn_from( const act* action, const ref* reference)
 			value = gen_name(temp, reference->ref_source, true);
 		else
 			value = reference->ref_value;
-		if (!reference->ref_master || (reference->ref_flags & REF_literal)) {
+		if (!reference->ref_master || (reference->ref_flags & REF_literal))
+		{
 			if ((reference->ref_field->fld_dtype == dtype_date) &&
 				(strlen(gpreGlob.sw_cob_dformat) != 0))
+			{
 				sprintf(output_buffer,
 				        "%sCALL \"rmc_dtoc\" USING %s, %s, \"%s\"\n",
 				        names[COLUMN],
 						variable,
 						value,
 						gpreGlob.sw_cob_dformat);
-			else {
-				sprintf(output_buffer, "%sMOVE %s TO %s\n",
-						names[COLUMN], value, variable);
-				switch (reference->ref_field->fld_dtype) {
-				case dtype_short:
-				case dtype_long:
+			}
+			else
+			{
+				if ((reference->ref_field->fld_dtype == dtype_sql_date) &&
+					(strlen(gpreGlob.sw_cob_dformat) != 0))
+				{
+					sprintf(output_buffer,
+							"%sCALL \"rmc_dtoc\" USING ISC-TEMP-QUAD, %s, \"%s\"\n",
+							names[COLUMN],
+							value,
+							gpreGlob.sw_cob_dformat);
 					RMC_print_buffer(output_buffer, false);
 					sprintf(output_buffer,
-							"%sCALL \"rmc_btoc\" USING %s GIVING %s\n",
+						    "%sMOVE ISC-TEMP-QUAD-HIGH TO %s\n",
 							names[COLUMN],
-							variable,
 							variable);
-					break;
-				case dtype_real:
-				case dtype_double:
-					RMC_print_buffer(output_buffer, false);
-					sprintf(output_buffer,
-							"%sCALL \"rmc_ftoc\" USING %s GIVING %s\n",
-							names[COLUMN],
-							variable,
-							variable);
-					break;
+				}
+				else
+				{
+					if ((reference->ref_field->fld_dtype == dtype_sql_time) &&
+						(strlen(gpreGlob.sw_cob_dformat) != 0))
+					{
+						sprintf(output_buffer,
+								"%sCALL \"rmc_dtoc\" USING ISC-TEMP-QUAD, %s, \"%s\"\n",
+								names[COLUMN],
+								value,
+								gpreGlob.sw_cob_dformat);
+						RMC_print_buffer(output_buffer, false);
+						sprintf(output_buffer,
+								"%sMOVE ISC-TEMP-QUAD-LOW TO %s\n",
+								names[COLUMN],
+								variable);
+					}
+					else
+					{
+						if (reference->ref_field->fld_dtype == dtype_cstring)
+						{
+							sprintf(output_buffer,
+								    "%sCALL \"rmc_stoc\" USING %s GIVING %s\n",
+									names[COLUMN],
+									value,
+									variable);
+						}
+						else
+						{
+							sprintf(output_buffer, "%sMOVE %s TO %s\n",
+									names[COLUMN], value, variable);
+									
+							switch (reference->ref_field->fld_dtype)
+							{
+							case dtype_short:
+							case dtype_long:
+								RMC_print_buffer(output_buffer, false);
+								sprintf(output_buffer,
+										"%sCALL \"rmc_btoc\" USING %s GIVING %s\n",
+										names[COLUMN],
+										variable,
+										variable);
+								break;
+							case dtype_real:
+							case dtype_double:
+								RMC_print_buffer(output_buffer, false);
+								sprintf(output_buffer,
+										"%sCALL \"rmc_ftoc\" USING %s GIVING %s\n",
+										names[COLUMN],
+										variable,
+										variable);
+								break;
+							}
+						}
+					}
 				}
 			}
 		}
-		else {
+		else
+		{
 			sprintf(output_buffer, "%sIF %s < 0 THEN\n",
 					names[COLUMN], value);
 			RMC_print_buffer(output_buffer, false);
@@ -776,13 +831,15 @@ static void asgn_to( const act* action, ref* reference)
 	const gpre_fld* field = source->ref_field;
 	gen_name(s, source, true);
 
-	if (field->fld_array_info) {
+	if (field->fld_array_info)
+	{
 		source->ref_value = reference->ref_value;
 		gen_get_or_put_slice(action, source, true);
 		return;
 	}
 
-	if ((field->fld_dtype == dtype_date) && (strlen(gpreGlob.sw_cob_dformat) != 0)) {
+	if ((field->fld_dtype == dtype_date) && (strlen(gpreGlob.sw_cob_dformat) != 0))
+	{
 		sprintf(output_buffer,
 			    "%sCALL \"rmc_ctod\" USING %s, %s, \"%s\"\n",
 			    names[COLUMN],
@@ -791,36 +848,93 @@ static void asgn_to( const act* action, ref* reference)
 				gpreGlob.sw_cob_dformat);
 		RMC_print_buffer(output_buffer, false);
 	}
-	else {
-		switch (field->fld_dtype) {
-		case dtype_short:
-		case dtype_long:
+	else
+	{
+		if ((field->fld_dtype == dtype_sql_date) && (strlen(gpreGlob.sw_cob_dformat) != 0))
+		{
 			sprintf(output_buffer,
-					"%sCALL \"rmc_ctob\" USING %s GIVING %s\n",
+				    "%sMOVE ZERO TO ISC-TEMP-QUAD-LOW\n",
+					names[COLUMN]);
+			RMC_print_buffer(output_buffer, false);
+			sprintf(output_buffer,
+				    "%sMOVE %s TO ISC-TEMP-QUAD-HIGH\n",
 					names[COLUMN],
-					s,
 					s);
 			RMC_print_buffer(output_buffer, false);
-			break;
-		case dtype_real:
-		case dtype_double:
 			sprintf(output_buffer,
-					"%sCALL \"rmc_ctof\" USING %s GIVING %s\n",
+					"%sCALL \"rmc_ctod\" USING %s, ISC-TEMP-QUAD, \"%s\"\n",
 					names[COLUMN],
-					s,
-					s);
+					reference->ref_value,
+					gpreGlob.sw_cob_dformat);
 			RMC_print_buffer(output_buffer, false);
-			break;
 		}
-		field = reference->ref_field;
-		sprintf(output_buffer, "%sMOVE %s TO %s\n",
-				names[COLUMN], s, reference->ref_value);
-		RMC_print_buffer(output_buffer, false);
+		else
+		{
+			if ((field->fld_dtype == dtype_sql_time) && (strlen(gpreGlob.sw_cob_dformat) != 0))
+			{
+				sprintf(output_buffer,
+						"%sMOVE ZERO TO ISC-TEMP-QUAD-HIGH\n",
+						names[COLUMN]);
+				RMC_print_buffer(output_buffer, false);
+				sprintf(output_buffer,
+						"%sMOVE %s TO ISC-TEMP-QUAD-LOW\n",
+						names[COLUMN],
+						s);
+				RMC_print_buffer(output_buffer, false);
+				sprintf(output_buffer,
+						"%sCALL \"rmc_ctod\" USING %s, ISC-TEMP-QUAD, \"%s\"\n",
+						names[COLUMN],
+						reference->ref_value,
+						gpreGlob.sw_cob_dformat);
+				RMC_print_buffer(output_buffer, false);
+			}
+			else
+			{
+				if (field->fld_dtype == dtype_cstring)
+				{
+					sprintf(output_buffer,
+						    "%sCALL \"rmc_ctos\" USING %s GIVING %s\n",
+							names[COLUMN],
+							s,
+							reference->ref_value);
+					RMC_print_buffer(output_buffer, false);
+				}
+				else
+				{
+					switch (field->fld_dtype)
+					{
+					case dtype_short:
+					case dtype_long:
+						sprintf(output_buffer,
+								"%sCALL \"rmc_ctob\" USING %s GIVING %s\n",
+								names[COLUMN],
+								s,
+								s);
+						RMC_print_buffer(output_buffer, false);
+						break;
+					case dtype_real:
+					case dtype_double:
+						sprintf(output_buffer,
+								"%sCALL \"rmc_ctof\" USING %s GIVING %s\n",
+								names[COLUMN],
+								s,
+								s);
+						RMC_print_buffer(output_buffer, false);
+						break;
+					}
+					field = reference->ref_field;
+					sprintf(output_buffer, "%sMOVE %s TO %s\n",
+							names[COLUMN], s, reference->ref_value);
+					RMC_print_buffer(output_buffer, false);
+				}
+			}
+		}
 	}
 
 //  Pick up NULL value if one is there 
 
-	if (reference = reference->ref_null) {
+	if (reference = reference->ref_null)
+	{
 		sprintf(output_buffer, "%sMOVE %s TO %s\n",
 				names[COLUMN], gen_name(s, reference, true),
 				reference->ref_value);
@@ -839,11 +953,14 @@ static void asgn_to_proc( const ref* reference)
 {
 	TEXT s[MAX_REF_SIZE];
 
-	for (; reference; reference = reference->ref_next) {
+	for (; reference; reference = reference->ref_next)
+	{
 		if (!reference->ref_value)
 			continue;
+
 		gen_name(s, reference, true);
-		if ((reference->ref_field->fld_dtype == dtype_date) && (strlen(gpreGlob.sw_cob_dformat) != 0)) {
+		if ((reference->ref_field->fld_dtype == dtype_date) && (strlen(gpreGlob.sw_cob_dformat) != 0))
+		{
 			sprintf(output_buffer,
 				    "%sCALL \"rmc_ctod\" USING %s, %s, \"%s\"\n",
 					names[COLUMN],
@@ -852,19 +969,75 @@ static void asgn_to_proc( const ref* reference)
 					gpreGlob.sw_cob_dformat);
 			RMC_print_buffer(output_buffer, false);
 		}
-		else {
-			if ((reference->ref_field->fld_dtype == dtype_short) ||
-				(reference->ref_field->fld_dtype == dtype_long)) {
+		else
+		{
+			if ((reference->ref_field->fld_dtype == dtype_sql_date) && (strlen(gpreGlob.sw_cob_dformat) != 0))
+			{
 				sprintf(output_buffer,
-						"%sCALL \"rmc_ctob\" USING %s GIVING %s\n",
+						"%sMOVE ZERO TO ISC-TEMP-QUAD-LOW\n",
+						names[COLUMN]);
+				RMC_print_buffer(output_buffer, false);
+				sprintf(output_buffer,
+						"%sMOVE %s TO ISC-TEMP-QUAD-HIGH\n",
 						names[COLUMN],
-						s,
 						s);
 				RMC_print_buffer(output_buffer, false);
+				sprintf(output_buffer,
+						"%sCALL \"rmc_ctod\" USING %s, ISC-TEMP-QUAD, \"%s\"\n",
+						names[COLUMN],
+						reference->ref_value,
+						gpreGlob.sw_cob_dformat);
+				RMC_print_buffer(output_buffer, false);
 			}
-			sprintf(output_buffer, "%sMOVE %s TO %s\n",
-					names[COLUMN], s, reference->ref_value);
-			RMC_print_buffer(output_buffer, false);
+			else
+			{
+				if ((reference->ref_field->fld_dtype == dtype_sql_time) && (strlen(gpreGlob.sw_cob_dformat) != 0))
+				{
+					sprintf(output_buffer,
+							"%sMOVE ZERO TO ISC-TEMP-QUAD-HIGH\n",
+							names[COLUMN]);
+					RMC_print_buffer(output_buffer, false);
+					sprintf(output_buffer,
+							"%sMOVE %s TO ISC-TEMP-QUAD-LOW\n",
+							names[COLUMN],
+							s);
+					RMC_print_buffer(output_buffer, false);
+					sprintf(output_buffer,
+							"%sCALL \"rmc_ctod\" USING %s, ISC-TEMP-QUAD, \"%s\"\n",
+							names[COLUMN],
+							reference->ref_value,
+							gpreGlob.sw_cob_dformat);
+					RMC_print_buffer(output_buffer, false);
+				}
+				else
+				{
+					if (reference->ref_field->fld_dtype == dtype_cstring)
+					{
+						sprintf(output_buffer,
+							    "%sCALL \"rmc_ctos\" USING %s GIVING %s\n",
+								names[COLUMN],
+								s,
+								reference->ref_value);
+						RMC_print_buffer(output_buffer, false);
+					}
+					else
+					{
+						if ((reference->ref_field->fld_dtype == dtype_short) ||
+							(reference->ref_field->fld_dtype == dtype_long))
+						{
+							sprintf(output_buffer,
+									"%sCALL \"rmc_ctob\" USING %s GIVING %s\n",
+									names[COLUMN],
+									s,
+									s);
+							RMC_print_buffer(output_buffer, false);
+						}
+						sprintf(output_buffer, "%sMOVE %s TO %s\n",
+								names[COLUMN], s, reference->ref_value);
+						RMC_print_buffer(output_buffer, false);
+					}
+				}
+			}
 		}
 	}
 }
@@ -972,6 +1145,15 @@ static void gen_based( const act* action)
 			fprintf(gpreGlob.out_file, "%sPIC S9(19)%s", names[COLUMN], USAGE_BINARY8);
 		else
 			fprintf(gpreGlob.out_file, "%sPIC X(%d)", names[COLUMN], strlen(gpreGlob.sw_cob_dformat));
+		break;
+
+	case dtype_sql_date:
+	case dtype_sql_time:
+		if (strlen(gpreGlob.sw_cob_dformat) == 0)
+			fprintf(gpreGlob.out_file, "%sPIC S9(10)%s", names[COLUMN], USAGE_BINARY4);
+		else {
+			fprintf(gpreGlob.out_file, "%sPIC X(%d)", names[COLUMN], strlen(gpreGlob.sw_cob_dformat));
+		}
 		break;
 
 	case dtype_blob:
@@ -1560,6 +1742,9 @@ static void gen_database( const act* action)
 	printa(COLUMN8, false, "01  %s PIC S9(10) %s EXTERNAL.",
 		   names[ISC_SQLCODE],
 		   USAGE_BINARY4);
+	printa(COLUMN8, false, "01  ISC-TEMP-QUAD.");
+	printa(COLUMN12, false, "03  ISC-TEMP-QUAD-HIGH PIC S9(10) %s.", USAGE_BINARY4);
+	printa(COLUMN12, false, "03  ISC-TEMP-QUAD-LOW PIC S9(10) %s.", USAGE_BINARY4);
 
 	bool all_static = true;
 	bool all_extern = true;
@@ -3824,6 +4009,13 @@ static void make_array_declaration( REF reference)
 		strcat(p, ".");
 		break;
 
+	case dtype_sql_date:
+	case dtype_sql_time:
+		strcpy(p, "PIC S9(10)");
+		strcat(p, USAGE_BINARY4);
+		strcat(p, ".");
+		break;
+
 	case dtype_quad:
 		sprintf(p, "PIC S9(%d)", 19 + field->fld_array->fld_scale);
 		while (*p)
@@ -3998,6 +4190,16 @@ static void make_port(const gpre_port* port)
 			fprintf(gpreGlob.out_file,
 				    "%s.\n",
 					(field->fld_dtype == dtype_real) ? USAGE_BINARY4 : USAGE_BINARY8);
+			break;
+		
+		case dtype_sql_date:
+		case dtype_sql_time:
+			fprintf(gpreGlob.out_file,
+				    "%s03  %s%d PIC S9(10) %s.\n",
+					COLUMN12,
+					names[isc_a_pos],
+					reference->ref_ident,
+					USAGE_BINARY4);
 			break;
 
 		default:

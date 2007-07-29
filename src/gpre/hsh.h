@@ -15,6 +15,10 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 2007.05.23 Stephen W. Boyd			- Added SKIP keyword
+ * 2007.06.15 Stephen W. Boyd			- Added CURRENT_CONNECTION, CURRENT_ROLE,
+ *										  CURRENT_TRANSACTION and CURRENT_USER keywords
  */
 /* Sort this file with "sort -b +1 +0" */
 
@@ -443,4 +447,9 @@
 	{"WORK", KW_WORK},
 	{"WRITE", KW_WRITE}, 
 	{"YEAR", KW_YEAR},
-        {"YEARDAY", KW_YEARDAY}
+    {"YEARDAY", KW_YEARDAY},
+	{"SKIP", KW_SKIP},
+	{"CURRENT_CONNECTION", KW_CURRENT_CONNECTION},
+	{"CURRENT_ROLE", KW_CURRENT_ROLE},
+	{"CURRENT_TRANSACTION", KW_CURRENT_TRANSACTION},
+	{"CURRENT_USER", KW_CURRENT_USER}

@@ -114,10 +114,9 @@ enum gpre_cmd_switch
 	 * deliver dates to Cobol programs
 	 */
 	IN_SW_GPRE_DATE_FMT,
-
 	/*
-	 * Added to allow QLI processing the be suppressed.  QLI and COBOL reserved word lists
-	 * intersect and since QLI reserved words are recognized no matter where the occur in the
+	 * Added to allow QLI processing to be suppressed.  QLI and COBOL reserved word lists
+	 * intersect and since QLI reserved words are recognized no matter where they occur in the
 	 * source stream this was causing bogus errors while parsing COBOL programs.
 	 */
 	IN_SW_NO_QLI,

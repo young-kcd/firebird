@@ -61,6 +61,10 @@
  * causing problems with Cobol programs since the QLI and Cobol reserved word
  * lists intersect.
  * Stephen W. Boyd 21.Mar.2007
+ *
+ * 2007.05.23 Stephen W. Boyd		- Added support for SQL "first n" and "skip n" clauses
+ * 2007.06.15 Stephen W. Boyd		- Added support for CURRENT_CONNECTION, CURRENT_ROLE,
+ *									  CURRENT_TRANSACTION and CURRENT_USER context variables.
 */
 
 #ifndef GPRE_GPRE_H
@@ -262,7 +266,7 @@ typedef enum nod_t {
 	nod_natural, nod_index_order, nod_ansi_all,
 	nod_extract, nod_current_date,
 	nod_current_time, nod_current_timestamp,
-	nod_lowcase,
+	nod_lowcase, nod_current_connection, nod_current_role, nod_current_transaction,
 	nod_LASTNOD					/* Leave this debugging GPRE_NOD last */
 } NOD_T;
 
@@ -914,6 +918,8 @@ struct gpre_rse {
 	USHORT rse_type;			/* node type */
 	gpre_nod* rse_boolean;		/* boolean expression, if present */
 	gpre_nod* rse_first;		/* "first n" clause, if present */
+	gpre_nod* rse_sqlfirst;		/* SQL "first n" clause if present */
+	gpre_nod* rse_sqlskip;		/* SQL "skip n" clause if present */
 	gpre_nod* rse_reduced;		/* projection clause, if present */
 	gpre_nod* rse_sort;			/* sort clause, if present */
 	gpre_nod* rse_fields;		/* list of fields */

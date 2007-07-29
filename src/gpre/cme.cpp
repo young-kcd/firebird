@@ -24,6 +24,9 @@
 //  
 //
 // 2006.10.12 Stephen W. Boyd			- Added support for WITH LOCK subclause.
+// 2007.05.23 Stephen W. Boyd			- Added support for FIRST/SKIP clauses.
+// 2007.06.15 Stephen W. Boyd			- Added support for CURRENT_CONNECTION, CURRENT_ROLE,
+//										  CURRENT_TRANSACTION and CURRENT_USER
 //____________________________________________________________
 //
 //
@@ -44,6 +47,7 @@
 #include "../gpre/prett_proto.h"
 #include "../jrd/dsc_proto.h"
 #include "../gpre/msc_proto.h"
+#include "../jrd/misc_func_ids.h"
 
 static void cmp_array(GPRE_NOD, gpre_req*);
 static void cmp_array_element(GPRE_NOD, gpre_req*);
@@ -62,6 +66,7 @@ static void stuff_sdl_loops(REF, const gpre_fld*);
 static void stuff_sdl_number(const SLONG, REF);
 
 const int USER_LENGTH = 32;
+const int ROLE_LENGTH = 32;
 //#define STUFF(blr)		*request->req_blr++ = (UCHAR) (blr)
 //#define STUFF_WORD(blr)		STUFF (blr); STUFF (blr >> 8)
 //#define STUFF_CSTRING(blr)	stuff_cstring (request, blr)
@@ -130,6 +135,7 @@ const op_table operators[] =
 	{ nod_current_date, blr_current_date },
 	{ nod_current_time, blr_current_time },
 	{ nod_current_timestamp, blr_current_timestamp },
+	{ nod_current_role, blr_current_role },
 	{ nod_any, 0 }
 };
 
@@ -336,6 +342,22 @@ void CME_expr(GPRE_NOD node, gpre_req* request)
 			request->add_word(element->mel_position);
 			return;
 		}
+
+	case nod_current_connection:
+		request->add_byte(blr_internal_info);
+		request->add_byte(blr_literal);
+		request->add_byte(blr_long);
+		request->add_byte(0);
+		request->add_long(internal_connection_id);
+		return;
+
+	case nod_current_transaction:
+		request->add_byte(blr_internal_info);
+		request->add_byte(blr_literal);
+		request->add_byte(blr_long);
+		request->add_byte(0);
+		request->add_long(internal_transaction_id);
+		return;
 	}
 
 	const op_table* nod2blr_operator;
@@ -994,6 +1016,19 @@ void CME_get_dtype(const gpre_nod* node, gpre_fld* f)
 		f->fld_charset_id = CS_ASCII;
 		return;
 
+	case nod_current_connection:
+	case nod_current_transaction:
+		f->fld_dtype = dtype_long;
+		f->fld_length = sizeof(SLONG);
+		return;
+
+	case nod_current_role:
+		f->fld_dtype = dtype_text;
+		f->fld_ttype = ttype_ascii;
+		f->fld_charset_id = CS_ASCII;
+		f->fld_length = ROLE_LENGTH;
+		return;
+
 	default:
 		CPR_error("CME_get_dtype: node type not supported");
 	}
@@ -1156,6 +1191,18 @@ void CME_rse(gpre_rse* selection, gpre_req* request)
 	{
 		request->add_byte(blr_first);
 		CME_expr(selection->rse_first, request);
+	}
+
+	if (selection->rse_sqlfirst)
+	{
+		request->add_byte(blr_first);
+		CME_expr(selection->rse_sqlfirst->nod_arg[0], request);
+	}
+
+	if (selection->rse_sqlskip)
+	{
+		request->add_byte(blr_skip);
+		CME_expr(selection->rse_sqlskip->nod_arg[0], request);
 	}
 
 	if (selection->rse_boolean)

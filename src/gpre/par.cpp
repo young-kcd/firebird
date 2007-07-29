@@ -362,63 +362,66 @@ act* PAR_action(const TEXT* base_dir)
 		return NULL;
 	}
 
-	for (; symbol; symbol = symbol->sym_homonym)
+	if (! gpreGlob.sw_no_qli)
 	{
-		switch (symbol->sym_type)
+		for (; symbol; symbol = symbol->sym_homonym)
 		{
-		case SYM_context:
-			try {
-				PAR_jmp_buf = &env;
-				cur_statement = NULL;
-				return par_variable();
-			}
-			catch (const gpre_exception&) {
-				throw;
-			}
-			catch (const Firebird::fatal_exception&)
+			switch (symbol->sym_type)
 			{
-				// CVC: a fatal exception should be propagated.
-				throw;
+			case SYM_context:
+				try {
+					PAR_jmp_buf = &env;
+					cur_statement = NULL;
+					return par_variable();
+				}
+				catch (const gpre_exception&) {
+					throw;
+				}
+				catch (const Firebird::fatal_exception&)
+				{
+					// CVC: a fatal exception should be propagated.
+					throw;
+				}
+				catch (const Firebird::Exception&) {
+					return 0;
+				}
+			case SYM_blob:
+				try {
+					PAR_jmp_buf = &env;
+					cur_statement = NULL;
+					return par_blob_field();
+				}
+				catch (const gpre_exception&) {
+					throw;
+				}
+				catch (const Firebird::fatal_exception&)
+				{
+					// CVC: a fatal exception should be propagated.
+					throw;
+				}
+				catch (const Firebird::Exception&) {
+					return 0;
+				}
+			case SYM_relation:
+				try {
+					PAR_jmp_buf = &env;
+					cur_statement = NULL;
+					return par_type();
+				}
+				catch (const gpre_exception&) {
+					throw;
+				}
+				catch (const Firebird::fatal_exception&)
+				{
+					// CVC: a fatal exception should be propagated.
+					throw;
+				}
+				catch (const Firebird::Exception&) {
+					return 0;
+				}
+			default:
+				break;
 			}
-			catch (const Firebird::Exception&) {
-				return 0;
-			}
-		case SYM_blob:
-			try {
-				PAR_jmp_buf = &env;
-				cur_statement = NULL;
-				return par_blob_field();
-			}
-			catch (const gpre_exception&) {
-				throw;
-			}
-			catch (const Firebird::fatal_exception&)
-			{
-				// CVC: a fatal exception should be propagated.
-				throw;
-			}
-			catch (const Firebird::Exception&) {
-				return 0;
-			}
-		case SYM_relation:
-			try {
-				PAR_jmp_buf = &env;
-				cur_statement = NULL;
-				return par_type();
-			}
-			catch (const gpre_exception&) {
-				throw;
-			}
-			catch (const Firebird::fatal_exception&)
-			{
-				// CVC: a fatal exception should be propagated.
-				throw;
-			}
-			catch (const Firebird::Exception&) {
-				return 0;
-			}
-		default:
-			break;
 		}
 	}
 

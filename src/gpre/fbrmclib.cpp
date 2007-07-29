@@ -165,6 +165,8 @@ RM_PROTO(rmc_dtoc);
 RM_PROTO(rmc_ctod);
 RM_PROTO(rmc_ftoc);
 RM_PROTO(rmc_ctof);
+RM_PROTO(rmc_ctos);
+RM_PROTO(rmc_stoc);
 #ifdef __cplusplus
 }
 #endif
@@ -1516,8 +1518,43 @@ EXPORT RM_ENTRY(rmc_ftoc)
 		
 	return (0);
 }
+// Convert a Cobol alpha (PIC X) field to a C string.  This is done by trimming trailing spaces
+// and adding the trailing '\0'.
+EXPORT RM_ENTRY(rmc_ctos)
+{
+	char* dest = (char*) arg_vector[-1].a_address;
+	const int dlen = arg_vector[-1].a_length;
+	const char* src = (char*) arg_vector[0].a_address;
+	const int slen = arg_vector[0].a_length;
+	
+	int i = slen - 1;
+	while (src[i] == ' ' && i >= 0)
+		--i;
+		
+	int len = ((i + 1) < dlen) ? i + 1 : dlen - 1;
+	memmove(dest, src, len);
+	dest[len] = '\0';
 
-static char		*banner = "Firebird Embedded SQL Interface";
+	return (0);
+}
+// Convert a C string to a Cobol alpha (PIC X) field.  This is done by copying the original
+// string and padding on the right with spaces.
+EXPORT RM_ENTRY(rmc_stoc)
+{
+	char* dest = (char*) arg_vector[-1].a_address;
+	const int dlen = arg_vector[-1].a_length;
+	const char* src = (char*) arg_vector[0].a_address;
+	const int slen = arg_vector[0].a_length;
+
+	memset(dest, ' ', dlen);
+	int len = (slen <= dlen) ? slen : dlen;
+	memmove(dest, src, len);
+
+	return (0);
+}
+
+static char* banner = "Firebird Embedded SQL Interface";
+
 
 #ifdef __cplusplus
 extern "C" {
@@ -1604,5 +1641,7 @@ EXPORT entry_table RM_EntryPoints[] = {
 	{ "rmc_ctod", rmc_ctod, "rmc_ctod" },
 	{ "rmc_ftoc", rmc_ftoc, "rmc_ftoc" },
 	{ "rmc_ctof", rmc_ctof, "rmc_ctof" },
+	{ "rmc_ctos", rmc_ctos, "rmc_ctos" },
+	{ "rmc_stoc", rmc_stoc, "RMC_stoc" },
 	{ NULL, NULL, NULL }
 };

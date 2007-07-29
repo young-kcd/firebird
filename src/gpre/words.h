@@ -15,6 +15,9 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 2007.05.23 Stephen W. Boyd			- Added SKIP keyword
+ * 2007.06.15 Stephen W. Boyd			- Added CURRENT_CONNECTION, CURRENT_ROLE,
  */
 typedef enum kwwords {
 	KW_none = 0,
@@ -311,5 +314,10 @@ typedef enum kwwords {
 	KW_WARNING,
 	KW_WEEKDAY,
 	KW_WHENEVER, KW_WIDTH, KW_WITH, KW_WORK, KW_WRITE, KW_YEAR, KW_YEARDAY,
+	KW_SKIP,
+	KW_CURRENT_CONNECTION,
+	KW_CURRENT_ROLE,
+	KW_CURRENT_TRANSACTION,
+	KW_CURRENT_USER,
 	KW_max
 } KWWORDS;

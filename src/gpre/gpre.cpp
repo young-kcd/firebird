@@ -643,6 +643,7 @@ int main(int argc, char* argv[])
 
 		case IN_SW_GPRE_RMCOBOL:
 			gpreGlob.sw_cob_dialect = cob_rmc;
+			gpreGlob.sw_cstring = true;
 			gen_routine = RMC_action;
 			break;
 
