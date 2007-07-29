@@ -314,7 +314,8 @@ void MemoryPool::updateSpare()
 			spareLeafs.add(temp);
 		}
 		while ( (int) spareNodes.getCount() <= freeBlocks.level + 1 &&
-				spareNodes.getCount() < spareNodes.getCapacity() ) {
+				spareNodes.getCount() < spareNodes.getCapacity() )
+		{
 			void* temp = internal_alloc(MEM_ALIGN(sizeof(FreeBlocksTree::NodeList)), TYPE_TREEPAGE);
 			if (!temp)
 				return;

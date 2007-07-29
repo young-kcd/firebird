@@ -57,13 +57,13 @@ struct dsc
 	explicit dsc(const dtype_t dtype) :
 		dsc_dtype(dtype), dsc_scale(0),  dsc_length(0), dsc_sub_type(0),
 		dsc_flags(0), dsc_address(0)
-	{};
+	{}
 	
 	dsc(const dtype_t dtype, const scale_t scale, const length_t length = 0,
 	    const address_t address = 0) :
 		dsc_dtype(dtype), dsc_scale(scale), dsc_length(length), dsc_sub_type(0),
 		dsc_flags(0), dsc_address(address)
-	{};
+	{}
 
 	dtype_t		dsc_dtype;
 	scale_t		dsc_scale;
