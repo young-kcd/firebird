@@ -148,6 +148,9 @@ SSHORT LOCK_debug_level = 0;
 #define DEBUG_DELAY				/* nothing */
 #endif
 
+// CVC: Unlike other definitions, SRQ_PTR is not a pointer to something in lowercase.
+// It's LONG.
+
 const SRQ_PTR DUMMY_OWNER_CREATE	= -1;
 const SRQ_PTR DUMMY_OWNER_DELETE	= -2;
 const SRQ_PTR DUMMY_OWNER_SHUTDOWN	= -3;
@@ -222,12 +225,13 @@ static void shutdown_blocking_thread(ISC_STATUS *);
 #endif
 static int signal_owner(own*, SRQ_PTR);
 #ifdef VALIDATE_LOCK_TABLE
-static void validate_lhb(LHB);
-static void validate_shb(SRQ_PTR);
-static void validate_owner(SRQ_PTR, USHORT);
-static void validate_lock(SRQ_PTR, USHORT, SRQ_PTR);
-static void validate_request(SRQ_PTR, USHORT, USHORT);
-static void validate_parent(LHB, SRQ_PTR);
+static void validate_history(const SRQ_PTR history_header);
+static void validate_parent(const lhb*, const SRQ_PTR);
+static void validate_lhb(const lhb*);
+static void validate_lock(const SRQ_PTR, USHORT, const SRQ_PTR);
+static void validate_owner(const SRQ_PTR, USHORT);
+static void validate_request(const SRQ_PTR, USHORT, USHORT);
+static void validate_shb(const SRQ_PTR);
 //static void validate_block(SRQ_PTR);
 #endif
 
@@ -1853,7 +1857,7 @@ static THREAD_ENTRY_DECLARE blocking_action_thread(THREAD_ENTRY_PARAM arg)
  *	will send to itself.
  *
  **************************************/
-	SRQ_PTR* owner_offset_ptr = (SRQ_PTR*)arg;
+	SRQ_PTR* owner_offset_ptr = (SRQ_PTR*) arg;
 	AST_INIT();					/* Check into scheduler as AST thread */
 
 	while (true) {
@@ -1890,7 +1894,7 @@ static THREAD_ENTRY_DECLARE blocking_action_thread(THREAD_ENTRY_PARAM arg)
  *	Thread to handle blocking signals.
  *
  **************************************/
-	SRQ_PTR* owner_offset_ptr = (SRQ_PTR*)arg;
+	SRQ_PTR* owner_offset_ptr = (SRQ_PTR*) arg;
 	AST_INIT();					/* Check into scheduler as AST thread */
 
 	while (true) {
@@ -4231,7 +4235,7 @@ const USHORT EXPECT_freed	= 1;
 const USHORT RECURSE_yes	= 0;
 const USHORT RECURSE_not	= 1;
 
-static void validate_history( SRQ_PTR history_header)
+static void validate_history(const SRQ_PTR history_header)
 {
 /**************************************
  *
@@ -4264,7 +4268,7 @@ static void validate_history( SRQ_PTR history_header)
 
 
 #ifdef VALIDATE_LOCK_TABLE
-static void validate_parent(LHB lhb, SRQ_PTR isSomeoneParent)
+static void validate_parent(const lhb* alhb, const SRQ_PTR isSomeoneParent)
 {
 /**************************************
  *
@@ -4278,21 +4282,21 @@ static void validate_parent(LHB lhb, SRQ_PTR isSomeoneParent)
  **************************************/
 	SignalInhibit siHolder;
 
-	if (lhb->lhb_active_owner == 0) 
+	if (alhb->lhb_active_owner == 0)
 		return;
 
-	own* owner = (own*) SRQ_ABS_PTR(lhb->lhb_active_owner);
+	const own* owner = (own*) SRQ_ABS_PTR(alhb->lhb_active_owner);
 
-	SRQ lock_srq;
+	const srq* lock_srq;
 	SRQ_LOOP(owner->own_requests, lock_srq) 
 	{
-		LRQ request = (LRQ) ((UCHAR *) lock_srq - OFFSET(LRQ, lrq_own_requests));
+		const lrq* request = (LRQ) ((UCHAR *) lock_srq - OFFSET(LRQ, lrq_own_requests));
 
 		if (!(request->lrq_flags & LRQ_repost)) 
 		{
 			if (request->lrq_lock != isSomeoneParent)
 			{
-				LBL lock = (LBL) SRQ_ABS_PTR(request->lrq_lock);
+				const lbl* lock = (LBL) SRQ_ABS_PTR(request->lrq_lock);
 
 				if (lock->lbl_parent == isSomeoneParent)
 				{
@@ -4306,7 +4310,7 @@ static void validate_parent(LHB lhb, SRQ_PTR isSomeoneParent)
 
 
 #ifdef VALIDATE_LOCK_TABLE
-static void validate_lhb( LHB lhb)
+static void validate_lhb(const lhb* alhb)
 {
 /**************************************
  *
@@ -4327,63 +4331,63 @@ static void validate_lhb( LHB lhb)
 
 	SignalInhibit siHolder;
 
-	CHECK(lhb != NULL);
+	CHECK(alhb != NULL);
 
-	CHECK(lhb->lhb_type == type_lhb);
-	CHECK(lhb->lhb_version == LHB_VERSION);
+	CHECK(alhb->lhb_type == type_lhb);
+	CHECK(alhb->lhb_version == LHB_VERSION);
 
-	validate_shb(lhb->lhb_secondary);
-	if (lhb->lhb_active_owner > 0)
-		validate_owner(lhb->lhb_active_owner, EXPECT_inuse);
+	validate_shb(alhb->lhb_secondary);
+	if (alhb->lhb_active_owner > 0)
+		validate_owner(alhb->lhb_active_owner, EXPECT_inuse);
 
-	SRQ lock_srq;
-	SRQ_LOOP(lhb->lhb_owners, lock_srq) {
+	const srq* lock_srq;
+	SRQ_LOOP(alhb->lhb_owners, lock_srq) {
 		/* Validate that the next backpointer points back to us */
-		SRQ que_next = SRQ_NEXT((*lock_srq));
+		const srq* que_next = SRQ_NEXT((*lock_srq));
 		CHECK(que_next->srq_backward == SRQ_REL_PTR(lock_srq));
 
-		own* owner = (own*) ((UCHAR *) lock_srq - OFFSET(own*, own_lhb_owners));
+		const own* owner = (own*) ((UCHAR *) lock_srq - OFFSET(own*, own_lhb_owners));
 		validate_owner(SRQ_REL_PTR(owner), EXPECT_inuse);
 	}
 
-	SRQ_LOOP(lhb->lhb_free_owners, lock_srq) {
+	SRQ_LOOP(alhb->lhb_free_owners, lock_srq) {
 		/* Validate that the next backpointer points back to us */
-		SRQ que_next = SRQ_NEXT((*lock_srq));
+		const srq* que_next = SRQ_NEXT((*lock_srq));
 		CHECK(que_next->srq_backward == SRQ_REL_PTR(lock_srq));
 
-		own* owner = (own*) ((UCHAR *) lock_srq - OFFSET(own*, own_lhb_owners));
+		const own* owner = (own*) ((UCHAR *) lock_srq - OFFSET(own*, own_lhb_owners));
 		validate_owner(SRQ_REL_PTR(owner), EXPECT_freed);
 	}
 
-	SRQ_LOOP(lhb->lhb_free_locks, lock_srq) {
+	SRQ_LOOP(alhb->lhb_free_locks, lock_srq) {
 		/* Validate that the next backpointer points back to us */
-		SRQ que_next = SRQ_NEXT((*lock_srq));
+		const srq* que_next = SRQ_NEXT((*lock_srq));
 		CHECK(que_next->srq_backward == SRQ_REL_PTR(lock_srq));
 
-		LBL lock = (LBL) ((UCHAR *) lock_srq - OFFSET(LBL, lbl_lhb_hash));
+		const lbl* lock = (LBL) ((UCHAR *) lock_srq - OFFSET(LBL, lbl_lhb_hash));
 		validate_lock(SRQ_REL_PTR(lock), EXPECT_freed, (SRQ_PTR) 0);
 	}
 
-	SRQ_LOOP(lhb->lhb_free_requests, lock_srq) {
+	SRQ_LOOP(alhb->lhb_free_requests, lock_srq) {
 		/* Validate that the next backpointer points back to us */
-		SRQ que_next = SRQ_NEXT((*lock_srq));
+		const srq* que_next = SRQ_NEXT((*lock_srq));
 		CHECK(que_next->srq_backward == SRQ_REL_PTR(lock_srq));
 
-		LRQ request = (LRQ) ((UCHAR *) lock_srq - OFFSET(LRQ, lrq_lbl_requests));
+		const lrq* request = (LRQ) ((UCHAR *) lock_srq - OFFSET(LRQ, lrq_lbl_requests));
 		validate_request(SRQ_REL_PTR(request), EXPECT_freed, RECURSE_not);
 	}
 
-	CHECK(lhb->lhb_used <= lhb->lhb_length);
+	CHECK(alhb->lhb_used <= alhb->lhb_length);
 
 #if defined UNIX && !defined SUPERSERVER && !defined USE_BLOCKING_THREAD
-	CHECK(lhb->lhb_mutex[0].mtx_semid == LOCK_data.sh_mem_mutex_arg);
+	CHECK(alhb->lhb_mutex[0].mtx_semid == LOCK_data.sh_mem_mutex_arg);
 #endif
 
-	validate_history(lhb->lhb_history);
-/* validate_semaphore_mask (lhb->lhb_mask); */
+	validate_history(alhb->lhb_history);
+/* validate_semaphore_mask (alhb->lhb_mask); */
 
-	CHECK(lhb->lhb_reserved[0] == 0);
-	CHECK(lhb->lhb_reserved[1] == 0);
+	CHECK(alhb->lhb_reserved[0] == 0);
+	CHECK(alhb->lhb_reserved[1] == 0);
 
 	DEBUG_MSG(0, ("validate_lhb completed:\n"));
 
@@ -4392,7 +4396,7 @@ static void validate_lhb( LHB lhb)
 
 
 #ifdef VALIDATE_LOCK_TABLE
-static void validate_lock( SRQ_PTR lock_ptr, USHORT freed, SRQ_PTR lrq_ptr)
+static void validate_lock(const SRQ_PTR lock_ptr, USHORT freed, const SRQ_PTR lrq_ptr)
 {
 /**************************************
  *
@@ -4406,12 +4410,12 @@ static void validate_lock( SRQ_PTR lock_ptr, USHORT freed, SRQ_PTR lrq_ptr)
  **************************************/
 	LOCK_TRACE(("validate_lock: %ld\n", lock_ptr));
 
-	LBL lock = (LBL) SRQ_ABS_PTR(lock_ptr);
+	const lbl* lock = (LBL) SRQ_ABS_PTR(lock_ptr);
 	//lbl lock_copy = *lock;
 
 	if (freed == EXPECT_freed)
 		CHECK(lock->lbl_type == type_null)
-			else
+	else
 		CHECK(lock->lbl_type == type_lbl);
 
 // The following condition is always true because UCHAR >= 0
@@ -4421,7 +4425,7 @@ static void validate_lock( SRQ_PTR lock_ptr, USHORT freed, SRQ_PTR lrq_ptr)
 	CHECK(lock->lbl_length <= lock->lbl_size);
 
 /* The lbl_count's should never roll over to be negative */
-	for (USHORT i = 0; i < FB_NELEM(lock->lbl_counts); i++)
+	for (ULONG i = 0; i < FB_NELEM(lock->lbl_counts); i++)
 		CHECK(!(lock->lbl_counts[i] & 0x8000))
 
 /* The count of pending locks should never roll over to be negative */
@@ -4430,19 +4434,19 @@ static void validate_lock( SRQ_PTR lock_ptr, USHORT freed, SRQ_PTR lrq_ptr)
 	USHORT direct_counts[LCK_max];
 	memset(direct_counts, 0, sizeof(direct_counts));
 
-	USHORT found = 0;
-	USHORT found_pending = 0;
+	ULONG found = 0;
+	ULONG found_pending = 0;
 	UCHAR highest_request = LCK_none;
-	SRQ lock_srq;
+	const srq* lock_srq;
 	SRQ_LOOP(lock->lbl_requests, lock_srq) {
 		/* Validate that the next backpointer points back to us */
-		SRQ que_next = SRQ_NEXT((*lock_srq));
+		const srq* que_next = SRQ_NEXT((*lock_srq));
 		CHECK(que_next->srq_backward == SRQ_REL_PTR(lock_srq));
 
 		/* Any requests of a freed lock should also be free */
 		CHECK(freed == EXPECT_inuse);
 
-		LRQ request = (LRQ) ((UCHAR *) lock_srq - OFFSET(LRQ, lrq_lbl_requests));
+		const lrq* request = (LRQ) ((UCHAR *) lock_srq - OFFSET(LRQ, lrq_lbl_requests));
 		/* Note: Don't try to validate_request here, it leads to recursion */
 
 		if (SRQ_REL_PTR(request) == lrq_ptr)
@@ -4511,7 +4515,7 @@ static void validate_lock( SRQ_PTR lock_ptr, USHORT freed, SRQ_PTR lrq_ptr)
 
 
 #ifdef VALIDATE_LOCK_TABLE
-static void validate_owner( SRQ_PTR own_ptr, USHORT freed)
+static void validate_owner(const SRQ_PTR own_ptr, USHORT freed)
 {
 /**************************************
  *
@@ -4525,14 +4529,14 @@ static void validate_owner( SRQ_PTR own_ptr, USHORT freed)
  **************************************/
 	LOCK_TRACE(("validate_owner: %ld\n", own_ptr));
 
-	own* owner = (own*) SRQ_ABS_PTR(own_ptr);
+	const own* owner = (own*) SRQ_ABS_PTR(own_ptr);
 	//own owner_copy = *owner;
 
 /* Note that owner->own_pending_request can be reset without the lock
  * table being acquired - eg: by another process.  That being the case,
  * we need to stash away a copy of it for validation.
  */
-	SRQ_PTR owner_own_pending_request = owner->own_pending_request;
+	const SRQ_PTR owner_own_pending_request = owner->own_pending_request;
 
 	CHECK(owner->own_type == type_own);
 	if (freed == EXPECT_freed)
@@ -4566,29 +4570,29 @@ static void validate_owner( SRQ_PTR own_ptr, USHORT freed)
 	if (owner->own_ast_flags & OWN_signaled)
 		CHECK(!(owner->own_flags & OWN_signal));
 
-	SRQ lock_srq;
+	const srq* lock_srq;
 	SRQ_LOOP(owner->own_requests, lock_srq) {
 		/* Validate that the next backpointer points back to us */
-		SRQ que_next = SRQ_NEXT((*lock_srq));
+		const srq* que_next = SRQ_NEXT((*lock_srq));
 		CHECK(que_next->srq_backward == SRQ_REL_PTR(lock_srq));
 
 		CHECK(freed == EXPECT_inuse);	/* should not be in loop for freed owner */
 
-		LRQ request = (LRQ) ((UCHAR *) lock_srq - OFFSET(LRQ, lrq_own_requests));
+		const lrq* request = (LRQ) ((UCHAR *) lock_srq - OFFSET(LRQ, lrq_own_requests));
 		validate_request(SRQ_REL_PTR(request), EXPECT_inuse, RECURSE_not);
 		CHECK(request->lrq_owner == own_ptr);
 
 		/* Make sure that request marked as blocking also exists in the blocking list */
 
 		if (request->lrq_flags & LRQ_blocking) {
-			USHORT found = 0;
-			SRQ que2;
+			ULONG found = 0;
+			const srq* que2;
 			SRQ_LOOP(owner->own_blocks, que2) {
 				/* Validate that the next backpointer points back to us */
-				SRQ que2_next = SRQ_NEXT((*que2));
+				const srq* que2_next = SRQ_NEXT((*que2));
 				CHECK(que2_next->srq_backward == SRQ_REL_PTR(que2));
 
-				LRQ request2 =
+				const lrq* request2 =
 					(LRQ) ((UCHAR *) que2 - OFFSET(LRQ, lrq_own_blocks));
 				CHECK(request2->lrq_owner == own_ptr);
 
@@ -4605,12 +4609,12 @@ static void validate_owner( SRQ_PTR own_ptr, USHORT freed)
 
 	SRQ_LOOP(owner->own_blocks, lock_srq) {
 		/* Validate that the next backpointer points back to us */
-		SRQ que_next = SRQ_NEXT((*lock_srq));
+		const srq* que_next = SRQ_NEXT((*lock_srq));
 		CHECK(que_next->srq_backward == SRQ_REL_PTR(lock_srq));
 
 		CHECK(freed == EXPECT_inuse);	/* should not be in loop for freed owner */
 
-		LRQ request = (LRQ) ((UCHAR *) lock_srq - OFFSET(LRQ, lrq_own_blocks));
+		const lrq* request = (LRQ) ((UCHAR *) lock_srq - OFFSET(LRQ, lrq_own_blocks));
 		validate_request(SRQ_REL_PTR(request), EXPECT_inuse, RECURSE_not);
 
 		LOCK_TRACE(("Validate own_block: %ld\n", SRQ_REL_PTR(request)));
@@ -4624,14 +4628,14 @@ static void validate_owner( SRQ_PTR own_ptr, USHORT freed)
 
 		/* Make sure that each block also exists in the request list */
 
-		USHORT found = 0;
-		SRQ que2;
+		ULONG found = 0;
+		const srq* que2;
 		SRQ_LOOP(owner->own_requests, que2) {
 			/* Validate that the next backpointer points back to us */
-			SRQ que2_next = SRQ_NEXT((*que2));
+			const srq* que2_next = SRQ_NEXT((*que2));
 			CHECK(que2_next->srq_backward == SRQ_REL_PTR(que2));
 
-			LRQ request2 = (LRQ) ((UCHAR *) que2 - OFFSET(LRQ, lrq_own_requests));
+			const lrq* request2 = (LRQ) ((UCHAR *) que2 - OFFSET(LRQ, lrq_own_requests));
 			CHECK(request2->lrq_owner == own_ptr);
 
 			if (SRQ_REL_PTR(request2) == SRQ_REL_PTR(request))
@@ -4647,20 +4651,20 @@ static void validate_owner( SRQ_PTR own_ptr, USHORT freed)
  */
 	if (owner_own_pending_request && (freed == EXPECT_inuse)) {
 		/* Make sure pending request is valid, and we own it */
-		LRQ request3 = (LRQ) SRQ_ABS_PTR(owner_own_pending_request);
+		const lrq* request3 = (LRQ) SRQ_ABS_PTR(owner_own_pending_request);
 		validate_request(SRQ_REL_PTR(request3), EXPECT_inuse, RECURSE_not);
 		CHECK(request3->lrq_owner == own_ptr);
 
 		/* Make sure the lock the request is for is valid */
-		LBL lock = (LBL) SRQ_ABS_PTR(request3->lrq_lock);
+		const lbl* lock = (LBL) SRQ_ABS_PTR(request3->lrq_lock);
 		validate_lock(SRQ_REL_PTR(lock), EXPECT_inuse, (SRQ_PTR) 0);
 
 		/* Make sure the pending request is on the list of requests for the lock */
 
 		bool found_pending = false;
-		SRQ que_of_lbl_requests;
+		const srq* que_of_lbl_requests;
 		SRQ_LOOP(lock->lbl_requests, que_of_lbl_requests) {
-			LRQ pending =
+			const lrq* pending =
 				(LRQ) ((UCHAR *) que_of_lbl_requests -
 					   OFFSET(LRQ, lrq_lbl_requests));
 			if (SRQ_REL_PTR(pending) == owner_own_pending_request) {
@@ -4680,8 +4684,10 @@ static void validate_owner( SRQ_PTR own_ptr, USHORT freed)
 #ifdef USE_STATIC_SEMAPHORES
 	{
 		const USHORT semaphore = owner->own_semaphore;
-		if (semaphore && (freed == EXPECT_inuse)) {
-			if (!(semaphore & OWN_semavail)) {
+		if (semaphore && (freed == EXPECT_inuse))
+		{
+			if (!(semaphore & OWN_semavail))
+			{
 				/* Check that the semaphore allocated is flagged as in use */
 				semaphore_mask* semaphores =
 					(semaphore_mask*) SRQ_ABS_PTR(LOCK_header->lhb_mask);
@@ -4697,7 +4703,7 @@ static void validate_owner( SRQ_PTR own_ptr, USHORT freed)
 
 
 #ifdef VALIDATE_LOCK_TABLE
-static void validate_request( SRQ_PTR lrq_ptr, USHORT freed, USHORT recurse)
+static void validate_request(const SRQ_PTR lrq_ptr, USHORT freed, USHORT recurse)
 {
 /**************************************
  *
@@ -4711,12 +4717,12 @@ static void validate_request( SRQ_PTR lrq_ptr, USHORT freed, USHORT recurse)
  **************************************/
 	LOCK_TRACE(("validate_request: %ld\n", lrq_ptr));
 
-	LRQ request = (LRQ) SRQ_ABS_PTR(lrq_ptr);
+	const lrq* request = (LRQ) SRQ_ABS_PTR(lrq_ptr);
 	//lrq request_copy = *request;
 
 	if (freed == EXPECT_freed)
 		CHECK(request->lrq_type == type_null)
-			else
+	else
 		CHECK(request->lrq_type == type_lrq);
 
 /* Check that no invalid flag bit is set */
@@ -4740,7 +4746,8 @@ static void validate_request( SRQ_PTR lrq_ptr, USHORT freed, USHORT recurse)
 	CHECK(request->lrq_requested < LCK_max);
 	CHECK(request->lrq_state < LCK_max);
 
-	if (freed == EXPECT_inuse) {
+	if (freed == EXPECT_inuse)
+	{
 		if (recurse == RECURSE_yes)
 			validate_owner(request->lrq_owner, EXPECT_inuse);
 
@@ -4753,7 +4760,7 @@ static void validate_request( SRQ_PTR lrq_ptr, USHORT freed, USHORT recurse)
 
 
 #ifdef VALIDATE_LOCK_TABLE
-static void validate_shb( SRQ_PTR shb_ptr)
+static void validate_shb(const SRQ_PTR shb_ptr)
 {
 /**************************************
  *
@@ -4772,13 +4779,13 @@ static void validate_shb( SRQ_PTR shb_ptr)
  **************************************/
 	LOCK_TRACE(("validate_shb: %ld\n", shb_ptr));
 
-	SHB secondary_header = (SHB) SRQ_ABS_PTR(shb_ptr);
+	const shb* secondary_header = (SHB) SRQ_ABS_PTR(shb_ptr);
 
 	CHECK(secondary_header->shb_type == type_shb);
 
 	validate_history(secondary_header->shb_history);
 
-	for (USHORT i = 0; i < FB_NELEM(secondary_header->shb_misc); i++)
+	for (ULONG i = 0; i < FB_NELEM(secondary_header->shb_misc); i++)
 		CHECK(secondary_header->shb_misc[i] == 0);
 }
 #endif
