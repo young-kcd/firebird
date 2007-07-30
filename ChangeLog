@@ -1,3 +1,38 @@
+2007-07-29 10:15  hvlad
+
+	* firebird2/src/dsql/parse.y (1.243):
+
+	Implement RECREATE GLOBAL TEMPORARY TABLE
+
+2007-07-29 09:30  robocop
+
+	* firebird2/src/gpre/: cme.cpp (1.40), fbrmclib.cpp (1.2), gpre.cpp
+	(1.85), gpre.h (1.88), gpreswi.h (1.17), hsh.h (1.7), par.cpp
+	(1.65), rmc.cpp (1.4), sqe.cpp (1.45), words.h (1.7):
+
+	Commit GPRE enhancements on behalf of Stephen Boyd.  This batch of
+	changes includes: - Support for FIRST/SKIP clauses - Support for
+	CURRENT_CONNECTION, CURRENT_ROLE, CURRENT_TRANSACTION and
+	CURRENT_USER context variables - Changed the BLR generated for
+	RM/Cobol programs to use blr_cstring rather than blr_text so that
+	CHAR and VARCHAR fields are not written as "fixed length" fields
+	from Cobol programs.  Incoming CHAR and VARCHAR fields are right
+	filled with spaces inbound to the Cobol program and stripped of
+	trailing spaces outbound.
+
+2007-07-29 04:32  robocop
+
+	* firebird2/src/lock/lock.cpp (1.124):
+
+	Cleanup.
+
+2007-07-29 04:30  robocop
+
+	* firebird2/src/: common/classes/alloc.cpp (1.94), jrd/dsc2.h
+	(1.9):
+
+	Misc.
+
 2007-07-27 18:15  asfernandes
 
 	* firebird2/src/intl/lc_narrow.cpp (1.25):
