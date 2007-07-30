@@ -13,7 +13,7 @@ if "%ERRLEV%"=="1" goto :END
 call make_examples
 if "%ERRLEV%"=="1" goto :END
 pushd ..\install\arch-specific\win32
-call BuildExecutableInstall ISX ZIP EMB PDB
+call BuildExecutableInstall ISX ZIP EMB
 popd
 
 goto:END
