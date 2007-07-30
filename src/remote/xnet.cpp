@@ -148,17 +148,6 @@ inline void make_event_name(char* buffer, size_t size, const char* format, ULONG
 
 static Firebird::Mutex	xnet_mutex;
 
-#if defined(SUPERCLIENT)
-
-inline void XNET_LOCK() {
-	xnet_mutex.enter();
-}
-inline void XNET_UNLOCK() {
-	xnet_mutex.leave();
-}
-
-#elif defined(SUPERSERVER)
-
 inline void XNET_LOCK() {
 	if (!xnet_shutdown)
 	{
@@ -170,43 +159,16 @@ inline void XNET_LOCK() {
 		THREAD_ENTER();
 	}
 }
+
 inline void XNET_UNLOCK() {
 	xnet_mutex.leave();
 }
 
-#else // CS
+static int xnet_error(rem_port*, ISC_STATUS, int);
 
-inline void XNET_LOCK() {
-}
-inline void XNET_UNLOCK() {
-}
-
-#endif
-
-static int xnet_error(rem_port*, const TEXT*, ISC_STATUS, int, ULONG);
-
-#define XNET_ERROR(po, fu, op, st) xnet_error(po, fu, op, st, __LINE__);
-#define XNET_LOG_ERROR(msg) xnet_log_error(__LINE__, msg)
-#define XNET_LOG_ERRORC(msg) xnet_log_error(__LINE__, msg, ERRNO)
-
-static void xnet_log_error(int source_line_num, const char* err_msg, ULONG err_code = 0)
+static void xnet_log_error(const char* err_msg)
 { 
-/**************************************
- *
- *  x n e t _ l o g _ e r r o r
- *
- **************************************
- *
- * Functional description
- *  Error logging when port isn;t yet allocated
- *
- **************************************/
-	if (err_code)
-		gds__log("XNET error (xnet:%d)  %s  Win32 error = %"ULONGFORMAT"\n",
-			source_line_num, err_msg, err_code);
-	else
-		gds__log("XNET error (xnet:%d)  %s\n",
-			source_line_num, err_msg);
+	gds__log("XNET error: %s", err_msg);
 }
 
 
@@ -490,7 +452,7 @@ rem_port* XNET_reconnect(ULONG client_pid, ISC_STATUS* status_vector)
 
 	}
 	catch (const Firebird::Exception&) {
-		XNET_LOG_ERROR("Unable to initialize child process");
+		xnet_log_error("Unable to initialize child process");
 		status_vector[1] = isc_unavailable;
 
 		if (port) {
@@ -810,7 +772,7 @@ static rem_port* aux_connect(rem_port* port, PACKET* packet, t_event_ast ast)
 	}
 	catch (const Firebird::Exception&) {
 
-		XNET_LOG_ERROR("aux_connect() failed");
+		xnet_log_error("aux_connect() failed");
 
 		if (xcc) {
 			if (xcc->xcc_event_send_channel_filled) {
@@ -943,7 +905,7 @@ static rem_port* aux_request(rem_port* port, PACKET* packet)
 	}
 	catch (const Firebird::Exception&) {
 
-		XNET_LOG_ERROR("aux_request() failed");
+		xnet_log_error("aux_request() failed");
 
 		if (xcc) {
 
@@ -1006,6 +968,8 @@ static void cleanup_comm(XCC xcc)
 	if (xpm) {
 		xpm->xpm_count--;
 
+		XNET_LOCK();
+
 		if (!xpm->xpm_count && global_client_maps) {
 			UnmapViewOfFile(xpm->xpm_address);
 			CloseHandle(xpm->xpm_handle);
@@ -1024,8 +988,11 @@ static void cleanup_comm(XCC xcc)
 					}
 				}
 			}
+
 			ALLR_free((UCHAR *) xpm);
 		}
+
+		XNET_UNLOCK();
 	}
 }
 
@@ -1045,9 +1012,7 @@ static void cleanup_port(rem_port* port)
  **************************************/
 
 	if (port->port_xcc) {
-		XNET_LOCK();
 		cleanup_comm((XCC) port->port_xcc);
-		XNET_UNLOCK();
 	}
 	
 	if (port->port_version) {
@@ -1152,7 +1117,7 @@ static rem_port* connect_client(PACKET* packet, ISC_STATUS* status_vector)
 	XNET_UNLOCK();
 
 	if (response.map_num == XNET_INVALID_MAP_NUM) {
-		XNET_LOG_ERROR("server failed to response on connect request");
+		xnet_log_error("Server failed to response on connect request");
 		return NULL;
 	}
 
@@ -1380,7 +1345,7 @@ static rem_port* connect_server(ISC_STATUS* status_vector, USHORT flag)
 		THREAD_ENTER();
 
 		if (wait_res != WAIT_OBJECT_0) {
-			XNET_LOG_ERRORC("WaitForSingleObject() failed");
+			xnet_log_error("WaitForSingleObject() failed");
 			break;
 		}
 
@@ -1402,9 +1367,7 @@ static rem_port* connect_server(ISC_STATUS* status_vector, USHORT flag)
 			ULONG map_num, slot_num;
 			ULONG timestamp = (ULONG) time(NULL);
 
-			XNET_LOCK();
 			XPM xpm = get_free_slot(&map_num, &slot_num, &timestamp);
-			XNET_UNLOCK();
 
 			// pack combined mapped area and number
 			if (xpm) {
@@ -1425,12 +1388,12 @@ static rem_port* connect_server(ISC_STATUS* status_vector, USHORT flag)
 
 				}
 				catch (const Firebird::Exception&) {
-					XNET_LOG_ERROR("failed to allocate server port for communication");
+					xnet_log_error("Failed to allocate server port for communication");
 					break;
 				}
 			}
 			else {
-				XNET_LOG_ERROR("get_free_slot() failed");
+				xnet_log_error("get_free_slot() failed");
 				break;
 			}
 		}
@@ -1565,7 +1528,7 @@ static int send_full( rem_port* port, PACKET * packet)
 	if (xnet_write(&port->port_send))
 		return TRUE;
 	else {
-		XNET_ERROR(port, "SetEvent()", isc_net_write_err, ERRNO);
+		xnet_error(port, isc_net_write_err, ERRNO);
 		return FALSE;
 	}
 }
@@ -1600,29 +1563,32 @@ static void server_shutdown(rem_port* port)
  *   Server shutdown handler (client side only).
  *
  **************************************/
+	xnet_log_error("Server shutdown detected");
+
 	XCC xcc = (XCC)port->port_xcc;
-	XPM xpm = xcc->xcc_xpm;
-
-	XNET_LOG_ERROR("Server shutdown detected");
-
-	XNET_LOCK();
-
 	xcc->xcc_flags |= XCCF_SERVER_SHUTDOWN;
 
-	ULONG dead_proc_id = XPS(xpm->xpm_address)->xps_server_proc_id;
+	XPM xpm = xcc->xcc_xpm;
+	if (!(xpm->xpm_flags & XPMF_SERVER_SHUTDOWN)) {
 
-	// mark all mapped areas connected to server with dead_proc_id
+		ULONG dead_proc_id = XPS(xpm->xpm_address)->xps_server_proc_id;
 
-	for (xpm = global_client_maps; xpm; xpm = xpm->xpm_next) {
-		if (XPS(xpm->xpm_address)->xps_server_proc_id == dead_proc_id)
-		{
-			xpm->xpm_flags |= XPMF_SERVER_SHUTDOWN;
-			xpm->xpm_handle = 0;
-			xpm->xpm_address = NULL;
+		// mark all mapped areas connected to server with dead_proc_id
+
+		XNET_LOCK();
+
+		for (xpm = global_client_maps; xpm; xpm = xpm->xpm_next) {
+			if (!(xpm->xpm_flags & XPMF_SERVER_SHUTDOWN) &&
+				XPS(xpm->xpm_address)->xps_server_proc_id == dead_proc_id)
+			{
+				xpm->xpm_flags |= XPMF_SERVER_SHUTDOWN;
+				xpm->xpm_handle = 0;
+				xpm->xpm_address = NULL;
+			}
 		}
-	}
 
-	XNET_UNLOCK();
+		XNET_UNLOCK();
+	}
 }
 #endif	// SUPERCLIENT
 
@@ -1699,8 +1665,7 @@ static void xnet_gen_error( rem_port* port, ISC_STATUS status, ...)
 }
 
 
-static int xnet_error(rem_port* port, const TEXT* function, ISC_STATUS operation,
-											int status, ULONG source_line_num)
+static int xnet_error(rem_port* port, ISC_STATUS operation, int status)
 {
 /**************************************
  *
@@ -1714,12 +1679,11 @@ static int xnet_error(rem_port* port, const TEXT* function, ISC_STATUS operation
  *	is used to indicate and error.
  *
  **************************************/
-	xnet_log_error(source_line_num, function, status);
-
 	if (status)
 		xnet_gen_error(port, operation, SYS_ERR, status, 0);
 	else
 		xnet_gen_error(port, operation, 0);
+
 	return 0;
 }
 
@@ -1750,13 +1714,11 @@ static bool_t xnet_getbytes(XDR * xdrs, SCHAR * buff, u_int count)
 		if (xpm->xpm_flags & XPMF_SERVER_SHUTDOWN) {
 			if (!(xcc->xcc_flags & XCCF_SERVER_SHUTDOWN)) {
 				xcc->xcc_flags |= XCCF_SERVER_SHUTDOWN;
-				XNET_ERROR(port, "connection lost: another side is dead", 
-						   isc_lost_db_connection, 0);
+				xnet_error(port, isc_lost_db_connection, 0);
 			}
 			return FALSE;
 		}
 #endif
-
 		SLONG to_copy;
 		if (xdrs->x_handy >= bytecount)
 			to_copy = bytecount;
@@ -1773,12 +1735,8 @@ static bool_t xnet_getbytes(XDR * xdrs, SCHAR * buff, u_int count)
 			xdrs->x_private += to_copy;
 		}
 		else {
-			THREAD_EXIT();
-			if (!xnet_read(xdrs)) {
-				THREAD_ENTER();
+			if (!xnet_read(xdrs))
 				return FALSE;
-			}
-			THREAD_ENTER();
 		}
 
 		if (to_copy) {
@@ -1867,20 +1825,18 @@ static bool_t xnet_putbytes(XDR* xdrs, const SCHAR* buff, u_int count)
 	XCH xch = (XCH)xcc->xcc_send_channel;
 	XPM xpm = xcc->xcc_xpm;
 
-
 	while (bytecount && !xnet_shutdown) {
 
 #ifdef SUPERCLIENT
 		if (xpm->xpm_flags & XPMF_SERVER_SHUTDOWN) {
 			if (!(xcc->xcc_flags & XCCF_SERVER_SHUTDOWN)) {
 				xcc->xcc_flags |= XCCF_SERVER_SHUTDOWN;
-				XNET_ERROR(port, "connection lost: another side is dead", 
-						   isc_lost_db_connection, 0);
+				xnet_error(port, isc_lost_db_connection, 0);
 			}
 			return FALSE;
 		}
 #endif
-		
+
 		SLONG to_copy;
 		if (xdrs->x_handy >= bytecount)
 			to_copy = bytecount;
@@ -1891,44 +1847,51 @@ static bool_t xnet_putbytes(XDR* xdrs, const SCHAR* buff, u_int count)
 
 			if ((ULONG) xdrs->x_handy == xch->xch_size) {
 
-				THREAD_EXIT();
 				while (!xnet_shutdown) {
+
+#ifdef SUPERCLIENT
+					if (xpm->xpm_flags & XPMF_SERVER_SHUTDOWN) {
+						if (!(xcc->xcc_flags & XCCF_SERVER_SHUTDOWN)) {
+							xcc->xcc_flags |= XCCF_SERVER_SHUTDOWN;
+							xnet_error(port, isc_lost_db_connection, 0);
+						}
+						return FALSE;
+					}
+#endif
+					THREAD_EXIT();
 
 					const DWORD wait_result =
 						WaitForSingleObject(xcc->xcc_event_send_channel_empted,
-													  XNET_SEND_WAIT_TIMEOUT);
-					if (wait_result == WAIT_OBJECT_0)
+										    XNET_SEND_WAIT_TIMEOUT);
+
+					if (wait_result == WAIT_OBJECT_0) {
+						THREAD_ENTER();
 						break;
-
-					if (wait_result == WAIT_TIMEOUT) {
-
+					}
+					else if (wait_result == WAIT_TIMEOUT) {
 						// Check whether another side is alive
-						if (WaitForSingleObject(xcc->xcc_proc_h, 1) == WAIT_TIMEOUT)
+						if (WaitForSingleObject(xcc->xcc_proc_h, 1) == WAIT_TIMEOUT) {
+							THREAD_ENTER();
 							continue; // another side is alive
+						}
 						else {
-
+							THREAD_ENTER();
 							// Another side is dead or something bad has happened
 #ifdef SUPERCLIENT
 							server_shutdown(port);
-							XNET_ERROR(port, "connection lost: another side is dead", 
-							           isc_lost_db_connection, 0);								
+							xnet_error(port, isc_lost_db_connection, 0);								
 #else
-							XNET_ERROR(port, "connection lost: another side is dead",
-								       isc_conn_lost, 0);
+							xnet_error(port, isc_conn_lost, 0);
 #endif
-
-							THREAD_ENTER();
 							return FALSE;
 						}
 					}
 					else {
-						XNET_ERROR(port, "WaitForSingleObject()", isc_net_write_err, ERRNO);
 						THREAD_ENTER();
+						xnet_error(port, isc_net_write_err, ERRNO);
 						return FALSE; // a non-timeout result is an error
 					}
 				}
-
-				THREAD_ENTER();
 			}
 
 			if (to_copy == sizeof(SLONG))
@@ -1941,7 +1904,7 @@ static bool_t xnet_putbytes(XDR* xdrs, const SCHAR* buff, u_int count)
 		}
 		else {
 			if (!xnet_write(xdrs)) {
-				XNET_ERROR(port, "SetEvent()", isc_net_write_err, ERRNO);
+				xnet_error(port, isc_net_write_err, ERRNO);
 				return FALSE;
 			}
 		}
@@ -1997,7 +1960,7 @@ static bool_t xnet_read(XDR * xdrs)
 		return FALSE;
 
 	if (!SetEvent(xcc->xcc_event_recv_channel_empted)) {
-		XNET_ERROR(port, "SetEvent()", isc_net_read_err, ERRNO);
+		xnet_error(port, isc_net_read_err, ERRNO);
 		return FALSE;
 	}
 
@@ -2007,50 +1970,50 @@ static bool_t xnet_read(XDR * xdrs)
 		if (xpm->xpm_flags & XPMF_SERVER_SHUTDOWN) {
 			if (!(xcc->xcc_flags & XCCF_SERVER_SHUTDOWN)) {
 				xcc->xcc_flags |= XCCF_SERVER_SHUTDOWN;
-				XNET_ERROR(port, "connection lost: another side is dead", 
-						   isc_lost_db_connection, 0);
+				xnet_error(port, isc_lost_db_connection, 0);
 			}
+			return FALSE;
 		}
 #endif
+		THREAD_EXIT();
 
 		const DWORD wait_result =
 			WaitForSingleObject(xcc->xcc_event_recv_channel_filled,
-		                                  XNET_RECV_WAIT_TIMEOUT);
+		                        XNET_RECV_WAIT_TIMEOUT);
+
 		if (wait_result == WAIT_OBJECT_0) {
-			/* Client wrote some data for us(for server) to read*/
+			THREAD_ENTER();
+			// Client has written some data for us (server) to read
 			xdrs->x_handy = xch->xch_length;
 			xdrs->x_private = xdrs->x_base;
 			return TRUE;
 		}
-
-		if (wait_result == WAIT_TIMEOUT) {
-
+		else if (wait_result == WAIT_TIMEOUT) {
 			// Check if another side is alive
-			if (WaitForSingleObject(xcc->xcc_proc_h, 1) == WAIT_TIMEOUT)
+			if (WaitForSingleObject(xcc->xcc_proc_h, 1) == WAIT_TIMEOUT) {
+				THREAD_ENTER();
 				continue; // another side is alive
+			}
 			else {
-
+				THREAD_ENTER();
 				// Another side is dead or something bad has happaned
 #ifdef SUPERCLIENT
 				server_shutdown(port);
-				XNET_ERROR(port, "connection lost: another side is dead", 
-						   isc_lost_db_connection, 0);								
+				xnet_error(port, isc_lost_db_connection, 0);								
 #else
-				XNET_ERROR(port, "connection lost: another side is dead",
-				           isc_conn_lost, 0);
+				xnet_error(port, isc_conn_lost, 0);
 #endif
-
 				return FALSE;
 			}
 		}
 		else {
-			XNET_ERROR(port, "WaitForSingleObject()", isc_net_read_err, ERRNO);
+			THREAD_ENTER();
+			xnet_error(port, isc_net_read_err, ERRNO);
 			return FALSE; // a non-timeout result is an error
 		}
 	}
 
 	return FALSE;
-	
 }
 
 
@@ -2125,7 +2088,7 @@ void release_all()
 	connect_fini();
 #endif
 
-	xnet_mutex.enter();
+	XNET_LOCK();
 
 	// release all map stuf left not released by broken ports
 
@@ -2139,7 +2102,7 @@ void release_all()
 
 	global_client_maps = NULL;
 
-	xnet_mutex.leave();
+	XNET_UNLOCK();
 
 	xnet_initialized = false;
 }
@@ -2223,8 +2186,12 @@ static XPM make_xpm(ULONG map_number, ULONG timestamp)
 	}
 	xpm->xpm_flags = 0;
 
+	XNET_LOCK();
+
 	xpm->xpm_next = global_client_maps;
 	global_client_maps = xpm;
+
+	XNET_UNLOCK();
 
 	return xpm;
 
@@ -2315,7 +2282,7 @@ static bool server_init()
 	}
 	catch (const Firebird::Exception&) {
 		connect_fini();
-		XNET_LOG_ERROR("XNET server initialization failed");
+		xnet_log_error("Server initialization failed");
 		return false;
 	}
 	
@@ -2342,6 +2309,8 @@ static XPM get_free_slot(ULONG* map_num, ULONG* slot_num, ULONG* timestamp)
 	XPM xpm = NULL;
 	ULONG i = 0, j = 0;
 
+	XNET_LOCK();
+
 	// go through list of maps
 
 	for (xpm = global_client_maps; xpm; xpm = xpm->xpm_next) {
@@ -2360,6 +2329,8 @@ static XPM get_free_slot(ULONG* map_num, ULONG* slot_num, ULONG* timestamp)
 		}
 		j++;
 	}
+
+	XNET_UNLOCK();
 
 	// if the mapped file structure has not yet been initialized,
 	// make one now
@@ -2434,7 +2405,7 @@ static bool fork(ULONG client_pid, USHORT flag, ULONG* forked_pid)
 		CloseHandle(pi.hProcess);
 	}
 	else
-		XNET_LOG_ERRORC("CreateProcess() failed");
+		xnet_log_error("CreateProcess() failed");
 
 	return cp_result;
 }
