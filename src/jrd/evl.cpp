@@ -3502,7 +3502,8 @@ static dsc* extract(thread_db* tdbb, jrd_nod* node, impure_value* impure)
 		timestamp.decode(&times);
 		if (extract_part != blr_extract_hour &&
 			extract_part != blr_extract_minute &&
-			extract_part != blr_extract_second)
+			extract_part != blr_extract_second &&
+			extract_part != blr_extract_millisecond)
 		{
 			ERR_post(isc_expression_eval_err, 0);
 		}
@@ -3512,7 +3513,8 @@ static dsc* extract(thread_db* tdbb, jrd_nod* node, impure_value* impure)
 		timestamp.decode(&times);
 		if (extract_part == blr_extract_hour ||
 			extract_part == blr_extract_minute ||
-			extract_part == blr_extract_second)
+			extract_part == blr_extract_second ||
+			extract_part == blr_extract_millisecond)
 		{
 			ERR_post(isc_expression_eval_err, 0);
 		}
@@ -3544,15 +3546,77 @@ static dsc* extract(thread_db* tdbb, jrd_nod* node, impure_value* impure)
 		part = times.tm_min;
 		break;
 	case blr_extract_second:
-		impure->vlu_desc.dsc_dtype = dtype_long;
 		impure->vlu_desc.dsc_scale = ISC_TIME_SECONDS_PRECISION_SCALE;
+		// fall through
+	case blr_extract_millisecond:
+		impure->vlu_desc.dsc_dtype = dtype_long;
 		impure->vlu_desc.dsc_address =
 			reinterpret_cast<UCHAR*>(&impure->vlu_misc.vlu_long);
 		impure->vlu_desc.dsc_length = sizeof(ULONG);
 		*(ULONG *) impure->vlu_desc.dsc_address =
 			times.tm_sec * ISC_TIME_SECONDS_PRECISION +
 			(timestamp.value().timestamp_time % ISC_TIME_SECONDS_PRECISION);
+
+		if (extract_part == blr_extract_millisecond)
+			(*(ULONG *) impure->vlu_desc.dsc_address) /= ISC_TIME_SECONDS_PRECISION / 1000;
+
 		return &impure->vlu_desc;
+
+	case blr_extract_week:
+	{
+		// Algorithm for Converting Gregorian Dates to ISO 8601 Week Date by Rick McCarty, 1999
+		// http://personal.ecu.edu/mccartyr/ISOwdALG.txt
+
+		int y = times.tm_year + 1900;
+		int dayOfYearNumber = times.tm_yday + 1;
+
+		// Find the jan1Weekday for y (Monday=1, Sunday=7)
+		int yy = (y - 1) % 100;
+		int c = (y - 1) - yy;
+		int g = yy + yy / 4;
+		int jan1Weekday = 1 + (((((c / 100) % 4) * 5) + g) % 7);
+
+		// Find the weekday for y m d
+		int h = dayOfYearNumber + (jan1Weekday - 1);
+		int weekday = 1 + ((h - 1) % 7);
+
+		// Find if y m d falls in yearNumber y-1, weekNumber 52 or 53
+		int yearNumber, weekNumber;
+
+		if ((dayOfYearNumber <= (8 - jan1Weekday)) && (jan1Weekday > 4))
+		{
+			yearNumber = y - 1;
+			weekNumber = ((jan1Weekday == 5) || ((jan1Weekday == 6) &&
+				Firebird::TimeStamp::isLeapYear(yearNumber))) ? 53 : 52;
+		}
+		else
+			yearNumber = y;
+
+		// Find if y m d falls in yearNumber y+1, weekNumber 1
+		if (yearNumber == y)
+		{
+			int i = Firebird::TimeStamp::isLeapYear(y) ? 366 : 365;
+
+			if ((i - dayOfYearNumber) < (4 - weekday))
+			{
+				yearNumber = y + 1;
+				weekNumber = 1;
+			}
+		}
+	        
+		// Find if y m d falls in yearNumber y, weekNumber 1 through 53
+		if (yearNumber == y)
+		{
+			int j = dayOfYearNumber + (7 - weekday) + (jan1Weekday - 1);
+			weekNumber = j / 7;
+			if (jan1Weekday > 4)
+				weekNumber--;
+		}
+
+		part = weekNumber;
+		break;
+	}
+
 	case blr_extract_yearday:
 		part = times.tm_yday;
 		break;

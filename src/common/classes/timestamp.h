@@ -108,6 +108,12 @@ public:
 	static void decode_time(ISC_TIME ntime, int* hours, int* minutes, int* seconds, int* fractions);
 	static ISC_TIME encode_time(int hours, int minutes, int seconds, int fractions);
 	static void round_time(ISC_TIME &ntime, int precision);
+
+	static inline bool isLeapYear(int year)
+	{
+		return (year % 4 == 0 && year % 100 != 0) || (year % 400 == 0);
+	}    
+
 private:
 	ISC_TIMESTAMP mValue;
 

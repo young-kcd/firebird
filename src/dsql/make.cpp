@@ -1220,20 +1220,24 @@ void MAKE_desc(dsql_req* request, dsc* desc, dsql_nod* node, dsql_nod* null_repl
 
 	case nod_extract:
 		MAKE_desc(request, &desc1, node->nod_arg[e_extract_value], NULL);
-		desc->dsc_sub_type = 0;
-		desc->dsc_scale = 0;
-		desc->dsc_flags = (desc1.dsc_flags & DSC_nullable);
-		if (*(ULONG *) node->nod_arg[e_extract_part]->nod_desc.dsc_address
-			== blr_extract_second)
+
+		switch (*(ULONG *) node->nod_arg[e_extract_part]->nod_desc.dsc_address)
 		{
-			// QUADDATE - maybe this should be DECIMAL(6,4) 
-			desc->dsc_dtype = dtype_long;
-			desc->dsc_scale = ISC_TIME_SECONDS_PRECISION_SCALE;
-			desc->dsc_length = sizeof(ULONG);
-			return;
+			case blr_extract_second:
+				// QUADDATE - maybe this should be DECIMAL(6,4) 
+				desc->makeLong(ISC_TIME_SECONDS_PRECISION_SCALE);
+				break;
+
+			case blr_extract_millisecond:
+				desc->makeLong(0);
+				break;
+
+			default:
+				desc->makeShort(0);
+				break;
 		}
-		desc->dsc_dtype = dtype_short;
-		desc->dsc_length = sizeof(SSHORT);
+
+		desc->setNullable(desc1.isNullable());
 		return;
 
 	case nod_strlen:

@@ -1645,21 +1645,22 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC * de
 		return;
 
 	case nod_extract:
-		if ((IPTR) node->nod_arg[e_extract_part] == blr_extract_second) {
-			// QUADDATE - SECOND returns a float, or scaled!
-			desc->dsc_dtype = dtype_long;
-			desc->dsc_length = sizeof(ULONG);
-			desc->dsc_scale = ISC_TIME_SECONDS_PRECISION_SCALE;
-			desc->dsc_sub_type = 0;
-			desc->dsc_flags = 0;
+		switch ((IPTR) node->nod_arg[e_extract_part])
+		{
+			case blr_extract_second:
+				// QUADDATE - SECOND returns a float, or scaled!
+				desc->makeLong(ISC_TIME_SECONDS_PRECISION_SCALE);
+				break;
+
+			case blr_extract_millisecond:
+				desc->makeLong(0);
+				break;
+
+			default:
+				desc->makeShort(0);
+				break;
 		}
-		else {
-			desc->dsc_dtype = dtype_short;
-			desc->dsc_length = sizeof(SSHORT);
-			desc->dsc_scale = 0;
-			desc->dsc_sub_type = 0;
-			desc->dsc_flags = 0;
-		}
+
 		return;
 
 	case nod_strlen:

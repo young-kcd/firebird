@@ -1120,7 +1120,8 @@ static dsc* evlDateAdd(Jrd::thread_db* tdbb, SysFunction* function, Jrd::jrd_nod
 
 			if (part != blr_extract_hour &&
 				part != blr_extract_minute &&
-				part != blr_extract_second)
+				part != blr_extract_second &&
+				part != blr_extract_millisecond)
 			{
 				status_exception::raise(isc_expression_eval_err, 0);
 			}
@@ -1131,7 +1132,8 @@ static dsc* evlDateAdd(Jrd::thread_db* tdbb, SysFunction* function, Jrd::jrd_nod
 
 			if (part == blr_extract_hour ||
 				part == blr_extract_minute ||
-				part == blr_extract_second)
+				part == blr_extract_second ||
+				part == blr_extract_millisecond)
 			{
 				status_exception::raise(isc_expression_eval_err, 0);
 			}
@@ -1223,6 +1225,10 @@ static dsc* evlDateAdd(Jrd::thread_db* tdbb, SysFunction* function, Jrd::jrd_nod
 
 		case blr_extract_second:
 			add10msec(&timestamp.value(), quantity, ISC_TIME_SECONDS_PRECISION);
+			break;
+
+		case blr_extract_millisecond:
+			add10msec(&timestamp.value(), quantity, ISC_TIME_SECONDS_PRECISION / 1000);
 			break;
 
 		default:
@@ -1335,6 +1341,7 @@ static dsc* evlDateDiff(Jrd::thread_db* tdbb, SysFunction* function, Jrd::jrd_no
 		case blr_extract_hour:
 		case blr_extract_minute:
 		case blr_extract_second:
+		case blr_extract_millisecond:
 			if (value1Dsc->dsc_dtype == dtype_sql_date || value2Dsc->dsc_dtype == dtype_sql_date)
 				status_exception::raise(isc_expression_eval_err, 0);
 
@@ -1385,6 +1392,13 @@ static dsc* evlDateDiff(Jrd::thread_db* tdbb, SysFunction* function, Jrd::jrd_no
 			result += ((SINT64) timestamp2.value().timestamp_time -
 				(SINT64) timestamp1.value().timestamp_time) /
 				ISC_TIME_SECONDS_PRECISION;
+			break;
+
+		case blr_extract_millisecond:
+			result = oneDay * (timestamp2.value().timestamp_date - timestamp1.value().timestamp_date) * 1000;
+			result += ((SINT64) timestamp2.value().timestamp_time -
+				(SINT64) timestamp1.value().timestamp_time) /
+				(ISC_TIME_SECONDS_PRECISION / 1000);
 			break;
 
 		default:

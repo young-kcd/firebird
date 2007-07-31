@@ -268,14 +268,16 @@
 
 /* sub parameters for blr_extract */
 
-#define blr_extract_year	(unsigned char)0
-#define blr_extract_month	(unsigned char)1
-#define blr_extract_day		(unsigned char)2
-#define blr_extract_hour	(unsigned char)3
-#define blr_extract_minute	(unsigned char)4
-#define blr_extract_second	(unsigned char)5
-#define blr_extract_weekday	(unsigned char)6
-#define blr_extract_yearday	(unsigned char)7
+#define blr_extract_year		(unsigned char)0
+#define blr_extract_month		(unsigned char)1
+#define blr_extract_day			(unsigned char)2
+#define blr_extract_hour		(unsigned char)3
+#define blr_extract_minute		(unsigned char)4
+#define blr_extract_second		(unsigned char)5
+#define blr_extract_weekday		(unsigned char)6
+#define blr_extract_yearday		(unsigned char)7
+#define blr_extract_millisecond	(unsigned char)8
+#define blr_extract_week		(unsigned char)9
 
 #define blr_current_date	(unsigned char)160
 #define blr_current_timestamp	(unsigned char)161

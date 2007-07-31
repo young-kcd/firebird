@@ -549,6 +549,7 @@ static LexerState lex;
 %token MATCHED
 %token MATCHING
 %token MAXVALUE
+%token MILLISECOND
 %token MINVALUE
 %token MOD
 %token OVERLAY
@@ -574,6 +575,7 @@ static LexerState lex;
 %token TANH
 %token TEMPORARY 
 %token TRUNC
+%token WEEK
 
 /* precedence declarations for expression evaluation */
 
@@ -2315,9 +2317,11 @@ keyword_or_column	: valid_symbol_name
 		| DISCONNECT
 		| GLOBAL
 		| INSENSITIVE
+		| MILLISECOND
 		| RECURSIVE 
 		| SENSITIVE
 		| START
+		| WEEK
 		;
 
 col_opt	: ALTER
@@ -4591,6 +4595,10 @@ timestamp_part	: YEAR
 			{ $$ = MAKE_constant ((dsql_str*)blr_extract_minute, CONSTANT_SLONG); }
 		| SECOND
 			{ $$ = MAKE_constant ((dsql_str*)blr_extract_second, CONSTANT_SLONG); }
+		| MILLISECOND
+			{ $$ = MAKE_constant ((dsql_str*)blr_extract_millisecond, CONSTANT_SLONG); }
+		| WEEK
+			{ $$ = MAKE_constant ((dsql_str*)blr_extract_week, CONSTANT_SLONG); }
 		| WEEKDAY
 			{ $$ = MAKE_constant ((dsql_str*)blr_extract_weekday, CONSTANT_SLONG); }
 		| YEARDAY

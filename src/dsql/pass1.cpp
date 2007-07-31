@@ -626,6 +626,7 @@ dsql_nod* PASS1_node(dsql_req* request, dsql_nod* input, bool proc_flag)
 		case blr_extract_day:
 		case blr_extract_weekday:
 		case blr_extract_yearday:
+		case blr_extract_week:
 			if (sub1->nod_type != nod_null &&
 				sub1->nod_desc.dsc_dtype != dtype_sql_date &&
 				sub1->nod_desc.dsc_dtype != dtype_timestamp)
@@ -637,6 +638,7 @@ dsql_nod* PASS1_node(dsql_req* request, dsql_nod* input, bool proc_flag)
 		case blr_extract_hour:
 		case blr_extract_minute:
 		case blr_extract_second:
+		case blr_extract_millisecond:
 			if (sub1->nod_type != nod_null &&
 				sub1->nod_desc.dsc_dtype != dtype_sql_time &&
 				sub1->nod_desc.dsc_dtype != dtype_timestamp)
