@@ -197,7 +197,7 @@ main(int argc, char *argv[])
 	printf("\n");
 
 /* Small tables print with all comments */
-	if ((unicode_conversion.count < 256) || (!option_condensed))
+	if ((codepoint_conversion.count < 256) || (!option_condensed))
 		print_indexed_table("from_unicode", &unicode_conversion,
 							CANT_MAP_CHARACTER);
 	else
