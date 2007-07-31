@@ -1117,7 +1117,7 @@ static rem_port* connect_client(PACKET* packet, ISC_STATUS* status_vector)
 	XNET_UNLOCK();
 
 	if (response.map_num == XNET_INVALID_MAP_NUM) {
-		xnet_log_error("Server failed to response on connect request");
+		xnet_log_error("Server failed to respond on connect request");
 		return NULL;
 	}
 
@@ -1964,7 +1964,8 @@ static bool_t xnet_read(XDR * xdrs)
 		return FALSE;
 	}
 
-	while (!xnet_shutdown) {
+	while (!xnet_shutdown)
+	{
 
 #ifdef SUPERCLIENT
 		if (xpm->xpm_flags & XPMF_SERVER_SHUTDOWN) {
