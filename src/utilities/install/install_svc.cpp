@@ -36,6 +36,7 @@
 #define REMOTE_EXECUTABLE ((sw_arch == ARCH_SS) ? REMOTE_SS_EXECUTABLE : REMOTE_CS_EXECUTABLE)
 
 static void svc_query(const char*, const char*, SC_HANDLE manager);
+static USHORT svc_query_ex(SC_HANDLE manager);
 static USHORT svc_error(SLONG, const TEXT*, SC_HANDLE);
 static void usage_exit(void);
 
@@ -455,10 +456,14 @@ int CLIB_ROUTINE main( int argc, char **argv)
 			break;
 
 		case COMMAND_QUERY:
-			svc_query(guard_service_name.c_str(), guard_display_name.c_str(),
+			if (svc_query_ex(manager) == FB_FAILURE)
+			{
+				svc_query(guard_service_name.c_str(), guard_display_name.c_str(),
 					  manager);
-			svc_query(remote_service_name.c_str(), remote_display_name.c_str(),
+				svc_query(remote_service_name.c_str(), remote_display_name.c_str(),
 					  manager);
+			}
+
 			status = FB_SUCCESS;
 			break;
 
@@ -470,6 +475,75 @@ int CLIB_ROUTINE main( int argc, char **argv)
 
 	return (status == FB_SUCCESS) ? FINI_OK : FINI_ERROR;
 }
+
+static USHORT svc_query_ex(SC_HANDLE manager)
+{
+/**********************************************
+ *
+ *	s v c _ q u e r y _ e x
+ *
+ **********************************************
+ *
+ * Functional description
+ *	Report (print) the status and configuration 
+ *  of all installed Firebird services.
+ *  If none are installed return FB_FAILURE
+ *  so as to allow a call to svc_query for the
+ *  status of the default instance.
+ *
+ **********************************************/
+	if (manager == NULL)
+		return FB_FAILURE;
+
+	ENUM_SERVICE_STATUS *service_data;
+	DWORD pcbBytesNeeded, lpServicesReturned, lpResumeHandle;
+
+	lpResumeHandle = 0;
+	pcbBytesNeeded = 0;
+
+	EnumServicesStatus(manager, SERVICE_WIN32, SERVICE_STATE_ALL, NULL, 0, 
+		&pcbBytesNeeded, &lpServicesReturned, &lpResumeHandle);
+
+    if ( GetLastError() == ERROR_MORE_DATA )
+	{
+		DWORD dwBytes = pcbBytesNeeded + sizeof(ENUM_SERVICE_STATUS);
+		service_data = new ENUM_SERVICE_STATUS [dwBytes];
+		EnumServicesStatus (manager, SERVICE_WIN32, SERVICE_STATE_ALL, service_data, dwBytes,
+                             &pcbBytesNeeded, &lpServicesReturned, &lpResumeHandle);
+
+		if (lpServicesReturned > 0)
+		{
+			Firebird::string ServerServiceName;
+			Firebird::string ServerDisplayName;
+			int firebirdServicesInstalled = 0;
+
+			for( int i = 0; i < lpServicesReturned; i++ )
+			{
+				ServerServiceName = service_data[i].lpServiceName;
+				if ( ServerServiceName.substr(0,8) == "Firebird" ) 
+				{
+					svc_query(service_data[i].lpServiceName, 
+						service_data[i].lpDisplayName, manager);
+
+					firebirdServicesInstalled++;
+				}
+			}
+			if ( firebirdServicesInstalled )
+				return FB_SUCCESS;
+			else
+			{
+				printf("\nNo named Firebird service instances are installed.\n");
+				return FB_FAILURE;
+			}
+		}
+		else
+			return FB_FAILURE;
+	}
+	else
+		return FB_FAILURE;
+
+}
+
 
 static void svc_query(const char* name, const char* display_name, SC_HANDLE manager)
 {
