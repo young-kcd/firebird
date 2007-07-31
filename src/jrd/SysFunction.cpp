@@ -1388,14 +1388,16 @@ static dsc* evlDateDiff(Jrd::thread_db* tdbb, SysFunction* function, Jrd::jrd_no
 			break;
 
 		case blr_extract_second:
-			result = oneDay * (timestamp2.value().timestamp_date - timestamp1.value().timestamp_date);
+			result = (SINT64) oneDay *
+				(timestamp2.value().timestamp_date - timestamp1.value().timestamp_date);
 			result += ((SINT64) timestamp2.value().timestamp_time -
 				(SINT64) timestamp1.value().timestamp_time) /
 				ISC_TIME_SECONDS_PRECISION;
 			break;
 
 		case blr_extract_millisecond:
-			result = oneDay * (timestamp2.value().timestamp_date - timestamp1.value().timestamp_date) * 1000;
+			result = (SINT64) oneDay *
+				(timestamp2.value().timestamp_date - timestamp1.value().timestamp_date) * 1000;
 			result += ((SINT64) timestamp2.value().timestamp_time -
 				(SINT64) timestamp1.value().timestamp_time) /
 				(ISC_TIME_SECONDS_PRECISION / 1000);
