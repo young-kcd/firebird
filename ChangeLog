@@ -1,3 +1,9 @@
+2007-07-30 11:59  dimitr
+
+	* firebird2/src/remote/xnet.cpp (1.70.4.4):
+
+	Backported a bit simplified fix for CORE-1194.
+
 2007-07-27 15:31  alexpeshkoff
 
 	* firebird2/src/common/classes/: alloc.cpp (1.80.2.9), fb_tls.h
