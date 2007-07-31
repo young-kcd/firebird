@@ -4741,7 +4741,7 @@ static void add_other_params(rem_port* port,
  * Functional description
  *	Add parameters to a dpb to describe client-side
  *	settings that the server should know about.  
- *	Currently only dummy_packet_interval.
+ *	Currently dummy_packet_interval, process_id and process_name.
  *
  **************************************/
 	if (port->port_flags & PORT_dummy_pckt_set) 
@@ -4749,6 +4749,21 @@ static void add_other_params(rem_port* port,
 		if (dpb.find(par.dummy_packet_interval))
 			dpb.deleteClumplet();
 		dpb.insertInt(par.dummy_packet_interval, port->port_dummy_packet_interval);
+	}
+
+	// Older version of engine not understand new tags and may process whole
+	// DPB incorrectly. Check for protocol version is an poor attempt to make 
+	// guess about remote engine's version
+	if (port->port_protocol >= PROTOCOL_VERSION11)
+	{
+		if (dpb.find(par.process_id)) {
+			dpb.deleteClumplet();
+		}
+		dpb.insertInt(par.process_id, getpid());
+
+		if (!dpb.find(par.process_name)) {
+			dpb.insertPath(par.process_name, fb_utils::get_process_name());
+		}
 	}
 }
 
@@ -5805,15 +5820,6 @@ static bool get_new_dpb(Firebird::ClumpletWriter& dpb,
 	    if (dpb.find(par.address_path)) {
 			Firebird::status_exception::raise(isc_unavailable, isc_arg_end);
 		}
-	}
-
-    if (dpb.find(par.process_id)) {
-		dpb.deleteClumplet();
-	}
-	dpb.insertInt(par.process_id, getpid());
-
-    if (!dpb.find(par.process_name)) {
-		dpb.insertPath(par.process_name, fb_utils::get_process_name());
 	}
 
 #ifndef NO_PASSWORD_ENCRYPTION
