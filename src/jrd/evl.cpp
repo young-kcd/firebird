@@ -1601,6 +1601,16 @@ USHORT EVL_group(thread_db* tdbb, RecordSource* rsb, jrd_nod *const node, USHORT
 					if (request->req_flags & req_null) {
 						break;
 					}
+
+					// if a max or min has been mapped to an index,
+					// then the first record is the EOF
+
+					if (from->nod_type == nod_agg_max_indexed ||
+						from->nod_type == nod_agg_min_indexed)
+					{
+						state = 2;
+					}
+
 					++impure->vlux_count;
 					if (!impure->vlu_desc.dsc_dtype)
 					{
@@ -1627,13 +1637,6 @@ USHORT EVL_group(thread_db* tdbb, RecordSource* rsb, jrd_nod *const node, USHORT
 						EVL_make_value(tdbb, desc, impure);
 					}
 
-					/* if a max or min has been mapped to an index, then the first record is the eof */
-
-					if (from->nod_type == nod_agg_max_indexed ||
-						from->nod_type == nod_agg_min_indexed)
-					{
-						state = 2;
-					}
 					break;
 				}
 
@@ -1730,9 +1733,12 @@ USHORT EVL_group(thread_db* tdbb, RecordSource* rsb, jrd_nod *const node, USHORT
 			}
 		}
 
+		if (state == 2)
+			break;
+
 		if (!RSE_get_record(tdbb, rsb, g_RSE_get_mode))
 		{
-			  state = 2;
+			state = 2;
 		}
 	}
 
