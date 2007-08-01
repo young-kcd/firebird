@@ -1,3 +1,40 @@
+2007-07-31 17:36  asfernandes
+
+	* firebird2/src/intl/utils/mapgen4.c (1.7):
+
+	Correction accordingly to CORE-1374
+
+2007-07-31 17:22  asfernandes
+
+	* firebird2/src/jrd/SysFunction.cpp (1.14):
+
+	Avoid integer overflow in date arithmetic - thanks to Claudio
+
+2007-07-31 15:06  dimitr
+
+	* firebird2/src/jrd/evl.cpp (1.233):
+
+	Fixed CORE-1389.
+
+2007-07-31 12:49  hvlad
+
+	* firebird2/src/remote/interface.cpp (1.144):
+
+	Fix for CORE-1388 : Can't attach to remote service manager if
+	remote engine version is less than 2.0
+
+2007-07-31 10:36  robocop
+
+	* firebird2/src/remote/xnet.cpp (1.88):
+
+	Misc.
+
+2007-07-31 10:18  paul_reeves
+
+	* firebird2/src/utilities/install/install_svc.cpp (1.27):
+
+	List all installed service instances with instsvc query
+
 2007-07-31 03:22  asfernandes
 
 	* firebird2/src/: common/classes/timestamp.h (1.13),
