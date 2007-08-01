@@ -495,53 +495,51 @@ static USHORT svc_query_ex(SC_HANDLE manager)
 	if (manager == NULL)
 		return FB_FAILURE;
 
-	ENUM_SERVICE_STATUS *service_data;
-	DWORD pcbBytesNeeded, lpServicesReturned, lpResumeHandle;
-
-	lpResumeHandle = 0;
-	pcbBytesNeeded = 0;
+	DWORD lpServicesReturned = 0;
+	DWORD lpResumeHandle = 0;
+	DWORD pcbBytesNeeded = 0;
+	USHORT rc = FB_FAILURE;
 
 	EnumServicesStatus(manager, SERVICE_WIN32, SERVICE_STATE_ALL, NULL, 0, 
 		&pcbBytesNeeded, &lpServicesReturned, &lpResumeHandle);
-
+		
     if ( GetLastError() == ERROR_MORE_DATA )
 	{
-		DWORD dwBytes = pcbBytesNeeded + sizeof(ENUM_SERVICE_STATUS);
-		service_data = new ENUM_SERVICE_STATUS [dwBytes];
+		const DWORD dwBytes = pcbBytesNeeded + sizeof(ENUM_SERVICE_STATUS);
+		ENUM_SERVICE_STATUS* service_data = new ENUM_SERVICE_STATUS [dwBytes];
 		EnumServicesStatus (manager, SERVICE_WIN32, SERVICE_STATE_ALL, service_data, dwBytes,
                              &pcbBytesNeeded, &lpServicesReturned, &lpResumeHandle);
 
-		if (lpServicesReturned > 0)
+		if (lpServicesReturned == 0)
+			delete[] service_data;
+		else
 		{
 			Firebird::string ServerServiceName;
 			Firebird::string ServerDisplayName;
-			int firebirdServicesInstalled = 0;
+			bool firebirdServicesInstalled = false;
 
 			for( int i = 0; i < lpServicesReturned; i++ )
 			{
 				ServerServiceName = service_data[i].lpServiceName;
-				if ( ServerServiceName.substr(0,8) == "Firebird" ) 
+				if ( ServerServiceName.substr(0, 8) == "Firebird" )
 				{
 					svc_query(service_data[i].lpServiceName, 
 						service_data[i].lpDisplayName, manager);
 
-					firebirdServicesInstalled++;
+					firebirdServicesInstalled = true;
 				}
 			}
+			
+			delete[] service_data;
+			
 			if ( firebirdServicesInstalled )
-				return FB_SUCCESS;
+				rc = FB_SUCCESS;
 			else
-			{
 				printf("\nNo named Firebird service instances are installed.\n");
-				return FB_FAILURE;
-			}
 		}
-		else
-			return FB_FAILURE;
 	}
-	else
-		return FB_FAILURE;
 
+	return rc;
 }
 
 
