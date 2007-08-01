@@ -719,7 +719,7 @@ ISC_STATUS API_ROUTINE GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 	ISC_STATUS_ARRAY local, temp;
 	USHORT n, length, org_length, temp_length;
 	WHY_DBB database;
-	TEXT expanded_filename[MAXPATHLEN], temp_filebuf[MAXPATHLEN];
+	Firebird::PathName expanded_filename, temp_filename;
 #if defined(UNIX)
 	TEXT single_user[5];
 #endif
@@ -759,8 +759,6 @@ ISC_STATUS API_ROUTINE GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 	SUBSYSTEM_USAGE_INCR;
 	
 	try {
-		TEXT* temp_filename = temp_filebuf;
-
 		ptr = status;
 
 		org_length = file_length;
@@ -779,8 +777,7 @@ ISC_STATUS API_ROUTINE GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
    utilities can modify it */
 
 		temp_length = org_length ? org_length : strlen(file_name);
-		memcpy(temp_filename, file_name, temp_length);
-		temp_filename[temp_length] = '\0';
+		temp_filename.assign(file_name, temp_length);
 
 		if (!ISC_check_if_remote(temp_filename, true))
 		{
@@ -788,25 +785,23 @@ ISC_STATUS API_ROUTINE GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 			if (ResolveDatabaseAlias(temp_filename, database))
 			{
 				ISC_expand_filename(database, false);
-				strcpy(expanded_filename, database.c_str());
+				expanded_filename = database;
 			}
-			else if (isc_set_path(temp_filename, org_length, expanded_filename))
+			else if (iscSetPath(temp_filename, expanded_filename))
 			{
 				temp_filename = expanded_filename;
-				org_length = strlen(temp_filename);
+				org_length = temp_filename.length();
 			}
 			else
 			{
-				ISC_expand_filename(temp_filename, org_length,
-									expanded_filename, sizeof(expanded_filename),
-									true);
+				expanded_filename = temp_filename;
+				ISC_expand_filename(expanded_filename, true);
 			}
 		}
 		else
 		{
-			ISC_expand_filename(temp_filename, org_length, 
-								expanded_filename, sizeof(expanded_filename),
-								true);
+			expanded_filename = temp_filename;
+			ISC_expand_filename(expanded_filename, true);
 		}
 
 		Firebird::ClumpletWriter newDpb(Firebird::ClumpletReader::Tagged, MAX_DPB_SIZE, 
@@ -821,12 +816,12 @@ ISC_STATUS API_ROUTINE GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 				continue;
 			}
 			WHY_ATT handle = NULL;
-			if (!CALL(PROC_ATTACH_DATABASE, n) (ptr, org_length, temp_filename,
+			if (!CALL(PROC_ATTACH_DATABASE, n) (ptr, org_length, temp_filename.c_str(),
 												&handle, newDpb.getBufferLength(), 
 												reinterpret_cast<const char*>(newDpb.getBuffer()),
-												expanded_filename))
+												expanded_filename.c_str()))
 			{
-				length = strlen(expanded_filename);
+				length = expanded_filename.length();
 				database = allocate_handle(n, handle, HANDLE_database);
 				if (database)
 				{
@@ -847,7 +842,7 @@ ISC_STATUS API_ROUTINE GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 
 				*public_handle = database->public_handle;
 				TEXT* p = database->db_path;
-				memcpy(p, expanded_filename, length);
+				memcpy(p, expanded_filename.c_str(), length);
 				p[length] = 0;
 
 				database->cleanup = NULL;
@@ -1341,7 +1336,7 @@ ISC_STATUS API_ROUTINE GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 	ISC_STATUS_ARRAY local, temp;
 	USHORT n, length, org_length, temp_length;
 	WHY_DBB database;
-	TEXT expanded_filename[MAXPATHLEN], temp_filebuf[MAXPATHLEN];
+	Firebird::PathName expanded_filename, temp_filename;
 #ifdef UNIX
 	TEXT single_user[5];
 #endif
@@ -1380,8 +1375,6 @@ ISC_STATUS API_ROUTINE GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 	SUBSYSTEM_USAGE_INCR;
 	
 	try {
-		TEXT* temp_filename = temp_filebuf;
-
 		ptr = status;
 
 		org_length = file_length;
@@ -1402,8 +1395,7 @@ ISC_STATUS API_ROUTINE GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 		else
 			temp_length = strlen(file_name);
 		
-		memcpy(temp_filename, file_name, temp_length);
-		temp_filename[temp_length] = '\0';
+		temp_filename.assign(file_name, temp_length);
 
 		if (!ISC_check_if_remote(temp_filename, true))
 		{
@@ -1411,25 +1403,23 @@ ISC_STATUS API_ROUTINE GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 			if (ResolveDatabaseAlias(temp_filename, database))
 			{
 				ISC_expand_filename(database, false);
-				strcpy(expanded_filename, database.c_str());
+				expanded_filename = database;
 			}
-			else if (isc_set_path(temp_filename, org_length, expanded_filename))
+			else if (iscSetPath(temp_filename, expanded_filename))
 			{
 				temp_filename = expanded_filename;
-				org_length = strlen(temp_filename);
+				org_length = temp_filename.length();
 			}
 			else
 			{
-				ISC_expand_filename(temp_filename, org_length,
-									expanded_filename, sizeof(expanded_filename),
-									true);
+				expanded_filename = temp_filename;
+				ISC_expand_filename(expanded_filename, true);
 			}
 		}
 		else
 		{
-			ISC_expand_filename(temp_filename, org_length, 
-								expanded_filename, sizeof(expanded_filename),
-								true);
+			expanded_filename = temp_filename;
+			ISC_expand_filename(expanded_filename, true);
 		}
 
 		Firebird::ClumpletWriter newDpb(Firebird::ClumpletReader::Tagged, MAX_DPB_SIZE, 
@@ -1442,20 +1432,21 @@ ISC_STATUS API_ROUTINE GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 			if (why_enabled && !(why_enabled & (1 << n)))
 				continue;
 			WHY_ATT handle = NULL;
-			if (!CALL(PROC_CREATE_DATABASE, n) (ptr, org_length, temp_filename,
+			if (!CALL(PROC_CREATE_DATABASE, n) (ptr, org_length, temp_filename.c_str(),
 												&handle, newDpb.getBufferLength(), 
 												reinterpret_cast<const char*>(newDpb.getBuffer()), 
-												0, expanded_filename))
+												0, expanded_filename.c_str()))
 			{
 #ifdef WIN_NT
     	        /* Now we can expand, the file exists. */
-        	    length = ISC_expand_filename (temp_filename, org_length, 
-					expanded_filename, sizeof(expanded_filename), true);
+				expanded_filename = temp_filename;
+				ISC_expand_filename (expanded_filename, true);
+        	    length = expanded_filename.length();
 #else
 				length = org_length;
 				if (!length) 
 				{
-					length = strlen(temp_filename);
+					length = temp_filename.length();
 				}
 #endif
 
@@ -1486,10 +1477,9 @@ ISC_STATUS API_ROUTINE GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 				TEXT* p = database->db_path;
 
 #ifdef WIN_NT
-            	/* for (q = (*handle)->dbb_filename->str_data; length; length--) */
-        	    memcpy(p, expanded_filename, length);
+        	    memcpy(p, expanded_filename.c_str(), length);
 #else
-				memcpy(p, temp_filename, length);
+				memcpy(p, temp_filename.c_str(), length);
 #endif
 				p[length] = 0;
 
