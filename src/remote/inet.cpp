@@ -2287,6 +2287,10 @@ static rem_port* receive( rem_port* main_port, PACKET * packet)
 				packet->p_operation = main_port->port_flags & PORT_partial_data ? 
 									  op_partial : op_exit;
 				main_port->port_flags &= ~PORT_partial_data;
+
+				if (packet->p_operation == op_exit) {
+					main_port->port_state = state_broken;
+				}
 				break;
 			}
 #ifdef DEBUG

@@ -506,7 +506,6 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 					 */
 					REMOTE_TRACE(("Enqueue request %p", request));
 					pending_requests = append_request_next(request, &request_que);
-					request = 0;
 					port->port_requests_queued++;
 #ifdef DEBUG_REMOTE_MEMORY
 					printf
@@ -537,11 +536,16 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 					REMOTE_TRACE(("Post event"));
 					requests_semaphore.release();
 				}
+				
+				// no need to process garbage received after op_exit 
+				if (request->req_receive.p_operation == op_exit) {
+					port = 0;
+				}
 				request = 0;
 
 				// Port may have some data in xdr buffer. 
 				// If not, we will select another one.
-				if (port->port_receive.x_handy <= 0)
+				if (port && port->port_receive.x_handy <= 0)
 				{
 					port = 0;
 				}
