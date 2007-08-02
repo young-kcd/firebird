@@ -1,3 +1,11 @@
+2007-08-01 12:55  alexpeshkoff
+
+	* firebird2/src/jrd/: utl.cpp (1.90.4.5), utl_proto.h (1.20.4.1),
+	why.cpp (1.100.4.3):
+
+	Fixed unregistered bug: vulnerability in attach/create database
+	when filename exceeds MAX_PATH_LEN.
+
 2007-07-30 11:59  dimitr
 
 	* firebird2/src/remote/xnet.cpp (1.70.4.4):
