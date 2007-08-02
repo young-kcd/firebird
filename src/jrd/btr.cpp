@@ -1827,6 +1827,13 @@ void BTR_reserve_slot(thread_db* tdbb, jrd_rel* relation, jrd_tra* transaction,
 
 	// Get root page, assign an index id, and store the index descriptor.
 	// Leave the root pointer null for the time being.
+	// Index id for temporary index instance of global temporary table is 
+	// already assigned, use it.
+	const bool use_idx_id = (relPages->rel_instance_id != 0);
+	if (use_idx_id) {
+		fb_assert((idx->idx_id >= 0) && (idx->idx_id <= dbb->dbb_max_idx));
+	}
+
 	WIN window(relPages->rel_pg_space_id, relPages->rel_index_root);
 	index_root_page* root = 
 		(index_root_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_root);
@@ -1846,6 +1853,13 @@ void BTR_reserve_slot(thread_db* tdbb, jrd_rel* relation, jrd_tra* transaction,
 	index_root_page::irt_repeat * root_idx, *end, *slot;
 	bool maybe_no_room = false;
 	
+	if (use_idx_id && (idx->idx_id >= root->irt_count))
+	{
+		memset(root->irt_rpt + root->irt_count, 0, 
+			sizeof(index_root_page::irt_repeat) * (idx->idx_id - root->irt_count + 1));
+		root->irt_count = idx->idx_id + 1;
+	}
+
 retry:
 	// dimitr: irtd_selectivity member of IRTD is introduced in ODS11
 	if (dbb->dbb_ods_version < ODS_VERSION11)
@@ -1865,7 +1879,11 @@ retry:
 		if (!root_idx->irt_root && !slot
 			&& !(root_idx->irt_flags & irt_in_progress)) 
 		{
-			slot = root_idx;
+			if (!use_idx_id || 
+				use_idx_id && ((root_idx - root->irt_rpt) == idx->idx_id)) 
+			{
+				slot = root_idx;
+			}
 		}
 	}
 
@@ -1887,6 +1905,7 @@ retry:
 	}
 
 	// If we didn't pick up an empty slot, allocate a new one
+	fb_assert(!use_idx_id || use_idx_id && slot);
 	if (!slot) {
 		slot = end;
 		root->irt_count++;

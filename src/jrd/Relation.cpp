@@ -190,19 +190,28 @@ RelationPages* jrd_rel::getPagesInternal(thread_db* tdbb, SLONG tran, bool alloc
 				pool = JrdMemoryPool::createPool();
 			Jrd::ContextPoolHolder context(tdbb, pool);
 
-			USHORT idx_id = 0;
-			while (true) 
+			IndexDescAlloc *indices = NULL;
+			// read indices from "base" index root page
+			tdbb->tdbb_flags |= TDBB_deferred;
+			USHORT idx_count = 0;
+			try {
+				idx_count = BTR_all(tdbb, this, &indices);
+			}
+			catch (...) {
+				tdbb->tdbb_flags &= ~TDBB_deferred;
+				throw;
+			}
+			tdbb->tdbb_flags &= ~TDBB_deferred;
+
+			index_desc *idx = indices->items, *const end = indices->items + idx_count;
+			for (; idx < end; idx++)
 			{
-				index_desc idx;
-				if (BTR_lookup(tdbb, this, idx_id, &idx, &rel_pages_base) != FB_SUCCESS)
-					break;
-
 				Firebird::MetaName idx_name;
-				MET_lookup_index(tdbb, idx_name, this->rel_name, idx_id + 1);
+				MET_lookup_index(tdbb, idx_name, this->rel_name, idx->idx_id + 1);
 
-				idx.idx_root = 0;
+				idx->idx_root = 0;
 				SelectivityList selectivity(*pool);
-				IDX_create_index(tdbb, this, &idx, idx_name.c_str(), NULL, 
+				IDX_create_index(tdbb, this, idx, idx_name.c_str(), NULL, 
 					tdbb->tdbb_transaction, selectivity);
 
 #ifdef VIO_DEBUG
@@ -216,12 +225,11 @@ RelationPages* jrd_rel::getPagesInternal(thread_db* tdbb, SLONG tran, bool alloc
 						newPages);
 				}
 #endif
-
-				idx_id++;
 			}
 
 			if (poolCreated)
 				JrdMemoryPool::deletePool(pool);
+			delete indices;
 
 			return newPages;
 		} // allocPages
