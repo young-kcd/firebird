@@ -1,3 +1,31 @@
+2007-08-02 04:00  asfernandes
+
+	* firebird2/src/: gpre/fbrmclib.cpp (1.3), gpre/rmc.cpp (1.5),
+	gpre/sqe.cpp (1.46), jrd/sdw.cpp (1.69), lock/lock.cpp (1.125),
+	remote/xnet.cpp (1.89), utilities/install/install_nt.h (1.14),
+	utilities/install/install_svc.cpp (1.29):
+
+	Misc
+
+2007-08-02 02:51  asfernandes
+
+	* firebird2/src/dsql/parse.y (1.245):
+
+	Correction
+
+2007-08-01 12:13  robocop
+
+	* firebird2/src/utilities/install/install_svc.cpp (1.28):
+
+	More C++ style code.  Fixed a memory leak.  We still allocate much
+	more memory than needed inside svc_query_ex().
+
+2007-08-01 11:00  robocop
+
+	* firebird2/src/jrd/evl.cpp (1.234):
+
+	Misc.
+
 2007-07-31 17:36  asfernandes
 
 	* firebird2/src/intl/utils/mapgen4.c (1.7):
