@@ -2317,11 +2317,9 @@ keyword_or_column	: valid_symbol_name
 		| DISCONNECT
 		| GLOBAL
 		| INSENSITIVE
-		| MILLISECOND
 		| RECURSIVE 
 		| SENSITIVE
 		| START
-		| WEEK
 		;
 
 col_opt	: ALTER
@@ -4775,6 +4773,7 @@ non_reserved_word :
 	| MATCHED
 	| MATCHING
 	| MAXVALUE
+	| MILLISECOND
 	| MINVALUE
 	| MOD
 	| OVERLAY
@@ -4797,6 +4796,7 @@ non_reserved_word :
 	| TANH
 	| TEMPORARY
 	| TRUNC
+	| WEEK
 	;
 
 %%
