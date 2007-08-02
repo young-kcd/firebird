@@ -4384,13 +4384,12 @@ static void validate_lhb(const lhb* alhb)
 #endif
 
 	validate_history(alhb->lhb_history);
-/* validate_semaphore_mask (alhb->lhb_mask); */
+	// validate_semaphore_mask (alhb->lhb_mask);
 
 	CHECK(alhb->lhb_reserved[0] == 0);
 	CHECK(alhb->lhb_reserved[1] == 0);
 
 	DEBUG_MSG(0, ("validate_lhb completed:\n"));
-
 }
 #endif
 
@@ -4418,17 +4417,17 @@ static void validate_lock(const SRQ_PTR lock_ptr, USHORT freed, const SRQ_PTR lr
 	else
 		CHECK(lock->lbl_type == type_lbl);
 
-// The following condition is always true because UCHAR >= 0
-//	CHECK(lock->lbl_state >= LCK_none);
+	// The following condition is always true because UCHAR >= 0
+	// CHECK(lock->lbl_state >= LCK_none);
 	CHECK(lock->lbl_state < LCK_max);
 
 	CHECK(lock->lbl_length <= lock->lbl_size);
 
-/* The lbl_count's should never roll over to be negative */
+	// The lbl_count's should never roll over to be negative
 	for (ULONG i = 0; i < FB_NELEM(lock->lbl_counts); i++)
 		CHECK(!(lock->lbl_counts[i] & 0x8000))
 
-/* The count of pending locks should never roll over to be negative */
+	// The count of pending locks should never roll over to be negative
 	CHECK(!(lock->lbl_pending_lrq_count & 0x8000));
 
 	USHORT direct_counts[LCK_max];

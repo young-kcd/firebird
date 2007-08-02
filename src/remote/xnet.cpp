@@ -1565,11 +1565,12 @@ static void server_shutdown(rem_port* port)
  **************************************/
 	xnet_log_error("Server shutdown detected");
 
-	XCC xcc = (XCC)port->port_xcc;
+	XCC xcc = (XCC) port->port_xcc;
 	xcc->xcc_flags |= XCCF_SERVER_SHUTDOWN;
 
 	XPM xpm = xcc->xcc_xpm;
-	if (!(xpm->xpm_flags & XPMF_SERVER_SHUTDOWN)) {
+	if (!(xpm->xpm_flags & XPMF_SERVER_SHUTDOWN))
+	{
 
 		ULONG dead_proc_id = XPS(xpm->xpm_address)->xps_server_proc_id;
 
@@ -1577,7 +1578,8 @@ static void server_shutdown(rem_port* port)
 
 		XNET_LOCK();
 
-		for (xpm = global_client_maps; xpm; xpm = xpm->xpm_next) {
+		for (xpm = global_client_maps; xpm; xpm = xpm->xpm_next)
+		{
 			if (!(xpm->xpm_flags & XPMF_SERVER_SHUTDOWN) &&
 				XPS(xpm->xpm_address)->xps_server_proc_id == dead_proc_id)
 			{

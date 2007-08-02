@@ -1518,6 +1518,7 @@ EXPORT RM_ENTRY(rmc_ftoc)
 		
 	return (0);
 }
+
 // Convert a Cobol alpha (PIC X) field to a C string.  This is done by trimming trailing spaces
 // and adding the trailing '\0'.
 EXPORT RM_ENTRY(rmc_ctos)
@@ -1537,6 +1538,7 @@ EXPORT RM_ENTRY(rmc_ctos)
 
 	return (0);
 }
+
 // Convert a C string to a Cobol alpha (PIC X) field.  This is done by copying the original
 // string and padding on the right with spaces.
 EXPORT RM_ENTRY(rmc_stoc)

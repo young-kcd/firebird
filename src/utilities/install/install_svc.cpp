@@ -75,10 +75,10 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	USHORT sw_arch = ARCH_SS;
 	bool sw_interactive = false;
 
-	const TEXT *instance = FB_DEFAULT_INSTANCE;
+	const TEXT* instance = FB_DEFAULT_INSTANCE;
 
-	TEXT *username = 0;
-	TEXT *password = 0;
+	TEXT* username = 0;
+	TEXT* password = 0;
 
 	// Let's get the root directory from the instance path of this program.
 	// argv[0] is only _mostly_ guaranteed to give this info,
@@ -507,21 +507,20 @@ static USHORT svc_query_ex(SC_HANDLE manager)
 	{
 		const DWORD dwBytes = pcbBytesNeeded + sizeof(ENUM_SERVICE_STATUS);
 		ENUM_SERVICE_STATUS* service_data = new ENUM_SERVICE_STATUS [dwBytes];
-		EnumServicesStatus (manager, SERVICE_WIN32, SERVICE_STATE_ALL, service_data, dwBytes,
-                             &pcbBytesNeeded, &lpServicesReturned, &lpResumeHandle);
+		EnumServicesStatus(manager, SERVICE_WIN32, SERVICE_STATE_ALL, service_data, dwBytes,
+			&pcbBytesNeeded, &lpServicesReturned, &lpResumeHandle);
 
 		if (lpServicesReturned == 0)
 			delete[] service_data;
 		else
 		{
-			Firebird::string ServerServiceName;
-			Firebird::string ServerDisplayName;
+			Firebird::string serverServiceName;
 			bool firebirdServicesInstalled = false;
 
-			for( int i = 0; i < lpServicesReturned; i++ )
+			for ( DWORD i = 0; i < lpServicesReturned; i++ )
 			{
-				ServerServiceName = service_data[i].lpServiceName;
-				if ( ServerServiceName.substr(0, 8) == "Firebird" )
+				serverServiceName = service_data[i].lpServiceName;
+				if ( serverServiceName.substr(0, 8) == "Firebird" )
 				{
 					svc_query(service_data[i].lpServiceName, 
 						service_data[i].lpDisplayName, manager);

@@ -1151,9 +1151,8 @@ static void gen_based( const act* action)
 	case dtype_sql_time:
 		if (strlen(gpreGlob.sw_cob_dformat) == 0)
 			fprintf(gpreGlob.out_file, "%sPIC S9(10)%s", names[COLUMN], USAGE_BINARY4);
-		else {
+		else
 			fprintf(gpreGlob.out_file, "%sPIC X(%d)", names[COLUMN], strlen(gpreGlob.sw_cob_dformat));
-		}
 		break;
 
 	case dtype_blob:

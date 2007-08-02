@@ -2674,9 +2674,11 @@ bool SQE_resolve_fields(GPRE_NOD fields,
 
 	gpre_nod** ptr = fields->nod_arg;
 	int count = fields->nod_count;
+
 	for (int i = 0; i < count; i++)
 	{
 		gpre_nod* node = ptr[i];
+
 		if (node->nod_type == nod_asterisk) {
 			const int old_count = count;
 			fields = explode_asterisk(fields, i, selection);
@@ -2687,23 +2689,25 @@ bool SQE_resolve_fields(GPRE_NOD fields,
 		else {
 			aggregate |= SQE_resolve(node, NULL, selection);
 			pair(node, 0);
+
 			switch (node->nod_type)
 			{
-			case nod_agg_count:
-			case nod_agg_max:
-			case nod_agg_min:
-			case nod_agg_average:
-			case nod_agg_total:
-				if ((node->nod_arg[1]) &&
-					(request->req_database->dbb_flags & DBB_v3))
-				{
-					selection->rse_reduced =
-						MSC_unary(nod_sort, node->nod_arg[1]);
-				}
-				break;
+				case nod_agg_count:
+				case nod_agg_max:
+				case nod_agg_min:
+				case nod_agg_average:
+				case nod_agg_total:
+					if ((node->nod_arg[1]) &&
+						(request->req_database->dbb_flags & DBB_v3))
+					{
+						selection->rse_reduced =
+							MSC_unary(nod_sort, node->nod_arg[1]);
+					}
+					break;
 			}
 		}
 	}
+
 	return aggregate;
 }
 //____________________________________________________________
@@ -2859,8 +2863,10 @@ static gpre_rse* par_select( gpre_req* request, gpre_rse* union_rse)
 
 	gpre_nod* into_list = NULL;
 	if (!(request->req_flags & REQ_sql_declare_cursor))
+	{
 		into_list = (MSC_match(KW_INTO)) ? SQE_list(SQE_variable, request,
 										false) : NULL;
+	}
 
 	gpre_rse* select = par_rse(request, s_list, distinct);
 

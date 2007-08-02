@@ -37,7 +37,7 @@ static const char* ISCGUARD_EXECUTABLE		= "bin\\fbguard";
 
 static const char* GUARDIAN_MUTEX			= "FirebirdGuardianMutex%s";
 
-static const char* FB_DEFAULT_INSTANCE			= "DefaultInstance";
+static const char* FB_DEFAULT_INSTANCE		= "DefaultInstance";
 
 // Starting with 128 the service params are user defined
 const DWORD SERVICE_CREATE_GUARDIAN_MUTEX	= 128;
