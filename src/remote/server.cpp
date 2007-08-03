@@ -1124,13 +1124,6 @@ static void aux_request( rem_port* port, P_REQ * request, PACKET* send)
 	port->port_status_vector = status_vector;
 	success(status_vector);
 
-/* We do this silliness with buffer because the SPX protocol
-   requires a 12 byte buffer to be sent back.  Other protocols
-   can do what they want to with cstr_address. */
-	CSTRING save_cstring = send->p_resp.p_resp_data;
-	UCHAR buffer[12];
-	send->p_resp.p_resp_data.cstr_address = buffer;
-
 	rem_port* aux_port = port->request(send);
 	RDB rdb = port->port_context;
 	if (bad_db(status_vector, rdb))
@@ -1147,7 +1140,6 @@ static void aux_request( rem_port* port, P_REQ * request, PACKET* send)
 		/* restore the port status vector */
 
 		port->port_status_vector = save_status;
-		send->p_resp.p_resp_data = save_cstring;
 		return;
 	}
 
@@ -1159,7 +1151,6 @@ static void aux_request( rem_port* port, P_REQ * request, PACKET* send)
 /* restore the port status vector */
 
 	port->port_status_vector = save_status;
-	send->p_resp.p_resp_data = save_cstring;
 }
 
 

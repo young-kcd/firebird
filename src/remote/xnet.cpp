@@ -901,6 +901,10 @@ static rem_port* aux_request(rem_port* port, PACKET* packet)
 		new_port->port_flags = port->port_flags & PORT_no_oob;
 		new_port->port_server_flags = port->port_server_flags;
 
+		P_RESP* response = &packet->p_resp;
+		response->p_resp_data.cstr_length = 0;
+		response->p_resp_data.cstr_address = NULL;
+
 		return new_port;
 	}
 	catch (const Firebird::Exception&) {
