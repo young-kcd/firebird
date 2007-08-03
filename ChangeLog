@@ -1,3 +1,10 @@
+2007-08-02 18:19  hvlad
+
+	* firebird2/src/remote/: inet.cpp (1.160.2.9), server.cpp
+	(1.126.2.5):
+
+	Fixed bug CORE-1397 : Possible vulnerability in remote server
+
 2007-08-01 12:55  alexpeshkoff
 
 	* firebird2/src/jrd/: utl.cpp (1.90.4.5), utl_proto.h (1.20.4.1),
