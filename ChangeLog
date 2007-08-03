@@ -1,3 +1,22 @@
+2007-08-02 22:51  hvlad
+
+	* firebird2/src/msgs/messages2.sql (1.12):
+
+	Correction
+
+2007-08-02 22:20  hvlad
+
+	* firebird2/src/jrd/: Relation.cpp (1.4), btr.cpp (1.197):
+
+	Fixed bug CORE-1401 : Global temporary table instance may pick up
+	not all indices
+
+2007-08-02 18:26  hvlad
+
+	* firebird2/src/remote/inet.cpp (1.192):
+
+	Fixed bug CORE-1397 : Possible vulnerability in remote server
+
 2007-08-02 04:00  asfernandes
 
 	* firebird2/src/: gpre/fbrmclib.cpp (1.3), gpre/rmc.cpp (1.5),
