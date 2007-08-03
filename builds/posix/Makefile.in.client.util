@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.client.util,v 1.34.4.1 2006-04-16 11:55:15 alexpeshkoff Exp $
+#  $Id: Makefile.in.client.util,v 1.34.4.2 2007-08-03 09:09:27 alexpeshkoff Exp $
 #
 ROOT=..
 ObjModuleType=std
@@ -67,7 +67,7 @@ DROP_Sources = $(addprefix utilities/, $(DROP_Files)) $(DROP_Other_Sources)
 DROP_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(DROP_Sources))))
 
 GSTAT_Other_Sources = jrd/btn.cpp jrd/db_alias.cpp jrd/ods.cpp \
-common/config/config.cpp common/config/config_file.cpp $(OS_SPECIFIC_Sources)
+jrd/isc_file.cpp $(OS_SPECIFIC_Sources)
 
 GSTAT_Files =  dba.epp ppg.cpp
 GSTAT_Sources = $(addprefix utilities/gstat/, $(GSTAT_Files)) $(GSTAT_Other_Sources)
@@ -137,7 +137,7 @@ $(LOCKPRINT):	$(LOCKPRINT_Objects) $(COMMON_Objects)
 
 gstat : $(LIBFBCLIENT_SO) $(GSTAT)
 
-$(GSTAT):	$(GSTAT_Objects) $(CLUMPLETS_Objects) $(COMMON_Objects)
+$(GSTAT):	$(GSTAT_Objects) $(CLUMPLETS_Objects) $(COMMON_Objects) $(FBCONFIG_Objects)
 	$(LD) $(LINK_OPTS) $^ -o $@ -L$(LIB) -lfbclient $(LINK_LIBS) @PTHREAD_CFLAGS@ @PTHREAD_LIBS@
  
 
