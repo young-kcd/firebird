@@ -1,3 +1,43 @@
+2007-08-04 04:11  asfernandes
+
+	* firebird2/src/jrd/: dfw.epp (1.210), met.epp (1.223), met_proto.h
+	(1.60), tra.h (1.64), vio.cpp (1.193):
+
+	Fixed CORE-1395 - Few problems with domains's check constraints
+
+2007-08-03 11:09  alexpeshkoff
+
+	* firebird2/builds/posix/: Makefile.in.client.util (1.45),
+	Makefile.in.embed.util (1.33):
+
+	misc
+
+2007-08-03 11:00  alexpeshkoff
+
+	* firebird2/builds/posix/: Makefile.in.client.util (1.44),
+	Makefile.in.embed.util (1.32):
+
+	fixed posix build
+
+2007-08-03 10:41  dimitr
+
+	* firebird2/src/remote/: server.cpp (1.153), xnet.cpp (1.90):
+
+	Fixed CORE-1403.
+
+2007-08-03 07:21  dimitr
+
+	* firebird2/builds/win32/msvc7/gstat.vcproj (1.25):
+
+	Fixed CORE-1398, CORE-1399, CORE-1400.
+
+2007-08-03 07:17  dimitr
+
+	* firebird2/: builds/win32/msvc8/gstat.vcproj (1.5),
+	src/utilities/gstat/dba.epp (1.80):
+
+	Fixed CORE-1398, CORE-1399, CORE-1400.
+
 2007-08-02 22:51  hvlad
 
 	* firebird2/src/msgs/messages2.sql (1.12):
