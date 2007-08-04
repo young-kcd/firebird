@@ -1228,7 +1228,8 @@ jrd_nod* MET_get_dependencies(thread_db*				tdbb,
 							  CompilerScratch**			csb_ptr,
 							  Firebird::MetaName&		object_name,
 							  int						type,
-							  USHORT					flags)
+							  USHORT					flags,
+							  Firebird::MetaName		domain_validation)
 {
 /**************************************
  *
@@ -1244,7 +1245,8 @@ jrd_nod* MET_get_dependencies(thread_db*				tdbb,
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->tdbb_database;
 
-	CompilerScratch* csb = CompilerScratch::newCsb(*tdbb->getDefaultPool(), 5);
+	CompilerScratch* csb = CompilerScratch::newCsb(*tdbb->getDefaultPool(), 5,
+		domain_validation);
 	csb->csb_g_flags |= (csb_get_dependencies | flags);
 
 	jrd_nod* node;

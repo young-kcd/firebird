@@ -2265,6 +2265,8 @@ void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb,
 				bool rc2 = EVL_field(0, new_rpb->rpb_record, f_fld_computed, &desc4);
 				if (rc1 != rc2 || rc1 && MOV_compare(&desc3, &desc4))
 					DFW_post_work_arg(transaction, dw, &desc1, 0)->dfw_type = dfw_arg_force_computed;
+
+				DFW_post_work(transaction, dfw_modify_field, &desc1, 0);
 			}
 			break;
 
@@ -2699,6 +2701,8 @@ void VIO_store(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 
 		case rel_fields:
 			check_control(tdbb);
+			EVL_field(0, rpb->rpb_record, f_fld_name, &desc);
+			DFW_post_work(transaction, dfw_create_field, &desc, 0);
 			set_system_flag(tdbb, rpb, f_fld_sys_flag, 0);
 			break;
 

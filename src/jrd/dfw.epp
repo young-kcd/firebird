@@ -162,7 +162,9 @@ static bool delete_exception(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 static bool delete_generator(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 static bool modify_generator(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 static bool delete_udf(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
+static bool create_field(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 static bool delete_field(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
+static bool modify_field(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 static bool delete_global(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 static bool delete_parameter(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 static bool delete_rfr(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
@@ -222,7 +224,9 @@ static const deferred_task task_table[] =
 	{ dfw_delete_rfr, delete_rfr },
 	{ dfw_delete_relation, delete_relation },
 	{ dfw_delete_shadow, delete_shadow },
+	{ dfw_create_field, create_field },
 	{ dfw_delete_field, delete_field },
+	{ dfw_modify_field, modify_field },
 	{ dfw_delete_global, delete_global },
 	{ dfw_create_relation, create_relation },
 	{ dfw_update_format, make_version },
@@ -2498,6 +2502,65 @@ static bool delete_udf(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 }
 
 
+static bool create_field(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_tra* transaction)
+{
+/**************************************
+ *
+ *	c r e a t e _ f i e l d
+ *
+ **************************************
+ *
+ * Functional description
+ *	Store dependencies of a field.
+ *
+ **************************************/
+
+	SET_TDBB(tdbb);
+	Database* dbb = tdbb->tdbb_database;
+
+	switch (phase)
+	{
+	case 0:
+		return false;
+
+	case 1:
+		{
+			Firebird::MetaName depName(work->dfw_name);
+			jrd_req* handle = NULL;
+			bid validation;
+			validation.clear();
+
+			FOR(REQUEST_HANDLE handle)
+				FLD IN RDB$FIELDS WITH
+					FLD.RDB$FIELD_NAME EQ depName.c_str()
+
+				if (!FLD.RDB$VALIDATION_BLR.NULL)
+					validation = FLD.RDB$VALIDATION_BLR;
+			END_FOR;
+
+			CMP_release(tdbb, handle);
+
+			if (!validation.isEmpty())
+			{
+				JrdMemoryPool* new_pool = JrdMemoryPool::createPool();
+				{
+					Jrd::ContextPoolHolder context(tdbb, new_pool);
+
+					MET_get_dependencies(tdbb, NULL, NULL, NULL, &validation,
+						NULL, NULL, depName, obj_validation, 0, depName);
+
+					JrdMemoryPool::deletePool(new_pool);
+				}
+			}
+		}
+		
+		break;
+    }
+
+	return false;
+}
+
+
 static bool delete_field(	thread_db*	tdbb,
 							SSHORT	phase,
 							DeferredWork*		work,
@@ -2565,8 +2628,70 @@ static bool delete_field(	thread_db*	tdbb,
 
 	case 3:
 		MET_delete_dependencies(tdbb, work->dfw_name, obj_computed);
+		MET_delete_dependencies(tdbb, work->dfw_name, obj_validation);
 		break;
 	}
+
+	return false;
+}
+
+
+static bool modify_field(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_tra* transaction)
+{
+/**************************************
+ *
+ *	m o d i f y _ f i e l d
+ *
+ **************************************
+ *
+ * Functional description
+ *	Handle constraint dependencies of a field.
+ *
+ **************************************/
+
+	SET_TDBB(tdbb);
+	Database* dbb = tdbb->tdbb_database;
+
+	switch (phase)
+	{
+	case 0:
+		return false;
+
+	case 1:
+		{
+			Firebird::MetaName depName(work->dfw_name);
+			jrd_req* handle = NULL;
+			bid validation;
+			validation.clear();
+
+			FOR(REQUEST_HANDLE handle)
+				FLD IN RDB$FIELDS WITH
+					FLD.RDB$FIELD_NAME EQ depName.c_str()
+
+				if (!FLD.RDB$VALIDATION_BLR.NULL)
+					validation = FLD.RDB$VALIDATION_BLR;
+			END_FOR;
+
+			CMP_release(tdbb, handle);
+
+			if (validation.isEmpty())
+				MET_delete_dependencies(tdbb, depName, obj_validation);
+			else
+			{
+				JrdMemoryPool* new_pool = JrdMemoryPool::createPool();
+				{
+					Jrd::ContextPoolHolder context(tdbb, new_pool);
+
+					MET_get_dependencies(tdbb, NULL, NULL, NULL, &validation,
+						NULL, NULL, depName, obj_validation, 0, depName);
+
+					JrdMemoryPool::deletePool(new_pool);
+				}
+			}
+		}
+
+		break;
+    }
 
 	return false;
 }
@@ -3476,6 +3601,9 @@ static bool find_depend_in_dfw(	thread_db*	tdbb,
 	case obj_computed:
 		dfw_type = (rel_id) ? dfw_delete_rfr : dfw_delete_global;
 		break;
+	case obj_validation:
+		dfw_type = dfw_delete_global;
+		break;
 	case obj_procedure:
 		dfw_type = dfw_delete_procedure;
 		break;
@@ -3529,33 +3657,54 @@ static bool find_depend_in_dfw(	thread_db*	tdbb,
 
 	if (dfw_type == dfw_delete_global)
 	{
-		/* Computed fields are more complicated.  If the global field isn't being
-		   deleted, see if all of the fields it is the source for, are. */
+		if (dep_type == obj_computed)
+		{
+			// Computed fields are more complicated.  If the global field isn't being
+			// deleted, see if all of the fields it is the source for, are.
 
-		jrd_req* request = CMP_find_request(tdbb, irq_ch_cmp_dpd, IRQ_REQUESTS);
+			jrd_req* request = CMP_find_request(tdbb, irq_ch_cmp_dpd, IRQ_REQUESTS);
 
-		FOR(REQUEST_HANDLE request)
-			FLD IN RDB$FIELDS CROSS
-				RFR IN RDB$RELATION_FIELDS CROSS
-				REL IN RDB$RELATIONS
-				WITH FLD.RDB$FIELD_NAME EQ RFR.RDB$FIELD_SOURCE
-				AND FLD.RDB$FIELD_NAME EQ object_name
-				AND REL.RDB$RELATION_NAME EQ RFR.RDB$RELATION_NAME
-            if (!REQUEST(irq_ch_cmp_dpd))
-                REQUEST(irq_ch_cmp_dpd) = request;
-            if (!find_depend_in_dfw(tdbb, RFR.RDB$FIELD_NAME, obj_computed,
-                                    REL.RDB$RELATION_ID, transaction))
-			{
-				EXE_unwind(tdbb, request);
-				return false;
+			FOR(REQUEST_HANDLE request)
+				FLD IN RDB$FIELDS CROSS
+					RFR IN RDB$RELATION_FIELDS CROSS
+					REL IN RDB$RELATIONS
+					WITH FLD.RDB$FIELD_NAME EQ RFR.RDB$FIELD_SOURCE
+					AND FLD.RDB$FIELD_NAME EQ object_name
+					AND REL.RDB$RELATION_NAME EQ RFR.RDB$RELATION_NAME
+				if (!REQUEST(irq_ch_cmp_dpd))
+					REQUEST(irq_ch_cmp_dpd) = request;
+
+				if (!find_depend_in_dfw(tdbb, RFR.RDB$FIELD_NAME, obj_computed,
+						REL.RDB$RELATION_ID, transaction))
+				{
+					EXE_unwind(tdbb, request);
+					return false;
+				}
+			END_FOR;
+
+			if (!REQUEST(irq_ch_cmp_dpd)) {
+				REQUEST(irq_ch_cmp_dpd) = request;
 			}
-		END_FOR;
 
-		if (!REQUEST(irq_ch_cmp_dpd)) {
-			REQUEST(irq_ch_cmp_dpd) = request;
+			return true;
 		}
+		else if (dep_type == obj_validation)
+		{
+			jrd_req* request = NULL;
 
-		return true;
+			FOR(REQUEST_HANDLE request)
+				FLD IN RDB$FIELDS WITH
+					FLD.RDB$FIELD_NAME EQ object_name
+
+				if (!FLD.RDB$VALIDATION_BLR.NULL)
+				{
+					EXE_unwind(tdbb, request);
+					return false;
+				}
+			END_FOR;
+
+			return true;
+		}
 	}
 
 	return false;
