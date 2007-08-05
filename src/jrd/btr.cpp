@@ -1880,7 +1880,7 @@ retry:
 			&& !(root_idx->irt_flags & irt_in_progress)) 
 		{
 			if (!use_idx_id || 
-				use_idx_id && ((root_idx - root->irt_rpt) == idx->idx_id)) 
+				(use_idx_id && ((root_idx - root->irt_rpt) == idx->idx_id))) 
 			{
 				slot = root_idx;
 			}
@@ -1905,7 +1905,7 @@ retry:
 	}
 
 	// If we didn't pick up an empty slot, allocate a new one
-	fb_assert(!use_idx_id || use_idx_id && slot);
+	fb_assert(!use_idx_id || (use_idx_id && slot));
 	if (!slot) {
 		slot = end;
 		root->irt_count++;

@@ -190,7 +190,7 @@ RelationPages* jrd_rel::getPagesInternal(thread_db* tdbb, SLONG tran, bool alloc
 				pool = JrdMemoryPool::createPool();
 			Jrd::ContextPoolHolder context(tdbb, pool);
 
-			IndexDescAlloc *indices = NULL;
+			IndexDescAlloc* indices = NULL;
 			// read indices from "base" index root page
 			tdbb->tdbb_flags |= TDBB_deferred;
 			USHORT idx_count = 0;
@@ -203,7 +203,7 @@ RelationPages* jrd_rel::getPagesInternal(thread_db* tdbb, SLONG tran, bool alloc
 			}
 			tdbb->tdbb_flags &= ~TDBB_deferred;
 
-			index_desc *idx = indices->items, *const end = indices->items + idx_count;
+			index_desc* idx = indices->items, *const end = indices->items + idx_count;
 			for (; idx < end; idx++)
 			{
 				Firebird::MetaName idx_name;
