@@ -89,10 +89,6 @@ LINK32=link.exe
 # PROP Default_Filter "cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\btn.cpp
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\gen\utilities\gstat\dba.cpp
 # End Source File
 # Begin Source File
@@ -102,14 +98,6 @@ SOURCE=..\..\..\src\jrd\enc.cpp
 # Begin Source File
 
 SOURCE=..\..\..\src\common\fb_exception.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\jrd\os\win32\guid.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\jrd\ods.cpp
 # End Source File
 # Begin Source File
 
@@ -138,6 +126,30 @@ SOURCE=..\..\..\src\utilities\gstat\ppg_proto.h
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\version.rc
+# End Source File
+# End Group
+# Begin Group "JRD files"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\btn.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\os\win32\guid.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\isc.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\isc_file.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\ods.cpp
 # End Source File
 # End Group
 # End Target
