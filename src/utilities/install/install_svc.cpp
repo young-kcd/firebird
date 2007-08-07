@@ -107,12 +107,13 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	{
 		if (**argv != '-')
 		{
-			USHORT i;
+			int i;
 			const TEXT* cmd;
 			for (i = 0; cmd = commands[i].name; i++)
 			{
 				const TEXT* q;
-				for (p = *argv, q = cmd; *p && UPPER(*p) == *q; p++, q++);
+				for (p = *argv, q = cmd; *p && UPPER(*p) == *q; p++, q++)
+					;
 				if (!*p && commands[i].abbrev <= (USHORT) (q - cmd))
 					break;
 			}
@@ -567,11 +568,21 @@ static void svc_query(const char* name, const char* display_name, SC_HANDLE mana
 			printf("  Status  : ");
 			switch (service_status.dwCurrentState)
 			{
-				case SERVICE_STOPPED : printf("stopped\n"); break;
-				case SERVICE_START_PENDING : printf("starting\n"); break;
-				case SERVICE_STOP_PENDING : printf("stopping\n"); break;
-				case SERVICE_RUNNING : printf("running\n"); break;
-				default: printf("unknown state\n");
+				case SERVICE_STOPPED :
+					printf("stopped\n");
+					break;
+				case SERVICE_START_PENDING :
+					printf("starting\n");
+					break;
+				case SERVICE_STOP_PENDING :
+					printf("stopping\n");
+					break;
+				case SERVICE_RUNNING :
+					printf("running\n");
+					break;
+				default:
+					printf("unknown state\n");
+					break;
 			}
 		}
 		else
@@ -588,10 +599,18 @@ static void svc_query(const char* name, const char* display_name, SC_HANDLE mana
 			printf("  Startup : ");
 			switch (qsc->dwStartType)
 			{
-				case SERVICE_AUTO_START : printf("automatic\n"); break;
-				case SERVICE_DEMAND_START : printf("manual\n"); break;
-				case SERVICE_DISABLED : printf("disabled\n"); break;
-				default : printf("invalid setting\n");
+				case SERVICE_AUTO_START :
+					printf("automatic\n");
+					break;
+				case SERVICE_DEMAND_START :
+					printf("manual\n");
+					break;
+				case SERVICE_DISABLED :
+					printf("disabled\n");
+					break;
+				default :
+					printf("invalid setting\n");
+					break;
 			}
 			if (! qsc->lpServiceStartName)
 				printf("  Run as  : LocalSystem");

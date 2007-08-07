@@ -3690,6 +3690,7 @@ static bool find_depend_in_dfw(	thread_db*	tdbb,
 		}
 		else if (dep_type == obj_validation)
 		{
+			// Maybe it's worth caching in the future?
 			jrd_req* request = NULL;
 
 			FOR(REQUEST_HANDLE request)
