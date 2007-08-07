@@ -2,15 +2,150 @@
   * v2.0.2
   **************************
 
+    * Fixed bug CORE-1405
+        Vulnerability in attach/create database when filename exceeds MAX_PATH_LEN
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Fixed bug CORE-1403
+        Server crashes if a few events are being registered simultaneously
+        by the client connected via XNET
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed bug CORE-1400
+        GSTAT doesn't support port number in connection string
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed bug CORE-1399
+        GSTAT does not use RemoteServicePort option in firebird.conf
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed bug CORE-1398
+        GSTAT: 'localhost' is case-sensitive in Windows
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed bug CORE-1397
+        Possible vulnerability in the remote server
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
+
+    * Fixed bug CORE-1380
+        IO errors after changing FW on already attached database
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
+
+    * Fixed bug CORE-1371
+        Execute block fails within execute statement
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Fixed bug CORE-1349
+        Remote interface doesn't check (in REM_receive and REM_fetch calls)
+        the client's supplied message length against the length of message's format
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
+
+    * Fixed bug CORE-1347
+        Unexpected "cannot transliterate" error
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Fixed bug CORE-1331
+        Charset transliterations don't work with EXECUTE STATEMENT
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Fixed bug CORE-1328
+        Unexpected end of input when running gfix in dialog
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Fixed bug CORE-1312
+        A remote attacker can check, if a file is present in the system,
+        running firebird server
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Fixed bug CORE-1303
+        Infinite loop in SS remote listener
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Fixed bug CORE-1302
+        Races during service startup
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Fixed bug CORE-1300
+        Lower level index pages is missed from parent page
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
+
+    * Fixed bug CORE-1299
+        Wrong index entries order at non-leaf b-tree pages
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
+
+    * Fixed bug CORE-1298
+        BTR\garbage_collect code can make a deadlock in a page cache
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
+
+    * Fixed bug CORE-1292
+        Can't create table using long username and UTF8 as attachment charset
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Fixed bug CORE-1286
+        Bug with COMPUTED BY fields
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Fixed bug CORE-1279
+        Incorrect initialization of the engine with many simultaneous attachments at first time
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Fixed bug CORE-1276
+        Sometime INET error reported as 0 in firebird.log instead of real error code
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
+
+    * Fixed bug CORE-1265
+        Database detach deallocates the memory used by an active critical section
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
     * Fixed bug CORE-1249
         Full shutdown mode doesn't work on Classic if there are other connections to the database
       Contributor(s):
         Dmitry Yemanov <yemanov at yandex.ru>
 
+    * Fixed bug CORE-1248
+        Incorrect timestamp arithmetic when one of operands is negative number
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
+
+    * Fixed bug CORE-1247
+        Blobs garbage collector removes wrong blob if going blob descriptor
+        contains 0:0 (NULL value) but field's NULL flag is not set
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
+
     * Fixed bug CORE-1240
         Any task, using libfbclient, hangs on exit (Darwin PPC)
       Contributor(s):
         Alex Peshkov <peshkoff at mail.ru>
+
+    * Fixed bug CORE-1223
+        Wrong message in firebird.log on Open SuSe Linux 10.2:
+        "Open file limit increased from 1024 to 0"
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
 
     * Fixed bug CORE-1207
         FB Embedded requires extra OS privileges
@@ -23,10 +158,25 @@
         Dmitry Yemanov <yemanov at yandex.ru>
         Claudio Valderrama <cvalde at usa.net>
 
+    * Fixed bug CORE-1203
+        Performance issue with some queries on Linux 32 bits
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
     * Fixed bug CORE-1183
         View cannot be created if its WHERE clause contains IN <subquery> with a procedure reference  
       Contributor(s):
         Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed bug CORE-1156
+        Prepare fails when having a parameter in a DSQL statement before a sub query
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Fixed bug CORE-1153
+        Activating index change "STARTING" working as "LIKE" in join condition
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
 
     * Fixed bug CORE-1149
         DoS attack on server using Services API
@@ -43,8 +193,14 @@
       Contributor(s):
         Claudio Valderrama <cvalde at usa.net>
 
+    * Fixed bug CORE-984
+        fbclient.dll changes the security descriptor of the calling process
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+        Vlad Horsun <horsun at kdb.dp.ua>
+
     * Fixed bug CORE-968
-        Lost Connection with Firebird Server
+        Lost connection with Firebird server
       Contributor(s):
         Alex Peshkov <peshkoff at mail.ru>
 
