@@ -2349,9 +2349,14 @@ static void list_functions()
 			first = false;
 		}
 
+		if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
+			ISQL_copy_SQL_id(FUN.RDB$FUNCTION_NAME, SQL_identifier, DBL_QUOTE);
+		else
+			strcpy(SQL_identifier, FUN.RDB$FUNCTION_NAME);
+
 		// Start new function declaration 
 		isqlGlob.printf("DECLARE EXTERNAL FUNCTION %s %s",
-				 FUN.RDB$FUNCTION_NAME,
+				 SQL_identifier,
 				 NEWLINE);
 
 		bool firstarg = true;
