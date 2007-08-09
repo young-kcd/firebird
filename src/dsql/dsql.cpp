@@ -3744,10 +3744,14 @@ static USHORT get_plan_info(
 							  &join_count, &level)) 
 			{
 				// don't allocate buffer of the same length second time
+				// and let user know plan is incomplete
 				if (buffer_ptr != *out_buffer) {
-					if (buffer_length) {
-						*plan++ = isc_info_truncated;
+					if (buffer_length < 3) {
+						plan -= 3 - buffer_length;
 					}
+					*plan++ = '.';
+					*plan++ = '.';
+					*plan++ = '.';
 					break;
 				}
 
