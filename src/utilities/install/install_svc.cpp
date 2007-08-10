@@ -568,16 +568,16 @@ static void svc_query(const char* name, const char* display_name, SC_HANDLE mana
 			printf("  Status  : ");
 			switch (service_status.dwCurrentState)
 			{
-				case SERVICE_STOPPED :
+				case SERVICE_STOPPED:
 					printf("stopped\n");
 					break;
-				case SERVICE_START_PENDING :
+				case SERVICE_START_PENDING:
 					printf("starting\n");
 					break;
-				case SERVICE_STOP_PENDING :
+				case SERVICE_STOP_PENDING:
 					printf("stopping\n");
 					break;
-				case SERVICE_RUNNING :
+				case SERVICE_RUNNING:
 					printf("running\n");
 					break;
 				default:
@@ -599,16 +599,16 @@ static void svc_query(const char* name, const char* display_name, SC_HANDLE mana
 			printf("  Startup : ");
 			switch (qsc->dwStartType)
 			{
-				case SERVICE_AUTO_START :
+				case SERVICE_AUTO_START:
 					printf("automatic\n");
 					break;
-				case SERVICE_DEMAND_START :
+				case SERVICE_DEMAND_START:
 					printf("manual\n");
 					break;
-				case SERVICE_DISABLED :
+				case SERVICE_DISABLED:
 					printf("disabled\n");
 					break;
-				default :
+				default:
 					printf("invalid setting\n");
 					break;
 			}
