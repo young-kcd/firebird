@@ -31,6 +31,7 @@
 #include "../jrd/lck.h"
 #include "../jrd/lck_proto.h"
 #include "../include/fb_types.h"
+#include "../jrd/isc.h"
 
 //#define COS_DEBUG
 
@@ -145,13 +146,23 @@ private:
 	// false - unlock releases cached lock if possible
 	bool	lockCaching;
 
-
 	Firebird::SortedArray<ObjectOwnerData, Firebird::EmptyStorage<ObjectOwnerData>, 
 		SLONG, ObjectOwnerData, Firebird::DefaultComparator<SLONG> > readers;
 	ObjectOwnerData writer;
 
-	void lockCounters();
-	void unlockCounters();
+	// In current implementation, threads are not used along with signals
+	// Anyways, if we own mutex only with signals disabled this code
+	// becomes signal-safe even in presense of threads.
+	//
+	// SUPERSERVER: We do not call any functions that can cause wait 
+	// when under counters lock so we do not need to release thread
+	// scheduler here
+	class CountersLockHolder : public AstInhibit, public Firebird::MutexLockGuard
+	{
+	public:
+		CountersLockHolder(Firebird::Mutex& mtx)
+			: AstInhibit(), MutexLockGuard(mtx) { }
+	};
 
 	static int blocking_ast_cached_lock(void* ast_object);
 };
