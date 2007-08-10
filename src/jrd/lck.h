@@ -65,15 +65,6 @@ enum lck_t {
 	LCK_cancel					/* Cancellation lock */
 };
 
-/* Lock owner types */
-
-enum lck_owner_t {
-	LCK_OWNER_process = 1,		/* A process is the owner of the lock */
-	LCK_OWNER_database,			/* A database is the owner of the lock */
-	LCK_OWNER_attachment,		/* An attachment is the owner of the lock */
-	LCK_OWNER_transaction		/* A transaction is the owner of the lock */
-};
-
 // This is defined in dbt.cpp and nobody calls it.
 void MP_GDB_print(MemoryPool*);
 

@@ -128,7 +128,8 @@ bool GlobalRWLock::lock(thread_db* tdbb, locklevel_t level, SSHORT wait, SLONG o
 	SET_TDBB(tdbb);
 	
 	fb_assert(owner_handle);
-
+{
+	SignalInhibit si;
 	lockCounters();
 
 	COS_TRACE(("lock type=%i, level=%i, readerscount=%i, owner=%i", cached_lock->lck_type, level, readers.getCount(), owner_handle));
@@ -185,7 +186,7 @@ bool GlobalRWLock::lock(thread_db* tdbb, locklevel_t level, SSHORT wait, SLONG o
 	internal_blocking++;
 
 	unlockCounters();
-
+}
 	// There is some congestion. Need to use the lock manager.
 	// Request new lock at the new level. Several concurrent lock requests may 
 	// wait here in the same process in parallel.
@@ -208,6 +209,8 @@ bool GlobalRWLock::lock(thread_db* tdbb, locklevel_t level, SSHORT wait, SLONG o
 	}
 	COS_TRACE(("Lock is got, type=%i", cached_lock->lck_type));
 
+{
+	SignalInhibit si;
 	lockCounters();
 
 	fb_assert(internal_blocking > 0);
@@ -257,7 +260,7 @@ bool GlobalRWLock::lock(thread_db* tdbb, locklevel_t level, SSHORT wait, SLONG o
 	}
 
 	unlockCounters();
-	
+}	
 	return true;
 }
 
@@ -274,7 +277,11 @@ void GlobalRWLock::unlock(thread_db* tdbb, locklevel_t level, SLONG owner_handle
 	if (level == LCK_read) {
 		size_t n;
 		if (!readers.find(owner_handle, n)) {
+			static int x = 0;
+			if (++x > 10)
+				abort();
 			ERR_bugcheck_msg("Attempt to call GlobalRWLock::unlock() while not holding a valid lock for logical owner");
+			--x;
 		}
 		fb_assert(readers[n].entry_count > 0);
 		readers[n].entry_count--;
@@ -348,6 +355,7 @@ void GlobalRWLock::changeLockOwner(thread_db* tdbb, locklevel_t level, SLONG old
 	if (old_owner_handle == new_owner_handle)
 		return;
 
+	SignalInhibit si;
 	lockCounters();
 
 	if (level == LCK_read) {
@@ -381,6 +389,7 @@ void GlobalRWLock::changeLockOwner(thread_db* tdbb, locklevel_t level, SLONG old
 
 bool GlobalRWLock::tryReleaseLock(thread_db* tdbb)
 {
+	SignalInhibit si;
 	lockCounters();
 	if (!writer.entry_count && !readers.getCount())
 	{

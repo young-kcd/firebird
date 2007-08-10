@@ -2044,7 +2044,8 @@ static void check_file(const sort_context* scb, const run_control* temp_run)
  *
  **************************************/
 	UINT64 runs = temp_run ? temp_run->run_size : 0;
-	UINT64 free = 0, run_mem = 0;
+	offset_t free = 0, 
+	UINT64 run_mem = 0;
 
 	bool ok = scb->scb_space->validate(free);
 	fb_assert(ok);

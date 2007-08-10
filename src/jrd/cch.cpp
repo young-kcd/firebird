@@ -6610,7 +6610,7 @@ static bool write_page(
 		AST_CHECK();
 		dbb->dbb_writes++;
 		RuntimeStatistics::bumpValue(tdbb, RuntimeStatistics::PAGE_WRITES);
-		fb_assert(dbb->dbb_writes == dbb->dbb_stats.getValue(RuntimeStatistics::PAGE_WRITES));
+		//fb_assert(dbb->dbb_writes == dbb->dbb_stats.getValue(RuntimeStatistics::PAGE_WRITES));
 
 		/* write out page to main database file, and to any
 		   shadows, making a special case of the header page */
