@@ -873,7 +873,7 @@ int LOCK_init(
 
 
 #ifdef MANAGER_PROCESS
-void LOCK_manager( SRQ_PTR manager_owner_offset)
+void LOCK_manager( SRQ_PTR* manager_owner_offset)
 {
 /**************************************
  *
@@ -891,7 +891,7 @@ void LOCK_manager( SRQ_PTR manager_owner_offset)
  **************************************/
 	LOCK_TRACE(("LOCK_manager\n"));
 
-	acquire(manager_owner_offset);
+	acquire(*manager_owner_offset);
 
 #ifdef VALIDATE_LOCK_TABLE
 	validate_lhb(LOCK_header);
@@ -902,12 +902,12 @@ void LOCK_manager( SRQ_PTR manager_owner_offset)
 	own* owner;
 	while (owner = get_manager(false)) {
 		if (signal_owner(owner, (SRQ_PTR) NULL))
-			purge_owner(manager_owner_offset, owner);
+			purge_owner(*manager_owner_offset, owner);
 		else {
 			DEBUG_MSG(0,
 					  ("LOCK_manager, pid %ld quiting, pid %ld is already manager\n",
 					   LOCK_pid, owner->own_process_id));
-			release(manager_owner_offset);
+			release(*manager_owner_offset);
 			return;
 		}
 	}
@@ -916,7 +916,7 @@ void LOCK_manager( SRQ_PTR manager_owner_offset)
 
 	DEBUG_MSG(0, ("LOCK_manager, pid %ld becoming manager\n", LOCK_pid));
 
-	own* manager_owner = (own*) SRQ_ABS_PTR(manager_owner_offset);
+	own* manager_owner = (own*) SRQ_ABS_PTR(*manager_owner_offset);
 	manager_owner->own_flags |= OWN_manager;
 	LOCK_process_owner.own_flags |= OWN_manager;
 #ifdef USE_STATIC_SEMAPHORES
@@ -925,9 +925,9 @@ void LOCK_manager( SRQ_PTR manager_owner_offset)
 	manager_owner->own_semaphore = 1;
 #endif
 	ASSERT_ACQUIRED;
-	LOCK_header->lhb_manager = manager_owner_offset;
+	LOCK_header->lhb_manager = *manager_owner_offset;
 	LOCK_header->lhb_flags &= ~LHB_shut_manager;
-	release(manager_owner_offset);
+	release(*manager_owner_offset);
 
 /* Loop, waiting for something to happen */
 
@@ -939,14 +939,14 @@ void LOCK_manager( SRQ_PTR manager_owner_offset)
 #endif
 
 	for (;;) {
-		acquire(manager_owner_offset);
+		acquire(*manager_owner_offset);
 #ifdef VALIDATE_LOCK_TABLE
 		if ((manager_counter++ % 100) == 0)
 			validate_lhb(LOCK_header);
 #endif
-		manager_owner = (own*) SRQ_ABS_PTR(manager_owner_offset);
+		manager_owner = (own*) SRQ_ABS_PTR(*manager_owner_offset);
 		if (LOCK_header->lhb_flags & LHB_shut_manager) {
-			purge_owner(manager_owner_offset, manager_owner);
+			purge_owner(*manager_owner_offset, manager_owner);
 			release_mutex();
 			break;
 		}
@@ -957,7 +957,7 @@ void LOCK_manager( SRQ_PTR manager_owner_offset)
 			if (owner->own_flags & OWN_signal) {
 				if (signal_owner(owner, (SRQ_PTR) NULL)) {
 					lock_srq = (SRQ) SRQ_ABS_PTR(lock_srq->srq_backward);
-					purge_owner(manager_owner_offset, owner);
+					purge_owner(*manager_owner_offset, owner);
 				}
 				else {
 					owner->own_flags &= ~OWN_signal;
@@ -972,13 +972,13 @@ void LOCK_manager( SRQ_PTR manager_owner_offset)
 		}
 		event_t* event_ptr = manager_owner->own_wakeup;
 		SLONG value = ISC_event_clear(manager_owner->own_wakeup);
-		release(manager_owner_offset);
+		release(*manager_owner_offset);
 
 		/* Prepare to wait for a timeout or a wakeup from somebody else.  Start
 		   by setting an alarm clock. */
 
 		const int ret = ISC_event_wait(1, &event_ptr, &value,
-							 LOCKMANTIMEOUT * 1000000, lock_alarm_handler,
+							 LOCKMANTIMEOUT * 100000, lock_alarm_handler,
 							 event_ptr);
 
 #ifdef DEBUG
@@ -1011,6 +1011,7 @@ void LOCK_manager( SRQ_PTR manager_owner_offset)
 
 	LOCK_header = NULL;
 	ISC_STATUS_ARRAY local_status;
+	*manager_owner_offset = 0;
 #ifdef TERMINATE_IDLE_LOCK_MANAGER
 	ISC_unmap_file(local_status, &LOCK_data, ISC_SEM_REMOVE);
 #else

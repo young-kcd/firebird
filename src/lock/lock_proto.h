@@ -44,7 +44,7 @@ SLONG	LOCK_enq(SLONG, SLONG, USHORT, const UCHAR*, USHORT, UCHAR,
 bool	LOCK_set_owner_handle(SLONG, SLONG);
 void	LOCK_fini(ISC_STATUS*, SLONG *);
 int		LOCK_init(ISC_STATUS*, bool, LOCK_OWNER_T, UCHAR, SLONG *);
-void	LOCK_manager(SLONG);
+void	LOCK_manager(SLONG*);
 SLONG	LOCK_query_data(SLONG, USHORT, USHORT);
 SLONG	LOCK_read_data(SLONG);
 SLONG	LOCK_read_data2(SLONG, USHORT, const UCHAR*, USHORT, SLONG);

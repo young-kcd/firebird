@@ -63,7 +63,7 @@ int main( int argc, char **argv)
 		 &owner_handle))
 	{
 #ifdef MANAGER_PROCESS
-			LOCK_manager(owner_handle);
+			LOCK_manager(&owner_handle);
 #else
 			;
 #endif
