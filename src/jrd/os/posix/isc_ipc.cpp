@@ -166,39 +166,44 @@ void ISC_enter(void)
 }
 
 namespace {
-	volatile sig_atomic_t inhibit_counter = 0;
-	sigset_t saved_sigmask;
+	volatile int inhibitCounter = 0;
 	Firebird::Mutex inhibitMutex;
+    sigset_t savedSigmask;
+	volatile bool inSignalHandler = false;
 }
 
 SignalInhibit::SignalInhibit() throw()
-	: enabled(false) 
+	: locked(!inSignalHandler)	// When called from signal handler, no need
+								// to care - signals are already inhibited.
 {
+	if (!locked)
+		return;
+
 	Firebird::MutexLockGuard lock(inhibitMutex);
 
-	if (inhibit_counter == 0) {
-		sigset_t set, oset;
+	if (inhibitCounter == 0) {
+		sigset_t set;
 		sigfillset(&set);
-		sigprocmask(SIG_BLOCK, &set, &saved_sigmask);
+		sigprocmask(SIG_BLOCK, &set, &savedSigmask);
 	}
-	inhibit_counter++;
+	inhibitCounter++;
 }
 
 void SignalInhibit::enable() throw()
 {
-	if (enabled)
+	if (!locked)
 		return;
 
-	enabled = true;
+	locked = false;
 
 	Firebird::MutexLockGuard lock(inhibitMutex);
 
-	fb_assert(inhibit_counter > 0);
-	inhibit_counter--;
-	if (inhibit_counter == 0) {
+	fb_assert(inhibitCounter > 0);
+	inhibitCounter--;
+	if (inhibitCounter == 0) {
 		// Return to the mask as it were before the first recursive 
 		// call to ISC_inhibit
-		sigprocmask(SIG_SETMASK, &saved_sigmask, NULL);
+		sigprocmask(SIG_SETMASK, &savedSigmask, NULL);
 	}
 }		
 
@@ -562,6 +567,13 @@ static void CLIB_ROUTINE signal_action(int number, siginfo_t *siginfo, void *con
  **************************************/
 	/* Invoke everybody who may have expressed an interest. */
 
+	bool restoreState = inSignalHandler;
+	inSignalHandler = true;
+
+	sigset_t set, localSavedSigmask;
+	sigfillset(&set);
+	sigprocmask(SIG_BLOCK, &set, &localSavedSigmask);
+
 	for (SIG sig = signals; sig; sig = sig->sig_next)
 	{
 		if (sig->sig_signal == number)
@@ -591,5 +603,9 @@ static void CLIB_ROUTINE signal_action(int number, siginfo_t *siginfo, void *con
 			}
 		}
 	}
+
+	sigprocmask(SIG_SETMASK, &localSavedSigmask, NULL);
+
+	inSignalHandler = restoreState;
 }
 
