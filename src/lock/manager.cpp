@@ -24,8 +24,6 @@
 #include "firebird.h"
 #include "../jrd/common.h"
 #include <stdio.h>
-#include "../jrd/jrd.h"
-#include "../jrd/lck.h"
 #include "../jrd/divorce.h"
 #include "../lock/lock_proto.h"
 
@@ -61,7 +59,7 @@ int main( int argc, char **argv)
 	status_vector[1] = 0;
 	owner_handle = 0;
 	if (!LOCK_init
-		(status_vector, true, getpid(), Jrd::LCK_OWNER_process,
+		(status_vector, true, getpid(), LCK_OWNER_process,
 		 &owner_handle))
 	{
 #ifdef MANAGER_PROCESS
