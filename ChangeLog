@@ -1,3 +1,15 @@
+2007-08-10 03:28  asfernandes
+
+	* firebird2/src/utilities/install/install_svc.cpp (1.31):
+
+	Misc
+
+2007-08-09 13:05  hvlad
+
+	* firebird2/src/dsql/dsql.cpp (1.196):
+
+	Fix for CORE-908 : Garbage in plan output of complex statement
+
 2007-08-08 03:46  asfernandes
 
 	* firebird2/src/isql/extract.epp (1.81):
