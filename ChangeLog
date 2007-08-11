@@ -1,3 +1,58 @@
+2007-08-10 15:57  alexpeshkoff
+
+	* firebird2/src/jrd/: GlobalRWLock.cpp (1.6), GlobalRWLock.h (1.6):
+
+	Use AstInhibit in GlobalRWLock
+
+2007-08-10 15:55  alexpeshkoff
+
+	* firebird2/src/jrd/os/: isc_i_proto.h (1.8), posix/isc_ipc.cpp
+	(1.23):
+
+	Made classes SignalInhibit and AstInhibit async signal safe.
+
+2007-08-10 15:05  alexpeshkoff
+
+	* firebird2/src/jrd/sort.cpp (1.100):
+
+	Fixed my obvious error
+
+2007-08-10 10:59  alexpeshkoff
+
+	* firebird2/src/lock/: lock.cpp (1.126), lock_proto.h (1.12),
+	manager.cpp (1.12):
+
+	1. Fixed AV when fb_lock_mgr exits.  2. Made timeout in
+	LOCK_manager() 10 times smaller - we are not in year 1993.
+
+2007-08-10 10:29  alexpeshkoff
+
+	* firebird2/src/lock/: lock_proto.h (1.11), manager.cpp (1.11):
+
+	Moved LCK_OWNER constants to lock, where they are actually used,
+	from jrd
+
+2007-08-10 10:11  alexpeshkoff
+
+	* firebird2/builds/posix/make.defaults (1.57):
+
+	restored accidetially commited file
+
+2007-08-10 09:55  alexpeshkoff
+
+	* firebird2/src/jrd/: GlobalRWLock.cpp (1.5), cch.cpp (1.170),
+	lck.h (1.32), lck_proto.h (1.14), sort.cpp (1.99):
+
+	Fixed solx86 build - not always offset_t and UINT64 are the same
+
+2007-08-10 09:51  alexpeshkoff
+
+	* firebird2/builds/posix/: Makefile.in.client.util (1.46),
+	Makefile.in.inet_server (1.17), firebird.vers (1.11), make.defaults
+	(1.56):
+
+	Removed entry, actually missing in API
+
 2007-08-10 03:28  asfernandes
 
 	* firebird2/src/utilities/install/install_svc.cpp (1.31):
