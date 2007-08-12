@@ -101,13 +101,15 @@ GlobalRWLock::GlobalRWLock(thread_db* tdbb, MemoryPool& p, locktype_t lckType,
 	writer.entry_count = 0;
 }
 
-GlobalRWLock::~GlobalRWLock() {
+GlobalRWLock::~GlobalRWLock()
+{
 	thread_db* tdbb = JRD_get_thread_data();
 	LCK_release(tdbb, cached_lock);
 	delete cached_lock;
 }
 
-bool GlobalRWLock::lock(thread_db* tdbb, locklevel_t level, SSHORT wait, SLONG owner_handle) {
+bool GlobalRWLock::lock(thread_db* tdbb, locklevel_t level, SSHORT wait, SLONG owner_handle)
+{
 	SET_TDBB(tdbb);
 	fb_assert(owner_handle);
 
@@ -147,7 +149,7 @@ bool GlobalRWLock::lock(thread_db* tdbb, locklevel_t level, SSHORT wait, SLONG o
 			else
 			{
 				writer.owner_handle = owner_handle;
-            	writer.entry_count++;
+				writer.entry_count++;
 			}
 
 			return true;
@@ -188,7 +190,7 @@ bool GlobalRWLock::lock(thread_db* tdbb, locklevel_t level, SSHORT wait, SLONG o
 	COS_TRACE(("Lock is got, type=%i", cached_lock->lck_type));
 
 	{ // this is a second scope for a code where counters are locked
-	    CountersLockHolder lockHolder(lockMutex);
+		CountersLockHolder lockHolder(lockMutex);
 
 		fb_assert(internal_blocking > 0);
 		internal_blocking--;
@@ -214,7 +216,7 @@ bool GlobalRWLock::lock(thread_db* tdbb, locklevel_t level, SSHORT wait, SLONG o
 		else
 		{
 			writer.owner_handle = owner_handle;
-	        writer.entry_count++;
+			writer.entry_count++;
 		}
 
 		// Replace cached lock with the new lock if needed
@@ -240,7 +242,8 @@ bool GlobalRWLock::lock(thread_db* tdbb, locklevel_t level, SSHORT wait, SLONG o
 
 // NOTE: unlock method must be signal safe
 // This function may be called in AST. The function doesn't wait.
-void GlobalRWLock::unlock(thread_db* tdbb, locklevel_t level, SLONG owner_handle) {
+void GlobalRWLock::unlock(thread_db* tdbb, locklevel_t level, SLONG owner_handle)
+{
 	SET_TDBB(tdbb);
 
 	CountersLockHolder lockHolder(lockMutex);
@@ -257,7 +260,8 @@ void GlobalRWLock::unlock(thread_db* tdbb, locklevel_t level, SLONG owner_handle
 		readers[n].entry_count--;
 		if (readers[n].entry_count == 0)
 			readers.remove(n);
-	} else {
+	}
+	else {
 		fb_assert(writer.owner_handle == owner_handle);
 		fb_assert(writer.entry_count == 1);
 		fb_assert(cached_lock->lck_physical == LCK_write);
@@ -266,7 +270,8 @@ void GlobalRWLock::unlock(thread_db* tdbb, locklevel_t level, SLONG owner_handle
 		writer.owner_handle = 0;
 
 		// Optimize non-contention case - downgrade to PR and re-use the lock
-		if (!internal_blocking && !external_blocking && lockCaching) {
+		if (!internal_blocking && !external_blocking && lockCaching)
+		{
 			if (!LCK_convert(tdbb, cached_lock, LCK_read, 0))
 				ERR_bugcheck_msg("LCK_convert call failed in GlobalRWLock::unlock()");
 			return;
@@ -291,7 +296,8 @@ void GlobalRWLock::unlock(thread_db* tdbb, locklevel_t level, SLONG owner_handle
 	COS_TRACE(("unlock type=%i, level=%i, readerscount=%i, owner=%i", cached_lock->lck_type, level, readers.getCount(), owner_handle));
 }
 
-void GlobalRWLock::blockingAstHandler(thread_db* tdbb) {
+void GlobalRWLock::blockingAstHandler(thread_db* tdbb)
+{
 	SET_TDBB(tdbb);
 
 	CountersLockHolder lockHolder(lockMutex);
@@ -311,17 +317,19 @@ void GlobalRWLock::blockingAstHandler(thread_db* tdbb) {
 		external_blocking = true;
 }
 
-void GlobalRWLock::setLockData(SLONG lck_data) {
+void GlobalRWLock::setLockData(SLONG lck_data)
+{
 	LCK_write_data(cached_lock, lck_data);
 } 
 
-void GlobalRWLock::changeLockOwner(thread_db* tdbb, locklevel_t level, SLONG old_owner_handle, SLONG new_owner_handle) {
+void GlobalRWLock::changeLockOwner(thread_db* tdbb, locklevel_t level, SLONG old_owner_handle, SLONG new_owner_handle)
+{
 	SET_TDBB(tdbb);
 
 	if (old_owner_handle == new_owner_handle)
 		return;
 
-    CountersLockHolder lockHolder(lockMutex);
+	CountersLockHolder lockHolder(lockMutex);
 
 	if (level == LCK_read) {
 		size_t n;
@@ -352,7 +360,7 @@ void GlobalRWLock::changeLockOwner(thread_db* tdbb, locklevel_t level, SLONG old
 
 bool GlobalRWLock::tryReleaseLock(thread_db* tdbb)
 {
-    CountersLockHolder lockHolder(lockMutex);
+	CountersLockHolder lockHolder(lockMutex);
 	if (!writer.entry_count && !readers.getCount())
 	{
 		LCK_release(tdbb, cached_lock);

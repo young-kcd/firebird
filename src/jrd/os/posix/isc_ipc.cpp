@@ -168,7 +168,7 @@ void ISC_enter(void)
 namespace {
 	volatile int inhibitCounter = 0;
 	Firebird::Mutex inhibitMutex;
-    sigset_t savedSigmask;
+	sigset_t savedSigmask;
 	volatile bool inSignalHandler = false;
 }
 
@@ -255,7 +255,7 @@ int ISC_kill(SLONG pid, SLONG signal_number)
 
 /* Process is there, but we don't have the privilege to
    send to him.  */
-   
+
 	int pipes[2];
 	
 	if (!relay_pipe) {
@@ -567,7 +567,7 @@ static void CLIB_ROUTINE signal_action(int number, siginfo_t *siginfo, void *con
  **************************************/
 	/* Invoke everybody who may have expressed an interest. */
 
-	bool restoreState = inSignalHandler;
+	const bool restoreState = inSignalHandler;
 	inSignalHandler = true;
 
 	sigset_t set, localSavedSigmask;
