@@ -24,7 +24,7 @@
  *  Contributor(s): ______________________________________.
  *
  *
- *  $Id: vector.h,v 1.15.4.1 2007-07-27 13:31:42 alexpeshkoff Exp $
+ *  $Id: vector.h,v 1.15.4.2 2007-08-13 03:47:10 dimitr Exp $
  *
  */
 
@@ -79,9 +79,6 @@ public:
 	}
 	void join(const Vector<T, Capacity>& L) {
 		fb_assert(count + L.count <= Capacity);
-#ifndef BOOT_BUILD
-		gds__log("Join:%p %8d, L:%p %8d", data, count, L.data, L.count);
-#endif
 		memcpy(data + count, L.data, sizeof(T) * L.count);
 		count += L.count;
 	}
