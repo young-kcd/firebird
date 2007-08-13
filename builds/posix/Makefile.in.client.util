@@ -122,9 +122,6 @@ RELAY_Files =  relay.cpp
 RELAY_Sources = $(addprefix utilities/, $(RELAY_Files))
 RELAY_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(RELAY_Sources))))
 
-# Override shared variable to exclude TempFile.cpp
-#FBCLASSES_ClientFiles=alloc.cpp locks.cpp fb_string.cpp timestamp.cpp
-
 AllObjects = $(CREATEDB_Object) $(DROP_Object) $(GSTAT_Object) $(FBGUARD_Objects) \
 			 $(FBMGR_Objects) $(REBUILD_Objects) $(RELAY_Objects) $(FBSVCMGR_Objects)
 
