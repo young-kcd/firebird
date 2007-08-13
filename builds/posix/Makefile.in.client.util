@@ -69,7 +69,7 @@ DROP_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(DROP_Sources)))
 
 
 GSTAT_Other_Sources = jrd/btn.cpp jrd/db_alias.cpp jrd/ods.cpp \
-common/utils.cpp jrd/isc_file.cpp $(OS_SPECIFIC_Sources)
+common/utils.cpp jrd/isc_file.cpp jrd/isc.cpp $(OS_SPECIFIC_Sources)
 
 GSTAT_Files =  dba.epp ppg.cpp
 GSTAT_Sources = $(addprefix utilities/gstat/, $(GSTAT_Files)) $(GSTAT_Other_Sources)
@@ -109,8 +109,9 @@ INSTREG_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(INSTREG_Sour
 
 
 INSTSVC_Files =  	install_svc.cpp services.cpp
-INSTSVC_Sources = $(addprefix utilities/install/, $(INSTSVC_Files))
-INSTSVC_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(INSTSVC_Sources))))
+INSTSVC_Other_Sources = common/classes/alloc.cpp common/classes/fb_string.cpp
+INSTSVC_Sources = $(addprefix utilities/install/, $(INSTSVC_Files)) $(INSTSVC_Other_Sources)
+INSTSVC_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(INSTSVC_Sources)))) $(FBCOMMON_ClientObjects)
 
 
 REBUILD_Files =  rebuild.cpp rstore.epp rmet.epp 
@@ -203,7 +204,7 @@ $(INSTREG):	$(INSTREG_Objects)
 instsvc: $(INSTSVC)
 
 $(INSTSVC):	$(INSTSVC_Objects)
-	$(LD) $(LINK_OPTS) $^ -o $@ -L$(LIB) $(FBCLASSES_ClientObjects) $(FBCOMMON_ClientObjects) $(LINK_LIBS) 
+	$(LD) $(LINK_OPTS) $^ -o $@ -L$(LIB) $(LINK_LIBS) 
 
 # This one needs a bit of work.
 
