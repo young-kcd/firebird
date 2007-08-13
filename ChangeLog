@@ -1,3 +1,10 @@
+2007-08-12 07:22  robocop
+
+	* firebird2/src/jrd/: GlobalRWLock.cpp (1.7), os/posix/isc_ipc.cpp
+	(1.24):
+
+	Misc.
+
 2007-08-10 15:57  alexpeshkoff
 
 	* firebird2/src/jrd/: GlobalRWLock.cpp (1.6), GlobalRWLock.h (1.6):
