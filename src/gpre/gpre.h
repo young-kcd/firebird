@@ -1525,7 +1525,7 @@ struct GpreGlobals
 	const TEXT* ada_null_address;
 	DBB isc_databases;
 	const TEXT* default_user;
-	TEXT* default_password;
+	const TEXT* default_password;
 	const TEXT* default_lc_ctype;
 	gpre_req* requests;
 	gpre_lls* events;
