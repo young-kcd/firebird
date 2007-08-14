@@ -75,4 +75,4 @@ CLIENT_UTIL_TARGETS=gds_drop gstat gsec fbguard fbmgr_bin nbackup fb_lock_print
 
 Physical_IO_Module=os/posix/unix.cpp
 
-LIB_LINK:= g++ $(GLOB_OPTIONS)
+UNDEF_PLATFORM = -Wl,-z,defs
