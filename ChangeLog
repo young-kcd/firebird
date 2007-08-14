@@ -1,3 +1,16 @@
+2007-08-13 14:55  aafemt
+
+	* firebird2/builds/posix/Makefile.in.client.util (1.48):
+
+	Fix MinGW build
+
+2007-08-13 14:00  alexpeshkoff
+
+	* firebird2/builds/posix/: Makefile.in.client.util (1.47),
+	prefix.solx86gcc (1.22):
+
+	Should link with g++ on Solaris
+
 2007-08-12 07:22  robocop
 
 	* firebird2/src/jrd/: GlobalRWLock.cpp (1.7), os/posix/isc_ipc.cpp
