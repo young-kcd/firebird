@@ -27,7 +27,6 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.extlib,v 1.20.4.1 2007-03-07 15:04:16 paulbeach Exp $
 #
 ROOT=..
 ObjModuleType=std
@@ -86,15 +85,16 @@ else
 $(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/lib -o $@ $^ @PTHREAD_CFLAGS@ @PTHREAD_LIBS@
 endif
 # ib_util
+# this is plain-C library, therefore CLIENTLIB_LINK is used
 
 lib_ib_util: $(LIBIBUTIL_SO)
 
 $(LIBIBUTIL_SO):	$(UTIL_Objects)
 ifeq ($(PLATFORM),DARWIN)
-	$(LIB_LINK) $(LIB_LINK_OPTIONS) $(LIB_LINK_RPATH)$(IbUtilLibraryName) $(LIB_LINK_SONAME) \
+	$(CLIENTLIB_LINK) $(LIB_LINK_OPTIONS) $(LIB_LINK_RPATH)$(IbUtilLibraryName) $(LIB_LINK_SONAME) \
 -o $@ $^ @PTHREAD_CFLAGS@ @PTHREAD_LIBS@
 else
-	$(LIB_LINK) $(LIB_LINK_OPTIONS) $(LIB_LINK_SONAME)$(IbUtilLibraryName) \
+	$(CLIENTLIB_LINK) $(LIB_LINK_OPTIONS) $(LIB_LINK_SONAME)$(IbUtilLibraryName) \
 $(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/lib -o $@ $^ @PTHREAD_CFLAGS@ @PTHREAD_LIBS@
 endif
 
