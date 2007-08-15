@@ -1,3 +1,22 @@
+2007-08-14 13:06  alexpeshkoff
+
+	* firebird2/builds/posix/: Makefile.in.extlib (1.23),
+	Makefile.in.libfbclient (1.37), make.defaults (1.58),
+	prefix.solx86gcc (1.23):
+
+	1. We have 3 kinds of libraries we build - plain-C (libib_util),
+	C++ with static ++ support (libfbclient) and C++ with dynamic ++
+	support (all the others). Reworked build process to clearly handle
+	different linkers and switches for this 3 kinds of libraries.  2.
+	Disabled creation of binaries with undefined external references
+	during DEV_BUILD.
+
+2007-08-14 12:15  alexpeshkoff
+
+	* firebird2/src/gpre/gpre.h (1.89):
+
+	Absolutely no reasons to have it non-const here
+
 2007-08-13 14:55  aafemt
 
 	* firebird2/builds/posix/Makefile.in.client.util (1.48):
