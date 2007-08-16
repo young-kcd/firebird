@@ -1,3 +1,10 @@
+2007-08-15 15:49  alexpeshkoff
+
+	* firebird2/builds/posix/: Makefile.in.extlib (1.20.4.2),
+	make.defaults (1.44.4.5), make.rules (1.28.4.2):
+
+	Fixed build on Solaris 10 x86.
+
 2007-08-13 05:47  dimitr
 
 	* firebird2/src/common/classes/vector.h (1.15.4.2):
