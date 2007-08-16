@@ -80,7 +80,7 @@ LONG CFBPanel::OnDblclk(HWND hwndCPl, UINT uAppNum, LONG lData)
 		{
 			char rootpath[MAX_PATH - 2];
 			DWORD buffer_size = sizeof(rootpath);
-			if (RegQueryValueEx(hkey, FB_DEFAULT_INSTANCE, NULL, NULL, LPBYTE(rootpath), &buffer_size)
+			if (RegQueryValueEx(hkey, "DefaultInstance", NULL, NULL, LPBYTE(rootpath), &buffer_size)
 				== ERROR_SUCCESS)
 			{
 				PathAddBackslash(rootpath);

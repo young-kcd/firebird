@@ -495,7 +495,7 @@ procedure SetupSharedFilesArray;
 // - Files which are absolutely necessary for a functioning installation.
 //     Hence gbak and gfix are shared files, isql and qli are not
 // - Libraries
-// - License files
+// - License files 
 begin
 SetArrayLength(SharedFileArray,29);
 
@@ -592,10 +592,10 @@ end;
 function GetFirebirdDir: string;
 //Check if Firebird installed, get version info to global var and return root dir
 var
-  FirebirdDir: String;
+	FirebirdDir: String;
 begin
   FirebirdDir := '';
-  FirebirdVer := [0,0,0,0];
+	FirebirdVer := [0,0,0,0];
   RegQueryStringValue(HKEY_LOCAL_MACHINE,
     'SOFTWARE\Firebird Project\Firebird Server\Instances','DefaultInstance', FirebirdDir);
   //If nothing returned then check for the registry entry used during beta/RC phase
@@ -616,7 +616,7 @@ var
   InterBaseDir: String;
 begin
   InterBaseDir := '';
-  InterBaseVer   := [0,0,0,0];
+	InterBaseVer   := [0,0,0,0];
   RegQueryStringValue(HKEY_LOCAL_MACHINE,
     'SOFTWARE\Borland\InterBase\CurrentVersion','RootDirectory', InterBaseDir);
   if ( InterBaseDir <> '' ) then
@@ -646,12 +646,12 @@ begin
 end;
 
 //Detect any 1.5 or 2.0 server running with default ClassName or mutex
-function FirebirdDefaultServerRunning: String;
+function FirebirdDefaultServerRunning: boolean;
 var
   Handle: Integer;
   mutex_found: boolean;
 begin
-  result := '';
+  result := False;
   //Look for a running version of Firebird 1.5 or later
   Handle := FindWindowByClassName('FB_Disabled');
   if ( Handle = 0 ) then
@@ -660,17 +660,11 @@ begin
     Handle := FindWindowByClassName('FB_Guard');
 
   if (Handle > 0) then
-     result := '1.5'
+     result := True
   else begin
     mutex_found := CheckForMutexes('FirebirdGuardianMutex,FirebirdServerMutex');
     if mutex_found then
-      result := '2.0'
-    else begin
-      mutex_found := CheckForMutexes('FirebirdGuardianMutexDefaultInstance,FirebirdServerMutexDefaultInstance');
-      if mutex_found then
-        result := '2.1'
-    end;
-
+      result := true;
   end;
 
 end;
@@ -680,7 +674,7 @@ function InstallCPLApplet: boolean;
 begin
   result := False;
   if ( (ConfigureFirebird) AND (not NoCPL) ) then
-     result := IsTaskSelected('InstallCPLAppletTask') ;
+     result := (ShouldProcessEntry('ServerComponent\SuperServerComponent', 'InstallCPLAppletTask') = srYes) ;
 end;
 
 
@@ -701,7 +695,7 @@ begin
   if ConfigureFirebird then begin
     //If one of these is false then either the commandline switch was passed
     //or the user unchecked the Copy client as GDS32 box
-    result := ( (not NoLegacyClient) AND (IsTaskSelected('CopyFbClientAsGds32Task') ));
+    result := ( (not NoLegacyClient) AND (ShouldProcessEntry('ClientComponent', 'CopyFbClientAsGds32Task')= srYes) );
   end;
 end;
 
@@ -716,8 +710,7 @@ end;
 function CopyFbClientLib: boolean;
 begin
 //Note that the default for this is the opposite to CopyGds32.
-  //result := ( (CopyFbClient) OR (ShouldProcessEntry('ClientComponent', 'CopyFbClientToSysTask')= srYes) );
-    result := ( (not CopyFbClient) AND (IsTaskSelected('CopyFbClientToSysTask') ));
+  result := ( (CopyFbClient) OR (ShouldProcessEntry('ClientComponent', 'CopyFbClientToSysTask')= srYes) );
 end;
 
 

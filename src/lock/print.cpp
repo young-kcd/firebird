@@ -1,6 +1,6 @@
 /*
  *      PROGRAM:        JRD Lock Manager
- *      MODULE:         print.cpp
+ *      MODULE:         print.c
  *      DESCRIPTION:    Lock Table printer
  *
  * The contents of this file are subject to the Interbase Public
@@ -126,7 +126,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
  **************************************/
 	OUTFILE outfile = stdout;
 
-/* Perform some special handling when run as a Firebird service.  The
+/* Perform some special handling when run as an Interbase service.  The
    first switch can be "-svc" (lower case!) or it can be "-svc_re" followed
    by 3 file descriptors to use in re-directing stdin, stdout, and stderr. */
 
@@ -259,7 +259,8 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 					}
 				if (!sw_interactive)
 					sw_interactive =
-						(SW_I_ACQUIRE | SW_I_OPERATION | SW_I_TYPE | SW_I_WAIT);
+						(SW_I_ACQUIRE | SW_I_OPERATION | SW_I_TYPE |
+						 SW_I_WAIT);
 				sw_nobridge = true;
 				sw_seconds = sw_intervals = 1;
 				if (argc > 1) {
@@ -315,10 +316,12 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 	shmem_data.sh_mem_semaphores = 0;
 #endif
 
-#ifndef VMS
-	SLONG LOCK_size_mapped = 0;			/* Use length of existing segment */
+	SLONG LOCK_size_mapped = DEFAULT_SIZE;
+
+#ifdef UNIX
+	LOCK_size_mapped = 0;		/* Use length of existing segment */
 #else
-	SLONG LOCK_size_mapped = 1048576;	/* length == 0 not supported by VMS */
+	LOCK_size_mapped = DEFAULT_SIZE;	/* length == 0 not supported by all non-UNIX */
 #endif
 
 	ISC_STATUS_ARRAY status_vector;
@@ -372,15 +375,8 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 	if ((LOCK_header->lhb_version != SS_LHB_VERSION) &&
 		(LOCK_header->lhb_version != CLASSIC_LHB_VERSION))
 	{
-		if (LOCK_header->lhb_type == 0 && LOCK_header->lhb_version == 0) 
-		{
-			FPRINTF(outfile, "\tLock table is empty.\n");
-		}
-		else 
-		{
-			FPRINTF(outfile, "\tUnable to read lock table version %d.\n",
+		FPRINTF(outfile, "\tUnable to read lock table version %d.\n",
 				LOCK_header->lhb_version);
-		}
 		exit(FINI_OK);
 	}
 
@@ -426,7 +422,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 #ifdef MANAGER_PROCESS
 	int manager_pid = 0;
 	if (LOCK_header->lhb_manager) {
-		own* manager = (own*) SRQ_ABS_PTR(LOCK_header->lhb_manager);
+		OWN manager = (OWN) SRQ_ABS_PTR(LOCK_header->lhb_manager);
 		manager_pid = manager->own_process_id;
 	}
 
@@ -502,9 +498,9 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 	}
 
 	prt_que(outfile, LOCK_header, "\tOwners", &LOCK_header->lhb_owners,
-			OFFSET(own*, own_lhb_owners));
+			OFFSET(OWN, own_lhb_owners));
 	prt_que(outfile, LOCK_header, "\tFree owners",
-			&LOCK_header->lhb_free_owners, OFFSET(own*, own_lhb_owners));
+			&LOCK_header->lhb_free_owners, OFFSET(OWN, own_lhb_owners));
 	prt_que(outfile, LOCK_header, "\tFree locks",
 			&LOCK_header->lhb_free_locks, OFFSET(LBL, lbl_lhb_hash));
 	prt_que(outfile, LOCK_header, "\tFree requests",
@@ -531,7 +527,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 		SRQ_PTR least_owner_id = 0x7FFFFFFF;
 		const srq* least_owner_ptr = &LOCK_header->lhb_owners;
 		SRQ_LOOP(LOCK_header->lhb_owners, que_inst) {
-			own* this_owner = (own*) ((UCHAR*) que_inst - OFFSET(own*, own_lhb_owners));
+			OWN this_owner = (OWN) ((UCHAR*) que_inst - OFFSET(OWN, own_lhb_owners));
 			if (SRQ_REL_PTR(this_owner) < least_owner_id) {
 				least_owner_id = SRQ_REL_PTR(this_owner);
 				least_owner_ptr = que_inst;
@@ -541,14 +537,14 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 		do {
 			if (que_inst != &LOCK_header->lhb_owners)
 				prt_owner(outfile, LOCK_header,
-						  (own*) ((UCHAR*) que_inst - OFFSET(own*, own_lhb_owners)),
+						  (OWN) ((UCHAR*) que_inst - OFFSET(OWN, own_lhb_owners)),
 						  sw_requests, sw_waitlist);
 			que_inst = SRQ_NEXT((*que_inst));
 		} while (que_inst != least_owner_ptr);
 #else
 		SRQ_LOOP(LOCK_header->lhb_owners, que_inst) {
 			prt_owner(outfile, LOCK_header,
-					  (own*) ((UCHAR*) que_inst - OFFSET(own*, own_lhb_owners)),
+					  (OWN) ((UCHAR*) que_inst - OFFSET(OWN, own_lhb_owners)),
 					  sw_requests, sw_waitlist);
 		}
 #endif /* SOLARIS_MT */
@@ -1133,7 +1129,7 @@ static void prt_owner_wait_cycle(
 				if (COMPATIBLE(owner_request->lrq_requested, lock_request->lrq_state)) 
 					continue;
 			}
-			const own* lock_owner = (own*) SRQ_ABS_PTR(lock_request->lrq_owner);
+			const own* lock_owner = (OWN) SRQ_ABS_PTR(lock_request->lrq_owner);
 			prt_owner_wait_cycle(outfile, LOCK_header, lock_owner, indent + 4,
 								 waiters);
 		}

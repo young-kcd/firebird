@@ -69,7 +69,6 @@ class Lex
 {
 public:
 	void captureStuff();
-	char& charTable(int ch);
 	bool getSegment();
 	void pushStream (InputStream *stream);
 	void setContinuationChar (char c);
@@ -87,29 +86,27 @@ public:
 	Lex(const char *punctuation, int debugFlags);
 	virtual ~Lex();
 
-	int			flags;
-	int			tokenType;
-	int			priorLineNumber;
-	bool		eol;
 	InputStream	*inputStream;
-	InputStream	*priorInputStream;
-
-private:
 	InputStream	*tokenInputStream;
+	InputStream	*priorInputStream;
 	Stream		stuff;
+	bool		eol;
 	int			tokenOffset;
+	int			flags;
 	char		captureStart;
 	char		captureEnd;
 	char		token [maxToken];
+	int			tokenType;
 	int			lineNumber;
 	int			tokenLineNumber;
+	int			priorLineNumber;
 	const char	*ptr;
 	const char	*end;
 	const char	*lineComment;
 	const char	*commentStart;
 	const char	*commentEnd;
 	char		continuationChar;
-	char		charTableArray [256];	// Don't use directly. Use through charTable.
+	char		charTable [256];
 };
 
 END_NAMESPACE

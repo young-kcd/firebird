@@ -29,12 +29,12 @@
 
 #include "../jrd/jrd_blks.h"
 #include "../include/fb_blk.h"
-#include "../jrd/TempSpace.h"
 
 namespace Jrd {
 
 // Forward declaration
 struct sort_work_file;
+class SortMem;
 class Attachment;
 struct irsb_sort;
 struct merge_control;
@@ -43,7 +43,7 @@ struct merge_control;
    longwords(32 bits).   For 16 bit Windows, this must be a huge pointer. 
 
    Use this definition whenever doing pointer arithmetic, as
-   Firebird variables (eg. scb->scb_longs) are in 32 - bit longwords. */
+   interbase variables (eg. scb->scb_longs) are in 32 - bit longwords. */
 
 typedef ULONG SORTP;
 
@@ -109,9 +109,9 @@ typedef struct sr
 {
 	sort_record**	sr_bckptr;	/* Pointer back to sort list entry */
 	union {
-		sort_record		sr_sort_record;
+		sort_record	sr_sort_record;
 		UINT64 dummy_alignment_force;
-	};
+    };
 } SR;
 
 /* scb_longs includes the size of sr_bckptr.  */
@@ -201,18 +201,16 @@ struct run_control
 	ULONG		run_max_records;	/* total number of records in run */
 #endif
 	USHORT		run_depth;			/* Number of "elementary" runs */
-	UINT64		run_seek;			/* Offset in file of run */
-	UINT64		run_size;			/* Length of run in work file */
+	sort_work_file*	run_sfb;			/* Run sort file block */
+	ULONG		run_seek;			/* Offset in file of run */
+	ULONG		run_size;			/* Length of run in work file */
 #ifdef SCROLLABLE_CURSORS
-	UINT64		run_cached;			/* amount of cached data from run file */
+	ULONG		run_cached;			/* amount of cached data from run file */
 #endif
 	sort_record*	run_record;			/* Next record in run */
 	SORTP*		run_buffer;			/* Run buffer */
 	SORTP*		run_end_buffer;		/* End of buffer */
-	bool		run_buff_alloc;		/* Allocated buffer flag */
-	bool		run_buff_cache;		// run buffer is already in cache
-	UINT64		run_mem_seek;		// position of run's buffer in in-memory part of sort file
-	ULONG		run_mem_size;		// size of run's buffer in in-memory part of sort file
+	ULONG		run_buff_alloc;		/* ALlocated buffer flag */
 };
 
 /* Merge control block */
@@ -226,6 +224,28 @@ struct merge_control
 	run_merge_hdr*	mrg_stream_b;
 };
 
+/* Work file space control block */
+
+struct work_file_space
+{
+	work_file_space*	wfs_next;
+	ULONG			wfs_position;	/* Starting position of free space */
+	ULONG			wfs_size;		/* Length of free space */
+};
+
+/* Sort work file control block */
+
+struct sort_work_file
+{
+	sort_work_file*	sfb_next;
+	int sfb_file;				/* File descriptor */
+	TEXT* sfb_file_name;		/* ALLOC: File name for deletion */
+	ULONG sfb_file_size;		/* Real size of the work file */
+	work_file_space* sfb_file_space;	/* ALLOC: Available space in work file */
+	work_file_space* sfb_free_wfs;		/* ALLOC: Free space in work file */
+	dir_list* sfb_dls;			/* Place where file is created */
+	SortMem* sfb_mem;
+};
 
 /* Sort Context Block */
 // Context or Control???
@@ -235,7 +255,6 @@ typedef bool (*FPTR_REJECT_DUP_CALLBACK)(const UCHAR*, const UCHAR*, void*);
 
 struct sort_context
 {
-	MemoryPool* scb_pool;
 	sort_context*	scb_next;	/* Next known sort in system */
 	SORTP *scb_memory;			/* ALLOC: Memory for sort */
 	SORTP *scb_end_memory;		/* End of memory */
@@ -252,8 +271,8 @@ struct sort_context
 	ULONG scb_key_length;		/* Key length */
 	ULONG scb_unique_length;	/* Unique key length, used when duplicates eliminated */
 	ULONG scb_records;			/* Number of records */
-	//UINT64 scb_max_records;		// Maximum number of records to store. Unused.
-	TempSpace*		scb_space;		// temporary space for scratch file
+	//UINT64 scb_max_records;		// Maximum number of records to store . Unused.
+	sort_work_file*	scb_sfb;		/* ALLOC: List of scratch files, if open */
 	run_control*	scb_runs;		/* ALLOC: Run on scratch file, if any */
 	merge_control*	scb_merge;		/* Top level merge block */
 	run_control*	scb_free_runs;	/* ALLOC: Currently unused run blocks */

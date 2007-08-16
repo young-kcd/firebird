@@ -33,7 +33,6 @@
 //#include <stdlib.h>
 //#include "Engine.h"
 #include "firebird.h"
-#include "../common/classes/alloc.h"
 #include "Element.h"
 #include "Stream.h"
 #include "InputStream.h"
@@ -47,20 +46,14 @@ static const int quoted = 1;
 static const int illegal = 2;
 
 static int charTable [256];
-
-inline void setCharTable(UCHAR pos, int val)
-{
-	charTable[pos] = val;
-}
-
 static int init();
 static int foo = init();
 
 int init()
 {
-	setCharTable('<', quoted);
-	setCharTable('>', quoted);
-	setCharTable('&', quoted);
+	charTable['<'] = quoted;
+	charTable['>'] = quoted;
+	charTable['&'] = quoted;
 	
 	for (int n = 0; n < 10; ++n)
 		charTable[n] = illegal;
@@ -187,19 +180,6 @@ Element* Element::findAttribute(int seq)
 	return NULL;
 }
 
-const Element* Element::findAttribute(int seq) const
-{
-	int n = 0;
-
-	for (const Element *attribute = attributes; attribute; attribute = attribute->sibling)
-	{
-		if (n++ == seq)
-			return attribute;
-	}
-
-	return NULL;
-}
-
 void Element::genXML(int level, Stream *stream)
 {
 	indent (level, stream);
@@ -287,9 +267,9 @@ Element* Element::findChildIgnoreCase(const char *childName)
 	return NULL;
 }
 
-const char* Element::getAttributeName(int position) const
+const char* Element::getAttributeName(int position)
 {
-	const Element *element = findAttribute (position);
+	Element *element = findAttribute (position);
 
 	if (!element)
 		return NULL;
@@ -363,10 +343,10 @@ void Element::addAttribute(JString attributeName)
 	addAttribute (new Element (attributeName));
 }
 
-Element* Element::addAttribute(JString attributeName, int attributeValue)
+Element* Element::addAttribute(JString attributeName, int value)
 {
 	char buffer [32];
-	sprintf (buffer, "%d", attributeValue);
+	sprintf (buffer, "%d", value);
 	
 	return addAttribute (attributeName, buffer);
 }

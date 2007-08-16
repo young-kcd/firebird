@@ -102,19 +102,10 @@ int INF_blob_info(const blb* blob,
  *
  **************************************/
 	SCHAR buffer[128];
-	USHORT length;
+	SSHORT length;
 
 	const SCHAR* const end_items = items + item_length;
 	const SCHAR* const end = info + output_length;
-	SCHAR* start_info;
-	
-	if (*items == isc_info_length) {
-		start_info = info;
-		items++;
-	}
-	else {
-		start_info = 0;
-	}
 
 	while (items < end_items && *items != isc_info_end) {
 		SCHAR item = *items++;
@@ -150,14 +141,6 @@ int INF_blob_info(const blb* blob,
 	}
 
 	*info++ = isc_info_end;
-
-	if (start_info && (end - info >= 7))
-	{
-		SLONG number = info - start_info;
-		memmove(start_info + 7, start_info, number);
-		length = INF_convert(number, buffer);
-		INF_put_item(isc_info_length, length, buffer, start_info, end);
-	}
 
 	return TRUE;
 }
@@ -325,7 +308,7 @@ int INF_database_info(const SCHAR* items,
 #endif
 
 		case isc_info_attachment_id:
-			length = INF_convert(PAG_attachment_id(tdbb), buffer);
+			length = INF_convert(PAG_attachment_id(), buffer);
 			break;
 
 		case isc_info_ods_version:
@@ -338,7 +321,7 @@ int INF_database_info(const SCHAR* items,
 
 		case isc_info_allocation:
 			CCH_flush(tdbb, FLUSH_ALL, 0L);
-			length = INF_convert(PageSpace::maxAlloc(dbb), buffer);
+			length = INF_convert(PIO_max_alloc(dbb), buffer);
 			break;
 
 		case isc_info_sweep_interval:
@@ -461,10 +444,14 @@ int INF_database_info(const SCHAR* items,
 
 		case isc_info_creation_date:
 			{
-				const ISC_TIMESTAMP ts = dbb->dbb_creation_date.value();
-				length = INF_convert(ts.timestamp_date, p); 
+				WIN window(HEADER_PAGE);
+				Ods::header_page* header = (Ods::header_page*) 
+					CCH_FETCH(tdbb, &window, LCK_read, pag_header);
+
+				length = INF_convert(header->hdr_creation_date[0], p); 
 				p += length;
-				length += INF_convert(ts.timestamp_time, p);
+				length += INF_convert(header->hdr_creation_date[1], p);
+				CCH_RELEASE(tdbb, &window);
 			}
 			break;
 
@@ -542,18 +529,6 @@ int INF_database_info(const SCHAR* items,
 			break;
 
 		case isc_info_user_names:
-			if (!(tdbb->tdbb_attachment->locksmith())) {
-				const UserId* user = tdbb->tdbb_attachment->att_user;
-				Firebird::string uname((user && user->usr_user_name.hasData()) ? user->usr_user_name.c_str() : "<Unknown>");
-				uname.insert(0, char(uname.length()));
-				info = INF_put_item(item, uname.length(), uname.c_str(), info, end);
-				if (!info) {
-					if (transaction)
-						TRA_commit(tdbb, transaction, false);
-					return FALSE;
-				}
-				continue;
-			}
 			for (att = dbb->dbb_attachments; att; att = att->att_next) {
 				if (att->att_flags & ATT_shutdown)
 					continue;
@@ -729,7 +704,7 @@ int INF_database_info(const SCHAR* items,
 
 		case isc_info_db_size_in_pages:
 			CCH_flush(tdbb, FLUSH_ALL, 0L);
-			length = INF_convert(PageSpace::actAlloc(dbb), buffer);
+			length = INF_convert(PIO_act_alloc(dbb), buffer);
 			break;
 
 		case isc_info_oldest_transaction:
@@ -858,16 +833,6 @@ int INF_request_info(const jrd_req* request,
 
 	const SCHAR* const end_items = items + item_length;
 	const SCHAR* const end = info + output_length;
-	SCHAR* start_info;
-	
-	if (*items == isc_info_length) {
-		start_info = info;
-		items++;
-	}
-	else {
-		start_info = 0;
-	}
-
 	SCHAR buffer[256];
 	memset(buffer, 0, sizeof(buffer));
 	SCHAR* buffer_ptr = buffer;
@@ -992,14 +957,6 @@ int INF_request_info(const jrd_req* request,
 
 	*info++ = isc_info_end;
 
-	if (start_info && (end - info >= 7))
-	{
-		SLONG number = info - start_info;
-		memmove(start_info + 7, start_info, number);
-		length = INF_convert(number, buffer);
-		INF_put_item(isc_info_length, length, buffer, start_info, end);
-	}
-
 	return TRUE;
 }
 
@@ -1020,19 +977,10 @@ int INF_transaction_info(const jrd_tra* transaction,
  *
  **************************************/
 	SCHAR buffer[128];
-	USHORT length;
+	SSHORT length;
 
 	const SCHAR* const end_items = items + item_length;
 	const SCHAR* const end = info + output_length;
-	SCHAR* start_info;
-	
-	if (*items == isc_info_length) {
-		start_info = info;
-		items++;
-	}
-	else {
-		start_info = 0;
-	}
 
 	while (items < end_items && *items != isc_info_end) {
 		SCHAR item = *items++;
@@ -1105,14 +1053,6 @@ int INF_transaction_info(const jrd_tra* transaction,
 	}
 
 	*info++ = isc_info_end;
-
-	if (start_info && (end - info >= 7))
-	{
-		SLONG number = info - start_info;
-		memmove(start_info + 7, start_info, number);
-		length = INF_convert(number, buffer);
-		INF_put_item(isc_info_length, length, buffer, start_info, end);
-	}
 
 	return TRUE;
 }

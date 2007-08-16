@@ -32,7 +32,7 @@ bool CMP_clone_is_active(const Jrd::jrd_req*);
 Jrd::jrd_nod* CMP_clone_node(Jrd::thread_db*, Jrd::CompilerScratch*, Jrd::jrd_nod*);
 Jrd::jrd_req* CMP_clone_request(Jrd::thread_db*, Jrd::jrd_req*, USHORT, bool);
 Jrd::jrd_req* CMP_compile(USHORT, const UCHAR*, USHORT);
-Jrd::jrd_req* CMP_compile2(Jrd::thread_db*, const UCHAR*, USHORT, USHORT = 0, const UCHAR* = NULL);
+Jrd::jrd_req* CMP_compile2(Jrd::thread_db*, const UCHAR*, USHORT);
 Jrd::CompilerScratch::csb_repeat* CMP_csb_element(Jrd::CompilerScratch*, USHORT);
 void CMP_decrement_prc_use_count(Jrd::thread_db*, Jrd::jrd_prc*);
 Jrd::jrd_req* CMP_find_request(Jrd::thread_db*, USHORT, USHORT);
@@ -44,7 +44,7 @@ SLONG CMP_impure(Jrd::CompilerScratch*, USHORT);
 Jrd::jrd_req* CMP_make_request(Jrd::thread_db*, Jrd::CompilerScratch*);
 void CMP_post_access(Jrd::thread_db*, Jrd::CompilerScratch*, const Firebird::MetaName&, SLONG,
 					 Jrd::SecurityClass::flags_t, const TEXT*, const Firebird::MetaName&);
-void CMP_post_resource(Jrd::ResourceList*, void*, Jrd::Resource::rsc_s, USHORT);
+void CMP_post_resource(Jrd::ResourceList*, blk*, Jrd::Resource::rsc_s, USHORT);
 void CMP_release(Jrd::thread_db*, Jrd::jrd_req*);
 void CMP_shutdown_database(Jrd::thread_db*);
 void CMP_verify_access(Jrd::thread_db* tdbb, Jrd::jrd_req* request);

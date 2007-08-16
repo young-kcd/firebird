@@ -27,7 +27,7 @@
 				ExceptionHandling="FALSE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				RuntimeTypeInfo="FALSE"
+				RuntimeTypeInfo="TRUE"
 				PrecompiledHeaderFile="..\..\..\temp\debug\fbclient/fbclient.pch"
 				AssemblerListingLocation="..\..\..\temp\debug\fbclient/"
 				ObjectFile="..\..\..\temp\debug\fbclient/"
@@ -100,7 +100,7 @@
 				PreprocessorDefinitions="NDEBUG;_WINDOWS;_USRDLL;CLIENT;SUPERCLIENT;GOVERNOR;I386;_X86_=1;WIN32;_X86_"
 				ExceptionHandling="FALSE"
 				RuntimeLibrary="2"
-				RuntimeTypeInfo="FALSE"
+				RuntimeTypeInfo="TRUE"
 				PrecompiledHeaderFile="..\..\..\temp\release\fbclient\fbclient.pch"
 				AssemblerListingLocation="..\..\..\temp\release\fbclient/"
 				ObjectFile="..\..\..\temp\release\fbclient/"
@@ -175,6 +175,9 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\cvt.cpp">
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\dls.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\dsc.cpp">
@@ -298,6 +301,9 @@
 				RelativePath="..\..\..\src\jrd\cvt_proto.h">
 			</File>
 			<File
+				RelativePath="..\..\..\src\jrd\dls_proto.h">
+			</File>
+			<File
 				RelativePath="..\..\..\src\jrd\dsc.h">
 			</File>
 			<File
@@ -371,15 +377,9 @@
 				</FileConfiguration>
 			</File>
 		</Filter>
-		<Filter
-			Name="AuthSspi">
-			<File
-				RelativePath="..\..\..\src\auth\trusted\AuthSspi.cpp">
-			</File>
-			<File
-				RelativePath="..\..\..\src\auth\trusted\AuthSspi.h">
-			</File>
-		</Filter>
+		<File
+			RelativePath="..\defs\fbclient.def">
+		</File>
 		<File
 			RelativePath="..\defs\fbclient.def">
 		</File>

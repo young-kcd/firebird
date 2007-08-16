@@ -43,13 +43,34 @@ typedef Firebird::PathName string;
  */
 
 #if defined SUPERSERVER || defined EMBEDDED
+#ifdef HAVE__PROC_SELF_EXE
+static string getExePathViaProcEntry() 
+{
+    char buffer[MAXPATHLEN];
+    const int len = readlink("/proc/self/exe", buffer, sizeof(buffer));
+	if (len >= 0) {
+		buffer[len] = 0;
+		return buffer;
+	}
+	return "";
+}
+#endif
+#endif
+
+/******************************************************************************
+ *
+ *	
+ */
+
+#if defined SUPERSERVER || defined EMBEDDED
 static string getRootPathFromExePath()
 {
+#ifdef HAVE__PROC_SELF_EXE
 	// get the pathname of the running executable
-	string bin_dir = fb_utils::get_process_name();
+	string bin_dir = getExePathViaProcEntry();
 	if (bin_dir.length() == 0) 
 		return "";
-
+	
 	// get rid of the filename
 	int index = bin_dir.rfind(PathUtils::dir_sep);
 	bin_dir = bin_dir.substr(0, index);
@@ -66,6 +87,9 @@ static string getRootPathFromExePath()
 	index = bin_dir.rfind(PathUtils::dir_sep, bin_dir.length());
 	string root_dir = (index ? bin_dir.substr(0, index) : bin_dir) + PathUtils::dir_sep;
     return root_dir;
+#else
+	return "";
+#endif
 }
 #endif
 
@@ -80,6 +104,6 @@ void ConfigRoot::osConfigRoot()
 #endif
 
     // As a last resort get it from the default install directory
-    root_dir = string(FB_PREFIX) + PathUtils::dir_sep;
+    root_dir = string(FB_PREFIX) + PathUtils::dir_sep;    
 }
 

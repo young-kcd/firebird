@@ -34,12 +34,11 @@ int		ISC_kill(SLONG, SLONG, void *);
 #else
 // And that are functions to manage UNIX signals
 int		ISC_kill(SLONG, SLONG);
-bool	ISC_signal(int, FPTR_VOID_PTR, void *);
-void	ISC_signal_cancel(int, FPTR_VOID_PTR, void *);
+void ISC_signal(int, FPTR_VOID_PTR, void *);
+void ISC_signal_cancel(int, FPTR_VOID_PTR, void *);
 #endif
 
 void	ISC_signal_init(void);
-
 
 class SignalInhibit
 //
@@ -68,12 +67,11 @@ public:
 	void enable() throw() { }
 #endif
 private:
-	// Forbid copy constructor & assignment
+	// Forbid copy constructor
 	SignalInhibit(const SignalInhibit&);
-	SignalInhibit& operator=(const SignalInhibit&);
 #ifndef WIN_NT
-	bool locked;
+	bool enabled;
 #endif
 };
 
-#endif // JRD_ISC_I_PROTO_H
+#endif /* JRD_ISC_I_PROTO_H */

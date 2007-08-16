@@ -57,6 +57,12 @@
 #include "../jrd/isc_signal.h"
 #include "../jrd/que.h"
 
+#ifdef WIN_NT
+const int DEFAULT_SIZE		= 32768;
+#else
+const int DEFAULT_SIZE		= 98304;
+#endif
+
 #define EXTEND_SIZE     32768
 
 // not used
@@ -97,7 +103,8 @@ const UCHAR LCK_PW		= 5;		// Protected Write
 const UCHAR LCK_EX		= 6;		// Exclusive
 const UCHAR LCK_max		= 7;
 
-enum locklevel_t {LCK_read = LCK_PR, LCK_write = LCK_EX};
+const UCHAR LCK_read	= LCK_PR;
+const UCHAR LCK_write	= LCK_EX;
 
 const SSHORT LCK_WAIT		= 1;
 const SSHORT LCK_NO_WAIT	= 0;
@@ -142,20 +149,21 @@ const SLONG LHB_PATTERN			= 123454321;
 #define USE_WAKEUP_EVENTS
 #endif
 
-#ifndef SUPERSERVER
-#ifdef MULTI_THREAD
-// USE_BLOCKING_THREAD - use thread to handle blocking ASTs
-//   real UNIX guys use signals instead  - but their CS is not MT
-#define USE_BLOCKING_THREAD
-#else
-// USE_BLOCKING_SIGNALS - use UNIX signals to deliver blocking ASTs
-#define USE_BLOCKING_SIGNALS
 // STATIC_SEMAPHORES - preallocate semaphores for UNIX events
 // if undefined UNIX events allocate semaphores dynamically
-#ifdef UNIX
+#if defined UNIX && (!defined SUPERSERVER && !defined MULTI_THREAD)
 #define USE_STATIC_SEMAPHORES
 #endif
+
+// USE_BLOCKING_THREAD - use thread to handle blocking ASTs
+//   real UNIX guys use signals instead  - but their CS is not MT
+#if (defined WIN_NT || defined SOLARIS_MT) && !defined SUPERSERVER
+#define USE_BLOCKING_THREAD
 #endif
+
+// USE_BLOCKING_SIGNALS - use UNIX signals to deliver blocking ASTs
+#if !defined WIN_NT && !defined SOLARIS_MT && !defined SUPERSERVER
+#define USE_BLOCKING_SIGNALS
 #endif
 
 /* Lock header block -- one per lock file, lives up front */
@@ -265,7 +273,7 @@ typedef struct lrq {
 	void* lrq_ast_argument;		/* Ast argument */
 } *LRQ;
 
-// lrq_flags
+// lrw_flags
 const USHORT LRQ_blocking		= 1;		/* Request is blocking */
 const USHORT LRQ_pending		= 2;		/* Request is pending */
 const USHORT LRQ_converting		= 4;		/* Request is pending conversion */
@@ -278,7 +286,7 @@ const USHORT LRQ_blocking_seen	= 256;		/* Blocking notification received by owne
 
 /* Owner block */
 
-struct own
+typedef struct own
 {
 	UCHAR own_type;				/* memory tag - always type_own */
 	UCHAR own_owner_type;		/* type of owner */
@@ -309,7 +317,7 @@ struct own
 #endif
 	USHORT own_semaphore;		/* Owner semaphore -- see note below */
 	USHORT own_flags;			/* Misc stuff */
-};
+} *OWN;
 
 /* Flags in own_flags */
 const USHORT OWN_blocking	= 1;		// Owner is blocking

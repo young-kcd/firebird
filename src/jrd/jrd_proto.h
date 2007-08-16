@@ -48,13 +48,13 @@ ISC_STATUS jrd8_blob_info(ISC_STATUS*, Jrd::blb**, SSHORT,
 										const SCHAR*, SSHORT, SCHAR*);
 ISC_STATUS jrd8_cancel_blob(ISC_STATUS *, Jrd::blb **);
 ISC_STATUS jrd8_cancel_events(ISC_STATUS *, Jrd::Attachment**, SLONG *);
-
+#ifdef CANCEL_OPERATION
 #define CANCEL_disable	1
 #define CANCEL_enable	2
 #define CANCEL_raise	3
 ISC_STATUS jrd8_cancel_operation(ISC_STATUS *, Jrd::Attachment**,
 											   USHORT);
-
+#endif
 ISC_STATUS jrd8_close_blob(ISC_STATUS *, Jrd::blb **);
 ISC_STATUS jrd8_commit_transaction(ISC_STATUS *, Jrd::jrd_tra **);
 ISC_STATUS jrd8_commit_retaining(ISC_STATUS *, Jrd::jrd_tra **);
@@ -75,14 +75,7 @@ ISC_STATUS jrd8_ddl(ISC_STATUS*, Jrd::Attachment**, Jrd::jrd_tra**,
 ISC_STATUS jrd8_detach_database(ISC_STATUS *, Jrd::Attachment**);
 ISC_STATUS jrd8_drop_database(ISC_STATUS *, Jrd::Attachment**);
 ISC_STATUS jrd8_intl_function(ISC_STATUS *, Jrd::Attachment**,
-							  USHORT, UCHAR, USHORT, const UCHAR*, void*);
-ISC_STATUS jrd8_dsql_cache(ISC_STATUS *, Jrd::Attachment**,
-						   USHORT, int, const char*, bool*);
-ISC_STATUS jrd8_internal_compile_request(ISC_STATUS*, Jrd::Attachment**,
-										 Jrd::jrd_req**,
-										 SSHORT, const SCHAR*,
-										 USHORT, const char*,
-										 USHORT, const UCHAR*);
+							  USHORT, UCHAR, USHORT, const UCHAR*, USHORT*);
 ISC_STATUS jrd8_get_segment(ISC_STATUS *, Jrd::blb**, USHORT *,
 										  USHORT, UCHAR *);
 ISC_STATUS jrd8_get_slice(ISC_STATUS*, Jrd::Attachment**,
@@ -153,22 +146,21 @@ void jrd_vtof(const char*, char*, SSHORT);
 const USHORT JRD_info_drivemask	= 1;
 const USHORT JRD_info_dbnames	= 2;
 
-TEXT*	JRD_num_attachments(TEXT* const, USHORT, USHORT, ULONG*, ULONG*);
+TEXT*	JRD_num_attachments(TEXT* const, USHORT, USHORT, USHORT*, USHORT*);
 void	JRD_shutdown_all(bool);
-#else /* SERVER_SHUTDOWN */
-void	JRD_process_close();
-void	JRD_database_close(Jrd::Attachment**, Jrd::Attachment**);
 #endif /* SERVER_SHUTDOWN */
 
 void	JRD_set_cache_default(ULONG *);
 void	JRD_blocked(Jrd::Attachment*, Jrd::BlockingThread**);
-void	JRD_mutex_lock(Firebird::Mutex&);
-void	JRD_mutex_unlock(Firebird::Mutex&);
+void	JRD_mutex_lock(struct mutx_t *);
+void	JRD_mutex_unlock(struct mutx_t *);
 bool	JRD_reschedule(Jrd::thread_db*, SLONG, bool);
 void	JRD_restore_context(void);
 void	JRD_set_context(Jrd::thread_db*);
 void	JRD_inuse_clear(Jrd::thread_db* tdbb);
 void	JRD_unblock(Jrd::BlockingThread**);
+void	JRD_wlck_lock(struct mutx_t *);
+void	JRD_wlck_unlock(struct mutx_t *);
 void	JRD_thread_security_disable(bool disable);
 bool	JRD_get_thread_security_disabled();
 

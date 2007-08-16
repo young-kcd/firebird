@@ -76,13 +76,13 @@ static bool schedule(void);
 static bool schedule_active(bool);
 static void stall(THREAD);
 static void stall_ast(THREAD);
-static void sch_mutex_lock(Firebird::Mutex&);
-static void sch_mutex_unlock(Firebird::Mutex&);
+static void sch_mutex_lock(Firebird::Mutex*);
+static void sch_mutex_unlock(Firebird::Mutex*);
 
 static THREAD free_threads = NULL;
 static THREAD active_thread = NULL;
 static THREAD ast_thread = NULL;
-static Firebird::Mutex thread_mutex;
+static MUTX_T thread_mutex[1];
 volatile static bool init_flag = false;
 static USHORT enabled = FALSE;
 
@@ -224,8 +224,7 @@ void SCH_abort(void)
 
 	const FB_THREAD_ID id = ThreadData::getId();
 	THREAD thread;
-	for (THREAD* ptr = &active_thread; thread = *ptr; ptr = &thread->thread_next)
-	{
+	for (THREAD* ptr = &active_thread; thread = *ptr; ptr = &thread->thread_next) {
 		if (thread->thread_id == id)
 			break;
 		if (thread->thread_next == active_thread)
@@ -546,9 +545,9 @@ void SCH_init(void)
 			gds__register_cleanup(cleanup, 0);
 			init_flag = true;
 #ifdef MULTI_THREAD
+			THD_INIT;
 		}
-	}
-	catch (const Firebird::Exception&) {
+	} catch (const std::exception&) {
 		scheduler_init_lock.leave();
 		throw;
 	}
@@ -594,6 +593,7 @@ bool SCH_thread_enter_check(void)
 		return true;
 
 	return false;
+
 }
 
 
@@ -693,7 +693,7 @@ static bool ast_enable(void)
  *
  * Functional description
  *	Enables AST delivery and returns
- *	TRUE if an AST is deliverable.
+ *	TRUE is an AST is deliverable.
  *
  **************************************/
 	if (!ast_thread)
@@ -701,9 +701,7 @@ static bool ast_enable(void)
 
 	if (ast_thread->thread_flags & THREAD_ast_active &&
 		ast_thread->thread_id == ThreadData::getId())
-	{
 		return false;
-	}
 
 	if (!ast_thread->thread_count || !--ast_thread->thread_count) {
 		ast_thread->thread_flags &= ~THREAD_ast_disabled;
@@ -775,12 +773,12 @@ static void cleanup(void *arg)
 		return;
 
 /* this is added to make sure that we release the memory
- * we have allocated for the thread event handler through
+ * we have alloacted for the thread event handler through
  * ISC_event_handle () (CreateEvent) */
 
 #ifdef SUPERCLIENT
 /* use locks */
-	thread_mutex.enter();
+	thread_mutex->enter();
 
 	if (!init_flag)
 		return;
@@ -821,7 +819,7 @@ static void cleanup(void *arg)
 
 	}
 
-	thread_mutex.leave();
+	thread_mutex->leave();
 #endif /* SUPERCLIENT */
 
 	init_flag = false;
@@ -1027,7 +1025,7 @@ static void stall_ast(THREAD thread)
 }
 
 
-static void sch_mutex_lock(Firebird::Mutex& mtx)
+static void sch_mutex_lock(Firebird::Mutex* mtx)
 {
 /**************************************
  *
@@ -1041,7 +1039,7 @@ static void sch_mutex_lock(Firebird::Mutex& mtx)
  **************************************/
 	try
 	{
-		mtx.enter();
+		mtx->enter();
 	}
 	catch (const Firebird::system_call_failed& e)
 	{
@@ -1050,7 +1048,7 @@ static void sch_mutex_lock(Firebird::Mutex& mtx)
 }
 
 
-static void sch_mutex_unlock(Firebird::Mutex& mtx)
+static void sch_mutex_unlock(Firebird::Mutex* mtx)
 {
 /**************************************
  *
@@ -1064,7 +1062,7 @@ static void sch_mutex_unlock(Firebird::Mutex& mtx)
  **************************************/
 	try
 	{
-		mtx.leave();
+		mtx->leave();
 	}
 	catch (const Firebird::system_call_failed& e)
 	{

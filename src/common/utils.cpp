@@ -38,11 +38,6 @@
 
 #include "../jrd/gdsassert.h"
 #include "../common/utils_proto.h"
-#include "../jrd/constants.h"
-
-#ifdef HAVE_UNISTD_H
-#include <unistd.h>
-#endif
 
 namespace fb_utils
 {
@@ -108,29 +103,6 @@ char* exact_name_limit(char* const str, size_t bufsize)
 		--p;
 	*(p + 1) = '\0';
 	return str;
-}
-
-
-// *****************************
-// i m p l i c i t _ d o m a i n
-// *****************************
-// Determines if a domain is of the form RDB$<n[...n]>[<spaces>]
-bool implicit_domain(const char* domain_name)
-{
-	if (strncmp(domain_name, IMPLICIT_DOMAIN_PREFIX, IMPLICIT_DOMAIN_PREFIX_LEN) != 0)
-		return false;
-		
-	int i = IMPLICIT_DOMAIN_PREFIX_LEN;
-	while (domain_name[i] >= '0' && domain_name[i] <= '9')
-		++i;
-		
-	if (i == IMPLICIT_DOMAIN_PREFIX_LEN) // 'RDB$' alone isn't valid
-		return false;
-		
-	while (domain_name[i] == ' ')
-		++i;
-		
-	return !domain_name[i]; // we reached null term
 }
 
 
@@ -222,33 +194,6 @@ int snprintf(char* buffer, size_t count, const char* format...)
 #endif
 	return rc;
 }
-
-// *******************
-// c l e a n u p _ p a s s w d
-// *******************
-// Copy password to newly allocated place and replace existing one in argv with spaces.
-// Allocated space is released upon exit from utility.
-// This is planned leak of a few bytes of memory in utilities.
-char* cleanup_passwd(char* arg)
-{
-	if (! arg) 
-	{
-		return arg;
-	}
-
-	int lpass = strlen(arg);
-	char* savePass = (char*) gds__alloc(lpass + 1);
-	if (! savePass)
-	{
-		// No clear idea, how will it work if there is no memory 
-		// for password, but let others think. As a minimum avoid AV.
-		return arg;
-	}
-	memcpy(savePass, arg, lpass + 1);
-	memset(arg, ' ', lpass);
-	return savePass;
-}
-
 
 #ifdef WIN_NT
 
@@ -522,32 +467,4 @@ bool validateProductSuite (LPCSTR lpszSuiteToValidate)
 }
 
 #endif // WIN_NT
-
-// *******************************
-// g e t _ p r o c e s s _ n a m e
-// *******************************
-// Return the name of the current process
-
-Firebird::PathName get_process_name()
-{
-	char buffer[MAXPATHLEN];
-
-#if defined(WIN_NT)
-	const int len = GetModuleFileName(NULL, buffer, sizeof(buffer));
-#elif defined(HAVE__PROC_SELF_EXE)
-    const int len = readlink("/proc/self/exe", buffer, sizeof(buffer));
-#else
-	const int len = 0;
-#endif
-
-	if (len <= 0)
-		buffer[0] = 0;
-	else if (len < sizeof(buffer))
-		buffer[len] = 0;
-	else
-		buffer[len - 1] = 0;
-
-	return buffer;
-}
-
 } // namespace fb_utils

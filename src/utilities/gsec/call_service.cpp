@@ -150,7 +150,6 @@ static void stuffSpb2(char*& spb, char param, const TEXT* value)
 isc_svc_handle attachRemoteServiceManager(ISC_STATUS* status,
 							  const TEXT* username,
 							  const TEXT* password, 
-							  bool trusted,
 							  int protocol, 
 							  const TEXT* server)
 {
@@ -190,7 +189,7 @@ isc_svc_handle attachRemoteServiceManager(ISC_STATUS* status,
 		return 0;
 	}
 
-	return attachRemoteServiceManager(status, username, password, trusted, service);
+	return attachRemoteServiceManager(status, username, password, service);
 }
 
 
@@ -211,7 +210,6 @@ isc_svc_handle attachRemoteServiceManager(ISC_STATUS* status,
 isc_svc_handle attachRemoteServiceManager(ISC_STATUS* status,
 							  const TEXT* username,
 							  const TEXT* password, 
-							  bool trusted,
 							  const TEXT* server)
 {
 	char service[SERVICE_SIZE];
@@ -227,14 +225,10 @@ isc_svc_handle attachRemoteServiceManager(ISC_STATUS* status,
 	char* spb = spb_buffer;
 	stuffSpbByte(spb, isc_spb_version);
 	stuffSpbByte(spb, isc_spb_current_version);
-	if (username && password && username[0] && password[0])
+	if (username && password)
 	{
 		stuffSpb(spb, isc_spb_user_name, username);
 		stuffSpb(spb, isc_spb_password, password);
-	}
-	else if (trusted)
-	{
-		stuffSpb(spb, isc_spb_trusted_auth, "");
 	}
 
 	fb_assert((size_t)(spb - spb_buffer) <= sizeof(spb_buffer));
@@ -281,20 +275,11 @@ static void userInfoToSpb(char*& spb,
 	if (userInfo.first_name_entered) {
 		stuffSpb2(spb, isc_spb_sec_firstname, userInfo.first_name);
 	}
-	else if (userInfo.first_name_specified) {
-		stuffSpb2(spb, isc_spb_sec_firstname, "");
-	}
 	if (userInfo.middle_name_entered) {
 		stuffSpb2(spb, isc_spb_sec_middlename, userInfo.middle_name);
 	}
-	else if (userInfo.middle_name_specified) {
-		stuffSpb2(spb, isc_spb_sec_middlename, "");
-	}
 	if (userInfo.last_name_entered) {
 		stuffSpb2(spb, isc_spb_sec_lastname, userInfo.last_name);
-	}
-	else if (userInfo.last_name_specified) {
-		stuffSpb2(spb, isc_spb_sec_lastname, "");
 	}
 }
 
@@ -597,7 +582,7 @@ static int typeBuffer(ISC_STATUS* status, char* buf, int offset,
 				return -1;
 			}
 		}
-		catch (size_t newOffset)
+		catch(size_t newOffset)
 		{
 			memmove(buf, --p, newOffset);
 			return newOffset;

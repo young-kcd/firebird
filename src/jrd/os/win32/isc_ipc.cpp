@@ -68,7 +68,7 @@
 static USHORT initialized_signals = FALSE;
 static SLONG volatile overflow_count = 0;
 
-static Firebird::Mutex	sig_mutex;
+static MUTX_T sig_mutex;
 
 static int process_id = 0;
 
@@ -92,7 +92,7 @@ static ULONG opn_event_clock;
 
 static void (*system_overflow_handler)(int);
 static void cleanup(void *);
-static void overflow_handler(int, int);
+static void overflow_handler(int, int) throw();
 
 // Not thread-safe 
 
@@ -260,7 +260,7 @@ static void cleanup(void *arg)
 #endif
 
 #ifndef REQUESTER
-static void overflow_handler(int signal, int code)
+static void overflow_handler(int signal, int code) throw()
 {
 /**************************************
  *

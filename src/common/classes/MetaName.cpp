@@ -103,7 +103,7 @@ namespace Firebird {
 		va_list params;
 		va_start(params, format);
 		int l = VSNPRINTF(data, MAX_SQL_IDENTIFIER_LEN, format, params);
-		if (l < 0 || size_t(l) > MAX_SQL_IDENTIFIER_LEN)
+		if (l < 0 || l > MAX_SQL_IDENTIFIER_LEN)
 		{
 			l = MAX_SQL_IDENTIFIER_LEN;
 		}

@@ -35,27 +35,21 @@
 #include "../common/classes/rwlock.h"
 #include "../common/classes/alloc.h"
 
-#ifdef MULTI_THREAD
-//
-//inline void THD_mutex_lock(Firebird::Mutex* m) {
-//	m->enter();
-//}
-//
-// THD_mutex_unlock is kept here to preserve INUSE_cleanup()
-// logic
-//
+
+inline void THD_mutex_lock(Firebird::Mutex* m) {
+	m->enter();
+}
 inline void THD_mutex_unlock(Firebird::Mutex* m) {
 	m->leave();
 }
 
-extern	Firebird::Mutex global_mutex;
+extern	Firebird::Mutex ib_mutex;
 inline void	THD_mutex_lock_global(void) {
-	global_mutex.enter();
+	ib_mutex.enter();
 }
 inline void THD_mutex_unlock_global(void) {
-	global_mutex.leave();
+	ib_mutex.leave();
 }
-#endif // MULTI_THREAD
 
 // recursive mutex
 #ifdef SUPERSERVER
@@ -171,9 +165,14 @@ struct iuo {
 
 typedef iuo *IUO;
 
+/* Mutex structure */
+
+typedef Firebird::Mutex MUTX_T;
+typedef Firebird::Mutex* MUTX_PTR;
+
 /* Recursive mutex structure */
 struct rec_mutx_t {
-	Firebird::Mutex rec_mutx_mtx;
+	MUTX_T rec_mutx_mtx[1];
 	FB_THREAD_ID rec_mutx_id;
 	SLONG rec_mutx_count;
 };
@@ -181,13 +180,46 @@ struct rec_mutx_t {
 typedef rec_mutx_t REC_MUTX_T;
 //typedef rec_mutx_t *REC_MUTX_PTR;
 
-#ifdef MULTI_THREAD
+
+#ifdef V4_THREADING
+// compatibility definitions
+enum	WLCK_type {WLCK_read = 1, WLCK_write = 2};
+
+/* Read/write lock structure */
+
+struct wlck_t {
+	Firebird::RWLock rwLock;
+	WLCK_type type;
+};
+
+//typedef struct wlck_t WLCK_T;
+//typedef struct wlck_t* WLCK;
+
+// compatibility definitions
+int		THD_wlck_lock(wlck_t*, enum WLCK_type);
+int		THD_wlck_unlock(wlck_t*);
+
+#define V4_MUTEX_LOCK(mutx)		THD_mutex_lock (mutx)
+#define V4_MUTEX_UNLOCK(mutx)		THD_mutex_unlock (mutx)
+#define V4_GLOBAL_MUTEX_LOCK		THD_mutex_lock_global()
+#define V4_GLOBAL_MUTEX_UNLOCK		THD_mutex_unlock_global()
+#define V4_RW_LOCK_LOCK(wlck, type)	THD_wlck_lock (wlck, type)
+#define V4_RW_LOCK_UNLOCK(wlck)		THD_wlck_unlock (wlck)
+#endif // V4_THREADING
+
+#ifdef ANY_THREADING
+#define THD_INIT
 #define THD_GLOBAL_MUTEX_LOCK		THD_mutex_lock_global()
 #define THD_GLOBAL_MUTEX_UNLOCK		THD_mutex_unlock_global()
-#else // MULTI_THREAD
+#define THD_MUTEX_LOCK(mutx)		THD_mutex_lock (mutx)
+#define THD_MUTEX_UNLOCK(mutx)		THD_mutex_unlock (mutx)
+#else
+#define THD_INIT
 #define THD_GLOBAL_MUTEX_LOCK
 #define THD_GLOBAL_MUTEX_UNLOCK
-#endif // MULTI_THREAD
+#define THD_MUTEX_LOCK(mutx)
+#define THD_MUTEX_UNLOCK(mutx)
+#endif
 
 extern "C" {
 	int		API_ROUTINE gds__thread_start(ThreadEntryPoint*, void*, int, int,

@@ -253,33 +253,27 @@ ISC_STATUS API_ROUTINE isc_wait_for_event(ISC_STATUS*, FB_API_HANDLE*, USHORT,
 #endif	/* JRD_IBASE_H */
 #endif	/* WHY_NO_API */
 
+typedef void DatabaseCleanupRoutine(FB_API_HANDLE*, void*);
+
+#ifdef CANCEL_OPERATION
 #define CANCEL_disable	1
 #define CANCEL_enable	2
 #define CANCEL_raise	3
 ISC_STATUS API_ROUTINE gds__cancel_operation(ISC_STATUS*, FB_API_HANDLE*, USHORT);
-
-typedef void AttachmentCleanupRoutine(FB_API_HANDLE*, void*);
-typedef void TransactionCleanupRoutine(FB_API_HANDLE, void*);
+#endif
 
 ISC_STATUS API_ROUTINE isc_database_cleanup(ISC_STATUS*, FB_API_HANDLE*,
-												AttachmentCleanupRoutine*, void*);
+												DatabaseCleanupRoutine*, void*);
 int API_ROUTINE gds__disable_subsystem(TEXT*);
 int API_ROUTINE gds__enable_subsystem(TEXT*);
 
 ISC_STATUS gds__handle_cleanup(ISC_STATUS*, FB_API_HANDLE*);
 
 #define INTL_FUNCTION_CHAR_LENGTH		1
-#define INTL_FUNCTION_CONV_TO_METADATA	2
-ISC_STATUS API_ROUTINE gds__intl_function(ISC_STATUS*, FB_API_HANDLE*, USHORT, UCHAR, USHORT, const UCHAR*, void*);
+#define INTL_FUNCTION_OCTET_LENGTH		2
+ISC_STATUS API_ROUTINE gds__intl_function(ISC_STATUS*, FB_API_HANDLE*, USHORT, UCHAR, USHORT, const UCHAR*, USHORT*);
 
-#define DSQL_CACHE_USE		1
-#define DSQL_CACHE_RELEASE	2
-ISC_STATUS API_ROUTINE gds__dsql_cache(ISC_STATUS*, FB_API_HANDLE*, USHORT, int, const char*, bool*);
-
-ISC_STATUS API_ROUTINE gds__internal_compile_request(
-	ISC_STATUS*, FB_API_HANDLE*, FB_API_HANDLE*, USHORT,
-	const SCHAR*, USHORT, const char*, USHORT, const UCHAR*);
-
+typedef void TransactionCleanupRoutine(FB_API_HANDLE, void*);
 ISC_STATUS API_ROUTINE gds__transaction_cleanup(ISC_STATUS*, FB_API_HANDLE*,
 												   TransactionCleanupRoutine*, void*);
 void WHY_cleanup_transaction(struct why_hndl* transaction);
@@ -293,6 +287,10 @@ BOOLEAN WHY_get_shutdown();
 #ifdef __cplusplus
 } /* extern "C"*/
 #endif
+
+struct why_hndl* WHY_alloc_handle(int implementation, int handle_type);
+struct why_hndl* WHY_translate_handle(FB_API_HANDLE handle);
+void WHY_free_handle(FB_API_HANDLE handle);
 
 #endif // JRD_WHY_PROTO_H
 

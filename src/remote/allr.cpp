@@ -94,7 +94,7 @@ UCHAR* ALLR_alloc(ULONG size)
 	// NOMEM: post a user level error, if we have a status vector,
 	//        otherwise just an error return
 
-	Firebird::BadAlloc::raise();
+	throw std::bad_alloc();
 	return NULL;	/* compiler silencer */
 }
 
@@ -117,12 +117,11 @@ BLK ALLR_block(UCHAR type, ULONG count)
 
 		if (status_vector)
 		{
+			TEXT errmsg[128];
 			status_vector[0] = isc_arg_gds;
 			status_vector[1] = isc_bug_check;
 			status_vector[2] = isc_arg_string;
 			status_vector[4] = isc_arg_end;
-#ifndef EMBEDDED
-			TEXT errmsg[128];
 			const SSHORT lookup_result =
 				gds__msg_lookup(0,
 								JRD_BUGCHK,
@@ -137,29 +136,27 @@ BLK ALLR_block(UCHAR type, ULONG count)
 			}
 			else
 			{
+			    // This is suspicious. The address of a local, non-static var
+				// is being passed. If REMOTE_save_status_strings() is not called,
+				// then embedded srv clearly shouldn't try to read the status
+				// vector where the exception is trapped, because "errmsg" would
+				// vanish before that => illegal address in the stack.
 				status_vector[3] = (ISC_STATUS) errmsg;
+#ifndef EMBEDDED
 				REMOTE_save_status_strings(tdrdb->trdb_status_vector);
-			}
 #else
-			// The old code was suspicious. The address of a local, non-static var
-			// was being passed. If REMOTE_save_status_strings() is not called,
-			// then embedded engine clearly shouldn't try to read the status
-			// vector where the exception is trapped, because "errmsg" would
-			// vanish before that => illegal address in the stack. This was
-			// exactly the state of the code prior to this change: embedded
-			// isn't allowed to call REMOTE_save_status_strings().
-			// Therefore, the solution for embedded was to hardcode bugcheck 150.
-			status_vector[3] = (ISC_STATUS) "request to allocate invalid block type";
+#pragma FB_COMPILER_MESSAGE("Problem in embedded with 'errmsg' if this file is used")
 #endif
-			Firebird::status_exception::raise(status_vector);
+			}
+			Firebird::status_exception::raise();
 		}
-		Firebird::BadAlloc::raise();
+		throw std::bad_alloc();
 	}
 
 	ULONG size		= REM_block_sizes[type].typ_root_length;
 	ULONG tail		= REM_block_sizes[type].typ_tail_length;
 
-	if (tail && count > 1) {
+	if (tail && count >= 1) {
 		size += (count - 1) * tail;
 	}
 

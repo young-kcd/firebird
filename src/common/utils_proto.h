@@ -31,6 +31,7 @@
 #include <string.h>
 #include "../common/classes/fb_string.h"
 
+
 namespace fb_utils
 {
 	char* exact_name(char* const str);
@@ -39,25 +40,10 @@ namespace fb_utils
 		str.rtrim();
 	}
 	char* exact_name_limit(char* const str, size_t bufsize);
-	bool implicit_domain(const char* domain_name);
 	int name_length(const TEXT* const name);
 	bool readenv(const char* env_name, Firebird::string& env_value);
 	bool readenv(const char* env_name, Firebird::PathName& env_value);
 	int snprintf(char* buffer, size_t count, const char* format...);
-	char* cleanup_passwd(char* arg);
-#ifdef SERVICE_THREAD
-	inline const char* get_passwd(const char* arg)
-	{
-		return arg;
-	}
-	typedef const char* arg_string;
-#else
-	inline char* get_passwd(char* arg)
-	{
-		return cleanup_passwd(arg);
-	}
-	typedef char* arg_string;
-#endif
 
 // Warning: Only wrappers:
 
@@ -97,8 +83,6 @@ namespace fb_utils
 #ifdef WIN_NT
 	void prefix_kernel_object_name(char*, size_t);
 #endif 
-
-	Firebird::PathName get_process_name();
 } // namespace fb_utils
 
 #endif // INCLUDE_UTILS_PROTO_H

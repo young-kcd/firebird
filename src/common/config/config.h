@@ -24,6 +24,7 @@
 #define COMMON_CONFIG_H
 
 #include "../common/classes/fb_string.h"
+#include "fb_vector.h"
 #include "../jrd/os/path_utils.h"
 
 /**
@@ -62,19 +63,13 @@ extern const char*	GCPolicyBackground;
 extern const char*	GCPolicyCombined;
 extern const char*	GCPolicyDefault;
 
-extern const char*	AmNative;
-extern const char*	AmTrusted;
-extern const char*	AmMixed;
-
-enum AmCache {AM_UNKNOWN, AM_DISABLED, AM_ENABLED};
-
 class Config
 {
 	enum ConfigKey
 	{
 		KEY_ROOT_DIRECTORY,							// 0
-		KEY_TEMP_BLOCK_SIZE,						// 1
-		KEY_TEMP_CACHE_LIMIT,						// 2
+		KEY_SORT_MEM_BLOCK_SIZE,					// 1
+		KEY_SORT_MEM_UPPER_LIMIT,					// 2
 		KEY_REMOTE_FILE_OPEN_ABILITY,				// 3
 		KEY_GUARDIAN_OPTION,						// 4
 		KEY_CPU_AFFINITY_MASK,						// 5
@@ -104,36 +99,22 @@ class Config
 		KEY_MAX_UNFLUSHED_WRITES,					// 29
 		KEY_MAX_UNFLUSHED_WRITE_TIME,				// 30
 		KEY_PROCESS_PRIORITY_LEVEL,					// 31
-		KEY_CREATE_INTERNAL_WINDOW,					// 32
-		KEY_COMPLETE_BOOLEAN_EVALUATION,			// 33
-		KEY_REMOTE_AUX_PORT,						// 34
-		KEY_REMOTE_BIND_ADDRESS,					// 35
-		KEY_EXTERNAL_FILE_ACCESS,					// 36
-		KEY_DATABASE_ACCESS,						// 37
-		KEY_UDF_ACCESS,								// 38
-		KEY_TEMP_DIRECTORIES,						// 39
- 		KEY_BUGCHECK_ABORT,							// 40
-		KEY_TRACE_DSQL,								// 41
-		KEY_LEGACY_HASH,							// 42
-		KEY_GC_POLICY,								// 43
-		KEY_REDIRECTION,							// 44
-		KEY_OLD_COLUMN_NAMING,						// 45
-		KEY_AUTH_METHOD,							// 46
-		KEY_DATABASE_GROWTH_INCREMENT,				// 47
-		KEY_MAX_FILESYSTEM_CACHE					// 48
+		KEY_COMPLETE_BOOLEAN_EVALUATION,			// 32
+		KEY_REMOTE_AUX_PORT,						// 33
+		KEY_REMOTE_BIND_ADDRESS,					// 34
+		KEY_EXTERNAL_FILE_ACCESS,					// 35
+		KEY_DATABASE_ACCESS,						// 36
+		KEY_UDF_ACCESS,								// 37
+		KEY_TEMP_DIRECTORIES,						// 38
+ 		KEY_BUGCHECK_ABORT,							// 39
+		KEY_TRACE_DSQL,								// 40
+		KEY_LEGACY_HASH,							// 41
+		KEY_GC_POLICY,								// 42
+		KEY_REDIRECTION,							// 43
+		KEY_OLD_COLUMN_NAMING						// 44
 	};
 
 public:
-
-	/*
-	 Interface to support command line root specification.
-	*
-	 This ugly solution was required to make it possible to specify root
-	 in command line to load firebird.conf from that root, though in other 
-	 cases firebird.conf may be also used to specify root.
-	*/
-	static void setRootDirectoryFromCommandLine(const Firebird::PathName& newRoot);
-	static const Firebird::PathName* getCommandLineRootDirectory();
 
 	/*
 		Installation directory
@@ -146,14 +127,14 @@ public:
 	static const char* getRootDirectory();
 
 	/*
-		Allocation chunk for the temporary spaces
+		Block size for the sorting manager
 	*/
-	static int getTempBlockSize();
+	static int getSortMemBlockSize();
 
 	/*
-		Caching limit for the temporary data
+		Memory usage limit for the sorting manager
 	*/
-	static int getTempCacheLimit();
+	static int getSortMemUpperLimit();
 
 	/*
 		Whether remote (NFS) files can be opened
@@ -301,11 +282,6 @@ public:
 	static int getProcessPriorityLevel();
 
 	/*
-		Create window for IPC stuff
-	*/
-	static bool getCreateInternalWindow();
-
-	/*
 		Complete boolean evaluation
 	*/
 	static bool getCompleteBooleanEvaluation();
@@ -370,14 +346,6 @@ public:
 	*/
 	static bool getOldColumnNaming();
 
-	/*
-		Use native, trusted or mixed authentication 
-	*/
-	static const char *getAuthMethod();
-
-	static int getDatabaseGrowthIncrement();
-
-	static int getMaxFileSystemCache();
 };
 
 namespace Firebird {

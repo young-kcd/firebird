@@ -1142,36 +1142,6 @@ C --
       PARAMETER (GDS__tra_num_exc                      = 335544864)
       INTEGER*4 GDS__field_disappeared               
       PARAMETER (GDS__field_disappeared                = 335544865)
-      INTEGER*4 GDS__met_wrong_gtt_scope             
-      PARAMETER (GDS__met_wrong_gtt_scope              = 335544866)
-      INTEGER*4 GDS__subtype_for_internal_use        
-      PARAMETER (GDS__subtype_for_internal_use         = 335544867)
-      INTEGER*4 GDS__illegal_prc_type                
-      PARAMETER (GDS__illegal_prc_type                 = 335544868)
-      INTEGER*4 GDS__invalid_sort_datatype           
-      PARAMETER (GDS__invalid_sort_datatype            = 335544869)
-      INTEGER*4 GDS__collation_name                  
-      PARAMETER (GDS__collation_name                   = 335544870)
-      INTEGER*4 GDS__domain_name                     
-      PARAMETER (GDS__domain_name                      = 335544871)
-      INTEGER*4 GDS__domnotdef                       
-      PARAMETER (GDS__domnotdef                        = 335544872)
-      INTEGER*4 GDS__array_max_dimensions            
-      PARAMETER (GDS__array_max_dimensions             = 335544873)
-      INTEGER*4 GDS__max_db_per_trans_allowed        
-      PARAMETER (GDS__max_db_per_trans_allowed         = 335544874)
-      INTEGER*4 GDS__bad_debug_format                
-      PARAMETER (GDS__bad_debug_format                 = 335544875)
-      INTEGER*4 GDS__bad_proc_BLR                    
-      PARAMETER (GDS__bad_proc_BLR                     = 335544876)
-      INTEGER*4 GDS__key_too_big                     
-      PARAMETER (GDS__key_too_big                      = 335544877)
-      INTEGER*4 GDS__concurrent_transaction          
-      PARAMETER (GDS__concurrent_transaction           = 335544878)
-      INTEGER*4 GDS__not_valid_for_var               
-      PARAMETER (GDS__not_valid_for_var                = 335544879)
-      INTEGER*4 GDS__not_valid_for                   
-      PARAMETER (GDS__not_valid_for                    = 335544880)
       INTEGER*4 GDS__gfix_db_name                    
       PARAMETER (GDS__gfix_db_name                     = 335740929)
       INTEGER*4 GDS__gfix_invalid_sw                 
@@ -1274,20 +1244,6 @@ C --
       PARAMETER (GDS__dsql_cursor_not_open             = 336003095)
       INTEGER*4 GDS__dsql_type_not_supp_ext_tab      
       PARAMETER (GDS__dsql_type_not_supp_ext_tab       = 336003096)
-      INTEGER*4 GDS__dsql_feature_not_supported_ods  
-      PARAMETER (GDS__dsql_feature_not_supported_ods   = 336003097)
-      INTEGER*4 GDS__primary_key_required            
-      PARAMETER (GDS__primary_key_required             = 336003098)
-      INTEGER*4 GDS__upd_ins_doesnt_match_pk         
-      PARAMETER (GDS__upd_ins_doesnt_match_pk          = 336003099)
-      INTEGER*4 GDS__upd_ins_doesnt_match_matching   
-      PARAMETER (GDS__upd_ins_doesnt_match_matching    = 336003100)
-      INTEGER*4 GDS__upd_ins_with_complex_view       
-      PARAMETER (GDS__upd_ins_with_complex_view        = 336003101)
-      INTEGER*4 GDS__dsql_incompatible_trigger_type  
-      PARAMETER (GDS__dsql_incompatible_trigger_type   = 336003102)
-      INTEGER*4 GDS__dsql_db_trigger_type_cant_change
-      PARAMETER (GDS__dsql_db_trigger_type_cant_change = 336003103)
       INTEGER*4 GDS__dyn_role_does_not_exist         
       PARAMETER (GDS__dyn_role_does_not_exist          = 336068796)
       INTEGER*4 GDS__dyn_no_grant_admin_opt          
@@ -1322,18 +1278,6 @@ C --
       PARAMETER (GDS__dyn_dtype_conv_invalid           = 336068818)
       INTEGER*4 GDS__dyn_zero_len_id                 
       PARAMETER (GDS__dyn_zero_len_id                  = 336068820)
-      INTEGER*4 GDS__max_coll_per_charset            
-      PARAMETER (GDS__max_coll_per_charset             = 336068829)
-      INTEGER*4 GDS__invalid_coll_attr               
-      PARAMETER (GDS__invalid_coll_attr                = 336068830)
-      INTEGER*4 GDS__dyn_wrong_gtt_scope             
-      PARAMETER (GDS__dyn_wrong_gtt_scope              = 336068840)
-      INTEGER*4 GDS__dyn_scale_too_big               
-      PARAMETER (GDS__dyn_scale_too_big                = 336068852)
-      INTEGER*4 GDS__dyn_precision_too_small         
-      PARAMETER (GDS__dyn_precision_too_small          = 336068853)
-      INTEGER*4 GDS__dyn_miss_priv_warning           
-      PARAMETER (GDS__dyn_miss_priv_warning            = 336068855)
       INTEGER*4 GDS__gbak_unknown_switch             
       PARAMETER (GDS__gbak_unknown_switch              = 336330753)
       INTEGER*4 GDS__gbak_page_size_missing          
@@ -1516,56 +1460,6 @@ C --
       PARAMETER (GDS__dsql_no_dup_name                 = 336397210)
       INTEGER*4 GDS__dsql_too_many_values            
       PARAMETER (GDS__dsql_too_many_values             = 336397211)
-      INTEGER*4 GDS__dsql_no_array_computed          
-      PARAMETER (GDS__dsql_no_array_computed           = 336397212)
-      INTEGER*4 GDS__dsql_implicit_domain_name       
-      PARAMETER (GDS__dsql_implicit_domain_name        = 336397213)
-      INTEGER*4 GDS__dsql_only_can_subscript_array   
-      PARAMETER (GDS__dsql_only_can_subscript_array    = 336397214)
-      INTEGER*4 GDS__dsql_max_sort_items             
-      PARAMETER (GDS__dsql_max_sort_items              = 336397215)
-      INTEGER*4 GDS__dsql_max_group_items            
-      PARAMETER (GDS__dsql_max_group_items             = 336397216)
-      INTEGER*4 GDS__dsql_conflicting_sort_field     
-      PARAMETER (GDS__dsql_conflicting_sort_field      = 336397217)
-      INTEGER*4 GDS__dsql_derived_table_more_columns 
-      PARAMETER (GDS__dsql_derived_table_more_columns  = 336397218)
-      INTEGER*4 GDS__dsql_derived_table_less_columns 
-      PARAMETER (GDS__dsql_derived_table_less_columns  = 336397219)
-      INTEGER*4 GDS__dsql_derived_field_unnamed      
-      PARAMETER (GDS__dsql_derived_field_unnamed       = 336397220)
-      INTEGER*4 GDS__dsql_derived_field_dup_name     
-      PARAMETER (GDS__dsql_derived_field_dup_name      = 336397221)
-      INTEGER*4 GDS__dsql_derived_alias_select       
-      PARAMETER (GDS__dsql_derived_alias_select        = 336397222)
-      INTEGER*4 GDS__dsql_derived_alias_field        
-      PARAMETER (GDS__dsql_derived_alias_field         = 336397223)
-      INTEGER*4 GDS__dsql_auto_field_bad_pos         
-      PARAMETER (GDS__dsql_auto_field_bad_pos          = 336397224)
-      INTEGER*4 GDS__dsql_cte_wrong_reference        
-      PARAMETER (GDS__dsql_cte_wrong_reference         = 336397225)
-      INTEGER*4 GDS__dsql_cte_cycle                  
-      PARAMETER (GDS__dsql_cte_cycle                   = 336397226)
-      INTEGER*4 GDS__dsql_cte_outer_join             
-      PARAMETER (GDS__dsql_cte_outer_join              = 336397227)
-      INTEGER*4 GDS__dsql_cte_mult_references        
-      PARAMETER (GDS__dsql_cte_mult_references         = 336397228)
-      INTEGER*4 GDS__dsql_cte_not_a_union            
-      PARAMETER (GDS__dsql_cte_not_a_union             = 336397229)
-      INTEGER*4 GDS__dsql_cte_nonrecurs_after_recurs 
-      PARAMETER (GDS__dsql_cte_nonrecurs_after_recurs  = 336397230)
-      INTEGER*4 GDS__dsql_cte_wrong_clause           
-      PARAMETER (GDS__dsql_cte_wrong_clause            = 336397231)
-      INTEGER*4 GDS__dsql_cte_union_all              
-      PARAMETER (GDS__dsql_cte_union_all               = 336397232)
-      INTEGER*4 GDS__dsql_cte_miss_nonrecursive      
-      PARAMETER (GDS__dsql_cte_miss_nonrecursive       = 336397233)
-      INTEGER*4 GDS__dsql_cte_nested_with            
-      PARAMETER (GDS__dsql_cte_nested_with             = 336397234)
-      INTEGER*4 GDS__dsql_col_more_than_once_using   
-      PARAMETER (GDS__dsql_col_more_than_once_using    = 336397235)
-      INTEGER*4 GDS__dsql_unsupp_feature_dialect     
-      PARAMETER (GDS__dsql_unsupp_feature_dialect      = 336397236)
       INTEGER*4 GDS__gsec_cant_open_db               
       PARAMETER (GDS__gsec_cant_open_db                = 336723983)
       INTEGER*4 GDS__gsec_switches_error             
@@ -1684,15 +1578,3 @@ C --
       PARAMETER (GDS__gstat_read_err                   = 336920606)
       INTEGER*4 GDS__gstat_sysmemex                  
       PARAMETER (GDS__gstat_sysmemex                   = 336920607)
-      INTEGER*4 GDS__fbsvcmgr_bad_am                 
-      PARAMETER (GDS__fbsvcmgr_bad_am                  = 336986113)
-      INTEGER*4 GDS__fbsvcmgr_bad_wm                 
-      PARAMETER (GDS__fbsvcmgr_bad_wm                  = 336986114)
-      INTEGER*4 GDS__fbsvcmgr_bad_rs                 
-      PARAMETER (GDS__fbsvcmgr_bad_rs                  = 336986115)
-      INTEGER*4 GDS__fbsvcmgr_info_err               
-      PARAMETER (GDS__fbsvcmgr_info_err                = 336986116)
-      INTEGER*4 GDS__fbsvcmgr_query_err              
-      PARAMETER (GDS__fbsvcmgr_query_err               = 336986117)
-      INTEGER*4 GDS__fbsvcmgr_switch_unknown         
-      PARAMETER (GDS__fbsvcmgr_switch_unknown          = 336986118)

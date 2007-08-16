@@ -131,6 +131,13 @@ const size_t REDIRECT_THRESHOLD = 32768;
 // Declare thread-specific variable for context memory pool
 TLS_DECLARE(MemoryPool*, contextPool);
 
+// Helper function to reduce code size, since many compilers
+// generate quite a bit of code at the point of the throw.
+void pool_out_of_memory()
+{
+	throw std::bad_alloc();
+}
+
 // Support for memory mapping facilities
 #if defined(WIN_NT)
 size_t get_page_size()
@@ -172,6 +179,7 @@ inline size_t get_map_page_size()
 	}
 	return map_page_size;
 }
+
 #endif
 
 #ifdef USE_VALGRIND
@@ -228,7 +236,7 @@ inline void MemoryPool::decrement_mapping(size_t size)
 	mapped_memory -= size;
 }
 
-MemoryPool* MemoryPool::setContextPool(MemoryPool* newPool)
+MemoryPool* MemoryPool::setContextPool(MemoryPool *newPool)
 {
 	MemoryPool* old = TLS_GET(contextPool);
 	TLS_SET(contextPool, newPool);
@@ -250,7 +258,7 @@ namespace {
 	char msBuffer[sizeof(MemoryStats) + ALLOC_ALIGNMENT];
 	MemoryPool* createProcessMemoryPool()
 	{
-		MemoryPool::default_stats_group =
+		MemoryPool::default_stats_group = 
 			new((void*)(IPTR) MEM_ALIGN((size_t)(IPTR) msBuffer)) MemoryStats;
 		MemoryPool* p = MemoryPool::createPool();
 		fb_assert(p);
@@ -263,7 +271,7 @@ namespace {
 MemoryPool* MemoryPool::processMemoryPool = createProcessMemoryPool();
 
 
-void MemoryPool::setStatsGroup(MemoryStats& statsL)
+void MemoryPool::setStatsGroup(MemoryStats &statsL)
 {
 	// This locking pattern is necessary to ensure thread-safety of this routine.
 	// It is deadlock-free only as long other code takes locks in the same order.
@@ -314,7 +322,7 @@ void MemoryPool::updateSpare()
 			spareLeafs.add(temp);
 		}
 		while ( (int) spareNodes.getCount() <= freeBlocks.level + 1 &&
-				spareNodes.getCount() < spareNodes.getCapacity() )
+				spareNodes.getCount() < spareNodes.getCapacity() ) 
 		{
 			void* temp = internal_alloc(MEM_ALIGN(sizeof(FreeBlocksTree::NodeList)), TYPE_TREEPAGE);
 			if (!temp)
@@ -531,7 +539,7 @@ void* MemoryPool::tree_alloc(size_t size) {
 			spareLeafs.getCount()) 
 		{
 			if (!spareLeafs.getCount())
-				Firebird::BadAlloc::raise();
+				pool_out_of_memory();
 			void *temp = spareLeafs[spareLeafs.getCount() - 1];
 			spareLeafs.shrink(spareLeafs.getCount() - 1);
 			needSpare = true;
@@ -539,7 +547,7 @@ void* MemoryPool::tree_alloc(size_t size) {
 		}
 	if (size == sizeof(FreeBlocksTree::NodeList)) {
 		if (!spareNodes.getCount())
-			Firebird::BadAlloc::raise();
+			pool_out_of_memory();
 		void *temp = spareNodes[spareNodes.getCount() - 1];
 		spareNodes.shrink(spareNodes.getCount() - 1);
 		needSpare = true;
@@ -743,7 +751,7 @@ void* MemoryPool::allocate(size_t size, SSHORT type
 #endif
 	);
 	if (!result)
-		Firebird::BadAlloc::raise();
+		pool_out_of_memory();
 	return result;
 }
 
@@ -1070,10 +1078,10 @@ MemoryPool* MemoryPool::internal_create(size_t instance_size, MemoryPool* parent
 		void* mem = parent->internal_alloc(size, TYPE_POOL);
 		if (!mem) {
 			parent->lock.leave();
-			Firebird::BadAlloc::raise();
+			pool_out_of_memory();
 		}
 		pool = new(mem) MemoryPool(parent, stats, NULL, NULL);
-
+		
 		MemoryBlock* blk = ptrToBlock(mem);
 		blk->mbk_pool = pool;
 		blk->mbk_flags |= MBK_PARENT;
@@ -1105,7 +1113,7 @@ MemoryPool* MemoryPool::internal_create(size_t instance_size, MemoryPool* parent
 		fb_assert(ext_size == EXTENT_SIZE); // Make sure exent size is a multiply of page size
 	
 		if (!mem)
-			Firebird::BadAlloc::raise();
+			pool_out_of_memory();
 		((MemoryExtent *)mem)->mxt_next = NULL;
 		((MemoryExtent *)mem)->mxt_prev = NULL;
 		
@@ -1457,8 +1465,7 @@ inline void MemoryPool::addFreeBlock(MemoryBlock *blk)
 	BlockInfo info = {blk->mbk_small.mbk_length, fragmentToAdd};
 	try {
 		freeBlocks.add(info);
-	}
-	catch (const Firebird::Exception&) {
+	} catch(const std::exception&) {
 		// Add item to the list of pending free blocks in case of critically-low memory condition
 		PendingFreeBlock* temp = blockToPtr<PendingFreeBlock*>(blk);
 		temp->next = pendingFree;
@@ -1790,3 +1797,44 @@ void AutoStorage::ProbeStack() const {
 #endif
 
 } // namespace Firebird
+
+/******************************** Global functions *****************************/
+
+void* operator new(size_t s) THROW_BAD_ALLOC
+{
+#if defined(DEV_BUILD)
+// Do not complain here. It causes client tools to crash on Red Hat 8.0
+//	fprintf(stderr, "You MUST allocate all memory from a pool.  Don't use the default global new().\n");
+#endif	// DEV_BUILD
+//	return getDefaultMemoryPool()->calloc(s, 0
+	return getDefaultMemoryPool()->allocate(s, 0
+#ifdef DEBUG_GDS_ALLOC
+	  ,__FILE__, __LINE__
+#endif
+	);
+}
+
+void* operator new[](size_t s) THROW_BAD_ALLOC
+{
+#if defined(DEV_BUILD)
+// Do not complain here. It causes client tools to crash on Red Hat 8.0
+//	fprintf(stderr, "You MUST allocate all memory from a pool.  Don't use the default global new[]().\n");
+#endif	// DEV_BUILD
+//	return getDefaultMemoryPool()->->calloc(s, 0
+	return getDefaultMemoryPool()->allocate(s, 0
+#ifdef DEBUG_GDS_ALLOC
+	  ,__FILE__, __LINE__
+#endif
+	);
+}
+
+void operator delete(void* mem) throw()
+{
+	Firebird::MemoryPool::globalFree(mem);
+}
+
+void operator delete[](void* mem) throw()
+{
+	Firebird::MemoryPool::globalFree(mem);
+}
+

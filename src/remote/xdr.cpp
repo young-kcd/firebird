@@ -39,9 +39,9 @@
 // The simpliest way to check it is to issue
 // "select abs(2.0/3.0) from rdb$database" from correct client
 // It will return big strange value in case of invalid define
-#if defined(i386) || defined(I386) || defined(_M_IX86) || defined(AMD64) || defined(MIPSEL)
+#if defined(i386) || defined(I386) || defined(_M_IX86) || defined(AMD64)
 #define		SWAP_DOUBLE
-#elif defined(sparc) || defined(PowerPC)
+#elif defined(sparc) || defined(PowerPC) || defined(PPC) || defined(__ppc__)
 #undef		SWAP_DOUBLE
 #else
 #error "Define SWAP_DOUBLE for your platform correctly !"
@@ -83,9 +83,8 @@ inline void DEBUG_XDR_FREE(XDR* xdrs, const void* xdrvar, const void* addr, ULON
 #endif /* DEBUG_XDR_MEMORY */
 
 /* Sun's XDR documentation says this should be "MAXUNSIGNED", but
-   for Firebird purposes, limiting strings to 65K is more than
+   for InterBase purposes, limiting strings to 65K is more than
    sufficient. */
-// This setting may be related to our max DSQL statement size.
 
 const u_int MAXSTRING_FOR_WRAPSTRING	= 65535;
 

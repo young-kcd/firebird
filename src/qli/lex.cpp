@@ -37,21 +37,18 @@
 #include "../qli/hsh_proto.h"
 #include "../qli/lex_proto.h"
 #include "../qli/proc_proto.h"
+#include "../jrd/gds_proto.h"
 #include "../jrd/utl_proto.h"
 #include "../jrd/gdsassert.h"
 #include "../common/utils_proto.h"
-#include "../common/classes/TempFile.h"
-
-using MsgFormat::SafeArg;
-
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
 
-//#ifdef HAVE_CTYPES_H
-//#include <ctypes.h>
-//#endif
+#ifdef HAVE_CTYPES_H
+#include <ctypes.h>
+#endif
 
 #ifdef VMS
 #include <descrip.h>
@@ -62,7 +59,11 @@ const SLONG LIB$_INPSTRTRU	= 0x15821c;
 #include <io.h> // isatty
 #endif
 
+#ifdef SMALL_FILE_NAMES
+static const char* SCRATCH		= "fb_q";
+#else
 static const char* SCRATCH		= "fb_query_";
+#endif
 
 const char* FOPEN_INPUT_TYPE	= "r";
 
@@ -89,8 +90,8 @@ const char CHR_white	= char(16);
 const char CHR_eol		= char(32);
 
 const char CHR_IDENT	= CHR_ident;
-const char CHR_LETTER	= CHR_letter | CHR_ident;
-const char CHR_DIGIT	= CHR_digit | CHR_ident;
+const char CHR_LETTER	= CHR_letter + CHR_ident;
+const char CHR_DIGIT	= CHR_digit + CHR_ident;
 const char CHR_QUOTE	= CHR_quote;
 const char CHR_WHITE	= CHR_white;
 const char CHR_EOL		= CHR_eol;
@@ -98,9 +99,7 @@ const char CHR_EOL		= CHR_eol;
 static const char* const eol_string = "end of line";
 static const char* const eof_string = "*end_of_file*";
 
-// Do not reference the array directly; use the functions below.
-
-static const char classes_array[256] =
+static const char classes[256] =
 {
 	0, 0, 0, 0, 0, 0, 0, 0,
 	0, CHR_WHITE, CHR_EOL, 0, 0, 0, 0, 0,
@@ -127,16 +126,6 @@ static const char classes_array[256] =
 	CHR_LETTER, CHR_LETTER, CHR_LETTER, 0
 };
 
-inline char classes(int idx)
-{
-	return classes_array[(UCHAR) idx];
-}
-
-inline char classes(UCHAR idx)
-{
-	return classes_array[idx];
-}
-
 
 
 bool LEX_active_procedure(void)
@@ -158,7 +147,7 @@ bool LEX_active_procedure(void)
 }
 
 
-void LEX_edit(SLONG start, SLONG stop)
+void LEX_edit( SLONG start, SLONG stop)
 {
 /**************************************
  *
@@ -171,17 +160,17 @@ void LEX_edit(SLONG start, SLONG stop)
  *	push the scratch file on the input stack.
  *
  **************************************/
-	const Firebird::PathName filename = TempFile::create(SCRATCH);
-	FILE* scratch = fopen(filename.c_str(), "w+b");
-	if (!scratch)
-		IBERROR(61);			// Msg 61 couldn't open scratch file
+	TEXT filename[MAXPATHLEN];
 
+	FILE* scratch = (FILE*) gds__temp_file(TRUE, SCRATCH, filename);
+	if (scratch == (FILE *) - 1)
+		IBERROR(61);			// Msg 61 couldn't open scratch file
 #ifdef WIN_NT
 	stop--;
 #endif
 
 	if (fseek(trace_file, start, 0)) {
-		fseek(trace_file, 0, 2);
+		fseek(trace_file, (SLONG) 0, 2);
 		IBERROR(59);			// Msg 59 fseek failed
 	}
 
@@ -194,12 +183,12 @@ void LEX_edit(SLONG start, SLONG stop)
 
 	fclose(scratch);
 
-	if (gds__edit(filename.c_str(), TRUE))
-		LEX_push_file(filename.c_str(), true);
+	if (gds__edit(filename, TRUE))
+		LEX_push_file(filename, true);
 
-	unlink(filename.c_str());
+	unlink(filename);
 
-	fseek(trace_file, 0, 2);
+	fseek(trace_file, (SLONG) 0, 2);
 }
 
 
@@ -230,9 +219,9 @@ qli_tok* LEX_edit_string(void)
 		return NULL;
 	}
 
-	while (!(classes(c) & (CHR_white | CHR_eol))) {
+	while (!(classes[c] & (CHR_white | CHR_eol))) {
 		*p++ = c;
-		if (classes(c) & CHR_quote)
+		if (classes[c] & CHR_quote)
 			for (;;) {
 				const SSHORT d = nextchar(false);
 				if (d == '\n') {
@@ -298,7 +287,7 @@ qli_tok* LEX_filename(void)
 // notice if this looks like a quoted file name
 
 	SSHORT save = 0;
-	if (classes(c) & CHR_quote) {
+	if (classes[c] & CHR_quote) {
 		token->tok_type = tok_quoted;
 		save = c;
 	}
@@ -307,12 +296,12 @@ qli_tok* LEX_filename(void)
 
 	for (;;) {
 		c = nextchar(true);
-		char char_class = classes(c);
+		char char_class = classes[c];
 		if (c == '"' && c != save) {
 			*p++ = c;
 			for (;;) {
 				c = nextchar(true);
-				char_class = classes(c);
+				char_class = classes[c];
 				if ((char_class & CHR_eol) || c == '"')
 					break;
 				*p++ = c;
@@ -363,7 +352,7 @@ void LEX_fini(void)
  *
  **************************************/
 
-	if (trace_file) {
+	if (trace_file && (trace_file != (FILE *) - 1)) {
 		fclose(trace_file);
 		unlink(trace_file_name);
 	}
@@ -556,10 +545,8 @@ void LEX_init(void)
  *	scratch trace file to keep all input.
  *
  **************************************/
-	const Firebird::PathName filename = TempFile::create(SCRATCH);
-	strcpy(trace_file_name, filename.c_str());
-	trace_file = fopen(trace_file_name, "w+b");
-	if (!trace_file)
+	trace_file = (FILE*) gds__temp_file(TRUE, SCRATCH, trace_file_name);
+	if (trace_file == (FILE *) - 1)
 		IBERROR(61);			// Msg 61 couldn't open scratch file
 
 	QLI_token = (qli_tok*) ALLOCPV(type_tok, MAXSYMLEN);
@@ -679,7 +666,7 @@ bool LEX_push_file(const TEXT* filename,
 		sprintf(buffer, "%s.com", filename);
 		if (!(file = fopen(buffer, FOPEN_INPUT_TYPE))) {
 			if (error_flag)
-				ERRQ_msg_put(67, filename);
+				ERRQ_msg_put(67, filename, NULL, NULL, NULL, NULL);
 				// Msg 67 can't open command file \"%s\"\n
 			return false;
 		}
@@ -739,7 +726,7 @@ void LEX_put_procedure(FB_API_HANDLE blob, SLONG start, SLONG stop)
 	ISC_STATUS_ARRAY status_vector;
 
 	if (fseek(trace_file, start, 0)) {
-		fseek(trace_file, 0, 2);
+		fseek(trace_file, (SLONG) 0, 2);
 		IBERROR(62);			// Msg 62 fseek failed
 	}
 
@@ -769,7 +756,7 @@ void LEX_put_procedure(FB_API_HANDLE blob, SLONG start, SLONG stop)
 				ERRQ_bugcheck(58);	// Msg 58 isc_put_segment failed
 	}
 
-	fseek(trace_file, 0, 2);
+	fseek(trace_file, (SLONG) 0, 2);
 }
 
 
@@ -855,10 +842,10 @@ qli_tok* LEX_token(void)
 
 // On end of file, generate furious but phone end of line tokens
 
-	char char_class = classes(c);
+	char char_class = classes[c];
 
 	if (char_class & CHR_letter) {
-		for (c = nextchar(true); classes(c) & CHR_ident; c = nextchar(true))
+		for (c = nextchar(true); classes[c] & CHR_ident; c = nextchar(true))
 			*p++ = c;
 		retchar();
 		token->tok_type = tok_ident;
@@ -876,7 +863,7 @@ qli_tok* LEX_token(void)
 			}
 			*p++ = next;
 			if ((p - token->tok_string) >= MAXSYMLEN)
-				ERRQ_msg_put(470, SafeArg() << MAXSYMLEN);	// Msg 470 literal too long
+				ERRQ_msg_put(470, (TEXT *) (IPTR) MAXSYMLEN, NULL, NULL, NULL, NULL);	// Msg 470 literal too long
 
 			// If there are 2 quotes in a row, interpret 2nd as a literal
 
@@ -1078,7 +1065,7 @@ static void next_line(const bool eof_ok)
 			}
 			if (flag) {
 				TEXT* q;
-				for (q = p; classes(*q) & CHR_white; q++);
+				for (q = p; classes[static_cast<UCHAR>(*q)] & CHR_white; q++);
 				if (*q == '@') {
 					TEXT filename[MAXPATHLEN];
 					for (p = q + 1, q = filename; *p && *p != '\n';)
@@ -1109,17 +1096,14 @@ static void next_line(const bool eof_ok)
 		// this is an unexpected end of file
 
 		if (QLI_line->line_type == line_blob)
-		{
-			ERRQ_print_error(64, QLI_line->line_source_name);
-			// Msg 64 unexpected end of procedure in procedure %s
-		}
+			ERRQ_print_error(64, QLI_line->line_source_name, NULL, NULL, NULL,
+							 NULL);
+		// Msg 64 unexpected end of procedure in procedure %s
 		else if (QLI_line->line_type == line_file)
-		{
-			ERRQ_print_error(65, QLI_line->line_source_name);
-			// Msg 65 unexpected end of file in file %s
-		}
-		else
-		{
+			ERRQ_print_error(65, QLI_line->line_source_name, NULL, NULL, NULL,
+							 NULL);
+		// Msg 65 unexpected end of file in file %s
+		else {
 			if (QLI_line->line_type == line_string)
 				LEX_pop_line();
 			IBERROR(66);		// Msg 66 unexpected eof
@@ -1194,7 +1178,7 @@ static bool scan_number(SSHORT c,
 	if (c == '.') {
 		c = nextchar(true);
 		retchar();
-		if (!(classes(c) & CHR_digit))
+		if (!(classes[c] & CHR_digit))
 			return false;
 		dot = true;
 	}
@@ -1203,7 +1187,7 @@ static bool scan_number(SSHORT c,
 
 	for (;;) {
 		c = nextchar(true);
-		if (classes(c) & CHR_digit)
+		if (classes[c] & CHR_digit)
 			*p++ = c;
 		else if (!dot && c == '.') {
 			*p++ = c;
@@ -1222,7 +1206,7 @@ static bool scan_number(SSHORT c,
 			*p++ = c;
 			c = nextchar(true);
 		}
-		while (classes(c) & CHR_digit) {
+		while (classes[c] & CHR_digit) {
 			*p++ = c;
 			c = nextchar(true);
 		}
@@ -1251,7 +1235,7 @@ static int skip_white(void)
 
 	while (true) {
 		c = nextchar(true);
-		const char char_class = classes(c);
+		const char char_class = classes[c];
 		if (char_class & CHR_white)
 			continue;
 		if (c == '/') {

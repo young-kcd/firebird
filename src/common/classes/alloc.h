@@ -35,8 +35,10 @@
 #ifndef CLASSES_ALLOC_H
 #define CLASSES_ALLOC_H
 
-#include "../../include/firebird.h"
+#include <cstddef>
+
 #include "../../include/fb_types.h"
+#include "../../include/firebird.h"
 #include <stdio.h>
 #include "../jrd/common.h"
 #include "../common/classes/fb_atomic.h"
@@ -50,7 +52,7 @@
 #ifdef _MSC_VER
 #define THROW_BAD_ALLOC
 #else
-#define THROW_BAD_ALLOC throw (Firebird::BadAlloc)
+#define THROW_BAD_ALLOC throw (std::bad_alloc)
 #endif
 
 #ifdef USE_VALGRIND
@@ -224,7 +226,7 @@ private:
 	// are synchronized with parent pool mutex only. All other pool members are 
 	// synchronized with this mutex.
 	Mutex lock;
-
+	
 	// Current usage counters for pool. Used to move pool to different statistics group
 	AtomicCounter used_memory;
 
@@ -294,7 +296,7 @@ protected:
 	
 	// Used to create MemoryPool descendants
 	static MemoryPool* internal_create(size_t instance_size, 
-		MemoryPool* parent = NULL, MemoryStats& stats = *default_stats_group);
+		MemoryPool* parent = NULL, MemoryStats &stats = *default_stats_group);
 	
 public:
 	// Default statistics group for process
@@ -304,25 +306,25 @@ public:
 	static MemoryPool* processMemoryPool;
 	
 	// Create memory pool instance
-	static MemoryPool* createPool(MemoryPool* parent = NULL, MemoryStats& stats = *default_stats_group) {
+	static MemoryPool* createPool(MemoryPool* parent = NULL, MemoryStats &stats = *default_stats_group) {
 		return internal_create(sizeof(MemoryPool), parent, stats);
 	}
 	
 	// Set context pool for current thread of execution
-	static MemoryPool* setContextPool(MemoryPool* newPool);
+	static MemoryPool* setContextPool(MemoryPool *newPool);
 	
 	// Get context pool for current thread of execution
 	static MemoryPool* getContextPool();
 	
 	// Set statistics group for pool. Usage counters will be decremented from 
 	// previously set group and added to new
-	void setStatsGroup(MemoryStats& stats);
+	void setStatsGroup(MemoryStats &stats);
 
 	// Deallocate pool and all its contents
 	static void deletePool(MemoryPool* pool);
 
 	// Allocate memory block. Result is not zero-initialized.
-	// It case of problems this method throws Firebird::BadAlloc
+	// It case of problems this method throws std::bad_alloc
 	void* allocate(size_t size, SSHORT type = 0
 #ifdef DEBUG_GDS_ALLOC
 		, const char* file = NULL, int line = 0
@@ -429,41 +431,14 @@ using Firebird::MemoryPool;
 
 inline static MemoryPool* getDefaultMemoryPool() { return Firebird::MemoryPool::processMemoryPool; }
 
-// Global versions of operators new and delete
-inline void* operator new(size_t s) THROW_BAD_ALLOC
-{
-	return getDefaultMemoryPool()->allocate(s, 0
-#ifdef DEBUG_GDS_ALLOC
-	  ,__FILE__, __LINE__
-#endif
-	);
-}
-inline void* operator new[](size_t s) THROW_BAD_ALLOC
-{
-	return getDefaultMemoryPool()->allocate(s, 0
-#ifdef DEBUG_GDS_ALLOC
-	  ,__FILE__, __LINE__
-#endif
-	);
-}
+// Global versions of operator new()
+// Implemented in alloc.cpp
+void* operator new(size_t) THROW_BAD_ALLOC;
+void* operator new[](size_t) THROW_BAD_ALLOC;
 
-inline void* operator new(size_t, void* ptr) throw() 
-{
-	return ptr;
-}
-inline void* operator new[](size_t, void* ptr) throw() 
-{
-	return ptr;
-}
-
-inline void operator delete(void* mem) throw()
-{
-	Firebird::MemoryPool::globalFree(mem);
-}
-inline void operator delete[](void* mem) throw()
-{
-	Firebird::MemoryPool::globalFree(mem);
-}
+// We cannot use inline versions because we have to replace STL delete defined in <new> header
+void operator delete(void* mem) throw();
+void operator delete[](void* mem) throw();
 
 #ifdef DEBUG_GDS_ALLOC
 inline void* operator new(size_t s, Firebird::MemoryPool& pool, const char* file, int line) {
@@ -486,8 +461,98 @@ inline void* operator new[](size_t s, Firebird::MemoryPool& pool) {
 #endif
 
 
+/**
+	This is the allocator template provided to be used with the STL.
+	Since the STL is the client of this class look to its documentation
+	to determine what the individual functions and typedefs do.
+
+	In order to use the allocator class you need to instanciate the
+	C++ container template with the allocator.  For example if you
+	want to use a std::vector<int> the declaration would be:
+
+	std::vector<int, MemoryPool::allocator<int> >
+
+	The allocator, by default, allocates all memory from the process
+	wide pool FB_MemoryPool.  Typically this is NOT the behavior you
+	want.  Selection of the correct pool to allocate your memory from is
+	important.  If you select a pool too far down in (a statement pool,
+	for example) your memory may be freed before you are done with it.
+	On the other hand if you always use the global pool you will
+	either leak memory or have to make sure you always delete the objects
+	you create.
+
+	If you decide to allocate the memory from a pool other than the global
+	pool you need to pass an allocator object to the constructor for
+	the STL object.  For example:
+
+	std::vector<int, MemoryPool::allocator<int> > vec(MemoryPool::allocator<int>(poolRef, type));
+	The type is an optional parameter that defaults to 0.
+**/
 namespace Firebird
 {
+
+#ifndef TESTING_ONLY
+
+	template <class T>
+	class allocator
+	{
+		public:
+		typedef size_t		size_type;
+		typedef ptrdiff_t	difference_type;
+		typedef T*			pointer;
+		typedef const T*	const_pointer;
+		typedef T&			reference;
+		typedef const T&	const_reference;
+		typedef T			value_type;
+	
+		allocator(MemoryPool& p, SSHORT t = 0) : pool(&p), type(t) {}
+		allocator(MemoryPool* p = getDefaultMemoryPool(), SSHORT t = 0) : pool(p), type(t) {}
+	
+		template <class DST>
+		allocator(const allocator<DST> &alloc)
+			: pool(alloc.getPool()), type(alloc.getType()) { }
+
+#ifdef DEBUG_GDS_ALLOC
+		pointer allocate(size_type s, const void* = 0)
+			{ return (pointer) pool->allocate(sizeof(T) * s, 0, __FILE__, __LINE__); }
+		char* _Charalloc(size_type n)
+			{ return (char*) pool->allocate(n, 0, __FILE__, __LINE__); }
+#else
+		pointer allocate(size_type s, const void* = 0)
+			{ return (pointer) pool->allocate(sizeof(T) * s, 0); }
+		char* _Charalloc(size_type n)
+			{ return (char*) pool->allocate(n, 0); }
+#endif
+			
+		void deallocate(pointer p, size_type s)	{ pool->deallocate(p); }
+		void deallocate(void* p, size_type s) { pool->deallocate(p); }
+		void construct(pointer p, const T& v) { new(p) T(v); }
+		void destroy(pointer p) { p->~T(); }
+	
+		size_type max_size() const { return (size_type) - 1 / sizeof(T); }
+	
+		pointer address(reference X) const { return &X; }
+		const_pointer address(const_reference X) const { return &X; }
+	
+		template <class _Tp1> struct rebind {
+			typedef Firebird::allocator<_Tp1> other;
+		};
+
+		bool operator==(const allocator<T>& rhs) const
+		{
+			return pool == rhs.pool && type == rhs.type;
+		}
+
+		MemoryPool* getPool() const { return pool; }
+		SSHORT getType() const { return type; }
+
+	private:
+		MemoryPool* pool;
+		SSHORT type;
+	};
+
+#endif /*TESTING_ONLY*/
+
 	// Permanent storage is used as base class for all objects,
 	// performing memory allocation in methods other than 
 	// constructors of this objects. Permanent means that pool,
@@ -526,3 +591,4 @@ namespace Firebird
 
 
 #endif // CLASSES_ALLOC_H
+

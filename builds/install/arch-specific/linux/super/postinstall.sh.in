@@ -29,6 +29,7 @@ fixFilePermissions
 installInitdScript
 createLinksForBackCompatibility
 buildUninstallFile
+updateHostsDotFile
 
 # start the db server so we can change the password
 startService

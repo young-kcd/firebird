@@ -29,10 +29,10 @@
 				FavorSizeOrSpeed="1"
 				OmitFramePointers="TRUE"
 				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
-				PreprocessorDefinitions="NDEBUG,WIN32,_WINDOWS,SUPERCLIENT"
+				PreprocessorDefinitions="NDEBUG,WIN32,_WINDOWS,SUPERSERVER"
 				ExceptionHandling="FALSE"
 				RuntimeLibrary="2"
-				RuntimeTypeInfo="FALSE"
+				RuntimeTypeInfo="TRUE"
 				PrecompiledHeaderFile="..\..\..\temp\release\fbguard/fbguard.pch"
 				AssemblerListingLocation="..\..\..\temp\release\fbguard/"
 				ObjectFile="..\..\..\temp\release\fbguard/"
@@ -94,11 +94,11 @@
 				AdditionalOptions="/EHsc-"
 				Optimization="0"
 				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
-				PreprocessorDefinitions="_DEBUG,WIN32,_WINDOWS,SUPERCLIENT,DEV_BUILD"
+				PreprocessorDefinitions="_DEBUG,WIN32,_WINDOWS,SUPERSERVER,DEV_BUILD"
 				ExceptionHandling="FALSE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				RuntimeTypeInfo="FALSE"
+				RuntimeTypeInfo="TRUE"
 				PrecompiledHeaderFile="..\..\..\temp\debug\fbguard/fbguard.pch"
 				AssemblerListingLocation="..\..\..\temp\debug\fbguard/"
 				ObjectFile="..\..\..\temp\debug\fbguard/"
@@ -199,18 +199,6 @@
 						Name="VCResourceCompilerTool"
 						AdditionalIncludeDirectories="..\..\..\src\iscguard;$(NoInherit)"/>
 				</FileConfiguration>
-			</File>
-		</Filter>
-		<Filter
-			Name="COMMON files">
-			<File
-				RelativePath="..\..\..\src\common\classes\alloc.cpp">
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\config\config_file.cpp">
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\os\win32\config_root.cpp">
 			</File>
 		</Filter>
 	</Files>

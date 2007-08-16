@@ -22,7 +22,7 @@
  *
  *  All Rights Reserved.
  *  Contributor(s): ______________________________________.
- *  Adriano dos Santos Fernandes
+ * 
  *
  */
 
@@ -58,7 +58,6 @@ private:
 
 	// Forbid copy constructor
 	RWLock(const RWLock& source);
-
 public:
 	RWLock() : lock(0), blockedReaders(0), blockedWriters(0)
 	{ 
@@ -353,17 +352,7 @@ namespace Firebird {
 class ReadLockGuard {
 public:
 	ReadLockGuard(RWLock &alock) : lock(&alock) { lock->beginRead(); }
-	~ReadLockGuard() { release(); }
-
-	void release()
-	{
-		if (lock)
-		{
-			lock->endRead();
-			lock = NULL;
-		}
-	}
-
+	~ReadLockGuard() { lock->endRead(); }
 private:
 	// Forbid copy constructor
 	ReadLockGuard(const ReadLockGuard& source);
@@ -374,17 +363,7 @@ private:
 class WriteLockGuard {
 public:
 	WriteLockGuard(RWLock &alock) : lock(&alock) { lock->beginWrite(); }
-	~WriteLockGuard() { release(); }
-
-	void release()
-	{
-		if (lock)
-		{
-			lock->endWrite();
-			lock = NULL;
-		}
-	}
-
+	~WriteLockGuard() { lock->endWrite(); }
 private:
 	// Forbid copy constructor
 	WriteLockGuard(const WriteLockGuard& source);

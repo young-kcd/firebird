@@ -48,6 +48,7 @@
 #include "../jrd/req.h"
 #include "../jrd/tra.h"
 #include "../jrd/gdsassert.h"
+#include "../jrd/all_proto.h"
 #include "../jrd/blb_proto.h"
 #include "../jrd/cmp_proto.h"
 #include "../jrd/enc_proto.h"
@@ -62,8 +63,6 @@
 #include "../jrd/constants.h"
 #include "../include/fb_exception.h"
 #include "../common/utils_proto.h"
-#include "../common/classes/array.h"
-#include "../common/config/config.h"
 
 
 #ifdef VMS
@@ -87,7 +86,7 @@ static SecurityClass::flags_t compute_access(thread_db*, const SecurityClass*,
 static SecurityClass::flags_t walk_acl(thread_db*, const UCHAR*, const jrd_rel*,
 	const Firebird::MetaName&, const Firebird::MetaName&, const ULONG);
 
-static inline void check_and_move(UCHAR*& to, UCHAR from, Firebird::UCharBuffer& start, ULONG* length_ptr)
+static inline void check_and_move(UCHAR*& to, UCHAR from, UCharBuffer& start, ULONG* length_ptr)
 {
 	if ((start.begin() + *length_ptr) < (to + 1))
 	{
@@ -332,7 +331,7 @@ void SCL_check_index(thread_db* tdbb, const Firebird::MetaName& index_name, UCHA
 
 	CMP_release(tdbb, request);
 	}
-	catch (const Firebird::Exception&) {
+	catch (const std::exception&) {
 		if (request) {
 			CMP_release(tdbb, request);
 		}
@@ -707,7 +706,7 @@ void SCL_init(bool create,
 
 
 void SCL_move_priv(UCHAR** acl_ptr, SecurityClass::flags_t mask,
-	Firebird::UCharBuffer& start_ptr, ULONG* length_ptr)
+	UCharBuffer& start_ptr, ULONG* length_ptr)
 {
 /**************************************
  *
@@ -908,7 +907,7 @@ static bool check_user_group(const UCHAR* acl,
 		}
 		else				// processing group name
 		{
-			Firebird::UCharBuffer buffer;
+			UCharBuffer buffer;
 			UCHAR* user_group_name = buffer.getBuffer(length);
 			do {
 				const TEXT one_char = *acl++;
@@ -967,7 +966,7 @@ static SecurityClass::flags_t compute_access(thread_db* tdbb,
  *	access permissions.  Return a flag word of recognized privileges.
  *
  **************************************/
-	Firebird::UCharBuffer str_buffer;
+	UCharBuffer str_buffer;
 	UCHAR* buffer = str_buffer.getBuffer(BLOB_BUFFER_SIZE);
 
 	SLONG length = BLOB_BUFFER_SIZE;
@@ -1070,7 +1069,7 @@ static SecurityClass::flags_t walk_acl(thread_db* tdbb,
 		BUGCHECK(160);	// msg 160 wrong ACL version
 	}
 
-	if (user.locksmith())
+	if (user.usr_flags & USR_locksmith)
 	{
 		return -1 & ~SCL_corrupt;
 	}

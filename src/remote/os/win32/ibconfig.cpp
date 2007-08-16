@@ -38,7 +38,6 @@
 
 #include "../remote/os/win32/ibconfig.h"
 #include "../remote/os/win32/property.rh"
-#include "../remote/os/win32/window.h"
 
 #include "../jrd/ibase.h"
 
@@ -63,7 +62,7 @@ static BOOL bServerApp = FALSE;	// Flag indicating if Server application
 static char szService[SERVICE_LEN];	// To store the service path
 
 // Window procedure
-LRESULT APIENTRY FirebirdPage(HWND, UINT, WPARAM, LPARAM);
+LRESULT APIENTRY InterbasePage(HWND, UINT, WPARAM, LPARAM);
 LRESULT APIENTRY OSPage(HWND, UINT, WPARAM, LPARAM);
 
 // Static functions for reading and writing settings
@@ -136,18 +135,18 @@ void AddConfigPages(HWND hPropSheet, HINSTANCE hInst)
 	IBPage.hInstance = hInst;
 	IBPage.pszTemplate = MAKEINTRESOURCE(CONFIG_DLG);
 	IBPage.pszTitle = "FB Settings";
-	IBPage.pfnDlgProc = (DLGPROC) FirebirdPage;
+	IBPage.pfnDlgProc = (DLGPROC) InterbasePage;
 	IBPage.pfnCallback = NULL;
 
 	PropSheet_AddPage(hPropSheet, CreatePropertySheetPage(&IBPage));
 }
 
-LRESULT CALLBACK FirebirdPage(HWND hDlg, UINT unMsg, WPARAM wParam,
+LRESULT CALLBACK InterbasePage(HWND hDlg, UINT unMsg, WPARAM wParam,
 							   LPARAM lParam)
 {
 /******************************************************************************
  *
- *  F i r e b i r d P a g e
+ *  I n t e r B a s e P a g e
  *
  ******************************************************************************
  *
@@ -256,7 +255,7 @@ LRESULT CALLBACK FirebirdPage(HWND hDlg, UINT unMsg, WPARAM wParam,
 		switch (((LPNMHDR) lParam)->code) {
 		case PSN_KILLACTIVE:	// When the page is about to lose focus
 			{
-				SetWindowLongPtr(hDlg, DWLP_MSGRESULT, FALSE);
+				SetWindowLong(hDlg, DWL_MSGRESULT, FALSE);
 				break;
 			}
 		case PSN_SETACTIVE:	// When the page is about to recieve 
@@ -280,7 +279,7 @@ LRESULT CALLBACK FirebirdPage(HWND hDlg, UINT unMsg, WPARAM wParam,
 				}
 				else			// Error writing the values
 				{
-					SetWindowLongPtr(hDlg, DWLP_MSGRESULT, TRUE);
+					SetWindowLong(hDlg, DWL_MSGRESULT, TRUE);
 					return TRUE;
 				}
 			break;
@@ -569,7 +568,7 @@ BOOL ValidateUser(HWND hParentWnd)
 	else {
 		szSysDbaPasswd[0] = '\0';
 		return (DialogBox
-				((HINSTANCE) GetWindowLongPtr(hParentWnd, GWLP_HINSTANCE),
+				((HINSTANCE) GetWindowLong(hParentWnd, GWL_HINSTANCE),
 				 MAKEINTRESOURCE(PASSWORD_DLG), hParentWnd,
 				 (DLGPROC) PasswordDlgProc) > 0);
 	}

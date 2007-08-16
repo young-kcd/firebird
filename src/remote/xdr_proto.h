@@ -27,7 +27,7 @@
 #include "../remote/xdr.h"
 
 // 15 Jan 2003. Nickolay Samofatov
-// Functions below need to have C++ linkage to avoid name clash with
+// Lower functions need to have C++ linkage to avoid name clash with
 // standard XDR. Firebird XDR is NOT compatible with Sun XDR at interface level
 
 bool_t	xdr_bool (XDR *, int *);

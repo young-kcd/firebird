@@ -37,7 +37,6 @@
 #include "../qli/picst_proto.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/utl_proto.h"
-#include "../common/classes/UserBlob.h"
 
 
 static SLONG execute_any(qli_nod*);
@@ -509,8 +508,8 @@ dsc* EVAL_value(qli_nod* node)
 
 	case nod_prompt:
 		if (!prompt[0][0]) {
-			ERRQ_msg_get(499, prompt[0], sizeof(prompt[0]));	// Msg499 Re-enter
-			ERRQ_msg_get(500, prompt[1], sizeof(prompt[1]));	// Msg500 Enter
+			ERRQ_msg_get(499, prompt[0]);	// Msg499 Re-enter
+			ERRQ_msg_get(500, prompt[1]);	// Msg500 Enter
 		}
 		return execute_prompt(node);
 
@@ -678,7 +677,7 @@ static DSC *execute_edit( qli_nod* node)
 	const TEXT* field_name = (TEXT *) node->nod_arg[e_edt_name];
 	BLOB_edit(id, dbb->dbb_handle, dbb->dbb_transaction, field_name);
 
-	node->nod_desc.dsc_missing = UserBlob::blobIsNull(*id) ? DSC_missing : 0;
+	node->nod_desc.dsc_missing = isNullBlob(id) ? DSC_missing : 0;
 
 	return &node->nod_desc;
 }
@@ -785,7 +784,7 @@ static DSC *execute_prompt( qli_nod* node)
 			return desc;
 		}
 
-		ERRQ_msg_put(32);	// Msg32 Input value is too long
+		ERRQ_msg_put(32, NULL, NULL, NULL, NULL, NULL);	// Msg32 Input value is too long
 		reprompt = TRUE;
 	}
 }
@@ -1345,10 +1344,9 @@ static bool string_function(
 	if (node->nod_type == nod_starts) {
 		if (l1 < l2)
 			return false;
-			
-		if (l2)
-			return memcmp(p1, p2, l2) == 0;
-
+		while (--l2 >= 0)
+			if (*p1++ != *p2++)
+				return false;
 		return true;
 	}
 

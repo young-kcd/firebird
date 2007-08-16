@@ -27,7 +27,7 @@ static const struct {
 	{335544324, -904}, /*   4 bad_db_handle                    */
 	{335544325, -924}, /*   5 bad_dpb_content                  */
 	{335544326, -901}, /*   6 bad_dpb_form                     */
-	{335544327, -901}, /*   7 bad_req_handle                   */
+	{335544327, -501}, /*   7 bad_req_handle                   */
 	{335544328, -901}, /*   8 bad_segstr_handle                */
 	{335544329, -901}, /*   9 bad_segstr_id                    */
 	{335544330, -901}, /*  10 bad_tpb_content                  */
@@ -284,7 +284,7 @@ static const struct {
 	{335544581, -204}, /* 261 dsql_procedure_err               */
 	{335544582, -518}, /* 262 dsql_request_err                 */
 	{335544583, -804}, /* 263 dsql_sqlda_err                   */
-	{335544584, -804}, /* 264 dsql_var_count_err               */
+	{335544584, 16384}, /* 264 dsql_var_count_err               */
 	{335544585, -826}, /* 265 dsql_stmt_handle                 */
 	{335544586, -804}, /* 266 dsql_function_err                */
 	{335544587, -206}, /* 267 dsql_blob_err                    */
@@ -566,21 +566,6 @@ static const struct {
 	{335544863, -904}, /* 543 partner_idx_not_found            */
 	{335544864, -904}, /* 544 tra_num_exc                      */
 	{335544865, -904}, /* 545 field_disappeared                */
-	{335544866, -901}, /* 546 met_wrong_gtt_scope              */
-	{335544867, -204}, /* 547 subtype_for_internal_use         */
-	{335544868, -901}, /* 548 illegal_prc_type                 */
-	{335544869, -901}, /* 549 invalid_sort_datatype            */
-	{335544870, -901}, /* 550 collation_name                   */
-	{335544871, -901}, /* 551 domain_name                      */
-	{335544872, -219}, /* 552 domnotdef                        */
-	{335544873, -171}, /* 553 array_max_dimensions             */
-	{335544874, -901}, /* 554 max_db_per_trans_allowed         */
-	{335544875,    0}, /* 555 bad_debug_format                 */
-	{335544876, -901}, /* 556 bad_proc_BLR                     */
-	{335544877, -901}, /* 557 key_too_big                      */
-	{335544878, -904}, /* 558 concurrent_transaction           */
-	{335544879, -625}, /* 559 not_valid_for_var                */
-	{335544880, -625}, /* 560 not_valid_for                    */
 	{335740929, -901}, /*   1 gfix_db_name                     */
 	{335740930, -901}, /*   2 gfix_invalid_sw                  */
 	{335740932, -901}, /*   4 gfix_incmp_sw                    */
@@ -632,13 +617,6 @@ static const struct {
 	{336003094, -502}, /*  22 dsql_cursor_rel_not_found        */
 	{336003095, -502}, /*  23 dsql_cursor_not_open             */
 	{336003096, -607}, /*  24 dsql_type_not_supp_ext_tab       */
-	{336003097, -804}, /*  25 dsql_feature_not_supported_ods   */
-	{336003098, -660}, /*  26 primary_key_required             */
-	{336003099, -313}, /*  27 upd_ins_doesnt_match_pk          */
-	{336003100, -313}, /*  28 upd_ins_doesnt_match_matching    */
-	{336003101, -817}, /*  29 upd_ins_with_complex_view        */
-	{336003102, -817}, /*  30 dsql_incompatible_trigger_type   */
-	{336003103, -817}, /*  31 dsql_db_trigger_type_cant_change */
 	{336068796, -901}, /* 188 dyn_role_does_not_exist          */
 	{336068797, -901}, /* 189 dyn_no_grant_admin_opt           */
 	{336068798, -901}, /* 190 dyn_user_not_role_member         */
@@ -656,12 +634,6 @@ static const struct {
 	{336068817, -829}, /* 209 dyn_invalid_dtype_conversion     */
 	{336068818, -829}, /* 210 dyn_dtype_conv_invalid           */
 	{336068820, -901}, /* 212 dyn_zero_len_id                  */
-	{336068829, -829}, /* 221 max_coll_per_charset             */
-	{336068830, -829}, /* 222 invalid_coll_attr                */
-	{336068840, -901}, /* 232 dyn_wrong_gtt_scope              */
-	{336068852, -829}, /* 244 dyn_scale_too_big                */
-	{336068853, -829}, /* 245 dyn_precision_too_small          */
-	{336068855,  106}, /* 247 dyn_miss_priv_warning            */
 	{336330753, -901}, /*   1 gbak_unknown_switch              */
 	{336330754, -901}, /*   2 gbak_page_size_missing           */
 	{336330755, -901}, /*   3 gbak_page_size_toobig            */
@@ -753,31 +725,6 @@ static const struct {
 	{336397209, -206}, /* 921 dsql_unknown_pos                 */
 	{336397210, -206}, /* 922 dsql_no_dup_name                 */
 	{336397211, -901}, /* 923 dsql_too_many_values             */
-	{336397212, -607}, /* 924 dsql_no_array_computed           */
-	{336397213, -637}, /* 925 dsql_implicit_domain_name        */
-	{336397214, -607}, /* 926 dsql_only_can_subscript_array    */
-	{336397215, -104}, /* 927 dsql_max_sort_items              */
-	{336397216, -104}, /* 928 dsql_max_group_items             */
-	{336397217, -104}, /* 929 dsql_conflicting_sort_field      */
-	{336397218, -104}, /* 930 dsql_derived_table_more_columns  */
-	{336397219, -104}, /* 931 dsql_derived_table_less_columns  */
-	{336397220, -104}, /* 932 dsql_derived_field_unnamed       */
-	{336397221, -104}, /* 933 dsql_derived_field_dup_name      */
-	{336397222, -104}, /* 934 dsql_derived_alias_select        */
-	{336397223, -104}, /* 935 dsql_derived_alias_field         */
-	{336397224, -104}, /* 936 dsql_auto_field_bad_pos          */
-	{336397225, -104}, /* 937 dsql_cte_wrong_reference         */
-	{336397226, -104}, /* 938 dsql_cte_cycle                   */
-	{336397227, -104}, /* 939 dsql_cte_outer_join              */
-	{336397228, -104}, /* 940 dsql_cte_mult_references         */
-	{336397229, -104}, /* 941 dsql_cte_not_a_union             */
-	{336397230, -104}, /* 942 dsql_cte_nonrecurs_after_recurs  */
-	{336397231, -104}, /* 943 dsql_cte_wrong_clause            */
-	{336397232, -104}, /* 944 dsql_cte_union_all               */
-	{336397233, -104}, /* 945 dsql_cte_miss_nonrecursive       */
-	{336397234, -104}, /* 946 dsql_cte_nested_with             */
-	{336397235, -104}, /* 947 dsql_col_more_than_once_using    */
-	{336397236, -901}, /* 948 dsql_unsupp_feature_dialect      */
 	{336723983, -901}, /*  15 gsec_cant_open_db                */
 	{336723984, -901}, /*  16 gsec_switches_error              */
 	{336723985, -901}, /*  17 gsec_no_op_spec                  */
@@ -837,11 +784,5 @@ static const struct {
 	{336920605, -901}, /*  29 gstat_open_err                   */
 	{336920606, -901}, /*  30 gstat_read_err                   */
 	{336920607, -901}, /*  31 gstat_sysmemex                   */
-	{336986113, -901}, /*   1 fbsvcmgr_bad_am                  */
-	{336986114, -901}, /*   2 fbsvcmgr_bad_wm                  */
-	{336986115, -901}, /*   3 fbsvcmgr_bad_rs                  */
-	{336986116, -901}, /*   4 fbsvcmgr_info_err                */
-	{336986117, -901}, /*   5 fbsvcmgr_query_err               */
-	{336986118, -901}, /*   6 fbsvcmgr_switch_unknown          */
 	{0, 0}
 };

@@ -65,7 +65,6 @@
 #include "../common/classes/ClumpletWriter.h"
 #include "../jrd/ibase.h"
 #include "../common/utils_proto.h"
-#include "../jrd/scl.h"
 
 #ifdef SERVER_SHUTDOWN
 #include "../jrd/jrd_proto.h"
@@ -95,6 +94,7 @@
 #include <fcntl.h>
 #endif
 
+const char* SYSDBA_USER_NAME	= "SYSDBA";
 const int SVC_user_dba			= 2;
 const int SVC_user_any			= 1;
 const int SVC_user_none			= 0;
@@ -126,20 +126,15 @@ const int GET_LINE		= 1;
 const int GET_EOF		= 2;
 const int GET_BINARY	= 4;
 
-const TEXT SVC_TRMNTR	= '\377';
+const TEXT SVC_TRMNTR	= '\1';
 
 namespace Jrd {
 	Service::Service(serv_entry *se, Firebird::MemoryPool& p) :
-		svc_parsed_sw(p), 
 		svc_handle(0), svc_status(svc_status_array), svc_input(0), svc_output(0),
-		svc_stdout_head(0), svc_stdout_tail(0), svc_stdout(0), svc_argv(p), svc_argc(0),
+		svc_stdout_head(0), svc_stdout_tail(0), svc_stdout(0), svc_argv(0), svc_argc(0),
 		svc_service(se), svc_resp_buf(0), svc_resp_ptr(0), svc_resp_buf_len(0),
 		svc_resp_len(0), svc_flags(0), svc_user_flag(0), svc_spb_version(0), svc_do_shutdown(false),
-		svc_username(p), svc_enc_password(p), 
-#ifdef TRUSTED_SERVICES
-		svc_trusted_login(p),
-#endif
-		svc_switches(p), svc_perm_sw(p)
+		svc_username(p), svc_enc_password(p), svc_switches(p), svc_perm_sw(p)
 
 	{
 		memset(svc_status_array, 0, sizeof svc_status_array);
@@ -167,6 +162,10 @@ namespace Jrd {
 		{
 			gds__free(svc_stdout);
 		}
+		if (svc_argv) 
+		{
+			gds__free(svc_argv);
+		}
 #endif //SERVICE_THREAD
 
 		if (svc_resp_buf)
@@ -177,65 +176,6 @@ namespace Jrd {
 #ifdef WIN_NT
 		CloseHandle((HANDLE) svc_handle);
 #endif
-	}
-	
-	void Service::parseSwitches()
-	{
-		svc_parsed_sw = svc_switches;
-		svc_parsed_sw.trim();
-		svc_argc = 2;
-		
-		if (svc_parsed_sw.isEmpty())
-		{
-			svc_argv.getBuffer(svc_argc + 1)[1] = 0;
-			return;
-		}
-		
-		bool inStr = false;
-		for (size_t i = 0; i < svc_parsed_sw.length(); ++i)
-		{
-
-			switch (svc_parsed_sw[i])
-			{
-			case SVC_TRMNTR:
-				svc_parsed_sw.erase(i, 1);
-				if (inStr)
-				{
-					if (i < svc_parsed_sw.length() && svc_parsed_sw[i] != SVC_TRMNTR)
-					{
-						inStr = false;
-						--i;
-					}
-				}
-				else
-				{
-					inStr = true;
-					--i;
-				}
-				break;
-				
-			case ' ':
-				if (!inStr)
-				{
-					++svc_argc;
-					svc_parsed_sw[i] = 0;
-				}
-				break;
-			}
-		}
-		
-		const char** argv = svc_argv.getBuffer(svc_argc + 1);
-		argv++;	// leave space for argv[0]
-		*argv++ = svc_parsed_sw.c_str();
-		for (const char *p = svc_parsed_sw.begin(); 
-			p < svc_parsed_sw.end(); ++p)
-		{
-			if (!*p) 
-			{
-				*argv++ = p + 1;
-			}
-		}
-		*argv = 0;
 	}
 } //namespace
 	
@@ -300,9 +240,6 @@ struct Serv_param_block {
 	Firebird::string	spb_command_line;
 	Firebird::string	spb_network_protocol;
 	Firebird::string    spb_remote_address;
-#ifdef TRUSTED_SERVICES
-	Firebird::string	spb_trusted_login;
-#endif
 	USHORT				spb_version;
 
 	Serv_param_block() : spb_version(0) { }
@@ -359,7 +296,7 @@ static ULONG shutdown_param = 0L;
 
 const char* const SPB_SEC_USERNAME = "isc_spb_sec_username";
 
-static Firebird::Mutex svc_mutex, thd_mutex;
+static MUTX_T svc_mutex[1], thd_mutex[1];
 
 /* Service Functions */
 #if defined(SERVICE_THREAD) && !defined(BOOT_BUILD)
@@ -388,44 +325,28 @@ THREAD_ENTRY_DECLARE main_gstat(THREAD_ENTRY_PARAM arg);
 #endif
 
 
-void SVC_STATUS_ARG(ISC_STATUS*& status, const MsgFormat::safe_cell& value)
+void SVC_STATUS_ARG(ISC_STATUS*& status, USHORT type, const void* value)
 {
-	using MsgFormat::safe_cell;
-    
-	switch (value.type)
+	if (value)
 	{
-	case safe_cell::at_int64:
-	case safe_cell::at_uint64:
-		*status++ = isc_arg_number;
-		*status++ = static_cast<SLONG>(value.i_value); // May truncate number!
-		break;
-	case safe_cell::at_str:
+		switch (type)
 		{
-			*status++ = isc_arg_string;
-			const char* s = value.st_value.s_string;
-			*status++ = (ISC_STATUS) error_string(s, s ? strlen(s) : 0);
+		case isc_arg_number:
+			*status++ = type;
+			*status++ = reinterpret_cast<ISC_STATUS>(value);
+			break;
+		case isc_arg_string:
+			{
+				*status++ = type;
+				const char* s = static_cast<const char*>(value);
+				*status++ = (ISC_STATUS) error_string(s, strlen(s));
+			}
+			break;
+		default:
+			break;
 		}
-		break;
-	case safe_cell::at_counted_str:
-		{
-			*status++ = isc_arg_string;
-			const char* s = value.st_value.s_string;
-			*status++ = (ISC_STATUS) error_string(s, value.st_value.s_len);
-		}
-		break;
-
-	default:
-		break;
 	}
 }
-
-
-void SVC_STATUS_ARG(ISC_STATUS*& status, const char* value)
-{
-	*status++ = isc_arg_string;
-	*status++ = (ISC_STATUS) error_string(value, value ? strlen(value) : 0);
-}
-
 
 /* Entries which have a NULL serv_executable field will not fork
    a process on the server, but will establish a valid connection
@@ -587,35 +508,25 @@ Service* SVC_attach(USHORT	service_length,
 		user_flag = SVC_user_none;
 	}
 	else {
-#ifdef TRUSTED_SERVICES
-		if (options.spb_trusted_login.hasData())
+		if (!options.spb_user_name.hasData())
 		{
-			options.spb_user_name = options.spb_trusted_login;
+			// user name and password are required while
+			// attaching to the services manager
+			ERR_post(isc_service_att_err, isc_arg_gds, isc_svcnouser, 0);
 		}
-		else
-#endif
+		else 
 		{
-			if (!options.spb_user_name.hasData())
-			{
-				// user name and password are required while
-				// attaching to the services manager
-				ERR_post(isc_service_att_err, isc_arg_gds, isc_svcnouser, 0);
-			}
-			else 
-			{
-				TEXT name[129]; // unused after retrieved
-				int id, group, node_id;
-
-				Firebird::string remote = options.spb_network_protocol +
-							(options.spb_network_protocol.isEmpty() || 
-							 options.spb_remote_address.isEmpty() ? "" : "/") +
-										  options.spb_remote_address;
+			TEXT name[129]; // unused after retrieved
+			int id, group, node_id;
 			
-				SecurityDatabase::verifyUser(name, options.spb_user_name.nullStr(),
-						                     options.spb_password.nullStr(), 
-											 options.spb_password_enc.nullStr(),
-											 &id, &group, &node_id, remote);
-			}
+			Firebird::string remote = options.spb_network_protocol +
+				(options.spb_network_protocol.isEmpty() || options.spb_remote_address.isEmpty() ? "" : "/") +
+									  options.spb_remote_address;
+			
+			SecurityDatabase::verifyUser(name, options.spb_user_name.nullStr(),
+					                     options.spb_password.nullStr(), 
+										 options.spb_password_enc.nullStr(),
+										 &id, &group, &node_id, remote);
 		}
 
 /* Check that the validated user has the authority to access this service */
@@ -649,12 +560,10 @@ Service* SVC_attach(USHORT	service_length,
 	service->svc_stdout_head = 1;
 	service->svc_stdout_tail = SVC_STDOUT_BUFFER_SIZE;
 	service->svc_stdout = NULL;
+	service->svc_argv = NULL;
 #endif
 	service->svc_spb_version = options.spb_version;
 	service->svc_username = options.spb_user_name;
-#ifdef TRUSTED_SERVICES
-	service->svc_trusted_login = options.spb_trusted_login;
-#endif
 
 /* The password will be issued to the service threads on NT since
  * there is no OS authentication.  If the password is not yet
@@ -704,7 +613,7 @@ Service* SVC_attach(USHORT	service_length,
 	}
 
 	}	// try
-	catch (const Firebird::Exception&) {
+	catch (const std::exception&) {
 		delete service;
 		throw;
 	}
@@ -931,19 +840,9 @@ ISC_STATUS SVC_query2(Service* service,
 /* Process the receive portion of the query now. */
 
 	const SCHAR* const end = info + buffer_length;
+
 	items = recv_items;
 	const SCHAR* const end_items2 = items + recv_item_length;
-
-	SCHAR* start_info;
-
-	if (*items == isc_info_length) {
-		start_info = info;
-		items++;
-	}
-	else {
-		start_info = 0;
-	}
-
 	while (items < end_items2 && *items != isc_info_end)
 	{
 		/*
@@ -974,11 +873,10 @@ ISC_STATUS SVC_query2(Service* service,
 
 #ifdef SERVER_SHUTDOWN
 		case isc_info_svc_svr_db_info:
-			if (service->svc_user_flag & SVC_user_dba)
 			{
 				UCHAR dbbuf[1024];
-				ULONG num_dbs = 0;
-				ULONG num_att = 0;
+				USHORT num_dbs = 0;
+				USHORT num_att = 0;
 
 				*info++ = item;
 				TEXT* const ptr =
@@ -1028,8 +926,6 @@ ISC_STATUS SVC_query2(Service* service,
 				if (info < end)
 					*info++ = isc_info_flag_end;
 			}
-			else
-				need_admin_privs(&status, "isc_info_svc_svr_db_info");
 
 			break;
 
@@ -1055,8 +951,8 @@ ISC_STATUS SVC_query2(Service* service,
 #endif /* SERVER_SHUTDOWN */
 
 			/* The following 3 service commands (or items) stuff the response
-			   buffer 'info' with values of environment variable FIREBIRD,
-			   FIREBIRD_LOCK or FIREBIRD_MSG. If the environment variable
+			   buffer 'info' with values of environment variable INTERBASE,
+			   INTERBASE_LOCK or INTERBASE_MSG. If the environment variable
 			   is not set then default value is returned.
 			 */
 		case isc_info_svc_get_env:
@@ -1165,7 +1061,7 @@ ISC_STATUS SVC_query2(Service* service,
 			break;
 
 		case isc_info_svc_implementation:
-			/* The server implementation - e.g. Firebird/sun4 */
+			/* The server implementation - e.g. Interbase/sun4 */
 			isc_format_implementation(IMPLEMENTATION, sizeof(buffer), buffer,
 									  0, 0, NULL);
 			info = INF_put_item(item, strlen(buffer), buffer, info, end);
@@ -1178,20 +1074,15 @@ ISC_STATUS SVC_query2(Service* service,
 
 
 		case isc_info_svc_user_dbpath:
-			if (service->svc_user_flag & SVC_user_dba)
-			{
-				/* The path to the user security database (security2.fdb) */
-				SecurityDatabase::getPath(buffer);
+			/* The path to the user security database (security2.fdb) */
+			SecurityDatabase::getPath(buffer);
 
-				if (!(info = INF_put_item(item, strlen(buffer), buffer,
-										  info, end)))
-				{
-					THREAD_ENTER();
-					return 0;
-				}
+			if (!(info = INF_put_item(item, strlen(buffer), buffer,
+									  info, end)))
+			{
+				THREAD_ENTER();
+				return 0;
 			}
-			else
-				need_admin_privs(&status, "isc_info_svc_user_dbpath");
 			break;
 
 		case isc_info_svc_response:
@@ -1329,13 +1220,6 @@ ISC_STATUS SVC_query2(Service* service,
 	if (info < end)
 		*info = isc_info_end;
 
-	if (start_info && (end - info >= 7))
-	{
-		SLONG number = 1 + (info - start_info);
-		memmove(start_info + 7, start_info, number);
-		USHORT length2 = INF_convert(number, buffer);
-		INF_put_item(isc_info_length, length2, buffer, start_info, end);
-	}
 
 	if (!(service->svc_flags & SVC_thd_running))
 	{
@@ -1431,10 +1315,9 @@ void SVC_query(Service*		service,
 
 #ifdef SERVER_SHUTDOWN
 		case isc_info_svc_svr_db_info:
-			if (service->svc_user_flag & SVC_user_dba)
 			{
-				ULONG num_att = 0;
-				ULONG num_dbs = 0;
+				USHORT num_att = 0;
+				USHORT num_dbs = 0;
 				JRD_num_attachments(NULL, 0, 0, &num_att, &num_dbs);
 				length = INF_convert(num_att, buffer);
 				info = INF_put_item(item,
@@ -1457,11 +1340,6 @@ void SVC_query(Service*		service,
 					return;
 				}
 			}
-			/*
-			 * Can not return error for service v.1 => simply ignore request
-			else
-				need_admin_privs(&status, "isc_info_svc_svr_db_info");
-			 */
 			break;
 
 		case isc_info_svc_svr_online:
@@ -1488,8 +1366,8 @@ void SVC_query(Service*		service,
 #endif /* SERVER_SHUTDOWN */
 
 			/* The following 3 service commands (or items) stuff the response
-			   buffer 'info' with values of environment variable FIREBIRD,
-			   FIREBIRD_LOCK or FIREBIRD_MSG. If the environment variable
+			   buffer 'info' with values of environment variable INTERBASE,
+			   INTERBASE_LOCK or INTERBASE_MSG. If the environment variable
 			   is not set then default value is returned.
 			 */
 		case isc_info_svc_get_env:
@@ -1545,11 +1423,8 @@ void SVC_query(Service*		service,
 				// TODO: reset the config values to defaults
 				THREAD_EXIT();
 			}
-			*
-			 * Can not return error for service v.1 => simply ignore request
 			else
-				need_admin_privs(&status, "isc_info_svc_default_config:");
-			 *
+				need_admin_privs(&status, "isc_info_svc_default_config");
 			break;
 
 		case isc_info_svc_set_config:
@@ -1559,11 +1434,9 @@ void SVC_query(Service*		service,
 				// TODO: set the config values
 				THREAD_EXIT();
 			}
-			*
-			 * Can not return error for service v.1 => simply ignore request
-			else
-				need_admin_privs(&status, "isc_info_svc_set_config:");
-			 *
+			else {
+				need_admin_privs(&status, "isc_info_svc_set_config");
+			}
 			break;
 */
 		case isc_info_svc_version:
@@ -1612,7 +1485,7 @@ void SVC_query(Service*		service,
 			}
 
 		case isc_info_svc_implementation:
-			/* The server implementation - e.g. Firebird/sun4 */
+			/* The server implementation - e.g. Interbase/sun4 */
 
 			p = buffer;
 			*p++ = 1;			/* Count */
@@ -1626,22 +1499,14 @@ void SVC_query(Service*		service,
 
 
 		case isc_info_svc_user_dbpath:
-            if (service->svc_user_flag & SVC_user_dba)
-            {
-				/* The path to the user security database (security2.fdb) */
-				SecurityDatabase::getPath(buffer);
+			/* The path to the user security database (security2.fdb) */
+			SecurityDatabase::getPath(buffer);
 
-				if (!(info = INF_put_item(item, strlen(buffer), buffer, info, end)))
-				{
-					THREAD_ENTER();
-					return;
-				}
+			if (!(info = INF_put_item(item, strlen(buffer), buffer, info, end)))
+			{
+				THREAD_ENTER();
+				return;
 			}
-			/*
-			 * Can not return error for service v.1 => simply ignore request
-			else
-				need_admin_privs(&status, "isc_info_svc_user_dbpath");
-			 */
 			break;
 
 		case isc_info_svc_response:
@@ -1809,9 +1674,9 @@ void* SVC_start(Service* service, USHORT spb_length, const SCHAR* spb_data)
 		ERR_post(isc_bad_spb_form, 0);
 	}
 
-	thd_mutex.enter();
+	THD_MUTEX_LOCK(thd_mutex);
 	if (service->svc_flags & SVC_thd_running) {
-		thd_mutex.leave();
+		THD_MUTEX_UNLOCK(thd_mutex);
 		ERR_post(isc_svc_in_use, isc_arg_string,
 				 error_string(serv->serv_name, strlen(serv->serv_name)),
 				 0);
@@ -1825,7 +1690,7 @@ void* SVC_start(Service* service, USHORT spb_length, const SCHAR* spb_data)
 		service->svc_flags = 0;
 	}
 	service->svc_flags |= SVC_thd_running;
-	thd_mutex.leave();
+	THD_MUTEX_UNLOCK(thd_mutex);
 
 	thread_db* tdbb = JRD_get_thread_data();
 
@@ -1857,50 +1722,36 @@ void* SVC_start(Service* service, USHORT spb_length, const SCHAR* spb_data)
 		svc_id == isc_action_svc_properties)
 	{
 		/* add the username and password to the end of svc_switches if needed */
-		if (service->svc_switches.hasData()) 
-		{
-#ifdef TRUSTED_SERVICES
-			if (service->svc_trusted_login.hasData()) 
+		if (service->svc_switches.hasData()) {
+			if (service->svc_username.hasData())
 			{
 				service->svc_switches += ' ';
-				service->svc_switches += TRUSTED_USER_SWITCH;
+				service->svc_switches += USERNAME_SWITCH;
 				service->svc_switches += ' ';
 				service->svc_switches += service->svc_username;
 			}
-			else
-#endif
-			{
-				if (service->svc_username.hasData())
-				{
-					service->svc_switches += ' ';
-					service->svc_switches += USERNAME_SWITCH;
-					service->svc_switches += ' ';
-					service->svc_switches += service->svc_username;
-				}
 
-				if (service->svc_enc_password.hasData())
-				{
-					service->svc_switches += ' ';
-					service->svc_switches += PASSWORD_SWITCH;
-					service->svc_switches += ' ';
-					service->svc_switches += service->svc_enc_password;
-				}
+			if (service->svc_enc_password.hasData())
+			{
+				service->svc_switches += ' ';
+				service->svc_switches += PASSWORD_SWITCH;
+				service->svc_switches += ' ';
+				service->svc_switches += service->svc_enc_password;
 			}
 		}
 	}
 
 // All services except for get_ib_log require switches
 	spb.rewind();
-	if ((!service->svc_switches.hasData()) && svc_id != isc_action_svc_get_fb_log) 
-	{
+	if ((!service->svc_switches.hasData()) && svc_id != isc_action_svc_get_fb_log) {
 		ERR_post(isc_bad_spb_form, 0);
 	}
 
 // Do not let everyone look at server log
 	if (svc_id == isc_action_svc_get_fb_log && !(service->svc_user_flag & SVC_user_dba))
-    {
-       	ERR_post(isc_adm_task_denied, 0);
-    }
+	{
+		ERR_post(isc_adm_task_denied, 0);
+	}
 
 #ifndef SERVICE_THREAD
 	TEXT service_path[MAXPATHLEN];
@@ -1914,15 +1765,86 @@ void* SVC_start(Service* service, USHORT spb_length, const SCHAR* spb_data)
 #else
 
 /* Break up the command line into individual arguments. */
-	service->parseSwitches();
-	service->svc_argv[0] = (TEXT *)(serv->serv_thd);
+	if (service->svc_switches.hasData())
+	{
+		USHORT argc;
+		TEXT* p;
+		for (argc = 2, p = service->svc_switches.begin(); *p;) {
+			if (*p == ' ') {
+				argc++;
+				while (*p == ' ')
+					p++;
+			}
+			else {
+				if (*p == SVC_TRMNTR) {
+					while (*p++ && *p != SVC_TRMNTR);
+					fb_assert(*p == SVC_TRMNTR);
+				}
+				p++;
+			}
+		}
+
+		service->svc_argc = argc;
+
+		TEXT** arg = (TEXT **) gds__alloc((SLONG) ((argc + 1) * sizeof(TEXT *)));
+		/*
+		 * the service block can be reused hence free a memory from the
+		 * previous usage if any.
+		 */
+		if (service->svc_argv)
+			gds__free(service->svc_argv);
+		service->svc_argv = arg;
+		/* FREE: at SVC_detach() - Possible memory leak if ERR_post() occurs */
+		if (!arg)				/* NOMEM: */
+			ERR_post(isc_virmemexh, 0);
+
+		*arg++ = (TEXT *)(serv->serv_thd);
+		const TEXT* q = p = service->svc_switches.begin();
+
+		while (*q == ' ')
+			q++;
+
+		while (*q) {
+			*arg = p;
+			while (*p = *q++) {
+				if (*p == ' ')
+					break;
+
+				if (*p == SVC_TRMNTR) {
+					*arg = ++p;	/* skip terminator */
+					while (*p = *q++)
+						/* If *q points to the last argument, then terminate the argument */
+						if ((*q == 0 || *q == ' ') && *p == SVC_TRMNTR) {
+							*p = '\0';
+							break;
+						}
+						else
+							p++;
+				}
+
+				if (*p == '\\' && *q == ' ') {
+					*p = ' ';
+					q++;
+				}
+				p++;
+			}
+			arg++;
+			if (!*p)
+				break;
+			*p++ = '\0';
+			while (*q == ' ')
+				q++;
+		}
+		*arg = NULL;
+	}
 
 /*
  * the service block can be reused hence free a memory from the
  * previous usage as well as init a status vector.
  */
 
-	memset((void *) service->svc_status, 0, sizeof(ISC_STATUS_ARRAY));
+	memset((void *) service->svc_status, 0,
+		   ISC_STATUS_LENGTH * sizeof(ISC_STATUS));
 
 	if (service->svc_stdout)
 		gds__free(service->svc_stdout);
@@ -2019,10 +1941,10 @@ THREAD_ENTRY_DECLARE SVC_read_fb_log(THREAD_ENTRY_PARAM arg)
 #ifdef SERVICE_THREAD
 		*status++ = isc_sys_request;
 		if (!file) {
-			SVC_STATUS_ARG(status, "fopen");
+			SVC_STATUS_ARG(status, isc_arg_string, "fopen");
 		}
 		else {
-			SVC_STATUS_ARG(status, "fgets");
+			SVC_STATUS_ARG(status, isc_arg_string, "fgets");
 		}
 		*status++ = SYS_ARG;
 		*status++ = errno;
@@ -2084,12 +2006,6 @@ static void get_options(Firebird::ClumpletReader&	spb,
 		case isc_spb_password_enc:
 			spb.getString(options->spb_password_enc);
 			break;
-
-#ifdef TRUSTED_SERVICES
-		case isc_spb_trusted_auth:
-			spb.getString(options->spb_trusted_login);
-			break;
-#endif
 
 		case isc_spb_command_line:
 			spb.getString(options->spb_command_line);
@@ -2259,12 +2175,50 @@ static void service_fork(ThreadEntryPoint* service_executable, Service* service)
  *	Startup a service.
  *
  **************************************/
+	TEXT* p;
+	
+	USHORT argc = 2;
+	for (p = service->svc_switches.begin(); *p;)
+		if (*p++ == ' ')
+			argc++;
 
-	// Break up the command line into individual arguments.
-	service->parseSwitches();
+	service->svc_argc = argc;
 
-	USHORT argc = service->svc_argc;
-	service->svc_argv[0] = (TEXT *)(service_executable);
+	TEXT** arg = (TEXT **) gds__alloc((SLONG) ((argc + 1) * sizeof(TEXT *)));
+	service->svc_argv = arg;
+/* FREE: at SVC_detach() - Possible memory leak if ERR_post() occurs */
+	if (!arg)					/* NOMEM: */
+		ERR_post(isc_virmemexh, 0);
+
+	*arg++ = (TEXT *)(service_executable);
+
+/* Break up the command line into individual arguments. */
+
+	const TEXT* q = p = service->svc_switches.begin();
+
+	while (*q == ' ')
+		q++;
+	while (*q) {
+		*arg++ = p;
+		while ((*p = *q++) && *p != ' ') {
+			if (*p == '\\' && *q == ' ') {
+				*p = ' ';
+				q++;
+			}
+			p++;
+		}
+		if (!*p)
+			break;
+		*p++ = 0;
+		while (*q == ' ')
+			q++;
+	}
+	*arg = NULL;
+
+	service->svc_stdout = (UCHAR*)gds__alloc((SLONG) SVC_STDOUT_BUFFER_SIZE + 1);
+/* FREE: at SVC_detach() */
+	if (!service->svc_stdout)	/* NOMEM: */
+		ERR_post(isc_virmemexh, 0);
 
 	THREAD_EXIT();
 	gds__thread_start(service_executable,
@@ -2435,10 +2389,104 @@ static void service_fork(TEXT* service_path, Service* service)
 	if (statistics(service_path, &stat_buf) == -1)
 		io_error("stat", errno, service_path, isc_io_access_err);
 
+/* Make sure we have buffers that are large enough to hold the number
+   and size of the command line arguments. */
+
+	TEXT* p;
+	
+	USHORT argc = 2;
+	for (p = service->svc_switches.begin(); *p;)
+	{
+		if (*p == ' ')
+		{
+			argc++;
+			while (*p == ' ')
+				p++;
+		}
+		else
+		{
+			if (*p == SVC_TRMNTR)
+			{
+				while (*p++ && *p != SVC_TRMNTR);
+				fb_assert (*p == SVC_TRMNTR);
+			}
+			p++;
+		}
+	}
+
+	// Hardcoded, ISC_STATUS_LEN, platform specific or what????
+	TEXT* argv_buf[20];
+	TEXT** argv;
+	if (argc > FB_NELEM(argv_buf))
+		argv = (TEXT **) gds__alloc((SLONG) (argc * sizeof(TEXT *)));
+	else
+		argv = argv_buf;
+/* FREE: at procedure return */
+	if (!argv)					/* NOMEM: */
+		ERR_post(isc_virmemexh, 0);
+	service->svc_argc = argc;
+
+	TEXT argv_data_buf[512];
+	TEXT* argv_data;
+	const USHORT len = service->svc_switches.length() + 1;
+	if (len > sizeof(argv_data_buf))
+		argv_data = (TEXT *) gds__alloc((SLONG) len);
+	else
+		argv_data = argv_data_buf;
+/* FREE: at procedure return */
+	if (!argv_data) {			/* NOMEM: */
+		if (argv != argv_buf)
+			gds__free(argv);
+		ERR_post(isc_virmemexh, 0);
+	}
+
 /* Break up the command line into individual arguments. */
-	service->parseSwitches();
-	const char **argv = &service->svc_argv[0];
-	*argv = service_path;
+
+	TEXT** arg = argv;
+	*arg++ = service_path;
+
+	p = argv_data;
+	const TEXT* q = service->svc_switches.c_str();
+
+	while (*q == ' ')
+		q++;
+	while (*q)
+	{
+		*arg = p;
+		while (*p = *q++)
+		{
+			if (*p == ' ')
+				break;
+
+			if (*p == SVC_TRMNTR)
+			{
+				*arg = ++p;	/* skip terminator */
+				while (*p = *q++)
+						/* If *q points to the last argument, then terminate the argument */
+					if ((*q == 0 || *q == ' ') && *p == SVC_TRMNTR)
+					{
+						*p = '\0';
+						break;
+					}
+					else
+						p++;
+			}
+
+			if (*p == '\\' && *q == ' ')
+			{
+				*p = ' ';
+				q++;
+			}
+			p++;
+		}
+		arg++;
+		if (!*p)
+			break;
+		*p++ = '\0';
+		while (*q == ' ')
+			q++;
+	}
+	*arg = NULL;
 
 /* At last we can fork the sub-process.  If the fork succeeds, repeat
    it so that we don't have defunct processes hanging around. */
@@ -2450,6 +2498,10 @@ static void service_fork(TEXT* service_path, Service* service)
 	switch (pid = vfork()) {
 	case -1:
 		THREAD_ENTER();
+		if (argv != argv_buf)
+			gds__free(argv);
+		if (argv_data != argv_data_buf)
+			gds__free(argv_data);
 		ERR_post(isc_sys_request, isc_arg_string, "vfork", SYS_ERR, errno, 0);
 		break;
 
@@ -2474,7 +2526,7 @@ static void service_fork(TEXT* service_path, Service* service)
 #ifdef DEV_BUILD
 		{
 			char buf[2 * MAXPATHLEN];
-			const char** s = argv;
+			char** s = argv;
 
 			strcpy (buf, "service_fork:");
 			while (*s != (char *)0)
@@ -2486,7 +2538,7 @@ static void service_fork(TEXT* service_path, Service* service)
 			gds__log(buf);
 		}
 #endif
-		execvp(argv[0], const_cast<char* const*>(argv));
+		execvp(argv[0], argv);
 		_exit(FINI_ERROR);
 	}
 
@@ -2496,6 +2548,11 @@ static void service_fork(TEXT* service_path, Service* service)
 	waitpid(pid, NULL, 0);
 
 	THREAD_ENTER();
+
+	if (argv != argv_buf)
+		gds__free(argv);
+	if (argv_data != argv_data_buf)
+		gds__free(argv_data);
 
 	if (!(service->svc_input = fdopen(pair1[0], "r")) ||
 		!(service->svc_output = fdopen(pair2[1], "w")))
@@ -2661,7 +2718,7 @@ void SVC_finish(Service* service, USHORT flag)
  *
  **************************************/
 
-	svc_mutex.enter();
+	THD_MUTEX_LOCK(svc_mutex);
 	if (service && ((flag == SVC_finished) || (flag == SVC_detached)))
 	{
 		service->svc_flags |= flag;
@@ -2685,7 +2742,7 @@ void SVC_finish(Service* service, USHORT flag)
 			service->svc_handle = 0;
 		}
 	}
-	svc_mutex.leave();
+	THD_MUTEX_UNLOCK(svc_mutex);
 }
 
 
@@ -2700,15 +2757,8 @@ static const TEXT* error_string(const TEXT* data, USHORT length)
  * Functional Description:
  *     Uses ERR_string to save string data for the
  *     status vector
- * CVC: None of the callees check the pointer, so we do here as paranoid measure.
- * The chain is error_string->ERR_string->status_nstring->InterlockedStringsBuffer::alloc
- *   ->CircularBuffer::alloc->memcpy
  ********************************************/
-	if (data)
-		return ERR_string(data, length);
-
-	data = "(null string)";
-	return ERR_string(data, strlen(data));
+	return ERR_string(data, length);
 }
 
 
@@ -2783,6 +2833,10 @@ static bool process_switches(Firebird::ClumpletReader&	spb,
  *   Loop through the appropriate switch table
  *   looking for the text for the given command switch.
  *
+ *   Calling this function with switches = NULL returns
+ *   the number of bytes to allocate for the switches and
+ *   parameters.
+ *
  **************************************/
 	if (spb.getBufferLength() == 0)
 		return false;
@@ -2791,8 +2845,6 @@ static bool process_switches(Firebird::ClumpletReader&	spb,
 	const UCHAR svc_action = spb.getClumpTag();
 	spb.moveNext();
 
-	Firebird::string burp_database, burp_backup;
-	int burp_options = 0;
 	bool found = false;
 
 	do 
@@ -2807,33 +2859,26 @@ static bool process_switches(Firebird::ClumpletReader&	spb,
 					return false;
 				}
 				else {
-					if (spb.isEof() && svc_action == isc_action_svc_display_user)
+					found = true;
+					/* in case of "display all users" the spb buffer contains
+					   nothing but isc_action_svc_display_user */
+					if (spb.isEof())
 					{
-						// in case of "display all users" the spb buffer contains
-						// nothing but isc_action_svc_display_user
 						break;
 					}
-					if (spb.getClumpTag() != isc_spb_sec_username) {
-						// unexpected item in service parameter block, expected @1
-						ERR_post(isc_unexp_spb_form, isc_arg_string,
-								 error_string(SPB_SEC_USERNAME,
-												strlen(SPB_SEC_USERNAME)),
-								 0);
-					}
-					found = true;
 				}
 			}
 
-			switch (spb.getClumpTag()) 
-			{
-			case isc_spb_sql_role_name:
+			switch (spb.getClumpTag()) {
+			case isc_spb_sec_username:
+				get_action_svc_string(spb, switches);
+				break;
+
 			case isc_spb_dbname:
 				if (!get_action_svc_parameter(spb.getClumpTag(), gsec_in_sw_table, switches))
 				{
 					return false;
 				}
-				// fall through ....
-			case isc_spb_sec_username:
 				get_action_svc_string(spb, switches);
 				break;
 				
@@ -2851,19 +2896,19 @@ static bool process_switches(Firebird::ClumpletReader&	spb,
 					return false;
 				}
 				else {
+					found = true;
 					if (spb.getClumpTag() != isc_spb_sec_username) {
-						// unexpected item in service parameter block, expected @1
+						/* unexpected service parameter block:
+						   expected %d, encountered %d */
 						ERR_post(isc_unexp_spb_form, isc_arg_string,
 								 error_string(SPB_SEC_USERNAME,
 												strlen(SPB_SEC_USERNAME)),
 								 0);
 					}
-					found = true;
 				}
 			}
 
-			switch (spb.getClumpTag()) 
-			{
+			switch (spb.getClumpTag()) {
 			case isc_spb_sec_userid:
 			case isc_spb_sec_groupid:
 				if (!get_action_svc_parameter(spb.getClumpTag(), gsec_in_sw_table, switches))
@@ -2873,6 +2918,10 @@ static bool process_switches(Firebird::ClumpletReader&	spb,
 				get_action_svc_data(spb, switches);
 				break;
 
+			case isc_spb_sec_username:
+				get_action_svc_string(spb, switches);
+				break;
+				
 			case isc_spb_sql_role_name:
 			case isc_spb_sec_password:
 			case isc_spb_sec_groupname:
@@ -2884,8 +2933,6 @@ static bool process_switches(Firebird::ClumpletReader&	spb,
 				{
 					return false;
 				}
-				// fall through ....
-			case isc_spb_sec_username:
 				get_action_svc_string(spb, switches);
 				break;
 
@@ -2922,23 +2969,19 @@ static bool process_switches(Firebird::ClumpletReader&	spb,
 		case isc_action_svc_restore:
 			switch (spb.getClumpTag()) {
 			case isc_spb_bkp_file:
-                get_action_svc_string(spb, burp_backup);
-				break;
 			case isc_spb_dbname:
-                get_action_svc_string(spb, burp_database);
+			case isc_spb_sql_role_name:
+                get_action_svc_string(spb, switches);
 				break;
 			case isc_spb_options:
-				burp_options |= spb.getInt();
 				if (!get_action_svc_bitmask(spb, burp_in_sw_table, switches))
 				{
 					return false;
 				}
 				break;
 			case isc_spb_bkp_length:
-				get_action_svc_data(spb, burp_backup);
-				break;
 			case isc_spb_res_length:
-				get_action_svc_data(spb, burp_database);
+				get_action_svc_data(spb, switches);
 				break;
 			case isc_spb_bkp_factor:
 			case isc_spb_res_buffers:
@@ -3015,23 +3058,6 @@ static bool process_switches(Firebird::ClumpletReader&	spb,
 		spb.moveNext();
 	} while (! spb.isEof());
 
-	// postfixes for burp
-	switch (svc_action)
-	{
-	case isc_action_svc_backup:
-		switches += (burp_database + burp_backup);
-		break;
-	case isc_action_svc_restore:
-		if (! (burp_options & (isc_spb_res_create | isc_spb_res_replace)))
-		{
-			// user not specified create or replace database
-			// default to create for restore
-			switches += "-CREATE_DATABASE ";
-		}
-		switches += (burp_backup + burp_database);
-		break;
-	}
-
 	switches.rtrim();
 	return switches.length() > 0;
 }
@@ -3096,14 +3122,16 @@ static void get_action_svc_string(const Firebird::ClumpletReader& spb,
  **************************************/
 	Firebird::string s;
 	spb.getString(s);
+	
 	for (size_t i = 0; i < s.length(); ++i)
 	{
 		if (s[i] == SVC_TRMNTR)
 		{
-			s.insert(i, 1, SVC_TRMNTR);
-			++i;
+			s.erase(i, 1);
+			--i;
 		}
 	}
+	
 	switches += SVC_TRMNTR;
 	switches += s;
 	switches += SVC_TRMNTR;

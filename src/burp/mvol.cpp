@@ -61,11 +61,6 @@
 #include <unistd.h>
 #endif
 
-#include "../common/classes/SafeArg.h"
-
-using MsgFormat::SafeArg;
-
-
 const int open_mask	= 0666;
 
 #ifdef VMS
@@ -85,23 +80,20 @@ const int MAX_HEADER_SIZE	= 512;
 
 static inline int get(BurpGlobals* tdgbl)
 {
-	return (--tdgbl->mvol_io_cnt >= 0 ? *tdgbl->mvol_io_ptr++ : 255);
+	return (--(tdgbl->mvol_io_cnt) >= 0 ? *(tdgbl->mvol_io_ptr)++ : 255);
 }
 
 static inline void put(BurpGlobals* tdgbl, UCHAR c)
 {
-	--tdgbl->mvol_io_cnt;
-	*tdgbl->mvol_io_ptr++ = c;
+	--(tdgbl->mvol_io_cnt);
+	*(tdgbl->mvol_io_ptr)++ = c;
 }
 
 #ifdef DEBUG
 static UCHAR debug_on = 0;		// able to turn this on in debug mode 
 #endif
 
-const int burp_msg_fac = 12;
-
-
-static void  bad_attribute(int, USHORT);
+static void  bad_attribute(USHORT, USHORT);
 static void  file_not_empty(void);
 static SLONG get_numeric(void);
 static int   get_text(UCHAR*, SSHORT);
@@ -263,7 +255,7 @@ void MVOL_init_write(const char*		database_name, // unused?
 	{
 		if (tdgbl->action->act_action == ACT_backup_split)
 		{
-			BURP_error(269, true, tdgbl->action->act_file->fil_name);
+			BURP_error(269, true, tdgbl->action->act_file->fil_name, 0, 0, 0, 0);
 			// msg 269 can't write a header record to file %s 
 		}
 		tdgbl->file_desc = next_volume(tdgbl->file_desc, MODE_WRITE, false);
@@ -311,12 +303,12 @@ int MVOL_read(int* cnt, UCHAR** ptr)
 			{
 				if (cnt)
 				{
-					BURP_error_redirect(0, 220);
+					BURP_error_redirect(0, 220, NULL, NULL);
 				// msg 220 Unexpected I/O error while reading from backup file 
 				}
 				else
 				{
-					BURP_error_redirect(0, 50);
+					BURP_error_redirect(0, 50, NULL, NULL);
 				// msg 50 unexpected end of file on backup file 
 				}
 			}
@@ -363,10 +355,10 @@ int MVOL_read(int* cnt, UCHAR** ptr)
 			else if (GetLastError() != ERROR_HANDLE_EOF)
 			{
 				if (cnt)
-					BURP_error_redirect(NULL, 220);
+					BURP_error_redirect(0, 220, NULL, NULL);
 				// msg 220 Unexpected I/O error while reading from backup file 
 				else
-					BURP_error_redirect(NULL, 50);
+					BURP_error_redirect(0, 50, NULL, NULL);
 				// msg 50 unexpected end of file on backup file 
 			}
 		}
@@ -623,12 +615,11 @@ UCHAR MVOL_write(UCHAR c, int *io_cnt, UCHAR ** io_ptr)
 						}
 						
 						tdgbl->action->act_file->fil_fd = INVALID_HANDLE_VALUE;
-						BURP_print(272, SafeArg() <<
-									tdgbl->action->act_file->fil_name <<
-									tdgbl->action->act_file->fil_length <<
-									tdgbl->action->act_file->fil_next->fil_name);
-						// msg 272 Warning -- free disk space exhausted for file %s,
-						// the rest of the bytes (%d) will be written to file %s
+						BURP_print(272,
+									tdgbl->action->act_file->fil_name,
+									(void*)(IPTR)tdgbl->action->act_file->fil_length,
+									tdgbl->action->act_file->fil_next->fil_name,
+									0, 0);	// msg 272 Warning -- free disk space exhausted for file %s, the rest of the bytes (%d) will be written to file %s 
 						tdgbl->action->act_file->fil_next->fil_length +=
 							tdgbl->action->act_file->fil_length;
 						tdgbl->action->act_file =
@@ -637,19 +628,12 @@ UCHAR MVOL_write(UCHAR c, int *io_cnt, UCHAR ** io_ptr)
 					}
 					else
 					{
-						BURP_error(270, true);
+						BURP_error(270, true, 0, 0, 0, 0, 0);
 						// msg 270 free disk space exhausted 
 					}
 					cnt = 0;
 					continue;
 				}
-
-				if (tdgbl->gbl_sw_service_gbak)
-				{
-					BURP_error(270, true);
-					// msg 270 free disk space exhausted
-				}
-
 				// Note: there is an assumption here, that if header data is being
 				// written, it is really being rewritten, so at least all the
 				// header data will be written
@@ -686,7 +670,7 @@ UCHAR MVOL_write(UCHAR c, int *io_cnt, UCHAR ** io_ptr)
 			}
 			else if (!SYSCALL_INTERRUPTED(errno))
 			{
-				BURP_error_redirect(0, 221);
+				BURP_error_redirect(0, 221, NULL, NULL);
 				// msg 221 Unexpected I/O error while writing to backup file 
 			}
 		}
@@ -764,17 +748,22 @@ const UCHAR *MVOL_write_block(BurpGlobals* tdgbl, const UCHAR * ptr, ULONG count
 // We ran into an unsupported attribute.  This shouldn't happen,
 // but it isn't the end of the world.
 //
-static void bad_attribute(int attribute, USHORT type)
+static void bad_attribute(USHORT attribute, USHORT type)
 {
 	TEXT name[128];
 
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
-	static const SafeArg dummy;
-	fb_msg_format(NULL, burp_msg_fac, type, sizeof(name), name, dummy);
-	BURP_print(80, SafeArg() << name << attribute);
+
+	gds__msg_format(0, 12, type, sizeof(name), name, 0, 0, 0, 0, 0);
+	BURP_print(80, name, (void*) (IPTR) attribute, NULL, NULL, NULL);
 	// msg 80  don't recognize %s attribute %ld -- continuing 
-	for (int l = get(tdgbl); l; --l)
-		get(tdgbl);
+	SSHORT l = get(tdgbl);
+	if (l)
+	{
+		do {
+			get(tdgbl);
+		} while (--l);
+	}
 }
 
 
@@ -817,7 +806,7 @@ static int get_text(UCHAR* text, SSHORT length)
 
 	if (length < 0)
 	{
-		BURP_error_redirect(0, 46);	// msg 46 string truncated
+		BURP_error_redirect(0, 46, NULL, NULL);	// msg 46 string truncated 
 	}
 
 	if (l)
@@ -864,7 +853,7 @@ static DESC next_volume( DESC handle, ULONG mode, bool full_buffer)
 			return tdgbl->action->act_file->fil_fd;
 		}
 
-		BURP_error_redirect(0, 50);	// msg 50 unexpected end of file on backup file
+		BURP_error_redirect(0, 50, NULL, NULL);	// msg 50 unexpected end of file on backup file 
 	}
 
 // If we got here, we've got a live one... Up the volume number unless
@@ -900,7 +889,7 @@ static DESC next_volume( DESC handle, ULONG mode, bool full_buffer)
 		if (new_desc < 0)
 #endif // WIN_NT 
 		{
-			BURP_print(222, new_file);
+			BURP_print(222, new_file, 0, 0, 0, 0);
 			// msg 222 \n\nCould not open file name \"%s\"\n 
 			continue;
 		}
@@ -915,15 +904,16 @@ static DESC next_volume( DESC handle, ULONG mode, bool full_buffer)
 		{
 			if (!write_header(new_desc, 0L, full_buffer))
 			{
-				BURP_print(223, new_file);
+				BURP_print(223, new_file, 0, 0, 0, 0);
 				// msg223 \n\nCould not write to file \"%s\"\n
 				continue;
 			}
 			else
 			{
-				BURP_msg_put(261, SafeArg() << tdgbl->mvol_volume_count << new_file);
+				BURP_msg_put(261, (void*) (IPTR) (tdgbl->mvol_volume_count),
+							 new_file, 0, 0, 0);
 				// Starting with volume #vol_count, new_file 
-				BURP_verbose(75, new_file);	// msg 75  creating file %s
+				BURP_verbose(75, new_file, 0, 0, 0, 0);	// msg 75  creating file %s 
 			}
 		}
 		else
@@ -934,14 +924,15 @@ static DESC next_volume( DESC handle, ULONG mode, bool full_buffer)
 			USHORT format;
 			if (!read_header(new_desc, &temp_buffer_size, &format, false))
 			{
-				BURP_print(224, new_file);
+				BURP_print(224, new_file, 0, 0, 0, 0);
 				continue;
 			}
 			else
 			{
-				BURP_msg_put(261, SafeArg() << tdgbl->mvol_volume_count << new_file);
+				BURP_msg_put(261, (void*) (IPTR) (tdgbl->mvol_volume_count),
+							 new_file, 0, 0, 0);
 				// Starting with volume #vol_count, new_file 
-				BURP_verbose(100, new_file);	// msg 100  opened file %s
+				BURP_verbose(100, new_file, 0, 0, 0, 0);	// msg 100  opened file %s 
 			}
 		}
 
@@ -986,21 +977,21 @@ static void prompt_for_name(SCHAR* name, int length)
 
 		if (strlen(tdgbl->mvol_old_file) > 0)
 		{
-			BURP_msg_get(225, msg, SafeArg() << (tdgbl->mvol_volume_count - 1) <<
-						 tdgbl->mvol_old_file);
+			BURP_msg_get(225, msg, (void*) (IPTR) (tdgbl->mvol_volume_count - 1),
+						 tdgbl->mvol_old_file, 0, 0, 0);
 			fprintf(term_out, msg);
-			BURP_msg_get(226, msg);
+			BURP_msg_get(226, msg, 0, 0, 0, 0, 0);
 			// \tPress return to reopen that file, or type a new\n\tname 
 			// followed by return to open a different file.\n
 			fprintf(term_out, msg);
 		}
 		else	// First volume 
 		{
-			BURP_msg_get(227, msg);
+			BURP_msg_get(227, msg, 0, 0, 0, 0, 0);
 			// Type a file name to open and hit return 
 			fprintf(term_out, msg);
 		}
-		BURP_msg_get(228, msg);	// "  Name: "
+		BURP_msg_get(228, msg, 0, 0, 0, 0, 0);	// "  Name: " 
 		fprintf(term_out, msg);
 
 		if (tdgbl->gbl_sw_service_gbak)
@@ -1010,7 +1001,7 @@ static void prompt_for_name(SCHAR* name, int length)
 		fflush(term_out);
 		if (fgets(name, length, term_in) == NULL)
 		{
-			BURP_msg_get(229, msg);
+			BURP_msg_get(229, msg, 0, 0, 0, 0, 0);
 			// \n\nERROR: Backup incomplete\n
 			fprintf(term_out, msg);
 			BURP_exit_local(FINI_ERROR, tdgbl);
@@ -1125,10 +1116,10 @@ static bool read_header(DESC	handle,
 
 	int attribute = get(tdgbl);
 	if (attribute != rec_burp)
-		BURP_error_redirect(0, 45);
+		BURP_error_redirect(0, 45, NULL, NULL);
 		// msg 45 expected backup description record 
 
-	int l, maxlen;
+	SSHORT l;
 	int temp;
 	TEXT* p;
 	for (attribute = get(tdgbl); attribute != att_end; attribute = get(tdgbl))
@@ -1152,32 +1143,21 @@ static bool read_header(DESC	handle,
 		case att_backup_date:
 			l = get(tdgbl);
 			if (init_flag)
-			{
 				p = tdgbl->gbl_backup_start_time;
-				maxlen = sizeof(tdgbl->gbl_backup_start_time) - 1;
-			}
 			else
-			{
 				p = buffer;
-				maxlen = sizeof(buffer) - 1;
-			}
 			if (l)
 			{
+				// B.O.
 				do {
 					*p++ = get(tdgbl);
-				} while (--l && --maxlen);
-				// Discard elements that don't fit in the buffer, possible corrupt backup
-				if (l > 0 && !maxlen)
-				{
-					while (l--)
-						get(tdgbl);
-				}
+				} while (--l);
 			}
 			*p = 0;
 			if (!init_flag && strcmp(buffer, tdgbl->gbl_backup_start_time))
 			{
-				BURP_msg_get(230, msg, SafeArg() <<
-							tdgbl->gbl_backup_start_time << buffer);
+				BURP_msg_get(230, msg,
+							 tdgbl->gbl_backup_start_time, buffer, 0, 0, 0);
 				// Expected backup start time %s, found %s\n
 				printf(msg);
 				return false;
@@ -1189,30 +1169,23 @@ static bool read_header(DESC	handle,
 			if (init_flag)
 			{
 				p = tdgbl->mvol_db_name_buffer;
-				maxlen = sizeof(tdgbl->mvol_db_name_buffer) - 1;
 			}
 			else
 			{
 				p = buffer;
-				maxlen = sizeof(buffer) - 1;
 			}
 			if (l)
 			{
+				// B.O.
 				do {
 					*p++ = get(tdgbl);
-				} while (--l && --maxlen);
-				// Discard elements that don't fit in the buffer, possible corrupt backup
-				if (l > 0 && !maxlen)
-				{
-					while (l--)
-						get(tdgbl);
-				}
+				} while (--l);
 			}
 			*p = 0;
 			if (!init_flag && strcmp(buffer, tdgbl->gbl_database_file_name))
 			{
-				BURP_msg_get(231, msg, SafeArg() <<
-							tdgbl->gbl_database_file_name << buffer);
+				BURP_msg_get(231, msg,
+							 tdgbl->gbl_database_file_name, buffer, 0, 0, 0);
 				// Expected backup database %s, found %s\n
 				printf(msg);
 				return false;
@@ -1241,8 +1214,9 @@ static bool read_header(DESC	handle,
 			temp = get_numeric();
 			if (temp != tdgbl->mvol_volume_count)
 			{
-				BURP_msg_get(232, msg, SafeArg() <<
-							 tdgbl->mvol_volume_count << temp);
+				BURP_msg_get(232, msg,
+							 (void*) (IPTR) (tdgbl->mvol_volume_count),
+							 (void*) (IPTR) temp, 0, 0, 0);
 				// Expected volume number %d, found volume %d\n
 				printf(msg);
 				return false;
@@ -1250,7 +1224,9 @@ static bool read_header(DESC	handle,
 			break;
 
 		default:
-			bad_attribute(attribute, 59);	// msg 59 backup
+			// TMN: Here we should really have the following assert 
+			// fb_assert(attribute <= MAX_USHORT); 
+			bad_attribute((USHORT) attribute, 59);	// msg 59 backup 
 		}
 	}
 

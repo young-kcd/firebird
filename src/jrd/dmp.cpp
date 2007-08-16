@@ -34,7 +34,7 @@
 #include "../jrd/pag.h"
 #include "../jrd/val.h"
 #include "../jrd/btr.h"
-#include "../common/classes/timestamp.h"
+//#include "../common/classes/timestamp.h"
 #include "../jrd/tra.h"
 #include "../jrd/cch_proto.h"
 #include "../jrd/dmp_proto.h"
@@ -521,11 +521,11 @@ static void dmp_data(const data_page* page)
 			fprintf(dbg_file, "\n\t%d - (empty)\n", i);
 			continue;
 		}
-		const rhd* header = (rhd*) ((SCHAR *) page + index->dpg_offset);
-		const rhdf* fragment = (rhdf*) header;
+		const rhd* header = (RHD) ((SCHAR *) page + index->dpg_offset);
+		const rhdf* fragment = (RHDF) header;
 		if (header->rhd_flags & rhd_blob)
 		{
-			const blh* blob = (blh*) header;
+			const blh* blob = (BLH) header;
 			fprintf(dbg_file,
 					   "\n\t%d - (blob) offset: %d, length: %d, flags: %x\n",
 					   i, index->dpg_offset, index->dpg_length,
@@ -548,12 +548,12 @@ static void dmp_data(const data_page* page)
 			{
 				if (header->rhd_flags & rhd_incomplete)
 				{
-					length = index->dpg_length - OFFSETA(rhdf*, rhdf_data);
-					p = (SCHAR *) ((rhdf*) header)->rhdf_data;
+					length = index->dpg_length - OFFSETA(RHDF, rhdf_data);
+					p = (SCHAR *) ((RHDF) header)->rhdf_data;
 				}
 				else
 				{
-					length = index->dpg_length - OFFSETA(rhd*, rhd_data);
+					length = index->dpg_length - OFFSETA(RHD, rhd_data);
 					p = (SCHAR *) header->rhd_data;
 				}
 				const char* q = p;
@@ -665,11 +665,8 @@ static void dmp_header(const header_page* page)
 			   page->hdr_page_size, page->hdr_ods_version & ~ODS_FIREBIRD_FLAG, 
 			   minor_version, page->hdr_ods_minor_original, page->hdr_PAGES);
 
-	const Firebird::TimeStamp ts(*((GDS_TIMESTAMP *) page->hdr_creation_date));
-
 	struct tm time;
-	ts.decode(&time);
-
+	isc_decode_timestamp((GDS_TIMESTAMP *) page->hdr_creation_date, &time);
 	fprintf(dbg_file, "\tCreation date:\t%s %d, %d %d:%02d:%02d\n",
 			   FB_SHORT_MONTHS[time.tm_mon], time.tm_mday, time.tm_year + 1900,
 			   time.tm_hour, time.tm_min, time.tm_sec);
@@ -783,7 +780,7 @@ static void dmp_index(const btree_page* page, USHORT page_size)
 			(USHORT)((ULONG) ((page_size - OFFSETA(pointer_page*, ppg_page)) * 8) /
 						(BITS_PER_LONG + 2));
 	const USHORT max_records = (page_size - sizeof(data_page)) /
-								(sizeof(data_page::dpg_repeat) + OFFSETA(rhd*, rhd_data));
+								(sizeof(data_page::dpg_repeat) + OFFSETA(RHD, rhd_data));
 
 	const btree_nod* const end  = (btree_nod*) ((UCHAR *) page + page->btr_length);
 	btree_nod* node = (btree_nod*) page->btr_nodes;

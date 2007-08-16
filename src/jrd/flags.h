@@ -47,7 +47,7 @@ const USHORT LOG_overflow	= 8;
 
 /* flags for RDB$RELATIONS */
 
-const USHORT REL_sql					= 0x0001;
+const USHORT REL_sql		= 1;
 
 /* flags for RDB$TRIGGERS */
 

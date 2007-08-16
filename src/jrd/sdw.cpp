@@ -38,6 +38,7 @@
 #include "../jrd/sdw.h"
 #include "../jrd/sbm.h"
 #include "../jrd/flags.h"
+#include "../jrd/all_proto.h"
 #include "../jrd/cch_proto.h"
 #include "../jrd/err_proto.h"
 #include "../jrd/gds_proto.h"
@@ -91,14 +92,10 @@ void SDW_add(const TEXT* file_name, USHORT shadow_number, USHORT file_flags)
 			isc_arg_end);
 	}
 
-	jrd_file* shadow_file = PIO_create(dbb, file_name, false, false, false);
+	jrd_file* shadow_file = PIO_create(dbb, file_name, false, false);
 
-	if (dbb->dbb_flags & (DBB_force_write | DBB_no_fs_cache))
-	{
-		PIO_force_write(shadow_file, 
-			dbb->dbb_flags & DBB_force_write, 
-			dbb->dbb_flags & DBB_no_fs_cache);
-	}
+	if (dbb->dbb_flags & DBB_force_write)
+		PIO_force_write(shadow_file, true);
 
 	Shadow* shadow = allocate_shadow(shadow_file, shadow_number, file_flags);
 
@@ -107,7 +104,7 @@ void SDW_add(const TEXT* file_name, USHORT shadow_number, USHORT file_flags)
 
 	if (shadow->sdw_flags & SDW_conditional)
 		shadow->sdw_flags &= ~SDW_conditional;
-	WIN window(HEADER_PAGE_NUMBER);
+	WIN window(HEADER_PAGE);
 	CCH_FETCH(tdbb, &window, LCK_write, pag_header);
 	CCH_MARK_MUST_WRITE(tdbb, &window);
 	CCH_write_all_shadows(tdbb, 0, window.win_bdb,
@@ -173,12 +170,8 @@ int SDW_add_file(const TEXT* file_name, SLONG start, USHORT shadow_number)
 
 	jrd_file* next = file->fil_next;
 
-	if (dbb->dbb_flags & (DBB_force_write | DBB_no_fs_cache))
-	{
-		PIO_force_write(next, 
-			dbb->dbb_flags & DBB_force_write, 
-			dbb->dbb_flags & DBB_no_fs_cache);
-	}
+	if (dbb->dbb_flags & DBB_force_write)
+		PIO_force_write(next, true);
 
 /* Always write the header page, even for a conditional
  * shadow that hasn't been activated.
@@ -283,7 +276,7 @@ else
 		delete[] spare_buffer;
 
 	}	// try
-	catch (const Firebird::Exception&) {
+	catch (const std::exception&) {
 		if (spare_buffer)
 			delete[] spare_buffer;
 		throw;
@@ -325,7 +318,7 @@ void SDW_check(void)
 			MET_delete_shadow(tdbb, shadow->sdw_number);
 			gds__log
 				("shadow %s deleted from database %s due to unavailability on write",
-				 shadow->sdw_file->fil_string, dbb->dbb_filename.c_str());
+				 shadow->sdw_file->fil_string, dbb->dbb_file->fil_string);
 		}
 
 		/* note that shutting down a shadow is destructive to 
@@ -410,7 +403,7 @@ bool SDW_check_conditional(void)
 
 				gds__log("conditional shadow %d %s activated for database %s",
 						 shadow->sdw_number, shadow->sdw_file->fil_string,
-						 dbb->dbb_filename.c_str());
+						 dbb->dbb_file->fil_string);
 				USHORT file_flags = FILE_shadow;
 				if (shadow->sdw_flags & SDW_manual)
 					file_flags |= FILE_manual;
@@ -461,7 +454,7 @@ void SDW_dump_pages(void)
 	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = tdbb->tdbb_database;
 	gds__log("conditional shadow dumped for database %s",
-			 dbb->dbb_filename.c_str());
+			 dbb->dbb_file->fil_string);
 	const SLONG max = PAG_last_page();
 
 /* mark the first shadow in the list because we don't
@@ -470,7 +463,7 @@ void SDW_dump_pages(void)
 
 /* none of these pages should need any alteration
    since header pages for extend files are not handled at this level */
-	WIN window(DB_PAGE_SPACE, -1);
+	WIN window(-1);
 	window.win_flags = WIN_large_scan;
 	window.win_scans = 1;
 
@@ -552,8 +545,9 @@ void SDW_get_shadows(void)
 	if (lock->lck_physical != LCK_SR) {
 		/* fb_assert (lock->lck_physical == LCK_none); */
 
-		WIN window(HEADER_PAGE_NUMBER);
-		const header_page* header = (header_page*) CCH_FETCH(tdbb, &window, LCK_read, pag_header);
+		WIN window(HEADER_PAGE);
+		const header_page* header =
+			(header_page*) CCH_FETCH(tdbb, &window, LCK_read, pag_header);
 		lock->lck_key.lck_long = header->hdr_shadow_count;
 		LCK_lock(tdbb, lock, LCK_SR, LCK_WAIT);
 		CCH_RELEASE(tdbb, &window);
@@ -606,7 +600,7 @@ void SDW_init(bool activate, bool delete_files)
 
 /* get current shadow lock count from database header page */
 
-	WIN window(HEADER_PAGE_NUMBER);
+	WIN window(HEADER_PAGE);
 
 	header = (header_page*) CCH_FETCH(tdbb, &window, LCK_read, pag_header);
 	lock->lck_key.lck_long = header->hdr_shadow_count;
@@ -691,8 +685,9 @@ void SDW_notify(void)
    note that since other processes need the header page to issue locks
    on the shadow count, this is effectively an uninterruptible operation */
 
-	WIN window(HEADER_PAGE_NUMBER);
-	header_page* header = (header_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
+	WIN window(HEADER_PAGE);
+	header_page* header =
+		(header_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
 	CCH_MARK_MUST_WRITE(tdbb, &window);
 
 /* get an exclusive lock on the current shadowing semaphore to
@@ -737,8 +732,7 @@ bool SDW_rollover_to_shadow(jrd_file* file, const bool inAst)
 	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = GET_DBB();
 
-	PageSpace* pageSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
-	if (file != pageSpace->file)
+	if (file != dbb->dbb_file)
 		return true;
 
 	Lock temp_lock;
@@ -761,14 +755,14 @@ bool SDW_rollover_to_shadow(jrd_file* file, const bool inAst)
 	// code must be executed for valid active attachments only.
 	if (tdbb->tdbb_attachment->att_flags & ATT_lck_init_done) {
 		if (update_lock->lck_physical != LCK_EX ||
-			file != pageSpace->file || !SDW_lck_update(sdw_update_flags))
+			file != dbb->dbb_file || !SDW_lck_update(sdw_update_flags)) 
 		{
 			LCK_release(tdbb, update_lock);
 			LCK_lock(tdbb, update_lock, LCK_SR, LCK_NO_WAIT);
 			while (update_lock->lck_physical != LCK_SR) {
 				if (dbb->dbb_ast_flags & DBB_get_shadows)
 					break;
-				if ((file != pageSpace->file ) || !dbb->dbb_shadow_lock)
+				if ((file != dbb->dbb_file) || !dbb->dbb_shadow_lock)
 					break;
 				LCK_lock(tdbb, update_lock, LCK_SR, LCK_NO_WAIT);
 			}
@@ -806,7 +800,7 @@ bool SDW_rollover_to_shadow(jrd_file* file, const bool inAst)
 		return false;
 	}
 
-	if (file != pageSpace->file) {
+	if (file != dbb->dbb_file) {
 		LCK_write_data(shadow_lock, (SLONG) 0);
 		LCK_release(tdbb, update_lock);
 		return true;
@@ -815,10 +809,10 @@ bool SDW_rollover_to_shadow(jrd_file* file, const bool inAst)
 /* close the main database file if possible
    and release all file blocks */
 
-	PIO_close(pageSpace->file);
+	PIO_close(dbb->dbb_file);
 
-	while ( (file = pageSpace->file) ) {
-		pageSpace->file = file->fil_next;
+	while ( (file = dbb->dbb_file) ) {
+		dbb->dbb_file = file->fil_next;
 		delete file;
 	}
 
@@ -829,7 +823,7 @@ bool SDW_rollover_to_shadow(jrd_file* file, const bool inAst)
    that would cause us to create a new shadow block for
    it the next time we do a MET_get_shadow_files () */
 
-	pageSpace->file = shadow->sdw_file;
+	dbb->dbb_file = shadow->sdw_file;
 	shadow->sdw_flags |= SDW_rollover;
 
 /* check conditional does a meta data update - since we were
@@ -943,9 +937,7 @@ void SDW_start(const TEXT* file_name,
 
 	Firebird::PathName expanded_name(file_name);
 	ISC_expand_filename(expanded_name, false);
-	PageSpace* pageSpace = 
-		dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
-	jrd_file* dbb_file = pageSpace->file;
+	jrd_file* dbb_file = dbb->dbb_file;
 
 	if (dbb_file && dbb_file->fil_string && 
 		expanded_name == dbb_file->fil_string) 
@@ -976,19 +968,15 @@ void SDW_start(const TEXT* file_name,
 												1) & ~((U_IPTR) MIN_PAGE_SIZE
 													   - 1)));
 
-	WIN window(DB_PAGE_SPACE, -1);
+	WIN window(-1);
 	jrd_file* shadow_file = 0;
 
 	try {
 
-	shadow_file =
-		PIO_open(dbb, expanded_name, false, file_name, false);
+	shadow_file = PIO_open(dbb, expanded_name, false, 0, file_name, false);
 
-	if (dbb->dbb_flags & (DBB_force_write | DBB_no_fs_cache))
-	{
-		PIO_force_write(shadow_file, 
-			dbb->dbb_flags & DBB_force_write, 
-			dbb->dbb_flags & DBB_no_fs_cache);
+	if (dbb->dbb_flags & DBB_force_write) {
+		PIO_force_write(shadow_file, true);
 	}
 
 	if (!(file_flags & FILE_conditional))
@@ -998,7 +986,7 @@ void SDW_start(const TEXT* file_name,
 		   2. make sure the database and shadow are in sync by checking the creation time/transaction id
 		   3. make sure that the shadow has not already been activated */
 
-		window.win_page = HEADER_PAGE_NUMBER;
+		window.win_page = HEADER_PAGE;
 		const header_page* database_header =
 			(header_page*) CCH_FETCH(tdbb, &window, LCK_read, pag_header);
 		header_fetched++;
@@ -1069,7 +1057,7 @@ void SDW_start(const TEXT* file_name,
 		delete[] spare_buffer;
 
 	}	// try
-	catch (const Firebird::Exception& ex) {
+	catch (const std::exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		if (header_fetched) {
 			CCH_RELEASE(tdbb, &window);
@@ -1161,13 +1149,13 @@ static void activate_shadow(void)
 	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
-	gds__log("activating shadow file %s", dbb->dbb_filename.c_str());
+	gds__log("activating shadow file %s", dbb->dbb_file->fil_string);
 
 	MET_activate_shadow(tdbb);
 
 /* clear the shadow bit on the header page */
 
-	WIN window(HEADER_PAGE_NUMBER);
+	WIN window(HEADER_PAGE);
 	header_page* header = (header_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
 	CCH_MARK_MUST_WRITE(tdbb, &window);
 	header->hdr_flags &= ~hdr_active_shadow;
@@ -1242,13 +1230,13 @@ static bool check_for_file(const SCHAR* name, USHORT length)
 	const Firebird::PathName path(name, length);
 
 	try {
-		// This use of PIO_open is NOT checked against DatabaseAccess configuration
-		// parameter. It's not required, because here we only check for presence of
-		// existing file, never really use (or create) it.
-		jrd_file* temp_file = PIO_open(dbb, path, false, path, false);
+//  This use of PIO_open is NOT checked against DatabaseAccess configuration
+// parameter. It's not required, because here we only check for presence of
+// existing file, never really use (or create) it.
+		jrd_file* temp_file = PIO_open(dbb, path, false, 0, path, false);
 		PIO_close(temp_file);
 	}	// try
-	catch (const Firebird::Exception& ex) {
+	catch (const std::exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		return false;
 	}
@@ -1309,7 +1297,7 @@ static void copy_header(void)
 /* get the database header page and write it out --
    CCH will take care of modifying it */
 
-	WIN window(HEADER_PAGE_NUMBER);
+	WIN window(HEADER_PAGE);
 	CCH_FETCH(tdbb, &window, LCK_write, pag_header);
 	CCH_MARK_MUST_WRITE(tdbb, &window);
 	CCH_RELEASE(tdbb, &window);
@@ -1346,17 +1334,15 @@ static void update_dbb_to_sdw(Database* dbb)
 /* close the main database file if possible
    and release all file blocks */
 
-	PageSpace* pageSpace = 
-		dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
-	PIO_close(pageSpace->file);
+	PIO_close(dbb->dbb_file);
 
 	jrd_file* file;
-	while ( (file = pageSpace->file) ) {
-		pageSpace->file = file->fil_next;
+	while ( (file = dbb->dbb_file) ) {
+		dbb->dbb_file = file->fil_next;
 		delete file;
 	}
 
-	pageSpace->file = shadow->sdw_file;
+	dbb->dbb_file = shadow->sdw_file;
 	shadow->sdw_flags |= SDW_rollover;
 }
 

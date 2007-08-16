@@ -27,6 +27,7 @@
 #  Contributor(s):
 # 
 #
+#  $Id: Makefile.in.client.gbak,v 1.15 2005-12-20 12:14:52 alexpeshkoff Exp $
 #
 
 ROOT=..
@@ -42,7 +43,7 @@ include     $(ROOT)/gen/make.shared.variables
 
 
 GBAK_Other_Sources = remote/xdr.cpp jrd/sdl.cpp\
-			common/classes/MetaName.cpp jrd/path_utils.cpp
+			common/classes/MetaName.cpp
 GBAK_Files = backup.epp  restore.epp \
 			burp.cpp canonical.cpp misc.cpp mvol.cpp
 GBAK_Sources = $(addprefix burp/, $(GBAK_Files)) $(GBAK_Other_Sources)

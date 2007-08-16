@@ -38,16 +38,15 @@ const int obj_exception			= 7;
 const int obj_user				= 8;
 const int obj_field				= 9;
 const int obj_index				= 10;
-// const int obj_count				= 11;
+const int obj_count				= 11;
 const int obj_user_group		= 12;
 const int obj_sql_role			= 13;
 const int obj_generator			= 14;
 const int obj_udf				= 15;
 const int obj_blob_filter		= 16;
-const int obj_collation			= 17;
 
 // keep this last !
-const int obj_type_MAX			= 18;
+const int obj_type_MAX			= 17;
 
 #endif /* JRD_OBJ_H */
 

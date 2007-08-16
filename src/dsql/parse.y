@@ -71,7 +71,6 @@
  * 2003.10.05 Dmitry Yemanov: Added support for explicit cursors in PSQL.
  * 2004.01.16 Vlad Horsun: added support for default parameters and 
  *   EXECUTE BLOCK statement
- * Adriano dos Santos Fernandes
  */
 
 #include "firebird.h"
@@ -130,6 +129,7 @@ typedef dsql_nod* YYSTYPE;
 #define YYFREE gds__free
 
 static const char INTERNAL_FIELD_NAME[] = "DSQL internal"; /* NTX: placeholder */
+static const char NULL_STRING[] = "";
 
 inline SLONG trigger_type_suffix(const int slot1, const int slot2, const int slot3)
 {
@@ -196,8 +196,13 @@ struct LexerState {
 	const TEXT* line_start_bk;
 	SSHORT	lines, att_charset;
 	SSHORT	lines_bk;
-	int  prev_keyword;
+	int  prev_keyword, prev_prev_keyword;
 	USHORT	param_number;
+	/* Fields to handle FIRST/SKIP as non-reserved keywords */
+	bool limit_clause; /* We are inside of limit clause. Need to detect SKIP after FIRST */
+	bool first_detection; /* Detect FIRST unconditionally */
+	/* Fields to handle INSERTING/UPDATING/DELETING as non-reserved keywords */
+	bool brace_analysis; /* When this is true lexer is informed not to swallow braces around INSERTING/UPDATING/DELETING */
 	
 	int yylex (
 		USHORT	client_dialect,
@@ -326,6 +331,7 @@ static LexerState lex;
 %token MAXIMUM
 %token MAX_SEGMENT
 %token MERGE
+%token MESSAGE
 %token MINIMUM
 %token MODULE_NAME
 %token NAMES
@@ -477,6 +483,11 @@ static LexerState lex;
 %token INSERTING
 %token UPDATING
 %token DELETING
+/* Special pseudo-tokens introduced to handle case 
+	when our grammar is not LARL(1) */
+%token KW_INSERTING
+%token KW_UPDATING
+%token KW_DELETING
 
 /* tokens added for Firebird 2.0 */
 
@@ -493,15 +504,20 @@ static LexerState lex;
 %token NEXT
 %token SEQUENCE
 %token RESTART
+// %token ACCENT		// FB_NEW_INTL_ALLOW_NOT_READY
 %token BOTH
 %token COLLATION
 %token COMMENT
 %token BIT_LENGTH
 %token CHAR_LENGTH
 %token CHARACTER_LENGTH
+// %token INSENSITIVE	// FB_NEW_INTL_ALLOW_NOT_READY
 %token LEADING
 %token KW_LOWER
 %token OCTET_LENGTH
+// %token PAD			// FB_NEW_INTL_ALLOW_NOT_READY
+// %token SENSITIVE		// FB_NEW_INTL_ALLOW_NOT_READY
+// %token SPACE			// FB_NEW_INTL_ALLOW_NOT_READY
 %token TRAILING
 %token TRIM
 %token RETURNING
@@ -510,72 +526,6 @@ static LexerState lex;
 %token UNDO
 %token REQUESTS
 %token TIMEOUT
-
-/* tokens added for Firebird 2.1 */
-
-%token ABS
-%token ACCENT
-%token ACOS
-%token ASCII_CHAR
-%token ASCII_VAL
-%token ASIN
-%token ATAN
-%token ATAN2
-%token BIN_AND
-%token BIN_OR
-%token BIN_SHL
-%token BIN_SHR
-%token BIN_XOR
-%token CEIL
-%token CONNECT
-%token COS
-%token COSH
-%token COT
-%token DATEADD
-%token DATEDIFF
-%token DECODE
-%token DISCONNECT
-%token EXP
-%token FLOOR
-%token GEN_UUID
-%token GLOBAL 
-%token HASH
-%token INSENSITIVE
-%token LIST
-%token LN
-%token LOG
-%token LOG10
-%token LPAD
-%token MATCHED
-%token MATCHING
-%token MAXVALUE
-%token MILLISECOND
-%token MINVALUE
-%token MOD
-%token OVERLAY
-%token PAD
-%token PI
-%token PLACING
-%token POWER
-%token PRESERVE
-%token RAND
-%token RECURSIVE 
-%token REPLACE
-%token REVERSE
-%token ROUND
-%token RPAD
-%token SENSITIVE
-%token SIGN
-%token SIN
-%token SINH
-%token SPACE
-%token SQRT
-%token START
-%token TAN
-%token TANH
-%token TEMPORARY 
-%token TRUNC
-%token WEEK
 
 /* precedence declarations for expression evaluation */
 
@@ -616,23 +566,21 @@ statement	: alter
 		| comment
 		| commit
 		| create
-		| create_or_alter
 		| declare
 		| delete
 		| drop
 		| grant
 		| insert
-		| merge
 		| exec_procedure
 		| exec_block
 		| recreate
+		| replace
 		| revoke
 		| rollback
 		| savepoint
 		| select
 		| set
 		| update
-		| update_or_insert
 		| KW_DEBUG signed_short_integer
 			{ prepare_console_debug ((IPTR) $2, &yydebug);
 			  $$ = make_node (nod_null, (int) 0, NULL); }
@@ -903,8 +851,6 @@ create_clause	: EXCEPTION exception_clause
 			{ $$ = $2; }
 		| TABLE table_clause
 			{ $$ = $2; }
-		| GLOBAL TEMPORARY TABLE gtt_table_clause
-			{ $$ = $4; }
 		| TRIGGER trigger_clause
 			{ $$ = $2; }
 		| VIEW view_clause
@@ -921,8 +867,10 @@ create_clause	: EXCEPTION exception_clause
 			{ $$ = $2; }
 		| ROLE role_clause
 			{ $$ = $2; }
+		/*** FB_NEW_INTL_ALLOW_NOT_READY
 		| COLLATION collation_clause
 			{ $$ = $2; }
+		***/
 		;
 
 
@@ -934,8 +882,6 @@ recreate_clause	: PROCEDURE rprocedure_clause
 			{ $$ = $2; }
 		| TABLE rtable_clause
 			{ $$ = $2; }
-		| GLOBAL TEMPORARY TABLE gtt_recreate_clause
-			{ $$ = $4; }
 		| VIEW rview_clause
 			{ $$ = $2; }
 		| TRIGGER rtrigger_clause
@@ -948,7 +894,7 @@ recreate_clause	: PROCEDURE rprocedure_clause
 			{ $$ = $2; }
 		;
 
-create_or_alter	: CREATE OR ALTER replace_clause
+replace	: CREATE OR ALTER replace_clause
 			{ $$ = $4; }
 		;
 
@@ -1121,9 +1067,9 @@ role_clause : symbol_role_name
 
 /* CREATE COLLATION */
 
+/*** FB_NEW_INTL_ALLOW_NOT_READY
 collation_clause : symbol_collation_name FOR symbol_character_set_name
-		collation_sequence_definition
-		collation_attribute_list_opt collation_specific_attribute_opt
+		collation_sequence_definition collation_attribute_list_opt collation_specific_attribute_opt
 			{ $$ = make_node (nod_def_collation, 
 						(int) e_def_coll_count, $1, $3, $4, make_list($5), $6); }
 		;
@@ -1131,8 +1077,6 @@ collation_clause : symbol_collation_name FOR symbol_character_set_name
 collation_sequence_definition :
 		FROM symbol_collation_name
 			{ $$ = make_node(nod_collation_from, 1, $2); }
-		| FROM EXTERNAL '(' sql_string ')'
-			{ $$ = make_node(nod_collation_from_external, 1, $4); }
 		|
 			{ $$ = NULL; }
 		;
@@ -1143,8 +1087,8 @@ collation_attribute_list_opt :
 		;
 
 collation_attribute_list : collation_attribute
-		| collation_attribute_list collation_attribute
-			{ $$ = make_node(nod_list, 2, $1, $2); }
+		| collation_attribute_list ',' collation_attribute
+			{ $$ = make_node(nod_list, 2, $1, $3); }
 		;
 
 collation_attribute :
@@ -1174,9 +1118,9 @@ collation_accent_attribute : ACCENT SENSITIVE
 collation_specific_attribute_opt :
 			{ $$ = NULL; }
 		| sql_string
-			{ $$ = make_node(nod_collation_specific_attr, 1,
-				MAKE_constant((dsql_str*)$1, CONSTANT_STRING)); }
+			{ $$ = make_node(nod_collation_specific_attr, 1, MAKE_constant((dsql_str*)$1, CONSTANT_STRING)); }
 		;
+***/
 
 
 /* CREATE DATABASE */
@@ -1271,31 +1215,13 @@ page_noise	:
 /* CREATE TABLE */
 
 table_clause	: simple_table_name external_file '(' table_elements ')'
-			{ $$ = make_flag_node (nod_def_relation, NOD_PERMANENT_TABLE,
+			{ $$ = make_node (nod_def_relation, 
 				(int) e_drl_count, $1, make_list ($4), $2); }
 		;
 
 rtable_clause	: simple_table_name external_file '(' table_elements ')'
-			{ $$ = make_flag_node (nod_redef_relation, NOD_PERMANENT_TABLE,
+			{ $$ = make_node (nod_redef_relation, 
 				(int) e_drl_count, $1, make_list ($4), $2); }
-		;
-
-gtt_table_clause :	simple_table_name '(' table_elements ')' gtt_scope
-			{ $$ = make_flag_node (nod_def_relation, (SSHORT) (IPTR) ($5),
-				(int) e_drl_count, $1, make_list ($3), NULL); }
-		;
-
-gtt_recreate_clause	:	simple_table_name '(' table_elements ')' gtt_scope
-			{ $$ = make_flag_node (nod_redef_relation, (SSHORT) (IPTR) ($5),
-				(int) e_drl_count, $1, make_list ($3), NULL); }
-		;
-
-gtt_scope : ON COMMIT PRESERVE ROWS
-			{ $$ = (dsql_nod*) NOD_GLOBAL_TEMP_TABLE_PRESERVE_ROWS; }
-		|	ON COMMIT KW_DELETE ROWS
-			{ $$ = (dsql_nod*) NOD_GLOBAL_TEMP_TABLE_DELETE_ROWS; }
-		|
-			{ $$ = (dsql_nod*) NOD_GLOBAL_TEMP_TABLE_DELETE_ROWS; }
 		;
 
 external_file	: EXTERNAL KW_FILE sql_string
@@ -1374,17 +1300,6 @@ simple_column_def_name  : simple_column_name
 
 data_type_descriptor :	init_data_type data_type
 			{ $$ = $1; }
-		| TYPE OF column_def_name
-			{
-				((dsql_fld*) $3)->fld_type_of_name = ((dsql_fld*) $3)->fld_name;
-				$$ = $3;
-			}
-		| column_def_name
-			{
-				((dsql_fld*) $1)->fld_type_of_name = ((dsql_fld*) $1)->fld_name;
-				((dsql_fld*) $1)->fld_full_domain = true;
-				$$ = $1;
-			}
 		;
 
 init_data_type :
@@ -1572,10 +1487,10 @@ input_proc_parameters	: input_proc_parameter
 			{ $$ = make_node (nod_list, 2, $1, $3); }
 		;
 
-input_proc_parameter	: simple_column_def_name domain_or_non_array_type collate_clause
+input_proc_parameter	: simple_column_def_name non_array_type
 				begin_trigger default_par_opt end_default_opt
 			{ $$ = make_node (nod_def_field, (int) e_dfl_count, 
-				$1, $5, $6, NULL, $3, NULL, NULL); }   
+				$1, $4, $5, NULL, NULL, NULL, NULL); }   
 		;
 
 output_proc_parameters	: proc_parameter
@@ -1583,9 +1498,9 @@ output_proc_parameters	: proc_parameter
 			{ $$ = make_node (nod_list, 2, $1, $3); }
 		;
 
-proc_parameter	: simple_column_def_name domain_or_non_array_type collate_clause
+proc_parameter	: simple_column_def_name non_array_type
 			{ $$ = make_node (nod_def_field, (int) e_dfl_count, 
-				$1, NULL, NULL, NULL, $3, NULL, NULL); }   
+				$1, NULL, NULL, NULL, NULL, NULL, NULL); }   
 		;
 
 default_par_opt	: DEFAULT begin_trigger default_value
@@ -1607,21 +1522,17 @@ local_declarations	: local_declaration
 			{ $$ = make_node (nod_list, 2, $1, $2); }
 		;
 
-local_declaration : stmt_start_line stmt_start_column DECLARE var_decl_opt local_declaration_item ';'
-			{
-				$$ = $5;
-				$$->nod_line = (IPTR) $1;
-				$$->nod_column = (IPTR) $2;
-			}
+local_declaration : DECLARE var_decl_opt local_declaration_item ';'
+			{ $$ = $3; }
 		;
 
 local_declaration_item	: var_declaration_item
 		| cursor_declaration_item
 		;
 
-var_declaration_item	: column_def_name domain_or_non_array_type collate_clause var_init_opt
+var_declaration_item	: column_def_name non_array_type var_init_opt
 			{ $$ = make_node (nod_def_field, (int) e_dfl_count, 
-				$1, $4, NULL, NULL, $3, NULL, NULL); }
+				$1, $3, NULL, NULL, NULL, NULL, NULL); }
 		;
 
 var_decl_opt	: VARIABLE
@@ -1647,10 +1558,8 @@ proc_block	: proc_statement
 		| full_proc_block
 		;
 
-full_proc_block	: stmt_start_line stmt_start_column BEGIN full_proc_block_body END
-			{ 
-				$$ = make_node (nod_src_info, e_src_info_count, $1, $2, $4);
-			}
+full_proc_block	: BEGIN full_proc_block_body END
+			{ $$ = $2; }
 		;
 
 full_proc_block_body	: proc_statements
@@ -1666,36 +1575,19 @@ proc_statements	: proc_block
 			{ $$ = make_node (nod_list, 2, $1, $2); }
 		;
 
-proc_statement	: stmt_start_line stmt_start_column simple_proc_statement ';'
-			{ 
-				$$ = make_node (nod_src_info, e_src_info_count, $1, $2, $3);
-			}
-		| stmt_start_line stmt_start_column complex_proc_statement
-			{ 
-				$$ = make_node (nod_src_info, e_src_info_count, $1, $2, $3);
-			}
+proc_statement	: simple_proc_statement ';'
+		| complex_proc_statement
 		;
 
-stmt_start_line :
-		{ $$ = (dsql_nod*) (IPTR) lex.lines_bk; }
-
-stmt_start_column :
-		{ 
-			const USHORT column = (lex.last_token_bk - lex.line_start_bk + 1);
-			$$ = (dsql_nod*) (IPTR) column;
-		}
-		
 simple_proc_statement	: assignment
 		| insert
-		| merge
 		| update
-		| update_or_insert
 		| delete
 		| singleton_select
 		| exec_procedure
 		| exec_sql
 		| exec_into
-		| exec_function
+		| exec_udf
 		| excp_statement
 		| raise_statement
 		| post_event
@@ -1758,7 +1650,7 @@ event_argument_opt	: /*',' value
 
 singleton_select	: select INTO variable_list
 			{ $$ = make_node (nod_for_select, (int) e_flp_count, $1,
-					  make_list ($3), NULL, NULL, NULL); }
+					  make_list ($3), NULL, NULL); }
 		;
 
 variable	: ':' symbol_variable_name
@@ -2000,107 +1892,35 @@ check_opt	: WITH CHECK OPTION
 
 /* CREATE TRIGGER */
 
-trigger_clause
-	:	symbol_trigger_name
+trigger_clause : symbol_trigger_name FOR simple_table_name
 		trigger_active
 		trigger_type
 		trigger_position
 		trigger_action
 		end_trigger
-		{
-			$$ = make_node (nod_def_trigger, (int) e_trg_count,
-				$1, NULL, $2, $3, $4, $5, $6);
-		}
-	|	symbol_trigger_name FOR simple_table_name
-		trigger_active
-		trigger_type
-		trigger_position
-		trigger_action
-		end_trigger
-		{
-			$$ = make_node (nod_def_trigger, (int) e_trg_count,
-				$1, $3, $4, $5, $6, $7, $8);
-		}
-	|	symbol_trigger_name
-		trigger_active
-		trigger_type
-		trigger_position
-		ON simple_table_name
-		trigger_action
-		end_trigger
-		{
-			$$ = make_node (nod_def_trigger, (int) e_trg_count,
-				$1, $6, $2, $3, $4, $7, $8);
-		}
-	;
+			{ $$ = make_node (nod_def_trigger, (int) e_trg_count,
+				$1, $3, $4, $5, $6, $7, $8); }
+		;
 
-rtrigger_clause
-	:	symbol_trigger_name
+rtrigger_clause : symbol_trigger_name FOR simple_table_name
 		trigger_active
 		trigger_type
 		trigger_position
 		trigger_action
 		end_trigger
-		{
-			$$ = make_node (nod_redef_trigger, (int) e_trg_count,
-				$1, NULL, $2, $3, $4, $5, $6);
-		}
-	|	symbol_trigger_name FOR simple_table_name
-		trigger_active
-		trigger_type
-		trigger_position
-		trigger_action
-		end_trigger
-		{
-			$$ = make_node (nod_redef_trigger, (int) e_trg_count,
-				$1, $3, $4, $5, $6, $7, $8);
-		}
-	|	symbol_trigger_name
-		trigger_active
-		trigger_type
-		trigger_position
-		ON simple_table_name
-		trigger_action
-		end_trigger
-		{
-			$$ = make_node (nod_redef_trigger, (int) e_trg_count,
-				$1, $6, $2, $3, $4, $7, $8);
-		}
-	;
+			{ $$ = make_node (nod_redef_trigger, (int) e_trg_count,
+				$1, $3, $4, $5, $6, $7, $8); }
+		;
 
-replace_trigger_clause
-	:	symbol_trigger_name
+replace_trigger_clause : symbol_trigger_name FOR simple_table_name
 		trigger_active
 		trigger_type
 		trigger_position
 		trigger_action
 		end_trigger
-		{
-			$$ = make_node (nod_replace_trigger, (int) e_trg_count,
-				$1, NULL, $2, $3, $4, $5, $6);
-		}
-	|	symbol_trigger_name FOR simple_table_name
-		trigger_active
-		trigger_type
-		trigger_position
-		trigger_action
-		end_trigger
-		{
-			$$ = make_node (nod_replace_trigger, (int) e_trg_count,
-				$1, $3, $4, $5, $6, $7, $8);
-		}
-	|	symbol_trigger_name
-		trigger_active
-		trigger_type
-		trigger_position
-		ON simple_table_name
-		trigger_action
-		end_trigger
-		{
-			$$ = make_node (nod_replace_trigger, (int) e_trg_count,
-				$1, $6, $2, $3, $4, $7, $8);
-		}
-	;
+			{ $$ = make_node (nod_replace_trigger, (int) e_trg_count,
+				$1, $3, $4, $5, $6, $7, $8); }
+		;
 
 trigger_active	: ACTIVE 
 			{ $$ = MAKE_constant ((dsql_str*) 0, CONSTANT_SLONG); }
@@ -2110,25 +1930,9 @@ trigger_active	: ACTIVE
 			{ $$ = NULL; }
 		;
 
-trigger_type
-	:	trigger_type_prefix trigger_type_suffix
+trigger_type	: trigger_type_prefix trigger_type_suffix
 			{ $$ = MAKE_trigger_type ($1, $2); }
-	|	ON trigger_db_type
-			{ $$ = $2; }
-	;
-
-trigger_db_type
-	:	CONNECT
-			{ $$ = MAKE_constant ((dsql_str*) (TRIGGER_TYPE_DB | DB_TRIGGER_CONNECT), CONSTANT_SLONG); }
-	|	DISCONNECT
-			{ $$ = MAKE_constant ((dsql_str*) (TRIGGER_TYPE_DB | DB_TRIGGER_DISCONNECT), CONSTANT_SLONG); }
-	|	TRANSACTION START
-			{ $$ = MAKE_constant ((dsql_str*) (TRIGGER_TYPE_DB | DB_TRIGGER_TRANS_START), CONSTANT_SLONG); }
-	|	TRANSACTION COMMIT
-			{ $$ = MAKE_constant ((dsql_str*) (TRIGGER_TYPE_DB | DB_TRIGGER_TRANS_COMMIT), CONSTANT_SLONG); }
-	|	TRANSACTION ROLLBACK
-			{ $$ = MAKE_constant ((dsql_str*) (TRIGGER_TYPE_DB | DB_TRIGGER_TRANS_ROLLBACK), CONSTANT_SLONG); }
-	;
+		;
 
 trigger_type_prefix	: BEFORE
 			{ $$ = MAKE_constant ((dsql_str*) 0, CONSTANT_SLONG); }
@@ -2308,18 +2112,13 @@ keyword_or_column	: valid_symbol_name
 		| CHAR_LENGTH
 		| CHARACTER_LENGTH
 		| COMMENT
+		// | INSENSITIVE	// FB_NEW_INTL_ALLOW_NOT_READY
 		| LEADING
 		| KW_LOWER
 		| OCTET_LENGTH
+		// | SENSITIVE		// FB_NEW_INTL_ALLOW_NOT_READY
 		| TRAILING
 		| TRIM
-		| CONNECT				/* added in FB 2.1 */
-		| DISCONNECT
-		| GLOBAL
-		| INSENSITIVE
-		| RECURSIVE 
-		| SENSITIVE
-		| START
 		;
 
 col_opt	: ALTER
@@ -2461,8 +2260,6 @@ drop_clause	: EXCEPTION symbol_exception_name
 			{ $$ = make_node (nod_del_generator, (int) 1, $2); }
 		| SEQUENCE symbol_generator_name
 			{ $$ = make_node (nod_del_generator, (int) 1, $2); }
-		| COLLATION symbol_collation_name
-			{ $$ = make_node (nod_del_collation, (int) 1, $2); }
 		;
 
 
@@ -2471,28 +2268,6 @@ drop_clause	: EXCEPTION symbol_exception_name
 data_type	: non_array_type
 		| array_type
 		;
-
-domain_or_non_array_type
-	:	domain_or_non_array_type_name
-	|	domain_or_non_array_type_name NOT KW_NULL
-			{ lex.g_field->fld_not_nullable = true; }
-	;
-
-domain_or_non_array_type_name
-	:	non_array_type
-	|	domain_type
-	;
-
-domain_type
-	:	TYPE OF symbol_column_name
-			{ lex.g_field->fld_type_of_name = ((dsql_str*) $3)->str_data; }
-	|	symbol_column_name
-			{
-				lex.g_field->fld_type_of_name = ((dsql_str*) $1)->str_data;
-				lex.g_field->fld_full_domain = true;
-			}
-	;
-
 
 non_array_type	: simple_type
 		| blob_type
@@ -3194,35 +2969,18 @@ lock_clause : WITH LOCK
 
 /* SELECT expression */
 
-select_expr	: with_clause select_expr_body order_clause rows_clause
-				{ $$ = make_node (nod_select_expr, (int) e_sel_count, $2, $3, $4, $1); }
-			| select_expr_body order_clause rows_clause
-				{ $$ = make_node (nod_select_expr, (int) e_sel_count, $1, $2, $3, NULL); }
- 		;
- 
-with_clause	: WITH RECURSIVE with_list
-				{ $$ = make_flag_node (nod_with, NOD_UNION_RECURSIVE, 1, make_list($3)); }
-			| WITH with_list
-				{ $$ = make_node (nod_with, 1, make_list($2)); }
- 		;
- 
-with_list	: with_item 
-			| with_item ',' with_list
-				{ $$ = make_node (nod_list, 2, $1, $3); }
-		;
-
-with_item	: symbol_table_alias_name derived_column_list AS '(' select_expr ')'
-				{ $$ = make_node (nod_derived_table, (int) e_derived_table_count, $5, $1, $2, NULL); }
+select_expr	: select_expr_body order_clause rows_clause
+			{ $$ = make_node (nod_select_expr, (int) e_sel_count, $1, $2, $3); }
 		;
 
 column_select	: select_expr_body order_clause rows_clause
 			{ $$ = make_flag_node (nod_select_expr, NOD_SELECT_EXPR_VALUE,
-					(int) e_sel_count, $1, $2, $3, NULL); }
+					(int) e_sel_count, $1, $2, $3); }
 		;
 
 column_singleton	: select_expr_body order_clause rows_clause
 			{ $$ = make_flag_node (nod_select_expr, NOD_SELECT_EXPR_VALUE | NOD_SELECT_EXPR_SINGLETON,
-					(int) e_sel_count, $1, $2, $3, NULL); }
+					(int) e_sel_count, $1, $2, $3); }
 		;
 
 select_expr_body	: query_term
@@ -3247,9 +3005,25 @@ query_spec	: SELECT limit_clause
 					$2, $3, $4, $5, $6, $7, $8, $9); }
 		;											   
 
-limit_clause	: first_clause skip_clause
+begin_limit	: 
+			{ lex.limit_clause = true; }
+		;
+
+end_limit	:
+			{ lex.limit_clause = false; }
+		;
+		
+begin_first	: 
+			{ lex.first_detection = true; }
+		;
+
+end_first	:
+			{ lex.first_detection = false; }
+		;
+		
+limit_clause	: first_clause skip_clause end_limit
 			{ $$ = make_node (nod_limit, (int) e_limit_count, $2, $1); }
-		|   first_clause
+		|   first_clause end_limit
 			{ $$ = make_node (nod_limit, (int) e_limit_count, NULL, $1); }
 		|   skip_clause 
 			{ $$ = make_node (nod_limit, (int) e_limit_count, $1, NULL); }
@@ -3257,18 +3031,18 @@ limit_clause	: first_clause skip_clause
 			{ $$ = 0; }
 		;
 
-first_clause	: FIRST long_integer
+first_clause	: FIRST long_integer begin_limit
 			{ $$ = MAKE_constant ((dsql_str*) $2, CONSTANT_SLONG); }
-		| FIRST '(' value ')'
+		| FIRST '(' value ')' begin_limit
 			{ $$ = $3; }
-		| FIRST parameter
+		| FIRST parameter begin_limit
 			{ $$ = $2; }
 		;
 
 skip_clause	: SKIP long_integer
 			{ $$ = MAKE_constant ((dsql_str*) $2, CONSTANT_SLONG); }
-		| SKIP '(' value ')'
-			{ $$ = $3; }
+		| SKIP '(' end_limit value ')'
+			{ $$ = $4; }
 		| SKIP parameter
 			{ $$ = $2; }
 		;
@@ -3320,11 +3094,10 @@ table_primary	: table_proc
 			{ $$ = $2; }
 		;
 
-// AB: derived table support
-// ASF: create derived table with nested union to fix CORE-1246
+/* AB: derived table support */
 derived_table :
 		'(' select_expr ')' as_noise correlation_name derived_column_list
-			{ $$ = make_node(nod_derived_table, (int) e_derived_table_count, $2, $5, $6, NULL); }
+			{ $$ = make_node(nod_derived_table, (int) e_derived_table_count, $2, $5, $6); }
 		;
 
 correlation_name : symbol_table_alias_name
@@ -3389,9 +3162,9 @@ table_proc_inputs	: '(' value_list ')'
 			;
 
 table_name	: simple_table_name
-		| symbol_table_name as_noise symbol_table_alias_name
+		| symbol_table_name symbol_table_alias_name
 			{ $$ = make_node (nod_relation_name, 
-						(int) e_rln_count, $1, $3); }
+						(int) e_rln_count, $1, $2); }
 		;						 
 
 simple_table_name: symbol_table_name
@@ -3462,9 +3235,9 @@ plan_expression	: plan_type '(' plan_item_list ')'
 plan_type	: JOIN
 			{ $$ = 0; }
 		| SORT MERGE
-			{ $$ = make_node (nod_merge_plan, (int) 0, NULL); }
+			{ $$ = make_node (nod_merge, (int) 0, NULL); }
 		| MERGE
-			{ $$ = make_node (nod_merge_plan, (int) 0, NULL); }
+			{ $$ = make_node (nod_merge, (int) 0, NULL); }
 
 		/* for now the SORT operator is a no-op; it does not 
 		   change the place where a sort happens, but is just intended 
@@ -3534,16 +3307,16 @@ order_direction	: ASC
 			{ $$ = 0; }
 		;
 
-nulls_clause : NULLS nulls_placement
-			{ $$ = $2; }
-		|
-			{ $$ = 0; }
-		;
-
 nulls_placement : FIRST
 			{ $$ = MAKE_constant((dsql_str*) NOD_NULLS_FIRST, CONSTANT_SLONG); }
 		| LAST
 			{ $$ = MAKE_constant((dsql_str*) NOD_NULLS_LAST, CONSTANT_SLONG); }
+		;
+
+nulls_clause : NULLS begin_first nulls_placement end_first
+			{ $$ = $3; }
+		|
+			{ $$ = 0; }
 		;
 
 /* ROWS clause */
@@ -3569,55 +3342,11 @@ rows_clause	: ROWS value
 insert		: INSERT INTO simple_table_name ins_column_parens_opt
 				VALUES '(' value_list ')' returning_clause
 			{ $$ = make_node (nod_insert, (int) e_ins_count, 
-				$3, $4, make_list ($7), NULL, $9); }
-		| INSERT INTO simple_table_name ins_column_parens_opt select_expr returning_clause
+				$3, make_list ($4), make_list ($7), NULL, $9); }
+		| INSERT INTO simple_table_name ins_column_parens_opt select_expr
 			{ $$ = make_node (nod_insert, (int) e_ins_count,
-				$3, $4, NULL, $5, $6); }
-		| INSERT INTO simple_table_name DEFAULT VALUES returning_clause
-			{ $$ = make_node (nod_insert, (int) e_ins_count,
-				$3, NULL, NULL, NULL, $6); }
+				$3, $4, NULL, $5, NULL); }
 		;
-
-
-/* MERGE statement */
-merge
-	:	MERGE INTO table_name USING table_reference ON search_condition
-			merge_when_clause
-		{
-			$$ = make_node(nod_merge, e_mrg_count, $3, $5, $7, $8);
-		}
-	;
-
-merge_when_clause
-	:	merge_when_matched_clause merge_when_not_matched_clause
-		{ $$ = make_node(nod_merge_when, e_mrg_when_count, $1, $2); }
-	|	merge_when_not_matched_clause merge_when_matched_clause
-		{ $$ = make_node(nod_merge_when, e_mrg_when_count, $2, $1); }
-	|	merge_when_matched_clause
-		{ $$ = make_node(nod_merge_when, e_mrg_when_count, $1, NULL); }
-	|	merge_when_not_matched_clause
-		{ $$ = make_node(nod_merge_when, e_mrg_when_count, NULL, $1); }
-	;
-
-merge_when_matched_clause
-	:	WHEN MATCHED THEN merge_update_specification
-		{ $$ = $4; }
-	;
-
-merge_when_not_matched_clause
-	:	WHEN NOT MATCHED THEN merge_insert_specification
-		{ $$ = $5; }
-	;
-
-merge_update_specification
-	:	UPDATE SET assignments
-		{ $$ = make_node(nod_merge_update, e_mrg_update_count, make_list($3)); }
-	;
-
-merge_insert_specification
-	:	INSERT ins_column_parens_opt VALUES '(' value_list ')'
-		{ $$ = make_node(nod_merge_insert, e_mrg_insert_count, make_list($2), make_list($5)); }
-	;
 
 
 /* DELETE statement */
@@ -3627,14 +3356,14 @@ delete		: delete_searched
 		;
 
 delete_searched	: KW_DELETE FROM table_name where_clause
-		plan_clause order_clause rows_clause returning_clause
+		plan_clause order_clause rows_clause
 			{ $$ = make_node (nod_delete, (int) e_del_count,
-				$3, $4, $5, $6, $7, NULL, $8); }
+				$3, $4, $5, $6, $7, NULL); }
 		;
 
 delete_positioned : KW_DELETE FROM table_name cursor_clause
 			{ $$ = make_node (nod_delete, (int) e_del_count,
-				$3, NULL, NULL, NULL, NULL, $4, NULL); }
+				$3, NULL, NULL, NULL, NULL, $4); }
 		;
 
 
@@ -3645,36 +3374,15 @@ update		: update_searched
 		;
 
 update_searched	: UPDATE table_name SET assignments where_clause
-		plan_clause order_clause rows_clause returning_clause
+		plan_clause order_clause rows_clause
 			{ $$ = make_node (nod_update, (int) e_upd_count,
-				$2, make_list ($4), $5, $6, $7, $8, NULL, $9, NULL); }
+				$2, make_list ($4), $5, $6, $7, $8, NULL); }
 		  	;
 
 update_positioned : UPDATE table_name SET assignments cursor_clause
 			{ $$ = make_node (nod_update, (int) e_upd_count,
-				$2, make_list ($4), NULL, NULL, NULL, NULL, $5, NULL, NULL); }
+				$2, make_list ($4), NULL, NULL, NULL, NULL, $5); }
 		;
-
-
-/* UPDATE OR INSERT statement */
-
-update_or_insert
-	:	UPDATE OR INSERT INTO simple_table_name ins_column_parens_opt
-			VALUES '(' value_list ')'
-			update_or_insert_matching_opt
-			returning_clause
-		{
-			$$ = make_node (nod_update_or_insert, (int) e_upi_count,
-				$5, make_list ($6), make_list ($9), $11, $12);
-		}
-	;
-
-update_or_insert_matching_opt
-	:	MATCHING ins_column_parens
-		{ $$ = $2; }
-	|
-		{ $$ = NULL; }
-	;
 
 
 returning_clause	: RETURNING value_list
@@ -3700,15 +3408,12 @@ assignments	: assignment
 		;
 
 assignment	: update_column_name '=' value
-			{ $$ = make_node (nod_assign, e_asgn_count, $3, $1); }
+			{ $$ = make_node (nod_assign, 2, $3, $1); }
 		;
 
-exec_function
-	: udf
-		{ $$ = make_node (nod_assign, e_asgn_count, $1, make_node (nod_null, 0, NULL)); }
-	| non_aggregate_function
-		{ $$ = make_node (nod_assign, e_asgn_count, $1, make_node (nod_null, 0, NULL)); }
-	;
+exec_udf	: udf
+			{ $$ = make_node (nod_assign, 2, $1, make_node (nod_null, 0, NULL)); }
+		;
 
 
 /* BLOB get and put */
@@ -3803,12 +3508,35 @@ Update...set column = expr, without qualifier for the column. */
 
 /* boolean expressions */
 
-search_condition : predicate
+search_condition : trigger_action_predicate
+		| NOT trigger_action_predicate
+			{ $$ = make_node (nod_not, 1, $2); }
+		| simple_search_condition
 		| search_condition OR search_condition
 			{ $$ = make_node (nod_or, 2, $1, $3); }
 		| search_condition AND search_condition
 			{ $$ = make_node (nod_and, 2, $1, $3); }
-		| NOT search_condition
+		;
+
+bracable_search_condition : simple_search_condition
+		| NOT trigger_action_predicate
+			{ $$ = make_node (nod_not, 1, $2); }
+		| bracable_search_condition OR search_condition
+			{ $$ = make_node (nod_or, 2, $1, $3); }
+		| bracable_search_condition AND search_condition
+			{ $$ = make_node (nod_and, 2, $1, $3); }
+		/* Special cases. Need help from lexer to parse the grammar */
+		/*| special_trigger_action_predicate -- handled by lexer */
+		| special_trigger_action_predicate OR search_condition
+			{ $$ = make_node (nod_or, 2, $1, $3); }
+		| special_trigger_action_predicate AND search_condition
+			{ $$ = make_node (nod_and, 2, $1, $3); }			
+		;
+
+simple_search_condition : predicate
+		| '(' bracable_search_condition ')'
+			{ $$ = $2; }
+		| NOT simple_search_condition
 			{ $$ = make_node (nod_not, 1, $2); }
 		;
 
@@ -3822,11 +3550,7 @@ predicate : comparison_predicate
 		| exists_predicate
 		| containing_predicate
 		| starting_predicate
-		| singular_predicate
-		| trigger_action_predicate
-		| '(' search_condition ')'
-			{ $$ = $2; }
-		;
+		| singular_predicate;
 
 
 /* comparisons */
@@ -3969,6 +3693,23 @@ trigger_action_predicate	: INSERTING
 						MAKE_constant ((dsql_str*) 3, CONSTANT_SLONG)); }
 	;
 
+special_trigger_action_predicate	: KW_INSERTING
+		{ $$ = make_node (nod_eql, 2,
+					make_node (nod_internal_info, (int) e_internal_info_count,
+						MAKE_constant ((dsql_str*) internal_trigger_action, CONSTANT_SLONG)),
+						MAKE_constant ((dsql_str*) 1, CONSTANT_SLONG)); }
+	| KW_UPDATING
+		{ $$ = make_node (nod_eql, 2,
+					make_node (nod_internal_info, (int) e_internal_info_count,
+						MAKE_constant ((dsql_str*) internal_trigger_action, CONSTANT_SLONG)),
+						MAKE_constant ((dsql_str*) 2, CONSTANT_SLONG)); }
+	| KW_DELETING
+		{ $$ = make_node (nod_eql, 2,
+					make_node (nod_internal_info, (int) e_internal_info_count,
+						MAKE_constant ((dsql_str*) internal_trigger_action, CONSTANT_SLONG)),
+						MAKE_constant ((dsql_str*) 3, CONSTANT_SLONG)); }
+	;
+
 /* set values */
 
 in_predicate_value	: table_subquery
@@ -4093,12 +3834,6 @@ sec_precision_opt	: '(' nonneg_short_integer ')'
 array_element   : column_name '[' value_list ']'
 			{ $$ = make_node (nod_array, (int) e_ary_count, $1, make_list ($3)); }
 		;
-
-value_list_opt
-	:	value_list
-	|	// nothing
-		{ $$ = NULL; }
-	;
 
 value_list	: value
 		| value_list ',' value
@@ -4244,15 +3979,9 @@ long_integer	: NUMBER
 
 /* functions */
 
-function
-	: aggregate_function
-	| non_aggregate_function
-	;
-
-non_aggregate_function
-	: numeric_value_function
+function	: aggregate_function
+	| numeric_value_function
 	| string_value_function
-	| system_function_expression
 	;
 	
 aggregate_function	: COUNT '(' '*' ')'
@@ -4302,28 +4031,11 @@ aggregate_function	: COUNT '(' '*' ')'
 			{ $$ = make_node (nod_agg_max, 1, $4); }
 		| MAXIMUM '(' DISTINCT value ')'
 			{ $$ = make_node (nod_agg_max, 1, $4); }
-		| LIST '(' all_noise value delimiter_opt ')'
-			{ $$ = make_node (nod_agg_list, 2, $4, $5); }
-		| LIST '(' DISTINCT value delimiter_opt ')'
-			{ $$ = make_flag_node (nod_agg_list, NOD_AGG_DISTINCT, 2, $4, $5); }
 		;
 
-delimiter_opt	: ',' delimiter_value
-			{ $$ = $2; }
-		|
-			{ $$ = MAKE_str_constant (MAKE_cstring(","), lex.att_charset); }
+numeric_value_function	: extract_expression
+		| length_expression
 		;
-
-delimiter_value	: sql_string
-			{ $$ = MAKE_str_constant ((dsql_str*) $1, lex.att_charset); }
-		| parameter
-		| variable
-		;
-
-numeric_value_function
-	: extract_expression
-	| length_expression
-	;
 
 extract_expression	: EXTRACT '(' timestamp_part FROM value ')'
 			{ $$ = make_node (nod_extract, (int) e_extract_count, $3, $5); }
@@ -4351,96 +4063,6 @@ octet_length_expression	: OCTET_LENGTH '(' value ')'
 			{ $$ = make_node(nod_strlen, (int) e_strlen_count,
 					MAKE_constant((dsql_str*)blr_strlen_octet, CONSTANT_SLONG), $3); }
 		;
-
-system_function_expression
-	: system_function_std_syntax '(' value_list_opt ')'
-		{ $$ = make_node(nod_sys_function, e_sysfunc_count, $1, make_list($3)); }
-	| system_function_special_syntax
-	;
-
-system_function_std_syntax
-	: ABS
-	| ACOS
-	| ASCII_CHAR
-	| ASCII_VAL
-	| ASIN
-	| ATAN
-	| ATAN2
-	| BIN_AND
-	| BIN_OR
-	| BIN_SHL
-	| BIN_SHR
-	| BIN_XOR
-	| CEIL
-	| COS
-	| COSH
-	| COT
-	| EXP
-	| FLOOR
-	| GEN_UUID
-	| HASH
-	| LEFT
-	| LN
-	| LOG
-	| LOG10
-	| LPAD
-	| MAXVALUE
-	| MINVALUE
-	| MOD
-	| PI
-	| POWER
-	| RAND
-	| REPLACE
-	| REVERSE
-	| RIGHT
-	| ROUND
-	| RPAD
-	| SIGN
-	| SIN
-	| SINH
-	| SQRT
-	| TAN
-	| TANH
-	| TRUNC
-	;
-
-system_function_special_syntax
-	: DATEADD '(' value timestamp_part FOR value ')'
-		{
-			$$ = make_flag_node(nod_sys_function, NOD_SPECIAL_SYNTAX, e_sysfunc_count,
-				$1, make_node(nod_list, 3, $3, $4, $6));
-		}
-	| DATEADD '(' timestamp_part ',' value ',' value ')'
-		{
-			$$ = make_flag_node(nod_sys_function, NOD_SPECIAL_SYNTAX, e_sysfunc_count,
-				$1, make_node(nod_list, 3, $5, $3, $7));
-		}
-	| DATEDIFF '(' timestamp_part FROM value FOR value ')'
-		{
-			$$ = make_flag_node(nod_sys_function, NOD_SPECIAL_SYNTAX, e_sysfunc_count,
-				$1, make_node(nod_list, 3, $3, $5, $7));
-		}
-	| DATEDIFF '(' timestamp_part ',' value ',' value ')'
-		{
-			$$ = make_flag_node(nod_sys_function, NOD_SPECIAL_SYNTAX, e_sysfunc_count,
-				$1, make_node(nod_list, 3, $3, $5, $7));
-		}
-	| OVERLAY '(' value PLACING value FROM value FOR value ')'
-		{
-			$$ = make_flag_node(nod_sys_function, NOD_SPECIAL_SYNTAX, e_sysfunc_count,
-				$1, make_node(nod_list, 4, $3, $5, $7, $9));
-		}
-	| OVERLAY '(' value PLACING value FROM value ')'
-		{
-			$$ = make_flag_node(nod_sys_function, NOD_SPECIAL_SYNTAX, e_sysfunc_count,
-				$1, make_node(nod_list, 3, $3, $5, $7));
-		}
-	| POSITION '(' value KW_IN value ')'
-		{
-			$$ = make_flag_node(nod_sys_function, NOD_SPECIAL_SYNTAX, e_sysfunc_count,
-				$1, make_node(nod_list, 2, $3, $5));
-		}
-	;
 
 string_value_function	:  substring_function
 		| trim_function
@@ -4510,10 +4132,6 @@ case_abbreviation	: NULLIF '(' value ',' value ')'
 				make_node (nod_list, 2, $3, $5), $7); }
 		| COALESCE '(' value ',' value_list ')'
 			{ $$ = make_node (nod_coalesce, 2, $3, $5); }
-		| DECODE '(' value ',' decode_pairs ')'
-			{ $$ = make_node(nod_simple_case, 3, $3, make_list($5), make_node(nod_null, 0, NULL)); }
-		| DECODE '(' value ',' decode_pairs ',' value ')'
-			{ $$ = make_node(nod_simple_case, 3, $3, make_list($5), $7); }
 		;
 
 case_specification	: simple_case
@@ -4553,13 +4171,6 @@ case_operand	: value
 case_result	: value
 		;
 
-decode_pairs
-	: value ',' value
-		{ $$ = make_node(nod_list, 2, $1, $3); }
-	| decode_pairs ',' value ',' value
-		{ $$ = make_node(nod_list, 2, $1, make_node(nod_list, 2, $3, $5)); }
-	;
-
 /* next value expression */
 
 next_value_expression	: NEXT KW_VALUE FOR symbol_generator_name
@@ -4593,10 +4204,6 @@ timestamp_part	: YEAR
 			{ $$ = MAKE_constant ((dsql_str*)blr_extract_minute, CONSTANT_SLONG); }
 		| SECOND
 			{ $$ = MAKE_constant ((dsql_str*)blr_extract_second, CONSTANT_SLONG); }
-		| MILLISECOND
-			{ $$ = MAKE_constant ((dsql_str*)blr_extract_millisecond, CONSTANT_SLONG); }
-		| WEEK
-			{ $$ = MAKE_constant ((dsql_str*)blr_extract_week, CONSTANT_SLONG); }
 		| WEEKDAY
 			{ $$ = MAKE_constant ((dsql_str*)blr_extract_weekday, CONSTANT_SLONG); }
 		| YEARDAY
@@ -4722,13 +4329,15 @@ non_reserved_word :
 	| INSERTING
 	| UPDATING
 	| DELETING
-	| FIRST
-	| SKIP
-	| BLOCK					/* added in FB 2.0 */
+/*  | FIRST | SKIP -- this is handled by the lexer. */
+	| BLOCK
+	// | ACCENT	// FB_NEW_INTL_ALLOW_NOT_READY				/* added in FB 2.0 */
 	| BACKUP
 	| KW_DIFFERENCE
 	| IIF
+	// | PAD	// FB_NEW_INTL_ALLOW_NOT_READY
 	| SCALAR_ARRAY
+	// | SPACE	// FB_NEW_INTL_ALLOW_NOT_READY
 	| WEEKDAY
 	| YEARDAY
 	| SEQUENCE
@@ -4741,62 +4350,6 @@ non_reserved_word :
 	| UNDO
 	| REQUESTS
 	| TIMEOUT
-	| ABS					/* added in FB 2.1 */
-	| ACCENT
-	| ACOS
-	| ASCII_CHAR
-	| ASCII_VAL
-	| ASIN
-	| ATAN
-	| ATAN2
-	| BIN_AND
-	| BIN_OR
-	| BIN_SHL
-	| BIN_SHR
-	| BIN_XOR
-	| CEIL
-	| COS
-	| COSH
-	| COT
-	| DATEADD
-	| DATEDIFF
-	| DECODE
-	| EXP
-	| FLOOR
-	| GEN_UUID
-	| HASH
-	| LIST
-	| LN
-	| LOG
-	| LOG10
-	| LPAD
-	| MATCHED
-	| MATCHING
-	| MAXVALUE
-	| MILLISECOND
-	| MINVALUE
-	| MOD
-	| OVERLAY
-	| PAD
-	| PI
-	| PLACING
-	| POWER
-	| PRESERVE
-	| RAND
-	| REPLACE
-	| REVERSE
-	| ROUND
-	| RPAD
-	| SIGN
-	| SIN
-	| SINH
-	| SPACE
-	| SQRT
-	| TAN
-	| TANH
-	| TEMPORARY
-	| TRUNC
-	| WEEK
 	;
 
 %%
@@ -4864,6 +4417,10 @@ void LEX_string (
 	lex.lines_bk = lex.lines;
 	lex.param_number = 1;
 	lex.prev_keyword = -1;
+	lex.prev_prev_keyword = -1;
+	lex.limit_clause = false;	
+	lex.first_detection = false;
+	lex.brace_analysis = false;
 #ifdef DSQL_DEBUG
 	if (DSQL_debug & 32)
 		dsql_trace("Source DSQL string:\n%.*s", (int)length, string);
@@ -4906,9 +4463,9 @@ static bool long_int(dsql_nod* string,
  *************************************/
 
 	for (const UCHAR* p = (UCHAR*)((dsql_str*) string)->str_data; 
-		 classes(*p) & CHR_DIGIT; p++)
+		 classes[*p] & CHR_DIGIT; p++)
 	{
-		if (!(classes(*p) & CHR_DIGIT)) {
+		if (!(classes[*p] & CHR_DIGIT)) {
 			return false;
 		}
 	}
@@ -4944,10 +4501,6 @@ static dsql_fld* make_field (dsql_nod* field_name)
 	dsql_fld* field =
 		FB_NEW_RPT(*tdsql->getDefaultPool(), strlen ((SCHAR*) string->str_data)) dsql_fld;
 	strcpy (field->fld_name, (TEXT*) string->str_data);
-	field->fld_type_of_name = NULL;
-	field->fld_explicit_collation = false;
-	field->fld_not_nullable = false;
-	field->fld_full_domain = false;
 
 	return field;
 }
@@ -5028,12 +4581,12 @@ static dsql_nod* make_parameter (void)
  **************************************/
 	tsql* tdsql = DSQL_get_thread_data();
 
-	dsql_nod* node = FB_NEW_RPT(*tdsql->getDefaultPool(), e_par_count) dsql_nod;
+	dsql_nod* node = FB_NEW_RPT(*tdsql->getDefaultPool(), 1) dsql_nod;
 	node->nod_type = nod_parameter;
 	node->nod_line = (USHORT) lex.lines_bk;
 	node->nod_column = (USHORT) (lex.last_token_bk - lex.line_start_bk + 1);
-	node->nod_count = e_par_count;
-	node->nod_arg[e_par_index] = (dsql_nod*)(IPTR) lex.param_number++;
+	node->nod_count = 1;
+	node->nod_arg[0] = (dsql_nod*)(IPTR) lex.param_number++;
 
 	return node;
 }
@@ -5151,9 +4704,9 @@ static bool short_int(dsql_nod* string,
 	}
 
 	for (UCHAR* p = (UCHAR*)((dsql_str*) string)->str_data; 
-		classes(*p) & CHR_DIGIT; p++)
+		classes[*p] & CHR_DIGIT; p++)
 	{
-		if (!(classes(*p) & CHR_DIGIT)) {
+		if (!(classes[*p] & CHR_DIGIT)) {
 			return false;
 		}
 	}
@@ -5273,9 +4826,11 @@ inline static int yylex (
 	USHORT	parser_version,
 	bool* stmt_ambiguous)
 {
-	lex.prev_keyword =
+	const int temp =
 		lex.yylex(client_dialect, db_dialect, parser_version, stmt_ambiguous);
-	return lex.prev_keyword;
+	lex.prev_prev_keyword = lex.prev_keyword;
+	lex.prev_keyword = temp;
+	return temp;
 }
 
 int LexerState::yylex (
@@ -5361,7 +4916,7 @@ int LexerState::yylex (
 			continue;
 		}
 
-		tok_class = classes(c);
+		tok_class = classes[c];
 
 		if (!(tok_class & CHR_WHITE))
 			break;
@@ -5377,7 +4932,7 @@ int LexerState::yylex (
 		 * to become the name of the character set
 		 */
 		char* p = string;
-		for (; ptr < end && classes(*ptr) & CHR_IDENT; ptr++)
+		for (; ptr < end && classes[static_cast<UCHAR>(*ptr)] & CHR_IDENT; ptr++)
 		{
 			if (ptr >= end)
 				return -1;
@@ -5503,7 +5058,7 @@ int LexerState::yylex (
 	fb_assert(ptr <= end);
 
 	if ((tok_class & CHR_DIGIT) ||
-		((c == '.') && (ptr < end) && (classes(*ptr) & CHR_DIGIT)))
+		((c == '.') && (ptr < end) && (classes[static_cast<UCHAR>(*ptr)] & CHR_DIGIT)))
 	{
 		/* The following variables are used to recognize kinds of numbers. */
 
@@ -5519,11 +5074,11 @@ int LexerState::yylex (
 		for (--ptr ; ptr < end ; ptr++)
 		{
 			c = *ptr;
-			if (have_exp_digit && (! (classes(c) & CHR_DIGIT)))
+			if (have_exp_digit && (! (classes[c]  & CHR_DIGIT)))
 				/* First non-digit after exponent and digit terminates
 				 the token. */
 				break;
-			else if (have_exp_sign && (! (classes(c) & CHR_DIGIT)))
+			else if (have_exp_sign && (! (classes[c]  & CHR_DIGIT)))
 			{
 				/* only digits can be accepted after "1E-" */
 				have_error = true;
@@ -5534,7 +5089,7 @@ int LexerState::yylex (
 				/* We've seen e or E, but nothing beyond that. */
 				if ( ('-' == c) || ('+' == c) )
 					have_exp_sign = true;
-				else if ( classes(c) & CHR_DIGIT )
+				else if ( classes[c]  & CHR_DIGIT )
 					/* We have a digit: we haven't seen a sign yet,
 					but it's too late now. */
 					have_exp_digit = have_exp_sign  = true;
@@ -5555,7 +5110,7 @@ int LexerState::yylex (
 					break;
 				}
 			}
-			else if (classes(c) & CHR_DIGIT)
+			else if (classes[c] & CHR_DIGIT)
 			{
 				/* Before computing the next value, make sure there will be
 				   no overflow.  */
@@ -5665,7 +5220,7 @@ int LexerState::yylex (
 	{
 		char* p = string;
 		check_copy_incr(p, UPPER (c), string);
-		for (; ptr < end && classes(*ptr) & CHR_IDENT; ptr++)
+		for (; ptr < end && classes[static_cast<UCHAR>(*ptr)] & CHR_IDENT; ptr++)
 		{
 			if (ptr >= end)
 				return -1;
@@ -5676,13 +5231,79 @@ int LexerState::yylex (
 		*p = 0;
 		dsql_sym* sym =
 			HSHD_lookup (NULL, (TEXT *) string, (SSHORT)(p - string), SYM_keyword, parser_version);
-		if (sym && (sym->sym_keyword != COMMENT || prev_keyword == -1))
+		if (sym)
 		{
-			yylval = (dsql_nod*) sym->sym_object;
-			last_token_bk = last_token;
-			line_start_bk = line_start;
-			lines_bk = lines;
-			return sym->sym_keyword;
+		/* 13 June 2003. Nickolay Samofatov
+		 * Detect INSERTING/UPDATING/DELETING as non-reserved keywords.
+		 * We need to help parser from lexer because our grammar is not LARL(1) in this case
+		 */
+			if (prev_keyword == '(' && !brace_analysis &&
+				(sym->sym_keyword == INSERTING ||
+				 sym->sym_keyword == UPDATING ||
+				 sym->sym_keyword == DELETING
+				) &&
+				/* Produce special_trigger_action_predicate only where we can handle it -
+				  in search conditions */
+				(prev_prev_keyword == '(' || prev_prev_keyword == NOT || prev_prev_keyword == AND ||
+				 prev_prev_keyword == OR || prev_prev_keyword == ON || prev_prev_keyword == HAVING ||
+				 prev_prev_keyword == WHERE || prev_prev_keyword == WHEN) )
+			{			
+				const LexerState savedState = lex;
+				const int nextToken = yylex(client_dialect, db_dialect, parser_version, stmt_ambiguous);
+				lex = savedState;
+				if (nextToken == OR || nextToken == AND) {
+					switch (sym->sym_keyword) {
+					case INSERTING:
+						yylval = (dsql_nod*) sym->sym_object;
+						return KW_INSERTING;
+					case UPDATING:
+						yylval = (dsql_nod*) sym->sym_object;
+						return KW_UPDATING;
+					case DELETING:
+						yylval = (dsql_nod*) sym->sym_object;
+						return KW_DELETING;
+					}
+				}
+			}
+			/* 23 May 2003. Nickolay Samofatov
+			 * Detect FIRST/SKIP as non-reserved keywords
+			 * 1. We detect FIRST or SKIP as keywords if they appear just after SELECT and
+			 *   immediately before parameter mark ('?'), opening brace ('(') or number
+			 * 2. We detect SKIP as a part of FIRST/SKIP clause the same way
+			 * 3. We detect FIRST if we are explicitly asked for (such as in NULLS FIRST/LAST clause)
+			 * 4. In all other cases we return them as SYMBOL
+			 */
+			if ((sym->sym_keyword == FIRST && !first_detection) ||
+				sym->sym_keyword == SKIP)
+			{
+				if (prev_keyword == SELECT || limit_clause) {
+					const LexerState savedState = lex;
+					const int nextToken = yylex(client_dialect, db_dialect, parser_version, stmt_ambiguous);
+					lex = savedState;
+					if (nextToken != NUMBER && nextToken != '?' && nextToken != '(') {
+						yylval = (dsql_nod*) MAKE_string(string, p - string);
+						last_token_bk = last_token;
+						line_start_bk = line_start;
+						lines_bk = lines;
+						return SYMBOL;
+					}
+					else {
+						yylval = (dsql_nod*) sym->sym_object;
+						last_token_bk = last_token;
+						line_start_bk = line_start;
+						lines_bk = lines;
+						return sym->sym_keyword;
+					}
+				} /* else fall down and return token as SYMBOL */
+			}
+			else if (sym->sym_keyword != COMMENT || prev_keyword == -1)
+			{
+				yylval = (dsql_nod*) sym->sym_object;
+				last_token_bk = last_token;
+				line_start_bk = line_start;
+				lines_bk = lines;
+				return sym->sym_keyword;
+			}
 		}
 		yylval = (dsql_nod*) MAKE_string(string, p - string);
 		last_token_bk = last_token;
@@ -5704,17 +5325,88 @@ int LexerState::yylex (
 		}
 	}
 		
+	/* We need to swallow braces around INSERTING/UPDATING/DELETING keywords */
+	/* This algorithm is not perfect, but it is ok for now. 
+	  It should be dropped when BOOLEAN datatype is introduced in Firebird */
+	if ( c == '(' && !brace_analysis && 
+		/* 1) We need to swallow braces in all boolean expressions
+		   2) We may swallow braces in ordinary expressions 
+		   3) We should not swallow braces after special tokens 
+			 like IF, FIRST, SKIP, VALUES and 30 more other	   
+		*/
+		(prev_keyword == '(' || prev_keyword == NOT || prev_keyword == AND || prev_keyword == OR ||
+		 prev_keyword == ON || prev_keyword == HAVING || prev_keyword == WHERE || prev_keyword == WHEN) )
+	{
+		LexerState savedState = lex;	
+		brace_analysis = true;
+		int openCount = 0;
+		int nextToken;
+		do {
+			openCount++;
+			nextToken = yylex(client_dialect, db_dialect, parser_version, stmt_ambiguous);
+		} while (nextToken == '(');
+		dsql_nod* temp_val = yylval;
+		if (nextToken == INSERTING || nextToken == UPDATING || nextToken == DELETING)
+		{
+			/* Skip closing braces. */
+			while ( openCount &&
+					yylex(client_dialect, db_dialect,
+						  parser_version, stmt_ambiguous) == ')')
+			{
+				openCount--;
+			}
+			if (openCount) {
+				/* Not enough closing braces. Restore status quo. */
+				lex = savedState;
+			}
+			else {
+				/* Cool! We successfully swallowed braces ! */
+				brace_analysis = false;
+				yylval = temp_val;
+				/* Check if we need to handle LR(2) grammar case */
+				if (prev_keyword == '(' &&
+					/* Produce special_trigger_action_predicate only where we can handle it -
+					  in search conditions */
+					(prev_prev_keyword == '(' || prev_prev_keyword == NOT || prev_prev_keyword == AND ||
+					 prev_prev_keyword == OR || prev_prev_keyword == ON || prev_prev_keyword == HAVING ||
+					 prev_prev_keyword == WHERE || prev_prev_keyword == WHEN) )
+				{
+					savedState = lex;
+					const int token = yylex(client_dialect, db_dialect, parser_version, stmt_ambiguous);
+					lex = savedState;
+					if (token == OR || token == AND) {
+						switch (nextToken) {
+						case INSERTING:
+							return KW_INSERTING;
+						case UPDATING:
+							return KW_UPDATING;
+						case DELETING:
+							return KW_DELETING;
+						}
+					}
+				}
+				return nextToken;
+			}
+		}
+		else {
+			/* Restore status quo. */
+			lex = savedState;
+		}
+	}
+
 	/* Single character punctuation are simply passed on */
 
-	return (UCHAR) c;
+	return c;
 }
 
 
-static void yyerror_detailed(const TEXT* error_string, int yychar, YYSTYPE&, YYPOSN&)
+// The argument passed to this function is ignored. Therefore, messages like
+// "syntax error" and "yacc stack overflow" are never seen.
+static void yyerror(const TEXT* error_string)
 {
 /**************************************
  *
- *	y y e r r o r _ d e t a i l e d
+ *	y y e r r o r
  *
  **************************************
  *
@@ -5748,16 +5440,6 @@ static void yyerror_detailed(const TEXT* error_string, int yychar, YYSTYPE&, YYP
 			isc_arg_cstring, (int) (lex.ptr - lex.last_token), lex.last_token,
 			0);
 	}
-}
-
-
-// The argument passed to this function is ignored. Therefore, messages like
-// "syntax error" and "yacc stack overflow" are never seen.
-static void yyerror(const TEXT* error_string)
-{
-	YYSTYPE errt_value =  0;
-	YYPOSN errt_posn = -1;
-	yyerror_detailed(error_string, -1, errt_value, errt_posn);
 }
 
 

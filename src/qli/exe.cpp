@@ -38,9 +38,6 @@
 #include "../qli/repor_proto.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/utl_proto.h"
-#include "../common/classes/UserBlob.h"
-
-using MsgFormat::SafeArg;
 
 
 #ifdef HAVE_UNISTD_H
@@ -287,7 +284,7 @@ file* EXEC_open_output(qli_nod* node)
 		if (out_file)
 			return (file*) out_file;
 
-		ERRQ_print_error(42, filename);
+		ERRQ_print_error(42, filename, NULL, NULL, NULL, NULL);
 		// Msg42 Can't open output file %s
 	}
 
@@ -328,7 +325,7 @@ file* EXEC_open_output(qli_nod* node)
 		dup(pair[0]);
 		close(pair[0]);
 		execvp(argv[0], argv);
-		ERRQ_msg_put(43, filename);	// Msg43 Couldn't run %s
+		ERRQ_msg_put(43, filename, NULL, NULL, NULL, NULL);	// Msg43 Couldn't run %s
 		_exit(-1);
 	}
 
@@ -507,39 +504,39 @@ static DSC *assignment(	qli_nod*		from_node,
 
 	try {
 
-		memcpy(QLI_env, old_env, sizeof(QLI_env));
-		dsc* from_desc = EVAL_value(from_node);
+	memcpy(QLI_env, old_env, sizeof(QLI_env));
+	dsc* from_desc = EVAL_value(from_node);
 
-		if (from_desc->dsc_missing & DSC_initial) {
-			from_desc = EVAL_value(initial);
-		}
+	if (from_desc->dsc_missing & DSC_initial) {
+		from_desc = EVAL_value(initial);
+	}
 
 /* If there is a value present, do any assignment; otherwise null fill */
 
-		if (*missing_flag = to_desc->dsc_missing = from_desc->dsc_missing) {
-			UCHAR* p = from_desc->dsc_address;
-			USHORT l = from_desc->dsc_length;
-			if (l) {
-				do {
-					*p++ = 0;
-				} while (--l);
-			}
+	if (*missing_flag = to_desc->dsc_missing = from_desc->dsc_missing) {
+		UCHAR* p = from_desc->dsc_address;
+		USHORT l = from_desc->dsc_length;
+		if (l) {
+			do {
+				*p++ = 0;
+			} while (--l);
 		}
-		else {
-			MOVQ_move(from_desc, to_desc);
-		}
-
-		if (validation && EVAL_boolean(validation) <= 0) {
-			IBERROR(39);			// Msg39 field validation error
-		}
-
-		QLI_reprompt = FALSE;
-		memcpy(QLI_env, old_env, sizeof(QLI_env));
-
-		return from_desc;
-
 	}
-	catch (const Firebird::Exception&) {
+	else {
+		MOVQ_move(from_desc, to_desc);
+	}
+
+	if (validation && EVAL_boolean(validation) <= 0) {
+		IBERROR(39);			// Msg39 field validation error
+	}
+
+	QLI_reprompt = FALSE;
+	memcpy(QLI_env, old_env, sizeof(QLI_env));
+
+	return from_desc;
+
+	}	// try
+	catch (const std::exception&) {
 		if (QLI_abort || !QLI_prompt_count) {
 			memcpy(QLI_env, old_env, sizeof(QLI_env));
 			throw;
@@ -596,7 +593,8 @@ static void commit_retaining( qli_nod* node)
 			if ((node->nod_type == nod_commit_retaining)
 				&& !(database->dbb_flags & DBB_prepared))
 			{
-				ERRQ_msg_put(465, database->dbb_symbol->sym_string);
+				ERRQ_msg_put(465, database->dbb_symbol->sym_string, NULL,
+							 NULL, NULL, NULL);
 			}
 			else if (node->nod_type == nod_prepare)
 				database->dbb_flags |= DBB_prepared;
@@ -613,7 +611,8 @@ static void commit_retaining( qli_nod* node)
 		if ((node->nod_type == nod_commit_retaining) &&
 			!(database->dbb_flags & DBB_prepared))
 		{
-			ERRQ_msg_put(465, database->dbb_symbol->sym_string);
+			ERRQ_msg_put(465, database->dbb_symbol->sym_string, NULL, NULL,
+						 NULL, NULL);
 		}
 		else if (node->nod_type == nod_prepare)
 			database->dbb_flags |= DBB_prepared;
@@ -665,15 +664,17 @@ static bool copy_blob( qli_nod* value, qli_par* parameter)
 		return false;
 	}
 
-	// We've got a blob copy on our hands.
+// We've got a blob copy on our hands.
 
 	if (!from_desc) {
 		*to_desc->dsc_address = 0;
 		return true;
 	}
 
+	FB_API_HANDLE to_blob = 0;
+	FB_API_HANDLE from_blob = 0;
 
-	// Format blob parameter block for the existing blob
+// Format blob parameter block for the existing blob
 
 	UCHAR bpb[20];
 	UCHAR* p = bpb;
@@ -689,25 +690,23 @@ static bool copy_blob( qli_nod* value, qli_par* parameter)
 	const USHORT bpb_length = p - bpb;
 
 	ISC_STATUS_ARRAY status_vector;
-	UserBlob to_blob(status_vector);
-	UserBlob from_blob(status_vector);
-	
-	if (!to_blob.create(to_dbb->dbb_handle, to_dbb->dbb_transaction,
-						 *(ISC_QUAD*) to_desc->dsc_address))
+	if (isc_create_blob(status_vector, &to_dbb->dbb_handle,
+						 &to_dbb->dbb_transaction, &to_blob,
+						 (ISC_QUAD*) to_desc->dsc_address))
 	{
 		ERRQ_database_error(to_dbb, status_vector);
 	}
 
-	if (!from_blob.open(from_dbb->dbb_handle, from_dbb->dbb_transaction,
-						*(ISC_QUAD*) from_desc->dsc_address, bpb_length,
+	if (isc_open_blob2(status_vector, &from_dbb->dbb_handle,
+						&from_dbb->dbb_transaction, &from_blob,
+						(ISC_QUAD*) from_desc->dsc_address, bpb_length,
 						bpb))
 	{
 		ERRQ_database_error(from_dbb, status_vector);
 	}
 
 	SLONG size, segment_count, max_segment;
-	if (!getBlobSize(from_blob, &size, &segment_count, &max_segment))
-		ERRQ_database_error(from_dbb, status_vector);
+	gds__blob_size(&from_blob, &size, &segment_count, &max_segment);
 
     UCHAR fixed_buffer[4096];
 	UCHAR* buffer;
@@ -726,10 +725,12 @@ static bool copy_blob( qli_nod* value, qli_par* parameter)
 #endif
 	}
 
-	size_t length;
-	while (from_blob.getSegment(buffer_length, buffer, length) && !from_blob.getCode())
+	USHORT length;
+	while (!isc_get_segment(status_vector, &from_blob, &length, buffer_length,
+							 (char*) buffer))
 	{
-		if (!to_blob.putSegment(length, buffer))
+		if (isc_put_segment(status_vector, &to_blob, length,
+			reinterpret_cast<const char*>(buffer)))
 		{
 			ERRQ_database_error(to_dbb, status_vector);
 		}
@@ -738,10 +739,10 @@ static bool copy_blob( qli_nod* value, qli_par* parameter)
 	if (buffer != fixed_buffer)
 		gds__free(buffer);
 
-	if (!from_blob.close())
+	if (isc_close_blob(status_vector, &from_blob))
 		ERRQ_database_error(from_dbb, status_vector);
 
-	if (!to_blob.close())
+	if (isc_close_blob(status_vector, &to_blob))
 		ERRQ_database_error(to_dbb, status_vector);
 
 	return true;
@@ -788,7 +789,7 @@ static void execute_abort( qli_nod* node)
 
 		UCHAR msg[128];
 		MOVQ_terminate(ptr, (SCHAR*) msg, l, sizeof(msg));
-		ERRQ_error(40, SafeArg() << msg);
+		ERRQ_error(40, (TEXT*) msg, NULL, NULL, NULL, NULL);
 		// Msg40 Request terminated by statement: %s
 	}
 
@@ -941,7 +942,7 @@ static void execute_output( qli_nod* node)
 	qli_prt* print = (qli_prt*) node->nod_arg[e_out_print];
 	print->prt_file = EXEC_open_output(node);
 
-	// Set up error handling
+// Set up error handling
 
 	jmp_buf old_env;
 	jmp_buf env;
@@ -950,14 +951,14 @@ static void execute_output( qli_nod* node)
 
 	try {
 
-		// Finally, execute the query
+// Finally, execute the query
 
-		EXEC_execute(node->nod_arg[e_out_statement]);
-		memcpy(QLI_env, old_env, sizeof(QLI_env));
-		fclose((FILE *) print->prt_file);
+	EXEC_execute(node->nod_arg[e_out_statement]);
+	memcpy(QLI_env, old_env, sizeof(QLI_env));
+	fclose((FILE *) print->prt_file);
 
-	}
-	catch (const Firebird::Exception&) {
+	}	// try
+	catch (const std::exception&) {
 		if (print->prt_file) {
 			fclose((FILE *) print->prt_file);
 		}

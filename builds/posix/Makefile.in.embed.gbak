@@ -32,7 +32,7 @@ ROOT=..
 SERVICES_THREADED=@service_thread_CS@
 ifeq ($(SERVICES_THREADED),true)
     ObjModuleType=superclient
-    CFLAGS+=-DSTD_UTIL -DSUPERCLIENT
+    CFLAGS+=-DSTD_UTIL
 else
     ObjModuleType=std
 endif
@@ -45,7 +45,7 @@ include     $(ROOT)/gen/make.shared.variables
 @SET_MAKE@
 
 
-GBAK_Other_Sources = remote/xdr.cpp jrd/sdl.cpp jrd/path_utils.cpp
+GBAK_Other_Sources = remote/xdr.cpp jrd/sdl.cpp
 GBAK_Files = backup.epp  restore.epp \
 			 burp.cpp canonical.cpp misc.cpp mvol.cpp
 GBAK_Sources = $(addprefix burp/, $(GBAK_Files)) $(GBAK_Other_Sources)

@@ -33,7 +33,7 @@ static void cleanup(void *);
 static void init(void);
 
 static IUO free_list = NULL;
-static Firebird::Mutex inuse_mutex;
+static MUTX_T inuse_mutex[1];
 static bool initialized = false;
 
 
@@ -60,10 +60,6 @@ bool INUSE_cleanup(IUO inuse, FPTR_VOID_PTR cleanup_routine)
 			ptr < end; ptr++)
 		{
 			if (*ptr) {
-				// dimitr:	this assert is put temporarily in order to track
-				//			mutexes that could be left acquired when we leave
-				//			the JRD context
-				fb_assert(false);
 				(*cleanup_routine) (*ptr);
 				needed_cleaning = true;
 			}
@@ -75,10 +71,10 @@ bool INUSE_cleanup(IUO inuse, FPTR_VOID_PTR cleanup_routine)
 		IUO* secondary_end_ptr = &secondary_inuse->iuo_next;
 		while (*secondary_end_ptr)
 			secondary_end_ptr = &(*secondary_end_ptr)->iuo_next;
-		inuse_mutex.enter();
+		THD_MUTEX_LOCK(inuse_mutex);
 		*secondary_end_ptr = free_list;
 		free_list = secondary_inuse;
-		inuse_mutex.leave();
+		THD_MUTEX_UNLOCK(inuse_mutex);
 	}
 
 	return needed_cleaning;
@@ -143,14 +139,14 @@ bool INUSE_insert(IUO inuse, void *new_object, bool dup_flag)
 #ifdef DEV_BUILD
 		gds__log("in-use block overflow. secondary block allocated.");
 #endif
-		inuse_mutex.enter();
+		THD_MUTEX_LOCK(inuse_mutex);
 		IUO new_inuse = free_list;
 		if (new_inuse) {
 			free_list = new_inuse->iuo_next;
-			inuse_mutex.leave();
+			THD_MUTEX_UNLOCK(inuse_mutex);
 		}
 		else {
-			inuse_mutex.leave();
+			THD_MUTEX_UNLOCK(inuse_mutex);
 			new_inuse = (IUO) gds__alloc((SLONG) sizeof(struct iuo));
 			/* FREE: at process exit, by cleanup handler cleanup() in this module */
 			if (!new_inuse) {	/* NOMEM: */
@@ -240,6 +236,7 @@ static void init(void)
  **************************************/
 
 	if (!initialized) {
+		THD_INIT;
 		THD_GLOBAL_MUTEX_LOCK;
 		if (!initialized) {
 			gds__register_cleanup(cleanup, 0);

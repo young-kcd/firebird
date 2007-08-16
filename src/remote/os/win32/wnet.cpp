@@ -104,6 +104,8 @@ static xdr_t::xdr_ops wnet_ops =
 	wnet_destroy
 };
 
+const USHORT MAX_PTYPE	= ptype_out_of_band;
+
 
 rem_port* WNET_analyze(Firebird::PathName& file_name,
 					ISC_STATUS*	status_vector,
@@ -179,13 +181,12 @@ rem_port* WNET_analyze(Firebird::PathName& file_name,
 
 	static const p_cnct::p_cnct_repeat protocols_to_try1[] =
 	{
-		REMOTE_PROTOCOL(PROTOCOL_VERSION7, ptype_rpc, ptype_batch_send, 1),
-		REMOTE_PROTOCOL(PROTOCOL_VERSION8, ptype_rpc, ptype_batch_send, 2),
-		REMOTE_PROTOCOL(PROTOCOL_VERSION10, ptype_rpc, ptype_batch_send, 3),
-		REMOTE_PROTOCOL(PROTOCOL_VERSION11, ptype_rpc, ptype_batch_send, 4)
+		REMOTE_PROTOCOL(PROTOCOL_VERSION7, ptype_rpc, MAX_PTYPE, 1),
+		REMOTE_PROTOCOL(PROTOCOL_VERSION8, ptype_rpc, MAX_PTYPE, 2),
+		REMOTE_PROTOCOL(PROTOCOL_VERSION10, ptype_rpc, MAX_PTYPE, 3)
 #ifdef SCROLLABLE_CURSORS
 		,
-		REMOTE_PROTOCOL(PROTOCOL_SCROLLABLE_CURSORS, ptype_rpc, ptype_batch_send, 99)
+		REMOTE_PROTOCOL(PROTOCOL_SCROLLABLE_CURSORS, ptype_rpc, MAX_PTYPE, 4)
 #endif
 	};
 	cnct->p_cnct_count = FB_NELEM(protocols_to_try1);
@@ -297,8 +298,7 @@ rem_port* WNET_analyze(Firebird::PathName& file_name,
    string to reflect it...  */
 
 	Firebird::string temp;
-	temp.printf("%s/P%d", port->port_version->str_data, 
-						  port->port_protocol & FB_PROTOCOL_MASK);
+	temp.printf("%s/P%d", port->port_version->str_data, port->port_protocol);
 	ALLR_free(port->port_version);
 	port->port_version = REMOTE_make_string(temp.c_str());
 
@@ -425,10 +425,10 @@ rem_port* WNET_connect(const TEXT*		name,
 		GetModuleFileName(NULL, name, sizeof(name));
 
 		Firebird::string cmdLine;
-		cmdLine.printf("%s -w -h %"SLONGFORMAT, name, (SLONG) port->port_handle);
+		cmdLine.printf("%s -s -w -h %"SLONGFORMAT, name, (SLONG) port->port_handle);
 
-		STARTUPINFO start_crud;
-		PROCESS_INFORMATION pi;
+		STARTUPINFO           start_crud;
+		PROCESS_INFORMATION   pi;
 		start_crud.cb = sizeof(STARTUPINFO);
 		start_crud.lpReserved = NULL;
 		start_crud.lpReserved2 = NULL;
@@ -436,13 +436,16 @@ rem_port* WNET_connect(const TEXT*		name,
 		start_crud.lpDesktop = NULL;
 		start_crud.lpTitle = NULL;
 		start_crud.dwFlags = STARTF_FORCEOFFFEEDBACK;
-
-		if (CreateProcess(NULL, cmdLine.begin(), NULL, NULL, TRUE,
-						  (flag & SRVR_high_priority ?
+		const USHORT ret = CreateProcess(NULL,
+							cmdLine.begin(),
+							NULL,
+							NULL,
+							TRUE,
+							(flag & SRVR_high_priority ?
 							 HIGH_PRIORITY_CLASS | DETACHED_PROCESS :
 							 NORMAL_PRIORITY_CLASS | DETACHED_PROCESS),
-						  NULL, NULL, &start_crud, &pi))
-		{
+							NULL, NULL, &start_crud, &pi);
+		if (ret) {
 			CloseHandle(pi.hThread);
 			CloseHandle(pi.hProcess);
 		}

@@ -40,13 +40,6 @@
 //
 // 2002.10.30 Sean Leyne - Removed support for obsolete "PC_PLATFORM" define
 //
-// Added support for RM/Cobol
-// Stephen W. Boyd 31.Aug.2006
-//
-// Added -noqli switch to suppress parsing of QLI keywords.  This was
-// causing problems with Cobol programs since the QLI and Cobol reserved word
-// lists intersect.
-// Stephen W. Boyd 21.Mar.2007
 //____________________________________________________________
 //
 //
@@ -64,9 +57,9 @@
 #include "../gpre/gpre_meta.h"
 #include "../gpre/msc_proto.h"
 #include "../gpre/par_proto.h"
+#include "../jrd/gds_proto.h"
 #include "../gpre/gpreswi.h"
 #include "../common/utils_proto.h"
-#include "../common/classes/TempFile.h"
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -82,10 +75,14 @@ extern "C" {
 // Globals
 GpreGlobals gpreGlob;
 
-const char* const SCRATCH = "fb_query_";
+#ifdef SMALL_FILE_NAMES
+const char* const SCRATCH		= "fb_q";
+#else
+const char* const SCRATCH		= "fb_query_";
+#endif
 
-const char* const FOPEN_READ_TYPE = "r";
-const char* const FOPEN_WRITE_TYPE = "w";
+const char* const FOPEN_READ_TYPE		= "r";
+const char* const FOPEN_WRITE_TYPE	= "w";
 
 static bool			all_digits(const char*);
 static bool			arg_is_string(SLONG, TEXT**, const TEXT*);
@@ -122,28 +119,7 @@ static SLONG prior_line_position;
 
 static act* global_last_action;
 static act* global_first_action;
-static UCHAR classes_array[256];
-
-inline UCHAR classes(int idx)
-{
-	return classes_array[(UCHAR) idx];
-}
-
-inline UCHAR classes(UCHAR idx)
-{
-	return classes_array[idx];
-}
-
-inline void set_classes(int idx, UCHAR v)
-{
-	classes_array[(UCHAR) idx] = v;
-}
-
-inline void set_classes(UCHAR idx, UCHAR v)
-{
-	classes_array[idx] = v;
-}
-
+static UCHAR classes[256];
 
 static TEXT input_buffer[512], *input_char;
 
@@ -172,18 +148,12 @@ static SLONG traced_position = 0;
 //___________________________________________________________________
 // Test if input language is cpp based.
 //
-bool isLangCpp(lang_t lang)
+bool isLangCpp(LANG_T lang)
 {
     if (lang == lang_cxx || lang == lang_internal) {
         return true;
     }
     return false;
-}
-
-// Test if input language is an ANSI-85 Cobol variant
-bool isAnsiCobol(cob_t dialect)
-{
-	return (dialect == cob_ansi) || (dialect == cob_rmc);
 }
 
 /*
@@ -254,14 +224,15 @@ static const ext_table_t dml_ext_table[] =
 	{ lang_undef, IN_SW_GPRE_0, NULL, NULL }
 };
 
-const UCHAR CHR_LETTER	= 1;
-const UCHAR	CHR_DIGIT	= 2;
-const UCHAR CHR_IDENT	= 4;
-const UCHAR CHR_QUOTE	= 8;
-const UCHAR CHR_WHITE	= 16;
-const UCHAR CHR_INTRODUCER	= 32;
-const UCHAR CHR_DBLQUOTE	= 64;
-
+enum char_types {
+	CHR_LETTER	= 1,
+	CHR_DIGIT	= 2,
+	CHR_IDENT	= 4,
+	CHR_QUOTE	= 8,
+	CHR_WHITE	= 16,
+	CHR_INTRODUCER	= 32,
+	CHR_DBLQUOTE	= 64
+};
 
 //  macro compares chars; case sensitive for some platforms 
 
@@ -303,30 +274,30 @@ int main(int argc, char* argv[])
 	//  Initialize character class table 
 	int i;
 	for (i = 0; i <= 127; ++i) {
-		set_classes(i, 0);
+		classes[i] = 0;
 	}
 	for (i = 128; i <= 255; ++i) {
-		set_classes(i, CHR_LETTER | CHR_IDENT);
+		classes[i] = CHR_LETTER | CHR_IDENT;
 	}
 	for (i = 'a'; i <= 'z'; ++i) {
-		set_classes(i, CHR_LETTER | CHR_IDENT);
+		classes[i] = CHR_LETTER | CHR_IDENT;
 	}
 	for (i = 'A'; i <= 'Z'; ++i) {
-		set_classes(i, CHR_LETTER | CHR_IDENT);
+		classes[i] = CHR_LETTER | CHR_IDENT;
 	}
 	for (i = '0'; i <= '9'; ++i) {
-		set_classes(i, CHR_DIGIT | CHR_IDENT);
+		classes[i] = CHR_DIGIT | CHR_IDENT;
 	}
 
-	set_classes('_', CHR_LETTER | CHR_IDENT | CHR_INTRODUCER);
-	set_classes('$', CHR_IDENT);
-	set_classes(' ', CHR_WHITE);
-	set_classes('\t', CHR_WHITE);
-	set_classes('\n', CHR_WHITE);
-	set_classes('\r', CHR_WHITE);
-	set_classes('\'', CHR_QUOTE);
-	set_classes('\"', CHR_DBLQUOTE);
-	set_classes('#', CHR_IDENT);
+	classes[static_cast<UCHAR>('_')]	= CHR_LETTER | CHR_IDENT | CHR_INTRODUCER;
+	classes[static_cast<UCHAR>('$')]	= CHR_IDENT;
+	classes[static_cast<UCHAR>(' ')]	= CHR_WHITE;
+	classes[static_cast<UCHAR>('\t')]	= CHR_WHITE;
+	classes[static_cast<UCHAR>('\n')]	= CHR_WHITE;
+	classes[static_cast<UCHAR>('\r')]	= CHR_WHITE;
+	classes[static_cast<UCHAR>('\'')]	= CHR_QUOTE;
+	classes[static_cast<UCHAR>('\"')]	= CHR_DBLQUOTE;
+	classes[static_cast<UCHAR>('#')]	= CHR_IDENT;
 
 //  zorch 0 through 7 in the fortran label vector 
 
@@ -343,9 +314,7 @@ int main(int argc, char* argv[])
 	sw_alsys					= false;
 	gpreGlob.sw_external		= false;
 	sw_standard_out				= false;
-	gpreGlob.sw_cob_dialect     = cob_vms;
-	gpreGlob.sw_cob_dformat		= "";
-	gpreGlob.sw_no_qli			= false;
+	gpreGlob.sw_ansi			= false;
 	gpreGlob.sw_version			= false;
 	gpreGlob.sw_d_float			= false;
 	gpreGlob.sw_sql_dialect		= SQL_DIALECT_V5;
@@ -366,7 +335,6 @@ int main(int argc, char* argv[])
 	gpreGlob.default_lc_ctype	= NULL;
 	gpreGlob.text_subtypes		= NULL;
 	gpreGlob.override_case		= false;
-	gpreGlob.trusted_auth		= false;
 
 	gpreGlob.sw_know_interp = FALSE;
 	gpreGlob.sw_interp = 0;
@@ -560,10 +528,6 @@ int main(int argc, char* argv[])
 			gpreGlob.sw_case = true;
 			break;
 
-		case IN_SW_NO_QLI:
-			gpreGlob.sw_no_qli = true;
-			break;
-
 #ifndef BOOT_BUILD
 #ifdef GPRE_ADA
 		case IN_SW_GPRE_ADA:
@@ -638,13 +602,7 @@ int main(int argc, char* argv[])
 
 #ifdef GPRE_COBOL
 		case IN_SW_GPRE_ANSI:
-			gpreGlob.sw_cob_dialect = cob_ansi;
-			break;
-
-		case IN_SW_GPRE_RMCOBOL:
-			gpreGlob.sw_cob_dialect = cob_rmc;
-			gpreGlob.sw_cstring = true;
-			gen_routine = RMC_action;
+			gpreGlob.sw_ansi = true;
 			break;
 
 		case IN_SW_GPRE_COB:
@@ -783,14 +741,12 @@ int main(int argc, char* argv[])
 	TEXT temp_name[MAXPATHLEN];
 
 #ifndef __ALPHA
-	// Replace this kludge with TempFile since gds__temp_file doesn't exist anymore.
 	temp = (FILE *) gds__temp_file(TRUE, "temp", 0);
 	strcpy(temp_name, "temporary file");
 #else
-	// Replace this kludge with TempFile since gds__temp_file doesn't exist anymore.
 	temp = (FILE *) gds__temp_file(TRUE, "temp", temp_name);
 #endif
-	if (temp) {
+	if (temp != (FILE *) - 1) {
 		SSHORT c;
 		while ((c = get_char(input_file)) != EOF)
 			putc(c, temp);
@@ -809,12 +765,12 @@ int main(int argc, char* argv[])
 #endif
 
 #if defined(GPRE_COBOL) && !defined(BOOT_BUILD)
-//  if cobol is defined we need both sw_cobol and sw_cob_dialect to
+//  if cobol is defined we need both sw_cobol and sw_ansi to
 //  determine how the string substitution table is set up
 //  
 
 	if (gpreGlob.sw_language == lang_cobol)
-		if (isAnsiCobol(gpreGlob.sw_cob_dialect)) {
+		if (gpreGlob.sw_ansi) {
 			if (db)
 				db->dbb_name->sym_string = "isc-database";
 			comment_start = "      *  ";
@@ -831,7 +787,7 @@ int main(int argc, char* argv[])
             gpreGlob.transaction_name = "ISC_TRANS";
         }
 
-	COB_name_init(isAnsiCobol(gpreGlob.sw_cob_dialect));
+	COB_name_init(gpreGlob.sw_ansi);
 #endif
 
 //  
@@ -934,7 +890,7 @@ int main(int argc, char* argv[])
 		while (end_position = compile_module(end_position, filename_array[3]));
 		// empty loop body
 	}	// try
-	catch (const Firebird::Exception&) {}  // fall through to the cleanup code
+	catch (const std::exception&) {}  // fall through to the cleanup code
 
 #ifdef FTN_BLK_DATA
 	if (gpreGlob.sw_language == lang_fortran)
@@ -984,7 +940,7 @@ int main(int argc, char* argv[])
 void CPR_abort()
 {
 	++fatals_global;
-	//throw Firebird::Exception();
+	//throw std::exception();
 	throw gpre_exception("Program terminated.");
 }
 
@@ -1234,7 +1190,7 @@ void CPR_raw_read()
 	while (c = get_char(input_file))
 	{
 		position++;
-		if ((classes(c) == CHR_WHITE) && sw_trace && token_string) {
+		if ((classes[c] == CHR_WHITE) && sw_trace && token_string) {
 			*p = 0;
 			puts(token_string);
 			token_string[0] = 0;
@@ -1252,7 +1208,7 @@ void CPR_raw_read()
 		}
 		else {
 			line_position++;
-			if (classes(c) != CHR_WHITE)
+			if (classes[c] != CHR_WHITE)
 				continue_char = (gpreGlob.token_global.tok_keyword == KW_AMPERSAND);
 		}
 	}
@@ -1361,7 +1317,7 @@ TOK CPR_token()
 static bool all_digits(const char* str1)
 {
 	for (; *str1; str1++)
-		if (!(classes(*str1) & CHR_DIGIT))
+		if (!(classes[static_cast<UCHAR>(*str1)] & CHR_DIGIT))
 			return false;
 
 	return true;
@@ -1431,11 +1387,17 @@ static SLONG compile_module( SLONG start_position, const TEXT* base_directory)
 	fseek(input_file, start_position, 0);
 	input_char = input_buffer;
 
-	Firebird::PathName filename = TempFile::create(SCRATCH);
-	strcpy(trace_file_name, filename.c_str());
-	trace_file = fopen(trace_file_name, "w+b");
+#if !(defined WIN_NT)
+	trace_file = (FILE *) gds__temp_file(TRUE, SCRATCH, 0);
+#else
+//  PC-like platforms can't delete a file that is open.  Therefore
+//  we will save the name of the temp file for later deletion. 
 
-	if (!trace_file) {
+	trace_file = (FILE *) gds__temp_file(TRUE, SCRATCH, trace_file_name);
+#endif
+
+	if (trace_file == (FILE *) - 1) {
+		trace_file = NULL;
 		CPR_error("Couldn't open scratch file");
 		return 0;
 	}
@@ -1991,14 +1953,8 @@ static bool get_switches(int			argc,
 			{
 				return false;
 			}
-			gpreGlob.default_password = fb_utils::get_passwd(*++argv);
+			gpreGlob.default_password = *++argv;
 			break;
-
-#ifdef TRUSTED_AUTH
-		case IN_SW_GPRE_TRUSTED:
-			gpreGlob.trusted_auth = true;
-			break;
-#endif
 
 		case IN_SW_GPRE_INTERP:
 			if (!arg_is_string(
@@ -2011,18 +1967,7 @@ static bool get_switches(int			argc,
 			gpreGlob.default_lc_ctype = (const TEXT*) * ++argv;
 			break;
 
-		case IN_SW_GPRE_DATE_FMT:
-			if (!arg_is_string(
-					--argc,
-					argv,
-					"Command line syntax: -dfm requires date format string:\n "))
-			{
-				return false;
-			}
-			gpreGlob.sw_cob_dformat = *++argv;
-			break;
 		}
-
 	}
 
 	sw_table_iterator++;
@@ -2055,7 +2000,7 @@ static TOK get_token()
 
 #ifdef GPRE_COBOL
 //  Skip over cobol line continuation characters 
-	if (gpreGlob.sw_language == lang_cobol && !isAnsiCobol(gpreGlob.sw_cob_dialect))
+	if (gpreGlob.sw_language == lang_cobol && !gpreGlob.sw_ansi)
 		while (line_position == 1) {
 			c = skip_white();
 			start_line = line_global;
@@ -2098,7 +2043,7 @@ static TOK get_token()
 
 	gpreGlob.token_global.tok_position = position;
 	gpreGlob.token_global.tok_white_space = 0;
-	UCHAR char_class = classes(c);
+	UCHAR char_class = classes[c];
 
 #ifdef GPRE_ADA
 	if ((gpreGlob.sw_language == lang_ada) && (c == '\'')) {
@@ -2115,7 +2060,7 @@ static TOK get_token()
 	bool label = false;
 
 	if (gpreGlob.sw_sql && (char_class & CHR_INTRODUCER)) {
-		while (classes(c = nextchar()) & CHR_IDENT) {
+		while (classes[c = nextchar()] & CHR_IDENT) {
 			if (p < end) {
 				*p++ = (TEXT) c;
 			}
@@ -2125,11 +2070,11 @@ static TOK get_token()
 	}
 	else if (char_class & CHR_LETTER) {
 		while (true) {
-			while (classes(c = nextchar()) & CHR_IDENT)
+			while (classes[c = nextchar()] & CHR_IDENT)
 				*p++ = (TEXT) c;
 			if (c != '-' || gpreGlob.sw_language != lang_cobol)
 				break;
-			if (gpreGlob.sw_language == lang_cobol && isAnsiCobol(gpreGlob.sw_cob_dialect))
+			if (gpreGlob.sw_language == lang_cobol && gpreGlob.sw_ansi)
 				*p++ = (TEXT) c;
 			else
 				*p++ = '_';
@@ -2142,7 +2087,7 @@ static TOK get_token()
 		if (gpreGlob.sw_language == lang_fortran && line_position < 7)
 			label = true;
 #endif
-		while (classes(c = nextchar()) & CHR_DIGIT)
+		while (classes[c = nextchar()] & CHR_DIGIT)
 			*p++ = (TEXT) c;
 		if (label) {
 			*p = 0;
@@ -2150,7 +2095,7 @@ static TOK get_token()
 		}
 		if (c == '.') {
 			*p++ = (TEXT) c;
-			while (classes(c = nextchar()) & CHR_DIGIT)
+			while (classes[c = nextchar()] & CHR_DIGIT)
 				*p++ = (TEXT) c;
 		}
 		if (!label && (c == 'E' || c == 'e')) {
@@ -2160,7 +2105,7 @@ static TOK get_token()
 				*p++ = (TEXT) c;
 			else
 				return_char(c);
-			while (classes(c = nextchar()) & CHR_DIGIT)
+			while (classes[c = nextchar()] & CHR_DIGIT)
 				*p++ = (TEXT) c;
 		}
 		return_char(c);
@@ -2170,7 +2115,7 @@ static TOK get_token()
 		gpreGlob.token_global.tok_type = (char_class & CHR_QUOTE) ? tok_sglquoted : tok_dblquoted;
 		for (;;) {
 			SSHORT next = nextchar();
-			if (gpreGlob.sw_language == lang_cobol && isAnsiCobol(gpreGlob.sw_cob_dialect) && next == '\n') {
+			if (gpreGlob.sw_language == lang_cobol && gpreGlob.sw_ansi && next == '\n') {
 				if (prior_line_position == 73) {
 					// should be a split literal 
 					next = skip_white();
@@ -2239,9 +2184,9 @@ static TOK get_token()
 		}
 	}
 	else if (c == '.') {
-		if (classes(c = nextchar()) & CHR_DIGIT) {
+		if (classes[c = nextchar()] & CHR_DIGIT) {
 			*p++ = (TEXT) c;
-			while (classes(c = nextchar()) & CHR_DIGIT)
+			while (classes[c = nextchar()] & CHR_DIGIT)
 				*p++ = (TEXT) c;
 			if ((c == 'E' || c == 'e')) {
 				*p++ = (TEXT) c;
@@ -2250,7 +2195,7 @@ static TOK get_token()
 					*p++ = (TEXT) c;
 				else
 					return_char(c);
-				while (classes(c = nextchar()) & CHR_DIGIT)
+				while (classes[c = nextchar()] & CHR_DIGIT)
 					*p++ = (TEXT) c;
 			}
 			return_char(c);
@@ -2393,8 +2338,8 @@ static int nextchar()
 
 #ifdef GPRE_COBOL
 	if (gpreGlob.sw_language == lang_cobol &&
-		(!isAnsiCobol(gpreGlob.sw_cob_dialect) && line_position == 1 && c == '-') ||
-		(isAnsiCobol(gpreGlob.sw_cob_dialect) && line_position == 7 && c == '-'))
+		(!gpreGlob.sw_ansi && line_position == 1 && c == '-') ||
+		(gpreGlob.sw_ansi && line_position == 7 && c == '-'))
 	{
 		first_position = FALSE;
 	}
@@ -2665,8 +2610,8 @@ static void pass2( SLONG start_position)
 					if (d == comment_start[1])
 						fputs(comment_stop, gpreGlob.out_file);
 				}
-				if (gpreGlob.sw_language != lang_cobol || !isAnsiCobol(gpreGlob.sw_cob_dialect)
-					|| c == '\n' || to_skip-- <= 0)
+				if (gpreGlob.sw_language != lang_cobol || !gpreGlob.sw_ansi || c == '\n'
+					|| to_skip-- <= 0)
 				{
 					putc(c, gpreGlob.out_file);
 				}
@@ -2826,7 +2771,7 @@ static void return_char( SSHORT c)
 
 static SSHORT skip_white()
 {
-	SSHORT c;
+	SSHORT c, next;
 
 	while (true) {
 		if ((c = nextchar()) == EOF)
@@ -2848,16 +2793,16 @@ static SSHORT skip_white()
 #ifdef GPRE_COBOL
 		// skip sequence numbers when ansi COBOL 
 
-		if (gpreGlob.sw_language == lang_cobol && isAnsiCobol(gpreGlob.sw_cob_dialect)) {
+		if (gpreGlob.sw_language == lang_cobol && gpreGlob.sw_ansi) {
 			while (line_position < 7 && (c = nextchar()) != '\n' && c != EOF);
 		}
 
 		// skip COBOL comments and conditional compilation 
 
 		if (gpreGlob.sw_language == lang_cobol &&
-			(!isAnsiCobol(gpreGlob.sw_cob_dialect) && line_position == 1 &&
+			(!gpreGlob.sw_ansi && line_position == 1 &&
 			 (c == 'C' || c == 'c' || c == '*' || c == '/' || c == '\\') ||
-			 (isAnsiCobol(gpreGlob.sw_cob_dialect) && line_position == 7 && c != '\t' && c != ' '
+			 (gpreGlob.sw_ansi && line_position == 7 && c != '\t' && c != ' '
 			  && c != '-')))
 		{
 			while ((c = nextchar()) != '\n' && c != EOF);
@@ -2865,7 +2810,7 @@ static SSHORT skip_white()
 		}
 #endif
 
-		const UCHAR char_class = classes(c);
+		const UCHAR char_class = classes[c];
 
 		if (char_class & CHR_WHITE) {
 			continue;
@@ -2890,8 +2835,7 @@ static SSHORT skip_white()
 			(gpreGlob.sw_language == lang_c ||
 			 isLangCpp(gpreGlob.sw_language)))
 		{
-			SSHORT next = nextchar();
-			if (next != '*') {
+			if ((next = nextchar()) != '*') {
 				if (isLangCpp(gpreGlob.sw_language) && next == '/') {
 					while ((c = nextchar()) != '\n' && c != EOF);
 					continue;
@@ -2929,8 +2873,7 @@ static SSHORT skip_white()
 #endif
 
 		if (c == '-' && (gpreGlob.sw_sql || gpreGlob.sw_language == lang_ada)) {
-			SSHORT next = nextchar();
-			if (next != '-') {
+			if ((next = nextchar()) != '-') {
 				return_char(next);
 				return c;
 			}
@@ -2946,8 +2889,7 @@ static SSHORT skip_white()
 		}
 
 		if (c == '(' && gpreGlob.sw_language == lang_pascal) {
-			SSHORT next = nextchar();
-			if (next != '*') {
+			if ((next = nextchar()) != '*') {
 				return_char(next);
 				return c;
 			}

@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD International support
  *	MODULE:		IntlManager.h
- *	DESCRIPTION:	INTL Manager
+ *	DESCRIPTION:	
  *
  *  The contents of this file are subject to the Initial
  *  Developer's Public License Version 1.0 (the "License");
@@ -28,7 +28,6 @@
 #define JRD_INTLMANAGER_H
 
 #include "../common/classes/fb_string.h"
-#include "../config/ConfObj.h"
 
 struct charset;
 struct texttype;
@@ -51,18 +50,8 @@ public:
 								ULONG specificAttributesLen, bool ignoreAttributes,
 								texttype* tt);
 
-	static bool setupCollationAttributes(
-		const Firebird::string& collationName, const Firebird::string& charSetName,
-		const Firebird::string& specificAttributes, Firebird::string& newSpecificAttributes);
-
 private:
-	static Firebird::string getConfigInfo(const ConfObj& confObj);
-
-	static bool registerCharSetCollation(const Firebird::string& name,
-		const Firebird::PathName& filename, const Firebird::string& externalName,
-		const Firebird::string& configInfo);
-
-	static bool validateCharSet(const Firebird::string& charSetName, charset* cs);
+	static bool registerCharSetCollation(const Firebird::string& name, const Firebird::PathName& filename);
 };
 
 }	// namespace Jrd

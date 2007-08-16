@@ -138,7 +138,7 @@ void ERRD_error( int code, const char* text)
         *status_vector++ = isc_random;
         *status_vector++ = isc_arg_cstring;
         *status_vector++ = strlen(s);
-        *status_vector++ = reinterpret_cast<ISC_STATUS>(s);
+        *status_vector++ = reinterpret_cast<ISC_STATUS>(s); // warning, pointer to SLONG!
         *status_vector++ = isc_arg_end;
     }
 
@@ -161,6 +161,10 @@ void ERRD_error( int code, const char* text)
 bool ERRD_post_warning(ISC_STATUS status, ...)
 {
 	va_list args;
+
+#pragma FB_COMPILER_MESSAGE("Warning, using STATUS array to hold pointers to STATUSes!")
+// meaning; if sizeof(long) != sizeof(void*), this code WILL crash something.
+
 
 	va_start(args, status);
 
@@ -263,6 +267,8 @@ bool ERRD_post_warning(ISC_STATUS status, ...)
  **/
 void ERRD_post(ISC_STATUS status, ...)
 {
+	int warning_indx = 0;
+
 	ISC_STATUS* status_vector = ((tsql*) DSQL_get_thread_data())->tsql_status;
 
 // stuff the status into temp buffer 
@@ -271,7 +277,7 @@ void ERRD_post(ISC_STATUS status, ...)
 	STUFF_STATUS(tmp_status, status);
 
 // calculate length of the status 
-	int tmp_status_len = 0, warning_indx = 0;
+	int tmp_status_len = 0;
 	PARSE_STATUS(tmp_status, tmp_status_len, warning_indx);
 	fb_assert(warning_indx == 0);
 

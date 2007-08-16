@@ -19,6 +19,8 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ * Added TCP_NO_DELAY option for superserver on Linux
+ * FSG 16.03.2001
  *
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "EPSON" port
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "XENIX" port
@@ -84,7 +86,6 @@
 
 #if !(defined VMS || defined WIN_NT)
 #include <netinet/tcp.h>
-#include <netinet/in.h>
 #include <netdb.h>
 #include <arpa/inet.h>
 /* EKU: SINIX-Z does not define INADDR_NONE */
@@ -135,11 +136,15 @@ const char* GDS_HOSTS_FILE = "";
 const char* PROXY_FILE	= "/etc/gds_proxy";
 const char* HOSTS_FILE	= "/etc/hosts.equiv";
 #ifdef MULTI_THREAD
-const USHORT MAX_PTYPE	= ptype_lazy_send;
+const USHORT MAX_PTYPE	= ptype_batch_send;
 #else
 const USHORT MAX_PTYPE	= ptype_out_of_band;
 #endif
+#ifdef SMALL_FILE_NAMES
+const char* GDS_HOSTS_FILE	= "/etc/gdshosts.eqv";
+#else
 const char* GDS_HOSTS_FILE	= "/etc/gds_hosts.equiv";
+#endif
 #endif // VMS
 
 #ifdef WIN_NT
@@ -182,14 +187,6 @@ const int NOTASOCKET = EBADF;
 
 #ifndef ENOBUFS
 #define ENOBUFS	0
-#endif
-
-#ifndef FB_SEND_FLAGS
-#define FB_SEND_FLAGS 0
-#endif
-
-#ifndef FB_SETOPT_FLAGS
-#define FB_SETOPT_FLAGS 0
 #endif
 
 SLONG INET_remote_buffer;
@@ -292,7 +289,7 @@ static int fork(SOCKET, USHORT);
 #endif
 
 static in_addr get_bind_address();
-static in_addr get_host_address(const Firebird::string&);
+static in_addr get_host_address(const TEXT *);
 
 static void copy_p_cnct_repeat_array(	p_cnct::p_cnct_repeat*			pDest,
 										const p_cnct::p_cnct_repeat*	pSource,
@@ -301,9 +298,7 @@ static void copy_p_cnct_repeat_array(	p_cnct::p_cnct_repeat*			pDest,
 static void		inet_copy(const void*, UCHAR*, int);
 static int		inet_destroy(XDR *);
 static void		inet_gen_error(rem_port*, ISC_STATUS, ...);
-#if !defined(SUPERSERVER) || defined(EMBEDDED)
 static bool_t	inet_getbytes(XDR *, SCHAR *, u_int);
-#endif
 static bool_t	inet_getlong(XDR *, SLONG *);
 static u_int	inet_getpostn(XDR *);
 #if !(defined WIN_NT)
@@ -357,10 +352,10 @@ static XDR::xdr_ops inet_ops =
 {
 	inet_getlong,
 	inet_putlong,
-#if !defined(SUPERSERVER) || defined(EMBEDDED)
-	inet_getbytes,
-#else
+#if defined(SUPERSERVER) && !defined(EMBEDDED)
 	REMOTE_getbytes,
+#else
+	inet_getbytes,
 #endif
 	inet_putbytes,
 	inet_getpostn,
@@ -406,27 +401,31 @@ static WSADATA INET_wsadata;
 
 #ifdef  SUPERSERVER
 
-static Firebird::Mutex	port_mutex;
+static MUTX_T	port_mutex;
+static bool		port_mutex_inited = false;
 
 #define DEFER_PORT_CLEANUP
 
-inline void START_PORT_CRITICAL() 
-{
+inline void START_PORT_CRITICAL() {
+	if (!port_mutex_inited) {
+		port_mutex_inited = true;
+	}
 	THREAD_EXIT();
-	port_mutex.enter();
+	THD_mutex_lock (&port_mutex);
 	THREAD_ENTER();
 }
 
-inline void STOP_PORT_CRITICAL()
-{
+inline void STOP_PORT_CRITICAL() {
 	THREAD_EXIT();
-	port_mutex.leave();
+	THD_mutex_unlock (&port_mutex);
 	THREAD_ENTER();
 }
 
 #else
-inline void START_PORT_CRITICAL() { }
-inline void STOP_PORT_CRITICAL() { }
+inline void START_PORT_CRITICAL() {
+}
+inline void STOP_PORT_CRITICAL() {
+}
 #endif
 
 
@@ -507,11 +506,10 @@ rem_port* INET_analyze(Firebird::PathName& file_name,
 	static const p_cnct::p_cnct_repeat protocols_to_try1[] =
 	{
 		REMOTE_PROTOCOL(PROTOCOL_VERSION8, ptype_rpc, MAX_PTYPE, 1),
-		REMOTE_PROTOCOL(PROTOCOL_VERSION10, ptype_rpc, MAX_PTYPE, 2),
-		REMOTE_PROTOCOL(PROTOCOL_VERSION11, ptype_rpc, MAX_PTYPE, 3),
+		REMOTE_PROTOCOL(PROTOCOL_VERSION10, ptype_rpc, MAX_PTYPE, 2)
 #ifdef SCROLLABLE_CURSORS
 		,
-		REMOTE_PROTOCOL(PROTOCOL_SCROLLABLE_CURSORS, ptype_rpc, MAX_PTYPE, 99)
+		REMOTE_PROTOCOL(PROTOCOL_SCROLLABLE_CURSORS, ptype_rpc, MAX_PTYPE, 3)
 #endif
 	};
 
@@ -598,9 +596,9 @@ rem_port* INET_analyze(Firebird::PathName& file_name,
 
 /* once we've decided on a protocol, concatenate the version
    string to reflect it...  */
+
 	Firebird::string temp;
-	temp.printf("%s/P%d", port->port_version->str_data, 
-						  port->port_protocol & FB_PROTOCOL_MASK);
+	temp.printf("%s/P%d", port->port_version->str_data, port->port_protocol);
 	ALLR_free(port->port_version);
 	port->port_version = REMOTE_make_string(temp.c_str());
 
@@ -614,10 +612,6 @@ rem_port* INET_analyze(Firebird::PathName& file_name,
 
 	if (packet->p_acpt.p_acpt_type != ptype_out_of_band) {
 		port->port_flags |= PORT_no_oob;
-	}
-
-	if (packet->p_acpt.p_acpt_type == ptype_lazy_send) {
-		port->port_flags |= PORT_lazy;
 	}
 
 	return port;
@@ -732,7 +726,7 @@ rem_port* INET_connect(const TEXT* name,
 
 	if (packet) {
 		// client connection
-		host_addr = get_host_address(host);
+		host_addr = get_host_address(host.c_str());
 
 		if (host_addr.s_addr == INADDR_NONE)
 		{
@@ -821,8 +815,7 @@ rem_port* INET_connect(const TEXT* name,
 						   isc_arg_gds,
 						   isc_service_unknown,
 						   isc_arg_string,
-						   protocol.c_str(),
-						   isc_arg_string, "tcp", 0);
+						   protocol.c_str(), isc_arg_string, "tcp", 0);
 			return NULL;
 		}						/* else / not hardwired gds_db translation */
 	}
@@ -1004,8 +997,8 @@ rem_port* INET_reconnect(HANDLE handle, ISC_STATUS* status_vector)
 	port->port_handle = handle;
 	port->port_server_flags |= SRVR_server;
 
-	int n = 0, optval = TRUE;
-	n = setsockopt((SOCKET) port->port_handle, SOL_SOCKET,
+	int optval = TRUE;
+	int n = setsockopt((SOCKET) port->port_handle, SOL_SOCKET,
 					SO_KEEPALIVE, (SCHAR*) &optval, sizeof(optval));
 	if (n == -1) {
 		gds__log("inet server err: setting KEEPALIVE socket option \n");
@@ -1031,7 +1024,6 @@ rem_port* INET_server(int sock)
  *	established.  Set up port block with the appropriate socket.
  *
  **************************************/
-	int n = 0;
 #ifdef VMS
 	ISC_tcp_setup(ISC_wait, gds__completion_ast);
 #endif
@@ -1040,7 +1032,7 @@ rem_port* INET_server(int sock)
 	port->port_handle = (HANDLE) sock;
 
 	int optval = 1;
-	n = setsockopt(sock, SOL_SOCKET, SO_KEEPALIVE,
+	int n = setsockopt(sock, SOL_SOCKET, SO_KEEPALIVE,
 			   (SCHAR *) & optval, sizeof(optval));
 	if (n == -1) {
 		gds__log("inet server err: setting KEEPALIVE socket option \n");
@@ -1528,8 +1520,7 @@ static rem_port* aux_request( rem_port* port, PACKET* packet)
 
 	int optval = TRUE;
 	int ret = setsockopt(n, SOL_SOCKET, SO_REUSEADDR,
-						 (SCHAR *) &optval, sizeof(optval));
-
+			   (SCHAR *) &optval, sizeof(optval));
 	if (ret == -1) {
 		inet_error(port, "setsockopt REUSE", isc_net_event_listen_err, INET_ERRNO);
 		return NULL;
@@ -1631,7 +1622,7 @@ static int check_host(
  **************************************
  *
  * Functional description
- *	Check the host on the other end of the socket to see if
+ *	Check the host on the other end of the socket to see it
  *	it's an equivalent host.
  * NB.: First check the ~/.rhosts then the HOSTS_FILE - both have
  *	the same line formats (see parse_line)
@@ -1643,10 +1634,6 @@ static int check_host(
 
 	if (getpeername((int) port->port_handle, (struct sockaddr*)&address, &length) == -1)
 		return 0;
-
-	// If source address is in the loopback net - trust it
-	if((ntohl(address.sin_addr.s_addr) >> IN_CLASSA_NSHIFT) == IN_LOOPBACKNET)
-		return 1;
 
 	const struct hostent* host = gethostbyaddr((SCHAR *) & address.sin_addr,
 							   sizeof(address.sin_addr), address.sin_family);
@@ -1907,10 +1894,6 @@ static void cleanup_port( rem_port* port)
 	delete port->port_queue;
 #endif
 
-#ifdef TRUSTED_AUTH
-	delete port->port_trusted_auth;
-#endif
-
 	ALLR_release((UCHAR *) port);
 	return;
 }
@@ -1987,7 +1970,7 @@ static int fork( SOCKET old_handle, USHORT flag)
 					DUPLICATE_SAME_ACCESS);
 
 	Firebird::string cmdLine;
-	cmdLine.printf("%s -i -h %"SLONGFORMAT, name, (SLONG) new_handle);
+	cmdLine.printf("%s -s -i -h %"SLONGFORMAT, name, (SLONG) new_handle);
 
 	STARTUPINFO start_crud;
 	start_crud.cb = sizeof(STARTUPINFO);
@@ -2000,10 +1983,10 @@ static int fork( SOCKET old_handle, USHORT flag)
 	
 	PROCESS_INFORMATION pi;
 	if (CreateProcess(NULL, cmdLine.begin(), NULL, NULL, TRUE,
-					  (flag & SRVR_high_priority ?
-						 HIGH_PRIORITY_CLASS | DETACHED_PROCESS :
-						 NORMAL_PRIORITY_CLASS | DETACHED_PROCESS),
-					  NULL, NULL, &start_crud, &pi))
+							(flag & SRVR_high_priority ?
+							 HIGH_PRIORITY_CLASS | DETACHED_PROCESS :
+							 NORMAL_PRIORITY_CLASS | DETACHED_PROCESS),
+							NULL, NULL, &start_crud, &pi))
 	{
 		CloseHandle(pi.hThread);
 		CloseHandle(pi.hProcess);
@@ -2037,7 +2020,7 @@ static in_addr get_bind_address()
 	return config_address;
 }
 
-static in_addr get_host_address(const Firebird::string& name)
+static in_addr get_host_address(const TEXT* name)
 {
 /**************************************
  *
@@ -2053,11 +2036,11 @@ static in_addr get_host_address(const Firebird::string& name)
 
 	THREAD_EXIT();
 
-	address.s_addr = inet_addr(name.c_str());
+	address.s_addr = inet_addr(name);
 
 	if (address.s_addr == INADDR_NONE) {
 
-		const hostent* host = gethostbyname(name.c_str());
+		const hostent* host = gethostbyname(name);
 
 		/* On Windows NT/9x, gethostbyname can only accomodate
 		 * 1 call at a time.  In this case it returns the error
@@ -2070,7 +2053,7 @@ static in_addr get_host_address(const Firebird::string& name)
 		if (!host) {
 			if (H_ERRNO == INET_RETRY_ERRNO) {
 				for (int retry = 0; retry < INET_RETRY_CALL; retry++) {
-					if ( (host = gethostbyname(name.c_str())) )
+					if ( (host = gethostbyname(name)) )
 						break;
 				}
 			}
@@ -2900,7 +2883,6 @@ static void inet_gen_error( rem_port* port, ISC_STATUS status, ...)
 	}
 }
 
-#if !defined(SUPERSERVER) || defined(EMBEDDED)
 static bool_t inet_getbytes( XDR * xdrs, SCHAR * buff, u_int count)
 {
 /**************************************
@@ -2960,7 +2942,6 @@ static bool_t inet_getbytes( XDR * xdrs, SCHAR * buff, u_int count)
 
 	return TRUE;
 }
-#endif
 
 static bool_t inet_getlong( XDR * xdrs, SLONG * lp)
 {
@@ -3626,7 +3607,6 @@ static int packet_receive(
 	return TRUE;
 }
 
-
 static bool_t packet_send( rem_port* port, const SCHAR* buffer, SSHORT buffer_length)
 {
 /**************************************
@@ -3646,7 +3626,6 @@ static bool_t packet_send( rem_port* port, const SCHAR* buffer, SSHORT buffer_le
 #else
 	const char* data = buffer;
 #endif
-
 	SSHORT length = buffer_length;
 
 	while (length) {
@@ -3658,7 +3637,7 @@ static bool_t packet_send( rem_port* port, const SCHAR* buffer, SSHORT buffer_le
 		}
 #endif
 		SSHORT n = -1;
-		n = send((SOCKET) port->port_handle, data, length, FB_SEND_FLAGS);
+		n = send((SOCKET) port->port_handle, data, length, 0);
 #ifdef DEBUG
 		if (INET_trace & TRACE_operations) {
 			fprintf(stdout, "After Send n is %d\n", n);
@@ -3700,7 +3679,7 @@ static bool_t packet_send( rem_port* port, const SCHAR* buffer, SSHORT buffer_le
 #else
 		const char* b = buffer;
 #endif
-		while ((n = send((SOCKET) port->port_handle, b, 1, MSG_OOB | FB_SEND_FLAGS)) == -1 &&
+		while ((n = send((SOCKET) port->port_handle, b, 1, MSG_OOB)) == -1 &&
 				(INET_ERRNO == ENOBUFS || INTERRUPT_ERROR(INET_ERRNO)))
 		{
 			inetErrNo = INET_ERRNO;

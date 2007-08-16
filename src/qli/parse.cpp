@@ -40,9 +40,6 @@
 #include "../jrd/gdsassert.h"
 #include "../jrd/constants.h"
 
-using MsgFormat::SafeArg;
-
-
 #define KEYWORD(kw)		(QLI_token->tok_keyword == kw)
 #define INT_CAST		(qli_syntax*) (IPTR)
 
@@ -397,7 +394,7 @@ void PAR_token(void)
 
 	if (PAR_match(KW_COLON)) {
 		if (!QLI_databases) {
-			ERRQ_error_format(159);	// Msg159 no databases are ready
+			ERRQ_error_format(159, NULL, NULL, NULL, NULL, NULL);	// Msg159 no databases are ready
 			ERRQ_pending();
 			LEX_token();
 		}
@@ -794,7 +791,7 @@ static qli_syntax* parse_assignment(void)
    assignment, and we're off the hook. */
 
 	if (!PAR_match(KW_EQUALS))
-		ERRQ_print_error(156, name->nam_string);	// Msg156 expected statement, encountered %s
+		ERRQ_print_error(156, name->nam_string, NULL, NULL, NULL, NULL);	// Msg156 expected statement, encountered %s
 
 /* See if the "field name" is really a relation reference.  If so,
    turn the assignment into a restructure. */
@@ -889,7 +886,7 @@ static qli_syntax* parse_copy(void)
 		return node;
 	}
 
-	ERRQ_print_error(157, QLI_token->tok_string);	// Msg157 Expected PROCEDURE encountered %s
+	ERRQ_print_error(157, QLI_token->tok_string, NULL, NULL, NULL, NULL);	// Msg157 Expected PROCEDURE encountered %s
 	return NULL;
 }
 
@@ -1018,14 +1015,14 @@ static qli_syntax* parse_declare(void)
 		NAM db_name = (NAM) field_node->syn_arg[0];
 		NAM rel_name = (NAM) field_node->syn_arg[1];
 		if (!db_name->nam_symbol)
-			ERRQ_print_error(165, db_name->nam_string);
+			ERRQ_print_error(165, db_name->nam_string, NULL, NULL, NULL, NULL);
 			// Msg165 %s is not a database
 
 		relation = resolve_relation(db_name->nam_symbol, rel_name->nam_symbol);
 		if (!relation)
 		{
-			ERRQ_print_error(166, SafeArg() << rel_name->nam_string <<
-							 db_name->nam_string);
+			ERRQ_print_error(166, rel_name->nam_string,
+							 db_name->nam_string, NULL, NULL, NULL);
 			// Msg166 %s is not a relation in database %s
 		}
 	}
@@ -1294,7 +1291,7 @@ static qli_syntax* parse_drop(void)
 	case KW_DATABASE:
 		LEX_filename();
 		if (!(l = QLI_token->tok_length))
-			ERRQ_error(429);	// Msg429 database file name required on DROP DATABASE
+			ERRQ_error(429, NULL, NULL, NULL, NULL, NULL);	// Msg429 database file name required on DROP DATABASE
 		q = QLI_token->tok_string;
 		if (QLI_token->tok_type == tok_quoted) {
 			l -= 2;
@@ -2994,8 +2991,8 @@ static qli_rel* parse_qualified_relation(void)
 			PAR_token();
 			return relation;
 		}
-		ERRQ_print_error(203, SafeArg() << QLI_token->tok_string << db_symbol->sym_string);
-		// Msg203 %s is not a relation in database %s
+		ERRQ_print_error(203, QLI_token->tok_string, db_symbol->sym_string,
+						 NULL, NULL, NULL);	// Msg203 %s is not a relation in database %s
 	}
 
 	qli_rel* relation = resolve_relation(0, QLI_token->tok_symbol);
@@ -3026,7 +3023,7 @@ static qli_syntax* parse_ready( NOD_T node_type)
 		LEX_filename();
 		SSHORT l = QLI_token->tok_length;
 		if (!l)
-			ERRQ_error(204);
+			ERRQ_error(204, NULL, NULL, NULL, NULL, NULL);
 			// Msg204 database file name required on READY
 		const TEXT* q = QLI_token->tok_string;
 		if (QLI_token->tok_type == tok_quoted) {
@@ -3046,7 +3043,7 @@ static qli_syntax* parse_ready( NOD_T node_type)
 				NAM name = parse_name();
 				database->dbb_symbol = (qli_symbol*) name;
 				if (HSH_lookup(name->nam_string, name->nam_length))
-					ERRQ_error(408, name->nam_string);
+					ERRQ_error(408, name->nam_string, NULL, NULL, NULL, NULL);
 					// Database handle is not unique
 			}
 			else
@@ -3314,7 +3311,7 @@ static qli_syntax* parse_relation(void)
 		if (sql_flag || !PAR_match(KW_IN)) {
 			if (!QLI_databases)
 				IBERROR(207);	// Msg207 a database has not been readied
-			ERRQ_print_error(208, context->sym_string);
+			ERRQ_print_error(208, context->sym_string, NULL, NULL, NULL, NULL);
 			// Msg208 expected \"relation_name\", encountered \"%s\" 
 		}
 		if (!
@@ -4385,7 +4382,7 @@ static int parse_sql_dtype( USHORT* length, USHORT* scale, USHORT* precision,
 			{
 				const bool l = (PAR_match(KW_MINUS)) ? true : false;
 				*scale = parse_ordinal();
-				if (*scale > logLength)
+				if (*scale < 0 || *scale > 18 || *scale > logLength)
 					ERRQ_syntax(510);  // Msg510 "Field scale exceeds allowed range"
 					
 				if (l || *scale > 0) // We need to have it negative in system tables.

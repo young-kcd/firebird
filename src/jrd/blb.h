@@ -39,12 +39,9 @@ namespace Jrd {
    number of the first segment-clump.  The two types of blobs can be
    reliably distinguished by a zero or non-zero relation id. */
 
-class Attachment;
 class BlobControl;
-class jrd_rel;
 class jrd_req;
 class jrd_tra;
-class vcl;
 
 // This structure must occupy 8 bytes
 struct bid {
@@ -59,7 +56,7 @@ struct bid {
 			ULONG bid_quad_low;
 		} bid_quad;
 	};
-
+	
 	ULONG& bid_temp_id() {
 		// Make sure that compiler packed structure like we wanted
 		fb_assert(sizeof(*this) == 8);
@@ -148,8 +145,6 @@ class blb : public pool_alloc_rpt<UCHAR, type_blb>
 	USHORT blb_source_interp;	/* source interp (for writing) */
 	USHORT blb_target_interp;	/* destination interp (for reading) */
 	SSHORT blb_sub_type;		/* Blob's declared sub-type */
-	UCHAR blb_charset;			// Blob's charset
-	USHORT blb_pg_space_id;		// page space
 	ULONG blb_sequence;			/* Blob page sequence */
 	ULONG blb_max_sequence;		/* Number of data pages */
 	ULONG blb_count;			/* Number of segments */

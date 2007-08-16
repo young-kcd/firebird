@@ -61,7 +61,7 @@ int rdb$vmspas_init(int dbcount, int *d)
  *	Mimic RdB's rdb$vmspas_init
  *
  **************************************/
-	TEB tebs[MAX_DB_PER_TRANS];
+	TEB tebs[16];
 	struct dsc$descriptor_s *dbname;
 
 	int stat = 1;

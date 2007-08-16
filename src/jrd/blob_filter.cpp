@@ -52,6 +52,7 @@
 #include "../jrd/ibsetjmp.h"
 #include "../jrd/thd.h"
 #include "../jrd/isc_s_proto.h"
+#include "../jrd/all_proto.h"
 #include "gen/iberror.h"
 
 using namespace Jrd;
@@ -350,8 +351,7 @@ static ISC_STATUS open_blob(
 
 	SSHORT from, to;
 	USHORT from_charset, to_charset;
-	gds__parse_bpb2(bpb_length, bpb, &from, &to, &from_charset, &to_charset,
-		NULL, NULL, NULL, NULL);
+	gds__parse_bpb2(bpb_length, bpb, &from, &to, &from_charset, &to_charset);
 
 	if ((!filter) || (!filter->blf_filter)) {
 		*user_status++ = isc_arg_gds;

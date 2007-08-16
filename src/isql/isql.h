@@ -77,8 +77,7 @@ enum processing_state {
 	EXTRACT		=	7,
 	EXTRACTALL	=	8,
 	FETCH		=	9,
-	OBJECT_NOT_FOUND = 10,
-	ERR_BUFFER_OVERFLOW = 11
+	OBJECT_NOT_FOUND = 10
 };
 
 // Which blob subtypes to print 
@@ -237,14 +236,6 @@ const int USAGE_NOTINT				= 143;		// usage: argument "%s" for switch "%s" is not
 const int USAGE_RANGE				= 144;		// usage: value "%s" for switch "%s" is out of range
 const int USAGE_DUPSW				= 145;		// usage: switch "%s" or its equivalent used more than once
 const int USAGE_DUPDB				= 146;		// usage: more than one database name: "%s", "%s"
-const int NO_DEPENDENCIES			= 147;		// No dependencies for %s were found
-const int NO_COLLATION				= 148;		// There is no collation %s in this database 
-const int NO_COLLATIONS				= 149;		// There are no collations in this database 
-const int MSG_COLLATIONS			= 150;		// Collations:
-const int NO_SECCLASS               = 151;      // There are no security classes for %s
-const int NO_DB_WIDE_SECCLASS       = 152;      // There is no database-wide security class
-const int CANNOT_GET_SRV_VER		= 153;		// Cannot get server version without database connection
-const int BULK_PROMPT				= 156;		// "BULK> "
 
 // Initialize types
 
@@ -351,7 +342,6 @@ public:
 	USHORT db_SQL_dialect;
 	// from isql.epp
 	USHORT major_ods;
-	USHORT minor_ods;
 	void printf(const char* buffer, ...);
 	void prints(const char* buffer);
 };
@@ -362,7 +352,11 @@ extern IsqlGlobals isqlGlob;
 #include <descrip.h>
 #endif
 
-static const char* SCRATCH = "fb_query_";
+#ifdef SMALL_FILE_NAMES
+static const char* SCRATCH		= "fb_q";
+#else
+static const char* SCRATCH		= "fb_query_";
+#endif
 
 inline void STDERROUT(const char* st, bool cr = true)
 {

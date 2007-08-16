@@ -14,22 +14,22 @@
 *       20841   klaus   12-JAN-1996
 *       Add interprocess comm under remote component
 *
-*       20804   RCURRY  9-JAN-1996
+*       20804   RCURRY  9-JAN-1996 
 *       Change priority for NP threads to normal
 *
 *       20768   klaus   20-DEC-1995
 *       More xnet driver work
 *
-*       20729   klaus   8-DEC-1995
+*       20729   klaus   8-DEC-1995 
 *       Begin adding xnet protocol
 *
-*       20716   jmayer  6-DEC-1995
+*       20716   jmayer  6-DEC-1995 
 *       Update to not show NamedPipes as supported on Win95.
 *
-*       20690   jmayer  4-DEC-1995
+*       20690   jmayer  4-DEC-1995 
 *       Change to start the IPC protocol when running as a service.
 *
-*       20682   jmayer  3-DEC-1995
+*       20682   jmayer  3-DEC-1995 
 *       Update to write to logfile and display msg box as a non-service.
 *
 *       20373   RCURRY  24-OCT-1995
@@ -119,8 +119,13 @@ static HINSTANCE hInst;
 
 static TEXT protocol_inet[128];
 static TEXT protocol_wnet[128];
-static TEXT instance[MAXPATHLEN];
 static USHORT server_flag;
+
+static const SERVICE_TABLE_ENTRY service_table[] =
+{
+	{const_cast<TEXT*>(REMOTE_SERVICE), CNTL_main_thread},
+	{NULL, NULL}
+};
 
 static const int SIGSHUT = 666;
 static int shutdown_pid = 0;
@@ -147,27 +152,28 @@ int WINAPI WinMain(HINSTANCE	hThisInst,
 	hInst = hThisInst;
 
 	// We want server to crash without waiting for feedback from the user
-	try
+	try 
 	{
 		if (!Config::getBugcheckAbort())
 			SetErrorMode(SEM_FAILCRITICALERRORS | SEM_NOGPFAULTERRORBOX | SEM_NOOPENFILEERRORBOX);
 	}
-	catch (Firebird::fatal_exception& e)
+	catch(Firebird::fatal_exception& e)
 	{
-		MessageBox(NULL, e.what(), "Firebird server failure",
+		MessageBox(NULL, e.what(), "Firebird server failure", 
 			MB_OK | MB_ICONHAND | MB_SYSTEMMODAL  | MB_DEFAULT_DESKTOP_ONLY);
 		return STARTUP_ERROR; // see /jrd/common.h
 	}
-	catch (Firebird::status_exception& e)
+	catch(Firebird::status_exception& e)
 	{
-		TEXT buffer[BUFFER_LARGE];
-		const ISC_STATUS* vector = e.value();
-		if (! (vector && fb_interpret(buffer, sizeof(buffer), &vector)))
+		TEXT buffer[1024];
+        const ISC_STATUS* vector = 0;
+		if (! (e.status_known() && (vector = e.value()) &&
+			  fb_interpret(buffer, sizeof(buffer), &vector)))
 		{
 			strcpy(buffer, "Unknown internal failure");
 		}
 
-		MessageBox(NULL, buffer, "Firebird server failure",
+		MessageBox(NULL, buffer, "Firebird server failure", 
 			MB_OK | MB_ICONHAND | MB_SYSTEMMODAL  | MB_DEFAULT_DESKTOP_ONLY);
 		return STARTUP_ERROR; // see /jrd/common.h
 	}
@@ -206,10 +212,8 @@ int WINAPI WinMain(HINSTANCE	hThisInst,
 	protocol_inet[0] = 0;
 	protocol_wnet[0] = 0;
 
-	strcpy(instance, FB_DEFAULT_INSTANCE);
-
 	HANDLE connection_handle = parse_args(lpszArgs, &server_flag);
-
+/*
 	if (shutdown_pid) {
 		int rc = ISC_kill(shutdown_pid, SIGSHUT, 0);
 		if (rc < 0)
@@ -217,13 +221,13 @@ int WINAPI WinMain(HINSTANCE	hThisInst,
 			char buffer[100];
 			sprintf(buffer, "Cannot terminate process with pid = %d", shutdown_pid);
 			MessageBox(NULL, buffer,
-				"Firebird server failure",
+				"Firebird server failure", 
 				MB_OK | MB_ICONHAND | MB_SYSTEMMODAL  | MB_DEFAULT_DESKTOP_ONLY);
 			return STARTUP_ERROR; // see /jrd/common.h
 		}
 		return 0;
 	}
-
+*/
 	if ((server_flag & (SRVR_inet | SRVR_wnet | SRVR_xnet)) == 0) {
 
 		if (ISC_is_WinNT())		/* True - NT, False - Win95 */
@@ -262,7 +266,7 @@ int WINAPI WinMain(HINSTANCE	hThisInst,
 	int nReturnValue = 0;
 	ISC_STATUS_ARRAY status_vector;
 
-	if (connection_handle != INVALID_HANDLE_VALUE)
+	if (connection_handle != INVALID_HANDLE_VALUE) 
 	{
 		rem_port* port = 0;
 		THREAD_ENTER();
@@ -277,21 +281,13 @@ int WINAPI WinMain(HINSTANCE	hThisInst,
 			service_connection(port);
 		}
 	}
-	else if (!(server_flag & SRVR_non_service))
+	else if (!(server_flag & SRVR_non_service)) 
 	{
-		Firebird::string service_name;
-		service_name.printf(REMOTE_SERVICE, instance);
-
-		CNTL_init(start_connections_thread, instance);
-
-		const SERVICE_TABLE_ENTRY service_table[] =
-		{
-			{const_cast<char*>(service_name.c_str()), CNTL_main_thread},
-			{NULL, NULL}
-		};
-
-		// BRS There is a error in MinGW (3.1.0) headers
-		// the parameter of StartServiceCtrlDispatcher is declared const in msvc headers
+		CNTL_init(start_connections_thread, REMOTE_SERVICE);
+//
+// BRS There is a error in MinGW (3.1.0) headers 
+// the parameter of StartServiceCtrlDispatcher is declared const in msvc headers
+//
 #if defined(MINGW)
 		if (!StartServiceCtrlDispatcher(const_cast<SERVICE_TABLE_ENTRY*>(service_table))) {
 #else
@@ -303,7 +299,7 @@ int WINAPI WinMain(HINSTANCE	hThisInst,
 			server_flag |= SRVR_non_service;
 		}
 	}
-	else
+	else 
 	{
 		if (server_flag & SRVR_inet) {
 			gds__thread_start(inet_connect_wait_thread, 0, THREAD_medium, 0,
@@ -318,15 +314,7 @@ int WINAPI WinMain(HINSTANCE	hThisInst,
 							  0);
 		}
 		// No need to waste a thread if we are running as a window
-		if (Config::getCreateInternalWindow()) {
-			nReturnValue = WINDOW_main(hThisInst, nWndMode, server_flag);
-		}
-		else {
-			HANDLE hEvent =
-				ISC_make_signal(TRUE, TRUE, GetCurrentProcessId(), SIGSHUT);
-			WaitForSingleObject(hEvent, INFINITE);
-			JRD_shutdown_all(false);
-		}
+		nReturnValue = WINDOW_main(hThisInst, nWndMode, server_flag);
 	}
 
 #ifdef DEBUG_GDS_ALLOC
@@ -636,18 +624,6 @@ static HANDLE parse_args( LPCSTR lpszArgs, USHORT * pserver_flag)
 					*pserver_flag &= ~SRVR_high_priority;
 					break;
 
-				case 'S':
-					while (*p && *p == ' ')
-						p++;
-					if (*p && *p != '-') {
-						char *pi = instance;
-						while (*p && *p != ' ') {
-							*pi++ = *p++;
-						}
-						*pi++ = '\0';
-					}
-					break;
-
 				case 'W':
 					*pserver_flag |= SRVR_wnet;
 					break;
@@ -659,7 +635,7 @@ static HANDLE parse_args( LPCSTR lpszArgs, USHORT * pserver_flag)
 				case 'Z':
 					// CVC: printf doesn't work because we don't have a console attached.
 					//printf("Firebird remote server version %s\n",  FB_VERSION);
-					MessageBox(NULL, FB_VERSION, "Firebird server version",
+					MessageBox(NULL, FB_VERSION, "Firebird server version", 
 						MB_OK | MB_ICONINFORMATION | MB_TOPMOST | MB_DEFAULT_DESKTOP_ONLY);
 					exit(FINI_OK);
 

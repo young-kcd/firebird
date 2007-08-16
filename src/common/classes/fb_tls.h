@@ -36,6 +36,10 @@
 //
 // TLS variable type should be smaller than size of pointer to stay portable
 
+#ifdef SOLARIS_MT
+#undef HAVE___THREAD
+#endif
+
 #if !defined(MULTI_THREAD)
 // Single-threaded case
 # define TLS_DECLARE(TYPE, NAME) TYPE NAME

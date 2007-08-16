@@ -1,110 +1,116 @@
 
-====================================
-Firebird 2.1.0       (Windows Build)
-====================================
+==================================
+Firebird 2.0.2       (Win32 Build)
+==================================
 
-  *** Beta 1 ***
 
 o Introduction
 o Intended Users
 o Features in this release (all platforms)
 o Bugs fixed in this release
 o Installation
+o Known Issues
 o Reporting Bugs
+o Requesting New Features
 
 
 Introduction
 ============
 
-Welcome to the first beta release of Firebird 2.1
+Welcome to Firebird 2.0.2
 
 
 Intended Users
 ==============
 
-This beta release is intended for experienced Firebird
-users. It has not been thoroughly tested and new
-features are only sparsely documented. Do not use this
-release in a production environment.
+Firebird 2.0.2 has undergone extensive testing and is
+intended for widespread production use. However, users
+are recommended to follow standard practices before
+deploying this release on a production server. ie:
+
+ o Please make sure you read the installation
+   readme and the release notes.
+
+ o If you have data you value remember to back it up
+   prior to installing this release.
+
+ o It is recommended that you remove any previous
+   version prior to installation. Uninstallation
+   preserves configuration files and log files.
+
+ o It is recommended that you carry out your own
+   tests in a development environment prior to
+   production deployment.
 
 
-Features in this release
-========================
+Features in this release (all platforms)
+========================================
 
-Apart from numerous bug fixes there are several
-major new features in Firebird 2.1. In no particular
-order they are:
-
- o Text blob compatibility with varchars
- o Database Triggers (connect, disconnect)
- o Transaction Triggers (start/commit/rollback)
- o Use of domains for Trigger/SP variable definition
- o Numerous monitoring facilities available via
-     SQL statements
- o Global temporary tables
- o Query termination
- o Unicode collations
- o MERGE and UPDATE or INSERT statements
- o Support for chinese characters via GBK
- o Common table expressions
- o Aggregate concatenation function
- o Character set TIS620
- o 64-bit builds for Windows
-
-There are also many more enhancements. You can browse
-a summary of changes via the bug tracker here:
-
-http://tracker.firebirdsql.org/secure/ReleaseNote.jspa?projectId=10000&styleName=Html&version=10041
-
-Improvements and New features are listed after the
-bug fixes.
-
-We are in the process of documenting the new features
-and you can read more about them in the release notes.
+See doc/Firebird_v2.0.2.ReleaseNotes.pdf for more
+information.
 
 
-Installation
+Bugs fixed in this release (all platforms)
+==========================================
+
+See doc/Firebird_v2.0.2.ReleaseNotes.pdf for more
+information.
+
+
+Installing the self-installing executable
+=========================================
+
+Please run the executable and read the accompanying
+installation instructions that are contained within the
+setup wizard.
+
+
+Known Issues
 ============
 
-Binary installation package are available, but they do
-not yet support multiple service instance installation.
-Neither are they fully 64-bit ready. The known
-limitations are discussed in installation_readme.txt.
-
-You can also use the zip packages to install Firebird
-manually. There is more info on manual installation
-in doc\install_windows_manually.txt.
+ o The security database has changed! See the DOC
+   directory for more details. Users who wish to
+   migrate an old security database to the new format
+   can use the upgrade script in misc/upgrade/security
 
 
 Reporting Bugs
 ==============
 
-Before you report a bug:
+o Are you sure you understand how Firebird works?
 
- o Check you know how Firebird works.
-   Maybe it is not a bug at all.
+  Perhaps you are seeing the correct behaviour and you
+  really have a support question. In this case contact
+  the firebird-support list server.
 
- o Perhaps some has already reported this? Browse
-   existing bug reports here:
+  You may subscribe here:
 
-    http://tracker.firebirdsql.org/secure/BrowseProject.jspa
-
- o If in doubt why not discuss the problem on the
-   Firebird-devel list? You can subscribe here:
-
-    http://lists.sourceforge.net/lists/listinfo/firebird-devel
-
-   and the list is viewable via a newsgroup interface
-   here:
-
-    news://news.atkin.com/
+	mailto:firebird-support-subscribe@yahoogroups.com
 
 
-Please don't use the Firebird-devel list for technical
-support unless the question specifically relates to a
-new feature in Firebird 2.1
+o Still think it is a bug?
+
+  First check the issue tracker here:
+
+	http://tracker.firebirdsql.org/secure/BrowseProject.jspa
+
+Please do not use the issue tracker to get technical
+support. If in doubt subscribe to the support list
+first at
+
+  mailto:firebird-support-subscribe@yahoogroups.com
+
+and ask your question there.
 
 
-Happy Testing!
+Requesting New Features
+=======================
 
-From the Firebird team.
+Before submitting feature requests please review the
+existing feature request list. Chances are that someone
+has already thought of it. Existing feature requests
+can be browsed here:
+
+  http://tracker.firebirdsql.org/secure/CreateIssue!default.jspa
+
+

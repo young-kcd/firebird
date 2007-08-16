@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:		Firebird exceptions classes
  *	MODULE:			fb_exception.h
- *	DESCRIPTION:	Firebird's exception classes 
+ *	DESCRIPTION:	Specific exception classes derived from std::exception
  *
  *  The contents of this file are subject to the Initial
  *  Developer's Public License Version 1.0 (the "License");
@@ -30,6 +30,7 @@
 #ifndef FB_EXCEPTION_H
 #define FB_EXCEPTION_H
 
+#include <exception>
 #include <stddef.h>
 #include <string.h>
 #include "fb_types.h"
@@ -67,48 +68,15 @@ private:
 	char *buffer_ptr;
 };
 
-class Exception
-{
-protected:
-	Exception() throw() { }
-public:
-	virtual ~Exception() throw() { }
-	virtual ISC_STATUS stuff_exception(ISC_STATUS* const status_vector, StringsBuffer* sb = NULL) const throw() = 0;
-	virtual const char* what() const throw() = 0;
-};
-
-// Used as jmpbuf to unwind when needed
-class LongJump : public Exception
-{
-public:
-	virtual ISC_STATUS stuff_exception(ISC_STATUS* const status_vector, StringsBuffer* sb = NULL) const throw();
-	virtual const char* what() const throw() { return "Firebird::LongJump"; }
-	static void raise();
-	LongJump() throw() : Exception() { }
-};
-
-// Used in MemoryPool
-class BadAlloc : public Exception
-{
-public:
-	virtual ISC_STATUS stuff_exception(ISC_STATUS* const status_vector, StringsBuffer* sb = NULL) const throw();
-	virtual const char* what() const throw() { return "Firebird::BadAlloc"; }
-	static void raise();
-	BadAlloc() throw() : Exception() { }
-};
-
-// Main exception class in firebird
-class status_exception : public Exception
+class status_exception : public std::exception
 {
 public:
 	// This version of constructor receives status vector pointing to permanent or 
 	// temp strings, depending upon second parameter.
 	status_exception(const ISC_STATUS *status_vector, bool permanent) throw();
 	virtual ~status_exception() throw();
-
-	virtual ISC_STATUS stuff_exception(ISC_STATUS* const status_vector, StringsBuffer* sb = NULL) const throw();
+	
 	virtual const char* what() const throw() { return "Firebird::status_exception"; }
-
 	const ISC_STATUS* value() const throw() { return m_status_vector; }
 
 	// Returns true if strings contained in status vector are located in magical 
@@ -116,8 +84,16 @@ public:
 	// and is about to deallocate them in its destructor
 	bool strings_permanent() const throw() { return m_strings_permanent; }
 
+	// Returns true if exception class holds status vector for the error.
+	// Returns false when status vector is passed "by magic", probably 
+	// somewhere in tdbb_status_vector
+	bool status_known() const throw() { return m_status_known; }
+
 	// Takes permanent strings
 	static void raise(const ISC_STATUS *status_vector);
+	
+	// Used as jmpbuf to unwind when needed
+	static void raise();
 	
 	// Take transient strings
 	static void raise(ISC_STATUS status, ...);
@@ -132,6 +108,7 @@ protected:
 private:
 	ISC_STATUS_ARRAY m_status_vector;
 	bool m_strings_permanent;
+	bool m_status_known;
 	void release_vector() throw();
 };
 
@@ -168,7 +145,7 @@ public:
 
 
 // Serialize exception into status_vector, put transient strings from exception into given StringsBuffer
-ISC_STATUS stuff_exception(ISC_STATUS *status_vector, const Firebird::Exception& ex, StringsBuffer* sb = NULL) throw();
+ISC_STATUS stuff_exception(ISC_STATUS *status_vector, const std::exception& ex, StringsBuffer* sb = NULL) throw();
 
 // These routines put strings into process-level circular buffer
 // They are obsolete, use transient version of status_exception::raise in combination with

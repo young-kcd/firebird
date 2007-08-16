@@ -41,10 +41,6 @@
 #include "../dsql/utld_proto.h"
 #include "../jrd/gds_proto.h"
 
-#if !defined(REQUESTER) && !defined(SUPERCLIENT)
-#include "../dsql/metd_proto.h"
-#endif
-
 
 static void cleanup(void *);
 static ISC_STATUS error_dsql_804(ISC_STATUS *, ISC_STATUS);
@@ -81,69 +77,6 @@ static TEXT *DSQL_failures, *DSQL_failures_ptr;
 
 const int  DSQL_FAILURE_SPACE = 2048;
 
-/**
-	Parse response on isc_info_sql_select or isc_info_sql_bind 
-	request. Return pointer to the next byte after successfully
-	parsed info or NULL if error is encountered or info is truncated
-**/
-SCHAR* UTLD_skip_sql_info(SCHAR* info)
-{
-	if (*info != isc_info_sql_select &&
-		*info != isc_info_sql_bind)
-	{
-		return 0;
-	}
-
-	info++;
-
-	if (*info++ != isc_info_sql_describe_vars)
-		return 0;
-
-	get_numeric_info((const SCHAR**) &info);
-
-	// Loop over the variables being described
-	while (true)
-	{
-		SCHAR str[256]; // must be big enough to hold metadata name
-		SCHAR item = *info++;
-
-		switch (item)
-		{
-		case isc_info_end:
-			return info;
-
-		case isc_info_truncated:
-			return 0;
-
-		case isc_info_sql_select:
-		case isc_info_sql_bind:
-			return --info;
-
-		case isc_info_sql_describe_end:
-			break;
-
-		case isc_info_sql_sqlda_seq:
-		case isc_info_sql_type:
-		case isc_info_sql_sub_type:
-		case isc_info_sql_scale:
-		case isc_info_sql_length:
-			get_numeric_info((const SCHAR**) &info);
-			break;
-
-		case isc_info_sql_field:
-		case isc_info_sql_relation:
-		case isc_info_sql_owner:
-		case isc_info_sql_alias:
-			get_string_info((const SCHAR**) &info, str, sizeof(str));
-			break;
-
-		default:
-			return 0;
-		}
-	}
-
-	return 0;
-}
 
 
 /**
@@ -1048,12 +981,3 @@ static void xsqlvar_to_sqlvar( XSQLVAR * xsqlvar, SQLVAR * sqlvar)
 		sqlvar->sqllen = sizeof(ISC_QUAD) | (xsqlvar->sqlscale << 8);
 }
 
-
-#if !defined(REQUESTER) && !defined(SUPERCLIENT)
-
-UCHAR DSqlDataTypeUtil::maxBytesPerChar(UCHAR charSet)
-{
-	return METD_get_charset_bpc(request, charSet);
-}
-
-#endif

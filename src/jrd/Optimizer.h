@@ -121,7 +121,7 @@ class IndexScratch
 {
 public:
 	IndexScratch(MemoryPool& p, thread_db* tdbb, index_desc* idx, CompilerScratch::csb_repeat* csb_tail);
-	IndexScratch(MemoryPool& p, const IndexScratch& scratch);
+	IndexScratch(MemoryPool& p, IndexScratch* scratch);
 	~IndexScratch();
 
 	index_desc*	idx;				// index descriptor
@@ -160,7 +160,7 @@ public:
 };
 
 typedef Firebird::HalfStaticArray<InversionCandidate*, 16> InversionCandidateList;
-typedef Firebird::ObjectsArray<IndexScratch> IndexScratchList;
+typedef Firebird::Array<IndexScratch*> IndexScratchList;
 
 class OptimizerRetrieval
 {

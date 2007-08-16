@@ -33,6 +33,8 @@
 #include "../common/classes/alloc.h"
 #include "../common/classes/array.h"
 
+#include <vector>
+
 #include "../alice/blk.h"
 
 enum val_errors {
@@ -58,10 +60,8 @@ enum alice_shut_mode {
 struct user_action
 {
 	ULONG ua_switches;
-	const char* ua_user;
-	const char* ua_password;
-	const char* ua_tr_user;
-	bool ua_trusted;
+	const UCHAR* ua_user;
+	const UCHAR* ua_password;
 	bool ua_use;
 	bool ua_force;
 	bool ua_read_only;
@@ -165,8 +165,6 @@ public:
 	AliceGlobals(Jrd::pfn_svc_output outProc, Jrd::Service* outData) 
 		: ThreadData(ThreadData::tddALICE), 
 		ALICE_default_pool(0),
-		exit_code(FINI_ERROR),	// prevent FINI_OK in case of unknown error thrown
-								// would be set to FINI_OK (==0) in ALICE_exit
 		output_proc(outProc), 
 		output_data(outData),
 		output_file(NULL),
@@ -176,7 +174,9 @@ public:
 		status(status_vector),
 		sw_redirect(NOREDIRECT),
 		sw_service(false),
-		sw_service_thd(false)
+		sw_service_thd(false),
+		exit_code(FINI_ERROR)	// prevent FINI_OK in case of unknown error thrown
+								// would be set to FINI_OK (==0) in ALICE_exit
 	{
 		memset(&ALICE_data, 0, sizeof(user_action));
 	}

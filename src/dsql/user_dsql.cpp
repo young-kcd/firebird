@@ -89,7 +89,7 @@ struct dsql_name
 
 static void		cleanup(void*);
 static void		cleanup_database(FB_API_HANDLE*, void*);
-static ISC_STATUS	error(const Firebird::Exception& ex);
+static ISC_STATUS	error(const std::exception& ex);
 static ISC_STATUS	error();
 static void		error_post(ISC_STATUS, ...);
 static dsql_name*		lookup_name(const SCHAR*, dsql_name*);
@@ -143,7 +143,7 @@ ISC_STATUS API_ROUTINE isc_embed_dsql_close(ISC_STATUS* user_status, const SCHAR
 									&statement->stmt_handle,
 									DSQL_close);
 	}
-	catch (const Firebird::Exception& ex)
+	catch(const std::exception& ex)
 	{
 		return error(ex);
 	}
@@ -181,7 +181,7 @@ ISC_STATUS API_ROUTINE isc_embed_dsql_declare(	ISC_STATUS*	user_status,
 
 		return s;
 	}
-	catch (const Firebird::Exception& ex)
+	catch(const std::exception& ex)
 	{
 		return error(ex);
 	}
@@ -211,7 +211,7 @@ ISC_STATUS API_ROUTINE isc_embed_dsql_describe(ISC_STATUS* user_status,
 							 dialect,
 							 sqlda);
 	}
-	catch (const Firebird::Exception& ex)
+	catch(const std::exception& ex)
 	{
 		return error(ex);
 	}
@@ -257,7 +257,7 @@ ISC_STATUS API_ROUTINE isc_embed_dsql_describe_bind(ISC_STATUS*	user_status,
 								  dialect,
 								  sqlda);
 	}
-	catch (const Firebird::Exception& ex)
+	catch(const std::exception& ex)
 	{
 		return error(ex);
 	}
@@ -310,7 +310,7 @@ ISC_STATUS API_ROUTINE isc_embed_dsql_execute2(ISC_STATUS*	user_status,
 								in_sqlda,
 								out_sqlda);
 	}
-	catch (const Firebird::Exception& ex)
+	catch(const std::exception& ex)
 	{
 		return error(ex);
 	}
@@ -448,7 +448,7 @@ ISC_STATUS API_ROUTINE isc_embed_dsql_fetch(ISC_STATUS* user_status,
 						  dialect,
 						  sqlda);
 	}
-	catch (const Firebird::Exception& ex)
+	catch(const std::exception& ex)
 	{
 		return error(ex);
 	}
@@ -483,7 +483,7 @@ ISC_STATUS API_ROUTINE isc_embed_dsql_fetch2(	ISC_STATUS*	user_status,
 							direction,
 							offset);
 	}
-	catch (const Firebird::Exception& ex)
+	catch(const std::exception& ex)
 	{
 		return error(ex);
 	}
@@ -530,9 +530,11 @@ ISC_STATUS API_ROUTINE isc_embed_dsql_fetch2_a(ISC_STATUS* user_status,
  *	Fetch next record from a dynamic SQL cursor (ADA version)
  *
  **************************************/
+	ISC_STATUS s;
+
 	*sqlcode = 0;
 
-	ISC_STATUS s =
+	s =
 		isc_embed_dsql_fetch2(user_status, cursor_name, dialect, sqlda,
 							  direction, offset);
 	if (s == 100)
@@ -558,20 +560,21 @@ ISC_STATUS API_ROUTINE isc_embed_dsql_insert(ISC_STATUS* user_status,
  *
  **************************************/
 	ISC_STATUS_ARRAY local_status;
+	stmt* statement;
 
 	INIT_DSQL(user_status, local_status);
 	try
 	{
 		// get the symbol table entry 
 
-		stmt* statement = lookup_stmt(cursor_name, cursor_names, NAME_cursor);
+		statement = lookup_stmt(cursor_name, cursor_names, NAME_cursor);
 
 		return isc_dsql_insert(user_status,
 						   &statement->stmt_handle,
 						   dialect,
 						   sqlda);
 	}
-	catch (const Firebird::Exception& ex)
+	catch(const std::exception& ex)
 	{
 		return error(ex);
 	}
@@ -592,7 +595,7 @@ void API_ROUTINE isc_embed_dsql_length(const UCHAR* string, USHORT* length)
  **************************************/
 	const UCHAR* p;
 	for (p = string; *p && *p != ';'; p++)
-		if (classes(*p) & CHR_QUOTE) {
+		if (classes[*p] & CHR_QUOTE) {
 			for (UCHAR prev = 0, quote = *p++; *p == quote || prev == quote;)
 				prev = *p++;
 			p--;
@@ -640,20 +643,21 @@ ISC_STATUS API_ROUTINE isc_embed_dsql_open2(ISC_STATUS* user_status,
  *
  **************************************/
 	ISC_STATUS_ARRAY local_status;
+	stmt* stmt;
 
 	INIT_DSQL(user_status, local_status);
 	try
 	{
 		// get the symbol table entry 
 
-		stmt* statement = lookup_stmt(cursor_name, cursor_names, NAME_cursor);
+		stmt = lookup_stmt(cursor_name, cursor_names, NAME_cursor);
 
 		return isc_dsql_execute2(user_status,
 							 trans_handle,
-							 &statement->stmt_handle,
+							 &stmt->stmt_handle,
 							 dialect, in_sqlda, out_sqlda);
 	}
-	catch (const Firebird::Exception& ex)
+	catch(const std::exception& ex)
 	{
 		return error(ex);
 	}
@@ -680,7 +684,7 @@ ISC_STATUS API_ROUTINE isc_embed_dsql_prepare(ISC_STATUS*	user_status,
  *
  **************************************/
 	ISC_STATUS s;
-	ISC_STATUS_ARRAY local_status;
+	ISC_STATUS_ARRAY local_status, local_status2;
 	stmt* statement;
 	HNDL stmt_handle;
 
@@ -727,7 +731,6 @@ ISC_STATUS API_ROUTINE isc_embed_dsql_prepare(ISC_STATUS*	user_status,
 		// An error occurred.  Free any newly allocated statement handle. 
 
 		if (!statement) {
-			ISC_STATUS_ARRAY local_status2;
 			isc_dsql_free_statement(local_status2,
 									&stmt_handle,
 									DSQL_drop);
@@ -765,7 +768,7 @@ ISC_STATUS API_ROUTINE isc_embed_dsql_prepare(ISC_STATUS*	user_status,
 	return s;
 
 	}	// try
-	catch (const Firebird::Exception& ex)
+	catch (const std::exception& ex)
 	{
 		return error(ex);
 	}
@@ -814,6 +817,8 @@ ISC_STATUS API_ROUTINE isc_embed_dsql_release(ISC_STATUS* user_status,
  *
  **************************************/
 	ISC_STATUS_ARRAY	local_status;
+	stmt**	stmt_ptr;
+	stmt* p;
 
 	INIT_DSQL(user_status, local_status);
 	try
@@ -839,8 +844,7 @@ ISC_STATUS API_ROUTINE isc_embed_dsql_release(ISC_STATUS* user_status,
 
 		// and remove this statement from the local list
 
-		stmt* p;
-		for (stmt** stmt_ptr = &statements; p = *stmt_ptr; stmt_ptr = &p->stmt_next) {
+		for (stmt_ptr = &statements; p = *stmt_ptr; stmt_ptr = &p->stmt_next) {
 			if (p == statement) {
 				*stmt_ptr = statement->stmt_next;
 				gds__free(statement);
@@ -850,7 +854,7 @@ ISC_STATUS API_ROUTINE isc_embed_dsql_release(ISC_STATUS* user_status,
 
 		return s;
 	}
-	catch (const Firebird::Exception& ex)
+	catch(const std::exception& ex)
 	{
 		return error(ex);
 	}
@@ -1045,7 +1049,9 @@ ISC_STATUS API_ROUTINE isc_execute_immediate_d(ISC_STATUS* status_vector,
 										   SLONG* tra_handle,
 										   struct dsc$descriptor_s * string)
 {
-	USHORT len = string->dsc$w_length;
+	USHORT len;
+
+	len = string->dsc$w_length;
 
 	return isc_execute_immediate(status_vector,
 								 db_handle,
@@ -1110,7 +1116,9 @@ ISC_STATUS API_ROUTINE isc_prepare_d(ISC_STATUS* status_vector,
 								 struct dsc$descriptor_s * string,
 								 SQLDA* sqlda)
 {
-	USHORT len = string->dsc$w_length;
+	USHORT len;
+
+	len = string->dsc$w_length;
 
 	return isc_prepare(status_vector,
 					   db_handle,
@@ -1131,7 +1139,7 @@ int API_ROUTINE isc_to_sqlda(	SQLDA*	sqlda,
 								int		host_var_size,
 								SCHAR*	name)
 {
-	// no longer supported
+// no longer supported 
 	return 0;
 }
 
@@ -1385,7 +1393,7 @@ static void cleanup_database(FB_API_HANDLE* db_handle, void* dummy)
 //	a status vector, return a status code.  Otherwise print the
 //	error code(s) and abort.
 //
-static ISC_STATUS error(const Firebird::Exception& ex)
+static ISC_STATUS error(const std::exception& ex)
 {
 	if (UDSQL_error->dsql_user_status) {
 		Firebird::stuff_exception(UDSQL_error->dsql_user_status, ex);

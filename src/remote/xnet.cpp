@@ -75,11 +75,11 @@ static int send_partial(rem_port*, PACKET *);
 static HANDLE server_process_handle = 0;
 static void server_shutdown(rem_port* port);
 #endif
-static rem_port* get_server_port(ULONG, XPM, ULONG, ULONG, ULONG, ISC_STATUS*);
-static bool make_map(ULONG, ULONG, FILE_ID*, CADDR_T*);
-static XPM make_xpm(ULONG, ULONG);
+static rem_port* get_server_port(ULONG, XPM, ULONG, ULONG, time_t, ISC_STATUS*);
+static bool make_map(ULONG, time_t, FILE_ID*, CADDR_T*);
+static XPM make_xpm(ULONG, time_t);
 static bool server_init();
-static XPM get_free_slot(ULONG*, ULONG*, ULONG*);
+static XPM get_free_slot(ULONG*, ULONG*, time_t*);
 static bool fork(ULONG, USHORT, ULONG*);
 
 static int xdrxnet_create(XDR *, rem_port*, UCHAR *, USHORT, enum xdr_op);
@@ -106,6 +106,8 @@ static xdr_t::xdr_ops xnet_ops =
 	xnet_inline,
 	xnet_destroy
 };
+
+const USHORT MAX_PTYPE = ptype_out_of_band;
 
 static ULONG global_pages_per_slot = XPS_DEF_PAGES_PER_CLI;
 static ULONG global_slots_per_map = XPS_DEF_NUM_CLI;
@@ -146,29 +148,41 @@ inline void make_event_name(char* buffer, size_t size, const char* format, ULONG
 	fb_utils::snprintf(buffer, size, format, Config::getIpcName(), arg1, arg2, arg3);
 }
 
-static Firebird::Mutex	xnet_mutex;
+static MUTX_T xnet_mutex;
 
 inline void XNET_LOCK() {
 	if (!xnet_shutdown)
-	{
 		THREAD_EXIT();
-	}
-	xnet_mutex.enter();
+	THD_mutex_lock(&xnet_mutex);
 	if (!xnet_shutdown)
-	{
 		THREAD_ENTER();
-	}
 }
-
 inline void XNET_UNLOCK() {
-	xnet_mutex.leave();
+	THD_mutex_unlock(&xnet_mutex);
 }
 
-static int xnet_error(rem_port*, ISC_STATUS, int);
+static int xnet_error(rem_port*, const TEXT*, ISC_STATUS, int);
 
-static void xnet_log_error(const char* err_msg)
+#define XNET_ERROR(po, fu, op, st) xnet_error(po, fu, op, st);
+#define XNET_LOG_ERROR(msg) xnet_log_error(msg)
+#define XNET_LOG_ERRORC(msg) xnet_log_error(msg, ERRNO)
+
+static void xnet_log_error(const char* err_msg, ULONG err_code = 0)
 { 
-	gds__log("XNET error: %s", err_msg);
+/**************************************
+ *
+ *  x n e t _ l o g _ e r r o r
+ *
+ **************************************
+ *
+ * Functional description
+ *  Error logging when port isn;t yet allocated
+ *
+ **************************************/
+	if (err_code)
+		gds__log("XNET error: %s, Win32 error = %"ULONGFORMAT"\n", err_msg, err_code);
+	else
+		gds__log("XNET error: %s\n", err_msg);
 }
 
 
@@ -244,13 +258,12 @@ rem_port* XNET_analyze(Firebird::PathName& file_name,
 
 	static const p_cnct::p_cnct_repeat protocols_to_try1[] =
 	{
-		REMOTE_PROTOCOL(PROTOCOL_VERSION7, ptype_rpc, ptype_batch_send, 1),
-		REMOTE_PROTOCOL(PROTOCOL_VERSION8, ptype_rpc, ptype_batch_send, 2),
-		REMOTE_PROTOCOL(PROTOCOL_VERSION10, ptype_rpc, ptype_batch_send, 3),
-		REMOTE_PROTOCOL(PROTOCOL_VERSION11, ptype_rpc, ptype_batch_send, 4)
+		REMOTE_PROTOCOL(PROTOCOL_VERSION7, ptype_rpc, MAX_PTYPE, 1),
+		REMOTE_PROTOCOL(PROTOCOL_VERSION8, ptype_rpc, MAX_PTYPE, 2),
+		REMOTE_PROTOCOL(PROTOCOL_VERSION10, ptype_rpc, MAX_PTYPE, 3)
 #ifdef SCROLLABLE_CURSORS
 		,
-		REMOTE_PROTOCOL(PROTOCOL_SCROLLABLE_CURSORS, ptype_rpc, ptype_batch_send, 99)
+		REMOTE_PROTOCOL(PROTOCOL_SCROLLABLE_CURSORS, ptype_rpc, MAX_PTYPE, 4)
 #endif
 	};
 	cnct->p_cnct_count = FB_NELEM(protocols_to_try1);
@@ -360,8 +373,7 @@ rem_port* XNET_analyze(Firebird::PathName& file_name,
 	// string to reflect it...
 
 	Firebird::string temp;
-	temp.printf("%s/P%d", port->port_version->str_data, 
-						  port->port_protocol & FB_PROTOCOL_MASK);
+	temp.printf("%s/P%d", port->port_version->str_data, port->port_protocol);
 
 	ALLR_free((UCHAR *) port->port_version);
 	port->port_version = REMOTE_make_string(temp.c_str());
@@ -437,7 +449,7 @@ rem_port* XNET_reconnect(ULONG client_pid, ISC_STATUS* status_vector)
 			Firebird::system_call_failed::raise("OpenEvent");
 		}
 
-		XPM xpm = make_xpm(current_process_id, 0);
+		XPM xpm = make_xpm(current_process_id, time_t(0));
 		if (!xpm) {
 			Firebird::system_call_failed::raise("CreateFileMapping");
 		}
@@ -451,8 +463,8 @@ rem_port* XNET_reconnect(ULONG client_pid, ISC_STATUS* status_vector)
 		}
 
 	}
-	catch (const Firebird::Exception&) {
-		xnet_log_error("Unable to initialize child process");
+	catch (const std::exception&) {
+		XNET_LOG_ERROR("Unable to initialize child process");
 		status_vector[1] = isc_unavailable;
 
 		if (port) {
@@ -526,7 +538,7 @@ static bool connect_init()
 
 		return true;
 	}
-	catch (const Firebird::Exception&) {
+	catch (const std::exception&) {
 		connect_fini();
 		return false;
 	}
@@ -598,9 +610,9 @@ static int accept_connection(rem_port* port, P_CNCT * cnct)
 	if (xcc) {
 		XPS xps = (XPS) xcc->xcc_mapped_addr;
 		if (xps) {
-			TEXT address[MAX_COMPUTERNAME_LENGTH + 1];
-			ISC_get_host(address, sizeof(address));
-			port->port_address_str = REMOTE_make_string(address);
+			Firebird::string address;
+			address.printf("%u", xps->xps_client_proc_id);
+			port->port_address_str = REMOTE_make_string(address.c_str());
 		}
 	}
 
@@ -746,21 +758,22 @@ static rem_port* aux_connect(rem_port* port, PACKET* packet, t_event_ast ast)
 			Firebird::system_call_failed::raise("OpenEvent");
 		}
 
-		// send and receive events channels
+		// send events channel
+		xps->xps_channels[XPS_CHANNEL_C2S_EVENTS].xch_client_ptr =
+			((UCHAR *) xpm->xpm_address + sizeof(struct xps));
+
+		// receive events channel
+		xps->xps_channels[XPS_CHANNEL_S2C_EVENTS].xch_client_ptr =
+			((UCHAR *) xpm->xpm_address + sizeof(struct xps) + (XNET_EVENT_SPACE));
 
 		xcc->xcc_send_channel = &xps->xps_channels[XPS_CHANNEL_C2S_EVENTS];		
 		xcc->xcc_recv_channel = &xps->xps_channels[XPS_CHANNEL_S2C_EVENTS];
 
-		UCHAR* const channel_c2s_client_ptr =
-			((UCHAR *) xpm->xpm_address + sizeof(struct xps));
-		UCHAR* const channel_s2c_client_ptr =
-			((UCHAR *) xpm->xpm_address + sizeof(struct xps) + (XNET_EVENT_SPACE));
-
 		// alloc new port and link xcc to it
 		new_port = alloc_port(NULL,
-							  channel_c2s_client_ptr,
+							  xcc->xcc_send_channel->xch_client_ptr,
 							  xcc->xcc_send_channel->xch_size,
-							  channel_s2c_client_ptr,
+							  xcc->xcc_recv_channel->xch_client_ptr,
 							  xcc->xcc_recv_channel->xch_size);
 
 		port->port_async = new_port;
@@ -770,9 +783,9 @@ static rem_port* aux_connect(rem_port* port, PACKET* packet, t_event_ast ast)
 
 		return new_port;
 	}
-	catch (const Firebird::Exception&) {
+	catch (const std::exception&) {
 
-		xnet_log_error("aux_connect() failed");
+		XNET_LOG_ERROR("aux_connect() failed");
 
 		if (xcc) {
 			if (xcc->xcc_event_send_channel_filled) {
@@ -879,21 +892,22 @@ static rem_port* aux_request(rem_port* port, PACKET* packet)
 			Firebird::system_call_failed::raise("CreateEvent");
 		}
 
-		// send and receive events channels
+		// send events channel
+		xps->xps_channels[XPS_CHANNEL_S2C_EVENTS].xch_client_ptr =
+			((UCHAR *) xpm->xpm_address + sizeof(struct xps) + (XNET_EVENT_SPACE));
+
+		// receive events channel
+		xps->xps_channels[XPS_CHANNEL_C2S_EVENTS].xch_client_ptr =
+			((UCHAR *) xpm->xpm_address + sizeof(struct xps));
 
 		xcc->xcc_send_channel = &xps->xps_channels[XPS_CHANNEL_S2C_EVENTS];		
 		xcc->xcc_recv_channel = &xps->xps_channels[XPS_CHANNEL_C2S_EVENTS];
 
-		UCHAR* const channel_s2c_client_ptr =
-			((UCHAR *) xpm->xpm_address + sizeof(struct xps) + (XNET_EVENT_SPACE));
-		UCHAR* const channel_c2s_client_ptr =
-			((UCHAR *) xpm->xpm_address + sizeof(struct xps));
-
 		// alloc new port and link xcc to it
 		new_port = alloc_port(NULL,
-							  channel_s2c_client_ptr,
+							  xcc->xcc_send_channel->xch_client_ptr,
 							  xcc->xcc_send_channel->xch_size,
-							  channel_c2s_client_ptr,
+							  xcc->xcc_recv_channel->xch_client_ptr,
 							  xcc->xcc_recv_channel->xch_size);
 
 		port->port_async = new_port;
@@ -907,9 +921,9 @@ static rem_port* aux_request(rem_port* port, PACKET* packet)
 
 		return new_port;
 	}
-	catch (const Firebird::Exception&) {
+	catch (const std::exception&) {
 
-		xnet_log_error("aux_request() failed");
+		XNET_LOG_ERROR("aux_request() failed");
 
 		if (xcc) {
 
@@ -992,7 +1006,6 @@ static void cleanup_comm(XCC xcc)
 					}
 				}
 			}
-
 			ALLR_free((UCHAR *) xpm);
 		}
 
@@ -1121,7 +1134,7 @@ static rem_port* connect_client(PACKET* packet, ISC_STATUS* status_vector)
 	XNET_UNLOCK();
 
 	if (response.map_num == XNET_INVALID_MAP_NUM) {
-		xnet_log_error("Server failed to respond on connect request");
+		XNET_LOG_ERROR("server failed to response on connect request");
 		return NULL;
 	}
 
@@ -1129,7 +1142,7 @@ static rem_port* connect_client(PACKET* packet, ISC_STATUS* status_vector)
 	global_slots_per_map = response.slots_per_map;
 	const ULONG map_num = response.map_num;
 	const ULONG slot_num = response.slot_num;
-	const ULONG timestamp = response.timestamp;
+	const time_t timestamp = response.timestamp;
 
 	TEXT name_buffer[BUFFER_TINY];
 	FILE_ID file_handle = 0;
@@ -1161,7 +1174,7 @@ static rem_port* connect_client(PACKET* packet, ISC_STATUS* status_vector)
 			// Area hasn't been mapped. Open new file mapping.
 
 			make_map_name(name_buffer, sizeof(name_buffer), XNET_MAPPED_FILE_NAME,
-						map_num, timestamp);
+						map_num, (ULONG) timestamp);
 			file_handle = OpenFileMapping(FILE_MAP_WRITE, FALSE, name_buffer);
 			if (!file_handle) {
 				Firebird::system_call_failed::raise("OpenFileMapping");
@@ -1186,7 +1199,7 @@ static rem_port* connect_client(PACKET* packet, ISC_STATUS* status_vector)
 		}
 
 		}
-		catch (const Firebird::Exception&) {
+		catch (const std::exception&) {
 			XNET_UNLOCK();
 			throw;
 		}
@@ -1226,7 +1239,7 @@ static rem_port* connect_client(PACKET* packet, ISC_STATUS* status_vector)
 		xpm->xpm_count++;
 
 		make_event_name(name_buffer, sizeof(name_buffer), XNET_E_C2S_DATA_CHAN_FILLED,
-						map_num, slot_num, timestamp);
+						map_num, slot_num, (ULONG) timestamp);
 		xcc->xcc_event_send_channel_filled =
 			OpenEvent(EVENT_ALL_ACCESS, FALSE, name_buffer);
 		if (!xcc->xcc_event_send_channel_filled) {
@@ -1234,7 +1247,7 @@ static rem_port* connect_client(PACKET* packet, ISC_STATUS* status_vector)
 		}
 
 		make_event_name(name_buffer, sizeof(name_buffer), XNET_E_C2S_DATA_CHAN_EMPTED,
-						map_num, slot_num, timestamp);
+						map_num, slot_num, (ULONG) timestamp);
 		xcc->xcc_event_send_channel_empted =
 			OpenEvent(EVENT_ALL_ACCESS, FALSE, name_buffer);
 		if (!xcc->xcc_event_send_channel_empted) {
@@ -1242,7 +1255,7 @@ static rem_port* connect_client(PACKET* packet, ISC_STATUS* status_vector)
 		}
 
 		make_event_name(name_buffer, sizeof(name_buffer), XNET_E_S2C_DATA_CHAN_FILLED,
-						map_num, slot_num, timestamp);
+						map_num, slot_num, (ULONG) timestamp);
 		xcc->xcc_event_recv_channel_filled =
 				OpenEvent(EVENT_ALL_ACCESS, FALSE, name_buffer);
 		if (!xcc->xcc_event_recv_channel_filled) {
@@ -1250,7 +1263,7 @@ static rem_port* connect_client(PACKET* packet, ISC_STATUS* status_vector)
 		}
 
 		make_event_name(name_buffer, sizeof(name_buffer), XNET_E_S2C_DATA_CHAN_EMPTED,
-						map_num, slot_num, timestamp);
+						map_num, slot_num, (ULONG) timestamp);
 		xcc->xcc_event_recv_channel_empted =
 				OpenEvent(EVENT_ALL_ACCESS, FALSE, name_buffer);
 		if (!xcc->xcc_event_recv_channel_empted) {
@@ -1270,56 +1283,57 @@ static rem_port* connect_client(PACKET* packet, ISC_STATUS* status_vector)
 		UCHAR* start_ptr =
 			(UCHAR*) xps + (sizeof(struct xps) + (XNET_EVENT_SPACE * 2));
 
-		// send and receive channels
-		UCHAR* const channel_c2s_client_ptr = start_ptr;
-		UCHAR* const channel_s2c_client_ptr = start_ptr + avail;
+		// send channel
+		xps->xps_channels[XPS_CHANNEL_C2S_DATA].xch_client_ptr = start_ptr;
+		// receive channel
+		xps->xps_channels[XPS_CHANNEL_S2C_DATA].xch_client_ptr = (start_ptr + avail);
 
-		rem_port* port =
-			alloc_port(0,
-					   channel_c2s_client_ptr,
-					   xcc->xcc_send_channel->xch_size,
-					   channel_s2c_client_ptr,
-					   xcc->xcc_recv_channel->xch_size);
-
-		status_vector[1] = FB_SUCCESS;
-		port->port_status_vector = status_vector;
-		port->port_xcc = (void *) xcc;
-		gds__register_cleanup((FPTR_VOID_PTR) exit_handler, port);
-		send_full(port, packet);
-
-		return port;
 	}
-	catch (const Firebird::Exception&) {
+	catch (const std::exception&) {
 
-		if (file_handle) {
-			if (mapped_address) {
-				UnmapViewOfFile(mapped_address);
+			if (file_handle) {
+				if (mapped_address) {
+					UnmapViewOfFile(mapped_address);
+				}
+				CloseHandle(file_handle);
 			}
-			CloseHandle(file_handle);
-		}
 
-		if (xpm) {
-			ALLR_free(xpm);
-		}
+			if (xpm) {
+				ALLR_free(xpm);
+			}
 
-		if (xcc) {
-			if (xcc->xcc_event_send_channel_filled) {
-				CloseHandle(xcc->xcc_event_send_channel_filled);
+			if (xcc) {
+				if (xcc->xcc_event_send_channel_filled) {
+					CloseHandle(xcc->xcc_event_send_channel_filled);
+				}
+				if (xcc->xcc_event_send_channel_empted) {
+					CloseHandle(xcc->xcc_event_send_channel_empted);
+				}
+				if (xcc->xcc_event_recv_channel_filled) {
+					CloseHandle(xcc->xcc_event_recv_channel_filled);
+				}
+				if (xcc->xcc_event_recv_channel_empted) {
+					CloseHandle(xcc->xcc_event_recv_channel_empted);
+				}
+				ALLR_free(xcc);
 			}
-			if (xcc->xcc_event_send_channel_empted) {
-				CloseHandle(xcc->xcc_event_send_channel_empted);
-			}
-			if (xcc->xcc_event_recv_channel_filled) {
-				CloseHandle(xcc->xcc_event_recv_channel_filled);
-			}
-			if (xcc->xcc_event_recv_channel_empted) {
-				CloseHandle(xcc->xcc_event_recv_channel_empted);
-			}
-			ALLR_free(xcc);
-		}
 
 		return NULL;
 	}
+
+	rem_port* port =
+		alloc_port(0, xcc->xcc_send_channel->xch_client_ptr,
+				   xcc->xcc_send_channel->xch_size,
+				   xcc->xcc_recv_channel->xch_client_ptr,
+				   xcc->xcc_recv_channel->xch_size);
+
+	status_vector[1] = FB_SUCCESS;
+	port->port_status_vector = status_vector;
+	port->port_xcc = (void *) xcc;
+	gds__register_cleanup((FPTR_VOID_PTR) exit_handler, port);
+	send_full(port, packet);
+
+	return port;
 }
 
 
@@ -1349,7 +1363,7 @@ static rem_port* connect_server(ISC_STATUS* status_vector, USHORT flag)
 		THREAD_ENTER();
 
 		if (wait_res != WAIT_OBJECT_0) {
-			xnet_log_error("WaitForSingleObject() failed");
+			XNET_LOG_ERRORC("WaitForSingleObject() failed");
 			break;
 		}
 
@@ -1363,13 +1377,13 @@ static rem_port* connect_server(ISC_STATUS* status_vector, USHORT flag)
 
 		presponse->slots_per_map = global_slots_per_map;
 		presponse->pages_per_slot = global_pages_per_slot;
-		presponse->timestamp = 0;
+		presponse->timestamp = time_t(0);
 
 		if (flag & (SRVR_debug | SRVR_multi_client))
 		{
 			// searhing for free slot
 			ULONG map_num, slot_num;
-			ULONG timestamp = (ULONG) time(NULL);
+			time_t timestamp = time(NULL);
 
 			XPM xpm = get_free_slot(&map_num, &slot_num, &timestamp);
 
@@ -1391,13 +1405,13 @@ static rem_port* connect_server(ISC_STATUS* status_vector, USHORT flag)
 				return port;
 
 				}
-				catch (const Firebird::Exception&) {
-					xnet_log_error("Failed to allocate server port for communication");
+				catch (const std::exception&) {
+					XNET_LOG_ERROR("failed to allocate server port for communication");
 					break;
 				}
 			}
 			else {
-				xnet_log_error("get_free_slot() failed");
+				XNET_LOG_ERROR("get_free_slot() failed");
 				break;
 			}
 		}
@@ -1532,7 +1546,7 @@ static int send_full( rem_port* port, PACKET * packet)
 	if (xnet_write(&port->port_send))
 		return TRUE;
 	else {
-		xnet_error(port, isc_net_write_err, ERRNO);
+		XNET_ERROR(port, "SetEvent()", isc_net_write_err, ERRNO);
 		return FALSE;
 	}
 }
@@ -1569,12 +1583,11 @@ static void server_shutdown(rem_port* port)
  **************************************/
 	xnet_log_error("Server shutdown detected");
 
-	XCC xcc = (XCC) port->port_xcc;
+	XCC xcc = (XCC)port->port_xcc;
 	xcc->xcc_flags |= XCCF_SERVER_SHUTDOWN;
 
 	XPM xpm = xcc->xcc_xpm;
-	if (!(xpm->xpm_flags & XPMF_SERVER_SHUTDOWN))
-	{
+	if (!(xpm->xpm_flags & XPMF_SERVER_SHUTDOWN)) {
 
 		ULONG dead_proc_id = XPS(xpm->xpm_address)->xps_server_proc_id;
 
@@ -1582,8 +1595,7 @@ static void server_shutdown(rem_port* port)
 
 		XNET_LOCK();
 
-		for (xpm = global_client_maps; xpm; xpm = xpm->xpm_next)
-		{
+		for (xpm = global_client_maps; xpm; xpm = xpm->xpm_next) {
 			if (!(xpm->xpm_flags & XPMF_SERVER_SHUTDOWN) &&
 				XPS(xpm->xpm_address)->xps_server_proc_id == dead_proc_id)
 			{
@@ -1671,7 +1683,8 @@ static void xnet_gen_error( rem_port* port, ISC_STATUS status, ...)
 }
 
 
-static int xnet_error(rem_port* port, ISC_STATUS operation, int status)
+static int xnet_error(rem_port* port, const TEXT* function,
+					  ISC_STATUS operation, int status)
 {
 /**************************************
  *
@@ -1685,6 +1698,8 @@ static int xnet_error(rem_port* port, ISC_STATUS operation, int status)
  *	is used to indicate and error.
  *
  **************************************/
+	xnet_log_error(function, status);
+
 	if (status)
 		xnet_gen_error(port, operation, SYS_ERR, status, 0);
 	else
@@ -1720,11 +1735,13 @@ static bool_t xnet_getbytes(XDR * xdrs, SCHAR * buff, u_int count)
 		if (xpm->xpm_flags & XPMF_SERVER_SHUTDOWN) {
 			if (!(xcc->xcc_flags & XCCF_SERVER_SHUTDOWN)) {
 				xcc->xcc_flags |= XCCF_SERVER_SHUTDOWN;
-				xnet_error(port, isc_lost_db_connection, 0);
+				XNET_ERROR(port, "connection lost: another side is dead", 
+						   isc_lost_db_connection, 0);
 			}
 			return FALSE;
 		}
 #endif
+
 		SLONG to_copy;
 		if (xdrs->x_handy >= bytecount)
 			to_copy = bytecount;
@@ -1831,18 +1848,20 @@ static bool_t xnet_putbytes(XDR* xdrs, const SCHAR* buff, u_int count)
 	XCH xch = (XCH)xcc->xcc_send_channel;
 	XPM xpm = xcc->xcc_xpm;
 
+
 	while (bytecount && !xnet_shutdown) {
 
 #ifdef SUPERCLIENT
 		if (xpm->xpm_flags & XPMF_SERVER_SHUTDOWN) {
 			if (!(xcc->xcc_flags & XCCF_SERVER_SHUTDOWN)) {
 				xcc->xcc_flags |= XCCF_SERVER_SHUTDOWN;
-				xnet_error(port, isc_lost_db_connection, 0);
+				XNET_ERROR(port, "connection lost: another side is dead", 
+						   isc_lost_db_connection, 0);
 			}
 			return FALSE;
 		}
 #endif
-
+		
 		SLONG to_copy;
 		if (xdrs->x_handy >= bytecount)
 			to_copy = bytecount;
@@ -1859,7 +1878,8 @@ static bool_t xnet_putbytes(XDR* xdrs, const SCHAR* buff, u_int count)
 					if (xpm->xpm_flags & XPMF_SERVER_SHUTDOWN) {
 						if (!(xcc->xcc_flags & XCCF_SERVER_SHUTDOWN)) {
 							xcc->xcc_flags |= XCCF_SERVER_SHUTDOWN;
-							xnet_error(port, isc_lost_db_connection, 0);
+							xnet_error(port, "connection lost: another side is dead",
+									   isc_lost_db_connection, 0);
 						}
 						return FALSE;
 					}
@@ -1885,16 +1905,19 @@ static bool_t xnet_putbytes(XDR* xdrs, const SCHAR* buff, u_int count)
 							// Another side is dead or something bad has happened
 #ifdef SUPERCLIENT
 							server_shutdown(port);
-							xnet_error(port, isc_lost_db_connection, 0);								
+							XNET_ERROR(port, "connection lost: another side is dead", 
+							           isc_lost_db_connection, 0);								
 #else
-							xnet_error(port, isc_conn_lost, 0);
+							XNET_ERROR(port, "connection lost: another side is dead",
+								       isc_conn_lost, 0);
 #endif
+
 							return FALSE;
 						}
 					}
 					else {
 						THREAD_ENTER();
-						xnet_error(port, isc_net_write_err, ERRNO);
+						XNET_ERROR(port, "WaitForSingleObject()", isc_net_write_err, ERRNO);
 						return FALSE; // a non-timeout result is an error
 					}
 				}
@@ -1910,7 +1933,7 @@ static bool_t xnet_putbytes(XDR* xdrs, const SCHAR* buff, u_int count)
 		}
 		else {
 			if (!xnet_write(xdrs)) {
-				xnet_error(port, isc_net_write_err, ERRNO);
+				XNET_ERROR(port, "SetEvent()", isc_net_write_err, ERRNO);
 				return FALSE;
 			}
 		}
@@ -1966,22 +1989,22 @@ static bool_t xnet_read(XDR * xdrs)
 		return FALSE;
 
 	if (!SetEvent(xcc->xcc_event_recv_channel_empted)) {
-		xnet_error(port, isc_net_read_err, ERRNO);
+		XNET_ERROR(port, "SetEvent()", isc_net_read_err, ERRNO);
 		return FALSE;
 	}
 
-	while (!xnet_shutdown)
-	{
+	while (!xnet_shutdown) {
 
 #ifdef SUPERCLIENT
 		if (xpm->xpm_flags & XPMF_SERVER_SHUTDOWN) {
 			if (!(xcc->xcc_flags & XCCF_SERVER_SHUTDOWN)) {
 				xcc->xcc_flags |= XCCF_SERVER_SHUTDOWN;
-				xnet_error(port, isc_lost_db_connection, 0);
+				XNET_ERROR(port, "connection lost: another side is dead", 
+						   isc_lost_db_connection, 0);
 			}
-			return FALSE;
 		}
 #endif
+
 		THREAD_EXIT();
 
 		const DWORD wait_result =
@@ -1990,7 +2013,7 @@ static bool_t xnet_read(XDR * xdrs)
 
 		if (wait_result == WAIT_OBJECT_0) {
 			THREAD_ENTER();
-			// Client has written some data for us (server) to read
+			// Client wrote some data for us (server) to read
 			xdrs->x_handy = xch->xch_length;
 			xdrs->x_private = xdrs->x_base;
 			return TRUE;
@@ -2006,21 +2029,24 @@ static bool_t xnet_read(XDR * xdrs)
 				// Another side is dead or something bad has happaned
 #ifdef SUPERCLIENT
 				server_shutdown(port);
-				xnet_error(port, isc_lost_db_connection, 0);								
+				XNET_ERROR(port, "connection lost: another side is dead", 
+						   isc_lost_db_connection, 0);								
 #else
-				xnet_error(port, isc_conn_lost, 0);
+				XNET_ERROR(port, "connection lost: another side is dead",
+				           isc_conn_lost, 0);
 #endif
 				return FALSE;
 			}
 		}
 		else {
 			THREAD_ENTER();
-			xnet_error(port, isc_net_read_err, ERRNO);
+			XNET_ERROR(port, "WaitForSingleObject()", isc_net_read_err, ERRNO);
 			return FALSE; // a non-timeout result is an error
 		}
 	}
 
 	return FALSE;
+	
 }
 
 
@@ -2120,7 +2146,7 @@ void release_all()
 /***********************************************************************/
 
 static bool make_map(ULONG map_number,
-					 ULONG timestamp,
+					 time_t timestamp,
 					 FILE_ID* map_handle,
 					 CADDR_T* map_address)
 {
@@ -2137,13 +2163,13 @@ static bool make_map(ULONG map_number,
 	TEXT name_buffer[BUFFER_TINY];
 
 	make_map_name(name_buffer, sizeof(name_buffer), XNET_MAPPED_FILE_NAME,
-				  map_number, timestamp);
-	*map_handle = CreateFileMapping(INVALID_HANDLE_VALUE,
-									ISC_get_security_desc(),
-									PAGE_READWRITE,
-									0L,
-									XPS_MAPPED_SIZE(global_slots_per_map, global_pages_per_slot),
-									name_buffer);
+				  map_number, (ULONG) timestamp);
+	*map_handle = CreateFileMapping((HANDLE) 0xFFFFFFFF,
+		                              ISC_get_security_desc(),
+		                              PAGE_READWRITE,
+		                              0L,
+		                              XPS_MAPPED_SIZE(global_slots_per_map, global_pages_per_slot),
+		                              name_buffer);
 	if (!(*map_handle) || (*map_handle && ERRNO == ERROR_ALREADY_EXISTS))
 		return false;
 
@@ -2158,7 +2184,7 @@ static bool make_map(ULONG map_number,
 }
 
 
-static XPM make_xpm(ULONG map_number, ULONG timestamp)
+static XPM make_xpm(ULONG map_number, time_t timestamp)
 {
 /**************************************
  *
@@ -2203,7 +2229,7 @@ static XPM make_xpm(ULONG map_number, ULONG timestamp)
 	return xpm;
 
 	}
-	catch (const Firebird::Exception&) {
+	catch (const std::exception&) {
 		return NULL;
 	}
 }
@@ -2270,12 +2296,12 @@ static bool server_init()
 		}
 
 		make_obj_name(name_buffer, sizeof(name_buffer), XNET_CONNECT_MAP);
-		xnet_connect_map_h = CreateFileMapping(INVALID_HANDLE_VALUE,
-											   ISC_get_security_desc(),
-											   PAGE_READWRITE,
-											   0,
-											   XNET_CONNECT_RESPONZE_SIZE,
-											   name_buffer);
+		xnet_connect_map_h = CreateFileMapping((HANDLE)0xFFFFFFFF,
+												ISC_get_security_desc(),
+												PAGE_READWRITE,
+												0,
+												XNET_CONNECT_RESPONZE_SIZE,
+												name_buffer);
 		if (!xnet_connect_map_h || (xnet_connect_map_h && ERRNO == ERROR_ALREADY_EXISTS))
 		{
 			Firebird::system_call_failed::raise("CreateFileMapping");
@@ -2287,9 +2313,9 @@ static bool server_init()
 			Firebird::system_call_failed::raise("MapViewOfFile");
 		}
 	}
-	catch (const Firebird::Exception&) {
+	catch (const std::exception&) {
 		connect_fini();
-		xnet_log_error("Server initialization failed");
+		XNET_LOG_ERROR("XNET server initialization failed");
 		return false;
 	}
 	
@@ -2300,7 +2326,7 @@ static bool server_init()
 }
 
 
-static XPM get_free_slot(ULONG* map_num, ULONG* slot_num, ULONG* timestamp)
+static XPM get_free_slot(ULONG* map_num, ULONG* slot_num, time_t* timestamp)
 {
 /**************************************
  *
@@ -2383,9 +2409,9 @@ static bool fork(ULONG client_pid, USHORT flag, ULONG* forked_pid)
  **************************************/
 	TEXT name[MAXPATHLEN];
 	GetModuleFileName(NULL, name, sizeof(name));
-
+ 
 	Firebird::string cmdLine;
-	cmdLine.printf("%s -x -h %"ULONGFORMAT, name, client_pid);
+	cmdLine.printf("%s -s -x -h %"ULONGFORMAT, name, client_pid);
 
 	STARTUPINFO start_crud;
 	start_crud.cb = sizeof(STARTUPINFO);
@@ -2400,7 +2426,7 @@ static bool fork(ULONG client_pid, USHORT flag, ULONG* forked_pid)
 	const bool cp_result =
 		CreateProcess(NULL, cmdLine.begin(), NULL, NULL, TRUE,
 					  (flag & SRVR_high_priority ? HIGH_PRIORITY_CLASS : NORMAL_PRIORITY_CLASS)
-						| DETACHED_PROCESS | CREATE_SUSPENDED,
+						| DETACHED_PROCESS | CREATE_SUSPENDED | STARTF_FORCEOFFFEEDBACK,
 					   NULL, NULL, &start_crud, &pi);
 
 	// Child process ID (forked_pid) used as map number
@@ -2412,7 +2438,7 @@ static bool fork(ULONG client_pid, USHORT flag, ULONG* forked_pid)
 		CloseHandle(pi.hProcess);
 	}
 	else
-		xnet_log_error("CreateProcess() failed");
+		XNET_LOG_ERRORC("CreateProcess() failed");
 
 	return cp_result;
 }
@@ -2422,7 +2448,7 @@ static rem_port* get_server_port(ULONG client_pid,
 								 XPM xpm,
 								 ULONG map_num,
 								 ULONG slot_num,
-								 ULONG timestamp,
+								 time_t timestamp,
 								 ISC_STATUS* status_vector)
 {
 /**************************************
@@ -2444,7 +2470,7 @@ static rem_port* get_server_port(ULONG client_pid,
 
 	try {
 		UCHAR* p = (UCHAR *) xpm->xpm_address + XPS_SLOT_OFFSET(global_pages_per_slot, slot_num);
-		memset(p, 0, XPS_MAPPED_PER_CLI(global_pages_per_slot));
+		memset(p, (char) 0, XPS_MAPPED_PER_CLI(global_pages_per_slot));
 		xcc->xcc_next = NULL;
 		xcc->xcc_mapped_addr = p;
 		xcc->xcc_xpm = xpm;
@@ -2470,7 +2496,7 @@ static rem_port* get_server_port(ULONG client_pid,
 		xps->xps_client_protocol = 0L;
 
 		make_event_name(name_buffer, sizeof(name_buffer), XNET_E_C2S_DATA_CHAN_FILLED,
-						map_num, slot_num, timestamp);
+						map_num, slot_num, (ULONG) timestamp);
 		xcc->xcc_event_recv_channel_filled =
 			CreateEvent(ISC_get_security_desc(), FALSE, FALSE, name_buffer);
 		if (!xcc->xcc_event_recv_channel_filled) {
@@ -2478,7 +2504,7 @@ static rem_port* get_server_port(ULONG client_pid,
 		}
 
 		make_event_name(name_buffer, sizeof(name_buffer), XNET_E_C2S_DATA_CHAN_EMPTED,
-						map_num, slot_num, timestamp);
+						map_num, slot_num, (ULONG) timestamp);
 		xcc->xcc_event_recv_channel_empted =
 			CreateEvent(ISC_get_security_desc(), FALSE, FALSE, name_buffer);
 		if (!xcc->xcc_event_recv_channel_empted) {
@@ -2486,7 +2512,7 @@ static rem_port* get_server_port(ULONG client_pid,
 		}
 
 		make_event_name(name_buffer, sizeof(name_buffer), XNET_E_S2C_DATA_CHAN_FILLED,
-						map_num, slot_num, timestamp);
+						map_num, slot_num, (ULONG) timestamp);
 		xcc->xcc_event_send_channel_filled =
 			CreateEvent(ISC_get_security_desc(), FALSE, FALSE, name_buffer);
 		if (!xcc->xcc_event_send_channel_filled) {
@@ -2494,7 +2520,7 @@ static rem_port* get_server_port(ULONG client_pid,
 		}
 
 		make_event_name(name_buffer, sizeof(name_buffer), XNET_E_S2C_DATA_CHAN_EMPTED,
-						map_num, slot_num, timestamp);
+						map_num, slot_num, (ULONG) timestamp);
 		xcc->xcc_event_send_channel_empted =
 			CreateEvent(ISC_get_security_desc(), FALSE, FALSE, name_buffer);
 		if (!xcc->xcc_event_send_channel_empted) {
@@ -2506,25 +2532,21 @@ static rem_port* get_server_port(ULONG client_pid,
 		p += sizeof(struct xps);
 
 		const ULONG avail =
-			(ULONG) (XPS_USEFUL_SPACE(global_pages_per_slot) - (XNET_EVENT_SPACE * 2)) / 2;
+			(USHORT) (XPS_USEFUL_SPACE(global_pages_per_slot) - (XNET_EVENT_SPACE * 2)) / 2;
 
-		// client to server events
-		UCHAR* const channel_c2s_event_buffer = p;
+		xps->xps_channels[XPS_CHANNEL_C2S_EVENTS].xch_buffer = p;	/* client to server events */
 		xps->xps_channels[XPS_CHANNEL_C2S_EVENTS].xch_size = XNET_EVENT_SPACE;
 
 		p += XNET_EVENT_SPACE;
-		// server to client events
-		UCHAR* const channel_s2c_event_buffer = p;
+		xps->xps_channels[XPS_CHANNEL_S2C_EVENTS].xch_buffer = p;	/* server to client events */
 		xps->xps_channels[XPS_CHANNEL_S2C_EVENTS].xch_size = XNET_EVENT_SPACE;
 
 		p += XNET_EVENT_SPACE;
-		// client to server data
-		UCHAR* const channel_c2s_data_buffer = p;
+		xps->xps_channels[XPS_CHANNEL_C2S_DATA].xch_buffer = p;	/* client to server data */
 		xps->xps_channels[XPS_CHANNEL_C2S_DATA].xch_size = avail;
 
 		p += avail;
-		// server to client data
-		UCHAR* const channel_s2c_data_buffer = p;
+		xps->xps_channels[XPS_CHANNEL_S2C_DATA].xch_buffer = p;	/* server to client data */
 		xps->xps_channels[XPS_CHANNEL_S2C_DATA].xch_size = avail;
 
 		xcc->xcc_recv_channel = &xps->xps_channels[XPS_CHANNEL_C2S_DATA];
@@ -2533,9 +2555,9 @@ static rem_port* get_server_port(ULONG client_pid,
 		// finally, allocate and set the port structure for this client
 
 		port = alloc_port(0,
-						  channel_s2c_data_buffer,
+						  xcc->xcc_send_channel->xch_buffer,
 						  xcc->xcc_send_channel->xch_size,
-						  channel_c2s_data_buffer,
+						  xcc->xcc_recv_channel->xch_buffer,
 						  xcc->xcc_recv_channel->xch_size);
 
 		port->port_xcc = (void *) xcc;
@@ -2549,7 +2571,7 @@ static rem_port* get_server_port(ULONG client_pid,
 		gds__register_cleanup((FPTR_VOID_PTR) exit_handler, port);
 
 	}
-	catch (const Firebird::Exception&) {
+	catch (const std::exception&) {
 		if (xcc) {
 			if (xcc->xcc_proc_h) {
 				CloseHandle(xcc->xcc_proc_h);

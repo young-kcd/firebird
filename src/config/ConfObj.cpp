@@ -29,7 +29,7 @@
 #include "ConfObject.h"
 
 
-ConfObj::ConfObj()
+ConfObj::ConfObj(void)
 {
 	object = NULL;
 }
@@ -40,7 +40,7 @@ ConfObj::ConfObj(ConfObject *confObject)
 		object->addRef();
 }
 
-ConfObj::~ConfObj()
+ConfObj::~ConfObj(void)
 {
 	if (object)
 		object->release();
@@ -55,7 +55,7 @@ ConfObj::ConfObj(const ConfObj& source)
 		object->addRef();
 }
 
-bool ConfObj::hasObject() const
+bool ConfObj::hasObject(void)
 {
 	return object != NULL;
 }

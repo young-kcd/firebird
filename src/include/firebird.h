@@ -26,7 +26,6 @@
  *  All Rights Reserved.
  *  Contributor(s): ______________________________________.
  *
- *		Alex Peshkov
  */
 
 #ifndef INCLUDE_Firebird_H
@@ -88,7 +87,7 @@ using namespace NAMESPACE;
 #define USE_POSIX_THREADS
 #endif
 #ifdef SUPERCLIENT
-#if defined(LINUX) || defined(FREEBSD) || defined (DARWIN)
+#if defined(LINUX) || defined(FREEBSD) || defined(DARWIN)
 /* The following ifdef was added to build thread safe gds shared
    library on linux platform. It seems the gdslib works now (20020220)
    with thread enabled applications. Anyway, more tests should be 
@@ -113,6 +112,13 @@ using namespace NAMESPACE;
 # define MULTI_THREAD
 #endif
 
+#ifdef MULTI_THREAD
+#define ANY_THREADING
+#endif
+#ifdef V4_THREADING
+#define ANY_THREADING
+#endif
+
 #ifndef NULL
 #define NULL            0L
 #endif
@@ -126,13 +132,6 @@ using namespace NAMESPACE;
 
 #if defined(MULTI_THREAD) && !defined(SUPERCLIENT) && !defined(BOOT_BUILD) &&!defined (STD_UTIL)
 #define SERVICE_THREAD
-#endif
-
-#if defined(WIN_NT)
-#define TRUSTED_AUTH
-#if defined(SERVICE_THREAD)
-#define TRUSTED_SERVICES
-#endif
 #endif
 
 #endif /* INCLUDE_Firebird_H */

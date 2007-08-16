@@ -1,6 +1,6 @@
 /*
  *
- *      PROGRAM:        Firebird server manager
+ *      PROGRAM:        InterBase server manager
  *      MODULE:         ibmgr.cpp
  *      DESCRIPTION:    server manager's routines
  *
@@ -197,9 +197,8 @@ void SRVRMGR_msg_get( USHORT number, TEXT * msg)
 
 /* The following line will be the future of this function
 
-	static const SafeArg arg;
-	fb_msg_format (0, MSG_FAC, number, MSG_LEN, msg, arg);
-
+gds__msg_format (0, MSG_FAC, number, MSG_LEN, msg,
+    NULL, NULL, NULL, NULL, NULL);
 */
 
 	const char* rs = 0;

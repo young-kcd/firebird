@@ -55,9 +55,6 @@
 #include "../include/fb_exception.h"
 #include "../common/utils_proto.h"
 
-using MsgFormat::SafeArg;
-
-
 #ifdef VMS
 const char* STARTUP_FILE	= "QLI_STARTUP";
 #else
@@ -133,9 +130,6 @@ int  CLIB_ROUTINE main( int argc, char **argv)
 #else
 	QLI_columns = 80;
 #endif
-#ifdef TRUSTED_AUTH
-	QLI_trusted = false;
-#endif
 	QLI_lines = 60;
 	QLI_name_columns = 0;
 	QLI_prompt = QLI_prompt_string;
@@ -169,7 +163,7 @@ int  CLIB_ROUTINE main( int argc, char **argv)
 			switch (UPPER(c)) {
 			case 'A':
 				if (argv >= arg_end) {
-					ERRQ_msg_put(23);	// Msg23 Please retry, supplying an application script file name  
+					ERRQ_msg_put(23, NULL, NULL, NULL, NULL, NULL);	// Msg23 Please retry, supplying an application script file name  
 					exit(FINI_ERROR);
 				}
 
@@ -188,12 +182,6 @@ int  CLIB_ROUTINE main( int argc, char **argv)
 					startup_file = *argv++;
 				break;
 
-#ifdef TRUSTED_AUTH
-			case 'K':
-				QLI_trusted = true;
-				break;
-#endif
-
 			case 'N':
 				banner_flag = false;
 				break;
@@ -204,7 +192,7 @@ int  CLIB_ROUTINE main( int argc, char **argv)
 						break;
 					TEXT* r = QLI_default_password;
 					const TEXT* const end = r + sizeof(QLI_default_password) - 1;
-					for (const TEXT* q = fb_utils::get_passwd(*argv++); *q && r < end;)
+					for (const TEXT* q = *argv++; *q && r < end;)
 						*r++ = *q++;
 					*r = 0;
 					break;
@@ -247,7 +235,7 @@ int  CLIB_ROUTINE main( int argc, char **argv)
 				break;
 
 			default:
-				ERRQ_msg_put(469, SafeArg() << c);	
+				ERRQ_msg_put(469, (TEXT *)(IPTR) c, NULL, NULL, NULL, NULL);	
 				// Msg469 qli: ignoring unknown switch %c 
 				break;
 			}
@@ -256,10 +244,10 @@ int  CLIB_ROUTINE main( int argc, char **argv)
 	enable_signals();
 
 	if (banner_flag)
-		ERRQ_msg_put(24);	// Msg24 Welcome to QLI Query Language Interpreter 
+		ERRQ_msg_put(24, NULL, NULL, NULL, NULL, NULL);	// Msg24 Welcome to QLI Query Language Interpreter 
 
 	if (version_flag)
-		ERRQ_msg_put(25, SafeArg() << GDS_VERSION);	// Msg25 qli version %s
+		ERRQ_msg_put(25, GDS_VERSION, NULL, NULL, NULL, NULL);	// Msg25 qli version %s 
 
 	if (application_file)
 		LEX_push_file(application_file, true);
@@ -288,7 +276,7 @@ int  CLIB_ROUTINE main( int argc, char **argv)
 			memcpy(QLI_env, env, sizeof(QLI_env));
 			PAR_token();
 		}
-		catch (const Firebird::Exception&) {
+		catch (const std::exception&) {
 			// try again 
 			got_started = false;
 			ERRQ_pending();
@@ -383,7 +371,7 @@ static bool process_statement(bool flush_flag)
 // Enable error unwinding and enable the unwinding environment 
 
 	try {
-	
+
 	memcpy(QLI_env, env, sizeof(QLI_env));
 
 /* Set up the appropriate prompt and get the first significant token.  If
@@ -486,18 +474,16 @@ static bool process_statement(bool flush_flag)
 		TEXT buffer[512], report[256];
 		for (dbb = QLI_databases; dbb; dbb = dbb->dbb_next)
 		{
-			report[0] = 0;
 			if (dbb->dbb_flags & DBB_active)
 			{
-				ERRQ_msg_get(505, report, sizeof(report));
+				ERRQ_msg_get(505, report);
 				// Msg505 "    reads = !r writes = !w fetches = !f marks = !m\n" 
-				size_t used_len = strlen(report);
-				ERRQ_msg_get(506, report + used_len, sizeof(report) - used_len);
+				ERRQ_msg_get(506, report + strlen(report));
 				// Msg506 "    elapsed = !e cpu = !u system = !s mem = !x, buffers = !b" 
 				perf_get_info(&dbb->dbb_handle, &statistics);
 				perf_format((perf*) dbb->dbb_statistics, &statistics,
 							report, buffer, 0);
-				ERRQ_msg_put(26, SafeArg() << dbb->dbb_filename << buffer);	// Msg26 Statistics for database %s %s  
+				ERRQ_msg_put(26, dbb->dbb_filename, buffer, NULL, NULL, NULL);	// Msg26 Statistics for database %s %s  
 				QLI_skip_line = true;
 			}
 		}
@@ -510,9 +496,9 @@ static bool process_statement(bool flush_flag)
 	return false;
 
 	}	// try
-	catch (const Firebird::Exception&) {
+	catch (const Firebird::status_exception& e) {
 		GEN_release();
-		return true;
+		return e.value();
 	}
 }
 
@@ -629,16 +615,13 @@ static bool yes_no(USHORT number, const TEXT* arg1)
  **************************************/
 	TEXT prompt[256];
 
-	ERRQ_msg_format(number, sizeof(prompt), prompt, SafeArg() << arg1);
-
+	ERRQ_msg_format(number, sizeof(prompt), prompt, arg1, NULL, NULL, NULL,
+					NULL);
 	if (!yes_no_loaded) {
 		yes_no_loaded = true;
-		// Msg498 NO
-		if (!ERRQ_msg_get(498, answer_table[0].answer, sizeof(answer_table[0].answer)))
+		if (!ERRQ_msg_get(498, answer_table[0].answer))	// Msg498 NO    
 			strcpy(answer_table[0].answer, "NO");	// default if msg_get fails 
-
-		// Msg497 YES
-		if (!ERRQ_msg_get(497, answer_table[1].answer, sizeof(answer_table[1].answer)))
+		if (!ERRQ_msg_get(497, answer_table[1].answer))	// Msg497 YES   
 			strcpy(answer_table[1].answer, "YES");
 	}
 

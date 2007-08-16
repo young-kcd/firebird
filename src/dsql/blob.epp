@@ -148,7 +148,7 @@ ISC_STATUS API_ROUTINE isc_blob_lookup_desc(ISC_STATUS* status,
  ***********************************************/
 	ISC_STATUS_ARRAY isc_status = {0};
 	isc_db_handle DB = *db_handle;
-	isc_req_handle handle = 0;
+	isc_req_handle handle = NULL;
 
     copy_exact_name (field_name, desc->blob_desc_field_name, 
                      sizeof(desc->blob_desc_field_name));
@@ -173,7 +173,7 @@ ISC_STATUS API_ROUTINE isc_blob_lookup_desc(ISC_STATUS* status,
                              sizeof(Y.RDB$FIELD_NAME));
         }
 	END_FOR 
-    ON_ERROR
+    ON_ERROR 
 		ISC_STATUS_ARRAY temp_status;
 		isc_release_request(temp_status, &handle);
 		return UTLD_copy_status(isc_status, status);
@@ -183,7 +183,7 @@ ISC_STATUS API_ROUTINE isc_blob_lookup_desc(ISC_STATUS* status,
 
 	if (!flag)
 	{
-		handle = 0;
+		handle = NULL;
 
 		FOR (REQUEST_HANDLE handle TRANSACTION_HANDLE *trans_handle)
 			X IN RDB$PROCEDURE_PARAMETERS CROSS Y IN RDB$FIELDS
@@ -201,7 +201,7 @@ ISC_STATUS API_ROUTINE isc_blob_lookup_desc(ISC_STATUS* status,
 								sizeof(Y.RDB$FIELD_NAME));
 			}
 		END_FOR 
-		ON_ERROR
+		ON_ERROR 
 			ISC_STATUS_ARRAY temp_status;
 			isc_release_request(temp_status, &handle);
 			return UTLD_copy_status(isc_status, status);

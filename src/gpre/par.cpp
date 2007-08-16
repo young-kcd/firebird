@@ -33,8 +33,6 @@
 //  
 //  TMN (Mike Nordell) 11.APR.2001 - Reduce compiler warnings
 //  TMN (Mike Nordell) APR-MAY.2001 - Conversion to C++
-//  SWB (Stepen Boyd) 2007/03/21 - Supressed parsing of QLI keywords if -noqli
-//                                 switch given on the command line.
 //  
 //
 //____________________________________________________________
@@ -143,202 +141,173 @@ act* PAR_action(const TEXT* base_dir)
 		(USHORT) gpreGlob.token_global.tok_keyword <= (USHORT) KW_end_actions)
 	{
 		const enum kwwords keyword = gpreGlob.token_global.tok_keyword;
-		if (! gpreGlob.sw_no_qli)
+		switch (keyword)
 		{
-			switch (keyword)
-			{
-			case KW_READY:
-			case KW_START_TRANSACTION:
-			case KW_FINISH:
-			case KW_COMMIT:
-			case KW_PREPARE:
-			case KW_RELEASE_REQUESTS:
-			case KW_ROLLBACK:
-			case KW_FUNCTION:
-			case KW_SAVE:
-			case KW_SUB:
-			case KW_SUBROUTINE:
-				CPR_eol_token();
-				break;
-	
-			case KW_EXTERNAL:
-				set_external_flag();
-				return NULL;
+		case KW_READY:
+		case KW_START_TRANSACTION:
+		case KW_FINISH:
+		case KW_COMMIT:
+		case KW_PREPARE:
+		case KW_RELEASE_REQUESTS:
+		case KW_ROLLBACK:
+		case KW_FUNCTION:
+		case KW_SAVE:
+		case KW_SUB:
+		case KW_SUBROUTINE:
+			CPR_eol_token();
+			break;
 
-			case KW_FOR:
-			/** Get the next token as it is without upcasing **/
-				gpreGlob.override_case = true;
-				CPR_token();
-				break;
+		case KW_EXTERNAL:
+			set_external_flag();
+			return NULL;
 
-			default:
-				CPR_token();
-			}
-		}
-		else
+		case KW_FOR:
+		/** Get the next token as it is without upcasing **/
+			gpreGlob.override_case = true;
 			CPR_token();
+			break;
+
+		default:
+			CPR_token();
+		}
 
 		try {
 
 		PAR_jmp_buf = &env;
 
-		if (! gpreGlob.sw_no_qli)
+		switch (keyword)
 		{
-			switch (keyword)
-			{
-			case KW_INT:
-			case KW_LONG:
-			case KW_SHORT:
-			case KW_CHAR:
-			case KW_FLOAT:
-			case KW_DOUBLE:
+		case KW_INT:
+		case KW_LONG:
+		case KW_SHORT:
+		case KW_CHAR:
+		case KW_FLOAT:
+		case KW_DOUBLE:
 // ***
 //    par_var_c (keyword);
 //** 
-				return NULL;
+			return NULL;
 
-			case KW_ANY:
-				return par_any();
-			case KW_AT:
-				return par_at();
-			case KW_BASED:
-				return par_based();
-			case KW_CLEAR_HANDLES:
-				return par_clear_handles();
-			case KW_DATABASE:
-				return PAR_database(false, base_dir);
-			case KW_DERIVED_FROM:
-				return par_derived_from();
-			case KW_END_ERROR:
-				return par_end_error();
-			case KW_END_FOR:
-				return cur_statement = par_end_for();
-			case KW_END_MODIFY:
-				return cur_statement = par_end_modify();
-			case KW_END_STREAM:
-				return cur_statement = par_end_stream();
-			case KW_END_STORE:
-				return cur_statement = par_end_store(false);
-			case KW_END_STORE_SPECIAL:
-				return cur_statement = par_end_store(true);
-			case KW_ELEMENT:
-				return par_array_element();
-			case KW_ERASE:
-				return cur_statement = par_erase();
-			case KW_EVENT_INIT:
-				return cur_statement = PAR_event_init(false);
-			case KW_EVENT_WAIT:
-				return cur_statement = PAR_event_wait(false);
-			case KW_FETCH:
-				return cur_statement = par_fetch();
-			case KW_FINISH:
-				return cur_statement = par_finish();
-			case KW_FOR:
-				return par_for();
-			case KW_END_FETCH:
-				return cur_statement = par_end_fetch();
-			case KW_MODIFY:
-				return par_modify();
-			case KW_ON:
-				return par_on();
-			case KW_ON_ERROR:
-				return par_on_error();
-			case KW_READY:
-				return cur_statement = par_ready();
-			case KW_RELEASE_REQUESTS:
-				return cur_statement = par_release();
-			case KW_RETURNING:
-				return par_returning_values();
-			case KW_START_STREAM:
-				return cur_statement = par_start_stream();
-			case KW_STORE:
-				return par_store();
-			case KW_START_TRANSACTION:
-				return cur_statement = par_start_transaction();
-			case KW_FUNCTION:
-				return par_function();
-			case KW_PROCEDURE:
-				return par_procedure();
-	
-			case KW_PROC:
-				break;
+		case KW_ANY:
+			return par_any();
+		case KW_AT:
+			return par_at();
+		case KW_BASED:
+			return par_based();
+		case KW_CLEAR_HANDLES:
+			return par_clear_handles();
+		case KW_DATABASE:
+			return PAR_database(false, base_dir);
+		case KW_DERIVED_FROM:
+			return par_derived_from();
+		case KW_END_ERROR:
+			return par_end_error();
+		case KW_END_FOR:
+			return cur_statement = par_end_for();
+		case KW_END_MODIFY:
+			return cur_statement = par_end_modify();
+		case KW_END_STREAM:
+			return cur_statement = par_end_stream();
+		case KW_END_STORE:
+			return cur_statement = par_end_store(false);
+		case KW_END_STORE_SPECIAL:
+			return cur_statement = par_end_store(true);
+		case KW_ELEMENT:
+			return par_array_element();
+		case KW_ERASE:
+			return cur_statement = par_erase();
+		case KW_EVENT_INIT:
+			return cur_statement = PAR_event_init(false);
+		case KW_EVENT_WAIT:
+			return cur_statement = PAR_event_wait(false);
+		case KW_FETCH:
+			return cur_statement = par_fetch();
+		case KW_FINISH:
+			return cur_statement = par_finish();
+		case KW_FOR:
+			return par_for();
+		case KW_END_FETCH:
+			return cur_statement = par_end_fetch();
+		case KW_MODIFY:
+			return par_modify();
+		case KW_ON:
+			return par_on();
+		case KW_ON_ERROR:
+			return par_on_error();
+		case KW_READY:
+			return cur_statement = par_ready();
+		case KW_RELEASE_REQUESTS:
+			return cur_statement = par_release();
+		case KW_RETURNING:
+			return par_returning_values();
+		case KW_START_STREAM:
+			return cur_statement = par_start_stream();
+		case KW_STORE:
+			return par_store();
+		case KW_START_TRANSACTION:
+			return cur_statement = par_start_transaction();
+		case KW_FUNCTION:
+			return par_function();
+		case KW_PROCEDURE:
+			return par_procedure();
 
-			case KW_SUBROUTINE:
-				return par_subroutine();
-			case KW_SUB:
-				break;
+		case KW_PROC:
+			break;
 
-			case KW_OPEN_BLOB:
-				return cur_statement = par_open_blob(ACT_blob_open, 0);
-			case KW_CREATE_BLOB:
-				return cur_statement = par_open_blob(ACT_blob_create, 0);
-			case KW_GET_SLICE:
-				return cur_statement = par_slice(ACT_get_slice);
-			case KW_PUT_SLICE:
-				return cur_statement = par_slice(ACT_put_slice);
-			case KW_GET_SEGMENT:
-				return cur_statement = par_blob_action(ACT_get_segment);
-			case KW_PUT_SEGMENT:
-				return cur_statement = par_blob_action(ACT_put_segment);
-			case KW_CLOSE_BLOB:
-				return cur_statement = par_blob_action(ACT_blob_close);
-			case KW_CANCEL_BLOB:
-				return cur_statement = par_blob_action(ACT_blob_cancel);
+		case KW_SUBROUTINE:
+			return par_subroutine();
+		case KW_SUB:
+			break;
 
-			case KW_COMMIT:
-				return cur_statement = par_trans(ACT_commit);
-			case KW_SAVE:
-				return cur_statement = par_trans(ACT_commit_retain_context);
-			case KW_ROLLBACK:
-				return cur_statement = par_trans(ACT_rollback);
-			case KW_PREPARE:
-				return cur_statement = par_trans(ACT_prepare);
+		case KW_OPEN_BLOB:
+			return cur_statement = par_open_blob(ACT_blob_open, 0);
+		case KW_CREATE_BLOB:
+			return cur_statement = par_open_blob(ACT_blob_create, 0);
+		case KW_GET_SLICE:
+			return cur_statement = par_slice(ACT_get_slice);
+		case KW_PUT_SLICE:
+			return cur_statement = par_slice(ACT_put_slice);
+		case KW_GET_SEGMENT:
+			return cur_statement = par_blob_action(ACT_get_segment);
+		case KW_PUT_SEGMENT:
+			return cur_statement = par_blob_action(ACT_put_segment);
+		case KW_CLOSE_BLOB:
+			return cur_statement = par_blob_action(ACT_blob_close);
+		case KW_CANCEL_BLOB:
+			return cur_statement = par_blob_action(ACT_blob_cancel);
 
-			case KW_L_BRACE:
-				return par_left_brace();
-			case KW_R_BRACE:
-				return par_right_brace();
-			case KW_END:
-				return par_end_block();
-			case KW_BEGIN:
-				return par_begin();
-			case KW_CASE:
-				return par_case();
-	
-			case KW_EXEC:
-				{
-					if (!MSC_match(KW_SQL))
-						break;
-					gpreGlob.sw_sql = true;
-					act* action = SQL_action(base_dir);
-					gpreGlob.sw_sql = false;
-					return action;
-				}
+		case KW_COMMIT:
+			return cur_statement = par_trans(ACT_commit);
+		case KW_SAVE:
+			return cur_statement = par_trans(ACT_commit_retain_context);
+		case KW_ROLLBACK:
+			return cur_statement = par_trans(ACT_rollback);
+		case KW_PREPARE:
+			return cur_statement = par_trans(ACT_prepare);
 
-			default:
-				break;
-			}
-		}
-		else
-		{
-			switch (keyword)
+		case KW_L_BRACE:
+			return par_left_brace();
+		case KW_R_BRACE:
+			return par_right_brace();
+		case KW_END:
+			return par_end_block();
+		case KW_BEGIN:
+			return par_begin();
+		case KW_CASE:
+			return par_case();
+
+		case KW_EXEC:
 			{
-			case KW_BASED:
-				return par_based();
-
-			case KW_EXEC:
-				{
-					if (!MSC_match(KW_SQL))
-						break;
-					gpreGlob.sw_sql = true;
-					act* action = SQL_action(base_dir);
-					gpreGlob.sw_sql = false;
-					return action;
-				}
-
-			default:
-				break;
+				if (!MSC_match(KW_SQL))
+					break;
+				gpreGlob.sw_sql = true;
+				act* action = SQL_action(base_dir);
+				gpreGlob.sw_sql = false;
+				return action;
 			}
+
+		default:
+			break;
 		}
 
 		}	// try
@@ -351,7 +320,7 @@ act* PAR_action(const TEXT* base_dir)
 			// For example, a failure in our runtime.
 			throw;
 		}
-		catch (const Firebird::Exception&) {
+		catch (const std::exception&) {
 			gpreGlob.sw_sql = false;
 			/* This is to force GPRE to get the next symbol. Fix for bug #274. DROOT */
 			gpreGlob.token_global.tok_symbol = NULL;
@@ -362,66 +331,63 @@ act* PAR_action(const TEXT* base_dir)
 		return NULL;
 	}
 
-	if (! gpreGlob.sw_no_qli)
+	for (; symbol; symbol = symbol->sym_homonym)
 	{
-		for (; symbol; symbol = symbol->sym_homonym)
+		switch (symbol->sym_type)
 		{
-			switch (symbol->sym_type)
-			{
-			case SYM_context:
-				try {
-					PAR_jmp_buf = &env;
-					cur_statement = NULL;
-					return par_variable();
-				}
-				catch (const gpre_exception&) {
-					throw;
-				}
-				catch (const Firebird::fatal_exception&)
-				{
-					// CVC: a fatal exception should be propagated.
-					throw;
-				}
-				catch (const Firebird::Exception&) {
-					return 0;
-				}
-			case SYM_blob:
-				try {
-					PAR_jmp_buf = &env;
-					cur_statement = NULL;
-					return par_blob_field();
-				}
-				catch (const gpre_exception&) {
-					throw;
-				}
-				catch (const Firebird::fatal_exception&)
-				{
-					// CVC: a fatal exception should be propagated.
-					throw;
-				}
-				catch (const Firebird::Exception&) {
-					return 0;
-				}
-			case SYM_relation:
-				try {
-					PAR_jmp_buf = &env;
-					cur_statement = NULL;
-					return par_type();
-				}
-				catch (const gpre_exception&) {
-					throw;
-				}
-				catch (const Firebird::fatal_exception&)
-				{
-					// CVC: a fatal exception should be propagated.
-					throw;
-				}
-				catch (const Firebird::Exception&) {
-					return 0;
-				}
-			default:
-				break;
+		case SYM_context:
+			try {
+				PAR_jmp_buf = &env;
+				cur_statement = NULL;
+				return par_variable();
 			}
+			catch (const gpre_exception&) {
+				throw;
+			}
+			catch (const Firebird::fatal_exception&)
+			{
+				// CVC: a fatal exception should be propagated.
+				throw;
+			}
+			catch (const std::exception&) {
+				return 0;
+			}
+		case SYM_blob:
+			try {
+				PAR_jmp_buf = &env;
+				cur_statement = NULL;
+				return par_blob_field();
+			}
+			catch (const gpre_exception&) {
+				throw;
+			}
+			catch (const Firebird::fatal_exception&)
+			{
+				// CVC: a fatal exception should be propagated.
+				throw;
+			}
+			catch (const std::exception&) {
+				return 0;
+			}
+		case SYM_relation:
+			try {
+				PAR_jmp_buf = &env;
+				cur_statement = NULL;
+				return par_type();
+			}
+			catch (const gpre_exception&) {
+				throw;
+			}
+			catch (const Firebird::fatal_exception&)
+			{
+				// CVC: a fatal exception should be propagated.
+				throw;
+			}
+			catch (const std::exception&) {
+				return 0;
+			}
+		default:
+			break;
 		}
 	}
 
@@ -626,7 +592,7 @@ act* PAR_database(bool sql, const TEXT* base_directory)
 		    found_error = true;
 	}
 	// CVC: It avoids countless errors if the db can't be loaded.
-	catch (const Firebird::Exception& exc)
+	catch (const Firebird::status_exception& exc)
 	{
 		found_error = true;
 		// CVC: Print the low level error. The lack of this caused me a lot of problems.
@@ -680,8 +646,7 @@ act* PAR_database(bool sql, const TEXT* base_directory)
 bool PAR_end()
 {
 	if ((gpreGlob.sw_language == lang_ada) || (gpreGlob.sw_language == lang_c) ||
-		(isLangCpp(gpreGlob.sw_language)) ||
-		((gpreGlob.sw_language == lang_cobol) && isAnsiCobol(gpreGlob.sw_cob_dialect)))
+		(isLangCpp(gpreGlob.sw_language)))
 	{
 		return (MSC_match(KW_SEMI_COLON));
 	}
@@ -1155,7 +1120,7 @@ gpre_sym* PAR_symbol(enum sym_t type)
 
 void PAR_unwind()
 {
-	throw Firebird::LongJump();
+	throw std::exception();
 }
 
 

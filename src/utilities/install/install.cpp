@@ -407,8 +407,13 @@ USHORT CLIENT_query(USHORT client, ULONG& verMS, ULONG& verLS,
 
 	DWORD type, size = sizeof(sharedCount);
 	sharedCount = 0;
-	RegQueryValueEx(hkey, target, NULL, &type,
+	keystatus = RegQueryValueEx(hkey, target, NULL, &type,
 		reinterpret_cast<BYTE*>(&sharedCount), &size);
+	if (keystatus != ERROR_SUCCESS)
+	{
+		RegCloseKey(hkey);
+		return (*err_handler) (keystatus, "RegQueryValueEx");
+	}
 	RegCloseKey(hkey);
 
 	return FB_SUCCESS;

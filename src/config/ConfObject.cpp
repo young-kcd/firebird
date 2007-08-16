@@ -66,7 +66,7 @@ ConfObject::ConfObject(ConfigFile *confFile)
 	chain = NULL;
 }
 
-ConfObject::~ConfObject()
+ConfObject::~ConfObject(void)
 {
 	configFile->release();
 	
@@ -79,7 +79,7 @@ bool ConfObject::matches(Element *element, const char* type, const char* string)
 	if (element->name != type)
 		return false;
 	
-	const Element *attribute = element->findAttribute (0);
+	Element *attribute = element->findAttribute (0);
 	
 	if (!attribute)
 		return false;
@@ -101,9 +101,6 @@ bool ConfObject::matches(Element *element, const char* type, const char* string)
 
 void ConfObject::putString(int position, const char* string, int stringLength)
 {
-	if (position >= MAX_STRINGS)
-		throw AdminException("ConfObject: string segments overflow");
-
 	strings [position ] = next;
 	
 	if (next + stringLength + 1 >= end)
@@ -131,7 +128,7 @@ bool ConfObject::match(int position, const char* pattern, const char* string)
 				return true;
 				}
 			for (; *s; ++s)
-				if (match (position + 1,  pattern + 1, s))
+				if (match (position + 1,  pattern+1, s))
 					{
 					putString (position, string, (int) (s - string));
 					return true;
@@ -161,7 +158,7 @@ bool ConfObject::match(int position, const char* pattern, const char* string)
 
 const char* ConfObject::getValue (const char* option, const char *defaultValue)
 {
-	const Element *element = findAttribute (option);
+	Element *element = findAttribute (option);
 	
 	if (!element)
 		return defaultValue;
@@ -196,7 +193,7 @@ int ConfObject::getValue(const char* option, int defaultValue)
 
 bool ConfObject::getValue(const char* option, bool defaultValue)
 {
-	const Element *element = findAttribute (option);
+	Element *element = findAttribute (option);
 	
 	if (!element)
 		return defaultValue;
@@ -216,7 +213,7 @@ JString ConfObject::expand(const char* rawValue)
 		return "";
 
 	char temp [1024];
-	char *p = temp, *temp_end = temp + sizeof(temp) - 1;
+	char *p = temp;
 	bool changed = false;
 	
 	for (const char *s = rawValue; *s;)
@@ -228,14 +225,14 @@ JString ConfObject::expand(const char* rawValue)
 				{
 				++s;
 				char name [256], *n = name;
-				while (*s && (c = *s++) != ')' && n < name + sizeof(name) - 1)
+				while (*s && (c = *s++) != ')')
 					*n++ = c;
 				*n = 0;
 				const char *subst = configFile->translate (name, object);
 				if (!subst)
 					throw AdminException ("can't substitute for \"%s\"", name);
 				changed = true;
-				for (const char *t = subst; *t && p < temp_end;)
+				for (const char *t = subst; *t;)
 					*p++ = *t++;					
 				}
 			else
@@ -245,11 +242,11 @@ JString ConfObject::expand(const char* rawValue)
 					n = n * 10 + *s++ - '0';
 				if (n > numberStrings)
 					throw AdminException ("substitution index exceeds available segments");
-				for (const char *t = (n == 0) ? (const char*) source : strings [n - 1]; *t && p < temp_end;)
+				for (const char *t = (n == 0) ? (const char*) source : strings [n - 1]; *t;)
 					*p++ = *t++;
 				}
 			}
-		else if (p < temp_end)
+		else
 			*p++ = c;
 		}
 	
@@ -263,7 +260,7 @@ JString ConfObject::expand(const char* rawValue)
 
 JString ConfObject::getValue(const char* attributeName)
 {
-	const Element *attribute = findAttribute (attributeName);
+	Element *attribute = findAttribute (attributeName);
 	
 	if (!attribute)
 		return "";
@@ -273,12 +270,12 @@ JString ConfObject::getValue(const char* attributeName)
 
 const char* ConfObject::getValue(int instanceNumber, const char* attributeName)
 {
-	const Element *attribute = findAttribute (attributeName);
+	Element *attribute = findAttribute (attributeName);
 	
 	if (!attribute)
 		return "";
 		
-	const Element *val = attribute->findAttribute (instanceNumber);
+	Element *val = attribute->findAttribute (instanceNumber);
 	
 	if (!val)
 		return "";
@@ -290,13 +287,13 @@ const char* ConfObject::getValue(int instanceNumber, const char* attributeName)
 
 const char* ConfObject::getConcatenatedValues(const char* attributeName)
 {
-	const Element *attribute = findAttribute (attributeName);
+	Element *attribute = findAttribute (attributeName);
 	JString value;
 	
 	if (!attribute)
 		return value;
 			
-	for (const Element *att = attribute->attributes; att; att = att->sibling)
+	for (Element *att = attribute->attributes; att; att = att->sibling)
 		{
 		if (!value.IsEmpty())
 			value += " ";
@@ -323,7 +320,7 @@ Element* ConfObject::findAttribute(const char* attributeName)
 	return configFile->findGlobalAttribute (attributeName);
 }
 
-ConfObject* ConfObject::getChain()
+ConfObject* ConfObject::getChain(void)
 {
 	return chain;
 }
@@ -337,12 +334,12 @@ void ConfObject::setChain(ConfObject* obj)
 		chain->addRef();
 }
 
-const char* ConfObject::getValue(const Element* attribute)
+const char* ConfObject::getValue(Element* attribute)
 {
 	if (!attribute)
 		return NULL;
 	
-	const Element *value = attribute->findAttribute (0);
+	Element *value = attribute->findAttribute (0);
 	
 	if (!value)
 		return NULL;
@@ -350,12 +347,12 @@ const char* ConfObject::getValue(const Element* attribute)
 	return value->name;
 }
 
-const char* ConfObject::getName()
+const char* ConfObject::getName(void)
 {
 	if (!object)
 		return NULL;
 
-	const Element *attribute = object->findAttribute (0);
+	Element *attribute = object->findAttribute (0);
 	
 	if (!attribute)
 		return NULL;
@@ -367,4 +364,3 @@ ConfObject* ConfObject::findObject(const char* objectType, const char* objectNam
 {
 	return configFile->findObject(objectType, objectName);
 }
-

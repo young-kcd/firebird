@@ -19,6 +19,8 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ * Added TCP_NO_DELAY option for superserver on Linux
+ * FSG 16.03.2001
  *
  * 2001.07.06 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
  *                         conditionals, as the engine now fully supports
@@ -82,7 +84,6 @@
 # endif
 #endif
 
-
 #ifdef SUPERSERVER
 #define GOVERNOR
 #define CANCEL_OPERATION
@@ -93,7 +94,7 @@
 
 
 /*****************************************************
-* Linux platforms 
+* Linux for Intel platforms 
 *****************************************************/
 #ifdef LINUX
 #define QUADFORMAT "ll"
@@ -111,13 +112,17 @@
 //format for __LINE__
 #define LINEFORMAT "d"
 
+#ifdef SUPERSERVER
+#define SET_TCP_NO_DELAY
+#endif
+
 //#define KILLER_SIGNALS
 
 #define UNIX
 #define IEEE
 
 #ifdef AMD64
-#define IMPLEMENTATION  isc_info_db_impl_linux_amd64 /* 66 */
+#define IMPLEMENTATION  isc_info_db_impl_linux_amd64 /* 66  next higher unique number, See you later  */
 #endif
 
 #ifdef PPC
@@ -126,16 +131,12 @@
 
 #ifdef i386
 #define I386
-#define IMPLEMENTATION  isc_info_db_impl_i386 /* 60 */
+#define IMPLEMENTATION  isc_info_db_impl_i386 /* 60  next higher unique number, See you later  */
 #endif /* i386 */
 
 #ifdef sparc
 #define IMPLEMENTATION  isc_info_db_impl_linux_sparc /* 65  */
 #endif /* sparc */
-
-#ifdef MIPSEL
-#define IMPLEMENTATION  isc_info_db_impl_linux_mipsel /* 71  */
-#endif /* mipsel */
 
 #define MEMMOVE(from, to, length)		memmove ((void *)to, (void *)from, (size_t) length)
 #define MOVE_FAST(from, to, length)       memcpy (to, from, (int) (length))
@@ -223,6 +224,10 @@ static inline int sinixz_sigaction(int sig, const struct sinixz_sigaction *act,
 //#define ALIGNMENT	4
 //#define DOUBLE_ALIGN	8
 
+#ifdef SUPERSERVER
+#define SET_TCP_NO_DELAY
+#endif
+
 //#define KILLER_SIGNALS
 
 #define UNIX
@@ -274,12 +279,12 @@ static inline int sinixz_sigaction(int sig, const struct sinixz_sigaction *act,
 //#define DOUBLE_ALIGN    4
 //#define BSD_UNIX
 #define UNIX
-#ifdef powerpc 
-#define IMPLEMENTATION isc_info_db_impl_darwin_ppc /* 63 */
-#endif
 #ifdef i386
 #define I386
 #define IMPLEMENTATION isc_info_db_impl_darwin_x86 /* 70 */
+#endif
+#ifdef __ppc__
+#define IMPLEMENTATION isc_info_db_impl_darwin_ppc /* 63 */
 #endif
 #define IEEE
 #define QUADCONST(n) (n##LL)
@@ -381,8 +386,11 @@ static inline int sinixz_sigaction(int sig, const struct sinixz_sigaction *act,
  * in Solaris
  */
 #define SOLARIS_MT
-#define MULTI_THREAD
 
+#ifdef SOLARIS_MT
+#define ANY_THREADING
+#define MULTI_THREAD
+#endif
 /*  Define the following only on platforms whose standard I/O
  *  implementation is so weak that we wouldn't be able to fopen
  *  a file whose underlying file descriptor would be > 255.
@@ -613,15 +621,13 @@ typedef unsigned __int64 UINT64;
    not permit the LL suffix which some other platforms require, but it
    handles numbers up to the largest 64-bit integer correctly without such
    a suffix, so the macro definition is trivial. */
-#ifdef __GNUC__ // needed for gcc 3.3.1
+#ifdef MINGW // needed for gcc 3.3.1
 #define QUADCONST(n) (n##LL)
 #else
 #define QUADCONST(n) (n)
 #endif
 
-#ifdef AMD64
-#define IMPLEMENTATION  isc_info_db_impl_winnt_amd64 /* 68 */
-#else
+#ifdef _X86_
 #ifndef I386
 #define I386
 #endif
@@ -1043,16 +1049,6 @@ void GDS_breakpoint(int);
 #ifndef DOUBLE_DIVIDE
 #define DOUBLE_DIVIDE(a, b)      (((double) (a)) / ((double) (b)))
 #endif
-
-#define STRINGIZE_AUX(x)	#x
-#define STRINGIZE(x)		STRINGIZE_AUX(x)
-
-#ifdef _MSC_VER
-#define CONST64(a) (a##i64)
-#else
-#define CONST64(a) (a##LL)
-#endif
-
 
 /* switch name and state table.  This structure should be used in all
  * command line tools to facilitate parsing options.*/

@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- *
+ * $Id: ibmgrswi.h,v 1.4.12.1 2006-04-16 11:48:21 alexpeshkoff Exp $
  */
 
 #ifndef IBMGR_IBMGRSWI_H

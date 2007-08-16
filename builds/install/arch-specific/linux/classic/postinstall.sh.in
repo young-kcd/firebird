@@ -31,6 +31,7 @@
 #   Contributor(s):
 #  
 # 
+#   $Id: postinstall.sh.in,v 1.13.4.1 2006-04-16 11:51:55 alexpeshkoff Exp $
 # 
 
 # The post install script for Firebird Classic
@@ -62,6 +63,8 @@
         echo "" >> $FileName
     #    replaceLineInFile "$FileName" "$newLine" "$oldLine"
     fi
+
+    updateHostsDotFile
 
     # add Firebird user
     if [ $RunUser = "firebird" ]

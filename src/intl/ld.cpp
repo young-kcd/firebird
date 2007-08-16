@@ -19,30 +19,23 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * Adriano dos Santos Fernandes
  */
 
 #include "firebird.h"
-#include "../jrd/IntlUtil.h"
 #include "../intl/ldcommon.h"
 #include "../intl/ld_proto.h"
-#include "../intl/cs_icu.h"
-#include "../intl/lc_icu.h"
-#include "fb_exception.h"
 
 #ifdef HAVE_SYS_PARAM_H
 #include <sys/param.h> /* for MAXPATHLEN */
 #endif
 #include <stdio.h>
 
-using namespace Firebird;
-
 /* Commented out to make Linux version work because it is inaccessiable on all
   known platforms. Nickolay Samofatov, 10 Sept 2002
 void gds__log(UCHAR*, ...);
 */
 
-#define	EXTERN_texttype(name)	INTL_BOOL name (texttype*, charset*, const ASCII*, const ASCII*, USHORT, const UCHAR*, ULONG)
+#define	EXTERN_texttype(name)	INTL_BOOL name (TEXTTYPE, const ASCII*, const ASCII*, USHORT, const UCHAR*, ULONG)
 // #define EXTERN_convert(name)	INTL_BOOL name (csconvert*, const ASCII*, const ASCII*)
 #define EXTERN_charset(name)	INTL_BOOL name (charset*, const ASCII*)
 
@@ -270,6 +263,35 @@ EXTERN_convert(CVJIS_sjis_x_eucj);
 #endif
 
 
+#ifdef DEV_BUILD
+void LD_assert(const SCHAR* filename, int lineno)
+{
+/**************************************
+ *
+ *	L D _ a s s e r t
+ *
+ **************************************
+ *
+ * Functional description
+ *
+ *	Utility function for fb_assert() macro
+ *	Defined locally (clone from jrd/err.c) as ERR_assert isn't
+ *	a shared module entry point on all platforms, whereas gds__log is.
+ *
+ **************************************/
+	char buffer[MAXPATHLEN];
+
+	sprintf(buffer,
+			"Assertion failed: component intl, file \"%s\", line %d\n",
+			filename, lineno);
+#if !(defined VMS || defined WIN_NT)
+/*	gds__log(buffer); -- see note above */
+#endif
+	printf(buffer);
+}
+#endif
+
+
 /* Note: Cannot use a lookup table here as SUN4 cannot init pointers inside
  * shared libraries
  */
@@ -296,27 +318,13 @@ EXTERN_convert(CVJIS_sjis_x_eucj);
 	    }
 #endif
 
-// ASF: FB 2.0 doesn't call LD_version function, then
-// version should be INTL_VERSION_1 by default.
-USHORT version = INTL_VERSION_1;
-
-
-INTL_BOOL FB_DLL_EXPORT LD_lookup_charset(charset* cs, const ASCII* name, const ASCII* config_info)
+INTL_BOOL FB_DLL_EXPORT LD_lookup_charset(charset* cs, const ASCII* name)
 {
-	// ASF: We can't read config_info if version < INTL_VERSION_2,
-	// since it wasn't pushed in the stack by the engine.
-
-	try
-	{
-#define CHARSET(cs_name, cs_id, coll_id, bytes, num, cs_symbol, cp_symbol, attr)	\
-	{																				\
-		EXTERN_charset((*lookup_symbol)) = cs_symbol;								\
-																					\
-		if (lookup_symbol && strcmp(name, cs_name) == 0)							\
-			return lookup_symbol(cs, name);											\
-	}
+#define CHARSET(cs_name, cs_id, coll_id, bytes, num, cs_symbol, cp_symbol, attr) \
+    if (strcmp(name, cs_name) == 0) \
+		return cs_symbol(cs, name);
 #define CSALIAS(name, cs_id)
-#define COLLATION(name, base_name, cc_id, cs_id, coll_id, symbol, attr, specific_attr)
+#define COLLATION(name, cc_id, cs_id, coll_id, symbol, attr)
 #define COLLATE_ALIAS(name, coll_id)
 #define END_CHARSET
 
@@ -330,78 +338,26 @@ INTL_BOOL FB_DLL_EXPORT LD_lookup_charset(charset* cs, const ASCII* name, const 
 #undef COLLATE_ALIAS
 #undef END_CHARSET
 
-		return CSICU_charset_init(cs, name);
-	}
-	catch (Firebird::BadAlloc)
-	{
-		fb_assert(false);
-		return false;
-	}
+	return (false);
 }
-
 
 INTL_BOOL FB_DLL_EXPORT LD_lookup_texttype(texttype* tt, const ASCII* texttype_name, const ASCII* charset_name,
 										   USHORT attributes, const UCHAR* specific_attributes,
-										   ULONG specific_attributes_length, INTL_BOOL ignore_attributes,
-										   const ASCII* config_info)
+										   ULONG specific_attributes_length, INTL_BOOL ignore_attributes)
 {
-	const ASCII* configInfo;
-
-	// ASF: We can't read config_info if version < INTL_VERSION_2,
-	// since it wasn't pushed in the stack by the engine.
-	if (version >= INTL_VERSION_2)
-		configInfo = config_info;
-	else
-		configInfo = "";
-
-	try
-	{
-#define CHARSET(cs_name, cs_id, coll_id, bytes, num, cs_symbol, cp_symbol, coll_attr)	\
-	if (strcmp(charset_name, cs_name) == 0)												\
-	{																					\
-		EXTERN_charset((*lookup_cs_symbol)) = cs_symbol;								\
-		EXTERN_texttype((*lookup_symbol)) = cp_symbol;									\
-																						\
-		charset cs;																		\
-		memset(&cs, 0, sizeof(cs));														\
-																						\
-		if (lookup_cs_symbol != NULL && lookup_cs_symbol(&cs, charset_name) &&			\
-			lookup_symbol != NULL && strcmp(texttype_name, cs_name) == 0)				\
-		{																				\
-			INTL_BOOL ret = lookup_symbol(												\
-				tt, &cs, texttype_name, charset_name,									\
-				(ignore_attributes ? coll_attr : attributes),							\
-				(ignore_attributes ? NULL : specific_attributes),						\
-				(ignore_attributes ? 0 : specific_attributes_length));					\
-																						\
-			if (cs.charset_fn_destroy)													\
-				cs.charset_fn_destroy(&cs);												\
-																						\
-			return ret;																	\
-		}
+#define CHARSET(cs_name, cs_id, coll_id, bytes, num, cs_symbol, cp_symbol, coll_attr) \
+	if (strcmp(charset_name, cs_name) == 0) { \
+    if (strcmp(texttype_name, cs_name) == 0) \
+	return cp_symbol(tt, texttype_name, charset_name, (ignore_attributes ? coll_attr : attributes), \
+					 (ignore_attributes ? NULL : specific_attributes), \
+					 (ignore_attributes ? 0 : specific_attributes_length));
 #define CSALIAS(name, cs_id)
-#define END_CHARSET	\
-	}
-#define COLLATION(tt_name, base_name, cc_id, cs_id, coll_id, symbol, coll_attr, specific_attr)	\
-	{																	\
-		EXTERN_texttype((*coll_lookup_symbol)) = symbol;				\
-																		\
-		if (coll_lookup_symbol && strcmp(texttype_name, (base_name ? base_name : tt_name)) == 0)	\
-		{																\
-			INTL_BOOL ret = coll_lookup_symbol(							\
-				tt, &cs, texttype_name, charset_name,					\
-				(ignore_attributes ? coll_attr : attributes),			\
-				(ignore_attributes ? (UCHAR*) specific_attr : specific_attributes),	\
-				(ignore_attributes ?									\
-					(specific_attr ? strlen(specific_attr) : 0) :		\
-					specific_attributes_length));						\
-																		\
-			if (cs.charset_fn_destroy)									\
-				cs.charset_fn_destroy(&cs);								\
-																		\
-			return ret;													\
-		}																\
-	}
+#define END_CHARSET }
+#define COLLATION(tt_name, cc_id, cs_id, coll_id, symbol, coll_attr) \
+    if (strcmp(texttype_name, tt_name) == 0) \
+		return symbol(tt, texttype_name, charset_name, (ignore_attributes ? coll_attr : attributes), \
+					  (ignore_attributes ? NULL : specific_attributes), \
+					  (ignore_attributes ? 0 : specific_attributes_length));
 #define COLLATE_ALIAS(name, coll_id)
 
 #define INTL_COMPONENT_FB
@@ -414,53 +370,9 @@ INTL_BOOL FB_DLL_EXPORT LD_lookup_texttype(texttype* tt, const ASCII* texttype_n
 #undef COLLATE_ALIAS
 #undef END_CHARSET
 
-		return LCICU_texttype_init(
-			tt, texttype_name, charset_name, (ignore_attributes ? TEXTTYPE_ATTR_PAD_SPACE : attributes),
-			(ignore_attributes ? NULL : specific_attributes),
-			(ignore_attributes ? 0 : specific_attributes_length), configInfo);
-	}
-	catch (Firebird::BadAlloc)
-	{
-		fb_assert(false);
-		return false;
-	}
+	return (false);
 }
 
 #undef DRIVER
 #undef CHARSET_INIT
 #undef CONVERT_INIT_BI
-
-
-ULONG FB_DLL_EXPORT LD_setup_attributes(
-	const ASCII* textTypeName, const ASCII* charSetName, const ASCII* configInfo,
-	ULONG srcLen, const UCHAR* src, ULONG dstLen, UCHAR* dst)
-{
-	Firebird::string specificAttributes((const char*) src, srcLen);
-	Firebird::string newSpecificAttributes = specificAttributes;
-	
-	if (!LCICU_setup_attributes(textTypeName, charSetName, configInfo,
-			specificAttributes, newSpecificAttributes))
-	{
-		return INTL_BAD_STR_LENGTH;
-	}
-
-	if (dstLen == 0)
-		return newSpecificAttributes.length();
-	else if (newSpecificAttributes.length() <= dstLen)
-	{
-		memcpy(dst, newSpecificAttributes.begin(), newSpecificAttributes.length());
-		return newSpecificAttributes.length();
-	}
-	else
-		return INTL_BAD_STR_LENGTH;
-}
-
-
-void FB_DLL_EXPORT LD_version(USHORT* version)
-{
-	// We support version 1 and 2.
-	if (*version != INTL_VERSION_1)
-		*version = INTL_VERSION_2;
-
-	::version = *version;
-}

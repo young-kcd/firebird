@@ -62,7 +62,6 @@
 #include "../common/classes/ClumpletWriter.h"
 #include "../common/utils_proto.h"
 #include "../common/classes/MetaName.h"
-#include "../common/classes/TempFile.h"
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -235,10 +234,9 @@ static const TEXT* const impl_implementation[] = {
     "Firebird/linux Sparc",	/* 65 */
     "Firebird/linux AMD64",	/* 66 */
     "Firebird/FreeBSD/amd64",	/* 67 */
-    "Firebird/x86-64/Windows NT",   /* 68 */
+    NULL, // "Firebird/x86-64/Windows NT",   /* 68 */		//Windows/amd64 - not ported yet
     "Firebird/linux PowerPC",	/* 69 */
-	"Firebird/Darwin/Intel",	/* 70 */
-    "Firebird/linux MIPSEL"	/* 71 */
+	"Firebird/Darwin/Intel"	/* 70 */
 };
 
 
@@ -302,13 +300,13 @@ int API_ROUTINE gds__blob_size(
 		return FALSE;
 	}
 
-	const UCHAR* p = reinterpret_cast<UCHAR*>(buffer);
-	UCHAR item;
-	while ((item = *p++) != isc_info_end)
-	{
-		const USHORT l = gds__vax_integer(p, 2);
+	const TEXT* p = buffer;
+	char item;
+	while ((item = *p++) != isc_info_end) {
+		const USHORT l =
+			gds__vax_integer(reinterpret_cast<const UCHAR*>(p), 2);
 		p += 2;
-		const SLONG n = gds__vax_integer(p, l);
+		const SLONG n = gds__vax_integer(reinterpret_cast<const UCHAR*>(p), l);
 		p += l;
 		switch (item) {
 		case isc_info_blob_max_segment:
@@ -495,7 +493,7 @@ int API_ROUTINE isc_modify_dpb(SCHAR**	dpb,
  *	i s c _ m o d i f y _ d p b
  *
  **************************************
- * CVC: This is exactly the same logic as isc_expand_dpb, but for one param.
+ * CVC: This is exactly the same login than isc_expand_dpb, but for one param.
  * However, the difference is that when presented with a dpb type it that's
  * unknown, it returns FB_FAILURE immediately. In contrast, isc_expand_dpb
  * doesn't complain and instead treats those as integers and tries to skip
@@ -1332,7 +1330,7 @@ void API_ROUTINE isc_format_implementation(
 }
 
 
-uintptr_t API_ROUTINE isc_baddress(SCHAR* object)
+U_IPTR API_ROUTINE isc_baddress(SCHAR* object)
 {
 /**************************************
  *
@@ -1345,11 +1343,11 @@ uintptr_t API_ROUTINE isc_baddress(SCHAR* object)
  *
  **************************************/
 
-	return (uintptr_t) object;
+	return (U_IPTR) object;
 }
 
 
-void API_ROUTINE isc_baddress_s(const SCHAR* object, uintptr_t* address)
+void API_ROUTINE isc_baddress_s(const SCHAR* object, U_IPTR* address)
 {
 /**************************************
  *
@@ -1362,7 +1360,7 @@ void API_ROUTINE isc_baddress_s(const SCHAR* object, uintptr_t* address)
  *
  **************************************/
 
-	*address = (uintptr_t) object;
+	*address = (U_IPTR) object;
 }
 
 
@@ -1982,21 +1980,18 @@ static int dump(ISC_QUAD* blob_id,
 
 	for (;;) {
 		USHORT l = 0;
-		isc_get_segment(status_vector, &blob, &l, short_length, buffer);
+		isc_get_segment(status_vector, &blob, &l,
+						 short_length, buffer);
 		if (status_vector[1] && status_vector[1] != isc_segment) {
 			if (status_vector[1] != isc_segstr_eof)
 				isc_print_status(status_vector);
 			break;
 		}
-		/*
 		const TEXT* p = buffer;
 		if (l)
 			do {
 				fputc(*p++, file);
 			} while (--l);
-		*/
-		if (l)
-			fwrite(buffer, 1, l, file);
 	}
 
 /* Close the blob */
@@ -2050,29 +2045,40 @@ static int edit(ISC_QUAD* blob_id,
    Would have saved me a lot of time, if I had seen this earlier :-(
    FSG 15.Oct.2000
 */
-	Firebird::PathName tmpf = TempFile::create(buffer);
-	if (tmpf.empty()) {
-		return FALSE;
-	}
+	TEXT file_name[50];
+	sprintf(file_name, "%sXXXXXX", buffer);
 
-	FILE* file = fopen(tmpf.c_str(), FOPEN_WRITE_TYPE_TEXT);
-	if (!file) {
-		unlink(tmpf.c_str());
+	FILE* file;
+
+#ifdef HAVE_MKSTEMP
+	const int fd = mkstemp(file_name);
+	if (!(file = fdopen(fd, "w+"))) {
+		close(fd);
 		return FALSE;
 	}
+#else
+	if (mktemp(file_name) == (char *)0)
+		return FALSE;
+	if (!(file = fopen(file_name, FOPEN_WRITE_TYPE)))
+		return FALSE;
+	fclose(file);
+
+	if (!(file = fopen(file_name, FOPEN_WRITE_TYPE_TEXT)))
+		return FALSE;
+#endif
 
 	if (!dump(blob_id, database, transaction, file)) {
 		fclose(file);
-		unlink(tmpf.c_str());
+		unlink(file_name);
 		return FALSE;
 	}
 
 	fclose(file);
 
-	if (type = gds__edit(tmpf.c_str(), type)) {
+	if (type = gds__edit(file_name, type)) {
 
-		if (!(file = fopen(tmpf.c_str(), FOPEN_READ_TYPE_TEXT))) {
-			unlink(tmpf.c_str());
+		if (!(file = fopen(file_name, FOPEN_READ_TYPE_TEXT))) {
+			unlink(file_name);
 			return FALSE;
 		}
 
@@ -2082,7 +2088,7 @@ static int edit(ISC_QUAD* blob_id,
 
 	}
 
-	unlink(tmpf.c_str());
+	unlink(file_name);
 
 	return type;
 }
@@ -2370,21 +2376,65 @@ inline void setTag(Firebird::ClumpletWriter& dpb, UCHAR tag, const TEXT* value)
 
 void setLogin(Firebird::ClumpletWriter& dpb)
 {
-#ifdef TRUSTED_AUTH
-	if (!dpb.find(isc_dpb_trusted_auth))
-#endif
+	Firebird::string username;
+	if (fb_utils::readenv("ISC_USER", username) && !dpb.find(isc_dpb_sys_user_name))
 	{
-		Firebird::string username;
-		if (fb_utils::readenv("ISC_USER", username) && !dpb.find(isc_dpb_sys_user_name))
-		{
-			setTag(dpb, isc_dpb_user_name, username.c_str());
-		}
+		setTag(dpb, isc_dpb_user_name, username.c_str());
+	}
 
-		Firebird::string password;
-		if (fb_utils::readenv("ISC_PASSWORD", password) && !dpb.find(isc_dpb_password_enc))
-		{
-			setTag(dpb, isc_dpb_password, password.c_str());
-		}
+	Firebird::string password;
+	if (fb_utils::readenv("ISC_PASSWORD", password) && !dpb.find(isc_dpb_password_enc))
+	{
+		setTag(dpb, isc_dpb_password, password.c_str());
 	}
 }
 
+BOOLEAN iscSetPath(const Firebird::PathName& file_name, Firebird::PathName& expanded_name)
+{
+/**************************************
+ *
+ *	i s c _ s e t _ p a t h
+ *
+ **************************************
+ *
+ * Functional description
+ *	Set a prefix to a filename based on 
+ *	the ISC_PATH user variable.
+ *
+ **************************************/
+
+/* look for the environment variables to tack 
+   onto the beginning of the database path */
+
+	Firebird::PathName pathname;
+	if (!fb_utils::readenv("ISC_PATH", pathname))
+	{
+		return FALSE;
+	}
+
+/* if the file already contains a remote node
+   or any path at all forget it */
+
+	if (file_name.find_first_of(":/\\") != Firebird::PathName::npos)
+	{
+		return FALSE;
+	}
+
+/* concatenate the strings */
+
+	expanded_name = pathname;
+
+    /* CVC: Make the concatenation work if no slash is present. */
+	if (expanded_name.length() > 0)
+	{
+		const char c = expanded_name[expanded_name.length() - 1];
+	    if (c != ':' && c != '/' && c != '\\')
+		{
+        	expanded_name += "/";
+    	}
+	}
+
+	expanded_name += file_name;
+
+	return TRUE;
+}

@@ -65,6 +65,10 @@
 #define MUTEX		event_mutex
 #endif
 
+#ifdef SERVER
+#undef MULTI_THREAD
+#endif
+
 #ifndef AST_TYPE
 #define AST_TYPE	void
 #endif
@@ -135,6 +139,8 @@ void EVENT_cancel(SLONG request_id)
  *	Cancel an outstanding event.
  *
  **************************************/
+	srq *event_srq, *que2;
+
 	if (!EVENT_header)
 		return;
 
@@ -142,10 +148,8 @@ void EVENT_cancel(SLONG request_id)
 
 	PRB process = (PRB) SRQ_ABS_PTR(EVENT_process_offset);
 
-	srq* que2;
 	SRQ_LOOP(process->prb_sessions, que2) {
 		SES session = (SES) ((UCHAR *) que2 - OFFSET(SES, ses_sessions));
-		srq* event_srq;
 		SRQ_LOOP(session->ses_requests, event_srq) {
 			EVT_REQ request = (EVT_REQ) ((UCHAR *) event_srq - OFFSET(EVT_REQ, req_requests));
 			if (request->req_request_id == request_id) {
@@ -160,8 +164,7 @@ void EVENT_cancel(SLONG request_id)
 }
 
 
-#ifndef SUPERCLIENT
-SLONG EVENT_create_session(ISC_STATUS* status_vector)
+SLONG EVENT_create_session(ISC_STATUS * status_vector)
 {
 /**************************************
  *
@@ -175,7 +178,7 @@ SLONG EVENT_create_session(ISC_STATUS* status_vector)
  **************************************/
 // If we're not initialized, do so now.
 
-	if (!EVENT_header && !EVENT_init(status_vector))
+	if (!EVENT_header && !EVENT_init(status_vector, true))
 		return 0;
 
 	if (!EVENT_process_offset)
@@ -197,7 +200,6 @@ SLONG EVENT_create_session(ISC_STATUS* status_vector)
 
 	return id;
 }
-#endif
 
 
 void EVENT_delete_session(SLONG session_id)
@@ -240,6 +242,7 @@ void EVENT_deliver()
  *  for delivery with EVENT_post.
  *
  **************************************/
+	srq	*event_srq;
 
 	/* If we're not initialized, do so now */
 
@@ -254,7 +257,6 @@ void EVENT_deliver()
 
 	while (flag) {
 		flag = false;
-		srq* event_srq;
 		SRQ_LOOP (EVENT_header->evh_processes, event_srq)	{
 			PRB process = (PRB) ((UCHAR*) event_srq - OFFSET (PRB, prb_processes));
 			if (process->prb_flags & PRB_wakeup) {
@@ -269,7 +271,9 @@ void EVENT_deliver()
 }
 
 
-EVH EVENT_init(ISC_STATUS* status_vector)
+// CVC: Contrary to the explanation, server_flag is not used!
+#pragma FB_COMPILER_MESSAGE("server_flag var is not honored: bug or deprecated?")
+EVH EVENT_init(ISC_STATUS* status_vector, bool server_flag)
 {
 /**************************************
  *
@@ -278,8 +282,9 @@ EVH EVENT_init(ISC_STATUS* status_vector)
  **************************************
  *
  * Functional description
- *	Initialize for access to shared global region.
- *	Return address of header.
+ *	Initialize for access to shared global region.  If "server_flag" is true,
+ *	create region if it doesn't exist.  Return address of header if region
+ *	exits, otherwise return NULL.
  *
  **************************************/
 	TEXT buffer[MAXPATHLEN];
@@ -291,7 +296,28 @@ EVH EVENT_init(ISC_STATUS* status_vector)
 
 	EVENT_default_size = Config::getEventMemSize();
 
-#ifdef UNIX
+#ifdef SERVER
+	EVENT_data.sh_mem_address = EVENT_header =
+		(EVH) gds__alloc((SLONG) EVENT_default_size);
+/* FREE: apparently only freed at process exit */
+	if (!EVENT_header) {		/* NOMEM: */
+		status_vector[0] = isc_arg_gds;
+		status_vector[1] = isc_virmemexh;
+		status_vector[2] = isc_arg_end;
+		return NULL;
+	}
+#ifdef DEBUG_GDS_ALLOC
+/* This structure is apparently only freed when the process exits */
+/* 1994-October-25 David Schnepper */
+	gds_alloc_flag_unfreed((void *) EVENT_header);
+#endif /* DEBUG_GDS_ALLOC */
+
+	EVENT_data.sh_mem_length_mapped = EVENT_default_size;
+	EVENT_data.sh_mem_mutex_arg = 0;
+	init((SLONG) 0, &EVENT_data, true);
+#else
+
+#if (defined UNIX)
 	EVENT_data.sh_mem_semaphores = SEMAPHORES;
 #endif
 
@@ -303,8 +329,13 @@ EVH EVENT_init(ISC_STATUS* status_vector)
 											init, 0, EVENT_default_size,
 											&EVENT_data))) 
 	{
+#ifdef SERVER
+		gds__free(EVENT_data.sh_mem_address);
+#endif /* SERVER */
 		return NULL;
 	}
+
+#endif
 
 	gds__register_cleanup(exit_handler, 0);
 
@@ -335,10 +366,11 @@ int EVENT_post(ISC_STATUS * status_vector,
  *	Post an event.
  *
  **************************************/
+	srq *event_srq;
 
 /* If we're not initialized, do so now */
 
-	if (!EVENT_header && !EVENT_init(status_vector))
+	if (!EVENT_header && !EVENT_init(status_vector, false))
 		return status_vector[1];
 
 	acquire();
@@ -349,7 +381,6 @@ int EVENT_post(ISC_STATUS * status_vector,
 		(event = find_event(minor_length, minor_code, parent)))
 	{
 		event->evnt_count += count;
-		srq* event_srq;
 		SRQ_LOOP(event->evnt_interests, event_srq) {
 			RINT interest = (RINT) ((UCHAR *) event_srq - OFFSET(RINT, rint_interests));
 			if (interest->rint_request) {
@@ -505,8 +536,10 @@ static EVH acquire(void)
 	EVENT_header->evh_current_process = EVENT_process_offset;
 #else
 	if (++acquire_count == 1) {
+#ifndef SERVER
 		if (mutex_state = ISC_mutex_lock(MUTEX))
 			mutex_bugcheck("mutex lock", mutex_state);
+#endif
 		EVENT_header->evh_current_process = EVENT_process_offset;
 	}
 #endif
@@ -697,13 +730,16 @@ static SLONG create_process(void)
 	EVENT_process_offset = SRQ_REL_PTR(process);
 
 #ifdef MULTI_THREAD
+
 #ifdef SOLARIS_MT
 	ISC_STATUS_ARRAY local_status;
 	ISC_event_init(process->prb_event, 0, EVENT_SIGNAL);
 	EVENT_process = (PRB) ISC_map_object(local_status, &EVENT_data,
 										 EVENT_process_offset,
 										 sizeof(prb));
-#else
+#endif
+
+#if !(defined SOLARIS_MT)
 	ISC_event_init(process->prb_event, EVENT_SIGNAL, 0);
 #endif
 #endif
@@ -714,7 +750,9 @@ static SLONG create_process(void)
 	release();
 
 #ifdef MULTI_THREAD
-	if (gds__thread_start(watcher_thread, NULL, THREAD_medium, THREAD_blast, 0))
+	if (gds__thread_start
+		(watcher_thread, NULL,
+		 THREAD_medium, THREAD_blast, 0))
 		ERR_bugcheck_msg("cannot start thread");
 #endif
 
@@ -849,17 +887,30 @@ static void delete_session(SLONG session_id)
  *	Delete a session.
  *
  **************************************/
+#ifdef MULTI_THREAD
+/*  This code is very Netware specific, so for now I've #ifdef'ed this
+ *  variable out.  In the future, other platforms may find a need to
+ *  use this as well.  --  Morgan Schweers, November 16, 1994
+ */
+	USHORT kill_anyway = 0;		/*  Kill session despite session delivering. */
+	/*  (Generally means session's deliver is hung. */
+#endif
+
 	SES session = (SES) SRQ_ABS_PTR(session_id);
 
 #ifdef MULTI_THREAD
-	USHORT kill_anyway = 0;		/*  Kill session despite session delivering. */
 /*  delay gives up control for 250ms, so a 40 iteration timeout is a
  *  up to 10 second wait for session to finish delivering its message.
  */
 	while (session->ses_flags & SES_delivering && (++kill_anyway != 40)) {
 		release();
 		THREAD_EXIT();
-		THREAD_SLEEP(250);
+#ifdef WIN_NT
+		Sleep(250);
+#endif
+#if (defined SOLARIS_MT || defined LINUX)
+		sleep(1);
+#endif
 		THREAD_ENTER();
 		acquire();
 		session = (SES) SRQ_ABS_PTR(session_id);
@@ -904,6 +955,8 @@ static AST_TYPE deliver(void* arg)
  *	We've been poked -- deliver any satisfying requests.
  *
  **************************************/
+	srq *event_srq, *que2;
+
 #ifdef UNIX
 	if (acquire_count)
 		return;
@@ -913,7 +966,6 @@ static AST_TYPE deliver(void* arg)
 	PRB process = (PRB) SRQ_ABS_PTR(EVENT_process_offset);
 	process->prb_flags &= ~PRB_pending;
 
-	srq* que2;
 	SRQ_LOOP(process->prb_sessions, que2) {
 		SES session = (SES) ((UCHAR *) que2 - OFFSET(SES, ses_sessions));
 #ifdef MULTI_THREAD
@@ -923,7 +975,6 @@ static AST_TYPE deliver(void* arg)
 		const SLONG que2_offset = SRQ_REL_PTR(que2);
 		for (bool flag = true; flag;) {
 			flag = false;
-			srq* event_srq;
 			SRQ_LOOP(session->ses_requests, event_srq) {
 				EVT_REQ request = (EVT_REQ) ((UCHAR *) event_srq - OFFSET(EVT_REQ, req_requests));
 				if (request_completed(request)) {
@@ -1043,11 +1094,13 @@ static void exit_handler(void* arg)
 
 	ISC_STATUS_ARRAY local_status;
 
+#ifndef SERVER
 #ifdef SOLARIS_MT
 	ISC_unmap_object(local_status, &EVENT_data, (UCHAR**)&EVENT_process,
 					 sizeof(prb));
 #endif
 	ISC_unmap_file(local_status, &EVENT_data, 0);
+#endif
 
 	EVENT_header = NULL;
 }
@@ -1065,9 +1118,10 @@ static EVNT find_event(USHORT length, const TEXT* string, EVNT parent)
  *	Lookup an event.
  *
  **************************************/
+	srq* event_srq;
+
 	SRQ_PTR parent_offset = (parent) ? SRQ_REL_PTR(parent) : 0;
 
-	srq* event_srq;
 	SRQ_LOOP(EVENT_header->evh_events, event_srq) {
 		EVNT event = (EVNT) ((UCHAR *) event_srq - OFFSET(EVNT, evnt_events));
 		if (event->evnt_parent == parent_offset &&
@@ -1193,9 +1247,11 @@ static void init(void* arg, SH_MEM shmem_data, bool initialize)
 	SRQ_INIT(EVENT_header->evh_processes);
 	SRQ_INIT(EVENT_header->evh_events);
 
+#ifndef SERVER
 #if !defined(WIN_NT)
 	if (mutex_state = ISC_mutex_init(MUTEX, shmem_data->sh_mem_mutex_arg))
 		mutex_bugcheck("mutex init", mutex_state);
+#endif
 #endif
 
 	FRB free = (FRB) ((UCHAR*) EVENT_header + sizeof(evh));
@@ -1299,6 +1355,10 @@ static void post_process(PRB process)
 	process->prb_flags |= PRB_pending;
 	release();
 
+#ifdef SERVER
+	deliver();
+#else
+
 #ifdef MULTI_THREAD
 	ISC_event_post(process->prb_event);
 #else
@@ -1310,6 +1370,7 @@ static void post_process(PRB process)
 
 #endif
 	acquire();
+#endif
 }
 
 
@@ -1383,8 +1444,10 @@ static void release(void)
 #else
 	if (!--acquire_count) {
 		EVENT_header->evh_current_process = 0;
+#ifndef SERVER
 		if (mutex_state = ISC_mutex_unlock(MUTEX))
 			mutex_bugcheck("mutex lock", mutex_state);
+#endif
 #ifdef UNIX
 		if (EVENT_process_offset) {
 			PRB process = (PRB) SRQ_ABS_PTR(EVENT_process_offset);

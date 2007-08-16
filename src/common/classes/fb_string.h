@@ -193,7 +193,7 @@ namespace Firebird
 		enum TrimType {TrimLeft, TrimRight, TrimBoth};
 
 		void baseTrim(TrimType WhereTrim, const_pointer ToTrim);
-
+		
 	public:
 		inline const_pointer c_str() const {
 			return stringBuffer;
@@ -211,17 +211,12 @@ namespace Firebird
 		// in case a null ASCII was inserted in the middle of the string.
 		inline size_type recalculate_length()
 		{
-		    stringLength = static_cast<internal_size_type>(strlen(stringBuffer));
+		    stringLength = strlen(stringBuffer);
 		    return stringLength;
 		}
-
+		
 		void reserve(size_type n = 0);
 		void resize(size_type n, char_type c = ' ');
-
-		inline pointer getBuffer(size_t l)
-		{
-			return baseAssign(l);
-		}
 
 		inline size_type copy_from(pointer s, size_type n, size_type pos = 0) const
 		{
@@ -363,7 +358,7 @@ namespace Firebird
 		void vprintf(const char* Format, va_list params);
 		void printf(const char* Format, ...);
 
-		inline size_type copyTo(pointer to, size_type toSize) const
+		inline int copyTo(pointer to, size_type toSize) const
 		{
 			fb_assert(to);
 			fb_assert(toSize);

@@ -1,5 +1,5 @@
 /*
- *	PROGRAM:	Firebird Access Method
+ *	PROGRAM:	InterBase Access Method
  *	MODULE:		qatest.c
  *	DESCRIPTION:	Entry points for QA testibility library
  *

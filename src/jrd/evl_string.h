@@ -122,7 +122,7 @@ public:
 		SLONG localCount = ROUNDUP(count, ALIGNMENT);
 		if (allocated + localCount <= STATIC_PATTERN_BUFFER) {
 			result = allocBuffer + allocated;
-			allocated += localCount; 
+			allocated += localCount;		
 		}
 		else {
 			result = pool.allocate(count);

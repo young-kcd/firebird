@@ -36,9 +36,11 @@ namespace Firebird {
 #define INIT_SPIN_COUNT ((tSetCriticalSectionSpinCount *)(0))
 
 tSetCriticalSectionSpinCount* 
-	Spinlock::SetCriticalSectionSpinCount = INIT_SPIN_COUNT;
+	Mutex::SetCriticalSectionSpinCount = INIT_SPIN_COUNT;
 
-Spinlock::Spinlock() {
+Mutex::Mutex() {
+	InitializeCriticalSection(&spinlock);
+/*
 	if (SetCriticalSectionSpinCount == MISS_SPIN_COUNT)
 		return;
 	if (SetCriticalSectionSpinCount == INIT_SPIN_COUNT) {
@@ -56,6 +58,7 @@ Spinlock::Spinlock() {
 		}
 	}
 	SetCriticalSectionSpinCount(&spinlock, 4000);
+*/
 }
 
 #endif  // WIN_NT

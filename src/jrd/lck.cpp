@@ -33,6 +33,7 @@
 #include "../jrd/lck.h"
 #include "gen/iberror.h"
 #include "../jrd/iberr.h"
+#include "../jrd/all_proto.h"
 #include "../jrd/err_proto.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/jrd_proto.h"
@@ -62,11 +63,11 @@
 
 using namespace Jrd;
 
-static void bug_lck(const TEXT*);
+static void bug_lck(TEXT*);
 #ifdef MULTI_THREAD
 static void check_lock(Lock*, USHORT);
 #endif
-static bool compatible(const Lock*, const Lock*, USHORT);
+static bool compatible(Lock*, Lock*, USHORT);
 static void enqueue(thread_db*, Lock*, USHORT, SSHORT);
 static int external_ast(void*);
 #ifdef MULTI_THREAD
@@ -74,11 +75,11 @@ static Lock* find_block(Lock*, USHORT);
 #endif
 static USHORT hash_func(const UCHAR*, USHORT);
 static void hash_allocate(Lock*);
-static Lock* hash_get_lock(Lock*, USHORT*, Lock***);
+static Lock* hash_get_lock(Lock*, USHORT *, Lock***);
 static void hash_insert_lock(Lock*);
 static bool hash_remove_lock(Lock*, Lock**);
 static void internal_ast(Lock*);
-static bool internal_compatible(Lock*, const Lock*, USHORT);
+static bool internal_compatible(Lock*, Lock*, USHORT);
 static void internal_dequeue(thread_db*, Lock*);
 static USHORT internal_downgrade(thread_db*, Lock*);
 static bool internal_enqueue(thread_db*, Lock*, USHORT, SSHORT, bool);
@@ -149,15 +150,16 @@ inline SLONG* LCK_OWNER_HANDLE_ATT(Attachment* attachment) {
 
 static const UCHAR compatibility[] = {
 
-/*							Shared	Prot	Shared	Prot
-			none	null	Read	Read	Write	Write	Exclusive */
-/* none */	1,		1,		1,		1,		1,		1,		1,
-/* null */	1,		1,		1,		1,		1,		1,		1,
-/* SR	*/	1,		1,		1,		1,		1,		1,		0,
-/* PR	*/	1,		1,		1,		1,		0,		0,		0,
-/* SW	*/	1,		1,		1,		0,		1,		0,		0,
-/* PW	*/	1,		1,		1,		0,		0,		0,		0,
-/* EX	*/	1,		1,		0,		0,		0,		0,		0
+/*				Shared	Prot	Shared	Prot
+		none	null	 Read	Read	Write	Write	Exclusive */
+
+/* none */ 1, 1, 1, 1, 1, 1, 1,
+/* null */ 1, 1, 1, 1, 1, 1, 1,
+/* SR */ 1, 1, 1, 1, 1, 1, 0,
+/* PR */ 1, 1, 1, 1, 0, 0, 0,
+/* SW */ 1, 1, 1, 0, 1, 0, 0,
+/* PW */ 1, 1, 1, 0, 0, 0, 0,
+/* EX */ 1, 1, 0, 0, 0, 0, 0
 };
 
 #define COMPATIBLE(st1, st2)	compatibility [st1 * LCK_max + st2]
@@ -209,16 +211,10 @@ JMB: As part of the c++ conversion I removed the check for Lock block type.
  Here is the line I removed from the macro:
 				 (l->blk_type == type_lck) && \
  */
-#define LCK_CHECK_LOCK checkLock
-
-inline bool checkLock(const Lock* l)
-{
-	return (l != NULL &&
-			l->lck_length <= MAX_UCHAR &&
-			l->lck_dbb != NULL &&
-			l->lck_test_field == 666 &&
-			(l->lck_id || l->lck_physical == LCK_none));
-}
+#define LCK_CHECK_LOCK(l)	(((l) != NULL) && \
+				 (l->lck_dbb != NULL) && \
+				 (l->lck_test_field == 666) && \
+				 (l->lck_id || (l->lck_physical == LCK_none)))
 
 /* The following check should be part of LCK_CHECK_LOCK, but it fails
    when the exclusive attachment to a database is changed to a shared
@@ -258,7 +254,7 @@ void LCK_assert(thread_db* tdbb, Lock* lock)
 	}
 
 	if (!LCK_lock(tdbb, lock, lock->lck_logical, LCK_WAIT))
-		BUGCHECK(159);			// msg 159 cannot assert logical lock
+		BUGCHECK(159);			/* msg 159 cannot fb_assert logical lock */
 
 	fb_assert(LCK_CHECK_LOCK(lock));
 }
@@ -510,7 +506,7 @@ SLONG LCK_get_owner_handle(thread_db* tdbb, enum lck_t lock_type)
 {
 /**************************************
  *
- *	L C K _ g e t _ o w n e r _ h a n d l e
+ *	L C K _ g e t _ l o c k _ o w n e r
  *
  **************************************
  *
@@ -529,7 +525,6 @@ SLONG LCK_get_owner_handle(thread_db* tdbb, enum lck_t lock_type)
 #endif
 	switch (lock_type) {
 	case LCK_database:
-	case LCK_instance:
 	case LCK_bdb:
 	case LCK_rel_exist:
 	case LCK_rel_partners:
@@ -540,108 +535,23 @@ SLONG LCK_get_owner_handle(thread_db* tdbb, enum lck_t lock_type)
 	case LCK_record_locking:
 	case LCK_prc_exist:
 	//case LCK_range_relation: // PC_ENGINE
+	case LCK_backup_state:
 	case LCK_backup_alloc:
 	case LCK_backup_database:
-	case LCK_counter:
-	case LCK_monitor:
-	case LCK_tt_exist:
 		return *LCK_OWNER_HANDLE_DBB(dbb);
 	case LCK_attachment:
-	case LCK_page_space:
 	case LCK_relation:
 	case LCK_file_extend:
 	case LCK_tra:
 	case LCK_sweep:
 	case LCK_record:
 	case LCK_update_shadow:
-	case LCK_dsql_cache:
-	case LCK_backup_end:
-	case LCK_cancel:
 		return *LCK_OWNER_HANDLE_ATT(attachment);
 	default:
 		bug_lck("Invalid lock type in LCK_get_owner_handle ()");
 		/* Not Reached - bug_lck calls ERR_post */
 		return 0;
 	}
-}
-
-SLONG LCK_get_owner_handle_by_type(thread_db* tdbb, lck_owner_t lck_owner_type)
-{
-/**********************************************************
- *
- *	L C K _ g e t _ o w n e r _ h a n d l e _ b y _ t y p e
- *
- **********************************************************
- *
- * Functional description
- *	return the lock owner given a lock owner type.
- *
- *********************************************************/
-	SET_TDBB(tdbb);
-
-	switch(lck_owner_type)
-	{
-		case LCK_OWNER_process:
-			return *LCK_OWNER_HANDLE_PROCESS();
-		case LCK_OWNER_database:
-			return *LCK_OWNER_HANDLE_DBB(tdbb->tdbb_database);;
-		case LCK_OWNER_attachment:
-			return *LCK_OWNER_HANDLE_ATT(tdbb->tdbb_attachment);
-		default:
-			bug_lck("Invalid lock owner type in LCK_get_owner_handle_by_type ()");
-			return 0;
-	}
-}
-
-bool LCK_set_owner_handle(Jrd::thread_db* tdbb, Jrd::Lock* lock, SLONG owner_handle)
-{
-/**************************************
- *
- *	L C K _ s e t _ o w n e r _ h a n d l e
- *
- **************************************
- *
- * Functional description
- *	Change lock owner, remove request from old owner que and
- *  grant it onto new one.
- *
- **************************************/
-	fb_assert(LCK_CHECK_LOCK(lock));
-	fb_assert(lock->lck_physical > LCK_none);
-
-	bool result = LOCK_set_owner_handle(lock->lck_id, owner_handle);
-	if (result)
-		lock->lck_owner_handle = owner_handle;
-
-	return result;
-}
-
-SLONG LCK_increment(Jrd::thread_db* tdbb, Jrd::Lock* lock)
-{
-/**************************************
- *
- *	L C K _ i n c r e m e n t
- *
- **************************************
- *
- * Functional description
- *	Increment the lock data value.
- *
- **************************************/
-	SET_TDBB(tdbb);
-
-	fb_assert(lock);
-
-	fb_assert(lock->lck_type == LCK_counter);
-	fb_assert(lock->lck_logical == LCK_SR);
-
-	LCK_convert(tdbb, lock, LCK_PW, LCK_WAIT);
-	SLONG data = LCK_read_data(lock);
-	LCK_write_data(lock, ++data);
-	fb_assert(LCK_read_data(lock) == data);
-	LCK_convert(tdbb, lock, LCK_SR, LCK_WAIT);
-
-	return data;
 }
 
 
@@ -1002,7 +912,7 @@ void LCK_write_data(Lock* lock, SLONG data)
 }
 
 
-static void bug_lck(const TEXT* string)
+static void bug_lck(TEXT* string)
 {
 /**************************************
  *
@@ -1017,7 +927,7 @@ static void bug_lck(const TEXT* string)
  **************************************/
 	TEXT s[128];
 
-	sprintf(s, "Fatal lock interface error: %.96s", string);
+	sprintf(s, "Fatal lock interface error: %s", string);
 	gds__log(s);
 	ERR_post(isc_db_corrupt, isc_arg_string, string, 0);
 }
@@ -1047,7 +957,7 @@ static void check_lock(Lock* lock, USHORT level)
 #endif
 
 
-static bool compatible(const Lock* lock1, const Lock* lock2, USHORT level2)
+static bool compatible(Lock* lock1, Lock* lock2, USHORT level2)
 {
 /**************************************
  *
@@ -1251,7 +1161,7 @@ static void hash_allocate(Lock* lock)
 }
 
 
-static Lock* hash_get_lock(Lock* lock, USHORT* hash_slot, Lock*** prior)
+static Lock* hash_get_lock(Lock* lock, USHORT * hash_slot, Lock*** prior)
 {
 /**************************************
  *
@@ -1450,7 +1360,7 @@ static void internal_ast(Lock* lock)
 
 
 
-static bool internal_compatible(Lock* match, const Lock* lock, USHORT level)
+static bool internal_compatible(Lock* match, Lock* lock, USHORT level)
 {
 /**************************************
  *
@@ -1481,6 +1391,7 @@ static bool internal_compatible(Lock* match, const Lock* lock, USHORT level)
 
 /* now deliver the blocking asts, attempting to gain
    compatibility by getting everybody to downgrade */
+
 	internal_ast(match);
 
 /* make one more pass to see if all locks were downgraded */

@@ -29,6 +29,10 @@
 #include "../jrd/msg_encode.h"
 #include "../jrd/iberr.h"
 
+#ifdef WIN_NT
+#include "../jrd/jrd_pwd.h"
+#endif
+
 #ifndef INCLUDE_FB_BLK
 #include "../include/fb_blk.h"
 #endif
@@ -41,13 +45,14 @@
 #include "../jrd/svc_proto.h"
 #include "cmd_util_proto.h"
 
-using MsgFormat::SafeArg;
-
-
 void CMD_UTIL_put_svc_status(ISC_STATUS* svc_status,
 							 USHORT  facility,
 							 USHORT  errcode,
-							 const SafeArg& arg)
+							 USHORT arg1_t, const void* arg1,
+							 USHORT arg2_t, const void* arg2,
+							 USHORT arg3_t, const void* arg3,
+							 USHORT arg4_t, const void* arg4,
+							 USHORT arg5_t, const void* arg5)
 {
 /**************************************
  *
@@ -60,7 +65,9 @@ void CMD_UTIL_put_svc_status(ISC_STATUS* svc_status,
  *
  **************************************/
 
-	ISC_STATUS_ARRAY tmp_status;
+	ISC_STATUS_ARRAY tmp_status, warning_status;
+	int i, tmp_status_len = 0, status_len = 0, err_status_len = 0;
+	int warning_count = 0, warning_indx = 0;
 	bool duplicate = false;
 
 	/* stuff the status into temp buffer */
@@ -69,13 +76,26 @@ void CMD_UTIL_put_svc_status(ISC_STATUS* svc_status,
 	ISC_STATUS *status = tmp_status;
 	*status++ = isc_arg_gds;
 	*status++ = ENCODE_ISC_MSG(errcode, facility);
-	int tmp_status_len = 3;
+	tmp_status_len = 3;
 
-	// We preserve the five params of the old code.
-	// Don't want to overflow the status vector.
-	for (unsigned int loop = 0; loop < 5 && loop < arg.getCount(); ++loop)
-	{
-		SVC_STATUS_ARG(status, arg.getCell(loop));
+	if (arg1) {
+		SVC_STATUS_ARG(status, arg1_t, arg1);
+		tmp_status_len += 2;
+	}
+	if (arg2) {
+		SVC_STATUS_ARG(status, arg2_t, arg2);
+		tmp_status_len += 2;
+	}
+	if (arg3) {
+		SVC_STATUS_ARG(status, arg3_t, arg3);
+		tmp_status_len += 2;
+	}
+	if (arg4) {
+		SVC_STATUS_ARG(status, arg4_t, arg4);
+		tmp_status_len += 2;
+	}
+	if (arg5) {
+		SVC_STATUS_ARG(status, arg5_t, arg5);
 		tmp_status_len += 2;
 	}
 
@@ -88,13 +108,11 @@ void CMD_UTIL_put_svc_status(ISC_STATUS* svc_status,
 		MOVE_FASTER(tmp_status, svc_status, sizeof(ISC_STATUS) * tmp_status_len);
 	}
 	else {
-		int status_len = 0, warning_indx = 0;
 		PARSE_STATUS(svc_status, status_len, warning_indx);
 		if (status_len)
 			--status_len;
 
 		/* check for duplicated error code */
-		int i;
 		for (i = 0; i < ISC_STATUS_LENGTH; i++) {
 			if (svc_status[i] == isc_arg_end && i == status_len)
 				break;			/* end of argument list */
@@ -106,8 +124,7 @@ void CMD_UTIL_put_svc_status(ISC_STATUS* svc_status,
 				svc_status[i - 1] != isc_arg_warning &&
 				i + tmp_status_len - 2 < ISC_STATUS_LENGTH &&
 				(memcmp(&svc_status[i], &tmp_status[1],
-						sizeof(ISC_STATUS) * (tmp_status_len - 2)) == 0))
-			{
+						sizeof(ISC_STATUS) * (tmp_status_len - 2)) == 0)) {
 				/* duplicate found */
 				duplicate = true;
 				break;
@@ -115,17 +132,15 @@ void CMD_UTIL_put_svc_status(ISC_STATUS* svc_status,
 		}
 		if (!duplicate) {
 			/* if the status_vector has only warnings then adjust err_status_len */
-			int err_status_len = i;
-			if (err_status_len == 2 && warning_indx)
+			if ((err_status_len = i) == 2 && warning_indx)
 				err_status_len = 0;
 
-			ISC_STATUS_ARRAY warning_status;
-			int warning_count = 0;
 			if (warning_indx) {
 				/* copy current warning(s) to a temp buffer */
 				MOVE_CLEAR(warning_status, sizeof(warning_status));
 				MOVE_FASTER(&svc_status[warning_indx], warning_status,
-							sizeof(ISC_STATUS) * (ISC_STATUS_LENGTH - warning_indx));
+							sizeof(ISC_STATUS) * (ISC_STATUS_LENGTH -
+											  warning_indx));
 				PARSE_STATUS(warning_status, warning_count, warning_indx);
 			}
 

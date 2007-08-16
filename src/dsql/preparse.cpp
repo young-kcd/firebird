@@ -50,7 +50,7 @@ enum pp_vals {
 };
 
 
-const size_t MAX_TOKEN_SIZE = 1024;
+const int MAX_TOKEN_SIZE = 1024;
 static void generate_error(ISC_STATUS*, const Firebird::string&, SSHORT, SSHORT);
 static SSHORT get_next_token(const SCHAR**, const SCHAR*, Firebird::string&);
 static SSHORT get_token(ISC_STATUS*, SSHORT, bool, const SCHAR**,
@@ -58,7 +58,7 @@ static SSHORT get_token(ISC_STATUS*, SSHORT, bool, const SCHAR**,
 
 struct pp_table {
 	SCHAR symbol[10];
-	USHORT length;
+	SSHORT length;
 	SSHORT code;
 };
 
@@ -281,7 +281,7 @@ bool PREPARSE_execute(
 							reinterpret_cast<const ISC_SCHAR*>(dpb.getBuffer()), 
 							0);
 	}
-	catch (const Firebird::Exception& ex)
+	catch(const std::exception& ex)
 	{
 		Firebird::stuff_exception(user_status, ex);
 		return true;
@@ -393,7 +393,7 @@ static SSHORT get_next_token(
 			continue;
 		}
 		// CVC: End modification.
-		char_class = classes(c);
+		char_class = classes[c];
 		if (!(char_class & CHR_WHITE))
 			break;
 	}
@@ -429,9 +429,8 @@ static SSHORT get_next_token(
 /* Is it an integer? */
 
 	if (char_class & CHR_DIGIT) {
-		for (; s < stmt_end && (classes(c = *s) & CHR_DIGIT); ++s); // empty body
-		fb_assert(s >= start_of_token);
-		const size_t length = (s - start_of_token);
+		for (; s < stmt_end && (classes[c = *s] & CHR_DIGIT); ++s); // empty body
+		const ptrdiff_t length = (s - start_of_token);
 		*stmt = s;
 		if (length > MAX_TOKEN_SIZE) {
 			token.assign(start_of_token, MAX_TOKEN_SIZE);
@@ -445,7 +444,7 @@ static SSHORT get_next_token(
 
 	if (char_class & CHR_LETTER) {
 		token += UPPER(c);
-		for (; s < stmt_end && (classes(*s) & CHR_IDENT); s++) {
+		for (; s < stmt_end && (classes[static_cast<UCHAR>(*s)] & CHR_IDENT); s++) {
 			token += UPPER(*s);
 		}
 

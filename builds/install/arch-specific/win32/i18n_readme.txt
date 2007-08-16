@@ -23,9 +23,10 @@ available for download. See here for details:
 Therefore adding i18n support to the Firebird installer is extremely
 simple as all we need are translations of the Firebird specific messages.
 
-Currently the Firebird installer has support for English, French, German,
-Portuguese (standard), Hungarian and Slovenian installs. So there are still 
-opportunities for others to provide support for their native language.
+Currently the Firebird installer has support for Bosnian, Spanish, French, 
+German, Hungarian, Italian, Polish, Portuguese (standard), Russian and 
+Slovenian installs. So there are still opportunities for others to provide 
+support for their native language.
 
 
 How to add new languages
@@ -45,15 +46,15 @@ o You can use anonymous CVS to checkout the Win32 install kit with these
 
   [login]
 
-    cvs -d:pserver:anonymous@firebird.cvs.sourceforge.net:/cvsroot/firebird login
+    cvs -d:pserver:anonymous@cvs.sourceforge.net:/cvsroot/firebird login
 
   [checkout the Fb 1.5 Win32 installation kit]
 
-    cvs -z3 -d:pserver:anonymous@firebird.cvs.sourceforge.net:/cvsroot/firebird co -r B1_5_Release firebird2/src/install/arch-specific/win32
+    cvs -z3 -d:pserver:anonymous@cvs.sourceforge.net:/cvsroot/firebird co -r B1_5_Release firebird2/src/install/arch-specific/win32
 
-  [checkout the Fb 2.0 Win32 installation kit]
+  [checkout the Fb 2.0 Win32 installation kit (When it is ready)]
 
-    cvs -z3 -d:pserver:anonymous@firebird.cvs.sourceforge.net:/cvsroot/firebird co -r B2_0_Release firebird2/builds/install/arch-specific/win32
+    cvs -z3 -d:pserver:anonymous@cvs.sourceforge.net:/cvsroot/firebird co -r B2_0_Release firebird2/builds/install/arch-specific/win32
 
 
 o Each language has its own sub-directory under install\arch-specific\win32.

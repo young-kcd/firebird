@@ -43,6 +43,7 @@
 #include "../jrd/intl.h"
 #include "../jrd/dyn.h"
 #include "../jrd/ods.h"
+#include "../jrd/all_proto.h"
 #include "../jrd/blb_proto.h"
 #include "../jrd/cmp_proto.h"
 #include "../jrd/dyn_proto.h"
@@ -56,8 +57,6 @@
 #include "../jrd/isc_f_proto.h"
 #include "../jrd/thd.h"
 #include "../jrd/vio_proto.h"
-
-using MsgFormat::SafeArg;
 
 using namespace Jrd;
 
@@ -183,7 +182,7 @@ void DYN_UTIL_generate_constraint_name( thread_db* tdbb, Global* gbl, Firebird::
 	
 	do {
 		id = drq_g_nxt_con;
-		buffer.printf("INTEG_%" SQUADFORMAT,
+		buffer.printf("INTEG_%" QUADFORMAT "d",
 				(SINT64) DYN_UTIL_gen_unique_id(tdbb,
 												gbl,
 												drq_g_nxt_con,
@@ -209,10 +208,10 @@ void DYN_UTIL_generate_constraint_name( thread_db* tdbb, Global* gbl, Firebird::
 	} while (found);
 
 	}	// try
-	catch (const Firebird::Exception& ex) {
+	catch (const std::exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, id);
-		DYN_error_punt(true, 131);
+		DYN_error_punt(true, 131, NULL, NULL, NULL, NULL, NULL);
 		/* msg 131: "Generation of constraint name failed" */
 	}
 }
@@ -260,7 +259,7 @@ void DYN_UTIL_generate_field_name( thread_db* tdbb, Global* gbl, Firebird::MetaN
 
 	do {
 		id = drq_g_nxt_fld;
-		buffer.printf("RDB$%" SQUADFORMAT,
+		buffer.printf("RDB$%" QUADFORMAT "d",
 				(SINT64) DYN_UTIL_gen_unique_id(tdbb,
 												gbl,
 												drq_g_nxt_fld,
@@ -285,10 +284,10 @@ void DYN_UTIL_generate_field_name( thread_db* tdbb, Global* gbl, Firebird::MetaN
 	} while (found);
 
 	}	// try
-	catch (const Firebird::Exception& ex) {
+	catch (const std::exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, id);
-		DYN_error_punt(true, 81);
+		DYN_error_punt(true, 81, NULL, NULL, NULL, NULL, NULL);
 		/* msg 81: "Generation of field name failed" */
 	}
 }
@@ -337,10 +336,10 @@ void DYN_UTIL_generate_field_position(
 	*field_pos = field_position;
 
 	}	// try
-	catch (const Firebird::Exception& ex) {
+	catch (const std::exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1);
-		DYN_error_punt(true, 162);
+		DYN_error_punt(true, 162, NULL, NULL, NULL, NULL, NULL);
 		/* msg 162: "Looking up field position failed" */
 	}
 }
@@ -372,11 +371,11 @@ void DYN_UTIL_generate_index_name(thread_db* tdbb, Global* gbl,
 	do {
 		const SCHAR* format;
 		if (verb == isc_dyn_def_primary_key)
-			format = "RDB$PRIMARY%" SQUADFORMAT;
+			format = "RDB$PRIMARY%" QUADFORMAT "d";
 		else if (verb == isc_dyn_def_foreign_key)
-			format = "RDB$FOREIGN%" SQUADFORMAT;
+			format = "RDB$FOREIGN%" QUADFORMAT "d";
 		else
-			format = "RDB$%" SQUADFORMAT;
+			format = "RDB$%" QUADFORMAT "d";
 		id = drq_g_nxt_idx;
 		buffer.printf(format,
 				(SINT64) DYN_UTIL_gen_unique_id(tdbb,
@@ -402,10 +401,10 @@ void DYN_UTIL_generate_index_name(thread_db* tdbb, Global* gbl,
 		request = NULL;
 	} while (found);
 	}	// try
-	catch (const Firebird::Exception& ex) {
+	catch (const std::exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, id);
-		DYN_error_punt(true, 82);
+		DYN_error_punt(true, 82, NULL, NULL, NULL, NULL, NULL);
 		/* msg 82: "Generation of index name failed" */
 	}
 }
@@ -435,7 +434,7 @@ void DYN_UTIL_generate_trigger_name( thread_db* tdbb, Global* gbl, Firebird::Met
 
 	do {
 		id = drq_g_nxt_trg;
-		buffer.printf("CHECK_%" SQUADFORMAT,
+		buffer.printf("CHECK_%" QUADFORMAT "d",
 				(SINT64) DYN_UTIL_gen_unique_id(tdbb,
 												gbl,
 												drq_g_nxt_trg,
@@ -459,10 +458,10 @@ void DYN_UTIL_generate_trigger_name( thread_db* tdbb, Global* gbl, Firebird::Met
 		request = NULL;
 	} while (found);
 	}	// try
-	catch (const Firebird::Exception& ex) {
+	catch (const std::exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, id);
-		DYN_error_punt(true, 83);
+		DYN_error_punt(true, 83, NULL, NULL, NULL, NULL, NULL);
 		/* msg 83: "Generation of trigger name failed" */
 	}
 }
@@ -509,7 +508,7 @@ bool DYN_UTIL_get_prot(thread_db*		tdbb,
 	DYN_rundown_request(request, drq_l_prot_mask);
 
 	}	// try
-	catch (const Firebird::Exception& ex) {
+	catch (const std::exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, drq_l_prot_mask);
 		return false;
@@ -552,10 +551,10 @@ void DYN_UTIL_store_check_constraints(thread_db*				tdbb,
 		DYN_REQUEST(drq_s_chk_con) = request;
 	}
 	}	// try
-	catch (const Firebird::Exception& ex) {
+	catch (const std::exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, drq_s_chk_con);
-		DYN_error_punt(true, 122);
+		DYN_error_punt(true, 122, NULL, NULL, NULL, NULL, NULL);
 		/* msg 122: "STORE RDB$CHECK_CONSTRAINTS failed" */
 	}
 }
@@ -597,11 +596,11 @@ bool DYN_UTIL_is_array(thread_db* tdbb,
 			
 		return rc;
 	}
-	catch (const Firebird::Exception& ex)
+	catch (const std::exception& ex)
 	{
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, drq_dom_is_array);
-		DYN_error_punt(true, 227, domain_name.c_str());
+		DYN_error_punt(true, 227, domain_name.c_str(), NULL, NULL, NULL, NULL);
 		// msg 227: "DYN_UTIL_is_array failed for domain %s"
 		return false; // Keep compiler happy.
 	}
@@ -749,11 +748,12 @@ void DYN_UTIL_copy_domain(thread_db* tdbb,
 		//	DYN_REQUEST(drq_dom_copy) = request;
 
 	}
-	catch (const Firebird::Exception& ex)
+	catch (const std::exception& ex)
 	{
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1); //drq_dom_copy);
-		DYN_error_punt(true, 228, org_name.c_str());
+		DYN_error_punt(true, 228, org_name.c_str(), NULL, NULL, NULL, NULL);
 		// msg 228: "DYN_UTIL_copy_domain failed for domain %s"
 	}
 }
+

@@ -33,11 +33,11 @@ bool	ISC_check_process_existence(SLONG, SLONG, bool);
 //void	ISC_get_config(TEXT *, struct ipccfg *);
 //int		ISC_set_config(TEXT *, struct ipccfg *);
 TEXT*	ISC_get_host(TEXT *, USHORT);
-bool	ISC_get_user(TEXT*, int*, int*, TEXT*,
-					 TEXT*, int*, const TEXT*);
+int		ISC_get_user(TEXT*, int*, int*, TEXT*,
+											 TEXT*, int*, const TEXT*);
 SLONG	ISC_get_user_group_id(const TEXT*);
 void	ISC_set_user(const TEXT*);
-SLONG	ISC_set_prefix(const TEXT*, const TEXT*);
+SLONG	ISC_get_prefix(const TEXT*);
 void	ISC_prefix(TEXT*, const TEXT*);
 void	ISC_prefix_lock(TEXT*, const TEXT*);
 void	ISC_prefix_msg(TEXT*, const TEXT*);

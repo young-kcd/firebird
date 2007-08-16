@@ -53,15 +53,14 @@ public:
 	void init(JString elementName);
 	const char* getAttributeValue (const char *name, const char *defaultValue);
 	const char* getAttributeValue (const char *name);
-	const char* getAttributeName (int position) const;
+	const char* getAttributeName (int position);
 	Element* findChildIgnoreCase (const char *name);
 	Element* addChild (JString name);
 	Element* addAttribute (JString name, JString value);
 	void indent (int level, Stream *stream);
 	void genXML (int level, Stream *stream);
-	Element* findAttribute (const char *name);
 	Element* findAttribute (int seq);
-	const Element* findAttribute (int seq) const;
+	Element* findAttribute (const char *name);
 	Element* findChild (const char *name);
 	void print (int level);
 	void addAttribute (Element *child);

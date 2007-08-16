@@ -19,6 +19,8 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ * Added TCP_NO_DELAY option for superserver on Linux
+ * FSG 16.03.2001 
  *
  * 2002.10.28 Sean Leyne - Code cleanup, removed obsolete "MPEXL" port
  * 2002.10.28 Sean Leyne - Code cleanup, removed obsolete "DecOSF" port
@@ -161,9 +163,9 @@ int CLIB_ROUTINE server_main( int argc, char** argv)
 // In GCC version 3.1-3.3 we need to install special error handler
 // in order to get meaningful terminate() error message on stderr. 
 // In GCC 3.4 or later this is the default.
-//#if __GNUC__ == 3 && __GNUC_MINOR__ >= 1 && __GNUC_MINOR__ < 4
-//    std::set_terminate (__gnu_cxx::__verbose_terminate_handler);
-//#endif
+#if __GNUC__ == 3 && __GNUC_MINOR__ >= 1 && __GNUC_MINOR__ < 4
+    std::set_terminate (__gnu_cxx::__verbose_terminate_handler);
+#endif
 
 #ifdef VMS
 	argc = VMS_parse(&argv, argc);
@@ -200,10 +202,8 @@ int CLIB_ROUTINE server_main( int argc, char** argv)
 				case 'M':
 					INET_SERVER_flag |= SRVR_multi_client;
 					if (argv < end)
-					{
 						if (clients = atoi(*argv))
 							argv++;
-					}
 					multi_client = standalone = true;
 					break;
 
@@ -226,7 +226,7 @@ int CLIB_ROUTINE server_main( int argc, char** argv)
 #endif /* SUPERSERVER */
 
 				case 'E':
-					if (ISC_set_prefix(p, *argv) == -1)
+					if (ISC_get_prefix(p) == -1)
 						printf("Invalid argument Ignored\n");
 					else
 						argv++;	/* do not skip next argument if this one
@@ -258,9 +258,9 @@ int CLIB_ROUTINE server_main( int argc, char** argv)
 					printf("  -h|? : print this help\n");
                     printf("\n");
                     printf("  (The following -e options used to be -h options)\n");
-					printf("  -e <firebird_root_dir>   : set firebird_root path\n");            
-					printf("  -el <firebird_lock_dir>  : set runtime firebird_lock dir\n");            
-					printf("  -em <firebird_msg_dir>   : set firebird_msg dir path\n");            
+					printf("  -e<firebird_root_dir>   : set firebird_root path\n");            
+					printf("  -el<firebird_lock_dir>   : set runtime firebird_lock dir\n");            
+					printf("  -em<firebird_msg_dir>   : set firebird_msg dir path\n");            
 					printf("  -z   : print version\n");            
 
 					exit(FINI_OK);
@@ -273,10 +273,6 @@ int CLIB_ROUTINE server_main( int argc, char** argv)
 					break;
 			}
 	}
-
-	// activate paths set with -e family of switches
-	ISC_set_prefix(0, 0);
-
 #if (defined SUPERSERVER && defined UNIX )
 	/* set_signal(SIGPIPE, signal_sigpipe_handler); */
 	set_signal(SIGPIPE, signal_handler);
@@ -572,8 +568,9 @@ static THREAD_ENTRY_DECLARE shutdown_thread(THREAD_ENTRY_PARAM arg)
 	catch (Firebird::status_exception& e)
 	{
 		TEXT buffer[1024];
-        const ISC_STATUS* vector = e.value();
-		if (! (vector && fb_interpret(buffer, sizeof(buffer), &vector)))
+        const ISC_STATUS* vector = 0;
+		if (! (e.status_known() && (vector = e.value()) &&
+			  fb_interpret(buffer, sizeof(buffer), &vector)))
 		{
 			strcpy(buffer, "Unknown failure in semaphore::enter()");
 		}
@@ -609,8 +606,9 @@ static void signal_term(int)
 	catch (Firebird::status_exception& e)
 	{
 		TEXT buffer[1024];
-        const ISC_STATUS* vector = e.value();
-		if (! (vector && fb_interpret(buffer, sizeof(buffer), &vector)))
+        const ISC_STATUS* vector = 0;
+		if (! (e.status_known() && (vector = e.value()) &&
+			  fb_interpret(buffer, sizeof(buffer), &vector)))
 		{
 			strcpy(buffer, "Unknown failure in semaphore::release()");
 		}

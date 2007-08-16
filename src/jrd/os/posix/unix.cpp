@@ -54,6 +54,7 @@
 #include "../jrd/cch.h"
 #include "../jrd/ibase.h"
 #include "gen/iberror.h"
+#include "../jrd/all_proto.h"
 #include "../jrd/cch_proto.h"
 #include "../jrd/err_proto.h"
 #include "../jrd/gds_proto.h"
@@ -78,11 +79,15 @@ using namespace Jrd;
 #endif
 
 #ifdef SUPERSERVER
-#define THD_IO_MUTEX_LOCK(mutx)		mutx.enter()
-#define THD_IO_MUTEX_UNLOCK(mutx)	mutx.leave()
+#define THD_IO_MUTEX_INIT(mutx)
+#define THD_IO_MUTEX_LOCK(mutx)		mutx->enter()
+#define THD_IO_MUTEX_UNLOCK(mutx)	mutx->leave()
+#define THD_IO_MUTEX_DESTROY(mutx)
 #else
+#define THD_IO_MUTEX_INIT(mutx)
 #define THD_IO_MUTEX_LOCK(mutx)
 #define THD_IO_MUTEX_UNLOCK(mutx)
+#define THD_IO_MUTEX_DESTROY(mutx)
 #endif
 
 #define IO_RETRY	20
@@ -118,7 +123,7 @@ using namespace Jrd;
 
 static jrd_file* seek_file(jrd_file*, BufferDesc*, UINT64 *, ISC_STATUS *);
 static jrd_file* setup_file(Database*, const Firebird::PathName&, int);
-static bool unix_error(TEXT*, const jrd_file*, ISC_STATUS, ISC_STATUS*);
+static bool unix_error(TEXT*, jrd_file*, ISC_STATUS, ISC_STATUS*);
 #if defined PREAD_PWRITE && !(defined HAVE_PREAD && defined HAVE_PWRITE)
 static SLONG pread(int, SCHAR *, SLONG, SLONG);
 static SLONG pwrite(int, SCHAR *, SLONG, SLONG);
@@ -154,7 +159,7 @@ int PIO_add_file(Database* dbb, jrd_file* main_file, const Firebird::PathName& f
  *	have been locked before entry.
  *
  **************************************/
-	jrd_file* new_file = PIO_create(dbb, file_name, false, false, false);
+	jrd_file* new_file = PIO_create(dbb, file_name, false, false);
 	if (!new_file)
 		return 0;
 
@@ -191,12 +196,36 @@ void PIO_close(jrd_file* main_file)
 		if (file->fil_desc && file->fil_desc != -1) {
 			close(file->fil_desc);
 			file->fil_desc = -1;
+#ifndef PREAD_PWRITE
+			THD_IO_MUTEX_DESTROY(file->fil_mutex);
+#endif
 		}
 	}
 }
 
 
-jrd_file* PIO_create(Database* dbb, const Firebird::PathName& string, bool overwrite, bool /*temporary*/, bool /*share_delete*/)
+int PIO_connection(const Firebird::PathName& file_name)
+{
+/**************************************
+ *
+ *	P I O _ c o n n e c t i o n
+ *
+ **************************************
+ *
+ * Functional description
+ *	Analyze a file specification and determine whether a page/lock
+ *	server is required and available.  If so, return a "connection"
+ *	block.  If not, return NULL.
+ *
+ *	Note: The file name must have been expanded prior to this call.
+ *
+ **************************************/
+
+	return 0;
+}
+
+
+jrd_file* PIO_create(Database* dbb, const Firebird::PathName& string, bool overwrite, bool share_delete)
 {
 /**************************************
  *
@@ -236,8 +265,6 @@ jrd_file* PIO_create(Database* dbb, const Firebird::PathName& string, bool overw
 				 isc_arg_gds, isc_io_create_err, isc_arg_unix, errno, 0);
 	}
 
-	// posix_fadvise(desc, 0, 0, POSIX_FADV_RANDOM);
-
 /* File open succeeded.  Now expand the file name. */
 
 	Firebird::PathName expanded_name(string);
@@ -247,7 +274,7 @@ jrd_file* PIO_create(Database* dbb, const Firebird::PathName& string, bool overw
 	{
 		file = setup_file(dbb, expanded_name, desc);
 	} 
-	catch (const Firebird::Exception&) 
+	catch(const std::exception&) 
 	{
 		close(desc);
 		throw;
@@ -256,7 +283,7 @@ jrd_file* PIO_create(Database* dbb, const Firebird::PathName& string, bool overw
 }
 
 
-bool PIO_expand(const TEXT* file_name, USHORT file_length, TEXT* expanded_name, size_t len_expanded)
+int PIO_expand(const TEXT* file_name, USHORT file_length, TEXT* expanded_name, size_t len_expanded)
 {
 /**************************************
  *
@@ -272,23 +299,6 @@ bool PIO_expand(const TEXT* file_name, USHORT file_length, TEXT* expanded_name, 
 
 	return ISC_expand_filename(file_name, file_length, 
 		expanded_name, len_expanded, false);
-}
-
-
-void PIO_extend(jrd_file* /*main_file*/, const ULONG /*extPages*/, const USHORT /*pageSize*/)
-{
-/**************************************
- *
- *	P I O _ e x t e n d
- *
- **************************************
- *
- * Functional description
- *	Extend file by extPages pages of pageSize size. 
- *
- **************************************/
-	// not implemented
-	return;
 }
 
 
@@ -320,7 +330,7 @@ void PIO_flush(jrd_file* main_file)
 }
 
 
-void PIO_force_write(jrd_file* file, bool flag, bool notUseFSCache)
+void PIO_force_write(jrd_file* file, bool flag)
 {
 /**************************************
  *
@@ -359,50 +369,13 @@ void PIO_force_write(jrd_file* file, bool flag, bool notUseFSCache)
 	else 
 	{
 		if (flag) {
-			file->fil_flags |= FIL_force_write;
+			file->fil_flags |= (FIL_force_write | FIL_force_write_init);
 		}
 		else {
 			file->fil_flags &= ~FIL_force_write;
 		}
 	}
 #endif
-}
-
-
-ULONG PIO_get_number_of_pages(const jrd_file* file, const USHORT pagesize)
-{
-/**************************************
- *
- *	P I O _ g e t _ n u m b e r _ o f _ p a g e s
- *
- **************************************
- *
- * Functional description
- *	Compute number of pages in file, based only on file size.
- *
- **************************************/
-
-	if (file->fil_desc == -1) {
-		unix_error("fstat", file, isc_io_access_err, 0);
-		return (0);
-	}
-
-	struct stat statistics;
-	if (fstat(file->fil_desc, &statistics)) {
-		unix_error("fstat", file, isc_io_access_err, 0);
-	}
-
-	const UINT64 length = statistics.st_size;
-
-/****
-#ifndef sun
-length = statistics.st_size;
-#else
-length = statistics.st_blocks * statistics.st_blksize;
-#endif
-****/
-
-	return (length + pagesize - 1) / pagesize;
 }
 
 
@@ -422,8 +395,7 @@ void PIO_header(Database* dbb, SCHAR * address, int length)
 	int i;
 	UINT64 bytes;
 
-	PageSpace* pageSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
-	jrd_file* file = pageSpace->file;
+	jrd_file* file = dbb->dbb_file;
 
 	SignalInhibit siHolder;
 
@@ -496,11 +468,91 @@ void PIO_header(Database* dbb, SCHAR * address, int length)
 }
 
 
+SLONG PIO_max_alloc(Database* dbb)
+{
+/**************************************
+ *
+ *	P I O _ m a x _ a l l o c
+ *
+ **************************************
+ *
+ * Functional description
+ *	Compute last physically allocated page of database.
+ *
+ **************************************/
+	jrd_file* file;
+
+	for (file = dbb->dbb_file; file->fil_next; file = file->fil_next);
+
+	if (file->fil_desc == -1) {
+		unix_error("fstat", file, isc_io_access_err, 0);
+		return (0);
+	}
+
+	struct stat statistics;
+	if (fstat(file->fil_desc, &statistics)) {
+		unix_error("fstat", file, isc_io_access_err, 0);
+	}
+
+	UINT64 length = statistics.st_size;
+
+/****
+#ifndef sun
+length = statistics.st_size;
+#else
+length = statistics.st_blocks * statistics.st_blksize;
+#endif
+****/
+
+	return file->fil_min_page - file->fil_fudge +
+		(length + dbb->dbb_page_size - 1) / dbb->dbb_page_size;
+}
+
+
+SLONG PIO_act_alloc(Database* dbb)
+{
+/**************************************
+ *
+ *	P I O _ a c t  _ a l l o c
+ *
+ **************************************
+ *
+ * Functional description
+ *  Compute actual number of physically allocated pages of database.
+ *
+ **************************************/
+	struct stat statistics;
+	ULONG tot_pages = 0;
+
+/**
+ **  Traverse the linked list of files and add up the number of pages
+ **  in each file
+ **/
+	for (jrd_file* file = dbb->dbb_file; file != NULL; file = file->fil_next) {
+		if (file->fil_desc == -1) {
+			unix_error("fstat", file, isc_io_access_err, 0);
+			return (0);
+		}
+
+		if (fstat(file->fil_desc, &statistics)) {
+			unix_error("fstat", file, isc_io_access_err, 0);
+		}
+
+		UINT64 length = statistics.st_size;
+
+		tot_pages += (length + dbb->dbb_page_size - 1) / dbb->dbb_page_size;
+	}
+
+	return tot_pages;
+}
+
+
 jrd_file* PIO_open(Database* dbb,
 			 const Firebird::PathName& string,
 			 bool trace_flag,
+			 blk* connection, 
 			 const Firebird::PathName& file_name,
-			 bool /*share_delete*/)
+			 bool share_delete)
 {
 /**************************************
  *
@@ -509,7 +561,8 @@ jrd_file* PIO_open(Database* dbb,
  **************************************
  *
  * Functional description
- *	Open a database file.
+ *	Open a database file.  If a "connection" block is provided, use
+ *	the connection to communication with a page/lock server.
  *
  **************************************/
 	int desc, flag;
@@ -547,13 +600,10 @@ jrd_file* PIO_open(Database* dbb,
 			 * the Header Page flag setting to make sure that the database is set
 			 * ReadOnly.
 			 */
-			PageSpace* pageSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
-			if (!pageSpace->file)
+			if (!dbb->dbb_file)
 				dbb->dbb_flags |= DBB_being_opened_read_only;
 		}
 	}
-
-	// posix_fadvise(desc, 0, 0, POSIX_FADV_RANDOM);
 
 #ifdef SUPPORT_RAW_DEVICES
 	/* At this point the file has successfully been opened in either RW or RO
@@ -575,8 +625,7 @@ jrd_file* PIO_open(Database* dbb,
 	jrd_file *file;
 	try {
 		file = setup_file(dbb, string, desc);
-	}
-	catch (const Firebird::Exception&) {
+	} catch(const std::exception&) {
 		close(desc);
 		throw;
 	}
@@ -672,7 +721,6 @@ bool PIO_read(jrd_file* file, BufferDesc* bdb, Ods::pag* page, ISC_STATUS* statu
 		}
 	}
 
-	// posix_fadvise(file->desc, offset, size, POSIX_FADV_NOREUSE);
 	return true;
 }
 
@@ -748,7 +796,6 @@ bool PIO_write(jrd_file* file, BufferDesc* bdb, Ods::pag* page, ISC_STATUS* stat
 	THD_IO_MUTEX_UNLOCK(file->fil_mutex);
 #endif
 
-	// posix_fadvise(file->desc, offset, size, POSIX_FADV_DONTNEED);
 	return true;
 }
 
@@ -768,7 +815,7 @@ static jrd_file* seek_file(jrd_file* file, BufferDesc* bdb, UINT64* offset,
  *
  **************************************/
 	Database* dbb = bdb->bdb_dbb;
-	ULONG page = bdb->bdb_page.getPageNum();
+	ULONG page = bdb->bdb_page;
 
 	for (;; file = file->fil_next)
 	{
@@ -834,11 +881,13 @@ static jrd_file* setup_file(Database* dbb, const Firebird::PathName& file_name, 
 	file->fil_max_page = -1UL;
 	MOVE_FAST(file_name.c_str(), file->fil_string, file_name.length());
 	file->fil_string[file_name.length()] = '\0';
+#ifndef PREAD_PWRITE
+	THD_IO_MUTEX_INIT(file->fil_mutex);
+#endif
 
 /* If this isn't the primary file, we're done */
 
-	PageSpace* pageSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
-	if (pageSpace && pageSpace->file)
+	if (dbb->dbb_file)
 		return file;
 
 /* Build unique lock string for file and construct lock block */
@@ -883,9 +932,8 @@ static jrd_file* setup_file(Database* dbb, const Firebird::PathName& file_name, 
 			SCHAR spare_memory[MIN_PAGE_SIZE * 2];
 			SCHAR *header_page_buffer = (SCHAR*) FB_ALIGN((IPTR)spare_memory, MIN_PAGE_SIZE);
 		
-			PageSpace* pageSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
 			try {
-				pageSpace->file = file;
+				dbb->dbb_file = file;
 				PIO_header(dbb, header_page_buffer, MIN_PAGE_SIZE);
 				/* Rewind file pointer */
 				if (lseek (file->fil_desc, LSEEK_OFFSET_CAST 0, 0) == (off_t)-1)
@@ -896,13 +944,12 @@ static jrd_file* setup_file(Database* dbb, const Firebird::PathName& file_name, 
 						isc_arg_unix, errno, 0);
 				if ((reinterpret_cast<Ods::header_page*>(header_page_buffer)->hdr_flags & Ods::hdr_shutdown_mask) == Ods::hdr_shutdown_single)
 					ERR_post(isc_shutdown, isc_arg_cstring, file_name.length(), ERR_cstring(file_name), 0);
-				pageSpace->file = NULL; // Will be set again later by the caller				
-			}
-			catch (const Firebird::Exception&) {
+				dbb->dbb_file = NULL; // Will be set again later by the caller				
+			} catch(const std::exception&) {
 				delete dbb->dbb_lock;
 				dbb->dbb_lock = NULL;
 				delete file;
-				pageSpace->file = NULL; // Will be set again later by the caller
+				dbb->dbb_file = NULL; // Will be set again later by the caller
 				throw;
 			}
 		}
@@ -914,7 +961,7 @@ static jrd_file* setup_file(Database* dbb, const Firebird::PathName& file_name, 
 
 static bool unix_error(
 						  TEXT* string,
-						  const jrd_file* file, ISC_STATUS operation,
+						  jrd_file* file, ISC_STATUS operation,
 						  ISC_STATUS* status_vector)
 {
 /**************************************

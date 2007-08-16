@@ -110,7 +110,6 @@ namespace Firebird
 		public:
 			const_iterator() : lst(0), pos(0) { }
 			explicit const_iterator(const iterator& it) : lst(it.lst), pos(it.pos) {}
-			explicit const_iterator(iterator& it) : lst(it.lst), pos(it.pos) {}
 /*
 			const_iterator& operator=(const ObjectsArray& a)
 			{
@@ -252,25 +251,6 @@ namespace Firebird
 				delete getPointer(i);
 			}
 			inherited::clear(); 
-		}
-		ObjectsArray<T, A>& operator =(const ObjectsArray<T, A>& L) 
-		{
-			while (this->count > L.count) 
-			{
-				delete inherited::pop();
-			}
-			for (size_t i = 0; i < L.count; i++) 
-			{
-				if (i < this->count)
-				{
-					(*this)[i] = L[i];
-				}
-				else 
-				{
-					add(L[i]);
-				}
-			}
-			return *this;
 		}
 	};
 

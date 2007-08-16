@@ -91,11 +91,6 @@ struct internal_user_data {
 	TEXT	dba_user_name [USER_NAME_LEN];	/* the user's name */
 	bool	dba_user_name_entered;	/* user name entered flag */
 	bool	dba_user_name_specified;/* database specified flag */
-#ifdef TRUSTED_SERVICES
-	TEXT	dba_trust_user_name [USER_NAME_LEN];	/* the trusted dba user's name */
-	bool	dba_trust_user_name_entered;	/* trusted dba user name entered flag */
-	bool	dba_trust_user_name_specified;/* trusted dba user name specified flag */
-#endif
 	TEXT	dba_password [NAME_LEN];	/* the user's name */
 	bool	dba_password_entered;	/* user name entered flag */
 	bool	dba_password_specified;	/* database specified flag */
@@ -105,9 +100,6 @@ struct internal_user_data {
 	TEXT	database_name [DATABASE_LEN];	/* database to manage name */
 	bool	database_name_entered;		/* database entered flag */
 	bool	database_name_specified;		/* database specified flag */
-#ifdef TRUSTED_AUTH
-	bool	trusted_auth;	/* use trusted authentication */
-#endif
 
 	// force NULLs in this ugly structure to avoid foolish bugs
 	internal_user_data() 
@@ -268,8 +260,6 @@ const USHORT GsecMsg87	= 87;	/* -database <security database> */
 const USHORT GsecMsg88	= 88;	/* -z */
 const USHORT GsecMsg89	= 89;	/* displaying version number: */
 const USHORT GsecMsg90	= 90;	/* z (interactive only) */
-const USHORT GsecMsg91	= 91;	/* -trusted (use trusted authentication) */
-const USHORT GsecMsg92	= 92;	/* invalid switch specified in interactive mode */
 
 #endif /* UTILITIES_GSEC_H */
 

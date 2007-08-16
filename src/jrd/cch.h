@@ -28,18 +28,6 @@
 #include "../jrd/os/pio.h"
 #ifdef SUPERSERVER_V2
 #include "../jrd/sbm.h"
-#include "../jrd/pag.h"
-#endif
-
-//#define CCH_DEBUG
-
-#ifdef CCH_DEBUG
-DEFINE_TRACE_ROUTINE(cch_trace);
-#define CCH_TRACE(args) cch_trace args
-#define CCH_TRACE_AST(message) gds__trace(message)
-#else
-#define CCH_TRACE(args) /* nothing */
-#define CCH_TRACEE_AST(message) /* nothing */
 #endif
 
 struct exp_index_buf;
@@ -63,17 +51,12 @@ class Database;
 const ULONG MIN_PAGE_BUFFERS = 50;
 const ULONG MAX_PAGE_BUFFERS = 131072;
 
-#define DIRTY_LIST
-//#define DIRTY_TREE
-
-#ifdef DIRTY_TREE
 /* AVL-balanced tree node */
 
 struct BalancedTreeNode {
 	BufferDesc* bdb_node;
 	SSHORT comp;
 };
-#endif // DIRTY_TREE
 
 /* BufferControl -- Buffer control block -- one per system */
 
@@ -90,13 +73,7 @@ public:
 	UCharStack	bcb_memory;			/* Large block partitioned into buffers */
 	que			bcb_in_use;			/* Que of buffers in use */
 	que			bcb_empty;			/* Que of empty buffers */
-#ifdef DIRTY_TREE
 	BufferDesc*	bcb_btree;			/* root of dirty page btree */
-#endif 
-#ifdef DIRTY_LIST
-	que			bcb_dirty;			// que of dirty buffers
-	SLONG		bcb_dirty_count;	// count of pages in dirty page btree 
-#endif 
 	Precedence*	bcb_free;			/* Free precedence blocks */
 	que			bcb_free_lwt;		/* Free latch wait blocks */
 	SSHORT		bcb_flags;			/* see below */
@@ -112,7 +89,7 @@ public:
 const int BCB_keep_pages	= 1;	/* set during btc_flush(), pages not removed from dirty binary tree */
 const int BCB_cache_writer	= 2;	/* cache writer thread has been started */
 //const int BCB_checkpoint_db	= 4;	// WAL has requested a database checkpoint
-const int BCB_writer_start  = 4;    // cache writer thread is starting now
+const int BCB_writer_start	= 4;	// cache writer thread is starting now
 const int BCB_writer_active	= 8;	/* no need to post writer event count */
 #ifdef SUPERSERVER_V2
 const int BCB_cache_reader	= 16;	/* cache reader thread has been started */
@@ -127,29 +104,22 @@ const int BDB_max_shared	= 20;	/* maximum number of shared latch owners per Buff
 
 class BufferDesc : public pool_alloc<type_bdb>
 {
-public:
-	BufferDesc() : bdb_page(0, 0) {};
-
+    public:
 	Database*	bdb_dbb;				/* Database block (for ASTs) */
 	Lock*		bdb_lock;				/* Lock block for buffer */
 	que			bdb_que;				/* Buffer que */
 	que			bdb_in_use;				/* queue of buffers in use */
-#ifdef DIRTY_LIST
-	que			bdb_dirty;				// dirty pages LRU queue
-#endif 
 	Ods::pag*	bdb_buffer;				/* Actual buffer */
 	exp_index_buf*	bdb_expanded_buffer;	/* expanded index buffer */
 	//BlockingThread*	bdb_blocked;		// Blocked attachments block 
-	PageNumber	bdb_page;				/* Database page number in buffer */
+	SLONG		bdb_page;				/* Database page number in buffer */
 	SLONG		bdb_incarnation;
 	ULONG		bdb_transactions;		/* vector of dirty flags to reduce commit overhead */
 	SLONG		bdb_mark_transaction;	/* hi-water mark transaction to defer header page I/O */
-#ifdef DIRTY_TREE
 	BufferDesc*	bdb_left;				/* dirty page binary tree link */
 	BufferDesc*	bdb_right;				/* dirty page binary tree link */
 	BufferDesc*	bdb_parent;				/* dirty page binary tree link */
 	SSHORT		bdb_balance;			/* AVL-tree balance (-1, 0, 1) */
-#endif
 	que			bdb_lower;				/* lower precedence que */
 	que			bdb_higher;				/* higher precedence que */
 	que			bdb_waiters;			/* latch wait que */
@@ -159,14 +129,16 @@ public:
 	USHORT		bdb_flags;
 	SSHORT		bdb_use_count;			/* Number of active users */
 	SSHORT		bdb_scan_count;			/* concurrent sequential scans */
+	USHORT		bdb_write_direction;    // Where to write buffer, NBAK
 	ULONG       bdb_difference_page;    // Number of page in difference file, NBAK
-	SLONG		bdb_backup_lock_owner;	// Logical owner of database_lock for buffer
+	SLONG       bdb_diff_generation;    /* Number of backup lock/unlock (NBAK) cycle for 
+										   this database in current process.
+										   Used in CS only. */
 	thread_db*	bdb_shared[BDB_max_shared];	/* threads holding shared latches */
 };
 
 /* bdb_flags */
 
-// to clear BDB_dirty use clear_page_dirty_flag()
 const int BDB_dirty				= 1;		/* page has been updated but not written yet */
 const int BDB_garbage_collect	= 2;		/* left by scan for garbage collector */
 const int BDB_writer			= 4;		/* someone is updating the page */
@@ -187,6 +159,13 @@ const int BDB_no_blocking_ast	= 32768;	/* No blocking AST registered with page l
 /* bdb_ast_flags */
 
 const int BDB_blocking 			= 1;	/* a blocking ast was sent while page locked */
+
+/* bdb_write_direction values */
+
+const int BDB_write_undefined	= 0;
+const int BDB_write_normal		= 1;
+const int BDB_write_diff		= 2;
+const int BDB_write_both		= 3;
 
 
 /* PRE -- Precedence block */

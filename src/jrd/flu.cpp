@@ -59,6 +59,7 @@
 
 #include "../jrd/flu_proto.h"
 #include "../jrd/gds_proto.h"
+#include "../jrd/dls_proto.h"
 #include "../jrd/err_proto.h"
 
 #include "gen/iberror.h"
@@ -388,7 +389,7 @@ FPTR_INT ISC-lookup-entrypoint(TEXT* module,
 		}
 
 	REPLACE THIS COMPILER ERROR WITH CODE TO VERIFY THAT THE MODULE IS FOUND
-		EITHER IN $FIREBIRD:UDF, or $FIREBIRD:intl,
+		EITHER IN $INTERBASE:UDF, or $INTERBASE:intl,
 		OR IN ONE OF THE DIRECTORIES NAMED IN EXTERNAL_FUNCTION_DIRECTORY
 		LINES IN ISC_CONFIG.for (p = absolute_module; *p && *p != ' '; p++);
 

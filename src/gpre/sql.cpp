@@ -976,7 +976,7 @@ void SQL_relation_name(TEXT* r_name,
 
 	gpre_sym* symbol = MSC_find_symbol(gpreGlob.token_global.tok_symbol, SYM_database);
 	if (symbol) {
-		if (strlen(symbol->sym_name) >= unsigned(NAME_SIZE))
+		if (strlen(symbol->sym_name) >= NAME_SIZE)
 			PAR_error("Database alias too long");
 			
 		strcpy(db_name, symbol->sym_name); // this is the alias, not the path
@@ -2245,6 +2245,16 @@ static act* act_declare(void)
 			symbol->sym_type =
 				(delimited) ? SYM_delimited_cursor : SYM_cursor;
 			request->req_rse = SQE_select(request, false);
+			if (MSC_match(KW_FOR)) {
+				if (!MSC_match(KW_UPDATE))
+					CPR_s_error("UPDATE");
+				if (!MSC_match(KW_OF))
+					CPR_s_error("OF");
+
+				do {
+					CPR_token();
+				} while (MSC_match(KW_COMMA));
+			}
 			EXP_rse_cleanup(request->req_rse);
 		}
 		else if (MSC_match(KW_READ)) {
@@ -3808,7 +3818,7 @@ static act* act_open_blob( ACT_T act_op, gpre_sym* symbol)
 
 		/*
 		 *  Even if no FILTER was specified, we set one up for the special
-		 *  case of Firebird TEXT blobs, in order to do character set
+		 *  case of InterBase TEXT blobs, in order to do character set
 		 *  transliteration from the column-declared character set of the
 		 *  blob to the process character set (CS_dynamic).
 		 *
@@ -5181,7 +5191,7 @@ static void pair( GPRE_NOD expr, GPRE_NOD field_expr)
 
 static void par_array( gpre_fld* field)
 {
-	USHORT i = 0;
+	SSHORT i = 0;
 
 //  Pick up ranges 
 

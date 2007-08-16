@@ -47,34 +47,31 @@ public:
 	ConfigFile(int configFlags);
 
 //protected:
-	virtual ~ConfigFile();
+	virtual ~ConfigFile(void);
 
 public:
-	InputFile* openConfigFile();
+	InputFile* openConfigFile(void);
 	
-	void			parse();
-	Element*		parseObject();
-	Element*		parseAttribute();
+	void parse(void);
+	Element*		parseObject(void);
+	Element*		parseAttribute(void);
 	ConfObject*		findObject(const char* objectType, const char* objectName);
-	const char*		getRootDirectory();
+	const char*		getRootDirectory(void);
 	ConfObject*		getObject(const char* objectType);
 	Element*		findGlobalAttribute(const char *attributeName);
-	const char*		getInstallDirectory();
+	const char*		getInstallDirectory(void);
 	virtual JString	expand(JString rawString);
 
+	Element		*objects;
+	JString		rootDirectory;
+	JString		installDirectory;
+	JString		currentDirectory;
+	Element		*hashTable [HASH_SIZE];
+	
 	const char* translate(const char *value, Element *object);
 	void init(int configFlags);
 	ConfigFile(const char* configFile, int configFlags);
 	void wildCardInclude(const char* fileName);
-
-	Element*	objects;
-
-private:
-	JString		rootDirectory;
-	JString		installDirectory;
-	JString		currentDirectory;
-	Element*	hashTable [HASH_SIZE];
-
 };
 END_NAMESPACE
 

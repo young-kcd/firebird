@@ -39,10 +39,6 @@ dnl Should Classic Server run services as thread or as process?
 dnl Default - run as processes (empty value).
 service_thread_CS=""
 
-dnl Should system editline and/or icu be used 
-STD_EDITLINE=false
-STD_ICU=false
-RPM64=
 
 case "$target" in
   *-*-darwin*)
@@ -66,7 +62,7 @@ case "$target" in
     ;;
 
   *-gentoo-freebsd*)
-    MAKEFILE_PREFIX=freebsd
+    MAKEFILE_PREFIX=freebsd 
     PLATFORM=GENTOOFREEBSD
     AC_DEFINE(FREEBSD, 1, [Define this if OS is FreeBSD])
     LOCK_MANAGER_FLG=Y
@@ -83,18 +79,6 @@ case "$target" in
     SHRLIB_EXT=so
     ;;
 
-  mipsel-*-linux*)
-    MAKEFILE_PREFIX=linux_mipsel
-    INSTALL_PREFIX=linux
-    PLATFORM=LINUX
-    AC_DEFINE(LINUX)
-    LOCK_MANAGER_FLG=Y
-    EDITLINE_FLG=Y
-    SHRLIB_EXT=so
-    PTHREAD_CFLAGS=-pthread
-    PTHREAD_LIBS=-lpthread
-    ;;
-
   x86_64*-*-linux*)
     MAKEFILE_PREFIX=linux_amd64
     INSTALL_PREFIX=linux
@@ -105,7 +89,6 @@ case "$target" in
     SHRLIB_EXT=so
     libdir=/usr/lib64
     CPU_TYPE=amd64
-	RPM64='()(64bit)'
     ;;
 
   sparc*-*-linux*)
@@ -118,20 +101,20 @@ case "$target" in
     SHRLIB_EXT=so
     ;;
 
-  powerpc*-*-linux*)
-    MAKEFILE_PREFIX=linux_powerpc
-    INSTALL_PREFIX=linux
+  i*86*-*-linux*)
+    MAKEFILE_PREFIX=linux
     PLATFORM=LINUX
-    AC_DEFINE(LINUX, 1, [Define this if OS is Linux])
+    AC_DEFINE(LINUX)
     LOCK_MANAGER_FLG=Y
     EDITLINE_FLG=Y
     SHRLIB_EXT=so
     ;;
 
-  i*86*-*-linux*)
-    MAKEFILE_PREFIX=linux
+  powerpc*-*-linux*)
+    MAKEFILE_PREFIX=linux_ppc
+    INSTALL_PREFIX=linux
     PLATFORM=LINUX
-    AC_DEFINE(LINUX)
+    AC_DEFINE(LINUX, 1, [Define this if OS is Linux])
     LOCK_MANAGER_FLG=Y
     EDITLINE_FLG=Y
     SHRLIB_EXT=so
@@ -230,7 +213,6 @@ AC_SUBST(SHRLIB_EXT)
 AC_SUBST(ICU_PLATFORM)
 AC_SUBST(service_thread_CS)
 AC_DEFINE(CASE_SENSITIVITY, false, [Define this if paths are case sensitive])
-AC_SUBST(RPM64)
 
 
 dnl Some controllable options
@@ -310,32 +292,7 @@ AC_ARG_WITH(editline,
      no)  EDITLINE_FLG=N;;
      *)   AC_MSG_ERROR(bad value '${withval}' for --with-editline);;
    esac])
-AC_ARG_WITH(system-editline,
-  [  --with-system-editline  use OS supplied libeditline],
-  [case "$withval" in
-     yes) STD_EDITLINE=true;;
-     no)  STD_EDITLINE=false;;
-     *)   AC_MSG_ERROR(bad value '${withval}' for --with-system-editline);;
-   esac])
-
-# not need editline in default libs, but need to test for its presence
-saveLIBS=$LIBS
-if test "$STD_EDITLINE" = "true"; then
-  AC_CHECK_LIB(editline, readline, EDITLINE_FLG=Y, STD_EDITLINE=false)
-fi
-LIBS=$saveLIBS
-
-AC_SUBST(STD_EDITLINE)
 AC_SUBST(EDITLINE_FLG)
-
-AC_ARG_WITH(system-icu,
-  [  --with-system-icu       use OS supplied ICU],
-  [case "$withval" in
-     yes) STD_ICU=true;;
-     no)  STD_ICU=false;;
-     *)   AC_MSG_ERROR(bad value '${withval}' for --with-system-icu);;
-   esac])
-AC_SUBST(STD_ICU)
 
 FB_SERVICE_NAME=gds_db
 FB_SERVICE_PORT=3050
@@ -369,7 +326,7 @@ AC_ARG_WITH(gpre-ada,
 AC_ARG_WITH(gpre-cobol,
   [  --with-gpre-cobol       support COBOL in gpre (default=no)],
   [case "$withval" in
-     yes) XE_APPEND(cob.cpp rmc.cpp,GPRE_LANGUAGE_MODULES)
+     yes) XE_APPEND(cob.cpp,GPRE_LANGUAGE_MODULES)
           AC_DEFINE(GPRE_COBOL, 1, [Define this if GPRE should support COBOL]);;
      no)  ;;
      *)   AC_MSG_ERROR(bad value '${withval}' for --with-gpre-cobol);;
@@ -408,6 +365,7 @@ AC_LIBTOOL_DLOPEN
 AC_LIBTOOL_WIN32_DLL
 AC_PROG_MAKE_SET
 AC_PROG_LIBTOOL
+AC_PROG_YACC
 
 
 dnl Check for system header files
@@ -439,7 +397,7 @@ AC_HEADER_TIME
 AC_CHECK_HEADERS(sys/timeb.h)
 AC_CHECK_HEADERS(sys/param.h)
 AC_CHECK_HEADERS(sys/ioctl.h)
-AC_CHECK_HEADERS(limits.h)
+AC_CHECK_HEADERS(sys/mount.h)
 AC_CHECK_HEADERS(setjmp.h)
 AC_CHECK_HEADERS(stdarg.h)
 AC_CHECK_HEADERS(stdlib.h)
@@ -448,7 +406,7 @@ AC_CHECK_HEADERS(signal.h sys/signal.h sys/siginfo.h)
 if test "$EDITLINE_FLG" = "Y"; then
   AC_CHECK_HEADERS(termio.h termios.h)
   AC_HEADER_DIRENT
-  AC_DEFINE(HAVE_EDITLINE_H, 1, [Define this if editline is in use])
+  AC_DEFINE(HAVE_EDITLINE_H, 1, [Define this if internal editline.h is in use])
 fi
 AC_CHECK_HEADERS(unistd.h)
 if test "$ac_cv_header_unistd_h" = "yes"; then
@@ -489,16 +447,10 @@ if test "$EDITLINE_FLG" = "Y"; then
 			AC_CHECK_LIB(termcap, tgetent, , \
 				AC_CHECK_LIB(tinfo, tgetent, , \
 					AC_MSG_ERROR(termcap support not found)))))  
+	AC_SUBST(EDITLINE_A, -leditline)
 fi
-dnl AC_CHECK_LIB(stdc++, main,,, $LIBS)
+AC_CHECK_LIB(stdc++, main,,, $LIBS)
 
-dnl check for INFINITY in math.h
-dnl _ISOC99_SOURCE is defined to emulate C++ compilation in plain-C conftest.c
-AC_TRY_COMPILE([#define _ISOC99_SOURCE 1
-#include <math.h>],
-    [double x = INFINITY;],
-    [AC_DEFINE(HAVE_INFINITY, 1,
-       [Define this if INFINITY is defined in math.h])])
 
 dnl Check for functions
 AC_CHECK_FUNCS(gettimeofday)
@@ -812,7 +764,6 @@ dnl #### TEMP ######### directories for .o and .d
 dnl # by module name
 
 mkdir -p temp/boot/alice
-mkdir -p temp/boot/auth/trusted
 mkdir -p temp/boot/burp
 mkdir -p temp/boot/common/classes
 mkdir -p temp/boot/common/config
@@ -848,7 +799,6 @@ mkdir -p temp/boot/utilities/rebuild
 mkdir -p temp/boot/vulcan
 
 mkdir -p temp/std/alice
-mkdir -p temp/std/auth/trusted
 mkdir -p temp/std/burp
 mkdir -p temp/std/common/classes
 mkdir -p temp/std/common/config
@@ -882,9 +832,9 @@ mkdir -p temp/std/utilities/ibmgr
 mkdir -p temp/std/utilities/install
 mkdir -p temp/std/utilities/rebuild
 mkdir -p temp/std/vulcan
+mkdir -p temp/std/extern/editline
 
 mkdir -p temp/superclient/alice
-mkdir -p temp/superclient/auth/trusted
 mkdir -p temp/superclient/burp
 mkdir -p temp/superclient/common/classes
 mkdir -p temp/superclient/common/config
@@ -920,7 +870,6 @@ mkdir -p temp/superclient/utilities/rebuild
 mkdir -p temp/superclient/vulcan
 
 mkdir -p temp/superserver/alice
-mkdir -p temp/superserver/auth/trusted
 mkdir -p temp/superserver/burp
 mkdir -p temp/superserver/common/classes
 mkdir -p temp/superserver/common/config
@@ -1044,6 +993,7 @@ case "$PLATFORM" in
   DARWIN)
     ;;
 esac
+
 if test -f ${MAKE_SRC_DIR}/postfix.${MAKEFILE_PREFIX};then
 	POSTFIX_FILE=gen/make.platform.postfix:${MAKE_SRC_DIR}/postfix.${MAKEFILE_PREFIX}
 	POSTFIX_INCLUDE='include $(ROOT)/gen/make.platform.postfix'
@@ -1097,13 +1047,9 @@ gen/Makefile.embed.qli:${MAKE_SRC_DIR}/Makefile.in.embed.qli
 gen/Makefile.embed.gpre:${MAKE_SRC_DIR}/Makefile.in.embed.gpre
 gen/Makefile.install:builds/install/arch-specific/${INSTALL_PREFIX}/Makefile.in
 Makefile:Makefile.in
+gen/Makefile.extern.editline:${MAKE_SRC_DIR}/Makefile.in.extern.editline
+gen/Makefile.extern.icu:${MAKE_SRC_DIR}/Makefile.in.extern.icu
 )
-if test "$STD_EDITLINE" = "false"; then
-  AC_CONFIG_FILES(gen/Makefile.extern.editline:${MAKE_SRC_DIR}/Makefile.in.extern.editline)
-fi
-if test "$STD_ICU" = "false"; then
-  AC_CONFIG_FILES(gen/Makefile.extern.icu:${MAKE_SRC_DIR}/Makefile.in.extern.icu)
-fi
 
 
 
@@ -1111,14 +1057,11 @@ if test "$PROD_BUILD_FLG" = N; then
   DEBUG_ICU=--enable-debug
 fi
 
-if test "$STD_ICU" = "true"; then
-AC_OUTPUT
-else
 AC_OUTPUT
 (cd extern/icu/source
 chmod +x runConfigureICU configure install-sh
 ./runConfigureICU "$ICU_PLATFORM" "$DEBUG_ICU" --prefix=`pwd`/..)
-fi
+
 
 dnl Print out the build configuration (the most interesting thing)
 echo

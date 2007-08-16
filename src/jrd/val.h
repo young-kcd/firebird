@@ -31,7 +31,7 @@
 
 #include "../jrd/jrd_blks.h"
 #include "../include/fb_blk.h"
-#include "../common/classes/array.h"
+#include "../include/fb_vector.h"
 
 #include "../jrd/dsc.h"
 
@@ -63,9 +63,8 @@ class Format : public pool_alloc<type_fmt>
 {
 public:
 	Format(MemoryPool& p, int len)
-	:	fmt_count(len), fmt_desc(p, fmt_count)
+	:	fmt_count(len), fmt_desc(len, p, type_fmt)
 	{
-		fmt_desc.resize(fmt_count);
 	}
 	static Format* newFormat(MemoryPool& p, int len = 0)
 	{ 
@@ -75,12 +74,11 @@ public:
 	USHORT fmt_length;
 	USHORT fmt_count;
 	USHORT fmt_version;
-	Firebird::Array<dsc> fmt_desc;
-	typedef Firebird::Array<dsc>::iterator fmt_desc_iterator;
-	typedef Firebird::Array<dsc>::const_iterator fmt_desc_const_iterator;
+	Firebird::vector<dsc> fmt_desc;
+	typedef Firebird::vector<dsc>::iterator fmt_desc_iterator;
+	typedef Firebird::vector<dsc>::const_iterator fmt_desc_const_iterator;
 };
 #endif /* REQUESTER */
-
 
 /* A macro to define a local vary stack variable of a given length
    Usage:  VARY_STR(5)	my_var;        */
