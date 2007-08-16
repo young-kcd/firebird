@@ -1,5 +1,5 @@
 ==================================================
-Firebird Serwer Baz Danych 2.0.1
+Firebird Serwer Baz Danych 2.0.2
 ==================================================
 
   ** WA¯NE **
@@ -10,9 +10,9 @@ Firebird Serwer Baz Danych 2.0.1
 
   ** ********* **
 
-Ten dokument jest przewodnikiem instalacji Firebird 2.0.1
+Ten dokument jest przewodnikiem instalacji Firebird 2.0.2
 na platformie Win32. Poni¿sze informacje dotycz¹
-raczej tego pakietu instalacyjnego ni¿ Firebirda 2.0.1 w ogóle.
+raczej tego pakietu instalacyjnego ni¿ Firebirda 2.0.2 w ogóle.
 
 
 Spis treœci
