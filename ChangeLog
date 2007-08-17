@@ -1,3 +1,21 @@
+2007-08-16 11:01  paul_reeves
+
+	* firebird2/builds/install/arch-specific/win32/:
+	BuildExecutableInstall.bat (1.15.2.12), FirebirdInstall_20.iss
+	(1.12.2.11), Readme.txt (1.9.2.8), installation_readme.txt
+	(1.9.2.10), ba/Instalacija_ProcitajMe.txt (1.4.4.4),
+	ba/ProcitajMe.txt (1.2.4.4), de/installation_liesmich.txt
+	(1.3.4.4), de/liesmich.txt (1.3.4.4), es/leame.txt (1.1.6.5),
+	es/leame_instalacion.txt (1.1.6.4), fr/installation_lisezmoi.txt
+	(1.1.6.4), fr/lisezmoi.txt (1.1.6.5), hu/olvass_el.txt (1.1.6.5),
+	hu/telepitesi_segedlet.txt (1.1.6.5), it/leggimi.txt (1.1.2.6),
+	it/leggimi_installazione.txt (1.1.2.4), pl/czytajto.txt (1.2.4.5),
+	pl/instalacja_czytajto.txt (1.3.4.5), pt/instalacao_leia-me.txt
+	(1.3.2.5), pt/leia-me.txt (1.2.2.4), ru/Readme.txt (1.1.2.4),
+	ru/installation_readme.txt (1.1.2.4):
+
+	Update hard-coded version number strings from 2.0.1 to 2.0.2
+
 2007-08-15 15:49  alexpeshkoff
 
 	* firebird2/builds/posix/: Makefile.in.extlib (1.20.4.2),
