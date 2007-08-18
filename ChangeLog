@@ -1,3 +1,9 @@
+2007-08-17 09:20  alexpeshkoff
+
+	* firebird2/src/jrd/os/posix/isc_ipc.cpp (1.25):
+
+	Take care about posix SS
+
 2007-08-14 13:06  alexpeshkoff
 
 	* firebird2/builds/posix/: Makefile.in.extlib (1.23),
