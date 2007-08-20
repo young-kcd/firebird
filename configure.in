@@ -177,6 +177,7 @@ case "$target" in
     PTHREAD_LIBS=-lthread
     ICU_PLATFORM=SOLARISX86GCC
     service_thread_CS=true
+    AC_CHECK_LIB(rt, main)
     ;;
 
   sparc-sun-solaris*)
