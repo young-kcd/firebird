@@ -33,11 +33,10 @@
 #include <string.h>
 #include <stdarg.h>
 
- 
+#include "firebird.h"
 #include "../include/fb_types.h"
 #include "../include/fb_exception.h"
 #include "../common/classes/alloc.h"
-#include "../include/gen/autoconfig.h"
 
 namespace Firebird
 {
