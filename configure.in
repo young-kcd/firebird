@@ -635,6 +635,7 @@ case "$PLATFORM" in
     if test "$EDITLINE_FLG" = "Y"; then
   	AC_CHECK_LIB(termcap, main, XE_APPEND(-ltermcap,EDITLINE_A))
     fi
+  	AC_CHECK_LIB(rt, main)
 
     AC_CHECK_TYPES([caddr_t])
 
