@@ -150,8 +150,6 @@ LD =	@CXX@
 # MOD 26-July-2001.
 
 # LINKER COMMANDS
-# they are candidates to go to make.defaults and make this file make.defaults.in
-# if we decide to support different linkers directly in our build process. 
 # Alternatively we may use libtool here.
 
 LIB_LINK:= @CXX@ $(GLOB_OPTIONS)
