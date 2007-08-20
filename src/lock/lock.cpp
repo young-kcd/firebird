@@ -251,6 +251,8 @@ static SLONG LOCK_shm_size, LOCK_sem_count;
 
 #if (defined SOLARIS_MT && !defined SUPERSERVER)
 static SLONG LOCK_solaris_stall;
+#include "../common/classes/semaphore.h"
+static Firebird::Semaphore startupSemaphore;
 #endif
 
 static SLONG LOCK_block_signal;
@@ -1896,6 +1898,7 @@ static THREAD_ENTRY_DECLARE blocking_action_thread(THREAD_ENTRY_PARAM arg)
  *
  **************************************/
 	SRQ_PTR* owner_offset_ptr = (SRQ_PTR*) arg;
+	bool atStartup = true;
 	AST_INIT();					/* Check into scheduler as AST thread */
 
 	while (true) {
@@ -1906,12 +1909,23 @@ static THREAD_ENTRY_DECLARE blocking_action_thread(THREAD_ENTRY_PARAM arg)
 			LOCK_owner->own_process_id != LOCK_pid ||
 			!LOCK_owner->own_owner_id)
 		{
+			if (atStartup)
+			{
+				startupSemaphore.release();
+			}
 			break;
 		}
 
 		SLONG value = ISC_event_clear(LOCK_owner->own_blocking);
 		blocking_action((void*)(IPTR)*owner_offset_ptr);
 		AST_EXIT();
+
+		if (atStartup)
+		{
+			atStartup = false;
+			startupSemaphore.release();
+		}
+
 		event_t* event_ptr = LOCK_owner->own_blocking;
 		ISC_event_wait(1, &event_ptr, &value, 0, NULL, 0);
 	}
@@ -4088,6 +4102,9 @@ static void shutdown_blocking_thread( ISC_STATUS * status_vector)
 
 		event_t* event_ptr = LOCK_owner->own_wakeup;
 		SLONG value = ISC_event_clear(event_ptr);
+
+		/* wait for AST thread to start (or 5 secs) */
+		startupSemaphore.tryEnter(5);
 
 		/* Wakeup the AST thread - it might be blocking or stalled */
 		ISC_event_post(LOCK_owner->own_blocking);
