@@ -1,3 +1,12 @@
+2007-08-20 15:40  alexpeshkoff
+
+	* firebird2/: configure.in (1.241.2.9),
+	src/common/classes/semaphore.h (1.24.2.6), src/lock/lock.cpp
+	(1.114.4.2):
+
+	Bacported fix for CORE-1418: Races when starting and quickly
+	shutting down blocking AST thread
+
 2007-08-16 11:01  paul_reeves
 
 	* firebird2/builds/install/arch-specific/win32/:
