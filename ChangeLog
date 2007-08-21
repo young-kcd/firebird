@@ -1,3 +1,35 @@
+2007-08-20 15:28  alexpeshkoff
+
+	* firebird2/src/lock/lock.cpp (1.127):
+
+	Bacported fix for CORE-1418: Races when starting and quickly
+	shutting down blocking AST thread
+
+2007-08-20 15:26  alexpeshkoff
+
+	* firebird2/configure.in (1.258):
+
+	Added library required for standard semaphores.
+
+2007-08-20 15:24  alexpeshkoff
+
+	* firebird2/src/common/classes/semaphore.h (1.35):
+
+	Removed buggy implementation of semaphore on solaris in favour of
+	standard one
+
+2007-08-20 15:22  alexpeshkoff
+
+	* firebird2/src/common/classes/fb_string.h (1.8):
+
+	Never include autoconfig.h directly
+
+2007-08-20 15:21  alexpeshkoff
+
+	* firebird2/builds/posix/make.defaults (1.59):
+
+	misc
+
 2007-08-17 09:20  alexpeshkoff
 
 	* firebird2/src/jrd/os/posix/isc_ipc.cpp (1.25):
