@@ -192,6 +192,7 @@ case "$target" in
     PTHREAD_LIBS=-lthread
     ICU_PLATFORM=SOLARISGCC
     service_thread_CS=true
+    AC_CHECK_LIB(rt, main)
     ;;
 
   i*-sni-sysv4)
