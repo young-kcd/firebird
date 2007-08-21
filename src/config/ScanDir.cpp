@@ -28,18 +28,19 @@
 //
 //////////////////////////////////////////////////////////////////////
 
-#include <stdio.h>
-#include <string.h>
-
-#ifndef _WIN32
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <unistd.h>
-#endif
 
 #include "firebird.h"
 #include "../jrd/common.h"
 #include "ScanDir.h"
+
+#ifndef _WIN32
+#include <sys/stat.h>
+#include <unistd.h>
+#endif
+
+#include <stdio.h>
+#include <string.h>
+
 
 //////////////////////////////////////////////////////////////////////
 // Construction/Destruction
