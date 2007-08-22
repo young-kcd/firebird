@@ -1,3 +1,27 @@
+2007-08-22 04:18  asfernandes
+
+	* firebird2/src/dsql/dsql.cpp (1.197):
+
+	Fixed CORE-1417 - "Invalid BLOB ID" in IBX insert operation
+
+2007-08-21 16:22  paulbeach
+
+	* firebird2/configure.in (1.259):
+
+	Update for Solaris Sparc too
+
+2007-08-21 15:34  alexpeshkoff
+
+	* firebird2/src/config/: ScanDir.cpp (1.4), ScanDir.h (1.4):
+
+	Make firebird.h first include file - specially required for solaris
+
+2007-08-21 10:54  alexpeshkoff
+
+	* firebird2/src/misc/src_bundle.sh (1.7):
+
+	Fixed CORE-1392: missing skeleton.c in src tarball
+
 2007-08-20 15:28  alexpeshkoff
 
 	* firebird2/src/lock/lock.cpp (1.127):
