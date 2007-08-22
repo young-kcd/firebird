@@ -4410,6 +4410,8 @@ static void map_in_out(	dsql_req*		request,
 				MOVD_move(&parameter->par_desc, &desc);
 			else if (!flag || *flag >= 0)
 				MOVD_move(&desc, &parameter->par_desc);
+			else if (parameter->par_desc.isBlob())
+				memset(parameter->par_desc.dsc_address, 0, parameter->par_desc.dsc_length);
 
 			count--;
 		}
