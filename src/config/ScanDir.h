@@ -41,6 +41,7 @@
 #include <windows.h>
 #endif
 #else
+#include <sys/types.h>                                                                        
 #include <dirent.h>
 #endif
 
