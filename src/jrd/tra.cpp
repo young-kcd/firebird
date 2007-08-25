@@ -2910,9 +2910,12 @@ static void transaction_options(
 		case isc_tpb_shared:
 		case isc_tpb_protected:
 		case isc_tpb_exclusive:
+			ERR_post(isc_bad_tpb_content, 0);
 			break;
 
 		case isc_tpb_wait:
+			if (!wait)
+				ERR_post(isc_bad_tpb_content, 0);
 			break;
 
 		case isc_tpb_rec_version:
@@ -2961,33 +2964,33 @@ static void transaction_options(
 					ERR_post(isc_bad_tpb_content, isc_arg_gds, isc_random,
 							 isc_arg_string, ERR_cstring(text), 0);
 				}
-				Firebird::MetaName name(reinterpret_cast<const char*>(tpb), l);
+				const Firebird::MetaName name(reinterpret_cast<const char*>(tpb), l);
 				tpb += l;
 				jrd_rel* relation = MET_lookup_relation(tdbb, name);
 				if (!relation) {
 					ERR_post(isc_bad_tpb_content,
 						 isc_arg_gds, isc_relnotdef, isc_arg_string,
 						 ERR_cstring(name), 0);
-			}
-
-			/* force a scan to read view information */
-			MET_scan_relation(tdbb, relation);
-
-			SCHAR lock_type = (op == isc_tpb_lock_read) ? LCK_none : LCK_SW;
-			if (tpb < end) {
-				if (*tpb == isc_tpb_shared)
-					tpb++;
-				else if (*tpb == isc_tpb_protected
-						 || *tpb == isc_tpb_exclusive) 
-				{
-					tpb++;
-					lock_type = (lock_type == LCK_SW) ? LCK_EX : LCK_PR;
 				}
-			}
 
-			expand_view_lock(transaction, relation, lock_type);
-			break;
+				/* force a scan to read view information */
+				MET_scan_relation(tdbb, relation);
+
+				SCHAR lock_type = (op == isc_tpb_lock_read) ? LCK_none : LCK_SW;
+				if (tpb < end) {
+					if (*tpb == isc_tpb_shared)
+						tpb++;
+					else if (*tpb == isc_tpb_protected
+							 || *tpb == isc_tpb_exclusive)
+					{
+						tpb++;
+						lock_type = (lock_type == LCK_SW) ? LCK_EX : LCK_PR;
+					}
+				}
+
+				expand_view_lock(transaction, relation, lock_type);
 			}
+			break;
 
 		case isc_tpb_verb_time:
 		case isc_tpb_commit_time:
