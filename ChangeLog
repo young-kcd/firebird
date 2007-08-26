@@ -1,3 +1,19 @@
+2007-08-25 11:30  robocop
+
+	* firebird2/src/jrd/dbg.cpp (1.34):
+
+	Reduced the number of errors in this outdated file, but it's still
+	unusable.
+
+2007-08-25 10:06  robocop
+
+	* firebird2/src/jrd/tra.cpp (1.136):
+
+	Implement a variation of the suggested fix in CORE-1416: - Use
+	isc_bad_tpb_content instead of isc_bad_tpb_form seems better,
+	considering the rest of the cases.  - Detect another trivial case:
+	wait once no_wait has been seen previously.
+
 2007-08-22 08:52  alexpeshkoff
 
 	* firebird2/src/config/ScanDir.cpp (1.5):
