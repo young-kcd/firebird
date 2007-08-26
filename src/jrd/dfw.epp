@@ -2249,8 +2249,7 @@ static bool create_collation(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 						length = BLB_get_data(tdbb, blob, buffer.getBuffer(length), length);
 					}
 
-					Firebird::string specificAttributes =
-						Firebird::string((const char*) buffer.begin(), length);
+					const Firebird::string specificAttributes((const char*) buffer.begin(), length);
 					Firebird::string newSpecificAttributes;
 
 					// ASF: If setupCollationAttributes fail we store the original

@@ -335,7 +335,7 @@ void DYN_define_collation( Global* gbl, const UCHAR** ptr)
 					// msg: 222: "Invalid collation attributes"
 				}
 
-				Firebird::string s = Firebird::IntlUtil::generateSpecificAttributes(cs, map);
+				const Firebird::string s = Firebird::IntlUtil::generateSpecificAttributes(cs, map);
 				Firebird::string newSpecificAttributes;
 				
 				if (!IntlManager::setupCollationAttributes(

@@ -1762,7 +1762,7 @@ ULONG INTL_builtin_setup_attributes(const ASCII* textTypeName, const ASCII* char
 		if (!INTL_builtin_lookup_charset(cs, charSetName, configInfo))
 			return INTL_BAD_STR_LENGTH;
 
-		Firebird::string specificAttributes((const char*) src, srcLen);
+		const Firebird::string specificAttributes((const char*) src, srcLen);
 		Firebird::string newSpecificAttributes = specificAttributes;
 
 		if (IntlUtil::setupIcuAttributes(cs, specificAttributes, configInfo, newSpecificAttributes))

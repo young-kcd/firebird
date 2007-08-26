@@ -95,7 +95,7 @@ bool putSpecTag(char**& av, Firebird::ClumpletWriter& spb, unsigned int tag,
 	if (! *av)
 		return false;
 
-	Firebird::string s(prepareSwitch(*av++));
+	const Firebird::string s(prepareSwitch(*av++));
 	for (; sw->name; ++sw)
 	{
 		if (s == sw->name)
@@ -184,7 +184,7 @@ bool populateSpbFromSwitches(char**& av,
 	if (! *av)
 		return false;
 
-	Firebird::string s(prepareSwitch(*av));
+	const Firebird::string s(prepareSwitch(*av));
 
 	for (; sw->name; ++sw)
 	{

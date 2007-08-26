@@ -312,7 +312,7 @@ void PluginManager::load_engine_plugins()
 	enginePluginManager().addSearchPath(ENGINE_PLUGIN_DIR);
 	enginePluginManager().loadAllPlugins();
 	
-	Firebird::string entryPoint(ENGINE_PLUGIN_REGISTRATION_ENTRYPOINT);
+	const Firebird::string entryPoint(ENGINE_PLUGIN_REGISTRATION_ENTRYPOINT);
 	for (PluginManager::iterator itr = enginePluginManager().begin();
 	    itr != enginePluginManager().end(); ++itr)
 	{

@@ -451,7 +451,7 @@ static int api_gbak(int argc,
 		}
 
 
-		Firebird::string svc_name(service ? service : "");
+		const Firebird::string svc_name(service ? service : "");
 		if (service)
 		{
 			*service = 0;

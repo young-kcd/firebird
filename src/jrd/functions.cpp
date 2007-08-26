@@ -173,7 +173,7 @@ vary* get_context(const vary* ns_vary, const vary* name_vary)
 		return NULL;
 	}
 
-	Firebird::string ns_str(ns_vary->vary_string, ns_vary->vary_length),
+	const Firebird::string ns_str(ns_vary->vary_string, ns_vary->vary_length),
 		name_str(name_vary->vary_string, name_vary->vary_length);
 
 	// Handle system variables
@@ -308,7 +308,7 @@ static SLONG set_context(const vary* ns_vary, const vary* name_vary, const vary*
 		return 0;
 	}
 
-	Firebird::string ns_str(ns_vary->vary_string, ns_vary->vary_length),
+	const Firebird::string ns_str(ns_vary->vary_string, ns_vary->vary_length),
 		name_str(name_vary->vary_string, name_vary->vary_length);
 
 	if (ns_str == USER_SESSION_NAMESPACE) 

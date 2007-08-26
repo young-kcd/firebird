@@ -7299,7 +7299,7 @@ static void getUserInfo(UserId& user, const DatabaseOptions& options)
 			else
 #endif
 			{
-				Firebird::string remote = options.dpb_network_protocol + 
+				const Firebird::string remote = options.dpb_network_protocol +
 					(options.dpb_network_protocol.isEmpty() || options.dpb_remote_address.isEmpty() ? "" : "/") +
 					options.dpb_remote_address;
 				SecurityDatabase::verifyUser(name, 

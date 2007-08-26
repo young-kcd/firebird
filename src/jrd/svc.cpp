@@ -530,7 +530,7 @@ Service* SVC_attach(USHORT	service_length,
 	
 
 /* Find the service by looking for an exact match. */
-	Firebird::string misc_buf(service_name, 
+	const Firebird::string misc_buf(service_name,
 		service_length ? service_length : strlen(service_name));
 	serv_entry* serv;
 	for (serv = services; serv->serv_name; serv++) {
@@ -606,7 +606,7 @@ Service* SVC_attach(USHORT	service_length,
 				TEXT name[129]; // unused after retrieved
 				int id, group, node_id;
 
-				Firebird::string remote = options.spb_network_protocol +
+				const Firebird::string remote = options.spb_network_protocol +
 							(options.spb_network_protocol.isEmpty() || 
 							 options.spb_remote_address.isEmpty() ? "" : "/") +
 										  options.spb_remote_address;
