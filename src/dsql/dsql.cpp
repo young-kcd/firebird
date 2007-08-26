@@ -1482,8 +1482,11 @@ ISC_STATUS GDS_DSQL_SET_CURSOR_CPP(	ISC_STATUS*	user_status,
 		{
 			// Quoted cursor names eh? Strip'em.
 			// Note that "" will be replaced with ".
+			// The code is very strange, because it doesn't check for "" really
+			// and thus deletes one isolated " in the middle of the cursor.
 			for (Firebird::string::iterator i = cursor.begin(); 
-							i < cursor.end(); ++i) {
+							i < cursor.end(); ++i)
+			{
 				if (*i == '\"') {
 					cursor.erase(i);
 				}
