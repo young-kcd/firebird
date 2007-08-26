@@ -3553,7 +3553,7 @@ void DYN_define_role( Global* gbl, const UCHAR** ptr)
 		ERR_punt();
 	}
 
-	Firebird::MetaName owner_name = tdbb->tdbb_attachment->att_user->usr_user_name;
+	Firebird::MetaName owner_name(tdbb->tdbb_attachment->att_user->usr_user_name);
 	owner_name.upper7();
 
 	Firebird::MetaName role_name;

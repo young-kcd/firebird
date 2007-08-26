@@ -1439,7 +1439,7 @@ int API_ROUTINE blob__display(
  *	PASCAL callable version of EDIT_blob.
  *
  **************************************/
-	Firebird::MetaName temp(field_name, *name_length);
+	const Firebird::MetaName temp(field_name, *name_length);
 
 	return BLOB_display(reinterpret_cast<ISC_QUAD*>(blob_id), *database,
 						*transaction, temp.c_str());
@@ -1588,7 +1588,7 @@ int API_ROUTINE blob__edit(
  *	into an internal edit call.
  *
  **************************************/
-	Firebird::MetaName temp(field_name, *name_length);
+	const Firebird::MetaName temp(field_name, *name_length);
 
 	return BLOB_edit(reinterpret_cast<ISC_QUAD*>(blob_id), *database,
 					 *transaction, temp.c_str());

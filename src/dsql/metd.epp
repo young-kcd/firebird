@@ -605,7 +605,7 @@ USHORT METD_get_charset_bpc(dsql_req* request, SSHORT charset_id)
 		cs_sym = dbb->dbb_charsets_by_id[pos];
 	}
 	else {
-		Firebird::MetaName cs_name = METD_get_charset_name(request, charset_id);
+		const Firebird::MetaName cs_name = METD_get_charset_name(request, charset_id);
 		cs_sym = METD_get_charset(request, cs_name.length(), cs_name.c_str());
 	}
 	
@@ -1869,23 +1869,25 @@ dsql_rel* METD_get_view_base(dsql_req* request,
 
 				THREAD_ENTER();
 
-				if (currentAux.exist(RFL.RDB$BASE_FIELD))
-					ambiguities.add(RFL.RDB$BASE_FIELD);
+				const Firebird::MetaName baseField(RFL.RDB$BASE_FIELD);
+				if (currentAux.exist(baseField))
+					ambiguities.add(baseField);
 				else
 				{
+					const Firebird::MetaName fieldName(RFL.RDB$FIELD_NAME);
 					if (first)
 					{
-						fields.put(RFL.RDB$FIELD_NAME, RFL.RDB$BASE_FIELD);
-						currentAux.put(RFL.RDB$BASE_FIELD, RFL.RDB$FIELD_NAME);
+						fields.put(fieldName, baseField);
+						currentAux.put(baseField, fieldName);
 					}
 					else
 					{
 						Firebird::MetaName field;
 
-						if (previousAux.get(RFL.RDB$FIELD_NAME, field))
+						if (previousAux.get(fieldName, field))
 						{
-							fields.put(field, RFL.RDB$BASE_FIELD);
-							currentAux.put(RFL.RDB$BASE_FIELD, field);
+							fields.put(field, baseField);
+							currentAux.put(baseField, field);
 						}
 					}
 				}
@@ -1893,7 +1895,7 @@ dsql_rel* METD_get_view_base(dsql_req* request,
 				THREAD_EXIT();
 			END_FOR
 
-			for (Firebird::MetaName* i = ambiguities.begin(); i != ambiguities.end(); ++i)
+			for (const Firebird::MetaName* i = ambiguities.begin(); i != ambiguities.end(); ++i)
 			{
 				Firebird::MetaName field;
 

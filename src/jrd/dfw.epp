@@ -4748,7 +4748,7 @@ static bool modify_trigger(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 
 			if (arg)
 			{
-				Firebird::MetaName relation_name = arg->dfw_name;
+				const Firebird::MetaName relation_name(arg->dfw_name);
 				SSHORT valid_blr = FALSE;
 
 				try

@@ -359,7 +359,7 @@ void SCL_check_procedure(const dsc* dsc_name, SecurityClass::flags_t mask)
 
 	// Get the name in CSTRING format, ending on NULL or SPACE
 	fb_assert(dsc_name->dsc_dtype == dtype_text);
-	Firebird::MetaName name(reinterpret_cast<TEXT*>(dsc_name->dsc_address), 
+	const Firebird::MetaName name(reinterpret_cast<TEXT*>(dsc_name->dsc_address),
 							dsc_name->dsc_length);
 
 	Database* dbb = tdbb->tdbb_database;
@@ -402,7 +402,7 @@ void SCL_check_relation(const dsc* dsc_name, SecurityClass::flags_t mask)
 
 	// Get the name in CSTRING format, ending on NULL or SPACE
 	fb_assert(dsc_name->dsc_dtype == dtype_text);
-	Firebird::MetaName name(reinterpret_cast<TEXT*>(dsc_name->dsc_address), 
+	const Firebird::MetaName name(reinterpret_cast<TEXT*>(dsc_name->dsc_address),
 							dsc_name->dsc_length);
 
 	Database* dbb = tdbb->tdbb_database;

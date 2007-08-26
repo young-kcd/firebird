@@ -3339,7 +3339,7 @@ static void check_rel_field_class(record_param* rpb,
 	bool okField = true;
 	DSC desc;
 	EVL_field(0, rpb->rpb_record, f_rfr_class, &desc);
-	Firebird::MetaName class_name(reinterpret_cast<TEXT*>(desc.dsc_address), 
+	const Firebird::MetaName class_name(reinterpret_cast<TEXT*>(desc.dsc_address),
 								  desc.dsc_length);
 	const SecurityClass* s_class = SCL_get_class(class_name.c_str());
 	if (s_class)

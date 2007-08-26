@@ -1771,7 +1771,7 @@ static void revoke_permission(Global* gbl, const UCHAR** ptr)
 /* Stash away a copy of the revoker's name, in uppercase form */
 
 	const UserId* revoking_user = tdbb->tdbb_attachment->att_user;
-	Firebird::MetaName revoking_user_name = revoking_user->usr_user_name;
+	Firebird::MetaName revoking_user_name(revoking_user->usr_user_name);
 	revoking_user_name.upper7();
 
 	GET_STRING(ptr, privileges);
