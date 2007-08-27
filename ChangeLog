@@ -1,3 +1,29 @@
+2007-08-26 11:53  robocop
+
+	* firebird2/src/: burp/burp.cpp (1.127), jrd/dfw.epp (1.213),
+	jrd/dyn_def.epp (1.157), jrd/functions.cpp (1.28),
+	jrd/intl_builtin.cpp (1.36), jrd/jrd.cpp (1.340),
+	jrd/plugin_manager.cpp (1.24), jrd/svc.cpp (1.186),
+	utilities/fbsvcmgr.cpp (1.5):
+
+	Misc tweaks with Firebird::string.
+
+2007-08-26 11:14  robocop
+
+	* firebird2/src/dsql/dsql.cpp (1.198):
+
+	Misc: document code that doesn't handle quoted names as expected.
+	It may be bug or strange feature for cursor names.
+
+2007-08-26 11:05  robocop
+
+	* firebird2/src/: jrd/dfw.epp (1.212), jrd/dyn.epp (1.109),
+	jrd/dyn_def.epp (1.156), jrd/dyn_del.epp (1.72), jrd/exe.h (1.103),
+	jrd/met.epp (1.224), jrd/scl.epp (1.85), jrd/utl.cpp (1.103),
+	jrd/vio.cpp (1.194), dsql/metd.epp (1.101):
+
+	Minor changes in MetaName usage.
+
 2007-08-25 11:30  robocop
 
 	* firebird2/src/jrd/dbg.cpp (1.34):
