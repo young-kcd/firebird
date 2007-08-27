@@ -516,6 +516,7 @@ static LexerState lex;
 %token ABS
 %token ACCENT
 %token ACOS
+%token ALWAYS
 %token ASCII_CHAR
 %token ASCII_VAL
 %token ASIN
@@ -538,6 +539,7 @@ static LexerState lex;
 %token EXP
 %token FLOOR
 %token GEN_UUID
+%token GENERATED
 %token GLOBAL 
 %token HASH
 %token INSENSITIVE
@@ -1326,7 +1328,6 @@ column_def	: column_def_name data_type_or_domain domain_default_opt
 		| column_def_name non_array_type def_computed
 			{ $$ = make_node (nod_def_field, (int) e_dfl_count, 
 					$1, NULL, NULL, NULL, NULL, NULL, $3); }   
-
 		| column_def_name def_computed
 			{ $$ = make_node (nod_def_field, (int) e_dfl_count, 
 					$1, NULL, NULL, NULL, NULL, NULL, $2); }   
@@ -1336,10 +1337,14 @@ column_def	: column_def_name data_type_or_domain domain_default_opt
  * source text
  */
 
-def_computed	: computed_by '(' begin_trigger value end_trigger ')'
+def_computed	: computed_clause '(' begin_trigger value end_trigger ')'
 			{ 
 			lex.g_field->fld_flags |= FLD_computed;
 			$$ = make_node (nod_def_computed, 2, $4, $5); }
+		;
+
+computed_clause	: computed_by
+		| GENERATED ALWAYS AS
 		;
 
 computed_by	: COMPUTED BY
@@ -4744,6 +4749,7 @@ non_reserved_word :
 	| ABS					/* added in FB 2.1 */
 	| ACCENT
 	| ACOS
+	| ALWAYS
 	| ASCII_CHAR
 	| ASCII_VAL
 	| ASIN
@@ -4764,6 +4770,7 @@ non_reserved_word :
 	| EXP
 	| FLOOR
 	| GEN_UUID
+	| GENERATED
 	| HASH
 	| LIST
 	| LN
