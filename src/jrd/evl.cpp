@@ -2642,7 +2642,12 @@ static dsc* add_timestamp(const dsc* desc, const jrd_nod* node, impure_value* va
 			 */
 			// 09-Apr-2004, Nickolay Samofatov. Adjust number before division to
 			// make sure we don't lose a tick as a result of remainder truncation
-			d2 = (d2 * 1000 + (SECONDS_PER_DAY / 200)) / (SINT64) (SECONDS_PER_DAY / 100);
+			if (d2 >= 0) {
+				d2 = (d2 * 1000 + (SECONDS_PER_DAY / 200)) / (SINT64) (SECONDS_PER_DAY / 100);
+			}
+			else {
+				d2 = (d2 * 1000 - (SECONDS_PER_DAY / 200)) / (SINT64) (SECONDS_PER_DAY / 100);
+			}
 			value->vlu_misc.vlu_int64 = d2;
 			result->dsc_dtype = dtype_int64;
 			result->dsc_length = sizeof(SINT64);
