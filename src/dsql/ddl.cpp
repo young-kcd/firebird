@@ -4890,7 +4890,7 @@ static void make_comment(dsql_req* request)
 			dyn_verb = isc_dyn_mod_function; // missing
 			break;
 		case ddl_blob_filter:
-			dyn_verb = isc_dyn_mod_filter; // mising
+			dyn_verb = isc_dyn_mod_filter; // missing
 			break;
 		case ddl_exception:
 			dyn_verb = isc_dyn_mod_exception;
