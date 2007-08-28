@@ -4001,7 +4001,8 @@ static void release_request( LRQ request)
 	{
 		CHECK(lock->lbl_pending_lrq_count == 0);
 #ifdef VALIDATE_LOCK_TABLE
-		validate_parent(LOCK_header, request->lrq_lock);
+		if (LOCK_header->lhb_active_owner > 0)
+			validate_parent(LOCK_header, request->lrq_lock);
 #endif
 		remove_que(&lock->lbl_lhb_hash);
 		remove_que(&lock->lbl_lhb_data);
@@ -4299,9 +4300,6 @@ static void validate_parent(const lhb* alhb, const SRQ_PTR isSomeoneParent)
  *
  **************************************/
 	SignalInhibit siHolder;
-
-	if (alhb->lhb_active_owner == 0)
-		return;
 
 	const own* owner = (own*) SRQ_ABS_PTR(alhb->lhb_active_owner);
 
