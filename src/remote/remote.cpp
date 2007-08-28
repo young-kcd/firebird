@@ -283,7 +283,7 @@ rrq* REMOTE_find_request(rrq* request, USHORT level)
 }
 
 
-void REMOTE_free_packet( rem_port* port, PACKET * packet)
+void REMOTE_free_packet( rem_port* port, PACKET * packet, bool partial)
 {
 /**************************************
  *
@@ -292,8 +292,8 @@ void REMOTE_free_packet( rem_port* port, PACKET * packet)
  **************************************
  *
  * Functional description
- *	Zero out a packet block.
- *
+ *	Zero out a full packet block (partial == false) or
+ *	part of packet used in last operation (partial == true)
  **************************************/
 	XDR xdr;
 	USHORT n;
@@ -303,12 +303,18 @@ void REMOTE_free_packet( rem_port* port, PACKET * packet)
 					  sizeof(PACKET), XDR_FREE);
 		xdr.x_public = (caddr_t) port;
 
-		for (n = (USHORT) op_connect; n < (USHORT) op_max; n++) {
-			packet->p_operation = (P_OP) n;
+		if (partial) {
 			xdr_protocol(&xdr, packet);
 		}
+		else {
+			for (n = (USHORT) op_connect; n < (USHORT) op_max; n++) {
+				packet->p_operation = (P_OP) n;
+				xdr_protocol(&xdr, packet);
+			}
+		}
 #ifdef DEBUG_XDR_MEMORY
-		/* All packet memory allocations should now be voided. */
+		// All packet memory allocations should now be voided. 
+		// note: this code will may work properly if partial == true
 
 		for (n = 0; n < P_MALLOC_SIZE; n++)
 			fb_assert(packet->p_malloc[n].p_operation == op_void);

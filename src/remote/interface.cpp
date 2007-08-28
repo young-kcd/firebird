@@ -232,8 +232,8 @@ inline bool defer_packet(rem_port* port, PACKET* packet, ISC_STATUS* status, boo
 
 	*packet = p.packet;
 
-	memset(p.packet.p_resp.p_resp_strings, 0, 
-		sizeof(p.packet.p_resp.p_resp_strings));
+	// don't use string references in P_RESP structure copied from another packet
+	memset(&p.packet.p_resp, 0, sizeof(p.packet.p_resp));
 	port->port_deferred_packets->add(p);
 	return true;
 }
@@ -6457,7 +6457,9 @@ static bool receive_packet_noqueue(rem_port* port,
 				statement->rsr_rtr = transaction;
 			}
 		}
-		REMOTE_free_packet(port, &p->packet);
+
+		// free only part of packet we worked with
+		REMOTE_free_packet(port, &p->packet, true);
 		port->port_deferred_packets->remove(p);
 	}
 
