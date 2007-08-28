@@ -2885,7 +2885,7 @@ static void transaction_options(
 	if (*tpb != isc_tpb_version3 && *tpb != isc_tpb_version1)
 		ERR_post(isc_bad_tpb_form, isc_arg_gds, isc_wrotpbver, 0);
 
-	bool wait = true, lock_timeout = false;
+	bool wait = true, wait_seen = false, lock_timeout = false;
 
 	++tpb;
 
@@ -2916,6 +2916,7 @@ static void transaction_options(
 		case isc_tpb_wait:
 			if (!wait)
 				ERR_post(isc_bad_tpb_content, 0);
+			wait_seen = true;
 			break;
 
 		case isc_tpb_rec_version:
@@ -2927,7 +2928,7 @@ static void transaction_options(
 			break;
 
 		case isc_tpb_nowait:
-			if (lock_timeout)
+			if (lock_timeout || wait_seen && wait)
 			{
 				ERR_post(isc_bad_tpb_content, 0);
 			}
