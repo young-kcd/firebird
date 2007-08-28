@@ -44,6 +44,9 @@ STD_EDITLINE=false
 STD_ICU=false
 RPM64=
 
+dnl Test for realtime library presence?
+RT_LIB_CHECK=false
+
 case "$target" in
   *-*-darwin*)
     MAKEFILE_PREFIX=darwin
@@ -177,7 +180,7 @@ case "$target" in
     PTHREAD_LIBS=-lthread
     ICU_PLATFORM=SOLARISX86GCC
     service_thread_CS=true
-    AC_CHECK_LIB(rt, main)
+    RT_LIB_CHECK=true
     ;;
 
   sparc-sun-solaris*)
@@ -192,7 +195,7 @@ case "$target" in
     PTHREAD_LIBS=-lthread
     ICU_PLATFORM=SOLARISGCC
     service_thread_CS=true
-    AC_CHECK_LIB(rt, main)
+    RT_LIB_CHECK=true
     ;;
 
   i*-sni-sysv4)
@@ -492,7 +495,9 @@ if test "$EDITLINE_FLG" = "Y"; then
 				AC_CHECK_LIB(tinfo, tgetent, , \
 					AC_MSG_ERROR(termcap support not found)))))  
 fi
-dnl AC_CHECK_LIB(stdc++, main,,, $LIBS)
+if test "$RT_LIB_CHECK" = "true"; then
+	AC_CHECK_LIB(rt, main)
+fi
 
 dnl check for INFINITY in math.h
 dnl _ISOC99_SOURCE is defined to emulate C++ compilation in plain-C conftest.c
