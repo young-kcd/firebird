@@ -511,6 +511,19 @@ void IDX_create_index(
 		ERR_post(isc_no_dup, isc_arg_string,
 				 ERR_cstring(index_name), 0);
 	}
+
+	if ((relation->rel_flags & REL_temp_conn) &&
+		(relation->getPages(tdbb)->rel_instance_id != 0))
+	{
+		IndexLock* idx_lock = CMP_get_index_lock(tdbb, relation, idx->idx_id);
+		if (idx_lock)
+		{
+			if (!idx_lock->idl_count) {
+				LCK_lock_non_blocking(tdbb, idx_lock->idl_lock, LCK_SR, LCK_WAIT);
+			}
+			++idx_lock->idl_count;
+		}
+	}
 }
 
 
@@ -578,7 +591,20 @@ void IDX_delete_index(thread_db* tdbb, jrd_rel* relation, USHORT id)
 	WIN window(relPages->rel_pg_space_id, relPages->rel_index_root);
 	CCH_FETCH(tdbb, &window, LCK_write, pag_root);
 
-	BTR_delete_index(tdbb, &window, id);
+	const bool tree_exists = BTR_delete_index(tdbb, &window, id);
+
+	if ((relation->rel_flags & REL_temp_conn) &&
+		(relation->getPages(tdbb)->rel_instance_id != 0) &&
+		tree_exists)
+	{
+		IndexLock* idx_lock = CMP_get_index_lock(tdbb, relation, id);
+		if (idx_lock)
+		{
+			if (!--idx_lock->idl_count) {
+				LCK_release(tdbb, idx_lock->idl_lock);
+			}
+		}
+	}
 }
 
 
@@ -602,9 +628,24 @@ void IDX_delete_indices(thread_db* tdbb, jrd_rel* relation, RelationPages* relPa
 	WIN window(relPages->rel_pg_space_id, relPages->rel_index_root);
 	index_root_page* root = (index_root_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_root);
 
-	for (i = 0; i < root->irt_count; i++) {
-		BTR_delete_index(tdbb, &window, i);
+	const bool is_temp = (relation->rel_flags & REL_temp_conn) &&
+		(relPages->rel_instance_id != 0);
+
+	for (i = 0; i < root->irt_count; i++) 
+	{
+		const bool tree_exists = BTR_delete_index(tdbb, &window, i);
 		root = (index_root_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_root);
+
+		if (is_temp && tree_exists)
+		{
+			IndexLock* idx_lock = CMP_get_index_lock(tdbb, relation, i);
+			if (idx_lock)
+			{
+				if (!--idx_lock->idl_count) {
+					LCK_release(tdbb, idx_lock->idl_lock);
+				}
+			}
+		}
 	}
 
 	CCH_RELEASE(tdbb, &window);

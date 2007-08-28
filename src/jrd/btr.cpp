@@ -320,7 +320,7 @@ void BTR_create(thread_db* tdbb,
 }
 
 
-void BTR_delete_index(thread_db* tdbb, WIN * window, USHORT id)
+bool BTR_delete_index(thread_db* tdbb, WIN * window, USHORT id)
 {
 /**************************************
  *
@@ -330,6 +330,7 @@ void BTR_delete_index(thread_db* tdbb, WIN * window, USHORT id)
  *
  * Functional description
  *	Delete an index if it exists.
+ *	Return true if index tree was there
  *
  **************************************/
 	SET_TDBB(tdbb);
@@ -339,6 +340,7 @@ void BTR_delete_index(thread_db* tdbb, WIN * window, USHORT id)
 	// Get index descriptor.  If index doesn't exist, just leave.
 	index_root_page* root = (index_root_page*) window->win_buffer;
 
+	bool tree_exists = false;
 	if (id >= root->irt_count) {
 		CCH_RELEASE(tdbb, window);
 	}
@@ -346,6 +348,7 @@ void BTR_delete_index(thread_db* tdbb, WIN * window, USHORT id)
 		index_root_page::irt_repeat* irt_desc = root->irt_rpt + id;
 		CCH_MARK(tdbb, window);
 		const PageNumber next(window->win_page.getPageSpaceID(), irt_desc->irt_root);
+		tree_exists = (irt_desc->irt_root != 0);
 
 		// remove the pointer to the top-level index page before we delete it
 		irt_desc->irt_root = 0;
@@ -356,6 +359,8 @@ void BTR_delete_index(thread_db* tdbb, WIN * window, USHORT id)
 		CCH_RELEASE(tdbb, window);
 		delete_tree(tdbb, relation_id, id, next, prior);
 	}
+
+	return tree_exists;
 }
 
 

@@ -145,6 +145,7 @@ static bool add_file(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 static bool add_shadow(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 static bool delete_shadow(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 static bool compute_security(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
+static bool modify_index(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 static bool create_index(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 static bool delete_index(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 static bool create_procedure(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
@@ -209,18 +210,19 @@ static const UCHAR nonnull_validation_blr[] =
 	blr_eoc
 };
 
+typedef bool (*dfw_task_routine) (thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 struct deferred_task
 {
 	enum dfw_t task_type;
-	bool (*task_routine) (thread_db*, SSHORT, DeferredWork*, jrd_tra*);
+	dfw_task_routine task_routine;
 };
 
 static const deferred_task task_table[] =
 {
 	{ dfw_add_file, add_file },
 	{ dfw_add_shadow, add_shadow },
-	{ dfw_delete_index, delete_index },
-	{ dfw_delete_expression_index, delete_index },
+	{ dfw_delete_index, modify_index },
+	{ dfw_delete_expression_index, modify_index },
 	{ dfw_delete_rfr, delete_rfr },
 	{ dfw_delete_relation, delete_relation },
 	{ dfw_delete_shadow, delete_shadow },
@@ -232,8 +234,8 @@ static const deferred_task task_table[] =
 	{ dfw_update_format, make_version },
 	{ dfw_scan_relation, scan_relation },
 	{ dfw_compute_security, compute_security },
-	{ dfw_create_index, create_index },
-	{ dfw_create_expression_index, PCMET_expression_index },
+	{ dfw_create_index, modify_index },
+	{ dfw_create_expression_index, modify_index },
 	{ dfw_grant, GRANT_privileges },
 	{ dfw_create_trigger, create_trigger },
 	{ dfw_delete_trigger, delete_trigger },
@@ -1490,6 +1492,104 @@ static bool compute_security(	thread_db*	tdbb,
 	return false;
 }
 
+static bool modify_index(	thread_db*	tdbb,
+							SSHORT	phase,
+							DeferredWork*		work,
+							jrd_tra*		transaction)
+{
+/**************************************
+ *
+ *	m o d i f y _ i n d e x
+ *
+ **************************************
+ *
+ * Functional description
+ *	Create\drop an index or change the state of an index between active/inactive.
+ *	If index owns by global temporary table with on commit preserve rows scope
+ *	change index instance for this temporary table too. For "create index" work
+ *	item create base index instance before temp index instance. For index
+ *	deletion delete temp index instance first to release index usage counter 
+ *	before deletion of base index instance.
+ **************************************/
+ 
+	SET_TDBB(tdbb);
+	Database* dbb = tdbb->tdbb_database;
+
+	const bool have_gtt = 
+		(ENCODE_ODS(dbb->dbb_ods_version, dbb->dbb_minor_version) >= ODS_11_1);
+
+	bool is_create = true;
+	dfw_task_routine task_routine = NULL;
+	switch (work->dfw_type)
+	{
+		case dfw_create_index :
+			task_routine = create_index;
+			break;
+
+		case dfw_create_expression_index :
+			task_routine = PCMET_expression_index;
+			break;
+
+		case dfw_delete_index :
+		case dfw_delete_expression_index :
+			task_routine = delete_index;
+			is_create = false;
+			break;
+	};
+	fb_assert(task_routine);
+	
+	bool more = false, more2 = false;
+	
+	if (is_create) {
+		more = (*task_routine)(tdbb, phase, work, transaction);
+	}
+	if (have_gtt)
+	{
+		bool gtt_preserve = false;
+		jrd_rel* relation = NULL;
+		
+		if (is_create)
+		{
+			jrd_req* request = NULL;
+			
+			FOR(REQUEST_HANDLE request)
+				IDX IN RDB$INDICES CROSS
+				REL IN RDB$RELATIONS OVER RDB$RELATION_NAME WITH
+					IDX.RDB$INDEX_NAME EQ work->dfw_name.c_str()
+				gtt_preserve = (REL.RDB$RELATION_TYPE == rel_global_temp_preserve);
+				relation = MET_lookup_relation(tdbb, REL.RDB$RELATION_NAME);
+			END_FOR;
+
+			CMP_release(tdbb, request);
+		}
+		else
+		{
+			relation = MET_lookup_relation_id(tdbb, work->dfw_id, false);
+			gtt_preserve = (relation) && (relation->rel_flags & REL_temp_conn);
+		}
+
+		if (gtt_preserve && relation)
+		{
+			tdbb->tdbb_flags &= ~TDBB_deferred;
+			try {
+				if (relation->getPages(tdbb, -1, false)) {
+					more2 = (*task_routine) (tdbb, phase, work, transaction);
+				}
+				tdbb->tdbb_flags |= TDBB_deferred;
+			}
+			catch (...)
+			{
+				tdbb->tdbb_flags |= TDBB_deferred;
+				throw;
+			}
+		}
+	}
+	if (!is_create) {
+		more = (*task_routine)(tdbb, phase, work, transaction);
+	}
+	return (more || more2);
+}
+
 
 static bool create_index(	thread_db*	tdbb,
 							SSHORT	phase,
@@ -1530,7 +1630,15 @@ static bool create_index(	thread_db*	tdbb,
 			{
 				relation = MET_lookup_relation(tdbb, IDXN.RDB$RELATION_NAME);
 
-				RelationPages* relPages = relation->getBasePages();
+				RelationPages* relPages = relation->getPages(tdbb, -1, false);
+				if (!relPages) {
+					return false;
+				}
+
+				// we need to special handle temp tables with ON PRESERVE ROWS only
+				const bool isTempIndex = (relation->rel_flags & REL_temp_conn) && 
+					(relPages->rel_instance_id != 0);
+
 				/* Fetch the root index page and mark MUST_WRITE, and then
 				   delete the index. It will also clean the index slot. Note
 				   that the previous fixed definition of MAX_IDX (64) has been
@@ -1542,8 +1650,21 @@ static bool create_index(	thread_db*	tdbb,
 						WIN window(relPages->rel_pg_space_id, relPages->rel_index_root);
 						CCH_FETCH(tdbb, &window, LCK_write, pag_root);
 						CCH_MARK_MUST_WRITE(tdbb, &window);
-						BTR_delete_index(tdbb, &window, work->dfw_id);
-						work->dfw_id = dbb->dbb_max_idx;
+						const bool tree_exists = BTR_delete_index(tdbb, &window, work->dfw_id);
+						
+						if (!isTempIndex) {
+							work->dfw_id = dbb->dbb_max_idx;
+						}
+						else if (tree_exists)
+						{
+							IndexLock* idx_lock = CMP_get_index_lock(tdbb, relation, work->dfw_id);
+							if (idx_lock)
+							{
+								if (!--idx_lock->idl_count) {
+									LCK_release(tdbb, idx_lock->idl_lock);
+								}
+							}
+						}
 					}
 					if (!IDXN.RDB$INDEX_ID.NULL)
 					{
@@ -1816,7 +1937,8 @@ static bool create_index(	thread_db*	tdbb,
 */
 			}
 
-			fb_assert(work->dfw_id == dbb->dbb_max_idx);
+			fb_assert(work->dfw_id <= dbb->dbb_max_idx);
+			idx.idx_id = work->dfw_id;
 			SelectivityList selectivity(*tdbb->getDefaultPool());
 			IDX_create_index(tdbb, relation, &idx, work->dfw_name.c_str(),
 							&work->dfw_id, transaction, selectivity);
@@ -2783,9 +2905,7 @@ static bool delete_index(thread_db* tdbb, SSHORT phase, DeferredWork* work,
  * Functional description
  *
  **************************************/
-	IndexLock* index;
-	jrd_rel* relation;
-	USHORT id;
+	IndexLock* index = NULL;
 
 	SET_TDBB(tdbb);
 
@@ -2794,15 +2914,27 @@ static bool delete_index(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 		arg = arg->dfw_next;
 
 	fb_assert(arg);
+	USHORT id = arg->dfw_id - 1;
+	
+	// Look up the relation.  If we can't find the relation,
+	// don't worry about the index. 
 
+	jrd_rel* relation = MET_lookup_relation_id(tdbb, work->dfw_id, false);
+	if (!relation) {
+		return false;
+	}
+
+	RelationPages* relPages = relation->getPages(tdbb, -1, false);
+	if (!relPages) {
+		return false;
+	}
+	// we need to special handle temp tables with ON PRESERVE ROWS only
+	const bool isTempIndex = (relation->rel_flags & REL_temp_conn) && 
+		(relPages->rel_instance_id != 0);
+	
 	switch (phase)
 	{
 	case 0:
-		relation = MET_lookup_relation_id(tdbb, work->dfw_id, false);
-		if (!relation) {
-			return false;
-		}
-		id = arg->dfw_id - 1;
 		index = CMP_get_index_lock(tdbb, relation, id);
 		if (index) {
 			if (!index->idl_count) {
@@ -2820,46 +2952,65 @@ static bool delete_index(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 		return true;
 
 	case 3:
-		/* Look up the relation.  If we can't find the relation,
-		   don't worry about the index. */
+		// Make sure nobody is currently using the index 
 
-		relation = MET_lookup_relation_id(tdbb, work->dfw_id, false);
-		if (!relation) {
-			return false;
-		}
+		// If we about to delete temp index instance then usage counter
+		// will remains 1 and will be decremented by IDX_delete_index at
+		// phase 4
 
-		/* Make sure nobody is currently using the index */
-
-		id = arg->dfw_id - 1;
 		index = CMP_get_index_lock(tdbb, relation, id);
 		if (index)
 		{
+			// take into account lock probably used by temp index instance
+			bool temp_lock_released = false;
+			if (isTempIndex && (index->idl_count == 1)) 
+			{
+				index_desc idx;
+				if (BTR_lookup(tdbb, relation, id, &idx, relPages) == FB_SUCCESS) 
+				{
+					index->idl_count--;
+					LCK_release(tdbb, index->idl_lock);
+					temp_lock_released = true;
+				}
+			}
+
 			// Try to clear trigger cache to release lock
 			if (index->idl_count)
 				MET_clear_cache(tdbb);
-			if (index->idl_count ||
-				!LCK_lock_non_blocking(tdbb, index->idl_lock, LCK_EX,
-									   transaction->getLockWait()))
+				
+			if (!isTempIndex)
 			{
-				ERR_post(isc_no_meta_update,
-						  isc_arg_gds, isc_obj_in_use,
-						  isc_arg_string, "INDEX",
-						  0);
+				if ((index->idl_count ||
+					!LCK_lock_non_blocking(tdbb, index->idl_lock, LCK_EX,
+										transaction->getLockWait())))
+				{
+					// restore lock used by temp index instance
+					if (temp_lock_released)
+					{
+						LCK_lock_non_blocking(tdbb, index->idl_lock, LCK_SR, LCK_WAIT);
+						index->idl_count++;
+					}
+					
+					ERR_post(isc_no_meta_update,
+							isc_arg_gds, isc_obj_in_use,
+							isc_arg_string, "INDEX",
+							0);
+				}
+				index->idl_count++;
 			}
-			index->idl_count++;
 		}
 
 		return true;
 
 	case 4:
-		relation = MET_lookup_relation_id(tdbb, work->dfw_id, false);
-		if (!relation) {
-			return false;
-		}
-
-		id = arg->dfw_id - 1;
 		index = CMP_get_index_lock(tdbb, relation, id);
+		if (isTempIndex && index)
+			index->idl_count++;
 		IDX_delete_index(tdbb, relation, id);
+		
+		if (isTempIndex)
+			return false;
+			
 		if (work->dfw_type == dfw_delete_expression_index)
 		{
 			MET_delete_dependencies(tdbb, arg->dfw_name, obj_expression_index);
@@ -2890,10 +3041,10 @@ static bool delete_index(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 		if (index)
 		{
 			/* in order for us to have gotten the lock in phase 3
-			   * idl_count HAD to be 0, therefore after having incremented
-			   * it for the exclusive lock it would have to be 1.
-			   * IF now it is NOT 1 then someone else got a lock to
-			   * the index and something is seriously wrong */
+			* idl_count HAD to be 0, therefore after having incremented
+			* it for the exclusive lock it would have to be 1.
+			* IF now it is NOT 1 then someone else got a lock to
+			* the index and something is seriously wrong */
 			fb_assert(index->idl_count == 1);
 			if (!--index->idl_count)
 			{
@@ -2920,7 +3071,7 @@ static bool delete_index(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 
 				for (IndexBlock** iptr = &relation->rel_index_blocks;
 					*iptr;
-					 iptr = &(*iptr)->idb_next)
+					iptr = &(*iptr)->idb_next)
 				{
 					if ((*iptr)->idb_id == id)
 					{
