@@ -142,10 +142,10 @@ bool IntlManager::initialize()
 
 								if (version != INTL_VERSION_1 && version != INTL_VERSION_2)
 								{
-									string s;
-									s.printf("INTL module '%s' is of incompatible version number %d",
+									string err_msg;
+									err_msg.printf("INTL module '%s' is of incompatible version number %d",
 										filename.c_str(), version);
-									gds__log(s.c_str());
+									gds__log(err_msg.c_str());
 									ok = false;
 								}
 								else
