@@ -95,16 +95,16 @@ static const TEXT history_names[][10] = {
 
 static const UCHAR compatibility[] = {
 
-/*				Shared	Prot	Shared	Prot
-		none	null	 Read	Read	Write	Write	Exclusive */
+/*							Shared	Prot	Shared	Prot
+			none	null	Read	Read	Write	Write	Exclusive */
 
-/* none */ 1, 1, 1, 1, 1, 1, 1,
-/* null */ 1, 1, 1, 1, 1, 1, 1,
-/* SR */ 1, 1, 1, 1, 1, 1, 0,
-/* PR */ 1, 1, 1, 1, 0, 0, 0,
-/* SW */ 1, 1, 1, 0, 1, 0, 0,
-/* PW */ 1, 1, 1, 0, 0, 0, 0,
-/* EX */ 1, 1, 0, 0, 0, 0, 0
+/* none */	1,		1,		1,		1,		1,		1,		1,
+/* null */	1,		1,		1,		1,		1,		1,		1,
+/* SR */	1,		1,		1,		1,		1,		1,		0,
+/* PR */	1,		1,		1,		1,		0,		0,		0,
+/* SW */	1,		1,		1,		0,		1,		0,		0,
+/* PW */	1,		1,		1,		0,		0,		0,		0,
+/* EX */	1,		1,		0,		0,		0,		0,		0
 };
 
 #define COMPATIBLE(st1, st2)	compatibility [st1 * LCK_max + st2]
@@ -907,6 +907,24 @@ static void prt_lock(
 			lock->lbl_series, lock->lbl_parent, lock->lbl_state,
 			lock->lbl_size, lock->lbl_length, lock->lbl_data);
 
+	if (lock->lbl_series == Jrd::LCK_bdb && lock->lbl_length == 6) {
+		// Since fb 2.1 lock keys for page numbers (series == 3) contains
+		// page space number in high 2 bytes of 6-byte key. Lets print it
+		// in <page_space>:<page_number> format
+		SLONG key;
+		UCHAR* p = (UCHAR *) &key;
+		const UCHAR* q = lock->lbl_key;
+		for (const UCHAR* const end = q + 4; q < end; q++)
+			*p++ = *q;
+
+		USHORT pg_space = 0;
+		p = (UCHAR *) &pg_space;
+		for (const UCHAR* const end = q + 2; q < end; q++)
+			*p++ = *q;
+
+		FPRINTF(outfile, "\tKey: %04d:%06"SLONGFORMAT",", pg_space, key);
+	}
+	else 
 	if (lock->lbl_length == 4) {
 		SLONG key;
 		UCHAR* p = (UCHAR *) &key;
