@@ -28,9 +28,6 @@ USHORT famasc_string_to_key(texttype* obj, USHORT iInLen, const BYTE* pInChar,
 SSHORT famasc_compare(texttype* obj, ULONG l1, const BYTE* s1, ULONG l2, const BYTE* s2,
 	INTL_BOOL* error_flag);
 
-ULONG famasc_str_to_upper(texttype* obj, ULONG iLen, const BYTE* pStr, ULONG iOutLen, BYTE* pOutStr);
-ULONG famasc_str_to_lower(texttype* obj, ULONG iLen, const BYTE* pStr, ULONG iOutLen, BYTE* pOutStr);
-
 ULONG cp1251_str_to_upper(texttype* obj, ULONG iLen, const BYTE* pStr, ULONG iOutLen, BYTE* pOutStr);
 ULONG cp1251_str_to_lower(texttype* obj, ULONG iLen, const BYTE* pStr, ULONG iOutLen, BYTE* pOutStr);
 

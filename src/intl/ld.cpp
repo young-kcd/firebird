@@ -42,7 +42,7 @@ using namespace Firebird;
 void gds__log(UCHAR*, ...);
 */
 
-#define	EXTERN_texttype(name)	INTL_BOOL name (texttype*, charset*, const ASCII*, const ASCII*, USHORT, const UCHAR*, ULONG)
+#define	EXTERN_texttype(name)	INTL_BOOL name (texttype*, charset*, const ASCII*, const ASCII*, USHORT, const UCHAR*, ULONG, const ASCII*)
 // #define EXTERN_convert(name)	INTL_BOOL name (csconvert*, const ASCII*, const ASCII*)
 #define EXTERN_charset(name)	INTL_BOOL name (charset*, const ASCII*)
 
@@ -372,7 +372,8 @@ INTL_BOOL FB_DLL_EXPORT LD_lookup_texttype(texttype* tt, const ASCII* texttype_n
 				tt, &cs, texttype_name, charset_name,									\
 				(ignore_attributes ? coll_attr : attributes),							\
 				(ignore_attributes ? NULL : specific_attributes),						\
-				(ignore_attributes ? 0 : specific_attributes_length));					\
+				(ignore_attributes ? 0 : specific_attributes_length),					\
+				configInfo);															\
 																						\
 			if (cs.charset_fn_destroy)													\
 				cs.charset_fn_destroy(&cs);												\
@@ -394,7 +395,8 @@ INTL_BOOL FB_DLL_EXPORT LD_lookup_texttype(texttype* tt, const ASCII* texttype_n
 				(ignore_attributes ? (UCHAR*) specific_attr : specific_attributes),	\
 				(ignore_attributes ?									\
 					(specific_attr ? strlen(specific_attr) : 0) :		\
-					specific_attributes_length));						\
+					specific_attributes_length),						\
+				configInfo);											\
 																		\
 			if (cs.charset_fn_destroy)									\
 				cs.charset_fn_destroy(&cs);								\

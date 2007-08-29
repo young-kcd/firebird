@@ -45,8 +45,8 @@ public:
 	static USHORT utf16KeyLength(USHORT len);	// BOCU-1
 	static USHORT utf16ToKey(USHORT srcLen, const USHORT* src, USHORT dstLen, UCHAR* dst,
 							 USHORT key_type);	// BOCU-1
-	static ULONG utf16LowerCase(ULONG srcLen, const USHORT* src, ULONG dstLen, USHORT* dst);
-	static ULONG utf16UpperCase(ULONG srcLen, const USHORT* src, ULONG dstLen, USHORT* dst);
+	static ULONG utf16LowerCase(ULONG srcLen, const USHORT* src, ULONG dstLen, USHORT* dst, const ULONG* exceptions);
+	static ULONG utf16UpperCase(ULONG srcLen, const USHORT* src, ULONG dstLen, USHORT* dst, const ULONG* exceptions);
 	static ULONG utf16ToUtf8(ULONG srcLen, const USHORT* src, ULONG dstLen, UCHAR* dst,
 							 USHORT* err_code, ULONG* err_position);
 	static ULONG utf8ToUtf16(ULONG srcLen, const UCHAR* src, ULONG dstLen, USHORT* dst,
@@ -84,7 +84,7 @@ public:
 						   USHORT key_type) const;
 		SSHORT compare(ULONG len1, const USHORT* str1, ULONG len2, const USHORT* str2,
 					   INTL_BOOL* error_flag) const;
-		ULONG canonical(ULONG srcLen, const USHORT* src, ULONG dstLen, ULONG* dst);
+		ULONG canonical(ULONG srcLen, const USHORT* src, ULONG dstLen, ULONG* dst, const ULONG* exceptions);
 
 	private:
 		static ICU* loadICU(const Firebird::string& collVersion, const Firebird::string& locale,

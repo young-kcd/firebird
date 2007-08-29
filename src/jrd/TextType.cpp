@@ -95,6 +95,7 @@
 #include "gen/iberror.h"
 #include "../jrd/jrd.h"
 #include "../jrd/intl_classes.h"
+#include "../jrd/IntlUtil.h"
 
 
 namespace Jrd {
@@ -308,29 +309,7 @@ ULONG TextType::str_to_upper(ULONG srcLen,
 	if (tt->texttype_fn_str_to_upper)
 		return (*tt->texttype_fn_str_to_upper)(tt, srcLen, src, dstLen, dst);
 	else
-	{
-		ULONG utf16_length = getCharSet()->getConvToUnicode().convertLength(srcLen);
-		Firebird::HalfStaticArray<UCHAR, BUFFER_SMALL> utf16_str;
-		UCHAR* utf16_ptr;
-
-		if (dstLen >= utf16_length)	// if dst buffer is sufficient large, use it as intermediate
-			utf16_ptr = dst;
-		else
-			utf16_ptr = utf16_str.getBuffer(utf16_length);
-
-		// convert to UTF-16
-		srcLen = getCharSet()->getConvToUnicode().convert(srcLen, src,
-					utf16_length, utf16_ptr);
-
-		// convert to uppercase
-		Firebird::HalfStaticArray<UCHAR, BUFFER_SMALL> upper_str;
-		srcLen = UnicodeUtil::utf16UpperCase(srcLen, reinterpret_cast<USHORT*>(utf16_ptr),
-					utf16_length, reinterpret_cast<USHORT*>(upper_str.getBuffer(utf16_length)));
-
-		// convert to original character set
-		return getCharSet()->getConvFromUnicode().convert(srcLen, upper_str.begin(),
-					dstLen, dst);
-	}
+		return Firebird::IntlUtil::toUpper(getCharSet(), srcLen, src, dstLen, dst, NULL);
 }
 
 
@@ -342,29 +321,7 @@ ULONG TextType::str_to_lower(ULONG srcLen,
 	if (tt->texttype_fn_str_to_lower)
 		return (*tt->texttype_fn_str_to_lower)(tt, srcLen, src, dstLen, dst);
 	else
-	{
-		ULONG utf16_length = getCharSet()->getConvToUnicode().convertLength(srcLen);
-		Firebird::HalfStaticArray<UCHAR, BUFFER_SMALL> utf16_str;
-		UCHAR* utf16_ptr;
-
-		if (dstLen >= utf16_length)	// if dst buffer is sufficient large, use it as intermediate
-			utf16_ptr = dst;
-		else
-			utf16_ptr = utf16_str.getBuffer(utf16_length);
-
-		// convert to UTF-16
-		srcLen = getCharSet()->getConvToUnicode().convert(srcLen, src,
-					utf16_length, utf16_ptr);
-
-		// convert to lowercase
-		Firebird::HalfStaticArray<UCHAR, BUFFER_SMALL> lower_str;
-		srcLen = UnicodeUtil::utf16LowerCase(srcLen, reinterpret_cast<USHORT*>(utf16_ptr),
-					utf16_length, reinterpret_cast<USHORT*>(lower_str.getBuffer(utf16_length)));
-
-		// convert to original character set
-		return getCharSet()->getConvFromUnicode().convert(srcLen, lower_str.begin(),
-					dstLen, dst);
-	}
+		return Firebird::IntlUtil::toLower(getCharSet(), srcLen, src, dstLen, dst, NULL);
 }
 
 
@@ -396,7 +353,9 @@ ULONG TextType::canonical(ULONG srcLen,
 	}
 	else
 	{
-		fb_assert(tt->texttype_canonical_width == getCharSet()->minBytesPerChar());
+		fb_assert(
+			(tt->texttype_canonical_width == 0 && !tt->texttype_fn_canonical) || 
+			tt->texttype_canonical_width == getCharSet()->minBytesPerChar());
 		fb_assert(dstLen >= srcLen);
 
 		memcpy(dst, src, srcLen);

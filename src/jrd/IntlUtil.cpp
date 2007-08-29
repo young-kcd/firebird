@@ -453,6 +453,56 @@ bool IntlUtil::initUnicodeCollation(texttype* tt, charset* cs, const ASCII* name
 }
 
 
+ULONG IntlUtil::toLower(Jrd::CharSet* cs, ULONG srcLen, const UCHAR* src, ULONG dstLen, UCHAR* dst,
+	const ULONG* exceptions)
+{
+	ULONG utf16_length = cs->getConvToUnicode().convertLength(srcLen);
+	Firebird::HalfStaticArray<UCHAR, BUFFER_SMALL> utf16_str;
+	UCHAR* utf16_ptr;
+
+	if (dstLen >= utf16_length)	// if dst buffer is sufficient large, use it as intermediate
+		utf16_ptr = dst;
+	else
+		utf16_ptr = utf16_str.getBuffer(utf16_length);
+
+	// convert to UTF-16
+	srcLen = cs->getConvToUnicode().convert(srcLen, src, utf16_length, utf16_ptr);
+
+	// convert to lowercase
+	Firebird::HalfStaticArray<UCHAR, BUFFER_SMALL> lower_str;
+	srcLen = UnicodeUtil::utf16LowerCase(srcLen, reinterpret_cast<USHORT*>(utf16_ptr),
+		utf16_length, reinterpret_cast<USHORT*>(lower_str.getBuffer(utf16_length)), exceptions);
+
+	// convert to original character set
+	return cs->getConvFromUnicode().convert(srcLen, lower_str.begin(), dstLen, dst);
+}
+
+
+ULONG IntlUtil::toUpper(Jrd::CharSet* cs, ULONG srcLen, const UCHAR* src, ULONG dstLen, UCHAR* dst,
+	const ULONG* exceptions)
+{
+	ULONG utf16_length = cs->getConvToUnicode().convertLength(srcLen);
+	Firebird::HalfStaticArray<UCHAR, BUFFER_SMALL> utf16_str;
+	UCHAR* utf16_ptr;
+
+	if (dstLen >= utf16_length)	// if dst buffer is sufficient large, use it as intermediate
+		utf16_ptr = dst;
+	else
+		utf16_ptr = utf16_str.getBuffer(utf16_length);
+
+	// convert to UTF-16
+	srcLen = cs->getConvToUnicode().convert(srcLen, src, utf16_length, utf16_ptr);
+
+	// convert to uppercase
+	Firebird::HalfStaticArray<UCHAR, BUFFER_SMALL> upper_str;
+	srcLen = UnicodeUtil::utf16UpperCase(srcLen, reinterpret_cast<USHORT*>(utf16_ptr),
+		utf16_length, reinterpret_cast<USHORT*>(upper_str.getBuffer(utf16_length)), exceptions);
+
+	// convert to original character set
+	return cs->getConvFromUnicode().convert(srcLen, upper_str.begin(), dstLen, dst);
+}
+
+
 bool IntlUtil::readOneChar(Jrd::CharSet* cs, const UCHAR** s, const UCHAR* end, ULONG* size)
 {
 	(*s) += *size;
@@ -740,7 +790,7 @@ static ULONG unicodeCanonical(texttype* tt, ULONG srcLen, const UCHAR* src, ULON
 
 		return tt->texttype_impl->collation->canonical(
 			utf16Len, reinterpret_cast<USHORT*>(utf16Str.begin()),
-			dstLen, reinterpret_cast<ULONG*>(dst));
+			dstLen, reinterpret_cast<ULONG*>(dst), NULL);
 	}
 	catch (BadAlloc)
 	{

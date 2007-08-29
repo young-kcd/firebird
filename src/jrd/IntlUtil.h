@@ -65,6 +65,11 @@ public:
 	static bool initUnicodeCollation(texttype* tt, charset* cs, const ASCII* name,
 		USHORT attributes, const UCharBuffer& specificAttributes, const string& configInfo);
 
+	static ULONG toLower(Jrd::CharSet* cs, ULONG srcLen, const UCHAR* src, ULONG dstLen, UCHAR* dst,
+		const ULONG* exceptions);
+	static ULONG toUpper(Jrd::CharSet* cs, ULONG srcLen, const UCHAR* src, ULONG dstLen, UCHAR* dst,
+		const ULONG* exceptions);
+
 	static bool readOneChar(Jrd::CharSet* cs, const UCHAR** s, const UCHAR* end, ULONG* size);
 
 	static bool setupIcuAttributes(charset* cs, const string& specificAttributes,

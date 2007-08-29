@@ -36,6 +36,7 @@
 #include "../common/classes/objects_array.h"
 #include "../common/classes/rwlock.h"
 #include "unicode/ustring.h"
+#include "unicode/utrans.h"
 #include "unicode/uchar.h"
 #include "unicode/ucnv.h"
 #include "unicode/ucol.h"
@@ -179,23 +180,37 @@ USHORT UnicodeUtil::utf16ToKey(USHORT srcLen, const USHORT* src, USHORT dstLen, 
 }
 
 
-ULONG UnicodeUtil::utf16LowerCase(ULONG srcLen, const USHORT* src, ULONG dstLen, USHORT* dst)
+ULONG UnicodeUtil::utf16LowerCase(ULONG srcLen, const USHORT* src, ULONG dstLen, USHORT* dst,
+	const ULONG* exceptions)
 {
 	// this is more correct but we don't support completely yet
 	/***
 	fb_assert(srcLen % sizeof(*src) == 0);
 	fb_assert(src != NULL && dst != NULL);
 
+	memcpy(dst, src, srcLen);
+
 	UErrorCode errorCode = U_ZERO_ERROR;
+	UTransliterator* trans = utrans_open("Any-Lower", UTRANS_FORWARD, NULL, 0, NULL, &errorCode);
+	//// TODO: add exceptions in this way: Any-Lower[^\\u03BC] - for U+03BC
 
-	int32_t length = u_strToLower(reinterpret_cast<UChar*>(dst), dstLen / sizeof(USHORT),
-								  reinterpret_cast<const UChar*>(src), srcLen / sizeof(USHORT),
-								  NULL, &errorCode);
+	if (errorCode <= 0)
+	{
+		int32_t capacity = dstLen;
+		int32_t len = srcLen / sizeof(USHORT);
+		int32_t limit = len;
 
-	if (errorCode > 0 || length > dstLen)
-		return INTL_BAD_STR_LENGTH;
+		utrans_transUChars(trans, reinterpret_cast<UChar*>(dst), &len, capacity, 0, &limit, &errorCode);
+		utrans_close(trans);
+
+		len *= sizeof(USHORT);
+		if (len > dstLen)
+			len = INTL_BAD_STR_LENGTH;
+
+		return len;
+	}
 	else
-		return static_cast<ULONG>(length * sizeof(USHORT));
+		return INTL_BAD_STR_LENGTH;
 	***/
 
 	fb_assert(srcLen % sizeof(*src) == 0);
@@ -211,7 +226,17 @@ ULONG UnicodeUtil::utf16LowerCase(ULONG srcLen, const USHORT* src, ULONG dstLen,
 		uint32_t c;
 		U16_NEXT(src, i, srcLen, c);
 
-		c = u_tolower(c);
+		if (!exceptions)
+			c = u_tolower(c);
+		else
+		{
+			const ULONG* p = exceptions;
+			while (*p && *p != c)
+				++p;
+
+			if (!*p)
+				c = u_tolower(c);
+		}
 
 		bool error;
 		U16_APPEND(dst, n, dstLen, c, error);
@@ -221,23 +246,37 @@ ULONG UnicodeUtil::utf16LowerCase(ULONG srcLen, const USHORT* src, ULONG dstLen,
 }
 
 
-ULONG UnicodeUtil::utf16UpperCase(ULONG srcLen, const USHORT* src, ULONG dstLen, USHORT* dst)
+ULONG UnicodeUtil::utf16UpperCase(ULONG srcLen, const USHORT* src, ULONG dstLen, USHORT* dst,
+	const ULONG* exceptions)
 {
 	// this is more correct but we don't support completely yet
 	/***
 	fb_assert(srcLen % sizeof(*src) == 0);
 	fb_assert(src != NULL && dst != NULL);
 
+	memcpy(dst, src, srcLen);
+
 	UErrorCode errorCode = U_ZERO_ERROR;
+	UTransliterator* trans = utrans_open("Any-Upper", UTRANS_FORWARD, NULL, 0, NULL, &errorCode);
+	//// TODO: add exceptions in this way: Any-Upper[^\\u03BC] - for U+03BC
 
-	int32_t length = u_strToUpper(reinterpret_cast<UChar*>(dst), dstLen / sizeof(USHORT),
-								  reinterpret_cast<const UChar*>(src), srcLen / sizeof(USHORT),
-								  NULL, &errorCode);
+	if (errorCode <= 0)
+	{
+		int32_t capacity = dstLen;
+		int32_t len = srcLen / sizeof(USHORT);
+		int32_t limit = len;
 
-	if (errorCode > 0 || length > dstLen)
-		return INTL_BAD_STR_LENGTH;
+		utrans_transUChars(trans, reinterpret_cast<UChar*>(dst), &len, capacity, 0, &limit, &errorCode);
+		utrans_close(trans);
+
+		len *= sizeof(USHORT);
+		if (len > dstLen)
+			len = INTL_BAD_STR_LENGTH;
+
+		return len;
+	}
 	else
-		return static_cast<ULONG>(length * sizeof(USHORT));
+		return INTL_BAD_STR_LENGTH;
 	***/
 
 	fb_assert(srcLen % sizeof(*src) == 0);
@@ -253,7 +292,17 @@ ULONG UnicodeUtil::utf16UpperCase(ULONG srcLen, const USHORT* src, ULONG dstLen,
 		uint32_t c;
 		U16_NEXT(src, i, srcLen, c);
 
-		c = u_toupper(c);
+		if (!exceptions)
+			c = u_toupper(c);
+		else
+		{
+			const ULONG* p = exceptions;
+			while (*p && *p != c)
+				++p;
+
+			if (!*p)
+				c = u_toupper(c);
+		}
 
 		bool error;
 		U16_APPEND(dst, n, dstLen, c, error);
@@ -1074,7 +1123,8 @@ SSHORT UnicodeUtil::Utf16Collation::compare(ULONG len1, const USHORT* str1,
 }
 
 
-ULONG UnicodeUtil::Utf16Collation::canonical(ULONG srcLen, const USHORT* src, ULONG dstLen, ULONG* dst)
+ULONG UnicodeUtil::Utf16Collation::canonical(ULONG srcLen, const USHORT* src, ULONG dstLen, ULONG* dst,
+	const ULONG* exceptions)
 {
 	USHORT errCode;
 	ULONG errPosition;
@@ -1084,7 +1134,7 @@ ULONG UnicodeUtil::Utf16Collation::canonical(ULONG srcLen, const USHORT* src, UL
 	if (attributes & TEXTTYPE_ATTR_CASE_INSENSITIVE)
 	{
 		srcLen = utf16UpperCase(srcLen, src,
-			dstLen, reinterpret_cast<USHORT*>(upperStr.getBuffer(dstLen)));
+			dstLen, reinterpret_cast<USHORT*>(upperStr.getBuffer(dstLen)), exceptions);
 		src = reinterpret_cast<USHORT*>(upperStr.begin());
 	}
 

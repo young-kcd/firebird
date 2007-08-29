@@ -720,7 +720,7 @@ static ULONG utf16_upper(
 	fb_assert(src != NULL && dst != NULL);
 
 	return UnicodeUtil::utf16UpperCase(srcLen, reinterpret_cast<const USHORT*>(src),
-									   dstLen, reinterpret_cast<USHORT*>(dst));
+									   dstLen, reinterpret_cast<USHORT*>(dst), NULL);
 }
 
 static ULONG utf16_lower(
@@ -744,7 +744,7 @@ static ULONG utf16_lower(
 	fb_assert(src != NULL && dst != NULL);
 
 	return UnicodeUtil::utf16LowerCase(srcLen, reinterpret_cast<const USHORT*>(src),
-									   dstLen, reinterpret_cast<USHORT*>(dst));
+									   dstLen, reinterpret_cast<USHORT*>(dst), NULL);
 }
 
 
