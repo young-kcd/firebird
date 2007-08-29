@@ -1520,6 +1520,7 @@ static bool modify_index(	thread_db*	tdbb,
 
 	bool is_create = true;
 	dfw_task_routine task_routine = NULL;
+
 	switch (work->dfw_type)
 	{
 		case dfw_create_index :
@@ -1543,6 +1544,7 @@ static bool modify_index(	thread_db*	tdbb,
 	if (is_create) {
 		more = (*task_routine)(tdbb, phase, work, transaction);
 	}
+
 	if (have_gtt)
 	{
 		bool gtt_preserve = false;
@@ -1584,9 +1586,11 @@ static bool modify_index(	thread_db*	tdbb,
 			}
 		}
 	}
+
 	if (!is_create) {
 		more = (*task_routine)(tdbb, phase, work, transaction);
 	}
+
 	return (more || more2);
 }
 

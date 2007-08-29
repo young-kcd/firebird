@@ -320,7 +320,7 @@ void BTR_create(thread_db* tdbb,
 }
 
 
-bool BTR_delete_index(thread_db* tdbb, WIN * window, USHORT id)
+bool BTR_delete_index(thread_db* tdbb, WIN* window, USHORT id)
 {
 /**************************************
  *
@@ -330,7 +330,7 @@ bool BTR_delete_index(thread_db* tdbb, WIN * window, USHORT id)
  *
  * Functional description
  *	Delete an index if it exists.
- *	Return true if index tree was there
+ *	Return true if index tree was there.
  *
  **************************************/
 	SET_TDBB(tdbb);

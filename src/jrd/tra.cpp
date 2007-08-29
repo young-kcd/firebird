@@ -2928,7 +2928,7 @@ static void transaction_options(
 			break;
 
 		case isc_tpb_nowait:
-			if (lock_timeout || wait_seen && wait)
+			if (lock_timeout || (wait_seen && wait))
 			{
 				ERR_post(isc_bad_tpb_content, 0);
 			}
