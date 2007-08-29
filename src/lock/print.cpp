@@ -911,26 +911,23 @@ static void prt_lock(
 		// Since fb 2.1 lock keys for page numbers (series == 3) contains
 		// page space number in high 2 bytes of 6-byte key. Lets print it
 		// in <page_space>:<page_number> format
+		UCHAR *q = lock->lbl_key;
+		
 		SLONG key;
-		UCHAR* p = (UCHAR *) &key;
-		const UCHAR* q = lock->lbl_key;
-		for (const UCHAR* const end = q + 4; q < end; q++)
-			*p++ = *q;
+		memcpy(&key, q, 4);
+		q += 4;
 
-		USHORT pg_space = 0;
-		p = (UCHAR *) &pg_space;
-		for (const UCHAR* const end = q + 2; q < end; q++)
-			*p++ = *q;
+		USHORT pg_space;
+		memcpy(&pg_space, q, 2);
 
 		FPRINTF(outfile, "\tKey: %04d:%06"SLONGFORMAT",", pg_space, key);
 	}
 	else 
 	if (lock->lbl_length == 4) {
 		SLONG key;
-		UCHAR* p = (UCHAR *) &key;
 		const UCHAR* q = lock->lbl_key;
-		for (const UCHAR* const end = q + 4; q < end; q++)
-			*p++ = *q;
+		memcpy(&key, q, 4);
+
 		FPRINTF(outfile, "\tKey: %06"SLONGFORMAT",", key);
 	}
 	else {
