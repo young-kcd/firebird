@@ -1,3 +1,37 @@
+2007-08-28 22:17  hvlad
+
+	* firebird2/src/jrd/: btr.cpp (1.199), btr_proto.h (1.40), dfw.epp
+	(1.214), idx.cpp (1.124), pcmet.epp (1.43):
+
+	Fixed bug CORE-1361 : Index operations for global temporary tables
+	are not visible for the active connection
+
+2007-08-28 21:35  hvlad
+
+	* firebird2/src/remote/: interface.cpp (1.145), remot_proto.h
+	(1.11), remote.cpp (1.46):
+
+	Fixed bug CORE-1430 : AV in fbclient.dll if statement prepared and
+	executed right after events was registered
+
+2007-08-28 13:19  alexpeshkoff
+
+	* firebird2/configure.in (1.260):
+
+	Fixed linux build in HEAD
+
+2007-08-28 10:38  dimitr
+
+	* firebird2/src/lock/lock.cpp (1.128):
+
+	Fixed an occasional infinite loop in DEV_BUILD.
+
+2007-08-28 07:28  robocop
+
+	* firebird2/src/jrd/tra.cpp (1.137):
+
+	Let's detect wait/no_wait conflict as requested by Dmitry.
+
 2007-08-27 23:48  hvlad
 
 	* firebird2/src/jrd/evl.cpp (1.235):
