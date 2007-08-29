@@ -29,7 +29,7 @@ struct tok {
     USHORT tok_ident;
     const char* tok_string;
     USHORT tok_version;
-    bool specialHandling;
+    bool nonReserved;
 };
 
 typedef tok TOK;
