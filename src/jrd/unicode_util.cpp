@@ -36,7 +36,7 @@
 #include "../common/classes/objects_array.h"
 #include "../common/classes/rwlock.h"
 #include "unicode/ustring.h"
-#include "unicode/utrans.h"
+///#include "unicode/utrans.h"
 #include "unicode/uchar.h"
 #include "unicode/ucnv.h"
 #include "unicode/ucol.h"
@@ -234,7 +234,7 @@ ULONG UnicodeUtil::utf16LowerCase(ULONG srcLen, const USHORT* src, ULONG dstLen,
 			while (*p && *p != c)
 				++p;
 
-			if (!*p)
+			if (*p == 0)
 				c = u_tolower(c);
 		}
 
@@ -300,7 +300,7 @@ ULONG UnicodeUtil::utf16UpperCase(ULONG srcLen, const USHORT* src, ULONG dstLen,
 			while (*p && *p != c)
 				++p;
 
-			if (!*p)
+			if (*p == 0)
 				c = u_toupper(c);
 		}
 
