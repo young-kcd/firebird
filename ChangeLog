@@ -1,3 +1,64 @@
+2007-08-30 00:27  hvlad
+
+	* firebird2/src/lock/print.cpp (1.56):
+
+	Use memcpy instead of byte copying as Adriano suggested
+
+2007-08-29 17:16  asfernandes
+
+	* firebird2/src/: intl/lc_ascii.cpp (1.19), intl/lc_ascii.h (1.10),
+	intl/ld.cpp (1.31), intl/ldcommon.h (1.26), jrd/IntlUtil.cpp
+	(1.11), jrd/IntlUtil.h (1.9), jrd/TextType.cpp (1.3),
+	jrd/intl_builtin.cpp (1.37), jrd/unicode_util.cpp (1.17),
+	jrd/unicode_util.h (1.11):
+
+	Fixed CORE-1431 - Greek characters in cp1251 vs uppercasing
+
+2007-08-29 13:12  aafemt
+
+	* firebird2/src/jrd/IntlManager.cpp (1.18):
+
+	Warning
+
+2007-08-29 12:35  robocop
+
+	* firebird2/src/utilities/analyse.cpp (1.12):
+
+	Archeology.
+
+2007-08-29 12:02  robocop
+
+	* firebird2/src/gpre/fbrmclib.cpp (1.4):
+
+	Commit fix from Stephen Boyd for his RMCOBOL interface library.
+
+2007-08-29 11:49  hvlad
+
+	* firebird2/src/dsql/keywords.cpp (1.64):
+
+	Correct my mistake - new built-in UDFs must be extracted with
+	quotes by isql
+
+2007-08-29 11:05  hvlad
+
+	* firebird2/src/dsql/: keywords.cpp (1.63), keywords.h (1.21):
+
+	Lets isql not quote new non-reserved tokens
+
+2007-08-29 10:33  hvlad
+
+	* firebird2/src/lock/print.cpp (1.55):
+
+	Make fb_lock_print print lock keys for database pages in
+	page_space:page_number format
+
+2007-08-29 04:33  asfernandes
+
+	* firebird2/src/jrd/: btr.cpp (1.200), dfw.epp (1.215), tra.cpp
+	(1.138):
+
+	Misc
+
 2007-08-28 22:17  hvlad
 
 	* firebird2/src/jrd/: btr.cpp (1.199), btr_proto.h (1.40), dfw.epp
