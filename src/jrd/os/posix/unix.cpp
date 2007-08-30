@@ -68,10 +68,19 @@
 
 using namespace Jrd;
 
+// Some operating systems have problems with use of write/read with 
+// big (>2Gb) files. On the other hand, pwrite/pread works fine for them.
+// Therefore:
+#if defined SOLARIS
+#define BROKEN_IO_64
+#endif
+// which will force use of pread/pwrite even for CS.
+
 /* SUPERSERVER uses a mutex to allow atomic seek/read(write) sequences.
-   SUPERSERVER_V2 uses "positioned" read (write) calls to avoid a seek
-   and allow multiple threads to overlap database I/O. */
-#if defined SUPERSERVER
+   When possible, it uses "positioned" read (write) calls to avoid a seek
+   and allow multiple threads to overlap database I/O. This functions also
+   help at some OSs with broken read/write calls. */
+#if defined SUPERSERVER || defined BROKEN_IO_64
 #if (defined PREAD && defined PWRITE) || defined HAVE_AIO_H
 #define PREAD_PWRITE
 #endif
