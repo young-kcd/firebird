@@ -449,7 +449,6 @@ if test "$EDITLINE_FLG" = "Y"; then
 					AC_MSG_ERROR(termcap support not found)))))  
 	AC_SUBST(EDITLINE_A, -leditline)
 fi
-AC_CHECK_LIB(stdc++, main,,, $LIBS)
 
 
 dnl Check for functions
