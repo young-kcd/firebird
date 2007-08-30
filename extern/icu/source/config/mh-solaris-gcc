@@ -6,11 +6,10 @@
 ## Flags for position independent code
 SHAREDLIBCFLAGS = -fPIC
 SHAREDLIBCXXFLAGS = -fPIC
-SHAREDLIBCPPFLAGS = -DPIC
 
 
-THREADSCFLAGS += -threads -DSOLARIS_MT
-THREADSCXXFLAGS += -threads -DSOLARIS_MT
+THREADSCFLAGS += -threads 
+THREADSCXXFLAGS += -threads
 
 
 ## Commands to generate dependency files

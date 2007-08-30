@@ -150,11 +150,11 @@ case "$target" in
 
   i386-pc-solaris*)
     MAKEFILE_PREFIX=solx86gcc
-    INSTALL_PREFIX=solx86gcc
+    INSTALL_PREFIX=solaris
     PLATFORM=solx86
     AC_DEFINE(solx86, 1, [Define this if OS is Solarix x86])
     LOCK_MANAGER_FLG=N
-    EDITLINE_FLG=N
+    EDITLINE_FLG=Y
     SHRLIB_EXT=so
     PTHREAD_CFLAGS=-threads
     PTHREAD_LIBS=-lthread
@@ -164,7 +164,7 @@ case "$target" in
 
   sparc-sun-solaris*)
     MAKEFILE_PREFIX=solaris
-    INSTALL_PREFIX=solx86gcc
+    INSTALL_PREFIX=solaris
     PLATFORM=SOLARIS
     AC_DEFINE(SOLARIS, 1, [Define this if OS is Solaris Sparc])
     LOCK_MANAGER_FLG=N
@@ -981,13 +981,13 @@ case "$PLATFORM" in
     ;;
 
   solx86|SOLARIS)
-    AC_CONFIG_FILES([gen/install/Pkginfo:builds/install/arch-specific/solx86gcc/${ARCH_TYPE_SUFFIX}/pkginfo.in
-                     gen/install/Prototype:builds/install/arch-specific/solx86gcc/${ARCH_TYPE_SUFFIX}/prototype.in
-                     gen/install/Preinstall:builds/install/arch-specific/solx86gcc/${ARCH_TYPE_SUFFIX}/preinstall.in
-                     gen/install/Postinstall:builds/install/arch-specific/solx86gcc/${ARCH_TYPE_SUFFIX}/postinstall.in
-                     gen/install/Postremove:builds/install/arch-specific/solx86gcc/${ARCH_TYPE_SUFFIX}/postremove.in
-		     gen/install/prototypelg:builds/install/arch-specific/solx86gcc/LIBGCC/prototypelg.in
-		     gen/install/pkginfolg:builds/install/arch-specific/solx86gcc/LIBGCC/pkginfolg.in
+    AC_CONFIG_FILES([gen/install/Pkginfo:builds/install/arch-specific/solaris/${ARCH_TYPE_SUFFIX}/pkginfo.in
+                     gen/install/Prototype:builds/install/arch-specific/solaris/${ARCH_TYPE_SUFFIX}/prototype.in
+                     gen/install/Preinstall:builds/install/arch-specific/solaris/${ARCH_TYPE_SUFFIX}/preinstall.in
+                     gen/install/Postinstall:builds/install/arch-specific/solaris/${ARCH_TYPE_SUFFIX}/postinstall.in
+                     gen/install/Postremove:builds/install/arch-specific/solaris/${ARCH_TYPE_SUFFIX}/postremove.in
+		     gen/install/prototypelg:builds/install/arch-specific/solaris/libgcc/prototypelg.in
+		     gen/install/pkginfolg:builds/install/arch-specific/solaris/libgcc/pkginfolg.in
       ],[chmod a+x gen/install/Pre* gen/install/Post* 2>/dev/null])
     ;;
 

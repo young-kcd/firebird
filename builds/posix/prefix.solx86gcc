@@ -18,7 +18,7 @@
 #
 # Use SOLX86 to identify x86 version of Solaris.  Neil McCalden
 #  
-# $Id: prefix.solx86gcc,v 1.19 2005-11-17 06:55:44 kkuznetsov Exp $
+# $Id: prefix.solx86gcc,v 1.19.4.1 2007-08-30 09:15:55 paulbeach Exp $
 #
 # Start of file prefix.solaris X 86 :	$(VERSION)	$(PLATFORM)
 # 2 Oct 2002, Nickolay Samofatov - Major Cleanup
@@ -27,30 +27,22 @@
 #FirebirdInstallPrefix = @prefix@
 
 WARNINGS=-Wall -W -Wno-unused -Wno-parentheses -Wno-switch -Wwrite-strings
-COMM_SOLX_FLAGS:=-DSOLARIS -DSOLARIS26 -DSOLARIS_MT -DSOLX86 -DBSD_COMP -fno-omit-frame-pointer  -fmessage-length=0 -MMD  -fPIC
+COMM_SOLX_FLAGS:=-DSOLARIS -DSOLARIS_MT -DSOLX86 -DBSD_COMP -fno-omit-frame-pointer  -fmessage-length=0 -MMD -fPIC
 
-#SFIO= /export/home/interbase/SfIO
-#SfIO is a pretty portable stdIO 
-#from http://www.research.att.com/sw/tools/sfio/
-
-#SFIO_DIR='/export/home/interbase/SfIO'
-#SFIO_FLAGS='-DSFIO -I/export/home/interbase/SfIO/include'
-#SFIO_LDFLAGS='-L/export/home/interbase/SfIO/lib'
 
 SFIO=@SFIO_DIR@
 SFIO_FLAGS=@SFIO_FLAGS@
 SFIO_LDFLAGS=@SFIO_LDFLAGS@
 
-#STLPort=/export/home/kostik/STL/STLport-4.5.3/stlport	
 
 
 ifdef SFIO
 COMM_SOLX_FLAGS:= $(COMM_SOLX_FLAGS)  $(SFIO_FLAGS) $(SFIO_LDFLAGS)
 endif
 
-COMM_SOLX_FLAGS:= $(COMM_SOLX_FLAGS) -I$(STLPort)
+COMM_SOLX_FLAGS:= $(COMM_SOLX_FLAGS) 
 
-PROD_FLAGS=-DNDEBUG -w $(COMM_SOLX_FLAGS) -O2  -mcpu=pentium 
+PROD_FLAGS=-DNDEBUG -w $(COMM_SOLX_FLAGS) -O2 -march=pentium 
 DEV_FLAGS=$(COMM_SOLX_FLAGS) -ggdb -g3 -p $(WARNINGS)
 
 OS_ServerFiles=inet_server.cpp
@@ -71,7 +63,6 @@ LIB_LINK_RPATH:=-R
 LIB_LINK_SONAME:=-h
 LIB_LINK_MAPFILE= -Xlinker -M
 
-#LINK_OPTS:= $(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/lib  $(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/intl
 EMBED_UTIL_TARGETS=gstat gds_drop gds_relay gsec nbackup fb_lock_print
 CLIENT_UTIL_TARGETS=gds_drop gds_relay gstat gsec fbguard fbmgr_bin nbackup fb_lock_print
 
