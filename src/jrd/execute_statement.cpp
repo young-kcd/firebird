@@ -239,6 +239,11 @@ rec_err:
 		src.dsc_sub_type = var->sqlsubtype;
 		src.dsc_address = (UCHAR*) var->sqldata;
 
+		if ((var->sqltype & ~1) == SQL_VARYING)
+		{
+			src.dsc_length += sizeof(SSHORT);
+		}
+
 		// and assign to the target
 		EXE_assignment(tdbb, *JrdVar, &src, (var->sqltype & 1) && (*var->sqlind < 0), NULL, NULL);
     }
