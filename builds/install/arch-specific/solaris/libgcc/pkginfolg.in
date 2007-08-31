@@ -3,7 +3,7 @@ NAME="GNU C/C+ runtime for Firebird 2 @CPU_TYPE@"
 ARCH="@CPU_TYPE@"
 VERSION="3.3.3"
 CATEGORY="library"
-VENDOR="WWW.FireBirdSQL.org"
+VENDOR="www.firebirdsql.org"
 BASEDIR=/usr/local/firebird/lib
-EMAIL=kkuznetsov@users.sf.net
+EMAIL=pbeach at ibphoenix.com
 
