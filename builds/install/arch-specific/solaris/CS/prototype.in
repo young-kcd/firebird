@@ -36,7 +36,6 @@ d none @prefix@ 0755 root root
 d none @prefix@/include 0755 root root
 f none @prefix@/include/ib_util.h=$SRCDIR/include/ib_util.h 0644 root root
 f none @prefix@/include/perf.h=$SRCDIR/include/perf.h 0644 root root
-f none @prefix@/include/blr.h=$SRCDIR/include/blr.h 0644 root root
 f none @prefix@/include/iberror.h=$SRCDIR/include/iberror.h 0644 root root
 f none @prefix@/include/ibase.h=$SRCDIR/include/ibase.h 0644 root root
 
@@ -57,7 +56,6 @@ f none @prefix@/bin/gsec=$SRCDIR/bin/gsec 0755 root root
 f none @prefix@/bin/isql=$SRCDIR/bin/isql 0755 root root
 f none @prefix@/bin/gpre=$SRCDIR/bin/gpre 0755 root root
 f none @prefix@/bin/gds_drop=$SRCDIR/bin/gds_drop 0755 root root
-f none @prefix@/bin/gds_relay=$SRCDIR/bin/gds_relay 0755 root root
 f none @prefix@/bin/gstat=$SRCDIR/bin/gstat 0755 root root
 #f none @prefix@/bin/fbguard=$SRCDIR/bin/fbguard 0755 root root
 #f none @prefix@/bin/fbmgr.bin=$SRCDIR/bin/fbmgr.bin 0755 root root
@@ -66,6 +64,8 @@ f none @prefix@/bin/gdef=$SRCDIR/bin/gdef 0755 root root
 f none @prefix@/bin/qli=$SRCDIR/bin/qli 6777 root root
 # from 2.0
 f none @prefix@/bin/nbackup=$SRCDIR/bin/nbackup 6777 root root
+# from 2.1
+f none @prefix@/bin/fbsvcmgr=$SRCDIR/bin/fbsvcmgr 0755 root root
 
 d none @prefix@/examples 0755 root root
 d none @prefix@/examples/api 0755 root root
