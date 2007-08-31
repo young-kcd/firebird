@@ -27,12 +27,14 @@ d none @prefix@/bin  0755 root root
 #f none @prefix@/bin/CSrestoreRootRunUser.sh=$SRCDIR/bin/CSrestoreRootRunUser.sh  0555 root root
 #f none @prefix@/bin/changeDBAPassword.sh=$SRCDIR/bin/changeDBAPassword.sh  0555 root root
 
-#/usr/lib synlinks for compability with external tools
+#/usr/lib symlinks for compability with external tools
 
 s none /usr/lib/libfbembed.so=@prefix@/lib/libfbembed.so
 s none /usr/lib/libfbclient.so=@prefix@/lib/libfbclient.so
 
 d none @prefix@ 0755 root root
+
+# include 
 
 d none @prefix@/include 0755 root root
 f none @prefix@/include/ib_util.h=$SRCDIR/include/ib_util.h 0644 root root
@@ -40,9 +42,13 @@ f none @prefix@/include/perf.h=$SRCDIR/include/perf.h 0644 root root
 f none @prefix@/include/iberror.h=$SRCDIR/include/iberror.h 0644 root root
 f none @prefix@/include/ibase.h=$SRCDIR/include/ibase.h 0644 root root
 
+# intl 
+
 d none @prefix@/intl 0755 root root
 f none @prefix@/intl/libfbintl.so=$SRCDIR/intl/libfbintl.so 0755 root root
 s none @prefix@/intl/fbintl=@prefix@/intl/libfbintl.so
+
+# UDF
 
 d none @prefix@/UDF 0755 root root
 f none @prefix@/UDF/ib_udf.so=$SRCDIR/UDF/ib_udf.so 0755 root root
@@ -50,6 +56,8 @@ f none @prefix@/UDF/fbudf.so=$SRCDIR/UDF/fbudf.so 0755 root root
 f none @prefix@/UDF/ib_udf.sql=$SRCDIR/../../src/extlib/ib_udf.sql 0644 root root
 f none @prefix@/UDF/ib_udf2.sql=$SRCDIR/../../src/extlib/ib_udf2.sql 0644 root root
 f none @prefix@/UDF/fbudf.sql=$SRCDIR/../../src/extlib/fbudf/fbudf.sql 0644 root root
+
+# bin
 
 d none @prefix@/bin 0755 root root
 f none @prefix@/bin/fb_inet_server=$SRCDIR/bin/fb_inet_server 0755 root root
@@ -72,17 +80,18 @@ f none @prefix@/bin/nbackup=$SRCDIR/bin/nbackup 6777 root root
 f none @prefix@/bin/fbsvcmgr=$SRCDIR/bin/fbsvcmgr 0755 root root
 
 # upgrade
-#d none @prefix@/upgrade 0755 root root
-#f none @prefix@/upgrade/ib_udf2_params.txt=$SRCDIR/../../src/misc/upgrade/v2/ib_udf2_params.txt 0644 root root
-#f none @prefix@/upgrade/ib_udf_params.txt=$SRCDIR/../../src/misc/upgrade/v2/ib_udf_params.txt 0644 root root
-#f none @prefix@/upgrade/ib_udf_upgrade.sql=$SRCDIR/../../src/misc/upgrade/v2/ib_udf_upgrade.sql 0644 root root
-#f none @prefix@/upgrade/security_database.sql=$SRCDIR/../../src/misc/upgrade/v2/security_database.sql 0644 root root
-#f none @prefix@/upgrade/security_database.txt=$SRCDIR/../../src/misc/upgrade/v2/security_database.txt 0644 root root
-#f none @prefix@/upgrade/metadata_charset.txt=$SRCDIR/../../src/misc/upgrade/v2.1/metadata_charset.txt 0644 root root
-#f none @prefix@/upgrade/metadata_charset_create.sql=$SRCDIR/../../src/misc/upgrade/v2.1/metadata_charset_create.sql 0644 root root
-#f none @prefix@/upgrade/metadata_charset_drop.sql=$SRCDIR/../../src/misc/upgrade/v2.1/metadata/charset_drop.sql 0644 root root
+d none @prefix@/upgrade 0755 root root
+f none @prefix@/upgrade/ib_udf2_params.txt=$SRCDIR/../../src/misc/upgrade/v2/ib_udf2_params.txt 0644 root root
+f none @prefix@/upgrade/ib_udf_params.txt=$SRCDIR/../../src/misc/upgrade/v2/ib_udf_params.txt 0644 root root
+f none @prefix@/upgrade/ib_udf_upgrade.sql=$SRCDIR/../../src/misc/upgrade/v2/ib_udf_upgrade.sql 0644 root root
+f none @prefix@/upgrade/security_database.sql=$SRCDIR/../../src/misc/upgrade/v2/security_database.sql 0644 root root
+f none @prefix@/upgrade/security_database.txt=$SRCDIR/../../src/misc/upgrade/v2/security_database.txt 0644 root root
+f none @prefix@/upgrade/metadata_charset.txt=$SRCDIR/../../src/misc/upgrade/v2.1/metadata_charset.txt 0644 root root
+f none @prefix@/upgrade/metadata_charset_create.sql=$SRCDIR/../../src/misc/upgrade/v2.1/metadata_charset_create.sql 0644 root root
+f none @prefix@/upgrade/metadata_charset_drop.sql=$SRCDIR/../../src/misc/upgrade/v2.1/metadata/charset_drop.sql 0644 root root
 
 # examples
+
 d none @prefix@/examples 0755 root root
 d none @prefix@/examples/api 0755 root root
 f none @prefix@/examples/api/api1.c=$SRCDIR/examples/api/api1.c 0644 root root
@@ -142,19 +151,18 @@ f none @prefix@/examples/stat/stat7.e=$SRCDIR/examples/stat/stat7.e 0644 root ro
 f none @prefix@/examples/stat/stat8.e=$SRCDIR/examples/stat/stat8.e 0644 root root
 f none @prefix@/examples/stat/stat9.e=$SRCDIR/examples/stat/stat9.e 0644 root root
 
-
 d none @prefix@/examples/udf 0755 root root
 f none @prefix@/examples/udf/udf.sql=$SRCDIR/examples/udf/udf.sql 0644 root root
 f none @prefix@/examples/udf/udflib.c=$SRCDIR/examples/udf/udflib.c 0644 root root
 f none @prefix@/examples/udf/udflib.def=$SRCDIR/examples/udf/udflib.def 0644 root root
 
-
 f none @prefix@/examples/README=$SRCDIR/examples/README 0644 root root
 
 f none @prefix@/examples/functions.c=$SRCDIR/examples/functions.c 0644 root root
 
-d none @prefix@/lib 0755 root root
+# lib
 
+d none @prefix@/lib 0755 root root
 f none @prefix@/lib/libfbclient.so.@FIREBIRD_VERSION@=$SRCDIR/lib/libfbclient.so.@FIREBIRD_VERSION@  0755 root root
 s none @prefix@/lib/libfbclient.so.2=@prefix@/lib/libfbclient.so.@FIREBIRD_VERSION@
 s none @prefix@/lib/libfbclient.so=@prefix@/lib/libfbclient.so.1
@@ -166,6 +174,7 @@ s none @prefix@/lib/libfbembed.so=@prefix@/lib/libfbembed.so.2
 f none @prefix@/lib/libib_util.so=$SRCDIR/lib/libib_util.so 0755 root root
 
 # ICU
+
 f none @prefix@/lib/libicudata.so.30.0=$SRCDIR/lib/libicudata.so.30.0 0755 root root
 s none @prefix@/lib/libicudata.so.30=@prefix@/lib/libicudata.so.30.0
 s none @prefix@/lib/libicudata.so=@prefix@/lib/libicudata.so.30
@@ -178,14 +187,19 @@ f none @prefix@/lib/libicuuc.so.30.0=$SRCDIR/lib/libicuuc.so.30.0 0755 root root
 s none @prefix@/lib/libicuuc.so.30=@prefix@/lib/libicuuc.so.30.0
 s none @prefix@/lib/libicuuc.so=@prefix@/lib/libicuuc.so.30
 
+# help
+
 d none @prefix@/help 0755 root root
 f none @prefix@/help/help.fdb=$SRCDIR/help/help.fdb 0444 root root
+
+# messages
 
 f none @prefix@/firebird.msg=$SRCDIR/firebird.msg 0666 root root
 f none @prefix@/fr_FR.msg=$SRCDIR/fr_FR.msg 0666 root root
 f none @prefix@/de_DE.msg=$SRCDIR/de_DE.msg 0666 root root
 
 # docs
+
 d none @prefix@/doc 0755 root root
 d none @prefix@/doc/sql.extensions 0755 root root
 f none @prefix@/doc/sql.extensions/README.PSQL_stack_trace=$SRCDIR/../../doc/sql.extensions/README.PSQL_stack_trace.txt 0644 root root
