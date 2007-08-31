@@ -1,3 +1,16 @@
+2007-08-30 17:14  alexpeshkoff
+
+	* firebird2/src/jrd/os/posix/unix.cpp (1.64):
+
+	Fixed 64-bit I/O on Solaris
+
+2007-08-30 04:40  asfernandes
+
+	* firebird2/src/: jrd/unicode_util.cpp (1.18), lock/print.cpp
+	(1.57):
+
+	Misc
+
 2007-08-30 00:27  hvlad
 
 	* firebird2/src/lock/print.cpp (1.56):
