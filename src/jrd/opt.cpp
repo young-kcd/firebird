@@ -3545,6 +3545,7 @@ static void find_rsbs(RecordSource* rsb, StreamStack* stream_list, RsbStack* rsb
 		case rsb_sequential:
 		case rsb_ext_sequential:
 		case rsb_ext_indexed:
+		case rsb_virt_sequential:
 			// No need to go any farther down with these.
 			stream_list->push(rsb->rsb_stream);
 			return;
@@ -3612,6 +3613,7 @@ static void find_used_streams(const RecordSource* rsb, UCHAR* streams)
 		case rsb_sequential:
 		case rsb_union:
 		case rsb_recurse:
+		case rsb_virt_sequential:
 			stream = rsb->rsb_stream;
 			found = true;
 			break;

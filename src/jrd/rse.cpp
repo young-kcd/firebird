@@ -3157,6 +3157,7 @@ static void pop_rpbs(jrd_req* request, RecordSource* rsb)
 	case rsb_union:
 	case rsb_recurse:
 	case rsb_aggregate:
+	case rsb_virt_sequential:
 		{
 			record_param* rpb = request->req_rpb + rsb->rsb_stream;
 			restore_record(rpb);
@@ -3271,6 +3272,7 @@ static void push_rpbs(thread_db* tdbb, jrd_req* request, RecordSource* rsb)
 	case rsb_union:
 	case rsb_recurse:
 	case rsb_aggregate:
+	case rsb_virt_sequential:
 		{
 			record_param* rpb = request->req_rpb + rsb->rsb_stream;
 			save_record(tdbb, rpb);
