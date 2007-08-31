@@ -1,3 +1,56 @@
+2007-08-30 17:37  alexpeshkoff
+
+	* firebird2/configure.in (1.241.2.11):
+
+	No need to manually add libstdc++ when using correct linker.  Also
+	created problems with ./configure on HPUX.
+
+2007-08-30 17:15  alexpeshkoff
+
+	* firebird2/src/jrd/os/posix/unix.cpp (1.42.4.7):
+
+	Backported fix for 64-bit I/O on Solaris
+
+2007-08-30 11:47  paulbeach
+
+	* firebird2/builds/install/arch-specific/solx86/Makefile.in
+	(1.2.12.2):
+
+	Solaris Port
+
+2007-08-30 11:26  paulbeach
+
+	* firebird2/builds/install/arch-specific/: solaris/CS/pkginfo.in
+	(1.1.6.1), solaris/CS/postinstall.in (1.2.4.1),
+	solaris/CS/preinstall.in (1.2.4.1), solaris/CS/prototype.in
+	(1.1.6.1), solaris/Makefile.in (1.3.4.1), solx86/Makefile.in
+	(1.2.12.1):
+
+	Solaris Port
+
+2007-08-30 11:15  paulbeach
+
+	* firebird2/: builds/posix/prefix.solx86gcc (1.19.4.1),
+	configure.in (1.241.2.10), extern/icu/source/config/mh-solaris-gcc
+	(1.6.4.1), builds/install/arch-specific/solx86gcc/CS/pkginfo.in
+	(1.2.4.1), builds/install/arch-specific/solx86gcc/CS/postinstall.in
+	(1.2.4.1), builds/install/arch-specific/solx86gcc/CS/postremove.in
+	(1.2.4.1), builds/install/arch-specific/solx86gcc/CS/preinstall.in
+	(1.2.4.1), builds/install/arch-specific/solx86gcc/CS/prototype.in
+	(1.5.4.1),
+	builds/install/arch-specific/solx86gcc/LIBGCC/pkginfolg.in
+	(1.2.4.1),
+	builds/install/arch-specific/solx86gcc/LIBGCC/prototypelg.in
+	(1.1.6.1), builds/install/arch-specific/solx86gcc/Makefile.in
+	(1.4.4.1), builds/install/arch-specific/solx86gcc/SS/pkginfo.in
+	(1.2.4.1), builds/install/arch-specific/solx86gcc/SS/postinstall.in
+	(1.1.6.1), builds/install/arch-specific/solx86gcc/SS/postremove.in
+	(1.1.6.1), builds/install/arch-specific/solx86gcc/SS/preinstall.in
+	(1.1.6.1), builds/install/arch-specific/solx86gcc/SS/prototype.in
+	(1.1.6.1):
+
+	Solaris Port
+
 2007-08-22 08:53  alexpeshkoff
 
 	* firebird2/src/config/: ScanDir.cpp (1.3.4.1), ScanDir.h
