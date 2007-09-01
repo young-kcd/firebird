@@ -1,3 +1,44 @@
+2007-08-31 17:29  paulbeach
+
+	* firebird2/builds/install/arch-specific/solaris/CS/prototype.in
+	(1.1.6.3):
+
+	Solaris Port
+
+2007-08-31 14:28  paulbeach
+
+	* firebird2/builds/install/arch-specific/solaris/CS/prototype.in
+	(1.1.6.2):
+
+	Solaris Port
+
+2007-08-31 14:09  alexpeshkoff
+
+	* firebird2/src/jrd/execute_statement.cpp (1.14.4.5):
+
+	Backported fix for CORE-1435
+
+2007-08-31 12:47  paulbeach
+
+	* firebird2/builds/posix/prefix.solx86gcc (1.19.4.2):
+
+	Solaris Port
+
+2007-08-31 11:11  paulbeach
+
+	*
+	firebird2/builds/install/arch-specific/solaris/libgcc/pkginfolg.in
+	(1.1.2.2):
+
+	Solaris Port
+
+2007-08-31 11:00  paulbeach
+
+	* firebird2/builds/install/arch-specific/solaris/libgcc/:
+	pkginfolg.in (1.1.2.1), prototypelg.in (1.1.2.1):
+
+	Solaris Port
+
 2007-08-30 17:37  alexpeshkoff
 
 	* firebird2/configure.in (1.241.2.11):
