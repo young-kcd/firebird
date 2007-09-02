@@ -1,4 +1,23 @@
   **************************
+  * v2.0.3
+  **************************
+
+    * Fixed bug CORE-1434
+        Incorrect result with EXECUTE STATEMENT and VARCHAR columns        
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Fixed bug CORE-1418
+        Races when starting and quickly shutting down blocking AST thread
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Solaris port
+      Contributor(s):
+        Paul Beach <pbeach at ibphoenix.com>
+        Alex Peshkov <peshkoff at mail.ru>
+
+  **************************
   * v2.0.2
   **************************
 
