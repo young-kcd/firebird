@@ -456,7 +456,7 @@ bool IntlUtil::initUnicodeCollation(texttype* tt, charset* cs, const ASCII* name
 ULONG IntlUtil::toLower(Jrd::CharSet* cs, ULONG srcLen, const UCHAR* src, ULONG dstLen, UCHAR* dst,
 	const ULONG* exceptions)
 {
-	ULONG utf16_length = cs->getConvToUnicode().convertLength(srcLen);
+	const ULONG utf16_length = cs->getConvToUnicode().convertLength(srcLen);
 	Firebird::HalfStaticArray<UCHAR, BUFFER_SMALL> utf16_str;
 	UCHAR* utf16_ptr;
 
@@ -481,7 +481,7 @@ ULONG IntlUtil::toLower(Jrd::CharSet* cs, ULONG srcLen, const UCHAR* src, ULONG 
 ULONG IntlUtil::toUpper(Jrd::CharSet* cs, ULONG srcLen, const UCHAR* src, ULONG dstLen, UCHAR* dst,
 	const ULONG* exceptions)
 {
-	ULONG utf16_length = cs->getConvToUnicode().convertLength(srcLen);
+	const ULONG utf16_length = cs->getConvToUnicode().convertLength(srcLen);
 	Firebird::HalfStaticArray<UCHAR, BUFFER_SMALL> utf16_str;
 	UCHAR* utf16_ptr;
 
