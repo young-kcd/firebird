@@ -924,27 +924,37 @@ static void prt_lock(
 	}
 	else if (lock->lbl_length == 4) {
 		SLONG key;
-		const UCHAR* q = lock->lbl_key;
-		memcpy(&key, q, 4);
+		memcpy(&key, lock->lbl_key, 4);
 
 		FPRINTF(outfile, "\tKey: %06"SLONGFORMAT",", key);
 	}
 	else {
 		UCHAR temp[512];
+		fb_assert(sizeof(temp) >= lock->lbl_length + 1); // Not enough, see <%d> below.
 		UCHAR* p = temp;
+		const UCHAR* end_temp = p + sizeof(temp) - 1;
   		const UCHAR* q = lock->lbl_key;
   		const UCHAR* const end = q + lock->lbl_length;
-		for (; q < end; q++) {
+		for (; q < end && p < end_temp; q++) {
 			const UCHAR c = *q;
 			if ((c >= 'a' && c <= 'z') ||
 				(c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '/')
 			{
 				*p++ = c;
 			}
-			else {
-				sprintf((char*) p, "<%d>", c);
-				while (*p)
-					p++;
+			else
+			{
+				char buf[6] = "";
+				int n = sprintf(buf, "<%d>", c);
+				if (n < 1 || p + n >= end_temp)
+				{
+					while (p < end_temp)
+						*p++ = '.';
+
+					break;
+				}
+				memcpy(p, buf, n);
+				p += n;
 			}
 		}
 		*p = 0;
