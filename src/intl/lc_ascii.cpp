@@ -49,11 +49,12 @@ static void famasc_destroy(texttype* obj)
 {
 	if (obj->texttype_impl)
 	{
-		if (obj->texttype_impl->cs.charset_fn_destroy)
-			obj->texttype_impl->cs.charset_fn_destroy(&obj->texttype_impl->cs);
+		TextTypeImpl* impl = obj->texttype_impl;
+		if (impl->cs.charset_fn_destroy)
+			impl->cs.charset_fn_destroy(&impl->cs);
 
-		delete obj->texttype_impl->charSet;
-		delete obj->texttype_impl;
+		delete impl->charSet;
+		delete impl;
 	}
 }
 
@@ -114,16 +115,16 @@ static inline bool FAMILY_ASCII(texttype* cache,
 		cache->texttype_fn_str_to_upper	= famasc_str_to_upper;
 		cache->texttype_fn_str_to_lower	= famasc_str_to_lower;
 
-		cache->texttype_impl = new TextTypeImpl();
+		TextTypeImpl* impl = new TextTypeImpl();
+		cache->texttype_impl = impl;
+		
+		memset(&impl->cs, 0, sizeof(impl->cs));
+		LD_lookup_charset(&impl->cs, cs_name, config_info);
 
-		memset(&cache->texttype_impl->cs, 0, sizeof(cache->texttype_impl->cs));
-		LD_lookup_charset(&cache->texttype_impl->cs, cs_name, config_info);
+		impl->charSet = Jrd::CharSet::createInstance(*getDefaultMemoryPool(), 0, &impl->cs);
 
-		cache->texttype_impl->charSet = Jrd::CharSet::createInstance(
-			*getDefaultMemoryPool(), 0, &cache->texttype_impl->cs);
-
-		cache->texttype_impl->lower_exceptions = lower_exceptions;
-		cache->texttype_impl->upper_exceptions = upper_exceptions;
+		impl->lower_exceptions = lower_exceptions;
+		impl->upper_exceptions = upper_exceptions;
 	}
 
 	return true;
