@@ -2918,7 +2918,7 @@ static bool delete_index(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 		arg = arg->dfw_next;
 
 	fb_assert(arg);
-	USHORT id = arg->dfw_id - 1;
+	const USHORT id = arg->dfw_id - 1;
 	
 	// Look up the relation.  If we can't find the relation,
 	// don't worry about the index. 
@@ -3513,7 +3513,7 @@ static bool delete_rfr(thread_db* tdbb, SSHORT phase, DeferredWork* work,
  *	2. drop the last column of a table
  *
  **************************************/
-	int rel_exists, field_count, id;
+	int rel_exists, field_count;
 	jrd_req* handle;
 	Firebird::MetaName f;
 	jrd_rel* relation;
@@ -3610,7 +3610,7 @@ static bool delete_rfr(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 		relation = MET_lookup_relation_id(tdbb, work->dfw_id, false);
 		if (relation)
 		{
-			id = MET_lookup_field(tdbb, relation, work->dfw_name, 0);
+			const int id = MET_lookup_field(tdbb, relation, work->dfw_name, 0);
 			if (id >= 0)
 			{
 				vec<jrd_fld*>* vector = relation->rel_fields;
