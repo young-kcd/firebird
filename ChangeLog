@@ -1,3 +1,9 @@
+2007-09-02 04:13  asfernandes
+
+	* firebird2/builds/install/arch-specific/solaris/Makefile.in (1.5):
+
+	Misc
+
 2007-08-31 17:29  paulbeach
 
 	* firebird2/builds/install/arch-specific/solaris/CS/prototype.in
