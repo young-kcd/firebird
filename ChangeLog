@@ -1,3 +1,28 @@
+2007-09-02 11:52  robocop
+
+	* firebird2/src/lock/print.cpp (1.58):
+
+	Paranoid buffer overrun protection.
+
+2007-09-02 11:50  robocop
+
+	* firebird2/src/jrd/dfw.epp (1.217):
+
+	Misc.
+
+2007-09-02 11:36  robocop
+
+	* firebird2/src/intl/lc_ascii.cpp (1.20):
+
+	Shorten code.
+
+2007-09-02 11:33  robocop
+
+	* firebird2/: src/jrd/IntlUtil.cpp (1.12),
+	builds/install/arch-specific/solaris/CS/postinstall.in (1.4):
+
+	Misc.
+
 2007-09-02 04:13  asfernandes
 
 	* firebird2/builds/install/arch-specific/solaris/Makefile.in (1.5):
