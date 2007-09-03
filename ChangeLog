@@ -1,3 +1,10 @@
+2007-09-02 15:57  dimitr
+
+	* firebird2/: doc/WhatsNew (1.95.2.36), src/jrd/isc_version.h
+	(1.8.4.10):
+
+	Update.
+
 2007-08-31 17:29  paulbeach
 
 	* firebird2/builds/install/arch-specific/solaris/CS/prototype.in
