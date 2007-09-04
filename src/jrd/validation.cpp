@@ -759,40 +759,42 @@ static RTN corrupt(thread_db* tdbb, vdr* control, USHORT err_code, const jrd_rel
  *	Corruption has been detected.
  *
  **************************************/
-	TEXT s[256];
-	va_list ptr;
-
-	va_start(ptr, relation);
 
 	SET_TDBB(tdbb);
 	Attachment* att = tdbb->tdbb_attachment;
 	if (err_code < att->att_val_errors->count())
 		(*att->att_val_errors)[err_code]++;
 
-	const TEXT* string = msg_table[err_code];
+	const TEXT* err_string = err_code < VAL_MAX_ERROR ? msg_table[err_code]: "Unknown error code";
 
-	SNPRINTF(s, sizeof(s), "Database: %s\n\t",
-			tdbb->tdbb_attachment->att_filename.c_str());
-			
-	TEXT* p;
-	for (p = s; *p; p++)
-		/* nothing */ ;
-	VSNPRINTF(p, sizeof(s) - (p - s), string, ptr);
+	TEXT s[256] = "";
+	va_list ptr;
+	const char* fn = tdbb->tdbb_attachment->att_filename.c_str();
+
+	va_start(ptr, relation);
+	VSNPRINTF(s, sizeof(s), err_string, ptr);
 	va_end(ptr);
-
-	if (relation) {
-		for (; *p; p++)
-			/* nothing */ ;
-		SNPRINTF(p, sizeof(s) - (p - s), " in table %s (%d)\n",
-				relation->rel_name.c_str(), relation->rel_id);
-	}
-
-	gds__log(s);
 
 #ifdef DEBUG_VAL_VERBOSE
 	if (VAL_debug_level >= 0)
-		fprintf(stdout, "LOG:\t%s\n", s);
+	{
+		if (relation)
+		{
+			fprintf(stdout, "LOG:\tDatabase: %s\n\t%s in table %s (%d)\n",
+				fn, s, relation->rel_name.c_str(), relation->rel_id);
+		}
+		else
+			fprintf(stdout, "LOG:\tDatabase: %s\n\t%s\n", fn, s);
+	}
 #endif
+
+	if (relation)
+	{
+		gds__log("Database: %s\n\t%s in table %s (%d)",
+			fn, s, relation->rel_name.c_str(), relation->rel_id);
+	}
+	else
+		gds__log("Database: %s\n\t%s", fn, s);
 
 	if (control)
 		++control->vdr_errors;
@@ -929,13 +931,14 @@ static void garbage_collect(thread_db* tdbb, vdr* control)
 
 #ifdef DEBUG_VAL_VERBOSE
 /* Dump verbose output of all the pages fetched */
-	if (VAL_debug_level >= 2) {
-		SLONG dmp_page_number = -1;
-		while (SBM_next(control->vdr_page_bitmap, &dmp_page_number,
-				RSE_get_forward)) 
-		{
-			DMP_page(dmp_page_number, dbb->dbb_page_size);
-		}
+	if (VAL_debug_level >= 2)
+	{
+		//We are assuming RSE_get_forward
+		if (control->vdr_page_bitmap->getFirst())
+			do {
+				SLONG dmp_page_number = control->vdr_page_bitmap->current();
+				DMP_page(dmp_page_number, dbb->dbb_page_size);
+			} while (control->vdr_page_bitmap->getNext());
 	}
 #endif
 }
@@ -1136,7 +1139,7 @@ static void walk_database(thread_db* tdbb, vdr* control)
 	if (VAL_debug_level) {
 		fprintf(stdout,
 				   "walk_database: %s\nODS: %d.%d  (creation ods %d)\nPage size %d\n",
-				   dbb->dbb_filename->str_data, dbb->dbb_ods_version,
+				   dbb->dbb_filename.c_str(), dbb->dbb_ods_version,
 				   dbb->dbb_minor_version, dbb->dbb_minor_original,
 				   dbb->dbb_page_size);
 	}
@@ -1384,7 +1387,7 @@ static RTN walk_index(thread_db* tdbb, vdr* control, jrd_rel* relation,
  *	So errors are reported against index id+1
  *
  **************************************/
-	UCHAR* p;
+	const UCHAR* p;
 	const UCHAR* q;
 	USHORT l; // temporary variable for length
 
@@ -1562,12 +1565,9 @@ static RTN walk_index(thread_db* tdbb, vdr* control, jrd_rel* relation,
 			}
 
 			// save the current key
-			q = node.data;
-			p = key.key_data + node.prefix;
-			for (l = node.length; l; l--) {
-				*p++ = *q++;
-			}
-			key.key_length = p - key.key_data;
+			memcpy(key.key_data + node.prefix, node.data, node.length);
+			//key.key_length = key.key_data + node.prefix + node.length - key.key_data;
+			key.key_length = node.prefix + node.length;
 
 			if (!nullKeyHandled && !nullKeyNode && !duplicateNode)
 			{
@@ -1766,7 +1766,7 @@ static void walk_pip(thread_db* tdbb, vdr* control)
 	CHECK_DBB(dbb);
 
 	PageManager& pageSpaceMgr = dbb->dbb_page_manager;
-	PageSpace* pageSpace = pageSpaceMgr.findPageSpace(DB_PAGE_SPACE);
+	const PageSpace* pageSpace = pageSpaceMgr.findPageSpace(DB_PAGE_SPACE);
 	fb_assert(pageSpace);
 
 	page_inv_page* page = 0;
@@ -2109,7 +2109,11 @@ static RTN walk_relation(thread_db* tdbb, vdr* control, jrd_rel* relation)
 		gds__log(msg, relation->rel_id, relation->rel_name.c_str());
 #ifdef DEBUG_VAL_VERBOSE
 		if (VAL_debug_level)
+		{
+			char s[256];
+			SNPRINTF(s, sizeof(s), msg, relation->rel_id, relation->rel_name.c_str());
 			fprintf(stdout, "LOG:\t%s\n", s);
+		}
 #endif
 		throw;
 	}
