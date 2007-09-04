@@ -65,6 +65,7 @@
 #include "../jrd/enc_proto.h"
 #include "../jrd/jrd_proto.h"
 #include "../common/classes/ClumpletWriter.h"
+#include "../common/classes/TriState.h"
 
 #ifndef VMS
 #include "../lock/lock_proto.h"
@@ -2825,7 +2826,6 @@ static THREAD_ENTRY_DECLARE sweep_database(THREAD_ENTRY_PARAM database)
  *	Sweep database.
  *
  **************************************/
-	isc_db_handle db_handle = 0;
 	Firebird::ClumpletWriter dpb(Firebird::ClumpletReader::Tagged, MAX_DPB_SIZE, isc_dpb_version1);
 
 	const char* szAuthenticator = "sweeper";
@@ -2835,13 +2835,14 @@ static THREAD_ENTRY_DECLARE sweep_database(THREAD_ENTRY_PARAM database)
 	dpb.insertString(isc_dpb_password, 
 		szPassword, strlen(szPassword));
 	dpb.insertByte(isc_dpb_sweep, isc_dpb_records);
-	// sometimes security database is also to be sweeped
+	// sometimes security database is also to be swept
 	dpb.insertByte(isc_dpb_gsec_attach, 1);
-
-	ISC_STATUS_ARRAY status_vector;
 
 	// Temporary disable security for this thread to proceed with internal attachment
 	JRD_thread_security_disable(true);
+
+	ISC_STATUS_ARRAY status_vector = {0};
+	isc_db_handle db_handle = 0;
 
 	isc_attach_database(status_vector, 0, (char*)database,
 						&db_handle, dpb.getBufferLength(),
@@ -2885,24 +2886,36 @@ static void transaction_options(
 	if (*tpb != isc_tpb_version3 && *tpb != isc_tpb_version1)
 		ERR_post(isc_bad_tpb_form, isc_arg_gds, isc_wrotpbver, 0);
 
-	bool wait = true, wait_seen = false, lock_timeout = false;
+	TriState wait, lock_timeout;
+	TriState isolation, read_only, rec_version;
 
 	++tpb;
 
-	while (tpb < end) {
+	while (tpb < end)
+	{
 		const USHORT op = *tpb++;
-		switch (op) {
+		switch (op)
+		{
 		case isc_tpb_consistency:
+			if (!isolation.assignOnce(true))
+				ERR_post(isc_bad_tpb_content, 0);
+				
 			transaction->tra_flags |= TRA_degree3;
 			transaction->tra_flags &= ~TRA_read_committed;
 			break;
 
 		case isc_tpb_concurrency:
+			if (!isolation.assignOnce(true))
+				ERR_post(isc_bad_tpb_content, 0);
+
 			transaction->tra_flags &= ~TRA_degree3;
 			transaction->tra_flags &= ~TRA_read_committed;
 			break;
 
 		case isc_tpb_read_committed:
+			if (!isolation.assignOnce(true))
+				ERR_post(isc_bad_tpb_content, 0);
+
 			transaction->tra_flags &= ~TRA_degree3;
 			transaction->tra_flags |= TRA_read_committed;
 			break;
@@ -2914,33 +2927,49 @@ static void transaction_options(
 			break;
 
 		case isc_tpb_wait:
-			if (!wait)
+			if (!wait.assignOnce(true))
 				ERR_post(isc_bad_tpb_content, 0);
-			wait_seen = true;
 			break;
 
 		case isc_tpb_rec_version:
+			if (!(transaction->tra_flags & TRA_read_committed))
+				ERR_post(isc_bad_tpb_content, 0);
+				
+			if (!rec_version.assignOnce(true))
+				ERR_post(isc_bad_tpb_content, 0);
+
 			transaction->tra_flags |= TRA_rec_version;
 			break;
 
 		case isc_tpb_no_rec_version:
+			if (!(transaction->tra_flags & TRA_read_committed))
+				ERR_post(isc_bad_tpb_content, 0);
+
+			if (!rec_version.assignOnce(false))
+				ERR_post(isc_bad_tpb_content, 0);
+
 			transaction->tra_flags &= ~TRA_rec_version;
 			break;
 
 		case isc_tpb_nowait:
-			if (lock_timeout || (wait_seen && wait))
+			if (lock_timeout.asBool() || !wait.assignOnce(false))
 			{
 				ERR_post(isc_bad_tpb_content, 0);
 			}
 			transaction->tra_lock_timeout = 0;
-			wait = false;
 			break;
 
 		case isc_tpb_read:
+			if (!read_only.assignOnce(true))
+				ERR_post(isc_bad_tpb_content, 0);
+
 			transaction->tra_flags |= TRA_readonly;
 			break;
 
 		case isc_tpb_write:
+			if (!read_only.assignOnce(false))
+				ERR_post(isc_bad_tpb_content, 0);
+
 			transaction->tra_flags &= ~TRA_readonly;
 			break;
 
@@ -2955,6 +2984,10 @@ static void transaction_options(
 		case isc_tpb_lock_write:
 		case isc_tpb_lock_read:
 			{
+				// Do we have space for the identifier length?
+				if (tpb >= end)
+					ERR_post(isc_bad_tpb_form, 0);
+					
 				USHORT l = *tpb++;
 				if (l > MAX_SQL_IDENTIFIER_LEN) {
 					TEXT text[BUFFER_TINY];
@@ -2965,6 +2998,10 @@ static void transaction_options(
 					ERR_post(isc_bad_tpb_content, isc_arg_gds, isc_random,
 							 isc_arg_string, ERR_cstring(text), 0);
 				}
+				// Does the identifier length surpasses the remaining of the TPB?
+				if (tpb >= end || end - tpb < l)
+					ERR_post(isc_bad_tpb_form, 0);
+				
 				const Firebird::MetaName name(reinterpret_cast<const char*>(tpb), l);
 				tpb += l;
 				jrd_rel* relation = MET_lookup_relation(tdbb, name);
@@ -2978,7 +3015,10 @@ static void transaction_options(
 				MET_scan_relation(tdbb, relation);
 
 				SCHAR lock_type = (op == isc_tpb_lock_read) ? LCK_none : LCK_SW;
-				if (tpb < end) {
+				if (tpb < end)
+				{
+					// Things we don't check yet: that the same table is reserved
+					// for read/write shared and (protected or exclusive).
 					if (*tpb == isc_tpb_shared)
 						tpb++;
 					else if (*tpb == isc_tpb_protected
@@ -2996,10 +3036,15 @@ static void transaction_options(
 		case isc_tpb_verb_time:
 		case isc_tpb_commit_time:
 			{
+				// Will be caught at the top of the loop if it goes beyond "end".
+				// Harmless for now even if formally invalid.
+				//if (tpb >= end)
+				//	ERR_post(isc_bad_tpb_form, 0);
+
 				const USHORT l = *tpb++;
 				tpb += l;
-				break;
 			}
+			break;
 
 		case isc_tpb_autocommit:
 			transaction->tra_flags |= TRA_autocommit;
@@ -3011,16 +3056,23 @@ static void transaction_options(
 
 		case isc_tpb_lock_timeout:
 			{
-				if (!wait)
+				if (wait.isAssigned() && !wait.asBool() || !lock_timeout.assignOnce(true))
 				{
 					ERR_post(isc_bad_tpb_content, 0);
 				}
+				// Do we have space for the identifier length?
+				if (tpb >= end)
+					ERR_post(isc_bad_tpb_form, 0);
+
 				const USHORT l = *tpb++;
+				// Does the encoded number's length surpasses the remaining of the TPB?
+				if (tpb >= end || end - tpb < l)
+					ERR_post(isc_bad_tpb_form, 0);
+
 				transaction->tra_lock_timeout = gds__vax_integer(tpb, l);
 				tpb += l;
-				lock_timeout = true;
-				break;
 			}
+			break;
 
 		default:
 			ERR_post(isc_bad_tpb_form, 0);
