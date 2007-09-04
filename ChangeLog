@@ -1,3 +1,21 @@
+2007-09-03 16:06  paul_reeves
+
+	* firebird2/builds/install/arch-specific/win32/:
+	BuildExecutableInstall.bat (1.15.2.13), FirebirdInstall_20.iss
+	(1.12.2.12), Readme.txt (1.9.2.9), installation_readme.txt
+	(1.9.2.11), ba/Instalacija_ProcitajMe.txt (1.4.4.5),
+	ba/ProcitajMe.txt (1.2.4.5), de/installation_liesmich.txt
+	(1.3.4.5), de/liesmich.txt (1.3.4.5), es/leame.txt (1.1.6.6),
+	es/leame_instalacion.txt (1.1.6.5), fr/installation_lisezmoi.txt
+	(1.1.6.5), fr/lisezmoi.txt (1.1.6.6), hu/olvass_el.txt (1.1.6.6),
+	hu/telepitesi_segedlet.txt (1.1.6.6), it/leggimi.txt (1.1.2.7),
+	it/leggimi_installazione.txt (1.1.2.5), pl/czytajto.txt (1.2.4.6),
+	pl/instalacja_czytajto.txt (1.3.4.6), pt/instalacao_leia-me.txt
+	(1.3.2.6), pt/leia-me.txt (1.2.2.5), ru/Readme.txt (1.1.2.5),
+	ru/installation_readme.txt (1.1.2.5):
+
+	Update hard-coded version number strings from 2.0.2 to 2.0.3
+
 2007-09-02 15:57  dimitr
 
 	* firebird2/: doc/WhatsNew (1.95.2.36), src/jrd/isc_version.h
