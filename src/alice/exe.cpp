@@ -51,8 +51,9 @@
 
 
 static void buildDpb(Firebird::ClumpletWriter&, const ULONG);
-static void extract_db_info(const UCHAR*);
+static void extract_db_info(const UCHAR*, size_t);
 
+// Keep always in sync with function extract_db_info()
 static const TEXT val_errors[] =
 {
 	isc_info_page_errors, isc_info_record_errors, isc_info_bpage_errors,
@@ -112,7 +113,7 @@ int EXE_action(const TEXT* database, const ULONG switches)
 							   val_errors, sizeof(error_string),
 							   reinterpret_cast<char*>(error_string));
 
-				extract_db_info(error_string);
+				extract_db_info(error_string, sizeof(error_string));
 			}
 
 			if (switches & sw_disable)
@@ -344,61 +345,57 @@ static void buildDpb(Firebird::ClumpletWriter& dpb, const ULONG switches)
 //		Extract database info from string
 //
 
-static void extract_db_info(const UCHAR* db_info_buffer)
+static void extract_db_info(const UCHAR* db_info_buffer, size_t buf_size)
 {
 	AliceGlobals* tdgbl = AliceGlobals::getSpecific();
 
 	const UCHAR* p = db_info_buffer;
+	const UCHAR* const end = p + buf_size;
 
 	UCHAR item;
-	while ((item = *p++) != isc_info_end) {
+	while ((item = *p++) != isc_info_end && p < end - 1)
+	{
 		const SLONG length = gds__vax_integer(p, 2);
 		p += 2;
 
 		// TMN: Here we should really have the following assert 
 		// fb_assert(length <= MAX_SSHORT);
 		// for all cases that use 'length' as input to 'gds__vax_integer' 
+		// Remember to keep this list in sync with the val_errors array.
 		switch (item) {
 		case isc_info_page_errors:
 			tdgbl->ALICE_data.ua_val_errors[VAL_PAGE_ERRORS] =
 				gds__vax_integer(p, (SSHORT) length);
-			p += length;
 			break;
 
 		case isc_info_record_errors:
 			tdgbl->ALICE_data.ua_val_errors[VAL_RECORD_ERRORS] =
 				gds__vax_integer(p, (SSHORT) length);
-			p += length;
 			break;
 
 		case isc_info_bpage_errors:
 			tdgbl->ALICE_data.ua_val_errors[VAL_BLOB_PAGE_ERRORS] =
 				gds__vax_integer(p, (SSHORT) length);
-			p += length;
 			break;
 
 		case isc_info_dpage_errors:
 			tdgbl->ALICE_data.ua_val_errors[VAL_DATA_PAGE_ERRORS] =
 				gds__vax_integer(p, (SSHORT) length);
-			p += length;
 			break;
 
 		case isc_info_ipage_errors:
 			tdgbl->ALICE_data.ua_val_errors[VAL_INDEX_PAGE_ERRORS] =
 				gds__vax_integer(p, (SSHORT) length);
-			p += length;
 			break;
 
 		case isc_info_ppage_errors:
 			tdgbl->ALICE_data.ua_val_errors[VAL_POINTER_PAGE_ERRORS] =
 				gds__vax_integer(p, (SSHORT) length);
-			p += length;
 			break;
 
 		case isc_info_tpage_errors:
 			tdgbl->ALICE_data.ua_val_errors[VAL_TIP_PAGE_ERRORS] =
 				gds__vax_integer(p, (SSHORT) length);
-			p += length;
 			break;
 
 		case isc_info_error:
@@ -408,8 +405,9 @@ static void extract_db_info(const UCHAR* db_info_buffer)
 			return;
 
 		default:
-			;
+			fb_assert(false);
 		}
+		p += length;
 	}
 }
 
