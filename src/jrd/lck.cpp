@@ -542,7 +542,6 @@ SLONG LCK_get_owner_handle(thread_db* tdbb, enum lck_t lock_type)
 	//case LCK_range_relation: // PC_ENGINE
 	case LCK_backup_alloc:
 	case LCK_backup_database:
-	case LCK_counter:
 	case LCK_monitor:
 	case LCK_tt_exist:
 		return *LCK_OWNER_HANDLE_DBB(dbb);
@@ -564,6 +563,7 @@ SLONG LCK_get_owner_handle(thread_db* tdbb, enum lck_t lock_type)
 		return 0;
 	}
 }
+
 
 SLONG LCK_get_owner_handle_by_type(thread_db* tdbb, lck_owner_t lck_owner_type)
 {
@@ -593,6 +593,7 @@ SLONG LCK_get_owner_handle_by_type(thread_db* tdbb, lck_owner_t lck_owner_type)
 	}
 }
 
+
 bool LCK_set_owner_handle(Jrd::thread_db* tdbb, Jrd::Lock* lock, SLONG owner_handle)
 {
 /**************************************
@@ -614,34 +615,6 @@ bool LCK_set_owner_handle(Jrd::thread_db* tdbb, Jrd::Lock* lock, SLONG owner_han
 		lock->lck_owner_handle = owner_handle;
 
 	return result;
-}
-
-SLONG LCK_increment(Jrd::thread_db* tdbb, Jrd::Lock* lock)
-{
-/**************************************
- *
- *	L C K _ i n c r e m e n t
- *
- **************************************
- *
- * Functional description
- *	Increment the lock data value.
- *
- **************************************/
-	SET_TDBB(tdbb);
-
-	fb_assert(lock);
-
-	fb_assert(lock->lck_type == LCK_counter);
-	fb_assert(lock->lck_logical == LCK_SR);
-
-	LCK_convert(tdbb, lock, LCK_PW, LCK_WAIT);
-	SLONG data = LCK_read_data(lock);
-	LCK_write_data(lock, ++data);
-	fb_assert(LCK_read_data(lock) == data);
-	LCK_convert(tdbb, lock, LCK_SR, LCK_WAIT);
-
-	return data;
 }
 
 

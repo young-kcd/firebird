@@ -126,7 +126,6 @@ static UCHAR* alloc_map(thread_db*, CompilerScratch*, USHORT);
 static jrd_nod* catenate_nodes(thread_db*, NodeStack&);
 static jrd_nod* copy(thread_db*, CompilerScratch*, jrd_nod*, UCHAR *, USHORT, jrd_nod*, bool);
 static void expand_view_nodes(thread_db*, CompilerScratch*, USHORT, NodeStack&, NOD_T);
-static void generate_request_id(thread_db*, jrd_req*);
 static void ignore_dbkey(thread_db*, CompilerScratch*, RecordSelExpr*, const jrd_rel*);
 static jrd_nod* make_defaults(thread_db*, CompilerScratch*, USHORT, jrd_nod*);
 static jrd_nod* make_validation(thread_db*, CompilerScratch*, USHORT);
@@ -496,8 +495,7 @@ jrd_req* CMP_clone_request(thread_db* tdbb, jrd_req* request, USHORT level, bool
 	clone->req_procedure = request->req_procedure;
 	clone->req_flags = request->req_flags & REQ_FLAGS_CLONE_MASK;
 	clone->req_last_xcp = request->req_last_xcp;
-
-	generate_request_id(tdbb, clone);
+	clone->req_id = dbb->generateId();
 
 	// We are cloning full lists here, not assigning pointers
 	clone->req_invariants = request->req_invariants;
@@ -2069,8 +2067,7 @@ jrd_req* CMP_make_request(thread_db* tdbb, CompilerScratch* csb)
 	request->req_external = csb->csb_external;
 	request->req_map_field_info.takeOwnership(csb->csb_map_field_info);
 	request->req_map_item_info.takeOwnership(csb->csb_map_item_info);
-
-	generate_request_id(tdbb, request);
+	request->req_id = dbb->generateId();
 
 	// CVC: Unused.
 	//request->req_variables = csb->csb_variables;
@@ -3066,33 +3063,6 @@ static void expand_view_nodes(thread_db* tdbb,
 		node->nod_arg[0] = (jrd_nod*) (IPTR) stream;
 		stack.push(node);
 	}
-}
-
-
-static void generate_request_id(thread_db* tdbb, jrd_req* request)
-{
-/**************************************
- *
- *	g e n e r a t e _ r e q u e s t _ i d
- *
- **************************************
- *
- * Functional description
- *	Get request id.  If don't have one, get one.  As a side
- *	effect, get a lock on it as well.
- *
- **************************************/
-	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
-
-	fb_assert(request);
-
-	fb_assert(!request->req_id);
-	fb_assert(request->req_pool);
-
-	// Get new request id
-
-	request->req_id = LCK_increment(tdbb, dbb->dbb_increment_lock);
 }
 
 

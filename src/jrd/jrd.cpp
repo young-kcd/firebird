@@ -412,6 +412,7 @@ static int blocking_ast_dsql_cache(void*);
 #endif
 static blb*		check_blob(thread_db*, ISC_STATUS*, blb**);
 static ISC_STATUS	check_database(thread_db*, Attachment*, ISC_STATUS*);
+static ISC_STATUS	check_transaction(thread_db*, jrd_tra*, ISC_STATUS*);
 static void		cleanup(void*);
 static ISC_STATUS	commit(ISC_STATUS*, jrd_tra**, const bool);
 static ISC_STATUS	compile_request(ISC_STATUS*, Attachment**, jrd_req**, SSHORT, const SCHAR*, USHORT, const char*, USHORT, const UCHAR*);
@@ -3167,6 +3168,9 @@ ISC_STATUS GDS_RECEIVE(ISC_STATUS * user_status,
 	if (check_database(tdbb, request->req_attachment, user_status))
 		return user_status[1];
 
+	if (check_transaction(tdbb, request->req_transaction, user_status))
+		return user_status[1];
+
 #ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
 	LOG_call(log_receive2, *req_handle, msg_type, msg_length, level);
 #endif
@@ -3175,7 +3179,7 @@ ISC_STATUS GDS_RECEIVE(ISC_STATUS * user_status,
 	try
 	{
 		verify_request_synchronization(request, level);
-	
+
 #ifdef SCROLLABLE_CURSORS
 		if (direction)
 			EXE_seek(tdbb, request, direction, offset);
@@ -3482,6 +3486,9 @@ ISC_STATUS GDS_SEND(ISC_STATUS * user_status,
 	jrd_req* request = *req_handle;
 
 	if (check_database(tdbb, request->req_attachment, user_status))
+		return user_status[1];
+
+	if (check_transaction(tdbb, request->req_transaction, user_status))
 		return user_status[1];
 
 #ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
@@ -4994,6 +5001,37 @@ static ISC_STATUS check_database(thread_db* tdbb, Attachment* attachment, ISC_ST
 }
 
 
+static ISC_STATUS check_transaction(thread_db* tdbb, jrd_tra* transaction, ISC_STATUS * user_status)
+{
+/**************************************
+ *
+ *	c h e c k _ t r a n s a c t i o n
+ *
+ **************************************
+ *
+ * Functional description
+ *	Check transaction for not being interrupted
+ *  in the meantime.
+ *
+ **************************************/
+	SET_TDBB(tdbb);
+
+	if (transaction && (transaction->tra_flags & TRA_cancel_request))
+	{
+		transaction->tra_flags &= ~TRA_cancel_request;
+		tdbb->tdbb_flags |= TDBB_sys_error;
+
+		ISC_STATUS* ptr = tdbb->tdbb_status_vector = user_status;
+		*ptr++ = isc_arg_gds;
+		*ptr++ = isc_cancelled;
+		*ptr++ = isc_arg_end;
+		return error(user_status);
+	}
+
+	return FB_SUCCESS;
+}
+
+	
 static void cleanup(void* arg)
 {
 /**************************************
@@ -5198,6 +5236,11 @@ static jrd_tra* find_transaction(thread_db* tdbb, jrd_tra* transaction, ISC_STAT
 
 	for (; transaction; transaction = transaction->tra_sibling)
 		if (transaction->tra_attachment == tdbb->tdbb_attachment) {
+
+			ISC_STATUS_ARRAY temp_status;
+			if (check_transaction(tdbb, transaction, temp_status))
+				ERR_punt();
+
 			tdbb->tdbb_transaction = transaction;
 			return transaction;
 		}
@@ -5969,20 +6012,9 @@ static void init_database_locks(thread_db* tdbb, Database* dbb)
 
 	fb_assert(dbb);
 
-	// Lock shared by all dbb owners, used to generate
-	// unique cross-database integer numbers
-	Lock* lock = FB_NEW_RPT(*dbb->dbb_permanent, sizeof(SLONG)) Lock();
-	dbb->dbb_increment_lock = lock;
-	lock->lck_type = LCK_counter;
-	lock->lck_owner_handle = LCK_get_owner_handle(tdbb, lock->lck_type);
-	lock->lck_parent = dbb->dbb_lock;
-	lock->lck_length = sizeof(SLONG);
-	lock->lck_dbb = dbb;
-	LCK_lock(tdbb, lock, LCK_SR, LCK_WAIT);
-
-	// Yet another shared lock, used to signal other dbb owners
+	// Lock shared by all dbb owners, used to signal other processes
 	// to dump their monitoring data and synchronize operations
-	lock = FB_NEW_RPT(*dbb->dbb_permanent, sizeof(SLONG)) Lock();
+	Lock* lock = FB_NEW_RPT(*dbb->dbb_permanent, sizeof(SLONG)) Lock();
 	dbb->dbb_monitor_lock = lock;
 	lock->lck_type = LCK_monitor;
 	lock->lck_owner_handle = LCK_get_owner_handle(tdbb, lock->lck_type);
@@ -6382,9 +6414,6 @@ static void shutdown_database(Database* dbb, const bool release_pools)
 
 	if (dbb->dbb_monitor_lock)
 		LCK_release(tdbb, dbb->dbb_monitor_lock);
-
-	if (dbb->dbb_increment_lock)
-		LCK_release(tdbb, dbb->dbb_increment_lock);
 
 	if (dbb->dbb_shadow_lock)
 		LCK_release(tdbb, dbb->dbb_shadow_lock);

@@ -220,7 +220,6 @@ public:
 	Lock*		dbb_shadow_lock;		// lock for synchronizing addition of shadows
 	//SLONG dbb_shadow_sync_count;		// to synchronize changes to shadows
 	Lock*		dbb_retaining_lock;		// lock for preserving commit retaining snapshot
-	Lock*		dbb_increment_lock;		// lock used as an internal id generator
 	Lock*		dbb_monitor_lock;		// lock for monitoring purposes
 	PageManager dbb_page_manager;
 	vcl*		dbb_t_pages;			// pages number for transactions
@@ -287,6 +286,7 @@ public:
 
 	BlockingThread*	dbb_free_btbs;		// Unused BlockingThread blocks
 
+	ULONG dbb_current_id;				// Generator of dbb-local ids
 	Firebird::MemoryStats dbb_memory_stats;
 
 	SLONG dbb_reads;
@@ -316,6 +316,11 @@ public:
 	BackupManager *dbb_backup_manager;	// physical backup manager
 	Firebird::TimeStamp dbb_creation_date; // creation date
 	Symbol*	dbb_hash_table[HASH_SIZE];	// keep this at the end
+
+	ULONG generateId()
+	{
+		return ++dbb_current_id;
+	}
 
 private:
 	explicit Database(MemoryPool& p)
