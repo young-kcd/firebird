@@ -941,7 +941,6 @@ void CCH_fetch_page(
 	AST_CHECK();
 	++dbb->dbb_reads;
 	RuntimeStatistics::bumpValue(tdbb, RuntimeStatistics::PAGE_READS);
-	fb_assert(dbb->dbb_reads == dbb->dbb_stats.getValue(RuntimeStatistics::PAGE_READS));
 	page = bdb->bdb_buffer;
 	PageSpace* pageSpace = 
 		dbb->dbb_page_manager.findPageSpace(bdb->bdb_page.getPageSpaceID());
@@ -1844,7 +1843,6 @@ void CCH_mark(thread_db* tdbb, WIN * window, USHORT mark_system, USHORT must_wri
 
 	dbb->dbb_marks++;
 	RuntimeStatistics::bumpValue(tdbb, RuntimeStatistics::PAGE_MARKS);
-	fb_assert(dbb->dbb_marks == dbb->dbb_stats.getValue(RuntimeStatistics::PAGE_MARKS));
 	BufferControl* bcb = dbb->dbb_bcb;
 	BufferDesc* bdb = window->win_bdb;
 	BLKCHK(bdb, type_bdb);
@@ -4983,7 +4981,6 @@ static BufferDesc* get_buffer(thread_db* tdbb, const PageNumber page, LATCH latc
 						bdb->bdb_flags &= ~(BDB_faked | BDB_prefetch);
 						dbb->dbb_fetches++;
 						RuntimeStatistics::bumpValue(tdbb, RuntimeStatistics::PAGE_FETCHES);
-						fb_assert(dbb->dbb_fetches == dbb->dbb_stats.getValue(RuntimeStatistics::PAGE_FETCHES));
 						return bdb;
 					}
 				}
@@ -5090,7 +5087,6 @@ static BufferDesc* get_buffer(thread_db* tdbb, const PageNumber page, LATCH latc
 #endif
 				dbb->dbb_fetches++;
 				RuntimeStatistics::bumpValue(tdbb, RuntimeStatistics::PAGE_FETCHES);
-				fb_assert(dbb->dbb_fetches == dbb->dbb_stats.getValue(RuntimeStatistics::PAGE_FETCHES));
 //				BCB_MUTEX_RELEASE;
 				return bdb;
 			}
@@ -6610,7 +6606,6 @@ static bool write_page(
 		AST_CHECK();
 		dbb->dbb_writes++;
 		RuntimeStatistics::bumpValue(tdbb, RuntimeStatistics::PAGE_WRITES);
-		//fb_assert(dbb->dbb_writes == dbb->dbb_stats.getValue(RuntimeStatistics::PAGE_WRITES));
 
 		/* write out page to main database file, and to any
 		   shadows, making a special case of the header page */
