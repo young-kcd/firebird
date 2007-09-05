@@ -52,38 +52,38 @@ private:
 };
 
 // The var is left uninitialized.
-TriState::TriState()
+inline TriState::TriState()
 	: m_init(false), m_val(false)
 {
 }
 
 // The var is initialized to the explicit value.
-TriState::TriState(bool input)
+inline TriState::TriState(bool input)
 	: m_init(true), m_val(input)
 {
 }
 
 // The var receives a T/F value.
-void TriState::operator=(bool input)
+inline void TriState::operator=(bool input)
 {
 	m_init = true;
 	m_val = input;
 }
 
 // The var is coerced to a T/F value as result.
-bool TriState::asBool() const
+inline bool TriState::asBool() const
 {
 	return m_init && m_val;
 }
 
 // The var is returned to its uninitialized state.
-void TriState::reset()
+inline void TriState::reset()
 {
 	m_init = m_val = false;
 }
 
 // The assignment succeeds only if the var is uninitialized.
-bool TriState::assignOnce(bool input)
+inline bool TriState::assignOnce(bool input)
 {
 	if (m_init)
 		return false;
@@ -94,19 +94,19 @@ bool TriState::assignOnce(bool input)
 }
 
 // Tests whether the var is uninitialized.
-bool TriState::isUnknown() const
+inline bool TriState::isUnknown() const
 {
 	return !m_init;
 }
 
 // Tests whether the var is initialized.
-bool TriState::isAssigned() const
+inline bool TriState::isAssigned() const
 {
 	return m_init;
 }
 
 // The var is toggled between T and F only if it's already initialized.
-bool TriState::toggle()
+inline bool TriState::toggle()
 {
 	if (!m_init)
 		return false;
