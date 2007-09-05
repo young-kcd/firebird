@@ -1,3 +1,24 @@
+2007-09-04 10:37  robocop
+
+	* firebird2/src/alice/exe.cpp (1.47):
+
+	Simplification and check for end of buffer.
+
+2007-09-04 10:34  robocop
+
+	* firebird2/src/jrd/validation.cpp (1.28):
+
+	Simplify this messy code and make it less dependant on the size of
+	the intermediate buffer (less chance of having a truncated message
+	in the log file).
+
+2007-09-04 10:22  robocop
+
+	* firebird2/src/: jrd/tra.cpp (1.139), common/classes/TriState.h
+	(1.1):
+
+	Fix CORE-1440.
+
 2007-09-02 11:52  robocop
 
 	* firebird2/src/lock/print.cpp (1.58):
