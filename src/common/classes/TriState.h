@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:		Firebird aux classes.
- *	MODULE:			StatusHolder.cpp
+ *	MODULE:			TriState.h
  *	DESCRIPTION:	Firebird's SQL tri-state emulation class.
  *
  *  The contents of this file are subject to the Initial
@@ -26,6 +26,9 @@
  *
  */
 
+#ifndef CLASSES_TRISTATE_H
+#define CLASSES_TRISTATE_H
+
 #include "firebird.h"
 
 
@@ -34,13 +37,16 @@ class TriState
 public:
 	TriState();
 	explicit TriState(bool input);
+
 	void operator=(bool input);
+
 	bool asBool() const;
 	void reset();
 	bool assignOnce(bool input);
 	bool isUnknown() const;
 	bool isAssigned() const;
 	bool toggle();
+
 private:
 	bool m_init, m_val;
 };
@@ -108,4 +114,7 @@ bool TriState::toggle()
 	m_val = !m_val;
 	return true;
 }
+
+
+#endif // CLASSES_TRISTATE_H
 
