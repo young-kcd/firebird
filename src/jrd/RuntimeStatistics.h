@@ -60,7 +60,6 @@ public:
 	~RuntimeStatistics() {}
 
 	void setParent(RuntimeStatistics*);
-	void bumpValue(size_t);
 	SINT64 getValue(size_t) const;
 
 	static void bumpValue(thread_db*, size_t);
@@ -69,6 +68,8 @@ private:
 	// copying is prohibited
 	RuntimeStatistics(const RuntimeStatistics&);
 	RuntimeStatistics& operator= (const RuntimeStatistics&);
+
+	void bumpValue(size_t);
 
 	RuntimeStatistics* parent;
 	Firebird::Array<SINT64> values;
