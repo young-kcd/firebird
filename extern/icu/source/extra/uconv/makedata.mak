@@ -14,6 +14,13 @@ CFG=Debug
 !MESSAGE No configuration specified. Defaulting to common - Win32 Debug.
 !ENDIF
 
+
+# this test is pointless in an automated build system. It might make sense if
+# this make file was run stand-alone, but as part of the Firebird/ICU component
+# it will probably never be built alone. CFG errors, if any, will be picked up
+# long before. However, as we need to diff against the original ICU code
+# we probably need to keep this code in place
+!if "$(CFG)" == "xyz"
 #Here we test if a valid configuration is given
 !IF "$(CFG)" != "Release" && "$(CFG)" != "release" && "$(CFG)" != "Debug" && "$(CFG)" != "debug"
 !MESSAGE Invalid configuration "$(CFG)" specified.
@@ -29,6 +36,7 @@ CFG=Debug
 !MESSAGE
 !ERROR An invalid configuration is specified.
 !ENDIF
+!ENDIF
 
 #Let's see if user has given us a path to ICU
 #This could be found according to the path to makefile, but for now it is this way
@@ -36,6 +44,7 @@ CFG=Debug
 !ERROR Can't find path!
 !ENDIF
 !MESSAGE ICU path is $(ICUP)
+!MESSAGE CGF is $(CFG)
 RESNAME=uconvmsg
 RESDIR=.
 RESFILES=resfiles.mk
@@ -48,7 +57,7 @@ PKGMODE=static
 
 ICD=$(ICUDATA)^\
 DATA_PATH=$(ICUP)\data^\
-ICUTOOLS=$(ICUP)\bin
+ICUTOOLS=$(ICUP)\$(CFG)\bin
 
 PATH = $(PATH);$(ICUP)\bin
 
@@ -73,13 +82,13 @@ OUTPUT = "$(DLL_OUTPUT)\$(RESNAME).lib"
 !ENDIF
 
 ALL : $(OUTPUT)
-	@echo All targets are up to date (mode $(PKGMODE))
+    @echo All targets are up to date (mode $(PKGMODE))
 
 
 # invoke pkgdata - static
 "$(DLL_OUTPUT)\$(RESNAME).lib" : $(RB_FILES) $(RESFILES)
-	@echo Building $(RESNAME).lib
-	@"$(ICUTOOLS)\pkgdata" -f -v -m static -c -p $(RESNAME) -d "$(DLL_OUTPUT)" -s "$(RESDIR)" <<pkgdatain.txt
+    @echo Building $(RESNAME).lib
+    @"$(ICUTOOLS)\pkgdata" -f -v -m static -c -p $(RESNAME) -d "$(DLL_OUTPUT)" -s "$(RESDIR)" <<pkgdatain.txt
 $(RB_FILES:.res =.res
 )
 <<KEEP
@@ -87,14 +96,14 @@ $(RB_FILES:.res =.res
 # This is to remove all the data files
 CLEAN :
     -@erase "$(RB_FILES)"
-	-@erase "$(RESDIR)\uconvmsg*.*"
-	-@erase "$(CFG)\*uconvmsg*.*"
+    -@erase "$(RESDIR)\uconvmsg*.*"
+    -@erase "$(CFG)\*uconvmsg*.*"
     -@"$(ICUTOOLS)\pkgdata" -f --clean -v -m static -c -p $(RESNAME) -d "$(DLL_OUTPUT)" -s "$(RESDIR)" pkgdatain.txt
 
 # Inference rule for creating resource bundles
 .txt.res:
-	@echo Making Resource Bundle files
-	"$(ICUTOOLS)\genrb" -t -p $(RESNAME) -s $(@D) -d $(@D) $(?F)
+    @echo Making Resource Bundle files
+    "$(ICUTOOLS)\genrb" -t -p $(RESNAME) -s $(@D) -d $(@D) $(?F)
 
 
 $(RESSRC) : {"$(ICUTOOLS)"}genrb.exe
