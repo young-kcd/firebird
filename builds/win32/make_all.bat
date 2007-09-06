@@ -7,7 +7,9 @@ set ERRLEV=0
 @if errorlevel 1 (call :ERROR Executing setenvvar.bat failed & goto :EOF)
 
 :: verify that boot was run before
-@if not exist %FB_ROOT_PATH%\gen\gpre_boot.exe (goto :HELP_BOOT & goto :EOF)
+
+@if not exist %FB_GEN_DIR%\gpre_boot.exe (goto :HELP_BOOT & goto :EOF)
+
 
 @call set_build_target.bat %*
 
@@ -44,22 +46,23 @@ if errorlevel 1 call :ERROR build failed - see make_all_%FB_TARGET_PLATFORM%.log
 @mkdir %FB_OUTPUT_DIR%\lib 2>nul
 @mkdir %FB_OUTPUT_DIR%\system32 2>nul
 
-@copy %FB_ROOT_PATH%\extern\icu\bin\icuuc30.dll %FB_OUTPUT_DIR%\bin >nul
-@copy %FB_ROOT_PATH%\extern\icu\bin\icudt30.dll %FB_OUTPUT_DIR%\bin >nul
-@copy %FB_ROOT_PATH%\extern\icu\bin\icuin30.dll %FB_OUTPUT_DIR%\bin >nul
+for %%v in ( icuuc30 icudt30 icuin30 ) do (
+@copy %FB_ICU_SOURCE_BIN%\%%v.dll %FB_OUTPUT_DIR%\bin >nul
+)
+
 @copy %FB_ROOT_PATH%\temp\%FB_OBJ_DIR%\firebird\bin\* %FB_OUTPUT_DIR%\bin >nul
 @copy %FB_ROOT_PATH%\temp\%FB_OBJ_DIR%\firebird\intl\* %FB_OUTPUT_DIR%\intl >nul
 @copy %FB_ROOT_PATH%\temp\%FB_OBJ_DIR%\firebird\udf\* %FB_OUTPUT_DIR%\udf >nul
 @copy %FB_ROOT_PATH%\temp\%FB_OBJ_DIR%\firebird\system32\* %FB_OUTPUT_DIR%\system32 >nul
 @copy %FB_ROOT_PATH%\temp\%FB_OBJ_DIR%\fbclient\fbclient.lib %FB_OUTPUT_DIR%\lib\fbclient_ms.lib >nul
 :: Firebird.conf, etc
-@copy %FB_ROOT_PATH%\gen\firebird.msg %FB_OUTPUT_DIR% > nul
+@copy %FB_GEN_DIR%\firebird.msg %FB_OUTPUT_DIR% > nul
 @copy %FB_ROOT_PATH%\builds\install\misc\firebird.conf %FB_OUTPUT_DIR% >nul
 @copy %FB_ROOT_PATH%\builds\install\misc\fbintl.conf %FB_OUTPUT_DIR%\intl >nul
 :: DATABASES
-@copy %FB_ROOT_PATH%\gen\dbs\SECURITY2.FDB %FB_OUTPUT_DIR%\security2.fdb >nul
-@copy %FB_ROOT_PATH%\gen\dbs\HELP.fdb %FB_OUTPUT_DIR%\help\help.fdb >nul
-::@copy %FB_ROOT_PATH%\gen\firebird.msg %FB_OUTPUT_DIR%\firebird.msg >nul
+@copy %FB_GEN_DIR%\dbs\SECURITY2.FDB %FB_OUTPUT_DIR%\security2.fdb >nul
+@copy %FB_GEN_DIR%\dbs\HELP.fdb %FB_OUTPUT_DIR%\help\help.fdb >nul
+::@copy %FB_GEN_DIR%\firebird.msg %FB_OUTPUT_DIR%\firebird.msg >nul
 @copy %FB_ROOT_PATH%\builds\misc\security.gbak %FB_OUTPUT_DIR%\security2.fbk > nul
 :: DOCS
 ::@copy %FB_ROOT_PATH%\ChangeLog %FB_OUTPUT_DIR%\doc\ChangeLog.txt >nul

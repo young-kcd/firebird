@@ -30,11 +30,11 @@
 @echo Calling GPRE for %1/%2.epp
 @if "%3"=="" (call :GPRE_M %1 %2) else (call :GPRE_GDS %1 %2)
 
-@if not exist %FB_ROOT_PATH%\gen\%1\%2.cpp (
-	@move %FB_ROOT_PATH%\gen\preprocessing.cpp %FB_ROOT_PATH%\gen\%1\%2.cpp
+@if not exist %FB_GEN_DIR%\%1\%2.cpp (
+    @move %FB_GEN_DIR%\preprocessing.cpp %FB_GEN_DIR%\%1\%2.cpp
 ) else (
-	@fc %FB_ROOT_PATH%\gen\preprocessing.cpp %FB_ROOT_PATH%\gen\%1\%2.cpp >nul
-	@if errorlevel 1 @move %FB_ROOT_PATH%\gen\preprocessing.cpp %FB_ROOT_PATH%\gen\%1\%2.cpp
+    @fc %FB_GEN_DIR%\preprocessing.cpp %FB_GEN_DIR%\%1\%2.cpp >nul
+    @if errorlevel 1 @move %FB_GEN_DIR%\preprocessing.cpp %FB_GEN_DIR%\%1\%2.cpp
 )
 
 @echo.
@@ -42,25 +42,25 @@
 
 ::===========
 :GPRE_M
-@%GPRE% -n -m -raw %FB_ROOT_PATH%\src\%1\%2.epp %FB_ROOT_PATH%\gen\preprocessing.cpp -b %FB_DB_PATH%/gen/dbs/
+@%GPRE% -n -m -raw %FB_ROOT_PATH%\src\%1\%2.epp %FB_GEN_DIR%\preprocessing.cpp -b %FB_GEN_DB_DIR%/dbs/
 @goto :EOF
 
 ::===========
 :GPRE_GDS
-@%GPRE% -n -gds -raw -ids %FB_ROOT_PATH%\src\%1\%2.epp %FB_ROOT_PATH%\gen\preprocessing.cpp -b %FB_DB_PATH%/gen/dbs/
+@%GPRE% -n -gds -raw -ids %FB_ROOT_PATH%\src\%1\%2.epp %FB_GEN_DIR%\preprocessing.cpp -b %FB_GEN_DB_DIR%/dbs/
 goto :EOF
 
 ::===========
 :BOOT_PROCESS
 @echo.
-@set GPRE=%FB_ROOT_PATH%\gen\gpre_boot -lang_internal
+@set GPRE=%FB_GEN_DIR%\gpre_boot -lang_internal
 @for %%i in (array, blob, metd) do @call :PREPROCESS dsql %%i
 @for %%i in (gpre_meta) do @call :PREPROCESS gpre %%i
 @for %%i in (backup, restore) do @call :PREPROCESS burp %%i
 @for %%i in (extract, isql, show) do @call :PREPROCESS isql %%i
 @for %%i in (dba) do @call :PREPROCESS utilities/gstat %%i
 
-@set GPRE=%FB_ROOT_PATH%\gen\gpre_boot
+@set GPRE=%FB_GEN_DIR%\gpre_boot
 @for %%i in (alice_meta) do @call :PREPROCESS alice %%i
 @for %%i in (array, blob, metd) do @call :PREPROCESS dsql %%i
 @for %%i in (gpre_meta) do @call :PREPROCESS gpre %%i
@@ -70,7 +70,7 @@ goto :EOF
 
 ::===========
 :MASTER_PROCESS
-@set GPRE=%FB_ROOT_PATH%\gen\gpre_embed
+@set GPRE=%FB_GEN_DIR%\gpre_embed
 @for %%i in (alice_meta) do @call :PREPROCESS alice %%i
 @for %%i in (backup, restore) do @call :PREPROCESS burp %%i
 @for %%i in (array, blob, metd) do @call :PREPROCESS dsql %%i

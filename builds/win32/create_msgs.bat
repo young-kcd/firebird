@@ -5,10 +5,10 @@
 
 @if "%1"=="msg" goto MSG
 
-@if exist "%FB_DB_PATH%\gen\dbs\msg.fdb" del "%FB_DB_PATH%\gen\dbs\msg.fdb"
+@if exist "%FB_GEN_DIR%\dbs\msg.fdb" del "%FB_GEN_DIR%\dbs\msg.fdb"
 
-@echo create database '%FB_DB_PATH%\gen\dbs\msg.fdb'; | "%FB_ROOT_PATH%\gen\isql_embed" -q
-@set FB_MSG_ISQL=@"%FB_ROOT_PATH%\gen\isql_embed" -q %FB_DB_PATH%\gen\dbs\msg.fdb -i %FB_ROOT_PATH%\src\msgs\
+@echo create database '%FB_GEN_DB_DIR%/dbs/msg.fdb'; | "%FB_GEN_DIR%\isql_embed" -q
+@set FB_MSG_ISQL=@"%FB_GEN_DIR%\isql_embed" -q %FB_GEN_DB_DIR%/dbs/msg.fdb -i %FB_ROOT_PATH%\src\msgs\
 @%FB_MSG_ISQL%msg.sql
 @%FB_MSG_ISQL%facilities2.sql
 @echo.
@@ -30,8 +30,9 @@
 @if "%1"=="db" goto END
 
 :MSG
-@echo Building message file and codes header...
-@%FB_ROOT_PATH%\gen\build_msg -f %FB_DB_PATH%/gen/firebird.msg -D %FB_DB_PATH%/gen/dbs/msg.fdb
-@%FB_ROOT_PATH%\gen\codes %FB_ROOT_PATH%\src\include\gen %FB_ROOT_PATH%\lang_helpers
+@echo Building message file...
+@%FB_GEN_DIR%\build_msg -f %FB_GEN_DB_DIR%/firebird.msg -D %FB_GEN_DB_DIR%\dbs\msg.fdb
+@echo Building codes header...
+@%FB_GEN_DIR%\codes %FB_ROOT_PATH%\src\include\gen %FB_ROOT_PATH%\lang_helpers
 
 :END

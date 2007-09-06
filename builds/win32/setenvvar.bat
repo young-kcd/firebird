@@ -1,7 +1,7 @@
 :: This batch file sets the environment values
 :: FB_ROOT_PATH dos format path of the main directory
 :: FB_DB_PATH unix format path of the main directory
-:: (We probably don't need this anymore. Anyone got time to check?)
+:: (This is used by gpre and preprocess.bat)
 :: VS_VER VisualStudio version (msvc6|msvc7|msvc8)
 :: SERVER_NAME server needed to connect to firebird (could include port)
 ::   Example : localhost/3051
@@ -43,7 +43,6 @@ if DEFINED VS71COMNTOOLS (
 @cd %~dp0
 @for /f "tokens=*" %%a in ('@echo %FB_ROOT_PATH:\=/%') do (set FB_DB_PATH=%%a)
 
-
 ::=================
 :SET_MSVC_VER
 
@@ -62,11 +61,11 @@ if DEFINED VS71COMNTOOLS (
 @if not defined MSVC_VERSION goto :HELP
 
 :SET_FB_TARGET_PLATFORM
-@set FB_TARGET_PLATFORM=win32
+@set FB_TARGET_PLATFORM=Win32
 :: If MSVC >= 8 then we can test for processor architecture
 :: We certainly don't want to try and set platform=x64 if MSVC7 is installed
 @if %MSVC_VERSION% GEQ 8 (
-@if "%PROCESSOR_ARCHITECTURE%"=="x86" (set FB_TARGET_PLATFORM=win32)
+@if "%PROCESSOR_ARCHITECTURE%"=="x86" (set FB_TARGET_PLATFORM=Win32)
 @if "%PROCESSOR_ARCHITECTURE%"=="AMD64" (set FB_TARGET_PLATFORM=x64)
 )
 
@@ -74,6 +73,19 @@ if DEFINED VS71COMNTOOLS (
 @set FB_OUTPUT_DIR=%FB_ROOT_PATH%\output_%FB_TARGET_PLATFORM%
 @set FB_TEMP_DIR=%FB_ROOT_PATH%\temp\%FB_TARGET_PLATFORM%
 @set FB_INSTALL_SCRIPTS=%FB_ROOT_PATH%\builds\install\arch-specific\win32
+@if %MSVC_VERSION% GEQ 8 (
+@set FB_GEN_DIR=%FB_ROOT_PATH%\gen\%FB_TARGET_PLATFORM%
+@set FB_GEN_DB_DIR=%FB_DB_PATH%/gen/%FB_TARGET_PLATFORM%
+@set FB_ICU_SOURCE_BIN=%FB_ROOT_PATH%\extern\icu\%FB_OBJ_DIR%\bin\
+) else (
+@set FB_GEN_DIR=%FB_ROOT_PATH%\gen
+@set FB_GEN_DB_DIR=%FB_DB_PATH%/gen
+@set FB_ICU_SOURCE_BIN=%FB_ROOT_PATH%\extern\icu\bin\
+)
+
+
+
+
 
 goto :END
 
