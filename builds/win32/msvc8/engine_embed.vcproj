@@ -19,7 +19,7 @@
 		<Configuration
 			Name="Release|Win32"
 			ConfigurationType="4"
-			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops;.\firebird2.vsprops"
+			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops;.\firebird2.vsprops;.\firebird2release.vsprops"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
 			CharacterSet="2"
@@ -47,7 +47,6 @@
 				FavorSizeOrSpeed="1"
 				AdditionalIncludeDirectories="../../../src/include;../../../src/include/gen;../../../extern/icu/include;../../../src/vulcan"
 				PreprocessorDefinitions="WIN32,NDEBUG,_WINDOWS,_LIB,SUPERSERVER,EMBEDDED,NAMESPACE=Vulcan"
-				RuntimeLibrary="2"
 				UsePrecompiledHeader="0"
 			/>
 			<Tool
@@ -83,7 +82,7 @@
 		<Configuration
 			Name="Release|x64"
 			ConfigurationType="4"
-			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops;.\firebird2.vsprops"
+			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops;.\firebird2.vsprops;.\firebird2release.vsprops"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
 			CharacterSet="2"
@@ -112,7 +111,6 @@
 				FavorSizeOrSpeed="1"
 				AdditionalIncludeDirectories="../../../src/include;../../../src/include/gen;../../../extern/icu/include;../../../src/vulcan"
 				PreprocessorDefinitions="WIN32,NDEBUG,_WINDOWS,_LIB,SUPERSERVER,EMBEDDED,NAMESPACE=Vulcan"
-				RuntimeLibrary="2"
 				UsePrecompiledHeader="0"
 			/>
 			<Tool
@@ -148,7 +146,7 @@
 		<Configuration
 			Name="Debug|Win32"
 			ConfigurationType="4"
-			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops;.\firebird2.vsprops"
+			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops;.\firebird2.vsprops;.\firebird2debug.vsprops"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
 			CharacterSet="2"
@@ -173,8 +171,6 @@
 				Optimization="0"
 				AdditionalIncludeDirectories="../../../src/include;../../../src/include/gen;../../../extern/icu/include;../../../src/vulcan"
 				PreprocessorDefinitions="WIN32,_DEBUG,_WINDOWS,_LIB,SUPERSERVER,DEV_BUILD,EMBEDDED,NAMESPACE=Vulcan"
-				BasicRuntimeChecks="3"
-				RuntimeLibrary="3"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -209,7 +205,7 @@
 		<Configuration
 			Name="Debug|x64"
 			ConfigurationType="4"
-			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops;.\firebird2.vsprops"
+			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops;.\firebird2.vsprops;.\firebird2debug.vsprops"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
 			CharacterSet="2"
@@ -235,8 +231,6 @@
 				Optimization="0"
 				AdditionalIncludeDirectories="../../../src/include;../../../src/include/gen;../../../extern/icu/include;../../../src/vulcan"
 				PreprocessorDefinitions="WIN32,_DEBUG,_WINDOWS,_LIB,SUPERSERVER,DEV_BUILD,EMBEDDED,NAMESPACE=Vulcan"
-				BasicRuntimeChecks="3"
-				RuntimeLibrary="3"
 				Detect64BitPortabilityProblems="true"
 			/>
 			<Tool
@@ -309,10 +303,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\GlobalRWLock.cpp"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\src\jrd\cch.cpp"
 				>
 			</File>
@@ -349,7 +339,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\gen\jrd\dfw.cpp"
+				RelativePath="..\..\..\gen\$(PlatformName)\jrd\dfw.cpp"
 				>
 			</File>
 			<File
@@ -357,7 +347,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\gen\jrd\dpm.cpp"
+				RelativePath="..\..\..\gen\$(PlatformName)\jrd\dpm.cpp"
 				>
 			</File>
 			<File
@@ -365,23 +355,23 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\gen\jrd\dyn.cpp"
+				RelativePath="..\..\..\gen\$(PlatformName)\jrd\dyn.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\gen\jrd\dyn_def.cpp"
+				RelativePath="..\..\..\gen\$(PlatformName)\jrd\dyn_def.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\gen\jrd\dyn_del.cpp"
+				RelativePath="..\..\..\gen\$(PlatformName)\jrd\dyn_del.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\gen\jrd\dyn_mod.cpp"
+				RelativePath="..\..\..\gen\$(PlatformName)\jrd\dyn_mod.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\gen\jrd\dyn_util.cpp"
+				RelativePath="..\..\..\gen\$(PlatformName)\jrd\dyn_util.cpp"
 				>
 			</File>
 			<File
@@ -421,7 +411,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\gen\jrd\fun.cpp"
+				RelativePath="..\..\..\gen\$(PlatformName)\jrd\fun.cpp"
 				>
 			</File>
 			<File
@@ -433,7 +423,11 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\gen\jrd\grant.cpp"
+				RelativePath="..\..\..\src\jrd\GlobalRWLock.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\gen\$(PlatformName)\jrd\grant.cpp"
 				>
 			</File>
 			<File
@@ -453,7 +447,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\gen\jrd\ini.cpp"
+				RelativePath="..\..\..\gen\$(PlatformName)\jrd\ini.cpp"
 				>
 			</File>
 			<File
@@ -505,7 +499,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\gen\jrd\met.cpp"
+				RelativePath="..\..\..\gen\$(PlatformName)\jrd\met.cpp"
 				>
 			</File>
 			<File
@@ -545,7 +539,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\gen\jrd\pcmet.cpp"
+				RelativePath="..\..\..\gen\$(PlatformName)\jrd\pcmet.cpp"
 				>
 			</File>
 			<File
@@ -585,7 +579,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\gen\jrd\scl.cpp"
+				RelativePath="..\..\..\gen\$(PlatformName)\jrd\scl.cpp"
 				>
 			</File>
 			<File
@@ -754,10 +748,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\build_no.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\GlobalRWLock.h"
 				>
 			</File>
 			<File
@@ -982,6 +972,10 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\gdsassert.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\GlobalRWLock.h"
 				>
 			</File>
 			<File

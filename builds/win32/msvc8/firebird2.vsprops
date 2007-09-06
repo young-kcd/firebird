@@ -12,7 +12,6 @@
 		OmitFramePointers="true"
 		AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
 		ExceptionHandling="0"
-		RuntimeLibrary="2"
 		RuntimeTypeInfo="false"
 		PrecompiledHeaderFile="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)\$(ProjectName).pch"
 		AssemblerListingLocation="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)/"
