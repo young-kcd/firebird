@@ -1,3 +1,44 @@
+2007-09-05 11:41  robocop
+
+	* firebird2/src/common/classes/TriState.h (1.3):
+
+	Switch to inline for now.
+
+2007-09-05 09:18  dimitr
+
+	* firebird2/src/jrd/cmp.cpp (1.263):
+
+	1) Replaced the hackery LM-based ID generation with the local
+	counter. Uniqueness will be ensured by the DatabaseSnapshot
+	internals.  2) Fixed CORE-1441.
+
+2007-09-05 09:14  dimitr
+
+	* firebird2/src/jrd/: jrd.cpp (1.341), jrd.h (1.195), lck.cpp
+	(1.66), lck.h (1.33), lck_proto.h (1.15), shut.cpp (1.48):
+
+	1) Replaced the hackery LM-based ID generation with the local
+	counter. Uniqueness will be ensured by the DatabaseSnapshot
+	internals.  2) Fixed CORE-1441.
+
+2007-09-05 09:07  dimitr
+
+	* firebird2/src/jrd/RuntimeStatistics.h (1.2):
+
+	Misc.
+
+2007-09-05 08:44  dimitr
+
+	* firebird2/src/jrd/cch.cpp (1.171):
+
+	Removed the asserts.
+
+2007-09-05 04:26  asfernandes
+
+	* firebird2/src/common/classes/TriState.h (1.2):
+
+	Do not include file more than once
+
 2007-09-04 10:37  robocop
 
 	* firebird2/src/alice/exe.cpp (1.47):
