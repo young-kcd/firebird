@@ -1166,7 +1166,8 @@ void PAG_header(bool info)
 
 	}
 	catch (std::exception&) {
-		// no-op, just ensure the header page will be released
+		CCH_RELEASE(tdbb, &window);
+		throw;
 	}
 
 	CCH_RELEASE(tdbb, &window);
