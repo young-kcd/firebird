@@ -190,12 +190,15 @@ public:
 	}
 
 	inline static SSHORT getLockLen() {
-		return sizeof(SLONG) + sizeof(USHORT);
+		return sizeof(SLONG) + sizeof(ULONG);
 	}
 
 	inline void getLockStr(UCHAR* str) const {
-		*(SLONG*)str = pageNum;
-		*(USHORT*)(str + sizeof(pageNum)) = pageSpaceID;
+		memcpy(str, &pageNum, sizeof(SLONG));
+		str += sizeof(SLONG);
+
+		const ULONG val = pageSpaceID;
+		memcpy(str, &val, sizeof(ULONG));
 	}
 
 	inline PageNumber& operator=(const PageNumber& from) {

@@ -907,20 +907,20 @@ static void prt_lock(
 			lock->lbl_series, lock->lbl_parent, lock->lbl_state,
 			lock->lbl_size, lock->lbl_length, lock->lbl_data);
 
-	if (lock->lbl_series == Jrd::LCK_bdb && lock->lbl_length == 6) {
+	if (lock->lbl_series == Jrd::LCK_bdb && lock->lbl_length == Jrd::PageNumber::getLockLen()) {
 		// Since fb 2.1 lock keys for page numbers (series == 3) contains
-		// page space number in high 2 bytes of 6-byte key. Lets print it
+		// page space number in high long of two-longs key. Lets print it
 		// in <page_space>:<page_number> format
 		const UCHAR* q = lock->lbl_key;
 		
 		SLONG key;
-		memcpy(&key, q, 4);
-		q += 4;
+		memcpy(&key, q, sizeof(SLONG));
+		q += sizeof(SLONG);
 
-		USHORT pg_space;
-		memcpy(&pg_space, q, 2);
+		ULONG pg_space;
+		memcpy(&pg_space, q, sizeof(SLONG));
 
-		FPRINTF(outfile, "\tKey: %04d:%06"SLONGFORMAT",", pg_space, key);
+		FPRINTF(outfile, "\tKey: %04"ULONGFORMAT":%06"SLONGFORMAT",", pg_space, key);
 	}
 	else if (lock->lbl_length == 4) {
 		SLONG key;

@@ -288,16 +288,17 @@ bool jrd_rel::delPages(thread_db* tdbb, SLONG tran, RelationPages* aPages)
 
 void jrd_rel::getRelLockKey(thread_db* tdbb, UCHAR* key)
 {
-	*(USHORT*)key = rel_id;
-	key += sizeof(USHORT);
+	const ULONG val = rel_id;
+	memcpy(key, &val, sizeof(ULONG));
+	key += sizeof(ULONG);
 
 	const SLONG inst_id = getPages(tdbb)->rel_instance_id;
-	*(SLONG*)key = inst_id;
+	memcpy(key, &inst_id, sizeof(SLONG));
 }
 
 SSHORT jrd_rel::getRelLockKeyLength() const
 {
-	return sizeof(USHORT) + sizeof(SLONG);
+	return sizeof(ULONG) + sizeof(SLONG);
 }
 
 void jrd_rel::cleanUp()
