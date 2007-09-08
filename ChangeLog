@@ -1,3 +1,10 @@
+2007-09-07 09:41  hvlad
+
+	* firebird2/src/: jrd/Relation.cpp (1.6), jrd/pag.h (1.14),
+	lock/print.cpp (1.59):
+
+	Fix alignment issues
+
 2007-09-06 15:25  paul_reeves
 
 	* firebird2/builds/win32/: blrtable.bat (1.11), clean_all.bat
