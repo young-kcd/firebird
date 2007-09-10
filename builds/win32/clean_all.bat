@@ -32,7 +32,11 @@ if defined FB_CLEAN_SHARED (
 
 :: This really does clean the icu stuff - but is it too much? Cleaning less
 :: thoroughly than this speeds up the build process if a previous build has been
-:: made for the same target.
+:: made for the same target. On the other hand, not cleaning thoroughly breaks
+:: a debug build as debug builds, by design, link incrementally and also generate
+:: browse info. In that case we need to set FB_INTLREALCLEAN anyway. The
+:: alternative would be to not create browse info automatically for debug builds.
+if defined FB_DBG (set FB_INTLREALCLEAN=1)
 if defined FB_INTLREALCLEAN (
 if defined FB_OBJ_DIR (
 @echo Thoroughly scrubbing all remnants of INTL %FB_OBJ_DIR% dirs...
