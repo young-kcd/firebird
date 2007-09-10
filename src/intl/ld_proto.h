@@ -37,7 +37,7 @@ INTL_BOOL FB_DLL_EXPORT LD_lookup_texttype(texttype* tt, const ASCII* texttype_n
 										   ULONG specific_attributes_length, INTL_BOOL ignore_attributes,
 										   const ASCII* config_info);
 void FB_DLL_EXPORT LD_version(USHORT* version);
-ULONG FB_DLL_EXPORT LD_attributes(
+ULONG FB_DLL_EXPORT LD_setup_attributes(
 	const ASCII* textTypeName, const ASCII* charSetName, const ASCII* configInfo,
 	ULONG srcLen, const UCHAR* src, ULONG dstLen, UCHAR* dst);
 
