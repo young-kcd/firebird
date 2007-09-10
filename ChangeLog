@@ -1,3 +1,18 @@
+2007-09-10 02:45  asfernandes
+
+	* firebird2/: builds/win32/msvc8/btyacc.vcproj (1.5),
+	src/alice/exe.cpp (1.48), src/common/classes/TriState.h (1.4),
+	src/intl/lc_ascii.cpp (1.21):
+
+	Misc
+
+2007-09-10 02:26  asfernandes
+
+	* firebird2/src/jrd/tra.cpp (1.140):
+
+	It's difficult for human beings distinguish between l (letter) and
+	1 (number one)
+
 2007-09-07 09:41  hvlad
 
 	* firebird2/src/: jrd/Relation.cpp (1.6), jrd/pag.h (1.14),
