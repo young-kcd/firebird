@@ -47,9 +47,10 @@ struct TextTypeImpl
 
 static void famasc_destroy(texttype* obj)
 {
-	if (obj->texttype_impl)
+	TextTypeImpl* impl = obj->texttype_impl;
+
+	if (impl)
 	{
-		TextTypeImpl* impl = obj->texttype_impl;
 		if (impl->cs.charset_fn_destroy)
 			impl->cs.charset_fn_destroy(&impl->cs);
 

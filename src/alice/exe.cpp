@@ -362,7 +362,8 @@ static void extract_db_info(const UCHAR* db_info_buffer, size_t buf_size)
 		// fb_assert(length <= MAX_SSHORT);
 		// for all cases that use 'length' as input to 'gds__vax_integer' 
 		// Remember to keep this list in sync with the val_errors array.
-		switch (item) {
+		switch (item)
+		{
 		case isc_info_page_errors:
 			tdgbl->ALICE_data.ua_val_errors[VAL_PAGE_ERRORS] =
 				gds__vax_integer(p, (SSHORT) length);
@@ -407,7 +408,7 @@ static void extract_db_info(const UCHAR* db_info_buffer, size_t buf_size)
 		default:
 			fb_assert(false);
 		}
+
 		p += length;
 	}
 }
-

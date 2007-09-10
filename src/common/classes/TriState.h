@@ -117,4 +117,3 @@ inline bool TriState::toggle()
 
 
 #endif // CLASSES_TRISTATE_H
-
