@@ -2988,8 +2988,8 @@ static void transaction_options(
 				if (tpb >= end)
 					ERR_post(isc_bad_tpb_form, 0);
 					
-				USHORT l = *tpb++;
-				if (l > MAX_SQL_IDENTIFIER_LEN) {
+				USHORT len = *tpb++;
+				if (len > MAX_SQL_IDENTIFIER_LEN) {
 					TEXT text[BUFFER_TINY];
 					USHORT flags = 0;
 					gds__msg_lookup(0, DYN_MSG_FAC, 159, sizeof(text),
@@ -2999,11 +2999,11 @@ static void transaction_options(
 							 isc_arg_string, ERR_cstring(text), 0);
 				}
 				// Does the identifier length surpasses the remaining of the TPB?
-				if (tpb >= end || end - tpb < l)
+				if (tpb >= end || end - tpb < len)
 					ERR_post(isc_bad_tpb_form, 0);
 				
-				const Firebird::MetaName name(reinterpret_cast<const char*>(tpb), l);
-				tpb += l;
+				const Firebird::MetaName name(reinterpret_cast<const char*>(tpb), len);
+				tpb += len;
 				jrd_rel* relation = MET_lookup_relation(tdbb, name);
 				if (!relation) {
 					ERR_post(isc_bad_tpb_content,
@@ -3021,8 +3021,8 @@ static void transaction_options(
 					// for read/write shared and (protected or exclusive).
 					if (*tpb == isc_tpb_shared)
 						tpb++;
-					else if (*tpb == isc_tpb_protected
-							 || *tpb == isc_tpb_exclusive)
+					else if (*tpb == isc_tpb_protected ||
+							 *tpb == isc_tpb_exclusive)
 					{
 						tpb++;
 						lock_type = (lock_type == LCK_SW) ? LCK_EX : LCK_PR;
@@ -3041,8 +3041,8 @@ static void transaction_options(
 				//if (tpb >= end)
 				//	ERR_post(isc_bad_tpb_form, 0);
 
-				const USHORT l = *tpb++;
-				tpb += l;
+				const USHORT len = *tpb++;
+				tpb += len;
 			}
 			break;
 
@@ -3064,13 +3064,13 @@ static void transaction_options(
 				if (tpb >= end)
 					ERR_post(isc_bad_tpb_form, 0);
 
-				const USHORT l = *tpb++;
+				const USHORT len = *tpb++;
 				// Does the encoded number's length surpasses the remaining of the TPB?
-				if (tpb >= end || end - tpb < l)
+				if (tpb >= end || end - tpb < len)
 					ERR_post(isc_bad_tpb_form, 0);
 
-				transaction->tra_lock_timeout = gds__vax_integer(tpb, l);
-				tpb += l;
+				transaction->tra_lock_timeout = gds__vax_integer(tpb, len);
+				tpb += len;
 			}
 			break;
 
