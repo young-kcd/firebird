@@ -58,7 +58,7 @@ USHORT MERGE_database_info(const UCHAR* in,
  *	database block.  Return the actual length of the packet.
  *
  **************************************/
-	SSHORT length, l;
+	SSHORT l;
 	const UCHAR* p;
 
 	UCHAR* start = out;
@@ -105,15 +105,17 @@ USHORT MERGE_database_info(const UCHAR* in,
 			break;
 
 		default:
-			length = (SSHORT) gds__vax_integer(in, 2);
-			in += 2;
-			if (out + length + 2 >= end) {
-				out[-1] = isc_info_truncated;
-				return 0;
+			{
+				SSHORT length = (SSHORT) gds__vax_integer(in, 2);
+				in += 2;
+				if (out + length + 2 >= end) {
+					out[-1] = isc_info_truncated;
+					return 0;
+				}
+				PUT_WORD(out, length);
+				while (length--)
+					*out++ = *in++;
 			}
-			PUT_WORD(out, length);
-			while (length--)
-				*out++ = *in++;
 			break;
 		}
 }
@@ -135,8 +137,7 @@ static SSHORT convert( ULONG number, UCHAR * buffer)
 	const UCHAR *p;
 
 #ifndef WORDS_BIGENDIAN
-	ULONG n = number;
-	p = (UCHAR *) & n;
+	p = (UCHAR *) & number;
 	*buffer++ = *p++;
 	*buffer++ = *p++;
 	*buffer++ = *p++;
@@ -190,9 +191,11 @@ static ISC_STATUS merge_setup(
 /* Copy data portion of information sans original count */
 
 	if (--length)
-		do {
-			*(*out)++ = *(*in)++;
-		} while (--length);
+	{
+		memcpy(*out, *in, length);
+		*out += length;
+		*in += length;
+	}
 
 	return FB_SUCCESS;
 }
