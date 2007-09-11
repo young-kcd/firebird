@@ -199,6 +199,9 @@ static const SCHAR db_items[] = {
 	isc_info_next_transaction,
 	isc_info_ods_version,
 	isc_info_ods_minor_version,
+#ifdef DEV_BUILD
+	isc_info_db_id,
+#endif
 	isc_info_end
 };
 
@@ -385,12 +388,12 @@ bool SHOW_dbb_parameters(FB_API_HANDLE db_handle,
  *	    db_itemsL -- list of db_info items to process
  *
  **************************************/
-	SCHAR buffer[BUFFER_LENGTH128];
+	SCHAR buffer[BUFFER_LENGTH400];
 	TEXT msg[MSG_LENGTH];
 
 	ISC_STATUS_ARRAY status_vector;
 	if (isc_database_info(status_vector, &db_handle, item_length,
-						  db_itemsL, BUFFER_LENGTH128, buffer))
+						  db_itemsL, sizeof(buffer), buffer))
 	{
 		ISQL_errmsg(status_vector);
 		return false;
@@ -493,6 +496,30 @@ bool SHOW_dbb_parameters(FB_API_HANDLE db_handle,
 			sprintf(info, "ODS = %"SLONGFORMAT".%"SLONGFORMAT"%s", 
 					(SLONG) isqlGlob.major_ods, value_out, NEWLINE);
 			break;
+			
+#ifdef DEV_BUILD
+		case isc_info_db_id:
+			{
+				// Will print with garbage for now.
+				//It's sprintf(info, "DB/Host = %.*s", length, d);
+				const UCHAR* s = reinterpret_cast<const UCHAR*>(d);
+				const UCHAR* end = s + length;
+				++s; // Skip useless indicator.
+				int len = *s++;
+				printf("DB = %.*s\n", len, s);
+				s += len;
+				while (s < end)
+				{
+					len = *s++;
+					printf("Host = %.*s\n", len, s);
+					s += len;
+				}
+			}
+			break;
+#endif
+			
+		case isc_info_truncated:
+			return info > info_buf; // If we got some items, we are (partially) successful.
 		}
 		
 		d += length;
