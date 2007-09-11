@@ -8,6 +8,5 @@
 		Name="VCCLCompilerTool"
 		RuntimeLibrary="3"
 		BasicRuntimeChecks="3"
-		Detect64BitPortabilityProblems="true"
 	/>
 </VisualStudioPropertySheet>
