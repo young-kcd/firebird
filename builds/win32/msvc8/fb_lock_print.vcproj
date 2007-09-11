@@ -46,7 +46,6 @@
 				EnableIntrinsicFunctions="true"
 				FavorSizeOrSpeed="1"
 				PreprocessorDefinitions="NDEBUG,_WINDOWS,CLIENT,SUPERCLIENT,WIN32"
-				RuntimeLibrary="0"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
