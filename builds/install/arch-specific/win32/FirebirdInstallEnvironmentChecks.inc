@@ -497,7 +497,7 @@ procedure SetupSharedFilesArray;
 // - Libraries
 // - License files
 begin
-SetArrayLength(SharedFileArray,29);
+SetArrayLength(SharedFileArray,33);
 
 SharedFileArray[0].Filename := ExpandConstant('{app}')+'\IPLicense.txt';
 SharedFileArray[1].Filename := ExpandConstant('{app}')+'\IDPLicense.txt';
@@ -540,7 +540,10 @@ if UsingWinNT then
 else
   SharedFileArray[28].Filename := ExpandConstant('{sys}')+'\FIREBI~1.CPL';
 
-
+SharedFileArray[29].Filename := ExpandConstant('{app}')+'aliases.conf';
+SharedFileArray[30].Filename := ExpandConstant('{app}')+'firebird.conf';
+SharedFileArray[31].Filename := ExpandConstant('{app}')+'firebird.log';
+SharedFileArray[32].Filename := ExpandConstant('{app}')+'security2.fdb';
 
 end;
 

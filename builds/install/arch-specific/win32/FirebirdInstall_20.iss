@@ -499,6 +499,7 @@ Source: {#FilesDir}\examples\udf\*.*; DestDir: {app}\examples\udf; Components: D
 Source: {#FilesDir}\bin\fbclient.pdb; DestDir: {app}\bin; Components: ClientComponent;
 Source: {#FilesDir}\bin\fb_inet_server.pdb; DestDir: {app}\bin; Components: ServerComponent\ClassicServerComponent;
 Source: {#FilesDir}\bin\fbserver.pdb; DestDir: {app}\bin; Components: ServerComponent\SuperServerComponent;
+;Source: {#FilesDir}\bin\fbembed.pdb; DestDir: {app}\bin; Components: ClientComponent;
 #endif
 
 [UninstallRun]
@@ -515,7 +516,7 @@ Filename: {app}\bin\instreg.exe; Parameters: " remove"; StatusMsg: {cm:instreg};
 [UninstallDelete]
 Type: files; Name: {app}\*.lck
 Type: files; Name: {app}\*.evn
-
+Type: dirifempty; Name: {app}
 
 [_ISTool]
 EnableISX=true
@@ -537,9 +538,9 @@ Var
   InstallRootDir: String;
   FirebirdConfSaved: String;
   ForceInstall: Boolean;        // If /force set on command-line we install _and_
-                                 // configure. Default is to install and configure only if
-                                 // no other working installation is found (unless we are installing
-                                 // over the same version)
+                                // configure. Default is to install and configure only if
+                                // no other working installation is found (unless we are installing
+                                // over the same version)
 
   //These three command-line options change the default behaviour
   // during a scripted install
@@ -547,7 +548,12 @@ Var
   // during an interactive install
   NoCPL: Boolean;               // pass /nocpl on command-line.
   NoLegacyClient: Boolean;      // pass /nogds32 on command line.
-  CopyFbClient: Boolean;     // pass /copyfbclient on command line.
+  CopyFbClient: Boolean;        // pass /copyfbclient on command line.
+  
+  // Options for scripted uninstall.
+  CleanUninstall: Boolean;      // If /clean is passed to the uninstaller it will delete
+                                // user config files - firebird.conf, firebird.log,
+                                // aliases.conf and the security database.
 
 
 #include "FirebirdInstallSupportFunctions.inc"
@@ -745,7 +751,6 @@ begin
       ShellExec('open', sMSWinsock2Update, '', '', SW_SHOWNORMAL, ewNoWait, ErrCode);
 end;
 
-
 //This function tries to find an existing install of Firebird 1.5
 //If it succeeds it suggests that directory for the install
 //Otherwise it suggests the default for Fb 1.5
@@ -937,6 +942,14 @@ begin
               SetupSharedFilesArray;
               GetSharedLibCountBeforeCopy;
       end;
+      
+    ssPostInstall: begin
+      //Manually set the sharedfile count of these files.
+      IncrementSharedCount(Is64BitInstallMode, GetAppPath+'\firebird.conf', false);
+      IncrementSharedCount(Is64BitInstallMode, GetAppPath+'\firebird.log', false);
+      IncrementSharedCount(Is64BitInstallMode, GetAppPath+'\aliases.conf', false);
+      IncrementSharedCount(Is64BitInstallMode, GetAppPath+'\security2.fdb', false);
+      end;
 
     ssDone: begin
       //If user has chosen to install an app and run it automatically set up the registry accordingly
@@ -998,6 +1011,60 @@ function NoFirebirdConfExists: boolean;
 begin
   Result := not fileexists(GetAppPath+'\firebird.conf');
 end;
+
+function InitializeUninstall(): Boolean;
+var
+  CommandLine: String;
+begin
+  CommandLine:=GetCmdTail;
+  if pos('CLEAN',Uppercase(CommandLine))>0 then
+    CleanUninstall:=True
+  else
+    CleanUninstall:=False;
+
+  //MUST return a result of true, otherwise uninstall will abort!
+  result := true;
+end;
+
+procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
+begin
+
+  case CurUninstallStep of
+
+//    usAppMutexCheck :
+  
+//    usUninstall :
+
+    usPostUninstall : begin
+      // We are manually handling the share count of these files, so we must
+      // a) Decrement shared count of each one and
+      // b) If Decrement reaches 0 (ie, function returns true) then we
+      //    test if CleanUninstall has been passed.
+      if DecrementSharedCount(Is64BitInstallMode, GetAppPath+'\firebird.conf') then
+        if CleanUninstall then
+          DeleteFile(GetAppPath+'\firebird.conf');
+
+      if DecrementSharedCount(Is64BitInstallMode, GetAppPath+'\firebird.log') then
+        if CleanUninstall then
+          DeleteFile(GetAppPath+'\firebird.log');
+
+      if DecrementSharedCount(Is64BitInstallMode, GetAppPath+'\aliases.conf') then
+        if CleanUninstall then
+          DeleteFile(GetAppPath+'\aliases.conf');
+
+      if DecrementSharedCount(Is64BitInstallMode, GetAppPath+'\security2.fdb') then
+        if CleanUninstall then
+          DeleteFile(GetAppPath+'\security2.fdb');
+          
+      end;
+
+//    usDone :
+
+  end;
+
+
+end;
+
 
 begin
 end.
