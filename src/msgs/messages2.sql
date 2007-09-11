@@ -1763,7 +1763,7 @@ COMMIT WORK;
 ('dsql_ambiguous_field_name', 'pass1_field', 'pass1.c', NULL, 7, 13, NULL, 'Ambiguous field name between @1 and @2', NULL, NULL);
 ('dsql_udf_return_pos_err', 'define_udf', 'ddl.c', NULL, 7, 14, NULL, 'External function should have return position between 1 and @1', NULL, NULL);
 ('dsql_invalid_label', 'PASS1_label', 'pass1.cpp', NULL, 7, 15, NULL, 'Label @1 @2 in the current scope', NULL, NULL);
-('dsql_datatypes_not_comparable', 'MAKE_desc_from_list', 'make.cpp', NULL, 7, 16, NULL, 'Datatypes @1sare not comparable in expression @2', NULL, NULL);
+('dsql_datatypes_not_comparable', 'MAKE_desc_from_list', 'make.cpp', NULL, 7, 16, NULL, 'Datatypes @1are not comparable in expression @2', NULL, NULL);
 ('dsql_cursor_invalid', NULL, 'pass1.cpp', NULL, 7, 17, NULL, 'Empty cursor name is not allowed', NULL, NULL);
 ('dsql_cursor_redefined', NULL, 'pass1.cpp', NULL, 7, 18, NULL, 'Statement already has a cursor @1 assigned', NULL, NULL);
 ('dsql_cursor_not_found', NULL, 'pass1.cpp', NULL, 7, 19, NULL, 'Cursor @1 is not found in the current context', NULL, NULL);
