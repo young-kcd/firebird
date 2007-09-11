@@ -2932,7 +2932,7 @@ static void transaction_options(
 			break;
 
 		case isc_tpb_rec_version:
-			if (!(transaction->tra_flags & TRA_read_committed))
+			if (isolation.isAssigned() && !(transaction->tra_flags & TRA_read_committed))
 				ERR_post(isc_bad_tpb_content, 0);
 				
 			if (!rec_version.assignOnce(true))
@@ -2942,7 +2942,7 @@ static void transaction_options(
 			break;
 
 		case isc_tpb_no_rec_version:
-			if (!(transaction->tra_flags & TRA_read_committed))
+			if (isolation.isAssigned() && !(transaction->tra_flags & TRA_read_committed))
 				ERR_post(isc_bad_tpb_content, 0);
 
 			if (!rec_version.assignOnce(false))
@@ -3078,6 +3078,13 @@ static void transaction_options(
 			ERR_post(isc_bad_tpb_form, 0);
 		}
 	}
+	
+	if (rec_version.isAssigned() &&
+		!(transaction->tra_flags & TRA_read_committed))
+	{
+		ERR_post(isc_bad_tpb_content, 0);
+	}
+
 
 /* If there aren't any relation locks to seize, we're done. */
 
