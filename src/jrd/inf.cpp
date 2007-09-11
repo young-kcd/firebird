@@ -179,9 +179,7 @@ USHORT INF_convert(SLONG number, SCHAR* buffer)
 	const SCHAR* p;
 
 #ifndef WORDS_BIGENDIAN
-	// CVC: What's the need for an intermediate "n" here?
-	const SLONG n = number;
-	p = reinterpret_cast<const SCHAR*>(&n);
+	p = reinterpret_cast<const SCHAR*>(&number);
 	*buffer++ = *p++;
 	*buffer++ = *p++;
 	*buffer++ = *p++;
@@ -229,9 +227,9 @@ int INF_database_info(const SCHAR* items,
 	jrd_tra* transaction = NULL;
 	const SCHAR* const end_items = items + item_length;
 	const SCHAR* const end = info + output_length;
+	const SCHAR* const end_buf = buffer + sizeof(buffer);
 
-	Attachment* err_att = 0;
-	Attachment* att = 0;
+	const Attachment* err_att = tdbb->tdbb_attachment;
 	const SCHAR* q;
 
 	while (items < end_items && *items != isc_info_end) {
@@ -444,17 +442,28 @@ int INF_database_info(const SCHAR* items,
 
 		case isc_info_db_id:
 			{
+				// May be simpler to code using a server-side version of isql's Extender class.
 				const Firebird::PathName& str_fn = dbb->dbb_database_name;
 				STUFF(p, 2);
-				SSHORT l = str_fn.length();
-				*p++ = l;
-				for (q = str_fn.c_str(); *q;)
-					*p++ = *q++;
-				SCHAR site[256];
-				ISC_get_host(site, sizeof(site));
-				*p++ = l = strlen(site);
-				for (q = site; *q;)
-					*p++ = *q++;
+				USHORT len = str_fn.length();
+				if (p + len + 1 >= end_buf)
+					len = end_buf - p - 1;
+				if (len > 255)
+					len = 255; // Cannot put more in one byte, will truncate instead.
+				*p++ = len;
+				memcpy(p, str_fn.c_str(), len);
+				p += len;
+				if (p + 2 < end_buf)
+				{
+					SCHAR site[256];
+					ISC_get_host(site, sizeof(site));
+					len = strlen(site);
+					if (p + len + 1 >= end_buf)
+						len = end_buf - p - 1;
+					*p++ = len;
+					memcpy(p, site, len);
+					p += len;
+				}
 				length = p - buffer;
 				break;
 			}
@@ -542,11 +551,14 @@ int INF_database_info(const SCHAR* items,
 			break;
 
 		case isc_info_user_names:
+			// Assumes user names will be smaller than sizeof(buffer) - 1.
 			if (!(tdbb->tdbb_attachment->locksmith())) {
 				const UserId* user = tdbb->tdbb_attachment->att_user;
-				Firebird::string uname((user && user->usr_user_name.hasData()) ? user->usr_user_name.c_str() : "<Unknown>");
-				uname.insert(0, char(uname.length()));
-				info = INF_put_item(item, uname.length(), uname.c_str(), info, end);
+				const char* uname = (user && user->usr_user_name.hasData()) ? user->usr_user_name.c_str() : "<Unknown>";
+				const SSHORT len = strlen(uname);
+				*p++ = len;
+				memcpy(p, uname, len);
+				info = INF_put_item(item, len + 1, buffer, info, end);
 				if (!info) {
 					if (transaction)
 						TRA_commit(tdbb, transaction, false);
@@ -554,7 +566,9 @@ int INF_database_info(const SCHAR* items,
 				}
 				continue;
 			}
-			for (att = dbb->dbb_attachments; att; att = att->att_next) {
+			{ // scope for VC6
+			for (const Attachment* att = dbb->dbb_attachments; att; att = att->att_next)
+			{
 				if (att->att_flags & ATT_shutdown)
 					continue;
                 
@@ -563,12 +577,10 @@ int INF_database_info(const SCHAR* items,
 					const char* user_name = user->usr_user_name.hasData() ?
 						user->usr_user_name.c_str() : "(Firebird Worker Thread)";
 					p = buffer;
-					SSHORT l = strlen (user_name);
-					*p++ = l;
-					for (q = user_name; l; l--)
-						*p++ = *q++;
-					length = p - buffer;
-                    info = INF_put_item(item, length, buffer, info, end);
+					const SSHORT len = strlen(user_name);
+					*p++ = len;
+					memcpy(p, user_name, len);
+                    info = INF_put_item(item, len + 1, buffer, info, end);
 					if (!info) {
 						if (transaction)
 							TRA_commit(tdbb, transaction, false);
@@ -576,10 +588,10 @@ int INF_database_info(const SCHAR* items,
 					}
 				}
 			}
+			} // end scope for VC6
 			continue;
 
 		case isc_info_page_errors:
-			err_att = tdbb->tdbb_attachment;
 			if (err_att->att_val_errors) {
 				err_val =
 					(*err_att->att_val_errors)[VAL_PAG_WRONG_TYPE]
@@ -595,7 +607,6 @@ int INF_database_info(const SCHAR* items,
 			break;
 
 		case isc_info_bpage_errors:
-			err_att = tdbb->tdbb_attachment;
 			if (err_att->att_val_errors) {
 				err_val =
 					(*err_att->att_val_errors)[VAL_BLOB_INCONSISTENT]
@@ -609,7 +620,6 @@ int INF_database_info(const SCHAR* items,
 			break;
 
 		case isc_info_record_errors:
-			err_att = tdbb->tdbb_attachment;
 			if (err_att->att_val_errors) {
 				err_val =
 					(*err_att->att_val_errors)[VAL_REC_CHAIN_BROKEN]
@@ -627,7 +637,6 @@ int INF_database_info(const SCHAR* items,
 			break;
 
 		case isc_info_dpage_errors:
-			err_att = tdbb->tdbb_attachment;
 			if (err_att->att_val_errors) {
 				err_val =
 					(*err_att->att_val_errors)[VAL_DATA_PAGE_CONFUSED]
@@ -641,7 +650,6 @@ int INF_database_info(const SCHAR* items,
 			break;
 
 		case isc_info_ipage_errors:
-			err_att = tdbb->tdbb_attachment;
 			if (err_att->att_val_errors) {
 				err_val =
 					(*err_att->att_val_errors)[VAL_INDEX_PAGE_CORRUPT] +
@@ -657,7 +665,6 @@ int INF_database_info(const SCHAR* items,
 			break;
 
 		case isc_info_ppage_errors:
-			err_att = tdbb->tdbb_attachment;
 			if (err_att->att_val_errors) {
 				err_val = (*err_att->att_val_errors)[VAL_P_PAGE_LOST]
 					+
@@ -670,7 +677,6 @@ int INF_database_info(const SCHAR* items,
 			break;
 
 		case isc_info_tpage_errors:
-			err_att = tdbb->tdbb_attachment;
 			if (err_att->att_val_errors) {
 				err_val = (*err_att->att_val_errors)[VAL_TIP_LOST]
 					+ (*err_att->att_val_errors)[VAL_TIP_LOST_SEQUENCE]
