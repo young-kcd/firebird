@@ -1,3 +1,52 @@
+2007-09-11 01:43  robocop
+
+	* firebird2/builds/win32/msvc8/fbserver.vcproj (1.11):
+
+	Correction.
+
+2007-09-10 17:58  asfernandes
+
+	* firebird2/src/jrd/unicode_util.cpp (1.19):
+
+	Since we now doesn't use ICU release with FB debug, adjust INTL
+	code to load correct library
+
+2007-09-10 17:40  asfernandes
+
+	* firebird2/src/intl/ld_proto.h (1.9):
+
+	Fixed CORE-1446 - Problem with UNICODE collations from fbintl when
+	using system ICU
+
+2007-09-10 15:55  paul_reeves
+
+	* firebird2/builds/win32/run_all.bat (1.11):
+
+	Allow run_all.bat to pass a variable through to each batch file it
+	calls.
+
+2007-09-10 15:53  paul_reeves
+
+	* firebird2/builds/win32/clean_all.bat (1.15):
+
+	Document why better cleaning is required for debug builds.
+	Automatically set variable to implement better cleaning for debug
+	builds.
+
+2007-09-10 15:52  paul_reeves
+
+	* firebird2/builds/win32/: make_all.bat (1.48), make_boot.bat
+	(1.37):
+
+	Copy icu debug dll's too.
+
+2007-09-10 15:48  paul_reeves
+
+	* firebird2/builds/win32/msvc8/: fb_inet_server.vcproj (1.10),
+	fbembed.vcproj (1.12), fbserver.vcproj (1.10), intl.vcproj (1.12):
+
+	link with icu debug libraries when appropriate.
+
 2007-09-10 02:45  asfernandes
 
 	* firebird2/: builds/win32/msvc8/btyacc.vcproj (1.5),
