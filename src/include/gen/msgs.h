@@ -624,7 +624,7 @@ static const struct {
 	{336003085, "Ambiguous field name between @1 and @2"},		/* 600, dsql_ambiguous_field_name */
 	{336003086, "External function should have return position between 1 and @1"},		/* 601, dsql_udf_return_pos_err */
 	{336003087, "Label @1 @2 in the current scope"},		/* 602, dsql_invalid_label */
-	{336003088, "Datatypes @1sare not comparable in expression @2"},		/* 603, dsql_datatypes_not_comparable */
+	{336003088, "Datatypes @1are not comparable in expression @2"},		/* 603, dsql_datatypes_not_comparable */
 	{336003089, "Empty cursor name is not allowed"},		/* 604, dsql_cursor_invalid */
 	{336003090, "Statement already has a cursor @1 assigned"},		/* 605, dsql_cursor_redefined */
 	{336003091, "Cursor @1 is not found in the current context"},		/* 606, dsql_cursor_not_found */
