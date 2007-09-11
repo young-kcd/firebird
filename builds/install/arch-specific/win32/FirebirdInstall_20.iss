@@ -425,9 +425,15 @@ Source: {#FilesDir}\bin\fbclient.dll; DestDir: {app}\bin; Components: ClientComp
 Source: {#WOW64Dir}\bin\fbclient.dll; DestDir: {app}\WOW64; Components: ClientComponent; Flags: overwritereadonly sharedfile promptifolder
 Source: {#WOW64Dir}\bin\instclient.exe; DestDir: {app}\WOW64; Components: ClientComponent; Flags: sharedfile ignoreversion
 #endif
+#ifdef release
 Source: {#FilesDir}\bin\icuuc30.dll; DestDir: {app}\bin; Components: ServerComponent; Flags: sharedfile ignoreversion
 Source: {#FilesDir}\bin\icuin30.dll; DestDir: {app}\bin; Components: ServerComponent; Flags: sharedfile ignoreversion
 Source: {#FilesDir}\bin\icudt30.dll; DestDir: {app}\bin; Components: ServerComponent; Flags: sharedfile ignoreversion
+#else
+Source: {#FilesDir}\bin\icuuc30d.dll; DestDir: {app}\bin; Components: ServerComponent; Flags: sharedfile ignoreversion
+Source: {#FilesDir}\bin\icuin30d.dll; DestDir: {app}\bin; Components: ServerComponent; Flags: sharedfile ignoreversion
+Source: {#FilesDir}\bin\icudt30.dll; DestDir: {app}\bin; Components: ServerComponent; Flags: sharedfile ignoreversion
+#endif
 
 ; Install MS libs locally if Win2K or later, else place in <sys> if NT4 or Win95/98/ME.
 ; NOTE: These dll's MUST never be sourced from the local system32 directory.
@@ -436,7 +442,7 @@ Source: {#FilesDir}\bin\icudt30.dll; DestDir: {app}\bin; Components: ServerCompo
 #if msvc_version == 6
 Source: {#FilesDir}\bin\msvcrt.dll; DestDir: {app}\bin; Components: ClientComponent;
 Source: {#FilesDir}\bin\msvcrt.dll; DestDir: {sys}; Components: ClientComponent; Flags: sharedfile onlyifdoesntexist uninsneveruninstall;
-#elif msvc_version >= 7
+#elif msvc_version == 7
 Source: {#FilesDir}\bin\msvcr{#msvc_version}?.dll; DestDir: {app}\bin; Components: ClientComponent; Flags: sharedfile;
 Source: {#FilesDir}\bin\msvcr{#msvc_version}?.dll; DestDir: {sys}; Components: ClientComponent; Flags: sharedfile uninsneveruninstall;
 Source: {#FilesDir}\bin\msvcp{#msvc_version}?.dll; DestDir: {app}\bin; Components: ClientComponent; Flags: sharedfile;
@@ -450,7 +456,8 @@ Source: {#WOW64Dir}\bin\msvcp{#msvc_version}?.dll; DestDir: {syswow64}; Componen
 #endif
 #endif
 #if msvc_version = 8
-Source: {#FilesDir}\bin\Microsoft.VC80.CRT.manifest; DestDir: {app}\bin; Components: ClientComponent; Flags: sharedfile;
+;While we experiment with static linking we won't need this manifest.
+;Source: {#FilesDir}\bin\Microsoft.VC80.CRT.manifest; DestDir: {app}\bin; Components: ClientComponent; Flags: sharedfile;
 #endif
 ;Docs
 Source: {#ScriptsDir}\installation_scripted.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: skipifsourcedoesntexist  ignoreversion
