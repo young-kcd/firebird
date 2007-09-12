@@ -496,7 +496,7 @@ bool SHOW_dbb_parameters(FB_API_HANDLE db_handle,
 			sprintf(info, "ODS = %"SLONGFORMAT".%"SLONGFORMAT"%s", 
 					(SLONG) isqlGlob.major_ods, value_out, NEWLINE);
 			break;
-			
+
 #ifdef DEV_BUILD
 		case isc_info_db_id:
 			{
@@ -521,7 +521,7 @@ bool SHOW_dbb_parameters(FB_API_HANDLE db_handle,
 		case isc_info_truncated:
 			return info > info_buf; // If we got some items, we are (partially) successful.
 		}
-		
+
 		d += length;
 		info += strlen(info);
 	}

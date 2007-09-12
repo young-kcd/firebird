@@ -137,7 +137,7 @@ static SSHORT convert( ULONG number, UCHAR * buffer)
 	const UCHAR *p;
 
 #ifndef WORDS_BIGENDIAN
-	p = (UCHAR *) & number;
+	p = (UCHAR *) &number;
 	*buffer++ = *p++;
 	*buffer++ = *p++;
 	*buffer++ = *p++;
@@ -145,7 +145,7 @@ static SSHORT convert( ULONG number, UCHAR * buffer)
 
 #else
 
-	p = (UCHAR *) & number;
+	p = (UCHAR *) &number;
 	p += 3;
 	*buffer++ = *p--;
 	*buffer++ = *p--;

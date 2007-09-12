@@ -23,7 +23,7 @@ useful to system administrators, and to other programs calling the Setup
 program.
 
 /SP-
-  Disables the This will install... Do you wish to continue? prompt
+  Disables the "This will install... Do you wish to continue?" prompt
   at the beginning of Setup. Of course, this will have no effect if the
   DisableStartupPrompt [Setup] section directive was set to yes.
 
@@ -37,7 +37,7 @@ program.
   '/SP-' command line option explained above).
 
   If a restart is necessary and the '/NORESTART' command isn't used (see
-  below) and Setup is silent, it will display a Reboot now? message box.
+  below) and Setup is silent, it will display a "Reboot now?" message box.
   If it's very silent it will reboot without asking.
 
 /SUPPRESSMSGBOXES
