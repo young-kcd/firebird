@@ -1,3 +1,83 @@
+2007-09-11 18:07  asfernandes
+
+	* firebird2/src/include/gen/msgs.h (1.85):
+
+	Correction
+
+2007-09-11 17:22  asfernandes
+
+	* firebird2/src/msgs/messages2.sql (1.13):
+
+	Correction
+
+2007-09-11 17:20  asfernandes
+
+	* firebird2/builds/win32/msvc8/firebird2debug.vsprops (1.2):
+
+	We don't want these warnings
+
+2007-09-11 14:28  paul_reeves
+
+	* firebird2/extern/icu/source/allinone/firebird2debug.vsprops
+	(1.2):
+
+	Use dynamic linking by default for ICU debug builds.
+
+2007-09-11 14:21  paul_reeves
+
+	* firebird2/builds/install/arch-specific/win32/:
+	FirebirdInstallEnvironmentChecks.inc (1.7), FirebirdInstall_20.iss
+	(1.21), installation_scripted.txt (1.4):
+
+	Implement support for passing /clean option when running the
+	Windows binary uninstaller.  (CORE-1158)
+
+	Update documentation for scripted installations.
+
+2007-09-11 14:13  paul_reeves
+
+	* firebird2/builds/install/arch-specific/win32/:
+	BuildExecutableInstall.bat (1.29), FirebirdInstall_20.iss (1.20):
+
+	Bring into line with recent changes to the build process
+
+2007-09-11 14:10  paul_reeves
+
+	* firebird2/builds/win32/msvc8/: fb2control.vcproj (1.6),
+	fb_lock_print.vcproj (1.6):
+
+	Misc. cleanup
+
+2007-09-11 14:07  paul_reeves
+
+	* firebird2/builds/win32/run_all.bat (1.12):
+
+	Pass option to buildexecutableinstall
+
+2007-09-11 11:31  robocop
+
+	* firebird2/src/remote/merge.cpp (1.22):
+
+	Misc.
+
+2007-09-11 11:20  robocop
+
+	* firebird2/src/isql/show.epp (1.117):
+
+	Enhancements in isql in debug mode to test for CORE-1447.
+
+2007-09-11 11:19  robocop
+
+	* firebird2/src/jrd/inf.cpp (1.74):
+
+	Fix CORE-1447.
+
+2007-09-11 09:47  robocop
+
+	* firebird2/src/jrd/tra.cpp (1.141):
+
+	Relax the txn option checks as required by Dmitry.
+
 2007-09-11 01:43  robocop
 
 	* firebird2/builds/win32/msvc8/fbserver.vcproj (1.11):
