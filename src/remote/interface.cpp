@@ -5558,9 +5558,12 @@ static RVNT find_event( rem_port* port, SLONG id)
  **************************************/
 	RDB rdb = port->port_context;
 
-	for (RVNT event = rdb->rdb_events; event; event = event->rvnt_next) {
-		if (event->rvnt_id == id)
-			return event;
+	if (!(port->port_flags & PORT_disconnect))
+	{
+		for (RVNT event = rdb->rdb_events; event; event = event->rvnt_next) {
+			if (event->rvnt_id == id)
+				return event;
+		}
 	}
 
 	return NULL;
