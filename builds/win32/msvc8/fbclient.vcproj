@@ -202,7 +202,6 @@
                 FavorSizeOrSpeed="1"
                 PreprocessorDefinitions="NDEBUG;_WINDOWS;_USRDLL;CLIENT;SUPERCLIENT;GOVERNOR;I386=1;WIN32"
                 BrowseInformation="1"
-                DebugInformationFormat="3"
             />
             <Tool
                 Name="VCManagedResourceCompilerTool"
@@ -217,12 +216,9 @@
             />
             <Tool
                 Name="VCLinkerTool"
-                AdditionalOptions="/VERBOSE"
                 AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
                 OutputFile="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\firebird/bin/$(ProjectName).dll"
                 LinkIncremental="1"
-                IgnoreAllDefaultLibraries="false"
-                IgnoreDefaultLibraryNames="msvcrt.lib"
                 ModuleDefinitionFile="..\defs\fbclient.def"
             />
             <Tool
