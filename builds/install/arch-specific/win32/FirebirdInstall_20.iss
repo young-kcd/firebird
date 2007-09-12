@@ -425,15 +425,9 @@ Source: {#FilesDir}\bin\fbclient.dll; DestDir: {app}\bin; Components: ClientComp
 Source: {#WOW64Dir}\bin\fbclient.dll; DestDir: {app}\WOW64; Components: ClientComponent; Flags: overwritereadonly sharedfile promptifolder
 Source: {#WOW64Dir}\bin\instclient.exe; DestDir: {app}\WOW64; Components: ClientComponent; Flags: sharedfile ignoreversion
 #endif
-#ifdef release
 Source: {#FilesDir}\bin\icuuc30.dll; DestDir: {app}\bin; Components: ServerComponent; Flags: sharedfile ignoreversion
 Source: {#FilesDir}\bin\icuin30.dll; DestDir: {app}\bin; Components: ServerComponent; Flags: sharedfile ignoreversion
 Source: {#FilesDir}\bin\icudt30.dll; DestDir: {app}\bin; Components: ServerComponent; Flags: sharedfile ignoreversion
-#else
-Source: {#FilesDir}\bin\icuuc30d.dll; DestDir: {app}\bin; Components: ServerComponent; Flags: sharedfile ignoreversion
-Source: {#FilesDir}\bin\icuin30d.dll; DestDir: {app}\bin; Components: ServerComponent; Flags: sharedfile ignoreversion
-Source: {#FilesDir}\bin\icudt30.dll; DestDir: {app}\bin; Components: ServerComponent; Flags: sharedfile ignoreversion
-#endif
 
 ; Install MS libs locally if Win2K or later, else place in <sys> if NT4 or Win95/98/ME.
 ; NOTE: These dll's MUST never be sourced from the local system32 directory.
@@ -549,7 +543,7 @@ Var
   NoCPL: Boolean;               // pass /nocpl on command-line.
   NoLegacyClient: Boolean;      // pass /nogds32 on command line.
   CopyFbClient: Boolean;        // pass /copyfbclient on command line.
-  
+
   // Options for scripted uninstall.
   CleanUninstall: Boolean;      // If /clean is passed to the uninstaller it will delete
                                 // user config files - firebird.conf, firebird.log,
@@ -942,7 +936,7 @@ begin
               SetupSharedFilesArray;
               GetSharedLibCountBeforeCopy;
       end;
-      
+
     ssPostInstall: begin
       //Manually set the sharedfile count of these files.
       IncrementSharedCount(Is64BitInstallMode, GetAppPath+'\firebird.conf', false);
@@ -1032,7 +1026,7 @@ begin
   case CurUninstallStep of
 
 //    usAppMutexCheck :
-  
+
 //    usUninstall :
 
     usPostUninstall : begin
@@ -1055,7 +1049,7 @@ begin
       if DecrementSharedCount(Is64BitInstallMode, GetAppPath+'\security2.fdb') then
         if CleanUninstall then
           DeleteFile(GetAppPath+'\security2.fdb');
-          
+
       end;
 
 //    usDone :

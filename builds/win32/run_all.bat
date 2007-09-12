@@ -4,7 +4,8 @@
 set ERRLEV=0
 
 if not defined FB_NOCLEAN (call clean_all)
-call make_icu %1
+:: We do not support debug builds of icu, so we don't pass %1
+call make_icu
 if "%ERRLEV%"=="1" goto :END
 call make_boot %1
 if "%ERRLEV%"=="1" goto :END
