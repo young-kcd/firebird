@@ -48,7 +48,6 @@
                 FavorSizeOrSpeed="1"
                 AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen,../../../src/jrd"
                 PreprocessorDefinitions="GPRE_FORTRAN,GPRE_PASCAL,GPRE_COBOL,GPRE_ADA,NDEBUG,_CONSOLE,SUPERCLIENT,WIN32"
-                Detect64BitPortabilityProblems="true"
             />
             <Tool
                 Name="VCManagedResourceCompilerTool"
@@ -121,7 +120,6 @@
                 Optimization="0"
                 AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen,../../../src/jrd"
                 PreprocessorDefinitions="GPRE_FORTRAN,GPRE_PASCAL,GPRE_COBOL,GPRE_ADA,_DEBUG,_CONSOLE,SUPERCLIENT,WIN32,DEV_BUILD"
-                Detect64BitPortabilityProblems="true"
             />
             <Tool
                 Name="VCManagedResourceCompilerTool"
@@ -199,7 +197,6 @@
                 FavorSizeOrSpeed="1"
                 AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen,../../../src/jrd"
                 PreprocessorDefinitions="GPRE_FORTRAN,GPRE_PASCAL,GPRE_COBOL,GPRE_ADA,NDEBUG,_CONSOLE,SUPERCLIENT,WIN32"
-                Detect64BitPortabilityProblems="true"
             />
             <Tool
                 Name="VCManagedResourceCompilerTool"
