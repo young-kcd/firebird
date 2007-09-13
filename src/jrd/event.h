@@ -117,6 +117,7 @@ struct ses {
 typedef ses *SES;
 
 const int SES_delivering	= 1;		/* Watcher thread is delivering an event */
+const int SES_purge			= 2;		// delete session after delivering an event
 
 /* Event block */
 

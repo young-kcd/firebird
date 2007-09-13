@@ -887,33 +887,22 @@ static void delete_session(SLONG session_id)
  *	Delete a session.
  *
  **************************************/
-#ifdef MULTI_THREAD
-/*  This code is very Netware specific, so for now I've #ifdef'ed this
- *  variable out.  In the future, other platforms may find a need to
- *  use this as well.  --  Morgan Schweers, November 16, 1994
- */
-	USHORT kill_anyway = 0;		/*  Kill session despite session delivering. */
-	/*  (Generally means session's deliver is hung. */
-#endif
-
 	SES session = (SES) SRQ_ABS_PTR(session_id);
 
 #ifdef MULTI_THREAD
-/*  delay gives up control for 250ms, so a 40 iteration timeout is a
- *  up to 10 second wait for session to finish delivering its message.
- */
-	while (session->ses_flags & SES_delivering && (++kill_anyway != 40)) {
+	// if session currently delivered events delay its deletion until deliver ends
+	if (session->ses_flags & SES_delivering)
+	{
+		session->ses_flags |= SES_purge;
+
+		// give a chance for delivering thread to detect SES_purge flag we just set
 		release();
 		THREAD_EXIT();
-#ifdef WIN_NT
-		Sleep(250);
-#endif
-#if (defined SOLARIS_MT || defined LINUX)
-		sleep(1);
-#endif
+		THREAD_SLEEP(100);
 		THREAD_ENTER();
 		acquire();
-		session = (SES) SRQ_ABS_PTR(session_id);
+
+		return;
 	}
 #endif
 
@@ -966,7 +955,9 @@ static AST_TYPE deliver(void* arg)
 	PRB process = (PRB) SRQ_ABS_PTR(EVENT_process_offset);
 	process->prb_flags &= ~PRB_pending;
 
-	SRQ_LOOP(process->prb_sessions, que2) {
+	que2 = SRQ_NEXT(process->prb_sessions);
+	while (que2 != &process->prb_sessions)
+	{
 		SES session = (SES) ((UCHAR *) que2 - OFFSET(SES, ses_sessions));
 #ifdef MULTI_THREAD
 		session->ses_flags |= SES_delivering;
@@ -982,14 +973,23 @@ static AST_TYPE deliver(void* arg)
 					process = (PRB) SRQ_ABS_PTR(EVENT_process_offset);
 					session = (SES) SRQ_ABS_PTR(session_offset);
 					que2 = (srq *) SRQ_ABS_PTR(que2_offset);
-					flag = true;
+					flag = !(session->ses_flags & SES_purge);
 					break;
 				}
 			}
 		}
+
 #ifdef MULTI_THREAD
 		session->ses_flags &= ~SES_delivering;
+		if (session->ses_flags & SES_purge)
+		{
+			que2 = SRQ_NEXT((*que2));
+			delete_session(SRQ_REL_PTR(session));
+			break;
+		}
+		else
 #endif
+			que2 = SRQ_NEXT((*que2));
 	}
 
 	release();
