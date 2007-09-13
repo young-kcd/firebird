@@ -710,14 +710,9 @@ UnicodeUtil::ICU* UnicodeUtil::loadICU(const Firebird::string& icuVersion,
 	const Firebird::string& configInfo)
 {
 #ifdef WIN_NT
-#ifdef DEV_BUILD
-	const char* const inTemplate = "icuin%s%sd.dll";
-	const char* const ucTemplate = "icuuc%s%sd.dll";
-#else
 	const char* const inTemplate = "icuin%s%s.dll";
 	const char* const ucTemplate = "icuuc%s%s.dll";
-#endif	// DEV_BUILD
-#else	// WIN_NT
+#else
 	const char* const inTemplate = "libicui18n.so.%s%s";
 	const char* const ucTemplate = "libicuuc.so.%s%s";
 #endif
