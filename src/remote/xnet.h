@@ -41,7 +41,7 @@
 const DWORD XNET_CONNECT_TIMEOUT	= 10000;
 
 // Receive wait timeout (ms)
-const DWORD XNET_RECV_WAIT_TIMEOUT	= 10000;
+const DWORD XNET_RECV_WAIT_TIMEOUT	= 500;
 
 // Send wait timeout (ms)
 const DWORD XNET_SEND_WAIT_TIMEOUT	= XNET_RECV_WAIT_TIMEOUT;
