@@ -1,3 +1,9 @@
+2007-09-12 10:16  dimitr
+
+	* firebird2/src/remote/interface.cpp (1.119.4.3):
+
+	Fixed CORE-1452.
+
 2007-09-06 08:35  dimitr
 
 	* firebird2/src/jrd/pag.cpp (1.98.4.11):
