@@ -760,11 +760,11 @@ static rem_port* aux_connect(rem_port* port, PACKET* packet, t_event_ast ast)
 
 		// send events channel
 		xps->xps_channels[XPS_CHANNEL_C2S_EVENTS].xch_client_ptr =
-			((UCHAR *) xpm->xpm_address + sizeof(struct xps));
+			((UCHAR *) xcc->xcc_mapped_addr + sizeof(struct xps));
 
 		// receive events channel
 		xps->xps_channels[XPS_CHANNEL_S2C_EVENTS].xch_client_ptr =
-			((UCHAR *) xpm->xpm_address + sizeof(struct xps) + (XNET_EVENT_SPACE));
+			((UCHAR *) xcc->xcc_mapped_addr + sizeof(struct xps) + (XNET_EVENT_SPACE));
 
 		xcc->xcc_send_channel = &xps->xps_channels[XPS_CHANNEL_C2S_EVENTS];		
 		xcc->xcc_recv_channel = &xps->xps_channels[XPS_CHANNEL_S2C_EVENTS];
@@ -894,11 +894,11 @@ static rem_port* aux_request(rem_port* port, PACKET* packet)
 
 		// send events channel
 		xps->xps_channels[XPS_CHANNEL_S2C_EVENTS].xch_client_ptr =
-			((UCHAR *) xpm->xpm_address + sizeof(struct xps) + (XNET_EVENT_SPACE));
+			((UCHAR *) xcc->xcc_mapped_addr + sizeof(struct xps) + (XNET_EVENT_SPACE));
 
 		// receive events channel
 		xps->xps_channels[XPS_CHANNEL_C2S_EVENTS].xch_client_ptr =
-			((UCHAR *) xpm->xpm_address + sizeof(struct xps));
+			((UCHAR *) xcc->xcc_mapped_addr + sizeof(struct xps));
 
 		xcc->xcc_send_channel = &xps->xps_channels[XPS_CHANNEL_S2C_EVENTS];		
 		xcc->xcc_recv_channel = &xps->xps_channels[XPS_CHANNEL_C2S_EVENTS];
