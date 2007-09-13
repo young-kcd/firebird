@@ -752,9 +752,9 @@ static rem_port* aux_connect(rem_port* port, PACKET* packet, t_event_ast ast)
 		xcc->xcc_recv_channel = &xps->xps_channels[XPS_CHANNEL_S2C_EVENTS];
 
 		UCHAR* const channel_c2s_client_ptr =
-			((UCHAR *) xpm->xpm_address + sizeof(struct xps));
+			((UCHAR *) xcc->xcc_mapped_addr + sizeof(struct xps));
 		UCHAR* const channel_s2c_client_ptr =
-			((UCHAR *) xpm->xpm_address + sizeof(struct xps) + (XNET_EVENT_SPACE));
+			((UCHAR *) xcc->xcc_mapped_addr + sizeof(struct xps) + (XNET_EVENT_SPACE));
 
 		// alloc new port and link xcc to it
 		new_port = alloc_port(NULL,
@@ -885,9 +885,9 @@ static rem_port* aux_request(rem_port* port, PACKET* packet)
 		xcc->xcc_recv_channel = &xps->xps_channels[XPS_CHANNEL_C2S_EVENTS];
 
 		UCHAR* const channel_s2c_client_ptr =
-			((UCHAR *) xpm->xpm_address + sizeof(struct xps) + (XNET_EVENT_SPACE));
+			((UCHAR *) xcc->xcc_mapped_addr + sizeof(struct xps) + (XNET_EVENT_SPACE));
 		UCHAR* const channel_c2s_client_ptr =
-			((UCHAR *) xpm->xpm_address + sizeof(struct xps));
+			((UCHAR *) xcc->xcc_mapped_addr + sizeof(struct xps));
 
 		// alloc new port and link xcc to it
 		new_port = alloc_port(NULL,
@@ -2343,7 +2343,7 @@ static XPM get_free_slot(ULONG* map_num, ULONG* slot_num, ULONG* timestamp)
 	// make one now
 
 	if (!xpm) {
-		
+
 		// allocate new map file and first slot
 
 		xpm = make_xpm(j, *timestamp);
