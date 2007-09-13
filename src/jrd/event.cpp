@@ -852,17 +852,19 @@ static void delete_session(SLONG session_id)
 	SES session = (SES) SRQ_ABS_PTR(session_id);
 
 #ifdef MULTI_THREAD
-	USHORT kill_anyway = 0;		/*  Kill session despite session delivering. */
-/*  delay gives up control for 250ms, so a 40 iteration timeout is a
- *  up to 10 second wait for session to finish delivering its message.
- */
-	while (session->ses_flags & SES_delivering && (++kill_anyway != 40)) {
+	// if session currently delivered events delay its deletion until deliver ends
+	if (session->ses_flags & SES_delivering)
+	{
+		session->ses_flags |= SES_purge;
+
+		// give a chance for delivering thread to detect SES_purge flag we just set
 		release();
 		THREAD_EXIT();
-		THREAD_SLEEP(250);
+		THREAD_SLEEP(100);
 		THREAD_ENTER();
 		acquire();
-		session = (SES) SRQ_ABS_PTR(session_id);
+
+		return;
 	}
 #endif
 
@@ -913,8 +915,9 @@ static AST_TYPE deliver(void* arg)
 	PRB process = (PRB) SRQ_ABS_PTR(EVENT_process_offset);
 	process->prb_flags &= ~PRB_pending;
 
-	srq* que2;
-	SRQ_LOOP(process->prb_sessions, que2) {
+	srq* que2 = SRQ_NEXT(process->prb_sessions);
+	while (que2 != &process->prb_sessions)
+	{
 		SES session = (SES) ((UCHAR *) que2 - OFFSET(SES, ses_sessions));
 #ifdef MULTI_THREAD
 		session->ses_flags |= SES_delivering;
@@ -931,14 +934,22 @@ static AST_TYPE deliver(void* arg)
 					process = (PRB) SRQ_ABS_PTR(EVENT_process_offset);
 					session = (SES) SRQ_ABS_PTR(session_offset);
 					que2 = (srq *) SRQ_ABS_PTR(que2_offset);
-					flag = true;
+					flag = !(session->ses_flags & SES_purge);
 					break;
 				}
 			}
 		}
 #ifdef MULTI_THREAD
 		session->ses_flags &= ~SES_delivering;
+		if (session->ses_flags & SES_purge)
+		{
+			que2 = SRQ_NEXT((*que2));
+			delete_session(SRQ_REL_PTR(session));
+			break;
+		}
+		else
 #endif
+			que2 = SRQ_NEXT((*que2));
 	}
 
 	release();
