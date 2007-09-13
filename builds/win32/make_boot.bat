@@ -149,7 +149,7 @@ if errorlevel 1 call :boot2 isql_embed
 :: ERROR boot
 :boot2
 echo.
-echo Error building %1, see %1.log
+echo Error building %1, see %1_%FB_TARGET_PLATFORM%.log
 echo.
 set ERRLEV=1
 goto :EOF
