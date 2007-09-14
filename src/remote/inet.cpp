@@ -1572,9 +1572,7 @@ static rem_port* aux_request( rem_port* port, PACKET* packet)
 				(UCHAR*) &address.sin_addr,
 				sizeof(address.sin_addr));
 
-	response->p_resp_data.cstr_address = 
-			reinterpret_cast<UCHAR*>(& response->p_resp_blob_id);
-	response->p_resp_data.cstr_length = sizeof(response->p_resp_blob_id);
+	response->p_resp_data.cstr_length = sizeof(address);
 	inet_copy(&address,
 			  response->p_resp_data.cstr_address,
 			  response->p_resp_data.cstr_length);
