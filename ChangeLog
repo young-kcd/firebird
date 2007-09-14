@@ -1,3 +1,18 @@
+2007-09-13 16:30  hvlad
+
+	* firebird2/src/jrd/: event.cpp (1.55.4.1), event.h (1.18.12.1):
+
+	Backported fix for bug CORE-1457: Server crashes attempting to
+	deliver events for the just disconnected session.  Subtask
+	CORE-1458 : Implement defered session cleanup in event.cpp
+
+2007-09-13 16:28  hvlad
+
+	* firebird2/src/remote/xnet.cpp (1.70.4.6):
+
+	Backport fix for bug CORE-1456: Wrong events delivery in the case
+	of concurrent XNET connections
+
 2007-09-12 10:16  dimitr
 
 	* firebird2/src/remote/interface.cpp (1.119.4.3):
