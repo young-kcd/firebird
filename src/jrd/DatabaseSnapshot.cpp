@@ -978,9 +978,6 @@ void DatabaseSnapshot::putDatabase(const Database* database,
 					   sizeof(ISC_TIMESTAMP));
 	// database size
 	writer.insertBigInt(f_mon_db_pages, PageSpace::actAlloc(database));
-	// statistics
-	writer.insertBigInt(f_mon_db_stat_id, getGlobalId(stat_id));
-	putStatistics(&database->dbb_stats, writer, stat_id);
 	// database state
 	thread_db* tdbb = JRD_get_thread_data();
 	database->dbb_backup_manager->lock_shared_database(tdbb, true);
@@ -1000,6 +997,9 @@ void DatabaseSnapshot::putDatabase(const Database* database,
 	}
 	database->dbb_backup_manager->unlock_shared_database(tdbb);
 	writer.insertInt(f_mon_db_backup_state, temp);
+	// statistics
+	writer.insertBigInt(f_mon_db_stat_id, getGlobalId(stat_id));
+	putStatistics(&database->dbb_stats, writer, stat_id);
 }
 
 
