@@ -1,3 +1,43 @@
+2007-09-13 15:28  hvlad
+
+	* firebird2/src/jrd/: event.cpp (1.62), event.h (1.19):
+
+	Fixed bug CORE-1457: Server crashes attempting to deliver events
+	for the just disconnected session.  Part one - AV in events code
+
+2007-09-13 15:24  hvlad
+
+	* firebird2/src/remote/xnet.h (1.16):
+
+	Reduce XNET read\write wait timeout. It allows faster detect
+	failures on the other part of connection
+
+2007-09-13 15:23  hvlad
+
+	* firebird2/src/remote/xnet.cpp (1.91):
+
+	Fixed bug CORE-1456: Wrong events delivery in the case of
+	concurrent XNET connections
+
+2007-09-13 12:48  robocop
+
+	* firebird2/src/jrd/unicode_util.cpp (1.20):
+
+	Since the ICU debug artifact was rolled back, we can undo Adriano's
+	patch to be able to compile with ICU debug.
+
+2007-09-13 12:47  robocop
+
+	* firebird2/builds/win32/make_all.bat (1.50):
+
+	Totally misc.
+
+2007-09-13 12:20  paul_reeves
+
+	* firebird2/builds/win32/make_boot.bat (1.39):
+
+	report correct name of log file in case of error.
+
 2007-09-12 16:04  paul_reeves
 
 	* firebird2/builds/:
