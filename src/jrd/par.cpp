@@ -936,7 +936,7 @@ static SSHORT par_context(CompilerScratch* csb, SSHORT* context_ptr)
  **************************************/
 
 	const SSHORT stream = csb->nextStream(false);
-	if (stream > MAX_STREAMS)
+	if (stream >= MAX_STREAMS)
 	{
 		error(csb, isc_too_many_contexts, 0);
 	}
@@ -1517,7 +1517,7 @@ static jrd_nod* par_modify(thread_db* tdbb, CompilerScratch* csb)
 	}
 	const SSHORT org_stream = csb->csb_rpt[context].csb_stream;
 	const SSHORT new_stream = csb->nextStream(false);
-	if (new_stream > MAX_STREAMS)
+	if (new_stream >= MAX_STREAMS)
 	{
 		error(csb, isc_too_many_contexts, 0);
 	}
