@@ -71,6 +71,11 @@ Monitoring tables
       - MON$RESERVE_SPACE (reserve space flag)
       - MON$CREATION_DATE (creation date/time)
       - MON$PAGES (number of pages allocated on disk)
+      - MON$BACKUP_STATE (current physical backup state)
+          0: normal
+          1: stalled
+          2: merge
+      - MON$STAT_ID (statistics ID)
 
     MON$ATTACHMENTS (connected attachments)
       - MON$ATTACHMENT_ID (attachment ID)
@@ -88,6 +93,7 @@ Monitoring tables
       - MON$CHARACTER_SET_ID (attachment character set)
       - MON$TIMESTAMP (connection date/time)
       - MON$GARBAGE_COLLECTION (garbage collection flag)
+      - MON$STAT_ID (statistics ID)
 
     MON$TRANSACTIONS (started transactions)
       - MON$TRANSACTION_ID (transaction ID)
@@ -111,6 +117,7 @@ Monitoring tables
       - MON$READ_ONLY (read-only flag)
       - MON$AUTO_COMMIT (auto-commit flag)
       - MON$AUTO_UNDO (auto-undo flag)
+      - MON$STAT_ID (statistics ID)
 
     MON$STATEMENTS (prepared statements)
       - MON$STATEMENT_ID (statement ID)
@@ -121,9 +128,10 @@ Monitoring tables
           1: active
       - MON$TIMESTAMP (statement start date/time)
       - MON$SQL_TEXT (statement text, if appropriate)
+      - MON$STAT_ID (statistics ID)
 
     MON$CALL_STACK (call stack of active PSQL requests)
-      - MON$CALL_ID (request ID)
+      - MON$CALL_ID (call ID)
       - MON$STATEMENT_ID (top-level DSQL statement ID)
       - MON$CALLER_ID (caller request ID)
       - MON$OBJECT_NAME (PSQL object name)
@@ -131,6 +139,25 @@ Monitoring tables
       - MON$TIMESTAMP (request start date/time)
       - MON$SOURCE_LINE (SQL source line number)
       - MON$SOURCE_COLUMN (SQL source column number)
+      - MON$STAT_ID (statistics ID)
+
+    MON$IO_STATS (I/O statistics)
+      - MON$STAT_ID (statistics ID)
+      - MON$PAGE_READS (number of page reads)
+      - MON$PAGE_WRITES (number of page writes)
+      - MON$PAGE_FETCHES (number of page fetches)
+      - MON$PAGE_MARKS (number of page marks)
+
+    MON$RECORD_STATS (record-level statistics)
+      - MON$STAT_ID (statistics ID)
+      - MON$RECORD_SEQ_READS (number of records read sequentially)
+      - MON$RECORD_IDX_READS (number of records read via an index)
+      - MON$RECORD_INSERTS (number of inserted records)
+      - MON$RECORD_UPDATES (number of updated records)
+      - MON$RECORD_DELETES (number of deleted records)
+      - MON$RECORD_BACKOUTS (number of backed out records)
+      - MON$RECORD_PURGES (number of purged records)
+      - MON$RECORD_EXPUNGES (number of expunged records)
 
   Notes:
     1) Textual descriptions of all "state" and "mode" values can be found
