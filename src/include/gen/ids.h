@@ -364,6 +364,7 @@
 	const USHORT  f_mon_db_res_space = 14;
 	const USHORT  f_mon_db_created = 15;
 	const USHORT  f_mon_db_pages = 16;
+	const USHORT  f_mon_db_stat_id = 17;
 
 
 	const USHORT  f_mon_att_id = 0;
@@ -379,6 +380,7 @@
 	const USHORT  f_mon_att_timestamp = 10;
 	const USHORT  f_mon_att_gc = 11;
 	const USHORT  f_mon_att_remote_process = 12;
+	const USHORT  f_mon_att_stat_id = 13;
 
 
 	const USHORT  f_mon_tra_id = 0;
@@ -393,6 +395,7 @@
 	const USHORT  f_mon_tra_read_only = 9;
 	const USHORT  f_mon_tra_auto_commit = 10;
 	const USHORT  f_mon_tra_auto_undo = 11;
+	const USHORT  f_mon_tra_stat_id = 12;
 
 
 	const USHORT  f_mon_stmt_id = 0;
@@ -401,6 +404,7 @@
 	const USHORT  f_mon_stmt_state = 3;
 	const USHORT  f_mon_stmt_timestamp = 4;
 	const USHORT  f_mon_stmt_sql_text = 5;
+	const USHORT  f_mon_stmt_stat_id = 6;
 
 
 	const USHORT  f_mon_call_id = 0;
@@ -411,5 +415,22 @@
 	const USHORT  f_mon_call_timestamp = 5;
 	const USHORT  f_mon_call_src_line = 6;
 	const USHORT  f_mon_call_src_column = 7;
+	const USHORT  f_mon_call_stat_id = 8;
 
 
+	const USHORT  f_mon_io_stat_id = 0;
+	const USHORT  f_mon_io_page_reads = 1;
+	const USHORT  f_mon_io_page_writes = 2;
+	const USHORT  f_mon_io_page_fetches = 3;
+	const USHORT  f_mon_io_page_marks = 4;
+
+
+	const USHORT  f_mon_rec_stat_id = 0;
+	const USHORT  f_mon_rec_seq_reads = 1;
+	const USHORT  f_mon_rec_idx_reads = 2;
+	const USHORT  f_mon_rec_inserts = 3;
+	const USHORT  f_mon_rec_updates = 4;
+	const USHORT  f_mon_rec_deletes = 5;
+	const USHORT  f_mon_rec_backouts = 6;
+	const USHORT  f_mon_rec_purges = 7;
+	const USHORT  f_mon_rec_expunges = 8;

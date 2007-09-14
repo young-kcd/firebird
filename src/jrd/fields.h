@@ -126,6 +126,7 @@
 	FIELD(fld_att_id		, nam_att_id		, dtype_long	, sizeof(SLONG)	, 0						, 0, NULL)
 	FIELD(fld_stmt_id		, nam_stmt_id		, dtype_long	, sizeof(SLONG)	, 0						, 0, NULL)
 	FIELD(fld_call_id		, nam_call_id		, dtype_long	, sizeof(SLONG)	, 0						, 0, NULL)
+	FIELD(fld_stat_id		, nam_stat_id		, dtype_long	, sizeof(SLONG)	, 0						, 0, NULL)
 
 	FIELD(fld_pid			, nam_pid			, dtype_long	, sizeof(SLONG)	, 0						, 0, NULL)
 	FIELD(fld_state			, nam_state			, dtype_short	, sizeof(SSHORT), 0						, 0, NULL)

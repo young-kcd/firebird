@@ -115,16 +115,25 @@ private:
 	static void dumpData(thread_db*);
 	static const char* checkNull(int, int, const char*, size_t);
 
-	static void putDatabase(const Database*, Firebird::ClumpletWriter&);
-	static void putAttachment(const Attachment*, Firebird::ClumpletWriter&);
-	static void putTransaction(const jrd_tra*, Firebird::ClumpletWriter&);
-	static void putRequest(const jrd_req*, Firebird::ClumpletWriter&);
-	static void putCall(const jrd_req*, Firebird::ClumpletWriter&);
+	static SINT64 getGlobalId(int value)
+	{
+		return ((SINT64)pid << BITS_PER_LONG) + value;
+	}
+
+	static void putDatabase(const Database*, Firebird::ClumpletWriter&, int);
+	static void putAttachment(const Attachment*, Firebird::ClumpletWriter&, int);
+	static void putTransaction(const jrd_tra*, Firebird::ClumpletWriter&, int);
+	static void putRequest(const jrd_req*, Firebird::ClumpletWriter&, int);
+	static void putCall(const jrd_req*, Firebird::ClumpletWriter&, int);
+	static void putStatistics(const RuntimeStatistics*, Firebird::ClumpletWriter&, int);
 
 	static Firebird::Mutex initMutex;
 	static SharedMemory* dump;
+	static int pid;
 
 	Firebird::Array<RelationData> snapshot;
+	Firebird::GenericMap<Firebird::Pair<Firebird::NonPooled<SINT64, SLONG> > > idMap;
+	int idCounter;
 };
 
 } // namespace
