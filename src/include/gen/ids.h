@@ -365,6 +365,7 @@
 	const USHORT  f_mon_db_created = 15;
 	const USHORT  f_mon_db_pages = 16;
 	const USHORT  f_mon_db_stat_id = 17;
+	const USHORT  f_mon_db_backup_state = 18;
 
 
 	const USHORT  f_mon_att_id = 0;

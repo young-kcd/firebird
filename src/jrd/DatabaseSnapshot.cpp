@@ -30,6 +30,7 @@
 #include "../jrd/jrd.h"
 #include "../jrd/cch.h"
 #include "../jrd/ini.h"
+#include "../jrd/nbak.h"
 #include "../jrd/os/guid.h"
 #include "../jrd/os/pio.h"
 #include "../jrd/req.h"
@@ -980,6 +981,25 @@ void DatabaseSnapshot::putDatabase(const Database* database,
 	// statistics
 	writer.insertBigInt(f_mon_db_stat_id, getGlobalId(stat_id));
 	putStatistics(&database->dbb_stats, writer, stat_id);
+	// database state
+	thread_db* tdbb = JRD_get_thread_data();
+	database->dbb_backup_manager->lock_shared_database(tdbb, true);
+	switch (database->dbb_backup_manager->get_state())
+	{
+		case nbak_state_normal:
+			temp = backup_state_normal;
+			break;
+		case nbak_state_stalled:
+			temp = backup_state_stalled;
+			break;
+		case nbak_state_merge:
+			temp = backup_state_merge;
+			break;
+		default:
+			fb_assert(false);
+	}
+	database->dbb_backup_manager->unlock_shared_database(tdbb);
+	writer.insertInt(f_mon_db_backup_state, temp);
 }
 
 

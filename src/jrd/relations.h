@@ -364,6 +364,7 @@ RELATION(nam_mon_database, rel_mon_database, ODS_11_1, rel_virtual)
 	FIELD(f_mon_db_created, nam_mon_created, fld_time, 0, 0, 0, 0)
 	FIELD(f_mon_db_pages, nam_mon_pages, fld_counter, 0, 0, 0, 0)
 	FIELD(f_mon_db_stat_id, nam_mon_stat_id, fld_stat_id, 0, 0, 0, 0)
+	FIELD(f_mon_db_backup_state, nam_mon_backup_state, fld_backup_state, 0, 0, 0, 0)
 END_RELATION
 RELATION(nam_mon_attachments, rel_mon_attachments, ODS_11_1, rel_virtual)
 	FIELD(f_mon_att_id, nam_mon_att_id, fld_att_id, 0, 0, 0, 0)

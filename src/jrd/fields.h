@@ -143,6 +143,7 @@
 
 	FIELD(fld_iso_mode		, nam_iso_mode		, dtype_short	, sizeof(SSHORT), 0						, 0, NULL)
 	FIELD(fld_lock_timeout	, nam_lock_timeout	, dtype_short	, sizeof(SSHORT), 0						, 0, NULL)
+	FIELD(fld_backup_state	, nam_backup_state	, dtype_short	, sizeof(SSHORT), 0						, 0, NULL)
 
 	FIELD(fld_debug_info	, nam_debug_info	, dtype_blob	, BLOB_SIZE		, isc_blob_debug_info	, 0, NULL)
 	FIELD(fld_prm_mechanism	, nam_prm_mechanism	, dtype_short	, sizeof(SSHORT), 0						, 0, NULL)
