@@ -1456,6 +1456,8 @@ void rem_port::disconnect(PACKET* sendL, PACKET* receiveL)
 	printf("disconnect(server)        free rdb         %x\n", rdb);
 #endif
 	this->port_context = NULL;
+	if (this->port_async)
+		this->port_async->port_context = NULL;
 	ALLR_release(rdb);
 	if (this->port_object_vector)
 	{
