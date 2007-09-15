@@ -117,7 +117,7 @@ private:
 
 	static SINT64 getGlobalId(int value)
 	{
-		return ((SINT64)pid << BITS_PER_LONG) + value;
+		return ((SINT64) pid << BITS_PER_LONG) + value;
 	}
 
 	static void putDatabase(const Database*, Firebird::ClumpletWriter&, int);

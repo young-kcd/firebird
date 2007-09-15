@@ -852,7 +852,7 @@ static void delete_session(SLONG session_id)
 	SES session = (SES) SRQ_ABS_PTR(session_id);
 
 #ifdef MULTI_THREAD
-	// if session currently delivered events delay its deletion until deliver ends
+	// if session currently delivered events, delay its deletion until deliver ends
 	if (session->ses_flags & SES_delivering)
 	{
 		session->ses_flags |= SES_purge;
