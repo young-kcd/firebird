@@ -1181,8 +1181,7 @@ void DatabaseSnapshot::putCall(const jrd_req* request,
 	// call id
 	writer.insertBigInt(f_mon_call_id, getGlobalId(request->req_id));
 	// statement id
-	const SINT64 stmt_id = ((SINT64) getpid() << BITS_PER_LONG) + statement->req_id;
-	writer.insertBigInt(f_mon_call_stmt_id, stmt_id);
+	writer.insertBigInt(f_mon_call_stmt_id, getGlobalId(statement->req_id));
 	// caller id
 	if (statement == request->req_caller) {
 		writer.insertInt(f_mon_call_caller_id, 0);
