@@ -1,3 +1,45 @@
+2007-09-14 17:59  dimitr
+
+	* firebird2/src/jrd/DatabaseSnapshot.cpp (1.36):
+
+	Fixed mistake in the last commit.
+
+2007-09-14 17:47  dimitr
+
+	* firebird2/doc/README.monitoring_tables (1.7):
+
+	Update.
+
+2007-09-14 17:36  dimitr
+
+	* firebird2/src/: include/gen/ids.h (1.27),
+	jrd/DatabaseSnapshot.cpp (1.35), jrd/constants.h (1.44),
+	jrd/fields.h (1.16), jrd/names.h (1.15), jrd/relations.h (1.20),
+	jrd/types.h (1.16):
+
+	Added MON$BACKUP_STATE to MON$DATABASE.
+
+2007-09-14 17:12  dimitr
+
+	* firebird2/src/: jrd/DatabaseSnapshot.cpp (1.34),
+	jrd/DatabaseSnapshot.h (1.8), jrd/fields.h (1.15), jrd/names.h
+	(1.14), jrd/relations.h (1.19), include/gen/ids.h (1.26):
+
+	Added MON$IO_STATS and MON$RECORD_STATS.
+
+2007-09-14 08:53  dimitr
+
+	* firebird2/src/remote/server.cpp (1.155):
+
+	Fixed CORE-1459.
+
+2007-09-14 08:00  dimitr
+
+	* firebird2/src/remote/: inet.cpp (1.193), server.cpp (1.154):
+
+	Fixed CORE-1460.  Make INET to use the same buffer as other
+	transports instead of the hackery usage of p_resp_blob_id.
+
 2007-09-13 15:28  hvlad
 
 	* firebird2/src/jrd/: event.cpp (1.62), event.h (1.19):
