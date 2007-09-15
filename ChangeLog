@@ -1,3 +1,21 @@
+2007-09-14 20:29  dimitr
+
+	* firebird2/src/jrd/par.cpp (1.132.4.5):
+
+	Fixed CORE-1462.
+
+2007-09-14 08:53  dimitr
+
+	* firebird2/src/remote/server.cpp (1.126.2.8):
+
+	Fixed CORE-1459.
+
+2007-09-14 07:48  dimitr
+
+	* firebird2/src/remote/server.cpp (1.126.2.7):
+
+	Fixed CORE-1460.
+
 2007-09-13 16:30  hvlad
 
 	* firebird2/src/jrd/: event.cpp (1.55.4.1), event.h (1.18.12.1):
