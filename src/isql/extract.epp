@@ -65,6 +65,8 @@ using MsgFormat::SafeArg;
 
 DATABASE DB = EXTERN COMPILETIME "yachts.lnk";
 
+static bool extract_rel_constraints(const char* relation_name);
+static void get_procedure_args(const char*);
 static void list_all_grants();
 static processing_state list_all_grants2(bool, const SCHAR*);
 static void list_all_procs();
@@ -82,8 +84,6 @@ static void list_functions();
 static void list_generators();
 static void list_index();
 static void list_views();
-
-static void get_procedure_args(const char*);
 
 extern const char* trigger_action(int);
 
@@ -634,47 +634,8 @@ int EXTRACT_list_table(const SCHAR* relation_name,
 	END_ERROR;
 
 	// Do primary and unique keys only. References come later.
-
-	SCHAR collist[BUFFER_LENGTH512 * 2];
-
-	FOR RELC IN RDB$RELATION_CONSTRAINTS WITH
-		(RELC.RDB$CONSTRAINT_TYPE EQ "PRIMARY KEY" OR
-		RELC.RDB$CONSTRAINT_TYPE EQ "UNIQUE") AND
-		RELC.RDB$RELATION_NAME EQ relation_name
-		SORTED BY RELC.RDB$CONSTRAINT_TYPE, RELC.RDB$CONSTRAINT_NAME
-
-		isqlGlob.printf(",%s", NEWLINE);
-		// If the name of the constraint is not INTEG_..., print it
-		if (!fb_utils::implicit_integrity(RELC.RDB$CONSTRAINT_NAME))
-		{
-			fb_utils::exact_name(RELC.RDB$CONSTRAINT_NAME);
-			if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
-			{
-				ISQL_copy_SQL_id (RELC.RDB$CONSTRAINT_NAME, SQL_identifier,
-								  DBL_QUOTE);
-				isqlGlob.printf("CONSTRAINT %s ", SQL_identifier);
-			}
-			else
-				isqlGlob.printf("CONSTRAINT %s ", RELC.RDB$CONSTRAINT_NAME);
-		}
-
-		if (!strncmp (RELC.RDB$CONSTRAINT_TYPE, "PRIMARY", 7))
-		{
-			ISQL_get_index_segments (collist, sizeof(collist), RELC.RDB$INDEX_NAME, true);
-			isqlGlob.printf("PRIMARY KEY (%s)", collist);
-		}
-
-		else if (!strncmp (RELC.RDB$CONSTRAINT_TYPE, "UNIQUE", 6))
-		{
-			ISQL_get_index_segments (collist, sizeof(collist), RELC.RDB$INDEX_NAME, true);
-			isqlGlob.printf("UNIQUE (%s)", collist);
-		}
-
-	END_FOR
-	ON_ERROR
-		ISQL_errmsg(gds_status);
+	if (!extract_rel_constraints(relation_name))
 		return FINI_ERROR;
-	END_ERROR;
 
 	// Check constaints are now deferred
 
@@ -698,6 +659,83 @@ int EXTRACT_list_table(const SCHAR* relation_name,
 }
 
 
+static bool extract_rel_constraints(const char* relation_name)
+{
+/**************************************************
+ *
+ *	e x t r a c t _ r e l _ c o n s t r a i n t s
+ *
+ **************************************************
+ *
+ * Functional description
+ *	This function extracts the relation constraints of type PK and UK.
+ *
+ **************************************/
+
+	SCHAR collist[BUFFER_LENGTH512 * 2];
+
+	// PK and UK are always based on indices for now, hence this join is safe.
+	FOR RELC IN RDB$RELATION_CONSTRAINTS
+		CROSS IDX IN RDB$INDICES OVER RDB$INDEX_NAME
+		WITH
+		(RELC.RDB$CONSTRAINT_TYPE EQ "PRIMARY KEY" OR
+		RELC.RDB$CONSTRAINT_TYPE EQ "UNIQUE") AND
+		RELC.RDB$RELATION_NAME EQ relation_name
+		SORTED BY RELC.RDB$CONSTRAINT_TYPE, RELC.RDB$CONSTRAINT_NAME
+
+		isqlGlob.printf(",%s", NEWLINE);
+		fb_utils::exact_name(RELC.RDB$CONSTRAINT_NAME);
+		fb_utils::exact_name(IDX.RDB$INDEX_NAME);
+
+		// If the name of the constraint is not INTEG_..., print it
+ 		if (!fb_utils::implicit_integrity(RELC.RDB$CONSTRAINT_NAME))
+		{
+			if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
+			{
+				ISQL_copy_SQL_id (RELC.RDB$CONSTRAINT_NAME, SQL_identifier, DBL_QUOTE);
+				isqlGlob.printf("CONSTRAINT %s ", SQL_identifier);
+			}
+			else
+				isqlGlob.printf("CONSTRAINT %s ", RELC.RDB$CONSTRAINT_NAME);
+		}
+
+		ISQL_get_index_segments (collist, sizeof(collist), RELC.RDB$INDEX_NAME, true);
+		if (!strncmp (RELC.RDB$CONSTRAINT_TYPE, "PRIMARY", 7))
+			isqlGlob.printf("PRIMARY KEY (%s)", collist);
+		else //if (!strncmp (RELC.RDB$CONSTRAINT_TYPE, "UNIQUE", 6)) // redundant
+			isqlGlob.printf("UNIQUE (%s)", collist);
+			
+		// Yes, the same RDB$... naming convention is used for both domains and indices.
+		const bool explicit_index = !fb_utils::implicit_domain(IDX.RDB$INDEX_NAME)
+		    && strcmp(RELC.RDB$CONSTRAINT_NAME, IDX.RDB$INDEX_NAME);
+		const bool descending_index = !IDX.RDB$INDEX_TYPE.NULL && IDX.RDB$INDEX_TYPE == 1;
+		if (explicit_index || descending_index)
+		{
+			//isqlGlob.printf("%s%sUSING %sINDEX", NEWLINE, TAB_AS_SPACES,
+			isqlGlob.printf(" USING %sINDEX",
+							descending_index ? "DESCENDING " : "");
+		}
+		if (explicit_index)
+		{
+			if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
+			{
+				ISQL_copy_SQL_id(IDX.RDB$INDEX_NAME, SQL_identifier, DBL_QUOTE);
+				isqlGlob.printf(" %s", SQL_identifier);
+			}
+			else
+				isqlGlob.printf(" %s", IDX.RDB$INDEX_NAME);
+		}
+
+	END_FOR
+	ON_ERROR
+		ISQL_errmsg(gds_status);
+		return false;
+	END_ERROR;
+	
+	return true;
+}
+
+
 static void get_procedure_args(const char* proc_name)
 {
 /**************************************
@@ -707,7 +745,7 @@ static void get_procedure_args(const char* proc_name)
  **************************************
  *
  * Functional description
- *	This function extract the procedure parameters and adds it to the
+ *	This function extracts the procedure parameters and adds it to the
  *	extract file
  *
  **************************************/
