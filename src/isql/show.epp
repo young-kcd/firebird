@@ -98,6 +98,8 @@ static processing_state show_role(const SCHAR*);
 static processing_state show_secclass(const char* object, const char* opt);
 static processing_state show_table(const SCHAR*, bool);
 static processing_state show_trigger(const SCHAR*, bool, bool);
+static processing_state show_users();
+
 const char* const spaces = "                                ";
 static TEXT Print_buffer[512];
 static TEXT SQL_identifier[BUFFER_LENGTH128];
@@ -271,7 +273,7 @@ public:
 		role, table, view, system, index, domain, exception,
 		filter, function, generator, grant, procedure, trigger,
 		check, database, comment, dependency, collation, security_class,
-		wrong
+		users, wrong
 	};
 	static show_commands getCommand(const char* cmd);
 
@@ -331,7 +333,8 @@ const ShowOptions::map ShowOptions::options[] =
 	{collation, "COLLATES", 7},
 	{collation, "COLLATIONS", 9},
 	{security_class, "SECURITY CLASSES", 12},
-	{security_class, "SECCLASSES", 6}
+	{security_class, "SECCLASSES", 6},
+	{users, "USERS", 4}
 };
 
 // Return the keyword associated with the string. There may be several strings
@@ -526,7 +529,7 @@ bool SHOW_dbb_parameters(FB_API_HANDLE db_handle,
 		info += strlen(info);
 	}
 
-	return true;
+	return info > info_buf;
 }
 
 
@@ -1536,6 +1539,10 @@ processing_state SHOW_metadata(const SCHAR* const* cmd,
 			else
 				key = NO_SECCLASS;
 		}
+		break;
+
+	case ShowOptions::users:
+		show_users();
 		break;
 
 	default:
@@ -4412,7 +4419,7 @@ static processing_state show_trigger(
 			TRG.RDB$TRIGGER_NAME EQ triggerName) AND
 		(TRG.RDB$SYSTEM_FLAG EQ 0 OR TRG.RDB$SYSTEM_FLAG MISSING)
 		SORTED BY TRG.RDB$RELATION_NAME, TRG.RDB$TRIGGER_TYPE,
-		TRG.RDB$TRIGGER_SEQUENCE, TRG.RDB$TRIGGER_NAME;
+		TRG.RDB$TRIGGER_SEQUENCE, TRG.RDB$TRIGGER_NAME
 
 		//bool skip = false;
 		// Skip triggers for check constraints
@@ -4467,5 +4474,116 @@ static processing_state show_trigger(
 	if (first)
 		return OBJECT_NOT_FOUND;
 	return SKIP;
+}
+
+
+static processing_state show_users()
+{
+/**************************************
+ *
+ *	s h o w _ u s e r s
+ *
+ **************************************
+ *
+ * Functional description
+ *	Show users logged in the database (not users defined for this database).
+ *
+ **************************************/
+ 
+	const SCHAR user_items[] =
+	{
+		isc_info_user_names,
+		isc_info_end
+	};
+
+
+	//TEXT msg[MSG_LENGTH]; // When messages can be translated.
+
+	char my_user[128] = "";
+	XSQLDA osqlda; // XSQLDA comes with one XSQLVAR inside.
+	memset(&osqlda, 0, XSQLDA_LENGTH(1));
+	osqlda.version = SQLDA_VERSION1;
+	osqlda.sqln = 1;
+	osqlda.sqld = 1;
+	XSQLVAR& ovar = osqlda.sqlvar[0];
+	ovar.sqlind = 0;
+	ovar.sqldata = my_user;
+	ovar.sqltype = SQL_VARYING;
+	ovar.sqllen = sizeof(my_user);
+	const char* getuser = isqlGlob.major_ods < ODS_VERSION10 ?
+	    "select user from rdb$database" : "select current_user from rdb$database";
+
+	if (isc_dsql_exec_immed2(isc_status, &DB, &gds_trans, 0,
+							 getuser,
+							 isqlGlob.SQL_dialect, NULL, &osqlda))
+	{
+		ISQL_errmsg(isc_status);
+		return OBJECT_NOT_FOUND;
+	}
+
+	vary* avary = reinterpret_cast<vary*>(my_user);
+	fb_assert(avary->vary_length < sizeof(my_user) - sizeof(avary->vary_length));
+	avary->vary_string[avary->vary_length] = 0; // Just for the debugger.
+
+    UCHAR buffer[BUFFER_LENGTH512];
+	ISC_STATUS_ARRAY status_vector;
+	if (isc_database_info(status_vector, &DB,
+							sizeof(user_items), user_items,
+							sizeof(buffer), reinterpret_cast<SCHAR*>(buffer)))
+	{
+		ISQL_errmsg(status_vector);
+		return ps_ERR;
+	}
+
+	bool newline = false;
+	processing_state rc = OBJECT_NOT_FOUND;
+	for (const UCHAR* d = buffer; *d != isc_info_end;)
+	{
+		const UCHAR item = *d++;
+		const int length = gds__vax_integer(d, 2);
+		d += 2;
+
+		switch (item)
+		{
+		case isc_info_end:
+			break;
+
+		case isc_info_user_names:
+			{
+				if (rc == OBJECT_NOT_FOUND)
+					printf("%s\n", "Users in the database");
+
+				int len = *d;
+				fb_assert(len == length - 1);
+				if (len == avary->vary_length && !memcmp(avary->vary_string, d + 1, len))
+					isqlGlob.printf("# %-37.*s", len, d + 1);
+				else
+					isqlGlob.printf("  %-37.*s", len, d + 1);
+
+				if (newline)
+					isqlGlob.printf("\n");
+
+				newline = !newline;
+				rc = SKIP;
+			}
+			break;
+			
+		case isc_info_truncated:
+			if (newline)
+				isqlGlob.printf("\n");
+				
+			isqlGlob.printf("Output was truncated\n");
+			return rc; // If we got some items, we are (partially) successful.
+		}
+
+		d += length;
+		if (d >= buffer + sizeof(buffer))
+			break;
+	}
+
+	if (newline) // Last line was without newline.
+		isqlGlob.printf("\n");
+		
+	return rc;
 }
 
