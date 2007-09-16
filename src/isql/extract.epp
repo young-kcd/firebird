@@ -595,7 +595,7 @@ int EXTRACT_list_table(const SCHAR* relation_name,
 				RCO.RDB$CONSTRAINT_TYPE EQ "NOT NULL" AND
 				RCO.RDB$RELATION_NAME = RFR.RDB$RELATION_NAME
 
-				if (strncmp(CON.RDB$CONSTRAINT_NAME, "INTEG", 5))
+				if (!fb_utils::implicit_integrity(CON.RDB$CONSTRAINT_NAME))
 				{
 					fb_utils::exact_name(CON.RDB$CONSTRAINT_NAME);
 					if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
@@ -633,7 +633,7 @@ int EXTRACT_list_table(const SCHAR* relation_name,
 		return FINI_ERROR;
 	END_ERROR;
 
-// Do primary and unique keys only. references come later 
+	// Do primary and unique keys only. References come later.
 
 	SCHAR collist[BUFFER_LENGTH512 * 2];
 
@@ -641,11 +641,11 @@ int EXTRACT_list_table(const SCHAR* relation_name,
 		(RELC.RDB$CONSTRAINT_TYPE EQ "PRIMARY KEY" OR
 		RELC.RDB$CONSTRAINT_TYPE EQ "UNIQUE") AND
 		RELC.RDB$RELATION_NAME EQ relation_name
-		SORTED BY RELC.RDB$CONSTRAINT_NAME
+		SORTED BY RELC.RDB$CONSTRAINT_TYPE, RELC.RDB$CONSTRAINT_NAME
 
 		isqlGlob.printf(",%s", NEWLINE);
-		// If the name of the constraint is not INTEG..., print it
-		if (strncmp(RELC.RDB$CONSTRAINT_NAME, "INTEG", 5))
+		// If the name of the constraint is not INTEG_..., print it
+		if (!fb_utils::implicit_integrity(RELC.RDB$CONSTRAINT_NAME))
 		{
 			fb_utils::exact_name(RELC.RDB$CONSTRAINT_NAME);
 			if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
@@ -1445,8 +1445,8 @@ static void list_check()
 			isqlGlob.printf("ALTER TABLE %s ADD %s%s",
 					 TRG.RDB$RELATION_NAME, NEWLINE, TAB_AS_SPACES);
 
-		// If the name of the constraint is not INTEG..., print it 
-		if (strncmp(CHK.RDB$CONSTRAINT_NAME, "INTEG", 5))
+		// If the name of the constraint is not INTEG_..., print it
+		if (!fb_utils::implicit_integrity(CHK.RDB$CONSTRAINT_NAME))
 		{
 			fb_utils::exact_name(CHK.RDB$CONSTRAINT_NAME);
 			if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
@@ -2251,9 +2251,9 @@ static void list_foreign()
 					 RELC1.RDB$RELATION_NAME);
 
 		/* If the name of the constraint is not INTEG..., print it.
-	      INTEG... are internally generated names. */
+	      INTEG_... are internally generated names. */
 		if (!RELC1.RDB$CONSTRAINT_NAME.NULL &&
-			strncmp(RELC1.RDB$CONSTRAINT_NAME, "INTEG", 5))
+			!fb_utils::implicit_integrity(RELC1.RDB$CONSTRAINT_NAME))
 		{
 			ISQL_truncate_term (RELC1.RDB$CONSTRAINT_NAME,
 								strlen(RELC1.RDB$CONSTRAINT_NAME));

@@ -87,11 +87,17 @@ const char* const RI_ACTION_DEFAULT = "SET DEFAULT";
 const char* const RI_ACTION_NONE    = "NO ACTION";
 const char* const RI_RESTRICT       = "RESTRICT";
 
+// Automatically created domains for fields with direct data type.
 const char* const IMPLICIT_DOMAIN_PREFIX = "RDB$";
 const int IMPLICIT_DOMAIN_PREFIX_LEN = 4;
 
+// Automatically created security classes for SQL objects.
 const char* const SQL_SECCLASS_PREFIX = "SQL$";
 const int SQL_SECCLASS_PREFIX_LEN = 4;
+
+// Automatically created check constraints for unnamed PRIMARY and UNIQUE declarations.
+const char* const IMPLICIT_INTEGRITY_PREFIX = "INTEG_";
+const int IMPLICIT_INTEGRITY_PREFIX_LEN = 6;
 
 
 /******************************************/

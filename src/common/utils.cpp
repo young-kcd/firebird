@@ -47,6 +47,8 @@
 namespace fb_utils
 {
 
+bool implicit_name(const char* name, const char* prefix, int prefix_len);
+
 
 char* exact_name(char* const str)
 {
@@ -117,20 +119,41 @@ char* exact_name_limit(char* const str, size_t bufsize)
 // Determines if a domain is of the form RDB$<n[...n]>[<spaces>]
 bool implicit_domain(const char* domain_name)
 {
-	if (strncmp(domain_name, IMPLICIT_DOMAIN_PREFIX, IMPLICIT_DOMAIN_PREFIX_LEN) != 0)
+	return implicit_name(domain_name, IMPLICIT_DOMAIN_PREFIX, IMPLICIT_DOMAIN_PREFIX_LEN);
+}
+
+
+// ***********************************
+// i m p l i c i t _ i n t e g r i t y
+// ***********************************
+// Determines if a table integrity constraint domain is of the form INTEG_<n[...n]>[<spaces>]
+bool implicit_integrity(const char* integ_name)
+{
+	return implicit_name(integ_name, IMPLICIT_INTEGRITY_PREFIX, IMPLICIT_INTEGRITY_PREFIX_LEN);
+}
+
+
+// ***********************************
+// i m p l i c i t _ n a m e
+// ***********************************
+// Determines if a name is of the form prefix<n[...n]>[<spaces>]
+// where prefix has a fixed known length.
+bool implicit_name(const char* name, const char* prefix, int prefix_len)
+{
+	if (strncmp(name, prefix, prefix_len) != 0)
 		return false;
-		
-	int i = IMPLICIT_DOMAIN_PREFIX_LEN;
-	while (domain_name[i] >= '0' && domain_name[i] <= '9')
+
+	int i = prefix_len;
+	while (name[i] >= '0' && name[i] <= '9')
 		++i;
-		
-	if (i == IMPLICIT_DOMAIN_PREFIX_LEN) // 'RDB$' alone isn't valid
+
+	if (i == prefix_len) // 'prefix' alone isn't valid
 		return false;
-		
-	while (domain_name[i] == ' ')
+
+	while (name[i] == ' ')
 		++i;
-		
-	return !domain_name[i]; // we reached null term
+
+	return !name[i]; // we reached null term
 }
 
 

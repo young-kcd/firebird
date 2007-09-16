@@ -4254,7 +4254,8 @@ static processing_state show_table(
 		AND R_C.RDB$CONSTRAINT_TYPE EQ 'NOT NULL'
 		AND R_C.RDB$CONSTRAINT_NAME EQ C_C.RDB$CONSTRAINT_NAME
 
-		if (strncmp (R_C.RDB$CONSTRAINT_NAME, "INTEG_", 6)) {
+		if (!fb_utils::implicit_integrity(R_C.RDB$CONSTRAINT_NAME))
+		{
 			fb_utils::exact_name(C_C.RDB$TRIGGER_NAME);
 			fb_utils::exact_name(R_C.RDB$CONSTRAINT_NAME);
 			isqlGlob.printf("CONSTRAINT %s:%s", R_C.RDB$CONSTRAINT_NAME,
