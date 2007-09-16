@@ -4496,7 +4496,6 @@ static processing_state show_users()
 		isc_info_end
 	};
 
-
 	//TEXT msg[MSG_LENGTH]; // When messages can be translated.
 
 	char my_user[128] = "";
@@ -4586,4 +4585,3 @@ static processing_state show_users()
 		
 	return rc;
 }
-

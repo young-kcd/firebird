@@ -47,7 +47,7 @@
 namespace fb_utils
 {
 
-bool implicit_name(const char* name, const char* prefix, int prefix_len);
+static bool implicit_name(const char* name, const char* prefix, int prefix_len);
 
 
 char* exact_name(char* const str)
