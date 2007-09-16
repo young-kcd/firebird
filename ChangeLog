@@ -1,3 +1,23 @@
+2007-09-15 17:01  hvlad
+
+	* firebird2/src/jrd/event.cpp (1.64):
+
+	Fixed compilation on non-MULTI_THREAD platforms
+
+2007-09-15 08:02  dimitr
+
+	* firebird2/src/jrd/DatabaseSnapshot.cpp (1.38):
+
+	Misc.
+
+2007-09-15 04:37  asfernandes
+
+	* firebird2/src/: jrd/DatabaseSnapshot.cpp (1.37),
+	jrd/DatabaseSnapshot.h (1.9), jrd/event.cpp (1.63),
+	remote/interface.cpp (1.147):
+
+	Misc
+
 2007-09-14 17:59  dimitr
 
 	* firebird2/src/jrd/DatabaseSnapshot.cpp (1.36):
