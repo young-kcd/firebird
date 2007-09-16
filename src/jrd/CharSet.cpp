@@ -204,8 +204,15 @@ ULONG MultiByteCharSet::substring(ULONG srcLen, const UCHAR* src, ULONG dstLen, 
 		// convert to UTF16
 		Firebird::HalfStaticArray<UCHAR, BUFFER_SMALL> str;
 		ULONG unilength = getConvToUnicode().convertLength(srcLen);
+
+		// ASF: We should pass badInputPos to convert for it not throw in the case
+		// of irrelevant (for substring) invalid bytes in the end of the string.
+		// This can occur with substring of blobs.
+		// We'll then assume the string is already well formed, because verifying
+		// this may be cost.
+		ULONG badInputPos;
 		unilength = getConvToUnicode().convert(srcLen, src, unilength,
-			reinterpret_cast<USHORT*>(str.getBuffer(unilength)));
+			reinterpret_cast<USHORT*>(str.getBuffer(unilength)), &badInputPos);
 
 		// generate substring of UTF16
 		Firebird::HalfStaticArray<UCHAR, BUFFER_SMALL> substr;
