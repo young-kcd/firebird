@@ -671,9 +671,7 @@ namespace
 		
 		bool fatal() const
 		{
-			return vector[0] == isc_arg_gds && 
-				(vector[1] == isc_shutdown ||
-				 vector[1] == isc_cancelled);
+			return (vector[0] == isc_arg_gds && vector[1] == isc_shutdown);
 		}
 	};
 
