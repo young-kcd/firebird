@@ -225,7 +225,7 @@
                 AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib icuuc.lib"
                 OutputFile="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\firebird\bin\$(ProjectName).exe"
                 LinkIncremental="1"
-                AdditionalLibraryDirectories="../../../extern/icu/$(PlatformName)/$(ConfigurationName)/lib"
+                AdditionalLibraryDirectories="../../../extern/icu/$(PlatformName)/release/lib"
                 SubSystem="2"
                 StackReserveSize="2097152"
             />
@@ -303,7 +303,7 @@
                 AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib icuuc.lib"
                 OutputFile="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\firebird\bin\$(ProjectName).exe"
                 LinkIncremental="1"
-                AdditionalLibraryDirectories="../../../extern/icu/$(PlatformName)/$(ConfigurationName)/lib"
+                AdditionalLibraryDirectories="../../../extern/icu/$(PlatformName)/release/lib"
                 SubSystem="2"
                 StackReserveSize="2097152"
                 TargetMachine="17"

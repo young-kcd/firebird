@@ -9,12 +9,12 @@
 ::==========
 :: MAIN
 
-@echo Building %FB_OBJ_DIR% for %FB_TARGET_PLATFORM%
+@echo Building ICU %FB_OBJ_DIR% for %FB_TARGET_PLATFORM%
 
 if "%VS_VER%"=="msvc8" (
-	@call compile.bat %FB_ROOT_PATH%\extern\icu\source\allinone\allinone_8 make_icu_%FB_TARGET_PLATFORM%.log
+    @call compile.bat %FB_ROOT_PATH%\extern\icu\source\allinone\allinone_8 make_icu_%FB_TARGET_PLATFORM%.log
 ) else (
-	@call compile.bat %FB_ROOT_PATH%\extern\icu\source\allinone\allinone make_icu_%FB_TARGET_PLATFORM%.log
+    @call compile.bat %FB_ROOT_PATH%\extern\icu\source\allinone\allinone make_icu_%FB_TARGET_PLATFORM%.log
 )
 
 if errorlevel 1 call :ERROR build failed - see make_icu_%FB_TARGET_PLATFORM%.log for details

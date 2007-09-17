@@ -64,7 +64,7 @@
 				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib icuuc.lib"
 				OutputFile="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\firebird/bin/$(ProjectName).dll"
 				LinkIncremental="1"
-				AdditionalLibraryDirectories="../../../extern/icu/$(PlatformName)/$(ConfigurationName)/lib"
+				AdditionalLibraryDirectories="../../../extern/icu/$(PlatformName)/release/lib"
 				ModuleDefinitionFile="..\defs\fbclient.def"
 			/>
 			<Tool
@@ -140,7 +140,7 @@
 				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib icuuc.lib"
 				OutputFile="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\firebird/bin/$(ProjectName).dll"
 				LinkIncremental="1"
-				AdditionalLibraryDirectories="../../../extern/icu/$(PlatformName)/$(ConfigurationName)/lib"
+				AdditionalLibraryDirectories="../../../extern/icu/$(PlatformName)/release/lib"
 				ModuleDefinitionFile="..\defs\fbclient.def"
 				TargetMachine="17"
 			/>
@@ -785,6 +785,4 @@
 			>
 		</File>
 	</Files>
-	<Globals>
-	</Globals>
 </VisualStudioProject>
