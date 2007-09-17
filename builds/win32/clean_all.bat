@@ -10,12 +10,9 @@
 @rmdir /S /Q %FB_GEN_DIR% 2>nul
 
 @echo Cleaning INTL...
-if defined FB_OBJ_DIR (
-@echo Cleaning INTL %FB_OBJ_DIR% dirs...
-@rmdir /S /Q %FB_ROOT_PATH%\extern\icu\%FB_OBJ_DIR%\bin 2>nul
-@rmdir /S /Q %FB_ROOT_PATH%\extern\icu\%FB_OBJ_DIR%\lib 2>nul
-@rmdir /S /Q %FB_ROOT_PATH%\extern\icu\%FB_OBJ_DIR% 2>nul
-)
+@rmdir /S /Q %FB_ROOT_PATH%\extern\icu\%FB_TARGET_PLATFORM%\release\bin 2>nul
+@rmdir /S /Q %FB_ROOT_PATH%\extern\icu\%FB_TARGET_PLATFORM%\release\lib 2>nul
+@rmdir /S /Q %FB_ROOT_PATH%\extern\icu\%FB_TARGET_PLATFORM%\release 2>nul
 @rmdir /S /Q %FB_ROOT_PATH%\extern\icu\%FB_TARGET_PLATFORM% 2>nul
 
 :: Removing this might screw up parallel builds.
@@ -34,10 +31,8 @@ if defined FB_CLEAN_SHARED (
 :: thoroughly than this speeds up the build process if a previous build has been
 :: made for the same target.
 if defined FB_INTLREALCLEAN (
-if defined FB_OBJ_DIR (
-@echo Thoroughly scrubbing all remnants of INTL %FB_OBJ_DIR% dirs...
-for /R %FB_ROOT_PATH%\extern\icu\source\ %%a in (%FB_OBJ_DIR%) do (rmdir /q /s "%%a" 2>nul)
-)
+@echo Thoroughly scrubbing all remnants of INTL release dirs...
+for /R %FB_ROOT_PATH%\extern\icu\source\ %%a in (release) do (rmdir /q /s "%%a" 2>nul)
 set FB_INTLREALCLEAN=
 )
 
