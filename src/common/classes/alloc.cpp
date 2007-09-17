@@ -1255,7 +1255,7 @@ void* MemoryPool::internal_alloc(size_t size, SSHORT type
 	// This method assumes already aligned block sizes
 	fb_assert(size % ALLOC_ALIGNMENT == 0);
 	// Make sure block can fit into extent
-	fb_assert(size < EXTENT_SIZE - MEM_ALIGN(sizeof(MemoryBlock)) - MEM_ALIGN(sizeof(MemoryExtent)));
+	fb_assert(size <= EXTENT_SIZE - MEM_ALIGN(sizeof(MemoryBlock)) - MEM_ALIGN(sizeof(MemoryExtent)));
 	
 	// Lookup a block greater or equal than size in freeBlocks tree
 	MemoryBlock* blk;
