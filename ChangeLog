@@ -1,3 +1,44 @@
+2007-09-16 20:46  hvlad
+
+	* firebird2/src/jrd/isc_sync.cpp (1.117):
+
+	Frontport fix for CORE-1207 : FB embedded requires extra OS
+	privileges
+
+2007-09-16 18:15  asfernandes
+
+	* firebird2/src/: common/utils.cpp (1.31), isql/show.epp (1.121):
+
+	Misc
+
+2007-09-16 17:41  asfernandes
+
+	* firebird2/src/jrd/CharSet.cpp (1.3):
+
+	Fixed CORE-1466 - Substring of multi-byte BLOBs can fail
+
+2007-09-16 13:16  robocop
+
+	* firebird2/src/isql/extract.epp (1.83):
+
+	Fix CORE-1261 First part: change extract.epp that's for scripts The
+	counterpart in show.epp (not critical) will be updated later.
+
+2007-09-16 11:05  robocop
+
+	* firebird2/src/isql/show.epp (1.120):
+
+	Post undocumented SHOW USERS command for testing, with permission
+	from Dmitry.
+
+2007-09-16 11:02  robocop
+
+	* firebird2/src/: jrd/constants.h (1.45), isql/extract.epp (1.82),
+	isql/show.epp (1.119), common/utils.cpp (1.30),
+	common/utils_proto.h (1.18):
+
+	Fix CORE-1465
+
 2007-09-15 17:01  hvlad
 
 	* firebird2/src/jrd/event.cpp (1.64):
