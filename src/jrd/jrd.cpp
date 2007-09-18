@@ -6894,7 +6894,11 @@ void JRD_shutdown_all(bool asyncMode)
 	int flShutdownComplete = 0;
 
 	if (!initialized)
+	{
+		// see comments in shutdown_all
+		THREAD_ENTER();
 		return;
+	}
 
 #ifdef SUPERSERVER
 	if (asyncMode)
