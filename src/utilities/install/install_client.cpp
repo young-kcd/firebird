@@ -94,9 +94,11 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	TEXT* p = directory + len;
 	do {--p;} while (*p != '\\');
 
+/*	Instclient no longer strips the bin\\ part. This section can be removed after fb2.1.0 beta2
 	// Get to the previous '\' (this one should precede the supposed 'bin\\' part).
 	// There is always an additional '\' OR a ':'.
 	do {--p;} while (*p != '\\' && *p != ':');
+*/
 	*p = '\0';
 
 	const TEXT* const* const end = argv + argc;

@@ -96,7 +96,8 @@ USHORT CLIENT_install(const TEXT * rootdir, USHORT client, bool sw_force,
 	// number that we intend to install to WinSysDir.
 	TEXT fbdll[MAXPATHLEN];
 	lstrcpy(fbdll, rootdir);
-	lstrcat(fbdll, "\\bin\\");
+//	lstrcat(fbdll, "\\bin\\");
+	lstrcat(fbdll, "\\");
 	lstrcat(fbdll, FBCLIENT_NAME);
 
 	DWORD newverMS = 0, newverLS = 0;
@@ -325,7 +326,8 @@ USHORT CLIENT_remove(const TEXT * rootdir, USHORT client, bool sw_force,
 	// number that we could have installed to WinSysDir.
 	TEXT fbdll[MAXPATHLEN];
 	lstrcpy(fbdll, rootdir);
-	lstrcat(fbdll, "\\bin\\");
+//	lstrcat(fbdll, "\\bin\\");
+	lstrcat(fbdll, "\\");
 	lstrcat(fbdll, FBCLIENT_NAME);
 
 	DWORD ourverMS = 0, ourverLS = 0;
