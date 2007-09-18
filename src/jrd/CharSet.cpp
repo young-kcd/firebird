@@ -209,7 +209,7 @@ ULONG MultiByteCharSet::substring(ULONG srcLen, const UCHAR* src, ULONG dstLen, 
 		// of irrelevant (for substring) invalid bytes in the end of the string.
 		// This can occur with substring of blobs.
 		// We'll then assume the string is already well formed, because verifying
-		// this may be cost.
+		// this may be costly.
 		ULONG badInputPos;
 		unilength = getConvToUnicode().convert(srcLen, src, unilength,
 			reinterpret_cast<USHORT*>(str.getBuffer(unilength)), &badInputPos);
