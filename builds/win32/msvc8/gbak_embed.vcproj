@@ -117,10 +117,6 @@
                 Name="VCCLCompilerTool"
                 Optimization="0"
                 PreprocessorDefinitions="_DEBUG,DEV_BUILD,WIN32,_CONSOLE,SUPERCLIENT"
-                PrecompiledHeaderFile="..\..\..\temp\debug\gbak_embed/gbak_embed.pch"
-                AssemblerListingLocation="..\..\..\temp\debug\gbak_embed/"
-                ObjectFile="..\..\..\temp\debug\gbak_embed/"
-                ProgramDataBaseFileName="..\..\..\temp\debug\gbak_embed/"
                 BrowseInformation="1"
             />
             <Tool
