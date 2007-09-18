@@ -4170,7 +4170,7 @@ static processing_state show_table(
 		return ps_ERR;
 	END_ERROR;
 
-// If this is a view and there were columns, print the view text
+	// If this is a view and there were columns, print the view text
 
 	if (!first) {
 		FOR REL IN RDB$RELATIONS WITH
@@ -4188,7 +4188,7 @@ static processing_state show_table(
 		END_ERROR;
 	}
 
-// Handle any referential or primary constraint on this table
+	// Handle any referential or primary constraint on this table
 
 	SCHAR collist[BUFFER_LENGTH512];
 
@@ -4198,21 +4198,24 @@ static processing_state show_table(
 		RELC1.RDB$RELATION_NAME EQ relation_name
 		SORTED BY RELC1.RDB$CONSTRAINT_TYPE, RELC1.RDB$CONSTRAINT_NAME
 
+		fb_utils::exact_name(RELC1.RDB$CONSTRAINT_NAME);
+		fb_utils::exact_name(RELC1.RDB$INDEX_NAME);
 		ISQL_get_index_segments (collist, sizeof(collist), RELC1.RDB$INDEX_NAME, false);
+		bool pkuk = false;
+
 		if (!strncmp (RELC1.RDB$CONSTRAINT_TYPE, "PRIMARY", 7)) {
-			fb_utils::exact_name(RELC1.RDB$CONSTRAINT_NAME);
+			pkuk = true;
 			isqlGlob.printf("CONSTRAINT %s:%s", RELC1.RDB$CONSTRAINT_NAME, NEWLINE);
-			isqlGlob.printf("  Primary key (%s)%s", collist, NEWLINE);
+			isqlGlob.printf("  Primary key (%s)", collist);
 		}
 		else if (!strncmp (RELC1.RDB$CONSTRAINT_TYPE, "UNIQUE", 6)) {
-			fb_utils::exact_name(RELC1.RDB$CONSTRAINT_NAME);
+			pkuk = true;
 			isqlGlob.printf("CONSTRAINT %s:%s", RELC1.RDB$CONSTRAINT_NAME, NEWLINE);
-			isqlGlob.printf("  Unique key (%s)%s", collist, NEWLINE);
+			isqlGlob.printf("  Unique key (%s)", collist);
 		}
-		else if (!strncmp (RELC1.RDB$CONSTRAINT_TYPE, "FOREIGN", 7)) {
-			fb_utils::exact_name(RELC1.RDB$CONSTRAINT_NAME);
+		else if (!strncmp (RELC1.RDB$CONSTRAINT_TYPE, "FOREIGN", 7))
+		{
 			isqlGlob.printf("CONSTRAINT %s:%s", RELC1.RDB$CONSTRAINT_NAME, NEWLINE);
-			ISQL_get_index_segments (collist, sizeof(collist), RELC1.RDB$INDEX_NAME, false);
 			isqlGlob.printf("  Foreign key (%s)", collist);
 
 			FOR RELC2 IN RDB$RELATION_CONSTRAINTS CROSS
@@ -4248,12 +4251,36 @@ static processing_state show_table(
 				return ps_ERR;
 			END_ERROR;
 		}
+		
+		if (pkuk) // Special handling for PRIMARY KEY and UNIQUE constraints.
+		{
+			FOR IDX IN RDB$INDICES
+			WITH IDX.RDB$INDEX_NAME = RELC1.RDB$INDEX_NAME
+				// Yes, the same RDB$... naming convention is used for both domains and indices.
+				const bool explicit_index = !fb_utils::implicit_domain(RELC1.RDB$INDEX_NAME)
+				    && strcmp(RELC1.RDB$CONSTRAINT_NAME, RELC1.RDB$INDEX_NAME);
+				const bool descending_index = !IDX.RDB$INDEX_TYPE.NULL && IDX.RDB$INDEX_TYPE == 1;
+				if (explicit_index || descending_index)
+				{
+					isqlGlob.printf(" uses explicit %s index",
+									descending_index ? "descending" : "ascending");
+				}
+				if (explicit_index)
+					isqlGlob.printf(" %s", RELC1.RDB$INDEX_NAME);
+						
+				isqlGlob.prints(NEWLINE);
+			END_FOR
+			ON_ERROR
+				ISQL_errmsg (isc_status);
+				return ps_ERR;
+			END_ERROR
+		}
 
 	END_FOR
 	ON_ERROR
 		ISQL_errmsg(isc_status);
 		return ps_ERR;
-	END_ERROR;
+	END_ERROR
 
 	FOR R_C IN RDB$RELATION_CONSTRAINTS CROSS
 		C_C IN RDB$CHECK_CONSTRAINTS
@@ -4585,3 +4612,4 @@ static processing_state show_users()
 		
 	return rc;
 }
+
