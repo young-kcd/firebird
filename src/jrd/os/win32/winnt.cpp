@@ -50,10 +50,92 @@
 #include "../jrd/lck_proto.h"
 #include "../jrd/mov_proto.h"
 #include "../jrd/os/pio_proto.h"
-#include "../jrd/thd.h"
+#include "../jrd/GlobalRWLock.h"
+#include "../jrd/thread_proto.h"
 
 #include <windows.h>
 
+namespace Jrd {
+
+
+FileExtendLock::FileExtendLock(Firebird::MemoryPool& p, size_t lock_len, UCHAR* lock_string)
+{
+	thread_db* tdbb = NULL;
+	SET_TDBB(tdbb);
+
+	// hvlad: logical lock owner better would be a thread, but this is not
+	// implemented currently. Fortunately only place when we need an exclusive
+	// lock is PIO_extend and it always called with existing attachment
+	m_lock = FB_NEW(p) GlobalRWLock(tdbb, p, LCK_file_extend, 
+		lock_len, lock_string, 
+		LCK_OWNER_database, LCK_OWNER_attachment, true);
+}
+
+FileExtendLock::~FileExtendLock()
+{
+	delete m_lock;
+}
+
+void FileExtendLock::lock(thread_db* tdbb, bool exclusive)
+{
+	const bool in_engine = SCH_thread_enter_check();
+	if (!in_engine)
+		THREAD_ENTER();
+
+	SET_TDBB(tdbb);
+	fb_assert(tdbb->tdbb_attachment);
+
+	m_lock->lock(tdbb, exclusive ? LCK_write : LCK_read, LCK_WAIT);
+
+	if (!in_engine)
+		THREAD_EXIT();
+}
+
+void FileExtendLock::release(thread_db* tdbb, bool exclusive)
+{
+	const bool in_engine = SCH_thread_enter_check();
+	if (!in_engine)
+		THREAD_ENTER();
+
+	SET_TDBB(tdbb);
+	fb_assert(tdbb->tdbb_attachment);
+
+	m_lock->unlock(tdbb, exclusive ? LCK_write : LCK_read);
+
+	if (!in_engine)
+		THREAD_EXIT();
+}
+
+
+class FileExtendLockGuard
+{
+public:
+	FileExtendLockGuard(thread_db* tdbb, FileExtendLock *lock, bool exclusive) :
+	  m_tdbb(tdbb), m_lock(lock), m_exclusive(exclusive) 
+	{
+		if (exclusive) {
+			fb_assert(m_lock);
+		}
+		if (m_lock) {
+			m_lock->lock(m_tdbb, m_exclusive);
+		}
+	}
+
+	~FileExtendLockGuard()
+	{
+		if (m_lock) {
+			m_lock->release(m_tdbb, m_exclusive);
+		}
+	}
+
+private:
+	thread_db*		m_tdbb;
+	FileExtendLock*	m_lock;
+	bool			m_exclusive;
+};
+
+
+} // namespace Jrd
 
 using namespace Jrd;
 
@@ -257,10 +339,20 @@ void PIO_extend(jrd_file* main_file, const ULONG extPages, const USHORT pageSize
 	const DWORD INVALID_SET_FILE_POINTER = 0xFFFFFFFF;
 #endif
 
+	// hvlad: prevent other threads from read\write changing file pointer
+	// It solved issue CORE-1468 (database file corruption when file extension 
+	// and read\write activity performed simultaneously)
+	// It looks like a Windows bug as all our ReadFile\WriteFile calls used
+	// overlapped to set read\write operation offset not touching file pointer
+	if (!main_file->fil_ext_lock)
+		return;
+
+	FileExtendLockGuard extLock(NULL, main_file->fil_ext_lock, true);
+
 	ULONG leftPages = extPages;
 	for (jrd_file* file = main_file; file && leftPages; file = file->fil_next)
 	{
-		ULONG filePages = PIO_get_number_of_pages(file, pageSize);
+		const ULONG filePages = PIO_get_number_of_pages(file, pageSize);
 		const ULONG fileMaxPages = (file->fil_max_page == MAX_ULONG) ? MAX_ULONG : 
 									file->fil_max_page - file->fil_min_page + 1;
 		if (filePages < fileMaxPages)
@@ -272,14 +364,27 @@ void PIO_extend(jrd_file* main_file, const ULONG extPages, const USHORT pageSize
 			LARGE_INTEGER newSize; 
 			newSize.QuadPart = (ULONGLONG) (filePages + extendBy) * pageSize;
 
+			if (ostype == OS_CHICAGO) {
+				file->fil_mutex.enter();
+			}
+
 			const DWORD ret = SetFilePointer(hFile, newSize.LowPart, &newSize.HighPart, FILE_BEGIN);
 			if (ret == INVALID_SET_FILE_POINTER && GetLastError() != NO_ERROR) {
+				if (ostype == OS_CHICAGO) {
+					file->fil_mutex.leave();
+				}
 				nt_error("SetFilePointer", file, isc_io_write_err, 0);
 			}
 			if (!SetEndOfFile(hFile)) {
+				if (ostype == OS_CHICAGO) {
+					file->fil_mutex.leave();
+				}
 				nt_error("SetEndOfFile", file, isc_io_write_err, 0);
 			}
 
+			if (ostype == OS_CHICAGO) {
+				file->fil_mutex.leave();
+			}
 			leftPages -= extendBy;
 		}
 	}
@@ -566,6 +671,9 @@ bool PIO_read(jrd_file* file, BufferDesc* bdb, Ods::pag* page, ISC_STATUS* statu
 	Database* dbb = bdb->bdb_dbb;
 	const DWORD size = dbb->dbb_page_size;
 
+	FileExtendLockGuard extLock(NULL, 
+		dbb->dbb_attachments ? file->fil_ext_lock : NULL, false);
+
 	OVERLAPPED overlapped, *overlapped_ptr;
 	if (!(file = seek_file(file, bdb, status_vector, &overlapped, &overlapped_ptr)))
 		return false;
@@ -783,6 +891,9 @@ bool PIO_write(jrd_file* file, BufferDesc* bdb, Ods::pag* page, ISC_STATUS* stat
 
 	Database*   dbb  = bdb->bdb_dbb;
 	const DWORD size = dbb->dbb_page_size;
+
+	FileExtendLockGuard extLock(NULL, 
+		dbb->dbb_attachments ? file->fil_ext_lock : NULL, false);
 
 	file = seek_file(file, bdb, status_vector, &overlapped,
 				   &overlapped_ptr);
@@ -1004,6 +1115,7 @@ static jrd_file* setup_file(Database*					dbb,
 	file->fil_desc = desc;
 	file->fil_length = file_name.length();
 	file->fil_max_page = (ULONG) -1;
+	file->fil_ext_lock = NULL;
 #ifdef SUPERSERVER_V2
 	memset(file->fil_io_events, 0, MAX_FILE_IO * sizeof(void*));
 #endif
@@ -1020,7 +1132,7 @@ static jrd_file* setup_file(Database*					dbb,
    under Windows/NT or Chicago */
 // CVC: local variable to all this unit, it means.
 
-	ostype = ISC_is_WinNT() ? OS_WINDOWS_NT : OS_CHICAGO;
+	ostype = /*ISC_is_WinNT() ? OS_WINDOWS_NT : */OS_CHICAGO;
 
 /* Build unique lock string for file and construct lock block */
 
@@ -1048,6 +1160,9 @@ static jrd_file* setup_file(Database*					dbb,
 	// We know p only was incremented, so can use safely size_t instead of ptrdiff_t
 	l = p - lock_string;
 	fb_assert(l <= sizeof(lock_string)); // In case we continue adding information.
+
+	file->fil_ext_lock = FB_NEW(*dbb->dbb_permanent) 
+		FileExtendLock(*dbb->dbb_permanent, l, lock_string);
 
 	Lock* lock = FB_NEW_RPT(*dbb->dbb_permanent, l) Lock;
 	dbb->dbb_lock = lock;

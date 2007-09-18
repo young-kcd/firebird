@@ -82,9 +82,31 @@ class jrd_file : public pool_alloc_rpt<SCHAR, type_fil>
 const int MAX_FILE_IO	= 32;			/* Maximum "allocated" overlapped I/O events */
 #endif
 
+class thread_db;
+class GlobalRWLock;
+
+class FileExtendLock 
+{
+public:
+	FileExtendLock(Firebird::MemoryPool& p, size_t lock_len, UCHAR* lock_string);
+	~FileExtendLock();
+
+	void lock(thread_db* tdbb, bool exclusive);
+	void release(thread_db* tdbb, bool exclusive);
+	
+private:
+	GlobalRWLock* m_lock;
+};
+
+
 class jrd_file : public pool_alloc_rpt<SCHAR, type_fil>
 {
     public:
+
+	~jrd_file() {
+		delete fil_ext_lock;
+	}
+
 	jrd_file*	fil_next;		/* Next file in database */
 	ULONG fil_min_page;			/* Minimum page number in file */
 	ULONG fil_max_page;			/* Maximum page number in file */
@@ -93,6 +115,7 @@ class jrd_file : public pool_alloc_rpt<SCHAR, type_fil>
 	HANDLE fil_desc;			// File descriptor
 	//int *fil_trace;				/* Trace file, if any */
 	Firebird::Mutex fil_mutex;
+	FileExtendLock* fil_ext_lock;	// file extend lock
 #ifdef SUPERSERVER_V2
 	void* fil_io_events[MAX_FILE_IO];	/* Overlapped I/O events */
 #endif

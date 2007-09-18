@@ -138,6 +138,7 @@ public:
 	USHORT getTempPageSpaceID(thread_db* tdbb);
 
 	void closeAll();
+	void releaseLocks();
 
 	SLONG pagesPerPIP;			// Pages per pip 
 	ULONG bytesBitPIP;			// Number of bytes of bit in PIP 

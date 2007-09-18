@@ -6458,6 +6458,8 @@ static void shutdown_database(Database* dbb, const bool release_pools)
 	}
 
 	if (dbb->dbb_flags & DBB_lck_init_done) {
+		dbb->dbb_page_manager.releaseLocks();
+
 		LCK_fini(tdbb, LCK_OWNER_database);	// For the database
 		dbb->dbb_flags &= ~DBB_lck_init_done;
 	}

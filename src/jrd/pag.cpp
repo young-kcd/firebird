@@ -2288,18 +2288,15 @@ bool PageSpace::extend(thread_db* tdbb, const ULONG pageNum)
 	if (pageNum < maxPageNumber || MAX_EXTEND_BYTES < MIN_EXTEND_BYTES)
 		return true;
 
+#ifdef WIN_NT
+	// hvlad: we need an attachment lock to get exclusive LCK_file_extend lock
+	// see comments in winnt.cpp\FileExtendLock::FileExtendLock
+	if (!tdbb->tdbb_attachment || !tdbb->tdbb_attachment->att_lock_owner_handle)
+		return false;
+#endif
+
 	Database* dbb = tdbb->tdbb_database;
 
-	Lock temp_lock;
-	temp_lock.lck_dbb = dbb;
-	temp_lock.lck_object = this;
-	temp_lock.lck_type = LCK_file_extend;
-	temp_lock.lck_owner_handle = LCK_get_owner_handle(tdbb, temp_lock.lck_type);
-	temp_lock.lck_parent = dbb->dbb_lock;
-	temp_lock.lck_length = sizeof(SLONG);
-	temp_lock.lck_key.lck_long = this->pageSpaceID;
-
-	LCK_lock(tdbb, &temp_lock, LCK_EX, LCK_WAIT);
 	if (pageNum >= maxAlloc(dbb->dbb_page_size))
 	{
 		const ULONG minExtendPages = MIN_EXTEND_BYTES / dbb->dbb_page_size;
@@ -2332,7 +2329,6 @@ bool PageSpace::extend(thread_db* tdbb, const ULONG pageNum)
 
 					gds__log("Error extending file \"%s\" by %lu page(s).\nCurrently allocated %lu pages, requested page number %lu", 
 						file->fil_string, extPages, maxPageNumber, pageNum);
-					LCK_release(tdbb, &temp_lock);
 					return false;
 				}
 			}
@@ -2341,7 +2337,6 @@ bool PageSpace::extend(thread_db* tdbb, const ULONG pageNum)
 		THREAD_ENTER();
 		maxPageNumber = 0; 
 	}
-	LCK_release(tdbb, &temp_lock);
 	return true;
 }
 
@@ -2383,6 +2378,15 @@ void PageManager::closeAll()
 	for (size_t i = 0; i < pageSpaces.getCount(); i++)
 		if (pageSpaces[i]->file) {
 			PIO_close(pageSpaces[i]->file);
+		}
+}
+
+void PageManager::releaseLocks()
+{
+	for (size_t i = 0; i < pageSpaces.getCount(); i++)
+		if (pageSpaces[i]->file && pageSpaces[i]->file->fil_ext_lock) {
+			delete pageSpaces[i]->file->fil_ext_lock;
+			pageSpaces[i]->file->fil_ext_lock = NULL;
 		}
 }
 
