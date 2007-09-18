@@ -711,12 +711,7 @@ static bool extract_rel_constraints(const char* relation_name)
 		const bool descending_index = !IDX.RDB$INDEX_TYPE.NULL && IDX.RDB$INDEX_TYPE == 1;
 		if (explicit_index || descending_index)
 		{
-			//isqlGlob.printf("%s%sUSING %sINDEX", NEWLINE, TAB_AS_SPACES,
-			isqlGlob.printf(" USING %sINDEX",
-							descending_index ? "DESCENDING " : "");
-		}
-		if (explicit_index)
-		{
+			isqlGlob.printf(" USING %sINDEX", descending_index ? "DESCENDING " : "");
 			if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
 			{
 				ISQL_copy_SQL_id(IDX.RDB$INDEX_NAME, SQL_identifier, DBL_QUOTE);
