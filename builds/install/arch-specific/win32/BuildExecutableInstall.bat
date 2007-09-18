@@ -190,7 +190,10 @@ del %temp%.\b$?.txt
 :: (You may need to download and extract the
 :: vcredist stuff to your MSDevDir for this to work with MSVC6.
 :: MSVC7 requires the Framework SDK v1.1 to be installed.
-:: MSVC8 should be installed with redistributable packages.
+:: MSVC8 is currently set to link statically, removing the need to copy the
+:: runtimes otherwise we also need to deploy vcredist.exe so as to support
+:: installing the client lib in the <Sys> dir. For now the dummy define
+:: FB_DYN_LIB is used to comment out this code section.
 ::=====================
 if not exist %FB_OUTPUT_DIR%\system32 (mkdir %FB_OUTPUT_DIR%\system32)
 @if DEFINED MSDevDir (
@@ -200,9 +203,11 @@ if not exist %FB_OUTPUT_DIR%\system32 (mkdir %FB_OUTPUT_DIR%\system32)
   )
 ) else (
   if %MSVC_VERSION% EQU 8 (
+    if defined FB_DYN_LIB (
     @copy "%VCINSTALLDIR%\redist\%PROCESSOR_ARCHITECTURE%\Microsoft.VC80.CRT\msvcp%MSVC_VERSION%?.dll" %FB_OUTPUT_DIR%\bin\ > nul
     @copy "%VCINSTALLDIR%\redist\%PROCESSOR_ARCHITECTURE%\Microsoft.VC80.CRT\msvcr%MSVC_VERSION%?.dll" %FB_OUTPUT_DIR%\bin\ > nul
     @copy "%VCINSTALLDIR%\redist\%PROCESSOR_ARCHITECTURE%\Microsoft.VC80.CRT\Microsoft.VC80.CRT.manifest" %FB_OUTPUT_DIR%\bin\ > nul
+    )
   ) else (
     if %MSVC_VERSION% EQU 7 (
       @copy "%FrameworkSDKDir%\bin\msvcp%MSVC_VERSION%?.dll" %FB_OUTPUT_DIR%\bin\ > nul
