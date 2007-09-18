@@ -590,10 +590,11 @@ bool SCH_thread_enter_check(void)
 
 /* if active thread is not null and thread_id matches the we are the
    active thread */
-	if ((active_thread) && (active_thread->thread_id == ThreadData::getId()))
-		return true;
+	sch_mutex_lock(thread_mutex);
+	const bool ret = ((active_thread) && (active_thread->thread_id == ThreadData::getId()));
+	sch_mutex_unlock(thread_mutex);
 
-	return false;
+	return ret;
 }
 
 
