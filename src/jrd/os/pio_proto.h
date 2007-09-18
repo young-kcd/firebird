@@ -43,6 +43,7 @@ void	PIO_flush(Jrd::jrd_file*);
 void	PIO_force_write(Jrd::jrd_file*, bool, bool);
 ULONG	PIO_get_number_of_pages(const Jrd::jrd_file*, const USHORT);
 void	PIO_header(Jrd::Database*, SCHAR*, int);
+USHORT	PIO_init_data(Jrd::Database*, Jrd::jrd_file*, ISC_STATUS*, ULONG, USHORT);
 Jrd::jrd_file*	PIO_open(Jrd::Database*, const Firebird::PathName&, bool,
 						 const Firebird::PathName&, bool);
 bool	PIO_read(Jrd::jrd_file*, Jrd::BufferDesc*, Ods::pag*, ISC_STATUS*);

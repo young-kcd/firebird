@@ -574,6 +574,86 @@ void PIO_header(Database* dbb, SCHAR * address, int length)
 }
 
 
+USHORT PIO_init_data(Database* dbb, jrd_file* main_file, ISC_STATUS* status_vector, 
+					 ULONG startPage, USHORT initPages)
+{
+/**************************************
+ *
+ *	P I O _ i n i t _ d a t a
+ *
+ **************************************
+ *
+ * Functional description
+ *	Initialize tail of file with zeros
+ *
+ **************************************/
+
+	// we need a class here only to return memory on shutdown and avoid
+	// false memory leak reports
+	static Firebird::Array<char> zero_array(*getDefaultMemoryPool());
+	static char *zero_buff = NULL;
+	const int zero_buf_size = 1024 * 128;
+	if (!zero_buff)
+	{
+		zero_buff = zero_array.getBuffer(zero_buf_size);
+		memset(zero_buff, 0, zero_buf_size);
+	}
+
+	FileExtendLockGuard extLock(NULL, 
+		dbb->dbb_attachments ? main_file->fil_ext_lock : NULL, false);
+
+	// Fake buffer, used in seek_file. Page space ID have no matter there
+	// as we already know file to work with
+	BufferDesc bdb;
+	bdb.bdb_dbb = dbb;
+	bdb.bdb_page = PageNumber(0, startPage);
+
+	OVERLAPPED overlapped, *overlapped_ptr;
+	jrd_file* file = 
+		seek_file(main_file, &bdb, status_vector, &overlapped, &overlapped_ptr);
+
+	if (!file)
+		return 0;
+
+	if (ostype == OS_CHICAGO)
+		file->fil_mutex.leave();
+
+	if (file->fil_min_page + 8 > startPage)
+		return 0;
+
+	USHORT leftPages = initPages;
+	const ULONG initBy = MIN(file->fil_max_page - startPage, leftPages);
+	for (ULONG i = startPage; i < startPage + initBy; )
+	{
+		bdb.bdb_page = PageNumber(0, i);
+		USHORT write_pages = zero_buf_size / dbb->dbb_page_size;
+		if (write_pages > leftPages)
+			write_pages = leftPages;
+
+		seek_file(main_file, &bdb, status_vector, &overlapped, &overlapped_ptr);
+
+		DWORD to_write = (DWORD) write_pages * dbb->dbb_page_size, written;
+
+		if (!WriteFile(file->fil_desc, zero_buff, to_write, &written, overlapped_ptr) ||
+			to_write != written)
+		{
+			if (ostype == OS_CHICAGO)
+				file->fil_mutex.leave();
+
+			nt_error("WriteFile", file, isc_io_write_err, status_vector);
+			break;
+		}
+
+		if (ostype == OS_CHICAGO)
+			file->fil_mutex.leave();
+
+		leftPages -= write_pages;
+		i += write_pages;
+	}
+	return (initPages - leftPages);
+}
+
+
 jrd_file* PIO_open(Database* dbb,
 				   const Firebird::PathName& string,
 				   bool trace_flag,
@@ -1132,7 +1212,7 @@ static jrd_file* setup_file(Database*					dbb,
    under Windows/NT or Chicago */
 // CVC: local variable to all this unit, it means.
 
-	ostype = /*ISC_is_WinNT() ? OS_WINDOWS_NT : */OS_CHICAGO;
+	ostype = ISC_is_WinNT() ? OS_WINDOWS_NT : OS_CHICAGO;
 
 /* Build unique lock string for file and construct lock block */
 

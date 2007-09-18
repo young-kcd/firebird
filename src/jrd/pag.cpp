@@ -320,6 +320,8 @@ const SSHORT CLASS		= CLASS_DARWIN_PPC;
 #endif
 static const char* const SCRATCH = "fb_table_";
 
+static const int MIN_EXTEND_BYTES = 128 * 1024;	// 128KB
+
 // CVC: Since nobody checks the result from this function (strange!), I changed
 // bool to void as the return type but left the result returned as comment.
 void PAG_add_clump(
@@ -793,34 +795,71 @@ PAG PAG_allocate(WIN * window)
 						{
 							if (isODS11_1)
 							{
+								USHORT next_init_pages = 1;
 								// ensure there are space on disk for faked page
 								if (relative_bit + 1 > pip_page->pip_header.reserved)
 								{
-									CCH_must_write(window);
-									try {
-										CCH_RELEASE(tdbb, window);
-									}
-									catch (Firebird::status_exception) 
+									fb_assert(relative_bit == pip_page->pip_header.reserved);
+
+									USHORT init_pages = 1;
+									if (!(dbb->dbb_flags & DBB_no_reserve)) 
 									{
-										// forget about this page as if we never tried to fake it
-										CCH_forget_page(tdbb, window);
+										const int minExtendPages = MIN_EXTEND_BYTES / dbb->dbb_page_size;
+										init_pages = 
+											sequence ? 64 : MIN(pip_page->pip_header.reserved / 16, 64);
+										if (init_pages < minExtendPages)
+											init_pages = 1;
 
-										// normally all page buffers now released by CCH_unwind 
-										// only exception is when TDBB_no_cache_unwind flag is set 
-										if (tdbb->tdbb_flags & TDBB_no_cache_unwind)
-											CCH_RELEASE(tdbb, &pip_window);
-
-										throw;
+										next_init_pages = init_pages;
 									}
 
-									new_page = CCH_fake(tdbb, window, 1);
+									ISC_STATUS_ARRAY status;
+									const ULONG start = 
+										sequence * pageMgr.pagesPerPIP + pip_page->pip_header.reserved;
+
+									THREAD_EXIT();
+									init_pages = PIO_init_data(dbb, pageSpace->file, status, start, init_pages);
+									THREAD_ENTER();
+
+									if (init_pages) {
+										pip_page->pip_header.reserved += init_pages;
+									}
+									else 
+									{
+										// PIO_init_data returns zero - perhaps it is not supported, no space 
+										// left on disk or IO error occured. Try to write one page and handle 
+										// IO errors if any
+										CCH_must_write(window);
+										try {
+											CCH_RELEASE(tdbb, window);
+											pip_page->pip_header.reserved = relative_bit + 1;
+										}
+										catch (Firebird::status_exception) 
+										{
+											// forget about this page as if we never tried to fake it
+											CCH_forget_page(tdbb, window);
+	
+											// normally all page buffers now released by CCH_unwind 
+											// only exception is when TDBB_no_cache_unwind flag is set 
+											if (tdbb->tdbb_flags & TDBB_no_cache_unwind)
+												CCH_RELEASE(tdbb, &pip_window);
+	
+											throw;
+										}
+	
+										new_page = CCH_fake(tdbb, window, 1);
+									}
 									fb_assert(new_page);
 								}
-								if (!(dbb->dbb_flags & DBB_no_reserve)) {
-									// At this point we ensure database has at least pageNum + 1 pages
-									// allocated. To avoid file growth by one page when next page will
-									// be allocated extend file up to pageNum + 2 pages now
-									pageSpace->extend(tdbb, pageNum + 2);
+								if (!(dbb->dbb_flags & DBB_no_reserve)) 
+								{
+									const ULONG initialized = 
+										sequence * pageMgr.pagesPerPIP + pip_page->pip_header.reserved;
+
+									// At this point we ensure database has at least "initialized" pages
+									// allocated. To avoid file growth by few pages when all this space
+									// will be used extend file up to initialized + next_init_pages now
+									pageSpace->extend(tdbb, initialized + next_init_pages);
 								}
 							}
 							break;	/* Found a page and successfully fake-ed it */
@@ -842,10 +881,6 @@ PAG PAG_allocate(WIN * window)
 	*bytes &= ~bit;
 	page_inv_page* pip_page = (page_inv_page*) pip_window.win_buffer;
 
-	if (isODS11_1) {
-		if (pip_page->pip_header.reserved < relative_bit + 1)
-			pip_page->pip_header.reserved = relative_bit + 1;
-	}
 	if (pipMin == relative_bit)
 		pipMin++;
 	pip_page->pip_min = pipMin;
@@ -1098,6 +1133,7 @@ void PAG_format_pip(thread_db* tdbb, PageSpace& pageSpace)
 
 	pages->pip_header.pag_type = pag_pages;
 	pages->pip_min = 4;
+	pages->pip_header.reserved = pages->pip_min - 1;
 	UCHAR* p = pages->pip_bits;
 	int i = dbb->dbb_page_size - OFFSETA(page_inv_page*, pip_bits);
 
@@ -2277,12 +2313,12 @@ bool PageSpace::extend(thread_db* tdbb, const ULONG pageNum)
  * Functional description
  *	Extend database file(s) up to at least pageNum pages. Number of pages to 
  *	extend can't be less than hardcoded value MIN_EXTEND_BYTES and more than
- *	configured value "MaxDatabaseFileGrowth" (both values in bytes).
+ *	configured value "DatabaseGrowthIncrement" (both values in bytes).
  *	
- *	If "MaxDatabaseFileGrowth" is less than MIN_EXTEND_BYTES don't extend file(s)
+ *	If "DatabaseGrowthIncrement" is less than MIN_EXTEND_BYTES then don't 
+ *	extend file(s)
  *
  **************************************/
-	const int MIN_EXTEND_BYTES = 128 * 1024;	// 128KB
 	const int MAX_EXTEND_BYTES = Config::getDatabaseGrowthIncrement();
 
 	if (pageNum < maxPageNumber || MAX_EXTEND_BYTES < MIN_EXTEND_BYTES)
