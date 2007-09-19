@@ -1,3 +1,103 @@
+2007-09-19 03:46  asfernandes
+
+	* firebird2/src/: isql/show.epp (1.123), jrd/pag.cpp (1.143),
+	jrd/os/posix/unix.cpp (1.66), jrd/os/win32/winnt.cpp (1.54):
+
+	Misc
+
+2007-09-18 17:28  hvlad
+
+	* firebird2/src/jrd/os/posix/unix.cpp (1.65):
+
+	Posix implementation of PIO_init_data (for CORE-1469). Commented
+	until verification
+
+2007-09-18 17:26  hvlad
+
+	* firebird2/src/jrd/: pag.cpp (1.142), os/pio_proto.h (1.24),
+	os/win32/winnt.cpp (1.53):
+
+	Implement improvement CORE-1469 : Improve performance of database
+	file growth after CORE-1228 was fixed General and WinNT code parts
+
+2007-09-18 17:10  paul_reeves
+
+	*
+	firebird2/builds/install/arch-specific/win32/BuildExecutableInstall.bat
+	(1.31):
+
+	Don't deploy the MSVC8 C runtimes unless we link dynamically.
+
+2007-09-18 17:09  paul_reeves
+
+	*
+	firebird2/builds/install/arch-specific/win32/FirebirdInstall_20.iss
+	(1.23):
+
+	Switch on support to deploy 32-bit client into <SysWOW64> when
+	installing the 64-bit kits.
+
+2007-09-18 17:06  paul_reeves
+
+	* firebird2/src/utilities/install/: install.cpp (1.11),
+	install_client.cpp (1.10):
+
+	instclient now looks for fbclient in its current working directory,
+	instead of ..\bin
+
+2007-09-18 16:58  hvlad
+
+	* firebird2/src/jrd/jrd.cpp (1.344):
+
+	Correction for fix for bug CORE-1443
+
+2007-09-18 16:50  hvlad
+
+	* firebird2/src/jrd/: jrd.cpp (1.343), pag.cpp (1.141), pag.h
+	(1.15), os/pio.h (1.11), os/win32/winnt.cpp (1.52):
+
+	Fixed bug CORE-1468 : Database corruption possible when database
+	file extension and read\write activity is performed simultaneously
+
+2007-09-18 15:57  hvlad
+
+	* firebird2/src/jrd/sch.cpp (1.42):
+
+	SCH_thread_enter_check was not thread-safe
+
+2007-09-18 14:48  paul_reeves
+
+	* firebird2/builds/win32/msvc8/gbak_embed.vcproj (1.5):
+
+	Minor cleanup
+
+2007-09-18 08:02  robocop
+
+	* firebird2/src/jrd/CharSet.cpp (1.4):
+
+	Totally misc.
+
+2007-09-18 08:01  robocop
+
+	* firebird2/src/isql/show.epp (1.122):
+
+	Adjust the SHOW command for CORE-1261 Here, we don't need to follow
+	the syntax as it's only informative.
+
+2007-09-18 08:00  robocop
+
+	* firebird2/src/isql/extract.epp (1.84):
+
+	Change for fix in CORE-1261: the index name can't be omitted in our
+	current syntax if the USING clause appears. Example:
+
+	CREATE TABLE T (A INTEGER, CONSTRAINT Z UNIQUE (A) USING DESCENDING
+	INDEX Z);
+
+	(The constraint and the index use the same name, but the descending
+	clause forces the using clause and then the index name is
+	mandatory.)
+
 2007-09-17 17:48  dimitr
 
 	* firebird2/src/jrd/why.cpp (1.133):
