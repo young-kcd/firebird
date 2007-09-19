@@ -2420,6 +2420,7 @@ void PageManager::closeAll()
 
 void PageManager::releaseLocks()
 {
+#ifdef WIN_NT
 	for (size_t i = 0; i < pageSpaces.getCount(); i++)
 	{
 		if (pageSpaces[i]->file && pageSpaces[i]->file->fil_ext_lock) {
@@ -2427,6 +2428,7 @@ void PageManager::releaseLocks()
 			pageSpaces[i]->file->fil_ext_lock = NULL;
 		}
 	}
+#endif
 }
 
 USHORT PageManager::getTempPageSpaceID(thread_db* tdbb)
