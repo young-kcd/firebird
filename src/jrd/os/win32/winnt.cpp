@@ -592,12 +592,15 @@ USHORT PIO_init_data(Database* dbb, jrd_file* main_file, ISC_STATUS* status_vect
 	// we need a class here only to return memory on shutdown and avoid
 	// false memory leak reports
 	static Firebird::Array<char> zero_array(*getDefaultMemoryPool());
+	static Firebird::Mutex mtx_zero_buff;
 	static char* zero_buff = NULL;
 	const int zero_buf_size = 1024 * 128;
 	if (!zero_buff)
 	{
+		mtx_zero_buff.enter();
 		zero_buff = zero_array.getBuffer(zero_buf_size);
 		memset(zero_buff, 0, zero_buf_size);
+		mtx_zero_buff.leave();
 	}
 
 	FileExtendLockGuard extLock(NULL, 

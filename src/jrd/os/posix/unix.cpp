@@ -525,12 +525,15 @@ USHORT PIO_init_data(Database* dbb, jrd_file* main_file, ISC_STATUS* status_vect
 	// we need a class here only to return memory on shutdown and avoid
 	// false memory leak reports
 	static Firebird::Array<char> zero_array(*getDefaultMemoryPool());
+	static Firebird::Mutex mtx_zero_buff;
 	static char* zero_buff = NULL;
 	const int zero_buf_size = 1024 * 128;
 	if (!zero_buff)
 	{
+		mtx_zero_buff.enter();
 		zero_buff = zero_array.getBuffer(zero_buf_size);
 		memset(zero_buff, 0, zero_buf_size);
+		mtx_zero_buff.leave();
 	}
 
 	// Fake buffer, used in seek_file. Page space ID have no matter there
@@ -562,22 +565,20 @@ USHORT PIO_init_data(Database* dbb, jrd_file* main_file, ISC_STATUS* status_vect
 		SLONG to_write = write_pages * dbb->dbb_page_size;
 		SLONG written;
 
+		for (int r = 0; r < IO_RETRY; r++) 
 		{
-			for (int r = 0; r < IO_RETRY; r++) 
-			{
-				if (!(file = seek_file(file, bdb, &offset, status_vector)))
-					return false;
+			if (!(file = seek_file(file, bdb, &offset, status_vector)))
+				return false;
 #ifdef PREAD_PWRITE
-				if ((written = pwrite(file->fil_desc, zero_buff, to_write, LSEEK_OFFSET_CAST offset)) == to_write)
-					break;
+			if ((written = pwrite(file->fil_desc, zero_buff, to_write, LSEEK_OFFSET_CAST offset)) == to_write)
+				break;
 #else
-				if ((written = write(file->fil_desc, zero_buff, to_write)) == to_write)
-					break;
-				THD_IO_MUTEX_UNLOCK(file->fil_mutex);
+			if ((written = write(file->fil_desc, zero_buff, to_write)) == to_write)
+				break;
+			THD_IO_MUTEX_UNLOCK(file->fil_mutex);
 #endif
-				if (written == (SLONG) -1 && !SYSCALL_INTERRUPTED(errno))
-					return unix_error("write", file, isc_io_write_err, status_vector);
-			}
+			if (written == (SLONG) -1 && !SYSCALL_INTERRUPTED(errno))
+				return unix_error("write", file, isc_io_write_err, status_vector);
 		}
 
 #ifndef PREAD_PWRITE
