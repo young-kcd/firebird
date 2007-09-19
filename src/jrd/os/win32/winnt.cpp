@@ -110,7 +110,7 @@ void FileExtendLock::release(thread_db* tdbb, bool exclusive)
 class FileExtendLockGuard
 {
 public:
-	FileExtendLockGuard(thread_db* tdbb, FileExtendLock *lock, bool exclusive) :
+	FileExtendLockGuard(thread_db* tdbb, FileExtendLock* lock, bool exclusive) :
 	  m_tdbb(tdbb), m_lock(lock), m_exclusive(exclusive) 
 	{
 		if (exclusive) {
@@ -364,7 +364,7 @@ void PIO_extend(jrd_file* main_file, const ULONG extPages, const USHORT pageSize
 			LARGE_INTEGER newSize; 
 			newSize.QuadPart = (ULONGLONG) (filePages + extendBy) * pageSize;
 
-			if (ostype == OS_CHICAGO) {
+			if (ostype == OS_CHICAGO) {	// WIN95
 				file->fil_mutex.enter();
 			}
 
@@ -385,6 +385,7 @@ void PIO_extend(jrd_file* main_file, const ULONG extPages, const USHORT pageSize
 			if (ostype == OS_CHICAGO) {
 				file->fil_mutex.leave();
 			}
+
 			leftPages -= extendBy;
 		}
 	}
@@ -591,7 +592,7 @@ USHORT PIO_init_data(Database* dbb, jrd_file* main_file, ISC_STATUS* status_vect
 	// we need a class here only to return memory on shutdown and avoid
 	// false memory leak reports
 	static Firebird::Array<char> zero_array(*getDefaultMemoryPool());
-	static char *zero_buff = NULL;
+	static char* zero_buff = NULL;
 	const int zero_buf_size = 1024 * 128;
 	if (!zero_buff)
 	{
@@ -608,7 +609,8 @@ USHORT PIO_init_data(Database* dbb, jrd_file* main_file, ISC_STATUS* status_vect
 	bdb.bdb_dbb = dbb;
 	bdb.bdb_page = PageNumber(0, startPage);
 
-	OVERLAPPED overlapped, *overlapped_ptr;
+	OVERLAPPED overlapped;
+	OVERLAPPED* overlapped_ptr;
 	jrd_file* file = 
 		seek_file(main_file, &bdb, status_vector, &overlapped, &overlapped_ptr);
 
@@ -632,7 +634,8 @@ USHORT PIO_init_data(Database* dbb, jrd_file* main_file, ISC_STATUS* status_vect
 
 		seek_file(main_file, &bdb, status_vector, &overlapped, &overlapped_ptr);
 
-		DWORD to_write = (DWORD) write_pages * dbb->dbb_page_size, written;
+		DWORD to_write = (DWORD) write_pages * dbb->dbb_page_size;
+		DWORD written;
 
 		if (!WriteFile(file->fil_desc, zero_buff, to_write, &written, overlapped_ptr) ||
 			to_write != written)
@@ -650,6 +653,7 @@ USHORT PIO_init_data(Database* dbb, jrd_file* main_file, ISC_STATUS* status_vect
 		leftPages -= write_pages;
 		i += write_pages;
 	}
+
 	return (initPages - leftPages);
 }
 
@@ -1351,4 +1355,3 @@ static bool nt_error(TEXT*	string,
 
 	return true;
 }
-

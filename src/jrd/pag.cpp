@@ -851,6 +851,7 @@ PAG PAG_allocate(WIN * window)
 									}
 									fb_assert(new_page);
 								}
+
 								if (!(dbb->dbb_flags & DBB_no_reserve)) 
 								{
 									const ULONG initialized = 
@@ -858,7 +859,7 @@ PAG PAG_allocate(WIN * window)
 
 									// At this point we ensure database has at least "initialized" pages
 									// allocated. To avoid file growth by few pages when all this space
-									// will be used extend file up to initialized + next_init_pages now
+									// will be used, extend file up to initialized + next_init_pages now
 									pageSpace->extend(tdbb, initialized + next_init_pages);
 								}
 							}
@@ -2420,10 +2421,12 @@ void PageManager::closeAll()
 void PageManager::releaseLocks()
 {
 	for (size_t i = 0; i < pageSpaces.getCount(); i++)
+	{
 		if (pageSpaces[i]->file && pageSpaces[i]->file->fil_ext_lock) {
 			delete pageSpaces[i]->file->fil_ext_lock;
 			pageSpaces[i]->file->fil_ext_lock = NULL;
 		}
+	}
 }
 
 USHORT PageManager::getTempPageSpaceID(thread_db* tdbb)

@@ -525,7 +525,7 @@ USHORT PIO_init_data(Database* dbb, jrd_file* main_file, ISC_STATUS* status_vect
 	// we need a class here only to return memory on shutdown and avoid
 	// false memory leak reports
 	static Firebird::Array<char> zero_array(*getDefaultMemoryPool());
-	static char *zero_buff = NULL;
+	static char* zero_buff = NULL;
 	const int zero_buf_size = 1024 * 128;
 	if (!zero_buff)
 	{
@@ -559,7 +559,8 @@ USHORT PIO_init_data(Database* dbb, jrd_file* main_file, ISC_STATUS* status_vect
 		if (write_pages > leftPages)
 			write_pages = leftPages;
 
-		SLONG to_write = write_pages * dbb->dbb_page_size, written;
+		SLONG to_write = write_pages * dbb->dbb_page_size;
+		SLONG written;
 
 		{
 			for (int r = 0; r < IO_RETRY; r++) 
@@ -586,6 +587,7 @@ USHORT PIO_init_data(Database* dbb, jrd_file* main_file, ISC_STATUS* status_vect
 		leftPages -= write_pages;
 		i += write_pages;
 	}
+
 	return (initPages - leftPages);
 ***/
 }
@@ -1311,4 +1313,3 @@ static int raw_devices_unlink_database (
 	return 0;
 }
 #endif // SUPPORT_RAW_DEVICES
-

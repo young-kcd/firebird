@@ -4612,4 +4612,3 @@ static processing_state show_users()
 		
 	return rc;
 }
-
