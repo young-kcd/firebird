@@ -1,3 +1,28 @@
+2007-09-20 03:46  asfernandes
+
+	* firebird2/src/jrd/unicode_util.cpp (1.21):
+
+	Fixed incorrect handling of unicode surrogates - thanks to Alex
+
+2007-09-19 22:35  hvlad
+
+	* firebird2/src/jrd/cch.cpp (1.172):
+
+	Restore correct error message formating
+
+2007-09-19 14:08  hvlad
+
+	* firebird2/src/jrd/pag.cpp (1.144):
+
+	Fixed compilation on non WIN_NT platforms
+
+2007-09-19 13:56  hvlad
+
+	* firebird2/src/jrd/os/: posix/unix.cpp (1.67), win32/winnt.cpp
+	(1.55):
+
+	Avoid pissible thread-safety problems. Thanks for tip to Adriano
+
 2007-09-19 03:46  asfernandes
 
 	* firebird2/src/: isql/show.epp (1.123), jrd/pag.cpp (1.143),
