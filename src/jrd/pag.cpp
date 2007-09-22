@@ -1284,7 +1284,8 @@ void PAG_init2(USHORT shadow_number)
 	WIN window;
 	SCHAR *temp_buffer = NULL, *temp_page;
 	USHORT file_length, sequence;
-	TEXT *p, *file_name;
+	UCHAR* p;
+	TEXT* file_name;
 	ULONG last_page;
 	struct bdb temp_bdb;
 	SLONG next_page;
@@ -1350,9 +1351,7 @@ void PAG_init2(USHORT shadow_number)
 			if ((shadow_number) && (!file->fil_min_page))
 				CCH_RELEASE(tdbb, &window);
 
-			for (p = reinterpret_cast<TEXT*>(header->hdr_data); 
-				 *p != HDR_end; 
-				 p += 2 + p[1])
+			for (p = header->hdr_data; *p != HDR_end; p += 2 + p[1])
 				switch (*p) {
 				case HDR_file:
 					file_length = p[1];
