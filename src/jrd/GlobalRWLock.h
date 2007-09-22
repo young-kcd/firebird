@@ -86,7 +86,7 @@ struct ObjectOwnerData {
 class GlobalRWLock : public Firebird::PermanentStorage {
 public:
 	GlobalRWLock(thread_db* tdbb, MemoryPool& p, locktype_t lckType, 
-					   size_t lockLen, UCHAR* lockStr, 
+					   size_t lockLen, const UCHAR* lockStr,
 					   lck_owner_t physical_lock_owner = LCK_OWNER_database,
 					   lck_owner_t default_logical_lock_owner = LCK_OWNER_attachment,
 					   bool lock_caching = true);

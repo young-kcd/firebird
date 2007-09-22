@@ -58,7 +58,7 @@
 namespace Jrd {
 
 
-FileExtendLock::FileExtendLock(Firebird::MemoryPool& p, size_t lock_len, UCHAR* lock_string)
+FileExtendLock::FileExtendLock(Firebird::MemoryPool& p, size_t lock_len, const UCHAR* lock_string)
 {
 	thread_db* tdbb = NULL;
 	SET_TDBB(tdbb);

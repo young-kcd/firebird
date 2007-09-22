@@ -88,7 +88,7 @@ class GlobalRWLock;
 class FileExtendLock 
 {
 public:
-	FileExtendLock(Firebird::MemoryPool& p, size_t lock_len, UCHAR* lock_string);
+	FileExtendLock(Firebird::MemoryPool& p, size_t lock_len, const UCHAR* lock_string);
 	~FileExtendLock();
 
 	void lock(thread_db* tdbb, bool exclusive);
