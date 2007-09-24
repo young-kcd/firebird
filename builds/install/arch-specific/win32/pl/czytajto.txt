@@ -1,13 +1,13 @@
 =================================================
-Firebird 2.0.3       (Kompilacja do wersji Win32)
+Firebird 2.0.3       (Wersja Win32)
 =================================================
 
 o Wprowadzenie
 o Docelowi u¿ytkownicy
 o Cechy tego wydania (wszystkie platformy)
-o Naprawione b³êdy tego wydania
+o B³êdy poprawione w tym wydaniu
 o Instalacja
-o Znane b³êdy
+o Znane problemy
 o Zg³aszanie b³êdów
 o Propozycje nowych funkcjonalnoœci
 
@@ -22,22 +22,22 @@ Docelowi u¿ytkownicy
 ====================
 
 Firebird 2.0.3 przeszed³ intensywne testy i jest przeznaczony
-dla szerokiego u¿ytku. Aczkolwiek rekomenduje siê aby
-u¿ytkownicy zachowali nastêpuj¹ce standardowe praktyki przed
-uruchomieniem tej emisji na serwerze produkcyjnym:
+do szerokich zastosowañ produkcyjnych. Aczkolwiek zaleca siê,
+aby u¿ytkownicy zachowali nastêpuj¹ce standardowe praktyki
+przed uruchomieniem tego wydania na serwerze produkcyjnym:
 
- o Proszê siê upewniæ ¿e przeczyta³eœ instalacyjne
-   czytajto i noty emisyjne.
+ o Proszê siê upewniæ, ¿e przeczyta³eœ "czytajto"
+   dotycz¹ce instalacji i informacje o wydaniu.
 
- o Jeœli posiadasz dane, które cenisz pamiêtaj o zrobieniu
-   kopii przez zainstalowaniem tej wersji.
+ o Jeœli posiadasz cenne dane to pamiêtaj o zrobieniu
+   ich kopii, przez zainstalowaniem tej wersji.
 
- o Rekomenduje siê usuniêcie jakichkolwiek wczeœniejszych
-   wersji przed przeprowadzeniem instalacji. Odinstalowanie
+ o Zaleca siê usuniêcie wczeœniejszych wersji serwera
+   przed przeprowadzeniem instalacji. Deinstalacja
    zachowuje pliki konfiguracyjne i pliki logów.
 
- o Rekomuenduje siê przeprowadzenie w³asnych testów
-   w œrodowisku deweloperskim przez uruchomieniem
+ o Zaleca siê przeprowadzenie w³asnych testów
+   w œrodowisku deweloperskim, przez uruchomieniem
    w œrodowisku produkcyjnym.
 
 
@@ -47,60 +47,62 @@ Cechy tego wydania (wszystkie platformy)
 Zobacz doc/Firebird_v2.0.3.ReleaseNotes.pdf w celu uzyskania dodatkowych informacji.
 
 
-Naprawione b³êdy tego wydania (wszystkie platformy)
+B³êdy poprawione w tym wydaniu (wszystkie platformy)
 ===================================================
 
 Zobacz doc/Firebird_v2.0.3.ReleaseNotes.pdf w celu uzyskania dodatkowych informacji.
 
 
-Instalowanie samo uruchamiaj¹cego siê programu
+Instalowanie samouruchamiaj¹cego siê programu
 ==============================================
 
-Proszê uruchomiæ wersje exe programu i przeczytaæ instrukcje towarzysz¹ce
-instalacji, zawarte w kreatorze instalacji
+Proszê uruchomiæ wersje wykonywaln¹ programu i przeczytaæ za³¹czone instrukcje
+instalacji, znajduj¹ce siê w kreatorze instalacji
 
 
-Znane b³êdy
+Znane problemy
 ===========
 
- o Baza danych bezpieczeñstwa zmieni³a siê! Zobacz katalog DOC w celu uzyskania
-   dodatkowych informacji. U¿ytkownicy, którzy chc¹ przenieœæ star¹ bazê
-   Bezpieczeñstwa do nowego formatu mog¹ u¿yæ skryptu, który znajduje siê w katalogu
+ o Baza danych bezpieczeñstwa zosta³a zmieniona! Przejrzyj katalog DOC w celu uzyskania
+   dodatkowych informacji. U¿ytkownicy, którzy chc¹ przenieœæ stary format bazy
+   bezpieczeñstwa do nowego mog¹ u¿yæ skryptu, który znajduje siê w katalogu
    misc/upgrade/security
 
 Zg³aszanie b³êdów
 =================
 
-o Jesteœ pewny, ¿e rozumiesz jak dzia³a Firebird?
+o Jesteœ pewny, ¿e rozumiesz jak dzia³a Firebird ?
 
-  Byæ mo¿e obserwujesz poprawne zachowanie a tak naprawdê masz pytanie
-  o pomoc. W takim wypadku szukaj pomocy na liœcie mailingowej ib-support
+  Byæ mo¿e obserwujesz poprawne zachowanie, a tak naprawdê masz pytanie
+  o pomoc. W takim przypadku szukaj pomocy na liœcie mailingowej ib-support
 
-  Mo¿esz siê zapisaæ tu:
+  Mo¿esz zapisaæ siê tu:
 
-	mailto:firebird-support-subscribe@yahoogroups.com
+    mailto:firebird-support-subscribe@yahoogroups.com
 
 
-o Ci¹gle myœlisz, ¿e to b³¹d?
+o Ci¹gle myœlisz, ¿e to b³¹d ?
 
   SprawdŸ listê Otwartych B³êdów. Mo¿esz j¹ znaleŸæ tu:
 
-	http://tracker.firebirdsql.org/secure/BrowseProject.jspa
+    http://tracker.firebirdsql.org/secure/BrowseProject.jspa
 
 Proszê nie u¿ywaæ trackera w celu uzyskania pomocy technicznej.
-Jeœli masz w¹tpliwoœci to zapisz siê najpierw do listy wsparcia:
+Jeœli masz w¹tpliwoœci, to zapisz siê najpierw na listê wsparcia technicznego:
 
   mailto:firebird-support-subscribe@yahoogroups.com
 
-i zadaj pytanie tam.
+i tam zadawaj pytania.
 
 
 Propozycje nowych funkcjonalnoœci
 ===============================
 
-Przed zg³aszaniem ¿¹dañ nowych funkcjonalnoœci, sprawdŸ bie¿¹c¹ listê
-¿¹dañ. Jest szansa, ¿e ktoœ ju¿ zg³osi³ tak¹ funkcjonalnoœæ. Bie¿¹ca lista
-funkcjonalnoœci znajduje siê tu:
+Przed zg³aszaniem proœby o nowe funkcjonalnoœci serwera, sprawdŸ
+najpierw bie¿¹c¹ listê. Jest szansa, ¿e ktoœ ju¿ zg³osi³
+tak¹ sam¹ proœbê. Bie¿¹ca lista oczekiwanych funkcjonalnoœci
+znajduje siê tu:
 
   http://tracker.firebirdsql.org/secure/CreateIssue!default.jspa
+
 
