@@ -1,4 +1,326 @@
   **************
+  * v2.1 Beta 2
+  **************
+
+    * Bugfix CORE-1470
+        Server crashes with secondary file name > 127 characters
+      Contributor(s):
+        Claudio Valderrama <cvalde at usa.net>
+
+    * Bugfix CORE-1468
+        Database corruption possible when database file extension and read\write activity
+        are performed simultaneously
+      Contributor(s):
+        Vlad Horsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-1467
+        Error 'database shutdown' after canceling statement via MON$STATEMENTS
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-1466
+        Substring of multi-byte BLOBs can fail
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-1465
+        ISQL ignores explicit constraint name when it's confused with an internal, automatic name
+      Contributor(s):
+        Claudio Valderrama <cvalde at usa.net>
+
+    * Bugfix CORE-1457
+        Server crashes attempting to deliver events for the just disconnected session
+      Contributor(s):
+        Vlad Horsun <hvlad at users.sourceforge.net>
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-1456
+        Wrong events delivery in the case of concurrent XNET connections
+      Contributor(s):
+        Vlad Horsun <hvlad at users.sourceforge.net>
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-1452
+        Client library crashes when attempting to process an event received just prior to disconnection
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+        Vlad Horsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-1447
+        Buffer overrun when querying for database info on very long path
+        through isc_database_info() API call
+      Contributor(s):
+        Claudio Valderrama <cvalde at usa.net>
+
+    * Bugfix CORE-1446
+        Problem with UNICODE collations from fbintl when using system ICU
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-1443
+        Embedded engine may hang application on exit if no database access was performed
+      Contributor(s):
+        Vlad Horsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-1441
+        Query cancellation feature cannot interrupt a long fetch
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-1440
+        Dangerous lack of validation for transaction options
+      Contributor(s):
+        Claudio Valderrama <cvalde at usa.net>
+
+    * Bugfix CORE-1436
+        Outer joins don't work properly with the MON$ tables
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-1434
+        Incorrect result with EXECUTE STATEMENT and VARCHAR columns
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-1431
+        Greek characters in cp1251 vs uppercasing
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-1430
+        Access Violation in fbclient.dll if statement prepared and executed right after events was registered
+      Contributor(s):
+        Vlad Horsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-1428
+        Incorrect timestamp substraction in 3 dialect when result is negative number
+      Contributor(s):
+        Vlad Horsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-1419
+        Wrong current timestamp evaluation for selectable procedures
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-1418
+        Races when starting and quickly shutting down blocking AST thread
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-1417
+        Error "Invalid BLOB ID" in IBX insert operation
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-1416
+        Incorrect transaction params order in TPB is accepted without returning an error
+      Contributor(s):
+        Claudio Valderrama <cvalde at usa.net>
+
+    * Bugfix CORE-1408
+        UDF names using reserved words are extracted without double quotes
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-1403
+        Server crashes if a few events are being registered simultaneously
+        by the client connected via XNET
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-1401
+        Global temporary table instance may pick up not all indices
+      Contributor(s):
+        Vlad Horsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-1400
+        GSTAT doesn't support port number in connection string
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-1399
+        GSTAT does not use RemoteServicePort option in firebird.conf
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-1398
+        GSTAT: 'localhost' is case-sensitive in Windows
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-1397
+        Possible vulnerability in the remote server
+      Contributor(s):
+        Vlad Horsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-1395
+        Few problems with domains's check constraints
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-1388
+        Cannot attach to remote service manager if remote engine version is less than 2.0
+      Contributor(s):
+        Vlad Horsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-1384
+        LIKE doesn't work correctly with collations using SPECIALS-FIRST=1
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-1380
+        I/O errors after changing FW for the already attached database
+      Contributor(s):
+        Vlad Horsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-1379
+        Invalid parameter type when using it in CHAR_LENGTH function
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-1378
+        Domain names and charset issues
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-1373
+        Incorrect result of recursive CTE query when recursive member's SELECT list
+        contains expression using self-referenced fields
+      Contributor(s):
+        Vlad Horsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-1372
+        isc_dsql_fetch() called after isc_commit_transaction() doesn't raise an error
+      Contributor(s):
+        Vlad Horsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-1371
+        Execute block fails within execute statement
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-1370
+        Memory leak when using CTE within procedure
+      Contributor(s):
+        Vlad Horsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-1369
+        Downgrade from ODS11.1 misses default values of procedure parameters
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-1361
+        Index operations for global temporary tables are not visible for the active connection
+      Contributor(s):
+        Vlad Horsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-1359
+        Server crashes at the first operation with the monitoring tables
+        if the file system lacks the necessary permissions for the shared-memory file
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-1358
+        Operations with MON$STATEMENTS throw "cannot transliterate" error
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-1349
+        Remote interface doesn't validate the client supplied message length against the message format length
+      Contributor(s):
+        Vlad Horsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-1347
+        Unexpected "cannot transliterate" error
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-1344
+        Error "request depth exceeded" when restoring complex metadata
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-1339
+        Metadata charset upgrade script generates garbage in descriptions
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-1338
+        Error 335544721 when selecting view with round
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-1334
+        Joins with NULL RDB$DB_KEY crash the server
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-1332
+        Put the connection charset in sqlscale of blobs when appropriate
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-1331
+        Charset transliterations don't work with EXECUTE STATEMENT
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-1330
+        Double semaphore locking when query the monitoring tables during long fetches
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-1312
+        A remote attacker can check, if a file is present in the system, running firebird server
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-1261
+        ISQL ignore index and ordering in UNIQUE CONSTRAINT for generate metadate script
+      Contributor(s):
+        Claudio Valderrama <cvalde at usa.net>
+
+    * Improvement CORE-1389
+        Indexed MIN/MAX aggregates produce three index reads instead of the expected one indexed read
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Improvement CORE-1387
+        Add MILLISECONDS handling to EXTRACT, DATEADD and DATEDIFF functions
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Improvement CORE-1386
+        Generated columns
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Improvement CORE-1340
+        Add a scale parameter to the TRUNC function
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * New feature CORE-1381
+        Allow Firebird to not use filesystem cache for database files (on Windows)
+      Contributor(s):
+        Vlad Horsun <hvlad at users.sourceforge.net>
+
+    * New feature CORE-1366
+        French insensitive collation FR_FR_CI_AI
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * New feature CORE-1324
+        Japanese character set CP943C
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * New feature CORE-663
+        EXTRACT(WEEK FROM DATE)
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+  **************
   * v2.1 Beta 1
   **************
 
