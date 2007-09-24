@@ -65,6 +65,7 @@
 #include "../jrd/ods_proto.h"
 #include "../jrd/os/pio_proto.h"
 #include "../jrd/thd.h"
+#include "../common/classes/init.h"
 
 using namespace Jrd;
 
@@ -125,6 +126,10 @@ using namespace Jrd;
 #define MASK		0666
 #endif
 
+#define FCNTL_BROKEN
+// please undefine FCNTL_BROKEN for operating systems,
+// that can successfully change BOTH O_DIRECT and O_SYNC using fcntl()
+
 static jrd_file* seek_file(jrd_file*, BufferDesc*, UINT64 *, ISC_STATUS *);
 static jrd_file* setup_file(Database*, const Firebird::PathName&, int);
 static bool unix_error(TEXT*, const jrd_file*, ISC_STATUS, ISC_STATUS*);
@@ -137,6 +142,7 @@ static bool raw_devices_check_file (const Firebird::PathName&);
 static bool raw_devices_validate_database (int, const Firebird::PathName&);
 static int  raw_devices_unlink_database (const Firebird::PathName&);
 #endif
+static int	openFile(const char*, bool, bool, bool);
 
 #ifdef hpux
 union fcntlun {
@@ -329,7 +335,30 @@ void PIO_flush(jrd_file* main_file)
 }
 
 
-void PIO_force_write(jrd_file* file, bool flag, bool notUseFSCache)
+static bool maybe_close_file(int& desc)
+{
+/**************************************
+ *
+ *	M a y b e C l o s e F i l e
+ *
+ **************************************
+ *
+ * Functional description
+ *	If the file is open, close it.
+ *
+ **************************************/
+
+	if (desc >= 0)
+	{
+		close(desc);
+		desc = -1;
+		return true;
+	}
+	return false;
+}
+
+
+void PIO_force_write(jrd_file* file, bool forcedWrites, bool notUseFSCache)
 {
 /**************************************
  *
@@ -341,38 +370,48 @@ void PIO_force_write(jrd_file* file, bool flag, bool notUseFSCache)
  *	Set (or clear) force write, if possible, for the database.
  *
  **************************************/
-#ifdef hpux
-	union fcntlun control;
-#else
-	int control;
-#endif
 
 /* Since all SUPERSERVER_V2 database and shadow I/O is synchronous, this
    is a no-op. */
 
 #ifndef SUPERSERVER_V2
+	const bool oldForce = (file->fil_flags & FIL_force_write) != 0;
+	const bool oldNotUseCache = (file->fil_flags & FIL_no_fs_cache) != 0;
+
+	if (forcedWrites != oldForce || notUseFSCache != oldNotUseCache)
+	{
+
 #ifdef hpux
-	control.val = (flag) ? SYNC : NULL;
+		union fcntlun control;
+		control.val = (forcedWrites) ? SYNC : NULL ;
 #else
-	control = (flag) ? SYNC : 0;
+		const int control = (forcedWrites ? SYNC : 0) | (notUseFSCache ? O_DIRECT : 0);
 #endif
 
-	if (fcntl(file->fil_desc, F_SETFL, control) == -1)
-	{
-		ERR_post(isc_io_error,
-				 isc_arg_string, "fcntl SYNC",
-				 isc_arg_cstring, file->fil_length,
-				 ERR_string(file->fil_string, file->fil_length), isc_arg_gds,
-				 isc_io_access_err, isc_arg_unix, errno, 0);
-	}
-	else 
-	{
-		if (flag) {
-			file->fil_flags |= FIL_force_write;
+#ifndef FCNTL_BROKEN
+		if (fcntl(file->fil_desc, F_SETFL, control) == -1)
+		{
+			ERR_post(isc_io_error,
+					 isc_arg_string, "fcntl() SYNC/DIRECT",
+					 isc_arg_cstring, file->fil_length,
+					 ERR_string(file->fil_string, file->fil_length), isc_arg_gds,
+					 isc_io_access_err, isc_arg_unix, errno, 0);
 		}
-		else {
-			file->fil_flags &= ~FIL_force_write;
+#else //FCNTL_BROKEN
+		maybe_close_file(file->fil_desc);
+		file->fil_desc = openFile(file->fil_string, forcedWrites, 
+								  notUseFSCache, file->fil_flags & FIL_readonly);
+		if (file->fil_desc == -1)
+		{
+			ERR_post(isc_io_error, isc_arg_string, "re open() for SYNC/DIRECT",
+					 isc_arg_cstring, file->fil_length, ERR_string(file->fil_string, file->fil_length),
+					 isc_arg_gds, isc_io_open_err, isc_arg_unix, errno, 0);
 		}
+#endif //FCNTL_BROKEN
+
+		file->fil_flags &= ~(FIL_force_write | FIL_no_fs_cache);
+		file->fil_flags |= (forcedWrites ? FIL_force_write : 0) | 
+						   (notUseFSCache ? FIL_no_fs_cache : 0);
 	}
 #endif
 }
@@ -504,6 +543,31 @@ void PIO_header(Database* dbb, SCHAR * address, int length)
 #endif
 }
 
+namespace {
+	// we need a class here only to return memory on shutdown and avoid
+	// false memory leak reports
+	static const int ZERO_BUF_SIZE = 1024 * 128;
+
+	class HugeStaticBuffer 
+	{
+	public:
+		HugeStaticBuffer(MemoryPool& p)
+			: zeroArray(p), 
+			zeroBuff(zeroArray.getBuffer(ZERO_BUF_SIZE)) 
+		{
+			memset(zeroBuff, 0, ZERO_BUF_SIZE);
+		}
+
+		const char* get() { return zeroBuff; }
+
+	private:
+		Firebird::Array<char> zeroArray;
+		char* zeroBuff;
+	};
+
+	static Firebird::InitInstance<HugeStaticBuffer> zeros;
+}
+
 
 USHORT PIO_init_data(Database* dbb, jrd_file* main_file, ISC_STATUS* status_vector, 
 					 ULONG startPage, USHORT initPages)
@@ -518,23 +582,6 @@ USHORT PIO_init_data(Database* dbb, jrd_file* main_file, ISC_STATUS* status_vect
  *	Initialize tail of file with zeros
  *
  **************************************/
-	return 0;
-
-	// commented until verification
-/***
-	// we need a class here only to return memory on shutdown and avoid
-	// false memory leak reports
-	static Firebird::Array<char> zero_array(*getDefaultMemoryPool());
-	static Firebird::Mutex mtx_zero_buff;
-	static char* zero_buff = NULL;
-	const int zero_buf_size = 1024 * 128;
-	if (!zero_buff)
-	{
-		mtx_zero_buff.enter();
-		zero_buff = zero_array.getBuffer(zero_buf_size);
-		memset(zero_buff, 0, zero_buf_size);
-		mtx_zero_buff.leave();
-	}
 
 	// Fake buffer, used in seek_file. Page space ID have no matter there
 	// as we already know file to work with
@@ -545,7 +592,7 @@ USHORT PIO_init_data(Database* dbb, jrd_file* main_file, ISC_STATUS* status_vect
 	UINT64 bytes, offset;
 	SignalInhibit siHolder;
 
-	jrd_file* file = seek_file(main_file, bdb, &offset, status_vector);
+	jrd_file* file = seek_file(main_file, &bdb, &offset, status_vector);
 
 	if (!file)
 		return 0;
@@ -558,7 +605,7 @@ USHORT PIO_init_data(Database* dbb, jrd_file* main_file, ISC_STATUS* status_vect
 	for (ULONG i = startPage; i < startPage + initBy; )
 	{
 		bdb.bdb_page = PageNumber(0, i);
-		USHORT write_pages = zero_buf_size / dbb->dbb_page_size;
+		USHORT write_pages = ZERO_BUF_SIZE / dbb->dbb_page_size;
 		if (write_pages > leftPages)
 			write_pages = leftPages;
 
@@ -567,13 +614,13 @@ USHORT PIO_init_data(Database* dbb, jrd_file* main_file, ISC_STATUS* status_vect
 
 		for (int r = 0; r < IO_RETRY; r++) 
 		{
-			if (!(file = seek_file(file, bdb, &offset, status_vector)))
+			if (!(file = seek_file(file, &bdb, &offset, status_vector)))
 				return false;
 #ifdef PREAD_PWRITE
-			if ((written = pwrite(file->fil_desc, zero_buff, to_write, LSEEK_OFFSET_CAST offset)) == to_write)
+			if ((written = pwrite(file->fil_desc, zeros().get(), to_write, LSEEK_OFFSET_CAST offset)) == to_write)
 				break;
 #else
-			if ((written = write(file->fil_desc, zero_buff, to_write)) == to_write)
+			if ((written = write(file->fil_desc, zeros().get(), to_write)) == to_write)
 				break;
 			THD_IO_MUTEX_UNLOCK(file->fil_mutex);
 #endif
@@ -590,7 +637,41 @@ USHORT PIO_init_data(Database* dbb, jrd_file* main_file, ISC_STATUS* status_vect
 	}
 
 	return (initPages - leftPages);
-***/
+}
+
+
+static int openFile(const char* name, bool forcedWrites, bool notUseFSCache, bool readOnly)
+{
+/**************************************
+ *
+ *	o p e n F i l e
+ *
+ **************************************
+ *
+ * Functional description
+ *	Open a file with appropriate flags.
+ *
+ **************************************/
+
+	int flag = O_BINARY | (readOnly ? O_RDONLY : O_RDWR);
+#ifdef SUPERSERVER_V2
+	flag |= SYNC;
+	// what to do with O_DIRECT here ?
+#else
+	if (forcedWrites)	flag |= SYNC;
+	if (notUseFSCache)	flag |= O_DIRECT;
+#endif
+
+	for (int i = 0; i < IO_RETRY; i++)
+	{
+		int desc = open(name, flag);
+		if (desc != -1)
+			return desc;
+		if (!SYSCALL_INTERRUPTED(errno))
+			break;
+	}
+
+	return -1;
 }
 
 
@@ -610,30 +691,15 @@ jrd_file* PIO_open(Database* dbb,
  *	Open a database file.
  *
  **************************************/
-	int desc, flag;
 	const TEXT* ptr = (string.hasData() ? string : file_name).c_str();
-
-#ifdef SUPERSERVER_V2
-	flag = SYNC | O_RDWR | O_BINARY;
-#else
-	flag = O_RDWR | O_BINARY;
-#endif
-
-	for (int i = 0; i < IO_RETRY; i++)
-	{
-		if ((desc = open(ptr, flag)) != -1)
-			break;
-		if (!SYSCALL_INTERRUPTED(errno))
-			break;
-	}
+	int desc = openFile(ptr, false, false, false);
 
 	if (desc == -1) {
 		/* Try opening the database file in ReadOnly mode. The database file could
 		 * be on a RO medium (CD-ROM etc.). If this fileopen fails, return error.
 		 */
-		flag &= ~O_RDWR;
-		flag |= O_RDONLY;
-		if ((desc = open(ptr, flag)) == -1) {
+		desc = openFile(ptr, false, false, true);
+		if (desc == -1) {
 			ERR_post(isc_io_error,
 					 isc_arg_string, "open",
 					 isc_arg_cstring, file_name.length(), ERR_cstring(file_name),
