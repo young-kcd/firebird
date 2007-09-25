@@ -2,6 +2,11 @@
   * v2.1 Beta 2
   **************
 
+    * Bugfix CORE-1476
+        Forced writes do not work on Linux
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
     * Bugfix CORE-1470
         Server crashes with secondary file name > 127 characters
       Contributor(s):
