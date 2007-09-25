@@ -672,6 +672,7 @@ jrd_req* EXE_find_request(thread_db* tdbb, jrd_req* request, bool validate)
 	}
 	clone->req_attachment = tdbb->tdbb_attachment;
 	clone->req_stats.setParent(&tdbb->tdbb_attachment->att_stats);
+	clone->req_stats.reset();
 	clone->req_flags |= req_in_use;
 	dbb->dbb_mutexes[DBB_MUTX_clone].leave();
 	return clone;

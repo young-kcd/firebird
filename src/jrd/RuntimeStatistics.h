@@ -61,6 +61,7 @@ public:
 
 	void setParent(RuntimeStatistics*);
 	SINT64 getValue(size_t) const;
+	void reset();
 
 	static void bumpValue(thread_db*, size_t);
 

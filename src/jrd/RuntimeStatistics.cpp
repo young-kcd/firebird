@@ -56,6 +56,11 @@ SINT64 RuntimeStatistics::getValue(size_t index) const
 	return values[index];
 }
 
+void RuntimeStatistics::reset()
+{
+	memset(values.begin(), 0, values.getCount() * sizeof(SINT64));
+}
+
 void RuntimeStatistics::bumpValue(thread_db* tdbb, size_t index)
 {
 	fb_assert(tdbb);
