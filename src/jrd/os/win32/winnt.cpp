@@ -50,86 +50,42 @@
 #include "../jrd/lck_proto.h"
 #include "../jrd/mov_proto.h"
 #include "../jrd/os/pio_proto.h"
-#include "../jrd/GlobalRWLock.h"
+#include "../common/classes/init.h"
 
 #include <windows.h>
 
 namespace Jrd {
 
-FileExtendLock::FileExtendLock(Firebird::MemoryPool& p, size_t lock_len, const UCHAR* lock_string)
-{
-	thread_db* tdbb = NULL;
-	SET_TDBB(tdbb);
-
-	// hvlad: logical lock owner better would be a thread, but this is not
-	// implemented currently. Fortunately only place when we need an exclusive
-	// lock is PIO_extend and it always called with existing attachment
-	m_lock = FB_NEW(p) GlobalRWLock(tdbb, p, LCK_file_extend, 
-		lock_len, lock_string, 
-		LCK_OWNER_database, LCK_OWNER_attachment, true);
-}
-
-FileExtendLock::~FileExtendLock()
-{
-	delete m_lock;
-}
-
-void FileExtendLock::lock(thread_db* tdbb, bool exclusive)
-{
-	const bool in_engine = SCH_thread_enter_check();
-	if (!in_engine)
-		THREAD_ENTER();
-
-	SET_TDBB(tdbb);
-	fb_assert(tdbb->tdbb_attachment);
-
-	m_lock->lock(tdbb, exclusive ? LCK_write : LCK_read, LCK_WAIT);
-
-	if (!in_engine)
-		THREAD_EXIT();
-}
-
-void FileExtendLock::release(thread_db* tdbb, bool exclusive)
-{
-	const bool in_engine = SCH_thread_enter_check();
-	if (!in_engine)
-		THREAD_ENTER();
-
-	SET_TDBB(tdbb);
-	fb_assert(tdbb->tdbb_attachment);
-
-	m_lock->unlock(tdbb, exclusive ? LCK_write : LCK_read);
-
-	if (!in_engine)
-		THREAD_EXIT();
-}
-
-
 class FileExtendLockGuard
 {
 public:
-	FileExtendLockGuard(thread_db* tdbb, FileExtendLock* lock, bool exclusive) :
-	  m_tdbb(tdbb), m_lock(lock), m_exclusive(exclusive) 
+	FileExtendLockGuard(Firebird::RWLock* lock, bool exclusive) :
+	  m_lock(lock), m_exclusive(exclusive) 
 	{
-		if (exclusive) {
+		if (m_exclusive) {
 			fb_assert(m_lock);
 		}
 		if (m_lock) {
-			m_lock->lock(m_tdbb, m_exclusive);
+			if (m_exclusive)
+				m_lock->beginWrite();
+			else
+				m_lock->beginRead();
 		}
 	}
 
 	~FileExtendLockGuard()
 	{
 		if (m_lock) {
-			m_lock->release(m_tdbb, m_exclusive);
+			if (m_exclusive)
+				m_lock->endWrite();
+			else
+				m_lock->endRead();
 		}
 	}
 
 private:
-	thread_db*		m_tdbb;
-	FileExtendLock*	m_lock;
-	bool			m_exclusive;
+	Firebird::RWLock*	m_lock;
+	bool				m_exclusive;
 };
 
 
@@ -337,14 +293,19 @@ void PIO_extend(jrd_file* main_file, const ULONG extPages, const USHORT pageSize
 	const DWORD INVALID_SET_FILE_POINTER = 0xFFFFFFFF;
 #endif
 
-	// hvlad: prevent other threads from read\write changing file pointer
+	// hvlad: prevent other reading\writing threads from changing file pointer.
+	// As we open file without FILE_FLAG_OVERLAPPED, ReadFile\WriteFile calls
+	// will change file pointer we set here and file truncation instead of file
+	// extension will occurs.
 	// It solved issue CORE-1468 (database file corruption when file extension 
 	// and read\write activity performed simultaneously)
+
+	// if file have no extend lock it is better to not extend file than corrupt it
 	if (!main_file->fil_ext_lock)
 		return;
 
 	ThreadExit teHolder;
-	FileExtendLockGuard extLock(NULL, main_file->fil_ext_lock, true);
+	FileExtendLockGuard extLock(main_file->fil_ext_lock, true);
 
 	ULONG leftPages = extPages;
 	for (jrd_file* file = main_file; file && leftPages; file = file->fil_next)
@@ -571,6 +532,31 @@ void PIO_header(Database* dbb, SCHAR * address, int length)
 	}
 }
 
+namespace {
+	// we need a class here only to return memory on shutdown and avoid
+	// false memory leak reports
+	static const int ZERO_BUF_SIZE = 1024 * 128;
+
+	class HugeStaticBuffer 
+	{
+	public:
+		HugeStaticBuffer(MemoryPool& p)
+			: zeroArray(p), 
+			zeroBuff(zeroArray.getBuffer(ZERO_BUF_SIZE)) 
+		{
+			memset(zeroBuff, 0, ZERO_BUF_SIZE);
+		}
+
+		const char* get() { return zeroBuff; }
+
+	private:
+		Firebird::Array<char> zeroArray;
+		char* zeroBuff;
+	};
+
+	static Firebird::InitInstance<HugeStaticBuffer> zeros;
+}
+
 
 USHORT PIO_init_data(Database* dbb, jrd_file* main_file, ISC_STATUS* status_vector, 
 					 ULONG startPage, USHORT initPages)
@@ -586,23 +572,10 @@ USHORT PIO_init_data(Database* dbb, jrd_file* main_file, ISC_STATUS* status_vect
  *
  **************************************/
 
-	// we need a class here only to return memory on shutdown and avoid
-	// false memory leak reports
-	static Firebird::Array<char> zero_array(*getDefaultMemoryPool());
-	static Firebird::Mutex mtx_zero_buff;
-	static char* zero_buff = NULL;
-	const int zero_buf_size = 1024 * 128;
-	if (!zero_buff)
-	{
-		mtx_zero_buff.enter();
-		zero_buff = zero_array.getBuffer(zero_buf_size);
-		memset(zero_buff, 0, zero_buf_size);
-		mtx_zero_buff.leave();
-	}
+	const char* zero_buff = zeros().get();
 
 	ThreadExit teHolder;
-	FileExtendLockGuard extLock(NULL, 
-		dbb->dbb_attachments ? main_file->fil_ext_lock : NULL, false);
+	FileExtendLockGuard extLock(main_file->fil_ext_lock, false);
 
 	// Fake buffer, used in seek_file. Page space ID have no matter there
 	// as we already know file to work with
@@ -629,7 +602,7 @@ USHORT PIO_init_data(Database* dbb, jrd_file* main_file, ISC_STATUS* status_vect
 	for (ULONG i = startPage; i < startPage + initBy; )
 	{
 		bdb.bdb_page = PageNumber(0, i);
-		USHORT write_pages = zero_buf_size / dbb->dbb_page_size;
+		USHORT write_pages = ZERO_BUF_SIZE / dbb->dbb_page_size;
 		if (write_pages > leftPages)
 			write_pages = leftPages;
 
@@ -757,8 +730,7 @@ bool PIO_read(jrd_file* file, BufferDesc* bdb, Ods::pag* page, ISC_STATUS* statu
 	const DWORD size = dbb->dbb_page_size;
 
 	ThreadExit teHolder;
-	FileExtendLockGuard extLock(NULL, 
-		dbb->dbb_attachments ? file->fil_ext_lock : NULL, false);
+	FileExtendLockGuard extLock(file->fil_ext_lock, false);
 
 	OVERLAPPED overlapped, *overlapped_ptr;
 	if (!(file = seek_file(file, bdb, status_vector, &overlapped, &overlapped_ptr)))
@@ -983,8 +955,7 @@ bool PIO_write(jrd_file* file, BufferDesc* bdb, Ods::pag* page, ISC_STATUS* stat
 	const DWORD size = dbb->dbb_page_size;
 
 	ThreadExit teHolder;
-	FileExtendLockGuard extLock(NULL, 
-		dbb->dbb_attachments ? file->fil_ext_lock : NULL, false);
+	FileExtendLockGuard extLock(file->fil_ext_lock, false);
 
 	file = seek_file(file, bdb, status_vector, &overlapped,
 				   &overlapped_ptr);
@@ -1252,8 +1223,7 @@ static jrd_file* setup_file(Database*					dbb,
 	l = p - lock_string;
 	fb_assert(l <= sizeof(lock_string)); // In case we continue adding information.
 
-	file->fil_ext_lock = FB_NEW(*dbb->dbb_permanent) 
-		FileExtendLock(*dbb->dbb_permanent, l, lock_string);
+	file->fil_ext_lock = FB_NEW(*dbb->dbb_permanent) Firebird::RWLock();
 
 	Lock* lock = FB_NEW_RPT(*dbb->dbb_permanent, l) Lock;
 	dbb->dbb_lock = lock;
