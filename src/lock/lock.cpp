@@ -2702,7 +2702,7 @@ static LBL find_lock(
 	for (USHORT l = 0; l < length; l++) {
 		if (!(l & 3))
 			p = (UCHAR *) &hash_value;
-		*p++ = *q++;
+		*p++ += *q++;
 	}
 	} // scope
 
