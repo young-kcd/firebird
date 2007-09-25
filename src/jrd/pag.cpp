@@ -817,9 +817,7 @@ PAG PAG_allocate(WIN * window)
 									const ULONG start = 
 										sequence * pageMgr.pagesPerPIP + pip_page->pip_header.reserved;
 
-									THREAD_EXIT();
 									init_pages = PIO_init_data(dbb, pageSpace->file, status, start, init_pages);
-									THREAD_ENTER();
 
 									if (init_pages) {
 										pip_page->pip_header.reserved += init_pages;
@@ -2341,8 +2339,6 @@ bool PageSpace::extend(thread_db* tdbb, const ULONG pageNum)
 		extPages = MIN(MAX(maxPageNumber / 16, minExtendPages), maxExtendPages);
 		extPages = MAX(reqPages, extPages);
 
-		THREAD_EXIT();
-
 		while (true)
 		{
 			try 
@@ -2359,8 +2355,6 @@ bool PageSpace::extend(thread_db* tdbb, const ULONG pageNum)
 				}
 				else 
 				{
-					THREAD_ENTER();
-
 					gds__log("Error extending file \"%s\" by %lu page(s).\nCurrently allocated %lu pages, requested page number %lu", 
 						file->fil_string, extPages, maxPageNumber, pageNum);
 					return false;
@@ -2368,7 +2362,6 @@ bool PageSpace::extend(thread_db* tdbb, const ULONG pageNum)
 			}
 		}
 
-		THREAD_ENTER();
 		maxPageNumber = 0; 
 	}
 	return true;

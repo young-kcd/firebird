@@ -981,10 +981,6 @@ void CCH_fetch_page(
 		NBAK_TRACE(("Reading page %d, state=%d, diff page=%d", bdb->bdb_page, bak_state, diff_page));
 	}
 
-#ifdef SUPERSERVER
-	THREAD_EXIT();
-#endif
-
 	// In merge mode, if we are reading past beyond old end of file and page is in .delta file
 	// then we maintain actual page in difference file. Always read it from there.
 	if (isTempPage || bak_state == nbak_state_normal || !diff_page) 
@@ -996,9 +992,6 @@ void CCH_fetch_page(
 			if (isTempPage || !read_shadow) {
 				break;
 			}
-#ifdef SUPERSERVER
-			THREAD_ENTER();
-#endif
 			if (!CCH_rollover_to_shadow(dbb, file, false)) {
 				PAGE_LOCK_RELEASE(bdb->bdb_lock);
 				if (database_locked) {
@@ -1023,9 +1016,6 @@ void CCH_fetch_page(
 					CCH_unwind(tdbb, true);
 				}
 			}
-#ifdef SUPERSERVER
-			THREAD_EXIT();
-#endif
 		}
 	}
 	else
@@ -1033,9 +1023,6 @@ void CCH_fetch_page(
 		NBAK_TRACE(("Reading page %d, state=%d, diff page=%d from DIFFERENCE", 
 			bdb->bdb_page, bak_state, diff_page));
 		if (!dbb->dbb_backup_manager->read_difference(tdbb, diff_page, page)) {
-#ifdef SUPERSERVER
-			THREAD_ENTER();
-#endif
 			PAGE_LOCK_RELEASE(bdb->bdb_lock);
 			if (database_locked) {
 				dbb->dbb_backup_manager->unlock_shared_database(tdbb);
@@ -1053,9 +1040,6 @@ void CCH_fetch_page(
 				if (!read_shadow) {
 					break;
 				}
-#ifdef SUPERSERVER
-				THREAD_ENTER();
-#endif
 				if (!CCH_rollover_to_shadow(dbb, file, false)) {
 					PAGE_LOCK_RELEASE(bdb->bdb_lock);
 					if (database_locked) {
@@ -1079,17 +1063,10 @@ void CCH_fetch_page(
 						CCH_unwind(tdbb, true);
 					}
 				}
-#ifdef SUPERSERVER
-				THREAD_EXIT();
-#endif
 			}
 		}
 	}
 	
-#ifdef SUPERSERVER
-	THREAD_ENTER();
-#endif
-
 	if (database_locked) {
 		dbb->dbb_backup_manager->unlock_shared_database(tdbb);
 		database_locked = false;
@@ -5862,10 +5839,8 @@ static void prefetch_epilogue(Prefetch* prefetch, ISC_STATUS* status_vector)
 		return;
 	}
 
-	THREAD_EXIT();
 	prefetch->prf_piob.piob_wait = TRUE;
 	const bool async_status = PIO_status(&prefetch->prf_piob, status_vector);
-	THREAD_ENTER();
 
 /* If there was an I/O error release all buffer latches acquired
    for the prefetch request. */
@@ -5961,12 +5936,10 @@ static void prefetch_io(Prefetch* prefetch, ISC_STATUS* status_vector)
 			ISC_event_post(dbb->dbb_reader_event);
 		}
 
-		THREAD_EXIT();
 		const bool async_status =
 			PIO_read_ahead(dbb, prefetch->prf_start_page,
 						   prefetch->prf_io_buffer, prefetch->prf_page_count,
 						   &prefetch->prf_piob, status_vector);
-		THREAD_ENTER();
 		if (!async_status) {
 			BufferDesc** next_bdb = prefetch->prf_bdbs;
 			for (USHORT i = 0; i < prefetch->prf_max_prefetch; i++) {
@@ -6649,15 +6622,9 @@ static bool write_page(
 			if (!isTempPage && (backup_state == nbak_state_stalled ||
 					backup_state == nbak_state_merge) ) 
 			{
-#ifdef SUPERSERVER
-				THREAD_EXIT();
-#endif
 				const bool res = 
 					dbb->dbb_backup_manager->write_difference(status, 
 						bdb->bdb_difference_page, bdb->bdb_buffer);
-#ifdef SUPERSERVER
-				THREAD_ENTER();
-#endif
 				if (!res) 
 				{
 					bdb->bdb_flags |= BDB_io_error;
@@ -6674,29 +6641,17 @@ static bool write_page(
 			}
 			else {
 				// We need to write our pages to main database files
-#ifdef SUPERSERVER
-				THREAD_EXIT();
-#endif
 				jrd_file* file = pageSpace->file;
 				while (!PIO_write(file, bdb, page, status)) {
-#ifdef SUPERSERVER
-					THREAD_ENTER();
-#endif
 					if (isTempPage || !CCH_rollover_to_shadow(dbb, file, inAst))
 					{
 						bdb->bdb_flags |= BDB_io_error;
 						dbb->dbb_flags |= DBB_suspend_bgio;
 						return false;
 					}
-#ifdef SUPERSERVER
-					THREAD_EXIT();
-#endif
 					file = pageSpace->file;
 				}
 
-#ifdef SUPERSERVER
-				THREAD_ENTER();
-#endif
 				if (bdb->bdb_page == HEADER_PAGE_NUMBER) {
 					dbb->dbb_last_header_write =
 						((header_page*) page)->hdr_next_transaction;

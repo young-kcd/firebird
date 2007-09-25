@@ -51,12 +51,10 @@
 #include "../jrd/mov_proto.h"
 #include "../jrd/os/pio_proto.h"
 #include "../jrd/GlobalRWLock.h"
-#include "../jrd/thread_proto.h"
 
 #include <windows.h>
 
 namespace Jrd {
-
 
 FileExtendLock::FileExtendLock(Firebird::MemoryPool& p, size_t lock_len, const UCHAR* lock_string)
 {
@@ -342,11 +340,10 @@ void PIO_extend(jrd_file* main_file, const ULONG extPages, const USHORT pageSize
 	// hvlad: prevent other threads from read\write changing file pointer
 	// It solved issue CORE-1468 (database file corruption when file extension 
 	// and read\write activity performed simultaneously)
-	// It looks like a Windows bug as all our ReadFile\WriteFile calls used
-	// overlapped to set read\write operation offset not touching file pointer
 	if (!main_file->fil_ext_lock)
 		return;
 
+	ThreadExit teHolder;
 	FileExtendLockGuard extLock(NULL, main_file->fil_ext_lock, true);
 
 	ULONG leftPages = extPages;
@@ -603,6 +600,7 @@ USHORT PIO_init_data(Database* dbb, jrd_file* main_file, ISC_STATUS* status_vect
 		mtx_zero_buff.leave();
 	}
 
+	ThreadExit teHolder;
 	FileExtendLockGuard extLock(NULL, 
 		dbb->dbb_attachments ? main_file->fil_ext_lock : NULL, false);
 
@@ -758,6 +756,7 @@ bool PIO_read(jrd_file* file, BufferDesc* bdb, Ods::pag* page, ISC_STATUS* statu
 	Database* dbb = bdb->bdb_dbb;
 	const DWORD size = dbb->dbb_page_size;
 
+	ThreadExit teHolder;
 	FileExtendLockGuard extLock(NULL, 
 		dbb->dbb_attachments ? file->fil_ext_lock : NULL, false);
 
@@ -840,6 +839,8 @@ bool PIO_read_ahead(Database*		dbb,
  *
  **************************************/
 	OVERLAPPED overlapped, *overlapped_ptr;
+
+	ThreadExit teHolder;
 
 /* If an I/O status block was passed the caller wants to
    queue an asynchronous I/O. */
@@ -938,6 +939,8 @@ bool PIO_status(phys_io_blk* piob, ISC_STATUS* status_vector)
  *
  **************************************/
 
+	ThreadExit teHolder;
+
 	if (!(piob->piob_flags & PIOB_success)) {
 		if (piob->piob_flags & PIOB_error) {
 			return false;
@@ -979,6 +982,7 @@ bool PIO_write(jrd_file* file, BufferDesc* bdb, Ods::pag* page, ISC_STATUS* stat
 	Database*   dbb  = bdb->bdb_dbb;
 	const DWORD size = dbb->dbb_page_size;
 
+	ThreadExit teHolder;
 	FileExtendLockGuard extLock(NULL, 
 		dbb->dbb_attachments ? file->fil_ext_lock : NULL, false);
 

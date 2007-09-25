@@ -590,6 +590,8 @@ USHORT PIO_init_data(Database* dbb, jrd_file* main_file, ISC_STATUS* status_vect
 	bdb.bdb_page = PageNumber(0, startPage);
 
 	UINT64 bytes, offset;
+
+	ThreadExit teHolder;
 	SignalInhibit siHolder;
 
 	jrd_file* file = seek_file(main_file, &bdb, &offset, status_vector);
@@ -763,10 +765,12 @@ bool PIO_read(jrd_file* file, BufferDesc* bdb, Ods::pag* page, ISC_STATUS* statu
 	int i;
 	UINT64 bytes, offset;
 
-	SignalInhibit siHolder;
-
-	if (file->fil_desc == -1)
+	if (file->fil_desc == -1) {
 		return unix_error("read", file, isc_io_read_err, status_vector);
+	}
+
+	ThreadExit teHolder;
+	SignalInhibit siHolder;
 
 	Database* dbb = bdb->bdb_dbb;
 	const UINT64 size = dbb->dbb_page_size;
@@ -792,8 +796,7 @@ bool PIO_read(jrd_file* file, BufferDesc* bdb, Ods::pag* page, ISC_STATUS* statu
 			THD_IO_MUTEX_UNLOCK(file->fil_mutex);
 #endif
 			if (bytes == -1U && !SYSCALL_INTERRUPTED(errno))
-				return unix_error("read", file, isc_io_read_err,
-								  status_vector);
+				return unix_error("read", file, isc_io_read_err, status_vector);
 		}
 	}
 	else
@@ -811,8 +814,7 @@ bool PIO_read(jrd_file* file, BufferDesc* bdb, Ods::pag* page, ISC_STATUS* statu
 			THD_IO_MUTEX_UNLOCK(file->fil_mutex);
 #endif
 			if (bytes == -1U && !SYSCALL_INTERRUPTED(errno))
-				return unix_error("read", file, isc_io_read_err,
-								  status_vector);
+				return unix_error("read", file, isc_io_read_err, status_vector);
 		}
 	}
 
@@ -857,10 +859,11 @@ bool PIO_write(jrd_file* file, BufferDesc* bdb, Ods::pag* page, ISC_STATUS* stat
 	SLONG bytes;
     UINT64 offset;
 
-	SignalInhibit siHolder;
-
 	if (file->fil_desc == -1)
 		return unix_error("write", file, isc_io_write_err, status_vector);
+
+	ThreadExit teHolder;
+	SignalInhibit siHolder;
 
 	Database* dbb = bdb->bdb_dbb;
 	const SLONG size = dbb->dbb_page_size;
@@ -884,8 +887,7 @@ bool PIO_write(jrd_file* file, BufferDesc* bdb, Ods::pag* page, ISC_STATUS* stat
 			THD_IO_MUTEX_UNLOCK(file->fil_mutex);
 #endif
 			if (bytes == -1U && !SYSCALL_INTERRUPTED(errno))
-				return unix_error("write", file, isc_io_write_err,
-								  status_vector);
+				return unix_error("write", file, isc_io_write_err, status_vector);
 		}
 	}
 	else
@@ -903,8 +905,7 @@ bool PIO_write(jrd_file* file, BufferDesc* bdb, Ods::pag* page, ISC_STATUS* stat
 			THD_IO_MUTEX_UNLOCK(file->fil_mutex);
 #endif
 			if (bytes == (SLONG) -1 && !SYSCALL_INTERRUPTED(errno))
-				return unix_error("write", file, isc_io_write_err,
-								  status_vector);
+				return unix_error("write", file, isc_io_write_err, status_vector);
 		}
 	}
 
