@@ -35,8 +35,9 @@
 #ifndef CLASSES_ALLOC_H
 #define CLASSES_ALLOC_H
 
-#include "../../include/firebird.h"
-#include "../../include/fb_types.h"
+#include "firebird.h"
+#include "fb_types.h"
+
 #include <stdio.h>
 #include "../jrd/common.h"
 #include "../common/classes/fb_atomic.h"
