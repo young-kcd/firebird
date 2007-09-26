@@ -86,7 +86,9 @@ static void printhelp(void);
 #ifndef SERVICE_THREAD
 static int output_main(Jrd::Service*, const UCHAR*);
 #endif
-inline void msg_get(USHORT number, TEXT* msg);
+inline void msg_get(USHORT, TEXT*);
+static void get_security_error(ISC_STATUS*, int);
+static void insert_error(ISC_STATUS*, ISC_STATUS);
 
 void inline gsec_exit(int code, tsec* tdsec)
 {
@@ -375,12 +377,14 @@ int common_main(int argc,
 			{
 				ret = SECURITY_exec_line(status, db_handle, 
 							user_data, data_print, NULL);
-				if (ret) {
+				if (ret) 
+				{
 					GSEC_print(ret, user_data->user_name);
 					if (status[1])
 					{
 						GSEC_print_status(status);
 					}
+					get_security_error(status, ret);
 				}
 			}
 			else
@@ -428,6 +432,14 @@ int common_main(int argc,
 					{
 						ret = SECURITY_exec_line(status, db_handle, 
 							user_data, data_print, NULL);
+						if (ret) 
+						{
+							GSEC_print(ret, user_data->user_name);
+							if (status[1]) {
+								GSEC_print_status(status);
+							}
+							break;
+						}
 					}
 					else
 #endif //SUPERCLIENT
@@ -439,13 +451,6 @@ int common_main(int argc,
 							ret = GsecMsg75;
 							break;
 						}
-					}
-					if (ret) {
-						GSEC_print(ret, user_data->user_name);
-						if (status[1]) {
-							GSEC_print_status(status);
-						}
-						break;
 					}
 				}
 			}
@@ -1492,4 +1497,79 @@ inline void msg_get(USHORT number, TEXT* msg)
 
 	static const SafeArg dummy;
 	fb_msg_format(NULL, GSEC_MSG_FAC, number, MSG_LENGTH, msg, dummy);
+}
+
+
+static void insert_error(ISC_STATUS* status, ISC_STATUS isc_err)
+{
+/**************************************
+ *
+ *      i n s e r t _ e r r o r
+ *
+ **************************************
+ *
+ * Functional description
+ *
+ *	Adds isc error code to status vector
+ **************************************/
+	if (status[1])
+	{
+		memmove(&status[2], &status[0], sizeof(ISC_STATUS_ARRAY) - 2 * sizeof(ISC_STATUS));
+	}
+	else
+	{
+		status[2] = isc_arg_end;
+	}
+	status[0] = isc_arg_gds;
+	status[1] = isc_err;
+}
+
+
+static void get_security_error(ISC_STATUS* status, int gsec_err)
+{
+/**************************************
+ *
+ *      g e t _ s e c u r i t y _ e r r o r
+ *
+ **************************************
+ *
+ * Functional description
+ *
+ *    Converts the gsec error code to an isc
+ *    error code and adds it to the status vector
+ **************************************/
+
+
+	switch (gsec_err) {
+	case GsecMsg19:			/* gsec - add record error */
+		insert_error(status, isc_error_adding_sec_record);
+		return;
+
+	case GsecMsg20:			/* gsec - modify record error */
+		insert_error(status, isc_error_modifying_sec_record);
+		return;
+
+	case GsecMsg21:			/* gsec - find/modify record error */
+		insert_error(status, isc_error_modifying_sec_record);
+		return;
+
+	case GsecMsg22:			/* gsec - record not found for user: */
+		insert_error(status, isc_usrname_not_found);
+		return;
+
+	case GsecMsg23:			/* gsec - delete record error */
+		insert_error(status, isc_error_deleting_sec_record);
+		return;
+
+	case GsecMsg24:			/* gsec - find/delete record error */
+		insert_error(status, isc_error_deleting_sec_record);
+		return;
+
+	case GsecMsg75:			/* gsec error */
+		insert_error(status, isc_error_updating_sec_db);
+		return;
+
+	default:
+		return;
+	}
 }
