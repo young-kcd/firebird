@@ -1,3 +1,45 @@
+2007-09-25 22:28  hvlad
+
+	* firebird2/src/lock/lock.cpp (1.129):
+
+	Correct hash function of lock manager. I don't think that using
+	last four bytes of key is a good hash :)
+
+2007-09-25 22:15  hvlad
+
+	* firebird2/src/jrd/os/: pio.h (1.14), win32/winnt.cpp (1.58):
+
+	Reimplement bugfix for CORE-1468 after engine checkout/checkin
+	logic was moved from CCH to PIO.
+
+2007-09-25 14:09  dimitr
+
+	* firebird2/src/jrd/: RuntimeStatistics.cpp (1.3),
+	RuntimeStatistics.h (1.3), exe.cpp (1.225):
+
+	Reset the statistics for every sub-request (aka call) execution.
+
+2007-09-25 13:47  dimitr
+
+	* firebird2/src/jrd/os/pio.h (1.13):
+
+	Moved the engine checkout/checkin logic from CCH to PIO. This
+	allows to avoid hacks like usage of SCH_check_thread_enter().
+
+2007-09-25 13:44  dimitr
+
+	* firebird2/src/jrd/: cch.cpp (1.173), pag.cpp (1.146),
+	os/win32/winnt.cpp (1.57), os/posix/unix.cpp (1.69):
+
+	Moved the engine checkout/checkin logic from CCH to PIO. This
+	allows to avoid hacks like usage of SCH_check_thread_enter().
+
+2007-09-25 10:22  dimitr
+
+	* firebird2/doc/WhatsNew (1.134):
+
+	Documented the Beta 2 changes.
+
 2007-09-24 14:38  alexpeshkoff
 
 	* firebird2/src/jrd/os/posix/unix.cpp (1.68):
