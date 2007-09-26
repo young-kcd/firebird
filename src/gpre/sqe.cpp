@@ -2666,7 +2666,7 @@ static GPRE_NOD par_relational(gpre_req* request,
 }
 
 
-bool SQE_resolve_fields(GPRE_NOD fields,
+bool SQE_resolve_fields(GPRE_NOD& fields,
 				        gpre_req* request,
 				        gpre_rse* selection)
 {
