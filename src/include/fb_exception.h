@@ -34,13 +34,14 @@
 #include <string.h>
 #include "fb_types.h"
 
-
 namespace Firebird {
 
 class StringsBuffer {
 public:
 	virtual char* alloc(const char* string, size_t length) = 0;
 	virtual ~StringsBuffer() {}
+
+	void makePermanentVector(ISC_STATUS* perm, const ISC_STATUS* temp);
 };
 
 template <size_t BUFFER_SIZE>
