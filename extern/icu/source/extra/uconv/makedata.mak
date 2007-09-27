@@ -44,7 +44,7 @@ CFG=Debug
 !ERROR Can't find path!
 !ENDIF
 !MESSAGE ICU path is $(ICUP)
-!MESSAGE CGF is $(CFG)
+!MESSAGE CFG is $(CFG)
 RESNAME=uconvmsg
 RESDIR=.
 RESFILES=resfiles.mk
@@ -57,7 +57,12 @@ PKGMODE=static
 
 ICD=$(ICUDATA)^\
 DATA_PATH=$(ICUP)\data^\
+
+!IF "$(CFG)" == "Release" || "$(CFG)" == "release"  || "$(CFG)" == "Debug" || "$(CFG)" == "debug"
+ICUTOOLS=$(ICUP)\bin
+!ELSE
 ICUTOOLS=$(ICUP)\$(CFG)\bin
+!ENDIF
 
 PATH = $(PATH);$(ICUP)\bin
 
@@ -82,13 +87,13 @@ OUTPUT = "$(DLL_OUTPUT)\$(RESNAME).lib"
 !ENDIF
 
 ALL : $(OUTPUT)
-    @echo All targets are up to date (mode $(PKGMODE))
+	@echo All targets are up to date (mode $(PKGMODE))
 
 
 # invoke pkgdata - static
 "$(DLL_OUTPUT)\$(RESNAME).lib" : $(RB_FILES) $(RESFILES)
-    @echo Building $(RESNAME).lib
-    @"$(ICUTOOLS)\pkgdata" -f -v -m static -c -p $(RESNAME) -d "$(DLL_OUTPUT)" -s "$(RESDIR)" <<pkgdatain.txt
+	@echo Building $(RESNAME).lib
+	@"$(ICUTOOLS)\pkgdata" -f -v -m static -c -p $(RESNAME) -d "$(DLL_OUTPUT)" -s "$(RESDIR)" <<pkgdatain.txt
 $(RB_FILES:.res =.res
 )
 <<KEEP
@@ -96,14 +101,14 @@ $(RB_FILES:.res =.res
 # This is to remove all the data files
 CLEAN :
     -@erase "$(RB_FILES)"
-    -@erase "$(RESDIR)\uconvmsg*.*"
-    -@erase "$(CFG)\*uconvmsg*.*"
+	-@erase "$(RESDIR)\uconvmsg*.*"
+	-@erase "$(CFG)\*uconvmsg*.*"
     -@"$(ICUTOOLS)\pkgdata" -f --clean -v -m static -c -p $(RESNAME) -d "$(DLL_OUTPUT)" -s "$(RESDIR)" pkgdatain.txt
 
 # Inference rule for creating resource bundles
 .txt.res:
-    @echo Making Resource Bundle files
-    "$(ICUTOOLS)\genrb" -t -p $(RESNAME) -s $(@D) -d $(@D) $(?F)
+	@echo Making Resource Bundle files
+	"$(ICUTOOLS)\genrb" -t -p $(RESNAME) -s $(@D) -d $(@D) $(?F)
 
 
 $(RESSRC) : {"$(ICUTOOLS)"}genrb.exe
