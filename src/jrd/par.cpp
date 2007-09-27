@@ -1242,10 +1242,18 @@ static jrd_nod* par_field(thread_db* tdbb, CompilerScratch* csb, SSHORT blr_oper
 	const USHORT context = (unsigned int) BLR_BYTE;
 
 	// check if this is a VALUE of domain's check constraint
-	if (!csb->csb_domain_validation.isEmpty() && blr_operator == blr_fid && context == 0)
+	if (!csb->csb_domain_validation.isEmpty() &&
+		(blr_operator == blr_fid || blr_operator == blr_field) &&
+		context == 0)
 	{
-		SSHORT id = BLR_WORD;
-		fb_assert(id == 0);
+		if (blr_operator == blr_fid) {
+			SSHORT id = BLR_WORD;
+			fb_assert(id == 0);
+		}
+		else {
+			Firebird::MetaName name;
+			par_name(csb, name);
+		}
 
 		jrd_nod* node = PAR_make_node(tdbb, e_domval_length);
 		node->nod_type = nod_domain_validation;
