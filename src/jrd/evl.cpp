@@ -3237,14 +3237,14 @@ static dsc* dbkey(thread_db* tdbb, const jrd_nod* node, impure_value* impure)
 	impure = (impure_value*) ((SCHAR *) request + node->nod_impure);
 	const record_param* rpb = &request->req_rpb[(int) (IPTR) node->nod_arg[0]];
 
+	const jrd_rel* relation = rpb->rpb_relation;
+
 	// If it doesn't point to a valid record, return NULL
-	if (!rpb->rpb_number.isValid())
+	if (!rpb->rpb_number.isValid() || !relation)
 	{
 		request->req_flags |= req_null;
 		return NULL;
 	}
-
-	const jrd_rel* relation = rpb->rpb_relation;
 
 	// Format dbkey as vector of relation id, record number
 
