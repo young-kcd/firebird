@@ -2,11 +2,6 @@
   * v2.1 Beta 2
   **************
 
-    * Bugfix CORE-1451
-        Using RDB$DB_KEY in where section while selecting from a procedure crashes the server
-      Contributor(s):
-        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
-
     * Bugfix CORE-1476
         Forced writes do not work on Linux
       Contributor(s):
@@ -55,6 +50,11 @@
       Contributor(s):
         Dmitry Yemanov <dimitr at firebirdsql.org>
         Vlad Horsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-1451
+        Using RDB$DB_KEY in where section while selecting from a procedure crashes the server
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
 
     * Bugfix CORE-1447
         Buffer overrun when querying for database info on very long path
