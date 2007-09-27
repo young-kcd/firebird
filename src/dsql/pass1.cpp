@@ -4014,6 +4014,13 @@ static dsql_nod* pass1_dbkey( dsql_req* request, dsql_nod* input)
 				continue;
 			}
 
+			if (!context->ctx_relation)
+			{
+				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -607,
+						  isc_arg_gds, isc_dsql_dbkey_from_non_table,
+						  0);
+			}
+
 			dsql_nod* node = MAKE_node(nod_dbkey, 1);
 			dsql_nod* rel_node = MAKE_node(nod_relation, e_rel_count);
 			rel_node->nod_arg[0] = (dsql_nod*) context;
