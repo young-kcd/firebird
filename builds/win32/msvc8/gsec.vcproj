@@ -316,7 +316,7 @@
 	</References>
 	<Files>
 		<Filter
-			Name="UTILITITES files"
+			Name="UTILITIES files"
 			Filter="cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
 			>
 			<File
