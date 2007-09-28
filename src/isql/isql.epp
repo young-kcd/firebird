@@ -2335,7 +2335,7 @@ static processing_state add_row(TEXT* tabname)
 						avary->vary_length = length;
 						strncpy(avary->vary_string, lastInputLine, length);
 						ivar->sqldata = (SCHAR*) avary;
-						ivar->sqllen = length + sizeof(USHORT);
+						ivar->sqllen = length;
 						break;
 					}
 
