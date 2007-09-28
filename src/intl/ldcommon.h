@@ -27,6 +27,7 @@
 /* #include "../jrd/gdsassert.h" */
 /* Put the assert in here */
 
+#include "../common/classes/alloc.h"
 #include "../jrd/intlobj_new.h"
 #include "../jrd/constants.h"
 #include "../intl/charsets.h"

@@ -23,6 +23,7 @@
 
 #include "firebird.h"
 #include <stdio.h>
+#include "../intl/ldcommon.h"
 #include "../jrd/common.h"
 #include "kanji.h"
 #include "kanji_proto.h"
