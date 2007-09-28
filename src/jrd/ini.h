@@ -160,14 +160,14 @@ static const int relfields[] =
 struct rtyp {
 	const TEXT* rtyp_name;
 	SSHORT rtyp_value;
-	UCHAR rtyp_field;
+	int rtyp_field;
 };
 
-#define TYPE(text, type, field)	{ text, type, (UCHAR) field },
+#define TYPE(text, type, field)	{ text, type, field },
 
 #define CHARSET(name, cs_id, coll_id, bytes, num, s1, s2, attr) \
-				{(name), (cs_id),   (UCHAR) nam_charset_name},
-#define CSALIAS(name, cs_id)	{(name), (cs_id),   (UCHAR) nam_charset_name},
+				{name, cs_id, nam_charset_name},
+#define CSALIAS(name, cs_id)	{name, cs_id, nam_charset_name},
 #define COLLATION(name, base_name, cc_id, cs_id, coll_id, sym, attr, specific_attr)
 #define END_CHARSET
 
