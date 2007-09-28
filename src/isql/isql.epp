@@ -2314,7 +2314,7 @@ static processing_state add_row(TEXT* tabname)
 						avary->vary_length = length;
 						strncpy(avary->vary_string, lastInputLine, length);
 						ivar->sqldata = (SCHAR*) avary;
-						ivar->sqllen = length + sizeof(USHORT);
+						ivar->sqllen = length;
 						break;
 					}
 
@@ -3109,7 +3109,7 @@ static processing_state bulk_insert_hack(const char* command, XSQLDA** sqldap)
 						avary->vary_length = length;
 						strncpy(avary->vary_string, lastPos, length);
 						ivar->sqldata = (SCHAR*) avary;
-						ivar->sqllen = length + sizeof(USHORT);
+						ivar->sqllen = length;
 						break;
 					}
 
