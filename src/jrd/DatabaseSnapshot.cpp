@@ -1000,10 +1000,9 @@ void DatabaseSnapshot::putDatabase(const Database* database,
 	}
 	database->dbb_backup_manager->unlock_shared_database(tdbb);
 	writer.insertInt(f_mon_db_backup_state, temp);
-
 	// statistics
 	writer.insertBigInt(f_mon_db_stat_id, getGlobalId(stat_id));
-	putStatistics(&database->dbb_stats, writer, stat_id);
+	putStatistics(&database->dbb_stats, writer, stat_id, stat_database);
 }
 
 
@@ -1062,7 +1061,7 @@ void DatabaseSnapshot::putAttachment(const Attachment* attachment,
 	writer.insertInt(f_mon_att_gc, temp);
 	// statistics
 	writer.insertBigInt(f_mon_att_stat_id, getGlobalId(stat_id));
-	putStatistics(&attachment->att_stats, writer, stat_id);
+	putStatistics(&attachment->att_stats, writer, stat_id, stat_attachment);
 }
 
 
@@ -1117,7 +1116,7 @@ void DatabaseSnapshot::putTransaction(const jrd_tra* transaction,
 	writer.insertInt(f_mon_tra_auto_undo, temp);
 	// statistics
 	writer.insertBigInt(f_mon_tra_stat_id, getGlobalId(stat_id));
-	putStatistics(&transaction->tra_stats, writer, stat_id);
+	putStatistics(&transaction->tra_stats, writer, stat_id, stat_transaction);
 }
 
 
@@ -1161,7 +1160,7 @@ void DatabaseSnapshot::putRequest(const jrd_req* request,
 	writer.insertString(f_mon_stmt_sql_text, request->req_sql_text);
 	// statistics
 	writer.insertBigInt(f_mon_stmt_stat_id, getGlobalId(stat_id));
-	putStatistics(&request->req_stats, writer, stat_id);
+	putStatistics(&request->req_stats, writer, stat_id, stat_statement);
 }
 
 
@@ -1217,12 +1216,13 @@ void DatabaseSnapshot::putCall(const jrd_req* request,
 	writer.insertInt(f_mon_call_src_column, request->req_src_column);
 	// statistics
 	writer.insertBigInt(f_mon_call_stat_id, getGlobalId(stat_id));
-	putStatistics(&request->req_stats, writer, stat_id);
+	putStatistics(&request->req_stats, writer, stat_id, stat_call);
 }
 
 void DatabaseSnapshot::putStatistics(const RuntimeStatistics* statistics,
 									 Firebird::ClumpletWriter& writer,
-									 int stat_id)
+									 int stat_id,
+									 int stat_group)
 {
 	fb_assert(statistics);
 
@@ -1232,6 +1232,7 @@ void DatabaseSnapshot::putStatistics(const RuntimeStatistics* statistics,
 	// physical I/O statistics
 	writer.insertByte(TAG_RECORD, rel_mon_io_stats);
 	writer.insertBigInt(f_mon_io_stat_id, id);
+	writer.insertInt(f_mon_io_stat_group, stat_group);
 	writer.insertBigInt(f_mon_io_page_reads,
 						statistics->getValue(RuntimeStatistics::PAGE_READS));
 	writer.insertBigInt(f_mon_io_page_writes,
@@ -1244,6 +1245,7 @@ void DatabaseSnapshot::putStatistics(const RuntimeStatistics* statistics,
 	// logical I/O statistics
 	writer.insertByte(TAG_RECORD, rel_mon_rec_stats);
 	writer.insertBigInt(f_mon_rec_stat_id, id);
+	writer.insertInt(f_mon_rec_stat_group, stat_group);
 	writer.insertBigInt(f_mon_rec_seq_reads,
 						statistics->getValue(RuntimeStatistics::RECORD_SEQ_READS));
 	writer.insertBigInt(f_mon_rec_idx_reads,
