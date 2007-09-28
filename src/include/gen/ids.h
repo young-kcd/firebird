@@ -420,18 +420,20 @@
 
 
 	const USHORT  f_mon_io_stat_id = 0;
-	const USHORT  f_mon_io_page_reads = 1;
-	const USHORT  f_mon_io_page_writes = 2;
-	const USHORT  f_mon_io_page_fetches = 3;
-	const USHORT  f_mon_io_page_marks = 4;
+	const USHORT  f_mon_io_stat_group = 1;
+	const USHORT  f_mon_io_page_reads = 2;
+	const USHORT  f_mon_io_page_writes = 3;
+	const USHORT  f_mon_io_page_fetches = 4;
+	const USHORT  f_mon_io_page_marks = 5;
 
 
 	const USHORT  f_mon_rec_stat_id = 0;
-	const USHORT  f_mon_rec_seq_reads = 1;
-	const USHORT  f_mon_rec_idx_reads = 2;
-	const USHORT  f_mon_rec_inserts = 3;
-	const USHORT  f_mon_rec_updates = 4;
-	const USHORT  f_mon_rec_deletes = 5;
-	const USHORT  f_mon_rec_backouts = 6;
-	const USHORT  f_mon_rec_purges = 7;
-	const USHORT  f_mon_rec_expunges = 8;
+	const USHORT  f_mon_rec_stat_group = 1;
+	const USHORT  f_mon_rec_seq_reads = 2;
+	const USHORT  f_mon_rec_idx_reads = 3;
+	const USHORT  f_mon_rec_inserts = 4;
+	const USHORT  f_mon_rec_updates = 5;
+	const USHORT  f_mon_rec_deletes = 6;
+	const USHORT  f_mon_rec_backouts = 7;
+	const USHORT  f_mon_rec_purges = 8;
+	const USHORT  f_mon_rec_expunges = 9;
