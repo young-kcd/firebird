@@ -24,6 +24,7 @@
 #ifndef INTL_LDCOMMON_H
 #define INTL_LDCOMMON_H
 
+#include "../common/classes/alloc.h"
 #include "../jrd/intlobj_new.h"
 #include "../jrd/constants.h"
 #include "../jrd/gdsassert.h"
