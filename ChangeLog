@@ -1,3 +1,15 @@
+2007-09-28 13:54  alexpeshkoff
+
+	* firebird2/src/intl/: kanji.cpp (1.7.6.1), ldcommon.h (1.22.4.1):
+
+	Backported fix for CORE-1484: AV in fbintl
+
+2007-09-28 13:47  alexpeshkoff
+
+	* firebird2/src/isql/isql.epp (1.174.2.2):
+
+	Backported fix for CORE-1485: AV when loading messages in msg.fdb
+
 2007-09-24 09:36  paul_reeves
 
 	* firebird2/builds/install/arch-specific/win32/pl/:
