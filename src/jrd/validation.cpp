@@ -2049,6 +2049,11 @@ static RTN walk_relation(thread_db* tdbb, vdr* control, jrd_rel* relation)
 		MET_scan_relation(tdbb, relation);
 	}
 
+	// skip deleted relations
+	if (relation->rel_flags & (REL_deleted | REL_deleting)) {
+		return rtn_ok;
+	}
+
 #ifdef DEBUG_VAL_VERBOSE
 	if (VAL_debug_level)
 		fprintf(stdout, "walk_relation: id %d Format %d %s %s\n",
