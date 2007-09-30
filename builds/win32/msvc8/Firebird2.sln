@@ -180,6 +180,9 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "instclient", "instclient.vcproj", "{C6A31374-178C-4680-A404-76BE24D0229B}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "fb2control", "fb2control.vcproj", "{1AE02D41-7E24-43CC-9BCB-E4CEB6037D16}"
+	ProjectSection(ProjectDependencies) = postProject
+		{15605F44-BFFD-444F-AD4C-55DC9D704465} = {15605F44-BFFD-444F-AD4C-55DC9D704465}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "utilities_embed", "utilities_embed.vcproj", "{B0833E27-BCB2-4D0D-B6D2-F4621224CFD8}"
 EndProject
