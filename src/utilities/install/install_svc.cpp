@@ -277,7 +277,10 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	remote_display_name.printf(REMOTE_DISPLAY_NAME, instance);
 
 	Firebird::string switches;
-	switches.printf("-s %s", instance);
+	if (strchr(instance, ' '))
+		switches.printf("-s \"%s\"", instance);
+	else
+		switches.printf("-s %s", instance);
 
 	switch (sw_command)
 	{
@@ -288,7 +291,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 				status = SERVICES_install(manager, guard_service_name.c_str(),
 					guard_display_name.c_str(), ISCGUARD_DISPLAY_DESCR,
 					ISCGUARD_EXECUTABLE, directory, switches.c_str(), NULL,
-					sw_startup, username, password, false, svc_error);
+					sw_startup, username, password, false, true, svc_error);
 
 				status2 = FB_SUCCESS;
 
@@ -313,7 +316,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 			status = SERVICES_install(manager, remote_service_name.c_str(),
 				remote_display_name.c_str(), REMOTE_DISPLAY_DESCR,
 				REMOTE_EXECUTABLE, directory, switches.c_str(), NULL,
-				sw_startup, username, password, sw_interactive, svc_error);
+				sw_startup, username, password, sw_interactive, !sw_guardian, svc_error);
 
 			status2 = FB_SUCCESS;
 
@@ -710,19 +713,5 @@ static void usage_exit(void)
 	printf("  Use the format 'domain\\username' or 'server\\username' if appropriate.\n");
 
 	exit(FINI_ERROR);
-}
-
-//
-// Until the fb_assert could be converted to a function/object linked with each module
-// we need this ugly workaround.
-//
-extern "C" void API_ROUTINE gds__log(const TEXT* text, ...)
-{
-	va_list ptr;
-
-	va_start(ptr, text);
-	vprintf(text, ptr);
-	va_end(ptr);
-	printf("\n\n");
 }
 

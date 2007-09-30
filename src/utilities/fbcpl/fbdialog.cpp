@@ -925,7 +925,7 @@ bool CFBDialog::ServiceInstall( CFBDialog::STATUS status )
 				guard_service, guard_display_name,
 				ISCGUARD_DISPLAY_DESCR, ISCGUARD_EXECUTABLE,
 				ServerPath, NULL, NULL, status.AutoStart,
-				NULL, NULL, false, svc_error);
+				NULL, NULL, false, true, svc_error);
 			if (m_Error_Status != FB_SUCCESS)
 			{
 				CloseServiceManager();
@@ -941,7 +941,7 @@ bool CFBDialog::ServiceInstall( CFBDialog::STATUS status )
 			remote_service, remote_display_name,
 			REMOTE_DISPLAY_DESCR, (LPCTSTR) status.ServiceExecutable,
 			ServerPath, NULL, NULL, status.AutoStart,
-			NULL, NULL, false, svc_error);
+			NULL, NULL, false, !new_settings.UseGuardian, svc_error);
 		if (m_Error_Status != FB_SUCCESS)
 		{
 			CloseServiceManager();

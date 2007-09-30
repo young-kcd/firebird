@@ -30,10 +30,12 @@
 #include <ntsecapi.h>
 #include <aclapi.h>
 #include "../jrd/common.h"
-//#include "../jrd/license.h"
+#include "../../common/classes/fb_string.h"
+#include "../../jrd/os/path_utils.h"
 #include "../utilities/install/install_nt.h"
 #include "../utilities/install/servi_proto.h"
 #include "../utilities/install/registry.h"
+
 
 USHORT SERVICES_install(SC_HANDLE manager,
 						const char* service_name,
@@ -47,6 +49,7 @@ USHORT SERVICES_install(SC_HANDLE manager,
 						const char* nt_user_name,
 						const char* nt_user_password,
 						bool interactive_mode,
+						bool auto_restart,
 						pfnSvcError err_handler)
 {
 /**************************************
@@ -59,23 +62,24 @@ USHORT SERVICES_install(SC_HANDLE manager,
  *	Install a service in the service control panel.
  *
  **************************************/
-	TEXT path_name[MAXPATHLEN];
+	
+	Firebird::PathName exe_name(directory);
+	PathUtils::ensureSeparator(exe_name);
+	exe_name += executable;
+	exe_name += ".exe";
 
-	// No check made on directory length?
-	strcpy(path_name, directory);
-	USHORT len = strlen(path_name);
-	if (len && path_name[len - 1] != '/' && path_name[len - 1] != '\\')
-	{
-		path_name[len++] = '\\';
-		path_name[len] = 0;
+	Firebird::string path_name;
+	if (exe_name.find(' ') != Firebird::AbstractString::npos) {
+		path_name.printf("\"%s\"", exe_name.c_str());
+	}
+	else {
+		path_name = exe_name.c_str();
 	}
 
-	// Again, no check for a buffer overrun!!!
-	strcpy(path_name + len, executable);
-	strcat(path_name, ".exe");
-	if (switches) {
-		strcat(path_name, " ");
-		strcat(path_name, switches);
+	if (switches) 
+	{
+		path_name += " ";
+		path_name += switches;
 	}
 
 	DWORD dwServiceType = SERVICE_WIN32_OWN_PROCESS;
@@ -97,7 +101,7 @@ USHORT SERVICES_install(SC_HANDLE manager,
 							(sw_startup ==
 							 STARTUP_DEMAND) ? SERVICE_DEMAND_START :
 							SERVICE_AUTO_START, SERVICE_ERROR_NORMAL,
-							path_name, NULL, NULL, dependencies,
+							path_name.c_str(), NULL, NULL, dependencies,
 							nt_user_name, nt_user_password);
 
 	if (service == NULL)
@@ -109,8 +113,8 @@ USHORT SERVICES_install(SC_HANDLE manager,
 			return (*err_handler) (errnum, "CreateService", NULL);
 	}
 
-	// Now enter the description string into the service config, if this is
-	// available on the current platform.
+	// Now enter the description string and failure actions into the service 
+	// config, if this is available on the current platform.
 	HMODULE advapi32 = LoadLibrary("ADVAPI32.DLL");
 	if (advapi32 != 0)
 	{
@@ -123,6 +127,23 @@ USHORT SERVICES_install(SC_HANDLE manager,
 			// LPSTR descr = display_description;
 			//(*config2)(service, SERVICE_CONFIG_DESCRIPTION, &descr);
 			(*config2)(service, SERVICE_CONFIG_DESCRIPTION, &display_description);
+
+			if (auto_restart)
+			{
+				SERVICE_FAILURE_ACTIONS fa;
+				SC_ACTION	acts;
+
+				memset(&fa, 0, sizeof(fa));
+				fa.dwResetPeriod = 0;
+				fa.cActions = 1;
+				fa.lpsaActions = &acts;
+
+				memset(&acts, 0, sizeof(acts));
+				acts.Delay = 0;
+				acts.Type = SC_ACTION_RESTART;
+
+				(*config2)(service, SERVICE_CONFIG_FAILURE_ACTIONS, &fa);
+			}
 		}
 		FreeLibrary(advapi32);
 	}
@@ -530,6 +551,20 @@ USHORT SERVICES_grant_access_rights(const char* service_name, TEXT* account,
 	}
 
 	return FB_SUCCESS;
+}
+
+//
+// Until the fb_assert could be converted to a function/object linked with each module
+// we need this ugly workaround.
+//
+extern "C" void API_ROUTINE gds__log(const TEXT* text, ...)
+{
+	va_list ptr;
+
+	va_start(ptr, text);
+	vprintf(text, ptr);
+	va_end(ptr);
+	printf("\n\n");
 }
 
 //
