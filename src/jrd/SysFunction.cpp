@@ -549,7 +549,12 @@ static void makeDateAdd(DataTypeUtilBase* dataTypeUtil, SysFunction* function, d
 {
 	fb_assert(argsCount >= 3);
 
+	bool isNullable;
+	if (initResult(result, argsCount, args, &isNullable))
+		return;
+
 	*result = *args[2];
+	result->setNullable(isNullable);
 }
 
 
