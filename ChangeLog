@@ -1,3 +1,10 @@
+2007-09-30 12:55  hvlad
+
+	* firebird2/src/jrd/validation.cpp (1.16.2.2):
+
+	Backport fix for bug CORE-1481 : gfix may report false errors when
+	using in-memory metadata
+
 2007-09-28 13:54  alexpeshkoff
 
 	* firebird2/src/intl/: kanji.cpp (1.7.6.1), ldcommon.h (1.22.4.1):
