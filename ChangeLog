@@ -1,3 +1,28 @@
+2007-09-30 16:12  hvlad
+
+	* firebird2/builds/win32/msvc8/Firebird2.sln (1.5):
+
+	Add 'common' into dependencies to 'fb2control'
+
+2007-09-30 16:03  hvlad
+
+	* firebird2/src/utilities/: fbcpl/fbdialog.cpp (1.10),
+	install/install_svc.cpp (1.32), install/servi_proto.h (1.13),
+	install/services.cpp (1.22):
+
+	1. Use Firebird::string to avoid BOFs in NT services installation
+	code 2. Move fake gds__log from install_svc into services to please
+	control panel applet 3. Quote service .exe and instance names when
+	it contains space 4. Configure installed services to restart after
+	fail automatically
+
+2007-09-30 12:53  hvlad
+
+	* firebird2/src/jrd/validation.cpp (1.29):
+
+	Fixed bug CORE-1481 : gfix may report false errors when using
+	in-memory metadata
+
 2007-09-28 21:55  dimitr
 
 	* firebird2/doc/WhatsNew (1.137):
