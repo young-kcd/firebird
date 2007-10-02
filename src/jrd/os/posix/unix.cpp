@@ -339,7 +339,7 @@ static bool maybe_close_file(int& desc)
 {
 /**************************************
  *
- *	M a y b e C l o s e F i l e
+ *	m a y b e _ c l o s e _ f i l e
  *
  **************************************
  *
@@ -553,7 +553,7 @@ namespace {
 	public:
 		HugeStaticBuffer(MemoryPool& p)
 			: zeroArray(p), 
-			zeroBuff(zeroArray.getBuffer(ZERO_BUF_SIZE)) 
+			  zeroBuff(zeroArray.getBuffer(ZERO_BUF_SIZE)) 
 		{
 			memset(zeroBuff, 0, ZERO_BUF_SIZE);
 		}
@@ -660,8 +660,10 @@ static int openFile(const char* name, bool forcedWrites, bool notUseFSCache, boo
 	flag |= SYNC;
 	// what to do with O_DIRECT here ?
 #else
-	if (forcedWrites)	flag |= SYNC;
-	if (notUseFSCache)	flag |= O_DIRECT;
+	if (forcedWrites)
+		flag |= SYNC;
+	if (notUseFSCache)
+		flag |= O_DIRECT;
 #endif
 
 	for (int i = 0; i < IO_RETRY; i++)
