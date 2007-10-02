@@ -1,3 +1,24 @@
+2007-10-02 03:53  asfernandes
+
+	* firebird2/src/: common/fb_exception.cpp (1.30),
+	jrd/os/posix/unix.cpp (1.70):
+
+	Misc
+
+2007-10-01 20:22  hvlad
+
+	* firebird2/src/jrd/pag.cpp (1.147):
+
+	Correction in calculations of how many pages needs to be
+	initialized with zeros. Don't initialize more pages than amount of
+	bits left on PIP
+
+2007-10-01 17:49  asfernandes
+
+	* firebird2/src/jrd/SysFunction.cpp (1.15):
+
+	Fixed CORE-1489 - DATEADD wrong work with NULL arguments
+
 2007-09-30 16:12  hvlad
 
 	* firebird2/builds/win32/msvc8/Firebird2.sln (1.5):
