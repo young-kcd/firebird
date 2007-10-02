@@ -143,6 +143,7 @@ static bool raw_devices_validate_database (int, const Firebird::PathName&);
 static int  raw_devices_unlink_database (const Firebird::PathName&);
 #endif
 static int	openFile(const char*, bool, bool, bool);
+static void	maybeCloseFile(int&);
 
 #ifdef hpux
 union fcntlun {
@@ -335,29 +336,6 @@ void PIO_flush(jrd_file* main_file)
 }
 
 
-static bool maybe_close_file(int& desc)
-{
-/**************************************
- *
- *	m a y b e _ c l o s e _ f i l e
- *
- **************************************
- *
- * Functional description
- *	If the file is open, close it.
- *
- **************************************/
-
-	if (desc >= 0)
-	{
-		close(desc);
-		desc = -1;
-		return true;
-	}
-	return false;
-}
-
-
 void PIO_force_write(jrd_file* file, bool forcedWrites, bool notUseFSCache)
 {
 /**************************************
@@ -398,7 +376,7 @@ void PIO_force_write(jrd_file* file, bool forcedWrites, bool notUseFSCache)
 					 isc_io_access_err, isc_arg_unix, errno, 0);
 		}
 #else //FCNTL_BROKEN
-		maybe_close_file(file->fil_desc);
+		maybeCloseFile(file->fil_desc);
 		file->fil_desc = openFile(file->fil_string, forcedWrites, 
 								  notUseFSCache, file->fil_flags & FIL_readonly);
 		if (file->fil_desc == -1)
@@ -639,43 +617,6 @@ USHORT PIO_init_data(Database* dbb, jrd_file* main_file, ISC_STATUS* status_vect
 	}
 
 	return (initPages - leftPages);
-}
-
-
-static int openFile(const char* name, bool forcedWrites, bool notUseFSCache, bool readOnly)
-{
-/**************************************
- *
- *	o p e n F i l e
- *
- **************************************
- *
- * Functional description
- *	Open a file with appropriate flags.
- *
- **************************************/
-
-	int flag = O_BINARY | (readOnly ? O_RDONLY : O_RDWR);
-#ifdef SUPERSERVER_V2
-	flag |= SYNC;
-	// what to do with O_DIRECT here ?
-#else
-	if (forcedWrites)
-		flag |= SYNC;
-	if (notUseFSCache)
-		flag |= O_DIRECT;
-#endif
-
-	for (int i = 0; i < IO_RETRY; i++)
-	{
-		int desc = open(name, flag);
-		if (desc != -1)
-			return desc;
-		if (!SYSCALL_INTERRUPTED(errno))
-			break;
-	}
-
-	return -1;
 }
 
 
@@ -977,6 +918,62 @@ static jrd_file* seek_file(jrd_file* file, BufferDesc* bdb, UINT64* offset,
 #endif
 
 	return file;
+}
+
+
+static int openFile(const char* name, bool forcedWrites, bool notUseFSCache, bool readOnly)
+{
+/**************************************
+ *
+ *	o p e n F i l e
+ *
+ **************************************
+ *
+ * Functional description
+ *	Open a file with appropriate flags.
+ *
+ **************************************/
+
+	int flag = O_BINARY | (readOnly ? O_RDONLY : O_RDWR);
+#ifdef SUPERSERVER_V2
+	flag |= SYNC;
+	// what to do with O_DIRECT here ?
+#else
+	if (forcedWrites)	flag |= SYNC;
+	if (notUseFSCache)	flag |= O_DIRECT;
+#endif
+
+	for (int i = 0; i < IO_RETRY; i++)
+	{
+		int desc = open(name, flag);
+		if (desc != -1)
+			return desc;
+		if (!SYSCALL_INTERRUPTED(errno))
+			break;
+	}
+
+	return -1;
+}
+
+
+static void maybeCloseFile(int& desc)
+{
+/**************************************
+ *
+ *	m a y b e C l o s e F i l e
+ *
+ **************************************
+ *
+ * Functional description
+ *	If the file is open, close it.
+ *
+ **************************************/
+
+	if (desc >= 0)
+	{
+		close(desc);
+		desc = -1;
+	}
 }
 
 
