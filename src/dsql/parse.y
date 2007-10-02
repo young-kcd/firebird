@@ -4420,7 +4420,7 @@ system_function_special_syntax
 			$$ = make_flag_node(nod_sys_function, NOD_SPECIAL_SYNTAX, e_sysfunc_count,
 				$1, make_node(nod_list, 3, $5, $3, $7));
 		}
-	| DATEDIFF '(' timestamp_part FROM value FOR value ')'
+	| DATEDIFF '(' timestamp_part FROM value TO value ')'
 		{
 			$$ = make_flag_node(nod_sys_function, NOD_SPECIAL_SYNTAX, e_sysfunc_count,
 				$1, make_node(nod_list, 3, $3, $5, $7));

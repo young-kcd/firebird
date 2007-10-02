@@ -297,7 +297,7 @@ Function:
     date/time/timestamp value to the second one.
 
 Format:
-    DATEDIFF( <timestamp_part> FROM <date_time> FOR <date_time> )
+    DATEDIFF( <timestamp_part> FROM <date_time> TO <date_time> )
     DATEDIFF( <timestamp_part>, <date_time>, <date_time> )
 
 Notes:
