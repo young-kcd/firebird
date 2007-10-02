@@ -67,7 +67,7 @@
         Vlad Horsun <hvlad at users.sourceforge.net>
 
     * Bugfix CORE-1451
-        Using RDB$DB_KEY in where section while selecting from a procedure crashes the server
+        Using RDB$DB_KEY in SQL's WHERE section while selecting from a procedure crashes the server
       Contributor(s):
         Adriano dos Santos Fernandes <adrianosf at uol.com.br>
 

@@ -84,7 +84,7 @@ LINK32=link.exe
 
 # Name "gsec - Win32 Debug"
 # Name "gsec - Win32 Release"
-# Begin Group "UTILITITES files"
+# Begin Group "UTILITIES files"
 
 # PROP Default_Filter "cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
 # Begin Source File
