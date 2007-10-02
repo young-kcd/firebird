@@ -30,8 +30,6 @@
 #include <ntsecapi.h>
 #include <aclapi.h>
 #include "../jrd/common.h"
-#include "../../common/classes/fb_string.h"
-#include "../../jrd/os/path_utils.h"
 #include "../utilities/install/install_nt.h"
 #include "../utilities/install/servi_proto.h"
 #include "../utilities/install/registry.h"
@@ -62,24 +60,30 @@ USHORT SERVICES_install(SC_HANDLE manager,
  *	Install a service in the service control panel.
  *
  **************************************/
-	
-	Firebird::PathName exe_name(directory);
-	PathUtils::ensureSeparator(exe_name);
-	exe_name += executable;
-	exe_name += ".exe";
 
-	Firebird::string path_name;
-	if (exe_name.find(' ') != Firebird::AbstractString::npos) {
-		path_name.printf("\"%s\"", exe_name.c_str());
+	char exe_name[MAX_PATH];
+	int len = strlen(directory);
+	const char last_char = len ? directory[len - 1] : '\\';
+	const char* exe_format = 
+		(last_char == '\\' || last_char == '/') ? "%s%s.exe" : "%s\\%s.exe";
+
+	len = snprintf(exe_name, MAX_PATH, exe_format, directory, executable);
+	if (len == MAX_PATH || len < 0) {
+		return (*err_handler) (0, "service exe name too long", 0);
 	}
-	else {
-		path_name = exe_name.c_str();
-	}
+
+	char path_name[1024];
+	const char *path_format = (strchr(exe_name, ' ') ? "\"%s\"" : "%s");
+	sprintf(path_name, path_format, exe_name);
 
 	if (switches) 
 	{
-		path_name += " ";
-		path_name += switches;
+		len = sizeof(path_name) - strlen(path_name) - 1;
+		if (len < strlen(switches) + 1) {
+			return (*err_handler) (0, "service command line too long", 0);
+		}
+		strcat(path_name, " ");
+		strcat(path_name, switches);
 	}
 
 	DWORD dwServiceType = SERVICE_WIN32_OWN_PROCESS;
@@ -101,7 +105,7 @@ USHORT SERVICES_install(SC_HANDLE manager,
 							(sw_startup ==
 							 STARTUP_DEMAND) ? SERVICE_DEMAND_START :
 							SERVICE_AUTO_START, SERVICE_ERROR_NORMAL,
-							path_name.c_str(), NULL, NULL, dependencies,
+							path_name, NULL, NULL, dependencies,
 							nt_user_name, nt_user_password);
 
 	if (service == NULL)
