@@ -91,14 +91,14 @@ void StringsBuffer::makePermanentVector(ISC_STATUS* perm, const ISC_STATUS* tran
 		case isc_arg_cstring: 
 			{				
 				const size_t len = *perm++ = *trans++;
-				char* temp = reinterpret_cast<char*>(*trans++);
+				const char* temp = reinterpret_cast<char*>(*trans++);
 				*perm++ = (ISC_STATUS)(IPTR) (alloc(temp, len));
 			}
 			break;
 		case isc_arg_string:
 		case isc_arg_interpreted:
 			{
-				char* temp = reinterpret_cast<char*>(*trans++);
+				const char* temp = reinterpret_cast<char*>(*trans++);
 				*perm++ = (ISC_STATUS)(IPTR) (alloc(temp, strlen(temp)));
 			}
 			break;

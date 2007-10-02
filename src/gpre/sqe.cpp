@@ -113,6 +113,7 @@ static GPRE_NOD post_select_list(GPRE_NOD, map*);
 static void pop_scope(gpre_req*, scope*);
 static void push_scope(gpre_req*, scope*);
 static gpre_fld* resolve(GPRE_NOD, gpre_ctx*, gpre_ctx**, act**);
+static bool resolve_fields(GPRE_NOD& fields, gpre_req* request, gpre_rse* selection);
 static gpre_ctx* resolve_asterisk(TOK, gpre_rse*);
 static void set_ref(GPRE_NOD, gpre_fld*);
 static char* upcase_string(const char*);
@@ -2666,7 +2667,8 @@ static GPRE_NOD par_relational(gpre_req* request,
 }
 
 
-bool SQE_resolve_fields(GPRE_NOD& fields,
+// Out of alphabetical order.
+static bool resolve_fields(GPRE_NOD& fields,
 				        gpre_req* request,
 				        gpre_rse* selection)
 {
@@ -2756,7 +2758,7 @@ static gpre_rse* par_rse(gpre_req* request,
 	bool aggregate = false;
 
 	if (fields)
-		aggregate = SQE_resolve_fields(fields, request, select);
+		aggregate = resolve_fields(fields, request, select);
 
 	select->rse_fields = fields;
 	if (distinct)
@@ -2871,11 +2873,11 @@ static gpre_rse* par_select( gpre_req* request, gpre_rse* union_rse)
 	gpre_rse* select = par_rse(request, s_list, distinct);
 
 	if (rse_first)
-		SQE_resolve_fields(rse_first, request, select);
+		resolve_fields(rse_first, request, select);
 	select->rse_sqlfirst = rse_first;
 
 	if (rse_skip)
-		SQE_resolve_fields(rse_skip, request, select);
+		resolve_fields(rse_skip, request, select);
 	select->rse_sqlskip = rse_skip;
 
 	if (select->rse_into = into_list)
