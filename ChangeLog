@@ -1,3 +1,58 @@
+2007-10-02 21:19  hvlad
+
+	* firebird2/builds/win32/msvc8/Firebird2.sln (1.6):
+
+	Remove 'common' from dependencies of 'fb2control' to allow static
+	linkage
+
+2007-10-02 21:14  hvlad
+
+	* firebird2/src/utilities/install/services.cpp (1.23):
+
+	Avoid using Firebird::string in WinNT services installation code to
+	allow static linkage of CPL applet
+
+2007-10-02 19:03  alexpeshkoff
+
+	* firebird2/src/jrd/opt.cpp (1.297):
+
+	Avoid unneeded cast
+
+2007-10-02 17:37  asfernandes
+
+	* firebird2/: doc/sql.extensions/README.builtin_functions.txt
+	(1.6), src/dsql/parse.y (1.247):
+
+	Fixed CORE-1490 - New builtin function DATEDIFF() implements wrong
+	choice of keywords for expanded syntax
+
+2007-10-02 14:13  alexpeshkoff
+
+	* firebird2/src/jrd/os/posix/unix.cpp (1.71):
+
+	style
+
+2007-10-02 12:41  robocop
+
+	* firebird2/src/: gpre/sqe.cpp (1.48), common/fb_exception.cpp
+	(1.31):
+
+	Misc.
+
+2007-10-02 12:21  robocop
+
+	* firebird2/builds/win32/msvc6/analyse.dsp (1.1):
+
+	I'm posting this in case someone wants to play with it. It contains
+	one of our forgotten pieces of code.
+
+2007-10-02 10:12  robocop
+
+	* firebird2/: doc/WhatsNew (1.138), builds/win32/msvc7/gsec.vcproj
+	(1.23), builds/win32/msvc6/gsec.dsp (1.22):
+
+	Misc.
+
 2007-10-02 03:53  asfernandes
 
 	* firebird2/src/: common/fb_exception.cpp (1.30),
