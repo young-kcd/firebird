@@ -1,3 +1,9 @@
+2007-10-03 11:33  robocop
+
+	* firebird2/src/utilities/drop.cpp (1.32):
+
+	Misc.
+
 2007-10-02 21:19  hvlad
 
 	* firebird2/builds/win32/msvc8/Firebird2.sln (1.6):
