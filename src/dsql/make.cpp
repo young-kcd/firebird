@@ -1443,7 +1443,7 @@ dsql_nod* MAKE_field(dsql_ctx* context, dsql_fld* field, dsql_nod* indices)
 	if ((field->fld_flags & FLD_nullable) ||
 		(context->ctx_flags & CTX_outer_join))
 	{
-		node->nod_desc.dsc_flags = DSC_nullable;
+		node->nod_desc.dsc_flags |= DSC_nullable;
 	}
 
 	// check if the field is a system domain and the type is CHAR/VARCHAR CHARACTER SET UNICODE_FSS

@@ -216,13 +216,8 @@ void DataTypeUtilBase::makeFromList(dsc* result, const char* expressionName, int
 		}
 
 		// Is this a text type?
-		if (DTYPE_IS_TEXT(arg->dsc_dtype))// ||
-				//((arg->dsc_dtype == dtype_blob) && 
-					//(arg->dsc_sub_type == 1))) // SUB_TYPE 1 = TEXT				
-				//
-				// AB: We should support TEXT BLOB in the near future, but
-				// currently we can't
-				//
+		if (DTYPE_IS_TEXT(arg->dsc_dtype) ||
+			(arg->dsc_dtype == dtype_blob && arg->dsc_sub_type == isc_blob_text))
 		{ 
 			const USHORT cnvlength = TEXT_LEN(arg);
 			if (cnvlength > maxtextlength) {
@@ -241,11 +236,11 @@ void DataTypeUtilBase::makeFromList(dsc* result, const char* expressionName, int
 			//
 			// At least give any first charset other then ASCII/NONE precedence
 			if (!any_text) {
-				ttype = arg->dsc_ttype();
+				ttype = arg->getTextType();
 			}
 			else {
 				if ((ttype == ttype_none) || (ttype == ttype_ascii)) {
-					ttype = arg->dsc_ttype();
+					ttype = arg->getTextType();
 				}
 			}
 			any_text = true;
@@ -280,9 +275,11 @@ void DataTypeUtilBase::makeFromList(dsc* result, const char* expressionName, int
 			all_timestamp = false;
 		}
 
-		if (arg->dsc_dtype == dtype_blob) {
+		if (arg->dsc_dtype == dtype_blob)
+		{
 			// When there was already another datatype raise immediately exception
-			if (!all_blob || !all_same_sub_type) {
+			if (!(any_text && arg->dsc_sub_type == isc_blob_text) && (!all_blob || !all_same_sub_type))
+			{
 				err = true;
 				break;
 			}
@@ -292,7 +289,7 @@ void DataTypeUtilBase::makeFromList(dsc* result, const char* expressionName, int
 				// TEXT BLOB
 				if (!any_text_blob) {
 					// Save first characterset and collation
-					ttype = arg->dsc_blob_ttype();
+					ttype = arg->getTextType();
 				}
 				any_text_blob = true;
 			}
@@ -350,16 +347,27 @@ void DataTypeUtilBase::makeFromList(dsc* result, const char* expressionName, int
 	// allow to use numeric and datetime types together with a 
 	// character-type, but output will always be varying !
 	if (all_text || (any_text && (any_numeric || any_datetime))) {
-		if (any_varying || (any_text && (any_numeric || any_datetime))) {
-			result->dsc_dtype = dtype_varying;
-			maxtextlength += sizeof(USHORT);
+		if (any_text_blob)
+		{
+			result->dsc_dtype = dtype_blob;
+			result->dsc_length = sizeof(ISC_QUAD);
+			result->setBlobSubType(isc_blob_text);
+			result->setTextType(ttype);
 		}
-		else {
-			result->dsc_dtype = dtype_text;
+		else
+		{
+			if (any_varying || (any_text && (any_numeric || any_datetime)))
+			{
+				result->dsc_dtype = dtype_varying;
+				maxtextlength += sizeof(USHORT);
+			}
+			else
+				result->dsc_dtype = dtype_text;
+
+			result->dsc_ttype() = ttype;  // same as dsc_subtype
+			result->dsc_length = maxtextlength;
+			result->dsc_scale = 0;
 		}
-		result->dsc_ttype() = ttype;  // same as dsc_subtype
-		result->dsc_length = maxtextlength;
-		result->dsc_scale = 0;
 		return;
 	}
 	else if (all_numeric) {
