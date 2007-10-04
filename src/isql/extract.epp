@@ -700,14 +700,17 @@ static bool extract_rel_constraints(const char* relation_name)
 		}
 
 		ISQL_get_index_segments (collist, sizeof(collist), RELC.RDB$INDEX_NAME, true);
-		if (!strncmp (RELC.RDB$CONSTRAINT_TYPE, "PRIMARY", 7))
+
+		const bool isPK = !strncmp (RELC.RDB$CONSTRAINT_TYPE, "PRIMARY", 7);
+		if (isPK)
 			isqlGlob.printf("PRIMARY KEY (%s)", collist);
 		else //if (!strncmp (RELC.RDB$CONSTRAINT_TYPE, "UNIQUE", 6)) // redundant
 			isqlGlob.printf("UNIQUE (%s)", collist);
 			
 		// Yes, the same RDB$... naming convention is used for both domains and indices.
-		const bool explicit_index = !fb_utils::implicit_domain(IDX.RDB$INDEX_NAME)
-		    && strcmp(RELC.RDB$CONSTRAINT_NAME, IDX.RDB$INDEX_NAME);
+		const bool explicit_index = (isPK && !fb_utils::implicit_pk(IDX.RDB$INDEX_NAME) ||
+			!isPK && !fb_utils::implicit_domain(IDX.RDB$INDEX_NAME)) &&
+		    strcmp(RELC.RDB$CONSTRAINT_NAME, IDX.RDB$INDEX_NAME);
 		const bool descending_index = !IDX.RDB$INDEX_TYPE.NULL && IDX.RDB$INDEX_TYPE == 1;
 		if (explicit_index || descending_index)
 		{

@@ -4201,15 +4201,16 @@ static processing_state show_table(
 		fb_utils::exact_name(RELC1.RDB$CONSTRAINT_NAME);
 		fb_utils::exact_name(RELC1.RDB$INDEX_NAME);
 		ISQL_get_index_segments (collist, sizeof(collist), RELC1.RDB$INDEX_NAME, false);
-		bool pkuk = false;
+		bool isPK = false;
+		bool isUK = false;
 
 		if (!strncmp (RELC1.RDB$CONSTRAINT_TYPE, "PRIMARY", 7)) {
-			pkuk = true;
+			isPK = true;
 			isqlGlob.printf("CONSTRAINT %s:%s", RELC1.RDB$CONSTRAINT_NAME, NEWLINE);
 			isqlGlob.printf("  Primary key (%s)", collist);
 		}
 		else if (!strncmp (RELC1.RDB$CONSTRAINT_TYPE, "UNIQUE", 6)) {
-			pkuk = true;
+			isUK = true;
 			isqlGlob.printf("CONSTRAINT %s:%s", RELC1.RDB$CONSTRAINT_NAME, NEWLINE);
 			isqlGlob.printf("  Unique key (%s)", collist);
 		}
@@ -4252,13 +4253,15 @@ static processing_state show_table(
 			END_ERROR;
 		}
 		
-		if (pkuk) // Special handling for PRIMARY KEY and UNIQUE constraints.
+		if (isPK || isUK) // Special handling for PRIMARY KEY and UNIQUE constraints.
 		{
 			FOR IDX IN RDB$INDICES
 			WITH IDX.RDB$INDEX_NAME = RELC1.RDB$INDEX_NAME
 				// Yes, the same RDB$... naming convention is used for both domains and indices.
-				const bool explicit_index = !fb_utils::implicit_domain(RELC1.RDB$INDEX_NAME)
-				    && strcmp(RELC1.RDB$CONSTRAINT_NAME, RELC1.RDB$INDEX_NAME);
+				const bool explicit_index =
+					(isPK && !fb_utils::implicit_pk(IDX.RDB$INDEX_NAME) ||
+					isUK && !fb_utils::implicit_domain(RELC1.RDB$INDEX_NAME)) &&
+				    strcmp(RELC1.RDB$CONSTRAINT_NAME, RELC1.RDB$INDEX_NAME);
 				const bool descending_index = !IDX.RDB$INDEX_TYPE.NULL && IDX.RDB$INDEX_TYPE == 1;
 				if (explicit_index || descending_index)
 				{

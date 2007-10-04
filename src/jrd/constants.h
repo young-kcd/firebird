@@ -88,8 +88,13 @@ const char* const RI_ACTION_NONE    = "NO ACTION";
 const char* const RI_RESTRICT       = "RESTRICT";
 
 // Automatically created domains for fields with direct data type.
+// Also, automatically created indices that are unique or non-unique, but not PK.
 const char* const IMPLICIT_DOMAIN_PREFIX = "RDB$";
 const int IMPLICIT_DOMAIN_PREFIX_LEN = 4;
+
+// Automatically created indices for PKs.
+const char* const IMPLICIT_PK_PREFIX = "RDB$PRIMARY";
+const int IMPLICIT_PK_PREFIX_LEN = 11;
 
 // Automatically created security classes for SQL objects.
 const char* const SQL_SECCLASS_PREFIX = "SQL$";

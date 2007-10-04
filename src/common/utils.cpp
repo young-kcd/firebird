@@ -47,7 +47,28 @@
 namespace fb_utils
 {
 
-static bool implicit_name(const char* name, const char* prefix, int prefix_len);
+bool implicit_name(const char* name, const char* prefix, int prefix_len);
+
+
+char* copy_terminate(char* dest, const char* src, size_t bufsize)
+{
+/**************************************
+ *
+ * c o p y _ t e r m i n a t e
+ *
+ **************************************
+ *
+ * Functional description
+ *	Do the same as strncpy but ensure the null terminator is written.
+ *
+ **************************************/
+	if (!bufsize) // Was it a joke?
+		return dest;
+
+	strncpy(dest, src, bufsize);
+	dest[bufsize - 1] = 0;
+	return dest;
+}
 
 
 char* exact_name(char* const str)
@@ -116,7 +137,8 @@ char* exact_name_limit(char* const str, size_t bufsize)
 // *****************************
 // i m p l i c i t _ d o m a i n
 // *****************************
-// Determines if a domain is of the form RDB$<n[...n]>[<spaces>]
+// Determines if a domain or index is of the form RDB$<n[...n]>[<spaces>]
+// This may be true for implicit domains and for unique and non-unique indices except PKs.
 bool implicit_domain(const char* domain_name)
 {
 	return implicit_name(domain_name, IMPLICIT_DOMAIN_PREFIX, IMPLICIT_DOMAIN_PREFIX_LEN);
@@ -130,6 +152,16 @@ bool implicit_domain(const char* domain_name)
 bool implicit_integrity(const char* integ_name)
 {
 	return implicit_name(integ_name, IMPLICIT_INTEGRITY_PREFIX, IMPLICIT_INTEGRITY_PREFIX_LEN);
+}
+
+
+// ***********************************
+// i m p l i c i t _ p k
+// ***********************************
+// Determines if an index is of the form RDB$PRIMARY<n[...n]>[<spaces>]
+bool implicit_pk(const char* pk_name)
+{
+	return implicit_name(pk_name, IMPLICIT_PK_PREFIX, IMPLICIT_PK_PREFIX_LEN);
 }
 
 
