@@ -4410,7 +4410,7 @@ system_function_std_syntax
 	;
 
 system_function_special_syntax
-	: DATEADD '(' value timestamp_part FOR value ')'
+	: DATEADD '(' value timestamp_part TO value ')'
 		{
 			$$ = make_flag_node(nod_sys_function, NOD_SPECIAL_SYNTAX, e_sysfunc_count,
 				$1, make_node(nod_list, 3, $3, $4, $6));
