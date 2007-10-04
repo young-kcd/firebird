@@ -2221,13 +2221,24 @@ static void list_filters()
 			isqlGlob.printf("%s/*  BLOB Filter declarations */%s",
 					 NEWLINE,
 					 NEWLINE);
+			first = false;
 		}
-		first = false;
 
-		isqlGlob.printf("DECLARE FILTER %s INPUT_TYPE %d OUTPUT_TYPE %d%s%sENTRY_POINT '%s' MODULE_NAME '%s'%s%s%s",
-				 FIL.RDB$FUNCTION_NAME, FIL.RDB$INPUT_SUB_TYPE, FIL.RDB$OUTPUT_SUB_TYPE,
-				 NEWLINE, TAB_AS_SPACES, FIL.RDB$ENTRYPOINT, FIL.RDB$MODULE_NAME, isqlGlob.global_Term, NEWLINE,
+		if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
+			ISQL_copy_SQL_id(FIL.RDB$FUNCTION_NAME, SQL_identifier, DBL_QUOTE);
+		else
+			strcpy(SQL_identifier, FIL.RDB$FUNCTION_NAME);
+
+		isqlGlob.printf("DECLARE FILTER %s INPUT_TYPE %d OUTPUT_TYPE %d%s",
+				 SQL_identifier, FIL.RDB$INPUT_SUB_TYPE, FIL.RDB$OUTPUT_SUB_TYPE,
 				 NEWLINE);
+				 
+		ISQL_copy_SQL_id(FIL.RDB$ENTRYPOINT, SQL_identifier, SINGLE_QUOTE);
+		ISQL_copy_SQL_id(FIL.RDB$MODULE_NAME, SQL_identifier2, SINGLE_QUOTE);
+
+		isqlGlob.printf("%sENTRY_POINT %s MODULE_NAME %s%s%s%s",
+				 TAB_AS_SPACES, SQL_identifier, SQL_identifier2,
+				 isqlGlob.global_Term, NEWLINE, NEWLINE);
 
 	END_FOR
 	ON_ERROR
@@ -2388,7 +2399,7 @@ static void list_functions()
 			strcpy(SQL_identifier, FUN.RDB$FUNCTION_NAME);
 
 		// Start new function declaration 
-		isqlGlob.printf("DECLARE EXTERNAL FUNCTION %s %s",
+		isqlGlob.printf("DECLARE EXTERNAL FUNCTION %s%s",
 				 SQL_identifier,
 				 NEWLINE);
 
@@ -2543,9 +2554,12 @@ static void list_functions()
 				 NEWLINE);
 
 		// Print out entrypoint information 
-		isqlGlob.printf("ENTRY_POINT '%s' MODULE_NAME '%s'%s%s%s",
-				 FUN.RDB$ENTRYPOINT,
-				 FUN.RDB$MODULE_NAME,
+		ISQL_copy_SQL_id(FUN.RDB$ENTRYPOINT, SQL_identifier, SINGLE_QUOTE);
+		ISQL_copy_SQL_id(FUN.RDB$MODULE_NAME, SQL_identifier2, SINGLE_QUOTE);
+		
+		isqlGlob.printf("ENTRY_POINT %s MODULE_NAME %s%s%s%s",
+				 SQL_identifier,
+				 SQL_identifier2,
 				 isqlGlob.global_Term,
 				 NEWLINE,
 				 NEWLINE);
