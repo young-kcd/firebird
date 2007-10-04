@@ -2832,7 +2832,7 @@ Fetches = !f', NULL, NULL);
 ('NO_GRANT_ON_ROL', 'SHOW_metadata', 'show.e', NULL, 17, 97, NULL, 'There is no membership privilege granted on @1 in this database', NULL, NULL);
 ('UNEXPECTED_EOF', 'do_isql', 'isql.e', NULL, 17, 98, NULL, 'Expected end of statement, encountered EOF', NULL, NULL);
 ('TIME_ERR', 'add_row()', 'isql.e', NULL, 17, 101, NULL, 'Bad TIME: @1', NULL, NULL);
-('HLP_OBJTYPE3', 'help', 'isql.e', NULL, 17, 102, NULL, '               TRIGGER, VERSION, VIEW', NULL, NULL);
+('HLP_OBJTYPE3', 'help', 'isql.epp', NULL, 17, 102, NULL, '               TRIGGER, VERSION, USERS, VIEW', NULL, NULL);
 ('', 'SHOW_metadata', 'show.e', NULL, 17, 103, NULL, 'There is no role @1 in this database', NULL, NULL);
 ('USAGE_BAIL', 'ISQL_main', 'isql.epp', NULL, 17, 104, NULL, '	-b(ail)                 bail on errors (set bail on)', NULL, NULL);
 ('', 'create_db', 'isql.e', NULL, 17, 105, NULL, 'Incomplete string in @1', NULL, NULL);
@@ -2889,6 +2889,9 @@ Fetches = !f', NULL, NULL);
 ('BULK_PROMPT', 'bulk_insert_hack', 'isql.epp', NULL, 17, 156, NULL, 'BULK> ', NULL, NULL);
 -- Do not change the arguments of the previous ISQL messages.
 -- Write the new ISQL messages here.
+('NO_CONNECTED_USERS', 'SHOW_metadata', 'show.epp', NULL, 17, 157, NULL, 'There are no connected users', NULL, NULL);
+('USERS_IN_DB', 'SHOW_metadata', 'show.epp', NULL, 17, 158, NULL, 'Users in the database', NULL, NULL);
+('OUTPUT_TRUNCATED', 'SHOW_metadata', 'show.epp', NULL, 17, 159, NULL, 'Output was truncated', NULL, NULL);
 -- GSEC
 ('GsecMsg1', 'get_line', 'gsec.e', NULL, 18, 1, NULL, 'GSEC>', NULL, NULL);
 ('GsecMsg2', 'printhelp', 'gsec.e', 'This message is used in the Help display. It should be the same as number 1 (but in lower case).', 18, 2, NULL, 'gsec', NULL, NULL);

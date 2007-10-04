@@ -1188,6 +1188,7 @@ Fetches = !f', NULL, NULL, 'c_pg');
 (1183, 'cvc', '2006-08-31 04:21:42', 8, 43, 'column %s is used in table %s (local name %s) and cannot be dropped', NULL, NULL, 'c_pg');
 (1184, 'cvc', '2006-10-01 03:18:30', 8, 18, 'could not find UNIQUE or PRIMARY KEY constraint with specified columns', NULL, NULL, 'c_pg');
 (1185, 'cvc', '2006-10-01 03:20:51', 8, 20, 'could not find PRIMARY KEY index in specified table', NULL, NULL, 'c_pg');
+(1186, 'cvc', '2007-10-03 05:28:09', 17, 102, '               TRIGGER, VERSION, VIEW', NULL, NULL, 'c_pg');
 stop
 
 COMMIT WORK;

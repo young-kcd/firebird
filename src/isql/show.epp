@@ -344,8 +344,10 @@ ShowOptions::show_commands ShowOptions::getCommand(const char* cmd)
 {
 	for (int i = 0; i < FB_NELEM(options); ++i)
 	{
+		// As long as we know our input is already uppercased, the call to
+		// fb_utils::strnicmp as been replaced by strncmp until the need arises.
 		size_t swlen = strlen(cmd);
-		if (swlen >= options[i].abbrlen && !fb_utils::strnicmp(cmd, options[i].text, swlen))
+		if (swlen >= options[i].abbrlen && !strncmp(cmd, options[i].text, swlen))
 			return options[i].kw;
 	}
 	return wrong;
@@ -1542,7 +1544,9 @@ processing_state SHOW_metadata(const SCHAR* const* cmd,
 		break;
 
 	case ShowOptions::users:
-		show_users();
+		ret = show_users();
+		if (ret == OBJECT_NOT_FOUND) // It seems impossible, but...
+			key = NO_CONNECTED_USERS;
 		break;
 
 	default:
@@ -4526,7 +4530,7 @@ static processing_state show_users()
 		isc_info_end
 	};
 
-	//TEXT msg[MSG_LENGTH]; // When messages can be translated.
+	TEXT msg[MSG_LENGTH]; // When messages can be translated.
 
 	char my_user[128] = "";
 	XSQLDA osqlda; // XSQLDA comes with one XSQLVAR inside.
@@ -4538,9 +4542,22 @@ static processing_state show_users()
 	ovar.sqlind = 0;
 	ovar.sqldata = my_user;
 	ovar.sqltype = SQL_VARYING;
-	ovar.sqllen = sizeof(my_user);
+	ovar.sqllen = sizeof(my_user) - 3;
 	const char* getuser = isqlGlob.major_ods < ODS_VERSION10 ?
 	    "select user from rdb$database" : "select current_user from rdb$database";
+	    
+/*
+#ifdef TRUSTED_AUTH
+	//if (Trusted_auth)
+	{
+		if (isqlGlob.major_ods > ODS_VERSION11
+			|| isqlGlob.major_ods == ODS_VERSION11 && isqlGlob.minor_ods > 1)
+		{
+			getuser = "select system_user from rdb$database";
+		}
+	}
+#endif
+*/
 
 	if (isc_dsql_exec_immed2(isc_status, &DB, &gds_trans, 0,
 							 getuser,
@@ -4566,11 +4583,11 @@ static processing_state show_users()
 
 	bool newline = false;
 	processing_state rc = OBJECT_NOT_FOUND;
-	for (const UCHAR* d = buffer; *d != isc_info_end;)
+	for (const UCHAR* data = buffer; *data != isc_info_end;)
 	{
-		const UCHAR item = *d++;
-		const int length = gds__vax_integer(d, 2);
-		d += 2;
+		const UCHAR item = *data++;
+		const int length = gds__vax_integer(data, 2);
+		data += 2;
 
 		switch (item)
 		{
@@ -4580,20 +4597,26 @@ static processing_state show_users()
 		case isc_info_user_names:
 			{
 				if (rc == OBJECT_NOT_FOUND)
-					printf("%s\n", "Users in the database");
+				{
+					// First time in the loop, print title.
+					ISQL_msg_get(USERS_IN_DB, msg);
+					isqlGlob.printf("%s\n", msg);
+					rc = SKIP; // We found at least one user.
+				}
 
-				int len = *d;
+				int len = *data;
 				fb_assert(len == length - 1);
-				if (len == avary->vary_length && !memcmp(avary->vary_string, d + 1, len))
-					isqlGlob.printf("# %-37.*s", len, d + 1);
+				const UCHAR* uname = data + 1;
+				// Let's mark all attachments with our same user with a # prefix.
+				if (len == avary->vary_length && !memcmp(avary->vary_string, uname, len))
+					isqlGlob.printf("# %-37.*s", len, uname);
 				else
-					isqlGlob.printf("  %-37.*s", len, d + 1);
+					isqlGlob.printf("  %-37.*s", len, uname);
 
 				if (newline)
 					isqlGlob.printf("\n");
 
 				newline = !newline;
-				rc = SKIP;
 			}
 			break;
 			
@@ -4601,12 +4624,13 @@ static processing_state show_users()
 			if (newline)
 				isqlGlob.printf("\n");
 				
-			isqlGlob.printf("Output was truncated\n");
+			ISQL_msg_get(OUTPUT_TRUNCATED, msg);
+			isqlGlob.printf("%s\n", msg);
 			return rc; // If we got some items, we are (partially) successful.
 		}
 
-		d += length;
-		if (d >= buffer + sizeof(buffer))
+		data += length;
+		if (data >= buffer + sizeof(buffer))
 			break;
 	}
 
@@ -4615,3 +4639,4 @@ static processing_state show_users()
 		
 	return rc;
 }
+
