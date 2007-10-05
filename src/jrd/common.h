@@ -131,6 +131,7 @@
 
 #ifdef sparc
 #define IMPLEMENTATION  isc_info_db_impl_linux_sparc /* 65  */
+#define RISC_ALIGNMENT
 #endif /* sparc */
 
 #ifdef MIPSEL
@@ -449,6 +450,7 @@ static inline int sinixz_sigaction(int sig, const struct sinixz_sigaction *act,
 //#define DOUBLE_ALIGN    8
 
 #define IMPLEMENTATION  isc_info_db_impl_isc_sun4 /* 30 */
+#define RISC_ALIGNMENT
 #else /* sparc */
 
 #ifdef i386
@@ -503,6 +505,8 @@ static inline int sinixz_sigaction(int sig, const struct sinixz_sigaction *act,
 #define MOVE_FAST(from, to, length)       memcpy (to, from, (int) (length))
 #define MOVE_FASTER(from, to, length)     memcpy (to, from, (int) (length))
 #define MOVE_CLEAR(to, length)           memset (to, 0, (int) (length))
+
+#define RISC_ALIGNMENT
 
 #endif /* hpux */
 

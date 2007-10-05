@@ -55,8 +55,8 @@ public:
 	static string convertUtf16ToAscii(const string& utf16, bool* error);
 
 	static ULONG cvtAsciiToUtf16(csconvert* obj, ULONG nSrc, const UCHAR* pSrc,
-		ULONG nDest, USHORT* pDest, USHORT* err_code, ULONG* err_position);
-	static ULONG cvtUtf16ToAscii(csconvert* obj, ULONG nSrc, const USHORT* pSrc,
+		ULONG nDest, UCHAR* pDest, USHORT* err_code, ULONG* err_position);
+	static ULONG cvtUtf16ToAscii(csconvert* obj, ULONG nSrc, const UCHAR* pSrc,
 		ULONG nDest, UCHAR* pDest, USHORT* err_code, ULONG* err_position);
 
 	static void initAsciiCharset(charset* cs);

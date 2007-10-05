@@ -38,10 +38,10 @@ CHARSET_ENTRY(CS_unicode_ucs2)
 	csptr->charset_space_character = (const BYTE*) & space;	/* 0x0020 */
 	csptr->charset_fn_well_formed = NULL;
 	CV_convert_init(&csptr->charset_to_unicode,
-					reinterpret_cast<pfn_INTL_convert>(CV_wc_copy),
+					CV_wc_copy,
 					NULL, NULL);
 	CV_convert_init(&csptr->charset_from_unicode,
-					reinterpret_cast<pfn_INTL_convert>(CV_wc_copy),
+					CV_wc_copy,
 					NULL, NULL);
 	CHARSET_RETURN;
 }

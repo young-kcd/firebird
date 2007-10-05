@@ -36,10 +36,10 @@
 #define	SPE_HAN(b1, b2)	(((b1) == 0xa4) && (((b2) == 0xa2) || ((b2) == 0xa4) || ((b2) == 0xa7) || ((b2) == 0xa8) || ((b2) == 0xa9) || ((b2) == 0xb1) || ((b2) == 0xb2) || ((b2) == 0xb3) || ((b2) == 0xb5) || ((b2) == 0xb6) || ((b2) == 0xb7) || ((b2) == 0xb8) || ((b2) == 0xb9) || ((b2) == 0xba) || ((b2) == 0xbb) || ((b2) == 0xbc) || ((b2) == 0xbd) || ((b2) == 0xbe)))
 
 ULONG CVKSC_ksc_to_unicode(csconvert* obj, ULONG ksc_len, const UCHAR* ksc_str,
-						   ULONG dest_len, USHORT *dest_ptr,
+						   ULONG dest_len, UCHAR *dest_ptr,
 						   USHORT *err_code, ULONG *err_position);
 
-ULONG CVKSC_unicode_to_ksc(csconvert* obj, ULONG unicode_len, const USHORT* unicode_str,
+ULONG CVKSC_unicode_to_ksc(csconvert* obj, ULONG unicode_len, const UCHAR* unicode_str,
 						   ULONG ksc_len, UCHAR *ksc_str,
 						   USHORT *err_code, ULONG *err_position);
 

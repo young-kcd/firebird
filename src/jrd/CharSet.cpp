@@ -93,6 +93,7 @@
 
 #include "firebird.h"
 #include "../jrd/intl_classes.h"
+#include "../common/classes/Aligner.h"
 
 using namespace Jrd;
 
@@ -178,7 +179,7 @@ ULONG MultiByteCharSet::length(ULONG srcLen, const UCHAR* src, bool countTrailin
 		ULONG len = getConvToUnicode().convertLength(srcLen);
 
 		// convert to UTF16
-		Firebird::HalfStaticArray<USHORT, BUFFER_SMALL> str;
+		Firebird::HalfStaticArray<USHORT, BUFFER_SMALL / sizeof(USHORT)> str;
 		len = getConvToUnicode().convert(srcLen, src, len,
 						str.getBuffer(len / sizeof(USHORT)));
 
@@ -212,12 +213,12 @@ ULONG MultiByteCharSet::substring(ULONG srcLen, const UCHAR* src, ULONG dstLen, 
 		// this may be costly.
 		ULONG badInputPos;
 		unilength = getConvToUnicode().convert(srcLen, src, unilength,
-			reinterpret_cast<USHORT*>(str.getBuffer(unilength)), &badInputPos);
+			Firebird::OutAligner<USHORT>(str.getBuffer(unilength), unilength), &badInputPos);
 
 		// generate substring of UTF16
 		Firebird::HalfStaticArray<UCHAR, BUFFER_SMALL> substr;
-		unilength = UnicodeUtil::utf16Substring(unilength, reinterpret_cast<const USHORT*>(str.begin()),
-			unilength, reinterpret_cast<USHORT*>(substr.getBuffer(unilength)), startPos, len);
+		unilength = UnicodeUtil::utf16Substring(unilength, Firebird::Aligner<USHORT>(str.begin(), unilength),
+			unilength, Firebird::OutAligner<USHORT>(substr.getBuffer(unilength), unilength), startPos, len);
 
 		// convert generated substring to original charset
 		result = getConvFromUnicode().convert(unilength, substr.begin(), dstLen, dst);

@@ -171,6 +171,7 @@ USHORT UnicodeUtil::utf16ToKey(USHORT srcLen, const USHORT* src, USHORT dstLen, 
 	fb_assert(U_SUCCESS(status));
 
 	int32_t len = ucnv_fromUChars(conv, reinterpret_cast<char*>(dst), dstLen, 
+								  // safe cast - alignment not changed
 								  reinterpret_cast<const UChar*>(src), srcLen / sizeof(*src), &status);
 	fb_assert(U_SUCCESS(status));
 
@@ -562,6 +563,7 @@ SSHORT UnicodeUtil::utf16Compare(ULONG len1, const USHORT* str1, ULONG len2, con
 
 	*error_flag = false;
 
+							   // safe casts - alignment not changed
 	int32_t cmp = u_strCompare(reinterpret_cast<const UChar*>(str1), len1 / sizeof(*str1), 
 							   reinterpret_cast<const UChar*>(str2), len2 / sizeof(*str2), true);
 	
@@ -572,6 +574,7 @@ SSHORT UnicodeUtil::utf16Compare(ULONG len1, const USHORT* str1, ULONG len2, con
 ULONG UnicodeUtil::utf16Length(ULONG len, const USHORT* str)
 {
 	fb_assert(len % sizeof(*str) == 0);
+						 // safe cast - alignment not changed
 	return u_countChar32(reinterpret_cast<const UChar*>(str), len / sizeof(*str));
 }
 
@@ -1050,6 +1053,7 @@ USHORT UnicodeUtil::Utf16Collation::stringToKey(USHORT srcLen, const USHORT* src
 				else
 					--len;
 
+										   // safe cast - alignment not changed
 				if (u_strCompare(str, len, reinterpret_cast<const UChar*>(src) + srcLen - len, len, true) == 0)
 				{
 					srcLen -= len;
@@ -1076,6 +1080,7 @@ USHORT UnicodeUtil::Utf16Collation::stringToKey(USHORT srcLen, const USHORT* src
 	if (srcLen != 0)
 	{
 		return icu->ucolGetSortKey(static_cast<const UCollator*>(coll),
+			// safe cast - alignment not changed
 			reinterpret_cast<const UChar*>(src), srcLen, dst, dstLen);
 	}
 	else
@@ -1118,6 +1123,7 @@ SSHORT UnicodeUtil::Utf16Collation::compare(ULONG len1, const USHORT* str1,
 	}
 
 	return (SSHORT)icu->ucolStrColl(static_cast<const UCollator*>(compareCollator),
+								// safe casts - alignment not changed
 								reinterpret_cast<const UChar*>(str1), len1, 
 								reinterpret_cast<const UChar*>(str2), len2);
 }
@@ -1129,13 +1135,13 @@ ULONG UnicodeUtil::Utf16Collation::canonical(ULONG srcLen, const USHORT* src, UL
 	USHORT errCode;
 	ULONG errPosition;
 
-	HalfStaticArray<UCHAR, BUFFER_SMALL> upperStr;
+	HalfStaticArray<USHORT, BUFFER_SMALL / 2> upperStr;
 
 	if (attributes & TEXTTYPE_ATTR_CASE_INSENSITIVE)
 	{
 		srcLen = utf16UpperCase(srcLen, src,
-			dstLen, reinterpret_cast<USHORT*>(upperStr.getBuffer(dstLen)), exceptions);
-		src = reinterpret_cast<USHORT*>(upperStr.begin());
+			dstLen, upperStr.getBuffer(dstLen / sizeof(USHORT)), exceptions);
+		src = upperStr.begin();
 	}
 
 	// convert UTF-16 to UTF-32

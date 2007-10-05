@@ -93,7 +93,7 @@ static ULONG unicode_to_icu(csconvert* cv,
 	UConverter* conv = create_converter(cv, &status);
 
 	ULONG len = ucnv_fromUChars(conv, reinterpret_cast<char*>(dst), dstLen,
-        reinterpret_cast<const UChar*>(src), srcLen / sizeof(UChar), &status);
+        Firebird::Aligner<UChar>(src, srcLen), srcLen / sizeof(UChar), &status);
 
 	if (!U_SUCCESS(status))
 	{
@@ -133,7 +133,7 @@ static ULONG icu_to_unicode(csconvert* cv,
 	UErrorCode status = U_ZERO_ERROR;
 	UConverter* conv = create_converter(cv, &status);
 
-	ULONG len = ucnv_toUChars(conv, reinterpret_cast<UChar*>(dst), dstLen / sizeof(UChar),
+	ULONG len = ucnv_toUChars(conv, Firebird::OutAligner<UChar>(dst, dstLen), dstLen / sizeof(UChar),
         reinterpret_cast<const char*>(src), srcLen, &status);
 
 	if (!U_SUCCESS(status))

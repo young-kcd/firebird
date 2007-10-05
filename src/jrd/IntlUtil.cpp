@@ -30,6 +30,7 @@
 #include "../jrd/intl_classes.h"
 #include "../intl/country_codes.h"
 #include "../common/classes/auto.h"
+#include "../common/classes/Aligner.h"
 
 
 using Jrd::UnicodeUtil;
@@ -263,7 +264,7 @@ string IntlUtil::convertUtf16ToAscii(const string& utf16, bool* error)
 
 
 ULONG IntlUtil::cvtAsciiToUtf16(csconvert* obj, ULONG nSrc, const UCHAR* pSrc,
-	ULONG nDest, USHORT* pDest, USHORT* err_code, ULONG* err_position)
+	ULONG nDest, UCHAR* ppDest, USHORT* err_code, ULONG* err_position)
 {
 /**************************************
  *
@@ -282,8 +283,11 @@ ULONG IntlUtil::cvtAsciiToUtf16(csconvert* obj, ULONG nSrc, const UCHAR* pSrc,
 	fb_assert(err_code != NULL);
 
 	*err_code = 0;
-	if (pDest == NULL)			/* length estimate needed? */
+	if (ppDest == NULL)			/* length estimate needed? */
 		return (2 * nSrc);
+
+	Firebird::OutAligner<USHORT> d(ppDest, nDest);
+	USHORT* pDest = d;
 
 	const USHORT* const pStart = pDest;
 	const UCHAR* const pStart_src = pSrc;
@@ -305,7 +309,7 @@ ULONG IntlUtil::cvtAsciiToUtf16(csconvert* obj, ULONG nSrc, const UCHAR* pSrc,
 }
 
 
-ULONG IntlUtil::cvtUtf16ToAscii(csconvert* obj, ULONG nSrc, const USHORT* pSrc,
+ULONG IntlUtil::cvtUtf16ToAscii(csconvert* obj, ULONG nSrc, const UCHAR* ppSrc,
 	ULONG nDest, UCHAR* pDest, USHORT* err_code, ULONG* err_position)
 {
 /**************************************
@@ -327,6 +331,9 @@ ULONG IntlUtil::cvtUtf16ToAscii(csconvert* obj, ULONG nSrc, const USHORT* pSrc,
 	*err_code = 0;
 	if (pDest == NULL)			/* length estimate needed? */
 		return (nSrc / 2);
+
+	Firebird::Aligner<USHORT> s(ppSrc, nSrc);
+	const USHORT* pSrc = s;
 
 	const UCHAR* const pStart = pDest;
 	const USHORT* const pStart_src = pSrc;
@@ -351,8 +358,8 @@ ULONG IntlUtil::cvtUtf16ToAscii(csconvert* obj, ULONG nSrc, const USHORT* pSrc,
 void IntlUtil::initAsciiCharset(charset* cs)
 {
 	initNarrowCharset(cs, "ASCII");
-	initConvert(&cs->charset_to_unicode, reinterpret_cast<pfn_INTL_convert>(cvtAsciiToUtf16));
-	initConvert(&cs->charset_from_unicode, reinterpret_cast<pfn_INTL_convert>(cvtUtf16ToAscii));
+	initConvert(&cs->charset_to_unicode, cvtAsciiToUtf16);
+	initConvert(&cs->charset_from_unicode, cvtUtf16ToAscii);
 }
 
 
@@ -470,8 +477,9 @@ ULONG IntlUtil::toLower(Jrd::CharSet* cs, ULONG srcLen, const UCHAR* src, ULONG 
 
 	// convert to lowercase
 	Firebird::HalfStaticArray<UCHAR, BUFFER_SMALL> lower_str;
-	srcLen = UnicodeUtil::utf16LowerCase(srcLen, reinterpret_cast<USHORT*>(utf16_ptr),
-		utf16_length, reinterpret_cast<USHORT*>(lower_str.getBuffer(utf16_length)), exceptions);
+	srcLen = UnicodeUtil::utf16LowerCase(srcLen, Firebird::Aligner<USHORT>(utf16_ptr, srcLen),
+		utf16_length, Firebird::OutAligner<USHORT>(lower_str.getBuffer(utf16_length), utf16_length), 
+		exceptions);
 
 	// convert to original character set
 	return cs->getConvFromUnicode().convert(srcLen, lower_str.begin(), dstLen, dst);
@@ -495,8 +503,9 @@ ULONG IntlUtil::toUpper(Jrd::CharSet* cs, ULONG srcLen, const UCHAR* src, ULONG 
 
 	// convert to uppercase
 	Firebird::HalfStaticArray<UCHAR, BUFFER_SMALL> upper_str;
-	srcLen = UnicodeUtil::utf16UpperCase(srcLen, reinterpret_cast<USHORT*>(utf16_ptr),
-		utf16_length, reinterpret_cast<USHORT*>(upper_str.getBuffer(utf16_length)), exceptions);
+	srcLen = UnicodeUtil::utf16UpperCase(srcLen, Firebird::Aligner<USHORT>(utf16_ptr, srcLen),
+		utf16_length, Firebird::OutAligner<USHORT>(upper_str.getBuffer(utf16_length), utf16_length), 
+		exceptions);
 
 	// convert to original character set
 	return cs->getConvFromUnicode().convert(srcLen, upper_str.begin(), dstLen, dst);
@@ -789,8 +798,8 @@ static ULONG unicodeCanonical(texttype* tt, ULONG srcLen, const UCHAR* src, ULON
 			&offendingPos);
 
 		return tt->texttype_impl->collation->canonical(
-			utf16Len, reinterpret_cast<USHORT*>(utf16Str.begin()),
-			dstLen, reinterpret_cast<ULONG*>(dst), NULL);
+			utf16Len, Firebird::Aligner<USHORT>(utf16Str.begin(), utf16Len),
+			dstLen, Firebird::OutAligner<ULONG>(dst, dstLen), NULL);
 	}
 	catch (BadAlloc)
 	{

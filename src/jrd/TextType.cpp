@@ -96,6 +96,7 @@
 #include "../jrd/jrd.h"
 #include "../jrd/intl_classes.h"
 #include "../jrd/IntlUtil.h"
+#include "../common/classes/Aligner.h"
 
 
 namespace Jrd {
@@ -202,7 +203,7 @@ USHORT TextType::string_to_key(USHORT srcLen,
 
 		if (getCharSet()->isMultiByte())
 		{
-			dstLen = UnicodeUtil::utf16ToKey(srcLen, reinterpret_cast<const USHORT*>(src), 
+			dstLen = UnicodeUtil::utf16ToKey(srcLen, Firebird::Aligner<USHORT>(src, srcLen), 
 											 dstLen, dst, key_type);
 		}
 		else
@@ -285,8 +286,8 @@ SSHORT TextType::compare(ULONG len1,
 		if (getCharSet()->isMultiByte())
 		{
 			INTL_BOOL error_flag;
-			return UnicodeUtil::utf16Compare(len1, reinterpret_cast<const USHORT*>(str1), 
-											 len2, reinterpret_cast<const USHORT*>(str2), &error_flag);
+			return UnicodeUtil::utf16Compare(len1, Firebird::Aligner<USHORT>(str1, len1), 
+											 len2, Firebird::Aligner<USHORT>(str2, len2), &error_flag);
 		}
 		else
 		{
@@ -348,8 +349,8 @@ ULONG TextType::canonical(ULONG srcLen,
 		ULONG errPos;
 
 		// convert UTF-16 to UTF-32
-		return UnicodeUtil::utf16ToUtf32(utf16_len, reinterpret_cast<const USHORT*>(utf16_str.begin()),
-			dstLen, reinterpret_cast<ULONG*>(dst), &errCode, &errPos) / sizeof(ULONG);
+		return UnicodeUtil::utf16ToUtf32(utf16_len, Firebird::Aligner<USHORT>(utf16_str.begin(), utf16_len),
+			dstLen, Firebird::OutAligner<ULONG>(dst, dstLen), &errCode, &errPos) / sizeof(ULONG);
 	}
 	else
 	{

@@ -40,10 +40,10 @@ static void common_8bit_init(charset* csptr,
 	csptr->charset_space_character = (const BYTE*) " ";
 	csptr->charset_fn_well_formed = NULL;
 	CV_convert_init(&csptr->charset_to_unicode,
-					reinterpret_cast<pfn_INTL_convert>(CV_nc_to_unicode),
+					CV_nc_to_unicode,
 					to_unicode_tbl, NULL);
 	CV_convert_init(&csptr->charset_from_unicode,
-					reinterpret_cast<pfn_INTL_convert>(CV_unicode_to_nc),
+					CV_unicode_to_nc,
 					from_unicode_tbl1, from_unicode_tbl2);
 }
 

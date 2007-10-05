@@ -30,9 +30,9 @@
 			 (UCHAR)((uc)&0xff)<=0xfe)	/* BIG-5 2nd-byte */
 
 ULONG CVBIG5_big5_to_unicode(csconvert* obj, ULONG src_len, const UCHAR* src_ptr,
-							 ULONG dest_len, USHORT *dest_ptr,
+							 ULONG dest_len, UCHAR *dest_ptr,
 							 USHORT *err_code, ULONG *err_position);
-ULONG CVBIG5_unicode_to_big5(csconvert* obj, ULONG unicode_len, const USHORT* unicode_str,
+ULONG CVBIG5_unicode_to_big5(csconvert* obj, ULONG unicode_len, const UCHAR* unicode_str,
 							 ULONG big5_len, UCHAR *big5_str,
 							 USHORT *err_code, ULONG *err_position);
 USHORT CVBIG5_check_big5(charset* cs, ULONG big5_len, const UCHAR* big5_str, ULONG* offending_position);

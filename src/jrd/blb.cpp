@@ -266,8 +266,8 @@ blb* BLB_create2(thread_db* tdbb,
 						   bpb,
 						   &from,
 						   &to,
-						   reinterpret_cast<USHORT*>(&from_charset),
-						   reinterpret_cast<USHORT*>(&to_charset),
+						   reinterpret_cast<USHORT*>(&from_charset),	// safe - alignment not changed
+						   reinterpret_cast<USHORT*>(&to_charset),		// safe - alignment not changed
 						   NULL, NULL, NULL, NULL);
 	blb* blob = allocate_blob(tdbb, transaction);
 
@@ -1300,8 +1300,8 @@ blb* BLB_open2(thread_db* tdbb,
 					bpb,
 					&from,
 					&to,
-					reinterpret_cast<USHORT*>(&from_charset),
-					reinterpret_cast<USHORT*>(&to_charset),
+					reinterpret_cast<USHORT*>(&from_charset),	// safe - alignment not changed
+					reinterpret_cast<USHORT*>(&to_charset),		// safe - alignment not changed
 					&from_type_specified, &from_charset_specified,
 					&to_type_specified, &to_charset_specified);
 

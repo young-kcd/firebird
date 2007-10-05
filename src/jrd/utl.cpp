@@ -1641,6 +1641,7 @@ int API_ROUTINE BLOB_get(BSTREAM* bstream)
 
 		isc_get_segment(status_vector, &bstream->bstr_blob,
 						 reinterpret_cast<USHORT*>(&bstream->bstr_cnt),
+							 // safe - cast from short, alignment is OK
 						 bstream->bstr_length, bstream->bstr_buffer);
 		if (status_vector[1] && status_vector[1] != isc_segment) {
 			bstream->bstr_ptr = 0;

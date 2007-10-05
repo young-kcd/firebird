@@ -41,11 +41,11 @@ CHARSET_ENTRY(CS_big_5)
 	csptr->charset_fn_well_formed = CVBIG5_check_big5;
 
 	CV_convert_init(&csptr->charset_to_unicode,
-					reinterpret_cast<pfn_INTL_convert>(CVBIG5_big5_to_unicode),
+					CVBIG5_big5_to_unicode,
 					to_unicode_mapping_array,
 					to_unicode_map);
 	CV_convert_init(&csptr->charset_from_unicode,
-					reinterpret_cast<pfn_INTL_convert>(CVBIG5_unicode_to_big5),
+					CVBIG5_unicode_to_big5,
 					from_unicode_mapping_array,
 					from_unicode_map);
 

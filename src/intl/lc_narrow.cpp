@@ -754,18 +754,15 @@ ULONG LC_NARROW_canonical(texttype* obj, ULONG srcLen, const UCHAR* src, ULONG d
 
 		if ((obj->texttype_impl->texttype_flags & (TEXTTYPE_secondary_insensitive | TEXTTYPE_tertiary_insensitive)) == 0)
 		{
-			*reinterpret_cast<USHORT*>(dst) = (primary << 8) | (coll->Secondary << 4) | coll->Tertiary;
-			dst += sizeof(USHORT);
+			put(dst, (USHORT) ((primary << 8) | (coll->Secondary << 4) | coll->Tertiary));
 		}
 		else if ((obj->texttype_impl->texttype_flags & TEXTTYPE_secondary_insensitive) == 0)
 		{
-			*reinterpret_cast<USHORT*>(dst) = (primary << 8) | coll->Secondary;
-			dst += sizeof(USHORT);
+			put(dst, (USHORT) ((primary << 8) | coll->Secondary));
 		}
 		else if ((obj->texttype_impl->texttype_flags & TEXTTYPE_tertiary_insensitive) == 0)
 		{
-			*reinterpret_cast<USHORT*>(dst) = (primary << 8) | coll->Tertiary;
-			dst += sizeof(USHORT);
+			put(dst, (USHORT) ((primary << 8) | coll->Tertiary));
 		}
 		else
 			*dst++ = primary;
