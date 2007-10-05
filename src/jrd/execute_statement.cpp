@@ -45,6 +45,7 @@
 #define	WHY_NO_API 
 #include "../jrd/why_proto.h"
 
+#include "../jrd/align.h"
 #include "../jrd/execute_statement.h"
 #include "../common/classes/GenericMap.h"
 #include "../common/classes/init.h"
@@ -86,6 +87,7 @@ void ExecuteStatement::Open(thread_db* tdbb, jrd_nod* sql, SSHORT nVars, bool Si
 	SET_TDBB(tdbb);
 
 	// initialize sqlTypeToDscType in the first call to this function
+	// non-thread safe, require mutex in Fb3
 	if (sqlTypeToDscType().count() == 0)
 	{
 		for (int i = 0; i < FB_NELEM(sqlType); ++i)
@@ -318,15 +320,24 @@ ULONG ExecuteStatement::ParseSqlda(void)
 {
     ULONG offset = 0;
     int i = 0;
+	UCHAR dscType;
     for (XSQLVAR* var = Sqlda->sqlvar;
                         i < Sqlda->sqld; var++, i++)
 	{
         USHORT length = var->sqllen;
         const int type = var->sqltype & (~1);
+		sqlTypeToDscType().get(type, dscType);
         if (type == SQL_VARYING)
             length += sizeof (SSHORT);
+
+		const USHORT align = type_alignments[dscType];
+		if (align) {
+			offset = FB_ALIGN(offset, align);
+		}
         var->sqldata = &Buffer[offset];
         offset += length;
+
+		offset = FB_ALIGN(offset, sizeof(short));
         var->sqlind = (short*) (&Buffer[offset]);
         offset += sizeof (short);
     }
