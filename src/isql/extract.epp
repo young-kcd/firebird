@@ -265,7 +265,7 @@ int EXTRACT_list_table(const SCHAR* relation_name,
  *
  **************************************/
 /**************************************
- *	default_char_set_id warrents special
+ *	default_char_set_id warrants special
  *	consideration.  If the metadata for a
  *	table is being extracted when there is
  *	really no need to redundantly and repeatedly
@@ -1045,6 +1045,9 @@ static processing_state list_all_grants2(bool show_role_list,
  **************************************/
 	bool first_role = true;
 	TEXT prev_owner[44];
+	
+	// Only extract (not show) wants the role list and with escaped quoted identifiers.
+	const bool mangle = show_role_list;
 
 	// Process GRANT roles
 	if (isqlGlob.major_ods >= ODS_VERSION9 && show_role_list)
@@ -1115,7 +1118,7 @@ static processing_state list_all_grants2(bool show_role_list,
 
 		const processing_state rc =
 			SHOW_grants2(REL.RDB$RELATION_NAME, terminator, obj_relation,
-						   first ? banner : 0);
+						   first ? banner : 0, mangle);
 		if (rc == SKIP) {
 			first = false;
 		}
@@ -1127,9 +1130,9 @@ static processing_state list_all_grants2(bool show_role_list,
 	END_ERROR;
 
 	if (first)
-		SHOW_grant_roles2(terminator, &first, banner);
+		SHOW_grant_roles2(terminator, &first, banner, mangle);
 	else
-		SHOW_grant_roles(terminator, 0);
+		SHOW_grant_roles2(terminator, 0, 0, mangle);
 
 
 	// Again for stored procedures
@@ -1142,7 +1145,7 @@ static processing_state list_all_grants2(bool show_role_list,
 
 		const processing_state rc =
 			SHOW_grants2(PRC.RDB$PROCEDURE_NAME, terminator, obj_procedure,
-						   first ? banner: 0);
+						   first ? banner: 0, mangle);
 		if (rc == SKIP)
 			first = false;
 

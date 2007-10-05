@@ -549,14 +549,15 @@ processing_state SHOW_grants(const SCHAR* object,
  *	Placeholder for SHOW_grants2 without additional message.
  *
  **************************************/
-	return SHOW_grants2 (object, terminator, obj_type, NULL);
+	return SHOW_grants2 (object, terminator, obj_type, NULL, false);
 }
 
 
 processing_state SHOW_grants2 (const SCHAR* object,
 				  const SCHAR* terminator,
 				  USHORT obj_type,
-				  const TEXT* optional_msg)
+				  const TEXT* optional_msg,
+				  bool mangle)
 {
 /**************************************
  *
@@ -643,7 +644,7 @@ processing_state SHOW_grants2 (const SCHAR* object,
 
 					first = false;
 
-					if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
+					if (mangle && isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
 						ISQL_copy_SQL_id (object, SQL_identifier, DBL_QUOTE);
 					else
 						strcpy (SQL_identifier, object);
@@ -674,7 +675,8 @@ processing_state SHOW_grants2 (const SCHAR* object,
 				case obj_trigger:
 				case obj_procedure:
 				case obj_sql_role:
-					if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION) {
+				case obj_user: // Users can be machine\user and need quoting
+					if (mangle && isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION) {
 						ISQL_copy_SQL_id (PRV.RDB$USER, SQL_identifier, DBL_QUOTE);
 					}
 					else
@@ -745,7 +747,7 @@ processing_state SHOW_grants2 (const SCHAR* object,
 				}
 				else {
 					fb_utils::exact_name(PRV.RDB$FIELD_NAME);
-					if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION) {
+					if (mangle && isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION) {
 						ISQL_copy_SQL_id (PRV.RDB$FIELD_NAME, SQL_identifier, DBL_QUOTE);
 						sprintf(col_string, " (%s)", SQL_identifier);
 					}
@@ -771,7 +773,7 @@ processing_state SHOW_grants2 (const SCHAR* object,
 					isqlGlob.prints(optional_msg);
 				first = false;
 
-				if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
+				if (mangle && isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
 					ISQL_copy_SQL_id (object, SQL_identifier, DBL_QUOTE);
 				else
 					strcpy (SQL_identifier, object);
@@ -820,7 +822,7 @@ processing_state SHOW_grants2 (const SCHAR* object,
 				case obj_trigger:
 				case obj_procedure:
 				case obj_sql_role:
-					if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION) {
+					if (mangle && isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION) {
 						ISQL_copy_SQL_id (PRV.RDB$USER, SQL_identifier, DBL_QUOTE);
 					}
 					else
@@ -863,7 +865,7 @@ processing_state SHOW_grants2 (const SCHAR* object,
 				else
 					with_option[0] = '\0';
 
-				if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION) {
+				if (mangle && isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION) {
 					ISQL_copy_SQL_id (object, SQL_identifier, DBL_QUOTE);
 				}
 				else
@@ -909,7 +911,7 @@ processing_state SHOW_grants2 (const SCHAR* object,
 
 				fb_utils::exact_name(PRV.RDB$RELATION_NAME);
 				strcpy (role_name, PRV.RDB$RELATION_NAME);
-				if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
+				if (mangle && isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
 					ISQL_copy_SQL_id (role_name, SQL_identifier, DBL_QUOTE);
 				else
 					strcpy (SQL_identifier, role_name);
@@ -964,12 +966,13 @@ void SHOW_grant_roles(const SCHAR* terminator,
  *	Placeholder for SHOW_grant_roles2 without additional message.
  *
  **************************************/
-	SHOW_grant_roles2 (terminator, first, 0);
+	SHOW_grant_roles2 (terminator, first, 0, false);
 }
 
 void SHOW_grant_roles2 (const SCHAR* terminator,
 						bool* first,
-						const TEXT* optional_msg)
+						const TEXT* optional_msg,
+						bool mangle)
 {
 /**************************************
  *
@@ -983,8 +986,7 @@ void SHOW_grant_roles2 (const SCHAR* terminator,
  *	All membership privilege may have the with_admin option set.
  *
  **************************************/
-	char with_option[19];
-	char user_string[44];
+	TEXT SQL_identifier2[BUFFER_LENGTH128];
 
 	// process role "object"
 
@@ -1001,19 +1003,19 @@ void SHOW_grant_roles2 (const SCHAR* terminator,
 			*first = false;
 		}
 
-		fb_utils::exact_name(PRV.RDB$USER);
-		strcpy (user_string, PRV.RDB$USER);
+		const char* user_string = fb_utils::exact_name(PRV.RDB$USER);
 
+		const char* with_option = "";
 		if (PRV.RDB$GRANT_OPTION)
-			strcpy (with_option, " WITH ADMIN OPTION");
-		else
-			with_option[0] = '\0';
+			with_option = " WITH ADMIN OPTION";
 
 		const char* role = fb_utils::exact_name(PRV.RDB$RELATION_NAME);
-		if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
+		if (mangle && isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
 		{
 			ISQL_copy_SQL_id (PRV.RDB$RELATION_NAME, SQL_identifier, DBL_QUOTE);
 			role = SQL_identifier;
+			ISQL_copy_SQL_id(PRV.RDB$USER, SQL_identifier2, DBL_QUOTE);
+			user_string = SQL_identifier2;
 		}
 		isqlGlob.printf("GRANT %s TO %s%s%s%s", role,
 					 user_string, with_option, terminator, NEWLINE);
