@@ -34,22 +34,22 @@ void CV_convert_init(csconvert* csptr,
 		pfn_INTL_convert cvt_fn, const void *datatable, const void *datatable2);
 
 ULONG CV_wc_to_wc(csconvert* obj, ULONG src_len, const UCHAR* src_ptr,
-				  ULONG dest_len, UCHAR *dest_ptr,
-				  USHORT *err_code, ULONG *err_position);
+				  ULONG dest_len, UCHAR* dest_ptr,
+				  USHORT* err_code, ULONG* err_position);
 
 ULONG CV_unicode_to_nc(csconvert* obj, ULONG src_len, const BYTE* src_ptr,
-					   ULONG dest_len, BYTE *dest_ptr,	
-					   USHORT *err_code, ULONG *err_position);
+					   ULONG dest_len, BYTE* dest_ptr,	
+					   USHORT* err_code, ULONG* err_position);
 
 ULONG CV_nc_to_unicode(csconvert* obj, ULONG src_len, const BYTE* src_ptr,
-					   ULONG dest_len, BYTE *dest_ptr,	
-					   USHORT *err_code,	ULONG *err_position);
+					   ULONG dest_len, BYTE* dest_ptr,	
+					   USHORT* err_code, ULONG* err_position);
 
 ULONG CV_wc_copy(csconvert* obj, ULONG src_len, const BYTE* src_ptr,
-				 ULONG dest_len, BYTE *dest_ptr,				
-				 USHORT *err_code, ULONG *err_position);
+				 ULONG dest_len, BYTE* dest_ptr,				
+				 USHORT* err_code, ULONG* err_position);
 
 ULONG eight_bit_convert(csconvert* obj, ULONG src_len, const BYTE* src_ptr,
-						ULONG dest_len, BYTE *dest_ptr,
-						USHORT *err_code, ULONG *err_position);
+						ULONG dest_len, BYTE* dest_ptr,
+						USHORT* err_code, ULONG* err_position);
 

@@ -46,7 +46,7 @@ ULONG CVBIG5_big5_to_unicode(csconvert* obj,
     const ULONG src_start = src_len;
 	*err_code = 0;
 
-/* See if we're only after a length estimate */
+	// See if we're only after a length estimate
 	if (p_dest_ptr == NULL)
 		return (src_len * sizeof(USHORT));
 

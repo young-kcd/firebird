@@ -273,7 +273,7 @@ Function:
     by the specified amount of time.
 
 Format:
-    DATEADD( <number> <timestamp_part> FOR <date_time> )
+    DATEADD( <number> <timestamp_part> TO <date_time> )
 	DATEADD( <timestamp_part>, <number>, <date_time> )
 
     timestamp_part ::= { YEAR | MONTH | DAY | WEEKDAY | HOUR | MINUTE | SECOND }

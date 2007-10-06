@@ -52,7 +52,7 @@ public:
 	{
 		fb_assert(len % sizeof(C) == 0);
 #ifdef RISC_ALIGNMENT
-		if ((IPTR)userBuffer & (sizeof(C) - 1))
+		if ((IPTR) userBuffer & (sizeof(C) - 1))
 		{
 			bPointer = localBuffer.getBuffer(len / sizeof(C) + (bSize % sizeof(C) ? 1 : 0));
 		}
@@ -61,11 +61,11 @@ public:
 
 	operator C*() 
 	{
-		return 
 #ifdef RISC_ALIGNMENT
-			   bPointer ? bPointer :
+		return bPointer ? bPointer : reinterpret_cast<C*>(userBuffer);
+#else
+		return reinterpret_cast<C*>(userBuffer);
 #endif
-									 reinterpret_cast<C*>(userBuffer);
 	} 
 
 	~OutAligner() 
@@ -93,7 +93,7 @@ public:
 	{
 		fb_assert(len % sizeof(C) == 0);
 #ifdef RISC_ALIGNMENT
-		if ((IPTR)buf & (sizeof(C) - 1))
+		if ((IPTR) buf & (sizeof(C) - 1))
 		{
 			C* tempPointer = localBuffer.getBuffer(len / sizeof(C) + (len % sizeof(C) ? 1 : 0));
 			memcpy(tempPointer, buf, len);
@@ -110,6 +110,6 @@ public:
 	} 
 };
 
-} //namespace Firebird
+} // namespace Firebird
 
 #endif // CLASSES_ALIGN_H

@@ -21321,7 +21321,7 @@ static const USHORT to_unicode_mapping_array[] = {
 0x9F3E,
 0x9F44,
 0xFFFD,
-	0 /* END OF MAP TABLE */
+0 /* END OF MAP TABLE */
 };
 static const USHORT to_unicode_map[256] = {
 256,
@@ -46671,7 +46671,7 @@ static const USHORT from_unicode_mapping_array[] = {
 0,
 0,
 0,
-	0 /* END OF MAP TABLE */
+0 /* END OF MAP TABLE */
 };
 static const USHORT from_unicode_map[256] = {
 256,

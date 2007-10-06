@@ -33,9 +33,9 @@ ULONG CVJIS_eucj_to_unicode(csconvert* obj,
 							ULONG src_len,
 							const UCHAR* src_ptr,
 							ULONG dest_len,
-							UCHAR *p_dest_ptr,
-							USHORT *err_code,
-							ULONG *err_position)
+							UCHAR* p_dest_ptr,
+							USHORT* err_code,
+							ULONG* err_position)
 {
 	fb_assert(src_ptr != NULL || p_dest_ptr == NULL);
 	fb_assert(err_code != NULL);
@@ -131,9 +131,9 @@ ULONG CVJIS_sjis_to_unicode(csconvert* obj,
 							ULONG sjis_len,
 							const UCHAR* sjis_str,
 							ULONG dest_len,
-							UCHAR *p_dest_ptr,
-							USHORT *err_code,
-							ULONG *err_position)
+							UCHAR* p_dest_ptr,
+							USHORT* err_code,
+							ULONG* err_position)
 {
 	fb_assert(sjis_str != NULL || p_dest_ptr == NULL);
 	fb_assert(err_code != NULL);
@@ -390,8 +390,8 @@ ULONG CVJIS_unicode_to_sjis(csconvert* obj,
 							const UCHAR* p_unicode_str,
 							ULONG sjis_len,
 							UCHAR* sjis_str,
-							USHORT *err_code,
-							ULONG *err_position)
+							USHORT* err_code,
+							ULONG* err_position)
 {
 	fb_assert(p_unicode_str != NULL || sjis_str == NULL);
 	fb_assert(err_code != NULL);
@@ -468,8 +468,8 @@ ULONG CVJIS_unicode_to_sjis(csconvert* obj,
 
 
 ULONG CVJIS_unicode_to_eucj(csconvert* obj, ULONG unicode_len, const UCHAR* p_unicode_str,
-							ULONG eucj_len, UCHAR *eucj_str,
-							USHORT *err_code, ULONG *err_position)
+							ULONG eucj_len, UCHAR* eucj_str,
+							USHORT* err_code, ULONG* err_position)
 {
 	fb_assert(p_unicode_str != NULL || eucj_str == NULL);
 	fb_assert(err_code != NULL);
@@ -482,7 +482,7 @@ ULONG CVJIS_unicode_to_eucj(csconvert* obj, ULONG unicode_len, const UCHAR* p_un
 	const ULONG src_start = unicode_len;
 	*err_code = 0;
 
-/* See if we're only after a length estimate */
+	// See if we're only after a length estimate
 	if (eucj_str == NULL)
 		return (unicode_len);	/* worst case - all han character input */
 
