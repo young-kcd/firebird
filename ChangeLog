@@ -1,3 +1,50 @@
+2007-10-05 17:18  asfernandes
+
+	* firebird2/src/intl/charsets/cs_gb2312.h (1.5):
+
+	Fixed CORE-1375 - Wrong mapping for 0x212C in cs_gb2312.h
+
+2007-10-05 16:36  alexpeshkoff
+
+	* firebird2/src/: jrd/CharSet.cpp (1.5), jrd/IntlUtil.cpp (1.13),
+	jrd/IntlUtil.h (1.10), jrd/TextType.cpp (1.4), jrd/blb.cpp (1.149),
+	jrd/common.h (1.155), jrd/intl_builtin.cpp (1.38), jrd/nbak.cpp
+	(1.67), jrd/unicode_util.cpp (1.22), jrd/utl.cpp (1.104),
+	intl/cs_big5.cpp (1.4), intl/cs_gb2312.cpp (1.5), intl/cs_jis.cpp
+	(1.5), intl/cs_ksc.cpp (1.5), intl/cs_narrow.cpp (1.9),
+	intl/cs_unicode_fss.cpp (1.5), intl/cs_unicode_ucs2.cpp (1.5),
+	intl/cv_big5.cpp (1.10), intl/cv_big5.h (1.7), intl/cv_gb2312.cpp
+	(1.11), intl/cv_gb2312.h (1.6), intl/cv_icu.cpp (1.2),
+	intl/cv_jis.cpp (1.12), intl/cv_jis.h (1.6), intl/cv_ksc.cpp
+	(1.11), intl/cv_ksc.h (1.8), intl/cv_narrow.cpp (1.10),
+	intl/cv_narrow.h (1.6), intl/cv_unicode_fss.cpp (1.10),
+	intl/cv_unicode_fss.h (1.9), intl/lc_narrow.cpp (1.26),
+	intl/ldcommon.h (1.28):
+
+	Fixed CORE-1499: Wrong alignment of data, used in INTL converters
+
+2007-10-05 16:35  alexpeshkoff
+
+	* firebird2/src/common/classes/Aligner.h (1.1):
+
+	Added templates to ensure alignment in INTL
+
+2007-10-05 16:30  alexpeshkoff
+
+	* firebird2/src/jrd/execute_statement.cpp (1.23):
+
+	Fixed CORE-1500: Data in EXECUTE STATEMENT internal buffer is not
+	aligned correctly
+
+2007-10-05 12:25  robocop
+
+	* firebird2/src/isql/: extract.epp (1.87), show.epp (1.126),
+	show_proto.h (1.18):
+
+	Fix CORE-1496.	In addition, the SHOW command shouldn't mangle
+	object names when requested to display grant-related information
+	(show grants).
+
 2007-10-04 17:33  asfernandes
 
 	* firebird2/src/: dsql/make.cpp (1.137), jrd/DataTypeUtil.cpp
