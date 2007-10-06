@@ -145,8 +145,8 @@ void ExecuteStatement::Open(thread_db* tdbb, jrd_nod* sql, SSHORT nVars, bool Si
 
 	Statement = 0;
 	Sqlda = MakeSqlda(tdbb, nVars ? nVars : 1);
-    Sqlda->sqln = nVars;
-    Sqlda->version = 1;
+	Sqlda->sqln = nVars;
+	Sqlda->version = 1;
 
 	// For normal diagnostic
 	const int max_diag_len = 50;
@@ -163,9 +163,9 @@ void ExecuteStatement::Open(thread_db* tdbb, jrd_nod* sql, SSHORT nVars, bool Si
 
 	Chk(isc_dsql_prepare(status, &Transaction, &Statement,
 		SqlText.length(), SqlText.c_str(), SQL_DIALECT_CURRENT, Sqlda));
-    if (! Sqlda->sqld) {  // Non-select statement - reject for a while
+	if (! Sqlda->sqld) {  // Non-select statement - reject for a while
 		/*Chk(isc_dsql_execute(status, &Transaction,
-               &Statement, SQLDA_VERSION1, 0)); */
+			&Statement, SQLDA_VERSION1, 0)); */
 		Chk(isc_dsql_free_statement(status, &Statement, DSQL_drop));
 		Statement = 0;
 		status[0] = isc_arg_gds;
@@ -178,14 +178,14 @@ void ExecuteStatement::Open(thread_db* tdbb, jrd_nod* sql, SSHORT nVars, bool Si
 	else {
 		Chk(ReMakeSqlda(status, tdbb));
 		Chk(isc_dsql_describe(status, &Statement,
-                        SQLDA_VERSION1, Sqlda));
+				SQLDA_VERSION1, Sqlda));
 		Buffer = 0;		// Buffer is used in ParseSqlda
 						// First dummy parse - to define buffer size
 		Buffer = FB_NEW(*tdbb->tdbb_transaction->tra_pool) 
 			SCHAR[XSQLDA_LENGTH(ParseSqlda())];
 		ParseSqlda();
 		Chk(isc_dsql_execute(status, &Transaction,
-                &Statement, SQLDA_VERSION1, 0));
+				&Statement, SQLDA_VERSION1, 0));
 	}
 
 #	undef Chk
@@ -212,15 +212,15 @@ bool ExecuteStatement::Fetch(thread_db* tdbb, jrd_nod** JrdVar)
 	status = local;
 
 	startCallback(tdbb);
-    if (isc_dsql_fetch(status, &Statement,
-                SQLDA_VERSION1, Sqlda) == 100)
+	if (isc_dsql_fetch(status, &Statement,
+			SQLDA_VERSION1, Sqlda) == 100)
 	{
 		isc_dsql_free_statement(status, &Statement, DSQL_drop);
 		finishCallback(tdbb);
 
 		Statement = 0;
 		return false;
-    }
+	}
 	finishCallback(tdbb);
 
 	if (status[0] == 1 && status[1]) {
@@ -267,7 +267,7 @@ rec_err:
 	if (SingleMode) {
 		startCallback(tdbb);
 		if (isc_dsql_fetch(status, &Statement,
-                SQLDA_VERSION1, Sqlda) == 100)
+				SQLDA_VERSION1, Sqlda) == 100)
 		{
 			isc_dsql_free_statement(status, &Statement, DSQL_drop);
 			finishCallback(tdbb);
@@ -285,7 +285,7 @@ rec_err:
 		memcpy(tdbb->tdbb_status_vector, status, sizeof(local));
 		Firebird::status_exception::raise(tdbb->tdbb_status_vector);
 	}
-    return true;
+	return true;
 }
 
 void ExecuteStatement::Close(thread_db* tdbb)
@@ -327,30 +327,29 @@ ISC_STATUS ExecuteStatement::ReMakeSqlda(ISC_STATUS *vector, thread_db* tdbb)
 
 ULONG ExecuteStatement::ParseSqlda(void)
 {
-    ULONG offset = 0;
-    int i = 0;
-	UCHAR dscType;
-    for (XSQLVAR* var = Sqlda->sqlvar;
-                        i < Sqlda->sqld; var++, i++)
+	ULONG offset = 0;
+	int i = 0;
+	for (XSQLVAR* var = Sqlda->sqlvar; i < Sqlda->sqld; var++, i++)
 	{
-        USHORT length = var->sqllen;
-        const int type = var->sqltype & (~1);
+		USHORT length = var->sqllen;
+		const int type = var->sqltype & (~1);
+		UCHAR dscType;
 		sqlTypeToDscType().get(type, dscType);
-        if (type == SQL_VARYING)
-            length += sizeof (SSHORT);
+		if (type == SQL_VARYING)
+			length += sizeof (SSHORT);
 
 		const USHORT align = type_alignments[dscType];
 		if (align) {
 			offset = FB_ALIGN(offset, align);
 		}
-        var->sqldata = &Buffer[offset];
-        offset += length;
+		var->sqldata = &Buffer[offset];
+		offset += length;
 
 		offset = FB_ALIGN(offset, sizeof(short));
-        var->sqlind = (short*) (&Buffer[offset]);
-        offset += sizeof (short);
-    }
-    return offset;
+		var->sqlind = (short*) (&Buffer[offset]);
+		offset += sizeof (short);
+	}
+	return offset;
 }
 
 void ExecuteStatement::getString(thread_db* tdbb, Firebird::string& s, const dsc* d, const jrd_req* r)
@@ -366,3 +365,4 @@ void ExecuteStatement::getString(thread_db* tdbb, Firebird::string& s, const dsc
 
 	s.assign((const char*)p, l);
 }
+
