@@ -278,7 +278,7 @@ ULONG CS_UTFFSS_unicode_to_fss(csconvert* obj,
 								USHORT* err_code,
 								ULONG* err_position)
 {
-	fb_assert(unicode_str != NULL || fss_str == NULL);
+	fb_assert(p_unicode_str != NULL || fss_str == NULL);
 	fb_assert(err_code != NULL);
 	fb_assert(err_position != NULL);
 	fb_assert(obj != NULL);

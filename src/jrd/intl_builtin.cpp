@@ -200,7 +200,7 @@ static ULONG internal_fss_to_unicode(csconvert* obj,
 									 USHORT* err_code,
 									 ULONG* err_position)
 {
-	fb_assert(src_ptr != NULL || dest_ptr == NULL);
+	fb_assert(src_ptr != NULL || p_dest_ptr == NULL);
 	fb_assert(err_code != NULL);
 	fb_assert(err_position != NULL);
 	fb_assert(obj != NULL);
@@ -246,7 +246,7 @@ ULONG internal_unicode_to_fss(csconvert* obj,
 	const ULONG src_start = unicode_len;
 	UCHAR tmp_buffer[6];
 
-	fb_assert(unicode_str != NULL || fss_str == NULL);
+	fb_assert(p_unicode_str != NULL || fss_str == NULL);
 	fb_assert(err_code != NULL);
 	fb_assert(err_position != NULL);
 	fb_assert(obj != NULL);
@@ -628,6 +628,7 @@ namespace {
 template <typename U>
 void padUtf16(const USHORT* text, U& len)
 {
+	fb_assert(len % sizeof(USHORT) == 0);
 	for (; len > 0; len -= sizeof(USHORT))
 	{
 		if (text[len / sizeof(USHORT) - 1] != 32)
@@ -813,7 +814,7 @@ static ULONG wc_to_nc(csconvert* obj, ULONG nSrc, const UCHAR* ppSrc,
  *
  **************************************/
 	fb_assert(obj != NULL);
-	fb_assert((pSrc != NULL) || (pDest == NULL));
+	fb_assert((ppSrc != NULL) || (pDest == NULL));
 	fb_assert(err_code != NULL);
 	fb_assert(err_position != NULL);
 
@@ -861,7 +862,7 @@ static ULONG mb_to_wc(csconvert* obj, ULONG nSrc, const UCHAR* pSrc,
  *
  *************************************/
 	fb_assert(obj != NULL);
-	fb_assert((pSrc != NULL) || (pDest == NULL));
+	fb_assert((pSrc != NULL) || (ppDest == NULL));
 	fb_assert(err_code != NULL);
 	fb_assert(err_position != NULL);
 
@@ -905,7 +906,7 @@ static ULONG wc_to_mb(csconvert* obj, ULONG nSrc, const UCHAR* ppSrc,
  *
  *************************************/
 	fb_assert(obj != NULL);
-	fb_assert((pSrc != NULL) || (pDest == NULL));
+	fb_assert((ppSrc != NULL) || (pDest == NULL));
 	fb_assert(err_code != NULL);
 	fb_assert(err_position != NULL);
 
@@ -1253,7 +1254,7 @@ static ULONG cvt_none_to_unicode(csconvert* obj, ULONG nSrc, const UCHAR* pSrc,
  *
  *************************************/
 	fb_assert(obj != NULL);
-	fb_assert((pSrc != NULL) || (pDest == NULL));
+	fb_assert((pSrc != NULL) || (ppDest == NULL));
 	fb_assert(err_code != NULL);
 
 	Firebird::OutAligner<USHORT> d(ppDest, nDest);
@@ -1297,7 +1298,7 @@ static ULONG cvt_unicode_to_unicode(csconvert* obj, ULONG nSrc, const UCHAR* ppS
  *
  *************************************/
 	fb_assert(obj != NULL);
-	fb_assert((pSrc != NULL) || (pDest == NULL));
+	fb_assert((ppSrc != NULL) || (ppDest == NULL));
 	fb_assert(err_code != NULL);
 
 	*err_code = 0;

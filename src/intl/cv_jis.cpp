@@ -37,7 +37,7 @@ ULONG CVJIS_eucj_to_unicode(csconvert* obj,
 							USHORT *err_code,
 							ULONG *err_position)
 {
-	fb_assert(src_ptr != NULL || dest_ptr == NULL);
+	fb_assert(src_ptr != NULL || p_dest_ptr == NULL);
 	fb_assert(err_code != NULL);
 	fb_assert(err_position != NULL);
 	fb_assert(obj != NULL);
@@ -135,7 +135,7 @@ ULONG CVJIS_sjis_to_unicode(csconvert* obj,
 							USHORT *err_code,
 							ULONG *err_position)
 {
-	fb_assert(sjis_str != NULL || dest_ptr == NULL);
+	fb_assert(sjis_str != NULL || p_dest_ptr == NULL);
 	fb_assert(err_code != NULL);
 	fb_assert(err_position != NULL);
 	fb_assert(obj != NULL);
@@ -393,7 +393,7 @@ ULONG CVJIS_unicode_to_sjis(csconvert* obj,
 							USHORT *err_code,
 							ULONG *err_position)
 {
-	fb_assert(unicode_str != NULL || sjis_str == NULL);
+	fb_assert(p_unicode_str != NULL || sjis_str == NULL);
 	fb_assert(err_code != NULL);
 	fb_assert(err_position != NULL);
 	fb_assert(obj != NULL);
@@ -471,7 +471,7 @@ ULONG CVJIS_unicode_to_eucj(csconvert* obj, ULONG unicode_len, const UCHAR* p_un
 							ULONG eucj_len, UCHAR *eucj_str,
 							USHORT *err_code, ULONG *err_position)
 {
-	fb_assert(unicode_str != NULL || eucj_str == NULL);
+	fb_assert(p_unicode_str != NULL || eucj_str == NULL);
 	fb_assert(err_code != NULL);
 	fb_assert(err_position != NULL);
 	fb_assert(obj != NULL);

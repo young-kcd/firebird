@@ -279,7 +279,7 @@ ULONG IntlUtil::cvtAsciiToUtf16(csconvert* obj, ULONG nSrc, const UCHAR* pSrc,
  *
  *************************************/
 	fb_assert(obj != NULL);
-	fb_assert((pSrc != NULL) || (pDest == NULL));
+	fb_assert((pSrc != NULL) || (ppDest == NULL));
 	fb_assert(err_code != NULL);
 
 	*err_code = 0;
@@ -325,7 +325,7 @@ ULONG IntlUtil::cvtUtf16ToAscii(csconvert* obj, ULONG nSrc, const UCHAR* ppSrc,
  *
  *************************************/
 	fb_assert(obj != NULL);
-	fb_assert((pSrc != NULL) || (pDest == NULL));
+	fb_assert((ppSrc != NULL) || (pDest == NULL));
 	fb_assert(err_code != NULL);
 
 	*err_code = 0;

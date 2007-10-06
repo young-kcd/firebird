@@ -102,7 +102,7 @@ ULONG CV_wc_to_wc(csconvert* obj,
 				  USHORT *err_code,
 				  ULONG *err_position)
 {
-	fb_assert(src_ptr != NULL || dest_ptr == NULL);
+	fb_assert(p_src_ptr != NULL || p_dest_ptr == NULL);
 	fb_assert(err_code != NULL);
 	fb_assert(err_position != NULL);
 	fb_assert(obj != NULL);

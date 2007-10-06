@@ -41,7 +41,7 @@ ULONG CVKSC_ksc_to_unicode(csconvert* obj,
 						   USHORT* err_code,
 						   ULONG* err_position)
 {
-	fb_assert(ksc_str != NULL || dest_ptr == NULL);
+	fb_assert(ksc_str != NULL || p_dest_ptr == NULL);
 	fb_assert(err_code != NULL);
 	fb_assert(err_position != NULL);
 	fb_assert(obj != NULL);
@@ -116,7 +116,7 @@ ULONG CVKSC_unicode_to_ksc(csconvert* obj,
 						   USHORT* err_code,
 						   ULONG* err_position)
 {
-	fb_assert(unicode_str != NULL || ksc_str == NULL);
+	fb_assert(p_unicode_str != NULL || ksc_str == NULL);
 	fb_assert(err_code != NULL);
 	fb_assert(err_position != NULL);
 	fb_assert(obj != NULL);

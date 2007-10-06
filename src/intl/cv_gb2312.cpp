@@ -35,7 +35,7 @@ ULONG CVGB_gb2312_to_unicode(csconvert* obj,
 							 USHORT* err_code,
 							 ULONG* err_position)
 {
-	fb_assert(src_ptr != NULL || dest_ptr == NULL);
+	fb_assert(src_ptr != NULL || p_dest_ptr == NULL);
 	fb_assert(err_code != NULL);
 	fb_assert(err_position != NULL);
 	fb_assert(obj != NULL);
@@ -114,7 +114,7 @@ ULONG CVGB_unicode_to_gb2312(csconvert* obj,
 							 USHORT* err_code, 
 							 ULONG* err_position)
 {
-	fb_assert(unicode_str != NULL || gb_str == NULL);
+	fb_assert(p_unicode_str != NULL || gb_str == NULL);
 	fb_assert(err_code != NULL);
 	fb_assert(err_position != NULL);
 	fb_assert(obj != NULL);
