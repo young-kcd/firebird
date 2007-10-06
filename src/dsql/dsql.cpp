@@ -89,6 +89,10 @@ nested FOR loops are added.
 #include "../common/config/config.h"
 #include "../common/utils_proto.h"
 
+#ifdef SCROLLABLE_CURSORS
+#include "../jrd/scroll_cursors.h"
+#endif
+
 #ifdef HAVE_CTYPE_H
 #include <ctype.h>
 #endif
