@@ -329,6 +329,7 @@ ULONG ExecuteStatement::ParseSqlda(void)
 {
 	ULONG offset = 0;
 	int i = 0;
+
 	for (XSQLVAR* var = Sqlda->sqlvar; i < Sqlda->sqld; var++, i++)
 	{
 		USHORT length = var->sqllen;
@@ -349,6 +350,7 @@ ULONG ExecuteStatement::ParseSqlda(void)
 		var->sqlind = (short*) (&Buffer[offset]);
 		offset += sizeof (short);
 	}
+
 	return offset;
 }
 

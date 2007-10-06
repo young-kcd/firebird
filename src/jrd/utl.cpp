@@ -1640,9 +1640,9 @@ int API_ROUTINE BLOB_get(BSTREAM* bstream)
 			return *bstream->bstr_ptr++ & 0377;
 
 		isc_get_segment(status_vector, &bstream->bstr_blob,
-						 reinterpret_cast<USHORT*>(&bstream->bstr_cnt),
-							 // safe - cast from short, alignment is OK
-						 bstream->bstr_length, bstream->bstr_buffer);
+			// safe - cast from short, alignment is OK
+			reinterpret_cast<USHORT*>(&bstream->bstr_cnt),
+			bstream->bstr_length, bstream->bstr_buffer);
 		if (status_vector[1] && status_vector[1] != isc_segment) {
 			bstream->bstr_ptr = 0;
 			bstream->bstr_cnt = 0;

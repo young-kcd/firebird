@@ -939,8 +939,10 @@ static int openFile(const char* name, bool forcedWrites, bool notUseFSCache, boo
 	flag |= SYNC;
 	// what to do with O_DIRECT here ?
 #else
-	if (forcedWrites)	flag |= SYNC;
-	if (notUseFSCache)	flag |= O_DIRECT;
+	if (forcedWrites)
+		flag |= SYNC;
+	if (notUseFSCache)
+		flag |= O_DIRECT;
 #endif
 
 	for (int i = 0; i < IO_RETRY; i++)

@@ -207,12 +207,12 @@ static ULONG internal_fss_to_unicode(csconvert* obj,
 
 	*err_code = 0;
 
-/* See if we're only after a length estimate */
+	// See if we're only after a length estimate
 	if (p_dest_ptr == NULL)
 		return (src_len * 2);	/* All single byte narrow characters */
 
 	Firebird::OutAligner<UNICODE> d(p_dest_ptr, dest_len);
-	UNICODE *dest_ptr = d;
+	UNICODE* dest_ptr = d;
 
 	const UNICODE* const start = dest_ptr;
 	const ULONG src_start = src_len;
@@ -721,7 +721,7 @@ static ULONG utf16_upper(
 	fb_assert(src != NULL && dst != NULL);
 
 	return UnicodeUtil::utf16UpperCase(srcLen, Firebird::Aligner<USHORT>(src, srcLen),
-									   dstLen, Firebird::OutAligner<USHORT>(dst, dstLen), NULL);
+		dstLen, Firebird::OutAligner<USHORT>(dst, dstLen), NULL);
 }
 
 static ULONG utf16_lower(
@@ -745,7 +745,7 @@ static ULONG utf16_lower(
 	fb_assert(src != NULL && dst != NULL);
 
 	return UnicodeUtil::utf16LowerCase(srcLen, Firebird::Aligner<USHORT>(src, srcLen),
-									   dstLen, Firebird::OutAligner<USHORT>(dst, dstLen), NULL);
+		dstLen, Firebird::OutAligner<USHORT>(dst, dstLen), NULL);
 }
 
 
@@ -789,7 +789,7 @@ static USHORT utf32_string_to_key(
 	Firebird::HalfStaticArray<USHORT, BUFFER_SMALL / sizeof(USHORT)> utf16Str;
 	ULONG sLen = UnicodeUtil::utf32ToUtf16(srcLen, Firebird::Aligner<ULONG>(src, srcLen),
 		dstLen, utf16Str.getBuffer(dstLen / sizeof(USHORT) + 1), &err_code, &err_position);
-	const USHORT *s = utf16Str.begin();
+	const USHORT* s = utf16Str.begin();
 
 	if (obj->texttype_pad_option)
 	{

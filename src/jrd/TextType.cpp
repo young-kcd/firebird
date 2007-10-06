@@ -204,7 +204,7 @@ USHORT TextType::string_to_key(USHORT srcLen,
 		if (getCharSet()->isMultiByte())
 		{
 			dstLen = UnicodeUtil::utf16ToKey(srcLen, Firebird::Aligner<USHORT>(src, srcLen), 
-											 dstLen, dst, key_type);
+				dstLen, dst, key_type);
 		}
 		else
 		{
@@ -287,7 +287,7 @@ SSHORT TextType::compare(ULONG len1,
 		{
 			INTL_BOOL error_flag;
 			return UnicodeUtil::utf16Compare(len1, Firebird::Aligner<USHORT>(str1, len1), 
-											 len2, Firebird::Aligner<USHORT>(str2, len2), &error_flag);
+				len2, Firebird::Aligner<USHORT>(str2, len2), &error_flag);
 		}
 		else
 		{

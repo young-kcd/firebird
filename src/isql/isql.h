@@ -271,8 +271,8 @@ const int VARCHAR		= 37;
 const int CSTRING		= 40;
 const int BLOB_ID		= 45;
 const int BLOB			= 261;
-//const int SQL_DATE      = 12;
-//const int SQL_TIME      = 13;
+//const int SQL_DATE	= 12;
+//const int SQL_TIME	= 13;
 const int BIGINT		= 16;
 
 static const sqltypes Column_types[] = {
