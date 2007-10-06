@@ -1,3 +1,10 @@
+2007-10-05 16:54  alexpeshkoff
+
+	* firebird2/src/jrd/execute_statement.cpp (1.14.4.6):
+
+	Backported fix for CORE-1500: Data in EXECUTE STATEMENT internal
+	buffer is not aligned correctly
+
 2007-09-30 12:55  hvlad
 
 	* firebird2/src/jrd/validation.cpp (1.16.2.2):
