@@ -376,13 +376,17 @@ void LOG_init(const TEXT* name, USHORT length)
  *	append to.
  *
  **************************************/
-	USHORT log_length;
 	TEXT file_name[MAXPATHLEN];
+	USHORT log_length = sizeof(file_name);
 
 /* Get header page and look for logging entry */
 
 	if (!PAG_get_clump(HEADER_PAGE, HDR_log_name, &log_length, file_name))
 		return;
+		
+	if (log_length >= sizeof(file_name))
+		log_length = sizeof(file_name) - 1; // We can't handle more for now.
+	
 	file_name[log_length] = 0;
 
 	open_log(file_name, log_length, MODE_APPEND);

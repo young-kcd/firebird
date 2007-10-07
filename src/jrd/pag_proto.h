@@ -38,9 +38,9 @@ namespace Ods {
 
 void	PAG_add_clump(SLONG, USHORT, USHORT, const UCHAR*, USHORT, USHORT);
 USHORT	PAG_add_file(const TEXT*, SLONG);
-int		PAG_add_header_entry(Ods::header_page*, USHORT, SSHORT, const UCHAR*);
+int		PAG_add_header_entry(Ods::header_page*, USHORT, USHORT, const UCHAR*);
 void	PAG_attach_temp_pages(Jrd::thread_db*, USHORT pageSpaceID);
-int		PAG_replace_entry_first(Ods::header_page*, USHORT, SSHORT, const UCHAR*);
+int		PAG_replace_entry_first(Ods::header_page*, USHORT, USHORT, const UCHAR*);
 Ods::pag*	PAG_allocate(Jrd::win *);
 SLONG	PAG_attachment_id(Jrd::thread_db*);
 int		PAG_delete_clump_entry(SLONG, USHORT);

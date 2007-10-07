@@ -104,7 +104,7 @@
 using namespace Jrd;
 using namespace Ods;
 
-static void find_clump_space(SLONG, WIN*, pag**, USHORT, SSHORT, const UCHAR*,
+static void find_clump_space(SLONG, WIN*, pag**, USHORT, USHORT, const UCHAR*,
 							 USHORT);
 static bool find_type(SLONG, WIN*, pag**, USHORT, USHORT, UCHAR**,
 						 const UCHAR**);
@@ -392,16 +392,14 @@ void PAG_add_clump(
 		if (entry_p[1] == len) {
 			entry_p += 2;
 			const UCHAR* r = entry;
-			USHORT l = len;
-			if (l) {
+			if (len)
+			{
 				if (must_write)
 					CCH_MARK_MUST_WRITE(tdbb, &window);
 				else
 					CCH_MARK(tdbb, &window);
-				do {
-					*entry_p++ = *r++;
-				} while (--l);
-
+					
+				memcpy(entry_p, entry, len);
 			}
 			CCH_RELEASE(tdbb, &window);
 			return; // true;
@@ -420,12 +418,8 @@ void PAG_add_clump(
 
 		const UCHAR* r = entry_p + 2 + entry_p[1];
 		USHORT l = clump_end - r + 1;
-
-		if (l) {
-			do {
-				*entry_p++ = *r++;
-			} while (--l);
-		}
+		if (l)
+			memmove(entry_p, r, l);
 
 		CCH_RELEASE(tdbb, &window);
 
@@ -573,7 +567,7 @@ USHORT PAG_add_file(const TEXT* file_name, SLONG start)
 }
 
 
-int PAG_add_header_entry(header_page* header, USHORT type, SSHORT len, const UCHAR* entry)
+int PAG_add_header_entry(header_page* header, USHORT type, USHORT len, const UCHAR* entry)
 {
 /***********************************************
  *
@@ -598,8 +592,6 @@ int PAG_add_header_entry(header_page* header, USHORT type, SSHORT len, const UCH
 
 	err_post_if_database_is_readonly(dbb);
 
-	const UCHAR* q = entry;
-
 	UCHAR* p;
 	for (p = header->hdr_data; ((*p != HDR_end) && (*p != type));
 		 p += 2 + p[1]);
@@ -617,17 +609,14 @@ int PAG_add_header_entry(header_page* header, USHORT type, SSHORT len, const UCH
 		*p++ = static_cast<UCHAR>(type);
 		*p++ = static_cast<UCHAR>(len);
 
-		if (len) {
-			if (q) {
-				do {
-					*p++ = *q++;
-				} while (--len);
-			}
-			else {
-				do {
-					*p++ = 0;
-				} while (--len);
-			}
+		if (len)
+		{
+			if (entry)
+				memcpy(p, entry, len);
+			else
+				memset(p, 0, len);
+
+			p += len;
 		}
 
 		*p = HDR_end;
@@ -668,7 +657,7 @@ void PAG_attach_temp_pages(thread_db* tdbb, USHORT pageSpaceID)
 }
 
 
-int PAG_replace_entry_first(header_page* header, USHORT type, SSHORT len, const UCHAR* entry)
+int PAG_replace_entry_first(header_page* header, USHORT type, USHORT len, const UCHAR* entry)
 {
 /***********************************************
  *
@@ -693,8 +682,6 @@ int PAG_replace_entry_first(header_page* header, USHORT type, SSHORT len, const 
 
 	err_post_if_database_is_readonly(dbb);
 
-	const UCHAR* q = entry;
-
 	UCHAR* p = header->hdr_data;
 	while ((*p != HDR_end) && (*p != type)) {
 		p += 2 + p[1];
@@ -704,7 +691,7 @@ int PAG_replace_entry_first(header_page* header, USHORT type, SSHORT len, const 
 	if (*p != HDR_end) {
 		UCHAR l = p[1] + 2;
 		memmove(p, p + l,
-			header->hdr_end - (p - (UCHAR*)header) - l + 1/*to preserve HDR_end*/);
+			header->hdr_end - (p - (UCHAR*)header) - l + 1); // to preserve HDR_end
 		header->hdr_end -= l;
 	}
 	
@@ -1022,12 +1009,8 @@ int PAG_delete_clump_entry(SLONG page_num, USHORT type)
 
 	const UCHAR* r = entry_p + 2 + entry_p[1];
 	USHORT l = clump_end - r + 1;
-
-	if (l) {
-		do {
-			*entry_p++ = *r++;
-		} while (--l);
-	}
+	if (l)
+		memmove(entry_p, r, l);
 
 	CCH_RELEASE(tdbb, &window);
 
@@ -1150,7 +1133,7 @@ void PAG_format_pip(thread_db* tdbb, PageSpace& pageSpace)
 }
 
 
-bool PAG_get_clump(SLONG page_num, USHORT type, USHORT* len, UCHAR* entry)
+bool PAG_get_clump(SLONG page_num, USHORT type, USHORT* inout_len, UCHAR* entry)
 {
 /***********************************************
  *
@@ -1164,12 +1147,11 @@ bool PAG_get_clump(SLONG page_num, USHORT type, USHORT* len, UCHAR* entry)
  *		false - Not present
  *	RETURNS
  *		value of clump in entry
- *		length in len
+ *		length in inout_len  <-> input and output value to avoid B.O.
  *
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
 
-	*len = 0;
 	WIN window(DB_PAGE_SPACE, page_num);
 
 	pag* page;
@@ -1182,18 +1164,20 @@ bool PAG_get_clump(SLONG page_num, USHORT type, USHORT* len, UCHAR* entry)
 	const UCHAR* dummy;
 	if (!find_type(page_num, &window, &page, LCK_read, type, &entry_p, &dummy)) {
 		CCH_RELEASE(tdbb, &window);
+		*inout_len = 0;
 		return false;
 	}
 
-	USHORT l = entry_p[1];
-	*len = l;
+	USHORT old_len = *inout_len;
+	*inout_len = entry_p[1];
 	entry_p += 2;
 
-	UCHAR* q = entry;
-	if (l) {
-		do {
-			*q++ = *entry_p++;
-		} while (--l);
+	if (*inout_len)
+	{
+		// Avoid the B.O. but inform the caller the buffer is bigger.
+		if (*inout_len < old_len)
+			old_len = *inout_len;
+		memcpy(entry, entry_p, old_len);
 	}
 
 	CCH_RELEASE(tdbb, &window);
@@ -2006,17 +1990,18 @@ int PAG_unlicensed()
 	CCH_FETCH(tdbb, &window, LCK_write, pag_header);
 	CCH_MARK_MUST_WRITE(tdbb, &window);
 
-	USHORT len;
 	SLONG count;
-	if (PAG_get_clump(HEADER_PAGE, HDR_unlicensed, &len, (UCHAR *) & count)) {
+	USHORT len = sizeof(count);
+	if (PAG_get_clump(HEADER_PAGE, HDR_unlicensed, &len, (UCHAR *) &count)) {
+		fb_assert(sizeof(count) == len);
 		count++;
 		PAG_add_clump(HEADER_PAGE, HDR_unlicensed, sizeof(count),
-					  (UCHAR *) & count, CLUMP_REPLACE_ONLY, 1);
+					  (UCHAR *) &count, CLUMP_REPLACE_ONLY, 1);
 	}
 	else {
 		count = 1;
 		PAG_add_clump(HEADER_PAGE, HDR_unlicensed, sizeof(count),
-					  (UCHAR *) & count, CLUMP_REPLACE, 1);
+					  (UCHAR *) &count, CLUMP_REPLACE, 1);
 	}
 	CCH_RELEASE(tdbb, &window);
 
@@ -2029,7 +2014,7 @@ static void find_clump_space(SLONG page_num,
 							 WIN* window,
 							 PAG* ppage,
 							 USHORT type,
-							 SSHORT len,
+							 USHORT len,
 							 const UCHAR* entry,
 							 USHORT must_write)
 {
@@ -2049,7 +2034,6 @@ static void find_clump_space(SLONG page_num,
 	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
-	const UCHAR* ptr = entry;
 	pag* page = *ppage;
 	header_page* header = 0; // used after the loop
 	log_info_page* logp = 0; // used after the loop
@@ -2085,10 +2069,10 @@ static void find_clump_space(SLONG page_num,
 			*p++ = static_cast<UCHAR>(type);
 			*p++ = static_cast<UCHAR>(len);
 
-			if (len) {
-				do {
-					*p++ = *ptr++;
-				} while (--len);
+			if (len)
+			{
+				memcpy(p, entry, len);
+				p += len;
 			}
 
 			*p = HDR_end;
@@ -2149,10 +2133,10 @@ static void find_clump_space(SLONG page_num,
 	*p++ = static_cast<UCHAR>(type);
 	*p++ = static_cast<UCHAR>(len);
 
-	if (len) {
-		do {
-			*p++ = *ptr++;
-		} while (--len);
+	if (len)
+	{
+		memcpy(p, entry, len);
+		p += len;
 	}
 
 	*p = HDR_end;
