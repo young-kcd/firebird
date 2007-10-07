@@ -1140,7 +1140,7 @@ ULONG UnicodeUtil::Utf16Collation::canonical(ULONG srcLen, const USHORT* src, UL
 	if (attributes & TEXTTYPE_ATTR_CASE_INSENSITIVE)
 	{
 		srcLen = utf16UpperCase(srcLen, src,
-			dstLen, upperStr.getBuffer(srcLen / sizeof(USHORT)), exceptions);
+			srcLen, upperStr.getBuffer(srcLen / sizeof(USHORT)), exceptions);
 		src = upperStr.begin();
 	}
 
