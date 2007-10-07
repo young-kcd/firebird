@@ -1,3 +1,58 @@
+2007-10-07 04:06  robocop
+
+	* firebird2/src/jrd/: log.cpp (1.25), pag.cpp (1.148), pag_proto.h
+	(1.18):
+
+	- Changed some lengths to USHORT.  - Took care of some exotic B.O.
+	- Replaced custom loops by either memcpy or memmove as required.
+
+2007-10-06 21:08  asfernandes
+
+	* firebird2/src/: isql/extract.epp (1.88), isql/isql.h (1.65),
+	jrd/TextType.cpp (1.5), jrd/execute_statement.cpp (1.25),
+	jrd/intl_builtin.cpp (1.40), jrd/utl.cpp (1.105),
+	jrd/os/posix/unix.cpp (1.72):
+
+	Misc
+
+2007-10-06 21:08  asfernandes
+
+	* firebird2/src/jrd/unicode_util.cpp (1.23):
+
+	Correction
+
+2007-10-06 18:07  asfernandes
+
+	* firebird2/: doc/sql.extensions/README.builtin_functions.txt
+	(1.7), src/common/classes/Aligner.h (1.2), src/intl/cv_big5.cpp
+	(1.12), src/intl/cv_jis.cpp (1.14), src/intl/cv_ksc.h (1.9),
+	src/intl/cv_narrow.cpp (1.12), src/intl/cv_narrow.h (1.7),
+	src/intl/cv_unicode_fss.cpp (1.12), src/intl/cv_unicode_fss.h
+	(1.10), src/intl/charsets/cs_gb2312.h (1.6):
+
+	Misc
+
+2007-10-06 12:30  robocop
+
+	* firebird2/src/dsql/dsql.cpp (1.199):
+
+	Fixing comditional compilation.
+
+2007-10-06 12:29  robocop
+
+	* firebird2/src/: jrd/IntlUtil.cpp (1.14), jrd/intl_builtin.cpp
+	(1.39), intl/cv_big5.cpp (1.11), intl/cv_gb2312.cpp (1.12),
+	intl/cv_jis.cpp (1.13), intl/cv_ksc.cpp (1.12), intl/cv_narrow.cpp
+	(1.11), intl/cv_unicode_fss.cpp (1.11):
+
+	It seems our dear Alex only compiles in Release mode.  :-)
+
+2007-10-06 12:22  robocop
+
+	* firebird2/src/jrd/execute_statement.cpp (1.24):
+
+	"Tabify."
+
 2007-10-05 17:18  asfernandes
 
 	* firebird2/src/intl/charsets/cs_gb2312.h (1.5):
