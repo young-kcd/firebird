@@ -404,6 +404,7 @@ int common_main(int argc,
 		int local_argc;
 		char* local_argv[MAXARGS];
 		for (;;) {
+			MOVE_CLEAR(status, sizeof(ISC_STATUS_ARRAY));
 			/* Clear out user data each time through this loop. */
 			MOVE_CLEAR(user_data, sizeof(internal_user_data));
 			if (get_line(&local_argc, local_argv, stuff, sizeof(stuff)))
@@ -425,7 +426,9 @@ int common_main(int argc,
 				databaseName.copyTo(user_data->database_name, sizeof(user_data->database_name));
 				user_data->database_name_entered = databaseNameEntered;
 				if (ret == 1)
-					break;
+				{
+					continue;
+				}
 				if (ret == 0) {
 #ifndef SUPERCLIENT
 					if (!useServices)
@@ -438,7 +441,7 @@ int common_main(int argc,
 							if (status[1]) {
 								GSEC_print_status(status);
 							}
-							break;
+							continue;
 						}
 					}
 					else
@@ -448,8 +451,7 @@ int common_main(int argc,
 						if (status[1])
 						{
 							GSEC_print_status(status);
-							ret = GsecMsg75;
-							break;
+							continue;
 						}
 					}
 				}
@@ -1307,24 +1309,20 @@ void GSEC_print_status(const ISC_STATUS* status_vector, bool exitOnError)
 			for (int j = 0; status_vector[j] && (i < ISC_STATUS_LENGTH); j++, i++)
 				*status++ = status_vector[j];
 		}
-#endif
-
+#else
 		SCHAR s[1024];
-		const char* nl = vector[0] == isc_arg_interpreted ? "" : "\n";
-		if (fb_interpret(s, sizeof(s), &vector)) {
+		while (fb_interpret(s, sizeof(s), &vector)) 
+		{
 			TRANSLATE_CP(s);
+			const char* nl = (s[0] ? s[strlen(s) - 1] != '\n' : true) ? "\n" : "";
 			int exitCode = util_print("%s%s", s, nl);
-			if (exitOnError && exitCode != 0) {
+			if (exitOnError && exitCode != 0) 
+			{
 				gsec_exit(exitCode, tsec::getSpecific());
 			}
-			while (fb_interpret(s, sizeof(s), &vector)) {
-				TRANSLATE_CP(s);
-				exitCode = util_print("%s%s", s, nl);
-				if (exitOnError && exitCode != 0) {
-					gsec_exit(exitCode, tsec::getSpecific());
-				}
-			}
+			nl = vector[0] == isc_arg_interpreted ? "" : "\n";
 		}
+#endif
 	}
 }
 

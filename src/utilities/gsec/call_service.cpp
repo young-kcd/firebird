@@ -369,16 +369,17 @@ void callRemoteServiceManager(ISC_STATUS* status,
 	fb_assert((size_t)(spb - spb_buffer) <= sizeof(spb_buffer));
 	isc_service_start(status, &handle, 0, 
 		static_cast<USHORT>(spb - spb_buffer), spb_buffer);
-	if (status[1] || /*userInfo.operation != DIS_OPER || */!outputFunction)
-	{
-		return;
-	}
 
 	spb = spb_buffer;
 	stuffSpbByte(spb, isc_info_svc_timeout);
 	stuffSpbLong(spb, 10);
+
 	char resultBuffer[RESULT_BUF_SIZE + 4];
 	Firebird::string text;
+
+	ISC_STATUS_ARRAY temp_status;
+	ISC_STATUS* local_status = status[1] ? temp_status : status;
+	memset(local_status, 0, sizeof(ISC_STATUS_ARRAY));
 	
 	if (userInfo.operation == DIS_OPER) {
 		const char request[] = {isc_info_svc_get_users};
@@ -389,14 +390,14 @@ void callRemoteServiceManager(ISC_STATUS* status,
 		for (;;)
 		{
 			isc_resv_handle reserved = 0;
-			isc_service_query(status, &handle, &reserved, spb - spb_buffer, 
+			isc_service_query(local_status, &handle, &reserved, spb - spb_buffer, 
 				spb_buffer, sizeof(request), request, RESULT_BUF_SIZE - startQuery, 
 				&resultBuffer[startQuery]);
-			if (status[1])
+			if (local_status[1])
 			{
 				return;
 			}
-			startQuery = typeBuffer(status, resultBuffer, startQuery, uData, 
+			startQuery = typeBuffer(local_status, resultBuffer, startQuery, uData, 
 				outputFunction, functionArg, text);
 			if (startQuery < 0)
 			{
@@ -404,7 +405,7 @@ void callRemoteServiceManager(ISC_STATUS* status,
 			}
 		}
 
-		if (uData.user_name[0])
+		if (uData.user_name[0] && outputFunction)
 		{
 			outputFunction(functionArg, &uData, !uData.user_name_entered);
 		}
@@ -414,9 +415,9 @@ void callRemoteServiceManager(ISC_STATUS* status,
 		for (;;)
 		{
 			isc_resv_handle reserved = 0;
-			isc_service_query(status, &handle, &reserved, spb - spb_buffer, 
+			isc_service_query(local_status, &handle, &reserved, spb - spb_buffer, 
 				spb_buffer, 1, &request, RESULT_BUF_SIZE, resultBuffer);
-			if (status[1])
+			if (local_status[1])
 			{
 				return;
 			}
@@ -444,10 +445,10 @@ void callRemoteServiceManager(ISC_STATUS* status,
 	}
 	if (! text.isEmpty())
 	{
-		status[0] = isc_arg_interpreted;
-		status[1] = reinterpret_cast<ISC_STATUS>(strdup(text.c_str()));
+		local_status[0] = isc_arg_interpreted;
+		local_status[1] = reinterpret_cast<ISC_STATUS>(strdup(text.c_str()));
 									// memory leak in case of errors
-		status[2] = isc_arg_end;
+		local_status[2] = isc_arg_end;
 	}
 }
 
@@ -571,7 +572,10 @@ static int typeBuffer(ISC_STATUS* status, char* buf, int offset,
 			case isc_spb_sec_username:
 				if (uData.user_name[0]) 
 				{
-					outputFunction(functionArg, &uData, !uData.user_name_entered);
+					if (outputFunction)
+					{
+						outputFunction(functionArg, &uData, !uData.user_name_entered);
+					}
 					memset(&uData, 0, sizeof uData);
 					uData.user_name_entered = true;
 				}
