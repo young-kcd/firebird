@@ -2810,10 +2810,11 @@ static bool process_switches(Firebird::ClumpletReader&	spb,
 					if (spb.isEof() && svc_action == isc_action_svc_display_user)
 					{
 						// in case of "display all users" the spb buffer contains
-						// nothing but isc_action_svc_display_user
+						// nothing but isc_action_svc_display_user or isc_spb_dbname
 						break;
 					}
-					if (spb.getClumpTag() != isc_spb_sec_username) {
+					if (spb.getClumpTag() != isc_spb_sec_username &&
+						spb.getClumpTag() != isc_spb_dbname) {
 						// unexpected item in service parameter block, expected @1
 						ERR_post(isc_unexp_spb_form, isc_arg_string,
 								 error_string(SPB_SEC_USERNAME,
