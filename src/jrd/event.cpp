@@ -973,7 +973,9 @@ static AST_TYPE deliver(void* arg)
 					process = (PRB) SRQ_ABS_PTR(EVENT_process_offset);
 					session = (SES) SRQ_ABS_PTR(session_offset);
 					que2 = (srq *) SRQ_ABS_PTR(que2_offset);
+#ifdef MULTI_THREAD
 					flag = !(session->ses_flags & SES_purge);
+#endif
 					break;
 				}
 			}
