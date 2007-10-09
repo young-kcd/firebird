@@ -1,3 +1,16 @@
+2007-10-08 15:42  alexpeshkoff
+
+	* firebird2/src/utilities/gsec/: call_service.cpp (1.14), gsec.cpp
+	(1.74):
+
+	Do not exit from gsec on errors in interactive mode
+
+2007-10-08 15:35  alexpeshkoff
+
+	* firebird2/src/jrd/svc.cpp (1.187):
+
+	Fixed use of isc_spb_dbname in isc_action_svc_display_user
+
 2007-10-08 03:21  asfernandes
 
 	* firebird2/doc/sql.extensions/README.builtin_functions.txt (1.8):
