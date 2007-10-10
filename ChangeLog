@@ -1,3 +1,10 @@
+2007-10-10 04:06  asfernandes
+
+	* firebird2/src/: jrd/log.cpp (1.26), jrd/pag.cpp (1.149),
+	jrd/svc.cpp (1.188), utilities/gsec/call_service.cpp (1.15):
+
+	Misc
+
 2007-10-08 15:42  alexpeshkoff
 
 	* firebird2/src/utilities/gsec/: call_service.cpp (1.14), gsec.cpp
