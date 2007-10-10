@@ -143,13 +143,6 @@ static bool raw_devices_validate_database (int, const Firebird::PathName&);
 static int  raw_devices_unlink_database (const Firebird::PathName&);
 #endif
 
-#ifdef hpux
-union fcntlun {
-	int val;
-	struct flock *lockdes;
-};
-#endif
-
 
 int PIO_add_file(Database* dbb, jrd_file* main_file, const Firebird::PathName& file_name, SLONG start)
 {
@@ -351,21 +344,13 @@ void PIO_force_write(jrd_file* file, bool flag)
  *	Set (or clear) force write, if possible, for the database.
  *
  **************************************/
-#ifdef hpux
-	union fcntlun control;
-#else
 	int control;
-#endif
 
 /* Since all SUPERSERVER_V2 database and shadow I/O is synchronous, this
    is a no-op. */
 
 #ifndef SUPERSERVER_V2
-#ifdef hpux
-	control.val = (flag) ? SYNC : NULL;
-#else
 	control = (flag) ? SYNC : 0;
-#endif
 
 	if (fcntl(file->fil_desc, F_SETFL, control) == -1)
 	{
