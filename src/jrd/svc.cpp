@@ -2813,8 +2813,10 @@ static bool process_switches(Firebird::ClumpletReader&	spb,
 						// nothing but isc_action_svc_display_user or isc_spb_dbname
 						break;
 					}
+
 					if (spb.getClumpTag() != isc_spb_sec_username &&
-						spb.getClumpTag() != isc_spb_dbname) {
+						spb.getClumpTag() != isc_spb_dbname)
+					{
 						// unexpected item in service parameter block, expected @1
 						ERR_post(isc_unexp_spb_form, isc_arg_string,
 								 error_string(SPB_SEC_USERNAME,

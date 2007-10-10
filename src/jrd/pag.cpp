@@ -391,7 +391,6 @@ void PAG_add_clump(
 
 		if (entry_p[1] == len) {
 			entry_p += 2;
-			const UCHAR* r = entry;
 			if (len)
 			{
 				if (must_write)
@@ -691,27 +690,26 @@ int PAG_replace_entry_first(header_page* header, USHORT type, USHORT len, const 
 	if (*p != HDR_end) {
 		UCHAR l = p[1] + 2;
 		memmove(p, p + l,
-			header->hdr_end - (p - (UCHAR*)header) - l + 1); // to preserve HDR_end
+			header->hdr_end - (p - (UCHAR*) header) - l + 1); // to preserve HDR_end
 		header->hdr_end -= l;
 	}
-	
-	
+
 	if (!entry) {
 		return FALSE; // We were asked just to remove item. We finished.
 	}
-	
+
 	// Check if we got enough space
 	if (dbb->dbb_page_size - header->hdr_end <= len + 2) {
 		BUGCHECK(251);
 	}
-		
+
 	// Actually add the item
 	memmove(header->hdr_data + len + 2, header->hdr_data, header->hdr_end - HDR_SIZE + 1);
 	header->hdr_data[0] = type;
 	header->hdr_data[1] = len;
 	memcpy(header->hdr_data + 2, entry, len);
 	header->hdr_end += len + 2;
-	
+
 	return TRUE;
 }
 

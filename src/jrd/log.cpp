@@ -85,7 +85,7 @@ may be safe to say that none of us use it.  :-)
 It sounds like a good feature.  In fact, a customer asked recently if
 there was a server-side feature akin to Delphi's "SQL Monitor" (which
 logs all BDE and InterBase API calls), and we had to say no.  Even if
-we had known about the REPLY feature, I think we would have said no,
+we had known about the REPLAY feature, I think we would have said no,
 since it is uncertified.
 
 I think we should keep it in the product, and even do some development

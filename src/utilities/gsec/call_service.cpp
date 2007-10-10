@@ -443,11 +443,12 @@ void callRemoteServiceManager(ISC_STATUS* status,
 		}
 		
 	}
+
 	if (! text.isEmpty())
 	{
 		local_status[0] = isc_arg_interpreted;
+		// strdup - memory leak in case of errors
 		local_status[1] = reinterpret_cast<ISC_STATUS>(strdup(text.c_str()));
-									// memory leak in case of errors
 		local_status[2] = isc_arg_end;
 	}
 }
