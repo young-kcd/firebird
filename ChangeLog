@@ -1,3 +1,9 @@
+2007-10-10 13:18  alexpeshkoff
+
+	* firebird2/src/jrd/os/posix/unix.cpp (1.42.4.8):
+
+	cleaned old unused hpux's union fcntlun
+
 2007-10-08 16:00  alexpeshkoff
 
 	* firebird2/src/jrd/event.cpp (1.55.4.2):
