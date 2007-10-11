@@ -1320,7 +1320,6 @@ void GSEC_print_status(const ISC_STATUS* status_vector, bool exitOnError)
 			{
 				gsec_exit(exitCode, tsec::getSpecific());
 			}
-			nl = vector[0] == isc_arg_interpreted ? "" : "\n";
 		}
 #endif
 	}
