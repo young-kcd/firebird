@@ -145,13 +145,6 @@ static int  raw_devices_unlink_database (const Firebird::PathName&);
 static int	openFile(const char*, bool, bool, bool);
 static void	maybeCloseFile(int&);
 
-#ifdef hpux
-union fcntlun {
-	int val;
-	struct flock *lockdes;
-};
-#endif
-
 
 int PIO_add_file(Database* dbb, jrd_file* main_file, const Firebird::PathName& file_name, SLONG start)
 {
@@ -359,12 +352,7 @@ void PIO_force_write(jrd_file* file, bool forcedWrites, bool notUseFSCache)
 	if (forcedWrites != oldForce || notUseFSCache != oldNotUseCache)
 	{
 
-#ifdef hpux
-		union fcntlun control;
-		control.val = (forcedWrites) ? SYNC : NULL ;
-#else
 		const int control = (forcedWrites ? SYNC : 0) | (notUseFSCache ? O_DIRECT : 0);
-#endif
 
 #ifndef FCNTL_BROKEN
 		if (fcntl(file->fil_desc, F_SETFL, control) == -1)
