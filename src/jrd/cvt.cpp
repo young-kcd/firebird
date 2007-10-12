@@ -2181,7 +2181,12 @@ static void float_to_text(const dsc* from, dsc* to, FPTR_ERROR err)
 	}
 	fb_assert(chars_printed <= width);
 
-/* Now move the result to the destination array. */
+	// trim trailing spaces
+	const char* p = strchr(temp + 1, ' ');
+	if (p)
+		chars_printed = p - temp;
+
+	// Now move the result to the destination array.
 
 	dsc intermediate;
 	intermediate.dsc_dtype = dtype_text;
