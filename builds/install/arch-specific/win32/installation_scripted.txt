@@ -204,7 +204,7 @@ Parameters specific to Firebird installs
 /FORCE
 
   Tells the installer to ignore its analysis of the existing
-  environment. It will attempt to install and configure Firebird 1.5 as
+  environment. It will attempt to install and configure Firebird 2.1 as
   if no previous version of Firebird or InterBase was installed.
 
   This can be useful if you have a seriously broken installation that
