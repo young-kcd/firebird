@@ -523,7 +523,7 @@ void DataTypeUtilBase::makeSubstr(dsc* result, const dsc* value, const dsc* offs
 
 void DataTypeUtilBase::makeSysFunction(dsc* result, const char* name, int argsCount, const dsc** args)
 {
-	SysFunction* function = SysFunction::lookup(name);
+	const SysFunction* function = SysFunction::lookup(name);
 
 	if (function)
 	{

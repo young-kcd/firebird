@@ -46,9 +46,9 @@ namespace Jrd
 class SysFunction
 {
 public:
-	typedef void (*SetParamsFunc)(DataTypeUtilBase* dataTypeUtil, SysFunction* function, int, dsc**);
-	typedef void (*MakeFunc)(DataTypeUtilBase* dataTypeUtil, SysFunction* function, dsc*, int, const dsc**);
-	typedef dsc* (*EvlFunc)(Jrd::thread_db*, SysFunction* function, Jrd::jrd_nod*, Jrd::impure_value*);
+	typedef void (*SetParamsFunc)(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, int, dsc**);
+	typedef void (*MakeFunc)(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc*, int, const dsc**);
+	typedef dsc* (*EvlFunc)(Jrd::thread_db*, const SysFunction* function, Jrd::jrd_nod*, Jrd::impure_value*);
 
 #if (defined(_MSC_VER) && (_MSC_VER <= 1200))
 	SysFunction(const char* s, int minCount, int maxCount, SetParamsFunc sp, MakeFunc mf, EvlFunc ef, void* v);
@@ -62,14 +62,14 @@ public:
 	EvlFunc evlFunc;
 	void* misc;
 
-	static SysFunction* lookup(const Firebird::MetaName& name);
+	static const SysFunction* lookup(const Firebird::MetaName& name);
 	static dsc* substring(Jrd::thread_db* tdbb, Jrd::impure_value* impure,
 		dsc* value, const dsc* offset_value, const dsc* length_value);
 
-	void checkArgsMismatch(int count);
+	void checkArgsMismatch(int count) const;
 
 private:
-	static SysFunction functions[];
+	const static SysFunction functions[];
 };
 
 

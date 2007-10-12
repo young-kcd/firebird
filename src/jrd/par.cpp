@@ -2483,7 +2483,7 @@ static jrd_nod* par_sys_function(thread_db* tdbb, CompilerScratch* csb)
 	Firebird::MetaName name;
 	const USHORT count = par_name(csb, name);
 
-	SysFunction* function = SysFunction::lookup(name);
+	const SysFunction* function = SysFunction::lookup(name);
 
 	if (!function)
 	{

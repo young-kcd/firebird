@@ -922,7 +922,7 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* const node)
 
 	case nod_sys_function:
 		{
-			SysFunction* sysFunction = reinterpret_cast<SysFunction*>(node->nod_arg[e_sysfun_function]);
+			const SysFunction* sysFunction = reinterpret_cast<SysFunction*>(node->nod_arg[e_sysfun_function]);
 			return sysFunction->evlFunc(tdbb, sysFunction, node->nod_arg[e_sysfun_args], impure);
 		}
 

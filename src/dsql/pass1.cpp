@@ -8235,7 +8235,7 @@ static dsql_nod* pass1_sys_function(dsql_req* request, dsql_nod* input, bool pro
 
 	if (node->nod_arg[e_sysfunc_args])
 	{
-		SysFunction* sf = SysFunction::lookup(((dsql_str*) node->nod_arg[e_sysfunc_name])->str_data);
+		const SysFunction* sf = SysFunction::lookup(((dsql_str*) node->nod_arg[e_sysfunc_name])->str_data);
 
 		if (sf && sf->setParamsFunc)
 		{
