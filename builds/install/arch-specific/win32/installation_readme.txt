@@ -36,10 +36,10 @@ fbclient.dll and gds32.dll are removed from <system32>.
 Known installation problems
 ---------------------------
 
-o It is not (yet) possible to use the binary installer
+o It is not possible to use the binary installer
   to install more than one instance of Firebird 2.1.
 
-o Unfortunately, (at the time of Beta 1) the installer
+o Unfortunately, (at the time of Beta 2) the installer
   cannot detect if other versions of Firebird are
   running.
 
@@ -47,17 +47,24 @@ o There are known areas of overlap between the
   32-bit and 64-bit installs:
 
   - The Control Panel | Add or Remove Programs section
-	does not indicate whether the installed version
-	is 32-bit or 64-bit.
+    does not indicate whether the installed version
+    is 32-bit or 64-bit.
 
   - The service installer (instsvc) uses the same
-	instance name.
+    instance name.
 
-o The 64-bit install does not yet provide the 32-bit
-  client libraries.
+o It is possible to deploy the client library
+  (fbclient or gds32) to the <system32> directory.
+  However, the necessary microsoft runtime libraries
+  will be missing. To resolve this it is necessary to
+  manually install vcredist.exe. Different versions are
+  available for x86 here:
 
-These issues will be resolved in a subsequent beta
-release.
+  http://www.microsoft.com/downloads/details.aspx?familyid=32BC1BEE-A3F9-4C13-9C99-220B62A191EE&displaylang=en
+
+  and x64 here:
+
+  http://www.microsoft.com/downloads/details.aspx?familyid=90548130-4468-4BBC-9673-D6ACABD5D13B&displaylang=en
 
 
 Uninstallation
@@ -91,6 +98,11 @@ o Uninstallation leaves four files in the install
   if Firebird is re-installed in the future. They can
   be deleted if no longer required.
 
+o A new feature of the uninstaller is an option to
+  run it with the /CLEAN parameter. This will check
+  the shared file count of each of the above files. If
+  possible it will delete them.
+
 
 Other Notes
 -----------
@@ -101,7 +113,7 @@ Other Notes
   not found the install will fail. You can visit
   this link:
 
-	http://support.microsoft.com/default.aspx?scid=kb;EN-US;q177719
+    http://support.microsoft.com/default.aspx?scid=kb;EN-US;q177719
 
   to find out how to go about upgrading.
 
@@ -112,7 +124,7 @@ Installation from a batch file
 The setup program can be run from a batch file.
 Please see this document:
 
-	installation_scripted.txt
+    installation_scripted.txt
 
 for full details.
 
