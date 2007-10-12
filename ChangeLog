@@ -1,3 +1,23 @@
+2007-10-12 02:52  asfernandes
+
+	* firebird2/src/dsql/make.cpp (1.138):
+
+	1) Fixed CORE-1510 - Bad XSQLVAR [NULL flags] for
+	(2*COALESCE(NULL,NULL)) - thanks to Dmitry Kovalenko 2) Fixed few
+	problems with NULLs and new system functions
+
+2007-10-11 13:20  alexpeshkoff
+
+	* firebird2/src/jrd/os/posix/unix.cpp (1.73):
+
+	frontported: cleaned old unused hpux's union fcntlun
+
+2007-10-11 13:17  alexpeshkoff
+
+	* firebird2/src/utilities/gsec/gsec.cpp (1.75):
+
+	removed unneeded code - thanks to Adriano
+
 2007-10-10 16:00  paul_reeves
 
 	* firebird2/builds/win32/run_all.bat (1.14):
