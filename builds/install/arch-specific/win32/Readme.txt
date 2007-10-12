@@ -3,7 +3,7 @@
 Firebird 2.1.0       (Windows Build)
 ====================================
 
-  *** Beta 1 ***
+  *** Beta 2 ***
 
 o Introduction
 o Intended Users
@@ -16,7 +16,7 @@ o Reporting Bugs
 Introduction
 ============
 
-Welcome to the first beta release of Firebird 2.1
+Welcome to the second beta release of Firebird 2.1
 
 
 Intended Users
@@ -31,45 +31,17 @@ release in a production environment.
 Features in this release
 ========================
 
-Apart from numerous bug fixes there are several
-major new features in Firebird 2.1. In no particular
-order they are:
-
- o Text blob compatibility with varchars
- o Database Triggers (connect, disconnect)
- o Transaction Triggers (start/commit/rollback)
- o Use of domains for Trigger/SP variable definition
- o Numerous monitoring facilities available via
-     SQL statements
- o Global temporary tables
- o Query termination
- o Unicode collations
- o MERGE and UPDATE or INSERT statements
- o Support for chinese characters via GBK
- o Common table expressions
- o Aggregate concatenation function
- o Character set TIS620
- o 64-bit builds for Windows
-
-There are also many more enhancements. You can browse
-a summary of changes via the bug tracker here:
-
-http://tracker.firebirdsql.org/secure/ReleaseNote.jspa?projectId=10000&styleName=Html&version=10041
-
-Improvements and New features are listed after the
-bug fixes.
-
-We are in the process of documenting the new features
-and you can read more about them in the release notes.
-
+Please see the Release Notes for details of new
+features.
 
 Installation
 ============
 
 Binary installation package are available, but they do
-not yet support multiple service instance installation.
-Neither are they fully 64-bit ready. The known
-limitations are discussed in installation_readme.txt.
+not support multiple service instance installation.
+Be sure to read the installation_readme.txt in the doc
+directory for more information concerning installation
+issue.
 
 You can also use the zip packages to install Firebird
 manually. There is more info on manual installation
