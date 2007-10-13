@@ -1,3 +1,40 @@
+2007-10-12 22:24  asfernandes
+
+	* firebird2/src/: dsql/pass1.cpp (1.339), jrd/DataTypeUtil.cpp
+	(1.10), jrd/SysFunction.cpp (1.16), jrd/SysFunction.h (1.5),
+	jrd/evl.cpp (1.237), jrd/par.cpp (1.172):
+
+	Use const in SysFunction as suggested by Dmitry Kovalenko
+
+2007-10-12 18:18  asfernandes
+
+	* firebird2/src/jrd/cvt.cpp (1.81):
+
+	Fixed CORE-1509 - Conversion from double to varchar insert trailing
+	spaces
+
+2007-10-12 14:18  paul_reeves
+
+	*
+	firebird2/builds/install/arch-specific/win32/installation_scripted.txt
+	(1.6):
+
+	Misc
+
+2007-10-12 14:15  paul_reeves
+
+	* firebird2/builds/install/arch-specific/win32/Readme.txt (1.14):
+
+	Update readme for beta 2
+
+2007-10-12 14:09  paul_reeves
+
+	*
+	firebird2/builds/install/arch-specific/win32/installation_readme.txt
+	(1.12):
+
+	Update installation notes
+
 2007-10-12 02:52  asfernandes
 
 	* firebird2/src/dsql/make.cpp (1.138):
