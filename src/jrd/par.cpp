@@ -1283,12 +1283,15 @@ static jrd_nod* par_field(thread_db* tdbb, CompilerScratch* csb, SSHORT blr_oper
 	const SSHORT stream = csb->csb_rpt[context].csb_stream;
 	SSHORT flags = 0;
 	bool is_column = false;
-	if (blr_operator == blr_fid) {
+
+	if (blr_operator == blr_fid)
+	{
 		id = BLR_WORD;
 		flags = nod_id;
 		is_column = true;
 	}
-	else if (blr_operator == blr_field) {
+	else if (blr_operator == blr_field)
+	{
 		CompilerScratch::csb_repeat* tail = &csb->csb_rpt[stream];
 		const jrd_prc* procedure = tail->csb_procedure;
 
@@ -1364,11 +1367,21 @@ static jrd_nod* par_field(thread_db* tdbb, CompilerScratch* csb, SSHORT blr_oper
 	if (is_column) {
 		jrd_rel* temp_rel = csb->csb_rpt[stream].csb_relation;
 		if (temp_rel) {
-			jrd_fld* field = (*temp_rel->rel_fields)[id];
-			if (field) {
-				if (field->fld_default_value && field->fld_not_null)
-					node->nod_arg[e_fld_default_value] =
-						field->fld_default_value;
+			if (id >= temp_rel->rel_fields->count())
+			{
+				node = PAR_make_node(tdbb, 0);
+				node->nod_type = nod_null;
+			}
+			else
+			{
+				jrd_fld* field = (*temp_rel->rel_fields)[id];
+				if (field) {
+					if (field->fld_default_value && field->fld_not_null)
+					{
+						node->nod_arg[e_fld_default_value] =
+							field->fld_default_value;
+					}
+				}
 			}
 		}
 	}
@@ -2914,7 +2927,7 @@ static jrd_nod* parse(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 	case blr_field:
 	case blr_fid:
 		node = par_field(tdbb, csb, blr_operator);
-		if (node->nod_type == nod_domain_validation)
+		if (node->nod_type == nod_domain_validation || node->nod_type == nod_null)
 			set_type = false;	// to not change nod->nod_type to nod_field
 		break;
 
