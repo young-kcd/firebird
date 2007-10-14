@@ -1475,7 +1475,8 @@ ISC_STATUS GDS_DSQL_EXECUTE2(ISC_STATUS*	user_status,
 				return error(user_status);
 
 			message->msg_address = NULL;
-			return FB_SUCCESS;
+
+			return return_success(rdb);
 		}
 
 		/* Set up the response packet.  We may receive an SQL response followed
@@ -2109,12 +2110,10 @@ ISC_STATUS GDS_DSQL_FREE(ISC_STATUS * user_status, RSR * stmt_handle, USHORT opt
 			if (!defer_packet(rdb->rdb_port, packet, user_status))
 				return error(user_status);
 
-			if (option == DSQL_drop) {
-				packet->p_resp.p_resp_object = INVALID_OBJECT;
-			}
-			else {
-				packet->p_resp.p_resp_object = statement->rsr_id;
-			}
+			if (option == DSQL_drop) 
+				*stmt_handle = NULL;
+
+			packet->p_resp.p_resp_object = statement->rsr_id;
 		}
 		else {
 			if (send_and_receive(rdb, packet, user_status)) {
@@ -6435,18 +6434,33 @@ static bool receive_packet_noqueue(rem_port* port,
 			break;
 
 		p->packet.p_resp.p_resp_status_vector = rdb->rdb_status_vector = tmp_status;
-		const bool bCheckResponse = (p->packet.p_operation == op_execute);
-		const OBJCT stmt_id = 
-			bCheckResponse ? p->packet.p_sqldata.p_sqldata_statement : 0;
+
+		OBJCT stmt_id = 0;
+		bool bCheckResponse = false, bFreeStmt = false;
+
+		if (p->packet.p_operation == op_execute) 
+		{
+			stmt_id = p->packet.p_sqldata.p_sqldata_statement;
+			bCheckResponse = true;
+		}
+		else if (p->packet.p_operation == op_free_statement) 
+		{
+			stmt_id = p->packet.p_sqlfree.p_sqlfree_statement;
+			bFreeStmt = (p->packet.p_sqlfree.p_sqlfree_option == DSQL_drop);
+		}
 
 		if (!port->receive(&p->packet))
 			return false;
 
+		RSR statement = NULL;
+		if (bCheckResponse || bFreeStmt)
+		{
+			statement = (RSR) port->port_objects[stmt_id];
+			CHECK_HANDLE(statement, type_rsr, isc_bad_req_handle);
+		}
+
 		if (bCheckResponse) 
 		{
-			RSR statement = (RSR) port->port_objects[stmt_id];
-			CHECK_HANDLE(statement, type_rsr, isc_bad_req_handle);
-
 			if (!check_response(rdb, &p->packet)) 
 			{
 				// save error within the corresponding statement
@@ -6460,6 +6474,11 @@ static bool receive_packet_noqueue(rem_port* port,
 				RTR transaction = (RTR) port->port_objects[tran_id];
 				statement->rsr_rtr = transaction;
 			}
+		}
+		if (bFreeStmt) 
+		{
+			fb_assert(p->packet.p_resp.p_resp_object == INVALID_OBJECT);
+			release_sql_request(statement);
 		}
 
 		// free only part of packet we worked with
