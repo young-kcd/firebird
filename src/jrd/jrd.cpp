@@ -4569,6 +4569,8 @@ bool JRD_reschedule(thread_db* tdbb, SLONG quantum, bool punt)
 		THREAD_YIELD();
 		THREAD_ENTER();
 	}
+#else
+	AST_CHECK();
 #endif
 
 	Database* dbb = tdbb->tdbb_database;
