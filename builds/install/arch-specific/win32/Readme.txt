@@ -37,11 +37,11 @@ features.
 Installation
 ============
 
-Binary installation package are available, but they do
+Binary installation packages are available, but they do
 not support multiple service instance installation.
 Be sure to read the installation_readme.txt in the doc
 directory for more information concerning installation
-issue.
+issues.
 
 You can also use the zip packages to install Firebird
 manually. There is more info on manual installation
@@ -59,17 +59,17 @@ Before you report a bug:
  o Perhaps some has already reported this? Browse
    existing bug reports here:
 
-    http://tracker.firebirdsql.org/secure/BrowseProject.jspa
+	http://tracker.firebirdsql.org/secure/BrowseProject.jspa
 
  o If in doubt why not discuss the problem on the
    Firebird-devel list? You can subscribe here:
 
-    http://lists.sourceforge.net/lists/listinfo/firebird-devel
+	http://lists.sourceforge.net/lists/listinfo/firebird-devel
 
    and the list is viewable via a newsgroup interface
    here:
 
-    news://news.atkin.com/
+	news://news.atkin.com/
 
 
 Please don't use the Firebird-devel list for technical
@@ -80,3 +80,4 @@ new feature in Firebird 2.1
 Happy Testing!
 
 From the Firebird team.
+

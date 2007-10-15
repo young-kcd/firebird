@@ -5,7 +5,8 @@ Firebird Database Server 2.1
 This document is a guide to installing this package of
 Firebird 2.1 on the Win32 platform. These notes refer
 to the installation package itself, rather than
-Firebird 2.1 in general.
+Firebird 2.1 in general. In addition, these notes are
+primarily aimed at users of the binary installer.
 
 It is assumed that readers of this document are already
 familiar Firebird 2.0. If you are evaluating Fb 2.1 as
@@ -36,22 +37,37 @@ fbclient.dll and gds32.dll are removed from <system32>.
 Known installation problems
 ---------------------------
 
-o It is not possible to use the binary installer
-  to install more than one instance of Firebird 2.1.
+o It is only possible to use the binary installer
+  to install the default instance of Firebird 2.1. If
+  you wish to install additional, named instances you
+  should manually install them with the zipped install
+  image.
 
 o Unfortunately, (at the time of Beta 2) the installer
-  cannot detect if other versions of Firebird are
-  running.
+  cannot detect if a previous version of Firebird
+  Classic server are running.
 
 o There are known areas of overlap between the
   32-bit and 64-bit installs:
 
   - The Control Panel | Add or Remove Programs section
-    does not indicate whether the installed version
-    is 32-bit or 64-bit.
+    does not indicate that an installed 32-bit version
+    is 32-bit. However, an installed 64-bit version is
+    clearly marked.
 
   - The service installer (instsvc) uses the same
-    instance name.
+    instance name for 32-bit and 64-bit installed. This
+    is by design. If an attempt is made to install (for
+    example) the 32-bit version and the 64-bit version
+    simultaneously using the default instance name
+    instsvc will see the location of the first version
+    to be installed and continue to use it. This means
+    that it will restart the original service at the
+    end of installation.
+
+  - If the 32-bit and 64-bit control panel applets are
+    installed they will both point to the same default
+    instance.
 
 o It is possible to deploy the client library
   (fbclient or gds32) to the <system32> directory.
@@ -60,11 +76,11 @@ o It is possible to deploy the client library
   manually install vcredist.exe. Different versions are
   available for x86 here:
 
-  http://www.microsoft.com/downloads/details.aspx?familyid=32BC1BEE-A3F9-4C13-9C99-220B62A191EE&displaylang=en
+    http://www.microsoft.com/downloads/details.aspx?familyid=32BC1BEE-A3F9-4C13-9C99-220B62A191EE&displaylang=en
 
   and x64 here:
 
-  http://www.microsoft.com/downloads/details.aspx?familyid=90548130-4468-4BBC-9673-D6ACABD5D13B&displaylang=en
+    http://www.microsoft.com/downloads/details.aspx?familyid=90548130-4468-4BBC-9673-D6ACABD5D13B&displaylang=en
 
 
 Uninstallation
