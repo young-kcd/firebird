@@ -6475,6 +6475,7 @@ static bool receive_packet_noqueue(rem_port* port,
 				statement->rsr_rtr = transaction;
 			}
 		}
+
 		if (bFreeStmt) 
 		{
 			fb_assert(p->packet.p_resp.p_resp_object == INVALID_OBJECT);
