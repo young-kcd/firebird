@@ -193,11 +193,10 @@ AppName={#MyAppName}
 ;duplicate this. See the InnoSetup help for details.
 #if PlatformTarget == "x64"
 AppID={#MyAppId}_{#BaseVer}_{#PlatformTarget}
-AppVerName={#MyAppVerName} ({#PlatformTarget})
 #else
 AppID={#MyAppId}_{#BaseVer}
-AppVerName={#MyAppVerName}
 #endif
+AppVerName={#MyAppVerName} ({#PlatformTarget})
 AppPublisher={#MyAppPublisher}
 AppPublisherURL={#MyAppURL}
 AppSupportURL={#MyAppURL}
@@ -217,7 +216,7 @@ WizardImageFile={#ScriptsDir}\firebird_install_logo1.bmp
 WizardSmallImageFile={#ScriptsDir}\firebird_install_logo1.bmp
 
 DefaultDirName={code:ChooseInstallDir|{pf}\Firebird\Firebird_{#AppVer}}
-DefaultGroupName=Firebird {#GroupnameVer}
+DefaultGroupName=Firebird {#GroupnameVer} ({#PlatformTarget})
 
 UninstallDisplayIcon={code:ChooseUninstallIcon|{#UninstallBinary}}
 #ifndef compression
@@ -332,6 +331,8 @@ Filename: {app}\WOW64\instclient.exe; Parameters: "install gds32"; StatusMsg: {c
 #endif
 
 ;If on NT/Win2k etc and 'Install and start service' requested
+;First, if installing service we must try and remove remnants of old service. Otherwise the new install will fail and when we start the service the old service will be started.
+Filename: {app}\bin\instsvc.exe; Parameters: "remove "; StatusMsg: {cm:instsvcSetup}; MinVersion: 0,4.0; Components: ServerComponent; Flags: runminimized; Tasks: UseServiceTask; Check: ConfigureFirebird;
 Filename: {app}\bin\instsvc.exe; Parameters: "install {code:ServiceStartFlags} "; StatusMsg: {cm:instsvcSetup}; MinVersion: 0,4.0; Components: ServerComponent; Flags: runminimized; Tasks: UseServiceTask; Check: ConfigureFirebird;
 Filename: {app}\bin\instsvc.exe; Description: {cm:instsvcStartQuestion}; Parameters: "start {code:ServiceName} "; StatusMsg: {cm:instsvcStartMsg}; MinVersion: 0,4.0; Components: ServerComponent; Flags: runminimized postinstall; Tasks: UseServiceTask; Check: StartEngine
 ;If 'start as application' requested

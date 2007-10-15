@@ -50,20 +50,10 @@ o Unfortunately, (at the time of Beta 2) the installer
 o There are known areas of overlap between the
   32-bit and 64-bit installs:
 
-  - The Control Panel | Add or Remove Programs section
-    does not indicate that an installed 32-bit version
-    is 32-bit. However, an installed 64-bit version is
-    clearly marked.
-
   - The service installer (instsvc) uses the same
-    instance name for 32-bit and 64-bit installed. This
-    is by design. If an attempt is made to install (for
-    example) the 32-bit version and the 64-bit version
-    simultaneously using the default instance name
-    instsvc will see the location of the first version
-    to be installed and continue to use it. This means
-    that it will restart the original service at the
-    end of installation.
+    default instance name for 32-bit and 64-bit
+    installations. This is by design. Services exist
+    in a single name space.
 
   - If the 32-bit and 64-bit control panel applets are
     installed they will both point to the same default
