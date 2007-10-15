@@ -143,6 +143,12 @@ Monitoring tables
 
     MON$IO_STATS (I/O statistics)
       - MON$STAT_ID (statistics ID)
+      - MON$STAT_GROUP (statistics group)
+          0: database
+          1: attachment
+          2: transaction
+          3: statement
+          4: call
       - MON$PAGE_READS (number of page reads)
       - MON$PAGE_WRITES (number of page writes)
       - MON$PAGE_FETCHES (number of page fetches)
@@ -150,6 +156,12 @@ Monitoring tables
 
     MON$RECORD_STATS (record-level statistics)
       - MON$STAT_ID (statistics ID)
+      - MON$STAT_GROUP (statistics group)
+          0: database
+          1: attachment
+          2: transaction
+          3: statement
+          4: call
       - MON$RECORD_SEQ_READS (number of records read sequentially)
       - MON$RECORD_IDX_READS (number of records read via an index)
       - MON$RECORD_INSERTS (number of inserted records)
