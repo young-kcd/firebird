@@ -789,11 +789,11 @@ arg_desc	: init_data_type udf_data_type param_mechanism
 param_mechanism :
 			{ $$ = NULL; } /* Beware: ddl.cpp converts this to mean FUN_reference. */
 		| BY KW_DESCRIPTOR
-			{ $$ = MAKE_constant ((dsql_str*) Jrd::FUN_descriptor, CONSTANT_SLONG); }
+			{ $$ = MAKE_const_slong (Jrd::FUN_descriptor); }
 		| BY SCALAR_ARRAY
-			{ $$ = MAKE_constant ((dsql_str*) Jrd::FUN_scalar_array, CONSTANT_SLONG); }
+			{ $$ = MAKE_const_slong (Jrd::FUN_scalar_array); }
 		| KW_NULL
-			{ $$ = MAKE_constant ((dsql_str*) Jrd::FUN_ref_with_null, CONSTANT_SLONG); }
+			{ $$ = MAKE_const_slong (Jrd::FUN_ref_with_null); }
 		;
 
 return_value1	: return_value
@@ -806,20 +806,20 @@ return_value	: init_data_type udf_data_type return_mechanism
 							  $1, $3); }
 		| PARAMETER pos_short_integer
 			{ $$ = make_node (nod_udf_return_value, (int) e_udf_param_count,
-				NULL, MAKE_constant ((dsql_str*) $2, CONSTANT_SLONG));}
+				NULL, MAKE_const_slong ((IPTR) $2));}
 		;
 
 return_mechanism :
-			{ $$ = MAKE_constant ((dsql_str*) Jrd::FUN_reference, CONSTANT_SLONG); }
+			{ $$ = MAKE_const_slong (Jrd::FUN_reference); }
 		| BY KW_VALUE
-			{ $$ = MAKE_constant ((dsql_str*) Jrd::FUN_value, CONSTANT_SLONG); }
+			{ $$ = MAKE_const_slong (Jrd::FUN_value); }
 		| BY KW_DESCRIPTOR
-			{ $$ = MAKE_constant ((dsql_str*) Jrd::FUN_descriptor, CONSTANT_SLONG); }
+			{ $$ = MAKE_const_slong (Jrd::FUN_descriptor); }
 		| FREE_IT
-			{ $$ = MAKE_constant ((dsql_str*) (-1 * Jrd::FUN_reference), CONSTANT_SLONG); }
+			{ $$ = MAKE_const_slong (-1 * Jrd::FUN_reference); }
 										 /* FUN_refrence with FREE_IT is -ve */
 		| BY KW_DESCRIPTOR FREE_IT
-			{ $$ = MAKE_constant ((dsql_str*) (-1 * Jrd::FUN_descriptor), CONSTANT_SLONG); }
+			{ $$ = MAKE_const_slong (-1 * Jrd::FUN_descriptor); }
 		;
 
 
@@ -833,7 +833,7 @@ blob_filter_subtype :	symbol_blob_subtype_name
 				{ $$ = MAKE_constant ((dsql_str*) $1, CONSTANT_STRING); }
 		|
 						signed_short_integer
-				{ $$ = MAKE_constant ((dsql_str*) $1, CONSTANT_SLONG); }
+				{ $$ = MAKE_const_slong ((IPTR) $1); }
 		;
 
 /* CREATE metadata operations */
@@ -958,17 +958,17 @@ shadow_clause	: pos_short_integer manual_auto conditional sql_string
 		;
 
 manual_auto	: MANUAL
-			{ $$ = MAKE_constant ((dsql_str*) 1, CONSTANT_SLONG); }
+			{ $$ = MAKE_const_slong (1); }
 		| AUTO
-			{ $$ = MAKE_constant ((dsql_str*) 0, CONSTANT_SLONG); }
+			{ $$ = MAKE_const_slong (0); }
 		| 
-			{ $$ = MAKE_constant ((dsql_str*) 0, CONSTANT_SLONG); }
+			{ $$ = MAKE_const_slong (0); }
 		;
 
 conditional	: 
-			{ $$ = MAKE_constant ((dsql_str*) 0, CONSTANT_SLONG); }
+			{ $$ = MAKE_const_slong (0); }
 		| CONDITIONAL
-			{ $$ = MAKE_constant ((dsql_str*) 1, CONSTANT_SLONG); }
+			{ $$ = MAKE_const_slong (1); }
 		;	
 
 first_file_length : 
@@ -1745,32 +1745,32 @@ fetch_seek_opt	:
 	| FIRST
 		{ $$ = make_node (nod_fetch_seek, 2,
 				// corresponds to (blr_bof_forward, 0)
-				MAKE_constant ((dsql_str*) 3, CONSTANT_SLONG),
-				MAKE_constant ((dsql_str*) 0, CONSTANT_SLONG)); }
+				MAKE_const_slong (3),
+				MAKE_const_slong (0)); }
 	| LAST
 		{ $$ = make_node (nod_fetch_seek, 2,
 				// corresponds to (blr_eof_backward, 0)
-				MAKE_constant ((dsql_str*) 4, CONSTANT_SLONG),
-				MAKE_constant ((dsql_str*) 0, CONSTANT_SLONG)); }
+				MAKE_const_slong (4),
+				MAKE_const_slong (0)); }
 	| PRIOR
 		{ $$ = make_node (nod_fetch_seek, 2,
 				// corresponds to (blr_backward, 1)
-				MAKE_constant ((dsql_str*) 2, CONSTANT_SLONG),
-				MAKE_constant ((dsql_str*) 1, CONSTANT_SLONG)); }
+				MAKE_const_slong (2),
+				MAKE_const_slong (1)); }
 	| NEXT
 		{ $$ = make_node (nod_fetch_seek, 2,
 				// corresponds to (blr_forward, 1)
-				MAKE_constant ((dsql_str*) 1, CONSTANT_SLONG),
-				MAKE_constant ((dsql_str*) 1, CONSTANT_SLONG)); }
+				MAKE_const_slong (1),
+				MAKE_const_slong (1)); }
 	| ABSOLUTE value
 		{ $$ = make_node (nod_fetch_seek, 2,
 				// corresponds to (blr_bof_forward, value)
-				MAKE_constant ((dsql_str*) 3, CONSTANT_SLONG),
+				MAKE_const_slong (3),
 				$2); }
 	| RELATIVE value
 		{ $$ = make_node (nod_fetch_seek, 2,
 				// corresponds to (blr_forward, value)
-				MAKE_constant ((dsql_str*) 1, CONSTANT_SLONG),
+				MAKE_const_slong (1),
 				$2); }
 	;
 */
@@ -1923,9 +1923,9 @@ replace_trigger_clause : symbol_trigger_name FOR simple_table_name
 		;
 
 trigger_active	: ACTIVE 
-			{ $$ = MAKE_constant ((dsql_str*) 0, CONSTANT_SLONG); }
+			{ $$ = MAKE_const_slong (0); }
 		| INACTIVE
-			{ $$ = MAKE_constant ((dsql_str*) 1, CONSTANT_SLONG); }
+			{ $$ = MAKE_const_slong (1); }
 		|
 			{ $$ = NULL; }
 		;
@@ -1935,45 +1935,45 @@ trigger_type	: trigger_type_prefix trigger_type_suffix
 		;
 
 trigger_type_prefix	: BEFORE
-			{ $$ = MAKE_constant ((dsql_str*) 0, CONSTANT_SLONG); }
+			{ $$ = MAKE_const_slong (0); }
 		| AFTER
-			{ $$ = MAKE_constant ((dsql_str*) 1, CONSTANT_SLONG); }
+			{ $$ = MAKE_const_slong (1); }
 		;
 
 trigger_type_suffix	: INSERT
-			{ $$ = MAKE_constant ((dsql_str*)(IPTR) trigger_type_suffix (1, 0, 0), CONSTANT_SLONG); }
+			{ $$ = MAKE_const_slong (trigger_type_suffix (1, 0, 0)); }
 		| UPDATE
-			{ $$ = MAKE_constant ((dsql_str*)(IPTR) trigger_type_suffix (2, 0, 0), CONSTANT_SLONG); }
+			{ $$ = MAKE_const_slong (trigger_type_suffix (2, 0, 0)); }
 		| KW_DELETE
-			{ $$ = MAKE_constant ((dsql_str*)(IPTR) trigger_type_suffix (3, 0, 0), CONSTANT_SLONG); }
+			{ $$ = MAKE_const_slong (trigger_type_suffix (3, 0, 0)); }
 		| INSERT OR UPDATE
-			{ $$ = MAKE_constant ((dsql_str*)(IPTR) trigger_type_suffix (1, 2, 0), CONSTANT_SLONG); }
+			{ $$ = MAKE_const_slong (trigger_type_suffix (1, 2, 0)); }
 		| INSERT OR KW_DELETE
-			{ $$ = MAKE_constant ((dsql_str*)(IPTR) trigger_type_suffix (1, 3, 0), CONSTANT_SLONG); }
+			{ $$ = MAKE_const_slong (trigger_type_suffix (1, 3, 0)); }
 		| UPDATE OR INSERT
-			{ $$ = MAKE_constant ((dsql_str*)(IPTR) trigger_type_suffix (2, 1, 0), CONSTANT_SLONG); }
+			{ $$ = MAKE_const_slong (trigger_type_suffix (2, 1, 0)); }
 		| UPDATE OR KW_DELETE
-			{ $$ = MAKE_constant ((dsql_str*)(IPTR) trigger_type_suffix (2, 3, 0), CONSTANT_SLONG); }
+			{ $$ = MAKE_const_slong (trigger_type_suffix (2, 3, 0)); }
 		| KW_DELETE OR INSERT
-			{ $$ = MAKE_constant ((dsql_str*)(IPTR) trigger_type_suffix (3, 1, 0), CONSTANT_SLONG); }
+			{ $$ = MAKE_const_slong (trigger_type_suffix (3, 1, 0)); }
 		| KW_DELETE OR UPDATE
-			{ $$ = MAKE_constant ((dsql_str*)(IPTR) trigger_type_suffix (3, 2, 0), CONSTANT_SLONG); }
+			{ $$ = MAKE_const_slong (trigger_type_suffix (3, 2, 0)); }
 		| INSERT OR UPDATE OR KW_DELETE
-			{ $$ = MAKE_constant ((dsql_str*)(IPTR) trigger_type_suffix (1, 2, 3), CONSTANT_SLONG); }
+			{ $$ = MAKE_const_slong (trigger_type_suffix (1, 2, 3)); }
 		| INSERT OR KW_DELETE OR UPDATE
-			{ $$ = MAKE_constant ((dsql_str*)(IPTR) trigger_type_suffix (1, 3, 2), CONSTANT_SLONG); }
+			{ $$ = MAKE_const_slong (trigger_type_suffix (1, 3, 2)); }
 		| UPDATE OR INSERT OR KW_DELETE
-			{ $$ = MAKE_constant ((dsql_str*)(IPTR) trigger_type_suffix (2, 1, 3), CONSTANT_SLONG); }
+			{ $$ = MAKE_const_slong (trigger_type_suffix (2, 1, 3)); }
 		| UPDATE OR KW_DELETE OR INSERT
-			{ $$ = MAKE_constant ((dsql_str*)(IPTR) trigger_type_suffix (2, 3, 1), CONSTANT_SLONG); }
+			{ $$ = MAKE_const_slong (trigger_type_suffix (2, 3, 1)); }
 		| KW_DELETE OR INSERT OR UPDATE
-			{ $$ = MAKE_constant ((dsql_str*)(IPTR) trigger_type_suffix (3, 1, 2), CONSTANT_SLONG); }
+			{ $$ = MAKE_const_slong (trigger_type_suffix (3, 1, 2)); }
 		| KW_DELETE OR UPDATE OR INSERT
-			{ $$ = MAKE_constant ((dsql_str*)(IPTR) trigger_type_suffix (3, 2, 1), CONSTANT_SLONG); }
+			{ $$ = MAKE_const_slong (trigger_type_suffix (3, 2, 1)); }
 		;
 
 trigger_position : POSITION nonneg_short_integer
-			{ $$ = MAKE_constant ((dsql_str*) $2, CONSTANT_SLONG); }
+			{ $$ = MAKE_const_slong ((IPTR) $2); }
 		|
 			{ $$ = NULL; }
 		;
@@ -2052,10 +2052,10 @@ alter_op	: DROP simple_column_name drop_behaviour
 /* CVC: From SQL, field positions start at 1, not zero. Think in ORDER BY, for example. 
 		| col_opt simple_column_name POSITION nonneg_short_integer 
 			{ $$ = make_node (nod_mod_field_pos, 2, $2,
-			MAKE_constant ((dsql_str*) $4, CONSTANT_SLONG)); } */
+			MAKE_const_slong ((IPTR) $4)); } */
 		| col_opt simple_column_name POSITION pos_short_integer
 			{ $$ = make_node(nod_mod_field_pos, 2, $2,
-				MAKE_constant((dsql_str*) $4, CONSTANT_SLONG)); }
+				MAKE_const_slong((IPTR) $4)); }
 		| col_opt alter_column_name TO simple_column_name
 			{ $$ = make_node(nod_mod_field_name, 2, $2, $4); }
 		| col_opt alter_col_name TYPE alter_data_type_or_domain
@@ -2156,7 +2156,7 @@ alter_index_clause	: symbol_index_name ACTIVE
 
 alter_sequence_clause	: symbol_generator_name RESTART WITH signed_long_integer
 			{ $$ = make_node (nod_set_generator2, e_gen_id_count, $1,
-				MAKE_constant ((dsql_str*) $4, CONSTANT_SLONG)); }
+				MAKE_const_slong ((IPTR) $4)); }
 		| symbol_generator_name RESTART WITH NUMBER64BIT
 			{ $$ = make_node (nod_set_generator2, e_gen_id_count, $1,
 				MAKE_constant((dsql_str*) $4, CONSTANT_SINT64)); }
@@ -2293,16 +2293,16 @@ array_spec	: array_range
 array_range	: signed_long_integer
 				{ if ((IPTR) $1 < 1)
 			 		$$ = make_node (nod_list, (int) 2, 
-					MAKE_constant ((dsql_str*) $1, CONSTANT_SLONG),
-					MAKE_constant ((dsql_str*) 1, CONSTANT_SLONG));
+					MAKE_const_slong ((IPTR) $1),
+					MAKE_const_slong (1));
 				  else
 			 		$$ = make_node (nod_list, (int) 2, 
-			   		MAKE_constant ((dsql_str*) 1, CONSTANT_SLONG),
-					MAKE_constant ((dsql_str*) $1, CONSTANT_SLONG) ); }
+			   		MAKE_const_slong (1),
+					MAKE_const_slong ((IPTR) $1) ); }
 		| signed_long_integer ':' signed_long_integer
 				{ $$ = make_node (nod_list, (int) 2, 
-			 	MAKE_constant ((dsql_str*) $1, CONSTANT_SLONG),
-				MAKE_constant ((dsql_str*) $3, CONSTANT_SLONG)); }
+			 	MAKE_const_slong ((IPTR) $1),
+				MAKE_const_slong ((IPTR) $3)); }
 		;
 
 simple_type	: non_charset_simple_type
@@ -2700,7 +2700,7 @@ set		: set_transaction
 
 set_generator	: SET GENERATOR symbol_generator_name TO signed_long_integer
 			{ $$ = make_node (nod_set_generator2, e_gen_id_count, $3,
-				MAKE_constant ((dsql_str*) $5, CONSTANT_SLONG)); }
+				MAKE_const_slong ((IPTR) $5)); }
 		| SET GENERATOR symbol_generator_name TO NUMBER64BIT
 			{ $$ = make_node (nod_set_generator2, e_gen_id_count, $3,
 				MAKE_constant((dsql_str*) $5, CONSTANT_SINT64)); }
@@ -2834,7 +2834,7 @@ tra_misc_options: NO AUTO UNDO
 		;
 		
 tra_timeout: LOCK TIMEOUT nonneg_short_integer
-			{ $$ = make_node(nod_lock_timeout, 1, MAKE_constant ((dsql_str*) $3, CONSTANT_SLONG)); }
+			{ $$ = make_node(nod_lock_timeout, 1, MAKE_const_slong ((IPTR) $3)); }
 		;
 
 tbl_reserve_options: RESERVING restr_list
@@ -2889,47 +2889,47 @@ comment		: COMMENT ON ddl_type0 IS ddl_desc
 			;
 
 ddl_type0	: DATABASE
-				{ $$ = MAKE_constant((dsql_str*) ddl_database, CONSTANT_SLONG); }
+				{ $$ = MAKE_const_slong(ddl_database); }
 			;
 
 ddl_type1	: DOMAIN
-				{ $$ = MAKE_constant((dsql_str*) ddl_domain, CONSTANT_SLONG); }
+				{ $$ = MAKE_const_slong(ddl_domain); }
 			| TABLE
-				{ $$ = MAKE_constant((dsql_str*) ddl_relation, CONSTANT_SLONG); }
+				{ $$ = MAKE_const_slong(ddl_relation); }
 			| VIEW
-				{ $$ = MAKE_constant((dsql_str*) ddl_view, CONSTANT_SLONG); }
+				{ $$ = MAKE_const_slong(ddl_view); }
 			| PROCEDURE
-				{ $$ = MAKE_constant((dsql_str*) ddl_procedure, CONSTANT_SLONG); }
+				{ $$ = MAKE_const_slong(ddl_procedure); }
 			| TRIGGER
-				{ $$ = MAKE_constant((dsql_str*) ddl_trigger, CONSTANT_SLONG); }
+				{ $$ = MAKE_const_slong(ddl_trigger); }
 			| EXTERNAL FUNCTION
-				{ $$ = MAKE_constant((dsql_str*) ddl_udf, CONSTANT_SLONG); }
+				{ $$ = MAKE_const_slong(ddl_udf); }
 			| FILTER
-				{ $$ = MAKE_constant((dsql_str*) ddl_blob_filter, CONSTANT_SLONG); }
+				{ $$ = MAKE_const_slong(ddl_blob_filter); }
 			| EXCEPTION
-				{ $$ = MAKE_constant((dsql_str*) ddl_exception, CONSTANT_SLONG); }
+				{ $$ = MAKE_const_slong(ddl_exception); }
 			| GENERATOR
-				{ $$ = MAKE_constant((dsql_str*) ddl_generator, CONSTANT_SLONG); }
+				{ $$ = MAKE_const_slong(ddl_generator); }
 			| SEQUENCE
-				{ $$ = MAKE_constant((dsql_str*) ddl_generator, CONSTANT_SLONG); }
+				{ $$ = MAKE_const_slong(ddl_generator); }
 			| INDEX
-				{ $$ = MAKE_constant((dsql_str*) ddl_index, CONSTANT_SLONG); }
+				{ $$ = MAKE_const_slong(ddl_index); }
 			| ROLE
-				{ $$ = MAKE_constant((dsql_str*) ddl_role, CONSTANT_SLONG); }
+				{ $$ = MAKE_const_slong(ddl_role); }
 			| CHARACTER SET
-				{ $$ = MAKE_constant((dsql_str*) ddl_charset, CONSTANT_SLONG); }
+				{ $$ = MAKE_const_slong(ddl_charset); }
 			| COLLATION
-				{ $$ = MAKE_constant((dsql_str*) ddl_collation, CONSTANT_SLONG); }
+				{ $$ = MAKE_const_slong(ddl_collation); }
 /*
 			| SECURITY CLASS
-				{ $$ = MAKE_constant((dsql_str*) ddl_sec_class, CONSTANT_SLONG); }
+				{ $$ = MAKE_const_slong(ddl_sec_class); }
 */
 			;
 
 ddl_type2	: COLUMN
-				{ $$ = MAKE_constant((dsql_str*) ddl_relation, CONSTANT_SLONG); }
+				{ $$ = MAKE_const_slong(ddl_relation); }
 			| PARAMETER
-				{ $$ = MAKE_constant((dsql_str*) ddl_procedure, CONSTANT_SLONG); }
+				{ $$ = MAKE_const_slong(ddl_procedure); }
 			;
 
 ddl_subname	: '.' symbol_ddl_name
@@ -3032,7 +3032,7 @@ limit_clause	: first_clause skip_clause end_limit
 		;
 
 first_clause	: FIRST long_integer begin_limit
-			{ $$ = MAKE_constant ((dsql_str*) $2, CONSTANT_SLONG); }
+			{ $$ = MAKE_const_slong ((IPTR) $2); }
 		| FIRST '(' value ')' begin_limit
 			{ $$ = $3; }
 		| FIRST parameter begin_limit
@@ -3040,7 +3040,7 @@ first_clause	: FIRST long_integer begin_limit
 		;
 
 skip_clause	: SKIP long_integer
-			{ $$ = MAKE_constant ((dsql_str*) $2, CONSTANT_SLONG); }
+			{ $$ = MAKE_const_slong ((IPTR) $2); }
 		| SKIP '(' end_limit value ')'
 			{ $$ = $4; }
 		| SKIP parameter
@@ -3308,9 +3308,9 @@ order_direction	: ASC
 		;
 
 nulls_placement : FIRST
-			{ $$ = MAKE_constant((dsql_str*) NOD_NULLS_FIRST, CONSTANT_SLONG); }
+			{ $$ = MAKE_const_slong(NOD_NULLS_FIRST); }
 		| LAST
-			{ $$ = MAKE_constant((dsql_str*) NOD_NULLS_LAST, CONSTANT_SLONG); }
+			{ $$ = MAKE_const_slong(NOD_NULLS_LAST); }
 		;
 
 nulls_clause : NULLS begin_first nulls_placement end_first
@@ -3328,10 +3328,10 @@ rows_clause	: ROWS value
 			/* equivalent to FIRST (upper_value - lower_value + 1) SKIP (lower_value - 1) */
 			{ $$ = make_node (nod_rows, (int) e_rows_count,
 				make_node (nod_subtract, 2, $2,
-					MAKE_constant ((dsql_str*) 1, CONSTANT_SLONG)),
+					MAKE_const_slong (1)),
 				make_node (nod_add, 2,
 					make_node (nod_subtract, 2, $4, $2),
-					MAKE_constant ((dsql_str*) 1, CONSTANT_SLONG))); }
+					MAKE_const_slong (1))); }
 		|
 			{ $$ = NULL; }
 		;
@@ -3437,7 +3437,7 @@ blob_subtype_value_io : blob_subtype_io
 		;
 
 blob_subtype_io	: signed_short_integer
-			{ $$ = MAKE_constant ((dsql_str*) $1, CONSTANT_SLONG); }
+			{ $$ = MAKE_const_slong ((IPTR) $1); }
 		;
 
 segment_clause_io	: MAX_SEGMENT segment_length_io
@@ -3447,7 +3447,7 @@ segment_clause_io	: MAX_SEGMENT segment_length_io
 		;
 
 segment_length_io	: unsigned_short_integer
-			{ $$ = MAKE_constant ((dsql_str*) $1, CONSTANT_SLONG); }
+			{ $$ = MAKE_const_slong ((IPTR) $1); }
 		| parameter
 		;
 
@@ -3679,35 +3679,35 @@ null_predicate	: value IS KW_NULL
 trigger_action_predicate	: INSERTING
 		{ $$ = make_node (nod_eql, 2,
 					make_node (nod_internal_info, (int) e_internal_info_count,
-						MAKE_constant ((dsql_str*) internal_trigger_action, CONSTANT_SLONG)),
-						MAKE_constant ((dsql_str*) 1, CONSTANT_SLONG)); }
+						MAKE_const_slong (internal_trigger_action)),
+						MAKE_const_slong (1)); }
 	| UPDATING
 		{ $$ = make_node (nod_eql, 2,
 					make_node (nod_internal_info, (int) e_internal_info_count,
-						MAKE_constant ((dsql_str*) internal_trigger_action, CONSTANT_SLONG)),
-						MAKE_constant ((dsql_str*) 2, CONSTANT_SLONG)); }
+						MAKE_const_slong (internal_trigger_action)),
+						MAKE_const_slong (2)); }
 	| DELETING
 		{ $$ = make_node (nod_eql, 2,
 					make_node (nod_internal_info, (int) e_internal_info_count,
-						MAKE_constant ((dsql_str*) internal_trigger_action, CONSTANT_SLONG)),
-						MAKE_constant ((dsql_str*) 3, CONSTANT_SLONG)); }
+						MAKE_const_slong (internal_trigger_action)),
+						MAKE_const_slong (3)); }
 	;
 
 special_trigger_action_predicate	: KW_INSERTING
 		{ $$ = make_node (nod_eql, 2,
 					make_node (nod_internal_info, (int) e_internal_info_count,
-						MAKE_constant ((dsql_str*) internal_trigger_action, CONSTANT_SLONG)),
-						MAKE_constant ((dsql_str*) 1, CONSTANT_SLONG)); }
+						MAKE_const_slong (internal_trigger_action)),
+						MAKE_const_slong (1)); }
 	| KW_UPDATING
 		{ $$ = make_node (nod_eql, 2,
 					make_node (nod_internal_info, (int) e_internal_info_count,
-						MAKE_constant ((dsql_str*) internal_trigger_action, CONSTANT_SLONG)),
-						MAKE_constant ((dsql_str*) 2, CONSTANT_SLONG)); }
+						MAKE_const_slong (internal_trigger_action)),
+						MAKE_const_slong (2)); }
 	| KW_DELETING
 		{ $$ = make_node (nod_eql, 2,
 					make_node (nod_internal_info, (int) e_internal_info_count,
-						MAKE_constant ((dsql_str*) internal_trigger_action, CONSTANT_SLONG)),
-						MAKE_constant ((dsql_str*) 3, CONSTANT_SLONG)); }
+						MAKE_const_slong (internal_trigger_action)),
+						MAKE_const_slong (3)); }
 	;
 
 /* set values */
@@ -3826,7 +3826,7 @@ datetime_value_expression : CURRENT_DATE
 		;
 
 sec_precision_opt	: '(' nonneg_short_integer ')'
-			{ $$ = MAKE_constant ((dsql_str*) $2, CONSTANT_SLONG); }
+			{ $$ = MAKE_const_slong ((IPTR) $2); }
 		|
 			{ $$ = NULL; }
 		;
@@ -3848,7 +3848,7 @@ constant	: u_constant
 u_numeric_constant : NUMERIC
 			{ $$ = MAKE_constant ((dsql_str*) $1, CONSTANT_STRING); }
 		| NUMBER
-			{ $$ = MAKE_constant ((dsql_str*) $1, CONSTANT_SLONG); }
+			{ $$ = MAKE_const_slong ((IPTR) $1); }
 		| FLOAT_NUMBER
 			{ $$ = MAKE_constant ((dsql_str*) $1, CONSTANT_DOUBLE); }
 		| NUMBER64BIT
@@ -3912,19 +3912,19 @@ current_role	: CURRENT_ROLE
 
 internal_info	: CURRENT_CONNECTION
 			{ $$ = make_node (nod_internal_info, (int) e_internal_info_count,
-						MAKE_constant ((dsql_str*) internal_connection_id, CONSTANT_SLONG)); }
+						MAKE_const_slong (internal_connection_id)); }
 		| CURRENT_TRANSACTION
 			{ $$ = make_node (nod_internal_info, (int) e_internal_info_count,
-						MAKE_constant ((dsql_str*) internal_transaction_id, CONSTANT_SLONG)); }
+						MAKE_const_slong (internal_transaction_id)); }
 		| GDSCODE
 			{ $$ = make_node (nod_internal_info, (int) e_internal_info_count,
-						MAKE_constant ((dsql_str*) internal_gdscode, CONSTANT_SLONG)); }
+						MAKE_const_slong (internal_gdscode)); }
 		| SQLCODE
 			{ $$ = make_node (nod_internal_info, (int) e_internal_info_count,
-						MAKE_constant ((dsql_str*) internal_sqlcode, CONSTANT_SLONG)); }
+						MAKE_const_slong (internal_sqlcode)); }
 		| ROW_COUNT
 			{ $$ = make_node (nod_internal_info, (int) e_internal_info_count,
-						MAKE_constant ((dsql_str*) internal_rows_affected, CONSTANT_SLONG)); }
+						MAKE_const_slong (internal_rows_affected)); }
 		;
 
 sql_string	: STRING			/* string in current charset */
@@ -4048,20 +4048,20 @@ length_expression	: bit_length_expression
 
 bit_length_expression	: BIT_LENGTH '(' value ')'
 			{ $$ = make_node(nod_strlen, (int) e_strlen_count,
-					MAKE_constant((dsql_str*)blr_strlen_bit, CONSTANT_SLONG), $3); }
+					MAKE_const_slong(blr_strlen_bit), $3); }
 		;
 
 char_length_expression	: CHAR_LENGTH '(' value ')'
 			{ $$ = make_node(nod_strlen, (int) e_strlen_count,
-					MAKE_constant((dsql_str*)blr_strlen_char, CONSTANT_SLONG), $3); }
+					MAKE_const_slong(blr_strlen_char), $3); }
 		| CHARACTER_LENGTH '(' value ')'
 			{ $$ = make_node(nod_strlen, (int) e_strlen_count,
-					MAKE_constant((dsql_str*)blr_strlen_char, CONSTANT_SLONG), $3); }
+					MAKE_const_slong(blr_strlen_char), $3); }
 		;
 
 octet_length_expression	: OCTET_LENGTH '(' value ')'
 			{ $$ = make_node(nod_strlen, (int) e_strlen_count,
-					MAKE_constant((dsql_str*)blr_strlen_octet, CONSTANT_SLONG), $3); }
+					MAKE_const_slong(blr_strlen_octet), $3); }
 		;
 
 string_value_function	:  substring_function
@@ -4078,33 +4078,33 @@ substring_function	: SUBSTRING '(' value FROM value string_length_opt ')'
 			   compatible with the engine's implementation */
 			{ $$ = make_node (nod_substr, (int) e_substr_count, $3,
 				make_node (nod_subtract, 2, $5,
-					MAKE_constant ((dsql_str*) 1, CONSTANT_SLONG)), $6); }
+					MAKE_const_slong (1)), $6); }
 		;
 
 string_length_opt	: FOR value
 			{ $$ = $2; }
 		|
-			{ $$ = MAKE_constant ((dsql_str*) SHRT_POS_MAX, CONSTANT_SLONG); }
+			{ $$ = MAKE_const_slong (SHRT_POS_MAX); }
 		;
 
 trim_function	: TRIM '(' trim_specification value FROM value ')'
 			{ $$ = make_node (nod_trim, (int) e_trim_count, $3, $4, $6); }
 		| TRIM '(' value FROM value ')'
 			{ $$ = make_node (nod_trim, (int) e_trim_count, 
-				MAKE_constant ((dsql_str*)blr_trim_both, CONSTANT_SLONG), $3, $5); }
+				MAKE_const_slong (blr_trim_both), $3, $5); }
 		| TRIM '(' trim_specification FROM value ')'
 			{ $$ = make_node (nod_trim, (int) e_trim_count, $3, NULL, $5); }
 		| TRIM '(' value ')'
 			{ $$ = make_node (nod_trim, (int) e_trim_count,
-				MAKE_constant ((dsql_str*)blr_trim_both, CONSTANT_SLONG), NULL, $3); }
+				MAKE_const_slong (blr_trim_both), NULL, $3); }
 		;
 
 trim_specification	: BOTH
-			{ $$ = MAKE_constant ((dsql_str*)blr_trim_both, CONSTANT_SLONG); }
+			{ $$ = MAKE_const_slong (blr_trim_both); }
 		| TRAILING
-			{ $$ = MAKE_constant ((dsql_str*)blr_trim_trailing, CONSTANT_SLONG); }
+			{ $$ = MAKE_const_slong (blr_trim_trailing); }
 		| LEADING
-			{ $$ = MAKE_constant ((dsql_str*)blr_trim_leading, CONSTANT_SLONG); }
+			{ $$ = MAKE_const_slong (blr_trim_leading); }
 		;
 		
 udf		: symbol_UDF_name '(' value_list ')'
@@ -4177,10 +4177,10 @@ next_value_expression	: NEXT KW_VALUE FOR symbol_generator_name
 			{ 
 			  if (client_dialect >= SQL_DIALECT_V6_TRANSITION)
 				  $$ = make_node (nod_gen_id2, 2, $4,
-						MAKE_constant((dsql_str*) 1, CONSTANT_SLONG));
+						MAKE_const_slong(1));
 			  else
 				  $$ = make_node (nod_gen_id, 2, $4,
-						MAKE_constant((dsql_str*) 1, CONSTANT_SLONG));
+						MAKE_const_slong(1));
 			}
 		| GEN_ID '(' symbol_generator_name ',' value ')'
 			{ 
@@ -4193,21 +4193,21 @@ next_value_expression	: NEXT KW_VALUE FOR symbol_generator_name
 
 
 timestamp_part	: YEAR
-			{ $$ = MAKE_constant ((dsql_str*)blr_extract_year, CONSTANT_SLONG); }
+			{ $$ = MAKE_const_slong (blr_extract_year); }
 		| MONTH
-			{ $$ = MAKE_constant ((dsql_str*)blr_extract_month, CONSTANT_SLONG); }
+			{ $$ = MAKE_const_slong (blr_extract_month); }
 		| DAY
-			{ $$ = MAKE_constant ((dsql_str*)blr_extract_day, CONSTANT_SLONG); }
+			{ $$ = MAKE_const_slong (blr_extract_day); }
 		| HOUR
-			{ $$ = MAKE_constant ((dsql_str*)blr_extract_hour, CONSTANT_SLONG); }
+			{ $$ = MAKE_const_slong (blr_extract_hour); }
 		| MINUTE
-			{ $$ = MAKE_constant ((dsql_str*)blr_extract_minute, CONSTANT_SLONG); }
+			{ $$ = MAKE_const_slong (blr_extract_minute); }
 		| SECOND
-			{ $$ = MAKE_constant ((dsql_str*)blr_extract_second, CONSTANT_SLONG); }
+			{ $$ = MAKE_const_slong (blr_extract_second); }
 		| WEEKDAY
-			{ $$ = MAKE_constant ((dsql_str*)blr_extract_weekday, CONSTANT_SLONG); }
+			{ $$ = MAKE_const_slong (blr_extract_weekday); }
 		| YEARDAY
-			{ $$ = MAKE_constant ((dsql_str*)blr_extract_yearday, CONSTANT_SLONG); }
+			{ $$ = MAKE_const_slong (blr_extract_yearday); }
 		;
 
 all_noise	: ALL
@@ -5160,6 +5160,7 @@ int LexerState::yylex (
 				if (!have_decimal && (number <= MAX_SLONG))
 				{
 					yylval = (dsql_nod*) (IPTR) number;
+					//printf ("parse.y %p %d\n", yylval, number);
 					return NUMBER;
 				}
 				else

@@ -28,6 +28,7 @@
 
 #include "../dsql/sym.h"
 
+dsql_nod* MAKE_const_slong(SLONG);
 dsql_nod* MAKE_constant(class dsql_str*, dsql_constant_type);
 dsql_nod* MAKE_str_constant(class dsql_str*, SSHORT);
 class dsql_str* MAKE_cstring(const char*);

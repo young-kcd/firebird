@@ -942,7 +942,7 @@ dsql_nod* PASS1_node(dsql_req* request, dsql_nod* input, bool proc_flag)
 			dsql_nod* const_node = input->nod_arg[0];
 			if (const_node) {
 				fb_assert(const_node->nod_type == nod_constant);
-				const int precision = (int)(IPTR) const_node->nod_arg[0];
+				const int precision = (int) const_node->getConstant();
 				fb_assert(precision >= 0);
 				if (precision > MAX_TIME_PRECISION) {
 					ERRD_post(isc_invalid_time_precision,
@@ -3171,10 +3171,10 @@ static void pass1_blob( dsql_req* request, dsql_nod* input)
 		}
 	}
 	if (!blob->blb_from) {
-		blob->blb_from = MAKE_constant((dsql_str*) 0, CONSTANT_SLONG);
+		blob->blb_from = MAKE_const_slong(0);
 	}
 	if (!blob->blb_to) {
-		blob->blb_to = MAKE_constant((dsql_str*) 0, CONSTANT_SLONG);
+		blob->blb_to = MAKE_const_slong(0);
 	}
 
 	for (parameter = blob->blb_open_in_msg->msg_parameters; parameter;
@@ -5052,7 +5052,7 @@ static dsql_nod* pass1_group_by_list(dsql_req* request, dsql_nod* input, dsql_no
 			stack.push(frnode);
 		}
 		else if ((sub->nod_type == nod_constant) && (sub->nod_desc.dsc_dtype == dtype_long)) {
-			const ULONG position = (IPTR) (sub->nod_arg[0]);
+			const ULONG position = sub->getConstant();
 			if ((position < 1) || !selectList ||
 				(position > (ULONG) selectList->nod_count))
 			{
@@ -6813,7 +6813,7 @@ static dsql_nod* pass1_sort( dsql_req* request, dsql_nod* input, dsql_nod* selec
 		else if (node1->nod_type == nod_constant &&
 			node1->nod_desc.dsc_dtype == dtype_long)
 		{
-			const ULONG position = (IPTR) (node1->nod_arg[0]);
+			const ULONG position = node1->getConstant();
 			if ((position < 1) || !selectList ||
 				(position > (ULONG) selectList->nod_count))
 			{
@@ -7095,7 +7095,7 @@ static dsql_nod* pass1_union( dsql_req* request, dsql_nod* input,
 						  isc_arg_gds, isc_order_by_err,	// invalid ORDER BY clause.
 						  0);
 			}
-			const SLONG number = (IPTR) position->nod_arg[0];
+			const SLONG number = position->getConstant();
 			if (number < 1 || number > union_items->nod_count) {
 				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
 						  isc_arg_gds, isc_dsql_command_err,

@@ -857,20 +857,20 @@ static void check_constraint(	dsql_req*		request,
 	// create the INSERT trigger
 
 	element->nod_arg[e_cnstr_type] =
-		MAKE_constant((dsql_str*) PRE_STORE_TRIGGER, CONSTANT_SLONG);
+		MAKE_const_slong(PRE_STORE_TRIGGER);
 	define_constraint_trigger(request, element);
 
 	// create the UPDATE trigger
 
 	element->nod_arg[e_cnstr_type] =
-		MAKE_constant((dsql_str*) PRE_MODIFY_TRIGGER, CONSTANT_SLONG);
+		MAKE_const_slong(PRE_MODIFY_TRIGGER);
 	define_constraint_trigger(request, element);
 
 	// create the DELETE trigger, if required
 	if (delete_trigger_required)
 	{
 		element->nod_arg[e_cnstr_type] =
-			MAKE_constant((dsql_str*) PRE_ERASE_TRIGGER, CONSTANT_SLONG);
+			MAKE_const_slong(PRE_ERASE_TRIGGER);
 		define_constraint_trigger(request, element);
 	}
 
@@ -936,7 +936,7 @@ static void create_view_triggers(dsql_req* request, dsql_nod* element,
 	// create the UPDATE trigger
 
 	element->nod_arg[e_cnstr_type] =
-		MAKE_constant((dsql_str*) PRE_MODIFY_TRIGGER, CONSTANT_SLONG);
+		MAKE_const_slong(PRE_MODIFY_TRIGGER);
 
 	dsql_nod* base_and_node = 0;
 	dsql_nod* base_relation = 0;
@@ -952,7 +952,7 @@ static void create_view_triggers(dsql_req* request, dsql_nod* element,
 	// create the INSERT trigger
 
 	element->nod_arg[e_cnstr_type] =
-		MAKE_constant((dsql_str*) PRE_STORE_TRIGGER, CONSTANT_SLONG);
+		MAKE_const_slong(PRE_STORE_TRIGGER);
 	define_view_trigger(request, element, NULL, items);
 
 	request->append_uchar(isc_dyn_end);	// For triggers definition
@@ -1117,7 +1117,7 @@ static void define_constraint_trigger(dsql_req* request, dsql_nod* node)
 	const dsql_nod* constant = node->nod_arg[e_cnstr_type];
 	if (constant)
 	{
-		const SSHORT type = (SSHORT)(IPTR) constant->nod_arg[0];
+		const SSHORT type = (SSHORT) constant->getConstant();
 		request->append_number(isc_dyn_trg_type, type);
 	}
 
@@ -1230,7 +1230,7 @@ request->append_number(isc_dyn_rel_sql_protection, 1);
 			switch (element->nod_type)
 			{
 			case nod_file_length:
-				start = (IPTR) (element->nod_arg[0]) + 1;
+				start = (IPTR) element->nod_arg[0] + 1;
 				break;
 
 			default:
@@ -1549,11 +1549,11 @@ static void define_dimensions( dsql_req* request, const dsql_fld* field)
 		request->append_number(isc_dyn_def_dimension, position);
 		const dsql_nod* element = *ptr++;
 		request->append_uchar(isc_dyn_dim_lower);
-		const SLONG lrange = (IPTR) (element->nod_arg[0]);
+		const SLONG lrange = element->getConstant();
 		request->append_ulong_with_length(lrange);
 		element = *ptr;
 		request->append_uchar(isc_dyn_dim_upper);
-		const SLONG hrange = (IPTR) (element->nod_arg[0]);
+		const SLONG hrange = element->getConstant();
 		request->append_ulong_with_length(hrange);
 		request->append_uchar(isc_dyn_end);
 		if (lrange >= hrange)
@@ -2007,7 +2007,7 @@ static SSHORT getBlobFilterSubType(dsql_req* request, const dsql_nod* node)
 	switch (node->nod_desc.dsc_dtype)
 	{
 	case dtype_long:
-		return (SSHORT)(IPTR)node->nod_arg[0];
+		return (SSHORT) node->getConstant();
 	case dtype_text:
 		break;
 	default:
@@ -2126,7 +2126,7 @@ static void define_collation( dsql_req* request)
 			switch (attribute->nod_type)
 			{
 				case nod_collation_attr:
-					request->append_number(isc_dyn_coll_attribute, (IPTR)(attribute->nod_arg[0]));
+					request->append_number(isc_dyn_coll_attribute, (IPTR) attribute->nod_arg[0]);
 					break;
 
 				default:
@@ -2936,9 +2936,9 @@ static void define_shadow(dsql_req* request)
 	request->append_number(isc_dyn_def_shadow, (SSHORT)(IPTR) (ptr[e_shadow_number]));
 	request->append_cstring(isc_dyn_def_file, ((dsql_str*) (ptr[e_shadow_name]))->str_data);
 	request->append_number(isc_dyn_shadow_man_auto,
-			   (SSHORT)(IPTR) ((ptr[e_shadow_man_auto])->nod_arg[0]));
+			   (SSHORT) ptr[e_shadow_man_auto]->getConstant());
 	request->append_number(isc_dyn_shadow_conditional,
-			   (SSHORT)(IPTR) ((ptr[e_shadow_conditional])->nod_arg[0]));
+			   (SSHORT) ptr[e_shadow_conditional]->getConstant());
 
 	request->append_file_start(0);
 
@@ -3062,16 +3062,14 @@ static void define_trigger(dsql_req* request, NOD_TYPE op)
 
 	dsql_nod* constant = trigger_node->nod_arg[e_trg_active];
 	if (constant)
-		request->append_number(isc_dyn_trg_inactive,
-				   (SSHORT)(IPTR) constant->nod_arg[0]);
+		request->append_number(isc_dyn_trg_inactive, (SSHORT) constant->getConstant());
 
 	if (constant = trigger_node->nod_arg[e_trg_position])
-		request->append_number(isc_dyn_trg_sequence,
-				   (SSHORT)(IPTR) constant->nod_arg[0]);
+		request->append_number(isc_dyn_trg_sequence, (SSHORT) constant->getConstant());
 
 	if (constant = trigger_node->nod_arg[e_trg_type]) {
-		request->append_number(isc_dyn_trg_type, (SSHORT)(IPTR) constant->nod_arg[0]);
-		trig_type = (USHORT)(IPTR) constant->nod_arg[0];
+		request->append_number(isc_dyn_trg_type, (SSHORT) constant->getConstant());
+		trig_type = (USHORT) constant->getConstant();
 	}
 	else {
 		fb_assert(op == nod_mod_trigger);
@@ -3183,7 +3181,7 @@ static void define_udf( dsql_req* request)
 		// CVC: This is case of "returns <type> [by value|reference]"
 		// Some data types can not be returned as value
 
-		if (((int) (IPTR) (ret_val_ptr[1]->nod_arg[0]) == Jrd::FUN_value) &&
+		if (((int) ret_val_ptr[1]->getConstant() == Jrd::FUN_value) &&
 			(field->fld_dtype == dtype_text ||
 			 field->fld_dtype == dtype_varying ||
 			 field->fld_dtype == dtype_cstring ||
@@ -3226,7 +3224,7 @@ static void define_udf( dsql_req* request)
 
 		// CVC: This is case of "returns parameter <N>"
 
-		position = (SSHORT)(IPTR) (ret_val_ptr[1]->nod_arg[0]);
+		position = (SSHORT) ret_val_ptr[1]->getConstant();
 		// Function modifies an argument whose value is the function return value
 
 		if (!arguments || position > arguments->nod_count || position < 1)
@@ -3248,7 +3246,7 @@ static void define_udf( dsql_req* request)
 		const dsql_nod* const* param_node = ret_arg->nod_arg;
 		if (param_node[e_udf_param_type])
 		{
-			const SSHORT arg_mechanism = (SSHORT)(IPTR) (param_node[e_udf_param_type]->nod_arg[0]);
+			const SSHORT arg_mechanism = (SSHORT) param_node[e_udf_param_type]->getConstant();
 			if (arg_mechanism == Jrd::FUN_scalar_array)
 				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -607,
 					isc_arg_gds, isc_random,
@@ -3268,7 +3266,7 @@ static void define_udf( dsql_req* request)
 		{
 		/* CVC: I need to test returning blobs by descriptor before allowing the
 		change there. For now, I ignore the return type specification. */
-			const bool free_it = ((SSHORT)(IPTR) ret_val_ptr[1]->nod_arg[0] < 0);
+			const bool free_it = ((SSHORT) ret_val_ptr[1]->getConstant() < 0);
 			request->append_number(isc_dyn_def_function_arg, blob_position);
 			request->append_number(isc_dyn_func_mechanism,
 					   (SSHORT)(SLONG) ((free_it ? -1 : 1) * Jrd::FUN_blob_struct));
@@ -3279,7 +3277,7 @@ static void define_udf( dsql_req* request)
 		{
 			request->append_number(isc_dyn_def_function_arg, (SSHORT) 0);
 			request->append_number(isc_dyn_func_mechanism,
-					   (SSHORT)(IPTR) (ret_val_ptr[1]->nod_arg[0]));
+					   (SSHORT) ret_val_ptr[1]->getConstant());
 		}
 
 		request->append_cstring(isc_dyn_function_name, udf_name);
@@ -3315,7 +3313,7 @@ static void define_udf( dsql_req* request)
 			request->append_number(isc_dyn_def_function_arg, position);
 
 			if (param_node[e_udf_param_type]) {
-				const SSHORT arg_mechanism = (SSHORT)(IPTR) (param_node[e_udf_param_type]->nod_arg[0]);
+				const SSHORT arg_mechanism = (SSHORT) param_node[e_udf_param_type]->getConstant();
 				request->append_number(isc_dyn_func_mechanism, arg_mechanism);
 			}
 			else if (field->fld_dtype == dtype_blob) {
@@ -3908,7 +3906,7 @@ static void define_view_trigger( dsql_req* request, dsql_nod* node, dsql_nod* rs
 	USHORT trig_type;
 	if (constant)
 	{
-		trig_type = (USHORT)(IPTR) constant->nod_arg[0];
+		trig_type = (USHORT) constant->getConstant();
 		request->append_number(isc_dyn_trg_type, trig_type);
 	}
 	else
@@ -4494,7 +4492,7 @@ static void generate_dyn( dsql_req* request, dsql_nod* node)
 
 	case nod_del_shadow:
 		request->append_number(isc_dyn_delete_shadow,
-				   (SSHORT)(IPTR) (node->nod_arg[0]));
+				   (SSHORT) (IPTR) node->nod_arg[0]);
 		request->append_uchar(isc_dyn_end);
 		break;
 
@@ -4618,7 +4616,7 @@ static void make_comment(dsql_req* request)
 	const dsql_nod* obj_type_node = node->nod_arg[e_comment_obj_type];
 	fb_assert(obj_type_node->nod_type == nod_constant
 		&& obj_type_node->nod_desc.dsc_dtype == dtype_long);
-	const int obj_type = (IPTR) obj_type_node->nod_arg[0];
+	const int obj_type = obj_type_node->getConstant();
 
 	UCHAR dyn_verb = 0;
 	switch (obj_type)
@@ -5473,7 +5471,7 @@ static void modify_relation( dsql_req* request)
 				const dsql_nod* const_node = element->nod_arg[e_mod_fld_pos_new_position];
 
                 // CVC: Since now the parser accepts pos=1..N, let's subtract one here.
-                const SSHORT constant = (SSHORT)(IPTR) const_node->nod_arg[0] - 1;
+                const SSHORT constant = (SSHORT) const_node->getConstant() - 1;
 
 				request->append_cstring(isc_dyn_rel_name,
 							relation_name->str_data);

@@ -132,7 +132,7 @@ void GEN_expr( dsql_req* request, dsql_nod* node)
 
 	case nod_strlen:
 		stuff(request, blr_strlen);
-		stuff(request, *(SLONG *) node->nod_arg[e_strlen_type]->nod_desc.dsc_address);
+		stuff(request, node->nod_arg[e_strlen_type]->getConstant());
 		GEN_expr(request, node->nod_arg[e_strlen_value]);
 		return;
 
@@ -179,7 +179,7 @@ void GEN_expr( dsql_req* request, dsql_nod* node)
 		if (node->nod_arg[0]) {
 			const dsql_nod* const_node = node->nod_arg[0];
 			fb_assert(const_node->nod_type == nod_constant);
-			const int precision = (int)(IPTR) const_node->nod_arg[0];
+			const int precision = (int) const_node->getConstant();
 			stuff(request, blr_current_time2);
 			stuff(request, precision);
 		}
@@ -192,7 +192,7 @@ void GEN_expr( dsql_req* request, dsql_nod* node)
 		if (node->nod_arg[0]) {
 			const dsql_nod* const_node = node->nod_arg[0];
 			fb_assert(const_node->nod_type == nod_constant);
-			const int precision = (int)(IPTR) const_node->nod_arg[0];
+			const int precision = (int) const_node->getConstant();
 			stuff(request, blr_current_timestamp2);
 			stuff(request, precision);
 		}
@@ -904,7 +904,7 @@ void GEN_start_transaction( dsql_req* request, const dsql_nod* tran_node)
 			sw_lock_timeout = true;
 			if (ptr->nod_count == 1 && ptr->nod_arg[0]->nod_type == nod_constant)
 			{
-				const int lck_timeout = (int)(IPTR) ptr->nod_arg[0]->nod_arg[0];
+				const int lck_timeout = (int) ptr->nod_arg[0]->getConstant();
 				stuff(request, isc_tpb_lock_timeout);
 				stuff(request, 2);
 				stuff_word(request, lck_timeout);
@@ -1495,6 +1495,7 @@ static void gen_constant( dsql_req* request, dsc* desc, bool negate_value)
 		value = *(SLONG *) p;
 		if (negate_value)
 			value = -value;
+		//printf("gen.cpp = %p %d\n", *((void**)p), value);
 		stuff_word(request, value);
 		stuff_word(request, value >> 16);
 		break;
@@ -2612,7 +2613,7 @@ static void gen_sort( dsql_req* request, dsql_nod* list)
 	{
 		dsql_nod* nulls_placement = (*ptr)->nod_arg[e_order_nulls];
 		if (nulls_placement) {
-			switch ((IPTR)nulls_placement->nod_arg[0]) {
+			switch (nulls_placement->getConstant()) {
 				case NOD_NULLS_FIRST:
 					stuff(request, blr_nullsfirst);
 					break;
