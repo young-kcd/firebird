@@ -452,6 +452,9 @@ Source: {#WOW64Dir}\bin\msvcp{#msvc_version}?.dll; DestDir: {syswow64}; Componen
 #endif
 #if msvc_version = 8
 Source: {#FilesDir}\bin\Microsoft.VC80.CRT.manifest; DestDir: {app}\bin; Components: ClientComponent; Flags: sharedfile;
+#if PlatformTarget == "x64"
+Source: {#WOW64Dir}\bin\Microsoft.VC80.CRT.manifest; DestDir: {syswow64}; Components: ClientComponent; Flags: sharedfile uninsneveruninstall;
+#endif
 #endif
 ;Docs
 Source: {#ScriptsDir}\installation_scripted.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: skipifsourcedoesntexist  ignoreversion
