@@ -1146,12 +1146,6 @@ void MAKE_desc(dsql_req* request, dsc* desc, dsql_nod* node, dsql_nod* null_repl
 			const dsql_str* name = (dsql_str*) node->nod_arg[e_sysfunc_name];
 			DSqlDataTypeUtil(request).makeSysFunction(desc, name->str_data, args.getCount(), args.begin());
 
-			if (desc->isNull() && null_replacement)
-			{
-				MAKE_desc(request, desc, null_replacement, NULL);
-				desc->dsc_flags |= (DSC_nullable | DSC_null);
-			}
-
 			return;
 		}
 
