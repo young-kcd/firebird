@@ -165,6 +165,9 @@
 				RelativePath="..\..\..\src\jrd\btn.h">
 			</File>
 			<File
+				RelativePath="..\..\..\src\utilities\gstat\dbaswi.h">
+			</File>
+			<File
 				RelativePath="..\..\..\src\jrd\enc_proto.h">
 			</File>
 			<File

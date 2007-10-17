@@ -169,7 +169,13 @@
 			Name="Header files"
 			Filter="h;hpp;hxx;hm;inl">
 			<File
+				RelativePath="..\..\..\src\utilities\gsec\call_service.h">
+			</File>
+			<File
 				RelativePath="..\..\..\src\utilities\gsec\gsec.h">
+			</File>
+			<File
+				RelativePath="..\..\..\src\utilities\gsec\gsecswi.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\utilities\gsec\secur_proto.h">
