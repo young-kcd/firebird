@@ -373,6 +373,12 @@ public:
 	dsql_nod* nod_arg[1];
 
 	dsql_nod() : nod_type(nod_unknown_type), nod_count(0), nod_flags(0) {}
+	SLONG getConstant() const
+	{
+		fb_assert(nod_type == nod_constant);
+		fb_assert(nod_desc.dsc_dtype == dtype_long);
+		return *((SLONG*) nod_arg);
+	}
 };
 
 // values of flags
@@ -435,7 +441,7 @@ enum nod_flags_vals {
 // Parameters to MAKE_constant
 enum dsql_constant_type {
 	CONSTANT_STRING		= 0, // stored as a string
-	CONSTANT_SLONG		= 1, // stored as a SLONG
+//	CONSTANT_SLONG		= 1, // stored as a SLONG
 	CONSTANT_DOUBLE		= 2, // stored as a string
 	CONSTANT_DATE		= 3, // stored as a SLONG
 	CONSTANT_TIME		= 4, // stored as a ULONG
@@ -811,7 +817,7 @@ enum node_args {
 	e_cnstr_source,
 	e_cnstr_count,
 
-	e_trg_name = 0,			// nod_mod_trigger and nod_def trigger
+	e_trg_name = 0,			// nod_mod_trigger and nod_def_trigger
 	e_trg_table,
 	e_trg_active,
 	e_trg_type,

@@ -1059,7 +1059,7 @@ dsql_nod* PASS1_node(dsql_req* request, dsql_nod* input, bool proc_flag)
 			dsql_nod* const_node = input->nod_arg[0];
 			if (const_node) {
 				fb_assert(const_node->nod_type == nod_constant);
-				const int precision = (int) (IPTR) const_node->nod_arg[0];
+				const int precision = const_node->getConstant();
 				fb_assert(precision >= 0);
 				if (unsigned(precision) > MAX_TIME_PRECISION) {
 					ERRD_post(isc_invalid_time_precision,
@@ -3489,10 +3489,10 @@ static void pass1_blob( dsql_req* request, dsql_nod* input)
 		}
 	}
 	if (!blob->blb_from) {
-		blob->blb_from = MAKE_constant((dsql_str*) 0, CONSTANT_SLONG);
+		blob->blb_from = MAKE_const_slong(0);
 	}
 	if (!blob->blb_to) {
-		blob->blb_to = MAKE_constant((dsql_str*) 0, CONSTANT_SLONG);
+		blob->blb_to = MAKE_const_slong(0);
 	}
 
 	for (parameter = blob->blb_open_in_msg->msg_parameters; parameter;
@@ -5920,13 +5920,14 @@ static dsql_nod* pass1_group_by_list(dsql_req* request, dsql_nod* input, dsql_no
 		DEV_BLKCHK(*ptr, dsql_type_nod);
 		dsql_nod* sub = (*ptr);
 		dsql_nod* frnode = NULL;
-		if (sub->nod_type == nod_field_name) {
+		if (sub->nod_type == nod_field_name) 
+		{
 			// check for alias or field node
 			frnode = pass1_field(request, sub, false, selectList);
 		}
 		else if ((sub->nod_type == nod_constant) && (sub->nod_desc.dsc_dtype == dtype_long))
 		{
-			const ULONG position = (IPTR) (sub->nod_arg[0]);
+			const ULONG position = sub->getConstant();
 			if ((position < 1) || !selectList ||
 				(position > (ULONG) selectList->nod_count))
 			{
@@ -8164,7 +8165,7 @@ static dsql_nod* pass1_sort( dsql_req* request, dsql_nod* input, dsql_nod* selec
 		else if (node1->nod_type == nod_constant &&
 			node1->nod_desc.dsc_dtype == dtype_long)
 		{
-			const ULONG position = (IPTR) (node1->nod_arg[0]);
+			const ULONG position = node1->getConstant();
 			if ((position < 1) || !selectList ||
 				(position > (ULONG) selectList->nod_count))
 			{
@@ -8531,7 +8532,7 @@ static dsql_nod* pass1_union( dsql_req* request, dsql_nod* input,
 						  isc_arg_gds, isc_order_by_err,	// invalid ORDER BY clause.
 						  0);
 			}
-			const SLONG number = (IPTR) position->nod_arg[0];
+			const SLONG number = position->getConstant();
 			if (number < 1 || number > union_items->nod_count) {
 				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
 						  isc_arg_gds, isc_dsql_command_err,
@@ -9188,7 +9189,7 @@ static dsql_nod* pass1_update_or_insert(dsql_req* request, dsql_nod* input, bool
 
 	if (input->nod_arg[e_upi_return])
 	{
-		update->nod_arg[e_upd_rse_flags] = (dsql_nod*) NOD_SELECT_EXPR_SINGLETON;
+		update->nod_arg[e_upd_rse_flags] = (dsql_nod*)(IPTR) NOD_SELECT_EXPR_SINGLETON;
 
 		dsql_nod* store_ret = insert->nod_arg[e_sto_return];
 
@@ -9223,9 +9224,8 @@ static dsql_nod* pass1_update_or_insert(dsql_req* request, dsql_nod* input, bool
 	// test if ROW_COUNT = 0
 	dsql_nod* eql = MAKE_node(nod_eql, 2);
 	eql->nod_arg[0] = MAKE_node(nod_internal_info, e_internal_info_count);
-	eql->nod_arg[0]->nod_arg[e_internal_info] =
-		MAKE_constant((dsql_str*) internal_rows_affected, CONSTANT_SLONG);
-	eql->nod_arg[1] = MAKE_constant((dsql_str*) 0, CONSTANT_SLONG);
+	eql->nod_arg[0]->nod_arg[e_internal_info] = MAKE_const_slong(internal_rows_affected);
+	eql->nod_arg[1] = MAKE_const_slong(0);
 
 	ULONG req_flags = request->req_flags;
 	request->req_flags |= REQ_block;	// to compile ROW_COUNT

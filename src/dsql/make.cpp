@@ -88,6 +88,24 @@ static void make_parameter_names(dsql_par*, const dsql_nod*);
 
 static const char* db_key_name = "DB_KEY";
 
+dsql_nod* MAKE_const_slong(SLONG value)
+{
+	tsql* tdsql = DSQL_get_thread_data();
+
+	dsql_nod* node = FB_NEW_RPT(*tdsql->getDefaultPool(), 1) dsql_nod;
+	node->nod_type = nod_constant;
+	node->nod_desc.dsc_dtype = dtype_long;
+	node->nod_desc.dsc_length = sizeof(SLONG);
+	node->nod_desc.dsc_scale = 0;
+	node->nod_desc.dsc_sub_type = 0;
+	node->nod_desc.dsc_address = (UCHAR*) node->nod_arg;
+
+	*((SLONG *) (node->nod_desc.dsc_address)) = value;
+	//printf("make.cpp %p %d\n", node->nod_arg[0], value);
+
+	return node;
+}
+
 
 /**
   
@@ -111,15 +129,15 @@ dsql_nod* MAKE_constant(dsql_str* constant, dsql_constant_type numeric_flag)
 
 	switch (numeric_flag)
 	{
-	case CONSTANT_SLONG:
+/*	case CONSTANT_SLONG:
 		node->nod_desc.dsc_dtype = dtype_long;
 		node->nod_desc.dsc_length = sizeof(SLONG);
 		node->nod_desc.dsc_scale = 0;
 		node->nod_desc.dsc_sub_type = 0;
 		node->nod_desc.dsc_address = (UCHAR*) node->nod_arg;
-		node->nod_arg[0] = (dsql_nod*) constant;
+		*((SLONG *) (node->nod_desc.dsc_address)) = (SLONG) (IPTR) constant;
 		break;
-
+*/
 	case CONSTANT_DOUBLE:
 		DEV_BLKCHK(constant, dsql_type_str);
 
@@ -1695,11 +1713,11 @@ dsql_str* MAKE_tagged_string(const char* strvar, size_t length, const char* char
  **/
 dsql_nod* MAKE_trigger_type(dsql_nod* prefix_node, dsql_nod* suffix_node)
 {
-	const long prefix = (long) prefix_node->nod_arg[0];
-	const long suffix = (long) suffix_node->nod_arg[0];
+	const SLONG prefix = prefix_node->getConstant();
+	const SLONG suffix = suffix_node->getConstant();
 	delete prefix_node;
 	delete suffix_node;
-	return MAKE_constant((dsql_str*) (prefix + suffix - 1), CONSTANT_SLONG);
+	return MAKE_const_slong(prefix + suffix - 1);
 }
 
 
@@ -1993,8 +2011,7 @@ static void make_parameter_names(dsql_par* parameter, const dsql_nod* item)
 		break;
 	case nod_strlen:
 		{
-	 		const ULONG length_type =
-				*(SLONG*)item->nod_arg[e_strlen_type]->nod_desc.dsc_address;
+			const ULONG length_type = item->nod_arg[e_strlen_type]->getConstant();
 
 			switch (length_type)
 			{
