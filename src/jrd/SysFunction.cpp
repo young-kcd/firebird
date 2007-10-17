@@ -181,7 +181,7 @@ static bool initResult(dsc* result, int argsCount, const dsc** args, bool* isNul
 	{
 		if (args[i]->isNull())
 		{
-			result->makeNullString();
+			result->setNull();
 			return true;
 		}
 
@@ -332,11 +332,12 @@ static void setParamsRoundTrunc(DataTypeUtilBase* dataTypeUtil, const SysFunctio
 
 static void makeDoubleResult(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args)
 {
+	result->makeDouble();
+
 	bool isNullable;
 	if (initResult(result, argsCount, args, &isNullable))
 		return;
 
-	result->makeDouble();
 	result->setNullable(isNullable);
 }
 
@@ -350,22 +351,24 @@ static void makeFromListResult(DataTypeUtilBase* dataTypeUtil, const SysFunction
 
 static void makeInt64Result(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args)
 {
+	result->makeInt64(0);
+
 	bool isNullable;
 	if (initResult(result, argsCount, args, &isNullable))
 		return;
 
-	result->makeInt64(0);
 	result->setNullable(isNullable);
 }
 
 
 static void makeLongResult(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args)
 {
+	result->makeLong(0);
+
 	bool isNullable;
 	if (initResult(result, argsCount, args, &isNullable))
 		return;
 
-	result->makeLong(0);
 	result->setNullable(isNullable);
 }
 
@@ -385,11 +388,12 @@ static void makeLongStringOrBlobResult(DataTypeUtilBase* dataTypeUtil, const Sys
 
 static void makeShortResult(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args)
 {
+	result->makeShort(0);
+
 	bool isNullable;
 	if (initResult(result, argsCount, args, &isNullable))
 		return;
 
-	result->makeShort(0);
 	result->setNullable(isNullable);
 }
 
@@ -402,7 +406,8 @@ static void makeAbs(DataTypeUtilBase* dataTypeUtil, const SysFunction* function,
 
 	if (value->isNull())
 	{
-		result->makeNullString();
+		result->makeLong(0);
+		result->setNull();
 		return;
 	}
 
@@ -453,23 +458,27 @@ static void makeBin(DataTypeUtilBase* dataTypeUtil, const SysFunction* function,
 	fb_assert(argsCount >= function->minArgCount);
 
 	bool isNullable = false;
+	bool isNull = false;
+	bool first = true;
 
 	for (int i = 0; i < argsCount; ++i)
 	{
-		if (args[i]->isNull())
-		{
-			result->makeNullString();
-			return;
-		}
-
 		if (args[i]->isNullable())
 			isNullable = true;
+
+		if (args[i]->isNull())
+		{
+			isNull = true;
+			continue;
+		}
 
 		if (!args[i]->isExact() || args[i]->dsc_scale != 0)
 			status_exception::raise(isc_expression_eval_err, 0);
 
-		if (i == 0)
+		if (first)
 		{
+			first = false;
+
 			result->clear();
 			result->dsc_dtype = args[i]->dsc_dtype;
 			result->dsc_length = args[i]->dsc_length;
@@ -483,6 +492,13 @@ static void makeBin(DataTypeUtilBase* dataTypeUtil, const SysFunction* function,
 		}
 	}
 
+	if (isNull)
+	{
+		if (first)
+			result->makeLong(0);
+		result->setNull();
+	}
+
 	result->setNullable(isNullable);
 }
 
@@ -491,13 +507,15 @@ static void makeBinShift(DataTypeUtilBase* dataTypeUtil, const SysFunction* func
 {
 	fb_assert(argsCount >= function->minArgCount);
 
+	result->makeInt64(0);
+
 	bool isNullable = false;
 
 	for (int i = 0; i < argsCount; ++i)
 	{
 		if (args[i]->isNull())
 		{
-			result->makeNullString();
+			result->setNull();
 			return;
 		}
 
@@ -508,7 +526,6 @@ static void makeBinShift(DataTypeUtilBase* dataTypeUtil, const SysFunction* func
 			status_exception::raise(isc_expression_eval_err, 0);
 	}
 
-	result->makeInt64(0);
 	result->setNullable(isNullable);
 }
 
@@ -521,7 +538,8 @@ static void makeCeilFloor(DataTypeUtilBase* dataTypeUtil, const SysFunction* fun
 
 	if (value->isNull())
 	{
-		result->makeNullString();
+		result->makeLong(0);
+		result->setNull();
 		return;
 	}
 
@@ -548,6 +566,8 @@ static void makeCeilFloor(DataTypeUtilBase* dataTypeUtil, const SysFunction* fun
 static void makeDateAdd(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args)
 {
 	fb_assert(argsCount >= 3);
+
+	*result = *args[2];
 
 	bool isNullable;
 	if (initResult(result, argsCount, args, &isNullable))
@@ -603,7 +623,8 @@ static void makeMod(DataTypeUtilBase* dataTypeUtil, const SysFunction* function,
 
 	if (value1->isNull() || value2->isNull())
 	{
-		result->makeNullString();
+		result->makeLong(0);
+		result->setNull();
 		return;
 	}
 
@@ -628,6 +649,8 @@ static void makeMod(DataTypeUtilBase* dataTypeUtil, const SysFunction* function,
 static void makeOverlay(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args)
 {
 	fb_assert(argsCount >= function->minArgCount);
+
+	result->makeNullString();
 
 	bool isNullable;
 	if (initResult(result, argsCount, args, &isNullable))
@@ -663,6 +686,8 @@ static void makeOverlay(DataTypeUtilBase* dataTypeUtil, const SysFunction* funct
 static void makePad(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args)
 {
 	fb_assert(argsCount >= function->minArgCount);
+
+	result->makeNullString();
 
 	bool isNullable;
 	if (initResult(result, argsCount, args, &isNullable))
@@ -780,7 +805,8 @@ static void makeRound(DataTypeUtilBase* dataTypeUtil, const SysFunction* functio
 
 	if (value1->isNull() || value2->isNull())
 	{
-		result->makeNullString();
+		result->makeLong(0);
+		result->setNull();
 		return;
 	}
 
@@ -801,7 +827,8 @@ static void makeTrunc(DataTypeUtilBase* dataTypeUtil, const SysFunction* functio
 
 	if (value->isNull() || (argsCount == 2 && args[1]->isNull()))
 	{
-		result->makeNullString();
+		result->makeLong(0);
+		result->setNull();
 		return;
 	}
 

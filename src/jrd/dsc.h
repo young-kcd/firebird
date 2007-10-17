@@ -107,12 +107,17 @@ typedef struct dsc
 		if (nullable)
 			dsc_flags |= DSC_nullable;
 		else
-			dsc_flags &= ~DSC_nullable;
+			dsc_flags &= ~(DSC_nullable | DSC_null);
 	}
 
 	bool isNull() const
 	{
 		return dsc_flags & DSC_null;
+	}
+
+	void setNull()
+	{
+		dsc_flags |= DSC_null | DSC_nullable;
 	}
 
 	bool isBlob() const
