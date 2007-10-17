@@ -237,6 +237,10 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "fbrmclib", "fbrmclib.vcproj
 		{492E7BDA-8948-408D-A43E-4C0A5B86AFB8} = {492E7BDA-8948-408D-A43E-4C0A5B86AFB8}
 	EndProjectSection
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "fbsvcmgr", "fbsvcmgr.vcproj", "{9BA0CA9A-5FF1-47BC-9B76-910FE26FC322}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfiguration) = preSolution
 		Debug = Debug
@@ -427,6 +431,10 @@ Global
 		{7A403DA6-1A91-4D3B-A2FA-17C80C13E876}.Debug.Build.0 = Debug|Win32
 		{7A403DA6-1A91-4D3B-A2FA-17C80C13E876}.Release.ActiveCfg = Release|Win32
 		{7A403DA6-1A91-4D3B-A2FA-17C80C13E876}.Release.Build.0 = Release|Win32
+		{9BA0CA9A-5FF1-47BC-9B76-910FE26FC322}.Debug.ActiveCfg = Debug|Win32
+		{9BA0CA9A-5FF1-47BC-9B76-910FE26FC322}.Debug.Build.0 = Debug|Win32
+		{9BA0CA9A-5FF1-47BC-9B76-910FE26FC322}.Release.ActiveCfg = Release|Win32
+		{9BA0CA9A-5FF1-47BC-9B76-910FE26FC322}.Release.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 	EndGlobalSection
