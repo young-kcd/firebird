@@ -2001,6 +2001,9 @@ ISC_STATUS GDS_DSQL_FETCH(ISC_STATUS* user_status,
 
 				statement->rsr_flags &= ~RSR_stream_err;
 
+				// hvlad: prevent subsequent fetches
+				statement->rsr_flags |= RSR_eof | RSR_past_eof;
+
 				if (statement->rsr_status) {
 					memcpy(user_status, statement->rsr_status->value(), 
 						sizeof(ISC_STATUS_ARRAY));
