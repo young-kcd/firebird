@@ -65,7 +65,7 @@ enum Function
 const static int oneDay = 86400;
 
 // auxiliary functions
-void static add10msec(ISC_TIMESTAMP* v, int msec, SINT64 multiplier);
+static void add10msec(ISC_TIMESTAMP* v, int msec, SINT64 multiplier);
 static double cot(double value);
 
 // generic setParams functions
@@ -144,7 +144,7 @@ static dsc* evlSqrt(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_
 static dsc* evlTrunc(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args, Jrd::impure_value* impure);
 
 
-void static add10msec(ISC_TIMESTAMP* v, int msec, SINT64 multiplier)
+static void add10msec(ISC_TIMESTAMP* v, int msec, SINT64 multiplier)
 {
 	SINT64 full = msec * multiplier;
 	int days = full / (oneDay * ISC_TIME_SECONDS_PRECISION);
@@ -1330,6 +1330,25 @@ static dsc* evlDateDiff(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::
 	timestamp2.decode(&times2);
 
 	SLONG part = MOV_get_long(partDsc, 0);
+
+	switch (part)
+	{
+		case blr_extract_hour:
+			times1.tm_min = 0;
+			times2.tm_min = 0;
+			// fall through
+
+		case blr_extract_minute:
+			times1.tm_sec = 0;
+			times2.tm_sec = 0;
+			// fall through
+
+		case blr_extract_second:
+			timestamp1.encode(&times1);
+			timestamp2.encode(&times2);
+			break;
+	}
+
 	SINT64 result;
 
 	// ASF: throw error if at least one value is "incomplete" from the EXTRACT POV
