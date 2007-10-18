@@ -1,3 +1,13 @@
+2007-10-17 16:36  alexpeshkoff
+
+	* firebird2/src/dsql/: ddl.cpp (1.168.4.2), dsql.cpp (1.162.4.3),
+	dsql.tab.h (1.65.4.1), gen.cpp (1.98.2.2), make.cpp (1.110.2.5),
+	make_proto.h (1.25.4.1), node.h (1.70.4.1), parse.cpp (1.173.4.1),
+	parse.y (1.200.4.1), pass1.cpp (1.260.2.5):
+
+	Backported fix for CORE-1501: Wrong access to SLONG data in
+	dsql_nod
+
 2007-10-10 13:18  alexpeshkoff
 
 	* firebird2/src/jrd/os/posix/unix.cpp (1.42.4.8):
