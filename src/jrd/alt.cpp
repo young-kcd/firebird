@@ -1219,6 +1219,13 @@ static ISC_STATUS executeSecurityCommand(
 	if (handle)
 	{
 		callRemoteServiceManager(status, handle, userInfo, 0, 0);
+		static Firebird::CircularStringsBuffer<1024> secExecBuf;
+		static Firebird::Mutex secExecMutex;
+		{
+			Firebird::MutexLockGuard lockMutex(secExecMutex);
+			secExecBuf.makePermanentVector(status, status);
+		}
+
 		ISC_STATUS_ARRAY user_status;
 		detachRemoteServiceManager(user_status, handle);
 	}
