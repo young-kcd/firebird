@@ -1,3 +1,58 @@
+2007-10-17 17:27  asfernandes
+
+	* firebird2/src/dsql/make.cpp (1.140):
+
+	Fixed the problem (with POWER) described in a comment of CORE-1514
+
+2007-10-17 17:15  asfernandes
+
+	* firebird2/src/jrd/: SysFunction.cpp (1.18), dsc.h (1.38):
+
+	Fixed CORE-1514 - Many new 2.1 built in functions have incorrect
+	NULL semantics
+
+2007-10-17 16:35  alexpeshkoff
+
+	* firebird2/src/dsql/: ddl.cpp (1.205), dsql.cpp (1.200), gen.cpp
+	(1.130), make.cpp (1.139), make_proto.h (1.26), node.h (1.93),
+	parse.y (1.249), pass1.cpp (1.340):
+
+	Fixed CORE-1501: Wrong access to SLONG data in dsql_nod
+
+2007-10-17 16:17  asfernandes
+
+	* firebird2/src/jrd/SysFunction.cpp (1.17):
+
+	Fixed CORE-1522 - Inconsistent DATEDIFF behaviour
+
+2007-10-17 16:03  alexpeshkoff
+
+	* firebird2/builds/win32/msvc7/: gsec.vcproj (1.24), gstat.vcproj
+	(1.26):
+
+	misc
+
+2007-10-17 16:02  alexpeshkoff
+
+	* firebird2/builds/win32/msvc7/: Firebird2.sln (1.28),
+	fbsvcmgr.vcproj (1.1):
+
+	Added project to build fbsvcmgr using VC7
+
+2007-10-17 15:05  paul_reeves
+
+	*
+	firebird2/builds/install/arch-specific/win32/FirebirdInstall_20.iss
+	(1.26):
+
+	Be sure to include manifest for wow64
+
+2007-10-17 10:56  hvlad
+
+	* firebird2/src/remote/interface.cpp (1.150):
+
+	Fixed bug CORE-1519 : AV in isc_dsql_fetch
+
 2007-10-15 19:48  dimitr
 
 	* firebird2/doc/README.monitoring_tables (1.8):
