@@ -598,7 +598,9 @@ CharSetContainer* CharSetContainer::lookupCharset(thread_db* tdbb, SSHORT ttype)
 				FB_NEW(*dbb->dbb_permanent) CharSetContainer(*dbb->dbb_permanent, id, &info);
 		}
 		else
+		{
 			ERR_post(isc_text_subtype, isc_arg_number, (ISC_STATUS) ttype, 0);
+		}
 	}
 
 	return cs;
@@ -753,8 +755,10 @@ TextType* CharSetContainer::lookupCollation(thread_db* tdbb, USHORT tt_id)
 			}
 		}
 	}
-	else
+	else 
+	{
 		ERR_post(isc_text_subtype, isc_arg_number, (ISC_STATUS) tt_id, 0);
+	}
 
 	return charset_collations[id];
 }
