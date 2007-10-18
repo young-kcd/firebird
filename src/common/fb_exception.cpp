@@ -76,6 +76,38 @@ void fill_status(ISC_STATUS *ptr, ISC_STATUS status, va_list status_args)
 
 namespace Firebird {
 
+/********************************* StringsBuffer *******************************/
+
+void StringsBuffer::makePermanentVector(ISC_STATUS* perm, const ISC_STATUS* trans)
+{
+	while (true) 
+	{
+		const ISC_STATUS type = *perm++ = *trans++;
+
+		switch (type) {
+		case isc_arg_end:
+			return;
+		case isc_arg_cstring: 
+			{				
+				const size_t len = *perm++ = *trans++;
+				const char* temp = reinterpret_cast<char*>(*trans++);
+				*perm++ = (ISC_STATUS)(IPTR) (alloc(temp, len));
+			}
+			break;
+		case isc_arg_string:
+		case isc_arg_interpreted:
+			{
+				const char* temp = reinterpret_cast<char*>(*trans++);
+				*perm++ = (ISC_STATUS)(IPTR) (alloc(temp, strlen(temp)));
+			}
+			break;
+		default:
+			*perm++ = *trans++;
+			break;
+		}
+	}
+}
+
 /********************************* status_exception *******************************/
 
 status_exception::status_exception() throw() : 
@@ -259,8 +291,8 @@ ISC_STATUS stuff_exception(ISC_STATUS *status_vector, const std::exception& ex, 
 			if (c_ex.strings_permanent()) 
 			{
 				// Copy status vector
-				 while (true) 
-				 {
+				while (true) 
+				{
 					const ISC_STATUS type = *sv++ = *ptr++;
 					if (type == isc_arg_end)
 						break;
@@ -269,39 +301,16 @@ ISC_STATUS stuff_exception(ISC_STATUS *status_vector, const std::exception& ex, 
 					*sv++ = *ptr++;
 				}
 			}
-			else {
+			else 
+			{
 				// Move in status and clone transient strings
-				 while (true) 
-				 {
-					const ISC_STATUS type = *sv++ = *ptr++;
-					if (type == isc_arg_end)
-						break;
-
-					switch (type) {
-					case isc_arg_cstring: 
-						{				
-							const UCHAR len = *sv++ = *ptr++;
-							char *temp = reinterpret_cast<char*>(*ptr++);
-							*sv++ = (ISC_STATUS)(IPTR) (sb->alloc(temp, len));
-							break;
-						}
-					case isc_arg_string:
-					case isc_arg_interpreted:
-						{
-							char *temp = reinterpret_cast<char*>(*ptr++);
-							*sv++ = (ISC_STATUS)(IPTR) (sb->alloc(temp, strlen(temp)));
-							break;
-						}
-					default:
-						*sv++ = *ptr++;
-						break;
-					}
-				}
+				sb->makePermanentVector(sv, ptr);
 			}
 		}
 		return status_vector[1];
 	} 
-	catch (const std::bad_cast&) {
+	catch (const std::bad_cast&) 
+	{
 	}
 	
 	// Other random C++ exceptions
