@@ -610,10 +610,14 @@ namespace Firebird
 			return rc ? rc : n0 - n;
 		}
 		int compare(const_pointer s, size_type n) const {
-			const size_type dl = length() - n;
 			const size_type ml = length() < n ? length() : n;
 			const int rc = Comparator::compare(c_str(), s, ml);
-			return rc ? rc : dl < 0 ? -1 : dl > 0 ? 1 : 0;
+			if (rc)
+			{
+				return rc;
+			}
+			const difference_type dl = length() - n;
+			return (dl < 0) ? -1 : (dl > 0) ? 1 : 0;
 		}
 
 		inline bool operator< (const StringType& str) const {return compare(str) <  0;}
