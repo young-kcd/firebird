@@ -88,6 +88,7 @@ static void make_parameter_names(dsql_par*, const dsql_nod*);
 
 static const char* db_key_name = "DB_KEY";
 
+
 dsql_nod* MAKE_const_slong(SLONG value)
 {
 	tsql* tdsql = DSQL_get_thread_data();
