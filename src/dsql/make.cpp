@@ -1708,8 +1708,8 @@ dsql_str* MAKE_tagged_string(const char* strvar, size_t length, const char* char
  **/
 dsql_nod* MAKE_trigger_type(dsql_nod* prefix_node, dsql_nod* suffix_node)
 {
-	const SLONG prefix = prefix_node->getConstant();
-	const SLONG suffix = suffix_node->getConstant();
+	const SLONG prefix = prefix_node->getSlong();
+	const SLONG suffix = suffix_node->getSlong();
 	delete prefix_node;
 	delete suffix_node;
 	return MAKE_const_slong(prefix + suffix - 1);
@@ -2006,7 +2006,7 @@ static void make_parameter_names(dsql_par* parameter, const dsql_nod* item)
 		break;
 	case nod_strlen:
 		{
-			const ULONG length_type = item->nod_arg[e_strlen_type]->getConstant();
+			const ULONG length_type = item->nod_arg[e_strlen_type]->getSlong();
 
 			switch (length_type)
 			{
