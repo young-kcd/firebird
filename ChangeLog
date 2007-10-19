@@ -1,3 +1,24 @@
+2007-10-18 13:59  alexpeshkoff
+
+	* firebird2/src/jrd/intl.cpp (1.83.4.1):
+
+	misc
+
+2007-10-18 13:28  alexpeshkoff
+
+	* firebird2/src/: include/fb_exception.h (1.21.4.1), jrd/alt.cpp
+	(1.60.4.1):
+
+	Backported fix for CORE-1455: Crash in fbclient after unsuccessful
+	user management API call
+
+2007-10-18 13:16  alexpeshkoff
+
+	* firebird2/src/common/fb_exception.cpp (1.23.2.1):
+
+	Backported fix for CORE-1455: Crash in fbclient after unsuccessful
+	user management API call
+
 2007-10-17 16:36  alexpeshkoff
 
 	* firebird2/src/dsql/: ddl.cpp (1.168.4.2), dsql.cpp (1.162.4.3),
