@@ -1,3 +1,15 @@
+2007-10-19 03:25  asfernandes
+
+	* firebird2/src/dsql/: ddl.cpp (1.206), make.cpp (1.141):
+
+	Misc
+
+2007-10-18 14:47  alexpeshkoff
+
+	* firebird2/src/common/classes/fb_string.h (1.9):
+
+	Fixed minor 64-bit issue
+
 2007-10-17 17:27  asfernandes
 
 	* firebird2/src/dsql/make.cpp (1.140):
