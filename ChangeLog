@@ -1,3 +1,16 @@
+2007-10-19 13:51  alexpeshkoff
+
+	* firebird2/src/dsql/: ddl.cpp (1.207), dsql.cpp (1.201), gen.cpp
+	(1.131), make.cpp (1.142), node.h (1.94), pass1.cpp (1.341):
+
+	Changes suggested by Claudio and Adriano. Further cleanup
+
+2007-10-19 10:13  alexpeshkoff
+
+	* firebird2/src/common/classes/fb_string.h (1.10):
+
+	Corrections - thanks to Claudio and Adriano
+
 2007-10-19 03:25  asfernandes
 
 	* firebird2/src/dsql/: ddl.cpp (1.206), make.cpp (1.141):
