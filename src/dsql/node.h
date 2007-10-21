@@ -377,7 +377,7 @@ public:
 	{
 		fb_assert(nod_type == nod_constant);
 		fb_assert(nod_desc.dsc_dtype == dtype_long);
-		fb_assert((void*)nod_desc.dsc_address == (void*)nod_arg);
+		fb_assert((void*) nod_desc.dsc_address == (void*) nod_arg);
 		return *((SLONG*) nod_arg);
 	}
 };
