@@ -411,6 +411,11 @@ int common_main(int argc,
 				break;
 			if (local_argc > 1) {
 				ret = parse_cmd_line(local_argc, local_argv, tdsec);
+				if (ret == 1)
+				{
+					// quit command
+					break;
+				}
 				if (user_data->dba_user_name_entered || 
 					user_data->dba_password_entered ||
 					user_data->database_name_entered
@@ -425,10 +430,6 @@ int common_main(int argc,
 
 				databaseName.copyTo(user_data->database_name, sizeof(user_data->database_name));
 				user_data->database_name_entered = databaseNameEntered;
-				if (ret == 1)
-				{
-					continue;
-				}
 				if (ret == 0) {
 #ifndef SUPERCLIENT
 					if (!useServices)
