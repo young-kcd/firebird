@@ -388,11 +388,6 @@ static USHORT subsystem_FPE_reset = FPE_RESET_INIT_ONLY;
 #define SUBSYSTEM_USAGE_DECR	/* nothing */
 #endif
 
-#ifdef UNIX
-static TEXT marker_failures[1024];
-static TEXT *marker_failures_ptr = marker_failures;
-#endif
-
 /* 
  * Global array to store string from the status vector in 
  * save_error_string.
