@@ -1243,10 +1243,6 @@ static dsc* evlDateAdd(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::j
 			timestamp.value().timestamp_date += quantity;
 			break;
 
-		case blr_extract_weekday:
-			timestamp.value().timestamp_date += (quantity * 7);
-			break;
-
 		case blr_extract_hour:
 			add10msec(&timestamp.value(), quantity, 3600 * ISC_TIME_SECONDS_PRECISION);
 			break;
@@ -1384,7 +1380,6 @@ static dsc* evlDateDiff(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::
 		case blr_extract_year:
 		case blr_extract_month:
 		case blr_extract_day:
-		case blr_extract_weekday:
 			if (value1Dsc->dsc_dtype == dtype_sql_time || value2Dsc->dsc_dtype == dtype_sql_time)
 				status_exception::raise(isc_expression_eval_err, 0);
 			break;
@@ -1418,10 +1413,7 @@ static dsc* evlDateDiff(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::
 			break;
 
 		case blr_extract_day:
-		case blr_extract_weekday:
 			result = timestamp2.value().timestamp_date - timestamp1.value().timestamp_date;
-			if (part == blr_extract_weekday)
-				result /= 7;
 			break;
 
 		case blr_extract_hour:

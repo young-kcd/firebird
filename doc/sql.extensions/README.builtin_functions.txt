@@ -276,7 +276,7 @@ Format:
     DATEADD( <number> <timestamp_part> TO <date_time> )
     DATEADD( <timestamp_part>, <number>, <date_time> )
 
-    timestamp_part ::= { YEAR | MONTH | DAY | WEEKDAY | HOUR | MINUTE | SECOND | MILLISECOND }
+    timestamp_part ::= { YEAR | MONTH | DAY | HOUR | MINUTE | SECOND | MILLISECOND }
 
 Notes:
     1) YEAR, MONTH, DAY and WEEKDAY could not be used with time values.
