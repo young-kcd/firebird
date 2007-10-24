@@ -387,7 +387,7 @@ public:
 #endif
 	Firebird::PathName	dpb_lc_messages;
 	Firebird::string	dpb_lc_ctype;
-	Firebird::string	dpb_gbak_attach;
+	bool				dpb_gbak_attach;
 	Firebird::PathName	dpb_working_directory;
 	Firebird::string	dpb_set_db_charset;
 	Firebird::string	dpb_network_protocol;
@@ -815,7 +815,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 	if (options.dpb_no_garbage)
 		attachment->att_flags |= ATT_no_cleanup;
 
-	if (options.dpb_gbak_attach.hasData())
+	if (options.dpb_gbak_attach)
 		attachment->att_flags |= ATT_gbak_attachment;
 
 	if (options.dpb_gstat_attach)
@@ -1881,7 +1881,7 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 		attachment->att_working_directory = options.dpb_working_directory;
 	}
 
-	if (options.dpb_gbak_attach.hasData()) {
+	if (options.dpb_gbak_attach) {
 		attachment->att_flags |= ATT_gbak_attachment;
 	}
 
@@ -5487,7 +5487,7 @@ void DatabaseOptions::get(const UCHAR* dpb, USHORT dpb_length)
 			break;
 
 		case isc_dpb_enable_journal:
-		    rdr.getString(dpb_journal);
+			rdr.getString(dpb_journal);
 			break;
 
 		case isc_dpb_wal_backup_dir:
@@ -5527,23 +5527,23 @@ void DatabaseOptions::get(const UCHAR* dpb, USHORT dpb_length)
 			break;
 
 		case isc_dpb_sys_user_name:
-		    rdr.getString(dpb_sys_user_name);
+			rdr.getString(dpb_sys_user_name);
 			break;
 
 		case isc_dpb_sql_role_name:
-		    rdr.getString(dpb_role_name);
+			rdr.getString(dpb_role_name);
 			break;
 
 		case isc_dpb_user_name:
-		    rdr.getString(dpb_user_name);
+			rdr.getString(dpb_user_name);
 			break;
 
 		case isc_dpb_password:
-		    rdr.getString(dpb_password);
+			rdr.getString(dpb_password);
 			break;
 
 		case isc_dpb_password_enc:
-		    rdr.getString(dpb_password_enc);
+			rdr.getString(dpb_password_enc);
 			break;
 
 #ifdef TRUSTED_AUTH
@@ -5554,7 +5554,7 @@ void DatabaseOptions::get(const UCHAR* dpb, USHORT dpb_length)
 
 		case isc_dpb_encrypt_key:
 #ifdef ISC_DATABASE_ENCRYPTION
-		    rdr.getString(dpb_key);
+			rdr.getString(dpb_key);
 #else
 			// Just in case there WAS a customer using this unsupported
 			// feature - post an error when they try to access it in 4.0
@@ -5606,11 +5606,11 @@ void DatabaseOptions::get(const UCHAR* dpb, USHORT dpb_length)
 			break;
 
 		case isc_dpb_lc_messages:
-		    rdr.getPath(dpb_lc_messages);
+			rdr.getPath(dpb_lc_messages);
 			break;
 
 		case isc_dpb_lc_ctype:
-		    rdr.getString(dpb_lc_ctype);
+			rdr.getString(dpb_lc_ctype);
 			break;
 
 		case isc_dpb_shutdown:
@@ -5637,7 +5637,7 @@ void DatabaseOptions::get(const UCHAR* dpb, USHORT dpb_length)
 			{
 				Firebird::string single;
 				rdr.getString(single);
-		    	if (single == "YES")
+				if (single == "YES")
 				{
 					dpb_single_user = TRUE;
 				}
@@ -5655,7 +5655,11 @@ void DatabaseOptions::get(const UCHAR* dpb, USHORT dpb_length)
 			break;
 
 		case isc_dpb_gbak_attach:
-		    rdr.getString(dpb_gbak_attach);
+			{
+				Firebird::string gbakStr;
+				rdr.getString(gbakStr);
+				dpb_gbak_attach = gbakStr.hasData();
+			}
 			break;
 
 		case isc_dpb_gstat_attach:
