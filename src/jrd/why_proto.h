@@ -250,6 +250,8 @@ ISC_STATUS API_ROUTINE isc_wait_for_event(ISC_STATUS*, FB_API_HANDLE*, USHORT,
 										const UCHAR*, UCHAR*);
 #endif
 
+SLONG API_ROUTINE isc_reset_fpe(USHORT);
+
 #endif	/* JRD_IBASE_H */
 #endif	/* WHY_NO_API */
 
