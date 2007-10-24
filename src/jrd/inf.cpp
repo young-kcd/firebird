@@ -465,8 +465,8 @@ int INF_database_info(const SCHAR* items,
 					p += len;
 				}
 				length = p - buffer;
-				break;
 			}
+			break;
 
 		case isc_info_creation_date:
 			{
