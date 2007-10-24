@@ -1,3 +1,10 @@
+2007-10-23 16:14  asfernandes
+
+	* firebird2/: doc/sql.extensions/README.builtin_functions.txt
+	(1.9), src/jrd/SysFunction.cpp (1.19):
+
+	Remove weekday support in DATEADD/DATEDIFF - CORE-1526
+
 2007-10-22 11:09  alexpeshkoff
 
 	* firebird2/src/utilities/gsec/gsec.cpp (1.76):
