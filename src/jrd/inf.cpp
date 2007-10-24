@@ -61,6 +61,7 @@
 #include "../jrd/tra_proto.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/err_proto.h"
+#include "../jrd/utl_proto.h"
 
 using namespace Firebird;
 
@@ -201,7 +202,6 @@ int INF_database_info(
 	STR str;
 	FIL file;
 	SCHAR item, *end_items, *end, buffer[256], *p, *q;
-	SCHAR site[256];
 	SSHORT length, l;
 	SLONG id;
 	SCHAR wal_name[256];
@@ -223,6 +223,7 @@ int INF_database_info(
 	transaction = NULL;
 	end_items = items + item_length;
 	end = info + buffer_length;
+	char* end_buf = buffer + sizeof(buffer);
 
 	err_att = att = NULL;
 
@@ -267,8 +268,15 @@ int INF_database_info(
 		case isc_info_cur_logfile_name:
 			wal_name[0] = 0;
 			if (WAL_segment)
-				strcpy(wal_name, WAL_segment->wals_logname);
-			*p++ = l = strlen(wal_name);
+			{
+				// wals_logname is MAXPATHLEN and wal_name is 256.
+				l = strlenmax(WAL_segment->wals_logname, sizeof(wal_name));
+				memcpy(wal_name, WAL_segment->wals_logname, l);
+				wal_name[l] = 0;
+			}
+			else
+				l = 0;
+			*p++ = l;
 			for (q = wal_name; l; l--)
 				*p++ = *q++;
 			length = p - buffer;
@@ -317,8 +325,15 @@ int INF_database_info(
 		case isc_info_wal_prv_ckpt_fname:
 			wal_name[0] = 0;
 			if (WAL_segment)
-				strcpy(wal_name, WAL_segment->wals_ckpt_logname);
-			*p++ = l = strlen(wal_name);
+			{
+				// wals_ckpt_logname is MAXPATHLEN and wal_name is 256.
+				l = strlenmax(WAL_segment->wals_ckpt_logname, sizeof(wal_name));
+				memcpy(wal_name, WAL_segment->wals_ckpt_logname, l);
+				wal_name[l] = 0;
+			}
+			else
+				l = 0;
+			*p++ = l;
 			for (q = wal_name; l; l--)
 				*p++ = *q++;
 			length = p - buffer;
@@ -520,16 +535,30 @@ int INF_database_info(
 			break;
 
 		case isc_info_db_id:
-			str = tdbb->tdbb_attachment->att_filename;
-			STUFF(p, 2);
-			*p++ = l = str->str_length;
-			for (q = reinterpret_cast<SCHAR*>(str->str_data); *q;)
-				*p++ = *q++;
-			ISC_get_host(site, sizeof(site));
-			*p++ = l = strlen(site);
-			for (q = site; *q;)
-				*p++ = *q++;
-			length = p - buffer;
+			{
+				str = tdbb->tdbb_attachment->att_filename;
+				STUFF(p, 2);
+				USHORT len = str->str_length;
+				if (p + len + 1 >= end_buf)
+					len = end_buf - p - 1;
+				if (len > 255)
+					len = 255; // Cannot put more in one byte, will truncate instead.				
+				*p++ = len;
+				memcpy(p, str->str_data, len);
+				p += len;
+				if (p + 2 < end_buf)
+				{
+					SCHAR site[256];
+					ISC_get_host(site, sizeof(site));
+					len = strlen(site);
+					if (p + len + 1 >= end_buf)
+						len = end_buf - p - 1;
+					*p++ = len;
+					memcpy(p, site, len);
+					p += len;					
+				}
+				length = p - buffer;
+			}
 			break;
 
 		case isc_info_no_reserve:

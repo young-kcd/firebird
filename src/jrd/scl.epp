@@ -759,6 +759,12 @@ void SCL_init(BOOLEAN	create,
 		strcpy(role_name, "NONE");
 	}
 
+	// CVC: Unfortunately, "name" is much longer in the security db than in rdb$user_privileges.rdb$user_name and several places expect it
+	// to be USERNAME_LENGTH at most. See how this caused a B.O. in INI_format, for example.
+	// The truncation is left commented out and INI_format is protected, but current_user() will fail with a truncation error.
+	//if (strlen(name) > USERNAME_LENGTH)
+	//	name[USERNAME_LENGTH] = 0;
+		
 	length = strlen(name) + strlen(role_name) + strlen(project) +
 		strlen(organization) + 4;   /* for the terminating nulls */
 	tdbb->tdbb_attachment->att_user = user = FB_NEW_RPT(*dbb->dbb_permanent, length) usr();

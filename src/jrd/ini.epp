@@ -286,10 +286,12 @@ void INI_format(const TEXT* owner, TEXT* charset)
 	if (owner && *owner)
 	{
 		p = string;
-		while ( (*p++ = UPPER7(*owner)) )
+		// Let's avoid the B.O. since user/owner can be up to 128 bytes.
+		while ( p - string < USERNAME_LENGTH && (*p++ = UPPER7(*owner)) )
 		{
 			++owner;
 		}
+		string[USERNAME_LENGTH] = 0;
 	}
 
 /* Uppercase charset name */

@@ -93,19 +93,7 @@ SOURCE=..\..\..\gen\utilities\dba.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\enc.cpp
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\src\common\fb_exception.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\jrd\isc.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\jrd\isc_file.cpp
 # End Source File
 # Begin Source File
 
@@ -130,6 +118,26 @@ SOURCE=..\..\..\src\utilities\ppg_proto.h
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\version.rc
+# End Source File
+# End Group
+# Begin Group "JRD files"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\enc.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\isc.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\isc_file.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\utl.cpp
 # End Source File
 # End Group
 # End Target

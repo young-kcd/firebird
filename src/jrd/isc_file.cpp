@@ -190,6 +190,7 @@ typedef struct mnt {
 #endif
 #endif
 
+#include "../jrd/utl_proto.h"
 
 #ifndef MAXHOSTLEN
 #define MAXHOSTLEN	64
@@ -800,15 +801,20 @@ int ISC_expand_filename(
  *	intelligent.
  *
  **************************************/
-	TEXT *p, *q, *end, temp[MAXPATHLEN], device[4];
-	USHORT length = 0;
+	TEXT *p, *q, *end, device[4];
 	USHORT dtype;
 	BOOLEAN fully_qualified_path = FALSE;
 	BOOLEAN drive_letter_present = FALSE;
 	if (!file_length)
-		file_length = strlen(file_name);
+		file_length = strlenmax(file_name, MAXPATHLEN);
+	else
+	{
+		if (file_length >= MAXPATHLEN)
+			file_length = MAXPATHLEN - 1;
+	}
 
-	strncpy(temp, file_name, file_length);
+	TEXT temp[MAXPATHLEN];
+	memcpy(temp, file_name, file_length);
 	temp[file_length] = 0;
 
 	expand_share_name(temp);
@@ -818,7 +824,8 @@ int ISC_expand_filename(
    and return with no further processing. */
 
 	if ((file_name[0] == '\\' && file_name[1] == '\\') ||
-		(file_name[0] == '/' && file_name[1] == '/')) {
+		(file_name[0] == '/' && file_name[1] == '/')) 
+	{
 		strcpy(expanded_name, temp);
 
 		/* Translate forward slashes to back slashes */
@@ -857,11 +864,12 @@ int ISC_expand_filename(
 		strcpy(expanded_name, temp);
 		return file_length;
 	}
-	else if (temp[0] == '\\' || temp[0] == '/')
+	
+	if (temp[0] == '\\' || temp[0] == '/')
 		fully_qualified_path = TRUE;
 
 /* Expand the file name */
-
+	USHORT length = 0;
 #ifdef SUPERSERVER
 	if (!fully_qualified_path)
 		length = JRD_getdir(expanded_name, MAXPATHLEN);
@@ -870,17 +878,29 @@ int ISC_expand_filename(
 	case where temp is of the form "c:foo.fdb" and
 	expanded_name is "c:\x\y".
         **/
-		if (drive_letter_present && device[0] == expanded_name[0]) {
-			strcat(expanded_name, "\\");
-			strcat(expanded_name, temp + 2);
+		if (drive_letter_present && device[0] == expanded_name[0]) 
+		{
+			if (length + strlen(temp + 2) + 1 < MAXPATHLEN)
+			{
+				strcat(expanded_name, "\\");
+				strcat(expanded_name, temp + 2);
+			}
+			else // What else can we do here?
+				strcpy(expanded_name, temp);
 		}
 		/**
 	case where temp is of the form "foo.fdb" and
 	expanded_name is "c:\x\y".
         **/
-		else if (!drive_letter_present) {
-			strcat(expanded_name, "\\");
-			strcat(expanded_name, temp);
+		else if (!drive_letter_present) 
+		{
+			if (length + strlen(temp) + 1 < MAXPATHLEN)
+			{
+				strcat(expanded_name, "\\");
+				strcat(expanded_name, temp);
+			}
+			else // What else can we do here?
+				strcpy(expanded_name, temp);
 		}
 		else {
 		/**
@@ -915,7 +935,7 @@ int ISC_expand_filename(
 				is not defined. I decided to make file_length as the length of the output buffer. */
 	}
 
-	TEXT expanded_name2[MAXPATHLEN];
+	TEXT expanded_name2[MAXPATHLEN] = "";
 
 	/* convert then name to its longer version ie. convert longfi~1.fdb
 	 * to longfilename.fdb */
@@ -1136,6 +1156,7 @@ int ISC_strip_extension(TEXT * file_name)
 #if (!defined NO_NFS || defined FREEBSD || defined NETBSD || defined SINIXZ)
 static int expand_filename2(TEXT * from_buff, USHORT length, TEXT * to_buff)
 {
+FIX THIS PLEASE, is length the length of the incoming buffer?
 /**************************************
  *
  *	e x p a n d _ f i l e n a m e 2		( N F S )
@@ -1148,18 +1169,21 @@ static int expand_filename2(TEXT * from_buff, USHORT length, TEXT * to_buff)
  *
  **************************************/
 	TEXT temp[MAXPATHLEN], temp2[MAXPATHLEN];
-	TEXT *from, *to, *p, *segment;
+	const TEXT *from = 0;
+	TEXT *to, *p, *segment;
 	SSHORT n;
 	struct passwd *passwd;
 
 	if (length) {
-		strncpy(temp2, from_buff, length);
+		if (length >= MAXPATHLEN)
+			length = MAXPATHLEN - 1;
+		memcpy(temp2, from_buff, length);
 		temp2[length] = 0;
 		from = temp2;
 	}
 	else {
 		strncpy(temp2, from_buff, MAXPATHLEN);
-		temp2[MAXPATHLEN-1] = 0;
+		temp2[MAXPATHLEN - 1] = 0;
 		from = temp2;
 	}
 
@@ -1305,18 +1329,21 @@ static void expand_share_name(TEXT * share_name)
  **************************************/
 
 	TEXT data_buf[MAXPATHLEN], workspace[MAXPATHLEN];
-	TEXT *p, *q, *data;
+	TEXT *q, *data;
 	HKEY hkey;
 	DWORD ret, d_size, type_code;
 	USHORT idx;
 
-	p = share_name;
+	const TEXT* p = share_name;
 	if (*p++ != '\\' || *p++ != '!') {
 		return;
 	}
 
-	strcpy(workspace, p);
-	for (q = workspace; *p && *p != '!'; p++, q++);
+	strncpy(workspace, p, sizeof(workspace));
+	workspace[sizeof(workspace) - 1] = 0;
+	// We test for *q, too, to avoid buffer overrun.
+	for (q = workspace; *q && *p && *p != '!'; p++, q++)
+		;
 
 	*q = '\0';
 	if (*p++ != '!' || *p++ != '\\') {

@@ -90,4 +90,8 @@ extern void API_ROUTINE gds__wake_init(void);
 } /* extern "C" */
 #endif
 
+size_t strlenmax(const char* buf, size_t bsize);
+TEXT* get_string_parameter(UCHAR** dpb_ptr, UCHAR* end_dpb, TEXT** opt_ptr, 
+							ULONG* buf_avail, bool* error);
+
 #endif /* _JRD_UTL_PROTO_H_ */

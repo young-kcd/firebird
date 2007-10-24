@@ -129,6 +129,8 @@
 #include "../common/config/config.h"
 #include "../jrd/plugin_manager.h"
 #include "../jrd/db_alias.h"
+#include "../jrd/constants.h"
+
 
 #ifdef GARBAGE_THREAD
 #include "vio_proto.h"
@@ -146,6 +148,8 @@ typedef struct dbf {
 
 #include "../jrd/sort.h"
 #endif /* SERVER_SHUTDOWN */
+
+#include "../jrd/utl_proto.h"
 
 #define	WAIT_PERIOD	-1
 
@@ -363,7 +367,7 @@ typedef struct dpb
 	BOOLEAN	dpb_set_db_readonly;
 	BOOLEAN	dpb_gfix_attach;
 	BOOLEAN	dpb_gstat_attach;
-	TEXT*	dpb_gbak_attach;
+	BOOLEAN	dpb_gbak_attach;
 	TEXT*	dpb_working_directory;
 	USHORT	dpb_sql_dialect;
 	USHORT	dpb_set_db_sql_dialect;
@@ -380,8 +384,7 @@ static ISC_STATUS	error(ISC_STATUS*);
 static void		find_intl_charset(TDBB, ATT, DPB*);
 static JRD_TRA		find_transaction(TDBB, JRD_TRA, ISC_STATUS);
 static void		get_options(UCHAR *, USHORT, TEXT **, ULONG, DPB *);
-static SLONG	get_parameter(UCHAR**);
-static TEXT*	get_string_parameter(UCHAR **, TEXT **, ULONG *);
+static SLONG	get_parameter(UCHAR** dpb_ptr, UCHAR* end_ptr, bool* error);
 static ISC_STATUS	handle_error(ISC_STATUS*, ISC_STATUS, TDBB);
 static bool		verify_database_name(TEXT *, ISC_STATUS *);
 
@@ -604,11 +607,11 @@ extern "C" {
 
 ISC_STATUS DLL_EXPORT GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 									  SSHORT	file_length,
-									  TEXT*		file_name,
+									  TEXT*		_file_name,
 									  ATT*		handle,
 									  SSHORT	dpb_length,
 									  UCHAR*	dpb,
-									  TEXT*		expanded_filename)
+									  TEXT*		_expanded_filename)
 {
 /**************************************
  *
@@ -623,7 +626,6 @@ ISC_STATUS DLL_EXPORT GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
  **************************************/
 	DBB dbb;
 	TEXT opt_buffer[DPB_EXPAND_BUFFER];
- 	TEXT expanded_name[MAXPATHLEN];
 
 	SSHORT first;
 	ISC_STATUS *status;
@@ -646,11 +648,27 @@ ISC_STATUS DLL_EXPORT GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 		return handle_error(user_status, gds_bad_db_handle, 0);
 	}
 
-/* Resolve given alias name */
-
-	if (!file_length) file_length = strlen(file_name);
+	TEXT file_name[MAXPATHLEN];
+	if (file_length)
+	{
+		if (file_length >= MAXPATHLEN)
+			file_length = MAXPATHLEN - 1;
+	}
+	else
+		file_length = strlenmax(_file_name, MAXPATHLEN);
+		
+	memcpy(file_name, _file_name, file_length);
+	file_name[file_length] = 0;
+	
+	/* Resolve given alias name */
+ 	TEXT expanded_name[MAXPATHLEN];
 	memcpy(expanded_name, file_name, file_length);
 	expanded_name[file_length] = '\0';
+	
+	TEXT expanded_filename[MAXPATHLEN];
+	size_t expanded_len = strlenmax(_expanded_filename, MAXPATHLEN);
+	memcpy(expanded_filename, _expanded_filename, expanded_len);
+	expanded_filename[expanded_len] = 0;
 
 	bool is_alias = ResolveDatabaseAlias(expanded_name, expanded_name);
 	if (is_alias)
@@ -714,10 +732,10 @@ ISC_STATUS DLL_EXPORT GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 /* Allocate buffer space */
 
 	TEXT*	opt_ptr = opt_buffer;
-	TEXT	archive_name[MAXPATHLEN];
-	TEXT	journal_name[MAXPATHLEN];
+	TEXT	archive_name[MAXPATHLEN] = "";
+	TEXT	journal_name[MAXPATHLEN] = "";
 	TEXT	journal_dir[MAXPATHLEN];
-	UCHAR	data[MAXPATHLEN];
+	UCHAR	data[MAXPATHLEN] = "";
 
 /* Process database parameter block */
 
@@ -1777,12 +1795,12 @@ ISC_STATUS DLL_EXPORT GDS_CREATE_BLOB2(ISC_STATUS * user_status,
 
 ISC_STATUS DLL_EXPORT GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 									  USHORT	file_length,
-									  TEXT*		file_name,
+									  TEXT*		_file_name,
 									  ATT*		handle,
 									  USHORT	dpb_length,
 									  UCHAR*	dpb,
 									  USHORT	db_type,
-									  TEXT*		expanded_filename)
+									  TEXT*		_expanded_filename)
 {
 /**************************************
  *
@@ -1795,7 +1813,6 @@ ISC_STATUS DLL_EXPORT GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
  *
  **************************************/
 	DBB dbb;
-	TEXT expanded_name[MAXPATHLEN];
 	TEXT opt_buffer[DPB_EXPAND_BUFFER];
 	TEXT *opt_ptr;
 	USHORT page_size;
@@ -1812,14 +1829,27 @@ ISC_STATUS DLL_EXPORT GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 		return handle_error(user_status, gds_bad_db_handle, 0);
 
 /* Get length of database file name, if not already known */
-	if (!file_length) file_length = strlen(file_name);
+	if (!file_length) 
+		file_length = strlenmax(_file_name, MAXPATHLEN);
+	else
+	{
+		if (file_length >= MAXPATHLEN)
+			file_length = MAXPATHLEN -1;
+	}
+	TEXT file_name[MAXPATHLEN];
+	memcpy(file_name, _file_name, file_length);
 	file_name[file_length] = 0;
 
+	TEXT expanded_name[MAXPATHLEN] = "";
 	bool is_alias = ResolveDatabaseAlias(file_name, expanded_name);
 	if (is_alias)
 		ISC_expand_filename(expanded_name, 0, expanded_name);
 	else
-		strcpy(expanded_name, expanded_filename);
+	{
+		size_t len = strlenmax(_expanded_filename, MAXPATHLEN);
+		memcpy(expanded_name, _expanded_filename, len);
+		expanded_name[len] = 0;
+	}
 	USHORT length_expanded = strlen(expanded_name);
 
 	struct tdbb* tdbb = set_thread_data(thd_context);
@@ -3836,7 +3866,7 @@ ISC_STATUS DLL_EXPORT GDS_TRANSACT_REQUEST(ISC_STATUS*	user_status,
 	CSB csb;
 	JRD_REQ request;
 	JRD_NOD in_message, out_message, node;
-	SCL class_;
+	//SCL class_;
 	FMT format;
 	JrdMemoryPool *old_pool, *new_pool;
 	USHORT i, len;
@@ -4237,11 +4267,13 @@ USHORT JRD_getdir(TEXT * buf, USHORT len)
     so in all probabilities attachment->att_working_directory will be null.
     return 0 so that ISC_expand_filename will create the file in fbserver's dir
    **/
-		if (!attachment || !attachment->att_working_directory ||
-			len - 1 < attachment->att_working_directory->str_length) return 0;
-		memcpy(buf, attachment->att_working_directory->str_data,
-			   attachment->att_working_directory->str_length);
-		buf[attachment->att_working_directory->str_length] = 0;
+		if (!attachment || !attachment->att_working_directory)
+			return 0;
+		size_t input_len = attachment->att_working_directory->str_length;
+		if (len - 1 < input_len) 
+			return 0;
+		memcpy(buf, attachment->att_working_directory->str_data, input_len);
+		buf[input_len] = 0;
 	}
 
 	return strlen(buf);
@@ -5013,8 +5045,13 @@ static void get_options(UCHAR*	dpb,
 	options->dpb_overwrite = TRUE;
 	options->dpb_sql_dialect = 99;
 	invalid_client_SQL_dialect = FALSE;
+	// We always have item, length, content. Sometimes length can be zero,
+	// but we have at least two bytes. Then end = dpb + length but limit is one byte less.
+	// Othwerwise, we can read the length from uninitialized memory and 
+	// then try to read an arbitrary chunk of invalid memory.
 	p = dpb;
 	end_dpb = p + dpb_length;
+	UCHAR* limit = end_dpb - 1;
 
 	if ((dpb == NULL) && (dpb_length > 0))
 		ERR_post(gds_bad_dpb_form, 0);
@@ -5022,8 +5059,11 @@ static void get_options(UCHAR*	dpb,
 	if (p < end_dpb && *p++ != gds_dpb_version1)
 		ERR_post(gds_bad_dpb_form, gds_arg_gds, gds_wrodpbver, 0);
 
-	while (p < end_dpb && buf_size)
+	while (p < limit && buf_size)
 	{
+		const ULONG old_buf_size = buf_size;
+		bool error = false;
+	
 		switch (*p++)
 		{
 		case isc_dpb_working_directory:
@@ -5031,7 +5071,12 @@ static void get_options(UCHAR*	dpb,
 				// CLASSIC have no thread data. Init to zero.
 				char* t_data = 0;
 				options->dpb_working_directory =
-					get_string_parameter(&p, scratch, &buf_size);
+					get_string_parameter(&p, end_dpb, scratch, &buf_size, &error);
+				if (error)
+					break;
+					
+				if (old_buf_size - buf_size > MAXPATHLEN)
+					options->dpb_working_directory[MAXPATHLEN - 1] = 0;
 
 				THD_getspecific_data((void **) &t_data);
 
@@ -5083,7 +5128,7 @@ static void get_options(UCHAR*	dpb,
 			break;
 
 		case isc_dpb_set_page_buffers:
-			options->dpb_page_buffers = get_parameter(&p);
+			options->dpb_page_buffers = get_parameter(&p, end_dpb, &error);
 			if (options->dpb_page_buffers &&
 				(options->dpb_page_buffers < MIN_PAGE_BUFFERS ||
 				 options->dpb_page_buffers > MAX_PAGE_BUFFERS))
@@ -5094,80 +5139,84 @@ static void get_options(UCHAR*	dpb,
 			break;
 
 		case gds_dpb_num_buffers:
-			options->dpb_buffers = get_parameter(&p);
+			options->dpb_buffers = get_parameter(&p, end_dpb, &error);
 			if (options->dpb_buffers < 10)
 				ERR_post(gds_bad_dpb_content, 0);
 			break;
 
 		case gds_dpb_page_size:
-			options->dpb_page_size = (USHORT) get_parameter(&p);
+			options->dpb_page_size = (USHORT) get_parameter(&p, end_dpb, &error);
 			break;
 
 		case gds_dpb_debug:
-			options->dpb_debug = (USHORT) get_parameter(&p);
+			options->dpb_debug = (USHORT) get_parameter(&p, end_dpb, &error);
 			break;
 
 		case gds_dpb_sweep:
-			options->dpb_sweep = (USHORT) get_parameter(&p);
+			options->dpb_sweep = (USHORT) get_parameter(&p, end_dpb, &error);
 			break;
 
 		case gds_dpb_sweep_interval:
-			options->dpb_sweep_interval = get_parameter(&p);
+			options->dpb_sweep_interval = get_parameter(&p, end_dpb, &error);
 			break;
 
 		case gds_dpb_verify:
-			options->dpb_verify = (USHORT) get_parameter(&p);
+			options->dpb_verify = (USHORT) get_parameter(&p, end_dpb, &error);
 			if (options->dpb_verify & gds_dpb_ignore)
 				dbb->dbb_flags |= DBB_damaged;
 			break;
 
 		case gds_dpb_trace:
-			options->dpb_trace = (USHORT) get_parameter(&p);
+			options->dpb_trace = (USHORT) get_parameter(&p, end_dpb, &error);
 			break;
 
 		case gds_dpb_damaged:
-			if (get_parameter(&p) & 1)
+			if (get_parameter(&p, end_dpb, &error) & 1)
 				dbb->dbb_flags |= DBB_damaged;
 			break;
 
 		case gds_dpb_enable_journal:
-		    options->dpb_journal = get_string_parameter(&p, scratch, &buf_size);
+		    options->dpb_journal = get_string_parameter(&p, end_dpb, scratch, &buf_size, &error);
+			if (!error && old_buf_size - buf_size > MAXPATHLEN)
+				options->dpb_journal[MAXPATHLEN - 1] = 0;			
 			break;
 
 		case gds_dpb_wal_backup_dir:
-		    options->dpb_wal_backup_dir = get_string_parameter(&p, scratch, &buf_size);
+		    options->dpb_wal_backup_dir = get_string_parameter(&p, end_dpb, scratch, &buf_size, &error);
+			if (!error && old_buf_size - buf_size > MAXPATHLEN)
+				options->dpb_wal_backup_dir[MAXPATHLEN - 1] = 0;			
 			break;
 
 		case gds_dpb_drop_walfile:
-			options->dpb_wal_action = (USHORT) get_parameter(&p);
+			options->dpb_wal_action = (USHORT) get_parameter(&p, end_dpb, &error);
 			break;
 
 		case gds_dpb_old_dump_id:
-			options->dpb_old_dump_id = (USHORT) get_parameter(&p);
+			options->dpb_old_dump_id = (USHORT) get_parameter(&p, end_dpb, &error);
 			break;
 
 		case gds_dpb_online_dump:
-			options->dpb_online_dump = (USHORT) get_parameter(&p);
+			options->dpb_online_dump = (USHORT) get_parameter(&p, end_dpb, &error);
 			break;
 
 		case gds_dpb_old_file_size:
-			options->dpb_old_file_size = get_parameter(&p);
+			options->dpb_old_file_size = get_parameter(&p, end_dpb, &error);
 			break;
 
 		case gds_dpb_old_num_files:
-			options->dpb_old_num_files = (USHORT) get_parameter(&p);
+			options->dpb_old_num_files = (USHORT) get_parameter(&p, end_dpb, &error);
 			break;
 
 		case gds_dpb_old_start_page:
-			options->dpb_old_start_page = get_parameter(&p);
+			options->dpb_old_start_page = get_parameter(&p, end_dpb, &error);
 			break;
 
 		case gds_dpb_old_start_seqno:
-			options->dpb_old_start_seqno = get_parameter(&p);
+			options->dpb_old_start_seqno = get_parameter(&p, end_dpb, &error);
 			break;
 
 		case gds_dpb_old_start_file:
-			options->dpb_old_start_file = (USHORT) get_parameter(&p);
+			options->dpb_old_start_file = (USHORT) get_parameter(&p, end_dpb, &error);
 			break;
 
 		case gds_dpb_old_file:
@@ -5175,53 +5224,72 @@ static void get_options(UCHAR*	dpb,
 				ERR_post(gds_num_old_files, 0);
 
 		    options->dpb_old_file [num_old_files] =
-				get_string_parameter(&p, scratch, &buf_size);
-			num_old_files++;
+				get_string_parameter(&p, end_dpb, scratch, &buf_size, &error);
+			if (!error)
+			{
+				if (old_buf_size - buf_size > MAXPATHLEN)
+					options->dpb_old_file[num_old_files][MAXPATHLEN - 1] = 0;			
+
+				num_old_files++;
+			}
 			break;
 
 		case gds_dpb_wal_chkptlen:
-			options->dpb_wal_chkpt_len = get_parameter(&p);
+			options->dpb_wal_chkpt_len = get_parameter(&p, end_dpb, &error);
 			break;
 
 		case gds_dpb_wal_numbufs:
-			options->dpb_wal_num_bufs = (SSHORT) get_parameter(&p);
+			options->dpb_wal_num_bufs = (SSHORT) get_parameter(&p, end_dpb, &error);
 			break;
 
 		case gds_dpb_wal_bufsize:
-			options->dpb_wal_bufsize = (USHORT) get_parameter(&p);
+			options->dpb_wal_bufsize = (USHORT) get_parameter(&p, end_dpb, &error);
 			break;
 
 		case gds_dpb_wal_grp_cmt_wait:
-			options->dpb_wal_grp_cmt_wait = get_parameter(&p);
+			options->dpb_wal_grp_cmt_wait = get_parameter(&p, end_dpb, &error);
 			break;
 
 		case gds_dpb_dbkey_scope:
-			options->dpb_dbkey_scope = (USHORT) get_parameter(&p);
+			options->dpb_dbkey_scope = (USHORT) get_parameter(&p, end_dpb, &error);
 			break;
 
 		case gds_dpb_sys_user_name:
-		    options->dpb_sys_user_name = get_string_parameter(&p, scratch, &buf_size);
+		    options->dpb_sys_user_name = get_string_parameter(&p, end_dpb, scratch, &buf_size, &error);
+			// See SCL_init -> ISC_get_user
+			if (!error && old_buf_size - buf_size > 256)
+				options->dpb_sys_user_name[255] = 0;			
 			break;
 
 		case isc_dpb_sql_role_name:
-		    options->dpb_role_name = get_string_parameter(&p, scratch, &buf_size);
+		    options->dpb_role_name = get_string_parameter(&p, end_dpb, scratch, &buf_size, &error);
+			if (!error && old_buf_size - buf_size > USERNAME_LENGTH + 1)
+				options->dpb_role_name[USERNAME_LENGTH] = 0;			
 			break;
 
 		case gds_dpb_user_name:
-		    options->dpb_user_name = get_string_parameter(&p, scratch, &buf_size);
+		    options->dpb_user_name = get_string_parameter(&p, end_dpb, scratch, &buf_size, &error);
+			if (!error && old_buf_size - buf_size > USERNAME_LENGTH + 1)
+				options->dpb_user_name[USERNAME_LENGTH] = 0;			
 			break;
 
 		case gds_dpb_password:
-		    options->dpb_password = get_string_parameter(&p, scratch, &buf_size);
+		    options->dpb_password = get_string_parameter(&p, end_dpb, scratch, &buf_size, &error);
+			if (!error && old_buf_size - buf_size > USERNAME_LENGTH + 1)
+				options->dpb_password[USERNAME_LENGTH] = 0;			
 			break;
 
 		case gds_dpb_password_enc:
-		    options->dpb_password_enc = get_string_parameter(&p, scratch, &buf_size);
+			// CVC: In jrd_pwd.h, MAX_PASSWORD_ENC_LENGTH is 12 but jrd uses 31.
+		    options->dpb_password_enc = get_string_parameter(&p, end_dpb, scratch, &buf_size, &error);
+			if (!error && old_buf_size - buf_size > USERNAME_LENGTH + 1)
+				options->dpb_password_enc[USERNAME_LENGTH] = 0;			
 			break;
 
 		case gds_dpb_encrypt_key:
 #ifdef ISC_DATABASE_ENCRYPTION
-		    options->dpb_key = get_string_parameter(&p, scratch, &buf_size);
+			// CVC: Couldn't find an appropriate length to trim.
+		    options->dpb_key = get_string_parameter(&p, end_dpb, scratch, &buf_size, &error);
 #else
 			/* Just in case there WAS a customer using this unsupported
 			 * feature - post an error when they try to access it in 4.0
@@ -5257,11 +5325,13 @@ static void get_options(UCHAR*	dpb,
 
 		case gds_dpb_force_write:
 			options->dpb_set_force_write = TRUE;
-			options->dpb_force_write = (SSHORT) get_parameter(&p);
+			options->dpb_force_write = (SSHORT) get_parameter(&p, end_dpb, &error);
 			break;
 
 		case gds_dpb_begin_log:
-		    options->dpb_log = get_string_parameter(&p, scratch, &buf_size);
+		    options->dpb_log = get_string_parameter(&p, end_dpb, scratch, &buf_size, &error);
+			if (!error && old_buf_size - buf_size > MAXPATHLEN)
+				options->dpb_log[MAXPATHLEN - 1] = 0;			
 			break;
 
 		case gds_dpb_quit_log:
@@ -5272,27 +5342,36 @@ static void get_options(UCHAR*	dpb,
 
 		case gds_dpb_no_reserve:
 			options->dpb_set_no_reserve = TRUE;
-			options->dpb_no_reserve = (UCHAR) get_parameter(&p);
+			options->dpb_no_reserve = (UCHAR) get_parameter(&p, end_dpb, &error);
 			break;
 
 		case gds_dpb_interp:
-			options->dpb_interp = (SSHORT) get_parameter(&p);
+			options->dpb_interp = (SSHORT) get_parameter(&p, end_dpb, &error);
 			break;
 
 		case gds_dpb_lc_messages:
-		    options->dpb_lc_messages = get_string_parameter(&p, scratch, &buf_size);
+		    options->dpb_lc_messages = get_string_parameter(&p, end_dpb, scratch, &buf_size, &error);
+			if (!error && old_buf_size - buf_size > MAXPATHLEN)
+				options->dpb_lc_messages[MAXPATHLEN - 1] = 0;			
 			break;
 
 		case gds_dpb_lc_ctype:
-		    options->dpb_lc_ctype = get_string_parameter(&p, scratch, &buf_size);
+		    options->dpb_lc_ctype = get_string_parameter(&p, end_dpb, scratch, &buf_size, &error);
+			// Look at MET_get_char_subtype			
+			if (!error)
+			{
+				const int limit = USERNAME_LENGTH * 2 + 1;
+				if (old_buf_size - buf_size > limit + 1)
+					options->dpb_lc_ctype[limit] = 0;
+			}
 			break;
 
 		case gds_dpb_shutdown:
-			options->dpb_shutdown = (USHORT) get_parameter(&p);
+			options->dpb_shutdown = (USHORT) get_parameter(&p, end_dpb, &error);
 			break;
 
 		case gds_dpb_shutdown_delay:
-			options->dpb_shutdown_delay = (SSHORT) get_parameter(&p);
+			options->dpb_shutdown_delay = (SSHORT) get_parameter(&p, end_dpb, &error);
 			break;
 
 		case gds_dpb_online:
@@ -5303,23 +5382,24 @@ static void get_options(UCHAR*	dpb,
 
 		case isc_dpb_reserved:
 			single =
-				reinterpret_cast<UCHAR*>(get_string_parameter(&p, scratch, &buf_size));
+				reinterpret_cast<UCHAR*>(get_string_parameter(&p, end_dpb, scratch, &buf_size, &error));
 		    if (single && !strcmp(reinterpret_cast < char *>(single), "YES"))
 				  options->dpb_single_user = TRUE;
 			break;
 
 		case isc_dpb_overwrite:
-			options->dpb_overwrite = (BOOLEAN) get_parameter(&p);
+			options->dpb_overwrite = (BOOLEAN) get_parameter(&p, end_dpb, &error);
 			break;
 
 		case isc_dpb_sec_attach:
-			options->dpb_sec_attach = (BOOLEAN) get_parameter(&p);
+			options->dpb_sec_attach = (BOOLEAN) get_parameter(&p, end_dpb, &error);
 			options->dpb_buffers = 50;
 			dbb->dbb_flags |= DBB_security_db;
 			break;
 
 		case isc_dpb_gbak_attach:
-		    options->dpb_gbak_attach = get_string_parameter(&p, scratch, &buf_size);
+			// CVC: For now we only care this item was set, not about its contents.
+		    options->dpb_gbak_attach = (get_string_parameter(&p, end_dpb, scratch, &buf_size, &error)) != NULL;
 			break;
 
 		case isc_dpb_gstat_attach:
@@ -5341,36 +5421,42 @@ static void get_options(UCHAR*	dpb,
 			break;
 
 		case gds_dpb_connect_timeout:
-			options->dpb_connect_timeout = get_parameter(&p);
+			options->dpb_connect_timeout = get_parameter(&p, end_dpb, &error);
 			break;
 
 		case gds_dpb_dummy_packet_interval:
-			options->dpb_dummy_packet_interval = get_parameter(&p);
+			options->dpb_dummy_packet_interval = get_parameter(&p, end_dpb, &error);
 			break;
 
 		case isc_dpb_sql_dialect:
-			options->dpb_sql_dialect = (USHORT) get_parameter(&p);
+			options->dpb_sql_dialect = (USHORT) get_parameter(&p, end_dpb, &error);
 			if (options->dpb_sql_dialect > SQL_DIALECT_V6)
 					invalid_client_SQL_dialect = TRUE;
 			break;
 
 		case isc_dpb_set_db_sql_dialect:
-			options->dpb_set_db_sql_dialect = (USHORT) get_parameter(&p);
+			options->dpb_set_db_sql_dialect = (USHORT) get_parameter(&p, end_dpb, &error);
 			break;
 
 		case isc_dpb_set_db_readonly:
 			options->dpb_set_db_readonly = TRUE;
-			options->dpb_db_readonly = (SSHORT) get_parameter(&p);
+			options->dpb_db_readonly = (SSHORT) get_parameter(&p, end_dpb, &error);
 			break;
 
 		case isc_dpb_set_db_charset:
-			options->dpb_set_db_charset = get_string_parameter (&p, scratch, &buf_size);
+			options->dpb_set_db_charset = get_string_parameter (&p, end_dpb, scratch, &buf_size, &error);
+			// Look at INI_format
+			if (!error && old_buf_size - buf_size > USERNAME_LENGTH + 1)
+				options->dpb_set_db_charset[USERNAME_LENGTH] = 0;			
 			break;
 
 		default:
 			l = *p++;
 			p += l;
 		}
+		
+		if (error)
+			ERR_post(gds_bad_dpb_form, 0);
 	}
 
 	if (p != end_dpb)
@@ -5379,7 +5465,7 @@ static void get_options(UCHAR*	dpb,
 }
 
 
-static SLONG get_parameter(UCHAR** ptr)
+static SLONG get_parameter(UCHAR** ptr, UCHAR* end_ptr, bool* error)
 {
 /**************************************
  *
@@ -5394,58 +5480,20 @@ static SLONG get_parameter(UCHAR** ptr)
  **************************************/
 	SLONG parameter;
 	SSHORT l;
-
+	
+	assert(end_ptr > *ptr); // The caller should meet this requirement.
+	
 	l = *(*ptr)++;
+	if (*ptr + l > end_ptr)
+	{
+		*error = true;
+		return 0;
+	}
+	
 	parameter = gds__vax_integer(*ptr, l);
 	*ptr += l;
 
 	return parameter;
-}
-
-
-static TEXT* get_string_parameter(UCHAR** dpb_ptr, TEXT** opt_ptr, ULONG* buf_avail)
-{
-/**************************************
- *
- *	g e t _ s t r i n g _ p a r a m e t e r
- *
- **************************************
- *
- * Functional description
- *	Pick up a string valued parameter, copy it to a running temp,
- *	and return pointer to copied string.
- *
- **************************************/
-	TEXT *opt;
-	UCHAR *dpb;
-	USHORT l;
-
-	if (!*buf_avail)  /* Because "l" may be zero but the NULL term still is set. */
-		return 0;
-
-	opt = *opt_ptr;
-	dpb = *dpb_ptr;
-
-	if ((l = *(dpb++)))
-	{
-		if (l >= *buf_avail) /* >= to count the NULL term. */
-		{
-			*buf_avail = 0;
-			return 0;
-		}
-		*buf_avail -= l;
-		do
-			*opt++ = *dpb++;
-		while (--l);
-	}
-
-	--*buf_avail;
-	*opt++ = 0;
-	*dpb_ptr = dpb;
-	dpb = (UCHAR *) * opt_ptr;
-	*opt_ptr = opt;
-
-	return (TEXT *) dpb;
 }
 
 

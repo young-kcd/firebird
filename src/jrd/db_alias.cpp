@@ -38,7 +38,7 @@ const char* ALIAS_FILE = "aliases.conf";
 bool ResolveDatabaseAlias(const char* alias, char* database)
 {
 	TEXT alias_filename[MAXPATHLEN];
-	gds__prefix(alias_filename, const_cast<char*>(ALIAS_FILE));
+	gds__prefix(alias_filename, ALIAS_FILE);
 	ConfigFile aliasConfig(false);
 	aliasConfig.setConfigFile(alias_filename);
 
@@ -55,6 +55,13 @@ bool ResolveDatabaseAlias(const char* alias, char* database)
 		if (PathUtils::isRelative(value)) {
 			gds__log("Value %s configured for alias %s "
 				"is not a fully qualified path name, ignored", value.c_str(), alias);
+			return false;
+		}
+		if (value.length() >= MAXPATHLEN)
+		{
+			gds__log("Value %s configured for alias %s "
+				"has a length %d bigger than maximum %d supported in this platform",
+				value.c_str(), alias, value.length(), MAXPATHLEN - 1);
 			return false;
 		}
 		strcpy(database, value.c_str());

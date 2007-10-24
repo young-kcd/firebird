@@ -1174,11 +1174,16 @@ BOOLEAN API_ROUTINE isc_set_path(TEXT * file_name,
 /* look for the environment variables to tack 
    onto the beginning of the database path */
 
-	if (!(pathname = getenv("ISC_PATH")))
+	if (!(pathname = getenv("ISC_PATH")) || !pathname[0])
 		return FALSE;
 
 	if (!file_length)
-		file_length = strlen(file_name);
+		file_length = strlenmax(file_name, MAXPATHLEN);
+	else
+	{
+		if (file_length >= MAXPATHLEN)
+			file_length = MAXPATHLEN - 1;
+	}
 	file_name[file_length] = 0;
 
 /* if the file already contains a remote node
@@ -1188,15 +1193,19 @@ BOOLEAN API_ROUTINE isc_set_path(TEXT * file_name,
 		if (*p == ':' || *p == '/' || *p == '\\')
 			return FALSE;
 
-/* concatenate the strings */
-
-	strcpy(expanded_name, pathname);
+	size_t path_len = strlen(pathname);
 
     /* CVC: Make the concatenation work if no slash is present. */
-    p = expanded_name + (strlen (expanded_name) - 1);
-    if (*p != ':' && *p != '/' && *p != '\\') {
+    p = pathname + (path_len - 1);
+    bool need_bl = (*p != ':' && *p != '/' && *p != '\\');
+	
+	if (path_len + (need_bl ? 1 : 0) + file_length >= MAXPATHLEN)
+		return FALSE; // Impossible to concatenate, B.O.
+	
+/* concatenate the strings */
+	strcpy(expanded_name, pathname);
+	if (need_bl)
         strcat(expanded_name, "/");
-    }
 
 	strcat(expanded_name, file_name);
 
@@ -2354,3 +2363,74 @@ static int load(
 
 
 } // extern "C"
+
+
+
+size_t strlenmax(const char* buf, size_t bsize)
+{
+	assert(bsize > 0);
+	for (size_t i = 0; i < bsize; ++i)
+	{
+		if (!buf[i])
+			return i;
+	}
+	return bsize - 1;
+}
+
+
+TEXT* get_string_parameter(UCHAR** dpb_ptr, 
+						   UCHAR* end_dpb,
+						   TEXT** opt_ptr, 
+						   ULONG* buf_avail, 
+						   bool* error)
+{
+/**************************************
+ *
+ *	g e t _ s t r i n g _ p a r a m e t e r
+ *
+ **************************************
+ *
+ * Functional description
+ *	Pick up a string valued parameter, copy it to a running temp,
+ *	and return pointer to copied string.
+ *
+ **************************************/
+	TEXT *opt;
+	UCHAR *dpb;
+	USHORT l;
+	
+	assert(end_dpb > *dpb_ptr); // The caller should meet this requirement.
+
+	if (!*buf_avail)  /* Because "l" may be zero but the NULL term still is set. */
+	{
+		*error = true;
+		return 0;
+	}
+
+	opt = *opt_ptr;
+	dpb = *dpb_ptr;
+
+	if ((l = *dpb++))
+	{
+		// First condition ensures we have enough memory to read.
+		// Second condition ensures we have enough memory to write
+		// and we use >= to count the NULL term.
+		if (dpb + l > end_dpb || l >= *buf_avail)
+		{
+			*buf_avail = 0;
+			*error = true;
+			return 0;
+		}
+		*buf_avail -= l;
+		while (l--)
+			*opt++ = *dpb++;
+	}
+
+	--*buf_avail;
+	*opt++ = 0;
+	*dpb_ptr = dpb;
+	TEXT* rc = *opt_ptr;
+	*opt_ptr = opt;
+
+	return rc;
+}

@@ -1551,7 +1551,7 @@ void API_ROUTINE gds__prefix(TEXT *resultString, const TEXT *file)
 
 	gdsPrefixInit();
 
-	strcat(resultString, ib_prefix);
+	strcpy(resultString, ib_prefix);
 	safe_concat_path(resultString, file);
 }
 #endif /* !defined(VMS) */

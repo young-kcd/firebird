@@ -36,7 +36,7 @@
  *
  */
 /*
-$Id: isc.cpp,v 1.36.2.2 2005-08-19 10:52:06 alexpeshkoff Exp $
+$Id: isc.cpp,v 1.36.2.3 2007-10-24 07:07:40 robocop Exp $
 */
 #ifdef DARWIN
 #define _STLP_CCTYPE
@@ -490,7 +490,11 @@ int INTERNAL_API_ROUTINE ISC_get_user(TEXT*	name,
 	}
 
 	if (name)
-		strcpy(name, p);
+	{
+		// Look at the caller, SCL_init()
+		strncpy(name, p, 128);
+		name[128] = 0;
+	}
 
 	if (id)
 		*id = euid;

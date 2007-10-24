@@ -67,6 +67,8 @@
 #include "../jrd/jrd_proto.h"
 #endif
 
+#include "../jrd/constants.h"
+
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
 #endif
@@ -180,8 +182,7 @@ typedef struct spb {
 static void conv_switches(USHORT, USHORT, SCHAR *, TEXT **);
 static TEXT *find_switch(int, IN_SW_TAB);
 static USHORT process_switches(USHORT, SCHAR *, TEXT *);
-static void get_options(UCHAR *, USHORT, TEXT *, SPB *);
-static TEXT *get_string_parameter(UCHAR **, TEXT **);
+static void get_options(UCHAR *, USHORT, TEXT *, ULONG, SPB *);
 #ifndef SUPERSERVER
 static void io_error(TEXT *, SLONG, TEXT *, ISC_STATUS, BOOLEAN);
 static void service_close(SVC);
@@ -422,11 +423,16 @@ SVC SVC_attach(USHORT	service_length,
 			service_length--;
 	}
 	if (service_length) {
+		if (service_length >= sizeof(misc_buf))
+			service_length = sizeof(misc_buf) - 1;
+			
 		strncpy(misc_buf, service_name, (int) service_length);
 		misc_buf[service_length] = 0;
 	}
 	else {
-		strcpy(misc_buf, service_name);
+		service_length = strlenmax(service_name, sizeof(misc_buf));
+		memcpy(misc_buf, service_name, service_length);
+		misc_buf[service_length] = 0;
 	}
 
 /* Find the service by looking for an exact match. */
@@ -512,16 +518,19 @@ SVC SVC_attach(USHORT	service_length,
 
 /* Process the service parameter block. */
 
-	if (spb_length > sizeof(misc_buf)) {
+	ULONG misc_size = sizeof(misc_buf);
+	if (spb_length > misc_size) {
 		misc = (TEXT *) gds__alloc((SLONG) spb_length);
 		if (!misc) {
 			ERR_post(isc_virmemexh, 0);
 		}
-	} else {
+		misc_size = spb_length;
+	} 
+	else {
 		misc = misc_buf;
 	}
 
-	get_options(reinterpret_cast<UCHAR*>(spb), spb_length, misc, &options);
+	get_options(reinterpret_cast<UCHAR*>(spb), spb_length, misc, misc_size, &options);
 
 /* Perhaps checkout the user in the security database. */
 
@@ -622,7 +631,10 @@ SVC SVC_attach(USHORT	service_length,
 #endif
 	service->svc_spb_version = options.spb_version;
 	if (options.spb_user_name)
-		strcpy(service->svc_username, options.spb_user_name);
+	{
+		strncpy(service->svc_username, options.spb_user_name, USERNAME_LENGTH);
+		service->svc_username[USERNAME_LENGTH] = 0;
+	}
 
 /* The password will be issued to the service threads on NT since
  * there is no OS authentication.  If the password is not yet
@@ -633,12 +645,15 @@ SVC SVC_attach(USHORT	service_length,
 		UCHAR* s = reinterpret_cast<UCHAR*>(service->svc_enc_password);
 		UCHAR* p = (UCHAR *) ENC_crypt(options.spb_password, PASSWORD_SALT) + 2;
 		int l = strlen((char *) p);
+		if (l >= MAX_PASSWORD_ENC_LENGTH)
+			l = MAX_PASSWORD_ENC_LENGTH - 1;
 		MOVE_FASTER(p, s, l);
 		service->svc_enc_password[l] = 0;
 	}
 
 	if (options.spb_password_enc) {
-		strcpy(service->svc_enc_password, options.spb_password_enc);
+		strncpy(service->svc_enc_password, options.spb_password_enc, MAX_PASSWORD_ENC_LENGTH);
+		service->svc_enc_password[MAX_PASSWORD_ENC_LENGTH - 1] = 0;
 	}
 
 /* If an executable is defined for the service, try to fork a new process.
@@ -2146,6 +2161,7 @@ void SVC_read_ib_log(SVC service)
 static void get_options(UCHAR*	spb,
 						USHORT	spb_length,
 						TEXT*	scratch,
+						ULONG	buf_size,
 						SPB*	options)
 {
 /**************************************
@@ -2162,13 +2178,35 @@ static void get_options(UCHAR*	spb,
 	USHORT l;
 
 	MOVE_CLEAR(options, (SLONG) sizeof(struct spb));
+	// We always have item, length, content. Sometimes length can be zero,
+	// but we have at least two bytes. Then end = spb + length but limit is one byte less.
+	// Othwerwise, we can read the length from uninitialized memory and 
+	// then try to read an arbitrary chunk of invalid memory.
 	p = spb;
 	end_spb = p + spb_length;
+	UCHAR* limit = end_spb - 1;
 
+	if ((spb == NULL) && (spb_length > 0))
+		ERR_post(gds_bad_spb_form, 0);	
+	
 	if (p < end_spb && (*p != isc_spb_version1 && *p != isc_spb_version))
 		ERR_post(isc_bad_spb_form, isc_arg_gds, isc_wrospbver, 0);
+		
+	// Since we a mess with version tags, we are forced to read isc_spb_version1 before the loop,
+	// inside the loop (if it's in the middle) and after the loop (if the loop condition just skipped the last byte).
+	// This is the price the pay for not making the cases inside the loop more cumbersome by checking always that
+	// we have one more byte available to read ("limit" is one byte before the end).
+	if (p < end_spb && *p == isc_spb_version1)
+	{
+		++p;
+		options->spb_version = isc_spb_version1;	
+	}
 
-	while (p < end_spb)
+	while (p < limit && buf_size)
+	{
+		const ULONG old_buf_size = buf_size;
+		bool error = false;
+
 		switch (*p++) {
 		case isc_spb_version1:
 			options->spb_version = isc_spb_version1;
@@ -2179,63 +2217,53 @@ static void get_options(UCHAR*	spb,
 			break;
 
 		case isc_spb_sys_user_name:
-			options->spb_sys_user_name = get_string_parameter(&p, &scratch);
+			options->spb_sys_user_name = get_string_parameter(&p, end_spb, &scratch, &buf_size, &error);
+			// See SCL_init -> ISC_get_user
+			if (!error && old_buf_size - buf_size > 256)
+				options->spb_sys_user_name[255] = 0;			
 			break;
 
 		case isc_spb_user_name:
-			options->spb_user_name = get_string_parameter(&p, &scratch);
+			options->spb_user_name = get_string_parameter(&p, end_spb, &scratch, &buf_size, &error);
+			if (!error && old_buf_size - buf_size > USERNAME_LENGTH + 1)
+				options->spb_user_name[USERNAME_LENGTH] = 0;			
 			break;
 
 		case isc_spb_password:
-			options->spb_password = get_string_parameter(&p, &scratch);
+			options->spb_password = get_string_parameter(&p, end_spb, &scratch, &buf_size, &error);
+			if (!error && old_buf_size - buf_size > USERNAME_LENGTH + 1)
+				options->spb_password[USERNAME_LENGTH] = 0;			
 			break;
 
 		case isc_spb_password_enc:
-			options->spb_password_enc = get_string_parameter(&p, &scratch);
+			options->spb_password_enc = get_string_parameter(&p, end_spb, &scratch, &buf_size, &error);
+			if (!error && old_buf_size - buf_size > USERNAME_LENGTH + 1)
+				options->spb_password_enc[USERNAME_LENGTH] = 0;			
 			break;
 
 		case isc_spb_command_line:
-			options->spb_command_line = get_string_parameter(&p, &scratch);
+			// CVC: We don't have a reasonable limit for this.
+			options->spb_command_line = get_string_parameter(&p, end_spb, &scratch, &buf_size, &error);
 			break;
 
 		default:
 			l = *p++;
 			p += l;
 		}
-}
+		
+		if (error)
+			ERR_post(gds_bad_spb_form, 0);
+	}
+	
+	if (p < end_spb && *p == isc_spb_version1)
+	{
+		++p;
+		options->spb_version = isc_spb_version1;	
+	}
 
-
-static TEXT *get_string_parameter(UCHAR ** spb_ptr, TEXT ** opt_ptr)
-{
-/**************************************
- *
- *	g e t _ s t r i n g _ p a r a m e t e r
- *
- **************************************
- *
- * Functional description
- *	Pick up a string valued parameter, copy it to a running temp,
- *	and return pointer to copied string.
- *
- **************************************/
-	UCHAR *spb;
-	TEXT *opt;
-	USHORT l;
-
-	opt = *opt_ptr;
-	spb = *spb_ptr;
-
-	if ( (l = *spb++) )
-		do
-			*opt++ = *spb++;
-		while (--l);
-
-	*opt++ = 0;
-	*spb_ptr = spb;
-	spb = (UCHAR *) * opt_ptr;
-	*opt_ptr = opt;
-
-	return (TEXT *) spb;
+	// For some obscure reasons, this check is not done.
+	//if (p != end_spb)
+	//	ERR_post(gds_bad_spb_form, 0);	
 }
 
 
@@ -3113,6 +3141,7 @@ static void service_fork(TEXT * service_path, SVC service)
 			{
 				strcat (buf, " ");
 				strcat (buf, *s);
+				assert(strlen(buf) < 2 * MAXPATHLEN);
 				s++;
 			}
 			gds__log(buf);
@@ -3722,6 +3751,10 @@ static BOOLEAN get_action_svc_bitmask(
 	TEXT *s_ptr;
 	ISC_USHORT count;
 
+	// Do not go beyond the bounds of the spb buffer 
+	if (sizeof(ISC_ULONG) > *len)
+		ERR_post(isc_bad_spb_form, 0);
+
 	opt =
 		gds__vax_integer(reinterpret_cast < UCHAR * >(*spb),
 						 sizeof(ISC_ULONG));
@@ -3767,6 +3800,10 @@ static void get_action_svc_string(
  **************************************/
 	ISC_USHORT l, l2;
 
+	// Do not go beyond the bounds of the spb buffer 
+	if (sizeof(ISC_USHORT) > *len)
+		ERR_post(isc_bad_spb_form, 0);
+
 	l = gds__vax_integer(reinterpret_cast < UCHAR * >(*spb),
 						 sizeof(ISC_USHORT));
 
@@ -3781,7 +3818,9 @@ static void get_action_svc_string(
 	l2 = 0;
 #endif
 
-/* Do not go beyond the bounds of the spb buffer */
+	*len -= sizeof(ISC_USHORT); // The count should be decremented here, before the next test.
+	
+	// Do not go beyond the bounds of the spb buffer
 	if (l > *len)
 		ERR_post(isc_bad_spb_form, 0);
 
@@ -3801,7 +3840,7 @@ static void get_action_svc_string(
 	}
 	*spb += l;
 	*total += l + l2 + 1 + 2;		/* Two SVC_TRMNTR for strings */
-	*len -= sizeof(ISC_USHORT) + l;
+	*len -= l;
 }
 
 
@@ -3822,6 +3861,10 @@ static void get_action_svc_data(
  **************************************/
 	ISC_ULONG ll;
 	TEXT buf[64];
+
+	// Do not go beyond the bounds of the spb buffer 
+	if (sizeof(ISC_ULONG) > *len)
+		ERR_post(isc_bad_spb_form, 0);
 
 	ll =
 		gds__vax_integer(reinterpret_cast < UCHAR * >(*spb),
@@ -3857,6 +3900,10 @@ static BOOLEAN get_action_svc_parameter(
  *
  **************************************/
 	TEXT *s_ptr;
+
+	// Do not go beyond the bounds of the spb buffer 
+	if (1 > *len)
+		ERR_post(isc_bad_spb_form, 0);
 
 	if (!(s_ptr = find_switch(**spb, table)))
 		return FALSE;

@@ -159,6 +159,10 @@ SOURCE=..\..\..\src\jrd\misc.cpp
 
 SOURCE=..\..\..\src\jrd\status.cpp
 # End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\utl.cpp
+# End Source File
 # End Group
 # Begin Group "GPRE files"
 
