@@ -372,6 +372,7 @@ public:
 	USHORT	dpb_set_db_sql_dialect;
 	SLONG	dpb_remote_pid;
 	bool	dpb_no_db_triggers;
+	bool	dpb_gbak_attach;
 // here begin compound objects
 // for constructor to work properly dpb_sys_user_name 
 // MUST be FIRST
@@ -387,7 +388,6 @@ public:
 #endif
 	Firebird::PathName	dpb_lc_messages;
 	Firebird::string	dpb_lc_ctype;
-	bool				dpb_gbak_attach;
 	Firebird::PathName	dpb_working_directory;
 	Firebird::string	dpb_set_db_charset;
 	Firebird::string	dpb_network_protocol;
