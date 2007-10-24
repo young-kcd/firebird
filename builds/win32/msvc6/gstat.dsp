@@ -93,10 +93,6 @@ SOURCE=..\..\..\gen\utilities\gstat\dba.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\enc.cpp
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\src\common\fb_exception.cpp
 # End Source File
 # Begin Source File
@@ -134,6 +130,10 @@ SOURCE=..\..\..\src\jrd\version.rc
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\btn.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\enc.cpp
 # End Source File
 # Begin Source File
 
