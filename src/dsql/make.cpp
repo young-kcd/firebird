@@ -1955,6 +1955,22 @@ static void make_parameter_names(dsql_par* parameter, const dsql_nod* item)
 	case nod_null:
 		name_alias = "CONSTANT";
 		break;
+	case nod_negate:
+		{
+			// CVC: For this to be a thorough check, we need to recurse over all nodes.
+			// This means we should separate the code that sets aliases from
+			// the rest of the functionality here in make_parameter_names().
+			// Otherwise, we need here to test here for most of the other node types.
+			// However, we need to be recursive only if we agree things like -gen_id()
+			// should be given the GEN_ID alias, too.
+			const dsql_nod* node = item->nod_arg[0];
+			while (node->nod_type == nod_negate)
+				node = node->nod_arg[0];
+				
+			if (node->nod_type == nod_constant || node->nod_type == nod_null)
+				name_alias = "CONSTANT";
+		}
+		break;
 	case nod_add:
 	case nod_add2:
 		name_alias = "ADD";
