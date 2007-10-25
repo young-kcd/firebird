@@ -1,3 +1,17 @@
+2007-10-24 09:07  robocop
+
+	* firebird2/: src/jrd/db_alias.cpp (1.10.2.2), src/jrd/gds.cpp
+	(1.84.2.12), src/jrd/inf.cpp (1.20.2.2), src/jrd/ini.epp
+	(1.18.2.3), src/jrd/isc.cpp (1.36.2.3), src/jrd/isc_file.cpp
+	(1.52.2.10), src/jrd/jrd.cpp (1.76.2.12), src/jrd/scl.epp
+	(1.21.2.5), src/jrd/svc.cpp (1.67.2.8), src/jrd/utl.cpp (1.35.2.4),
+	src/jrd/utl_proto.h (1.6.2.1), builds/win32/msvc6/gdef.dsp
+	(1.14.2.2), builds/win32/msvc6/gstat.dsp (1.14.2.3),
+	builds/win32/msvc6/qli.dsp (1.13.2.2):
+
+	First attempt to close the cases shown in the RISE report in v1.5
+	and other known but unreported cases. INET_connect wasn't reviewed.
+
 2007-09-22 10:36  robocop
 
 	* firebird2/src/jrd/pag.cpp (1.37.2.11):
