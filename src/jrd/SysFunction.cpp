@@ -351,7 +351,10 @@ static void makeFromListResult(DataTypeUtilBase* dataTypeUtil, const SysFunction
 
 static void makeInt64Result(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args)
 {
-	result->makeInt64(0);
+	if (dataTypeUtil->getDialect() == 1)
+		result->makeDouble();
+	else
+		result->makeInt64(0);
 
 	bool isNullable;
 	if (initResult(result, argsCount, args, &isNullable))

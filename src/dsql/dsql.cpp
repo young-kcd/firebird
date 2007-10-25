@@ -672,7 +672,7 @@ static ISC_STATUS dsql8_execute_immediate_common(ISC_STATUS*	user_status,
  * be a way to send the parser version to DSQL so that the parser can compare the keyword
  * version to the parser version.  To accomplish this, the parser version is combined with
  * the client dialect and sent across that way.  In dsql8_execute_immediate, the parser version
- * and client dialect are separated and passed on to their final desintations.  The information
+ * and client dialect are separated and passed on to their final destinations.  The information
  * is combined as follows:
  *     Dialect * 10 + parser_version
  *

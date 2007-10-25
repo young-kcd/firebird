@@ -535,11 +535,14 @@ void DataTypeUtilBase::makeSysFunction(dsc* result, const char* name, int argsCo
 
 namespace Jrd {
 
-
 UCHAR DataTypeUtil::maxBytesPerChar(UCHAR charSet)
 {
 	return INTL_charset_lookup(tdbb, charSet)->maxBytesPerChar();
 }
 
+USHORT DataTypeUtil::getDialect()
+{
+	return (tdbb->tdbb_database->dbb_flags & DBB_DB_SQL_dialect_3) ? 3 : 1;
+}
 
 }	// namespace Jrd

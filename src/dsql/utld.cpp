@@ -1056,4 +1056,9 @@ UCHAR DSqlDataTypeUtil::maxBytesPerChar(UCHAR charSet)
 	return METD_get_charset_bpc(request, charSet);
 }
 
+USHORT DSqlDataTypeUtil::getDialect()
+{
+	return request->req_client_dialect;
+}
+
 #endif
