@@ -351,6 +351,24 @@ Package=<4>
 
 ###############################################################################
 
+Project: "fbsvcmgr"=.\fbsvcmgr.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name common
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name fbclient
+    End Project Dependency
+}}}
+
+###############################################################################
+
 Project: "fbudf"=.\fbudf.dsp - Package Owner=<4>
 
 Package=<5>
