@@ -1158,32 +1158,41 @@ void API_ROUTINE gds__trace(const TEXT * text)
 
 	char buffer[1024]; // 1K should be enough for the trace message
 	char* p = buffer;
-	gds__ulstr(p, today.tm_year + 1900, 4, '0'); p += 4;
+	gds__ulstr(p, today.tm_year + 1900, 4, '0');
+	p += 4;
 	*p++ = '-';
-	gds__ulstr(p, today.tm_mon, 2, '0'); p += 2;
+	gds__ulstr(p, today.tm_mon, 2, '0');
+	p += 2;
 	*p++ = '-';
-	gds__ulstr(p, today.tm_mday, 2, '0'); p += 2;
+	gds__ulstr(p, today.tm_mday, 2, '0');
+	p += 2;
 	*p++ = 'T';
-	gds__ulstr(p, today.tm_hour, 2, '0'); p += 2;
+	gds__ulstr(p, today.tm_hour, 2, '0');
+	p += 2;
 	*p++ = ':';
-	gds__ulstr(p, today.tm_min, 2, '0'); p += 2;
+	gds__ulstr(p, today.tm_min, 2, '0');
+	p += 2;
 	*p++ = ':';
-	gds__ulstr(p, today.tm_sec, 2, '0'); p += 2;
+	gds__ulstr(p, today.tm_sec, 2, '0');
+	p += 2;
 	*p++ = ' ';
-	gds__ulstr(p, 
+	ULONG apid =
 #ifdef WIN_NT
 #ifdef SUPERSERVER
-			     GetCurrentThreadId(),
+			     GetCurrentThreadId();
 #else
-				 GetCurrentProcessId(),				   
+				 GetCurrentProcessId();
 #endif
 #else
-				 getpid(),
+				 getpid();
 #endif
-				 5, ' '); p += 5;
+	gds__ulstr(p, apid, 5, ' ');
+	p += 5;
 	*p++ = ' ';
-	strcpy(p, text); p += strlen(p);
-	strcat(p, "\n"); p += strlen(p);
+	strcpy(p, text);
+	p += strlen(p);
+	strcat(p, "\n");
+	p += strlen(p);
 	gds__trace_raw(buffer, p - buffer);
 }
 
@@ -3622,7 +3631,8 @@ void gds__trace_printer(void* arg, SSHORT offset, const TEXT* line)
 	gds__ulstr(p, offset, 4, ' ');
 	p += strlen(p);
 	*p++ = ' ';
-	strcpy(p, line); p += strlen(p);
+	strcpy(p, line);
+	p += strlen(p);
 	*p++ = '\n';
 	*p = 0;
 	gds__trace_raw(buffer);
