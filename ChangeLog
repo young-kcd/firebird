@@ -1,3 +1,22 @@
+2007-10-24 17:36  paulbeach
+
+	* firebird2/builds/install/arch-specific/solaris/CS/postinstall.in
+	(1.2.4.2):
+
+	Solaris Port
+
+2007-10-24 15:53  alexpeshkoff
+
+	* firebird2/src/jrd/why_proto.h (1.25.4.1):
+
+	backported API function declaration
+
+2007-10-24 15:22  paulbeach
+
+	* firebird2/builds/posix/prefix.solaris (1.21.4.1):
+
+	Solaris Port
+
 2007-10-22 09:43  alexpeshkoff
 
 	* firebird2/src/jrd/why.cpp (1.100.4.4):
