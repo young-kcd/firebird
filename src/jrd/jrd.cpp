@@ -6431,9 +6431,6 @@ static void shutdown_database(Database* dbb, const bool release_pools)
 	// this is anyway called in ~Database()
 	dbb->destroyIntlObjects();
 
-	if (dbb->dbb_lock)
-		LCK_release(tdbb, dbb->dbb_lock);
-
 #ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
 	if (dbb->dbb_log)
 		LOG_fini();
@@ -6448,12 +6445,26 @@ static void shutdown_database(Database* dbb, const bool release_pools)
 
 		for (; ptr < end; ++ptr)
 		{
-			if (*ptr && (*ptr)->rel_file)
+			jrd_rel* relation = *ptr;
+			if (relation)
 			{
-				EXT_fini(*ptr, false);
+				if (relation->rel_file)
+				{
+					EXT_fini(*ptr, false);
+				}
+
+				for (IndexBlock* index_block = relation->rel_index_blocks; index_block;
+					index_block = index_block->idb_next)
+				{
+					if (index_block->idb_lock)
+						LCK_release(tdbb, index_block->idb_lock);
+				}
 			}
 		}
 	}
+
+	if (dbb->dbb_lock)
+		LCK_release(tdbb, dbb->dbb_lock);
 
 	Database** d_ptr;	// Intentionally left outside loop (HP/UX compiler)
 	for (d_ptr = &databases; *(d_ptr); d_ptr = &(*d_ptr)->dbb_next) {
