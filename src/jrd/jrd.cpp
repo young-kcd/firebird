@@ -6384,6 +6384,16 @@ static void setup_NT_handlers()
 #endif
 
 
+bool Database::onRawDevice()
+{
+#ifdef SUPPORT_RAW_DEVICES
+	return PIO_on_raw_device(dbb_filename);
+#else
+	return false;
+#endif
+}
+
+
 static void shutdown_database(Database* dbb, const bool release_pools)
 {
 /**************************************

@@ -230,12 +230,18 @@ void BackupManager::unlock_alloc(thread_db* tdbb)
 void BackupManager::generate_filename()
 {
 	diff_name = database->dbb_filename + ".delta";
+	explicit_diff_name = false;
 }
 
 // Initialize and open difference file for writing
 void BackupManager::begin_backup(thread_db* tdbb)
 {
 	NBAK_TRACE(("begin_backup"));
+
+	// Check for raw device
+	if ((!explicit_diff_name) && database->onRawDevice()) {
+		ERR_post(isc_need_difference, 0);
+	}
 
 	WIN window(HEADER_PAGE_NUMBER);
 
@@ -665,7 +671,8 @@ bool BackupManager::read_difference(thread_db* tdbb, ULONG diff_page, Ods::pag* 
 	
 BackupManager::BackupManager(thread_db* tdbb, Database* _database, int ini_state) :
 	dbCreating(false), database(_database), diff_file(NULL), alloc_table(NULL),
-	last_allocated_page(0), current_scn(0), diff_name(*_database->dbb_permanent)
+	last_allocated_page(0), current_scn(0), diff_name(*_database->dbb_permanent),
+	explicit_diff_name(false)
 {
 	// Allocate various database page buffers needed for operation
 	temp_buffers_space = FB_NEW(*database->dbb_permanent) BYTE[database->dbb_page_size * 3 + MIN_PAGE_SIZE];
@@ -710,6 +717,7 @@ void BackupManager::set_difference(thread_db* tdbb, const char* filename)
 			strlen(filename), reinterpret_cast<const UCHAR*>(filename));
 		CCH_RELEASE(tdbb, &window);
 		diff_name = filename;
+		explicit_diff_name = true;
 	}
 	else {
 		PAG_delete_clump_entry(HEADER_PAGE, Ods::HDR_difference_file);
@@ -767,7 +775,7 @@ bool BackupManager::actualize_state(thread_db* tdbb)
 	current_scn = header->hdr_header.pag_scn;
 
 	// Read difference file name from header clumplets
-	bool fname_found = false;
+	explicit_diff_name = false;
 	const UCHAR* p = header->hdr_data;
 	while (true) {
 		switch (*p) {
@@ -775,12 +783,12 @@ bool BackupManager::actualize_state(thread_db* tdbb)
 			p += p[1] + 2;
 			continue;
 		case Ods::HDR_difference_file:
-			fname_found = true;
+			explicit_diff_name = true;
 			diff_name.assign(reinterpret_cast<const char*>(p + 2), p[1]);
 		}
 		break;
 	}
-	if (!fname_found)
+	if (!explicit_diff_name)
 		generate_filename();
 		
 	if (new_backup_state == nbak_state_normal || missed_cycle) {

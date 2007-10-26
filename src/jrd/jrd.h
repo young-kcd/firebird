@@ -322,6 +322,9 @@ public:
 		return ++dbb_current_id;
 	}
 
+	// returns true if primary file is located on raw device
+	bool onRawDevice();
+
 private:
 	explicit Database(MemoryPool& p)
 	:	dbb_page_manager(p),

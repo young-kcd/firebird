@@ -1253,7 +1253,6 @@ static jrd_nod* par_field(thread_db* tdbb, CompilerScratch* csb, SSHORT blr_oper
 		else {
 			Firebird::MetaName name;
 			par_name(csb, name);
-			fb_assert(name == csb->csb_domain_validation);
 		}
 
 		jrd_nod* node = PAR_make_node(tdbb, e_domval_length);

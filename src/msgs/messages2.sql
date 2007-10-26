@@ -662,6 +662,7 @@ COMMIT WORK;
 -- Write the new JRD messages here.
 ('not_valid_for_var', 'EVL_validate', 'evl.cpp', NULL, 0, 559, NULL, 'validation error for variable @1, value "@2"', NULL, NULL);
 ('not_valid_for', 'EVL_validate', 'evl.cpp', NULL, 0, 560, NULL, 'validation error for @1, value "@2"', NULL, NULL);
+('need_difference', 'BackupManager::begin_backup', 'nbak.cpp', NULL, 0, 561, NULL, 'Difference file name should be set explicitly for database on raw device', NULL, NULL);
 -- QLI
 (NULL, NULL, NULL, NULL, 1, 0, NULL, 'expected type', NULL, NULL);
 (NULL, NULL, NULL, NULL, 1, 1, NULL, 'bad block type', NULL, NULL);

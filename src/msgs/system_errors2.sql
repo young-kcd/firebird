@@ -561,6 +561,7 @@ set bulk_insert INSERT INTO SYSTEM_ERRORS (SQL_CODE, SQL_CLASS, SQL_SUBCLASS, FA
 (-904, NULL, NULL, 0, 558, NULL, 'concurrent_transaction', NULL, NULL)
 (-625, NULL, NULL, 0, 559, NULL, 'not_valid_for_var', NULL, NULL)
 (-625, NULL, NULL, 0, 560, NULL, 'not_valid_for', NULL, NULL)
+(-820, NULL, NULL, 0, 561, NULL, 'need_difference', NULL, NULL)
 -- GFIX
 (-901, NULL, NULL, 3, 1, NULL, 'gfix_db_name', NULL, NULL)
 (-901, NULL, NULL, 3, 2, NULL, 'gfix_invalid_sw', NULL, NULL)

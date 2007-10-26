@@ -276,6 +276,7 @@ private:
 	ULONG *alloc_buffer, *empty_buffer, *spare_buffer;
 	ULONG current_scn;
 	Firebird::PathName diff_name;
+	bool explicit_diff_name;
 
 	// Lock to protect allocation table in this process (BTree)
 	NBackupAlloc* alloc_lock;

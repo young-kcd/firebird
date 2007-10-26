@@ -582,6 +582,7 @@ static const struct {
 	{"concurrent_transaction", 335544878},
 	{"not_valid_for_var", 335544879},
 	{"not_valid_for", 335544880},
+	{"need_difference", 335544881},
 	{"gfix_db_name", 335740929},
 	{"gfix_invalid_sw", 335740930},
 	{"gfix_incmp_sw", 335740932},
