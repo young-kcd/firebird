@@ -53,6 +53,7 @@
 #include "../jrd/sch_proto.h"
 #include "../jrd/thread_proto.h"
 #include "../jrd/why_proto.h"
+#include "../jrd/constants.h"
 #include "../common/classes/semaphore.h"
 #include "../common/classes/ClumpletWriter.h"
 #include "../common/config/config.h"
@@ -930,7 +931,7 @@ static void attach_database(rem_port* port,
 
 #ifdef TRUSTED_AUTH
 	// Do we need trusted authentication?
-	if (port->port_protocol >= PROTOCOL_VERSION11 && dpb_buffer.find(isc_dpb_trusted_auth))
+	if (dpb_buffer.find(isc_dpb_trusted_auth))
 	{
 		try 
 		{
@@ -941,24 +942,24 @@ static void attach_database(rem_port* port,
 			dpb_buffer.deleteClumplet();
 
 			// remove extra trusted_auth if present (security measure)
-			while (dpb_buffer.find(isc_spb_trusted_auth))
-			{
-				dpb_buffer.deleteClumplet();
-			}
+			dpb_buffer.deleteWithTag(isc_dpb_trusted_auth);
 
-			port->port_trusted_auth = FB_NEW(*getDefaultMemoryPool()) 
-				ServerAuth(file, l, dpb_buffer, attach_database2, operation);
-			AuthSspi* authSspi = port->port_trusted_auth->authSspi;
-
-			if (authSspi->accept(data) && authSspi->isActive())
+			if (port->port_protocol >= PROTOCOL_VERSION11)
 			{
-				send->p_operation = op_trusted_auth;
-				cstring& s = send->p_trau.p_trau_data;
-				s.cstr_allocated = 0;
-				s.cstr_length = data.getCount();
-				s.cstr_address = data.begin();
-				port->send(send);
-				return;
+				port->port_trusted_auth = FB_NEW(*getDefaultMemoryPool()) 
+					ServerAuth(file, l, dpb_buffer, attach_database2, operation);
+				AuthSspi* authSspi = port->port_trusted_auth->authSspi;
+
+				if (authSspi->accept(data) && authSspi->isActive())
+				{
+					send->p_operation = op_trusted_auth;
+					cstring& s = send->p_trau.p_trau_data;
+					s.cstr_allocated = 0;
+					s.cstr_length = data.getCount();
+					s.cstr_address = data.begin();
+					port->send(send);
+					return;
+				}
 			}
 		}
 		catch(const Firebird::status_exception& e)
@@ -4814,7 +4815,7 @@ static void attach_service(rem_port* port, P_ATCH* attach, PACKET* sendL)
 
 #ifdef TRUSTED_AUTH
 	// Do we can & need trusted authentication?
-	if (port->port_protocol >= PROTOCOL_VERSION11 && spb.find(isc_spb_trusted_auth))
+	if (spb.find(isc_spb_trusted_auth))
 	{
 		try 
 		{
@@ -4824,25 +4825,25 @@ static void attach_service(rem_port* port, P_ATCH* attach, PACKET* sendL)
 				spb.getBytes(), spb.getClumpLength());
 			spb.deleteClumplet();
 
-			// remove extra trusted_auth if present (security measure)
-			while (spb.find(isc_spb_trusted_auth))
-			{
-				spb.deleteClumplet();
-			}
+			// remove extra trusted tags if present (security measure)
+			spb.deleteWithTag(isc_spb_trusted_auth);
 
-			port->port_trusted_auth = FB_NEW(*getDefaultMemoryPool()) 
-				ServerAuth(service_name, service_length, spb, attach_service2, op_trusted_auth);
-			AuthSspi* authSspi = port->port_trusted_auth->authSspi;
-
-			if (authSspi->accept(data) && authSspi->isActive())
+			if (port->port_protocol >= PROTOCOL_VERSION11)
 			{
-				sendL->p_operation = op_trusted_auth;
-				cstring& s = sendL->p_trau.p_trau_data;
-				s.cstr_allocated = 0;
-				s.cstr_length = data.getCount();
-				s.cstr_address = data.begin();
-				port->send(sendL);
-				return;
+				port->port_trusted_auth = FB_NEW(*getDefaultMemoryPool()) 
+					ServerAuth(service_name, service_length, spb, attach_service2, op_trusted_auth);
+				AuthSspi* authSspi = port->port_trusted_auth->authSspi;
+
+				if (authSspi->accept(data) && authSspi->isActive())
+				{
+					sendL->p_operation = op_trusted_auth;
+					cstring& s = sendL->p_trau.p_trau_data;
+					s.cstr_allocated = 0;
+					s.cstr_length = data.getCount();
+					s.cstr_address = data.begin();
+					port->send(sendL);
+					return;
+				}
 			}
 		}
 		catch(const Firebird::status_exception& e)

@@ -353,5 +353,17 @@ void ClumpletWriter::deleteClumplet()
 	}
 }
 
+bool ClumpletWriter::deleteWithTag(UCHAR tag)
+{
+   bool rc = false;
+   while (find(tag))
+   {
+       rc = true;
+       deleteClumplet();
+   }
+
+   return rc;
+}
+
 } // namespace
 

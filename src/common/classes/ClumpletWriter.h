@@ -68,6 +68,10 @@ public:
     // Delete currently selected clumplet from buffer
 	void deleteClumplet();
 
+	// Delete all clumplets with given tag
+	// Returns true if any found
+	bool deleteWithTag(UCHAR tag);
+
 	virtual const UCHAR* getBuffer() const { return dynamic_buffer.begin(); }
 protected:
 	virtual const UCHAR* getBufferEnd() const { return dynamic_buffer.end(); }

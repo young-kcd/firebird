@@ -5999,10 +5999,7 @@ static bool init(ISC_STATUS* user_status,
 
 	// Do we can & need to try trusted auth
 
-	if (dpb.find(param.trusted_auth))
-	{
-		dpb.deleteClumplet();
-	}
+	dpb.deleteWithTag(param.trusted_auth);
 
 #ifdef TRUSTED_AUTH
 	AuthSspi authSspi;
