@@ -1,3 +1,25 @@
+2007-10-25 16:31  asfernandes
+
+	* firebird2/src/: dsql/dsql.cpp (1.202), dsql/utld.cpp (1.40),
+	dsql/utld_proto.h (1.17), jrd/DataTypeUtil.cpp (1.11),
+	jrd/DataTypeUtil.h (1.8), jrd/SysFunction.cpp (1.20):
+
+	Fixed CORE-1528 - Functions DATEDIFF, ABS(integer const) does not
+	work in dialect 1
+
+2007-10-25 06:01  robocop
+
+	* firebird2/builds/win32/msvc6/: Firebird2.dsw (1.42), config.dsp
+	(1.5), fbsvcmgr.dsp (1.1):
+
+	Add fbsvcmgr project to VC6.
+
+2007-10-25 05:59  robocop
+
+	* firebird2/src/jrd/gds.cpp (1.228):
+
+	Misc.
+
 2007-10-24 15:45  alexpeshkoff
 
 	* firebird2/src/jrd/why_proto.h (1.34):
