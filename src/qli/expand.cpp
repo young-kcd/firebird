@@ -2922,11 +2922,11 @@ static void resolve_really( qli_fld* variable, const qli_syntax* field_node)
 	const nam* fld_name = (NAM) field_node->syn_arg[--offset];
 
 	NAM rel_name = NULL;
-	NAM db_name = NULL;
+	//NAM db_name = NULL;
 	if (offset) {
 		rel_name = (NAM) field_node->syn_arg[--offset];
-		if (offset)
-			db_name = (NAM) field_node->syn_arg[--offset];
+		//if (offset)
+		//	db_name = (NAM) field_node->syn_arg[--offset];
 	}
 
     bool resolved = false;

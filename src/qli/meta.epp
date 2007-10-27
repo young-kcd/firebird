@@ -2095,10 +2095,9 @@ static void clone_fields( qli_rel* target, qli_rel* source)
  *
  **************************************/
 	FB_API_HANDLE req1, req2;
-	FB_API_HANDLE t_trans, s_trans;
 
 	req1 = req2 = 0;
-	s_trans = t_trans = gds_trans;
+	FB_API_HANDLE s_trans = gds_trans;
 	DB = DB1 = target->rel_database->dbb_handle;
 
 	if (target->rel_database != source->rel_database) {
