@@ -1960,7 +1960,7 @@ static void make_parameter_names(dsql_par* parameter, const dsql_nod* item)
 			// CVC: For this to be a thorough check, we need to recurse over all nodes.
 			// This means we should separate the code that sets aliases from
 			// the rest of the functionality here in make_parameter_names().
-			// Otherwise, we need here to test here for most of the other node types.
+			// Otherwise, we need to test here for most of the other node types.
 			// However, we need to be recursive only if we agree things like -gen_id()
 			// should be given the GEN_ID alias, too.
 			const dsql_nod* node = item->nod_arg[0];

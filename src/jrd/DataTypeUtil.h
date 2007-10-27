@@ -50,7 +50,7 @@ public:
 
 public:
 	virtual UCHAR maxBytesPerChar(UCHAR charSet) = 0;
-	virtual USHORT getDialect() = 0;
+	virtual USHORT getDialect() = 0;	// returns client dialect in DSQL and database dialect in JRD
 };
 
 
@@ -68,7 +68,7 @@ public:
 
 public:
 	virtual UCHAR maxBytesPerChar(UCHAR charSet);
-	virtual USHORT getDialect();	// returns client dialect in DSQL and database dialect in JRD
+	virtual USHORT getDialect();
 
 private:
 	thread_db* tdbb;
