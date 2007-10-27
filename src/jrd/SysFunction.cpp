@@ -39,6 +39,7 @@
 #include "../jrd/evl_proto.h"
 #include "../jrd/intl_proto.h"
 #include "../jrd/mov_proto.h"
+#include "../jrd/os/guid.h"
 #include <math.h>
 
 using namespace Firebird;
@@ -2214,7 +2215,11 @@ static dsc* evlRand(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_
 {
 	fb_assert(args->nod_count == 0);
 
-	impure->vlu_misc.vlu_double = (double) rand() / (double) RAND_MAX;
+	SINT64 n;
+	GenerateRandomBytes(&n, sizeof(n));
+	n &= 0x7FFFFFFFFFFFFFFFll;
+
+	impure->vlu_misc.vlu_double = (double) n / MAX_SINT64;
 	impure->vlu_desc.makeDouble(&impure->vlu_misc.vlu_double);
 
 	return &impure->vlu_desc;
