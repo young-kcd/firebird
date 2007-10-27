@@ -593,6 +593,7 @@ const
 	gds_concurrent_transaction           = 335544878;
 	gds_not_valid_for_var                = 335544879;
 	gds_not_valid_for                    = 335544880;
+	gds_need_difference                  = 335544881;
 	gds_gfix_db_name                     = 335740929;
 	gds_gfix_invalid_sw                  = 335740930;
 	gds_gfix_incmp_sw                    = 335740932;

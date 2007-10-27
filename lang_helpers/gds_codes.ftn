@@ -1172,6 +1172,8 @@ C --
       PARAMETER (GDS__not_valid_for_var                = 335544879)
       INTEGER*4 GDS__not_valid_for                   
       PARAMETER (GDS__not_valid_for                    = 335544880)
+      INTEGER*4 GDS__need_difference                 
+      PARAMETER (GDS__need_difference                  = 335544881)
       INTEGER*4 GDS__gfix_db_name                    
       PARAMETER (GDS__gfix_db_name                     = 335740929)
       INTEGER*4 GDS__gfix_invalid_sw                 
