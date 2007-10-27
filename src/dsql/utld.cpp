@@ -55,8 +55,8 @@ static SLONG get_string_info(const SCHAR**, SCHAR*, int);
 static void print_xsqlda(XSQLDA *);
 #endif
 #endif
-static void sqlvar_to_xsqlvar(SQLVAR *, XSQLVAR *);
-static void xsqlvar_to_sqlvar(XSQLVAR *, SQLVAR *);
+static void sqlvar_to_xsqlvar(const SQLVAR*, XSQLVAR*);
+static void xsqlvar_to_sqlvar(const XSQLVAR*, SQLVAR*);
 
 static inline void ch_stuff(BLOB_PTR*& p, const SCHAR value, bool& same_flag)
 {
@@ -987,7 +987,7 @@ static void print_xsqlda( XSQLDA * xsqlda)
     @param xsqlvar
 
  **/
-static void sqlvar_to_xsqlvar( SQLVAR * sqlvar, XSQLVAR * xsqlvar)
+static void sqlvar_to_xsqlvar(const SQLVAR* sqlvar, XSQLVAR* xsqlvar)
 {
 
 	xsqlvar->sqltype = sqlvar->sqltype;
@@ -997,21 +997,24 @@ static void sqlvar_to_xsqlvar( SQLVAR * sqlvar, XSQLVAR * xsqlvar)
 	xsqlvar->sqlsubtype = 0;
 	xsqlvar->sqlscale = 0;
 	xsqlvar->sqllen = sqlvar->sqllen;
-	if ((xsqlvar->sqltype & ~1) == SQL_LONG) {
+	switch (xsqlvar->sqltype & ~1)
+	{
+	case SQL_LONG:
 		xsqlvar->sqlscale = xsqlvar->sqllen >> 8;
 		xsqlvar->sqllen = sizeof(SLONG);
-	}
-	else if ((xsqlvar->sqltype & ~1) == SQL_SHORT) {
+		break;
+	case SQL_SHORT:
 		xsqlvar->sqlscale = xsqlvar->sqllen >> 8;
 		xsqlvar->sqllen = sizeof(SSHORT);
-	}
-	else if ((xsqlvar->sqltype & ~1) == SQL_INT64) {
+		break;
+	case SQL_INT64:
 		xsqlvar->sqlscale = xsqlvar->sqllen >> 8;
 		xsqlvar->sqllen = sizeof(SINT64);
-	}
-	else if ((xsqlvar->sqltype & ~1) == SQL_QUAD) {
+		break;
+	case SQL_QUAD:
 		xsqlvar->sqlscale = xsqlvar->sqllen >> 8;
 		xsqlvar->sqllen = sizeof(ISC_QUAD);
+		break;
 	}
 }
 
@@ -1027,7 +1030,7 @@ static void sqlvar_to_xsqlvar( SQLVAR * sqlvar, XSQLVAR * xsqlvar)
     @param sqlvar
 
  **/
-static void xsqlvar_to_sqlvar( XSQLVAR * xsqlvar, SQLVAR * sqlvar)
+static void xsqlvar_to_sqlvar(const XSQLVAR* xsqlvar, SQLVAR* sqlvar)
 {
 
 	sqlvar->sqltype = xsqlvar->sqltype;
@@ -1038,14 +1041,22 @@ static void xsqlvar_to_sqlvar( XSQLVAR * xsqlvar, SQLVAR * sqlvar)
 	memcpy(sqlvar->sqlname, xsqlvar->aliasname, sizeof(sqlvar->sqlname));
 
 	sqlvar->sqllen = xsqlvar->sqllen;
-	if ((sqlvar->sqltype & ~1) == SQL_LONG)
-		sqlvar->sqllen = sizeof(SLONG) | (xsqlvar->sqlscale << 8);
-	else if ((sqlvar->sqltype & ~1) == SQL_SHORT)
-		sqlvar->sqllen = sizeof(SSHORT) | (xsqlvar->sqlscale << 8);
-	else if ((sqlvar->sqltype & ~1) == SQL_INT64)
-		sqlvar->sqllen = sizeof(SINT64) | (xsqlvar->sqlscale << 8);
-	else if ((sqlvar->sqltype & ~1) == SQL_QUAD)
-		sqlvar->sqllen = sizeof(ISC_QUAD) | (xsqlvar->sqlscale << 8);
+	const USHORT scale = xsqlvar->sqlscale << 8;
+	switch (sqlvar->sqltype & ~1)
+	{
+	case SQL_LONG:
+		sqlvar->sqllen = sizeof(SLONG) | scale;
+		break;
+	case SQL_SHORT:
+		sqlvar->sqllen = sizeof(SSHORT) | scale;
+		break;
+	case SQL_INT64:
+		sqlvar->sqllen = sizeof(SINT64) | scale;
+		break;
+	case SQL_QUAD:
+		sqlvar->sqllen = sizeof(ISC_QUAD) | scale;
+		break;
+	}
 }
 
 
