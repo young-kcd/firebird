@@ -47,6 +47,7 @@
 #include "../common/classes/stack.h"
 #include "../common/classes/timestamp.h"
 #include "../common/classes/GenericMap.h"
+#include "../jrd/RandomGenerator.h"
 #include "../jrd/os/guid.h"
 #include "../jrd/sbm.h"
 
@@ -581,6 +582,7 @@ public:
 	Firebird::string att_remote_address;	// Protocol-specific addess of remote client
 	SLONG att_remote_pid;					// Process id of remote client
 	Firebird::PathName att_remote_process;	// Process name of remote client
+	RandomGenerator att_random_generator;	// Random bytes generator
 #ifndef SUPERSERVER
 	Lock*		att_temp_pg_lock;			// temporary pagespace ID lock
 	Firebird::GenericMap<Firebird::Pair<Firebird::Left<

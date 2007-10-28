@@ -38,7 +38,7 @@ JRD_ServerFiles=  blob_filter.cpp dpm.epp dyn.epp dyn_def.epp \
 		idx.cpp inf.cpp intl.cpp intl_builtin.cpp IntlManager.cpp IntlUtil.cpp \
 		inuse.cpp jrd.cpp lck.cpp log.cpp  \
 		mov.cpp nav.cpp opt.cpp Optimizer.cpp pag.cpp par.cpp \
-		ods.cpp plugin_manager.cpp pwd.cpp Relation.cpp rlck.cpp \
+		ods.cpp plugin_manager.cpp pwd.cpp RandomGenerator.cpp Relation.cpp rlck.cpp \
 		rpb_chain.cpp rse.cpp \
 		sdw.cpp shut.cpp sort.cpp sqz.cpp \
 		svc.cpp sym.cpp SysFunction.cpp TempSpace.cpp tpc.cpp tra.cpp validation.cpp vio.cpp \
