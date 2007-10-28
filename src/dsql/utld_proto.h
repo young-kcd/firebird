@@ -56,7 +56,7 @@ public:
 
 public:
 	virtual UCHAR maxBytesPerChar(UCHAR charSet);
-	virtual USHORT getDialect();
+	virtual USHORT getDialect() const;
 
 private:
 	dsql_req* request;
