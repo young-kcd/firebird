@@ -114,7 +114,6 @@ bool AuthSspi::checkAdminPrivilege(PCtxtHandle phContext) const
 	TOKEN_GROUPS *ptg = (TOKEN_GROUPS *)buffer.getBuffer(token_len);
 	bool ok = GetTokenInformation(spc.AccessToken,
 			TokenGroups, ptg, token_len, &token_len);
-	fFreeContextBuffer(spc.AccessToken);
 	if (! ok)
 	{
 		return false;
