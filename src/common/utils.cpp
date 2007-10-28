@@ -377,7 +377,7 @@ bool isGlobalKernelPrefix()
 			HMODULE hmodAdvApi = LoadLibrary("advapi32.dll");
 			
 			if (!hmodAdvApi) {
-				gds__log("GetModuleHandle failed for advapi32.dll. Error code: %lu", GetLastError());
+				gds__log("LoadLibrary failed for advapi32.dll. Error code: %lu", GetLastError());
 				return false;
 			}
 
