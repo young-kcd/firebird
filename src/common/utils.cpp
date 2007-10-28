@@ -374,10 +374,9 @@ bool isGlobalKernelPrefix()
 
 			HANDLE hProcess = GetCurrentProcess();
 
-			HMODULE hmodAdvApi = GetModuleHandleA("advapi32.dll");
+			HMODULE hmodAdvApi = LoadLibrary("advapi32.dll");
 			
 			if (!hmodAdvApi) {
-				// May happen if module is not linked to Advapi32.dll for some reason
 				gds__log("GetModuleHandle failed for advapi32.dll. Error code: %lu", GetLastError());
 				return false;
 			}
@@ -396,12 +395,14 @@ bool isGlobalKernelPrefix()
 			if (!pfnOpenProcessToken || !pfnLookupPrivilegeValue || !pfnPrivilegeCheck) {
 				// Should never happen, really
 				gds__log("Cannot access privilege management API");
+				FreeLibrary(hmodAdvApi);
 				return false;
 			}
 
 			HANDLE hToken;
 			if (pfnOpenProcessToken(hProcess, TOKEN_QUERY, &hToken) == 0) {
 				gds__log("OpenProcessToken failed. Error code: %lu", GetLastError());
+				FreeLibrary(hmodAdvApi);
 				return false;
 			}
 
@@ -413,6 +414,7 @@ bool isGlobalKernelPrefix()
 				// Failure here means we're running on old version of Windows 2000 or XP
 				// which always allow creating global handles
 				CloseHandle(hToken);
+				FreeLibrary(hmodAdvApi);
 				return true;
 			}
 
@@ -420,10 +422,12 @@ bool isGlobalKernelPrefix()
 			if (pfnPrivilegeCheck(hToken, &ps, &checkResult) == 0) {
 				gds__log("PrivilegeCheck failed. Error code: %lu", GetLastError());
 				CloseHandle(hToken);
+				FreeLibrary(hmodAdvApi);
 				return false;
 			}
 
 			CloseHandle(hToken);
+			FreeLibrary(hmodAdvApi);
 
 			return checkResult; 
 		}
