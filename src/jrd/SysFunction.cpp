@@ -2217,7 +2217,7 @@ static dsc* evlRand(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_
 
 	SINT64 n;
 	GenerateRandomBytes(&n, sizeof(n));
-	n &= 0x7FFFFFFFFFFFFFFFll;
+	n &= QUADCONST(0x7FFFFFFFFFFFFFFF);
 
 	impure->vlu_misc.vlu_double = (double) n / MAX_SINT64;
 	impure->vlu_desc.makeDouble(&impure->vlu_misc.vlu_double);
