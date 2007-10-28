@@ -4748,8 +4748,7 @@ static void add_other_params(rem_port* port,
  **************************************/
 	if (port->port_flags & PORT_dummy_pckt_set) 
 	{
-		if (dpb.find(par.dummy_packet_interval))
-			dpb.deleteClumplet();
+		dpb.deleteWithTag(par.dummy_packet_interval);
 		dpb.insertInt(par.dummy_packet_interval, port->port_dummy_packet_interval);
 	}
 
@@ -4758,9 +4757,7 @@ static void add_other_params(rem_port* port,
 	// guess about remote engine's version
 	if (port->port_protocol >= PROTOCOL_VERSION11)
 	{
-		if (dpb.find(par.process_id)) {
-			dpb.deleteClumplet();
-		}
+		dpb.deleteWithTag(par.process_id);
 		dpb.insertInt(par.process_id, getpid());
 
 		if (!dpb.find(par.process_name)) {
