@@ -3799,18 +3799,60 @@ bool get_global_field(BurpGlobals* tdgbl)
 					break;
 
 				case att_field_computed_blr:
-					X.RDB$COMPUTED_BLR.NULL = FALSE;
-					get_blr_blob (tdgbl, X.RDB$COMPUTED_BLR, false);
+					// if we are going against a V4.0 database,
+					// restore the global fields in 2 phases.
+
+					if (tdgbl->global_trans)
+					{
+						if (!gfield)
+							gfield = (GFLD)BURP_alloc_zero(sizeof(gfld));
+
+						get_blr_blob (tdgbl, gfield->gfld_computed_blr, true);
+						gfield->gfld_flags |= GFLD_computed_blr;
+					}
+					else
+					{
+						X.RDB$COMPUTED_BLR.NULL = FALSE;
+						get_blr_blob (tdgbl, X.RDB$COMPUTED_BLR, false);
+					}
 					break;
 
 				case att_field_computed_source:
-					X.RDB$COMPUTED_SOURCE.NULL = FALSE;
-					get_misc_blob (tdgbl, X.RDB$COMPUTED_SOURCE, 1, false);
+					// if we are going against a V4.0 database,
+					// restore the global fields in 2 phases.
+
+					if (tdgbl->global_trans)
+					{
+						if (!gfield)
+							gfield = (GFLD)BURP_alloc_zero(sizeof(gfld));
+
+						get_misc_blob (tdgbl, gfield->gfld_computed_source, 1, true);
+						gfield->gfld_flags |= GFLD_computed_source;
+					}
+					else
+					{
+						X.RDB$COMPUTED_SOURCE.NULL = FALSE;
+						get_misc_blob (tdgbl, X.RDB$COMPUTED_SOURCE, 1, false);
+					}
 					break;
 
 				case att_field_computed_source2:
-					X.RDB$COMPUTED_SOURCE.NULL = FALSE;
-					get_source_blob (tdgbl, X.RDB$COMPUTED_SOURCE, false);
+					// if we are going against a V4.0 database,
+					// restore the global fields in 2 phases.
+
+					if (tdgbl->global_trans)
+					{
+						if (!gfield)
+							gfield = (GFLD)BURP_alloc_zero(sizeof(gfld));
+
+						get_source_blob (tdgbl, gfield->gfld_computed_source2, true);
+						gfield->gfld_flags |= GFLD_computed_source2;
+					}
+					else
+					{
+						X.RDB$COMPUTED_SOURCE.NULL = FALSE;
+						get_source_blob (tdgbl, X.RDB$COMPUTED_SOURCE, false);
+					}
 					break;
 
 				case att_field_validation_blr:
@@ -4086,18 +4128,60 @@ bool get_global_field(BurpGlobals* tdgbl)
 					break;
 
 				case att_field_computed_blr:
-					X.RDB$COMPUTED_BLR.NULL = FALSE;
-					get_blr_blob (tdgbl, X.RDB$COMPUTED_BLR, false);
+					// if we are going against a V4.0 database,
+					// restore the global fields in 2 phases.
+
+					if (tdgbl->global_trans)
+					{
+						if (!gfield)
+							gfield = (GFLD)BURP_alloc_zero(sizeof(gfld));
+
+						get_blr_blob (tdgbl, gfield->gfld_computed_blr, true);
+						gfield->gfld_flags |= GFLD_computed_blr;
+					}
+					else
+					{
+						X.RDB$COMPUTED_BLR.NULL = FALSE;
+						get_blr_blob (tdgbl, X.RDB$COMPUTED_BLR, false);
+					}
 					break;
 
 				case att_field_computed_source:
-					X.RDB$COMPUTED_SOURCE.NULL = FALSE;
-					get_misc_blob (tdgbl, X.RDB$COMPUTED_SOURCE, 1, false);
+					// if we are going against a V4.0 database,
+					// restore the global fields in 2 phases.
+
+					if (tdgbl->global_trans)
+					{
+						if (!gfield)
+							gfield = (GFLD)BURP_alloc_zero(sizeof(gfld));
+
+						get_misc_blob (tdgbl, gfield->gfld_computed_source, 1, true);
+						gfield->gfld_flags |= GFLD_computed_source;
+					}
+					else
+					{
+						X.RDB$COMPUTED_SOURCE.NULL = FALSE;
+						get_misc_blob (tdgbl, X.RDB$COMPUTED_SOURCE, 1, false);
+					}
 					break;
 
 				case att_field_computed_source2:
-					X.RDB$COMPUTED_SOURCE.NULL = FALSE;
-					get_source_blob (tdgbl, X.RDB$COMPUTED_SOURCE, false);
+					// if we are going against a V4.0 database,
+					// restore the global fields in 2 phases.
+
+					if (tdgbl->global_trans)
+					{
+						if (!gfield)
+							gfield = (GFLD)BURP_alloc_zero(sizeof(gfld));
+
+						get_source_blob (tdgbl, gfield->gfld_computed_source2, true);
+						gfield->gfld_flags |= GFLD_computed_source2;
+					}
+					else
+					{
+						X.RDB$COMPUTED_SOURCE.NULL = FALSE;
+						get_source_blob (tdgbl, X.RDB$COMPUTED_SOURCE, false);
+					}
 					break;
 
 				case att_field_validation_blr:
@@ -7632,6 +7716,24 @@ void update_global_field(BurpGlobals* tdgbl)
 				{
 					X.RDB$VALIDATION_SOURCE.NULL = FALSE;
 					memcpy(&X.RDB$VALIDATION_SOURCE, &gfield->gfld_vs2, sizeof(ISC_QUAD));
+				}
+
+				if (gfield->gfld_flags & GFLD_computed_blr)
+				{
+					X.RDB$COMPUTED_BLR.NULL = FALSE;
+					memcpy(&X.RDB$COMPUTED_BLR, &gfield->gfld_computed_blr, sizeof(ISC_QUAD));
+				}
+
+				if (gfield->gfld_flags & GFLD_computed_source)
+				{
+					X.RDB$COMPUTED_SOURCE.NULL = FALSE;
+					memcpy(&X.RDB$COMPUTED_SOURCE, &gfield->gfld_computed_source, sizeof(ISC_QUAD));
+				}
+
+				if (gfield->gfld_flags & GFLD_computed_source2)
+				{
+					X.RDB$COMPUTED_SOURCE.NULL = FALSE;
+					memcpy(&X.RDB$COMPUTED_SOURCE, &gfield->gfld_computed_source2, sizeof(ISC_QUAD));
 				}
 
 			END_MODIFY;

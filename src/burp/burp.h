@@ -649,6 +649,9 @@ struct gfld {
 	ISC_QUAD	gfld_vb;
 	ISC_QUAD	gfld_vs;
 	ISC_QUAD	gfld_vs2;
+	ISC_QUAD	gfld_computed_blr;
+	ISC_QUAD	gfld_computed_source;
+	ISC_QUAD	gfld_computed_source2;
 	gfld*		gfld_next;
 	USHORT		gfld_flags;
 };
@@ -658,7 +661,10 @@ typedef gfld* GFLD;
 enum gfld_flags_vals {
 	GFLD_validation_blr		= 1,
 	GFLD_validation_source	= 2,
-	GFLD_validation_source2	= 4
+	GFLD_validation_source2	= 4,
+	GFLD_computed_blr		= 8,
+	GFLD_computed_source	= 16,
+	GFLD_computed_source2	= 32
 };
 
 // CVC: Could use MAXPATHLEN, but what about restoring in a different system?
