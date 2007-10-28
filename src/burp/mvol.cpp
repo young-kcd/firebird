@@ -1089,9 +1089,9 @@ static void put_numeric( SCHAR attribute, int value)
 	const UCHAR* p = (UCHAR *) &vax_value;
 
 	put(tdgbl, attribute);
-	put(tdgbl, sizeof(value));
+	put(tdgbl, sizeof(vax_value));
 
-	for (USHORT i = 0; i < sizeof(value); i++) {
+	for (USHORT i = 0; i < sizeof(vax_value); i++) {
 		put(tdgbl, *p++);
 	}
 }
