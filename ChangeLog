@@ -1,3 +1,45 @@
+2007-10-27 22:48  skidder
+
+	* firebird2/src/common/utils.cpp (1.33):
+
+	Restore the ability broken around FB 2.0.2 to run server under
+	Vista and (hopefully) 2000/XP restricted accounts as application.
+	This change may break the build against old Platform SDK, please
+	replace SE_CREATE_GLOBAL_NAME constant with the hardcoded string in
+	this case.
+
+2007-10-27 20:09  asfernandes
+
+	* firebird2/src/: dsql/make.cpp (1.144), jrd/DataTypeUtil.h (1.9),
+	msgs/facilities2.sql (1.12):
+
+	Misc
+
+2007-10-27 19:16  asfernandes
+
+	* firebird2/src/jrd/SysFunction.cpp (1.21):
+
+	CORE-1546 - Improve random number quality of builtin RAND
+
+2007-10-27 09:03  robocop
+
+	* firebird2/src/dsql/utld.cpp (1.41):
+
+	Misc.
+
+2007-10-27 08:11  robocop
+
+	* firebird2/lang_helpers/: gds_codes.ftn (1.59), gds_codes.pas
+	(1.59):
+
+	Forgotten files in the last messages db change.
+
+2007-10-27 08:08  robocop
+
+	* firebird2/src/qli/: expand.cpp (1.35), meta.epp (1.69):
+
+	Cleanup from Bill Oliver.
+
 2007-10-26 21:55  skidder
 
 	* firebird2/src/jrd/: isc_version.rc (1.3), version.rc (1.4):
