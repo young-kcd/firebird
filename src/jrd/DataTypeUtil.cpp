@@ -540,7 +540,7 @@ UCHAR DataTypeUtil::maxBytesPerChar(UCHAR charSet)
 	return INTL_charset_lookup(tdbb, charSet)->maxBytesPerChar();
 }
 
-USHORT DataTypeUtil::getDialect()
+USHORT DataTypeUtil::getDialect() const
 {
 	return (tdbb->tdbb_database->dbb_flags & DBB_DB_SQL_dialect_3) ? 3 : 1;
 }
