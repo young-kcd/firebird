@@ -121,6 +121,14 @@ static HANDLE xnet_connect_event = 0;
 static HANDLE xnet_response_event = 0;
 static DWORD current_process_id;
 
+// XNET endpoint is the IPC prefix name used to access the server.
+// It may have to be dynamically determined and has to be initialized 
+// before the protocol can be used. It is initialized at the following points:
+//  - XNET_reconnect (classic servant size)
+//  - connect_client (client side)
+//  - server_init (listener side)
+static char xnet_endpoint[BUFFER_TINY] = "";
+
 #endif // WIN_NT
 
 static bool xnet_initialized = false;
@@ -133,17 +141,23 @@ static void release_all();
 
 inline void make_obj_name(char* buffer, size_t size, const char* format)
 {
-	fb_utils::snprintf(buffer, size, format, Config::getIpcName());
+	fb_assert(strcmp(xnet_endpoint, "") != 0);
+
+	fb_utils::snprintf(buffer, size, format, xnet_endpoint);
 }
 
 inline void make_map_name(char* buffer, size_t size, const char* format, ULONG arg1, ULONG arg2)
 {
-	fb_utils::snprintf(buffer, size, format, Config::getIpcName(), arg1, arg2);
+	fb_assert(strcmp(xnet_endpoint, "") != 0);
+
+	fb_utils::snprintf(buffer, size, format, xnet_endpoint, arg1, arg2);
 }
 
 inline void make_event_name(char* buffer, size_t size, const char* format, ULONG arg1, ULONG arg2, ULONG arg3)
 {
-	fb_utils::snprintf(buffer, size, format, Config::getIpcName(), arg1, arg2, arg3);
+	fb_assert(strcmp(xnet_endpoint, "") != 0);
+
+	fb_utils::snprintf(buffer, size, format, xnet_endpoint, arg1, arg2, arg3);
 }
 
 static Firebird::Mutex	xnet_mutex;
@@ -421,6 +435,13 @@ rem_port* XNET_reconnect(ULONG client_pid, ISC_STATUS* status_vector)
 
 	rem_port* port = NULL;
 	TEXT name_buffer[BUFFER_TINY];
+
+	// Initialize server-side IPC endpoint to a value we know we have permissions to listen at
+	if (strcmp(xnet_endpoint, "") == 0) {
+		strncpy(xnet_endpoint, Config::getIpcName(), sizeof(xnet_endpoint));
+		xnet_endpoint[sizeof(xnet_endpoint)-1] = 0;
+		fb_utils::prefix_kernel_object_name(xnet_endpoint, sizeof(xnet_endpoint));
+	}
 
 	global_slots_per_map = 1;
 	global_pages_per_slot = XPS_MAX_PAGES_PER_CLI;
@@ -1079,9 +1100,23 @@ static rem_port* connect_client(PACKET* packet, ISC_STATUS* status_vector)
 	status_vector[2] = isc_arg_end;
 
 	XNET_LOCK();
+
+	// First, try to connect using default kernel namespace.
+	// This should work on Win9X, NT4 and on later OS when server is running
+	// under restricted account in the same session as the client
+	strncpy(xnet_endpoint, Config::getIpcName(), sizeof(xnet_endpoint));
+	xnet_endpoint[sizeof(xnet_endpoint)-1] = 0;
+
 	if (!connect_init()) {
-		XNET_UNLOCK();
-		return NULL;
+		// The client may not have permissions to create global objects,
+		// but still be able to connect to a local server that has such permissions.
+		// This is why we try to connect using Global\ namespace unconditionally
+		fb_utils::snprintf(xnet_endpoint, sizeof(xnet_endpoint), "Global\\%s", Config::getIpcName());
+
+		if (!connect_init()) {
+			XNET_UNLOCK();
+			return NULL;
+		}
 	}
 
 	// waiting for XNET connect lock to release
@@ -2226,6 +2261,13 @@ static bool server_init()
 		return true;
 
 	TEXT name_buffer[BUFFER_TINY];
+
+	// Initialize server-side IPC endpoint to a value we know we have permissions to listen at
+	if (strcmp(xnet_endpoint, "") == 0) {
+		strncpy(xnet_endpoint, Config::getIpcName(), sizeof(name_buffer));
+		xnet_endpoint[sizeof(xnet_endpoint)-1] = 0;
+		fb_utils::prefix_kernel_object_name(xnet_endpoint, sizeof(xnet_endpoint));
+	}
 
 	// init the limits
 #ifdef SUPERSERVER
