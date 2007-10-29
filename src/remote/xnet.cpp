@@ -439,7 +439,7 @@ rem_port* XNET_reconnect(ULONG client_pid, ISC_STATUS* status_vector)
 	// Initialize server-side IPC endpoint to a value we know we have permissions to listen at
 	if (strcmp(xnet_endpoint, "") == 0) {
 		strncpy(xnet_endpoint, Config::getIpcName(), sizeof(xnet_endpoint));
-		xnet_endpoint[sizeof(xnet_endpoint)-1] = 0;
+		xnet_endpoint[sizeof(xnet_endpoint) - 1] = 0;
 		fb_utils::prefix_kernel_object_name(xnet_endpoint, sizeof(xnet_endpoint));
 	}
 
@@ -1105,7 +1105,7 @@ static rem_port* connect_client(PACKET* packet, ISC_STATUS* status_vector)
 	// This should work on Win9X, NT4 and on later OS when server is running
 	// under restricted account in the same session as the client
 	strncpy(xnet_endpoint, Config::getIpcName(), sizeof(xnet_endpoint));
-	xnet_endpoint[sizeof(xnet_endpoint)-1] = 0;
+	xnet_endpoint[sizeof(xnet_endpoint) - 1] = 0;
 
 	if (!connect_init()) {
 		// The client may not have permissions to create global objects,
@@ -2265,7 +2265,7 @@ static bool server_init()
 	// Initialize server-side IPC endpoint to a value we know we have permissions to listen at
 	if (strcmp(xnet_endpoint, "") == 0) {
 		strncpy(xnet_endpoint, Config::getIpcName(), sizeof(name_buffer));
-		xnet_endpoint[sizeof(xnet_endpoint)-1] = 0;
+		xnet_endpoint[sizeof(xnet_endpoint) - 1] = 0;
 		fb_utils::prefix_kernel_object_name(xnet_endpoint, sizeof(xnet_endpoint));
 	}
 

@@ -328,10 +328,10 @@ void prefix_kernel_object_name(char* name, size_t bufsize)
 
 	// Backwards compatibility feature with Firebird 2.0.3 and earlier. 
 	// If the name already contains some prefix (specified by the user, as was 
-	// recommeded in firebird.conf) additional prefix is not added
+	// recommended in firebird.conf) additional prefix is not added
 	if (bGlobalPrefix && !strchr(name, '\\'))
 	{
-		const char *prefix = "Global\\";
+		const char* prefix = "Global\\";
 		const size_t len_prefix = strlen(prefix);
 		const size_t len_name = strlen(name) + 1;
 

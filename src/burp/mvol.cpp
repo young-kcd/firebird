@@ -1086,7 +1086,7 @@ static void put_numeric( SCHAR attribute, int value)
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 	const ULONG vax_value = gds__vax_integer(reinterpret_cast<const UCHAR*>(&value), sizeof(value));
-	const UCHAR* p = (UCHAR *) &vax_value;
+	const UCHAR* p = (UCHAR*) &vax_value;
 
 	put(tdgbl, attribute);
 	put(tdgbl, sizeof(vax_value));

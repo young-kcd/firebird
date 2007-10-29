@@ -3805,7 +3805,7 @@ bool get_global_field(BurpGlobals* tdgbl)
 					if (tdgbl->global_trans)
 					{
 						if (!gfield)
-							gfield = (GFLD)BURP_alloc_zero(sizeof(gfld));
+							gfield = (GFLD) BURP_alloc_zero(sizeof(gfld));
 
 						get_blr_blob (tdgbl, gfield->gfld_computed_blr, true);
 						gfield->gfld_flags |= GFLD_computed_blr;
@@ -3824,7 +3824,7 @@ bool get_global_field(BurpGlobals* tdgbl)
 					if (tdgbl->global_trans)
 					{
 						if (!gfield)
-							gfield = (GFLD)BURP_alloc_zero(sizeof(gfld));
+							gfield = (GFLD) BURP_alloc_zero(sizeof(gfld));
 
 						get_misc_blob (tdgbl, gfield->gfld_computed_source, 1, true);
 						gfield->gfld_flags |= GFLD_computed_source;
@@ -3843,7 +3843,7 @@ bool get_global_field(BurpGlobals* tdgbl)
 					if (tdgbl->global_trans)
 					{
 						if (!gfield)
-							gfield = (GFLD)BURP_alloc_zero(sizeof(gfld));
+							gfield = (GFLD) BURP_alloc_zero(sizeof(gfld));
 
 						get_source_blob (tdgbl, gfield->gfld_computed_source2, true);
 						gfield->gfld_flags |= GFLD_computed_source2;
@@ -4134,7 +4134,7 @@ bool get_global_field(BurpGlobals* tdgbl)
 					if (tdgbl->global_trans)
 					{
 						if (!gfield)
-							gfield = (GFLD)BURP_alloc_zero(sizeof(gfld));
+							gfield = (GFLD) BURP_alloc_zero(sizeof(gfld));
 
 						get_blr_blob (tdgbl, gfield->gfld_computed_blr, true);
 						gfield->gfld_flags |= GFLD_computed_blr;
@@ -4153,7 +4153,7 @@ bool get_global_field(BurpGlobals* tdgbl)
 					if (tdgbl->global_trans)
 					{
 						if (!gfield)
-							gfield = (GFLD)BURP_alloc_zero(sizeof(gfld));
+							gfield = (GFLD) BURP_alloc_zero(sizeof(gfld));
 
 						get_misc_blob (tdgbl, gfield->gfld_computed_source, 1, true);
 						gfield->gfld_flags |= GFLD_computed_source;
@@ -4172,7 +4172,7 @@ bool get_global_field(BurpGlobals* tdgbl)
 					if (tdgbl->global_trans)
 					{
 						if (!gfield)
-							gfield = (GFLD)BURP_alloc_zero(sizeof(gfld));
+							gfield = (GFLD) BURP_alloc_zero(sizeof(gfld));
 
 						get_source_blob (tdgbl, gfield->gfld_computed_source2, true);
 						gfield->gfld_flags |= GFLD_computed_source2;
