@@ -3542,6 +3542,7 @@ static void find_rsbs(RecordSource* rsb, StreamStack* stream_list, RsbStack* rsb
 			}
 		case rsb_indexed:
 		case rsb_sequential:
+		case rsb_navigate:
 		case rsb_ext_sequential:
 		case rsb_ext_indexed:
 		case rsb_virt_sequential:
