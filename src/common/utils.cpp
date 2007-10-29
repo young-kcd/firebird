@@ -345,6 +345,34 @@ void prefix_kernel_object_name(char* name, size_t bufsize)
 	}
 }
 
+
+// Simply handle guardian.
+class DynLibHandle
+{
+public:
+	explicit DynLibHandle(HMODULE mod)
+		: m_handle(mod)
+	{}
+	~DynLibHandle()
+	{
+		if (m_handle)
+			FreeLibrary(m_handle);
+	}
+	operator HMODULE() const
+	{
+		return m_handle;
+	}
+	/* The previous conversion is invoked with !object so this is enough.
+	bool operator!() const
+	{
+		return !m_handle;
+	}
+	*/
+private:
+	HMODULE m_handle;
+};
+
+
 // hvlad: two functions below got from 
 // http://msdn2.microsoft.com/en-us/library/aa380797.aspx
 // and slightly adapted for our coding style
@@ -361,83 +389,78 @@ bool isGlobalKernelPrefix()
 	// for engine objects if we can. This can be prevented by either lack of OS support 
 	// for the feature (Win9X) or lack of privileges (Vista, Windows 2000/XP restricted accounts)
 
-	DWORD dwVersion = GetVersion();
+#if (defined(_MSC_VER) && (_MSC_VER <= 1200)) // || defined(MINGW)
+	const char* SE_CREATE_GLOBAL_NAME = "SeCreateGlobalPrivilege";
+#endif
+
+	const DWORD dwVersion = GetVersion();
 
 	// Is Windows NT running?
 	if (!(dwVersion & 0x80000000)) 
 	{
+		if (LOBYTE(LOWORD(dwVersion)) <= 4) // This is Windows NT 4.0 or earlier.
+			return validateProductSuite("Terminal Server");
+
 		// Is it Windows 2000 or greater? It is possible to use Global\ prefix on any
 		// version of Windows from Windows 2000 and up
-		if (LOBYTE(LOWORD(dwVersion)) > 4) 
-		{
-			// Check if we have enough privileges to create global handles.
-			// If not fall back to creating local ones.
-			// The API for that is the NT thing, so we have to get addresses of the 
-			// functions dynamically to avoid troubles on Windows 9X platforms
+		// Check if we have enough privileges to create global handles.
+		// If not fall back to creating local ones.
+		// The API for that is the NT thing, so we have to get addresses of the 
+		// functions dynamically to avoid troubles on Windows 9X platforms
 
-			HANDLE hProcess = GetCurrentProcess();
+		HANDLE hProcess = GetCurrentProcess();
 
-			HMODULE hmodAdvApi = LoadLibrary("advapi32.dll");
-			
-			if (!hmodAdvApi) {
-				gds__log("LoadLibrary failed for advapi32.dll. Error code: %lu", GetLastError());
-				return false;
-			}
+		DynLibHandle hmodAdvApi(LoadLibrary("advapi32.dll"));
+		
+		if (!hmodAdvApi) {
+			gds__log("LoadLibrary failed for advapi32.dll. Error code: %lu", GetLastError());
+			return false;
+		}
+		
+		typedef BOOL (WINAPI *PFnOpenProcessToken) (HANDLE, DWORD, PHANDLE);
+		typedef BOOL (WINAPI *PFnLookupPrivilegeValue) (LPCSTR, LPCSTR, PLUID);
+		typedef BOOL (WINAPI *PFnPrivilegeCheck) (HANDLE, PPRIVILEGE_SET, LPBOOL);
 
-			typedef BOOL (WINAPI *PFnOpenProcessToken) (HANDLE, DWORD, PHANDLE);
-			typedef BOOL (WINAPI *PFnLookupPrivilegeValue) (LPCSTR, LPCSTR, PLUID);
-			typedef BOOL (WINAPI *PFnPrivilegeCheck) (HANDLE, PPRIVILEGE_SET, LPBOOL);
+		PFnOpenProcessToken pfnOpenProcessToken = 
+			(PFnOpenProcessToken) GetProcAddress(hmodAdvApi, "OpenProcessToken");
+		PFnLookupPrivilegeValue pfnLookupPrivilegeValue = 
+			(PFnLookupPrivilegeValue) GetProcAddress(hmodAdvApi, "LookupPrivilegeValueA");
+		PFnPrivilegeCheck pfnPrivilegeCheck = 
+			(PFnPrivilegeCheck) GetProcAddress(hmodAdvApi, "PrivilegeCheck");
 
-			PFnOpenProcessToken pfnOpenProcessToken = 
-				(PFnOpenProcessToken) GetProcAddress(hmodAdvApi, "OpenProcessToken");
-			PFnLookupPrivilegeValue pfnLookupPrivilegeValue = 
-				(PFnLookupPrivilegeValue) GetProcAddress(hmodAdvApi, "LookupPrivilegeValueA");
-			PFnPrivilegeCheck pfnPrivilegeCheck = 
-				(PFnPrivilegeCheck) GetProcAddress(hmodAdvApi, "PrivilegeCheck");
+		if (!pfnOpenProcessToken || !pfnLookupPrivilegeValue || !pfnPrivilegeCheck) {
+			// Should never happen, really
+			gds__log("Cannot access privilege management API");
+			return false;
+		}
 
-			if (!pfnOpenProcessToken || !pfnLookupPrivilegeValue || !pfnPrivilegeCheck) {
-				// Should never happen, really
-				gds__log("Cannot access privilege management API");
-				FreeLibrary(hmodAdvApi);
-				return false;
-			}
+		HANDLE hToken;
+		if (pfnOpenProcessToken(hProcess, TOKEN_QUERY, &hToken) == 0) {
+			gds__log("OpenProcessToken failed. Error code: %lu", GetLastError());
+			return false;
+		}
 
-			HANDLE hToken;
-			if (pfnOpenProcessToken(hProcess, TOKEN_QUERY, &hToken) == 0) {
-				gds__log("OpenProcessToken failed. Error code: %lu", GetLastError());
-				FreeLibrary(hmodAdvApi);
-				return false;
-			}
-
-			PRIVILEGE_SET ps;
-			memset(&ps, 0, sizeof(ps));
-			ps.Control = PRIVILEGE_SET_ALL_NECESSARY;
-			ps.PrivilegeCount = 1;
-			if (pfnLookupPrivilegeValue(NULL, SE_CREATE_GLOBAL_NAME, &ps.Privilege[0].Luid) == 0) {
-				// Failure here means we're running on old version of Windows 2000 or XP
-				// which always allow creating global handles
-				CloseHandle(hToken);
-				FreeLibrary(hmodAdvApi);
-				return true;
-			}
-
-			BOOL checkResult;
-			if (pfnPrivilegeCheck(hToken, &ps, &checkResult) == 0) {
-				gds__log("PrivilegeCheck failed. Error code: %lu", GetLastError());
-				CloseHandle(hToken);
-				FreeLibrary(hmodAdvApi);
-				return false;
-			}
-
+		PRIVILEGE_SET ps;
+		memset(&ps, 0, sizeof(ps));
+		ps.Control = PRIVILEGE_SET_ALL_NECESSARY;
+		ps.PrivilegeCount = 1;
+		if (pfnLookupPrivilegeValue(NULL, SE_CREATE_GLOBAL_NAME, &ps.Privilege[0].Luid) == 0) {
+			// Failure here means we're running on old version of Windows 2000 or XP
+			// which always allow creating global handles
 			CloseHandle(hToken);
-			FreeLibrary(hmodAdvApi);
+			return true;
+		}
 
-			return checkResult; 
+		BOOL checkResult;
+		if (pfnPrivilegeCheck(hToken, &ps, &checkResult) == 0) {
+			gds__log("PrivilegeCheck failed. Error code: %lu", GetLastError());
+			CloseHandle(hToken);
+			return false;
 		}
-		else  // This is Windows NT 4.0 or earlier.
-		{
-			return validateProductSuite("Terminal Server");
-		}
+
+		CloseHandle(hToken);
+
+		return checkResult; 
 	}
 
 	return false;
