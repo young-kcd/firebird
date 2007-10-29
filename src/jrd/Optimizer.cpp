@@ -133,7 +133,9 @@ bool OPT_computable(CompilerScratch* csb, jrd_nod* node, SSHORT stream,
 
 		n = (USHORT)(IPTR) node->nod_arg[e_fld_stream];
 		if (allowOnlyCurrentStream) {
-			if (n != stream) {
+			if (n != stream &&
+				!(csb->csb_rpt[n].csb_flags & csb_sub_stream))
+			{
 				return false;
 			}
 		}
@@ -149,7 +151,9 @@ bool OPT_computable(CompilerScratch* csb, jrd_nod* node, SSHORT stream,
 
 		n = (USHORT)(IPTR) node->nod_arg[0];
 		if (allowOnlyCurrentStream) {
-			if (n != stream) {
+			if (n != stream &&
+				!(csb->csb_rpt[n].csb_flags & csb_sub_stream))
+			{
 				return false;
 			}
 		}
@@ -207,7 +211,7 @@ bool OPT_computable(CompilerScratch* csb, jrd_nod* node, SSHORT stream,
 	for (ptr = rse->rse_relation, end = ptr + rse->rse_count; ptr < end; ptr++) {
 		if ((*ptr)->nod_type != nod_rse) {
 			n = (USHORT)(IPTR) (*ptr)->nod_arg[STREAM_INDEX((*ptr))];
-			csb->csb_rpt[n].csb_flags |= csb_active;
+			csb->csb_rpt[n].csb_flags |= (csb_active | csb_sub_stream);
 		}
 	}
 
@@ -241,7 +245,7 @@ bool OPT_computable(CompilerScratch* csb, jrd_nod* node, SSHORT stream,
 		if ((*ptr)->nod_type != nod_rse)
 		{
 			n = (USHORT)(IPTR) (*ptr)->nod_arg[STREAM_INDEX((*ptr))];
-			csb->csb_rpt[n].csb_flags &= ~csb_active;
+			csb->csb_rpt[n].csb_flags &= ~(csb_active | csb_sub_stream);
 		}
 	}
 
