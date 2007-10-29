@@ -1588,7 +1588,7 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC * de
 	case nod_dbkey:
 		desc->dsc_dtype = dtype_text;
 		desc->dsc_ttype() = ttype_binary;
-		desc->dsc_length = 8;
+		desc->dsc_length = sizeof(ISC_QUAD);
 		desc->dsc_scale = 0;
 		desc->dsc_flags = 0;
 		return;
@@ -1596,7 +1596,7 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC * de
 	case nod_rec_version:
 		desc->dsc_dtype = dtype_text;
 		desc->dsc_ttype() = ttype_binary;
-		desc->dsc_length = 4;
+		desc->dsc_length = sizeof(SLONG);
 		desc->dsc_scale = 0;
 		desc->dsc_flags = 0;
 		return;
@@ -5856,15 +5856,15 @@ static void process_map(thread_db* tdbb, CompilerScratch* csb, jrd_nod* map,
 		CMP_get_desc(tdbb, csb, assignment->nod_arg[e_asgn_from], &desc2);
 		const USHORT min = MIN(desc->dsc_dtype, desc2.dsc_dtype);
 		const USHORT max = MAX(desc->dsc_dtype, desc2.dsc_dtype);
-		if (max == dtype_blob) {
-			desc->dsc_dtype = dtype_quad;
-			desc->dsc_length = 8;
+		if (!min) {			// eg: dtype_unknown
+			*desc = desc2;
+		}
+		else if (max == dtype_blob) {
+			desc->dsc_dtype = dtype_blob;
+			desc->dsc_length = sizeof(ISC_QUAD);
 			desc->dsc_scale = 0;
 			desc->dsc_sub_type = 0;
 			desc->dsc_flags = 0;
-		}
-		else if (!min) {			// eg: dtype_unknown
-			*desc = desc2;
 		}
 		else if (min <= dtype_any_text) {	// either field a text field?
 			const USHORT len1 = DSC_string_length(desc);
