@@ -38,7 +38,7 @@ void RandomGenerator::getBytes(void* p, size_t size)
 {
 	while (size > 0)
 	{
-		size_t size2 = MIN(size, BUFFER_SIZE);
+		const size_t size2 = MIN(size, BUFFER_SIZE);
 
 		if (bufferPos + size2 > BUFFER_SIZE)
 		{
