@@ -44,8 +44,8 @@ void RandomGenerator::getBytes(void* p, size_t size)
 		{
 			if (bufferPos < BUFFER_SIZE)
 				memmove(buffer, buffer + bufferPos, BUFFER_SIZE - bufferPos);
-			bufferPos = BUFFER_SIZE - bufferPos;
-			GenerateRandomBytes(buffer, BUFFER_SIZE - bufferPos);
+			GenerateRandomBytes(buffer + (BUFFER_SIZE - bufferPos), bufferPos);
+			bufferPos = 0;
 		}
 
 		memcpy(p, buffer + bufferPos, size2);
