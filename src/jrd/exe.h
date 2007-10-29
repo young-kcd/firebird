@@ -862,8 +862,7 @@ const int csb_trigger		= 8;		// NEW or OLD context in trigger
 const int csb_no_dbkey		= 16;		// stream doesn't have a dbkey
 const int csb_store			= 32;		// we are processing a store statement
 const int csb_modify		= 64;		// we are processing a modify
-// Obsolete: was used for PC_ENGINE
-//const int csb_compute		= 128;		// compute cardinality for this stream
+const int csb_sub_stream	= 128;		// a sub-stream of the RSE being processed
 const int csb_erase			= 256;		// we are processing an erase
 const int csb_unmatched		= 512;		// stream has conjuncts unmatched by any index
 const int csb_update		= 1024;		// erase or modify for relation
