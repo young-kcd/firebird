@@ -320,8 +320,8 @@ static rem_port*		inet_try_connect(	PACKET*,
 									Firebird::PathName&,
 									const TEXT*,
 									ISC_STATUS*,
-									const SCHAR*,
-									SSHORT);
+									const UCHAR*,
+									USHORT);
 static bool_t	inet_write(XDR *, int);
 static void		inet_zero(sockaddr_in*, int);
 #if !(defined WIN_NT)
@@ -435,8 +435,8 @@ rem_port* INET_analyze(Firebird::PathName& file_name,
 					const TEXT*	node_name,
 					const TEXT*	user_string,
 					bool	uv_flag,
-					const SCHAR*	dpb,
-					SSHORT	dpb_length)
+					const UCHAR*	dpb,
+					USHORT	dpb_length)
 {
 /**************************************
  *
@@ -626,7 +626,7 @@ rem_port* INET_analyze(Firebird::PathName& file_name,
 rem_port* INET_connect(const TEXT* name,
 							 PACKET* packet,
 							 ISC_STATUS* status_vector,
-							 USHORT flag, const SCHAR* dpb, SSHORT dpb_length)
+							 USHORT flag, const UCHAR* dpb, USHORT dpb_length)
 {
 /**************************************
  *
@@ -657,8 +657,7 @@ rem_port* INET_connect(const TEXT* name,
 
 	rem_port* port = alloc_port(0);
 	port->port_status_vector = status_vector;
-	REMOTE_get_timeout_params(port, reinterpret_cast<const UCHAR*>(dpb),
-							  dpb_length);
+	REMOTE_get_timeout_params(port, dpb, dpb_length);
 	status_vector[0] = isc_arg_gds;
 	status_vector[1] = 0;
 	status_vector[2] = isc_arg_end;
@@ -3266,8 +3265,8 @@ static rem_port* inet_try_connect(
 							 Firebird::PathName& file_name,
 							 const TEXT* node_name, 
 							 ISC_STATUS* status_vector,
-							 const SCHAR* dpb, 
-							 SSHORT dpb_length)
+							 const UCHAR* dpb,
+							 USHORT dpb_length)
 {
 /**************************************
  *

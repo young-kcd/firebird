@@ -138,9 +138,9 @@ static RVNT add_event(rem_port*);
 static void add_other_params(rem_port*, Firebird::ClumpletWriter&, const ParametersSet&);
 static void add_working_directory(Firebird::ClumpletWriter&, const Firebird::PathName&);
 static rem_port* analyze(Firebird::PathName&, ISC_STATUS*, const TEXT*,
-					bool, const SCHAR*, SSHORT, Firebird::PathName&);
+					bool, const UCHAR*, USHORT, Firebird::PathName&);
 static rem_port* analyze_service(Firebird::PathName&, ISC_STATUS*, const TEXT*, 
-					bool, const SCHAR*, SSHORT);
+					bool, const UCHAR*, USHORT);
 static bool batch_gds_receive(trdb *, rem_port*, struct rmtque *,
 								 ISC_STATUS *, USHORT);
 static bool batch_dsql_fetch(trdb *, rem_port*, struct rmtque *,
@@ -345,7 +345,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 		Firebird::PathName expanded_name(expanded_filename);
 		Firebird::PathName node_name;
 		rem_port* port = analyze(expanded_name, user_status, us, user_verification,
-					   reinterpret_cast<const SCHAR*>(newDpb.getBuffer()), 
+					   newDpb.getBuffer(),
 					   newDpb.getBufferLength(), node_name);
 		if (!port)
 		{
@@ -906,8 +906,9 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 
 		Firebird::PathName expanded_name(expanded_filename);
 		Firebird::PathName node_name;
+		const UCHAR* dpb2 = reinterpret_cast<const UCHAR*>(dpb);
 		rem_port* port = analyze(expanded_name, user_status, us,
-					   user_verification, dpb, dpb_length, node_name);
+					   user_verification, dpb2, dpb_length, node_name);
 		if (!port) {
 			return error(user_status);
 		}
@@ -4051,8 +4052,9 @@ ISC_STATUS GDS_SERVICE_ATTACH(ISC_STATUS* user_status,
 		const bool user_verification = get_new_dpb(newSpb, user_string, spbParam);
 		const TEXT* us = (user_string.hasData()) ? user_string.c_str() : 0;
 
+		const UCHAR* spb2 = reinterpret_cast<const UCHAR*>(spb);
 		rem_port* port = analyze_service(expanded_name, user_status, us,
-						 user_verification, spb, spb_length);
+						 user_verification, spb2, spb_length);
 		if (!port) {
 			return error(user_status);
 		}
@@ -4801,8 +4803,8 @@ static rem_port* analyze(Firebird::PathName&	file_name,
 					ISC_STATUS*					status_vector,
 					const TEXT*					user_string,
 					bool						uv_flag,
-					const SCHAR*				dpb,
-					SSHORT						dpb_length,
+					const UCHAR*				dpb,
+					USHORT						dpb_length,
 					Firebird::PathName&			node_name)
 {
 /**************************************
@@ -4961,8 +4963,8 @@ static rem_port* analyze_service(Firebird::PathName& service_name,
 							ISC_STATUS* status_vector,
 							const TEXT* user_string,
 							bool uv_flag,
-							const SCHAR* dpb,
-							SSHORT dpb_length)
+							const UCHAR* dpb,
+							USHORT dpb_length)
 {
 /**************************************
  *
