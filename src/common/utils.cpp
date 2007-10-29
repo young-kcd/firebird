@@ -64,9 +64,10 @@ char* copy_terminate(char* dest, const char* src, size_t bufsize)
  **************************************/
 	if (!bufsize) // Was it a joke?
 		return dest;
-
+		
+	--bufsize;
 	strncpy(dest, src, bufsize);
-	dest[bufsize - 1] = 0;
+	dest[bufsize] = 0;
 	return dest;
 }
 
