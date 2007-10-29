@@ -616,6 +616,7 @@ int common_main(int						argc,
 
 	if (ret == FINI_ERROR) {
 		ALICE_print_status(tdgbl->status);
+		ALICE_exit(FINI_ERROR, tdgbl);
 	}
 
 	ALICE_exit(FINI_OK, tdgbl);
