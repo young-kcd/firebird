@@ -419,6 +419,10 @@ SOURCE=..\..\..\src\jrd\pwd.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\src\jrd\RandomGenerator.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\src\jrd\RecordBuffer.cpp
 # End Source File
 # Begin Source File
@@ -1178,6 +1182,10 @@ SOURCE=..\..\..\src\jrd\quad_proto.h
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\que.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\RandomGenerator.h
 # End Source File
 # Begin Source File
 
