@@ -434,12 +434,10 @@ rem_port* XNET_reconnect(ULONG client_pid, ISC_STATUS* status_vector)
  **************************************/
 
 	rem_port* port = NULL;
-	TEXT name_buffer[BUFFER_TINY];
 
 	// Initialize server-side IPC endpoint to a value we know we have permissions to listen at
 	if (strcmp(xnet_endpoint, "") == 0) {
-		strncpy(xnet_endpoint, Config::getIpcName(), sizeof(xnet_endpoint));
-		xnet_endpoint[sizeof(xnet_endpoint) - 1] = 0;
+		fb_utils::copy_terminate(xnet_endpoint, Config::getIpcName(), sizeof(xnet_endpoint));
 		fb_utils::prefix_kernel_object_name(xnet_endpoint, sizeof(xnet_endpoint));
 	}
 
@@ -452,6 +450,7 @@ rem_port* XNET_reconnect(ULONG client_pid, ISC_STATUS* status_vector)
 
 	try {
 
+		TEXT name_buffer[BUFFER_TINY];
 		make_obj_name(name_buffer, sizeof(name_buffer), XNET_RESPONSE_EVENT);
 		xnet_response_event = OpenEvent(EVENT_ALL_ACCESS, FALSE, name_buffer);
 		if (!xnet_response_event) {
@@ -1104,8 +1103,7 @@ static rem_port* connect_client(PACKET* packet, ISC_STATUS* status_vector)
 	// First, try to connect using default kernel namespace.
 	// This should work on Win9X, NT4 and on later OS when server is running
 	// under restricted account in the same session as the client
-	strncpy(xnet_endpoint, Config::getIpcName(), sizeof(xnet_endpoint));
-	xnet_endpoint[sizeof(xnet_endpoint) - 1] = 0;
+	fb_utils::copy_terminate(xnet_endpoint, Config::getIpcName(), sizeof(xnet_endpoint));
 
 	if (!connect_init()) {
 		// The client may not have permissions to create global objects,
@@ -2264,8 +2262,7 @@ static bool server_init()
 
 	// Initialize server-side IPC endpoint to a value we know we have permissions to listen at
 	if (strcmp(xnet_endpoint, "") == 0) {
-		strncpy(xnet_endpoint, Config::getIpcName(), sizeof(name_buffer));
-		xnet_endpoint[sizeof(xnet_endpoint) - 1] = 0;
+		fb_utils::copy_terminate(xnet_endpoint, Config::getIpcName(), sizeof(name_buffer));
 		fb_utils::prefix_kernel_object_name(xnet_endpoint, sizeof(xnet_endpoint));
 	}
 
