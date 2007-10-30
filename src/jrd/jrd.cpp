@@ -5023,11 +5023,16 @@ static ISC_STATUS check_transaction(thread_db* tdbb, jrd_tra* transaction, ISC_S
 		transaction->tra_flags &= ~TRA_cancel_request;
 		tdbb->tdbb_flags |= TDBB_sys_error;
 
-		ISC_STATUS* ptr = tdbb->tdbb_status_vector = user_status;
+		if (user_status)
+		{
+			tdbb->tdbb_status_vector = user_status;
+		}
+		ISC_STATUS* ptr = tdbb->tdbb_status_vector;
+		fb_assert(ptr);
 		*ptr++ = isc_arg_gds;
 		*ptr++ = isc_cancelled;
 		*ptr++ = isc_arg_end;
-		return error(user_status);
+		return user_status ? error(user_status) : tdbb->tdbb_status_vector[1];
 	}
 
 	return FB_SUCCESS;
@@ -5239,9 +5244,10 @@ static jrd_tra* find_transaction(thread_db* tdbb, jrd_tra* transaction, ISC_STAT
 	for (; transaction; transaction = transaction->tra_sibling)
 		if (transaction->tra_attachment == tdbb->tdbb_attachment) {
 
-			ISC_STATUS_ARRAY temp_status;
-			if (check_transaction(tdbb, transaction, temp_status))
+			if (check_transaction(tdbb, transaction, 0))
+			{
 				ERR_punt();
+			}
 
 			tdbb->tdbb_transaction = transaction;
 			return transaction;
