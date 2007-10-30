@@ -1,3 +1,15 @@
+2007-10-29 18:55  dimitr
+
+	* firebird2/src/jrd/opt.cpp (1.261.2.12):
+
+	Fixed CORE-1533.
+
+2007-10-29 18:53  dimitr
+
+	* firebird2/src/jrd/: Optimizer.cpp (1.56.4.5), exe.h (1.82.2.3):
+
+	Fixed CORE-1549.
+
 2007-10-24 17:36  paulbeach
 
 	* firebird2/builds/install/arch-specific/solaris/CS/postinstall.in
