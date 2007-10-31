@@ -3656,7 +3656,7 @@ void MET_scan_relation( thread_db* tdbb, jrd_rel* relation)
 		relation->rel_current_fmt = REL.RDB$FORMAT;
 		vec<jrd_fld*>* vector = relation->rel_fields =
 			vec<jrd_fld*>::newVector(*dbb->dbb_permanent, relation->rel_fields,
-						   REL.RDB$FIELD_ID);
+						   REL.RDB$FIELD_ID + 1);
 		if (!REL.RDB$SECURITY_CLASS.NULL) {
 			relation->rel_security_name = REL.RDB$SECURITY_CLASS;
 		}
