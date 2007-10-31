@@ -1,3 +1,9 @@
+2007-10-30 15:50  alexpeshkoff
+
+	* firebird2/src/jrd/jrd.cpp (1.350):
+
+	Fixed CORE-1551: AV when all statements are cancelled
+
 2007-10-29 18:56  dimitr
 
 	* firebird2/src/jrd/: Optimizer.cpp (1.77), exe.h (1.104):
