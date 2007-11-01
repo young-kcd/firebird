@@ -3433,9 +3433,29 @@ static jrd_nod* pass1(thread_db* tdbb,
 			// Are we using a collation?
 			if (TTYPE_TO_COLLATION(ttype) != 0)
 			{
-				CMP_post_resource(&csb->csb_resources,
-					INTL_texttype_lookup(tdbb, ttype),
-					Resource::rsc_collation, ttype);
+				Jrd::Collation* collation = NULL;
+				ISC_STATUS* save_status = tdbb->tdbb_status_vector;
+
+				try
+				{
+					ISC_STATUS_ARRAY local_status;
+					tdbb->tdbb_status_vector = local_status;
+
+					collation = INTL_texttype_lookup(tdbb, ttype);
+				}
+				catch (Firebird::Exception&)
+				{
+					// ASF: Swallow the exception if we fail to load the collation here.
+					// This allows we to backup databases when the collation isn't available.
+				}
+
+				tdbb->tdbb_status_vector = save_status;
+
+				if (collation)
+				{
+					CMP_post_resource(&csb->csb_resources, collation,
+						Resource::rsc_collation, ttype);
+				}
 			}
 
 			// if this is a modify or store, check REFERENCES access to any foreign keys
