@@ -2680,6 +2680,7 @@ static void open_procedure(thread_db* tdbb, RecordSource* rsb, irsb_procedure* i
 	proc_request->req_flags &= ~req_proc_fetch;
 
 	try {
+		proc_request->req_timestamp = request->req_timestamp;
 		EXE_start(tdbb, proc_request, request->req_transaction);
 		if (iml) {
 			EXE_send(tdbb, proc_request, 0, iml, im);
