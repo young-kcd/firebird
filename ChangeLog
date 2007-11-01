@@ -1,3 +1,18 @@
+2007-10-31 14:59  alexpeshkoff
+
+	* firebird2/src/jrd/met.epp (1.226):
+
+	Rolled back latest commit - it breaks gdef's logic, when field_id
+	starts with 1, not 0
+
+2007-10-31 13:00  dimitr
+
+	* firebird2/src/jrd/vio.cpp (1.195):
+
+	Fixed the server crash that appeared after a recent restore.epp
+	commit by Nickolay.  Now a domain can be altered while not being
+	linked to a particilar relation yet.
+
 2007-10-30 15:50  alexpeshkoff
 
 	* firebird2/src/jrd/jrd.cpp (1.350):
