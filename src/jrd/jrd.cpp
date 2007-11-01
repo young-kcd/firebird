@@ -2866,14 +2866,15 @@ ISC_STATUS GDS_GET_SLICE(ISC_STATUS* user_status,
 			MOVE_CLEAR(slice, slice_length);
 			*return_length = 0;
 		}
-		else
+		else {
 			*return_length = BLB_get_slice(tdbb,
 									   transaction,
 									   reinterpret_cast<bid*>(array_id),
 									   sdl,
 									   param_length,
-									   reinterpret_cast<const SLONG*>(param),
+									   param,
 									   slice_length, slice);
+		}
 	}
 	catch (const Firebird::Exception& ex)
 	{

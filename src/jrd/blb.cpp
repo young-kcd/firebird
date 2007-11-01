@@ -795,7 +795,7 @@ SLONG BLB_get_slice(thread_db* tdbb,
 					const bid* blob_id,
 					const UCHAR* sdl,
 					USHORT param_length,
-					const SLONG* param, SLONG slice_length, UCHAR* slice_addr)
+					const UCHAR* param, SLONG slice_length, UCHAR* slice_addr)
 {
 /**************************************
  *
