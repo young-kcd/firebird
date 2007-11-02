@@ -562,7 +562,7 @@ void ERR_punt(void)
  		if (Config::getBugcheckAbort())
 		{
 #if defined(UNIX) && defined(HAVE_SETRLIMIT) && defined(HAVE_GETRLIMIT)
-			// try to force core files creation for DEV_BUILD
+			// try to force core files creation
 			struct rlimit core;
 			if (getrlimit(RLIMIT_CORE, &core) == 0)
 			{
