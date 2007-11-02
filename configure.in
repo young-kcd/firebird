@@ -482,6 +482,7 @@ AC_CHECK_HEADERS(aio.h)
 AC_CHECK_HEADERS(mntent.h mnttab.h sys/mntent.h sys/mnttab.h)
 AC_CHECK_HEADERS(sys/ipc.h sys/file.h)
 AC_CHECK_HEADERS(socket.h sys/socket.h sys/sockio.h winsock2.h)
+AC_CHECK_HEADERS(sys/resource.h)
 
 
 dnl Check for libraries
@@ -569,6 +570,7 @@ if test "$ac_cv_func_getmntent" = "yes"; then
    AC_MSG_RESULT(yes)],
   [AC_MSG_RESULT(no)])
 fi
+AC_CHECK_FUNCS(setrlimit getrlimit)
 AC_CHECK_FUNCS(tcgetattr strdup)
 AC_CHECK_FUNCS(mkstemp)
 AC_CHECK_FUNCS(pthread_keycreate pthread_key_create)

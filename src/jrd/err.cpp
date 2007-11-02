@@ -33,6 +33,7 @@
 #include <stdarg.h>
 #include "gen/iberror.h"
 #include "../jrd/iberr.h"
+#include <errno.h>
 
 #if ( !defined( REQUESTER) && !defined( SUPERCLIENT))
 #include "../jrd/jrd.h"
@@ -52,6 +53,10 @@
 #include "../jrd/gds_proto.h"
 #include "../common/config/config.h"
 #include "../common/utils_proto.h"
+
+#ifdef HAVE_SYS_RESOURCE_H
+#include <sys/resource.h>
+#endif
 
 using namespace Jrd;
 
@@ -555,7 +560,33 @@ void ERR_punt(void)
 			tdbb->tdbb_attachment->att_filename.c_str() : "Database unknown in ERR_punt on bugcheck",
 			tdbb->tdbb_status_vector);
  		if (Config::getBugcheckAbort())
+		{
+#if defined(UNIX) && defined(HAVE_SETRLIMIT) && defined(HAVE_GETRLIMIT)
+			// try to force core files creation for DEV_BUILD
+			struct rlimit core;
+			if (getrlimit(RLIMIT_CORE, &core) == 0)
+			{
+				core.rlim_cur = core.rlim_max;
+				if (setrlimit(RLIMIT_CORE, &core) != 0)
+				{
+					gds__log("setrlimit() failed, errno=%d", errno);
+				}
+			}
+			else
+			{
+				gds__log("getrlimit() failed, errno=%d", errno);
+			}
+
+			// we need some writable directory for core file
+			// on any unix /tmp seems to be the best place
+			if (chdir("/tmp") != 0)
+			{
+				gds__log("chdir(/tmp) failed, errno=%d", errno);
+			}
+#endif
+
 			abort();
+		}
 	}
 
 	Firebird::status_exception::raise(tdbb->tdbb_status_vector);
