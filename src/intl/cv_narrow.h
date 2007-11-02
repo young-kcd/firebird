@@ -30,8 +30,8 @@ struct CsConvertImpl
 void CV_convert_init(csconvert* csptr,
 		pfn_INTL_convert cvt_fn, const void *datatable, const void *datatable2);
 
-ULONG CV_wc_to_wc(csconvert* obj, ULONG src_len, const USHORT* src_ptr,
-				  ULONG dest_len, USHORT *dest_ptr,
+ULONG CV_wc_to_wc(csconvert* obj, ULONG src_len, const UCHAR* src_ptr,
+				  ULONG dest_len, UCHAR *dest_ptr,
 				  USHORT *err_code, ULONG *err_position);
 
 ULONG CV_unicode_to_nc(csconvert* obj, ULONG src_len, const BYTE* src_ptr,

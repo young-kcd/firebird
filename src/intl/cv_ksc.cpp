@@ -37,23 +37,26 @@ ULONG CVKSC_ksc_to_unicode(csconvert* obj,
 						   ULONG ksc_len,
 						   const UCHAR* ksc_str,
 						   ULONG dest_len,
-						   USHORT *dest_ptr,
-						   USHORT *err_code,
-						   ULONG *err_position)
+						   UCHAR* p_dest_ptr,
+						   USHORT* err_code,
+						   ULONG* err_position)
 {
-	fb_assert(ksc_str != NULL || dest_ptr == NULL);
+	fb_assert(ksc_str != NULL || p_dest_ptr == NULL);
 	fb_assert(err_code != NULL);
 	fb_assert(err_position != NULL);
 	fb_assert(obj != NULL);
-	fb_assert(obj->csconvert_fn_convert == reinterpret_cast<pfn_INTL_convert>(CVKSC_ksc_to_unicode));
+	fb_assert(obj->csconvert_fn_convert == CVKSC_ksc_to_unicode);
 	fb_assert(obj->csconvert_impl->csconvert_datatable != NULL);
 	fb_assert(obj->csconvert_impl->csconvert_misc != NULL);
 
 	const ULONG src_start = ksc_len;
 	*err_code = 0;
 
-	if (dest_ptr == NULL)
+	if (p_dest_ptr == NULL)
 		return (ksc_len * sizeof(USHORT));
+
+	Firebird::OutAligner<USHORT> d(p_dest_ptr, dest_len);
+	USHORT* dest_ptr = d;
 
 	USHORT this_len;
 	USHORT wide;
@@ -107,17 +110,17 @@ ULONG CVKSC_ksc_to_unicode(csconvert* obj,
 
 ULONG CVKSC_unicode_to_ksc(csconvert* obj,
 						   ULONG unicode_len,
-						   const USHORT* unicode_str,
+						   const UCHAR* p_unicode_str,
 						   ULONG ksc_len,
-						   UCHAR *ksc_str,
-						   USHORT *err_code,
-						   ULONG *err_position)
+						   UCHAR* ksc_str,
+						   USHORT* err_code,
+						   ULONG* err_position)
 {
-	fb_assert(unicode_str != NULL || ksc_str == NULL);
+	fb_assert(p_unicode_str != NULL || ksc_str == NULL);
 	fb_assert(err_code != NULL);
 	fb_assert(err_position != NULL);
 	fb_assert(obj != NULL);
-	fb_assert(obj->csconvert_fn_convert == reinterpret_cast<pfn_INTL_convert>(CVKSC_unicode_to_ksc));
+	fb_assert(obj->csconvert_fn_convert == CVKSC_unicode_to_ksc);
 	fb_assert(obj->csconvert_impl->csconvert_datatable != NULL);
 	fb_assert(obj->csconvert_impl->csconvert_misc != NULL);
 
@@ -126,6 +129,9 @@ ULONG CVKSC_unicode_to_ksc(csconvert* obj,
 
 	if (ksc_str == NULL)
 		return (unicode_len);
+
+	Firebird::Aligner<USHORT> s(p_unicode_str, unicode_len);
+	const USHORT* unicode_str = s;
 
 	const UCHAR* const start = ksc_str;
 	while (ksc_len && unicode_len > 1) {

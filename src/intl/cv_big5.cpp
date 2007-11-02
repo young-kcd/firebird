@@ -31,15 +31,15 @@ ULONG CVBIG5_big5_to_unicode(csconvert* obj,
 							 ULONG src_len,
 							 const UCHAR* src_ptr,
 							 ULONG dest_len,
-							 USHORT *dest_ptr,
-							 USHORT *err_code,
-							 ULONG *err_position)
+							 UCHAR* p_dest_ptr,
+							 USHORT* err_code,
+							 ULONG* err_position)
 {
-	fb_assert(src_ptr != NULL || dest_ptr == NULL);
+	fb_assert(src_ptr != NULL || p_dest_ptr == NULL);
 	fb_assert(err_code != NULL);
 	fb_assert(err_position != NULL);
 	fb_assert(obj != NULL);
-	fb_assert(obj->csconvert_fn_convert == reinterpret_cast<pfn_INTL_convert>(CVBIG5_big5_to_unicode));
+	fb_assert(obj->csconvert_fn_convert == CVBIG5_big5_to_unicode);
 	fb_assert(obj->csconvert_impl->csconvert_datatable != NULL);
 	fb_assert(obj->csconvert_impl->csconvert_misc != NULL);
 
@@ -47,8 +47,11 @@ ULONG CVBIG5_big5_to_unicode(csconvert* obj,
 	*err_code = 0;
 
 /* See if we're only after a length estimate */
-	if (dest_ptr == NULL)
+	if (p_dest_ptr == NULL)
 		return (src_len * sizeof(USHORT));
+
+	Firebird::OutAligner<USHORT> d(p_dest_ptr, dest_len);
+	USHORT* dest_ptr = d;
 
 	USHORT wide;
 	USHORT this_len;
@@ -104,17 +107,17 @@ ULONG CVBIG5_big5_to_unicode(csconvert* obj,
 
 ULONG CVBIG5_unicode_to_big5(csconvert* obj,
 							 ULONG unicode_len,
-							 const USHORT* unicode_str,
+							 const UCHAR* p_unicode_str,
 							 ULONG big5_len,
-							 UCHAR *big5_str,
-							 USHORT *err_code,
-							 ULONG *err_position)
+							 UCHAR* big5_str,
+							 USHORT* err_code,
+							 ULONG* err_position)
 {
-	fb_assert(unicode_str != NULL || big5_str == NULL);
+	fb_assert(p_unicode_str != NULL || big5_str == NULL);
 	fb_assert(err_code != NULL);
 	fb_assert(err_position != NULL);
 	fb_assert(obj != NULL);
-	fb_assert(obj->csconvert_fn_convert == reinterpret_cast<pfn_INTL_convert>(CVBIG5_unicode_to_big5));
+	fb_assert(obj->csconvert_fn_convert == CVBIG5_unicode_to_big5);
 	fb_assert(obj->csconvert_impl->csconvert_datatable != NULL);
 	fb_assert(obj->csconvert_impl->csconvert_misc != NULL);
 
@@ -124,6 +127,9 @@ ULONG CVBIG5_unicode_to_big5(csconvert* obj,
 /* See if we're only after a length estimate */
 	if (big5_str == NULL)
 		return (unicode_len);	/* worst case - all han character input */
+
+	Firebird::Aligner<USHORT> s(p_unicode_str, unicode_len);
+	const USHORT* unicode_str = s;
 
 	const UCHAR* const start = big5_str;
 	while ((big5_len) && (unicode_len > 1)) {

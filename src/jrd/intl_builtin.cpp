@@ -29,6 +29,20 @@ struct TextTypeImpl
 };
 
 
+namespace {
+template <typename U>
+void padUtf16(const USHORT* text, U& len)
+{
+	for (; len > 0; len -= sizeof(USHORT))
+	{
+		if (text[len / sizeof(USHORT) - 1] != 32)
+			break;
+	}
+}
+} //namespace
+
+
+
 static inline bool FAMILY_INTERNAL(TEXTTYPE cache,
 								   SSHORT country,
 								   const ASCII* POSIX,
@@ -203,34 +217,37 @@ static SSHORT internal_fss_mbtowc(TEXTTYPE obj,
 }
 #endif
 
-static ULONG internal_fss_to_unicode(TEXTTYPE obj,
+static ULONG internal_fss_to_unicode(csconvert* obj,
 									 ULONG src_len,
 									 const UCHAR* src_ptr,
 									 ULONG dest_len,
-									 UNICODE* dest_ptr,
+									 UCHAR* p_dest_ptr,
 									 USHORT* err_code,
 									 ULONG* err_position)
 {
-	fb_assert(src_ptr != NULL || dest_ptr == NULL);
+	fb_assert(src_ptr != NULL || p_dest_ptr == NULL);
 	fb_assert(err_code != NULL);
 	fb_assert(err_position != NULL);
 	fb_assert(obj != NULL);
 
 	*err_code = 0;
 
-/* See if we're only after a length estimate */
-	if (dest_ptr == NULL)
+	// See if we're only after a length estimate
+	if (p_dest_ptr == NULL)
 		return (src_len * 2);	/* All single byte narrow characters */
+
+	Firebird::OutAligner<UNICODE> d(p_dest_ptr, dest_len);
+	UNICODE* dest_ptr = d;
 
 	const UNICODE* const start = dest_ptr;
 	const ULONG src_start = src_len;
 	while ((src_len) && (dest_len >= sizeof(*dest_ptr))) {
 		const fss_size_t res = fss_mbtowc(dest_ptr, src_ptr, src_len);
-		if (res == -1) {
+		if (res < 0) {
 			*err_code = CS_BAD_INPUT;
 			break;
 		}
-		fb_assert(res <= src_len);
+		fb_assert(static_cast<ULONG>(res) <= src_len);
 		dest_ptr++;
 		dest_len -= sizeof(*dest_ptr);
 		src_ptr += res;
@@ -245,7 +262,7 @@ static ULONG internal_fss_to_unicode(TEXTTYPE obj,
 
 ULONG internal_unicode_to_fss(csconvert* obj,
 							  ULONG unicode_len,	/* BYTE count */
-							  const UNICODE* unicode_str,
+							  const UCHAR* p_unicode_str,
 							  ULONG fss_len,
 							  UCHAR* fss_str,
 							  USHORT* err_code,
@@ -254,11 +271,11 @@ ULONG internal_unicode_to_fss(csconvert* obj,
 	const ULONG src_start = unicode_len;
 	UCHAR tmp_buffer[6];
 
-	fb_assert(unicode_str != NULL || fss_str == NULL);
+	fb_assert(p_unicode_str != NULL || fss_str == NULL);
 	fb_assert(err_code != NULL);
 	fb_assert(err_position != NULL);
 	fb_assert(obj != NULL);
-	fb_assert(obj->csconvert_fn_convert == (pfn_INTL_convert) internal_unicode_to_fss);
+	fb_assert(obj->csconvert_fn_convert == internal_unicode_to_fss);
 
 	*err_code = 0;
 
@@ -266,16 +283,19 @@ ULONG internal_unicode_to_fss(csconvert* obj,
 	if (fss_str == NULL)
 		return ((unicode_len + 1) / 2 * 3);	/* worst case - all han character input */
 
+	Firebird::Aligner<UNICODE> s(p_unicode_str, unicode_len);
+	const UNICODE* unicode_str = s;
+
 	const UCHAR* const start = fss_str;
 	while ((fss_len) && (unicode_len >= sizeof(*unicode_str))) {
 		/* Convert the wide character into temp buffer */
 		fss_size_t res = fss_wctomb(tmp_buffer, *unicode_str);
-		if (res == -1) {
+		if (res < 0) {
 			*err_code = CS_BAD_INPUT;
 			break;
 		}
 		/* will the mb sequence fit into space left? */
-		if (res > fss_len) {
+		if (static_cast<ULONG>(res) > fss_len) {
 			*err_code = CS_TRUNCATION_ERROR;
 			break;
 		}
@@ -314,10 +334,10 @@ static ULONG internal_fss_length(charset* obj, ULONG srcLen, const UCHAR* src)
 		USHORT c;
 		const fss_size_t res = fss_mbtowc(&c, src, srcLen);
 
-		if (res == -1)
+		if (res < 0)
 			break;
 
-		fb_assert(res <= srcLen);
+		fb_assert(static_cast<ULONG>(res) <= srcLen);
 
 		src += res;
 		srcLen -= res;
@@ -363,7 +383,7 @@ static ULONG internal_fss_substring(charset* obj, ULONG srcLen, const UCHAR* src
 		{
 			res = fss_mbtowc(&c, src, srcLen);
 
-			if (res == -1)
+			if (res < 0)
 			{
 				wellFormed = false;
 				continue;
@@ -375,7 +395,7 @@ static ULONG internal_fss_substring(charset* obj, ULONG srcLen, const UCHAR* src
 			res = 1;
 		}
 
-		fb_assert(res <= srcLen);
+		fb_assert(static_cast<ULONG>(res) <= srcLen);
 
 		src += res;
 		srcLen -= res;
@@ -391,7 +411,7 @@ static ULONG internal_fss_substring(charset* obj, ULONG srcLen, const UCHAR* src
 		{
 			res = fss_mbtowc(&c, src, srcLen);
 
-			if (res == -1)
+			if (res < 0)
 			{
 				wellFormed = false;
 				continue;
@@ -403,7 +423,7 @@ static ULONG internal_fss_substring(charset* obj, ULONG srcLen, const UCHAR* src
 			res = 1;
 		}
 
-		fb_assert(res <= srcLen);
+		fb_assert(static_cast<ULONG>(res) <= srcLen);
 
 		src += res;
 		srcLen -= res;
@@ -669,29 +689,21 @@ static USHORT unicode8_string_to_key(
 	USHORT err_code;
 	ULONG err_position;
 
-	Firebird::HalfStaticArray<UCHAR, BUFFER_SMALL> utf16Str;
+	Firebird::HalfStaticArray<USHORT, BUFFER_SMALL / sizeof(USHORT)> utf16Str;
 	ULONG utf16Len = UnicodeUtil::utf8ToUtf16(srcLen, src, 0, NULL,
 		&err_code, &err_position);
 
 	utf16Len = UnicodeUtil::utf8ToUtf16(srcLen, src,
-		utf16Len, reinterpret_cast<USHORT*>(utf16Str.getBuffer(utf16Len)),
+		utf16Len, utf16Str.getBuffer(utf16Len / sizeof(USHORT) + 1),
 		&err_code, &err_position);
 
 	if (obj->texttype_pad_option)
 	{
-		const UCHAR* pad;
-
-		for (pad = utf16Str.begin() + utf16Len - sizeof(USHORT); pad >= utf16Str.begin(); pad -= sizeof(USHORT))
-		{
-			if (*reinterpret_cast<const USHORT*>(pad) != 32)
-				break;
-		}
-
-		utf16Len = pad - utf16Str.begin() + sizeof(USHORT);
+		padUtf16(utf16Str.begin(), utf16Len);
 	}
 
 	return ((UnicodeUtil::Utf16Collation*)obj->reserved_for_driver[0])->stringToKey(
-		utf16Len, (USHORT*)utf16Str.begin(), dstLen, dst, key_type);
+		utf16Len, utf16Str.begin(), dstLen, dst, key_type);
 }
 
 
@@ -712,45 +724,29 @@ static SSHORT unicode8_compare(TEXTTYPE obj, ULONG length1, const UCHAR* p1,
 	USHORT err_code;
 	ULONG err_position;
 
-	Firebird::HalfStaticArray<UCHAR, BUFFER_SMALL> utf16Str1;
-	Firebird::HalfStaticArray<UCHAR, BUFFER_SMALL> utf16Str2;
+	Firebird::HalfStaticArray<USHORT, BUFFER_SMALL / sizeof(USHORT)> utf16Str1;
+	Firebird::HalfStaticArray<USHORT, BUFFER_SMALL / sizeof(USHORT)> utf16Str2;
 	ULONG utf16Len1 = UnicodeUtil::utf8ToUtf16(length1, p1, 0, NULL,
 		&err_code, &err_position);
 	ULONG utf16Len2 = UnicodeUtil::utf8ToUtf16(length2, p2, 0, NULL,
 		&err_code, &err_position);
 
 	utf16Len1 = UnicodeUtil::utf8ToUtf16(length1, p1,
-		utf16Len1, reinterpret_cast<USHORT*>(utf16Str1.getBuffer(utf16Len1)),
+		utf16Len1, utf16Str1.getBuffer(utf16Len1 / sizeof(USHORT) + 1),
 		&err_code, &err_position);
 
 	utf16Len2 = UnicodeUtil::utf8ToUtf16(length2, p2,
-		utf16Len2, reinterpret_cast<USHORT*>(utf16Str2.getBuffer(utf16Len2)),
+		utf16Len2, utf16Str2.getBuffer(utf16Len2 / sizeof(USHORT) + 1),
 		&err_code, &err_position);
 
 	if (obj->texttype_pad_option)
 	{
-		const UCHAR* pad;
-
-		for (pad = utf16Str1.begin() + utf16Len1 - sizeof(USHORT); pad >= utf16Str1.begin(); pad -= sizeof(USHORT))
-		{
-			if (*reinterpret_cast<const USHORT*>(pad) != 32)
-				break;
-		}
-
-		utf16Len1 = pad - utf16Str1.begin() + sizeof(USHORT);
-
-		for (pad = utf16Str2.begin() + utf16Len2 - sizeof(USHORT); pad >= utf16Str2.begin(); pad -= sizeof(USHORT))
-		{
-			if (*reinterpret_cast<const USHORT*>(pad) != 32)
-				break;
-		}
-
-		utf16Len2 = pad - utf16Str2.begin() + sizeof(USHORT);
+		padUtf16(utf16Str1.begin(), utf16Len1);
+		padUtf16(utf16Str2.begin(), utf16Len2);
 	}
 
 	return ((UnicodeUtil::Utf16Collation*)obj->reserved_for_driver[0])->compare(
-		utf16Len1, (USHORT*)utf16Str1.begin(),
-		utf16Len2, (USHORT*)utf16Str2.begin(), error_flag);
+		utf16Len1, utf16Str1.begin(), utf16Len2, utf16Str2.begin(), error_flag);
 }
 
 
@@ -771,7 +767,7 @@ static USHORT utf16_keylength(TEXTTYPE obj, USHORT len)
 static USHORT utf16_string_to_key(
 								  TEXTTYPE obj,
 								  USHORT srcLen,
-								  const UCHAR* src,
+								  const UCHAR* psrc,
 								  USHORT dstLen,
 								  UCHAR* dst,
 								  USHORT key_type)
@@ -788,28 +784,22 @@ static USHORT utf16_string_to_key(
 	fb_assert(obj != NULL);
 	fb_assert(srcLen % 2 == 0);
 
+	const USHORT* src = Firebird::Aligner<USHORT>(psrc, srcLen);
+
 	if (obj->texttype_pad_option)
 	{
-		const UCHAR* pad;
-
-		for (pad = src + srcLen - sizeof(USHORT); pad >= src; pad -= sizeof(USHORT))
-		{
-			if (*reinterpret_cast<const USHORT*>(pad) != 32)
-				break;
-		}
-
-		srcLen = pad - src + sizeof(USHORT);
+		padUtf16(src, srcLen);
 	}
 
-	return UnicodeUtil::utf16ToKey(srcLen, reinterpret_cast<const USHORT*>(src), dstLen, dst, key_type);
+	return UnicodeUtil::utf16ToKey(srcLen, src, dstLen, dst, key_type);
 }
 
 static SSHORT utf16_compare(
 							TEXTTYPE obj,
 							ULONG len1, 
-							const UCHAR* str1, 
+							const UCHAR* pstr1, 
 							ULONG len2, 
-							const UCHAR* str2,
+							const UCHAR* pstr2,
 							INTL_BOOL* error_flag)
 {
 /**************************************
@@ -823,31 +813,17 @@ static SSHORT utf16_compare(
  **************************************/
 	fb_assert(obj != NULL);
 	fb_assert(len1 % 2 == 0 && len2 % 2 == 0);
-	fb_assert(str1 != NULL && str2 != NULL);
+	fb_assert(pstr1 != NULL && pstr2 != NULL);
+	const USHORT* str1 = Firebird::Aligner<USHORT>(pstr1, len1);
+	const USHORT* str2 = Firebird::Aligner<USHORT>(pstr2, len2);
 
 	if (obj->texttype_pad_option)
 	{
-		const UCHAR* pad;
-
-		for (pad = str1 + len1 - sizeof(USHORT); pad >= str1; pad -= sizeof(USHORT))
-		{
-			if (*reinterpret_cast<const USHORT*>(pad) != 32)
-				break;
-		}
-
-		len1 = pad - str1 + sizeof(USHORT);
-
-		for (pad = str2 + len2 - sizeof(USHORT); pad >= str2; pad -= sizeof(USHORT))
-		{
-			if (*reinterpret_cast<const USHORT*>(pad) != 32)
-				break;
-		}
-
-		len2 = pad - str2 + sizeof(USHORT);
+		padUtf16(str1, len1);
+		padUtf16(str2, len2);
 	}
 
-	return UnicodeUtil::utf16Compare(len1, reinterpret_cast<const USHORT*>(str1),
-									 len2, reinterpret_cast<const USHORT*>(str2), error_flag);
+	return UnicodeUtil::utf16Compare(len1, str1, len2, str2, error_flag);
 }
 
 static ULONG utf16_upper(
@@ -870,8 +846,8 @@ static ULONG utf16_upper(
 	fb_assert(srcLen % 2 == 0);
 	fb_assert(src != NULL && dst != NULL);
 
-	return UnicodeUtil::utf16UpperCase(srcLen, reinterpret_cast<const USHORT*>(src),
-									   dstLen, reinterpret_cast<USHORT*>(dst));
+	return UnicodeUtil::utf16UpperCase(srcLen, Firebird::Aligner<USHORT>(src, srcLen),
+									   dstLen, Firebird::OutAligner<USHORT>(dst, dstLen));
 }
 
 static ULONG utf16_lower(
@@ -894,8 +870,8 @@ static ULONG utf16_lower(
 	fb_assert(srcLen % 2 == 0);
 	fb_assert(src != NULL && dst != NULL);
 
-	return UnicodeUtil::utf16LowerCase(srcLen, reinterpret_cast<const USHORT*>(src),
-									   dstLen, reinterpret_cast<USHORT*>(dst));
+	return UnicodeUtil::utf16LowerCase(srcLen, Firebird::Aligner<USHORT>(src, srcLen),
+									   dstLen, Firebird::OutAligner<USHORT>(dst, dstLen));
 }
 
 
@@ -916,7 +892,7 @@ static USHORT utf32_keylength(TEXTTYPE obj, USHORT len)
 static USHORT utf32_string_to_key(
 								  TEXTTYPE obj,
 								  USHORT srcLen,
-								  const UCHAR* src,
+								  const UCHAR* psrc,
 								  USHORT dstLen,
 								  UCHAR* dst,
 								  USHORT key_type)
@@ -936,29 +912,21 @@ static USHORT utf32_string_to_key(
 	USHORT err_code;
 	ULONG err_position;
 
-	Firebird::HalfStaticArray<UCHAR, BUFFER_SMALL> utf16Str;
-	srcLen = UnicodeUtil::utf32ToUtf16(srcLen, reinterpret_cast<const ULONG*>(src),
-		dstLen, reinterpret_cast<USHORT*>(utf16Str.getBuffer(dstLen)), &err_code, &err_position);
-	src = utf16Str.begin();
+	Firebird::HalfStaticArray<USHORT, BUFFER_SMALL / sizeof(USHORT)> utf16Str;
+	srcLen = UnicodeUtil::utf32ToUtf16(srcLen, Firebird::Aligner<ULONG>(psrc, srcLen),
+		dstLen, utf16Str.getBuffer(dstLen / sizeof(USHORT) + 1), &err_code, &err_position);
+	USHORT* src = utf16Str.begin();
 
 	if (obj->texttype_pad_option)
 	{
-		const UCHAR* pad;
-
-		for (pad = src + srcLen - sizeof(USHORT); pad >= src; pad -= sizeof(USHORT))
-		{
-			if (*reinterpret_cast<const USHORT*>(pad) != 32)
-				break;
-		}
-
-		srcLen = pad - src + sizeof(USHORT);
+		padUtf16(src, srcLen);
 	}
 
-	return UnicodeUtil::utf16ToKey(srcLen, reinterpret_cast<const USHORT*>(src), dstLen, dst, key_type);
+	return UnicodeUtil::utf16ToKey(srcLen, src, dstLen, dst, key_type);
 }
 
 
-static ULONG wc_to_nc(csconvert* obj, ULONG nSrc, const USHORT* pSrc,
+static ULONG wc_to_nc(csconvert* obj, ULONG nSrc, const UCHAR* ppSrc,
 					  ULONG nDest, UCHAR* pDest,
 					  USHORT* err_code, ULONG* err_position)
 {
@@ -972,13 +940,16 @@ static ULONG wc_to_nc(csconvert* obj, ULONG nSrc, const USHORT* pSrc,
  *
  **************************************/
 	fb_assert(obj != NULL);
-	fb_assert((pSrc != NULL) || (pDest == NULL));
+	fb_assert((ppSrc != NULL) || (pDest == NULL));
 	fb_assert(err_code != NULL);
 	fb_assert(err_position != NULL);
 
 	*err_code = 0;
 	if (pDest == NULL)			/* length estimate needed? */
 		return ((nSrc + 1) / 2);
+
+	Firebird::Aligner<USHORT> s(ppSrc, nSrc);
+	const USHORT* pSrc = s;
 
 	const UCHAR* const pStart = pDest;
 	const USHORT* const pStart_src = pSrc;
@@ -1002,7 +973,7 @@ static ULONG wc_to_nc(csconvert* obj, ULONG nSrc, const USHORT* pSrc,
 
 
 static ULONG mb_to_wc(csconvert* obj, ULONG nSrc, const UCHAR* pSrc,
-					  ULONG nDest, USHORT* pDest,
+					  ULONG nDest, UCHAR* ppDest,
 					  USHORT* err_code, ULONG* err_position)
 {
 /**************************************
@@ -1017,13 +988,16 @@ static ULONG mb_to_wc(csconvert* obj, ULONG nSrc, const UCHAR* pSrc,
  *
  *************************************/
 	fb_assert(obj != NULL);
-	fb_assert((pSrc != NULL) || (pDest == NULL));
+	fb_assert((pSrc != NULL) || (ppDest == NULL));
 	fb_assert(err_code != NULL);
 	fb_assert(err_position != NULL);
 
 	*err_code = 0;
-	if (pDest == NULL)			/* length estimate needed? */
+	if (ppDest == NULL)			/* length estimate needed? */
 		return (nSrc);
+
+	Firebird::OutAligner<USHORT> d(ppDest, nDest);
+	USHORT* pDest = d;
 
 	const USHORT* const pStart = pDest;
 	const UCHAR* const pStart_src = pSrc;
@@ -1042,7 +1016,7 @@ static ULONG mb_to_wc(csconvert* obj, ULONG nSrc, const UCHAR* pSrc,
 }
 
 
-static ULONG wc_to_mb(csconvert* obj, ULONG nSrc, const USHORT* pSrc,
+static ULONG wc_to_mb(csconvert* obj, ULONG nSrc, const UCHAR* ppSrc,
 					  ULONG nDest, UCHAR* pDest,
 					  USHORT* err_code, ULONG* err_position)
 {
@@ -1058,13 +1032,16 @@ static ULONG wc_to_mb(csconvert* obj, ULONG nSrc, const USHORT* pSrc,
  *
  *************************************/
 	fb_assert(obj != NULL);
-	fb_assert((pSrc != NULL) || (pDest == NULL));
+	fb_assert((ppSrc != NULL) || (pDest == NULL));
 	fb_assert(err_code != NULL);
 	fb_assert(err_position != NULL);
 
 	*err_code = 0;
 	if (pDest == NULL)			/* length estimate needed? */
 		return (nSrc);
+
+	Firebird::Aligner<USHORT> s(ppSrc, nSrc);
+	const USHORT* pSrc = s;
 
 	const UCHAR* const pStart = pDest;
 	const USHORT* const pStart_src = pSrc;
@@ -1346,7 +1323,7 @@ static INTL_BOOL cs_utf16_well_formed(charset* cs,
  *************************************/
 	fb_assert(cs != NULL);
 
-	return UnicodeUtil::utf16WellFormed(len, reinterpret_cast<const USHORT*>(str), offending_position);
+	return UnicodeUtil::utf16WellFormed(len, Firebird::Aligner<USHORT>(str, len), offending_position);
 }
 
 
@@ -1365,7 +1342,7 @@ static ULONG cs_utf16_length(charset* cs,
  *
  *************************************/
 	fb_assert(cs != NULL);
-	return UnicodeUtil::utf16Length(srcLen, reinterpret_cast<const USHORT*>(src));
+	return UnicodeUtil::utf16Length(srcLen, Firebird::Aligner<USHORT>(src, srcLen));
 }
 
 
@@ -1389,8 +1366,8 @@ static ULONG cs_utf16_substring(charset* cs,
  *************************************/
 	fb_assert(cs != NULL);
 
-	return UnicodeUtil::utf16Substring(srcLen, reinterpret_cast<const USHORT*>(src),
-		dstLen, reinterpret_cast<USHORT*>(dst), startPos, length);
+	return UnicodeUtil::utf16Substring(srcLen, Firebird::Aligner<USHORT>(src, srcLen),
+		dstLen, Firebird::OutAligner<USHORT>(dst, dstLen), startPos, length);
 }
 
 
@@ -1411,7 +1388,7 @@ static INTL_BOOL cs_utf32_well_formed(charset* cs,
  *************************************/
 	fb_assert(cs != NULL);
 
-	return UnicodeUtil::utf32WellFormed(len, reinterpret_cast<const ULONG*>(str), offending_position);
+	return UnicodeUtil::utf32WellFormed(len, Firebird::Aligner<ULONG>(str, len), offending_position);
 }
 
 
@@ -1436,7 +1413,7 @@ static void common_convert_init(
 
 
 static ULONG cvt_ascii_to_unicode(csconvert* obj, ULONG nSrc, const UCHAR* pSrc,
-								  ULONG nDest, USHORT* pDest,
+								  ULONG nDest, UCHAR* ppDest,
 								  USHORT* err_code, ULONG* err_position)
 {
 /**************************************
@@ -1452,12 +1429,15 @@ static ULONG cvt_ascii_to_unicode(csconvert* obj, ULONG nSrc, const UCHAR* pSrc,
  *
  *************************************/
 	fb_assert(obj != NULL);
-	fb_assert((pSrc != NULL) || (pDest == NULL));
+	fb_assert((pSrc != NULL) || (ppDest == NULL));
 	fb_assert(err_code != NULL);
 
 	*err_code = 0;
-	if (pDest == NULL)			/* length estimate needed? */
+	if (ppDest == NULL)			/* length estimate needed? */
 		return (2 * nSrc);
+
+	Firebird::OutAligner<USHORT> d(ppDest, nDest);
+	USHORT* pDest = d;
 
 	const USHORT* const pStart = pDest;
 	const UCHAR* const pStart_src = pSrc;
@@ -1479,7 +1459,7 @@ static ULONG cvt_ascii_to_unicode(csconvert* obj, ULONG nSrc, const UCHAR* pSrc,
 }
 
 
-static ULONG cvt_unicode_to_ascii(csconvert* obj, ULONG nSrc, const USHORT* pSrc,
+static ULONG cvt_unicode_to_ascii(csconvert* obj, ULONG nSrc, const UCHAR* ppSrc,
 								  ULONG nDest, UCHAR* pDest,
 								  USHORT* err_code, ULONG* err_position)
 {
@@ -1496,8 +1476,11 @@ static ULONG cvt_unicode_to_ascii(csconvert* obj, ULONG nSrc, const USHORT* pSrc
  *
  *************************************/
 	fb_assert(obj != NULL);
-	fb_assert((pSrc != NULL) || (pDest == NULL));
+	fb_assert((ppSrc != NULL) || (pDest == NULL));
 	fb_assert(err_code != NULL);
+
+	Firebird::Aligner<USHORT> s(ppSrc, nSrc);
+	const USHORT* pSrc = s;
 
 	*err_code = 0;
 	if (pDest == NULL)			/* length estimate needed? */
@@ -1524,7 +1507,7 @@ static ULONG cvt_unicode_to_ascii(csconvert* obj, ULONG nSrc, const USHORT* pSrc
 
 
 static ULONG cvt_none_to_unicode(csconvert* obj, ULONG nSrc, const UCHAR* pSrc,
-								 ULONG nDest, USHORT* pDest,
+								 ULONG nDest, UCHAR* ppDest,
 								 USHORT* err_code, ULONG* err_position)
 {
 /**************************************
@@ -1540,8 +1523,11 @@ static ULONG cvt_none_to_unicode(csconvert* obj, ULONG nSrc, const UCHAR* pSrc,
  *
  *************************************/
 	fb_assert(obj != NULL);
-	fb_assert((pSrc != NULL) || (pDest == NULL));
+	fb_assert((pSrc != NULL) || (ppDest == NULL));
 	fb_assert(err_code != NULL);
+
+	Firebird::OutAligner<USHORT> d(ppDest, nDest);
+	USHORT* pDest = d;
 
 	*err_code = 0;
 	if (pDest == NULL)			/* length estimate needed? */
@@ -1567,8 +1553,8 @@ static ULONG cvt_none_to_unicode(csconvert* obj, ULONG nSrc, const UCHAR* pSrc,
 }
 
 
-static ULONG cvt_unicode_to_unicode(csconvert* obj, ULONG nSrc, const USHORT* pSrc,
-									ULONG nDest, USHORT* pDest,
+static ULONG cvt_unicode_to_unicode(csconvert* obj, ULONG nSrc, const UCHAR* ppSrc,
+									ULONG nDest, UCHAR* ppDest,
 									USHORT* err_code, ULONG* err_position)
 {
 /**************************************
@@ -1581,12 +1567,17 @@ static ULONG cvt_unicode_to_unicode(csconvert* obj, ULONG nSrc, const USHORT* pS
  *
  *************************************/
 	fb_assert(obj != NULL);
-	fb_assert((pSrc != NULL) || (pDest == NULL));
+	fb_assert((ppSrc != NULL) || (ppDest == NULL));
 	fb_assert(err_code != NULL);
 
 	*err_code = 0;
-	if (pDest == NULL)			/* length estimate needed? */
+	if (ppDest == NULL)			/* length estimate needed? */
 		return nSrc;
+
+	Firebird::Aligner<USHORT> s(ppSrc, nSrc);
+	const USHORT* pSrc = s;
+	Firebird::OutAligner<USHORT> d(ppDest, nDest);
+	USHORT* pDest = d;
 
 	const USHORT* const pStart = pDest;
 	const USHORT* const pStart_src = pSrc;
@@ -1659,15 +1650,16 @@ static ULONG cvt_utffss_to_ascii(csconvert* obj, ULONG nSrc, const UCHAR* pSrc,
 
 static ULONG cvt_unicode_to_utf8(csconvert* obj,
 								 ULONG unicode_len,
-								 const USHORT* unicode_str,
+								 const UCHAR* unicode_str,
 								 ULONG utf8_len,
 								 UCHAR* utf8_str,
 								 USHORT* err_code,
 								 ULONG* err_position)
 {
 	fb_assert(obj != NULL);
-	fb_assert(obj->csconvert_fn_convert == (pfn_INTL_convert) cvt_unicode_to_utf8);
-	return UnicodeUtil::utf16ToUtf8(unicode_len, unicode_str, utf8_len, utf8_str, err_code, err_position);
+	fb_assert(obj->csconvert_fn_convert == cvt_unicode_to_utf8);
+	return UnicodeUtil::utf16ToUtf8(unicode_len, Firebird::Aligner<USHORT>(unicode_str, unicode_len), 
+		utf8_len, utf8_str, err_code, err_position);
 }
 
 
@@ -1675,41 +1667,45 @@ static ULONG cvt_utf8_to_unicode(csconvert* obj,
 								 ULONG utf8_len,
 								 const UCHAR* utf8_str,
 								 ULONG unicode_len,
-								 USHORT* unicode_str,
+								 UCHAR* unicode_str,
 								 USHORT* err_code,
 								 ULONG* err_position)
 {
 	fb_assert(obj != NULL);
-	fb_assert(obj->csconvert_fn_convert == (pfn_INTL_convert) cvt_utf8_to_unicode);
-	return UnicodeUtil::utf8ToUtf16(utf8_len, utf8_str, unicode_len, unicode_str, err_code, err_position);
+	fb_assert(obj->csconvert_fn_convert == cvt_utf8_to_unicode);
+	return UnicodeUtil::utf8ToUtf16(utf8_len, utf8_str, 
+		unicode_len, Firebird::OutAligner<USHORT>(unicode_str, unicode_len), err_code, err_position);
 }
 
 
 static ULONG cvt_unicode_to_utf32(csconvert* obj,
 								  ULONG unicode_len,
-								  const USHORT* unicode_str,
+								  const UCHAR* unicode_str,
 								  ULONG utf32_len,
-								  ULONG* utf32_str,
+								  UCHAR* utf32_str,
 								  USHORT* err_code,
 								  ULONG* err_position)
 {
 	fb_assert(obj != NULL);
-	fb_assert(obj->csconvert_fn_convert == (pfn_INTL_convert) cvt_unicode_to_utf32);
-	return UnicodeUtil::utf16ToUtf32(unicode_len, unicode_str, utf32_len, utf32_str, err_code, err_position);
+	fb_assert(obj->csconvert_fn_convert == cvt_unicode_to_utf32);
+	return UnicodeUtil::utf16ToUtf32(unicode_len, Firebird::Aligner<USHORT>(unicode_str, unicode_len), 
+		utf32_len, Firebird::OutAligner<ULONG>(utf32_str, utf32_len), err_code, err_position);
 }
 
 
 static ULONG cvt_utf32_to_unicode(csconvert* obj,
 								  ULONG utf32_len,
-								  const ULONG* utf32_str,
+								  const UCHAR* utf32_str,
 								  ULONG unicode_len,
-								  USHORT* unicode_str,
+								  UCHAR* unicode_str,
 								  USHORT* err_code,
 								  ULONG* err_position)
 {
 	fb_assert(obj != NULL);
-	fb_assert(obj->csconvert_fn_convert == (pfn_INTL_convert) cvt_utf32_to_unicode);
-	return UnicodeUtil::utf32ToUtf16(utf32_len, utf32_str, unicode_len, unicode_str, err_code, err_position);
+	fb_assert(obj->csconvert_fn_convert == cvt_utf32_to_unicode);
+
+	return UnicodeUtil::utf32ToUtf16(utf32_len, Firebird::Aligner<ULONG>(utf32_str, utf32_len), 
+		unicode_len, Firebird::OutAligner<USHORT>(unicode_str, unicode_len), err_code, err_position);
 }
 
 
@@ -1726,10 +1722,8 @@ static INTL_BOOL cs_ascii_init(charset* csptr, const ASCII* charset_name)
  *************************************/
 
 	common_8bit_init(csptr, (const ASCII*) "ASCII", NULL, NULL, NULL);
-	common_convert_init(&csptr->charset_to_unicode,
-						reinterpret_cast<pfn_INTL_convert>(cvt_ascii_to_unicode));
-	common_convert_init(&csptr->charset_from_unicode,
-						reinterpret_cast<pfn_INTL_convert>(cvt_unicode_to_ascii));
+	common_convert_init(&csptr->charset_to_unicode, cvt_ascii_to_unicode);
+	common_convert_init(&csptr->charset_from_unicode, cvt_unicode_to_ascii);
 	return true;
 }
 
@@ -1751,10 +1745,8 @@ static INTL_BOOL cs_none_init(charset* csptr, const ASCII* charset_name)
 common_convert_init (&csptr->charset_to_unicode, CS_UTF16, id,
 	nc_to_wc, to_unicode_tbl, NULL);
 */
-	common_convert_init(&csptr->charset_to_unicode,
-						reinterpret_cast<pfn_INTL_convert>(cvt_none_to_unicode));
-	common_convert_init(&csptr->charset_from_unicode,
-						reinterpret_cast<pfn_INTL_convert>(wc_to_nc));
+	common_convert_init(&csptr->charset_to_unicode, cvt_none_to_unicode);
+	common_convert_init(&csptr->charset_from_unicode, wc_to_nc);
 	return true;
 }
 
@@ -1776,10 +1768,8 @@ static INTL_BOOL cs_unicode_fss_init(charset* csptr, const ASCII* charset_name)
 	csptr->charset_max_bytes_per_char = 3;
 	csptr->charset_flags |= CHARSET_LEGACY_SEMANTICS;
 
-	common_convert_init(&csptr->charset_to_unicode,
-						reinterpret_cast<pfn_INTL_convert>(internal_fss_to_unicode));
-	common_convert_init(&csptr->charset_from_unicode,
-						reinterpret_cast<pfn_INTL_convert>(internal_unicode_to_fss));
+	common_convert_init(&csptr->charset_to_unicode, internal_fss_to_unicode);
+	common_convert_init(&csptr->charset_from_unicode, internal_unicode_to_fss);
 	csptr->charset_fn_length = internal_fss_length;
 	csptr->charset_fn_substring = internal_fss_substring;
 
@@ -1809,10 +1799,8 @@ static INTL_BOOL cs_unicode_ucs2_init(charset* csptr, const ASCII* charset_name)
 	csptr->charset_space_character = (const BYTE*) & space;	/* 0x0020 */
 	csptr->charset_fn_well_formed = NULL;
 
-	common_convert_init(&csptr->charset_to_unicode,
-						reinterpret_cast<pfn_INTL_convert>(cvt_unicode_to_unicode));
-	common_convert_init(&csptr->charset_from_unicode,
-						reinterpret_cast<pfn_INTL_convert>(cvt_unicode_to_unicode));
+	common_convert_init(&csptr->charset_to_unicode, cvt_unicode_to_unicode);
+	common_convert_init(&csptr->charset_from_unicode, cvt_unicode_to_unicode);
 
 	return true;
 }
@@ -1832,10 +1820,8 @@ static INTL_BOOL cs_binary_init(charset* csptr, const ASCII* charset_name)
 
 	common_8bit_init(csptr, (const ASCII*) "BINARY", NULL, NULL, NULL);
 	csptr->charset_space_character = (const BYTE*) "\0";
-	common_convert_init(&csptr->charset_to_unicode,
-						reinterpret_cast<pfn_INTL_convert>(mb_to_wc));
-	common_convert_init(&csptr->charset_from_unicode,
-						reinterpret_cast<pfn_INTL_convert>(wc_to_mb));
+	common_convert_init(&csptr->charset_to_unicode, mb_to_wc);
+	common_convert_init(&csptr->charset_from_unicode, wc_to_mb);
 	return true;
 }
 
@@ -1863,10 +1849,8 @@ static INTL_BOOL cs_utf8_init(charset* csptr, const ASCII* charset_name)
 	csptr->charset_space_character = (const BYTE*)&space;
 	csptr->charset_fn_well_formed = cs_utf8_well_formed;
 
-	common_convert_init(&csptr->charset_to_unicode,
-						reinterpret_cast<pfn_INTL_convert>(cvt_utf8_to_unicode));
-	common_convert_init(&csptr->charset_from_unicode,
-						reinterpret_cast<pfn_INTL_convert>(cvt_unicode_to_utf8));
+	common_convert_init(&csptr->charset_to_unicode, cvt_utf8_to_unicode);
+	common_convert_init(&csptr->charset_from_unicode, cvt_unicode_to_utf8);
 	return true;
 }
 
@@ -1896,10 +1880,8 @@ static INTL_BOOL cs_utf16_init(charset* csptr, const ASCII* charset_name)
 	csptr->charset_fn_length = cs_utf16_length;
 	csptr->charset_fn_substring = cs_utf16_substring;
 
-	common_convert_init(&csptr->charset_to_unicode,
-						reinterpret_cast<pfn_INTL_convert>(cvt_unicode_to_unicode));
-	common_convert_init(&csptr->charset_from_unicode,
-						reinterpret_cast<pfn_INTL_convert>(cvt_unicode_to_unicode));
+	common_convert_init(&csptr->charset_to_unicode, cvt_unicode_to_unicode);
+	common_convert_init(&csptr->charset_from_unicode, cvt_unicode_to_unicode);
 	return true;
 }
 
@@ -1927,10 +1909,8 @@ static INTL_BOOL cs_utf32_init(charset* csptr, const ASCII* charset_name)
 	csptr->charset_space_character = (const BYTE*)&space;
 	csptr->charset_fn_well_formed = cs_utf32_well_formed;
 
-	common_convert_init(&csptr->charset_to_unicode,
-						reinterpret_cast<pfn_INTL_convert>(cvt_utf32_to_unicode));
-	common_convert_init(&csptr->charset_from_unicode,
-						reinterpret_cast<pfn_INTL_convert>(cvt_unicode_to_utf32));
+	common_convert_init(&csptr->charset_to_unicode, cvt_utf32_to_unicode);
+	common_convert_init(&csptr->charset_from_unicode, cvt_unicode_to_utf32);
 	return true;
 }
 

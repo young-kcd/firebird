@@ -42,10 +42,10 @@ CHARSET_ENTRY(CS_jis_0208_1990)
 	csptr->charset_fn_well_formed = NULL;
 
 	CV_convert_init(&csptr->charset_to_unicode,
-					reinterpret_cast<pfn_INTL_convert>(CV_wc_to_wc),
+					CV_wc_to_wc,
 					to_unicode_mapping_array, to_unicode_map);
 	CV_convert_init(&csptr->charset_from_unicode,
-					reinterpret_cast<pfn_INTL_convert>(CV_wc_to_wc),
+					CV_wc_to_wc,
 					from_unicode_mapping_array,
 					from_unicode_map);
 	CHARSET_RETURN;
@@ -60,10 +60,8 @@ CHARSET_ENTRY(CS_sjis)
 	csptr->charset_min_bytes_per_char = 1;
 	csptr->charset_space_length = 1;
 	csptr->charset_space_character = (const BYTE*) " ";	/* 0x20 */
-	csptr->charset_to_unicode.csconvert_fn_convert =
-		reinterpret_cast<pfn_INTL_convert>(CVJIS_sjis_to_unicode);
-	csptr->charset_from_unicode.csconvert_fn_convert =
-		reinterpret_cast<pfn_INTL_convert>(CVJIS_unicode_to_sjis);
+	csptr->charset_to_unicode.csconvert_fn_convert = CVJIS_sjis_to_unicode;
+	csptr->charset_from_unicode.csconvert_fn_convert = CVJIS_unicode_to_sjis;
 	CHARSET_RETURN;
 }
 
@@ -76,9 +74,7 @@ CHARSET_ENTRY(CS_euc_j)
 	csptr->charset_min_bytes_per_char = 1;
 	csptr->charset_space_length = 1;
 	csptr->charset_space_character = (const BYTE*) " ";	/* 0x20 */
-	csptr->charset_to_unicode.csconvert_fn_convert =
-		reinterpret_cast<pfn_INTL_convert>(CVJIS_eucj_to_unicode);
-	csptr->charset_from_unicode.csconvert_fn_convert =
-		reinterpret_cast<pfn_INTL_convert>(CVJIS_unicode_to_eucj);
+	csptr->charset_to_unicode.csconvert_fn_convert = CVJIS_eucj_to_unicode;
+	csptr->charset_from_unicode.csconvert_fn_convert = CVJIS_unicode_to_eucj;
 	CHARSET_RETURN;
 }

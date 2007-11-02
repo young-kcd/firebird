@@ -33,6 +33,7 @@
 #include "../intl/charsets.h"
 #include "../intl/country_codes.h"
 #include "../intl/ld.h"
+#include "../common/classes/Aligner.h"
 
 #undef DEBUG
 
@@ -80,6 +81,14 @@ typedef USHORT UNICODE;
 #define CHARSET_RETURN	return (true)
 
 void CV_convert_init(csconvert*, pfn_INTL_convert, const void*, const void*);
+
+// Helpers to avoid alignment problems in INTL
+template <typename C>
+inline void put(UCHAR*& dest, const C src)
+{
+	memcpy(dest, &src, sizeof(C));
+	dest += sizeof(C);
+}
 
 #endif /* INTL_LDCOMMON_H */
 

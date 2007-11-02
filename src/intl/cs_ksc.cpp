@@ -42,11 +42,11 @@ CHARSET_ENTRY(CS_ksc_5601)
 	csptr->charset_fn_well_formed = CVKSC_check_ksc;
 
 	CV_convert_init(&csptr->charset_to_unicode,
-					reinterpret_cast<pfn_INTL_convert>(CVKSC_ksc_to_unicode),
+					CVKSC_ksc_to_unicode,
 					to_unicode_mapping_array,
 					to_unicode_map);
 	CV_convert_init(&csptr->charset_from_unicode,
-					reinterpret_cast<pfn_INTL_convert>(CVKSC_unicode_to_ksc),
+					CVKSC_unicode_to_ksc,
 					from_unicode_mapping_array,
 					from_unicode_map);
 

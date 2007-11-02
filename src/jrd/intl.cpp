@@ -471,15 +471,15 @@ public:
 			ULONG errPos;
 
 			// convert to UTF16
-			Firebird::HalfStaticArray<UCHAR, BUFFER_SMALL> str;
+			Firebird::HalfStaticArray<USHORT, BUFFER_SMALL / sizeof(USHORT)> str;
 			ULONG unilength = getConvToUnicode().convertLength(srcLen);
 			unilength = getConvToUnicode().convert(srcLen, src, unilength,
-				reinterpret_cast<USHORT*>(str.getBuffer(unilength)), &errCode, &errPos);
+				str.getBuffer(unilength / sizeof(USHORT) + 1), &errCode, &errPos);
 
 			// generate substring of UTF16
-			Firebird::HalfStaticArray<UCHAR, BUFFER_SMALL> substr;
-			unilength = UnicodeUtil::utf16Substring(unilength, reinterpret_cast<const USHORT*>(str.begin()),
-				unilength, reinterpret_cast<USHORT*>(substr.getBuffer(unilength)), startPos, len);
+			Firebird::HalfStaticArray<USHORT, BUFFER_SMALL / sizeof(USHORT)> substr;
+			unilength = UnicodeUtil::utf16Substring(unilength, str.begin(),
+				unilength, substr.getBuffer(unilength / sizeof(USHORT) + 1), startPos, len);
 
 			// convert generated substring to original charset
 			return getConvFromUnicode().convert(unilength, substr.begin(), dstLen, dst, &errCode, &errPos);

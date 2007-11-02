@@ -33,6 +33,7 @@
 #include "../jrd/intlobj_new.h"
 #include "../jrd/constants.h"
 #include "../jrd/unicode_util.h"
+#include "../common/classes/Aligner.h"
 
 typedef SSHORT CHARSET_ID;
 typedef SSHORT COLLATE_ID;
@@ -297,7 +298,7 @@ public:
 		{
 			const UCHAR* space = getCharSet()->getSpace();
 			BYTE spaceLength = getCharSet()->getSpaceLength();
-			Firebird::HalfStaticArray<UCHAR, BUFFER_SMALL> utf16Str;
+			Firebird::HalfStaticArray<USHORT, BUFFER_SMALL / sizeof(USHORT)> utf16Str;
 			UCHAR utf16Space[sizeof(ULONG)];
 
 			if (getCharSet()->isMultiByte())
@@ -309,8 +310,8 @@ public:
 				ULONG utf16Length = getCharSet()->getConvToUnicode().convertLength(srcLen);
 
 				srcLen = getCharSet()->getConvToUnicode().convert(srcLen, src,
-							utf16Length, utf16Str.getBuffer(utf16Length), &err_code, &err_position);
-				src = utf16Str.begin();
+							utf16Length, utf16Str.getBuffer(utf16Length / sizeof(USHORT) + 1), &err_code, &err_position);
+				src = reinterpret_cast<UCHAR*>(utf16Str.begin());
 
 				// convert charset space to UTF-16
 				spaceLength = getCharSet()->getConvToUnicode().convert(spaceLength, space,
@@ -334,7 +335,7 @@ public:
 
 			if (getCharSet()->isMultiByte())
 			{
-				dstLen = UnicodeUtil::utf16ToKey(srcLen, reinterpret_cast<const USHORT*>(src), 
+				dstLen = UnicodeUtil::utf16ToKey(srcLen, Firebird::Aligner<USHORT>(src, srcLen), 
 												 dstLen, dst, key_type);
 			}
 			else
@@ -365,8 +366,8 @@ public:
 		{
 			const UCHAR* space = getCharSet()->getSpace();
 			BYTE spaceLength = getCharSet()->getSpaceLength();
-			Firebird::HalfStaticArray<UCHAR, BUFFER_SMALL> utf16Str1;
-			Firebird::HalfStaticArray<UCHAR, BUFFER_SMALL> utf16Str2;
+			Firebird::HalfStaticArray<USHORT, BUFFER_SMALL / sizeof(USHORT)> utf16Str1;
+			Firebird::HalfStaticArray<USHORT, BUFFER_SMALL / sizeof(USHORT)> utf16Str2;
 			UCHAR utf16Space[sizeof(ULONG)];
 
 			if (getCharSet()->isMultiByte())
@@ -378,15 +379,15 @@ public:
 				ULONG utf16Length = getCharSet()->getConvToUnicode().convertLength(len1);
 
 				len1 = getCharSet()->getConvToUnicode().convert(len1, str1,
-							utf16Length, utf16Str1.getBuffer(utf16Length), &err_code, &err_position);
-				str1 = utf16Str1.begin();
+							utf16Length, utf16Str1.getBuffer(utf16Length / sizeof(USHORT) + 1), &err_code, &err_position);
+				str1 = reinterpret_cast<UCHAR*>(utf16Str1.begin());
 
 				// convert str2 to UTF-16
 				utf16Length = getCharSet()->getConvToUnicode().convertLength(len2);
 
 				len2 = getCharSet()->getConvToUnicode().convert(len2, str2,
-							utf16Length, utf16Str2.getBuffer(utf16Length), &err_code, &err_position);
-				str2 = utf16Str2.begin();
+							utf16Length, utf16Str2.getBuffer(utf16Length / sizeof(USHORT) + 1), &err_code, &err_position);
+				str2 = reinterpret_cast<UCHAR*>(utf16Str2.begin());
 
 				// convert charset space to UTF-16
 				spaceLength = getCharSet()->getConvToUnicode().convert(spaceLength, space,
@@ -419,8 +420,8 @@ public:
 			if (getCharSet()->isMultiByte())
 			{
 				INTL_BOOL error_flag;
-				return UnicodeUtil::utf16Compare(len1, reinterpret_cast<const USHORT*>(str1), 
-												 len2, reinterpret_cast<const USHORT*>(str2), &error_flag);
+				return UnicodeUtil::utf16Compare(len1, Firebird::Aligner<USHORT>(str1, len1), 
+												 len2, Firebird::Aligner<USHORT>(str2, len2), &error_flag);
 			}
 			else
 			{
@@ -448,22 +449,17 @@ public:
 			ULONG err_position;
 
 			ULONG utf16_length = getCharSet()->getConvToUnicode().convertLength(srcLen);
-			Firebird::HalfStaticArray<UCHAR, BUFFER_SMALL> utf16_str;
-			UCHAR* utf16_ptr;
-
-			if (dstLen >= utf16_length)	// if dst buffer is sufficient large, use it as intermediate
-				utf16_ptr = dst;
-			else
-				utf16_ptr = utf16_str.getBuffer(utf16_length);
+			Firebird::HalfStaticArray<USHORT, BUFFER_SMALL / sizeof(USHORT)> utf16_str;
+			USHORT* utf16_ptr = utf16_str.getBuffer(utf16_length / sizeof(USHORT) + 1);
 
 			// convert to UTF-16
 			srcLen = getCharSet()->getConvToUnicode().convert(srcLen, src,
 						utf16_length, utf16_ptr, &err_code, &err_position);
 
 			// convert to uppercase
-			Firebird::HalfStaticArray<UCHAR, BUFFER_SMALL> upper_str;
-			srcLen = UnicodeUtil::utf16UpperCase(srcLen, reinterpret_cast<USHORT*>(utf16_ptr),
-						utf16_length, reinterpret_cast<USHORT*>(upper_str.getBuffer(utf16_length)));
+			Firebird::HalfStaticArray<USHORT, BUFFER_SMALL / sizeof(USHORT)> upper_str;
+			srcLen = UnicodeUtil::utf16UpperCase(srcLen, utf16_ptr,
+						utf16_length, upper_str.getBuffer(utf16_length / sizeof(USHORT) + 1));
 
 			// convert to original character set
 			return getCharSet()->getConvFromUnicode().convert(srcLen, upper_str.begin(),
@@ -485,22 +481,17 @@ public:
 			ULONG err_position;
 
 			ULONG utf16_length = getCharSet()->getConvToUnicode().convertLength(srcLen);
-			Firebird::HalfStaticArray<UCHAR, BUFFER_SMALL> utf16_str;
-			UCHAR* utf16_ptr;
-
-			if (dstLen >= utf16_length)	// if dst buffer is sufficient large, use it as intermediate
-				utf16_ptr = dst;
-			else
-				utf16_ptr = utf16_str.getBuffer(utf16_length);
+			Firebird::HalfStaticArray<USHORT, BUFFER_SMALL / sizeof(USHORT)> utf16_str;
+			USHORT* utf16_ptr = utf16_str.getBuffer(utf16_length / sizeof(USHORT) + 1);
 
 			// convert to UTF-16
 			srcLen = getCharSet()->getConvToUnicode().convert(srcLen, src,
 						utf16_length, utf16_ptr, &err_code, &err_position);
 
 			// convert to lowercase
-			Firebird::HalfStaticArray<UCHAR, BUFFER_SMALL> lower_str;
-			srcLen = UnicodeUtil::utf16LowerCase(srcLen, reinterpret_cast<USHORT*>(utf16_ptr),
-						utf16_length, reinterpret_cast<USHORT*>(lower_str.getBuffer(utf16_length)));
+			Firebird::HalfStaticArray<USHORT, BUFFER_SMALL / sizeof(USHORT)> lower_str;
+			srcLen = UnicodeUtil::utf16LowerCase(srcLen, utf16_ptr, 
+						utf16_length, lower_str.getBuffer(utf16_length / sizeof(USHORT) + 1));
 
 			// convert to original character set
 			return getCharSet()->getConvFromUnicode().convert(srcLen, lower_str.begin(),
@@ -523,17 +514,17 @@ public:
 
 			USHORT err_code;
 			ULONG err_position;
-			Firebird::HalfStaticArray<UCHAR, BUFFER_SMALL> utf16_str;
+			Firebird::HalfStaticArray<USHORT, BUFFER_SMALL / sizeof(USHORT)> utf16_str;
 
 			ULONG utf16_len = getCharSet()->getConvToUnicode().convertLength(srcLen);
 
 			// convert to UTF-16
 			utf16_len = getCharSet()->getConvToUnicode().convert(srcLen, src,
-				utf16_len, utf16_str.getBuffer(utf16_len), &err_code, &err_position);
+				utf16_len, utf16_str.getBuffer(utf16_len / sizeof(USHORT) + 1), &err_code, &err_position);
 
 			// convert UTF-16 to UTF-32
-			return UnicodeUtil::utf16ToUtf32(utf16_len, reinterpret_cast<const USHORT*>(utf16_str.begin()),
-				dstLen, reinterpret_cast<ULONG*>(dst), &err_code, &err_position) / sizeof(ULONG);
+			return UnicodeUtil::utf16ToUtf32(utf16_len, utf16_str.begin(),
+				dstLen, Firebird::OutAligner<ULONG>(dst, dstLen), &err_code, &err_position) / sizeof(ULONG);
 		}
 		else
 		{

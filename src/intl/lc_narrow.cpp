@@ -688,18 +688,15 @@ ULONG LC_NARROW_canonical(TEXTTYPE obj, ULONG srcLen, const UCHAR* src, ULONG ds
 
 		if ((obj->texttype_impl->texttype_flags & (TEXTTYPE_secondary_insensitive | TEXTTYPE_tertiary_insensitive)) == 0)
 		{
-			*reinterpret_cast<USHORT*>(dst) = (coll->Primary << 8) | (coll->Secondary << 4) | coll->Tertiary;
-			dst += sizeof(USHORT);
+			put(dst, (USHORT) ((coll->Primary << 8) | (coll->Secondary << 4) | coll->Tertiary));
 		}
 		else if ((obj->texttype_impl->texttype_flags & TEXTTYPE_secondary_insensitive) == 0)
 		{
-			*reinterpret_cast<USHORT*>(dst) = (coll->Primary << 8) | coll->Secondary;
-			dst += sizeof(USHORT);
+			put(dst, (USHORT) ((coll->Primary << 8) | coll->Secondary));
 		}
 		else if ((obj->texttype_impl->texttype_flags & TEXTTYPE_tertiary_insensitive) == 0)
 		{
-			*reinterpret_cast<USHORT*>(dst) = (coll->Primary << 8) | coll->Tertiary;
-			dst += sizeof(USHORT);
+			put(dst, (USHORT) ((coll->Primary << 8) | coll->Tertiary));
 		}
 		else
 			*dst++ = coll->Primary;

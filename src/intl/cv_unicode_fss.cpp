@@ -255,7 +255,7 @@ ULONG CS_UTFFSS_fss_to_unicode_cc(csconvert* obj,
 								ULONG src_len,
 								const UCHAR* src_ptr,
 								ULONG dest_len,
-								UNICODE *dest_ptr,
+								UCHAR *dest_ptr,
 								USHORT *err_code,
 								ULONG *err_position)
 {
@@ -263,26 +263,26 @@ ULONG CS_UTFFSS_fss_to_unicode_cc(csconvert* obj,
 	fb_assert(err_code != NULL);
 	fb_assert(err_position != NULL);
 	fb_assert(obj != NULL);
-	fb_assert(obj->csconvert_fn_convert ==
-		reinterpret_cast<pfn_INTL_convert>(CS_UTFFSS_fss_to_unicode_cc));
+	fb_assert(obj->csconvert_fn_convert == CS_UTFFSS_fss_to_unicode_cc);
 
-	return fss_to_unicode(src_len, src_ptr, dest_len, dest_ptr, err_code, err_position);
+	return fss_to_unicode(src_len, src_ptr, 
+		dest_len, Firebird::OutAligner<UNICODE>(dest_ptr, dest_len), err_code, err_position);
 }
 
 
 ULONG CS_UTFFSS_unicode_to_fss(csconvert* obj,
 								ULONG unicode_len,
-								const UNICODE* unicode_str,
+								const UCHAR* p_unicode_str,
 								ULONG fss_len,
-								UCHAR *fss_str,
-								USHORT *err_code,
-								ULONG *err_position)
+								UCHAR* fss_str,
+								USHORT* err_code,
+								ULONG* err_position)
 {
-	fb_assert(unicode_str != NULL || fss_str == NULL);
+	fb_assert(p_unicode_str != NULL || fss_str == NULL);
 	fb_assert(err_code != NULL);
 	fb_assert(err_position != NULL);
 	fb_assert(obj != NULL);
-	fb_assert(obj->csconvert_fn_convert == reinterpret_cast<pfn_INTL_convert>(CS_UTFFSS_unicode_to_fss));
+	fb_assert(obj->csconvert_fn_convert == CS_UTFFSS_unicode_to_fss);
 
 	const ULONG src_start = unicode_len;
 	*err_code = 0;
@@ -290,6 +290,9 @@ ULONG CS_UTFFSS_unicode_to_fss(csconvert* obj,
 /* See if we're only after a length estimate */
 	if (fss_str == NULL)
 		return ((ULONG) (unicode_len + 1) / 2 * 3);	/* worst case - all han character input */
+
+	Firebird::Aligner<UNICODE> s(p_unicode_str, unicode_len);
+	const UNICODE* unicode_str = s;
 
 	UCHAR tmp_buffer[6];
 	const UCHAR* const start = fss_str;

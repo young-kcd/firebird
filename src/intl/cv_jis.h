@@ -22,18 +22,18 @@
  */
 
 ULONG CVJIS_sjis_to_unicode(csconvert* obj, ULONG sjis_len, const UCHAR* sjis_str,
-							ULONG dest_len, USHORT *dest_ptr,
+							ULONG dest_len, UCHAR *dest_ptr,
 							USHORT *err_code, ULONG *err_position);
 
-ULONG CVJIS_unicode_to_sjis(csconvert* obj, ULONG unicode_len, const USHORT* unicode_str,
+ULONG CVJIS_unicode_to_sjis(csconvert* obj, ULONG unicode_len, const UCHAR* unicode_str,
 							ULONG sjis_len, UCHAR *sjis_str,
 							USHORT *err_code, ULONG *err_position);
 
 ULONG CVJIS_eucj_to_unicode(csconvert* obj, ULONG src_len, const UCHAR* src_ptr,
-							ULONG dest_len, USHORT *dest_ptr,
+							ULONG dest_len, UCHAR *dest_ptr,
 							USHORT *err_code, ULONG *err_position);
 
-ULONG CVJIS_unicode_to_eucj(csconvert* obj, ULONG unicode_len, const USHORT* unicode_str,
+ULONG CVJIS_unicode_to_eucj(csconvert* obj, ULONG unicode_len, const UCHAR* unicode_str,
 							ULONG eucj_len, UCHAR *eucj_str,
 							USHORT *err_code, ULONG *err_position);
 

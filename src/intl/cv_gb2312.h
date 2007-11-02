@@ -28,11 +28,11 @@
 			 (UCHAR)((uc)&0xff)<=0xfe)	/* GB2312 2nd-byte */
 
 ULONG CVGB_gb2312_to_unicode(csconvert* obj, ULONG src_len, const UCHAR* src_ptr,
-							 ULONG dest_len, USHORT *dest_ptr,
+							 ULONG dest_len, UCHAR *dest_ptr,
 							 USHORT *err_code, ULONG *err_position);
 
-ULONG CVGB_unicode_to_gb2312(csconvert* obj, ULONG unicode_len, const USHORT* unicode_str,
-							 ULONG gb_len,UCHAR *gb_str,
+ULONG CVGB_unicode_to_gb2312(csconvert* obj, ULONG unicode_len, const UCHAR* unicode_str,
+							 ULONG gb_len, UCHAR *gb_str,
 							 USHORT *err_code, ULONG *err_position);
 
 INTL_BOOL CVGB_check_gb2312(charset* cs, ULONG gb_len, const UCHAR* gb_str, ULONG* offending_position);
