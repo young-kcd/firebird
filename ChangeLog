@@ -1,3 +1,9 @@
+2007-11-01 11:33  dimitr
+
+	* firebird2/src/jrd/rse.cpp (1.104.2.6):
+
+	Backported CORE-1419.
+
 2007-10-29 18:55  dimitr
 
 	* firebird2/src/jrd/opt.cpp (1.261.2.12):
