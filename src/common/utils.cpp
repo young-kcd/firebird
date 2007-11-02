@@ -409,8 +409,6 @@ bool isGlobalKernelPrefix()
 		// The API for that is the NT thing, so we have to get addresses of the 
 		// functions dynamically to avoid troubles on Windows 9X platforms
 
-		HANDLE hProcess = GetCurrentProcess();
-
 		DynLibHandle hmodAdvApi(LoadLibrary("advapi32.dll"));
 		
 		if (!hmodAdvApi) {
@@ -435,6 +433,7 @@ bool isGlobalKernelPrefix()
 			return false;
 		}
 
+		HANDLE hProcess = GetCurrentProcess();
 		HANDLE hToken;
 		if (pfnOpenProcessToken(hProcess, TOKEN_QUERY, &hToken) == 0) {
 			gds__log("OpenProcessToken failed. Error code: %lu", GetLastError());
