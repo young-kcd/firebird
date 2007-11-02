@@ -1,3 +1,16 @@
+2007-11-01 18:19  alexpeshkoff
+
+	* firebird2/src/jrd/: blb.cpp (1.150), blb_proto.h (1.30), jrd.cpp
+	(1.351):
+
+	avoid cast
+
+2007-11-01 15:54  asfernandes
+
+	* firebird2/src/jrd/cmp.cpp (1.265):
+
+	Allow to backup databases when a collation is not available
+
 2007-10-31 14:59  alexpeshkoff
 
 	* firebird2/src/jrd/met.epp (1.226):
