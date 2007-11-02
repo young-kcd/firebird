@@ -280,7 +280,7 @@ int CLIB_ROUTINE server_main( int argc, char** argv)
 	set_signal(SIGUSR2, signal_handler);
 #endif
 
-#if defined(UNIX) && defined(DEV_BUILD)
+#if defined(UNIX) && defined(DEV_BUILD) && defined(HAVE_SETRLIMIT) && defined(HAVE_GETRLIMIT)
 	{
 		// try to force core files creation for DEV_BUILD
 		struct rlimit core;
