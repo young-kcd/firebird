@@ -2360,7 +2360,7 @@ static bool dump_rsb(const jrd_req* request,
 
 /* print out the type followed immediately by any
    type-specific data */
-	SSHORT return_length;
+	USHORT return_length;
 	*buffer++ = isc_info_rsb_type;
 
 	switch (rsb->rsb_type) {
@@ -2442,7 +2442,7 @@ static bool dump_rsb(const jrd_req* request,
         }
 
 		if (!OPT_access_path(procedure->prc_request, buffer, *buffer_length,
-			 reinterpret_cast<USHORT*>(&return_length)))
+			 				 &return_length))
 		{
 			return false;
 		}
