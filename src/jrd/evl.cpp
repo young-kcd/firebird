@@ -2927,7 +2927,7 @@ static dsc* cast(thread_db* tdbb, dsc* value, const jrd_nod* node, impure_value*
 	impure->vlu_desc.dsc_address = (UCHAR *) & impure->vlu_misc;
 	if (DTYPE_IS_TEXT(impure->vlu_desc.dsc_dtype)) {
 		USHORT length = DSC_string_length(&impure->vlu_desc);
-		if (length <= 0) {
+		if (length <= 0 && value) {
 			/* cast is a subtype cast only */
 
 			length = DSC_string_length(value);
