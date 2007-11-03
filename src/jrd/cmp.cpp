@@ -3447,6 +3447,8 @@ static jrd_nod* pass1(thread_db* tdbb,
 				{
 					// ASF: Swallow the exception if we fail to load the collation here.
 					// This allows we to backup databases when the collation isn't available.
+					if (!(tdbb->tdbb_attachment->att_flags & ATT_gbak_attachment))
+						throw;
 				}
 
 				tdbb->tdbb_status_vector = save_status;
