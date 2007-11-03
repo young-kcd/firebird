@@ -1,3 +1,30 @@
+2007-11-02 16:21  alexpeshkoff
+
+	* firebird2/src/jrd/err.cpp (1.66):
+
+	Comment
+
+2007-11-02 16:13  asfernandes
+
+	* firebird2/src/common/utils.cpp (1.40):
+
+	Misc
+
+2007-11-02 16:12  alexpeshkoff
+
+	* firebird2/: configure.in (1.262), src/jrd/err.cpp (1.65),
+	src/remote/inet_server.cpp (1.66):
+
+	Fixed CORE-1558: Help people get core files in case of abort() on
+	BUGCHECK
+
+2007-11-02 15:43  alexpeshkoff
+
+	* firebird2/src/jrd/evl.cpp (1.238):
+
+	Fixed CORE-1560: NULLIF crashes when first parameter is constant
+	empty string
+
 2007-11-01 18:19  alexpeshkoff
 
 	* firebird2/src/jrd/: blb.cpp (1.150), blb_proto.h (1.30), jrd.cpp
