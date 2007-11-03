@@ -1363,27 +1363,29 @@ static jrd_nod* par_field(thread_db* tdbb, CompilerScratch* csb, SSHORT blr_oper
 	jrd_nod* node = PAR_gen_field(tdbb, stream, id);
 	node->nod_flags |= flags;
 
-	if (is_column) {
-		jrd_rel* temp_rel = csb->csb_rpt[stream].csb_relation;
-		if (temp_rel) {
-			if (id >= temp_rel->rel_fields->count())
-			{
-				node = PAR_make_node(tdbb, 0);
-				node->nod_type = nod_null;
-			}
-			else
-			{
-				jrd_fld* field = (*temp_rel->rel_fields)[id];
-				if (field) {
-					if (field->fld_default_value && field->fld_not_null)
-					{
-						node->nod_arg[e_fld_default_value] =
-							field->fld_default_value;
-					}
-				}
-			}
-		}
-	}
+	if (is_column)
+	{
+ 		jrd_rel* temp_rel = csb->csb_rpt[stream].csb_relation;
+
+		if (temp_rel)
+		{
+			jrd_fld* field;
+
+			if (id < (int) temp_rel->rel_fields->count() && (field = (*temp_rel->rel_fields)[id]))
+ 			{
+				if (field->fld_default_value && field->fld_not_null)
+					node->nod_arg[e_fld_default_value] = field->fld_default_value;
+ 			}
+ 			else
+ 			{
+				if (temp_rel->rel_flags & REL_system)
+				{
+					node = PAR_make_node(tdbb, 0);
+					node->nod_type = nod_null;
+ 				}
+ 			}
+ 		}
+ 	}
 
 	return node;
 }
