@@ -4689,7 +4689,7 @@ static bool string_boolean(thread_db* tdbb, jrd_nod* node, dsc* desc1,
 						reinterpret_cast<bid*>(desc1->dsc_address));
 
 		if (charset->isMultiByte() &&
-			(node->nod_type == nod_contains || !(obj->getFlags() & TEXTTYPE_DIRECT_MATCH)))
+			(node->nod_type != nod_starts || !(obj->getFlags() & TEXTTYPE_DIRECT_MATCH)))
 		{
 			buffer.getBuffer(blob->blb_length);		// alloc space to put entire blob in memory
 		}
