@@ -1,3 +1,37 @@
+2007-11-02 16:46  alexpeshkoff
+
+	* firebird2/: configure.in (1.241.2.12), src/jrd/err.cpp
+	(1.61.4.1), src/remote/inet_server.cpp (1.58.4.3):
+
+	Backported fix for CORE-1558: Help people get core files in case of
+	abort() on BUGCHECK
+
+2007-11-02 12:40  alexpeshkoff
+
+	* firebird2/src/: common/classes/Aligner.h (1.2.2.2),
+	intl/cs_big5.cpp (1.3.4.1), intl/cs_gb2312.cpp (1.4.4.1),
+	intl/cs_jis.cpp (1.4.4.1), intl/cs_ksc.cpp (1.4.4.1),
+	intl/cs_narrow.cpp (1.8.4.1), intl/cs_unicode_fss.cpp (1.4.4.1),
+	intl/cs_unicode_ucs2.cpp (1.4.4.1), intl/cv_big5.cpp (1.9.4.1),
+	intl/cv_big5.h (1.6.4.1), intl/cv_gb2312.cpp (1.8.4.1),
+	intl/cv_gb2312.h (1.5.4.1), intl/cv_jis.cpp (1.11.4.1),
+	intl/cv_jis.h (1.5.4.1), intl/cv_ksc.cpp (1.10.4.1), intl/cv_ksc.h
+	(1.7.4.1), intl/cv_narrow.cpp (1.9.4.1), intl/cv_narrow.h
+	(1.4.4.1), intl/cv_unicode_fss.cpp (1.9.4.1), intl/cv_unicode_fss.h
+	(1.8.4.1), intl/lc_narrow.cpp (1.16.2.2), intl/ldcommon.h
+	(1.22.4.2), jrd/common.h (1.137.2.6), jrd/intl.cpp (1.83.4.2),
+	jrd/intl_builtin.cpp (1.28.4.1), jrd/intl_classes.h (1.22.4.1),
+	jrd/unicode_util.cpp (1.6.4.3):
+
+	Backported fix for CORE-1499: Wrong alignment of data, used in INTL
+	converters
+
+2007-11-02 12:40  alexpeshkoff
+
+	* firebird2/src/jrd/opt.cpp (1.261.2.13):
+
+	avoid cast
+
 2007-11-01 11:33  dimitr
 
 	* firebird2/src/jrd/rse.cpp (1.104.2.6):
@@ -84,12 +118,31 @@
 
 	fixed posix CS build
 
+2007-10-06 18:07  alexpeshkoff
+
+	* firebird2/src/common/classes/Aligner.h (1.2.2.1):
+
+	file Aligner.h was added on branch B2_0_Release on 2007-11-02
+	11:40:58 +0000
+
+2007-10-06 18:07  asfernandes
+
+	* firebird2/src/common/classes/Aligner.h (1.2):
+
+	Misc
+
 2007-10-05 16:54  alexpeshkoff
 
 	* firebird2/src/jrd/execute_statement.cpp (1.14.4.6):
 
 	Backported fix for CORE-1500: Data in EXECUTE STATEMENT internal
 	buffer is not aligned correctly
+
+2007-10-05 16:35  alexpeshkoff
+
+	* firebird2/src/common/classes/Aligner.h (1.1):
+
+	Added templates to ensure alignment in INTL
 
 2007-09-30 12:55  hvlad
 
