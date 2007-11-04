@@ -1,3 +1,25 @@
+2007-11-03 20:02  asfernandes
+
+	* firebird2/src/jrd/cmp.cpp (1.266):
+
+	Take Alex suggestion to swallow the exception only when backuping.
+	The index code is not prepared to handle such type of exceptions
+	well.
+
+2007-11-03 18:49  asfernandes
+
+	* firebird2/src/jrd/evl.cpp (1.239):
+
+	Simple fix for CORE-1539 - select * from rdb$triggers where
+	rdb$trigger_source like 'CHECK%'
+
+2007-11-03 18:18  asfernandes
+
+	* firebird2/src/jrd/par.cpp (1.175):
+
+	Rework on the non-existent fields handling after Alex change in
+	met.epp
+
 2007-11-02 16:21  alexpeshkoff
 
 	* firebird2/src/jrd/err.cpp (1.66):
