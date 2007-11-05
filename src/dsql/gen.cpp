@@ -132,7 +132,7 @@ void GEN_expr( dsql_req* request, dsql_nod* node)
 
 	case nod_strlen:
 		stuff(request, blr_strlen);
-		stuff(request, node->nod_arg[e_strlen_type]->getConstant());
+		stuff(request, node->nod_arg[e_strlen_type]->getSlong());
 		GEN_expr(request, node->nod_arg[e_strlen_value]);
 		return;
 
@@ -179,7 +179,7 @@ void GEN_expr( dsql_req* request, dsql_nod* node)
 		if (node->nod_arg[0]) {
 			const dsql_nod* const_node = node->nod_arg[0];
 			fb_assert(const_node->nod_type == nod_constant);
-			const int precision = (int) const_node->getConstant();
+			const int precision = (int) const_node->getSlong();
 			stuff(request, blr_current_time2);
 			stuff(request, precision);
 		}
@@ -192,7 +192,7 @@ void GEN_expr( dsql_req* request, dsql_nod* node)
 		if (node->nod_arg[0]) {
 			const dsql_nod* const_node = node->nod_arg[0];
 			fb_assert(const_node->nod_type == nod_constant);
-			const int precision = (int) const_node->getConstant();
+			const int precision = (int) const_node->getSlong();
 			stuff(request, blr_current_timestamp2);
 			stuff(request, precision);
 		}
@@ -904,7 +904,7 @@ void GEN_start_transaction( dsql_req* request, const dsql_nod* tran_node)
 			sw_lock_timeout = true;
 			if (ptr->nod_count == 1 && ptr->nod_arg[0]->nod_type == nod_constant)
 			{
-				const int lck_timeout = (int) ptr->nod_arg[0]->getConstant();
+				const int lck_timeout = (int) ptr->nod_arg[0]->getSlong();
 				stuff(request, isc_tpb_lock_timeout);
 				stuff(request, 2);
 				stuff_word(request, lck_timeout);
@@ -2613,7 +2613,7 @@ static void gen_sort( dsql_req* request, dsql_nod* list)
 	{
 		dsql_nod* nulls_placement = (*ptr)->nod_arg[e_order_nulls];
 		if (nulls_placement) {
-			switch (nulls_placement->getConstant()) {
+			switch (nulls_placement->getSlong()) {
 				case NOD_NULLS_FIRST:
 					stuff(request, blr_nullsfirst);
 					break;
