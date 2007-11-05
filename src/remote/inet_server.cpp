@@ -105,16 +105,21 @@
 #endif
 #endif
 
+#ifdef HAVE_SYS_RESOURCE_H
+#include <sys/resource.h>
+#endif
+
 #if (defined SUPERSERVER && defined UNIX && defined SERVER_SHUTDOWN)
 #include "../common/classes/semaphore.h"
 #define SHUTDOWN_THREAD
 #endif
 
-#ifdef SUPERSERVER
-#ifndef WIN_NT
+#ifdef UNIX
 const char* TEMP_DIR = "/tmp";
 #define CHANGE_DIR chdir
 #endif
+
+#ifdef SUPERSERVER
 const char* INTERBASE_USER_NAME		= "interbase";
 const char* INTERBASE_USER_SHORT	= "interbas";
 const char* FIREBIRD_USER_NAME		= "firebird";
@@ -280,9 +285,12 @@ int CLIB_ROUTINE server_main( int argc, char** argv)
 	set_signal(SIGUSR2, signal_handler);
 #endif
 
-#if defined(UNIX) && defined(DEV_BUILD) && defined(HAVE_SETRLIMIT) && defined(HAVE_GETRLIMIT)
+#if defined(UNIX) && defined(HAVE_SETRLIMIT) && defined(HAVE_GETRLIMIT)
+#if !(defined(DEV_BUILD))
+	if (Config::getBugcheckAbort())
+#endif
 	{
-		// try to force core files creation for DEV_BUILD
+		// try to force core files creation
 		struct rlimit core;
 		if (getrlimit(RLIMIT_CORE, &core) == 0)
 		{
@@ -295,6 +303,14 @@ int CLIB_ROUTINE server_main( int argc, char** argv)
 		else
 		{
 			gds__log("getrlimit() failed, errno=%d", errno);
+		}
+
+		// we need some writable directory for core file
+		// on any unix /tmp seems to be the best place
+		if (CHANGE_DIR(TEMP_DIR)) {
+			/* error on changing the directory */
+			gds__log("Could not change directory to %s due to errno %d",
+					TEMP_DIR, errno);
 		}
 	}
 #endif
