@@ -1,3 +1,18 @@
+2007-11-05 16:03  alexpeshkoff
+
+	* firebird2/src/dsql/: ddl.cpp (1.168.4.3), dsql.cpp (1.162.4.4),
+	gen.cpp (1.98.2.3), make.cpp (1.110.2.6), node.h (1.70.4.2),
+	pass1.cpp (1.260.2.6):
+
+	Backported function name change
+
+2007-11-05 14:20  alexpeshkoff
+
+	* firebird2/src/: jrd/err.cpp (1.61.4.2), remote/inet_server.cpp
+	(1.58.4.4):
+
+	Backported proper fix for CORE-1558
+
 2007-11-02 16:46  alexpeshkoff
 
 	* firebird2/: configure.in (1.241.2.12), src/jrd/err.cpp
