@@ -99,7 +99,6 @@ dsql_nod* MAKE_const_slong(SLONG value)
 	node->nod_desc.dsc_address = (UCHAR*) node->nod_arg;
 
 	*((SLONG *) (node->nod_desc.dsc_address)) = value;
-	//printf("make.cpp %p %d\n", node->nod_arg[0], value);
 
 	return node;
 }
@@ -514,7 +513,7 @@ void MAKE_desc(dsql_req* request, dsc* desc, dsql_nod* node, dsql_nod* null_repl
 			{
 				// We have a constant passed as length, so
 				// use the real length
-				length = UTLD_char_length_to_byte_length(*(SLONG *) for_node->nod_desc.dsc_address, maxBytesPerChar);
+				length = UTLD_char_length_to_byte_length(for_node->getSlong(), maxBytesPerChar);
 
 				if (length < 0 || length > MAX_COLUMN_SIZE - sizeof(USHORT))
 					length = UTLD_char_length_to_byte_length(MAX_COLUMN_SIZE - sizeof(USHORT), maxBytesPerChar);

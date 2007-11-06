@@ -2615,8 +2615,7 @@ void DSQL_pretty(const dsql_nod* node, int column)
 			if (node->nod_desc.dsc_dtype == dtype_text)
 				sprintf(s, "constant \"%s\"", node->nod_desc.dsc_address);
 			else
-				sprintf(s, "constant %"SLONGFORMAT,
-						*(SLONG *) (node->nod_desc.dsc_address));
+				sprintf(s, "constant %"SLONGFORMAT, node->getSlong());
 			verb = s;
 		}
 		break;

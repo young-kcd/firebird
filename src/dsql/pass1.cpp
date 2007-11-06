@@ -593,7 +593,7 @@ dsql_nod* PASS1_node(dsql_req* request, dsql_nod* input, bool proc_flag)
 		sub1 = PASS1_node(request, input->nod_arg[e_extract_value], proc_flag);
 		MAKE_desc(request, &sub1->nod_desc, sub1, NULL);
 
-		switch (*(SLONG*)input->nod_arg[e_extract_part]->nod_desc.dsc_address)
+		switch (input->nod_arg[e_extract_part]->getSlong())
 		{
 		case blr_extract_year:
 		case blr_extract_month:

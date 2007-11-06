@@ -10796,7 +10796,6 @@ int LexerState::yylex (
 				if (!have_decimal && (number <= MAX_SLONG))
 				{
 					yylval = (dsql_nod*) (IPTR) number;
-					//printf ("parse.y %p %d\n", yylval, number);
 					return NUMBER;
 				}
 				else

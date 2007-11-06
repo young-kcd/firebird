@@ -126,7 +126,7 @@ void GEN_expr( dsql_req* request, dsql_nod* node)
 
 	case nod_extract:
 		stuff(request, blr_extract);
-		stuff(request, *(SLONG *) node->nod_arg[e_extract_part]->nod_desc.dsc_address);
+		stuff(request, node->nod_arg[e_extract_part]->getSlong());
 		GEN_expr(request, node->nod_arg[e_extract_value]);
 		return;
 
@@ -485,7 +485,7 @@ void GEN_expr( dsql_req* request, dsql_nod* node)
 
 	case nod_trim:
 		stuff(request, blr_trim);
-		stuff(request, *(SLONG *) node->nod_arg[e_trim_specification]->nod_desc.dsc_address);
+		stuff(request, node->nod_arg[e_trim_specification]->getSlong());
 
 		if (node->nod_arg[e_trim_characters])
 		{
@@ -1495,7 +1495,6 @@ static void gen_constant( dsql_req* request, dsc* desc, bool negate_value)
 		value = *(SLONG *) p;
 		if (negate_value)
 			value = -value;
-		//printf("gen.cpp = %p %d\n", *((void**)p), value);
 		stuff_word(request, value);
 		stuff_word(request, value >> 16);
 		break;
