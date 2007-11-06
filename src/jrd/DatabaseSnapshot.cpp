@@ -296,7 +296,9 @@ void DatabaseSnapshot::SharedMemory::init(void* arg, SH_MEM_T* shmemData, bool i
 	fb_assert(shmem);
 
 #ifdef WIN_NT
-	checkMutex("init", ISC_mutex_init(&shmem->mutex, MONITOR_FILE));
+	char buffer[MAXPATHLEN];
+	gds__prefix_lock(buffer, MONITOR_FILE);
+	checkMutex("init", ISC_mutex_init(&shmem->mutex, buffer));
 #endif
 
 	if (!initialize)
