@@ -1,3 +1,10 @@
+2007-11-05 14:18  alexpeshkoff
+
+	* firebird2/src/: jrd/err.cpp (1.67), remote/inet_server.cpp
+	(1.67):
+
+	Better fix for CORE-1558
+
 2007-11-03 20:02  asfernandes
 
 	* firebird2/src/jrd/cmp.cpp (1.266):
