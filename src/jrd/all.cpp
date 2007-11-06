@@ -155,7 +155,7 @@ void ALL_print_memory_pool_info(FILE* fptr, Database* databases)
 
 	for (k = 1, dbb = databases; dbb; dbb = dbb->dbb_next, ++k)
 	{
-		fprintf(fptr, "\n\t dbb%d -> %s\n", k, dbb->dbb_filename.c_str());
+		fprintf(fptr, "\n\t dbb #%d -> %s\n", k, dbb->dbb_filename.c_str());
 		j = 0;
 		
 		size_t itr;
@@ -171,7 +171,7 @@ void ALL_print_memory_pool_info(FILE* fptr, Database* databases)
 		{
 			j++;
 		}
-		fprintf(fptr, " and %d attachment(s)", j);
+		fprintf(fptr, " and %d attachment(s)\n\n", j);
 		for (itr = 0; itr < dbb->dbb_pools.getCount(); ++itr)
 		{
 			JrdMemoryPool *myPool = dbb->dbb_pools[itr];
