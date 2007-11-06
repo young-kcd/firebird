@@ -1194,7 +1194,9 @@ static void init(void* arg, SH_MEM shmem_data, bool initialize)
 	int mutex_state;
 
 #if defined(WIN_NT)
-	if (mutex_state = ISC_mutex_init(MUTEX, EVENT_FILE))
+	char buffer[MAXPATHLEN];
+	gds__prefix_lock(buffer, EVENT_FILE);
+	if (mutex_state = ISC_mutex_init(MUTEX, buffer))
 		mutex_bugcheck("mutex init", mutex_state);
 #endif
 
