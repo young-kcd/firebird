@@ -3557,22 +3557,22 @@ static bool initializeFastMutex(FAST_MUTEX* lpMutex, LPSECURITY_ATTRIBUTES lpAtt
 	{
 		if (lpName)
 			sprintf(sz, FAST_MUTEX_MAP_NAME, lpName);
-		
+
 		lpMutex->hFileMap = CreateFileMapping(
 			INVALID_HANDLE_VALUE, 
-			NULL, 
+			lpAttributes, 
 			PAGE_READWRITE, 
 			0, 
 			sizeof(FAST_MUTEX_SHARED_SECTION), 
 			name);
-		
+
 		dwLastError = GetLastError();
-		
+
 		if (lpMutex->hFileMap)
 		{
 			lpMutex->lpSharedInfo = (FAST_MUTEX_SHARED_SECTION*) 
 				MapViewOfFile(lpMutex->hFileMap, FILE_MAP_WRITE, 0, 0, 0);
-		    
+
 			if (lpMutex->lpSharedInfo)
 			{
 				if (dwLastError != ERROR_ALREADY_EXISTS)
@@ -3587,7 +3587,7 @@ static bool initializeFastMutex(FAST_MUTEX* lpMutex, LPSECURITY_ATTRIBUTES lpAtt
 					while (!lpMutex->lpSharedInfo->fInitialized) 
 						switchToThread();
 				}
-				
+
 				SetLastError(dwLastError);
 				return true;
 			}
