@@ -1,3 +1,12 @@
+2007-11-06 09:18  alexpeshkoff
+
+	* firebird2/src/dsql/: dsql.cpp (1.162.4.5), gen.cpp (1.98.2.4),
+	make.cpp (1.110.2.7), parse.cpp (1.173.4.2), parse.y (1.200.4.2),
+	pass1.cpp (1.260.2.7):
+
+	Some more places, where getSlong() is useful.  Removed
+	accidentially committed commented printfs.
+
 2007-11-05 16:03  alexpeshkoff
 
 	* firebird2/src/dsql/: ddl.cpp (1.168.4.3), dsql.cpp (1.162.4.4),
