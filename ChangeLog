@@ -1,3 +1,27 @@
+2007-11-06 13:03  dimitr
+
+	* firebird2/src/jrd/isc_sync.cpp (1.118):
+
+	Let's always use the explicit security attributes.
+
+2007-11-06 10:51  dimitr
+
+	* firebird2/src/jrd/all.cpp (1.50):
+
+	Misc.
+
+2007-11-06 10:50  dimitr
+
+	* firebird2/src/jrd/event.cpp (1.65):
+
+	The same fix for events.
+
+2007-11-06 10:45  dimitr
+
+	* firebird2/src/jrd/DatabaseSnapshot.cpp (1.40):
+
+	Fixed CORE-1567.
+
 2007-11-05 14:18  alexpeshkoff
 
 	* firebird2/src/: jrd/err.cpp (1.67), remote/inet_server.cpp
