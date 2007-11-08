@@ -1148,8 +1148,10 @@ void PAG_header(bool info)
 
 	if (header->hdr_flags & hdr_force_write) {
 		dbb->dbb_flags |= DBB_force_write;
-		if (!(header->hdr_flags & hdr_read_only))
-			PIO_force_write(dbb->dbb_file, true);
+		if (!(header->hdr_flags & hdr_read_only)) {
+			for (jrd_file* file = dbb->dbb_file; file; file = file->fil_next) 
+				PIO_force_write(file, true);
+		}
 	}
 
 	if (header->hdr_flags & hdr_no_reserve)
