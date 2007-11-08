@@ -1280,9 +1280,11 @@ void PAG_header(bool info)
 			(useFSCache ? 0 : DBB_no_fs_cache);
 
 		PageSpace* pageSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
-		PIO_force_write(pageSpace->file, 
-			(dbb->dbb_flags & DBB_force_write) && !(header->hdr_flags & hdr_read_only), 
-			dbb->dbb_flags & DBB_no_fs_cache);
+		for (jrd_file* file = pageSpace->file; file; file = file->fil_next) {
+			PIO_force_write(file, 
+				(dbb->dbb_flags & DBB_force_write) && !(header->hdr_flags & hdr_read_only), 
+				dbb->dbb_flags & DBB_no_fs_cache);
+		}
 	}
 
 	if (header->hdr_flags & hdr_no_reserve)
@@ -1783,8 +1785,7 @@ void PAG_set_force_write(Database* dbb, SSHORT flag)
 
 	CCH_RELEASE(tdbb, &window);
 
-	PageSpace* pageSpace = 
-		dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
+	PageSpace* pageSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
 	for (jrd_file* file = pageSpace->file; file; file = file->fil_next) {
 		PIO_force_write(file, flag != 0, 
 			dbb->dbb_flags & DBB_no_fs_cache);
