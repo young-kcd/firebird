@@ -93,7 +93,7 @@ struct dba_idx {
 	ULONG idx_total_duplicates;
 	ULONG idx_max_duplicates;
 	ULONG idx_nodes;
-	UINT64 idx_data_length;
+	FB_UINT64 idx_data_length;
 	SLONG idx_fill_distribution[BUCKETS];
 	SCHAR idx_name[32];
 };
@@ -106,12 +106,12 @@ struct dba_rel {
 	SLONG rel_slots;
 	ULONG rel_data_pages;
 	ULONG rel_records;
-	UINT64 rel_record_space;
+	FB_UINT64 rel_record_space;
 	ULONG rel_versions;
-	UINT64 rel_version_space;
+	FB_UINT64 rel_version_space;
 	ULONG rel_max_versions;
 	SLONG rel_fill_distribution[BUCKETS];
-	UINT64 rel_total_space;
+	FB_UINT64 rel_total_space;
 	SSHORT rel_id;
 	SCHAR rel_name[32];
 };
@@ -132,7 +132,7 @@ struct dba_fil {
 	SCHAR fil_string[1];		/* Expanded file name */
 };
 
-// CVC: I need to compile in MSVC6 that doesn't accept UINT64 to double conversion.
+// CVC: I need to compile in MSVC6 that doesn't accept FB_UINT64 to double conversion.
 #if defined(_WIN32) && defined(_MSC_VER) && _MSC_VER == 1200
 #define CAST64 (SINT64)
 #else
@@ -1701,7 +1701,7 @@ static const pag* db_read( SLONG page_number)
 	}
 
 	page_number -= fil->fil_min_page - fil->fil_fudge;
-	const UINT64 offset = ((UINT64)page_number) * ((UINT64)tddba->page_size);
+	const FB_UINT64 offset = ((FB_UINT64)page_number) * ((FB_UINT64)tddba->page_size);
 	if (lseek (fil->fil_desc, offset, 0) == -1) {
 #ifdef SERVICE_THREAD
 		CMD_UTIL_put_svc_status(tddba->dba_service_blk->svc_status,

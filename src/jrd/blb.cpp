@@ -396,7 +396,7 @@ void BLB_garbage_collect(
 	// Get rid of blob
 	if (bmGoing.getFirst()) {
 		do {
-			const UINT64 id = bmGoing.current();
+			const FB_UINT64 id = bmGoing.current();
 
 			bid blob;
 			blob.set_permanent(relation->rel_id, RecordNumber(id));

@@ -140,7 +140,7 @@ struct dsc
 	//bid		asBlobId() const;
 	//bid		asArrayId() const;
 	SINT64		asSBigInt() const;
-	UINT64		asUBigInt() const;
+	FB_UINT64		asUBigInt() const;
 };
 
 typedef dsc DSC;
@@ -717,7 +717,7 @@ inline SINT64 dsc::asSBigInt() const
 	}
 }
 
-inline UINT64 dsc::asUBigInt() const
+inline FB_UINT64 dsc::asUBigInt() const
 {
 	switch (dsc_dtype) {
 	case dtype_byte:
@@ -727,7 +727,7 @@ inline UINT64 dsc::asUBigInt() const
 	case dtype_long:
 		return asULong();
 	case dtype_int64:
-		return *reinterpret_cast<UINT64*>(dsc_address);
+		return *reinterpret_cast<FB_UINT64*>(dsc_address);
 	default:
 		return 0;
 	}

@@ -1766,7 +1766,12 @@ void CVT_move(const dsc* from, dsc* to, FPTR_ERROR err)
 		return;
 
 	case DEFAULT_DOUBLE:
+	#ifdef HPUX
+		double d_value = CVT_get_double(from, err);
+		MOVE_FAST(&d_value, p, sizeof(double));
+	#else
 		*(double*) p = CVT_get_double(from, err);
+	#endif
 		return;
 
 #ifdef VMS
@@ -2283,7 +2288,7 @@ static void integer_to_text(const dsc* from, dsc* to, FPTR_ERROR err)
 
 /* Check for negation, then convert the number to a string of digits */
 
-	UINT64 u;
+	FB_UINT64 u;
 	if (n >= 0)
 		u = n;
 	else {

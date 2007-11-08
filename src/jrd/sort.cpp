@@ -691,7 +691,7 @@ sort_context* SORT_init(ISC_STATUS* status_vector,
 			  FPTR_REJECT_DUP_CALLBACK call_back,
 			  void* user_arg,
 			  Attachment* att,
-			  UINT64 max_records)
+			  FB_UINT64 max_records)
 {
 /**************************************
  *

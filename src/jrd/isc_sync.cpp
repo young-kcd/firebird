@@ -49,7 +49,7 @@
 #include "../jrd/gdsassert.h"
 #endif
 
-#ifdef HP10
+#ifdef HPUX
 #include <sys/pstat.h>
 #endif
 
@@ -200,7 +200,7 @@ static BOOLEAN mutex_test(MTX);
 static void make_object_name(TEXT*, size_t, const TEXT*, const TEXT*);
 #endif
 
-#if defined FREEBSD || defined NETBSD || defined DARWIN
+#if defined FREEBSD || defined NETBSD || defined DARWIN || defined HPUX
 #define sigset      signal
 #endif
 
@@ -675,7 +675,6 @@ int ISC_event_wait(
 #ifdef HP10
 			if ((ret == -1) && (errno == EAGAIN))
 #else
-/* RITTER - added HP11 to the preprocessor condition below */
 #if (defined LINUX || defined DARWIN || defined HP11 || defined FREEBSD)
 			if (ret == ETIMEDOUT)
 #else

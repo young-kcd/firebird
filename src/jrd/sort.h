@@ -110,7 +110,7 @@ typedef struct sr
 	sort_record**	sr_bckptr;	/* Pointer back to sort list entry */
 	union {
 		sort_record	sr_sort_record;
-		UINT64 dummy_alignment_force;
+		FB_UINT64 dummy_alignment_force;
     };
 } SR;
 
@@ -271,7 +271,7 @@ struct sort_context
 	ULONG scb_key_length;		/* Key length */
 	ULONG scb_unique_length;	/* Unique key length, used when duplicates eliminated */
 	ULONG scb_records;			/* Number of records */
-	//UINT64 scb_max_records;		// Maximum number of records to store . Unused.
+	//FB_UINT64 scb_max_records;		// Maximum number of records to store . Unused.
 	sort_work_file*	scb_sfb;		/* ALLOC: List of scratch files, if open */
 	run_control*	scb_runs;		/* ALLOC: Run on scratch file, if any */
 	merge_control*	scb_merge;		/* Top level merge block */

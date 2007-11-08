@@ -52,7 +52,7 @@ const P_ARCH ARCHITECTURE	= arch_sun386;
 #	else
 const P_ARCH ARCHITECTURE	= arch_sun;
 #	endif
-#elif defined(hpux)
+#elif defined(HPUX)
 const P_ARCH ARCHITECTURE	= arch_hpux;
 #elif (defined AIX || defined AIX_PPC)
 const P_ARCH ARCHITECTURE	= arch_rt;

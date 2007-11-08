@@ -188,29 +188,29 @@ typedef struct lhb {
 	SRQ_PTR lhb_mask;				/* Semaphore mask block */
 	ULONG lhb_scan_interval;	/* Deadlock scan interval (secs) */
 	ULONG lhb_acquire_spins;
-	UINT64 lhb_acquires;
-	UINT64 lhb_acquire_blocks;
-	UINT64 lhb_acquire_retries;
-	UINT64 lhb_retry_success;
-	UINT64 lhb_enqs;
-	UINT64 lhb_converts;
-	UINT64 lhb_downgrades;
-	UINT64 lhb_deqs;
-	UINT64 lhb_read_data;
-	UINT64 lhb_write_data;
-	UINT64 lhb_query_data;
-	UINT64 lhb_operations[LCK_MAX_SERIES];
-	UINT64 lhb_waits;
-	UINT64 lhb_denies;
-	UINT64 lhb_timeouts;
-	UINT64 lhb_blocks;
-	UINT64 lhb_direct_sigs;
-	UINT64 lhb_indirect_sigs;
-	UINT64 lhb_wakeups;
-	UINT64 lhb_scans;
-	UINT64 lhb_deadlocks;
+	FB_UINT64 lhb_acquires;
+	FB_UINT64 lhb_acquire_blocks;
+	FB_UINT64 lhb_acquire_retries;
+	FB_UINT64 lhb_retry_success;
+	FB_UINT64 lhb_enqs;
+	FB_UINT64 lhb_converts;
+	FB_UINT64 lhb_downgrades;
+	FB_UINT64 lhb_deqs;
+	FB_UINT64 lhb_read_data;
+	FB_UINT64 lhb_write_data;
+	FB_UINT64 lhb_query_data;
+	FB_UINT64 lhb_operations[LCK_MAX_SERIES];
+	FB_UINT64 lhb_waits;
+	FB_UINT64 lhb_denies;
+	FB_UINT64 lhb_timeouts;
+	FB_UINT64 lhb_blocks;
+	FB_UINT64 lhb_direct_sigs;
+	FB_UINT64 lhb_indirect_sigs;
+	FB_UINT64 lhb_wakeups;
+	FB_UINT64 lhb_scans;
+	FB_UINT64 lhb_deadlocks;
 	ULONG lhb_wait_time;
-	UINT64 lhb_reserved[2];		/* For future use */
+	FB_UINT64 lhb_reserved[2];		/* For future use */
 	srq lhb_data[LCK_MAX_SERIES];
 	srq lhb_hash[1];			/* Hash table */
 } *LHB;
@@ -300,7 +300,7 @@ typedef struct own
 	SRQ_PTR own_pending_request;	/* Request we're waiting on */
 	int own_process_id;			/* Owner's process ID */
 	int own_process_uid;		/* Owner's process UID */
-	UINT64 own_acquire_time;		/* lhb_acquires when owner last tried acquire() */
+	FB_UINT64 own_acquire_time;		/* lhb_acquires when owner last tried acquire() */
 	ULONG own_acquire_realtime;	/* GET_TIME when owner last tried acquire() */
 #ifdef WIN_NT
 	void *own_wakeup_hndl;		/* Handle of wakeup event */

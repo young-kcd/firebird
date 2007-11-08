@@ -127,7 +127,7 @@ static const double pow10_table[] =
 #define powerof10(s) ((s) <= 0 ? pow10_table[-(s)] : 1. / pow10_table[-(s)])
 
 static const struct {			/* Used in make_int64_key() */
-	UINT64 limit;
+	FB_UINT64 limit;
 	SINT64 factor;
 	SSHORT scale_change;
 } int64_scale_control[] =
@@ -6030,7 +6030,7 @@ static INT64_KEY make_int64_key(SINT64 q, SSHORT scale)
 	// Following structure declared above in the modules global section
 	//
 	// static const struct {
-	//     UINT64 limit;		--- if abs(q) is >= this, ...
+	//     FB_UINT64 limit;		--- if abs(q) is >= this, ...
 	//     SINT64 factor;		--- then multiply by this, ...
 	//     SSHORT scale_change;	--- and add this to the scale.
 	// } int64_scale_control[];
@@ -6044,7 +6044,7 @@ static INT64_KEY make_int64_key(SINT64 q, SSHORT scale)
 	// being mapped to the same key.
  
 	int n = 0;
-	UINT64 uq = (UINT64) ((q >= 0) ? q : -q);	// absolute value
+	FB_UINT64 uq = (FB_UINT64) ((q >= 0) ? q : -q);	// absolute value
 	while (uq < int64_scale_control[n].limit) {
 		n++;
 	}

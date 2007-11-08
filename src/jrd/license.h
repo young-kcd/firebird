@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: license.h,v 1.31.12.2 2007-05-02 13:46:11 paulbeach Exp $
+ * $Id: license.h,v 1.31.12.3 2007-11-08 15:26:17 paulbeach Exp $
  * Revision 1.5  2000/12/08 16:18:21  fsg
  * Preliminary changes to get IB_BUILD_NO automatically
  * increased on commits.
@@ -67,11 +67,11 @@
 #include "../jrd/build_no.h"
 #include "../jrd/isc_version.h"
 
-#ifdef hpux
+#ifdef HPUX
 #ifdef HP10
 #define FB_PLATFORM	"HU"
 #endif /* HP10 */
-#ifdef HP11  /* RITTER */
+#ifdef HP11 
 #define FB_PLATFORM     "HU"
 #endif /* HP11 */
 #endif

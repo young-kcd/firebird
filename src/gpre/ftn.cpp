@@ -294,7 +294,7 @@ const char* const I4CONST_2			= "";
 const char* const COMMENT			= "*     ";
 const char* const INLINE_COMMENT	= "\n*                ";
 const char* const COMMA				= ",";
-#elif defined(hpux)
+#elif defined(HPUX)
 const char* const INCLUDE_ISC_FTN	= "       INCLUDE  '%s\' \n\n";
 const char* const INCLUDE_FTN_FILE	= "include/gds.f";
 const char* const DOUBLE_DCL		= "DOUBLE PRECISION";
@@ -1511,7 +1511,7 @@ static void gen_database_decls(const act* action)
 			dcl_ndx_var = true;
 		}
 
-#ifdef hpux
+#ifdef HPUX
 		// build fields to handle start_multiple 
 
 		count++;
@@ -1529,7 +1529,7 @@ static void gen_database_decls(const act* action)
 		printa(COLUMN, "COMMON /%s/ %s", name, name);
 	}
 
-#ifdef hpux
+#ifdef HPUX
 //  declare array and set up equivalence for start_multiple vector 
 
 	const SSHORT length = 12;
@@ -1755,7 +1755,7 @@ static void gen_dyn_execute(const act* action)
 
 	const TEXT* sqlda = statement->dyn_sqlda;
 	const TEXT* sqlda2 = statement->dyn_sqlda2;
-#ifdef hpux
+#ifdef HPUX
 	TEXT s2[64], s3[64];
 	if (sqlda) {
 		sprintf(s2, "isc_baddress (%s)", sqlda);
@@ -1795,7 +1795,7 @@ static void gen_dyn_fetch(const act* action)
 	const dyn* statement = (const dyn*) action->act_object;
 
 	const TEXT* sqlda = statement->dyn_sqlda;
-#ifdef hpux
+#ifdef HPUX 
 	TEXT s2[64];
 	if (sqlda) {
 		sprintf(s2, "isc_baddress (%s)", sqlda);
@@ -1847,7 +1847,7 @@ static void gen_dyn_immediate(const act* action)
 
 	const TEXT* sqlda = statement->dyn_sqlda;
 	const TEXT* sqlda2 = statement->dyn_sqlda2;
-#ifdef hpux
+#ifdef HPUX
 	TEXT s2[64], s3[64];
 	if (sqlda) {
 		sprintf(s2, "isc_baddress (%s)", sqlda);
@@ -1889,7 +1889,7 @@ static void gen_dyn_insert(const act* action)
 	const dyn* statement = (const dyn*) action->act_object;
 
 	const TEXT* sqlda = statement->dyn_sqlda;
-#ifdef hpux
+#ifdef HPUX
 	TEXT s2[64];
 	if (sqlda) {
 		sprintf(s2, "isc_baddress (%s)", sqlda);
@@ -1938,7 +1938,7 @@ static void gen_dyn_open(const act* action)
 
 	const TEXT* sqlda = statement->dyn_sqlda;
 	const TEXT* sqlda2 = statement->dyn_sqlda2;
-#ifdef hpux
+#ifdef HPUX
 	TEXT s2[64], s3[64];
 	if (sqlda) {
 		sprintf(s2, "isc_baddress (%s)", sqlda);
@@ -1998,7 +1998,7 @@ static void gen_dyn_prepare(const act* action)
 	}
 
 	const TEXT* sqlda = statement->dyn_sqlda;
-#ifdef hpux
+#ifdef HPUX
 	TEXT s2[64];
 	if (sqlda) {
 		sprintf(s2, "isc_baddress (%s)", sqlda);
@@ -3436,8 +3436,8 @@ static void gen_t_start(const act* action)
 			}
 		}
 
-#ifdef hpux
-//  If this is hpux we should be building a teb vector here 
+#ifdef HPUX
+//  If this is HPUX we should be building a teb vector here 
 //  with the tpb address and length specified 
 
 	int count = 0;
@@ -4098,7 +4098,7 @@ static void t_start_auto(const gpre_req* request,
 		}
 
 		count++;
-#ifdef hpux
+#ifdef HPUX
 		printa(COLUMN, "ISC_TEB%d_LEN = 0", count);
 		printa(COLUMN, "ISC_TEB%d_TPB = ISC_NULL", count);
 		printa(COLUMN, "ISC_TEB%d_DBB = ISC_BADDRESS (%s)", count,
@@ -4116,7 +4116,7 @@ static void t_start_auto(const gpre_req* request,
 			printa(COLUMN, "IF (%s) THEN", buffer);
 	}
 
-#ifdef hpux
+#ifdef HPUX
 	printa(COLUMN_INDENT, "CALL ISC_START_MULTIPLE (%s, %s, %s%d%s, ISC_TEB)",
 		   vector, trname, I2CONST_1, count, I2CONST_2);
 #else

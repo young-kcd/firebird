@@ -451,7 +451,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 			LOCK_header->lhb_acquire_spins);
 
 	if (LOCK_header->lhb_acquire_blocks) {
-		// CVC: MSVC up to v6 couldn't convert UINT64 to double.
+		// CVC: MSVC up to v6 couldn't convert FB_UINT64 to double.
 		const float bottleneck =
 			(float) ((100. * (SINT64) LOCK_header->lhb_acquire_blocks) /
 					 (SINT64) LOCK_header->lhb_acquires);

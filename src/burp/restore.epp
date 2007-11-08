@@ -562,7 +562,7 @@ int RESTORE_restore (const TEXT* file_name,
 	BURP_verbose (88, NULL, NULL, NULL, NULL, NULL);
 	// msg 88 finishing, closing, and going home 
 
-	UINT64 cumul_count = MVOL_fini_read();
+	FB_UINT64 cumul_count = MVOL_fini_read();
 
 	// Close database before we attach to it again. 
 	FINISH

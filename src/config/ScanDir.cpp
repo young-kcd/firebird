@@ -147,8 +147,10 @@ bool ScanDir::isDirectory()
 	return (data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0;
 #else
 #ifndef SOLARIS
+#ifndef HPUX
 	if (data->d_type == DT_DIR)
 		return true;
+#endif
 #endif
 
 	struct stat buf;

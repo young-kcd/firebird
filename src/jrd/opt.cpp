@@ -91,7 +91,7 @@ using namespace Jrd;
 #endif
 
 static bool augment_stack(jrd_nod*, NodeStack&);
-static UINT64 calculate_priority_level(const OptimizerBlk*, const index_desc*);
+static FB_UINT64 calculate_priority_level(const OptimizerBlk*, const index_desc*);
 static void check_indices(const CompilerScratch::csb_repeat*);
 static bool check_relationship(const OptimizerBlk*, USHORT, USHORT);
 static void check_sorts(RecordSelExpr*);
@@ -220,7 +220,7 @@ const double INDEX_COST						= 30.0;
 const int CACHE_PAGES_PER_STREAM			= 15;
 const int SELECTIVITY_THRESHOLD_FACTOR		= 10;
 const int OR_SELECTIVITY_THRESHOLD_FACTOR	= 2000;
-const UINT64 LOWEST_PRIORITY_LEVEL		= 0;
+const FB_UINT64 LOWEST_PRIORITY_LEVEL		= 0;
 
 /* enumeration of sort datatypes */
 
@@ -1299,7 +1299,7 @@ static bool augment_stack(jrd_nod* node, NodeStack& stack)
 }
 
 
-static UINT64 calculate_priority_level(const OptimizerBlk* opt, const index_desc* idx)
+static FB_UINT64 calculate_priority_level(const OptimizerBlk* opt, const index_desc* idx)
 {
 /**************************************
  *
@@ -1337,8 +1337,8 @@ static UINT64 calculate_priority_level(const OptimizerBlk* opt, const index_desc
 
 		// Note: dbb->dbb_max_idx = 1022 for the largest supported page of 16K and
 		//						    62 for the smallest page of 1K
-		const UINT64 max_idx = JRD_get_thread_data()->tdbb_database->dbb_max_idx + 1;
-		UINT64 unique_prefix = 0;
+		const FB_UINT64 max_idx = JRD_get_thread_data()->tdbb_database->dbb_max_idx + 1;
+		FB_UINT64 unique_prefix = 0;
 		if ((idx->idx_flags & idx_unique) && (idx_eql_count == idx->idx_count)) {
 			unique_prefix = (max_idx - idx->idx_count) * max_idx * max_idx * max_idx;
 		}
@@ -4755,9 +4755,9 @@ static RecordSource* gen_retrieval(thread_db*     tdbb,
 		Firebird::HalfStaticArray<index_desc*, OPT_STATIC_ITEMS> idx_walk_vector(*tdbb->getDefaultPool());
 		idx_walk_vector.grow(csb_tail->csb_indices);
 		index_desc** idx_walk = idx_walk_vector.begin();
-		Firebird::HalfStaticArray<UINT64, OPT_STATIC_ITEMS> idx_priority_level_vector(*tdbb->getDefaultPool());
+		Firebird::HalfStaticArray<FB_UINT64, OPT_STATIC_ITEMS> idx_priority_level_vector(*tdbb->getDefaultPool());
 		idx_priority_level_vector.grow(csb_tail->csb_indices);
-		UINT64* idx_priority_level = idx_priority_level_vector.begin();
+		FB_UINT64* idx_priority_level = idx_priority_level_vector.begin();
 
 		SSHORT i = 0;
 		for (index_desc* idx = csb_tail->csb_idx->items; i < csb_tail->csb_indices;
@@ -6310,10 +6310,10 @@ static jrd_nod* make_inversion(thread_db* tdbb, OptimizerBlk* opt,
 		idx_walk_vector(*tdbb->getDefaultPool());
 	idx_walk_vector.grow(csb_tail->csb_indices);
 	index_desc** idx_walk = idx_walk_vector.begin();
-	Firebird::HalfStaticArray<UINT64, OPT_STATIC_ITEMS>
+	Firebird::HalfStaticArray<FB_UINT64, OPT_STATIC_ITEMS>
 		idx_priority_level_vector(*tdbb->getDefaultPool());
 	idx_priority_level_vector.grow(csb_tail->csb_indices);
-	UINT64* idx_priority_level = idx_priority_level_vector.begin();
+	FB_UINT64* idx_priority_level = idx_priority_level_vector.begin();
 
 	index_desc* idx = csb_tail->csb_idx->items;
 	if (opt->opt_base_conjuncts) {
@@ -7566,7 +7566,7 @@ static SSHORT sort_indices_by_priority(CompilerScratch::csb_repeat* csb_tail,
 	for (SSHORT i = 0; i < csb_tail->csb_indices; i++)
 	{
 		SSHORT last_idx = -1;
-		UINT64 last_priority_level = 0;
+		FB_UINT64 last_priority_level = 0;
 
 		for (SSHORT j = csb_tail->csb_indices - 1; j >= 0; j--)
 		{

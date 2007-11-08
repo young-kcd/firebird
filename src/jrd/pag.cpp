@@ -236,7 +236,7 @@ const SSHORT CLASS		= CLASS_SOLARIS_SPARC;
 #endif
 #endif
 
-#ifdef hpux
+#ifdef HPUX
 const SSHORT CLASS		= CLASS_HPUX_PA;
 #endif
 

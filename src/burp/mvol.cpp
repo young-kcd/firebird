@@ -108,7 +108,7 @@ static DESC	 next_volume(DESC, ULONG, bool);
 //____________________________________________________________
 //
 //
-UINT64 MVOL_fini_read()
+FB_UINT64 MVOL_fini_read()
 {
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
@@ -136,7 +136,7 @@ UINT64 MVOL_fini_read()
 //____________________________________________________________
 //
 //
-UINT64 MVOL_fini_write(int* io_cnt, UCHAR** io_ptr)
+FB_UINT64 MVOL_fini_write(int* io_cnt, UCHAR** io_ptr)
 {
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 

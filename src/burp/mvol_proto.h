@@ -27,8 +27,8 @@
 #include "../burp/burp.h"
 
 
-UINT64			MVOL_fini_read();
-UINT64			MVOL_fini_write(int*, UCHAR**);
+FB_UINT64			MVOL_fini_read();
+FB_UINT64			MVOL_fini_write(int*, UCHAR**);
 void			MVOL_init(ULONG);
 void			MVOL_init_read(const char*, const char*, USHORT*, int*, UCHAR**);
 void			MVOL_init_write(const char*, const char*, int*, UCHAR**);

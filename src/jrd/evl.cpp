@@ -3688,7 +3688,7 @@ static dsc* multiply2(const dsc* desc, impure_value* value, const jrd_nod* node)
    when one or both arguments are negative.  (ldiv() is guaranteed to
    round towards 0, but the standard does not yet require an lldiv()
    or whatever for 64-bit operands.  This makes the problem messy.
-   We use UINT64s for the checking, thus ensuring that our division rounds
+   We use FB_UINT64s for the checking, thus ensuring that our division rounds
    down.  This means that we have to check the sign of the product first
    in order to know whether the maximum abs(i1*i2) is MAX_SINT64 or
    (MAX_SINT64+1).
@@ -3697,10 +3697,10 @@ static dsc* multiply2(const dsc* desc, impure_value* value, const jrd_nod* node)
    need a trial-division to be sure the multiply won't overflow.
  */
 
-	const UINT64 u1 = (i1 >= 0) ? i1 : -i1;	// abs(i1)
-	const UINT64 u2 = (i2 >= 0) ? i2 : -i2;	// abs(i2)
+	const FB_UINT64 u1 = (i1 >= 0) ? i1 : -i1;	// abs(i1)
+	const FB_UINT64 u2 = (i2 >= 0) ? i2 : -i2;	// abs(i2)
 	// largest product
-	const UINT64 u_limit = ((i1 ^ i2) >= 0) ? MAX_SINT64 : (UINT64) MAX_SINT64 + 1;
+	const FB_UINT64 u_limit = ((i1 ^ i2) >= 0) ? MAX_SINT64 : (FB_UINT64) MAX_SINT64 + 1;
 
 	if ((u1 != 0) && ((u_limit / u1) < u2)) {
 		ERR_post(isc_exception_integer_overflow, 0);
@@ -4561,7 +4561,7 @@ static dsc* string_length(thread_db* tdbb, jrd_nod* node, impure_value* impure)
 		{
 			case blr_strlen_bit:
 				{
-					UINT64 l = (UINT64) blob->blb_length * 8;
+					FB_UINT64 l = (FB_UINT64) blob->blb_length * 8;
 					if (l > MAX_SINT64)
 						ERR_post(isc_arith_except, 0);
 						
@@ -4613,7 +4613,7 @@ static dsc* string_length(thread_db* tdbb, jrd_nod* node, impure_value* impure)
 	{
 		case blr_strlen_bit:
 			{
-				UINT64 l = (UINT64) length * 8;
+				FB_UINT64 l = (FB_UINT64) length * 8;
 				if (l > MAX_SINT64)
 					ERR_post(isc_arith_except, 0);
 

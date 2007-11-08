@@ -24,7 +24,7 @@
  *  Contributor(s): ______________________________________.
  *
  *
- *  $Id: RecordNumber.h,v 1.5.4.2 2007-03-25 10:12:36 alexpeshkoff Exp $
+ *  $Id: RecordNumber.h,v 1.5.4.3 2007-11-08 15:26:17 paulbeach Exp $
  *
  */
 
@@ -88,7 +88,7 @@ public:
 		}
 
 		inline SINT64 bid_decode() const {
-			return bid_number + (((UINT64) bid_number_up) << 32);
+			return bid_number + (((FB_UINT64) bid_number_up) << 32);
 		}
 	};
 	
