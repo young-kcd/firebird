@@ -88,6 +88,7 @@ void usage()
 		"  -U <user>                             User name\n"
 		"  -P <password>                         Password\n"
 		"  -T                                    Do not run database triggers\n"
+		"  -S                                    Print database size in pages after lock\n"
 		"Notes:\n"
 		"  <database> may specify database alias\n"
 		"  incremental backups of multi-file databases are not supported yet\n"
@@ -171,6 +172,7 @@ public:
 
 		dbase = 0;
 		backup = 0;
+		db_size_pages = 0;
 		newdb = 0;
 		trans = 0;
 		// Recognition of local prefix allows to work with
@@ -184,10 +186,11 @@ public:
 	}
 	// External calls must clean up resources after themselves
 	void fixup_database();
-	void lock_database();
+	void lock_database(bool get_size);
 	void unlock_database();
 	void backup_database(int level, const char* fname);
 	void restore_database(int filecount, const char* const* files);
+
 private:
     ISC_STATUS_ARRAY status; // status vector
 	isc_db_handle newdb; // database handle
@@ -202,6 +205,7 @@ private:
 	Firebird::PathName bakname;
 	FILE_HANDLE dbase;
 	FILE_HANDLE backup;
+	ULONG  db_size_pages;	// In pages
 
 	// IO functions
 	size_t read_file(FILE_HANDLE &file, void *buffer, size_t bufsize);		
@@ -211,6 +215,7 @@ private:
 	static void pr_error(const ISC_STATUS* status, const char* operation);
 
 	void internal_lock_database();
+	void get_database_size();
 	void internal_unlock_database();
 	void attach_database();
 	void detach_database();
@@ -481,6 +486,22 @@ void nbackup::internal_lock_database()
 		pr_error(status, "begin backup: commit");
 }
 
+void nbackup::get_database_size()
+{
+	db_size_pages = 0;
+	char fs[] = {frb_info_db_file_size};
+	char res[128];
+	if (isc_database_info(status, &newdb, sizeof(fs), fs, sizeof(res), res))
+	{
+		pr_error(status, "size info");
+	}
+	else if (res[0] == frb_info_db_file_size)
+	{
+		USHORT len = isc_vax_integer (&res[1], 2);
+		db_size_pages = isc_vax_integer (&res[3], len);
+	}
+}
+
 void nbackup::internal_unlock_database()
 {
     if (isc_start_transaction(status, &trans, 1, &newdb, 0, NULL))
@@ -492,11 +513,18 @@ void nbackup::internal_unlock_database()
 		pr_error(status, "end backup: commit");
 }
 
-void nbackup::lock_database()
+void nbackup::lock_database(bool get_size)
 {
 	attach_database();
+	db_size_pages = 0;
 	try {
 		internal_lock_database();
+		if (get_size)
+		{
+			get_database_size();
+			if (db_size_pages)
+				printf("%d", db_size_pages);
+		}
 	} 
 	catch (const Firebird::Exception&) {
 		detach_database();		
@@ -577,6 +605,7 @@ void nbackup::backup_database(int level, const char* fname)
 		// Lock database for backup
 		internal_lock_database();
 		database_locked = true;	
+		get_database_size();
 		detach_database();
 
 		time_t _time = time(NULL);
@@ -638,10 +667,12 @@ void nbackup::backup_database(int level, const char* fname)
 			)
 		);
 
+		ULONG db_size = db_size_pages;
 		seek_file(dbase, 0);
 
 		if (read_file(dbase, page_buff, header->hdr_page_size) != header->hdr_page_size)
 			b_error::raise("Unexpected end of file when reading header of database file (stage 2)");
+		--db_size;
 
 		FB_GUID backup_guid;
 		bool guid_found = false;
@@ -706,7 +737,11 @@ void nbackup::backup_database(int level, const char* fname)
 			else
 				write_file(backup, page_buff, header->hdr_page_size);
 		
+			if ((db_size_pages != 0) && (db_size == 0))
+				break;
+
 			const size_t bytesDone = read_file(dbase, page_buff, header->hdr_page_size);
+			--db_size;
 			if (bytesDone == 0)
 				break;
 			if (bytesDone != header->hdr_page_size)
@@ -983,6 +1018,7 @@ int main( int argc, char *argv[] )
 	const char* const* backup_files = NULL;
 	int level;
 	int filecount;
+	bool print_size = false;
 
 	try {
 		// Read global command line parameters
@@ -1081,6 +1117,10 @@ int main( int argc, char *argv[] )
 				op = nbRestore;
 				break;
 
+			case 'S':
+				print_size = true;
+				break;
+
 			default:
 				fprintf(stderr, "ERROR: Unknown switch %s.\n\n", *argp);
 				usage();
@@ -1088,13 +1128,16 @@ int main( int argc, char *argv[] )
 			}
 		}
 
+		if (print_size && (op != nbLock))
+			usage();
+
 		switch (op) {
 			case nbNone:
 				usage();
 				break;
 
 			case nbLock:
-				nbackup(database, username, password, run_db_triggers).lock_database();
+				nbackup(database, username, password, run_db_triggers).lock_database(print_size);
 				break;
 
 			case nbUnlock:

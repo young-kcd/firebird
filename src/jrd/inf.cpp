@@ -62,6 +62,7 @@
 #include "../jrd/gds_proto.h"
 #include "../jrd/err_proto.h"
 #include "../jrd/intl_proto.h"
+#include "../jrd/nbak.h"
 
 using namespace Jrd;
 
@@ -548,6 +549,11 @@ int INF_database_info(const SCHAR* items,
 				}
 				length = INF_convert(cnt, buffer);
 			}
+			break;
+
+		case frb_info_db_file_size:
+			BackupManager *bm = dbb->dbb_backup_manager;
+			length = INF_convert(bm ? bm->getPageCount() : 0, buffer);
 			break;
 
 		case isc_info_user_names:
