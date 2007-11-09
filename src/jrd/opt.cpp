@@ -172,7 +172,7 @@ static void set_made_river(OptimizerBlk*, const River*);
 static void set_position(const jrd_nod*, jrd_nod*, const jrd_nod*);
 static void set_rse_inactive(CompilerScratch*, const RecordSelExpr*);
 static void sort_indices_by_selectivity(CompilerScratch::csb_repeat*);
-static SSHORT sort_indices_by_priority(CompilerScratch::csb_repeat*, index_desc**, UINT64*);
+static SSHORT sort_indices_by_priority(CompilerScratch::csb_repeat*, index_desc**, FB_UINT64*);
 
 
 /* macro definitions */
@@ -7544,7 +7544,7 @@ static void sort_indices_by_selectivity(CompilerScratch::csb_repeat* csb_tail)
 
 static SSHORT sort_indices_by_priority(CompilerScratch::csb_repeat* csb_tail,
 									   index_desc** idx_walk,
-									   UINT64* idx_priority_level)
+									   FB_UINT64* idx_priority_level)
 {
 /***************************************************
  *

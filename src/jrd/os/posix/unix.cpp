@@ -130,7 +130,7 @@ using namespace Jrd;
 #define MASK		0666
 #endif
 
-static jrd_file* seek_file(jrd_file*, BufferDesc*, UINT64 *, ISC_STATUS *);
+static jrd_file* seek_file(jrd_file*, BufferDesc*, FB_UINT64 *, ISC_STATUS *);
 static jrd_file* setup_file(Database*, const Firebird::PathName&, int);
 static bool unix_error(TEXT*, jrd_file*, ISC_STATUS, ISC_STATUS*);
 #if defined PREAD_PWRITE && !(defined HAVE_PREAD && defined HAVE_PWRITE)
@@ -387,7 +387,7 @@ void PIO_header(Database* dbb, SCHAR * address, int length)
  *
  **************************************/
 	int i;
-	UINT64 bytes;
+	FB_UINT64 bytes;
 
 	jrd_file* file = dbb->dbb_file;
 
@@ -411,10 +411,10 @@ void PIO_header(Database* dbb, SCHAR * address, int length)
 
 #ifdef PREAD_PWRITE
 			if ((bytes = pread(file->fil_desc, spare_buffer, length, 0)) ==
-				(UINT64) -1) {
+				(FB_UINT64) -1) {
 #else
 			if ((bytes = read(file->fil_desc, spare_buffer, length)) == 
-				(UINT64) -1) {
+				(FB_UINT64) -1) {
 				THD_IO_MUTEX_UNLOCK(file->fil_mutex);
 #endif
 				if (SYSCALL_INTERRUPTED(errno))
@@ -428,9 +428,9 @@ void PIO_header(Database* dbb, SCHAR * address, int length)
 		else
 #endif /* ISC_DATABASE_ENCRYPTION */
 #ifdef PREAD_PWRITE
-		if ((bytes = pread(file->fil_desc, address, length, 0)) == (UINT64) -1) {
+		if ((bytes = pread(file->fil_desc, address, length, 0)) == (FB_UINT64) -1) {
 #else
-		if ((bytes = read(file->fil_desc, address, length)) == (UINT64) -1) {
+		if ((bytes = read(file->fil_desc, address, length)) == (FB_UINT64) -1) {
 			THD_IO_MUTEX_UNLOCK(file->fil_mutex);
 #endif
 			if (SYSCALL_INTERRUPTED(errno))
@@ -488,7 +488,7 @@ SLONG PIO_max_alloc(Database* dbb)
 		unix_error("fstat", file, isc_io_access_err, 0);
 	}
 
-	UINT64 length = statistics.st_size;
+	FB_UINT64 length = statistics.st_size;
 
 /****
 #ifndef sun
@@ -532,7 +532,7 @@ SLONG PIO_act_alloc(Database* dbb)
 			unix_error("fstat", file, isc_io_access_err, 0);
 		}
 
-		UINT64 length = statistics.st_size;
+		FB_UINT64 length = statistics.st_size;
 
 		tot_pages += (length + dbb->dbb_page_size - 1) / dbb->dbb_page_size;
 	}
@@ -640,7 +640,7 @@ bool PIO_read(jrd_file* file, BufferDesc* bdb, Ods::pag* page, ISC_STATUS* statu
  *
  **************************************/
 	int i;
-	UINT64 bytes, offset;
+	FB_UINT64 bytes, offset;
 
 	SignalInhibit siHolder;
 
@@ -648,7 +648,7 @@ bool PIO_read(jrd_file* file, BufferDesc* bdb, Ods::pag* page, ISC_STATUS* statu
 		return unix_error("read", file, isc_io_read_err, status_vector);
 
 	Database* dbb = bdb->bdb_dbb;
-	const UINT64 size = dbb->dbb_page_size;
+	const FB_UINT64 size = dbb->dbb_page_size;
 
 #ifdef ISC_DATABASE_ENCRYPTION
 	if (dbb->dbb_encrypt_key) {
@@ -733,7 +733,7 @@ bool PIO_write(jrd_file* file, BufferDesc* bdb, Ods::pag* page, ISC_STATUS* stat
  **************************************/
 	int i;
 	SLONG bytes;
-    UINT64 offset;
+    FB_UINT64 offset;
 
 	SignalInhibit siHolder;
 
@@ -794,7 +794,7 @@ bool PIO_write(jrd_file* file, BufferDesc* bdb, Ods::pag* page, ISC_STATUS* stat
 }
 
 
-static jrd_file* seek_file(jrd_file* file, BufferDesc* bdb, UINT64* offset,
+static jrd_file* seek_file(jrd_file* file, BufferDesc* bdb, FB_UINT64* offset,
 	ISC_STATUS* status_vector)
 {
 /**************************************
@@ -828,10 +828,10 @@ static jrd_file* seek_file(jrd_file* file, BufferDesc* bdb, UINT64* offset,
 
 	page -= file->fil_min_page - file->fil_fudge;
 
-    UINT64 lseek_offset = page;
+    FB_UINT64 lseek_offset = page;
     lseek_offset *= dbb->dbb_page_size;
 
-    if (lseek_offset != (UINT64) LSEEK_OFFSET_CAST lseek_offset)
+    if (lseek_offset != (FB_UINT64) LSEEK_OFFSET_CAST lseek_offset)
 	{
 		unix_error("lseek", file, isc_io_32bit_exceeded_err, status_vector);
 		return 0;
