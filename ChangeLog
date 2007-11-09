@@ -1,3 +1,10 @@
+2007-11-08 16:40  hvlad
+
+	* firebird2/src/jrd/pag.cpp (1.150):
+
+	Fixed bug CORE-1577 : Forced Writes setting is not applied to the
+	secondary database files
+
 2007-11-06 13:03  dimitr
 
 	* firebird2/src/jrd/isc_sync.cpp (1.118):
