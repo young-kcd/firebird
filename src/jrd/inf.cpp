@@ -552,8 +552,10 @@ int INF_database_info(const SCHAR* items,
 			break;
 
 		case frb_info_db_file_size:
-			BackupManager *bm = dbb->dbb_backup_manager;
-			length = INF_convert(bm ? bm->getPageCount() : 0, buffer);
+			{
+				BackupManager* bm = dbb->dbb_backup_manager;
+				length = INF_convert(bm ? bm->getPageCount() : 0, buffer);
+			}
 			break;
 
 		case isc_info_user_names:
