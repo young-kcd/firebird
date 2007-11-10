@@ -1,3 +1,24 @@
+2007-11-10 01:53  asfernandes
+
+	* firebird2/src/jrd/SysFunction.cpp (1.25):
+
+	Fixed CORE-1582 - ABS() rounds NUMERIC values
+
+2007-11-10 01:45  asfernandes
+
+	* firebird2/src/jrd/inf.cpp (1.77):
+
+	Correction
+
+2007-11-09 16:47  alexpeshkoff
+
+	* firebird2/src/: jrd/inf.cpp (1.76), jrd/inf_pub.h (1.17),
+	jrd/nbak.cpp (1.69), jrd/nbak.h (1.28), utilities/nbackup.cpp
+	(1.61):
+
+	Fix for CORE-1581: Support for doing physical backups when database
+	is located on raw device.
+
 2007-11-08 16:40  hvlad
 
 	* firebird2/src/jrd/pag.cpp (1.150):
