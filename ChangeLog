@@ -1,3 +1,17 @@
+2007-11-09 12:02  alexpeshkoff
+
+	* firebird2/src/dsql/parse.y (1.200.4.3):
+
+	one more FB_UINT64
+
+2007-11-09 10:47  paulbeach
+
+	* firebird2/src/: dsql/make.cpp (1.110.2.8), dsql/parse.cpp
+	(1.173.4.3), jrd/opt.cpp (1.261.2.15), jrd/os/posix/unix.cpp
+	(1.42.4.9):
+
+	HPUX Port - correct missing FB_UINT64's
+
 2007-11-08 16:43  hvlad
 
 	* firebird2/src/jrd/pag.cpp (1.98.4.13):
