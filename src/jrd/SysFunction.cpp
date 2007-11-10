@@ -418,11 +418,11 @@ static void makeAbs(DataTypeUtilBase* dataTypeUtil, const SysFunction* function,
 	switch (value->dsc_dtype)
 	{
 		case dtype_short:
-			result->makeLong(result->dsc_scale);
+			result->makeLong(value->dsc_scale);
 			break;
 
 		case dtype_long:
-			result->makeInt64(result->dsc_scale);
+			result->makeInt64(value->dsc_scale);
 			break;
 
 		case dtype_real:
