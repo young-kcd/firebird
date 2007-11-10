@@ -1087,6 +1087,11 @@ void BLB_move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, jrd_nod* field)
 	const USHORT id = (USHORT) (IPTR) field->nod_arg[e_fld_id];
 	record_param* rpb = &request->req_rpb[(IPTR)field->nod_arg[e_fld_stream]];
 	jrd_rel* relation = rpb->rpb_relation;
+
+	if (relation->isVirtual()) {
+		ERR_post(isc_read_only, 0);
+	}
+
 	RelationPages* relPages = relation->getPages(tdbb);
 	Record* record = rpb->rpb_record;
 
