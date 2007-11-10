@@ -684,7 +684,7 @@ int main(int ac, char **av)
 		isc_service_detach(status, &svc_handle);
 		return 0;
 	}
-	catch(const Firebird::Exception& e)
+	catch (const Firebird::Exception& e)
 	{
 		e.stuff_exception(status);
 		isc_print_status(status);
