@@ -20,14 +20,12 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: drop.cpp,v 1.31.4.1 2007-11-08 15:26:26 paulbeach Exp $
- *
  * 2002.10.27 Sean Leyne - Completed removal of obsolete "DELTA" port
  * 2002.10.27 Sean Leyne - Completed removal of obsolete "IMP" port
  *
  * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
  *
-*/
+ */
 
 #include "firebird.h"
 #include <stdio.h>

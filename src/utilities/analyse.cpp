@@ -328,7 +328,7 @@ static PAG db_read( SLONG page_number)
  *
  **************************************/
 
-	FB_UINT64 offset = ((FB_UINT64)page_number) * ((FB_UINT64)page_size);
+	FB_UINT64 offset = ((FB_UINT64) page_number) * ((FB_UINT64) page_size);
 
 	if (!global_buffer)
 		global_buffer = malloc(page_size);

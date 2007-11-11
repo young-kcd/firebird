@@ -1701,7 +1701,7 @@ static const pag* db_read( SLONG page_number)
 	}
 
 	page_number -= fil->fil_min_page - fil->fil_fudge;
-	const FB_UINT64 offset = ((FB_UINT64)page_number) * ((FB_UINT64)tddba->page_size);
+	const FB_UINT64 offset = ((FB_UINT64) page_number) * ((FB_UINT64) tddba->page_size);
 	if (lseek (fil->fil_desc, offset, 0) == -1) {
 #ifdef SERVICE_THREAD
 		CMD_UTIL_put_svc_status(tddba->dba_service_blk->svc_status,

@@ -27,9 +27,6 @@
  * 2002.10.30 Sean Leyne - Removed support for obsolete "PC_PLATFORM" define
  *
  */
-/*
-$Id: canonical.cpp,v 1.36.4.1 2007-11-08 15:26:00 paulbeach Exp $
-*/
 
 #include "firebird.h"
 #include <stdio.h>

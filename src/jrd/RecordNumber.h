@@ -23,9 +23,6 @@
  *  All Rights Reserved.
  *  Contributor(s): ______________________________________.
  *
- *
- *  $Id: RecordNumber.h,v 1.5.4.3 2007-11-08 15:26:17 paulbeach Exp $
- *
  */
 
 #ifndef JRD_RECORDNUMBER_H

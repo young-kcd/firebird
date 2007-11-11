@@ -140,7 +140,7 @@ struct dsc
 	//bid		asBlobId() const;
 	//bid		asArrayId() const;
 	SINT64		asSBigInt() const;
-	FB_UINT64		asUBigInt() const;
+	FB_UINT64	asUBigInt() const;
 };
 
 typedef dsc DSC;

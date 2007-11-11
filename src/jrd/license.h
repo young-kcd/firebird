@@ -19,7 +19,6 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: license.h,v 1.31.12.3 2007-11-08 15:26:17 paulbeach Exp $
  * Revision 1.5  2000/12/08 16:18:21  fsg
  * Preliminary changes to get IB_BUILD_NO automatically
  * increased on commits.
@@ -72,7 +71,7 @@
 #define FB_PLATFORM	"HU"
 #endif /* HP10 */
 #ifdef HP11 
-#define FB_PLATFORM     "HU"
+#define FB_PLATFORM "HU"
 #endif /* HP11 */
 #endif
 
