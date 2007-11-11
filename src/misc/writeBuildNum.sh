@@ -3,13 +3,13 @@
 # This file is used both to rebuild the header file and to set the 
 # environment variables on the config call
 
-BuildVersion="$Id: writeBuildNum.sh,v 1.17286 2007-11-10 20:24:25 asfernandes Exp $"
+BuildVersion="$Id: writeBuildNum.sh,v 1.17287 2007-11-11 03:21:30 fsg Exp $"
 
 BuildType=T
 MajorVer=2
 MinorVer=1
 RevNo=0
-BuildNum=17128
+BuildNum=17129
 
 if [ "$SPECIAL_BUILD_SUFFIX" = "" ]; then
 # Normal builds
@@ -94,7 +94,7 @@ cat >$1 <<eof
 MajorVer = $MajorVer
 MinorVer = $MinorVer
 RevNo = $RevNo
-BuildNum=17128
+BuildNum=17129
 BuildType = $BuildType
 BuildSuffix = $BuildSuffix
 
