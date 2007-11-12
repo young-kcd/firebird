@@ -378,7 +378,7 @@ PAG RBDB_read(RBDB rbdb, SLONG page_number)
  **************************************/
 	int file = rbdb->rbdb_file.fil_file;
 
-	const UINT64 offset = ((UINT64)page_number) * ((UINT64)rbdb->rbdb_page_size);
+	const FB_UINT64 offset = ((FB_UINT64)page_number) * ((FB_UINT64)rbdb->rbdb_page_size);
 	if (lseek (file, offset, 0) == -1)
 		db_error(errno);
 
@@ -415,7 +415,7 @@ void RBDB_write( RBDB rbdb, PAG page, SLONG page_number)
 	const ULONG page_size = rbdb->rbdb_page_size;
 	int fd = rbdb->rbdb_file.fil_file;
 
-	const UINT64 offset = ((UINT64)page_number) * ((UINT64)page_size);
+	const FB_UINT64 offset = ((FB_UINT64)page_number) * ((FB_UINT64)page_size);
 	if (lseek (fd, offset, 0) == -1)
 		db_error(errno);
 	if (write(fd, page, page_size) == -1)

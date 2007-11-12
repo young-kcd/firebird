@@ -132,8 +132,8 @@ static sort_record*	get_merge(merge_control*, sort_context*);
 
 static ULONG allocate_memory(sort_context*, ULONG, ULONG, bool);
 static void error_memory(sort_context*);
-static inline UINT64 find_file_space(sort_context*, ULONG);
-static inline void free_file_space(sort_context*, UINT64, ULONG);
+static inline	FB_UINT64 find_file_space(sort_context*, ULONG);
+static inline void free_file_space(sort_context*, FB_UINT64, ULONG);
 static void init(sort_context*);
 static bool local_fini(sort_context*, Attachment*);
 static void merge_runs(sort_context*, USHORT);
@@ -661,7 +661,7 @@ sort_context* SORT_init(thread_db* tdbb,
 						const sort_key_def* key_description,
 						FPTR_REJECT_DUP_CALLBACK call_back,
 						void* user_arg,
-						UINT64 max_records)
+						FB_UINT64 max_records)
 {
 /**************************************
  *
@@ -873,11 +873,11 @@ void SORT_put(thread_db* tdbb, sort_context* scb, ULONG ** record_address)
 #ifdef SCROLLABLE_CURSORS
 void SORT_read_block(
 #else
-UINT64 SORT_read_block(
+FB_UINT64 SORT_read_block(
 #endif
 						ISC_STATUS* status_vector,
 						TempSpace* tmp_space,
-						UINT64 seek,
+						FB_UINT64 seek,
 						BLOB_PTR* address,
 						ULONG length)
 {
@@ -1181,9 +1181,9 @@ void SORT_sort(thread_db* tdbb, sort_context* scb)
 }
 
 
-UINT64 SORT_write_block(ISC_STATUS* status_vector,
+FB_UINT64 SORT_write_block(ISC_STATUS* status_vector,
 						TempSpace* tmp_space,
-						UINT64 seek,
+						FB_UINT64 seek,
 						BLOB_PTR* address,
 						ULONG length)
 {
@@ -1583,7 +1583,7 @@ static void error_memory(sort_context* scb)
 }
 
 
-static inline UINT64 find_file_space(sort_context* scb, ULONG size)
+static inline FB_UINT64 find_file_space(sort_context* scb, ULONG size)
 {
 /**************************************
  *
@@ -1602,7 +1602,7 @@ static inline UINT64 find_file_space(sort_context* scb, ULONG size)
 }
 
 
-static inline void free_file_space(sort_context* scb, UINT64 position, ULONG size)
+static inline void free_file_space(sort_context* scb, FB_UINT64 position, ULONG size)
 {
 /**************************************
  *
@@ -2043,9 +2043,9 @@ static void check_file(const sort_context* scb, const run_control* temp_run)
  *      Validate memory and file space allocation
  *
  **************************************/
-	UINT64 runs = temp_run ? temp_run->run_size : 0;
+	FB_UINT64 runs = temp_run ? temp_run->run_size : 0;
 	offset_t free = 0;
-	UINT64 run_mem = 0;
+	FB_UINT64 run_mem = 0;
 
 	bool ok = scb->scb_space->validate(free);
 	fb_assert(ok);
@@ -2266,7 +2266,7 @@ static void merge_runs(sort_context* scb, USHORT n)
 	CHECK_FILE(scb);
 
 	sort_record* q = reinterpret_cast<sort_record*>(temp_run.run_buffer);
-	UINT64 seek = temp_run.run_seek = find_file_space(scb, temp_run.run_size);
+	FB_UINT64 seek = temp_run.run_seek = find_file_space(scb, temp_run.run_size);
 	temp_run.run_records = 0;
 
 	CHECK_FILE2(scb, &temp_run);
@@ -2647,7 +2647,7 @@ static void order_and_save(sort_context* scb)
 	const ULONG key_length = 
 		(scb->scb_longs - SIZEOF_SR_BCKPTR_IN_LONGS) * sizeof(ULONG);
 	run->run_size = run->run_records * key_length;
-	UINT64 seek = run->run_seek = find_file_space(scb, run->run_size);
+	FB_UINT64 seek = run->run_seek = find_file_space(scb, run->run_size);
 
 	TempSpace* tmpSpace = scb->scb_space;
 	char* mem = tmpSpace->inMemory(run->run_seek, run->run_size);
@@ -2880,7 +2880,7 @@ namespace
 		RunSort(run_control* irun) : run(irun) {}
 		RunSort() : run(NULL) {}
 
-		static const UINT64 generate(const void*, const RunSort& item) 
+		static const FB_UINT64 generate(const void*, const RunSort& item) 
 		{ return item.run->run_seek; }
 
 		run_control* run;
@@ -2903,7 +2903,7 @@ static void sort_runs_by_seek(sort_context* scb, int n)
  **************************************/
 
 	Firebird::SortedArray<
-		RunSort, Firebird::InlineStorage<RunSort, RUN_GROUP>, UINT64, RunSort
+		RunSort, Firebird::InlineStorage<RunSort, RUN_GROUP>, FB_UINT64, RunSort
 	> 
 	runs(*scb->scb_pool, n);
 	

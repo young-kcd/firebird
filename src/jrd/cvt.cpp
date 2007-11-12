@@ -2257,7 +2257,7 @@ static void integer_to_text(const dsc* from, dsc* to, FPTR_ERROR err)
 
 /* Check for negation, then convert the number to a string of digits */
 
-	UINT64 u;
+	FB_UINT64 u;
 	if (n >= 0)
 		u = n;
 	else {

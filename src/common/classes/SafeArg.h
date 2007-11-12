@@ -178,7 +178,7 @@ public:
 	SafeArg& operator<<(long int c);
 	SafeArg& operator<<(unsigned long int c);
 	SafeArg& operator<<(SINT64 c);
-	SafeArg& operator<<(UINT64 c);
+	SafeArg& operator<<(FB_UINT64 c);
 	//SafeArg& operator<<(long c);
 	SafeArg& operator<<(SINT128 c);
 	SafeArg& operator<<(double c);

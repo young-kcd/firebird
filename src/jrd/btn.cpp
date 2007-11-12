@@ -602,21 +602,21 @@ UCHAR* readNode(IndexNode* indexNode, UCHAR* pagePointer, UCHAR flags, bool leaf
 				number |= (tmp & 0x7F) << 19;
 				if (tmp >= 128) {
 					tmp = *localPointer++;
-					number |= (UINT64) (tmp & 0x7F) << 26;
+					number |= (FB_UINT64) (tmp & 0x7F) << 26;
 					if (tmp >= 128) {
 						tmp = *localPointer++;
-						number |= (UINT64) (tmp & 0x7F) << 33;
+						number |= (FB_UINT64) (tmp & 0x7F) << 33;
 /*
 	Uncomment this if you need more bits in record number
 						if (tmp >= 128) {
 							tmp = *localPointer++;
-							number |= (UINT64) (tmp & 0x7F) << 40;
+							number |= (FB_UINT64) (tmp & 0x7F) << 40;
 							if (tmp >= 128) {
 								tmp = *localPointer++;
-								number |= (UINT64) (tmp & 0x7F) << 47;
+								number |= (FB_UINT64) (tmp & 0x7F) << 47;
 								if (tmp >= 128) {
 									tmp = *localPointer++;
-									number |= (UINT64) (tmp & 0x7F) << 54; // We get 61 bits at this point!
+									number |= (FB_UINT64) (tmp & 0x7F) << 54; // We get 61 bits at this point!
 								}
 							}
 						}

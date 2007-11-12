@@ -430,7 +430,7 @@ static inline int sinixz_sigaction(int sig, const struct sinixz_sigaction *act,
 
 /* The following define is the prefix to go in front of a "d" or "u"
    format item in a printf() format string, to indicate that the argument
-   is an SINT64 or UINT64. */
+   is an SINT64 or FB_UINT64. */
 #define QUADFORMAT "ll"
 /* The following macro creates a quad-sized constant, possibly one
    which is too large to fit in a long int. */
@@ -495,7 +495,7 @@ static inline int sinixz_sigaction(int sig, const struct sinixz_sigaction *act,
 
 /* The following define is the prefix to go in front of a "d" or "u"
    format item in a printf() format string, to indicate that the argument
-   is an SINT64 or UINT64. */
+   is an SINT64 or FB_UINT64. */
 #define QUADFORMAT "ll"
 /* The following macro creates a quad-sized constant, possibly one
    which is too large to fit in a long int. */
@@ -605,12 +605,12 @@ typedef unsigned int64 UATOM;
 #define LINEFORMAT "d"
 
 typedef __int64 SINT64;
-typedef unsigned __int64 UINT64;
+typedef unsigned __int64 FB_UINT64;
 #define INT64_DEFINED
 
 /* The following define is the prefix to go in front of a "d" or "u"
    format item in a printf() format string, to indicate that the argument
-   is an SINT64 or UINT64. */
+   is an SINT64 or FB_UINT64. */
 #define QUADFORMAT "I64"
 /* The following macro creates a quad-sized constant, possibly one
    which is too large to fit in a long int.  The Microsoft compiler does
@@ -790,7 +790,7 @@ typedef unsigned __int64 UINT64;
 
 #ifndef INT64_DEFINED			/* 64 bit */
 typedef long long int SINT64;
-typedef unsigned long long int UINT64;
+typedef unsigned long long int FB_UINT64;
 #else
 #undef INT64_DEFINED
 #endif
@@ -867,7 +867,7 @@ struct ISC_TIMESTAMP
 #define MAX_SLONG		0x7FFFFFFF
 #define MIN_SLONG		(-MAX_SLONG - 1)
 
-#define MAX_UINT64              ((UINT64) QUADCONST(0xFFFFFFFFFFFFFFFF))
+#define MAX_UINT64              ((FB_UINT64) QUADCONST(0xFFFFFFFFFFFFFFFF))
 #define MIN_UINT64              QUADCONST(0x0000000000000000)
 
 #define MAX_SINT64              QUADCONST(0x7FFFFFFFFFFFFFFF)

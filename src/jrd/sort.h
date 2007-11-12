@@ -110,7 +110,7 @@ typedef struct sr
 	sort_record**	sr_bckptr;	/* Pointer back to sort list entry */
 	union {
 		sort_record		sr_sort_record;
-		UINT64 dummy_alignment_force;
+		FB_UINT64 dummy_alignment_force;
 	};
 } SR;
 
@@ -201,17 +201,17 @@ struct run_control
 	ULONG		run_max_records;	/* total number of records in run */
 #endif
 	USHORT		run_depth;			/* Number of "elementary" runs */
-	UINT64		run_seek;			/* Offset in file of run */
-	UINT64		run_size;			/* Length of run in work file */
+	FB_UINT64		run_seek;			/* Offset in file of run */
+	FB_UINT64		run_size;			/* Length of run in work file */
 #ifdef SCROLLABLE_CURSORS
-	UINT64		run_cached;			/* amount of cached data from run file */
+	FB_UINT64		run_cached;			/* amount of cached data from run file */
 #endif
 	sort_record*	run_record;			/* Next record in run */
 	SORTP*		run_buffer;			/* Run buffer */
 	SORTP*		run_end_buffer;		/* End of buffer */
 	bool		run_buff_alloc;		/* Allocated buffer flag */
 	bool		run_buff_cache;		// run buffer is already in cache
-	UINT64		run_mem_seek;		// position of run's buffer in in-memory part of sort file
+	FB_UINT64		run_mem_seek;		// position of run's buffer in in-memory part of sort file
 	ULONG		run_mem_size;		// size of run's buffer in in-memory part of sort file
 };
 
@@ -252,7 +252,7 @@ struct sort_context
 	ULONG scb_key_length;		/* Key length */
 	ULONG scb_unique_length;	/* Unique key length, used when duplicates eliminated */
 	ULONG scb_records;			/* Number of records */
-	//UINT64 scb_max_records;		// Maximum number of records to store. Unused.
+	//FB_UINT64 scb_max_records;		// Maximum number of records to store. Unused.
 	TempSpace*		scb_space;		// temporary space for scratch file
 	run_control*	scb_runs;		/* ALLOC: Run on scratch file, if any */
 	merge_control*	scb_merge;		/* Top level merge block */

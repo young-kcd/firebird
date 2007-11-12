@@ -858,7 +858,7 @@ public:
 	int         RESTORE_ods;
 	ULONG		mvol_io_buffer_size;
 	ULONG		mvol_actual_buffer_size;
-	UINT64		mvol_cumul_count;
+	FB_UINT64	mvol_cumul_count;
 	UCHAR*		mvol_io_ptr;
 	int			mvol_io_cnt;
 	UCHAR*		mvol_io_buffer;

@@ -34,7 +34,7 @@
 namespace Jrd {
 
 // Bitmap of record numbers
-typedef Firebird::SparseBitmap<UINT64> RecordBitmap;
+typedef Firebird::SparseBitmap<FB_UINT64> RecordBitmap;
 
 // Bitmap of page numbers
 typedef Firebird::SparseBitmap<ULONG> PageBitmap;

@@ -180,7 +180,7 @@ dsql_nod* MAKE_constant(dsql_str* constant, dsql_constant_type numeric_flag)
 			   only if preceded by a '-', but that issue is handled in GEN_expr,
 			   and need not be addressed here. */
 
-			UINT64 value = 0;
+			FB_UINT64 value = 0;
 			const char* p = constant->str_data;
 
 			while (isdigit(*p))
@@ -192,7 +192,7 @@ dsql_nod* MAKE_constant(dsql_str* constant, dsql_constant_type numeric_flag)
 				}
 			}
 
-			*(UINT64 *) (node->nod_desc.dsc_address) = value;
+			*(FB_UINT64 *) (node->nod_desc.dsc_address) = value;
 			break;
 		}
 

@@ -5520,8 +5520,8 @@ int LexerState::yylex (
 		bool have_exp	   = false;	/* digit ... [eE]				  */
 		bool have_exp_sign  = false; /* digit ... [eE] {+-]			 */
 		bool have_exp_digit = false; /* digit ... [eE] ... digit		*/
-		UINT64	number		 = 0;
-		UINT64	limit_by_10	= MAX_SINT64 / 10;
+		FB_UINT64	number		 = 0;
+		FB_UINT64	limit_by_10	= MAX_SINT64 / 10;
 
 		for (--ptr ; ptr < end ; ptr++)
 		{

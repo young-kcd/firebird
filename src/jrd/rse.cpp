@@ -114,7 +114,7 @@ static void join_to_nulls(thread_db*, RecordSource*, StreamStack*);
 static void map_sort_data(thread_db*, jrd_req*, SortMap*, UCHAR *);
 static void open_merge(thread_db*, RecordSource*, irsb_mrg*);
 static void open_procedure(thread_db*, RecordSource*, irsb_procedure*);
-static void open_sort(thread_db*, RecordSource*, irsb_sort*, UINT64);
+static void open_sort(thread_db*, RecordSource*, irsb_sort*, FB_UINT64);
 static void proc_assignment(thread_db*, const dsc*, const dsc*, UCHAR*, dsc*, SSHORT, Record*);
 static void pop_rpbs(jrd_req*, RecordSource*);
 static void push_rpbs(thread_db*, jrd_req*, RecordSource*);
@@ -436,7 +436,7 @@ void RSE_open(thread_db* tdbb, RecordSource* rsb)
 			//			record set, if there's actually nothing to return
 			if (first_records) {
 				open_sort(tdbb, rsb, (irsb_sort*) impure,
-					(first_records < 0) ? 0 : (UINT64) first_records + skip_records);
+					(first_records < 0) ? 0 : (FB_UINT64) first_records + skip_records);
 			}
 			else {
 				((irsb_sort*) impure)->irsb_sort_handle = NULL;
@@ -2887,7 +2887,7 @@ static void open_procedure(thread_db* tdbb, RecordSource* rsb, irsb_procedure* i
 }
 
 
-static void open_sort(thread_db* tdbb, RecordSource* rsb, irsb_sort* impure, UINT64 max_records)
+static void open_sort(thread_db* tdbb, RecordSource* rsb, irsb_sort* impure, FB_UINT64 max_records)
 {
 /**************************************
  *

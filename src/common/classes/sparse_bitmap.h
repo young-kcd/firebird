@@ -43,7 +43,7 @@ struct BitmapTypes_32 {
 };
 
 struct BitmapTypes_64 {
-	typedef UINT64 BUNCH_T;
+	typedef FB_UINT64 BUNCH_T;
 	enum {
 		LOG2_BUNCH_BITS = 8,
 		BUNCH_BITS = 64

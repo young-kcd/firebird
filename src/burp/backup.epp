@@ -504,7 +504,7 @@ int BACKUP_backup(const TEXT* dbb_file, const TEXT* file_name)
 
 	put(tdgbl, (UCHAR) (rec_end));
 	
-	UINT64 cumul_count = MVOL_fini_write(&tdgbl->io_cnt, &tdgbl->io_ptr);
+	FB_UINT64 cumul_count = MVOL_fini_write(&tdgbl->io_cnt, &tdgbl->io_ptr);
 	BURP_verbose(176, SafeArg() << cumul_count);
 	// msg 176 closing file, committing, and finishing.  %ld bytes written
 	
@@ -2191,8 +2191,8 @@ void put_int64( SCHAR attribute, SINT64 value)
  **************************************/
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
-	const UINT64 le_value =
-		(UINT64) isc_portable_integer((const UCHAR*) &value, sizeof(value));
+	const FB_UINT64 le_value =
+		(FB_UINT64) isc_portable_integer((const UCHAR*) &value, sizeof(value));
 
 	put(tdgbl, (UCHAR) (attribute));
 	put(tdgbl, (UCHAR) (sizeof(value)));

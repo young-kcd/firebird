@@ -86,7 +86,7 @@ public:
 		}
 
 		inline SINT64 bid_decode() const {
-			return bid_number + (((UINT64) bid_number_up) << 32);
+			return bid_number + (((FB_UINT64) bid_number_up) << 32);
 		}
 	};
 	

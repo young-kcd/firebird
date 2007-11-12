@@ -161,11 +161,11 @@ case "$target" in
 
   *-*-hpux*)
     MAKEFILE_PREFIX=hpux
-    PLATFORM=hpux
+    PLATFORM=HPUX
     AC_DEFINE(hpux, 1, [Define this if OS is HP-UX])
     LOCK_MANAGER_FLG=Y
-    EDITLINE_FLG=N
-    SHRLIB_EXT=so
+    EDITLINE_FLG=Y
+    SHRLIB_EXT=sl
     ;;
 
   i386-pc-solaris*)
@@ -483,6 +483,8 @@ AC_CHECK_HEADERS(mntent.h mnttab.h sys/mntent.h sys/mnttab.h)
 AC_CHECK_HEADERS(sys/ipc.h sys/file.h)
 AC_CHECK_HEADERS(socket.h sys/socket.h sys/sockio.h winsock2.h)
 AC_CHECK_HEADERS(sys/resource.h)
+AC_CHECK_HEADERS(sys/sem.h)
+AC_CHECK_HEADERS(semaphore.h)
 
 
 dnl Check for libraries
@@ -577,7 +579,12 @@ AC_CHECK_FUNCS(pthread_keycreate pthread_key_create)
 AC_CHECK_FUNCS(llrint)
 AC_CHECK_FUNCS(localtime_r)
 AC_CHECK_FUNCS(gmtime_r)
-
+if test "$ac_cv_header_semaphore.h" = "yes"; then
+savedFlags="$CFLAGS"
+CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
+AC_CHECK_FUNCS(sem_timedwait)
+CFLAGS="$savedFlags"
+fi
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_BIGENDIAN
@@ -670,7 +677,9 @@ case "$PLATFORM" in
 	dnl      thread support compiled into FIREBIRD.
 	AC_DEFINE(HAVE_POSIX_THREADS)
     ;;
-
+  HPUX)
+	AC_DEFINE(HAVE_POSIX_THREADS)
+    ;;	
   FREEBSD|GENTOOFREEBSD)
     dnl the AC_CHECK_TYPES for socklen_t doesn't include sys/socket.h
     dnl so test for socklen_t with sys/socket.h included

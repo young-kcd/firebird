@@ -177,7 +177,7 @@ SafeArg& SafeArg::operator<<(SINT64 c)
 	return *this;
 }
 
-SafeArg& SafeArg::operator<<(UINT64 c)
+SafeArg& SafeArg::operator<<(FB_UINT64 c)
 {
 	if (m_count < SAFEARG_MAX_ARG)
 	{

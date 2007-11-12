@@ -914,7 +914,7 @@ void CME_get_dtype(const gpre_nod* node, gpre_fld* f)
 				}
 
 			/** Get rid of the decimal point **/
-				UINT64 uint64_val = 0;
+				FB_UINT64 uint64_val = 0;
 				while (*s_ptr)
 				{
 					if (*s_ptr != '.')
@@ -1520,7 +1520,7 @@ static void cmp_literal( const gpre_nod* node, gpre_req* request)
 				scale = -scale;
 			}
 
-			UINT64 uint64_val = 0;
+			FB_UINT64 uint64_val = 0;
 			while (*s_ptr)
 			{
 				if (*s_ptr != '.')
@@ -1530,7 +1530,7 @@ static void cmp_literal( const gpre_nod* node, gpre_req* request)
 
 	/** see if we can fit the value in a long or INT64.  **/
 			if ((uint64_val <= MAX_SLONG) ||
-				((uint64_val == (MAX_SLONG + (UINT64) 1))
+				((uint64_val == (MAX_SLONG + (FB_UINT64) 1))
 				 && (negate == true)))
 			{
 				long long_val;
@@ -1544,7 +1544,7 @@ static void cmp_literal( const gpre_nod* node, gpre_req* request)
 				request->add_word(long_val >> 16);
 			}
 			else if ((uint64_val <= MAX_SINT64) ||
-					 ((uint64_val == ((UINT64) MAX_SINT64 + 1))
+					 ((uint64_val == ((FB_UINT64) MAX_SINT64 + 1))
 					  && (negate == true)))
 			{
 				SINT64 sint64_val;
