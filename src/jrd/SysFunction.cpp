@@ -2086,7 +2086,7 @@ static dsc* evlPi(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_no
 
 static dsc* evlPosition(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args, Jrd::impure_value* impure)
 {
-	fb_assert(args->nod_count == 2);
+	fb_assert(args->nod_count >= 2);
 
 	jrd_req* request = tdbb->tdbb_request;
 
@@ -2098,6 +2098,19 @@ static dsc* evlPosition(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::
 	const dsc* value2 = EVL_expr(tdbb, args->nod_arg[1]);
 	if (request->req_flags & req_null)	// return NULL if value2 is NULL
 		return NULL;
+
+	SLONG start = 1;
+
+	if (args->nod_count >= 3)
+	{
+		const dsc* value3 = EVL_expr(tdbb, args->nod_arg[2]);
+		if (request->req_flags & req_null)	// return NULL if value3 is NULL
+			return NULL;
+
+		start = MOV_get_long(value3, 0);
+		if (start <= 0)
+			status_exception::raise(isc_expression_eval_err, 0);
+	}
 
 	// make descriptor for return value
 	impure->vlu_desc.makeLong(0, &impure->vlu_misc.vlu_long);
@@ -2167,7 +2180,9 @@ static dsc* evlPosition(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::
 	// search if value1 is inside value2
 	const UCHAR* end = value2Canonical.begin() + value2CanonicalLen;
 
-	for (const UCHAR* p = value2Canonical.begin(); p + value1CanonicalLen <= end; p += canonicalWidth)
+	for (const UCHAR* p = value2Canonical.begin() + (start - 1) * canonicalWidth;
+		 p + value1CanonicalLen <= end;
+		 p += canonicalWidth)
 	{
 		if (memcmp(p, value1Canonical.begin(), value1CanonicalLen) == 0)
 		{
@@ -2746,7 +2761,7 @@ const SysFunction SysFunction::functions[] =
 		SF("MOD", 2, 2, setParamsFromList, makeMod, evlMod, NULL),
 		SF("OVERLAY", 3, 4, setParamsOverlay, makeOverlay, evlOverlay, NULL),
 		SF("PI", 0, 0, NULL, makeDoubleResult, evlPi, NULL),
-		SF("POSITION", 2, 2, setParamsPosition, makeLongResult, evlPosition, NULL),
+		SF("POSITION", 2, 3, setParamsPosition, makeLongResult, evlPosition, NULL),
 		SF("POWER", 2, 2, setParamsDouble, makeDoubleResult, evlPower, NULL),
 		SF("RAND", 0, 0, NULL, makeDoubleResult, evlRand, NULL),
 		SF("REPLACE", 3, 3, setParamsFromList, makeReplace, evlReplace, NULL),

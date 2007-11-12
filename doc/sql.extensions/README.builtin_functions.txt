@@ -539,11 +539,12 @@ POSITION
 --------
 
 Function:
-    POSITION(X IN Y) returns the position of the substring X in the string Y
-    or 0 if X isn't inside Y.
+    Returns the position of the first string inside the second string starting at
+    an offset (or from the beginning when omitted).
 
 Format:
-    POSITION( <string IN <string> )
+    POSITION( <string> IN <string> )
+    POSITION( <string>, <string> [, <number>] )
 
 Example:
     select rdb$relation_name
