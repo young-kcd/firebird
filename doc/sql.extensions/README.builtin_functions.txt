@@ -636,7 +636,7 @@ Function:
     Returns a number rounded to the specified scale.
 
 Format:
-    ROUND( <number>, <number> )
+    ROUND( <number> [, <number> ] )
 
 Notes:
     If the scale (second parameter) is negative, the integer part of

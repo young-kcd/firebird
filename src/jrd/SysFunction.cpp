@@ -805,9 +805,8 @@ static void makeRound(DataTypeUtilBase* dataTypeUtil, const SysFunction* functio
 	fb_assert(argsCount == function->minArgCount);
 
 	const dsc* value1 = args[0];
-	const dsc* value2 = args[1];
 
-	if (value1->isNull() || value2->isNull())
+	if (value1->isNull() || (argsCount > 1 && args[1]->isNull()))
 	{
 		result->makeLong(0);
 		result->setNull();
@@ -815,11 +814,15 @@ static void makeRound(DataTypeUtilBase* dataTypeUtil, const SysFunction* functio
 	}
 
 	if (value1->isExact() || value1->dsc_dtype == dtype_real || value1->dsc_dtype == dtype_double)
+	{
 		*result = *value1;
+		if (argsCount == 1)
+			result->dsc_scale = 0;
+	}
 	else
 		status_exception::raise(isc_expression_eval_err, 0);
 
-	result->setNullable(value1->isNullable() || value2->isNullable());
+	result->setNullable(value1->isNullable() || (argsCount > 1 && args[1]->isNullable()));
 }
 
 
@@ -851,7 +854,7 @@ static void makeTrunc(DataTypeUtilBase* dataTypeUtil, const SysFunction* functio
 			break;
 	}
 
-	result->setNullable(value->isNullable());
+	result->setNullable(value->isNullable() || (argsCount > 1 && args[1]->isNullable()));
 }
 
 
@@ -2527,7 +2530,7 @@ static dsc* evlRight(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd
 
 static dsc* evlRound(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args, Jrd::impure_value* impure)
 {
-	fb_assert(args->nod_count == 2);
+	fb_assert(args->nod_count >= 1);
 
 	jrd_req* request = tdbb->tdbb_request;
 
@@ -2536,13 +2539,18 @@ static dsc* evlRound(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd
 	if (request->req_flags & req_null)	// return NULL if value is NULL
 		return NULL;
 
-	dsc* scaleDsc = EVL_expr(tdbb, args->nod_arg[1]);
-	if (request->req_flags & req_null)	// return NULL if scaleDsc is NULL
-		return NULL;
+	SLONG scale = 0;
 
-	SLONG scale = -MOV_get_long(scaleDsc, 0);
-	if (!(scale >= MIN_SCHAR && scale <= MAX_SCHAR))
-		status_exception::raise(isc_expression_eval_err, 0);
+	if (args->nod_count > 1)
+	{
+		dsc* scaleDsc = EVL_expr(tdbb, args->nod_arg[1]);
+		if (request->req_flags & req_null)	// return NULL if scaleDsc is NULL
+			return NULL;
+
+		scale = -MOV_get_long(scaleDsc, 0);
+		if (!(scale >= MIN_SCHAR && scale <= MAX_SCHAR))
+			status_exception::raise(isc_expression_eval_err, 0);
+	}
 
 	impure->vlu_misc.vlu_int64 = MOV_get_int64(value, scale);
 	impure->vlu_desc.makeInt64(scale, &impure->vlu_misc.vlu_int64);
@@ -2744,7 +2752,7 @@ const SysFunction SysFunction::functions[] =
 		SF("REPLACE", 3, 3, setParamsFromList, makeReplace, evlReplace, NULL),
 		SF("REVERSE", 1, 1, NULL, makeReverse, evlReverse, NULL),
 		SF("RIGHT", 2, 2, setParamsSecondInteger, makeLeftRight, evlRight, NULL),
-		SF("ROUND", 2, 2, setParamsRoundTrunc, makeRound, evlRound, NULL),
+		SF("ROUND", 1, 2, setParamsRoundTrunc, makeRound, evlRound, NULL),
 		SF("RPAD", 2, 3, setParamsSecondInteger, makePad, evlPad, (void*) funRPad),
 		SF("SIGN", 1, 1, setParamsDouble, makeShortResult, evlSign, NULL),
 		SF("SIN", 1, 1, setParamsDouble, makeDoubleResult, evlStdMath, (VoidPtrStdMathFunc) sin),
