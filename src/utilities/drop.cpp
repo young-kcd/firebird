@@ -232,7 +232,7 @@ static void remove_resource(
 	gds__prefix_lock(expanded_filename, filename);
 
 	shmem_data.sh_mem_semaphores = sem_count;
-
+	if (!ISC_map_file
 #ifdef HP11
 		(status_vector, expanded_filename,
 		(void (*) (void *, sh_mem*, bool)) dummy_init, 0, shm_length,
@@ -241,6 +241,11 @@ static void remove_resource(
 		(status_vector, expanded_filename, dummy_init, 0, shm_length,
 		&shmem_data))
 #endif
+	{
+		printf("\n***Unable to access %s resources:\n", label);
+		gds__print_status(status_vector);
+		return;
+	}
 
 	const SLONG key = get_key(expanded_filename);
 	if (key == -1) {
