@@ -270,7 +270,7 @@ int main( int argc, char *argv[])
 }
 
 
-#ifdef hpux
+#ifdef HPUX
 PAG CCH_fetch(WIN * x, USHORT y, int z)
 {
 /**************************************

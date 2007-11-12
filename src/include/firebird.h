@@ -88,7 +88,7 @@ using namespace NAMESPACE;
 #define USE_POSIX_THREADS
 #endif
 #ifdef SUPERCLIENT
-#if defined(LINUX) || defined(FREEBSD) || defined (DARWIN)
+#if defined(LINUX) || defined(FREEBSD) || defined(DARWIN) || defined(HPUX)
 /* The following ifdef was added to build thread safe gds shared
    library on linux platform. It seems the gdslib works now (20020220)
    with thread enabled applications. Anyway, more tests should be 

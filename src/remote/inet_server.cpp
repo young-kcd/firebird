@@ -566,7 +566,7 @@ static void signal_sigpipe_handler(int)
 #endif
 
 #ifdef SHUTDOWN_THREAD
-static Firebird::Semaphore shutSem;
+static Firebird::SignalSafeSemaphore shutSem;
 static bool alreadyClosing = false;
 
 static THREAD_ENTRY_DECLARE shutdown_thread(THREAD_ENTRY_PARAM arg) 

@@ -93,7 +93,7 @@
 #endif
 #endif // !(defined VMS || defined WIN_NT)
 
-#ifdef DARWIN
+#if (defined DARWIN || defined HPUX)
 extern "C" int innetgr(const char*, const char*, const char*, const char*);
 #endif
 
@@ -118,7 +118,7 @@ const int INET_RETRY_CALL	= 5;
 #include "../common/utils_proto.h"
 #include "../common/classes/ClumpletWriter.h"
 
-#if (defined hpux || defined SCO_UNIX)
+#if (defined HPUX || defined SCO_UNIX)
 extern int h_errno;
 #endif
 

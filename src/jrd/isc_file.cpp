@@ -145,7 +145,7 @@ const char* MTAB		= _PATH_MNTTAB;
 
 #if   defined(_PATH_MOUNTED)
 const char* MTAB		= _PATH_MOUNTED;
-#elif defined(hpux)
+#elif defined(HPUX)
 const char* MTAB		= "/etc/mnttab";
 #elif defined(SOLARIS)
 const char* MTAB		= "/etc/mnttab";
@@ -349,7 +349,7 @@ bool ISC_analyze_nfs(tstring& expanded_filename, tstring& node_name)
 		expanded_filename.replace(0, len, max_path);
 		node_name = max_node;
 	}
-#if defined(hpux) && (!(defined HP10 || defined HP11))
+#if defined(HPUX) && (!(defined HP10 || defined HP11))
 	else
 	{
 		flag = get_server(expanded_filename, node_name);
@@ -1825,8 +1825,7 @@ bool Mnt::get()
 }
 #endif // GET_MOUNTS
 
-#ifdef hpux
-/* RITTER - added HP11 to the pre-processor condition below */
+#ifdef HPUX
 #if !(defined HP10 || defined HP11)
 static bool get_server(tstring&, tstring& node_name)
 {

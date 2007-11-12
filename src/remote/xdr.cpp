@@ -41,7 +41,7 @@
 // It will return big strange value in case of invalid define
 #if defined(i386) || defined(I386) || defined(_M_IX86) || defined(AMD64) || defined(MIPSEL)
 #define		SWAP_DOUBLE
-#elif defined(sparc) || defined(PowerPC)
+#elif defined(sparc) || defined(PowerPC) || defined(PPC) || defined(__ppc__) || defined(HPUX)
 #undef		SWAP_DOUBLE
 #else
 #error "Define SWAP_DOUBLE for your platform correctly !"

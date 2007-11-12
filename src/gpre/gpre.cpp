@@ -235,7 +235,7 @@ static const ext_table_t dml_ext_table[] =
 #ifdef GPRE_ADA
 #ifdef VMS
 	{ lang_ada, IN_SW_GPRE_ADA, ".eada", ".ada" },
-#elif defined(hpux)
+#elif defined(HPUX)
 	{ lang_ada, IN_SW_GPRE_ADA, ".eada", ".ada" },
 #else
 	{ lang_ada, IN_SW_GPRE_ADA, ".ea", ".a" },

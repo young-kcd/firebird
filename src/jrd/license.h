@@ -67,11 +67,11 @@
 #include "../jrd/build_no.h"
 #include "../jrd/isc_version.h"
 
-#ifdef hpux
+#ifdef HPUX
 #ifdef HP10
 #define FB_PLATFORM	"HU"
 #endif /* HP10 */
-#ifdef HP11  /* RITTER */
+#ifdef HP11 
 #define FB_PLATFORM     "HU"
 #endif /* HP11 */
 #endif
