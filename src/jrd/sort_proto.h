@@ -37,7 +37,7 @@ void SORT_get(Jrd::thread_db*, Jrd::sort_context*, ULONG **, RSE_GET_MODE);
 void SORT_read_block(ISC_STATUS*, TempSpace*, FB_UINT64, BLOB_PTR *, ULONG);
 #else
 void SORT_get(Jrd::thread_db*, Jrd::sort_context*, ULONG **);
-UINT64 SORT_read_block(ISC_STATUS*, TempSpace*, FB_UINT64, BLOB_PTR *, ULONG);
+FB_UINT64 SORT_read_block(ISC_STATUS*, TempSpace*, FB_UINT64, BLOB_PTR *, ULONG);
 #endif
 
 void SORT_fini(Jrd::sort_context*, Jrd::Attachment*);
