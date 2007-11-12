@@ -276,7 +276,7 @@ private:
 	volatile SATOM backup_state;
 	ULONG last_allocated_page; // Last physical page allocated in the difference file
 	BYTE *temp_buffers_space;
-	ULONG *alloc_buffer, *empty_buffer, *spare_buffer, *raw_buffer;
+	ULONG *alloc_buffer, *empty_buffer, *spare_buffer;
 	ULONG current_scn;
 	Firebird::PathName diff_name;
 	bool explicit_diff_name;

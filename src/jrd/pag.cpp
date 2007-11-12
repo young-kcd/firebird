@@ -2441,3 +2441,52 @@ USHORT PageManager::getTempPageSpaceID(thread_db* tdbb)
 	return (USHORT) att->att_temp_pg_lock->lck_key.lck_long;
 #endif
 }
+
+ULONG PAG_page_count(Database* database, PageCountCallback* cb)
+{
+/*********************************************
+ *
+ *	P A G _ p a g e _ c o u n t
+ *
+ *********************************************
+ *
+ * Functional description
+ *	Count pages, used by database
+ *
+ *********************************************/
+	fb_assert(cb);
+
+	const bool isODS11_1 = (database->dbb_ods_version == ODS_VERSION11 &&
+							database->dbb_minor_version >= 1);
+	if (! isODS11_1)
+	{
+		return 0;
+	}
+
+	SCHAR temp_buffer[2 * MIN_PAGE_SIZE];
+	Firebird::Array<BYTE> temp;
+	page_inv_page* pip = (Ods::page_inv_page*) 
+						 // can't reinterpret_cast<> here
+			FB_ALIGN((IPTR) temp.getBuffer(database->dbb_page_size + MIN_PAGE_SIZE), MIN_PAGE_SIZE);
+	PageSpace* pageSpace = 
+		database->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
+	fb_assert(pageSpace);
+	ULONG pageNo = pageSpace->ppFirst;
+	const ULONG pagesPerPip = database->dbb_page_manager.pagesPerPIP;
+
+	for (ULONG sequence = 0; ; pageNo = (pagesPerPip * ++sequence) - 1)
+	{
+		cb->newPage(pageNo, &pip->pip_header);
+		fb_assert(pip->pip_header.pag_type == pag_pages);
+		if (pip->pip_header.reserved == pagesPerPip) 
+		{
+			// this is not last page, continue search
+			continue;
+		}
+
+		return pip->pip_header.reserved + pageNo + (sequence ? 1 : -1);
+	}
+
+	// compiler warnings silencer
+	return 0;
+}

@@ -339,67 +339,33 @@ ULONG BackupManager::getPageCount()
 		return 0;
 	}
 	
-	const bool isODS11_1 = (database->dbb_ods_version == ODS_VERSION11 &&
-							database->dbb_minor_version >= 1);
-	if (! isODS11_1)
+	class PioCount : public Jrd::PageCountCallback
 	{
-		return 0;
-	}
+	private:
+	    BufferDesc temp_bdb;
+		PageSpace* pageSpace;
 
-	SSHORT retryCount = 0;
-	Ods::page_inv_page* pip = reinterpret_cast<Ods::page_inv_page*>(raw_buffer);
-	BufferDesc temp_bdb;
-	temp_bdb.bdb_dbb = database;
-	temp_bdb.bdb_buffer = &pip->pip_header;
-	PageSpace* pageSpace = 
-		database->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
-	fb_assert(pageSpace);
-	temp_bdb.bdb_page = pageSpace->ppFirst;
-	ULONG pagesPerPip = database->dbb_page_manager.pagesPerPIP;
-
-	for (ULONG sequence = 0; ; temp_bdb.bdb_page = (pagesPerPip * ++sequence) - 1)
-	{
-		jrd_file* file = pageSpace->file;
-		ISC_STATUS_ARRAY status;
-		while (!PIO_read(file, &temp_bdb, temp_bdb.bdb_buffer, status)) 
+	public:
+		PioCount(Database* d)
 		{
-			if (!CCH_rollover_to_shadow(database, file, false)) {
-				NBAK_TRACE(("Shadow change error"));
+			temp_bdb.bdb_dbb = d;
+			pageSpace = d->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
+			fb_assert(pageSpace);
+		}
+		virtual void newPage(const SLONG pageNum, Ods::pag* buf)
+		{
+			temp_bdb.bdb_buffer = buf;
+			temp_bdb.bdb_page = pageNum;
+			ISC_STATUS_ARRAY status;
+			if (!PIO_read(pageSpace->file, &temp_bdb, temp_bdb.bdb_buffer, status)) 
+			{
 				Firebird::status_exception::raise(status);
 			}
-			if (file != pageSpace->file)
-			{
-				file = pageSpace->file;
-			}
-			else 
-			{
-				if (retryCount++ == 3) 
-				{
-					NBAK_TRACE(("IO error"));
-					Firebird::status_exception::raise(status);
-				}
-			}
 		}
-
-		// got pip
-		fb_assert(pip->pip_header.pag_type == pag_pages);
-		if (pip->pip_header.reserved == pagesPerPip) 
-		{
-			// this is not last page, continue search
-			continue;
-		}
-
-		ULONG maxPage = pip->pip_header.reserved + 
-						temp_bdb.bdb_page.getPageNum() + 
-						(sequence ? 1 : -1);
-#ifdef NBAK_DEBUG
-		//printf("seq=%d size = %d(pages) %d\n", sequence, maxPage, maxPage * database->dbb_page_size);
-#endif
-		return maxPage;
-	}
-
-	// compiler warnings silencer
-	return 0;
+	};
+	PioCount pioCount(database);
+	
+	return PAG_page_count(database, &pioCount);
 }
 
 
@@ -753,7 +719,7 @@ BackupManager::BackupManager(thread_db* tdbb, Database* _database, int ini_state
 	explicit_diff_name(false)
 {
 	// Allocate various database page buffers needed for operation
-	temp_buffers_space = FB_NEW(*database->dbb_permanent) BYTE[database->dbb_page_size * 4 + MIN_PAGE_SIZE];
+	temp_buffers_space = FB_NEW(*database->dbb_permanent) BYTE[database->dbb_page_size * 3 + MIN_PAGE_SIZE];
 	// Align it at sector boundary for faster IO (also guarantees correct alignment for ULONG later)
 	BYTE *temp_buffers = reinterpret_cast<BYTE*>(
 		FB_ALIGN(reinterpret_cast<U_IPTR>(temp_buffers_space), MIN_PAGE_SIZE));
@@ -764,7 +730,6 @@ BackupManager::BackupManager(thread_db* tdbb, Database* _database, int ini_state
 	empty_buffer = reinterpret_cast<ULONG*>(temp_buffers);
 	spare_buffer = reinterpret_cast<ULONG*>(temp_buffers + database->dbb_page_size);
 	alloc_buffer = reinterpret_cast<ULONG*>(temp_buffers + database->dbb_page_size * 2);
-	raw_buffer = reinterpret_cast<ULONG*>(temp_buffers + database->dbb_page_size * 3);
 
 	database_lock = new NBackupState(tdbb, *database->dbb_permanent, this);
 	alloc_lock = new NBackupAlloc(tdbb, *database->dbb_permanent, this);

@@ -62,5 +62,16 @@ void	PAG_set_page_buffers(ULONG);
 void	PAG_sweep_interval(SLONG);
 //int		PAG_unlicensed(void);
 
+namespace Jrd {
+	class PageCountCallback
+	{
+	public:
+//		PageCountCallback() { }
+		virtual void newPage(const SLONG, Ods::pag*) = 0;
+//		virtual ~PageCountCallback();
+	};
+}
+ULONG	PAG_page_count(Jrd::Database*, Jrd::PageCountCallback*);
+
 #endif // JRD_PAG_PROTO_H
 

@@ -489,13 +489,13 @@ void nbackup::internal_lock_database()
 void nbackup::get_database_size()
 {
 	db_size_pages = 0;
-	char fs[] = {frb_info_db_file_size};
+	char fs[] = {isc_info_db_file_size};
 	char res[128];
 	if (isc_database_info(status, &newdb, sizeof(fs), fs, sizeof(res), res))
 	{
 		pr_error(status, "size info");
 	}
-	else if (res[0] == frb_info_db_file_size)
+	else if (res[0] == isc_info_db_file_size)
 	{
 		USHORT len = isc_vax_integer (&res[1], 2);
 		db_size_pages = isc_vax_integer (&res[3], len);
