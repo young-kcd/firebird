@@ -5,6 +5,10 @@
 	Name="firebird2release"
 	>
 	<Tool
+		Name="VCCLCompilerTool"
+		RuntimeLibrary="2"
+	/>
+	<Tool
 		Name="VCLinkerTool"
 		IgnoreDefaultLibraryNames="msvcrt.lib"
 	/>
