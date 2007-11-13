@@ -2670,6 +2670,7 @@ static jrd_nod* copy(thread_db* tdbb,
 			RecordSelExpr* new_rse =
 				(RecordSelExpr*) PAR_make_node(tdbb, old_rse->rse_count + rse_delta + 2);
 			new_rse->nod_type = input->nod_type;
+			new_rse->nod_flags = input->nod_flags;
 			new_rse->nod_count = 0;
 			new_rse->rse_count = old_rse->rse_count;
 			jrd_nod** arg1 = old_rse->rse_relation;
