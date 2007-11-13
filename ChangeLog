@@ -1,3 +1,54 @@
+2007-11-12 18:24  alexpeshkoff
+
+	* firebird2/src/: jrd/inf.cpp (1.78), jrd/inf_pub.h (1.18),
+	jrd/nbak.cpp (1.70), jrd/nbak.h (1.29), jrd/pag.cpp (1.152),
+	jrd/pag_proto.h (1.19), utilities/nbackup.cpp (1.62):
+
+	1. Renamed info parameter.  2. Clearly separated PIP logic and IO,
+	as was requested by Vlad.
+
+2007-11-12 18:16  alexpeshkoff
+
+	* firebird2/src/jrd/sort_proto.h (1.20):
+
+	fixed build
+
+2007-11-12 16:18  paulbeach
+
+	* firebird2/src/: burp/canonical.cpp (1.37),
+	common/classes/semaphore.h (1.36), config/ScanDir.cpp (1.6),
+	gpre/ftn.cpp (1.59), gpre/gpre.cpp (1.86), gpre/gpre.h (1.90),
+	include/firebird.h (1.44), jrd/cvt.cpp (1.83), jrd/flu.cpp (1.59),
+	jrd/isc_file.cpp (1.110), jrd/isc_sync.cpp (1.119), jrd/license.h
+	(1.35), jrd/pag.cpp (1.151), remote/inet.cpp (1.195),
+	remote/inet_server.cpp (1.68), remote/remote_def.h (1.29),
+	remote/xdr.cpp (1.26), utilities/drop.cpp (1.33),
+	utilities/rebuild/rebuild.cpp (1.21):
+
+	HPUX Port
+
+2007-11-12 15:25  paulbeach
+
+	* firebird2/: configure.in (1.263), src/burp/backup.epp (1.104),
+	src/burp/burp.h (1.84), src/burp/mvol.cpp (1.50),
+	src/burp/mvol_proto.h (1.10), src/burp/restore.epp (1.126),
+	src/common/classes/File.h (1.5), src/common/classes/SafeArg.cpp
+	(1.6), src/common/classes/SafeArg.h (1.3),
+	src/common/classes/sparse_bitmap.h (1.20), src/dsql/make.cpp
+	(1.145), src/dsql/parse.y (1.250), src/gpre/cme.cpp (1.41),
+	src/jrd/RecordNumber.h (1.10), src/jrd/blb.cpp (1.152),
+	src/jrd/btn.cpp (1.24), src/jrd/btr.cpp (1.201), src/jrd/common.h
+	(1.156), src/jrd/cvt.cpp (1.82), src/jrd/dsc.cpp (1.30),
+	src/jrd/dsc2.h (1.10), src/jrd/evl.cpp (1.240), src/jrd/opt.cpp
+	(1.299), src/jrd/rse.cpp (1.138), src/jrd/sbm.h (1.10),
+	src/jrd/sort.cpp (1.101), src/jrd/sort.h (1.34),
+	src/jrd/sort_proto.h (1.19), src/jrd/os/posix/unix.cpp (1.75),
+	src/lock/lock.h (1.38), src/lock/print.cpp (1.60),
+	src/utilities/analyse.cpp (1.13), src/utilities/gstat/dba.epp
+	(1.81), src/utilities/rebuild/rebuild.cpp (1.20):
+
+	HPUX Port
+
 2007-11-12 01:31  asfernandes
 
 	* firebird2/: src/jrd/SysFunction.cpp (1.27),
