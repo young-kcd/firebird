@@ -1,23 +1,37 @@
+  **************
+  * v1.5.5
+  **************
+
+    * Fixed unregistered bugs
+        A number of vulnerabilities found and reported by RISE Security:
+          http://www.risesecurity.org/advisory/RISE-2007003/
+      Contributor(s):
+        Claudio Valderrama <cvalde at usa.net>
+
+    * Fixed bug CORE-1470
+        Server crashes with secondary file name > 127 characters
+      Contributor(s):
+        Claudio Valderrama <cvalde at usa.net>
+
     * QLI crash
-	  Fix problem with QLI where a crash occurs using the following SQL
-	  insert into relationx select * from relationy
+        Fix problem with QLI where a crash occurs using the following SQL:
+          insert into relationx select * from relationy
       Contributor(s):
-	Paul Beach (pbeach at ibphoenix.com)
+        Paul Beach (pbeach at ibphoenix.com)
 
-
-    * HPUX Ports
-	  Fix Core Dump on HPUX when using SQL Dialect 1 and 
-	  select distinct(1.0/1) from rdb$database. Alignment
-	  issue.
+    * Fixed unregistered bug
+        Fix Core Dump on HPUX when using SQL Dialect 1 and:
+          select distinct(1.0/1) from rdb$database.
+        Alignment issue.
       Contributor(s):
-	Paul Beach (pbeach at ibphoenix.com)
+        Paul Beach (pbeach at ibphoenix.com)
 
   **************
   * v1.5.4
   **************
 
     * HPUX ports
-	    Changes committed to CVS to support Classic and SuperServer builds for HPUX11
+        Changes committed to CVS to support Classic and SuperServer builds for HPUX11
       Contributor(s):
         Paul Beach (pbeach at ibphoenix.com)
 
