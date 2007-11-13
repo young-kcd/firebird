@@ -5053,6 +5053,10 @@ static void get_options(UCHAR*	dpb,
 	end_dpb = p + dpb_length;
 	UCHAR* limit = end_dpb - 1;
 
+	// Test for special cae when dpb_length == 0
+	if (! dpb_length)
+		return;
+
 	if ((dpb == NULL) && (dpb_length > 0))
 		ERR_post(gds_bad_dpb_form, 0);
 
