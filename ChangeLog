@@ -1,3 +1,17 @@
+2007-11-13 02:50  asfernandes
+
+	* firebird2/src/jrd/cmp.cpp (1.203.2.7):
+
+	Fixed CORE-1572 - Multiple Rows in Singleton Select not reported in
+	a View - backporting CORE-881 - Singleton isn't respected in
+	COMPUTED BY expressions
+
+2007-11-12 13:17  paulbeach
+
+	* firebird2/src/utilities/drop.cpp (1.31.4.3):
+
+	HPUX Port - correct drop.cpp
+
 2007-11-11 19:59  asfernandes
 
 	* firebird2/src/: burp/burp.h (1.72.4.2), burp/canonical.cpp
