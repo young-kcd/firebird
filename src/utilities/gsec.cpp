@@ -639,15 +639,18 @@ static BOOLEAN get_switches(
 				user_data->group_name_entered = TRUE;
 				break;
 			case IN_SW_GSEC_FNAME:
-				strncpy(user_data->first_name, string, 17);
+				strncpy(user_data->first_name, string, NAME_LEN - 1);
+				user_data->first_name[NAME_LEN - 1] = 0;
 				user_data->first_name_entered = TRUE;
 				break;
 			case IN_SW_GSEC_MNAME:
-				strncpy(user_data->middle_name, string, 17);
+				strncpy(user_data->middle_name, string, NAME_LEN - 1);
+				user_data->middle_name[NAME_LEN - 1] = 0;
 				user_data->middle_name_entered = TRUE;
 				break;
 			case IN_SW_GSEC_LNAME:
-				strncpy(user_data->last_name, string, 17);
+				strncpy(user_data->last_name, string, NAME_LEN - 1);
+				user_data->last_name[NAME_LEN - 1] = 0;
 				user_data->last_name_entered = TRUE;
 				break;
 			case IN_SW_GSEC_DATABASE:
