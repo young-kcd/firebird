@@ -1,3 +1,9 @@
+2007-11-13 11:50  dimitr
+
+	* firebird2/src/jrd/isc_version.h (1.8.4.11):
+
+	Update.
+
 2007-11-13 02:50  asfernandes
 
 	* firebird2/src/jrd/cmp.cpp (1.203.2.7):
