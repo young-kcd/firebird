@@ -1778,7 +1778,7 @@ void *SVC_start(SVC service, USHORT spb_length, SCHAR * spb)
 	isc_resv_handle reserved = (isc_resv_handle)0;	/* Reserved for future functionality */
 
 /* The name of the service is the first element of the buffer */
-	svc_id = *spb;
+	svc_id = spb ? *spb : 0;
 
 	for (serv = (struct serv*)services; serv->serv_action; serv++)
 		if (serv->serv_action == svc_id)
