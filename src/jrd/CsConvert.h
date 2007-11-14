@@ -37,7 +37,7 @@
 namespace Jrd {
 
 class CsConvert
-{ 
+{
 public:
 	CsConvert(charset* cs1, charset* cs2)
 		: charSet1(cs1),
@@ -150,8 +150,10 @@ public:
 			{
 				if (ignoreTrailingSpaces && errCode == CS_TRUNCATION_ERROR)
 				{
+					const USHORT* end = reinterpret_cast<const USHORT*>(temp.begin() + len);
+
 					for (const USHORT* p = (const USHORT*) (temp.begin() + errPos);
-						 p < (const USHORT*) temp.end(); ++p)
+						 p < end; ++p)
 					{
 						if (*p != 0x20)	// space
 						{
