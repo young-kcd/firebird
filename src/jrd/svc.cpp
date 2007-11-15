@@ -618,6 +618,13 @@ Service* SVC_attach(USHORT	service_length,
 			}
 		}
 
+		if (options.spb_user_name.length() > USERNAME_LENGTH)
+		{
+			Firebird::status_exception::raise(isc_long_login, 
+											  isc_arg_number, options.spb_user_name.length(), 
+											  isc_arg_number, USERNAME_LENGTH, 0);
+		}
+
 /* Check that the validated user has the authority to access this service */
 		if (fb_utils::stricmp(options.spb_user_name.c_str(), SYSDBA_USER_NAME))
 		{

@@ -663,6 +663,7 @@ COMMIT WORK;
 ('not_valid_for_var', 'EVL_validate', 'evl.cpp', NULL, 0, 559, NULL, 'validation error for variable @1, value "@2"', NULL, NULL);
 ('not_valid_for', 'EVL_validate', 'evl.cpp', NULL, 0, 560, NULL, 'validation error for @1, value "@2"', NULL, NULL);
 ('need_difference', 'BackupManager::begin_backup', 'nbak.cpp', NULL, 0, 561, NULL, 'Difference file name should be set explicitly for database on raw device', NULL, NULL);
+('long_login', 'getUserInfo', 'jrd.cpp', NULL, 0, 562, NULL, 'Login name too long (@1 characters, maximum allowed @2)', NULL, NULL);
 -- QLI
 (NULL, NULL, NULL, NULL, 1, 0, NULL, 'expected type', NULL, NULL);
 (NULL, NULL, NULL, NULL, 1, 1, NULL, 'bad block type', NULL, NULL);

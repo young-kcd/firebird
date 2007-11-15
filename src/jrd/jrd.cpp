@@ -7411,6 +7411,13 @@ static void getUserInfo(UserId& user, const DatabaseOptions& options)
 		strcpy(name, SYSDBA_USER_NAME);
 	}
 
+	if (strlen(name) > USERNAME_LENGTH)
+	{
+		Firebird::status_exception::raise(isc_long_login, 
+										  isc_arg_number, strlen(name), 
+										  isc_arg_number, USERNAME_LENGTH, 0);
+	}
+
 	user.usr_user_name = name;
 	user.usr_project_name = project;
 	user.usr_org_name = organization;

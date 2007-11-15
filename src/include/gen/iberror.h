@@ -616,6 +616,7 @@ const ISC_LONG isc_concurrent_transaction           = 335544878L;
 const ISC_LONG isc_not_valid_for_var                = 335544879L;
 const ISC_LONG isc_not_valid_for                    = 335544880L;
 const ISC_LONG isc_need_difference                  = 335544881L;
+const ISC_LONG isc_long_login                       = 335544882L;
 const ISC_LONG isc_gfix_db_name                     = 335740929L;
 const ISC_LONG isc_gfix_invalid_sw                  = 335740930L;
 const ISC_LONG isc_gfix_incmp_sw                    = 335740932L;
@@ -878,7 +879,7 @@ const ISC_LONG isc_fbsvcmgr_bad_rs                  = 336986115L;
 const ISC_LONG isc_fbsvcmgr_info_err                = 336986116L;
 const ISC_LONG isc_fbsvcmgr_query_err               = 336986117L;
 const ISC_LONG isc_fbsvcmgr_switch_unknown          = 336986118L;
-const ISC_LONG isc_err_max                          = 823;
+const ISC_LONG isc_err_max                          = 824;
 
 #else /* c definitions */
 
@@ -1464,6 +1465,7 @@ const ISC_LONG isc_err_max                          = 823;
 #define isc_not_valid_for_var                335544879L
 #define isc_not_valid_for                    335544880L
 #define isc_need_difference                  335544881L
+#define isc_long_login                       335544882L
 #define isc_gfix_db_name                     335740929L
 #define isc_gfix_invalid_sw                  335740930L
 #define isc_gfix_incmp_sw                    335740932L
@@ -1726,7 +1728,7 @@ const ISC_LONG isc_err_max                          = 823;
 #define isc_fbsvcmgr_info_err                336986116L
 #define isc_fbsvcmgr_query_err               336986117L
 #define isc_fbsvcmgr_switch_unknown          336986118L
-#define isc_err_max                          823
+#define isc_err_max                          824
 
 #endif
 
