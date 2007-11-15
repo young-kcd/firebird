@@ -70,6 +70,8 @@ public:
 
 #else //WIN_NT
 
+#ifdef MULTI_THREAD
+
 #ifdef HAVE_SEMAPHORE_H
 
 #include <semaphore.h>
@@ -443,6 +445,25 @@ public:
 #endif //HAVE_SYS_SEM_H
 
 #endif //HAVE_SEM_TIMEDWAIT
+
+#else //MULTI_THREAD
+
+namespace Firebird 
+{
+class SignalSafeSemaphore 
+{
+public:
+	SignalSafeSemaphore() { }
+	~SignalSafeSemaphore() { }
+
+	void enter() { }
+	void release(SLONG count = 1) { }
+	bool tryEnter(int seconds = 0) { return true; }
+};
+typedef SignalSafeSemaphore Semaphore;
+} // namespace Firebird
+
+#endif //MULTI_THREAD
 
 #endif //WIN_NT
 
