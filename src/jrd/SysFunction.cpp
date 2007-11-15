@@ -802,7 +802,7 @@ static void makeReverse(DataTypeUtilBase* dataTypeUtil, const SysFunction* funct
 
 static void makeRound(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args)
 {
-	fb_assert(argsCount == function->minArgCount);
+	fb_assert(argsCount >= function->minArgCount);
 
 	const dsc* value1 = args[0];
 
