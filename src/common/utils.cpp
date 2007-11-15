@@ -444,7 +444,7 @@ bool isGlobalKernelPrefix()
 		memset(&ps, 0, sizeof(ps));
 		ps.Control = PRIVILEGE_SET_ALL_NECESSARY;
 		ps.PrivilegeCount = 1;
-		if (pfnLookupPrivilegeValue(NULL, SE_CREATE_GLOBAL_NAME, &ps.Privilege[0].Luid) == 0) {
+		if (pfnLookupPrivilegeValue(NULL, TEXT("SeCreateGlobalPrivilege"), &ps.Privilege[0].Luid) == 0) {
 			// Failure here means we're running on old version of Windows 2000 or XP
 			// which always allow creating global handles
 			CloseHandle(hToken);
