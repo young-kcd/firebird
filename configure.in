@@ -579,7 +579,7 @@ AC_CHECK_FUNCS(pthread_keycreate pthread_key_create)
 AC_CHECK_FUNCS(llrint)
 AC_CHECK_FUNCS(localtime_r)
 AC_CHECK_FUNCS(gmtime_r)
-if test "$ac_cv_header_semaphore.h" = "yes"; then
+if test "$ac_cv_header_semaphore_h" = "yes"; then
 savedFlags="$CFLAGS"
 CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
 AC_CHECK_FUNCS(sem_timedwait)
