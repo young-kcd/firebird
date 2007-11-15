@@ -390,10 +390,6 @@ bool isGlobalKernelPrefix()
 	// for engine objects if we can. This can be prevented by either lack of OS support 
 	// for the feature (Win9X) or lack of privileges (Vista, Windows 2000/XP restricted accounts)
 
-#if (defined(_MSC_VER) && (_MSC_VER <= 1200)) // || defined(MINGW)
-	const char* SE_CREATE_GLOBAL_NAME = "SeCreateGlobalPrivilege";
-#endif
-
 	const DWORD dwVersion = GetVersion();
 
 	// Is Windows NT running?
