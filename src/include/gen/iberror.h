@@ -698,6 +698,7 @@ const ISC_LONG isc_dyn_wrong_gtt_scope              = 336068840L;
 const ISC_LONG isc_dyn_scale_too_big                = 336068852L;
 const ISC_LONG isc_dyn_precision_too_small          = 336068853L;
 const ISC_LONG isc_dyn_miss_priv_warning            = 336068855L;
+const ISC_LONG isc_dyn_ods_not_supp_feature         = 336068856L;
 const ISC_LONG isc_gbak_unknown_switch              = 336330753L;
 const ISC_LONG isc_gbak_page_size_missing           = 336330754L;
 const ISC_LONG isc_gbak_page_size_toobig            = 336330755L;
@@ -879,7 +880,7 @@ const ISC_LONG isc_fbsvcmgr_bad_rs                  = 336986115L;
 const ISC_LONG isc_fbsvcmgr_info_err                = 336986116L;
 const ISC_LONG isc_fbsvcmgr_query_err               = 336986117L;
 const ISC_LONG isc_fbsvcmgr_switch_unknown          = 336986118L;
-const ISC_LONG isc_err_max                          = 824;
+const ISC_LONG isc_err_max                          = 825;
 
 #else /* c definitions */
 
@@ -1547,6 +1548,7 @@ const ISC_LONG isc_err_max                          = 824;
 #define isc_dyn_scale_too_big                336068852L
 #define isc_dyn_precision_too_small          336068853L
 #define isc_dyn_miss_priv_warning            336068855L
+#define isc_dyn_ods_not_supp_feature         336068856L
 #define isc_gbak_unknown_switch              336330753L
 #define isc_gbak_page_size_missing           336330754L
 #define isc_gbak_page_size_toobig            336330755L
@@ -1728,7 +1730,7 @@ const ISC_LONG isc_err_max                          = 824;
 #define isc_fbsvcmgr_info_err                336986116L
 #define isc_fbsvcmgr_query_err               336986117L
 #define isc_fbsvcmgr_switch_unknown          336986118L
-#define isc_err_max                          824
+#define isc_err_max                          825
 
 #endif
 

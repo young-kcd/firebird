@@ -664,6 +664,7 @@ static const struct {
 	{336068852, -829}, /* 244 dyn_scale_too_big                */
 	{336068853, -829}, /* 245 dyn_precision_too_small          */
 	{336068855,  106}, /* 247 dyn_miss_priv_warning            */
+	{336068856, -901}, /* 248 dyn_ods_not_supp_feature         */
 	{336330753, -901}, /*   1 gbak_unknown_switch              */
 	{336330754, -901}, /*   2 gbak_page_size_missing           */
 	{336330755, -901}, /*   3 gbak_page_size_toobig            */
