@@ -155,9 +155,6 @@
 				RelativePath="..\..\..\src\jrd\builtin.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\GlobalRWLock.cpp">
-			</File>
-			<File
 				RelativePath="..\..\..\src\jrd\cch.cpp">
 			</File>
 			<File
@@ -246,6 +243,9 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\gds.cpp">
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\GlobalRWLock.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\gen\jrd\grant.cpp">
@@ -339,6 +339,9 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\pwd.cpp">
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\RandomGenerator.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\RecordBuffer.cpp">
@@ -490,9 +493,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\build_no.h">
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\GlobalRWLock.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\cch.h">
@@ -661,6 +661,9 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\gdsassert.h">
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\GlobalRWLock.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\grant_proto.h">
