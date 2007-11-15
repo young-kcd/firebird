@@ -148,11 +148,15 @@ public:
 			}
 			else if (errCode != 0)
 			{
+				Firebird::HalfStaticArray<USHORT, BUFFER_SMALL / sizeof(USHORT)> temp2;
+				fb_assert((len % sizeof(USHORT)) == 0);
+				USHORT *temp = temp2.getBuffer(len / sizeof(USHORT) + 1);
+
 				if (ignoreTrailingSpaces && errCode == CS_TRUNCATION_ERROR)
 				{
-					const USHORT* end = reinterpret_cast<const USHORT*>(temp.begin() + len);
+					const USHORT* end = temp + len / 2;
 
-					for (const USHORT* p = (const USHORT*) (temp.begin() + errPos);
+					for (const USHORT* p = temp + errPos / 2;
 						 p < end; ++p)
 					{
 						if (*p != 0x20)	// space
