@@ -1,3 +1,23 @@
+2007-11-14 18:03  alexpeshkoff
+
+	* firebird2/src/jrd/svc.cpp (1.67.2.9):
+
+	fixed AV in services
+
+2007-11-14 17:39  alexpeshkoff
+
+	* firebird2/src/jrd/isc_file.cpp (1.52.2.11):
+
+	backported BOF-free version of ISC_expand_filename from HEAD
+
+2007-11-14 15:53  alexpeshkoff
+
+	* firebird2/src/utilities/gsec.cpp (1.16.2.3):
+
+	Fixed CORE-1076: Services Manager and gsec truncate
+	First.Middle.Last Name fields to 17 chars instead of 32 chars
+	available in field definition
+
 2007-11-13 16:20  alexpeshkoff
 
 	* firebird2/src/jrd/jrd.cpp (1.76.2.13):
