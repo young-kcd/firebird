@@ -2025,6 +2025,7 @@ COMMIT WORK;
 ('dyn_precision_too_small', 'check_update_numeric_type', 'dyn_mod.epp', NULL, 8, 245, NULL, 'New precision specified for column @1 must be at least @2.', NULL, NULL);
 (NULL, 'revoke_permission', 'dyn.epp', NULL, 8, 246, NULL, '@1 is not grantor of @2 on @3 to @4.', NULL, NULL);
 ('dyn_miss_priv_warning', 'revoke_permission', 'dyn.epp', NULL, 8, 247, NULL, 'Warning: @1 on @2 is not granted to @3.', NULL, NULL);
+('dyn_ods_not_supp_feature', 'DYN_define_relation', 'dyn_def.epp', NULL, 8, 248, NULL, 'Feature ''@1'' is not supported in ODS @2.@3', NULL, NULL);
 COMMIT WORK;
 -- TEST
 (NULL, 'main', 'test.c', NULL, 11, 0, 0, 'This is a modified text message', NULL, NULL);

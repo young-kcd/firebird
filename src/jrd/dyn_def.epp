@@ -3368,6 +3368,12 @@ void DYN_define_relation( Global* gbl, const UCHAR** ptr)
 				break;
 
 			case isc_dyn_rel_temporary:
+				if (ENCODE_ODS(dbb->dbb_ods_version, dbb->dbb_minor_original) < ODS_11_1)
+				{
+					// msg 248: "Feature ''@1'' is not supported in ODS @2.@3"
+					DYN_error_punt(false, 248, SafeArg() << "GLOBAL TEMPORARY TABLE" << 
+						dbb->dbb_ods_version << dbb->dbb_minor_original);
+				}
 				switch (DYN_get_number(ptr))
 				{
 					case isc_dyn_rel_temp_global_preserve:

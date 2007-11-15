@@ -647,6 +647,7 @@ set bulk_insert INSERT INTO SYSTEM_ERRORS (SQL_CODE, SQL_CLASS, SQL_SUBCLASS, FA
 (-829, NULL, NULL, 8, 244, NULL, 'dyn_scale_too_big', NULL, NULL)
 (-829, NULL, NULL, 8, 245, NULL, 'dyn_precision_too_small', NULL, NULL)
 (106,  NULL, NULL, 8, 247, NULL, 'dyn_miss_priv_warning', NULL, NULL)
+(-901, NULL, NULL, 8, 248, NULL, 'dyn_ods_not_supp_feature', NULL, NULL)
 --  GBAK
 (-901, NULL, NULL, 12, 1, NULL, 'gbak_unknown_switch', NULL, NULL)
 (-901, NULL, NULL, 12, 2, NULL, 'gbak_page_size_missing', NULL, NULL)
