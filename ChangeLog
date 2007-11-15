@@ -1,3 +1,18 @@
+2007-11-14 23:34  asfernandes
+
+	* firebird2/src/jrd/CsConvert.h (1.6):
+
+	Fixed CORE-1594 - BUG in CsConvert::convert - thanks to Dmitry
+	Kovalenko
+
+2007-11-14 11:02  dimitr
+
+	* firebird2/builds/win32/msvc8/fb2control.vcproj (1.9):
+
+	Fixed the CPL applet linkage (made it static instead of dynamic).
+	This is the only project that overrides the common property sheets
+	(in terms of linkage).
+
 2007-11-13 16:01  dimitr
 
 	* firebird2/builds/win32/msvc8/: fb2control.vcproj (1.8),
