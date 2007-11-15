@@ -1781,8 +1781,10 @@ void *SVC_start(SVC service, USHORT spb_length, SCHAR * spb)
 	svc_id = spb ? *spb : 0;
 
 	for (serv = (struct serv*)services; serv->serv_action; serv++)
+	{
 		if (serv->serv_action == svc_id)
 			break;
+	}
 
 	if (!serv->serv_name)
 		ERR_post(isc_service_att_err, isc_arg_gds, isc_service_not_supported, 0);

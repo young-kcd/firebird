@@ -5053,7 +5053,7 @@ static void get_options(UCHAR*	dpb,
 	end_dpb = p + dpb_length;
 	UCHAR* limit = end_dpb - 1;
 
-	// Test for special cae when dpb_length == 0
+	// Test for special case when dpb_length == 0
 	if (! dpb_length)
 		return;
 
