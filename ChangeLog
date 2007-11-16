@@ -1,3 +1,9 @@
+2007-11-15 08:47  robocop
+
+	* firebird2/src/jrd/: jrd.cpp (1.76.2.14), svc.cpp (1.67.2.10):
+
+	Misc.
+
 2007-11-14 18:03  alexpeshkoff
 
 	* firebird2/src/jrd/svc.cpp (1.67.2.9):
