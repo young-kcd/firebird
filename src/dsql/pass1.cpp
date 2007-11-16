@@ -6249,8 +6249,10 @@ static dsql_nod* pass1_join(dsql_req* request, dsql_nod* input, bool proc_flag)
 				boolean = MAKE_list(matched);	// Transform to USING
 		}
 
-		if (boolean && boolean->nod_type == nod_list)	// JOIN ... USING
+		if (boolean)	// JOIN ... USING
 		{
+			fb_assert(boolean->nod_type == nod_list);
+
 			dsql_nod* newBoolean = NULL;
 			StrArray usedColumns(request->req_pool);
 
@@ -6364,8 +6366,6 @@ static dsql_nod* pass1_join(dsql_req* request, dsql_nod* input, bool proc_flag)
 
 			boolean = newBoolean;
 		}
-		else if (boolean)
-			fb_assert(false);
 	}
 
 	node->nod_arg[e_join_boolean] = PASS1_node(request, boolean, proc_flag);
