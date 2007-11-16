@@ -1,3 +1,94 @@
+2007-11-16 02:07  asfernandes
+
+	* firebird2/src/jrd/CsConvert.h (1.8):
+
+	1) Fixed CORE-1596 - BUG in CsConvert::convert (#2) 2) Fixed
+	problem that may cause incorrect transliteration of blobs
+
+2007-11-16 00:05  hvlad
+
+	* firebird2/src/include/gen/: codetext.h (1.69), iberror.h (1.70),
+	msgs.h (1.88), rdb_codes.h (1.66), sql_code.h (1.74):
+
+	Regenerate files
+
+2007-11-16 00:03  hvlad
+
+	* firebird2/src/: jrd/dyn_def.epp (1.158), msgs/facilities2.sql
+	(1.14), msgs/history2.sql (1.3), msgs/messages2.sql (1.17),
+	msgs/system_errors2.sql (1.11):
+
+	Fixed bug CORE-1597 : GLOBAL TEMPORARY TABLEs allowed to be created
+	in ODS less than 11.1
+
+2007-11-15 19:30  dimitr
+
+	* firebird2/src/jrd/dyn_ut_proto.h (1.14):
+
+	Sync'ed prototype with the definition.
+
+2007-11-15 15:40  alexpeshkoff
+
+	* firebird2/src/jrd/CsConvert.h (1.7):
+
+	Alignment issues - avoid casts
+
+2007-11-15 14:50  dimitr
+
+	* firebird2/src/common/utils.cpp (1.42):
+
+	Cleanup after Alex's commit.
+
+2007-11-15 14:29  alexpeshkoff
+
+	* firebird2/builds/win32/msvc7/: engine.vcproj (1.64),
+	engine_classic.vcproj (1.64), engine_embed.vcproj (1.53):
+
+	Fixed VC7 build
+
+2007-11-15 14:28  alexpeshkoff
+
+	* firebird2/src/common/utils.cpp (1.41):
+
+	Make it buildable with old SDK
+
+2007-11-15 14:10  asfernandes
+
+	* firebird2/src/jrd/SysFunction.cpp (1.28):
+
+	Fixed wrong assertion - thanks to Dmitry Kovalenko
+
+2007-11-15 13:48  alexpeshkoff
+
+	* firebird2/: lang_helpers/gds_codes.ftn (1.60),
+	lang_helpers/gds_codes.pas (1.60), src/include/gen/codetext.h
+	(1.68), src/include/gen/iberror.h (1.69), src/include/gen/msgs.h
+	(1.87), src/include/gen/rdb_codes.h (1.65),
+	src/include/gen/sql_code.h (1.73), src/jrd/jrd.cpp (1.352),
+	src/jrd/svc.cpp (1.189), src/msgs/facilities2.sql (1.13),
+	src/msgs/messages2.sql (1.16), src/msgs/system_errors2.sql (1.10):
+
+	Fixed CORE-1593: Full domain user name can be longer than 31
+	char(for trusted authentication)
+
+2007-11-15 12:38  alexpeshkoff
+
+	* firebird2/configure.in (1.264):
+
+	Fixed posix build
+
+2007-11-15 12:31  alexpeshkoff
+
+	* firebird2/src/common/classes/semaphore.h (1.37):
+
+	Fixed posix build
+
+2007-11-15 09:20  paulbeach
+
+	* firebird2/builds/posix/prefix.hpux (1.2):
+
+	HPUX Port
+
 2007-11-14 23:34  asfernandes
 
 	* firebird2/src/jrd/CsConvert.h (1.6):
