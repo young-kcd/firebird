@@ -47,10 +47,10 @@ public:
 	{
 		if (cs1 == NULL)
 		{
-			cs1 = cs2;
+			charSet1 = cs2;
 			cnvt1 = cnvt2;
 
-			cs2 = NULL;
+			charSet2 = NULL;
 			cnvt2 = NULL;
 		}
 	}
