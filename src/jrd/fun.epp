@@ -286,22 +286,29 @@ void FUN_evaluate(UserFunction* function, jrd_nod* node, impure_value* value)
 				arg_ptr = reinterpret_cast<UDF_ARG*>(p);
 				continue;
 			}
-			else if (tail->fun_mechanism != FUN_ref_with_null)
-				MOVE_CLEAR(temp_ptr, (SLONG) length);
-			else
+			else 
 			{
-				// Probably for arrays and blobs it's better to preserve the
-				// current behavior that sends a zeroed memory chunk.
-				switch (tail->fun_desc.dsc_dtype)
+				if (tail->fun_desc.dsc_dtype == dtype_blob)
 				{
-				case dtype_quad:
-				case dtype_array:
-				case dtype_blob:
+					length = sizeof(udf_blob);
+				}
+				if (tail->fun_mechanism != FUN_ref_with_null)
 					MOVE_CLEAR(temp_ptr, (SLONG) length);
-					break;
-				default: // FUN_ref_with_null, non-blob, non-array: we send null pointer.
-					*arg_ptr++ = 0;
-					continue;
+				else
+				{
+					// Probably for arrays and blobs it's better to preserve the
+					// current behavior that sends a zeroed memory chunk.
+					switch (tail->fun_desc.dsc_dtype)
+					{
+					case dtype_quad:
+					case dtype_array:
+					case dtype_blob:
+						MOVE_CLEAR(temp_ptr, (SLONG) length);
+						break;
+					default: // FUN_ref_with_null, non-blob, non-array: we send null pointer.
+						*arg_ptr++ = 0;
+						continue;
+					}
 				}
 			}
 		}
