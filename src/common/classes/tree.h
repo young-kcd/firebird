@@ -491,6 +491,9 @@ public:
 	    Value& current() const { return (*curr)[curPos]; }
 	private:
 		BePlusTree* tree;
+#if defined(_MSC_VER) && _MSC_VER <= 1200
+	public:
+#endif
 		ItemList *curr;
   		size_t curPos;
 	}; // class Accessor

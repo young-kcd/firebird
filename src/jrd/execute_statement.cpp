@@ -306,14 +306,14 @@ XSQLDA* ExecuteStatement::MakeSqlda(thread_db* tdbb, short n)
 		(FB_NEW(*tdbb->tdbb_transaction->tra_pool) char[XSQLDA_LENGTH(n)]);
 }
 
-ISC_STATUS ExecuteStatement::ReMakeSqlda(ISC_STATUS *vector, thread_db* tdbb)
+ISC_STATUS ExecuteStatement::ReMakeSqlda(ISC_STATUS* svector, thread_db* tdbb)
 {
 	if (Sqlda->sqln != Sqlda->sqld) {
-		vector[0] = isc_arg_gds;
-		vector[1] = isc_wronumarg;
-		vector[2] = isc_arg_end;
+		svector[0] = isc_arg_gds;
+		svector[1] = isc_wronumarg;
+		svector[2] = isc_arg_end;
 	}
-	return vector[1];
+	return svector[1];
 }
 
 ULONG ExecuteStatement::ParseSqlda(void)
