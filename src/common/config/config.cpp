@@ -180,6 +180,7 @@ ConfigImpl::ConfigImpl(MemoryPool& p) : ConfigRoot(p)
 	file.setConfigFilePath(getConfigFilePath());
 
 	strncpy(defIpcName, FB_IPC_NAME, sizeof(defIpcName));
+	defIpcName[sizeof(defIpcName) - 1] = 0;
 #ifdef WIN_NT
 	fb_utils::prefix_kernel_object_name(defIpcName, sizeof(defIpcName));
 #endif
