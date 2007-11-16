@@ -1,3 +1,15 @@
+2007-11-15 12:48  alexpeshkoff
+
+	* firebird2/configure.in (1.241.2.14):
+
+	Fixed posix build
+
+2007-11-15 12:38  alexpeshkoff
+
+	* firebird2/src/common/classes/semaphore.h (1.24.2.8):
+
+	Fixed posix build
+
 2007-11-13 11:50  dimitr
 
 	* firebird2/src/jrd/isc_version.h (1.8.4.11):
