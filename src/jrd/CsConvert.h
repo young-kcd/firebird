@@ -107,17 +107,18 @@ public:
 
 		if (cnvt2)
 		{
-			Firebird::HalfStaticArray<UCHAR, BUFFER_SMALL> temp;
-
 			ULONG len = (*cnvt1->csconvert_fn_convert)(cnvt1, srcLen, NULL, 0, NULL, &errCode, &errPos);
+			fb_assert(len % sizeof(USHORT) == 0);
 
 			if (len == INTL_BAD_STR_LENGTH || errCode != 0)
 				Firebird::status_exception::raise(isc_arith_except, 0);
 
-			temp.getBuffer(len);
+			Firebird::HalfStaticArray<USHORT, BUFFER_SMALL> temp;
 
-			len = (*cnvt1->csconvert_fn_convert)(
-				cnvt1, srcLen, src, len, temp.begin(), &errCode, &errPos);
+			len = (*cnvt1->csconvert_fn_convert)(cnvt1, srcLen, src, len,
+				reinterpret_cast<UCHAR*>(temp.getBuffer(len / 2)), &errCode, &errPos);
+			fb_assert(len % sizeof(USHORT) == 0);
+			temp.shrink(len / 2);
 
 			if (len == INTL_BAD_STR_LENGTH)
 			{
@@ -137,7 +138,8 @@ public:
 					0);
 			}
 
-			len = (*cnvt2->csconvert_fn_convert)(cnvt2, len, temp.begin(), dstLen, dst, &errCode, &errPos);
+			len = (*cnvt2->csconvert_fn_convert)(cnvt2, len, reinterpret_cast<const UCHAR*>(temp.begin()),
+				dstLen, dst, &errCode, &errPos);
 
 			if (len == INTL_BAD_STR_LENGTH)
 			{
@@ -146,45 +148,55 @@ public:
 					isc_arg_gds, isc_transliteration_failed,
 					0);
 			}
-			else if (errCode != 0)
+			else if (errCode == CS_TRUNCATION_ERROR)
 			{
-				Firebird::HalfStaticArray<USHORT, BUFFER_SMALL / sizeof(USHORT)> temp2;
-				fb_assert((len % sizeof(USHORT)) == 0);
-				USHORT *temp = temp2.getBuffer(len / sizeof(USHORT) + 1);
+				fb_assert(errPos % sizeof(USHORT) == 0);
+				errPos /= sizeof(USHORT);
 
-				if (ignoreTrailingSpaces && errCode == CS_TRUNCATION_ERROR)
+				if (ignoreTrailingSpaces)
 				{
-					const USHORT* end = temp + len / 2;
+					const USHORT* end = temp.end();
+					const USHORT* p;
 
-					for (const USHORT* p = temp + errPos / 2;
-						 p < end; ++p)
+					for (p = temp.begin() + errPos; p < end; ++p)
 					{
 						if (*p != 0x20)	// space
 						{
 							if (badInputPos)
-							{
-								*badInputPos = errPos;
 								break;
-							}
 							else
 								Firebird::status_exception::raise(isc_arith_except, 0);
 						}
 					}
-				}
-				else if (errCode == CS_TRUNCATION_ERROR)
-				{
-					if (badInputPos)
-						*badInputPos = errPos;
-					else
-						Firebird::status_exception::raise(isc_arith_except, 0);
+
+					if (p >= end)	// only spaces found
+						badInputPos = NULL;
 				}
 				else
 				{
-					Firebird::status_exception::raise(
-						isc_arith_except,
-						isc_arg_gds, isc_transliteration_failed,
-						0);
+					if (!badInputPos)
+						Firebird::status_exception::raise(isc_arith_except, 0);
 				}
+
+				if (badInputPos)
+				{
+					// ASF: We should report the bad pos in context of the source string.
+					// Convert the "good" UTF-16 buffer to it to know the length.
+					Firebird::HalfStaticArray<UCHAR, BUFFER_SMALL> dummyBuffer;
+					USHORT dummyErr;
+					ULONG dummyPos;
+					*badInputPos = (*charSet1->charset_from_unicode.csconvert_fn_convert)(
+						&charSet1->charset_from_unicode, errPos * sizeof(USHORT),
+						reinterpret_cast<const UCHAR*>(temp.begin()),
+						srcLen, dummyBuffer.getBuffer(srcLen), &dummyErr, &dummyPos);
+				}
+			}
+			else if (errCode != 0)
+			{
+				Firebird::status_exception::raise(
+					isc_arith_except,
+					isc_arg_gds, isc_transliteration_failed,
+					0);
 			}
 
 			return len;
