@@ -235,7 +235,7 @@ static void remove_resource(
 	if (!ISC_map_file
 #ifdef HP11
 		(status_vector, expanded_filename,
-		(void (*) (void *, sh_mem*, bool)) dummy_init, 0, shm_length,
+		(void (*) (void*, sh_mem*, bool)) dummy_init, 0, shm_length,
 		&shmem_data))
 #else
 		(status_vector, expanded_filename, dummy_init, 0, shm_length,

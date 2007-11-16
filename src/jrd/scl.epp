@@ -687,6 +687,7 @@ void SCL_init(bool create,
             if (!REL.RDB$OWNER_NAME.NULL && user->usr_user_name.hasData())
 			{
 				char name[129];
+				fb_assert(user->usr_user_name.length() < 256);
 				*name = user->usr_user_name.length();
 				user->usr_user_name.copyTo(name + 1, sizeof(name) - 1);
 				if (!check_string(reinterpret_cast<const UCHAR*>(name), 

@@ -4790,7 +4790,7 @@ static BufferDesc* get_buffer(thread_db* tdbb, SLONG page, LATCH latch, SSHORT l
 static void invalidate_and_release_buffer(thread_db* tdbb, BufferDesc* bdb)
 {
 	// This function should be called before difference processing is done.
-	// So there should be no need to no need to release difference locks though
+	// So there should be no need to release difference locks though
 	Database* dbb = tdbb->tdbb_database;
 	bdb->bdb_flags |= BDB_not_valid;
 	bdb->bdb_flags &= ~BDB_dirty;

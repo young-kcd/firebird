@@ -149,9 +149,6 @@
 				RelativePath="..\..\..\gen\utilities\gstat\dba.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\enc.cpp">
-			</File>
-			<File
 				RelativePath="..\..\..\src\common\fb_exception.cpp">
 			</File>
 			<File
@@ -201,6 +198,9 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\os\win32\guid.cpp">
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\enc.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\isc.cpp">
