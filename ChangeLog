@@ -1,3 +1,33 @@
+2007-11-16 14:18  robocop
+
+	* firebird2/src/common/config/config.cpp (1.66.4.4):
+
+	Paranoid check.
+
+2007-11-16 14:11  robocop
+
+	* firebird2/: src/jrd/cch.cpp (1.129.2.8), src/jrd/isc_file.cpp
+	(1.98.4.3), src/jrd/scl.epp (1.71.4.4), src/utilities/drop.cpp
+	(1.31.4.4), builds/win32/msvc7/gstat.vcproj (1.22.4.3):
+
+	Misc.
+
+2007-11-16 14:09  robocop
+
+	* firebird2/: src/jrd/execute_statement.cpp (1.14.4.7),
+	builds/win32/msvc6/gsec.dsp (1.18.4.1),
+	builds/win32/msvc6/gstat.dsp (1.19.4.1), src/common/classes/tree.h
+	(1.50.2.3):
+
+	Fixing compilation for VC6.
+
+2007-11-16 13:33  alexpeshkoff
+
+	* firebird2/src/jrd/fun.epp (1.72.4.1):
+
+	Backported fix for CORE-1579: Corrupt BLOB in UDF if followed by a
+	char* that is a timestamp
+
 2007-11-15 12:48  alexpeshkoff
 
 	* firebird2/configure.in (1.241.2.14):
