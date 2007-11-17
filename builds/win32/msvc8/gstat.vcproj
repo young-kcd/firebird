@@ -324,10 +324,6 @@
                 >
             </File>
             <File
-                RelativePath="..\..\..\src\jrd\enc.cpp"
-                >
-            </File>
-            <File
                 RelativePath="..\..\..\src\common\fb_exception.cpp"
                 >
             </File>
@@ -402,6 +398,10 @@
             >
             <File
                 RelativePath="..\..\..\src\jrd\btn.cpp"
+                >
+            </File>
+            <File
+                RelativePath="..\..\..\src\jrd\enc.cpp"
                 >
             </File>
             <File

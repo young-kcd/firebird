@@ -7501,11 +7501,13 @@ static void set_direction(const jrd_nod* from_clause, jrd_nod* to_clause)
 	// one for each field.
 	jrd_nod* const* from_ptr = from_clause->nod_arg;
 	jrd_nod** to_ptr = to_clause->nod_arg;
-	for (const jrd_nod* const* const end = from_ptr + from_clause->nod_count;
+	const ULONG fromCount = from_clause->nod_count;
+	const ULONG toCount = to_clause->nod_count;
+	for (const jrd_nod* const* const end = from_ptr + fromCount;
 		from_ptr < end; from_ptr++, to_ptr++)
 	{
-		*(to_ptr + to_clause->nod_count) = *(from_ptr + from_clause->nod_count);
-		*(to_ptr + to_clause->nod_count * 2) = *(from_ptr + from_clause->nod_count * 2);
+		to_ptr[toCount] = from_ptr[fromCount];
+		to_ptr[toCount * 2] = from_ptr[fromCount * 2];
 	}
 }
 

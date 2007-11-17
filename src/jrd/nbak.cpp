@@ -346,8 +346,9 @@ ULONG BackupManager::getPageCount()
 		PageSpace* pageSpace;
 
 	public:
-		PioCount(Database* d)
+		explicit PioCount(Database* d)
 		{
+			fb_assert(d);
 			temp_bdb.bdb_dbb = d;
 			pageSpace = d->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
 			fb_assert(pageSpace);

@@ -2359,10 +2359,9 @@ static void merge_runs(sort_context* scb, USHORT n)
 
 inline void swap(SORTP** a, SORTP** b)
 {
-	SORTP* temp;
 	((SORTP ***) (*a))[BACK_OFFSET] = b;
 	((SORTP ***) (*b))[BACK_OFFSET] = a;
-	temp = *a;
+	SORTP* temp = *a;
 	*a = *b;
 	*b = temp;
 }

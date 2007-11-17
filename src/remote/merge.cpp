@@ -106,7 +106,7 @@ USHORT MERGE_database_info(const UCHAR* in,
 
 		default:
 			{
-				SSHORT length = (SSHORT) gds__vax_integer(in, 2);
+				USHORT length = (USHORT) gds__vax_integer(in, 2);
 				in += 2;
 				if (out + length + 2 >= end) {
 					out[-1] = isc_info_truncated;

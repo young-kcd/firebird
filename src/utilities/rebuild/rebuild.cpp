@@ -66,7 +66,6 @@ static void format_tip(tx_inv_page*, int, SLONG);
 static void get_next_file(RBDB, header_page*);
 static void get_range(TEXT***, const TEXT* const* const, ULONG*, ULONG*);
 static void get_switch(TEXT**, SWC);
-static void move(const SCHAR*, SCHAR*, SSHORT);
 static header_page* open_database(RBDB, ULONG);
 static void print_db_header(FILE*, const header_page*);
 static void rebuild(RBDB);
@@ -872,24 +871,6 @@ static void get_switch( TEXT** argv, SWC token)
 }
 
 
-static void move(const SCHAR* from, SCHAR* to, SSHORT length)
-{
-/**************************************
- *
- *	m o v e
- *
- **************************************
- *
- * Functional description
- *	Move some stuff.
- *
- **************************************/
-	do {
-		*to++ = *from++;
-	} while (--length);
-}
-
-
 static header_page* open_database( RBDB rbdb, ULONG pg_size)
 {
 /**************************************
@@ -1027,17 +1008,17 @@ fprintf ("    Creation date    \n", header->hdr_creation_date);
 			break;
 
 		case HDR_last_page:
-			move(p + 2, &number, sizeof(number));
+			memcpy(&number, p + 2, sizeof(number));
 			fprintf(file, "\tLast logical page: %ld\n", number);
 			break;
 /*
 		case HDR_unlicensed:
-			move(p + 2, &number, sizeof(number));
+			memcpy(&number, p + 2, sizeof(number));
 			fprintf(file, "\tUnlicensed accesses: %ld\n", number);
 			break;
 */
 		case HDR_sweep_interval:
-			move(p + 2, &number, sizeof(number));
+			memcpy(&number, p + 2, sizeof(number));
 			fprintf(file, "\tSweep interval: %ld\n", number);
 			break;
 
