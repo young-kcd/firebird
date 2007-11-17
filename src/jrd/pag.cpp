@@ -1452,9 +1452,7 @@ void PAG_init2(USHORT shadow_number)
 			if ((shadow_number) && (!file->fil_min_page))
 				CCH_RELEASE(tdbb, &window);
 
-			for (const TEXT* p = reinterpret_cast<TEXT*>(header->hdr_data); 
-				 *p != HDR_end; 
-				 p += 2 + p[1])
+			for (const UCHAR* p = header->hdr_data; *p != HDR_end; p += 2 + p[1])
 			{
 				switch (*p) {
 				case HDR_file:
@@ -1470,8 +1468,7 @@ void PAG_init2(USHORT shadow_number)
 				case HDR_sweep_interval:
 					// CVC: Let's copy it always.
 					//if (!(dbb->dbb_flags & DBB_read_only))
-						MOVE_FAST(p + 2, &dbb->dbb_sweep_interval,
-								  sizeof(SLONG));
+						MOVE_FAST(p + 2, &dbb->dbb_sweep_interval, sizeof(SLONG));
 					break;
 				}
 			}
