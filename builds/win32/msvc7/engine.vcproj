@@ -890,6 +890,9 @@
 				RelativePath="..\..\..\src\jrd\perf_proto.h">
 			</File>
 			<File
+				RelativePath="..\..\..\src\jrd\RandomGenerator.h">
+			</File>
+			<File
 				RelativePath="..\..\..\src\jrd\os\pio.h">
 			</File>
 			<File

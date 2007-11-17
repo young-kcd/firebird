@@ -976,7 +976,7 @@ void dsc::address32bit() const
  *
  **************************************/
 #if SIZEOF_VOID_P > 4
-	FB_UINT64 addr = (FB_UINT64)(IPTR)dsc_address;
+	FB_UINT64 addr = (FB_UINT64)(IPTR) dsc_address;
 	fb_assert(addr == (addr & 0xFFFFFFFF));
 #endif
 }

@@ -292,6 +292,7 @@ void FUN_evaluate(UserFunction* function, jrd_nod* node, impure_value* value)
 				{
 					length = sizeof(udf_blob);
 				}
+
 				if (tail->fun_mechanism != FUN_ref_with_null)
 					MOVE_CLEAR(temp_ptr, (SLONG) length);
 				else

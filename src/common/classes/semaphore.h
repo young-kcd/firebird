@@ -120,8 +120,8 @@ public:
 	}
 
 #ifdef HAVE_SEM_TIMEDWAIT
-// In case when sem_timedwait() is implemented by host OS, 
-// class SignalSafeSemaphore may have this function:
+	// In case when sem_timedwait() is implemented by host OS, 
+	// class SignalSafeSemaphore may have this function:
 	bool tryEnter(int seconds = 0) {
 		// Return true in case of success
 		fb_assert(init == true);

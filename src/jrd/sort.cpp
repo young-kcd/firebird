@@ -132,7 +132,7 @@ static sort_record*	get_merge(merge_control*, sort_context*);
 
 static ULONG allocate_memory(sort_context*, ULONG, ULONG, bool);
 static void error_memory(sort_context*);
-static inline	FB_UINT64 find_file_space(sort_context*, ULONG);
+static inline FB_UINT64 find_file_space(sort_context*, ULONG);
 static inline void free_file_space(sort_context*, FB_UINT64, ULONG);
 static void init(sort_context*);
 static bool local_fini(sort_context*, Attachment*);

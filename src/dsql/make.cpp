@@ -192,7 +192,7 @@ dsql_nod* MAKE_constant(dsql_str* constant, dsql_constant_type numeric_flag)
 				}
 			}
 
-			*(FB_UINT64 *) (node->nod_desc.dsc_address) = value;
+			*(FB_UINT64*) (node->nod_desc.dsc_address) = value;
 			break;
 		}
 

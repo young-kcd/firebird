@@ -130,7 +130,7 @@ using namespace Jrd;
 // please undefine FCNTL_BROKEN for operating systems,
 // that can successfully change BOTH O_DIRECT and O_SYNC using fcntl()
 
-static jrd_file* seek_file(jrd_file*, BufferDesc*, FB_UINT64 *, ISC_STATUS *);
+static jrd_file* seek_file(jrd_file*, BufferDesc*, FB_UINT64*, ISC_STATUS*);
 static jrd_file* setup_file(Database*, const Firebird::PathName&, int);
 static bool unix_error(TEXT*, const jrd_file*, ISC_STATUS, ISC_STATUS*);
 #if defined PREAD_PWRITE && !(defined HAVE_PREAD && defined HAVE_PWRITE)
@@ -455,11 +455,9 @@ void PIO_header(Database* dbb, SCHAR * address, int length)
 			SLONG spare_buffer[MAX_PAGE_SIZE / sizeof(SLONG)];
 
 #ifdef PREAD_PWRITE
-			if ((bytes = pread(file->fil_desc, spare_buffer, length, 0)) ==
-				(FB_UINT64) -1) {
+			if ((bytes = pread(file->fil_desc, spare_buffer, length, 0)) == (FB_UINT64) -1) {
 #else
-			if ((bytes = read(file->fil_desc, spare_buffer, length)) == 
-				(FB_UINT64) -1) {
+			if ((bytes = read(file->fil_desc, spare_buffer, length)) == (FB_UINT64) -1) {
 				THD_IO_MUTEX_UNLOCK(file->fil_mutex);
 #endif
 				if (SYSCALL_INTERRUPTED(errno))

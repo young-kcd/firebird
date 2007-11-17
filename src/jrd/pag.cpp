@@ -2463,7 +2463,6 @@ ULONG PAG_page_count(Database* database, PageCountCallback* cb)
 		return 0;
 	}
 
-	SCHAR temp_buffer[2 * MIN_PAGE_SIZE];
 	Firebird::Array<BYTE> temp;
 	page_inv_page* pip = (Ods::page_inv_page*) 
 						 // can't reinterpret_cast<> here

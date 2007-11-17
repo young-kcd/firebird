@@ -1795,7 +1795,7 @@ static void gen_dyn_fetch(const act* action)
 	const dyn* statement = (const dyn*) action->act_object;
 
 	const TEXT* sqlda = statement->dyn_sqlda;
-#ifdef HPUX 
+#ifdef HPUX
 	TEXT s2[64];
 	if (sqlda) {
 		sprintf(s2, "isc_baddress (%s)", sqlda);

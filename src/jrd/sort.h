@@ -107,9 +107,9 @@ const ULONG MAX_SORT_RECORD		= 65535;	/* bytes */
    which points to the sort_record structure. */
 typedef struct sr
 {
-	sort_record**	sr_bckptr;	/* Pointer back to sort list entry */
+	sort_record** sr_bckptr;	/* Pointer back to sort list entry */
 	union {
-		sort_record		sr_sort_record;
+		sort_record sr_sort_record;
 		FB_UINT64 dummy_alignment_force;
 	};
 } SR;
