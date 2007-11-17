@@ -25,6 +25,12 @@
       Contributor(s):
         Claudio Valderrama <cvalde at usa.net>
 
+    * Fixed bug CORE-1447
+        Buffer overrun when querying for database info on very long path
+        through isc_database_info() API call
+      Contributor(s):
+        Claudio Valderrama <cvalde at usa.net>
+
     * QLI crash
         Fix problem with QLI where a crash occurs using the following SQL:
           insert into relationx select * from relationy
