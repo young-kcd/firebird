@@ -1,3 +1,44 @@
+2007-11-17 01:37  asfernandes
+
+	* firebird2/: builds/win32/msvc7/engine.vcproj (1.65),
+	builds/win32/msvc7/engine_classic.vcproj (1.65),
+	builds/win32/msvc7/engine_embed.vcproj (1.54),
+	src/burp/canonical.cpp (1.38), src/common/classes/semaphore.h
+	(1.38), src/dsql/make.cpp (1.146), src/dsql/parse.y (1.251),
+	src/gpre/ftn.cpp (1.60), src/jrd/dsc.cpp (1.31), src/jrd/fun.epp
+	(1.80), src/jrd/pag.cpp (1.153), src/jrd/sort.cpp (1.102),
+	src/jrd/sort.h (1.35), src/jrd/os/posix/unix.cpp (1.76),
+	src/msgs/facilities2.sql (1.15), src/utilities/analyse.cpp (1.14),
+	src/utilities/gstat/dba.epp (1.82),
+	src/utilities/rebuild/rebuild.cpp (1.22):
+
+	Misc
+
+2007-11-17 01:27  asfernandes
+
+	* firebird2/src/msgs/history2.sql (1.4):
+
+	New messages should not be appended here
+
+2007-11-17 00:18  asfernandes
+
+	* firebird2/src/jrd/CsConvert.h (1.9):
+
+	Fixed problem reported by Dmitry Kovalenko
+
+2007-11-16 14:47  asfernandes
+
+	* firebird2/src/dsql/pass1.cpp (1.342):
+
+	Fixed warning - thanks to Dmitry
+
+2007-11-16 13:32  alexpeshkoff
+
+	* firebird2/src/jrd/fun.epp (1.79):
+
+	Fixed CORE-1579: Corrupt BLOB in UDF if followed by a char* that is
+	a timestamp
+
 2007-11-16 02:07  asfernandes
 
 	* firebird2/src/jrd/CsConvert.h (1.8):
