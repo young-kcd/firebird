@@ -30,29 +30,33 @@
 #define CLASSES_SEMAPHORE_H
 
 #ifdef WIN_NT
-// Note: windows do not need signal safe version of the class
+// Note: Windows does not need signal safe version of the class
 
 #include <windows.h>
 #include <limits.h>
 
-namespace Firebird {
+namespace Firebird
+{
 
-class Semaphore {
+class Semaphore
+{
 private:
 	HANDLE hSemaphore;
 public:
-	Semaphore() { 
-		hSemaphore = CreateSemaphore(NULL, 0 /*initial count*/, 
-			INT_MAX, NULL); 
+	Semaphore()
+	{ 
+		hSemaphore = CreateSemaphore(NULL, 0 /*initial count*/, INT_MAX, NULL);
 		if (hSemaphore == NULL)
 			system_call_failed::raise("CreateSemaphore");
 	}
-	~Semaphore() {
+	~Semaphore()
+	{
 		if (hSemaphore && !CloseHandle(hSemaphore))
 			system_call_failed::raise("CloseHandle");
 	}	
 
-	bool tryEnter(int seconds = 0) {
+	bool tryEnter(int seconds = 0)
+	{
 		DWORD result = WaitForSingleObject(
 			hSemaphore, seconds >= 0 ? seconds * 1000 : INFINITE);
 		if (result == WAIT_FAILED)
@@ -60,7 +64,8 @@ public:
 		return result != WAIT_TIMEOUT;
 	}
 
-	void release(SLONG count = 1) {
+	void release(SLONG count = 1)
+	{
 		if (!ReleaseSemaphore(hSemaphore, count, NULL))
 			system_call_failed::raise("ReleaseSemaphore");
 	}
@@ -77,14 +82,17 @@ public:
 #include <semaphore.h>
 #include <errno.h>
 
-namespace Firebird {
+namespace Firebird
+{
 
-class SignalSafeSemaphore {
+class SignalSafeSemaphore
+{
 private:
 	sem_t sem;
 	bool  init;
 public:
-	SignalSafeSemaphore() : init(false) {
+	SignalSafeSemaphore() : init(false)
+	{
 		if (sem_init(&sem, 0, 0) == -1) {
 			//gds__log("Error on semaphore.h: constructor");
 			system_call_failed::raise("sem_init");
@@ -92,7 +100,8 @@ public:
 		init = true;
 	}
 	
-	~SignalSafeSemaphore() {
+	~SignalSafeSemaphore()
+	{
 		fb_assert(init == true);
 		if (sem_destroy(&sem) == -1) {
 			//gds__log("Error on semaphore.h: destructor");
@@ -102,7 +111,8 @@ public:
 
 	}
 	
-	void enter() {
+	void enter()
+	{
 		fb_assert(init == true);
 		do {
 			if (sem_wait(&sem) != -1)
@@ -111,21 +121,25 @@ public:
 		system_call_failed::raise("semaphore.h: enter: sem_wait()");
 	}
 	
-	void release(SLONG count = 1) {
+	void release(SLONG count = 1)
+	{
 		fb_assert(init == true);
 		for (int i = 0; i < count; i++)
-			if (sem_post(&sem) == -1) {
+		{
+			if (sem_post(&sem) == -1)
 				system_call_failed::raise("semaphore.h: release: sem_post()");
-			}
+		}
 	}
 
 #ifdef HAVE_SEM_TIMEDWAIT
 	// In case when sem_timedwait() is implemented by host OS, 
 	// class SignalSafeSemaphore may have this function:
-	bool tryEnter(int seconds = 0) {
+	bool tryEnter(int seconds = 0)
+	{
 		// Return true in case of success
 		fb_assert(init == true);
-		if (seconds == 0) {
+		if (seconds == 0)
+		{
 			// Instant try
 			do {
 				if (sem_trywait(&sem) != -1) 
@@ -135,7 +149,8 @@ public:
 				return false;
 			system_call_failed::raise("sem_trywait");
 		}
-		if (seconds < 0) {
+		if (seconds < 0)
+		{
 			// Unlimited wait, like enter()
 			do {
 				if (sem_wait(&sem) != -1)
@@ -176,7 +191,7 @@ typedef SignalSafeSemaphore Semaphore;
 #endif //HAVE_SEMAPHORE_H
 
 #ifndef HAVE_SEM_TIMEDWAIT
-// Should implement Semaphore indepedent from SignalSafeSemaphore.
+// Should implement Semaphore independent from SignalSafeSemaphore.
 // In the worst case no SignalSafeSemaphore at all (and no SS for that platform).
 
 #ifdef HAVE_SYS_SEM_H
@@ -185,18 +200,22 @@ typedef SignalSafeSemaphore Semaphore;
 #include <sys/ipc.h>
 #include <sys/sem.h>
 
-namespace Firebird {
+namespace Firebird
+{
 
-class Semaphore {
+class Semaphore
+{
 private:
 	int semId;
-	union semun {
+	union semun
+	{
 		int					val;
 		struct semid_ds*	buf;
 		unsigned short*		array;
 	};
 public:
-	Semaphore() : semId(semget(IPC_PRIVATE, 1, 0600)) {
+	Semaphore() : semId(semget(IPC_PRIVATE, 1, 0600))
+	{
 		if (semId < 0)
 			system_call_failed::raise("semaphore.h: Semaphore: semget()");
 		semun arg;
@@ -205,13 +224,15 @@ public:
 			system_call_failed::raise("semaphore.h: Semaphore: semctl()");
 	}
 	
-	~Semaphore() {
+	~Semaphore()
+	{
 		semun arg;
 		if (semctl(semId, 0, IPC_RMID, arg) < 0)
 			system_call_failed::raise("semaphore.h: ~Semaphore: semctl()");
 	}
 	
-	bool tryEnter(int seconds = 0) {	// Returns true in case of success
+	bool tryEnter(int seconds = 0) // Returns true in case of success
+	{
 		timespec timeout;
 		timeout.tv_sec = time(NULL) + seconds;
 		timeout.tv_nsec = 0;
@@ -232,7 +253,8 @@ public:
 			sb.sem_flg = IPC_NOWAIT;
 		}
 
-		while (semtimedop(semId, &sb, 1, t) < 0) {
+		while (semtimedop(semId, &sb, 1, t) < 0)
+		{
 			switch (errno) {
 			case EAGAIN:
 				return false;
@@ -245,17 +267,20 @@ public:
 		return false; //compiler silencer
 	}
 	
-	void enter() {
+	void enter()
+	{
 		tryEnter(-1);
 	}
 	
-	void release(SLONG count = 1) {
+	void release(SLONG count = 1)
+	{
 		sembuf sb;
 		sb.sem_num = 0;
 		sb.sem_op = 1;
 		sb.sem_flg = 0;
 
-		while (semop(semId, &sb, 1) < 0) {
+		while (semop(semId, &sb, 1) < 0)
+		{
 			if (errno == EINTR) {
 				continue;
 			}
@@ -271,15 +296,18 @@ public:
 #include <pthread.h>
 #include <errno.h>
 
-namespace Firebird {
+namespace Firebird
+{
 
-class Semaphore {
+class Semaphore
+{
 private:
 	pthread_mutex_t	mu;
 	pthread_cond_t	cv;
-	bool	init;
+	bool			init;
 public:
-	Semaphore() : init(false) {
+	Semaphore() : init(false)
+	{
 		int err = pthread_mutex_init(&mu, NULL);
 		if (err != 0) {
 			//gds__log("Error on semaphore.h: constructor");
@@ -293,7 +321,8 @@ public:
 		init = true;
 	}
 	
-	~Semaphore() {
+	~Semaphore()
+	{
 		fb_assert(init == true);
 		int err = pthread_mutex_destroy(&mu);
 		if (err != 0) {
@@ -307,20 +336,22 @@ public:
 		}
 		
 		init = false;
-
 	}
 	
-	bool tryEnter(int seconds = 0) {
+	bool tryEnter(int seconds = 0)
+	{
 		bool rt = false;
 		int err2 = 0;
 		int err = 0;
 		// Return true in case of success
 		fb_assert(init == true);
-		if (seconds == 0) {
+		if (seconds == 0)
+		{
 			// Instant try
 			
 			err2 = pthread_mutex_trylock(&mu);
-			if (err2 == 0) {
+			if (err2 == 0)
+			{
 				do {
 					err = pthread_cond_wait(&cv, &mu);
 					if (err != 0) {
@@ -335,17 +366,17 @@ public:
 				pthread_mutex_unlock(&mu);
 				return rt;
 			}
-			else if (err2 == EBUSY) {
-				rt = false;
-				return rt;
-			}
-			
+			if (err2 == EBUSY)
+				return false;
+
 			system_call_failed::raise("pthread_mutex_trylock", err2);
 		}
-		if (seconds < 0) {
+		if (seconds < 0)
+		{
 			// Unlimited wait, like enter()
 			err2 = pthread_mutex_lock(&mu);
-			if (err2 == 0) {
+			if (err2 == 0)
+			{
 				do {
 					err = pthread_cond_wait(&cv, &mu);
 					if (err != 0) {
@@ -360,12 +391,10 @@ public:
 				pthread_mutex_unlock(&mu);
 				return rt;
 			}
-			else if (err2 == EBUSY) {
-				rt = false;
-				return rt;
-			}
-			else 
-				system_call_failed::raise("pthread_mutex_lock", err2);
+			if (err2 == EBUSY)
+				return false;
+
+			system_call_failed::raise("pthread_mutex_lock", err2);
 			
 		} //seconds < 0 
 
@@ -375,7 +404,8 @@ public:
 		timeout.tv_nsec = 0;
 		err2 = pthread_mutex_lock(&mu);
 
-		if (err2 == 0) {
+		if (err2 == 0)
+		{
 			do {
 				err = pthread_cond_timedwait(&cv, &mu, &timeout);
 				if (err != 0) {
@@ -390,21 +420,21 @@ public:
 			pthread_mutex_unlock(&mu);
 			return rt;
 		}
-		else if (err2 == EBUSY) {
-			rt = false;
-			return rt;
-  		}
-		else
-			system_call_failed::raise("pthread_mutex_lock", err2);
+		if (err2 == EBUSY)
+			return false;
+
+		system_call_failed::raise("pthread_mutex_lock", err2);
 
 		return false; //compiler silencer
 	}
 	
-	void enter() {
+	void enter()
+	{
 		fb_assert(init == true);
 		int err = 0;
 		int	err2 = pthread_mutex_lock(&mu);
-		if (err2 == 0) {
+		if (err2 == 0)
+		{
 			do {
 				err = pthread_cond_wait(&cv, &mu);
 				if (err == 0) {
@@ -418,7 +448,8 @@ public:
 			system_call_failed::raise("pthread_mutex_lock", err2);
 	}
 	
-	void release(SLONG count = 1) {
+	void release(SLONG count = 1)
+	{
 		int err = 0;
 		fb_assert(init == true);
 		for (int i = 0; i < count; i++) 
