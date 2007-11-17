@@ -257,7 +257,7 @@
 #undef NETBSD
 #undef sun
 #undef SOLARIS
-#undef hpux
+#undef HPUX
 #undef VMS
 #undef AIX
 #define WIN_NT

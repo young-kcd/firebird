@@ -171,7 +171,7 @@ const char* MTAB		= "/etc/mtab";
 
 #endif /* NO_NFS */
 
-#ifdef hpux
+#ifdef HPUX
 #if !(defined HP10 || defined HP11)
 #include <cluster.h>
 #endif
@@ -257,7 +257,7 @@ static void share_name_from_unc(tstring&, LPREMOTE_NAME_INFO);
 static bool get_full_path(const tstring&, tstring&);
 #endif
 
-#ifdef hpux
+#ifdef HPUX
 #if !(defined HP10 || defined HP11)
 static bool get_server(tstring&, tstring&);
 #endif
@@ -1858,7 +1858,7 @@ static bool get_server(tstring&, tstring& node_name)
 	return true;
 }
 #endif
-#endif // hpux
+#endif // HPUX
 #endif // NO_NFS
 } // anonymous namespace
 
