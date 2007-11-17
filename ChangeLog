@@ -1,3 +1,10 @@
+2007-11-16 07:02  dimitr
+
+	* firebird2/: doc/WhatsNew (1.36.2.66), src/jrd/isc_version.h
+	(1.1.2.37):
+
+	Update.
+
 2007-11-15 08:47  robocop
 
 	* firebird2/src/jrd/: jrd.cpp (1.76.2.14), svc.cpp (1.67.2.10):
