@@ -91,7 +91,8 @@ private:
 	sem_t sem;
 	bool  init;
 public:
-	SignalSafeSemaphore() : init(false)
+	SignalSafeSemaphore()
+		: init(false)
 	{
 		if (sem_init(&sem, 0, 0) == -1) {
 			//gds__log("Error on semaphore.h: constructor");
@@ -214,7 +215,8 @@ private:
 		unsigned short*		array;
 	};
 public:
-	Semaphore() : semId(semget(IPC_PRIVATE, 1, 0600))
+	Semaphore()
+		: semId(semget(IPC_PRIVATE, 1, 0600))
 	{
 		if (semId < 0)
 			system_call_failed::raise("semaphore.h: Semaphore: semget()");
@@ -255,7 +257,8 @@ public:
 
 		while (semtimedop(semId, &sb, 1, t) < 0)
 		{
-			switch (errno) {
+			switch (errno)
+			{
 			case EAGAIN:
 				return false;
 			case EINTR:
@@ -306,7 +309,8 @@ private:
 	pthread_cond_t	cv;
 	bool			init;
 public:
-	Semaphore() : init(false)
+	Semaphore()
+		: init(false)
 	{
 		int err = pthread_mutex_init(&mu, NULL);
 		if (err != 0) {
@@ -371,6 +375,7 @@ public:
 
 			system_call_failed::raise("pthread_mutex_trylock", err2);
 		}
+
 		if (seconds < 0)
 		{
 			// Unlimited wait, like enter()
@@ -395,7 +400,6 @@ public:
 				return false;
 
 			system_call_failed::raise("pthread_mutex_lock", err2);
-			
 		} //seconds < 0 
 
 		// Wait with timeout
