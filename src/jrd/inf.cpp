@@ -212,6 +212,7 @@ int INF_database_info(const SCHAR* items,
 	jrd_tra* transaction = NULL;
 	const SCHAR* const end_items = items + item_length;
 	const SCHAR* const end = info + output_length;
+	const SCHAR* const end_buf = buffer + sizeof(buffer);
 
 	Attachment* err_att = 0;
 	Attachment* att = 0;
@@ -427,20 +428,31 @@ int INF_database_info(const SCHAR* items,
 
 		case isc_info_db_id:
 			{
+				// May be simpler to code using a server-side version of isql's Extender class.
 				const Firebird::PathName& str_fn = dbb->dbb_database_name;
 				STUFF(p, 2);
-				SSHORT l = str_fn.length();
-				*p++ = l;
-				for (q = str_fn.c_str(); *q;)
-					*p++ = *q++;
-				SCHAR site[256];
-				ISC_get_host(site, sizeof(site));
-				*p++ = l = strlen(site);
-				for (q = site; *q;)
-					*p++ = *q++;
+				USHORT len = str_fn.length();
+				if (p + len + 1 >= end_buf)
+					len = end_buf - p - 1;
+				if (len > 255)
+					len = 255; // Cannot put more in one byte, will truncate instead.
+				*p++ = len;
+				memcpy(p, str_fn.c_str(), len);
+				p += len;
+				if (p + 2 < end_buf)
+				{
+					SCHAR site[256];
+					ISC_get_host(site, sizeof(site));
+					len = strlen(site);
+					if (p + len + 1 >= end_buf)
+						len = end_buf - p - 1;
+					*p++ = len;
+					memcpy(p, site, len);
+					p += len;
+				}
 				length = p - buffer;
-				break;
 			}
+			break;
 
 		case isc_info_creation_date:
 			{
@@ -529,6 +541,7 @@ int INF_database_info(const SCHAR* items,
 			break;
 
 		case isc_info_user_names:
+			// Assumes user names will be smaller than sizeof(buffer) - 1.
 			for (att = dbb->dbb_attachments; att; att = att->att_next) {
 				if (att->att_flags & ATT_shutdown)
 					continue;
@@ -538,12 +551,10 @@ int INF_database_info(const SCHAR* items,
 					const char* user_name = user->usr_user_name.hasData() ?
 						user->usr_user_name.c_str() : "(Firebird Worker Thread)";
 					p = buffer;
-					SSHORT l = strlen (user_name);
-					*p++ = l;
-					for (q = user_name; l; l--)
-						*p++ = *q++;
-					length = p - buffer;
-                    info = INF_put_item(item, length, buffer, info, end);
+					const SSHORT len = strlen(user_name);
+					*p++ = len;
+					memcpy(p, user_name, len);
+                    info = INF_put_item(item, len + 1, buffer, info, end);
 					if (!info) {
 						if (transaction)
 							TRA_commit(tdbb, transaction, false);
@@ -977,7 +988,7 @@ int INF_transaction_info(const jrd_tra* transaction,
  *
  **************************************/
 	SCHAR buffer[128];
-	SSHORT length;
+	USHORT length;
 
 	const SCHAR* const end_items = items + item_length;
 	const SCHAR* const end = info + output_length;
