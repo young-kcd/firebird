@@ -676,6 +676,7 @@ const
 	gds_dyn_scale_too_big                = 336068852;
 	gds_dyn_precision_too_small          = 336068853;
 	gds_dyn_miss_priv_warning            = 336068855;
+	gds_dyn_ods_not_supp_feature         = 336068856;
 	gds_gbak_unknown_switch              = 336330753;
 	gds_gbak_page_size_missing           = 336330754;
 	gds_gbak_page_size_toobig            = 336330755;
