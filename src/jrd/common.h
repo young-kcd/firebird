@@ -481,11 +481,7 @@ static inline int sinixz_sigaction(int sig, const struct sinixz_sigaction *act,
 * HP/UX platforms 
 *****************************************************/
 
-#if (defined(hpux) || defined(HPUX))
-
-#ifndef hpux
-#define hpux
-#endif
+#ifdef HPUX
 
 //#define KILLER_SIGNALS
 #define UNIX
@@ -516,7 +512,7 @@ static inline int sinixz_sigaction(int sig, const struct sinixz_sigaction *act,
 
 #define RISC_ALIGNMENT
 
-#endif /* hpux */
+#endif /* HPUX */
 
 
 /*****************************************************

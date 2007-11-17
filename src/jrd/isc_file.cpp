@@ -1768,7 +1768,7 @@ static bool get_server(tstring&, tstring& node_name)
 	return true;
 }
 #endif
-#endif // hpux
+#endif // HPUX
 #endif // NO_NFS
 } // anonymous namespace
 
