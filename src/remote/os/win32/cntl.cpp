@@ -40,10 +40,10 @@
 
 const int ERROR_BUFFER_LENGTH	= 1024;
 
-typedef struct thread {
-	struct thread *thread_next;
+typedef struct cntl_thread {
+	struct cntl_thread *thread_next;
 	HANDLE thread_handle;
-} *THREAD;
+} *CNTL_THREAD;
 
 static void WINAPI control_thread(DWORD);
 static THREAD_ENTRY_DECLARE cleanup_thread(THREAD_ENTRY_PARAM);
@@ -56,7 +56,7 @@ static Firebird::string* service_name = NULL;
 static Firebird::string* mutex_name = NULL;
 static HANDLE stop_event_handle;
 static Firebird::Mutex thread_mutex;
-static THREAD threads;
+static CNTL_THREAD threads;
 static HANDLE hMutex = NULL;
 static bool bGuarded = false;
 
@@ -94,7 +94,7 @@ void *CNTL_insert_thread(void)
  *
  **************************************/
 	THREAD_ENTER();
-	THREAD new_thread = (THREAD) ALLR_alloc((SLONG) sizeof(struct thread));
+	CNTL_THREAD new_thread = (CNTL_THREAD) ALLR_alloc((SLONG) sizeof(struct cntl_thread));
 /* NOMEM: ALLR_alloc() handled */
 /* FREE:  in CTRL_remove_thread() */
 
@@ -177,7 +177,7 @@ void WINAPI CNTL_main_thread( DWORD argc, char* argv[])
 }
 
 
-void CNTL_remove_thread( void *thread)
+void CNTL_remove_thread( void *cntl_thread)
 {
 /**************************************
  *
@@ -189,21 +189,21 @@ void CNTL_remove_thread( void *thread)
  *
  **************************************/
     thread_mutex.enter();
-	for (THREAD* thread_ptr = &threads;
+	for (CNTL_THREAD* thread_ptr = &threads;
 		 *thread_ptr; thread_ptr = &(*thread_ptr)->thread_next)
 	{
-		if (*thread_ptr == (THREAD) thread) {
-			*thread_ptr = ((THREAD) thread)->thread_next;
+		if (*thread_ptr == (CNTL_THREAD) cntl_thread) {
+			*thread_ptr = ((CNTL_THREAD) cntl_thread)->thread_next;
 			break;
 		}
 	}
     thread_mutex.leave();
 
-	THREAD this_thread = (THREAD) thread;
+	CNTL_THREAD this_thread = (CNTL_THREAD) cntl_thread;
 	CloseHandle(this_thread->thread_handle);
 
 	THREAD_ENTER();
-	ALLR_free(thread);
+	ALLR_free(cntl_thread);
 	THREAD_EXIT();
 }
 
