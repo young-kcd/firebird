@@ -143,6 +143,8 @@ ISC_STATUS jrd8_transact_request(ISC_STATUS*, Jrd::Attachment**,
 											   USHORT, SCHAR*, USHORT,
 											   SCHAR*);
 ISC_STATUS jrd8_unwind_request(ISC_STATUS *, Jrd::jrd_req**, SSHORT);
+ISC_STATUS jrd8_set_public_handle(ISC_STATUS *, UCHAR, FB_API_HANDLE, FB_API_HANDLE);
+ISC_STATUS jrd8_get_public_handle(ISC_STATUS *, UCHAR, FB_API_HANDLE*);
 
 } // extern "C"
 

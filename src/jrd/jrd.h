@@ -588,6 +588,7 @@ public:
 	Firebird::GenericMap<Firebird::Pair<Firebird::Left<
 		Firebird::string, DSqlCacheItem> > > att_dsql_cache;	// DSQL cache locks
 #endif
+	FB_API_HANDLE	att_public_handle;
 
 	bool locksmith() const;
 };

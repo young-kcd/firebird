@@ -54,6 +54,7 @@ class Record;
 class VerbAction;
 class ArrayField;
 class Attachment;
+class ExtTransaction;
 
 // Blobs active in transaction identified by bli_temp_id. Please keep this 
 // structure small as there can be huge amount of them floating in memory.
@@ -130,6 +131,11 @@ class jrd_tra : public pool_alloc_rpt<SCHAR, type_tra>
 	jrd_req* tra_requests;		// Doubly linked list of requests active in this transaction
 	DatabaseSnapshot* tra_db_snapshot; // Database state snapshot (for monitoring purposes)
 	RuntimeStatistics tra_stats;
+
+	FB_API_HANDLE	tra_public_handle;
+	ExtTransaction *tra_ext_common;
+	//ExtTransaction *tra_ext_two_phase;
+
 	UCHAR tra_transactions[1];
 
 	SSHORT getLockWait() const

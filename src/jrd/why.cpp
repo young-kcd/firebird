@@ -109,7 +109,8 @@ using namespace YValve;
 // Taking into account that given y-valve lives it's last version,
 // in which dpb version is not likely to change, define it here.
 // #include "../jrd/ibase.h"
-const UCHAR isc_dpb_version1 = 1;
+//const UCHAR isc_dpb_version1 = 1;
+#include "consts_pub.h"
 
 #ifdef HAVE_ERRNO_H
 #include <errno.h>
@@ -210,7 +211,7 @@ namespace YValve
 
 	BaseHandle::BaseHandle(UCHAR t, FB_API_HANDLE* pub, Attachment* par, USHORT imp)
 		: type(t), flags(0), implementation(par ? par->implementation : imp), 
-		  parent(par), user_handle(0)
+		  parent(par), user_handle(0), engine_handle(0)
 	{
 		fb_assert(par || (imp != USHORT(~0)));
 
@@ -318,6 +319,7 @@ namespace YValve
 	{
 		toParent<Attachment>(attachments(), this);
 		parent = this;
+		engine_handle = h;
 	}
 
 	Attachment::~Attachment()
@@ -766,6 +768,8 @@ namespace
 #define GDS_TRANSACT_REQUEST	isc_transact_request
 #define GDS_TRANSACTION_INFO	isc_transaction_info
 #define GDS_UNWIND				isc_unwind_request
+#define GDS_SET_PUBLIC_HANDLE	gds__set_public_handle
+#define GDS_GET_PUBLIC_HANDLE	gds__get_public_handle
 
 #define GDS_DSQL_ALLOCATE		isc_dsql_allocate_statement
 #define GDS_DSQL_ALLOC			isc_dsql_alloc_statement
@@ -867,8 +871,10 @@ const int PROC_CANCEL_OPERATION	= 53;
 const int PROC_INTL_FUNCTION	= 54;	// internal call
 const int PROC_DSQL_CACHE		= 55;	// internal call
 const int PROC_INTERNAL_COMPILE	= 56;	// internal call
+const int PROC_SET_PUBLIC_HANDLE = 57;	// internal call
+const int PROC_GET_PUBLIC_HANDLE = 58;	// internal call
 
-const int PROC_count			= 57;
+const int PROC_count			= 59;
 
 struct ENTRY
 {
@@ -1082,6 +1088,14 @@ ISC_STATUS API_ROUTINE GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 	{
 		nullCheck(public_handle, isc_bad_db_handle);
 
+		const SCHAR dpb_internal[] = {isc_dpb_version1, isc_dpb_current_attachment};
+		if (!file_length && !file_name && dpb_length == sizeof(dpb_internal) && 
+			memcmp(dpb, dpb_internal, sizeof(dpb_internal)) == 0)
+		{
+			CALL(PROC_GET_PUBLIC_HANDLE, SUBSYSTEMS-1) (status, 1, public_handle);
+			return status[1];
+		}
+
 		if (!file_name)
 		{
 			Firebird::status_exception::raise(isc_bad_db_format,
@@ -1175,6 +1189,9 @@ ISC_STATUS API_ROUTINE GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 				if (status[2] != isc_arg_warning) {
 					status[2] = isc_arg_end;
 				}
+
+				ISC_STATUS_ARRAY temp_status = {0};
+				GDS_SET_PUBLIC_HANDLE(temp_status, *public_handle);
 
 				return status[1];
 			}
@@ -4975,6 +4992,15 @@ ISC_STATUS API_ROUTINE GDS_START_MULTIPLE(ISC_STATUS * user_status,
 				/* Do we need new error code here ? */ isc_arg_end);
 		}
 
+		const UCHAR tpb_internal[] = {isc_tpb_version3, isc_tpb_current_transaction};
+		if (count == 1 && vector->teb_tpb_length == sizeof(tpb_internal) && 
+			memcmp(vector->teb_tpb, tpb_internal, sizeof(tpb_internal)) == 0)
+		{
+			dbb = translate<Attachment>(vector->teb_database);
+			CALL(PROC_GET_PUBLIC_HANDLE, dbb->implementation) (status, 2, tra_handle);
+			return status[1];
+		}
+
 		Transaction** ptr;
 		USHORT n;
 		for (n = 0, ptr = &transaction; n < count;
@@ -5001,8 +5027,12 @@ ISC_STATUS API_ROUTINE GDS_START_MULTIPLE(ISC_STATUS * user_status,
 			Transaction *sub = new Transaction(tra_handle, SUBSYSTEMS);
 			sub->next = transaction;
 		}
-		else {
+		else 
+		{
 			*tra_handle = transaction->public_handle;
+
+			ISC_STATUS_ARRAY temp_status = {0};
+			GDS_SET_PUBLIC_HANDLE(temp_status, *tra_handle);
 		}
 	}
 	catch (const Firebird::Exception& e)
@@ -5258,6 +5288,25 @@ ISC_STATUS API_ROUTINE GDS_UNWIND(ISC_STATUS * user_status,
 
 	return status[1];
 }
+
+
+ISC_STATUS API_ROUTINE GDS_SET_PUBLIC_HANDLE(ISC_STATUS *user_status, FB_API_HANDLE public_handle)
+{
+	try
+	{
+		BaseHandle *y_handle = BaseHandle::translate(public_handle);
+		
+		CALL(PROC_SET_PUBLIC_HANDLE, y_handle->implementation) 
+			(user_status, y_handle->type, y_handle->engine_handle, y_handle->public_handle);
+	}
+	catch (const Firebird::Exception& e)
+	{
+		e.stuff_exception(user_status);
+	}
+
+	return user_status[1];
+}
+
 
 #ifdef DEBUG_GDS_ALLOC
 static SCHAR *alloc_debug(SLONG length, const char* file, int line)

@@ -1485,6 +1485,30 @@ ENTRYPOINT( "gds_internal_compile_request",
    /***    "_jrd8_internal_compile_request" ***/  NULL,
    /***     IPI_internal_compile_request    ***/  no_entrypoint)
 
+ENTRYPOINT( "gds_set_public_handle",
+            jrd8_set_public_handle,
+   /***    "jrd5_set_public_handle"  ***/  NULL,
+   /***     REM_set_public_handle    ***/  no_entrypoint,
+   /***    "REM_set_public_handle"   ***/  NULL,
+   /***     CSI_set_public_handle    ***/  no_entrypoint,
+   /***     RDB_set_public_handle    ***/  no_entrypoint,
+   /***     PSI_set_public_handle    ***/  no_entrypoint,
+   /***     PSI5_set_public_handle   ***/  no_entrypoint,
+   /***    "_jrd8_set_public_handle" ***/  NULL,
+   /***     IPI_set_public_handle    ***/  no_entrypoint)
+
+ENTRYPOINT( "gds_get_public_handle",
+            jrd8_get_public_handle,
+   /***    "jrd5_get_public_handle"  ***/  NULL,
+   /***     REM_get_public_handle    ***/  no_entrypoint,
+   /***    "REM_get_public_handle"   ***/  NULL,
+   /***     CSI_get_public_handle    ***/  no_entrypoint,
+   /***     RDB_get_public_handle    ***/  no_entrypoint,
+   /***     PSI_get_public_handle    ***/  no_entrypoint,
+   /***     PSI5_get_public_handle   ***/  no_entrypoint,
+   /***    "_jrd8_get_public_handle" ***/  NULL,
+   /***     IPI_get_public_handle    ***/  no_entrypoint)
+
 #undef ENTRYPOINT
 #endif // 0/1
 

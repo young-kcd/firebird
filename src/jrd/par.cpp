@@ -2741,6 +2741,36 @@ static jrd_nod* parse(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 			*arg++ = parse(tdbb, csb, VALUE);
 		break;
 
+	case blr_exec_stmt:
+		{
+			const USHORT inputs = BLR_WORD;
+			const USHORT outputs = BLR_WORD;
+			n = inputs + outputs + e_exec_stmt_fixed_count; 
+
+			node = PAR_make_node(tdbb, n + e_exec_stmt_extra_count);
+			node->nod_count = n;
+			arg = node->nod_arg;
+			*arg++ = parse(tdbb, csb, VALUE);		// e_exec_stmt_stmt_sql	
+			*arg++ = parse(tdbb, csb, VALUE);		// e_exec_stmt_data_src	
+			*arg++ = parse(tdbb, csb, VALUE);		// e_exec_stmt_user	
+			*arg++ = parse(tdbb, csb, VALUE);		// e_exec_stmt_password	
+			const USHORT tra_mode = BLR_WORD;		// e_exec_stmt_tran		
+
+			if (BLR_BYTE)	// singleton flag
+				*arg++ = 0;								// e_exec_stmt_proc_block
+			else
+				*arg++ = parse(tdbb, csb, STATEMENT);	// e_exec_stmt_proc_block
+
+			// input and output parameters
+			for (n = e_exec_stmt_fixed_count; n < node->nod_count; n++)
+				*arg++ = parse(tdbb, csb, VALUE);
+
+			*arg++ = (jrd_nod*) (IPTR) inputs;		// e_exec_stmt_inputs	
+			*arg++ = (jrd_nod*) (IPTR) outputs;		// e_exec_stmt_outputs	
+			*arg++ = (jrd_nod*) (IPTR) tra_mode;	// e_exec_stmt_tran
+		}
+		break;
+
 	case blr_post_arg:
 		*arg++ = parse(tdbb, csb, sub_type);
 		*arg++ = parse(tdbb, csb, sub_type);

@@ -131,6 +131,7 @@
 #include "../common/classes/fb_tls.h"
 #include "../common/classes/ClumpletReader.h"
 #include "../jrd/DebugInterface.h"
+#include "../jrd/ExtDS.h"
 
 using namespace Jrd;
 
@@ -570,7 +571,81 @@ bool invalid_client_SQL_dialect = false;
 #define GDS_TRANSACT_REQUEST	jrd8_transact_request
 #define GDS_TRANSACTION_INFO	jrd8_transaction_info
 #define GDS_UNWIND				jrd8_unwind_request
+#define GDS_SET_PUBLIC_HANDLE	jrd8_set_public_handle
+#define GDS_GET_PUBLIC_HANDLE	jrd8_get_public_handle
 
+
+ISC_STATUS GDS_SET_PUBLIC_HANDLE(ISC_STATUS *user_status, UCHAR h_type, 
+	FB_API_HANDLE handle, FB_API_HANDLE public_handle)
+{
+	api_entry_point_init(user_status);
+
+	thread_db thd_context;
+	thread_db* tdbb = JRD_MAIN_set_thread_data(thd_context);
+	tdbb->tdbb_status_vector = user_status;
+
+	switch (h_type)
+	{
+		case 1:
+		{
+			Jrd::Attachment* attachment = (Jrd::Attachment*) handle;
+			if (check_database(tdbb, attachment, user_status))
+				return user_status[1];
+
+			attachment->att_public_handle = public_handle;
+		}
+		break;
+
+		case 2:
+		{
+			Jrd::jrd_tra* transaction = (Jrd::jrd_tra*) handle;
+			if (check_transaction(tdbb, transaction, user_status))
+				return user_status[1];
+
+			transaction->tra_public_handle = public_handle;
+		}
+		break;
+
+		default:
+			return handle_error(user_status, isc_bad_db_handle, tdbb);
+	}
+	return return_success(tdbb);
+}
+
+
+ISC_STATUS GDS_GET_PUBLIC_HANDLE(ISC_STATUS *user_status, UCHAR h_type, 
+	FB_API_HANDLE *public_handle)
+{
+	api_entry_point_init(user_status);
+	thread_db* tdbb = JRD_get_thread_data();
+
+	switch (h_type)
+	{
+		case 1:
+		{
+			Jrd::Attachment* attachment = tdbb->tdbb_attachment;
+			if (!public_handle || !attachment || !attachment->att_public_handle)
+				return handle_error(user_status, isc_bad_db_handle, 0);
+
+			*public_handle = attachment->att_public_handle;
+		}
+		break;
+
+		case 2:
+		{
+			Jrd::jrd_tra* transaction = tdbb->tdbb_transaction;
+			if (!public_handle || !transaction || !transaction->tra_public_handle)
+				return handle_error(user_status, isc_bad_trans_handle, 0);
+
+			*public_handle = transaction->tra_public_handle;
+		}
+		break;
+
+		default:
+			return handle_error(user_status, isc_bad_db_handle, 0);
+	}
+	return user_status[1];
+}
 
 // External hook definitions
 
@@ -6930,7 +7005,9 @@ void JRD_shutdown_all(bool asyncMode)
 	if (!initialized)
 	{
 		// see comments in shutdown_all
+#ifndef EMBEDDED
 		THREAD_ENTER();
+#endif
 		return;
 	}
 
@@ -7141,6 +7218,11 @@ static void purge_attachment(thread_db*		tdbb,
 
 	const ULONG att_flags = attachment->att_flags;
 	attachment->att_flags |= ATT_shutdown;
+
+	ExtProvider &native = 
+		ExtProvManager::extProvManager().getProvider(NATIVE_PROVIDER_NAME);
+	native.attachmentReleased(tdbb, attachment);
+
 
 	if (!(dbb->dbb_flags & DBB_bugcheck))
 	{

@@ -62,6 +62,7 @@
 #include "../jrd/req.h"
 #include "../jrd/val.h"
 #include "../jrd/exe.h"
+#include "../jrd/ExtDS.h"
 #include "../jrd/tra.h"
 #include "gen/iberror.h"
 #include "../jrd/ods.h"
@@ -194,6 +195,7 @@ static jrd_nod* erase(thread_db*, jrd_nod*, SSHORT);
 static void execute_looper(thread_db*, jrd_req*, jrd_tra*, enum jrd_req::req_s);
 static void exec_sql(thread_db*, jrd_req*, DSC *);
 static void execute_procedure(thread_db*, jrd_nod*);
+static jrd_nod* execute_statement(thread_db*, jrd_req*, jrd_nod*);
 static jrd_req* execute_triggers(thread_db*, trig_vec**, Record*, Record*,
 	enum jrd_req::req_ta);
 static jrd_nod* looper(thread_db*, jrd_req*, jrd_nod*);
@@ -1157,7 +1159,7 @@ void EXE_unwind(thread_db* tdbb, jrd_req* request)
 			tdbb->tdbb_request = old_request;
 			tdbb->tdbb_transaction = old_transaction;
 		}
-		if (request->req_exec_sta.getCount()) {
+		if (request->req_exec_sta.getCount() /*|| request->req_ext_stmt*/) {
 			Jrd::ContextPoolHolder context(tdbb, request->req_pool);
 			jrd_req* old_request = tdbb->tdbb_request;
 			tdbb->tdbb_request = request;
@@ -1171,6 +1173,14 @@ void EXE_unwind(thread_db* tdbb, jrd_req* request)
 					(ExecuteStatement*)	((char *) request + node->nod_impure);
 				impure->Close(tdbb);
 			}
+
+			//ExtStatement* stmt = request->req_ext_stmt;
+			//while (stmt)
+			//{
+			//	stmt->close(tdbb);
+			//	stmt = stmt->m_nextStmt;
+			//}
+
 			tdbb->tdbb_request = old_request;
 			tdbb->tdbb_transaction = old_transaction;
 		}
@@ -1628,6 +1638,134 @@ static void execute_procedure(thread_db* tdbb, jrd_nod* node)
 	proc_request->req_attachment = NULL;
 	proc_request->req_flags &= ~(req_in_use | req_proc_fetch);
 	proc_request->req_timestamp.invalidate();
+}
+
+
+static jrd_nod* execute_statement(thread_db* tdbb, jrd_req* request, jrd_nod* node)
+{
+	SET_TDBB(tdbb);
+	BLKCHK(node, type_nod);
+
+	ExtStatement** stmt_ptr = (ExtStatement**) ((char*) request + node->nod_impure);
+	ExtStatement* stmt = *stmt_ptr;
+
+	int inputs = (SHORT) (IPTR) node->nod_arg[node->nod_count + e_exec_stmt_extra_inputs];
+	int outputs = (SHORT) (IPTR) node->nod_arg[node->nod_count + e_exec_stmt_extra_outputs];
+	TraScope tra_scope = (TraScope) (IPTR) node->nod_arg[node->nod_count + e_exec_stmt_extra_tran];
+	jrd_nod **node_inputs = node->nod_arg + e_exec_stmt_fixed_count;
+	jrd_nod **node_outputs = node->nod_arg + e_exec_stmt_fixed_count + inputs;
+	jrd_nod *node_proc_block = node->nod_arg[e_exec_stmt_proc_block];
+
+	if (request->req_operation == jrd_req::req_evaluate)
+	{
+		dsc *dsc_sql = EVL_expr(tdbb, node->nod_arg[e_exec_stmt_stmt_sql]);
+		dsc *dsc_dataSrc = EVL_expr(tdbb, node->nod_arg[e_exec_stmt_data_src]);
+		dsc *dsc_user = EVL_expr(tdbb, node->nod_arg[e_exec_stmt_user]);
+		dsc *dsc_pwd = EVL_expr(tdbb, node->nod_arg[e_exec_stmt_password]);
+
+		Firebird::MemoryPool *pool = tdbb->getDefaultPool();
+
+		MoveBuffer buffer;
+		UCHAR *p = 0;
+		SSHORT len = 0;
+		if (dsc_sql) {
+			len = MOV_make_string2(tdbb, dsc_sql, dsc_sql->getTextType(), &p, buffer);
+		}
+		Firebird::string sSql((char*) p, len);
+		sSql.trim();
+
+		// sDataSrc : registered data source name 
+		// or connection string : provider::database
+		p = 0; len = 0; buffer.clear();
+		if (dsc_dataSrc) {
+			len = MOV_make_string2(tdbb, dsc_dataSrc, dsc_dataSrc->getTextType(), &p, buffer);
+		}
+		Firebird::string sDataSrc((char*) p, len);
+		sDataSrc.trim();
+
+		p = 0; len = 0; buffer.clear();
+		if (dsc_user) {
+			len = MOV_make_string2(tdbb, dsc_user, dsc_user->getTextType(), &p, buffer);
+		}
+		Firebird::string sUser((char*) p, len);
+
+		if (!dsc_user || dsc_user->dsc_flags & DSC_null)  {
+			sUser = tdbb->tdbb_attachment->att_user->usr_user_name;
+		}
+		sUser.trim();
+
+		p = 0;  len = 0; buffer.clear();
+		if (dsc_pwd) {
+			len = MOV_make_string2(tdbb, dsc_pwd, dsc_pwd->getTextType(), &p, buffer);
+		}
+		Firebird::string sPwd((char*) p, len);
+		sPwd.trim();
+
+		Firebird::string sPrvName, sDBName;
+		
+		if (sDataSrc.isEmpty()) {
+			sPrvName = NATIVE_PROVIDER_NAME;
+		}
+		else 
+		{
+			size_t pos = sDataSrc.find("::");
+			if (pos != Firebird::string::npos)
+			{
+				sPrvName = sDataSrc.substr(0, pos);
+				sDBName = sDataSrc.substr(pos + 2);
+			}
+			else 
+			{
+				sPrvName = NATIVE_PROVIDER_NAME;
+				sDBName = sDataSrc;
+			}
+			// hvlad, todo: get user\password from data source reg info
+		}
+
+		fb_assert(*stmt_ptr == 0);
+
+		ExtProvider &provider = ExtProvManager::extProvManager().getProvider(sPrvName);
+		ExtConnection &conn = provider.getConnection(tdbb, sDBName, sUser, sPwd, tra_scope);
+
+		*stmt_ptr = stmt = &conn.createStatement(sSql);
+
+		ExtTransaction &tran = ExtTransaction::getTransaction(tdbb, 
+			stmt->getConnection(), tra_scope);
+
+		// store pointer to the statement into impure area
+		*stmt_ptr = stmt;
+
+		stmt->prepare(tdbb, tran, sSql);
+		if (stmt->getSelectable())
+			stmt->open(tdbb, tran, inputs, node_inputs, !node_proc_block);
+		else
+			stmt->execute(tdbb, tran, inputs, node_inputs, outputs, node_outputs);
+
+		request->req_operation = jrd_req::req_return;
+	}  // jrd_req::req_evaluate
+
+	if (request->req_operation == jrd_req::req_return ||
+		request->req_operation == jrd_req::req_sync)
+	{
+		fb_assert(stmt);
+		if (stmt->getSelectable())
+		{
+			if (stmt->fetch(tdbb, outputs, node_outputs))
+			{
+				request->req_operation = jrd_req::req_evaluate;
+				return node_proc_block;
+			}
+			request->req_operation = jrd_req::req_return;
+		}
+	}
+	
+	if (stmt) 
+	{
+		*stmt_ptr = NULL;
+		stmt->close(tdbb);
+	}
+
+	return node->nod_parent;
 }
 
 
@@ -2568,6 +2706,10 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 					node = node->nod_parent;
 				}
 			}
+			break;
+
+		case nod_exec_stmt:
+			node = execute_statement(tdbb, request, node);
 			break;
 
 		case nod_post:

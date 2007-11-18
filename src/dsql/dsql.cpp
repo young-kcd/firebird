@@ -1623,15 +1623,22 @@ ISC_STATUS GDS_DSQL_SQL_INFO_CPP(	ISC_STATUS*		user_status,
 				}
 				*info++ = item;
 			}
-			else if (item == isc_info_sql_stmt_type)
+			else if (item == isc_info_sql_stmt_type || item == isc_info_sql_stmt_selectable)
 			{
+				// selectable : 0 if statement have no cursor, 1 else.
+				// note: when insert\update\delete returning will be able to 
+				// return set of recods, don't forget to mark such statements 
+				// as selectable
+				SLONG selectable = 0;
 				switch (request->req_type) {
 				case REQ_SELECT:
 				case REQ_EMBED_SELECT:
 					number = isc_info_sql_stmt_select;
+					selectable = 1;
 					break;
 				case REQ_SELECT_UPD:
 					number = isc_info_sql_stmt_select_for_upd;
+					selectable = 1;
 					break;
 				case REQ_DDL:
 					number = isc_info_sql_stmt_ddl;
@@ -1678,12 +1685,14 @@ ISC_STATUS GDS_DSQL_SQL_INFO_CPP(	ISC_STATUS*		user_status,
 					break;
 				case REQ_SELECT_BLOCK: 
 					number = isc_info_sql_stmt_select;
+					selectable = 1;
 					break;
 				default:
 					number = 0;
 					break;
 				}
-				length = convert((SLONG) number, buffer);
+				length = convert(
+					(item == isc_info_sql_stmt_type ? (SLONG) number : selectable), buffer);
 				info = put_item(item, length, buffer, info, end_info);
 				if (!info) {
 					return return_success();

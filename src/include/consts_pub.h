@@ -105,6 +105,7 @@
 #define isc_dpb_no_db_triggers            72
 #define isc_dpb_trusted_auth			  73
 #define isc_dpb_process_name              74
+#define isc_dpb_current_attachment		  75
 
 /**************************************************/
 /* clumplet tags used inside isc_dpb_address_path */
@@ -214,6 +215,7 @@
 #define isc_tpb_restart_requests          19
 #define isc_tpb_no_auto_undo              20
 #define isc_tpb_lock_timeout              21
+#define isc_tpb_current_transaction		  22
 
 
 /************************/

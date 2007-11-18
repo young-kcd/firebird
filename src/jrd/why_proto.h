@@ -282,6 +282,8 @@ ISC_STATUS API_ROUTINE gds__internal_compile_request(
 	ISC_STATUS*, FB_API_HANDLE*, FB_API_HANDLE*, USHORT,
 	const SCHAR*, USHORT, const char*, USHORT, const UCHAR*);
 
+ISC_STATUS API_ROUTINE gds__set_public_handle(ISC_STATUS *user_status, FB_API_HANDLE public_handle);
+
 ISC_STATUS API_ROUTINE gds__transaction_cleanup(ISC_STATUS*, FB_API_HANDLE*,
 												   TransactionCleanupRoutine*, void*);
 void WHY_cleanup_transaction(struct why_hndl* transaction);

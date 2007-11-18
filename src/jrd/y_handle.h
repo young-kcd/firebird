@@ -137,6 +137,7 @@ namespace YValve
 		FB_API_HANDLE	public_handle;
 		Attachment*		parent;
     	FB_API_HANDLE*	user_handle;
+    	FB_API_HANDLE	engine_handle;
 		
 	protected:
 		BaseHandle(UCHAR t, FB_API_HANDLE* pub, Attachment* par, USHORT imp = ~0);
@@ -246,6 +247,7 @@ namespace YValve
 			  next(0), handle(h)
 		{
 			toParent<Transaction>(parent->transactions, this);
+			engine_handle = h;
 		}
 
 		Transaction(FB_API_HANDLE* pub, USHORT a_implementation)

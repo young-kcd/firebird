@@ -302,6 +302,7 @@ const int op_literals	= 18;
 const int op_relation	= 20;
 const int op_exec_into	= 21;
 const int op_cursor_stmt	= 22;
+const int op_exec_into2	= 23;
 
 static const UCHAR
 	/* generic print formats */
@@ -358,7 +359,8 @@ static const UCHAR
 	cursor_stmt[] = { op_cursor_stmt, 0 },
 	strlength[] = { op_byte, op_line, op_verb, 0},
 	trim[] = { op_byte, op_byte, op_line, op_verb, 0},
-	modify2[] = { op_byte, op_byte, op_line, op_verb, op_verb, 0};
+	modify2[] = { op_byte, op_byte, op_line, op_verb, op_verb, 0},
+	exec_into2[] = { op_word, op_word, op_line, /*op_indent, */op_exec_into2, 0};
 
 #include "../jrd/blp.h"
 
@@ -3411,6 +3413,22 @@ static void blr_print_verb(gds_ctl* control, SSHORT level)
 		
 		case op_exec_into: {
 			blr_print_verb(control, level);
+			if (! blr_print_byte(control)) {
+				blr_print_verb(control, level);
+			}
+			while (n-- > 0) {
+				blr_print_verb(control, level);
+			}
+			break;
+		}
+
+		case op_exec_into2: {
+			blr_print_verb(control, level);		// query expression
+			blr_print_verb(control, level);		// external data source
+			blr_print_verb(control, level);		// user 
+			blr_print_verb(control, level);		// password
+			blr_print_word(control);			// transaction behavior
+
 			if (! blr_print_byte(control)) {
 				blr_print_verb(control, level);
 			}
