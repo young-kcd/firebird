@@ -1,3 +1,40 @@
+2007-11-17 18:43  asfernandes
+
+	* firebird2/src/jrd/fun.epp (1.72.4.2):
+
+	Misc
+
+2007-11-17 11:31  robocop
+
+	* firebird2/src/: include/gen/autoconfig_msvc.h (1.99.2.2),
+	jrd/common.h (1.137.2.8), jrd/isc_file.cpp (1.98.4.4):
+
+	No more hpux (lowercase). To be reviewed by Paul Beach.
+
+2007-11-17 08:53  robocop
+
+	* firebird2/src/jrd/sort.cpp (1.79.4.4):
+
+	Strange warnings.
+
+2007-11-17 06:47  robocop
+
+	* firebird2/src/jrd/inf.cpp (1.62.4.6):
+
+	Backport CORE-1447 as requested by Pavel.
+
+2007-11-17 06:45  robocop
+
+	* firebird2/src/jrd/pag.cpp (1.98.4.14):
+
+	Backport CORE-1470 as requested by Pavel.
+
+2007-11-17 05:57  robocop
+
+	* firebird2/builds/win32/msvc8/gstat.vcproj (1.5.2.3):
+
+	Misc.
+
 2007-11-16 14:18  robocop
 
 	* firebird2/src/common/config/config.cpp (1.66.4.4):
