@@ -40,10 +40,11 @@
 
 const int ERROR_BUFFER_LENGTH	= 1024;
 
-typedef struct cntl_thread {
-	struct cntl_thread *thread_next;
+struct cntl_thread
+{
+	cntl_thread* thread_next;
 	HANDLE thread_handle;
-} *CNTL_THREAD;
+};
 
 static void WINAPI control_thread(DWORD);
 static THREAD_ENTRY_DECLARE cleanup_thread(THREAD_ENTRY_PARAM);
@@ -56,7 +57,7 @@ static Firebird::string* service_name = NULL;
 static Firebird::string* mutex_name = NULL;
 static HANDLE stop_event_handle;
 static Firebird::Mutex thread_mutex;
-static CNTL_THREAD threads;
+static cntl_thread* threads = NULL;
 static HANDLE hMutex = NULL;
 static bool bGuarded = false;
 
@@ -82,7 +83,7 @@ void CNTL_init(ThreadEntryPoint* handler, const TEXT* name)
 }
 
 
-void *CNTL_insert_thread(void)
+void* CNTL_insert_thread()
 {
 /**************************************
  *
@@ -94,7 +95,7 @@ void *CNTL_insert_thread(void)
  *
  **************************************/
 	THREAD_ENTER();
-	CNTL_THREAD new_thread = (CNTL_THREAD) ALLR_alloc((SLONG) sizeof(struct cntl_thread));
+	cntl_thread* new_thread = (cntl_thread*) ALLR_alloc((SLONG) sizeof(cntl_thread));
 /* NOMEM: ALLR_alloc() handled */
 /* FREE:  in CTRL_remove_thread() */
 
@@ -177,7 +178,7 @@ void WINAPI CNTL_main_thread( DWORD argc, char* argv[])
 }
 
 
-void CNTL_remove_thread( void *cntl_thread)
+void CNTL_remove_thread(void* athread)
 {
 /**************************************
  *
@@ -188,22 +189,23 @@ void CNTL_remove_thread( void *cntl_thread)
  * Functional description
  *
  **************************************/
-    thread_mutex.enter();
-	for (CNTL_THREAD* thread_ptr = &threads;
+	thread_mutex.enter();
+	cntl_thread* const rem_thread = (cntl_thread*) athread;
+
+	for (cntl_thread** thread_ptr = &threads;
 		 *thread_ptr; thread_ptr = &(*thread_ptr)->thread_next)
 	{
-		if (*thread_ptr == (CNTL_THREAD) cntl_thread) {
-			*thread_ptr = ((CNTL_THREAD) cntl_thread)->thread_next;
+		if (*thread_ptr == rem_thread) {
+			*thread_ptr = rem_thread->thread_next;
 			break;
 		}
 	}
-    thread_mutex.leave();
+	thread_mutex.leave();
 
-	CNTL_THREAD this_thread = (CNTL_THREAD) cntl_thread;
-	CloseHandle(this_thread->thread_handle);
+	CloseHandle(rem_thread->thread_handle);
 
 	THREAD_ENTER();
-	ALLR_free(cntl_thread);
+	ALLR_free(rem_thread);
 	THREAD_EXIT();
 }
 
