@@ -1,3 +1,42 @@
+2007-11-19 01:21  hvlad
+
+	* firebird2/src/: dsql/dsql.cpp (1.204), dsql/gen.cpp (1.133),
+	dsql/keywords.cpp (1.66), dsql/node.h (1.97), dsql/pass1.cpp
+	(1.344), include/consts_pub.h (1.13), jrd/blp.h (1.31), jrd/blr.h
+	(1.35), jrd/cmp.cpp (1.268), jrd/entry.h (1.26), jrd/exe.cpp
+	(1.227), jrd/exe.h (1.106), jrd/gds.cpp (1.230), jrd/inf_pub.h
+	(1.20), jrd/jrd.cpp (1.354), jrd/jrd.h (1.199), jrd/jrd_proto.h
+	(1.51), jrd/nod.h (1.25), jrd/par.cpp (1.177), jrd/tra.cpp (1.143),
+	jrd/tra.h (1.66), jrd/why.cpp (1.135), jrd/why_proto.h (1.36),
+	jrd/y_handle.h (1.22), misc/blrtable.cpp (1.34), remote/inet.cpp
+	(1.197), remote/remote.cpp (1.48), remote/remote.h (1.58):
+
+	Revert files back after wrong commit
+
+2007-11-18 23:58  hvlad
+
+	* firebird2/src/: dsql/dsql.cpp (1.203), dsql/gen.cpp (1.132),
+	dsql/keywords.cpp (1.65), dsql/node.h (1.96), dsql/pass1.cpp
+	(1.343), include/consts_pub.h (1.12), jrd/ExtDS.cpp (1.1),
+	jrd/ExtDS.h (1.1), jrd/ExtDS_Native.cpp (1.1), jrd/blp.h (1.30),
+	jrd/blr.h (1.34), jrd/cmp.cpp (1.267), jrd/entry.h (1.25),
+	jrd/exe.cpp (1.226), jrd/exe.h (1.105), jrd/gds.cpp (1.229),
+	jrd/inf_pub.h (1.19), jrd/jrd.cpp (1.353), jrd/jrd.h (1.198),
+	jrd/jrd_proto.h (1.50), jrd/nod.h (1.24), jrd/par.cpp (1.176),
+	jrd/tra.cpp (1.142), jrd/tra.h (1.65), jrd/why.cpp (1.134),
+	jrd/why_proto.h (1.35), jrd/y_handle.h (1.21), misc/blrtable.cpp
+	(1.33), remote/inet.cpp (1.196), remote/remote.cpp (1.47),
+	remote/remote.h (1.57):
+
+	Execute statement with support of external data source
+
+2007-11-18 20:25  hvlad
+
+	* firebird2/src/remote/os/win32/cntl.cpp (1.23):
+
+	Rename thread to cntl_thread in cntl.cpp to avoid multiply "struct
+	thread" definitions and make debugger happier
+
 2007-11-17 18:22  asfernandes
 
 	* firebird2/src/common/classes/semaphore.h (1.40):
