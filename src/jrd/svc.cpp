@@ -603,7 +603,7 @@ Service* SVC_attach(USHORT	service_length,
 			}
 			else 
 			{
-				TEXT name[129]; // unused after retrieved
+				Firebird::string name; // unused after retrieved
 				int id, group, node_id;
 
 				const Firebird::string remote = options.spb_network_protocol +

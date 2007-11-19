@@ -462,20 +462,16 @@ rem_port* INET_analyze(Firebird::PathName& file_name,
 
 /* Pick up some user identification information */
 	Firebird::ClumpletWriter user_id(Firebird::ClumpletReader::UnTagged, MAX_DPB_SIZE);
-	char buffer[BUFFER_SMALL];
-
+	Firebird::string buffer;
 	int eff_gid;
 	int eff_uid;
-	ISC_get_user(buffer, &eff_uid, &eff_gid, 0, 0, 0, user_string);
-	user_id.insertString(CNCT_user, buffer, strlen(buffer));
 
-	ISC_get_host(buffer, sizeof(buffer));
-	for (char* p = buffer; *p; p++) {
-		if (*p >= 'A' && *p <= 'Z') {
-			*p = *p - 'A' + 'a';
-		}
-	}
-	user_id.insertString(CNCT_host, buffer, strlen(buffer));
+	ISC_get_user(&buffer, &eff_uid, &eff_gid, user_string);
+	user_id.insertString(CNCT_user, buffer);
+
+	ISC_get_host(buffer);
+	buffer.lower();
+	user_id.insertString(CNCT_host, buffer);
 
 	if ((eff_uid == -1) || uv_flag) {
 		user_id.insertTag(CNCT_user_verification);

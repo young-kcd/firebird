@@ -263,7 +263,7 @@ void SecurityDatabase::init()
 	counter += (is_cached) ? 1 : 0;
 }
 
-bool SecurityDatabase::lookup_user(TEXT * user_name, int *uid, int *gid, TEXT * pwd)
+bool SecurityDatabase::lookup_user(const TEXT* user_name, int* uid, int* gid, TEXT* pwd)
 {
 	bool found = false;		// user found flag
 	TEXT uname[129];		// user name buffer
@@ -433,7 +433,7 @@ void SecurityDatabase::shutdown()
 	instance.fini();
 }
 
-void SecurityDatabase::verifyUser(TEXT* name,
+void SecurityDatabase::verifyUser(Firebird::string& name,
 								  const TEXT* user_name,
 								  const TEXT* password,
 								  const TEXT* password_enc,
@@ -444,12 +444,11 @@ void SecurityDatabase::verifyUser(TEXT* name,
 {
 	if (user_name)
 	{
-		TEXT* p = name;
-		for (const TEXT* q = user_name; *q; ++q, ++p)
+		name = user_name;
+		for (unsigned int n = 0; n < name.length(); ++n)
 		{
-			*p = UPPER7(*q);
+			name[n] = UPPER7(name[n]);
 		}
-		*p = 0;
 	}
 
 #ifndef EMBEDDED
@@ -477,7 +476,7 @@ void SecurityDatabase::verifyUser(TEXT* name,
 	// that means the current context must be saved and restored.
 
 	TEXT pw1[MAX_PASSWORD_LENGTH + 1];
-	const bool found = instance.lookup_user(name, uid, gid, pw1);
+	const bool found = instance.lookup_user(name.c_str(), uid, gid, pw1);
 	pw1[MAX_PASSWORD_LENGTH] = 0;
 	Firebird::string storedHash(pw1, MAX_PASSWORD_LENGTH);
 	storedHash.rtrim();

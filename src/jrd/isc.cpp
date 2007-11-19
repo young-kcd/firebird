@@ -371,14 +371,29 @@ TEXT* ISC_get_host(TEXT* string, USHORT length)
 }
 #endif
 
+const TEXT* ISC_get_host(Firebird::string& host)
+{
+/**************************************
+ *
+ *      I S C _ g e t _ h o s t
+ *
+ **************************************
+ *
+ * Functional description
+ *      Get host name in non-plain buffer.
+ *
+ **************************************/
+	TEXT buffer[BUFFER_SMALL];
+	ISC_get_host(buffer, sizeof(buffer));
+	host = buffer;
+	return host.c_str();
+}
+
 #ifdef UNIX
-bool ISC_get_user(TEXT*	name,
-									  int*	id,
-									  int*	group,
-									  TEXT*	project,
-									  TEXT*	organization,
-									  int*	node,
-									  const TEXT*	user_string)
+bool ISC_get_user(Firebird::string*	name, 
+				  int*	id,
+				  int*	group,
+				  const TEXT*	user_string)
 {
 /**************************************
  *
@@ -426,22 +441,13 @@ bool ISC_get_user(TEXT*	name,
 	}
 
 	if (name)
-		strcpy(name, p);
+		*name = p;
 
 	if (id)
 		*id = euid;
 
 	if (group)
 		*group = egid;
-
-	if (project)
-		*project = 0;
-
-	if (organization)
-		*organization = 0;
-
-	if (node)
-		*node = 0;
 
 	return (euid == 0);
 }
@@ -551,13 +557,10 @@ bool ISC_get_user(
 #endif
 
 #ifdef WIN_NT
-bool ISC_get_user(TEXT*	name,
-									  int*	id,
-									  int*	group,
-									  TEXT*	project,
-									  TEXT*	organization,
-									  int*	node,
-									  const TEXT*	user_string)
+bool ISC_get_user(Firebird::string*	name, 
+				  int*	id,
+				  int*	group,
+				  const TEXT*	user_string)
 {
 /**************************************
  *
@@ -575,28 +578,24 @@ bool ISC_get_user(TEXT*	name,
 	if (group)
 		*group = -1;
 
-	if (project)
-		*project = 0;
-
-	if (organization)
-		*organization = 0;
-
-	if (node)
-		*node = 0;
-
 	if (name)
 	{
-		name[0] = 0;
 		DWORD name_len = 128;
-		if (GetUserName(name, &name_len))
+		TEXT* nm = name->getBuffer(name_len + 1)
+		if (GetUserName(nm, &name_len))
 		{
-			name[name_len] = 0;
+			nm[name_len] = 0;
 
 			// NT user name is case insensitive
 			for (DWORD i = 0; i < name_len; i++)
 			{
-				name[i] = UPPER7(name[i]);
+				nm[i] = UPPER7(nm[i]);
 			}
+			name->recalculate_length();
+		}
+		else
+		{
+			*name = "";
 		}
 	}
 

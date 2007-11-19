@@ -94,6 +94,7 @@
 #include "../jrd/sch_proto.h"
 #include "../jrd/thread_proto.h"
 #include "../common/utils_proto.h"
+#include "../common/classes/fb_string.h"
 
 #ifdef UNIX
 #ifdef NETBSD
@@ -348,14 +349,14 @@ int CLIB_ROUTINE server_main( int argc, char** argv)
             // Remove restriction on username, for DEV builds
             // restrict only for production builds.  MOD 21-July-2002
 #ifndef DEV_BUILD
-			TEXT user_name[256];	/* holds the user name */
+			Firebird::string user_name;	/* holds the user name */
 			/* check user id */
-			ISC_get_user(user_name, NULL, NULL, NULL, NULL, NULL, NULL);
+			ISC_get_user(&user_name, NULL, NULL, NULL);
 
-			if (strcmp(user_name, "root") &&
-				strcmp(user_name, FIREBIRD_USER_NAME) &&
-				strcmp(user_name, INTERBASE_USER_NAME) &&
-				strcmp(user_name, INTERBASE_USER_SHORT))
+			if (user_name != "root" &&
+				user_name != FIREBIRD_USER_NAME &&
+				user_name != INTERBASE_USER_NAME &&
+				user_name != INTERBASE_USER_SHORT)
 			{
 				/* invalid user -- bail out */
 				fprintf(stderr,

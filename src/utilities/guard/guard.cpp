@@ -53,6 +53,7 @@ int errno = -1;
 #include "../jrd/gds_proto.h"
 #include "../jrd/file_params.h"
 #include "../utilities/guard/util_proto.h"
+#include "../common/classes/fb_string.h"
 
 const USHORT FOREVER	= 1;
 const USHORT ONETIME	= 2;
@@ -125,12 +126,13 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	}							/* while */
 
 /* check user id */
-	TEXT user_name[256];		/* holds the user name */
-	ISC_get_user(user_name, NULL, NULL, NULL, NULL, NULL, NULL);
+	Firebird::string user_name;		/* holds the user name */
+	ISC_get_user(&user_name, NULL, NULL, NULL);
 
-	if (strcmp(user_name, INTERBASE_USER) && strcmp(user_name, "root")
-		&& strcmp(user_name, FIREBIRD_USER)
-		&& strcmp(user_name, INTERBASE_USER_SHORT))
+	if (user_name != INTERBASE_USER && 
+		user_name != "root" &&
+		user_name != FIREBIRD_USER &&
+		user_name != INTERBASE_USER_SHORT)
 	{
 		/* invalid user bail out */
 		fprintf(stderr,
