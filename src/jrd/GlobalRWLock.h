@@ -32,6 +32,7 @@
 #include "../jrd/lck_proto.h"
 #include "../include/fb_types.h"
 #include "../jrd/isc.h"
+#include "os/pio.h"
 
 //#define COS_DEBUG
 
@@ -154,14 +155,26 @@ private:
 	// Anyways, if we own mutex only with signals disabled this code
 	// becomes signal-safe even in presense of threads.
 	//
-	// SUPERSERVER: We do not call any functions that can cause wait 
-	// when under counters lock so we do not need to release thread
-	// scheduler here
-	class CountersLockHolder : public AstInhibit, public Firebird::MutexLockGuard
+	class EngineMutexLockGuard {
+	public:
+		explicit EngineMutexLockGuard(Firebird::Mutex &alock) 
+			: lock(&alock) 
+		{ 
+			ThreadExit te;
+			lock->enter(); 
+		}
+		~EngineMutexLockGuard() { lock->leave(); }
+	private:
+		// Forbid copy constructor
+		EngineMutexLockGuard(const EngineMutexLockGuard& source);
+		Firebird::Mutex *lock;
+	};
+
+	class CountersLockHolder : public AstInhibit, public EngineMutexLockGuard
 	{
 	public:
 		CountersLockHolder(Firebird::Mutex& mtx)
-			: AstInhibit(), MutexLockGuard(mtx) { }
+			: AstInhibit(), EngineMutexLockGuard(mtx) { }
 	};
 
 	static int blocking_ast_cached_lock(void* ast_object);
