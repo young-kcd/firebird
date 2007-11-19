@@ -267,7 +267,7 @@ public:
 			system_call_failed::raise("semaphore.h: tryEnter: semop()");
 		}
 
-		return false; //compiler silencer
+		return true;
 	}
 	
 	void enter()
