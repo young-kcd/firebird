@@ -220,7 +220,6 @@ static const struct
 	{"init_variable", variable},
 	{"recurse", union_ops},
 	{"sys_function", function},
-	{"exec_stmt", exec_into2},
 	{0, 0}
 };
 

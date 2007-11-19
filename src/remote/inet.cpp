@@ -301,10 +301,9 @@ static void copy_p_cnct_repeat_array(	p_cnct::p_cnct_repeat*			pDest,
 static void		inet_copy(const void*, UCHAR*, int);
 static int		inet_destroy(XDR *);
 static void		inet_gen_error(rem_port*, ISC_STATUS, ...);
+#if !defined(SUPERSERVER) || defined(EMBEDDED)
 static bool_t	inet_getbytes(XDR *, SCHAR *, u_int);
-//#if !defined(SUPERSERVER) || defined(EMBEDDED)
-static bool_t	inet_getbytes_as_client(XDR *, SCHAR *, u_int);
-//#endif
+#endif
 static bool_t	inet_getlong(XDR *, SLONG *);
 static u_int	inet_getpostn(XDR *);
 #if !(defined WIN_NT)
@@ -358,11 +357,11 @@ static XDR::xdr_ops inet_ops =
 {
 	inet_getlong,
 	inet_putlong,
-//#if !defined(SUPERSERVER) || defined(EMBEDDED)
+#if !defined(SUPERSERVER) || defined(EMBEDDED)
 	inet_getbytes,
-//#else
-//	REMOTE_getbytes,
-//#endif
+#else
+	REMOTE_getbytes,
+#endif
 	inet_putbytes,
 	inet_getpostn,
 	inet_setpostn,
@@ -657,9 +656,6 @@ rem_port* INET_connect(const TEXT* name,
 #endif
 
 	rem_port* port = alloc_port(0);
-	if (packet) {	// client connection
-		port->port_flags |= PORT_client;
-	}
 	port->port_status_vector = status_vector;
 	REMOTE_get_timeout_params(port, dpb, dpb_length);
 	status_vector[0] = isc_arg_gds;
@@ -2901,8 +2897,8 @@ static void inet_gen_error( rem_port* port, ISC_STATUS status, ...)
 	}
 }
 
-//#if !defined(SUPERSERVER) || defined(EMBEDDED)
-static bool_t inet_getbytes_as_client( XDR * xdrs, SCHAR * buff, u_int count)
+#if !defined(SUPERSERVER) || defined(EMBEDDED)
+static bool_t inet_getbytes( XDR * xdrs, SCHAR * buff, u_int count)
 {
 /**************************************
  *
@@ -2961,22 +2957,7 @@ static bool_t inet_getbytes_as_client( XDR * xdrs, SCHAR * buff, u_int count)
 
 	return TRUE;
 }
-//#endif
-
-
-static bool_t inet_getbytes( XDR * xdrs, SCHAR * buff, u_int count)
-{
-#ifdef SUPERSERVER
-	rem_port* port = (rem_port*) xdrs->x_public;
-	if (port->port_flags & PORT_client)
-		return inet_getbytes_as_client(xdrs, buff, count);
-	else
-		return REMOTE_getbytes(xdrs, buff, count);
-#else
-	return inet_getbytes_as_client(xdrs, buff, count);
 #endif
-}
-
 
 static bool_t inet_getlong( XDR * xdrs, SLONG * lp)
 {

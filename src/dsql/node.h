@@ -353,9 +353,7 @@ enum nod_t
 	nod_merge_when, // 280
 	nod_merge_update,
 	nod_merge_insert,
-	nod_sys_function,
-	nod_exec_stmt,
-	nod_exec_stmt_inputs
+	nod_sys_function
 };
 
 typedef nod_t NOD_TYPE;
@@ -438,11 +436,7 @@ enum nod_flags_vals {
 	NOD_GLOBAL_TEMP_TABLE_PRESERVE_ROWS	= 2,
 	NOD_GLOBAL_TEMP_TABLE_DELETE_ROWS	= 3,
 
-	NOD_SPECIAL_SYNTAX		= 1,	// nod_sys_function
-
-	NOD_TRAN_AUTONOMOUS = 1,	// nod_exec_rem_stmt
-	NOD_TRAN_COMMON = 2,
-	NOD_TRAN_2PC = 3
+	NOD_SPECIAL_SYNTAX		= 1	// nod_sys_function
 };
 
 // Parameters to MAKE_constant
@@ -515,21 +509,6 @@ enum node_args {
 	e_exec_into_list,
 	e_exec_into_label,
 	e_exec_into_count,
-
-	e_exec_stmt_sql = 0,	// nod_exec_rem_stmt
-	e_exec_stmt_inputs,
-	e_exec_stmt_outputs,
-	e_exec_stmt_proc_block,
-	e_exec_stmt_data_src,
-	e_exec_stmt_user,
-	e_exec_stmt_pwd,
-	e_exec_stmt_tran,
-	e_exec_stmt_label,
-	e_exec_stmt_count,
-	
-	e_exec_stmt_inputs_sql = 0,	// nod_exec_stmt_inputs
-	e_exec_stmt_inputs_params,
-	e_exec_stmt_inputs_count,
 
 	e_internal_info = 0,	// nod_internal_info
 	e_internal_info_count,

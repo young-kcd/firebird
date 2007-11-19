@@ -82,7 +82,6 @@
 #include "../jrd/dsc_proto.h"
 #include "../jrd/dbg_proto.h"	// DBG_supervisor
 #include "../jrd/execute_statement.h"
-#include "../jrd/ExtDS.h"
 
 #include "../jrd/DataTypeUtil.h"
 #include "../jrd/SysFunction.h"
@@ -2407,14 +2406,6 @@ void CMP_release(thread_db* tdbb, jrd_req* request)
 			}
 		}
 	}
-
-	//ExtStatement *stmt = request->req_ext_stmt;
-	//while (stmt)
-	//{
-	//	ExtStatement *next = stmt->m_nextStmt;
-	//	stmt->getConnection().deleteStatement(stmt);
-	//	stmt = next;
-	//}
 
 	JrdMemoryPool::deletePool(request->req_pool);
 }
@@ -5297,10 +5288,6 @@ static jrd_nod* pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node
 	case nod_exec_into:
 		csb->csb_impure += sizeof(ExecuteStatement);
 		csb->csb_exec_sta.push(node);
-		break;
-
-	case nod_exec_stmt:
-		csb->csb_impure += sizeof(ExtStatement**);
 		break;
 
 	default:

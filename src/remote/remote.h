@@ -304,7 +304,7 @@ const USHORT RSR_no_batch	= 8;		/* Do not batch fetch rows */
 const USHORT RSR_stream_err	= 16;		/* There is an error pending in the batched rows */
 const USHORT RSR_lazy		= 32;		/* To be allocated at the first reference */
 const USHORT RSR_defer_execute	= 64;	// op_execute can be deferred
-const USHORT RSR_past_eof		= 128;		// EOF was returned by fetch from this statement
+const USHORT RSR_past_eof	= 128;		// EOF was returned by fetch from this statement
 
 // will be methods of remote statement class
 inline void stmt_save_exception(RSR statement, const ISC_STATUS* status, bool overwrite)
@@ -636,7 +636,6 @@ const USHORT PORT_dummy_pckt_set= 1024;	/* A dummy packet interval is set  */
 const USHORT PORT_partial_data	= 2048;	/* Physical packet doesn't contain all API packet */
 const USHORT PORT_lazy			= 4096;	/* Deferred operations are allowed */
 const USHORT PORT_busy			= 8192;	// disable receive - port is busy now
-const USHORT PORT_client		= 16384;
 
 
 /* Misc declarations */

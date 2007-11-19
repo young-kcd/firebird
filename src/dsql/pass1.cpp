@@ -1680,38 +1680,6 @@ dsql_nod* PASS1_statement(dsql_req* request, dsql_nod* input, bool proc_flag)
 			PASS1_node(request, input->nod_arg[e_exec_into_list], proc_flag);
 		return pass1_savepoint(request, node);
 
-	case nod_exec_stmt:
-		node = MAKE_node(input->nod_type, input->nod_count);
-		node->nod_arg[e_exec_stmt_sql] =
-			PASS1_node(request, input->nod_arg[e_exec_stmt_sql], proc_flag);
-		node->nod_arg[e_exec_stmt_inputs] = 
-			PASS1_node(request, input->nod_arg[e_exec_stmt_inputs], proc_flag);
-		node->nod_arg[e_exec_stmt_outputs] = 
-			PASS1_node(request, input->nod_arg[e_exec_stmt_outputs], proc_flag);
-		
-		if (input->nod_arg[e_exec_stmt_proc_block])
-		{
-			request->req_loop_level++;
-			node->nod_arg[e_exec_stmt_label] = pass1_label(request, input);
-			node->nod_arg[e_exec_stmt_proc_block] =
-				PASS1_statement(request, input->nod_arg[e_exec_stmt_proc_block], proc_flag);
-			request->req_loop_level--;
-			request->req_labels.pop();
-		}
-
-		node->nod_arg[e_exec_stmt_data_src] = 
-			PASS1_node(request, input->nod_arg[e_exec_stmt_data_src], proc_flag);
-
-		node->nod_arg[e_exec_stmt_user] = 
-			PASS1_node(request, input->nod_arg[e_exec_stmt_user], proc_flag);
-
-		node->nod_arg[e_exec_stmt_pwd] = 
-			PASS1_node(request, input->nod_arg[e_exec_stmt_pwd], proc_flag);
-
-		node->nod_arg[e_exec_stmt_tran] = input->nod_arg[e_exec_stmt_tran];
-
-		return pass1_savepoint(request, node);
-
 	case nod_exit:
 		return input;
 
@@ -5112,7 +5080,7 @@ static dsql_nod* pass1_field( dsql_req* request, dsql_nod* input,
 			// resolve_context() checks the type of the
 			// given context, so the cast to dsql_ctx* is safe.
 
-			dsql_ctx* context = stack.object();
+	        dsql_ctx* context = stack.object();
 
 			if (context->ctx_scope_level != (current_scope_level - 1)) {
 				continue;
@@ -6435,9 +6403,6 @@ static dsql_nod* pass1_label(dsql_req* request, dsql_nod* input)
 		break;
 	case nod_exec_into:
 		label = input->nod_arg[e_exec_into_label];
-		break;
-	case nod_exec_stmt:
-		label = input->nod_arg[e_exec_stmt_label];
 		break;
 	case nod_while:
 		label = input->nod_arg[e_while_label];

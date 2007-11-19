@@ -1081,57 +1081,6 @@ void GEN_statement( dsql_req* request, dsql_nod* node)
 		}
 		return;
 	
-	case nod_exec_stmt:
-		if (node->nod_arg[e_exec_stmt_proc_block]) {
-			stuff(request, blr_label);
-			stuff(request, (int) (IPTR) node->nod_arg[e_exec_stmt_label]->nod_arg[e_label_number]);
-		}
-		stuff(request, blr_exec_stmt);
-
-		// count of input and output parameters
-		temp = node->nod_arg[e_exec_stmt_inputs];
-		stuff_word(request, temp ? temp->nod_count : 0);
-
-		temp = node->nod_arg[e_exec_stmt_outputs];
-		stuff_word(request, temp ? temp->nod_count : 0);
-
-		// query expression
-		GEN_expr(request, node->nod_arg[e_exec_stmt_sql]);
-
-		// external data source, user and password
-		GEN_expr(request, node->nod_arg[e_exec_stmt_data_src]);
-		GEN_expr(request, node->nod_arg[e_exec_stmt_user]);
-		GEN_expr(request, node->nod_arg[e_exec_stmt_pwd]);
-
-		// statement's transaction behavior
-		stuff_word(request, (USHORT) (IPTR) node->nod_arg[e_exec_stmt_tran]);
-
-		// singleton flag and proc block body
-		if (node->nod_arg[e_exec_stmt_proc_block]) {
-			stuff(request, 0);		// non-singleton
-			GEN_statement(request, node->nod_arg[e_exec_stmt_proc_block]);
-		}
-		else {
-			stuff(request, 1);		// singleton
-		}
-
-		// inputs
-		temp = node->nod_arg[e_exec_stmt_inputs];
-		if (temp) {
-			for (ptr = temp->nod_arg, end = ptr + temp->nod_count; ptr < end; ptr++) {
-				GEN_expr(request, *ptr);
-			}
-		}
-
-		// outputs
-		temp = node->nod_arg[e_exec_stmt_outputs];
-		if (temp) {
-			for (ptr = temp->nod_arg, end = ptr + temp->nod_count; ptr < end; ptr++) {
-				GEN_expr(request, *ptr);
-			}
-		}
-		return;
-	
 	case nod_return:
 		if ( (temp = node->nod_arg[e_rtn_procedure]) )
 		{

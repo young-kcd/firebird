@@ -887,12 +887,6 @@ bool_t REMOTE_getbytes (XDR * xdrs, SCHAR * buff, u_int count)
 	
 	return TRUE;
 }
-#else
-bool_t REMOTE_getbytes (XDR * xdrs, SCHAR * buff, u_int count)
-{
-	fb_assert(false);
-	return 0;
-}
 #endif //SUPERSERVER
 
 #ifdef TRUSTED_AUTH

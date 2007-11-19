@@ -349,7 +349,4 @@
 #define blr_recurse			(unsigned char)185
 #define blr_sys_function	(unsigned char)186
 
-/* FB 2.1+ specific BLR */
-#define blr_exec_stmt		(unsigned char)187
-
 #endif // JRD_BLR_H
