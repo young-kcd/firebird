@@ -9,23 +9,33 @@
 # Source function library.
 . /etc/init.d/functions.sh
 
+# To run more instances of firebird:
+#   Copy /opt/firebird somewhere
+#   Copy this script under a new name
+#   Change INSTANCE and FIREBIRD below (all instance names should be unique)
+#   Edit the copied firebird.conf to change at least RemoteServicePort
+#   Optionally run rc-update to autostart the new service
+INSTANCE=default
 FIREBIRD=@prefix@
+
 FBRunUser=firebird
-pidfile=/var/run/firebird/`basename $0`.pid
+pidfile=/var/run/firebird/$INSTANCE.pid
+FULLNAME="firebird server [$INSTANCE]"
+LD_LIBRARY_PATH=$FIREBIRD/lib
 FB_OPTS="-pidfile $pidfile -start -forever"
 
-export FIREBIRD
+export FIREBIRD LD_LIBRARY_PATH
 
 MANAGER=$FIREBIRD/bin/fbmgr.bin
 
 start(){
-	ebegin "Starting firebird server"
+	ebegin "Starting $FULLNAME"
 	start-stop-daemon --oknodo --start --pidfile $pidfile --chuid $FBRunUser --startas $MANAGER -- $FB_OPTS
 	eend $?
 }
 
 stop(){
-	ebegin "Stopping firebird"
+	ebegin "Stopping $FULLNAME"
 	start-stop-daemon --stop --pidfile $pidfile --oknodo
 	eend $?
 }
