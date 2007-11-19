@@ -121,27 +121,41 @@ bool AuthSspi::checkAdminPrivilege(PCtxtHandle phContext) const
 
 	// Create a System Identifier for the Admin group.
 	SID_IDENTIFIER_AUTHORITY system_sid_authority = {SECURITY_NT_AUTHORITY};
-	PSID admin_sid;
+	PSID domain_admin_sid, local_admin_sid;
+
 	if (!AllocateAndInitializeSid(&system_sid_authority, 2,
 				SECURITY_BUILTIN_DOMAIN_RID,
-				DOMAIN_ALIAS_RID_ADMINS,
-				0, 0, 0, 0, 0, 0, &admin_sid))
+				DOMAIN_GROUP_RID_ADMINS,
+				0, 0, 0, 0, 0, 0, &domain_admin_sid))
 	{
 		return false;
 	}
+
+	if (!AllocateAndInitializeSid(&system_sid_authority, 2,
+				SECURITY_BUILTIN_DOMAIN_RID,
+				DOMAIN_ALIAS_RID_ADMINS,
+				0, 0, 0, 0, 0, 0, &local_admin_sid))
+	{
+		return false;
+	}
+
+	bool matched = false;
 
 	// Finally we'll iterate through the list of groups for this access
 	// token looking for a match against the SID we created above.
 	for (DWORD i = 0; i < ptg->GroupCount; i++)
 	{
-		if (EqualSid(ptg->Groups[i].Sid, admin_sid))
+		if (EqualSid(ptg->Groups[i].Sid, domain_admin_sid) ||
+			EqualSid(ptg->Groups[i].Sid, local_admin_sid))
 		{
-			FreeSid(admin_sid);
-			return true;
+			matched = true;
+			break;
 		}
 	}
-	FreeSid(admin_sid);
-	return false;
+
+	FreeSid(domain_admin_sid);
+	FreeSid(local_admin_sid);
+	return matched;
 }
 
 bool AuthSspi::request(AuthSspi::DataHolder& data)
