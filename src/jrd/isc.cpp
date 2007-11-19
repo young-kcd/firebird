@@ -68,6 +68,7 @@
 
 #include <windows.h>
 #include <aclapi.h>
+#include <lmcons.h>
 
 static USHORT os_type;
 static SECURITY_ATTRIBUTES security_attr;
@@ -580,17 +581,14 @@ bool ISC_get_user(Firebird::string*	name,
 
 	if (name)
 	{
-		DWORD name_len = 128;
-		TEXT* nm = name->getBuffer(name_len + 1)
+		DWORD name_len = UNLEN;
+		TEXT* nm = name->getBuffer(name_len + 1);
 		if (GetUserName(nm, &name_len))
 		{
 			nm[name_len] = 0;
 
 			// NT user name is case insensitive
-			for (DWORD i = 0; i < name_len; i++)
-			{
-				nm[i] = UPPER7(nm[i]);
-			}
+			CharUpperBuff(nm, name_len);
 			name->recalculate_length();
 		}
 		else
