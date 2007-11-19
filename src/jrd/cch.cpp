@@ -5808,7 +5808,7 @@ static void page_validation_error(thread_db* tdbb, WIN * window, SSHORT type)
 
 	IBERR_build_status(tdbb->tdbb_status_vector,
 					   isc_db_corrupt,
-					   isc_arg_string, pages->file->fil_string,
+					   isc_arg_string, ERR_cstring(pages->file->fil_string),
 					   isc_arg_gds, isc_page_type_err,
 					   isc_arg_gds, isc_badpagtyp,
 					   isc_arg_number, (SLONG) bdb->bdb_page.getPageNum(),
