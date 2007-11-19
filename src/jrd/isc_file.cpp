@@ -737,9 +737,8 @@ static bool ShortToLongPathName(tstring& Path)
 				Path[last] = 0;
 				const DWORD rc = GetFileAttributes(Path.c_str());
 				// Assuming the user included a file name (that's what we want),
-				// the path one level above should exist, should be a directory but
-				// shouldn't be a system object.
-				if (rc == 0xFFFFFFFF || !(rc & FILE_ATTRIBUTE_DIRECTORY) || rc & FILE_ATTRIBUTE_SYSTEM)
+				// the path one level above should exist and should be a directory.
+				if (rc == 0xFFFFFFFF || !(rc & FILE_ATTRIBUTE_DIRECTORY))
 				{
 					right = npos;
 					error = true;
