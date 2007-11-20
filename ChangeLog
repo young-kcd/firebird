@@ -1,3 +1,81 @@
+2007-11-19 21:34  hvlad
+
+	* firebird2/src/jrd/isc.cpp (1.70):
+
+	Correction for Win32
+
+2007-11-19 17:18  alexpeshkoff
+
+	* firebird2/src/: jrd/constants.h (1.48), jrd/isc.cpp (1.69),
+	jrd/isc_proto.h (1.18), jrd/jrd.cpp (1.355), jrd/jrd_pwd.h (1.20),
+	jrd/pwd.cpp (1.53), jrd/svc.cpp (1.190), remote/inet.cpp (1.198),
+	remote/inet_server.cpp (1.69), remote/xnet.cpp (1.95),
+	remote/os/win32/wnet.cpp (1.42), utilities/guard/guard.cpp (1.17):
+
+	Fixed CORE-1603: Possible buffer overflow with long user name
+
+2007-11-19 14:30  alexpeshkoff
+
+	* firebird2/src/jrd/GlobalRWLock.h (1.8):
+
+	Patch from Roman Simakov for deadlock using GlobalRWLock
+
+2007-11-19 14:21  alexpeshkoff
+
+	*
+	firebird2/builds/install/arch-specific/linux/misc/firebird.init.d.gentoo.in
+	(1.6):
+
+	Added minimum multi-instance support
+
+2007-11-19 14:20  alexpeshkoff
+
+	*
+	firebird2/builds/install/arch-specific/linux/misc/firebird.init.d.suse.in
+	(1.8):
+
+	frontported change in startup script
+
+2007-11-19 13:32  hvlad
+
+	* firebird2/src/jrd/isc_file.cpp (1.112):
+
+	Fixed CORE-1576 : Firebird not allow to add secondary database
+	files in system folders
+
+2007-11-19 11:36  dimitr
+
+	* firebird2/src/auth/trusted/AuthSspi.cpp (1.11):
+
+	Fixed CORE-1602.
+
+2007-11-19 11:30  alexpeshkoff
+
+	* firebird2/src/common/classes/semaphore.h (1.41):
+
+	Fixed wrong return - thanks to Adriano
+
+2007-11-19 11:29  dimitr
+
+	* firebird2/src/jrd/cch.cpp (1.174):
+
+	Fixed CORE-1601.
+
+2007-11-19 08:24  robocop
+
+	* firebird2/src/remote/os/win32/: cntl.cpp (1.24), cntl_proto.h
+	(1.7):
+
+	Since we avoid the practice of naming a variable and a struct the
+	same, I changed that (and did little cleanup).
+
+2007-11-19 08:15  robocop
+
+	* firebird2/src/jrd/: ExtDS.cpp (1.2), ExtDS.h (1.2),
+	ExtDS_Native.cpp (1.2):
+
+	These files do not belong here (in this branch).
+
 2007-11-19 01:21  hvlad
 
 	* firebird2/src/: dsql/dsql.cpp (1.204), dsql/gen.cpp (1.133),
