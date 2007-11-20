@@ -2625,7 +2625,7 @@ COMMIT WORK;
 (NULL, 'EVL_assign_to', 'evl.c', NULL, 15, 229, NULL, 'EVL_assign_to: invalid operation', NULL, NULL);
 (NULL, 'EVL_bitmap', 'evl.c', NULL, 15, 230, NULL, 'EVL_bitmap: invalid operation', NULL, NULL);
 (NULL, 'EVL_boolean', 'evl.c', NULL, 15, 231, NULL, 'EVL_boolean: invalid operation', NULL, NULL);
-(NULL, 'EVL_expr', 'evl.c', NULL, 15, 232, NULL, 'EVL_expt: invalid operation', NULL, NULL);
+(NULL, 'EVL_expr', 'evl.c', NULL, 15, 232, NULL, 'EVL_expr: invalid operation', NULL, NULL);
 (NULL, 'eval_statistical', 'evl.v', NULL, 15, 233, NULL, 'eval_statistical: invalid operation', NULL, NULL);
 (NULL, 'MAP_status_to_gds', 'map.c', NULL, 15, 234, NULL, 'Unimplemented conversion, FAO directive O,Z,S', NULL, NULL);
 (NULL, 'MAP_status_to_gds', 'map.c', NULL, 15, 235, NULL, 'Unimplemented conversion, FAO directive X,U', NULL, NULL);
