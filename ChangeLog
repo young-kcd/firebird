@@ -1,3 +1,9 @@
+2007-11-19 11:14  alexpeshkoff
+
+	* firebird2/src/common/classes/semaphore.h (1.24.2.9):
+
+	Fixed wrong return - thanks to Adriano
+
 2007-11-17 18:43  asfernandes
 
 	* firebird2/src/jrd/fun.epp (1.72.4.2):
