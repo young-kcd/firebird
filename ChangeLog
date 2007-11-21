@@ -1,3 +1,9 @@
+2007-11-20 08:39  dimitr
+
+	* firebird2/src/msgs/messages2.sql (1.18):
+
+	Typo.
+
 2007-11-19 21:34  hvlad
 
 	* firebird2/src/jrd/isc.cpp (1.70):
