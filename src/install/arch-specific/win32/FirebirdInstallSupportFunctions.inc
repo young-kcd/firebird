@@ -25,8 +25,8 @@
 
 Function Prototypes
 
-  function UsingWin2k: boolean;
-  function UsingWinXP: boolean;
+  function GetWindowsOS: integer;
+  function IsWin64: boolean;
   function CheckWinsock2(): Boolean;
   function GetAppPath: String;
   function GetSysPath: String;
@@ -47,34 +47,85 @@ InnoSetup Help Extract on Windows version strings:
 4.1.1998      Windows 98
 4.1.2222      Windows 98 Second Edition
 4.9.3000      Windows Me
+
 Windows NT versions:
 4.0.1381      Windows NT 4.0
 5.0.2195      Windows 2000
 5.01.2600     Windows XP
-5.2.3790      Windows 2003 Standard
+  or Windows XP 64-Bit Edition Version 2002 (Itanium)
+5.02.3790 Windows Server 2003
+  or Windows XP x64 Edition (AMD64/EM64T)
+  or Windows XP 64-Bit Edition Version 2003 (Itanium)
+6.0.6000 Windows Vista
+
 *)
 
-function UsingWin2k: boolean;
-//return true if using Win2k OR later
+
+const
+  OS_WIN95 = 1;
+  OS_WIN98 = 2;
+  OS_WINME = 3;
+  OS_WINNT = 4;
+  OS_WIN2K = 5;
+  OS_WINXP = 6;
+  OS_WIN23 = 7;
+  OS_VISTA = 8;
+
+function IsWin64: boolean;
 begin
-  Result := (InstallOnThisVersion('0,5.0', '0,0') = irInstall);
+if getenv('PROCESSOR_ARCHITECTURE') = 'AMD64' then
+  result := true;
+
+//Wow - Itanium!
+if getenv('PROCESSOR_ARCHITECTURE') = 'IA64' then
+  result := true;
+
+end;
+
+function GetWindowsOS: integer;
+var
+  Major: Cardinal;          // Major version number
+  Minor: Cardinal;          // Minor version number
+  Build: Cardinal;          // Build number
+  NTPlatform: Boolean;      // True if an NT-based platform
+  OS64: Boolean;            // True if O/S is 64-bit
+  
+begin
+  Major := GetWindowsVersion shr 24;
+  Minor := (GetWindowsVersion  shr 16) AND $FF;
+  Build := GetWindowsVersion AND $FFFF;
+  NTPlatform := UsingWinNT;
+  OS64 := IsWin64;
+  
+  result := 0;
+  
+  if (Major = 4) and (Minor = 0) then
+    if NTPlatform then
+     result := OS_WINNT
+    else
+     result := OS_WIN95;
+
+  if (Major = 4) and (Minor = 1) then
+     result := OS_WIN98;
+
+  if (Major = 4) and (Minor = 9) then
+     result := OS_WINME;
+
+  if (Major = 5) and (Minor = 0) then
+     result := OS_WIN2K;
+
+  if (Major = 5) and (Minor = 1) then
+     result := OS_WINXP;
+
+  if (Major = 5) and (Minor = 2) then
+     result := OS_WIN23;
+
+  if (Major = 6) and (Minor = 0) then
+     result := OS_VISTA;
+
 end;
 
 
-function UsingWinXP: boolean;
-// return true if using WinXP OR later.
-// Currently not used in this script.
-begin
-  Result := (InstallOnThisVersion('0,5.01', '0,0') = irInstall);
-end;
-
-(* Untested.
-function UsingWin95: boolean;
-// return true if using Win95.
-begin
-  Result := (InstallOnThisVersion('0,0', '4,1,0.0') = irInstall);
-end;
-*)
 
 
 const

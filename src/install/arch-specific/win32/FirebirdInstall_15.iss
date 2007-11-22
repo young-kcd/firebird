@@ -550,6 +550,9 @@ begin
   if pos('NOCPL', Uppercase(CommandLine))>0 then
     NoCPL := True;
 
+  if GetWindowsOS = OS_VISTA then
+    NoCPL := True;
+
   if pos('NOGDS32', Uppercase(CommandLine))>0 then
     NoLegacyClient := True;
 

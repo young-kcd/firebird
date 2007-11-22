@@ -11,6 +11,7 @@ Contents
 --------
 
 o Before installation
+o Installation on systems running Windows Vista
 o Installation on systems with Firebird 2.0
 o New features of the installer
 o Deprecated features related to installation
@@ -25,6 +26,26 @@ Before installation
 It is recommended that you UNINSTALL all previous 
 versions of Firebird 1.0, Firebird 1.5, Firebird 2.0
 or InterBase before installing this package.
+
+
+Installation on systems running Windows Vista
+---------------------------------------------
+
+There is a known problem with installing the Firebird
+1.5 control panel applet on Windows Vista. The Control
+Panel is unable to load and Explorer crashes. The O/S
+will offer to restart Explorer but the crash will occur
+each time an attempt is made to load open the Control
+Panel. No indication of the cause of the error is
+given. If you are upgrading from an earlier version of
+Firebird 1.5 you should manually remove the Firebird
+control panel applet from the system32 directory.
+
+Installation of the Firebird 1.5 control panel applet 
+is now disabled if the host O/S is Vista.
+
+(Note - this problem only affects Firebird 1.5. It does
+not occur with Firebird 2.)
 
 
 Installation on systems with Firebird 2.0
