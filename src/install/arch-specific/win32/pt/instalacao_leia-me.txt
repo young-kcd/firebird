@@ -1,4 +1,4 @@
-Servidor SQL Firbird 1.5.4 
+Servidor SQL Firebird 1.5.5 
 ==================================================
 
 Este documento constitui um guia para instalar o kit do
@@ -30,7 +30,7 @@ instalar este kit.
 Instalação em sistemas com o Firebird 2.0
 -----------------------------------------
 
-O processo de instalação do Firebird 1.5.4 detectará 
+O processo de instalação do Firebird 1.5.5 detectará 
 uma versão activa do Firebird 2.0. Irá surgir um aviso 
 e poderá prosseguir ou cancelar a instalação. Se continuar
 a instalação, uma versão Super Server será detectada, e a

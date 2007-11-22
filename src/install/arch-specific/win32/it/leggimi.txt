@@ -1,6 +1,6 @@
 
 ==================================
-Firebird 1.5.4       (Win32 Build)
+Firebird 1.5.5       (Win32 Build)
 ==================================
 
 o Introduzione
@@ -17,7 +17,7 @@ o Richiesta di nuove funzionalità
 Introduzione
 ============
 
-Benvenuti in Firebird 1.5.4. Fate riferimento
+Benvenuti in Firebird 1.5.5. Fate riferimento
 alle release notes nella cartella doc/ per
 dettagli sulle correzioni e sulle piccole
 migliorie di questa versione.

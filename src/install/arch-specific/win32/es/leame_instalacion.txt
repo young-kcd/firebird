@@ -1,4 +1,4 @@
-Firebird Database Server 1.5.4
+Firebird Database Server 1.5.5
 ==============================
 
 Este documento es una guía para instalar este paquete
@@ -29,7 +29,7 @@ o InterBase antes de instalar este paquete.
 
 Instalación en sistemas con Firebird 2.0
 ----------------------------------------
-El proceso de instalación de Firebird 1.5.4 
+El proceso de instalación de Firebird 1.5.5 
 detectará una instalación de Firebird 2. En este caso, 
 presentará una advertencia y le permitirá cancelar la instalación.
 Si continúa, el proceso de instalación detectará una instancia

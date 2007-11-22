@@ -1,4 +1,4 @@
-Firebird Serveur de bases de données 1.5.4
+Firebird Serveur de bases de données 1.5.5
 ==================================================
 
 Ce document est un guide pour l'installation de
@@ -38,7 +38,7 @@ Firebird 2.0 ou InterBase avant de commencer l'installation.
 Installation sur des systèmes avec Firebird 2.0
 -------------------------------------------------------
 
-Le programme d'installation de Firebird 1.5.4 peut
+Le programme d'installation de Firebird 1.5.5 peut
 détecter une version existante Firebird 2.0. Il affichera
 un avertissement et vous permettra de mettre fin à l'installation.
 Si vous continez l'installation il détectera un Super Serveur

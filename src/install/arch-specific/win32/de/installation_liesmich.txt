@@ -1,4 +1,4 @@
-Firebird Datenbank Server 1.5.4
+Firebird Datenbank Server 1.5.5
 ===============================
 
 Dieses Dokument ist ein Leitfaden, um dieses Paket
@@ -31,7 +31,7 @@ deinstallieren, bevor Sie dieses Paket installieren.
 Installation auf einem System mit Firebird 2.0
 ----------------------------------------------
 
-Der Firebird 1.5.4 Installationsprozess wird eine
+Der Firebird 1.5.5 Installationsprozess wird eine
 Firebird 2 Installation erkennen. Es wird eine
 Warnung angezeigt und Sie können die Installation
 abbrechen. Falls Sie mit dem Installationsprozess

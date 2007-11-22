@@ -247,7 +247,7 @@ for %%v in ( fbudf.sql fbudf.txt ) do (
 @if %ERRORLEVEL% GEQ 1 ( (call :ERROR Copying doc\sql.extensions failed  ) & (goto :EOF))
 
 @echo   Copying pdf docs...
-@for %%v in (Firebird-1.5-QuickStart.pdf Firebird_v1.5.4.ReleaseNotes.pdf ) do (
+@for %%v in (Firebird-1.5-QuickStart.pdf Firebird_v1.5.5.ReleaseNotes.pdf ) do (
   @echo     ... %%v
   (@copy /Y %FB_EXTERNAL_DOCS%\%%v %FBBUILD_OUTPUT%\doc\%%v > nul) || (call :WARNING Copying %FB_EXTERNAL_DOCS%\%%v failed.)
 )

@@ -1,4 +1,4 @@
-Firebird Database Server 1.5.4
+Firebird Database Server 1.5.5
 ==============================
 
 Questo documento contiene istruzioni per
@@ -31,7 +31,7 @@ prima di installare questa versione.
 Installazione su sistemi contenenti Firebird 2.0
 ------------------------------------------------
 
-Il programma di installazione di Firebird 1.5.4
+Il programma di installazione di Firebird 1.5.5
 è in grado di rilevare automaticamente se un server
 Firebird 2 risulta installato. In questo caso, il
 programma vi avvertirà e vi darà la possibilità di
