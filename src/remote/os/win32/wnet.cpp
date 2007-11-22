@@ -135,25 +135,17 @@ rem_port* WNET_analyze(Firebird::PathName& file_name,
 	PACKET* packet = &rdb->rdb_packet;
 
 /* Pick up some user identification information */
-	TEXT buffer[128];
+	Firebird::string buffer;
 	TEXT *p;
 	Firebird::ClumpletWriter user_id(Firebird::ClumpletReader::UnTagged, MAX_DPB_SIZE);
 
-	ISC_get_user(buffer, 0, 0, 0, 0, 0, 0);
-	for (p = buffer; *p; p++) {
-		if (*p >= 'A' && *p <= 'Z') {
-			*p = *p - 'A' + 'a';
-		}
-	}
-	user_id.insertString(CNCT_user, buffer, strlen(buffer));
+	ISC_get_user(&buffer, 0, 0, 0);
+	buffer.lower();
+	user_id.insertString(CNCT_user, buffer);
 
-	ISC_get_host(buffer, sizeof(buffer));
-	for (p = buffer; *p; p++) {
-		if (*p >= 'A' && *p <= 'Z') {
-			*p = *p - 'A' + 'a';
-		}
-	}
-	user_id.insertString(CNCT_host, buffer, strlen(buffer));
+	ISC_get_host(buffer);
+	buffer.lower();
+	user_id.insertString(CNCT_host, buffer);
 
 	if (uv_flag) {
 		user_id.insertTag(CNCT_user_verification);

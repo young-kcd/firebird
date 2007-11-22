@@ -56,7 +56,7 @@ const ULONG MAX_COLUMN_SIZE	= 32767;	/* Bytes */
 
 /* Misc constant values */
 
-const int USERNAME_LENGTH	= 31;	/* Characters */
+const unsigned int USERNAME_LENGTH	= 31;	/* Characters */
 
 const size_t MAX_SQL_IDENTIFIER_SIZE = 32;
 const size_t MAX_SQL_IDENTIFIER_LEN = MAX_SQL_IDENTIFIER_SIZE - 1;

@@ -6699,12 +6699,9 @@ static vdnResult verify_database_name(const Firebird::PathName& name, ISC_STATUS
  **/
 static void getUserInfo(UserId& user, const DatabaseOptions& options)
 {
-	TEXT name[129] = "";
-	TEXT project[33] = "";
-	TEXT organization[33] = "";
-
-	int node_id = 0;
 	int id = -1, group = -1;	// CVC: This var contained trash
+	int node_id = 0;
+	Firebird::string name;
 
 #ifdef BOOT_BUILD
 	bool wheel = true;
@@ -6712,12 +6709,9 @@ static void getUserInfo(UserId& user, const DatabaseOptions& options)
 	bool wheel = false;
 	if (options.dpb_user_name.isEmpty()) 
 	{
-       wheel = ISC_get_user(name,
+       wheel = ISC_get_user(&name,
                             &id,
                             &group,
-                            project,
-                            organization,
-                            &node_id,
                             options.dpb_sys_user_name.nullStr());
 	}
 
@@ -6738,18 +6732,18 @@ static void getUserInfo(UserId& user, const DatabaseOptions& options)
 		{
 			if (options.dpb_user_name.hasData())
 			{
-				options.dpb_user_name.copyTo(name, sizeof name);
+				name = options.dpb_user_name;
 			}
 			else
 			{
-				strcpy(name, "<Unknown>");
+				name = "<Unknown>";
 			}
 		}
 
 		// if the name from the user database is defined as SYSDBA,
 		// we define that user id as having system privileges
 
-		if (!strcmp(name, SYSDBA_USER_NAME))
+		if (name == SYSDBA_USER_NAME)
 		{
 			wheel = true;
 		}
@@ -6761,12 +6755,12 @@ static void getUserInfo(UserId& user, const DatabaseOptions& options)
 
 	if (wheel)
 	{
-		strcpy(name, SYSDBA_USER_NAME);
+		name = SYSDBA_USER_NAME;
 	}
 
 	user.usr_user_name = name;
-	user.usr_project_name = project;
-	user.usr_org_name = organization;
+	user.usr_project_name = "";
+	user.usr_org_name = "";
 	user.usr_sql_role_name = options.dpb_role_name;
 	user.usr_user_id = id;
 	user.usr_group_id = group;

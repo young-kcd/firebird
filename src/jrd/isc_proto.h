@@ -25,6 +25,7 @@
 #define JRD_ISC_PROTO_H
 
 #include "../jrd/isc.h"
+#include "../common/classes/fb_string.h"
 
 void	ISC_ast_enter(void);
 void	ISC_ast_exit(void);
@@ -33,8 +34,8 @@ bool	ISC_check_process_existence(SLONG, SLONG, bool);
 //void	ISC_get_config(TEXT *, struct ipccfg *);
 //int		ISC_set_config(TEXT *, struct ipccfg *);
 TEXT*	ISC_get_host(TEXT *, USHORT);
-int		ISC_get_user(TEXT*, int*, int*, TEXT*,
-											 TEXT*, int*, const TEXT*);
+const TEXT*   ISC_get_host(Firebird::string&);
+bool  ISC_get_user(Firebird::string*, int*, int*, const TEXT*);
 SLONG	ISC_get_user_group_id(const TEXT*);
 void	ISC_set_user(const TEXT*);
 SLONG	ISC_get_prefix(const TEXT*);

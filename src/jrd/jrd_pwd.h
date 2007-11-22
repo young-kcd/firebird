@@ -66,11 +66,11 @@ public:
 
 	static void initialize();
 	static void shutdown();
-	static void verifyUser(TEXT*, const TEXT*, const TEXT*, const TEXT*,
+	static void verifyUser(Firebird::string&, const TEXT*, const TEXT*, const TEXT*,
 		int*, int*, int*, const Firebird::string&);
 
 	static void hash(Firebird::string& h, 
-					 const TEXT* userName, 
+					 const Firebird::string& userName, 
 					 const TEXT* passwd)
 	{
 		Firebird::string salt;
@@ -79,7 +79,7 @@ public:
 	}
 
 	static void hash(Firebird::string& h, 
-					 const TEXT* userName, 
+					 const Firebird::string& userName, 
 					 const TEXT* passwd,
 					 const Firebird::string& oldHash)
 	{
@@ -110,7 +110,7 @@ private:
 
 	void fini();
 	void init();
-	bool lookup_user(TEXT*, int*, int*, TEXT*);
+	bool lookup_user(const TEXT*, int*, int*, TEXT*);
 	bool prepare();
 
 	static SecurityDatabase instance;
