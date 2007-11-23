@@ -2,6 +2,14 @@
   * v1.5.5
   **************
 
+    * Partially fixed bug reported in CORE-1061 and CORE-1109
+        The Explorer running under Vista crashes when the Firebird 1.5 control
+        panel applet is installed. This crash does NOT occur with Firebird 2.n,
+        but backporting the changes hasn't worked. Installation of the 1.5 applet
+        is now disabled if Vista is detected as the host O/S.
+      Contributor(s):
+        Paul Reeves <preeves at ibphoenix.com>
+
     * Fixed bug CORE-1076
         Services Manager and gsec truncate First/Middle/Last Name fields
         to 17 chars instead of 31 chars available in field definition
@@ -53,7 +61,7 @@
       Contributor(s):
         Paul Beach (pbeach at ibphoenix.com)
 
-    * Fixed bug CORE-1051 
+    * Fixed bug CORE-1051
         Possible stack corruption in the deferred work handler
       Contributor(s):
         Vlad Horsun <horsun at kdb.dp.ua>
@@ -82,7 +90,7 @@
         Alex Peshkov <peshkoff at mail.ru>
 
     * Fixed bug CORE-973
-        BUGCHECK(183) when attempting to backout a record version after a crash  
+        BUGCHECK(183) when attempting to backout a record version after a crash
       Contributor(s):
         Ann Harrison <aharrison at ibphoenix.com>
 
@@ -109,7 +117,7 @@
   **************
 
     * Fixed SF bug #1175157
-        Error in thread scheduler causes server to lockup 
+        Error in thread scheduler causes server to lockup
         in case if IO error at database attachment
       Contributor(s):
         Vlad Horsun <horsun at kdb.dp.ua>
@@ -168,8 +176,8 @@
         Vlad Horsun <horsun at kdb.dp.ua>
 
     * Fixed unregistered bug.
-        Crash occured in service gfix code when it tried to reattach to currently 
-        unavailable database. Since service can't interact with end user an endless 
+        Crash occured in service gfix code when it tried to reattach to currently
+        unavailable database. Since service can't interact with end user an endless
         loop leads to overflow service buffer and crash as result.
       Contributor(s):
         Vlad Horsun <horsun at kdb.dp.ua>
