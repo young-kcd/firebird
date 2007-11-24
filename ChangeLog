@@ -1,54 +1,8 @@
-2007-11-19 10:26  dimitr
-
-	* firebird2/doc/WhatsNew (1.36.2.68):
-
-	Misc.
-
-2007-11-17 07:28  dimitr
-
-	* firebird2/doc/WhatsNew (1.36.2.67):
-
-	Update.
-
-2007-11-16 07:02  dimitr
-
-	* firebird2/doc/WhatsNew (1.36.2.66):
-
-	Update.
-
-2007-11-13 12:07  dimitr
-
-	* firebird2/doc/WhatsNew (1.36.2.65):
-
-	Update.
-
-2007-10-24 09:07  robocop
-
-	* firebird2/builds/win32/msvc6/: gdef.dsp (1.14.2.2), gstat.dsp
-	(1.14.2.3), qli.dsp (1.13.2.2):
-
-	First attempt to close the cases shown in the RISE report in v1.5
-	and other known but unreported cases. INET_connect wasn't reviewed.
-
 2007-08-09 13:57  paulbeach
 
 	* firebird2/builds/posix/prefix.hpux (1.1.2.1):
 
 	Missing prefix file
-
-2007-02-21 11:42  paulbeach
-
-	* firebird2/doc/WhatsNew (1.36.2.64):
-
-	Fix crash in QLI using the following SQL command. insert into
-	relationx select * from relationy
-
-2007-02-06 12:45  paulbeach
-
-	* firebird2/doc/WhatsNew (1.36.2.63):
-
-	Fix alignment issue for HPUX, which generates core dump - SQL
-	Dialect 1 and select distinct(1.0/1) from rdb$database
 
 2007-01-31 15:26  paul_reeves
 
@@ -58,59 +12,17 @@
 	english language versions Misc changes to prepare for release of
 	1.5.4
 
-2007-01-29 19:12  dimitr
-
-	* firebird2/doc/WhatsNew (1.36.2.62):
-
-	Misc.
-
-2007-01-23 15:27  asfernandes
-
-	* firebird2/doc/WhatsNew (1.36.2.61):
-
-	Misc
-
-2007-01-22 14:25  paulbeach
-
-	* firebird2/doc/WhatsNew (1.36.2.60):
-
-	More changes to support HPUX Ports
-
 2007-01-22 13:27  paulbeach
 
 	* firebird2/configure.in (1.141.2.41):
 
 	Changes to support HPUX Ports
 
-2006-12-12 10:15  dimitr
-
-	* firebird2/doc/WhatsNew (1.36.2.59):
-
-	Update.
-
-2006-12-07 08:23  dimitr
-
-	* firebird2/doc/WhatsNew (1.36.2.58):
-
-	no message
-
-2006-12-07 08:11  hvlad
-
-	* firebird2/doc/WhatsNew (1.36.2.57):
-
-	Update WhatsNew
-
 2006-12-06 17:07  alexpeshkoff
 
 	* firebird2/: autogen.sh (1.8.2.3), configure.in (1.141.2.40):
 
 	Fixes for AIX build
-
-2006-12-06 16:16  dimitr
-
-	* firebird2/doc/WhatsNew (1.36.2.56):
-
-	Docs.
 
 2006-11-05 15:37  alexpeshkoff
 
@@ -164,48 +76,11 @@
 	needed.  There are also some small fixes, where xlC wanted, but
 	they are trivial enough not to mention here.
 
-2006-10-25 10:33  paulbeach
-
-	* firebird2/doc/WhatsNew (1.36.2.55):
-
-	Fix for Core-966 etc
-
-2006-05-08 13:26  paulbeach
-
-	* firebird2/doc/WhatsNew (1.36.2.54):
-
-	ISQL issues, non error on buffer overflow, and quoted string
-	problems.
-
 2006-03-03 08:34  kkuznetsov
 
 	* firebird2/builds/posix/prefix.solaris (1.5.2.9):
 
 	Removed profile gcc flag noticed by Douglas.K.Moore
-
-2005-12-09 03:23  robocop
-
-	* firebird2/doc/WhatsNew (1.36.2.53):
-
-	Misc.
-
-2005-12-08 14:21  hvlad
-
-	* firebird2/doc/WhatsNew (1.36.2.52):
-
-	Correct WhatsNew
-
-2005-12-08 11:52  dimitr
-
-	* firebird2/doc/WhatsNew (1.36.2.51):
-
-	More docs.
-
-2005-11-24 11:02  dimitr
-
-	* firebird2/doc/WhatsNew (1.36.2.50):
-
-	Described more changes.
 
 2005-11-15 15:22  kkuznetsov
 
@@ -214,73 +89,12 @@
 
 	Update sparc build
 
-2005-10-03 08:33  paul_reeves
-
-	* firebird2/doc/WhatsNew (1.36.2.49):
-
-	Allow build_no.h to be used for mass consumption again.
-
-2005-09-22 09:08  dimitr
-
-	* firebird2/doc/WhatsNew (1.36.2.48):
-
-	Added missing bugfixes.
-
-2005-09-22 08:22  dimitr
-
-	* firebird2/doc/WhatsNew (1.36.2.47):
-
-	no message
-
-2005-09-20 19:26  dimitr
-
-	* firebird2/doc/WhatsNew (1.36.2.46):
-
-	Described recent commits.
-
 2005-08-17 10:37  paul_reeves
 
-	* firebird2/builds/win32/: make_boot.bat (1.5.2.2),
-	msvc6/gpre_boot.dsp (1.17.2.2):
+	* firebird2/builds/win32/make_boot.bat (1.5.2.2):
 
 	Add init.* to gpre_boot.dsp. Add clearer error handler to
 	make_boot.bat
-
-2005-08-14 11:33  dimitr
-
-	* firebird2/doc/WhatsNew (1.36.2.45):
-
-	1) Fixed formatting.  2) Added a couple of forgotten bugfixes to
-	the 1.5.0 section, as requested by the bug reporter.
-
-2005-08-10 21:32  hvlad
-
-	* firebird2/doc/WhatsNew (1.36.2.44):
-
-	Update WhatsNew
-
-2005-07-26 14:57  arnobrinkman
-
-	* firebird2/builds/win32/msvc7/: engine.vcproj (1.21.2.4),
-	engine_classic.vcproj (1.20.2.4), engine_embed.vcproj (1.8.2.4),
-	fb_lock_print.vcproj (1.13.2.4), fbclient.vcproj (1.17.2.5),
-	gpre_boot.vcproj (1.12.2.4):
-
-	Fix MSVC7 builds for Firebird 1.5
-
-2005-06-19 05:11  robocop
-
-	* firebird2/builds/win32/msvc6/fb_lock_print.dsp (1.17.2.3):
-
-	Totally misc.
-
-2005-06-17 19:31  alexpeshkoff
-
-	* firebird2/builds/win32/msvc6/: engine.dsp (1.32.2.3),
-	engine_classic.dsp (1.28.2.3), engine_embed.dsp (1.9.2.2),
-	fb_lock_print.dsp (1.17.2.2), fbclient.dsp (1.33.2.4):
-
-	backported fix for SF bug #739480 - fixed MSVC6 build
 
 2005-06-17 18:59  alexpeshkoff
 
@@ -301,24 +115,6 @@
 
 	Small fixes to Solaris sparc
 
-2005-06-08 15:56  dimitr
-
-	* firebird2/doc/WhatsNew (1.36.2.43):
-
-	no message
-
-2005-06-07 12:24  dimitr
-
-	* firebird2/doc/WhatsNew (1.36.2.42):
-
-	Backported some fixes from HEAD.
-
-2005-06-07 11:55  dimitr
-
-	* firebird2/doc/WhatsNew (1.36.2.41):
-
-	Backported some fixes from HEAD.
-
 2005-04-29 08:24  kkuznetsov
 
 	* firebird2/configure.in (1.141.2.37):
@@ -332,24 +128,12 @@
 
 	Solaris fixes
 
-2005-04-28 08:46  robocop
-
-	* firebird2/doc/WhatsNew (1.36.2.40):
-
-	FB v1.5's what's new.
-
 2005-04-26 09:28  kkuznetsov
 
 	* firebird2/: builds/posix/prefix.solaris-64gcc (1.3.2.2),
 	configure.in (1.141.2.36):
 
 	Backporting some Solaris install system
-
-2005-04-23 17:01  dimitr
-
-	* firebird2/doc/WhatsNew (1.36.2.39):
-
-	Updated docs.
 
 2005-04-13 15:02  kkuznetsov
 
@@ -384,12 +168,6 @@
 	We always used byacc and this file's inline help recommends byacc,
 	but it attempts to use yacc. Go figure.
 
-2005-02-01 14:59  kkuznetsov
-
-	* firebird2/doc/README.install.Solaris_on_Intel (1.1.2.3):
-
-	Document updated for Super Server
-
 2005-02-01 10:01  kkuznetsov
 
 	* firebird2/configure.in (1.141.2.35):
@@ -410,12 +188,6 @@
 	prefix.solx86 (1.18.2.2):
 
 	Fix final instances of gds_delay to gds_relay.
-
-2004-12-10 06:34  skidder
-
-	* firebird2/doc/WhatsNew (1.36.2.38):
-
-	Add description for my last change
 
 2004-12-09 15:43  kkuznetsov
 
@@ -438,24 +210,6 @@
 	breaking DEV_BUILD on POSIX. Undo the change and backport the fix
 	from HEAD which is supposed to make Solaris happy
 
-2004-11-19 09:27  alexpeshkoff
-
-	* firebird2/doc/WhatsNew (1.36.2.37):
-
-	documented my last fix in 1.5
-
-2004-11-18 20:59  skidder
-
-	* firebird2/doc/WhatsNew (1.36.2.36):
-
-	Document my last fix
-
-2004-11-18 09:11  arnobrinkman
-
-	* firebird2/doc/WhatsNew (1.36.2.35):
-
-	no message
-
 2004-11-13 10:25  kkuznetsov
 
 	* firebird2/builds/posix/firebird.vers (1.3.2.2):
@@ -465,35 +219,11 @@
 	gds_alloc_flag_unfreed gds_alloc_report gds_interprete_cpp
 	isc_interprete_cpp
 
-2004-11-13 09:20  paul_reeves
-
-	* firebird2/doc/README.user.embedded (1.1.2.4):
-
-	Update version number
-
 2004-11-11 12:19  kkuznetsov
 
 	* firebird2/configure.in (1.141.2.31):
 
 	Fix threading build problem on Solaris x86 build
-
-2004-11-08 18:06  skidder
-
-	* firebird2/doc/WhatsNew (1.36.2.34):
-
-	Add description for ISQL fix
-
-2004-11-06 07:12  skidder
-
-	* firebird2/doc/WhatsNew (1.36.2.33):
-
-	Add description for savepoints fix
-
-2004-11-03 18:00  skidder
-
-	* firebird2/builds/win32/msvc7/Firebird2.sln (1.9.2.5):
-
-	Fix compilation problem in MSVC7 debug build
 
 2004-10-30 10:10  skidder
 
@@ -501,73 +231,12 @@
 
 	Add workaround for GCC 3.2 build problem
 
-2004-10-30 02:16  skidder
-
-	* firebird2/doc/WhatsNew (1.36.2.32):
-
-	Adjust doco for Arno fix once again
-
-2004-10-29 21:44  skidder
-
-	* firebird2/doc/WhatsNew (1.36.2.31):
-
-	Add description for Arno fix
-
-2004-10-23 20:08  skidder
-
-	* firebird2/doc/WhatsNew (1.36.2.30):
-
-	Slightly more verbose descriptions of POSIX packaging changes
-
-2004-10-22 00:26  arnobrinkman
-
-	* firebird2/doc/WhatsNew (1.36.2.29):
-
-	Hopefully this comment is clear enough :-/
-
-	Example by code, with what i meant :
-
-	SELECT * FROM	TableX x   LEFT JOIN TableY y ON (y.FK = x.PK)
-	WHERE	x.FieldX IN (1,2,3,4,5)
-
-	and "x.FieldX" isn't included in a index
-
-2004-10-20 20:37  dimitr
-
-	* firebird2/doc/WhatsNew (1.36.2.28):
-
-	Added latest commits
-
 2004-10-20 18:50  alexpeshkoff
 
 	* firebird2/builds/posix/: Makefile.in.fbserver (1.11.2.6),
 	Makefile.in.libfbserver (1.6.2.4):
 
 	fixed posix SS build
-
-2004-10-18 22:35  skidder
-
-	* firebird2/doc/WhatsNew (1.36.2.27):
-
-	Clarify change description
-
-2004-10-18 21:22  skidder
-
-	* firebird2/doc/WhatsNew (1.36.2.26):
-
-	Document the last change
-
-2004-10-09 16:20  dimitr
-
-	* firebird2/doc/WhatsNew (1.36.2.25):
-
-	Added description for the latest commit.
-
-2004-10-08 04:00  skidder
-
-	* firebird2/doc/WhatsNew (1.36.2.24):
-
-	Add description for my change
 
 2004-10-07 23:34  skidder
 
@@ -582,12 +251,6 @@
 
 	Backport fixes to build threaded versions of various shared
 	libraries
-
-2004-10-05 17:01  dimitr
-
-	* firebird2/doc/WhatsNew (1.36.2.23):
-
-	Added recent commits.
 
 2004-10-05 12:56  paul_reeves
 
@@ -607,12 +270,6 @@
 	* firebird2/configure.in (1.141.2.28):
 
 	Correctly build on non-x86 SuSE linux
-
-2004-09-18 09:47  skidder
-
-	* firebird2/doc/WhatsNew (1.36.2.22):
-
-	Backport fixes for the problems detected by Valgrind
 
 2004-09-18 08:56  skidder
 
@@ -644,28 +301,15 @@
 	builds/posix/Makefile.in.libfbembed (1.10.2.4),
 	builds/posix/fbintl.vers (1.2.2.1), builds/posix/firebird.vers
 	(1.3.2.1), builds/posix/make.defaults (1.25.2.8),
-	builds/posix/prefix.solx86gcc (1.1.2.6), doc/WhatsNew (1.36.2.21):
+	builds/posix/prefix.solx86gcc (1.1.2.6):
 
 	Support GCC 3.4 build, backport version script at the same time
 	because we want to allow linking of C++ programs with Firebird and
 	GCC 3.4 cannot build hack we used for this purpose earlier
 
-2004-08-11 06:53  paul_reeves
-
-	* firebird2/doc/README.user.embedded (1.1.2.3):
-
-	Amend notes on use of embedded library for Helen.
-
-2004-08-10 16:18  kkuznetsov
-
-	* firebird2/doc/README.install.Solaris_on_Intel (1.1.2.2):
-
-	Some coorections
-
 2004-08-06 15:49  kkuznetsov
 
-	* firebird2/: configure.in (1.141.2.25),
-	doc/README.install.Solaris_on_Intel (1.1.2.1):
+	* firebird2/configure.in (1.141.2.25):
 
 	Added install script for gcc C++ runtime as separate package and
 	readme file
@@ -678,12 +322,6 @@
 
 	Add support for Sox86 packaging (experimental) and fix relative dll
 	path in linker opts
-
-2004-07-14 14:10  paul_reeves
-
-	* firebird2/doc/README.user.embedded (1.1.2.2):
-
-	Minor doc changes for Fb 1.5.1
 
 2004-07-05 16:21  kkuznetsov
 
@@ -725,24 +363,6 @@
 
 	Commented out THD_* functions if using new style of thd
 
-2004-06-11 01:17  skidder
-
-	* firebird2/doc/WhatsNew (1.36.2.20):
-
-	Clean up WhatsNew
-
-2004-06-09 16:31  paul_reeves
-
-	* firebird2/doc/WhatsNew (1.36.2.19):
-
-	update WhatsNew
-
-2004-06-08 15:59  dimitr
-
-	* firebird2/doc/sql.extensions/README.universal_triggers (1.1.2.2):
-
-	Corrected a typo.
-
 2004-06-08 14:10  kkuznetsov
 
 	* firebird2/builds/posix/firebird.vers (1.2):
@@ -758,30 +378,11 @@
 
 2004-04-28 16:44  paul_reeves
 
-	* firebird2/: builds/win32/make_all.bat (1.4.2.13), doc/WhatsNew
-	(1.36.2.18):
+	* firebird2/builds/win32/make_all.bat (1.4.2.13):
 
 	Extend BuildExecutableInstall.bat to create zip and embedded
 	packages for Win32. Update build number. Update WhatsNew to reflect
 	removal of string to blob fix.
-
-2004-04-13 00:22  skidder
-
-	* firebird2/builds/win32/msvc7/gstat.vcproj (1.11.2.4):
-
-	Adjust MSVC7 makefiles for the latest Dmitry changes
-
-2004-04-11 15:17  dimitr
-
-	* firebird2/doc/WhatsNew (1.36.2.17):
-
-	More v1.5.1 changes.
-
-2004-04-10 16:19  dimitr
-
-	* firebird2/builds/win32/msvc6/gstat.dsp (1.14.2.2):
-
-	Fixed GSTAT to understand non-local connection strings.
 
 2004-04-10 03:54  skidder
 
@@ -796,85 +397,6 @@
 
 	Fix broken soname for libib_util.so in B1_5_Release (SF#904270)
 
-2004-04-08 01:42  skidder
-
-	* firebird2/builds/win32/msvc7/: alice.vcproj (1.8.2.3),
-	alice_classic.vcproj (1.8.2.3), burp.vcproj (1.11.2.3),
-	burp_classic.vcproj (1.11.2.3), common.vcproj (1.9.2.3),
-	common_classic.vcproj (1.7.2.3), dsql_server.vcproj (1.10.2.3),
-	dsql_server_classic.vcproj (1.10.2.3), engine.vcproj (1.21.2.3),
-	engine_classic.vcproj (1.20.2.3), engine_embed.vcproj (1.8.2.3),
-	fb2control.vcproj (1.1.2.3), fb_inet_server.vcproj (1.9.2.3),
-	fb_lock_print.vcproj (1.13.2.3), fbclient.vcproj (1.17.2.4),
-	fbembed.vcproj (1.14.2.3), fbguard.vcproj (1.11.2.3),
-	fbserver.vcproj (1.10.2.3), fbudf.vcproj (1.6.2.3), gbak.vcproj
-	(1.11.2.3), gdef.vcproj (1.11.2.3), gds32.vcproj (1.10.2.3),
-	gfix.vcproj (1.10.2.3), gpre.vcproj (1.13.2.4), gsec.vcproj
-	(1.10.2.3), gsplit.vcproj (1.5.2.3), gstat.vcproj (1.11.2.3),
-	ib_udf.vcproj (1.10.2.3), ib_util.vcproj (1.10.2.3), instreg.vcproj
-	(1.9.2.3), instsvc.vcproj (1.9.2.3), intl.vcproj (1.10.2.3),
-	ipserver.vcproj (1.9.2.3), isql.vcproj (1.11.2.3), lock.vcproj
-	(1.8.2.3), lock_classic.vcproj (1.8.2.3), qli.vcproj (1.10.2.3),
-	remote.vcproj (1.11.2.3), remote_classic.vcproj (1.11.2.3),
-	utilities.vcproj (1.10.2.3), utilities_classic.vcproj (1.9.2.3),
-	v5_examples.vcproj (1.1.2.2), wal.vcproj (1.8.2.3),
-	wal_classic.vcproj (1.8.2.3):
-
-	Update MSVC7 makefiles
-
-2004-04-06 17:50  dimitr
-
-	* firebird2/doc/WhatsNew (1.36.2.16):
-
-	More v1.5.1 changes.
-
-2004-04-06 17:42  dimitr
-
-	* firebird2/builds/win32/msvc6/intl.dsp (1.20.2.2):
-
-	Added new collation.
-
-2004-04-04 18:31  skidder
-
-	* firebird2/doc/WhatsNew (1.36.2.15):
-
-	Make fixes descriptions slightly more precise
-
-2004-04-04 15:08  dimitr
-
-	* firebird2/doc/WhatsNew (1.36.2.14):
-
-	Added v1.5.1 changes.
-
-2004-03-31 07:08  skidder
-
-	* firebird2/builds/win32/msvc7/: Firebird2.sln (1.9.2.4),
-	Firebird2Boot.sln (1.1.2.1), alice.vcproj (1.8.2.2),
-	alice_classic.vcproj (1.8.2.2), build_msg.vcproj (1.1.2.2),
-	burp.vcproj (1.11.2.2), burp_classic.vcproj (1.11.2.2),
-	codes.vcproj (1.1.2.2), common.vcproj (1.9.2.2),
-	common_classic.vcproj (1.7.2.2), common_static.vcproj (1.1.2.1),
-	dsql_server.vcproj (1.10.2.2), dsql_server_classic.vcproj
-	(1.10.2.2), engine.vcproj (1.21.2.2), engine_classic.vcproj
-	(1.20.2.2), engine_embed.vcproj (1.8.2.2), fb2control.vcproj
-	(1.1.2.2), fb_inet_server.vcproj (1.9.2.2), fb_lock_print.vcproj
-	(1.13.2.2), fbclient.vcproj (1.17.2.3), fbclient_static.vcproj
-	(1.1.2.3), fbembed.vcproj (1.14.2.2), fbguard.vcproj (1.11.2.2),
-	fbserver.vcproj (1.10.2.2), fbudf.vcproj (1.6.2.2), gbak.vcproj
-	(1.11.2.2), gdef.vcproj (1.11.2.2), gds32.vcproj (1.10.2.2),
-	gfix.vcproj (1.10.2.2), gpre.vcproj (1.13.2.3), gpre_boot.vcproj
-	(1.12.2.3), gpre_static.vcproj (1.1.2.2), gsec.vcproj (1.10.2.2),
-	gsplit.vcproj (1.5.2.2), gstat.vcproj (1.11.2.2), ib_udf.vcproj
-	(1.10.2.2), ib_util.vcproj (1.10.2.2), instreg.vcproj (1.9.2.2),
-	instsvc.vcproj (1.9.2.2), intl.vcproj (1.10.2.2), ipserver.vcproj
-	(1.9.2.2), isql.vcproj (1.11.2.2), lock.vcproj (1.8.2.2),
-	lock_classic.vcproj (1.8.2.2), qli.vcproj (1.10.2.2), remote.vcproj
-	(1.11.2.2), remote_classic.vcproj (1.11.2.2), utilities.vcproj
-	(1.10.2.2), utilities_classic.vcproj (1.9.2.2), v5_examples.vcproj
-	(1.1.2.1), wal.vcproj (1.8.2.2), wal_classic.vcproj (1.8.2.2):
-
-	Update MSVC7 makefiles
-
 2004-03-29 05:49  skidder
 
 	* firebird2/: configure.in (1.141.2.21),
@@ -882,13 +404,7 @@
 	builds/posix/Makefile.in.client.gpre (1.9.2.2),
 	builds/posix/Makefile.in.embed.gpre (1.9.2.2),
 	builds/posix/Makefile.in.static.gpre (1.10.2.2),
-	builds/posix/prefix.linux_amd64 (1.4.2.1),
-	builds/win32/msvc6/gpre.dsp (1.18.2.2),
-	builds/win32/msvc6/gpre_boot.dsp (1.17.2.1),
-	builds/win32/msvc6/gpre_static.dsp (1.3.2.1),
-	builds/win32/msvc7/gpre.vcproj (1.13.2.2),
-	builds/win32/msvc7/gpre_boot.vcproj (1.12.2.2),
-	builds/win32/msvc7/gpre_static.vcproj (1.1.2.1):
+	builds/posix/prefix.linux_amd64 (1.4.2.1):
 
 	Backport AMD64 port
 
@@ -921,38 +437,11 @@
 
 	Add check for dinkum patches under msvc6. Update Build Number.
 
-2004-02-20 07:30  dimitr
-
-	* firebird2/doc/WhatsNew (1.36.2.13):
-
-	no message
-
 2004-02-15 09:51  dimitr
 
 	* firebird2/builds/posix/Makefile.in.extlib (1.10.2.5):
 
 	Fixed a typo. Thanks To Oleg Kraynov.
-
-2004-02-10 19:16  dimitr
-
-	* firebird2/doc/WhatsNew (1.36.2.12):
-
-	Updated WhatsNew
-
-2004-01-27 14:52  epocman
-
-	* firebird2/builds/win32/msvc6/: Firebird2.dsw (1.19.2.7),
-	instreg.dsp (1.12.2.3), instsvc.dsp (1.13.2.2):
-
-	Static link instreg and instsvc, just as instclient.
-
-2004-01-22 08:47  epocman
-
-	* firebird2/builds/win32/msvc6/: Firebird2.dsw (1.19.2.6),
-	common_utilities.dsp (1.1.2.1), instclient.dsp (1.1.2.3):
-
-	Static link instclient.exe so it can be used from an installer when
-	MS compiler support DLLs are possibly not yet updated.
 
 2004-01-21 16:50  paul_reeves
 
@@ -975,68 +464,17 @@
 
 	Add prefix for my machine
 
-2004-01-05 09:48  paul_reeves
-
-	* firebird2/builds/win32/msvc6/fb2control.dsp (1.1.2.5):
-
-	Update build number. Improve error detection in cpl applet. Update
-	some Win32 install notes.
-
 2003-12-28 00:39  skidder
 
 	* firebird2/builds/posix/prefix.linux (1.18.2.3):
 
 	Distribute debuggable PROD_BUILD
 
-2003-12-28 00:07  skidder
-
-	* firebird2/doc/WhatsNew (1.36.2.11):
-
-	Document my change
-
-2003-12-26 16:57  dimitr
-
-	* firebird2/doc/WhatsNew (1.36.2.10):
-
-	Added RC8 changes.
-
-2003-12-24 16:43  dimitr
-
-	* firebird2/builds/win32/msvc6/: alice.dsp (1.15.2.1),
-	alice_classic.dsp (1.12.2.1), burp.dsp (1.17.2.1), burp_classic.dsp
-	(1.15.2.1), common.dsp (1.21.2.2), common_classic.dsp (1.15.2.2),
-	dsql_server.dsp (1.20.2.1), dsql_server_classic.dsp (1.16.2.1),
-	engine.dsp (1.32.2.2), engine_classic.dsp (1.28.2.2),
-	engine_embed.dsp (1.9.2.1), fb2control.dsp (1.1.2.4),
-	fb_inet_server.dsp (1.17.2.1), fb_lock_print.dsp (1.17.2.1),
-	fbclient.dsp (1.33.2.3), fbembed.dsp (1.25.2.1), fbguard.dsp
-	(1.17.2.2), fbserver.dsp (1.28.2.1), fbudf.dsp (1.10.2.1), gbak.dsp
-	(1.19.2.1), gdef.dsp (1.14.2.1), gds32.dsp (1.18.2.2), gfix.dsp
-	(1.17.2.2), gpre.dsp (1.18.2.1), gsec.dsp (1.13.2.1), gsplit.dsp
-	(1.6.2.1), gstat.dsp (1.14.2.1), ib_udf.dsp (1.15.2.1), ib_util.dsp
-	(1.15.2.1), instclient.dsp (1.1.2.2), instreg.dsp (1.12.2.2),
-	instsvc.dsp (1.13.2.1), intl.dsp (1.20.2.1), intlcpp.dsp (1.5.2.1),
-	ipserver.dsp (1.13.2.1), isql.dsp (1.19.2.1), lock.dsp (1.12.2.1),
-	lock_classic.dsp (1.10.2.1), qli.dsp (1.13.2.1), remote.dsp
-	(1.17.2.1), remote_classic.dsp (1.14.2.1), utilities.dsp
-	(1.13.2.1), utilities_classic.dsp (1.11.2.1), v5_examples.dsp
-	(1.3.2.1), wal.dsp (1.12.2.1), wal_classic.dsp (1.10.2.1):
-
-	Let's create PDB files as a part of the release builds.
-
 2003-12-24 00:23  skywalker
 
 	* firebird2/configure.in (1.141.2.20):
 
 	Added generation of new script files from .in templates
-
-2003-12-19 16:43  paul_reeves
-
-	* firebird2/: builds/win32/msvc6/fb2control.dsp (1.1.2.3),
-	doc/README.Win32LibraryInstallation.txt (1.1.2.4):
-
-	Update build number for Fb 1.5. Put correct link to IDPL in some
-	boiler plates. (Very) minor changes to Win32 build process.
 
 2003-12-17 15:33  paul_reeves
 
@@ -1046,18 +484,9 @@
 	for Fb 1.5. Make some minor corrections to some license
 	boiler-plates.
 
-2003-12-15 18:12  epocman
-
-	* firebird2/doc/README.Win32LibraryInstallation.txt (1.1.2.3):
-
-	Updated documentation.
-
 2003-12-15 17:23  epocman
 
-	* firebird2/builds/win32/: make_all.bat (1.4.2.10),
-	msvc6/Firebird2.dsw (1.19.2.5), msvc6/instclient.dsp (1.1.2.1),
-	msvc6/instgds.dsp (1.1.2.2), msvc7/instclient.vcproj (1.1.2.1),
-	msvc7/instgds.vcproj (1.1.2.2):
+	* firebird2/builds/win32/make_all.bat (1.4.2.10):
 
 	Win32 - new instclient.exe tool (replaces instgds.exe).
 	Documentation to follow shortly from me and/or Paul R.
@@ -1066,8 +495,7 @@
 
 	* firebird2/: configure.in (1.141.2.19),
 	builds/posix/Makefile.in.client.util (1.9.2.3),
-	builds/posix/Makefile.in.firebird (1.37.2.12),
-	doc/README.user.troubleshooting (1.1.2.2):
+	builds/posix/Makefile.in.firebird (1.37.2.12):
 
 	Update makefile for gstat add -lfbstatic to allow build to find
 	db_alias.o
@@ -1090,13 +518,6 @@
 
 	also add a fb_config utility (undocumented currently)
 
-2003-12-14 04:59  skywalker
-
-	* firebird2/doc/README.user.troubleshooting (1.1.2.1):
-
-	Update docs to specify that need to belong to firebird group to
-	access databases on classic.
-
 2003-12-14 04:58  skywalker
 
 	* firebird2/builds/posix/Makefile.in.firebird (1.37.2.11):
@@ -1109,14 +530,6 @@
 
 	Change location of some of the generated files, so they won't be
 	deleted as part of make clean
-
-2003-12-13 13:16  dimitr
-
-	* firebird2/builds/win32/msvc6/: Firebird2.dsw (1.19.2.4),
-	common.dsp (1.21.2.1), common_classic.dsp (1.15.2.1), engine.dsp
-	(1.32.2.1), engine_classic.dsp (1.28.2.1), fbclient.dsp (1.33.2.2):
-
-	1) Move db_alias.cpp to common.lib 2) Add common.lib to gstat.exe
 
 2003-12-02 22:57  bellardo
 
@@ -1132,23 +545,9 @@
 	Distribution package only needs to include fbclient.dll along with
 	instgds.exe tool.
 
-2003-11-30 21:00  epocman
-
-	* firebird2/doc/README.Win32LibraryInstallation.txt (1.1.2.2):
-
-	Win32 - New tool 'instgds.exe'. This installs a copy of
-	fbclient.dll as gds32.dll in the windows system directory, but take
-	care of updating the file version info, so that gds32.dll appears
-	to be of version 6.3 instead of 1.5, for compatibility reasons with
-	some old legacy applications. There is no more 'stub' gds32.dll.
-	The gds32.dll is a full clone of fbclient.dll (only client library
-	to be build).
-
 2003-11-30 20:53  epocman
 
-	* firebird2/builds/win32/: make_all.bat (1.4.2.8),
-	msvc6/Firebird2.dsw (1.19.2.3), msvc6/instgds.dsp (1.1.2.1),
-	msvc7/instgds.vcproj (1.1.2.1):
+	* firebird2/builds/win32/make_all.bat (1.4.2.8):
 
 	Win32 - New tool 'instgds.exe'. This installs a copy of
 	fbclient.dll as gds32.dll in the windows system directory, but take
@@ -1401,32 +800,6 @@
 
 	Polished up the examples build.
 
-2003-11-09 12:59  dimitr
-
-	* firebird2/doc/WhatsNew (1.36.2.9):
-
-	Added RC7 changes.
-
-2003-11-09 11:40  dimitr
-
-	* firebird2/doc/README.user.embedded (1.1.2.1):
-
-	Corrections.
-
-2003-11-06 17:51  dimitr
-
-	* firebird2/doc/README.build.msvc.html (1.6.2.1):
-
-	Minor corrections by Paul Beach.
-
-2003-11-06 14:05  paul_reeves
-
-	* firebird2/doc/README.Win32LibraryInstallation.txt (1.1.2.1):
-
-	More tweaks to the Win32 installer. Documentation added about
-	library installation policy. Installation notes for the binary
-	installer updated.
-
 2003-11-06 10:28  stryqx
 
 	* firebird2/configure.in (1.141.2.11):
@@ -1435,24 +808,11 @@
 
 2003-11-04 13:18  paul_reeves
 
-	* firebird2/: builds/win32/make_all.bat (1.4.2.6),
-	doc/Firebird_conf.txt (1.2.2.1), doc/README.user (1.1.2.1),
-	doc/WhatsNew (1.36.2.8):
+	* firebird2/builds/win32/make_all.bat (1.4.2.6):
 
 	Extensive reworking of install script for Win32. Main new feature
 	is better analysis of existing previous installs. This is necessary
 	to support new client library installation requirements.
-
-2003-10-30 18:48  epocman
-
-	* firebird2/builds/win32/msvc6/gds32.dsp (1.18.2.1):
-
-	Win32 stub GDS32.DLL now preferably attempts to load FBCLIENT.DLL
-	from its installation location (rootdir/bin) instead of system
-	directories. Related to the finishing touches of the Win32
-	installation scheme looking forward multi-instances support after
-	V1.5.  Please build maintainers, add advapi32.lib to msvc7/mingw
-	builds of gds32.dll. Thanks.
 
 2003-10-28 19:21  skidder
 
@@ -1479,13 +839,6 @@
 
 	Make B1_5_Release compile on Linux
 
-2003-10-26 12:12  hippoman
-
-	* firebird2/builds/win32/msvc7/: Firebird2.sln (1.9.2.3),
-	fb2control.vcproj (1.1.2.1):
-
-	* added Control Panel Applet to msvc7 build
-
 2003-10-26 12:11  hippoman
 
 	* firebird2/builds/win32/make_all.bat (1.4.2.5):
@@ -1511,13 +864,6 @@
 	cpl applet now uses version.lib to detect installed default
 	instance.
 
-2003-10-16 07:05  paul_reeves
-
-	* firebird2/builds/win32/msvc6/fb2control.dsp (1.1.2.2):
-
-	Concatenate ibase.h for the binary installer. Tweak the InnoSetup
-	install script a little more.
-
 2003-10-15 16:47  alexpeshkoff
 
 	* firebird2/builds/posix/: Makefile.in.extlib (1.10.2.4),
@@ -1530,24 +876,6 @@
 	* firebird2/configure.in (1.141.2.8):
 
 	changes required for SS install scripts
-
-2003-10-12 15:17  epocman
-
-	* firebird2/doc/install_win32.txt (1.2.2.4):
-
-	[no log message]
-
-2003-10-12 14:02  epocman
-
-	* firebird2/doc/install_win32.txt (1.2.2.3):
-
-	[no log message]
-
-2003-10-12 13:54  epocman
-
-	* firebird2/doc/README.instsvc (1.1.2.2):
-
-	[no log message]
 
 2003-10-11 10:12  paul_reeves
 
@@ -1585,52 +913,20 @@
 
 	Next step to correct SS install
 
-2003-10-08 10:49  dimitr
-
-	* firebird2/doc/sql.extensions/README.context_variables (1.2.2.2):
-
-	Added extra note.
-
 2003-10-07 08:02  stryqx
 
 	* firebird2/builds/posix/prefix.freebsd (1.6.2.1):
 
 	Make builds work on both FreeBSD-stable and FreeBSD-current.
 
-2003-10-06 15:20  alexpeshkoff
-
-	* firebird2/doc/sql.extensions/README.execute_statement (1.2.2.2):
-
-	Added security note
-
-2003-09-30 17:15  epocman
-
-	* firebird2/doc/README.instsvc (1.1.2.1):
-
-	Updated documentation for the new instreg/instsvc Win32 setup
-	tools.
-
-2003-09-29 13:37  paul_reeves
-
-	* firebird2/builds/win32/msvc6/fb2control.dsp (1.1.2.1):
-
-	[no log message]
-
 2003-09-29 11:54  paul_reeves
 
 	* firebird2/builds/win32/: make_all.bat (1.4.2.2), make_boot.bat
-	(1.5.2.1), prepare.bat (1.19.2.3), msvc6/Firebird2.dsw (1.19.2.2),
-	msvc6/fbguard.dsp (1.17.2.1), msvc6/instreg.dsp (1.12.2.1):
+	(1.5.2.1), prepare.bat (1.19.2.3):
 
 	Add Firebird Control Panel applet. Minor improvements to Win32
 	build process. Addition of command-line switch for Guardian to
 	start Classic server as an application. Updated InnoSetup script.
-
-2003-09-28 22:51  skidder
-
-	* firebird2/builds/win32/msvc7/Firebird2.sln (1.9.2.2):
-
-	Update MSVC7 makefiles
 
 2003-09-23 21:07  skidder
 
@@ -1638,24 +934,6 @@
 	builds/posix/Makefile.in.firebird (1.37.2.2):
 
 	Make Linux CS install prefix-aware
-
-2003-09-11 10:01  epocman
-
-	* firebird2/doc/install_win32.txt (1.2.2.2):
-
-	Minor Win32 installation notes update
-
-2003-09-10 19:29  dimitr
-
-	* firebird2/doc/WhatsNew (1.36.2.7):
-
-	no message
-
-2003-09-10 19:20  dimitr
-
-	* firebird2/doc/WhatsNew (1.36.2.6):
-
-	Added recent RC6 changes
 
 2003-09-08 16:48  alexpeshkoff
 
@@ -1690,89 +968,12 @@
 
 	fix posix SS client library name
 
-2003-09-01 15:55  skidder
-
-	* firebird2/builds/win32/msvc7/fbclient_static.vcproj (1.1.2.2):
-
-	Adjust MSVC7 makefiles
-
-2003-08-31 09:41  dimitr
-
-	* firebird2/doc/install_win32.txt (1.2.2.1):
-
-	Small corrections.
-
-2003-08-23 00:52  arnobrinkman
-
-	* firebird2/builds/win32/msvc6/: Firebird2.dsw (1.19.2.1),
-	fbclient.dsp (1.33.2.1), fbclient_static.dsp (1.4.2.1):
-
-	Fix MSVC6 build
-
-2003-08-22 00:32  skidder
-
-	* firebird2/doc/WhatsNew (1.36.2.5):
-
-	Fix kernel memory leak
-
-2003-08-20 01:08  skidder
-
-	* firebird2/doc/WhatsNew (1.36.2.4):
-
-	Get ready for RC6
-
 2003-08-19 23:20  skidder
 
 	* firebird2/configure.in (1.141.2.3):
 
 	Apply writebuildnum.sh at configure time to simplify building rpm
 	packages in release branch
-
-2003-08-18 00:36  skidder
-
-	* firebird2/doc/WhatsNew (1.36.2.3):
-
-	Add RC6 changes
-
-2003-08-17 23:38  skidder
-
-	* firebird2/builds/win32/msvc7/: Firebird2.sln (1.9.2.1),
-	fbclient.vcproj (1.17.2.2):
-
-	Adjust MSVC7 makefiles
-
-2003-08-13 13:13  alexpeshkoff
-
-	* firebird2/builds/win32/msvc6/gfix.dsp (1.17.2.1):
-
-	Fixed MSVC6 gfix build
-
-2003-08-12 00:31  skidder
-
-	* firebird2/builds/win32/msvc7/: alice.vcproj (1.8.2.1),
-	alice_classic.vcproj (1.8.2.1), build_msg.vcproj (1.1.2.1),
-	burp.vcproj (1.11.2.1), burp_classic.vcproj (1.11.2.1),
-	codes.vcproj (1.1.2.1), common.vcproj (1.9.2.1),
-	common_classic.vcproj (1.7.2.1), dsql_server.vcproj (1.10.2.1),
-	dsql_server_classic.vcproj (1.10.2.1), engine.vcproj (1.21.2.1),
-	engine_classic.vcproj (1.20.2.1), engine_embed.vcproj (1.8.2.1),
-	fb_inet_server.vcproj (1.9.2.1), fb_lock_print.vcproj (1.13.2.1),
-	fbclient.vcproj (1.17.2.1), fbclient_static.vcproj (1.1.2.1),
-	fbembed.vcproj (1.14.2.1), fbguard.vcproj (1.11.2.1),
-	fbserver.vcproj (1.10.2.1), fbudf.vcproj (1.6.2.1), gbak.vcproj
-	(1.11.2.1), gdef.vcproj (1.11.2.1), gds32.vcproj (1.10.2.1),
-	gfix.vcproj (1.10.2.1), gpre.vcproj (1.13.2.1), gpre_boot.vcproj
-	(1.12.2.1), gsec.vcproj (1.10.2.1), gsplit.vcproj (1.5.2.1),
-	gstat.vcproj (1.11.2.1), ib_udf.vcproj (1.10.2.1), ib_util.vcproj
-	(1.10.2.1), instreg.vcproj (1.9.2.1), instsvc.vcproj (1.9.2.1),
-	intl.vcproj (1.10.2.1), intlcpp.vcproj (1.4.2.1), ipserver.vcproj
-	(1.9.2.1), isql.vcproj (1.11.2.1), lock.vcproj (1.8.2.1),
-	lock_classic.vcproj (1.8.2.1), qli.vcproj (1.10.2.1), remote.vcproj
-	(1.11.2.1), remote_classic.vcproj (1.11.2.1), utilities.vcproj
-	(1.10.2.1), utilities_classic.vcproj (1.9.2.1), wal.vcproj
-	(1.8.2.1), wal_classic.vcproj (1.8.2.1):
-
-	Adjust MSVC7 makefiles
 
 2003-08-08 11:13  paulbeach
 
@@ -1789,13 +990,6 @@
 	spaces in the path name. Echo %FIREBIRD% in setenvvar.bat. Copy
 	firebird.conf to output so the server will actually run.
 
-2003-08-06 19:15  brodsom
-
-	* firebird2/builds/win32/msvc6/build_msg.dsp (1.3.2.1):
-
-	This file should be in the branch but due to some CVS mistery it is
-	not.
-
 2003-08-06 18:21  brodsom
 
 	* firebird2/builds/win32/prepare.bat (1.19.2.1):
@@ -1809,79 +1003,12 @@
 
 	Backport fbudf/fb_udf fix to B1_5_Release
 
-2003-08-04 23:54  skidder
-
-	* firebird2/doc/sql.extensions/: README.aggregate_tracking
-	(1.1.2.1), README.context_variables (1.2.2.1), README.data_types
-	(1.2.2.1), README.exception_handling (1.1.2.1),
-	README.execute_statement (1.2.2.1), README.explicit_locks
-	(1.4.2.1), README.order_by_expressions_nulls (1.2.2.1),
-	README.savepoints (1.1.2.1), README.universal_triggers (1.1.2.1):
-
-	Move docs to B1_5_Release
-
 2003-08-04 23:21  skidder
 
 	* firebird2/builds/posix/prefix.linux (1.18.2.1):
 
 	Return Linux port to buildable state after fixup of Darwin port by
 	John Bellardo
-
-2003-08-04 10:13  dimitr
-
-	* firebird2/doc/WhatsNew (1.36.2.2):
-
-	no message
-
-2003-08-04 10:08  dimitr
-
-	* firebird2/doc/WhatsNew (1.36.2.1):
-
-	Added RC5 changes
-
-2003-07-31 13:54  skidder
-
-	* firebird2/doc/sql.extensions/README.explicit_locks (1.4):
-
-	Fix typo
-
-2003-07-29 13:33  skidder
-
-	* firebird2/doc/sql.extensions/README.savepoints (1.1):
-
-	Added docs for savepoints
-
-2003-07-29 02:55  arnobrinkman
-
-	* firebird2/doc/sql.extensions/README.aggregate_tracking (1.1):
-
-	Please give some comments
-
-2003-07-28 11:29  skidder
-
-	* firebird2/doc/sql.extensions/README.explicit_locks (1.3):
-
-	Fix a couple typos
-
-2003-07-28 11:21  skidder
-
-	* firebird2/doc/sql.extensions/: README.explicit_locks (1.2),
-	README.order_by_expressions_nulls (1.2):
-
-	Correct docs a little
-
-2003-07-27 20:00  skidder
-
-	* firebird2/doc/sql.extensions/README.order_by_expressions_nulls
-	(1.1):
-
-	Some more docs
-
-2003-07-27 17:44  skidder
-
-	* firebird2/doc/sql.extensions/README.explicit_locks (1.1):
-
-	Add docs for explicit locking
 
 2003-07-19 08:20  bellardo
 
@@ -1938,33 +1065,6 @@
 
 	Fix debug build compile flags
 
-2003-07-15 12:32  dimitr
-
-	* firebird2/doc/sql.extensions/: README.context_variables (1.2),
-	README.data_types (1.2):
-
-	no message
-
-2003-07-15 11:09  dimitr
-
-	* firebird2/doc/sql.extensions/: README.context_variables (1.1),
-	README.data_types (1.1), README.exception_handling (1.1),
-	README.universal_triggers (1.1):
-
-	Added some documentation for RelNotes. More will follow shortly.
-
-2003-07-08 13:32  skidder
-
-	* firebird2/doc/install_win32.txt (1.2):
-
-	Correct docs a little
-
-2003-07-08 13:19  skidder
-
-	* firebird2/doc/WhatsNew (1.36):
-
-	[no log message]
-
 2003-07-08 12:56  alexpeshkoff
 
 	* firebird2/builds/win32/preprocess.bat (1.16):
@@ -2000,29 +1100,11 @@
 	-Split posix build output between 'gen' and 'temp'(compiler .o .d)
 	- Remove some redundant variables
 
-2003-07-07 13:42  brodsom
-
-	* firebird2/doc/README.build.msvc.html (1.6):
-
-	Correction
-
 2003-07-07 13:34  brodsom
 
 	* firebird2/builds/win32/clean_all.bat (1.9):
 
 	Installer update
-
-2003-07-07 13:29  brodsom
-
-	* firebird2/doc/README.build.msvc.html (1.5):
-
-	Installer update
-
-2003-07-06 17:13  dimitr
-
-	* firebird2/doc/WhatsNew (1.35):
-
-	Added RC4 changed.
 
 2003-07-06 10:38  dimitr
 
@@ -2036,15 +1118,6 @@
 	* firebird2/builds/posix/Makefile.in.codes (1.6):
 
 	Comment correction
-
-2003-07-06 03:18  hippoman
-
-	* firebird2/builds/win32/msvc7/: Firebird2Boot.sln (1.1),
-	build_msg.vcproj (1.1), codes.vcproj (1.1), common_static.vcproj
-	(1.1), fbclient_static.vcproj (1.1), gpre_static.vcproj (1.1),
-	v5_examples.vcproj (1.1):
-
-	Syncing MSVC7 build files
 
 2003-07-06 03:16  hippoman
 
@@ -2072,12 +1145,6 @@
 
 	Move old_prefixes to builds directory
 
-2003-07-05 16:48  brodsom
-
-	* firebird2/doc/README.build.msvc.html (1.4):
-
-	Update
-
 2003-07-05 16:45  brodsom
 
 	* firebird2/builds/win32/: preprocess.bat (1.15), clean_all.bat
@@ -2100,41 +1167,12 @@
 
 	Use temporary compiler dir 'temp' below root
 
-2003-07-05 05:17  brodsom
-
-	* firebird2/builds/win32/msvc6/: alice.dsp (1.15),
-	alice_classic.dsp (1.12), build_msg.dsp (1.3), burp.dsp (1.17),
-	burp_classic.dsp (1.15), codes.dsp (1.3), common.dsp (1.21),
-	common_classic.dsp (1.15), common_static.dsp (1.2), dsql_server.dsp
-	(1.20), dsql_server_classic.dsp (1.16), engine.dsp (1.32),
-	engine_classic.dsp (1.28), engine_embed.dsp (1.9),
-	fb_inet_server.dsp (1.17), fb_lock_print.dsp (1.17), fbclient.dsp
-	(1.33), fbclient_static.dsp (1.4), fbembed.dsp (1.25), fbguard.dsp
-	(1.17), fbserver.dsp (1.28), fbudf.dsp (1.10), gbak.dsp (1.19),
-	gdef.dsp (1.14), gds32.dsp (1.18), gfix.dsp (1.17), gpre.dsp
-	(1.18), gpre_boot.dsp (1.17), gpre_static.dsp (1.3), gsec.dsp
-	(1.13), gsplit.dsp (1.6), gstat.dsp (1.14), ib_udf.dsp (1.15),
-	ib_util.dsp (1.15), instreg.dsp (1.12), instsvc.dsp (1.13),
-	intl.dsp (1.20), intlcpp.dsp (1.5), ipserver.dsp (1.13), isql.dsp
-	(1.19), lock.dsp (1.12), lock_classic.dsp (1.10), qli.dsp (1.13),
-	remote.dsp (1.17), remote_classic.dsp (1.14), utilities.dsp (1.13),
-	utilities_classic.dsp (1.11), v5_examples.dsp (1.3), wal.dsp
-	(1.12), wal_classic.dsp (1.10):
-
-	Use temporary compiler dir 'temp' below root
-
 2003-07-05 04:54  brodsom
 
 	* firebird2/builds/win32/: clean_all.bat (1.5), make_boot.bat
 	(1.2):
 
 	Move firebird.msg to 'gen' directory
-
-2003-07-05 04:35  brodsom
-
-	* firebird2/doc/README.build.msvc.html (1.3):
-
-	Update
 
 2003-07-05 04:23  brodsom
 
@@ -2167,12 +1205,6 @@
 	directory to a temporary below root -Use absolute paths (easier to
 	move)
 
-2003-07-04 21:21  brodsom
-
-	* firebird2/doc/README.build.msvc.html (1.2):
-
-	Update, not the final one.
-
 2003-07-04 15:08  brodsom
 
 	* firebird2/builds/win32/prepare.bat (1.17):
@@ -2185,26 +1217,6 @@
 	* firebird2/builds/win32/prepare.bat (1.16):
 
 	Minor changes to the preparation script.
-
-2003-07-04 14:42  brodsom
-
-	* firebird2/doc/README.build.mingw.html (1.1):
-
-	Change the file name to a more understandable one.
-
-2003-07-04 14:40  brodsom
-
-	* firebird2/doc/README.build.msvc.html (1.1):
-
-	First and temporary version of msvc build readme. (The good one in
-	hours)
-
-2003-07-04 12:15  dimitr
-
-	* firebird2/builds/win32/msvc6/: engine.dsp (1.31),
-	engine_classic.dsp (1.27), engine_embed.dsp (1.8):
-
-	Fixed little optimization issue with VC6 (SP < 5)
 
 2003-07-04 05:31  brodsom
 
@@ -2251,32 +1263,7 @@
 2003-07-03 14:36  brodsom
 
 	* firebird2/builds/win32/: prepare.bat (1.15), preprocess.bat
-	(1.13), msvc6/alice.dsp (1.14), msvc6/alice_classic.dsp (1.11),
-	msvc6/build_msg.dsp (1.2), msvc6/burp.dsp (1.16),
-	msvc6/burp_classic.dsp (1.14), msvc6/codes.dsp (1.2),
-	msvc6/dsql_server.dsp (1.19), msvc6/dsql_server_classic.dsp (1.15),
-	msvc6/engine.dsp (1.30), msvc6/engine_classic.dsp (1.26),
-	msvc6/engine_embed.dsp (1.7), msvc6/fb_inet_server.dsp (1.16),
-	msvc6/fbclient.dsp (1.32), msvc6/fbclient_static.dsp (1.3),
-	msvc6/fbembed.dsp (1.24), msvc6/fbserver.dsp (1.27), msvc6/gbak.dsp
-	(1.18), msvc6/gdef.dsp (1.13), msvc6/gfix.dsp (1.16),
-	msvc6/gpre.dsp (1.17), msvc6/gpre_static.dsp (1.2), msvc6/gsec.dsp
-	(1.12), msvc6/gstat.dsp (1.13), msvc6/isql.dsp (1.18),
-	msvc6/qli.dsp (1.12), msvc6/utilities.dsp (1.12),
-	msvc6/utilities_classic.dsp (1.10), msvc6/v5_examples.dsp (1.2),
-	msvc7/alice.vcproj (1.8), msvc7/alice_classic.vcproj (1.8),
-	msvc7/burp.vcproj (1.11), msvc7/burp_classic.vcproj (1.11),
-	msvc7/dsql_server.vcproj (1.10), msvc7/dsql_server_classic.vcproj
-	(1.10), msvc7/engine.vcproj (1.21), msvc7/engine_classic.vcproj
-	(1.20), msvc7/engine_embed.vcproj (1.8),
-	msvc7/fb_inet_server.vcproj (1.9), msvc7/fbclient.vcproj (1.17),
-	msvc7/fbembed.vcproj (1.14), msvc7/fbserver.vcproj (1.10),
-	msvc7/gbak.vcproj (1.11), msvc7/gdef.vcproj (1.11),
-	msvc7/gfix.vcproj (1.10), msvc7/gpre.vcproj (1.13),
-	msvc7/gsec.vcproj (1.10), msvc7/gstat.vcproj (1.11),
-	msvc7/isql.vcproj (1.11), msvc7/qli.vcproj (1.10),
-	msvc7/utilities.vcproj (1.10), msvc7/utilities_classic.vcproj
-	(1.9):
+	(1.13):
 
 	Move generated source from 'generated' to 'gen'. So we don't use a
 	CVS and obsolete directory for build output and it will be easier
@@ -2317,73 +1304,17 @@
 
 	Avoid using sed to edit epp files (excluding security.epp).
 
-2003-07-02 13:40  brodsom
-
-	* firebird2/builds/win32/msvc6/: Firebird2Boot.dsw (1.1),
-	Firebird2.dsw (1.19):
-
-	New dsp's to replace nmake's (split boot workspace)
-
 2003-07-02 00:24  brodsom
 
 	* firebird2/builds/win32/preprocess.bat (1.8):
 
 	New dsp's to replace nmake's (gpre with BOOT_BUILD = gpre_static)
 
-2003-07-01 20:49  brodsom
-
-	* firebird2/builds/win32/msvc6/: Firebird2.dsw (1.18),
-	fbclient_static.dsp (1.2):
-
-	New dsp's to replace nmake's
-
-2003-07-01 20:45  brodsom
-
-	* firebird2/builds/win32/msvc6/: build_msg.dsp (1.1), codes.dsp
-	(1.1):
-
-	New dsp's to replace nmake's
-
-2003-07-01 19:09  brodsom
-
-	* firebird2/builds/win32/msvc6/: common_static.dsp (1.1),
-	fbclient_static.dsp (1.1), gpre_static.dsp (1.1), Firebird2.dsw
-	(1.17):
-
-	New dsp's to replace nmake's
-
 2003-06-30 20:12  brodsom
 
 	* firebird2/builds/win32/prepare.bat (1.12):
 
 	Remove unneeded sed commands in build
-
-2003-06-30 20:10  brodsom
-
-	* firebird2/builds/win32/msvc6/gbak.dsp (1.17):
-
-	Changes only inside #ifdef DEBUG.  Needed to be able to build with
-	-DDEBUG on gcc.(there are also some format corrections)
-
-2003-06-27 17:59  brodsom
-
-	* firebird2/builds/win32/msvc6/: Firebird2.dsw (1.16),
-	v5_examples.dsp (1.1):
-
-	Add batch and dsp to rebuild empbuild.c. The script is not included
-	in build process.
-
-2003-06-22 14:37  alexpeshkoff
-
-	* firebird2/doc/: README.NTSecurity (1.1), README.instsvc (1.1):
-
-	some more readme's
-
-2003-06-22 13:52  alexpeshkoff
-
-	* firebird2/doc/sql.extensions/README.execute_statement (1.2):
-
-	fixed word repetition
 
 2003-06-20 19:55  kkuznetsov
 
@@ -2392,12 +1323,6 @@
 
 	Trying to make FB2 compiler independant add prefix for SUN C
 	compiler and fix fist compilation error
-
-2003-06-18 15:29  alexpeshkoff
-
-	* firebird2/doc/sql.extensions/README.execute_statement (1.1):
-
-	Initial revision of EXECUTE STATEMENT description
 
 2003-06-15 08:03  stryqx
 
@@ -2418,45 +1343,12 @@
 
 	Create a required directory for super
 
-2003-06-08 22:59  hippoman
-
-	* firebird2/builds/win32/msvc7/: fb_inet_server.vcproj (1.8),
-	fb_lock_print.vcproj (1.13), fbclient.vcproj (1.16), fbembed.vcproj
-	(1.13), fbguard.vcproj (1.11), fbserver.vcproj (1.9), gbak.vcproj
-	(1.10), gdef.vcproj (1.10), gds32.vcproj (1.10), gfix.vcproj (1.9),
-	gpre.vcproj (1.12), gpre_boot.vcproj (1.12), gsec.vcproj (1.9),
-	gsplit.vcproj (1.5), gstat.vcproj (1.10), ib_udf.vcproj (1.10),
-	ib_util.vcproj (1.10), instreg.vcproj (1.9), instsvc.vcproj (1.9),
-	intl.vcproj (1.10), intlcpp.vcproj (1.4), isql.vcproj (1.10),
-	qli.vcproj (1.9):
-
-	*Synced msvc7 build *changed dir references related ro rc files to
-	relative paths.
-
 2003-06-06 11:31  alexpeshkoff
 
 	* firebird2/builds/posix/: Makefile.in.fbserver (1.11),
 	prefix.linux (1.18):
 
 	fixing linux SS - trivial mistypes
-
-2003-06-05 21:38  dimitr
-
-	* firebird2/builds/win32/msvc6/fbembed.dsp (1.23):
-
-	Add remote client to the embedded server again.
-
-2003-06-05 15:12  dimitr
-
-	* firebird2/builds/win32/msvc6/engine.dsp (1.29):
-
-	Rolled back my previous optimization change.
-
-2003-06-04 15:04  dimitr
-
-	* firebird2/builds/win32/msvc6/engine.dsp (1.28):
-
-	Fixed another issue with invalid VC6 optimization.
 
 2003-06-04 10:29  paul_reeves
 
@@ -2469,24 +1361,6 @@
 	* firebird2/builds/win32/prepare.bat (1.10):
 
 	Automate the Win32 build process a little bit more.
-
-2003-06-01 21:17  skidder
-
-	* firebird2/doc/WhatsNew (1.34):
-
-	fix up WhatsNew
-
-2003-06-01 21:14  skidder
-
-	* firebird2/doc/WhatsNew (1.33):
-
-	fix up WhatsNew
-
-2003-06-01 20:42  dimitr
-
-	* firebird2/doc/WhatsNew (1.32):
-
-	Added RC3 notes.
 
 2003-05-28 05:33  paul_reeves
 
@@ -2537,56 +1411,11 @@
 	Restored compatibility ordinals. Unfortunately, too many software
 	depend on them.
 
-2003-05-10 17:13  dimitr
-
-	* firebird2/doc/WhatsNew (1.31):
-
-	Update.
-
-2003-05-09 17:10  hippoman
-
-	* firebird2/builds/win32/msvc7/: engine.vcproj (1.20),
-	engine_classic.vcproj (1.19), Firebird2.sln (1.9), common.vcproj
-	(1.9), common_classic.vcproj (1.7), engine_embed.vcproj (1.7),
-	fbclient.vcproj (1.15), fbembed.vcproj (1.12):
-
-	* Synced the msvc7 build files
-
-2003-05-08 19:40  skidder
-
-	* firebird2/doc/WhatsNew (1.30):
-
-	better description for some of RC2 changes
-
-2003-05-08 09:15  dimitr
-
-	* firebird2/doc/WhatsNew (1.29):
-
-	Added RC2 changes.
-
-2003-05-05 12:36  dimitr
-
-	* firebird2/builds/win32/msvc6/fbembed.dsp (1.22):
-
-	Updated project files
-
-2003-05-05 12:32  dimitr
-
-	* firebird2/doc/README.user.embedded (1.1):
-
-	Added notes for the embedded server
-
 2003-05-05 09:38  alexpeshkoff
 
 	* firebird2/builds/posix/make.shared.variables (1.25):
 
 	Dropped second entry for rpb_chain
-
-2003-05-01 15:28  dimitr
-
-	* firebird2/builds/win32/msvc6/fbclient.dsp (1.31):
-
-	Bugfix
 
 2003-04-29 16:23  alexpeshkoff
 
@@ -2600,61 +1429,9 @@
 
 	Update linux makefiles to reflect rpb_chain changes
 
-2003-04-28 20:24  skidder
+2003-04-19 18:46  alexpeshkoff
 
-	* firebird2/builds/win32/msvc7/: engine.vcproj (1.19),
-	engine_classic.vcproj (1.18), engine_embed.vcproj (1.6):
-
-	Update MSVC7 makefiles to reflect rpb_chain changes
-
-2003-04-25 16:51  alexpeshkoff
-
-	* firebird2/builds/win32/msvc6/: common.dsp (1.20),
-	common_classic.dsp (1.14), engine.dsp (1.27), engine_classic.dsp
-	(1.25), engine_embed.dsp (1.6):
-
-	Fixed bug with wrong rpb contents after pre-triggers execution
-
-2003-04-20 18:26  skidder
-
-	* firebird2/doc/fb2-todo.txt (1.1):
-
-	Added TODO for Firebird 2
-
-2003-04-20 05:30  hippoman
-
-	* firebird2/builds/win32/msvc7/: Firebird2.sln (1.8), alice.vcproj
-	(1.7), alice_classic.vcproj (1.7), burp.vcproj (1.10),
-	burp_classic.vcproj (1.10), common.vcproj (1.8),
-	common_classic.vcproj (1.6), dsql_server.vcproj (1.9),
-	dsql_server_classic.vcproj (1.9), engine.vcproj (1.18),
-	engine_classic.vcproj (1.17), engine_embed.vcproj (1.5),
-	fb_inet_server.vcproj (1.7), fb_lock_print.vcproj (1.12),
-	fbclient.vcproj (1.14), fbembed.vcproj (1.11), fbguard.vcproj
-	(1.10), fbserver.vcproj (1.8), fbudf.vcproj (1.6), gbak.vcproj
-	(1.9), gdef.vcproj (1.9), gds32.vcproj (1.9), gfix.vcproj (1.8),
-	gpre.vcproj (1.11), gpre_boot.vcproj (1.11), gsec.vcproj (1.8),
-	gsplit.vcproj (1.4), gstat.vcproj (1.9), ib_udf.vcproj (1.9),
-	ib_util.vcproj (1.9), instreg.vcproj (1.8), instsvc.vcproj (1.8),
-	intl.vcproj (1.9), intlcpp.vcproj (1.3), ipserver.vcproj (1.9),
-	isql.vcproj (1.9), lock.vcproj (1.8), lock_classic.vcproj (1.8),
-	qli.vcproj (1.8), remote.vcproj (1.11), remote_classic.vcproj
-	(1.11), utilities.vcproj (1.9), utilities_classic.vcproj (1.8),
-	wal.vcproj (1.8), wal_classic.vcproj (1.8):
-
-	* Sync the msvc7 build
-
-2003-04-19 19:01  alexpeshkoff
-
-	* firebird2/builds/win32/msvc6/common_classic.dsp (1.13):
-
-	Exit on missing / wrong firebird.conf with error report in system
-	log
-
-2003-04-19 18:45  alexpeshkoff
-
-	* firebird2/builds/: win32/msvc6/common.dsp (1.19),
-	posix/make.shared.variables (1.22):
+	* firebird2/builds/posix/make.shared.variables (1.22):
 
 	Exit on missing / wrong firebird.conf with error report in system
 	log
@@ -2678,29 +1455,11 @@
 	Fix the permissions on the configure script, just in case it is
 	needed (like on Darwin)
 
-2003-04-15 11:19  dimitr
-
-	* firebird2/builds/win32/msvc6/instsvc.dsp (1.12):
-
-	Corrected a typo.
-
 2003-04-14 21:21  skidder
 
 	* firebird2/builds/posix/prefix.linux (1.17):
 
 	Be compatible with older machines
-
-2003-04-13 17:18  skidder
-
-	* firebird2/doc/WhatsNew (1.28):
-
-	Add description for my lock manager changes
-
-2003-04-13 16:50  dimitr
-
-	* firebird2/doc/WhatsNew (1.27):
-
-	Added RC1 changes.
 
 2003-04-13 14:14  dimitr
 
@@ -2732,27 +1491,6 @@
 	(1.17), make.shared.targets (1.10):
 
 	Use predefined macros from make.defaults!
-
-2003-04-09 12:08  dimitr
-
-	* firebird2/builds/win32/msvc6/: alice.dsp (1.13),
-	alice_classic.dsp (1.10), burp.dsp (1.15), burp_classic.dsp (1.13),
-	common.dsp (1.18), common_classic.dsp (1.12), dsql_server.dsp
-	(1.18), dsql_server_classic.dsp (1.14), engine.dsp (1.26),
-	engine_classic.dsp (1.24), engine_embed.dsp (1.5),
-	fb_inet_server.dsp (1.15), fb_lock_print.dsp (1.16), fbclient.dsp
-	(1.30), fbembed.dsp (1.21), fbguard.dsp (1.16), fbserver.dsp
-	(1.26), fbudf.dsp (1.9), gbak.dsp (1.16), gdef.dsp (1.12),
-	gds32.dsp (1.17), gfix.dsp (1.15), gpre.dsp (1.16), gpre_boot.dsp
-	(1.16), gsec.dsp (1.11), gsplit.dsp (1.5), gstat.dsp (1.12),
-	ib_udf.dsp (1.14), ib_util.dsp (1.14), instreg.dsp (1.11),
-	instsvc.dsp (1.11), intl.dsp (1.19), intlcpp.dsp (1.4),
-	ipserver.dsp (1.12), isql.dsp (1.17), lock.dsp (1.11),
-	lock_classic.dsp (1.9), qli.dsp (1.11), remote.dsp (1.16),
-	remote_classic.dsp (1.13), utilities.dsp (1.11),
-	utilities_classic.dsp (1.9), wal.dsp (1.11), wal_classic.dsp (1.9):
-
-	Fixed win32 build.
 
 2003-04-08 12:20  aafemt
 
@@ -2817,43 +1555,25 @@
 
 2003-03-27 12:21  aafemt
 
-	* firebird2/: builds/posix/Makefile.in.client.gbak (1.5),
-	builds/posix/Makefile.in.client.gdef (1.5),
-	builds/posix/Makefile.in.client.gfix (1.6),
-	builds/posix/Makefile.in.client.gpre (1.8),
-	builds/posix/Makefile.in.client.isql (1.5),
-	builds/posix/Makefile.in.client.util (1.8),
-	builds/posix/Makefile.in.codes (1.5),
-	builds/posix/Makefile.in.embed.gbak (1.5),
-	builds/posix/Makefile.in.embed.gdef (1.5),
-	builds/posix/Makefile.in.embed.gfix (1.6),
-	builds/posix/Makefile.in.embed.gpre (1.8),
-	builds/posix/Makefile.in.embed.isql (1.5),
-	builds/posix/Makefile.in.embed.lockmgr (1.5),
-	builds/posix/Makefile.in.embed.qli (1.7),
-	builds/posix/Makefile.in.embed.util (1.7),
-	builds/posix/Makefile.in.example5 (1.5),
-	builds/posix/Makefile.in.extern.editline (1.2),
-	builds/posix/Makefile.in.extlib (1.9),
-	builds/posix/Makefile.in.fbserver (1.8),
-	builds/posix/Makefile.in.fbutil (1.6),
-	builds/posix/Makefile.in.firebird (1.33),
-	builds/posix/Makefile.in.gpre (1.7),
-	builds/posix/Makefile.in.inet_server (1.10),
-	builds/posix/Makefile.in.intl (1.11),
-	builds/posix/Makefile.in.libfbclient (1.13),
-	builds/posix/Makefile.in.libfbcommon (1.6),
-	builds/posix/Makefile.in.libfbembed (1.10),
-	builds/posix/Makefile.in.libfbserver (1.5),
-	builds/posix/Makefile.in.libfbstatic (1.5),
-	builds/posix/Makefile.in.msgs (1.8),
-	builds/posix/Makefile.in.refDatabases (1.14),
-	builds/posix/Makefile.in.static.gbak (1.5),
-	builds/posix/Makefile.in.static.gpre (1.10),
-	builds/posix/Makefile.in.static.isql (1.6),
-	builds/posix/Makefile.in.v5_examples (1.7),
-	builds/posix/make.defaults (1.21), builds/posix/make.rules (1.14),
-	builds/posix/prefix.mingw (1.15), doc/README.makefiles (1.3):
+	* firebird2/builds/posix/: Makefile.in.client.gbak (1.5),
+	Makefile.in.client.gdef (1.5), Makefile.in.client.gfix (1.6),
+	Makefile.in.client.gpre (1.8), Makefile.in.client.isql (1.5),
+	Makefile.in.client.util (1.8), Makefile.in.codes (1.5),
+	Makefile.in.embed.gbak (1.5), Makefile.in.embed.gdef (1.5),
+	Makefile.in.embed.gfix (1.6), Makefile.in.embed.gpre (1.8),
+	Makefile.in.embed.isql (1.5), Makefile.in.embed.lockmgr (1.5),
+	Makefile.in.embed.qli (1.7), Makefile.in.embed.util (1.7),
+	Makefile.in.example5 (1.5), Makefile.in.extern.editline (1.2),
+	Makefile.in.extlib (1.9), Makefile.in.fbserver (1.8),
+	Makefile.in.fbutil (1.6), Makefile.in.firebird (1.33),
+	Makefile.in.gpre (1.7), Makefile.in.inet_server (1.10),
+	Makefile.in.intl (1.11), Makefile.in.libfbclient (1.13),
+	Makefile.in.libfbcommon (1.6), Makefile.in.libfbembed (1.10),
+	Makefile.in.libfbserver (1.5), Makefile.in.libfbstatic (1.5),
+	Makefile.in.msgs (1.8), Makefile.in.refDatabases (1.14),
+	Makefile.in.static.gbak (1.5), Makefile.in.static.gpre (1.10),
+	Makefile.in.static.isql (1.6), Makefile.in.v5_examples (1.7),
+	make.defaults (1.21), make.rules (1.14), prefix.mingw (1.15):
 
 	Ironing POSIX build
 
@@ -2879,21 +1599,6 @@
 
 	Another step towards MinGW CS build
 
-2003-03-25 03:22  brodsom
-
-	* firebird2/builds/win32/: msvc6/engine.dsp (1.25),
-	msvc6/engine_classic.dsp (1.23), msvc6/engine_embed.dsp (1.4),
-	msvc7/engine.vcproj (1.17), msvc7/engine_classic.vcproj (1.16),
-	msvc7/engine_embed.vcproj (1.4):
-
-	Remove WINDOWS_ONLY remains
-
-2003-03-21 14:11  brodsom
-
-	* firebird2/builds/win32/msvc6/: gbak.dsp (1.15), gsplit.dsp (1.4):
-
-	Remove wsock32.lib (thanks to Claudio)
-
 2003-03-21 12:53  aafemt
 
 	* firebird2/: configure.in (1.132),
@@ -2911,20 +1616,6 @@
 	builds/posix/make.defaults (1.19):
 
 	Version information is concentrated in src/misc/writeBuildNum.sh
-
-2003-03-19 09:49  dimitr
-
-	* firebird2/builds/win32/msvc6/: intl.dsp (1.18), intlcpp.dsp
-	(1.3):
-
-	Fixed LD2_lookup issue.
-
-2003-03-18 09:58  dimitr
-
-	* firebird2/builds/win32/msvc6/gds32.dsp (1.16):
-
-	Updated project files:	 - moved gds32_debug.def   - removed IB7
-	functions from compatibility gds32
 
 2003-03-18 09:48  dimitr
 
@@ -2953,9 +1644,7 @@
 
 2003-03-15 21:20  alexpeshkoff
 
-	* firebird2/builds/: win32/msvc6/common.dsp (1.17),
-	win32/msvc6/common_classic.dsp (1.11), posix/make.shared.variables
-	(1.21):
+	* firebird2/builds/posix/make.shared.variables (1.21):
 
 	Now external tables are checked against directories list
 
@@ -2966,35 +1655,11 @@
 	Fixup optimization flags to produce fastest possible but still
 	correct binary
 
-2003-03-15 05:21  hippoman
-
-	* firebird2/builds/win32/msvc7/ipserver.vcproj (1.8):
-
-	* define SUPERSERVER.
-
-2003-03-13 18:02  skidder
-
-	* firebird2/doc/WhatsNew (1.26):
-
-	Added notes about Services API
-
 2003-03-13 16:46  alexpeshkoff
 
 	* firebird2/configure.in (1.130):
 
 	Dropped HAVE_*EXIT defines
-
-2003-03-13 12:20  dimitr
-
-	* firebird2/doc/WhatsNew (1.25):
-
-	Added Beta 4 changes.
-
-2003-03-13 11:04  dimitr
-
-	* firebird2/doc/install_win32.txt (1.1):
-
-	Added win32 installation notes.
 
 2003-03-13 07:50  eku
 
@@ -3017,12 +1682,6 @@
 	* firebird2/configure.in (1.128):
 
 	Getting ready for Beta4
-
-2003-03-11 12:55  dimitr
-
-	* firebird2/builds/win32/msvc6/ipserver.dsp (1.11):
-
-	Updated project files.
 
 2003-03-07 08:41  eku
 
@@ -3059,16 +1718,6 @@
 	* firebird2/configure.in (1.125):
 
 	Changes fro MINGW build (forgoten commit) -Add directory
-
-2003-03-06 01:43  brodsom
-
-	* firebird2/builds/win32/: msvc6/engine_classic.dsp (1.22),
-	msvc6/engine_embed.dsp (1.3), msvc6/engine.dsp (1.24),
-	msvc7/engine.vcproj (1.16), msvc7/engine_classic.vcproj (1.15),
-	msvc7/engine_embed.vcproj (1.3):
-
-	Blob_filter is not a epp file since 1999, change the name to .cpp
-	and modify the makefiles
 
 2003-03-06 01:37  brodsom
 
@@ -3198,20 +1847,6 @@
 	library extension -Add some libraries to windows build -Add some
 	some needed directories
 
-2003-03-04 23:00  hippoman
-
-	* firebird2/builds/win32/msvc7/: remote.vcproj (1.10),
-	remote_classic.vcproj (1.10):
-
-	Fixed MSVC7 build, added IPSERVER define
-
-2003-03-03 15:35  dimitr
-
-	* firebird2/builds/win32/msvc6/: remote.dsp (1.15),
-	remote_classic.dsp (1.12):
-
-	Fixed connects via local protocol after Blas' changes.
-
 2003-03-03 07:02  aafemt
 
 	* firebird2/configure.in (1.123):
@@ -3225,69 +1860,6 @@
 	Fixed some really old typos.  Included ExecuteStatement in the
 	LINUX-Build
 
-2003-03-02 14:17  dimitr
-
-	* firebird2/builds/win32/msvc6/engine_embed.dsp (1.2):
-
-	Synchronized MSVC6 builds with EXECUTE STATEMENT changes.
-
-2003-03-02 13:51  alexpeshkoff
-
-	* firebird2/builds/win32/msvc6/: engine.dsp (1.23),
-	engine_classic.dsp (1.21):
-
-	Fixed EXECUTE STATEMENT to support INTO clause Now required changes
-	in msvc6 build
-
-2003-03-02 00:22  hippoman
-
-	* firebird2/builds/win32/msvc7/: engine.vcproj (1.15),
-	engine_classic.vcproj (1.14), engine_embed.vcproj (1.2):
-
-	* Added missing JRD\ExecuteStatment.* files to engine* projects
-
-2003-03-01 23:04  hippoman
-
-	* firebird2/builds/win32/msvc7/: Firebird2.sln (1.7), alice.vcproj
-	(1.6), alice_classic.vcproj (1.6), burp.vcproj (1.9),
-	burp_classic.vcproj (1.9), common.vcproj (1.7),
-	common_classic.vcproj (1.5), dsql_server.vcproj (1.8),
-	dsql_server_classic.vcproj (1.8), engine.vcproj (1.14),
-	engine_classic.vcproj (1.13), engine_embed.vcproj (1.1),
-	fb_inet_server.vcproj (1.6), fb_lock_print.vcproj (1.11),
-	fbclient.vcproj (1.13), fbembed.vcproj (1.10), fbguard.vcproj
-	(1.9), fbserver.vcproj (1.7), fbudf.vcproj (1.5), gbak.vcproj
-	(1.8), gdef.vcproj (1.8), gds32.vcproj (1.8), gfix.vcproj (1.7),
-	gpre.vcproj (1.10), gpre_boot.vcproj (1.10), gsec.vcproj (1.7),
-	gsplit.vcproj (1.3), gstat.vcproj (1.8), ib_udf.vcproj (1.8),
-	ib_util.vcproj (1.8), instreg.vcproj (1.7), instsvc.vcproj (1.7),
-	intl.vcproj (1.8), intlcpp.vcproj (1.2), ipserver.vcproj (1.7),
-	isql.vcproj (1.8), lock.vcproj (1.7), lock_classic.vcproj (1.7),
-	qli.vcproj (1.7), remote.vcproj (1.9), remote_classic.vcproj (1.9),
-	utilities.vcproj (1.8), utilities_classic.vcproj (1.7), wal.vcproj
-	(1.7), wal_classic.vcproj (1.7):
-
-	* updated msvc7 build files.
-
-2003-03-01 17:29  dimitr
-
-	* firebird2/builds/win32/msvc6/: Firebird2.dsw (1.15), fbembed.dsp
-	(1.20), engine_embed.dsp (1.1):
-
-	Some changes for the embedded server.
-
-2003-02-28 21:41  tamlin
-
-	* firebird2/doc/Firebird_conf.txt (1.2):
-
-	no message
-
-2003-02-28 20:20  tamlin
-
-	* firebird2/doc/Firebird_conf.txt (1.1):
-
-	First draft.
-
 2003-02-28 06:22  aafemt
 
 	* firebird2/builds/posix/: Makefile.in.codes (1.3), make.defaults
@@ -3296,115 +1868,11 @@
 
 	blrtable.h is generated and must not be in tree
 
-2003-02-27 17:53  brodsom
-
-	* firebird2/builds/win32/msvc6/gpre.dsp (1.15):
-
-	Add Fortran files and move GPRE_* defines from autoconf header to
-	makefiles.
-
-2003-02-27 17:27  dimitr
-
-	* firebird2/builds/win32/msvc6/: alice.dsp (1.12),
-	alice_classic.dsp (1.9), burp.dsp (1.14), burp_classic.dsp (1.12),
-	common.dsp (1.16), common_classic.dsp (1.10), dsql_server.dsp
-	(1.17), dsql_server_classic.dsp (1.13), engine.dsp (1.22),
-	engine_classic.dsp (1.20), fb_inet_server.dsp (1.14),
-	fb_lock_print.dsp (1.15), fbclient.dsp (1.29), fbembed.dsp (1.19),
-	fbguard.dsp (1.15), fbserver.dsp (1.25), fbudf.dsp (1.8), gbak.dsp
-	(1.14), gdef.dsp (1.11), gds32.dsp (1.15), gfix.dsp (1.14),
-	gpre.dsp (1.14), gpre_boot.dsp (1.15), gsec.dsp (1.10), gsplit.dsp
-	(1.3), gstat.dsp (1.11), ib_udf.dsp (1.13), ib_util.dsp (1.13),
-	instreg.dsp (1.10), instsvc.dsp (1.10), intl.dsp (1.17),
-	intlcpp.dsp (1.2), ipserver.dsp (1.10), isql.dsp (1.16), lock.dsp
-	(1.10), lock_classic.dsp (1.8), qli.dsp (1.10), remote.dsp (1.14),
-	remote_classic.dsp (1.11), utilities.dsp (1.10),
-	utilities_classic.dsp (1.8), wal.dsp (1.10), wal_classic.dsp (1.8):
-
-	Fixed build problem pointed by Arno (caused the server to crash in
-	some cases).
-
-2003-02-27 16:35  dimitr
-
-	* firebird2/builds/win32/msvc6/: engine_classic.dsp (1.19),
-	fbembed.dsp (1.18), fbudf.dsp (1.7):
-
-	Updated project files.
-
-2003-02-26 13:22  dimitr
-
-	* firebird2/doc/WhatsNew (1.24):
-
-	Added recent changes.
-
-2003-02-26 12:28  dimitr
-
-	* firebird2/builds/win32/msvc6/fbembed.dsp (1.17):
-
-	Fixed win32 build.
-
-2003-02-25 14:14  brodsom
-
-	* firebird2/builds/win32/msvc6/intl.dsp (1.16):
-
-	Add needed file (lost when the change was committed)
-
-2003-02-25 14:11  brodsom
-
-	* firebird2/builds/win32/msvc7/: remote_classic.vcproj (1.8),
-	isql.vcproj (1.7), remote.vcproj (1.8), gsplit.vcproj (1.2),
-	fbserver.vcproj (1.6), gbak.vcproj (1.7), gpre_boot.vcproj (1.9),
-	fb_inet_server.vcproj (1.5), fb_lock_print.vcproj (1.10),
-	fbclient.vcproj (1.12), fbembed.vcproj (1.9), fbguard.vcproj (1.8),
-	dsql_server_classic.vcproj (1.7), engine.vcproj (1.13),
-	engine_classic.vcproj (1.12), burp.vcproj (1.8),
-	burp_classic.vcproj (1.8), dsql_server.vcproj (1.7):
-
-	Move WIN32_LEAN_AND_MEAN to autoconfig_msvc.h.
-
-2003-02-25 14:10  brodsom
-
-	* firebird2/builds/win32/msvc6/isql.dsp (1.15):
-
-	Move WIN32_LEAN_AND_MEAN to autoconfig_msvc.h. (and clean
-	dependency)
-
-2003-02-25 14:01  brodsom
-
-	* firebird2/builds/win32/msvc6/: remote_classic.dsp (1.10),
-	gpre_boot.dsp (1.14), gsplit.dsp (1.2), remote.dsp (1.13),
-	fbserver.dsp (1.24), gbak.dsp (1.13), fbembed.dsp (1.16),
-	fbguard.dsp (1.14):
-
-	Move WIN32_LEAN_AND_MEAN to autoconfig_msvc.h.
-
-2003-02-25 13:55  brodsom
-
-	* firebird2/builds/win32/msvc6/: fb_lock_print.dsp (1.14),
-	fbclient.dsp (1.28), fb_inet_server.dsp (1.13), engine_classic.dsp
-	(1.18), engine.dsp (1.21), dsql_server.dsp (1.16),
-	dsql_server_classic.dsp (1.12), burp_classic.dsp (1.11), burp.dsp
-	(1.13):
-
-	Move WIN32_LEAN_AND_MEAN to autoconfig_msvc.h.
-
 2003-02-25 13:51  brodsom
 
 	* firebird2/builds/win32/blrtable.bat (1.2):
 
 	Move WIN32_LEAN_AND_MEAN to autoconfig_msvc.h.
-
-2003-02-25 12:58  dimitr
-
-	* firebird2/doc/WhatsNew (1.23):
-
-	Added Beta 3 changes.
-
-2003-02-25 09:22  dimitr
-
-	* firebird2/builds/win32/msvc6/fbserver.dsp (1.23):
-
-	Cleanup.
 
 2003-02-25 02:12  brodsom
 
@@ -3431,42 +1899,6 @@
 
 	Make intl support work on POSIX again
 
-2003-02-21 01:32  hippoman
-
-	* firebird2/builds/win32/msvc7/: gsplit.vcproj (1.1),
-	intlcpp.vcproj (1.1):
-
-	* new projects
-
-2003-02-21 01:31  hippoman
-
-	* firebird2/builds/win32/msvc7/: Firebird2.sln (1.6), alice.vcproj
-	(1.5), alice_classic.vcproj (1.5), burp.vcproj (1.7),
-	burp_classic.vcproj (1.7), common.vcproj (1.6),
-	common_classic.vcproj (1.4), dsql_server.vcproj (1.6),
-	dsql_server_classic.vcproj (1.6), engine.vcproj (1.12),
-	engine_classic.vcproj (1.11), fb_inet_server.vcproj (1.4),
-	fb_lock_print.vcproj (1.9), fbclient.vcproj (1.11), fbembed.vcproj
-	(1.8), fbguard.vcproj (1.7), fbserver.vcproj (1.5), fbudf.vcproj
-	(1.4), gbak.vcproj (1.6), gdef.vcproj (1.7), gds32.vcproj (1.7),
-	gfix.vcproj (1.6), gpre.vcproj (1.9), gpre_boot.vcproj (1.8),
-	gsec.vcproj (1.6), gstat.vcproj (1.7), ib_udf.vcproj (1.7),
-	ib_util.vcproj (1.7), instreg.vcproj (1.6), instsvc.vcproj (1.6),
-	intl.vcproj (1.7), ipserver.vcproj (1.6), isql.vcproj (1.6),
-	lock.vcproj (1.6), lock_classic.vcproj (1.6), qli.vcproj (1.6),
-	remote.vcproj (1.7), remote_classic.vcproj (1.7), utilities.vcproj
-	(1.7), utilities_classic.vcproj (1.6), wal.vcproj (1.6),
-	wal_classic.vcproj (1.6):
-
-	* Fixed the msvc7 build files
-
-2003-02-20 22:39  hippoman
-
-	* firebird2/builds/win32/msvc6/ib_udf.dsp (1.12):
-
-	* deleted an empty /D switch that was causing problems when
-	importing the projects in msvc7
-
 2003-02-20 15:41  kkuznetsov
 
 	* firebird2/builds/posix/prefix.solx86 (1.16):
@@ -3486,46 +1918,6 @@
 
 	This file does not compile on POSIX platforms. Exclude it from the
 	build process until someone has fixed it.
-
-2003-02-20 02:28  brodsom
-
-	* firebird2/builds/win32/msvc6/: burp.dsp (1.12), burp_classic.dsp
-	(1.10):
-
-	Remove spit from burp project (and remove some warnings)
-
-2003-02-20 02:17  brodsom
-
-	* firebird2/builds/win32/msvc6/: Firebird2.dsw (1.14), gsplit.dsp
-	(1.1):
-
-	Add gsplit project
-
-2003-02-19 14:20  brodsom
-
-	* firebird2/builds/win32/msvc6/intlcpp.dsp (1.1):
-
-	Adding intl C++ conversion
-
-2003-02-19 13:58  brodsom
-
-	* firebird2/builds/win32/: msvc6/fbclient.dsp (1.27),
-	msvc6/fbembed.dsp (1.15), msvc6/gds32.dsp (1.14), msvc6/ib_udf.dsp
-	(1.11), msvc6/ib_util.dsp (1.12), msvc6/intl.dsp (1.15),
-	msvc7/intl.vcproj (1.6), msvc7/ib_util.vcproj (1.6),
-	msvc7/gds32.vcproj (1.6), msvc7/ib_udf.vcproj (1.6),
-	msvc7/fbclient.vcproj (1.10), msvc7/fbembed.vcproj (1.7):
-
-	Move def files to builds directory
-
-2003-02-19 13:21  brodsom
-
-	* firebird2/builds/win32/old_makes/: remote.mak (1.1),
-	v5_examples.mak (1.1), burp.mak (1.1), dsql.mak (1.1), extlib.mak
-	(1.1), intl.mak (1.1), intlcpp.mak (1.1), jrd.mak (1.1), msgs.mak
-	(1.1):
-
-	Move old borland makefiles to builds directory
 
 2003-02-19 13:15  brodsom
 
@@ -3562,164 +1954,18 @@
 
 	WCHAR --> UCS2_CHAR and some cleanup around it
 
-2003-02-17 14:43  brodsom
-
-	* firebird2/builds/win32/msvc6/: utilities.dsp (1.9),
-	utilities_classic.dsp (1.7), wal.dsp (1.9), wal_classic.dsp (1.7),
-	dsql_server_classic.dsp (1.11), engine.dsp (1.20),
-	engine_classic.dsp (1.17), fb_inet_server.dsp (1.12),
-	fb_lock_print.dsp (1.13), fbclient.dsp (1.26), fbembed.dsp (1.14),
-	fbguard.dsp (1.13), fbserver.dsp (1.22), fbudf.dsp (1.6), gbak.dsp
-	(1.12), gdef.dsp (1.10), gds32.dsp (1.13), gfix.dsp (1.13),
-	gpre.dsp (1.13), gpre_boot.dsp (1.13), gsec.dsp (1.9), gstat.dsp
-	(1.10), ib_udf.dsp (1.10), ib_util.dsp (1.11), instreg.dsp (1.9),
-	instsvc.dsp (1.9), intl.dsp (1.14), ipserver.dsp (1.9), isql.dsp
-	(1.14), lock.dsp (1.9), lock_classic.dsp (1.7), qli.dsp (1.9),
-	remote.dsp (1.12), remote_classic.dsp (1.9), alice.dsp (1.11),
-	alice_classic.dsp (1.8), burp.dsp (1.11), burp_classic.dsp (1.9),
-	common.dsp (1.15), common_classic.dsp (1.9), dsql_server.dsp
-	(1.15):
-
-	Return warning level in msvc6 to 3 until there is a solution to the
-	Q167355 bug.
-
-2003-02-17 14:35  brodsom
-
-	* firebird2/builds/win32/msvc7/: engine_classic.vcproj (1.10),
-	fb_lock_print.vcproj (1.8), fbclient.vcproj (1.9), fbembed.vcproj
-	(1.6), fbguard.vcproj (1.6), fbudf.vcproj (1.3), gbak.vcproj (1.5),
-	gdef.vcproj (1.6), gds32.vcproj (1.5), gfix.vcproj (1.5),
-	gpre.vcproj (1.8), gpre_boot.vcproj (1.7), gsec.vcproj (1.5),
-	gstat.vcproj (1.6), ib_udf.vcproj (1.5), ib_util.vcproj (1.5),
-	instreg.vcproj (1.5), instsvc.vcproj (1.5), intl.vcproj (1.5),
-	ipserver.vcproj (1.5), isql.vcproj (1.5), lock.vcproj (1.5),
-	lock_classic.vcproj (1.5), qli.vcproj (1.5), remote.vcproj (1.6),
-	remote_classic.vcproj (1.6), utilities.vcproj (1.6),
-	utilities_classic.vcproj (1.5), wal.vcproj (1.5),
-	wal_classic.vcproj (1.5), alice.vcproj (1.4), alice_classic.vcproj
-	(1.4), burp.vcproj (1.6), burp_classic.vcproj (1.6), common.vcproj
-	(1.5), common_classic.vcproj (1.3), dsql_server.vcproj (1.5),
-	dsql_server_classic.vcproj (1.5), engine.vcproj (1.11):
-
-	Warning control from autoconfig_msvc.h
-
-2003-02-17 14:22  dimitr
-
-	* firebird2/builds/win32/msvc6/: alice.dsp (1.10),
-	alice_classic.dsp (1.7), burp.dsp (1.10), burp_classic.dsp (1.8),
-	common.dsp (1.14), common_classic.dsp (1.8), dsql_server.dsp
-	(1.14), dsql_server_classic.dsp (1.10), engine.dsp (1.19),
-	engine_classic.dsp (1.16), fb_inet_server.dsp (1.11),
-	fb_lock_print.dsp (1.12), fbclient.dsp (1.25), fbembed.dsp (1.13),
-	fbguard.dsp (1.12), fbserver.dsp (1.21), fbudf.dsp (1.5), gbak.dsp
-	(1.11), gdef.dsp (1.9), gds32.dsp (1.12), gfix.dsp (1.12), gpre.dsp
-	(1.12), gpre_boot.dsp (1.12), gsec.dsp (1.8), gstat.dsp (1.9),
-	ib_udf.dsp (1.9), ib_util.dsp (1.10), instreg.dsp (1.8),
-	instsvc.dsp (1.8), intl.dsp (1.13), ipserver.dsp (1.8), isql.dsp
-	(1.13), lock.dsp (1.8), lock_classic.dsp (1.6), qli.dsp (1.8),
-	remote.dsp (1.11), remote_classic.dsp (1.8), utilities.dsp (1.8),
-	utilities_classic.dsp (1.6), wal.dsp (1.8), wal_classic.dsp (1.6):
-
-	/W4 -> /W3
-
 2003-02-17 09:26  eku
 
 	* firebird2/builds/posix/make.shared.variables (1.14):
 
 	Fixed POSIX build after removal of pipe/csv directories.
 
-2003-02-16 20:19  dimitr
+2003-02-15 17:22  brodsom
 
-	* firebird2/builds/win32/msvc6/fbembed.dsp (1.12):
-
-	Added finalization code.
-
-2003-02-16 12:37  brodsom
-
-	* firebird2/builds/win32/: msvc6/instsvc.dsp (1.7), msvc6/intl.dsp
-	(1.12), msvc6/ipserver.dsp (1.7), msvc6/isql.dsp (1.12),
-	msvc6/lock.dsp (1.7), msvc6/lock_classic.dsp (1.5), msvc6/qli.dsp
-	(1.7), msvc6/remote.dsp (1.10), msvc6/remote_classic.dsp (1.7),
-	msvc6/utilities.dsp (1.7), msvc6/utilities_classic.dsp (1.5),
-	msvc6/wal.dsp (1.7), msvc6/wal_classic.dsp (1.5),
-	msvc6/fbclient.dsp (1.24), msvc6/fbembed.dsp (1.11),
-	msvc6/fbguard.dsp (1.11), msvc6/fbserver.dsp (1.20),
-	msvc6/fbudf.dsp (1.4), msvc6/gbak.dsp (1.10), msvc6/gdef.dsp (1.8),
-	msvc6/gds32.dsp (1.11), msvc6/gfix.dsp (1.11), msvc6/gpre.dsp
-	(1.11), msvc6/gpre_boot.dsp (1.11), msvc6/gsec.dsp (1.7),
-	msvc6/gstat.dsp (1.8), msvc6/ib_udf.dsp (1.8), msvc6/ib_util.dsp
-	(1.9), msvc6/instreg.dsp (1.7), msvc6/alice.dsp (1.9),
-	msvc6/alice_classic.dsp (1.6), msvc6/burp.dsp (1.9),
-	msvc6/burp_classic.dsp (1.7), msvc6/common.dsp (1.13),
-	msvc6/common_classic.dsp (1.7), msvc6/dsql_server.dsp (1.13),
-	msvc6/dsql_server_classic.dsp (1.9), msvc6/engine.dsp (1.18),
-	msvc6/engine_classic.dsp (1.15), msvc6/fb_inet_server.dsp (1.10),
-	msvc6/fb_lock_print.dsp (1.11), msvc7/gdef.vcproj (1.5),
-	msvc7/gds32.vcproj (1.4), msvc7/gfix.vcproj (1.4),
-	msvc7/gpre.vcproj (1.7), msvc7/gpre_boot.vcproj (1.6),
-	msvc7/gsec.vcproj (1.4), msvc7/gstat.vcproj (1.5),
-	msvc7/ib_udf.vcproj (1.4), msvc7/ib_util.vcproj (1.4),
-	msvc7/instreg.vcproj (1.4), msvc7/instsvc.vcproj (1.4),
-	msvc7/intl.vcproj (1.4), msvc7/ipserver.vcproj (1.4),
-	msvc7/isql.vcproj (1.4), msvc7/lock.vcproj (1.4),
-	msvc7/lock_classic.vcproj (1.4), msvc7/qli.vcproj (1.4),
-	msvc7/remote.vcproj (1.5), msvc7/remote_classic.vcproj (1.5),
-	msvc7/utilities.vcproj (1.5), msvc7/utilities_classic.vcproj (1.4),
-	msvc7/wal.vcproj (1.4), msvc7/wal_classic.vcproj (1.4),
-	msvc7/alice.vcproj (1.3), msvc7/alice_classic.vcproj (1.3),
-	msvc7/burp.vcproj (1.5), msvc7/burp_classic.vcproj (1.5),
-	msvc7/common.vcproj (1.4), msvc7/common_classic.vcproj (1.2),
-	msvc7/dsql_server.vcproj (1.4), msvc7/dsql_server_classic.vcproj
-	(1.4), msvc7/engine.vcproj (1.10), msvc7/engine_classic.vcproj
-	(1.9), msvc7/fb_lock_print.vcproj (1.7), msvc7/fbclient.vcproj
-	(1.8), msvc7/fbembed.vcproj (1.5), msvc7/fbguard.vcproj (1.5),
-	msvc7/fbudf.vcproj (1.2), msvc7/gbak.vcproj (1.4):
-
-	Change build system to move warning control to only one header for
-	each compiler
-
-2003-02-16 01:17  brodsom
-
-	* firebird2/builds/win32/: msvc7/fbserver.vcproj (1.4),
-	msvc6/fbserver.dsp (1.19):
-
-	Add svc.cpp to fbserver
-
-2003-02-15 17:21  brodsom
-
-	* firebird2/builds/: win32/msvc7/engine.vcproj (1.9),
-	win32/msvc7/engine_classic.vcproj (1.8),
-	win32/msvc6/engine_classic.dsp (1.14), win32/msvc6/engine.dsp
-	(1.17), mac_os_x/CS/CS.pbproj/project.pbxproj (1.2):
+	* firebird2/builds/mac_os_x/CS/CS.pbproj/project.pbxproj (1.2):
 
 	Rename header arg.h to log2.h (included only in log.cpp) and remove
 	atom.h
-
-2003-02-15 10:25  dimitr
-
-	* firebird2/builds/win32/msvc6/: alice.dsp (1.8), alice_classic.dsp
-	(1.5), burp.dsp (1.8), burp_classic.dsp (1.6), common.dsp (1.12),
-	common_classic.dsp (1.6), dsql_server.dsp (1.12),
-	dsql_server_classic.dsp (1.8), engine.dsp (1.16),
-	engine_classic.dsp (1.13), fb_inet_server.dsp (1.9),
-	fb_lock_print.dsp (1.10), fbclient.dsp (1.23), fbembed.dsp (1.10),
-	fbguard.dsp (1.10), fbserver.dsp (1.18), fbudf.dsp (1.3), gbak.dsp
-	(1.9), gdef.dsp (1.7), gds32.dsp (1.10), gfix.dsp (1.10), gpre.dsp
-	(1.10), gpre_boot.dsp (1.10), gsec.dsp (1.6), gstat.dsp (1.7),
-	ib_udf.dsp (1.7), ib_util.dsp (1.8), instreg.dsp (1.6), instsvc.dsp
-	(1.6), intl.dsp (1.11), ipserver.dsp (1.6), isql.dsp (1.11),
-	lock.dsp (1.6), lock_classic.dsp (1.4), qli.dsp (1.6), remote.dsp
-	(1.9), remote_classic.dsp (1.6), utilities.dsp (1.6),
-	utilities_classic.dsp (1.4), wal.dsp (1.6), wal_classic.dsp (1.4):
-
-	Updated project files. Fixed issues with exception handling.
-
-2003-02-14 10:12  dimitr
-
-	* firebird2/builds/win32/msvc6/: engine.dsp (1.15),
-	engine_classic.dsp (1.12):
-
-	Updated project files.
 
 2003-02-13 23:49  bellardo
 
@@ -3746,22 +1992,6 @@
 
 	3 new tests for darwin: expanded semun expanded 64 bit io dirname
 
-2003-02-11 18:43  dimitr
-
-	* firebird2/builds/win32/msvc6/: dsql_server.dsp (1.11),
-	dsql_server_classic.dsp (1.7), engine.dsp (1.14),
-	engine_classic.dsp (1.11):
-
-	Fixed another build issues.
-
-2003-02-11 17:19  dimitr
-
-	* firebird2/builds/win32/msvc6/: engine.dsp (1.13),
-	engine_classic.dsp (1.10):
-
-	Fixed build problems related to the service manager and error
-	handling.
-
 2003-02-11 06:13  aafemt
 
 	* firebird2/: configure.in (1.114),
@@ -3782,12 +2012,6 @@
 	* firebird2/configure.in (1.113):
 
 	Mark linux packages as Beta2
-
-2003-02-10 15:50  dimitr
-
-	* firebird2/builds/win32/msvc6/Firebird2.dsw (1.13):
-
-	Fixed the workspace.
 
 2003-02-10 14:28  eku
 
@@ -3826,32 +2050,6 @@
 
 	Renamed isc4.gdb to security.gdb (POSIX builds)
 
-2003-02-10 11:36  dimitr
-
-	* firebird2/builds/win32/msvc6/: alice.dsp (1.7), alice_classic.dsp
-	(1.4), burp.dsp (1.7), burp_classic.dsp (1.5), dsql_server.dsp
-	(1.10), dsql_server_classic.dsp (1.6), engine.dsp (1.12),
-	engine_classic.dsp (1.9), fb_inet_server.dsp (1.8),
-	fb_lock_print.dsp (1.9), fbclient.dsp (1.22), Firebird2.dsw (1.12),
-	fbembed.dsp (1.9), fbguard.dsp (1.9), fbserver.dsp (1.17),
-	fbudf.dsp (1.2), gbak.dsp (1.8), gdef.dsp (1.6), gds32.dsp (1.9),
-	gfix.dsp (1.9), gpre.dsp (1.9), gpre_boot.dsp (1.9), gsec.dsp
-	(1.5), gstat.dsp (1.6), ib_udf.dsp (1.6), ib_util.dsp (1.7),
-	instreg.dsp (1.5), instsvc.dsp (1.5), intl.dsp (1.10), ipserver.dsp
-	(1.5), isql.dsp (1.10), lock.dsp (1.5), lock_classic.dsp (1.3),
-	qli.dsp (1.5), remote.dsp (1.8), remote_classic.dsp (1.5),
-	utilities.dsp (1.5), utilities_classic.dsp (1.3), wal.dsp (1.5),
-	wal_classic.dsp (1.3):
-
-	Changed options for the release configuration.
-
-2003-02-10 11:03  dimitr
-
-	* firebird2/builds/win32/msvc6/: common.dsp (1.11),
-	common_classic.dsp (1.5):
-
-	Changed options for the release configuration.
-
 2003-02-10 10:39  eku
 
 	* firebird2/configure.in (1.112):
@@ -3870,37 +2068,6 @@
 
 	Some cleanup
 
-2003-02-09 16:43  dimitr
-
-	* firebird2/doc/WhatsNew (1.22):
-
-	Recent changes.
-
-2003-02-09 09:54  dimitr
-
-	* firebird2/doc/WhatsNew (1.21):
-
-	Actual credits.
-
-2003-02-04 21:19  dimitr
-
-	* firebird2/builds/win32/msvc6/isql.dsp (1.9):
-
-	Cleanup.
-
-2003-02-04 21:18  dimitr
-
-	* firebird2/builds/win32/msvc6/gfix.dsp (1.8):
-
-	Moved allocator functions back to GDS. MemoryPool is no longer
-	exported.
-
-2003-02-04 20:07  dimitr
-
-	* firebird2/doc/WhatsNew (1.20):
-
-	Beta 2 changes so far.
-
 2003-02-04 16:01  brodsom
 
 	* firebird2/builds/win32/: uninstall.bat (1.1), install_classic.bat
@@ -3908,62 +2075,17 @@
 
 	Add command line makes Add install batchs
 
-2003-02-04 11:28  dimitr
-
-	* firebird2/builds/win32/msvc6/gpre_boot.dsp (1.8):
-
-	Fixed debug build of gpre_boot.
-
 2003-02-03 13:48  brodsom
 
 	* firebird2/builds/win32/preprocess.bat (1.4):
 
 	Autoconfig must be copy before build_boot.bat
 
-2003-02-02 14:23  dimitr
-
-	* firebird2/builds/win32/msvc6/: common.dsp (1.10),
-	common_classic.dsp (1.4):
-
-	Updated project files.
-
-2003-02-01 04:08  hippoman
-
-	* firebird2/builds/win32/msvc7/: Firebird2.sln (1.5), burp.vcproj
-	(1.4), burp_classic.vcproj (1.4), common.vcproj (1.3),
-	engine.vcproj (1.8), fbguard.vcproj (1.4), gdef.vcproj (1.4),
-	gpre_boot.vcproj (1.5), gsec.vcproj (1.3), gstat.vcproj (1.4),
-	instreg.vcproj (1.3), instsvc.vcproj (1.3), intl.vcproj (1.3),
-	ipserver.vcproj (1.3), lock.vcproj (1.3), lock_classic.vcproj
-	(1.3), remote.vcproj (1.4), remote_classic.vcproj (1.4),
-	utilities.vcproj (1.4), utilities_classic.vcproj (1.3), wal.vcproj
-	(1.3), wal_classic.vcproj (1.3):
-
-	Sync msvc7 build with latest changes
-
 2003-01-29 16:29  skidder
 
 	* firebird2/configure.in (1.110):
 
 	Change package prefix
-
-2003-01-28 09:58  dimitr
-
-	* firebird2/builds/win32/msvc6/: alice.dsp (1.6), alice_classic.dsp
-	(1.3), burp.dsp (1.6), burp_classic.dsp (1.4), common.dsp (1.9),
-	common_classic.dsp (1.3), dsql_server.dsp (1.9),
-	dsql_server_classic.dsp (1.5), engine.dsp (1.11),
-	fb_inet_server.dsp (1.7), fb_lock_print.dsp (1.8), fbclient.dsp
-	(1.21), fbguard.dsp (1.8), fbserver.dsp (1.16), gbak.dsp (1.7),
-	gdef.dsp (1.5), gds32.dsp (1.8), gfix.dsp (1.7), gpre.dsp (1.8),
-	gpre_boot.dsp (1.7), gsec.dsp (1.4), gstat.dsp (1.5), ib_udf.dsp
-	(1.5), ib_util.dsp (1.6), instreg.dsp (1.4), instsvc.dsp (1.4),
-	ipserver.dsp (1.4), isql.dsp (1.8), lock.dsp (1.4),
-	lock_classic.dsp (1.2), qli.dsp (1.4), remote.dsp (1.7),
-	remote_classic.dsp (1.4), utilities.dsp (1.4),
-	utilities_classic.dsp (1.2), wal.dsp (1.4), wal_classic.dsp (1.2):
-
-	Updated project files.
 
 2003-01-26 19:12  fsg
 
@@ -3983,34 +2105,6 @@
 
 	New charsets (update posix build)
 
-2003-01-25 04:13  brodsom
-
-	* firebird2/builds/win32/msvc6/intl.dsp (1.9):
-
-	New charsets (update msvc6 build)
-
-2003-01-24 23:57  hippoman
-
-	* firebird2/builds/win32/msvc7/: Firebird2.sln (1.4), alice.vcproj
-	(1.2), alice_classic.vcproj (1.2), burp.vcproj (1.3),
-	burp_classic.vcproj (1.3), common.vcproj (1.2),
-	common_classic.vcproj (1.1), dsql_server.vcproj (1.3),
-	dsql_server_classic.vcproj (1.3), engine.vcproj (1.7),
-	engine_classic.vcproj (1.7), fb_inet_server.vcproj (1.3),
-	fb_lock_print.vcproj (1.6), fbclient.vcproj (1.7), fbembed.vcproj
-	(1.4), fbguard.vcproj (1.3), fbserver.vcproj (1.3), fbudf.vcproj
-	(1.1), gbak.vcproj (1.3), gdef.vcproj (1.3), gds32.vcproj (1.3),
-	gfix.vcproj (1.3), gpre.vcproj (1.6), gpre_boot.vcproj (1.4),
-	gsec.vcproj (1.2), gstat.vcproj (1.3), ib_udf.vcproj (1.3),
-	ib_util.vcproj (1.3), instreg.vcproj (1.2), instsvc.vcproj (1.2),
-	intl.vcproj (1.2), ipserver.vcproj (1.2), isql.vcproj (1.3),
-	lock.vcproj (1.2), lock_classic.vcproj (1.2), qli.vcproj (1.3),
-	remote.vcproj (1.3), remote_classic.vcproj (1.3), utilities.vcproj
-	(1.3), utilities_classic.vcproj (1.2), wal.vcproj (1.2),
-	wal_classic.vcproj (1.2):
-
-	Sync msvc7 build with latest changes
-
 2003-01-24 18:15  dimitr
 
 	* firebird2/builds/win32/preprocess.bat (1.2):
@@ -4028,86 +2122,6 @@
 	* firebird2/builds/win32/: blrtable.bat (1.1), parse.bat (1.1):
 
 	Two of the win32 build batch files. Others will follow shortly.
-
-2003-01-24 13:05  dimitr
-
-	* firebird2/builds/win32/msvc6/: fbudf.dsp (1.1), Firebird2.dsw
-	(1.11):
-
-	Updated fbudf files.
-
-2003-01-24 10:29  dimitr
-
-	* firebird2/builds/win32/msvc6/fbembed.dsp (1.8):
-
-	Updated project files.
-
-2003-01-23 13:25  skidder
-
-	* firebird2/doc/: WhatsNew (1.18), WhatsNew (1.19):
-
-	[no log message]
-
-2003-01-23 11:38  skidder
-
-	* firebird2/doc/WhatsNew (1.17):
-
-	Little Beta 1 description change
-
-2003-01-23 10:30  dimitr
-
-	* firebird2/doc/WhatsNew (1.16):
-
-	Added Beta 1 changes. Please review this file and correct, if
-	necessary.
-
-2003-01-23 04:36  brodsom
-
-	* firebird2/builds/win32/msvc6/intl.dsp (1.8):
-
-	Update msvc6 build
-
-2003-01-21 12:10  dimitr
-
-	* firebird2/builds/win32/msvc6/: common.dsp (1.8),
-	common_classic.dsp (1.2):
-
-	Updated project files.
-
-2003-01-19 15:12  dimitr
-
-	* firebird2/builds/win32/msvc6/: fbclient.dsp (1.20), remote.dsp
-	(1.6), remote_classic.dsp (1.3):
-
-	Link with XNET support.
-
-2003-01-18 20:21  dimitr
-
-	* firebird2/builds/win32/msvc6/: engine.dsp (1.10),
-	fb_inet_server.dsp (1.6), fb_lock_print.dsp (1.7), fbclient.dsp
-	(1.19), Firebird2.dsw (1.10), fbembed.dsp (1.7), fbguard.dsp (1.7),
-	fbserver.dsp (1.15), gbak.dsp (1.6), gdef.dsp (1.4), gfix.dsp
-	(1.6), gpre.dsp (1.7), gpre_boot.dsp (1.6), gsec.dsp (1.3),
-	gstat.dsp (1.4), ib_udf.dsp (1.4), ib_util.dsp (1.5), instreg.dsp
-	(1.3), instsvc.dsp (1.3), intl.dsp (1.7), isql.dsp (1.7), qli.dsp
-	(1.3):
-
-	Updated project files:	 1. Cleaned up used import libraries.	 2.
-	Winsock2 is used.    3. Embedded engine now supports true local
-	access.
-
-2003-01-17 10:53  dimitr
-
-	* firebird2/builds/win32/msvc6/: common.dsp (1.7),
-	common_classic.dsp (1.1), Firebird2.dsw (1.9):
-
-	Updated project files.
-
-2003-01-17 10:03  dimitr
-
-	* firebird2/builds/win32/msvc6/common.dsp (1.6):
-
-	Updated project files.
 
 2003-01-16 18:47  skidder
 
@@ -4192,14 +2206,6 @@
 
 	Remove gpre generated files when doing a make clean.
 
-2002-12-22 02:54  hippoman
-
-	* firebird2/builds/win32/msvc7/: Firebird2.sln (1.3), engine.vcproj
-	(1.6), engine_classic.vcproj (1.6), fbclient.vcproj (1.6),
-	gpre.vcproj (1.5), gpre_boot.vcproj (1.3):
-
-	Fixed the MSVC7 build, why.c has been removed
-
 2002-12-16 22:19  skidder
 
 	* firebird2/builds/posix/: Makefile.in.boot.gpre (1.12),
@@ -4207,14 +2213,6 @@
 	make.shared.variables (1.11), prefix.linux (1.12):
 
 	Several little changes to make engine compilable again on Linux
-
-2002-12-16 18:01  alexpeshkoff
-
-	* firebird2/builds/win32/msvc6/: engine.dsp (1.9),
-	engine_classic.dsp (1.8), fbclient.dsp (1.18):
-
-	Rename all links to why.cpp handle to struct why_hndl * (or FRBRD
-	*)
 
 2002-12-12 13:08  dimitr
 
@@ -4231,13 +2229,6 @@
 	(1.11):
 
 	Little changes to build stable Linux packages
-
-2002-12-11 09:35  dimitr
-
-	* firebird2/builds/win32/msvc6/: Firebird2.dsw (1.8), engine.dsp
-	(1.8), fbclient.dsp (1.17), gpre_boot.dsp (1.5):
-
-	Updated project files.
 
 2002-12-10 12:53  eku
 
@@ -4265,13 +2256,6 @@
 
 	Adding linker option what prevent user to   setting LD_LIBRARY_PATH
 
-2002-12-06 21:55  hippoman
-
-	* firebird2/builds/win32/msvc7/: gpre.vcproj (1.4),
-	gpre_boot.vcproj (1.2):
-
-	Fixing the build, added pascal and ada to gpre salad.
-
 2002-12-06 15:30  dimitr
 
 	* firebird2/builds/posix/make.defaults (1.9):
@@ -4296,18 +2280,6 @@
 
 	Moving platform dependent linker option to platform files
 
-2002-12-04 17:23  skidder
-
-	* firebird2/doc/WhatsNew (1.15):
-
-	Little changes in Alpha 5 changes description
-
-2002-12-04 16:15  dimitr
-
-	* firebird2/doc/WhatsNew (1.14):
-
-	Added alpha 5 changes.
-
 2002-12-03 14:58  eku
 
 	* firebird2/configure.in (1.102):
@@ -4320,13 +2292,6 @@
 	* firebird2/configure.in (1.101):
 
 	Prepared for Alpha 5.
-
-2002-12-03 12:09  dimitr
-
-	* firebird2/builds/win32/msvc6/: gpre.dsp (1.6), gpre_boot.dsp
-	(1.4):
-
-	Cleanup.
 
 2002-12-02 12:17  eku
 
@@ -4355,58 +2320,18 @@
 	'defined(__osf__) && defined(__alpha)' with 'SIZEOF_LONG == 8'.
 	New macro FB_NELEM calculates the number of elements in an array.
 
-2002-11-30 18:30  hippoman
-
-	* firebird2/builds/win32/msvc7/: engine.vcproj (1.5),
-	engine_classic.vcproj (1.5), fb_lock_print.vcproj (1.5),
-	fbclient.vcproj (1.5), gdef.vcproj (1.2), gfix.vcproj (1.2),
-	qli.vcproj (1.2):
-
-	Fixed the build, isc_win32.cpp has been removed
-
 2002-11-30 16:08  skidder
 
-	* firebird2/: configure.in (1.98), builds/posix/prefix.mingw (1.4),
-	builds/win32/msvc6/alice.dsp (1.5),
-	builds/win32/msvc6/alice_classic.dsp (1.2),
-	builds/win32/msvc6/burp.dsp (1.5),
-	builds/win32/msvc6/burp_classic.dsp (1.3),
-	builds/win32/msvc6/common.dsp (1.5),
-	builds/win32/msvc6/dsql_server.dsp (1.8),
-	builds/win32/msvc6/dsql_server_classic.dsp (1.4),
-	builds/win32/msvc6/engine.dsp (1.7),
-	builds/win32/msvc6/engine_classic.dsp (1.7),
-	builds/win32/msvc6/fb_inet_server.dsp (1.5),
-	builds/win32/msvc6/fb_lock_print.dsp (1.6),
-	builds/win32/msvc6/fbclient.dsp (1.16),
-	builds/win32/msvc6/fbembed.dsp (1.6),
-	builds/win32/msvc6/fbserver.dsp (1.14):
+	* firebird2/: configure.in (1.98), builds/posix/prefix.mingw (1.4):
 
 	New changes by Dmitry Emanov. Configuration manager and Windows
 	build environment improvements
-
-2002-11-26 10:00  dimitr
-
-	* firebird2/builds/win32/msvc6/: engine.dsp (1.6),
-	engine_classic.dsp (1.6), fb_lock_print.dsp (1.5), fbclient.dsp
-	(1.15), gbak.dsp (1.5), gdef.dsp (1.3), gfix.dsp (1.5), qli.dsp
-	(1.2):
-
-	Updated project files.
 
 2002-11-24 18:53  skidder
 
 	* firebird2/builds/posix/prefix.linux (1.9):
 
 	A little more optimization wont hurt
-
-2002-11-24 00:11  hippoman
-
-	* firebird2/builds/win32/msvc7/: engine.vcproj (1.4),
-	engine_classic.vcproj (1.4), fb_lock_print.vcproj (1.4),
-	fbclient.vcproj (1.4), gpre.vcproj (1.3):
-
-	Fixed the build, thd_win32.cpp has been deleted..
 
 2002-11-22 15:31  eku
 
@@ -4419,14 +2344,6 @@
 	* firebird2/configure.in (1.96):
 
 	Cleanup by Dimitry Sibiryakov.
-
-2002-11-22 12:20  dimitr
-
-	* firebird2/builds/win32/msvc6/: dsql_server.dsp (1.7),
-	dsql_server_classic.dsp (1.3), engine.dsp (1.5), engine_classic.dsp
-	(1.5), fb_lock_print.dsp (1.4), fbclient.dsp (1.14):
-
-	Updated project files.
 
 2002-11-21 14:46  kkuznetsov
 
@@ -4455,19 +2372,6 @@
 
 	Autoconf: check for header files sys/ipc.h and sys/file.h.
 
-2002-11-20 16:01  hippoman
-
-	* firebird2/builds/win32/msvc7/: burp.vcproj (1.2),
-	burp_classic.vcproj (1.2), dsql_server.vcproj (1.2),
-	dsql_server_classic.vcproj (1.2), engine.vcproj (1.3),
-	engine_classic.vcproj (1.3), fb_inet_server.vcproj (1.2),
-	fb_lock_print.vcproj (1.3), fbclient.vcproj (1.3), fbembed.vcproj
-	(1.3), fbguard.vcproj (1.2), fbserver.vcproj (1.2), gbak.vcproj
-	(1.2), isql.vcproj (1.2), remote.vcproj (1.2),
-	remote_classic.vcproj (1.2):
-
-	NOMSG is not needed, addied version.lib
-
 2002-11-20 14:38  kkuznetsov
 
 	* firebird2/builds/posix/: Makefile.in.gpre (1.3),
@@ -4487,17 +2391,6 @@
 	* firebird2/configure.in (1.93):
 
 	Removed check for xdr_hyper
-
-2002-11-19 14:21  dimitr
-
-	* firebird2/builds/win32/msvc6/: burp.dsp (1.4), burp_classic.dsp
-	(1.2), dsql_server.dsp (1.6), dsql_server_classic.dsp (1.2),
-	engine.dsp (1.4), engine_classic.dsp (1.4), fb_inet_server.dsp
-	(1.4), fb_lock_print.dsp (1.3), fbclient.dsp (1.13), fbembed.dsp
-	(1.5), fbguard.dsp (1.6), fbserver.dsp (1.13), gbak.dsp (1.4),
-	isql.dsp (1.6), remote.dsp (1.5), remote_classic.dsp (1.2):
-
-	We no longer need NOMSG macro defined.
 
 2002-11-18 14:22  eku
 
@@ -4525,45 +2418,6 @@
 	firebird target will be the super edition.  Configure.in changed to
 	build some install files from new locations.
 
-2002-11-17 17:06  dimitr
-
-	* firebird2/builds/win32/msvc6/: fb_inet_server.dsp (1.3),
-	fb_lock_print.dsp (1.2), fbclient.dsp (1.12), fbembed.dsp (1.4),
-	fbserver.dsp (1.12):
-
-	Updates project files.
-
-2002-11-17 00:54  hippoman
-
-	* firebird2/builds/win32/msvc7/: Firebird2.sln (1.2), engine.vcproj
-	(1.2), engine_classic.vcproj (1.2), fb_lock_print.vcproj (1.2),
-	fbclient.vcproj (1.2), fbembed.vcproj (1.2), gds32.vcproj (1.2),
-	gpre.vcproj (1.2), gstat.vcproj (1.2), ib_udf.vcproj (1.2),
-	ib_util.vcproj (1.2), utilities.vcproj (1.2):
-
-	update to the latest changes
-
-2002-11-16 16:54  dimitr
-
-	* firebird2/builds/win32/msvc6/: engine.dsp (1.3),
-	engine_classic.dsp (1.3), fbclient.dsp (1.11):
-
-	Synchronized generic and win32-only files. The latter is removed.
-
-2002-11-16 11:58  dimitr
-
-	* firebird2/builds/win32/msvc6/: fb_inet_server.dsp (1.2),
-	fbembed.dsp (1.3):
-
-	Updates project files.
-
-2002-11-16 09:38  dimitr
-
-	* firebird2/builds/win32/msvc6/: fbclient.dsp (1.10), gds32.dsp
-	(1.7), ib_udf.dsp (1.3), ib_util.dsp (1.4):
-
-	Updates project files.
-
 2002-11-16 04:14  skywalker
 
 	* firebird2/builds/posix/Makefile.in.firebird (1.18):
@@ -4579,44 +2433,11 @@
 	in 'compatibility' libgds.so links if the files do not already
 	exist.
 
-2002-11-15 12:20  skidder
-
-	* firebird2/doc/WhatsNew (1.13):
-
-	Added instabitily note
-
 2002-11-15 11:55  kkuznetsov
 
 	* firebird2/configure.in (1.89):
 
 	Fix check for xdr staff
-
-2002-11-15 01:11  hippoman
-
-	* firebird2/builds/win32/msvc7/: Firebird2.sln (1.1), alice.vcproj
-	(1.1), alice_classic.vcproj (1.1), burp.vcproj (1.1),
-	burp_classic.vcproj (1.1), common.vcproj (1.1), dsql_server.vcproj
-	(1.1), dsql_server_classic.vcproj (1.1), engine.vcproj (1.1),
-	engine_classic.vcproj (1.1), fb_inet_server.vcproj (1.1),
-	fb_lock_print.vcproj (1.1), fbclient.vcproj (1.1), fbembed.vcproj
-	(1.1), fbguard.vcproj (1.1), fbserver.vcproj (1.1), gbak.vcproj
-	(1.1), gdef.vcproj (1.1), gds32.vcproj (1.1), gfix.vcproj (1.1),
-	gpre.vcproj (1.1), gpre_boot.vcproj (1.1), gsec.vcproj (1.1),
-	gstat.vcproj (1.1), ib_udf.vcproj (1.1), ib_util.vcproj (1.1),
-	instreg.vcproj (1.1), instsvc.vcproj (1.1), intl.vcproj (1.1),
-	ipserver.vcproj (1.1), isql.vcproj (1.1), lock.vcproj (1.1),
-	lock_classic.vcproj (1.1), qli.vcproj (1.1), remote.vcproj (1.1),
-	remote_classic.vcproj (1.1), utilities.vcproj (1.1),
-	utilities_classic.vcproj (1.1), wal.vcproj (1.1),
-	wal_classic.vcproj (1.1):
-
-	MSVC7 Project files..
-
-2002-11-14 17:23  dimitr
-
-	* firebird2/doc/WhatsNew (1.12):
-
-	Added alpha 4 changes.
 
 2002-11-14 14:53  dimitr
 
@@ -4694,13 +2515,6 @@
 
 	More work regarding win32 builds via mingw.
 
-2002-11-12 15:04  dimitr
-
-	* firebird2/builds/win32/msvc6/: gpre.dsp (1.5), gpre_boot.dsp
-	(1.3):
-
-	Make COBOL available in win32 builds of gpre.
-
 2002-11-12 14:46  eku
 
 	* firebird2/configure.in (1.81):
@@ -4745,13 +2559,6 @@
 	arch-specific/${MAKEFILE_PREFIX} This 'should' work for Erik as
 	well.
 
-2002-11-11 15:48  skywalker
-
-	* firebird2/doc/: README.makefiles (1.2), README.user (1.1),
-	README.user.troubleshooting (1.1):
-
-	Added troubleshooting guide and simple user intro
-
 2002-11-11 15:08  skywalker
 
 	* firebird2/configure.in (1.75):
@@ -4773,19 +2580,6 @@
 	* firebird2/configure.in (1.73):
 
 	Changes to packaging of linux classic build
-
-2002-11-10 15:46  dimitr
-
-	* firebird2/builds/win32/msvc6/fbembed.dsp (1.2):
-
-	Cleanup.
-
-2002-11-10 15:19  dimitr
-
-	* firebird2/builds/win32/msvc6/: common.dsp (1.4), engine.dsp
-	(1.2), engine_classic.dsp (1.2), fbguard.dsp (1.5):
-
-	Updated project files.
 
 2002-11-09 14:23  skywalker
 
@@ -4814,12 +2608,6 @@
 
 	Autoconfigured pipe name for wnet protocol.
 
-2002-11-07 08:16  dimitr
-
-	* firebird2/builds/win32/msvc6/fbguard.dsp (1.4):
-
-	Removed redundant absolute path.
-
 2002-11-06 21:37  skidder
 
 	* firebird2/configure.in (1.69):
@@ -4843,26 +2631,6 @@
 	* firebird2/builds/posix/make.shared.variables (1.6):
 
 	Make new config stuff compile on POSIX
-
-2002-11-06 16:10  dimitr
-
-	* firebird2/builds/win32/msvc6/: alice.dsp (1.4), alice_classic.dsp
-	(1.1), burp.dsp (1.3), burp_classic.dsp (1.1), common.dsp (1.3),
-	dsql_server.dsp (1.5), dsql_server_classic.dsp (1.1), engine.dsp
-	(1.1), engine_classic.dsp (1.1), Firebird2.dsw (1.7),
-	fb_inet_server.dsp (1.1), fb_lock_print.dsp (1.1), fbclient.dsp
-	(1.9), fbembed.dsp (1.1), fbguard.dsp (1.3), fbserver.dsp (1.11),
-	gbak.dsp (1.3), gdef.dsp (1.2), gds32.dsp (1.6), gfix.dsp (1.4),
-	gpre.dsp (1.4), gpre_boot.dsp (1.2), gsec.dsp (1.2), gstat.dsp
-	(1.3), ib_udf.dsp (1.2), ib_util.dsp (1.3), instreg.dsp (1.2),
-	instsvc.dsp (1.2), intl.dsp (1.6), ipserver.dsp (1.3), isql.dsp
-	(1.5), lock.dsp (1.3), lock_classic.dsp (1.1), qli.dsp (1.1),
-	remote.dsp (1.4), remote_classic.dsp (1.1), utilities.dsp (1.3),
-	utilities_classic.dsp (1.1), wal.dsp (1.3), wal_classic.dsp (1.1):
-
-	1. Reorganized project files.  2. Added fb_lock_print and qli.	3.
-	Implemented classic and embedded servers.  4. Used new
-	configuration manager.
 
 2002-11-06 14:38  dimitr
 
@@ -4947,18 +2715,6 @@
 
 	Do not issue warning when already been told not to run configure.
 
-2002-11-04 17:37  tamlin
-
-	* firebird2/builds/win32/msvc6/README_MSVC6.txt (1.1):
-
-	no message
-
-2002-11-04 17:35  tamlin
-
-	* firebird2/builds/win32/msvc6/isql.dsp (1.4):
-
-	Fix isql debug build line input
-
 2002-11-04 14:57  eku
 
 	* firebird2/configure.in (1.60):
@@ -4986,30 +2742,11 @@
 
 	[no log message]
 
-2002-10-31 17:07  alexpeshkoff
-
-	* firebird2/builds/win32/msvc6/fbserver.dsp (1.10):
-
-	Minor bug while cleaning netware port
-
 2002-10-30 15:49  kkuznetsov
 
 	* firebird2/configure.in (1.56):
 
 	Add search for SFIO library
-
-2002-10-30 07:40  seanleyne
-
-	* firebird2/builds/win32/msvc6/fbserver.dsp (1.9):
-
-	Removed obsolete "Netware" port
-
-2002-10-30 06:04  seanleyne
-
-	* firebird2/builds/win32/msvc6/: fbclient.dsp (1.8), fbserver.dsp
-	(1.8), remote.dsp (1.3):
-
-	Removed support for obsolete IPX/SPX Protocol
 
 2002-10-29 21:20  skidder
 
@@ -5018,53 +2755,6 @@
 
 	Merging changes from skidder branch - explicit locks, savepoints,
 	build system changes
-
-2002-10-28 16:34  alexpeshkoff
-
-	* firebird2/builds/win32/msvc6/fbserver.dsp (1.7):
-
-	Threads' priority scheduling in Win32 Added thd_priority.cpp to
-	project file
-
-	Inactive by default To bring to active state uncomment
-	//#define THREAD_PSCHED in thd_priority.h
-
-2002-10-28 07:47  dimitr
-
-	* firebird2/builds/win32/msvc6/Firebird2.dsw (1.6):
-
-	Small correction.
-
-2002-10-26 15:26  dimitr
-
-	* firebird2/doc/WhatsNew (1.11):
-
-	Added alpha 3 changes.
-
-2002-10-26 10:32  dimitr
-
-	* firebird2/builds/win32/msvc6/: fbclient.dsp (1.7), fbserver.dsp
-	(1.6):
-
-	Corrected project files.
-
-2002-10-24 14:01  tamlin
-
-	* firebird2/builds/win32/msvc6/gfix.dsp (1.3):
-
-	Make gfix compile in debug mode.
-
-2002-10-18 13:11  dimitr
-
-	* firebird2/builds/win32/msvc6/fbclient.dsp (1.6):
-
-	Added proper version information for the both client libraries.
-
-2002-10-18 11:14  dimitr
-
-	* firebird2/builds/win32/msvc6/gpre.dsp (1.3):
-
-	Small correction.
 
 2002-10-16 10:38  eku
 
@@ -5078,13 +2768,6 @@
 
 	The file permissions must match the database attribute (read-only),
 	otherwise gpre will fail.
-
-2002-10-12 12:03  dimitr
-
-	* firebird2/builds/win32/msvc6/: fbclient.dsp (1.5), gds32.dsp
-	(1.5):
-
-	Added proper version information for the both client libraries.
 
 2002-10-12 06:59  stryqx
 
@@ -5116,12 +2799,6 @@
 
 	Compilation of the editline library depends on configure switches.
 	Added qli to the CS targets (needed by TCS).
-
-2002-10-09 14:32  skidder
-
-	* firebird2/doc/WhatsNew (1.10):
-
-	Added my unmentioned change
 
 2002-10-08 11:42  eku
 
@@ -5172,24 +2849,6 @@
 	build scripts Fix makefiles for super build Exchange editline for
 	readline in isql
 
-2002-10-06 15:33  dimitr
-
-	* firebird2/doc/WhatsNew (1.9):
-
-	Alpha 2 changes.
-
-2002-10-06 12:59  dimitr
-
-	* firebird2/builds/win32/msvc6/fbserver.dsp (1.5):
-
-	no message
-
-2002-10-06 12:55  dimitr
-
-	* firebird2/builds/win32/msvc6/isql.dsp (1.3):
-
-	Statically link isql with the runtime libraries.
-
 2002-10-04 23:57  skidder
 
 	* firebird2/builds/posix/: make.shared.variables (1.3),
@@ -5197,12 +2856,6 @@
 	prefix.solx86 (1.6):
 
 	Little garbage cleanup. Shouldn't break anything
-
-2002-10-02 16:31  dimitr
-
-	* firebird2/doc/WhatsNew (1.8):
-
-	Updated.
 
 2002-10-02 14:43  eku
 
@@ -5217,12 +2870,6 @@
 	Autoconf: the usage of the readline library can be turned off with
 		 '--without-readline'.
 
-2002-10-01 09:56  dimitr
-
-	* firebird2/doc/WhatsNew (1.7):
-
-	no message
-
 2002-10-01 07:47  eku
 
 	* firebird2/configure.in (1.50):
@@ -5231,59 +2878,11 @@
 	Added switch '--enable-raw-devices' to configure to enable this
 	feature (default=off). Currently only supported on UNIX platforms.
 
-2002-09-30 22:32  dimitr
-
-	* firebird2/doc/WhatsNew (1.6):
-
-	Oops.
-
-2002-09-30 22:25  dimitr
-
-	* firebird2/doc/: WhatsNew (1.4), WhatsNew (1.5):
-
-	Mentioned the invisible work that's done by our heroes ;-) Most of
-	these things cannot be seen by our users but its importance cannot
-	be overstressed.
-
-2002-09-30 22:22  dimitr
-
-	* firebird2/doc/WhatsNew (1.3):
-
-	Mentioned the invisible work that's done by our heroes ;-) Most of
-	these things cannot be seen by our users but its importance cannot
-	be overstressed.
-
-2002-09-30 21:13  dimitr
-
-	* firebird2/doc/WhatsNew (1.2):
-
-	Removed unfinished stuff and added credits.
-
-2002-09-30 17:18  dimitr
-
-	* firebird2/doc/WhatsNew (1.1):
-
-	Added new file which describes all changes that are visible for
-	end-users.
-
 2002-09-28 22:56  skidder
 
 	* firebird2/builds/posix/make.shared.variables (1.2):
 
 	Make it build on posix again
-
-2002-09-28 16:08  dimitr
-
-	* firebird2/builds/win32/msvc6/: dsql_server.dsp (1.4),
-	fbserver.dsp (1.4):
-
-	Added new files to the projects.
-
-2002-09-27 17:21  alexpeshkoff
-
-	* firebird2/builds/win32/msvc6/alice.dsp (1.3):
-
-	Missed DEV_BUILD in Debug configuration
 
 2002-09-26 15:32  kkuznetsov
 
@@ -5357,13 +2956,6 @@
 	interbase.log => firebird.log
 
 	SINIX-Z: don't distribute build programms
-
-2002-09-20 12:07  dimitr
-
-	* firebird2/builds/win32/msvc6/: fbclient.dsp (1.4), fbserver.dsp
-	(1.3):
-
-	Get rid of unnecessary files.
 
 2002-09-20 10:28  eku
 
@@ -5504,24 +3096,6 @@
 
 	SINIX-Z packaging
 
-2002-09-04 12:22  dimitr
-
-	* firebird2/builds/win32/msvc6/intl.dsp (1.5):
-
-	Renamed gdsintl.dll to fbintl.dll.
-
-2002-09-03 19:31  dimitr
-
-	* firebird2/builds/win32/msvc6/ib_udf.dsp (1.1):
-
-	Added ib_udf project.
-
-2002-09-03 19:25  dimitr
-
-	* firebird2/builds/win32/msvc6/Firebird2.dsw (1.5):
-
-	Added ib_udf project.
-
 2002-09-03 15:35  eku
 
 	* firebird2/builds/posix/Makefile.in.refDatabases (1.4):
@@ -5553,14 +3127,6 @@
 	Some minor fixes to get it compiled under linux again, some of them
 	submitted by Nickolay Samofatov
 
-2002-08-28 11:20  dimitr
-
-	* firebird2/builds/win32/msvc6/: Firebird2.dsw (1.4), fbclient.dsp
-	(1.3), gdef.dsp (1.1), instreg.dsp (1.1), instsvc.dsp (1.1):
-
-	Added new projects to the workspace:   - gdef.exe   - instreg.exe
-	- instsvc.exe
-
 2002-08-28 10:02  eku
 
 	* firebird2/configure.in (1.39):
@@ -5585,25 +3151,6 @@
 
 	Another autoconf cleanup:  o check for the existence of the
 	function strcasecmp and stricmp  o replaced STRICMP
-
-2002-08-28 08:12  dimitr
-
-	* firebird2/builds/win32/msvc6/fbclient.dsp (1.2):
-
-	Cleaned up fbclient.dll contents.
-
-2002-08-27 13:01  dimitr
-
-	* firebird2/builds/win32/msvc6/intl.dsp (1.4):
-
-	Small correction.
-
-2002-08-26 15:50  dimitr
-
-	* firebird2/builds/win32/msvc6/: Firebird2.dsw (1.3), fbclient.dsp
-	(1.1), gds32.dsp (1.4):
-
-	Renamed the win32 client library.
 
 2002-08-26 13:59  eku
 
@@ -5736,39 +3283,6 @@
 
 	Do not define '-m468' in platform-independent rules.
 
-2002-08-12 07:34  dimitr
-
-	* firebird2/builds/win32/msvc6/fbserver.dsp (1.2):
-
-	Just a small correction for the generated headers.
-
-2002-08-09 19:05  dimitr
-
-	* firebird2/builds/win32/msvc6/: Firebird2.dsw (1.2), alice.dsp
-	(1.2), burp.dsp (1.2), common.dsp (1.2), dsql_server.dsp (1.3),
-	fbguard.dsp (1.2), gbak.dsp (1.2), gds32.dsp (1.3), gfix.dsp (1.2),
-	gpre.dsp (1.2), gpre_boot.dsp (1.1), gsec.dsp (1.1), gstat.dsp
-	(1.2), ib_util.dsp (1.2), intl.dsp (1.3), ipserver.dsp (1.2),
-	isql.dsp (1.2), lock.dsp (1.2), remote.dsp (1.2), utilities.dsp
-	(1.2), wal.dsp (1.2):
-
-	1. Get rid of debug runtime libraries in our release builds 2.
-	Added gpre_boot and gsec projects
-
-2002-08-09 09:25  skywalker
-
-	* firebird2/doc/sql.extensions/README.nullif (1.2):
-
-	Update the description, it is now correct.
-
-2002-08-09 01:33  skywalker
-
-	* firebird2/doc/sql.extensions/: README.case (1.1), README.coalesce
-	(1.1), README.nullif (1.1):
-
-	documentation for new sql clauses case, coalesce and nullif
-	contributed by Arno Brinkman <firebird@abvisie.nl>
-
 2002-08-05 18:34  skywalker
 
 	* firebird2/configure.in (1.23):
@@ -5784,13 +3298,6 @@
 
 	More changes to make fb2 compile on linux work with new build
 	structure
-
-2002-07-29 20:42  dimitr
-
-	* firebird2/builds/win32/msvc6/: dsql_server.dsp (1.2), gds32.dsp
-	(1.2):
-
-	Keep in-sync with Mark's changes.
 
 2002-07-29 17:43  skywalker
 
@@ -5869,28 +3376,11 @@
 
 	Support SINIX-Z as a platform.
 
-2002-07-02 16:09  dimitr
-
-	* firebird2/builds/win32/msvc6/intl.dsp (1.2):
-
-	Updated project files
-
 2002-07-01 18:59  skywalker
 
 	* firebird2/configure.in (1.16):
 
 	Merged change from fb1.
-
-2002-07-01 16:59  dimitr
-
-	* firebird2/builds/win32/msvc6/: Firebird2.dsw (1.1), alice.dsp
-	(1.1), burp.dsp (1.1), common.dsp (1.1), dsql_server.dsp (1.1),
-	fbguard.dsp (1.1), fbserver.dsp (1.1), gbak.dsp (1.1), gds32.dsp
-	(1.1), gfix.dsp (1.1), gpre.dsp (1.1), gstat.dsp (1.1), ib_util.dsp
-	(1.1), intl.dsp (1.1), ipserver.dsp (1.1), isql.dsp (1.1), lock.dsp
-	(1.1), remote.dsp (1.1), utilities.dsp (1.1), wal.dsp (1.1):
-
-	Added FB2 project files for MSVC6
 
 2002-06-29 18:41  skywalker
 
@@ -5904,13 +3394,6 @@
 
 	Updated code to support building under Linux. Main changes are to
 	support the platform manager and the move of kanji.* to /intl.
-
-2002-06-19 17:10  skywalker
-
-	* firebird2/doc/README.makefiles (1.1):
-
-	Added README file which explains a little about the makefile
-	structure.
 
 2002-01-21 16:26  kkuznetsov
 
