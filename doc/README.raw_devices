@@ -17,7 +17,7 @@ Document date:  2007/11/21
 ==============
 
 
- To make firebird have better performance under such circumsatnces
+ To make firebird have better performance under such circumstances
  you may place your database not in a regular file on some 
  filesystem, but on raw device. Any type of block devices is 
  supported.

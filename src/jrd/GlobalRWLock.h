@@ -157,7 +157,7 @@ private:
 	//
 	class EngineMutexLockGuard {
 	public:
-		explicit EngineMutexLockGuard(Firebird::Mutex &alock) 
+		explicit EngineMutexLockGuard(Firebird::Mutex& alock) 
 			: lock(&alock) 
 		{ 
 			ThreadExit te;
@@ -167,7 +167,7 @@ private:
 	private:
 		// Forbid copy constructor
 		EngineMutexLockGuard(const EngineMutexLockGuard& source);
-		Firebird::Mutex *lock;
+		Firebird::Mutex* lock;
 	};
 
 	class CountersLockHolder : public AstInhibit, public EngineMutexLockGuard
