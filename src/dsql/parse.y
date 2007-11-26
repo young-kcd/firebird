@@ -4393,6 +4393,7 @@ system_function_std_syntax
 	| MINVALUE
 	| MOD
 	| PI
+	| POSITION
 	| POWER
 	| RAND
 	| REPLACE

@@ -134,7 +134,6 @@ rem_port* WNET_analyze(Firebird::PathName& file_name,
 
 /* Pick up some user identification information */
 	Firebird::string buffer;
-	TEXT *p;
 	Firebird::ClumpletWriter user_id(Firebird::ClumpletReader::UnTagged, MAX_DPB_SIZE);
 
 	ISC_get_user(&buffer, 0, 0, 0);
