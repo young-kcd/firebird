@@ -27,7 +27,6 @@
 #include "firebird.h"
 #include "../jrd/common.h"
 #include <stdio.h>
-#include "../jrd/isc_proto.h"
 #include <stdlib.h>
 #include <windows.h>
 //#include "../jrd/license.h"

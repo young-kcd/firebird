@@ -134,9 +134,6 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ib_util", "ib_util.vcproj", "{EABA0FF3-1C4D-4FAB-8418-31C9061F3F0D}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "instreg", "instreg.vcproj", "{19470DE6-1975-4F9B-B1BE-E87A83240B15}"
-	ProjectSection(ProjectDependencies) = postProject
-		{15605F44-BFFD-444F-AD4C-55DC9D704465} = {15605F44-BFFD-444F-AD4C-55DC9D704465}
-	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "instsvc", "instsvc.vcproj", "{72894398-38CA-47A6-95FE-9647DE2BE968}"
 	ProjectSection(ProjectDependencies) = postProject
