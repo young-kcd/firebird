@@ -523,7 +523,7 @@ void nbackup::lock_database(bool get_size)
 		{
 			get_database_size();
 			if (db_size_pages)
-				printf("%d", db_size_pages);
+				printf("%d\n", db_size_pages);
 		}
 	} 
 	catch (const Firebird::Exception&) {
