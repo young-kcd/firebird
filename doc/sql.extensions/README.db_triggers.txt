@@ -28,10 +28,11 @@ Syntax rules:
 	1) Database triggers type can't be changed.
 
 Utilities support:
-	A new parameter was added to GBAK and ISQL to not run database triggers.
-	This parameter could only be used by database owner and SYSDBA:
-	GBAK -no_dbtriggers
+	New parameters was added to GBAK, ISQL and NBACKUP to not run database triggers.
+	These parameters could only be used by database owner and SYSDBA:
+	GBAK -nodbtriggers
 	ISQL -nodbtriggers 
+	NBACKUP -T
 
 Permissions:
 	Only database owner and SYSDBA can do database triggers DDL.

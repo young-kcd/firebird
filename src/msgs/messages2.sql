@@ -2334,7 +2334,7 @@ ERROR: Backup incomplete', NULL, NULL);
 (NULL, 'get_procedure_prm', 'restore.epp', NULL, 12, 291, NULL, 'procedure parameter', NULL, NULL);
 (NULL, 'get_ref_constraint', 'restore.epp', NULL, 12, 292, NULL, 'referential constraint', NULL, NULL);
 (NULL, 'get_type', 'restore.epp', NULL, 12, 293, NULL, 'type (in RDB$TYPES)', NULL, NULL);
-(NULL, '', 'burp.cpp', NULL, 12, 294, NULL, '	@1NO_D(BTRIGGERS)      do not run database triggers', NULL, NULL);
+(NULL, '', 'burp.cpp', NULL, 12, 294, NULL, '	@1NOD(BTRIGGERS)       do not run database triggers', NULL, NULL);
 -- Do not change the arguments of the previous GBAK messages.
 -- Write the new GBAK messages here.
 (NULL, '', 'burp.cpp', NULL, 12, 295, NULL, '	@1TRU(STED)            use trusted authentication', NULL, NULL);

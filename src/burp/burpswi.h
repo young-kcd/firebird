@@ -127,8 +127,8 @@ static in_sw_tab_t burp_in_sw_table [] =
                 // msg 278: %sMODE read_only or read_write access 
     {IN_SW_BURP_N,    isc_spb_res_no_validity,	"NO_VALIDITY",	    0, 0, 0, FALSE, 187, 0, NULL},
                 // msg 187: %sN(O_VALIDITY) do not restore database validity conditions 
-    {IN_SW_BURP_NOD,  0,				"NO_DBTRIGGERS",    0, 0, 0, FALSE, 294, 0, NULL},
-                // msg 294: %sNO_D(BTRIGGERS) do not run database triggers
+    {IN_SW_BURP_NOD,  0,				"NODBTRIGGERS",    0, 0, 0, FALSE, 294, 0, NULL},
+                // msg 294: %sNOD(BTRIGGERS) do not run database triggers
     {IN_SW_BURP_NT,   isc_spb_bkp_non_transportable,      "NT",	    0, 0, 0, FALSE, 239, 0, NULL},
                 // msg 239: %sNT Non-Transportable backup file format 
     {IN_SW_BURP_O,    isc_spb_res_one_at_a_time,	"ONE_AT_A_TIME",    0, 0, 0, FALSE, 99, 0, NULL},
