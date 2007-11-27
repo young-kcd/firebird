@@ -2307,13 +2307,6 @@ bool PageSpace::extend(thread_db* tdbb, const ULONG pageNum)
 	if (pageNum < maxPageNumber || MAX_EXTEND_BYTES < MIN_EXTEND_BYTES)
 		return true;
 
-#ifdef WIN_NT
-	// hvlad: we need an attachment lock to get exclusive LCK_file_extend lock
-	// see comments in winnt.cpp\FileExtendLock::FileExtendLock
-	if (!tdbb->tdbb_attachment || !tdbb->tdbb_attachment->att_lock_owner_handle)
-		return false;
-#endif
-
 	Database* dbb = tdbb->tdbb_database;
 
 	if (pageNum >= maxAlloc(dbb->dbb_page_size))
