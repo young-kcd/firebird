@@ -1,3 +1,17 @@
+2007-11-27 17:21  hvlad
+
+	* firebird2/src/jrd/pag.cpp (1.154):
+
+	Remove not needed code.
+
+2007-11-27 08:45  alexpeshkoff
+
+	*
+	firebird2/builds/install/arch-specific/linux/misc/firebird.init.d.generic.in
+	(1.6):
+
+	Multi-instancing support in generic startup file for super-server.
+
 2007-11-26 16:41  alexpeshkoff
 
 	*
