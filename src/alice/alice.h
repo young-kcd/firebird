@@ -165,6 +165,8 @@ public:
 	AliceGlobals(Jrd::pfn_svc_output outProc, Jrd::Service* outData) 
 		: ThreadData(ThreadData::tddALICE), 
 		ALICE_default_pool(0),
+		exit_code(FINI_ERROR),	// prevent FINI_OK in case of unknown error thrown
+								// would be set to FINI_OK (==0) in ALICE_exit
 		output_proc(outProc), 
 		output_data(outData),
 		output_file(NULL),
@@ -174,9 +176,7 @@ public:
 		status(status_vector),
 		sw_redirect(NOREDIRECT),
 		sw_service(false),
-		sw_service_thd(false),
-		exit_code(FINI_ERROR)	// prevent FINI_OK in case of unknown error thrown
-								// would be set to FINI_OK (==0) in ALICE_exit
+		sw_service_thd(false)
 	{
 		memset(&ALICE_data, 0, sizeof(user_action));
 	}
