@@ -241,6 +241,8 @@ Filename: {app}\bin\instsvc.exe; Description: {cm:instsvcStartQuestion}; Paramet
 ;If 'start as application' requested
 Filename: {code:StartApp|{app}\bin\fbserver.exe}; Description: {cm:instappStartQuestion}; Parameters: -a; StatusMsg: {cm:instappStartMsg}; MinVersion: 0,4.0; Components: ServerComponent; Flags: nowait postinstall; Tasks: UseApplicationTask; Check: StartEngine
 
+;Jump to a landing page.
+Filename: "{#FirebirdURL}/afterinstall"; Description: "After installation - What Next?"; Flags: postinstall shellexec skipifsilent; Components: ServerComponent DevAdminComponent;
 
 [Registry]
 ;If user has chosen to start as App they may well want to start automatically. That is handled by a function below.
@@ -266,6 +268,8 @@ Name: {group}\Firebird ISQL Tool; Filename: {app}\bin\isql.exe; WorkingDir: {app
 #define App_Name = SetupSetting("AppName")
 Name: {group}\Firebird 1.5.5 Release Notes; Filename: {app}\doc\Firebird_v1.5.5.ReleaseNotes.pdf; MinVersion: 4.0,4.0; Components: DevAdminComponent; Comment: {#App_Name}.4 {cm:ReleaseNotes}
 Name: {group}\Firebird 1.5 Quick Start Guide; Filename: {app}\doc\Firebird-1.5-QuickStart.pdf; MinVersion: 4.0,4.0; Components: DevAdminComponent; Comment: {#App_Name} Quick Start Guide (in English)
+Name: "{group}\After Installation"; Filename: "{app}\doc\After_Installation.url"; Comment: "New User? Here's a quick guide to what you should do next."
+Name: "{group}\Firebird Web-site"; Filename: "{app}\doc\firebirdsql.org.url"
 ;Always install the original english version of the readme
 Name: {group}\Firebird 1.5.5 Readme; Filename: {app}\readme.txt; MinVersion: 4.0,4.0; Components: DevAdminComponent;
 #ifdef i18n
@@ -278,6 +282,8 @@ Name: {group}\{cm:IconUninstall}; Filename: {uninstallexe}; Comment: Uninstall F
 #ifdef files
 Source: src\install\misc\IPLicense.txt; DestDir: {app}; Components: ClientComponent; Flags: sharedfile ignoreversion
 Source: src\install\misc\IDPLicense.txt; DestDir: {app}; Components: ClientComponent; Flags: sharedfile ignoreversion
+Source: src\install\arch-specific\win32\After_Installation.url; DestDir: {app}\doc; Components: ServerComponent DevAdminComponent; Flags: sharedfile ignoreversion
+Source: src\install\arch-specific\win32\firebirdsql.org.url; DestDir: {app}\doc; Components: ServerComponent DevAdminComponent; Flags: sharedfile ignoreversion
 ;Always install the original english version
 Source: src\install\arch-specific\win32\readme.txt; DestDir: {app}; Components: DevAdminComponent; Flags: ignoreversion
 #ifdef i18n
