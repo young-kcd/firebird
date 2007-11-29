@@ -6816,13 +6816,16 @@ static dsql_nod* pass1_merge(dsql_req* request, dsql_nod* input, bool proc_flag)
 
 		for (i = 0; i < list->nod_count; ++i)
 		{
+			if (!set_parameter_type(request, org_values[i], new_values[i], false))
+				set_parameter_type(request, new_values[i], org_values[i], false);
+
 			dsql_nod* assign = MAKE_node(nod_assign, e_asgn_count);
 			assign->nod_arg[e_asgn_value] = org_values[i];
 			assign->nod_arg[e_asgn_field] = new_values[i];
 			list->nod_arg[i] = assign;
 		}
 
-		// We do not allow cases like UPDATE T SET f1 = v1, f2 = v2, f1 = v3...
+		// We do not allow cases like UPDATE SET f1 = v1, f2 = v2, f1 = v3...
 		field_appears_once(modify->nod_arg[e_mdc_statement],
 			input->nod_arg[e_mrg_when]->nod_arg[e_mrg_when_matched]->nod_arg[e_mrg_update_statement],
 			false, "MERGE");
