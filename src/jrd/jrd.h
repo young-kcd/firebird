@@ -334,7 +334,6 @@ private:
 		dbb_database_name(p),
 		dbb_encrypt_key(p),
 		dbb_pools(p, 4),
-		dbb_stats(p),
 		dbb_charsets(p)
 	{
 		dbb_pools.resize(1);
@@ -508,7 +507,7 @@ class Attachment : public pool_alloc<type_att>
 public:
 	explicit Attachment(Database* dbb) :
 		att_database(dbb), 
-		att_stats(*dbb->dbb_permanent, &dbb->dbb_stats),
+		att_stats(&dbb->dbb_stats),
 		att_lc_messages(*dbb->dbb_permanent),
 		att_working_directory(*dbb->dbb_permanent), 
 		att_filename(*dbb->dbb_permanent),

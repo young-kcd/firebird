@@ -31,37 +31,7 @@
 using namespace Firebird;
 using namespace Jrd;
 
-RuntimeStatistics::RuntimeStatistics(MemoryPool& pool, RuntimeStatistics* p)
-	: parent(p), values(pool, TOTAL_ITEMS)
-{
-	values.resize(TOTAL_ITEMS);
-}
-
-void RuntimeStatistics::setParent(RuntimeStatistics* p)
-{
-	parent = p;
-}
-
-void RuntimeStatistics::bumpValue(size_t index)
-{
-	for (RuntimeStatistics* stats = this; stats; stats = stats->parent) {
-		fb_assert(index < stats->values.getCount());
-		stats->values[index]++;
-	}
-}
-
-SINT64 RuntimeStatistics::getValue(size_t index) const
-{
-	fb_assert(index < values.getCount());
-	return values[index];
-}
-
-void RuntimeStatistics::reset()
-{
-	memset(values.begin(), 0, values.getCount() * sizeof(SINT64));
-}
-
-void RuntimeStatistics::bumpValue(thread_db* tdbb, size_t index)
+void RuntimeStatistics::bumpValue(thread_db* tdbb, stat_t index)
 {
 	fb_assert(tdbb);
 
@@ -81,5 +51,8 @@ void RuntimeStatistics::bumpValue(thread_db* tdbb, size_t index)
 	}
 
 	fb_assert(statistics);
-	statistics->bumpValue(index);
+
+	for (; statistics; statistics = statistics->parent) {
+		statistics->values[index]++;
+	}
 }

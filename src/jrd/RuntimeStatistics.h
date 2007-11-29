@@ -34,7 +34,7 @@ class thread_db;
 
 class RuntimeStatistics {
 public:
-	enum {
+	enum stat_t {
 		PAGE_FETCHES = 0,
 		PAGE_READS,
 		PAGE_MARKS,
@@ -56,24 +56,45 @@ public:
 		TOTAL_ITEMS
 	};
 
-	explicit RuntimeStatistics(Firebird::MemoryPool&, RuntimeStatistics* = NULL);
-	~RuntimeStatistics() {}
+	RuntimeStatistics()
+		: parent(NULL)
+	{
+		reset();
+	}
 
-	void setParent(RuntimeStatistics*);
-	SINT64 getValue(size_t) const;
-	void reset();
+	explicit RuntimeStatistics(RuntimeStatistics* p)
+		: parent(p)
+	{
+		reset();
+	}
 
-	static void bumpValue(thread_db*, size_t);
+	~RuntimeStatistics()
+	{}
+
+	void setParent(RuntimeStatistics* p)
+	{
+		parent = p;
+	}
+
+	UINT64 getValue(stat_t index) const
+	{
+		return values[index];
+	}
+
+	void reset()
+	{
+		memset(values, 0, sizeof(values));
+	}
+
+	static void bumpValue(thread_db*, stat_t);
 
 private:
 	// copying is prohibited
 	RuntimeStatistics(const RuntimeStatistics&);
 	RuntimeStatistics& operator= (const RuntimeStatistics&);
 
-	void bumpValue(size_t);
-
 	RuntimeStatistics* parent;
-	Firebird::Array<SINT64> values;
+	UINT64 values[TOTAL_ITEMS];
 };
 
 } // namespace

@@ -188,7 +188,7 @@ class jrd_req : public pool_alloc_rpt<record_param, type_req>
 public:
 	jrd_req(JrdMemoryPool* pool) :
 		req_blobs(pool), req_external(*pool), req_access(*pool), req_resources(*pool),
-		req_trg_name(*pool), req_stats(*pool), req_fors(*pool), req_exec_sta(*pool),
+		req_trg_name(*pool), req_fors(*pool), req_exec_sta(*pool),
 		req_invariants(*pool), req_timestamp(true), req_sql_text(*pool), req_domain_validation(NULL),
 		req_map_field_info(*pool), req_map_item_info(*pool)
 	{}
