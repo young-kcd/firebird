@@ -702,9 +702,10 @@ static void usage_exit(void)
 	printf("                    [ -n[ame] instance ]\n");
 	printf("                    [ -i[nteractive] ]\n\n");
 	printf("          sta[rt]   [ -b[oostpriority] ]\n");
-	printf("          sto[p]\n");
+	printf("                    [ -n[ame] instance ]\n");
+	printf("          sto[p]    [ -n[ame] instance ]\n");
 	printf("          q[uery]\n");
-	printf("          r[emove]\n\n");
+	printf("          r[emove]  [ -n[ame] instance ]\n\n");
 	printf("  This utility should be located and run from the 'bin' directory\n");
 	printf("  of your Firebird installation.\n\n");
 	printf("  '*' denotes the default values\n");
