@@ -1,3 +1,12 @@
+2007-11-28 15:10  paul_reeves
+
+	* firebird2/src/install/arch-specific/win32/:
+	FirebirdInstall_15.iss (1.5.2.30), After_Installation.url
+	(1.1.2.1), firebirdsql.org.url (1.1.2.1):
+
+	Add links to Firebird web-site and launch link to web-site from
+	installer.
+
 2007-11-23 11:00  paul_reeves
 
 	* firebird2/doc/WhatsNew (1.36.2.69):
