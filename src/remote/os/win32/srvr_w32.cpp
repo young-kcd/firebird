@@ -555,6 +555,7 @@ static HANDLE parse_args( LPCSTR lpszArgs, USHORT * pserver_flag)
  *
  **************************************/
 	TEXT buffer[32];
+	bool delimited = false;
 
 	HANDLE connection_handle = INVALID_HANDLE_VALUE;
 
@@ -637,14 +638,28 @@ static HANDLE parse_args( LPCSTR lpszArgs, USHORT * pserver_flag)
 					break;
 
 				case 'S':
+					delimited = false;
 					while (*p && *p == ' ')
 						p++;
-					if (*p && *p != '-') {
+					if (*p && *p == '"')
+						p++, delimited = true;
+					if (delimited) {
 						char *pi = instance;
-						while (*p && *p != ' ') {
+						while (*p && *p != '"') {
 							*pi++ = *p++;
 						}
 						*pi++ = '\0';
+						if (*p && *p == '"')
+							p++;
+					}
+					else {
+						if (*p && *p != '-') {
+							char *pi = instance;
+							while (*p && *p != ' ') {
+								*pi++ = *p++;
+							}
+							*pi++ = '\0';
+						}
 					}
 					break;
 

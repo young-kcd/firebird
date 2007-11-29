@@ -188,6 +188,7 @@ static bool parse_args(LPCSTR lpszArgs, TEXT* instance)
 *
 **************************************/
 	bool is_service = true;
+	bool delimited = false;
 
 	for (const char* p = lpszArgs; *p; p++) {
 		if (*p++ == '-') {
@@ -199,13 +200,28 @@ static bool parse_args(LPCSTR lpszArgs, TEXT* instance)
 					break;
 
 				case 'S':
+					delimited = false;
 					while (*p && *p == ' ')
 						p++;
-					if (*p && *p != '-') {
-						while (*p && *p != ' ') {
-							*instance++ = *p++;
+					if (*p && *p == '"')
+						p++, delimited = true;
+					if (delimited) {
+						char* pi = instance;
+						while (*p && *p != '"') {
+							*pi++ = *p++;
 						}
-						*instance++ = '\0';
+						*pi++ = '\0';
+						if (*p && *p == '"')
+							p++;
+					}
+					else {
+						if (*p && *p != '-') {
+							char* pi = instance;
+							while (*p && *p != ' ') {
+								*pi++ = *p++;
+							}
+							*pi++ = '\0';
+						}
 					}
 					break;
 
