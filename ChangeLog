@@ -1,3 +1,9 @@
+2007-11-28 14:12  alexpeshkoff
+
+	* firebird2/src/alice/alice.h (1.49.2.3):
+
+	Fixed gcc warning
+
 2007-11-22 13:30  alexpeshkoff
 
 	* firebird2/src/: jrd/constants.h (1.24.4.2), jrd/isc.cpp
