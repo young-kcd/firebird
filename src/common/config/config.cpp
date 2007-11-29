@@ -124,7 +124,8 @@ const ConfigImpl::ConfigEntry ConfigImpl::entries[] =
 	{TYPE_BOOLEAN,		"OldColumnNaming",			(ConfigValue) false},	// if true use old style concatenation
 	{TYPE_STRING,		"Authentication",			(ConfigValue) AmMixed},	// use native, trusted or mixed
 	{TYPE_INTEGER,		"DatabaseGrowthIncrement",	(ConfigValue) 128 * 1048576},	// bytes
-	{TYPE_INTEGER,		"MaxFileSystemCache",		(ConfigValue) 65536}	// page buffers
+	{TYPE_INTEGER,		"MaxFileSystemCache",		(ConfigValue) 65536},	// page buffers
+	{TYPE_BOOLEAN,		"RelaxedAliasChecking",		(ConfigValue) false}	// if true relax strict alias checking rules in DSQL a bit
 };
 
 /******************************************************************************
@@ -556,4 +557,9 @@ int Config::getDatabaseGrowthIncrement()
 int Config::getMaxFileSystemCache()
 {
 	return (int) sysConfig.values[KEY_MAX_FILESYSTEM_CACHE];
+}
+
+bool Config::getRelaxedAliasChecking()
+{
+	return (bool) sysConfig.values[KEY_RELAXED_ALIAS_CHECKING];
 }

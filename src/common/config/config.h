@@ -120,7 +120,8 @@ class Config
 		KEY_OLD_COLUMN_NAMING,						// 45
 		KEY_AUTH_METHOD,							// 46
 		KEY_DATABASE_GROWTH_INCREMENT,				// 47
-		KEY_MAX_FILESYSTEM_CACHE					// 48
+		KEY_MAX_FILESYSTEM_CACHE,					// 48
+		KEY_RELAXED_ALIAS_CHECKING					// 49
 	};
 
 public:
@@ -378,6 +379,8 @@ public:
 	static int getDatabaseGrowthIncrement();
 
 	static int getMaxFileSystemCache();
+
+	static bool getRelaxedAliasChecking();
 };
 
 namespace Firebird {
