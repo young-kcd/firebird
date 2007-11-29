@@ -1569,20 +1569,47 @@ static dsc* evlHash(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_
 	if (request->req_flags & req_null)	// return NULL if value is NULL
 		return NULL;
 
-	MoveBuffer buffer;
-	UCHAR* address;
-	ULONG length = MOV_make_string2(tdbb, value, value->getTextType(), &address, buffer, false);
-
 	impure->vlu_misc.vlu_int64 = 0;
 
-	for (UCHAR* end = address + length; address < end; ++address)
-	{
-		impure->vlu_misc.vlu_int64 = (impure->vlu_misc.vlu_int64 << 4) + *address;
+	MoveBuffer buffer;
+	UCHAR* address;
 
-		SINT64 n = impure->vlu_misc.vlu_int64 & CONST64(0xF000000000000000);
-		if (n)
-		  impure->vlu_misc.vlu_int64 ^= n >> 56;
-		impure->vlu_misc.vlu_int64 &= ~n;
+	if (value->isBlob())
+	{
+		blb* blob = BLB_open(tdbb, tdbb->tdbb_request->req_transaction,
+			reinterpret_cast<bid*>(value->dsc_address));
+
+		while (!(blob->blb_flags & BLB_eof))
+		{
+			address = buffer.begin();
+			SLONG length = BLB_get_data(tdbb, blob, address, buffer.getCapacity(), false);
+
+			for (const UCHAR* end = address + length; address < end; ++address)
+			{
+				impure->vlu_misc.vlu_int64 = (impure->vlu_misc.vlu_int64 << 4) + *address;
+
+				SINT64 n = impure->vlu_misc.vlu_int64 & CONST64(0xF000000000000000);
+				if (n)
+					impure->vlu_misc.vlu_int64 ^= n >> 56;
+				impure->vlu_misc.vlu_int64 &= ~n;
+			}
+		}
+
+		BLB_close(tdbb, blob);
+	}
+	else
+	{
+		ULONG length = MOV_make_string2(tdbb, value, value->getTextType(), &address, buffer, false);
+
+		for (const UCHAR* end = address + length; address < end; ++address)
+		{
+			impure->vlu_misc.vlu_int64 = (impure->vlu_misc.vlu_int64 << 4) + *address;
+
+			SINT64 n = impure->vlu_misc.vlu_int64 & CONST64(0xF000000000000000);
+			if (n)
+				impure->vlu_misc.vlu_int64 ^= n >> 56;
+			impure->vlu_misc.vlu_int64 &= ~n;
+		}
 	}
 
 	// make descriptor for return value
