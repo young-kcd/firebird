@@ -372,10 +372,10 @@ HASH
 ----
 
 Function:
-    Returns a HASH of a value.
+    Returns a HASH of a string.
 
 Format:
-    HASH( <value> )
+    HASH( <string> )
 
 Example:
     select hash(x) from y;
