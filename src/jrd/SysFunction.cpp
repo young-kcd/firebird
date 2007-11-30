@@ -2156,7 +2156,7 @@ static dsc* evlPosition(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::
 	{
 		// value1 is a blob
 		blb* blob = BLB_open(tdbb, tdbb->tdbb_request->req_transaction,
-            reinterpret_cast<bid*>(value1->dsc_address));
+			reinterpret_cast<bid*>(value1->dsc_address));
 
 		value1Address = value1Buffer.getBuffer(blob->blb_length);
 		value1Length = BLB_get_data(tdbb, blob, value1Address, blob->blb_length, true);
@@ -2184,7 +2184,7 @@ static dsc* evlPosition(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::
 	{
 		// value2 is a blob
 		blb* blob = BLB_open(tdbb, tdbb->tdbb_request->req_transaction,
-            reinterpret_cast<bid*>(value2->dsc_address));
+			reinterpret_cast<bid*>(value2->dsc_address));
 
 		value2Address = value2Buffer.getBuffer(blob->blb_length);
 		value2Length = BLB_get_data(tdbb, blob, value2Address, blob->blb_length, true);
