@@ -1,3 +1,60 @@
+2007-11-30 01:35  asfernandes
+
+	* firebird2/src/: dsql/pass1.cpp (1.347), iscguard/iscguard.cpp
+	(1.52), jrd/RuntimeStatistics.h (1.5), remote/os/win32/srvr_w32.cpp
+	(1.40):
+
+	Misc
+
+2007-11-29 19:45  dimitr
+
+	* firebird2/builds/install/misc/firebird.conf (1.39):
+
+	Some practice in the English language :-)
+
+2007-11-29 18:53  hvlad
+
+	* firebird2/: builds/install/misc/firebird.conf (1.38),
+	src/common/config/config.cpp (1.84), src/common/config/config.h
+	(1.46), src/dsql/pass1.cpp (1.346):
+
+	Implement CORE-1625 : Implement new setting to relax strict SQL
+	standard's alias checking rules
+
+2007-11-29 16:15  asfernandes
+
+	* firebird2/src/dsql/pass1.cpp (1.345):
+
+	Fixed CORE-1624 - MERGE not correctly worked with parameters in
+	MATCHING clause
+
+2007-11-29 15:32  asfernandes
+
+	* firebird2/src/jrd/SysFunction.cpp (1.29):
+
+	Improvement CORE-1623 - Improve memory consumption of HASH(blob)
+
+2007-11-29 11:26  dimitr
+
+	* firebird2/src/jrd/: RuntimeStatistics.cpp (1.4),
+	RuntimeStatistics.h (1.4), jrd.h (1.200), req.h (1.69), tra.h
+	(1.67):
+
+	A few trivial optimizations.
+
+2007-11-29 10:33  dimitr
+
+	* firebird2/src/utilities/install/install_svc.cpp (1.33):
+
+	Fixed (hopefully) CORE-1565.
+
+2007-11-29 10:23  dimitr
+
+	* firebird2/src/: remote/os/win32/srvr_w32.cpp (1.39),
+	iscguard/iscguard.cpp (1.51):
+
+	Fixed (hopefully) CORE-1565.
+
 2007-11-27 17:21  hvlad
 
 	* firebird2/src/jrd/pag.cpp (1.154):
