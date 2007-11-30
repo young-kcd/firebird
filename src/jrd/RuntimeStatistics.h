@@ -53,7 +53,7 @@ public:
 		SORT_PUTS,
 		STMT_PREPARES,
 		STMT_EXECUTES,
-		TOTAL_ITEMS
+		TOTAL_ITEMS		// last
 	};
 
 	RuntimeStatistics()

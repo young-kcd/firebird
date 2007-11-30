@@ -5068,7 +5068,8 @@ static dsql_nod* pass1_field( dsql_req* request, dsql_nod* input,
 
 	bool resolve_by_alias = true;
 	const bool relaxedAliasChecking = Config::getRelaxedAliasChecking();
-	while(true) 
+
+	while (true) 
 	{
 		// AB: Loop through the scope_levels starting by its own.
 		bool done = false;

@@ -641,8 +641,10 @@ static HANDLE parse_args( LPCSTR lpszArgs, USHORT * pserver_flag)
 					delimited = false;
 					while (*p && *p == ' ')
 						p++;
-					if (*p && *p == '"')
-						p++, delimited = true;
+					if (*p && *p == '"') {
+						p++;
+						delimited = true;
+					}
 					if (delimited) {
 						char *pi = instance;
 						while (*p && *p != '"') {
