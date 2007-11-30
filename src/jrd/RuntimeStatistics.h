@@ -76,7 +76,7 @@ public:
 		parent = p;
 	}
 
-	UINT64 getValue(stat_t index) const
+	FB_UINT64 getValue(stat_t index) const
 	{
 		return values[index];
 	}
@@ -94,7 +94,7 @@ private:
 	RuntimeStatistics& operator= (const RuntimeStatistics&);
 
 	RuntimeStatistics* parent;
-	UINT64 values[TOTAL_ITEMS];
+	FB_UINT64 values[TOTAL_ITEMS];
 };
 
 } // namespace
