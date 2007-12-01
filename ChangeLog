@@ -1,3 +1,21 @@
+2007-11-30 15:05  mkubecek
+
+	* firebird2/src/jrd/RuntimeStatistics.h (1.6):
+
+	incorrect type
+
+2007-11-30 14:49  asfernandes
+
+	* firebird2/doc/sql.extensions/README.builtin_functions.txt (1.12):
+
+	Change function description
+
+2007-11-30 11:44  asfernandes
+
+	* firebird2/src/jrd/SysFunction.cpp (1.30):
+
+	Misc
+
 2007-11-30 01:35  asfernandes
 
 	* firebird2/src/: dsql/pass1.cpp (1.347), iscguard/iscguard.cpp
