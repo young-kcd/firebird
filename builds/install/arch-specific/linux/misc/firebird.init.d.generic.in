@@ -7,7 +7,6 @@
 #   Copy this script under a new name
 #   Change INSTANCE and FIREBIRD below (all instance names should be unique)
 #   Edit the copied firebird.conf to change at least RemoteServicePort
-#   Optionally run rc-update to autostart the new service
 INSTANCE=default
 FIREBIRD=@prefix@
 
