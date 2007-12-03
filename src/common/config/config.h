@@ -111,7 +111,8 @@ class Config
 		KEY_LEGACY_HASH,							// 41
 		KEY_GC_POLICY,								// 42
 		KEY_REDIRECTION,							// 43
-		KEY_OLD_COLUMN_NAMING						// 44
+		KEY_OLD_COLUMN_NAMING,						// 44
+		KEY_RELAXED_ALIAS_CHECKING					// 45
 	};
 
 public:
@@ -346,6 +347,7 @@ public:
 	*/
 	static bool getOldColumnNaming();
 
+	static bool getRelaxedAliasChecking();
 };
 
 namespace Firebird {

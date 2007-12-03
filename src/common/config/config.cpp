@@ -122,7 +122,8 @@ const ConfigImpl::ConfigEntry ConfigImpl::entries[] =
 	{TYPE_BOOLEAN,		"LegacyHash",				(ConfigValue) true},	// let use old passwd hash verification
 	{TYPE_STRING,		"GCPolicy",					(ConfigValue) GCPolicyDefault},	// garbage collection policy
 	{TYPE_BOOLEAN,		"Redirection",				(ConfigValue) false},
-	{TYPE_BOOLEAN,		"OldColumnNaming",			(ConfigValue) false}	// if true use old style concatenation
+	{TYPE_BOOLEAN,		"OldColumnNaming",			(ConfigValue) false},	// if true use old style concatenation
+	{TYPE_BOOLEAN,		"RelaxedAliasChecking",		(ConfigValue) false}	// if true relax strict alias checking rules in DSQL a bit
 };
 
 /******************************************************************************
@@ -518,5 +519,10 @@ bool Config::getRedirection()
 bool Config::getOldColumnNaming()
 {
 	return (bool) sysConfig.values[KEY_OLD_COLUMN_NAMING];
+}
+
+bool Config::getRelaxedAliasChecking()
+{
+	return (bool) sysConfig.values[KEY_RELAXED_ALIAS_CHECKING];
 }
 
