@@ -889,7 +889,7 @@ static bool get_record(
  *
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
-	jrd_req* request = tdbb->tdbb_request;
+	jrd_req* request = tdbb->getRequest();
 	index_desc* idx = (index_desc*) ((SCHAR*) impure + (IPTR) rsb->rsb_arg[RSB_NAV_idx_offset]);
 
 	ULONG old_att_flags = 0;
@@ -903,8 +903,8 @@ static bool get_record(
 		// There are cases when we are called here and have a window locked 
 		// HACK for bug 7041
 
-		old_att_flags = (tdbb->tdbb_attachment->att_flags & ATT_no_cleanup);
-		tdbb->tdbb_attachment->att_flags |= ATT_no_cleanup;	// HACK
+		old_att_flags = (tdbb->getAttachment()->att_flags & ATT_no_cleanup);
+		tdbb->getAttachment()->att_flags |= ATT_no_cleanup;	// HACK
 	}
 
 #ifdef SCROLLABLE_CURSORS
@@ -939,15 +939,15 @@ static bool get_record(
 	}
 
 	if (inhibit_cleanup) {
-		tdbb->tdbb_attachment->att_flags &= ~ATT_no_cleanup;
-		tdbb->tdbb_attachment->att_flags |= old_att_flags;
+		tdbb->getAttachment()->att_flags &= ~ATT_no_cleanup;
+		tdbb->getAttachment()->att_flags |= old_att_flags;
 	}
 
 	}	// try
 	catch (const Firebird::Exception&) {
 		// Cleanup the HACK should there be an error
-		tdbb->tdbb_attachment->att_flags &= ~ATT_no_cleanup;
-		tdbb->tdbb_attachment->att_flags |= old_att_flags;
+		tdbb->getAttachment()->att_flags &= ~ATT_no_cleanup;
+		tdbb->getAttachment()->att_flags |= old_att_flags;
 		throw;
 	}
 

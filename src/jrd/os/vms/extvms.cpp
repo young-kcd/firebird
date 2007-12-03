@@ -83,7 +83,7 @@ void EXT_close(RecordSource* rsb)
 
 	jrd_rel* relation = rsb->rsb_relation;
 	ExternalFile* file = relation->rel_file;
-	jrd_req* request = tdbb->tdbb_request;
+	jrd_req* request = tdbb->getRequest();
 	record_param* rpb = &request->req_rpb[rsb->rsb_stream];
 
 	if ((rab.rab$w_isi = rpb->rpb_ext_isi) &&
@@ -142,7 +142,7 @@ ExternalFile* EXT_file(jrd_rel* relation, TEXT* file_name, bid* description)
 	UCHAR index_buffer[MAX_KEYS * sizeof(index_desc)];
 
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 /* Allocate and fill out an external file block.  Get the
    external format and flesh it out using the internal
@@ -292,7 +292,7 @@ bool EXT_get(RecordSource* rsb)
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
 
-	if (tdbb->tdbb_request->req_flags & req_abort)
+	if (tdbb->getRequest()->req_flags & req_abort)
 		return false;
 
 	switch (rsb->rsb_type) {
@@ -364,7 +364,7 @@ EXT_open(RecordSource* rsb)
 	thread_db* tdbb = JRD_get_thread_data();
 
 	jrd_rel* relation = rsb->rsb_relation;
-	jrd_req* request = tdbb->tdbb_request;
+	jrd_req* request = tdbb->getRequest();
 	record_param* rpb = &request->req_rpb[rsb->rsb_stream];
 
 	const Format* format;
@@ -839,7 +839,7 @@ static bool get_dbkey(RecordSource* rsb)
 
 	jrd_rel* relation = rsb->rsb_relation;
 	ExternalFile* file = relation->rel_file;
-	jrd_req* request = tdbb->tdbb_request;
+	jrd_req* request = tdbb->getRequest();
 
 	irsb_ext* impure = (irsb_ext*) ((UCHAR *) request + rsb->rsb_impure);
 	record_param* rpb = &request->req_rpb[rsb->rsb_stream];
@@ -903,7 +903,7 @@ static bool get_indexed(RecordSource* rsb)
 	ExternalFile* file = relation->rel_file;
 	const Format* format = file->ext_format;
 
-	jrd_req* request = tdbb->tdbb_request;
+	jrd_req* request = tdbb->getRequest();
 	record_param* rpb = &request->req_rpb[rsb->rsb_stream];
 	irsb_ext* impure = (irsb_ext*) ((UCHAR *) request + rsb->rsb_impure);
 
@@ -1015,7 +1015,7 @@ static bool get_sequential(RecordSource* rsb)
 
 	jrd_rel* relation = rsb->rsb_relation;
 	ExternalFile* file = relation->rel_file;
-	jrd_req* request = tdbb->tdbb_request;
+	jrd_req* request = tdbb->getRequest();
 
 	irsb_ext* impure = (irsb_ext*) ((UCHAR *) request + rsb->rsb_impure);
 	record_param* rpb = &request->req_rpb[rsb->rsb_stream];
@@ -1117,7 +1117,7 @@ static open_indexed(RecordSource* rsb)
 
 	jrd_rel* relation = rsb->rsb_relation;
 	ExternalFile* file = relation->rel_file;
-	jrd_req* request = tdbb->tdbb_request;
+	jrd_req* request = tdbb->getRequest();
 	record_param* rpb = &request->req_rpb[rsb->rsb_stream];
 	jrd_nod* node = (jrd_nod*) rsb->rsb_arg[0];
 	IndexRetrieval* retrieval = (IndexRetrieval*) node->nod_arg[e_idx_retrieval];
@@ -1147,7 +1147,7 @@ static open_sequential(RecordSource* rsb)
 
 	jrd_rel* relation = rsb->rsb_relation;
 	ExternalFile* file = relation->rel_file;
-	jrd_req* request = tdbb->tdbb_request;
+	jrd_req* request = tdbb->getRequest();
 	record_param* rpb = &request->req_rpb[rsb->rsb_stream];
 
 	if (file->ext_file_type == FAB$C_IDX) {

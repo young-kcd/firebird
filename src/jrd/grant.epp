@@ -160,7 +160,7 @@ bool GRANT_privileges( thread_db* tdbb, SSHORT phase, DeferredWork* work,
 
 			bool restrct = false;
 
-			Database* dbb = tdbb->tdbb_database;
+			Database* dbb = tdbb->getDatabase();
 			Firebird::MetaName s_class, owner, default_class;
 			bool view; // unused after being retrieved.
 			get_object_info(tdbb, work->dfw_name.c_str(), work->dfw_id, owner,
@@ -296,7 +296,7 @@ static void define_default_class(
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 	if (default_class.length() == 0) {
 		default_class.printf("%s%" SQUADFORMAT, DEFAULT_CLASS,
@@ -351,7 +351,7 @@ static void delete_security_class( thread_db* tdbb, const TEXT* s_class)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 	jrd_req* handle = NULL;
 
@@ -411,7 +411,7 @@ static SecurityClass::flags_t get_public_privs(
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 	SecurityClass::flags_t public_priv = 0;
 
@@ -457,7 +457,7 @@ static void get_object_info(thread_db* tdbb,
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 	owner = s_class = default_class = "";
 	view = false;
@@ -523,7 +523,7 @@ static void get_user_privs(thread_db*					tdbb,
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 	UCHAR* acl = *acl_ptr;
 	Firebird::MetaName user;
@@ -679,7 +679,7 @@ static void purge_default_class( TEXT* object_name, SSHORT obj_type)
  *
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 	jrd_req* request = CMP_find_request(tdbb, irq_grant8, IRQ_REQUESTS);
 
@@ -740,7 +740,7 @@ static SecurityClass::flags_t save_field_privileges(thread_db*	tdbb,
 	Firebird::UCharBuffer str_field_buffer_start;
 
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 	// initialize the field-level acl buffer to include all relation-level privs
 	str_field_buffer_start.getBuffer(*length_ptr - 1);
@@ -1000,7 +1000,7 @@ static void save_security_class(thread_db*					tdbb,
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 	bid blob_id;
 	blb* blob = BLB_create(tdbb, dbb->dbb_sys_trans, &blob_id);

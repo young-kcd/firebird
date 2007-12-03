@@ -283,7 +283,7 @@ bool LCK_convert(thread_db* tdbb, Lock* lock, USHORT level, SSHORT wait)
 	ISC_STATUS* status = tdbb->tdbb_status_vector;
 
 	Attachment *old_attachment = lock->lck_attachment;
-	set_lock_attachment(lock, tdbb->tdbb_attachment);
+	set_lock_attachment(lock, tdbb->getAttachment());
 
 	const bool result = CONVERT(tdbb, lock, level, wait, status);
 
@@ -330,7 +330,7 @@ int LCK_convert_non_blocking(thread_db* tdbb, Lock* lock, USHORT level, SSHORT w
 		return LCK_convert(tdbb, lock, level, wait);
 
 	Attachment* old_attachment = lock->lck_attachment;
-	set_lock_attachment(lock, tdbb->tdbb_attachment);
+	set_lock_attachment(lock, tdbb->getAttachment());
 
 /* Save context and checkout from the scheduler */
 
@@ -481,8 +481,8 @@ void LCK_fini(thread_db* tdbb, enum lck_owner_t owner_type)
 	SLONG* owner_handle_ptr = 0;
 
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
-	Attachment* attachment = tdbb->tdbb_attachment;
+	Database* dbb = tdbb->getDatabase();
+	Attachment* attachment = tdbb->getAttachment();
 
 	switch (owner_type) {
 	case LCK_OWNER_process:
@@ -521,8 +521,8 @@ SLONG LCK_get_owner_handle(thread_db* tdbb, enum lck_t lock_type)
 
 	SET_TDBB(tdbb);
 #ifdef SUPERSERVER
-	Database* dbb = tdbb->tdbb_database;
-	Attachment* attachment = tdbb->tdbb_attachment;
+	Database* dbb = tdbb->getDatabase();
+	Attachment* attachment = tdbb->getAttachment();
 #else
 	Database* dbb = NULL;
 	Attachment* attachment = NULL;
@@ -584,9 +584,9 @@ SLONG LCK_get_owner_handle_by_type(thread_db* tdbb, lck_owner_t lck_owner_type)
 		case LCK_OWNER_process:
 			return *LCK_OWNER_HANDLE_PROCESS();
 		case LCK_OWNER_database:
-			return *LCK_OWNER_HANDLE_DBB(tdbb->tdbb_database);;
+			return *LCK_OWNER_HANDLE_DBB(tdbb->getDatabase());;
 		case LCK_OWNER_attachment:
-			return *LCK_OWNER_HANDLE_ATT(tdbb->tdbb_attachment);
+			return *LCK_OWNER_HANDLE_ATT(tdbb->getAttachment());
 		default:
 			bug_lck("Invalid lock owner type in LCK_get_owner_handle_by_type ()");
 			return 0;
@@ -634,8 +634,8 @@ void LCK_init(thread_db* tdbb, enum lck_owner_t owner_type)
 	SLONG* owner_handle_ptr = 0;
 
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
-	Attachment* attachment = tdbb->tdbb_attachment;
+	Database* dbb = tdbb->getDatabase();
+	Attachment* attachment = tdbb->getAttachment();
 
 	switch (owner_type) {
 	case LCK_OWNER_process:
@@ -686,7 +686,7 @@ int LCK_lock(thread_db* tdbb, Lock* lock, USHORT level, SSHORT wait)
 	Database* dbb = lock->lck_dbb;
 	ISC_STATUS* status = tdbb->tdbb_status_vector;
 	lock->lck_blocked_threads = NULL;
-    set_lock_attachment(lock, tdbb->tdbb_attachment);
+    set_lock_attachment(lock, tdbb->getAttachment());
 
 	ENQUEUE(tdbb, lock, level, wait);
 	fb_assert(LCK_CHECK_LOCK(lock));
@@ -738,7 +738,7 @@ int LCK_lock_non_blocking(thread_db* tdbb, Lock* lock, USHORT level, SSHORT wait
 	if (!wait || !gds__thread_enable(FALSE))
 		return LCK_lock(tdbb, lock, level, wait);
 
-	set_lock_attachment(lock, tdbb->tdbb_attachment);
+	set_lock_attachment(lock, tdbb->getAttachment());
 
 /* Make sure we're not about to wait for ourselves */
 

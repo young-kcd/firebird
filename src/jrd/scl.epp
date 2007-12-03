@@ -155,7 +155,7 @@ void SCL_check_access(const SecurityClass* s_class,
 		return;
 	}
 
-	const Attachment* const attachment = tdbb->tdbb_attachment;
+	const Attachment* const attachment = tdbb->getAttachment();
 
 	// Allow the database owner to back up a database even if he does not have
 	// read access to all the tables in the database
@@ -235,7 +235,7 @@ void SCL_check_index(thread_db* tdbb, const Firebird::MetaName& index_name, UCHA
  *
  *******************************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 	const SecurityClass* s_class = NULL;
 	const SecurityClass* default_s_class = NULL;
 
@@ -362,7 +362,7 @@ void SCL_check_procedure(const dsc* dsc_name, SecurityClass::flags_t mask)
 	const Firebird::MetaName name(reinterpret_cast<TEXT*>(dsc_name->dsc_address),
 							dsc_name->dsc_length);
 
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 	const SecurityClass* s_class = NULL;
 
 	jrd_req* request = CMP_find_request(tdbb, irq_p_security, IRQ_REQUESTS);
@@ -405,7 +405,7 @@ void SCL_check_relation(const dsc* dsc_name, SecurityClass::flags_t mask)
 	const Firebird::MetaName name(reinterpret_cast<TEXT*>(dsc_name->dsc_address),
 							dsc_name->dsc_length);
 
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 	const SecurityClass* s_class = NULL;
 
@@ -443,7 +443,7 @@ SecurityClass* SCL_get_class(const TEXT* _string)
  *
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 	// Name may be absent or terminated with NULL or blank.  Clean up name.
 
@@ -460,7 +460,7 @@ SecurityClass* SCL_get_class(const TEXT* _string)
 		return NULL;
 	}
 
-	Attachment* attachment = tdbb->tdbb_attachment;
+	Attachment* attachment = tdbb->getAttachment();
 
 	// Look for the class already known
 
@@ -509,7 +509,7 @@ SecurityClass::flags_t SCL_get_mask(const TEXT* relation_name, const TEXT* field
  *
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
-	Attachment* attachment = tdbb->tdbb_attachment;
+	Attachment* attachment = tdbb->getAttachment();
 
 	// Start with database security class
 
@@ -565,7 +565,7 @@ void SCL_init(bool create,
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 	const USHORT major_version = dbb->dbb_ods_version;
 	const USHORT minor_original = dbb->dbb_minor_original;
 
@@ -667,7 +667,7 @@ void SCL_init(bool create,
 
 	UserId* user = FB_NEW(*dbb->dbb_permanent) UserId(*dbb->dbb_permanent, tempId);
 	user->usr_sql_role_name = role_name.c_str();
-	tdbb->tdbb_attachment->att_user = user;
+	tdbb->getAttachment()->att_user = user;
 
 	jrd_req* handle = NULL;
 	jrd_req* handle1 = NULL;
@@ -676,7 +676,7 @@ void SCL_init(bool create,
 		FOR(REQUEST_HANDLE handle) X IN RDB$DATABASE
 
 			if (!X.RDB$SECURITY_CLASS.NULL)
-				tdbb->tdbb_attachment->att_security_class =
+				tdbb->getAttachment()->att_security_class =
 					SCL_get_class(X.RDB$SECURITY_CLASS);
 		END_FOR;
 		CMP_release(tdbb, handle);
@@ -788,7 +788,7 @@ void SCL_release(SecurityClass* s_class)
  *
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
-	Attachment* attachment = tdbb->tdbb_attachment;
+	Attachment* attachment = tdbb->getAttachment();
 
 	for (SecurityClass** next = &attachment->att_security_classes; *next;
 		 next = &(*next)->scl_next)
@@ -893,7 +893,7 @@ static bool check_user_group(const UCHAR* acl,
  *
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 	SLONG n = 0;
 
@@ -973,7 +973,7 @@ static SecurityClass::flags_t compute_access(thread_db* tdbb,
 	SLONG length = BLOB_BUFFER_SIZE;
 
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 	SecurityClass::flags_t privileges = SCL_scanned;
 
@@ -1046,11 +1046,11 @@ static SecurityClass::flags_t walk_acl(thread_db* tdbb,
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 	// Munch ACL. If we find a hit, eat up privileges.
 
-	UserId user = *tdbb->tdbb_attachment->att_user;
+	UserId user = *tdbb->getAttachment()->att_user;
 	const TEXT* role_name = user.usr_sql_role_name.nullStr();
 
 	if (view && (view->rel_flags & REL_sql_relation))

@@ -51,7 +51,7 @@ void VirtualTable::close(thread_db* tdbb, RecordSource* rsb)
 	SET_TDBB(tdbb);
 
 	irsb_virtual* impure =
-		(irsb_virtual*) ((UCHAR *) tdbb->tdbb_request + rsb->rsb_impure);
+		(irsb_virtual*) ((UCHAR *) tdbb->getRequest() + rsb->rsb_impure);
 
 	impure->irsb_record_buffer = NULL;
 }
@@ -61,7 +61,7 @@ void VirtualTable::erase(thread_db* tdbb, record_param* rpb)
 {
 	SET_TDBB(tdbb);
 
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 	fb_assert(dbb);
 
 	jrd_rel* relation = rpb->rpb_relation;
@@ -96,7 +96,7 @@ bool VirtualTable::get(thread_db* tdbb, RecordSource* rsb)
 {
 	SET_TDBB(tdbb);
 
-	jrd_req* request = tdbb->tdbb_request;
+	jrd_req* request = tdbb->getRequest();
 
 	record_param* const rpb = &request->req_rpb[rsb->rsb_stream];
 	irsb_virtual* const impure =
@@ -122,7 +122,7 @@ void VirtualTable::open(thread_db* tdbb, RecordSource* rsb)
 {
 	SET_TDBB(tdbb);
 
-	jrd_req* request = tdbb->tdbb_request;
+	jrd_req* request = tdbb->getRequest();
 
 	jrd_rel* const relation = rsb->rsb_relation;
 	record_param* const rpb = &request->req_rpb[rsb->rsb_stream];

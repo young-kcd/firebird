@@ -251,7 +251,7 @@ bool EXT_get(thread_db* tdbb, RecordSource* rsb)
  **************************************/
 	jrd_rel* relation = rsb->rsb_relation;
 	ExternalFile* file = relation->rel_file;
-	jrd_req* request = tdbb->tdbb_request;
+	jrd_req* request = tdbb->getRequest();
 
 	if (request->req_flags & req_abort)
 		return false;
@@ -348,11 +348,11 @@ void EXT_open(thread_db* tdbb, RecordSource* rsb)
  **************************************/
 	jrd_rel* relation = rsb->rsb_relation;
 	ExternalFile* file = relation->rel_file;
-	jrd_req* request = tdbb->tdbb_request;
+	jrd_req* request = tdbb->getRequest();
 	record_param* rpb = &request->req_rpb[rsb->rsb_stream];
 
 	if (!file->ext_ifi) {
-		ext_fopen(tdbb->tdbb_database, file);
+		ext_fopen(tdbb->getDatabase(), file);
 	}
 
 	const Format* format;
@@ -465,7 +465,7 @@ void EXT_store(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 	const Format* format = record->rec_format;
 
 	if (!file->ext_ifi) {
-		ext_fopen(tdbb->tdbb_database, file);
+		ext_fopen(tdbb->getDatabase(), file);
 	}
 
 /* Loop thru fields setting missing fields to either blanks/zeros
@@ -474,7 +474,7 @@ void EXT_store(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 /* check if file is read only if read only then
    post error we cannot write to this file */
 	if (file->ext_flags & EXT_readonly) {
-		Database* dbb = tdbb->tdbb_database;
+		Database* dbb = tdbb->getDatabase();
 		CHECK_DBB(dbb);
 		/* Distinguish error message for a ReadOnly database */
 		if (dbb->dbb_flags & DBB_read_only)

@@ -110,7 +110,7 @@ RelationPages* jrd_rel::getPagesInternal(thread_db* tdbb, SLONG tran, bool alloc
 	if (tdbb->tdbb_flags & TDBB_deferred)
 		return &rel_pages_base;
 
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 	SLONG inst_id;
 	if (rel_flags & REL_temp_tran) 
 	{
@@ -118,8 +118,8 @@ RelationPages* jrd_rel::getPagesInternal(thread_db* tdbb, SLONG tran, bool alloc
 			inst_id = tran;
 		else if (tdbb->tdbb_temp_traid)
 			inst_id = tdbb->tdbb_temp_traid;
-		else if (tdbb->tdbb_transaction)
-			inst_id = tdbb->tdbb_transaction->tra_number;
+		else if (tdbb->getTransaction())
+			inst_id = tdbb->getTransaction()->tra_number;
 		else // called without transaction, maybe from OPT or CMP ?
 			return &rel_pages_base;
 	}
@@ -212,7 +212,7 @@ RelationPages* jrd_rel::getPagesInternal(thread_db* tdbb, SLONG tran, bool alloc
 				idx->idx_root = 0;
 				SelectivityList selectivity(*pool);
 				IDX_create_index(tdbb, this, idx, idx_name.c_str(), NULL, 
-					tdbb->tdbb_transaction, selectivity);
+					tdbb->getTransaction(), selectivity);
 
 #ifdef VIO_DEBUG
 				if (debug_flag > DEBUG_WRITES)
@@ -329,7 +329,7 @@ void jrd_rel::fillPagesSnapshot(RelPagesSnapshot& snapshot, const bool attachmen
 			}
 			else if (rel_flags & REL_temp_tran) 
 			{
-				const jrd_tra* tran = snapshot.spt_tdbb->tdbb_attachment->att_transactions;
+				const jrd_tra* tran = snapshot.spt_tdbb->getAttachment()->att_transactions;
 				for (; tran; tran = tran->tra_next)
 				{
 					if (tran->tra_number == relPages->rel_instance_id) 

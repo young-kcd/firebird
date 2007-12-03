@@ -217,7 +217,7 @@ BlobFilter* BLF_lookup_internal_filter(thread_db* tdbb, SSHORT from, SSHORT to)
  *	Lookup blob filter in data structures.
  *
  **************************************/
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 /* Check for system defined filter */
 
@@ -345,7 +345,7 @@ static ISC_STATUS open_blob(
  *	Open a blob and invoke a filter.
  *
  **************************************/
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 	ISC_STATUS* user_status = tdbb->tdbb_status_vector;
 
 	SSHORT from, to;

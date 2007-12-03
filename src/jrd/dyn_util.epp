@@ -122,7 +122,7 @@ SINT64 DYN_UTIL_gen_unique_id(thread_db*		tdbb,
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 	jrd_req* req_handle = CMP_find_request(tdbb, id, DYN_REQUESTS);
 
@@ -172,7 +172,7 @@ void DYN_UTIL_generate_constraint_name( thread_db* tdbb, Global* gbl, Firebird::
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 	jrd_req* request = NULL;
 	SSHORT id = -1;
@@ -249,7 +249,7 @@ void DYN_UTIL_generate_field_name( thread_db* tdbb, Global* gbl, Firebird::MetaN
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 	jrd_req* request = NULL;
 	SSHORT id = -1;
@@ -313,7 +313,7 @@ void DYN_UTIL_generate_field_position(
 	SLONG field_position = -1;
 
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 	jrd_req* request = NULL;
 
@@ -360,7 +360,7 @@ void DYN_UTIL_generate_index_name(thread_db* tdbb, Global* gbl,
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 	jrd_req* request = NULL;
 	SSHORT id = -1;
@@ -424,7 +424,7 @@ void DYN_UTIL_generate_trigger_name( thread_db* tdbb, Global* gbl, Firebird::Met
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 	jrd_req* request = NULL;
 	SSHORT id = -1;
@@ -535,7 +535,7 @@ void DYN_UTIL_store_check_constraints(thread_db*				tdbb,
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 	jrd_req* request = CMP_find_request(tdbb, drq_s_chk_con, DYN_REQUESTS);
 
@@ -576,7 +576,7 @@ bool DYN_UTIL_is_array(thread_db* tdbb,
 					   const Firebird::MetaName& domain_name)
 {
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 	
 	jrd_req* request = CMP_find_request(tdbb, drq_dom_is_array, DYN_REQUESTS);
 	
@@ -626,7 +626,7 @@ void DYN_UTIL_copy_domain(thread_db* tdbb,
 					   const Firebird::MetaName& new_name)
 {
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 	jrd_req* request = NULL; //CMP_find_request(tdbb, drq_dom_copy, DYN_REQUESTS);
 	jrd_req* req2 = NULL;

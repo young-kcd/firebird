@@ -222,7 +222,7 @@ int INF_database_info(const SCHAR* items,
 	bool header_refreshed = false;
 
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
 	jrd_tra* transaction = NULL;
@@ -230,7 +230,7 @@ int INF_database_info(const SCHAR* items,
 	const SCHAR* const end = info + output_length;
 	const SCHAR* const end_buf = buffer + sizeof(buffer);
 
-	const Attachment* err_att = tdbb->tdbb_attachment;
+	const Attachment* err_att = tdbb->getAttachment();
 	const SCHAR* q;
 
 	while (items < end_items && *items != isc_info_end) {
@@ -560,8 +560,8 @@ int INF_database_info(const SCHAR* items,
 
 		case isc_info_user_names:
 			// Assumes user names will be smaller than sizeof(buffer) - 1.
-			if (!(tdbb->tdbb_attachment->locksmith())) {
-				const UserId* user = tdbb->tdbb_attachment->att_user;
+			if (!(tdbb->getAttachment()->locksmith())) {
+				const UserId* user = tdbb->getAttachment()->att_user;
 				const char* uname = (user && user->usr_user_name.hasData()) ? user->usr_user_name.c_str() : "<Unknown>";
 				const SSHORT len = strlen(uname);
 				*p++ = len;
@@ -791,7 +791,7 @@ int INF_database_info(const SCHAR* items,
 			break;
 
 		case frb_info_att_charset:
-			length = INF_convert(tdbb->tdbb_attachment->att_charset, buffer);
+			length = INF_convert(tdbb->getAttachment()->att_charset, buffer);
 			break;
 
 		default:
@@ -1146,7 +1146,7 @@ static USHORT get_counts(USHORT count_id, SCHAR* buffer, USHORT length)
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
 
-	const vcl* vector = tdbb->tdbb_attachment->att_counts[count_id];
+	const vcl* vector = tdbb->getAttachment()->att_counts[count_id];
 	if (!vector)
 		return 0;
 

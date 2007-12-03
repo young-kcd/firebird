@@ -378,7 +378,7 @@ void BackupManager::end_backup(thread_db* tdbb, bool recover)
 	NBAK_TRACE(("end_backup, recover=%i", recover));
 
 	// Check for recover
-	Database *dbb = tdbb->tdbb_database;
+	Database *dbb = tdbb->getDatabase();
 
 	GlobalRWLock endLock(tdbb, *database->dbb_permanent, LCK_backup_end, 0, NULL, LCK_OWNER_attachment, LCK_OWNER_attachment, false);
 

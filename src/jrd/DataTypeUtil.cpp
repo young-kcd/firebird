@@ -542,7 +542,7 @@ UCHAR DataTypeUtil::maxBytesPerChar(UCHAR charSet)
 
 USHORT DataTypeUtil::getDialect() const
 {
-	return (tdbb->tdbb_database->dbb_flags & DBB_DB_SQL_dialect_3) ? 3 : 1;
+	return (tdbb->getDatabase()->dbb_flags & DBB_DB_SQL_dialect_3) ? 3 : 1;
 }
 
 }	// namespace Jrd

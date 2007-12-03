@@ -114,7 +114,7 @@ static void modify_err_punt(thread_db*, ULONG, const dyn_fld&, const dyn_fld&);
 void DYN_modify_charset(Global* gbl, const UCHAR** ptr)
 {
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 	jrd_req* request = CMP_find_request(tdbb, drq_m_chset, DYN_REQUESTS);
 	bool found = false;
@@ -177,7 +177,7 @@ void DYN_modify_charset(Global* gbl, const UCHAR** ptr)
 void DYN_modify_collation(Global* gbl, const UCHAR** ptr)
 {
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 	jrd_req* request = CMP_find_request(tdbb, drq_m_coll, DYN_REQUESTS);
 	bool found = false;
@@ -248,7 +248,7 @@ void DYN_modify_database( Global* gbl, const UCHAR** ptr)
 	UCHAR s[128];
 
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 	jrd_req* request = NULL;
 
@@ -350,7 +350,7 @@ void DYN_modify_exception( Global* gbl, const UCHAR** ptr)
  *
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 	jrd_req* request = CMP_find_request(tdbb, drq_m_xcp, DYN_REQUESTS);
 	bool found = false;
@@ -417,7 +417,7 @@ void DYN_modify_exception( Global* gbl, const UCHAR** ptr)
 void DYN_modify_filter(Global* gbl, const UCHAR** ptr)
 {
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 	jrd_req* request = CMP_find_request(tdbb, drq_m_bfil, DYN_REQUESTS);
 	bool found = false;
@@ -482,7 +482,7 @@ void DYN_modify_filter(Global* gbl, const UCHAR** ptr)
 void DYN_modify_function(Global* gbl, const UCHAR** ptr)
 {
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 	jrd_req* request = CMP_find_request(tdbb, drq_m_fun, DYN_REQUESTS);
 	bool found = false;
@@ -555,7 +555,7 @@ void DYN_modify_function(Global* gbl, const UCHAR** ptr)
 void DYN_modify_generator(Global* gbl, const UCHAR** ptr)
 {
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 	jrd_req* request = CMP_find_request(tdbb, drq_m_gen, DYN_REQUESTS);
 	bool found = false;
@@ -627,7 +627,7 @@ void DYN_modify_global_field(Global* gbl,
  *
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 	jrd_req* request = CMP_find_request(tdbb, drq_m_gfield, DYN_REQUESTS);
 	bool found = false;
@@ -1169,7 +1169,7 @@ void DYN_modify_index( Global* gbl, const UCHAR** ptr)
 	Firebird::MetaName name;
 
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 	jrd_req* request = CMP_find_request(tdbb, drq_m_index, DYN_REQUESTS);
 	bool found = false;
@@ -1262,7 +1262,7 @@ void DYN_modify_local_field(
 	const UCHAR *query_header, *description;
 
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 	GET_STRING(ptr, f);
 	
@@ -1441,7 +1441,7 @@ void DYN_modify_local_field(
 void DYN_modify_parameter(Global* gbl, const UCHAR** ptr)
 {
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 	jrd_req* request = CMP_find_request(tdbb, drq_m_prm, DYN_REQUESTS);
 	bool found = false;
@@ -1524,7 +1524,7 @@ void DYN_modify_procedure( Global* gbl, const UCHAR** ptr)
 	GET_STRING(ptr, procedure_name);
 
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 	jrd_req* request = NULL;
 	bool found = false;
@@ -1692,7 +1692,7 @@ void DYN_modify_relation( Global* gbl, const UCHAR** ptr)
 	Firebird::MetaName name, field_name;
 
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 	GET_STRING(ptr, name);
 
@@ -1781,7 +1781,7 @@ void DYN_modify_relation( Global* gbl, const UCHAR** ptr)
 void DYN_modify_role(Global* gbl, const UCHAR** ptr)
 {
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 	jrd_req* request = CMP_find_request(tdbb, drq_m_rol, DYN_REQUESTS);
 	bool found = false;
@@ -1851,7 +1851,7 @@ void DYN_modify_trigger( Global* gbl, const UCHAR** ptr)
 	Firebird::MetaName trigger_name;
 
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 	jrd_req* request = CMP_find_request(tdbb, drq_m_trigger, DYN_REQUESTS);
 	bool found = false;
@@ -1872,7 +1872,7 @@ void DYN_modify_trigger( Global* gbl, const UCHAR** ptr)
 			DYN_REQUEST(drq_m_trigger) = request;
 		}
 
-		if (X.RDB$RELATION_NAME.NULL && !tdbb->tdbb_attachment->locksmith())
+		if (X.RDB$RELATION_NAME.NULL && !tdbb->getAttachment()->locksmith())
 			ERR_post(isc_adm_task_denied, 0);
 
 		// CVC: I think that we'll do well by hiding our automatic triggers from this function.
@@ -2036,7 +2036,7 @@ void DYN_modify_trigger_msg( Global* gbl, const UCHAR** ptr, Firebird::MetaName*
 	Firebird::MetaName t;
 
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 	jrd_req* request = CMP_find_request(tdbb, drq_m_trg_msg, DYN_REQUESTS);
 
@@ -2104,7 +2104,7 @@ void DYN_modify_view( Global* gbl, const UCHAR** ptr)
  *
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 	Firebird::MetaName view_name;
 	GET_STRING(ptr, view_name);
@@ -2234,9 +2234,9 @@ static void change_backup_mode( Global* gbl, UCHAR verb)
 	bool invalid_state = false;
 
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
-	if (!tdbb->tdbb_attachment->locksmith())
+	if (!tdbb->getAttachment()->locksmith())
 	{
 		ERR_post(isc_adm_task_denied, 0);
 	}
@@ -2684,7 +2684,7 @@ void DYN_modify_sql_field(Global*					gbl,
  *
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 	
 	dyn_fld orig_fld, new_fld, dom_fld;
 

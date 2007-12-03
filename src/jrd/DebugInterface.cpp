@@ -29,7 +29,7 @@ using namespace Firebird;
 
 void DBG_parse_debug_info(thread_db* tdbb, bid *blob_id, Firebird::DbgInfo& dbgInfo)
 {
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 	blb* blob = BLB_open(tdbb, dbb->dbb_sys_trans, blob_id);
 	const SLONG length = blob->blb_length;
 	Firebird::HalfStaticArray<UCHAR, 128> tmp;

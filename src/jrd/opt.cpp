@@ -311,7 +311,7 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 	DEV_BLKCHK(rse, type_nod);
 
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 #ifdef OPT_DEBUG
 	if (opt_debug_flag != DEBUG_NONE && !opt_debug_file)
@@ -1341,7 +1341,7 @@ static FB_UINT64 calculate_priority_level(const OptimizerBlk* opt, const index_d
 
 		// Note: dbb->dbb_max_idx = 1022 for the largest supported page of 16K and
 		//						    62 for the smallest page of 1K
-		const FB_UINT64 max_idx = JRD_get_thread_data()->tdbb_database->dbb_max_idx + 1;
+		const FB_UINT64 max_idx = JRD_get_thread_data()->getDatabase()->dbb_max_idx + 1;
 		FB_UINT64 unique_prefix = 0;
 		if ((idx->idx_flags & idx_unique) && (idx_eql_count == idx->idx_count)) {
 			unique_prefix = (max_idx - idx->idx_count) * max_idx * max_idx * max_idx;
@@ -2323,9 +2323,9 @@ static bool dump_index(const jrd_nod* node,
 
 		MoveBuffer nameBuffer;
 		nameBuffer.getBuffer(DataTypeUtil(tdbb).convertLength(MAX_SQL_IDENTIFIER_LEN,
-			CS_METADATA, tdbb->tdbb_attachment->att_charset));
+			CS_METADATA, tdbb->getAttachment()->att_charset));
 		length = INTL_convert_bytes(tdbb,
-			tdbb->tdbb_attachment->att_charset, nameBuffer.begin(), nameBuffer.getCapacity(),
+			tdbb->getAttachment()->att_charset, nameBuffer.begin(), nameBuffer.getCapacity(),
 			CS_METADATA, (const BYTE*) index_name.c_str(), length, ERR_post);
 
 		*buffer_length -= 1 + length;
@@ -2389,11 +2389,11 @@ static bool dump_rsb(const jrd_req* request,
 
 	MoveBuffer nameBuffer;
 	nameBuffer.getBuffer(DataTypeUtil(tdbb).convertLength(MAX_SQL_IDENTIFIER_LEN,
-		CS_METADATA, tdbb->tdbb_attachment->att_charset));
+		CS_METADATA, tdbb->getAttachment()->att_charset));
 
 	if (name) {
 		length = INTL_convert_bytes(tdbb,
-			tdbb->tdbb_attachment->att_charset, nameBuffer.begin(), nameBuffer.getCapacity(),
+			tdbb->getAttachment()->att_charset, nameBuffer.begin(), nameBuffer.getCapacity(),
 			CS_METADATA, (const BYTE*) name, length, ERR_post);
 
 		*buffer_length -= 2 + length;
@@ -2476,7 +2476,7 @@ static bool dump_rsb(const jrd_req* request,
 			const Firebird::MetaName& n = procedure->prc_name;
 
 			length = INTL_convert_bytes(tdbb,
-				tdbb->tdbb_attachment->att_charset, nameBuffer.begin(), nameBuffer.getCapacity(),
+				tdbb->getAttachment()->att_charset, nameBuffer.begin(), nameBuffer.getCapacity(),
 				CS_METADATA, (const BYTE*) n.c_str(), n.length(), ERR_post);
 
 			*buffer_length -= 6 + length;
@@ -3325,7 +3325,7 @@ static void find_index_relationship_streams(thread_db* tdbb,
 
 	DEV_BLKCHK(opt, type_opt);
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 	CompilerScratch* csb = opt->opt_csb;
 	const UCHAR* end_stream = streams + 1 + streams[0];
@@ -3737,7 +3737,7 @@ static void form_rivers(thread_db*		tdbb,
 	if (temp[0] != 0) {
 		OptimizerInnerJoin* innerJoin = NULL;
 
-		Database* dbb = tdbb->tdbb_database;
+		Database* dbb = tdbb->getDatabase();
 		if (dbb->dbb_ods_version >= ODS_VERSION11) {
 			// For ODS11 and higher databases we can use new calculations
 			innerJoin = FB_NEW(*tdbb->getDefaultPool())
@@ -4170,7 +4170,7 @@ static void gen_join(thread_db*		tdbb,
 	DEV_BLKCHK(plan_clause, type_nod);
 	SET_TDBB(tdbb);
 
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 	CompilerScratch* csb = opt->opt_csb;
 
 	if (!streams[0]) {
@@ -4325,7 +4325,7 @@ static RecordSource* gen_navigation(thread_db* tdbb,
 	DEV_BLKCHK(alias, type_str);
 	DEV_BLKCHK(*sort_ptr, type_nod);
 
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 	// Check sort order against index.  If they don't match, give up and
 	// go home.  Also don't bother if we have a non-unique index.
@@ -4795,7 +4795,7 @@ static RecordSource* gen_retrieval(thread_db*     tdbb,
 	bool index_used = false;
 	bool full_unique_match = false;
 
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 	const bool ods11orHigher = (dbb->dbb_ods_version >= ODS_VERSION11);
 	if (ods11orHigher && !relation->rel_file && !relation->isVirtual()) {
 		// For ODS11 and higher databases we can use new calculations
@@ -5349,7 +5349,7 @@ static RecordSource* gen_sort(thread_db* tdbb,
 		sort_key->skd_length = 1;
 		// Handle nulls placement
 		sort_key->skd_flags = SKD_ascending;
-		if (tdbb->tdbb_database->dbb_ods_version < ODS_VERSION11) {
+		if (tdbb->getDatabase()->dbb_ods_version < ODS_VERSION11) {
 			// Put nulls at the tail for ODS10 and earlier
 			if ((IPTR)*(node_ptr + sort->nod_count * 2) == rse_nulls_first)
 				sort_key->skd_flags |= SKD_descending;
@@ -5546,7 +5546,7 @@ static bool gen_sort_merge(thread_db* tdbb, OptimizerBlk* opt, RiverStack& org_r
 	jrd_nod **eq_class, **ptr;
 	DEV_BLKCHK(opt, type_opt);
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 	// Count the number of "rivers" involved in the operation, then allocate
 	// a scratch block large enough to hold values to compute equality
@@ -6274,7 +6274,7 @@ static jrd_nod* make_index_node(thread_db* tdbb, jrd_rel* relation,
 						  relation, Resource::rsc_index,
 						  idx->idx_id);
 	else
-		CMP_post_resource(&tdbb->tdbb_request->req_resources,
+		CMP_post_resource(&tdbb->getRequest()->req_resources,
 						  relation, Resource::rsc_index,
 						  idx->idx_id);
 
@@ -6556,7 +6556,7 @@ static jrd_nod* make_missing(thread_db* tdbb,
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 	DEV_BLKCHK(opt, type_opt);
 	DEV_BLKCHK(relation, type_rel);

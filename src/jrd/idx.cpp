@@ -229,7 +229,7 @@ void IDX_create_index(
 	IDX_E result = idx_e_ok;
 
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 	if (relation->rel_file) {
 		ERR_post(isc_no_meta_update, isc_arg_gds, isc_extfile_uns_op,
@@ -330,7 +330,7 @@ void IDX_create_index(
 
 /* Unless this is the only attachment or a database restore, worry about
    preserving the page working sets of other attachments. */
-	Attachment* attachment = tdbb->tdbb_attachment;
+	Attachment* attachment = tdbb->getAttachment();
 	if ((attachment) &&
 		(attachment != dbb->dbb_attachments || attachment->att_next))
 	{
@@ -500,7 +500,7 @@ void IDX_create_index(
 	}
 	catch (const Firebird::Exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
-		SORT_fini(sort_handle, tdbb->tdbb_attachment);
+		SORT_fini(sort_handle, tdbb->getAttachment());
 		ERR_punt();
 	}
 
@@ -541,7 +541,7 @@ IndexBlock* IDX_create_index_block(thread_db* tdbb, jrd_rel* relation, USHORT id
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
 	IndexBlock* index_block = FB_NEW(*dbb->dbb_permanent) IndexBlock();
@@ -1500,13 +1500,14 @@ static int index_block_flush(void* ast_object)
 
 	Lock* lock = index_block->idb_lock;
 
-	if (lock->lck_attachment) {
-		tdbb->tdbb_database = lock->lck_attachment->att_database;
+	if (lock->lck_attachment) 
+	{
+		tdbb->setDatabase(lock->lck_attachment->att_database);
 	}
-	tdbb->tdbb_attachment = lock->lck_attachment;
+	tdbb->setAttachment(lock->lck_attachment);
 	tdbb->tdbb_quantum = QUANTUM;
-	tdbb->tdbb_request = NULL;
-	tdbb->tdbb_transaction = NULL;
+	tdbb->setRequest(NULL);
+	tdbb->setTransaction(NULL);
 
 /* release the index expression request, which also has
    the effect of releasing the expression tree */

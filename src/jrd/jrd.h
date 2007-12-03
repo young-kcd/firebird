@@ -507,7 +507,6 @@ class Attachment : public pool_alloc<type_att>
 public:
 	explicit Attachment(Database* dbb) :
 		att_database(dbb), 
-		att_stats(&dbb->dbb_stats),
 		att_lc_messages(*dbb->dbb_permanent),
 		att_working_directory(*dbb->dbb_permanent), 
 		att_filename(*dbb->dbb_permanent),
@@ -878,25 +877,28 @@ private:
 		tdbb_default = p;
 	}
 	friend class Firebird::SubsystemContextPoolHolder <Jrd::thread_db, JrdMemoryPool>;
+	Database*	database;
+	Attachment*	attachment;
+	jrd_tra*	transaction;
+	jrd_req*	request;
+	RuntimeStatistics *reqStat, *traStat, *attStat, *dbbStat;
+
 public:
 	thread_db() 
 		: ThreadData(ThreadData::tddDBB)
 	{
 		tdbb_default = 0;
-		tdbb_database = 0;
-		tdbb_attachment = 0;
-		tdbb_transaction = 0;
-		tdbb_request = 0;
+		database = 0;
+		attachment = 0;
+		transaction = 0;
+		request = 0;
 		tdbb_status_vector = 0;
 		tdbb_quantum = 0;
 		tdbb_flags = 0;
 		tdbb_temp_attid = tdbb_temp_traid = 0;
 		JRD_inuse_clear(this);
+		reqStat = traStat = attStat = dbbStat = RuntimeStatistics::getDummy();
 	}
-	Database*	tdbb_database;
-	Attachment*	tdbb_attachment;
-	jrd_tra*	tdbb_transaction;
-	jrd_req*	tdbb_request;
 	ISC_STATUS*	tdbb_status_vector;
 	SSHORT		tdbb_quantum;		// Cycles remaining until voluntary schedule
 	USHORT		tdbb_flags;
@@ -912,6 +914,62 @@ public:
 	JrdMemoryPool* getDefaultPool()
 	{
 		return tdbb_default;
+	}
+
+	Database* getDatabase()
+	{
+		return database;
+	}
+	const Database* getDatabase() const
+	{
+		return database;
+	}
+	void setDatabase(Database* val)
+	{
+		database = val;
+		dbbStat = val ? &val->dbb_stats : RuntimeStatistics::getDummy();
+	}
+
+	Attachment* getAttachment()
+	{
+		return attachment;
+	}
+	const Attachment* getAttachment() const
+	{
+		return attachment;
+	}
+	void setAttachment(Attachment* val)
+	{
+		attachment = val;
+		attStat = val ? &val->att_stats : RuntimeStatistics::getDummy();
+	}
+
+	jrd_tra* getTransaction()
+	{
+		return transaction;
+	}
+	const jrd_tra* getTransaction() const
+	{
+		return transaction;
+	}
+	void setTransaction(jrd_tra* val);
+
+	jrd_req* getRequest()
+	{
+		return request;
+	}
+	const jrd_req* getRequest() const
+	{
+		return request;
+	}
+	void setRequest(jrd_req* val);
+
+	void bumpStats(const RuntimeStatistics::StatType index)
+	{
+		reqStat->bumpValue(index);
+		traStat->bumpValue(index);
+		attStat->bumpValue(index);
+		dbbStat->bumpValue(index);
 	}
 };
 
@@ -987,11 +1045,11 @@ public:
  * This allows for NULL thread data (which might be an error by itself)
  * If there is thread data, 
  * AND it is tagged as being a thread_db.
- * AND it has a non-NULL tdbb_database field, 
+ * AND it has a non-NULL database field, 
  * THEN we validate that the structure there is a database block.
  * Otherwise, we return what we got.
  * We can't always validate the database field, as during initialization
- * there is no tdbb_database set up.
+ * there is no database set up.
  */
 
 #include "../jrd/thd.h"
@@ -1004,7 +1062,7 @@ inline Jrd::thread_db* JRD_get_thread_data() {
 	if (p1 && p1->getType() == ThreadData::tddDBB)
 	{
 		Jrd::thread_db* p2 = (Jrd::thread_db*)p1;
-		if (p2->tdbb_database && MemoryPool::blk_type(p2->tdbb_database) != type_dbb)
+		if (p2->getDatabase() && MemoryPool::blk_type(p2->getDatabase()) != type_dbb)
 		{
 			BUGCHECK(147);
 		}
@@ -1013,8 +1071,8 @@ inline Jrd::thread_db* JRD_get_thread_data() {
 }
 inline void CHECK_TDBB(const Jrd::thread_db* tdbb) {
 	fb_assert(tdbb && (tdbb->getType() == ThreadData::tddDBB) &&
-			(!tdbb->tdbb_database ||
-				MemoryPool::blk_type(tdbb->tdbb_database) == type_dbb));
+			(!tdbb->getDatabase() ||
+				MemoryPool::blk_type(tdbb->getDatabase()) == type_dbb));
 }
 inline void CHECK_DBB(const Jrd::Database* dbb) {
 	fb_assert(dbb && MemoryPool::blk_type(dbb) == type_dbb);
@@ -1033,7 +1091,7 @@ inline void CHECK_TDBB(const Jrd::thread_db* tdbb) {
 #endif
 
 inline Jrd::Database* GET_DBB() {
-	return JRD_get_thread_data()->tdbb_database;
+	return JRD_get_thread_data()->getDatabase();
 }
 
 /*-------------------------------------------------------------------------*

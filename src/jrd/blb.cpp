@@ -252,7 +252,7 @@ blb* BLB_create2(thread_db* tdbb,
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
 	// FIXME! Temporary BLOBs are not supported in read only databases
@@ -300,9 +300,9 @@ blb* BLB_create2(thread_db* tdbb,
 	else if (to == isc_blob_text && (from_charset != to_charset))
 	{
 		if (from_charset == CS_dynamic)
-			from_charset = tdbb->tdbb_attachment->att_charset;
+			from_charset = tdbb->getAttachment()->att_charset;
 		if (to_charset == CS_dynamic)
-			to_charset = tdbb->tdbb_attachment->att_charset;
+			to_charset = tdbb->getAttachment()->att_charset;
 
 		if ((to_charset != CS_NONE) && (from_charset != CS_NONE) && 
 			(to_charset != CS_BINARY) && (from_charset != CS_BINARY) &&
@@ -606,7 +606,7 @@ USHORT BLB_get_segment(thread_db* tdbb,
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 	if (--tdbb->tdbb_quantum < 0)
 		JRD_reschedule(tdbb, 0, true);
@@ -959,7 +959,7 @@ void BLB_map_blobs(thread_db* tdbb, blb* old_blob, blb* new_blob)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
 	blb_map* new_map = FB_NEW(*dbb->dbb_permanent) blb_map();
@@ -1031,7 +1031,7 @@ void BLB_move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, jrd_nod* field)
 			case nod_field:
 				// We should not materialize the blob if the destination field
 				// stream (nod_union, for example) doesn't have a relation.
-				simpleMove = tdbb->tdbb_request->
+				simpleMove = tdbb->getRequest()->
 					req_rpb[(IPTR)field->nod_arg[e_fld_stream]].rpb_relation == NULL;
 				break;
 			case nod_argument:
@@ -1060,7 +1060,7 @@ void BLB_move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, jrd_nod* field)
 	if (!needFilter && to_desc->isBlob() &&
 		(from_desc->getCharSet() == CS_NONE || from_desc->getCharSet() == CS_BINARY))
 	{
-		AutoBlb blob(tdbb, BLB_open(tdbb, tdbb->tdbb_transaction, source));
+		AutoBlb blob(tdbb, BLB_open(tdbb, tdbb->getTransaction(), source));
 		BLB_check_well_formed(tdbb, to_desc, blob.getBlb());
 	}
 
@@ -1083,7 +1083,7 @@ void BLB_move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, jrd_nod* field)
 		return;
 	}
 
-	jrd_req* request = tdbb->tdbb_request;
+	jrd_req* request = tdbb->getRequest();
 	const USHORT id = (USHORT) (IPTR) field->nod_arg[e_fld_id];
 	record_param* rpb = &request->req_rpb[(IPTR)field->nod_arg[e_fld_stream]];
 	jrd_rel* relation = rpb->rpb_relation;
@@ -1291,7 +1291,7 @@ blb* BLB_open2(thread_db* tdbb,
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 /* Handle filter case */
 	SSHORT from, to;
@@ -1443,9 +1443,9 @@ blb* BLB_open2(thread_db* tdbb,
 	}
 	else if (to == isc_blob_text && (from_charset != to_charset)) {
 		if (from_charset == CS_dynamic)
-			from_charset = tdbb->tdbb_attachment->att_charset;
+			from_charset = tdbb->getAttachment()->att_charset;
 		if (to_charset == CS_dynamic)
-			to_charset = tdbb->tdbb_attachment->att_charset;
+			to_charset = tdbb->getAttachment()->att_charset;
 
 		if ((to_charset != CS_NONE) && (from_charset != CS_NONE) &&
 			(to_charset != CS_BINARY) && (from_charset != CS_BINARY) &&
@@ -1524,7 +1524,7 @@ void BLB_put_segment(thread_db* tdbb, blb* blob, const UCHAR* seg, USHORT segmen
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 	const BLOB_PTR* segment = seg;
 
 /* Make sure blob is a temporary blob.  If not, complain bitterly. */
@@ -1950,12 +1950,12 @@ static blb* allocate_blob(thread_db* tdbb, jrd_tra* transaction)
  **************************************/
 
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 /* Create a blob large enough to hold a single data page */
 
 	blb* blob = FB_NEW_RPT(*transaction->tra_pool, dbb->dbb_page_size) blb();
-	blob->blb_attachment = tdbb->tdbb_attachment;
+	blob->blb_attachment = tdbb->getAttachment();
 	blob->blb_transaction = transaction;
 
 /* Compute some parameters governing various maximum sizes based on
@@ -2084,7 +2084,7 @@ static blb* copy_blob(thread_db* tdbb, const bid* source, bid* destination,
  **************************************/
 	SET_TDBB(tdbb);
 
-	jrd_req* request = tdbb->tdbb_request;
+	jrd_req* request = tdbb->getRequest();
 	blb* input = BLB_open2(tdbb, request->req_transaction, source, bpb_length, bpb);
 	blb* output = BLB_create(tdbb, request->req_transaction, destination);
 	output->blb_sub_type = input->blb_sub_type;
@@ -2131,7 +2131,7 @@ static void delete_blob(thread_db* tdbb, blb* blob, ULONG prior_page)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
 	if (dbb->dbb_flags & DBB_read_only)
@@ -2204,7 +2204,7 @@ static void delete_blob_id(
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
 	/* If the blob is null, don't bother to delete it.  Reasonable? */
@@ -2268,7 +2268,7 @@ static BlobFilter* find_filter(thread_db* tdbb, SSHORT from, SSHORT to)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
 	BlobFilter* cache = dbb->dbb_blob_filters;
@@ -2310,7 +2310,7 @@ static blob_page* get_next_page(thread_db* tdbb, blb* blob, WIN * window)
 	}
 
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 	vcl* vector = blob->blb_pages;
 
 #ifdef SUPERSERVER_V2
@@ -2395,7 +2395,7 @@ static void get_replay_blob(thread_db* tdbb, bid* blob_id)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
 /* we're only interested in newly created blobs */
@@ -2432,7 +2432,7 @@ static void insert_page(thread_db* tdbb, blb* blob)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
 	const USHORT length = dbb->dbb_page_size - blob->blb_space_remaining;
@@ -2564,7 +2564,7 @@ static void move_from_string(thread_db* tdbb, const dsc* from_desc, dsc* to_desc
 	UCharBuffer bpb;
 	BLB_gen_bpb_from_descs(from_desc, to_desc, bpb);
 
-	blob = BLB_create2(tdbb, tdbb->tdbb_request->req_transaction, &temp_bid, bpb.getCount(), bpb.begin());
+	blob = BLB_create2(tdbb, tdbb->getRequest()->req_transaction, &temp_bid, bpb.getCount(), bpb.begin());
 
 	blob_desc.dsc_scale = to_desc->dsc_scale;	// blob charset
 	blob_desc.dsc_flags = (blob_desc.dsc_flags & 0xFF) | (to_desc->dsc_flags & 0xFF00);	// blob collation
@@ -2590,7 +2590,7 @@ static void move_from_string(thread_db* tdbb, const dsc* from_desc, dsc* to_desc
 	// ASF: Blob ID could now be stored in any descriptor of parameters or
 	// variables. - 2007-03-24
 
-	jrd_tra* transaction = tdbb->tdbb_request->req_transaction;
+	jrd_tra* transaction = tdbb->getRequest()->req_transaction;
 	if (transaction->tra_blobs.locate(blob_temp_id)) {
 		BlobIndex* current = &transaction->tra_blobs.current();
 		if (current->bli_materialized) {
@@ -2615,7 +2615,7 @@ static void move_from_string(thread_db* tdbb, const dsc* from_desc, dsc* to_desc
 			// we may still bind lifetime of blob to current top level request.
 			if (!current->bli_request)
 			{
-				jrd_req* blob_request = tdbb->tdbb_request;
+				jrd_req* blob_request = tdbb->getRequest();
 				while (blob_request->req_caller)
 					blob_request = blob_request->req_caller;
 
@@ -2655,7 +2655,7 @@ static void move_to_string(thread_db* tdbb, dsc* fromDesc, dsc* toDesc)
 	UCharBuffer bpb;
 	BLB_gen_bpb_from_descs(fromDesc, &blobAsText, bpb);
 
-	blb* blob = BLB_open2(tdbb, tdbb->tdbb_request->req_transaction,
+	blb* blob = BLB_open2(tdbb, tdbb->getRequest()->req_transaction,
 		(bid*) fromDesc->dsc_address, bpb.getCount(), bpb.begin());
 
 	CharSet* fromCharSet = INTL_charset_lookup(tdbb, fromDesc->dsc_scale);

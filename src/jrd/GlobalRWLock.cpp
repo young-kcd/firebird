@@ -57,11 +57,11 @@ int GlobalRWLock::blocking_ast_cached_lock(void* ast_object)
 	ISC_STATUS_ARRAY ast_status;
 	Jrd::Database* dbb = GlobalRWLock->cached_lock->lck_dbb;
 
-	tdbb->tdbb_database = dbb;
-	tdbb->tdbb_attachment = NULL;
+	tdbb->setDatabase(dbb);
+	tdbb->setAttachment(NULL);
 	tdbb->tdbb_quantum = QUANTUM;
-	tdbb->tdbb_request = NULL;
-	tdbb->tdbb_transaction = NULL;
+	tdbb->setRequest(NULL);
+	tdbb->setTransaction(NULL);
 	tdbb->tdbb_status_vector = ast_status;
 
 	GlobalRWLock->blockingAstHandler(tdbb);
@@ -84,7 +84,7 @@ GlobalRWLock::GlobalRWLock(thread_db* tdbb, MemoryPool& p, locktype_t lckType,
 {
 	SET_TDBB(tdbb);
 
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 	cached_lock = FB_NEW_RPT(getPool(), lockLen) Lock();
 	cached_lock->lck_type = static_cast<Jrd::lck_t>(lckType);

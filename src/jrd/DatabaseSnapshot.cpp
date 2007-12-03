@@ -170,7 +170,7 @@ void DatabaseSnapshot::SharedMemory::writeData(thread_db* tdbb, ClumpletWriter& 
 void DatabaseSnapshot::SharedMemory::garbageCollect(thread_db* tdbb, bool self)
 {
 	fb_assert(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 	fb_assert(dbb);
 
 	// Get the buffer length
@@ -326,7 +326,7 @@ DatabaseSnapshot* DatabaseSnapshot::create(thread_db* tdbb)
 {
 	SET_TDBB(tdbb);
 
-	jrd_tra* transaction = tdbb->tdbb_transaction;
+	jrd_tra* transaction = tdbb->getTransaction();
 	fb_assert(transaction);
 
 	if (!transaction->tra_db_snapshot)
@@ -353,11 +353,11 @@ int DatabaseSnapshot::blockingAst(void* ast_object)
 	Lock* lock = dbb->dbb_monitor_lock;
 	fb_assert(lock);
 
-	tdbb->tdbb_database = lock->lck_dbb;
-	tdbb->tdbb_attachment = lock->lck_attachment;
+	tdbb->setDatabase(lock->lck_dbb);
+	tdbb->setAttachment(lock->lck_attachment);
 	tdbb->tdbb_quantum = QUANTUM;
-	tdbb->tdbb_request = NULL;
-	tdbb->tdbb_transaction = NULL;
+	tdbb->setRequest(NULL);
+	tdbb->setTransaction(NULL);
 
 	Jrd::ContextPoolHolder context(tdbb, dbb->dbb_permanent);
 
@@ -397,10 +397,10 @@ DatabaseSnapshot::DatabaseSnapshot(thread_db* tdbb, MemoryPool& pool)
 	RecordBuffer* rec_stat_buffer =
 		allocBuffer(tdbb, pool, rel_mon_rec_stats);
 
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 	fb_assert(dbb);
 
-	Attachment* attachment = tdbb->tdbb_attachment;
+	Attachment* attachment = tdbb->getAttachment();
 	fb_assert(attachment);
 
 	// Dump data for our own dbb
@@ -707,7 +707,7 @@ void DatabaseSnapshot::putField(Record* record, int id, const void* source, size
 			p += 2;
 			*p++ = isc_bpb_source_interp;
 			*p++ = 1;
-			*p++ = tdbb->tdbb_attachment->att_charset;
+			*p++ = tdbb->getAttachment()->att_charset;
 
 			*p++ = isc_bpb_target_type;
 			*p++ = 2;
@@ -720,7 +720,7 @@ void DatabaseSnapshot::putField(Record* record, int id, const void* source, size
 			bpb.shrink(p - bpb.begin());
 
 			bid blob_id;
-			blb* blob = BLB_create2(tdbb, tdbb->tdbb_transaction, &blob_id,
+			blb* blob = BLB_create2(tdbb, tdbb->getTransaction(), &blob_id,
 									bpb.getCount(), bpb.begin());
 
 			length = MIN(length, MAX_USHORT);
@@ -795,7 +795,7 @@ const char* DatabaseSnapshot::checkNull(int rid, int fid, const char* source, si
 void DatabaseSnapshot::dumpData(thread_db* tdbb)
 {
 	fb_assert(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 	fb_assert(dbb);
 
 	MemoryPool& pool = *tdbb->getDefaultPool();
@@ -805,7 +805,7 @@ void DatabaseSnapshot::dumpData(thread_db* tdbb)
 
 	writer->insertBytes(TAG_DBB, (UCHAR*) &dbb->dbb_guid, sizeof(FB_GUID));
 
-	const Attachment* self_attachment = tdbb->tdbb_attachment;
+	const Attachment* self_attachment = tdbb->getAttachment();
 	fb_assert(self_attachment);
 
 	jrd_tra* transaction = NULL;

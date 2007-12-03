@@ -866,11 +866,11 @@ void Collation::destroy()
 		// Establish a thread context.
 		JRD_set_thread_data(tdbb, thd_context);
 
-		tdbb->tdbb_database = existenceLock->lck_dbb;
-		tdbb->tdbb_attachment = existenceLock->lck_attachment;
+		tdbb->setDatabase(existenceLock->lck_dbb);
+		tdbb->setAttachment(existenceLock->lck_attachment);
 		tdbb->tdbb_quantum = QUANTUM;
-		tdbb->tdbb_request = NULL;
-		tdbb->tdbb_transaction = NULL;
+		tdbb->setRequest(NULL);
+		tdbb->setTransaction(NULL);
 		Jrd::ContextPoolHolder context(tdbb, 0);
 
 		LCK_release(tdbb, existenceLock);

@@ -155,7 +155,7 @@ int QATEST_entrypoint(ULONG * function, void *arg1, void *arg2, void *arg3)
 		/* Close current database file & delete */
 
 		tdbb = JRD_get_thread_data();
-		if (!(file = tdbb->tdbb_attachment->att_database->dbb_file))
+		if (!(file = tdbb->getAttachment()->att_database->dbb_file))
 			return -1;
 
 #ifdef WIN_NT
@@ -184,7 +184,7 @@ int QATEST_entrypoint(ULONG * function, void *arg1, void *arg2, void *arg3)
 		/* Close & delete specified shadow file */
 
 		tdbb = JRD_get_thread_data();
-		if (!(shadow = tdbb->tdbb_attachment->att_database->dbb_shadow))
+		if (!(shadow = tdbb->getAttachment()->att_database->dbb_shadow))
 			return -1;
 		for (; shadow; shadow = shadow->sdw_next)
 			if (shadow->sdw_number == *(ULONG *) arg1) {

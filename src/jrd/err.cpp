@@ -295,8 +295,8 @@ void ERR_log(int facility, int number, const TEXT* message)
 	const size_t len = strlen(errmsg);
 	fb_utils::snprintf(errmsg + len, sizeof(errmsg) - len, " (%d)", number);
 
-	gds__log("Database: %s\n\t%s", (tdbb && tdbb->tdbb_attachment) ?
-		tdbb->tdbb_attachment->att_filename.c_str() : "",
+	gds__log("Database: %s\n\t%s", (tdbb && tdbb->getAttachment()) ?
+		tdbb->getAttachment()->att_filename.c_str() : "",
 		errmsg, 0);
 }
 #endif
@@ -548,12 +548,12 @@ void ERR_punt(void)
  **************************************/
 
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 	if (dbb && (dbb->dbb_flags & DBB_bugcheck))
 	{
-		gds__log_status(tdbb->tdbb_attachment->att_filename.hasData() ?
-			tdbb->tdbb_attachment->att_filename.c_str() : "Database unknown in ERR_punt on bugcheck",
+		gds__log_status(tdbb->getAttachment()->att_filename.hasData() ?
+			tdbb->getAttachment()->att_filename.c_str() : "Database unknown in ERR_punt on bugcheck",
 			tdbb->tdbb_status_vector);
  		if (Config::getBugcheckAbort())
 		{
@@ -608,7 +608,7 @@ void ERR_warning(ISC_STATUS status, ...)
 
 	STUFF_STATUS(tdbb->tdbb_status_vector, status);
 	DEBUG;
-	tdbb->tdbb_request->req_flags |= req_warning;
+	tdbb->getRequest()->req_flags |= req_warning;
 }
 #endif
 

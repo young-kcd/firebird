@@ -1354,10 +1354,10 @@ void CVT_move(const dsc* from, dsc* to, FPTR_ERROR err)
 
 				SLONG cur_date;
 				if (tdbb && (tdbb->getType() == ThreadData::tddDBB) &&
-					tdbb->tdbb_request)
+					tdbb->getRequest())
 				{
-					fb_assert(!tdbb->tdbb_request->req_timestamp.isEmpty());
-					cur_date = tdbb->tdbb_request->req_timestamp.value().timestamp_date;
+					fb_assert(!tdbb->getRequest()->req_timestamp.isEmpty());
+					cur_date = tdbb->getRequest()->req_timestamp.value().timestamp_date;
 				}
 				else
 				{
@@ -1809,9 +1809,9 @@ static void datetime_to_text(const dsc* from, dsc* to, FPTR_ERROR err)
 			client library **/
 		tdbb = (thread_db*) ThreadData::getSpecific();
 		if (tdbb && (tdbb->getType() == ThreadData::tddDBB) &&
-			tdbb->tdbb_request)
+			tdbb->getRequest())
 		{
-			version4 = (tdbb->tdbb_request->req_flags & req_blr_version4) ?
+			version4 = (tdbb->getRequest()->req_flags & req_blr_version4) ?
 				true : false;
 		}
 		ts.value() = *(GDS_TIMESTAMP *) from->dsc_address;

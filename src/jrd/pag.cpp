@@ -347,7 +347,7 @@ void PAG_add_clump(
  *
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
 	err_post_if_database_is_readonly(dbb);
@@ -461,7 +461,7 @@ USHORT PAG_add_file(const TEXT* file_name, SLONG start)
  *
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
 	err_post_if_database_is_readonly(dbb);
@@ -586,7 +586,7 @@ int PAG_add_header_entry(header_page* header, USHORT type, USHORT len, const UCH
  *
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
 	err_post_if_database_is_readonly(dbb);
@@ -643,7 +643,7 @@ void PAG_attach_temp_pages(thread_db* tdbb, USHORT pageSpaceID)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
 	PageSpace* pageSpaceTemp = dbb->dbb_page_manager.addPageSpace(pageSpaceID);
@@ -676,7 +676,7 @@ int PAG_replace_entry_first(header_page* header, USHORT type, USHORT len, const 
  *
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
 	err_post_if_database_is_readonly(dbb);
@@ -727,7 +727,7 @@ PAG PAG_allocate(WIN * window)
  *
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
 	PageManager& pageMgr = dbb->dbb_page_manager;
@@ -915,9 +915,9 @@ SLONG PAG_attachment_id(thread_db* tdbb)
  *
  ******************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
-	Attachment* attachment = tdbb->tdbb_attachment;
+	Attachment* attachment = tdbb->getAttachment();
 	WIN window(DB_PAGE_SPACE, -1);
 
 /* If we've been here before just return the id */
@@ -968,7 +968,7 @@ int PAG_delete_clump_entry(SLONG page_num, USHORT type)
  *
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
 	err_post_if_database_is_readonly(dbb);
@@ -1029,7 +1029,7 @@ void PAG_format_header()
  *
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
 /* Initialize header page */
@@ -1106,7 +1106,7 @@ void PAG_format_pip(thread_db* tdbb, PageSpace& pageSpace)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
 /* Initialize Page Inventory Page */
@@ -1198,9 +1198,9 @@ void PAG_header(bool info)
  *
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
-	Attachment* attachment = tdbb->tdbb_attachment;
+	Attachment* attachment = tdbb->getAttachment();
 	fb_assert(attachment);
 
 	WIN window(HEADER_PAGE_NUMBER);
@@ -1325,9 +1325,9 @@ void PAG_header_init()
  *
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
-	Attachment* attachment = tdbb->tdbb_attachment;
+	Attachment* attachment = tdbb->getAttachment();
 	fb_assert(attachment);
 
 	// Allocate a spare buffer which is large enough,
@@ -1424,7 +1424,7 @@ void PAG_init()
  *
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
 	PageManager& pageMgr = dbb->dbb_page_manager;
@@ -1509,7 +1509,7 @@ void PAG_init2(USHORT shadow_number)
  *
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 	ISC_STATUS* status = tdbb->tdbb_status_vector;
 
 /* allocate a spare buffer which is large enough,
@@ -1664,7 +1664,7 @@ SLONG PAG_last_page()
  *
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
 	PageManager& pageMgr = dbb->dbb_page_manager;
@@ -1714,7 +1714,7 @@ void PAG_release_page(const PageNumber& number, const PageNumber& prior_page)
  *
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
 #ifdef VIO_DEBUG
@@ -1938,7 +1938,7 @@ void PAG_set_page_buffers(ULONG buffers)
  *
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
 	err_post_if_database_is_readonly(dbb);
@@ -2030,7 +2030,7 @@ static void find_clump_space(SLONG page_num,
  *
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
 	pag* page = *ppage;
@@ -2307,7 +2307,7 @@ bool PageSpace::extend(thread_db* tdbb, const ULONG pageNum)
 	if (pageNum < maxPageNumber || MAX_EXTEND_BYTES < MIN_EXTEND_BYTES)
 		return true;
 
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 	if (pageNum >= maxAlloc(dbb->dbb_page_size))
 	{
@@ -2407,8 +2407,8 @@ USHORT PageManager::getTempPageSpaceID(thread_db* tdbb)
 	return TEMP_PAGE_SPACE;
 #else
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
-	Attachment* att = tdbb->tdbb_attachment;
+	Database* dbb = tdbb->getDatabase();
+	Attachment* att = tdbb->getAttachment();
 	if (!att->att_temp_pg_lock)
 	{
 		Lock* lock = FB_NEW_RPT(*dbb->dbb_permanent, sizeof(USHORT)) Lock();

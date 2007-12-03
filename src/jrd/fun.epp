@@ -186,7 +186,7 @@ void FUN_evaluate(UserFunction* function, jrd_nod* node, impure_value* value)
 	OwnedBlobStack blob_stack(tdbb);
 	UCharStack array_stack;
 	
-	jrd_req* request = tdbb->tdbb_request;
+	jrd_req* request = tdbb->getRequest();
 	// CVC: restoring the null flag seems like a Borland hack to try to
 	// patch a bug with null handling. There's no evident reason to restore it
 	// because EVL_expr() resets it every time it's called.	Kept it for now.
@@ -484,7 +484,7 @@ void FUN_evaluate(UserFunction* function, jrd_nod* node, impure_value* value)
 					if (tail == return_ptr)
 					{
 						blob =
-							BLB_create(tdbb, tdbb->tdbb_request->req_transaction,
+							BLB_create(tdbb, tdbb->getRequest()->req_transaction,
 									   (bid*) &value->vlu_misc);
 						return_blob_struct = blob_desc;
 						blob_stack.setBlobCreated(blob);
@@ -508,7 +508,7 @@ void FUN_evaluate(UserFunction* function, jrd_nod* node, impure_value* value)
 							blob_id = *(bid*) input->dsc_address;
 						}
 						blob = BLB_open(tdbb,
-										tdbb->tdbb_request->req_transaction,
+										tdbb->getRequest()->req_transaction,
 										&blob_id);
 					}
 					blob_stack.push(blob);
@@ -599,7 +599,7 @@ UserFunction* FUN_lookup_function(const Firebird::MetaName& name, bool ShowAcces
  *
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 /* Start by looking for already defined symbol */
 	for (Symbol* symbol = Symbol::lookup(name); symbol; symbol = symbol->sym_homonym)
@@ -849,7 +849,7 @@ static SLONG get_scalar_array(fun_repeat*	arg,
 	SLONG stuff[IAD_LEN(16) / 4];
 	Ods::InternalArrayDesc* array_desc = (Ods::InternalArrayDesc*) stuff;
 	blb* blob = BLB_get_array(tdbb,
-						tdbb->tdbb_request->req_transaction,
+						tdbb->getRequest()->req_transaction,
 						(bid*)value->dsc_address,
 						array_desc);
 						

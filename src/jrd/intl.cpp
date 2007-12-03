@@ -195,11 +195,11 @@ CharSetContainer* CharSetContainer::lookupCharset(thread_db* tdbb, USHORT ttype)
 	CharSetContainer *cs = NULL;
 
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 	USHORT id = TTYPE_TO_CHARSET(ttype);
 	if (id == CS_dynamic)
-		id = tdbb->tdbb_attachment->att_charset;
+		id = tdbb->getAttachment()->att_charset;
 
 	if (id >= dbb->dbb_charsets.getCount())
 		dbb->dbb_charsets.resize(id + 10);
@@ -237,9 +237,9 @@ Lock* CharSetContainer::createCollationLock(thread_db* tdbb, USHORT ttype)
  *      Create a collation lock.
  *
  **************************************/
-	Lock* lock = FB_NEW_RPT(*tdbb->tdbb_database->dbb_permanent, 0) Lock;
-	lock->lck_parent = tdbb->tdbb_database->dbb_lock;
-	lock->lck_dbb = tdbb->tdbb_database;
+	Lock* lock = FB_NEW_RPT(*tdbb->getDatabase()->dbb_permanent, 0) Lock;
+	lock->lck_parent = tdbb->getDatabase()->dbb_lock;
+	lock->lck_dbb = tdbb->getDatabase();
 	lock->lck_key.lck_long = ttype;
 	lock->lck_length = sizeof(lock->lck_key.lck_long);
 	lock->lck_type = LCK_tt_exist;
@@ -318,7 +318,7 @@ Collation* CharSetContainer::lookupCollation(thread_db* tdbb, USHORT tt_id)
 			info.specificAttributes = specificAttributes;
 		}
 
-		texttype* tt = FB_NEW(*tdbb->tdbb_database->dbb_permanent) texttype;
+		texttype* tt = FB_NEW(*tdbb->getDatabase()->dbb_permanent) texttype;
 		memset(tt, 0, sizeof(texttype));
 
 		if (!lookup_texttype(tt, &info))
@@ -347,7 +347,7 @@ Collation* CharSetContainer::lookupCollation(thread_db* tdbb, USHORT tt_id)
 			}
 		}
 
-		charset_collations[id] = Collation::createInstance(*tdbb->tdbb_database->dbb_permanent, tt_id, tt, charset);
+		charset_collations[id] = Collation::createInstance(*tdbb->getDatabase()->dbb_permanent, tt_id, tt, charset);
 		charset_collations[id]->name = info.collationName;
 
 		// we don't need a lock in the charset
@@ -456,7 +456,7 @@ CHARSET_ID INTL_charset(thread_db* tdbb, USHORT ttype)
 		return (CS_BINARY);
 	case ttype_dynamic:
 		SET_TDBB(tdbb);
-		return (tdbb->tdbb_attachment->att_charset);
+		return (tdbb->getAttachment()->att_charset);
 	default:
 		return (TTYPE_TO_CHARSET(ttype));
 	}
@@ -642,14 +642,14 @@ CsConvert INTL_convert_lookup(thread_db* tdbb,
  **************************************/
 
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
 	if (from_cs == CS_dynamic)
-		from_cs = tdbb->tdbb_attachment->att_charset;
+		from_cs = tdbb->getAttachment()->att_charset;
 
 	if (to_cs == CS_dynamic)
-		to_cs = tdbb->tdbb_attachment->att_charset;
+		to_cs = tdbb->getAttachment()->att_charset;
 
 /* Should from_cs == to_cs? be handled better? YYY */
 
@@ -1001,10 +1001,10 @@ Collation* INTL_texttype_lookup(thread_db* tdbb,
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 	if (parm1 == ttype_dynamic)
-		parm1 = MAP_CHARSET_TO_TTYPE(tdbb->tdbb_attachment->att_charset);
+		parm1 = MAP_CHARSET_TO_TTYPE(tdbb->getAttachment()->att_charset);
 
 	CharSetContainer* csc = CharSetContainer::lookupCharset(tdbb, parm1);
 
@@ -1368,11 +1368,11 @@ static int blocking_ast_collation(void* ast_object)
 			// a thread context.
 			JRD_set_thread_data(tdbb, thd_context);
 
-			tdbb->tdbb_database = tt->existenceLock->lck_dbb;
-			tdbb->tdbb_attachment = tt->existenceLock->lck_attachment;
+			tdbb->setDatabase(tt->existenceLock->lck_dbb);
+			tdbb->setAttachment(tt->existenceLock->lck_attachment);
 			tdbb->tdbb_quantum = QUANTUM;
-			tdbb->tdbb_request = NULL;
-			tdbb->tdbb_transaction = NULL;
+			tdbb->setRequest(NULL);
+			tdbb->setTransaction(NULL);
 			Jrd::ContextPoolHolder context(tdbb, 0);
 
 			LCK_release(tdbb, tt->existenceLock);

@@ -558,7 +558,7 @@ int MOV_make_string2(Jrd::thread_db* tdbb,
 		Firebird::UCharBuffer bpb;
 		BLB_gen_bpb_from_descs(desc, &temp, bpb);
 
-		Jrd::blb* blob = BLB_open2(tdbb, tdbb->tdbb_request->req_transaction,
+		Jrd::blb* blob = BLB_open2(tdbb, tdbb->getRequest()->req_transaction,
 			reinterpret_cast<Jrd::bid*>(desc->dsc_address), bpb.getCount(), bpb.begin());
 
 		ULONG size;

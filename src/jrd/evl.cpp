@@ -210,7 +210,7 @@ dsc* EVL_assign_to(thread_db* tdbb, jrd_nod* node)
 
 	DEV_BLKCHK(node, type_nod);
 
-	jrd_req* request = tdbb->tdbb_request;
+	jrd_req* request = tdbb->getRequest();
 	impure_value* impure = (impure_value*) ((SCHAR *) request + node->nod_impure);
 
 /* The only nodes that can be assigned to are: argument, field and variable. */
@@ -240,7 +240,7 @@ dsc* EVL_assign_to(thread_db* tdbb, jrd_nod* node)
 			   convert the charset to the declared charset of the process. */
 
 			INTL_ASSIGN_DSC(&impure->vlu_desc,
-							tdbb->tdbb_attachment->att_charset, COLLATE_NONE);
+							tdbb->getAttachment()->att_charset, COLLATE_NONE);
 		}
 		return &impure->vlu_desc;
 
@@ -325,11 +325,11 @@ RecordBitmap** EVL_bitmap(thread_db* tdbb, jrd_nod* node, RecordBitmap* bitmap_a
 
 	case nod_bit_dbkey:
 		{
-			impure_inversion* impure = (impure_inversion*) ((SCHAR *) tdbb->tdbb_request + node->nod_impure);
+			impure_inversion* impure = (impure_inversion*) ((SCHAR *) tdbb->getRequest() + node->nod_impure);
 			RecordBitmap::reset(impure->inv_bitmap);
 			const dsc* desc = EVL_expr(tdbb, node->nod_arg[0]);
 
-			if (!(tdbb->tdbb_request->req_flags & req_null) &&
+			if (!(tdbb->getRequest()->req_flags & req_null) &&
 				desc->dsc_length == sizeof(RecordNumber::Packed))
 			{
 				const USHORT id = (USHORT)(IPTR) node->nod_arg[1];
@@ -348,7 +348,7 @@ RecordBitmap** EVL_bitmap(thread_db* tdbb, jrd_nod* node, RecordBitmap* bitmap_a
 
 	case nod_index:
 		{
-			impure_inversion* impure = (impure_inversion*) ((SCHAR *) tdbb->tdbb_request + node->nod_impure);
+			impure_inversion* impure = (impure_inversion*) ((SCHAR *) tdbb->getRequest() + node->nod_impure);
 			RecordBitmap::reset(impure->inv_bitmap);
 			BTR_evaluate(tdbb,
 						 reinterpret_cast<IndexRetrieval*>(node->nod_arg[e_idx_retrieval]),
@@ -388,7 +388,7 @@ bool EVL_boolean(thread_db* tdbb, jrd_nod* node)
 /* Handle and pre-processing possible for various nodes.  This includes
    evaluating argument and checking NULL flags */
 
-	jrd_req* request = tdbb->tdbb_request;
+	jrd_req* request = tdbb->getRequest();
 	jrd_nod** ptr = node->nod_arg;
 
 	switch (node->nod_type)
@@ -824,7 +824,7 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* const node)
 	if (--tdbb->tdbb_quantum < 0)
 		JRD_reschedule(tdbb, 0, true);
 
-	jrd_req* const request = tdbb->tdbb_request;
+	jrd_req* const request = tdbb->getRequest();
 	impure_value* const impure = (impure_value*) ((SCHAR *) request + node->nod_impure);
 	request->req_flags &= ~req_null;
 
@@ -993,9 +993,9 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* const node)
 			impure->vlu_desc.dsc_scale = 0;
 			INTL_ASSIGN_TTYPE(&impure->vlu_desc, ttype_metadata);
 			const char* cur_user = 0;
-			if (tdbb->tdbb_attachment->att_user)
+			if (tdbb->getAttachment()->att_user)
 			{
-				cur_user = tdbb->tdbb_attachment->att_user->usr_user_name.c_str();
+				cur_user = tdbb->getAttachment()->att_user->usr_user_name.c_str();
 				impure->vlu_desc.dsc_address = reinterpret_cast<UCHAR*>
 												(const_cast<char*>(cur_user));
 			}
@@ -1014,9 +1014,9 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* const node)
 			impure->vlu_desc.dsc_scale = 0;
 			INTL_ASSIGN_TTYPE(&impure->vlu_desc, ttype_metadata);
 			const char* cur_role = 0;
-			if (tdbb->tdbb_attachment->att_user)
+			if (tdbb->getAttachment()->att_user)
 			{
-				cur_role = tdbb->tdbb_attachment->att_user->usr_sql_role_name.c_str();
+				cur_role = tdbb->getAttachment()->att_user->usr_sql_role_name.c_str();
 				impure->vlu_desc.dsc_address = reinterpret_cast<UCHAR*>(const_cast<char*>(cur_role));
 			}
 			if (cur_role)
@@ -1255,7 +1255,7 @@ bool EVL_field(jrd_rel* relation, Record* record, USHORT id, dsc* desc)
 						thread_db* tdbb = NULL;
 						SET_TDBB(tdbb);
 						const char* rc_role = 0;
-						const UserId* att_user = tdbb->tdbb_attachment->att_user;
+						const UserId* att_user = tdbb->getAttachment()->att_user;
 						const char* cur_user = att_user ? att_user->usr_user_name.c_str() : 0;
 						if (cur_user && relation->rel_owner_name == cur_user)
 							rc_role = att_user->usr_sql_role_name.c_str();
@@ -1376,7 +1376,7 @@ USHORT EVL_group(thread_db* tdbb, RecordSource* rsb, jrd_nod *const node, USHORT
 	impure_value vtemp;
 	vtemp.vlu_string = NULL;
 
-	jrd_req* request = tdbb->tdbb_request;
+	jrd_req* request = tdbb->getRequest();
 	jrd_nod* map = node->nod_arg[e_agg_map];
 	jrd_nod* group = node->nod_arg[e_agg_group];
 
@@ -1681,7 +1681,7 @@ USHORT EVL_group(thread_db* tdbb, RecordSource* rsb, jrd_nod *const node, USHORT
 
 				if (!impure->vlu_blob)
 				{
-					impure->vlu_blob = BLB_create(tdbb, tdbb->tdbb_request->req_transaction,
+					impure->vlu_blob = BLB_create(tdbb, tdbb->getRequest()->req_transaction,
 						&impure->vlu_misc.vlu_bid);
 					impure->vlu_desc.makeBlob(desc->getBlobSubType(), desc->getTextType(),
 						(ISC_QUAD* ) &impure->vlu_misc.vlu_bid);
@@ -1977,7 +1977,7 @@ void EVL_validate(thread_db* tdbb, const Item& item, dsc* desc, bool null)
  *
  **************************************/
 	MapItemInfo::ValueType itemInfo;
-	if (tdbb->tdbb_request->req_map_item_info.get(item, itemInfo))
+	if (tdbb->getRequest()->req_map_item_info.get(item, itemInfo))
 		EVL_validate(tdbb, item, &itemInfo, desc, null);
 }
 
@@ -1997,7 +1997,7 @@ void EVL_validate(thread_db* tdbb, const Item& item, const ItemInfo* itemInfo, d
 	if (itemInfo == NULL)
 		return;
 
-	jrd_req* request = tdbb->tdbb_request;
+	jrd_req* request = tdbb->getRequest();
 	bool err = false;
 
 	if (null && !itemInfo->nullable)
@@ -2837,7 +2837,7 @@ static dsc* binary_value(thread_db* tdbb, const jrd_nod* node, impure_value* imp
 
 	DEV_BLKCHK(node, type_nod);
 
-	jrd_req* request = tdbb->tdbb_request;
+	jrd_req* request = tdbb->getRequest();
 	impure = (impure_value*) ((SCHAR *) request + node->nod_impure);
 
 /* Evaluate arguments.  If either is null, result is null, but in
@@ -2960,7 +2960,7 @@ static dsc* cast(thread_db* tdbb, dsc* value, const jrd_nod* node, impure_value*
 
 	if (value == NULL)
 	{
-		tdbb->tdbb_request->req_flags |= req_null;
+		tdbb->getRequest()->req_flags |= req_null;
 		return NULL;
 	}
 
@@ -2993,7 +2993,7 @@ static void compute_agg_distinct(thread_db* tdbb, jrd_nod* node)
 
 	DEV_BLKCHK(node, type_nod);
 
-	jrd_req* request = tdbb->tdbb_request;
+	jrd_req* request = tdbb->getRequest();
 	const size_t asb_index =
 		(node->nod_type == nod_agg_list_distinct) ? 2 : 1;
 	AggregateSort* asb = (AggregateSort*) node->nod_arg[asb_index];
@@ -3020,7 +3020,7 @@ static void compute_agg_distinct(thread_db* tdbb, jrd_nod* node)
 
 		if (data == NULL) {
 			/* we are done, close the sort */
-			SORT_fini(asb_impure->iasb_sort_handle, tdbb->tdbb_attachment);
+			SORT_fini(asb_impure->iasb_sort_handle, tdbb->getAttachment());
 			asb_impure->iasb_sort_handle = NULL;
 			break;
 		}
@@ -3048,7 +3048,7 @@ static void compute_agg_distinct(thread_db* tdbb, jrd_nod* node)
 		{
 			if (!impure->vlu_blob)
 			{
-				impure->vlu_blob = BLB_create(tdbb, tdbb->tdbb_request->req_transaction,
+				impure->vlu_blob = BLB_create(tdbb, tdbb->getRequest()->req_transaction,
 					&impure->vlu_misc.vlu_bid);
 				impure->vlu_desc.makeBlob(desc->getBlobSubType(), desc->getTextType(),
 					(ISC_QUAD* ) &impure->vlu_misc.vlu_bid);
@@ -3158,7 +3158,7 @@ static dsc* concatenate(thread_db* tdbb,
 
 		desc.dsc_address = (UCHAR*)&impure->vlu_misc.vlu_bid;
 
-		blb* newBlob = BLB_create(tdbb, tdbb->tdbb_request->req_transaction,
+		blb* newBlob = BLB_create(tdbb, tdbb->getRequest()->req_transaction,
 			&impure->vlu_misc.vlu_bid);
 
 		Firebird::HalfStaticArray<UCHAR, BUFFER_SMALL> buffer;
@@ -3170,7 +3170,7 @@ static dsc* concatenate(thread_db* tdbb,
 			Firebird::UCharBuffer bpb;
 			BLB_gen_bpb_from_descs(value1, &desc, bpb);
 
-			blb* blob = BLB_open2(tdbb, tdbb->tdbb_request->req_transaction,
+			blb* blob = BLB_open2(tdbb, tdbb->getRequest()->req_transaction,
 				reinterpret_cast<bid*>(value1->dsc_address), bpb.getCount(), bpb.begin());
 
 			while (!(blob->blb_flags & BLB_eof))
@@ -3191,7 +3191,7 @@ static dsc* concatenate(thread_db* tdbb,
 			Firebird::UCharBuffer bpb;
 			BLB_gen_bpb_from_descs(value2, &desc, bpb);
 
-			blb* blob = BLB_open2(tdbb, tdbb->tdbb_request->req_transaction,
+			blb* blob = BLB_open2(tdbb, tdbb->getRequest()->req_transaction,
 				reinterpret_cast<bid*>(value2->dsc_address), bpb.getCount(), bpb.begin());
 
 			while (!(blob->blb_flags & BLB_eof))
@@ -3233,7 +3233,7 @@ static dsc* dbkey(thread_db* tdbb, const jrd_nod* node, impure_value* impure)
 
 	// Get request, record parameter block, and relation for stream
 
-	jrd_req* request = tdbb->tdbb_request;
+	jrd_req* request = tdbb->getRequest();
 	impure = (impure_value*) ((SCHAR *) request + node->nod_impure);
 	const record_param* rpb = &request->req_rpb[(int) (IPTR) node->nod_arg[0]];
 
@@ -3297,7 +3297,7 @@ static dsc* eval_statistical(thread_db* tdbb, jrd_nod* node, impure_value* impur
 
 /* Get started by opening stream */
 
-	jrd_req* request = tdbb->tdbb_request;
+	jrd_req* request = tdbb->getRequest();
 	dsc* desc = &impure->vlu_desc;
 
 	if (node->nod_flags & nod_invariant) {
@@ -3497,7 +3497,7 @@ static dsc* extract(thread_db* tdbb, jrd_nod* node, impure_value* impure)
 		reinterpret_cast<UCHAR*>(&impure->vlu_misc.vlu_short);
 	impure->vlu_desc.dsc_length = sizeof(SSHORT);
 	
-	jrd_req* request = tdbb->tdbb_request;
+	jrd_req* request = tdbb->getRequest();
 	// CVC: Borland used special signaling for nulls in outer joins.
 	if (!value || (request->req_flags & req_null)) {
 		request->req_flags |= req_null;
@@ -3659,7 +3659,7 @@ static void fini_agg_distinct(thread_db* tdbb, const jrd_nod *const node)
 
 	DEV_BLKCHK(node, type_nod);
 
-	jrd_req* request = tdbb->tdbb_request;
+	jrd_req* request = tdbb->getRequest();
 	jrd_nod* map = node->nod_arg[e_agg_map];
 
 	jrd_nod** ptr;
@@ -3681,7 +3681,7 @@ static void fini_agg_distinct(thread_db* tdbb, const jrd_nod *const node)
 					(from->nod_type == nod_agg_list_distinct) ? 2 : 1;
 				const AggregateSort* asb = (AggregateSort*) from->nod_arg[asb_index];
 				impure_agg_sort* asb_impure = (impure_agg_sort*) ((SCHAR *) request + asb->nod_impure);
-				SORT_fini(asb_impure->iasb_sort_handle, tdbb->tdbb_attachment);
+				SORT_fini(asb_impure->iasb_sort_handle, tdbb->getAttachment());
 				asb_impure->iasb_sort_handle = NULL;
 			}
 		}
@@ -3756,7 +3756,7 @@ static dsc* get_mask(thread_db* tdbb, jrd_nod* node, impure_value* impure)
 
 	DEV_BLKCHK(node, type_nod);
 
-	jrd_req* request = tdbb->tdbb_request;
+	jrd_req* request = tdbb->getRequest();
 	TEXT* p1 = NULL;
 	TEXT* p2 = NULL;
 	const dsc* value = EVL_expr(tdbb, node->nod_arg[0]);
@@ -3837,7 +3837,7 @@ static void init_agg_distinct(thread_db* tdbb, const jrd_nod* node)
 
 	DEV_BLKCHK(node, type_nod);
 
-	jrd_req* request = tdbb->tdbb_request;
+	jrd_req* request = tdbb->getRequest();
 
 	const size_t asb_index =
 		(node->nod_type == nod_agg_list_distinct) ? 2 : 1;
@@ -3871,7 +3871,7 @@ static dsc* lock_state(thread_db* tdbb, jrd_nod* node, impure_value* impure)
  **************************************/
 	SET_TDBB(tdbb);
 
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 	DEV_BLKCHK(node, type_nod);
 
@@ -3884,7 +3884,7 @@ static dsc* lock_state(thread_db* tdbb, jrd_nod* node, impure_value* impure)
 
 /* Evaluate attachment id */
 
-	jrd_req* request = tdbb->tdbb_request;
+	jrd_req* request = tdbb->getRequest();
 	const dsc* desc = EVL_expr(tdbb, node->nod_arg[0]);
 
 	if (request->req_flags & req_null)
@@ -3944,7 +3944,7 @@ static dsc* low_up_case(thread_db* tdbb, const dsc* value, impure_value* impure,
 		TextType* textType = INTL_texttype_lookup(tdbb, value->dsc_blob_ttype());
 		CharSet* charSet = textType->getCharSet();
 
-		blb* blob = BLB_open(tdbb, tdbb->tdbb_request->req_transaction,
+		blb* blob = BLB_open(tdbb, tdbb->getRequest()->req_transaction,
 			reinterpret_cast<bid*>(value->dsc_address));
 
 		Firebird::HalfStaticArray<UCHAR, BUFFER_SMALL> buffer;
@@ -3952,7 +3952,7 @@ static dsc* low_up_case(thread_db* tdbb, const dsc* value, impure_value* impure,
 		if (charSet->isMultiByte())
 			buffer.getBuffer(blob->blb_length);	// alloc space to put entire blob in memory
 
-		blb* newBlob = BLB_create(tdbb, tdbb->tdbb_request->req_transaction,
+		blb* newBlob = BLB_create(tdbb, tdbb->getRequest()->req_transaction,
 			&impure->vlu_misc.vlu_bid);
 
 		while (!(blob->blb_flags & BLB_eof))
@@ -4405,7 +4405,7 @@ static dsc* record_version(thread_db* tdbb, const jrd_nod* node, impure_value* i
 
 	// Get request, record parameter block for stream
 
-	jrd_req* request = tdbb->tdbb_request;
+	jrd_req* request = tdbb->getRequest();
 	// Already set by the caller
 	//impure = (impure_value*) ((SCHAR *) request + node->nod_impure);
 	const record_param* rpb = &request->req_rpb[(int) (IPTR) node->nod_arg[0]];
@@ -4417,7 +4417,7 @@ static dsc* record_version(thread_db* tdbb, const jrd_nod* node, impure_value* i
  * to check equality of record version will be forced to evaluate to true.
  */
 
-	if (tdbb->tdbb_request->req_transaction->tra_number ==
+	if (tdbb->getRequest()->req_transaction->tra_number ==
 		rpb->rpb_transaction_nr)
 	{
 		request->req_flags |= req_same_tx_upd;
@@ -4484,7 +4484,7 @@ static dsc* scalar(thread_db* tdbb, jrd_nod* node, impure_value* impure)
 	DEV_BLKCHK(node, type_nod);
 
 	const dsc* desc = EVL_expr(tdbb, node->nod_arg[e_scl_field]);
-	jrd_req* request = tdbb->tdbb_request;
+	jrd_req* request = tdbb->getRequest();
 
 	if (request->req_flags & req_null)
 		return NULL;
@@ -4585,7 +4585,7 @@ static bool sleuth(thread_db* tdbb, jrd_nod* node, const dsc* desc1, const dsc* 
 		/* Source string is a blob, things get interesting */
 
 		blb* blob =
-			BLB_open(tdbb, tdbb->tdbb_request->req_transaction,
+			BLB_open(tdbb, tdbb->getRequest()->req_transaction,
 					 reinterpret_cast<bid*>(desc1->dsc_address));
 
 		UCHAR buffer[BUFFER_LARGE];
@@ -4629,7 +4629,7 @@ static bool string_boolean(thread_db* tdbb, jrd_nod* node, dsc* desc1,
 
 	SET_TDBB(tdbb);
 
-	jrd_req* request = tdbb->tdbb_request;
+	jrd_req* request = tdbb->getRequest();
 
 	DEV_BLKCHK(node, type_nod);
 
@@ -4865,7 +4865,7 @@ static bool string_function(
 	SET_TDBB(tdbb);
 	DEV_BLKCHK(node, type_nod);
 
-	jrd_req* request = tdbb->tdbb_request;
+	jrd_req* request = tdbb->getRequest();
 
 	Collation* obj = INTL_texttype_lookup(tdbb, ttype);
 	CharSet* charset = obj->getCharSet();
@@ -4997,7 +4997,7 @@ static dsc* string_length(thread_db* tdbb, jrd_nod* node, impure_value* impure)
 		reinterpret_cast<UCHAR*>(&impure->vlu_misc.vlu_long);
 	impure->vlu_desc.dsc_length = sizeof(ULONG);
 
-	jrd_req* request = tdbb->tdbb_request;
+	jrd_req* request = tdbb->getRequest();
 	// CVC: Borland used special signaling for nulls in outer joins.
 	if (!value || (request->req_flags & req_null)) {
 		request->req_flags |= req_null;
@@ -5010,7 +5010,7 @@ static dsc* string_length(thread_db* tdbb, jrd_nod* node, impure_value* impure)
 	if (value->dsc_dtype == dtype_blob ||
 		value->dsc_dtype == dtype_quad)
 	{
-		blb* blob = BLB_open(tdbb, tdbb->tdbb_request->req_transaction,
+		blb* blob = BLB_open(tdbb, tdbb->getRequest()->req_transaction,
 							 reinterpret_cast<bid*>(value->dsc_address));
 
 		switch (length_type)
@@ -5127,7 +5127,7 @@ static dsc* trim(thread_db* tdbb, jrd_nod* node, impure_value* impure)
  **************************************/
 	SET_TDBB(tdbb);
 
-	jrd_req* request = tdbb->tdbb_request;
+	jrd_req* request = tdbb->getRequest();
 
 	const ULONG specification = (IPTR) node->nod_arg[e_trim_specification];
 
@@ -5175,7 +5175,7 @@ static dsc* trim(thread_db* tdbb, jrd_nod* node, impure_value* impure)
 	if (value->dsc_dtype == dtype_blob)
 	{
 		// Source string is a blob, things get interesting.
-		blb* blob = BLB_open(tdbb, tdbb->tdbb_request->req_transaction,
+		blb* blob = BLB_open(tdbb, tdbb->getRequest()->req_transaction,
             reinterpret_cast<bid*>(value->dsc_address));
 
 		// It's very difficult (and probably not very efficient) to trim a blob in chunks.
@@ -5231,7 +5231,7 @@ static dsc* trim(thread_db* tdbb, jrd_nod* node, impure_value* impure)
 
 		EVL_make_value(tdbb, value, impure);
 
-		blb* newBlob = BLB_create(tdbb, tdbb->tdbb_request->req_transaction,
+		blb* newBlob = BLB_create(tdbb, tdbb->getRequest()->req_transaction,
 			&impure->vlu_misc.vlu_bid);
 
 		BLB_put_data(tdbb, newBlob, valueCanonical.begin(), len);
@@ -5283,23 +5283,23 @@ static dsc* internal_info(thread_db* tdbb, const dsc* value, impure_value* impur
 		impure->vlu_misc.vlu_long = PAG_attachment_id(tdbb);
 		break;
 	case internal_transaction_id:
-		impure->vlu_misc.vlu_long = tdbb->tdbb_transaction->tra_number;
+		impure->vlu_misc.vlu_long = tdbb->getTransaction()->tra_number;
 		break;
 	case internal_gdscode:
 		impure->vlu_misc.vlu_long =
-			tdbb->tdbb_request->req_last_xcp.as_gdscode();
+			tdbb->getRequest()->req_last_xcp.as_gdscode();
 		break;
 	case internal_sqlcode:
 		impure->vlu_misc.vlu_long =
-			tdbb->tdbb_request->req_last_xcp.as_sqlcode();
+			tdbb->getRequest()->req_last_xcp.as_sqlcode();
 		break;
 	case internal_rows_affected:
 		impure->vlu_misc.vlu_long =
-			tdbb->tdbb_request->req_records_affected.getCount();
+			tdbb->getRequest()->req_records_affected.getCount();
 		break;
 	case internal_trigger_action:
 		impure->vlu_misc.vlu_long =
-			tdbb->tdbb_request->req_trigger_action;
+			tdbb->getRequest()->req_trigger_action;
 		break;
 	default:
 		BUGCHECK(232);	/* msg 232 EVL_expr: invalid operation */

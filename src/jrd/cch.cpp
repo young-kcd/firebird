@@ -336,11 +336,11 @@ int CCH_down_grade_dbb(void* ast_object)
 	JRD_set_thread_data(tdbb, thd_context);
 
 	ISC_STATUS_ARRAY ast_status;
-	tdbb->tdbb_database = dbb;
-	tdbb->tdbb_attachment = lock->lck_attachment;
+	tdbb->setDatabase(dbb);
+	tdbb->setAttachment(lock->lck_attachment);
 	tdbb->tdbb_quantum = QUANTUM;
-	tdbb->tdbb_request = NULL;
-	tdbb->tdbb_transaction = NULL;
+	tdbb->setRequest(NULL);
+	tdbb->setTransaction(NULL);
 	tdbb->tdbb_status_vector = ast_status;
 
 	dbb->dbb_ast_flags |= DBB_blocking;
@@ -438,7 +438,7 @@ bool CCH_exclusive(thread_db* tdbb, USHORT level, SSHORT wait_flag)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 #ifdef SUPERSERVER
 	if (!CCH_exclusive_attachment(tdbb, level, wait_flag)) {
@@ -507,8 +507,8 @@ bool CCH_exclusive_attachment(thread_db* tdbb, USHORT level, SSHORT wait_flag)
 	const int CCH_EXCLUSIVE_RETRY_INTERVAL = 1;	/* retry interval in seconds */
 
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
-	Attachment* attachment = tdbb->tdbb_attachment;
+	Database* dbb = tdbb->getDatabase();
+	Attachment* attachment = tdbb->getAttachment();
 	if (attachment->att_flags & ATT_exclusive) {
 		return true;
 	}
@@ -537,12 +537,12 @@ bool CCH_exclusive_attachment(thread_db* tdbb, USHORT level, SSHORT wait_flag)
 	for (SLONG remaining = timeout; remaining > 0;
 		 remaining -= CCH_EXCLUSIVE_RETRY_INTERVAL)
 	{
-		if (tdbb->tdbb_attachment->att_flags & ATT_shutdown) {
+		if (tdbb->getAttachment()->att_flags & ATT_shutdown) {
 			break;
 		}
 
 		bool found = false;
-		for (attachment = tdbb->tdbb_attachment->att_next; attachment;
+		for (attachment = tdbb->getAttachment()->att_next; attachment;
 			 attachment = attachment->att_next)
 		{
 			if (attachment->att_flags & ATT_shutdown) {
@@ -557,7 +557,7 @@ bool CCH_exclusive_attachment(thread_db* tdbb, USHORT level, SSHORT wait_flag)
 					break;
 				}
 				// Forbid multiple attachments in single-user maintenance mode
-				if (attachment != tdbb->tdbb_attachment &&
+				if (attachment != tdbb->getAttachment() &&
 					(dbb->dbb_ast_flags & DBB_shutdown_single) )
 				{
 					found = true;
@@ -568,7 +568,7 @@ bool CCH_exclusive_attachment(thread_db* tdbb, USHORT level, SSHORT wait_flag)
 
 				found = true;
 				if (attachment->att_flags & ATT_exclusive_pending) {
-					tdbb->tdbb_attachment->att_flags &=
+					tdbb->getAttachment()->att_flags &=
 						~ATT_exclusive_pending;
 					if (wait_flag == LCK_WAIT) {
 						ERR_post(isc_deadlock, 0);
@@ -582,10 +582,10 @@ bool CCH_exclusive_attachment(thread_db* tdbb, USHORT level, SSHORT wait_flag)
 		}
 
 		if (!found) {
-			tdbb->tdbb_attachment->att_flags &=
+			tdbb->getAttachment()->att_flags &=
 				~(ATT_exclusive_pending | ATT_attach_pending);
 			if (level != LCK_none) {
-				tdbb->tdbb_attachment->att_flags |= ATT_exclusive;
+				tdbb->getAttachment()->att_flags |= ATT_exclusive;
 			}
 			return true;
 		}
@@ -599,16 +599,16 @@ bool CCH_exclusive_attachment(thread_db* tdbb, USHORT level, SSHORT wait_flag)
 			THREAD_ENTER();
 		}
 
-		if (tdbb->tdbb_attachment->att_flags & ATT_cancel_raise) {
+		if (tdbb->getAttachment()->att_flags & ATT_cancel_raise) {
 			if (JRD_reschedule(tdbb, 0, false)) {
-				tdbb->tdbb_attachment->att_flags &=
+				tdbb->getAttachment()->att_flags &=
 					~(ATT_exclusive_pending | ATT_attach_pending);
 				ERR_punt();
 			}
 		}
 	}
 
-	tdbb->tdbb_attachment->att_flags &=
+	tdbb->getAttachment()->att_flags &=
 		~(ATT_exclusive_pending | ATT_attach_pending);
 	return false;
 }
@@ -663,7 +663,7 @@ pag* CCH_fake(thread_db* tdbb, WIN * window, SSHORT latch_wait)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 	SLONG attachment_lock_handle = BackupManager::attachment_lock_handle(tdbb);
 	if (window->win_page == HEADER_PAGE_NUMBER)
@@ -758,7 +758,7 @@ pag* CCH_fetch(
 	SET_TDBB(tdbb);
 
 	if (window->win_page == HEADER_PAGE_NUMBER) {
-		tdbb->tdbb_database->dbb_backup_manager->lock_shared_database(tdbb, true);
+		tdbb->getDatabase()->dbb_backup_manager->lock_shared_database(tdbb, true);
 	}
 	
 	CCH_TRACE(("FETCH PAGE=%d", window->win_page));
@@ -776,7 +776,7 @@ pag* CCH_fetch(
 	}
 	else if (fetch_lock_return == -2 || fetch_lock_return == -1) {
 		if (window->win_page == HEADER_PAGE_NUMBER)
-			tdbb->tdbb_database->dbb_backup_manager->unlock_shared_database(tdbb);
+			tdbb->getDatabase()->dbb_backup_manager->unlock_shared_database(tdbb);
 		return NULL;			/* latch or lock timeout */
 	}
 
@@ -871,7 +871,7 @@ SSHORT CCH_fetch_lock(
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 /* if there has been a shadow added recently, go out and
    find it before we grant any more write locks */
@@ -930,7 +930,7 @@ void CCH_fetch_page(
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 	BufferDesc* bdb = window->win_bdb;
 
 	ISC_STATUS* status = tdbb->tdbb_status_vector;
@@ -940,7 +940,7 @@ void CCH_fetch_page(
 
 	AST_CHECK();
 	++dbb->dbb_reads;
-	RuntimeStatistics::bumpValue(tdbb, RuntimeStatistics::PAGE_READS);
+	tdbb->bumpStats(RuntimeStatistics::PAGE_READS);
 	page = bdb->bdb_buffer;
 	PageSpace* pageSpace = 
 		dbb->dbb_page_manager.findPageSpace(bdb->bdb_page.getPageSpaceID());
@@ -1114,7 +1114,7 @@ void CCH_forget_page(thread_db* tdbb, WIN * window)
  **************************************/
 	SET_TDBB(tdbb);
 	BufferDesc* bdb = window->win_bdb;
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 	if (window->win_page != bdb->bdb_page ||
 		bdb->bdb_buffer->pag_type != pag_undefined) 
@@ -1163,7 +1163,7 @@ void CCH_fini(thread_db* tdbb)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 	bool flush_error = false;
 	
 	// CVC: Patching a conversion error FB1->FB2 with crude logic
@@ -1302,7 +1302,7 @@ void CCH_flush(thread_db* tdbb, USHORT flush_flag, SLONG tra_number)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 	BufferControl* bcb = dbb->dbb_bcb;
 	ISC_STATUS* status = tdbb->tdbb_status_vector;
@@ -1447,7 +1447,7 @@ void CCH_flush(thread_db* tdbb, USHORT flush_flag, SLONG tra_number)
 		{
 			PIO_flush(dbb->dbb_shadow->sdw_file);
 		}
-		RuntimeStatistics::bumpValue(tdbb, RuntimeStatistics::FLUSHES);
+		tdbb->bumpStats(RuntimeStatistics::FLUSHES);
 	}
 
 /* take the opportunity when we know there are no pages
@@ -1471,7 +1471,7 @@ void CCH_flush_ast(thread_db* tdbb)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 	BufferControl* bcb = dbb->dbb_bcb;
 
@@ -1514,7 +1514,7 @@ bool CCH_free_page(thread_db* tdbb)
 /* Called by VIO/garbage_collector() when it is idle to
    help quench the thirst for free pages. */
 
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 	BufferControl* bcb = dbb->dbb_bcb;
 
 	if (dbb->dbb_flags & DBB_read_only) {
@@ -1689,7 +1689,7 @@ void CCH_init(thread_db* tdbb, ULONG number)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 	
 	CCH_TRACE(("INIT %s", dbb->dbb_filename.c_str()));
 
@@ -1755,7 +1755,7 @@ void CCH_init(thread_db* tdbb, ULONG number)
 	if (count != (SLONG) bcb->bcb_count) {
 		gds__log
 			("Database: %s\n\tAllocated %ld page buffers of %ld requested",
-			 tdbb->tdbb_attachment->att_filename.c_str(), bcb->bcb_count, count);
+			 tdbb->getAttachment()->att_filename.c_str(), bcb->bcb_count, count);
 	}
 
 	if (dbb->dbb_lock->lck_logical != LCK_EX) {
@@ -1816,10 +1816,10 @@ void CCH_mark(thread_db* tdbb, WIN * window, USHORT mark_system, USHORT must_wri
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 	dbb->dbb_marks++;
-	RuntimeStatistics::bumpValue(tdbb, RuntimeStatistics::PAGE_MARKS);
+	tdbb->bumpStats(RuntimeStatistics::PAGE_MARKS);
 	BufferControl* bcb = dbb->dbb_bcb;
 	BufferDesc* bdb = window->win_bdb;
 	BLKCHK(bdb, type_bdb);
@@ -1850,7 +1850,7 @@ void CCH_mark(thread_db* tdbb, WIN * window, USHORT mark_system, USHORT must_wri
    has updated this page */
 
 	SLONG number;
-	jrd_tra* transaction = tdbb->tdbb_transaction;
+	jrd_tra* transaction = tdbb->getTransaction();
 	if (transaction && (number = transaction->tra_number)) {
 		if (!(tdbb->tdbb_flags & TDBB_sweeper)) {
 			const ULONG trans_bucket = number & (BITS_PER_LONG - 1);
@@ -1943,7 +1943,7 @@ Lock* CCH_page_lock(thread_db* tdbb)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 	const SSHORT lockLen = PageNumber::getLockLen();
 	Lock* lock = FB_NEW_RPT(*dbb->dbb_bufferpool, lockLen) Lock;
@@ -2021,7 +2021,7 @@ void CCH_prefetch(thread_db* tdbb, SLONG * pages, SSHORT count)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 	BufferControl* bcb = dbb->dbb_bcb;
 
 	if (!count || !(bcb->bcb_flags & BCB_cache_reader))	{
@@ -2086,7 +2086,7 @@ bool CCH_prefetch_pages(thread_db* tdbb)
 
 void set_diff_page(thread_db* tdbb, BufferDesc* bdb)
 {
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 	const int backup_state = dbb->dbb_backup_manager->get_state();
 
@@ -2156,7 +2156,7 @@ void CCH_release(thread_db* tdbb, WIN * window, bool release_tail)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 	BufferDesc* bdb = window->win_bdb;
 	BLKCHK(bdb, type_bdb);
@@ -2318,10 +2318,10 @@ void CCH_release_exclusive(thread_db* tdbb)
  *
  **************************************/
 	SET_TDBB(tdbb);	
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 	dbb->dbb_flags &= ~DBB_exclusive;
 
-	Attachment* attachment = tdbb->tdbb_attachment;
+	Attachment* attachment = tdbb->getAttachment();
 	if (attachment) {
 		attachment->att_flags &= ~ATT_exclusive;
 	}
@@ -2411,7 +2411,7 @@ void CCH_unwind(thread_db* tdbb, bool punt)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 /* CCH_unwind is called when any of the following occurs:
 	- IO error
@@ -2539,7 +2539,7 @@ bool CCH_write_all_shadows(thread_db* tdbb,
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 	Shadow* sdw = shadow ? shadow : dbb->dbb_shadow;
 
@@ -2697,7 +2697,7 @@ static BufferDesc* alloc_bdb(thread_db* tdbb, BufferControl* bcb, UCHAR** memory
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 	BufferDesc* bdb = FB_NEW(*dbb->dbb_bufferpool) BufferDesc;
 	bdb->bdb_dbb = dbb;
@@ -2764,11 +2764,11 @@ static int blocking_ast_bdb(void* ast_object)
 	ISC_STATUS_ARRAY ast_status;
 	Database* dbb = bdb->bdb_dbb;
 
-	tdbb->tdbb_database = dbb;
-	tdbb->tdbb_attachment = NULL;
+	tdbb->setDatabase(dbb);
+	tdbb->setAttachment(NULL);
 	tdbb->tdbb_quantum = QUANTUM;
-	tdbb->tdbb_request = NULL;
-	tdbb->tdbb_transaction = NULL;
+	tdbb->setRequest(NULL);
+	tdbb->setTransaction(NULL);
 	tdbb->tdbb_status_vector = ast_status;
 
 /* Do some fancy footwork to make sure that pages are
@@ -2850,7 +2850,7 @@ static void flushDirty(thread_db* tdbb,
 					  const bool sys_only, ISC_STATUS* status)
 {
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 	BufferControl* bcb = dbb->dbb_bcb;
 	Firebird::HalfStaticArray<BufferDesc*, 1024> flush;
 
@@ -2923,7 +2923,7 @@ static void flushDirty(thread_db* tdbb,
 static void flushAll(thread_db* tdbb, USHORT flush_flag)
 {
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 	BufferControl* bcb = dbb->dbb_bcb;
 	ISC_STATUS* status = tdbb->tdbb_status_vector;
 	Firebird::HalfStaticArray<BufferDesc*, 1024> flush(bcb->bcb_dirty_count);
@@ -3035,7 +3035,7 @@ static void btc_flush(thread_db* tdbb,
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 /* traverse the tree, flagging to prevent pages
    from being removed from the tree during write_page() --
@@ -4082,13 +4082,13 @@ static THREAD_ENTRY_DECLARE cache_reader(THREAD_ENTRY_PARAM arg)
 
 	ISC_STATUS_ARRAY status_vector;
 /* Dummy attachment needed for lock owner identification. */
-	tdbb->tdbb_database = dbb;
+	tdbb->setDatabase(dbb);
 	Jrd::ContextPoolHolder context(tdbb, dbb->dbb_bufferpool);
 	tdbb->tdbb_status_vector = status_vector;
 	tdbb->tdbb_quantum = QUANTUM;
-	tdbb->tdbb_attachment = FB_NEW(*dbb->dbb_bufferpool) Attachment();
-	tdbb->tdbb_attachment->att_database = dbb;
-	tdbb->tdbb_attachment->att_filename = dbb->dbb_filename;
+	tdbb->setAttachment(FB_NEW(*dbb->dbb_bufferpool) Attachment());
+	tdbb->getAttachment()->att_database = dbb;
+	tdbb->getAttachment()->att_filename = dbb->dbb_filename;
 
 /* This try block is specifically to protect the LCK_init call: if
    LCK_init fails we won't be able to accomplish anything anyway, so
@@ -4208,8 +4208,8 @@ static THREAD_ENTRY_DECLARE cache_reader(THREAD_ENTRY_PARAM arg)
 	}
 
 	LCK_fini(tdbb, LCK_OWNER_attachment);
-	delete tdbb->tdbb_attachment;
-	tdbb->tdbb_attachment = 0;
+	delete tdbb->getAttachment();
+	tdbb->setAttachment(0);
 	bcb->bcb_flags &= ~BCB_cache_reader;
 	ISC_event_post(reader_event);
 	THREAD_EXIT();
@@ -4255,12 +4255,12 @@ static THREAD_ENTRY_DECLARE cache_writer(THREAD_ENTRY_PARAM arg)
 	ISC_STATUS_ARRAY status_vector;
 /* Dummy attachment needed for lock owner identification. */
 
-	tdbb->tdbb_database = dbb;
+	tdbb->setDatabase(dbb);
 	Jrd::ContextPoolHolder context(tdbb, dbb->dbb_bufferpool);
 	tdbb->tdbb_status_vector = status_vector;
 	tdbb->tdbb_quantum = QUANTUM;
-	tdbb->tdbb_attachment = FB_NEW(*dbb->dbb_bufferpool) Attachment(dbb);
-	tdbb->tdbb_attachment->att_filename = dbb->dbb_filename;
+	tdbb->setAttachment(FB_NEW(*dbb->dbb_bufferpool) Attachment(dbb));
+	tdbb->getAttachment()->att_filename = dbb->dbb_filename;
 
 /* This try block is specifically to protect the LCK_init call: if
    LCK_init fails we won't be able to accomplish anything anyway, so
@@ -4374,8 +4374,8 @@ static THREAD_ENTRY_DECLARE cache_writer(THREAD_ENTRY_PARAM arg)
 		}
 
 		LCK_fini(tdbb, LCK_OWNER_attachment);
-		delete tdbb->tdbb_attachment;
-		tdbb->tdbb_attachment = 0;
+		delete tdbb->getAttachment();
+		tdbb->setAttachment(0);
 		bcb->bcb_flags &= ~BCB_cache_writer;
 		/* Notify the finalization caller that we're finishing. */
 		ISC_event_post(dbb->dbb_writer_event_fini);
@@ -4416,7 +4416,7 @@ static void check_precedence(thread_db* tdbb, WIN * window, PageNumber page)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 /* If this is really a transaction id, sort things out */
 
@@ -4773,7 +4773,7 @@ static void expand_buffers(thread_db* tdbb, ULONG number)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 	BufferControl* old = dbb->dbb_bcb;
 
 	if (number <= old->bcb_count || number > MAX_PAGE_BUFFERS) {
@@ -4922,7 +4922,7 @@ static BufferDesc* get_buffer(thread_db* tdbb, const PageNumber page, LATCH latc
 	BufferControl* bcb;
 
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 	SSHORT walk = dbb->dbb_bcb->bcb_free_minimum;
 
 //	BCB_MUTEX_ACQUIRE;
@@ -4957,7 +4957,7 @@ static BufferDesc* get_buffer(thread_db* tdbb, const PageNumber page, LATCH latc
 					else {
 						bdb->bdb_flags &= ~(BDB_faked | BDB_prefetch);
 						dbb->dbb_fetches++;
-						RuntimeStatistics::bumpValue(tdbb, RuntimeStatistics::PAGE_FETCHES);
+						tdbb->bumpStats(RuntimeStatistics::PAGE_FETCHES);
 						return bdb;
 					}
 				}
@@ -5063,7 +5063,7 @@ static BufferDesc* get_buffer(thread_db* tdbb, const PageNumber page, LATCH latc
 				}
 #endif
 				dbb->dbb_fetches++;
-				RuntimeStatistics::bumpValue(tdbb, RuntimeStatistics::PAGE_FETCHES);
+				tdbb->bumpStats(RuntimeStatistics::PAGE_FETCHES);
 //				BCB_MUTEX_RELEASE;
 				return bdb;
 			}
@@ -5220,7 +5220,7 @@ static void invalidate_and_release_buffer(thread_db* tdbb, BufferDesc* bdb)
  *  So there should be no need to release difference locks though
  *
  **************************************/
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 	bdb->bdb_flags |= BDB_not_valid;
 	// This will also release logical lock on LCK_backup_database
 	clear_page_dirty_flag(tdbb, bdb);
@@ -5407,7 +5407,7 @@ static SSHORT latch_bdb(
 /* Get or create a latch wait block and wait for someone to grant
    the latch. */
 
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 	BufferControl* bcb = dbb->dbb_bcb;
 
 	LatchWait* lwt;
@@ -5695,7 +5695,7 @@ static ULONG memory_init(thread_db* tdbb, BufferControl* bcb, SLONG number)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 	UCHAR* memory = NULL;
 	SLONG buffers = 0;
@@ -5804,7 +5804,7 @@ static void page_validation_error(thread_db* tdbb, WIN * window, SSHORT type)
 	BufferDesc* bdb = window->win_bdb;
 	const pag* page = bdb->bdb_buffer;
 
-	PageSpace* pages = tdbb->tdbb_database->dbb_page_manager.findPageSpace(bdb->bdb_page.getPageSpaceID());
+	PageSpace* pages = tdbb->getDatabase()->dbb_page_manager.findPageSpace(bdb->bdb_page.getPageSpaceID());
 
 	IBERR_build_status(tdbb->tdbb_status_vector,
 					   isc_db_corrupt,
@@ -5846,7 +5846,7 @@ static void prefetch_epilogue(Prefetch* prefetch, ISC_STATUS* status_vector)
    for the prefetch request. */
 
 	thread_db* tdbb = prefetch->prf_tdbb;
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 	if (!async_status) {
 		BufferDesc** next_bdb = prefetch->prf_bdbs;
@@ -5898,7 +5898,7 @@ static void prefetch_init(Prefetch* prefetch, thread_db* tdbb)
  *	interfaces want the buffer address aligned.
  *
  **************************************/
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 	prefetch->prf_tdbb = tdbb;
 	prefetch->prf_flags = 0;
@@ -5924,7 +5924,7 @@ static void prefetch_io(Prefetch* prefetch, ISC_STATUS* status_vector)
  *
  **************************************/
 	thread_db* tdbb = prefetch->prf_tdbb;
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 	if (!prefetch->prf_page_count) {
 		prefetch->prf_flags &= ~PRF_active;
@@ -5968,7 +5968,7 @@ static void prefetch_prologue(Prefetch* prefetch, SLONG* start_page)
  *
  **************************************/
 	thread_db* tdbb = prefetch->prf_tdbb;
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 	BufferControl* bcb = dbb->dbb_bcb;
 
 	prefetch->prf_start_page = *start_page;
@@ -6341,7 +6341,7 @@ static void unmark(thread_db* tdbb, WIN * window)
 			fb_assert(bdb->bdb_backup_lock_owner == BackupManager::attachment_lock_handle(tdbb));
 
 			SLONG database_lock_handle = BackupManager::database_lock_handle(tdbb);
-			tdbb->tdbb_database->dbb_backup_manager->change_dirty_page_owner(tdbb, 
+			tdbb->getDatabase()->dbb_backup_manager->change_dirty_page_owner(tdbb, 
 				bdb->bdb_backup_lock_owner, database_lock_handle);
 			bdb->bdb_backup_lock_owner = database_lock_handle;
 			release_bdb(tdbb, bdb, false, false, true);
@@ -6422,7 +6422,7 @@ static int write_buffer(
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 	if (latch_bdb(tdbb, LATCH_io, bdb, page, 1) == -1) {
 		return 1;
@@ -6578,7 +6578,7 @@ static bool write_page(
 	if (true) {
 		AST_CHECK();
 		dbb->dbb_writes++;
-		RuntimeStatistics::bumpValue(tdbb, RuntimeStatistics::PAGE_WRITES);
+		tdbb->bumpStats(RuntimeStatistics::PAGE_WRITES);
 
 		/* write out page to main database file, and to any
 		   shadows, making a special case of the header page */
@@ -6727,7 +6727,7 @@ static void clear_page_dirty_flag(thread_db* tdbb, BufferDesc* bdb)
 {
 	if (bdb->bdb_flags & BDB_dirty) {
 		fb_assert(bdb->bdb_backup_lock_owner);
-		tdbb->tdbb_database->dbb_backup_manager->release_dirty_page(tdbb, bdb->bdb_backup_lock_owner);
+		tdbb->getDatabase()->dbb_backup_manager->release_dirty_page(tdbb, bdb->bdb_backup_lock_owner);
 		bdb->bdb_backup_lock_owner = 0;
 		bdb->bdb_flags &= ~BDB_dirty;
 	}

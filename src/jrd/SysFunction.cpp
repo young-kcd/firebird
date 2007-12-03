@@ -863,7 +863,7 @@ static dsc* evlStdMath(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::j
 	fb_assert(args->nod_count == 1);
 	fb_assert(function->misc != NULL);
 
-	jrd_req* request = tdbb->tdbb_request;
+	jrd_req* request = tdbb->getRequest();
 
 	request->req_flags &= ~req_null;
 	const dsc* value = EVL_expr(tdbb, args->nod_arg[0]);
@@ -883,7 +883,7 @@ static dsc* evlAbs(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_n
 {
 	fb_assert(args->nod_count == 1);
 
-	jrd_req* request = tdbb->tdbb_request;
+	jrd_req* request = tdbb->getRequest();
 
 	request->req_flags &= ~req_null;
 	const dsc* value = EVL_expr(tdbb, args->nod_arg[0]);
@@ -929,7 +929,7 @@ static dsc* evlAsciiChar(Jrd::thread_db* tdbb, const SysFunction* function, Jrd:
 {
 	fb_assert(args->nod_count == 1);
 
-	jrd_req* request = tdbb->tdbb_request;
+	jrd_req* request = tdbb->getRequest();
 
 	request->req_flags &= ~req_null;
 	const dsc* value = EVL_expr(tdbb, args->nod_arg[0]);
@@ -951,7 +951,7 @@ static dsc* evlAsciiVal(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::
 {
 	fb_assert(args->nod_count == 1);
 
-	jrd_req* request = tdbb->tdbb_request;
+	jrd_req* request = tdbb->getRequest();
 
 	request->req_flags &= ~req_null;
 	const dsc* value = EVL_expr(tdbb, args->nod_arg[0]);
@@ -977,7 +977,7 @@ static dsc* evlAtan2(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd
 {
 	fb_assert(args->nod_count == 2);
 
-	jrd_req* request = tdbb->tdbb_request;
+	jrd_req* request = tdbb->getRequest();
 
 	request->req_flags &= ~req_null;
 	const dsc* value1 = EVL_expr(tdbb, args->nod_arg[0]);
@@ -999,7 +999,7 @@ static dsc* evlBin(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_n
 {
 	fb_assert(args->nod_count >= 1);
 
-	jrd_req* request = tdbb->tdbb_request;
+	jrd_req* request = tdbb->getRequest();
 
 	for (int i = 0; i < args->nod_count; ++i)
 	{
@@ -1042,7 +1042,7 @@ static dsc* evlBinShift(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::
 {
 	fb_assert(args->nod_count == 2);
 
-	jrd_req* request = tdbb->tdbb_request;
+	jrd_req* request = tdbb->getRequest();
 
 	request->req_flags &= ~req_null;
 	const dsc* value1 = EVL_expr(tdbb, args->nod_arg[0]);
@@ -1078,7 +1078,7 @@ static dsc* evlCeil(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_
 {
 	fb_assert(args->nod_count == 1);
 
-	jrd_req* request = tdbb->tdbb_request;
+	jrd_req* request = tdbb->getRequest();
 
 	request->req_flags &= ~req_null;
 	const dsc* value = EVL_expr(tdbb, args->nod_arg[0]);
@@ -1133,7 +1133,7 @@ static dsc* evlDateAdd(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::j
 {
 	fb_assert(args->nod_count == 3);
 
-	jrd_req* request = tdbb->tdbb_request;
+	jrd_req* request = tdbb->getRequest();
 
 	request->req_flags &= ~req_null;
 	const dsc* quantityDsc = EVL_expr(tdbb, args->nod_arg[0]);
@@ -1300,7 +1300,7 @@ static dsc* evlDateDiff(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::
 {
 	fb_assert(args->nod_count == 3);
 
-	jrd_req* request = tdbb->tdbb_request;
+	jrd_req* request = tdbb->getRequest();
 
 	const dsc* partDsc = EVL_expr(tdbb, args->nod_arg[0]);
 	if (request->req_flags & req_null)	// return NULL if partDsc is NULL
@@ -1469,7 +1469,7 @@ static dsc* evlExp(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_n
 {
 	fb_assert(args->nod_count == 1);
 
-	jrd_req* request = tdbb->tdbb_request;
+	jrd_req* request = tdbb->getRequest();
 
 	request->req_flags &= ~req_null;
 	const dsc* value = EVL_expr(tdbb, args->nod_arg[0]);
@@ -1490,7 +1490,7 @@ static dsc* evlFloor(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd
 {
 	fb_assert(args->nod_count == 1);
 
-	jrd_req* request = tdbb->tdbb_request;
+	jrd_req* request = tdbb->getRequest();
 
 	request->req_flags &= ~req_null;
 	const dsc* value = EVL_expr(tdbb, args->nod_arg[0]);
@@ -1562,7 +1562,7 @@ static dsc* evlHash(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_
 {
 	fb_assert(args->nod_count == 1);
 
-	jrd_req* request = tdbb->tdbb_request;
+	jrd_req* request = tdbb->getRequest();
 
 	request->req_flags &= ~req_null;
 	const dsc* value = EVL_expr(tdbb, args->nod_arg[0]);
@@ -1576,7 +1576,7 @@ static dsc* evlHash(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_
 
 	if (value->isBlob())
 	{
-		blb* blob = BLB_open(tdbb, tdbb->tdbb_request->req_transaction,
+		blb* blob = BLB_open(tdbb, tdbb->getRequest()->req_transaction,
 			reinterpret_cast<bid*>(value->dsc_address));
 
 		while (!(blob->blb_flags & BLB_eof))
@@ -1623,7 +1623,7 @@ static dsc* evlLeft(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_
 {
 	fb_assert(args->nod_count == 2);
 
-	jrd_req* request = tdbb->tdbb_request;
+	jrd_req* request = tdbb->getRequest();
 
 	request->req_flags &= ~req_null;
 	dsc* str = EVL_expr(tdbb, args->nod_arg[0]);
@@ -1646,7 +1646,7 @@ static dsc* evlLn(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_no
 {
 	fb_assert(args->nod_count == 1);
 
-	jrd_req* request = tdbb->tdbb_request;
+	jrd_req* request = tdbb->getRequest();
 
 	request->req_flags &= ~req_null;
 	const dsc* value = EVL_expr(tdbb, args->nod_arg[0]);
@@ -1669,7 +1669,7 @@ static dsc* evlLog(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_n
 {
 	fb_assert(args->nod_count == 2);
 
-	jrd_req* request = tdbb->tdbb_request;
+	jrd_req* request = tdbb->getRequest();
 
 	request->req_flags &= ~req_null;
 	const dsc* value1 = EVL_expr(tdbb, args->nod_arg[0]);
@@ -1691,7 +1691,7 @@ static dsc* evlMaxMinValue(Jrd::thread_db* tdbb, const SysFunction* function, Jr
 {
 	fb_assert(args->nod_count >= 1);
 
-	jrd_req* request = tdbb->tdbb_request;
+	jrd_req* request = tdbb->getRequest();
 	dsc* result = NULL;
 
 	for (int i = 0; i < args->nod_count; ++i)
@@ -1731,7 +1731,7 @@ static dsc* evlMod(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_n
 {
 	fb_assert(args->nod_count == 2);
 
-	jrd_req* request = tdbb->tdbb_request;
+	jrd_req* request = tdbb->getRequest();
 
 	request->req_flags &= ~req_null;
 	const dsc* value1 = EVL_expr(tdbb, args->nod_arg[0]);
@@ -1780,7 +1780,7 @@ static dsc* evlOverlay(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::j
 {
 	fb_assert(args->nod_count >= 3);
 
-	jrd_req* request = tdbb->tdbb_request;
+	jrd_req* request = tdbb->getRequest();
 
 	request->req_flags &= ~req_null;
 	dsc* value = EVL_expr(tdbb, args->nod_arg[0]);
@@ -1827,7 +1827,7 @@ static dsc* evlOverlay(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::j
 		Firebird::UCharBuffer bpb;
 		BLB_gen_bpb_from_descs(value, &impure->vlu_desc, bpb);
 
-		blb* blob = BLB_open2(tdbb, tdbb->tdbb_request->req_transaction,
+		blb* blob = BLB_open2(tdbb, tdbb->getRequest()->req_transaction,
 			reinterpret_cast<bid*>(value->dsc_address), bpb.getCount(), bpb.begin());
 		len1 =
 			(blob->blb_length / INTL_charset_lookup(tdbb, value->getCharSet())->minBytesPerChar()) *
@@ -1847,7 +1847,7 @@ static dsc* evlOverlay(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::j
 		Firebird::UCharBuffer bpb;
 		BLB_gen_bpb_from_descs(placing, &impure->vlu_desc, bpb);
 
-		blb* blob = BLB_open2(tdbb, tdbb->tdbb_request->req_transaction,
+		blb* blob = BLB_open2(tdbb, tdbb->getRequest()->req_transaction,
 			reinterpret_cast<bid*>(placing->dsc_address), bpb.getCount(), bpb.begin());
 		len2 =
 			(blob->blb_length / INTL_charset_lookup(tdbb, placing->getCharSet())->minBytesPerChar()) *
@@ -1886,7 +1886,7 @@ static dsc* evlOverlay(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::j
 		EVL_make_value(tdbb, (value->isBlob() ? value : placing), impure);
 		impure->vlu_desc.setBlobSubType(DataTypeUtil::getResultBlobSubType(value, placing));
 		impure->vlu_desc.setTextType(resultTextType);
-		newBlob = BLB_create(tdbb, tdbb->tdbb_request->req_transaction, &impure->vlu_misc.vlu_bid);
+		newBlob = BLB_create(tdbb, tdbb->getRequest()->req_transaction, &impure->vlu_misc.vlu_bid);
 	}
 
 	HalfStaticArray<UCHAR, BUFFER_LARGE> blobBuffer;
@@ -1951,7 +1951,7 @@ static dsc* evlPad(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_n
 {
 	fb_assert(args->nod_count >= 2);
 
-	jrd_req* request = tdbb->tdbb_request;
+	jrd_req* request = tdbb->getRequest();
 
 	request->req_flags &= ~req_null;
 	const dsc* value1 = EVL_expr(tdbb, args->nod_arg[0]);
@@ -2003,7 +2003,7 @@ static dsc* evlPad(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_n
 		EVL_make_value(tdbb, (value1->isBlob() ? value1 : value2), impure);
 		impure->vlu_desc.setBlobSubType(value1->getBlobSubType());
 		impure->vlu_desc.setTextType(ttype);
-		newBlob = BLB_create(tdbb, tdbb->tdbb_request->req_transaction, &impure->vlu_misc.vlu_bid);
+		newBlob = BLB_create(tdbb, tdbb->getRequest()->req_transaction, &impure->vlu_misc.vlu_bid);
 	}
 	else
 	{
@@ -2115,7 +2115,7 @@ static dsc* evlPosition(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::
 {
 	fb_assert(args->nod_count >= 2);
 
-	jrd_req* request = tdbb->tdbb_request;
+	jrd_req* request = tdbb->getRequest();
 
 	request->req_flags &= ~req_null;
 	const dsc* value1 = EVL_expr(tdbb, args->nod_arg[0]);
@@ -2155,7 +2155,7 @@ static dsc* evlPosition(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::
 	if (value1->isBlob())
 	{
 		// value1 is a blob
-		blb* blob = BLB_open(tdbb, tdbb->tdbb_request->req_transaction,
+		blb* blob = BLB_open(tdbb, tdbb->getRequest()->req_transaction,
 			reinterpret_cast<bid*>(value1->dsc_address));
 
 		value1Address = value1Buffer.getBuffer(blob->blb_length);
@@ -2183,7 +2183,7 @@ static dsc* evlPosition(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::
 	if (value2->isBlob())
 	{
 		// value2 is a blob
-		blb* blob = BLB_open(tdbb, tdbb->tdbb_request->req_transaction,
+		blb* blob = BLB_open(tdbb, tdbb->getRequest()->req_transaction,
 			reinterpret_cast<bid*>(value2->dsc_address));
 
 		value2Address = value2Buffer.getBuffer(blob->blb_length);
@@ -2228,7 +2228,7 @@ static dsc* evlPower(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd
 {
 	fb_assert(args->nod_count == 2);
 
-	jrd_req* request = tdbb->tdbb_request;
+	jrd_req* request = tdbb->getRequest();
 
 	request->req_flags &= ~req_null;
 	const dsc* value1 = EVL_expr(tdbb, args->nod_arg[0]);
@@ -2261,7 +2261,7 @@ static dsc* evlRand(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_
 	fb_assert(args->nod_count == 0);
 
 	SINT64 n;
-	tdbb->tdbb_attachment->att_random_generator.getBytes(&n, sizeof(n));
+	tdbb->getAttachment()->att_random_generator.getBytes(&n, sizeof(n));
 	n &= QUADCONST(0x7FFFFFFFFFFFFFFF);	// remove the sign
 
 	impure->vlu_misc.vlu_double = (double) n / MAX_SINT64;
@@ -2275,7 +2275,7 @@ static dsc* evlReplace(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::j
 {
 	fb_assert(args->nod_count == 3);
 
-	jrd_req* request = tdbb->tdbb_request;
+	jrd_req* request = tdbb->getRequest();
 	dsc* values[3];	// 0 = searched, 1 = find, 2 = replacement
 	const dsc* firstBlob = NULL;
 	int i;
@@ -2306,7 +2306,7 @@ static dsc* evlReplace(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::j
 		if (values[i]->isBlob())
 		{
 			// values[i] is a blob
-			blb* blob = BLB_open(tdbb, tdbb->tdbb_request->req_transaction,
+			blb* blob = BLB_open(tdbb, tdbb->getRequest()->req_transaction,
 				reinterpret_cast<bid*>(values[i]->dsc_address));
 
 			addresses[i] = buffers[i].getBuffer(blob->blb_length);
@@ -2348,7 +2348,7 @@ static dsc* evlReplace(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::j
 		EVL_make_value(tdbb, firstBlob, impure);
 		impure->vlu_desc.setBlobSubType(values[0]->getBlobSubType());
 		impure->vlu_desc.setTextType(ttype);
-		newBlob = BLB_create(tdbb, tdbb->tdbb_request->req_transaction, &impure->vlu_misc.vlu_bid);
+		newBlob = BLB_create(tdbb, tdbb->getRequest()->req_transaction, &impure->vlu_misc.vlu_bid);
 	}
 
 	// search 'find' in 'searched'
@@ -2426,7 +2426,7 @@ static dsc* evlReverse(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::j
 {
 	fb_assert(args->nod_count == 1);
 
-	jrd_req* request = tdbb->tdbb_request;
+	jrd_req* request = tdbb->getRequest();
 
 	request->req_flags &= ~req_null;
 	dsc* value = EVL_expr(tdbb, args->nod_arg[0]);
@@ -2437,7 +2437,7 @@ static dsc* evlReverse(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::j
 
 	if (value->isBlob())
 	{
-		blb* blob = BLB_open(tdbb, tdbb->tdbb_request->req_transaction,
+		blb* blob = BLB_open(tdbb, tdbb->getRequest()->req_transaction,
 			reinterpret_cast<bid*>(value->dsc_address));
 
 		Firebird::HalfStaticArray<UCHAR, BUFFER_LARGE> buffer;
@@ -2476,7 +2476,7 @@ static dsc* evlReverse(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::j
 
 		EVL_make_value(tdbb, value, impure);
 
-		blb* newBlob = BLB_create(tdbb, tdbb->tdbb_request->req_transaction,
+		blb* newBlob = BLB_create(tdbb, tdbb->getRequest()->req_transaction,
 			&impure->vlu_misc.vlu_bid);
 		BLB_put_data(tdbb, newBlob, p, len);
 		BLB_close(tdbb, newBlob);
@@ -2521,7 +2521,7 @@ static dsc* evlRight(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd
 {
 	fb_assert(args->nod_count == 2);
 
-	jrd_req* request = tdbb->tdbb_request;
+	jrd_req* request = tdbb->getRequest();
 
 	request->req_flags &= ~req_null;
 	dsc* value = EVL_expr(tdbb, args->nod_arg[0]);
@@ -2537,7 +2537,7 @@ static dsc* evlRight(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd
 	if (value->isBlob())
 	{
 		CharSet* charSet = INTL_charset_lookup(tdbb, value->getCharSet());
-		blb* blob = BLB_open(tdbb, tdbb->tdbb_request->req_transaction,
+		blb* blob = BLB_open(tdbb, tdbb->getRequest()->req_transaction,
 			reinterpret_cast<bid*>(value->dsc_address));
 
 		if (charSet->isMultiByte())
@@ -2574,7 +2574,7 @@ static dsc* evlRound(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd
 {
 	fb_assert(args->nod_count >= 1);
 
-	jrd_req* request = tdbb->tdbb_request;
+	jrd_req* request = tdbb->getRequest();
 
 	request->req_flags &= ~req_null;
 	dsc* value = EVL_expr(tdbb, args->nod_arg[0]);
@@ -2605,7 +2605,7 @@ static dsc* evlSign(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_
 {
 	fb_assert(args->nod_count == 1);
 
-	jrd_req* request = tdbb->tdbb_request;
+	jrd_req* request = tdbb->getRequest();
 
 	request->req_flags &= ~req_null;
 	dsc* value = EVL_expr(tdbb, args->nod_arg[0]);
@@ -2631,7 +2631,7 @@ static dsc* evlSqrt(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_
 {
 	fb_assert(args->nod_count == 1);
 
-	jrd_req* request = tdbb->tdbb_request;
+	jrd_req* request = tdbb->getRequest();
 
 	request->req_flags &= ~req_null;
 	const dsc* value = EVL_expr(tdbb, args->nod_arg[0]);
@@ -2654,7 +2654,7 @@ static dsc* evlTrunc(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd
 {
 	fb_assert(args->nod_count >= 1);
 
-	jrd_req* request = tdbb->tdbb_request;
+	jrd_req* request = tdbb->getRequest();
 
 	request->req_flags &= ~req_null;
 	const dsc* value = EVL_expr(tdbb, args->nod_arg[0]);
@@ -2861,10 +2861,10 @@ dsc* SysFunction::substring(thread_db* tdbb, impure_value* impure,
 
 		desc.dsc_address = (UCHAR*)&impure->vlu_misc.vlu_bid;
 
-		blb* newBlob = BLB_create(tdbb, tdbb->tdbb_request->req_transaction,
+		blb* newBlob = BLB_create(tdbb, tdbb->getRequest()->req_transaction,
 			&impure->vlu_misc.vlu_bid);
 
-		blb* blob = BLB_open(tdbb, tdbb->tdbb_request->req_transaction,
+		blb* blob = BLB_open(tdbb, tdbb->getRequest()->req_transaction,
 							reinterpret_cast<bid*>(value->dsc_address));
 
 		Firebird::HalfStaticArray<UCHAR, BUFFER_LARGE> buffer;

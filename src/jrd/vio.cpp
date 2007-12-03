@@ -224,7 +224,7 @@ void VIO_backout(thread_db* tdbb, record_param* rpb, const jrd_tra* transaction)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
 #ifdef VIO_DEBUG
@@ -237,7 +237,7 @@ void VIO_backout(thread_db* tdbb, record_param* rpb, const jrd_tra* transaction)
 
 	jrd_rel* relation = rpb->rpb_relation;
 	VIO_bump_count(tdbb, DBB_backout_count, relation);
-	RuntimeStatistics::bumpValue(tdbb, RuntimeStatistics::RECORD_BACKOUTS);
+	tdbb->bumpStats(RuntimeStatistics::RECORD_BACKOUTS);
 	RecordStack going, staying;
 	Record* data = NULL;
 	Record* old_data = NULL;
@@ -449,7 +449,7 @@ void VIO_bump_count(thread_db* tdbb, USHORT count_id, jrd_rel* relation)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
 #ifdef VIO_DEBUG
@@ -470,7 +470,7 @@ void VIO_bump_count(thread_db* tdbb, USHORT count_id, jrd_rel* relation)
 #endif
 
 	const USHORT relation_id = relation->rel_id;
-	vcl** ptr = tdbb->tdbb_attachment->att_counts + count_id;
+	vcl** ptr = tdbb->getAttachment()->att_counts + count_id;
 
 	vcl* vector = *ptr = vcl::newVector(*dbb->dbb_permanent, *ptr, relation_id + 1);
 	((*vector)[relation_id])++;
@@ -497,8 +497,8 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb, RecordSource* 
  **************************************/
 	SET_TDBB(tdbb);
 
-	const bool gcPolicyCooperative = tdbb->tdbb_database->dbb_flags & DBB_gc_cooperative;
-	const bool gcPolicyBackground = tdbb->tdbb_database->dbb_flags & DBB_gc_background;
+	const bool gcPolicyCooperative = tdbb->getDatabase()->dbb_flags & DBB_gc_cooperative;
+	const bool gcPolicyBackground = tdbb->getDatabase()->dbb_flags & DBB_gc_background;
 
 #ifdef VIO_DEBUG
 	if (debug_flag > DEBUG_TRACE_ALL) {
@@ -1135,7 +1135,7 @@ void VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 	SqlIdentifier relation_name, revokee, privilege, procedure_name;
 
 	SET_TDBB(tdbb);
-	jrd_req* request = tdbb->tdbb_request;
+	jrd_req* request = tdbb->getRequest();
 
 #ifdef VIO_DEBUG
 	if (debug_flag > DEBUG_WRITES)
@@ -1398,7 +1398,7 @@ void VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 
 		case rel_priv:
 			EVL_field(0, rpb->rpb_record, f_file_name, &desc);
-			if (!(tdbb->tdbb_request->req_flags & req_internal))
+			if (!(tdbb->getRequest()->req_flags & req_internal))
 			{
 				EVL_field(0, rpb->rpb_record, f_prv_grantor, &desc);
 				if (!check_user(tdbb, &desc))
@@ -1491,7 +1491,7 @@ void VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 	}
 
 	VIO_bump_count(tdbb, DBB_delete_count, relation);
-	RuntimeStatistics::bumpValue(tdbb, RuntimeStatistics::RECORD_DELETES);
+	tdbb->bumpStats(RuntimeStatistics::RECORD_DELETES);
 
 /* for an autocommit transaction, mark a commit as necessary */
 
@@ -1502,7 +1502,7 @@ void VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 	
 #ifdef GARBAGE_THREAD
 	// VIO_erase
-	if ((tdbb->tdbb_database->dbb_flags & DBB_gc_background) &&
+	if ((tdbb->getDatabase()->dbb_flags & DBB_gc_background) &&
 		!rpb->rpb_relation->isTemporary())
 	{
 		notify_garbage_collector(tdbb, rpb, transaction->tra_number);
@@ -1524,7 +1524,7 @@ void VIO_fini(thread_db* tdbb)
  *	Shutdown the garbage collector thread.
  *
  **************************************/
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 	if (dbb->dbb_flags & DBB_garbage_collector)
 	{
@@ -1672,7 +1672,7 @@ Record* VIO_gc_record(thread_db* tdbb, jrd_rel* relation)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
 /* Allocate a vector of garbage collect record blocks for relation. */
@@ -1764,7 +1764,7 @@ bool VIO_get(thread_db* tdbb, record_param* rpb, RecordSource* rsb, jrd_tra* tra
 	}
 
 	VIO_bump_count(tdbb, DBB_read_idx_count, rpb->rpb_relation);
-	RuntimeStatistics::bumpValue(tdbb, RuntimeStatistics::RECORD_IDX_READS);
+	tdbb->bumpStats(RuntimeStatistics::RECORD_IDX_READS);
 
 	return true;
 }
@@ -2040,8 +2040,8 @@ void VIO_init(thread_db* tdbb)
  *	Activate the garbage collector thread.
  *
  **************************************/
-	Database* dbb = tdbb->tdbb_database;
-	Attachment* attachment = tdbb->tdbb_attachment;
+	Database* dbb = tdbb->getDatabase();
+	Attachment* attachment = tdbb->getAttachment();
 
 	if ((dbb->dbb_flags & DBB_read_only) ||
 		!(dbb->dbb_flags & DBB_gc_background))
@@ -2197,7 +2197,7 @@ void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb,
    endless grief on cleanup */
 
 	VIO_bump_count(tdbb, DBB_update_count, relation);
-	RuntimeStatistics::bumpValue(tdbb, RuntimeStatistics::RECORD_UPDATES);
+	tdbb->bumpStats(RuntimeStatistics::RECORD_UPDATES);
 
 	if (transaction->tra_flags & TRA_system) {
 		update_in_place(tdbb, transaction, org_rpb, new_rpb);
@@ -2289,11 +2289,11 @@ void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb,
 			{
 				if (EVL_field(0, new_rpb->rpb_record, f_idx_exp_blr, &desc2)) {
 					DFW_post_work(transaction, dfw_create_expression_index,
-								  &desc1, tdbb->tdbb_database->dbb_max_idx);
+								  &desc1, tdbb->getDatabase()->dbb_max_idx);
 				}
 				else {
 					DFW_post_work(transaction, dfw_create_index, &desc1,
-								  tdbb->tdbb_database->dbb_max_idx);
+								  tdbb->getDatabase()->dbb_max_idx);
 				}
 			}
 			break;
@@ -2405,7 +2405,7 @@ void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb,
 
 #ifdef GARBAGE_THREAD
 	// VIO_modify
-	if ((tdbb->tdbb_database->dbb_flags & DBB_gc_background) &&
+	if ((tdbb->getDatabase()->dbb_flags & DBB_gc_background) &&
 		!org_rpb->rpb_relation->isTemporary())
 	{
 		notify_garbage_collector(tdbb, org_rpb, transaction->tra_number);
@@ -2480,7 +2480,7 @@ bool VIO_next_record(thread_db* tdbb,
 #endif
 
 	VIO_bump_count(tdbb, DBB_read_seq_count, rpb->rpb_relation);
-	RuntimeStatistics::bumpValue(tdbb, RuntimeStatistics::RECORD_SEQ_READS);
+	tdbb->bumpStats(RuntimeStatistics::RECORD_SEQ_READS);
 
 	return true;
 }
@@ -2500,7 +2500,7 @@ Record* VIO_record(thread_db* tdbb, record_param* rpb, const Format* format,
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
 #ifdef VIO_DEBUG
@@ -2570,7 +2570,7 @@ void VIO_refetch_record(thread_db* tdbb, record_param* rpb,
 		ERR_post(isc_no_cur_rec, 0);
 	}
 
-	VIO_data(tdbb, rpb, tdbb->tdbb_request->req_pool);
+	VIO_data(tdbb, rpb, tdbb->getRequest()->req_pool);
 
 	// If record is present, and the transaction is read committed,
 	// make sure the record has not been updated.  Also, punt after
@@ -2632,7 +2632,7 @@ void VIO_store(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 	DSC desc, desc2;
 
 	SET_TDBB(tdbb);
-	jrd_req* request = tdbb->tdbb_request;
+	jrd_req* request = tdbb->getRequest();
 	DeferredWork* work = NULL;
 
 #ifdef VIO_DEBUG
@@ -2664,8 +2664,8 @@ void VIO_store(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 
 				SSHORT check_blr = TRUE;
 
-				if (ENCODE_ODS(tdbb->tdbb_database->dbb_ods_version,
-					tdbb->tdbb_database->dbb_minor_original) >= ODS_11_1)
+				if (ENCODE_ODS(tdbb->getDatabase()->dbb_ods_version,
+					tdbb->getDatabase()->dbb_minor_original) >= ODS_11_1)
 				{
 					if (EVL_field(0, rpb->rpb_record, f_prc_valid_blr, &desc2))
 						check_blr = MOV_get_long(&desc2, 0);
@@ -2683,11 +2683,11 @@ void VIO_store(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 			EVL_field(0, rpb->rpb_record, f_idx_name, &desc);
 			if (EVL_field(0, rpb->rpb_record, f_idx_exp_blr, &desc2)) {
 				DFW_post_work(transaction, dfw_create_expression_index, &desc,
-							  tdbb->tdbb_database->dbb_max_idx);
+							  tdbb->getDatabase()->dbb_max_idx);
 			}
 			else {
 				DFW_post_work(transaction, dfw_create_index, &desc, 
-							  tdbb->tdbb_database->dbb_max_idx);
+							  tdbb->getDatabase()->dbb_max_idx);
 			}
 			break;
 
@@ -2821,7 +2821,7 @@ void VIO_store(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 #endif
 
 	VIO_bump_count(tdbb, DBB_insert_count, relation);
-	RuntimeStatistics::bumpValue(tdbb, RuntimeStatistics::RECORD_INSERTS);
+	tdbb->bumpStats(RuntimeStatistics::RECORD_INSERTS);
 
 	if (!(transaction->tra_flags & TRA_system) &&
 		(transaction->tra_save_point) &&
@@ -2851,7 +2851,7 @@ bool VIO_sweep(thread_db* tdbb, jrd_tra* transaction)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 #ifdef VIO_DEBUG
 	if (debug_flag > DEBUG_TRACE) {
@@ -2866,8 +2866,8 @@ bool VIO_sweep(thread_db* tdbb, jrd_tra* transaction)
 
 	DPM_scan_pages(tdbb);
 
-	// hvlad: restore tdbb->tdbb_transaction since it can be used later
-	tdbb->tdbb_transaction = transaction;
+	// hvlad: restore tdbb->getTransaction() since it can be used later
+	tdbb->setTransaction(transaction);
 
 	record_param rpb;
 	rpb.rpb_record = NULL;
@@ -3023,9 +3023,9 @@ void VIO_verb_cleanup(thread_db* tdbb, jrd_tra* transaction)
 
 	record_param rpb;
 	VerbAction* action;
-	jrd_tra* old_tran = tdbb->tdbb_transaction;
+	jrd_tra* old_tran = tdbb->getTransaction();
 	try {
-		tdbb->tdbb_transaction = transaction;
+		tdbb->setTransaction(transaction);
 
 		while ( (action = sav_point->sav_verb_actions) ) {
 			sav_point->sav_verb_actions = action->vct_next;
@@ -3173,10 +3173,10 @@ void VIO_verb_cleanup(thread_db* tdbb, jrd_tra* transaction)
 			action->vct_next = sav_point->sav_verb_free;
 			sav_point->sav_verb_free = action;
 		}
-		tdbb->tdbb_transaction = old_tran;
+		tdbb->setTransaction(old_tran);
 	}
 	catch (...) {
-		tdbb->tdbb_transaction = old_tran;
+		tdbb->setTransaction(old_tran);
 		throw;
 	}
 
@@ -3260,7 +3260,7 @@ bool VIO_writelock(thread_db* tdbb, record_param* org_rpb, RecordSource* rsb,
 			{
 				return false;
 			}
-			VIO_data(tdbb, org_rpb, tdbb->tdbb_request->req_pool);
+			VIO_data(tdbb, org_rpb, tdbb->getRequest()->req_pool);
 
 			org_rpb->rpb_stream_flags &= ~RPB_s_refetch;
 			
@@ -3392,7 +3392,7 @@ static void check_class(thread_db* tdbb,
 	if (!MOV_compare(&desc1, &desc2))
 		return;
 
-	Attachment* attachment = tdbb->tdbb_attachment;
+	Attachment* attachment = tdbb->getAttachment();
 
 	SCL_check_access(attachment->att_security_class,
 					 0, NULL, NULL, SCL_protect, "DATABASE", NULL);
@@ -3415,7 +3415,7 @@ static void check_control(thread_db* tdbb)
  **************************************/
 	SET_TDBB(tdbb);
 
-	Attachment* attachment = tdbb->tdbb_attachment;
+	Attachment* attachment = tdbb->getAttachment();
 
 	SCL_check_access(attachment->att_security_class,
 					 0, NULL, NULL, SCL_control, "DATABASE", NULL);
@@ -3438,7 +3438,7 @@ static bool check_user(thread_db* tdbb, const dsc* desc)
 
 	const TEXT* p = (TEXT *) desc->dsc_address;
 	const TEXT* const end = p + desc->dsc_length;
-	const TEXT* q = tdbb->tdbb_attachment->att_user->usr_user_name.c_str();
+	const TEXT* q = tdbb->getAttachment()->att_user->usr_user_name.c_str();
 
 /* It is OK to not internationalize this function for v4.00 as
  * User names are limited to 7-bit ASCII for v4.00
@@ -3666,7 +3666,7 @@ static void expunge(thread_db* tdbb, record_param* rpb,
 	if (!DPM_get(tdbb, rpb, LCK_write)) {
 #ifdef GARBAGE_THREAD
 		// expunge
-		if (tdbb->tdbb_database->dbb_flags & DBB_gc_background)
+		if (tdbb->getDatabase()->dbb_flags & DBB_gc_background)
 			notify_garbage_collector(tdbb, rpb);
 #endif
 		return;
@@ -3690,7 +3690,7 @@ static void expunge(thread_db* tdbb, record_param* rpb,
 
 #ifdef GARBAGE_THREAD
 		// expunge
-		if (tdbb->tdbb_database->dbb_flags & DBB_gc_background)
+		if (tdbb->getDatabase()->dbb_flags & DBB_gc_background)
 			notify_garbage_collector(tdbb, rpb);
 #endif
 
@@ -3712,7 +3712,7 @@ static void expunge(thread_db* tdbb, record_param* rpb,
 	RecordStack empty_staying;
 	garbage_collect(tdbb, &temp, rpb->rpb_page, empty_staying);
 	VIO_bump_count(tdbb, DBB_expunge_count, rpb->rpb_relation);
-	RuntimeStatistics::bumpValue(tdbb, RuntimeStatistics::RECORD_EXPUNGES);
+	tdbb->bumpStats(RuntimeStatistics::RECORD_EXPUNGES);
 }
 
 
@@ -3861,7 +3861,7 @@ static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM arg)
    killing all its contexts. */
 	thread_db thd_context, *tdbb;
 	JRD_set_thread_data(tdbb, thd_context);
-	tdbb->tdbb_database = dbb;
+	tdbb->setDatabase(dbb);
 	tdbb->tdbb_status_vector = status_vector;
 	tdbb->tdbb_quantum = SWEEP_QUANTUM;
 	tdbb->tdbb_flags = TDBB_sweeper;
@@ -3876,9 +3876,9 @@ static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM arg)
 
 /* Pseudo attachment needed for lock owner identification. */
 
-		tdbb->tdbb_attachment = FB_NEW(*dbb->dbb_permanent) Attachment(dbb);
-		tdbb->tdbb_attachment->att_filename = dbb->dbb_filename;
-		tdbb->tdbb_attachment->att_flags = ATT_garbage_collector;
+		tdbb->setAttachment(FB_NEW(*dbb->dbb_permanent) Attachment(dbb));
+		tdbb->getAttachment()->att_filename = dbb->dbb_filename;
+		tdbb->getAttachment()->att_flags = ATT_garbage_collector;
 
 		rpb.getWindow(tdbb).win_flags = WIN_garbage_collector;
 
@@ -3991,7 +3991,7 @@ static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM arg)
 							   inhibit garbage collection by its very existence. */
 
 							transaction = TRA_start(tdbb, sizeof(gc_tpb), gc_tpb);
-							tdbb->tdbb_transaction = transaction;
+							tdbb->setTransaction(transaction);
 						}
 						else {
 							/* Refresh our notion of the oldest transactions for
@@ -4126,10 +4126,10 @@ gc_exit:
 		if (transaction) {
 			TRA_commit(tdbb, transaction, false);
 		}
-		if (tdbb->tdbb_attachment) {
+		if (tdbb->getAttachment()) {
 			LCK_fini(tdbb, LCK_OWNER_attachment);
-			delete tdbb->tdbb_attachment;
-			tdbb->tdbb_attachment = 0;
+			delete tdbb->getAttachment();
+			tdbb->setAttachment(0);
 		}
 		dbb->dbb_flags &= ~(DBB_garbage_collector | DBB_gc_active | DBB_gc_pending);
 		/* Notify the finalization caller that we're finishing. */
@@ -4279,7 +4279,7 @@ static void notify_garbage_collector(thread_db* tdbb, record_param* rpb, SLONG t
  *	which are candidates for garbage collection.
  *
  **************************************/
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 	jrd_rel* relation = rpb->rpb_relation;
 
 	if (relation->isTemporary())
@@ -4322,8 +4322,8 @@ static void notify_garbage_collector(thread_db* tdbb, record_param* rpb, SLONG t
 	dbb->dbb_flags |= DBB_gc_pending;
 	
 	if (!(dbb->dbb_flags & DBB_gc_active) &&
-		(tranid < (tdbb->tdbb_transaction ? 
-					tdbb->tdbb_transaction->tra_oldest_active : 
+		(tranid < (tdbb->getTransaction() ? 
+					tdbb->getTransaction()->tra_oldest_active : 
 					dbb->dbb_oldest_snapshot)) )
 	{
 		ISC_event_post(dbb->dbb_gc_event);
@@ -4753,7 +4753,7 @@ static void purge(thread_db* tdbb, record_param* rpb)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
 #ifdef VIO_DEBUG
@@ -4790,7 +4790,7 @@ static void purge(thread_db* tdbb, record_param* rpb)
 
 #ifdef GARBAGE_THREAD
 		// purge
-		if (tdbb->tdbb_database->dbb_flags & DBB_gc_background)
+		if (tdbb->getDatabase()->dbb_flags & DBB_gc_background)
 			notify_garbage_collector(tdbb, rpb);
 #endif
 		return; //false;
@@ -4819,7 +4819,7 @@ static void purge(thread_db* tdbb, record_param* rpb)
 	garbage_collect(tdbb, &temp, rpb->rpb_page, staying);
 	gc_rec->rec_flags &= ~REC_gc_active;
 	VIO_bump_count(tdbb, DBB_purge_count, relation);
-	RuntimeStatistics::bumpValue(tdbb, RuntimeStatistics::RECORD_PURGES);
+	tdbb->bumpStats(RuntimeStatistics::RECORD_PURGES);
 
 	return; // true;
 }
@@ -4951,7 +4951,7 @@ static void update_in_place(
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
 #ifdef VIO_DEBUG

@@ -21,38 +21,17 @@
  */
 
 #include "firebird.h"
-#include "../jrd/gdsassert.h"
-#include "../jrd/jrd.h"
-#include "../jrd/req.h"
-#include "../jrd/tra.h"
 
 #include "../jrd/RuntimeStatistics.h"
 
 using namespace Firebird;
-using namespace Jrd;
+namespace Jrd {
 
-void RuntimeStatistics::bumpValue(thread_db* tdbb, stat_t index)
+RuntimeStatistics RuntimeStatistics::dummy;
+
+void RuntimeStatistics::reset()
 {
-	fb_assert(tdbb);
+	memset(values, 0, sizeof values);
+}
 
-	RuntimeStatistics* statistics = NULL;
-
-	if (tdbb->tdbb_request) {
-		statistics = &tdbb->tdbb_request->req_stats;
-	}
-	else if (tdbb->tdbb_transaction) {
-		statistics = &tdbb->tdbb_transaction->tra_stats;
-	}
-	else if (tdbb->tdbb_attachment) {
-		statistics = &tdbb->tdbb_attachment->att_stats;
-	}
-	else if (tdbb->tdbb_database) {
-		statistics = &tdbb->tdbb_database->dbb_stats;
-	}
-
-	fb_assert(statistics);
-
-	for (; statistics; statistics = statistics->parent) {
-		statistics->values[index]++;
-	}
 }

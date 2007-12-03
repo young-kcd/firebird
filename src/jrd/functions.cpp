@@ -165,9 +165,9 @@ vary* get_context(const vary* ns_vary, const vary* name_vary)
 
 	// See if JRD thread data structure looks sane for occasion
 	if (!tdbb || 
-		!(dbb = tdbb->tdbb_database) || 
-		!(transaction = tdbb->tdbb_transaction) || 
-		!(att = tdbb->tdbb_attachment)) 
+		!(dbb = tdbb->getDatabase()) || 
+		!(transaction = tdbb->getTransaction()) || 
+		!(att = tdbb->getAttachment())) 
 	{
 		fb_assert(false);
 		return NULL;
@@ -313,7 +313,7 @@ static SLONG set_context(const vary* ns_vary, const vary* name_vary, const vary*
 
 	if (ns_str == USER_SESSION_NAMESPACE) 
 	{
-		Attachment* att = tdbb->tdbb_attachment;
+		Attachment* att = tdbb->getAttachment();
 
 		if (!att) {
 			fb_assert(false);
@@ -332,7 +332,7 @@ static SLONG set_context(const vary* ns_vary, const vary* name_vary, const vary*
 			Firebird::string(value_vary->vary_string, value_vary->vary_length));
 	} 
 	else if (ns_str == USER_TRANSACTION_NAMESPACE) {
-		jrd_tra* tra = tdbb->tdbb_transaction;
+		jrd_tra* tra = tdbb->getTransaction();
 
 		if (!tra) {
 			fb_assert(false);

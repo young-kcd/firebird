@@ -442,7 +442,7 @@ jrd_req* CMP_clone_request(thread_db* tdbb, jrd_req* request, USHORT level, bool
 
 	SET_TDBB(tdbb);
 
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 	fb_assert(dbb);
 
 	// find the request if we've got it
@@ -485,8 +485,7 @@ jrd_req* CMP_clone_request(thread_db* tdbb, jrd_req* request, USHORT level, bool
 		(USHORT) ((request->req_impure_size - REQ_SIZE + REQ_TAIL - 1) / REQ_TAIL);
 	clone = FB_NEW_RPT(*request->req_pool, n) jrd_req(request->req_pool);
 	(*vector)[level] = clone;
-	clone->req_attachment = tdbb->tdbb_attachment;
-	clone->req_stats.setParent(&tdbb->tdbb_attachment->att_stats);
+	clone->req_attachment = tdbb->getAttachment();
 	clone->req_count = request->req_count;
 	clone->req_pool = request->req_pool;
 	clone->req_impure_size = request->req_impure_size;
@@ -629,7 +628,7 @@ jrd_req* CMP_find_request(thread_db* tdbb, USHORT id, USHORT which)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
 	// if the request hasn't been compiled or isn't active,
@@ -1921,7 +1920,7 @@ IndexLock* CMP_get_index_lock(thread_db* tdbb, jrd_rel* relation, USHORT id)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 	DEV_BLKCHK(relation, type_rel);
 
@@ -2001,11 +2000,11 @@ jrd_req* CMP_make_request(thread_db* tdbb, CompilerScratch* csb)
 
 	SET_TDBB(tdbb);
 
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 	fb_assert(dbb);
 
-	jrd_req* old_request = tdbb->tdbb_request;
-	tdbb->tdbb_request = NULL;
+	jrd_req* old_request = tdbb->getRequest();
+	tdbb->setRequest(NULL);
 
 	try {
 
@@ -2168,16 +2167,16 @@ jrd_req* CMP_make_request(thread_db* tdbb, CompilerScratch* csb)
 	request->req_invariants = csb->csb_invariants;
 
 	DEBUG;
-	tdbb->tdbb_request = old_request;
+	tdbb->setRequest(old_request);
 
 	} // try
 	catch (const Firebird::Exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);		
-		tdbb->tdbb_request = old_request;
+		tdbb->setRequest(old_request);
 		ERR_punt();
 	}
 
-	RuntimeStatistics::bumpValue(tdbb, RuntimeStatistics::STMT_PREPARES);
+	tdbb->bumpStats(RuntimeStatistics::STMT_PREPARES);
 
 	return request;
 }
@@ -2307,7 +2306,7 @@ void CMP_decrement_prc_use_count(thread_db* tdbb, jrd_prc* procedure)
 	// The procedure will be different than in dbb_procedures only if it is a
 	// floating copy, i.e. an old copy or a deleted procedure.
 	if ((procedure->prc_use_count == 0) &&
-		( (*tdbb->tdbb_database->dbb_procedures)[procedure->prc_id]
+		( (*tdbb->getDatabase()->dbb_procedures)[procedure->prc_id]
 		 //!= &procedure->prc_header))
 		 != procedure))
 	{
@@ -2426,7 +2425,7 @@ void CMP_shutdown_database(thread_db* tdbb)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
 	DEV_BLKCHK(dbb, type_dbb);
@@ -3447,7 +3446,7 @@ static jrd_nod* pass1(thread_db* tdbb,
 				{
 					// ASF: Swallow the exception if we fail to load the collation here.
 					// This allows we to backup databases when the collation isn't available.
-					if (!(tdbb->tdbb_attachment->att_flags & ATT_gbak_attachment))
+					if (!(tdbb->getAttachment()->att_flags & ATT_gbak_attachment))
 						throw;
 				}
 
@@ -4393,7 +4392,7 @@ static void pass1_source(thread_db*			tdbb,
 	DEV_BLKCHK(*boolean, type_nod);
 	DEV_BLKCHK(parent_view, type_rel);
 
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
 	// in the case of an RecordSelExpr, it is possible that a new RecordSelExpr will be generated, 
@@ -5182,7 +5181,7 @@ static jrd_nod* pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node
 			// For gbak attachments, there is no need to resolve the UDF function
 			// Also if we are dropping a procedure don't bother resolving the
 			// UDF that the procedure invokes.
-			if (!(tdbb->tdbb_attachment->att_flags & ATT_gbak_attachment) &&
+			if (!(tdbb->getAttachment()->att_flags & ATT_gbak_attachment) &&
 				!(tdbb->tdbb_flags & TDBB_prc_being_dropped))
 			{
 				jrd_nod* value = node->nod_arg[e_fun_args];

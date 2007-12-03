@@ -24,17 +24,16 @@
 #define JRD_RUNTIME_STATISTICS_H
 
 #include "../common/classes/alloc.h"
-#include "../common/classes/array.h"
 
 namespace Jrd {
 
 class thread_db;
 
-// Multi-level runtime statistics class
+// Runtime statistics class
 
 class RuntimeStatistics {
 public:
-	enum stat_t {
+	enum StatType {
 		PAGE_FETCHES = 0,
 		PAGE_READS,
 		PAGE_MARKS,
@@ -57,44 +56,37 @@ public:
 	};
 
 	RuntimeStatistics()
-		: parent(NULL)
 	{
 		reset();
 	}
 
-	explicit RuntimeStatistics(RuntimeStatistics* p)
-		: parent(p)
-	{
-		reset();
-	}
+	~RuntimeStatistics() {}
 
-	~RuntimeStatistics()
-	{}
-
-	void setParent(RuntimeStatistics* p)
-	{
-		parent = p;
-	}
-
-	FB_UINT64 getValue(stat_t index) const
+	SINT64 getValue(const StatType index) const
 	{
 		return values[index];
 	}
+	void reset();
 
-	void reset()
+	void bumpValue(const StatType index)
 	{
-		memset(values, 0, sizeof(values));
+		++values[index];
 	}
 
-	static void bumpValue(thread_db*, stat_t);
+	static RuntimeStatistics* getDummy()
+	{
+		return &dummy;
+	}
 
 private:
 	// copying is prohibited
 	RuntimeStatistics(const RuntimeStatistics&);
 	RuntimeStatistics& operator= (const RuntimeStatistics&);
 
-	RuntimeStatistics* parent;
-	FB_UINT64 values[TOTAL_ITEMS];
+	SINT64 values[TOTAL_ITEMS];
+	// This dummy RuntimeStatistics is used instead of missing elements in tdbb,
+	// helping us avoid conditional checks in time-critical places of code.
+	static RuntimeStatistics dummy;
 };
 
 } // namespace

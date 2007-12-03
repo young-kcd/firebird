@@ -62,7 +62,7 @@ int TPC_cache_state(thread_db* tdbb, SLONG number)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
 	const TxPageCache* tip_cache = dbb->dbb_tip_cache;
@@ -112,7 +112,7 @@ void TPC_initialize_tpc(thread_db* tdbb, SLONG number)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
 	TxPageCache* tip_cache = dbb->dbb_tip_cache;
@@ -158,7 +158,7 @@ void TPC_set_state(thread_db* tdbb, SLONG number, SSHORT state)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
 	const SLONG trans_per_tip = dbb->dbb_page_manager.transPerTIP;
@@ -197,7 +197,7 @@ int TPC_snapshot_state(thread_db* tdbb, SLONG number)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
 	const TxPageCache* tip_cache = dbb->dbb_tip_cache;
@@ -298,7 +298,7 @@ void TPC_update_cache(thread_db* tdbb, const Ods::tx_inv_page* tip_page, SLONG s
  **************************************/
 
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
 	const SLONG trans_per_tip = dbb->dbb_page_manager.transPerTIP;
@@ -353,7 +353,7 @@ static TxPageCache* allocate_tpc(thread_db* tdbb, SLONG base)
  *	of all transactions on one page.
  *
  **************************************/
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 	const SLONG trans_per_tip = dbb->dbb_page_manager.transPerTIP;
 
 /* allocate a TIP cache block with enough room for 
@@ -382,7 +382,7 @@ static SLONG cache_transactions(thread_db* tdbb, TxPageCache** tip_cache_ptr,
  *	the oldest interesting transaction.
  *
  **************************************/
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
 /* check the header page for the oldest and 
@@ -443,7 +443,7 @@ static int extend_cache(thread_db* tdbb, SLONG number)
  *	the state of the passed transaction.
  *
  **************************************/
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 	const SLONG trans_per_tip = dbb->dbb_page_manager.transPerTIP;
 
 	// find the end of the linked list, and cache

@@ -605,7 +605,7 @@ void SORT_get(thread_db* tdbb,
 
 	*record_address = (ULONG *) record;
 
-	RuntimeStatistics::bumpValue(tdbb, RuntimeStatistics::SORT_GETS);
+	tdbb->bumpStats(RuntimeStatistics::SORT_GETS);
 }
 #else
 void SORT_get(thread_db* tdbb,
@@ -649,7 +649,7 @@ void SORT_get(thread_db* tdbb,
 		diddle_key((UCHAR *) record->sort_record_key, scb, false);
 	}
 
-	RuntimeStatistics::bumpValue(tdbb, RuntimeStatistics::SORT_GETS);
+	tdbb->bumpStats(RuntimeStatistics::SORT_GETS);
 }
 #endif
 
@@ -685,7 +685,7 @@ sort_context* SORT_init(thread_db* tdbb,
  **************************************/
 	SET_TDBB(tdbb);
 
-	MemoryPool* const pool = tdbb->tdbb_database->dbb_permanent;
+	MemoryPool* const pool = tdbb->getDatabase()->dbb_permanent;
 	ISC_STATUS* status_vector = tdbb->tdbb_status_vector;
 	sort_context* scb = NULL;
 
@@ -769,7 +769,7 @@ sort_context* SORT_init(thread_db* tdbb,
 
 	// If a linked list pointer was given, link in new sort block
 
-	Attachment* att = tdbb->tdbb_attachment;
+	Attachment* att = tdbb->getAttachment();
 	if (att) {
 		scb->scb_next = att->att_active_sorts;
 		att->att_active_sorts = scb;
@@ -866,7 +866,7 @@ void SORT_put(thread_db* tdbb, sort_context* scb, ULONG ** record_address)
 #endif
 	*record_address = (ULONG *) record->sr_sort_record.sort_record_key;
 
-	RuntimeStatistics::bumpValue(tdbb, RuntimeStatistics::SORT_PUTS);
+	tdbb->bumpStats(RuntimeStatistics::SORT_PUTS);
 }
 
 
@@ -976,7 +976,7 @@ void SORT_sort(thread_db* tdbb, sort_context* scb)
 		scb->scb_flags |= scb_initialized;
 #endif
 		scb->scb_flags |= scb_sorted;
-		RuntimeStatistics::bumpValue(tdbb, RuntimeStatistics::SORTS);
+		tdbb->bumpStats(RuntimeStatistics::SORTS);
 		return;
 	}
 
@@ -1172,7 +1172,7 @@ void SORT_sort(thread_db* tdbb, sort_context* scb)
 	sort_runs_by_seek(scb, run_count);
 
 	scb->scb_flags |= scb_sorted;
-	RuntimeStatistics::bumpValue(tdbb, RuntimeStatistics::SORTS);
+	tdbb->bumpStats(RuntimeStatistics::SORTS);
 
 	}
 	catch (const Firebird::BadAlloc&) {

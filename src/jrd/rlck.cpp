@@ -62,7 +62,7 @@ Lock* RLCK_reserve_relation(thread_db* tdbb,
  **************************************/
 	if (transaction->tra_flags & TRA_system)
 		return NULL;
-	if (write_flag && (tdbb->tdbb_database->dbb_flags & DBB_read_only))
+	if (write_flag && (tdbb->getDatabase()->dbb_flags & DBB_read_only))
 		ERR_post(isc_read_only_database, 0);
 	if (write_flag && (transaction->tra_flags & TRA_readonly))
 		ERR_post(isc_read_only_trans, 0);
@@ -169,7 +169,7 @@ static Lock* allocate_relation_lock(MemoryPool* pool, jrd_rel* relation)
  *
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 	SSHORT	relLockLen = relation->getRelLockKeyLength();
 
@@ -182,7 +182,7 @@ static Lock* allocate_relation_lock(MemoryPool* pool, jrd_rel* relation)
 	lock->lck_parent = dbb->dbb_lock;
 /* enter all relation locks into the intra-process lock manager and treat
    them as compatible within the attachment according to IPLM rules */
-	lock->lck_compatible = tdbb->tdbb_attachment;
+	lock->lck_compatible = tdbb->getAttachment();
 /* the lck_object is used here to find the relation
    block from the lock block */
 	lock->lck_object = relation;

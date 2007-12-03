@@ -1334,7 +1334,7 @@ static jrd_nod* par_field(thread_db* tdbb, CompilerScratch* csb, SSHORT blr_oper
 					is_column = true;
 				}
 				else {
-					if (tdbb->tdbb_attachment->att_flags & ATT_gbak_attachment)
+					if (tdbb->getAttachment()->att_flags & ATT_gbak_attachment)
 						warning(csb, isc_fldnotdef, isc_arg_string,
 								ERR_cstring(name), isc_arg_string,
 								relation->rel_name.c_str(), 0);
@@ -1409,7 +1409,7 @@ static jrd_nod* par_function(thread_db* tdbb, CompilerScratch* csb)
 	const USHORT count = par_name(csb, name);
 
 	UserFunction* function = FUN_lookup_function(name,
-					!(tdbb->tdbb_attachment->att_flags & ATT_gbak_attachment));
+					!(tdbb->getAttachment()->att_flags & ATT_gbak_attachment));
 	if (!function) {
 		if (tdbb->tdbb_flags & TDBB_prc_being_dropped) {
 			jrd_nod* anode = PAR_make_node(tdbb, e_fun_length);
@@ -1431,7 +1431,7 @@ static jrd_nod* par_function(thread_db* tdbb, CompilerScratch* csb)
 	}
 
 	if (!homonyms)
-		if (tdbb->tdbb_attachment->att_flags & ATT_gbak_attachment)
+		if (tdbb->getAttachment()->att_flags & ATT_gbak_attachment)
 			warning(csb, isc_funnotdef,
 					isc_arg_string, ERR_cstring(name),
 					isc_arg_interpreted,
@@ -1874,7 +1874,7 @@ static jrd_nod* par_plan(thread_db* tdbb, CompilerScratch* csb)
 				if (idx_status == MET_object_unknown ||
 					idx_status == MET_object_inactive)
 				{
-					if (tdbb->tdbb_attachment->att_flags & ATT_gbak_attachment)
+					if (tdbb->getAttachment()->att_flags & ATT_gbak_attachment)
 						warning(csb, isc_indexname, isc_arg_string,
 								ERR_cstring(name), isc_arg_string,
 								relation->rel_name.c_str(), 0);
@@ -1939,7 +1939,7 @@ static jrd_nod* par_plan(thread_db* tdbb, CompilerScratch* csb)
 					if (idx_status == MET_object_unknown ||
 						idx_status == MET_object_inactive)
 					{
-						if (tdbb->tdbb_attachment->att_flags & ATT_gbak_attachment)
+						if (tdbb->getAttachment()->att_flags & ATT_gbak_attachment)
 							warning(csb, isc_indexname, isc_arg_string,
 									ERR_cstring(name), isc_arg_string,
 									relation->rel_name.c_str(), 0);

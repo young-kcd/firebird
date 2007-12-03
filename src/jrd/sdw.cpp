@@ -132,7 +132,7 @@ int SDW_add_file(const TEXT* file_name, SLONG start, USHORT shadow_number)
  *
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 /* Find the file to be extended */
 
@@ -346,7 +346,7 @@ void SDW_check(void)
 			lock->lck_owner_handle =
 				LCK_get_owner_handle(tdbb, lock->lck_type);
 			lock->lck_parent = dbb->dbb_lock;
-			lock->lck_owner = tdbb->tdbb_attachment;
+			lock->lck_owner = tdbb->getAttachment();
 
 			LCK_lock(tdbb, lock, LCK_EX, LCK_NO_WAIT);
 			if (lock->lck_physical == LCK_EX) {
@@ -373,7 +373,7 @@ bool SDW_check_conditional(void)
  *
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
 /* first get rid of any shadows that need to be 
@@ -459,7 +459,7 @@ void SDW_dump_pages(void)
  *
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 	gds__log("conditional shadow dumped for database %s",
 			 dbb->dbb_filename.c_str());
 	const SLONG max = PAG_last_page();
@@ -539,7 +539,7 @@ void SDW_get_shadows(void)
  *
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
 /* unless we have one, get a shared lock to ensure that we don't miss any
@@ -584,7 +584,7 @@ void SDW_init(bool activate, bool delete_files)
  *
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
 /* set up the lock block for synchronizing addition of new shadows */
@@ -684,7 +684,7 @@ void SDW_notify(void)
  *
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
 /* get current shadow lock count from database header page --
@@ -750,7 +750,7 @@ bool SDW_rollover_to_shadow(jrd_file* file, const bool inAst)
 	update_lock->lck_owner_handle =
 		LCK_get_owner_handle(tdbb, update_lock->lck_type);
 	update_lock->lck_parent = dbb->dbb_lock;
-	update_lock->lck_owner = tdbb->tdbb_attachment;
+	update_lock->lck_owner = tdbb->getAttachment();
 
 	SLONG sdw_update_flags = SDW_rollover;
 
@@ -759,7 +759,7 @@ bool SDW_rollover_to_shadow(jrd_file* file, const bool inAst)
 	// CCH_fini(), then consider us accessing the shadow exclusively.
 	// LCK_update_shadow locking isn't going to work anyway. The below
 	// code must be executed for valid active attachments only.
-	if (tdbb->tdbb_attachment->att_flags & ATT_lck_init_done) {
+	if (tdbb->getAttachment()->att_flags & ATT_lck_init_done) {
 		if (update_lock->lck_physical != LCK_EX ||
 			file != pageSpace->file || !SDW_lck_update(sdw_update_flags))
 		{
@@ -918,7 +918,7 @@ void SDW_start(const TEXT* file_name,
 	USHORT header_fetched = 0;
 
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 /* check that this shadow has not already been started,
    (unless it is marked as invalid, in which case it may
@@ -1125,10 +1125,10 @@ int SDW_start_shadowing(void* ast_object)
 	thread_db thd_context, *tdbb;
 	JRD_set_thread_data(tdbb, thd_context);
 
-	tdbb->tdbb_database = new_dbb;
+	tdbb->setDatabase(new_dbb);
 	tdbb->tdbb_quantum = QUANTUM;
-	tdbb->tdbb_request = NULL;
-	tdbb->tdbb_transaction = NULL;
+	tdbb->setRequest(NULL);
+	tdbb->setTransaction(NULL);
 
 	new_dbb->dbb_ast_flags |= DBB_get_shadows;
 	if (LCK_read_data(lock) & SDW_rollover)
@@ -1158,7 +1158,7 @@ static void activate_shadow(void)
  *
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
 	gds__log("activating shadow file %s", dbb->dbb_filename.c_str());
@@ -1238,7 +1238,7 @@ static bool check_for_file(const SCHAR* name, USHORT length)
  **************************************/
 
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 	const Firebird::PathName path(name, length);
 
 	try {
@@ -1271,7 +1271,7 @@ static void check_if_got_ast(jrd_file* file)
  *
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
 	Lock* lock = dbb->dbb_shadow_lock;
@@ -1303,7 +1303,7 @@ static void copy_header(void)
  *
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
 /* get the database header page and write it out --

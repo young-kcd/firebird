@@ -144,7 +144,7 @@ bool SHUT_database(Database* dbb, SSHORT flag, SSHORT delay)
  *
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
-	Attachment* attachment = tdbb->tdbb_attachment;
+	Attachment* attachment = tdbb->getAttachment();
 
 /* Only platform's user locksmith can shutdown or bring online
    a database. */
@@ -338,7 +338,7 @@ bool SHUT_online(Database* dbb, SSHORT flag)
  **************************************/
 
 	thread_db* tdbb = JRD_get_thread_data();
-	Attachment* attachment = tdbb->tdbb_attachment;
+	Attachment* attachment = tdbb->getAttachment();
 
 /* Only platform's user locksmith can shutdown or bring online
    a database. */
@@ -438,7 +438,7 @@ bool SHUT_online(Database* dbb, SSHORT flag)
 static bool bad_mode(thread_db* tdbb, bool ignore)
 {
 	if (!ignore) {
-		Database* dbb = tdbb->tdbb_database;
+		Database* dbb = tdbb->getDatabase();
 		
 		ISC_STATUS* status = tdbb->tdbb_status_vector;
 		*status++ = isc_arg_gds;
@@ -453,7 +453,7 @@ static bool bad_mode(thread_db* tdbb, bool ignore)
 
 static void check_backup_state(thread_db* tdbb)
 {
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 	dbb->dbb_backup_manager->lock_shared_database(tdbb, true);
 

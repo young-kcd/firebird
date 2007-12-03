@@ -157,8 +157,6 @@ void TRA_attach_request(Jrd::jrd_tra* transaction, Jrd::jrd_req* request)
 		request->req_tra_next = transaction->tra_requests;
 	}
 	transaction->tra_requests = request;
-
-	request->req_stats.setParent(&transaction->tra_stats);
 }
 
 void TRA_detach_request(Jrd::jrd_req* request)
@@ -185,8 +183,6 @@ void TRA_detach_request(Jrd::jrd_req* request)
 	request->req_transaction = NULL;
 	request->req_tra_next = NULL;
 	request->req_tra_prev = NULL;
-
-	request->req_stats.setParent(&request->req_attachment->att_stats);
 }
 
 bool TRA_active_transactions(thread_db* tdbb, Database* dbb)
@@ -286,7 +282,7 @@ void TRA_cleanup(thread_db* tdbb)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
 /* Return without cleaning up the TIP's for a ReadOnly database */
@@ -508,7 +504,7 @@ void TRA_extend_tip(thread_db* tdbb, ULONG sequence, WIN * precedence_window)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
 /* Start by fetching prior transaction page, if any */
@@ -563,7 +559,7 @@ int TRA_fetch_state(thread_db* tdbb, SLONG number)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
 /* locate and fetch the proper TIP page */
@@ -603,7 +599,7 @@ void TRA_get_inventory(thread_db* tdbb, UCHAR* bit_vector, ULONG base, ULONG top
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
 	const ULONG trans_per_tip = dbb->dbb_page_manager.transPerTIP;
@@ -665,7 +661,7 @@ int TRA_get_state(thread_db* tdbb, SLONG number)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
 	if (dbb->dbb_tip_cache)
@@ -753,14 +749,13 @@ void TRA_init(thread_db* tdbb)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
 	jrd_tra* trans = FB_NEW_RPT(*dbb->dbb_permanent, 0) jrd_tra(*dbb->dbb_permanent);
 	dbb->dbb_sys_trans = trans;
 	trans->tra_flags |= TRA_system | TRA_ignore_limbo;
 	trans->tra_pool = dbb->dbb_permanent;
-	trans->tra_stats.setParent(&dbb->dbb_stats);
 }
 
 
@@ -867,7 +862,7 @@ bool TRA_precommited(thread_db* tdbb, SLONG old_number, SLONG new_number)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
 	vcl* vector = dbb->dbb_pc_transactions;
@@ -983,7 +978,7 @@ jrd_tra* TRA_reconnect(thread_db* tdbb, const UCHAR* id, USHORT length)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
 /* Cannot work on limbo transactions for ReadOnly database */
@@ -1095,7 +1090,7 @@ void TRA_release_transaction(thread_db* tdbb, jrd_tra* transaction)
 	}
 
 	{
-		vec<jrd_rel*>& rels = *tdbb->tdbb_database->dbb_relations;
+		vec<jrd_rel*>& rels = *tdbb->getDatabase()->dbb_relations;
 		for (size_t i = 0; i < rels.count(); i++)
 		{
 			jrd_rel* relation = rels[i];
@@ -1136,7 +1131,7 @@ void TRA_release_transaction(thread_db* tdbb, jrd_tra* transaction)
 
 	// Unlink the transaction from the database block
 
-	for (jrd_tra** ptr = &tdbb->tdbb_attachment->att_transactions;
+	for (jrd_tra** ptr = &tdbb->getAttachment()->att_transactions;
 							*ptr; ptr = &(*ptr)->tra_next) 
 	{ 
 		if (*ptr == transaction) {
@@ -1321,7 +1316,7 @@ void TRA_set_state(thread_db* tdbb, jrd_tra* transaction, SLONG number, SSHORT s
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
 /* If we're terminating ourselves and we've
@@ -1508,13 +1503,13 @@ jrd_tra* TRA_start(thread_db* tdbb, int tpb_length, const UCHAR* tpb)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
-	Attachment* attachment = tdbb->tdbb_attachment;
+	Database* dbb = tdbb->getDatabase();
+	Attachment* attachment = tdbb->getAttachment();
 	WIN window(DB_PAGE_SPACE, -1);
 
 	if (dbb->dbb_ast_flags & DBB_shut_tran) {
 		ERR_post(isc_shutinprog, isc_arg_string,
-				 ERR_string(tdbb->tdbb_attachment->att_filename),
+				 ERR_string(tdbb->getAttachment()->att_filename),
 				 0);
 	}
 
@@ -1774,7 +1769,7 @@ jrd_tra* TRA_start(thread_db* tdbb, int tpb_length, const UCHAR* tpb)
 /* If the transaction block is getting out of hand, force a sweep */
 
 	if (dbb->dbb_sweep_interval &&
-		!(tdbb->tdbb_attachment->att_flags & ATT_no_cleanup) &&
+		!(tdbb->getAttachment()->att_flags & ATT_no_cleanup) &&
 		(trans->tra_oldest_active - trans->tra_oldest >
 		 dbb->dbb_sweep_interval) && oldest_state != tra_limbo)
 	{
@@ -1882,7 +1877,7 @@ bool TRA_sweep(thread_db* tdbb, jrd_tra* trans)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
 /* No point trying to sweep a ReadOnly database */
@@ -1911,7 +1906,7 @@ bool TRA_sweep(thread_db* tdbb, jrd_tra* trans)
 
 	dbb->dbb_flags |= DBB_sweep_in_progress;
 
-	jrd_tra* const tdbb_old_trans = tdbb->tdbb_transaction;
+	jrd_tra* const tdbb_old_trans = tdbb->getTransaction();
 	jrd_tra* transaction = 0;
 /* The following line seems to fix a bug that appears on VMS and AIX
    (and perhaps MPE XL).  It probably has to do with the fact that
@@ -1941,7 +1936,7 @@ bool TRA_sweep(thread_db* tdbb, jrd_tra* trans)
 		transaction = TRA_start(tdbb, sizeof(sweep_tpb), sweep_tpb);
 
 	SLONG transaction_oldest_active = transaction->tra_oldest_active;
-	tdbb->tdbb_transaction = transaction;
+	tdbb->setTransaction(transaction);
 
 
 #ifdef GARBAGE_THREAD
@@ -2006,7 +2001,7 @@ bool TRA_sweep(thread_db* tdbb, jrd_tra* trans)
 	dbb->dbb_flags &= ~DBB_sweep_in_progress;
 
 	tdbb->tdbb_flags &= ~TDBB_sweeper;
-	tdbb->tdbb_transaction = tdbb_old_trans;
+	tdbb->setTransaction(tdbb_old_trans);
 	}	// try
 	catch (const Firebird::Exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
@@ -2017,14 +2012,14 @@ bool TRA_sweep(thread_db* tdbb, jrd_tra* trans)
 			LCK_release(tdbb, &temp_lock);
 			dbb->dbb_flags &= ~DBB_sweep_in_progress;
 			tdbb->tdbb_flags &= ~TDBB_sweeper;
-			tdbb->tdbb_transaction = tdbb_old_trans;
+			tdbb->setTransaction(tdbb_old_trans);
 		}
 		catch (const Firebird::Exception& ex2) {
 			Firebird::stuff_exception(tdbb->tdbb_status_vector, ex2);
 			LCK_release(tdbb, &temp_lock);
 			dbb->dbb_flags &= ~DBB_sweep_in_progress;
 			tdbb->tdbb_flags &= ~TDBB_sweeper;
-			tdbb->tdbb_transaction = tdbb_old_trans;
+			tdbb->setTransaction(tdbb_old_trans);
 			return false;
 		}
 	}
@@ -2046,7 +2041,7 @@ Lock* TRA_transaction_lock(thread_db* tdbb, BLK object)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 	Lock* lock = FB_NEW_RPT(*tdbb->getDefaultPool(), sizeof(SLONG)) Lock();
 	lock->lck_type = LCK_tra;
@@ -2081,7 +2076,7 @@ int TRA_wait(thread_db* tdbb, jrd_tra* trans, SLONG number, jrd_tra::wait_t wait
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
 /* Create, wait on, and release lock on target transaction.  If
@@ -2162,11 +2157,11 @@ static int blocking_ast_transaction(void* ast_object)
 	thread_db thd_context, *tdbb;
 	JRD_set_thread_data(tdbb, thd_context);
 
-	tdbb->tdbb_database = transaction->tra_cancel_lock->lck_dbb;
-	tdbb->tdbb_attachment = transaction->tra_cancel_lock->lck_attachment;
+	tdbb->setDatabase(transaction->tra_cancel_lock->lck_dbb);
+	tdbb->setAttachment(transaction->tra_cancel_lock->lck_attachment);
 	tdbb->tdbb_quantum = QUANTUM;
-	tdbb->tdbb_request = NULL;
-	tdbb->tdbb_transaction = NULL;
+	tdbb->setRequest(NULL);
+	tdbb->setTransaction(NULL);
 	Jrd::ContextPoolHolder context(tdbb, 0);
 
 	if (transaction->tra_cancel_lock)
@@ -2194,7 +2189,7 @@ static SLONG bump_transaction_id(thread_db* tdbb, WIN * window)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
 	if (dbb->dbb_next_transaction >= MAX_TRA_NUMBER - 1) 
@@ -2236,7 +2231,7 @@ static header_page* bump_transaction_id(thread_db* tdbb, WIN * window)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
 	window->win_page = HEADER_PAGE_NUMBER;
@@ -2309,7 +2304,7 @@ static void compute_oldest_retaining(
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
 /* Get a commit retaining lock, if not present. */
@@ -2479,7 +2474,7 @@ static SLONG inventory_page(thread_db* tdbb, SLONG sequence)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
 	WIN window(DB_PAGE_SPACE, -1);
@@ -2525,7 +2520,7 @@ static SSHORT limbo_transaction(thread_db* tdbb, SLONG id)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
 	const SLONG trans_per_tip = dbb->dbb_page_manager.transPerTIP;
@@ -2560,12 +2555,10 @@ static void link_transaction(thread_db* tdbb, jrd_tra* transaction)
  **************************************/
 	SET_TDBB(tdbb);
 
-	Attachment* attachment  = tdbb->tdbb_attachment;
+	Attachment* attachment  = tdbb->getAttachment();
 	transaction->tra_attachment = attachment;
 	transaction->tra_next = attachment->att_transactions;
 	attachment->att_transactions = transaction;
-
-	transaction->tra_stats.setParent(&attachment->att_stats);
 }
 
 
@@ -2630,7 +2623,7 @@ static void retain_context(thread_db* tdbb, jrd_tra* transaction,
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
 /* The new transaction needs to remember the 'commit-retained' transaction
@@ -2792,7 +2785,7 @@ static void start_sweeper(thread_db* tdbb, Database* dbb)
 	LCK_release(tdbb, &temp_lock);
 
 	/* allocate space for the string and a null at the end */
-	const char* pszFilename = tdbb->tdbb_attachment->att_filename.c_str();
+	const char* pszFilename = tdbb->getAttachment()->att_filename.c_str();
 
 	char* database = (char*)gds__alloc(strlen(pszFilename) + 1);
 

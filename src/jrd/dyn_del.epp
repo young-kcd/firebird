@@ -92,7 +92,7 @@ void DYN_delete_collation(Global* gbl, const UCHAR** ptr)
  *
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 	jrd_req* request = NULL;
 	
@@ -308,7 +308,7 @@ void DYN_delete_exception( Global* gbl, const UCHAR** ptr)
 	Firebird::MetaName t;
 
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 	GET_STRING(ptr, t);
 
@@ -364,7 +364,7 @@ void DYN_delete_filter( Global* gbl, const UCHAR** ptr)
  *
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 	jrd_req* request = CMP_find_request(tdbb, drq_e_filters, DYN_REQUESTS);
 
@@ -419,7 +419,7 @@ void DYN_delete_function( Global* gbl, const UCHAR** ptr)
  *
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 	jrd_req* request = CMP_find_request(tdbb, drq_e_func_args, DYN_REQUESTS);
 	USHORT id = drq_e_func_args;
@@ -496,7 +496,7 @@ void DYN_delete_generator(Global* gbl, const UCHAR**ptr)
  *
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 	jrd_req* request = NULL;
 	
@@ -553,7 +553,7 @@ void DYN_delete_global_field( Global* gbl, const UCHAR** ptr)
 	Firebird::MetaName f;
 
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 	jrd_req* request = CMP_find_request(tdbb, drq_l_fld_src, DYN_REQUESTS);
 	
@@ -650,7 +650,7 @@ void DYN_delete_index( Global* gbl, const UCHAR** ptr)
 	Firebird::MetaName idx_name, rel_name;
 
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 	jrd_req* request = CMP_find_request(tdbb, drq_e_indices, DYN_REQUESTS);
 
@@ -744,7 +744,7 @@ void DYN_delete_local_field(Global* gbl,
 	Firebird::MetaName tbl_nm, col_nm, constraint, index_name;
 
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 	GET_STRING(ptr, col_nm);
 
@@ -973,7 +973,7 @@ void DYN_delete_parameter(Global* gbl,
 	}
 
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 	jrd_req* request = CMP_find_request(tdbb, drq_e_prm, DYN_REQUESTS);
 	USHORT id = drq_e_prms;
@@ -1063,7 +1063,7 @@ void DYN_delete_procedure( Global* gbl, const UCHAR** ptr)
 
 	GET_STRING(ptr, name);
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 	tdbb->tdbb_flags |= TDBB_prc_being_dropped;
 	if (MET_lookup_procedure(tdbb, name, true) == 0)
@@ -1235,7 +1235,7 @@ void DYN_delete_relation( Global* gbl, const UCHAR** ptr, const Firebird::MetaNa
 	Firebird::MetaName relation_name;
 
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 	if (relation)
 		relation_name = *relation;
@@ -1520,7 +1520,7 @@ void DYN_delete_role( Global* gbl, const UCHAR** ptr)
 	Firebird::MetaName role_name;
 
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 	const USHORT major_version = dbb->dbb_ods_version;
 	const USHORT minor_original = dbb->dbb_minor_original;
@@ -1536,7 +1536,7 @@ void DYN_delete_role( Global* gbl, const UCHAR** ptr)
 
 	try {
 
-		Firebird::MetaName user(tdbb->tdbb_attachment->att_user->usr_user_name);
+		Firebird::MetaName user(tdbb->getAttachment()->att_user->usr_user_name);
 		user.upper7();
 
 		GET_STRING(ptr, role_name);
@@ -1556,7 +1556,7 @@ void DYN_delete_role( Global* gbl, const UCHAR** ptr)
 			found = true;
 			const Firebird::MetaName role_owner(XX.RDB$OWNER_NAME);
 
-			if (tdbb->tdbb_attachment->locksmith() || role_owner == user)
+			if (tdbb->getAttachment()->locksmith() || role_owner == user)
 			{
 				ERASE XX;
 			}
@@ -1672,9 +1672,9 @@ void DYN_delete_shadow( Global* gbl, const UCHAR** ptr)
  *
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
-	if (!tdbb->tdbb_attachment->locksmith())
+	if (!tdbb->getAttachment()->locksmith())
 	{
 		ERR_post(isc_adm_task_denied, 0);
 	}
@@ -1724,7 +1724,7 @@ void DYN_delete_trigger( Global* gbl, const UCHAR** ptr)
  *
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 	jrd_req* request = CMP_find_request(tdbb, drq_e_trg_msgs, DYN_REQUESTS);
 	USHORT id = drq_e_trg_msgs;
@@ -1742,7 +1742,7 @@ void DYN_delete_trigger( Global* gbl, const UCHAR** ptr)
         if (!DYN_REQUEST(drq_e_trg_msgs))
             DYN_REQUEST(drq_e_trg_msgs) = request;
 
-		if (TR.RDB$RELATION_NAME.NULL && !tdbb->tdbb_attachment->locksmith())
+		if (TR.RDB$RELATION_NAME.NULL && !tdbb->getAttachment()->locksmith())
 			ERR_post(isc_adm_task_denied, 0);
 
 		ERASE TM;
@@ -1763,7 +1763,7 @@ void DYN_delete_trigger( Global* gbl, const UCHAR** ptr)
         if (!DYN_REQUEST(drq_e_trigger))
             DYN_REQUEST(drq_e_trigger) = request;
 
-		if (X.RDB$RELATION_NAME.NULL && !tdbb->tdbb_attachment->locksmith())
+		if (X.RDB$RELATION_NAME.NULL && !tdbb->getAttachment()->locksmith())
 			ERR_post(isc_adm_task_denied, 0);
 
 		r = X.RDB$RELATION_NAME;
@@ -1889,7 +1889,7 @@ void DYN_delete_trigger_msg( Global* gbl, const UCHAR** ptr, Firebird::MetaName*
 	Firebird::MetaName t;
 
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 	const int number = DYN_get_number(ptr);
 	if (trigger_name)
@@ -1959,7 +1959,7 @@ static bool delete_constraint_records(Global*	gbl,
  *
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 	jrd_req* request = CMP_find_request(tdbb, drq_e_rel_con, DYN_REQUESTS);
 
@@ -2010,7 +2010,7 @@ static bool delete_dimension_records(Global* gbl,
  *
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 	jrd_req* request = CMP_find_request(tdbb, drq_e_dims, DYN_REQUESTS);
 	
@@ -2081,7 +2081,7 @@ static void delete_f_key_constraint(thread_db*	tdbb,
  *  
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 	jrd_req* request = CMP_find_request(tdbb, drq_e_rel_const, DYN_REQUESTS);
 
@@ -2134,7 +2134,7 @@ static void delete_gfield_for_lfield( Global* gbl, const Firebird::MetaName& lfi
  *
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 	jrd_req* request = CMP_find_request(tdbb, drq_e_l_gfld, DYN_REQUESTS);
 
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
@@ -2176,7 +2176,7 @@ static bool delete_index_segment_records(Global* gbl,
  *
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 	jrd_req* request = CMP_find_request(tdbb, drq_e_idx_segs, DYN_REQUESTS);
 	
@@ -2224,7 +2224,7 @@ static bool delete_security_class2( Global* gbl, const Firebird::MetaName& secur
  **************************************/
 
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 	jrd_req* request = CMP_find_request(tdbb, drq_e_class, DYN_REQUESTS);
 

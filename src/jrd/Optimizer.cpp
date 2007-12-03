@@ -273,16 +273,16 @@ bool OPT_expression_equal(thread_db* tdbb, OptimizerBlk* opt,
 			EXE_find_request(tdbb, idx->idx_expression_request, false);
 
 		fb_assert(expr_req->req_caller == NULL);
-		expr_req->req_caller = tdbb->tdbb_request;
-		tdbb->tdbb_request = expr_req;
+		expr_req->req_caller = tdbb->getRequest();
+		tdbb->setRequest(expr_req);
 		bool result = false;
 		{
-			Jrd::ContextPoolHolder context(tdbb, tdbb->tdbb_request->req_pool);
+			Jrd::ContextPoolHolder context(tdbb, tdbb->getRequest()->req_pool);
 
 			result = OPT_expression_equal2(tdbb, opt, idx->idx_expression, 
 				node, stream);
 		}
-		tdbb->tdbb_request = expr_req->req_caller;
+		tdbb->setRequest(expr_req->req_caller);
 		expr_req->req_caller = NULL;
 		expr_req->req_flags &= ~req_in_use;
 
@@ -589,7 +589,7 @@ double OPT_getRelationCardinality(thread_db* tdbb, jrd_rel* relation, const Form
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 	if (relation->isVirtual()) {
 		// Just a dumb estimation
@@ -824,7 +824,7 @@ IndexScratch::IndexScratch(MemoryPool& p, thread_db* tdbb, index_desc* ix,
 		// Compound indexes are generally less compressed.
 		factor = 0.7;
 	}
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 	cardinality = (csb_tail->csb_cardinality * (2 + (length * factor))) / 
 		(dbb->dbb_page_size - BTR_SIZE);
 }
@@ -922,7 +922,7 @@ OptimizerRetrieval::OptimizerRetrieval(MemoryPool& p, OptimizerBlk* opt,
 	setConjunctionsMatched = false;
 
 	SET_TDBB(tdbb);
-	this->database = tdbb->tdbb_database;
+	this->database = tdbb->getDatabase();
 	this->stream = streamNumber;
 	this->optimizer = opt;
 	this->csb = this->optimizer->opt_csb;
@@ -1668,7 +1668,7 @@ jrd_nod* OptimizerRetrieval::makeIndexNode(const index_desc* idx) const
 						  idx->idx_id);
 	}
 	else {
-		CMP_post_resource(&tdbb->tdbb_request->req_resources,
+		CMP_post_resource(&tdbb->getRequest()->req_resources,
 						  relation, Resource::rsc_index,
 						  idx->idx_id);
 	}
@@ -2857,7 +2857,7 @@ OptimizerInnerJoin::OptimizerInnerJoin(MemoryPool& p, OptimizerBlk* opt, UCHAR*	
  **************************************/
 	tdbb = NULL;
 	SET_TDBB(tdbb);
-	this->database = tdbb->tdbb_database;
+	this->database = tdbb->getDatabase();
 	this->optimizer = opt;
 	this->csb = this->optimizer->opt_csb;
 	this->sort = sort_clause;

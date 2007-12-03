@@ -234,7 +234,7 @@ USHORT BTR_all(thread_db*		tdbb,
  *
  **************************************/
 	SET_TDBB(tdbb);
-	const Database* dbb = tdbb->tdbb_database;
+	const Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 	
 	RelationPages* relPages = relation->getPages(tdbb);
@@ -298,7 +298,7 @@ void BTR_create(thread_db* tdbb,
  **************************************/
 
 	SET_TDBB(tdbb);
-	const Database* dbb = tdbb->tdbb_database;
+	const Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
 	// Now that the index id has been checked out, create the index.
@@ -334,7 +334,7 @@ bool BTR_delete_index(thread_db* tdbb, WIN* window, USHORT id)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	const Database* dbb = tdbb->tdbb_database;
+	const Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
 	// Get index descriptor.  If index doesn't exist, just leave.
@@ -379,7 +379,7 @@ bool BTR_description(thread_db* tdbb, jrd_rel* relation, index_root_page* root, 
  **************************************/
 
 	SET_TDBB(tdbb);
-	const Database* dbb = tdbb->tdbb_database;
+	const Database* dbb = tdbb->getDatabase();
 
 	if (id >= root->irt_count) {
 		return false;
@@ -447,27 +447,27 @@ DSC* BTR_eval_expression(thread_db* tdbb, index_desc* idx, Record* record, bool 
 	jrd_req* expr_request = EXE_find_request(tdbb, idx->idx_expression_request, false);
 	fb_assert(expr_request->req_caller == NULL);
 
-	expr_request->req_caller = tdbb->tdbb_request;
+	expr_request->req_caller = tdbb->getRequest();
 
 	// 10 Feb 2005 hvlad
 	// When this code called from IDX_create_index
-	// tdbb->tdbb_request is set to our idx->idx_expression_request
+	// tdbb->getRequest() is set to our idx->idx_expression_request
 	// by PCMET_expression_index. Therefore no need to attach\detach
 	// idx_expression_request to the same transaction twice
 	const bool already_attached = (expr_request->req_caller == expr_request);
 
 	if (!already_attached) {
-		TRA_attach_request(tdbb->tdbb_transaction, expr_request);
+		TRA_attach_request(tdbb->getTransaction(), expr_request);
 	}
 	fb_assert(expr_request->req_transaction);
 
-	tdbb->tdbb_request = expr_request;
-	tdbb->tdbb_request->req_rpb[0].rpb_record = record;
-	tdbb->tdbb_request->req_flags &= ~req_null;
+	tdbb->setRequest(expr_request);
+	tdbb->getRequest()->req_rpb[0].rpb_record = record;
+	tdbb->getRequest()->req_flags &= ~req_null;
 
 	DSC* result = 0;
 	try {
-		Jrd::ContextPoolHolder context(tdbb, tdbb->tdbb_request->req_pool);
+		Jrd::ContextPoolHolder context(tdbb, tdbb->getRequest()->req_pool);
 
 		if (!(result = EVL_expr(tdbb, idx->idx_expression)))
 			result = &idx->idx_expression_desc;
@@ -476,18 +476,18 @@ DSC* BTR_eval_expression(thread_db* tdbb, index_desc* idx, Record* record, bool 
 		if (!already_attached) {
 			TRA_detach_request(expr_request);
 		}
-		tdbb->tdbb_request = expr_request->req_caller;
+		tdbb->setRequest(expr_request->req_caller);
 		expr_request->req_caller = NULL;
 		expr_request->req_flags &= ~req_in_use;
 
 		throw;
 	}
-	notNull = !(tdbb->tdbb_request->req_flags & req_null);
+	notNull = !(tdbb->getRequest()->req_flags & req_null);
 
 	if (!already_attached) {
 		TRA_detach_request(expr_request);
 	}
-	tdbb->tdbb_request = expr_request->req_caller;
+	tdbb->setRequest(expr_request->req_caller);
 	expr_request->req_caller = NULL;
 	expr_request->req_flags &= ~req_in_use;
 
@@ -582,7 +582,7 @@ void BTR_evaluate(thread_db* tdbb, IndexRetrieval* retrieval, RecordBitmap** bit
 	SET_TDBB(tdbb);
 
 	// Remove ignore_nulls flag for older ODS
-	const Database* dbb = tdbb->tdbb_database;
+	const Database* dbb = tdbb->getDatabase();
 	if (dbb->dbb_ods_version < ODS_VERSION11) {
 		retrieval->irb_generic &= ~irb_ignore_null_value_key;
 	}
@@ -921,7 +921,7 @@ void BTR_insert(thread_db* tdbb, WIN * root_window, index_insertion* insertion)
  **************************************/
 
 	SET_TDBB(tdbb);
-	const Database* dbb = tdbb->tdbb_database;
+	const Database* dbb = tdbb->getDatabase();
 
 	index_desc* idx = insertion->iib_descriptor;
 	RelationPages* relPages = insertion->iib_relation->getPages(tdbb);
@@ -1092,7 +1092,7 @@ IDX_E BTR_key(thread_db* tdbb, jrd_rel* relation, Record* record, index_desc* id
 	int missing_unique_segments = 0;
 
 	SET_TDBB(tdbb);
-	const Database* dbb = tdbb->tdbb_database;
+	const Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
 	IDX_E result = idx_e_ok;
@@ -1223,7 +1223,7 @@ USHORT BTR_key_length(thread_db* tdbb, jrd_rel* relation, index_desc* idx)
 	// hvlad: in ODS11 key of descending index can be prefixed with
 	//		  one byte value. See comments in compress
 	const size_t prefix = (idx->idx_flags & idx_descending) &&
-		(tdbb->tdbb_database->dbb_ods_version >= ODS_VERSION11) ? 1 : 0;
+		(tdbb->getDatabase()->dbb_ods_version >= ODS_VERSION11) ? 1 : 0;
 
 	const Format* format = MET_current(tdbb, relation);
 	index_desc::idx_repeat* tail = idx->idx_rpt;
@@ -1378,7 +1378,7 @@ btree_page* BTR_left_handoff(thread_db* tdbb, WIN * window, btree_page* page,
  **************************************/
 
 	SET_TDBB(tdbb);
-	const Database* dbb = tdbb->tdbb_database;
+	const Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
 	const SLONG original_page = window->win_page;
@@ -1478,7 +1478,7 @@ IDX_E BTR_make_key(thread_db* tdbb,
 	temp.key_length = 0;
 
 	SET_TDBB(tdbb);
-	const Database* dbb = tdbb->tdbb_database;
+	const Database* dbb = tdbb->getDatabase();
 
 	fb_assert(count > 0);
 	fb_assert(idx != NULL);
@@ -1593,11 +1593,11 @@ void BTR_make_null_key(thread_db* tdbb, index_desc* idx, temporary_key* key)
 	temp.key_length = 0;
 
 	SET_TDBB(tdbb);
-	//const Database* dbb = tdbb->tdbb_database;
+	//const Database* dbb = tdbb->getDatabase();
 
 	fb_assert(idx != NULL);
 	fb_assert(key != NULL);
-	fb_assert(tdbb->tdbb_database->dbb_ods_version >= ODS_VERSION11)
+	fb_assert(tdbb->getDatabase()->dbb_ods_version >= ODS_VERSION11)
 
 	key->key_flags = key_all_nulls;
 
@@ -1740,7 +1740,7 @@ void BTR_remove(thread_db* tdbb, WIN * root_window, index_insertion* insertion)
  *
  **************************************/
 
-	//const Database* dbb = tdbb->tdbb_database;
+	//const Database* dbb = tdbb->getDatabase();
 	index_desc* idx = insertion->iib_descriptor;
 	RelationPages* relPages = insertion->iib_relation->getPages(tdbb);
 	WIN window(relPages->rel_pg_space_id, idx->idx_root);
@@ -1823,7 +1823,7 @@ void BTR_reserve_slot(thread_db* tdbb, jrd_rel* relation, jrd_tra* transaction,
  **************************************/
 
 	SET_TDBB(tdbb);
-	const Database* dbb = tdbb->tdbb_database;
+	const Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
 	fb_assert(relation);
@@ -2009,7 +2009,7 @@ void BTR_selectivity(thread_db* tdbb, jrd_rel* relation, USHORT id,
 	duplicatesList.grow(segments);
 	memset(duplicatesList.begin(), 0, segments * sizeof(ULONG));
 
-	//const Database* dbb = tdbb->tdbb_database;
+	//const Database* dbb = tdbb->getDatabase();
 
 	// go through all the leaf nodes and count them; 
 	// also count how many of them are duplicates
@@ -2368,7 +2368,7 @@ static void compress(thread_db* tdbb,
 	const UCHAR desc_end_value_prefix = 0x01; // ~0xFE
 	const UCHAR desc_end_value_check = 0x00; // ~0xFF;
 
-	const Database* dbb = tdbb->tdbb_database;
+	const Database* dbb = tdbb->getDatabase();
 
 	UCHAR* p = key->key_data;
 
@@ -2784,7 +2784,7 @@ static USHORT compress_root(thread_db* tdbb, index_root_page* page)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	const Database* dbb = tdbb->tdbb_database;
+	const Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
 	UCHAR* const temp =
@@ -2854,7 +2854,7 @@ static CONTENTS delete_node(thread_db* tdbb, WIN *window, UCHAR *pointer)
  **************************************/
 
 	SET_TDBB(tdbb);
-	const Database* dbb = tdbb->tdbb_database;
+	const Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
 	btree_page* page = (btree_page*) window->win_buffer;
@@ -3101,7 +3101,7 @@ static DSC *eval(thread_db* tdbb, jrd_nod* node, DSC * temp, bool *isNull)
 	dsc* desc = EVL_expr(tdbb, node);
 	*isNull = false;
 
-	if (desc && !(tdbb->tdbb_request->req_flags & req_null)) {
+	if (desc && !(tdbb->getRequest()->req_flags & req_null)) {
 		return desc;
 	}
 	else {
@@ -3156,7 +3156,7 @@ static SLONG fast_load(thread_db* tdbb,
 
 	
 	SET_TDBB(tdbb);
-	const Database* dbb = tdbb->tdbb_database;
+	const Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
 	const USHORT pageSpaceID = relation->getPages(tdbb)->rel_pg_space_id;
@@ -3914,7 +3914,7 @@ static SLONG fast_load(thread_db* tdbb,
 	tdbb->tdbb_flags &= ~TDBB_no_cache_unwind;
 
 	// do some final housekeeping
-	SORT_fini(sort_handle, tdbb->tdbb_attachment);
+	SORT_fini(sort_handle, tdbb->getAttachment());
 
 	// If index flush fails, try to delete the index tree.
 	// If the index delete fails, just go ahead and punt.
@@ -4769,7 +4769,7 @@ static CONTENTS garbage_collect(thread_db* tdbb, WIN * window, SLONG parent_numb
  **************************************/
 
 	SET_TDBB(tdbb);
-	const Database* dbb = tdbb->tdbb_database;
+	const Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
 	const USHORT pageSpaceID = window->win_page.getPageSpaceID();
@@ -5343,7 +5343,7 @@ static void generate_jump_nodes(thread_db* tdbb, btree_page* page,
  **************************************/
 
 	SET_TDBB(tdbb);
-	const Database* dbb = tdbb->tdbb_database;
+	const Database* dbb = tdbb->getDatabase();
 	fb_assert(page);
 	fb_assert(jumpNodes);
 	fb_assert(jumpersSize);
@@ -5507,7 +5507,7 @@ static SLONG insert_node(thread_db* tdbb,
  **************************************/
 
 	SET_TDBB(tdbb);
-	const Database* dbb = tdbb->tdbb_database;
+	const Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
 	const USHORT pageSpaceID = window->win_page.getPageSpaceID();
@@ -6243,7 +6243,7 @@ static CONTENTS remove_node(thread_db* tdbb, index_insertion* insertion, WIN* wi
  **************************************/
 
 	SET_TDBB(tdbb);
-	const Database* dbb = tdbb->tdbb_database;
+	const Database* dbb = tdbb->getDatabase();
 	index_desc* idx = insertion->iib_descriptor;
 	btree_page* page = (btree_page*) window->win_buffer;
 

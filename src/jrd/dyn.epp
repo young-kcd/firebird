@@ -130,7 +130,7 @@ void DYN_ddl(Attachment* attachment, jrd_tra* transaction, USHORT length,
 	JrdMemoryPool* tempPool = JrdMemoryPool::createPool();
 	Jrd::ContextPoolHolder context(tdbb, tempPool);
 
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 	try {
 
@@ -308,7 +308,7 @@ bool DYN_is_it_sql_role(Global*						gbl,
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 	const USHORT major_version = dbb->dbb_ods_version;
 	const USHORT minor_original = dbb->dbb_minor_original;
@@ -907,7 +907,7 @@ USHORT DYN_put_text_blob(Global* gbl, const UCHAR** ptr, bid* blob_id)
 	try {
 		Firebird::UCharBuffer bpb;
 
-		Database* dbb = tdbb->tdbb_database;
+		Database* dbb = tdbb->getDatabase();
 		if (ENCODE_ODS(dbb->dbb_ods_version, dbb->dbb_minor_original) >= ODS_11_1) 
 		{
 			bpb.resize(15);
@@ -921,7 +921,7 @@ USHORT DYN_put_text_blob(Global* gbl, const UCHAR** ptr, bid* blob_id)
 			p += 2;
 			*p++ = isc_bpb_source_interp;
 			*p++ = 1;
-			*p++ = tdbb->tdbb_attachment->att_charset;
+			*p++ = tdbb->getAttachment()->att_charset;
 
 			*p++ = isc_bpb_target_type;
 			*p++ = 2;
@@ -970,7 +970,7 @@ void DYN_rundown_request(jrd_req* handle, SSHORT id)
  **************************************/
 
 	thread_db* tdbb = JRD_get_thread_data();
-	Database*  dbb  = tdbb->tdbb_database;
+	Database*  dbb  = tdbb->getDatabase();
 
 	if (!handle) {
 		return;
@@ -1049,7 +1049,7 @@ static void grant( Global* gbl, const UCHAR** ptr)
 	Firebird::MetaName grantor;
 
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 	const USHORT major_version  = dbb->dbb_ods_version;
 	const USHORT minor_original = dbb->dbb_minor_original;
@@ -1252,7 +1252,7 @@ static void grant( Global* gbl, const UCHAR** ptr)
 			}
 			id = drq_get_role_nm;
 
-			grantor = tdbb->tdbb_attachment->att_user->usr_user_name;
+			grantor = tdbb->getAttachment()->att_user->usr_user_name;
 			grantor.upper7();
 
 			if (!grantor_can_grant_role(tdbb, gbl, grantor, object)) {
@@ -1286,7 +1286,7 @@ static void grant( Global* gbl, const UCHAR** ptr)
 			{	/* relation or view because we cannot distinguish at this point. */
 				id = drq_gcg1;
 				if (!grantor_can_grant(gbl,
-										tdbb->tdbb_attachment->att_user->usr_user_name.c_str(),
+										tdbb->getAttachment()->att_user->usr_user_name.c_str(),
 										priv,
 										object,
 										field,
@@ -1369,7 +1369,7 @@ static bool grantor_can_grant(Global*					gbl,
 	USHORT err_num;
 
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 /* Verify that the input relation exists. */
 
@@ -1427,7 +1427,7 @@ static bool grantor_can_grant(Global*					gbl,
 
 /* If the current user is locksmith - allow all grants to occur */
 
-	if (tdbb->tdbb_attachment->locksmith()) {
+	if (tdbb->getAttachment()->locksmith()) {
 		return true;
 	}
 
@@ -1641,14 +1641,14 @@ static bool grantor_can_grant_role(	thread_db*	tdbb,
 	bool grantable = false;
 
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 	// Fetch the name of the owner of the ROLE
 	Firebird::MetaName owner;
 	if (DYN_is_it_sql_role(gbl, role_name, owner, tdbb))
 	{
 		// Both SYSDBA and the owner of this ROLE can grant membership
-		if (tdbb->tdbb_attachment->locksmith() || owner == grantor)
+		if (tdbb->getAttachment()->locksmith() || owner == grantor)
 			return true;
 	}
 	else
@@ -1763,14 +1763,14 @@ static void revoke_permission(Global* gbl, const UCHAR** ptr)
 	Firebird::MetaName dummy_name;
 
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 	const USHORT major_version = dbb->dbb_ods_version;
 	const USHORT minor_original = dbb->dbb_minor_original;
 
 /* Stash away a copy of the revoker's name, in uppercase form */
 
-	const UserId* revoking_user = tdbb->tdbb_attachment->att_user;
+	const UserId* revoking_user = tdbb->getAttachment()->att_user;
 	Firebird::MetaName revoking_user_name(revoking_user->usr_user_name);
 	revoking_user_name.upper7();
 
@@ -2029,7 +2029,7 @@ static void set_field_class_name(Global*					gbl,
  *
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 	jrd_req* request = CMP_find_request(tdbb, drq_s_f_class, DYN_REQUESTS);
 	jrd_req* request2 = NULL;
@@ -2093,7 +2093,7 @@ static void store_privilege(Global*						gbl,
  *
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 	jrd_req* request = CMP_find_request(tdbb, drq_s_grant, DYN_REQUESTS);
 

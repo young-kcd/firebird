@@ -690,8 +690,8 @@ bool VAL_validate(thread_db* tdbb, USHORT switches)
 	JrdMemoryPool* val_pool = 0;
 
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
-	Attachment* att = tdbb->tdbb_attachment;
+	Database* dbb = tdbb->getDatabase();
+	Attachment* att = tdbb->getAttachment();
 
 	try {
 
@@ -761,7 +761,7 @@ static RTN corrupt(thread_db* tdbb, vdr* control, USHORT err_code, const jrd_rel
  **************************************/
 
 	SET_TDBB(tdbb);
-	Attachment* att = tdbb->tdbb_attachment;
+	Attachment* att = tdbb->getAttachment();
 	if (err_code < att->att_val_errors->count())
 		(*att->att_val_errors)[err_code]++;
 
@@ -769,7 +769,7 @@ static RTN corrupt(thread_db* tdbb, vdr* control, USHORT err_code, const jrd_rel
 
 	TEXT s[256] = "";
 	va_list ptr;
-	const char* fn = tdbb->tdbb_attachment->att_filename.c_str();
+	const char* fn = tdbb->getAttachment()->att_filename.c_str();
 
 	va_start(ptr, relation);
 	VSNPRINTF(s, sizeof(s), err_string, ptr);
@@ -820,7 +820,7 @@ static FETCH_CODE fetch_page(thread_db* tdbb,
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
 	if (--tdbb->tdbb_quantum < 0)
@@ -881,7 +881,7 @@ static void garbage_collect(thread_db* tdbb, vdr* control)
  **************************************/
 	SET_TDBB(tdbb);
 
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 	PageManager& pageSpaceMgr = dbb->dbb_page_manager;
 	PageSpace* pageSpace = pageSpaceMgr.findPageSpace(DB_PAGE_SPACE);
@@ -1133,7 +1133,7 @@ static void walk_database(thread_db* tdbb, vdr* control)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 #ifdef DEBUG_VAL_VERBOSE
 	if (VAL_debug_level) {
@@ -1188,7 +1188,7 @@ static RTN walk_data_page(thread_db* tdbb,
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 	WIN window(DB_PAGE_SPACE, -1);
 	data_page* page = 0;
@@ -1320,7 +1320,7 @@ static void walk_generators(thread_db* tdbb, vdr* control)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 	WIN window(DB_PAGE_SPACE, -1);
 
@@ -1392,7 +1392,7 @@ static RTN walk_index(thread_db* tdbb, vdr* control, jrd_rel* relation,
 	USHORT l; // temporary variable for length
 
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
 	const SLONG page_number = root_page.irt_rpt[id].irt_root;
@@ -1403,7 +1403,7 @@ static RTN walk_index(thread_db* tdbb, vdr* control, jrd_rel* relation,
 	const bool unique = (root_page.irt_rpt[id].irt_flags & (irt_unique | idx_primary));
 
 	temporary_key nullKey, *null_key = 0;
-	if (unique && tdbb->tdbb_database->dbb_ods_version >= ODS_VERSION11)
+	if (unique && tdbb->getDatabase()->dbb_ods_version >= ODS_VERSION11)
 	{
 		const bool isExpression = root_page.irt_rpt[id].irt_flags & irt_expression;
 		if (isExpression)
@@ -1762,7 +1762,7 @@ static void walk_pip(thread_db* tdbb, vdr* control)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
 	PageManager& pageSpaceMgr = dbb->dbb_page_manager;
@@ -1805,7 +1805,7 @@ static RTN walk_pointer_page(	thread_db*	tdbb,
  **************************************/
 	SET_TDBB(tdbb);
 
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 	const vcl* vector = relation->getBasePages()->rel_pages;
 
@@ -1902,8 +1902,8 @@ static RTN walk_record(thread_db* tdbb,
 	if (VAL_debug_level) {
 		fprintf(stdout, "record: number %ld (%d/%d) ",
 				   number,
-				   (USHORT) number / tdbb->tdbb_database->dbb_max_records,
-				   (USHORT) number % tdbb->tdbb_database->dbb_max_records);
+				   (USHORT) number / tdbb->getDatabase()->dbb_max_records,
+				   (USHORT) number % tdbb->getDatabase()->dbb_max_records);
 		print_rhd(length, header);
 	}
 #endif
@@ -2176,7 +2176,7 @@ static RTN walk_tip(thread_db* tdbb, vdr* control, SLONG transaction)
  **************************************/
 
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
 	const vcl* vector = dbb->dbb_t_pages;

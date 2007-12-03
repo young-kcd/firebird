@@ -87,9 +87,9 @@ static InitInstance<GenericMap<Pair<NonPooled<SSHORT, UCHAR> > > > sqlTypeToDscT
 void startCallback(thread_db* tdbb)
 {
 #if (defined DEV_BUILD && !defined MULTI_THREAD)
-	tdbb->tdbb_database->dbb_flags |= DBB_exec_statement;
+	tdbb->getDatabase()->dbb_flags |= DBB_exec_statement;
 #endif
-	tdbb->tdbb_transaction->tra_callback_count++;
+	tdbb->getTransaction()->tra_callback_count++;
 	THREAD_EXIT();
 }
 
@@ -97,9 +97,9 @@ void finishCallback(thread_db* tdbb)
 {
 	THREAD_ENTER();
 #if (defined DEV_BUILD && !defined MULTI_THREAD)
-	tdbb->tdbb_database->dbb_flags &= ~DBB_exec_statement;
+	tdbb->getDatabase()->dbb_flags &= ~DBB_exec_statement;
 #endif
-	tdbb->tdbb_transaction->tra_callback_count--;
+	tdbb->getTransaction()->tra_callback_count--;
 }
 
 } // anonymous namespace
@@ -116,7 +116,7 @@ void ExecuteStatement::Open(thread_db* tdbb, jrd_nod* sql, SSHORT nVars, bool Si
 			sqlTypeToDscType().put(sqlType[i], static_cast<UCHAR>(i));
 	}
 
-	if (tdbb->tdbb_transaction->tra_callback_count >= MAX_CALLBACKS) {
+	if (tdbb->getTransaction()->tra_callback_count >= MAX_CALLBACKS) {
 		tdbb->tdbb_status_vector[0] = isc_arg_gds;
 		tdbb->tdbb_status_vector[1] = isc_exec_sql_max_call_exceeded;
 		tdbb->tdbb_status_vector[2] = isc_arg_end;
@@ -128,20 +128,20 @@ void ExecuteStatement::Open(thread_db* tdbb, jrd_nod* sql, SSHORT nVars, bool Si
 	Buffer = 0;
 	SingleMode = SingleTon;
 
-	fb_assert(tdbb->tdbb_transaction->tra_pool);
+	fb_assert(tdbb->getTransaction()->tra_pool);
 	Firebird::string SqlText;
-	getString(tdbb, SqlText, EVL_expr(tdbb, sql), tdbb->tdbb_request);
+	getString(tdbb, SqlText, EVL_expr(tdbb, sql), tdbb->getRequest());
 	memcpy(StartOfSqlOperator, SqlText.c_str(), sizeof(StartOfSqlOperator) - 1);
 	StartOfSqlOperator[sizeof(StartOfSqlOperator) - 1] = 0;
 
 	YValve::Attachment* temp_dbb = GetWhyAttachment(tdbb->tdbb_status_vector,
-								  tdbb->tdbb_attachment);
+								  tdbb->getAttachment());
 	if (!temp_dbb)
 		ERR_punt();
 
 	Attachment = temp_dbb->public_handle;
 
-	YValve::Transaction* temp_tra = new YValve::Transaction(tdbb->tdbb_transaction, &Transaction, temp_dbb);
+	YValve::Transaction* temp_tra = new YValve::Transaction(tdbb->getTransaction(), &Transaction, temp_dbb);
 
 	Statement = 0;
 	Sqlda = MakeSqlda(tdbb, nVars ? nVars : 1);
@@ -181,7 +181,7 @@ void ExecuteStatement::Open(thread_db* tdbb, jrd_nod* sql, SSHORT nVars, bool Si
 				SQLDA_VERSION1, Sqlda));
 		Buffer = 0;		// Buffer is used in ParseSqlda
 						// First dummy parse - to define buffer size
-		Buffer = FB_NEW(*tdbb->tdbb_transaction->tra_pool) 
+		Buffer = FB_NEW(*tdbb->getTransaction()->tra_pool) 
 			SCHAR[XSQLDA_LENGTH(ParseSqlda())];
 		ParseSqlda();
 		Chk(isc_dsql_execute(status, &Transaction,
@@ -312,7 +312,7 @@ void ExecuteStatement::Close(thread_db* tdbb)
 XSQLDA* ExecuteStatement::MakeSqlda(thread_db* tdbb, short n)
 {
 	return (XSQLDA *)
-		(FB_NEW(*tdbb->tdbb_transaction->tra_pool) char[XSQLDA_LENGTH(n)]);
+		(FB_NEW(*tdbb->getTransaction()->tra_pool) char[XSQLDA_LENGTH(n)]);
 }
 
 ISC_STATUS ExecuteStatement::ReMakeSqlda(ISC_STATUS *vector, thread_db* tdbb)

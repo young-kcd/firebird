@@ -105,7 +105,7 @@ PAG DPM_allocate(thread_db* tdbb, WIN* window)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
 #ifdef VIO_DEBUG
@@ -135,7 +135,7 @@ void DPM_backout( thread_db* tdbb, record_param* rpb)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
 #ifdef VIO_DEBUG
@@ -202,7 +202,7 @@ double DPM_cardinality(thread_db* tdbb, jrd_rel* relation, const Format* format)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 	// Estimated number of total records for this relation, 
 	// we assume that the records are compressed to 50%
@@ -272,7 +272,7 @@ bool DPM_chain( thread_db* tdbb, record_param* org_rpb, record_param* new_rpb)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
 #ifdef VIO_DEBUG
@@ -468,7 +468,7 @@ int DPM_compress( thread_db* tdbb, data_page* page)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 #ifdef VIO_DEBUG
 	if (debug_flag > DEBUG_TRACE_ALL)
@@ -523,7 +523,7 @@ void DPM_create_relation( thread_db* tdbb, jrd_rel* relation)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
 #ifdef VIO_DEBUG
@@ -545,7 +545,7 @@ void DPM_create_relation( thread_db* tdbb, jrd_rel* relation)
 void DPM_create_relation_pages(thread_db* tdbb, jrd_rel* relation, RelationPages* relPages)
 {
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
 /* Allocate first pointer page */
@@ -666,7 +666,7 @@ void DPM_delete( thread_db* tdbb, record_param* rpb, SLONG prior_page)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
 #ifdef VIO_DEBUG
@@ -857,7 +857,7 @@ void DPM_delete_relation( thread_db* tdbb, jrd_rel* relation)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 	RelationPages* relPages = relation->getBasePages();
 	DPM_delete_relation_pages(tdbb, relation, relPages);
@@ -879,7 +879,7 @@ void DPM_delete_relation( thread_db* tdbb, jrd_rel* relation)
 void DPM_delete_relation_pages(Jrd::thread_db* tdbb, Jrd::jrd_rel* relation, Jrd::RelationPages* relPages)
 {
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 	WIN window(relPages->rel_pg_space_id, -1), data_window(relPages->rel_pg_space_id, -1);
 	window.win_flags = data_window.win_flags = WIN_large_scan;
 	window.win_scans = data_window.win_scans = 1;
@@ -1154,7 +1154,7 @@ SINT64 DPM_gen_id(thread_db* tdbb, SLONG generator, bool initialize, SINT64 val)
  *      The resulting value is the result of the function.
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
 #ifdef VIO_DEBUG
@@ -1242,8 +1242,8 @@ SINT64 DPM_gen_id(thread_db* tdbb, SLONG generator, bool initialize, SINT64 val)
 			*lptr += (SLONG) val;
 		}
 
-		if (tdbb->tdbb_transaction) {
-			tdbb->tdbb_transaction->tra_flags |= TRA_write;
+		if (tdbb->getTransaction()) {
+			tdbb->getTransaction()->tra_flags |= TRA_write;
 		}
 	}
 
@@ -1283,7 +1283,7 @@ bool DPM_get( thread_db* tdbb, record_param* rpb, SSHORT lock_type)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
 #ifdef VIO_DEBUG
@@ -1354,7 +1354,7 @@ ULONG DPM_get_blob(thread_db* tdbb,
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 	
 	record_param rpb;
@@ -1432,7 +1432,7 @@ ULONG DPM_get_blob(thread_db* tdbb,
 		// Unless this is the only attachment, don't allow the sequential scan
 		// of very large blobs to flush pages used by other attachments.
 
-		Attachment* attachment = tdbb->tdbb_attachment;
+		Attachment* attachment = tdbb->getAttachment();
 		if (attachment &&
 			(attachment != dbb->dbb_attachments || attachment->att_next))
 		{
@@ -1515,7 +1515,7 @@ bool DPM_next(thread_db* tdbb,
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
 #ifdef VIO_DEBUG
@@ -1721,7 +1721,7 @@ void DPM_pages(
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 #ifdef VIO_DEBUG
 	if (debug_flag > DEBUG_TRACE_ALL) {
@@ -1769,7 +1769,7 @@ SLONG DPM_prefetch_bitmap(thread_db* tdbb, jrd_rel* relation, PageBitmap* bitmap
 		return number;
 	}
 
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 	WIN window(-1);
 	SLONG pages[PREFETCH_MAX_PAGES];
 
@@ -1823,7 +1823,7 @@ void DPM_scan_pages( thread_db* tdbb)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 #ifdef VIO_DEBUG
 	if (debug_flag > DEBUG_TRACE_ALL)
@@ -1907,7 +1907,7 @@ void DPM_store( thread_db* tdbb, record_param* rpb, PageStack& stack, USHORT typ
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
 #ifdef VIO_DEBUG
@@ -1988,7 +1988,7 @@ RecordNumber DPM_store_blob(thread_db* tdbb, blb* blob, Record* record)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
 	record_param rpb;
@@ -2083,7 +2083,7 @@ void DPM_rewrite_header( thread_db* tdbb, record_param* rpb)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
 #ifdef VIO_DEBUG
@@ -2134,7 +2134,7 @@ void DPM_update( thread_db* tdbb, record_param* rpb, PageStack* stack,
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
 #ifdef VIO_DEBUG
@@ -2382,7 +2382,7 @@ static void fragment(
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
 #ifdef VIO_DEBUG
@@ -2547,7 +2547,7 @@ static void extend_relation( thread_db* tdbb, jrd_rel* relation, WIN * window)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 	RelationPages* relPages = relation->getPages(tdbb);
 	WIN pp_window(relPages->rel_pg_space_id, -1), 
@@ -2713,7 +2713,7 @@ static UCHAR* find_space(thread_db*	tdbb,
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
 	const SSHORT aligned_size = ROUNDUP(size, ODS_ALIGNMENT);
@@ -2923,7 +2923,7 @@ static rhd* locate_space(
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
 	jrd_rel* relation = rpb->rpb_relation;
@@ -3033,7 +3033,7 @@ static void mark_full( thread_db* tdbb, record_param* rpb)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
 #ifdef VIO_DEBUG
@@ -3160,7 +3160,7 @@ static void store_big_record(thread_db* tdbb, record_param* rpb,
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
 #ifdef VIO_DEBUG

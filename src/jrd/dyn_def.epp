@@ -145,7 +145,7 @@ void DYN_define_collation( Global* gbl, const UCHAR** ptr)
  **************************************/
 
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 	const USHORT major_version  = dbb->dbb_ods_version;
 	const USHORT minor_original = dbb->dbb_minor_original;
@@ -421,7 +421,7 @@ void DYN_define_constraint(Global*		gbl,
 	UCHAR ri_action = 0;
 
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 	GET_STRING(ptr, constraint_name);
 	if (constraint_name.length() == 0)
@@ -803,7 +803,7 @@ void DYN_define_dimension(Global*		gbl,
  **************************************/
 
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 	jrd_req* request = CMP_find_request(tdbb, drq_s_dims, DYN_REQUESTS);
 
 	bool b_ending_store = false;
@@ -881,7 +881,7 @@ void DYN_define_exception( Global* gbl, const UCHAR** ptr)
 	Firebird::MetaName exception_name;
 
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 	GET_STRING(ptr, exception_name);
 
@@ -960,9 +960,9 @@ void DYN_define_file(Global*		gbl,
 	SSHORT id;
 
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
-	if (!tdbb->tdbb_attachment->locksmith())
+	if (!tdbb->getAttachment()->locksmith())
 	{
 		ERR_post(isc_adm_task_denied, 0);
 	}
@@ -1085,10 +1085,10 @@ void DYN_define_difference(Global*		gbl,
 	SSHORT id = -1;
 
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 	jrd_req* request = NULL;
 
-	if (!tdbb->tdbb_attachment->locksmith())
+	if (!tdbb->getAttachment()->locksmith())
 	{
 		ERR_post(isc_adm_task_denied, 0);
 	}
@@ -1169,7 +1169,7 @@ void DYN_define_filter( Global* gbl, const UCHAR** ptr)
  **************************************/
 
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 	Firebird::MetaName filter_name;
 	GET_STRING(ptr, filter_name);
@@ -1263,7 +1263,7 @@ void DYN_define_function( Global* gbl, const UCHAR** ptr)
  **************************************/
 
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 	Firebird::MetaName function_name;
 	GET_STRING(ptr, function_name);
@@ -1366,7 +1366,7 @@ void DYN_define_function_arg(Global* gbl, const UCHAR** ptr, Firebird::MetaName*
 	jrd_req* request = NULL;
 
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 	const USHORT major_version  = dbb->dbb_ods_version;
 	const USHORT minor_original = dbb->dbb_minor_original;
@@ -1494,7 +1494,7 @@ void DYN_define_generator( Global* gbl, const UCHAR** ptr)
  **************************************/
 
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 	Firebird::MetaName generator_name;
 	GET_STRING(ptr, generator_name);
@@ -1558,7 +1558,7 @@ void DYN_define_global_field(Global*		gbl,
  **************************************/
 
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 	UCHAR verb;
 	Firebird::MetaName global_field_name;
@@ -1840,7 +1840,7 @@ void DYN_define_index(Global*		gbl,
 	}
 
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 	GET_STRING(ptr, index_name);
 
@@ -2430,7 +2430,7 @@ void DYN_define_local_field(Global*		gbl,
 	SLONG fld_pos;
 
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 	Firebird::MetaName local_field_name;
 	GET_STRING(ptr, local_field_name);
@@ -2763,7 +2763,7 @@ void DYN_define_parameter( Global* gbl, const UCHAR** ptr, Firebird::MetaName* p
 	const UCHAR* default_source_ptr = NULL;
 
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 	Firebird::MetaName parameter_name;
 	GET_STRING(ptr, parameter_name);
@@ -3080,7 +3080,7 @@ void DYN_define_procedure( Global* gbl, const UCHAR** ptr)
 	Firebird::MetaName procedure_name;
 
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 	GET_STRING(ptr, procedure_name);
 
@@ -3268,7 +3268,7 @@ void DYN_define_relation( Global* gbl, const UCHAR** ptr)
 	Firebird::MetaName field_name; // unused, only passed empty to DYN_execute again.
 
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 	GET_STRING(ptr, relation_name);
 
@@ -3548,7 +3548,7 @@ void DYN_define_role( Global* gbl, const UCHAR** ptr)
 	jrd_req* request = NULL;
 
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 	const USHORT major_version  = dbb->dbb_ods_version;
 	const USHORT minor_original = dbb->dbb_minor_original;
@@ -3559,7 +3559,7 @@ void DYN_define_role( Global* gbl, const UCHAR** ptr)
 		ERR_punt();
 	}
 
-	Firebird::MetaName owner_name(tdbb->tdbb_attachment->att_user->usr_user_name);
+	Firebird::MetaName owner_name(tdbb->getAttachment()->att_user->usr_user_name);
 	owner_name.upper7();
 
 	Firebird::MetaName role_name;
@@ -3672,7 +3672,7 @@ void DYN_define_security_class( Global* gbl, const UCHAR** ptr)
  **************************************/
 
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 	jrd_req* request = CMP_find_request(tdbb, drq_s_classes, DYN_REQUESTS);
 
 	bool b_ending_store = false;
@@ -3746,7 +3746,7 @@ void DYN_define_sql_field(Global*		gbl,
 	SLONG fld_pos;
 
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 	Firebird::MetaName sql_field_name;
 	GET_STRING(ptr, sql_field_name);
@@ -4048,7 +4048,7 @@ void DYN_define_shadow( Global* gbl, const UCHAR** ptr)
  **************************************/
 
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 	bool found = false;
 
@@ -4124,7 +4124,7 @@ void DYN_define_trigger(Global*						gbl,
  **************************************/
 
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 	Firebird::MetaName t;
 
@@ -4253,7 +4253,7 @@ void DYN_define_trigger(Global*						gbl,
 			}
 		}
 
-		if (X.RDB$RELATION_NAME.NULL && !tdbb->tdbb_attachment->locksmith())
+		if (X.RDB$RELATION_NAME.NULL && !tdbb->getAttachment()->locksmith())
 			ERR_post(isc_adm_task_denied, 0);
 
 		b_ending_store = true;
@@ -4321,7 +4321,7 @@ void DYN_define_trigger_msg(Global* gbl, const UCHAR** ptr, const Firebird::Meta
  **************************************/
 
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 	jrd_req* request = CMP_find_request(tdbb, drq_s_trg_msgs, DYN_REQUESTS);
 
@@ -4395,7 +4395,7 @@ void DYN_define_view_relation( Global* gbl, const UCHAR** ptr, const Firebird::M
  **************************************/
 
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 	fb_assert(view);
 	if (view->length() == 0) {
@@ -4512,7 +4512,7 @@ static void check_unique_name(	thread_db*	tdbb,
 	bool found = false;
 
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 	jrd_req* request = NULL;
 
@@ -4589,7 +4589,7 @@ static bool find_field_source(thread_db*	tdbb,
  **************************************/
 
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 	jrd_req* request = NULL;
 
@@ -4716,7 +4716,7 @@ bool is_it_user_name(Global* gbl, const Firebird::MetaName& role_name, thread_db
 	USHORT request_id;
 
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 	bool found = false;
 
 	try {
@@ -4776,7 +4776,7 @@ bool is_it_user_name(Global* gbl, const Firebird::MetaName& role_name, thread_db
 static rel_t get_relation_type(thread_db* tdbb, Global* gbl,
 							   const Firebird::MetaName& rel_name)
 {
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 	const USHORT major_version  = dbb->dbb_ods_version;
 	const USHORT minor_original = dbb->dbb_minor_original;
@@ -4821,7 +4821,7 @@ static void check_foreign_key_temp_scope(thread_db* tdbb, Global* gbl,
  *	relation and master relation (owner of given PK\UK index)
  *
  **********************************************************/
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 	jrd_req* request = CMP_find_request(tdbb, drq_l_rel_info, DYN_REQUESTS);
 	bool bErr = false;
@@ -4890,7 +4890,7 @@ static void check_relation_temp_scope(thread_db* tdbb, Global* gbl,
  *	created child relation and all its master relations
  *
  ****************************************************/
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 	if (child_type != rel_persistent &&
 		child_type != rel_global_temp_preserve &&
