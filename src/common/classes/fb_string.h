@@ -218,6 +218,11 @@ namespace Firebird
 		void reserve(size_type n = 0);
 		void resize(size_type n, char_type c = ' ');
 
+		inline pointer getBuffer(size_t l)
+		{
+			return baseAssign(l);
+		}
+
 		inline size_type copy_from(pointer s, size_type n, size_type pos = 0) const
 		{
 			AdjustRange(length(), pos, n);
