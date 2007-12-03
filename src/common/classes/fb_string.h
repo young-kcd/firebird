@@ -222,13 +222,6 @@ namespace Firebird
 			return baseAssign(l);
 		}
 
-		inline size_type copy_from(pointer s, size_type n, size_type pos = 0) const
-		{
-			AdjustRange(length(), pos, n);
-			memcpy(s, c_str() + pos, n);
-			return n;
-		}
-
 /*		inline void swap(AbstractString& str) {
 			Storage *tmp = StringData;
 			StringData = str.StringData;
