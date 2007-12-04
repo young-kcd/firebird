@@ -1189,6 +1189,7 @@ Fetches = !f', NULL, NULL, 'c_pg');
 (1184, 'cvc', '2006-10-01 03:18:30', 8, 18, 'could not find UNIQUE or PRIMARY KEY constraint with specified columns', NULL, NULL, 'c_pg');
 (1185, 'cvc', '2006-10-01 03:20:51', 8, 20, 'could not find PRIMARY KEY index in specified table', NULL, NULL, 'c_pg');
 (1186, 'cvc', '2007-10-03 05:28:09', 17, 102, '               TRIGGER, VERSION, VIEW', NULL, NULL, 'c_pg');
+(1187, 'cvc', '2007-11-20 02:42:50', 0, 76, 'column @1 is not defined in table @1', NULL, 'An undefined external function was referenced in blr.', 'c_pg')
 stop
 
 COMMIT WORK;

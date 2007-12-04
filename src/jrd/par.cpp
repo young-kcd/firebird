@@ -1309,7 +1309,7 @@ static jrd_nod* par_field(thread_db* tdbb, CompilerScratch* csb, SSHORT blr_oper
 			par_name(csb, name);
 			if ((id = find_proc_field(procedure, name)) == -1)
 				error(csb,
-					  isc_fldnotdef,
+					  isc_fldnotdef2,
 					  isc_arg_string, ERR_cstring(name),
 					  isc_arg_string, procedure->prc_name.c_str(), 0);
 		}

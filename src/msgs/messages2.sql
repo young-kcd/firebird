@@ -151,7 +151,7 @@ to trap for this condition.', 'The operating system returned an error.');
 ('badodsver', NULL, NULL, NULL, 0, 74, NULL, 'incompatible version of on-disk structure', 'Look further in the status vector for more detail
 and fix the error.', 'Some dynamic SQL error occured - more to follow');
 ('relnotdef', NULL, NULL, NULL, 0, 75, NULL, 'table @1 is not defined', NULL, NULL);
-('fldnotdef', NULL, NULL, NULL, 0, 76, NULL, 'column @1 is not defined in table @1', NULL, 'An undefined external function was referenced in blr.');
+('fldnotdef', NULL, NULL, NULL, 0, 76, NULL, 'column @1 is not defined in table @2', NULL, 'An undefined field was referenced in blr.');
 ('dirtypage', NULL, NULL, NULL, 0, 77, NULL, 'internal error', NULL, 'An external function was defined but was incompatible with either the
 number or types of arguments given.');
 ('waifortra', NULL, NULL, NULL, 0, 78, NULL, 'internal error', NULL, NULL);
@@ -664,6 +664,7 @@ COMMIT WORK;
 ('not_valid_for', 'EVL_validate', 'evl.cpp', NULL, 0, 560, NULL, 'validation error for @1, value "@2"', NULL, NULL);
 ('need_difference', 'BackupManager::begin_backup', 'nbak.cpp', NULL, 0, 561, NULL, 'Difference file name should be set explicitly for database on raw device', NULL, NULL);
 ('long_login', 'getUserInfo', 'jrd.cpp', NULL, 0, 562, NULL, 'Login name too long (@1 characters, maximum allowed @2)', NULL, NULL);
+('fldnotdef2', NULL, NULL, NULL, 0, 563, NULL, 'column @1 is not defined in procedure @2', NULL, 'An undefined field was referenced in blr.');
 -- QLI
 (NULL, NULL, NULL, NULL, 1, 0, NULL, 'expected type', NULL, NULL);
 (NULL, NULL, NULL, NULL, 1, 1, NULL, 'bad block type', NULL, NULL);

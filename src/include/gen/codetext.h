@@ -584,6 +584,7 @@ static const struct {
 	{"not_valid_for", 335544880},
 	{"need_difference", 335544881},
 	{"long_login", 335544882},
+	{"fldnotdef2", 335544883},
 	{"gfix_db_name", 335740929},
 	{"gfix_invalid_sw", 335740930},
 	{"gfix_incmp_sw", 335740932},
