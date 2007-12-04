@@ -1,3 +1,18 @@
+2007-12-03 21:58  hvlad
+
+	* firebird2/: builds/install/misc/firebird.conf (1.20.4.5),
+	src/common/config/config.cpp (1.66.4.5), src/common/config/config.h
+	(1.38.4.2), src/dsql/pass1.cpp (1.260.2.8):
+
+	Backport CORE-1625 : Implement new setting to relax strict SQL
+	standard's alias checking rules
+
+2007-12-03 21:48  hvlad
+
+	* firebird2/src/common/classes/fb_string.h (1.5.2.1):
+
+	Backported missed method from HEAD
+
 2007-11-28 14:12  alexpeshkoff
 
 	* firebird2/src/alice/alice.h (1.49.2.3):
