@@ -86,6 +86,7 @@ private:
 	SINT64 values[TOTAL_ITEMS];
 	// This dummy RuntimeStatistics is used instead of missing elements in tdbb,
 	// helping us avoid conditional checks in time-critical places of code.
+	// Values of it contain actually garbage - don't be surprised when debugging.
 	static RuntimeStatistics dummy;
 };
 
