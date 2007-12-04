@@ -1,3 +1,51 @@
+2007-12-03 17:11  alexpeshkoff
+
+	*
+	firebird2/builds/install/arch-specific/linux/misc/firebird.init.d.slackware.in
+	(1.4):
+
+	Multi-instancing in SlackWare
+
+2007-12-03 16:48  alexpeshkoff
+
+	*
+	firebird2/builds/install/arch-specific/linux/misc/firebird.init.d.generic.in
+	(1.7):
+
+	Comment
+
+2007-12-03 16:46  alexpeshkoff
+
+	* firebird2/src/jrd/: Collation.cpp (1.9), DataTypeUtil.cpp (1.13),
+	DatabaseSnapshot.cpp (1.41), DebugInterface.cpp (1.5),
+	GlobalRWLock.cpp (1.9), Optimizer.cpp (1.78), Relation.cpp (1.7),
+	RuntimeStatistics.cpp (1.5), RuntimeStatistics.h (1.7),
+	SysFunction.cpp (1.31), VirtualTable.cpp (1.7), blb.cpp (1.153),
+	blob_filter.cpp (1.33), btr.cpp (1.202), cch.cpp (1.175), cmp.cpp
+	(1.269), cvt.cpp (1.84), cvt2.cpp (1.56), dfw.epp (1.218), dmp.cpp
+	(1.33), dpm.epp (1.74), dyn.epp (1.110), dyn_def.epp (1.159),
+	dyn_del.epp (1.73), dyn_mod.epp (1.91), dyn_util.epp (1.46),
+	err.cpp (1.68), evl.cpp (1.241), exe.cpp (1.228),
+	execute_statement.cpp (1.26), ext.cpp (1.75), fun.epp (1.81),
+	functions.cpp (1.30), grant.epp (1.59), idx.cpp (1.125), inf.cpp
+	(1.79), ini.epp (1.91), intl.cpp (1.99), intl.h (1.18), jrd.cpp
+	(1.356), jrd.h (1.201), lck.cpp (1.67), met.epp (1.227), mov.cpp
+	(1.32), nav.cpp (1.69), nbak.cpp (1.72), opt.cpp (1.301), pag.cpp
+	(1.155), par.cpp (1.178), pcmet.epp (1.44), qatest.cpp (1.19),
+	rlck.cpp (1.38), rse.cpp (1.139), scl.epp (1.86), sdw.cpp (1.70),
+	shut.cpp (1.49), sort.cpp (1.104), tpc.cpp (1.29), tra.cpp (1.144),
+	validation.cpp (1.30), vio.cpp (1.196), os/vms/extvms.cpp (1.29):
+
+	Optimized RuntimeStaticstics (and related part of ThreadDb) for
+	performance - some tests run 25faster
+
+2007-12-03 14:29  alexpeshkoff
+
+	* firebird2/src/common/classes/fb_string.h (1.11):
+
+	Dropped method, compliant with STL's copy(), but never used due to
+	presence of much better copyTo()
+
 2007-11-30 15:05  mkubecek
 
 	* firebird2/src/jrd/RuntimeStatistics.h (1.6):
