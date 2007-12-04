@@ -210,7 +210,8 @@ static bool parse_args(LPCSTR lpszArgs, TEXT* instance)
 
 					if (delimited) {
 						char* pi = instance;
-						while (*p && *p != '"') {
+						const char* pend = instance + sizeof(instance) - 1;
+						while (*p && *p != '"' && pi < pend) {
 							*pi++ = *p++;
 						}
 						*pi++ = '\0';
@@ -220,7 +221,8 @@ static bool parse_args(LPCSTR lpszArgs, TEXT* instance)
 					else {
 						if (*p && *p != '-') {
 							char* pi = instance;
-							while (*p && *p != ' ') {
+							const char* pend = instance + sizeof(instance) - 1;
+							while (*p && *p != ' ' && pi < pend) {
 								*pi++ = *p++;
 							}
 							*pi++ = '\0';

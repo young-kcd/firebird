@@ -617,16 +617,24 @@ static HANDLE parse_args( LPCSTR lpszArgs, USHORT * pserver_flag)
 					while (*p && *p == ' ')
 						p++;
 					if (*p) {
-						char *pi = protocol_inet, *pw = protocol_wnet;
+						// Assumed the buffer size for both protocols may differ
+						// in the future, hence I did generic code.
+						char* pi = protocol_inet;
+						const char* piend = protocol_inet + sizeof(protocol_inet) - 1;
+						char* pw = protocol_wnet;
+						const char* pwend = protocol_wnet + sizeof(protocol_wnet) - 1;
 
 						*pi++ = '/';
 						*pw++ = '\\';
 						*pw++ = '\\';
 						*pw++ = '.';
 						*pw++ = '@';
-						while (*p && *p != ' ') {
-							*pi++ = *p;
-							*pw++ = *p++;
+						while (*p && *p != ' ')
+						{
+							if (pi < piend)
+								*pi++ = *p;
+							if (pw < pwend)
+								*pw++ = *p++;
 						}
 						*pi++ = '\0';
 						*pw++ = '\0';
@@ -646,8 +654,9 @@ static HANDLE parse_args( LPCSTR lpszArgs, USHORT * pserver_flag)
 						delimited = true;
 					}
 					if (delimited) {
-						char *pi = instance;
-						while (*p && *p != '"') {
+						char* pi = instance;
+						const char* pend = instance + sizeof(instance) - 1;
+						while (*p && *p != '"' && pi < pend) {
 							*pi++ = *p++;
 						}
 						*pi++ = '\0';
@@ -656,8 +665,9 @@ static HANDLE parse_args( LPCSTR lpszArgs, USHORT * pserver_flag)
 					}
 					else {
 						if (*p && *p != '-') {
-							char *pi = instance;
-							while (*p && *p != ' ') {
+							char* pi = instance;
+							const char* pend = instance + sizeof(instance) - 1;
+							while (*p && *p != ' ' && pi < pend) {
 								*pi++ = *p++;
 							}
 							*pi++ = '\0';
