@@ -1,3 +1,70 @@
+2007-12-05 01:03  asfernandes
+
+	* firebird2/src/jrd/: RuntimeStatistics.h (1.9), cch.cpp (1.176),
+	cmp.cpp (1.270), cvt.cpp (1.85), dmp.cpp (1.34), dyn.epp (1.111),
+	evl.cpp (1.242), exe.cpp (1.230), execute_statement.cpp (1.27),
+	fun.epp (1.82), jrd.h (1.202), par.cpp (1.180), rse.cpp (1.140):
+
+	Misc
+
+2007-12-04 14:58  alexpeshkoff
+
+	* firebird2/doc/README.raw_devices (1.4):
+
+	misc
+
+2007-12-04 14:47  alexpeshkoff
+
+	* firebird2/src/jrd/RuntimeStatistics.h (1.8):
+
+	Comment
+
+2007-12-04 14:44  alexpeshkoff
+
+	* firebird2/src/jrd/exe.cpp (1.229):
+
+	Fixed possible tdbb state restore problem, noticed by Claudio
+
+2007-12-04 11:05  robocop
+
+	* firebird2/: src/include/gen/codetext.h (1.70),
+	src/include/gen/iberror.h (1.71), src/include/gen/msgs.h (1.89),
+	src/include/gen/rdb_codes.h (1.67), src/include/gen/sql_code.h
+	(1.75), src/msgs/facilities2.sql (1.16), src/msgs/history2.sql
+	(1.5), src/msgs/messages2.sql (1.20), src/msgs/system_errors2.sql
+	(1.12), lang_helpers/gds_codes.ftn (1.62),
+	lang_helpers/gds_codes.pas (1.62), src/jrd/par.cpp (1.179):
+
+	Fixed the message column @1 is not defined in table @1 and added a
+	new one for unknown field in procedure (with Dmitry's permission).
+
+2007-12-04 10:59  robocop
+
+	* firebird2/src/: iscguard/iscguard.cpp (1.53),
+	remote/os/win32/srvr_w32.cpp (1.41):
+
+	I decided to close some exotic (and probably irrelevant) buffer
+	overruns.
+
+2007-12-04 09:36  robocop
+
+	* firebird2/builds/win32/msvc6/Firebird2.dsw (1.43):
+
+	Follow VC8 changes.
+
+2007-12-04 09:29  dimitr
+
+	* firebird2/doc/sql.extensions/: README.context_variables (1.5),
+	README.exception_handling (1.2):
+
+	Fixed docs.
+
+2007-12-04 09:23  robocop
+
+	* firebird2/doc/sql.extensions/README.db_triggers.txt (1.7):
+
+	Misc.
+
 2007-12-03 17:11  alexpeshkoff
 
 	*
