@@ -325,7 +325,7 @@ RecordBitmap** EVL_bitmap(thread_db* tdbb, jrd_nod* node, RecordBitmap* bitmap_a
 
 	case nod_bit_dbkey:
 		{
-			impure_inversion* impure = (impure_inversion*) ((SCHAR *) tdbb->getRequest() + node->nod_impure);
+			impure_inversion* impure = (impure_inversion*) ((SCHAR*) tdbb->getRequest() + node->nod_impure);
 			RecordBitmap::reset(impure->inv_bitmap);
 			const dsc* desc = EVL_expr(tdbb, node->nod_arg[0]);
 
@@ -348,7 +348,7 @@ RecordBitmap** EVL_bitmap(thread_db* tdbb, jrd_nod* node, RecordBitmap* bitmap_a
 
 	case nod_index:
 		{
-			impure_inversion* impure = (impure_inversion*) ((SCHAR *) tdbb->getRequest() + node->nod_impure);
+			impure_inversion* impure = (impure_inversion*) ((SCHAR*) tdbb->getRequest() + node->nod_impure);
 			RecordBitmap::reset(impure->inv_bitmap);
 			BTR_evaluate(tdbb,
 						 reinterpret_cast<IndexRetrieval*>(node->nod_arg[e_idx_retrieval]),
@@ -4417,11 +4417,8 @@ static dsc* record_version(thread_db* tdbb, const jrd_nod* node, impure_value* i
  * to check equality of record version will be forced to evaluate to true.
  */
 
-	if (tdbb->getRequest()->req_transaction->tra_number ==
-		rpb->rpb_transaction_nr)
-	{
+	if (tdbb->getRequest()->req_transaction->tra_number == rpb->rpb_transaction_nr)
 		request->req_flags |= req_same_tx_upd;
-	}
 	else
 	{
 		/* If the transaction is a commit retain, check if the record was

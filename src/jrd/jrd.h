@@ -920,10 +920,12 @@ public:
 	{
 		return database;
 	}
+
 	const Database* getDatabase() const
 	{
 		return database;
 	}
+
 	void setDatabase(Database* val)
 	{
 		database = val;
@@ -934,10 +936,12 @@ public:
 	{
 		return attachment;
 	}
+
 	const Attachment* getAttachment() const
 	{
 		return attachment;
 	}
+
 	void setAttachment(Attachment* val)
 	{
 		attachment = val;
@@ -948,20 +952,24 @@ public:
 	{
 		return transaction;
 	}
+
 	const jrd_tra* getTransaction() const
 	{
 		return transaction;
 	}
+
 	void setTransaction(jrd_tra* val);
 
 	jrd_req* getRequest()
 	{
 		return request;
 	}
+
 	const jrd_req* getRequest() const
 	{
 		return request;
 	}
+
 	void setRequest(jrd_req* val);
 
 	void bumpStats(const RuntimeStatistics::StatType index)

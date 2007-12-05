@@ -1335,13 +1335,17 @@ static jrd_nod* par_field(thread_db* tdbb, CompilerScratch* csb, SSHORT blr_oper
 				}
 				else {
 					if (tdbb->getAttachment()->att_flags & ATT_gbak_attachment)
+					{
 						warning(csb, isc_fldnotdef, isc_arg_string,
 								ERR_cstring(name), isc_arg_string,
 								relation->rel_name.c_str(), 0);
+					}
 					else if (relation->rel_name.length() > 0)
+					{
 						error(csb, isc_fldnotdef, isc_arg_string,
 							  ERR_cstring(name), isc_arg_string,
 							  relation->rel_name.c_str(), 0);
+					}
 					else
 						error(csb, isc_ctxnotdef, 0);
 				}
@@ -1432,10 +1436,12 @@ static jrd_nod* par_function(thread_db* tdbb, CompilerScratch* csb)
 
 	if (!homonyms)
 		if (tdbb->getAttachment()->att_flags & ATT_gbak_attachment)
+		{
 			warning(csb, isc_funnotdef,
 					isc_arg_string, ERR_cstring(name),
 					isc_arg_interpreted,
 					"module name or entrypoint could not be found", 0);
+		}
 		else {
 			csb->csb_running -= count;
 			error(csb, isc_funnotdef,
@@ -1875,13 +1881,17 @@ static jrd_nod* par_plan(thread_db* tdbb, CompilerScratch* csb)
 					idx_status == MET_object_inactive)
 				{
 					if (tdbb->getAttachment()->att_flags & ATT_gbak_attachment)
+					{
 						warning(csb, isc_indexname, isc_arg_string,
 								ERR_cstring(name), isc_arg_string,
 								relation->rel_name.c_str(), 0);
+					}
 					else
+					{
 						error(csb, isc_indexname, isc_arg_string,
 							  ERR_cstring(name), isc_arg_string,
 							  relation->rel_name.c_str(), 0);
+					}
 				}
 
 				/* save both the relation id and the index id, since
@@ -1940,13 +1950,17 @@ static jrd_nod* par_plan(thread_db* tdbb, CompilerScratch* csb)
 						idx_status == MET_object_inactive)
 					{
 						if (tdbb->getAttachment()->att_flags & ATT_gbak_attachment)
+						{
 							warning(csb, isc_indexname, isc_arg_string,
 									ERR_cstring(name), isc_arg_string,
 									relation->rel_name.c_str(), 0);
+						}
 						else
+						{
 							error(csb, isc_indexname, isc_arg_string,
 								  ERR_cstring(name), isc_arg_string,
 								  relation->rel_name.c_str(), 0);
+						}
 					}
 
 					/* save both the relation id and the index id, since

@@ -568,8 +568,8 @@ bool CCH_exclusive_attachment(thread_db* tdbb, USHORT level, SSHORT wait_flag)
 
 				found = true;
 				if (attachment->att_flags & ATT_exclusive_pending) {
-					tdbb->getAttachment()->att_flags &=
-						~ATT_exclusive_pending;
+					tdbb->getAttachment()->att_flags &= ~ATT_exclusive_pending;
+
 					if (wait_flag == LCK_WAIT) {
 						ERR_post(isc_deadlock, 0);
 					}

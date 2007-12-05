@@ -1353,8 +1353,7 @@ void CVT_move(const dsc* from, dsc* to, FPTR_ERROR err)
 				   date portion of the timestamp */
 
 				SLONG cur_date;
-				if (tdbb && (tdbb->getType() == ThreadData::tddDBB) &&
-					tdbb->getRequest())
+				if (tdbb && (tdbb->getType() == ThreadData::tddDBB) && tdbb->getRequest())
 				{
 					fb_assert(!tdbb->getRequest()->req_timestamp.isEmpty());
 					cur_date = tdbb->getRequest()->req_timestamp.value().timestamp_date;
@@ -1808,12 +1807,8 @@ static void datetime_to_text(const dsc* from, dsc* to, FPTR_ERROR err)
 			BUGCHECK i.e. ERR_bugcheck() which is not part of 
 			client library **/
 		tdbb = (thread_db*) ThreadData::getSpecific();
-		if (tdbb && (tdbb->getType() == ThreadData::tddDBB) &&
-			tdbb->getRequest())
-		{
-			version4 = (tdbb->getRequest()->req_flags & req_blr_version4) ?
-				true : false;
-		}
+		if (tdbb && (tdbb->getType() == ThreadData::tddDBB) && tdbb->getRequest())
+			version4 = (tdbb->getRequest()->req_flags & req_blr_version4) ? true : false;
 		ts.value() = *(GDS_TIMESTAMP *) from->dsc_address;
 		break;
 	default:

@@ -970,7 +970,7 @@ void DYN_rundown_request(jrd_req* handle, SSHORT id)
  **************************************/
 
 	thread_db* tdbb = JRD_get_thread_data();
-	Database*  dbb  = tdbb->getDatabase();
+	Database* dbb  = tdbb->getDatabase();
 
 	if (!handle) {
 		return;

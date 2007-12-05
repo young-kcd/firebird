@@ -66,6 +66,7 @@ public:
 	{
 		return values[index];
 	}
+
 	void reset();
 
 	void bumpValue(const StatType index)

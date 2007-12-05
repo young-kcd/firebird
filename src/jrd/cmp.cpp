@@ -2306,9 +2306,9 @@ void CMP_decrement_prc_use_count(thread_db* tdbb, jrd_prc* procedure)
 	// The procedure will be different than in dbb_procedures only if it is a
 	// floating copy, i.e. an old copy or a deleted procedure.
 	if ((procedure->prc_use_count == 0) &&
-		( (*tdbb->getDatabase()->dbb_procedures)[procedure->prc_id]
-		 //!= &procedure->prc_header))
-		 != procedure))
+		( (*tdbb->getDatabase()->dbb_procedures)[procedure->prc_id] !=
+		 	// &procedure->prc_header))
+		 	procedure))
 	{
 		if (procedure->prc_request) {
 			CMP_release(tdbb, procedure->prc_request);

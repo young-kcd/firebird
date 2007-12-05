@@ -135,7 +135,7 @@ void ExecuteStatement::Open(thread_db* tdbb, jrd_nod* sql, SSHORT nVars, bool Si
 	StartOfSqlOperator[sizeof(StartOfSqlOperator) - 1] = 0;
 
 	YValve::Attachment* temp_dbb = GetWhyAttachment(tdbb->tdbb_status_vector,
-								  tdbb->getAttachment());
+		tdbb->getAttachment());
 	if (!temp_dbb)
 		ERR_punt();
 

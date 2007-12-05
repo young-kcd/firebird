@@ -1008,8 +1008,10 @@ static void dmp_transactions(const tx_inv_page* page, ULONG sequence)
 			   "Transaction Inventory Page\t checksum %d\t generation %ld\n",
 			   ((PAG) page)->pag_checksum, ((PAG) page)->pag_generation);
 	if (tdbb->getTransaction())
+	{
 		fprintf(dbg_file, "\tCurrent transaction %d",
 				   tdbb->getTransaction()->tra_number);
+	}
 	else
 		fprintf(dbg_file, "\tCurrent transaction (NULL)");
 	if (sequence)

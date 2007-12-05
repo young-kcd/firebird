@@ -143,7 +143,7 @@ void RSE_close(thread_db* tdbb, RecordSource* rsb)
 	invalidate_child_rpbs(tdbb, rsb);
 
 	while (true) {
-		irsb_sort* impure = (irsb_sort*) ((UCHAR *) tdbb->getRequest() + rsb->rsb_impure);
+		irsb_sort* impure = (irsb_sort*) ((UCHAR*) tdbb->getRequest() + rsb->rsb_impure);
 		if (!(impure->irsb_flags & irsb_open))
 			return;
 
@@ -250,7 +250,7 @@ bool RSE_get_record(thread_db* tdbb, RecordSource* rsb, RSE_GET_MODE mode)
  **************************************/
 	SET_TDBB(tdbb);
 	jrd_req* request = tdbb->getRequest();
-	IRSB impure = (IRSB) ((UCHAR *) request + rsb->rsb_impure);
+	IRSB impure = (IRSB) ((UCHAR*) request + rsb->rsb_impure);
 
 #ifdef SCROLLABLE_CURSORS
 /* The mode RSE_get_next is a generic mode which requests that
@@ -1107,7 +1107,7 @@ static bool get_merge_fetch(
  **************************************/
 	SET_TDBB(tdbb);
 
-	irsb_mrg* impure = (irsb_mrg*) ((UCHAR *) tdbb->getRequest() + rsb->rsb_impure);
+	irsb_mrg* impure = (irsb_mrg*) ((UCHAR*) tdbb->getRequest() + rsb->rsb_impure);
 	irsb_mrg::irsb_mrg_repeat* tail = impure->irsb_mrg_rpt + stream;
 	const SSHORT m = tail->irsb_mrg_order;
 	tail = impure->irsb_mrg_rpt + m;
@@ -1202,7 +1202,7 @@ static bool get_merge_fetch(thread_db* tdbb, RecordSource* rsb, SSHORT stream)
  **************************************/
 	SET_TDBB(tdbb);
 
-	irsb_mrg* impure = (irsb_mrg*) ((UCHAR *) tdbb->getRequest() + rsb->rsb_impure);
+	irsb_mrg* impure = (irsb_mrg*) ((UCHAR*) tdbb->getRequest() + rsb->rsb_impure);
 	irsb_mrg::irsb_mrg_repeat* tail = impure->irsb_mrg_rpt + stream;
 	const SSHORT m = tail->irsb_mrg_order;
 	tail = impure->irsb_mrg_rpt + m;
@@ -2808,8 +2808,10 @@ static void open_merge(thread_db* tdbb, RecordSource* rsb, irsb_mrg* impure)
 		mfb->mfb_block_size = MAX(mfb->mfb_record_size, MERGE_BLOCK_SIZE);
 		mfb->mfb_blocking_factor = mfb->mfb_block_size / mfb->mfb_record_size;
 		if (!mfb->mfb_block_data)
+		{
 			mfb->mfb_block_data =
 				FB_NEW(*tdbb->getRequest()->req_pool) UCHAR[mfb->mfb_block_size];
+		}
 	}
 }
 

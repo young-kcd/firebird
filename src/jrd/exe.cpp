@@ -1161,11 +1161,11 @@ void EXE_unwind(thread_db* tdbb, jrd_req* request)
 				{
 					jrd_nod* node = request->req_exec_sta[i];
 					ExecuteStatement* impure =
-						(ExecuteStatement*)	((char *) request + node->nod_impure);
+						(ExecuteStatement*)	((char*) request + node->nod_impure);
 					impure->Close(tdbb);
 				}
 			}
-			catch(const Firebird::Exception&)
+			catch (const Firebird::Exception&)
 			{
 				tdbb->setRequest(old_request);
 				tdbb->setTransaction(old_transaction);

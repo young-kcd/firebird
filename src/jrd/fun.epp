@@ -507,9 +507,7 @@ void FUN_evaluate(UserFunction* function, jrd_nod* node, impure_value* value)
 							}
 							blob_id = *(bid*) input->dsc_address;
 						}
-						blob = BLB_open(tdbb,
-										tdbb->getRequest()->req_transaction,
-										&blob_id);
+						blob = BLB_open(tdbb, tdbb->getRequest()->req_transaction, &blob_id);
 					}
 					blob_stack.push(blob);
 					blob_desc->blob_get_segment = blob_get_segment;
