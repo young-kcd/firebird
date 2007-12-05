@@ -8057,7 +8057,7 @@ static dsql_fld* resolve_context( dsql_req* request, const dsql_str* qualifier,
 
 // If a context qualifier is present, make sure this is the proper context
 	if (qualifier && strcmp(reinterpret_cast<const char*>(qualifier->str_data), table_name)) {
-			return NULL;	
+		return NULL;
 	}
 
 // Lookup field in relation or procedure
