@@ -16,35 +16,43 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  */
-#ifndef ISCGUARD_H
-#define ISCGUARD_H
+#define GUARDIAN_APP_NAME		"Firebird Guardian"
+#define GUARDIAN_APP_LABEL		"Firebird Guardian"
+#define GUARDIAN_CLASS_NAME		"FB_Guard"
 
-static const char* GUARDIAN_APP_NAME		= "Firebird Guardian";
-static const char* GUARDIAN_APP_LABEL		= "Firebird Guardian";
-static const char* GUARDIAN_CLASS_NAME		= "FB_Guard";
-static const char* FBSERVER					= "fbserver.exe";
-static const char* GUARDIAN_HELP_FILE		= "fbserver.hlp";
+#define SS_EXECUTABLE			"fbserver.exe"
+#define CS_EXECUTABLE			"fb_inet_server.exe"
+#define FBSERVER \
+	((sw_arch == ARCH_SS) ? SS_EXECUTABLE : CS_EXECUTABLE)
+
+#define GUARDIAN_HELP_FILE "fbserver.hlp"
 
 /* Help Constants */
-const DWORD ibs_server_directory	= 8060;
-const DWORD ibs_guard_version		= 8080;
-const DWORD ibs_guard_log			= 8090;
+#define ibs_server_directory    8060
+#define ibs_guard_version       8080
+#define ibs_guard_log           8090
 
 #define WM_SWITCHICONS  WM_USER + 3
 
-const short START_ONCE		= 0;
-const short START_FOREVER	= 1;
+#define START_ONCE      0
+#define START_FOREVER   1
 
-const DWORD NORMAL_EXIT		= 0;
-const DWORD CRASHED			= (DWORD) -1;
+#define NORMAL_EXIT	0
+#define CRASHED		-1
+
+#ifdef VMS
+/* also defined in common.h, if this is changed remember to change common.h */
+#define STARTUP_ERROR   46
+#else /* if not VMS */
+/* also defined in common.h, if this is changed remember to change common.h */
+#define STARTUP_ERROR   2
+#endif /* VMS */
+#define args             args
 
 typedef void (*FPTR_VOID) ();
-
-struct log_info {
+typedef struct log_info {
 	char log_action[25];
 	char log_date[25];
 	char log_time[25];
-	log_info* next;
-};
-
-#endif // ISCGUARD_H
+	struct log_info *next;
+} LOG_INFO;

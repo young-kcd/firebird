@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Access Method
  *	MODULE:		ext_proto.h
- *	DESCRIPTION:	Prototype header file for ext.cpp & extvms.cpp
+ *	DESCRIPTION:	Prototype header file for ext.c & extvms.c
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -21,39 +21,34 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef JRD_EXT_PROTO_H
-#define JRD_EXT_PROTO_H
+#ifndef _JRD_EXT_PROTO_H_
+#define _JRD_EXT_PROTO_H_
 
-namespace Jrd {
-	class ExternalFile;
-	class jrd_tra;
-	class RecordSource;
-	class jrd_rel;
-	class OptimizerBlk;
-	class jrd_nod;
-	struct record_param;
-	struct bid;
-}
-
-void	EXT_close(Jrd::RecordSource*);
-void	EXT_erase(Jrd::record_param*, Jrd::jrd_tra*);
-Jrd::ExternalFile*	EXT_file(Jrd::jrd_rel*, const TEXT*, Jrd::bid*);
-void	EXT_fini(Jrd::jrd_rel*, bool);
-bool	EXT_get(Jrd::thread_db*, Jrd::RecordSource*);
-void	EXT_modify(Jrd::record_param*, Jrd::record_param*, Jrd::jrd_tra*);
-
-#ifdef VMS
-int	EXT_open(Jrd::RecordSource*);
-#else
-void	EXT_open(Jrd::thread_db*, Jrd::RecordSource*);
+#ifdef __cplusplus
+extern "C" {
 #endif
-Jrd::RecordSource*	EXT_optimize(Jrd::OptimizerBlk*, SSHORT, Jrd::jrd_nod**);
-void	EXT_ready(Jrd::jrd_rel*);
-void	EXT_store(Jrd::thread_db*, Jrd::record_param*, Jrd::jrd_tra*);
-void	EXT_trans_commit(Jrd::jrd_tra*);
-void	EXT_trans_prepare(Jrd::jrd_tra*);
-void	EXT_trans_rollback(Jrd::jrd_tra*);
-void	EXT_trans_start(Jrd::jrd_tra*);
 
-#endif // JRD_EXT_PROTO_H
+extern void EXT_close(class Rsb *);
+extern void EXT_erase(struct rpb *, int *);
+extern struct ext *EXT_file(struct jrd_rel *, const TEXT *, SLONG *);
+extern void EXT_fini(struct jrd_rel *);
+extern int EXT_get(class Rsb *);
+extern void EXT_modify(struct rpb *, struct rpb *, int *);
+#ifdef VMS
+extern int EXT_open(class Rsb *);
+#else
+extern void EXT_open(class Rsb *);
+#endif
+extern class Rsb *EXT_optimize(class Opt *, SSHORT, struct jrd_nod **);
+extern void EXT_ready(struct jrd_rel *);
+extern void EXT_store(struct rpb *, int *);
+extern void EXT_trans_commit(struct jrd_tra *);
+extern void EXT_trans_prepare(struct jrd_tra *);
+extern void EXT_trans_rollback(struct jrd_tra *);
+extern void EXT_trans_start(struct jrd_tra *);
 
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
+
+#endif /* _JRD_EXT_PROTO_H_ */

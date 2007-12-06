@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Backup and Restore program  
  *	MODULE:		burp_proto.h
- *	DESCRIPTION:	Prototype header file for burp.cpp
+ *	DESCRIPTION:	Prototype header file for burp.c
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -21,31 +21,32 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef BURP_BURP_PROTO_H
-#define BURP_BURP_PROTO_H
+#ifndef _BURP_BURP_PROTO_H_
+#define _BURP_BURP_PROTO_H_
 
-#include "../jrd/thd.h"
-#include "../common/classes/MsgPrint.h"
-
-#ifdef SERVICE_THREAD
-THREAD_ENTRY_DECLARE BURP_main(THREAD_ENTRY_PARAM);
+#ifdef __cplusplus
+extern "C" {
 #endif
 
-void	BURP_abort(void);
-void	BURP_error(USHORT, bool, const MsgFormat::SafeArg& arg = MsgFormat::SafeArg());
-void	BURP_error(USHORT, bool, const char* str);
-void	BURP_error_redirect(const ISC_STATUS*, USHORT, const MsgFormat::SafeArg& arg = MsgFormat::SafeArg());
-void	BURP_msg_partial(USHORT, const MsgFormat::SafeArg& arg = MsgFormat::SafeArg());
-void	BURP_msg_put(USHORT, const MsgFormat::SafeArg& arg);
-const int BURP_MSG_GET_SIZE = 128; // Use it for buffers passed to this function.
-void	BURP_msg_get(USHORT, TEXT*, const MsgFormat::SafeArg& arg = MsgFormat::SafeArg());
-void	BURP_output_version(void*, const TEXT*);
-void	BURP_print(USHORT, const MsgFormat::SafeArg& arg = MsgFormat::SafeArg());
-void	BURP_print(USHORT, const char* str);
-void	BURP_print_status(const ISC_STATUS*);
-void	BURP_print_warning(const ISC_STATUS*);
-void	BURP_verbose(USHORT, const MsgFormat::SafeArg& arg = MsgFormat::SafeArg());
-void	BURP_verbose(USHORT, const char* str);
+typedef int (DLL_EXPORT* OUTPUTPROC) (SLONG, UCHAR *);
 
-#endif	//  BURP_BURP_PROTO_H
+extern int  BURP_gbak (int, char **, OUTPUTPROC, SLONG);
+extern void	BURP_abort (void);
+extern void	BURP_svc_error (USHORT, USHORT, void *, USHORT, void *, USHORT, void *, USHORT, void *, USHORT, void *);
+extern void	BURP_error (USHORT, const void*, const void*, const void*, const void*, const void*);
+extern void	BURP_print_status (ISC_STATUS *);
+extern void	BURP_error_redirect (ISC_STATUS *, USHORT, void*, void*);
+extern void	BURP_msg_partial (USHORT, const void*, const void*, const void*, const void*, const void*);
+extern void	BURP_msg_put (USHORT, const void*, const void*, const void*, const void*, const void*);
+extern void	BURP_msg_get (USHORT, void*, void*, void*, void*, void*, void*);
+extern void	BURP_output_version (TEXT *, TEXT *);
+extern void	BURP_print (USHORT, const void*, const void*, const void*, const void*, const void*);
+extern void	BURP_print_warning (ISC_STATUS*);
+extern void	BURP_verbose (USHORT, const void*, const void*, const void*, const void*, const void*);
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif	/*  _BURP_BURP_PROTO_H_  */
 

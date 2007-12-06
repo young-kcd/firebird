@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	Dynamic SQL runtime support
- *	MODULE:		utld.cpp
+ *	MODULE:		utld.c
  *	DESCRIPTION:	Utility routines for DSQL
  *
  * The contents of this file are subject to the Interbase Public
@@ -29,160 +29,53 @@
  *
  */
 
+/*
+$Id: utld.cpp,v 1.12 2003-04-10 06:14:59 aafemt Exp $
+*/
 
 #include "firebird.h"
-#include <stdio.h>
+#include "../jrd/ib_stdio.h"
 #include <string.h>
 #include "../dsql/dsql.h"
 #include "../dsql/sqlda.h"
-#include "../jrd/ibase.h"
+#include "../jrd/blr.h"
+#include "../jrd/gdsold.h"
+#include "../jrd/inf.h"
 #include "../jrd/align.h"
-#include "../jrd/constants.h"
 #include "../dsql/utld_proto.h"
 #include "../jrd/gds_proto.h"
 
-#if !defined(REQUESTER) && !defined(SUPERCLIENT)
-#include "../dsql/metd_proto.h"
-#endif
+
+extern "C" {
 
 
 static void cleanup(void *);
 static ISC_STATUS error_dsql_804(ISC_STATUS *, ISC_STATUS);
-static SLONG get_numeric_info(const SCHAR**);
-static SLONG get_string_info(const SCHAR**, SCHAR*, int);
+static SLONG get_numeric_info(SCHAR **);
+static SLONG get_string_info(SCHAR **, SCHAR *, int);
 #ifdef NOT_USED_OR_REPLACED
 #ifdef DEV_BUILD
 static void print_xsqlda(XSQLDA *);
 #endif
 #endif
-static void sqlvar_to_xsqlvar(const SQLVAR*, XSQLVAR*);
-static void xsqlvar_to_sqlvar(const XSQLVAR*, SQLVAR*);
+static void sqlvar_to_xsqlvar(SQLVAR *, XSQLVAR *);
+static void xsqlvar_to_sqlvar(XSQLVAR *, SQLVAR *);
 
-static inline void ch_stuff(BLOB_PTR*& p, const SCHAR value, bool& same_flag)
-{
-	if (*p == value) 
-		p++; 
-	else {
-		*p++ = value;
-		same_flag = false;
-	}
-}
+#ifndef PRINTF
+#define PRINTF	ib_printf
+#endif
 
-static inline void ch_stuff_word(BLOB_PTR*& p, const SSHORT value, bool& same_flag)
-{
-	ch_stuff(p, value & 255, same_flag);
-	ch_stuff(p, value >> 8, same_flag);
-}
+#define CH_STUFF(p,value)	{if ((SCHAR) *(p) == (SCHAR) (value)) (p)++; else\
+				{*(p)++ = (value); same_flag = FALSE;}}
+#define CH_STUFF_WORD(p,value)	{CH_STUFF (p, (value) & 255);\
+				CH_STUFF (p, (value) >> 8);}
 
 /* these statics define a round-robin data area for storing
    textual error messages returned to the user */
 
 static TEXT *DSQL_failures, *DSQL_failures_ptr;
 
-const int  DSQL_FAILURE_SPACE = 2048;
-
-/**
-	Parse response on isc_info_sql_select or isc_info_sql_bind 
-	request. Return pointer to the next byte after successfully
-	parsed info or NULL if error is encountered or info is truncated
-**/
-SCHAR* UTLD_skip_sql_info(SCHAR* info)
-{
-	if (*info != isc_info_sql_select &&
-		*info != isc_info_sql_bind)
-	{
-		return 0;
-	}
-
-	info++;
-
-	if (*info++ != isc_info_sql_describe_vars)
-		return 0;
-
-	get_numeric_info((const SCHAR**) &info);
-
-	// Loop over the variables being described
-	while (true)
-	{
-		SCHAR str[256]; // must be big enough to hold metadata name
-		SCHAR item = *info++;
-
-		switch (item)
-		{
-		case isc_info_end:
-			return info;
-
-		case isc_info_truncated:
-			return 0;
-
-		case isc_info_sql_select:
-		case isc_info_sql_bind:
-			return --info;
-
-		case isc_info_sql_describe_end:
-			break;
-
-		case isc_info_sql_sqlda_seq:
-		case isc_info_sql_type:
-		case isc_info_sql_sub_type:
-		case isc_info_sql_scale:
-		case isc_info_sql_length:
-			get_numeric_info((const SCHAR**) &info);
-			break;
-
-		case isc_info_sql_field:
-		case isc_info_sql_relation:
-		case isc_info_sql_owner:
-		case isc_info_sql_alias:
-			get_string_info((const SCHAR**) &info, str, sizeof(str));
-			break;
-
-		default:
-			return 0;
-		}
-	}
-
-	return 0;
-}
-
-
-/**
-
-	UTLD_char_length_to_byte_length
-	
-	@brief  Return max byte length necessary for a specified character length string
-	
-	@param lengthInChars
-	@param maxBytesPerChar
-	
-**/
-USHORT UTLD_char_length_to_byte_length(USHORT lengthInChars, USHORT maxBytesPerChar)
-{
-	return MIN((MAX_COLUMN_SIZE - sizeof(USHORT)) / maxBytesPerChar * maxBytesPerChar,
-			   lengthInChars * maxBytesPerChar);
-}
-
-
-ISC_STATUS UTLD_copy_status(const ISC_STATUS* from, ISC_STATUS* to)
-{
-/**************************************
- *
- *	c o p y _ s t a t u s
- *
- **************************************
- *
- * Functional description
- *	Copy a status vector.
- *
- **************************************/
-	const ISC_STATUS status = from[1];
-
-	const ISC_STATUS* const end = from + ISC_STATUS_LENGTH;
-	while (from < end)
-		*to++ = *from++;
-
-	return status;
-}
+#define DSQL_FAILURE_SPACE	2048
 
 
 /**
@@ -200,38 +93,39 @@ ISC_STATUS UTLD_copy_status(const ISC_STATUS* from, ISC_STATUS* to)
     @param return_index
 
  **/
-ISC_STATUS	UTLD_parse_sql_info(
-				ISC_STATUS* status,
-				USHORT dialect,
-				const SCHAR* info,
-				XSQLDA* xsqlda,
-				USHORT* return_index)
+ISC_STATUS DLL_EXPORT UTLD_parse_sql_info(
+									  ISC_STATUS * status,
+									  USHORT dialect,
+									  SCHAR * info,
+XSQLDA * xsqlda, USHORT * return_index)
 {
+	SCHAR item;
+	SSHORT n;
 	XSQLVAR *xvar, xsqlvar;
-	SQLDA* sqlda;
-	SQLVAR* qvar;
-	USHORT last_index = 0;
+	SQLDA *sqlda;
+	SQLVAR *var;
+	USHORT index, last_index;
 
 	if (return_index)
-		*return_index = 0;
+		*return_index = last_index = 0;
 
 	if (!xsqlda)
 		return 0;
 
 /* The first byte of the returned buffer is assumed to be either a
-   isc_info_sql_select or isc_info_sql_bind item.  The second byte
-   is assumed to be isc_info_sql_describe_vars. */
+   gds__info_sql_select or gds__info_sql_bind item.  The second byte
+   is assumed to be gds__info_sql_describe_vars. */
 
 	info += 2;
 
-	const SSHORT n = static_cast<SSHORT>(get_numeric_info(&info));
+	n = static_cast<SSHORT> (get_numeric_info(&info));
 	if (dialect >= DIALECT_xsqlda)
 	{
 		if (xsqlda->version != SQLDA_VERSION1)
-			return error_dsql_804(status, isc_dsql_sqlda_err);
+			return error_dsql_804(status, gds_dsql_sqlda_err);
 		xsqlda->sqld = n;
 
-		// If necessary, inform the application that more sqlda items are needed 
+		/* If necessary, inform the application that more sqlda items are needed */
 		if (xsqlda->sqld > xsqlda->sqln)
 			return 0;
 	}
@@ -240,7 +134,7 @@ ISC_STATUS	UTLD_parse_sql_info(
 		sqlda = (SQLDA *) xsqlda;
 		sqlda->sqld = n;
 
-		// If necessary, inform the application that more sqlda items are needed 
+		/* If necessary, inform the application that more sqlda items are needed */
 		if (sqlda->sqld > sqlda->sqln)
 			return 0;
 
@@ -248,85 +142,83 @@ ISC_STATUS	UTLD_parse_sql_info(
 		xvar = &xsqlvar;
 	}
 
-// Loop over the variables being described.
+/* Loop over the variables being described. */
 
-	USHORT index = 0;
-	while (*info != isc_info_end)
+	while (*info != gds_info_end)
 	{
-	   SCHAR item;
-	   while ((item = *info++) != isc_info_sql_describe_end)
+		while ((item = *info++) != gds_info_sql_describe_end)
 			switch (item)
 			{
-			case isc_info_sql_sqlda_seq:
+			case gds_info_sql_sqlda_seq:
 				index = static_cast<USHORT>(get_numeric_info(&info));
 				if (xsqlda)
 					xvar = xsqlda->sqlvar + index - 1;
 				else
 				{
-					qvar = sqlda->sqlvar + index - 1;
+					var = sqlda->sqlvar + index - 1;
 					memset(xvar, 0, sizeof(XSQLVAR));
 				}
 				break;
 
-			case isc_info_sql_type:
+			case gds_info_sql_type:
 				xvar->sqltype =
 					static_cast<SSHORT>(get_numeric_info(&info));
 				break;
 
-			case isc_info_sql_sub_type:
+			case gds_info_sql_sub_type:
 				xvar->sqlsubtype =
 					static_cast<SSHORT>(get_numeric_info(&info));
 				break;
 
-			case isc_info_sql_scale:
+			case gds_info_sql_scale:
 				xvar->sqlscale =
 					static_cast<SSHORT>(get_numeric_info(&info));
 				break;
 
-			case isc_info_sql_length:
+			case gds_info_sql_length:
 				xvar->sqllen =
 					static_cast<SSHORT>(get_numeric_info(&info));
 				break;
 
-			case isc_info_sql_field:
+			case gds_info_sql_field:
 				xvar->sqlname_length =
 					static_cast<SSHORT>(get_string_info(&info, xvar->sqlname, sizeof(xvar->sqlname)));
 				break;
 
-			case isc_info_sql_relation:
+			case gds_info_sql_relation:
 				xvar->relname_length =
 					static_cast<SSHORT>(get_string_info(&info, xvar->relname, sizeof(xvar->relname)));
 				break;
 
-			case isc_info_sql_owner:
+			case gds_info_sql_owner:
 				xvar->ownname_length =
 					static_cast<SSHORT>(get_string_info(&info, xvar->ownname, sizeof(xvar->ownname)));
 				break;
 
-			case isc_info_sql_alias:
+			case gds_info_sql_alias:
 				xvar->aliasname_length =
 					static_cast<SSHORT>
 					(get_string_info
 					 (&info, xvar->aliasname, sizeof(xvar->aliasname)));
 				break;
 
-			case isc_info_truncated:
+			case gds_info_truncated:
 				if (return_index)
 					*return_index = last_index;
 
 			default:
-				return error_dsql_804(status, isc_dsql_sqlda_err);
+				return error_dsql_804(status, gds_dsql_sqlda_err);
 			}
 
 		if (!xsqlda)
-			xsqlvar_to_sqlvar(xvar, qvar);
+			xsqlvar_to_sqlvar(xvar, var);
 
 		if (index > last_index)
 			last_index = index;
 	}
 
-	if (*info != isc_info_end)
-		return error_dsql_804(status, isc_dsql_sqlda_err);
+	if (*info != gds_info_end)
+		return error_dsql_804(status, gds_dsql_sqlda_err);
 
 	return FB_SUCCESS;
 }
@@ -352,20 +244,23 @@ ISC_STATUS	UTLD_parse_sql_info(
     @param clause
 
  **/
-ISC_STATUS	UTLD_parse_sqlda(
-				ISC_STATUS* status,
-				sqlda_sup* const dasup,
-				USHORT* blr_length,
-				USHORT* msg_type,
-				USHORT* msg_length,
-				USHORT dialect,
-				XSQLDA* xsqlda,
-				const USHORT clause)
+ISC_STATUS DLL_EXPORT UTLD_parse_sqlda(ISC_STATUS * status,
+								   DASUP dasup,
+								   USHORT * blr_length,
+								   USHORT * msg_type,
+								   USHORT * msg_length,
+								   USHORT dialect,
+								   XSQLDA * xsqlda,
+								   USHORT clause)
 {
-	USHORT n;
+	USHORT i, n, blr_len, par_count, dtype, same_flag, msg_len, len, align, offset,
+		null_offset;
+	SSHORT *null_ind;
 	XSQLVAR *xvar, xsqlvar;
-	SQLDA* sqlda;
-	SQLVAR* qvar;
+	SQLDA *sqlda;
+	SQLVAR *var;
+	BLOB_PTR *p;				/* one huge pointer per line for LIBS */
+	BLOB_PTR *msg_buf;			/* one huge pointer per line for LIBS */
 
 	if (!xsqlda)
 		n = 0;
@@ -373,7 +268,7 @@ ISC_STATUS	UTLD_parse_sqlda(
 		if (dialect >= DIALECT_xsqlda)
 		{
 			if (xsqlda->version != SQLDA_VERSION1)
-				return error_dsql_804(status, isc_dsql_sqlda_err);
+				return error_dsql_804(status, gds_dsql_sqlda_err);
 			n = xsqlda->sqld;
 		}
 		else
@@ -384,23 +279,18 @@ ISC_STATUS	UTLD_parse_sqlda(
 			xvar = &xsqlvar;
 		}
 
-
-	sqlda_sup::dasup_clause* const pClause = &dasup->dasup_clauses[clause];
-
 	if (!n)
 	{
-		// If there isn't an SQLDA, don't bother with anything else. 
+		/* If there isn't an SQLDA, don't bother with anything else. */
 
 		if (blr_length)
-			*blr_length = pClause->dasup_blr_length = 0;
+			*blr_length = dasup->dasup_clauses[clause].dasup_blr_length = 0;
 		if (msg_length)
 			*msg_length = 0;
 		if (msg_type)
 			*msg_type = 0;
 		return 0;
 	}
-
-	USHORT i;
 
 	if (msg_length)
 	{
@@ -417,21 +307,21 @@ ISC_STATUS	UTLD_parse_sqlda(
 		/* Make a quick pass through the SQLDA to determine the amount of
 		   blr that will be generated. */
 
-		USHORT blr_len = 8;
-		USHORT par_count = 0;
+		blr_len = 8;
+		par_count = 0;
 		if (xsqlda)
 			xvar = xsqlda->sqlvar - 1;
 		else
-			qvar = sqlda->sqlvar - 1;
+			var = sqlda->sqlvar - 1;
 		for (i = 0; i < n; i++)
 		{
 			if (xsqlda)
 				xvar++;
 			else {
-				qvar++;
-				sqlvar_to_xsqlvar(qvar, xvar);
+				var++;
+				sqlvar_to_xsqlvar(var, xvar);
 			}
-			const USHORT dtype = xvar->sqltype & ~1;
+			dtype = xvar->sqltype & ~1;
 			if (dtype == SQL_VARYING || dtype == SQL_TEXT)
 				blr_len += 3;
 			else
@@ -453,149 +343,144 @@ ISC_STATUS	UTLD_parse_sqlda(
 		/* Make sure the blr buffer is large enough.  If it isn't, allocate
 		   a new one. */
 
-		if (blr_len > pClause->dasup_blr_buf_len)
+		if (blr_len > dasup->dasup_clauses[clause].dasup_blr_buf_len)
 		{
-			if (pClause->dasup_blr) {
-				gds__free(pClause->dasup_blr);
+			if (dasup->dasup_clauses[clause].dasup_blr) {
+				gds__free(dasup->dasup_clauses[clause].dasup_blr);
 			}
-			pClause->dasup_blr =
+			dasup->dasup_clauses[clause].dasup_blr =
 				reinterpret_cast<char*>(gds__alloc((SLONG) blr_len));
-			// FREE: unknown
-			if (!pClause->dasup_blr)	// NOMEM:
-				return error_dsql_804(status, isc_virmemexh);
-			pClause->dasup_blr_buf_len = blr_len;
-			pClause->dasup_blr_length = 0;
+			/* FREE: unknown */
+			if (!dasup->dasup_clauses[clause].dasup_blr)	/* NOMEM: */
+				return error_dsql_804(status, gds_virmemexh);
+			memset(dasup->dasup_clauses[clause].dasup_blr, 0, blr_len);
+			dasup->dasup_clauses[clause].dasup_blr_buf_len = blr_len;
+			dasup->dasup_clauses[clause].dasup_blr_length = 0;
 		}
-		memset(pClause->dasup_blr, 0, blr_len);
 
-		bool same_flag = (blr_len == pClause->dasup_blr_length);
+		same_flag = (blr_len == dasup->dasup_clauses[clause].dasup_blr_length);
 
-		/* turn off same_flag because it breaks execute & execute2 when
-		   more than one statement is prepared */
+        /* turn off same_flag because it breaks execute & execute2 when
+           more than one statement is prepared */
 
-		same_flag = false;
+        same_flag = FALSE;
 
-		pClause->dasup_blr_length = blr_len;
+		dasup->dasup_clauses[clause].dasup_blr_length = blr_len;
 
 		/* Generate the blr for the message and at the same time, determine
 		   the size of the message buffer.  Allow for a null indicator with
 		   each variable in the SQLDA. */
 
-		// one huge pointer per line for LIBS
-		BLOB_PTR* p = reinterpret_cast<UCHAR*>(pClause->dasup_blr);
-
+		p = reinterpret_cast <UCHAR*>(dasup->dasup_clauses[clause].dasup_blr);
 	/** The define SQL_DIALECT_V5 is not available here, Hence using
 	constant 1.
-	**/
+    **/
 		if (dialect > 1) {
-			ch_stuff(p, blr_version5, same_flag);
-		}
-		else {
-			ch_stuff(p, blr_version4, same_flag);
-		}
-		//else if ((SCHAR) *(p) == (SCHAR) (blr_version4)) {
-		//	(p)++; 
-		//}
-		//else {
-		//	*(p)++ = (blr_version4); 
-		//	same_flag = false;
-		//}
-
-		ch_stuff(p, blr_begin, same_flag);
-		ch_stuff(p, blr_message, same_flag);
-		ch_stuff(p, 0, same_flag);
-		ch_stuff_word(p, par_count, same_flag);
-		USHORT msg_len = 0;
+			CH_STUFF(p, blr_version5)
+                }
+        else if ((SCHAR) *(p) == (SCHAR) (blr_version4)) {
+            (p)++; 
+        }
+        else {
+            *(p)++ = (blr_version4); 
+            same_flag = FALSE;
+        }
+        
+		CH_STUFF(p, blr_begin);
+		CH_STUFF(p, blr_message);
+		CH_STUFF(p, 0);
+		CH_STUFF_WORD(p, par_count);
+		msg_len = 0;
 		if (xsqlda)
 			xvar = xsqlda->sqlvar - 1;
 		else
-			qvar = sqlda->sqlvar - 1;
+			var = sqlda->sqlvar - 1;
 		for (i = 0; i < n; i++)
 		{
 			if (xsqlda)
 				xvar++;
 			else
 			{
-				qvar++;
-				sqlvar_to_xsqlvar(qvar, xvar);
+				var++;
+				sqlvar_to_xsqlvar(var, xvar);
 			}
-			USHORT dtype = xvar->sqltype & ~1;
-			USHORT len = xvar->sqllen;
+			dtype = xvar->sqltype & ~1;
+			len = xvar->sqllen;
 			switch (dtype)
 			{
 			case SQL_VARYING:
-				ch_stuff(p, blr_varying, same_flag);
-				ch_stuff_word(p, len, same_flag);
+				CH_STUFF(p, blr_varying);
+				CH_STUFF_WORD(p, len);
 				dtype = dtype_varying;
 				len += sizeof(USHORT);
 				break;
 			case SQL_TEXT:
-				ch_stuff(p, blr_text, same_flag);
-				ch_stuff_word(p, len, same_flag);
+				CH_STUFF(p, blr_text);
+				CH_STUFF_WORD(p, len);
 				dtype = dtype_text;
 				break;
 			case SQL_DOUBLE:
-				ch_stuff(p, blr_double, same_flag);
+				CH_STUFF(p, blr_double);
 				dtype = dtype_double;
 				break;
 			case SQL_FLOAT:
-				ch_stuff(p, blr_float, same_flag);
+				CH_STUFF(p, blr_float);
 				dtype = dtype_real;
 				break;
 			case SQL_D_FLOAT:
-				ch_stuff(p, blr_d_float, same_flag);
+				CH_STUFF(p, blr_d_float);
 				dtype = dtype_d_float;
 				break;
 			case SQL_TYPE_DATE:
-				ch_stuff(p, blr_sql_date, same_flag);
+				CH_STUFF(p, blr_sql_date);
 				dtype = dtype_sql_date;
 				break;
 			case SQL_TYPE_TIME:
-				ch_stuff(p, blr_sql_time, same_flag);
+				CH_STUFF(p, blr_sql_time);
 				dtype = dtype_sql_time;
 				break;
 			case SQL_TIMESTAMP:
-				ch_stuff(p, blr_timestamp, same_flag);
+				CH_STUFF(p, blr_timestamp);
 				dtype = dtype_timestamp;
 				break;
 			case SQL_BLOB:
-				ch_stuff(p, blr_quad, same_flag);
-				ch_stuff(p, 0, same_flag);
+				CH_STUFF(p, blr_quad);
+				CH_STUFF(p, 0);
 				dtype = dtype_blob;
 				break;
 			case SQL_ARRAY:
-				ch_stuff(p, blr_quad, same_flag);
-				ch_stuff(p, 0, same_flag);
+				CH_STUFF(p, blr_quad);
+				CH_STUFF(p, 0);
 				dtype = dtype_array;
 				break;
 			case SQL_LONG:
-				ch_stuff(p, blr_long, same_flag);
-				ch_stuff(p, xvar->sqlscale, same_flag);
+				CH_STUFF(p, blr_long);
+				CH_STUFF(p, xvar->sqlscale);
 				dtype = dtype_long;
 				break;
 			case SQL_SHORT:
-				ch_stuff(p, blr_short, same_flag);
-				ch_stuff(p, xvar->sqlscale, same_flag);
+				CH_STUFF(p, blr_short);
+				CH_STUFF(p, xvar->sqlscale);
 				dtype = dtype_short;
 				break;
 			case SQL_INT64:
-				ch_stuff(p, blr_int64, same_flag);
-				ch_stuff(p, xvar->sqlscale, same_flag);
+				CH_STUFF(p, blr_int64);
+				CH_STUFF(p, xvar->sqlscale);
 				dtype = dtype_int64;
 				break;
 			case SQL_QUAD:
-				ch_stuff(p, blr_quad, same_flag);
-				ch_stuff(p, xvar->sqlscale, same_flag);
+				CH_STUFF(p, blr_quad);
+				CH_STUFF(p, xvar->sqlscale);
 				dtype = dtype_quad;
 				break;
 			default:
-				return error_dsql_804(status, isc_dsql_sqlda_value_err);
+				return error_dsql_804(status, gds_dsql_sqlda_value_err);
 			}
 
-			ch_stuff(p, blr_short, same_flag);
-			ch_stuff(p, 0, same_flag);
+			CH_STUFF(p, blr_short);
+			CH_STUFF(p, 0);
 
-			USHORT align = type_alignments[dtype];
+			align = type_alignments[dtype];
 			if (align)
 				msg_len = FB_ALIGN(msg_len, align);
 			msg_len += len;
@@ -605,58 +490,57 @@ ISC_STATUS	UTLD_parse_sqlda(
 			msg_len += sizeof(SSHORT);
 		}
 
-		ch_stuff(p, blr_end, same_flag);
-		ch_stuff(p, blr_eoc, same_flag);
+		CH_STUFF(p, blr_end);
+		CH_STUFF(p, blr_eoc);
 
 		/* Make sure the message buffer is large enough.  If it isn't, allocate
 		   a new one. */
 
-		if (msg_len > pClause->dasup_msg_buf_len)
+		if (msg_len > dasup->dasup_clauses[clause].dasup_msg_buf_len)
 		{
-			if (pClause->dasup_msg)
-				gds__free(pClause->dasup_msg);
-			pClause->dasup_msg =
+			if (dasup->dasup_clauses[clause].dasup_msg)
+				gds__free(dasup->dasup_clauses[clause].dasup_msg);
+			dasup->dasup_clauses[clause].dasup_msg =
 				reinterpret_cast<char*>(gds__alloc((SLONG) msg_len));
-			// FREE: unknown
-			if (!pClause->dasup_msg)	// NOMEM:
-				return error_dsql_804(status, isc_virmemexh);
-			pClause->dasup_msg_buf_len = msg_len;
+			/* FREE: unknown */
+			if (!dasup->dasup_clauses[clause].dasup_msg)	/* NOMEM: */
+				return error_dsql_804(status, gds_virmemexh);
+			memset(dasup->dasup_clauses[clause].dasup_msg, 0, msg_len);
+			dasup->dasup_clauses[clause].dasup_msg_buf_len = msg_len;
 		}
-		memset(pClause->dasup_msg, 0, msg_len);
 
-		// Fill in the return values to the caller.
+		/* Fill in the return values to the caller. */
 
 		*blr_length = (same_flag) ? 0 : blr_len;
 		*msg_length = msg_len;
 		*msg_type = 0;
 
-		// If this is the first call from fetch, we're done.
+		/* If this is the first call from fetch, we're done. */
 
 		if (clause == DASUP_CLAUSE_select)
 			return 0;
 	}
 
-// Move the data between the SQLDA and the message buffer.
+/* Move the data between the SQLDA and the message buffer. */
 
-	USHORT offset = 0;
-	// one huge pointer per line for LIBS
-	BLOB_PTR* msg_buf =
-		reinterpret_cast<UCHAR*>(pClause->dasup_msg);
+	offset = 0;
+	msg_buf =
+		reinterpret_cast<UCHAR*>(dasup->dasup_clauses[clause].dasup_msg);
 	if (xsqlda)
 		xvar = xsqlda->sqlvar - 1;
 	else
-		qvar = sqlda->sqlvar - 1;
+		var = sqlda->sqlvar - 1;
 	for (i = 0; i < n; i++)
 	{
 		if (xsqlda)
 			xvar++;
 		else
 		{
-			qvar++;
-			sqlvar_to_xsqlvar(qvar, xvar);
+			var++;
+			sqlvar_to_xsqlvar(var, xvar);
 		}
-		USHORT dtype = xvar->sqltype & ~1;
-		USHORT len = xvar->sqllen;
+		dtype = xvar->sqltype & ~1;
+		len = xvar->sqllen;
 		switch (dtype)
 		{
 		case SQL_VARYING:
@@ -703,30 +587,30 @@ ISC_STATUS	UTLD_parse_sqlda(
 			dtype = dtype_quad;
 		}
 
-		USHORT align = type_alignments[dtype];
+		align = type_alignments[dtype];
 		if (align)
 			offset = FB_ALIGN(offset, align);
-		USHORT null_offset = offset + len;
+		null_offset = offset + len;
 
 		align = type_alignments[dtype_short];
 		if (align)
 			null_offset = FB_ALIGN(null_offset, align);
 
-		SSHORT *null_ind = (SSHORT *) (msg_buf + null_offset);
+		null_ind = (SSHORT *) (msg_buf + null_offset);
 		if (clause == DASUP_CLAUSE_select)
 		{
-			// Move data from the message into the SQLDA. 
+			/* Move data from the message into the SQLDA. */
 
-			// Make sure user has specified a data location 
+			/* Make sure user has specified a data location */
 			if (!xvar->sqldata)
-				return error_dsql_804(status, isc_dsql_sqlda_value_err);
+				return error_dsql_804(status, gds_dsql_sqlda_value_err);
 
 			memcpy(xvar->sqldata, msg_buf + offset, len);
 			if (xvar->sqltype & 1)
 			{
-				// Make sure user has specified a location for null indicator 
+				/* Make sure user has specified a location for null indicator */
 				if (!xvar->sqlind)
-					return error_dsql_804(status, isc_dsql_sqlda_value_err);
+					return error_dsql_804(status, gds_dsql_sqlda_value_err);
 				*xvar->sqlind = *null_ind;
 			}
 		}
@@ -738,21 +622,21 @@ ISC_STATUS	UTLD_parse_sqlda(
 
 			if (xvar->sqltype & 1)
 			{
-				// Make sure user has specified a location for null indicator 
+				/* Make sure user has specified a location for null indicator */
 				if (!xvar->sqlind)
-					return error_dsql_804(status, isc_dsql_sqlda_value_err);
+					return error_dsql_804(status, gds_dsql_sqlda_value_err);
 				*null_ind = *xvar->sqlind;
 			}
 			else
 				*null_ind = 0;
 
-			// Make sure user has specified a data location (unless NULL) 
+			/* Make sure user has specified a data location (unless NULL) */
 			if (!xvar->sqldata && !*null_ind)
-				return error_dsql_804(status, isc_dsql_sqlda_value_err);
+				return error_dsql_804(status, gds_dsql_sqlda_value_err);
 
-			// Copy data - unless known to be NULL 
-			if ((offset + len) > pClause->dasup_msg_buf_len)
-				return error_dsql_804(status, isc_dsql_sqlda_value_err);
+			/* Copy data - unless known to be NULL */
+			if ((offset + len) > dasup->dasup_clauses[clause].dasup_msg_buf_len)
+				return error_dsql_804(status, gds_dsql_sqlda_value_err);
 
 			if (!*null_ind)
 				memcpy(msg_buf + offset, xvar->sqldata, len);
@@ -777,15 +661,19 @@ ISC_STATUS	UTLD_parse_sqlda(
     @param vector
 
  **/
-void	UTLD_save_status_strings(ISC_STATUS* vector)
+void DLL_EXPORT UTLD_save_status_strings( ISC_STATUS * vector)
 {
-// allocate space for failure strings if it hasn't already been allocated
+	TEXT *p;
+	ISC_STATUS status;
+	USHORT l;
+
+/* allocate space for failure strings if it hasn't already been allocated */
 
 	if (!DSQL_failures)
 	{
 		DSQL_failures = (TEXT *) ALLOC_LIB_MEMORY((SLONG) DSQL_FAILURE_SPACE);
-		// FREE: by exit handler cleanup() 
-		if (!DSQL_failures)		// NOMEM: don't try to copy the strings 
+		/* FREE: by exit handler cleanup() */
+		if (!DSQL_failures)		/* NOMEM: don't try to copy the strings */
 			return;
 		DSQL_failures_ptr = DSQL_failures;
 		gds__register_cleanup(cleanup, 0);
@@ -797,18 +685,17 @@ void	UTLD_save_status_strings(ISC_STATUS* vector)
 
 	while (*vector)
 	{
-		const TEXT* p;
-		USHORT l;
-		const ISC_STATUS status = *vector++;
+		status = *vector;
+		vector++;
 		switch (status)
 		{
-		case isc_arg_cstring:
+		case gds_arg_cstring:
 			l = static_cast<USHORT>(*vector++);
 
-		case isc_arg_interpreted:
-		case isc_arg_string:
+		case gds_arg_interpreted:
+		case gds_arg_string:
 			p = (TEXT *) * vector;
-			if (status != isc_arg_cstring)
+			if (status != gds_arg_cstring)
 				l = strlen(p) + 1;
 
 			/* If there isn't any more room in the buffer,
@@ -867,17 +754,18 @@ static void cleanup( void *arg)
  **/
 static ISC_STATUS error_dsql_804( ISC_STATUS * status, ISC_STATUS err)
 {
-	ISC_STATUS *p = status;
+	ISC_STATUS *p;
 
-	*p++ = isc_arg_gds;
-	*p++ = isc_dsql_error;
-	*p++ = isc_arg_gds;
-	*p++ = isc_sqlerr;
-	*p++ = isc_arg_number;
+	p = status;
+	*p++ = gds_arg_gds;
+	*p++ = gds_dsql_error;
+	*p++ = gds_arg_gds;
+	*p++ = gds_sqlerr;
+	*p++ = gds_arg_number;
 	*p++ = -804;
-	*p++ = isc_arg_gds;
+	*p++ = gds_arg_gds;
 	*p++ = (err);
-	*p = isc_arg_end;
+	*p = gds_arg_end;
 
 	return status[1];
 }
@@ -894,12 +782,14 @@ static ISC_STATUS error_dsql_804( ISC_STATUS * status, ISC_STATUS err)
     @param ptr
 
  **/
-static SLONG get_numeric_info( const SCHAR** ptr)
+static SLONG get_numeric_info( SCHAR ** ptr)
 {
-	const SSHORT l =
-		static_cast<SSHORT>(gds__vax_integer(reinterpret_cast<const UCHAR*>(*ptr), 2));
+	int item;
+	SSHORT l;
+
+	l = static_cast<SSHORT>(gds__vax_integer(reinterpret_cast<UCHAR*>(*ptr), 2));
 	*ptr += 2;
-	int item = gds__vax_integer(reinterpret_cast<const UCHAR*>(*ptr), l);
+	item = gds__vax_integer(reinterpret_cast<UCHAR*>(*ptr), l);
 	*ptr += l;
 
 	return item;
@@ -920,19 +810,22 @@ static SLONG get_numeric_info( const SCHAR** ptr)
     @param buffer_len
 
  **/
-static SLONG get_string_info( const SCHAR** ptr, SCHAR * buffer, int buffer_len)
+static SLONG get_string_info( SCHAR ** ptr, SCHAR * buffer, int buffer_len)
 {
-	const SCHAR* p = *ptr;
-	SSHORT l =
-		static_cast<SSHORT>(gds__vax_integer(reinterpret_cast<const UCHAR*>(p), 2));
+	SSHORT l, len;
+	SCHAR *p;
+
+	p = *ptr;
+	l =
+		static_cast<SSHORT>
+		(gds__vax_integer(reinterpret_cast<UCHAR*>(p), 2));
 	*ptr += l + 2;
 	p += 2;
 
 	if (l >= buffer_len)
 		l = buffer_len - 1;
 
-	SSHORT len = l;
-	if (len)
+	if (len = l)
 		do
 			*buffer++ = *p++;
 		while (--l);
@@ -959,15 +852,15 @@ static void print_xsqlda( XSQLDA * xsqlda)
 	if (!xsqlda)
 		return;
 
-	printf("SQLDA Version %d\n", xsqlda->version);
-	printf("      sqldaid %.8s\n", xsqlda->sqldaid);
-	printf("      sqldabc %d\n", xsqlda->sqldabc);
-	printf("      sqln    %d\n", xsqlda->sqln);
-	printf("      sqld    %d\n", xsqlda->sqld);
+	PRINTF("SQLDA Version %d\n", xsqlda->version);
+	PRINTF("      sqldaid %.8s\n", xsqlda->sqldaid);
+	PRINTF("      sqldabc %d\n", xsqlda->sqldabc);
+	PRINTF("      sqln    %d\n", xsqlda->sqln);
+	PRINTF("      sqld    %d\n", xsqlda->sqld);
 
 	xvar = xsqlda->sqlvar;
 	for (end_var = xvar + xsqlda->sqld; xvar < end_var; xvar++)
-		printf("         %.31s %.31s type: %d, scale %d, len %d subtype %d\n",
+		PRINTF("         %.31s %.31s type: %d, scale %d, len %d subtype %d\n",
 			   xvar->sqlname, xvar->relname, xvar->sqltype,
 			   xvar->sqlscale, xvar->sqllen, xvar->sqlsubtype);
 }
@@ -987,7 +880,7 @@ static void print_xsqlda( XSQLDA * xsqlda)
     @param xsqlvar
 
  **/
-static void sqlvar_to_xsqlvar(const SQLVAR* sqlvar, XSQLVAR* xsqlvar)
+static void sqlvar_to_xsqlvar( SQLVAR * sqlvar, XSQLVAR * xsqlvar)
 {
 
 	xsqlvar->sqltype = sqlvar->sqltype;
@@ -997,24 +890,21 @@ static void sqlvar_to_xsqlvar(const SQLVAR* sqlvar, XSQLVAR* xsqlvar)
 	xsqlvar->sqlsubtype = 0;
 	xsqlvar->sqlscale = 0;
 	xsqlvar->sqllen = sqlvar->sqllen;
-	switch (xsqlvar->sqltype & ~1)
-	{
-	case SQL_LONG:
+	if ((xsqlvar->sqltype & ~1) == SQL_LONG) {
 		xsqlvar->sqlscale = xsqlvar->sqllen >> 8;
 		xsqlvar->sqllen = sizeof(SLONG);
-		break;
-	case SQL_SHORT:
+	}
+	else if ((xsqlvar->sqltype & ~1) == SQL_SHORT) {
 		xsqlvar->sqlscale = xsqlvar->sqllen >> 8;
 		xsqlvar->sqllen = sizeof(SSHORT);
-		break;
-	case SQL_INT64:
+	}
+	else if ((xsqlvar->sqltype & ~1) == SQL_INT64) {
 		xsqlvar->sqlscale = xsqlvar->sqllen >> 8;
 		xsqlvar->sqllen = sizeof(SINT64);
-		break;
-	case SQL_QUAD:
+	}
+	else if ((xsqlvar->sqltype & ~1) == SQL_QUAD) {
 		xsqlvar->sqlscale = xsqlvar->sqllen >> 8;
-		xsqlvar->sqllen = sizeof(ISC_QUAD);
-		break;
+		xsqlvar->sqllen = sizeof(GDS_QUAD);
 	}
 }
 
@@ -1030,46 +920,26 @@ static void sqlvar_to_xsqlvar(const SQLVAR* sqlvar, XSQLVAR* xsqlvar)
     @param sqlvar
 
  **/
-static void xsqlvar_to_sqlvar(const XSQLVAR* xsqlvar, SQLVAR* sqlvar)
+static void xsqlvar_to_sqlvar( XSQLVAR * xsqlvar, SQLVAR * sqlvar)
 {
 
 	sqlvar->sqltype = xsqlvar->sqltype;
 	sqlvar->sqlname_length = xsqlvar->aliasname_length;
 
-// N.B., this may not NULL-terminate the name... 
+/* N.B., this may not NULL-terminate the name... */
 
 	memcpy(sqlvar->sqlname, xsqlvar->aliasname, sizeof(sqlvar->sqlname));
 
 	sqlvar->sqllen = xsqlvar->sqllen;
-	const USHORT scale = xsqlvar->sqlscale << 8;
-	switch (sqlvar->sqltype & ~1)
-	{
-	case SQL_LONG:
-		sqlvar->sqllen = sizeof(SLONG) | scale;
-		break;
-	case SQL_SHORT:
-		sqlvar->sqllen = sizeof(SSHORT) | scale;
-		break;
-	case SQL_INT64:
-		sqlvar->sqllen = sizeof(SINT64) | scale;
-		break;
-	case SQL_QUAD:
-		sqlvar->sqllen = sizeof(ISC_QUAD) | scale;
-		break;
-	}
+	if ((sqlvar->sqltype & ~1) == SQL_LONG)
+		sqlvar->sqllen = sizeof(SLONG) | (xsqlvar->sqlscale << 8);
+	else if ((sqlvar->sqltype & ~1) == SQL_SHORT)
+		sqlvar->sqllen = sizeof(SSHORT) | (xsqlvar->sqlscale << 8);
+	else if ((sqlvar->sqltype & ~1) == SQL_INT64)
+		sqlvar->sqllen = sizeof(SINT64) | (xsqlvar->sqlscale << 8);
+	else if ((sqlvar->sqltype & ~1) == SQL_QUAD)
+		sqlvar->sqllen = sizeof(GDS_QUAD) | (xsqlvar->sqlscale << 8);
 }
 
 
-#if !defined(REQUESTER) && !defined(SUPERCLIENT)
-
-UCHAR DSqlDataTypeUtil::maxBytesPerChar(UCHAR charSet)
-{
-	return METD_get_charset_bpc(request, charSet);
-}
-
-USHORT DSqlDataTypeUtil::getDialect() const
-{
-	return request->req_client_dialect;
-}
-
-#endif
+} // extern "C"

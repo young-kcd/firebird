@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Access method
  *	MODULE:		intl_proto.h
- *	DESCRIPTION:	Prototype Header file for intl.cpp
+ *	DESCRIPTION:	Prototype Header file for intl.c 
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -21,47 +21,47 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef JRD_INTL_PROTO_H
-#define JRD_INTL_PROTO_H
+#ifndef _JRD_INTL_PROTO_H_
+#define _JRD_INTL_PROTO_H_
 
 #include "../jrd/intl_classes.h"
 
-namespace Jrd {
-	class thread_db;
-	class Lock;
-}
+extern CHARSET_ID DLL_EXPORT INTL_charset(TDBB, USHORT, FPTR_VOID);
+extern int DLL_EXPORT INTL_compare(TDBB, struct dsc *, struct dsc *,
+								   FPTR_VOID);
+extern USHORT DLL_EXPORT INTL_convert_bytes(TDBB, CHARSET_ID, UCHAR *, USHORT,
+											CHARSET_ID, BYTE *, USHORT,
+											FPTR_VOID);
+extern CsConvert *DLL_EXPORT INTL_convert_lookup(TDBB, CHARSET_ID, CHARSET_ID);
+extern int DLL_EXPORT INTL_convert_string(struct dsc *, struct dsc *,
+										  FPTR_VOID);
+extern int DLL_EXPORT INTL_data(struct dsc *);
+extern int DLL_EXPORT INTL_data_or_binary(struct dsc *);
+extern int DLL_EXPORT INTL_defined_type(TDBB, ISC_STATUS *, SSHORT);
+//extern SSHORT DLL_EXPORT INTL_fss_mbtowc(struct texttype **, unsigned short *,
+//										 unsigned char *, USHORT);
+//extern USHORT DLL_EXPORT INTL_fss_to_unicode(CsConvert *, USHORT *,
+//											 USHORT, unsigned char *, USHORT,
+//											 SSHORT *, USHORT *);
+extern unsigned short DLL_EXPORT INTL_getch(TDBB, TextType**, SSHORT,
+											UCHAR **, USHORT *);
+extern void DLL_EXPORT INTL_init(TDBB);
+extern USHORT DLL_EXPORT INTL_key_length(TDBB, USHORT, USHORT);
+extern CharSet *DLL_EXPORT INTL_charset_lookup(TDBB tdbb, SSHORT parm1,
+												ISC_STATUS * status);
+extern TextType *DLL_EXPORT INTL_texttype_lookup(
+								 TDBB tdbb,
+								 SSHORT parm1, FPTR_VOID err, ISC_STATUS * status);
+//extern void *DLL_EXPORT INTL_obj_lookup(TDBB, USHORT, SSHORT, FPTR_VOID,
+//										ISC_STATUS *);
+extern void DLL_EXPORT INTL_pad_spaces(TDBB, struct dsc *, UCHAR *, USHORT);
+extern USHORT DLL_EXPORT INTL_string_to_key(TDBB, USHORT, struct dsc *,
+											struct dsc *, USHORT);
+extern int DLL_EXPORT INTL_str_to_upper(TDBB, struct dsc *);
+//extern USHORT DLL_EXPORT INTL_unicode_to_fss(CsConvert *,
+//											 unsigned char *, USHORT,
+//											 USHORT *, USHORT, SSHORT *,
+//											 USHORT *);
+extern UCHAR DLL_EXPORT INTL_upper(TDBB, USHORT, UCHAR);
 
-struct dsc;
-struct SubtypeInfo;
-
-CHARSET_ID	INTL_charset(Jrd::thread_db*, USHORT);
-int			INTL_compare(Jrd::thread_db*, const dsc*, const dsc*, FPTR_ERROR);
-ULONG		INTL_convert_bytes(Jrd::thread_db*, CHARSET_ID, UCHAR*, ULONG, CHARSET_ID,
-								const BYTE*, ULONG, FPTR_ERROR);
-Jrd::CsConvert	INTL_convert_lookup(Jrd::thread_db*, CHARSET_ID, CHARSET_ID);
-int			INTL_convert_string(dsc*, const dsc*, FPTR_ERROR);
-int			INTL_data(const dsc*);
-int			INTL_data_or_binary(const dsc*);
-bool		INTL_defined_type(Jrd::thread_db*, USHORT);
-void		INTL_init(Jrd::thread_db*);
-USHORT		INTL_key_length(Jrd::thread_db*, USHORT, USHORT);
-Jrd::CharSet*	INTL_charset_lookup(Jrd::thread_db* tdbb, USHORT parm1);
-Jrd::Collation*	INTL_texttype_lookup(Jrd::thread_db* tdbb, USHORT parm1);
-void		INTL_texttype_unload(Jrd::thread_db*, USHORT);
-bool		INTL_texttype_validate(Jrd::thread_db*, const SubtypeInfo*);
-void		INTL_pad_spaces(Jrd::thread_db*, dsc*, UCHAR*, ULONG);
-USHORT		INTL_string_to_key(Jrd::thread_db*, USHORT, const dsc*, dsc*, USHORT);
-int			INTL_str_to_upper(Jrd::thread_db*, dsc*);
-int			INTL_str_to_lower(Jrd::thread_db*, dsc*);
-
-// Built-in charsets/texttypes interface
-INTL_BOOL INTL_builtin_lookup_charset(charset* cs, const ASCII* charset_name, const ASCII* config_info);
-INTL_BOOL INTL_builtin_lookup_texttype(texttype* tt, const ASCII* texttype_name, const ASCII* charset_name,
-									   USHORT attributes, const UCHAR* specific_attributes,
-									   ULONG specific_attributes_length, INTL_BOOL ignore_attributes,
-									   const ASCII* config_info);
-ULONG INTL_builtin_setup_attributes(const ASCII* textTypeName, const ASCII* charSetName,
-	const ASCII* configInfo, ULONG srcLen, const UCHAR* src, ULONG dstLen, UCHAR* dst);
-
-#endif // JRD_INTL_PROTO_H
-
+#endif /* _JRD_INTL_PROTO_H_ */

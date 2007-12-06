@@ -27,7 +27,6 @@
 				ExceptionHandling="FALSE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				RuntimeTypeInfo="FALSE"
 				PrecompiledHeaderFile="..\..\..\temp\debug\gdef/gdef.pch"
 				AssemblerListingLocation="..\..\..\temp\debug\gdef/"
 				ObjectFile="..\..\..\temp\debug\gdef/"
@@ -42,15 +41,15 @@
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
 				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
-				OutputFile="..\..\..\temp\debug\firebird\bin\gdef.exe"
+				OutputFile="debug/firebird/bin/gdef.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile="..\..\..\temp\debug\gdef\gdef.pdb"
+				ProgramDatabaseFile="..\..\..\temp\debug\gdef/gdef.pdb"
 				SubSystem="1"/>
 			<Tool
 				Name="VCMIDLTool"
-				TypeLibraryName="..\..\..\temp\debug\gdef\gdef.tlb"/>
+				TypeLibraryName="..\..\..\temp\debug\gdef/gdef.tlb"/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool
@@ -94,8 +93,7 @@
 				PreprocessorDefinitions="WIN32,NDEBUG,_CONSOLE,SUPERCLIENT"
 				ExceptionHandling="FALSE"
 				RuntimeLibrary="2"
-				RuntimeTypeInfo="FALSE"
-				PrecompiledHeaderFile="..\..\..\temp\release\gdef\gdef.pch"
+				PrecompiledHeaderFile="..\..\..\temp\release\gdef/gdef.pch"
 				AssemblerListingLocation="..\..\..\temp\release\gdef/"
 				ObjectFile="..\..\..\temp\release\gdef/"
 				ProgramDataBaseFileName="..\..\..\temp\release\gdef/"
@@ -109,14 +107,15 @@
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
 				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
-				OutputFile="..\..\..\temp\release\firebird\bin\gdef.exe"
+				OutputFile="release/firebird/bin/gdef.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				GenerateDebugInformation="TRUE"
+				ProgramDatabaseFile="..\..\..\temp\release\gdef/gdef.pdb"
 				SubSystem="1"/>
 			<Tool
 				Name="VCMIDLTool"
-				TypeLibraryName="..\..\..\temp\release\gdef\gdef.tlb"/>
+				TypeLibraryName="..\..\..\temp\release\gdef/gdef.tlb"/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool
@@ -192,6 +191,12 @@
 				RelativePath="..\..\..\src\jrd\isc_file.cpp">
 			</File>
 			<File
+				RelativePath="..\..\..\src\jrd\llio.cpp">
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\misc.cpp">
+			</File>
+			<File
 				RelativePath="..\..\..\src\jrd\status.cpp">
 			</File>
 		</Filter>
@@ -200,6 +205,13 @@
 			Filter="">
 			<File
 				RelativePath="..\..\..\src\gpre\pretty.cpp">
+			</File>
+		</Filter>
+		<Filter
+			Name="WAL files"
+			Filter="">
+			<File
+				RelativePath="..\..\..\src\wal\walf.cpp">
 			</File>
 		</Filter>
 		<Filter

@@ -32,7 +32,6 @@
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;IB_UTIL_EXPORTS"
 				ExceptionHandling="FALSE"
 				RuntimeLibrary="2"
-				RuntimeTypeInfo="FALSE"
 				PrecompiledHeaderFile="..\..\..\temp\release\ib_util/ib_util.pch"
 				AssemblerListingLocation="..\..\..\temp\release\ib_util/"
 				ObjectFile="..\..\..\temp\release\ib_util/"
@@ -47,19 +46,20 @@
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
 				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
-				OutputFile="..\..\..\temp\release\firebird\bin\ib_util.dll"
+				OutputFile="release/firebird/bin/ib_util.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				ModuleDefinitionFile="..\defs\ib_util.def"
 				GenerateDebugInformation="TRUE"
-				ImportLibrary="..\..\..\temp\release\ib_util\ib_util.lib"/>
+				ProgramDatabaseFile="..\..\..\temp\release\ib_util/ib_util.pdb"
+				ImportLibrary="..\..\..\temp\release\ib_util/ib_util.lib"/>
 			<Tool
 				Name="VCMIDLTool"
 				PreprocessorDefinitions="_DEBUG"
 				MkTypLibCompatible="TRUE"
 				SuppressStartupBanner="TRUE"
 				TargetEnvironment="1"
-				TypeLibraryName="..\..\..\temp\release\ib_util\ib_util.tlb"/>
+				TypeLibraryName="..\..\..\temp\release\ib_util/ib_util.tlb"/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool
@@ -98,7 +98,6 @@
 				ExceptionHandling="FALSE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				RuntimeTypeInfo="FALSE"
 				PrecompiledHeaderFile="..\..\..\temp\debug\ib_util/ib_util.pch"
 				AssemblerListingLocation="..\..\..\temp\debug\ib_util/"
 				ObjectFile="..\..\..\temp\debug\ib_util/"
@@ -113,20 +112,20 @@
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
 				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
-				OutputFile="..\..\..\temp\debug\firebird\bin\ib_util.dll"
+				OutputFile="debug/firebird/bin/ib_util.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				ModuleDefinitionFile="..\defs\ib_util.def"
 				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile="..\..\..\temp\debug\ib_util\ib_util.pdb"
-				ImportLibrary="..\..\..\temp\debug\ib_util\ib_util.lib"/>
+				ProgramDatabaseFile="..\..\..\temp\debug\ib_util/ib_util.pdb"
+				ImportLibrary="..\..\..\temp\debug\ib_util/ib_util.lib"/>
 			<Tool
 				Name="VCMIDLTool"
 				PreprocessorDefinitions="_DEBUG"
 				MkTypLibCompatible="TRUE"
 				SuppressStartupBanner="TRUE"
 				TargetEnvironment="1"
-				TypeLibraryName="..\..\..\temp\debug\ib_util\ib_util.tlb"/>
+				TypeLibraryName="..\..\..\temp\debug\ib_util/ib_util.tlb"/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool

@@ -1,30 +1,33 @@
 /*
- *  The contents of this file are subject to the Initial
- *  Developer's Public License Version 1.0 (the "License");
- *  you may not use this file except in compliance with the
- *  License. You may obtain a copy of the License at
- *  http://www.ibphoenix.com/main.nfs?a=ibphoenix&page=ibp_idpl.
+ *	PROGRAM:	Client/Server Common Code
+ *	MODULE:		config.h
+ *	DESCRIPTION:	Configuration manager (public interface)
  *
- *  Software distributed under the License is distributed AS IS,
- *  WITHOUT WARRANTY OF ANY KIND, either express or implied.
- *  See the License for the specific language governing rights
- *  and limitations under the License.
+ * The contents of this file are subject to the Interbase Public
+ * License Version 1.0 (the "License"); you may not use this file
+ * except in compliance with the License. You may obtain a copy
+ * of the License at http://www.Inprise.com/IPL.html
  *
- *  The Original Code was created by Dmitry Yemanov
- *  for the Firebird Open Source RDBMS project.
+ * Software distributed under the License is distributed on an
+ * "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express
+ * or implied. See the License for the specific language governing
+ * rights and limitations under the License.
  *
- *  Copyright (c) 2002 Dmitry Yemanov <dimitr@users.sf.net>
- *  and all contributors signed below.
+ * The Original Code was created by Inprise Corporation
+ * and its predecessors. Portions created by Inprise Corporation are
+ * Copyright (C) Inprise Corporation.
  *
- *  All Rights Reserved.
- *  Contributor(s): ______________________________________.
+ * Created by: Dmitry Yemanov <yemanov@yandex.ru>
+ *
+ * All Rights Reserved.
+ * Contributor(s): ______________________________________.
  */
 
-#ifndef COMMON_CONFIG_H
-#define COMMON_CONFIG_H
+#ifndef CONFIG_H
+#define CONFIG_H
 
-#include "../common/classes/fb_string.h"
-#include "../jrd/os/path_utils.h"
+#include "fb_string.h"
+#include "fb_vector.h"
 
 /**
 	Since the original (isc.cpp) code wasn't able to provide powerful and
@@ -57,89 +60,56 @@
 		   in config.cpp module.
 **/
 
-extern const char*	GCPolicyCooperative;
-extern const char*	GCPolicyBackground;
-extern const char*	GCPolicyCombined;
-extern const char*	GCPolicyDefault;
-
-extern const char*	AmNative;
-extern const char*	AmTrusted;
-extern const char*	AmMixed;
-
-enum AmCache {AM_UNKNOWN, AM_DISABLED, AM_ENABLED};
-
 class Config
 {
 	enum ConfigKey
 	{
 		KEY_ROOT_DIRECTORY,							// 0
-		KEY_TEMP_BLOCK_SIZE,						// 1
-		KEY_TEMP_CACHE_LIMIT,						// 2
+		KEY_SORT_MEM_BLOCK_SIZE,					// 1
+		KEY_SORT_MEM_UPPER_LIMIT,					// 2
 		KEY_REMOTE_FILE_OPEN_ABILITY,				// 3
 		KEY_GUARDIAN_OPTION,						// 4
 		KEY_CPU_AFFINITY_MASK,						// 5
 		KEY_OLD_PARAMETER_ORDERING,					// 6
 		KEY_TCP_REMOTE_BUFFER_SIZE,					// 7
 		KEY_TCP_NO_NAGLE,							// 8
-		KEY_DEFAULT_DB_CACHE_PAGES,					// 9
-		KEY_CONNECTION_TIMEOUT,						// 10
-		KEY_DUMMY_PACKET_INTERVAL,					// 11
-		KEY_LOCK_MEM_SIZE,							// 12
-		KEY_LOCK_SEM_COUNT,							// 13
-		KEY_LOCK_SIGNAL,							// 14
-		KEY_LOCK_GRANT_ORDER,						// 15
-		KEY_LOCK_HASH_SLOTS,						// 16
-		KEY_LOCK_ACQUIRE_SPINS,						// 17
-		KEY_EVENT_MEM_SIZE,							// 18
-		KEY_DEADLOCK_TIMEOUT,						// 19
-		KEY_SOLARIS_STALL_VALUE,					// 20
-		KEY_TRACE_MEMORY_POOLS,						// 21	
-		KEY_PRIORITY_SWITCH_DELAY,					// 22
-		KEY_USE_PRIORITY_SCHEDULER,					// 23
-		KEY_PRIORITY_BOOST,							// 24
-		KEY_REMOTE_SERVICE_NAME,					// 25
-		KEY_REMOTE_SERVICE_PORT,					// 26
-		KEY_REMOTE_PIPE_NAME,						// 27
-		KEY_IPC_NAME,								// 28
-		KEY_MAX_UNFLUSHED_WRITES,					// 29
-		KEY_MAX_UNFLUSHED_WRITE_TIME,				// 30
-		KEY_PROCESS_PRIORITY_LEVEL,					// 31
-		KEY_CREATE_INTERNAL_WINDOW,					// 32
-		KEY_COMPLETE_BOOLEAN_EVALUATION,			// 33
-		KEY_REMOTE_AUX_PORT,						// 34
-		KEY_REMOTE_BIND_ADDRESS,					// 35
-		KEY_EXTERNAL_FILE_ACCESS,					// 36
-		KEY_DATABASE_ACCESS,						// 37
-		KEY_UDF_ACCESS,								// 38
-		KEY_TEMP_DIRECTORIES,						// 39
- 		KEY_BUGCHECK_ABORT,							// 40
-		KEY_TRACE_DSQL,								// 41
-		KEY_LEGACY_HASH,							// 42
-		KEY_GC_POLICY,								// 43
-		KEY_REDIRECTION,							// 44
-		KEY_OLD_COLUMN_NAMING,						// 45
-		KEY_AUTH_METHOD,							// 46
-		KEY_DATABASE_GROWTH_INCREMENT,				// 47
-		KEY_MAX_FILESYSTEM_CACHE,					// 48
-		KEY_RELAXED_ALIAS_CHECKING					// 49
+		KEY_IPC_MAP_SIZE,							// 9
+		KEY_DEFAULT_DB_CACHE_PAGES,					// 10
+		KEY_CONNECTION_TIMEOUT,						// 11
+		KEY_DUMMY_PACKET_INTERVAL,					// 12
+		KEY_LOCK_MEM_SIZE,							// 13
+		KEY_LOCK_SEM_COUNT,							// 14
+		KEY_LOCK_SIGNAL,							// 15
+		KEY_LOCK_GRANT_ORDER,						// 16
+		KEY_LOCK_HASH_SLOTS,						// 17
+		KEY_LOCK_ACQUIRE_SPINS,						// 18
+		KEY_EVENT_MEM_SIZE,							// 19
+		KEY_DEADLOCK_TIMEOUT,						// 20
+		KEY_SOLARIS_STALL_VALUE,					// 21
+		KEY_TRACE_MEMORY_POOLS,						// 22	
+		KEY_PRIORITY_SWITCH_DELAY,					// 23
+		KEY_DEAD_THREADS_COLLECTION,				// 24
+		KEY_PRIORITY_BOOST,							// 25
+		KEY_REMOTE_SERVICE_NAME,					// 26
+		KEY_REMOTE_SERVICE_PORT,					// 27
+		KEY_REMOTE_PIPE_NAME,						// 28
+		KEY_IPC_NAME,								// 29
+		KEY_MAX_UNFLUSHED_WRITES,					// 30
+		KEY_MAX_UNFLUSHED_WRITE_TIME,				// 31
+		KEY_PROCESS_PRIORITY_LEVEL,					// 32
+		KEY_CREATE_INTERNAL_WINDOW,					// 33
+		KEY_COMPLETE_BOOLEAN_EVALUATION,			// 34
+		KEY_REMOTE_AUX_PORT,						// 35
+		KEY_REMOTE_BIND_ADDRESS,					// 36
+		KEY_EXTERNAL_FILE_ACCESS,					// 37
+		KEY_DATABASE_ACCESS,						// 38
+		KEY_UDF_ACCESS,								// 39
+		KEY_TEMP_DIRECTORIES,						// 40
+		KEY_BUGCHECK_ABORT,							// 41
+		KEY_OLD_COLUMN_NAMING						// 42
 	};
 
 public:
-
-	/*
-	 Interface to support command line root specification.
-	*
-	 This ugly solution was required to make it possible to specify root
-	 in command line to load firebird.conf from that root, though in other 
-	 cases firebird.conf may be also used to specify root.
-	*/
-	static void setRootDirectoryFromCommandLine(const Firebird::PathName& newRoot);
-	static const Firebird::PathName* getCommandLineRootDirectory();
-
-	/*
-		Installation directory
-	*/
-	static const char* getInstallDirectory();
 
 	/*
 		Root directory of current installation
@@ -147,14 +117,14 @@ public:
 	static const char* getRootDirectory();
 
 	/*
-		Allocation chunk for the temporary spaces
+		Block size for the sorting manager
 	*/
-	static int getTempBlockSize();
+	static int getSortMemBlockSize();
 
 	/*
-		Caching limit for the temporary data
+		Memory usage limit for the sorting manager
 	*/
-	static int getTempCacheLimit();
+	static int getSortMemUpperLimit();
 
 	/*
 		Whether remote (NFS) files can be opened
@@ -185,6 +155,11 @@ public:
 		Disable Nagle algorithm
 	*/
 	static bool getTcpNoNagle();
+
+	/*
+		IPC client mapping
+	*/
+	static int getIpcMapSize();
 
 	/*
 		Default database cache size
@@ -257,9 +232,9 @@ public:
 	static int getPrioritySwitchDelay();
 
 	/*
-		Use priority scheduler
+		Dead threads collection
 	*/
-	static bool getUsePriorityScheduler();
+	static int getDeadThreadsCollection();
 
 	/*
 		Priority boost
@@ -274,7 +249,7 @@ public:
 	/*
 		Service port for INET
 	*/
-	static unsigned short getRemoteServicePort();
+	static int getRemoteServicePort();
 
 	/*
 		Pipe name for WNET
@@ -342,55 +317,15 @@ public:
 	static const char *getTempDirectories();
 
 	/*
-		DSQL trace bitmask
+		Abort on BUGCHECK and structured exceptions
 	*/
-	static int getTraceDSQL();
-
- 	/*
- 		Abort on BUGCHECK and structured exceptions
- 	*/
- 	static bool getBugcheckAbort();
-
-	/*
-		Let use of des hash to verify passwords
-	*/
-	static bool getLegacyHash();
-
-	/*
-		GC policy
-	*/
-	static const char *getGCPolicy();
-
-	/*
-		Redirection
-	*/
-	static bool getRedirection();
+	static bool getBugcheckAbort();
 
 	/*
 		Use old column naming rules (does not conform to SQL standard)
 	*/
 	static bool getOldColumnNaming();
 
-	/*
-		Use native, trusted or mixed authentication 
-	*/
-	static const char *getAuthMethod();
-
-	static int getDatabaseGrowthIncrement();
-
-	static int getMaxFileSystemCache();
-
-	static bool getRelaxedAliasChecking();
 };
 
-namespace Firebird {
-
-// Add appropriate file prefix.
-inline void Prefix(PathName& result, const PathName& file)
-{
-	PathUtils::concatPath(result, Config::getRootDirectory(), file);
-}
-
-} //namespace Firebird
-
-#endif // COMMON_CONFIG_H
+#endif // CONFIG_H

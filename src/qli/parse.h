@@ -21,24 +21,24 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef QLI_PARSE_H
-#define QLI_PARSE_H
+#ifndef _QLI_PARSE_H_
+#define _QLI_PARSE_H_
 
-#include <stdio.h>
+#define MAXSYMLEN	256
 
-const int MAXSYMLEN	= 256;
+#define MATCH(kw) 	PAR_match (kw)
 
-// Keywords 
+/* Keywords */
 
-typedef enum kwwords {
+typedef ENUM kwwords {
     KW_none = 0,
 #include "../qli/symbols.h"
     KW_continuation
 } KWWORDS;
 
-// Token block, used to hold a lexical token. 
+/* Token block, used to hold a lexical token. */
 
-typedef enum tok_t {
+typedef ENUM tok_t {
     tok_ident, 
     tok_number, 
     tok_quoted, 
@@ -47,21 +47,21 @@ typedef enum tok_t {
     tok_eof
 } TOK_T;
 
-struct qli_tok {
-    blk			tok_header;
-    TOK_T 		tok_type;		// type of token 
-    qli_symbol*	tok_symbol;		// hash block if recognized 
-    KWWORDS		tok_keyword;	// keyword number, if recognized 
-    SLONG		tok_position;	// byte number in input stream 
-    USHORT		tok_length;
-    qli_tok*	tok_next;
-    qli_tok*	tok_prior;
-    TEXT		tok_string [2];
-};
+typedef struct tok {
+    struct blk	tok_header;
+    TOK_T 	tok_type;	/* type of token */
+    struct sym	*tok_symbol;	/* hash block if recognized */
+    KWWORDS	tok_keyword;	/* keyword number, if recognized */
+    SLONG	tok_position;	/* byte number in input stream */
+    USHORT	tok_length;
+    struct tok	*tok_next;
+    struct tok	*tok_prior;
+    TEXT	tok_string [2];
+} *TOK ; 
 
-// Input line control 
+/* Input line control */
 
-enum line_t {
+ENUM line_t {
     line_stdin,
     line_blob,
     line_file,
@@ -69,20 +69,30 @@ enum line_t {
     line_edit
 };
 
-struct qli_line {
-    blk			line_header;
-    qli_line*	line_next;
-    dbb*		line_database;
-    USHORT		line_size;
-    USHORT		line_length;
-    TEXT*		line_ptr;
-    SLONG		line_position;
-    FB_API_HANDLE line_source_blob;			// Blob handle
-	FILE*		line_source_file;			// File handle
-    enum line_t	line_type;
-    TEXT		line_data[256];
-    TEXT		line_source_name[2];
-};
+typedef struct line {
+    struct blk	line_header;
+    struct line	*line_next;
+    struct dbb	*line_database;
+    USHORT	line_size;
+    USHORT	line_length;
+    TEXT	*line_ptr;
+    SLONG	line_position;
+    FRBRD	*line_source;			/* File or blob handle */
+    ENUM line_t	line_type;
+    TEXT	line_data [256];
+    TEXT	line_source_name [2];
+} *LINE;
 
-#endif // QLI_PARSE_H
+#ifdef PARSER_MAIN
+#define EXTERN
+#else
+#define EXTERN	extern
+#endif
 
+EXTERN TOK	QLI_token;
+EXTERN LINE	QLI_line;                  
+EXTERN TEXT	*QLI_prompt;
+
+#undef EXTERN
+
+#endif /* _QLI_PARSE_H_ */

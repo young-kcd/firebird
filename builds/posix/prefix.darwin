@@ -15,41 +15,40 @@
 # All Rights Reserved.
 # Contributor(s): ______________________________________.
 # Start of file prefix.darwin:	$(VERSION)	@PLATFORM@
-#
+#$Id: prefix.darwin,v 1.8.2.17 2003-11-25 23:18:50 bellardo Exp $
 # 2 Oct 2002, Nickolay Samofatov - Major Cleanup
-#
 
-DYLD_LIBRARY_PATH=$(FIREBIRD)/lib
-export DYLD_LIBRARY_PATH
+LD=@CXX@
+
+MACOSX_DEPLOYMENT_TARGET=10.2
+export MACOSX_DEPLOYMENT_TARGET
 
 OS_ServerFiles=inet_server.cpp
 
-PROD_FLAGS=-O3 -DNDEBUG -DDARWIN -pipe -MMD -p -fPIC -fno-common
-DEV_FLAGS=-ggdb -DDARWIN -pipe -MMD -p -fPIC -fno-common -Wall
-EMBED_UTIL_TARGETS=gstat gds_drop gsec nbackup fb_lock_print
-CLIENT_UTIL_TARGETS=gds_drop gstat gsec fbguard fbmgr_bin nbackup fb_lock_print
+PROD_FLAGS=-O3 -DNDEBUG -DDARWIN -pipe -MMD -p -fPIC @DARWIN_VERSPEC_CFLAGS@
+DEV_FLAGS=-g -DDARWIN -DDEBUG_GDS_ALLOC -pipe -MMD -p -fPIC -Wall @DARWIN_VERSPEC_CFLAGS@
+LIB_LINK_OPTIONS:=-bundle -flat_namespace -undefined suppress
+LIB_SHLIB_LINK_OPTIONS:=-dynamiclib -flat_namespace
+LIB_EMBED_LINK_OPTIONS:=-install_name Firebird.framework/Versions/A/Firebird \
+	-current_version 1.0.0 -compatibility_version 1.0.0 -seg1addr 0x30000000
+LIB_CLIENT_LINK_OPTIONS:=-install_name Firebird.framework/Versions/A/Firebird \
+	-current_version 1.0.0 -compatibility_version 1.0.0 -seg1addr 0x30000000
+#LIB_LINK_RPATH:=-Wl,-rpath,
+#LIB_LINK_SONAME:=-Wl,-soname,
+LIB_LINK_RPATH_LINE:=
+LIB_LINK_SONAME_LINE:=
+EMBED_UTIL_TARGETS=gstat gds_drop gds_relay gsec fb_lock_print
+CLIENT_UTIL_TARGETS=gds_drop gds_relay gstat gsec fbguard fbmgr_bin fb_lock_print
 
-Physical_IO_Module=os/posix/unix.cpp
-PLATFORM_PATH=os/darwin
+FBEMBED_LINK:=-F../gen/firebird -framework Firebird -L$(LIB)
 
-LINK_OPTS:=
-LIB_BUNDLE_OPTIONS:=$(LD_FLAGS) -bundle -flat_namespace -undefined suppress
-LIB_LINK_OPTIONS:=$(LD_FLAGS) -dynamiclib -flat_namespace
-LIB_LINK_SONAME:=-current_version 2.1.0 -compatibility_version 2.1.0 -seg1addr 0x30000000
-LIB_LINK_MAPFILE:=-Wl,-exported_symbols_list,
-LINK_FIREBIRD_EMBED_SYMBOLS=$(LIB_LINK_MAPFILE)$(ROOT)/builds/posix/firebird.darwin.embed.vers
-LINK_FIREBIRD_CLIENT_SYMBOLS=$(LIB_LINK_MAPFILE)$(ROOT)/builds/posix/firebird.darwin.client.vers
-LINK_FBINTL_SYMBOLS=$(LIB_LINK_MAPFILE)$(ROOT)/builds/posix/fbintl.vers
-
-LIB_LINK_RPATH:=-install_name /Firebird.framework/Versions/A/Libraries/
-LIB_EMBED_LINK_OPTIONS:= -install_name Firebird.framework/Versions/A/Firebird
-LIB_CLIENT_LINK_OPTIONS:= -install_name Firebird.framework/Versions/A/Firebird
-FBEMBED_LINK:=-F../gen/firebird -framework Firebird -L$(LIB) -lfbembed
+Physical_IO_Module=unix.cpp
+PLATFORM_PATH := jrd/os/darwin
 
 PLAT_CLASSIC_PRE_TARGET=darwin_setup_framework
 PLAT_CLASSIC_POST_TARGET=darwin_finish_cs_framework
 
 PLAT_SUPER_PRE_TARGET=darwin_setup_framework
-PLAT_SUPER_POST_TRAGET=darwin_finish_ss_framework
+PLAT_SUPER_POST_TARGET=darwin_finish_ss_framework
 
 PLATFORM_POSTBUILD_TARGET=darwin_postbuild_target

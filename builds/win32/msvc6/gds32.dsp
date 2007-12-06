@@ -53,7 +53,8 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /debug /machine:I386 /pdbtype:sept
-# ADD LINK32 kernel32.lib advapi32.lib /nologo /dll /incremental:no /debug /machine:I386 /out:"..\..\..\temp\debug\firebird/bin/gds32.dll" /pdbtype:sept
+# ADD LINK32 msvcrt.lib kernel32.lib advapi32.lib /nologo /dll /incremental:no /debug /machine:I386 /out:"..\..\..\temp\debug\firebird/bin/gds32.dll" /pdbtype:sept
+# SUBTRACT LINK32 /nodefaultlib
 
 !ELSEIF  "$(CFG)" == "gds32 - Win32 Release"
 
@@ -70,7 +71,7 @@ LINK32=link.exe
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MDd /W3 /Gm /GX /ZI /Od /I "../../../src/include" /I "../../../src/include/gen" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /FD /GZ /c
 # SUBTRACT BASE CPP /YX
-# ADD CPP /nologo /MD /W3 /GX /Ot /Og /Oi /Op /Oy /Ob1 /I "../../../src/include" /I "../../../src/include/gen" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "GDS32" /FD /EHc- /c
+# ADD CPP /nologo /MD /W3 /GX /Zi /Ot /Og /Oi /Op /Oy /Ob1 /I "../../../src/include" /I "../../../src/include/gen" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "GDS32" /FD /EHc- /c
 # ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x41d /d "_DEBUG"
@@ -80,7 +81,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /debug /machine:I386 /pdbtype:sept
-# ADD LINK32 kernel32.lib advapi32.lib /nologo /dll /incremental:no /machine:I386 /out:"..\..\..\temp\release\firebird/bin/gds32.dll" /pdbtype:sept
+# ADD LINK32 msvcrt.lib kernel32.lib advapi32.lib /nologo /dll /incremental:no /machine:I386 /out:"..\..\..\temp\release\firebird/bin/gds32.dll" /pdbtype:sept
 # SUBTRACT LINK32 /debug
 
 !ENDIF 
@@ -94,7 +95,7 @@ LINK32=link.exe
 # PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\os\win32\ibinitdll.cpp
+SOURCE=..\..\..\src\jrd\ibinitdll.cpp
 # End Source File
 # End Group
 # Begin Group "Resource files"
@@ -105,21 +106,31 @@ SOURCE=..\..\..\src\jrd\os\win32\ibinitdll.cpp
 SOURCE=..\..\..\src\jrd\isc_version.rc
 # End Source File
 # End Group
-# Begin Group "COMMON files"
-
-# PROP Default_Filter "cpp"
-# Begin Source File
-
-SOURCE=..\..\..\src\common\classes\alloc.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\common\fb_exception.cpp
-# End Source File
-# End Group
 # Begin Source File
 
 SOURCE=..\defs\gds32.def
+
+!IF  "$(CFG)" == "gds32 - Win32 Debug"
+
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "gds32 - Win32 Release"
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=..\defs\gds32_debug.def
+
+!IF  "$(CFG)" == "gds32 - Win32 Debug"
+
+!ELSEIF  "$(CFG)" == "gds32 - Win32 Release"
+
+# PROP Exclude_From_Build 1
+
+!ENDIF 
+
 # End Source File
 # End Target
 # End Project

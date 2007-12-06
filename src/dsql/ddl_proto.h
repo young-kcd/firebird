@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	Dynamic SQL runtime support
  *	MODULE:		ddl_proto.h
- *	DESCRIPTION:	Prototype Header file for ddl.cpp
+ *	DESCRIPTION:	Prototype Header file for ddl_proto.h
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -19,13 +19,10 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- *
- * 2004.01.16 Vlad Horsun: added support for default parameters and 
- *   EXECUTE BLOCK statement
  */
 
-#ifndef DSQL_DDL_PROTO_H
-#define DSQL_DDL_PROTO_H
+#ifndef _DSQL_DDL_PROTO_H_
+#define _DSQL_DDL_PROTO_H_
 
 // This is a DSQL internal file. Not to be used by anything but
 // the DSQL module itself.
@@ -33,15 +30,13 @@
 class dsql_req;
 class dsql_fld;
 class dsql_nod;
-class dsql_str;
+class str;
 
 void DDL_execute(dsql_req*);
 void DDL_generate(dsql_req*, dsql_nod*);
 bool DDL_ids(const dsql_req*);
-void DDL_put_field_dtype(dsql_req*, const dsql_fld*, bool);
-void DDL_resolve_intl_type(dsql_req*, dsql_fld*, const dsql_str*);
-void DDL_resolve_intl_type2(dsql_req*, dsql_fld*, const dsql_str*, bool);
-void DDL_gen_block(dsql_req*, dsql_nod*);
+void DDL_put_field_dtype(dsql_req*, const dsql_fld*, USHORT);
+void DDL_resolve_intl_type(dsql_req*, dsql_fld*, str*);
+void DDL_resolve_intl_type2(dsql_req*, dsql_fld*, str*, bool);
 
-#endif // DSQL_DDL_PROTO_H
-
+#endif /* _DSQL_DDL_PROTO_H_ */

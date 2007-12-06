@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Command Oriented Query Language
- *	MODULE:		exe.cpp
+ *	MODULE:		exe.c
  *	DESCRIPTION:	Execution phase
  *
  * The contents of this file are subject to the Interbase Public
@@ -22,25 +22,23 @@
  */
 
 #include "firebird.h"
-#include <stdio.h>
+#include "../jrd/ib_stdio.h"
 #include <setjmp.h>
 
-#include "../jrd/ibase.h"
+#define REQUESTS_MAIN
+#include "../jrd/gds.h"
 #include "../qli/dtr.h"
 #include "../qli/exe.h"
 #include "../qli/all_proto.h"
 #include "../qli/err_proto.h"
 #include "../qli/eval_proto.h"
 #include "../qli/exe_proto.h"
-#include "../qli/report.h"
+#include "../qli/form_proto.h"
 #include "../qli/forma_proto.h"
 #include "../qli/mov_proto.h"
 #include "../qli/repor_proto.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/utl_proto.h"
-#include "../common/classes/UserBlob.h"
-
-using MsgFormat::SafeArg;
 
 
 #ifdef HAVE_UNISTD_H
@@ -55,34 +53,42 @@ using MsgFormat::SafeArg;
 #include <string.h>
 #endif
 
-const char* FOPEN_WRITE_TYPE	= "w";
+#ifndef FOPEN_WRITE_TYPE
+#define FOPEN_WRITE_TYPE	"w"
+#endif
 
-static DSC *assignment(qli_nod*, DSC *, qli_nod*, qli_nod*, qli_par*);
-static void commit_retaining(qli_nod*);
-static bool copy_blob(qli_nod*, qli_par*);
-static void db_error(qli_req*, ISC_STATUS *);
-static void execute_abort(qli_nod*);
-static void execute_assignment(qli_nod*);
-static void execute_for(qli_nod*);
-static void execute_modify(qli_nod*);
-static void execute_output(qli_nod*);
-static void execute_print(qli_nod*);
-static void execute_repeat(qli_nod*);
-static void execute_store(qli_nod*);
-static void map_data(qli_msg*);
-static void print_counts(qli_req*);
-static void set_null(qli_msg*);
-static void transaction_state(qli_nod*, DBB);
+typedef vary VARY;
 
-// definitions for SET COUNT
+extern jmp_buf QLI_env;
 
-const int COUNT_ITEMS	= 4;
+extern USHORT QLI_prompt_count, QLI_reprompt;
 
-static const SCHAR count_info[] = {
-	isc_info_req_select_count,
-	isc_info_req_insert_count,
-	isc_info_req_update_count,
-	isc_info_req_delete_count
+static DSC *assignment(QLI_NOD, DSC *, QLI_NOD, QLI_NOD, PAR);
+static void commit_retaining(QLI_NOD);
+static int copy_blob(QLI_NOD, PAR);
+static void db_error(QLI_REQ, ISC_STATUS *);
+static void execute_abort(QLI_NOD);
+static void execute_assignment(QLI_NOD);
+static void execute_for(QLI_NOD);
+static void execute_modify(QLI_NOD);
+static void execute_output(QLI_NOD);
+static void execute_print(QLI_NOD);
+static void execute_repeat(QLI_NOD);
+static void execute_store(QLI_NOD);
+static void map_data(QLI_MSG);
+static void print_counts(QLI_REQ);
+static void set_null(QLI_MSG);
+static void transaction_state(QLI_NOD, DBB);
+
+/* definitions for SET COUNT */
+
+#define COUNT_ITEMS	4
+
+static SCHAR count_info[] = {
+	gds_info_req_select_count,
+	gds_info_req_insert_count,
+	gds_info_req_update_count,
+	gds_info_req_delete_count
 };
 
 
@@ -100,16 +106,18 @@ void EXEC_abort(void)
  *
  **************************************/
 	ISC_STATUS_ARRAY status_vector;
+	QLI_REQ request;
 
-	for (qli_req* request = QLI_requests; request; request = request->req_next)
+	for (request = QLI_requests; request; request = request->req_next)
 		if (request->req_handle)
-			isc_unwind_request(status_vector, &request->req_handle, 0);
+			gds__unwind_request(status_vector,
+								GDS_REF(request->req_handle), 0);
 
-	QLI_abort = true;
+	QLI_abort = TRUE;
 }
 
 
-void EXEC_execute( qli_nod* node)
+void EXEC_execute( QLI_NOD node)
 {
 /**************************************
  *
@@ -121,10 +129,14 @@ void EXEC_execute( qli_nod* node)
  *	Execute a node.
  *
  **************************************/
+	QLI_MSG message;
+	QLI_NOD *ptr;
+	USHORT i;
+
 	if (QLI_abort)
 		EXEC_poll_abort();
 
-	if (node) {
+	if (node)
 		switch (node->nod_type) {
 		case nod_abort:
 			execute_abort(node);
@@ -138,23 +150,27 @@ void EXEC_execute( qli_nod* node)
 			return;
 
 		case nod_erase:
-			{
-				qli_msg* message = (qli_msg*) node->nod_arg[e_era_message];
-				if (message)
-					EXEC_send(message);
-				return;
-			}
+			if (message = (QLI_MSG) node->nod_arg[e_era_message])
+				EXEC_send(message);
+			return;
 
 		case nod_for:
 			execute_for(node);
 			return;
+#ifdef PYXIS
+		case nod_form_for:
+			FORM_display(node);
+			return;
+
+		case nod_form_update:
+			FORM_update(node);
+			return;
+#endif
 		case nod_list:
-			{
-				qli_nod** ptr = node->nod_arg;
-				for (USHORT i = 0; i < node->nod_count; i++)
-					EXEC_execute(*ptr++);
-				return;
-			}
+			ptr = node->nod_arg;
+			for (i = 0; i < node->nod_count; i++)
+				EXEC_execute(*ptr++);
+			return;
 
 		case nod_modify:
 			execute_modify(node);
@@ -192,13 +208,12 @@ void EXEC_execute( qli_nod* node)
 			return;
 
 		default:
-			ERRQ_bugcheck(33);		// Msg33 EXEC_execute: not implemented
+			BUGCHECK(33);		/* Msg33 EXEC_execute: not implemented */
 		}
-	}
 }
 
 
-FB_API_HANDLE EXEC_open_blob( qli_nod* node)
+FRBRD *EXEC_open_blob( QLI_NOD node)
 {
 /**************************************
  *
@@ -210,50 +225,59 @@ FB_API_HANDLE EXEC_open_blob( qli_nod* node)
  *	Given a blob field node, open and return the blob.
  *
  **************************************/
-	dsc* desc = EVAL_value(node);
-	if (!desc)
-		return 0;
+	QLI_CTX context;
+	QLI_REQ request;
+	DBB dbb;
+	DSC *desc;
+	UCHAR bpb[20], *p;
+	USHORT bpb_length;
+	FRBRD *blob;
+	ISC_STATUS_ARRAY status_vector;
 
-// Starting from the print item, work our way back to the database block
+	desc = EVAL_value(node);
+	if (!desc)
+		return FALSE;
+
+/* Starting from the print item, work our way back to the database block */
 
 	if (node->nod_type == nod_reference)
 		node = node->nod_arg[0];
 
 	if (node->nod_type != nod_field)
-		ERRQ_bugcheck(34);			// Msg34 print_blob: expected field node
+		BUGCHECK(34);			/* Msg34 print_blob: expected field node */
 
-	qli_ctx* context = (qli_ctx*) node->nod_arg[e_fld_context];
-	qli_req* request = context->ctx_request;
-	DBB dbb = request->req_database;
-	FB_API_HANDLE blob = 0;
+	context = (QLI_CTX) node->nod_arg[e_fld_context];
+	request = context->ctx_request;
+	dbb = request->req_database;
+	blob = NULL;
 
-// Format blob parameter block
-	UCHAR bpb[20];
-	UCHAR* p = bpb;
-	*p++ = isc_bpb_version1;
-	*p++ = isc_bpb_source_type;
+/* Format blob parameter block */
+
+	p = bpb;
+	*p++ = gds_bpb_version1;
+	*p++ = gds_bpb_source_type;
 	*p++ = 2;
 	*p++ = desc->dsc_sub_type;
 	*p++ = desc->dsc_sub_type >> 8;
-	*p++ = isc_bpb_target_type;
+	*p++ = gds_bpb_target_type;
 	*p++ = 1;
 	*p++ = 1;
 
-	const USHORT bpb_length = p - bpb;
+	bpb_length = p - bpb;
 
-	ISC_STATUS_ARRAY status_vector;
-	if (isc_open_blob2(status_vector, &dbb->dbb_handle, &dbb->dbb_transaction,
-						&blob, (ISC_QUAD*) desc->dsc_address, bpb_length,
-						bpb))
-	{
-		ERRQ_database_error(dbb, status_vector);
-	}
+	if (gds__open_blob2(status_vector,
+						GDS_REF(dbb->dbb_handle),
+						GDS_REF(dbb->dbb_transaction),
+						GDS_REF(blob),
+						(GDS_QUAD*)GDS_VAL(desc->dsc_address),
+						bpb_length,
+						(char*) bpb)) ERRQ_database_error(dbb, status_vector);
 
 	return blob;
 }
 
 
-file* EXEC_open_output(qli_nod* node)
+struct file *EXEC_open_output(QLI_NOD node)
 {
 /**************************************
  *
@@ -265,62 +289,61 @@ file* EXEC_open_output(qli_nod* node)
  *	Open output stream to re-direct output.
  *
  **************************************/
-// Evaluate filename and copy to a null terminated string
+	IB_FILE *file;
+	DSC *desc;
+	TEXT filename[256], temp[64], *p, *q;
+#ifndef WIN_NT
+	TEXT *argv[20], **arg;
+	int pair[2];
+#endif
+	SSHORT l;
 
-	dsc* desc = EVAL_value(node->nod_arg[e_out_file]);
-	const TEXT* p = NULL;
-	TEXT temp[64];
-	SSHORT l = MOVQ_get_string(desc, &p, (vary*) temp, sizeof(temp));
+/* Evaluate filename and copy to a null terminated string */
 
-	TEXT filename[256];
-	TEXT* q = filename;
+	desc = EVAL_value(node->nod_arg[e_out_file]);
+	l = MOVQ_get_string(desc, &p, (VARY*) temp, sizeof(temp));
+	q = filename;
 	if (l)
-		do {
+		do
 			*q++ = *p++;
-		} while (--l);
+		while (--l);
 	*q = 0;
 
-// If output is to a file, just do it
+/* If output is to a file, just do it */
 
 	if (!node->nod_arg[e_out_pipe]) {
-	    FILE* out_file = fopen(filename, FOPEN_WRITE_TYPE);
-		if (out_file)
-			return (file*) out_file;
+		if (file = ib_fopen(filename, FOPEN_WRITE_TYPE))
+			return (struct file *) file;
 
-		ERRQ_print_error(42, filename);
-		// Msg42 Can't open output file %s
+		ERRQ_print_error(42, filename, NULL, NULL, NULL, NULL);	/* Msg42 Can't open output file %s */
 	}
 
-// Output is to a file.  Setup file and fork process
+/* Output is to a file.  Setup file and fork process */
 
 #ifdef VMS
-	IBERROR(35);				// Msg35 output pipe is not supported on VMS
+	IBERROR(35);				/* Msg35 output pipe is not supported on VMS */
 #else
 
 #ifdef WIN_NT
-	FILE* out_file = _popen(filename, "w");
-	if (out_file)
-		return (file*) out_file;
+	if (file = _popen(filename, "w"))
+		return (struct file *) file;
 #else
-	TEXT* argv[20];
-	TEXT** arg = argv;
-	TEXT** const end = argv + FB_NELEM(argv) - 1; // The last element should be NULL
-	TEXT* pp = filename;
-	while (*pp && arg < end) {
-		*arg++ = pp;
-		while (*pp && *pp != ' ')
-			pp++;
-		if (!*pp)
+	arg = argv;
+	p = filename;
+	while (*p) {
+		*arg++ = p;
+		while (*p && *p != ' ')
+			p++;
+		if (!*p)
 			break;
-		*pp++ = 0;
-		while (*pp == ' ')
-			pp++;
+		*p++ = 0;
+		while (*p == ' ')
+			p++;
 	}
 	*arg = NULL;
 
-	int pair[2];
 	if (pipe(pair) < 0)
-		IBERROR(36);			// Msg36 couldn't create pipe
+		IBERROR(36);			/* Msg36 couldn't create pipe */
 
 	if (!vfork()) {
 		close(pair[1]);
@@ -328,18 +351,17 @@ file* EXEC_open_output(qli_nod* node)
 		dup(pair[0]);
 		close(pair[0]);
 		execvp(argv[0], argv);
-		ERRQ_msg_put(43, filename);	// Msg43 Couldn't run %s
+		ERRQ_msg_put(43, filename, NULL, NULL, NULL, NULL);	/* Msg43 Couldn't run %s */
 		_exit(-1);
 	}
 
 	close(pair[0]);
 
-	FILE* out_file = fdopen(pair[1], "w");
-	if (out_file)
-		return (file*) out_file;
+	if (file = ib_fdopen(pair[1], "w"))
+		return (struct file *) file;
 #endif
 
-	IBERROR(37);				// Msg37 fdopen failed
+	IBERROR(37);				/* Msg37 ib_fdopen failed */
 #endif
 	return NULL;
 }
@@ -362,11 +384,11 @@ void EXEC_poll_abort(void)
 	if (!QLI_abort)
 		return;
 
-	IBERROR(38);				// Msg38 execution terminated by signal
+	IBERROR(38);				/* Msg38 execution terminated by signal */
 }
 
 
-DSC *EXEC_receive(qli_msg* message, qli_par* parameter)
+DSC *EXEC_receive(QLI_MSG message, PAR parameter)
 {
 /**************************************
  *
@@ -378,13 +400,17 @@ DSC *EXEC_receive(qli_msg* message, qli_par* parameter)
  *	Receive a message from a running request.
  *
  **************************************/
+	QLI_REQ request;
 	ISC_STATUS_ARRAY status_vector;
 
-	qli_req* request = message->msg_request;
+	request = message->msg_request;
 
-	if (isc_receive(status_vector, &request->req_handle, message->msg_number,
-					 message->msg_length, message->msg_buffer, 0))
-		db_error(request, status_vector);
+	if (gds__receive(status_vector,
+					 GDS_REF(request->req_handle),
+					 message->msg_number,
+					 message->msg_length,
+					 GDS_VAL(message->msg_buffer),
+					 0)) db_error(request, status_vector);
 
 	if (!parameter)
 		return NULL;
@@ -393,7 +419,7 @@ DSC *EXEC_receive(qli_msg* message, qli_par* parameter)
 }
 
 
-void EXEC_send( qli_msg* message)
+void EXEC_send( QLI_MSG message)
 {
 /**************************************
  *
@@ -406,20 +432,22 @@ void EXEC_send( qli_msg* message)
  *	any data to the message.
  *
  **************************************/
+	QLI_REQ request;
 	ISC_STATUS_ARRAY status_vector;
 
-	qli_req* request = message->msg_request;
+	request = message->msg_request;
 
 	map_data(message);
-	if (isc_send(status_vector, &request->req_handle, message->msg_number,
-				  message->msg_length, message->msg_buffer, 0))
-	{
-		db_error(request, status_vector);
-	}
+	if (gds__send(status_vector,
+				  GDS_REF(request->req_handle),
+				  message->msg_number,
+				  message->msg_length,
+				  GDS_VAL(message->msg_buffer),
+				  0)) db_error(request, status_vector);
 }
 
 
-void EXEC_start_request( qli_req* request, qli_msg* message)
+void EXEC_start_request( QLI_REQ request, QLI_MSG message)
 {
 /**************************************
  *
@@ -436,27 +464,24 @@ void EXEC_start_request( qli_req* request, qli_msg* message)
 
 	if (message) {
 		map_data(message);
-		if (!isc_start_and_send(status_vector, &request->req_handle,
-								 &request->req_database-> dbb_transaction,
+		if (!gds__start_and_send(status_vector,
+								 GDS_REF(request->req_handle),
+								 GDS_REF(request->req_database->
+										 dbb_transaction),
 								 message->msg_number, message->msg_length,
-								 message->msg_buffer, 0))
-		{
-			return;
-		}
+								 GDS_VAL(message->msg_buffer), 0)) return;
 	}
-	else {
-		if (!isc_start_request(status_vector, &request->req_handle,
-								&request->req_database-> dbb_transaction, 0))
-		{
-			return;
-		}
-	}
+	else
+		if (!gds__start_request(status_vector,
+								GDS_REF(request->req_handle),
+								GDS_REF(request->req_database->
+										dbb_transaction), 0)) return;
 
 	db_error(request, status_vector);
 }
 
 
-void EXEC_top( qli_nod* node)
+void EXEC_top( QLI_NOD node)
 {
 /**************************************
  *
@@ -473,11 +498,11 @@ void EXEC_top( qli_nod* node)
 }
 
 
-static DSC *assignment(	qli_nod*		from_node,
+static DSC *assignment(	QLI_NOD		from_node,
 						DSC*	to_desc,
-						qli_nod*		validation,
-						qli_nod*		initial,
-						qli_par*		parameter)
+						QLI_NOD		validation,
+						QLI_NOD		initial,
+						PAR		parameter)
 {
 /**************************************
  *
@@ -490,15 +515,17 @@ static DSC *assignment(	qli_nod*		from_node,
  *	goes wrong and there was a prompt, try again.
  *
  **************************************/
+	DSC *from_desc;
+	UCHAR *p;
+	QLI_MSG message;
+	USHORT l, *missing_flag, trash;
 	jmp_buf old_env;
 
 	memcpy(old_env, QLI_env, sizeof(QLI_env));
 	QLI_reprompt = FALSE;
 	QLI_prompt_count = 0;
+	missing_flag = &trash;
 
-	USHORT trash;
-	USHORT* missing_flag = &trash;
-	qli_msg* message = NULL;
 	if (parameter) {
 		message = parameter->par_message;
 		missing_flag =
@@ -507,39 +534,38 @@ static DSC *assignment(	qli_nod*		from_node,
 
 	try {
 
-		memcpy(QLI_env, old_env, sizeof(QLI_env));
-		dsc* from_desc = EVAL_value(from_node);
+	memcpy(QLI_env, old_env, sizeof(QLI_env));
+	from_desc = EVAL_value(from_node);
 
-		if (from_desc->dsc_missing & DSC_initial) {
-			from_desc = EVAL_value(initial);
-		}
+	if (from_desc->dsc_missing & DSC_initial) {
+		from_desc = EVAL_value(initial);
+	}
 
 /* If there is a value present, do any assignment; otherwise null fill */
 
-		if (*missing_flag = to_desc->dsc_missing = from_desc->dsc_missing) {
-			UCHAR* p = from_desc->dsc_address;
-			USHORT l = from_desc->dsc_length;
-			if (l) {
-				do {
-					*p++ = 0;
-				} while (--l);
-			}
+	if (*missing_flag = to_desc->dsc_missing = from_desc->dsc_missing) {
+		p = from_desc->dsc_address;
+		if (l = from_desc->dsc_length) {
+			do {
+				*p++ = 0;
+			} while (--l);
 		}
-		else {
-			MOVQ_move(from_desc, to_desc);
-		}
-
-		if (validation && EVAL_boolean(validation) <= 0) {
-			IBERROR(39);			// Msg39 field validation error
-		}
-
-		QLI_reprompt = FALSE;
-		memcpy(QLI_env, old_env, sizeof(QLI_env));
-
-		return from_desc;
-
 	}
-	catch (const Firebird::Exception&) {
+	else {
+		MOVQ_move(from_desc, to_desc);
+	}
+
+	if (validation && EVAL_boolean(validation) <= 0) {
+		IBERROR(39);			/* Msg39 field validation error */
+	}
+
+	QLI_reprompt = FALSE;
+	memcpy(QLI_env, old_env, sizeof(QLI_env));
+
+	return from_desc;
+
+	}	// try
+	catch (const std::exception&) {
 		if (QLI_abort || !QLI_prompt_count) {
 			memcpy(QLI_env, old_env, sizeof(QLI_env));
 			throw;
@@ -552,7 +578,7 @@ static DSC *assignment(	qli_nod*		from_node,
 }
 
 
-static void commit_retaining( qli_nod* node)
+static void commit_retaining( QLI_NOD node)
 {
 /**************************************
  *
@@ -562,10 +588,12 @@ static void commit_retaining( qli_nod* node)
  *
  * Functional description
  *	Execute commit retaining statement for
- *	one or more named databases or all databases.
+ *	one or more named databases or all databases. 
  *	If there's more than one, prepare it.
  *
  **************************************/
+	DBB database;
+	QLI_NOD *ptr, *end;
 
 /* If there aren't any open databases then obviously
    there isn't anything to commit. */
@@ -575,14 +603,13 @@ static void commit_retaining( qli_nod* node)
 
 	if (node->nod_type == nod_commit_retaining &&
 		((node->nod_count > 1) ||
-		 (node->nod_count == 0 && QLI_databases->dbb_next)))
-	{
+		 (node->nod_count == 0 && QLI_databases->dbb_next))) {
 		node->nod_type = nod_prepare;
 		commit_retaining(node);
 		node->nod_type = nod_commit_retaining;
 	}
 	else if (node->nod_count == 1) {
-		DBB database = (DBB) node->nod_arg[0];
+		database = (DBB) node->nod_arg[0];
 		database->dbb_flags |= DBB_prepared;
 	}
 	else
@@ -590,14 +617,12 @@ static void commit_retaining( qli_nod* node)
 
 
 	if (node->nod_count == 0) {
-		for (DBB database = QLI_databases; database;
-			 database = database->dbb_next)
-		{
+		for (database = QLI_databases; database;
+			 database = database->dbb_next) {
 			if ((node->nod_type == nod_commit_retaining)
 				&& !(database->dbb_flags & DBB_prepared))
-			{
-				ERRQ_msg_put(465, database->dbb_symbol->sym_string);
-			}
+				ERRQ_msg_put(465, database->dbb_symbol->sym_string, NULL,
+							 NULL, NULL, NULL);
 			else if (node->nod_type == nod_prepare)
 				database->dbb_flags |= DBB_prepared;
 			if (database->dbb_transaction)
@@ -606,15 +631,12 @@ static void commit_retaining( qli_nod* node)
 		return;
 	}
 
-    qli_nod** ptr = node->nod_arg;
-	for (const qli_nod* const* const end = ptr + node->nod_count; ptr < end; ptr++)
-	{
-		DBB database = (DBB) *ptr;
+	for (ptr = node->nod_arg, end = ptr + node->nod_count; ptr < end; ptr++) {
+		database = (DBB) * ptr;
 		if ((node->nod_type == nod_commit_retaining) &&
 			!(database->dbb_flags & DBB_prepared))
-		{
-			ERRQ_msg_put(465, database->dbb_symbol->sym_string);
-		}
+			ERRQ_msg_put(465, database->dbb_symbol->sym_string, NULL, NULL,
+						 NULL, NULL);
 		else if (node->nod_type == nod_prepare)
 			database->dbb_flags |= DBB_prepared;
 		if (database->dbb_transaction)
@@ -624,7 +646,7 @@ static void commit_retaining( qli_nod* node)
 
 
 
-static bool copy_blob( qli_nod* value, qli_par* parameter)
+static int copy_blob( QLI_NOD value, PAR parameter)
 {
 /**************************************
  *
@@ -634,121 +656,125 @@ static bool copy_blob( qli_nod* value, qli_par* parameter)
  *
  * Functional description
  *	Copy a blob from one database to another.  If the blob can be
- *	successfully assigned, return false and let somebody else just
+ *	successfully assigned, return FALSE and let somebody else just
  *	copy the blob ids.
  *
  **************************************/
-
+	QLI_CTX context;
+	QLI_MSG message;
+	QLI_REQ from_request, to_request;
+	DBB to_dbb, from_dbb;
+	DSC *from_desc, *to_desc;
+	FRBRD *from_blob, *to_blob;
+	SLONG size, segment_count, max_segment;
+	ISC_STATUS_ARRAY status_vector;
+	USHORT bpb_length, length, buffer_length;
+	UCHAR bpb[20], *p, fixed_buffer[4096], *buffer;
+#ifdef PYXIS
+	if (value->nod_type == nod_form_field)
+		return FORM_get_blob(value, parameter);
+#endif
 /* If assignment isn't from a field, there isn't a blob copy, so
    do a dumb assignment. */
 
 	if (value->nod_type != nod_field)
-		return false;
+		return FALSE;
 
 /* Find the sending and receiving requests.  If they are the same
    and no filtering is necessary, a simple assignment will suffice. */
 
-	qli_ctx* context = (qli_ctx*) value->nod_arg[e_fld_context];
-	qli_req* from_request = context->ctx_request;
-	DBB from_dbb = from_request->req_database;
-	qli_msg* message = parameter->par_message;
-	qli_req* to_request = message->msg_request;
-	DBB to_dbb = to_request->req_database;
+	context = (QLI_CTX) value->nod_arg[e_fld_context];
+	from_request = context->ctx_request;
+	from_dbb = from_request->req_database;
+	message = parameter->par_message;
+	to_request = message->msg_request;
+	to_dbb = to_request->req_database;
 
-	dsc* from_desc = EVAL_value(value);
-	dsc* to_desc = EVAL_parameter(parameter);
+	from_desc = EVAL_value(value);
+	to_desc = EVAL_parameter(parameter);
 
 	if (to_dbb == from_dbb &&
 		(!to_desc->dsc_sub_type ||
-		 from_desc->dsc_sub_type == to_desc->dsc_sub_type))
-	{
-		return false;
-	}
+		 from_desc->dsc_sub_type == to_desc->dsc_sub_type)) return FALSE;
 
-	// We've got a blob copy on our hands.
+/* We've got a blob copy on our hands. */
 
 	if (!from_desc) {
 		*to_desc->dsc_address = 0;
-		return true;
+		return TRUE;
 	}
 
+	to_blob = from_blob = NULL;
 
-	// Format blob parameter block for the existing blob
+/* Format blob parameter block for the existing blob */
 
-	UCHAR bpb[20];
-	UCHAR* p = bpb;
-	*p++ = isc_bpb_version1;
-	*p++ = isc_bpb_source_type;
+	p = bpb;
+	*p++ = gds_bpb_version1;
+	*p++ = gds_bpb_source_type;
 	*p++ = 2;
 	*p++ = from_desc->dsc_sub_type;
 	*p++ = from_desc->dsc_sub_type >> 8;
-	*p++ = isc_bpb_target_type;
+	*p++ = gds_bpb_target_type;
 	*p++ = 2;
 	*p++ = to_desc->dsc_sub_type;
 	*p++ = to_desc->dsc_sub_type >> 8;
-	const USHORT bpb_length = p - bpb;
+	bpb_length = p - bpb;
 
-	ISC_STATUS_ARRAY status_vector;
-	UserBlob to_blob(status_vector);
-	UserBlob from_blob(status_vector);
-	
-	if (!to_blob.create(to_dbb->dbb_handle, to_dbb->dbb_transaction,
-						 *(ISC_QUAD*) to_desc->dsc_address))
-	{
+	if (gds__create_blob(status_vector,
+						 GDS_REF(to_dbb->dbb_handle),
+						 GDS_REF(to_dbb->dbb_transaction),
+						 GDS_REF(to_blob), (GDS__QUAD*) GDS_VAL(to_desc->dsc_address)))
 		ERRQ_database_error(to_dbb, status_vector);
-	}
 
-	if (!from_blob.open(from_dbb->dbb_handle, from_dbb->dbb_transaction,
-						*(ISC_QUAD*) from_desc->dsc_address, bpb_length,
-						bpb))
-	{
-		ERRQ_database_error(from_dbb, status_vector);
-	}
+	if (gds__open_blob2(status_vector,
+						GDS_REF(from_dbb->dbb_handle),
+						GDS_REF(from_dbb->dbb_transaction),
+						GDS_REF(from_blob),
+						(GDS__QUAD*) GDS_VAL(from_desc->dsc_address),
+						bpb_length,
+						(char*) bpb)) ERRQ_database_error(from_dbb, status_vector);
 
-	SLONG size, segment_count, max_segment;
-	if (!getBlobSize(from_blob, &size, &segment_count, &max_segment))
-		ERRQ_database_error(from_dbb, status_vector);
+	gds__blob_size(&from_blob, &size, &segment_count, &max_segment);
 
-    UCHAR fixed_buffer[4096];
-	UCHAR* buffer;
-	USHORT buffer_length;
-	if (max_segment < (SLONG) sizeof(fixed_buffer)) {
+	if (max_segment < sizeof(fixed_buffer)) {
 		buffer_length = sizeof(fixed_buffer);
 		buffer = fixed_buffer;
 	}
-	else
-	{
+	else {
 		buffer_length = max_segment;
 		buffer = (UCHAR*) gds__alloc(buffer_length);
 #ifdef DEBUG_GDS_ALLOC
-		// We don't care about QLI specific memory leaks for V4.0
-		gds_alloc_flag_unfreed((void *) buffer);	// QLI: don't care
+		/* We don't care about QLI specific memory leaks for V4.0 */
+		gds_alloc_flag_unfreed((void *) buffer);	/* QLI: don't care */
 #endif
+
 	}
 
-	size_t length;
-	while (from_blob.getSegment(buffer_length, buffer, length) && !from_blob.getCode())
-	{
-		if (!to_blob.putSegment(length, buffer))
-		{
-			ERRQ_database_error(to_dbb, status_vector);
-		}
-	}
+	while (!gds__get_segment(status_vector,
+							 GDS_REF(from_blob),
+							 GDS_REF(length),
+							 buffer_length,
+							 (char*) GDS_VAL(buffer)))
+			if (gds__put_segment(status_vector,
+								 GDS_REF(to_blob),
+								 length,
+								 (char*) GDS_VAL(buffer)))
+				ERRQ_database_error(to_dbb, status_vector);
 
 	if (buffer != fixed_buffer)
 		gds__free(buffer);
 
-	if (!from_blob.close())
+	if (gds__close_blob(status_vector, GDS_REF(from_blob)))
 		ERRQ_database_error(from_dbb, status_vector);
 
-	if (!to_blob.close())
+	if (gds__close_blob(status_vector, GDS_REF(to_blob)))
 		ERRQ_database_error(to_dbb, status_vector);
 
-	return true;
+	return TRUE;
 }
 
 
-static void db_error( qli_req* request, ISC_STATUS * status_vector)
+static void db_error( QLI_REQ request, ISC_STATUS * status_vector)
 {
 /**************************************
  *
@@ -767,7 +793,7 @@ static void db_error( qli_req* request, ISC_STATUS * status_vector)
 }
 
 
-static void execute_abort( qli_nod* node)
+static void execute_abort( QLI_NOD node)
 {
 /**************************************
  *
@@ -779,24 +805,22 @@ static void execute_abort( qli_nod* node)
  *	Abort a statement.
  *
  **************************************/
-	if (node->nod_count) {
-	    const TEXT* ptr = NULL;
-		UCHAR temp[80];
-		const USHORT l =
-			MOVQ_get_string(EVAL_value(node->nod_arg[0]), &ptr,
-				(vary*) temp, sizeof(temp));
+	USHORT l;
+	UCHAR *ptr, temp[80], msg[128];
 
-		UCHAR msg[128];
-		MOVQ_terminate(ptr, (SCHAR*) msg, l, sizeof(msg));
-		ERRQ_error(40, SafeArg() << msg);
-		// Msg40 Request terminated by statement: %s
+	if (node->nod_count) {
+		l =
+			MOVQ_get_string(EVAL_value(node->nod_arg[0]), (TEXT**) &ptr, (VARY*) temp,
+							sizeof(temp));
+		MOVQ_terminate((SCHAR*) ptr, (SCHAR*) msg, l, sizeof(msg));
+		ERRQ_error(40, (TEXT*) msg, NULL, NULL, NULL, NULL);	/* Msg40 Request terminated by statement: %s */
 	}
 
-	IBERROR(41);				// Msg41 Request terminated by statement
+	IBERROR(41);				/* Msg41 Request terminated by statement */
 }
 
 
-static void execute_assignment( qli_nod* node)
+static void execute_assignment( QLI_NOD node)
 {
 /**************************************
  *
@@ -807,24 +831,30 @@ static void execute_assignment( qli_nod* node)
  * Functional description
  *
  **************************************/
+	QLI_NOD to, from, reference, initial;
+	QLI_FLD field;
+	PAR parameter;
+
 	if (node->nod_flags & NOD_remote)
 		return;
 
-	qli_nod* to = node->nod_arg[e_asn_to];
-	qli_nod* from = node->nod_arg[e_asn_from];
-	qli_nod* initial = node->nod_arg[e_asn_initial];
+	to = node->nod_arg[e_asn_to];
+	from = node->nod_arg[e_asn_from];
+	initial = node->nod_arg[e_asn_initial];
 
-	qli_par* parameter;
 	if (to->nod_type == nod_field) {
-		qli_nod* reference = to->nod_arg[e_fld_reference];
+		reference = to->nod_arg[e_fld_reference];
 		parameter = reference->nod_import;
 		if (to->nod_desc.dsc_dtype == dtype_blob &&
 			from->nod_desc.dsc_dtype == dtype_blob &&
-			copy_blob(from, parameter))
-		{
-			return;
-		}
+			copy_blob(from, parameter)) return;
 	}
+#ifdef PYXIS
+	else if (to->nod_type == nod_form_field) {
+		FORM_put_field(from, to);
+		return;
+	}
+#endif
 	else
 		parameter = node->nod_import;
 
@@ -834,10 +864,10 @@ static void execute_assignment( qli_nod* node)
 	assignment(from, EVAL_value(to),
 			   node->nod_arg[e_asn_valid], initial, parameter);
 
-// propagate the missing flag in variable assignments
+/* propagate the missing flag in variable assignments */
 
 	if (to->nod_type == nod_variable) {
-		qli_fld* field = (qli_fld*) to->nod_arg[e_fld_field];
+		field = (QLI_FLD) to->nod_arg[e_fld_field];
 		if (to->nod_desc.dsc_missing & DSC_missing)
 			field->fld_flags |= FLD_missing;
 		else
@@ -846,7 +876,7 @@ static void execute_assignment( qli_nod* node)
 }
 
 
-static void execute_for( qli_nod* node)
+static void execute_for( QLI_NOD node)
 {
 /**************************************
  *
@@ -861,31 +891,29 @@ static void execute_for( qli_nod* node)
  *	absolutely nothing to do.
  *
  **************************************/
+	QLI_REQ request;
+	QLI_MSG message;
+	DSC *desc;
 
 /* If there is a request associated  with the node, start it and possibly
    send a message along with it. */
 
-	qli_req* request = (qli_req*) node->nod_arg[e_for_request];
-	if (request)
-		EXEC_start_request(request, (qli_msg*) node->nod_arg[e_for_send]);
-	else {
-	    qli_msg* amessage = (qli_msg*) node->nod_arg[e_for_send];
-		if (amessage)
-			EXEC_send(amessage);
-	}
+	if (request = (QLI_REQ) node->nod_arg[e_for_request])
+		EXEC_start_request(request, (QLI_MSG) node->nod_arg[e_for_send]);
+	else if (message = (QLI_MSG) node->nod_arg[e_for_send])
+		EXEC_send(message);
 
 /* If there isn't a receive message, the body of the loop has been
-   optimized out of existence.  So skip it. */
+   optimized out of existance.  So skip it. */
 
-	qli_msg* message = (qli_msg*) node->nod_arg[e_for_receive];
-	if (!message)
+	if (!(message = (QLI_MSG) node->nod_arg[e_for_receive]))
 		goto count;
 
 /* Receive messages in a loop until the end of file field comes up
    true. */
 
-	while (true) {
-		dsc* desc = EXEC_receive(message, (qli_par*) node->nod_arg[e_for_eof]);
+	while (TRUE) {
+		desc = EXEC_receive(message, (PAR) node->nod_arg[e_for_eof]);
 		if (*(USHORT *) desc->dsc_address)
 			break;
 		EXEC_execute(node->nod_arg[e_for_statement]);
@@ -899,7 +927,7 @@ static void execute_for( qli_nod* node)
 }
 
 
-static void execute_modify( qli_nod* node)
+static void execute_modify( QLI_NOD node)
 {
 /**************************************
  *
@@ -912,11 +940,13 @@ static void execute_modify( qli_nod* node)
  *	message to the running request and executing a sub-statement.
  *
  **************************************/
+	QLI_MSG message;
+
+
 	if (node->nod_flags & NOD_remote)
 		return;
 
-	qli_msg* message = (qli_msg*) node->nod_arg[e_mod_send];
-	if (message)
+	if (message = (QLI_MSG) node->nod_arg[e_mod_send])
 		set_null(message);
 
 	EXEC_execute(node->nod_arg[e_mod_statement]);
@@ -926,7 +956,7 @@ static void execute_modify( qli_nod* node)
 }
 
 
-static void execute_output( qli_nod* node)
+static void execute_output( QLI_NOD node)
 {
 /**************************************
  *
@@ -938,28 +968,30 @@ static void execute_output( qli_nod* node)
  *	Open output stream to re-direct output.
  *
  **************************************/
-	qli_prt* print = (qli_prt*) node->nod_arg[e_out_print];
-	print->prt_file = EXEC_open_output(node);
-
-	// Set up error handling
-
+	PRT print;
 	jmp_buf old_env;
 	jmp_buf env;
+
+	print = (PRT) node->nod_arg[e_out_print];
+	print->prt_file = EXEC_open_output(node);
+
+/* Set up error handling */
+
 	memcpy(old_env, QLI_env, sizeof(QLI_env));
 	memcpy(QLI_env, env, sizeof(QLI_env));
 
 	try {
 
-		// Finally, execute the query
+/* Finally, execute the query */
 
-		EXEC_execute(node->nod_arg[e_out_statement]);
-		memcpy(QLI_env, old_env, sizeof(QLI_env));
-		fclose((FILE *) print->prt_file);
+	EXEC_execute(node->nod_arg[e_out_statement]);
+	memcpy(QLI_env, old_env, sizeof(QLI_env));
+	ib_fclose((IB_FILE *) print->prt_file);
 
-	}
-	catch (const Firebird::Exception&) {
+	}	// try
+	catch (const std::exception&) {
 		if (print->prt_file) {
-			fclose((FILE *) print->prt_file);
+			ib_fclose((IB_FILE *) print->prt_file);
 		}
 		memcpy(QLI_env, old_env, sizeof(QLI_env));
 		throw;
@@ -967,7 +999,7 @@ static void execute_output( qli_nod* node)
 }
 
 
-static void execute_print( qli_nod* node)
+static void execute_print( QLI_NOD node)
 {
 /**************************************
  *
@@ -982,19 +1014,19 @@ static void execute_print( qli_nod* node)
  **************************************/
 
 	if (node->nod_arg[e_prt_header]) {
-		FMT_put((TEXT*) node->nod_arg[e_prt_header], (qli_prt*) node->nod_arg[e_prt_output]);
+		FMT_put((TEXT*) node->nod_arg[e_prt_header], (PRT) node->nod_arg[e_prt_output]);
 		node->nod_arg[e_prt_header] = NULL;
 	}
 
-	FMT_print(node->nod_arg[e_prt_list], (qli_prt*) node->nod_arg[e_prt_output]);
+	FMT_print(node->nod_arg[e_prt_list], (PRT) node->nod_arg[e_prt_output]);
 }
 
 
-static void execute_repeat( qli_nod* node)
+static void execute_repeat( QLI_NOD node)
 {
 /**************************************
  *
- *	e x e c u t e _ r e p e a t
+ *	e x e c u t e _ r e p e a t 
  *
  **************************************
  *
@@ -1002,14 +1034,16 @@ static void execute_repeat( qli_nod* node)
  *	Execute a REPEAT statement.  In short, loop.
  *
  **************************************/
-	SLONG count = MOVQ_get_long(EVAL_value(node->nod_arg[e_rpt_value]), 0);
+	SLONG count;
+
+	count = MOVQ_get_long(EVAL_value(node->nod_arg[e_rpt_value]), 0);
 
 	while (--count >= 0)
 		EXEC_execute(node->nod_arg[e_rpt_statement]);
 }
 
 
-static void execute_store( qli_nod* node)
+static void execute_store( QLI_NOD node)
 {
 /**************************************
  *
@@ -1025,8 +1059,10 @@ static void execute_store( qli_nod* node)
  *	here.
  *
  **************************************/
-	qli_msg* message = (qli_msg*) node->nod_arg[e_sto_send];
-	if (message)
+	QLI_REQ request;
+	QLI_MSG message;
+
+	if (message = (QLI_MSG) node->nod_arg[e_sto_send])
 		set_null(message);
 
 	if (!(node->nod_flags & NOD_remote))
@@ -1035,9 +1071,8 @@ static void execute_store( qli_nod* node)
 /* If there is a request associated  with the node, start it and possibly
    send a message along with it. */
 
-	qli_req* request = (qli_req*) node->nod_arg[e_sto_request];
-	if (request)
-		EXEC_start_request(request, (qli_msg*) node->nod_arg[e_sto_send]);
+	if (request = (QLI_REQ) node->nod_arg[e_sto_request])
+		EXEC_start_request(request, (QLI_MSG) node->nod_arg[e_sto_send]);
 	else if (message)
 		EXEC_send(message);
 
@@ -1046,7 +1081,7 @@ static void execute_store( qli_nod* node)
 }
 
 
-static void map_data( qli_msg* message)
+static void map_data( QLI_MSG message)
 {
 /**************************************
  *
@@ -1058,19 +1093,24 @@ static void map_data( qli_msg* message)
  *	Map data to a message in preparation for sending.
  *
  **************************************/
-	for (qli_par* parameter = message->msg_parameters; parameter;
-		 parameter = parameter->par_next)
-	{
-		dsc* desc = &parameter->par_desc;
+	PAR parameter, missing_parameter;
+	QLI_NOD from;
+	DSC *desc;
+	USHORT *missing_flag;
+
+	for (parameter = message->msg_parameters; parameter;
+		 parameter = parameter->par_next) {
+		desc = &parameter->par_desc;
 		desc->dsc_address = message->msg_buffer + parameter->par_offset;
-		qli_par* missing_parameter = parameter->par_missing;
-		if (missing_parameter) {
-			USHORT* missing_flag = (USHORT*) (message->msg_buffer +
+		if (missing_parameter = parameter->par_missing) {
+			missing_flag =
+				(USHORT *) (message->msg_buffer +
 							missing_parameter->par_offset);
-			*missing_flag = (desc->dsc_missing & DSC_missing) ? DSC_missing : 0;
+			*missing_flag =
+				(desc->dsc_missing & DSC_missing) ? DSC_missing : 0;
 		}
 
-		qli_nod* from = parameter->par_value;
+		from = parameter->par_value;
 		if (desc->dsc_dtype == dtype_blob && copy_blob(from, parameter))
 			continue;
 		assignment(from, desc, 0, 0, parameter->par_missing);
@@ -1078,7 +1118,7 @@ static void map_data( qli_msg* message)
 }
 
 
-static void print_counts( qli_req* request)
+static void print_counts( QLI_REQ request)
 {
 /**************************************
  *
@@ -1087,45 +1127,47 @@ static void print_counts( qli_req* request)
  **************************************
  *
  * Functional description
- *	Print out the count of records affected
+ *	Print out the count of records affected 
  *	by the last statement.
  *
  **************************************/
+	UCHAR item;
+	int length;
+	ULONG number;
 	ISC_STATUS_ARRAY status_vector;
+	SCHAR count_buffer[COUNT_ITEMS * 7 + 1], *c;
 
-	UCHAR count_buffer[COUNT_ITEMS * 7 + 1];
-	if (isc_request_info(status_vector, &request->req_handle, 0,
-						  sizeof(count_info), count_info,
-						  sizeof(count_buffer), (SCHAR*) count_buffer))
-	{
-		return;
-	}
+	if (gds__request_info(status_vector,
+						  GDS_REF(request->req_handle),
+						  0,
+						  sizeof(count_info),
+						  count_info,
+						  sizeof(count_buffer), count_buffer)) return;
 
-// print out the counts of any records affected
+/* print out the counts of any records affected */
 
-	int length = 0;
-	for (UCHAR* c = count_buffer; *c != isc_info_end; c += length) {
-		UCHAR item = *c++;
-		length = gds__vax_integer(c, 2);
+	for (c = count_buffer; *c != gds_info_end; c += length) {
+		item = *c++;
+		length = gds__vax_integer((UCHAR*) c, 2);
 		c += 2;
-		const ULONG number = gds__vax_integer(c, length);
+		number = gds__vax_integer((UCHAR*) c, length);
 
 		if (number)
 			switch (item) {
-			case isc_info_req_select_count:
-				printf("\nrecords selected: %"ULONGFORMAT"\n", number);
+			case gds_info_req_select_count:
+				ib_printf("\nrecords selected: %ld\n", number);
 				break;
 
-			case isc_info_req_insert_count:
-				printf("records inserted: %"ULONGFORMAT"\n", number);
+			case gds_info_req_insert_count:
+				ib_printf("records inserted: %ld\n", number);
 				break;
 
-			case isc_info_req_update_count:
-				printf("records updated: %"ULONGFORMAT"\n", number);
+			case gds_info_req_update_count:
+				ib_printf("records updated: %ld\n", number);
 				break;
 
-			case isc_info_req_delete_count:
-				printf("records deleted: %"ULONGFORMAT"\n", number);
+			case gds_info_req_delete_count:
+				ib_printf("records deleted: %ld\n", number);
 				break;
 
 			default:
@@ -1135,7 +1177,7 @@ static void print_counts( qli_req* request)
 }
 
 
-static void set_null( qli_msg* message)
+static void set_null( QLI_MSG message)
 {
 /**************************************
  *
@@ -1150,12 +1192,15 @@ static void set_null( qli_msg* message)
  *	statements.
  *
  **************************************/
-	for (qli_par* parameter = message->msg_parameters; parameter;
-		 parameter = parameter->par_next)
-	{
-		qli_nod* from = parameter->par_value;
+	PAR parameter;
+	QLI_NOD from;
+	DSC *desc;
+
+	for (parameter = message->msg_parameters; parameter;
+		 parameter = parameter->par_next) {
+		from = parameter->par_value;
 		if (from->nod_type == nod_field) {
-			dsc* desc = EVAL_value(from);
+			desc = EVAL_value(from);
 			desc->dsc_missing |= DSC_missing;
 		}
 		else
@@ -1165,7 +1210,7 @@ static void set_null( qli_msg* message)
 
 
 
-static void transaction_state( qli_nod* node, DBB database)
+static void transaction_state( QLI_NOD node, DBB database)
 {
 /**************************************
  *
@@ -1174,7 +1219,7 @@ static void transaction_state( qli_nod* node, DBB database)
  **************************************
  *
  * Functional description
- *
+ *	
  *	set the state of the working transaction
  *	in a particular database to prepared or
  *	committed.
@@ -1184,14 +1229,14 @@ static void transaction_state( qli_nod* node, DBB database)
 
 	if (database->dbb_transaction) {
 		if (node->nod_type == nod_commit_retaining) {
-			if (isc_commit_retaining(status, &database->dbb_transaction))
+			if (gds__commit_retaining(status,
+									  GDS_REF(database->dbb_transaction)))
 					ERRQ_database_error(database, status);
 		}
 		else if (node->nod_type == nod_prepare) {
-			if (isc_prepare_transaction(status, &database->dbb_transaction))
+			if (gds__prepare_transaction(status,
+										 GDS_REF(database->dbb_transaction)))
 					ERRQ_database_error(database, status);
 		}
 	}
 }
-
-

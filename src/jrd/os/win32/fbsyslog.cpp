@@ -1,25 +1,29 @@
 /*
  *	PROGRAM:	Client/Server Common Code
- *	MODULE:		fbsyslog.h
+ *	MODULE:		fbsyslog.cpp
  *	DESCRIPTION:	System log facility (win32)
  *
- * The contents of this file are subject to the Interbase Public
- * License Version 1.0 (the "License"); you may not use this file
- * except in compliance with the License. You may obtain a copy
- * of the License at http://www.Inprise.com/IPL.html
+ *  The contents of this file are subject to the Initial
+ *  Developer's Public License Version 1.0 (the "License");
+ *  you may not use this file except in compliance with the
+ *  License. You may obtain a copy of the License at
+ *  http://www.ibphoenix.com/main.nfs?a=ibphoenix&page=ibp_idpl.
  *
- * Software distributed under the License is distributed on an
- * "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express
- * or implied. See the License for the specific language governing
- * rights and limitations under the License.
+ *  Software distributed under the License is distributed AS IS,
+ *  WITHOUT WARRANTY OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing rights
+ *  and limitations under the License.
  *
- * Created by: Alex Peshkov <peshkoff@mail.ru>
+ *  The Original Code was created by Alexander Peshkoff
+ *  for the Firebird Open Source RDBMS project.
  *
- * All Rights Reserved.
- * Contributor(s): ______________________________________.
+ *  Copyright (c) 2003 Alexander Peshkoff <peshkoff@mail.ru>
+ *  and all contributors signed below.
+ *
+ *  All Rights Reserved.
+ *  Contributor(s): ______________________________________.
  */
 
-#include "firebird.h"
 #include "../jrd/os/fbsyslog.h"
 
 #include <Windows.h>
@@ -54,11 +58,10 @@ public:
 	~SyslogAccess() {
 		DeleteCriticalSection(&cs);
 	}
-	void Record(WORD wType, const Firebird::string& Msg);
+	void Record(WORD wType, Firebird::string Msg);
 };
 
-void SyslogAccess::Record(WORD wType, const Firebird::string& Msg) 
-{
+void SyslogAccess::Record(WORD wType, Firebird::string Msg) {
 	EnterCriticalSection(&cs);
 	if (! InitFlag) {
 		InitFlag = true;
@@ -85,21 +88,20 @@ void SyslogAccess::Record(WORD wType, const Firebird::string& Msg)
 }
 
 class SyslogAccess iSyslogAccess;
-} // namespace
+}
 
 namespace Firebird {
-	void Syslog::Record(Severity level, const Firebird::string& Msg) 
-	{
-		WORD wType = EVENTLOG_ERROR_TYPE;
-		switch (level) {
-		case Warning:
-			wType = EVENTLOG_INFORMATION_TYPE;
-			break;
-		case Error:
-		default:
-			wType = EVENTLOG_ERROR_TYPE;
-			break;
-		}
-		iSyslogAccess.Record(wType, Msg);
+void Syslog::Record(Severity level, string Msg) {
+	WORD wType = EVENTLOG_ERROR_TYPE;
+	switch (level) {
+	case Warning:
+		wType = EVENTLOG_INFORMATION_TYPE;
+		break;
+	case Error:
+	default:
+		wType = EVENTLOG_ERROR_TYPE;
+		break;
 	}
-} // namespace Firebird
+	iSyslogAccess.Record(wType, Msg);
+}
+}

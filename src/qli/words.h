@@ -40,7 +40,6 @@
 {KW_BEGIN,               "BEGIN"},
 {KW_BETWEEN,             "BETWEEN"},
 {KW_BETWEEN,             "BT"},
-{KW_BIGINT,		"BIGINT"},
 {KW_BLOB,                "BLOB"},
 {KW_BLR,                 "BLR"},
 {KW_BOTTOM,              "BOTTOM"},
@@ -119,7 +118,13 @@
 {KW_FIXED,		"FIXED"},
 {KW_FLOAT,               "FLOAT"},
 {KW_FOR,                 "FOR"},
+#ifdef PYXIS
+{KW_FORM,                "FORM"},
+#endif
 {KW_FORMAT,              "FORMAT"},
+#ifdef PYXIS
+{KW_FORMS,               "FORMS"},
+#endif
 {KW_FROM,                "FROM"},
 {KW_FULL,                "FULL"},
 {KW_FUNCTION,		"FUNCTION"},

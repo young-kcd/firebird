@@ -26,32 +26,19 @@
  *   collisions between dropping and redefining the udf concurrently.
  *   This closes SF Bug# 409769.
  * 2002.10.29 Nickolay Samofatov: Added support for savepoints
- * 2004.01.16 Vlad Horsun: added support for default parameters and 
- *   EXECUTE BLOCK statement
- * Adriano dos Santos Fernandes
+ *
  */
 
-#ifndef DSQL_DSQL_H
-#define DSQL_DSQL_H
+#ifndef _DSQL_DSQL_H_
+#define _DSQL_DSQL_H_
+
+#if defined(DEV_BUILD) && defined(WIN_NT) && defined(SUPERSERVER)
+#include <stdio.h>
+#endif
 
 #include "../jrd/common.h"
 #include "../dsql/all.h"
-#include "../common/classes/array.h"
-#include "../common/classes/GenericMap.h"
-#include "../common/classes/MetaName.h"
-#include "../common/classes/stack.h"
-#define REQUESTER
-#include "../jrd/val.h"  // Get rid of duplicated FUN_T enum.
-#undef REQUESTER
-
-#ifdef DEV_BUILD
-// This macro enables DSQL tracing code
-#define DSQL_DEBUG
-#endif
-
-#ifdef DSQL_DEBUG
-DEFINE_TRACE_ROUTINE(dsql_trace);
-#endif
+#include "../jrd/y_ref.h"
 
 //! Dynamic SQL Error Status Block
 struct dsql_err_stblock
@@ -63,15 +50,23 @@ struct dsql_err_stblock
 
 // this table is used in data allocation to determine
 // whether a block has a variable length tail
+#define BLKDEF(type, root, tail) type,
+
+ENUM blk_t {
+	dsql_type_MIN = 0,
 #include "../dsql/blk.h"
+dsql_type_MAX};
+
+#undef BLKDEF
 
 // generic block used as header to all allocated structures
-#include "../include/fb_blk.h"
 
-#include "../dsql/sym.h"
+#ifndef INCLUDE_FB_BLK
+#include "../include/fb_blk.h"
+#endif
 
 //! generic data type used to store strings
-class dsql_str : public pool_alloc_rpt<char, dsql_type_str>
+class str : public pool_alloc_rpt<char, dsql_type_str>
 {
 public:
 	const char* str_charset;	//!< ASCIIZ Character set identifier for string
@@ -79,23 +74,25 @@ public:
 	ULONG       str_length;		//!< length of string in BYTES
 	char        str_data[2];	//!< one for ALLOC and one for the NULL
 };
+typedef str* STR;
 
 // values used in str_flags
 
-const long STR_delimited_id		= 0x1L;
+#define	STR_delimited_id	0x1L
 
-// Context aliases used in triggers
-const char* const OLD_CONTEXT		= "OLD";
-const char* const NEW_CONTEXT		= "NEW";
-const char* const TEMP_CONTEXT		= "TEMP";
+//! macros and block used to implement a generic stack mechanism
+class dsql_lls : public pool_alloc<dsql_type_lls>
+{
+public:
+	blk* lls_object;
+	dsql_lls* lls_next;
+};
+typedef dsql_lls* DLLS;
 
-class dsql_ctx;
-class dsql_str;
-class dsql_nod;
-class dsql_intlsym;
-typedef Firebird::Stack<dsql_ctx*> DsqlContextStack;
-typedef Firebird::Stack<dsql_str*> DsqlStrStack;
-typedef Firebird::Stack<dsql_nod*> DsqlNodStack;
+#define LLS_PUSH(object,stack)		DsqlMemoryPool::ALLD_push ((BLK) object, stack)
+#define LLS_POP(stack)			DsqlMemoryPool::ALLD_pop (stack)
+
+
 
 //======================================================================
 // remaining node definitions for local processing
@@ -105,87 +102,86 @@ typedef Firebird::Stack<dsql_nod*> DsqlNodStack;
 
 #include "../jrd/dsc.h"
 
+#ifdef NOT_USED_OR_REPLACED
+
+#define irq_relation    0   
+#define irq_fields      1   
+#define irq_dimensions  2   
+#define irq_primary_key 3   
+#define irq_view        4   
+#define irq_function    5   
+#define irq_func_return 6   
+#define irq_procedure   7   
+#define irq_parameters  8   
+#define irq_collation   9   
+#define irq_charset     10  
+#define irq_trigger     11  
+#define irq_domain      12  
+#define irq_type        13  
+#define irq_col_default 14  
+#define irq_domain_2    15  
+
+#define irq_MAX         16
+
+#else
 //! internal DSQL requests
 enum irq_type_t {
-    irq_relation,		//!< lookup a relation
-    irq_fields,			//!< lookup a relation's fields
-    irq_dimensions,		//!< lookup a field's dimensions
-    irq_primary_key,	//!< lookup a primary key
-    irq_view,			//!< lookup a view's base relations
-    irq_view_base,		//!< lookup a view's base relations
-    irq_view_base_flds,	//!< lookup a view's base fields
-    irq_function,		//!< lookup a user defined function
-    irq_func_return,	//!< lookup a function's return argument
-    irq_procedure,		//!< lookup a stored procedure
-    irq_parameters,		//!< lookup a procedure's parameters
-    irq_parameters2,	//!< lookup a procedure's parameters (ODS 11.1)
-    irq_collation,		//!< lookup a collation name
-    irq_charset,		//!< lookup a character set
-    irq_trigger,		//!< lookup a trigger
-    irq_domain,			//!< lookup a domain
-    irq_type,			//!< lookup a symbolic name in RDB$TYPES
-    irq_col_default,	//!< lookup default for a column
-    irq_domain_2,		//!< lookup a domain
-    irq_exception,		//!< lookup an exception
-	irq_cs_name,		//!< lookup a charset name
-	irq_default_cs,		//!< lookup the default charset
-	irq_rel_ids,		//!< check relation/field ids
+    irq_relation    = 0,     //!< lookup a relation                     
+    irq_fields      = 1,     //!< lookup a relation's fields            
+    irq_dimensions  = 2,     //!< lookup a field's dimensions           
+    irq_primary_key = 3,     //!< lookup a primary key                  
+    irq_view        = 4,     //!< lookup a view's base relations        
+    irq_function    = 5,     //!< lookup a user defined function        
+    irq_func_return = 6,     //!< lookup a function's return argument   
+    irq_procedure   = 7,     //!< lookup a stored procedure             
+    irq_parameters  = 8,     //!< lookup a procedure's parameters       
+    irq_collation   = 9,     //!< lookup a collation name               
+    irq_charset     = 10,    //!< lookup a character set name           
+    irq_trigger     = 11,    //!< lookup a trigger                      
+    irq_domain      = 12,    //!< lookup a domain                       
+    irq_type        = 13,    //!< lookup a symbolic name in RDB$TYPES   
+    irq_col_default = 14,    //!< lookup default for a column           
+    irq_domain_2    = 15,    //!< lookup a domain
 
-    irq_MAX
+    irq_MAX         = 16
 };
 
-// dsql_nod definition
-#include "../dsql/node.h"
+#endif
+
 
 // blocks used to cache metadata
 
 //! Database Block
-typedef Firebird::SortedArray
-	<
-		dsql_intlsym*, 
-		Firebird::EmptyStorage<dsql_intlsym*>, 
-		SSHORT,
-		dsql_intlsym, 
-		Firebird::DefaultComparator<SSHORT>
-	> IntlSymArray;
-
-class dsql_dbb : public pool_alloc<dsql_type_dbb>
+class dbb : public pool_alloc<dsql_type_dbb>
 {
 public:
-	dsql_dbb*		dbb_next;
+	dbb*			dbb_next;
 	class dsql_rel* dbb_relations;		//!< known relations in database
 	class dsql_prc*	dbb_procedures;		//!< known procedures in database
-	class dsql_udf*	dbb_functions;		//!< known functions in database
+	class udf*		dbb_functions;		//!< known functions in database
 	DsqlMemoryPool*	dbb_pool;			//!< The current pool for the dbb
-	FB_API_HANDLE	dbb_database_handle;
-	FB_API_HANDLE	dbb_requests[irq_MAX];
-	dsql_str*		dbb_dfl_charset;
+	FRBRD*			dbb_database_handle;
+	FRBRD*			dbb_requests[irq_MAX];
+	str*			dbb_dfl_charset;
 	USHORT			dbb_base_level;		//!< indicates the version of the engine code itself
 	USHORT			dbb_flags;
 	USHORT			dbb_db_SQL_dialect;
 	SSHORT			dbb_att_charset;	//!< characterset at time of attachment
-	IntlSymArray	dbb_charsets_by_id;	// charsets sorted by charset_id
-	USHORT			dbb_ods_version;	// major ODS version number
-	USHORT			dbb_minor_version;	// minor ODS version number
-
-	dsql_dbb(DsqlMemoryPool& p) : 
-		dbb_charsets_by_id(p, 16) 
-		{};
 };
+typedef dbb* DBB;
 
 //! values used in dbb_flags
-enum dbb_flags_vals {
-	DBB_no_arrays	= 0x1,
-	DBB_no_charset	= 0x2,
-	DBB_read_only	= 0x4
-};
+#define DBB_no_arrays	0x1
+#define DBB_v3			0x2
+#define DBB_no_charset	0x4
+#define DBB_read_only	0x8
 
 //! Relation block
 class dsql_rel : public pool_alloc_rpt<SCHAR, dsql_type_dsql_rel>
 {
 public:
 	dsql_rel*	rel_next;			//!< Next relation in database
-	dsql_sym*	rel_symbol;			//!< Hash symbol for relation
+	struct sym*	rel_symbol;			//!< Hash symbol for relation
 	class dsql_fld*	rel_fields;		//!< Field block
 	dsql_rel*	rel_base_relation;	//!< base relation for an updatable view
 	TEXT*		rel_name;			//!< Name of relation
@@ -195,25 +191,25 @@ public:
 	USHORT		rel_flags;
 	TEXT		rel_data[3];
 };
+typedef dsql_rel* DSQL_REL;
 
 // rel_flags bits
-enum rel_flags_vals {
-	REL_new_relation	= 1, //!< relation exists in sys tables, not committed yet
-	REL_dropped			= 2, //!< relation has been dropped
-	REL_view			= 4, //!< relation is a view 
-	REL_external		= 8, //!< relation is an external table
-	REL_creating		= 16 //!< we are creating the bare relation in memory
-};
+
+#define REL_new_relation	1	//!< relation is newly defined, not committed yet
+#define REL_dropped			2	//!< relation has been dropped
+#define REL_view            4   //!< relation is a view 
+#define REL_external        8   //!< relation is an external table
+
 
 class dsql_fld : public pool_alloc_rpt<SCHAR, dsql_type_fld>
 {
 public:
-	dsql_fld*	fld_next;				//!< Next field in relation
+	dsql_fld*		fld_next;				//!< Next field in relation
 	dsql_rel*	fld_relation;			//!< Parent relation
 	class dsql_prc*	fld_procedure;			//!< Parent procedure
-	dsql_nod*	fld_ranges;				//!< ranges for multi dimension array
-	dsql_nod*	fld_character_set;		//!< null means not specified
-	dsql_nod*	fld_sub_type_name;		//!< Subtype name for later resolution
+	struct dsql_nod*	fld_ranges;				//!< ranges for multi dimension array
+	struct dsql_nod*	fld_character_set;		//!< null means not specified
+	struct dsql_nod*	fld_sub_type_name;		//!< Subtype name for later resolution
 	USHORT		fld_flags;
 	USHORT		fld_id;					//!< Field in in database
 	USHORT		fld_dtype;				//!< Data type of field
@@ -229,90 +225,97 @@ public:
 	SSHORT		fld_character_set_id;	//!< ID of field's character set
 	SSHORT		fld_collation_id;		//!< ID of field's collation
 	SSHORT		fld_ttype;				//!< ID of field's language_driver
-	TEXT*		fld_type_of_name;		//!< TYPE OF
-	bool		fld_explicit_collation;	//!< COLLATE was explicit specified
-	bool		fld_not_nullable;		//!< NOT NULL was explicit specified
-	bool		fld_full_domain;		//!< Domain name without TYPE OF prefix
 	TEXT		fld_name[2];
 };
+typedef dsql_fld* DSQL_FLD;
 
 // values used in fld_flags
 
-enum fld_flags_vals {
-	FLD_computed	= 1,
-	FLD_national	= 2, //!< field uses NATIONAL character set
-	FLD_nullable	= 4,
-	FLD_system		= 8
-};
+#define FLD_computed	1
+#define FLD_drop	2
+#define FLD_dbkey	4
+#define FLD_national	8		//!< field uses NATIONAL character set
+#define FLD_nullable	16
+
+#define MAX_ARRAY_DIMENSIONS 16	//!< max array dimensions
 
 //! database/log/cache file block
-class dsql_fil : public pool_alloc<dsql_type_fil>
+class fil : public pool_alloc<dsql_type_fil>
 {
 public:
 	SLONG	fil_length;			//!< File length in pages
 	SLONG	fil_start;			//!< Starting page
-	dsql_str*	fil_name;			//!< File name
-	dsql_fil*	fil_next;			//!< next file
+	str*	fil_name;			//!< File name
+	fil*	fil_next;			//!< next file
 	SSHORT	fil_shadow_number;	//!< shadow number if part of shadow
 	SSHORT	fil_manual;			//!< flag to indicate manual shadow
 	SSHORT	fil_partitions;		//!< number of log file partitions
 	USHORT	fil_flags;
 };
+typedef fil* FIL;
 
 //! Stored Procedure block
 class dsql_prc : public pool_alloc_rpt<SCHAR, dsql_type_prc>
 {
 public:
-	dsql_prc*	prc_next;		//!< Next relation in database
-	dsql_sym*	prc_symbol;		//!< Hash symbol for procedure
-	dsql_fld*	prc_inputs;		//!< Input parameters
-	dsql_fld*	prc_outputs;	//!< Output parameters
+	dsql_prc*		prc_next;		//!< Next relation in database
+	struct sym*	prc_symbol;		//!< Hash symbol for procedure
+	dsql_fld*		prc_inputs;		//!< Input parameters
+	dsql_fld*		prc_outputs;	//!< Output parameters
 	TEXT*		prc_name;		//!< Name of procedure
 	TEXT*		prc_owner;		//!< Owner of procedure
 	SSHORT		prc_in_count;
-	SSHORT		prc_def_count;	//!< number of inputs with default values
 	SSHORT		prc_out_count;
 	USHORT		prc_id;			//!< Procedure id
 	USHORT		prc_flags;
 	TEXT		prc_data[3];
 };
+typedef dsql_prc* DSQL_PRC;
 
 // prc_flags bits
 
-enum prc_flags_vals {
-	PRC_new_procedure	= 1, //!< procedure is newly defined, not committed yet
-	PRC_dropped			= 2  //!< procedure has been dropped
-};
+#define PRC_new_procedure	1	//!< procedure is newly defined, not committed yet
+#define PRC_dropped			2	//!< procedure has been dropped
 
 //! User defined function block
-class dsql_udf : public pool_alloc_rpt<SCHAR, dsql_type_udf>
+class udf : public pool_alloc_rpt<SCHAR, dsql_type_udf>
 {
 public:
-	dsql_udf*	udf_next;
-	dsql_sym*	udf_symbol;		//!< Hash symbol for udf
+	udf*		udf_next;
+	struct sym*	udf_symbol;		//!< Hash symbol for udf
 	USHORT		udf_dtype;
 	SSHORT		udf_scale;
 	SSHORT		udf_sub_type;
 	USHORT		udf_length;
 	SSHORT		udf_character_set_id;
 	USHORT		udf_character_length;
-    dsql_nod*	udf_arguments;
+    struct dsql_nod  *udf_arguments;
     USHORT      udf_flags;
 
 	TEXT		udf_name[2];
 };
+typedef udf* UDF;
 
-// udf_flags bits
-
-enum udf_flags_vals {
-	UDF_new_udf		= 1, //!< udf is newly declared, not committed yet
-	UDF_dropped		= 2  //!< udf has been dropped
+//! these values are multiplied by -1 to indicate that server frees them
+//! on return from the udf
+enum FUN_T
+{
+	FUN_value,
+	FUN_reference,
+	FUN_descriptor,
+	FUN_blob_struct,
+	FUN_scalar_array
 };
+
+/* udf_flags bits */
+
+#define UDF_new_udf        1   /*!< udf is newly declared, not committed yet */
+#define UDF_dropped        2   /*!< udf has been dropped */
 
 // Variables - input, output & local
 
 //! Variable block
-class dsql_var : public pool_alloc_rpt<SCHAR, dsql_type_var>
+class Variable : public pool_alloc_rpt<SCHAR, dsql_type_var>
 {
 public:
 	dsql_fld*	var_field;		//!< Field on which variable is based
@@ -322,23 +325,23 @@ public:
 	USHORT	var_variable_number;	//!< Local variable number
 	TEXT	var_name[2];
 };
+typedef Variable* VAR;
 
 // values used in var_flags
-enum var_flags_vals {
-	VAR_input	= 1,
-	VAR_output	= 2,
-	VAR_local	= 4
-};
+
+#define VAR_input	1
+#define VAR_output	2
+#define VAR_local	4
 
 
 // Symbolic names for international text types
 // (either collation or character set name)
 
 //! International symbol
-class dsql_intlsym : public pool_alloc_rpt<SCHAR, dsql_type_intlsym>
+class intlsym : public pool_alloc_rpt<SCHAR, dsql_type_intlsym>
 {
 public:
-	dsql_sym*	intlsym_symbol;		//!< Hash symbol for intlsym
+	struct sym*	intlsym_symbol;	//!< Hash symbol for intlsym
 	USHORT		intlsym_type;		//!< what type of name
 	USHORT		intlsym_flags;
 	SSHORT		intlsym_ttype;		//!< id of implementation
@@ -346,21 +349,17 @@ public:
 	SSHORT		intlsym_collate_id;
 	USHORT		intlsym_bytes_per_char;
 	TEXT		intlsym_name[2];
-
-	static SSHORT generate(const void*, const dsql_intlsym* Item)
-	{ return Item->intlsym_charset_id; }
 };
+typedef intlsym* INTLSYM;
+
+// values used in intlsym_type
+
+#define INTLSYM_collation	1
+#define	INTLSYM_charset		2
 
 // values used in intlsym_flags
 
-enum intlsym_flags_vals {
-	INTLSYM_dropped	= 1  //!< intlsym has been dropped
-};
 
-
-// Forward declaration.
-class dsql_par;
-class dsql_opn;
 
 //! Request information
 enum REQ_TYPE
@@ -369,9 +368,9 @@ enum REQ_TYPE
 	REQ_UPDATE_CURSOR, REQ_DELETE_CURSOR,
 	REQ_COMMIT, REQ_ROLLBACK, REQ_DDL, REQ_EMBED_SELECT,
 	REQ_START_TRANS, REQ_GET_SEGMENT, REQ_PUT_SEGMENT, REQ_EXEC_PROCEDURE,
-	REQ_COMMIT_RETAIN, REQ_ROLLBACK_RETAIN, REQ_SET_GENERATOR, REQ_SAVEPOINT, 
-	REQ_EXEC_BLOCK, REQ_SELECT_BLOCK 
+	REQ_COMMIT_RETAIN, REQ_SET_GENERATOR, REQ_SAVEPOINT
 };
+
 
 class dsql_req : public pool_alloc<dsql_type_req>
 {
@@ -381,7 +380,6 @@ public:
 	inline void		append_ushort(USHORT val);
 	inline void		append_ulong(ULONG val);
 	void		append_cstring(UCHAR verb, const char* string);
-	void		append_meta_string(const char* string);
 	void		append_string(UCHAR verb, const char* string, USHORT len);
 	void		append_number(UCHAR verb, SSHORT number);
 	void		begin_blr(UCHAR verb);
@@ -393,176 +391,100 @@ public:
 	void		append_file_start(ULONG start);
 	void		generate_unnamed_trigger_beginning(	bool		on_update_trigger,
 													const char*	prim_rel_name,
-													const dsql_nod* prim_columns,
+													struct dsql_nod* prim_columns,
 													const char*	for_rel_name,
-													const dsql_nod* for_columns);
-
-	void	begin_debug();
-	void	end_debug();
-	void	put_debug_src_info(USHORT, USHORT);
-	void	put_debug_variable(USHORT, const TEXT*);
-	void	put_debug_argument(UCHAR, USHORT, const TEXT*);
-	void	append_debug_info();
+													struct dsql_nod* for_columns);
 	// end - member functions that should be private
-
-	dsql_req(DsqlMemoryPool& p) 
-		: req_pool(p), 
-		req_main_context(p), 
-		req_context(&req_main_context), 
-		req_union_context(p), 
-		req_dt_context(p), 
-		req_blr_data(p),
-		req_labels(p), 
-		req_cursors(p),
-		req_debug_data(p),
-		req_curr_ctes(p),
-		req_ctes(p),
-		req_cte_aliases(p) { }
 
 	dsql_req*	req_parent;		//!< Source request, if cursor update
 	dsql_req*	req_sibling;	//!< Next sibling request, if cursor update
 	dsql_req*	req_offspring;	//!< Cursor update requests
-	DsqlMemoryPool&	req_pool;
-	DsqlContextStack	req_main_context;
-	DsqlContextStack*	req_context;
-    DsqlContextStack	req_union_context;	//!< Save contexts for views of unions
-    DsqlContextStack	req_dt_context;		//!< Save contexts for views of derived tables
-	dsql_sym* req_name;			//!< Name of request
-	dsql_sym* req_cursor;		//!< Cursor symbol, if any
-	dsql_dbb*	req_dbb;			//!< Database handle
-	FB_API_HANDLE	req_trans;			//!< Database transaction handle
-	dsql_opn* req_open_cursor;
-	dsql_nod* req_ddl_node;		//!< Store metadata request
-	dsql_nod* req_blk_node;		//!< exec_block node 
-	class dsql_blb* req_blob;			//!< Blob info for blob requests
-	FB_API_HANDLE	req_handle;				//!< OSRI request handle
-	//dsql_str*	req_blr_string;			//!< String block during BLR generation
-	Firebird::HalfStaticArray<BLOB_PTR, 1024> req_blr_data;
+	DsqlMemoryPool*	req_pool;
+	DLLS	req_context;
+    DLLS    req_union_context;	//!< Save contexts for views of unions
+	struct sym* req_name;		//!< Name of request
+	struct sym* req_cursor;		//!< Cursor symbol, if any
+	dbb*	req_dbb;			//!< Database handle
+	FRBRD*	req_trans;			//!< Database transaction handle
+	class opn* req_open_cursor;
+	struct dsql_nod* req_ddl_node;	//!< Store metadata request
+	class blb* req_blob;			//!< Blob info for blob requests
+	FRBRD*	req_handle;				//!< OSRI request handle
+	str*	req_blr_string;			//!< String block during BLR generation
 	class dsql_msg* req_send;		//!< Message to be sent to start request
 	class dsql_msg* req_receive;	//!< Per record message to be received
 	class dsql_msg* req_async;		//!< Message for sending scrolling information
-	dsql_par* req_eof;			//!< End of file parameter
-	dsql_par* req_dbkey;		//!< Database key for current of
-	dsql_par* req_rec_version;	//!< Record Version for current of
-	dsql_par* req_parent_rec_version;	//!< parent record version
-	dsql_par* req_parent_dbkey;	//!< Parent database key for current of
+	class par* req_eof;			//!< End of file parameter
+	class par* req_dbkey;		//!< Database key for current of
+	class par* req_rec_version;	//!< Record Version for current of
+	class par* req_parent_rec_version;	//!< parent record version
+	class par* req_parent_dbkey;	//!< Parent database key for current of
 	dsql_rel* req_relation;	//!< relation created by this request (for DDL)
 	dsql_prc* req_procedure;	//!< procedure created by this request (for DDL)
 	class dsql_ctx* req_outer_agg_context;	//!< agg context for outer ref
-	//BLOB_PTR* req_blr;			//!< Running blr address
-	//BLOB_PTR* req_blr_yellow;	//!< Threshold for upping blr buffer size
+	BLOB_PTR* req_blr;			//!< Running blr address
+	BLOB_PTR* req_blr_yellow;	//!< Threshold for upping blr buffer size
 	ULONG	req_inserts;			//!< records processed in request
 	ULONG	req_deletes;
 	ULONG	req_updates;
 	ULONG	req_selects;
 	REQ_TYPE req_type;			//!< Type of request
-	ULONG	req_base_offset;		//!< place to go back and stuff in blr length
+	ULONG	req_base_offset;	//!< place to go back and stuff in blr length
 	USHORT	req_context_number;	//!< Next available context number
 	USHORT	req_scope_level;		//!< Scope level for parsing aliases in subqueries
 	USHORT	req_message_number;	//!< Next available message number
 	USHORT	req_loop_level;		//!< Loop level
-	DsqlStrStack	req_labels;			//!< Loop labels
-	USHORT	req_cursor_number;	//!< Cursor number
-	DsqlNodStack	req_cursors;		//!< Cursors
 	USHORT	req_in_select_list;	//!< now processing "select list"
 	USHORT	req_in_where_clause;	//!< processing "where clause"
 	USHORT	req_in_group_by_clause;	//!< processing "group by clause"
 	USHORT	req_in_having_clause;	//!< processing "having clause"
 	USHORT	req_in_order_by_clause;	//!< processing "order by clause"
 	USHORT	req_error_handlers;	//!< count of active error handlers
-	ULONG	req_flags;			//!< generic flag
+	USHORT	req_flags;			//!< generic flag
 	USHORT	req_client_dialect;	//!< dialect passed into the API call
-	USHORT	req_in_outer_join;	//!< processing inside outer-join part
-	dsql_str*		req_alias_relation_prefix;	//!< prefix for every relation-alias.
-
-	Firebird::HalfStaticArray<BLOB_PTR, 128> req_debug_data;
-
-	void addCTEs(dsql_nod* list);
-	dsql_nod* findCTE(const dsql_str* name);
-	void clearCTEs();
-
-	// hvlad: each member of recursive CTE can refer to CTE itself (only once) via 
-	// CTE name or via alias. We need to substitute this aliases when processing CTE 
-	// member to resolve field names. Therefore we store all aliases in order of 
-	// occurence and later use it in backward order (since our parser is right-to-left). 
-	// We also need to repeat this process if main select expression contains union with 
-	// recursive CTE
-	void addCTEAlias(const dsql_str* alias) 
-	{
-		req_cte_aliases.add(alias);
-	}
-	const dsql_str* getNextCTEAlias()
-	{
-		return *(--req_curr_cte_alias);
-	}
-	void resetCTEAlias()
-	{
-		req_curr_cte_alias = req_cte_aliases.end();
-	}
-
-	DsqlNodStack req_curr_ctes;			// current processing CTE's
-	class dsql_ctx* req_recursive_ctx;	// context of recursive CTE
-	USHORT req_recursive_ctx_id;		// id of recursive union stream context
-
-private:
-	// Request should never be destroyed using delete.
-	// It dies together with it's pool in release_request().
-	~dsql_req();
-
-	Firebird::HalfStaticArray<dsql_nod*, 4> req_ctes; // common table expressions
-	Firebird::HalfStaticArray<const dsql_str*, 4> req_cte_aliases; // CTE aliases in recursive members
-	const dsql_str* const* req_curr_cte_alias;
-
-	// To avoid posix warning about missing public destructor declare 
-	// MemoryPool as friend class. In fact IT releases request memory!
-	friend class MemoryPool;
 };
+typedef dsql_req* DSQL_REQ;
 
 
 // values used in req_flags
-enum req_flags_vals {
-	REQ_cursor_open			= 0x00001,
-	REQ_save_metadata		= 0x00002,
-	REQ_prepared			= 0x00004,
-	REQ_embedded_sql_cursor	= 0x00008,
-	REQ_procedure			= 0x00010,
-	REQ_trigger				= 0x00020,
-	REQ_orphan				= 0x00040,
-	REQ_enforce_scope		= 0x00080,
-	REQ_no_batch			= 0x00100,
-	REQ_backwards			= 0x00200,
-	REQ_blr_version4		= 0x00400,
-	REQ_blr_version5		= 0x00800,
-	REQ_block				= 0x01000,
-	REQ_selectable			= 0x02000,
-	REQ_CTE_recursive		= 0x04000,
-	REQ_dsql_upd_or_ins		= 0x08000,
-	REQ_returning_into		= 0x10000
-};
+
+#define REQ_cursor_open		1
+#define REQ_save_metadata	2
+#define REQ_prepared		4
+#define REQ_embedded_sql_cursor	8
+#define REQ_procedure		16
+#define REQ_trigger		32
+#define REQ_orphan		64
+#define REQ_enforce_scope	128
+#define REQ_no_batch		256
+#define REQ_backwards		512
+#define REQ_blr_version4	1024
+#define REQ_blr_version5	2048
 
 //! Blob
-class dsql_blb : public pool_alloc<dsql_type_blb>
+class blb : public pool_alloc<dsql_type_blb>
 {
 public:
-	dsql_nod*	blb_field;			//!< Related blob field
-	dsql_par*	blb_blob_id;		//!< Parameter to hold blob id
-	dsql_par*	blb_segment;		//!< Parameter for segments
-	dsql_nod* blb_from;
-	dsql_nod* blb_to;
+	struct dsql_nod*	blb_field;			//!< Related blob field
+	class par*	blb_blob_id;		//!< Parameter to hold blob id
+	class par*	blb_segment;		//!< Parameter for segments
+	struct dsql_nod* blb_from;
+	struct dsql_nod* blb_to;
 	class dsql_msg*	blb_open_in_msg;	//!< Input message to open cursor
 	class dsql_msg*	blb_open_out_msg;	//!< Output message from open cursor
 	class dsql_msg*	blb_segment_msg;	//!< Segment message
 };
+typedef blb* BLB;
 
 //! List of open cursors
-class dsql_opn : public pool_alloc<dsql_type_opn>
+class opn : public pool_alloc<dsql_type_opn>
 {
 public:
-	dsql_opn*	opn_next;			//!< Next open cursor
+	opn*		opn_next;			//!< Next open cursor
 	dsql_req*	opn_request;		//!< Request owning the cursor
-	FB_API_HANDLE		opn_transaction;	//!< Transaction executing request
+	FRBRD*		opn_transaction;	//!< Transaction executing request
 };
-
+typedef opn* OPN;
 
 //! Transaction block
 class dsql_tra : public pool_alloc<dsql_type_tra>
@@ -570,161 +492,100 @@ class dsql_tra : public pool_alloc<dsql_type_tra>
 public:
 	dsql_tra* tra_next;		//!< Next open transaction
 };
+typedef dsql_tra* DSQL_TRA;
 
-//! Implicit (NATURAL and USING) joins
-class ImplicitJoin : public pool_alloc<dsql_type_imp_join>
-{
-public:
-	dsql_nod* value;
-	dsql_ctx* visibleInContext;
-};
 
 //! Context block used to create an instance of a relation reference
 class dsql_ctx : public pool_alloc<dsql_type_ctx>
 {
 public:
-	dsql_ctx(MemoryPool &p)
-		: ctx_childs_derived_table(p),
-	      ctx_imp_join(p)
-	{
-	}
-
-	dsql_req*			ctx_request;		//!< Parent request
-	dsql_rel*			ctx_relation;		//!< Relation for context
-	dsql_prc*			ctx_procedure;		//!< Procedure for context
-	dsql_nod*			ctx_proc_inputs;	//!< Procedure input parameters
-	class dsql_map*		ctx_map;			//!< Map for aggregates
-	dsql_nod*			ctx_rse;			//!< Sub-rse for aggregates
-	dsql_ctx*			ctx_parent;			//!< Parent context for aggregates
-	TEXT*				ctx_alias;			//!< Context alias (can include concatenated derived table alias)
-	TEXT*				ctx_internal_alias;	//!< Alias as specified in query
-	USHORT				ctx_context;		//!< Context id
-	USHORT				ctx_recursive;		//!< Secondary context id for recursive UNION (nobody referred to this context)
-	USHORT				ctx_scope_level;	//!< Subquery level within this request
-	USHORT				ctx_flags;			//!< Various flag values
-	DsqlContextStack	ctx_childs_derived_table;	//!< Childs derived table context
-	Firebird::GenericMap<Firebird::Pair<Firebird::Left<
-		Firebird::MetaName, ImplicitJoin*> > > ctx_imp_join;	// Map of USING fieldname to ImplicitJoin
-
-	dsql_ctx& operator=(dsql_ctx& v)
-	{
-		ctx_request = v.ctx_request;
-		ctx_relation = v.ctx_relation;
-		ctx_procedure = v.ctx_procedure;
-		ctx_proc_inputs = v.ctx_proc_inputs;
-		ctx_map = v.ctx_map;
-		ctx_rse = v.ctx_rse;
-		ctx_parent = v.ctx_parent;
-		ctx_alias = v.ctx_alias;
-		ctx_context = v.ctx_context;
-		ctx_recursive = v.ctx_recursive;
-		ctx_scope_level = v.ctx_scope_level;
-		ctx_flags = v.ctx_flags;
-		ctx_childs_derived_table.assign(v.ctx_childs_derived_table);
-		ctx_imp_join.assign(v.ctx_imp_join);
-
-		return *this;
-	}
-
-	bool getImplicitJoinField(const TEXT* name, dsql_nod*& node);
+	dsql_req*		ctx_request;		//!< Parent request
+	dsql_rel*	ctx_relation;		//!< Relation for context
+	dsql_prc*		ctx_procedure;		//!< Procedure for context
+	struct dsql_nod*	ctx_proc_inputs;	//!< Procedure input parameters
+	class map*	ctx_map;			//!< Map for aggregates
+	struct dsql_nod*	ctx_rse;			//!< Sub-rse for aggregates
+	dsql_ctx*		ctx_parent;			//!< Parent context for aggregates
+	TEXT*		ctx_alias;			//!< Context alias
+	USHORT		ctx_context;		//!< Context id
+	USHORT		ctx_scope_level;	//!< Subquery level within this request
+	USHORT		ctx_flags;			//!< Various flag values
 };
+typedef dsql_ctx* DSQL_CTX;
 
 // Flag values for ctx_flags
 
-const USHORT CTX_outer_join = 0x01;	// reference is part of an outer join
-const USHORT CTX_system		= 0x02;	// Context generated by system (NEW/OLD in triggers, check-constraint, RETURNING)
-const USHORT CTX_null		= 0x04;	// Fields of the context should be resolved to NULL constant
-const USHORT CTX_returning	= 0x08;	// Context generated by RETURNING
-const USHORT CTX_recursive	= 0x10;	// Context has secondary number (ctx_recursive) generated for recursive UNION
+#define CTX_outer_join		(1<<0)	// reference is part of an outer join
 
 //! Aggregate/union map block to map virtual fields to their base
 //! TMN: NOTE! This datatype should definitely be renamed!
-class dsql_map : public pool_alloc<dsql_type_map>
+class map : public pool_alloc<dsql_type_map>
 {
 public:
-	dsql_map*	map_next;			//!< Next map in item
-	dsql_nod*	map_node;			//!< Value for map item
-	USHORT		map_position;		//!< Position in map
+	map*		map_next;		//!< Next map in item
+	struct dsql_nod*	map_node;		//!< Value for map item
+	USHORT		map_position;	//!< Position in map
 };
+typedef map* MAP;
+
+
 
 //! Message block used in communicating with a running request
 class dsql_msg : public pool_alloc<dsql_type_msg>
 {
 public:
-	dsql_par*	msg_parameters;	//!< Parameter list
-	UCHAR*		msg_buffer;			//!< Message buffer
-	USHORT		msg_number;			//!< Message number
-	USHORT		msg_length;			//!< Message length
-	USHORT		msg_parameter;		//!< Next parameter number
-	USHORT		msg_index;			//!< Next index into SQLDA
+	class par*	msg_parameters;	//!< Parameter list
+	class par*	msg_par_ordered;	//!< Ordered parameter list
+	UCHAR*	msg_buffer;			//!< Message buffer
+	USHORT	msg_number;			//!< Message number
+	USHORT	msg_length;			//!< Message length
+	USHORT	msg_parameter;		//!< Next parameter number
+	USHORT	msg_index;			//!< Next index into SQLDA
 };
+typedef dsql_msg *DSQL_MSG;
 
 //! Parameter block used to describe a parameter of a message
-class dsql_par : public pool_alloc<dsql_type_par>
+class par : public pool_alloc<dsql_type_par>
 {
 public:
 	dsql_msg*	par_message;		//!< Parent message
-	dsql_par*	par_next;			//!< Next parameter in linked list
-	dsql_par*	par_null;			//!< Null parameter, if used
-	dsql_nod*	par_node;			//!< Associated value node, if any
+	class par*	par_next;			//!< Next parameter in linked list
+	class par*	par_ordered;		//!< Next parameter in order of index
+	class par*	par_null;			//!< Null parameter, if used
+	struct dsql_nod*	par_node;			//!< Associated value node, if any
 	dsql_ctx*	par_dbkey_ctx;		//!< Context of internally requested dbkey
 	dsql_ctx*	par_rec_version_ctx;	//!< Context of internally requested record version
-	const TEXT*	par_name;			//!< Parameter name, if any
-	const TEXT*	par_rel_name;		//!< Relation name, if any
-	const TEXT*	par_owner_name;		//!< Owner name, if any
-	const TEXT*	par_rel_alias;		//!< Relation alias, if any
-	const TEXT*	par_alias;			//!< Alias, if any
-	DSC			par_desc;			//!< Field data type
-	DSC			par_user_desc;		//!< SQLDA data type
-	USHORT		par_parameter;		//!< BLR parameter number
-	USHORT		par_index;			//!< Index into SQLDA, if appropriate
+	TEXT*	par_name;			//!< Parameter name, if any
+	TEXT*	par_rel_name;		//!< Relation name, if any
+	TEXT*	par_owner_name;		//!< Owner name, if any
+	TEXT*	par_alias;			//!< Alias, if any
+	DSC		par_desc;			//!< Field data type
+	DSC		par_user_desc;		//!< SQLDA data type
+	USHORT	par_parameter;		//!< BLR parameter number
+	USHORT	par_index;			//!< Index into SQLDA, if appropriate
 };
+typedef par* PAR;
+
 
 #include "../jrd/thd.h"
 
 // DSQL threading declarations
 
-class tsql : public ThreadData
+struct tsql
 {
-private:
+	thdd		tsql_thd_data;
 	DsqlMemoryPool*		tsql_default;
-	friend class Firebird::SubsystemContextPoolHolder <tsql, DsqlMemoryPool>;
-
-	void setDefaultPool(DsqlMemoryPool* p)
-	{
-		tsql_default = p;
-	}
-
-public:
-	typedef tsql* Pointer;
-	tsql(ISC_STATUS* status, Pointer& ptr) 
-		: ThreadData(tddSQL), tsql_default(0), 
-		tsql_status(status)
-	{
-		ptr = this;
-		putSpecific();
-	}
-
-	~tsql()
-	{
-		restoreSpecific();
-	}
-
 	ISC_STATUS*		tsql_status;
-
-	DsqlMemoryPool* getDefaultPool()
-	{
-		return tsql_default;
-	}
+	ISC_STATUS*		tsql_user_status;
 };
+typedef tsql* TSQL;
 
-typedef Firebird::SubsystemContextPoolHolder <tsql, DsqlMemoryPool> 
-	DsqlContextPoolHolder;
 
-inline tsql* DSQL_get_thread_data() {
-	return (tsql*) ThreadData::getSpecific();
-}
+#ifdef GET_THREAD_DATA
+#undef GET_THREAD_DATA
+#endif
 
+#define GET_THREAD_DATA	((TSQL) THD_get_specific())
 /*! \var unsigned DSQL_debug
     \brief Debug level 
     
@@ -739,45 +600,85 @@ inline tsql* DSQL_get_thread_data() {
     > 256   Display yacc parser output level = DSQL_level>>8
 */
 
-// macros for error generation
-
-#define BLKCHK(blk, type) if (MemoryPool::blk_type(blk) != (SSHORT) type) ERRD_bugcheck("expected type")
-
-#ifdef DSQL_DEBUG
-	extern unsigned DSQL_debug;
+#ifndef SHLIB_DEFS
+#ifdef DSQL_MAIN
+unsigned DSQL_debug;
+#if defined(DEV_BUILD) && defined(WIN_NT) && defined(SUPERSERVER)
+FILE       *redirected_output;
+#endif
+#else
+extern unsigned DSQL_debug;
+#if defined(DEV_BUILD) && defined(WIN_NT) && defined(SUPERSERVER)
+extern FILE    *redirected_output;
+#endif
+#endif
+#else
+extern unsigned DSQL_debug;
+#if defined(DEV_BUILD) && defined(WIN_NT) && defined(SUPERSERVER)
+extern FILE    *redirected_output;
+#endif
 #endif
 
+
+
+// macros for error generation
+
+#define BUGCHECK(string)	ERRD_bugcheck(string)
+#define IBERROR(code, string)	ERRD_error(code, string)
+//#define BLKCHK(blk, type) if (blk->blk_type != (SCHAR) type) BUGCHECK ("expected type")
+#define BLKCHK(blk, type) if (MemoryPool::blk_type(blk) != (SSHORT) type) BUGCHECK ("expected type")
+
+// macro to stuff blr
+// this is used in both ddl.cpp and gen.cpp, and is put here for commonality
+
+#define STUFF(byte)     ((BLOB_PTR*)request->req_blr < (BLOB_PTR*)request->req_blr_yellow) ?\
+			(*request->req_blr++ = (UCHAR)(byte)) : GEN_expand_buffer (request, (UCHAR)(byte))
+
+
+// Macros for DEV_BUILD internal consistancy checking
+
 #ifdef DEV_BUILD
-// Verifies that a pointed to block matches the expected type.
-// Useful to find coding errors & memory globbers.
+
+/* Verifies that a pointed to block matches the expected type.
+ Useful to find coding errors & memory globbers.
+
+#define DEV_BLKCHK(blk, typ)	\
+	{ \
+	if ((blk) && (((BLK) (blk))->blk_type != (typ))) \
+	    ERRD_assert_msg (assert_blkchk_msg, assert_filename, (ULONG) __LINE__); \
+	}
+*/
 
 #define DEV_BLKCHK(blk, typ)	{						\
 		if ((blk) && MemoryPool::blk_type(blk) != (SSHORT)typ) {	\
-			ERRD_assert_msg("Unexpected memory block type",			\
-							(char*) __FILE__,			\
+			ERRD_assert_msg((char*)assert_blkchk_msg,			\
+							(char*)assert_filename,			\
 							(ULONG) __LINE__);			\
 		}												\
 	}
 
-#undef fb_assert
-void ERRD_assert_msg(const char*, const char*, ULONG);
-#define fb_assert(ex)	{if (!(ex)) {ERRD_assert_msg (NULL, (char*)__FILE__, __LINE__);}}
+
+#define _assert(ex)	{if (!(ex)){(void) ERRD_assert_msg (NULL, (char*)assert_filename, __LINE__);}}
+#undef assert
+#define assert(ex)	_assert(ex)
+#define ASSERT_FAIL ERRD_assert_msg (NULL, (char*)assert_filename, __LINE__)
+
+// Define the assert_filename as a static variable to save on codespace
+
+#define	ASSERT_FILENAME static UCHAR assert_filename[] = __FILE__; 
+#define	ASSERT_BLKCHK_MSG static UCHAR assert_blkchk_msg[] = "Unexpected memory block type";	// NTX: dev
 
 #else // PROD_BUILD
 
+#define	ASSERT_FILENAME
+#define	ASSERT_BLKCHK_MSG
 #define DEV_BLKCHK(blk, typ)
-#undef fb_assert
-#define fb_assert(ex)
+#define _assert(ex)
+#undef assert
+#define assert(ex)
+#define ASSERT_FAIL
+#define	ASSERT_FILENAME
 
 #endif // DEV_BUILD
 
-// CVC: Enumeration used for the COMMENT command.
-enum
-{
-	ddl_database, ddl_domain, ddl_relation, ddl_view, ddl_procedure, ddl_trigger,
-	ddl_udf, ddl_blob_filter, ddl_exception, ddl_generator, ddl_index, ddl_role,
-	ddl_charset, ddl_collation//, ddl_sec_class
-};
-
-#endif // DSQL_DSQL_H
-
+#endif // _DSQL_DSQL_H_

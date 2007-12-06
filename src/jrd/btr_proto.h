@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Access Method
  *	MODULE:		btr_proto.h
- *	DESCRIPTION:	Prototype header file for btr.cpp
+ *	DESCRIPTION:	Prototype header file for btr.c
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -21,42 +21,52 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef JRD_BTR_PROTO_H
-#define JRD_BTR_PROTO_H
+#ifndef _JRD_BTR_PROTO_H_
+#define _JRD_BTR_PROTO_H_
 
 #include "../jrd/btr.h"
 #include "../jrd/ods.h"
 #include "../jrd/req.h"
-#include "../jrd/exe.h"
 
-struct btree_exp;
-struct exp_index_buf;
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-USHORT	BTR_all(Jrd::thread_db*, Jrd::jrd_rel*, Jrd::IndexDescAlloc**);
-void	BTR_complement_key(Jrd::temporary_key*);
-void	BTR_create(Jrd::thread_db*, Jrd::jrd_rel*, Jrd::index_desc*, USHORT, Jrd::sort_context*, Jrd::SelectivityList&);
-bool	BTR_delete_index(Jrd::thread_db*, Jrd::win*, USHORT);
-//USHORT	BTR_delete_node(Jrd::thread_db*, Ods::btree_page*, USHORT);
-bool	BTR_description(Jrd::thread_db*, Jrd::jrd_rel*, Ods::index_root_page*, Jrd::index_desc*, SSHORT);
-DSC*	BTR_eval_expression(Jrd::thread_db*, Jrd::index_desc*, Jrd::Record*, bool&);
-void	BTR_evaluate(Jrd::thread_db*, Jrd::IndexRetrieval*, Jrd::RecordBitmap**, Jrd::RecordBitmap*);
-UCHAR*	BTR_find_leaf(Ods::btree_page*, Jrd::temporary_key*, UCHAR*, USHORT*, bool, bool);
-Ods::btree_page*	BTR_find_page(Jrd::thread_db*, Jrd::IndexRetrieval*, Jrd::win*, Jrd::index_desc*,
-								 Jrd::temporary_key*, Jrd::temporary_key*, bool);
-void	BTR_insert(Jrd::thread_db*, Jrd::win*, Jrd::index_insertion*);
-Jrd::idx_e	BTR_key(Jrd::thread_db*, Jrd::jrd_rel*, Jrd::Record*, Jrd::index_desc*, Jrd::temporary_key*,
-					Jrd::idx_null_state*, bool);
-USHORT	BTR_key_length(Jrd::thread_db*, Jrd::jrd_rel*, Jrd::index_desc*);
-UCHAR*	BTR_last_node(Ods::btree_page*, exp_index_buf*, btree_exp**);
-Ods::btree_page*	BTR_left_handoff(Jrd::thread_db*, Jrd::win*, Ods::btree_page*, SSHORT);
-USHORT	BTR_lookup(Jrd::thread_db*, Jrd::jrd_rel*, USHORT, Jrd::index_desc*, Jrd::RelationPages*);
-Jrd::idx_e	BTR_make_key(Jrd::thread_db*, USHORT, Jrd::jrd_nod**, Jrd::index_desc*, Jrd::temporary_key*, bool);
-void	BTR_make_null_key(Jrd::thread_db*, Jrd::index_desc*, Jrd::temporary_key*);
-bool	BTR_next_index(Jrd::thread_db*, Jrd::jrd_rel*, Jrd::jrd_tra*, Jrd::index_desc*, Jrd::win*);
-void	BTR_remove(Jrd::thread_db*, Jrd::win*, Jrd::index_insertion*);
-void	BTR_reserve_slot(Jrd::thread_db*, Jrd::jrd_rel*, Jrd::jrd_tra*, Jrd::index_desc*);
-void	BTR_selectivity(Jrd::thread_db*, Jrd::jrd_rel*, USHORT, Jrd::SelectivityList&);
-bool	BTR_types_comparable(const dsc& target, const dsc& source);
+extern USHORT BTR_all(TDBB, struct jrd_rel *, struct idx **, struct idx **,
+					  struct str **, SLONG *);
+extern void BTR_create(TDBB, struct jrd_rel *, struct idx *, USHORT, struct scb *,
+					   float *);
+extern void BTR_delete_index(TDBB, struct win *, USHORT);
+extern BOOLEAN BTR_description(JRD_REL, struct irt *,
+							   struct idx *, SSHORT);
+extern void BTR_evaluate(struct tdbb *, struct irb *, struct sbm **);
+extern struct btn *BTR_find_leaf(struct btr *, struct key *, UCHAR *, UCHAR *,
+								 int, BOOLEAN);
+extern struct btr *BTR_find_page(struct tdbb *, struct irb *, struct win *,
+								 struct idx *, struct key *, struct key *,
+								 BOOLEAN);
+extern SLONG BTR_get_quad(const SCHAR*);
+extern void BTR_insert(struct tdbb *, struct win *, struct iib *);
+extern enum idx_e BTR_key(struct tdbb *, struct jrd_rel *, struct rec *,
+						  struct idx *, struct key *, idx_null_state *);
+extern USHORT BTR_key_length(struct jrd_rel *, struct idx *);
+extern struct btn *BTR_last_node(struct btr *, struct exp_index_buf *, struct btx **);
+extern struct btr *BTR_left_handoff(struct tdbb *, struct win *, struct btr *,
+									SSHORT);
+extern USHORT BTR_lookup(TDBB, struct jrd_rel *, USHORT, struct idx *);
+extern void BTR_make_key(struct tdbb *, USHORT, struct jrd_nod **, struct idx *,
+						 struct key *, USHORT);
+extern BOOLEAN BTR_next_index(TDBB, struct jrd_rel *, struct jrd_tra *, struct idx *,
+							  struct win *);
+extern struct btn *BTR_next_node(struct btn *, struct btx **);
+extern struct btn *BTR_previous_node(struct btn *, struct btx **);
+extern void BTR_remove(struct tdbb *, struct win *, struct iib *);
+extern void BTR_reserve_slot(TDBB, struct jrd_rel *, struct jrd_tra *, struct idx *);
+extern float BTR_selectivity(TDBB, struct jrd_rel *, USHORT);
+extern void BTR_complement_key(struct key *);
 
-#endif // JRD_BTR_PROTO_H
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
+#endif /* _JRD_BTR_PROTO_H_ */

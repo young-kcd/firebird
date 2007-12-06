@@ -27,9 +27,10 @@
 #  Contributor(s):
 # 
 #
+#  $Id: Makefile.in.embed.isql,v 1.6.2.3 2006-11-05 14:37:29 alexpeshkoff Exp $
 #
 ROOT=..
-ObjModuleType=std
+ObjModuleName=embed.isql
 
 include     $(ROOT)/gen/make.defaults
 include     $(ROOT)/gen/make.platform
@@ -41,17 +42,13 @@ include     $(ROOT)/gen/make.shared.variables
 unexport ISC_USER
 unexport ISC_PASSWORD
 
-ISQL_Other_Sources = jrd/path_utils.cpp
-ISQL_Files = extract.epp isql.epp show.epp Extender.cpp
-ISQL_Sources = $(addprefix isql/, $(ISQL_Files)) $(ISQL_Other_Sources)
+ISQL_Files = extract.epp isql.epp show.epp
+ISQL_Sources = $(addprefix isql/, $(ISQL_Files))
 ISQL_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(ISQL_Sources))))
 
-AllObjects = $(ISQL_Objects) $(CLUMPLETS_Objects)
+AllObjects = $(ISQL_Objects)
 
-ifeq ($(PLATFORM),DARWIN)
-LINK_LIBS+=$(ICU_LIBS)
-endif
-Dependencies = $(AllObjects:.o=.d) 
+Dependencies=$(AllObjects:.o=.$(DEP_EXT))
 
 
 
@@ -60,8 +57,8 @@ Dependencies = $(AllObjects:.o=.d)
 
 isql : $(LIBFBEMBED_SO) $(ISQL)
 
-$(ISQL):	$(ISQL_Objects) $(CLUMPLETS_Objects) $(FBCOMMON_Objects) $(FBCLASSES_Objects)
-	$(LD) $(LINK_OPTS) $^ -o $@ $(FBEMBED_LINK) $(LINK_LIBS) $(LIBEDITLINE)
+$(ISQL):	$(ISQL_Objects)
+	$(LD) $(LINK_OPTS) $^ -o $@ $(FBEMBED_LINK) $(LINK_LIBS)
 
 
 include $(ROOT)/gen/make.shared.targets

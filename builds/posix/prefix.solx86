@@ -14,11 +14,12 @@
 #
 # All Rights Reserved.
 # Contributor(s): __Konstantin Kuznetsov___________________________________.
-# This file can be used to build FB on Solaris 2.6 x 86 with SUN CC 6u2
-# and bash
+# This file can be used to build FB on Solaris 8 x 86 with gcc 2.95 and bash
 #
 # Use SOLX86 to identify x86 version of Solaris.  Neil McCalden
 #  
+# $Id: prefix.solx86,v 1.18.2.2 2005-01-24 02:19:43 stryqx Exp $
+#
 # Start of file prefix.solaris X 86 :	$(VERSION)	$(PLATFORM)
 # 2 Oct 2002, Nickolay Samofatov - Major Cleanup
 
@@ -26,7 +27,7 @@
 #FirebirdInstallPrefix = @prefix@
 
 WARNINGS=+w2
-COMM_SOLX_FLAGS:=   -DSOLARIS -DSOLARIS26 -DSOLARIS_MT -DSOLX86 -DBSD_COMP -KPIC -features=no%conststrings #,extensions
+COMM_SOLX_FLAGS:=   -DSOLARIS -DSOLARIS26 -DSOLARIS_MT -DSOLX86 -DBSD_COMP -DEXACT_NUMERICS  -KPIC -features=no%conststrings
 
 #SFIO= /export/home/interbase/SfIO
 #SfIO is a pretty portable stdIO 
@@ -40,7 +41,7 @@ SFIO=@SFIO_DIR@
 SFIO_FLAGS=@SFIO_FLAGS@
 SFIO_LDFLAGS=@SFIO_LDFLAGS@
 
-STLPort=/export/home/kostik/STL/STLport-4.5.3/stlport	-library=no%libC
+STLPort=/export/home/kostik/STL/STLport-4.5.3/stlport	
 
 
 ifdef SFIO
@@ -55,13 +56,13 @@ DEV_FLAGS=$(COMM_SOLX_FLAGS) -g  $(WARNINGS)
 OS_ServerFiles=inet_server.cpp
 
 #still ugly hack - becouse can not move it to configure.in
-GPRECOMMON_Files= ../jrd/ThreadData.cpp ../jrd/isc_sync.cpp
+GPRECOMMON_Files= ../jrd/thd.cpp ../jrd/isc_sync.cpp
 GPRECommon_Sources= $(GPRECOMMON_Files)
 LIB_LINK_OPTIONS:= -G 
 LIB_LINK_RPATH:=-R
 LIB_LINK_SONAME:=-h
 #LINK_OPTS:= $(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/lib  $(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/intl
-EMBED_UTIL_TARGETS=gstat gds_drop gsec nbackup fb_lock_print
-CLIENT_UTIL_TARGETS=gds_drop gstat gsec fbguard fbmgr_bin nbackup fb_lock_print
+EMBED_UTIL_TARGETS=gstat gds_drop gds_relay gsec fb_lock_print
+CLIENT_UTIL_TARGETS=gds_drop gds_relay gstat gsec fbguard fbmgr_bin fb_lock_print
 
-Physical_IO_Module=os/posix/unix.cpp
+Physical_IO_Module=unix.cpp

@@ -1,0 +1,276 @@
+Firebird Database Server 1.5.5
+==============================
+
+Questo documento contiene istruzioni per
+l'installazione di Firebird 1.5 su piattaforma
+Win32. Questa documentazione si riferisce dunque al
+solo processo di installazione, e non a Firebird 1.5
+in generale.
+
+
+Indice
+------
+
+o Prima di installare
+o Installazione su sistemi contenenti Firebird 2.0
+o Nuove caratteristiche del programma di installazione
+o Funzionalità di installazione obsolete
+o Disinstallazione
+o Altre informazioni
+o Installazione batch da un file di comandi
+
+
+Prima di installare
+-------------------
+
+Si raccomanda di DISINSTALLARE qualunque versione
+preesistente di Firebird 1.0, 1.5, 2.0 o InterBase
+prima di installare questa versione.
+
+
+Installazione su sistemi contenenti Firebird 2.0
+------------------------------------------------
+
+Il programma di installazione di Firebird 1.5.5
+è in grado di rilevare automaticamente se un server
+Firebird 2 risulta installato. In questo caso, il
+programma vi avvertirà e vi darà la possibilità di
+annullare l'installazione. Se si prosegue, il programma
+rileverà un'istanza di Firebird Super Server in
+esecuzione e si interromperà. Tenete presente, tuttavia,
+che il programma non è in grado di rilevare un'istanza
+di Firebird Classic, e in quel caso proseguirà. Per
+questo motivo, è bene verificare quale tipo di server
+si sta usando qualora il programma di installazione
+ne rilevi uno.
+
+
+Nuove caratteristiche del programma di installazione 1.5.4
+----------------------------------------------------------
+
+o In caso esista già un file firebird.conf, il
+  programma di installazione non lo sovrascriverà ma
+  creerà un nuovo file chiamato:
+
+  firebird.conf.default.
+
+  Il file firebird.conf esistente non verrà
+  modificato. Questo al fine di garantire il
+  mantenimento di eventuali restrizioni di accesso
+  dopo un aggiornamento.
+
+o Il programma di installazione è ora disponibile
+  anche in Bosniaco, Spagnolo, Italiano, Polacco
+  e Russo.
+  
+  Nota 1 - I nomi delle lingue disponibili sono
+  elencati in ordine alfabetico, ciascuno espresso
+  nella lingua stessa.
+  
+  Nota 2 - Non tutti i caratteri saranno sempre visibili.
+  Tipicamente, le lingue est-europee non saranno
+  utilizzabili da utenti dell'europa occidentale.
+
+
+Nuove caratteristiche del programma di installazione 1.5.3
+----------------------------------------------------------
+
+Il programma di installazione (e SOLO il programma
+di installazione, non Firebird, al momento) può
+essere eseguito in diverse lingue supplementari, tra
+cui l'italiano.
+
+
+Nuove caratteristiche del programma di installazione 1.5
+--------------------------------------------------------
+
+o Questo programma di installazione combina Firebird
+  Classic e Firebird Super Server, e consente di scegliere
+  quale dei due installare (ma non entrambi allo stesso
+  tempo). Per passare da una tipologia all'altra è
+  necessario disinstallare e reinstallare.
+  
+o Le regole per l'installazione della libreria client sono
+  notevolmente cambiate. Le nnovità sono dettagliate nel
+  file doc/README.Win32LibraryInstallation.txt.
+  
+  Per via di queste modifiche, il programma di installazione
+  effettua un controllo sull'esistenza di una versione
+  precedente di Firebird o InterBase.
+  
+  - Se c'è già installato Firebird 1.5, il programma
+    tenterà una sovrascrittura, fermandosi se il server
+    è in esecuzione.
+    
+  - Se c'è un'altra versione di Firebird o InterBase, il
+    programma vi avvertirà. Se decidete di proseguire,
+    Firebird verrà installato e le sue chiavi di registro
+    configurate, ma non ne verrà impostato l'avvio
+    automatico come servizio nè come applicazione. Questo
+    passaggio andrà fatto manualmente.
+    
+  - Il programma di installazione accetta un nuovo
+    parametro /force sulla riga di comando, che permette
+    a chi ne ha un buon motivo di saltare i controlli
+    descritti sopra.
+
+
+Funzionalità di installazione obsolete
+--------------------------------------
+
+o Firebird 1.0 usava la chiave di registro
+  HKLM\SOFTWARE\FirebirdSQL, che è ora
+  obsoleta e verrà eliminata dl programma di
+  installazione. Se avete applicazioni che
+  fanno affidamento sul contenuto di tale chiave,
+  dovrete aggiungerla manualmente (anche se è
+  preferibile modificare le applicazioni perché
+  usino la nuova chiave).
+  
+o Le primissime versioni release candidate di
+  Firebird 1.5 installavano la libreria client
+  fbclient.dll nella cartella di sistema. Questa
+  pratica è ora considerata obsoleta. Il programma
+  offre un'opzione per installare la libreria client
+  nella cartella di sistema, ma vi suggeriamo di
+  non adottarla e invece modificare, se necessario,
+  le applicazioni perché cerchino la libreria client
+  nel percorso corretto.
+
+
+Disinstallazione
+----------------
+
+o Si consiglia di distinstallare il prodotto nel modo
+  consueto, tramite il Pannello di Controllo. In
+  alternativa, è sufficiente eseguire unins000.exe
+  dalla cartella di installazione.
+
+o Se Firebird è in esecuzione come applicazione (e non
+  come servizio), si raccomanda di arrestare
+  manualmente il server prima di procedere con la
+  disinstallazione. Questo è necessario in quanto il
+  programma di disinstallazione non è in grado di
+  arrestare un'applicazione in esecuzione. Se il
+  server è attivo, la disinstallazione si interromperà
+  con un errore e sarà necessario ripulire manualmente
+  il sistema dai file residui.
+
+
+Altre informazioni
+------------------
+
+  Firebird richiede Winsock 2. Winsock 2 è presente in
+  tutte le piattaforme Windows a 32 bit, eccetto
+  Windows 95. Il programma di installazione verifica
+  la presenza di Winsock 2 e termina con un errore in
+  caso di esito negativo. In questo caso si consiglia
+  di visitare questo sito:
+  
+    http://support.microsoft.com/default.aspx?scid=kb;EN-US;q177719
+
+  per maggiori informazioni su come aggiornare
+  Winsock.
+
+
+Installazione batch da un file di comandi
+-----------------------------------------
+
+Il programma di installazione può essere eseguito come
+parte di un file di comandi. Sono accettati i seguenti
+parametri:
+
+
+/SP-
+  Disattiva la richiesta di conferma iniziale.
+  
+/SILENT, /VERYSILENT
+  Quando il programma di installazione lavora in modalità
+  silent, mostra soltanto una finestra con il progresso
+  dell'installazione. In modalità very silent, nemmeno quella.
+  Tutto il resto funziona normalmente; ad esempio, eventuali
+  messaggi di errore compaiono come al solito, e anche la
+  richiesta iniziale (a meno che non sia stata disattivata
+  tramite il parametro /SP-).
+  
+  Se è richiesto un riavvio del sistema, ed è stato indicato
+  il parametro /NORESTART (ved. oltre), il programma di
+  installazione chiederà conferma se in modalità silent,
+  ma effettuerà il riavvio senza chiedere conferma se in
+  modalità very silent.
+  
+/NORESTART
+  Fa in modo che il programma di installazione non causi mai
+  un riavvio, nemmeno se necessario.
+  
+/DIR="percorso"
+  Serve ad indicare un percorso di installazione diverso da
+  quello predefinito. Occorre indicare un percorso assoluto.
+  
+/GROUP="nome"
+  Serve ad indicare un nome di cartella diverso da quello
+  predefinito per il menu Start.
+  
+/NOICONS
+  Fa sì che la voce "Non creare una cartella nel menu
+  Avvio/Start" sia inizialmente disattivata.
+  
+/COMPONENTS="elenco di nomi separati da virgola"
+  Per indicare i componenti da installare.
+  Si può scegliere tra:
+    ServerComponent,
+    ServerComponent\SuperServerComponent, 
+    ServerComponent\ClassicServerComponent,
+    DevAdminComponent e
+    ClientComponent
+
+  L'indicazione di questo parametro sulla riga di comando
+  implica l'impostazione di una installazione di tipo
+  personalizzato. Un'installazione completa richiede
+  di combinare più componenti; ad esempio:
+  
+  /COMPONENTS="ServerComponent, 
+               ServerComponent\SuperServerComponent,  
+               DevAdminComponent, ClientComponent"
+
+  L'esempio sopra configura una installazione Super Server
+  completa.
+  
+/FORCE
+  Impone al programma di installazione di ignorare il
+  risultato dei controlli su eventuali installazioni precedenti.
+  Il programma tenterà di installare e configurare Firebird
+  1.5 come se non ci fosse alcuna versione di Firebird o
+  InterBase preesistente sul computer.
+  
+  Questa modalità può essere utile in caso si abbia
+  un'installazione rovinata che non è possibile
+  disinstallare. Oppure, può essere un altro modo per
+  rovinare installazioni perfettamente funzionanti, a
+  scelta.
+  
+/NOCPL
+  Non installa l'applet Firebird nel Pannello di Controllo.
+  Questo può essere utile in due casi:
+  
+  o Spesso installare l'applet richiede il successivo
+    riavvio del sistema, cosa che potreste voler evitare.
+    
+  o Potreste voler usare un applet alternativo.
+
+/NOGDS32
+  Disattiva la possibilità di installare una copia della
+  libreria client nella cartella di sistema, anche nei casi
+  in cui l'analisi preventiva delle precedenti installazioni
+  lo ammetta.
+  
+/COPYFBCLIENT
+  Causa la copia della libreria fbclient.dll nella cartella di
+  sistema. Questa modalità è consigliata solo nei casi in cui
+  ci sia la certezza di lavorare, da questo computer, con
+  una sole versione di server Firebird. Nei casi in cui sia
+  possibile che le vostre applicazioni debbano accedere a versioni
+  diverse di Firebird, è bene non avere la libreria client
+  condivisa tra tutte. Maggiori dettagli (solo in inglese):
+  
+    doc/README.Win32LibraryInstallation.txt

@@ -31,12 +31,8 @@
 
 #include "../jrd/common.h"
 #include "../remote/remote_def.h"
-#include "../jrd/thd.h"
-#include "../common/classes/objects_array.h"
-#include "../auth/trusted/AuthSspi.h"
-#include "../common/classes/fb_string.h"
-#include "../common/classes/ClumpletWriter.h"
-#include "../common/StatusHolder.h"
+#include "../jrd/thd_proto.h"
+#include "../jrd/y_ref.h"
 
 /* Include some apollo include files for tasking */
 
@@ -48,16 +44,6 @@
 #endif /* !VMS || !WIN_NT */
 
 
-// Uncomment this line if you need to trace module activity
-//#define REMOTE_DEBUG
-
-#ifdef REMOTE_DEBUG
-DEFINE_TRACE_ROUTINE(remote_trace);
-#define REMOTE_TRACE(args) remote_trace args
-#else
-#define REMOTE_TRACE(args) /* nothing */
-#endif
-
 #ifdef DEV_BUILD
 /* Debug packet/XDR memory allocation */
 
@@ -66,28 +52,30 @@ DEFINE_TRACE_ROUTINE(remote_trace);
 
 #endif
 
-const int BLOB_LENGTH		= 16384;
+#define BLOB_LENGTH		16384   
+
+#define ALLOC(type)			ALLR_block (type, 0)
+#define ALLOCV(type, count)	ALLR_block (type, count)
+
 
 #include "../remote/protocol.h"
 
 /* Block types */
 
-struct blk;
-
 #ifndef INCLUDE_FB_BLK
 #include "../include/old_fb_blk.h"
 #endif
 
-// fwd. decl.
-struct rem_port;
+
+/* Block types */
 
 typedef struct rdb
 {
-	blk				rdb_header;
+	struct blk		rdb_header;
 	USHORT			rdb_id;
 	USHORT			rdb_flags;
-	FB_API_HANDLE	rdb_handle;			/* database handle */
-	rem_port*		rdb_port;			/* communication port */
+	FRBRD*			rdb_handle;			/* database handle */
+	struct port*	rdb_port;			/* communication port */
 	struct rtr*		rdb_transactions;	/* linked list of transactions */
 	struct rrq*		rdb_requests;		/* compiled requests */
 	struct rvnt*	rdb_events;			/* known events */
@@ -96,30 +84,28 @@ typedef struct rdb
 	PACKET			rdb_packet;			/* Communication structure */
 } *RDB;
 
-// rdb_flags
-const USHORT RDB_service	= 1;		/* structure relates to a service */
+#define RDB_service	1		/* structure relates to a service */
 
 typedef struct rtr
 {
-	blk			rtr_header;
-	rdb*		rtr_rdb;
-	rtr*		rtr_next;
+	struct blk	rtr_header;
+	struct rdb*	rtr_rdb;
+	struct rtr*	rtr_next;
 	struct rbl*	rtr_blobs;
-	FB_API_HANDLE rtr_handle;
+	FRBRD*		rtr_handle;
 	USHORT		rtr_flags;
 	USHORT		rtr_id;
 } *RTR;
 
-// rtr_flags
-const USHORT RTR_limbo	= 1;
+#define RTR_limbo	1
 
 typedef struct rbl
 {
-	blk			rbl_header;
-	rdb*		rbl_rdb;
-	rtr*		rbl_rtr;
-	rbl*		rbl_next;
-	FB_API_HANDLE rbl_handle;
+	struct blk	rbl_header;
+	struct rdb*	rbl_rdb;
+	struct rtr*	rbl_rtr;
+	struct rbl*	rbl_next;
+	FRBRD*		rbl_handle;
 	SLONG		rbl_offset;			/* Apparent (to user) offset in blob */
 	USHORT		rbl_id;
 	USHORT		rbl_flags;
@@ -133,159 +119,156 @@ typedef struct rbl
 	UCHAR		rbl_data[1];
 } *RBL;
 
-// rbl_flags
-const USHORT RBL_eof		= 1;
-const USHORT RBL_segment	= 2;
-const USHORT RBL_eof_pending= 4;
-const USHORT RBL_create		= 8;
+#define RBL_eof		1
+#define RBL_segment	2
+#define RBL_eof_pending	4
+#define RBL_create	8
 
 typedef struct rvnt
 {
-	blk			rvnt_header;
-	rvnt*		rvnt_next;
-	rdb*		rvnt_rdb;
-	FPTR_EVENT_CALLBACK	rvnt_ast;
+	struct blk	rvnt_header;
+	struct rvnt*rvnt_next;
+	RDB			rvnt_rdb;
+	void		(*rvnt_ast)(void*, USHORT, UCHAR*);
 	void*		rvnt_arg;
 	SLONG		rvnt_id;
 	SLONG		rvnt_rid;	/* used by server to store client-side id */
-	rem_port*	rvnt_port;	/* used to id server from whence async came */
-	const UCHAR*		rvnt_items;
+	struct port*rvnt_port;	/* used to id server from whence async came */
+	UCHAR*		rvnt_items;
 	SSHORT		rvnt_length;
 } *RVNT;
 
-struct rem_vec
+typedef struct vec
 {
-	blk			vec_header;
+	struct blk	vec_header;
 	ULONG		vec_count;
-	blk*		vec_object[1];
-};
+	struct blk*	vec_object[1];
+} *VEC;
 
-//struct rem_vcl
-//{
-//	blk			vcl_header;
-//	ULONG		vcl_count;
-//	SLONG		vcl_long[1];
-//};
+typedef struct vcl
+{
+	struct blk	vcl_header;
+	ULONG		vcl_count;
+	SLONG		vcl_long[1];
+} *VCL;
 
 /* Random string block -- jack of all kludges */
 
-struct rem_str
+typedef struct str
 {
-	blk			str_header;
+	struct blk	str_header;
 	USHORT		str_length;
 	SCHAR		str_data[2];
-};
+} *STR;
 
 /* Include definition of descriptor */
 
 #include "../jrd/dsc.h"
 
+typedef vary* VARY;
 
-struct rem_fmt
+typedef struct fmt
 {
-	blk			fmt_header;
+	struct blk	fmt_header;
 	USHORT		fmt_length;
 	USHORT		fmt_net_length;
 	USHORT		fmt_count;
 	USHORT		fmt_version;
-	USHORT		fmt_flags; // unused
+	USHORT		fmt_flags;
 	struct dsc	fmt_desc[1];
-};
+} *FMT;
 
-// fmt_flags (not used)
-//#define FMT_has_P10_specific_datatypes	0x1	/* datatypes don't exist in P9 */
+#define FMT_has_P10_specific_datatypes	0x1	/* datatypes don't exist in P9 */
 
 /* Windows declares a msg structure, so rename the structure 
    to avoid overlap problems. */
 
 typedef struct message
 {
-	blk			msg_header;
-	message*	msg_next;	/* Next available message */
+	struct blk	msg_header;
+	struct message *msg_next;	/* Next available message */
 #ifdef SCROLLABLE_CURSORS
-	message*	msg_prior;	/* Next available message */
-	ULONG		msg_absolute; 		/* Absolute record number in cursor result set */
+	struct message *msg_prior;	/* Next available message */
+	ULONG	msg_absolute; 		/* Absolute record number in cursor result set */
 #endif
 	/* Please DO NOT re-arrange the order of following two fields.
 	   This could result in alignment problems while trying to access
 	   'msg_buffer' as a 'long', leading to "core" drops 
 		Sriram - 04-Jun-97 */
-	USHORT		msg_number;			/* Message number */
-	UCHAR*		msg_address;		/* Address of message */
-	UCHAR		msg_buffer[1];		/* Allocated message */
+	USHORT	msg_number;			/* Message number */
+	UCHAR	*msg_address;		/* Address of message */
+	UCHAR	msg_buffer[1];		/* Allocated message */
 } *REM_MSG;
 
 /* remote stored procedure request */
 
 typedef struct rpr
 {
-	blk			rpr_header;
-	rdb*		rpr_rdb;
-	rtr*		rpr_rtr;
-	FB_API_HANDLE rpr_handle;
-	message*	rpr_in_msg;		/* input message */
-	message*	rpr_out_msg;	/* output message */
-	rem_fmt*	rpr_in_format;	/* Format of input message */
-	rem_fmt*	rpr_out_format;	/* Format of output message */
-	USHORT		rpr_flags; // unused
+	struct blk		rpr_header;
+	struct rdb*		rpr_rdb;
+	struct rtr*		rpr_rtr;
+	FRBRD*			rpr_handle;
+	struct message*	rpr_in_msg;		/* input message */
+	struct message*	rpr_out_msg;	/* output message */
+	struct fmt*		rpr_in_format;	/* Format of input message */
+	struct fmt*		rpr_out_format;	/* Format of output message */
+	USHORT			rpr_flags;
 } *RPR;
 
-// rpr_flags (not used)
-//#define RPR_eof		1		/* End-of-stream encountered */
+#define RPR_eof		1		/* End-of-stream encountered */
 
-struct rrq
+typedef struct rrq
 {
-	blk		rrq_header;
-	rdb*	rrq_rdb;
-	rtr*	rrq_rtr;
-	rrq*	rrq_next;
-	rrq*	rrq_levels;		/* RRQ block for next level */
-	FB_API_HANDLE rrq_handle;
+	struct blk	rrq_header;
+	struct rdb*	rrq_rdb;
+	struct rtr*	rrq_rtr;
+	struct rrq*	rrq_next;
+	struct rrq*	rrq_levels;		/* RRQ block for next level */
+	FRBRD*		rrq_handle;
 	USHORT		rrq_id;
 	USHORT		rrq_max_msg;
 	USHORT		rrq_level;
 	ISC_STATUS_ARRAY	rrq_status_vector;
 	struct		rrq_repeat
 	{
-		rem_fmt*	rrq_format;		/* format for this message */
-		message*	rrq_message; 	/* beginning or end of cache, depending on whether it is client or server */
-		message*	rrq_xdr;		/* point at which cache is read or written by xdr */
+		struct fmt*		rrq_format;		/* format for this message */
+		struct message*	rrq_message; 	/* beginning or end of cache, depending on whether it is client or server */
+		struct message*	rrq_xdr;		/* point at which cache is read or written by xdr */ 
 #ifdef SCROLLABLE_CURSORS
-		message*	rrq_last;		/* last message returned */
-		ULONG		rrq_absolute;	/* current offset in result set for record being read into cache */
-		USHORT		rrq_flags;
+		struct message*	rrq_last;		/* last message returned */
+		ULONG			rrq_absolute;	/* current offset in result set for record being read into cache */
+		USHORT			rrq_flags;
 #endif
-		USHORT		rrq_msgs_waiting;	/* count of full rrq_messages */
-		USHORT		rrq_rows_pending;	/* How many rows in waiting */
-		USHORT		rrq_reorder_level;	/* Reorder when rows_pending < this level */
-		USHORT		rrq_batch_count;	/* Count of batches in pipeline */
+		USHORT			rrq_msgs_waiting;	/* count of full rrq_messages */
+		USHORT			rrq_rows_pending;	/* How many rows in waiting */
+		USHORT			rrq_reorder_level;	/* Reorder when rows_pending < this level */
+		USHORT			rrq_batch_count;	/* Count of batches in pipeline */
 
 	} rrq_rpt[1];
-};
+} *RRQ;
 
-// rrq_flags
-#ifdef SCROLLABLE_CURSORS
-const USHORT RRQ_backward			= 1;	/* the cache was created in the backward direction */ 
-const USHORT RRQ_absolute_backward	= 2;	/* rrq_absolute is measured from the end of the stream */
-const USHORT RRQ_last_backward		= 4;	/* last time, the next level up asked for us to scroll in the backward direction */
-#endif
+/* rrq flags */
+
+#define RRQ_backward			1	/* the cache was created in the backward direction */ 
+#define RRQ_absolute_backward	2	/* rrq_absolute is measured from the end of the stream */
+#define RRQ_last_backward		4	/* last time, the next level up asked for us to scroll in the backward direction */
 
 /* remote SQL request */
 
 typedef struct rsr
 {
-	blk				rsr_header;
-	rsr*			rsr_next;
-	rdb*			rsr_rdb;
-	rtr*			rsr_rtr;
-	FB_API_HANDLE	rsr_handle;
-	rem_fmt*		rsr_bind_format;		/* Format of bind message */
-	rem_fmt*		rsr_select_format;		/* Format of select message */
-	rem_fmt*		rsr_user_select_format; /* Format of user's select message */
-	rem_fmt*		rsr_format;				/* Format of current message */
-	message*		rsr_message;			/* Next message to process */
-	message*		rsr_buffer;				/* Next buffer to use */
-	Firebird::StatusHolder* rsr_status;		/* saved status for buffered errors */
+	struct blk		rsr_header;
+	struct rsr*		rsr_next;
+	struct rdb*		rsr_rdb;
+	struct rtr*		rsr_rtr;
+	FRBRD*			rsr_handle;
+	struct fmt*		rsr_bind_format;		/* Format of bind message */
+	struct fmt*		rsr_select_format;		/* Format of select message */
+	struct fmt*		rsr_user_select_format; /* Format of user's select message */
+	struct fmt*		rsr_format;				/* Format of current message */
+	struct message*	rsr_message;			/* Next message to process */
+	struct message*	rsr_buffer;				/* Next buffer to use */
+	ISC_STATUS_ARRAY	rsr_status_vector;	/* saved status for buffered errors */
 	USHORT			rsr_id;
 	USHORT			rsr_flags;
 	USHORT			rsr_fmt_length;
@@ -296,53 +279,12 @@ typedef struct rsr
 	USHORT			rsr_batch_count; 	/* Count of batches in pipeline */
 } *RSR;
 
-// rsr_flags
-const USHORT RSR_fetched	= 1;		/* Cleared by execute, set by fetch */
-const USHORT RSR_eof		= 2;		/* End-of-stream encountered */
-const USHORT RSR_blob		= 4;		/* Statement relates to blob op */
-const USHORT RSR_no_batch	= 8;		/* Do not batch fetch rows */
-const USHORT RSR_stream_err	= 16;		/* There is an error pending in the batched rows */
-const USHORT RSR_lazy		= 32;		/* To be allocated at the first reference */
-const USHORT RSR_defer_execute	= 64;	// op_execute can be deferred
-const USHORT RSR_past_eof	= 128;		// EOF was returned by fetch from this statement
+#define RSR_fetched		1		/* Cleared by execute, set by fetch */
+#define RSR_eof			2		/* End-of-stream encountered */
+#define RSR_blob		4		/* Statement relates to blob op */
+#define RSR_no_batch	8		/* Do not batch fetch rows */
+#define RSR_stream_err	16		/* There is an error pending in the batched rows */
 
-// will be methods of remote statement class
-inline void stmt_save_exception(RSR statement, const ISC_STATUS* status, bool overwrite)
-{
-	if (!statement->rsr_status) {
-		statement->rsr_status = new Firebird::StatusHolder();
-	}
-	if (overwrite || !statement->rsr_status->getError()) {
-		statement->rsr_status->save(status);
-	}
-}
-
-inline void stmt_clear_exception(RSR statement)
-{
-	if (statement->rsr_status)
-		statement->rsr_status->clear();
-}
-
-inline ISC_STATUS stmt_have_exception(RSR statement)
-{
-	return (statement->rsr_status ?	
-		statement->rsr_status->getError() : 0);
-}
-
-inline void stmt_raise_exception(RSR statement)
-{
-	if (statement->rsr_status)
-		statement->rsr_status->raise();
-}
-
-inline void stmt_release_exception(RSR statement)
-{
-	if (statement->rsr_status) 
-	{
-		delete statement->rsr_status;
-		statement->rsr_status = NULL;
-	}
-}
 
 enum blk_t
 {
@@ -371,9 +313,17 @@ enum blk_t
 
 enum rem_port_t
 {
+	port_mailbox,		/* Apollo mailbox */
+	port_pcic,			/* IBM PC interconnect */
 	port_inet,			/* Internet (TCP/IP) */
+	port_asyn_homebrew,	/* homebrew asynchronous connection */
+	port_decnet,		/* DECnet connection */
+	port_ipc,			/* NetIPC connection */
 	port_pipe,			/* Windows NT named pipe connection */
-	port_xnet			/* Windows NT shared memory connection */
+	port_mslan,			/* Microsoft LanManager connection */
+	port_spx,			/* Novell SPX connection */
+	port_ipserver,		/* InterBase interprocess server */
+	port_xnet			/* Windows NT named xnet connection */
 };
 
 enum state_t
@@ -388,64 +338,31 @@ enum state_t
 
 
 #ifndef WIN_NT
-typedef int HANDLE;
+#define HANDLE	int
 #endif  /* WIN_NT */
 
 
 //////////////////////////////////////////////////////////////////
 // fwd. decl.
+struct port;
 struct p_cnct;
-struct rmtque;
-
-/* Queue of deferred packets */
-
-struct rem_que_packet
-{
-	PACKET packet;
-	bool sent;
-};
-
-typedef Firebird::Array<rem_que_packet> PacketQueue;
-
-#ifdef TRUSTED_AUTH
-// delayed authentication block for trusted auth callback
-class ServerAuth
-{
-public:
-	typedef void Part2(rem_port*, P_OP, const char* fName, int fLen, const UCHAR* pb, int pbLen, PACKET*);
-	Firebird::PathName fileName;
-	Firebird::HalfStaticArray<UCHAR, 128> clumplet;
-	AuthSspi* authSspi;
-	Part2* part2;
-	P_OP operation;
-
-	ServerAuth(const char* fName, int fLen, const Firebird::ClumpletWriter& pb, Part2* p2, P_OP op);
-	~ServerAuth();
-};
-#endif // TRUSTED_AUTH
-
-/* Port itself */
 
 class port_interface
 {
 public:
-	virtual int		accept_(rem_port* pPort, p_cnct* pConnection) = 0;
+	virtual int		accept_(port* pPort, p_cnct* pConnection) = 0;
 };
 
-//typedef XDR_INT (*t_event_ast)();
-typedef void (*t_event_ast)(rem_port*);
-typedef rem_port* (*t_port_connect)(rem_port*, PACKET*, t_event_ast);
-
-struct rem_port
+typedef struct port
 {
-	blk				port_header;
+	struct blk		port_header;
 	enum rem_port_t	port_type;			/* type of port */
 	enum state_t	port_state;			/* state of port */
 	P_ARCH			port_client_arch;	/* so we can tell arch of client */
-	rem_port*		port_clients;		/* client ports */
-	rem_port*		port_next;			/* next client port */
-	rem_port*		port_parent;		/* parent port (for client ports) */
-	rem_port*		port_async;			/* asynchronous sibling port */
+	struct port*	port_clients;		/* client ports */
+	struct port*	port_next;			/* next client port */
+	struct port*	port_parent;		/* parent port (for client ports) */
+	struct port*	port_async;			/* asynchronous sibling port */
 	struct srvr*	port_server;		/* server of port */
 	USHORT			port_server_flags;	/* TRUE if server */
 	USHORT			port_protocol;		/* protocol version number */
@@ -462,118 +379,48 @@ struct rem_port
 	struct linger	port_linger;		/* linger value as defined by SO_LINGER */
 
 	/* port function pointers (C "emulation" of virtual functions) */
-	int				(*port_accept)(rem_port*, p_cnct*);
-	void			(*port_disconnect)(rem_port*);
-	rem_port*		(*port_receive_packet)(rem_port*, PACKET*);
-	XDR_INT			(*port_send_packet)(rem_port*, PACKET*);
-	XDR_INT			(*port_send_partial)(rem_port*, PACKET*);
-	t_port_connect	port_connect;		/* Establish secondary connection */
-	rem_port*		(*port_request)(rem_port*, PACKET*);	/* Request to establish secondary connection */
-	rem_port*		(*port_select_multi)(rem_port*, UCHAR*, SSHORT, SSHORT*);	// get packet from active port
-									
-	rdb*			port_context;
-	t_event_ast		port_ast;		/* AST for events */
+	int				(*port_accept)(struct port*, struct p_cnct*);
+	void			(*port_disconnect)(struct port*);
+	struct port*	(*port_receive_packet)(struct port*, PACKET*);
+	XDR_INT			(*port_send_packet)(struct port*, PACKET*);
+	XDR_INT			(*port_send_partial)(struct port*, PACKET*);
+	struct port*	(*port_connect)(struct port*, PACKET*, void(*)());	/* Establish secondary connection */
+	struct port*	(*port_request)(struct port*, PACKET*);	/* Request to establish secondary connection */
+
+	struct rdb*		port_context;
+	XDR_INT			(*port_ast)();		/* AST for events */
 	XDR				port_receive;
 	XDR				port_send;
 #ifdef DEBUG_XDR_MEMORY
-	rem_vec*		port_packet_vector;	/* Vector of send/receive packets */
+	VEC				port_packet_vector;	/* Vector of send/receive packets */
 #endif
-	rem_vec*		port_object_vector;
+	VEC				port_object_vector;
 	BLK*			port_objects;
-	rem_str*		port_version;
-	rem_str*		port_host;			/* Our name */
-	rem_str*		port_connection;	/* Name of connection */
-	rem_str*		port_user_name;
-	rem_str*		port_passwd;
-	rem_str*		port_protocol_str;	// String containing protocol name for this port
-	rem_str*		port_address_str;	// Protocol-specific address string for the port
-	rpr*			port_rpr;			/* port stored procedure reference */
-	rsr*			port_statement;		/* Statement for execute immediate */
-	rmtque*			port_receive_rmtque;	/* for client, responses waiting */
+	STR				port_version;
+	STR				port_host;			/* Our name */
+	STR				port_connection;	/* Name of connection */
+	STR				port_user_name;
+	STR				port_passwd;
+	struct rpr*		port_rpr;			/* port stored procedure reference */
+	struct rsr*		port_statement;		/* Statement for execute immediate */
+	struct rmtque*	port_receive_rmtque;	/* for client, responses waiting */
 	USHORT			port_requests_queued;	/* requests currently queued */
 #ifdef VMS
 	USHORT			port_iosb[4];
 #endif
-	void*			port_xcc;				/* interprocess structure */
-	PacketQueue*	port_deferred_packets;	/* queue of deferred packets */
-	OBJCT			port_last_object_id;	/* cached last id */
-#ifdef SUPERSERVER
-	Firebird::ObjectsArray< Firebird::Array< char > >*	port_queue;
-	size_t			port_qoffset;			// current packet in the queue
-#endif
-#ifdef TRUSTED_AUTH
-	ServerAuth*		port_trusted_auth;
-#endif
+	void*			port_xcc;              /* interprocess structure */
 	UCHAR			port_buffer[1];
 
 	/* TMN: Beginning of C++ port */
+#ifdef __cplusplus
 	/* TMN: ugly, but at least a start */
 	int		accept(p_cnct* cnct);
 	void	disconnect();
-	rem_port*	receive(PACKET* pckt);
+	port*	receive(PACKET* pckt);
 	XDR_INT	send(PACKET* pckt);
 	XDR_INT	send_partial(PACKET* pckt);
-	rem_port*	connect(PACKET* pckt, t_event_ast);
-	rem_port*	request(PACKET* pckt);
-	rem_port*   select_multi(UCHAR* buffer, SSHORT bufsize, SSHORT* length);
-
-	bool haveRecvData() const
-	{
-		return (port_receive.x_handy > 0 
-#ifdef SUPERSERVER
-			|| port_queue && (port_qoffset < port_queue->getCount())
-#endif
-			);
-	}
-
-	void clearRecvQue()
-	{
-#ifdef SUPERSERVER
-		if (port_queue)
-			port_queue->clear();
-		port_qoffset = 0; 
-#endif
-		port_receive.x_private = port_receive.x_base;
-	}
-
-	class RecvQueState
-	{
-	public:
-		int save_handy;
-		size_t save_private;
-#ifdef SUPERSERVER
-		size_t save_qoffset;
-#endif
-
-		RecvQueState(rem_port* port)
-		{ 
-			save_handy = port->port_receive.x_handy;
-			save_private = port->port_receive.x_private - port->port_receive.x_base;
-#ifdef SUPERSERVER
-			save_qoffset = port->port_qoffset;
-#endif
-		}
-	};
-
-	RecvQueState getRecvState()
-	{
-		return RecvQueState(this);
-	}
-
-	void setRecvState(const RecvQueState& rs)
-	{
-#ifdef SUPERSERVER
-		if (rs.save_qoffset > 0 && (rs.save_qoffset != port_qoffset))
-		{
-			Firebird::Array<char>& q = (*port_queue)[rs.save_qoffset - 1];
-			memcpy(port_receive.x_base, q.begin(), q.getCount());
-		}
-		port_qoffset = rs.save_qoffset;
-#endif
-		port_receive.x_private = port_receive.x_base + rs.save_private;
-		port_receive.x_handy = rs.save_handy;
-	}
-
+	port*	connect(PACKET* pckt, void(*ast)());
+	port*	request(PACKET* pckt);
 
 	/* TMN: The following member functions are conceptually private
 	 *      to server.cpp and should be _made_ private in due time!
@@ -608,8 +455,8 @@ struct rem_port
 	ISC_STATUS	receive_msg(P_DATA*, PACKET*);
 	ISC_STATUS	seek_blob(P_SEEK*, PACKET*);
 	ISC_STATUS	send_msg(P_DATA*, PACKET*);
-	ISC_STATUS	send_response(PACKET*, OBJCT, USHORT, const ISC_STATUS*, bool);
-	ISC_STATUS	service_attach(const char*, const USHORT, Firebird::ClumpletWriter&, PACKET*);
+	ISC_STATUS	send_response(PACKET*, OBJCT, USHORT, ISC_STATUS*);
+	ISC_STATUS	service_attach(P_ATCH*, PACKET*);
 	ISC_STATUS	service_end(P_RLSE*, PACKET*);
 	ISC_STATUS	service_start(P_INFO*, PACKET*);
 	ISC_STATUS	set_cursor(P_SQLCUR*, PACKET*);
@@ -617,25 +464,22 @@ struct rem_port
 	ISC_STATUS	start_and_send(P_OP, P_DATA*, PACKET*);
 	ISC_STATUS	start_transaction(P_OP, P_STTR*, PACKET*);
 	ISC_STATUS	transact_request(P_TRRQ *, PACKET*);
-};
 
-// port_flags
-const USHORT PORT_symmetric		= 1;	/* Server/client archiectures are symmetic */
-const USHORT PORT_rpc			= 2;	/* Protocol is remote procedure call */
-const USHORT PORT_pend_ack		= 4;	/* An ACK is pending on the port */
-const USHORT PORT_broken		= 8;	/* Connect is broken */
-const USHORT PORT_async			= 16;	/* Port is asynchronous channel for events */
-const USHORT PORT_no_oob		= 32;	/* Don't send out of band data */
-const USHORT PORT_disconnect	= 64;	/* Disconnect is in progress */
-//const USHORT PORT_pend_rec		= 128;	// A record is pending on the port
-// This is set only in inet.cpp but never tested.
-const USHORT PORT_not_trusted	= 256;	/* Connection is from an untrusted node */
-// This is tested only in wnet.cpp but never set.
-//const USHORT PORT_impersonate	= 512;	// A remote user is being impersonated
-const USHORT PORT_dummy_pckt_set= 1024;	/* A dummy packet interval is set  */
-const USHORT PORT_partial_data	= 2048;	/* Physical packet doesn't contain all API packet */
-const USHORT PORT_lazy			= 4096;	/* Deferred operations are allowed */
-const USHORT PORT_busy			= 8192;	// disable receive - port is busy now
+#endif	/* __cplusplus */
+
+} *PORT;
+
+#define PORT_symmetric		1	/* Server/client archiectures are symmetic */
+#define PORT_rpc			2	/* Protocol is remote procedure call */
+#define PORT_pend_ack		4	/* An ACK is pending on the port */
+#define PORT_broken			8	/* Connect is broken */
+#define PORT_async			16	/* Port is asynchronous channel for events */
+#define PORT_no_oob			32	/* Don't send out of band data */
+#define PORT_disconnect		64	/* Disconnect is in progress */
+#define PORT_pend_rec		128	/* A record is pending on the port */
+#define PORT_not_trusted	256	/* Connection is from an untrusted node */
+#define PORT_impersonate	512	/* A remote user is being impersonated */
+#define PORT_dummy_pckt_set	1024	/* A dummy packet interval is set  */
 
 
 /* Misc declarations */
@@ -645,47 +489,39 @@ const USHORT PORT_busy			= 8192;	// disable receive - port is busy now
 
 /* Thread specific remote database block */
 
-class trdb : public ThreadData
+typedef struct trdb
 {
-public:
-	trdb(ISC_STATUS* status) 
-		: ThreadData(ThreadData::tddRDB), trdb_status_vector(status)
-	{
-		trdb_database = 0;
-	}
-	rdb*	trdb_database;
+	struct thdd	trdb_thd_data;
+	struct rdb*	trdb_database;
 	ISC_STATUS*	trdb_status_vector;
-};
-
-typedef trdb* TRDB;
+} *TRDB;
 
 
-inline trdb* REM_get_thread_data() {
-	return (trdb*) ThreadData::getSpecific();
-}
-inline void REM_set_thread_data(trdb* &tdrdb, trdb* thd_context) {
-	tdrdb = thd_context;
-	tdrdb->putSpecific();
-}
-inline void REM_restore_thread_data() {
-	ThreadData::restoreSpecific();
-}
+#ifdef GET_THREAD_DATA
+#undef GET_THREAD_DATA
+#endif
+
+#define GET_THREAD_DATA		((TRDB) THD_get_specific())
+
+
 
 /* Queuing structure for Client batch fetches */
 
-typedef bool (*t_rmtque_fn)(trdb*, rem_port*, rmtque*, ISC_STATUS*, USHORT);
-
 typedef struct rmtque
 {
-	blk					rmtque_header;	// Memory allocator header
-	rmtque*				rmtque_next;	// Next entry in queue
-	void*				rmtque_parm;	// What request has response in queue
-	rrq::rrq_repeat*	rmtque_message;	// What message is pending
-	rdb*				rmtque_rdb;		// What database has pending msg
+	struct blk			rmtque_header;	/* Memory allocator header */
+	struct rmtque*		rmtque_next;	/* Next entry in queue */
+	void*				rmtque_parm;/* What request has response in queue */
+	rrq::rrq_repeat*	rmtque_message;/* What message is pending */
+	struct rdb*			rmtque_rdb;	/* What database has pending msg */
 
 	/* Fn that receives queued entry */
-	t_rmtque_fn			rmtque_function;
+	BOOLEAN	(*rmtque_function) (struct trdb*,
+								struct port*,
+								struct rmtque*,
+								ISC_STATUS*,
+								USHORT);
 } *RMTQUE;
 
-#endif // REMOTE_REMOTE_H
+#endif /* REMOTE_REMOTE_H */
 

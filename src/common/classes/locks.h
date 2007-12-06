@@ -3,31 +3,28 @@
  *	MODULE:			locks.h
  *	DESCRIPTION:	Single-state locks
  *
- *  The contents of this file are subject to the Initial
- *  Developer's Public License Version 1.0 (the "License");
- *  you may not use this file except in compliance with the
- *  License. You may obtain a copy of the License at
- *  http://www.ibphoenix.com/main.nfs?a=ibphoenix&page=ibp_idpl.
+ * The contents of this file are subject to the Interbase Public
+ * License Version 1.0 (the "License"); you may not use this file
+ * except in compliance with the License. You may obtain a copy
+ * of the License at http://www.Inprise.com/IPL.html
  *
- *  Software distributed under the License is distributed AS IS,
- *  WITHOUT WARRANTY OF ANY KIND, either express or implied.
- *  See the License for the specific language governing rights
- *  and limitations under the License.
+ * Software distributed under the License is distributed on an
+ * "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express
+ * or implied. See the License for the specific language governing
+ * rights and limitations under the License.
  *
- *  The Original Code was created by Nickolay Samofatov
- *  for the Firebird Open Source RDBMS project.
+ * The Original Code was created by Inprise Corporation
+ * and its predecessors. Portions created by Inprise Corporation are
+ * Copyright (C) Inprise Corporation.
  *
- *  Copyright (c) 2004 Nickolay Samofatov <nickolay@broadviewsoftware.com>
- *  and all contributors signed below.
+ * Created by: Nickolay Samofatov <skidder@bssys.com>
  *
- *  All Rights Reserved.
- *  Contributor(s): ______________________________________.
- *
- *
+ * All Rights Reserved.
+ * Contributor(s): ______________________________________.
  */
 
-#ifndef CLASSES_LOCKS_H
-#define CLASSES_LOCKS_H
+#ifndef LOCKS_H
+#define LOCKS_H
 
 #include "firebird.h"
 
@@ -37,7 +34,7 @@
 // in thd.h ? This is Windows platform maintainers choice
 #include <windows.h>
 #else
-#ifndef SOLARIS_MT
+#ifndef SOLARIS
 #include <pthread.h>
 #else
 #include <thread.h>
@@ -51,19 +48,21 @@ namespace Firebird {
 #ifdef MULTI_THREAD
 #ifdef WIN_NT
 
-// Generic process-local mutex and spinlock. The latter
-// is used to manage memory heaps in a threaded environment.
-
+/* Process-local spinlock. Used to manage memory heaps in threaded environment. */
 // Windows version of the class
 
-class Mutex {
-protected:
+typedef WINBASEAPI DWORD WINAPI tSetCriticalSectionSpinCount (
+	LPCRITICAL_SECTION lpCriticalSection,
+	DWORD dwSpinCount
+);
+
+class Spinlock {
+private:
 	CRITICAL_SECTION spinlock;
+	static tSetCriticalSectionSpinCount* SetCriticalSectionSpinCount;
 public:
-	Mutex() {
-		InitializeCriticalSection(&spinlock);
-	}
-	~Mutex() {
+	Spinlock();
+	~Spinlock() {
 		DeleteCriticalSection(&spinlock);
 	}
 	void enter() {
@@ -74,107 +73,91 @@ public:
 	}
 };
 
-typedef WINBASEAPI DWORD WINAPI tSetCriticalSectionSpinCount (
-	LPCRITICAL_SECTION lpCriticalSection,
-	DWORD dwSpinCount
-);
+#else
 
-class Spinlock : public Mutex {
-private:
-	static tSetCriticalSectionSpinCount* SetCriticalSectionSpinCount;
-public:
-	Spinlock();
-};
-
-#else //WIN_NT
-
-#ifdef SOLARIS_MT
-
-class Mutex {
-private:
-	mutex_t mlock;
-public:
-	Mutex() {
-		if (mutex_init(&mlock, USYNC_PROCESS, NULL))
-			system_call_failed::raise("mutex_init");
-	}
-	~Mutex() {
-		if (mutex_destroy(&mlock))
-			system_call_failed::raise("mutex_destroy");
-	}
-	void enter() {
-		if (mutex_lock(&mlock))
-			system_call_failed::raise("mutex_lock");
-	}
-	void leave() {
-		if (mutex_unlock(&mlock))
-			system_call_failed::raise("mutex_unlock");
-	}
-};
-
-typedef Mutex Spinlock;
-
-#else  //SOLARIS_MT
-
+/* Process-local spinlock. Used to manage memory heaps in threaded environment. */
 // Pthreads version of the class
-class Mutex {
-private:
-	pthread_mutex_t mlock;
-public:
-	Mutex() {
-		if (pthread_mutex_init(&mlock, 0))
-			system_call_failed::raise("pthread_mutex_init");
-	}
-	~Mutex() {
-		if (pthread_mutex_destroy(&mlock))
-			system_call_failed::raise("pthread_mutex_destroy");
-	}
-	void enter() {
-		if (pthread_mutex_lock(&mlock))
-			system_call_failed::raise("pthread_mutex_lock");
-	}
-	void leave() {
-		if (pthread_mutex_unlock(&mlock))
-			system_call_failed::raise("pthread_mutex_unlock");
-	}
-};
-
-#ifndef DARWIN
+#if !defined(SOLARIS) && !defined(DARWIN) && !defined(FREEBSD) && !defined(AIX) && !defined(HPUX)
 class Spinlock {
 private:
 	pthread_spinlock_t spinlock;
 public:
 	Spinlock() {
 		if (pthread_spin_init(&spinlock, false))
-			system_call_failed::raise("pthread_spin_init");
+			system_call_failed::raise();
 	}
 	~Spinlock() {
 		if (pthread_spin_destroy(&spinlock))
-			system_call_failed::raise("pthread_spin_destroy");
+			system_call_failed::raise();
 	}
 	void enter() {
 		if (pthread_spin_lock(&spinlock))
-			system_call_failed::raise("pthread_spin_lock");
+			system_call_failed::raise();
 	}
 	void leave() {
 		if (pthread_spin_unlock(&spinlock))
-			system_call_failed::raise("pthread_spin_unlock");
+			system_call_failed::raise();
 	}
 };
-#endif //DARWIN
-
-#endif //SOLARIS_MT
-
-#endif //WIN_NT
-
-#else //MULTI_THREAD
-
-// Non-MT version
-class Mutex {
+#else
+#ifdef SOLARIS
+// Who knows why Solaris 2.6 have not THIS funny spins?
+// //Konstantin
+class Spinlock {
+private:
+	mutex_t spinlock;
 public:
-	Mutex() {
+	Spinlock() {
+		if (mutex_init(&spinlock, USYNC_PROCESS, NULL))
+			system_call_failed::raise();
 	}
-	~Mutex() {
+	~Spinlock() {
+		if (mutex_destroy(&spinlock))
+			system_call_failed::raise();
+	}
+	void enter() {
+		if (mutex_lock(&spinlock))
+			system_call_failed::raise();
+	}
+	void leave() {
+		if (mutex_unlock(&spinlock))
+			system_call_failed::raise();
+	}
+};
+#else  // DARWIN, FREEBSD, AIX, HPUX
+class Spinlock {
+private:
+	pthread_mutex_t mlock;
+public:
+	Spinlock() {
+		if (pthread_mutex_init(&mlock, 0))
+			system_call_failed::raise();
+	}
+	~Spinlock() {
+		if (pthread_mutex_destroy(&mlock))
+			system_call_failed::raise();
+	}
+	void enter() {
+		if (pthread_mutex_lock(&mlock))
+			system_call_failed::raise();
+	}
+	void leave() {
+		if (pthread_mutex_unlock(&mlock))
+			system_call_failed::raise();
+	}
+};
+#endif
+
+#endif
+#endif
+#endif /* MULTI_THREAD */
+
+// Spinlock in shared memory. Not implemented yet !
+class SharedSpinlock {
+public:
+	SharedSpinlock() {
+	}
+	~SharedSpinlock() {
 	}
 	void enter() {
 	}
@@ -182,22 +165,6 @@ public:
 	}
 };
 
-typedef Mutex Spinlock;
+}
 
-#endif //MULTI_THREAD
-
-// RAII holder of mutex lock
-class MutexLockGuard {
-public:
-	explicit MutexLockGuard(Mutex &alock) 
-		: lock(&alock) { lock->enter(); }
-	~MutexLockGuard() { lock->leave(); }
-private:
-	// Forbid copy constructor
-	MutexLockGuard(const MutexLockGuard& source);
-	Mutex *lock;
-};
-
-} //namespace Firebird
-
-#endif // CLASSES_LOCKS_H
+#endif

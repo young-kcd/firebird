@@ -21,14 +21,14 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef DSQL_SYM_H
-#define DSQL_SYM_H
+#ifndef _DSQL_SYM_H_
+#define _DSQL_SYM_H_
 
 #include "../jrd/common.h"
 
-// possible symbol types 
+/* possible symbol types */
 
-enum sym_type {
+typedef ENUM sym_type {
 	SYM_statement,
 	SYM_cursor,
 	SYM_keyword,
@@ -38,29 +38,25 @@ enum sym_type {
 	SYM_stream,
 	SYM_udf,
 	SYM_procedure,
-	SYM_intlsym_charset,
-	SYM_intlsym_collation,
+	SYM_intlsym,
 	SYM_eof
-};
+} SYM_TYPE;
 
-typedef sym_type SYM_TYPE;
+/* symbol block */
 
-// symbol block 
-
-class dsql_sym : public pool_alloc_rpt<UCHAR, dsql_type_sym> {
+class sym : public pool_alloc_rpt<UCHAR, dsql_type_sym> {
 public:
-	void *sym_dbb;				// generic DB structure handle 
-	TEXT *sym_string;			// address of asciz string 
-	USHORT sym_length;			// length of string (exc. term.) 
-	SYM_TYPE sym_type;			// symbol type 
-	USHORT sym_keyword;			// keyword number, if keyword 
-	USHORT sym_version;			// dialect version the symbol was introduced 
-	void *sym_object;			// general pointer to object 
-	dsql_sym* sym_collision;	// collision pointer 
-	dsql_sym* sym_homonym;		// homonym pointer 
-	TEXT sym_name[2];			// space for name, if necessary 
+	void *sym_dbb;				/* generic DB structure handle */
+	TEXT *sym_string;			/* address of asciz string */
+	USHORT sym_length;			/* length of string (exc. term.) */
+	SYM_TYPE sym_type;			/* symbol type */
+	USHORT sym_keyword;			/* keyword number, if keyword */
+	void *sym_object;			/* general pointer to object */
+	struct sym *sym_collision;	/* collision pointer */
+	struct sym *sym_homonym;	/* homonym pointer */
+	TEXT sym_name[2];			/* space for name, if necessary */
+	USHORT sym_version;			/* dialect version the symbol was introduced */
 };
-typedef dsql_sym *DSQL_SYM;
+typedef sym *SYM;
 
-#endif // DSQL_SYM_H
-
+#endif /* _DSQL_SYM_H_ */

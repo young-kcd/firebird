@@ -1,8 +1,8 @@
 /*
- *	PROGRAM:	Firebird 2.0 control panel applet
+ *	PROGRAM:	Firebird 1.5 control panel applet
  *	MODULE:		FBDialog.h
  *	DESCRIPTION:	Main file to provide GUI based server control functions
- *					for Firebird 2.0
+ *					for Firebird 1.5
  *
  *  The contents of this file are subject to the Initial Developer's 
  *  Public License Version 1.0 (the "License"); you may not use this 
@@ -30,8 +30,8 @@
 /////////////////////////////////////////////////////////////////////////////
 // CFBDialog dialog
 
-#if !defined(UTILITIES_FBDIALOG_H)
-#define UTILITIES_FBDIALOG_H
+#if !defined(_FBDialog_)
+#define _FBDialog_
 
 //#pragma once
 
@@ -45,13 +45,13 @@
 
 #include <winsvc.h>
 
-#include "../install/install_nt.h"
-#include "../install/servi_proto.h"
-#include "../install/registry.h"
-#include "../../remote/os/win32/window.h"
+#include "../install_nt.h"
+#include "../servi_proto.h"
+#include "../registry.h"
+#include "../../remote/window.h"
 #include "../../iscguard/iscguard.h"
 
-extern USHORT svc_error (SLONG, const TEXT*, SC_HANDLE);
+extern USHORT svc_error (SLONG, TEXT *, SC_HANDLE);
 
 
 class CFBDialog : public CDialog
@@ -96,7 +96,7 @@ protected:
 	virtual BOOL OnInitDialog();
 	virtual void OnOK();
 	afx_msg void OnButtonStop();
-	afx_msg void OnTimer(UINT_PTR nIDEvent);
+	afx_msg void OnTimer(UINT nIDEvent);
 	afx_msg void OnDestroy();
 	afx_msg void OnService();
 	afx_msg void OnManualStart();
@@ -172,20 +172,19 @@ public:
 
 //Get Stuff
 
-	CString GetServiceName(const char* name) const;
-	HWND GetSuperServerHandle() const;
+	HWND GetSuperServerHandle();
 #ifdef MANAGE_CLASSIC
-	HWND GetClassicServerHandle() const;
+	HWND GetClassicServerHandle();
 #endif
-	HWND GetFirebirdHandle() const;
-	void GetFullAppPath( CFBDialog::STATUS status, char* app);
-	HWND GetGuardianHandle() const;
+	HWND GetFirebirdHandle();
+	void GetFullAppPath( CFBDialog::STATUS status, char * app);
+	HWND GetGuardianHandle();
 //	bool GetGuardianUseSpecified();
 	bool GetPreferredArchitecture();
-	void GetServerName( CFBDialog::STATUS status, CString& AppName) const;
+	void GetServerName( CFBDialog::STATUS status, CString& AppName);
 	int GetServerStatus();
 
-	bool ServiceSupportAvailable() const;
+	bool ServiceSupportAvailable();
 	void ViewRegistryEntries();
 
 //Set stuff
@@ -217,8 +216,8 @@ public:
 	bool ServerStart( CFBDialog::STATUS status );
 	bool ServiceInstall( CFBDialog::STATUS status );
 	bool ServiceRemove();
-	static void HandleSvcError(SLONG status, const TEXT* string);
-	void HandleError(bool silent, const TEXT* string );
+	static void HandleSvcError(SLONG	status, TEXT *string);
+	void HandleError(bool silent, TEXT *string );
 	void ShowError( LPTSTR lpMsgBuf, CString error_title );
 	void UpdateServerStatus();
 	bool UserHasSufficientRights();
@@ -226,5 +225,4 @@ public:
 };
 
 
-#endif // UTILITIES_FBDIALOG_H
-
+#endif

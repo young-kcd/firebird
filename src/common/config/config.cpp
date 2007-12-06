@@ -1,23 +1,26 @@
 /*
- *  The contents of this file are subject to the Initial
- *  Developer's Public License Version 1.0 (the "License");
- *  you may not use this file except in compliance with the
- *  License. You may obtain a copy of the License at
- *  http://www.ibphoenix.com/main.nfs?a=ibphoenix&page=ibp_idpl.
+ *	PROGRAM:	Client/Server Common Code
+ *	MODULE:		config.cpp
+ *	DESCRIPTION:	Configuration manager (generic code)
  *
- *  Software distributed under the License is distributed AS IS,
- *  WITHOUT WARRANTY OF ANY KIND, either express or implied.
- *  See the License for the specific language governing rights
- *  and limitations under the License.
+ * The contents of this file are subject to the Interbase Public
+ * License Version 1.0 (the "License"); you may not use this file
+ * except in compliance with the License. You may obtain a copy
+ * of the License at http://www.Inprise.com/IPL.html
  *
- *  The Original Code was created by Dmitry Yemanov
- *  for the Firebird Open Source RDBMS project.
+ * Software distributed under the License is distributed on an
+ * "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express
+ * or implied. See the License for the specific language governing
+ * rights and limitations under the License.
  *
- *  Copyright (c) 2002 Dmitry Yemanov <dimitr@users.sf.net>
- *  and all contributors signed below.
+ * The Original Code was created by Inprise Corporation
+ * and its predecessors. Portions created by Inprise Corporation are
+ * Copyright (C) Inprise Corporation.
  *
- *  All Rights Reserved.
- *  Contributor(s): ______________________________________.
+ * Created by: Dmitry Yemanov <yemanov@yandex.ru>
+ *
+ * All Rights Reserved.
+ * Contributor(s): ______________________________________.
  */
 
 #include "firebird.h"
@@ -30,44 +33,33 @@
 #include <stdlib.h>
 #endif
 
-// config_file works with OS case-sensitivity
-typedef Firebird::PathName string;
+#include "../jrd/gdsassert.h"
+
+typedef Firebird::string string;
 
 /******************************************************************************
  *
  *	Configuration entries
  */
 
-const char*	GCPolicyCooperative	= "cooperative";
-const char*	GCPolicyBackground	= "background";
-const char*	GCPolicyCombined	= "combined";
-#ifdef SUPERSERVER
-const char*	GCPolicyDefault	= GCPolicyCombined;
-#else
-const char*	GCPolicyDefault	= GCPolicyCooperative;
-#endif
-
-const char*	AmNative	= "native";
-const char*	AmTrusted	= "trusted";
-const char*	AmMixed		= "mixed";
-
 const ConfigImpl::ConfigEntry ConfigImpl::entries[] =
 {
 	{TYPE_STRING,		"RootDirectory",			(ConfigValue) 0},
-	{TYPE_INTEGER,		"TempBlockSize",			(ConfigValue) 1048576},		// bytes
+	{TYPE_INTEGER,		"SortMemBlockSize",			(ConfigValue) 1048576},		// bytes
 #ifdef SUPERSERVER
-	{TYPE_INTEGER,		"TempCacheLimit",			(ConfigValue) 67108864},	// bytes
+	{TYPE_INTEGER,		"SortMemUpperLimit",		(ConfigValue) 67108864},	// bytes
 #elif defined(WIN_NT) // win32 CS
-	{TYPE_INTEGER,		"TempCacheLimit",			(ConfigValue) 8388608},		// bytes
+	{TYPE_INTEGER,		"SortMemUpperLimit",		(ConfigValue) 8388608},		// bytes
 #else // non-win32 CS
-	{TYPE_INTEGER,		"TempCacheLimit",			(ConfigValue) 0},			// bytes
+	{TYPE_INTEGER,		"SortMemUpperLimit",		(ConfigValue) 0},			// bytes
 #endif
 	{TYPE_BOOLEAN,		"RemoteFileOpenAbility",	(ConfigValue) false},
 	{TYPE_INTEGER,		"GuardianOption",			(ConfigValue) 1},
 	{TYPE_INTEGER,		"CpuAffinityMask",			(ConfigValue) 1},
 	{TYPE_BOOLEAN,		"OldParameterOrdering",		(ConfigValue) false},
 	{TYPE_INTEGER,		"TcpRemoteBufferSize",		(ConfigValue) 8192},		// bytes
-	{TYPE_BOOLEAN,		"TcpNoNagle",				(ConfigValue) true},
+	{TYPE_BOOLEAN,		"TcpNoNagle",				(ConfigValue) false},
+	{TYPE_INTEGER,		"IpcMapSize",				(ConfigValue) 4096},		// bytes
 #ifdef SUPERSERVER
 	{TYPE_INTEGER,		"DefaultDbCachePages",		(ConfigValue) 2048},		// pages
 #else
@@ -75,22 +67,26 @@ const ConfigImpl::ConfigEntry ConfigImpl::entries[] =
 #endif
 	{TYPE_INTEGER,		"ConnectionTimeout",		(ConfigValue) 180},			// seconds
 	{TYPE_INTEGER,		"DummyPacketInterval",		(ConfigValue) 0},			// seconds
+#if defined(WIN_NT) && !defined(SUPERSERVER)
 	{TYPE_INTEGER,		"LockMemSize",				(ConfigValue) 1048576},		// bytes
-#if defined(SINIXZ) || defined(FREEBSD) || defined(NETBSD)
+#else
+	{TYPE_INTEGER,		"LockMemSize",				(ConfigValue) 262144},		// bytes
+#endif
+#ifdef SINIXZ
 	{TYPE_INTEGER,		"LockSemCount",				(ConfigValue) 25},			// semaphores
 #else
 	{TYPE_INTEGER,		"LockSemCount",				(ConfigValue) 32},			// semaphores
 #endif
 	{TYPE_INTEGER,		"LockSignal",				(ConfigValue) 16},			// signal #
 	{TYPE_BOOLEAN,		"LockGrantOrder",			(ConfigValue) true},
-	{TYPE_INTEGER,		"LockHashSlots",			(ConfigValue) 1009},		// slots
+	{TYPE_INTEGER,		"LockHashSlots",			(ConfigValue) 101},			// slots
 	{TYPE_INTEGER,		"LockAcquireSpins",			(ConfigValue) 0},
 	{TYPE_INTEGER,		"EventMemSize",				(ConfigValue) 65536},		// bytes
 	{TYPE_INTEGER,		"DeadlockTimeout",			(ConfigValue) 10},			// seconds
 	{TYPE_INTEGER,		"SolarisStallValue",		(ConfigValue) 60},			// seconds
 	{TYPE_BOOLEAN,		"TraceMemoryPools",			(ConfigValue) false},		// for internal use only
 	{TYPE_INTEGER,		"PrioritySwitchDelay",		(ConfigValue) 100},			// milliseconds
-	{TYPE_BOOLEAN,		"UsePriorityScheduler",		(ConfigValue) true},
+	{TYPE_INTEGER,		"DeadThreadsCollection",	(ConfigValue) 50},			// number of PrioritySwitchDelay cycles before dead threads collection
 	{TYPE_INTEGER,		"PriorityBoost",			(ConfigValue) 5},			// ratio oh high- to low-priority thread ticks in jrd.cpp
 	{TYPE_STRING,		"RemoteServiceName",		(ConfigValue) FB_SERVICE_NAME},
 	{TYPE_INTEGER,		"RemoteServicePort",		(ConfigValue) 0},
@@ -105,27 +101,16 @@ const ConfigImpl::ConfigEntry ConfigImpl::entries[] =
 #endif
 	{TYPE_INTEGER,		"ProcessPriorityLevel",		(ConfigValue) 0},
 	{TYPE_BOOLEAN,		"CreateInternalWindow",		(ConfigValue) true},
-	{TYPE_BOOLEAN,		"CompleteBooleanEvaluation", (ConfigValue) false},
+	{TYPE_BOOLEAN,		"CompleteBooleanEvaluation",(ConfigValue) false},
 	{TYPE_INTEGER,		"RemoteAuxPort",			(ConfigValue) 0},
 	{TYPE_STRING,		"RemoteBindAddress",		(ConfigValue) 0},
 	{TYPE_STRING,		"ExternalFileAccess",		(ConfigValue) "None"},	// location(s) of external files for tables
 	{TYPE_STRING,		"DatabaseAccess",			(ConfigValue) "Full"},	// location(s) of databases
 	{TYPE_STRING,		"UdfAccess",				(ConfigValue) "Restrict UDF"},	// location(s) of UDFs
 	{TYPE_STRING,		"TempDirectories",			(ConfigValue) 0},
-#ifdef DEV_BUILD
- 	{TYPE_BOOLEAN,		"BugcheckAbort",			(ConfigValue) true},	// whether to abort() engine when internal error is found
-#else
- 	{TYPE_BOOLEAN,		"BugcheckAbort",			(ConfigValue) false},	// whether to abort() engine when internal error is found
-#endif
-	{TYPE_INTEGER,		"TraceDSQL",				(ConfigValue) 0},		// bitmask
-	{TYPE_BOOLEAN,		"LegacyHash",				(ConfigValue) true},	// let use old passwd hash verification
-	{TYPE_STRING,		"GCPolicy",					(ConfigValue) GCPolicyDefault},	// garbage collection policy
-	{TYPE_BOOLEAN,		"Redirection",				(ConfigValue) false},
-	{TYPE_BOOLEAN,		"OldColumnNaming",			(ConfigValue) false},	// if true use old style concatenation
-	{TYPE_STRING,		"Authentication",			(ConfigValue) AmMixed},	// use native, trusted or mixed
-	{TYPE_INTEGER,		"DatabaseGrowthIncrement",	(ConfigValue) 128 * 1048576},	// bytes
-	{TYPE_INTEGER,		"MaxFileSystemCache",		(ConfigValue) 65536},	// page buffers
-	{TYPE_BOOLEAN,		"RelaxedAliasChecking",		(ConfigValue) false}	// if true relax strict alias checking rules in DSQL a bit
+	{TYPE_BOOLEAN,		"BugcheckAbort",			(ConfigValue) false},	// whether to abort() engine when internal error is found
+	{TYPE_BOOLEAN,		"OldColumnNaming",			(ConfigValue) false}	// if true use old column naming rules
+
 };
 
 /******************************************************************************
@@ -137,28 +122,25 @@ const ConfigImpl::ConfigEntry ConfigImpl::entries[] =
 
 static ConfigImpl *sys_config = NULL;
 #ifdef MULTI_THREAD
-static Firebird::Mutex config_init_lock;
+static Firebird::Spinlock config_init_lock;
 #endif
 
 const ConfigImpl& ConfigImpl::instance()
 {
-	if (!sys_config) 
-	{
+	if (!sys_config) {
 #ifdef MULTI_THREAD
 		try {
 			config_init_lock.enter();
 			if (!sys_config) {
-				sys_config = FB_NEW(*getDefaultMemoryPool()) ConfigImpl(*getDefaultMemoryPool());
+#endif
+				sys_config = FB_NEW(*getDefaultMemoryPool()) ConfigImpl;
+#ifdef MULTI_THREAD
 			}
-		}
-		catch (const Firebird::Exception&) {
+		} catch(const std::exception&) {
 			config_init_lock.leave();
 			throw;
 		}
 		config_init_lock.leave();
-#else
-		sys_config = FB_NEW(*getDefaultMemoryPool()) ConfigImpl(*getDefaultMemoryPool());
-
 #endif
 	}
 	return *sys_config;
@@ -171,17 +153,18 @@ const ConfigImpl& ConfigImpl::instance()
  *	Implementation interface
  */
 
-ConfigImpl::ConfigImpl(MemoryPool& p) : ConfigRoot(p) 
+ConfigImpl::ConfigImpl()
 {
 	/* Prepare some stuff */
 
 	ConfigFile file(true);
 	root_dir = getRootDirectory();
-	const int size = FB_NELEM(entries);
-	values = FB_NEW(p) ConfigValue[size];
+	MemoryPool *pool = getDefaultMemoryPool();
+	int size = FB_NELEM(entries);
+	values = FB_NEW(*pool) ConfigValue[size];
 
 	string val_sep = ",";
-	file.setConfigFilePath(getConfigFilePath());
+	file.setConfigFile(getConfigFile());
 
 	/* Iterate through the known configuration entries */
 
@@ -211,20 +194,20 @@ ConfigImpl::ConfigImpl(MemoryPool& p) : ConfigRoot(p)
 		case TYPE_STRING:
 			{
 			const char *src = asString(value);
-			char *dst = FB_NEW(p) char[strlen(src) + 1];
+			char *dst = FB_NEW(*pool) char[strlen(src) + 1];
 			strcpy(dst, src);
 			values[i] = (ConfigValue) dst;
 			}
 			break;
 		case TYPE_STRING_VECTOR:
-			break;
+			;
 		}
 	}
 }
 
 ConfigImpl::~ConfigImpl()
 {
-	const int size = FB_NELEM(entries);
+	int size = FB_NELEM(entries);
 
 	/* Free allocated memory */
 
@@ -239,13 +222,13 @@ ConfigImpl::~ConfigImpl()
 			delete[] (char*)values[i];
 			break;
 		case TYPE_STRING_VECTOR:
-			break;
+			;
 		}
 	}
 	delete[] values;
 }
 
-string ConfigImpl::getValue(ConfigFile& file, const ConfigKey key)
+string ConfigImpl::getValue(ConfigFile& file, ConfigKey key)
 {
 	return file.doesKeyExist(key) ? file.getString(key) : "";
 }
@@ -270,46 +253,20 @@ const char* ConfigImpl::asString(const string &value)
  *	Public interface
  */
 
-const char* Config::getInstallDirectory()
-{
-	return sysConfig.getInstallDirectory();
-}
-
-static Firebird::PathName* rootFromCommandLine = 0;
-
-void Config::setRootDirectoryFromCommandLine(const Firebird::PathName& newRoot)
-{
-	delete rootFromCommandLine;
-	rootFromCommandLine = FB_NEW(*getDefaultMemoryPool()) 
-		Firebird::PathName(*getDefaultMemoryPool(), newRoot);
-}
-
-const Firebird::PathName* Config::getCommandLineRootDirectory()
-{
-	return rootFromCommandLine;
-}
-
 const char* Config::getRootDirectory()
 {
-	// must check it here - command line must override any other root settings, including firebird.conf
-	if (rootFromCommandLine)
-	{
-		return rootFromCommandLine->c_str();
-	}
-
 	const char* result = (char*) sysConfig.values[KEY_ROOT_DIRECTORY];
 	return result ? result : sysConfig.root_dir;
 }
 
-int Config::getTempBlockSize()
+int Config::getSortMemBlockSize()
 {
-	return (int) sysConfig.values[KEY_TEMP_BLOCK_SIZE];
+	return (int) sysConfig.values[KEY_SORT_MEM_BLOCK_SIZE];
 }
 
-int Config::getTempCacheLimit()
+int Config::getSortMemUpperLimit()
 {
-	int v = (int) sysConfig.values[KEY_TEMP_CACHE_LIMIT];
-	return v < 0 ? 0 : v;
+	return (int) sysConfig.values[KEY_SORT_MEM_UPPER_LIMIT];
 }
 
 bool Config::getRemoteFileOpenAbility()
@@ -334,17 +291,17 @@ bool Config::getOldParameterOrdering()
 
 int Config::getTcpRemoteBufferSize()
 {
-	int rc = (int) sysConfig.values[KEY_TCP_REMOTE_BUFFER_SIZE];
-	if (rc < 1448)
-		rc = 1448;
-	if (rc > MAX_SSHORT)
-		rc = MAX_SSHORT;
-	return rc;
+	return (int) sysConfig.values[KEY_TCP_REMOTE_BUFFER_SIZE];
 }
 
 bool Config::getTcpNoNagle()
 {
 	return (bool) sysConfig.values[KEY_TCP_NO_NAGLE];
+}
+
+int Config::getIpcMapSize()
+{
+	return (int) sysConfig.values[KEY_IPC_MAP_SIZE];
 }
 
 int Config::getDefaultDbCachePages()
@@ -420,6 +377,14 @@ int Config::getPrioritySwitchDelay()
 	return rc;
 }
 
+int Config::getDeadThreadsCollection()
+{
+	int rc = (int) sysConfig.values[KEY_DEAD_THREADS_COLLECTION];
+	if (rc < 1)
+		rc = 1;
+	return rc;
+}
+
 int Config::getPriorityBoost()
 {
 	int rc = (int) sysConfig.values[KEY_PRIORITY_BOOST];
@@ -430,19 +395,14 @@ int Config::getPriorityBoost()
 	return rc;
 }
 
-bool Config::getUsePriorityScheduler()
-{
-	return (bool) sysConfig.values[KEY_USE_PRIORITY_SCHEDULER];
-}
-
 const char *Config::getRemoteServiceName()
 {
 	return (const char*) sysConfig.values[KEY_REMOTE_SERVICE_NAME];
 }
 
-unsigned short Config::getRemoteServicePort()
+int Config::getRemoteServicePort()
 {
-	return (unsigned short) sysConfig.values[KEY_REMOTE_SERVICE_PORT];
+	return (int) sysConfig.values[KEY_REMOTE_SERVICE_PORT];
 }
 
 const char *Config::getRemotePipeName()
@@ -519,47 +479,8 @@ bool Config::getBugcheckAbort()
 	return (bool) sysConfig.values[KEY_BUGCHECK_ABORT];
 }
 
-int Config::getTraceDSQL()
-{
-	return (int) sysConfig.values[KEY_TRACE_DSQL];
-}
-
-bool Config::getLegacyHash()
-{
-	return (bool) sysConfig.values[KEY_LEGACY_HASH];
-}
-
-const char *Config::getGCPolicy()
-{
-	return (const char *) sysConfig.values[KEY_GC_POLICY];
-}
-
-bool Config::getRedirection()
-{
-	return (bool) sysConfig.values[KEY_REDIRECTION];
-}
-
 bool Config::getOldColumnNaming()
 {
 	return (bool) sysConfig.values[KEY_OLD_COLUMN_NAMING];
 }
 
-const char *Config::getAuthMethod()
-{
-	return (const char *) sysConfig.values[KEY_AUTH_METHOD];
-}
-
-int Config::getDatabaseGrowthIncrement()
-{
-	return (int) sysConfig.values[KEY_DATABASE_GROWTH_INCREMENT];
-}
-
-int Config::getMaxFileSystemCache()
-{
-	return (int) sysConfig.values[KEY_MAX_FILESYSTEM_CACHE];
-}
-
-bool Config::getRelaxedAliasChecking()
-{
-	return (bool) sysConfig.values[KEY_RELAXED_ALIAS_CHECKING];
-}

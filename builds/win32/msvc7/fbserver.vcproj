@@ -32,7 +32,6 @@
 				PreprocessorDefinitions="NDEBUG,_WINDOWS,SUPERSERVER,WIN32,_X86_"
 				ExceptionHandling="FALSE"
 				RuntimeLibrary="2"
-				RuntimeTypeInfo="FALSE"
 				PrecompiledHeaderFile="..\..\..\temp\release\fbserver/fbserver.pch"
 				AssemblerListingLocation="..\..\..\temp\release\fbserver/"
 				ObjectFile="..\..\..\temp\release\fbserver/"
@@ -47,12 +46,12 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib icuuc.lib"
-				OutputFile="..\..\..\temp\release\firebird\bin\fbserver.exe"
+				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
+				OutputFile="release/firebird/bin/fbserver.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
-				AdditionalLibraryDirectories="../../../extern/icu/lib"
 				GenerateDebugInformation="TRUE"
+				ProgramDatabaseFile="..\..\..\temp\release\fbserver/fbserver.pdb"
 				SubSystem="2"
 				StackReserveSize="2097152"/>
 			<Tool
@@ -61,7 +60,7 @@
 				MkTypLibCompatible="TRUE"
 				SuppressStartupBanner="TRUE"
 				TargetEnvironment="1"
-				TypeLibraryName="..\..\..\temp\release\fbserver\fbserver.tlb"/>
+				TypeLibraryName="..\..\..\temp\release\fbserver/fbserver.tlb"/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool
@@ -100,7 +99,6 @@
 				ExceptionHandling="FALSE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				RuntimeTypeInfo="FALSE"
 				PrecompiledHeaderFile="..\..\..\temp\debug\fbserver/fbserver.pch"
 				AssemblerListingLocation="..\..\..\temp\debug\fbserver/"
 				ObjectFile="..\..\..\temp\debug\fbserver/"
@@ -115,13 +113,12 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib icuuc.lib"
-				OutputFile="..\..\..\temp\debug\firebird\bin\fbserver.exe"
+				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
+				OutputFile="debug/firebird/bin/fbserver.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
-				AdditionalLibraryDirectories="../../../extern/icu/lib"
 				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile="..\..\..\temp\debug\fbserver\fbserver.pdb"
+				ProgramDatabaseFile="..\..\..\temp\debug\fbserver/fbserver.pdb"
 				SubSystem="2"
 				StackReserveSize="2097152"/>
 			<Tool
@@ -130,7 +127,7 @@
 				MkTypLibCompatible="TRUE"
 				SuppressStartupBanner="TRUE"
 				TargetEnvironment="1"
-				TypeLibraryName="..\..\..\temp\debug\fbserver\fbserver.tlb"/>
+				TypeLibraryName="..\..\..\temp\debug\fbserver/fbserver.tlb"/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool
@@ -160,23 +157,23 @@
 			Name="UTILITIES files"
 			Filter="">
 			<File
-				RelativePath="..\..\..\gen\utilities\gstat\dba.cpp">
+				RelativePath="..\..\..\gen\utilities\dba.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\src\utilities\gstat\ppg.cpp">
+				RelativePath="..\..\..\src\utilities\ppg.cpp">
 			</File>
 		</Filter>
 		<Filter
 			Name="Resource files"
 			Filter="ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe">
 			<File
-				RelativePath="..\..\..\src\remote\os\win32\caution.ico">
+				RelativePath="..\..\..\src\remote\caution.ico">
 			</File>
 			<File
-				RelativePath="..\..\..\src\remote\os\win32\server.ico">
+				RelativePath="..\..\..\src\remote\server.ico">
 			</File>
 			<File
-				RelativePath="..\..\..\src\remote\os\win32\window.rc">
+				RelativePath="..\..\..\src\remote\window.rc">
 				<FileConfiguration
 					Name="Release|Win32">
 					<Tool

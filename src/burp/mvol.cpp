@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Backup and Restore Program
- *	MODULE:		multivol.cpp
+ *	MODULE:		multivol.c
  *	DESCRIPTION:	
  *
  * The contents of this file are subject to the Interbase Public
@@ -25,7 +25,7 @@
  */
 
 #include "firebird.h"
-#include <stdio.h>
+#include "../jrd/ib_stdio.h"
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
@@ -40,11 +40,19 @@
 # endif
 #endif
 #include "../burp/burp.h"
+#ifdef WIN_NT
+#include <windows.h>
+#include <winnt.h>
+#ifdef TEXT
+#undef TEXT
+#endif
+#define TEXT char
+#endif
 #include "../burp/burp_proto.h"
 #include "../burp/mvol_proto.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/gdsassert.h"
-#include "../jrd/thd.h"
+#include "../jrd/thd_proto.h"
 #ifndef VMS
 #include <fcntl.h>
 #include <sys/types.h>
@@ -52,79 +60,72 @@
 #include <types.h>
 #include <file.h>
 #endif
-
 #if (defined WIN_NT)
-#include <io.h>  // isatty
+#include <io.h>
 #endif
-
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
 
-#include "../common/classes/SafeArg.h"
-
-using MsgFormat::SafeArg;
 
 
-const int open_mask	= 0666;
+#define	OPEN_MASK	((int) 0666)
 
 #ifdef VMS
-const char* TERM_INPUT	= "sys$input";
-const char* TERM_OUTPUT	= "sys$error";
-#else
+#define TERM_INPUT	"sys$input"
+#define TERM_OUTPUT	"sys$error"
+#endif
+
 #ifdef WIN_NT
-const char* TERM_INPUT	= "CONIN$";
-const char* TERM_OUTPUT	= "CONOUT$";
-#else
-const char* TERM_INPUT	= "/dev/tty";
-const char* TERM_OUTPUT	= "/dev/tty";
-#endif
+#define TERM_INPUT	"CONIN$"
+#define TERM_OUTPUT	"CONOUT$"
 #endif
 
-const int MAX_HEADER_SIZE	= 512;
+#ifndef TERM_INPUT
+#define TERM_INPUT	"/dev/tty"
+#define TERM_OUTPUT	"/dev/tty"
+#endif
 
-static inline int get(BurpGlobals* tdgbl)
-{
-	return (--tdgbl->mvol_io_cnt >= 0 ? *tdgbl->mvol_io_ptr++ : 255);
-}
+#define MAX_HEADER_SIZE		512
 
-static inline void put(BurpGlobals* tdgbl, UCHAR c)
-{
-	--tdgbl->mvol_io_cnt;
-	*tdgbl->mvol_io_ptr++ = c;
-}
+#define BITS_ON(word,bits)	((bits) == ((word)&(bits)))
+
+#define GET()				(--(tdgbl->mvol_io_cnt) >= 0 ? *(tdgbl->mvol_io_ptr)++ : 255)
+#define GET_ATTRIBUTE(att)		((att) = (ATT_TYPE) GET())
+
+#define PUT(c)				--(tdgbl->mvol_io_cnt); *(tdgbl->mvol_io_ptr)++ = (UCHAR) (c)
+#define PUT_NUMERIC(attribute, value)	put_numeric ((attribute), (value))
+#define PUT_ASCIZ(attribute, string)	put_asciz ((attribute), (string))
 
 #ifdef DEBUG
-static UCHAR debug_on = 0;		// able to turn this on in debug mode 
+static UCHAR debug_on = 0;		/* able to turn this on in debug mode */
 #endif
 
-const int burp_msg_fac = 12;
-
-
-static void  bad_attribute(int, USHORT);
+static void  bad_attribute(USHORT, USHORT);
 static void  file_not_empty(void);
 static SLONG get_numeric(void);
 static int   get_text(UCHAR*, SSHORT);
 static void  prompt_for_name(SCHAR*, int);
-static void  put_asciz(SCHAR, const SCHAR*);
+static void  put_asciz(SCHAR, SCHAR*);
 static void  put_numeric(SCHAR, int);
-static bool  read_header(DESC, ULONG*, USHORT*, bool);
-static bool  write_header(DESC, ULONG, bool);
-static DESC	 next_volume(DESC, ULONG, bool);
+static bool  read_header(DESC, ULONG*, USHORT*, USHORT);
+static bool  write_header(DESC, ULONG, USHORT);
+static DESC	 next_volume(DESC, int, USHORT);
 
 
 //____________________________________________________________
 //
 //
-FB_UINT64 MVOL_fini_read()
+UINT64 MVOL_fini_read()
 {
-	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
+	TGBL tdgbl = GET_THREAD_DATA;
 
 	if (strcmp(tdgbl->mvol_old_file, "stdin") != 0)
 	{
-		close_platf(tdgbl->file_desc);
+		CLOSE(tdgbl->file_desc);
 
-		for (burp_fil* file = tdgbl->gbl_sw_backup_files; file; file = file->fil_next)
+		FIL	file;
+		for (file = tdgbl->gbl_sw_backup_files; file; file = file->fil_next)
 		{
 			if (file->fil_fd == tdgbl->file_desc) {
 				file->fil_fd = INVALID_HANDLE_VALUE;
@@ -133,7 +134,7 @@ FB_UINT64 MVOL_fini_read()
 	}
 
 	tdgbl->file_desc = INVALID_HANDLE_VALUE;
-	BURP_free(tdgbl->mvol_io_buffer);
+	BURP_FREE(tdgbl->mvol_io_buffer);
 	tdgbl->mvol_io_buffer = NULL;
 	tdgbl->io_cnt = 0;
 	tdgbl->io_ptr = NULL;
@@ -144,23 +145,26 @@ FB_UINT64 MVOL_fini_read()
 //____________________________________________________________
 //
 //
-FB_UINT64 MVOL_fini_write(int* io_cnt, UCHAR** io_ptr)
+UINT64 MVOL_fini_write(int* io_cnt, UCHAR** io_ptr)
 {
-	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
+	TGBL tdgbl;
+	FIL	file;
 
-	MVOL_write(rec_end, io_cnt, io_ptr);
-	flush_platf(tdgbl->file_desc);
+	tdgbl = GET_THREAD_DATA;
+
+	(void) MVOL_write(rec_end, io_cnt, io_ptr);
+	FLUSH(tdgbl->file_desc);
 	if (strcmp(tdgbl->mvol_old_file, "stdout") != 0)
 	{
-		close_platf(tdgbl->file_desc);
-		for (burp_fil* file = tdgbl->gbl_sw_backup_files; file; file = file->fil_next)
+		CLOSE(tdgbl->file_desc);
+		for (file = tdgbl->gbl_sw_backup_files; file; file = file->fil_next)
 		{
 			if (file->fil_fd == tdgbl->file_desc)
 				file->fil_fd = INVALID_HANDLE_VALUE;
 		}
 	}
 	tdgbl->file_desc = INVALID_HANDLE_VALUE;
-	BURP_free(tdgbl->mvol_io_header);
+	BURP_FREE(tdgbl->mvol_io_header);
 	tdgbl->mvol_io_header = NULL;
 	tdgbl->mvol_io_buffer = NULL;
 	tdgbl->io_cnt = 0;
@@ -174,7 +178,7 @@ FB_UINT64 MVOL_fini_write(int* io_cnt, UCHAR** io_ptr)
 //
 void MVOL_init(ULONG io_buf_size)
 {
-	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
+	TGBL tdgbl = GET_THREAD_DATA;
 
 	tdgbl->mvol_io_buffer_size = io_buf_size;
 }
@@ -184,39 +188,43 @@ void MVOL_init(ULONG io_buf_size)
 //
 // Read init record from backup file
 //
-void MVOL_init_read(const char* database_name, // unused?
-					const char* file_name,
+void MVOL_init_read(UCHAR*	database_name,
+					UCHAR*	file_name,
 					USHORT*	format,
 					int*	cnt,
 					UCHAR**	ptr)
 {
-	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
+	ULONG temp_buffer_size;
+	UCHAR *new_buffer;
+	TGBL tdgbl;
+
+	tdgbl = GET_THREAD_DATA;
 
 	tdgbl->mvol_volume_count = 1;
 	tdgbl->mvol_empty_file = TRUE;
 
-	if (file_name != NULL)
+	if (file_name != (UCHAR *) NULL)
 	{
-		strncpy(tdgbl->mvol_old_file, file_name, MAX_FILE_NAME_SIZE);
-		tdgbl->mvol_old_file[MAX_FILE_NAME_SIZE - 1] = 0;
+		strncpy(tdgbl->mvol_old_file, (char*) file_name, MAX_FILE_NAME_LENGTH);
+		tdgbl->mvol_old_file[MAX_FILE_NAME_LENGTH - 1] = 0;
 	}
 	else
 	{
 		tdgbl->mvol_old_file[0] = 0;
 	}
 
-	ULONG temp_buffer_size = tdgbl->mvol_io_buffer_size;
-	tdgbl->mvol_actual_buffer_size = temp_buffer_size;
-	tdgbl->mvol_io_buffer = BURP_alloc(temp_buffer_size);
+	tdgbl->mvol_actual_buffer_size = temp_buffer_size =
+		tdgbl->mvol_io_buffer_size;
+	tdgbl->mvol_io_buffer = BURP_ALLOC(temp_buffer_size);
 	tdgbl->gbl_backup_start_time[0] = 0;
 
-	read_header(tdgbl->file_desc, &temp_buffer_size, format, true);
+	read_header(tdgbl->file_desc, &temp_buffer_size, format, TRUE);
 
 	if (temp_buffer_size > tdgbl->mvol_actual_buffer_size)
 	{
-		UCHAR* new_buffer = BURP_alloc(temp_buffer_size);
+		new_buffer = BURP_ALLOC(temp_buffer_size);
 		memcpy(new_buffer, tdgbl->mvol_io_buffer, tdgbl->mvol_io_buffer_size);
-		BURP_free(tdgbl->mvol_io_buffer);
+		BURP_FREE(tdgbl->mvol_io_buffer);
 		tdgbl->mvol_io_ptr =
 			new_buffer + (tdgbl->mvol_io_ptr - tdgbl->mvol_io_buffer);
 		tdgbl->mvol_io_buffer = new_buffer;
@@ -233,20 +241,23 @@ void MVOL_init_read(const char* database_name, // unused?
 //
 // Write init record to the backup file
 //
-void MVOL_init_write(const char*		database_name, // unused?
-					 const char*		file_name,
+void MVOL_init_write(UCHAR*		database_name,
+					 UCHAR*		file_name,
 					 int*		cnt,
 					 UCHAR**	ptr)
 {
-	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
+	ULONG temp_buffer_size;
+	TGBL tdgbl;
+
+	tdgbl = GET_THREAD_DATA;
 
 	tdgbl->mvol_volume_count = 1;
 	tdgbl->mvol_empty_file = TRUE;
 
-	if (file_name != NULL)
+	if (file_name != (UCHAR *) NULL)
 	{
-		strncpy(tdgbl->mvol_old_file, file_name, MAX_FILE_NAME_SIZE);
-		tdgbl->mvol_old_file[MAX_FILE_NAME_SIZE - 1] = 0;
+		strncpy(tdgbl->mvol_old_file, (char*)file_name, MAX_FILE_NAME_LENGTH);
+		tdgbl->mvol_old_file[MAX_FILE_NAME_LENGTH - 1] = 0;
 	}
 	else
 	{
@@ -254,19 +265,19 @@ void MVOL_init_write(const char*		database_name, // unused?
 	}
 
 	tdgbl->mvol_actual_buffer_size = tdgbl->mvol_io_buffer_size;
-	const ULONG temp_buffer_size = tdgbl->mvol_io_buffer_size * tdgbl->gbl_sw_blk_factor;
+	temp_buffer_size = tdgbl->mvol_io_buffer_size * tdgbl->gbl_sw_blk_factor;
 	tdgbl->mvol_io_ptr = tdgbl->mvol_io_buffer =
-		BURP_alloc(temp_buffer_size + MAX_HEADER_SIZE);
+		BURP_ALLOC(temp_buffer_size + MAX_HEADER_SIZE);
 	tdgbl->mvol_io_cnt = tdgbl->mvol_actual_buffer_size;
 
-	while (!write_header(tdgbl->file_desc, temp_buffer_size, false))
+	while (!write_header(tdgbl->file_desc, temp_buffer_size, FALSE))
 	{
 		if (tdgbl->action->act_action == ACT_backup_split)
 		{
-			BURP_error(269, true, tdgbl->action->act_file->fil_name);
-			// msg 269 can't write a header record to file %s 
+			BURP_error(269, tdgbl->action->act_file->fil_name, 0, 0, 0, 0);
+			/* msg 269 can't write a header record to file %s */
 		}
-		tdgbl->file_desc = next_volume(tdgbl->file_desc, MODE_WRITE, false);
+		tdgbl->file_desc = next_volume(tdgbl->file_desc, MODE_WRITE, FALSE);
 	}
 
 	tdgbl->mvol_actual_buffer_size = temp_buffer_size;
@@ -283,7 +294,9 @@ void MVOL_init_write(const char*		database_name, // unused?
 //
 int MVOL_read(int* cnt, UCHAR** ptr)
 {
-	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
+	TGBL tdgbl;
+
+	tdgbl = GET_THREAD_DATA;
 
 	for (;;)
 	{
@@ -300,7 +313,7 @@ int MVOL_read(int* cnt, UCHAR** ptr)
 		{
 			if (!tdgbl->mvol_io_cnt || errno == EIO)
 			{
-				tdgbl->file_desc = next_volume(tdgbl->file_desc, MODE_READ, false);
+				tdgbl->file_desc = next_volume(tdgbl->file_desc, MODE_READ, FALSE);
 				if (tdgbl->mvol_io_cnt > 0)
 				{
 					break;
@@ -311,13 +324,13 @@ int MVOL_read(int* cnt, UCHAR** ptr)
 			{
 				if (cnt)
 				{
-					BURP_error_redirect(0, 220);
-				// msg 220 Unexpected I/O error while reading from backup file 
+					BURP_error_redirect(0, 220, NULL, NULL);
+				/* msg 220 Unexpected I/O error while reading from backup file */
 				}
 				else
 				{
-					BURP_error_redirect(0, 50);
-				// msg 50 unexpected end of file on backup file 
+					BURP_error_redirect(0, 50, NULL, NULL);
+				/* msg 50 unexpected end of file on backup file */
 				}
 			}
 		}
@@ -340,11 +353,13 @@ int MVOL_read(int* cnt, UCHAR** ptr)
 //
 int MVOL_read(int* cnt, UCHAR** ptr)
 {
-	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
+	BOOL ret;
+
+	TGBL tdgbl = GET_THREAD_DATA;
 
 	for (;;)
 	{
-		BOOL ret = ReadFile(tdgbl->file_desc,
+		ret = ReadFile(tdgbl->file_desc,
 					   tdgbl->mvol_io_buffer,
 					   tdgbl->mvol_io_buffer_size,
 					   reinterpret_cast<DWORD*>(&tdgbl->mvol_io_cnt),
@@ -356,18 +371,18 @@ int MVOL_read(int* cnt, UCHAR** ptr)
 		{
 			if (!tdgbl->mvol_io_cnt)
 			{
-				tdgbl->file_desc = next_volume(tdgbl->file_desc, MODE_READ, false);
+				tdgbl->file_desc = next_volume(tdgbl->file_desc, MODE_READ, FALSE);
 				if (tdgbl->mvol_io_cnt > 0)
 					break;
 			}
 			else if (GetLastError() != ERROR_HANDLE_EOF)
 			{
 				if (cnt)
-					BURP_error_redirect(NULL, 220);
-				// msg 220 Unexpected I/O error while reading from backup file 
+					BURP_error_redirect(0, 220, NULL, NULL);
+				/* msg 220 Unexpected I/O error while reading from backup file */
 				else
-					BURP_error_redirect(NULL, 50);
-				// msg 50 unexpected end of file on backup file 
+					BURP_error_redirect(0, 50, NULL, NULL);
+				/* msg 50 unexpected end of file on backup file */
 			}
 		}
 	}
@@ -380,7 +395,7 @@ int MVOL_read(int* cnt, UCHAR** ptr)
 
 	return *(tdgbl->mvol_io_ptr);
 }
-#endif // !WIN_NT 
+#endif /* !WIN_NT */
 
 
 //____________________________________________________________
@@ -388,31 +403,33 @@ int MVOL_read(int* cnt, UCHAR** ptr)
 // Read a chunk of data from the IO buffer.
 // Return a pointer to the first position NOT read into.
 //
-UCHAR* MVOL_read_block(BurpGlobals* tdgbl, UCHAR * ptr, ULONG count)
+UCHAR* MVOL_read_block(TGBL tdgbl, UCHAR * ptr, ULONG count)
 {
-// To handle tape drives & Multi-volume boundaries, use the normal
-// read function, instead of doing a more optimal bulk read.
-
+/* To handle tape drives & Multi-volume boundaries, use the normal
+ * read function, instead of doing a more optimal bulk read.
+ */
 
 	while (count)
 	{
-		// If buffer empty, reload it 
+		ULONG n;
+
+		/* If buffer empty, reload it */
 		if (tdgbl->io_cnt <= 0)
 		{
 			*ptr++ = MVOL_read(&tdgbl->io_cnt, &tdgbl->io_ptr);
 
-			// One byte was "read" by MVOL_read 
+			/* One byte was "read" by MVOL_read */
 			count--;
 		}
 
-		ULONG n = MIN(count, (ULONG) tdgbl->io_cnt);
+		n = MIN(count, (ULONG) tdgbl->io_cnt);
 
-		// Copy data from the IO buffer 
+		/* Copy data from the IO buffer */
 
-		memcpy(ptr, tdgbl->io_ptr, n);
+		(void) memcpy(ptr, tdgbl->io_ptr, n);
 		ptr += n;
 
-		// Skip ahead in current buffer 
+		/* Skip ahead in current buffer */
 
 		count -= n;
 		tdgbl->io_cnt -= n;
@@ -428,26 +445,28 @@ UCHAR* MVOL_read_block(BurpGlobals* tdgbl, UCHAR * ptr, ULONG count)
 // Skip head in the IO buffer.  Often used when only
 // doing partial restores.
 //
-void MVOL_skip_block( BurpGlobals* tdgbl, ULONG count)
+void MVOL_skip_block( TGBL tdgbl, ULONG count)
 {
-// To handle tape drives & Multi-volume boundaries, use the normal
-// read function, instead of doing a more optimal seek.
-
+/* To handle tape drives & Multi-volume boundaries, use the normal
+ * read function, instead of doing a more optimal seek.
+ */
 
 	while (count)
 	{
-		// If buffer empty, reload it 
+		ULONG n;
+
+		/* If buffer empty, reload it */
 		if (tdgbl->io_cnt <= 0)
 		{
-			MVOL_read(&tdgbl->io_cnt, &tdgbl->io_ptr);
+			(void) MVOL_read(&tdgbl->io_cnt, &tdgbl->io_ptr);
 
-			// One byte was "read" by MVOL_read 
+			/* One byte was "read" by MVOL_read */
 			count--;
 		}
 
-		ULONG n = MIN(count, (ULONG) tdgbl->io_cnt);
+		n = MIN(count, (ULONG) tdgbl->io_cnt);
 
-		// Skip ahead in current buffer 
+		/* Skip ahead in current buffer */
 
 		count -= n;
 		tdgbl->io_cnt -= n;
@@ -462,13 +481,14 @@ void MVOL_skip_block( BurpGlobals* tdgbl, ULONG count)
 // detect if it's a tape, rewind if so
 // and set the buffer size
 //
-DESC MVOL_open(const char * name, ULONG mode, ULONG create)
+DESC MVOL_open(char * name, ULONG mode, ULONG create)
 {
+	TGBL tdgbl;
 	HANDLE handle;
 	TAPE_GET_MEDIA_PARAMETERS param;
 	DWORD size = sizeof(param);
 
-	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
+	tdgbl = GET_THREAD_DATA;
 
 	if (strnicmp(name, "\\\\.\\tape", 8))
 	{
@@ -478,39 +498,43 @@ DESC MVOL_open(const char * name, ULONG mode, ULONG create)
 	}
 	else
 	{
-		// it's a tape device 
-		// Note: we *want* to open the tape in Read-only mode or in
-		// write-only mode, but it turns out that on NT SetTapePosition 
-		// will fail (thereby not rewinding the tape) if the tape is 
-		// opened write-only, so we will make sure that we always have 
-		// read access. So much for standards!
-		// Ain't Windows wonderful???
-		//
-		// Note: we *want* to open the tape in FILE_EXCLUSIVE_WRITE, but
-		// during testing discovered that several NT tape drives do not
-		// work unless we specify FILE_SHARE_WRITE as the open mode.
-		// So it goes...
-		//
-		handle = CreateFile(name, mode | MODE_READ,
-							mode == MODE_WRITE ? FILE_SHARE_WRITE : FILE_SHARE_READ,
+		/* it's a tape device */
+		/* Note: we *want* to open the tape in Read-only mode or in
+		 * write-only mode, but it turns out that on NT SetTapePosition 
+		 * will fail (thereby not rewinding the tape) if the tape is 
+		 * opened write-only, so we will make sure that we always have 
+		 * read access. So much for standards!
+		 * Ain't Windows wonderful???
+		 */
+		/* Note: we *want* to open the tape in FILE_EXCLUSIVE_WRITE, but
+		 * during testing discovered that several NT tape drives do not
+		 * work unless we specify FILE_SHARE_WRITE as the open mode.
+		 * So it goes...
+		 */
+		handle = CreateFile(name,
+							mode | MODE_READ,
+							mode ==
+								MODE_WRITE ? FILE_SHARE_WRITE : FILE_SHARE_READ,
 							0, OPEN_EXISTING, 0, NULL);
 		if (handle != INVALID_HANDLE_VALUE)
 		{
-			// emulate UNIX rewinding the tape on open:
-			// This MUST be done since Windows does NOT have anything
-			// like mt to allow the user to do tape management. The 
-			// implication here is that we will be able to write ONLY
-			// one (1) database per tape. This is bad if the user wishes to
-			// backup several small databases.
-			// Note: We are intentionally NOT trapping for errors during
-			// rewind, since if we can not rewind, we are either a non-rewind
-			// device (then it is user controlled) or we have a problem with
-			// the physical media.  In the latter case I would rather wait for 
-			// the write to fail so that we can loop and prompt the user for 
-			// a different file/device. 
-			//
+			/* emulate UNIX rewinding the tape on open:
+			 * This MUST be done since Windows does NOT have anything
+			 * like mt to allow the user to do tape management. The 
+			 * implication here is that we will be able to write ONLY
+			 * one (1) database per tape. This is bad if the user wishes to
+			 * backup several small databases.
+			 * Note: We are intentionally NOT trapping for errors during
+			 * rewind, since if we can not rewind, we are either a non-rewind
+			 * device (then it is user controlled) or we have a problem with
+			 * the physical media.  In the latter case I would rather wait for 
+			 * the write to fail so that we can loop and prompt the user for 
+			 * a different file/device. 
+			 */
 			SetTapePosition(handle, TAPE_REWIND, 0, 0, 0, FALSE);
-			if (GetTapeParameters(handle, GET_TAPE_MEDIA_INFORMATION, &size,
+			if (GetTapeParameters(	handle,
+									GET_TAPE_MEDIA_INFORMATION,
+									&size,
 									&param) == NO_ERROR)
 			{
 				tdgbl->io_buffer_size = param.BlockSize;
@@ -519,7 +543,7 @@ DESC MVOL_open(const char * name, ULONG mode, ULONG create)
 	}
 	return handle;
 }
-#endif // WIN_NT 
+#endif /* WIN_NT */
 
 
 //____________________________________________________________
@@ -529,11 +553,18 @@ DESC MVOL_open(const char * name, ULONG mode, ULONG create)
 UCHAR MVOL_write(UCHAR c, int *io_cnt, UCHAR ** io_ptr)
 {
 	UCHAR *ptr;
-	SLONG left, cnt;
+	ULONG left, cnt, size_to_write;
+	USHORT full_buffer;
+	TGBL tdgbl;
+	FIL	file;
 
-	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
+#ifdef WIN_NT
+	DWORD err;
+#endif /* WIN_NT */
 
-	ULONG size_to_write = BURP_UP_TO_BLOCK(*io_ptr - tdgbl->mvol_io_buffer);
+	tdgbl = GET_THREAD_DATA;
+
+	size_to_write = BURP_UP_TO_BLOCK(*io_ptr - tdgbl->mvol_io_buffer);
 
 	for (ptr = tdgbl->mvol_io_buffer, left = size_to_write;
 		 left > 0;
@@ -541,14 +572,14 @@ UCHAR MVOL_write(UCHAR c, int *io_cnt, UCHAR ** io_ptr)
 	{
 		if (tdgbl->action->act_action == ACT_backup_split)
 		{
-			// Write to the current file till fil_lingth > 0, otherwise
-			// switch to the next one
+			/* Write to the current file till fil_lingth > 0, otherwise
+			   switch to the next one */
 			if (tdgbl->action->act_file->fil_length == 0)
 			{
 				if (tdgbl->action->act_file->fil_next)
 				{
-					close_platf(tdgbl->file_desc);
-					for (burp_fil* file = tdgbl->gbl_sw_backup_files; file; file = file->fil_next)
+					CLOSE(tdgbl->file_desc);
+					for (file = tdgbl->gbl_sw_backup_files; file; file = file->fil_next)
 					{
 						if (file->fil_fd == tdgbl->file_desc)
 							file->fil_fd = INVALID_HANDLE_VALUE;
@@ -559,8 +590,8 @@ UCHAR MVOL_write(UCHAR c, int *io_cnt, UCHAR ** io_ptr)
 				}
 				else
 				{
-					// This is a last file. Keep writing in a hope that there is
-					// enough free disk space ...
+					/* This is a last file. Keep writing in a hope that there is
+					   enough free disk space ... */
 					tdgbl->action->act_file->fil_length = MAX_LENGTH;
 				}
 			}
@@ -575,15 +606,13 @@ UCHAR MVOL_write(UCHAR c, int *io_cnt, UCHAR ** io_ptr)
 			(tdgbl->action->act_action == ACT_backup_split &&
 			 (tdgbl->action->act_file->fil_length < left) ?
 			 tdgbl->action->act_file->fil_length : left);
-			 
-		DWORD err = 0;
-		// Assumes DWORD <==> ULONG
-		if (!WriteFile(tdgbl->file_desc, ptr, nBytesToWrite,
-					   reinterpret_cast <DWORD *>(&cnt), NULL)) 
-		{
+		if (!WriteFile(tdgbl->file_desc,
+					   ptr,
+					   nBytesToWrite,
+					   reinterpret_cast < DWORD * >(&cnt), NULL)) {
 			err = GetLastError();
 		}
-#endif // !WIN_NT 
+#endif /* !WIN_NT */
 		tdgbl->mvol_io_buffer = tdgbl->mvol_io_data;
 		if (cnt > 0)
 		{
@@ -605,30 +634,28 @@ UCHAR MVOL_write(UCHAR c, int *io_cnt, UCHAR ** io_ptr)
 				errno == EFBIG)
 #else
 				err == ERROR_DISK_FULL || err == ERROR_HANDLE_DISK_FULL)
-#endif // !WIN_NT 
+#endif /* !WIN_NT */
 			{
 				if (tdgbl->action->act_action == ACT_backup_split)
 				{
-					// Close the current file and switch to the next one.
-					// If there is no more specified files left then
-					// issue an error and give up
+					/* Close the current file and switch to the next one.
+					   If there is no more specified files left then
+					   issue an error and give up */
 					if (tdgbl->action->act_file->fil_next)
 					{
-						close_platf(tdgbl->file_desc);
-						for (burp_fil* file = tdgbl->gbl_sw_backup_files; file;
-							file = file->fil_next)
+						CLOSE(tdgbl->file_desc);
+						for (file = tdgbl->gbl_sw_backup_files; file; file = file->fil_next)
 						{
 							if (file->fil_fd == tdgbl->file_desc)
 								file->fil_fd = INVALID_HANDLE_VALUE;
 						}
 						
 						tdgbl->action->act_file->fil_fd = INVALID_HANDLE_VALUE;
-						BURP_print(272, SafeArg() <<
-									tdgbl->action->act_file->fil_name <<
-									tdgbl->action->act_file->fil_length <<
-									tdgbl->action->act_file->fil_next->fil_name);
-						// msg 272 Warning -- free disk space exhausted for file %s,
-						// the rest of the bytes (%d) will be written to file %s
+						BURP_print(272,
+									tdgbl->action->act_file->fil_name,
+									(TEXT *) tdgbl->action->act_file->fil_length,
+									tdgbl->action->act_file->fil_next->fil_name,
+									0, 0);	/* msg 272 Warning -- free disk space exhausted for file %s, the rest of the bytes (%d) will be written to file %s */
 						tdgbl->action->act_file->fil_next->fil_length +=
 							tdgbl->action->act_file->fil_length;
 						tdgbl->action->act_file =
@@ -637,47 +664,39 @@ UCHAR MVOL_write(UCHAR c, int *io_cnt, UCHAR ** io_ptr)
 					}
 					else
 					{
-						BURP_error(270, true);
-						// msg 270 free disk space exhausted 
+						BURP_error(270, 0, 0, 0, 0, 0);	/* msg 270 free disk space exhausted */
 					}
 					cnt = 0;
 					continue;
 				}
-
-				if (tdgbl->gbl_sw_service_gbak)
-				{
-					BURP_error(270, true);
-					// msg 270 free disk space exhausted
-				}
-
-				// Note: there is an assumption here, that if header data is being
-				// written, it is really being rewritten, so at least all the
-				// header data will be written
+				/* Note: there is an assumption here, that if header data is being
+				   written, it is really being rewritten, so at least all the
+				   header data will be written */
 
 				if (left != size_to_write)
 				{
-					// Wrote some, move remainder up in buffer. 
+					/* Wrote some, move remainder up in buffer. */
 
-					// NOTE: We should NOT use memcpy here.  We're moving overlapped
-					// data and memcpy does not guanantee the order the data
-					// is moved in
+					/* NOTE: We should NOT use memcpy here.  We're moving overlapped
+					   data and memcpy does not guanantee the order the data
+					   is moved in */
 					memcpy(tdgbl->mvol_io_data, ptr, left);
 				}
 				left += tdgbl->mvol_io_data - tdgbl->mvol_io_header;
-				bool full_buffer;
 				if (left >=  tdgbl->mvol_io_buffer_size)
-					full_buffer = true;
+					full_buffer = TRUE;
 				else
-					full_buffer = false;
-				tdgbl->file_desc = next_volume(tdgbl->file_desc, MODE_WRITE, 
-											   full_buffer);
+					full_buffer = FALSE;
+				tdgbl->file_desc =
+					next_volume(tdgbl->file_desc, MODE_WRITE, full_buffer);
 				if (full_buffer)
 				{
 					left -= tdgbl->mvol_io_buffer_size;
 					memcpy(tdgbl->mvol_io_data,
 						   tdgbl->mvol_io_header + tdgbl->mvol_io_buffer_size,
 						   left);
-					tdgbl->mvol_cumul_count += tdgbl->mvol_io_buffer_size;
+					tdgbl->mvol_cumul_count +=
+						tdgbl->mvol_io_buffer_size;
 					tdgbl->mvol_io_buffer = tdgbl->mvol_io_data;
 				}
 				else
@@ -686,28 +705,28 @@ UCHAR MVOL_write(UCHAR c, int *io_cnt, UCHAR ** io_ptr)
 			}
 			else if (!SYSCALL_INTERRUPTED(errno))
 			{
-				BURP_error_redirect(0, 221);
-				// msg 221 Unexpected I/O error while writing to backup file 
+				BURP_error_redirect(0, 221, NULL, NULL);
+				/* msg 221 Unexpected I/O error while writing to backup file */
 			}
 		}
-		if (left < cnt) {	// this is impossible, but...
-			cnt = left;
-		}
+        if (left < cnt) {    // this is impossible, but...
+            cnt = left;
+        }
 
-	} // for
+	}
 
 #ifdef DEBUG
 	{
 		int dbg_cnt;
 		if (debug_on)
 			for (dbg_cnt = 0; dbg_cnt < cnt; dbg_cnt++)
-				printf("%d,\n", *(ptr + dbg_cnt));
+				ib_printf("%d,\n", *(ptr + dbg_cnt));
 	}
 #endif
 
-// After the first block of first volume is written (using a default block size)
-// change the block size to one that reflects the user's blocking factor.  By
-// making the first block a standard size we will avoid restore problems.
+/* After the first block of first volume is written (using a default block size)
+   change the block size to one that reflects the user's blocking factor.  By
+   making the first block a standard size we will avoid restore problems. */
 
 	tdgbl->mvol_io_buffer_size = tdgbl->mvol_actual_buffer_size;
 
@@ -722,33 +741,36 @@ UCHAR MVOL_write(UCHAR c, int *io_cnt, UCHAR ** io_ptr)
 
 //____________________________________________________________
 //
-// Write a chunk of data to the IO buffer.
+// Read a chunk of data from the IO buffer.
 // Return a pointer to the first position NOT written from.
 //
-const UCHAR *MVOL_write_block(BurpGlobals* tdgbl, const UCHAR * ptr, ULONG count)
+UCHAR *MVOL_write_block(TGBL tdgbl, UCHAR * ptr, ULONG count)
 {
-// To handle tape drives & Multi-volume boundaries, use the normal
-// write function, instead of doing a more optimal bulk write.
+/* To handle tape drives & Multi-volume boundaries, use the normal
+ * write function, instead of doing a more optimal bulk write.
+ */
 
 	while (count)
 	{
-		// If buffer full, dump it
+		ULONG n;
+
+		/* If buffer full, dump it */
 		if (tdgbl->io_cnt <= 0)
 		{
-			MVOL_write(*ptr++, &tdgbl->io_cnt, &tdgbl->io_ptr);
+			(void) MVOL_write(*ptr++, &tdgbl->io_cnt, &tdgbl->io_ptr);
 
-			// One byte was written by MVOL_write
+			/* One byte was written by MVOL_write */
 			count--;
 		}
 
-		ULONG n = MIN(count, (ULONG) tdgbl->io_cnt);
+		n = MIN(count, (ULONG) tdgbl->io_cnt);
 
-		// Copy data to the IO buffer
+		/* Copy data to the IO buffer */
 
-		memcpy(tdgbl->io_ptr, ptr, n);
+		(void) memcpy(tdgbl->io_ptr, ptr, n);
 		ptr += n;
 
-		// Skip ahead in current buffer
+		/* Skip ahead in current buffer */
 
 		count -= n;
 		tdgbl->io_cnt -= n;
@@ -764,17 +786,24 @@ const UCHAR *MVOL_write_block(BurpGlobals* tdgbl, const UCHAR * ptr, ULONG count
 // We ran into an unsupported attribute.  This shouldn't happen,
 // but it isn't the end of the world.
 //
-static void bad_attribute(int attribute, USHORT type)
+static void bad_attribute(USHORT attribute, USHORT type)
 {
+	SSHORT l;
 	TEXT name[128];
+	TGBL tdgbl;
 
-	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
-	static const SafeArg dummy;
-	fb_msg_format(NULL, burp_msg_fac, type, sizeof(name), name, dummy);
-	BURP_print(80, SafeArg() << name << attribute);
-	// msg 80  don't recognize %s attribute %ld -- continuing 
-	for (int l = get(tdgbl); l; --l)
-		get(tdgbl);
+	tdgbl = GET_THREAD_DATA;
+
+	gds__msg_format(0, 12, type, sizeof(name), name, 0, 0, 0, 0, 0);
+	BURP_print(80, name, (TEXT *) (ULONG) attribute, NULL, NULL, NULL);
+	/* msg 80  don't recognize %s attribute %ld -- continuing */
+	l = GET();
+	if (l)
+	{
+		do {
+			GET();
+		} while (--l);
+	}
 }
 
 
@@ -783,7 +812,7 @@ static void bad_attribute(int attribute, USHORT type)
 //
 static void file_not_empty(void)
 {
-	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
+	TGBL tdgbl = GET_THREAD_DATA;
 
 	tdgbl->mvol_empty_file = FALSE;
 }
@@ -799,7 +828,7 @@ static SLONG get_numeric(void)
 
 	SSHORT length = get_text((UCHAR*) value, sizeof(value));
 
-	return gds__vax_integer(reinterpret_cast<const UCHAR*>(value), length);
+	return gds__vax_integer((UCHAR*) value, length);
 }
 
 
@@ -809,21 +838,24 @@ static SLONG get_numeric(void)
 //
 static int get_text(UCHAR* text, SSHORT length)
 {
-	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
+	unsigned int l, l2;
+	TGBL tdgbl;
 
-	ULONG l = get(tdgbl);
+	tdgbl = GET_THREAD_DATA;
+
+	l = GET();
 	length -= l;
-	const ULONG l2 = l;
+	l2 = l;
 
 	if (length < 0)
 	{
-		BURP_error_redirect(0, 46);	// msg 46 string truncated
+		BURP_error_redirect(0, 46, NULL, NULL);	/* msg 46 string truncated */
 	}
 
 	if (l)
 	{
 		do {
-			*text++ = get(tdgbl);
+			*text++ = GET();
 		} while (--l);
 	}
 
@@ -838,20 +870,26 @@ static int get_text(UCHAR* text, SSHORT length)
 // Get specification for the next volume (tape).
 // Try to open it. Return file descriptor.
 //
-static DESC next_volume( DESC handle, ULONG mode, bool full_buffer)
+static DESC next_volume( DESC handle, int mode, USHORT full_buffer)
 {
-	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
+	SCHAR new_file[MAX_FILE_NAME_LENGTH];
+	DESC new_desc;
+	ULONG temp_buffer_size;
+	USHORT format;
+	TGBL tdgbl;
 
-// We must  close the old handle before the user inserts
-// another tape, or something.
+	tdgbl = GET_THREAD_DATA;
+
+/* We must  close the old handle before the user inserts
+   another tape, or something. */
 
 #ifdef WIN_NT
 	if (handle != INVALID_HANDLE_VALUE)
 #else
 	if (handle > -1)
-#endif // WIN_NT 
+#endif /* WIN_NT */
 	{
-		close_platf(handle);
+		CLOSE(handle);
 	}
 
 	if (tdgbl->action->act_action == ACT_restore_join)
@@ -864,31 +902,29 @@ static DESC next_volume( DESC handle, ULONG mode, bool full_buffer)
 			return tdgbl->action->act_file->fil_fd;
 		}
 
-		BURP_error_redirect(0, 50);	// msg 50 unexpected end of file on backup file
+		BURP_error_redirect(0, 50, NULL, NULL);	/* msg 50 unexpected end of file on backup file */
 	}
 
-// If we got here, we've got a live one... Up the volume number unless
-// the old file was empty
+/* If we got here, we've got a live one... Up the volume number unless
+   the old file was empty */
 
 	if (!tdgbl->mvol_empty_file)
 		(tdgbl->mvol_volume_count)++;
 
 	tdgbl->mvol_empty_file = TRUE;
 
-// Loop until we have opened a file successfully 
+/* Loop until we have opened a file successfully */
 
-	SCHAR new_file[MAX_FILE_NAME_SIZE];
-	DESC new_desc = INVALID_HANDLE_VALUE;
-	for (;;)
+	for (new_desc = INVALID_HANDLE_VALUE;;)
 	{
-		// We aim to keep our descriptors clean 
+		/* We aim to keep our descriptors clean */
 
 		if (new_desc != INVALID_HANDLE_VALUE) {
-			close_platf(new_desc);
+			CLOSE(new_desc);
 			new_desc = INVALID_HANDLE_VALUE;
 		}
 
-		// Get file name to try 
+		/* Get file name to try */
 
 		prompt_for_name(new_file, sizeof(new_file));
 
@@ -896,52 +932,52 @@ static DESC next_volume( DESC handle, ULONG mode, bool full_buffer)
 		new_desc = MVOL_open(new_file, mode, OPEN_ALWAYS);
 		if (new_desc == INVALID_HANDLE_VALUE)
 #else
-		new_desc = open(new_file, mode, open_mask);
+		new_desc = open(new_file, mode, OPEN_MASK);
 		if (new_desc < 0)
-#endif // WIN_NT 
+#endif /* WIN_NT */
 		{
-			BURP_print(222, new_file);
-			// msg 222 \n\nCould not open file name \"%s\"\n 
+			BURP_print(222, new_file, 0, 0, 0, 0);
+			/* msg 222 \n\nCould not open file name \"%s\"\n */
 			continue;
 		}
 
-		// If the file is to be writable, probe it, and make sure it is... 
+		/* If the file is to be writable, probe it, and make sure it is... */
 
 #ifdef WIN_NT
 		if (mode == MODE_WRITE)
 #else
-		if ((O_WRONLY == (mode & O_WRONLY)) || (O_RDWR == (mode & O_RDWR)))
-#endif // WIN_NT 
+		if (BITS_ON(mode, O_WRONLY) || BITS_ON(mode, O_RDWR))
+#endif /* WIN_NT */
 		{
 			if (!write_header(new_desc, 0L, full_buffer))
 			{
-				BURP_print(223, new_file);
-				// msg223 \n\nCould not write to file \"%s\"\n
+				BURP_print(223, new_file, 0, 0, 0, 0);
+				/* msg223 \n\nCould not write to file \"%s\"\n */
 				continue;
 			}
 			else
 			{
-				BURP_msg_put(261, SafeArg() << tdgbl->mvol_volume_count << new_file);
-				// Starting with volume #vol_count, new_file 
-				BURP_verbose(75, new_file);	// msg 75  creating file %s
+				BURP_msg_put(261, (TEXT *) (SLONG) (tdgbl->mvol_volume_count),
+							 new_file, 0, 0, 0);
+				/* Starting with volume #vol_count, new_file */
+				BURP_verbose(75, new_file, 0, 0, 0, 0);	/* msg 75  creating file %s */
 			}
 		}
 		else
 		{
-			// File is open for read only.  Read the header. 
+			/* File is open for read only.  Read the header. */
 
-			ULONG temp_buffer_size;
-			USHORT format;
-			if (!read_header(new_desc, &temp_buffer_size, &format, false))
+			if (!read_header(new_desc, &temp_buffer_size, &format, FALSE))
 			{
-				BURP_print(224, new_file);
+				BURP_print(224, new_file, 0, 0, 0, 0);
 				continue;
 			}
 			else
 			{
-				BURP_msg_put(261, SafeArg() << tdgbl->mvol_volume_count << new_file);
-				// Starting with volume #vol_count, new_file 
-				BURP_verbose(100, new_file);	// msg 100  opened file %s
+				BURP_msg_put(261, (TEXT *) (SLONG) (tdgbl->mvol_volume_count),
+							 new_file, 0, 0, 0);
+				/* Starting with volume #vol_count, new_file */
+				BURP_verbose(100, new_file, 0, 0, 0, 0);	/* msg 100  opened file %s */
 			}
 		}
 
@@ -956,68 +992,68 @@ static DESC next_volume( DESC handle, ULONG mode, bool full_buffer)
 //
 static void prompt_for_name(SCHAR* name, int length)
 {
-	FILE*	term_in = NULL;
-	FILE*	term_out =  NULL;
-	TEXT	msg[BURP_MSG_GET_SIZE];
+	IB_FILE*	term_in;
+	IB_FILE*	term_out;
+	SCHAR*		name_ptr;
+	TEXT		msg[128];
 
-	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
+	TGBL tdgbl = GET_THREAD_DATA;
 
-// Unless we are operating as a service, stdin can't necessarily be trusted.
-// Get a location to read from.
+/* Unless we are operating as a service, stdin can't necessarily be trusted.
+   Get a location to read from. */
 
 	if (tdgbl->gbl_sw_service_gbak ||
-		isatty(fileno(stdout)) ||
-		!(term_out = fopen(TERM_OUTPUT, "w")))
+		isatty(ib_fileno(ib_stdout)) ||
+		!(term_out = ib_fopen(TERM_OUTPUT, "w")))
 	{
-		term_out = stdout;
+		term_out = ib_stdout;
 	}
 	if (tdgbl->gbl_sw_service_gbak ||
-		isatty(fileno(stdin)) ||
-		!(term_in = fopen(TERM_INPUT, "r")))
+		isatty(ib_fileno(ib_stdin)) ||
+		!(term_in = ib_fopen(TERM_INPUT, "r")))
 	{
-		term_in = stdin;
+		term_in = ib_stdin;
 	}
 
-// Loop until we have a file name to try 
+/* Loop until we have a file name to try */
 
 	for (;;)
 	{
-		// If there was an old file name, use that prompt 
+		/* If there was an old file name, use that prompt */
 
 		if (strlen(tdgbl->mvol_old_file) > 0)
 		{
-			BURP_msg_get(225, msg, SafeArg() << (tdgbl->mvol_volume_count - 1) <<
-						 tdgbl->mvol_old_file);
-			fprintf(term_out, msg);
-			BURP_msg_get(226, msg);
-			// \tPress return to reopen that file, or type a new\n\tname 
-			// followed by return to open a different file.\n
-			fprintf(term_out, msg);
+			BURP_msg_get(225, msg, (TEXT *) (SLONG) (tdgbl->mvol_volume_count - 1),
+						 tdgbl->mvol_old_file, 0, 0, 0);
+			ib_fprintf(term_out, msg);
+			BURP_msg_get(226, msg, 0, 0, 0, 0, 0);
+			/* \tPress return to reopen that file, or type a new\n\tname followed by return to open a different file.\n */
+			ib_fprintf(term_out, msg);
 		}
-		else	// First volume 
+		else	/* First volume */
 		{
-			BURP_msg_get(227, msg);
-			// Type a file name to open and hit return 
-			fprintf(term_out, msg);
+			BURP_msg_get(227, msg, 0, 0, 0, 0, 0);
+			/* Type a file name to open and hit return */
+			ib_fprintf(term_out, msg);
 		}
-		BURP_msg_get(228, msg);	// "  Name: "
-		fprintf(term_out, msg);
+		BURP_msg_get(228, msg, 0, 0, 0, 0, 0);	/* "  Name: " */
+		ib_fprintf(term_out, msg);
 
 		if (tdgbl->gbl_sw_service_gbak)
 		{
-			putc('\001', term_out);
+			ib_putc('\001', term_out);
 		}
-		fflush(term_out);
-		if (fgets(name, length, term_in) == NULL)
+		ib_fflush(term_out);
+		if (ib_fgets(name, length, term_in) == (SCHAR*) NULL)
 		{
-			BURP_msg_get(229, msg);
-			// \n\nERROR: Backup incomplete\n
-			fprintf(term_out, msg);
-			BURP_exit_local(FINI_ERROR, tdgbl);
+			BURP_msg_get(229, msg, 0, 0, 0, 0, 0);
+			/* \n\nERROR: Backup incomplete\n */
+			ib_fprintf(term_out, msg);
+			EXIT(FINI_ERROR);
 		}
 
-		// If the user typed just a carriage return, they
-		// want the old file.  If there isn't one, reprompt
+		/* If the user typed just a carriage return, they
+		   want the old file.  If there isn't one, reprompt */
 
 		if (name[0] == '\n')
 		{
@@ -1026,13 +1062,13 @@ static void prompt_for_name(SCHAR* name, int length)
 				strcpy(name, tdgbl->mvol_old_file);
 				break;
 			}
-			else				// reprompt 
+			else				/* reprompt */
 				continue;
 		}
 
-		// OK, its a file name, strip the carriage return 
+		/* OK, its a file name, strip the carriage return */
 
-		SCHAR* name_ptr = name;
+		name_ptr = name;
 		while (*name_ptr && *name_ptr != '\n')
 		{
 			name_ptr++;
@@ -1041,11 +1077,11 @@ static void prompt_for_name(SCHAR* name, int length)
 		break;
 	}
 
-	if (term_out != stdout) {
-		fclose(term_out);
+	if (term_out != ib_stdout) {
+		ib_fclose(term_out);
 	}
-	if (term_in != stdin) {
-		fclose(term_in);
+	if (term_in != ib_stdin) {
+		ib_fclose(term_in);
 	}
 }
 
@@ -1054,23 +1090,26 @@ static void prompt_for_name(SCHAR* name, int length)
 //
 // Write an attribute starting with a null terminated string.
 //
-static void put_asciz( SCHAR attribute, const TEXT* string)
+static void put_asciz( SCHAR attribute, TEXT * string)
 {
-	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
+	TEXT *p;
+	SSHORT l;
+	TGBL tdgbl;
 
-	SSHORT l = 0;
-	for (const TEXT *p = string; *p; p++)
+	tdgbl = GET_THREAD_DATA;
+
+	for (p = string, l = 0; *p; p++)
 	{
 		l++;
 	}
-	fb_assert(l <= MAX_UCHAR);
 
-	put(tdgbl, attribute);
-	put(tdgbl, l);
+	PUT(attribute);
+	PUT(l);
 	if (l)
 	{
-		do {
-			put(tdgbl, *string++);
+		do
+		{
+			PUT(*string++);
 		} while (--l);
 	}
 }
@@ -1083,16 +1122,21 @@ static void put_asciz( SCHAR attribute, const TEXT* string)
 //
 static void put_numeric( SCHAR attribute, int value)
 {
-	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
+	ULONG vax_value;
+	USHORT i;
+	UCHAR *p;
+	TGBL tdgbl;
 
-	const ULONG vax_value = gds__vax_integer(reinterpret_cast<const UCHAR*>(&value), sizeof(value));
-	const UCHAR* p = (UCHAR*) &vax_value;
+	tdgbl = GET_THREAD_DATA;
 
-	put(tdgbl, attribute);
-	put(tdgbl, sizeof(vax_value));
+	vax_value = gds__vax_integer((UCHAR *) & value, sizeof(value));
+	p = (UCHAR *) & vax_value;
 
-	for (USHORT i = 0; i < sizeof(vax_value); i++) {
-		put(tdgbl, *p++);
+	PUT(attribute);
+	PUT(sizeof(value));
+
+	for (i = 0; i < sizeof(value); i++) {
+		PUT(*p++);
 	}
 }
 
@@ -1101,120 +1145,93 @@ static void put_numeric( SCHAR attribute, int value)
 //
 // Functional description
 //
-static bool read_header(DESC	handle,
-						ULONG*	buffer_size,
-						USHORT*	format,
-						bool	init_flag)
+static bool read_header(DESC    handle,
+						ULONG*  buffer_size,
+						USHORT* format,
+						USHORT  init_flag)
 {
-	TEXT buffer[MAX_FILE_NAME_SIZE], msg[BURP_MSG_GET_SIZE];
+	int attribute, temp;
+	SSHORT l;
+	ULONG temp_buffer_size;
+	TEXT buffer[256], *p, msg[128];
+	TGBL tdgbl;
 
-	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
+	tdgbl = GET_THREAD_DATA;
 
-// Headers are a version number, and a volume number 
+/* Headers are a version number, and a volume number */
 
-// CVC: Nobody does an explicit check for the read operation, assuming
-// that GET_ATTRIBUTE() != rec_burp will provide an implicit test.
 #ifndef WIN_NT
-	tdgbl->mvol_io_cnt = read(handle, tdgbl->mvol_io_buffer, 
-							  tdgbl->mvol_actual_buffer_size);
+	tdgbl->mvol_io_cnt =
+		read(handle, tdgbl->mvol_io_buffer, tdgbl->mvol_actual_buffer_size);
 #else
 	ReadFile(handle, tdgbl->mvol_io_buffer, tdgbl->mvol_actual_buffer_size,
 			 reinterpret_cast<DWORD*>(&tdgbl->mvol_io_cnt), NULL);
 #endif
 	tdgbl->mvol_io_ptr = tdgbl->mvol_io_buffer;
 
-	int attribute = get(tdgbl);
-	if (attribute != rec_burp)
-		BURP_error_redirect(0, 45);
-		// msg 45 expected backup description record 
+	if (GET_ATTRIBUTE(attribute) != rec_burp)
+		BURP_error_redirect(0, 45, NULL, NULL);	/* msg 45 expected backup description record */
 
-	int l, maxlen;
-	int temp;
-	TEXT* p;
-	for (attribute = get(tdgbl); attribute != att_end; attribute = get(tdgbl))
+	while (GET_ATTRIBUTE(attribute) != att_end)
 	{
 		switch (attribute)
 		{
 		case att_backup_blksize:
-			{
-				ULONG temp_buffer_size = get_numeric();
-				if (init_flag)
-					*buffer_size = temp_buffer_size;
-			}
+			temp_buffer_size = get_numeric();
+			if (init_flag)
+				*buffer_size = temp_buffer_size;
 			break;
 
 		case att_backup_compress:
 			temp = get_numeric();
 			if (init_flag)
-				tdgbl->gbl_sw_compress = temp != 0;
+				tdgbl->gbl_sw_compress = temp;
 			break;
 
 		case att_backup_date:
-			l = get(tdgbl);
+			l = GET();
 			if (init_flag)
-			{
 				p = tdgbl->gbl_backup_start_time;
-				maxlen = sizeof(tdgbl->gbl_backup_start_time) - 1;
-			}
 			else
-			{
 				p = buffer;
-				maxlen = sizeof(buffer) - 1;
-			}
 			if (l)
-			{
-				do {
-					*p++ = get(tdgbl);
-				} while (--l && --maxlen);
-				// Discard elements that don't fit in the buffer, possible corrupt backup
-				if (l > 0 && !maxlen)
-				{
-					while (l--)
-						get(tdgbl);
-				}
-			}
+				do
+					*p++ = GET();
+				while (--l);
 			*p = 0;
 			if (!init_flag && strcmp(buffer, tdgbl->gbl_backup_start_time))
 			{
-				BURP_msg_get(230, msg, SafeArg() <<
-							tdgbl->gbl_backup_start_time << buffer);
-				// Expected backup start time %s, found %s\n
-				printf(msg);
+				BURP_msg_get(230, msg,
+							 tdgbl->gbl_backup_start_time, buffer, 0, 0, 0);
+				/* Expected backup start time %s, found %s\n */
+				ib_printf(msg);
 				return false;
 			}
 			break;
 
 		case att_backup_file:
-			l = get(tdgbl);
+			l = GET();
 			if (init_flag)
 			{
 				p = tdgbl->mvol_db_name_buffer;
-				maxlen = sizeof(tdgbl->mvol_db_name_buffer) - 1;
 			}
 			else
 			{
 				p = buffer;
-				maxlen = sizeof(buffer) - 1;
 			}
 			if (l)
 			{
 				do {
-					*p++ = get(tdgbl);
-				} while (--l && --maxlen);
-				// Discard elements that don't fit in the buffer, possible corrupt backup
-				if (l > 0 && !maxlen)
-				{
-					while (l--)
-						get(tdgbl);
-				}
+					*p++ = GET();
+				} while (--l);
 			}
 			*p = 0;
 			if (!init_flag && strcmp(buffer, tdgbl->gbl_database_file_name))
 			{
-				BURP_msg_get(231, msg, SafeArg() <<
-							tdgbl->gbl_database_file_name << buffer);
-				// Expected backup database %s, found %s\n
-				printf(msg);
+				BURP_msg_get(231, msg,
+							 tdgbl->gbl_database_file_name, buffer, 0, 0, 0);
+				/* Expected backup database %s, found %s\n */
+				ib_printf(msg);
 				return false;
 			}
 			if (init_flag)
@@ -1233,7 +1250,7 @@ static bool read_header(DESC	handle,
 			temp = get_numeric();
 			if (init_flag)
 			{
-				tdgbl->gbl_sw_transportable = temp != 0;
+				tdgbl->gbl_sw_transportable = temp;
 			}
 			break;
 
@@ -1241,16 +1258,19 @@ static bool read_header(DESC	handle,
 			temp = get_numeric();
 			if (temp != tdgbl->mvol_volume_count)
 			{
-				BURP_msg_get(232, msg, SafeArg() <<
-							 tdgbl->mvol_volume_count << temp);
-				// Expected volume number %d, found volume %d\n
-				printf(msg);
+				BURP_msg_get(232, msg,
+							 (TEXT *) (SLONG) (tdgbl->mvol_volume_count),
+							 (TEXT *) (SLONG) temp, 0, 0, 0);
+				/* Expected volume number %d, found volume %d\n */
+				ib_printf(msg);
 				return false;
 			}
 			break;
 
 		default:
-			bad_attribute(attribute, 59);	// msg 59 backup
+			/* TMN: Here we should really have the following assert */
+			/* assert(attribute <= MAX_USHORT); */
+			bad_attribute((USHORT) attribute, 59);	/* msg 59 backup */
 		}
 	}
 
@@ -1263,44 +1283,52 @@ static bool read_header(DESC	handle,
 //
 static bool write_header(DESC   handle,
 						 ULONG  backup_buffer_size,
-						 bool full_buffer)
+						 USHORT full_buffer)
 {
-	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
+	ULONG vax_value;
+	USHORT i;
+	UCHAR *p, *q;
+	TGBL tdgbl;
+#ifdef WIN_NT
+	DWORD bytes_written, err;
+#else
+	ULONG bytes_written;
+#endif
+
+	tdgbl = GET_THREAD_DATA;
 
 	if (backup_buffer_size)
 	{
 		tdgbl->mvol_io_header = tdgbl->mvol_io_buffer;
 
-		put(tdgbl, rec_burp);
-		put_numeric(att_backup_format, ATT_BACKUP_FORMAT);
+		PUT(rec_burp);
+		PUT_NUMERIC(att_backup_format, ATT_BACKUP_FORMAT);
 
 		if (tdgbl->gbl_sw_compress)
-			put_numeric(att_backup_compress, 1);
+			PUT_NUMERIC(att_backup_compress, 1);
 
 		if (tdgbl->gbl_sw_transportable)
-			put_numeric(att_backup_transportable, 1);
+			PUT_NUMERIC(att_backup_transportable, 1);
 
-		put_numeric(att_backup_blksize, backup_buffer_size);
+		PUT_NUMERIC(att_backup_blksize, backup_buffer_size);
 
 		tdgbl->mvol_io_volume = tdgbl->mvol_io_ptr + 2;
-		put_numeric(att_backup_volume, tdgbl->mvol_volume_count);
+		PUT_NUMERIC(att_backup_volume, tdgbl->mvol_volume_count);
 
-		put_asciz(att_backup_file, tdgbl->gbl_database_file_name);
-		put_asciz(att_backup_date, tdgbl->gbl_backup_start_time);
-		put(tdgbl, att_end);
+		PUT_ASCIZ(att_backup_file, tdgbl->gbl_database_file_name);
+		PUT_ASCIZ(att_backup_date, tdgbl->gbl_backup_start_time);
+		PUT(att_end);
 
 		tdgbl->mvol_io_data = tdgbl->mvol_io_ptr;
 	}
 	else
 	{
-		const ULONG vax_value = gds__vax_integer(reinterpret_cast<const UCHAR*>(
-											&tdgbl->mvol_volume_count),
-											sizeof(tdgbl->mvol_volume_count));
-		const UCHAR* p = (UCHAR *) &vax_value;
-		UCHAR* q = tdgbl->mvol_io_volume;
-		// CVC: Warning, do we want sizeof(int) or sizeof(some_abstract_FB_type)???
-		// It seems to me we want sizeof(ULONG) for safety. => Done.
-		for (size_t i = 0; i < sizeof(ULONG); i++)
+		vax_value =
+			gds__vax_integer((UCHAR*) &(tdgbl->mvol_volume_count),
+							 sizeof(tdgbl->mvol_volume_count));
+		p = (UCHAR *) & vax_value;
+		q = tdgbl->mvol_io_volume;
+		for (i = 0; i < sizeof(int); i++)
 		{
 			*q++ = *p++;
 		}
@@ -1309,13 +1337,13 @@ static bool write_header(DESC   handle,
 	if (full_buffer)
 	{
 #ifdef WIN_NT
-		DWORD bytes_written = 0;
-		DWORD err = WriteFile(handle, tdgbl->mvol_io_header,
-							  tdgbl->mvol_io_buffer_size, &bytes_written, NULL);
+		err =
+			WriteFile(handle, tdgbl->mvol_io_header,
+					  tdgbl->mvol_io_buffer_size, &bytes_written, NULL);
 #else
-		ULONG bytes_written = write(handle, tdgbl->mvol_io_header,
+		bytes_written = write(handle, tdgbl->mvol_io_header,
 							  tdgbl->mvol_io_buffer_size);
-#endif // WIN_NT 
+#endif /* WIN_NT */
 
 		if (bytes_written != tdgbl->mvol_io_buffer_size)
 		{
@@ -1346,31 +1374,44 @@ static bool write_header(DESC   handle,
 //
 bool MVOL_split_hdr_write(void)
 {
+	TGBL tdgbl;
 	TEXT buffer[HDR_SPLIT_SIZE + 1];
+	time_t seconds;
+#ifdef WIN_NT
+	DWORD bytes_written;
+#else
+	ULONG bytes_written;
+#endif
 
-	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
-	fb_assert(tdgbl->action->act_action == ACT_backup_split);
-	fb_assert(tdgbl->action->act_file->fil_fd != INVALID_HANDLE_VALUE);
+	tdgbl = GET_THREAD_DATA;
+
+	assert(tdgbl->action->act_action == ACT_backup_split);
+	assert(tdgbl->action->act_file->fil_fd != INVALID_HANDLE_VALUE);
 
 	if (tdgbl->action->act_file->fil_length < HDR_SPLIT_SIZE) {
 		return false;
 	}
 
-	time_t seconds = time(NULL);
+	seconds = time((time_t *) NULL);
 
 	sprintf(buffer, "%s%.24s      , file No. %4d of %4d, %-27.27s",
-			HDR_SPLIT_TAG, ctime(&seconds), tdgbl->action->act_file->fil_seq,
-			tdgbl->action->act_total, tdgbl->action->act_file->fil_name);
+			HDR_SPLIT_TAG,
+			ctime(&seconds),
+			tdgbl->action->act_file->fil_seq,
+			tdgbl->action->act_total,
+			tdgbl->action->act_file->fil_name);
 
 #ifdef WIN_NT
-	DWORD bytes_written = 0;
-	WriteFile(tdgbl->action->act_file->fil_fd, buffer, HDR_SPLIT_SIZE,
-							&bytes_written, NULL);
+	WriteFile(tdgbl->action->act_file->fil_fd,
+							buffer,
+							HDR_SPLIT_SIZE,
+							&bytes_written,
+							NULL);
 #else
-	ULONG bytes_written =
+	bytes_written =
 		write(tdgbl->action->act_file->fil_fd, buffer, HDR_SPLIT_SIZE);
-#endif // WIN_NT 
+#endif /* WIN_NT */
 
 	if (bytes_written != HDR_SPLIT_SIZE) {
 		return false;
@@ -1387,9 +1428,9 @@ bool MVOL_split_hdr_write(void)
 //
 bool MVOL_split_hdr_read(void)
 {
-	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
+	TGBL tdgbl = GET_THREAD_DATA;
 
-	fb_assert(tdgbl->action->act_file->fil_fd != INVALID_HANDLE_VALUE);
+	assert(tdgbl->action->act_file->fil_fd != INVALID_HANDLE_VALUE);
 
 	if (tdgbl->action && tdgbl->action->act_file &&
 		(tdgbl->action->act_file->fil_fd != INVALID_HANDLE_VALUE))
@@ -1398,12 +1439,15 @@ bool MVOL_split_hdr_read(void)
 		int cnt;
 
 #ifdef WIN_NT
-		ReadFile(tdgbl->action->act_file->fil_fd, buffer, HDR_SPLIT_SIZE,
-					reinterpret_cast<DWORD*>(&cnt), NULL);
+		ReadFile(tdgbl->action->act_file->fil_fd,
+					buffer,
+					HDR_SPLIT_SIZE,
+					reinterpret_cast<DWORD*>(&cnt),
+					NULL);
 #else
 		cnt = read(tdgbl->action->act_file->fil_fd, buffer, HDR_SPLIT_SIZE);
 #endif
-		if ((cnt >= 0) && ((ULONG) cnt == HDR_SPLIT_SIZE) &&
+		if ((cnt == HDR_SPLIT_SIZE) &&
 			((strncmp(buffer, HDR_SPLIT_TAG, (sizeof(HDR_SPLIT_TAG) - 1)) == 0) ||
 			(strncmp(buffer, HDR_SPLIT_TAG5, (sizeof(HDR_SPLIT_TAG) - 1)) == 0)))
 		{

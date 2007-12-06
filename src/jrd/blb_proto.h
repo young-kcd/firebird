@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Access Method
  *	MODULE:		blb_proto.h
- *	DESCRIPTION:	Prototype header file for Jrd::blb.cpp
+ *	DESCRIPTION:	Prototype header file for blb.c
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -29,71 +29,52 @@
 #include "../jrd/exe.h"
 #include "../jrd/lls.h"
 #include "../jrd/val.h"
-#include "../jrd/req.h"
-#include "../common/classes/array.h"
 
-void   BLB_cancel(Jrd::thread_db*, Jrd::blb*);
-void   BLB_check_well_formed(Jrd::thread_db*, const dsc* desc, Jrd::blb*);
-void   BLB_close(Jrd::thread_db*, Jrd::blb*);
-Jrd::blb*   BLB_create(Jrd::thread_db*, Jrd::jrd_tra*, Jrd::bid*);
-Jrd::blb*   BLB_create2(Jrd::thread_db*, Jrd::jrd_tra*, Jrd::bid*, USHORT, const UCHAR*);
-void   BLB_garbage_collect(Jrd::thread_db*, Jrd::RecordStack&, Jrd::RecordStack&, SLONG, Jrd::jrd_rel*);
-void BLB_gen_bpb(SSHORT source, SSHORT target, UCHAR sourceCharset, UCHAR targetCharset, Firebird::UCharBuffer& bpb);
-void BLB_gen_bpb_from_descs(const dsc*, const dsc*, Firebird::UCharBuffer&);
-Jrd::blb*   BLB_get_array(Jrd::thread_db*, Jrd::jrd_tra*, const Jrd::bid*, Ods::InternalArrayDesc*);
-ULONG  BLB_get_data(Jrd::thread_db*, Jrd::blb*, UCHAR*, SLONG, bool = true);
-USHORT BLB_get_segment(Jrd::thread_db*, Jrd::blb*, UCHAR*, USHORT);
-SLONG  BLB_get_slice(Jrd::thread_db*, Jrd::jrd_tra*, const Jrd::bid*, const UCHAR*, USHORT,
-	const UCHAR*, SLONG, UCHAR*);
-SLONG  BLB_lseek(Jrd::blb*, USHORT, SLONG);
+// fwd decl.
+class blb;
+struct jrd_tra;
+struct bid;
+struct lls;
+struct jrd_rel;
+struct dsc;
+struct arr;
+struct jrd_nod;
+struct vlu;
+struct ads;
 
-void BLB_move(Jrd::thread_db*, dsc*, dsc*, Jrd::jrd_nod*);
-Jrd::blb* BLB_open(Jrd::thread_db*, Jrd::jrd_tra*, const Jrd::bid*);
-Jrd::blb* BLB_open2(Jrd::thread_db*, Jrd::jrd_tra*, const Jrd::bid*, USHORT, const UCHAR*, bool = false);
-void BLB_put_data(Jrd::thread_db*, Jrd::blb*, const UCHAR*, SLONG);
-void BLB_put_segment(Jrd::thread_db*, Jrd::blb*, const UCHAR*, USHORT);
-void BLB_put_slice(Jrd::thread_db*, Jrd::jrd_tra*, Jrd::bid*, const UCHAR*, USHORT,
-	const SLONG*, SLONG, UCHAR*);
-void BLB_release_array(Jrd::ArrayField*);
-void BLB_scalar(Jrd::thread_db*, Jrd::jrd_tra*, const Jrd::bid*, USHORT, const SLONG*, Jrd::impure_value*);
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+void   BLB_cancel(TDBB, blb*);
+void   BLB_close(TDBB, blb*);
+blb*   BLB_create(TDBB, jrd_tra*, bid*);
+blb*   BLB_create2(TDBB, jrd_tra*, bid*, USHORT, UCHAR*);
+void   BLB_garbage_collect(TDBB, lls*, lls*, SLONG, jrd_rel*);
+blb*   BLB_get_array(TDBB, jrd_tra*, bid*, ads*);
+SLONG  BLB_get_data(TDBB, blb*, UCHAR *, SLONG);
+USHORT BLB_get_segment(TDBB, blb*, UCHAR*, USHORT);
+SLONG  BLB_get_slice(TDBB, jrd_tra*, bid*, UCHAR*, USHORT, SLONG*, SLONG, UCHAR*);
+SLONG  BLB_lseek(blb*, USHORT, SLONG);
+
+void BLB_move(TDBB, dsc*, dsc*, jrd_nod*);
+void BLB_move_from_string(TDBB, dsc*, dsc*, jrd_nod*);
+blb* BLB_open(TDBB, jrd_tra*, bid*);
+blb* BLB_open2(TDBB, jrd_tra*, bid*, USHORT,
+						 UCHAR *);
+void BLB_put_segment(TDBB, blb*, UCHAR *, USHORT);
+void BLB_put_slice(TDBB, jrd_tra*, bid*, UCHAR*, USHORT, SLONG*, SLONG, UCHAR*);
+void BLB_release_array(arr*);
+void BLB_scalar(TDBB, jrd_tra*, bid*, USHORT, SLONG*, vlu*);
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 
 #ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
-void BLB_map_blobs(Jrd::thread_db*, Jrd::blb*, Jrd::blb*);
+extern "C" {
+void DLL_EXPORT BLB_map_blobs(TDBB, struct blb*, struct blb*);
+}
 #endif
-
-class AutoBlb
-{
-public:
-	AutoBlb(Jrd::thread_db* atdbb, Jrd::blb* ablob)
-		: tdbb(atdbb),
-		  blob(ablob)
-	{
-	}
-
-	~AutoBlb()
-	{
-		BLB_close(tdbb, blob);
-	}
-
-public:
-	Jrd::blb* getBlb()
-	{
-		return blob;
-	}
-
-	Jrd::blb* operator ->()
-	{
-		return blob;
-	}
-
-private:
-	AutoBlb(const AutoBlb&);				// not implemented
-	AutoBlb& operator =(const AutoBlb&);	// not implemented
-
-private:
-	Jrd::thread_db* tdbb;
-	Jrd::blb* blob;
-};
 
 #endif	// JRD_BLB_PROTO_H

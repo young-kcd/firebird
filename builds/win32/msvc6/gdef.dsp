@@ -67,7 +67,7 @@ LINK32=link.exe
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MDd /W3 /Gm /GX /Zi /Od /I "../../../src/include" /I "../../../src/include/gen" /D "WIN32" /D "_DEBUG" /D "_CONSOLE" /D "_MBCS" /FD /GZ /c
 # SUBTRACT BASE CPP /YX
-# ADD CPP /nologo /MD /W3 /GX /Ot /Og /Oi /Op /Oy /Ob1 /I "../../../src/include" /I "../../../src/include/gen" /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /D "_MBCS" /D "SUPERCLIENT" /FD /EHc- /c
+# ADD CPP /nologo /MD /W3 /GX /Zi /Ot /Og /Oi /Op /Oy /Ob1 /I "../../../src/include" /I "../../../src/include/gen" /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /D "_MBCS" /D "SUPERCLIENT" /FD /EHc- /c
 # ADD BASE RSC /l 0x41d /d "_DEBUG"
 # ADD RSC /l 0x41d /d "_DEBUG"
 BSC32=bscmake.exe
@@ -149,7 +149,19 @@ SOURCE=..\..\..\src\jrd\isc_file.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\src\jrd\llio.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\misc.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\src\jrd\status.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\utl.cpp
 # End Source File
 # End Group
 # Begin Group "GPRE files"
@@ -158,6 +170,14 @@ SOURCE=..\..\..\src\jrd\status.cpp
 # Begin Source File
 
 SOURCE=..\..\..\src\gpre\pretty.cpp
+# End Source File
+# End Group
+# Begin Group "WAL files"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\..\src\wal\walf.cpp
 # End Source File
 # End Group
 # Begin Group "Header files"

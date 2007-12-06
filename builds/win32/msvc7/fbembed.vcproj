@@ -3,7 +3,6 @@
 	ProjectType="Visual C++"
 	Version="7.10"
 	Name="fbembed"
-	ProjectGUID="{97FEEEE5-4A9E-47DF-B04A-4E9C31A78ABA}"
 	SccProjectName=""
 	SccLocalPath="">
 	<Platforms>
@@ -24,11 +23,10 @@
 				AdditionalOptions="/EHsc-"
 				Optimization="0"
 				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
-				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;_X86_;SUPERSERVER;DEV_BUILD;EMBEDDED"
+				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;_X86_;SUPERSERVER;SERVER_SHUTDOWN;DEV_BUILD;EMBEDDED"
 				ExceptionHandling="FALSE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				RuntimeTypeInfo="FALSE"
 				PrecompiledHeaderFile="..\..\..\temp\debug\fbembed/fbembed.pch"
 				AssemblerListingLocation="..\..\..\temp\debug\fbembed/"
 				ObjectFile="..\..\..\temp\debug\fbembed/"
@@ -42,22 +40,21 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib icuuc.lib"
-				OutputFile="..\..\..\temp\debug\firebird\bin\fbembed.dll"
+				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
+				OutputFile="debug/firebird/bin/fbembed.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
-				AdditionalLibraryDirectories="../../../extern/icu/lib"
-				ModuleDefinitionFile="..\defs\fbclient.def"
+				ModuleDefinitionFile="..\defs\fbclient_debug.def"
 				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile="..\..\..\temp\debug\fbembed\fbembed.pdb"
-				ImportLibrary="..\..\..\temp\debug\fbembed\fbembed.lib"/>
+				ProgramDatabaseFile="..\..\..\temp\debug\fbembed/fbembed.pdb"
+				ImportLibrary="..\..\..\temp\debug\fbembed/fbembed.lib"/>
 			<Tool
 				Name="VCMIDLTool"
 				PreprocessorDefinitions="_DEBUG"
 				MkTypLibCompatible="TRUE"
 				SuppressStartupBanner="TRUE"
 				TargetEnvironment="1"
-				TypeLibraryName="..\..\..\temp\debug\fbembed\fbembed.tlb"/>
+				TypeLibraryName="..\..\..\temp\debug\fbembed/fbembed.tlb"/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool
@@ -98,10 +95,9 @@
 				FavorSizeOrSpeed="1"
 				OmitFramePointers="TRUE"
 				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
-				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;_X86_;SUPERSERVER;EMBEDDED"
+				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;_X86_;SERVER_SHUTDOWN;SUPERSERVER;EMBEDDED"
 				ExceptionHandling="FALSE"
 				RuntimeLibrary="2"
-				RuntimeTypeInfo="FALSE"
 				UsePrecompiledHeader="2"
 				PrecompiledHeaderFile="..\..\..\temp\release\fbembed/fbembed.pch"
 				AssemblerListingLocation="..\..\..\temp\release\fbembed/"
@@ -116,21 +112,21 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="mpr.lib ws2_32.lib version.lib icuuc.lib"
-				OutputFile="..\..\..\temp\release\firebird/bin/fbembed.dll"
+				AdditionalDependencies="mpr.lib ws2_32.lib version.lib"
+				OutputFile="release/firebird/bin/fbembed.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
-				AdditionalLibraryDirectories="../../../extern/icu/lib"
 				ModuleDefinitionFile="..\defs\fbclient.def"
 				GenerateDebugInformation="TRUE"
-				ImportLibrary="..\..\..\temp\release\fbembed\fbembed.lib"/>
+				ProgramDatabaseFile="..\..\..\temp\release\fbembed/fbembed.pdb"
+				ImportLibrary="..\..\..\temp\release\fbembed/fbembed.lib"/>
 			<Tool
 				Name="VCMIDLTool"
 				PreprocessorDefinitions="NDEBUG"
 				MkTypLibCompatible="TRUE"
 				SuppressStartupBanner="TRUE"
 				TargetEnvironment="1"
-				TypeLibraryName="..\..\..\temp\release\fbembed\fbembed.tlb"/>
+				TypeLibraryName="..\..\..\temp\release\fbembed/fbembed.tlb"/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool
@@ -160,9 +156,6 @@
 			Name="COMMON"
 			Filter="">
 			<File
-				RelativePath="..\..\..\src\common\classes\alloc.cpp">
-			</File>
-			<File
 				RelativePath="..\..\..\src\common\config\config_file.cpp">
 			</File>
 			<File
@@ -173,7 +166,7 @@
 			Name="JRD files"
 			Filter="">
 			<File
-				RelativePath="..\..\..\src\jrd\os\win32\ibinitdll.cpp">
+				RelativePath="..\..\..\src\jrd\ibinitdll.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\perf.cpp">
@@ -188,13 +181,13 @@
 					Name="Debug|Win32">
 					<Tool
 						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;_X86_;SUPERSERVER;DEV_BUILD;EMBEDDED;SUPERCLIENT;$(NoInherit)"/>
+						PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;_X86_;SUPERSERVER;SERVER_SHUTDOWN;DEV_BUILD;EMBEDDED;SUPERCLIENT;$(NoInherit)"/>
 				</FileConfiguration>
 				<FileConfiguration
 					Name="Release|Win32">
 					<Tool
 						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;_X86_;SUPERSERVER;EMBEDDED;SUPERCLIENT;$(NoInherit)"/>
+						PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;_X86_;SERVER_SHUTDOWN;SUPERSERVER;EMBEDDED;SUPERCLIENT;$(NoInherit)"/>
 				</FileConfiguration>
 			</File>
 			<File
@@ -203,13 +196,13 @@
 					Name="Debug|Win32">
 					<Tool
 						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;_X86_;SUPERSERVER;DEV_BUILD;EMBEDDED;SUPERCLIENT;$(NoInherit)"/>
+						PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;_X86_;SUPERSERVER;SERVER_SHUTDOWN;DEV_BUILD;EMBEDDED;SUPERCLIENT;$(NoInherit)"/>
 				</FileConfiguration>
 				<FileConfiguration
 					Name="Release|Win32">
 					<Tool
 						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;_X86_;SUPERSERVER;EMBEDDED;SUPERCLIENT;$(NoInherit)"/>
+						PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;_X86_;SERVER_SHUTDOWN;SUPERSERVER;EMBEDDED;SUPERCLIENT;$(NoInherit)"/>
 				</FileConfiguration>
 			</File>
 			<File
@@ -218,13 +211,13 @@
 					Name="Debug|Win32">
 					<Tool
 						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;_X86_;SUPERSERVER;DEV_BUILD;EMBEDDED;SUPERCLIENT;$(NoInherit)"/>
+						PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;_X86_;SUPERSERVER;SERVER_SHUTDOWN;DEV_BUILD;EMBEDDED;SUPERCLIENT;$(NoInherit)"/>
 				</FileConfiguration>
 				<FileConfiguration
 					Name="Release|Win32">
 					<Tool
 						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;_X86_;SUPERSERVER;EMBEDDED;SUPERCLIENT;$(NoInherit)"/>
+						PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;_X86_;SERVER_SHUTDOWN;SUPERSERVER;EMBEDDED;SUPERCLIENT;$(NoInherit)"/>
 				</FileConfiguration>
 			</File>
 			<File
@@ -233,13 +226,13 @@
 					Name="Debug|Win32">
 					<Tool
 						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;_X86_;SUPERSERVER;DEV_BUILD;EMBEDDED;SUPERCLIENT;$(NoInherit)"/>
+						PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;_X86_;SUPERSERVER;SERVER_SHUTDOWN;DEV_BUILD;EMBEDDED;SUPERCLIENT;$(NoInherit)"/>
 				</FileConfiguration>
 				<FileConfiguration
 					Name="Release|Win32">
 					<Tool
 						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;_X86_;SUPERSERVER;EMBEDDED;SUPERCLIENT;$(NoInherit)"/>
+						PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;_X86_;SERVER_SHUTDOWN;SUPERSERVER;EMBEDDED;SUPERCLIENT;$(NoInherit)"/>
 				</FileConfiguration>
 			</File>
 			<File
@@ -248,13 +241,13 @@
 					Name="Debug|Win32">
 					<Tool
 						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;_X86_;SUPERSERVER;DEV_BUILD;EMBEDDED;SUPERCLIENT;$(NoInherit)"/>
+						PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;_X86_;SUPERSERVER;SERVER_SHUTDOWN;DEV_BUILD;EMBEDDED;SUPERCLIENT;$(NoInherit)"/>
 				</FileConfiguration>
 				<FileConfiguration
 					Name="Release|Win32">
 					<Tool
 						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;_X86_;SUPERSERVER;EMBEDDED;SUPERCLIENT;$(NoInherit)"/>
+						PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;_X86_;SERVER_SHUTDOWN;SUPERSERVER;EMBEDDED;SUPERCLIENT;$(NoInherit)"/>
 				</FileConfiguration>
 			</File>
 			<File
@@ -263,13 +256,13 @@
 					Name="Debug|Win32">
 					<Tool
 						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;_X86_;SUPERSERVER;DEV_BUILD;EMBEDDED;SUPERCLIENT;$(NoInherit)"/>
+						PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;_X86_;SUPERSERVER;SERVER_SHUTDOWN;DEV_BUILD;EMBEDDED;SUPERCLIENT;$(NoInherit)"/>
 				</FileConfiguration>
 				<FileConfiguration
 					Name="Release|Win32">
 					<Tool
 						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;_X86_;SUPERSERVER;EMBEDDED;SUPERCLIENT;$(NoInherit)"/>
+						PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;_X86_;SERVER_SHUTDOWN;SUPERSERVER;EMBEDDED;SUPERCLIENT;$(NoInherit)"/>
 				</FileConfiguration>
 			</File>
 			<File
@@ -278,28 +271,28 @@
 					Name="Debug|Win32">
 					<Tool
 						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;_X86_;SUPERSERVER;DEV_BUILD;EMBEDDED;SUPERCLIENT;$(NoInherit)"/>
+						PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;_X86_;SUPERSERVER;SERVER_SHUTDOWN;DEV_BUILD;EMBEDDED;SUPERCLIENT;$(NoInherit)"/>
 				</FileConfiguration>
 				<FileConfiguration
 					Name="Release|Win32">
 					<Tool
 						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;_X86_;SUPERSERVER;EMBEDDED;SUPERCLIENT;$(NoInherit)"/>
+						PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;_X86_;SERVER_SHUTDOWN;SUPERSERVER;EMBEDDED;SUPERCLIENT;$(NoInherit)"/>
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\..\src\remote\os\win32\wnet.cpp">
+				RelativePath="..\..\..\src\remote\wnet.cpp">
 				<FileConfiguration
 					Name="Debug|Win32">
 					<Tool
 						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;_X86_;SUPERSERVER;DEV_BUILD;EMBEDDED;SUPERCLIENT;$(NoInherit)"/>
+						PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;_X86_;SUPERSERVER;SERVER_SHUTDOWN;DEV_BUILD;EMBEDDED;SUPERCLIENT;$(NoInherit)"/>
 				</FileConfiguration>
 				<FileConfiguration
 					Name="Release|Win32">
 					<Tool
 						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;_X86_;SUPERSERVER;EMBEDDED;SUPERCLIENT;$(NoInherit)"/>
+						PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;_X86_;SERVER_SHUTDOWN;SUPERSERVER;EMBEDDED;SUPERCLIENT;$(NoInherit)"/>
 				</FileConfiguration>
 			</File>
 			<File
@@ -308,13 +301,13 @@
 					Name="Debug|Win32">
 					<Tool
 						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;_X86_;SUPERSERVER;DEV_BUILD;EMBEDDED;SUPERCLIENT;$(NoInherit)"/>
+						PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;_X86_;SUPERSERVER;SERVER_SHUTDOWN;DEV_BUILD;EMBEDDED;SUPERCLIENT;$(NoInherit)"/>
 				</FileConfiguration>
 				<FileConfiguration
 					Name="Release|Win32">
 					<Tool
 						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;_X86_;SUPERSERVER;EMBEDDED;SUPERCLIENT;$(NoInherit)"/>
+						PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;_X86_;SERVER_SHUTDOWN;SUPERSERVER;EMBEDDED;SUPERCLIENT;$(NoInherit)"/>
 				</FileConfiguration>
 			</File>
 			<File
@@ -323,13 +316,13 @@
 					Name="Debug|Win32">
 					<Tool
 						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;_X86_;SUPERSERVER;DEV_BUILD;EMBEDDED;SUPERCLIENT;$(NoInherit)"/>
+						PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;_X86_;SUPERSERVER;SERVER_SHUTDOWN;DEV_BUILD;EMBEDDED;SUPERCLIENT;$(NoInherit)"/>
 				</FileConfiguration>
 				<FileConfiguration
 					Name="Release|Win32">
 					<Tool
 						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;_X86_;SUPERSERVER;EMBEDDED;SUPERCLIENT;$(NoInherit)"/>
+						PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;_X86_;SERVER_SHUTDOWN;SUPERSERVER;EMBEDDED;SUPERCLIENT;$(NoInherit)"/>
 				</FileConfiguration>
 			</File>
 		</Filter>
@@ -337,10 +330,10 @@
 			Name="UTILITIES files"
 			Filter="">
 			<File
-				RelativePath="..\..\..\gen\utilities\gstat\dba.cpp">
+				RelativePath="..\..\..\gen\utilities\dba.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\src\utilities\gstat\ppg.cpp">
+				RelativePath="..\..\..\src\utilities\ppg.cpp">
 			</File>
 		</Filter>
 		<Filter
@@ -362,17 +355,11 @@
 				</FileConfiguration>
 			</File>
 		</Filter>
-		<Filter
-			Name="AuthSspi">
-			<File
-				RelativePath="..\..\..\src\auth\trusted\AuthSspi.cpp">
-			</File>
-			<File
-				RelativePath="..\..\..\src\auth\trusted\AuthSspi.h">
-			</File>
-		</Filter>
 		<File
 			RelativePath="..\defs\fbclient.def">
+		</File>
+		<File
+			RelativePath="..\defs\fbclient_debug.def">
 		</File>
 	</Files>
 	<Globals>

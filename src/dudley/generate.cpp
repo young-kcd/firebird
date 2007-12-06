@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Data Definition Utility
- *	MODULE:		generate.cpp
+ *	MODULE:		generate.c
  *	DESCRIPTION:	Blr generator
  *
  * The contents of this file are subject to the Interbase Public
@@ -23,27 +23,24 @@
 
 #include "firebird.h"
 #include <string.h>
-#include "../jrd/ibase.h"
+#include "../jrd/gds.h"
 #include "../dudley/ddl.h"
 #include "../jrd/acl.h"
 #include "../dudley/gener_proto.h"
 #include "../jrd/gds_proto.h"
-#include "../jrd/gdsassert.h"
 #include "../dudley/trn_proto.h"
 
 static void generate(STR, DUDLEY_NOD);
 static void get_set_generator(STR, DUDLEY_NOD);
 
-static inline void check_blr(str* blr, const int l)
-{
-	if (!(blr->str_current - blr->str_start + l <= blr->str_length) 
-		&& !TRN_get_buffer(blr, l) )
-	{
-		DDL_err(289);
-	}
-}
+#define STUFF(c)	*blr->str_current++ = c
+#define STUFF_WORD(c)	{STUFF (c); STUFF (c >> 8);}
+#define CHECK_BLR(l)	{if ( !(blr->str_current - blr->str_start + l <= \
+                                blr->str_length) && !TRN_get_buffer (blr, l) )\
+                             DDL_err (289, NULL, NULL, NULL, NULL, NULL);}
 
-int GENERATE_acl( SCL sec_class, UCHAR * buffer)
+
+int GENERATE_acl( SCL class_, UCHAR * buffer)
 {
 /**************************************
  *
@@ -55,24 +52,22 @@ int GENERATE_acl( SCL sec_class, UCHAR * buffer)
  *	Generate an access control list.
  *
  **************************************/
-	UCHAR* p = buffer;
+	UCHAR *p, *q, **id, c;
+	SCE item;
+	USHORT i;
+
+	p = buffer;
 	*p++ = ACL_version;
 
-	for (SCE item = sec_class->scl_entries; item; item = item->sce_next) {
+	for (item = class_->scl_entries; item; item = item->sce_next) {
 		*p++ = ACL_id_list;
-		USHORT i;
-		const UCHAR* const* id;
 		for (i = 0, id = item->sce_idents; i < id_max; id++, i++)
-		{
-			const UCHAR* q = *id;
-			if (q) {
+			if (q = *id) {
 				*p++ = i;
-				*p++ = strlen((const char*) q);
-				UCHAR c;
+				*p++ = strlen((char*) q);
 				while (c = *q++)
 					*p++ = UPPER(c);
 			}
-		}
 		*p++ = priv_end;
 		*p++ = ACL_priv_list;
 		for (i = 0; i < priv_max; i++)
@@ -100,11 +95,11 @@ void GENERATE_blr( STR blr, DUDLEY_NOD node)
  *
  **************************************/
 
-	check_blr(blr, 1);
-	blr->add_byte(blr_version4);
+	CHECK_BLR(1);
+	STUFF(blr_version4);
 	generate(blr, node);
-	check_blr(blr, 1);
-	blr->add_byte(blr_eoc);
+	CHECK_BLR(1);
+	STUFF(blr_eoc);
 }
 
 
@@ -124,97 +119,97 @@ static void generate( STR blr, DUDLEY_NOD node)
 	DUDLEY_REL relation;
 	SYM symbol;
 	CON constant;
-	DUDLEY_NOD sub;
+	DUDLEY_NOD sub, *arg, *end;
 	DUDLEY_CTX context;
-	SCHAR operatr;
-	const char* p;
+	SCHAR operatr, *p;
 	SLONG value;
-	USHORT l, pos;
+	USHORT l;
 
-	USHORT posi = 0;
-	USHORT endi = node->nod_count;
+	arg = node->nod_arg;
+	end = arg + node->nod_count;
 
 	switch (node->nod_type) {
 	case nod_fid:
-		check_blr(blr, 4);
-		blr->add_byte(blr_fid);
-		blr->add_byte(0);
-		blr->add_word(0);
+		CHECK_BLR(4);
+		STUFF(blr_fid);
+		STUFF(0);
+		STUFF_WORD(0);
 		return;
 
 	case nod_field:
-		check_blr(blr, 4);
+		CHECK_BLR(4);
 		if (sub = node->nod_arg[s_fld_subs])
-			blr->add_byte(blr_index);
-		blr->add_byte(blr_field);
+			STUFF(blr_index);
+		STUFF(blr_field);
 		field = (DUDLEY_FLD) node->nod_arg[s_fld_field];
 		context = (DUDLEY_CTX) node->nod_arg[s_fld_context];
-		blr->add_byte(context->ctx_context_id);
+		STUFF(context->ctx_context_id);
 		symbol = field->fld_name;
-		blr->add_byte(l = symbol->sym_length);
-		p = symbol->sym_string;
+		STUFF(l = symbol->sym_length);
+		p = (SCHAR *) symbol->sym_string;
 		if (l) {
-			check_blr(blr, l);
+			CHECK_BLR(l);
 			do
-				blr->add_byte(*p++);
+				STUFF(*p++);
 			while (--l);
 		}
 		if (sub) {
-			check_blr(blr, 1);
-			blr->add_byte(sub->nod_count);
-			for (pos = 0; pos < sub->nod_count; pos++)
-				generate(blr, sub->nod_arg[pos]);
+			CHECK_BLR(1);
+			STUFF(sub->nod_count);
+			for (arg = sub->nod_arg, end = arg + sub->nod_count; arg < end;
+				 arg++)
+				generate(blr, *arg);
 		}
 		return;
 
 	case nod_function:
-		check_blr(blr, 2);
-		blr->add_byte(blr_function);
+		CHECK_BLR(2);
+		STUFF(blr_function);
 		symbol = (SYM) node->nod_arg[1];
-		blr->add_byte(l = symbol->sym_length);
-		p = symbol->sym_string;
+		STUFF(l = symbol->sym_length);
+		p = (SCHAR *) symbol->sym_string;
 		if (l) {
-			check_blr(blr, l);
+			CHECK_BLR(l);
 			do
-				blr->add_byte(*p++);
+				STUFF(*p++);
 			while (--l);
 		}
 		sub = node->nod_arg[0];
-		check_blr(blr, 1);
-		blr->add_byte(sub->nod_count);
-		for (pos = 0; pos < sub->nod_count ; pos++)
-			generate(blr, sub->nod_arg[pos]);
+		CHECK_BLR(1);
+		STUFF(sub->nod_count);
+		for (arg = sub->nod_arg, end = arg + sub->nod_count; arg < end; arg++)
+			generate(blr, *arg);
 		return;
 
 	case nod_context:
 		context = (DUDLEY_CTX) node->nod_arg[0];
 		relation = context->ctx_relation;
-		check_blr(blr, 2);
-		blr->add_byte(blr_relation);
+		CHECK_BLR(2);
+		STUFF(blr_relation);
 		symbol = relation->rel_name;
-		blr->add_byte(l = symbol->sym_length);
-		p = symbol->sym_string;
+		STUFF(l = symbol->sym_length);
+		p = (SCHAR *) symbol->sym_string;
 		if (l) {
-			check_blr(blr, l);
+			CHECK_BLR(l);
 			do
-				blr->add_byte(*p++);
+				STUFF(*p++);
 			while (--l);
 		}
-		check_blr(blr, 1);
-		blr->add_byte(context->ctx_context_id);
+		CHECK_BLR(1);
+		STUFF(context->ctx_context_id);
 		return;
 
 	case nod_gen_id:
-		check_blr(blr, 2);
-		blr->add_byte(blr_gen_id);
+		CHECK_BLR(2);
+		STUFF(blr_gen_id);
 		symbol = (SYM) node->nod_arg[1];
-		blr->add_byte(l = symbol->sym_length);
-		p = symbol->sym_string;
+		STUFF(l = symbol->sym_length);
+		p = (SCHAR *) symbol->sym_string;
 		if (l) {
-			check_blr(blr, l);
-			do {
-				blr->add_byte(*p++);
-			} while (--l);
+			CHECK_BLR(l);
+			do
+				STUFF(*p++);
+			while (--l);
 		}
 		generate(blr, node->nod_arg[0]);
 		return;
@@ -224,138 +219,139 @@ static void generate( STR blr, DUDLEY_NOD node)
 		return;
 
 	case nod_user_name:
-		check_blr(blr, 1);
-		blr->add_byte(blr_user_name);
+		CHECK_BLR(1);
+		STUFF(blr_user_name);
 		return;
 
 	case nod_null:
-		check_blr(blr, 1);
-		blr->add_byte(blr_null);
+		CHECK_BLR(1);
+		STUFF(blr_null);
 		return;
 
 	case nod_literal:
-		check_blr(blr, 6);
-		blr->add_byte(blr_literal);
+		CHECK_BLR(6);
+		STUFF(blr_literal);
 		constant = (CON) node->nod_arg[0];
 		l = constant->con_desc.dsc_length;
 		switch (constant->con_desc.dsc_dtype) {
 		case dtype_text:
-			blr->add_byte(blr_text);
-			blr->add_word(l);
+			STUFF(blr_text);
+			STUFF_WORD(l);
 			break;
 
 		case dtype_short:
-			check_blr(blr, 2);
-			blr->add_byte(blr_short);
-			blr->add_byte(constant->con_desc.dsc_scale);
+			CHECK_BLR(2);
+			STUFF(blr_short);
+			STUFF(constant->con_desc.dsc_scale);
 			break;
 
 		case dtype_long:
-			check_blr(blr, 2);
-			blr->add_byte(blr_long);
-			blr->add_byte(constant->con_desc.dsc_scale);
+			CHECK_BLR(2);
+			STUFF(blr_long);
+			STUFF(constant->con_desc.dsc_scale);
 			break;
 
 		case dtype_quad:
-			check_blr(blr, 2);
-			blr->add_byte(blr_quad);
-			blr->add_byte(constant->con_desc.dsc_scale);
+			CHECK_BLR(2);
+			STUFF(blr_quad);
+			STUFF(constant->con_desc.dsc_scale);
 			break;
 
 		case dtype_real:
-			check_blr(blr, 1);
-			blr->add_byte(blr_float);
+			CHECK_BLR(1);
+			STUFF(blr_float);
 			break;
 
 		case dtype_double:
-			check_blr(blr, 1);
-			blr->add_byte(blr_double);
+			CHECK_BLR(1);
+			STUFF(blr_double);
 			break;
 
 		case dtype_timestamp:
-			check_blr(blr, 1);
-			blr->add_byte(blr_timestamp);
+			CHECK_BLR(1);
+			STUFF(blr_timestamp);
 			break;
 
 		case dtype_int64:
 		case dtype_sql_time:
 		case dtype_sql_date:
 		default:
-			DDL_err(95);
-			// msg 95: GENERATE_blr: dtype not supported
+			DDL_err(95, NULL, NULL, NULL, NULL, NULL);	/* msg 95: GENERATE_blr: dtype not supported */
 		}
-		p = (const char*) constant->con_data;
+		p = (SCHAR *) constant->con_data;
 		switch (constant->con_desc.dsc_dtype) {
 		case dtype_short:
 			value = *(SSHORT *) p;
-			check_blr(blr, 2);
-			blr->add_word(value);
+			CHECK_BLR(2);
+			STUFF_WORD(value);
 			break;
 
 		case dtype_long:
 			value = *(SLONG *) p;
-			check_blr(blr, 4);
-			blr->add_word(value);
-			blr->add_word(value >> 16);
+			CHECK_BLR(4);
+			STUFF_WORD(value);
+			STUFF_WORD(value >> 16);
 			break;
 
 		case dtype_quad:
 		case dtype_timestamp:
 			value = *(SLONG *) p;
-			check_blr(blr, 8);
-			blr->add_word(value);
-			blr->add_word(value >> 16);
+			CHECK_BLR(8);
+			STUFF_WORD(value);
+			STUFF_WORD(value >> 16);
 			value = *(SLONG *) (p + 4);
-			blr->add_word(value);
-			blr->add_word(value >> 16);
+			STUFF_WORD(value);
+			STUFF_WORD(value >> 16);
 			break;
 
 		default:
 			if (l) {
-				check_blr(blr, l);
-				do {
-					blr->add_byte(*p++);
-				} while (--l);
+				CHECK_BLR(l);
+				do
+					STUFF(*p++);
+				while (--l);
 			}
 		}
 		return;
 
 	case nod_rse:
-		check_blr(blr, 2);
-		blr->add_byte(blr_rse);
+		CHECK_BLR(2);
+		STUFF(blr_rse);
 		sub = node->nod_arg[s_rse_contexts];
-		blr->add_byte(sub->nod_count);
-		for (pos = 0; pos < sub->nod_count ; pos++)
-			generate(blr, sub->nod_arg[pos]);
+		STUFF(sub->nod_count);
+		for (l = 0, arg = sub->nod_arg; l < sub->nod_count; l++, arg++)
+			generate(blr, *arg);
 		if (sub = node->nod_arg[s_rse_first]) {
-			check_blr(blr, 1);
-			blr->add_byte(blr_first);
+			CHECK_BLR(1);
+			STUFF(blr_first);
 			generate(blr, sub);
 		}
 		if (sub = node->nod_arg[s_rse_boolean]) {
-			check_blr(blr, 1);
-			blr->add_byte(blr_boolean);
+			CHECK_BLR(1);
+			STUFF(blr_boolean);
 			generate(blr, sub);
 		}
 		if (sub = node->nod_arg[s_rse_sort]) {
-			check_blr(blr, 2);
-			blr->add_byte(blr_sort);
-			blr->add_byte(sub->nod_count / 2);
-			for (pos = 0; pos < sub->nod_count ; pos += 2) {
-				check_blr(blr, 1);
-				blr->add_byte((sub->nod_arg[pos + 1]) ? blr_descending : blr_ascending);
-				generate(blr, sub->nod_arg[pos]);
+			CHECK_BLR(2);
+			STUFF(blr_sort);
+			STUFF(sub->nod_count / 2);
+			for (arg = sub->nod_arg, end = arg + sub->nod_count;
+				 arg < end; arg += 2) {
+				CHECK_BLR(1);
+				STUFF((arg[1]) ? blr_descending : blr_ascending);
+				generate(blr, arg[0]);
 			}
 		}
 		if (sub = node->nod_arg[s_rse_reduced]) {
-			check_blr(blr, 2);
-			blr->add_byte(blr_project);
-			blr->add_byte(sub->nod_count / 2);
-			for (pos = 0; pos < sub->nod_count ; pos += 2)
-				generate(blr, sub->nod_arg[pos]);
+			CHECK_BLR(2);
+			STUFF(blr_project);
+			STUFF(sub->nod_count / 2);
+			for (arg = sub->nod_arg, end = arg + sub->nod_count;
+				 arg < end; arg += 2)
+				generate(blr, arg[0]);
 		}
-		check_blr(blr, 1);
-		blr->add_byte(blr_end);
+		CHECK_BLR(1);
+		STUFF(blr_end);
 		return;
 
 	case nod_count:
@@ -383,13 +379,9 @@ static void generate( STR blr, DUDLEY_NOD node)
 		case nod_from:
 			operatr = (node->nod_arg[s_stt_default]) ? blr_via : blr_from;
 			break;
-		default:
-			// operatr not assigned
-			fb_assert(false);
-			return;
 		}
-		check_blr(blr, 1);
-		blr->add_byte(operatr);
+		CHECK_BLR(1);
+		STUFF(operatr);
 		generate(blr, node->nod_arg[s_stt_rse]);
 		if (sub = node->nod_arg[s_stt_value])
 			generate(blr, sub);
@@ -398,59 +390,59 @@ static void generate( STR blr, DUDLEY_NOD node)
 		return;
 
 	case nod_any:
-		check_blr(blr, 1);
-		blr->add_byte(blr_any);
+		CHECK_BLR(1);
+		STUFF(blr_any);
 		generate(blr, node->nod_arg[0]);
 		return;
 
 	case nod_unique:
-		check_blr(blr, 1);
-		blr->add_byte(blr_unique);
+		CHECK_BLR(1);
+		STUFF(blr_unique);
 		generate(blr, node->nod_arg[0]);
 		return;
 
 	case nod_if:
-		check_blr(blr, 1);
-		blr->add_byte(blr_if);
-		generate(blr, node->nod_arg[posi++]);
-		generate(blr, node->nod_arg[posi++]);
-		if (node->nod_arg[posi])
-			generate(blr, node->nod_arg[posi]);
+		CHECK_BLR(1);
+		STUFF(blr_if);
+		generate(blr, *arg++);
+		generate(blr, *arg++);
+		if (*arg)
+			generate(blr, *arg);
 		else {
-			check_blr(blr, 1);
-			blr->add_byte(blr_end);
+			CHECK_BLR(1);
+			STUFF(blr_end);
 		}
 		return;
 
 	case nod_list:
-		check_blr(blr, 1);
-		blr->add_byte(blr_begin);
-		for (; posi < endi; posi++)
-			generate(blr, node->nod_arg[posi]);
-		check_blr(blr, 1);
-		blr->add_byte(blr_end);
+		CHECK_BLR(1);
+		STUFF(blr_begin);
+		for (; arg < end; arg++)
+			generate(blr, *arg);
+		CHECK_BLR(1);
+		STUFF(blr_end);
 		return;
 
 	case nod_abort:
-		check_blr(blr, 2);
-		blr->add_byte(blr_leave);
-		blr->add_byte((IPTR) node->nod_arg[0]);
+		CHECK_BLR(2);
+		STUFF(blr_leave);
+		STUFF((int) node->nod_arg[0]);
 		return;
 
 	case nod_erase:
-		check_blr(blr, 2);
-		blr->add_byte(blr_erase);
+		CHECK_BLR(2);
+		STUFF(blr_erase);
 		context = (DUDLEY_CTX) node->nod_arg[0];
-		blr->add_byte(context->ctx_context_id);
+		STUFF(context->ctx_context_id);
 		return;
 
 	case nod_modify:
-		check_blr(blr, 3);
-		blr->add_byte(blr_modify);
+		CHECK_BLR(3);
+		STUFF(blr_modify);
 		context = (DUDLEY_CTX) node->nod_arg[s_mod_old_ctx];
-		blr->add_byte(context->ctx_context_id);
+		STUFF(context->ctx_context_id);
 		context = (DUDLEY_CTX) node->nod_arg[s_mod_new_ctx];
-		blr->add_byte(context->ctx_context_id);
+		STUFF(context->ctx_context_id);
 		generate(blr, node->nod_arg[s_mod_action]);
 		return;
 
@@ -529,51 +521,43 @@ static void generate( STR blr, DUDLEY_NOD node)
 	case nod_uppercase:
 		operatr = blr_upcase;
 		break;
-	case nod_lowercase:
-		operatr = blr_lowcase;
-		break;
 	case nod_sleuth:
 		operatr = blr_matching2;
 		break;
-//	case nod_substr:
-//		operatr = blr_substring; 
-//		break;
+		/*case nod_substr:      operatr = blr_substring; break; */
 
 	default:
-		DDL_err(96);
-		// msg 96: GENERATE_blr: node not supported
+		DDL_err(96, NULL, NULL, NULL, NULL, NULL);	/* msg 96: GENERATE_blr: node not supported */
 		return;
 	}
 
-// If the user has given us something that has the form
-//
-//     field {EQ} NULL
-//          {NE}
-//
-//   transform it into
-//
-//     field [NOT] MISSING
+/* If the user has given us something that has the form
 
-	if ((operatr == blr_eql || operatr == blr_neq)
-		&& (node->nod_arg[posi]->nod_type == nod_null ||
-			node->nod_arg[posi + 1]->nod_type == nod_null))
-	{
+       field {EQ} NULL
+             {NE}
+
+   transform it into
+
+       field [NOT] MISSING */
+
+	if ((operatr == blr_eql || operatr == blr_neq) &&
+		(arg[0]->nod_type == nod_null || arg[1]->nod_type == nod_null)) {
 		if (operatr == blr_neq) {
-			check_blr(blr, 1);
-			blr->add_byte(blr_not);
+			CHECK_BLR(1);
+			STUFF(blr_not);
 		}
 		operatr = blr_missing;
-		if (node->nod_arg[posi]->nod_type == nod_null)
-			posi++;
-		endi = posi + 1;
+		if (arg[0]->nod_type == nod_null)
+			arg++;
+		end = arg + 1;
 	}
 
-// Fall thru on reasonable stuff
+/* Fall thru on reasonable stuff */
 
-	check_blr(blr, 1);
-	blr->add_byte(operatr);
-	for (; posi < endi; posi++)
-		generate(blr, node->nod_arg[posi]);
+	CHECK_BLR(1);
+	STUFF(operatr);
+	for (; arg < end; arg++)
+		generate(blr, *arg);
 }
 
 
@@ -591,54 +575,58 @@ static void get_set_generator( STR blr, DUDLEY_NOD node)
  *	generator name and the increment.
  *	The rest is canned.
  **************************************/
-	static const UCHAR gen_prologue[] = {
+	SCHAR *p;
+	SYM symbol;
+	static SCHAR gen_prologue[] = {
 		blr_begin, blr_message, 0, 1, 0, blr_long, 0,
 		blr_send, 0, blr_begin, blr_assignment, blr_gen_id,
 	};
-	static const UCHAR gen_epilogue[] = {
+	static SCHAR gen_epilogue[] = {
 		blr_parameter, 0, 0, 0, blr_end, blr_end
 	};
+	int l;
+	CON constant;
+	SLONG value;
 
 /* copy the beginning of the blr into the buffer */
 
-	int l = sizeof(gen_prologue);
-	const UCHAR* p = gen_prologue;
-	check_blr(blr, l);
-	do {
-		blr->add_byte(*p++);
-	} while (--l);
+	l = sizeof(gen_prologue);
+	p = gen_prologue;
+	CHECK_BLR(l);
+	do
+		STUFF(*p++);
+	while (--l);
 
 /* stuff in the name length and the name */
 
-	SYM symbol = (SYM) node->nod_arg[1];
-	check_blr(blr, 1);
-	blr->add_byte(l = symbol->sym_length);
-	p = (const UCHAR*) symbol->sym_string;
+	symbol = (SYM) node->nod_arg[1];
+	CHECK_BLR(1);
+	STUFF(l = symbol->sym_length);
+	p = (SCHAR *) symbol->sym_string;
 	if (l) {
-		check_blr(blr, l);
-		do {
-			blr->add_byte(*p++);
-		} while (--l);
+		CHECK_BLR(l);
+		do
+			STUFF(*p++);
+		while (--l);
 	}
 
-/* now for the increment value */
+/* now for the increvent value */
 
-	check_blr(blr, 7);
-	blr->add_byte(blr_literal);
-	CON constant = (CON) node->nod_arg[0]->nod_arg[0];
-	blr->add_byte(blr_long);
-	blr->add_byte(constant->con_desc.dsc_scale);
-	p = constant->con_data;
-	const SLONG value = *(SLONG *) p;
-	blr->add_word(value);
-	blr->add_word(value >> 16);
+	CHECK_BLR(7);
+	STUFF(blr_literal);
+	constant = (CON) node->nod_arg[0]->nod_arg[0];
+	STUFF(blr_long);
+	STUFF(constant->con_desc.dsc_scale);
+	p = (SCHAR *) constant->con_data;
+	value = *(SLONG *) p;
+	STUFF_WORD(value);
+	STUFF_WORD(value >> 16);
 
 /* complete the string */
 	l = sizeof(gen_epilogue);
-	p = gen_epilogue;
-	check_blr(blr, l);
-	do {
-		blr->add_byte(*p++);
-	} while (--l);
+	p = (SCHAR *) gen_epilogue;
+	CHECK_BLR(l);
+	do
+		STUFF(*p++);
+	while (--l);
 }
-

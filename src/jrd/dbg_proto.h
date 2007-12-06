@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Access Method
  *	MODULE:		dbg_proto.h
- *	DESCRIPTION:	Prototype header file for dbg.cpp
+ *	DESCRIPTION:	Prototype header file for dbg.c
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -21,20 +21,14 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef JRD_DBG_PROTO_H
-#define JRD_DBG_PROTO_H
+#ifndef _JRD_DBG_PROTO_H_
+#define _JRD_DBG_PROTO_H_
 
-/* Don't declare DBG_supervisor in _ANSI_PROTOTYPES_, it screws up val.cpp */
+/* Don't declare DBG_supervisor in _ANSI_PROTOTYPES_, it screws up val.c */
 
-namespace Jrd
-{
-	class jrd_nod;
-	struct record_param;
-	class SortMap;
-}
-
-class JrdMemoryPool;
-struct blk;
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 int DBG_supervisor(int);
 
@@ -42,20 +36,23 @@ int DBG_all(void);
 int DBG_analyze(int);
 int DBG_bdbs(void);
 int DBG_precedence(void);
-int DBG_block(blk*);
+int DBG_block(struct blk *);
 int DBG_check(int);
 int DBG_close(void);
 int DBG_eval(int);
 int DBG_examine(int *);
 int DBG_init(void);
 int DBG_open(void);
-int DBG_pool(JrdMemoryPool*);
-int DBG_pretty(const Jrd::jrd_nod*, int);
-int DBG_rpb(Jrd::record_param*);
-int DBG_smb(Jrd::SortMap*, int);
+int DBG_pool(class JrdMemoryPool*);
+int DBG_pretty(struct jrd_nod *, int);
+int DBG_rpb(struct rpb *);
+int DBG_smb(struct smb *, int);
 int DBG_verify(void);
 int DBG_window(int *);
 int DBG_memory(void);
 
-#endif // JRD_DBG_PROTO_H
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
+#endif /* _JRD_DBG_PROTO_H_ */

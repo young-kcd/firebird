@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	Data Definition Utility
  *	MODULE:		parse_proto.h
- *	DESCRIPTION:	Prototype header file for parse.cpp
+ *	DESCRIPTION:	Prototype header file for parse.c
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -21,22 +21,20 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef DUDLEY_PARSE_PROTO_H
-#define DUDLEY_PARSE_PROTO_H
+#ifndef _DUDLEY_PARSE_PROTO_H_
+#define _DUDLEY_PARSE_PROTO_H_
 
 #include "../dudley/parse.h"
 
-void		PARSE_actions(void);
-void		PARSE_error(USHORT, const TEXT*, const TEXT*);
-void		PARSE_error(USHORT, int, int = 0);
-FUNC		PARSE_function(int);
-enum kwwords PARSE_keyword(void);
-DUDLEY_NOD	PARSE_make_list(dudley_lls*);
-DUDLEY_NOD	PARSE_make_node(enum nod_t, USHORT);
-bool		PARSE_match(enum kwwords);
-int			PARSE_number(void);
-DUDLEY_REL	PARSE_relation(void);
-SYM			PARSE_symbol(enum tok_t);
+extern void PARSE_actions(void);
+extern void PARSE_error(USHORT, TEXT *, TEXT *);
+extern FUNC PARSE_function(int);
+extern enum kwwords PARSE_keyword(void);
+extern DUDLEY_NOD PARSE_make_list(LLS);
+extern DUDLEY_NOD PARSE_make_node(enum nod_t, USHORT);
+extern int PARSE_match(enum kwwords);
+extern int PARSE_number(void);
+extern DUDLEY_REL PARSE_relation(void);
+extern SYM PARSE_symbol(enum tok_t);
 
-#endif // DUDLEY_PARSE_PROTO_H
-
+#endif /* _DUDLEY_PARSE_PROTO_H_ */

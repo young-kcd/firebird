@@ -23,11 +23,10 @@
 				AdditionalOptions="/EHsc-"
 				Optimization="0"
 				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
-				PreprocessorDefinitions="_DEBUG,_LIB,SUPERSERVER,WIN32,_X86_,DEV_BUILD"
+				PreprocessorDefinitions="_DEBUG,_LIB,SUPERSERVER,SERVER_SHUTDOWN,IPSERVER,WIN32,_X86_,DEV_BUILD"
 				ExceptionHandling="FALSE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				RuntimeTypeInfo="FALSE"
 				PrecompiledHeaderFile="..\..\..\temp\debug\remote_ss/remote.pch"
 				AssemblerListingLocation="..\..\..\temp\debug\remote_ss/"
 				ObjectFile="..\..\..\temp\debug\remote_ss/"
@@ -82,10 +81,9 @@
 				FavorSizeOrSpeed="1"
 				OmitFramePointers="TRUE"
 				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
-				PreprocessorDefinitions="NDEBUG,_LIB,SUPERSERVER,WIN32,_X86_"
+				PreprocessorDefinitions="NDEBUG,_LIB,SUPERSERVER,SERVER_SHUTDOWN,IPSERVER,WIN32,_X86_"
 				ExceptionHandling="FALSE"
 				RuntimeLibrary="2"
-				RuntimeTypeInfo="FALSE"
 				PrecompiledHeaderFile="..\..\..\temp\release\remote_ss/remote.pch"
 				AssemblerListingLocation="..\..\..\temp\release\remote_ss/"
 				ObjectFile="..\..\..\temp\release\remote_ss/"
@@ -132,13 +130,13 @@
 				RelativePath="..\..\..\src\remote\allr.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\src\remote\os\win32\chop.cpp">
+				RelativePath="..\..\..\src\remote\chop.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\src\remote\os\win32\cntl.cpp">
+				RelativePath="..\..\..\src\remote\cntl.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\src\remote\os\win32\ibconfig.cpp">
+				RelativePath="..\..\..\src\remote\ibconfig.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\src\remote\inet.cpp">
@@ -153,7 +151,7 @@
 				RelativePath="..\..\..\src\remote\parser.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\src\remote\os\win32\property.cpp">
+				RelativePath="..\..\..\src\remote\property.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\src\remote\protocol.cpp">
@@ -165,13 +163,13 @@
 				RelativePath="..\..\..\src\remote\server.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\src\remote\os\win32\srvr_w32.cpp">
+				RelativePath="..\..\..\src\remote\srvr_w32.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\src\remote\os\win32\window.cpp">
+				RelativePath="..\..\..\src\remote\window.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\src\remote\os\win32\wnet.cpp">
+				RelativePath="..\..\..\src\remote\wnet.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\src\remote\xdr.cpp">
@@ -208,7 +206,7 @@
 				RelativePath="..\..\..\src\remote\spxnet32_proto.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\remote\os\win32\wnet_proto.h">
+				RelativePath="..\..\..\src\remote\wnet_proto.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\remote\xdr.h">
@@ -218,16 +216,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\remote\xnet_proto.h">
-			</File>
-		</Filter>
-		<Filter
-			Name="AuthSspi"
-			Filter="">
-			<File
-				RelativePath="..\..\..\src\auth\trusted\AuthSspi.cpp">
-			</File>
-			<File
-				RelativePath="..\..\..\src\auth\trusted\AuthSspi.h">
 			</File>
 		</Filter>
 	</Files>

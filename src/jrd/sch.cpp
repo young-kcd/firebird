@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Access Method
- *	MODULE:		sch.cpp
+ *	MODULE:		sch.c
  *	DESCRIPTION:	Voluntary thread scheduler
  *
  * The contents of this file are subject to the Interbase Public
@@ -25,16 +25,16 @@
  */
 
 #include "firebird.h"
-#include <stdio.h>
+#include "../jrd/ib_stdio.h"
 #include <stdlib.h>
 #include "../jrd/common.h"
 #include "../jrd/thd.h"
 #include "../jrd/isc.h"
-#include "../jrd/ibase.h"
+#include "../jrd/gds.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/isc_s_proto.h"
 #include "../jrd/sch_proto.h"
-#include "../jrd/thread_proto.h"
+#include "../jrd/thd_proto.h"
 #include "../jrd/err_proto.h"
 #include "../jrd/iberr_proto.h"
 #include "../jrd/gdsassert.h"
@@ -45,46 +45,44 @@
 #include <windows.h>
 #endif
 
+extern "C" {
+
 
 /* must be careful with alignment on structures like this that are
    not run through the ALL routine */
 
-struct thread {
-	struct thread *thread_next;	/* Next thread to be scheduled */
-	struct thread *thread_prior;	/* Prior thread */
-	event_t thread_stall[1];	/* Generic event to stall thread */
+typedef struct sch_thread {
+	struct sch_thread *thread_next;	/* Next thread to be scheduled */
+	struct sch_thread *thread_prior;	/* Prior thread */
+	EVENT_T thread_stall[1];	/* Generic event to stall thread */
 	FB_THREAD_ID thread_id;			/* Current thread id */
 	USHORT thread_count;		/* AST disable count */
 	USHORT thread_flags;		/* Flags */
-};
+} *THREAD;
 
-typedef thread *THREAD;
-
-//  thread_flags
-
-const USHORT THREAD_hiber			= 1;	/* Thread is hibernating */
-const USHORT THREAD_ast_disabled	= 2;	/* Disable AST delivery */
-const USHORT THREAD_ast_active		= 4;	/* Disable AST preemption while AST active */
-const USHORT THREAD_ast_pending		= 8;	/* AST waiting to be delivered */
+#define THREAD_hiber		1	/* Thread is hibernating */
+#define THREAD_ast_disabled	2	/* Disable AST delivery */
+#define THREAD_ast_active	4	/* Disable AST preemption while AST active */
+#define	THREAD_ast_pending	8	/* AST waiting to be delivered */
 
 static THREAD alloc_thread(void);
-static bool ast_enable(void);
+static BOOLEAN ast_enable(void);
 static void ast_disable(void);
 static void cleanup(void *);
-static void mutex_bugcheck(const TEXT*, int);
-static bool schedule(void);
-static bool schedule_active(bool);
+static void mutex_bugcheck(TEXT *, int);
+static BOOLEAN schedule(void);
+static BOOLEAN schedule_active(int);
 static void stall(THREAD);
 static void stall_ast(THREAD);
-static void sch_mutex_lock(Firebird::Mutex&);
-static void sch_mutex_unlock(Firebird::Mutex&);
 
 static THREAD free_threads = NULL;
 static THREAD active_thread = NULL;
 static THREAD ast_thread = NULL;
-static Firebird::Mutex thread_mutex;
-volatile static bool init_flag = false;
+static MUTX_T thread_mutex[1];
+volatile static USHORT init_flag = FALSE;
 static USHORT enabled = FALSE;
+
+#define ABORT	abort()
 
 
 #ifdef VMS
@@ -214,6 +212,9 @@ void SCH_abort(void)
  *	unlink it.
  *
  **************************************/
+	THREAD *ptr, thread;
+	FB_THREAD_ID id;
+	int mutex_state;
 
 /* If threading isn't active, don't sweat it */
 
@@ -222,10 +223,8 @@ void SCH_abort(void)
 
 /* See if we can find thread.  If not, don't worry about it */
 
-	const FB_THREAD_ID id = ThreadData::getId();
-	THREAD thread;
-	for (THREAD* ptr = &active_thread; thread = *ptr; ptr = &thread->thread_next)
-	{
+	id = THD_get_thread_id();
+	for (ptr = &active_thread; thread = *ptr; ptr = &thread->thread_next) {
 		if (thread->thread_id == id)
 			break;
 		if (thread->thread_next == active_thread)
@@ -241,12 +240,14 @@ void SCH_abort(void)
 
 /* We're on the list but not active.  Remove from list */
 
-	sch_mutex_lock(thread_mutex);
+	if (mutex_state = THD_mutex_lock(thread_mutex))
+		mutex_bugcheck("mutex lock", mutex_state);
 	thread->thread_prior->thread_next = thread->thread_next;
 	thread->thread_next->thread_prior = thread->thread_prior;
 	thread->thread_next = free_threads;
 	free_threads = thread;
-	sch_mutex_unlock(thread_mutex);
+	if (mutex_state = THD_mutex_unlock(thread_mutex))
+		mutex_bugcheck("mutex unlock", mutex_state);
 }
 
 
@@ -266,25 +267,26 @@ void SCH_ast(enum ast_t action)
  *	In case you're wondering: AST = Asynchronous System Trap
  *
  **************************************/
+	int mutex_state;
+	THREAD thread;
+
 	if (!ast_thread && !(action == AST_alloc || action == AST_disable ||
-						 action == AST_enable))
-	{
+						 action == AST_enable)) {
 		/* Better be an AST thread before we do anything to it! */
-		fb_assert(FALSE);
+		assert(FALSE);
 		return;
 	}
 
 	if (ast_thread && action == AST_check)
 		if (!(ast_thread->thread_flags & THREAD_ast_pending) ||
 			ast_thread->thread_count > 1)
-		{
 			return;
-		}
 
 	if (!init_flag)
 		SCH_init();
 
-	sch_mutex_lock(thread_mutex);
+	if (mutex_state = THD_mutex_lock(thread_mutex))
+		mutex_bugcheck("mutex lock", mutex_state);
 
 	switch (action) {
 		/* Check into thread scheduler as AST thread */
@@ -296,7 +298,7 @@ void SCH_ast(enum ast_t action)
 		break;
 
 	case AST_init:
-		ast_thread->thread_id = ThreadData::getId();
+		ast_thread->thread_id = THD_get_thread_id();
 		break;
 
 		/* Check out of thread scheduler as AST thread */
@@ -348,15 +350,14 @@ void SCH_ast(enum ast_t action)
 
 		/* Post non-active threads that have requested AST disabling */
 
-		for (THREAD thread = ast_thread->thread_next; thread != ast_thread;
-			 thread = thread->thread_next)
-		{
-			 ISC_event_post(thread->thread_stall);
-		}
+		for (thread = ast_thread->thread_next; thread != ast_thread;
+			 thread =
+			 thread->thread_next) ISC_event_post(thread->thread_stall);
 		break;
 	}
 
-	sch_mutex_unlock(thread_mutex);
+	if (mutex_state = THD_mutex_unlock(thread_mutex))
+		mutex_bugcheck("mutex unlock", mutex_state);
 }
 
 
@@ -391,16 +392,18 @@ void SCH_enter(void)
  *	Humor him.
  *
  **************************************/
+	THREAD thread, prior;
+	int mutex_state;
 
 /* Special case single thread case */
 
 #ifndef MULTI_THREAD
 	if (free_threads) {
-		THREAD thread = active_thread = free_threads;
+		thread = active_thread = free_threads;
 		free_threads = NULL;
 		thread->thread_next = thread->thread_prior = thread;
 		thread->thread_flags = 0;
-		thread->thread_id = ThreadData::getId();
+		thread->thread_id = THD_get_thread_id();
 		return;
 	}
 #endif
@@ -411,10 +414,12 @@ void SCH_enter(void)
 
 /* Get mutex on scheduler data structures to prevent tragic misunderstandings */
 
-	sch_mutex_lock(thread_mutex);
+	if (mutex_state = THD_mutex_lock(thread_mutex)) {
+		mutex_bugcheck("mutex lock", mutex_state);
+	}
 
-	THREAD thread = alloc_thread();
-	thread->thread_id = ThreadData::getId();
+	thread = alloc_thread();
+	thread->thread_id = THD_get_thread_id();
 
 /* Link thread block into circular list of active threads */
 
@@ -422,11 +427,10 @@ void SCH_enter(void)
 	{
 		/* The calling thread should NOT be the active_thread 
 		   This is to prevent deadlock by the same thread */
-		fb_assert(thread->thread_id != active_thread->thread_id);
+		assert(thread->thread_id != active_thread->thread_id);
 
 		thread->thread_next = active_thread;
-		THREAD prior = active_thread->thread_prior;
-		thread->thread_prior = prior;
+		thread->thread_prior = prior = active_thread->thread_prior;
 		active_thread->thread_prior = thread;
 		prior->thread_next = thread;
 	}
@@ -435,14 +439,16 @@ void SCH_enter(void)
 		thread->thread_next = thread->thread_prior = thread;
 		active_thread = thread;
 	}
-	ThreadPriorityScheduler::enter();
+	THPS_ENTER();
 
 	if (active_thread->thread_flags & THREAD_hiber) {
 		schedule();
 	}
 
 	stall(thread);
-	sch_mutex_unlock(thread_mutex);
+	if (mutex_state = THD_mutex_unlock(thread_mutex)) {
+		mutex_bugcheck("mutex unlock", mutex_state);
+	}
 }
 
 
@@ -466,37 +472,42 @@ void SCH_exit(void)
 	active_thread = NULL;
 	free_threads->thread_next = NULL;
 #else
-	sch_mutex_lock(thread_mutex);
+	THREAD thread, prior, next;
+	int mutex_state;
+
+	if (mutex_state = THD_mutex_lock(thread_mutex))
+		mutex_bugcheck("mutex lock", mutex_state);
 
 	ast_enable();				/* Reenable AST delivery */
 
-	THREAD thread = active_thread;
+	thread = active_thread;
 
 	// This is to prevent nasty crash if error (for example, IO error) 
 	// happens during attach to database in SS builds. Exception
 	// handler there calls THREAD_EXIT without preceding THREAD_ENTER
 	// in this case (during shutdown of CACHE_WRITER or CACHE_READER)
 	if (!thread) {
-		sch_mutex_unlock(thread_mutex);
-		return; 
+		if (mutex_state = THD_mutex_unlock(thread_mutex))
+			mutex_bugcheck("mutex unlock", mutex_state);
+		return;
 	}
 
 	if (thread == thread->thread_next)
 		active_thread = NULL;
 	else {
-		THREAD next = thread->thread_next;
-		THREAD prior = thread->thread_prior;
-		active_thread = prior;
+		next = thread->thread_next;
+		active_thread = prior = thread->thread_prior;
 		prior->thread_next = next;
 		next->thread_prior = prior;
 	}
-	ThreadPriorityScheduler::exit();
+	THPS_EXIT();
 
 	thread->thread_next = free_threads;
 	free_threads = thread;
 	schedule();
 
-	sch_mutex_unlock(thread_mutex);
+	if (mutex_state = THD_mutex_unlock(thread_mutex))
+		mutex_bugcheck("mutex unlock", mutex_state);
 #endif
 }
 
@@ -515,11 +526,11 @@ void SCH_hiber(void)
  *
  **************************************/
 
-	schedule_active(true);
+	schedule_active(TRUE);
 }
 
 #ifdef MULTI_THREAD
-static Firebird::Mutex scheduler_init_lock;
+static Firebird::Spinlock scheduler_init_lock;
 #endif
 
 void SCH_init(void)
@@ -544,11 +555,14 @@ void SCH_init(void)
 		if (!init_flag) {
 #endif
 			gds__register_cleanup(cleanup, 0);
-			init_flag = true;
+			int mutex_state;
+			if (mutex_state = THD_mutex_init(thread_mutex))
+				mutex_bugcheck("mutex init", mutex_state);
+			init_flag = TRUE;
 #ifdef MULTI_THREAD
+			THD_INIT;
 		}
-	}
-	catch (const Firebird::Exception&) {
+	} catch (const std::exception&) {
 		scheduler_init_lock.leave();
 		throw;
 	}
@@ -557,7 +571,7 @@ void SCH_init(void)
 }
 
 
-bool SCH_schedule(void)
+int SCH_schedule(void)
 {
 /**************************************
  *
@@ -567,14 +581,15 @@ bool SCH_schedule(void)
  *
  * Functional description
  *	Voluntarily relinquish control so that others may run.
- *	If a context switch actually happened, return true.
+ *	If a context switch actually happened, return TRUE.
  *
  **************************************/
-	return schedule_active(false);
+
+	return schedule_active(FALSE);
 }
 
 
-bool SCH_thread_enter_check(void)
+BOOLEAN SCH_thread_enter_check(void)
 {
 /**************************************
  *
@@ -583,22 +598,22 @@ bool SCH_thread_enter_check(void)
  **************************************
  *
  * Functional description
- *	Check if thread is active thread, if so return true
- * else return false.
+ *	Check if thread is active thread, if so return TRUE
+ * else return FALSE.
  *
  **************************************/
 
 /* if active thread is not null and thread_id matches the we are the
    active thread */
-	sch_mutex_lock(thread_mutex);
-	const bool ret = ((active_thread) && (active_thread->thread_id == ThreadData::getId()));
-	sch_mutex_unlock(thread_mutex);
+	if ((active_thread) && (active_thread->thread_id == THD_get_thread_id()))
+		return (TRUE);
 
-	return ret;
+	return (FALSE);
+
 }
 
 
-bool SCH_validate(void)
+BOOLEAN SCH_validate(void)
 {
 /**************************************
  *
@@ -613,20 +628,19 @@ bool SCH_validate(void)
 
 	if (!init_flag || !active_thread) {
 		gds__log("SCH_validate -- not entered");
-		// CVC: No need to replace by fb_utils::readenv() I think.
-		if (getenv("ISC_PUNT")) 
-			abort();
-		return false;
+		if (getenv("ISC_PUNT"))
+			ABORT;
+		return FALSE;
 	}
 
 #ifdef MULTI_THREAD
-	if (active_thread->thread_id != ThreadData::getId()) {
+	if (active_thread->thread_id != THD_get_thread_id()) {
 		gds__log("SCH_validate -- wrong thread");
-		return false;
+		return FALSE;
 	}
 #endif
 
-	return true;
+	return TRUE;
 }
 
 
@@ -642,6 +656,7 @@ void SCH_wake(THREAD thread)
  *	Take thread out of hibernation.
  *
  **************************************/
+
 	thread->thread_flags &= ~THREAD_hiber;
 	ISC_event_post(thread->thread_stall);
 }
@@ -659,14 +674,14 @@ static THREAD alloc_thread(void)
  *	Allocate a thread block.
  *
  **************************************/
+	THREAD thread;
 
 /* Find a useable thread block.  If there isn't one, allocate one */
 
-	THREAD thread = free_threads;
-	if (thread)
+	if (thread = free_threads)
 		free_threads = thread->thread_next;
 	else {
-		thread = (THREAD) gds__alloc((SLONG) sizeof(struct thread));
+		thread = (THREAD) gds__alloc((SLONG) sizeof(struct sch_thread));
 		/* FREE: unknown */
 		if (!thread)			/* NOMEM: bugcheck */
 			mutex_bugcheck("Out of memory", 0);	/* no real error handling */
@@ -684,7 +699,7 @@ static THREAD alloc_thread(void)
 }
 
 
-static bool ast_enable(void)
+static BOOLEAN ast_enable(void)
 {
 /**************************************
  *
@@ -694,28 +709,27 @@ static bool ast_enable(void)
  *
  * Functional description
  *	Enables AST delivery and returns
- *	TRUE if an AST is deliverable.
+ *	TRUE is an AST is deliverable.
  *
  **************************************/
+
 	if (!ast_thread)
-		return false;
+		return FALSE;
 
 	if (ast_thread->thread_flags & THREAD_ast_active &&
-		ast_thread->thread_id == ThreadData::getId())
-	{
-		return false;
-	}
+		ast_thread->thread_id == THD_get_thread_id())
+		return FALSE;
 
 	if (!ast_thread->thread_count || !--ast_thread->thread_count) {
 		ast_thread->thread_flags &= ~THREAD_ast_disabled;
 		if (ast_thread->thread_flags & THREAD_ast_pending) {
 			ast_thread->thread_flags |= THREAD_ast_active;
 			ISC_event_post(ast_thread->thread_stall);
-			return true;
+			return TRUE;
 		}
 	}
 
-	return false;
+	return FALSE;
 }
 
 
@@ -733,21 +747,22 @@ static void ast_disable(void)
  *	before returning.
  *
  **************************************/
+	THREAD thread;
+
 	if (!ast_thread)
 		return;
 
 	if (ast_thread->thread_flags & THREAD_ast_active) {
-		if (ast_thread->thread_id == ThreadData::getId())
+		if (ast_thread->thread_id == THD_get_thread_id())
 			return;
 		else {
 			if (active_thread
-				&& active_thread->thread_id == ThreadData::getId()) 
-			{
+				&& active_thread->thread_id == THD_get_thread_id()) {
 				stall(active_thread);
 				return;
 			}
 			else {
-				THREAD thread = alloc_thread();
+				thread = alloc_thread();
 				stall_ast(thread);
 				thread->thread_next = free_threads;
 				free_threads = thread;
@@ -772,23 +787,27 @@ static void cleanup(void *arg)
  *	Exit handler for image exit.
  *
  **************************************/
-	if (!init_flag)
+
+#ifdef SUPERCLIENT
+	THREAD temp_thread;
+#endif
+
+	if (init_flag == FALSE)
 		return;
 
 /* this is added to make sure that we release the memory
- * we have allocated for the thread event handler through
+ * we have alloacted for the thread event handler through
  * ISC_event_handle () (CreateEvent) */
 
 #ifdef SUPERCLIENT
 /* use locks */
-	thread_mutex.enter();
+	THD_mutex_lock(thread_mutex);
 
-	if (!init_flag)
+	if (init_flag == FALSE)
 		return;
 
 /* loop through the list of active threads and free the events */
-	THREAD temp_thread = active_thread;
-	if (temp_thread) {
+	if (temp_thread = active_thread) {
 		/* reach to the starting of the list */
 		while (temp_thread != temp_thread->thread_prior)
 			temp_thread = temp_thread->thread_prior;
@@ -799,7 +818,8 @@ static void cleanup(void *arg)
 			/* the thread structures are freed as a part of the 
 			 * gds_alloc cleanup, so do not worry about them here
 			 */
-		} while (temp_thread->thread_next != temp_thread
+		}
+		while (temp_thread->thread_next != temp_thread
 			   && (temp_thread = temp_thread->thread_next));
 
 	}
@@ -816,20 +836,24 @@ static void cleanup(void *arg)
 			/* the thread structures are freed as a part of the 
 			 * gds_alloc cleanup, so do not worry about them here
 			 */
-		} while (temp_thread->thread_next != temp_thread
+		}
+		while (temp_thread->thread_next != temp_thread
 			   && (temp_thread = temp_thread->thread_next));
 
 
 	}
 
-	thread_mutex.leave();
+	THD_mutex_unlock(thread_mutex);
+
+/* add the the destroy for the thread_mutex */
+	THD_mutex_destroy(thread_mutex);
 #endif /* SUPERCLIENT */
 
-	init_flag = false;
+	init_flag = FALSE;
 }
 
 
-static void mutex_bugcheck(const TEXT* string, int mutex_state)
+static void mutex_bugcheck(TEXT * string, int mutex_state)
 {
 /**************************************
  *
@@ -844,16 +868,15 @@ static void mutex_bugcheck(const TEXT* string, int mutex_state)
  **************************************/
 	TEXT msg[128];
 
-	sprintf(msg, "SCH: %.93s error, status = %d", string, mutex_state);
+	sprintf(msg, "SCH: %s error, status = %d", string, mutex_state);
 	gds__log(msg);
-	fprintf(stderr, "%s\n", msg);
+	ib_fprintf(ib_stderr, "%s\n", msg);
 
-	abort();
+	ABORT;
 }
 
 
-// CVC: Nobody checks the result from this function.
-static bool schedule(void)
+static BOOLEAN schedule(void)
 {
 /**************************************
  *
@@ -863,31 +886,33 @@ static bool schedule(void)
  *
  * Functional description
  *	Loop thru active thread to find the next runable task.  If we find one,
- *	set "active_tasks" to point to it and return true.  Otherwise simply
- *	return false.
+ *	set "active_tasks" to point to it and return TRUE.  Otherwise simply
+ *	return FALSE.
  *
  **************************************/
-	if (!active_thread)
-		return false;
+	THREAD thread;
 
-	THREAD thread = active_thread;
+	if (!active_thread)
+		return FALSE;
+
+	thread = active_thread;
 
 	for (;;) {
 		thread = thread->thread_next;
 		if (!(thread->thread_flags & THREAD_hiber))
 			break;
 		if (thread == active_thread)
-			return false;
+			return FALSE;
 	}
 
 	active_thread = thread;
 	ISC_event_post(active_thread->thread_stall);
 
-	return true;
+	return TRUE;
 }
 
 
-static bool schedule_active(bool hiber_flag)
+static BOOLEAN schedule_active(int hiber_flag)
 {
 /**************************************
  *
@@ -897,16 +922,21 @@ static bool schedule_active(bool hiber_flag)
  *
  * Functional description
  *	Voluntarily relinquish control so that others may run.
- *	If a context switch actually happened, return true.
+ *	If a context switch actually happened, return TRUE.
  *
  **************************************/
 #ifndef MULTI_THREAD
-	return false;
+	return FALSE;
 #else
-	if (!active_thread)
-		return false;
+	THREAD thread;
+	int mutex_state;
+	BOOLEAN ret;
 
-	sch_mutex_lock(thread_mutex);
+	if (!active_thread)
+		return FALSE;
+
+	if (mutex_state = THD_mutex_lock(thread_mutex))
+		mutex_bugcheck("mutex lock", mutex_state);
 
 /* Take this opportunity to check for pending ASTs
    and deliver them. */
@@ -918,18 +948,18 @@ static bool schedule_active(bool hiber_flag)
 
 	if (hiber_flag)
 		active_thread->thread_flags |= THREAD_hiber;
-	THREAD thread = active_thread;
+	thread = active_thread;
 	schedule();
-	bool ret;
 	if (thread == active_thread && !(thread->thread_flags & THREAD_hiber))
-		ret = false;
+		ret = FALSE;
 	else {
 		ast_enable();
 		stall(thread);
-		ret = true;
+		ret = TRUE;
 	}
 
-	sch_mutex_unlock(thread_mutex);
+	if (mutex_state = THD_mutex_unlock(thread_mutex))
+		mutex_bugcheck("mutex unlock", mutex_state);
 
 	return ret;
 #endif
@@ -948,24 +978,29 @@ static void stall(THREAD thread)
  *	Stall until our thread is made active.
  *
  **************************************/
+	SLONG value;
+	EVENT ptr;
+	int mutex_state;
+
 	if (thread != active_thread || thread->thread_flags & THREAD_hiber ||
 		(ast_thread && ast_thread->thread_flags & THREAD_ast_active))
-	{
 		for (;;) {
-			SLONG value = ISC_event_clear(thread->thread_stall);
+			value = ISC_event_clear(thread->thread_stall);
 			if (thread == active_thread
-				&& !(thread->thread_flags & THREAD_hiber)
-				&& (!ast_thread
-					|| !(ast_thread->thread_flags & THREAD_ast_active)))
-			{
-				break;
-			}
-			sch_mutex_unlock(thread_mutex);
-			event_t* ptr = thread->thread_stall;
+				&& !(thread->thread_flags & THREAD_hiber) && (!ast_thread
+															  ||
+															  !
+															  (ast_thread->thread_flags
+															   &
+															   THREAD_ast_active)))
+					break;
+			if (mutex_state = THD_mutex_unlock(thread_mutex))
+				mutex_bugcheck("mutex unlock", mutex_state);
+			ptr = thread->thread_stall;
 			ISC_event_wait(1, &ptr, &value, 0, 0, 0);
-			sch_mutex_lock(thread_mutex);
+			if (mutex_state = THD_mutex_lock(thread_mutex))
+				mutex_bugcheck("mutex lock", mutex_state);
 		}
-	}
 
 /* Explicitly disable AST delivery for active thread */
 
@@ -988,16 +1023,22 @@ static void stall_ast(THREAD thread)
  *	AST is complete.
  *
  **************************************/
+	SLONG value;
+	EVENT ptr;
+	int mutex_state;
+
 	if (thread == ast_thread) {
 		if (ast_thread->thread_flags & THREAD_ast_disabled)
 			for (;;) {
-				SLONG value = ISC_event_clear(thread->thread_stall);
+				value = ISC_event_clear(thread->thread_stall);
 				if (!(ast_thread->thread_flags & THREAD_ast_disabled))
 					break;
-				sch_mutex_unlock(thread_mutex);
-				event_t* ptr = thread->thread_stall;
+				if (mutex_state = THD_mutex_unlock(thread_mutex))
+					mutex_bugcheck("mutex unlock", mutex_state);
+				ptr = thread->thread_stall;
 				ISC_event_wait(1, &ptr, &value, 0, 0, 0);
-				sch_mutex_lock(thread_mutex);
+				if (mutex_state = THD_mutex_lock(thread_mutex))
+					mutex_bugcheck("mutex lock", mutex_state);
 			}
 	}
 	else {
@@ -1012,13 +1053,15 @@ static void stall_ast(THREAD thread)
 
 		if (ast_thread->thread_flags & THREAD_ast_active)
 			for (;;) {
-				SLONG value = ISC_event_clear(thread->thread_stall);
+				value = ISC_event_clear(thread->thread_stall);
 				if (!(ast_thread->thread_flags & THREAD_ast_active))
 					break;
-				sch_mutex_unlock(thread_mutex);
-				event_t* ptr = thread->thread_stall;
+				if (mutex_state = THD_mutex_unlock(thread_mutex))
+					mutex_bugcheck("mutex unlock", mutex_state);
+				ptr = thread->thread_stall;
 				ISC_event_wait(1, &ptr, &value, 0, 0, 0);
-				sch_mutex_lock(thread_mutex);
+				if (mutex_state = THD_mutex_lock(thread_mutex))
+					mutex_bugcheck("mutex lock", mutex_state);
 			}
 		/* Unlink thread block from ast thread queue */
 
@@ -1027,48 +1070,4 @@ static void stall_ast(THREAD thread)
 	}
 }
 
-
-static void sch_mutex_lock(Firebird::Mutex& mtx)
-{
-/**************************************
- *
- *	s c h _ m u t e x _ l o c k
- *
- **************************************
- *
- * Functional description
- *	Enters mutex, on error bugcheks.
- *
- **************************************/
-	try
-	{
-		mtx.enter();
-	}
-	catch (const Firebird::system_call_failed& e)
-	{
-		mutex_bugcheck("mutex lock", e.getErrorCode());
-	}
-}
-
-
-static void sch_mutex_unlock(Firebird::Mutex& mtx)
-{
-/**************************************
- *
- *	s c h _ m u t e x _ u n l o c k
- *
- **************************************
- *
- * Functional description
- *	Leaves mutex, on error bugcheks.
- *
- **************************************/
-	try
-	{
-		mtx.leave();
-	}
-	catch (const Firebird::system_call_failed& e)
-	{
-		mutex_bugcheck("mutex unlock", e.getErrorCode());
-	}
-}
+} // extern "C"

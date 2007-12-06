@@ -26,7 +26,6 @@
 				StringPooling="TRUE"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="TRUE"
-				RuntimeTypeInfo="FALSE"
 				UsePrecompiledHeader="2"
 				PrecompiledHeaderFile=".\..\..\..\temp\release\build_msg/build_msg.pch"
 				AssemblerListingLocation=".\..\..\..\temp\release\build_msg/"
@@ -72,8 +71,8 @@
 		</Configuration>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory=".\..\..\..\temp\debug\build_msg"
-			IntermediateDirectory=".\..\..\..\temp\debug\build_msg"
+			OutputDirectory=".\..\..\..\temp\release\build_msg"
+			IntermediateDirectory=".\..\..\..\temp\release\build_msg"
 			ConfigurationType="1"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE"
@@ -85,12 +84,11 @@
 				PreprocessorDefinitions="WIN32,_DEBUG,_CONSOLE,SUPERCLIENT"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				RuntimeTypeInfo="FALSE"
 				UsePrecompiledHeader="2"
-				PrecompiledHeaderFile=".\..\..\..\temp\debug\build_msg/build_msg.pch"
-				AssemblerListingLocation=".\..\..\..\temp\debug\build_msg/"
-				ObjectFile=".\..\..\..\temp\debug\build_msg/"
-				ProgramDataBaseFileName=".\..\..\..\temp\debug\build_msg/"
+				PrecompiledHeaderFile=".\..\..\..\temp\release\build_msg/build_msg.pch"
+				AssemblerListingLocation=".\..\..\..\temp\release\build_msg/"
+				ObjectFile=".\..\..\..\temp\release\build_msg/"
+				ProgramDataBaseFileName=".\..\..\..\temp\release\build_msg/"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
 				DebugInformationFormat="3"
@@ -101,15 +99,15 @@
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
 				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
-				OutputFile=".\..\..\..\temp\debug\build_msg/build_msg.exe"
+				OutputFile=".\..\..\..\temp\release\build_msg/build_msg.exe"
 				LinkIncremental="2"
 				SuppressStartupBanner="TRUE"
 				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile=".\..\..\..\temp\debug\build_msg/build_msg.pdb"
+				ProgramDatabaseFile=".\..\..\..\temp\release\build_msg/build_msg.pdb"
 				SubSystem="1"/>
 			<Tool
 				Name="VCMIDLTool"
-				TypeLibraryName=".\..\..\..\temp\debug\build_msg/build_msg.tlb"/>
+				TypeLibraryName=".\..\..\..\temp\release\build_msg/build_msg.tlb"/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool
@@ -140,6 +138,9 @@
 			Filter="cpp;c;cxx;rc;def;r;odl;idl;hpj;bat">
 			<File
 				RelativePath="..\..\..\gen\msgs\build_file.cpp">
+			</File>
+			<File
+				RelativePath="..\..\..\src\common\fb_exception.cpp">
 			</File>
 		</Filter>
 		<Filter

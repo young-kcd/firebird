@@ -1,4 +1,4 @@
-CS_SRV_TH=@service_thread_CS@
+
 
 #________________________________________________________________________
 #
@@ -16,10 +16,10 @@ WHY_Sources = why.cpp
 # why.cpp does the switch to determine the actual implementation to use
 
 
-JRD_ClientFiles = alt.cpp cvt.cpp db_alias.cpp dsc.cpp \
+JRD_ClientFiles = alt.cpp cvt.cpp dsc.cpp dls.cpp \
 		enc.cpp gds.cpp isc.cpp isc_file.cpp isc_ipc.cpp \
 		isc_sync.cpp perf.cpp sch.cpp sdl.cpp status.cpp \
-		ThreadData.cpp utl.cpp \
+		thd.cpp utl.cpp init.cpp \
         $(WHY_Sources)
 
 # These are in the win32 release but not unix one for super? 
@@ -28,23 +28,21 @@ JRD_ClientFiles = alt.cpp cvt.cpp db_alias.cpp dsc.cpp \
 JRD_ServerFiles=  blob_filter.cpp dpm.epp dyn.epp dyn_def.epp \
         dyn_del.epp dyn_mod.epp dyn_util.epp fun.epp \
         grant.epp ini.epp met.epp pcmet.epp scl.epp \
-        CharSet.cpp Collation.cpp DatabaseSnapshot.cpp VirtualTable.cpp RecordBuffer.cpp \
-        all.cpp blb.cpp btn.cpp btr.cpp builtin.cpp \
-		GlobalRWLock.cpp cch.cpp cmp.cpp cvt2.cpp \
-		DataTypeUtil.cpp dfw.cpp divorce.cpp \
+                   \
+        ail.cpp all.cpp bookmark.cpp blb.cpp btr.cpp builtin.cpp \
+		cch.cpp cmp.cpp cvt2.cpp db_alias.cpp \
+		dfw.cpp divorce.cpp \
 		err.cpp iberr.cpp \
 		event.cpp evl.cpp exe.cpp ext.cpp \
-		execute_statement.cpp filters.cpp flu.cpp functions.cpp \
-		idx.cpp inf.cpp intl.cpp intl_builtin.cpp IntlManager.cpp IntlUtil.cpp \
-		inuse.cpp jrd.cpp lck.cpp log.cpp  \
-		mov.cpp nav.cpp opt.cpp Optimizer.cpp pag.cpp par.cpp \
-		ods.cpp plugin_manager.cpp pwd.cpp RandomGenerator.cpp Relation.cpp rlck.cpp \
-		rpb_chain.cpp rse.cpp \
-		sdw.cpp shut.cpp sort.cpp sqz.cpp \
-		svc.cpp sym.cpp SysFunction.cpp TempSpace.cpp tpc.cpp tra.cpp validation.cpp vio.cpp \
-		nodebug.cpp nbak.cpp sha.cpp $(Physical_IO_Module) TextType.cpp \
-		ThreadData.cpp thd.cpp unicode_util.cpp RuntimeStatistics.cpp \
-		DebugInterface.cpp
+		ExecuteStatement.cpp filters.cpp flu.cpp functions.cpp \
+		idx.cpp inf.cpp intl.cpp intl_builtin.cpp inuse.cpp \
+		jrd.cpp jrn.cpp lck.cpp llio.cpp log.cpp  \
+		misc.cpp mov.cpp nav.cpp old.cpp opt.cpp pag.cpp par.cpp \
+		plugin_manager.cpp pwd.cpp rec.cpp rlck.cpp \
+		rng.cpp rpb_chain.cpp rse.cpp sbm.cpp \
+		sdw.cpp shut.cpp sort.cpp sort_mem.cpp sqz.cpp \
+		svc.cpp sym.cpp tpc.cpp tra.cpp val.cpp vio.cpp \
+		nodebug.cpp $(Physical_IO_Module)
 
 
 JRD_Files = $(JRD_ClientFiles) $(JRD_ServerFiles)
@@ -100,16 +98,15 @@ LOCK_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(LOCK_Sources)))
 REMOTE_ClientFiles =  allr.cpp inet.cpp interface.cpp merge.cpp \
             parser.cpp protocol.cpp remote.cpp xdr.cpp
 
+ifeq ($(PLATFORM),win32)
+REMOTE_ClientFiles += wnet.cpp xnet.cpp
+endif
+
 INTERFACE_Files=	$(REMOTE_ClientFiles)
 
 
 INTERFACE_Sources = $(addprefix remote/, $(INTERFACE_Files))
 INTERFACE_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(INTERFACE_Sources))))
-
-ifeq ($(PLATFORM),win32)
-REMOTE_ClientFiles += os/win32/wnet.cpp xnet.cpp
-INTERFACE_Objects += $(OBJ)/auth/trusted/AuthSspi.o
-endif
 
 #________________________________________________________________________
 #
@@ -117,6 +114,19 @@ endif
 
 # none currently.
 
+
+#________________________________________________________________________
+#
+# wal
+
+WAL_ClientFiles = 
+
+WAL_ServerFiles=	walf.cpp wal.cpp walc.cpp walr.cpp wstatus.cpp walw.cpp
+
+WAL_Files = $(WAL_ClientFiles) $(WAL_ServerFiles)
+
+WAL_Sources = $(addprefix wal/, $(WAL_Files))
+WAL_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(WAL_Sources))))
 
 #________________________________________________________________________
 #
@@ -138,11 +148,6 @@ GPRELIB_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(GPRELIB_Sour
 ALICE_Files=
 ifeq ($(ArchType),super)
     ALICE_Files=alice.cpp all.cpp exe.cpp alice_meta.epp tdr.cpp
-else
-	ifeq ($(CS_SRV_TH),true)
-	    ALICE_Files=alice.cpp all.cpp exe.cpp alice_meta.epp tdr.cpp
-	endif
-
 endif
 
 ALICE_Sources = $(addprefix alice/, $(ALICE_Files))
@@ -155,10 +160,6 @@ ALICE_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(ALICE_Sources)
 BURP_Files=
 ifeq ($(ArchType),super)
     BURP_Files=burp.cpp backup.epp restore.epp mvol.cpp misc.cpp canonical.cpp
-else
-	ifeq ($(CS_SRV_TH),true)
-	    BURP_Files=burp.cpp backup.epp restore.epp mvol.cpp misc.cpp canonical.cpp
-	endif
 endif
 
 BURP_Sources = $(addprefix burp/, $(BURP_Files))
@@ -169,33 +170,17 @@ BURP_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(BURP_Sources)))
 #
 # utilities
 
-SECURITY_ClientFiles_gsec = call_service.cpp
+SECURITY_ClientFiles = security.cpp
 
-SECURITY_ServerFiles_gsec:= security.cpp
-SECURITY_ServerFiles_gstat:=
-SECURITY_ServerFiles_common:=
+SECURITY_ServerFiles:=
 
 ifeq ($(ArchType),super)
-    SECURITY_ServerFiles_gsec:= $(SECURITY_ServerFiles_gsec) gsec.cpp 
-    SECURITY_ServerFiles_gstat:= $(SECURITY_ServerFiles_gstat) dba.epp ppg.cpp 
-    SECURITY_ServerFiles_common:= $(SECURITY_ServerFiles_common) cmd_util.cpp
-else
-	ifeq ($(CS_SRV_TH),true)
-	    SECURITY_ServerFiles_gsec:= $(SECURITY_ServerFiles_gsec) gsec.cpp 
-	    SECURITY_ServerFiles_gstat:= $(SECURITY_ServerFiles_gstat) dba.epp ppg.cpp 
-	    SECURITY_ServerFiles_common:= $(SECURITY_ServerFiles_common) cmd_util.cpp
-	endif
-
+    SECURITY_ServerFiles:= $(SECURITY_ServerFiles) gsec.cpp dba.epp ppg.cpp cmd_util.cpp
 endif
 
-SECURITY_Files_gsec = $(SECURITY_ClientFiles_gsec) $(SECURITY_ServerFiles_gsec)
-SECURITY_Files_gstat = $(SECURITY_ServerFiles_gstat)
-SECURITY_Files_common = $(SECURITY_ServerFiles_common)
-SECURITY_Sources_gsec = $(addprefix utilities/gsec/, $(SECURITY_Files_gsec))
-SECURITY_Sources_gstat = $(addprefix utilities/gstat/, $(SECURITY_Files_gstat))
-SECURITY_Sources_common = $(addprefix utilities/common/, $(SECURITY_Files_common))
+SECURITY_Files = $(SECURITY_ClientFiles) $(SECURITY_ServerFiles)
 
-SECURITY_Sources = $(SECURITY_Sources_gsec) $(SECURITY_Sources_gstat) $(SECURITY_Sources_common)
+SECURITY_Sources = $(addprefix utilities/, $(SECURITY_Files))
 SECURITY_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(SECURITY_Sources))))
 
 #________________________________________________________________________
@@ -215,19 +200,13 @@ FBUTIL_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(FBUTIL_Source
 #
 # common/classes
 
-FBCLASSES_ClientFiles=alloc.cpp locks.cpp fb_string.cpp timestamp.cpp TempFile.cpp
-FBCLASSES_MsgFiles=SafeArg.cpp MsgPrint.cpp BaseStream.cpp
-FBCLASSES_ServerFiles=UserBlob.cpp
+FBCLASSES_ClientFiles=alloc.cpp locks.cpp
+FBCLASSES_ServerFiles=
 
-FBCLASSES_ClientSources = $(addprefix common/classes/, $(FBCLASSES_ClientFiles))
-FBCLASSES_MsgSources = $(addprefix common/classes/, $(FBCLASSES_MsgFiles))
-FBCLASSES_ServerSources = $(addprefix common/classes/, $(FBCLASSES_ServerFiles))
+FBCLASSES_Files= $(FBCLASSES_ClientFiles) $(FBCLASSES_ServerFiles)
 
-FBCLASSES_ClientObjects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(FBCLASSES_ClientSources))))
-FBCLASSES_MsgObjects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(FBCLASSES_MsgSources))))
-FBCLASSES_ServerObjects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(FBCLASSES_ServerSources))))
-
-FBCLASSES_Objects = $(FBCLASSES_ClientObjects) $(FBCLASSES_ServerObjects) $(FBCLASSES_MsgObjects)
+FBCLASSES_Sources = $(addprefix common/classes/, $(FBCLASSES_Files))
+FBCLASSES_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(FBCLASSES_Sources))))
 
 #________________________________________________________________________
 #
@@ -243,54 +222,15 @@ FBCONFIG_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(FBCONFIG_So
 
 #________________________________________________________________________
 #
-# config
-
-CONFIG_ClientFiles=AdminException.cpp Args.cpp ArgsException.cpp \
-    ConfObj.cpp ConfObject.cpp ConfigFile.cpp Configuration.cpp \
-    DirectoryList.cpp Element.cpp FileName.cpp InputFile.cpp \
-    InputStream.cpp Lex.cpp ScanDir.cpp Stream.cpp StreamSegment.cpp
-CONFIG_ServerFiles=
-
-CONFIG_Files= $(CONFIG_ClientFiles) $(CONFIG_ServerFiles)
-
-CONFIG_Sources = $(addprefix config/, $(CONFIG_Files))
-CONFIG_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(CONFIG_Sources))))
-
-#________________________________________________________________________
-#
-# vulcan
-
-VULCAN_ClientFiles=JString.cpp PathName.cpp RefObject.cpp
-VULCAN_ServerFiles=
-
-VULCAN_Files= $(VULCAN_ClientFiles) $(VULCAN_ServerFiles)
-
-VULCAN_Sources = $(addprefix vulcan/, $(VULCAN_Files))
-VULCAN_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(VULCAN_Sources))))
-
-#________________________________________________________________________
-#
 # common
 
-FBCOMMON_ClientFiles = fb_exception.cpp classes/MetaName.cpp StatusHolder.cpp
-FBCOMMON_ServerFiles = utils.cpp
+FBCOMMON_ClientFiles = fb_exception.cpp
+FBCOMMON_ServerFiles = 
 
-FBCOMMON_ClientObjects = $(addprefix $(OBJ)/common/, $(addsuffix .o, $(basename $(FBCOMMON_ClientFiles))))
-FBCOMMON_ServerObjects = $(addprefix $(OBJ)/common/, $(addsuffix .o, $(basename $(FBCOMMON_ServerFiles))))
+FBCOMMON_Files = $(FBCOMMON_ClientFiles) $(FBCOMMON_ServerFiles)
 
-FBCOMMON_Objects = $(FBCOMMON_ClientObjects) $(FBCOMMON_ServerObjects)
-
-#________________________________________________________________________
-#
-# clumplets
-
-CLUMPLETS_ClientFiles = ClumpletReader.cpp ClumpletWriter.cpp
-CLUMPLETS_ServerFiles = 
-
-CLUMPLETS_Files = $(CLUMPLETS_ClientFiles) $(CLUMPLETS_ServerFiles)
-
-CLUMPLETS_Sources = $(addprefix common/classes/, $(CLUMPLETS_Files))
-CLUMPLETS_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(CLUMPLETS_Sources))))
+FBCOMMON_Sources = $(addprefix common/, $(FBCOMMON_Files))
+FBCOMMON_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(FBCOMMON_Sources))))
 
 
 #________________________________________________________________________
@@ -298,21 +238,14 @@ CLUMPLETS_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(CLUMPLETS_
 # Platform Manager
 
 # just in case if make.platform defined some files
-OS_SPECIFIC_Files += config_root.cpp path_utils.cpp mod_loader.cpp fbsyslog.cpp guid.cpp
+OS_SPECIFIC_Files += config_root.cpp path_utils.cpp mod_loader.cpp fbsyslog.cpp
 
-OS_SPECIFIC_Sources = $(addprefix jrd/, $(OS_SPECIFIC_Files))
+OS_SPECIFIC_Sources = $(addprefix $(PLATFORM_PATH)/, $(OS_SPECIFIC_Files))
 OS_SPECIFIC_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(OS_SPECIFIC_Sources))))
 
 
 #________________________________________________________________________
 #
-
-# These objects are needed in any target
-
-COMMON_Objects = $(FBCLASSES_Objects) \
-				$(FBCOMMON_Objects) \
-				$(CONFIG_Objects) \
-				$(VULCAN_Objects)
 
 # These are the lists of object/shared object files that will go into libgds.a
 # and libgds.$(SHRLIB_EXT).
@@ -322,10 +255,12 @@ LIBFBEMBED_Objects =$(OS_SPECIFIC_Objects) \
                 $(DSQL_Objects) \
                 $(LOCK_Objects) \
                 $(INTERFACE_Objects) \
+                $(WAL_Objects) \
                 $(GPRELIB_Objects) \
                 $(SECURITY_Objects) \
                 $(FBUTIL_Objects) \
-                $(CLUMPLETS_Objects) \
+				$(FBCLASSES_Objects) \
+                $(FBCOMMON_Objects) \
                 $(FBCONFIG_Objects) \
                 $(BURP_Objects) \
                 $(ALICE_Objects)
@@ -351,9 +286,9 @@ LIBFBSTATIC_Objects = $(OS_SPECIFIC_Objects) \
                 $(DSQL_Objects) \
                 $(LOCK_Objects) \
                 $(INTERFACE_Objects) \
+                $(WAL_Objects) \
                 $(GPRELIB_Objects) \
-				$(FBCONFIG_Objects) \
-				$(CLUMPLETS_Objects)
+				$(FBCONFIG_Objects)
 
 
 # Not needed since loaded into libfbmemory.a already
@@ -364,5 +299,5 @@ LIBFBSTATIC_Objects = $(OS_SPECIFIC_Objects) \
 #
 # blrtable builder
 
-BLRTABLE_Sources = misc/blrtable.cpp
+BLRTABLE_Sources = jrd/blrtable.cpp
 BLRTABLE_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(BLRTABLE_Sources))))

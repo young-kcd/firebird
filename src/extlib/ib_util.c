@@ -16,6 +16,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  */
+#include "../include/firebird.h"
 #include <stdlib.h>
 #include "ib_udf.h"
 

@@ -1,8 +1,7 @@
-
 /*
  *	PROGRAM:	Alice (All Else) Utility
  *	MODULE:		alice_proto.h
- *	DESCRIPTION:	Prototype header file for alice.cpp
+ *	DESCRIPTION:	Prototype header file for alice.c
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -22,23 +21,23 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef ALICE_ALICE_PROTO_H
-#define ALICE_ALICE_PROTO_H
+#ifndef _ALICE_ALICE_PROTO_H_
+#define _ALICE_ALICE_PROTO_H_
 
-#include "../jrd/thd.h"
-#include "../common/classes/MsgPrint.h"
-
-#ifdef SERVICE_THREAD
-THREAD_ENTRY_DECLARE ALICE_main(THREAD_ENTRY_PARAM);
+#ifdef __cplusplus
+extern "C" {
 #endif
 
-class AliceGlobals;
+typedef int (DLL_EXPORT * OUTPUTPROC) (SLONG, UCHAR *);
 
-void	ALICE_down_case(const TEXT*, TEXT*, const size_t);
-void	ALICE_print(USHORT, const MsgFormat::SafeArg& arg = MsgFormat::SafeArg());
-void	ALICE_error(USHORT, const MsgFormat::SafeArg& arg = MsgFormat::SafeArg());
-void	ALICE_print_status(const ISC_STATUS*);
-void	ALICE_exit(int, AliceGlobals*);
+void	ALICE_down_case(TEXT*, TEXT*);
+int		ALICE_gfix(int, char**, OUTPUTPROC, SLONG);
+void	ALICE_print(USHORT, TEXT*, TEXT*, TEXT*, TEXT*, TEXT*);
+void	ALICE_error(USHORT, TEXT*, TEXT*, TEXT*, TEXT*, TEXT*);
+void	ALICE_print_status(ISC_STATUS*);
 
-#endif // ALICE_ALICE_PROTO_H
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
+#endif /* _ALICE_ALICE_PROTO_H_ */

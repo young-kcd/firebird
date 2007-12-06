@@ -27,10 +27,6 @@
 #ifndef JRD_BLB_H
 #define JRD_BLB_H
 
-#include "../jrd/RecordNumber.h"
-
-namespace Jrd {
-
 /* Blob id.  A blob has two states -- temporary and permanent.  In each
    case, the blob id is 8 bytes (2 longwords) long.  In the case of a
    temporary blob, the first word is NULL and the second word points to
@@ -38,105 +34,30 @@ namespace Jrd {
    word contains the relation id of the blob and the second the record
    number of the first segment-clump.  The two types of blobs can be
    reliably distinguished by a zero or non-zero relation id. */
-
-class Attachment;
-class BlobControl;
-class jrd_rel;
-class jrd_req;
-class jrd_tra;
-class vcl;
-
-// This structure must occupy 8 bytes
-struct bid {
+   
+typedef struct bid {
+	ULONG bid_relation_id;		/* Relation id (or null) */
 	union {
-		// Internal decomposition of the structure
-		RecordNumber::Packed bid_internal;
-
-		// This is how bid structure represented in public API.
-		// Must be present to enforce alignment rules when structure is declared on stack
-		struct {
-			ULONG bid_quad_high;
-			ULONG bid_quad_low;
-		} bid_quad;
-	};
-
-	ULONG& bid_temp_id() {
-		// Make sure that compiler packed structure like we wanted
-		fb_assert(sizeof(*this) == 8);
-
-		return bid_internal.bid_temp_id();
-	}
-
-	ULONG bid_temp_id() const {
-		// Make sure that compiler packed structure like we wanted
-		fb_assert(sizeof(*this) == 8);
-
-		return bid_internal.bid_temp_id();
-	}
-
-	bool isEmpty() const { 
-		// Make sure that compiler packed structure like we wanted
-		fb_assert(sizeof(*this) == 8);
-
-		return bid_quad.bid_quad_high == 0 && bid_quad.bid_quad_low == 0; 
-	}
-
-	void clear() {
-		// Make sure that compiler packed structure like we wanted
-		fb_assert(sizeof(*this) == 8);
-
-		bid_quad.bid_quad_high = 0;
-		bid_quad.bid_quad_low = 0;
-	}
-
-	void set_temporary(ULONG temp_id) {
-		// Make sure that compiler packed structure like we wanted
-		fb_assert(sizeof(*this) == 8);
-
-		clear();
-		bid_temp_id() = temp_id;
-	}
-
-	void set_permanent(USHORT relation_id, RecordNumber num) {
-		// Make sure that compiler packed structure like we wanted
-		fb_assert(sizeof(*this) == 8);
-
-		clear();
-		bid_internal.bid_relation_id = relation_id;
-		num.bid_encode(&bid_internal);
-	}
-
-	RecordNumber get_permanent_number() const {
-		// Make sure that compiler packed structure like we wanted
-		fb_assert(sizeof(*this) == 8);
-
-		RecordNumber temp;
-		temp.bid_decode(&bid_internal);
-		return temp;
-	}
-
-	bool operator == (const bid& other) const {
-		// Make sure that compiler packed structure like we wanted
-		fb_assert(sizeof(*this) == 8);
-
-		return bid_quad.bid_quad_high == other.bid_quad.bid_quad_high && 
-			bid_quad.bid_quad_low == other.bid_quad.bid_quad_low;
-	}
-};
+		ULONG bid_temp_id;	/* Temporary ID of blob or array. Used for newly created objects (bid_relation_id==0) */
+		ULONG bid_number;	/* Record number */
+	} bid_stuff;
+	bool isEmpty() const { return bid_relation_id == 0 && bid_stuff.bid_number == 0; }
+} *BID;
 
 /* Your basic blob block. */
 
 class blb : public pool_alloc_rpt<UCHAR, type_blb>
 {
     public:
-	Attachment*	blb_attachment;	/* database attachment */
-	jrd_rel*	blb_relation;	/* Relation, if known */
-	jrd_tra*	blb_transaction;	/* Parent transaction block */
-	blb*		blb_next;		/* Next blob in transaction */
-	UCHAR*		blb_segment;	/* Next segment to be addressed */
-	BlobControl*	blb_filter;	/* Blob filter control block, if any */
-	bid			blb_blob_id;	/* Id of materialized blob */
-	vcl*		blb_pages;		/* Vector of pages */
+	att *blb_attachment;	/* database attachment */
+	jrd_rel *blb_relation;	/* Relation, if known */
+	struct jrd_tra *blb_transaction;	/* Parent transaction block */
+	blb *blb_next;		/* Next blob in transaction */
+	UCHAR *blb_segment;			/* Next segment to be addressed */
+	struct ctl *blb_filter;		/* Blob filter control block, if any */
+	struct bid blb_blob_id;		/* Id of materialized blob */
+	struct jrd_req *blb_request;	/* request that assigned temporary blob */
+	vcl *blb_pages;		/* Vector of pages */
 	USHORT blb_pointers;		/* Max pointer on a page */
 	USHORT blb_level;			/* Storage type */
 	USHORT blb_max_segment;		/* Longest segment */
@@ -148,8 +69,6 @@ class blb : public pool_alloc_rpt<UCHAR, type_blb>
 	USHORT blb_source_interp;	/* source interp (for writing) */
 	USHORT blb_target_interp;	/* destination interp (for reading) */
 	SSHORT blb_sub_type;		/* Blob's declared sub-type */
-	UCHAR blb_charset;			// Blob's charset
-	USHORT blb_pg_space_id;		// page space
 	ULONG blb_sequence;			/* Blob page sequence */
 	ULONG blb_max_sequence;		/* Number of data pages */
 	ULONG blb_count;			/* Number of segments */
@@ -160,15 +79,16 @@ class blb : public pool_alloc_rpt<UCHAR, type_blb>
 	/* blb_data must be longword aligned */
 	UCHAR blb_data[1];			/* A page's worth of blob */
 };
+typedef blb *BLB;
 
-const int BLB_temporary	= 1;			/* Newly created blob */
-const int BLB_eof		= 2;			/* This blob is exhausted */
-const int BLB_stream	= 4;			/* Stream style blob */
-const int BLB_closed	= 8;			/* Temporary blob has been closed */
-const int BLB_damaged	= 16;			/* Blob is busted */
-const int BLB_seek		= 32;			/* Seek is pending */
-const int BLB_user_def	= 64;			/* Blob is user created */
-const int BLB_large_scan	= 128;		/* Blob is larger than page buffer cache */
+#define BLB_temporary	1		/* Newly created blob */
+#define BLB_eof		2			/* This blob is exhausted */
+#define BLB_stream	4			/* Stream style blob */
+#define BLB_closed	8			/* Temporary blob has been closed */
+#define BLB_damaged	16			/* Blob is busted */
+#define BLB_seek	32			/* Seek is pending */
+#define BLB_user_def	64		/* Blob is user created */
+#define BLB_large_scan	128		/* Blob is larger than page buffer cache */
 
 /* Blob levels are:
 
@@ -177,17 +97,14 @@ const int BLB_large_scan	= 128;		/* Blob is larger than page buffer cache */
 	2	large blob -- blob "record" is pointer to pages of pointers
 */
 
-// mapping blob ids for REPLAY
-// Useful only with REPLAY_OSRI_API_CALLS_SUBSYSTEM defined.
-class blb_map : public pool_alloc<type_map>
+/* mapping blob ids for REPLAY */
+class map : public pool_alloc<type_map>
 {
     public:
-	blb_map*	map_next;
-	blb*		map_old_blob;
-	blb*		map_new_blob;
+	map *map_next;
+	blb *map_old_blob;
+	blb *map_new_blob;
 };
+typedef map *MAP;
 
-} //namespace Jrd
-
-#endif // JRD_BLB_H
-
+#endif /* _JRD_BLB_H_ */

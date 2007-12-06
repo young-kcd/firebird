@@ -26,8 +26,7 @@
 				PreprocessorDefinitions="_DEBUG,_CONSOLE,SUPERCLIENT,DEV_BUILD,WIN32,_X86_"
 				ExceptionHandling="FALSE"
 				BasicRuntimeChecks="3"
-				RuntimeLibrary="3"
-				RuntimeTypeInfo="FALSE"
+				RuntimeLibrary="5"
 				PrecompiledHeaderFile="..\..\..\temp\debug\isql/isql.pch"
 				AssemblerListingLocation="..\..\..\temp\debug\isql/"
 				ObjectFile="..\..\..\temp\debug\isql/"
@@ -43,15 +42,15 @@
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
 				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
-				OutputFile="..\..\..\temp\debug/firebird/bin/isql.exe"
+				OutputFile="debug/firebird/bin/isql.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile="..\..\..\temp\debug\isql\isql.pdb"
+				ProgramDatabaseFile="..\..\..\temp\debug\isql/isql.pdb"
 				SubSystem="1"/>
 			<Tool
 				Name="VCMIDLTool"
-				TypeLibraryName="..\..\..\temp\debug\isql\isql.tlb"/>
+				TypeLibraryName="..\..\..\temp\debug\isql/isql.tlb"/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool
@@ -94,8 +93,7 @@
 				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
 				PreprocessorDefinitions="NDEBUG,_CONSOLE,SUPERCLIENT,WIN32,_X86_"
 				ExceptionHandling="FALSE"
-				RuntimeLibrary="2"
-				RuntimeTypeInfo="FALSE"
+				RuntimeLibrary="4"
 				PrecompiledHeaderFile="..\..\..\temp\release\isql/isql.pch"
 				AssemblerListingLocation="..\..\..\temp\release\isql/"
 				ObjectFile="..\..\..\temp\release\isql/"
@@ -111,14 +109,15 @@
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
 				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
-				OutputFile="..\..\..\temp\release/firebird/bin/isql.exe"
+				OutputFile="release/firebird/bin/isql.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				GenerateDebugInformation="TRUE"
+				ProgramDatabaseFile="..\..\..\temp\release\isql/isql.pdb"
 				SubSystem="1"/>
 			<Tool
 				Name="VCMIDLTool"
-				TypeLibraryName="..\..\..\temp\release\isql\isql.tlb"/>
+				TypeLibraryName="..\..\..\temp\release\isql/isql.tlb"/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool
@@ -148,9 +147,6 @@
 			Name="ISQL files"
 			Filter="cpp;c;cxx;rc;def;r;odl;idl;hpj;bat">
 			<File
-				RelativePath="..\..\..\src\isql\Extender.cpp">
-			</File>
-			<File
 				RelativePath="..\..\..\gen\isql\extract.cpp">
 			</File>
 			<File
@@ -179,9 +175,6 @@
 		<Filter
 			Name="Header files"
 			Filter="h;hpp;hxx;hm;inl">
-			<File
-				RelativePath="..\..\..\src\isql\Extender.h">
-			</File>
 			<File
 				RelativePath="..\..\..\src\isql\extra_proto.h">
 			</File>

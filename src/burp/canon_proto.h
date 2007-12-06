@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Backup and Restore Program
  *	MODULE:		canon_proto.h		
- *	DESCRIPTION:	Prototype Header file for canonical.cpp
+ *	DESCRIPTION:	Prototype Header file for canonical.c
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -21,11 +21,18 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef BURP_CANON_PROTO_H
-#define BURP_CANON_PROTO_H
+#ifndef _BURP_CANON_PROTO_H_
+#define _BURP_CANON_PROTO_H_
 
-ULONG	CAN_encode_decode (burp_rel*, lstring*, UCHAR*, int);
-ULONG	CAN_slice (lstring*, lstring*, int, USHORT, UCHAR*);
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-#endif	// BURP_CANON_PROTO_H
+extern ULONG	CAN_encode_decode (struct burp_rel *, struct lstring *, UCHAR *, int);
+extern ULONG	CAN_slice (struct lstring *, struct lstring *, int, USHORT, UCHAR *);
 
+#ifdef __cplusplus
+}	/* extern "C" */
+#endif
+
+#endif	/* _BURP_CANON_PROTO_H_ */

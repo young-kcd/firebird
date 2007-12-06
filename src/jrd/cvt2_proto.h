@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Access Method
  *	MODULE:		cvt2_proto.h
- *	DESCRIPTION:	Prototype header file for cvt2.cpp
+ *	DESCRIPTION:	Prototype header file for cvt2.c
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -21,14 +21,13 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef JRD_CVT2_PROTO_H
-#define JRD_CVT2_PROTO_H
+#ifndef _JRD_CVT2_PROTO_H_
+#define _JRD_CVT2_PROTO_H_
 
-#include "../jrd/jrd.h"
+extern SSHORT CVT2_compare(struct dsc *, struct dsc *, FPTR_VOID);
+extern SSHORT CVT2_blob_compare(struct dsc *, struct dsc *, FPTR_VOID);
+extern void CVT2_get_name(struct dsc *, TEXT *, FPTR_VOID);
+extern USHORT CVT2_make_string2(struct dsc *, USHORT, UCHAR **, struct vary *,
+								USHORT, struct str **, FPTR_VOID);
 
-SSHORT	CVT2_compare(const dsc*, const dsc*, FPTR_ERROR);
-SSHORT	CVT2_blob_compare(const dsc*, const dsc*, FPTR_ERROR);
-void	CVT2_get_name(const dsc*, TEXT*, FPTR_ERROR);
-USHORT	CVT2_make_string2(const dsc*, USHORT, UCHAR**, Jrd::MoveBuffer&, FPTR_ERROR);
-
-#endif // JRD_CVT2_PROTO_H
+#endif /* _JRD_CVT2_PROTO_H_ */

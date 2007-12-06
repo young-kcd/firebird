@@ -27,7 +27,6 @@
 				ExceptionHandling="FALSE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				RuntimeTypeInfo="FALSE"
 				PrecompiledHeaderFile="..\..\..\temp\debug\gsplit/gsplit.pch"
 				AssemblerListingLocation="..\..\..\temp\debug\gsplit/"
 				ObjectFile="..\..\..\temp\debug\gsplit/"
@@ -43,15 +42,15 @@
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
 				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
-				OutputFile="..\..\..\temp\debug\firebird\bin\gsplit.exe"
+				OutputFile="debug/firebird/bin/gsplit.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile="..\..\..\temp\debug\gsplit\gsplit.pdb"
+				ProgramDatabaseFile="..\..\..\temp\debug\gsplit/gsplit.pdb"
 				SubSystem="1"/>
 			<Tool
 				Name="VCMIDLTool"
-				TypeLibraryName="..\..\..\temp\debug\gsplit\gsplit.tlb"/>
+				TypeLibraryName="..\..\..\temp\debug\gsplit/gsplit.tlb"/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool
@@ -95,7 +94,6 @@
 				PreprocessorDefinitions="NDEBUG,WIN32,_CONSOLE,_X86_,SUPERCLIENT"
 				ExceptionHandling="FALSE"
 				RuntimeLibrary="2"
-				RuntimeTypeInfo="FALSE"
 				PrecompiledHeaderFile="..\..\..\temp\release\gsplit/gsplit.pch"
 				AssemblerListingLocation="..\..\..\temp\release\gsplit/"
 				ObjectFile="..\..\..\temp\release\gsplit/"
@@ -111,14 +109,15 @@
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
 				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
-				OutputFile="..\..\..\temp\release\firebird\bin\gsplit.exe"
+				OutputFile="release/firebird/bin/gsplit.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				GenerateDebugInformation="TRUE"
+				ProgramDatabaseFile="..\..\..\temp\release\gsplit/gsplit.pdb"
 				SubSystem="1"/>
 			<Tool
 				Name="VCMIDLTool"
-				TypeLibraryName="..\..\..\temp\release\gsplit\gsplit.tlb"/>
+				TypeLibraryName="..\..\..\temp\release\gsplit/gsplit.tlb"/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool
@@ -147,6 +146,9 @@
 		<Filter
 			Name="BURP files"
 			Filter="cpp;c;cxx;rc;def;r;odl;idl;hpj;bat">
+			<File
+				RelativePath="..\..\..\src\common\fb_exception.cpp">
+			</File>
 			<File
 				RelativePath="..\..\..\src\burp\spit.cpp">
 			</File>

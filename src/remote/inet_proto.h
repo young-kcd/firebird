@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Remote Interface/Server
  *	MODULE:		inet_proto.h
- *	DESCRIPTION:	Prototpe header file for inet.cpp
+ *	DESCRIPTION:	Prototpe header file for inet.c
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -21,18 +21,21 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef REMOTE_INET_PROTO_H
-#define REMOTE_INET_PROTO_H
+#ifndef _REMOTE_INET_PROTO_H_
+#define _REMOTE_INET_PROTO_H_
 
-#include "../common/classes/fb_string.h"
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-rem_port*	INET_analyze(Firebird::PathName&, ISC_STATUS*, const TEXT*, const TEXT*,
-	bool, const UCHAR*, USHORT);
-rem_port*	INET_connect(const TEXT*, struct packet*, ISC_STATUS*, USHORT,
-	const UCHAR*, USHORT);
-rem_port*	INET_reconnect(HANDLE, ISC_STATUS*);
-rem_port*	INET_server(int);
-void	INET_set_clients(int);
+extern PORT	INET_analyze (TEXT *, USHORT *, ISC_STATUS *, TEXT *, TEXT *, USHORT, SCHAR*, SSHORT);
+extern PORT	DLL_EXPORT INET_connect (TEXT *, struct packet *, ISC_STATUS *, USHORT, SCHAR*, SSHORT);
+extern PORT	INET_reconnect (HANDLE, TEXT *, ISC_STATUS *);
+extern PORT	DLL_EXPORT INET_server (int);
+extern void	INET_set_clients (int);
 
-#endif // REMOTE_INET_PROTO_H
+#ifdef __cplusplus
+}	/* extern "C" */
+#endif
 
+#endif /* _REMOTE_INET_PROTO_H */ 

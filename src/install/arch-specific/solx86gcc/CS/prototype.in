@@ -14,12 +14,13 @@ d none  /usr/lib     ? ? ?
 
 d none @prefix@ 0755 root root
 
-v CONFIG.prsv @prefix@/security2.fdb=$SRCDIR/security2.fdb  0666 root root
+v CONFIG.prsv @prefix@/security.fdb=$SRCDIR/security.fdb  0666 root root
 f none @prefix@/firebird.msg=$SRCDIR/firebird.msg  0644 root root
 f none @prefix@/de_DE.msg=$SRCDIR/de_DE.msg  0644 root root
 f none @prefix@/fr_FR.msg=$SRCDIR/fr_FR.msg  0644 root root
 f none @prefix@/ja_JP.msg=$SRCDIR/ja_JP.msg  0644 root root
 v CONFIG.prsv @prefix@/firebird.conf=$SRCDIR/misc/firebird.conf  0644 root root
+v CONFIG.prsv @prefix@/aliases.conf=$SRCDIR/../../src/install/misc/aliases.conf.in  0644 root root
 
 d none @prefix@/bin  0755 root root
 
@@ -121,14 +122,14 @@ f none @prefix@/intl/libfbintl.so=$SRCDIR/intl/libfbintl.so  0755 root root
 d none @prefix@/lib  0755 root root
 f none @prefix@/lib/libib_util.so=$SRCDIR/lib/libib_util.so  0755 root root
 #f none @prefix@/lib/libfbcommon.a=$SRCDIR/lib/libfbcommon.a  0644 root root
-f none @prefix@/lib/libfbembed.so.1.5.1=$SRCDIR/lib/libfbembed.so.1.5.1  0755 root root
-s none @prefix@/lib/libfbembed.so.1=@prefix@/lib/libfbembed.so.1.5.1
+f none @prefix@/lib/libfbembed.so.@FIREBIRD_VERSION@=$SRCDIR/lib/libfbembed.so.@FIREBIRD_VERSION@  0755 root root
+s none @prefix@/lib/libfbembed.so.1=@prefix@/lib/libfbembed.so.@FIREBIRD_VERSION@
 s none @prefix@/lib/libfbembed.so=@prefix@/lib/libfbembed.so.1
 #f none @prefix@/lib/libfbstatic.a=$SRCDIR/lib/libfbstatic.a  0644 root root
 s none @prefix@/lib/libgds.so.1=@prefix@/lib/libfbembed.so.1
 s none @prefix@/lib/libgds.so=@prefix@/lib/libfbembed.so
-f none @prefix@/lib/libfbclient.so.1.5.1=$SRCDIR/lib/libfbclient.so.1.5.1  0755 root root
-s none @prefix@/lib/libfbclient.so.1=@prefix@/lib/libfbclient.so.1.5.1
+f none @prefix@/lib/libfbclient.so.@FIREBIRD_VERSION@=$SRCDIR/lib/libfbclient.so.@FIREBIRD_VERSION@  0755 root root
+s none @prefix@/lib/libfbclient.so.1=@prefix@/lib/libfbclient.so.@FIREBIRD_VERSION@
 s none @prefix@/lib/libfbclient.so=@prefix@/lib/libfbclient.so.1
 
 
@@ -136,6 +137,7 @@ s none @prefix@/lib/libfbclient.so=@prefix@/lib/libfbclient.so.1
 #/usr/lib synlinks for compability with external tools
 
 s none /usr/lib/libgds.so=@prefix@/lib/libfbembed.so
+s none /usr/lib/libgdsmt.so=@prefix@/lib/libfbembed.so
 s none /usr/lib/libfbembed.so=@prefix@/lib/libfbembed.so
 #s none /usr/lib/libgds.so.1=@prefix@/lib/libfbembed.so.1
 s none /usr/lib/libfbclient.so=@prefix@/lib/libfbclient.so

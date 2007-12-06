@@ -1,5 +1,5 @@
 /*
- *  PROGRAM:        Firebird 2.0 control panel applet
+ *  PROGRAM:        Firebird 1.5 control panel applet
  *  MODULE:         fbpanel.h
  *
  *  The contents of this file are subject to the Initial Developer's 
@@ -25,8 +25,8 @@
  */
 
 
-#if !defined(UTILITIES_FBPANEL_H)
-#define UTILITIES_FBPANEL_H
+#if !defined(_FBPanel_)
+#define _FBPanel_
 
 #include "ctrlpan.h"
 
@@ -38,5 +38,4 @@ public:
 
 };
 
-#endif // UTILITIES_FBPANEL_H
-
+#endif

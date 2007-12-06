@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Data Definition Utility
- *	MODULE:		dyn_util.epp
+ *	MODULE:		dyn_util.e
  *	DESCRIPTION:	Dynamic data definition - utility functions
  *
  * The contents of this file are subject to the Interbase Public
@@ -35,14 +35,14 @@
 #include "../jrd/scl.h"
 #include "../jrd/drq.h"
 #include "../jrd/flags.h"
-#include "../jrd/ibase.h"
+#include "../jrd/gds.h"
 #include "../jrd/lls.h"
 #include "../jrd/all.h"
 #include "../jrd/met.h"
 #include "../jrd/btr.h"
 #include "../jrd/intl.h"
 #include "../jrd/dyn.h"
-#include "../jrd/ods.h"
+#include "../jrd/all_proto.h"
 #include "../jrd/blb_proto.h"
 #include "../jrd/cmp_proto.h"
 #include "../jrd/dyn_proto.h"
@@ -54,12 +54,13 @@
 #include "../jrd/inf_proto.h"
 #include "../jrd/intl_proto.h"
 #include "../jrd/isc_f_proto.h"
-#include "../jrd/thd.h"
+#include "../jrd/thd_proto.h"
 #include "../jrd/vio_proto.h"
+#include "../jrd/ail.h"
 
-using MsgFormat::SafeArg;
-
-using namespace Jrd;
+#ifdef SUPERSERVER
+#define V4_THREADING
+#endif
 
 DATABASE DB = STATIC "ODS.RDB";
 
@@ -73,14 +74,11 @@ static const SCHAR gen_id_blr1[] = {
 	blr_begin,
 	blr_assignment,
 	blr_gen_id
-};
-
-static const SCHAR gen_id_blr2[] = {
+}, gen_id_blr2[] = {
 	blr_literal, blr_long, 0, 1, 0, 0, 0,
-		blr_parameter, 0, 0, 0, blr_end, blr_end, blr_end, blr_eoc
-};
+		blr_parameter, 0, 0, 0, blr_end, blr_end, blr_end, blr_eoc};
 
-static const UCHAR prot_blr[] = {
+static const SCHAR prot_blr[] = {
 	blr_version5,
 	blr_begin,
 	blr_message, 1, 1, 0,
@@ -105,15 +103,15 @@ static const UCHAR prot_blr[] = {
 
 
 
-SINT64 DYN_UTIL_gen_unique_id(thread_db*		tdbb,
-							  Global*		gbl,
+SINT64 DYN_UTIL_gen_unique_id(TDBB		tdbb,
+							  GBL		gbl,
 							  SSHORT	id,
-							  const SCHAR*	generator_name,
-							  jrd_req**		request)
+							  SCHAR*	generator_name,
+							  BLK*		request)
 {
 /**************************************
  *
- *	D Y N _ U T I L _ g e n _ u n i q u e _ i d
+ *	D Y N _ U T I L _g e n _ u n i q u e _ i d
  *
  **************************************
  *
@@ -121,20 +119,22 @@ SINT64 DYN_UTIL_gen_unique_id(thread_db*		tdbb,
  *	Generate a unique id using a generator.
  *
  **************************************/
-	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
+	DBB dbb;
+	JRD_REQ req_handle;
+	SINT64 value;
 
-	jrd_req* req_handle = CMP_find_request(tdbb, id, DYN_REQUESTS);
+	SET_TDBB(tdbb);
+	dbb = tdbb->tdbb_database;
+
+	req_handle = CMP_find_request(tdbb, id, DYN_REQUESTS);
 
 	if (!req_handle)
 	{
 		/* 32 bytes allocated for size of of a metadata name */
-		const size_t blr_size = sizeof(gen_id_blr1) + sizeof(gen_id_blr2) + 1
-			+ MAX_SQL_IDENTIFIER_SIZE;
-		SCHAR blr[blr_size];
-		fb_assert(strlen(generator_name) < MAX_SQL_IDENTIFIER_SIZE);
+		SCHAR blr[sizeof(gen_id_blr1) + sizeof(gen_id_blr2) + 1 + 32], *p;
+		assert(strlen(generator_name) < 32);
 
-		char* p = blr;
+		p = blr;
 		memcpy(p, gen_id_blr1, sizeof(gen_id_blr1));
 		p += sizeof(gen_id_blr1);
 		*p++ = strlen(generator_name);
@@ -142,28 +142,27 @@ SINT64 DYN_UTIL_gen_unique_id(thread_db*		tdbb,
 		p += p[-1];
 		memcpy(p, gen_id_blr2, sizeof(gen_id_blr2));
 		p += sizeof(gen_id_blr2);
-		req_handle = CMP_compile2(tdbb, reinterpret_cast<const UCHAR*>(blr), TRUE);
+		req_handle = CMP_compile2(tdbb, (UCHAR*)blr, TRUE);
 	}
-	*request = req_handle;
-	SINT64 value;
+	*request = (BLK)req_handle;
 	EXE_start(tdbb, req_handle, dbb->dbb_sys_trans);
 	EXE_receive(tdbb, req_handle, 0, sizeof(value), (UCHAR*)&value);
 	EXE_unwind(tdbb, req_handle);
 	*request = NULL;
 
 	if (!DYN_REQUEST(id)) {
-		DYN_REQUEST(id) = req_handle;
+		DYN_REQUEST(id) = (BLK)req_handle;
 	}
 
 	return value;
 }
 
 
-void DYN_UTIL_generate_constraint_name( thread_db* tdbb, Global* gbl, Firebird::MetaName& buffer)
+void DYN_UTIL_generate_constraint_name( TDBB tdbb, GBL gbl, TEXT * buffer)
 {
 /**************************************
  *
- *	D Y N _ U T I L _ g e n e r a t e _ c o n s t r a i n t _ n a m e
+ *	D Y N _ U T I L _g e n e r a t e _ c o n s t r a i n t _ n a m e
  *
  **************************************
  *
@@ -171,36 +170,39 @@ void DYN_UTIL_generate_constraint_name( thread_db* tdbb, Global* gbl, Firebird::
  *	Generate a name unique to RDB$RELATION_CONSTRAINTS.
  *
  **************************************/
-	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
+	DBB dbb;
+	volatile BLK request;
+	USHORT found;
+	volatile SSHORT id;
 
-	jrd_req* request = NULL;
-	SSHORT id = -1;
+	SET_TDBB(tdbb);
+	dbb = tdbb->tdbb_database;
+
+	request = NULL;
+	id = -1;
 
 	try {
 
-	bool found = false;
-	
 	do {
 		id = drq_g_nxt_con;
-		buffer.printf("INTEG_%" SQUADFORMAT,
+		sprintf(buffer, "INTEG_%" QUADFORMAT "d",
 				(SINT64) DYN_UTIL_gen_unique_id(tdbb,
 												gbl,
 												drq_g_nxt_con,
 												"RDB$CONSTRAINT_NAME",
-												&request));
+				/* cast away volatile - bad */	(BLK*)&request));
 
-		request = CMP_find_request(tdbb, drq_f_nxt_con, DYN_REQUESTS);
+		request = (BLK) CMP_find_request(tdbb, drq_f_nxt_con, DYN_REQUESTS);
 		id = drq_f_nxt_con;
 
-		found = false;
+		found = FALSE;
 		FOR(REQUEST_HANDLE request)
 			FIRST 1 X IN RDB$RELATION_CONSTRAINTS
-				WITH X.RDB$CONSTRAINT_NAME EQ buffer.c_str()
+				WITH X.RDB$CONSTRAINT_NAME EQ buffer
 
             if (!DYN_REQUEST(drq_f_nxt_con))
                 DYN_REQUEST(drq_f_nxt_con) = request;
-			found = true;
+			found = TRUE;
 		END_FOR;
 
 		if (!DYN_REQUEST(drq_f_nxt_con))
@@ -209,38 +211,19 @@ void DYN_UTIL_generate_constraint_name( thread_db* tdbb, Global* gbl, Firebird::
 	} while (found);
 
 	}	// try
-	catch (const Firebird::Exception& ex) {
-		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
+	catch (const std::exception&) {
 		DYN_rundown_request(request, id);
-		DYN_error_punt(true, 131);
+		DYN_error_punt(TRUE, 131, NULL, NULL, NULL, NULL, NULL);
 		/* msg 131: "Generation of constraint name failed" */
 	}
 }
 
 
-void DYN_UTIL_generate_field_name( thread_db* tdbb, Global* gbl, TEXT* buffer)
+void DYN_UTIL_generate_field_name( TDBB tdbb, GBL gbl, TEXT * buffer)
 {
 /**************************************
  *
- *	D Y N _ U T I L _ g e n e r a t e _ f i e l d _ n a m e
- *
- **************************************
- *
- * Functional description
- *	Stub to make it work with char* too.
- *
- **************************************/
-	Firebird::MetaName temp;
-	DYN_UTIL_generate_field_name(tdbb, gbl, temp);
-	strcpy(buffer, temp.c_str());
-}
-
-
-void DYN_UTIL_generate_field_name( thread_db* tdbb, Global* gbl, Firebird::MetaName& buffer)
-{
-/**************************************
- *
- *	D Y N _ U T I L _ g e n e r a t e _ f i e l d _ n a m e
+ *	D Y N _ U T I L _g e n e r a t e _ f i e l d _ n a m e
  *
  **************************************
  *
@@ -248,35 +231,38 @@ void DYN_UTIL_generate_field_name( thread_db* tdbb, Global* gbl, Firebird::MetaN
  *	Generate a name unique to RDB$FIELDS.
  *
  **************************************/
-	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
+	DBB dbb;
+	volatile BLK request;
+	USHORT found;
+	volatile SSHORT id;
 
-	jrd_req* request = NULL;
-	SSHORT id = -1;
-	
+	SET_TDBB(tdbb);
+	dbb = tdbb->tdbb_database;
+
+	request = NULL;
+	id = -1;
+
 	try {
-	
-	bool found = false;
 
 	do {
 		id = drq_g_nxt_fld;
-		buffer.printf("RDB$%" SQUADFORMAT,
+		sprintf(buffer, "RDB$%" QUADFORMAT "d",
 				(SINT64) DYN_UTIL_gen_unique_id(tdbb,
 												gbl,
 												drq_g_nxt_fld,
 												"RDB$FIELD_NAME",
-												&request));
+				/* cast away volatile - bad */	(BLK*)&request));
 
-		request = CMP_find_request(tdbb, drq_f_nxt_fld, DYN_REQUESTS);
+		request = (BLK) CMP_find_request(tdbb, drq_f_nxt_fld, DYN_REQUESTS);
 		id = drq_f_nxt_fld;
 
-		found = false;
+		found = FALSE;
 		FOR(REQUEST_HANDLE request)
-			FIRST 1 X IN RDB$FIELDS WITH X.RDB$FIELD_NAME EQ buffer.c_str()
+			FIRST 1 X IN RDB$FIELDS WITH X.RDB$FIELD_NAME EQ buffer
 
             if (!DYN_REQUEST(drq_f_nxt_fld))
 				DYN_REQUEST(drq_f_nxt_fld) = request;
-			found = true;
+			found = TRUE;
 		END_FOR;
 
 		if (!DYN_REQUEST(drq_f_nxt_fld))
@@ -285,24 +271,22 @@ void DYN_UTIL_generate_field_name( thread_db* tdbb, Global* gbl, Firebird::MetaN
 	} while (found);
 
 	}	// try
-	catch (const Firebird::Exception& ex) {
-		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
+	catch (const std::exception&) {
 		DYN_rundown_request(request, id);
-		DYN_error_punt(true, 81);
+		DYN_error_punt(TRUE, 81, NULL, NULL, NULL, NULL, NULL);
 		/* msg 81: "Generation of field name failed" */
 	}
 }
 
 
 void DYN_UTIL_generate_field_position(
-									  thread_db* tdbb,
-									  Global* gbl,
-									  const Firebird::MetaName& relation_name,
-									  SLONG* field_pos)
+									  TDBB tdbb,
+									  GBL gbl,
+									  TEXT * relation_name, SLONG * field_pos)
 {
 /**************************************
  *
- *	D Y N _ U T I L _ g e n e r a t e _ f i e l d _ p o s i t i o n
+ *	D Y N _ U T I L _g e n e r a t e _ f i e l d _ p o s i t i o n
  *
  **************************************
  *
@@ -310,20 +294,25 @@ void DYN_UTIL_generate_field_position(
  *	Generate a field position if not specified
  *
  **************************************/
+	DBB dbb;
+	volatile BLK request;
 	SLONG field_position = -1;
 
-	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
+	if (!relation_name)
+		return;
 
-	jrd_req* request = NULL;
+	SET_TDBB(tdbb);
+	dbb = tdbb->tdbb_database;
+
+	request = NULL;
 
 	try {
 
-	request = CMP_find_request(tdbb, drq_l_fld_pos, DYN_REQUESTS);
+	request = (BLK) CMP_find_request(tdbb, drq_l_fld_pos, DYN_REQUESTS);
 
 	FOR(REQUEST_HANDLE request)
 		X IN RDB$RELATION_FIELDS
-			WITH X.RDB$RELATION_NAME EQ relation_name.c_str()
+			WITH X.RDB$RELATION_NAME EQ relation_name
 
         if (!DYN_REQUEST(drq_l_fld_pos))
             DYN_REQUEST(drq_l_fld_pos) = request;
@@ -337,21 +326,20 @@ void DYN_UTIL_generate_field_position(
 	*field_pos = field_position;
 
 	}	// try
-	catch (const Firebird::Exception& ex) {
-		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
+	catch (const std::exception&) {
 		DYN_rundown_request(request, -1);
-		DYN_error_punt(true, 162);
+		DYN_error_punt(TRUE, 162, NULL, NULL, NULL, NULL, NULL);
 		/* msg 162: "Looking up field position failed" */
 	}
 }
 
 
-void DYN_UTIL_generate_index_name(thread_db* tdbb, Global* gbl, 
-								  Firebird::MetaName& buffer, UCHAR verb)
+void DYN_UTIL_generate_index_name(TDBB tdbb,
+								  GBL gbl, TEXT * buffer, UCHAR verb)
 {
 /**************************************
  *
- *	D Y N _ U T I L _ g e n e r a t e _ i n d e x _ n a m e
+ *	D Y N _ U T I L _g e n e r a t e _ i n d e x _ n a m e
  *
  **************************************
  *
@@ -359,42 +347,45 @@ void DYN_UTIL_generate_index_name(thread_db* tdbb, Global* gbl,
  *	Generate a name unique to RDB$INDICES.
  *
  **************************************/
-	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
+	DBB dbb;
+	volatile BLK request;
+	USHORT found;
+	volatile SSHORT id;
+	SCHAR *format;
 
-	jrd_req* request = NULL;
-	SSHORT id = -1;
+	SET_TDBB(tdbb);
+	dbb = tdbb->tdbb_database;
+
+	request = NULL;
+	id = -1;
 
 	try {
 
-	bool found = false;
-
 	do {
-		const SCHAR* format;
-		if (verb == isc_dyn_def_primary_key)
-			format = "RDB$PRIMARY%" SQUADFORMAT;
-		else if (verb == isc_dyn_def_foreign_key)
-			format = "RDB$FOREIGN%" SQUADFORMAT;
+		if (verb == gds_dyn_def_primary_key)
+			format = "RDB$PRIMARY%" QUADFORMAT "d";
+		else if (verb == gds_dyn_def_foreign_key)
+			format = "RDB$FOREIGN%" QUADFORMAT "d";
 		else
-			format = "RDB$%" SQUADFORMAT;
+			format = "RDB$%" QUADFORMAT "d";
 		id = drq_g_nxt_idx;
-		buffer.printf(format,
+		sprintf(buffer, format,
 				(SINT64) DYN_UTIL_gen_unique_id(tdbb,
 												gbl,
 												drq_g_nxt_idx,
 												"RDB$INDEX_NAME",
-												&request));
+				/* cast away volatile - bad */	(BLK*)&request));
 
-		request = CMP_find_request(tdbb, drq_f_nxt_idx, DYN_REQUESTS);
+		request = (BLK) CMP_find_request(tdbb, drq_f_nxt_idx, DYN_REQUESTS);
 		id = drq_f_nxt_idx;
 
-		found = false;
+		found = FALSE;
 		FOR(REQUEST_HANDLE request)
-			FIRST 1 X IN RDB$INDICES WITH X.RDB$INDEX_NAME EQ buffer.c_str()
+			FIRST 1 X IN RDB$INDICES WITH X.RDB$INDEX_NAME EQ buffer
 
             if (!DYN_REQUEST(drq_f_nxt_idx))
 				DYN_REQUEST(drq_f_nxt_idx) = request;
-			found = true;
+			found = TRUE;
 		END_FOR;
 
 		if (!DYN_REQUEST(drq_f_nxt_idx))
@@ -402,20 +393,19 @@ void DYN_UTIL_generate_index_name(thread_db* tdbb, Global* gbl,
 		request = NULL;
 	} while (found);
 	}	// try
-	catch (const Firebird::Exception& ex) {
-		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
+	catch (const std::exception&) {
 		DYN_rundown_request(request, id);
-		DYN_error_punt(true, 82);
+		DYN_error_punt(TRUE, 82, NULL, NULL, NULL, NULL, NULL);
 		/* msg 82: "Generation of index name failed" */
 	}
 }
 
 
-void DYN_UTIL_generate_trigger_name( thread_db* tdbb, Global* gbl, Firebird::MetaName& buffer)
+void DYN_UTIL_generate_trigger_name( TDBB tdbb, GBL gbl, TEXT * buffer)
 {
 /**************************************
  *
- *	D Y N _ U T I L _ g e n e r a t e _ t r i g g e r _ n a m e
+ *	D Y N _ U T I L _g e n e r a t e _ t r i g g e r _ n a m e
  *
  **************************************
  *
@@ -423,35 +413,38 @@ void DYN_UTIL_generate_trigger_name( thread_db* tdbb, Global* gbl, Firebird::Met
  *	Generate a name unique to RDB$TRIGGERS.
  *
  **************************************/
-	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
+	DBB dbb;
+	volatile BLK request;
+	USHORT found;
+	volatile SSHORT id;
 
-	jrd_req* request = NULL;
-	SSHORT id = -1;
+	SET_TDBB(tdbb);
+	dbb = tdbb->tdbb_database;
+
+	request = NULL;
+	id = -1;
 
 	try {
-	
-	bool found = false;
 
 	do {
 		id = drq_g_nxt_trg;
-		buffer.printf("CHECK_%" SQUADFORMAT,
+		sprintf(buffer, "CHECK_%" QUADFORMAT "d",
 				(SINT64) DYN_UTIL_gen_unique_id(tdbb,
 												gbl,
 												drq_g_nxt_trg,
 												"RDB$TRIGGER_NAME",
-												&request));
+				/* cast away volatile - bad */	(BLK*)&request));
 
-		request = CMP_find_request(tdbb, drq_f_nxt_trg, DYN_REQUESTS);
+		request = (BLK) CMP_find_request(tdbb, drq_f_nxt_trg, DYN_REQUESTS);
 		id = drq_f_nxt_trg;
 
-		found = false;
+		found = FALSE;
 		FOR(REQUEST_HANDLE request)
-			FIRST 1 X IN RDB$TRIGGERS WITH X.RDB$TRIGGER_NAME EQ buffer.c_str()
+			FIRST 1 X IN RDB$TRIGGERS WITH X.RDB$TRIGGER_NAME EQ buffer
 
             if (!DYN_REQUEST(drq_f_nxt_trg))
 				DYN_REQUEST(drq_f_nxt_trg) = request;
-			found = true;
+			found = TRUE;
 		END_FOR;
 
 		if (!DYN_REQUEST(drq_f_nxt_trg))
@@ -459,24 +452,23 @@ void DYN_UTIL_generate_trigger_name( thread_db* tdbb, Global* gbl, Firebird::Met
 		request = NULL;
 	} while (found);
 	}	// try
-	catch (const Firebird::Exception& ex) {
-		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
+	catch (const std::exception&) {
 		DYN_rundown_request(request, id);
-		DYN_error_punt(true, 83);
+		DYN_error_punt(TRUE, 83, NULL, NULL, NULL, NULL, NULL);
 		/* msg 83: "Generation of trigger name failed" */
 	}
 }
 
 
-bool DYN_UTIL_get_prot(thread_db*		tdbb,
-						  Global*		gbl,
-						  const SCHAR*	rname,
-						  const SCHAR*	fname,
-						  SecurityClass::flags_t*	prot_mask)
+BOOLEAN DYN_UTIL_get_prot(TDBB		tdbb,
+						  GBL		gbl,
+						  SCHAR*	rname,
+						  SCHAR*	fname,
+						  USHORT*	prot_mask)
 {
 /**************************************
  *
- *	D Y N _ U T I L _ g e t _ p r o t
+ *	D Y N _ U T I L _g e t _ p r o t
  *
  **************************************
  *
@@ -484,44 +476,53 @@ bool DYN_UTIL_get_prot(thread_db*		tdbb,
  *	Get protection mask for relation or relation_field
  *
  **************************************/
+	volatile JRD_REQ request;
 	struct
 	{
-		SqlIdentifier relation_name;
-		SqlIdentifier field_name;
+		SCHAR relation_name[32];
+		SCHAR field_name[32];
 	} in_msg;
 
 	SET_TDBB(tdbb);
 
-	jrd_req* request = CMP_find_request(tdbb, drq_l_prot_mask, DYN_REQUESTS);
+	request = CMP_find_request(tdbb, drq_l_prot_mask, DYN_REQUESTS);
 
 	try {
 
 	if (!request)
 	{
-		request = CMP_compile2(tdbb, prot_blr, TRUE);
+		request = CMP_compile2(tdbb,
+								(UCHAR*)prot_blr, /* const_cast */
+								TRUE);
 	}
 	gds__vtov(rname, in_msg.relation_name, sizeof(in_msg.relation_name));
 	gds__vtov(fname, in_msg.field_name, sizeof(in_msg.field_name));
 	EXE_start(tdbb, request, gbl->gbl_transaction);
 	EXE_send(tdbb, request, 0, sizeof(in_msg), (UCHAR*)&in_msg);
-	EXE_receive(tdbb, request, 1, sizeof(SecurityClass::flags_t), (UCHAR*)prot_mask);
+	EXE_receive(tdbb, request, 1, sizeof(USHORT), (UCHAR*)prot_mask);
 
-	DYN_rundown_request(request, drq_l_prot_mask);
+	/*
+	 * The "(BLK)" cast, casts away volatile AND changes
+	 * type at the same time - bad
+	 */
+	DYN_rundown_request( (BLK)request,
+						drq_l_prot_mask);
 
 	}	// try
-	catch (const Firebird::Exception& ex) {
-		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
-		DYN_rundown_request(request, drq_l_prot_mask);
-		return false;
+	catch (const std::exception&) {
+		// Note that the following cast to BLK not only changes
+		// the type, it also casts away volatile!
+		DYN_rundown_request((BLK)request, drq_l_prot_mask);
+		return FB_FAILURE;
 	}
-	return true;
+	return FB_SUCCESS;
 }
 
 
-void DYN_UTIL_store_check_constraints(thread_db*				tdbb,
-									  Global*					gbl,
-									  const Firebird::MetaName&	constraint_name,
-									  const Firebird::MetaName&	trigger_name)
+void DYN_UTIL_store_check_constraints(TDBB	tdbb,
+									  GBL	gbl,
+									  TEXT*	constraint_name,
+									  TEXT*	trigger_name)
 {
 /**************************************
  *
@@ -530,21 +531,22 @@ void DYN_UTIL_store_check_constraints(thread_db*				tdbb,
  **************************************
  *
  * Functional description
- *	Fill in rdb$check_constraints the association between a check name and the
- *	system defined trigger that implements that check.
  *
  **************************************/
-	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
+	DBB dbb;
+	volatile BLK request;
 
-	jrd_req* request = CMP_find_request(tdbb, drq_s_chk_con, DYN_REQUESTS);
+	SET_TDBB(tdbb);
+	dbb = tdbb->tdbb_database;
+
+	request = (BLK) CMP_find_request(tdbb, drq_s_chk_con, DYN_REQUESTS);
 
 	try {
 
 	STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		CHK IN RDB$CHECK_CONSTRAINTS
-        strcpy(CHK.RDB$CONSTRAINT_NAME, constraint_name.c_str());
-		strcpy(CHK.RDB$TRIGGER_NAME, trigger_name.c_str());
+        strcpy(CHK.RDB$CONSTRAINT_NAME, constraint_name);
+		strcpy(CHK.RDB$TRIGGER_NAME, trigger_name);
 
 	END_STORE;
 
@@ -552,208 +554,9 @@ void DYN_UTIL_store_check_constraints(thread_db*				tdbb,
 		DYN_REQUEST(drq_s_chk_con) = request;
 	}
 	}	// try
-	catch (const Firebird::Exception& ex) {
-		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
+	catch (const std::exception&) {
 		DYN_rundown_request(request, drq_s_chk_con);
-		DYN_error_punt(true, 122);
+		DYN_error_punt(TRUE, 122, NULL, NULL, NULL, NULL, NULL);
 		/* msg 122: "STORE RDB$CHECK_CONSTRAINTS failed" */
-	}
-}
-
-
-//***************************************
-//
-// 	D Y N _ U T I L _ i s _ a r r a y
-//
-//**************************************
-//
-// Functional description
-//	Discover if a given domain (either automatic or explicit) has dimensions.
-//
-//***************************************
-bool DYN_UTIL_is_array(thread_db* tdbb,
-					   Global* gbl,
-					   const Firebird::MetaName& domain_name)
-{
-	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
-	
-	jrd_req* request = CMP_find_request(tdbb, drq_dom_is_array, DYN_REQUESTS);
-	
-	try
-	{
-		bool rc;
-		FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
-			X IN RDB$FIELDS WITH X.RDB$FIELD_NAME EQ domain_name.c_str()
-			
-			if (!DYN_REQUEST(drq_dom_is_array))
-				DYN_REQUEST(drq_dom_is_array) = request;
-				
-			rc = !X.RDB$DIMENSIONS.NULL && X.RDB$DIMENSIONS > 0;
-		END_FOR
-	
-		if (!DYN_REQUEST(drq_dom_is_array))
-			DYN_REQUEST(drq_dom_is_array) = request;
-			
-		return rc;
-	}
-	catch (const Firebird::Exception& ex)
-	{
-		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
-		DYN_rundown_request(request, drq_dom_is_array);
-		DYN_error_punt(true, 227, domain_name.c_str());
-		// msg 227: "DYN_UTIL_is_array failed for domain %s"
-		return false; // Keep compiler happy.
-	}
-}
-
-
-//***************************************
-//
-// 	D Y N _ U T I L _ c o p y _ d o m a i n
-//
-//**************************************
-//
-// Functional description
-//	Copy a domain in another. More reliable than using dyn_fld as intermediate.
-//  The source cannot be an array domain.
-//  We don't copy the default, it may be useless work.
-//
-//***************************************
-void DYN_UTIL_copy_domain(thread_db* tdbb,
-					   Global* gbl,
-					   const Firebird::MetaName& org_name,
-					   const Firebird::MetaName& new_name)
-{
-	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
-
-	jrd_req* request = NULL; //CMP_find_request(tdbb, drq_dom_copy, DYN_REQUESTS);
-	jrd_req* req2 = NULL;
-
-	try
-	{
-		FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
-			X IN RDB$FIELDS WITH X.RDB$FIELD_NAME EQ org_name.c_str()
-
-			//if (!DYN_REQUEST(drq_dom_copy))
-			//	DYN_REQUEST(drq_dom_copy) = request;
-
-			if (!X.RDB$DIMENSIONS.NULL && X.RDB$DIMENSIONS > 0)
-				ERR_punt();
-				
-			STORE(REQUEST_HANDLE req2 TRANSACTION_HANDLE gbl->gbl_transaction)
-				X2 IN RDB$FIELDS
-				
-				X2.RDB$FIELD_NAME.NULL = FALSE;
-				strcpy(X2.RDB$FIELD_NAME, new_name.c_str());
-				
-				X2.RDB$QUERY_NAME.NULL = X.RDB$QUERY_NAME.NULL;
-				if (!X.RDB$QUERY_NAME.NULL)
-					strcpy(X2.RDB$QUERY_NAME, X.RDB$QUERY_NAME);
-					
-				// The following fields may require blob copying:
-				// rdb$validation_blr, rdb$validation_source,
-				// rdb$computed_blr, rdb$computed_source,
-				// rdb$default_value, rdb$default_source,
-				// rdb$missing_value,  rdb$missing_source,
-				// rdb$description and rdb$query_header.
-					
-				X2.RDB$VALIDATION_BLR.NULL    = X.RDB$VALIDATION_BLR.NULL;
-				X2.RDB$VALIDATION_BLR         = X.RDB$VALIDATION_BLR;
-				
-				X2.RDB$VALIDATION_SOURCE.NULL = X.RDB$VALIDATION_SOURCE.NULL;
-				X2.RDB$VALIDATION_SOURCE      = X.RDB$VALIDATION_SOURCE;
-				
-				X2.RDB$COMPUTED_BLR.NULL      = X.RDB$COMPUTED_BLR.NULL;
-				X2.RDB$COMPUTED_BLR           = X.RDB$COMPUTED_BLR;
-				
-				X2.RDB$COMPUTED_SOURCE.NULL   = X.RDB$COMPUTED_SOURCE.NULL;
-				X2.RDB$COMPUTED_SOURCE        = X.RDB$COMPUTED_SOURCE;
-				
-				//X2.RDB$DEFAULT_VALUE.NULL     = X.RDB$DEFAULT_VALUE.NULL;
-				//X2.RDB$DEFAULT_VALUE          = X.RDB$DEFAULT_VALUE;
-				
-				//X2.RDB$DEFAULT_SOURCE.NULL    = X.RDB$DEFAULT_SOURCE.NULL;
-				//X2.RDB$DEFAULT_SOURCE         = X.RDB$DEFAULT_SOURCE;
-				
-				X2.RDB$FIELD_LENGTH.NULL      = X.RDB$FIELD_LENGTH.NULL;
-				X2.RDB$FIELD_LENGTH           = X.RDB$FIELD_LENGTH;
-				
-				X2.RDB$FIELD_SCALE.NULL       = X.RDB$FIELD_SCALE.NULL;
-				X2.RDB$FIELD_SCALE            = X.RDB$FIELD_SCALE;
-				
-				X2.RDB$FIELD_TYPE.NULL        = X.RDB$FIELD_TYPE.NULL;
-				X2.RDB$FIELD_TYPE             = X.RDB$FIELD_TYPE;
-				
-				X2.RDB$FIELD_SUB_TYPE.NULL    = X.RDB$FIELD_SUB_TYPE.NULL;
-				X2.RDB$FIELD_SUB_TYPE         = X.RDB$FIELD_SUB_TYPE;
-				
-				X2.RDB$MISSING_VALUE.NULL     = X.RDB$MISSING_VALUE.NULL;
-				X2.RDB$MISSING_VALUE          = X.RDB$MISSING_VALUE;
-				
-				X2.RDB$MISSING_SOURCE.NULL    = X.RDB$MISSING_SOURCE.NULL;
-				X2.RDB$MISSING_SOURCE         = X.RDB$MISSING_SOURCE;
-				
-				X2.RDB$DESCRIPTION.NULL       = X.RDB$DESCRIPTION.NULL;
-				X2.RDB$DESCRIPTION            = X.RDB$DESCRIPTION;
-				
-				X2.RDB$SYSTEM_FLAG.NULL       = X.RDB$SYSTEM_FLAG.NULL;
-				X2.RDB$SYSTEM_FLAG            = X.RDB$SYSTEM_FLAG;
-				
-				X2.RDB$QUERY_HEADER.NULL      = X.RDB$QUERY_HEADER.NULL;
-				X2.RDB$QUERY_HEADER           = X.RDB$QUERY_HEADER;
-				
-				X2.RDB$SEGMENT_LENGTH.NULL    = X.RDB$SEGMENT_LENGTH.NULL;
-				X2.RDB$SEGMENT_LENGTH         = X.RDB$SEGMENT_LENGTH;
-				
-				X2.RDB$EDIT_STRING.NULL       = X.RDB$EDIT_STRING.NULL;
-				if (!X.RDB$EDIT_STRING.NULL)
-					strcpy(X2.RDB$EDIT_STRING, X.RDB$EDIT_STRING);
-				
-				X2.RDB$EXTERNAL_LENGTH.NULL   = X.RDB$EXTERNAL_LENGTH.NULL;
-				X2.RDB$EXTERNAL_LENGTH        = X.RDB$EXTERNAL_LENGTH;
-				
-				X2.RDB$EXTERNAL_SCALE.NULL    = X.RDB$EXTERNAL_SCALE.NULL;
-				X2.RDB$EXTERNAL_SCALE         = X.RDB$EXTERNAL_SCALE;
-				
-				X2.RDB$EXTERNAL_TYPE.NULL     = X.RDB$EXTERNAL_TYPE.NULL;
-				X2.RDB$EXTERNAL_TYPE          = X.RDB$EXTERNAL_TYPE;
-				
-				X2.RDB$DIMENSIONS.NULL        = X.RDB$DIMENSIONS.NULL;
-				X2.RDB$DIMENSIONS             = X.RDB$DIMENSIONS;
-				
-				X2.RDB$NULL_FLAG.NULL         = X.RDB$NULL_FLAG.NULL;
-				X2.RDB$NULL_FLAG              = X.RDB$NULL_FLAG;
-				
-				X2.RDB$CHARACTER_LENGTH.NULL  = X.RDB$CHARACTER_LENGTH.NULL;
-				X2.RDB$CHARACTER_LENGTH       = X.RDB$CHARACTER_LENGTH;
-				
-				X2.RDB$COLLATION_ID.NULL      = X.RDB$COLLATION_ID.NULL;
-				X2.RDB$COLLATION_ID           = X.RDB$COLLATION_ID;
-				
-				X2.RDB$CHARACTER_SET_ID.NULL  = X.RDB$CHARACTER_SET_ID.NULL;
-				X2.RDB$CHARACTER_SET_ID       = X.RDB$CHARACTER_SET_ID;
-				
-				X2.RDB$FIELD_PRECISION.NULL   = X.RDB$FIELD_PRECISION.NULL;
-				X2.RDB$FIELD_PRECISION        = X.RDB$FIELD_PRECISION;
-			END_STORE
-			CMP_release(tdbb, req2);
-			req2 = NULL;
-		END_FOR
-		
-		CMP_release(tdbb, request);
-		request = NULL;
-		// For now, CMP_release used instead of this:
-		//if (!DYN_REQUEST(drq_dom_copy))
-		//	DYN_REQUEST(drq_dom_copy) = request;
-
-	}
-	catch (const Firebird::Exception& ex)
-	{
-		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
-		DYN_rundown_request(request, -1); //drq_dom_copy);
-		DYN_error_punt(true, 228, org_name.c_str());
-		// msg 228: "DYN_UTIL_copy_domain failed for domain %s"
 	}
 }

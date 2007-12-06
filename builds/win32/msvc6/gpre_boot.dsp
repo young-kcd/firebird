@@ -42,7 +42,7 @@ RSC=rc.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_CONSOLE" /D "_MBCS" /YX /FD /GZ /c
-# ADD CPP /nologo /MDd /W3 /Gm /GX /Zi /Od /I "../../../src/include" /I "../../../src/include/gen" /D "_DEBUG" /D "_CONSOLE" /D "SUPERCLIENT" /D "WIN32" /D "_MBCS" /D "_X86_" /D "DEV_BUILD" /D "_WINDOWS" /D "_USRDLL" /D "CLIENT" /D "BOOT_BUILD" /FR /FD /GZ /c
+# ADD CPP /nologo /MDd /W3 /Gm /GX /Zi /Od /I "../../../src/include" /I "../../../src/include/gen" /D "_DEBUG" /D "_CONSOLE" /D "SUPERCLIENT" /D "WIN32" /D "_MBCS" /D "_X86_" /D "DEV_BUILD" /D "_WINDOWS" /D "_USRDLL" /D "CLIENT" /FR /FD /GZ /c
 # ADD BASE RSC /l 0x41d /d "_DEBUG"
 # ADD RSC /l 0x41d /d "_DEBUG"
 BSC32=bscmake.exe
@@ -68,7 +68,7 @@ LINK32=link.exe
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MDd /W3 /Gm /GX /ZI /Od /I "../../../src/include" /I "../../../src/include/gen" /I "../../../src/jrd" /D "_DEBUG" /D "_CONSOLE" /D "SUPERCLIENT" /D "WIN32" /D "_MBCS" /D "_X86_" /FR /FD /GZ /c
 # SUBTRACT BASE CPP /YX
-# ADD CPP /nologo /MD /W3 /GX /Ot /Og /Oi /Oy /Ob1 /I "../../../src/include" /I "../../../src/include/gen" /D "NDEBUG" /D "_CONSOLE" /D "SUPERCLIENT" /D "WIN32" /D "_MBCS" /D "_X86_" /D "BOOT_BUILD" /FR /FD /EHc- /c
+# ADD CPP /nologo /MD /W3 /GX /Ot /Og /Oi /Oy /Ob1 /I "../../../src/include" /I "../../../src/include/gen" /D "NDEBUG" /D "_CONSOLE" /D "SUPERCLIENT" /D "WIN32" /D "_MBCS" /D "_X86_" /FR /FD /EHc- /c
 # ADD BASE RSC /l 0x41d /d "_DEBUG"
 # ADD RSC /l 0x41d /d "_DEBUG"
 BSC32=bscmake.exe
@@ -90,6 +90,10 @@ LINK32=link.exe
 # PROP Default_Filter "cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
 # Begin Source File
 
+SOURCE=..\..\..\src\gpre\ada.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\src\gpre\c_cxx.cpp
 # End Source File
 # Begin Source File
@@ -106,7 +110,15 @@ SOURCE=..\..\..\src\gpre\cmp.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\src\gpre\cob.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\src\gpre\exp.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\common\fb_exception.cpp
 # End Source File
 # Begin Source File
 
@@ -119,6 +131,10 @@ SOURCE=..\..\..\src\gpre\gpre_meta_boot.cpp
 # Begin Source File
 
 SOURCE=..\..\..\src\gpre\hsh.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\init.cpp
 # End Source File
 # Begin Source File
 
@@ -138,7 +154,15 @@ SOURCE=..\..\..\src\gpre\msc.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\src\gpre\noform.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\src\gpre\par.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\gpre\pas.cpp
 # End Source File
 # Begin Source File
 
@@ -162,15 +186,15 @@ SOURCE=..\..\..\src\gpre\sql.cpp
 # PROP Default_Filter "h;c"
 # Begin Source File
 
+SOURCE=..\..\..\src\jrd\dls.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\src\jrd\dsc.cpp
 # End Source File
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\dsc.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\jrd\dsc_pub.h
 # End Source File
 # Begin Source File
 
@@ -182,7 +206,7 @@ SOURCE=..\..\..\src\jrd\isc.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\os\win32\isc_ipc.cpp
+SOURCE=..\..\..\src\jrd\isc_ipc.cpp
 # End Source File
 # Begin Source File
 
@@ -222,6 +246,18 @@ SOURCE=..\..\..\src\gpre\exp_proto.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\src\gpre\form.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\gpre\form__proto.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\gpre\form_proto.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\src\gpre\gpre.h
 # End Source File
 # Begin Source File
@@ -243,6 +279,10 @@ SOURCE=..\..\..\src\gpre\hsh.h
 # Begin Source File
 
 SOURCE=..\..\..\src\gpre\hsh_proto.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\init.h
 # End Source File
 # Begin Source File
 
@@ -294,10 +334,6 @@ SOURCE=..\..\..\src\gpre\sql_proto.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\common\classes\TempFile.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\src\gpre\words.h
 # End Source File
 # End Group
@@ -307,14 +343,6 @@ SOURCE=..\..\..\src\gpre\words.h
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\version.rc
-# End Source File
-# End Group
-# Begin Group "OTHER files"
-
-# PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=..\..\..\src\common\classes\TempFile.cpp
 # End Source File
 # End Group
 # End Target

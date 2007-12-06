@@ -21,64 +21,46 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef JRD_EXT_H
-#define JRD_EXT_H
-
-#include <stdio.h>
-
-namespace Jrd {
+#ifndef _JRD_EXT_H_
+#define _JRD_EXT_H_
 
 /* External file access block */
 
-class ExternalFile : public pool_alloc_rpt<SCHAR, type_ext>
+class ext : public pool_alloc_rpt<SCHAR, type_ext>
 {
     public:
+	struct fmt *ext_format;		/* External format */
+	UCHAR *ext_stuff;			/* Random stuff */
+	USHORT ext_flags;			/* Misc and cruddy flags */
 #ifdef VMS
-	Format*	ext_format;			/* External format */
-#endif
-	//UCHAR*	ext_stuff;			// Random stuff
-	USHORT	ext_flags;			/* Misc and cruddy flags */
-#ifdef VMS
-	int		ext_ifi;			/* Internal file identifier */
-	int		ext_isi;			/* Internal stream (default) */
+	int ext_ifi;				/* Internal file identifier */
+	int ext_isi;				/* Internal stream (default) */
 #else
-	FILE*	ext_ifi;			/* Internal file identifier */
-	//int*	ext_isi;			// Internal stream (default)
+	int *ext_ifi;				/* Internal file identifier */
+	int *ext_isi;				/* Internal stream (default) */
 #endif
-	//USHORT	ext_record_length;	// Record length
-#ifdef VMS
-	USHORT	ext_file_type;		/* File type */
-	
-	USHORT	ext_index_count;	/* Number of indices */
-	UCHAR*	ext_indices;		/* Index descriptions */
-	UCHAR	ext_dbkey[8];		/* DBKEY */
-#endif
-	UCHAR	ext_filename[1];
+	USHORT ext_record_length;	/* Record length */
+	USHORT ext_file_type;		/* File type */
+	USHORT ext_index_count;		/* Number of indices */
+	UCHAR *ext_indices;			/* Index descriptions */
+	UCHAR ext_dbkey[8];			/* DBKEY */
+	UCHAR ext_filename[1];
 };
+typedef ext *EXT;
 
-//const int EXT_opened	= 1;	// File has been opened
-const int EXT_eof		= 2;	/* Positioned at EOF */
-const int EXT_readonly	= 4;	/* File could only be opened for read */
-const int EXT_last_read		= 8;	// last operation was read
-const int EXT_last_write	= 16;	// last operation was write
+#define EXT_opened	1			/* File has been opened */
+#define EXT_eof		2			/* Positioned at EOF */
+#define EXT_readonly	4		/* File could only be opened for read */
 
-#ifdef VMS
-struct irsb_ext {
+typedef struct irsb_ext {
 	USHORT irsb_flags;			/* flags (a whole word!) */
 	UCHAR irsb_ext_dbkey[8];	/* DBKEY */
-};
-#endif
-
+} *IRSB_EXT;
 
 /* Overload record parameter block with external file stuff */
 
 #define rpb_ext_pos	rpb_page
-#ifdef VMS
 #define rpb_ext_isi	rpb_f_page
 #define rpb_ext_dbkey	rpb_b_page
-#endif
 
-} //namespace Jrd
-
-#endif // JRD_EXT_H
-
+#endif /* _JRD_EXT_H_ */

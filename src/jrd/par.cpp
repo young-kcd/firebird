@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Access Method
- *	MODULE:		par.cpp
+ *	MODULE:		par.c
  *	DESCRIPTION:	BLR Parser
  *
  * The contents of this file are subject to the Interbase Public
@@ -31,19 +31,19 @@
  * 2002.10.29 Mike Nordell - Fixed breakage.
  * 2002.10.29 Nickolay Samofatov: Added support for savepoints
  * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
- * 2003.10.05 Dmitry Yemanov: Added support for explicit cursors in PSQL
- * 2004.01.16 Vlad Horsun: Added support for default parameters 
- * Adriano dos Santos Fernandes
+ *
  */
+/*
+$Id: par.cpp,v 1.43.2.6 2006-11-05 14:38:11 alexpeshkoff Exp $
+*/
 
 #include "firebird.h"
-#include <stdio.h>
+#include "../jrd/ib_stdio.h"
 #include <string.h>
 #include "../jrd/common.h"
 #include <stdarg.h>
 #include "../jrd/jrd.h"
-#include "../jrd/ibase.h"
-#include "../jrd/ini.h"
+#include "../jrd/gds.h"
 #include "../jrd/val.h"
 #include "../jrd/align.h"
 #include "../jrd/exe.h"
@@ -56,6 +56,7 @@
 #include "../jrd/blb.h"
 #include "../jrd/intl.h"
 #include "../jrd/met.h"
+#include "../jrd/all_proto.h"
 #include "../jrd/cmp_proto.h"
 #include "../jrd/cvt_proto.h"
 #include "../jrd/err_proto.h"
@@ -63,81 +64,77 @@
 #include "../jrd/gds_proto.h"
 #include "../jrd/met_proto.h"
 #include "../jrd/par_proto.h"
-#include "../jrd/thd.h"
-#include "../common/utils_proto.h"
-#include "../jrd/SysFunction.h"
-
+#include "../jrd/thd_proto.h"
 
 /* blr type classes */
 
-const int OTHER			= 0;
-const int STATEMENT		= 1;
-const int TYPE_BOOL		= 2;
-const int VALUE			= 3;
-const int TYPE_RSE		= 4;
-const int RELATION		= 5;
-const int ACCESS_TYPE	= 6;
-
-using namespace Jrd;
+#define OTHER		0
+#define STATEMENT	1
+#define BOOL		2
+#define VALUE		3
+#define TYPE_RSE	4
+#define RELATION	5
+#define ACCESS_TYPE	6
 
 #include "gen/blrtable.h"
 
 
+extern "C" {
 
-static const TEXT elements[][14] =
-	{ "", "statement", "boolean", "value", "RecordSelExpr", "TABLE" };
 
+static const TEXT elements[][10] =
+	{ "", "statement", "boolean", "value", "RSE", "TABLE" };
+static const struct {
+	const SCHAR *code_string;
+	SLONG code_number;
+} codes[] = {
 #include "gen/codetext.h"
+	{NULL, 0}
+};
 
+static void error(CSB, ...);
+static SSHORT find_proc_field(JRD_PRC, TEXT *);
+static JRD_NOD par_args(TDBB, CSB *, USHORT);
+static JRD_NOD par_cast(TDBB, CSB *);
+static XCP par_condition(TDBB, CSB *);
+static XCP par_conditions(TDBB, CSB *);
+static SSHORT par_context(CSB *, SSHORT *);
+static void par_dependency(TDBB, CSB *, SSHORT, SSHORT, TEXT *);
+static JRD_NOD par_exec_proc(TDBB, CSB *, SSHORT);
+static JRD_NOD par_fetch(TDBB, CSB *, JRD_NOD);
+static JRD_NOD par_field(TDBB, CSB *, SSHORT);
+static JRD_NOD par_function(TDBB, CSB *);
+static JRD_NOD par_literal(TDBB, CSB *);
+static JRD_NOD par_map(TDBB, CSB *, USHORT);
+static JRD_NOD par_message(TDBB, CSB *);
+static JRD_NOD par_modify(TDBB, CSB *);
+static USHORT par_name(CSB *, TEXT *);
+static JRD_NOD par_plan(TDBB, CSB *);
+static JRD_NOD par_procedure(TDBB, CSB *, SSHORT);
+static void par_procedure_parms(TDBB, CSB *, JRD_PRC, JRD_NOD *, JRD_NOD *, USHORT);
+static JRD_NOD par_relation(TDBB, CSB *, SSHORT, BOOLEAN);
+static JRD_NOD par_rse(TDBB, CSB *, SSHORT);
+static JRD_NOD par_sort(TDBB, CSB *, BOOLEAN);
+static JRD_NOD par_stream(TDBB, CSB *);
+static JRD_NOD par_union(TDBB, CSB *);
+static USHORT par_word(CSB *);
+static JRD_NOD parse(TDBB, CSB *, USHORT);
+static void syntax_error(CSB, const TEXT *);
+static void warning(CSB, ...);
 
-static void error(CompilerScratch*, ...);
-static SSHORT find_proc_field(const jrd_prc*, const Firebird::MetaName&);
-static jrd_nod* par_args(thread_db*, CompilerScratch*, USHORT);
-static jrd_nod* par_cast(thread_db*, CompilerScratch*);
-static PsqlException* par_condition(thread_db*, CompilerScratch*);
-static PsqlException* par_conditions(thread_db*, CompilerScratch*);
-static SSHORT par_context(CompilerScratch*, SSHORT *);
-static void par_dependency(thread_db*, CompilerScratch*, SSHORT, SSHORT, const Firebird::MetaName&);
-static jrd_nod* par_exec_proc(thread_db*, CompilerScratch*, SSHORT);
-static jrd_nod* par_fetch(thread_db*, CompilerScratch*, jrd_nod*);
-static jrd_nod* par_field(thread_db*, CompilerScratch*, SSHORT);
-static jrd_nod* par_function(thread_db*, CompilerScratch*);
-static jrd_nod* par_literal(thread_db*, CompilerScratch*);
-static jrd_nod* par_map(thread_db*, CompilerScratch*, USHORT);
-static jrd_nod* par_message(thread_db*, CompilerScratch*);
-static jrd_nod* par_modify(thread_db*, CompilerScratch*, SSHORT);
-static USHORT par_name(CompilerScratch*, Firebird::MetaName&);
-static size_t par_name(CompilerScratch* csb, Firebird::string& name);
-static jrd_nod* par_plan(thread_db*, CompilerScratch*);
-static jrd_nod* par_procedure(thread_db*, CompilerScratch*, SSHORT);
-static void par_procedure_parms(thread_db*, CompilerScratch*, jrd_prc*, jrd_nod**,
-	jrd_nod**, bool);
-static jrd_nod* par_relation(thread_db*, CompilerScratch*, SSHORT, bool);
-static jrd_nod* par_rse(thread_db*, CompilerScratch*, SSHORT);
-static jrd_nod* par_sort(thread_db*, CompilerScratch*, bool);
-#ifdef NOT_USED_OR_REPLACED
-static jrd_nod* par_stream(thread_db*, CompilerScratch*);
-#endif
-static jrd_nod* par_sys_function(thread_db*, CompilerScratch*);
-static jrd_nod* par_union(thread_db*, CompilerScratch*, bool);
-static USHORT par_word(CompilerScratch*);
-static jrd_nod* parse(thread_db*, CompilerScratch*, USHORT, USHORT expected_optional = 0);
-static void syntax_error(CompilerScratch*, const TEXT*);
-static void warning(CompilerScratch*, ...);
-
-#define BLR_PEEK	*(csb->csb_running)
-#define BLR_BYTE	*(csb->csb_running)++
-#define BLR_PUSH	(csb->csb_running)--
+#define BLR_PEEK	*((*csb)->csb_running)
+#define BLR_BYTE	*((*csb)->csb_running)++
+#define BLR_PUSH	((*csb)->csb_running)--
 #define BLR_WORD	par_word (csb)
 
 
-jrd_nod* PAR_blr(thread_db*	tdbb,
-			jrd_rel*		relation,
-			const UCHAR*	blr,
-			CompilerScratch*	view_csb,
-			CompilerScratch**	csb_ptr,
-			jrd_req**	request_ptr,
-			const bool trigger,
+JRD_NOD PAR_blr(TDBB	tdbb,
+			JRD_REL		relation,
+			UCHAR*	blr,
+			CSB		view_csb,
+			CSB*	csb_ptr,
+			JRD_REQ*	request_ptr,
+			BOOLEAN	trigger,
 			USHORT	flags)
 {
 /**************************************
@@ -151,20 +148,19 @@ jrd_nod* PAR_blr(thread_db*	tdbb,
  *	Caller must do pool handling.
  *
  **************************************/
+	CSB csb;
+	JRD_NOD node;
+	SSHORT version, stream, count;
+	csb_repeat *t1, *t2;
+
 	SET_TDBB(tdbb);
 
-#ifdef CMP_DEBUG
-	cmp_trace("BLR code given for JRD parsing:");
-	// CVC: Couldn't find isc_trace_printer, so changed it to gds__trace_printer.
-	gds__print_blr(blr, gds__trace_printer, 0, 0);
-#endif
-
-	CompilerScratch* csb;
 	if (!(csb_ptr && (csb = *csb_ptr))) {
-		size_t count = 5;
+		count = 5;
 		if (view_csb)
-			count += view_csb->csb_rpt.getCapacity();
-		csb = CompilerScratch::newCsb(*tdbb->getDefaultPool(), count);
+			count += view_csb->csb_count;
+		csb = Csb::newCsb(*tdbb->tdbb_default, count);
+		csb->csb_count = count;
 		csb->csb_g_flags |= flags;
 	}
 
@@ -172,62 +168,58 @@ jrd_nod* PAR_blr(thread_db*	tdbb,
    the target relation */
 
 	if (trigger) {
-		SSHORT stream = csb->nextStream();
-		CompilerScratch::csb_repeat* t1 = CMP_csb_element(csb, 0);
+		stream = csb->csb_n_stream++;
+		t1 = CMP_csb_element(&csb, 0);
 		t1->csb_flags |= csb_used | csb_active | csb_trigger;
 		t1->csb_relation = relation;
 		t1->csb_stream = (UCHAR) stream;
 
-		stream = csb->nextStream();
-		t1 = CMP_csb_element(csb, 1);
+		stream = csb->csb_n_stream++;
+		t1 = CMP_csb_element(&csb, 1);
 		t1->csb_flags |= csb_used | csb_active | csb_trigger;
 		t1->csb_relation = relation;
 		t1->csb_stream = (UCHAR) stream;
 	}
-	else if (relation) {
-		CompilerScratch::csb_repeat* t1 = CMP_csb_element(csb, 0);
-		t1->csb_stream = csb->nextStream();
-		t1->csb_relation = relation;
-		t1->csb_flags = csb_used | csb_active;
+	else {
+		++csb->csb_n_stream;
+		csb->csb_rpt[0].csb_relation = relation;
 	}
 
 	csb->csb_running = csb->csb_blr = blr;
 
 	if (view_csb) {
-		CompilerScratch::rpt_itr ptr = view_csb->csb_rpt.begin();
-		// AB: csb_n_stream replaced by view_csb->csb_rpt.getCount(), because there could
+		Csb::rpt_itr ptr = view_csb->csb_rpt.begin();
+		// AB: csb_n_stream replaced by view_csb->csb_count, because there could
 		// be more then just csb_n_stream-numbers that hold data. 
 		// Certainly csb_stream (see par_context where the context is retrieved)
-		const CompilerScratch::rpt_const_itr end = view_csb->csb_rpt.end();
-		for (SSHORT stream = 0; ptr != end; ++ptr, ++stream) {
-			CompilerScratch::csb_repeat* t2 = CMP_csb_element(csb, stream);
+		Csb::rpt_itr end = ptr + view_csb->csb_count;
+		for (stream = 0; ptr != end; ++ptr, ++stream) {
+			t2 = CMP_csb_element(&csb, stream);
 			t2->csb_relation = ptr->csb_relation;
 			t2->csb_stream = ptr->csb_stream;
-			t2->csb_flags = ptr->csb_flags & csb_used;
 		}
 		csb->csb_n_stream = view_csb->csb_n_stream;
 	}
 
-	const SSHORT version = *csb->csb_running++;
+	version = *csb->csb_running++;
 
-	if (version != blr_version4 && version != blr_version5) {
-		error(csb, isc_metadata_corrupt,
-			  isc_arg_gds, isc_wroblrver,
-			  isc_arg_number, (SLONG) blr_version4,
-			  isc_arg_number, (SLONG) version, 0);
-	}
+	if (version != blr_version4 && version != blr_version5)
+		error(csb, gds_metadata_corrupt,
+			  gds_arg_gds, gds_wroblrver,
+			  gds_arg_number, (SLONG) blr_version4,
+			  gds_arg_number, (SLONG) version, 0);
 
 	if (version == blr_version4)
 		csb->csb_g_flags |= csb_blr_version4;
 
-	jrd_nod* node = parse(tdbb, csb, OTHER);
+	node = parse(tdbb, &csb, OTHER);
 	csb->csb_node = node;
 
 	if (*csb->csb_running++ != (UCHAR) blr_eoc)
 		syntax_error(csb, "end_of_command");
 
 	if (request_ptr)
-		*request_ptr = CMP_make_request(tdbb, csb);
+		*request_ptr = CMP_make_request(tdbb, &csb);
 
 	if (csb_ptr)
 		*csb_ptr = csb;
@@ -238,7 +230,7 @@ jrd_nod* PAR_blr(thread_db*	tdbb,
 }
 
 
-USHORT PAR_desc(thread_db* tdbb, CompilerScratch* csb, DSC* desc, ItemInfo* itemInfo)
+int PAR_desc(CSB * csb, DSC * desc)
 {
 /**************************************
  *
@@ -251,28 +243,14 @@ USHORT PAR_desc(thread_db* tdbb, CompilerScratch* csb, DSC* desc, ItemInfo* item
  *	of the datatype.
  *
  **************************************/
-	if (itemInfo)
-	{
-		itemInfo->nullable = true;
-		itemInfo->explicitCollation = false;
-		itemInfo->fullDomain = false;
-	}
+	USHORT dtype;
 
 	desc->dsc_scale = 0;
 	desc->dsc_sub_type = 0;
-	desc->dsc_address = NULL;
+	desc->dsc_address = (UCHAR *) 0;
 	desc->dsc_flags = 0;
 
-	const USHORT dtype = BLR_BYTE;
-
-	switch (dtype)
-	{
-	case blr_not_nullable:
-		PAR_desc(tdbb, csb, desc, itemInfo);
-		if (itemInfo)
-			itemInfo->nullable = false;
-		break;
-
+	switch (dtype = BLR_BYTE) {
 	case blr_text:
 		desc->dsc_dtype = dtype_text;
 		desc->dsc_flags |= DSC_no_subtype;
@@ -332,7 +310,7 @@ USHORT PAR_desc(thread_db* tdbb, CompilerScratch* csb, DSC* desc, ItemInfo* item
 
 	case blr_quad:
 		desc->dsc_dtype = dtype_quad;
-		desc->dsc_length = sizeof(ISC_QUAD);
+		desc->dsc_length = sizeof(GDS__QUAD);
 		desc->dsc_scale = (int) BLR_BYTE;
 		break;
 
@@ -343,7 +321,7 @@ USHORT PAR_desc(thread_db* tdbb, CompilerScratch* csb, DSC* desc, ItemInfo* item
 
 	case blr_timestamp:
 		desc->dsc_dtype = dtype_timestamp;
-		desc->dsc_length = sizeof(ISC_QUAD);
+		desc->dsc_length = sizeof(GDS__QUAD);
 		break;
 
 	case blr_sql_date:
@@ -371,95 +349,20 @@ USHORT PAR_desc(thread_db* tdbb, CompilerScratch* csb, DSC* desc, ItemInfo* item
 		break;
 #endif
 
-	case blr_blob2:
-		{
-			desc->dsc_dtype = dtype_blob;
-			desc->dsc_length = sizeof(ISC_QUAD);
-			desc->dsc_sub_type = BLR_WORD;
-
-			USHORT ttype = BLR_WORD;
-			desc->dsc_scale = ttype & 0xFF;		// BLOB character set
-			desc->dsc_flags = ttype & 0xFF00;	// BLOB collation
-			break;
-		}
-
-	case blr_domain_name:
-	case blr_domain_name2:
-		{
-			bool fullDomain = (BLR_BYTE == blr_domain_full);
-			Firebird::MetaName* name = FB_NEW(csb->csb_pool) Firebird::MetaName(csb->csb_pool);
-			par_name(csb, *name);
-
-			FieldInfo fieldInfo;
-			bool exist = csb->csb_map_field_info.get(*name, fieldInfo);
-			MET_get_domain(tdbb, *name, desc, (exist ? NULL : &fieldInfo));
-
-			if (!exist)
-				csb->csb_map_field_info.put(*name, fieldInfo);
-
-			if (itemInfo)
-			{
-				itemInfo->field = *name;
-
-				if (fullDomain)
-				{
-					itemInfo->nullable = fieldInfo.nullable;
-					itemInfo->fullDomain = true;
-				}
-				else
-					itemInfo->nullable = true;
-			}
-
-			if (dtype == blr_domain_name2)
-			{
-				USHORT ttype = BLR_WORD;
-
-				switch (desc->dsc_dtype)
-				{
-					case dtype_cstring:
-					case dtype_text:
-					case dtype_varying:
-						INTL_ASSIGN_TTYPE(desc, ttype);
-						break;
-
-					case dtype_blob:
-						desc->dsc_scale = ttype & 0xFF;		// BLOB character set
-						desc->dsc_flags = ttype & 0xFF00;	// BLOB collation
-						break;
-
-					default:
-						error(csb, isc_collation_requires_text, 0);
-						break;
-				}
-			}
-
-			jrd_nod* dep_node = PAR_make_node(tdbb, e_dep_length);
-			dep_node->nod_type = nod_dependency;
-			dep_node->nod_arg[e_dep_object] = (jrd_nod*) name;
-			dep_node->nod_arg[e_dep_object_type] = (jrd_nod*)(IPTR) obj_field;
-			csb->csb_dependencies.push(dep_node);
-
-			break;
-		}
-
 	default:
-		error(csb, isc_datnotsup, 0);
-	}
-
-	if (itemInfo)
-	{
-		if (dtype == blr_cstring2 || dtype == blr_text2 || dtype == blr_varying2 ||
-			dtype == blr_blob2 || dtype == blr_domain_name2)
-		{
-			itemInfo->explicitCollation = true;
+		if (dtype == blr_blob) {
+			desc->dsc_dtype = dtype_blob;
+			desc->dsc_length = sizeof(GDS__QUAD);
+			break;
 		}
+		error(*csb, gds_datnotsup, 0);
 	}
 
 	return type_alignments[desc->dsc_dtype];
 }
 
 
-jrd_nod* PAR_gen_field(thread_db* tdbb, USHORT stream, USHORT id)
+JRD_NOD PAR_gen_field(TDBB tdbb, USHORT stream, USHORT id)
 {
 /**************************************
  *
@@ -471,20 +374,20 @@ jrd_nod* PAR_gen_field(thread_db* tdbb, USHORT stream, USHORT id)
  *	Generate a field block.
  *
  **************************************/
+	JRD_NOD node;
+
 	SET_TDBB(tdbb);
 
-	jrd_nod* node = FB_NEW_RPT(*tdbb->getDefaultPool(), e_fld_length) jrd_nod();
+	node = FB_NEW_RPT(*tdbb->tdbb_default, e_fld_length) jrd_nod();
 	node->nod_type = nod_field;
-	node->nod_arg[e_fld_id] = (jrd_nod*) (IPTR) id;
-	node->nod_arg[e_fld_stream] = (jrd_nod*) (IPTR) stream;
+	node->nod_arg[e_fld_id] = (JRD_NOD) (SLONG) id;
+	node->nod_arg[e_fld_stream] = (JRD_NOD) (SLONG) stream;
 
 	return node;
 }
 
 
-jrd_nod* PAR_make_field(thread_db* tdbb, CompilerScratch* csb, 
-						USHORT context,
-						const Firebird::MetaName& base_field)
+JRD_NOD PAR_make_field(TDBB tdbb, CSB csb, USHORT context, TEXT * base_field)
 {
 /**************************************
  *
@@ -497,9 +400,16 @@ jrd_nod* PAR_make_field(thread_db* tdbb, CompilerScratch* csb,
  *	by MET_scan_relation to handle view fields.
  *
  **************************************/
+	SSHORT id;
+	USHORT stream;
+	TEXT name[32];
+	JRD_FLD field;
+	JRD_REL temp_rel;
+	JRD_NOD temp_node;
+
 	SET_TDBB(tdbb);
 
-	const USHORT stream = csb->csb_rpt[context].csb_stream;
+	stream = csb->csb_rpt[context].csb_stream;
 
     /* CVC: This is just another case of a custom function that isn't prepared
        for quoted identifiers and that causes views with fields names like "z x"
@@ -509,79 +419,50 @@ jrd_nod* PAR_make_field(thread_db* tdbb, CompilerScratch* csb,
        This means a field without entry in rdb$fields. This is the origin of the
        mysterious message "cannot access column z x in view VF" when selecting from
        such view that has field "z x". This closes Firebird Bug #227758. */
-	// solved by using MetaName& as parameter - AP
-	jrd_rel* relation = csb->csb_rpt[stream].csb_relation;
-	jrd_prc* procedure = csb->csb_rpt[stream].csb_procedure;
 
-	const SSHORT id = procedure ? find_proc_field(procedure, base_field) :
-		MET_lookup_field (tdbb, csb->csb_rpt[stream].csb_relation, base_field, 0);
+    strcpy (name, base_field);
+    MET_exact_name (name);
+
+    id = MET_lookup_field (tdbb, csb->csb_rpt [stream].csb_relation, name, 0);
 
 	if (id < 0)
 		return NULL;
+
+	temp_rel = csb->csb_rpt[stream].csb_relation;
 
 /* If rel_fields is NULL this means that the relation is
  * in a temporary state (partially loaded).  In this case
  * there is nothing we can do but post an error and exit.
  * Note: This will most likely happen if we have a large list
- * of deferred work which can not complete because of some
+ * of deffered work which can not complete because of some
  * error, and while we are trying to commit, we find 
  * that we have a dependency on something later in the list.
  * IF there were no error, then the dependency woyld have
  * been resolved, because we would have fully loaded the
  * relation, but if it can not be loaded, then we have this
  * problem. The only thing that can be done to remedy this
- * problem is to rollback.  This will clear the DeferredWork list and
+ * problem is to rollback.  This will clear the dfw list and
  * allow the user to remedy the original error.  Note: it would
  * be incorrect for us (the server) to perform the rollback
  * implicitly, because this is a task for the user to do, and
  * should never be decided by the server. This fixes bug 10052 */
-
-	// CVC: The code for procedures now compiles correctly, but Vlad has
-	// pointed out that we don't have default for output fields, therefore
-	// the code is commented till better times.
-	jrd_fld* field = NULL;
-	/*
-	Parameter* param = NULL;
-
-	if (procedure)
-	{
-		param = (*procedure->prc_output_fields)[id];
-	}
-	else
-	*/
-	if (relation)
-	{
-		if (!relation->rel_fields) {
-			ERR_post(isc_depend_on_uncommitted_rel, 0);
-		}
-		field = (*relation->rel_fields)[id];
+	if (!temp_rel->rel_fields) {
+		ERR_post(isc_depend_on_uncommitted_rel, 0);
 	}
 
-	if (csb->csb_g_flags & csb_get_dependencies) {
-		par_dependency(tdbb, csb, stream, id, base_field);
-	}
+	temp_node = PAR_gen_field(tdbb, stream, id);
 
-	jrd_nod* temp_node = PAR_gen_field(tdbb, stream, id);
-	/*
-	if (param)
-	{
-		if (param->prm_default_value) //&& param->prm_not_null)
-			temp_node->nod_arg[e_fld_default_value] =
-				param->prm_default_value;
-	}
-	else
-	*/
-	if (field) 
-	{
+	if ( (field = (JRD_FLD) (*temp_rel->rel_fields)[id]) ) {
 		if (field->fld_default_value && field->fld_not_null)
-			temp_node->nod_arg[e_fld_default_value] = field->fld_default_value;
+			temp_node->nod_arg[e_fld_default_value] =
+				field->fld_default_value;
 	}
 
 	return temp_node;
 }
 
 
-jrd_nod* PAR_make_list(thread_db* tdbb, NodeStack& stack)
+JRD_NOD PAR_make_list(TDBB tdbb, LLS stack)
 {
 /**************************************
  *
@@ -593,25 +474,29 @@ jrd_nod* PAR_make_list(thread_db* tdbb, NodeStack& stack)
  *	Make a list node out of a stack.
  *
  **************************************/
+	JRD_NOD node, *ptr;
+	LLS temp;
+	USHORT count;
+
 	SET_TDBB(tdbb);
 
 /* Count the number of nodes */
-	USHORT count = stack.getCount();
 
-	jrd_nod* node = PAR_make_node(tdbb, count);
+	for (temp = stack, count = 0; temp; count++)
+		temp = temp->lls_next;
+
+	node = PAR_make_node(tdbb, count);
 	node->nod_type = nod_list;
-	jrd_nod** ptr = node->nod_arg + count;
+	ptr = node->nod_arg + count;
 
-	while (stack.hasData()) 
-	{
-		*--ptr = stack.pop();
-	}
+	while (stack)
+		*--ptr = (JRD_NOD) LLS_POP(&stack);
 
 	return node;
 }
 
 
-jrd_nod* PAR_make_node(thread_db* tdbb, int size)
+JRD_NOD PAR_make_node(TDBB tdbb, int size)
 {
 /**************************************
  *
@@ -623,17 +508,18 @@ jrd_nod* PAR_make_node(thread_db* tdbb, int size)
  *	Make a node element and pass it back.
  *
  **************************************/
+	JRD_NOD node;
+
 	SET_TDBB(tdbb);
 
-	jrd_nod* node = FB_NEW_RPT(*tdbb->getDefaultPool(), size) jrd_nod();
+	node = FB_NEW_RPT(*tdbb->tdbb_default, size) jrd_nod();
 	node->nod_count = size;
 
 	return node;
 }
 
 
-CompilerScratch* PAR_parse(thread_db* tdbb, const UCHAR* blr, USHORT internal_flag,
-						   USHORT dbginfo_length, const UCHAR* dbginfo)
+CSB PAR_parse(TDBB tdbb, UCHAR* blr, USHORT internal_flag)
 {
 /**************************************
  *
@@ -645,19 +531,25 @@ CompilerScratch* PAR_parse(thread_db* tdbb, const UCHAR* blr, USHORT internal_fl
  *	Parse blr, returning a compiler scratch block with the results.
  *
  **************************************/
+	JRD_NOD node;
+	CSB csb;
+	SSHORT version;
+
 	SET_TDBB(tdbb);
 
-	CompilerScratch* csb = CompilerScratch::newCsb(*tdbb->getDefaultPool(), 5);
+	csb = Csb::newCsb(*tdbb->tdbb_default, 5);
+	csb->csb_count = 5;
+	csb->csb_rpt.resize(5);	// vec always allocates one too many
 	csb->csb_running = csb->csb_blr = blr;
-	const SSHORT version = *csb->csb_running++;
+	version = *csb->csb_running++;
 	if (internal_flag)
 		csb->csb_g_flags |= csb_internal;
 
 	if (version != blr_version4 && version != blr_version5)
 	{
-		error(csb, isc_wroblrver,
-			  isc_arg_number, (SLONG) blr_version4,
-			  isc_arg_number, (SLONG) version, 0);
+		error(csb, gds_wroblrver,
+			  gds_arg_number, (SLONG) blr_version4,
+			  gds_arg_number, (SLONG) version, 0);
 	}
 
 	if (version == blr_version4)
@@ -665,10 +557,7 @@ CompilerScratch* PAR_parse(thread_db* tdbb, const UCHAR* blr, USHORT internal_fl
 		csb->csb_g_flags |= csb_blr_version4;
 	}
 
-	if (dbginfo_length > 0)
-		DBG_parse_debug_info(dbginfo_length, dbginfo, csb->csb_dbg_info);
-
-	jrd_nod* node = parse(tdbb, csb, OTHER);
+	node = parse(tdbb, &csb, OTHER);
 	csb->csb_node = node;
 
 	if (*csb->csb_running++ != (UCHAR) blr_eoc)
@@ -680,7 +569,7 @@ CompilerScratch* PAR_parse(thread_db* tdbb, const UCHAR* blr, USHORT internal_fl
 }
 
 
-SLONG PAR_symbol_to_gdscode(const Firebird::MetaName& name)
+SLONG PAR_symbol_to_gdscode(const char* name)
 {
 /**************************************
  *
@@ -700,8 +589,14 @@ SLONG PAR_symbol_to_gdscode(const Firebird::MetaName& name)
  *
  **************************************/
 
+	const char* p = name;
+
+	while (*p && *p != ' ') {
+		p++;
+	}
+	const size_t length = p - name;
 	for (int i = 0; codes[i].code_number; ++i) {
-		if (name == codes[i].code_string) {
+		if (!strncmp(name, codes[i].code_string, length)) {
 			return codes[i].code_number;
 		}
 	}
@@ -710,7 +605,7 @@ SLONG PAR_symbol_to_gdscode(const Firebird::MetaName& name)
 }
 
 
-static void error(CompilerScratch* csb, ...)
+static void error(CSB csb, ...)
 {
 /**************************************
  *
@@ -722,25 +617,26 @@ static void error(CompilerScratch* csb, ...)
  *	We've got a blr error other than a syntax error.  Handle it.
  *
  **************************************/
+	TDBB tdbb;
 	ISC_STATUS *p;
 	USHORT offset;
 	int type;
 	va_list args;
 
 /* Don't bother to pass tdbb for error handling */
-	thread_db* tdbb = JRD_get_thread_data();
+	tdbb = GET_THREAD_DATA;
 
-	va_start(args, csb);
+	VA_START(args, csb);
 
 	csb->csb_running--;
 	offset = csb->csb_running - csb->csb_blr;
 	p = tdbb->tdbb_status_vector;
-	*p++ = isc_arg_gds;
-	*p++ = isc_invalid_blr;
-	*p++ = isc_arg_number;
+	*p++ = gds_arg_gds;
+	*p++ = gds_invalid_blr;
+	*p++ = gds_arg_number;
 	*p++ = offset;
 
-	*p++ = isc_arg_gds;
+	*p++ = gds_arg_gds;
 	*p++ = va_arg(args, ISC_STATUS);
 
 /* Pick up remaining args */
@@ -748,34 +644,33 @@ static void error(CompilerScratch* csb, ...)
 	while ( (*p++ = type = va_arg(args, int)) )
 	{
 		switch (type) {
-		case isc_arg_gds:
+		case gds_arg_gds:
 			*p++ = (ISC_STATUS) va_arg(args, ISC_STATUS);
 			break;
 
-		case isc_arg_string:
-		case isc_arg_interpreted:
+		case gds_arg_string:
+		case gds_arg_interpreted:
 			*p++ = (ISC_STATUS) va_arg(args, TEXT *);
 			break;
 
-		case isc_arg_cstring:
+		case gds_arg_cstring:
 			*p++ = (ISC_STATUS) va_arg(args, int);
 			*p++ = (ISC_STATUS) va_arg(args, TEXT *);
 			break;
 
-		case isc_arg_number:
+		case gds_arg_number:
 			*p++ = (ISC_STATUS) va_arg(args, SLONG);
 			break;
 
 		default:
-			fb_assert(FALSE);
-		case isc_arg_vms:
-		case isc_arg_unix:
-		case isc_arg_win32:
+			assert(FALSE);
+		case gds_arg_vms:
+		case gds_arg_unix:
+		case gds_arg_win32:
 			*p++ = va_arg(args, int);   
 			break; 
 		}
 	}
-	va_end(args);
 
 /* Give up whatever we were doing and return to the user. */
 
@@ -783,7 +678,7 @@ static void error(CompilerScratch* csb, ...)
 }
 
 
-static SSHORT find_proc_field(const jrd_prc* procedure, const Firebird::MetaName& name)
+static SSHORT find_proc_field(JRD_PRC procedure, TEXT * name)
 {
 /**************************************
  *
@@ -795,12 +690,16 @@ static SSHORT find_proc_field(const jrd_prc* procedure, const Firebird::MetaName
  *	Look for named field in procedure output fields.
  *
  **************************************/
-	vec<Parameter*>* list = procedure->prc_output_fields;
-	vec<Parameter*>::const_iterator ptr = list->begin();
-	for (const vec<Parameter*>::const_iterator end = list->end(); ptr < end; ++ptr)
-	{
-		const Parameter* param = *ptr;
-		if (name == param->prm_name)
+	VEC list;
+	vec::iterator ptr, end;
+	PRM param;
+
+	// JMB: Is there a reason we are skipping the last element in the array?
+	list = procedure->prc_output_fields;
+	for (ptr = list->begin(), end = list->end() - 1; ptr < end;
+		 ptr++) {
+		param = (PRM) * ptr;
+		if (!strcmp(name, param->prm_name))
 			return param->prm_number;
 	}
 
@@ -808,7 +707,7 @@ static SSHORT find_proc_field(const jrd_prc* procedure, const Firebird::MetaName
 }
 
 
-static jrd_nod* par_args(thread_db* tdbb, CompilerScratch* csb, USHORT expected)
+static JRD_NOD par_args(TDBB tdbb, CSB * csb, USHORT expected)
 {
 /**************************************
  *
@@ -820,24 +719,27 @@ static jrd_nod* par_args(thread_db* tdbb, CompilerScratch* csb, USHORT expected)
  *	Parse a counted argument list.
  *
  **************************************/
+	JRD_NOD node, *ptr;
+	USHORT count;
+
 	SET_TDBB(tdbb);
 
-	USHORT count = BLR_BYTE;
-	jrd_nod* node = PAR_make_node(tdbb, count);
-	node->nod_type = nod_list;
-	jrd_nod** ptr = node->nod_arg;
 
-	if (count) {
-		do {
+	count = BLR_BYTE;
+	node = PAR_make_node(tdbb, count);
+	node->nod_type = nod_list;
+	ptr = node->nod_arg;
+
+	if (count)
+		do
 			*ptr++ = parse(tdbb, csb, expected);
-		} while (--count);
-	}
+		while (--count);
 
 	return node;
 }
 
 
-static jrd_nod* par_cast(thread_db* tdbb, CompilerScratch* csb)
+static JRD_NOD par_cast(TDBB tdbb, CSB * csb)
 {
 /**************************************
  *
@@ -849,41 +751,30 @@ static jrd_nod* par_cast(thread_db* tdbb, CompilerScratch* csb)
  *	Parse a datatype cast
  *
  **************************************/
+	JRD_NOD node;
+	FMT format;
+	DSC *desc;
+
 	SET_TDBB(tdbb);
 
-	jrd_nod* node = PAR_make_node(tdbb, e_cast_length);
+	node = PAR_make_node(tdbb, e_cast_length);
 	node->nod_count = count_table[blr_cast];
 
-	Format* format = Format::newFormat(*tdbb->getDefaultPool(), 1);
-	node->nod_arg[e_cast_fmt] = (jrd_nod*) format;
+	format = fmt::newFmt(*tdbb->tdbb_default, 1);
+	format->fmt_count = 1;
+	node->nod_arg[e_cast_fmt] = (JRD_NOD) format;
 
-	dsc* desc = &format->fmt_desc[0];
-	ItemInfo itemInfo;
-	PAR_desc(tdbb, csb, desc, &itemInfo);
+	desc = &format->fmt_desc[0];
+	PAR_desc(csb, desc);
 	format->fmt_length = desc->dsc_length;
 
 	node->nod_arg[e_cast_source] = parse(tdbb, csb, VALUE);
-
-	if (itemInfo.isSpecial())
-	{
-		ItemInfo* p = FB_NEW(*tdbb->getDefaultPool()) ItemInfo(*tdbb->getDefaultPool(), itemInfo);
-		node->nod_arg[e_cast_iteminfo] = (jrd_nod*) p;
-	}
-
-	if (itemInfo.explicitCollation)
-	{
-		jrd_nod* dep_node = PAR_make_node (tdbb, e_dep_length);
-		dep_node->nod_type = nod_dependency;
-		dep_node->nod_arg [e_dep_object] = (jrd_nod*)(IPTR) INTL_TEXT_TYPE(*desc);
-		dep_node->nod_arg [e_dep_object_type] = (jrd_nod*)(IPTR) obj_collation;
-		csb->csb_dependencies.push(dep_node);
-	}
 
 	return node;
 }
 
 
-static PsqlException* par_condition(thread_db* tdbb, CompilerScratch* csb)
+static XCP par_condition(TDBB tdbb, CSB * csb)
 {
 /**************************************
  *
@@ -895,67 +786,73 @@ static PsqlException* par_condition(thread_db* tdbb, CompilerScratch* csb)
  *	Parse an error conditions list.
  *
  **************************************/
-	jrd_nod* dep_node;
+	XCP exception_list;
+	JRD_NOD dep_node;
+	USHORT code_type;
+	TEXT name[32], *p;
 	SLONG code_number;
-	Firebird::MetaName name;
 
 	SET_TDBB(tdbb);
 
 /* allocate a node to represent the conditions list */
 
-	const USHORT code_type = BLR_BYTE;
+	code_type = BLR_BYTE;
 
-	/* don't create PsqlException if blr_raise is used,
+	/* don't create XCP if blr_raise is used,
 	   just return NULL */
 	if (code_type == blr_raise)
 	{
 		return NULL;
 	}
 
-	PsqlException* exception_list = FB_NEW_RPT(*tdbb->getDefaultPool(), 1) PsqlException();
+	exception_list = FB_NEW_RPT(*tdbb->tdbb_default, 1) xcp();
 	exception_list->xcp_count = 1;
-	xcp_repeat& item = exception_list->xcp_rpt[0];
 	
 	switch (code_type) {
 	case blr_sql_code:
-		item.xcp_type = xcp_sql_code;
-		item.xcp_code = (SSHORT) BLR_WORD;
+		exception_list->xcp_rpt[0].xcp_type = xcp_sql_code;
+		exception_list->xcp_rpt[0].xcp_code = (SSHORT) BLR_WORD;
 		break;
 
 	case blr_gds_code:
-		item.xcp_type = xcp_gds_code;
+		exception_list->xcp_rpt[0].xcp_type = xcp_gds_code;
 		par_name(csb, name);
-		name.lower7();
+		for (p = name; *p; *p++)
+			*p = LOWWER(*p);
 		code_number = PAR_symbol_to_gdscode(name);
 		if (code_number)
-			item.xcp_code = code_number;
+			exception_list->xcp_rpt[0].xcp_code = code_number;
 		else
-			error(csb, isc_codnotdef, isc_arg_string, ERR_cstring(name), 0);
+			error(*csb, gds_codnotdef, gds_arg_string, ERR_cstring(name), 0);
 		break;
 
 	case blr_exception:
 	case blr_exception_msg:
-		item.xcp_type = xcp_xcp_code;
+		exception_list->xcp_rpt[0].xcp_type = xcp_xcp_code;
 		par_name(csb, name);
-		if (!(item.xcp_code = MET_lookup_exception_number(tdbb, name)))
-			error(csb, isc_xcpnotdef, isc_arg_string, ERR_cstring(name), 0);
+		if (!(exception_list->xcp_rpt[0].xcp_code =
+			  MET_lookup_exception_number(tdbb, name)))
+			error(*csb, gds_xcpnotdef, gds_arg_string, ERR_cstring(name), 0);
 		dep_node = PAR_make_node(tdbb, e_dep_length);
 		dep_node->nod_type = nod_dependency;
-		dep_node->nod_arg[e_dep_object] = (jrd_nod*)(IPTR) item.xcp_code;
-		dep_node->nod_arg[e_dep_object_type] = (jrd_nod*)(IPTR) obj_exception;
-		csb->csb_dependencies.push(dep_node);
+		dep_node->nod_arg[e_dep_object] =
+			(JRD_NOD) exception_list->xcp_rpt[0].xcp_code;
+		dep_node->nod_arg[e_dep_object_type] = (JRD_NOD) obj_exception;
+		LLS_PUSH(dep_node, &(*csb)->csb_dependencies);
 		break;
 
 	default:
-		fb_assert(FALSE);
+		assert(FALSE);
 		break;
 	}
+
+	exception_list->xcp_rpt[0].xcp_msg = 0;
 
 	return exception_list;
 }
 
 
-static PsqlException* par_conditions(thread_db* tdbb, CompilerScratch* csb)
+static XCP par_conditions(TDBB tdbb, CSB * csb)
 {
 /**************************************
  *
@@ -967,57 +864,62 @@ static PsqlException* par_conditions(thread_db* tdbb, CompilerScratch* csb)
  *	Parse an error conditions list.
  *
  **************************************/
-	jrd_nod* dep_node;
+	XCP exception_list;
+	JRD_NOD dep_node;
+	USHORT n, i, code_type;
+	TEXT name[32], *p;
 	SLONG code_number;
-	Firebird::MetaName name;
 
 	SET_TDBB(tdbb);
 
 /* allocate a node to represent the conditions list */
 
-	const USHORT n = BLR_WORD;
-	PsqlException* exception_list = FB_NEW_RPT(*tdbb->getDefaultPool(), n) PsqlException();
+	n = BLR_WORD;
+	exception_list = FB_NEW_RPT(*tdbb->tdbb_default, n) xcp();
 	exception_list->xcp_count = n;
-	for (int i = 0; i < n; i++) {
-		const USHORT code_type = BLR_BYTE;
-		xcp_repeat& item = exception_list->xcp_rpt[i];
-		
+	for (i = 0; i < n; i++) {
+		code_type = BLR_BYTE;
 		switch (code_type) {
 		case blr_sql_code:
-			item.xcp_type = xcp_sql_code;
-			item.xcp_code = (SSHORT) BLR_WORD;
+			exception_list->xcp_rpt[i].xcp_type = xcp_sql_code;
+			exception_list->xcp_rpt[i].xcp_code = (SSHORT) BLR_WORD;
 			break;
 
 		case blr_gds_code:
-			item.xcp_type = xcp_gds_code;
+			exception_list->xcp_rpt[i].xcp_type = xcp_gds_code;
 			par_name(csb, name);
-			name.lower7();
+			for (p = name; *p; *p++)
+				*p = LOWWER(*p);
 			code_number = PAR_symbol_to_gdscode(name);
 			if (code_number)
-				item.xcp_code = code_number;
+				exception_list->xcp_rpt[i].xcp_code = code_number;
 			else
-				error(csb, isc_codnotdef, isc_arg_string, ERR_cstring(name), 0);
+				error(*csb, gds_codnotdef,
+					  gds_arg_string, ERR_cstring(name), 0);
 			break;
 
 		case blr_exception:
-			item.xcp_type = xcp_xcp_code;
+			exception_list->xcp_rpt[i].xcp_type = xcp_xcp_code;
 			par_name(csb, name);
-			if (!(item.xcp_code = MET_lookup_exception_number(tdbb, name)))
-				error(csb, isc_xcpnotdef, isc_arg_string, ERR_cstring(name), 0);
+			if (!(exception_list->xcp_rpt[i].xcp_code =
+				  MET_lookup_exception_number(tdbb, name)))
+				error(*csb, gds_xcpnotdef,
+					  gds_arg_string, ERR_cstring(name), 0);
 			dep_node = PAR_make_node(tdbb, e_dep_length);
 			dep_node->nod_type = nod_dependency;
-			dep_node->nod_arg[e_dep_object] = (jrd_nod*)(IPTR) item.xcp_code;
-			dep_node->nod_arg[e_dep_object_type] = (jrd_nod*)(IPTR) obj_exception;
-			csb->csb_dependencies.push(dep_node);
+			dep_node->nod_arg[e_dep_object] =
+				(JRD_NOD) exception_list->xcp_rpt[0].xcp_code;
+			dep_node->nod_arg[e_dep_object_type] = (JRD_NOD) obj_exception;
+			LLS_PUSH(dep_node, &(*csb)->csb_dependencies);
 			break;
 
 		case blr_default_code:
-			item.xcp_type = xcp_default;
-			item.xcp_code = 0;
+			exception_list->xcp_rpt[i].xcp_type = xcp_default;
+			exception_list->xcp_rpt[i].xcp_code = 0;
 			break;
 
 		default:
-			fb_assert(FALSE);
+			assert(FALSE);
 			break;
 		}
 	}
@@ -1026,7 +928,7 @@ static PsqlException* par_conditions(thread_db* tdbb, CompilerScratch* csb)
 }
 
 
-static SSHORT par_context(CompilerScratch* csb, SSHORT* context_ptr)
+static SSHORT par_context(CSB* csb, SSHORT* context_ptr)
 {
 /**************************************
  *
@@ -1041,42 +943,37 @@ static SSHORT par_context(CompilerScratch* csb, SSHORT* context_ptr)
  *
  **************************************/
 
-	const SSHORT context = (unsigned int) BLR_BYTE;
-
-	if (context_ptr)
-		*context_ptr = context;
-
-	CompilerScratch::csb_repeat* tail = CMP_csb_element(csb, context);
-
-	if (tail->csb_flags & csb_used) {
-		if (csb->csb_g_flags & csb_reuse_context) {
-			return tail->csb_stream;
-		}
-		else {
-			error(csb, isc_ctxinuse, 0);
-		}
+	SSHORT stream = (*csb)->csb_n_stream++;
+	if (stream > MAX_STREAMS) {
+		// TMN: Someone please review this to verify that
+		// gds_too_many_contexts is indeed the right error to report.
+		// "Too many streams" would probably be more correct, but we
+		/// don't have such an error (yet).
+		error(*csb, gds_too_many_contexts, 0);
 	}
+	assert(stream <= MAX_STREAMS);
+	SSHORT context = (unsigned int) BLR_BYTE;
+	CMP_csb_element(csb, stream);
+	csb_repeat* tail = CMP_csb_element(csb, context);
 
-	const SSHORT stream = csb->nextStream(false);
-	if (stream >= MAX_STREAMS)
-	{
-		error(csb, isc_too_many_contexts, 0);
-	}
+	if (tail->csb_flags & csb_used)
+		error(*csb, gds_ctxinuse, 0);
 
 	tail->csb_flags |= csb_used;
 	tail->csb_stream = (UCHAR) stream;
 
-	CMP_csb_element(csb, stream);
+	if (context_ptr)
+		*context_ptr = context;
 
 	return stream;
 }
 
 
-static void par_dependency(thread_db*   tdbb,
-						   CompilerScratch*    csb,
+static void par_dependency(TDBB   tdbb,
+						   CSB*   csb,
 						   SSHORT stream,
 						   SSHORT id,
-						   const Firebird::MetaName& field_name)
+						   TEXT*  field_name)
 {
 /**************************************
  *
@@ -1089,45 +986,45 @@ static void par_dependency(thread_db*   tdbb,
  *	as a dependency.
  *
  **************************************/
+	JRD_NOD node, field_node;
+	STR string;
+	int length;
+
 	SET_TDBB(tdbb);
 
-	jrd_nod* node = PAR_make_node(tdbb, e_dep_length);
+	node = PAR_make_node(tdbb, e_dep_length);
 	node->nod_type = nod_dependency;
-	if (csb->csb_rpt[stream].csb_relation) {
+	if ((*csb)->csb_rpt[stream].csb_relation) {
 		node->nod_arg[e_dep_object] =
-			(jrd_nod*) csb->csb_rpt[stream].csb_relation;
-		// How do I determine reliably this is a view?
-		// At this time, rel_view_rse is still null.
-		//if (is_view)
-		//	node->nod_arg[e_dep_object_type] = (jrd_nod*)(IPTR) obj_view;
-		//else
-			node->nod_arg[e_dep_object_type] = (jrd_nod*)(IPTR) obj_relation;
+			(JRD_NOD) (*csb)->csb_rpt[stream].csb_relation;
+		node->nod_arg[e_dep_object_type] = (JRD_NOD) obj_relation;
 	}
-	else if (csb->csb_rpt[stream].csb_procedure) {
+	else if ((*csb)->csb_rpt[stream].csb_procedure) {
 		node->nod_arg[e_dep_object] =
-			(jrd_nod*) csb->csb_rpt[stream].csb_procedure;
-		node->nod_arg[e_dep_object_type] = (jrd_nod*)(IPTR) obj_procedure;
+			(JRD_NOD) (*csb)->csb_rpt[stream].csb_procedure;
+		node->nod_arg[e_dep_object_type] = (JRD_NOD) obj_procedure;
 	}
 
-	if (field_name.length() > 0) {
-		jrd_nod* field_node = PAR_make_node(tdbb, 1);
-		node->nod_arg[e_dep_field] = field_node;
+	if (field_name) {
+		node->nod_arg[e_dep_field] = field_node = PAR_make_node(tdbb, 1);
 		field_node->nod_type = nod_literal;
-		field_node->nod_arg[0] = (jrd_nod*) 
-			stringDup(*tdbb->getDefaultPool(), field_name.c_str());
+		length = strlen(field_name);
+		string = FB_NEW_RPT(*tdbb->tdbb_default, length) str();
+		string->str_length = length;
+		strcpy(reinterpret_cast < char *>(string->str_data), field_name);
+		field_node->nod_arg[0] = (JRD_NOD) string->str_data;
 	}
 	else if (id >= 0) {
-		jrd_nod* field_node = PAR_make_node(tdbb, 1);
-		node->nod_arg[e_dep_field] = field_node;
+		node->nod_arg[e_dep_field] = field_node = PAR_make_node(tdbb, 1);
 		field_node->nod_type = nod_field;
-		field_node->nod_arg[0] = (jrd_nod*) (IPTR) id;
+		field_node->nod_arg[0] = (JRD_NOD) (SLONG) id;
 	}
 
-	csb->csb_dependencies.push(node);
+	LLS_PUSH(node, &(*csb)->csb_dependencies);
 }
 
 
-static jrd_nod* par_exec_proc(thread_db* tdbb, CompilerScratch* csb, SSHORT blr_operator)
+static JRD_NOD par_exec_proc(TDBB tdbb, CSB * csb, SSHORT operator_)
 {
 /**************************************
  *
@@ -1139,47 +1036,51 @@ static jrd_nod* par_exec_proc(thread_db* tdbb, CompilerScratch* csb, SSHORT blr_
  *	Parse an execute procedure  reference.
  *
  **************************************/
+	JRD_NOD node, dep_node;
+	JRD_PRC procedure;
+
 	SET_TDBB(tdbb);
 
-	jrd_prc* procedure = NULL;
+	procedure = NULL;
 	{
-		Firebird::MetaName name;
+		TEXT name[32];
+		USHORT pid;
 
-		if (blr_operator == blr_exec_pid) {
-			const USHORT pid = BLR_WORD;
-			if (!(procedure = MET_lookup_procedure_id(tdbb, pid, false, false, 0)))
-				name.printf("id %d", pid);
+		if (operator_ == blr_exec_pid) {
+			pid = BLR_WORD;
+			if (!(procedure = MET_lookup_procedure_id(tdbb, pid, FALSE, FALSE, 0)))
+				sprintf(name, "id %d", pid);
 		}
 		else {
 			par_name(csb, name);
-			procedure = MET_lookup_procedure(tdbb, name, false);
+			procedure = MET_lookup_procedure(tdbb, name, FALSE);
 		}
 		if (!procedure)
-			error(csb, isc_prcnotdef, isc_arg_string, ERR_cstring(name), 0);
+			error(*csb, gds_prcnotdef, gds_arg_string, ERR_cstring(name), 0);
 	}
 
-	jrd_nod* node = PAR_make_node(tdbb, e_esp_length);
+	node = PAR_make_node(tdbb, e_esp_length);
 	node->nod_type = nod_exec_proc;
 	node->nod_count = count_table[blr_exec_proc];
-	node->nod_arg[e_esp_procedure] = (jrd_nod*) procedure;
+	node->nod_arg[e_esp_procedure] = (JRD_NOD) procedure;
 
 	par_procedure_parms(tdbb, csb, procedure, &node->nod_arg[e_esp_in_msg],
-						&node->nod_arg[e_esp_inputs], true);
+						&node->nod_arg[e_esp_inputs], TRUE);
 	par_procedure_parms(tdbb, csb, procedure, &node->nod_arg[e_esp_out_msg],
-						&node->nod_arg[e_esp_outputs], false);
+						&node->nod_arg[e_esp_outputs], FALSE);
 
-	jrd_nod* dep_node = PAR_make_node(tdbb, e_dep_length);
+	dep_node = PAR_make_node(tdbb, e_dep_length);
 	dep_node->nod_type = nod_dependency;
-	dep_node->nod_arg[e_dep_object] = (jrd_nod*) procedure;
-	dep_node->nod_arg[e_dep_object_type] = (jrd_nod*)(IPTR) obj_procedure;
+	dep_node->nod_arg[e_dep_object] = (JRD_NOD) procedure;
+	dep_node->nod_arg[e_dep_object_type] = (JRD_NOD) obj_procedure;
 
-	csb->csb_dependencies.push(dep_node);
+	LLS_PUSH(dep_node, &(*csb)->csb_dependencies);
 
 	return node;
 }
 
 
-static jrd_nod* par_fetch(thread_db* tdbb, CompilerScratch* csb, jrd_nod* for_node)
+static JRD_NOD par_fetch(TDBB tdbb, CSB * csb, JRD_NOD for_node)
 {
 /**************************************
  *
@@ -1193,21 +1094,24 @@ static jrd_nod* par_fetch(thread_db* tdbb, CompilerScratch* csb, jrd_nod* for_no
  *	    FOR x IN relation WITH x.DBKEY EQ value ...
  *
  **************************************/
+	RSE rse;
+	JRD_NOD relation, node;
+
 	SET_TDBB(tdbb);
 
-/* Fake RecordSelExpr */
+
+/* Fake RSE */
 
 	for_node->nod_arg[e_for_re] = PAR_make_node(tdbb, 1 + rse_delta + 2);
-	RecordSelExpr* rse = (RecordSelExpr*) for_node->nod_arg[e_for_re];
+	rse = (RSE) for_node->nod_arg[e_for_re];
 	rse->nod_type = nod_rse;
 	rse->nod_count = 0;
 	rse->rse_count = 1;
-	jrd_nod* relation = parse(tdbb, csb, RELATION);
-	rse->rse_relation[0] = relation;
+	rse->rse_relation[0] = relation = parse(tdbb, csb, RELATION);
 
 /* Fake boolean */
 
-	jrd_nod* node = rse->rse_boolean = PAR_make_node(tdbb, 2);
+	node = rse->rse_boolean = PAR_make_node(tdbb, 2);
 	node->nod_type = nod_eql;
 	node->nod_flags = nod_comparison;
 	node->nod_arg[1] = parse(tdbb, csb, VALUE);
@@ -1225,7 +1129,7 @@ static jrd_nod* par_fetch(thread_db* tdbb, CompilerScratch* csb, jrd_nod* for_no
 }
 
 
-static jrd_nod* par_field(thread_db* tdbb, CompilerScratch* csb, SSHORT blr_operator)
+static JRD_NOD par_field(TDBB tdbb, CSB * csb, SSHORT operator_)
 {
 /**************************************
  *
@@ -1237,70 +1141,43 @@ static jrd_nod* par_field(thread_db* tdbb, CompilerScratch* csb, SSHORT blr_oper
  *	Parse a field.
  *
  **************************************/
+	JRD_REL relation;
+	JRD_PRC procedure;
+	TEXT name[32];
+	JRD_NOD node;
+	SSHORT stream, id, context, flags;
+	csb_repeat *tail;
+	JRD_PRC scan_proc;
+	JRD_FLD field;
+	JRD_REL temp_rel;
+	BOOLEAN is_column = FALSE;
+
 	SET_TDBB(tdbb);
 
-	const USHORT context = (unsigned int) BLR_BYTE;
 
-	// check if this is a VALUE of domain's check constraint
-	if (!csb->csb_domain_validation.isEmpty() &&
-		(blr_operator == blr_fid || blr_operator == blr_field) &&
-		context == 0)
-	{
-		if (blr_operator == blr_fid) {
-			SSHORT id = BLR_WORD;
-			fb_assert(id == 0);
-		}
-		else {
-			Firebird::MetaName name;
-			par_name(csb, name);
-		}
+	context = (unsigned int) BLR_BYTE;
 
-		jrd_nod* node = PAR_make_node(tdbb, e_domval_length);
-		node->nod_type = nod_domain_validation;
-		node->nod_count = 0;
+	if (context >= (*csb)->csb_count)
+		error(*csb, gds_ctxnotdef, 0);
 
-		dsc* desc = (dsc*) (node->nod_arg + e_domval_desc);
-		MET_get_domain(tdbb, csb->csb_domain_validation, desc, NULL);
+	stream = (*csb)->csb_rpt[context].csb_stream;
+	flags = 0;
 
-		return node;
-	}
-
-	if (context >= csb->csb_rpt.getCount())/* ||
-		!(csb->csb_rpt[context].csb_flags & csb_used) )
-
-		dimitr:	commented out to support system triggers implementing
-				WITH CHECK OPTION. They reference the relation stream (#2)
-				directly, without a DSQL context. It breaks the layering,
-				but we must support legacy BLR.
-		*/
-	{
-		error(csb, isc_ctxnotdef, 0);
-	}
-
-	Firebird::MetaName name;
-	SSHORT id;
-	const SSHORT stream = csb->csb_rpt[context].csb_stream;
-	SSHORT flags = 0;
-	bool is_column = false;
-
-	if (blr_operator == blr_fid)
-	{
+	if (operator_ == blr_fid) {
 		id = BLR_WORD;
 		flags = nod_id;
-		is_column = true;
+		is_column = TRUE;
 	}
-	else if (blr_operator == blr_field)
-	{
-		CompilerScratch::csb_repeat* tail = &csb->csb_rpt[stream];
-		const jrd_prc* procedure = tail->csb_procedure;
+	else if (operator_ == blr_field) {
+		tail = &(*csb)->csb_rpt[stream];
+		procedure = tail->csb_procedure;
 
 		/* make sure procedure has been scanned before using it */
 
 		if (procedure && (!(procedure->prc_flags & PRC_scanned)
 						  || (procedure->prc_flags & PRC_being_scanned)
-						  || (procedure->prc_flags & PRC_being_altered)))
-		{
-			const jrd_prc* scan_proc = MET_procedure(tdbb, procedure->prc_id, false, 0);
+						  || (procedure->prc_flags & PRC_being_altered))) {
+			scan_proc = MET_procedure(tdbb, procedure->prc_id, FALSE, 0);
 			if (scan_proc != procedure)
 				procedure = NULL;
 		}
@@ -1308,48 +1185,41 @@ static jrd_nod* par_field(thread_db* tdbb, CompilerScratch* csb, SSHORT blr_oper
 		if (procedure) {
 			par_name(csb, name);
 			if ((id = find_proc_field(procedure, name)) == -1)
-				error(csb,
-					  isc_fldnotdef2,
-					  isc_arg_string, ERR_cstring(name),
-					  isc_arg_string, procedure->prc_name.c_str(), 0);
+				error(*csb,
+					  gds_fldnotdef,
+					  gds_arg_string, ERR_cstring(name),
+					  gds_arg_string, procedure->prc_name->str_data, 0);
 		}
 		else {
-			jrd_rel* relation = tail->csb_relation;
-			if (!relation)
-				error(csb, isc_ctxnotdef, 0);
+			if (!(relation = tail->csb_relation))
+				error(*csb, gds_ctxnotdef, 0);
 
 			/* make sure relation has been scanned before using it */
 
 			if (!(relation->rel_flags & REL_scanned) ||
 				(relation->rel_flags & REL_being_scanned))
-			{
 					MET_scan_relation(tdbb, relation);
-			}
 
 			par_name(csb, name);
-			if ((id = MET_lookup_field(tdbb, relation, name.c_str(), 0)) < 0) {
-				if (csb->csb_g_flags & csb_validation) {
+			if ((id = MET_lookup_field(tdbb, relation, name, 0)) < 0)
+				if ((*csb)->csb_g_flags & csb_validation) {
 					id = 0;
 					flags |= nod_id;
-					is_column = true;
+					is_column = TRUE;
 				}
 				else {
-					if (tdbb->getAttachment()->att_flags & ATT_gbak_attachment)
-					{
-						warning(csb, isc_fldnotdef, isc_arg_string,
-								ERR_cstring(name), isc_arg_string,
-								relation->rel_name.c_str(), 0);
-					}
-					else if (relation->rel_name.length() > 0)
-					{
-						error(csb, isc_fldnotdef, isc_arg_string,
-							  ERR_cstring(name), isc_arg_string,
-							  relation->rel_name.c_str(), 0);
-					}
+					if (tdbb->
+						tdbb_attachment->att_flags & ATT_gbak_attachment)
+							warning(*csb, gds_fldnotdef, gds_arg_string,
+									ERR_cstring(name), gds_arg_string,
+									relation->rel_name, 0);
+					else if (relation->rel_name)
+						error(*csb, gds_fldnotdef, gds_arg_string,
+							  ERR_cstring(name), gds_arg_string,
+							  relation->rel_name, 0);
 					else
-						error(csb, isc_ctxnotdef, 0);
+						error(*csb, gds_ctxnotdef, 0);
 				}
-			}
 		}
 	}
 
@@ -1357,45 +1227,30 @@ static jrd_nod* par_field(thread_db* tdbb, CompilerScratch* csb, SSHORT blr_oper
    use it because when restoring the database the field
    id's may not be valid yet */
 
-	if (csb->csb_g_flags & csb_get_dependencies) {
-		if (blr_operator == blr_fid)
-			par_dependency(tdbb, csb, stream, id, "");
+	if ((*csb)->csb_g_flags & csb_get_dependencies)
+		if (operator_ == blr_fid)
+			par_dependency(tdbb, csb, stream, id, 0);
 		else
 			par_dependency(tdbb, csb, stream, id, name);
-	}
 
-	jrd_nod* node = PAR_gen_field(tdbb, stream, id);
+	node = PAR_gen_field(tdbb, stream, id);
 	node->nod_flags |= flags;
 
-	if (is_column)
-	{
- 		jrd_rel* temp_rel = csb->csb_rpt[stream].csb_relation;
-
-		if (temp_rel)
-		{
-			jrd_fld* field;
-
-			if (id < (int) temp_rel->rel_fields->count() && (field = (*temp_rel->rel_fields)[id]))
- 			{
+	if (is_column == TRUE) {
+		if ( (temp_rel = (*csb)->csb_rpt[stream].csb_relation) ) {
+			if ( (field = (JRD_FLD) (*temp_rel->rel_fields)[id]) ) {
 				if (field->fld_default_value && field->fld_not_null)
-					node->nod_arg[e_fld_default_value] = field->fld_default_value;
- 			}
- 			else
- 			{
-				if (temp_rel->rel_flags & REL_system)
-				{
-					node = PAR_make_node(tdbb, 0);
-					node->nod_type = nod_null;
- 				}
- 			}
- 		}
- 	}
+					node->nod_arg[e_fld_default_value] =
+						field->fld_default_value;
+			}
+		}
+	}
 
 	return node;
 }
 
 
-static jrd_nod* par_function(thread_db* tdbb, CompilerScratch* csb)
+static JRD_NOD par_function(TDBB tdbb, CSB * csb)
 {
 /**************************************
  *
@@ -1407,68 +1262,68 @@ static jrd_nod* par_function(thread_db* tdbb, CompilerScratch* csb)
  *	Parse a function reference.
  *
  **************************************/
-	SET_TDBB(tdbb);
-	
-	Firebird::MetaName name;
-	const USHORT count = par_name(csb, name);
+	JRD_NOD node;
+	FUN function, homonyms;
+	TEXT name[32];
+	USHORT count;
 
-	UserFunction* function = FUN_lookup_function(name,
-					!(tdbb->getAttachment()->att_flags & ATT_gbak_attachment));
+	SET_TDBB(tdbb);
+
+	count = par_name(csb, name);
+
+	function = FUN_lookup_function(name, 
+				!(tdbb->tdbb_attachment->att_flags & ATT_gbak_attachment));
 	if (!function) {
 		if (tdbb->tdbb_flags & TDBB_prc_being_dropped) {
-			jrd_nod* anode = PAR_make_node(tdbb, e_fun_length);
-			anode->nod_count = 1;
-			anode->nod_arg[e_fun_function] = NULL;
-			anode->nod_arg[e_fun_args] = par_args(tdbb, csb, VALUE);
-			return anode;
+			node = PAR_make_node(tdbb, e_fun_length);
+			node->nod_count = 1;
+			node->nod_arg[e_fun_function] = (JRD_NOD) NULL;
+			node->nod_arg[e_fun_args] = par_args(tdbb, csb, VALUE);
+			return node;
 		}
 		else {
-			csb->csb_running -= count;
-			error(csb, isc_funnotdef, isc_arg_string, ERR_cstring(name), 0);
+			(*csb)->csb_running -= count;
+			error(*csb, gds_funnotdef, gds_arg_string, ERR_cstring(name), 0);
 		}
 	}
 
-	UserFunction* homonyms;
-	for (homonyms = function; homonyms; homonyms = homonyms->fun_homonym) {
+	for (homonyms = function; homonyms; homonyms = homonyms->fun_homonym)
 		if (homonyms->fun_entrypoint)
 			break;
-	}
 
 	if (!homonyms)
-		if (tdbb->getAttachment()->att_flags & ATT_gbak_attachment)
-		{
-			warning(csb, isc_funnotdef,
-					isc_arg_string, ERR_cstring(name),
-					isc_arg_interpreted,
+		if (tdbb->tdbb_attachment->att_flags & ATT_gbak_attachment)
+			warning(*csb, gds_funnotdef,
+					gds_arg_string, ERR_cstring(name),
+					gds_arg_interpreted,
 					"module name or entrypoint could not be found", 0);
-		}
 		else {
-			csb->csb_running -= count;
-			error(csb, isc_funnotdef,
-				  isc_arg_string, ERR_cstring(name),
-				  isc_arg_interpreted,
+			(*csb)->csb_running -= count;
+			error(*csb, gds_funnotdef,
+				  gds_arg_string, ERR_cstring(name),
+				  gds_arg_interpreted,
 				  "module name or entrypoint could not be found", 0);
 		}
 
-	jrd_nod* node = PAR_make_node(tdbb, e_fun_length);
+	node = PAR_make_node(tdbb, e_fun_length);
 	node->nod_count = 1;
-	node->nod_arg[e_fun_function] = (jrd_nod*) function;
+	node->nod_arg[e_fun_function] = (JRD_NOD) function;
 	node->nod_arg[e_fun_args] = par_args(tdbb, csb, VALUE);
 
     /* CVC: I will track ufds only if a proc is not being dropped. */
-    if (csb->csb_g_flags & csb_get_dependencies) {
-        jrd_nod* dep_node = PAR_make_node (tdbb, e_dep_length);
+    if ((*csb)->csb_g_flags & csb_get_dependencies) {
+        JRD_NOD dep_node = PAR_make_node (tdbb, e_dep_length);
         dep_node->nod_type = nod_dependency;
-        dep_node->nod_arg [e_dep_object] = (jrd_nod*) function;
-        dep_node->nod_arg [e_dep_object_type] = (jrd_nod*)(IPTR) obj_udf;
-        csb->csb_dependencies.push(dep_node);
+        dep_node->nod_arg [e_dep_object] = (JRD_NOD) function;
+        dep_node->nod_arg [e_dep_object_type] = (JRD_NOD) obj_udf;
+        LLS_PUSH (dep_node, &(*csb)->csb_dependencies);
     }
 
 	return node;
 }
 
 
-static jrd_nod* par_literal(thread_db* tdbb, CompilerScratch* csb)
+static JRD_NOD par_literal(TDBB tdbb, CSB * csb)
 {
 /**************************************
  *
@@ -1480,24 +1335,26 @@ static jrd_nod* par_literal(thread_db* tdbb, CompilerScratch* csb)
  *	Parse a literal value.
  *
  **************************************/
-	SSHORT scale;
+	LIT literal;
+	JRD_NOD node;
+	DSC desc;
+	UCHAR *p, *q;
+	SSHORT count, l, scale;
 	UCHAR dtype;
 
 	SET_TDBB(tdbb);
 
-	DSC desc;
-	PAR_desc(tdbb, csb, &desc);
-	const int count = lit_delta +
-		(desc.dsc_length + sizeof(jrd_nod*) - 1) / sizeof(jrd_nod*);
-	jrd_nod* node = PAR_make_node(tdbb, count);
-	Literal* literal = (Literal*) node;
+
+	PAR_desc(csb, &desc);
+	count = lit_delta + (desc.dsc_length+sizeof(jrd_nod*)-1)/sizeof(jrd_nod*);
+	node = PAR_make_node(tdbb, count);
+	literal = (LIT) node;
 	node->nod_count = 0;
 	literal->lit_desc = desc;
-	UCHAR* p = reinterpret_cast<UCHAR*>(literal->lit_data);
-	literal->lit_desc.dsc_address = p;
+	literal->lit_desc.dsc_address = p = reinterpret_cast<UCHAR*>(literal->lit_data);
 	literal->lit_desc.dsc_flags = 0;
-	const UCHAR* q = csb->csb_running;
-	USHORT l = desc.dsc_length;
+	q = (*csb)->csb_running;
+	l = desc.dsc_length;
 
 	switch (desc.dsc_dtype) {
 	case dtype_short:
@@ -1509,20 +1366,20 @@ static jrd_nod* par_literal(thread_db* tdbb, CompilerScratch* csb)
 	case dtype_sql_date:
 	case dtype_sql_time:
 		l = 4;
-		*(SLONG *) p = gds__vax_integer(q, l);
+		*(SLONG *) p = (SLONG) gds__vax_integer(q, l);
 		break;
 
 	case dtype_timestamp:
 		l = 8;
-		*(SLONG *) p = gds__vax_integer(q, 4);
+		*(SLONG *) p = (SLONG) gds__vax_integer(q, 4);
 		p += 4;
 		q += 4;
-		*(SLONG *) p = gds__vax_integer(q, 4);
+		*(SLONG *) p = (SLONG) gds__vax_integer(q, 4);
 		break;
 
 	case dtype_int64:
 		l = sizeof(SINT64);
-		*(SINT64 *) p = isc_portable_integer(q, l);
+		*(SINT64 *) p = (SINT64) isc_portable_integer(q, l);
 		break;
 
 	case dtype_double:
@@ -1531,9 +1388,9 @@ static jrd_nod* par_literal(thread_db* tdbb, CompilerScratch* csb)
 		   text string. Convert the numeric string to its binary
 		   value (int64, long or double as appropriate). */
 		l = BLR_WORD;
-		q = csb->csb_running;
+		q = (*csb)->csb_running;
 		dtype =
-			CVT_get_numeric(q, l, &scale, (double *) p, ERR_post);
+			CVT_get_numeric(q, l, &scale, (double *) p, (FPTR_VOID) ERR_post);
 		literal->lit_desc.dsc_dtype = dtype;
 		if (dtype == dtype_double)
 			literal->lit_desc.dsc_length = sizeof(double);
@@ -1547,21 +1404,23 @@ static jrd_nod* par_literal(thread_db* tdbb, CompilerScratch* csb)
 		}
 		break;
 
-	case dtype_text:
-		memcpy(p, q, l);
-		break;
-
 	default:
-		fb_assert(FALSE);
+		assert(FALSE);
+	case dtype_text:
+		if ( (count = l) )
+			do
+				*p++ = *q++;
+			while (--count);
+		break;
 	}
 
-	csb->csb_running += l;
+	(*csb)->csb_running += l;
 
 	return node;
 }
 
 
-static jrd_nod* par_map(thread_db* tdbb, CompilerScratch* csb, USHORT stream)
+static JRD_NOD par_map(TDBB tdbb, CSB * csb, USHORT stream)
 {
 /**************************************
  *
@@ -1573,32 +1432,37 @@ static jrd_nod* par_map(thread_db* tdbb, CompilerScratch* csb, USHORT stream)
  *	Parse a MAP clause for a union or global aggregate expression.
  *
  **************************************/
+	JRD_NOD assignment, node;
+	SSHORT count;
+	LLS map;
+
 	SET_TDBB(tdbb);
 
-	if (BLR_BYTE != blr_map)
-		syntax_error(csb, "blr_map");
 
-	SSHORT count = BLR_WORD;
-	NodeStack map;
+	if (BLR_BYTE != blr_map)
+		syntax_error(*csb, "blr_map");
+
+	count = BLR_WORD;
+	map = NULL;
 
 	while (--count >= 0) {
-		jrd_nod* assignment = PAR_make_node(tdbb, e_asgn_length);
+		assignment = PAR_make_node(tdbb, e_asgn_length);
 		assignment->nod_type = nod_assignment;
 		assignment->nod_count = e_asgn_length;
 		assignment->nod_arg[e_asgn_to] =
 			PAR_gen_field(tdbb, stream, BLR_WORD);
 		assignment->nod_arg[e_asgn_from] = parse(tdbb, csb, VALUE);
-		map.push(assignment);
+		LLS_PUSH(assignment, &map);
 	}
 
-	jrd_nod* node = PAR_make_list(tdbb, map);
+	node = PAR_make_list(tdbb, map);
 	node->nod_type = nod_map;
 
 	return node;
 }
 
 
-static jrd_nod* par_message(thread_db* tdbb, CompilerScratch* csb)
+static JRD_NOD par_message(TDBB tdbb, CSB * csb)
 {
 /**************************************
  *
@@ -1610,54 +1474,45 @@ static jrd_nod* par_message(thread_db* tdbb, CompilerScratch* csb)
  *	Parse a message declaration, including operator byte.
  *
  **************************************/
+	JRD_NOD node;
+	FMT format;
+	fmt::fmt_desc_iterator desc, end;
+	USHORT n, alignment;
+	ULONG offset;
+	csb_repeat *tail;
+
 	SET_TDBB(tdbb);
 
-/* Get message number, register it in the compiler scratch block, and
+/* Get message number, register it in the compile scratch block, and
    allocate a node to represent the message */
 
-	USHORT n = (unsigned int) BLR_BYTE;
-	CompilerScratch::csb_repeat* tail = CMP_csb_element(csb, n);
-	jrd_nod* node = PAR_make_node(tdbb, e_msg_length);
-	tail->csb_message = node;
+	n = (unsigned int) BLR_BYTE;
+	tail = CMP_csb_element(csb, n);
+	tail->csb_message = node = PAR_make_node(tdbb, e_msg_length);
 	node->nod_count = 0;
-	node->nod_arg[e_msg_number] = (jrd_nod*) (IPTR) n;
-	if (n > csb->csb_msg_number)
-		csb->csb_msg_number = n;
+	node->nod_arg[e_msg_number] = (JRD_NOD) (SLONG) n;
+	if (n > (*csb)->csb_msg_number)
+		(*csb)->csb_msg_number = n;
 
 /* Get the number of parameters in the message and prepare to fill
    out the format block */
 
 	n = BLR_WORD;
-	Format* format = Format::newFormat(*tdbb->getDefaultPool(), n);
-	node->nod_arg[e_msg_format] = (jrd_nod*) format;
-	ULONG offset = 0;
+	format = fmt::newFmt(*tdbb->tdbb_default, n);
+	node->nod_arg[e_msg_format] = (JRD_NOD) format;
+	format->fmt_count = n;
+	offset = 0;
 
-	Format::fmt_desc_iterator desc, end;
-	USHORT index = 0;
-
-	for (desc = format->fmt_desc.begin(), end = desc + n; desc < end; ++desc, ++index)
-	{
-		ItemInfo itemInfo;
-		const USHORT alignment = PAR_desc(tdbb, csb, &*desc, &itemInfo);
+	for (desc = format->fmt_desc.begin(), end = desc + n; desc < end; desc++) {
+		alignment = PAR_desc(csb, &*desc);
 		if (alignment)
 			offset = FB_ALIGN(offset, alignment);
-		desc->dsc_address = (UCHAR *) (IPTR) offset;
+		desc->dsc_address = (UCHAR *) (SLONG) offset;
 		offset += desc->dsc_length;
-
-		// ASF: Odd indexes are the nullable flag.
-		// So we only check even indexes, which is the actual parameter.
-		if (itemInfo.isSpecial() && index % 2 == 0)
-		{
-			csb->csb_dbg_info.argInfoToName.get(
-				Firebird::ArgumentInfo(csb->csb_msg_number, index / 2), itemInfo.name);
-
-			csb->csb_map_item_info.put(
-				Item(nod_argument, csb->csb_msg_number, index), itemInfo);
-		}
 	}
 
 	if (offset > MAX_FORMAT_SIZE)
-		error(csb, isc_imp_exc, isc_arg_gds, isc_blktoobig, 0);
+		error(*csb, gds_imp_exc, gds_arg_gds, gds_blktoobig, 0);
 
 	format->fmt_length = (USHORT) offset;
 
@@ -1665,7 +1520,7 @@ static jrd_nod* par_message(thread_db* tdbb, CompilerScratch* csb)
 }
 
 
-static jrd_nod* par_modify(thread_db* tdbb, CompilerScratch* csb, SSHORT blr_operator)
+static JRD_NOD par_modify(TDBB tdbb, CSB * csb)
 {
 /**************************************
  *
@@ -1677,53 +1532,43 @@ static jrd_nod* par_modify(thread_db* tdbb, CompilerScratch* csb, SSHORT blr_ope
  *	Parse a modify statement.
  *
  **************************************/
+	JRD_NOD node;
+	SSHORT context, new_stream, org_stream;
+	csb_repeat *tail;
+
 	SET_TDBB(tdbb);
 
 /* Parse the original and new contexts */
 
-	USHORT context = (unsigned int) BLR_BYTE;
-	if (context >= csb->csb_rpt.getCount() || 
-		!(csb->csb_rpt[context].csb_flags & csb_used))
-	{
-		error(csb, isc_ctxnotdef, 0);
-	}
-	const SSHORT org_stream = csb->csb_rpt[context].csb_stream;
-	const SSHORT new_stream = csb->nextStream(false);
-	if (new_stream >= MAX_STREAMS)
-	{
-		error(csb, isc_too_many_contexts, 0);
-	}
+	context = (unsigned int) BLR_BYTE;
+	if (context >= (*csb)->csb_count)
+		error(*csb, gds_ctxnotdef, 0);
+	org_stream = (*csb)->csb_rpt[context].csb_stream;
+	new_stream = (*csb)->csb_n_stream++;
 	context = (unsigned int) BLR_BYTE;
 
 /* Make sure the compiler scratch block is big enough to hold
    everything */
 
-	CompilerScratch::csb_repeat* tail = CMP_csb_element(csb, context);
+	tail = CMP_csb_element(csb, context);
 	tail->csb_stream = (UCHAR) new_stream;
-	tail->csb_flags |= csb_used;
 
 	tail = CMP_csb_element(csb, new_stream);
-	tail->csb_relation = csb->csb_rpt[org_stream].csb_relation;
+	tail->csb_relation = (*csb)->csb_rpt[org_stream].csb_relation;
 
 /* Make the node and parse the sub-expression */
 
-	jrd_nod* node = PAR_make_node(tdbb, e_mod_length);
+	node = PAR_make_node(tdbb, e_mod_length);
 	node->nod_count = 1;
-	node->nod_arg[e_mod_org_stream] = (jrd_nod*) (IPTR) org_stream;
-	node->nod_arg[e_mod_new_stream] = (jrd_nod*) (IPTR) new_stream;
+	node->nod_arg[e_mod_org_stream] = (JRD_NOD) (SLONG) org_stream;
+	node->nod_arg[e_mod_new_stream] = (JRD_NOD) (SLONG) new_stream;
 	node->nod_arg[e_mod_statement] = parse(tdbb, csb, STATEMENT);
-
-	if (blr_operator == blr_modify2)
-	{
-		node->nod_count = 2;
-		node->nod_arg[e_mod_statement2] = parse(tdbb, csb, STATEMENT);
-	}
 
 	return node;
 }
 
 
-static USHORT par_name(CompilerScratch* csb, Firebird::MetaName& name)
+static USHORT par_name(CSB * csb, TEXT * string)
 {
 /**************************************
  *
@@ -1735,58 +1580,20 @@ static USHORT par_name(CompilerScratch* csb, Firebird::MetaName& name)
  *	Parse a counted string, returning count.
  *
  **************************************/
-	size_t l = BLR_BYTE;
+	USHORT count, l;
 
-	// Check for overly long identifiers at BLR parse stage to prevent unwanted
-	// surprises in deeper layers of the engine.
-	if (l > MAX_SQL_IDENTIFIER_LEN) {
-		SqlIdentifier st;
-		char* s = st;
-		l = MAX_SQL_IDENTIFIER_LEN;
-		while (l--) {
-			*s++ = BLR_BYTE;
-		}
-		*s = 0;
-		ERR_post(isc_identifier_too_long, isc_arg_string, ERR_cstring(st), 0);
-	}
+	if ( (count = l = BLR_BYTE) )
+		do
+			*string++ = BLR_BYTE;
+		while (--l);
 
-	char* s = name.getBuffer(l);
+	*string = 0;
 
-	while (l--) 
-	{
-		*s++ = BLR_BYTE;
-	}
-
-	return name.length();
+	return count;
 }
 
 
-static size_t par_name(CompilerScratch* csb, Firebird::string& name)
-{
-/**************************************
- *
- *	p a r _ n a m e
- *
- **************************************
- *
- * Functional description
- *	Parse a counted string of virtually unlimited size 
- *  (up to 64K, actually <= 255), returning count.
- *
- **************************************/
-	size_t l = BLR_BYTE;
-	char* s = name.getBuffer(l);
-
-	while (l--) 
-	{
-		*s++ = BLR_BYTE;
-	}
-
-	return name.length();
-}
-
-
-static jrd_nod* par_plan(thread_db* tdbb, CompilerScratch* csb)
+static JRD_NOD par_plan(TDBB tdbb, CSB * csb)
 {
 /**************************************
  *
@@ -1801,18 +1608,21 @@ static jrd_nod* par_plan(thread_db* tdbb, CompilerScratch* csb)
  *	and indices.
  *
  **************************************/
+	JRD_NOD plan, access_type, relation_node, *arg;
+	USHORT node_type, count;
+
 	SET_TDBB(tdbb);
 
-	USHORT node_type = (USHORT) BLR_BYTE;
+	node_type = (USHORT) BLR_BYTE;
 
 /* a join type indicates a cross of two or more streams */
 
 	if (node_type == blr_join || node_type == blr_merge) {
-		USHORT count = (USHORT) BLR_BYTE;
-		jrd_nod* plan = PAR_make_node(tdbb, count);
+		count = (USHORT) BLR_BYTE;
+		plan = PAR_make_node(tdbb, count);
 		plan->nod_type = (NOD_T) (USHORT) blr_table[node_type];
 
-		for (jrd_nod** arg = plan->nod_arg; count--;)
+		for (arg = plan->nod_arg; count--;)
 			*arg++ = par_plan(tdbb, csb);
 		return plan;
 	}
@@ -1820,184 +1630,132 @@ static jrd_nod* par_plan(thread_db* tdbb, CompilerScratch* csb)
 /* we have hit a stream; parse the context number and access type */
 
 	if (node_type == blr_retrieve) {
-		jrd_nod* plan = PAR_make_node(tdbb, e_retrieve_length);
+		TEXT name[32];
+		SSHORT stream, n;
+		SLONG index_id, relation_id;
+		JRD_REL relation;
+
+		plan = PAR_make_node(tdbb, e_retrieve_length);
 		plan->nod_type = (NOD_T) (USHORT) blr_table[node_type];
 
 		/* parse the relation name and context--the relation 
 		   itself is redundant except in the case of a view,
 		   in which case the base relation (and alias) must be specified */
 
-		USHORT n = (unsigned int) BLR_BYTE;
+		n = BLR_BYTE;
 		if (n != blr_relation && n != blr_relation2 &&
 			n != blr_rid && n != blr_rid2)
-		{
-			syntax_error(csb, elements[RELATION]);
-		}
+				syntax_error(*csb, elements[RELATION]);
 
 		/* don't have par_relation() parse the context, because
 		   this would add a new context; while this is a reference to 
 		   an existing context */
 
-		jrd_nod* relation_node = par_relation(tdbb, csb, n, false);
+		relation_node = par_relation(tdbb, csb, n, FALSE);
 		plan->nod_arg[e_retrieve_relation] = relation_node;
-		jrd_rel* relation = (jrd_rel*) relation_node->nod_arg[e_rel_relation];
+		relation = (JRD_REL) relation_node->nod_arg[e_rel_relation];
 
 		n = BLR_BYTE;
-		if (n >= csb->csb_rpt.getCount() || !(csb->csb_rpt[n].csb_flags & csb_used))
-			error(csb, isc_ctxnotdef, 0);
-		const SSHORT stream = csb->csb_rpt[n].csb_stream;
+		if (n >= (*csb)->csb_count)
+			error(*csb, gds_ctxnotdef, 0);
+		stream = (*csb)->csb_rpt[n].csb_stream;
 
-		relation_node->nod_arg[e_rel_stream] = (jrd_nod*) (IPTR) stream;
-		relation_node->nod_arg[e_rel_context] = (jrd_nod*) (IPTR) n;
+		relation_node->nod_arg[e_rel_stream] = (JRD_NOD) (SLONG) stream;
+		relation_node->nod_arg[e_rel_context] = (JRD_NOD) (SLONG) n;
 
 		/* Access plan types (sequential is default) */
 
 		node_type = (USHORT) BLR_BYTE;
-		USHORT extra_count = 0;
-		jrd_nod* access_type = 0;
-		Firebird::MetaName name;
-		TEXT* idx_name = 0;
-		
-		switch (node_type) {
-		case blr_navigational:
-			{
-				access_type = plan->nod_arg[e_retrieve_access_type] =
-					PAR_make_node(tdbb, e_access_type_length);
-				access_type->nod_type = nod_navigational;
+		if (node_type == blr_navigational) {
+			SSHORT idx_status;
 
-				/* pick up the index name and look up the appropriate ids */
+			access_type = plan->nod_arg[e_retrieve_access_type] =
+				PAR_make_node(tdbb, 3);
+			access_type->nod_type = nod_navigational;
 
+			/* pick up the index name and look up the appropriate ids */
+
+			par_name(csb, name);
+            /* CVC: We can't do this. Index names are identifiers.
+               for (p = name; *p; *p++)
+               *p = UPPER (*p);
+               */
+			index_id = MET_lookup_index_name(tdbb, name, &relation_id, &idx_status);
+
+			if (idx_status == MET_object_unknown ||
+				idx_status == MET_object_inactive)
+					if (tdbb->
+						tdbb_attachment->att_flags & ATT_gbak_attachment)
+						warning(*csb, gds_indexname, gds_arg_string,
+								ERR_cstring(name), gds_arg_string,
+								relation->rel_name, 0);
+				else
+					error(*csb, gds_indexname, gds_arg_string,
+						  ERR_cstring(name), gds_arg_string,
+						  relation->rel_name, 0);
+
+			/* save both the relation id and the index id, since 
+			   the relation could be a base relation of a view;
+			   save the index name also, for convenience */
+
+			access_type->nod_arg[0] = (JRD_NOD) relation_id;
+			access_type->nod_arg[1] = (JRD_NOD) index_id;
+			access_type->nod_arg[2] = (JRD_NOD) ALL_cstring(name);
+		}
+		else if (node_type == blr_indices) {
+			SSHORT idx_status;
+
+			count = (USHORT) BLR_BYTE;
+			access_type = plan->nod_arg[e_retrieve_access_type] =
+				PAR_make_node(tdbb, count * 3);
+			access_type->nod_type = nod_indices;
+
+			/* pick up the index names and look up the appropriate ids */
+
+			for (arg = access_type->nod_arg; count--;) {
 				par_name(csb, name);
-	            /* CVC: We can't do this. Index names are identifiers.
-	               for (p = name; *p; *p++)
-	               *p = UPPER (*p);
-	               */
-				SLONG relation_id;
-				SSHORT idx_status;
-				const SLONG index_id =
-					MET_lookup_index_name(tdbb, name, &relation_id, &idx_status);
+          		/* Nickolay Samofatov: We can't do this. Index names are identifiers.
+				 for (p = name; *p; *p++)
+				 *p = UPPER(*p);
+  	             */
+
+				index_id =
+					MET_lookup_index_name(tdbb, name, &relation_id,
+										  &idx_status);
 
 				if (idx_status == MET_object_unknown ||
 					idx_status == MET_object_inactive)
-				{
-					if (tdbb->getAttachment()->att_flags & ATT_gbak_attachment)
-					{
-						warning(csb, isc_indexname, isc_arg_string,
-								ERR_cstring(name), isc_arg_string,
-								relation->rel_name.c_str(), 0);
-					}
+						if (tdbb->
+							tdbb_attachment->att_flags & ATT_gbak_attachment)
+							warning(*csb, gds_indexname, gds_arg_string,
+									ERR_cstring(name), gds_arg_string,
+									relation->rel_name, 0);
 					else
-					{
-						error(csb, isc_indexname, isc_arg_string,
-							  ERR_cstring(name), isc_arg_string,
-							  relation->rel_name.c_str(), 0);
-					}
-				}
+						error(*csb, gds_indexname, gds_arg_string,
+							  ERR_cstring(name), gds_arg_string,
+							  relation->rel_name, 0);
 
-				/* save both the relation id and the index id, since
+				/* save both the relation id and the index id, since 
 				   the relation could be a base relation of a view;
 				   save the index name also, for convenience */
 
-				access_type->nod_arg[e_access_type_relation] = (jrd_nod*) (IPTR) relation_id;
-				access_type->nod_arg[e_access_type_index] = (jrd_nod*) (IPTR) index_id;
-				idx_name = stringDup(*tdbb->getDefaultPool(), name.c_str());
-				access_type->nod_arg[e_access_type_index_name] = (jrd_nod*) idx_name;
-
-				if (csb->csb_g_flags & csb_get_dependencies)
-				{
-	                jrd_nod* dep_node = PAR_make_node (tdbb, e_dep_length);
-	                dep_node->nod_type = nod_dependency;
-	                dep_node->nod_arg[e_dep_object] = (jrd_nod*) idx_name;
-	                dep_node->nod_arg[e_dep_object_type] = (jrd_nod*)(IPTR) obj_index;
-	                csb->csb_dependencies.push(dep_node);
-	            }
-
-				if (BLR_PEEK == blr_indices)
-					// dimitr:	FALL INTO, if the plan item is ORDER ... INDEX (...)
-					extra_count = 3;
-				else
-					break;
+				*arg++ = (JRD_NOD) relation_id;
+				*arg++ = (JRD_NOD) index_id;
+				*arg++ = (JRD_NOD) ALL_cstring(name);
 			}
-		case blr_indices:
-			{
-				if (extra_count)
-					BLR_BYTE; // skip blr_indices
-				USHORT count = (USHORT) BLR_BYTE;
-				jrd_nod* temp = plan->nod_arg[e_retrieve_access_type] =
-					PAR_make_node(tdbb, count * e_access_type_length + extra_count);
-				for (USHORT i = 0; i < extra_count; i++) {
-					temp->nod_arg[i] = access_type->nod_arg[i];
-				}
-				temp->nod_type = (extra_count) ? nod_navigational : nod_indices;
-				if (extra_count)
-					delete access_type;
-				access_type = temp;
-
-				/* pick up the index names and look up the appropriate ids */
-
-				for (jrd_nod** arg = access_type->nod_arg + extra_count; count--;) {
-					par_name(csb, name);
-	          		/* Nickolay Samofatov: We can't do this. Index names are identifiers.
-					 for (p = name; *p; *p++)
-					 *p = UPPER(*p);
-	  	             */
-					SLONG relation_id;
-					SSHORT idx_status;
-					const SLONG index_id =
-						MET_lookup_index_name(tdbb, name, &relation_id, &idx_status);
-
-					if (idx_status == MET_object_unknown ||
-						idx_status == MET_object_inactive)
-					{
-						if (tdbb->getAttachment()->att_flags & ATT_gbak_attachment)
-						{
-							warning(csb, isc_indexname, isc_arg_string,
-									ERR_cstring(name), isc_arg_string,
-									relation->rel_name.c_str(), 0);
-						}
-						else
-						{
-							error(csb, isc_indexname, isc_arg_string,
-								  ERR_cstring(name), isc_arg_string,
-								  relation->rel_name.c_str(), 0);
-						}
-					}
-
-					/* save both the relation id and the index id, since
-					   the relation could be a base relation of a view;
-					   save the index name also, for convenience */
-
-					*arg++ = (jrd_nod*) (IPTR) relation_id;
-					*arg++ = (jrd_nod*) (IPTR) index_id;
-					idx_name = stringDup(*tdbb->getDefaultPool(), name.c_str());
-					*arg++ = (jrd_nod*) idx_name;
-
-					if (csb->csb_g_flags & csb_get_dependencies)
-					{
-		                jrd_nod* dep_node = PAR_make_node (tdbb, e_dep_length);
-		                dep_node->nod_type = nod_dependency;
-		                dep_node->nod_arg[e_dep_object] = (jrd_nod*) idx_name;
-		                dep_node->nod_arg[e_dep_object_type] = (jrd_nod*)(IPTR) obj_index;
-		                csb->csb_dependencies.push(dep_node);
-		            }
-				}
-			}
-			break;
-		case blr_sequential:
-			break;
-		default:
-			syntax_error(csb, "access type");
 		}
+		else if (node_type != blr_sequential)
+			syntax_error(*csb, "access type");
 
 		return plan;
 	}
 
-	syntax_error(csb, "plan item");
-	return NULL;			/* Added to remove compiler warning */
+	syntax_error(*csb, "plan item");
+	return ((JRD_NOD) 0);			/* Added to remove compiler warning */
 }
 
 
-static jrd_nod* par_procedure(thread_db* tdbb, CompilerScratch* csb, SSHORT blr_operator)
+static JRD_NOD par_procedure(TDBB tdbb, CSB * csb, SSHORT operator_)
 {
 /**************************************
  *
@@ -2009,57 +1767,54 @@ static jrd_nod* par_procedure(thread_db* tdbb, CompilerScratch* csb, SSHORT blr_
  *	Parse an procedural view reference.
  *
  **************************************/
-	jrd_prc* procedure;
+	JRD_NOD node;
+	JRD_PRC procedure;
+	USHORT stream;
 
 	SET_TDBB(tdbb);
 
 	{
-		Firebird::MetaName name;
+		TEXT name[32];
+		SSHORT pid;
 
-		if (blr_operator == blr_procedure) {
+		if (operator_ == blr_procedure) {
 			par_name(csb, name);
-			procedure = MET_lookup_procedure(tdbb, name, false);
+			procedure = MET_lookup_procedure(tdbb, name, FALSE);
 		}
 		else {
-			const SSHORT pid = BLR_WORD;
-			if (!(procedure = MET_lookup_procedure_id(tdbb, pid, false, false, 0)))
-				name.printf("id %d", pid);
+			pid = BLR_WORD;
+			if (!(procedure = MET_lookup_procedure_id(tdbb, pid, FALSE, FALSE, 0)))
+				sprintf(name, "id %d", pid);
 		}
 		if (!procedure)
-			error(csb, isc_prcnotdef, isc_arg_string, ERR_cstring(name), 0);
+			error(*csb, gds_prcnotdef, gds_arg_string, ERR_cstring(name), 0);
 	}
 
-	if (procedure->prc_type == prc_executable)
-	{
-		error(csb, isc_illegal_prc_type,
-			  isc_arg_string, ERR_string(procedure->prc_name), 0);
-	}
-
-	jrd_nod* node = PAR_make_node(tdbb, e_prc_length);
+	node = PAR_make_node(tdbb, e_prc_length);
 	node->nod_type = nod_procedure;
 	node->nod_count = count_table[blr_procedure];
-	node->nod_arg[e_prc_procedure] = (jrd_nod*) (IPTR) procedure->prc_id;
+	node->nod_arg[e_prc_procedure] = (JRD_NOD) (SLONG) procedure->prc_id;
 
-	const USHORT stream = par_context(csb, 0);
-	node->nod_arg[e_prc_stream] = (jrd_nod*) (IPTR) stream;
-	csb->csb_rpt[stream].csb_procedure = procedure;
+	stream = par_context(csb, 0);
+	node->nod_arg[e_prc_stream] = (JRD_NOD) (SLONG) stream;
+	(*csb)->csb_rpt[stream].csb_procedure = procedure;
 
 	par_procedure_parms(tdbb, csb, procedure, &node->nod_arg[e_prc_in_msg],
-						&node->nod_arg[e_prc_inputs], true);
+						&node->nod_arg[e_prc_inputs], TRUE);
 
-	if (csb->csb_g_flags & csb_get_dependencies)
-		par_dependency(tdbb, csb, stream, (SSHORT) - 1, "");
+	if ((*csb)->csb_g_flags & csb_get_dependencies)
+		par_dependency(tdbb, csb, stream, (SSHORT) - 1, 0);
 
 	return node;
 }
 
 
 static void par_procedure_parms(
-								thread_db* tdbb,
-								CompilerScratch* csb,
-								jrd_prc* procedure,
-								jrd_nod** message_ptr,
-								jrd_nod** parameter_ptr, bool input_flag)
+								TDBB tdbb,
+								CSB * csb,
+								JRD_PRC procedure,
+								JRD_NOD * message_ptr,
+								JRD_NOD * parameter_ptr, USHORT input_flag)
 {
 /**************************************
  *
@@ -2071,50 +1826,50 @@ static void par_procedure_parms(
  *	Parse some procedure parameters.
  *
  **************************************/
+	JRD_NOD message, list, *ptr, asgn, prm, prm_f;
+	FMT format;
+	USHORT count, n, i, asgn_arg1, asgn_arg2;
+	csb_repeat *tail;
+	BOOLEAN mismatch = FALSE;
+
 	SET_TDBB(tdbb);
-	bool mismatch = false;
-	SLONG count = BLR_WORD;
+
+	count = BLR_WORD;
 
 /** Check to see if the parameter count matches **/
-	if (input_flag ? 
-			(count < (procedure->prc_inputs - procedure->prc_defaults) ||
-			(count > procedure->prc_inputs) ) : 
-			(count != procedure->prc_outputs)) 
-	{
+	if (count !=
+		(input_flag ? procedure->prc_inputs : procedure->prc_outputs)) {
 	/** They don't match...Hmmm...Its OK if we were dropping the procedure **/
-		if (!(tdbb->tdbb_flags & TDBB_prc_being_dropped)) {
-			error(csb,
-				  input_flag ? isc_prcmismat : isc_prc_out_param_mismatch,
-				  isc_arg_string,
-				  ERR_cstring(procedure->prc_name.c_str()),
-				  0);
-		}
+		if (!(tdbb->tdbb_flags & TDBB_prc_being_dropped))
+			error(*csb,
+				  gds_prcmismat,
+				  gds_arg_string,
+				  ERR_cstring(reinterpret_cast <
+							  char *>(procedure->prc_name->str_data)), 0);
 		else
-			mismatch = true;
+			mismatch = TRUE;
 	}
 
-	if (count || input_flag && procedure->prc_defaults) {
+	if (count) {
 	/** We have a few parameters. Get on with creating the message block **/
-		USHORT n = ++csb->csb_msg_number;
-		if (n < 2)
-			csb->csb_msg_number = n = 2;
-		CompilerScratch::csb_repeat* tail = CMP_csb_element(csb, n);
-		jrd_nod* message = PAR_make_node(tdbb, e_msg_length);
-		tail->csb_message = message;
+		if ((n = ++(*csb)->csb_msg_number) < 2)
+			(*csb)->csb_msg_number = n = 2;
+		tail = CMP_csb_element(csb, n);
+		tail->csb_message = message = PAR_make_node(tdbb, e_msg_length);
 		message->nod_type = nod_message;
 		message->nod_count = count_table[blr_message];
 		*message_ptr = message;
 		message->nod_count = 0;
-		message->nod_arg[e_msg_number] = (jrd_nod*)(IPTR) n;
-		const Format* format =
+		message->nod_arg[e_msg_number] = (JRD_NOD) (SLONG) n;
+		format =
 			input_flag ? procedure->prc_input_fmt : procedure->prc_output_fmt;
 		/* dimitr: procedure (with its parameter formats) is allocated out of
 				   its own pool (prc_request->req_pool) and can be freed during
 				   the cache cleanup (MET_clear_cache). Since the current
-				   tdbb default pool is different from the procedure's one,
+				   tdbb_default pool is different from the procedure's one,
 				   it's dangerous to copy a pointer from one request to another.
 				   As an experiment, I've decided to copy format by value
-				   instead of copying the reference. Since Format structure
+				   instead of copying the reference. Since fmt structure
 				   doesn't contain any pointers, it should be safe to use a
 				   default assignment operator which does a simple byte copy.
 				   This change fixes one serious bug in the current codebase.
@@ -2123,25 +1878,23 @@ static void par_procedure_parms(
 				   to avoid unexpected cache cleanups, but that area is out of my
 				   knowledge. So this fix should be considered a temporary solution.
 
-		message->nod_arg[e_msg_format] = (jrd_nod*) format;
+		message->nod_arg[e_msg_format] = (JRD_NOD) format;
 		*/
-		Format* fmt_copy = Format::newFormat(*tdbb->getDefaultPool(), format->fmt_count);
+		FMT fmt_copy = fmt::newFmt(*tdbb->tdbb_default, format->fmt_count);
 		*fmt_copy = *format;
-		message->nod_arg[e_msg_format] = (jrd_nod*) fmt_copy;
+		message->nod_arg[e_msg_format] = (JRD_NOD) fmt_copy;
 		/* --- end of fix --- */
 		if (!mismatch)
 			n = format->fmt_count / 2;
-		else {
+		else
 			/*  There was a parameter mismatch hence can't depend upon the format's
 			   fmt_count. Use count instead.
 			 */
 			n = count;
-		}
-		jrd_nod* list = *parameter_ptr = PAR_make_node(tdbb, n);
+		list = *parameter_ptr = PAR_make_node(tdbb, n);
 		list->nod_type = nod_list;
 		list->nod_count = n;
-		jrd_nod** ptr = list->nod_arg;
-		USHORT asgn_arg1, asgn_arg2;
+		ptr = list->nod_arg;
 		if (input_flag) {
 			asgn_arg1 = e_asgn_from;
 			asgn_arg2 = e_asgn_to;
@@ -2150,50 +1903,39 @@ static void par_procedure_parms(
 			asgn_arg1 = e_asgn_to;
 			asgn_arg2 = e_asgn_from;
 		}
-		for (USHORT i = 0; n; count--, n--) {
-			jrd_nod* asgn = PAR_make_node(tdbb, e_asgn_length);
+		for (i = 0; count; count--) {
+			asgn = PAR_make_node(tdbb, e_asgn_length);
 			*ptr++ = asgn;
 			asgn->nod_type = nod_assignment;
 			asgn->nod_count = count_table[blr_assignment];
-
-			// default value for parameter 
-			if ((count <= 0) && input_flag) {
-				Parameter* parameter =
-					(*procedure->prc_input_fields)[procedure->prc_inputs - n];
-				asgn->nod_arg[asgn_arg1] = parameter->prm_default_value;
-			}
-			else {
-				asgn->nod_arg[asgn_arg1] = parse(tdbb, csb, VALUE);
-			}
-			jrd_nod* prm = asgn->nod_arg[asgn_arg2] =
+			asgn->nod_arg[asgn_arg1] = parse(tdbb, csb, VALUE);
+			prm = asgn->nod_arg[asgn_arg2] =
 				PAR_make_node(tdbb, e_arg_length);
 			prm->nod_type = nod_argument;
 			prm->nod_count = 1;
 			prm->nod_arg[e_arg_message] = message;
-			prm->nod_arg[e_arg_number] = (jrd_nod*)(IPTR) i++;
-			jrd_nod* prm_f = prm->nod_arg[e_arg_flag] =
+			prm->nod_arg[e_arg_number] = (JRD_NOD) i++;
+			prm_f = prm->nod_arg[e_arg_flag] =
 				PAR_make_node(tdbb, e_arg_length);
 			prm_f->nod_type = nod_argument;
 			prm_f->nod_count = 0;
 			prm_f->nod_arg[e_arg_message] = message;
-			prm_f->nod_arg[e_arg_number] = (jrd_nod*)(IPTR) i++;
+			prm_f->nod_arg[e_arg_number] = (JRD_NOD) i++;
 		}
 	}
 	else if ((input_flag ? procedure->prc_inputs : procedure->prc_outputs) &&
 			 !mismatch)
-	{
-		error(csb,
-			  input_flag ? isc_prcmismat : isc_prc_out_param_mismatch,
-			  isc_arg_string,
-			  ERR_cstring(procedure->prc_name.c_str()),
-			  0);
-	}
+			error(*csb,
+				  gds_prcmismat,
+				  gds_arg_string,
+				  ERR_cstring(reinterpret_cast <
+							  char *>(procedure->prc_name->str_data)), 0);
 }
 
 
-static jrd_nod* par_relation(
-						thread_db* tdbb,
-						CompilerScratch* csb, SSHORT blr_operator, bool parse_context)
+static JRD_NOD par_relation(
+						TDBB tdbb,
+						CSB * csb, SSHORT operator_, BOOLEAN parse_context)
 {
 /**************************************
  *
@@ -2205,54 +1947,57 @@ static jrd_nod* par_relation(
  *	Parse a relation reference.
  *
  **************************************/
-	Firebird::MetaName name;
+	JRD_NOD node;
+	JRD_REL relation;
+	TEXT name[32];
+	STR alias_string = NULL;
+	SSHORT id, stream, length, context;
 
 	SET_TDBB(tdbb);
 
 /* Make a relation reference node */
 
-	jrd_nod* node = PAR_make_node(tdbb, e_rel_length);
+	node = PAR_make_node(tdbb, e_rel_length);
 	node->nod_count = 0;
 
 /* Find relation either by id or by name */
-	jrd_rel* relation = 0;
-	Firebird::string* alias_string = 0;
-	if (blr_operator == blr_rid || blr_operator == blr_rid2) {
-		const SSHORT id = BLR_WORD;
-		if (blr_operator == blr_rid2) {
-			alias_string = FB_NEW(csb->csb_pool) Firebird::string(csb->csb_pool);
-			par_name(csb, *alias_string);
+
+	if (operator_ == blr_rid || operator_ == blr_rid2) {
+		id = BLR_WORD;
+		if (operator_ == blr_rid2) {
+			length = BLR_PEEK;
+			alias_string = FB_NEW_RPT(*tdbb->tdbb_default, length + 1) str();
+			alias_string->str_length = length;
+			par_name(csb, reinterpret_cast < char *>(alias_string->str_data));
 		}
-		if (!(relation = MET_lookup_relation_id(tdbb, id, false))) {
-			name.printf("id %d", id);
-			error(csb, isc_relnotdef, isc_arg_string, ERR_cstring(name), 0);
+		if (!(relation = MET_lookup_relation_id(tdbb, id, FALSE))) {
+			sprintf(name, "id %d", id);
+			error(*csb, gds_relnotdef, gds_arg_string, ERR_cstring(name), 0);
 		}
 	}
-	else if (blr_operator == blr_relation || blr_operator == blr_relation2) {
+	else if (operator_ == blr_relation || operator_ == blr_relation2) {
 		par_name(csb, name);
-		if (blr_operator == blr_relation2) {
-			alias_string = FB_NEW(csb->csb_pool) Firebird::string(csb->csb_pool);
-			par_name(csb, *alias_string);
+		if (operator_ == blr_relation2) {
+			length = BLR_PEEK;
+			alias_string = FB_NEW_RPT(*tdbb->tdbb_default, length + 1) str();
+			alias_string->str_length = length;
+			par_name(csb, reinterpret_cast < char *>(alias_string->str_data));
 		}
 		if (!(relation = MET_lookup_relation(tdbb, name)))
-			error(csb, isc_relnotdef, isc_arg_string, ERR_cstring(name), 0);
+			error(*csb, gds_relnotdef, gds_arg_string, ERR_cstring(name), 0);
 	}
 
 /* if an alias was passed, store with the relation */
 
 	if (alias_string)
-	{
-		node->nod_arg[e_rel_alias] = 
-			(jrd_nod*) stringDup(*tdbb->getDefaultPool(), alias_string->c_str());
-	}
+		node->nod_arg[e_rel_alias] = (JRD_NOD) alias_string;
 
 /* Scan the relation if it hasn't already been scanned for meta data */
 
 	if ((!(relation->rel_flags & REL_scanned)
 		 || (relation->rel_flags & REL_being_scanned))
 		&& ((relation->rel_flags & REL_force_scan)
-			|| !(csb->csb_g_flags & csb_internal)))
-	{
+			|| !((*csb)->csb_g_flags & csb_internal))) {
 		relation->rel_flags &= ~REL_force_scan;
 		MET_scan_relation(tdbb, relation);
 	}
@@ -2265,30 +2010,25 @@ static jrd_nod* par_relation(
    assuming it is a real reference */
 
 	if (parse_context) {
-		SSHORT context;
-		const SSHORT stream = par_context(csb, &context);
-		fb_assert(stream <= MAX_STREAMS);
-		node->nod_arg[e_rel_stream] = (jrd_nod*) (IPTR) stream;
-		node->nod_arg[e_rel_context] = (jrd_nod*) (IPTR) context;
+		stream = par_context(csb, &context);
+		assert(stream <= MAX_STREAMS);
+		node->nod_arg[e_rel_stream] = (JRD_NOD) (SLONG) stream;
+		node->nod_arg[e_rel_context] = (JRD_NOD) (SLONG) context;
 
-		csb->csb_rpt[stream].csb_relation = relation;
-		csb->csb_rpt[stream].csb_alias = alias_string;
+		(*csb)->csb_rpt[stream].csb_relation = relation;
+		(*csb)->csb_rpt[stream].csb_alias = alias_string;
 
-		if (csb->csb_g_flags & csb_get_dependencies)
-			par_dependency(tdbb, csb, stream, (SSHORT) -1, "");
-	}
-	else
-	{
-		delete alias_string;
+		if ((*csb)->csb_g_flags & csb_get_dependencies)
+			par_dependency(tdbb, csb, stream, (SSHORT) - 1, 0);
 	}
 
-	node->nod_arg[e_rel_relation] = (jrd_nod*) relation;
+	node->nod_arg[e_rel_relation] = (JRD_NOD) relation;
 
 	return node;
 }
 
 
-static jrd_nod* par_rse(thread_db* tdbb, CompilerScratch* csb, SSHORT rse_op)
+static JRD_NOD par_rse(TDBB tdbb, CSB * csb, SSHORT rse_op)
 {
 /**************************************
  *
@@ -2300,75 +2040,71 @@ static jrd_nod* par_rse(thread_db* tdbb, CompilerScratch* csb, SSHORT rse_op)
  *	Parse a record selection expression.
  *
  **************************************/
+	RSE rse;
+	JRD_NOD *ptr;
+	SSHORT count;
+	USHORT jointype;
+	UCHAR op;
+
 	SET_TDBB(tdbb);
 
-	SSHORT count = (unsigned int) BLR_BYTE;
-	RecordSelExpr* rse = (RecordSelExpr*) PAR_make_node(tdbb, count + rse_delta + 2);
+	count = (unsigned int) BLR_BYTE;
+	rse = (RSE) PAR_make_node(tdbb, count + rse_delta + 2);
 	rse->nod_count = 0;
 	rse->rse_count = count;
-	jrd_nod** ptr = rse->rse_relation;
+	ptr = rse->rse_relation;
 
-	while (--count >= 0) {
-		// AB: Added TYPE_RSE for derived table support
-		*ptr++ = parse(tdbb, csb, RELATION, TYPE_RSE);
-		//*ptr++ = parse(tdbb, csb, RELATION);
-	}
+	while (--count >= 0)
+		*ptr++ = parse(tdbb, csb, RELATION);
 
-	while (true) {
-		const UCHAR op = BLR_BYTE;
-		switch (op) {
+	while (TRUE)
+		switch (op = BLR_BYTE) {
 		case blr_boolean:
-			rse->rse_boolean = parse(tdbb, csb, TYPE_BOOL);
+			rse->rse_boolean = parse(tdbb, csb, BOOL);
 			break;
 
 		case blr_first:
 			if (rse_op == blr_rs_stream)
-				syntax_error(csb, "RecordSelExpr stream clause");
+				syntax_error(*csb, "rse stream clause");
 			rse->rse_first = parse(tdbb, csb, VALUE);
 			break;
 
         case blr_skip:
             if (rse_op == blr_rs_stream)
-                syntax_error (csb, "RecordSelExpr stream clause");
+                syntax_error (*csb, "rse stream clause");
             rse->rse_skip = parse (tdbb, csb, VALUE);
             break;
 
 		case blr_sort:
 			if (rse_op == blr_rs_stream)
-				syntax_error(csb, "RecordSelExpr stream clause");
-			rse->rse_sorted = par_sort(tdbb, csb, true);
+				syntax_error(*csb, "rse stream clause");
+			rse->rse_sorted = par_sort(tdbb, csb, TRUE);
 			break;
 
 		case blr_project:
 			if (rse_op == blr_rs_stream)
-				syntax_error(csb, "RecordSelExpr stream clause");
-			rse->rse_projection = par_sort(tdbb, csb, false);
+				syntax_error(*csb, "rse stream clause");
+			rse->rse_projection = par_sort(tdbb, csb, FALSE);
 			break;
 
 		case blr_join_type:
-			{
-				const USHORT jointype = (USHORT) BLR_BYTE;
-				rse->rse_jointype = jointype;
-				if (jointype != blr_inner
-					&& jointype != blr_left && jointype != blr_right
-					&& jointype != blr_full)
-				{
-					syntax_error(csb, "join type clause");
-				}
-				break;
-			}
+			if ((rse->rse_jointype = jointype = (USHORT) BLR_BYTE) !=
+				blr_inner && jointype != blr_left && jointype != blr_right
+				&& jointype != blr_full)
+				syntax_error(*csb, "join type clause");
+			break;
 
 		case blr_plan:
 			rse->rse_plan = par_plan(tdbb, csb);
 			break;
 			
 		case blr_writelock:
-			rse->rse_writelock = true;
+			rse->rse_writelock = TRUE;
 			break;
 
 #ifdef SCROLLABLE_CURSORS
 			/* if a receive is seen here, then it is intended to be an asynchronous 
-			   receive which can happen at any time during the scope of the RecordSelExpr-- 
+			   receive which can happen at any time during the scope of the rse-- 
 			   this is intended to be a more efficient mechanism for scrolling through 
 			   a record stream, to prevent having to send a message to the engine 
 			   for each record */
@@ -2386,29 +2122,16 @@ static jrd_nod* par_rse(thread_db* tdbb, CompilerScratch* csb, SSHORT rse_op)
 
 				if (!rse->rse_jointype ||
 					(rse->rse_count == 2 && rse->rse_boolean))
-				{
-						// Convert right outer joins to left joins to avoid
-						// RIGHT JOIN handling at lower engine levels
-						if (rse->rse_jointype == blr_right) {
-							// Swap sub-streams
-							jrd_nod* temp = rse->rse_relation[0];
-							rse->rse_relation[0] = rse->rse_relation[1];
-							rse->rse_relation[1] = temp;
-
-							rse->rse_jointype = blr_left;
-						}
-						return (jrd_nod*) rse;
-				}
+						return (JRD_NOD) rse;
 			}
-			syntax_error(csb, (TEXT*)((rse_op == blr_rs_stream) ?
-						 "RecordSelExpr stream clause" :
+			syntax_error(*csb, (TEXT*)((rse_op == blr_rs_stream) ?
+						 "rse stream clause" :
 						 "record selection expression clause"));
 		}
-	}
 }
 
 
-static jrd_nod* par_sort(thread_db* tdbb, CompilerScratch* csb, bool flag)
+static JRD_NOD par_sort(TDBB tdbb, CSB * csb, BOOLEAN flag)
 {
 /**************************************
  *
@@ -2421,34 +2144,33 @@ static jrd_nod* par_sort(thread_db* tdbb, CompilerScratch* csb, bool flag)
  *	BLR_SORT, BLR_PROJECT, and BLR_GROUP.
  *
  **************************************/
+	JRD_NOD clause, *ptr, *ptr2, *ptr3;
+	SSHORT count;
+
 	SET_TDBB(tdbb);
 
-	SSHORT count = (unsigned int) BLR_BYTE;
-	jrd_nod* clause = PAR_make_node(tdbb, count * 3);
+	count = (unsigned int) BLR_BYTE;
+	clause = PAR_make_node(tdbb, count * 3);
 	clause->nod_type = nod_sort;
 	clause->nod_count = count;
-	jrd_nod** ptr = clause->nod_arg;
-	jrd_nod** ptr2 = ptr + count;
-	jrd_nod** ptr3 = ptr2 + count;
+	ptr = clause->nod_arg;
+	ptr2 = ptr + count;
+	ptr3 = ptr2 + count;	
 
 	while (--count >= 0) {
 		if (flag) {
 			UCHAR code = BLR_BYTE;
-			switch (code) {
-			case blr_nullsfirst:
-				*ptr3++ = (jrd_nod*) (IPTR) rse_nulls_first;
+			if (code == blr_nullsfirst) {
+				*ptr3++ = (JRD_NOD) (SLONG) TRUE;
 				code = BLR_BYTE;
-				break;
-			case blr_nullslast:
-				*ptr3++ = (jrd_nod*) (IPTR) rse_nulls_last;
-				code = BLR_BYTE;
-				break;
-			default:
-				*ptr3++ = (jrd_nod*) (IPTR) rse_nulls_default;
+			} else {
+				if (code == blr_nullslast)
+					code = BLR_BYTE;
+				*ptr3++ = (JRD_NOD) (SLONG) FALSE;
 			}
 			  
 			*ptr2++ =
-				(jrd_nod*) (IPTR) ((code == blr_descending) ? TRUE : FALSE);
+				(JRD_NOD) (SLONG) ((code == blr_descending) ? TRUE : FALSE);
 		}
 		*ptr++ = parse(tdbb, csb, VALUE);
 	}
@@ -2457,8 +2179,7 @@ static jrd_nod* par_sort(thread_db* tdbb, CompilerScratch* csb, bool flag)
 }
 
 
-#ifdef NOT_USED_OR_REPLACED
-static jrd_nod* par_stream(thread_db* tdbb, CompilerScratch* csb)
+static JRD_NOD par_stream(TDBB tdbb, CSB * csb)
 {
 /**************************************
  *
@@ -2470,65 +2191,31 @@ static jrd_nod* par_stream(thread_db* tdbb, CompilerScratch* csb)
  *	Parse a stream expression.
  *
  **************************************/
+	RSE rse;
+	UCHAR op;
+
 	SET_TDBB(tdbb);
 
-	RecordSelExpr* rse = (RecordSelExpr*) PAR_make_node(tdbb, 1 + rse_delta + 2);
+	rse = (RSE) PAR_make_node(tdbb, 1 + rse_delta + 2);
 	rse->nod_count = 0;
 	rse->rse_count = 1;
 	rse->rse_relation[0] = parse(tdbb, csb, RELATION);
 
-	while (true) {
-		const UCHAR op = BLR_BYTE;
-		switch (op) {
+	while (TRUE)
+		switch (op = BLR_BYTE) {
 		case blr_boolean:
-			rse->rse_boolean = parse(tdbb, csb, TYPE_BOOL);
+			rse->rse_boolean = parse(tdbb, csb, BOOL);
 			break;
 
 		default:
 			if (op == (UCHAR) blr_end)
-				return (jrd_nod*) rse;
-			syntax_error(csb, "stream_clause");
+				return (JRD_NOD) rse;
+			syntax_error(*csb, "stream_clause");
 		}
-	}
-}
-#endif
-
-
-static jrd_nod* par_sys_function(thread_db* tdbb, CompilerScratch* csb)
-{
-/**************************************
- *
- *	p a r _ s y s _ f u n c t i o n
- *
- **************************************
- *
- * Functional description
- *	Parse a system function reference.
- *
- **************************************/
-	SET_TDBB(tdbb);
-	
-	Firebird::MetaName name;
-	const USHORT count = par_name(csb, name);
-
-	const SysFunction* function = SysFunction::lookup(name);
-
-	if (!function)
-	{
-		csb->csb_running -= count;
-		error(csb, isc_funnotdef, isc_arg_string, ERR_cstring(name), 0);
-	}
-
-	jrd_nod* node = PAR_make_node(tdbb, e_sysfun_length);
-	node->nod_count = count_table[blr_sys_function];
-	node->nod_arg[e_sysfun_args] = par_args(tdbb, csb, VALUE);
-	node->nod_arg[e_sysfun_function] = (jrd_nod*) function;
-
-	return node;
 }
 
 
-static jrd_nod* par_union(thread_db* tdbb, CompilerScratch* csb, bool recursive)
+static JRD_NOD par_union(TDBB tdbb, CSB * csb)
 {
 /**************************************
  *
@@ -2540,34 +2227,29 @@ static jrd_nod* par_union(thread_db* tdbb, CompilerScratch* csb, bool recursive)
  *	Parse a union reference.
  *
  **************************************/
+	JRD_NOD node;
+	SSHORT count;
+	USHORT stream;
+	LLS clauses;
+
 	SET_TDBB(tdbb);
 
 /* Make the node, parse the context number, get a stream assigned,
-   and get the number of sub-RecordSelExpr's. */
+   and get the number of sub-rse's. */
 
-	jrd_nod* node = PAR_make_node(tdbb, e_uni_length);
-	node->nod_count = 3;
-	const USHORT stream = par_context(csb, 0);
-	node->nod_arg[e_uni_stream] = (jrd_nod*) (IPTR) stream;
+	node = PAR_make_node(tdbb, e_uni_length);
+	node->nod_count = 2;
+	stream = par_context(csb, 0);
+	node->nod_arg[e_uni_stream] = (JRD_NOD) (SLONG) stream;
+	count = (unsigned int) BLR_BYTE;
 
-	// assign separate context for mapped record if union is recursive
-	USHORT map_stream = stream;
-	if (recursive)
-	{
-		node->nod_flags |= nod_recurse;
-		map_stream = par_context(csb, 0);
-		node->nod_arg[e_uni_map_stream] = (jrd_nod*) (IPTR) map_stream;
-	}
+/* Pick up the sub-rse's and maps */
 
-	SSHORT count = (unsigned int) BLR_BYTE;
-
-/* Pick up the sub-RecordSelExpr's and maps */
-
-	NodeStack clauses;
+	clauses = NULL;
 
 	while (--count >= 0) {
-		clauses.push(parse(tdbb, csb, TYPE_RSE));
-		clauses.push(par_map(tdbb, csb, map_stream));
+		LLS_PUSH(parse(tdbb, csb, TYPE_RSE), &clauses);
+		LLS_PUSH(par_map(tdbb, csb, stream), &clauses);
 	}
 
 	node->nod_arg[e_uni_clauses] = PAR_make_list(tdbb, clauses);
@@ -2576,7 +2258,7 @@ static jrd_nod* par_union(thread_db* tdbb, CompilerScratch* csb, bool recursive)
 }
 
 
-static USHORT par_word(CompilerScratch* csb)
+static USHORT par_word(CSB * csb)
 {
 /**************************************
  *
@@ -2588,15 +2270,16 @@ static USHORT par_word(CompilerScratch* csb)
  *	Pick up a BLR word.
  *
  **************************************/
-	const UCHAR low = BLR_BYTE;
-	const UCHAR high = BLR_BYTE;
+	UCHAR low, high;
+
+	low = BLR_BYTE;
+	high = BLR_BYTE;
 
 	return high * 256 + low;
 }
 
 
-static jrd_nod* parse(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
-	USHORT expected_optional)
+static JRD_NOD parse(TDBB tdbb, CSB * csb, USHORT expected)
 {
 /**************************************
  *
@@ -2608,52 +2291,41 @@ static jrd_nod* parse(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
  *	Parse a BLR expression.
  *
  **************************************/
+	JRD_NOD node, *arg;
+	SSHORT sub_type, operator_;
+	USHORT n;
+	TEXT name[32];
+
 	SET_TDBB(tdbb);
 
-	const USHORT blr_offset = csb->csb_running - csb->csb_blr;
-	const SSHORT blr_operator = BLR_BYTE;
+	operator_ = BLR_BYTE;
 
-	if (blr_operator < 0 || blr_operator >= FB_NELEM(type_table)) {
-        // NS: This error string is correct, please do not mangle it again and again.
-		// The whole error message is "BLR syntax error: expected %s at offset %d, encountered %d"
-        syntax_error(csb, "valid BLR code");
+	if (operator_ < 0 || operator_ >= FB_NELEM(type_table)) {
+        syntax_error(*csb, "invalid BLR code");
     }
 
-	const SSHORT sub_type = sub_type_table[blr_operator];
+	sub_type = sub_type_table[operator_];
 
-	if (expected && (expected != type_table[blr_operator])) {
-		if (expected_optional) {
-			if (expected_optional != type_table[blr_operator]) {
-				syntax_error(csb, elements[expected]);
-			}
-		}
-		else {
-			syntax_error(csb, elements[expected]);
-		}
-	}
+	if (expected && expected != type_table[operator_])
+		syntax_error(*csb, elements[expected]);
 
 /* If there is a length given in the length table, pre-allocate
    the node and set its count.  This saves an enormous amount of
    repetitive code. */
 
-	jrd_nod* node;
-	jrd_nod** arg;
-	USHORT n = length_table[blr_operator];
-	if (n) {
+	if ( (n = length_table[operator_]) ) {
 		node = PAR_make_node(tdbb, n);
-		node->nod_count = count_table[blr_operator];
+		node->nod_count = count_table[operator_];
 		arg = node->nod_arg;
 	}
 	else {
 		node = NULL;
 		arg = NULL;
-	}
-
-	bool set_type = true;
+	};
 
 /* Dispatch on operator type. */
 
-	switch (blr_operator) {
+	switch (operator_) {
 	case blr_any:
 	case blr_unique:
 	case blr_ansi_any:
@@ -2672,25 +2344,6 @@ static jrd_nod* parse(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 		*arg++ = parse(tdbb, csb, sub_type);
 		*arg++ = parse(tdbb, csb, sub_type);
 		break;
-
-	case blr_trim:
-	{
-		node->nod_count = e_trim_count;
-		node->nod_arg[e_trim_specification] = (jrd_nod*)(U_IPTR) BLR_BYTE;
-
-		BYTE trimWhat = BLR_BYTE;
-
-		if (trimWhat == blr_trim_characters)
-			node->nod_arg[e_trim_characters] = parse(tdbb, csb, sub_type);
-		else
-		{
-			node->nod_arg[e_trim_characters] = NULL;
-			--node->nod_count;
-		}
-
-		node->nod_arg[e_trim_value] = parse(tdbb, csb, sub_type);
-		break;
-	}
 
 	case blr_and:
 	case blr_or:
@@ -2715,7 +2368,6 @@ static jrd_nod* parse(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 
 	case blr_lock_state:
 	case blr_upcase:
-	case blr_lowcase:
 	case blr_negate:
 	case blr_not:
 	case blr_missing:
@@ -2732,18 +2384,12 @@ static jrd_nod* parse(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 		*arg++ = parse(tdbb, csb, sub_type);
 		break;
 
-	case blr_agg_list:
-	case blr_agg_list_distinct:
-		*arg++ = parse(tdbb, csb, sub_type);
-		*arg++ = parse(tdbb, csb, VALUE);
-		break;
-
 	case blr_exec_sql:
 		*arg++ = parse(tdbb, csb, sub_type);
 		break;
 
 	case blr_exec_into:
-		n = BLR_WORD + 2; // e_exec_into_count - 1
+		n = BLR_WORD + 2 /*e_exec_into_count - 1*/ ;
 		node = PAR_make_node(tdbb, n);
 		arg = node->nod_arg;
 		*arg++ = parse(tdbb, csb, VALUE);
@@ -2751,7 +2397,7 @@ static jrd_nod* parse(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 			*arg++ = 0;
 		else
 			*arg++ = parse(tdbb, csb, STATEMENT);
-		for (n = 2/*e_exec_into_list*/; n < node->nod_count; n++)
+		for (n=2/*e_exec_into_list*/; n<node->nod_count; n++)
 			*arg++ = parse(tdbb, csb, VALUE);
 		break;
 
@@ -2765,42 +2411,23 @@ static jrd_nod* parse(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 	case blr_user_name:
     case blr_current_role:
 	case blr_current_date:
+	case blr_current_time:
+	case blr_current_timestamp:
 	case blr_start_savepoint:
 	case blr_end_savepoint:
 		break;
 
-	case blr_current_time:
-		node->nod_arg[0] = (jrd_nod*) (IPTR) DEFAULT_TIME_PRECISION;
-		break;
-
-	case blr_current_timestamp:
-		node->nod_arg[0] = (jrd_nod*) (IPTR) DEFAULT_TIMESTAMP_PRECISION;
-		break;
-
-	case blr_current_time2:
-	case blr_current_timestamp2:
-		n = BLR_BYTE;
-		if (n > MAX_TIME_PRECISION) {
-			ERR_post(isc_invalid_time_precision,
-					 isc_arg_number, MAX_TIME_PRECISION, 0);
-		}
-		node->nod_arg[0] = (jrd_nod*) (IPTR) n;
-		break;
-
 	case blr_user_savepoint:
-		{
-			*arg++ = (jrd_nod*) (IPTR) BLR_BYTE;
-			Firebird::MetaName name;
-			par_name(csb, name);
-			*arg++ = (jrd_nod*) stringDup(*tdbb->getDefaultPool(), name.c_str());
-			break;
-		}
+		*arg++ = (JRD_NOD) BLR_BYTE;
+		par_name(csb, name);
+		*arg++ = (JRD_NOD) ALL_cstring(name);
+		break;
 
 	case blr_store:
 	case blr_store2:
 		node->nod_arg[e_sto_relation] = parse(tdbb, csb, RELATION);
 		node->nod_arg[e_sto_statement] = parse(tdbb, csb, sub_type);
-		if (blr_operator == blr_store2)
+		if (operator_ == blr_store2)
 			node->nod_arg[e_sto_statement2] = parse(tdbb, csb, sub_type);
 		break;
 
@@ -2809,7 +2436,6 @@ static jrd_nod* parse(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 	case blr_between:
 		*arg++ = parse(tdbb, csb, sub_type);
 
-	case blr_equiv:
 	case blr_eql:
 	case blr_neq:
 	case blr_geq:
@@ -2823,25 +2449,24 @@ static jrd_nod* parse(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 
 	case blr_erase:
 		n = BLR_BYTE;
-		if (n >= csb->csb_rpt.getCount() || !(csb->csb_rpt[n].csb_flags & csb_used))
-			error(csb, isc_ctxnotdef, 0);
+		if (n >= (*csb)->csb_count)
+			error(*csb, gds_ctxnotdef, 0);
 		node->nod_arg[e_erase_stream] =
-			(jrd_nod*) (IPTR) csb->csb_rpt[n].csb_stream;
+			(JRD_NOD) (SLONG) (*csb)->csb_rpt[n].csb_stream;
 		break;
 	
 	case blr_modify:
-	case blr_modify2:
-		node = par_modify(tdbb, csb, blr_operator);
+		node = par_modify(tdbb, csb);
 		break;
 
 	case blr_exec_proc:
 	case blr_exec_pid:
-		node = par_exec_proc(tdbb, csb, blr_operator);
+		node = par_exec_proc(tdbb, csb, operator_);
 		break;
 
 	case blr_pid:
 	case blr_procedure:
-		node = par_procedure(tdbb, csb, blr_operator);
+		node = par_procedure(tdbb, csb, operator_);
 		break;
 
 	case blr_function:
@@ -2858,119 +2483,77 @@ static jrd_nod* parse(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 			node->nod_arg[e_for_stall] = parse(tdbb, csb, STATEMENT);
 
 		if (BLR_PEEK == (UCHAR) blr_rse ||
-			BLR_PEEK == (UCHAR) blr_singular)
+			BLR_PEEK == (UCHAR) blr_singular ||
+			BLR_PEEK == (UCHAR) blr_stream)
 				node->nod_arg[e_for_re] = parse(tdbb, csb, TYPE_RSE);
 		else
-			node->nod_arg[e_for_re] = par_rse(tdbb, csb, blr_operator);
+			node->nod_arg[e_for_re] = par_rse(tdbb, csb, operator_);
 		node->nod_arg[e_for_statement] = parse(tdbb, csb, sub_type);
-		break;
-
-	case blr_dcl_cursor:
-		{
-			node->nod_arg[e_dcl_cursor_number] = (jrd_nod*) (IPTR) BLR_WORD;
-			node->nod_arg[e_dcl_cursor_rse] = parse(tdbb, csb, TYPE_RSE);
-			n = BLR_WORD;
-			jrd_nod* temp = PAR_make_node(tdbb, n);
-			temp->nod_type = nod_list;
-			for (jrd_nod** ptr = temp->nod_arg; n; n--) {
-				*ptr++ = parse(tdbb, csb, VALUE);
-			}
-			node->nod_arg[e_dcl_cursor_refs] = temp;
-		}
-		break;
-
-	case blr_cursor_stmt:
-		n = BLR_BYTE;
-		node->nod_arg[e_cursor_stmt_op] = (jrd_nod*) (IPTR) n;
-		node->nod_arg[e_cursor_stmt_number] = (jrd_nod*) (IPTR) BLR_WORD;
-		switch (n) {
-		case blr_cursor_open:
-		case blr_cursor_close:
-			break;
-		case blr_cursor_fetch:
-#ifdef SCROLLABLE_CURSORS
-			if (BLR_PEEK == blr_seek)
-				node->nod_arg[e_cursor_stmt_seek] = parse(tdbb, csb, STATEMENT);
-#endif
-			csb->csb_g_flags |= csb_reuse_context;
-			node->nod_arg[e_cursor_stmt_into] = parse(tdbb, csb, STATEMENT);
-			csb->csb_g_flags &= ~csb_reuse_context;
-			break;
-		default:
-			syntax_error(csb, "cursor operation clause");
-		}
 		break;
 
 	case blr_rse:
 	case blr_rs_stream:
-		node = par_rse(tdbb, csb, blr_operator);
+		node = par_rse(tdbb, csb, operator_);
 		break;
 
 	case blr_singular:
 		node = parse(tdbb, csb, TYPE_RSE);
-		((RecordSelExpr*) node)->nod_flags |= rse_singular;
+		((RSE) node)->nod_flags |= rse_singular;
 		break;
 
 	case blr_relation:
 	case blr_rid:
 	case blr_relation2:
 	case blr_rid2:
-		node = par_relation(tdbb, csb, blr_operator, true);
+		node = par_relation(tdbb, csb, operator_, TRUE);
 		break;
 
 	case blr_union:
-		node = par_union(tdbb, csb, false);
-		break;
-
-	case blr_recurse:
-		node = par_union(tdbb, csb, true);
+		node = par_union(tdbb, csb);
 		break;
 
 	case blr_aggregate:
-		node->nod_arg[e_agg_stream] = (jrd_nod*) (IPTR) par_context(csb, 0);
-		fb_assert((int) (IPTR)node->nod_arg[e_agg_stream] <= MAX_STREAMS);
+		node->nod_arg[e_agg_stream] = (JRD_NOD) (SLONG) par_context(csb, 0);
+		assert((int)node->nod_arg[e_agg_stream] <= MAX_STREAMS);
 		node->nod_arg[e_agg_rse] = parse(tdbb, csb, TYPE_RSE);
 		node->nod_arg[e_agg_group] = parse(tdbb, csb, OTHER);
 		node->nod_arg[e_agg_map] =
-			par_map(tdbb, csb, (USHORT)(IPTR) node->nod_arg[e_agg_stream]);
+			par_map(tdbb, csb, (USHORT) (IPTR) node->nod_arg[e_agg_stream]);
 		break;
 
 	case blr_group_by:
-		node = par_sort(tdbb, csb, false);
+		node = par_sort(tdbb, csb, FALSE);
 		return (node->nod_count) ? node : NULL;
 
 	case blr_field:
 	case blr_fid:
-		node = par_field(tdbb, csb, blr_operator);
-		if (node->nod_type == nod_domain_validation || node->nod_type == nod_null)
-			set_type = false;	// to not change nod->nod_type to nod_field
+		node = par_field(tdbb, csb, operator_);
 		break;
 
 	case blr_gen_id:
 	case blr_set_generator:
 		{
-			Firebird::MetaName name;
+			SLONG tmp;
+			TEXT name[32];
 
 			par_name(csb, name);
-			const SLONG tmp = MET_lookup_generator(tdbb, name.c_str());
-			if (tmp < 0) {
-				error(csb, isc_gennotdef,
-					  isc_arg_string, ERR_cstring(name), 0);
-			}
-			node->nod_arg[e_gen_relation] = (jrd_nod*) (IPTR) tmp;
+			tmp = MET_lookup_generator(tdbb, name);
+			if (tmp < 0)
+				error(*csb, gds_gennotdef,
+					  gds_arg_string, ERR_cstring(name), 0);
+			node->nod_arg[e_gen_relation] = (JRD_NOD) tmp;
 			node->nod_arg[e_gen_value] = parse(tdbb, csb, VALUE);
 
             /* CVC: There're thousand ways to go wrong, but I don't see any value
                in posting dependencies with set generator since it's DDL, so I will
                track only gen_id() in both dialects. */
-            if ((blr_operator == blr_gen_id)
-                && (csb->csb_g_flags & csb_get_dependencies))
-			{
-                jrd_nod* dep_node = PAR_make_node (tdbb, e_dep_length);
+            if ((operator_ == blr_gen_id)
+                && ((*csb)->csb_g_flags & csb_get_dependencies)) {
+                JRD_NOD dep_node = PAR_make_node (tdbb, e_dep_length);
                 dep_node->nod_type = nod_dependency;
-                dep_node->nod_arg [e_dep_object] = (jrd_nod*) (IPTR) tmp;
-                dep_node->nod_arg [e_dep_object_type] = (jrd_nod*)(IPTR) obj_generator;
-                csb->csb_dependencies.push(dep_node);
+                dep_node->nod_arg [e_dep_object] = (JRD_NOD) tmp;
+                dep_node->nod_arg [e_dep_object_type] = (JRD_NOD) obj_generator;
+                LLS_PUSH (dep_node, &(*csb)->csb_dependencies);
             }
 
 		}
@@ -2979,9 +2562,9 @@ static jrd_nod* parse(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 	case blr_record_version:
 	case blr_dbkey:
 		n = BLR_BYTE;
-		if (n >= csb->csb_rpt.getCount() || !(csb->csb_rpt[n].csb_flags & csb_used))
-			error(csb, isc_ctxnotdef, 0);
-		node->nod_arg[0] = (jrd_nod*) (IPTR) csb->csb_rpt[n].csb_stream;
+		if (n >= (*csb)->csb_count)
+			error(*csb, gds_ctxnotdef, 0);
+		node->nod_arg[0] = (JRD_NOD) (SLONG) (*csb)->csb_rpt[n].csb_stream;
 		break;
 
 	case blr_fetch:
@@ -2991,7 +2574,7 @@ static jrd_nod* parse(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 	case blr_send:
 	case blr_receive:
 		n = BLR_BYTE;
-		node->nod_arg[e_send_message] = csb->csb_rpt[n].csb_message;
+		node->nod_arg[e_send_message] = (*csb)->csb_rpt[n].csb_message;
 		node->nod_arg[e_send_statement] = parse(tdbb, csb, sub_type);
 		break;
 
@@ -3008,59 +2591,33 @@ static jrd_nod* parse(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 		break;
 
 	case blr_extract:
-	    // This forced conversion looks strange, but extract_part fits in a byte
-		node->nod_arg[e_extract_part] = (jrd_nod*)(U_IPTR) BLR_BYTE;
+		node->nod_arg[e_extract_part] = reinterpret_cast < jrd_nod * >(BLR_BYTE);
 		node->nod_arg[e_extract_value] = parse(tdbb, csb, sub_type);
 		node->nod_count = e_extract_count;
 		break;
 
-	case blr_strlen:
-	    // This forced conversion looks strange, but length_type fits in a byte
-		node->nod_arg[e_strlen_type] = (jrd_nod*)(U_IPTR) BLR_BYTE;
-		node->nod_arg[e_strlen_value] = parse(tdbb, csb, sub_type);
-		node->nod_count = e_strlen_count;
-		break;
-
 	case blr_dcl_variable:
 		{
-			dsc* desc = (dsc*) (node->nod_arg + e_dcl_desc);
-
-			ItemInfo itemInfo;
-
 			n = BLR_WORD;
-			node->nod_arg[e_dcl_id] = (jrd_nod*) (IPTR) n;
-			PAR_desc(tdbb, csb, desc, &itemInfo);
-			vec<jrd_nod*>* vector = csb->csb_variables =
-				vec<jrd_nod*>::newVector(*tdbb->getDefaultPool(), csb->csb_variables, n + 1);
-			(*vector)[n] = node;
-
-			if (itemInfo.isSpecial())
-			{
-				csb->csb_dbg_info.varIndexToName.get(n, itemInfo.name);
-				csb->csb_map_item_info.put(Item(nod_variable, n), itemInfo);
-			}
-
-			if (itemInfo.explicitCollation)
-			{
-				jrd_nod* dep_node = PAR_make_node (tdbb, e_dep_length);
-				dep_node->nod_type = nod_dependency;
-				dep_node->nod_arg [e_dep_object] = (jrd_nod*)(IPTR) INTL_TEXT_TYPE(*desc);
-				dep_node->nod_arg [e_dep_object_type] = (jrd_nod*)(IPTR) obj_collation;
-				csb->csb_dependencies.push(dep_node);
-			}
+			node->nod_arg[e_dcl_id] = (JRD_NOD) (SLONG) n;
+			PAR_desc(csb, (DSC *) (node->nod_arg + e_dcl_desc));
+			VEC vector = (*csb)->csb_variables = 
+				vec::newVector(*tdbb->tdbb_default, (*csb)->csb_variables, n + 1);
+			(*vector)[n] = (BLK) node;
 		}
 		break;
 
 	case blr_variable:
 		{
+			VEC vector;
+
 			n = BLR_WORD;
-			node->nod_arg[e_var_id] = (jrd_nod*) (IPTR) n;
-			vec<jrd_nod*>* vector = csb->csb_variables;
-			if (!vector || n >= vector->count() ||
-				!(node->nod_arg[e_var_variable] = (*vector)[n]))
-			{
-				syntax_error(csb, "variable identifier");
-			}
+			node->nod_arg[e_var_id] = (JRD_NOD) (SLONG) n;
+			if (!(vector = (*csb)->csb_variables) ||
+				n >= vector->count() ||
+				!(node->nod_arg[e_var_variable] =
+				  (JRD_NOD) (*vector)[n])) syntax_error(*csb,
+															 "variable identifier");
 		}
 		break;
 
@@ -3068,42 +2625,42 @@ static jrd_nod* parse(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 	case blr_parameter2:
 	case blr_parameter3:
 		{
-			jrd_nod* message;
+			JRD_NOD message, temp;
+			FMT format;
+
 			n = (USHORT) BLR_BYTE;
-			if (n >= csb->csb_rpt.getCount() ||
-				!(message = csb->csb_rpt[n].csb_message))
-			{
-				error(csb, isc_badmsgnum, 0);
-			}
+			if (n >= (*csb)->csb_count ||
+				!(message = (*csb)->csb_rpt[n].csb_message))
+					error(*csb, gds_badmsgnum, 0);
 			node->nod_arg[e_arg_message] = message;
 			n = BLR_WORD;
-			node->nod_arg[e_arg_number] = (jrd_nod*) (IPTR) n;
-			const Format* format = (Format*) message->nod_arg[e_msg_format];
+			node->nod_arg[e_arg_number] = (JRD_NOD) (SLONG) n;
+			format = (FMT) message->nod_arg[e_msg_format];
 			if (n >= format->fmt_count)
-				error(csb, isc_badparnum, 0);
-			if (blr_operator != blr_parameter) {
-				jrd_nod* temp = PAR_make_node(tdbb, e_arg_length);
-				node->nod_arg[e_arg_flag] = temp;
+				error(*csb, gds_badparnum, 0);
+			if (operator_ != blr_parameter) {
+				node->nod_arg[e_arg_flag] = temp =
+					PAR_make_node(tdbb, e_arg_length);
 				node->nod_count = 1;
 				temp->nod_count = 0;
 				temp->nod_type = nod_argument;
 				temp->nod_arg[e_arg_message] = message;
 				n = BLR_WORD;
-				temp->nod_arg[e_arg_number] = (jrd_nod*) (IPTR) n;
+				temp->nod_arg[e_arg_number] = (JRD_NOD) (SLONG) n;
 				if (n >= format->fmt_count)
-					error(csb, isc_badparnum, 0);
+					error(*csb, gds_badparnum, 0);
 			}
-			if (blr_operator == blr_parameter3) {
-				jrd_nod* temp = PAR_make_node(tdbb, e_arg_length);
-				node->nod_arg[e_arg_indicator] = temp;
+			if (operator_ == blr_parameter3) {
+				node->nod_arg[e_arg_indicator] = temp =
+					PAR_make_node(tdbb, e_arg_length);
 				node->nod_count = 2;
 				temp->nod_count = 0;
 				temp->nod_type = nod_argument;
 				temp->nod_arg[e_arg_message] = message;
 				n = BLR_WORD;
-				temp->nod_arg[e_arg_number] = (jrd_nod*) (IPTR) n;
+				temp->nod_arg[e_arg_number] = (JRD_NOD) (SLONG) n;
 				if (n >= format->fmt_count)
-					error(csb, isc_badparnum, 0);
+					error(*csb, gds_badparnum, 0);
 			}
 		}
 		break;
@@ -3114,66 +2671,64 @@ static jrd_nod* parse(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 	case blr_select:
 	case blr_begin:
 		{
-			NodeStack stack;
+			LLS stack = NULL;
 
 			while (BLR_PEEK != (UCHAR) blr_end) {
-				if (blr_operator == blr_select && BLR_PEEK != blr_receive)
-					syntax_error(csb, "blr_receive");
-				stack.push(parse(tdbb, csb, sub_type));
+				if (operator_ == blr_select && BLR_PEEK != blr_receive)
+					syntax_error(*csb, "blr_receive");
+				LLS_PUSH(parse(tdbb, csb, sub_type), &stack);
 			}
-			BLR_BYTE; // skip blr_end
+			(void) BLR_BYTE;
 			node = PAR_make_list(tdbb, stack);
 		}
 		break;
 
 	case blr_block:
 		{
-			NodeStack stack;
+			LLS stack = NULL;
 
 			node->nod_arg[e_blk_action] = parse(tdbb, csb, sub_type);
 			while (BLR_PEEK != (UCHAR) blr_end)
-			{
-				stack.push(parse(tdbb, csb, sub_type));
-			}
-			BLR_BYTE; // skip blr_end
+				LLS_PUSH(parse(tdbb, csb, sub_type), &stack);
+			(void) BLR_BYTE;
 			node->nod_arg[e_blk_handlers] = PAR_make_list(tdbb, stack);
 		}
 		break;
 
 	case blr_error_handler:
-		node->nod_arg[e_err_conditions] = (jrd_nod*) par_conditions(tdbb, csb);
+		node->nod_arg[e_err_conditions] = (JRD_NOD) par_conditions(tdbb, csb);
 		node->nod_arg[e_err_action] = parse(tdbb, csb, sub_type);
 		break;
 
 	case blr_abort:
 		{
-			const bool flag = (BLR_PEEK == blr_exception_msg);
-			node->nod_arg[e_xcp_desc] = (jrd_nod*) par_condition(tdbb, csb);
-			if (flag)
-			{
-				node->nod_arg[e_xcp_msg] = parse(tdbb, csb, sub_type);
-			}
-			break;
+		bool flag = (BLR_PEEK == blr_exception_msg);
+		node->nod_arg[e_xcp_desc] = (JRD_NOD) par_condition(tdbb, csb);
+		if (flag)
+		{
+			node->nod_arg[e_xcp_msg] = parse(tdbb, csb, sub_type);
+		}
+		break;
 		}
 
 	case blr_if:
-		node->nod_arg[e_if_boolean] = parse(tdbb, csb, TYPE_BOOL);
+		node->nod_arg[e_if_boolean] = parse(tdbb, csb, BOOL);
 		node->nod_arg[e_if_true] = parse(tdbb, csb, sub_type);
 		if (BLR_PEEK == (UCHAR) blr_end) {
 			node->nod_count = 2;
-			BLR_BYTE; // skip blr_end
+			(void) BLR_BYTE;
 			break;
 		}
 		node->nod_arg[e_if_false] = parse(tdbb, csb, sub_type);
 		break;
 
 	case blr_label:
-		node->nod_arg[e_lbl_label] = (jrd_nod*) (IPTR) BLR_BYTE;
+		node->nod_arg[e_lbl_label] = (JRD_NOD) (SLONG) BLR_BYTE;
 		node->nod_arg[e_lbl_statement] = parse(tdbb, csb, sub_type);
 		break;
 
 	case blr_leave:
-		node->nod_arg[0] = (jrd_nod*) (IPTR) BLR_BYTE;
+		node->nod_arg[0] = (JRD_NOD) (SLONG) BLR_BYTE;
 		break;
 
 
@@ -3187,68 +2742,187 @@ static jrd_nod* parse(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 	case blr_total:
 	case blr_from:
 	case blr_via:
-		node->nod_arg[e_stat_rse] = parse(tdbb, csb, TYPE_RSE);
-		if (blr_operator != blr_count)
+		if (BLR_PEEK == (UCHAR) blr_stream)
+			node->nod_arg[e_stat_rse] = parse(tdbb, csb, OTHER);
+		else
+			node->nod_arg[e_stat_rse] = parse(tdbb, csb, TYPE_RSE);
+		if (operator_ != blr_count)
 			node->nod_arg[e_stat_value] = parse(tdbb, csb, VALUE);
-		if (blr_operator == blr_via)
+		if (operator_ == blr_via)
 			node->nod_arg[e_stat_default] = parse(tdbb, csb, VALUE);
 		break;
 
+		/* Client/Server Express Features */
+
+	case blr_stream:
+#ifdef PROD_BUILD
+		error(*csb, isc_cse_not_supported, 0);
+#endif
+		node = par_stream(tdbb, csb);
+		break;
+
+#ifdef PC_ENGINE
+	case blr_set_index:
+		n = BLR_BYTE;
+		if (n >= (*csb)->csb_count)
+			error(*csb, gds_ctxnotdef, 0);
+		node->nod_arg[e_index_stream] =
+			(JRD_NOD) (SLONG) (*csb)->csb_rpt[n].csb_stream;
+		node->nod_arg[e_index_index] = parse(tdbb, csb, VALUE);
+		break;
+
+	case blr_find:
+		n = BLR_BYTE;
+		if (n >= (*csb)->csb_count)
+			error(*csb, gds_ctxnotdef, 0);
+		node->nod_arg[e_find_stream] =
+			(JRD_NOD) (SLONG) (*csb)->csb_rpt[n].csb_stream;
+		node->nod_arg[e_find_operator] = parse(tdbb, csb, VALUE);
+		node->nod_arg[e_find_direction] = parse(tdbb, csb, VALUE);
+		node->nod_arg[e_find_args] = par_args(tdbb, csb, VALUE);
+		break;
+
+	case blr_find_dbkey:
+	case blr_find_dbkey_version:
+		n = BLR_BYTE;
+		if (n >= (*csb)->csb_count)
+			error(*csb, gds_ctxnotdef, 0);
+		node->nod_arg[e_find_dbkey_stream] =
+			(JRD_NOD) (SLONG) (*csb)->csb_rpt[n].csb_stream;
+		node->nod_arg[e_find_dbkey_dbkey] = parse(tdbb, csb, VALUE);
+
+		if (operator_ == blr_find_dbkey_version)
+			node->nod_arg[e_find_dbkey_version] = parse(tdbb, csb, VALUE);
+		break;
+
+	case blr_get_bookmark:
+		n = BLR_BYTE;
+		if (n >= (*csb)->csb_count)
+			error(*csb, gds_ctxnotdef, 0);
+		node->nod_arg[e_getmark_stream] =
+			(JRD_NOD) (SLONG) (*csb)->csb_rpt[n].csb_stream;
+		break;
+
+	case blr_set_bookmark:
+		n = BLR_BYTE;
+		if (n >= (*csb)->csb_count)
+			error(*csb, gds_ctxnotdef, 0);
+		node->nod_arg[e_setmark_stream] =
+			(JRD_NOD) (SLONG) (*csb)->csb_rpt[n].csb_stream;
+		node->nod_arg[e_setmark_id] = parse(tdbb, csb, VALUE);
+		break;
+
+	case blr_release_bookmark:
+		node->nod_arg[e_relmark_id] = parse(tdbb, csb, VALUE);
+		break;
+
+	case blr_bookmark:
+		node->nod_arg[e_bookmark_id] = parse(tdbb, csb, VALUE);
+		break;
+
+	case blr_force_crack:
+	case blr_crack:
+		n = BLR_BYTE;
+		if (n >= (*csb)->csb_count)
+			error(*csb, gds_ctxnotdef, 0);
+		node->nod_arg[0] = (JRD_NOD) (SLONG) (*csb)->csb_rpt[n].csb_stream;
+		break;
+
+	case blr_reset_stream:
+		n = BLR_BYTE;
+		if (n >= (*csb)->csb_count)
+			error(*csb, gds_ctxnotdef, 0);
+		node->nod_arg[e_reset_from_stream] =
+			(JRD_NOD) (SLONG) (*csb)->csb_rpt[n].csb_stream;
+
+		n = BLR_BYTE;
+		if (n >= (*csb)->csb_count)
+			error(*csb, gds_ctxnotdef, 0);
+		node->nod_arg[e_reset_to_stream] =
+			(JRD_NOD) (SLONG) (*csb)->csb_rpt[n].csb_stream;
+		break;
+
+	case blr_release_lock:
+		node->nod_arg[e_rellock_lock] = parse(tdbb, csb, VALUE);
+		break;
+
+	case blr_lock_relation:
+		n = BLR_BYTE;
+		if (n != blr_relation && n != blr_relation2 &&
+			n != blr_rid && n != blr_rid2)
+				syntax_error(*csb, elements[RELATION]);
+		node->nod_arg[e_lockrel_relation] = par_relation(tdbb, csb, n, FALSE);
+		node->nod_arg[e_lockrel_level] = parse(tdbb, csb, VALUE);
+		break;
+
+	case blr_lock_record:
+		n = BLR_BYTE;
+		if (n >= (*csb)->csb_count)
+			error(*csb, gds_ctxnotdef, 0);
+		node->nod_arg[e_lockrec_stream] =
+			(JRD_NOD) (SLONG) (*csb)->csb_rpt[n].csb_stream;
+		node->nod_arg[e_lockrec_level] = parse(tdbb, csb, VALUE);
+		break;
+
+	case blr_begin_range:
+		node->nod_arg[e_brange_number] = parse(tdbb, csb, VALUE);
+		break;
+
+	case blr_end_range:
+		node->nod_arg[e_erange_number] = parse(tdbb, csb, VALUE);
+		break;
+
+	case blr_delete_range:
+		node->nod_arg[e_drange_number] = parse(tdbb, csb, VALUE);
+		break;
+
+	case blr_range_relation:
+		node->nod_arg[e_range_relation_number] = parse(tdbb, csb, VALUE);
+		n = BLR_BYTE;
+		if (n != blr_relation && n != blr_relation2 &&
+			n != blr_rid && n != blr_rid2)
+				syntax_error(*csb, elements[RELATION]);
+		node->nod_arg[e_range_relation_relation] =
+			par_relation(tdbb, csb, n, FALSE);
+		break;
+
+	case blr_release_locks:
+	case blr_delete_ranges:
+		node = PAR_make_node(tdbb, 0);
+		node->nod_count = 0;
+		break;
+
+	case blr_cardinality:
+		n = BLR_BYTE;
+		if (n >= (*csb)->csb_count)
+			error(*csb, gds_ctxnotdef, 0);
+		node->nod_arg[e_card_stream] =
+			(JRD_NOD) (SLONG) (*csb)->csb_rpt[n].csb_stream;
+		break;
+#endif
+
 #ifdef SCROLLABLE_CURSORS
 	case blr_seek:
+	case blr_seek_no_warn:
 		node->nod_arg[e_seek_direction] = parse(tdbb, csb, VALUE);
 		node->nod_arg[e_seek_offset] = parse(tdbb, csb, VALUE);
 		break;
 #endif
 
-	case blr_init_variable:
-		{
-			n = BLR_WORD;
-			node->nod_arg[e_init_var_id] = (jrd_nod*)(U_IPTR) n;
-			vec<jrd_nod*>* vector = csb->csb_variables;
-			if (!vector || n >= vector->count() ||
-				!(node->nod_arg[e_init_var_variable] = (*vector)[n]))
-			{
-				syntax_error(csb, "variable identifier");
-			}
-		}
-		break;
-
-	case blr_sys_function:
-		node = par_sys_function(tdbb, csb);
-		break;
-
 	default:
-		syntax_error(csb, elements[expected]);
+		syntax_error(*csb, elements[expected]);
 	}
 
-	if (set_type)
-	{
-		if (csb->csb_g_flags & csb_blr_version4)
-			node->nod_type = (NOD_T) (USHORT) blr_table4[(int) blr_operator];
-		else
-			node->nod_type = (NOD_T) (USHORT) blr_table[(int) blr_operator];
-	}
-
-	size_t pos = 0;
-	if (csb->csb_dbg_info.blrToSrc.find(blr_offset, pos))
-	{
-		Firebird::MapBlrToSrcItem& i = csb->csb_dbg_info.blrToSrc[pos];
-		jrd_nod* node_src = PAR_make_node(tdbb, e_src_info_length);
-
-		node_src->nod_type = nod_src_info;
-		node_src->nod_arg[e_src_info_line] = (jrd_nod*) (IPTR) i.mbs_src_line;
-		node_src->nod_arg[e_src_info_col] = (jrd_nod*) (IPTR) i.mbs_src_col;
-		node_src->nod_arg[e_src_info_node] = node;
-
-		return node_src;
-	}
+	if ((*csb)->csb_g_flags & csb_blr_version4)
+		node->nod_type = (NOD_T) (USHORT) blr_table4[(int) operator_];
+	else
+		node->nod_type = (NOD_T) (USHORT) blr_table[(int) operator_];
 
 	return node;
 }
 
 
-static void syntax_error(CompilerScratch* csb, const TEXT* string)
+static void syntax_error(CSB csb, const TEXT * string)
 {
 /**************************************
  *
@@ -3261,14 +2935,14 @@ static void syntax_error(CompilerScratch* csb, const TEXT* string)
  *
  **************************************/
 
-	error(csb, isc_syntaxerr,
-		  isc_arg_string, string,
-		  isc_arg_number, (SLONG) (csb->csb_running - csb->csb_blr - 1),
-		  isc_arg_number, (SLONG) csb->csb_running[-1], 0);
+	error(csb, gds_syntaxerr,
+		  gds_arg_string, string,
+		  gds_arg_number, (SLONG) (csb->csb_running - csb->csb_blr - 1),
+		  gds_arg_number, (SLONG) csb->csb_running[-1], 0);
 }
 
 
-static void warning(CompilerScratch* csb, ...)
+static void warning(CSB csb, ...)
 {
 /**************************************
  *
@@ -3289,26 +2963,27 @@ static void warning(CompilerScratch* csb, ...)
  *	the message.
  *
  **************************************/
+	TDBB tdbb;
 	ISC_STATUS *p;
 	int type;
 	va_list args;
 
-	thread_db* tdbb = JRD_get_thread_data();
+	tdbb = GET_THREAD_DATA;
 
-	va_start(args, csb);
+	VA_START(args, csb);
 
 	p = tdbb->tdbb_status_vector;
 
 /* Make sure that the [1] position is 0
    indicating that no error has occured */
 
-	*p++ = isc_arg_gds;
+	*p++ = gds_arg_gds;
 	*p++ = 0;
 
 /* Now place your warning messages starting
    with position [2] */
 
-	*p++ = isc_arg_gds;
+	*p++ = gds_arg_gds;
 	*p++ = va_arg(args, ISC_STATUS);
 
 /* Pick up remaining args */
@@ -3316,33 +2991,34 @@ static void warning(CompilerScratch* csb, ...)
 	while ( (*p++ = type = va_arg(args, int)) )
 	{
 		switch (type) {
-		case isc_arg_gds:
+		case gds_arg_gds:
 			*p++ = (ISC_STATUS) va_arg(args, ISC_STATUS);
 			break;
 
-		case isc_arg_string:
-		case isc_arg_interpreted:
+		case gds_arg_string:
+		case gds_arg_interpreted:
 			*p++ = (ISC_STATUS) va_arg(args, TEXT *);
 			break;
 
-		case isc_arg_cstring:
+		case gds_arg_cstring:
 			*p++ = (ISC_STATUS) va_arg(args, int);
 			*p++ = (ISC_STATUS) va_arg(args, TEXT *);
 			break;
 
-		case isc_arg_number:
+		case gds_arg_number:
 			*p++ = (ISC_STATUS) va_arg(args, SLONG);
 			break;
 
 		default:
-			fb_assert(FALSE);
-		case isc_arg_vms:
-		case isc_arg_unix:
-		case isc_arg_win32:
+			assert(FALSE);
+		case gds_arg_vms:
+		case gds_arg_unix:
+		case gds_arg_win32:
 			*p++ = va_arg(args, int);   
 			break; 
 		}
 	}
-	va_end(args);
 }
 
+
+} // extern "C"

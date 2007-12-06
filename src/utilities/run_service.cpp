@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	Service manager
- *	MODULE:		run_service.cpp
- *	DESCRIPTION:	Run a utility as a Firebird service
+ *	MODULE:		run_service.c
+ *	DESCRIPTION:	Run a utility as an Interbase service
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -22,14 +22,14 @@
  */
 
 #include "firebird.h"
-#include <stdio.h>
+#include "../jrd/ib_stdio.h"
 #include <string.h>
 #include "../jrd/common.h"
-#include "../jrd/ibase.h"
+#include "../jrd/gds.h"
 #include "../jrd/gds_proto.h"
 
-static const SCHAR recv_items[] = { isc_info_svc_to_eof };
-static const SCHAR send_timeout[] = { isc_info_svc_timeout, 1, 0, 30 };
+static SCHAR recv_items[] = { gds__info_svc_to_eof };
+static SCHAR send_timeout[] = { gds__info_svc_timeout, 1, 0, 30 };
 
 
 int CLIB_ROUTINE main( int argc, char *argv[])
@@ -44,35 +44,36 @@ int CLIB_ROUTINE main( int argc, char *argv[])
  *	Initialize lock manager for process.
  *
  **************************************/
+	SCHAR *service_path;
+	SCHAR *spb, spb_buffer[2048], *p, *send_items, send_buffer[2048],
+		buffer[2048], item;
+	SLONG *handle;
+	SSHORT send_item_length, len;
+
 	if (argc < 2) {
-		printf("usage: run_service service_path [args]\n");
+		ib_printf("usage: run_service service_path [args]\n");
 		exit(FINI_ERROR);
 	}
 
-	const char* service_path = argv[1];
+	service_path = argv[1];
 
-	char spb_buffer[2048];
-	char* spb = spb_buffer;
+	spb = spb_buffer;
 	if (argc > 2) {
-		*spb++ = isc_spb_version1;
-		*spb++ = isc_spb_command_line;
+		*spb++ = gds__spb_version1;
+		*spb++ = gds__spb_command_line;
 		spb++;
 		for (argv += 2, argc -= 2; argc--;) {
-			for (const char* p = *argv++; *spb = *p++; spb++);
+			for (p = *argv++; *spb = *p++; spb++);
 			*spb++ = ' ';
 		}
 		*--spb = 0;
 		spb_buffer[2] = strlen(spb_buffer + 3);
 	}
 
-	SLONG* handle = NULL;
-	isc_service_attach(NULL, 0, service_path, &handle,
+	handle = NULL;
+	isc_service_attach((SLONG *) 0, 0, service_path, &handle,
 					   (SSHORT) (spb - spb_buffer), spb_buffer);
 
-	SCHAR send_buffer[2048];
-
-	const char* send_items;
-	SSHORT send_item_length;
 	if (strstr(service_path, "start_cache")) {
 		send_items = send_timeout;
 		send_item_length = sizeof(send_timeout);
@@ -82,45 +83,41 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 		send_item_length = 0;
 	}
 
-	if (send_item_length) {
-		printf
+	if (send_item_length)
+		ib_printf
 			("It will take about 30 seconds to confirm that the cache manager\nis running.  Please wait...\n");
-	}
 
-	char buffer[2048];
-	char item = isc_info_end;
+	item = gds__info_end;
 	do {
-		isc_service_query(NULL, &handle, send_item_length, send_items,
+		isc_service_query((SLONG *) 0, &handle, send_item_length, send_items,
 						  sizeof(recv_items), recv_items, sizeof(buffer),
 						  buffer);
 		if (send_items == send_buffer)
 			send_item_length = 0;
-		const char* p = buffer;
+		p = buffer;
 		while (p < buffer + sizeof(buffer) &&
-			   (item = *p) != isc_info_end &&
-			   item != isc_info_truncated && item != isc_info_svc_timeout)
-		{
-			SSHORT len = gds__vax_integer(p + 1, 2);
+			   (item = *p) != gds__info_end &&
+			   item != gds__info_truncated && item != gds__info_svc_timeout) {
+			len = gds__vax_integer(p + 1, 2);
 			p += 2;
 			while (len--) {
 				p++;
 				if (*p != '\001')
-					putchar(*p);
+					ib_putchar(*p);
 			}
 			if (*p++ == '\001') {
-				send_buffer[0] = isc_info_svc_line;
-				fgets(send_buffer + 3, sizeof(send_buffer) - 3, stdin);
+				send_buffer[0] = gds__info_svc_line;
+				ib_fgets(send_buffer + 3, sizeof(send_buffer) - 3, ib_stdin);
 				len = strlen(send_buffer + 3);
 				send_buffer[1] = len;
 				send_buffer[2] = len >> 8;
 				send_item_length = len + 3;
 			}
 		}
-	} while (item == isc_info_truncated
+	} while (item == gds__info_truncated
 			 || (send_items == send_buffer && send_item_length));
 
-	isc_service_detach(NULL, &handle);
+	isc_service_detach((SLONG *) 0, &handle);
 
 	exit(FINI_OK);
 }
-

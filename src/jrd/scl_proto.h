@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Access Method
  *	MODULE:		scl_proto.h
- *	DESCRIPTION:	Prototype header file for scl.epp
+ *	DESCRIPTION:	Prototype header file for scl.c
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -21,30 +21,28 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef JRD_SCL_PROTO_H
-#define JRD_SCL_PROTO_H
+#ifndef _JRD_SCL_PROTO_H_
+#define _JRD_SCL_PROTO_H_
 
-#include "../jrd/scl.h"
-#include "../common/classes/array.h"
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-//namespace Jrd {
-//	class SecurityClass;
-//}
+void		SCL_check_access(struct scl*, SLONG, const TEXT*,
+							const TEXT*, USHORT,
+							const TEXT*, const TEXT*);
+void		SCL_check_procedure(struct dsc*, USHORT);
+void		SCL_check_relation(struct dsc*, USHORT);
+struct scl*	SCL_get_class(const TEXT*);
+int			SCL_get_mask(const TEXT*, const TEXT*);
+void		SCL_init(BOOLEAN, TEXT*, TEXT*, TEXT*, TEXT*, TEXT*, TDBB, BOOLEAN);
+void		SCL_move_priv(UCHAR**, USHORT, STR*, ULONG*);
+struct scl*	SCL_recompute_class(TDBB, TEXT*);
+void		SCL_release(struct scl*);
+void		SCL_check_index(TDBB, TEXT*, UCHAR, USHORT);
 
-struct dsc;
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
-void SCL_check_access(const Jrd::SecurityClass*, SLONG, const Firebird::MetaName&,
-					  const Firebird::MetaName&, Jrd::SecurityClass::flags_t,
-					  const TEXT*, const Firebird::MetaName&);
-void SCL_check_index(Jrd::thread_db*, const Firebird::MetaName&, UCHAR, Jrd::SecurityClass::flags_t);
-void SCL_check_procedure(const dsc*, Jrd::SecurityClass::flags_t);
-void SCL_check_relation(const dsc*, Jrd::SecurityClass::flags_t);
-Jrd::SecurityClass* SCL_get_class(const TEXT*);
-Jrd::SecurityClass::flags_t SCL_get_mask(const TEXT*, const TEXT*);
-void SCL_init(bool, const Jrd::UserId& tempId, Jrd::thread_db*);
-void SCL_move_priv(UCHAR**, Jrd::SecurityClass::flags_t, Firebird::UCharBuffer&, ULONG*);
-Jrd::SecurityClass* SCL_recompute_class(Jrd::thread_db*, const TEXT*);
-void SCL_release(Jrd::SecurityClass*);
-
-#endif // JRD_SCL_PROTO_H
-
+#endif /* _JRD_SCL_PROTO_H_ */

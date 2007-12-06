@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Data Definition Language
- *	MODULE:		hsh.cpp
+ *	MODULE:		hsh.c
  *	DESCRIPTION:	Hash table and symbol manager
  *
  * The contents of this file are subject to the Interbase Public
@@ -29,17 +29,21 @@
 #include "../dudley/hsh_proto.h"
 
 
-const int HASH_SIZE = 101;
+extern "C" {
 
-static USHORT hash(const SCHAR*, USHORT);
-static bool scompare(const SCHAR*, USHORT, const SCHAR*, const USHORT);
+
+#define HASH_SIZE	101
+
+static USHORT hash(SCHAR *, USHORT);
+static BOOLEAN scompare(SCHAR *, USHORT, SCHAR *,
+						USHORT);
 
 static SYM hash_table[HASH_SIZE];
 static SYM key_symbols;
 
 struct word {
 	enum kwwords id;
-	const char* keyword;
+	SCHAR *keyword;
 } keywords[] = {
 	{KW_OR, "||"},
 		{KW_AND, "&&"},
@@ -75,14 +79,14 @@ struct word {
 		{KW_AT, "AT"},
 		{KW_AUTO, "AUTO"},
 		{KW_BASED, "BASED"},
-//		{KW_BASE_NAME, "BASE_NAME"},
+		{KW_BASE_NAME, "BASE_NAME"},
 		{KW_BEGIN, "BEGIN"},
 		{KW_BLOB, "BLOB"},
 		{KW_BLR, "BLR"},
-//		{KW_CACHE, "CACHE"},
-//		{KW_CASCADE, "CASCADE"},
+		{KW_CACHE, "CACHE"},
+		{KW_CASCADE, "CASCADE"},
 		{KW_CHAR, "CHAR"},
-//		{KW_CHECK_POINT_LEN, "CHECK_POINT_LENGTH"},
+		{KW_CHECK_POINT_LEN, "CHECK_POINT_LENGTH"},
 		{KW_COMPUTED, "COMPUTED_BY"},
 		{KW_COMPUTED, "COMPUTED"},
 		{KW_CONDITIONAL, "CONDITIONAL"},
@@ -123,7 +127,7 @@ struct word {
 		{KW_GENERATOR, "GENERATOR"},
 		{KW_GRANT, "GRANT"},
 		{KW_GROUP, "GROUP"},
-//		{KW_GROUP_COMMIT_WAIT, "GROUP_COMMIT_WAIT_TIME"},
+		{KW_GROUP_COMMIT_WAIT, "GROUP_COMMIT_WAIT_TIME"},
 		{KW_IF, "IF"},
 		{KW_INACTIVE, "INACTIVE"},
 		{KW_INDEX, "INDEX"},
@@ -131,8 +135,8 @@ struct word {
 		{KW_INSERT, "INSERT"},
 		{KW_IS, "IS"},
 		{KW_LENGTH, "LENGTH"},
-//		{KW_LOG_BUF_SIZE, "LOG_BUFFER_SIZE"},
-//		{KW_LOG_FILE, "LOGFILE"},
+		{KW_LOG_BUF_SIZE, "LOG_BUFFER_SIZE"},
+		{KW_LOG_FILE, "LOGFILE"},
 		{KW_LONG, "LONG"},
 		{KW_MANUAL, "MANUAL"},
 		{KW_MESSAGE, "MESSAGE"},
@@ -143,12 +147,12 @@ struct word {
 		{KW_MSGDROP, "MSGDROP"},
 		{KW_MSGMODIFY, "MSGMODIFY"},
 		{KW_NULL, "NULL"},
-//		{KW_NUM_LOG_BUFS, "NUM_LOG_BUFFERS"},
+		{KW_NUM_LOG_BUFS, "NUM_LOG_BUFFERS"},
 		{KW_OFFSET, "OFFSET"},
 		{KW_ON, "ON"},
 		{KW_OPTION, "OPTION"},
 		{KW_OUTPUT_TYPE, "OUTPUT_TYPE"},
-//		{KW_OVERFLOW, "OVERFLOW"},
+		{KW_OVERFLOW, "OVERFLOW"},
 		{KW_OVERWRITE, "OVERWRITE"},
 		{KW_PAGE, "PAGE"},
 		{KW_PAGES, "PAGES"},
@@ -170,8 +174,8 @@ struct word {
 		{KW_QUAD, "QUAD"},
 		{KW_QUERY_NAME, "QUERY_NAME"},
 		{KW_QUERY_HEADER, "QUERY_HEADER"},
-//		{KW_RAW, "RAW"},
-//		{KW_RAW_PARTITIONS, "RAW_PARTITIONS"},
+		{KW_RAW, "RAW"},
+		{KW_RAW_PARTITIONS, "RAW_PARTITIONS"},
 		{KW_REFERENCE, "REFERENCE"},
     	{KW_RELATION, "RELATION"}, 
         {KW_RETURN_ARGUMENT, "RETURN_ARGUMENT"},	/* function argument return_mode */
@@ -186,7 +190,7 @@ struct word {
 		{KW_SET_GENERATOR, "SET_GENERATOR"},
 		{KW_SHADOW, "SHADOW"},
 		{KW_SHORT, "SHORT"},
-//		{KW_SIZE, "SIZE"},
+		{KW_SIZE, "SIZE"},
 		{KW_SORTED, "SORTED"},
 		{KW_STATISTICS, "STATISTICS"},
 		{KW_STORE, "STORE"},
@@ -269,12 +273,13 @@ void HSH_init(void)
  *	inserting all known keywords.
  *
  **************************************/
+	SCHAR *string;
 	SYM symbol;
 	int i;
 	SSHORT length;
 
 	for (i = 0; i < FB_NELEM(keywords); i++) {
-		const char* string = keywords[i].keyword;
+		string = keywords[i].keyword;
 		for (length = 0; string[length] != '\0'; length++);
 		symbol = (SYM) DDL_alloc(SYM_LEN);
 		symbol->sym_type = SYM_keyword;
@@ -307,8 +312,7 @@ void HSH_insert( SYM symbol)
 
 	for (old = hash_table[h]; old; old = old->sym_collision)
 		if (scompare(symbol->sym_string, symbol->sym_length,
-					 old->sym_string, old->sym_length))
-		{
+					 old->sym_string, old->sym_length)) {
 			symbol->sym_homonym = old->sym_homonym;
 			old->sym_homonym = symbol;
 			return;
@@ -319,7 +323,7 @@ void HSH_insert( SYM symbol)
 }
 
 
-SYM HSH_lookup(const SCHAR* string, USHORT length)
+SYM HSH_lookup(SCHAR * string, USHORT length)
 {
 /**************************************
  *
@@ -372,17 +376,17 @@ void HSH_remove( SYM symbol)
 				return;
 			}
 		else
-			for (ptr = &(*next)->sym_homonym; *ptr; ptr = &(*ptr)->sym_homonym)
-				if (symbol == *ptr) {
+			for (ptr = &(*next)->sym_homonym; *ptr;
+				 ptr = &(*ptr)->sym_homonym) if (symbol == *ptr) {
 					*ptr = symbol->sym_homonym;
 					return;
 				}
 
-	DDL_err(280);	/* msg 280: HSH_remove failed  */
+	DDL_err(280, NULL, NULL, NULL, NULL, NULL);	/* msg 280: HSH_remove failed  */
 }
 
 
-SYM HSH_typed_lookup(const TEXT* string,
+SYM HSH_typed_lookup(TEXT * string,
 					 USHORT length, enum sym_t type)
 {
 /**************************************
@@ -398,15 +402,17 @@ SYM HSH_typed_lookup(const TEXT* string,
  *	a null or space and compute the length.
  *
  **************************************/
+	SYM symbol;
+	TEXT *p;
+
 	if (!length) {
-		const TEXT* p;
 		for (p = string; *p && *p != ' '; p++)
 			if ((p - string) >= 32)
 				break;
 		length = p - string;
 	}
 
-	SYM symbol = HSH_lookup(string, length);
+	symbol = HSH_lookup(string, length);
 
 	for (; symbol; symbol = symbol->sym_homonym)
 		if (symbol->sym_type == type)
@@ -416,7 +422,7 @@ SYM HSH_typed_lookup(const TEXT* string,
 }
 
 
-static USHORT hash(const SCHAR* string, USHORT length)
+static USHORT hash( SCHAR * string, USHORT length)
 {
 /**************************************
  *
@@ -428,10 +434,13 @@ static USHORT hash(const SCHAR* string, USHORT length)
  *	Returns the hash function of a string.
  *
  **************************************/
-	USHORT value = 0;
+	USHORT value;
+	SCHAR c;
+
+	value = 0;
 
 	while (length--) {
-		const SCHAR c = *string++;
+		c = *string++;
 		value = (value << 1) + UPPER(c);
 	}
 
@@ -439,10 +448,10 @@ static USHORT hash(const SCHAR* string, USHORT length)
 }
 
 
-static bool scompare(const SCHAR* string1,
-					 USHORT length1,
-					 const SCHAR* string2,
-					 const USHORT length2)
+static BOOLEAN scompare(
+						SCHAR * string1,
+						USHORT length1,
+						SCHAR * string2, USHORT length2)
 {
 /**************************************
  *
@@ -457,12 +466,14 @@ static bool scompare(const SCHAR* string1,
 	SCHAR c1, c2;
 
 	if (length1 != length2)
-		return false;
+		return FALSE;
 
 	while (length1--)
 		if ((c1 = *string1++) != (c2 = *string2++) && UPPER(c1) != UPPER(c2))
-			return false;
+			return FALSE;
 
-	return true;
+	return TRUE;
 }
 
+
+} // extern "C"

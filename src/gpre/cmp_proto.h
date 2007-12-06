@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	Preprocessor
  *	MODULE:		cmp_proto.h
- *	DESCRIPTION:	Prototype header file for cmp.cpp
+ *	DESCRIPTION:	Prototype header file for cmp.c
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -21,16 +21,28 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef GPRE_CMP_PROTO_H
-#define GPRE_CMP_PROTO_H
+#ifndef _GPRE_CMP_PROTO_H_
+#define _GPRE_CMP_PROTO_H_
 
-void	CMP_check(gpre_req*, SSHORT);
-void	CMP_compile_request(gpre_req*);
-void	CMP_external_field(gpre_req*, const gpre_fld*);
-void	CMP_init(void);
-ULONG	CMP_next_ident(void);
-void	CMP_stuff_symbol(gpre_req*, const gpre_sym*);
-void	CMP_t_start(gpre_tra*);
+#include "../gpre/form.h"
 
-#endif // GPRE_CMP_PROTO_H
+#ifdef __cplusplus
+extern "C" {
+#endif
 
+extern void CMP_check(GPRE_REQ, SSHORT);
+extern void CMP_compile_request(GPRE_REQ);
+#ifdef PYXIS
+extern int CMP_display_code(FINT, REF);
+#endif
+extern void CMP_external_field(GPRE_REQ, GPRE_FLD);
+extern void CMP_init(void);
+extern ULONG CMP_next_ident(void);
+extern void CMP_stuff_symbol(GPRE_REQ, SYM);
+extern void CMP_t_start(GPRE_TRA);
+
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
+
+#endif /* _GPRE_CMP_PROTO_H_ */

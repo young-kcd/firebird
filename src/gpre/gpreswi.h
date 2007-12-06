@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- *
+ * $Id: gpreswi.h,v 1.8 2003-07-02 12:57:41 brodsom Exp $
  * Revision 1.2  2000/11/16 15:54:29  fsg
  * Added new switch -verbose to gpre that will dump
  * parsed lines to stderr
@@ -32,16 +32,6 @@
  * in WHERE clauses for sql dialect 2 and 3.
  * (cause a core dump in a test case from C.R. Zamana)
  *
- * Added support for RM/Cobol
- * SWB 31.Aug.2006
- *
- * Added support for user specifiable date format for Cobol programs
- * SWB 15.Sep.2006
- *
- * Added -noqli switch to suppress parsing of QLI keywords.  This was
- * causing problems with Cobol programs since the QLI and Cobol reserved word
- * lists intersect.
- * Stephen W. Boyd 21.Mar.2007
  */
 
 
@@ -103,29 +93,6 @@ enum gpre_cmd_switch
 	 */
 	IN_SW_GPRE_BASE,
 
-	/*
-	 * Added to allow generation of RM/Cobol compatible code
-	 * SWB 31.Aug.2006
-	 */
-	IN_SW_GPRE_RMCOBOL,
-
-	/*
-	 * Added to allow specification of a Cobol date format, other than ISC_QUAD, to be used to 
-	 * deliver dates to Cobol programs
-	 */
-	IN_SW_GPRE_DATE_FMT,
-	/*
-	 * Added to allow QLI processing to be suppressed.  QLI and COBOL reserved word lists
-	 * intersect and since QLI reserved words are recognized no matter where they occur in the
-	 * source stream this was causing bogus errors while parsing COBOL programs.
-	 */
-	IN_SW_NO_QLI,
-
-	/*
-	 * Added to allow trusted authentication even with ISC_USER set in environment 
-	 */
-	IN_SW_GPRE_TRUSTED,
-
 	/* As mentioned above: This should always be one larger than the largest 
 	   switch value.
 	   FSG 14.Nov.2000
@@ -147,7 +114,7 @@ typedef struct sw_tab_t
 } *SW_TAB;
 
 
-static const in_sw_tab_t gpre_in_sw_table[] =
+static struct in_sw_tab_t gpre_in_sw_table[] =
 {
 #ifdef GPRE_ADA
 	{IN_SW_GPRE_ADA		, 0, "ADA"			, 0, 0, 0, FALSE, 0, 0, "\t\textended ADA program"},
@@ -171,7 +138,7 @@ static const in_sw_tab_t gpre_in_sw_table[] =
 	{IN_SW_GPRE_I		, 0, "IDENTIFIERS"	, 0, 0, 0, FALSE, 0, 0, NULL},
 	{IN_SW_GPRE_I		, 0, "IDS"			, 0, 0, 0, FALSE, 0, 0, NULL},
 	{IN_SW_GPRE_INTERP	, 0, "CHARSET"		, 0, 0, 0, FALSE, 0, 0, "\t\tDefault character set & format"},
-	{IN_SW_GPRE_INTERP	, 0, "INTERPRETATION", 0, 0, 0, FALSE, 0, 0, NULL},
+	{IN_SW_GPRE_INTERP	, 0, "INTERPRETATION",0, 0, 0, FALSE, 0, 0, NULL},
 	{IN_SW_GPRE_LANG_INTERNAL , 0, "LANG_INTERNAL"	, 0, 0, 0, FALSE, 0, 0, "\tinternal language only"},
 	{IN_SW_GPRE_M		, 0, "MANUAL"		, 0, 0, 0, FALSE, 0, 0, "\t\tdo not automatically ATTACH to a database"},
 	{IN_SW_GPRE_N		, 0, "NO_LINES"		, 0, 0, 0, FALSE, 0, 0, "\tdo not generate C debug lines"},
@@ -179,16 +146,13 @@ static const in_sw_tab_t gpre_in_sw_table[] =
 #ifdef GPRE_PASCAL
 	{IN_SW_GPRE_P		, 0, "PASCAL"		, 0, 0, 0, FALSE, 0, 0, "\t\textended PASCAL program"},
 #endif
-	{IN_SW_GPRE_PASSWORD, 0, "PASSWORD"		, 0, 0, 0, FALSE, 0, 0, "\tdefault password"},
+	{IN_SW_GPRE_PASSWORD	, 0, "PASSWORD"		, 0, 0, 0, FALSE, 0, 0, "\tdefault password"},
 	{IN_SW_GPRE_R		, 0, "RAW"			, 0, 0, 0, FALSE, 0, 0, "\t\tgenerate unformatted binary BLR"},
-	{IN_SW_GPRE_SQLDIALECT, 0, "SQL_DIALECT", 0, 0, 0, FALSE, 0, 0, "\tSQL dialect to use"},
+	{IN_SW_GPRE_SQLDIALECT,0, "SQL_DIALECT"	, 0, 0, 0, FALSE, 0, 0, "\tSQL dialect to use"},
 	{IN_SW_GPRE_S		, 0, "STRINGS"		, 0, 0, 0, FALSE, 0, 0, NULL},
 	{IN_SW_GPRE_SQLDA	, 0, "SQLDA"		, 0, 0, 0, FALSE, 0, 0, "\t\t***** Deprecated feature. ********"},
 	{IN_SW_GPRE_T		, 0, "TRACE"		, 0, 0, 0, FALSE, 0, 0, NULL},
-#ifdef TRUSTED_AUTH
-	{IN_SW_GPRE_TRUSTED	, 0, "TRUSTED"		, 0, 0, 0, FALSE, 0, 0, "\t\tuse trusted authentication"},
-#endif
-	{IN_SW_GPRE_USER	, 0, "USER"			, 0, 0, 0, FALSE, 0, 0, "\t\tdefault user name"},
+	{IN_SW_GPRE_USER		, 0, "USER"			, 0, 0, 0, FALSE, 0, 0, "\t\tdefault user name"},
 /* FSG 14.Nov.2000 */
 	{IN_SW_GPRE_VERBOSE	, 0, "VERBOSE"		, 0, 0, 0, FALSE, 0, 0, "\t\tVerbose Output to stderr"},
 #ifdef VMS
@@ -198,12 +162,9 @@ static const in_sw_tab_t gpre_in_sw_table[] =
 #endif
 #ifdef GPRE_COBOL
 	{IN_SW_GPRE_COB		, 0, "COB"			, 0, 0, 0, FALSE, 0, 0, "\t\textended COBOL program"},
-	{IN_SW_GPRE_ANSI	, 0, "ANSI"			, 0, 0, 0, FALSE, 0, 0, "\t\tgenerate ANSI85 compatible COBOL"},
-	{IN_SW_GPRE_RMCOBOL	, 0, "RMC"			, 0, 0, 0, FALSE, 0, 0, "\t\tRM/Cobol"},
+	{IN_SW_GPRE_ANSI		, 0, "ANSI"			, 0, 0, 0, FALSE, 0, 0, "\t\tgenerate ANSI85 compatible COBOL"},
 #endif
 	{IN_SW_GPRE_Z		, 0, "Z"			, 0, 0, 0, FALSE, 0, 0, "\t\tprint software version"},
 	{IN_SW_GPRE_BASE	, 0, "BASE"			, 0, 0, 0, FALSE, 0, 0, "\t\tbase directory for compiletime DB"},
-	{IN_SW_GPRE_DATE_FMT, 0, "DFM"			, 0, 0, 0, FALSE, 0, 0, "\t\tCobol date format"},
-	{IN_SW_NO_QLI		, 0, "NOQLI"		, 0, 0, 0, FALSE, 0, 0, "\t\tsupress QLI syntax"},
 	{IN_SW_GPRE_0		, 0, NULL			, 0, 0, 0, FALSE, 0, 0, NULL}
 };

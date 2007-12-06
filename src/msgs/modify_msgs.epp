@@ -1,6 +1,6 @@
 /*
- *	PROGRAM:		Firebird Message file modify for escape chars
- *	MODULE:			modify_messages.epp
+ *	PROGRAM:	Interbase Message file modify for escape chars
+ *	MODULE:		modify_messages.e
  *	DESCRIPTION:	Allow modification of messages with translatation of escape sequences
  *
  * The contents of this file are subject to the Interbase Public
@@ -22,8 +22,8 @@
  */
 
 #include "firebird.h"
-#include <stdio.h>
-#include "../jrd/ibase.h"
+#include "../jrd/ib_stdio.h"
+#include "../jrd/gds.h"
 #include "../jrd/common.h"
 
 #include <stdlib.h>
@@ -33,7 +33,7 @@
 
 DATABASE DB = "msg.fdb";
 
-static void explicit_print(const TEXT*);
+static void explicit_print(TEXT *);
 
 
 int main( int argc, char **argv)
@@ -50,35 +50,36 @@ int main( int argc, char **argv)
  **************************************/
 	SCHAR facility[20], newtext[256];
 	SCHAR innumber[4];
+	SCHAR *p, *q;
 	SSHORT number;
 
-	printf("\nHit Ctrl-D (or Ctrl-Z) at prompt to exit level\n");
-	printf("You will be prompted for fac_code and message number\n");
-	printf("Escape sequences will be translated to single bytes\n");
+	ib_printf("\nHit Ctrl-D (or Ctrl-Z) at prompt to exit level\n");
+	ib_printf("You will be prompted for fac_code and message number\n");
+	ib_printf("Escape sequences will be translated to single bytes\n");
 
 	READY;
 	START_TRANSACTION;
 
 	for (;;) {
-		printf("Facility: ");
-		if (!gets(facility))
+		ib_printf("Facility: ");
+		if (!ib_gets(facility))
 			break;
 		FOR Y IN FACILITIES WITH Y.FACILITY CONTAINING facility
-			printf("Message number: ");
-			if (!gets(innumber))
+			ib_printf("Message number: ");
+			if (!ib_gets(innumber))
 				break;
 			number = atoi(innumber);
 			FOR X IN MESSAGES WITH X.FAC_CODE = Y.FAC_CODE AND X.NUMBER = number
-				printf(" Current text:");
+				ib_printf(" Current text:");
 				explicit_print(X.TEXT);
-				printf("\n New text: ");
-				if (!gets(newtext))
+				ib_printf("\n New text: ");
+				if (!ib_gets(newtext))
 					break;
 
 				MODIFY X USING
 
-					SCHAR* p = X.TEXT;
-					const SCHAR* q = newtext;
+					p = X.TEXT;
+					q = newtext;
 
 					/* translate scape sequences to single bytes */
 					while (*q) {
@@ -116,7 +117,7 @@ int main( int argc, char **argv)
 								*p++ = '\'';
 								break;
 							default:
-								printf
+								ib_printf
 									("\n\n*** Escape sequence not understood; being copied unchanged  ***\n\n");
 								*p++ = '\\';
 								*p++ = *q;
@@ -139,7 +140,7 @@ int main( int argc, char **argv)
 }
 
 
-static void explicit_print( const TEXT* string)
+static void explicit_print( TEXT * string)
 {
 /**************************************
  *
@@ -153,49 +154,50 @@ static void explicit_print( const TEXT* string)
  *      to make changing messages easy
  *
  **************************************/
-	const TEXT* p = string;
+	TEXT *p;
+
+	p = string;
 
 	while (*p) {
 		switch (*p) {
 		case '\n':
-			putchar('\\');
-			putchar('n');
+			ib_putchar('\\');
+			ib_putchar('n');
 			break;
 		case '\t':
-			putchar('\\');
-			putchar('t');
+			ib_putchar('\\');
+			ib_putchar('t');
 			break;
 		case '\f':
-			putchar('\\');
-			putchar('f');
+			ib_putchar('\\');
+			ib_putchar('f');
 			break;
 		case '\b':
-			putchar('\\');
-			putchar('b');
+			ib_putchar('\\');
+			ib_putchar('b');
 			break;
 		case '\r':
-			putchar('\\');
-			putchar('r');
+			ib_putchar('\\');
+			ib_putchar('r');
 			break;
 		case '\v':
-			putchar('\\');
+			ib_putchar('\\');
 			break;
 		case '\\':
-			putchar('\\');
-			putchar('\\');
+			ib_putchar('\\');
+			ib_putchar('\\');
 			break;
 		case '\"':
-			putchar('\\');
-			putchar('\"');
+			ib_putchar('\\');
+			ib_putchar('\"');
 			break;
 		case '\'':
-			putchar('\\');
-			putchar('\'');
+			ib_putchar('\\');
+			ib_putchar('\'');
 			break;
 		default:
-			putchar(*p);
+			ib_putchar(*p);
 		}
 		*p++;
 	}
 }
-

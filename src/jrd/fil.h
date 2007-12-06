@@ -28,46 +28,56 @@
  *
  */
 
-#ifndef JRD_FIL_H
-#define JRD_FIL_H
+#ifndef _JRD_FIL_H_
+#define _JRD_FIL_H_
 
 #include "../jrd/thd.h"
+
+#ifdef UNIX
+#define WORKDIR        "/tmp/"
+#endif
+
+#ifdef WIN_NT
+#define WORKDIR        "/temp/"
+#endif
+
+#ifdef VMS
+#define WORKDIR        "SYS$SCRATCH:"
+#endif
+
+#define	ALLROOM		-1UL		/* use all available space */
 
 /* Defined the directory list structures. */
 
 /* Temporary workfile directory list. */
 
-struct dir_list {
-	SLONG dls_header;           // Never referenced directly.
-	dir_list* dls_next;
+typedef struct dls {
+	SLONG dls_header;
+	struct dls *dls_next;
 	ULONG dls_size;				/* Maximum size in the directory */
 	ULONG dls_inuse;			/* Occupied space in the directory */
 	TEXT dls_directory[2];		/* Directory name */
-};
+} *DLS;
 
-struct mutexed_dir_list {
-	dir_list* mdls_dls;			/* Pointer to the directory list */
-	Firebird::Mutex mdls_mutex;	/* Mutex for directory list. Must
+typedef struct mdls {
+	DLS mdls_dls;				/* Pointer to the directory list */
+	BOOLEAN mdls_mutex_init;
+	MUTX_T mdls_mutex[1];		/* Mutex for directory list. Must
 								   be locked before list operations */
-	mutexed_dir_list()
-		: mdls_dls(NULL) {}
-};
+} MDLS;
 
 /* external function directory list */
-/* OBSOLETE.
-struct function_dir_list {
-	function_dir_list* fdls_next;
+
+typedef struct fdls {
+	struct fdls *fdls_next;
 	TEXT fdls_directory[1];
-};
-*/
+} FDLS;
 
 /* external file directory list */
-/* OBSOLETE
-struct extfile_dir_list {
-    extfile_dir_list* edls_next;
+
+typedef struct edls {
+    struct edls *edls_next;
     TEXT edls_directory[1];
-};
-*/
+} EDLS;
 
-#endif /* JRD_FIL_H */
-
+#endif /* _JRD_FIL_H_ */

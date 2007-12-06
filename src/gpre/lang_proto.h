@@ -19,29 +19,32 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * Modified to support RM/Cobol
- * Stephen W. Boyd 31.Aug.06
  */
 
-#ifndef GPRE_LANG_PROTO_H
-#define GPRE_LANG_PROTO_H
+#ifndef _GPRE_LANG_PROTO_H_
+#define _GPRE_LANG_PROTO_H_
 
-void	ADA_action(const act*, int);
-void	ADA_print_buffer(TEXT*, const int);
-//int		BAS_action(ACT, int);
-void	C_CXX_action(const act*, int);
-void	COB_action(const act*, int);
-void	COB_name_init(bool);
-void	COB_print_buffer(TEXT*, bool);
-void	FTN_action(const act*, int);
-void	FTN_fini(void);
-void	FTN_print_buffer(TEXT*);
-void	INT_action(const act*, int);
-void	INT_CXX_action(const act*, int);
-void	PAS_action(const act*, int);
-//int		PLI_action(ACT, int);
-void	RMC_action(const act*, int);
-void	RMC_print_buffer(TEXT*, bool);
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-#endif // GPRE_LANG_PROTO_H
+extern void ADA_action(ACT, int);
+extern void ADA_print_buffer(TEXT *, int);
+extern int BAS_action(ACT, int);
+extern void C_CXX_action(ACT, int);
+extern void COB_action(ACT, int);
+extern void COB_name_init(BOOLEAN);
+extern void COB_print_buffer(TEXT *, BOOLEAN);
+extern void FTN_action(ACT, int);
+extern void FTN_fini(void);
+extern void FTN_print_buffer(TEXT *);
+extern void INT_action(ACT, int);
+extern void INT_CXX_action(ACT, int);
+extern void PAS_action(ACT, int);
+extern int PLI_action(ACT, int);
 
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
+
+#endif /* _GPRE_LANG_PROTO_H_ */

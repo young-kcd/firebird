@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Access Method
  *	MODULE:		nav_proto.h
- *	DESCRIPTION:	Prototype header file for nav.cpp
+ *	DESCRIPTION:	Prototype header file for nav.c
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -21,26 +21,23 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef JRD_NAV_PROTO_H
-#define JRD_NAV_PROTO_H
+#ifndef _JRD_NAV_PROTO_H_
+#define _JRD_NAV_PROTO_H_
 
 #include "../jrd/rse.h"
 
-struct exp_index_buf;
-
-namespace Jrd {
-	struct record_param;
-	class jrd_nod;
-	class RecordSource;
-	struct win;
-	struct irsb_nav;
-}
-
 #ifdef SCROLLABLE_CURSORS
-exp_index_buf* NAV_expand_index(Jrd::win*, Jrd::irsb_nav*);
+extern struct exp *NAV_expand_index(struct win *, struct irsb_nav *);
 #endif
-bool NAV_get_record(Jrd::thread_db* tdbb, Jrd::RecordSource*, Jrd::irsb_nav*, 
-					Jrd::record_param*, Jrd::rse_get_mode);
+extern BOOLEAN NAV_get_record(class Rsb *, struct irsb_nav *, struct rpb *,
+							  enum rse_get_mode);
 
-#endif // JRD_NAV_PROTO_H
+#ifdef PC_ENGINE
+extern BOOLEAN NAV_find_record(class Rsb *, USHORT, USHORT, struct jrd_nod *);
+extern void NAV_get_bookmark(class Rsb *, struct irsb_nav *, struct bkm *);
+extern BOOLEAN NAV_reset_position(class Rsb *, struct rpb *);
+extern BOOLEAN NAV_set_bookmark(class Rsb *, struct irsb_nav *, struct rpb *,
+								struct bkm *);
+#endif
 
+#endif /* _JRD_NAV_PROTO_H_ */

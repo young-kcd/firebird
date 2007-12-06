@@ -27,9 +27,10 @@
 #  Contributor(s):
 # 
 #
+#  $Id: Makefile.in.embed.gdef,v 1.5.2.3 2006-11-05 14:37:29 alexpeshkoff Exp $
 #
 ROOT=..
-ObjModuleType=std
+ObjModuleName=embed.gdef
 
 include     $(ROOT)/gen/make.defaults
 include     $(ROOT)/gen/make.platform
@@ -42,8 +43,9 @@ unexport ISC_USER
 unexport ISC_PASSWORD
 
 
-GDEF_Other_Sources = gpre/pretty.cpp jrd/isc_file.cpp common/config/config.cpp common/config/dir_list.cpp \
-common/config/config_file.cpp $(OS_SPECIFIC_Sources) jrd/isc.cpp
+GDEF_Other_Sources = common/classes/alloc.cpp common/fb_exception.cpp \
+gpre/pretty.cpp jrd/isc_file.cpp common/config/config.cpp common/config/dir_list.cpp \
+common/config/config_file.cpp $(OS_SPECIFIC_Sources)
 
 GDEF_Files=	exe.epp extract.epp \
 			ddl.cpp expand.cpp expr.cpp generate.cpp \
@@ -52,21 +54,18 @@ GDEF_Files=	exe.epp extract.epp \
 GDEF_Sources = $(addprefix dudley/, $(GDEF_Files)) $(GDEF_Other_Sources)
 GDEF_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(GDEF_Sources))))
 
-ifeq ($(PLATFORM),DARWIN)
-LINK_LIBS+=$(ICU_LIBS)
-endif
-AllObjects = $(GDEF_Objects) $(CLUMPLETS_Objects)
-Dependencies = $(AllObjects:.o=.d)
+AllObjects = $(GDEF_Objects)
+Dependencies=$(AllObjects:.o=.$(DEP_EXT))
 
 
 .PHONY: all gdef
 
 all:	gdef 
 
-gdef:   $(GDEF)
+gdef:   $(BIN)/gdef
 
-$(GDEF): $(GDEF_Objects) $(CLUMPLETS_Objects) $(FBCOMMON_Objects) $(FBCLASSES_Objects)
-	$(LD) $(LINK_OPTS) $^ -o $@ $(FBEMBED_LINK) $(LINK_LIBS)
+$(BIN)/gdef: $(GDEF_Objects) $(LIBFBEMBED_SO)  
+	$(LD) $(LINK_OPTS) $(GDEF_Objects) -o $@ $(FBEMBED_LINK) $(LINK_LIBS)
 
 
 

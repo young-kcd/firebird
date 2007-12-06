@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	Dynamic SQL runtime support
  *	MODULE:		movd_proto.h
- *	DESCRIPTION:	Prototype Header file for movd.cpp
+ *	DESCRIPTION:	Prototype Header file for movd.c
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -21,10 +21,9 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef DSQL_MOVD_PROTO_H
-#define DSQL_MOVD_PROTO_H
+#ifndef _DSQL_MOVD_PROTO_H_
+#define _DSQL_MOVD_PROTO_H_
 
-void MOVD_move(const dsc*, dsc*);
+extern void MOVD_move(struct dsc *, struct dsc *);
 
-#endif //  DSQL_MOVD_PROTO_H
-
+#endif /*  _DSQL_MOVD_PROTO_H_  */

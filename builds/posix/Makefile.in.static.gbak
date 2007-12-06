@@ -27,9 +27,11 @@
 #  Contributor(s):
 # 
 #
+#  $Id: Makefile.in.static.gbak,v 1.6.2.2 2006-11-05 14:37:30 alexpeshkoff Exp $
+#
 ROOT=..
-ObjModuleType=boot
-CFLAGS += -DBOOT_BUILD
+ObjModuleName=static.gbak
+CFLAGS := -DBOOT_BUILD
 
 include     $(ROOT)/gen/make.defaults
 include     $(ROOT)/gen/make.platform
@@ -46,7 +48,7 @@ GBAKSTATIC_Sources = $(addprefix burp/, $(GBAKSTATIC_Files))
 GBAKSTATIC_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(GBAKSTATIC_Sources))))
 
 AllObjects = $(GBAKSTATIC_Objects)
-Dependencies = $(AllObjects:.o=.d) 
+Dependencies=$(AllObjects:.o=.$(DEP_EXT))
 
 
 
@@ -55,9 +57,11 @@ Dependencies = $(AllObjects:.o=.d)
 
 gbak_static : $(GBAK_STATIC)
 
-$(GBAK_STATIC) : $(GBAKSTATIC_Objects) $(COMMON_Objects) $(LIBFBSTATIC_A) 
-	$(CXX) $(LINK_OPTS) $^ -o $@ -L$(LIB) $(LINK_LIBS) $(ICU_LIBS)
+$(GBAK_STATIC) : $(GBAKSTATIC_Objects) $(LIBFBCOMMON_A) $(LIBFBSTATIC_A) 
+	$(CXX) $(LINK_OPTS) $(GBAKSTATIC_Objects) -o $@ -L$(LIB) -lfbstatic -lfbcommon $(LINK_LIBS)
 
+# Darwin may need this link as well
+#$(COREFOUNDATION_LINK)
 
 include $(ROOT)/gen/make.shared.targets
 

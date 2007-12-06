@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Backup and Restore Program
- *	MODULE:		misc.cpp
+ *	MODULE:		misc.c
  *	DESCRIPTION:	Miscellaneous useful routines
  *
  * The contents of this file are subject to the Interbase Public
@@ -25,15 +25,18 @@
  */
 
 #include "firebird.h"
-#include <stdio.h>
+#include "../jrd/ib_stdio.h"
 #include <string.h>
 #include "../burp/burp.h"
 #include "../burp/burp_proto.h"
 #include "../burp/misc_proto.h"
 
-#ifdef SERVICE_THREAD
-#include "../jrd/thd.h"
+#ifdef SUPERSERVER
+#include "../jrd/thd_proto.h"
 #endif
+
+
+extern "C" {
 
 
 UCHAR *MISC_alloc_burp(ULONG size)
@@ -50,18 +53,17 @@ UCHAR *MISC_alloc_burp(ULONG size)
  *
  **************************************/
 
-	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
+	TGBL tdgbl = GET_THREAD_DATA;
 
-// Add some header space to store a list of blocks allocated for this gbak 
-	size += ROUNDUP(sizeof(UCHAR *), ALIGNMENT);
+/* Add some header space to store a list of blocks allocated for this gbak */
+	size += ROUNDUP(sizeof(UCHAR *), FB_ALIGNMENT);
 
 	UCHAR* block = (UCHAR*)gds__alloc(size);
 
 	if (!block)
 		/* NOMEM: message & abort FREE: all items freed at gbak exit */
 	{
-		BURP_error(238, true);
-		// msg 238: System memory exhaused 
+		BURP_error(238, NULL, NULL, NULL, NULL, NULL);	/* msg 238: System memory exhaused */
 		return NULL;
 	}
 
@@ -74,7 +76,7 @@ UCHAR *MISC_alloc_burp(ULONG size)
 	*((UCHAR **) block) = tdgbl->head_of_mem_list;
 	tdgbl->head_of_mem_list = block;
 
-	return (block + ROUNDUP(sizeof(UCHAR *), ALIGNMENT));
+	return (block + ROUNDUP(sizeof(UCHAR *), FB_ALIGNMENT));
 }
 
 
@@ -90,85 +92,37 @@ void MISC_free_burp( void *free)
  *	Release an unwanted block.
  *
  **************************************/
-	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
+	UCHAR **block;
+	TGBL tdgbl;
+	UCHAR **ptr;
+
+	tdgbl = GET_THREAD_DATA;
 
 	if (free != NULL) {
-		// Point at the head of the allocated block 
-		UCHAR **block =
-			(UCHAR **) ((UCHAR *) free - ROUNDUP(sizeof(UCHAR *), ALIGNMENT));
+		/* Point at the head of the allocated block */
+		block =
+			(UCHAR **) ((UCHAR *) free - ROUNDUP(sizeof(UCHAR *), FB_ALIGNMENT));
 
-		// Scan for this block in the list of blocks 
-		for (UCHAR **ptr = &tdgbl->head_of_mem_list; *ptr; ptr = (UCHAR **) *ptr)
-		{
+		/* Scan for this block in the list of blocks */
+		for (ptr = &tdgbl->head_of_mem_list; *ptr; ptr = (UCHAR **) * ptr) {
 			if (*ptr == (UCHAR *) block) {
-				// Found it - remove it from the list 
+				/* Found it - remove it from the list */
 				*ptr = *block;
 
-				// and free it 
+				/* and free it */
 				gds__free((SLONG *) block);
 				return;
 			}
 		}
 
-		// We should always find the block in the list 
-		BURP_error(238, true);
-		// msg 238: System memory exhausted 
-		// (too lazy to add a better message)
+		/* We should always find the block in the list */
+		BURP_error(238, NULL, NULL, NULL, NULL, NULL);	/* msg 238: System memory exhausted */
+		/* (too lazy to add a better message) */
 	}
 }
 
 
-// Since this code appears everywhere, it makes more sense to isolate it
-// in a function visible to all gbak components.
-// Given a request, if it's non-zero (compiled), deallocate it but
-// without caring about a possible error.
-void MISC_release_request_silent(isc_req_handle& req_handle)
-{
-	if (req_handle)
-	{
-		ISC_STATUS_ARRAY req_status;
-		isc_release_request(req_status, &req_handle);
-	}
-}
-
-
-int MISC_symbol_length( const TEXT* symbol, ULONG size_len)
-{
-/**************************************
- *
- *	M I S C _ s y m b o l _ l e n g t h
- *
- **************************************
- *
- * Functional description
- * Compute length of null terminated symbol.
- *      CVC: This function should acknowledge embedded blanks.
- *
- **************************************/
-	if (size_len < 2) {
-		return 0;
-	}
-
-	--size_len;
-
-	const TEXT* p = symbol;
-	const TEXT* const q = p + size_len;
-
-	while (*p && p < q) {  // find end of string (null or end).
-		p++;
-	}
-
-	--p;
-
-	while (p >= symbol && *p == ' ') {  // skip trailing blanks
-		--p;
-	}
-
-	return p + 1 - symbol;
-}
-
-
-void MISC_terminate(const TEXT* from, TEXT* to, ULONG length, ULONG max_length)
+void MISC_terminate(UCHAR* from, UCHAR* to, ULONG length, ULONG max_length)
 {
 /**************************************
  *
@@ -183,12 +137,11 @@ void MISC_terminate(const TEXT* from, TEXT* to, ULONG length, ULONG max_length)
  *
  **************************************/
 
-	fb_assert(max_length != 0);
 	if (length) {
 		length = MIN(length, max_length - 1);
-		do {
+		do
 			*to++ = *from++;
-		} while (--length);
+		while (--length);
 		*to++ = '\0';
 	}
 	else {
@@ -197,3 +150,5 @@ void MISC_terminate(const TEXT* from, TEXT* to, ULONG length, ULONG max_length)
 	}
 }
 
+
+} // extern "C"

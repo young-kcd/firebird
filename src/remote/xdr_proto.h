@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Remote Server 
  *	MODULE:		xdr_proto.h
- *	DESCRIPTION:	Prototype Header file for xdr.cpp
+ *	DESCRIPTION:	Prototype Header file for xdr.c
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -27,27 +27,26 @@
 #include "../remote/xdr.h"
 
 // 15 Jan 2003. Nickolay Samofatov
-// Functions below need to have C++ linkage to avoid name clash with
+// Lower functions need to have C++ linkage to avoid name clash with
 // standard XDR. Firebird XDR is NOT compatible with Sun XDR at interface level
 
-bool_t	xdr_bool (XDR *, int *);
-bool_t	xdr_bytes (XDR *, SCHAR**, u_int *, u_int);
-bool_t	xdr_double (XDR *, double *);
-bool_t	xdr_enum (XDR *, enum xdr_op *);
-bool_t	xdr_float (XDR *, float *);
-bool_t	xdr_free (xdrproc_t proc, SCHAR *objp);
-bool_t	xdr_int (XDR *, int *);
-bool_t	xdr_long (XDR *, SLONG *);
-bool_t	xdrmem_create (XDR *, SCHAR *, u_int, enum xdr_op);
-bool_t	xdr_opaque (XDR *, SCHAR *, u_int);
-bool_t	xdr_short (XDR *, SSHORT *);
-bool_t	xdr_string (XDR *, SCHAR**, u_int);
-bool_t	xdr_u_int (XDR *, u_int *);
-bool_t	xdr_u_long (XDR *, ULONG *);
-bool_t	xdr_u_short (XDR *, u_short *);
-int		xdr_union (XDR *, enum xdr_op *, SCHAR *, struct xdr_discrim *, xdrproc_t);
-bool_t	xdr_wrapstring (XDR *, SCHAR **);
-bool_t	xdr_hyper(XDR *, void *);
+extern bool_t	xdr_bool (XDR *, int *);
+extern bool_t	xdr_bytes (XDR *, SCHAR * *, u_int *, u_int);
+extern bool_t	xdr_double (XDR *, double *);
+extern bool_t	xdr_enum (XDR *, enum xdr_op *);
+extern bool_t	xdr_float (XDR *, float *);
+extern bool_t	xdr_free (xdrproc_t proc, SCHAR *objp);
+extern bool_t	xdr_int (XDR *, int *);
+extern bool_t	xdr_long (XDR *, SLONG *);
+extern bool_t	xdrmem_create (XDR *, SCHAR *, u_int, enum xdr_op);
+extern bool_t	xdr_opaque (XDR *, SCHAR *, u_int);
+extern bool_t	xdr_short (XDR *, SSHORT *);
+extern bool_t	xdr_string (XDR *, SCHAR * *, u_int);
+extern bool_t	xdr_u_int (XDR *, u_int *);
+extern bool_t	xdr_u_long (XDR *, ULONG *);
+extern bool_t	xdr_u_short (XDR *, u_short *);
+extern int		xdr_union (XDR *, enum xdr_op *, SCHAR *, struct xdr_discrim *, xdrproc_t);
+extern bool_t	xdr_wrapstring (XDR *, SCHAR **);
+extern bool_t	xdr_hyper(XDR *, SINT64 *);
 
 #endif	/* REMOTE_XDR_PROTO_H */
-

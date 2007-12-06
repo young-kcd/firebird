@@ -3,7 +3,6 @@
 	ProjectType="Visual C++"
 	Version="7.10"
 	Name="alice"
-	ProjectGUID="{0D8750CC-7CCC-4795-9369-48D59FA0A2F5}"
 	SccProjectName=""
 	SccLocalPath="">
 	<Platforms>
@@ -33,7 +32,6 @@
 				PreprocessorDefinitions="NDEBUG,_LIB,SUPERSERVER,WIN32,_X86_"
 				ExceptionHandling="FALSE"
 				RuntimeLibrary="2"
-				RuntimeTypeInfo="FALSE"
 				PrecompiledHeaderFile="..\..\..\temp\release\alice_ss/alice.pch"
 				AssemblerListingLocation="..\..\..\temp\release\alice_ss/"
 				ObjectFile="..\..\..\temp\release\alice_ss/"
@@ -86,7 +84,6 @@
 				ExceptionHandling="FALSE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				RuntimeTypeInfo="FALSE"
 				PrecompiledHeaderFile="..\..\..\temp\debug\alice_ss/alice.pch"
 				AssemblerListingLocation="..\..\..\temp\debug\alice_ss/"
 				ObjectFile="..\..\..\temp\debug\alice_ss/"

@@ -23,47 +23,41 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef DSQL_METD_PROTO_H
-#define DSQL_METD_PROTO_H
+#ifndef _DSQL_METD_PROTO_H
+#define _DSQL_METD_PROTO_H
 
-#include "../common/classes/GenericMap.h"
-#include "../common/classes/MetaName.h"
-#include "../common/classes/fb_pair.h"
-
-typedef Firebird::Pair<Firebird::Full<Firebird::MetaName, Firebird::MetaName> > MetaNamePair;
-typedef Firebird::GenericMap<MetaNamePair> MetaNamePairMap;
+#ifndef __cplusplus
+#error This header file can only be used from C++
+#endif
 
 // forward declarations
 class dsql_req;
-class dsql_str;
+class str;
 
-void METD_drop_collation(dsql_req*, const dsql_str*);
-void METD_drop_function(dsql_req*, const dsql_str*);
-void METD_drop_procedure(dsql_req*, const dsql_str*);
-void METD_drop_relation(dsql_req*, const dsql_str*);
+extern "C" {
 
-dsql_intlsym*  METD_get_charset(dsql_req*, USHORT, const char* name); // UTF-8
-USHORT   METD_get_charset_bpc(dsql_req*, SSHORT);
-Firebird::MetaName METD_get_charset_name (dsql_req*, SSHORT);
-dsql_intlsym* METD_get_collation(dsql_req*, const dsql_str*, USHORT charset_id);
-USHORT   METD_get_col_default(dsql_req*, const char*, const char*, bool*, TEXT*, USHORT);
-dsql_str*      METD_get_default_charset(dsql_req*);
-USHORT   METD_get_domain(dsql_req*, class dsql_fld*, const char* name); // UTF-8
-USHORT   METD_get_domain_default(dsql_req*, const TEXT*, bool*, TEXT*, USHORT);
-bool METD_get_exception(dsql_req*, const dsql_str*);
-dsql_udf*      METD_get_function(dsql_req*, const dsql_str*);
-dsql_nod* METD_get_primary_key(dsql_req*, const dsql_str*);
-dsql_prc* METD_get_procedure(dsql_req*, const dsql_str*);
-dsql_rel* METD_get_relation(dsql_req*, const dsql_str*);
-bool   METD_get_trigger(dsql_req*, const dsql_str*, dsql_str**, USHORT*);
-bool   METD_get_type(dsql_req*, const dsql_str*, char*, SSHORT*);
-dsql_rel* METD_get_view_base(dsql_req*   request,
-							 const char* view_name,	// UTF-8
-							 MetaNamePairMap& fields);
-dsql_rel* METD_get_view_relation(dsql_req*   request,
-								const char* view_name,         // UTF-8
-								const char* relation_or_alias, // UTF-8
+void METD_drop_function(dsql_req*, str*);
+void METD_drop_procedure(dsql_req*, str*);
+void METD_drop_relation(dsql_req*, str*);
+
+INTLSYM  METD_get_charset(dsql_req*, USHORT, const char* name /* UTF-8 */);
+USHORT   METD_get_charset_bpc (struct dsql_req *, SSHORT);
+INTLSYM  METD_get_collation(dsql_req*, str*);
+void     METD_get_col_default(DSQL_REQ, const char*, const char*, BOOLEAN*, TEXT*, USHORT);
+STR      METD_get_default_charset(dsql_req*);
+USHORT   METD_get_domain(dsql_req*, class dsql_fld*, const char* name /* UTF-8 */);
+void     METD_get_domain_default(dsql_req*, TEXT*, BOOLEAN*, TEXT*, USHORT);
+UDF      METD_get_function(dsql_req*, str*);
+DSQL_NOD METD_get_primary_key(dsql_req*, str*);
+DSQL_PRC METD_get_procedure(dsql_req*, str*);
+DSQL_REL METD_get_relation(dsql_req*, str*);
+STR      METD_get_trigger_relation(dsql_req*, str*, USHORT*);
+USHORT   METD_get_type(dsql_req*, str*, char*, SSHORT*);
+DSQL_REL METD_get_view_relation(dsql_req*   request,
+								const char* view_name         /* UTF-8 */,
+								const char* relation_or_alias /* UTF-8 */,
 								USHORT      level);
 
-#endif // DSQL_METD_PROTO_H
+} // extern "C"
 
+#endif /*_DSQL_METD_PROTO_H */

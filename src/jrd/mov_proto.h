@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Access Method
  *	MODULE:		mov_proto.h
- *	DESCRIPTION:	Prototype header file for mov.cpp
+ *	DESCRIPTION:	Prototype header file for mov.c
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -21,36 +21,44 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef JRD_MOV_PROTO_H
-#define JRD_MOV_PROTO_H
+#ifndef _JRD_MOV_PROTO_H_
+#define _JRD_MOV_PROTO_H_
 
 #include "../jrd/dsc.h"
 #include "../jrd/jrd.h"
 #include "../jrd/val.h"
 
-struct dsc;
-struct vary;
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-int		MOV_compare(const dsc*, const dsc*);
-double	MOV_date_to_double(const dsc*);
-void	MOV_double_to_date(double, SLONG[2]);
-void	MOV_fast(const SCHAR*, SCHAR*, ULONG);
-void	MOV_faster(const SLONG*, SLONG*, ULONG);
-void	MOV_fill(SLONG*, ULONG);
-double	MOV_get_double(const dsc*);
-SLONG	MOV_get_long(const dsc*, SSHORT);
-void	MOV_get_metadata_str(const dsc*, TEXT*, USHORT);
-void	MOV_get_name(const dsc*, TEXT*);
-SQUAD	MOV_get_quad(const dsc*, SSHORT);
-SINT64	MOV_get_int64(const dsc*, SSHORT);
-int		MOV_get_string_ptr(const dsc*, USHORT*, UCHAR**, vary*,
+extern int MOV_compare(struct dsc *, struct dsc *);
+extern double MOV_date_to_double(struct dsc *);
+extern void MOV_double_to_date(double, SLONG[2]);
+extern void MOV_fast(SCHAR *, SCHAR *, ULONG);
+extern void MOV_faster(SLONG *, SLONG *, ULONG);
+extern void MOV_fill(SLONG *, ULONG);
+extern double MOV_get_double(struct dsc *);
+extern SLONG MOV_get_long(struct dsc *, SSHORT);
+extern void MOV_get_metadata_str(struct dsc *, TEXT *, USHORT);
+extern void MOV_get_name(struct dsc *, TEXT *);
+extern SQUAD MOV_get_quad(struct dsc *, SSHORT);
+extern SINT64 MOV_get_int64(struct dsc *, SSHORT);
+extern int MOV_get_string_ptr(struct dsc *, USHORT *, UCHAR **, struct vary *,
 							  USHORT);
-int		MOV_get_string(const dsc*, UCHAR**, vary*, USHORT);
-GDS_DATE	MOV_get_sql_date(const dsc*);
-GDS_TIME	MOV_get_sql_time(const dsc*);
-GDS_TIMESTAMP	MOV_get_timestamp(const dsc*);
-int		MOV_make_string(const dsc*, USHORT, const char**, vary*, USHORT);
-int		MOV_make_string2(Jrd::thread_db*, const dsc*, USHORT, UCHAR**, Jrd::MoveBuffer&, bool = true);
-void	MOV_move(Jrd::thread_db*, /*const*/ dsc*, dsc*);
+extern int MOV_get_string(struct dsc *, UCHAR **, struct vary *, USHORT);
+extern GDS_DATE MOV_get_sql_date(struct dsc *);
+extern GDS_TIME MOV_get_sql_time(struct dsc *);
+extern GDS_TIMESTAMP MOV_get_timestamp(struct dsc *);
+extern int MOV_make_string(struct dsc *, USHORT, const char**, struct vary *,
+						   USHORT);
+extern int MOV_make_string2(struct dsc *, USHORT, UCHAR **, struct vary *,
+							USHORT, struct str **);
+extern void MOV_move(struct dsc *, struct dsc *);
+extern void MOV_time_stamp(GDS_TIMESTAMP *);
 
-#endif // JRD_MOV_PROTO_H
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
+
+#endif /* _JRD_MOV_PROTO_H_ */

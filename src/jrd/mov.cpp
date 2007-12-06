@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Access Method
- *	MODULE:		mov.cpp
+ *	MODULE:		mov.c
  *	DESCRIPTION:	Data mover and converter and comparator, etc.
  *
  * The contents of this file are subject to the Interbase Public
@@ -23,24 +23,25 @@
  * 2002.08.21 Dmitry Yemanov: fixed bug with a buffer overrun,
  *                            which at least caused invalid dependencies
  *                            to be stored (DB$xxx, for example)
- * Adriano dos Santos Fernandes
  */
 
 #include "firebird.h"
-#include "../jrd/common.h"
 #include "../jrd/gdsassert.h"
+#include "../jrd/jrd_time.h"
 #include "../jrd/jrd.h"
 #include "../jrd/val.h"
 #include "../jrd/intl.h"
-#include "../jrd/blb_proto.h"
 #include "../jrd/cvt_proto.h"
 #include "../jrd/cvt2_proto.h"
 #include "../jrd/err_proto.h"
-#include "../jrd/intl_proto.h"
+#include "../jrd/gds_proto.h"
 #include "../jrd/mov_proto.h"
 
 
-int MOV_compare(const dsc* arg1, const dsc* arg2)
+extern "C" {
+
+
+int MOV_compare(DSC * arg1, DSC * arg2)
 {
 /**************************************
  *
@@ -53,11 +54,11 @@ int MOV_compare(const dsc* arg1, const dsc* arg2)
  *
  **************************************/
 
-	return CVT2_compare(arg1, arg2, ERR_post);
+	return CVT2_compare(arg1, arg2, (FPTR_VOID) ERR_post);
 }
 
 
-double MOV_date_to_double(const dsc* desc)
+double MOV_date_to_double(DSC * desc)
 {
 /**************************************
  *
@@ -71,13 +72,11 @@ double MOV_date_to_double(const dsc* desc)
  *
  **************************************/
 
-	return CVT_date_to_double(desc, ERR_post);
+	return CVT_date_to_double(desc, (FPTR_VOID) ERR_post);
 }
 
 
-#ifdef NOT_USED_OR_REPLACED
-// Strange, I don't see this function surfaced as public.
-void MOV_double_to_date2(double real, dsc* desc)
+void MOV_double_to_date2(double real, DSC * dsc)
 {
 /**************************************
  *
@@ -92,23 +91,22 @@ void MOV_double_to_date2(double real, dsc* desc)
 	SLONG fixed[2];
 
 	MOV_double_to_date(real, fixed);
-	switch (desc->dsc_dtype) {
+	switch (dsc->dsc_dtype) {
 	case dtype_timestamp:
-		((SLONG *) desc->dsc_address)[0] = fixed[0];
-		((SLONG *) desc->dsc_address)[1] = fixed[1];
+		((SLONG *) dsc->dsc_address)[0] = fixed[0];
+		((SLONG *) dsc->dsc_address)[1] = fixed[1];
 		break;
 	case dtype_sql_time:
-		((SLONG *) desc->dsc_address)[0] = fixed[1];
+		((SLONG *) dsc->dsc_address)[0] = fixed[1];
 		break;
 	case dtype_sql_date:
-		((SLONG *) desc->dsc_address)[0] = fixed[0];
+		((SLONG *) dsc->dsc_address)[0] = fixed[0];
 		break;
 	default:
-		fb_assert(FALSE);
+		assert(FALSE);
 		break;
 	}
 }
-#endif
 
 
 void MOV_double_to_date(double real, SLONG fixed[2])
@@ -126,14 +124,14 @@ void MOV_double_to_date(double real, SLONG fixed[2])
  *
  **************************************/
 
-	CVT_double_to_date(real, fixed, ERR_post);
+	CVT_double_to_date(real, fixed, (FPTR_VOID) ERR_post);
 }
 
 
 #ifndef VMS
 void MOV_fast(
-			  const SCHAR* from,
-			  SCHAR* to, ULONG length)
+			  SCHAR * from,
+			  SCHAR * to, ULONG length)
 {
 /**************************************
  *
@@ -145,8 +143,9 @@ void MOV_fast(
  *	Move a byte string as fast as possible.
  *
  **************************************/
-	ULONG l = length >> 4;
-	if (l)
+	ULONG l;
+
+	if (l = (length >> 4))
 		do {
 			*to++ = *from++;
 			*to++ = *from++;
@@ -167,13 +166,13 @@ void MOV_fast(
 		} while (--l);
 
 	if (length &= 15)
-		do {
+		do
 			*to++ = *from++;
-		} while (--length);
+		while (--length);
 }
 
 
-void MOV_faster(const SLONG* from, SLONG* to, ULONG length)
+void MOV_faster(SLONG * from, SLONG * to, ULONG length)
 {
 /**************************************
  *
@@ -186,9 +185,10 @@ void MOV_faster(const SLONG* from, SLONG* to, ULONG length)
  *
  **************************************/
 	ULONG l;
+	UCHAR *p, *q;
 
-	fb_assert(!((U_IPTR) to & (sizeof(ULONG) - 1)));	/* ULONG alignment required */
-	fb_assert(!((U_IPTR) from & (sizeof(ULONG) - 1)));	/* ULONG alignment required */
+	assert(!((U_IPTR) to & (sizeof(ULONG) - 1)));	/* ULONG alignment required */
+	assert(!((U_IPTR) from & (sizeof(ULONG) - 1)));	/* ULONG alignment required */
 
 /* copy by chunks of 8 longwords == 32 bytes == 2**5 bytes */
 	if (l = (length >> 5)) {
@@ -213,8 +213,8 @@ void MOV_faster(const SLONG* from, SLONG* to, ULONG length)
 
 /* Finally, copy any trailing bytes */
 	if (l = (length & 3)) {
-		UCHAR* p = (UCHAR *) to;
-		const UCHAR* q = (UCHAR *) from;
+		p = (UCHAR *) to;
+		q = (UCHAR *) from;
 		do
 			*p++ = *q++;
 		while (--l);
@@ -223,7 +223,7 @@ void MOV_faster(const SLONG* from, SLONG* to, ULONG length)
 #endif
 
 
-void MOV_fill(SLONG* to, ULONG length)
+void MOV_fill(SLONG * to, ULONG length)
 {
 /**************************************
  *
@@ -236,6 +236,7 @@ void MOV_fill(SLONG* to, ULONG length)
  *
  **************************************/
 	ULONG l;
+	UCHAR *p;
 
 /* If not longword aligned, fill bytewise until it is */
 
@@ -244,12 +245,12 @@ void MOV_fill(SLONG* to, ULONG length)
 		if (length < l)
 			l = length;
 		length -= l;
-		UCHAR* p = (UCHAR *) to;
+		p = (UCHAR *) to;
 		while (l--)
 			*p++ = 0;
 		to = (SLONG *) p;
-		fb_assert(!(((U_IPTR) to) & (sizeof(ULONG) - 1))	/* We're now aligned ULONG */
-			   || !length);		/* Or already completed */
+		assert(!(((U_IPTR) to) & (sizeof(ULONG) - 1))	/* We're now aligned ULONG */
+			   ||!length);		/* Or already completed */
 	}
 
 /* Fill in chunks of 8 longwords == 32 bytes == 2**5 bytes */
@@ -275,7 +276,7 @@ void MOV_fill(SLONG* to, ULONG length)
 
 /* Finally, fill any trailing bytes */
 	if (l = (length & 3)) {
-		UCHAR* p = (UCHAR *) to;
+		p = (UCHAR *) to;
 		do
 			*p++ = 0;
 		while (--l);
@@ -283,7 +284,7 @@ void MOV_fill(SLONG* to, ULONG length)
 }
 
 
-double MOV_get_double(const dsc* desc)
+double MOV_get_double(DSC * desc)
 {
 /**************************************
  *
@@ -296,11 +297,11 @@ double MOV_get_double(const dsc* desc)
  *
  **************************************/
 
-	return CVT_get_double(desc, ERR_post);
+	return CVT_get_double(desc, (FPTR_VOID) ERR_post);
 }
 
 
-SLONG MOV_get_long(const dsc* desc, SSHORT scale)
+SLONG MOV_get_long(DSC * desc, SSHORT scale)
 {
 /**************************************
  *
@@ -314,11 +315,11 @@ SLONG MOV_get_long(const dsc* desc, SSHORT scale)
  *
  **************************************/
 
-	return CVT_get_long(desc, scale, ERR_post);
+	return CVT_get_long(desc, scale, (FPTR_VOID) ERR_post);
 }
 
 
-SINT64 MOV_get_int64(const dsc* desc, SSHORT scale)
+SINT64 MOV_get_int64(DSC * desc, SSHORT scale)
 {
 /**************************************
  *
@@ -332,11 +333,11 @@ SINT64 MOV_get_int64(const dsc* desc, SSHORT scale)
  *
  **************************************/
 
-	return CVT_get_int64(desc, scale, ERR_post);
+	return CVT_get_int64(desc, scale, (FPTR_VOID) ERR_post);
 }
 
 
-void MOV_get_metadata_str(const dsc* desc, TEXT* buffer, USHORT buffer_length)
+void MOV_get_metadata_str(DSC * desc, TEXT * buffer, USHORT buffer_length)
 {
 /**************************************
  *
@@ -354,14 +355,12 @@ void MOV_get_metadata_str(const dsc* desc, TEXT* buffer, USHORT buffer_length)
 	UCHAR *ptr;
 
 	USHORT length = CVT_get_string_ptr(desc, &dummy_type, &ptr,
-									   NULL, 0, ERR_post);
+									   NULL, 0, (FPTR_VOID) ERR_post);
 	
 #ifdef DEV_BUILD
 	if ((dummy_type != ttype_metadata) &&
 		(dummy_type != ttype_none) && (dummy_type != ttype_ascii))
-	{
 		ERR_bugcheck_msg("Expected METADATA name");
-	}
 #endif
 
 	length = ptr ? MIN(length, buffer_length - 1) : 0;
@@ -370,7 +369,7 @@ void MOV_get_metadata_str(const dsc* desc, TEXT* buffer, USHORT buffer_length)
 }
 
 
-void MOV_get_name(const dsc* desc, TEXT* string)
+void MOV_get_name(DSC * desc, TEXT * string)
 {
 /**************************************
  *
@@ -383,11 +382,11 @@ void MOV_get_name(const dsc* desc, TEXT* string)
  *
  **************************************/
 
-	CVT2_get_name(desc, string, ERR_post);
+	CVT2_get_name(desc, string, (FPTR_VOID) ERR_post);
 }
 
 
-SQUAD MOV_get_quad(const dsc* desc, SSHORT scale)
+SQUAD MOV_get_quad(DSC * desc, SSHORT scale)
 {
 /**************************************
  *
@@ -401,14 +400,14 @@ SQUAD MOV_get_quad(const dsc* desc, SSHORT scale)
  *
  **************************************/
 
-	return CVT_get_quad(desc, scale, ERR_post);
+	return CVT_get_quad(desc, scale, (FPTR_VOID) ERR_post);
 }
 
 
 int MOV_get_string_ptr(
-					   const dsc* desc,
-					   USHORT* ttype,
-					   UCHAR** address, vary* temp, USHORT length)
+					   DSC * desc,
+					   USHORT * ttype,
+					   UCHAR ** address, VARY * temp, USHORT length)
 {
 /**************************************
  *
@@ -427,11 +426,12 @@ int MOV_get_string_ptr(
  *
  **************************************/
 
-	return CVT_get_string_ptr(desc, ttype, address, temp, length, ERR_post);
+	return CVT_get_string_ptr(desc, ttype, address, temp, length,
+							  (FPTR_VOID) ERR_post);
 }
 
 
-int MOV_get_string(const dsc* desc, UCHAR** address, vary* temp, USHORT length)
+int MOV_get_string(DSC * desc, UCHAR ** address, VARY * temp, USHORT length)
 {
 /**************************************
  *
@@ -448,7 +448,7 @@ int MOV_get_string(const dsc* desc, UCHAR** address, vary* temp, USHORT length)
 }
 
 
-GDS_DATE MOV_get_sql_date(const dsc* desc)
+GDS_DATE MOV_get_sql_date(DSC * desc)
 {
 /**************************************
  *
@@ -461,11 +461,11 @@ GDS_DATE MOV_get_sql_date(const dsc* desc)
  *
  **************************************/
 
-	return CVT_get_sql_date(desc, ERR_post);
+	return CVT_get_sql_date(desc, (FPTR_VOID) ERR_post);
 }
 
 
-GDS_TIME MOV_get_sql_time(const dsc* desc)
+GDS_TIME MOV_get_sql_time(DSC * desc)
 {
 /**************************************
  *
@@ -478,11 +478,11 @@ GDS_TIME MOV_get_sql_time(const dsc* desc)
  *
  **************************************/
 
-	return CVT_get_sql_time(desc, ERR_post);
+	return CVT_get_sql_time(desc, (FPTR_VOID) ERR_post);
 }
 
 
-GDS_TIMESTAMP MOV_get_timestamp(const dsc* desc)
+GDS_TIMESTAMP MOV_get_timestamp(DSC * desc)
 {
 /**************************************
  *
@@ -495,14 +495,14 @@ GDS_TIMESTAMP MOV_get_timestamp(const dsc* desc)
  *
  **************************************/
 
-	return CVT_get_timestamp(desc, ERR_post);
+	return CVT_get_timestamp(desc, (FPTR_VOID) ERR_post);
 }
 
 
-int MOV_make_string(const dsc*	     desc,
+int MOV_make_string(DSC*	     desc,
 					USHORT	     ttype,
 					const char** address,
-					vary*	     temp,
+					VARY*	     temp,
 					USHORT	     length)
 {
 /**************************************
@@ -524,16 +524,15 @@ int MOV_make_string(const dsc*	     desc,
  *
  **************************************/
 
-	return CVT_make_string(desc, ttype, address, temp, length, ERR_post);
+	return CVT_make_string(desc, ttype, address, temp, length,
+						   (FPTR_VOID) ERR_post);
 }
 
 
-int MOV_make_string2(Jrd::thread_db* tdbb,
-					 const dsc* desc,
+int MOV_make_string2(
+					 DSC * desc,
 					 USHORT ttype,
-					 UCHAR** address, 
-					 Jrd::MoveBuffer& buffer,
-					 bool limit)
+					 UCHAR ** address, VARY * temp, USHORT length, STR * ptr)
 {
 /**************************************
  *
@@ -543,49 +542,25 @@ int MOV_make_string2(Jrd::thread_db* tdbb,
  *
  * Functional description
  *	Make a string, in a specified text type, out of a descriptor.
+ *	The caller provides a temporary, and a pointer to a pointer
+ *	to hold a CVT_ allocated data structure.
+ *	Should CVT_ allocate memory, it is the caller's responsibility to
+ *	free it with gds__free().
  *	The address of the resultant string is returned.
  *	MOV_make_string2 returns the length of the string in bytes.
  *
+ *	Note: If the descriptor is known to be a string type in the
+ *	given ttype the argument (temp buffer) may be omitted.
+ *	But this would be a bad idea in general.
+ *
  **************************************/
 
-	if (desc->isBlob())
-	{
-		// fake descriptor
-		dsc temp;
-		temp.dsc_dtype = dtype_text;
-		temp.setTextType(ttype);
-
-		Firebird::UCharBuffer bpb;
-		BLB_gen_bpb_from_descs(desc, &temp, bpb);
-
-		Jrd::blb* blob = BLB_open2(tdbb, tdbb->getRequest()->req_transaction,
-			reinterpret_cast<Jrd::bid*>(desc->dsc_address), bpb.getCount(), bpb.begin());
-
-		ULONG size;
-
-		if (temp.getCharSet() == desc->getCharSet())
-			size = blob->blb_length;
-		else
-		{
-			size = (blob->blb_length / INTL_charset_lookup(tdbb, desc->getCharSet())->minBytesPerChar()) *
-				INTL_charset_lookup(tdbb, temp.getCharSet())->maxBytesPerChar();
-		}
-
-		*address = buffer.getBuffer(size);
-
-		size = BLB_get_data(tdbb, blob, *address, size, true);
-
-		if (limit && size > MAX_COLUMN_SIZE)
-			ERR_post(isc_arith_except, 0);
-
-		return size;
-	}
-	else
-		return CVT2_make_string2(desc, ttype, address, buffer, ERR_post);
+	return CVT2_make_string2(desc, ttype, address, temp, length, ptr,
+							 (FPTR_VOID) ERR_post);
 }
 
 
-void MOV_move(Jrd::thread_db* tdbb, /*const*/ dsc* from, dsc* to)
+void MOV_move(DSC * from, DSC * to)
 {
 /**************************************
  *
@@ -598,11 +573,29 @@ void MOV_move(Jrd::thread_db* tdbb, /*const*/ dsc* from, dsc* to)
  *
  **************************************/
 
-	if (DTYPE_IS_BLOB_OR_QUAD(from->dsc_dtype) ||
-		DTYPE_IS_BLOB_OR_QUAD(to->dsc_dtype))
-	{
-		BLB_move(tdbb, from, to, NULL);
-	}
-	else
-		CVT_move(from, to, ERR_post);
+	CVT_move(from, to, (FPTR_VOID) ERR_post);
 }
+
+
+void MOV_time_stamp(GDS_TIMESTAMP * date)
+{
+/**************************************
+ *
+ *	M O V _ t i m e _ s t a m p
+ *
+ **************************************
+ *
+ * Functional description
+ *	Get the current timestamp in gds format.
+ *
+ **************************************/
+	time_t clock;
+	struct tm times;
+
+	clock = time(NULL);
+	times = *localtime(&clock);
+	isc_encode_timestamp(&times, date);
+}
+
+
+} // extern "C"

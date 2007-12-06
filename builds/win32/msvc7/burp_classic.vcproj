@@ -32,7 +32,6 @@
 				PreprocessorDefinitions="NDEBUG,_LIB,WIN32,_X86_"
 				ExceptionHandling="FALSE"
 				RuntimeLibrary="2"
-				RuntimeTypeInfo="FALSE"
 				PrecompiledHeaderFile="..\..\..\temp\release\burp_cs/burp_classic.pch"
 				AssemblerListingLocation="..\..\..\temp\release\burp_cs/"
 				ObjectFile="..\..\..\temp\release\burp_cs/"
@@ -45,7 +44,7 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile="..\..\..\temp\release\burp_cs\burp.lib"
+				OutputFile="release\burp_cs\burp.lib"
 				SuppressStartupBanner="TRUE"/>
 			<Tool
 				Name="VCMIDLTool"/>
@@ -85,7 +84,6 @@
 				ExceptionHandling="FALSE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				RuntimeTypeInfo="FALSE"
 				PrecompiledHeaderFile="..\..\..\temp\debug\burp_cs/burp_classic.pch"
 				AssemblerListingLocation="..\..\..\temp\debug\burp_cs/"
 				ObjectFile="..\..\..\temp\debug\burp_cs/"
@@ -98,7 +96,7 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile="..\..\..\temp\debug\burp_cs\burp.lib"
+				OutputFile="debug\burp_cs\burp.lib"
 				SuppressStartupBanner="TRUE"/>
 			<Tool
 				Name="VCMIDLTool"/>

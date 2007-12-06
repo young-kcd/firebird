@@ -18,7 +18,7 @@
  */
 # include <windows.h>
 
-# include "isql.rh"
+# include "isql_res.h"
 
 isql ICON "isql.ico"
 

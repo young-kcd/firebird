@@ -1,6 +1,8 @@
+dnl $Id: configure.in,v 1.141.2.41 2007-01-22 12:27:43 paulbeach Exp $
+
 dnl ############################# INITIALISATION ###############################
 
-AC_PREREQ(2.56)
+AC_PREREQ(2.53)
 AC_INIT(src)
 AC_CONFIG_AUX_DIR(builds/make.new/config)
 AC_CACHE_VAL(ac_cv_prog_make_set, [AC_PROG_MAKE_SET])
@@ -19,83 +21,41 @@ sinclude(acx_pthread.m4)
 dnl ############################# ADD TESTS BELOW ##############################
 
 AC_CANONICAL_SYSTEM
-CPU_TYPE=$target_cpu
-AC_SUBST(CPU_TYPE)
 
+case "$target_cpu" in
+  powerpc) AC_DEFINE(PowerPC) ;;
+esac
+
+CPU_TYPE=$host_cpu dnl EKU: Should this be target_cpu ???
+AC_SUBST(CPU_TYPE)
 
 dnl EKU: set appropiate defaults for each platform
 dnl      LOCK_MANAGER_FLG : build lock manager (CS only)
 dnl      EDITLINE_FLG     : support fancy command line editing in isql
-dnl      SHRLIB_EXT       : suffix of shared library files
 
-RAW_DEVICES_FLG=Y
 INSTALL_PREFIX=""
 
 dnl Use /usr/lib for library links on most platforms except some 64-bit ones
 libdir=/usr/lib
-ICU_PLATFORM=LinuxRedHat
-
-dnl Should Classic Server run services as thread or as process?
-dnl Default - run as processes (empty value).
-service_thread_CS=""
-
-dnl Should system editline and/or icu be used 
-STD_EDITLINE=false
-STD_ICU=false
-RPM64=
-
-dnl Test for realtime library presence?
-RT_LIB_CHECK=false
 
 case "$target" in
   *-*-darwin*)
     MAKEFILE_PREFIX=darwin
     PLATFORM=DARWIN
-    AC_DEFINE(DARWIN, 1, [Define this if OS is DARWIN])
+    AC_DEFINE(DARWIN)
 	XE_APPEND(-framework CoreFoundation,LIBS)
     LOCK_MANAGER_FLG=Y
     EDITLINE_FLG=Y
     SHRLIB_EXT=dylib
     ;;
 
-  amd64-*-freebsd*)
-    MAKEFILE_PREFIX=freebsd
-    PLATFORM=FREEBSD
-    AC_DEFINE(FREEBSD, 1, [Define this if OS is FreeBSD])
-    AC_DEFINE(AMD64, 1, [Define this if CPU is amd64])
-    LOCK_MANAGER_FLG=Y
-    EDITLINE_FLG=Y
-    SHRLIB_EXT=so
-    ;;
-
-  *-gentoo-freebsd*)
-    MAKEFILE_PREFIX=freebsd
-    PLATFORM=GENTOOFREEBSD
-    AC_DEFINE(FREEBSD, 1, [Define this if OS is FreeBSD])
-    LOCK_MANAGER_FLG=Y
-    EDITLINE_FLG=Y
-    SHRLIB_EXT=so
-    ;;
-
   *-*-freebsd*)
     MAKEFILE_PREFIX=freebsd 
     PLATFORM=FREEBSD
-    AC_DEFINE(FREEBSD, 1, [Define this if OS is FreeBSD])
+    AC_DEFINE(FREEBSD)
     LOCK_MANAGER_FLG=Y
-    EDITLINE_FLG=Y
+    EDITLINE_FLG=N
     SHRLIB_EXT=so
-    ;;
-
-  mipsel-*-linux*)
-    MAKEFILE_PREFIX=linux_mipsel
-    INSTALL_PREFIX=linux
-    PLATFORM=LINUX
-    AC_DEFINE(LINUX)
-    LOCK_MANAGER_FLG=Y
-    EDITLINE_FLG=Y
-    SHRLIB_EXT=so
-    PTHREAD_CFLAGS=-pthread
-    PTHREAD_LIBS=-lpthread
     ;;
 
   x86_64*-*-linux*)
@@ -108,31 +68,11 @@ case "$target" in
     SHRLIB_EXT=so
     libdir=/usr/lib64
     CPU_TYPE=amd64
-	RPM64='()(64bit)'
     ;;
 
   sparc*-*-linux*)
     MAKEFILE_PREFIX=linux_sparc32
     INSTALL_PREFIX=linux
-    PLATFORM=LINUX
-    AC_DEFINE(LINUX, 1, [Define this if OS is Linux])
-    LOCK_MANAGER_FLG=Y
-    EDITLINE_FLG=Y
-    SHRLIB_EXT=so
-    ;;
-
-  powerpc*-*-linux*)
-    MAKEFILE_PREFIX=linux_powerpc
-    INSTALL_PREFIX=linux
-    PLATFORM=LINUX
-    AC_DEFINE(LINUX, 1, [Define this if OS is Linux])
-    LOCK_MANAGER_FLG=Y
-    EDITLINE_FLG=Y
-    SHRLIB_EXT=so
-    ;;
-
-  i*86*-*-linux*)
-    MAKEFILE_PREFIX=linux
     PLATFORM=LINUX
     AC_DEFINE(LINUX)
     LOCK_MANAGER_FLG=Y
@@ -141,67 +81,68 @@ case "$target" in
     ;;
 
   *-*-linux*)
-    MAKEFILE_PREFIX=linux_generic
-    INSTALL_PREFIX=linux
+    MAKEFILE_PREFIX=linux
     PLATFORM=LINUX
-    AC_DEFINE(LINUX, 1, [Define this if OS is Linux])
+    AC_DEFINE(LINUX)
     LOCK_MANAGER_FLG=Y
     EDITLINE_FLG=Y
     SHRLIB_EXT=so
+    
+    dnl These lines are necessary to make gcc 3.2 and 
+    dnl probably earlier produce correct multithreaded
+    dnl shared libraries. Normally threading flags are
+    dnl determined by ACX_PTHREAD macro
+    
+    PTHREAD_CFLAGS=-pthread
+    PTHREAD_LIBS=-lpthread
     ;;
 
   *-*-netbsd*)
     MAKEFILE_PREFIX=netbsd
     PLATFORM=NETBSD
-    AC_DEFINE(NETBSD, 1, [Define this if OS is NetBSD])
+    AC_DEFINE(NETBSD)
     LOCK_MANAGER_FLG=Y
-    EDITLINE_FLG=Y
+    EDITLINE_FLG=N
     SHRLIB_EXT=so
     ;;
 
   *-*-hpux*)
     MAKEFILE_PREFIX=hpux
     PLATFORM=HPUX
-    AC_DEFINE(hpux, 1, [Define this if OS is HP-UX])
+    AC_DEFINE(HPUX)
     LOCK_MANAGER_FLG=Y
-    EDITLINE_FLG=Y
+    EDITLINE_FLG=N
     SHRLIB_EXT=sl
     ;;
 
   i386-pc-solaris*)
     MAKEFILE_PREFIX=solx86gcc
-    INSTALL_PREFIX=solaris
+    INSTALL_PREFIX=solx86gcc
     PLATFORM=solx86
-    AC_DEFINE(solx86, 1, [Define this if OS is Solarix x86])
+    AC_DEFINE(solx86)
     LOCK_MANAGER_FLG=N
-    EDITLINE_FLG=Y
+    EDITLINE_FLG=N
     SHRLIB_EXT=so
     PTHREAD_CFLAGS=-threads
     PTHREAD_LIBS=-lthread
-    ICU_PLATFORM=SOLARISX86GCC
-    service_thread_CS=true
-    RT_LIB_CHECK=true
     ;;
 
   sparc-sun-solaris*)
     MAKEFILE_PREFIX=solaris
-    INSTALL_PREFIX=solaris
+    INSTALL_PREFIX=solx86gcc
     PLATFORM=SOLARIS
-    AC_DEFINE(SOLARIS, 1, [Define this if OS is Solaris Sparc])
+    AC_DEFINE(SOLARIS)
     LOCK_MANAGER_FLG=N
     EDITLINE_FLG=Y
     SHRLIB_EXT=so
     PTHREAD_CFLAGS=-threads
     PTHREAD_LIBS=-lthread
-    ICU_PLATFORM=SOLARISGCC
-    service_thread_CS=true
-    RT_LIB_CHECK=true
     ;;
 
   i*-sni-sysv4)
     MAKEFILE_PREFIX=sinixz
     PLATFORM="SINIX-Z"
-    AC_DEFINE(SINIXZ, 1, [Define this if OS is SINIX-Z])
+    AC_DEFINE(SINIXZ)
     LOCK_MANAGER_FLG=N
     EDITLINE_FLG=Y
     SHRLIB_EXT=so
@@ -210,14 +151,22 @@ case "$target" in
   *-*-mingw*)
     MAKEFILE_PREFIX=mingw
     PLATFORM=win32
-    AC_DEFINE(WIN_NT, 1, [Define this if OS is Windows NT])
-    AC_DEFINE(HAVE_MULTI_THREAD, 1, [Define this if multi-threading should be supported])
+    AC_DEFINE(WIN_NT)
     LOCK_MANAGER_FLG=N
     EDITLINE_FLG=N
-    RAW_DEVICES_FLG=N
     SHRLIB_EXT=dll
-	ICU_PLATFORM=MinGW
-    service_thread_CS=true
+    ;;
+
+  powerpc-ibm-aix*)
+    MAKEFILE_PREFIX=aix
+    INSTALL_PREFIX=aix
+    PLATFORM=AIX_PPC
+    AC_DEFINE(AIX_PPC, 1, [Define this if OS is aix])
+    LOCK_MANAGER_FLG=Y
+    EDITLINE_FLG=N
+    SHRLIB_EXT=a
+    libdir=/usr/lib64
+    CPU_TYPE=PowerPC
     ;;
 
   *)
@@ -231,11 +180,37 @@ fi
 
 AC_SUBST(MAKEFILE_PREFIX)
 AC_SUBST(PLATFORM)
-AC_SUBST(SHRLIB_EXT)
-AC_SUBST(ICU_PLATFORM)
-AC_SUBST(service_thread_CS)
-AC_DEFINE(CASE_SENSITIVITY, false, [Define this if paths are case sensitive])
-AC_SUBST(RPM64)
+
+
+dnl possibly needed if we use install-sh program
+dnl AC_CONFIG_AUX_DIR(`pwd`)
+
+AC_PROG_AWK
+AC_PROG_CC(xlc_r7 gcc)  dnl EKU: C++ programs should not use CC, but at the moment all
+            dnl makefiles use $(CC) to link objects. This has to be changed!
+AC_PROG_CXX(xlC_r7 g++)
+AC_PROG_LN_S
+dnl EKU: AC_PROG_RANLIB has been superseded by AC_PROG_LIBTOOL
+AC_LIBTOOL_DLOPEN
+AC_LIBTOOL_WIN32_DLL
+AC_PROG_LIBTOOL
+AC_PROG_YACC
+
+if test "$PLATFORM" = "DARWIN"; then
+	COMP_VERS=`$CC --version | head -1 | sed -e 's/[[^0123456789]]*\([[0123456789]][[0123456789]]*\(\.[[0123456789]][[0123456789]]*\)*\).*/\1/g'`
+	case "$COMP_VERS" in
+  		2.*)
+    		AC_MSG_ERROR(Incorrect version of GCC.  FB requires 3.1 or later. Please upgrade.)
+			;;
+		3.1*)
+			DARWIN_VERSPEC_CFLAGS=-no-cpp-precomp
+			;;
+		*)
+			DARWIN_VERSPEC_CFLAGS=
+			;;
+	esac
+	AC_SUBST(DARWIN_VERSPEC_CFLAGS)
+fi
 
 
 dnl Some controllable options
@@ -254,6 +229,7 @@ case $FIREBIRD_ARCH_TYPE in
   classic) AC_SUBST(ARCH_TYPE_SUFFIX,CS);;
 esac
 
+
 PROD_BUILD_FLG=Y
 AC_ARG_ENABLE(debug,
   [  --enable-debug          build debug version (default=no)],
@@ -266,22 +242,22 @@ AC_SUBST(PROD_BUILD_FLG)
 
 dnl Find out how to use threads on this platform
 ACX_PTHREAD([
-  AC_DEFINE(HAVE_MULTI_THREAD, 1,
+   AC_DEFINE(HAVE_MULTI_THREAD, 1,
     [Define this if multi-threading should be supported])])
 
 AC_SUBST(PTHREAD_LIBS)
 AC_SUBST(PTHREAD_CFLAGS)
 
+RAW_DEVICES_FLG=N
 AC_ARG_ENABLE(raw-devices,
-  [  --enable-raw-devices    enable databases on raw devices (default on POSIX)],
+  [  --enable-raw-devices    enable databases on raw devices (default=no)],
   [case "$enableval" in
      yes) RAW_DEVICES_FLG=Y;;
      no)  RAW_DEVICES_FLG=N;;
      *)   AC_MSG_ERROR(bad value '${enableval}' for --enable-raw-devices);;
    esac])
 if test "$RAW_DEVICES_FLG" = "Y"; then
-  AC_DEFINE(SUPPORT_RAW_DEVICES, 1,
-    [Define this if databases on raw devices should be supported])
+  AC_DEFINE(SUPPORT_RAW_DEVICES)
 fi
 
 MANAGER_PROCESS_TARGET=
@@ -301,8 +277,7 @@ if test "$FIREBIRD_ARCH_TYPE" = "classic"; then
     dnl      at least SOLARIS-MT, DARWIN and SINIX-Z do not require a lock
     dnl      manager process
     dnl EKU: is this really true???
-    AC_DEFINE(MANAGER_PROCESS, 1,
-      [Define this if the lock manager process is needed])
+    AC_DEFINE(MANAGER_PROCESS)
     MANAGER_PROCESS_TARGET=lock_mgr
   fi
 fi
@@ -315,32 +290,9 @@ AC_ARG_WITH(editline,
      no)  EDITLINE_FLG=N;;
      *)   AC_MSG_ERROR(bad value '${withval}' for --with-editline);;
    esac])
-AC_ARG_WITH(system-editline,
-  [  --with-system-editline  use OS supplied libeditline],
-  [case "$withval" in
-     yes) STD_EDITLINE=true;;
-     no)  STD_EDITLINE=false;;
-     *)   AC_MSG_ERROR(bad value '${withval}' for --with-system-editline);;
-   esac])
-
-# not need editline in default libs, but need to test for its presence
-saveLIBS=$LIBS
-if test "$STD_EDITLINE" = "true"; then
-  AC_CHECK_LIB(editline, readline, EDITLINE_FLG=Y, STD_EDITLINE=false)
-fi
-LIBS=$saveLIBS
-
-AC_SUBST(STD_EDITLINE)
 AC_SUBST(EDITLINE_FLG)
 
-AC_ARG_WITH(system-icu,
-  [  --with-system-icu       use OS supplied ICU],
-  [case "$withval" in
-     yes) STD_ICU=true;;
-     no)  STD_ICU=false;;
-     *)   AC_MSG_ERROR(bad value '${withval}' for --with-system-icu);;
-   esac])
-AC_SUBST(STD_ICU)
+AC_SUBST(SHRLIB_EXT)
 
 FB_SERVICE_NAME=gds_db
 FB_SERVICE_PORT=3050
@@ -352,11 +304,11 @@ AC_ARG_WITH(service-port,
   [  --with-service-port     specify inet service port (default=3050)],
   [FB_SERVICE_PORT=${withval}])
 AC_ARG_WITH(ipc-name,
-  [  --with-ipc-name         specify local IPC name (default=FirebirdIPI)],
+  [  --with-ipc-name     specify local IPC name (default=FirebirdIPI)],
   [FB_IPC_NAME=${withval}])
-AC_DEFINE_UNQUOTED(FB_SERVICE_NAME,"$FB_SERVICE_NAME", [Inet service name])
-AC_DEFINE_UNQUOTED(FB_SERVICE_PORT,$FB_SERVICE_PORT, [Inet service port])
-AC_DEFINE_UNQUOTED(FB_IPC_NAME,"$FB_IPC_NAME", [Local IPC name])
+AC_DEFINE_UNQUOTED(FB_SERVICE_NAME,"$FB_SERVICE_NAME")
+AC_DEFINE_UNQUOTED(FB_SERVICE_PORT,$FB_SERVICE_PORT)
+AC_DEFINE_UNQUOTED(FB_IPC_NAME,"$FB_IPC_NAME")
 AC_SUBST(FB_SERVICE_NAME)
 AC_SUBST(FB_SERVICE_PORT)
 AC_SUBST(FB_IPC_NAME)
@@ -367,15 +319,15 @@ AC_ARG_WITH(gpre-ada,
   [  --with-gpre-ada         support ADA in gpre (default=no)],
   [case "$withval" in
      yes) XE_APPEND(ada.cpp,GPRE_LANGUAGE_MODULES)
-          AC_DEFINE(GPRE_ADA, 1, [Define this if GPRE should support ADA]);;
+          AC_DEFINE(GPRE_ADA);;
      no)  ;;
      *)   AC_MSG_ERROR(bad value '${withval}' for --with-gpre-ada);;
    esac])
 AC_ARG_WITH(gpre-cobol,
   [  --with-gpre-cobol       support COBOL in gpre (default=no)],
   [case "$withval" in
-     yes) XE_APPEND(cob.cpp rmc.cpp,GPRE_LANGUAGE_MODULES)
-          AC_DEFINE(GPRE_COBOL, 1, [Define this if GPRE should support COBOL]);;
+     yes) XE_APPEND(cob.cpp,GPRE_LANGUAGE_MODULES)
+          AC_DEFINE(GPRE_COBOL);;
      no)  ;;
      *)   AC_MSG_ERROR(bad value '${withval}' for --with-gpre-cobol);;
    esac])
@@ -383,7 +335,7 @@ AC_ARG_WITH(gpre-fortran,
   [  --with-gpre-fortran     support FORTRAN in gpre (default=no)],
   [case "$withval" in
      yes) XE_APPEND(ftn.cpp,GPRE_LANGUAGE_MODULES)
-          AC_DEFINE(GPRE_FORTRAN, 1, [Define this if GPRE should support FORTRAN]);;
+          AC_DEFINE(GPRE_FORTRAN);;
      no)  ;;
      *)   AC_MSG_ERROR(bad value '${withval}' for --with-gpre-fortran);;
    esac])
@@ -391,34 +343,14 @@ AC_ARG_WITH(gpre-pascal,
   [  --with-gpre-pascal      support PASCAL in gpre (default=no)],
   [case "$withval" in
      yes) XE_APPEND(pas.cpp,GPRE_LANGUAGE_MODULES)
-          AC_DEFINE(GPRE_PASCAL, 1, [Define this if GPRE should support PASCAL]);;
+          AC_DEFINE(GPRE_PASCAL);;
      no)  ;;
      *)   AC_MSG_ERROR(bad value '${withval}' for --with-gpre-pascal);;
    esac])
 AC_SUBST(GPRE_LANGUAGE_MODULES)
 
 
-
-dnl Checks for programs.
-AC_PROG_AWK
-AC_PROG_CC  dnl EKU: C++ programs should not use CC, but at the moment all
-            dnl makefiles use $(CC) to link objects. This has to be changed!
-AC_PROG_GCC_TRADITIONAL
-AC_PROG_CXX
-AC_PROG_CPP
-AC_PROG_INSTALL
-AC_PROG_LN_S
-dnl EKU: AC_PROG_RANLIB has been superseded by AC_PROG_LIBTOOL
-AC_LIBTOOL_DLOPEN
-AC_LIBTOOL_WIN32_DLL
-AC_PROG_MAKE_SET
-AC_PROG_LIBTOOL
-
-
 dnl Check for system header files
-AC_HEADER_DIRENT
-AC_HEADER_STDC
-AC_HEADER_SYS_WAIT
 AC_CHECK_HEADERS(assert.h)
 AC_CHECK_HEADERS(ctype.h)
 AC_CHECK_HEADERS(errno.h)
@@ -436,6 +368,7 @@ case "$PLATFORM" in
 	AC_CHECK_HEADERS(pthread.h)
   ;;
 esac
+
 AC_CHECK_HEADERS(sys/types.h)
 AC_CHECK_HEADERS(sys/stat.h)
 AC_CHECK_HEADERS(sys/uio.h)
@@ -444,36 +377,17 @@ AC_HEADER_TIME
 AC_CHECK_HEADERS(sys/timeb.h)
 AC_CHECK_HEADERS(sys/param.h)
 AC_CHECK_HEADERS(sys/ioctl.h)
-AC_CHECK_HEADERS(limits.h)
 AC_CHECK_HEADERS(setjmp.h)
 AC_CHECK_HEADERS(stdarg.h)
 AC_CHECK_HEADERS(stdlib.h)
 AC_CHECK_HEADERS(string.h)
-AC_CHECK_HEADERS(signal.h sys/signal.h sys/siginfo.h)
+AC_CHECK_HEADERS(signal.h)
 if test "$EDITLINE_FLG" = "Y"; then
   AC_CHECK_HEADERS(termio.h termios.h)
   AC_HEADER_DIRENT
-  AC_DEFINE(HAVE_EDITLINE_H, 1, [Define this if editline is in use])
+  AC_DEFINE(HAVE_EDITLINE_H)
 fi
 AC_CHECK_HEADERS(unistd.h)
-if test "$ac_cv_header_unistd_h" = "yes"; then
-  dnl For details see
-  dnl http://www.opengroup.org/onlinepubs/007904975/basedefs/unistd.h.html
-  dnl http://people.redhat.com/drepper/posix-option-groups.html
-  AC_MSG_CHECKING(if POSIX threads are available)
-  AC_TRY_RUN([#include <unistd.h>
-    main () { 
-#if defined(_POSIX_THREADS) && _POSIX_THREADS >= 200112L
-    exit(0);
-#else
-    exit(1);
-#endif
-  }],
-  [AC_DEFINE(HAVE_POSIX_THREADS, 1,
-     [Define this if POSIX threads are available])
-   AC_MSG_RESULT(yes)],
-  [AC_MSG_RESULT(no)])
-fi
 AC_CHECK_HEADERS(varargs.h)
 AC_CHECK_HEADERS(crypt.h)
 AC_CHECK_HEADERS(netinet/in.h rpc/rpc.h netconfig.h)
@@ -481,36 +395,40 @@ AC_CHECK_HEADERS(rpc/xdr.h,,,[#include <rpc/rpc.h>])
 AC_CHECK_HEADERS(aio.h)
 AC_CHECK_HEADERS(mntent.h mnttab.h sys/mntent.h sys/mnttab.h)
 AC_CHECK_HEADERS(sys/ipc.h sys/file.h)
-AC_CHECK_HEADERS(socket.h sys/socket.h sys/sockio.h winsock2.h)
-AC_CHECK_HEADERS(sys/resource.h)
-AC_CHECK_HEADERS(sys/sem.h)
-AC_CHECK_HEADERS(semaphore.h)
-
+AC_CHECK_HEADERS(socket.h  sys/socket.h sys/sockio.h winsock2.h)
 
 dnl Check for libraries
 AC_CHECK_LIB(dl, main)
-AC_CHECK_LIB(c, main)
+AC_CHECK_LIB(c,main)
 AC_CHECK_LIB(m, main)
+AC_CHECK_LIB(crypt, main)
+AC_CHECK_LIB(curses, main)
+dnl AC_CHECK_LIB(termcap, main)
 if test "$EDITLINE_FLG" = "Y"; then
-	AC_CHECK_LIB(curses, tgetent, , \
-		AC_CHECK_LIB(ncurses, tgetent, , \
-			AC_CHECK_LIB(termcap, tgetent, , \
-				AC_CHECK_LIB(tinfo, tgetent, , \
-					AC_MSG_ERROR(termcap support not found)))))  
+  AC_SUBST(EDITLINE_A, -leditline)
 fi
-if test "$RT_LIB_CHECK" = "true"; then
-	AC_CHECK_LIB(rt, main)
+AC_CHECK_LIB(stdc++, main,,, $LIBS)
+
+dnl kkuznetsov: Solaris always check for -lnsl and Sun threading -lthread and -ltermcap if --with-editline
+if test "$PLATFORM" = "solx86" -o "$PLATFORM" = "SOLARIS"; then
+  AC_CHECK_LIB(nsl, gethostname, XE_APPEND(-lnsl,LIBS))
+  AC_CHECK_LIB(thread, thr_create, XE_PREPEND(-lthread,LIBS))
+  if test "$EDITLINE_FLG" = "Y"; then
+  	AC_CHECK_LIB(termcap, main, XE_APPEND(-ltermcap,EDITLINE_A))
+  fi
+  fi
+  
+dnl pbeach: There is currently a limitation with shl_load(), where you can't
+dnl dynamically load pthread or any other library that has Thread Local
+dnl Storage declared and has a dependency on pthread.
+if test "$PLATFORM" = "HPUX"; then
+AC_CHECK_LIB(pthread, main)
+AC_CHECK_LIB(cl, main)
 fi
 
-dnl check for INFINITY in math.h
-dnl _ISOC99_SOURCE is defined to emulate C++ compilation in plain-C conftest.c
-AC_TRY_COMPILE([#define _ISOC99_SOURCE 1
-#include <math.h>],
-    [double x = INFINITY;],
-    [AC_DEFINE(HAVE_INFINITY, 1,
-       [Define this if INFINITY is defined in math.h])])
 
 dnl Check for functions
+AC_CHECK_FUNCS(strlcpy strlcat)
 AC_CHECK_FUNCS(gettimeofday)
 if test "$ac_cv_func_gettimeofday" = "yes"; then
   dnl EKU: SINIX-Z has no prototype for gettimeofday() so the following test
@@ -522,23 +440,15 @@ if test "$ac_cv_func_gettimeofday" = "yes"; then
     AC_MSG_CHECKING(if gettimeofday accepts second (timezone) argument)
     AC_TRY_COMPILE([#include <sys/time.h>],
     [struct timeval tp; gettimeofday(&tp, (struct timezone *)0);],
-    [AC_DEFINE(GETTIMEOFDAY_RETURNS_TIMEZONE, 1,
-       [Define this if gettimeofday accepts second (timezone) argument])
-     AC_MSG_RESULT(yes)],
+    [AC_DEFINE(GETTIMEOFDAY_RETURNS_TIMEZONE) AC_MSG_RESULT(yes)],
     [AC_MSG_RESULT(no)])
     ;;
   esac
-  AH_BOTTOM([#ifdef GETTIMEOFDAY_RETURNS_TIMEZONE
-#define GETTIMEOFDAY(x) gettimeofday((x), (struct timezone *)0)
-#else
-#define GETTIMEOFDAY(x) gettimeofday((x))
-#endif])
 fi
 AC_CHECK_FUNCS(time times)
 AC_SEARCH_LIBS(gethostname,nsl)
 AC_SEARCH_LIBS(connect,socket)
 AC_CHECK_FUNCS(strcasecmp stricmp)
-AC_CHECK_FUNCS(strncasecmp strnicmp)
 if test "$ac_cv_func_strcasecmp" = "no" -a "$ac_cv_func_stricmp" = "no"; then
   dnl EKU: On SINIX-Z strcasecmp is in libresolv.
   AC_CHECK_LIB(resolv, strcasecmp,
@@ -546,19 +456,19 @@ if test "$ac_cv_func_strcasecmp" = "no" -a "$ac_cv_func_stricmp" = "no"; then
      unset ac_cv_func_strcasecmp
      AC_CHECK_FUNCS(strcasecmp)],, $LIBS)
 fi
-AC_SEARCH_LIBS(dirname, gen)
+AC_SEARCH_LIBS(dirname,gen)
 AC_CHECK_FUNCS(dirname)
 AC_CHECK_FUNCS(sigaction setitimer)
-AC_CHECK_FUNCS(snprintf vsnprintf)
+AC_CHECK_FUNCS(snprintf)
 AC_CHECK_FUNCS(swab _swab)
 AC_FUNC_MMAP 
 AC_FUNC_FORK
-AC_FUNC_SETPGRP
-AC_CHECK_FUNCS(setpgid)
-AC_FUNC_GETPGRP
+AC_CHECK_FUNCS(setgrp setpgid getpgrp)
+AC_FUNC_SETPGRP 
 AC_CHECK_FUNCS(flock)
 AC_CHECK_FUNCS(initgroups)
 AC_CHECK_FUNCS(getpagesize)
+AC_CHECK_FUNCS(crypt)
 AC_CHECK_FUNCS(pread pwrite)
 AC_CHECK_FUNCS(getcwd getwd)
 AC_CHECK_FUNCS(setmntent getmntent)
@@ -567,50 +477,29 @@ if test "$ac_cv_func_getmntent" = "yes"; then
   AC_TRY_COMPILE([#include <stdio.h>
 #include <sys/mnttab.h>],
   [FILE *f; struct mntent *m; getmntent(f, m);],
-  [AC_DEFINE(GETMNTENT_TAKES_TWO_ARGUMENTS, 1,
-    [Define this if getmntent needs second argument])
-   AC_MSG_RESULT(yes)],
+  [AC_DEFINE(GETMNTENT_TAKES_TWO_ARGUMENTS) AC_MSG_RESULT(yes)],
   [AC_MSG_RESULT(no)])
 fi
-AC_CHECK_FUNCS(setrlimit getrlimit)
 AC_CHECK_FUNCS(tcgetattr strdup)
 AC_CHECK_FUNCS(mkstemp)
-AC_CHECK_FUNCS(pthread_keycreate pthread_key_create)
-AC_CHECK_FUNCS(llrint)
-AC_CHECK_FUNCS(localtime_r)
-AC_CHECK_FUNCS(gmtime_r)
-if test "$ac_cv_header_semaphore_h" = "yes"; then
-savedFlags="$CFLAGS"
-CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
-AC_CHECK_FUNCS(sem_timedwait)
-CFLAGS="$savedFlags"
-fi
 
-# Checks for typedefs, structures, and compiler characteristics.
+
+dnl Check for other things
 AC_C_BIGENDIAN
 AC_C_VOLATILE 
 AC_TYPE_SIGNAL
-AC_TYPE_OFF_T
-AC_TYPE_SIZE_T
-AC_TYPE_UID_T
 AC_SYS_LARGEFILE
 if test "$ac_cv_sys_file_offset_bits" = "no"; then
   AC_MSG_CHECKING(for native large file support)
   AC_TRY_RUN([#include <unistd.h>
     main () { 
     exit(!(sizeof(off_t) == 8));
-  }],
-  [ac_cv_sys_file_offset_bits=64; AC_DEFINE(_FILE_OFFSET_BITS,64)
-   AC_MSG_RESULT(yes)],
-  [AC_MSG_RESULT(no)])
+  }], [ac_cv_sys_file_offset_bits=64; AC_DEFINE(_FILE_OFFSET_BITS,64) AC_MSG_RESULT(yes)],AC_MSG_RESULT(no))
 fi
 
-AC_CHECK_SIZEOF(void *)
+AC_CHECK_SIZEOF(void*)
 AC_CHECK_SIZEOF(long)
 AC_CHECK_TYPES([socklen_t],,,[#include <sys/socket.h>])
-AH_BOTTOM([#ifndef HAVE_SOCKLEN_T
-typedef int socklen_t;
-#endif])
 AC_CHECK_TYPES([semun])
 if test "$ac_cv_type_semun" = "no"; then
   AC_MSG_CHECKING(if sem.h defines semun)
@@ -618,7 +507,7 @@ if test "$ac_cv_type_semun" = "no"; then
       #include <sys/ipc.h>
       #include <sys/sem.h>],
   [union semun s;],
-  [ac_cv_type_semun=yes; AC_DEFINE(HAVE_SEMUN) AC_MSG_RESULT(yes)],
+  [ac_cv_type_semun=yes AC_DEFINE(HAVE_SEMUN) AC_MSG_RESULT(yes)],
   [AC_MSG_RESULT(no)])
 fi
 
@@ -629,7 +518,7 @@ AC_CHECK_TYPES([struct xdr_ops],,,[#include <rpc/rpc.h>
 
 
 dnl EKU: try to determine the alignment of long and double
-dnl      replaces ALIGNMENT and DOUBLE_ALIGN in src/jrd/common.h
+dnl      replaces FB_ALIGNMENT and DOUBLE_ALIGN in src/jrd/common.h
 AC_MSG_CHECKING(alignment of long)
 AC_TRY_RUN([main () {
   struct s {
@@ -639,7 +528,7 @@ AC_TRY_RUN([main () {
   exit((int)&((struct s*)0)->b);
 }], ac_cv_c_alignment=$ac_status, ac_cv_c_alignment=$ac_status)
 AC_MSG_RESULT($ac_cv_c_alignment)
-AC_DEFINE_UNQUOTED(ALIGNMENT, $ac_cv_c_alignment, [Alignment of long])
+AC_DEFINE_UNQUOTED(FB_ALIGNMENT,$ac_cv_c_alignment)
 
 AC_MSG_CHECKING(alignment of double)
 AC_TRY_RUN([main () {
@@ -650,7 +539,7 @@ AC_TRY_RUN([main () {
   exit((int)&((struct s*)0)->b);
 }], ac_cv_c_double_align=$ac_status, ac_cv_c_double_align=$ac_status)
 AC_MSG_RESULT($ac_cv_c_double_align)
-AC_DEFINE_UNQUOTED(DOUBLE_ALIGN, $ac_cv_c_double_align, [Alignment of double])
+AC_DEFINE_UNQUOTED(DOUBLE_ALIGN,$ac_cv_c_double_align)
 
 dnl EKU: don't know how to convert this into an autoconf test:
 dnl      #define FB_ALIGN(n,b) ...
@@ -664,23 +553,15 @@ dnl
 dnl      volunters are welcome!
 
 
-
 dnl EKU: Add any platform specific tests below
 case "$PLATFORM" in
   LINUX)
     dnl MOD: Check for /proc/self/exe mainly used on linux systems
     dnl      this is used to determine path to executable file.
     AC_CHECK_FILES(/proc/self/exe)
-
-	dnl EKU: some Linux distributions do not provide POSIX threads
-	dnl      compatibility. Define HAVE_POSIX_THREADS anyway to get
-	dnl      thread support compiled into FIREBIRD.
-	AC_DEFINE(HAVE_POSIX_THREADS)
     ;;
-  HPUX)
-	AC_DEFINE(HAVE_POSIX_THREADS)
-    ;;	
-  FREEBSD|GENTOOFREEBSD)
+
+  FREEBSD)
     dnl the AC_CHECK_TYPES for socklen_t doesn't include sys/socket.h
     dnl so test for socklen_t with sys/socket.h included
     AC_MSG_CHECKING(if sys/socket.h defines socklen_t)
@@ -689,21 +570,9 @@ case "$PLATFORM" in
     [socklen_t s;],
     [AC_DEFINE(HAVE_SOCKLEN_T) AC_MSG_RESULT(yes)],
     [AC_MSG_RESULT(no)])
-    dnl define HAVE_POSIX_THREADS for FreeBSD 4.x support
-    AC_DEFINE(HAVE_POSIX_THREADS)
     ;;
 
-  SOLARIS|solx86)
-    dnl kkuznetsov: Solaris always check for -lnsl and use Sun thread (!not posix)
-    AC_CHECK_LIB(nsl, gethostname, XE_APPEND(-lnsl,LIBS))
-    AC_CHECK_LIB(thread, thr_create, XE_PREPEND(-lthread,LIBS)) 
-  
-    if test "$EDITLINE_FLG" = "Y"; then
-  	AC_CHECK_LIB(termcap, main, XE_APPEND(-ltermcap,EDITLINE_A))
-    fi
-
-    AC_CHECK_TYPES([caddr_t])
-
+  [SOLARIS|solx86])
     AC_ARG_WITH(sfio,
       AC_HELP_STRING([--with-sfio=PATH],
         [use sfio (replacement stdio on Solaris) (default=no)]),
@@ -713,10 +582,8 @@ case "$PLATFORM" in
       SFIO_DIR=""
       SFIO_FLAGS=""
       SFIO_LDFLAGS=""
-    else		
-      AC_CHECK_LIB(sfio, main)		
-      dnl Kkuznetsov: using sfio-mt looks like double protecting of FILE*
-      dnl and I avoid to use vthread based on posix threading
+    else
+   	AC_CHECK_LIB(sfio, main)		
       #AC_CHECK_LIB(sfio-mt, main,, 
       #AC_MSG_ERROR([sfio library not found]),-lvthread)
       #XE_PREPEND(-lvthread,LIBS)		
@@ -732,38 +599,16 @@ case "$PLATFORM" in
     AC_ARG_WITH(pipe-name,
       [  --with-pipe-name        specify wnet pipe name (default=interbas)],
       [FB_PIPE_NAME=${withval}])
-    AH_VERBATIM(FB_PIPE_NAME,
-[/* Wnet pipe name */
-#define FB_PIPE_NAME "interbas"])
     AC_DEFINE_UNQUOTED(FB_PIPE_NAME,"$FB_PIPE_NAME")
     AC_SUBST(FB_PIPE_NAME)
-    XE_PREPEND( -mno-cygwin -mthreads -lmpr -lversion -lws2_32 -lole32,LIBS)
+    XE_PREPEND(-lmpr -lversion -lws2_32,LIBS)
     ;;
 
   *)
     ;;
 esac
 
-dnl Detect support for ISO syntax for thread-locals
-AC_CACHE_CHECK([for __thread], firebird_cv_gcc___thread,
-  [cat > conftest.c <<\EOF
-__thread int a = 42;
-main() {
-	a = a + 1;
-	return 0;
-}
-EOF
-if AC_TRY_COMMAND([gcc -fPIC -o conftest conftest.c >&AS_MESSAGE_LOG_FD && ./conftest]); then
-  firebird_cv_gcc___thread=yes
-else
-  firebird_cv_gcc___thread=no
-fi
-rm -f conftest*])
 
-if test "$firebird_cv_gcc___thread" = yes; then
-  AC_DEFINE(HAVE___THREAD, 1, [Define it if compiler supports ISO syntax for thread-local storage])
-fi
-				  
 dnl ##################### DO NOT ADD ANY TESTS BELOW ###########################
 
 AC_SUBST(SFIO_DIR)
@@ -785,28 +630,27 @@ NEW_FIREBIRD_DIR=$GEN_ROOT/firebird
 AC_SUBST(BUILD_ROOT_DIR)
 AC_SUBST(NEW_FIREBIRD_DIR)
 
-AC_DEFINE_UNQUOTED(FB_PREFIX, $(if test "x$prefix" = "xNONE" ; then echo \"$ac_default_prefix\"; else echo \"$prefix\"; fi), [Installation path prefix])
+AC_DEFINE_UNQUOTED(FB_PREFIX, $(if test "x$prefix" = "xNONE" ; then echo \"$ac_default_prefix\"; else echo \"$prefix\"; fi))
 
 AC_CONFIG_COMMANDS(,,[
+dnl ### GEN ### directories for preprocessed cpp, databases and output
+mkdir -p gen
 dnl # rebuild version header if needed
 ./src/misc/writeBuildNum.sh rebuildHeader
-dnl ### GEN ### directories for preprocessed cpp, databases and output
 mkdir -p gen/alice
 mkdir -p gen/burp
 mkdir -p gen/dsql
 mkdir -p gen/dudley
 mkdir -p gen/gpre
-mkdir -p gen/iscguard
 mkdir -p gen/isql
 mkdir -p gen/jrd
 mkdir -p gen/msgs
 mkdir -p gen/qli
 mkdir -p gen/utilities
-mkdir -p gen/examples
+mkdir -p gen/v5_examples
 
 dnl # some .o and .d in this directory (to be removed)
-mkdir -p gen/remote/os/win32
-mkdir -p gen/remote/os/sun
+mkdir -p gen/remote
 
 dnl # databases and output
 mkdir -p gen/refDatabases
@@ -814,164 +658,169 @@ mkdir -p gen/firebird/include
 mkdir -p gen/firebird/intl
 mkdir -p gen/firebird/UDF
 mkdir -p gen/firebird/bin
-mkdir -p gen/firebird/examples/api
-mkdir -p gen/firebird/examples/dyn
-dnl # mkdir -p gen/firebird/examples/build_unix
-dnl # mkdir -p gen/firebird/examples/build_win32
-mkdir -p gen/firebird/examples/empbuild
-mkdir -p gen/firebird/examples/include
-mkdir -p gen/firebird/examples/stat
-mkdir -p gen/firebird/examples/udf
+mkdir -p gen/firebird/examples/v5
 mkdir -p gen/firebird/lib
 mkdir -p gen/firebird/misc
 mkdir -p gen/firebird/help
 
+mkdir -p gen/RPM/RPMS/i686
+mkdir -p gen/RPM/BUILD
+
 dnl #### TEMP ######### directories for .o and .d
 dnl # by module name
 
-mkdir -p temp/boot/alice
-mkdir -p temp/boot/auth/trusted
-mkdir -p temp/boot/burp
-mkdir -p temp/boot/common/classes
-mkdir -p temp/boot/common/config
-mkdir -p temp/boot/config
-mkdir -p temp/boot/dsql
-mkdir -p temp/boot/dudley
-mkdir -p temp/boot/extlib
-mkdir -p temp/boot/extlib/fbudf
-mkdir -p temp/boot/gpre
-mkdir -p temp/boot/intl
-mkdir -p temp/boot/ipserver
-mkdir -p temp/boot/iscguard
-mkdir -p temp/boot/isql
-mkdir -p temp/boot/jrd
-mkdir -p temp/boot/jrd/os/posix
-mkdir -p temp/boot/jrd/os/win32
-mkdir -p temp/boot/jrd/os/darwin
-mkdir -p temp/boot/lock
-mkdir -p temp/boot/misc
-mkdir -p temp/boot/msgs
-mkdir -p temp/boot/qli
-mkdir -p temp/boot/remote
-mkdir -p temp/boot/remote/os/win32
-mkdir -p temp/boot/remote/os/sun
-mkdir -p temp/boot/remote/os/darwin
-mkdir -p temp/boot/utilities/common
-mkdir -p temp/boot/utilities/gsec
-mkdir -p temp/boot/utilities/gstat
-mkdir -p temp/boot/utilities/guard
-mkdir -p temp/boot/utilities/ibmgr
-mkdir -p temp/boot/utilities/install
-mkdir -p temp/boot/utilities/rebuild
-mkdir -p temp/boot/vulcan
+mkdir -p temp/libfbserver
+mkdir -p temp/libfbserver/jrd
+mkdir -p temp/libfbserver/dsql
+mkdir -p temp/libfbserver/lock
+mkdir -p temp/libfbserver/remote
+mkdir -p temp/libfbserver/pipe
+mkdir -p temp/libfbserver/gpre
+mkdir -p temp/libfbserver/alice
+mkdir -p temp/libfbserver/burp
+mkdir -p temp/libfbserver/utilities
+mkdir -p temp/libfbserver/fbutil
+mkdir -p temp/libfbserver/wal
+mkdir -p temp/libfbserver/common/classes
+mkdir -p temp/libfbserver/common/config
+mkdir -p temp/libfbserver/jrd/os/posix
+mkdir -p temp/libfbserver/jrd/os/darwin
+mkdir -p temp/libfbserver/jrd/os/win32
+mkdir -p temp/fbserver/remote
+mkdir -p temp/fbserver/ipserver
+mkdir -p temp/libfbclient/jrd
+mkdir -p temp/libfbclient/dsql
+mkdir -p temp/libfbclient/gpre
+mkdir -p temp/libfbclient/remote
+mkdir -p temp/libfbserver/remote/os
+mkdir -p temp/libfbserver/remote/os/sun
+mkdir -p temp/libfbclient/utilities
+mkdir -p temp/libfbclient/common/classes
+mkdir -p temp/libfbclient/common/config
+mkdir -p temp/libfbclient/jrd/os/posix
+mkdir -p temp/libfbclient/jrd/os/win32
+mkdir -p temp/libfbclient/jrd/os/darwin
+mkdir -p temp/libfbclient/remote/os/sun
+mkdir -p temp/client.gbak/burp
+mkdir -p temp/client.gfix/alice
+mkdir -p temp/client.gpre/gpre
+mkdir -p temp/client.gdef/dudley
+mkdir -p temp/client.isql/isql
+mkdir -p temp/client.qli/qli
+mkdir -p temp/client.util/lock
+mkdir -p temp/client.util/utilities
+mkdir -p temp/client.util/iscguard
+mkdir -p temp/client.util/remote
+mkdir -p temp/client.util/jrd/os/win32
+mkdir -p temp/intl/intl
 
-mkdir -p temp/std/alice
-mkdir -p temp/std/auth/trusted
-mkdir -p temp/std/burp
-mkdir -p temp/std/common/classes
-mkdir -p temp/std/common/config
-mkdir -p temp/std/config
-mkdir -p temp/std/dsql
-mkdir -p temp/std/dudley
-mkdir -p temp/std/extlib
-mkdir -p temp/std/extlib/fbudf
-mkdir -p temp/std/gpre
-mkdir -p temp/std/intl
-mkdir -p temp/std/ipserver
-mkdir -p temp/std/iscguard
-mkdir -p temp/std/isql
-mkdir -p temp/std/jrd
-mkdir -p temp/std/jrd/os/posix
-mkdir -p temp/std/jrd/os/win32
-mkdir -p temp/std/jrd/os/darwin
-mkdir -p temp/std/lock
-mkdir -p temp/std/misc
-mkdir -p temp/std/msgs
-mkdir -p temp/std/qli
-mkdir -p temp/std/remote
-mkdir -p temp/std/remote/os/win32
-mkdir -p temp/std/remote/os/sun
-mkdir -p temp/std/remote/os/darwin
-mkdir -p temp/std/utilities/common
-mkdir -p temp/std/utilities/gsec
-mkdir -p temp/std/utilities/gstat
-mkdir -p temp/std/utilities/guard
-mkdir -p temp/std/utilities/ibmgr
-mkdir -p temp/std/utilities/install
-mkdir -p temp/std/utilities/rebuild
-mkdir -p temp/std/vulcan
+mkdir -p temp/libfbcommon/common/classes
+mkdir -p temp/libfbcommon/common/config
+mkdir -p temp/boot.gpre/jrd/os/posix
+mkdir -p temp/boot.gpre/jrd/os/darwin
+mkdir -p temp/boot.gpre/jrd/os/win32
+mkdir -p temp/boot.gpre/gpre
+mkdir -p temp/static.gpre/gpre
+mkdir -p temp/static.gpre/jrd
+mkdir -p temp/static.gbak/burp
+mkdir -p temp/static.isql/isql
 
-mkdir -p temp/superclient/alice
-mkdir -p temp/superclient/auth/trusted
-mkdir -p temp/superclient/burp
-mkdir -p temp/superclient/common/classes
-mkdir -p temp/superclient/common/config
-mkdir -p temp/superclient/config
-mkdir -p temp/superclient/dsql
-mkdir -p temp/superclient/dudley
-mkdir -p temp/superclient/extlib
-mkdir -p temp/superclient/extlib/fbudf
-mkdir -p temp/superclient/gpre
-mkdir -p temp/superclient/intl
-mkdir -p temp/superclient/ipserver
-mkdir -p temp/superclient/iscguard
-mkdir -p temp/superclient/isql
-mkdir -p temp/superclient/jrd
-mkdir -p temp/superclient/jrd/os/posix
-mkdir -p temp/superclient/jrd/os/win32
-mkdir -p temp/superclient/jrd/os/darwin
-mkdir -p temp/superclient/lock
-mkdir -p temp/superclient/misc
-mkdir -p temp/superclient/msgs
-mkdir -p temp/superclient/qli
-mkdir -p temp/superclient/remote
-mkdir -p temp/superclient/remote/os/win32
-mkdir -p temp/superclient/remote/os/sun
-mkdir -p temp/superclient/remote/os/darwin
-mkdir -p temp/superclient/utilities/common
-mkdir -p temp/superclient/utilities/gsec
-mkdir -p temp/superclient/utilities/gstat
-mkdir -p temp/superclient/utilities/guard
-mkdir -p temp/superclient/utilities/ibmgr
-mkdir -p temp/superclient/utilities/install
-mkdir -p temp/superclient/utilities/rebuild
-mkdir -p temp/superclient/vulcan
+mkdir -p temp/libfbstatic
+mkdir -p temp/libfbstatic/jrd
+mkdir -p temp/libfbstatic/dsql
+mkdir -p temp/libfbstatic/lock
+mkdir -p temp/libfbstatic/remote
+mkdir -p temp/libfbstatic/gpre
+mkdir -p temp/libfbstatic/jrd/os/posix
+mkdir -p temp/libfbstatic/jrd/os/darwin
+mkdir -p temp/libfbstatic/jrd/os/win32
+mkdir -p temp/libfbstatic/wal
+mkdir -p temp/libfbstatic/common/config
 
-mkdir -p temp/superserver/alice
-mkdir -p temp/superserver/auth/trusted
-mkdir -p temp/superserver/burp
-mkdir -p temp/superserver/common/classes
-mkdir -p temp/superserver/common/config
-mkdir -p temp/superserver/config
-mkdir -p temp/superserver/dsql
-mkdir -p temp/superserver/dudley
-mkdir -p temp/superserver/extlib
-mkdir -p temp/superserver/extlib/fbudf
-mkdir -p temp/superserver/gpre
-mkdir -p temp/superserver/intl
-mkdir -p temp/superserver/ipserver
-mkdir -p temp/superserver/iscguard
-mkdir -p temp/superserver/isql
-mkdir -p temp/superserver/jrd
-mkdir -p temp/superserver/jrd/os/posix
-mkdir -p temp/superserver/jrd/os/win32
-mkdir -p temp/superserver/jrd/os/darwin
-mkdir -p temp/superserver/lock
-mkdir -p temp/superserver/misc
-mkdir -p temp/superserver/msgs
-mkdir -p temp/superserver/qli
-mkdir -p temp/superserver/remote
-mkdir -p temp/superserver/remote/os/win32
-mkdir -p temp/superserver/remote/os/sun
-mkdir -p temp/superserver/remote/os/darwin
-mkdir -p temp/superserver/utilities/common
-mkdir -p temp/superserver/utilities/gsec
-mkdir -p temp/superserver/utilities/gstat
-mkdir -p temp/superserver/utilities/guard
-mkdir -p temp/superserver/utilities/ibmgr
-mkdir -p temp/superserver/utilities/install
-mkdir -p temp/superserver/utilities/rebuild
-mkdir -p temp/superserver/vulcan
+mkdir -p temp/embed.lockmgr/lock
+mkdir -p temp/embed.util/lock
+mkdir -p temp/embed.util/utilities
+mkdir -p temp/embed.gbak/burp
+mkdir -p temp/embed.gfix/alice
+mkdir -p temp/embed.isql/isql
+mkdir -p temp/embed.gdef/dudley
+mkdir -p temp/embed.qli/qli
+mkdir -p temp/embed.gpre/gpre
+mkdir -p temp/inet_server/remote
+mkdir -p temp/inet_server/ipserver
+mkdir -p temp/msgs/msgs
+mkdir -p temp/extlib/extlib
+mkdir -p temp/extlib/extlib/fbudf
+mkdir -p temp/v5_examples/v5_examples
+
+mkdir -p temp/libfbembed
+mkdir -p temp/libfbembed/jrd
+mkdir -p temp/libfbembed/dsql
+mkdir -p temp/libfbembed/lock
+mkdir -p temp/libfbembed/remote
+mkdir -p temp/libfbembed/pipe
+mkdir -p temp/libfbembed/gpre
+mkdir -p temp/libfbembed/alice
+mkdir -p temp/libfbembed/utilities
+mkdir -p temp/libfbembed/fbutil
+mkdir -p temp/libfbembed/jrd/os/posix
+mkdir -p temp/libfbembed/jrd/os/darwin
+mkdir -p temp/libfbembed/jrd/os/win32
+mkdir -p temp/libfbembed/burp
+mkdir -p temp/libfbembed/wal
+mkdir -p temp/libfbembed/common/classes
+mkdir -p temp/libfbembed/common/config
+mkdir -p temp/codes
+mkdir -p temp/codes/jrd
+
+mkdir -p temp/editline/extern/editline
+
+mkdir -p temp/client.gbak/remote
+mkdir -p temp/client.gbak/jrd
+mkdir -p temp/client.gbak/common
+mkdir -p temp/client.gfix/jrd
+mkdir -p temp/client.gfix/common/classes
+mkdir -p temp/client.gpre/jrd
+mkdir -p temp/client.gpre/common
+mkdir -p temp/client.gdef/jrd/os/posix
+mkdir -p temp/client.gdef/jrd/os/win32
+mkdir -p temp/client.gdef/common/classes
+mkdir -p temp/client.gdef/common/config
+mkdir -p temp/client.gdef/gpre
+mkdir -p temp/client.qli/common/classes
+mkdir -p temp/client.qli/common/config
+mkdir -p temp/client.qli/gpre
+mkdir -p temp/client.qli/jrd
+mkdir -p temp/client.qli/jrd/os/posix
+mkdir -p temp/client.qli/jrd/os/win32
+mkdir -p temp/client.isql/common
+mkdir -p temp/client.util/jrd/os/posix
+mkdir -p temp/client.util/common/classes
+mkdir -p temp/client.util/common/config
+mkdir -p temp/embed.util/jrd/os/posix
+mkdir -p temp/embed.util/jrd/os/win32
+mkdir -p temp/embed.util/common/classes
+mkdir -p temp/embed.util/common/config
+mkdir -p temp/embed.gbak/remote
+mkdir -p temp/embed.gbak/jrd
+mkdir -p temp/embed.gbak/common
+mkdir -p temp/embed.gfix/common/classes
+mkdir -p temp/embed.gfix/jrd
+mkdir -p temp/embed.isql/common
+mkdir -p temp/embed.gdef/jrd
+mkdir -p temp/embed.gdef/jrd/os/posix
+mkdir -p temp/embed.gdef/jrd/os/win32
+mkdir -p temp/embed.gdef/gpre
+mkdir -p temp/embed.gdef/common/classes
+mkdir -p temp/embed.gdef/common/config
+mkdir -p temp/embed.qli/jrd
+mkdir -p temp/embed.qli/gpre
+mkdir -p temp/embed.qli/common/classes
+mkdir -p temp/embed.qli/common/config
+mkdir -p temp/embed.qli/jrd/os/posix
+mkdir -p temp/embed.qli/jrd/os/win32
+mkdir -p temp/embed.gpre/jrd
+mkdir -p temp/embed.gpre/common
 
 ])
 
@@ -980,88 +829,106 @@ MAKE_SRC_DIR=builds/posix
 
 
 dnl EKU: handle platform specific installation and packaging
+dnl: Common Files
+case "$PLATFORM" in
+  [LINUX|HPUX])
+    INSTALL_MISC=src/install/misc
+    AC_CONFIG_FILES([
+    gen/install/misc/firebird.conf:${INSTALL_MISC}/firebird.conf
+    gen/install/misc/aliases.conf:${INSTALL_MISC}/aliases.conf.in
+    gen/install/bin/fb_config:${INSTALL_MISC}/fb_config.in
+    gen/install/bin/CSchangeRunUser.sh:${INSTALL_MISC}/CSchangeRunUser.sh.in
+    gen/install/bin/CSrestoreRootRunUser.sh:${INSTALL_MISC}/CSrestoreRootRunUser.sh.in
+    gen/install/bin/SSchangeRunUser.sh:${INSTALL_MISC}/SSchangeRunUser.sh.in
+    gen/install/bin/SSrestoreRootRunUser.sh:${INSTALL_MISC}/SSrestoreRootRunUser.sh.in],
+   [chmod a+x gen/install/scripts/*.sh gen/install/*sh 2>/dev/null])
+   ;;
+esac
+
+dnl: Platform Specific Files
 
 case "$PLATFORM" in
-  LINUX|GENTOOFREEBSD)
+  LINUX)
     AC_CONFIG_COMMANDS(,,[
         mkdir -p gen/install/scripts
-        mkdir -p gen/install/misc
-        mkdir -p gen/RPM/RPMS/i686
-        mkdir -p gen/RPM/BUILD])
-
-    INSTALL_SRC_DIR=builds/install/arch-specific/linux/${FIREBIRD_ARCH_TYPE}
+        mkdir -p gen/install/misc])
+    INSTALL_SRC_DIR=src/install/arch-specific/linux/${FIREBIRD_ARCH_TYPE}
     AC_CONFIG_FILES([gen/install/makeInstallImage.sh:${INSTALL_SRC_DIR}/makeInstallImage.sh.in
-                     gen/firebird/bin/tarMainInstall.sh:${INSTALL_SRC_DIR}/tarMainInstall.sh.in
-                     gen/firebird/bin/tarinstall.sh:${INSTALL_SRC_DIR}/tarinstall.sh.in
-                     gen/firebird/bin/preinstall.sh:${INSTALL_SRC_DIR}/preinstall.sh.in
-                     gen/firebird/bin/postinstall.sh:${INSTALL_SRC_DIR}/postinstall.sh.in
-                     gen/firebird/bin/preuninstall.sh:${INSTALL_SRC_DIR}/preuninstall.sh.in
-                     gen/firebird/bin/postuninstall.sh:${INSTALL_SRC_DIR}/postuninstall.sh.in
-                     gen/firebird/bin/taruninstall.sh:${INSTALL_SRC_DIR}/taruninstall.sh.in
-                     gen/firebird/bin/tarMainUninstall.sh:${INSTALL_SRC_DIR}/tarMainUninstall.sh.in
+                     gen/install/scripts/preinstall.sh:${INSTALL_SRC_DIR}/preinstall.sh.in
+                     gen/install/scripts/tarinstall.sh:${INSTALL_SRC_DIR}/tarinstall.sh.in
+                     gen/install/scripts/tarMainInstall.sh:${INSTALL_SRC_DIR}/tarMainInstall.sh.in
+                     gen/install/scripts/taruninstall.sh:${INSTALL_SRC_DIR}/taruninstall.sh.in
+                     gen/install/scripts/tarMainUninstall.sh:${INSTALL_SRC_DIR}/tarMainUninstall.sh.in
+                     gen/install/scripts/postinstall.sh:${INSTALL_SRC_DIR}/postinstall.sh.in
+                     gen/install/scripts/preuninstall.sh:${INSTALL_SRC_DIR}/preuninstall.sh.in
+                     gen/install/scripts/postuninstall.sh:${INSTALL_SRC_DIR}/postuninstall.sh.in
                      gen/install/scripts/rpmheader.txt:${INSTALL_SRC_DIR}/rpmheader.txt.in
                      gen/install/scripts/rpmfiles.txt:${INSTALL_SRC_DIR}/rpmfiles.txt.in
-                     gen/install/misc/firebird.conf:builds/install/misc/firebird.conf
-                     gen/install/misc/aliases.conf:builds/install/misc/aliases.conf.in
-                     gen/install/misc/fbintl.conf:builds/install/misc/fbintl.conf
-                     gen/install/misc/firebird.xinetd:builds/install/arch-specific/linux/misc/firebird.xinetd.in
-                     gen/install/misc/firebird.init.d.generic:builds/install/arch-specific/linux/misc/firebird.init.d.generic.in
-                     gen/install/misc/firebird.init.d.mandrake:builds/install/arch-specific/linux/misc/firebird.init.d.mandrake.in
-                     gen/install/misc/firebird.init.d.suse:builds/install/arch-specific/linux/misc/firebird.init.d.suse.in
-                     gen/install/misc/firebird.init.d.debian:builds/install/arch-specific/linux/misc/firebird.init.d.debian.in
-                     gen/install/misc/firebird.init.d.gentoo:builds/install/arch-specific/linux/misc/firebird.init.d.gentoo.in
-                     gen/install/misc/firebird.init.d.slackware:builds/install/arch-specific/linux/misc/firebird.init.d.slackware.in
-                     gen/install/misc/rc.config.firebird:builds/install/arch-specific/linux/misc/rc.config.firebird.in
-                     gen/firebird/bin/changeDBAPassword.sh:builds/install/misc/changeDBAPassword.sh.in
-                     gen/firebird/bin/changeGdsLibraryCompatibleLink.sh:builds/install/misc/changeGdsLibraryCompatibleLink.sh.in
-                     gen/firebird/bin/createAliasDB.sh:builds/install/misc/createAliasDB.sh.in
-                     gen/firebird/bin/fb_config:builds/install/misc/fb_config.in
-            	     gen/firebird/bin/changeRunUser.sh:builds/install/misc/changeRunUser.sh.in
-                     gen/firebird/bin/restoreRootRunUser.sh:builds/install/misc/restoreRootRunUser.sh.in
-                     gen/firebird/bin/posixLibrary.sh:builds/install/misc/posixLibrary.sh.in
-                     gen/firebird/bin/classicLibrary.sh:builds/install/misc/classicLibrary.sh.in
-                     gen/firebird/bin/superLibrary.sh:builds/install/misc/superLibrary.sh.in
-                     gen/firebird/bin/linuxLibrary.sh:builds/install/arch-specific/linux/misc/linuxLibrary.sh.in
-                     gen/firebird/bin/superLinux.sh:builds/install/arch-specific/linux/misc/superLinux.sh.in
+                     gen/install/misc/firebird.xinetd:src/install/arch-specific/linux/misc/firebird.xinetd.in
+                     gen/install/misc/firebird.init.d.generic:src/install/arch-specific/linux/misc/firebird.init.d.generic.in
+                     gen/install/misc/firebird.init.d.mandrake:src/install/arch-specific/linux/misc/firebird.init.d.mandrake.in
+                     gen/install/misc/firebird.init.d.suse:src/install/arch-specific/linux/misc/firebird.init.d.suse.in
+                     gen/install/misc/firebird.init.d.debian:src/install/arch-specific/linux/misc/firebird.init.d.debian.in
+                     gen/install/misc/firebird.init.d.gentoo:src/install/arch-specific/linux/misc/firebird.init.d.gentoo.in
+                     gen/install/misc/rc.config.firebird:src/install/arch-specific/linux/misc/rc.config.firebird.in
+                     gen/install/bin/changeDBAPassword.sh:src/install/arch-specific/linux/misc/changeDBAPassword.sh.in
+                     gen/install/bin/changeGdsLibraryCompatibleLink.sh:src/install/arch-specific/linux/misc/changeGdsLibraryCompatibleLink.sh.in
+                     gen/install/bin/createAliasDB.sh:src/install/arch-specific/linux/misc/createAliasDB.sh.in
       ],[chmod a+x gen/install/scripts/*.sh gen/install/*sh 2>/dev/null])
     ;;
 
+  HPUX)
+    HP_INSTALL=src/install/arch-specific/hpux/${FIREBIRD_ARCH_TYPE}
+    HP_INSTALL_MISC=src/install/arch-specific/hpux/misc
+    AC_CONFIG_FILES([
+    gen/install/makeinstallImage.sh:${HP_INSTALL}/makeinstallImage.sh.in
+    gen/install/scripts/preInstall.sh:${HP_INSTALL}/preInstall.sh.in
+    gen/install/scripts/tarInstall.sh:${HP_INSTALL}/tarInstall.sh.in
+    gen/install/scripts/tarmainInstall.sh:${HP_INSTALL}/tarmainInstall.sh.in
+    gen/install/scripts/tarUninstall.sh:${HP_INSTALL}/tarUninstall.sh.in
+    gen/install/scripts/tarmainUninstall.sh:${HP_INSTALL}/tarmainUninstall.sh.in
+    gen/install/scripts/postInstall.sh:${HP_INSTALL}/postInstall.sh.in
+    gen/install/scripts/preUninstall.sh:${HP_INSTALL}/preUninstall.sh.in
+    gen/install/scripts/postUninstall.sh:${HP_INSTALL}/postUninstall.sh.in
+    gen/install/misc/firebird.init.d.hpux:${HP_INSTALL_MISC}/firebird.init.d.hpux.in
+    gen/install/misc/rc.config.firebird.hpux:${HP_INSTALL_MISC}/rc.config.firebird.hpux.in
+    gen/install/bin/changedbaPassword.sh:${HP_INSTALL_MISC}/changedbaPassword.sh.in
+    gen/install/bin/changegdslibrarycompatibleLink.sh:${HP_INSTALL_MISC}/changegdslibrarycompatibleLink.sh.in
+    gen/install/bin/createaliasDB.sh:${HP_INSTALL_MISC}/createaliasDB.sh.in], 
+    [chmod a+x gen/install/scripts/*.sh gen/install/*.sh 2>/dev/null])
+    ;;
 
   FREEBSD)
-    AC_CONFIG_FILES([gen/install/install.sh:builds/install/arch-specific/freebsd/install.sh.in
+    AC_CONFIG_FILES([gen/install/install.sh:src/install/arch-specific/freebsd/install.sh.in
       ],[chmod a+x gen/install/install.sh 2>/dev/null])
     ;;
 
 
-  NETBSD)
-    AC_CONFIG_FILES([gen/install/install.netbsd.sh:builds/install/arch-specific/netbsd/install.sh.in
-      ],[chmod a+x gen/install/install.netbsd.sh 2>/dev/null])
-    ;;
-
-
   SINIX-Z)
-    AC_CONFIG_FILES([gen/install/pkginfo:builds/install/arch-specific/sinixz/pkginfo.in
-                     gen/install/prototype:builds/install/arch-specific/sinixz/prototype.in
-                     gen/install/preinstall:builds/install/arch-specific/sinixz/preinstall.in
-                     gen/install/postinstall:builds/install/arch-specific/sinixz/postinstall.in
-                     gen/install/postremove:builds/install/arch-specific/sinixz/postremove.in
+    AC_CONFIG_FILES([gen/install/pkginfo:src/install/arch-specific/sinixz/pkginfo.in
+                     gen/install/prototype:src/install/arch-specific/sinixz/prototype.in
+                     gen/install/preinstall:src/install/arch-specific/sinixz/preinstall.in
+                     gen/install/postinstall:src/install/arch-specific/sinixz/postinstall.in
+                     gen/install/postremove:src/install/arch-specific/sinixz/postremove.in
       ],[chmod a+x gen/install/pre* gen/install/post* 2>/dev/null])
     ;;
 
   solx86|SOLARIS)
-    AC_CONFIG_FILES([gen/install/Pkginfo:builds/install/arch-specific/solaris/${ARCH_TYPE_SUFFIX}/pkginfo.in
-                     gen/install/Prototype:builds/install/arch-specific/solaris/${ARCH_TYPE_SUFFIX}/prototype.in
-                     gen/install/Preinstall:builds/install/arch-specific/solaris/${ARCH_TYPE_SUFFIX}/preinstall.in
-                     gen/install/Postinstall:builds/install/arch-specific/solaris/${ARCH_TYPE_SUFFIX}/postinstall.in
-                     gen/install/Postremove:builds/install/arch-specific/solaris/${ARCH_TYPE_SUFFIX}/postremove.in
-		     gen/install/prototypelg:builds/install/arch-specific/solaris/libgcc/prototypelg.in
-		     gen/install/pkginfolg:builds/install/arch-specific/solaris/libgcc/pkginfolg.in
+    AC_CONFIG_FILES([gen/install/Pkginfo:src/install/arch-specific/solx86gcc/${ARCH_TYPE_SUFFIX}/pkginfo.in
+                     gen/install/Prototype:src/install/arch-specific/solx86gcc/${ARCH_TYPE_SUFFIX}/prototype.in
+                     gen/install/Preinstall:src/install/arch-specific/solx86gcc/${ARCH_TYPE_SUFFIX}/preinstall.in
+                     gen/install/Postinstall:src/install/arch-specific/solx86gcc/${ARCH_TYPE_SUFFIX}/postinstall.in
+                     gen/install/Postremove:src/install/arch-specific/solx86gcc/${ARCH_TYPE_SUFFIX}/postremove.in
+		     gen/install/prototypelg:src/install/arch-specific/solx86gcc/LIBGCC/prototypelg.in
+		     gen/install/pkginfolg:src/install/arch-specific/solx86gcc/LIBGCC/pkginfolg.in
       ],[chmod a+x gen/install/Pre* gen/install/Post* 2>/dev/null])
     ;;
+  
 
   DARWIN)
-    ;;
+  	;;
 esac
+
 if test -f ${MAKE_SRC_DIR}/postfix.${MAKEFILE_PREFIX};then
 	POSTFIX_FILE=gen/make.platform.postfix:${MAKE_SRC_DIR}/postfix.${MAKEFILE_PREFIX}
 	POSTFIX_INCLUDE='include $(ROOT)/gen/make.platform.postfix'
@@ -1072,14 +939,15 @@ fi
 AC_SUBST(POSTFIX_INCLUDE)
 
 
-AC_CONFIG_FILES(
+AC_OUTPUT(
 gen/make.rules:${MAKE_SRC_DIR}/make.rules
 gen/make.defaults:${MAKE_SRC_DIR}/make.defaults
 gen/make.platform:${MAKE_SRC_DIR}/prefix.${MAKEFILE_PREFIX}
 ${POSTFIX_FILE}
 gen/make.shared.variables:${MAKE_SRC_DIR}/make.shared.variables
 gen/make.shared.targets:${MAKE_SRC_DIR}/make.shared.targets
-gen/Makefile:${MAKE_SRC_DIR}/Makefile.in.firebird
+src/Makefile:${MAKE_SRC_DIR}/Makefile.in.firebird
+gen/Makefile.libfbcommon:${MAKE_SRC_DIR}/Makefile.in.libfbcommon
 gen/Makefile.codes:${MAKE_SRC_DIR}/Makefile.in.codes
 gen/Makefile.boot.gpre:${MAKE_SRC_DIR}/Makefile.in.boot.gpre
 gen/Makefile.libfbstatic:${MAKE_SRC_DIR}/Makefile.in.libfbstatic
@@ -1087,101 +955,81 @@ gen/Makefile.static.gpre:${MAKE_SRC_DIR}/Makefile.in.static.gpre
 gen/Makefile.static.gbak:${MAKE_SRC_DIR}/Makefile.in.static.gbak
 gen/Makefile.static.isql:${MAKE_SRC_DIR}/Makefile.in.static.isql
 gen/Makefile.refDatabases:${MAKE_SRC_DIR}/Makefile.in.refDatabases
+gen/Makefile.libfbserver:${MAKE_SRC_DIR}/Makefile.in.libfbserver
 gen/Makefile.fbserver:${MAKE_SRC_DIR}/Makefile.in.fbserver
 gen/Makefile.libfbclient:${MAKE_SRC_DIR}/Makefile.in.libfbclient
-gen/Makefile.client.fbudf:${MAKE_SRC_DIR}/Makefile.in.client.fbudf
 gen/Makefile.client.gbak:${MAKE_SRC_DIR}/Makefile.in.client.gbak
 gen/Makefile.client.gfix:${MAKE_SRC_DIR}/Makefile.in.client.gfix
 gen/Makefile.client.gdef:${MAKE_SRC_DIR}/Makefile.in.client.gdef
-gen/Makefile.client.qli:${MAKE_SRC_DIR}/Makefile.in.client.qli
 gen/Makefile.client.isql:${MAKE_SRC_DIR}/Makefile.in.client.isql
 gen/Makefile.client.gpre:${MAKE_SRC_DIR}/Makefile.in.client.gpre
+gen/Makefile.client.qli:${MAKE_SRC_DIR}/Makefile.in.client.qli
 gen/Makefile.client.util:${MAKE_SRC_DIR}/Makefile.in.client.util
-gen/Makefile.client.gsec:${MAKE_SRC_DIR}/Makefile.in.client.gsec
 gen/Makefile.intl:${MAKE_SRC_DIR}/Makefile.in.intl
 gen/Makefile.msgs:${MAKE_SRC_DIR}/Makefile.in.msgs
 gen/Makefile.extlib:${MAKE_SRC_DIR}/Makefile.in.extlib
-gen/examples/Makefile.examples:${MAKE_SRC_DIR}/Makefile.in.examples
+gen/Makefile.v5_examples:${MAKE_SRC_DIR}/Makefile.in.v5_examples
 gen/Makefile.libfbembed:${MAKE_SRC_DIR}/Makefile.in.libfbembed
 gen/Makefile.inet_server:${MAKE_SRC_DIR}/Makefile.in.inet_server
 gen/Makefile.embed.lockmgr:${MAKE_SRC_DIR}/Makefile.in.embed.lockmgr
 gen/Makefile.embed.util:${MAKE_SRC_DIR}/Makefile.in.embed.util
-gen/Makefile.embed.fbudf:${MAKE_SRC_DIR}/Makefile.in.embed.fbudf
 gen/Makefile.embed.gfix:${MAKE_SRC_DIR}/Makefile.in.embed.gfix
 gen/Makefile.embed.gbak:${MAKE_SRC_DIR}/Makefile.in.embed.gbak
 gen/Makefile.embed.isql:${MAKE_SRC_DIR}/Makefile.in.embed.isql
 gen/Makefile.embed.gdef:${MAKE_SRC_DIR}/Makefile.in.embed.gdef
 gen/Makefile.embed.qli:${MAKE_SRC_DIR}/Makefile.in.embed.qli
 gen/Makefile.embed.gpre:${MAKE_SRC_DIR}/Makefile.in.embed.gpre
-gen/Makefile.install:builds/install/arch-specific/${INSTALL_PREFIX}/Makefile.in
+src/v5_examples/Makefile:${MAKE_SRC_DIR}/Makefile.in.example5
+gen/Makefile.install:src/install/arch-specific/${INSTALL_PREFIX}/Makefile.in
 Makefile:Makefile.in
+gen/Makefile.extern.editline:${MAKE_SRC_DIR}/Makefile.in.extern.editline
 )
-if test "$STD_EDITLINE" = "false"; then
-  AC_CONFIG_FILES(gen/Makefile.extern.editline:${MAKE_SRC_DIR}/Makefile.in.extern.editline)
-fi
-if test "$STD_ICU" = "false"; then
-  AC_CONFIG_FILES(gen/Makefile.extern.icu:${MAKE_SRC_DIR}/Makefile.in.extern.icu)
-fi
 
-
-
-if test "$PROD_BUILD_FLG" = N; then
-  DEBUG_ICU=--enable-debug
-fi
-
-if test "$STD_ICU" = "true"; then
-AC_OUTPUT
-else
-AC_OUTPUT
-(cd extern/icu/source
-chmod +x runConfigureICU configure install-sh
-./runConfigureICU "$ICU_PLATFORM" "$DEBUG_ICU" --prefix=`pwd`/..)
-fi
 
 dnl Print out the build configuration (the most interesting thing)
 echo
-echo                           
+echo
 echo The Firebird2 package has been configured with the following options:
 echo
 
 case $FIREBIRD_ARCH_TYPE in
- super)   echo "                   Architecture : SuperServer";;
- classic) echo "                   Architecture : ClassicServer";;
+ super)   echo "Architecture : SuperServer";;
+ classic) echo "Architecture : ClassicServer";;
 esac
 
 case $PROD_BUILD_FLG in
- Y)       echo "                          Debug : disabled";;
- N)       echo "                          Debug : enabled";;
+ Y)       echo "       Debug : disabled";;
+ N)       echo "       Debug : enabled";;
 esac
 
 case $ac_cv_sys_file_offset_bits in
- no)      echo "64 bit I/O for 32-bit platforms : disabled";;
- 64)      echo "64 bit I/O for 32-bit platforms : enabled";;
+ no)      echo "  64 bit I/O : disabled";;
+ 64)      echo "  64 bit I/O : enabled";;
 esac
 
 case $RAW_DEVICES_FLG in
- Y)       echo "                    Raw devices : enabled";;
- N)       echo "                    Raw devices : disabled";;
+ Y)       echo " Raw devices : enabled";;
+ N)       echo " Raw devices : disabled";;
 esac
 
 if test "$FIREBIRD_ARCH_TYPE" = "classic"; then
   case $LOCK_MANAGER_FLG in
-   Y)     echo "                   Lock manager : enabled";;
-   N)     echo "                   Lock manager : disabled";;
+   Y)     echo "Lock manager : enabled";;
+   N)     echo "Lock manager : disabled";;
   esac
 fi
 
-echo           "                   Service name : $FB_SERVICE_NAME"
-echo           "                   Service port : $FB_SERVICE_PORT"
+echo           "Service name : $FB_SERVICE_NAME"
+echo           "Service port : $FB_SERVICE_PORT"
 
 case "$PLATFORM" in
- win32)   echo "                      Pipe name : $FB_PIPE_NAME";;
+ win32)   echo "   Pipe name : $FB_PIPE_NAME";;
 esac
 
-echo           "                   GPRE modules : c_cxx.cpp$GPRE_LANGUAGE_MODULES"
+echo           "GPRE modules : c_cxx.cpp$GPRE_LANGUAGE_MODULES"
 echo
 
-echo           "                    Install Dir : $prefix"
+echo           " Install Dir : $prefix"
 echo
 
 dnl EOF

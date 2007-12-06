@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	Dynamic SQL runtime support
  *	MODULE:		utld_proto.h
- *	DESCRIPTION:	Prototype Header file for utld.cpp
+ *	DESCRIPTION:	Prototype Header file for utld.c
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -24,46 +24,22 @@
  *
  */
 
-#ifndef DSQL_UTLD_PROTO_H
-#define DSQL_UTLD_PROTO_H
+#ifndef _DSQL_UTLD_PROTO_H_
+#define _DSQL_UTLD_PROTO_H_
 
-#if !defined(REQUESTER) && !defined(SUPERCLIENT)
-#include "../jrd/DataTypeUtil.h"
+#ifdef __cplusplus
+extern "C" {
 #endif
 
-struct sqlda_sup;
+extern ISC_STATUS DLL_EXPORT UTLD_parse_sql_info(ISC_STATUS *, USHORT, SCHAR *,
+											 XSQLDA *, USHORT *);
+extern ISC_STATUS DLL_EXPORT UTLD_parse_sqlda(ISC_STATUS *, struct dasup *, USHORT *,
+										  USHORT *, USHORT *, USHORT,
+										  XSQLDA *, USHORT);
+extern void DLL_EXPORT UTLD_save_status_strings(ISC_STATUS *);
 
-USHORT		UTLD_char_length_to_byte_length(USHORT lengthInChars, USHORT maxBytesPerChar);
-ISC_STATUS	UTLD_copy_status(const ISC_STATUS*, ISC_STATUS*);
-ISC_STATUS	UTLD_parse_sql_info(ISC_STATUS*, USHORT, const SCHAR*, XSQLDA*, USHORT*);
-ISC_STATUS	UTLD_parse_sqlda(ISC_STATUS*, sqlda_sup* const, USHORT*, USHORT*,
-	USHORT*, USHORT, XSQLDA*, const USHORT);
-void		UTLD_save_status_strings(ISC_STATUS*);
-SCHAR*		UTLD_skip_sql_info(SCHAR*);
-
-
-#if !defined(REQUESTER) && !defined(SUPERCLIENT)
-
-class dsql_req;
-
-class DSqlDataTypeUtil : public DataTypeUtilBase
-{
-public:
-	DSqlDataTypeUtil(dsql_req* req)
-		: request(req)
-	{
-	}
-
-public:
-	virtual UCHAR maxBytesPerChar(UCHAR charSet);
-	virtual USHORT getDialect() const;
-
-private:
-	dsql_req* request;
-};
-
+#ifdef __cplusplus
+} /* extern "C" */
 #endif
 
-
-#endif //  DSQL_UTLD_PROTO_H
-
+#endif /*  _DSQL_UTLD_PROTO_H_  */

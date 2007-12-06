@@ -22,7 +22,7 @@
 #ifndef AUTOCONFIG_H
 #define AUTOCONFIG_H
 
-//#pragma warning(disable:4099)	// class/struct mixups
+#pragma warning(disable:4099)	// class/struct mixups
 #pragma warning(disable:4251)	// needs to have dll-interface
 #pragma warning(disable:4291)	// no matching op. delete (there are)
 #pragma warning(disable:4355)	// 'this' used in base member initializer list
@@ -34,7 +34,7 @@
 #pragma warning(disable:4018)  // signed/unsigned mismatch
 #pragma warning(disable:4100)  // unreferenced formal parameter
 #pragma warning(disable:4127)  // conditional expression is constant
-//#pragma warning(disable:4131)  // uses old-style declarator
+#pragma warning(disable:4131)  // uses old-style declarator
 #pragma warning(disable:4146)  // unary minus operator applied to unsigned type, result still unsigned
 #pragma warning(disable:4189)  // local variable is initialized but not referenced
 #pragma warning(disable:4211)  // nonstandard extension used : redefined extern to static
@@ -61,10 +61,13 @@
 
 #pragma warning(disable:4097)  // typedef-name '......' used as synonym for class-name '.....'
 
-// New MSVC8 warnings
+#ifndef _X86_
+#define _X86_
+#endif
 
-#pragma warning(disable:4996)  // 'identificator' was declared deprecated
-
+#ifdef DEV_BUILD
+#define DEBUG_GDS_ALLOC
+#endif
 
 #define WIN32_LEAN_AND_MEAN		// Exclude rarely-used stuff from Windows headers
 
@@ -89,14 +92,11 @@
 #define HAVE_SYS_TIMEB_H
 #undef HAVE_SYS_PARAM_H
 #undef HAVE_SYS_IOCTL_H
-#define HAVE_LIMITS_H
 #define HAVE_SETJMP_H
 #define HAVE_STDARG_H
 #define HAVE_STDLIB_H
 #define HAVE_STRING_H
 #define HAVE_SIGNAL_H
-#undef HAVE_SYS_SIGNAL_H
-#undef HAVE_SYS_SIGINFO_H
 #undef HAVE_EDITLINE_H
 #undef HAVE_TERMIO_H
 #undef HAVE_TERMIOS_H
@@ -126,19 +126,17 @@
 
 
 /* Functions */
+#undef HAVE_STRLCPY
+#undef HAVE_STRLCAT
 #undef HAVE_GETTIMEOFDAY
 #undef HAVE_TIME
 #undef HAVE_TIMES
 #undef HAVE_STRCASECMP
 #define HAVE_STRICMP
-#undef HAVE_STRNCASECMP
-#define HAVE_STRNICMP
 #define HAVE_DIRNAME
 #undef HAVE_SIGACTION
 #undef HAVE_SETITIMER
 #define HAVE_SNPRINTF
-#define vsnprintf _vsnprintf
-#define HAVE_VSNPRINTF
 #define HAVE_SWAB
 #define HAVE__SWAB
 #undef HAVE_MMAP
@@ -162,14 +160,10 @@
 #undef HAVE_TCGETATTR
 #define HAVE_STRDUP
 #undef HAVE_MKSTEMP
-#undef HAVE_LLRINT
-#undef HAVE_LOCALTIME_R
-#undef HAVE_GMTIME_R
 
 
 /* Types */
 #undef HAVE_SOCKLEN_T
-#undef HAVE_INFINITY
 
 /* gettimeofday accepts second (timezone) argument */
 #undef GETTIMEOFDAY_RETURNS_TIMEZONE
@@ -178,33 +172,22 @@
 #undef _FILE_OFFSET_BITS
 #undef _LARGE_FILES
 
-/* target architecture */
-#if defined(_M_IX86)
-/* sizeof(void *) */
+/* sizeof(void *) = 8 ==> HAS_64BIT_POINTERS */
 #define SIZEOF_VOID_P 4
-/* alignment of long */
-#define ALIGNMENT 4
-#elif defined(_M_AMD64)
-#define AMD64
-/* sizeof(void *) */
-#define SIZEOF_VOID_P 8
-/* alignment of long */
-#define ALIGNMENT 8
-#else
-#error unknown target platform
-#endif
-
-/* sizeof(long) */
 #define SIZEOF_LONG 4
-
-/* alignment of double */
-#define DOUBLE_ALIGN 8
 
 /* Is union semun defined? */
 #undef HAVE_SEMUN
 
 /* Is struct xdr_ops defined? */
 #undef HAVE_STRUCT_XDR_OPS
+
+/* alignment of long */
+#define ALIGNMENT 4
+#define FB_ALIGNMENT 4
+
+/* alignment of double */
+#define DOUBLE_ALIGN 8
 
 /* Functions */
 #define snprintf _snprintf
@@ -224,9 +207,6 @@
 /* Support databases on Raw Devices (UNIX only) */
 #undef SUPPORT_RAW_DEVICES
 
-/* Support for ISO syntax for thread-local data */
-#undef HAVE___THREAD
-
 /* Inet service name and port */
 #define FB_SERVICE_NAME "gds_db"
 #define FB_SERVICE_PORT 3050
@@ -234,14 +214,11 @@
 /* Wnet pipe name */
 #define FB_PIPE_NAME "interbas"
 
-/* Xnet objects name */
-#define FB_IPC_NAME "FIREBIRD"
+/* IPC map name */
+#define FB_IPC_NAME "FirebirdIPI"
 
 /* Maximum allowed pathname length */
 #define MAXPATHLEN 260 // should correspond to MAX_PATH define in windef.h
-
-/* Windows platforms support threads */
-#define HAVE_MULTI_THREAD 1
 
 /* CPU types */
 #undef PowerPC
@@ -257,7 +234,7 @@
 #undef NETBSD
 #undef sun
 #undef SOLARIS
-#undef HPUX
+#undef hpux
 #undef VMS
 #undef AIX
 #define WIN_NT
@@ -265,9 +242,5 @@
 #undef SINIXZ
 
 #define FB_PREFIX "c:\\Program Files\\Firebird\\"
-
-#ifndef HAVE_SOCKLEN_T
-typedef int socklen_t;
-#endif
 
 #endif

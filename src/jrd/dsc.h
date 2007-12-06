@@ -21,58 +21,23 @@
  * Contributor(s): ______________________________________.
  * 2002.04.16  Paul Beach - HP10 Define changed from -4 to (-4) to make it
  *             compatible with the HP Compiler
- * Adriano dos Santos Fernandes
  */
 
 #ifndef JRD_DSC_H
 #define JRD_DSC_H
 
-#include "../jrd/dsc_pub.h"
-#include "consts_pub.h"
-#include "../jrd/ods.h"
-#include "../intl/charsets.h"
-
-/* Data type information */
-
-inline bool DTYPE_IS_TEXT(UCHAR d) {
-	return ((d >= dtype_text) && (d <= dtype_varying));
-}
-
-inline bool DTYPE_IS_DATE(UCHAR t) {
-	return ((t >= dtype_sql_date) && (t <= dtype_timestamp));
-}
-
-/* DTYPE_IS_BLOB includes both BLOB and ARRAY since array's are implemented over blobs. */
-inline bool DTYPE_IS_BLOB(UCHAR d) {
-	return ((d == dtype_blob) || (d == dtype_array));
-}
-
-/* DTYPE_IS_BLOB_OR_QUAD includes both BLOB, QUAD and ARRAY since array's are implemented over blobs. */
-inline bool DTYPE_IS_BLOB_OR_QUAD(UCHAR d) {
-	return ((d == dtype_blob) || (d == dtype_quad) || (d == dtype_array));
-}
-
-/* Exact numeric? */
-inline bool DTYPE_IS_EXACT(UCHAR d) {
-	return ((d == dtype_int64) || (d == dtype_long) || (d == dtype_short));
-}
-
-#ifdef VMS
-inline bool DTYPE_IS_APPROX(UCHAR d) {
-	return ((d == dtype_double) || (d == dtype_real) || (d == dtype_d_float));
-}
-#else
-inline bool DTYPE_IS_APPROX(UCHAR d) {
-	return ((d == dtype_double) || (d == dtype_real));
-}
+#ifdef __cplusplus
+extern "C" {
 #endif
 
 
-inline bool DTYPE_IS_NUMERIC(UCHAR d) {
-	return (((d >= dtype_byte) && (d <= dtype_d_float)) || (d  == dtype_int64));
-}
-
 /* Descriptor format */
+
+/* WARNING !
+   This run-time structure is stored in RDB$FORMATS.RDB$DESCRIPTORS.
+   Any modification to this structure is tantamount to an ODS change.
+   See MET_format() and make_format() in MET.E for enlightenment.
+*/
 
 typedef struct dsc
 {
@@ -90,238 +55,28 @@ typedef struct dsc
 	USHORT	dsc_length;
 	SSHORT	dsc_sub_type;
 	USHORT	dsc_flags;
-	UCHAR*	dsc_address; // Used either as offset in a message or as a pointer
-
-#ifdef __cplusplus
-	SSHORT dsc_blob_ttype() const { return dsc_scale | (dsc_flags & 0xFF00);}
-	SSHORT& dsc_ttype() { return dsc_sub_type;}
-	SSHORT dsc_ttype() const { return dsc_sub_type;}
-
-	bool isNullable() const
-	{
-		return dsc_flags & DSC_nullable;
-	}
-
-	void setNullable(bool nullable)
-	{
-		if (nullable)
-			dsc_flags |= DSC_nullable;
-		else
-			dsc_flags &= ~(DSC_nullable | DSC_null);
-	}
-
-	bool isNull() const
-	{
-		return dsc_flags & DSC_null;
-	}
-
-	void setNull()
-	{
-		dsc_flags |= DSC_null | DSC_nullable;
-	}
-
-	bool isBlob() const
-	{
-		return dsc_dtype == dtype_blob || dsc_dtype == dtype_quad;
-	}
-
-	bool isExact() const
-	{
-		return ((dsc_dtype == dtype_int64) || (dsc_dtype == dtype_long) || (dsc_dtype == dtype_short));
-	}
-
-	bool isText() const
-	{
-		return (dsc_dtype >= dtype_text) && (dsc_dtype <= dtype_varying);
-	}
-
-	bool isUnknown() const
-	{
-		return dsc_dtype == dtype_unknown;
-	}
-
-	SSHORT getBlobSubType() const
-	{
-		if (isBlob())
-			return dsc_sub_type;
-		else
-			return isc_blob_text;
-	}
-
-	void setBlobSubType(SSHORT subType)
-	{
-		if (isBlob())
-			dsc_sub_type = subType;
-	}
-
-	UCHAR getCharSet() const
-	{
-		if (isText())
-			return dsc_sub_type & 0xFF;
-		else if (isBlob())
-		{
-			if (dsc_sub_type == isc_blob_text)
-				return dsc_scale;
-			else
-				return CS_BINARY;
-		}
-		else
-			return CS_ASCII;
-	}
-
-	USHORT getTextType() const
-	{
-		if (isText())
-			return dsc_sub_type;
-		else if (isBlob())
-		{
-			if (dsc_sub_type == isc_blob_text)
-				return dsc_scale | (dsc_flags & 0xFF00);
-			else
-				return CS_BINARY;
-		}
-		else
-			return CS_ASCII;
-	}
-
-	void setTextType(USHORT ttype)
-	{
-		if (isText())
-			dsc_sub_type = ttype;
-		else if (isBlob() && dsc_sub_type == isc_blob_text)
-		{
-			dsc_scale = ttype & 0xFF;
-			dsc_flags = (dsc_flags & 0xFF) | (ttype & 0xFF00);
-		}
-	}
-
-	void clear()
-	{
-		memset(this, 0, sizeof(*this));
-	}
-
-	void makeBlob(SSHORT subType, USHORT ttype, ISC_QUAD* address = NULL)
-	{
-		clear();
-		dsc_dtype = dtype_blob;
-		dsc_length = sizeof(ISC_QUAD);
-		setBlobSubType(subType);
-		setTextType(ttype);
-		dsc_address = (UCHAR*) address;
-	}
-
-	void makeDouble(double* address = NULL)
-	{
-		clear();
-		dsc_dtype = dtype_double;
-		dsc_length = sizeof(double);
-		dsc_address = (UCHAR*) address;
-	}
-
-	void makeInt64(SCHAR scale, SINT64* address = NULL)
-	{
-		clear();
-		dsc_dtype = dtype_int64;
-		dsc_length = sizeof(SINT64);
-		dsc_scale = scale;
-		dsc_address = (UCHAR*) address;
-	}
-
-	void makeLong(SCHAR scale, SLONG* address = NULL)
-	{
-		clear();
-		dsc_dtype = dtype_long;
-		dsc_length = sizeof(SLONG);
-		dsc_scale = scale;
-		dsc_address = (UCHAR*) address;
-	}
-
-	void makeNullString()
-	{
-		clear();
-
-		// VARCHAR(1) CHARACTER SET NONE
-		dsc_dtype = dtype_varying;
-		setTextType(CS_NONE);
-		dsc_length = sizeof(USHORT) + 1;
-		dsc_flags = DSC_nullable | DSC_null;
-	}
-
-	void makeShort(SCHAR scale, SSHORT* address = NULL)
-	{
-		clear();
-		dsc_dtype = dtype_short;
-		dsc_length = sizeof(SSHORT);
-		dsc_scale = scale;
-		dsc_address = (UCHAR*) address;
-	}
-
-	void makeText(USHORT length, USHORT ttype, UCHAR* address = NULL)
-	{
-		clear();
-		dsc_dtype = dtype_text;
-		dsc_length = length;
-		setTextType(ttype);
-		dsc_address = address;
-	}
-
-	void makeTimestamp(GDS_TIMESTAMP* address = NULL)
-	{
-		clear();
-		dsc_dtype = dtype_timestamp;
-		dsc_length = sizeof(GDS_TIMESTAMP);
-		dsc_scale = 0;
-		dsc_address = (UCHAR*) address;
-	}
-
-	void makeVarying(USHORT length, USHORT ttype, UCHAR* address = NULL)
-	{
-		clear();
-		dsc_dtype = dtype_varying;
-		dsc_length = sizeof(USHORT) + length;
-		setTextType(ttype);
-		dsc_address = address;
-	}
-
-	int getStringLength() const;
-#endif
-
-// this functions were added to have interoperability
-// between Ods::Descriptor and struct dsc
-	dsc(const Ods::Descriptor& od)
-	:	dsc_dtype(od.dsc_dtype),
-		dsc_scale(od.dsc_scale),
-		dsc_length(od.dsc_length),
-		dsc_sub_type(od.dsc_sub_type),
-		dsc_flags(od.dsc_flags),
-		dsc_address((UCHAR*)(IPTR)(od.dsc_offset))
-	{}
-	operator Ods::Descriptor() const {
-#ifdef DEV_BUILD
-		address32bit();
-#endif
-		Ods::Descriptor d;
-		d.dsc_dtype = dsc_dtype;
-		d.dsc_scale = dsc_scale;
-		d.dsc_length = dsc_length;
-		d.dsc_sub_type = dsc_sub_type;
-		d.dsc_flags = dsc_flags;
-		d.dsc_offset = (ULONG)(IPTR)dsc_address;
-		return d;
-	}
-#ifdef DEV_BUILD
-	void address32bit() const;
-#endif
-	    
+	UCHAR*	dsc_address;
 } DSC;
 
-inline SSHORT DSC_GET_CHARSET(const dsc* desc) {
-	return (desc->dsc_sub_type & 0x00FF);
-}
+/* values for dsc_flags */
+/* Note: DSC_null is only reliably set for local variables
+   (blr_variable) */
+#define DSC_null		1
+#define DSC_no_subtype		2	/* dsc has no sub type specified */
+#define DSC_nullable  		4	/* not stored. instead, is derived
+								   from metadata primarily to flag
+								   SQLDA (in DSQL)               */
 
-inline SSHORT DSC_GET_COLLATE(const dsc* desc) {
-	return (desc->dsc_sub_type >> 8);
-}
+/* Overload text typing information into the dsc_sub_type field.
+   See intl.h for definitions of text types */
+
+#ifndef dsc_ttype
+#define dsc_ttype	dsc_sub_type
+#endif
+
+#define DSC_GET_CHARSET(dsc)	(((dsc)->dsc_ttype) & 0x00FF)
+#define DSC_GET_COLLATE(dsc)	(((dsc)->dsc_ttype) >> 8)
+
 
 typedef struct alt_dsc {
 	SLONG dsc_combined_type;
@@ -329,65 +84,118 @@ typedef struct alt_dsc {
 	USHORT dsc_flags;			/* Not currently used */
 } ALT_DSC;
 
-inline bool DSC_EQUIV(const dsc* d1, const dsc* d2, bool check_collate)
-{
-	if (((ALT_DSC*) d1)->dsc_combined_type == ((ALT_DSC*) d2)->dsc_combined_type)
-	{
-		if (d1->dsc_dtype >= dtype_text && d1->dsc_dtype <= dtype_varying) {
-			if (DSC_GET_CHARSET(d1) == DSC_GET_CHARSET(d2)) {
-				if (check_collate) {
-					return (DSC_GET_COLLATE(d1) == DSC_GET_COLLATE(d2));
-				}
-				return true;
-			}
-			return false;
-		}
-		return true;
-	}
-	return false;
-}
+
+
+#define DSC_EQUIV(d1,d2) ((((ALT_DSC*) d1)->dsc_combined_type == ((ALT_DSC*) d2)->dsc_combined_type) && \
+			  ((DSC_GET_CHARSET (d1) == DSC_GET_CHARSET (d2)) || d1->dsc_dtype > dtype_any_text))
+
+
+
+/* Data types */
+
+/* WARNING: if you add another manifest constant to this group, then you
+ * must add another entry to the array compare_priority in jrd/cvt2.c.
+ */
+
+/* Note that dtype_null actually means that we do not yet know the
+   dtype for this descriptor.  A nice cleanup item would be to globally
+   change it to dtype_unknown.  --chrisj 1999-02-17 */
+
+#define dtype_null	0
+#define dtype_text	1
+#define dtype_cstring	2
+#define dtype_varying	3
+
+#define dtype_packed	6
+#define dtype_byte	7
+#define dtype_short	8
+#define dtype_long	9
+#define dtype_quad	10
+#define dtype_real	11
+#define dtype_double	12
+#define dtype_d_float	13
+#define dtype_sql_date	14
+#define dtype_sql_time	15
+#define dtype_timestamp	16
+#define dtype_blob	17
+#define dtype_array	18
+#define dtype_int64     19
+
+#define DTYPE_TYPE_MAX	20
 
 /* In DSC_*_result tables, DTYPE_CANNOT means that the two operands
    cannot participate together in the requested operation. */
 
-const UCHAR DTYPE_CANNOT	= 127;
+#define DTYPE_CANNOT   127
 
 /* Historical alias definition */
-const UCHAR dtype_date		= dtype_timestamp;
+#define dtype_date	dtype_timestamp
 
-const UCHAR dtype_aligned	= dtype_varying;
-const UCHAR dtype_any_text	= dtype_varying;
-const UCHAR dtype_min_comp	= dtype_packed;
-const UCHAR dtype_max_comp	= dtype_d_float;
+#define dtype_aligned	dtype_varying
+#define dtype_any_text	dtype_varying
+#define dtype_min_comp	dtype_packed
+#define dtype_max_comp	dtype_d_float
 
 /* NOTE: For types <= dtype_any_text the dsc_sub_type field defines
    the text type */
 
-inline USHORT TEXT_LEN(const dsc* desc) {
-	return ((desc->dsc_dtype == dtype_text) ? desc->dsc_length 
-		: (desc->dsc_dtype == dtype_cstring) ? desc->dsc_length - 1 : desc->dsc_length - sizeof(USHORT));
-}
+#define TEXT_LEN(d)   ((d->dsc_dtype == dtype_text) ? d->dsc_length : (d->dsc_dtype == dtype_cstring) ? d->dsc_length - 1 : d->dsc_length - sizeof(USHORT))
 
 
 /* Text Sub types, distinct from character sets & collations */
 
-const SSHORT dsc_text_type_none		= 0;	/* Normal text */
-const SSHORT dsc_text_type_fixed	= 1;	/* strings can contain null bytes */
-const SSHORT dsc_text_type_ascii	= 2;	/* string contains only ASCII characters */
-const SSHORT dsc_text_type_metadata	= 3;	/* string represents system metadata */
+#define dsc_text_type_none	0	/* Normal text */
+#define	dsc_text_type_fixed	1	/* strings can contain null bytes */
+#define dsc_text_type_metadata	3	/* string represents system metadata */
 
 
 /* Exact numeric subtypes: with ODS >= 10, these apply when dtype
    is short, long, or quad. */
 
-const SSHORT dsc_num_type_none		= 0;	/* defined as SMALLINT or INTEGER */
-const SSHORT dsc_num_type_numeric	= 1;	/* defined as NUMERIC(n,m)        */
-const SSHORT dsc_num_type_decimal	= 2;	/* defined as DECIMAL(n,m)        */
+#define dsc_num_type_none       0	/* defined as SMALLINT or INTEGER */
+#define dsc_num_type_numeric    1	/* defined as NUMERIC(n,m)        */
+#define dsc_num_type_decimal    2	/* defined as DECIMAL(n,m)        */
+
 
 /* Date type information */
 
-inline SCHAR NUMERIC_SCALE(const dsc desc) {
-	return ((DTYPE_IS_TEXT(desc.dsc_dtype)) ? 0 : desc.dsc_scale);
-}
+#define DTYPE_IS_TEXT(d)	(((d) >= dtype_text) && ((d) <= dtype_varying))
+#define DTYPE_IS_DATE(t)	(((t) >= dtype_sql_date) && ((t) <= dtype_timestamp))
+
+/* DTYPE_IS_BLOB includes both BLOB and ARRAY since array's are implemented over blobs. */
+#define DTYPE_IS_BLOB(d)        (((d) == dtype_blob) || ((d) == dtype_array))
+
+/* Exact numeric? */
+
+#define DTYPE_IS_EXACT(d)       (((d) == dtype_int64) || \
+				 ((d) == dtype_long)  || \
+				 ((d) == dtype_short))
+
+#ifdef VMS
+#define DTYPE_IS_APPROX(d)       (((d) == dtype_double) || \
+				 ((d) == dtype_real)  || \
+				 ((d) == dtype_d_float))
+#else
+#define DTYPE_IS_APPROX(d)       (((d) == dtype_double) || \
+				  ((d) == dtype_real))
+#endif
+
+#define DTYPE_IS_NUMERIC(d)	((((d) >= dtype_byte) && \
+				  ((d) <= dtype_d_float)) || \
+				 ((d)  == dtype_int64))
+
+/* Macros defining what operations are legal on data types */
+#define DTYPE_CAN_NEGATE(d)	DTYPE_IS_NUMERIC(d)
+#define DTYPE_CAN_AVERAGE(d)	DTYPE_IS_NUMERIC(d)
+#define DTYPE_CAN_DIVIDE(d)	DTYPE_IS_NUMERIC(d)
+#define DTYPE_CAN_MULTIPLY(d)	DTYPE_IS_NUMERIC(d)
+
+
+#define ISC_TIME_SECONDS_PRECISION		10000L
+#define ISC_TIME_SECONDS_PRECISION_SCALE	(-4)
+
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif /* JRD_DSC_H */

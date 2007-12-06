@@ -23,11 +23,10 @@
 				AdditionalOptions="/EHsc-"
 				Optimization="0"
 				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
-				PreprocessorDefinitions="_DEBUG;DEV_BUILD;_WINDOWS;_USRDLL;CLIENT;SUPERCLIENT;GOVERNOR;WIN32;_X86_"
+				PreprocessorDefinitions="_DEBUG;DEV_BUILD;_WINDOWS;_USRDLL;CLIENT;SUPERCLIENT;SERVER_SHUTDOWN;IPSERV;GOVERNOR;EXACT_NUMERICS;WIN32;_X86_"
 				ExceptionHandling="FALSE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				RuntimeTypeInfo="FALSE"
 				PrecompiledHeaderFile="..\..\..\temp\debug\fbclient/fbclient.pch"
 				AssemblerListingLocation="..\..\..\temp\debug\fbclient/"
 				ObjectFile="..\..\..\temp\debug\fbclient/"
@@ -43,20 +42,20 @@
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
 				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
-				OutputFile="..\..\..\temp\debug\firebird\bin\fbclient.dll"
+				OutputFile="debug/firebird/bin/fbclient.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
-				ModuleDefinitionFile="..\defs\fbclient.def"
+				ModuleDefinitionFile="..\defs\fbclient_debug.def"
 				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile="..\..\..\temp\debug\fbclient\fbclient.pdb"
-				ImportLibrary="..\..\..\temp\debug\fbclient\fbclient.lib"/>
+				ProgramDatabaseFile="..\..\..\temp\debug\fbclient/fbclient.pdb"
+				ImportLibrary="..\..\..\temp\debug\fbclient/fbclient.lib"/>
 			<Tool
 				Name="VCMIDLTool"
 				PreprocessorDefinitions="_DEBUG"
 				MkTypLibCompatible="TRUE"
 				SuppressStartupBanner="TRUE"
 				TargetEnvironment="1"
-				TypeLibraryName="..\..\..\temp\debug\fbclient\fbclient.tlb"/>
+				TypeLibraryName="..\..\..\temp\debug\fbclient/fbclient.tlb"/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool
@@ -97,11 +96,10 @@
 				FavorSizeOrSpeed="1"
 				OmitFramePointers="TRUE"
 				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
-				PreprocessorDefinitions="NDEBUG;_WINDOWS;_USRDLL;CLIENT;SUPERCLIENT;GOVERNOR;I386;_X86_=1;WIN32;_X86_"
+				PreprocessorDefinitions="NDEBUG;_WINDOWS;_USRDLL;CLIENT;SUPERCLIENT;SERVER_SHUTDOWN;IPSERV;GOVERNOR;EXACT_NUMERICS;I386;_X86_=1;WIN32;_X86_"
 				ExceptionHandling="FALSE"
 				RuntimeLibrary="2"
-				RuntimeTypeInfo="FALSE"
-				PrecompiledHeaderFile="..\..\..\temp\release\fbclient\fbclient.pch"
+				PrecompiledHeaderFile="..\..\..\temp\release\fbclient/fbclient.pch"
 				AssemblerListingLocation="..\..\..\temp\release\fbclient/"
 				ObjectFile="..\..\..\temp\release\fbclient/"
 				ProgramDataBaseFileName="..\..\..\temp\release\fbclient/"
@@ -116,19 +114,20 @@
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
 				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
-				OutputFile="..\..\..\temp\release\firebird\bin\fbclient.dll"
+				OutputFile="release/firebird/bin/fbclient.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				ModuleDefinitionFile="..\defs\fbclient.def"
 				GenerateDebugInformation="TRUE"
-				ImportLibrary="..\..\..\temp\release\fbclient\fbclient.lib"/>
+				ProgramDatabaseFile="..\..\..\temp\release\fbclient/fbclient.pdb"
+				ImportLibrary="..\..\..\temp\release\fbclient/fbclient.lib"/>
 			<Tool
 				Name="VCMIDLTool"
 				PreprocessorDefinitions="_DEBUG"
 				MkTypLibCompatible="TRUE"
 				SuppressStartupBanner="TRUE"
 				TargetEnvironment="1"
-				TypeLibraryName="..\..\..\temp\release\fbclient\fbclient.tlb"/>
+				TypeLibraryName="..\..\..\temp\release\fbclient/fbclient.tlb"/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool
@@ -158,9 +157,6 @@
 			Name="COMMON files"
 			Filter="">
 			<File
-				RelativePath="..\..\..\src\common\classes\alloc.cpp">
-			</File>
-			<File
 				RelativePath="..\..\..\src\common\config\config_file.cpp">
 			</File>
 			<File
@@ -177,6 +173,12 @@
 				RelativePath="..\..\..\src\jrd\cvt.cpp">
 			</File>
 			<File
+				RelativePath="..\..\..\src\jrd\db_alias.cpp">
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\dls.cpp">
+			</File>
+			<File
 				RelativePath="..\..\..\src\jrd\dsc.cpp">
 			</File>
 			<File
@@ -186,7 +188,10 @@
 				RelativePath="..\..\..\src\jrd\gds.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\os\win32\ibinitdll.cpp">
+				RelativePath="..\..\..\src\jrd\ibinitdll.cpp">
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\init.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\isc.cpp">
@@ -195,7 +200,7 @@
 				RelativePath="..\..\..\src\jrd\isc_file.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\os\win32\isc_ipc.cpp">
+				RelativePath="..\..\..\src\jrd\isc_ipc.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\isc_sync.cpp">
@@ -214,9 +219,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\thd.cpp">
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\ThreadData.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\utl.cpp">
@@ -248,6 +250,19 @@
 			</File>
 		</Filter>
 		<Filter
+			Name="IPSERVER files"
+			Filter="">
+			<File
+				RelativePath="..\..\..\src\ipserver\alli.cpp">
+			</File>
+			<File
+				RelativePath="..\..\..\src\ipserver\ipcevent.cpp">
+			</File>
+			<File
+				RelativePath="..\..\..\src\ipserver\ipclient.cpp">
+			</File>
+		</Filter>
+		<Filter
 			Name="REMOTE files"
 			Filter="">
 			<File
@@ -272,7 +287,7 @@
 				RelativePath="..\..\..\src\remote\remote.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\src\remote\os\win32\wnet.cpp">
+				RelativePath="..\..\..\src\remote\wnet.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\src\remote\xdr.cpp">
@@ -285,23 +300,26 @@
 			Name="UTILITIES files"
 			Filter="">
 			<File
-				RelativePath="..\..\..\src\utilities\gsec\call_service.cpp">
+				RelativePath="..\..\..\src\jrd\init.h">
+			</File>
+			<File
+				RelativePath="..\..\..\gen\utilities\security.cpp">
 			</File>
 		</Filter>
 		<Filter
 			Name="Header files"
 			Filter="h;hpp;hxx;hm;inl">
 			<File
-				RelativePath="..\..\..\src\utilities\gsec\call_service.h">
-			</File>
-			<File
 				RelativePath="..\..\..\src\jrd\cvt_proto.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\dsc.h">
+				RelativePath="..\..\..\src\jrd\db_alias.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\dsc_pub.h">
+				RelativePath="..\..\..\src\jrd\dls_proto.h">
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\dsc.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\enc_proto.h">
@@ -314,6 +332,9 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\flu_proto.h">
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\gds.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\gds_proto.h">
@@ -371,17 +392,11 @@
 				</FileConfiguration>
 			</File>
 		</Filter>
-		<Filter
-			Name="AuthSspi">
-			<File
-				RelativePath="..\..\..\src\auth\trusted\AuthSspi.cpp">
-			</File>
-			<File
-				RelativePath="..\..\..\src\auth\trusted\AuthSspi.h">
-			</File>
-		</Filter>
 		<File
 			RelativePath="..\defs\fbclient.def">
+		</File>
+		<File
+			RelativePath="..\defs\fbclient_debug.def">
 		</File>
 	</Files>
 	<Globals>

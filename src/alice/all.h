@@ -21,28 +21,40 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef ALICE_ALL_H
-#define ALICE_ALL_H
+#ifndef _ALICE_ALL_H_
+#define _ALICE_ALL_H_
 
-#include "../common/classes/auto.h"
-#include "../common/classes/alloc.h"
+#include "../jrd/block_cache.h"
+#include "../alice/lls.h"
+
+void		ALLA_init();				/* initialize pool system */
+void		ALLA_fini();				/* get rid of everything */
 
 class AliceMemoryPool : public MemoryPool
 {
 protected:
 	// Dummy constructor and destructor. Should never be called
-	AliceMemoryPool() : MemoryPool(NULL, *default_stats_group, NULL, NULL) {}
+	AliceMemoryPool() : MemoryPool(NULL, NULL), lls_cache(*this) {}
 	~AliceMemoryPool() {}	
 public:
-	static AliceMemoryPool* createPool();
-	static void deletePool(AliceMemoryPool* pool);
-	static void clear(AliceMemoryPool* ptr)
-	{
-		deletePool(ptr);
+	static AliceMemoryPool *createPool() {
+		AliceMemoryPool *result = (AliceMemoryPool *)internal_create(sizeof(AliceMemoryPool));
+		new (&result->lls_cache) BlockCache<lls> (*result);
+		return result;
 	}
+	static void deletePool(AliceMemoryPool* pool);
+//	static AliceMemoryPool *create_new_pool(MemoryPool* = 0);
+//	AliceMemoryPool(MemoryPool* p = 0)
+//	:	MemoryPool(0, p),
+//		lls_cache(*this)
+//	{}
+
+	static class blk* ALLA_pop(class lls**);
+	static void ALLA_push(class blk*, class lls**);
+
+private:
+	BlockCache<class lls> lls_cache;  /* Was plb_lls */
 };
 
-typedef Firebird::AutoPtr<AliceMemoryPool, AliceMemoryPool> AliceAutoPool;
-
-#endif // ALICE_ALL_H
+#endif /* _ALICE_ALL_H_ */
 

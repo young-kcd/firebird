@@ -23,7 +23,7 @@
 #include "/sys5/usr/include/sys/sem.h"
 #include "lock.h"
 
-int main( int argc, char **argv)
+void main( int argc, char **argv)
 {
 /**************************************
  *
@@ -34,9 +34,10 @@ int main( int argc, char **argv)
  * Functional description
  *
  **************************************/
-	const int semid = semget(SEM_KEY, 2, 0);
+	int semid, ret;
+
+	semid = semget(SEM_KEY, 2, 0);
 	if (semid == -1)
 		return;
-	return semctl(semid, 0, IPC_RMID, 0);
+	ret = semctl(semid, 0, IPC_RMID, 0);
 }
-

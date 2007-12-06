@@ -27,8 +27,10 @@
 #  Contributor(s):
 # 
 #
+#  $Id: Makefile.in.libfbembed,v 1.10.2.5 2006-11-05 14:37:30 alexpeshkoff Exp $
+#
 ROOT=..
-ObjModuleType=std
+ObjModuleName=libfbembed
 ArchType=classic
 
 include     $(ROOT)/gen/make.defaults
@@ -40,7 +42,7 @@ include     $(ROOT)/gen/make.shared.variables
 
 
 # These are deliberatly unexported otherwise gbak and others will try and check
-# the userid against the security2.fdb database, which doesn't exist at this stage
+# the userid against the security.fdb database, which doesn't exist at this stage 
 # in the build. MOD 11-July-2002
 
 unexport ISC_USER
@@ -51,29 +53,24 @@ SERVER_Files = $(OS_ServerFiles) server.cpp
 SERVER_Sources = $(addprefix remote/, $(SERVER_Files))
 SERVER_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(SERVER_Sources))))
 
-
-
-AllObjects = $(LIBFBEMBED_Objects) $(SERVER_Objects) $(COMMON_Objects) 
-Dependencies = $(AllObjects:.o=.d)
+AllObjects = $(LIBFBEMBED_Objects) $(SERVER_Objects)
+Dependencies=$(AllObjects:.o=.$(DEP_EXT))
 
 
 .PHONY: libfbembed
 
 libfbembed : $(LIBFBEMBED_SONAME)
 
-$(LIBFBEMBED_SO): $(LIBFBEMBED_Objects) $(SERVER_Objects) $(COMMON_Objects)
-ifeq ($(PLATFORM),DARWIN)
-	$(LIB_LINK) $(LINK_FIREBIRD_EMBED_SYMBOLS) $(LIB_LINK_OPTIONS) \
-$(LIB_EMBED_LINK_OPTIONS) $(LIB_LINK_SONAME) \
--o $@ $^ -L$(LIB) $(LIB_GUI) $(SO_LINK_LIBS) $(ICU_LIBS)
-else
-	$(LIB_LINK) $(LINK_FIREBIRD_SYMBOLS) $(LIB_LINK_OPTIONS) $(LIB_LINK_SONAME)$(SharedLibrarySoName) \
-$(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/lib -o $@ $^ -L$(LIB) $(LIB_GUI) $(SO_LINK_LIBS) $(ICU_LIBS)
-endif
-$(LIBFBEMBED_SOBASENAME): $(LIBFBEMBED_SO)
+$(LIBFBEMBED_SO):	LINK_PROD=$(SharedLibrarySoName)
+$(LIBFBEMBED_SO):	$(LIBFBEMBED_Objects) $(SERVER_Objects)
+#	$(LIB_LINK) -Wl,-soname,libfbembed.$(SHRLIB_EXT).1 -Wl,-rpath,/usr/lib -o $@ $^
+	$(LIB_LINK) $(LINK_FIREBIRD_SYMBOLS)  $(LIB_SHLIB_LINK_OPTIONS) $(LIB_EMBED_LINK_OPTIONS) \
+		$(LIB_LINK_SONAME_LINE) $(LIB_LINK_RPATH_LINE) -o $@ $^ $(SO_LINK_LIBS)
+
+$(LIBFBEMBED_SOBASENAME):	$(LIBFBEMBED_SO)
 	(cd $(LIB) && $(LN) -f $(SharedLibraryName) $(SharedLibrarySoName) )
 
-$(LIBFBEMBED_SONAME): $(LIBFBEMBED_SOBASENAME)
+$(LIBFBEMBED_SONAME):	$(LIBFBEMBED_SOBASENAME)
 	(cd $(LIB) && $(LN) -f $(SharedLibrarySoName) $(SharedLibraryBaseName) )
 
 include $(ROOT)/gen/make.shared.targets

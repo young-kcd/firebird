@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Access method
  *	MODULE:		inf_proto.h
- *	DESCRIPTION:	Prototype header file for inf.cpp
+ *	DESCRIPTION:	Prototype header file for inf.c
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -21,24 +21,23 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef JRD_INF_PROTO_H
-#define JRD_INF_PROTO_H
+#ifndef _JRD_INF_PROTO_H_
+#define _JRD_INF_PROTO_H_
 
-namespace Jrd {
-	class jrd_req;
-	class jrd_tra;
-	class blb;
-}
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-int		INF_blob_info(const Jrd::blb*, const SCHAR*, const SSHORT,
-						SCHAR*, const SSHORT);
-USHORT	INF_convert(SLONG, SCHAR*);
-int		INF_database_info(const SCHAR*, const SSHORT, SCHAR*, const SSHORT);
-SCHAR*	INF_put_item(SCHAR, USHORT, const SCHAR*, SCHAR*, const SCHAR*);
-int		INF_request_info(const Jrd::jrd_req*, const SCHAR*, const SSHORT,
-						SCHAR*, const SSHORT);
-int		INF_transaction_info(const Jrd::jrd_tra*, const SCHAR*, const SSHORT,
-						SCHAR*, const SSHORT);
+extern int INF_blob_info(struct blb *, SCHAR *, SSHORT, SCHAR *, SSHORT);
+extern USHORT DLL_EXPORT INF_convert(SLONG, SCHAR *);
+extern int INF_database_info(SCHAR *, SSHORT, SCHAR *, SSHORT);
+extern SCHAR *INF_put_item(SCHAR, USHORT, SCHAR *, SCHAR *, SCHAR *);
+extern int INF_request_info(struct jrd_req *, SCHAR *, SSHORT, SCHAR *, SSHORT);
+extern int INF_transaction_info(struct jrd_tra *, SCHAR *, SSHORT, SCHAR *,
+								SSHORT);
 
-#endif // JRD_INF_PROTO_H
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
+#endif /* _JRD_INF_PROTO_H_ */

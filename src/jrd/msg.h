@@ -19,51 +19,47 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- *
  */
+/*
+$Id: msg.h,v 1.2 2001-12-24 02:50:51 tamlin Exp $
+*/
 
-#ifndef JRD_MSG_H
-#define JRD_MSG_H
+#ifndef _JRD_MSG_H_
+#define _JRD_MSG_H_
 
 #define MSG_NUMBER(facility, code)	((SLONG) facility * 10000 + code)
-const USHORT MSG_BUCKET			= 1024;
-const UCHAR MSG_MAJOR_VERSION	= 1;
-// trick to silence the compiler when FB_MSG_MINOR_VERSION is 0
-#define FB_MSG_MINOR_VERSION	1
-const UCHAR MSG_MINOR_VERSION	= FB_MSG_MINOR_VERSION;
+#define MSG_BUCKET			1024
+#define MSG_MAJOR_VERSION		1
+#define MSG_MINOR_VERSION		0
 
-// Message file header block
+/* Message file header block */
 
-struct isc_msghdr {
-	UCHAR msghdr_major_version;	// Version number
-	UCHAR msghdr_minor_version;	// Version number
-	USHORT msghdr_bucket_size;	// Bucket size of B-tree
-	ULONG msghdr_top_tree;		// Start address of first index bucket
-	ULONG msghdr_origin;		// Origin for data records, unused.
-	USHORT msghdr_levels;		// Levels in tree
-};
+typedef struct isc_msghdr {
+	UCHAR msghdr_major_version;	/* Version number */
+	UCHAR msghdr_minor_version;	/* Version number */
+	USHORT msghdr_bucket_size;	/* Bucket size of B-tree */
+	ULONG msghdr_top_tree;		/* Start address of first index bucket */
+	ULONG msghdr_origin;		/* Origin for data records */
+	USHORT msghdr_levels;		/* Levels in tree */
+} ISC_MSGHDR;
 
-typedef isc_msghdr ISC_MSGHDR;
+/* Index node */
 
-// Index node
+typedef struct msgnod {
+	ULONG msgnod_code;			/* Message code */
+	ULONG msgnod_seek;			/* Offset of next bucket or message */
+} *MSGNOD;
 
-struct msgnod {
-	ULONG msgnod_code;			// Message code
-	ULONG msgnod_seek;			// Offset of next bucket or message
-};
+/* Leaf node */
 
-// Leaf node
+typedef struct msgrec {
+	ULONG msgrec_code;			/* Message code */
+	USHORT msgrec_length;		/* Length of message text */
+	USHORT msgrec_flags;		/* Misc flags */
+	TEXT msgrec_text[1];		/* Text of message */
+} *MSGREC;
 
-struct msgrec {
-	ULONG msgrec_code;			// Message code
-	USHORT msgrec_length;		// Length of message text
-	USHORT msgrec_flags;		// Misc flags
-	TEXT msgrec_text[1];		// Text of message
-};
-
-typedef msgrec *MSGREC;
 #define NEXT_LEAF(leaf)	(MSGREC) \
 	((SCHAR*) leaf + FB_ALIGN(OFFSETA (MSGREC, msgrec_text) + leaf->msgrec_length, sizeof (SLONG)))
 
-#endif // JRD_MSG_H
-
+#endif /* _JRD_MSG_H_ */

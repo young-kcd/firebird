@@ -1,1173 +1,2734 @@
   **************
-  * v2.1 Beta 2
+  * v1.5.5
   **************
 
-    * Bugfix CORE-1485
-        AV when loading messages in msg.fdb
+    * Partially fixed bug reported in CORE-1061 and CORE-1109
+        The Explorer running under Vista crashes when the Firebird 1.5 control
+        panel applet is installed. This crash does NOT occur with Firebird 2.n,
+        but backporting the changes hasn't worked. Installation of the 1.5 applet
+        is now disabled if Vista is detected as the host O/S.
+      Contributor(s):
+        Paul Reeves <preeves at ibphoenix.com>
+
+    * Fixed bug CORE-1076
+        Services Manager and gsec truncate First/Middle/Last Name fields
+        to 17 chars instead of 31 chars available in field definition
       Contributor(s):
         Alex Peshkov <peshkoff at mail.ru>
 
-    * Bugfix CORE-1484
-        AV in fbintl
+    * Fixed unregistered bugs
+        Server crashes when empty DPB or SPB is provided
       Contributor(s):
         Alex Peshkov <peshkoff at mail.ru>
 
-    * Bugfix CORE-1476
-        Forced writes do not work on Linux
+    * Fixed unregistered bugs
+        A number of vulnerabilities found and reported by RISE Security:
+          http://www.risesecurity.org/advisory/RISE-2007003/
       Contributor(s):
         Alex Peshkov <peshkoff at mail.ru>
+        Claudio Valderrama <cvalde at usa.net>
 
-    * Bugfix CORE-1470
+    * Fixed bug CORE-1470
         Server crashes with secondary file name > 127 characters
       Contributor(s):
         Claudio Valderrama <cvalde at usa.net>
 
-    * Bugfix CORE-1468
-        Database corruption possible when database file extension and read\write activity
-        are performed simultaneously
-      Contributor(s):
-        Vlad Horsun <hvlad at users.sourceforge.net>
-
-    * Bugfix CORE-1467
-        Error 'database shutdown' after canceling statement via MON$STATEMENTS
-      Contributor(s):
-        Dmitry Yemanov <dimitr at firebirdsql.org>
-
-    * Bugfix CORE-1466
-        Substring of multi-byte BLOBs can fail
-      Contributor(s):
-        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
-
-    * Bugfix CORE-1465
-        ISQL ignores explicit constraint name when it's confused with an internal, automatic name
-      Contributor(s):
-        Claudio Valderrama <cvalde at usa.net>
-
-    * Bugfix CORE-1457
-        Server crashes attempting to deliver events for the just disconnected session
-      Contributor(s):
-        Vlad Horsun <hvlad at users.sourceforge.net>
-        Dmitry Yemanov <dimitr at firebirdsql.org>
-
-    * Bugfix CORE-1456
-        Wrong events delivery in the case of concurrent XNET connections
-      Contributor(s):
-        Vlad Horsun <hvlad at users.sourceforge.net>
-        Dmitry Yemanov <dimitr at firebirdsql.org>
-
-    * Bugfix CORE-1455
-        Crash in fbclient after unsuccessful user management API call
-      Contributor(s):
-        Alex Peshkov <peshkoff at mail.ru>
-
-    * Bugfix CORE-1452
-        Client library crashes when attempting to process an event received just prior to disconnection
-      Contributor(s):
-        Dmitry Yemanov <dimitr at firebirdsql.org>
-        Vlad Horsun <hvlad at users.sourceforge.net>
-
-    * Bugfix CORE-1451
-        Using RDB$DB_KEY in SQL's WHERE section while selecting from a procedure crashes the server
-      Contributor(s):
-        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
-
-    * Bugfix CORE-1447
+    * Fixed bug CORE-1447
         Buffer overrun when querying for database info on very long path
         through isc_database_info() API call
       Contributor(s):
         Claudio Valderrama <cvalde at usa.net>
 
-    * Bugfix CORE-1446
-        Problem with UNICODE collations from fbintl when using system ICU
-      Contributor(s):
-        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
-
-    * Bugfix CORE-1443
-        Embedded engine may hang application on exit if no database access was performed
-      Contributor(s):
-        Vlad Horsun <hvlad at users.sourceforge.net>
-
-    * Bugfix CORE-1441
-        Query cancellation feature cannot interrupt a long fetch
-      Contributor(s):
-        Dmitry Yemanov <dimitr at firebirdsql.org>
-
-    * Bugfix CORE-1440
-        Dangerous lack of validation for transaction options
-      Contributor(s):
-        Claudio Valderrama <cvalde at usa.net>
-
-    * Bugfix CORE-1436
-        Outer joins don't work properly with the MON$ tables
-      Contributor(s):
-        Dmitry Yemanov <dimitr at firebirdsql.org>
-
-    * Bugfix CORE-1434
-        Incorrect result with EXECUTE STATEMENT and VARCHAR columns
-      Contributor(s):
-        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
-
-    * Bugfix CORE-1431
-        Greek characters in cp1251 vs uppercasing
-      Contributor(s):
-        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
-
-    * Bugfix CORE-1430
-        Access Violation in fbclient.dll if statement prepared and executed right after events was registered
-      Contributor(s):
-        Vlad Horsun <hvlad at users.sourceforge.net>
-
-    * Bugfix CORE-1428
-        Incorrect timestamp substraction in 3 dialect when result is negative number
-      Contributor(s):
-        Vlad Horsun <hvlad at users.sourceforge.net>
-
-    * Bugfix CORE-1419
-        Wrong current timestamp evaluation for selectable procedures
-      Contributor(s):
-        Dmitry Yemanov <dimitr at firebirdsql.org>
-
-    * Bugfix CORE-1418
-        Races when starting and quickly shutting down blocking AST thread
-      Contributor(s):
-        Alex Peshkov <peshkoff at mail.ru>
-
-    * Bugfix CORE-1417
-        Error "Invalid BLOB ID" in IBX insert operation
-      Contributor(s):
-        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
-
-    * Bugfix CORE-1416
-        Incorrect transaction params order in TPB is accepted without returning an error
-      Contributor(s):
-        Claudio Valderrama <cvalde at usa.net>
-
-    * Bugfix CORE-1408
-        UDF names using reserved words are extracted without double quotes
-      Contributor(s):
-        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
-
-    * Bugfix CORE-1403
-        Server crashes if a few events are being registered simultaneously
-        by the client connected via XNET
-      Contributor(s):
-        Dmitry Yemanov <dimitr at firebirdsql.org>
-
-    * Bugfix CORE-1401
-        Global temporary table instance may pick up not all indices
-      Contributor(s):
-        Vlad Horsun <hvlad at users.sourceforge.net>
-
-    * Bugfix CORE-1400
-        GSTAT doesn't support port number in connection string
-      Contributor(s):
-        Dmitry Yemanov <dimitr at firebirdsql.org>
-
-    * Bugfix CORE-1399
-        GSTAT does not use RemoteServicePort option in firebird.conf
-      Contributor(s):
-        Dmitry Yemanov <dimitr at firebirdsql.org>
-
-    * Bugfix CORE-1398
-        GSTAT: 'localhost' is case-sensitive in Windows
-      Contributor(s):
-        Dmitry Yemanov <dimitr at firebirdsql.org>
-
-    * Bugfix CORE-1397
-        Possible vulnerability in the remote server
-      Contributor(s):
-        Vlad Horsun <hvlad at users.sourceforge.net>
-
-    * Bugfix CORE-1395
-        Few problems with domains's check constraints
-      Contributor(s):
-        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
-
-    * Bugfix CORE-1388
-        Cannot attach to remote service manager if remote engine version is less than 2.0
-      Contributor(s):
-        Vlad Horsun <hvlad at users.sourceforge.net>
-
-    * Bugfix CORE-1384
-        LIKE doesn't work correctly with collations using SPECIALS-FIRST=1
-      Contributor(s):
-        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
-
-    * Bugfix CORE-1380
-        I/O errors after changing FW for the already attached database
-      Contributor(s):
-        Vlad Horsun <hvlad at users.sourceforge.net>
-
-    * Bugfix CORE-1379
-        Invalid parameter type when using it in CHAR_LENGTH function
-      Contributor(s):
-        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
-
-    * Bugfix CORE-1378
-        Domain names and charset issues
-      Contributor(s):
-        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
-
-    * Bugfix CORE-1373
-        Incorrect result of recursive CTE query when recursive member's SELECT list
-        contains expression using self-referenced fields
-      Contributor(s):
-        Vlad Horsun <hvlad at users.sourceforge.net>
-
-    * Bugfix CORE-1372
-        isc_dsql_fetch() called after isc_commit_transaction() doesn't raise an error
-      Contributor(s):
-        Vlad Horsun <hvlad at users.sourceforge.net>
-
-    * Bugfix CORE-1371
-        Execute block fails within execute statement
-      Contributor(s):
-        Alex Peshkov <peshkoff at mail.ru>
-
-    * Bugfix CORE-1370
-        Memory leak when using CTE within procedure
-      Contributor(s):
-        Vlad Horsun <hvlad at users.sourceforge.net>
-
-    * Bugfix CORE-1369
-        Downgrade from ODS11.1 misses default values of procedure parameters
-      Contributor(s):
-        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
-
-    * Bugfix CORE-1361
-        Index operations for global temporary tables are not visible for the active connection
-      Contributor(s):
-        Vlad Horsun <hvlad at users.sourceforge.net>
-
-    * Bugfix CORE-1359
-        Server crashes at the first operation with the monitoring tables
-        if the file system lacks the necessary permissions for the shared-memory file
-      Contributor(s):
-        Dmitry Yemanov <dimitr at firebirdsql.org>
-
-    * Bugfix CORE-1358
-        Operations with MON$STATEMENTS throw "cannot transliterate" error
-      Contributor(s):
-        Dmitry Yemanov <dimitr at firebirdsql.org>
-
-    * Bugfix CORE-1349
-        Remote interface doesn't validate the client supplied message length against the message format length
-      Contributor(s):
-        Vlad Horsun <hvlad at users.sourceforge.net>
-
-    * Bugfix CORE-1347
-        Unexpected "cannot transliterate" error
-      Contributor(s):
-        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
-
-    * Bugfix CORE-1344
-        Error "request depth exceeded" when restoring complex metadata
-      Contributor(s):
-        Dmitry Yemanov <dimitr at firebirdsql.org>
-
-    * Bugfix CORE-1339
-        Metadata charset upgrade script generates garbage in descriptions
-      Contributor(s):
-        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
-
-    * Bugfix CORE-1338
-        Error 335544721 when selecting view with round
-      Contributor(s):
-        Dmitry Yemanov <dimitr at firebirdsql.org>
-
-    * Bugfix CORE-1334
-        Joins with NULL RDB$DB_KEY crash the server
-      Contributor(s):
-        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
-
-    * Bugfix CORE-1332
-        Put the connection charset in sqlscale of blobs when appropriate
-      Contributor(s):
-        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
-
-    * Bugfix CORE-1331
-        Charset transliterations don't work with EXECUTE STATEMENT
-      Contributor(s):
-        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
-
-    * Bugfix CORE-1330
-        Double semaphore locking when query the monitoring tables during long fetches
-      Contributor(s):
-        Dmitry Yemanov <dimitr at firebirdsql.org>
-
-    * Bugfix CORE-1312
-        A remote attacker can check, if a file is present in the system, running firebird server
-      Contributor(s):
-        Alex Peshkov <peshkoff at mail.ru>
-
-    * Bugfix CORE-1261
-        ISQL ignore index and ordering in UNIQUE CONSTRAINT for generate metadate script
-      Contributor(s):
-        Claudio Valderrama <cvalde at usa.net>
-
-    * Improvement CORE-1389
-        Indexed MIN/MAX aggregates produce three index reads instead of the expected one indexed read
-      Contributor(s):
-        Dmitry Yemanov <dimitr at firebirdsql.org>
-
-    * Improvement CORE-1387
-        Add MILLISECONDS handling to EXTRACT, DATEADD and DATEDIFF functions
-      Contributor(s):
-        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
-
-    * Improvement CORE-1386
-        Generated columns
-      Contributor(s):
-        Dmitry Yemanov <dimitr at firebirdsql.org>
-
-    * Improvement CORE-1340
-        Add a scale parameter to the TRUNC function
-      Contributor(s):
-        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
-
-    * New feature CORE-1381, CORE-1480
-        Allow Firebird to bypass filesystem cache for database files
-      Contributor(s):
-        Vlad Horsun <hvlad at users.sourceforge.net>
-
-    * New feature CORE-1366
-        French insensitive collation FR_FR_CI_AI
-      Contributor(s):
-        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
-
-    * New feature CORE-1324
-        Japanese character set CP943C
-      Contributor(s):
-        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
-
-    * New feature CORE-663
-        EXTRACT(WEEK FROM DATE)
-      Contributor(s):
-        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
-
-  **************
-  * v2.1 Beta 1
-  **************
-
-    * Bugfix CORE-1318
-        Error "Identifier ... is too long using multiple (nested) derived tables
-      Contributor(s):
-        Alex Peshkov <peshkoff at mail.ru>
-        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
-
-    * Bugfix CORE-1315
-        Data type unknown
-      Contributor(s):
-        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
-        Vlad Horsun <hvlad at users.sourceforge.net>
-
-    * Bugfix CORE-1306
-        Indices not used for views
-      Contributor(s):
-        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
-
-    * Bugfix CORE-1303
-		Infinite loop in SS remote listener
-      Contributor(s):
-        Vlad Horsun <hvlad at users.sourceforge.net>
-
-    * Bugfix CORE-1300
-		Lower level index pages is missed from parent page
-      Contributor(s):
-        Vlad Horsun <hvlad at users.sourceforge.net>
-
-    * Bugfix CORE-1299
-		Wrong index entries order at non-leaf b-tree pages
-      Contributor(s):
-        Vlad Horsun <hvlad at users.sourceforge.net>
-
-    * Bugfix CORE-1298
-		BTR\garbage_collect code can make a deadlock in a page cache
-      Contributor(s):
-        Vlad Horsun <hvlad at users.sourceforge.net>
-
-    * Bugfix CORE-1292
-        Can't create table using long username and UTF8 as attachment charset
-      Contributor(s):
-        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
-
-    * Bugfix CORE-1291
-		Can't transliterate character set when look at procedure text in database 
-		just created from script (and thus in ODS 11.1)
-      Contributor(s):
-        Vlad Horsun <hvlad at users.sourceforge.net>
-		
-    * Bugfix CORE-1286
-        Bug with COMPUTED BY fields
-      Contributor(s):
-        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
-
-    * Bugfix CORE-1276
-		Sometime INET error reported as 0 in firebird.log instead of real error code
-      Contributor(s):
-        Vlad Horsun <hvlad at users.sourceforge.net>
-		
-    * Bugfix CORE-1271
-        Creation of invalid procedures/triggers allowed
-      Contributor(s):
-        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
-
-    * Bugfix CORE-1267
-        Small bug with default value for domains in PSQL
-      Contributor(s):
-        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
-
-    * Bugfix CORE-1256
-        Table columns hide destination variables of RETURNING INTO
-      Contributor(s):
-        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
-
-    * Bugfix CORE-1253
-        LIST(DISTINCT) concatenate VARCHAR values as CHAR
-      Contributor(s):
-        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
-
-    * Bugfix CORE-1249
-        Full shutdown mode doesn't work on Classic if there are other connections to the database
-      Contributor(s):
-        Dmitry Yemanov <dimitr at firebirdsql.org>
-
-    * Bugfix CORE-1248
-        Incorrect timestamp arithmetics when one of the operands is negative number
-      Contributor(s):
-        Vlad Horsun <hvlad at users.sourceforge.net>
-
-    * Bugfix CORE-1244
-        Server crash on "select * from <recursive CTE>"
-      Contributor(s):
-        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
-        Vlad Horsun <hvlad at users.sourceforge.net>
-
-    * Bugfix CORE-1240
-        Any task, using libfbclient, hangs on exit (Darwin PPC)
-      Contributor(s):
-        Alex Peshkov <peshkoff at mail.ru>
-
-    * Bugfix CORE-1237
-        GBAK does not create backup in service_mgr mode if there is no space on disk, no error reported
-      Contributor(s):
-        Alex Peshkov <peshkoff at mail.ru>
-
-    * Bugfix CORE-1228
-        Database often became corrupted after an out of disk space condition
-      Contributor(s):
-        Vlad Horsun <hvlad at users.sourceforge.net>
-
-    * Bugfix CORE-1227
-        LIST() function seems not work if used twice or more in a query  
-      Contributor(s):
-        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
-
-    * Bugfix CORE-1223
-        Wrong message in firebird.log on Open SuSe Linux 10.2 : Open file limit increased from 1024 to 0
-      Contributor(s):
-        Vlad Horsun <hvlad at users.sourceforge.net>
-
-    * Bugfix CORE-1218
-        isc_dsql_info(isc_info_sql_stmt_type) doesn't set isc_info_end at the end of the passed user's buffer
-      Contributor(s):
-        Vlad Horsun <hvlad at users.sourceforge.net>
-
-    * Bugfix CORE-1215
-        Wrong SELECT query results using index to evaluate >= condition
-      Contributor(s):
-        Vlad Horsun <hvlad at users.sourceforge.net>
-
-    * Bugfix CORE-1207
-        FB embedded requires extra OS privileges
-      Contributor(s):
-        Vlad Horsun <hvlad at users.sourceforge.net>
-
-    * Bugfix CORE-1205
-        v2.1 GBAK crashes the v2.0.x server when attempting to backup a database  
-      Contributor(s):
-        Dmitry Yemanov <dimitr at firebirdsql.org>
-        Claudio Valderrama <cvalde at usa.net>
-
-    * Bugfix CORE-1196
-        Long SQL statements break TCP/IP connection
-      Contributor(s):
-        Vlad Horsun <hvlad at users.sourceforge.net>
-        Alex Peshkov <peshkoff at mail.ru>
-        Dmitry Yemanov <dimitr at firebirdsql.org>
-
-    * Bugfix CORE-1183
-        View cannot be created if its WHERE clause contains IN <subquery> with a procedure reference  
-      Contributor(s):
-        Dmitry Yemanov <dimitr at firebirdsql.org>
-
-    * Bugfix CORE-1175
-        Error "Data type unknown" when any UDF argument is a built-in function
-        containing a DSQL parameter reference
-      Contributor(s):
-        Dmitry Yemanov <dimitr at firebirdsql.org>
-
-    * Bugfix CORE-1174
-        GBAK restores NULL rdb$description in rdb$functions as blob (0, 0)
-      Contributor(s):
-        Claudio Valderrama <cvalde at usa.net>
-
-    * Bugfix CORE-1167
-        CHARACTER SET GBK is not installed
-      Contributor(s):
-        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
-
-    * Bugfix CORE-1165
-        WHEN <list of exceptions> tracks only the dependency on the first exception in PSQL
-      Contributor(s):
-        Claudio Valderrama <cvalde at usa.net>
-
-    * Bugfix CORE-1162
-        Problem altering numeric field type
-      Contributor(s):
-        Claudio Valderrama <cvalde at usa.net>
-
-    * Bugfix CORE-1153
-        Activating index change "STARTING" working as "LIKE" in join condition
-      Contributor(s):
-        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
-
-    * Bugfix CORE-1151
-        Error "database file not available" when running NBackup
-      Contributor(s):
-        Nickolay Samofatov <skidder at users.sourceforge.net>
-
-    * Bugfix CORE-981
-        x86_64 RPM package missing "provides"  
-      Contributor(s):
-        Alex Peshkov <peshkoff at mail.ru>
-
-    * Bugfix CORE-949
-        Restore with UDF in 'COMPUTED BY' fields fails  
-      Contributor(s):
-        Dimitry Sibiryakov <sd at ibphoenix.com>
-
-    * Bugfix CORE-885
-        It is impossible to take away rights on update of a column
-      Contributor(s):
-        Alex Peshkov <peshkoff at mail.ru>
-
-    * Bugfix CORE-856
-        Unable to set FName, MName, LName fields in the security database to blank
-      Contributor(s):
-        Alex Peshkov <peshkoff at mail.ru>
-
-    * Bugfix CORE-703
-        Using DEL-Key in isql under Linux gives "~"
-      Contributor(s):
-        Alex Peshkov <peshkoff at mail.ru>
-
-    * Bugfix CORE-132
-        Restore fails on external table  
-      Contributor(s):
-        Vlad Horsun <hvlad at users.sourceforge.net>
-
-    * Bugfix CORE-107
-        Instance of fb_lock_mgr runs after build
-      Contributor(s):
-        Alex Peshkov <peshkoff at mail.ru>
-
-    * Improvement CORE-1280
-        Verify well-formedness of text blobs
-      Contributor(s):
-        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
-
-    * Improvement CORE-1277
-        Automatic transliteration of text blobs
-      Contributor(s):
-        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
-
-    * Improvement CORE-1232
-        Wrong behaviour of services manager during backup/restore operations
-      Contributor(s):
-        Alex Peshkov <peshkoff at mail.ru>
-
-    * Improvement CORE-1229
-        Allocate disk space by more than one page at a time
-      Contributor(s):
-        Vlad Horsun <hvlad at users.sourceforge.net>
-
-    * Improvement CORE-1226
-        Allow RETURNING in INSERT...SELECT, UPDATE and DELETE
-      See also:
-        /doc/README.returning
-      Contributor(s):
-        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
-
-    * Improvement CORE-1213
-        CURRENT OF is now allowed for views
-      Contributor(s):
-        Dmitry Yemanov <dimitr at firebirdsql.org>
-
-    * Improvement CORE-1179
-        "CH" and "LL" are not separate spanish alphabet letters since 1994
-      Contributor(s):
-        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
-
-    * Improvement CORE-1178
-        Standarize ES_ES_CI_AI collation
-      Contributor(s):
-        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
-
-    * Improvement CORE-1170
-        Conversion of DDL source from client charset to metadata charset  
-      Contributor(s):
-        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
-
-    * Improvement CORE-1169
-        Conversion of temporary blobs to the destination blob type when materializing  
-      Contributor(s):
-        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
-
-    * Improvement CORE-961
-        Free external tables as soon as they're no longer in use by user requests
-      Contributor(s):
-        Vlad Horsun <hvlad at users.sourceforge.net>
-
-    * Improvement CORE-867
-        GBAK should change param0 to not show username/password in ps axf
-      Contributor(s):
-        Alex Peshkov <peshkoff at mail.ru>
-
-    * Improvement CORE-787
-        Optionally disable non-SYSDBA use of Services API
-      Contributor(s):
-        Alex Peshkov <peshkoff at mail.ru>
-
-    * Feature CORE-1235
-        NATURAL JOIN and JOIN...USING
-      See also:
-        /doc/README.joins.txt
-      Contributor(s):
-        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
-
-    * Added a wide set of new built-in functions
-        ABS, ACOS, ASCII_CHAR, ASCII_VAL, ASIN, ATAN, ATAN2,
-        BIN_AND, BIN_OR, BIN_SHL, BIN_SHR, BIN_XOR,
-        CEIL, COS, COSH, COT, DATEADD, DATEDIFF, DECODE,
-        EXP, FLOOR, GEN_UUID, HASH, LEFT, LN, LOG, LOG10, LPAD,
-        MAXVALUE, MINVALUE, MOD, OVERLAY, PI, POSITION, POWER,
-        RAND, REPLACE, REVERSE, RIGHT, ROUND, RPAD,
-        SIGN, SIN, SINH, SQRT, TAN, TANH, TRUNC
-      See also:
-        /doc/README.builtin_functions.txt
-      Contributor(s):
-        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
-        Oleg Loa <loa at mail.ru>
-        Alexey Karyakin <aleksey.karyakin at mail.ru>
-
-
-  **************
-  * v2.1 Alpha 1
-  **************
-
-    * Bugfix CORE-1149
-        DoS attack on server using services API
-      Contributor(s):
-        Alex Peshkov <peshkoff at mail.ru>
-
-    * Bugfix CORE-1145
-        Server locks up while attempting to commit a deletion of an expression index
-      Contributor(s):
-        Dmitry Yemanov <dimitr at firebirdsql.org>
-
-    * Bugfix CORE-1142
-        Cannot alter generator's comment to the same value
-      Contributor(s):
-        Claudio Valderrama <cvalde at usa.net>
-
-    * Bugfix CORE-1120
-        Conversion from string to number is not standard compliant
-      Contributor(s):
-        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
-
-    * Bugfix CORE-1112
-        Crash when dealing with a string literal longer than 32K
-      Contributor(s):
-        Dmitry Yemanov <dimitr at firebirdsql.org>
-
-    * Bugfix CORE-1098
-        Races in cch.cpp, leading to AV during cache_writer startup
-      Contributor(s):
-        Alex Peshkov <peshkoff at mail.ru>
-
-    * Bugfix CORE-1073
-        SINGULAR buggy when NULLs present
-      Contributor(s):
-        Dmitry Yemanov <dimitr at firebirdsql.org>
-
-    * Bugfix CORE-1058
-        ALTER DOMAIN and ALTER TABLE don't allow to change character set
-      Contributor(s):
-        Dmitry Yemanov <dimitr at firebirdsql.org>
-
-    * Bugfix CORE-1056
-        A query could produce different results, depending on the presence of an index
-      Contributor(s):
-        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
-
-    * Bugfix CORE-1039
-        Memory statistics does not include the buffer cache size
-      Contributor(s):
-        Dmitry Yemanov <dimitr at firebirdsql.org>
-
-    * Bugfix CORE-1031
-        fb_lock_print.exe fails on Windows 2003 R2 / XP SP2
-      Contributor(s):
-        Vlad Horsun <hvlad at users.sourceforge.net>
-
-    * Bugfix CORE-1009
-        Restoring RDB$BASE_FIELD for expression
-      Contributor(s):
-        Claudio Valderrama <cvalde at usa.net>
-
-    * Bugfix CORE-995
-        SELECT with FIRST and LEFT JOIN needs excess SORT in plan
-      Contributor(s):
-        Dmitry Yemanov <dimitr at firebirdsql.org>
-
-    * Bugfix CORE-986
-        Non-ASCII quoted identifiers are not converted to metadata (UNICODE_FSS) charset
-      Contributor(s):
-        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
-
-    * Bugfix CORE-968
-        Lost connection with Firebird Server
-      Contributor(s):
-        Alex Peshkov <peshkoff at mail.ru>
-
-    * Bugfix CORE-967
-        SQL with incorrect characters (outside the ASCII range) may be processed wrongly
-      Contributor(s):
-        Claudio Valderrama <cvalde at usa.net>
-
-    * Bugfix CORE-965
-        Many aggregate functions within a single select list may cause a server crash
-      Contributor(s):
-        Dmitry Yemanov <dimitr at firebirdsql.org>
-
-    * Bugfix CORE-954
-        Server crashes while grouping by PSQL variable
-      Contributor(s):
-        Dmitry Yemanov <dimitr at firebirdsql.org>
-
-    * Bugfix CORE-945
-        Bad error message when tring to create a foreign key to a non-existent table
-      Contributor(s):
-        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
-        Claudio Valderrama <cvalde at usa.net>
-
-    * Bugfix CORE-929
-        Bug in a DSQL parameter being casted and used in arithmetics
-      Contributor(s):
-        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
-
-    * Bugfix CORE-925
-        ALL predicate works incorrectly for some subqueries
-      Contributor(s):
-        Dmitry Yemanov <dimitr at firebirdsql.org>
-
-    * Bugfix CORE-908
-        Garbage in plan output of complex statement
-      Contributor(s):
-        Vlad Horsun <hvlad at users.sourceforge.net>
-
-    * Bugfix CORE-900
-        Deadlock when attaching simultaneously with services and standard APIs
-      Contributor(s):
-        Alex Peshkov <peshkoff at mail.ru>
-
-    * Bugfix CORE-899
-        Problems with explicit PSQL cursors in unwanted states
-      Contributor(s):
-        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
-
-    * Bugfix CORE-896
-        SUBSTRING with NULL offset or length doesn't return NULL
-      Contributor(s):
-        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
-
-    * Bugfix CORE-881
-        Singleton is not respected in COMPUTED BY expressions
-      Contributor(s):
-        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
-
-    * Bugfix CORE-880
-        Malformed characters are accepted in character set GB2312
-      Contributor(s):
-        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
-
-    * Bugfix CORE-878
-        Problem when dropping column that is a primary key
-      Contributor(s):
-        Dmitry Yemanov <dimitr at firebirdsql.org>
-
-    * Bugfix CORE-871
-        Incorrect handling of NULL within views - returns 0
-      Contributor(s):
-        Claudio Valderrama <cvalde at usa.net>
-
-    * Bugfix CORE-870
-        Engine crashes while trying to backup a logically corrupt database
-      Contributor(s):
-        Claudio Valderrama <cvalde at usa.net>
-
-    * Bugfix CORE-866
-        Removing a NOT NULL constraint is not visible until reconnect
-      Contributor(s):
-        Dmitry Yemanov <dimitr at firebirdsql.org>
-
-    * Bugfix CORE-859
-        Sorting is allowed for blobs
-      Contributor(s):
-        Dmitry Yemanov <dimitr at firebirdsql.org>
-
-    * Bugfix CORE-851
-        Field can be used multiple times in multi-segment index definition
-      Contributor(s):
-        Claudio Valderrama <cvalde at usa.net>
-
-    * Bugfix CORE-850
-        DYN layer allows to set defaults for computed fields when altering a field
-      Contributor(s):
-        Claudio Valderrama <cvalde at usa.net>
-
-    * Bugfix CORE-847
-        Computed field cannot be changed to non-computed using ALTER TABLE ALTER COLUMN TYPE <datatype>
-      Contributor(s):
-        Claudio Valderrama <cvalde at usa.net>
-
-    * Bugfix CORE-842
-        Specific query crashing the server
-      Contributor(s):
-        Dmitry Yemanov <dimitr at firebirdsql.org>
-
-    * Bugfix CORE-833
-        Connection issues with very long hostname
-      Contributor(s):
-        Dmitry Yemanov <dimitr at firebirdsql.org>
-
-    * Bugfix CORE-347
-        Input of invalid dates through DSQL parameters
-      Contributor(s):
-        Dmitry Yemanov <dimitr at firebirdsql.org>
-
-    * Bugfix CORE-202
-        ORDER BY works wrong with collate PT_PT
-      Contributor(s):
-        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
-
-    * Bugfix CORE-200
-        Empty column names with aggregate functions
-      Contributor(s):
-        Claudio Valderrama <cvalde at usa.net>
-
-    * Bugfix CORE-152
-        Sqlsubtype incorrect on timestamp difference
-      Contributor(s):
-        Claudio Valderrama <cvalde at usa.net>
-
-    * Bugfix CORE-104
-        Dropping and recreating a table in the same transaction disables the primary key
-      Contributor(s):
-        Dmitry Yemanov <dimitr at firebirdsql.org>
-
-    * Bugfix CORE-91
-        Recreate and self-referencing indexes
-      Contributor(s):
-        Dmitry Yemanov <dimitr at firebirdsql.org>
-
-    * Bugfix CORE-87
-        Bug in libfbclient under Linux with SA_SIGINFO
-      Contributor(s):
-        Alex Peshkov <peshkoff at mail.ru>
-
-    * Bugfixes CORE-86, CORE-88 and CORE-99
-        Select/join on different datatypes produces undesired results
-      Contributor(s):
-        Dmitry Yemanov <dimitr at firebirdsql.org>
-
-    * Bugfix CORE-84
-        NBACKUP and security
-      Contributor(s):
-        Alex Peshkov <peshkoff at mail.ru>
-
-    * QLI crash (unregistered)
+    * QLI crash
         Fix problem with QLI where a crash occurs using the following SQL:
-        INSERT INTO relationx SELECT * FROM relationy
+          insert into relationx select * from relationy
       Contributor(s):
         Paul Beach (pbeach at ibphoenix.com)
 
-    * More dependencies (unregistered)
-        Fixed untracked collation dependencies in PSQL
+    * Fixed unregistered bug
+        Fix Core Dump on HPUX when using SQL Dialect 1 and:
+          select distinct(1.0/1) from rdb$database.
+        Alignment issue.
       Contributor(s):
-        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+        Paul Beach (pbeach at ibphoenix.com)
 
-    * Security fix (unregistered)
-        Tricky paths can allow a directory traversal attack bypassing config file
-        settings for DB creation dir, for example.
+  **************
+  * v1.5.4
+  **************
+
+    * HPUX ports
+        Changes committed to CVS to support Classic and SuperServer builds for HPUX11
       Contributor(s):
-        Claudio Valderrama <cvalde at usa.net>
+        Paul Beach (pbeach at ibphoenix.com)
 
-    * Various BOF fixes (unregistered)
+    * Fixed bug CORE-1051
+        Possible stack corruption in the deferred work handler
       Contributor(s):
-        Claudio Valderrama <cvalde at usa.net>
-        Alex Peshkov <peshkoff at mail.ru>
-        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+        Vlad Horsun <horsun at kdb.dp.ua>
 
-    * Improvement CORE-1266
-        Using blob filters in dynamic SQL
+    * Fixed bug CORE-1042
+        Transaction numbers can overflow 32-bit signed integer and corrupt database
       Contributor(s):
-        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+        Vlad Horsun <horsun at kdb.dp.ua>
 
-    * Improvement CORE-1148
-        Regular users are prevented from retrieving the server log
-        using Services API. This is now allowed for SYSDBA only.
-      Contributor(s):
-        Alex Peshkov <peshkoff at mail.ru>
-
-    * Improvement CORE-1091
-        isc_service_query() should return an alias name instead of
-        a full database file name in the case of configured "DatabaseAccess = None"
+    * Fixed bug CORE-921
+        Core dump in stored procedure using execute statement
       Contributor(s):
         Alex Peshkov <peshkoff at mail.ru>
 
-    * Improvement CORE-1071
-        Background garbage collector doesn't need to read backversion of active record
+    * Fixed bug CORE-966
+        Bug in socket binding for database events
       Contributor(s):
-        Vlad Horsun <hvlad at users.sourceforge.net>
+        Paul Beach <pbeach at ibphoenix.com>
+        Dmitry Yemanov <yemanov at yandex.ru>
 
-    * Improvement CORE-1070
-        Optimize sparse bitmap operations (set, test and clear) with mostly consecutive values
+    * Fixed bugs CORE-157 and CORE-363
+        Server hangs when a client registers events but the
+        connection is not established
       Contributor(s):
-        Vlad Horsun <hvlad at users.sourceforge.net>
+        Paul Beach <pbeach at ibphoenix.com>
+        Alex Peshkov <peshkoff at mail.ru>
 
-    * Improvement CORE-1069
-        Optimize index scan when more than one index scanned and ANDed
+    * Fixed bug CORE-973
+        BUGCHECK(183) when attempting to backout a record version after a crash
       Contributor(s):
-        Vlad Horsun <hvlad at users.sourceforge.net>
+        Ann Harrison <aharrison at ibphoenix.com>
 
-    * Improvement CORE-979
-        Make RDB$DB_KEY in outer joins returns NULL when appropriate
+    * Fixed bug CORE-911
+        AV in Classic server after long idle period
+        when using long running read committed read-only transaction
       Contributor(s):
-        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+        Vlad Horsun <horsun at kdb.dp.ua>
 
-    * Improvement CORE-978
-        Extend ISQL SHOW SYSTEM command
+    * Fixed unregistered bugs
+        Error not detected when buffer overflows in isql
+        Problems handling quoted strings
       Contributor(s):
-        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+        Paul Beach <pbeach at ibphoenix.com>
+        Dimitry Sibiryakov <sd at topol.udm.net>
 
-    * Improvement CORE-977
-        Put blob charset in XSQLVAR::sqlscale
-      Contributor(s):
-        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
-
-    * Improvement CORE-976
-        Synchronization of DSQL metadata cache objects in classic-server
-      Contributor(s):
-        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
-
-    * Improvement CORE-972
-        Case-insensitive collation for UTF-8
-      Contributor(s):
-        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
-
-    * Improvement CORE-971
-        Improve network protocol performance
-      Contributor(s):
-        Dmitry Yemanov <dimitr at firebirdsql.org>
-        Vlad Horsun <hvlad at users.sourceforge.net>
-
-    * Improvement CORE-970
-        Show line/column numbers in PSQL error stack trace
-      Contributor(s):
-        Vlad Horsun <hvlad at users.sourceforge.net>
-
-    * Improvement CORE-969
-        Deprecate page sizes of 1K and 2K as being inefficient
-      Note(s):
-        This applies to new databases only. Old ones can be attached
-        regardless of their page size.
-      Contributor(s):
-        Dmitry Yemanov <dimitr at firebirdsql.org>
-
-    * Improvement CORE-958
-        Increase the maximum number of hash slots for the Lock Manager.
-      Note(s):
-        The new limit is 64K slots (the old one was 2048).
-      Contributor(s):
-        Dmitry Yemanov <dimitr at firebirdsql.org>
-
-    * Improvement CORE-937
-        Change default lock manager settings -- increase table memory and number of slots.
-      Note(s):
-        The default lock table size has been increased to 1MB on all platforms,
-        the new default number of hash slots is 1009.
-      Contributor(s):
-        Dmitry Yemanov <dimitr at firebirdsql.org>
-
-    * Improvement CORE-863
-        INSERT without values
-      Example(s):
-        INSERT INTO <table> DEFAULT VALUES [RETURNING <values>]
-      Contributor(s):
-        Dmitry Yemanov <dimitr at firebirdsql.org>
-
-    * Improvement CORE-831
-        Column aliases are processed as column names in the view definition
-      Example(s):
-        CREATE VIEW V_TEST AS
-          SELECT ID, COL1 AS CODE, COL2 AS NAME FROM TAB;
-      Contributor(s):
-        Dmitry Yemanov <dimitr at firebirdsql.org>
-
-    * Improvement CORE-779
-        Introduced a type flag for stored procedures
-      Note(s):
-        Column RDB$PROCEDURE_TYPE has been added to the table RDB$PROCEDURES.
-        Possible values are:
-          - 0 or NULL - legacy procedure (no validation checks are performed)
-          - 1 - selectable procedure (the one that contains a SUSPEND statement)
-          - 2 - executable procedure (no SUSPEND statement, cannot be selected from)
-      Contributor(s):
-        Dmitry Yemanov <dimitr at firebirdsql.org>
-
-    * Improvement CORE-711
-        Make syntax for "CREATE TRIGGER" compliant with SQL2003
-      Contributor(s):
-        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
-
-    * Improvement CORE-673
-        instsvc.exe now supports multi-instance installations
-      Contributor(s):
-        Dmitry Yemanov <dimitr at firebirdsql.org>
-
-    * GBAK improvement (unregistered)
-        Now it's possible to use v2.1's GBAK to restore on any FB version
+    * Fixed unregistered bug
+        GSTAT prints "unknown Windows NT error" instead of a proper Win32 error message
       Contributor(s):
         Claudio Valderrama <cvalde at usa.net>
 
-     * INTL improvements (unregistered)
-        1) Ability to use ICU charsets through fbintl
-        2) UNICODE collation (charset_UNICODE) is available for all fbintl charsets
-        3) Collation attributes
-        4) CREATE/DROP COLLATION statements
-        5) SHOW COLLATION and collation extraction in ISQL
-      See also:
-        /doc/README.intl.txt
-      Contributor(s):
-        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+  **************
+  * v1.5.3
+  **************
 
-    * Feature CORE-1018
-        Provide mechanism to get engine version without needing to call API function
-      Example(s):
-        SELECT RDB$GET_CONTEXT('SYSTEM', 'ENGINE_VERSION')
-        FROM RDB$DATABASE
+    * Fixed SF bug #1175157
+        Error in thread scheduler causes server to lockup
+        in case if IO error at database attachment
       Contributor(s):
-        Dmitry Yemanov <dimitr at firebirdsql.org>
+        Vlad Horsun <horsun at kdb.dp.ua>
 
-    * Feature CORE-975
-        Thai character set TIS620
-      Contributor(s):
-        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
-
-    * Feature CORE-964
-        Aggregate function LIST (string concatenation)
-      See also:
-        /doc/sql.extensions/README.list
-      Contributor(s):
-        Dmitry Yemanov <dimitr at firebirdsql.org>
-
-    * Feature CORE-963
-        Common table expressions and recursive queries
-      See also:
-        /doc/README.common_table_expressions
-      Contributor(s):
-        Vlad Horsun <hvlad at users.sourceforge.net>
-
-    * Feature CORE-962
-        Global temporary tables
-      See also:
-        /doc/README.global_temporary_tables
-      Contributor(s):
-        Vlad Horsun <hvlad at users.sourceforge.net>
-
-    * Feature CORE-864
-        Chinese character set GBK
-      Contributor(s):
-        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
-
-    * Feature CORE-815
-        UPDATE OR INSERT and MERGE statements
-      See also:
-        /doc/sql.extensions/README.update_or_insert.txt
-        /doc/sql.extensions/README.merge.txt
-      Contributor(s):
-        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
-
-    * Feature CORE-795
-        Unicode collations
-      Contributor(s):
-        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
-
-    * Feature CORE-794
-        Kill a query on client request
-      Contributor(s):
-        Dmitry Yemanov <dimitr at firebirdsql.org>
-
-    * Features CORE-746, CORE-774 and CORE-1019
-        Runtime database monitoring via SQL
-      See also:
-        /doc/README.monitoring_tables
-      Contributor(s):
-        Dmitry Yemanov <dimitr at firebirdsql.org>
-
-    * Feature CORE-704
-        Ctrl-C to be used to cancel interactive ISQL output
-      Contributor(s):
-        Michal Kubecek <mike at mk-sys.cz>
-        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
-
-    * Feature CORE-684
-        Collations allowed in PSQL parameters and variables
-      Contributor(s):
-        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
-
-    * Features CORE-682 and CORE-819
-        Port to Windows 64-bit platform (AMD64 and Intel EM64T)
-      Contributor(s):
-        Dmitry Yemanov <dimitr at firebirdsql.org>
-
-    * Feature CORE-660
-        Domains allowed to be used in PSQL parameters and variables
-      See also:
-        /doc/sql.extensions/README.domains_psql.txt
-      Contributor(s):
-        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
-
-   * Feature CORE-655
-        BLOB SUB_TYPE TEXT datatype fully compatible with VAR[CHAR]
-      Contributor(s):
-        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
-
-    * Features CORE-645 and CORE-745
-        Database triggers
-      See also:
-        /doc/sql.extensions/README.db_triggers.txt
-      Contributor(s):
-        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
-
-    * Generic cleanup
-        STL is removed in favor of the internal class library
+    * Fixed unregistered bug.
+        Wrong permissions for the QLI help database
       Contributor(s):
         Alex Peshkov <peshkoff at mail.ru>
 
-    * Generic cleanup
-        Large amount of ongoing code cleanup and style standardization
+    * Fixed unregistered bug.
+        Wrong permissions for the QLI help database
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Fixed unregistered bug.
+        No more than 32767 identifiiers are generated by GPRE
+      Contributor(s):
+        Ann Harrison <aharrison at ibphoenix.com>
+
+    * Added OldColumnNaming parameter to firebird.conf
+        Allow users to revert to pre-V1.5 column naming in select expressions
+      Contributor(s):
+        Paul Reeves <preeves at ibphoenix.com>
+
+    * Added diagnostics.
+        Logged attempt to send signals via missing gds_relay
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Fixed unregistered security related bugs.
+        1) Server crashed when too long filename is provided
+        2) No longer trust UID received from the client side
+        3) isc_user_* functions worked wrongly under "superuser" account on win32
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Fixed v1.5.2 bug.
+        Comparisons between strings in NONE and other charset caused an error
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed unregistered bug.
+        100% cpu load in case of write failure
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
+
+    * Fixed unregistered v1.5 bug.
+        Wrong error detection in case of write failure
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
+
+    * Fixed bug SF #1076858
+        Possible corruption in classic server:
+        page 0 is of wrong type (expected 6, found 1)
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
+
+    * Fixed unregistered bug.
+        Crash occured in service gfix code when it tried to reattach to currently
+        unavailable database. Since service can't interact with end user an endless
+        loop leads to overflow service buffer and crash as result.
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
+
+    * Fixed SF bug #1242982.
+        Bug in compound index key mangling.
+      Contributor(s):
+        Arno Brinkman <firebird at abvisie.nl>
+
+    * Fixed SF bug #739480.
+        Locally exploitable stack overflow.
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Fixed unregistered bug.
+        Unneeded evaluation of the last item by COALESCE function.
+      Contributor(s):
+        Arno Brinkman <firebird at abvisie.nl>
+
+    * Fixed SF bug #1191006.
+        Using where params in SUM return incorrect results.
+      Contributor(s):
+        Arno Brinkman <firebird at abvisie.nl>
+
+    * Fixed SF bug #1016969.
+        -804 Data type unknown in UPDATE with CASE and parameters.
+      Contributor(s):
+        Arno Brinkman <firebird at abvisie.nl>
+
+    * Fixed unregistered bug.
+        BLOB sub-type bug in COALESCE/CASE.
+      Contributor(s):
+        Arno Brinkman <firebird at abvisie.nl>
+
+    * Fixed unregistered bug.
+        Fixed Dialect 3 quoted identifiers issue in the ISQL command SHOW GENERATORS.
       Contributor(s):
         Claudio Valderrama <cvalde at usa.net>
+
+    * Fixed unregistered bug.
+        Lost charset/collation for local PSQL variables causing string conversion errors.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed unregistered bug.
+        Server crashes during database shutdown when there are active DDL operations.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed bug SF #1110717.
+        Wrong charset of subquery in VIEWs.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed bug SF #1106825.
+        Access Violation in fcblient.dll v1.5.2 on disconnecting.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed unregistered bug.
+        Server crashes while performing a metadata scan for complex table.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed unregistered bug.
+        Database corruption due to pre-triggers (e.g. record is deleted in BEFORE UPDATE trigger).
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed unregistered bug.
+        User savepoints are not released when commit retaining is issued.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed unregistered bug.
+        Backport isql fixes:
+        Another fix for the -b (Bail On Error) option when SQL commands are issued
+        and no db connection exists yet.
+        Apply Miroslav Penchev's patch for bug with -Q always returning 1 to the
+        operating system, discovered by Ivan Prenosil.
+      Contributor(s):
+        Claudio Valderrama <cvalde at usa.net>
+
+    * Fixed unregistered bug.
+        Computed column of blob/array type zeroes the first column of the table being restored.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed unregistered bug.
+        Server crashed in some cases of the BLOB filter declaration.
+      Contributor(s):
+        Claudio Valderrama <cvalde at usa.net>
+
+    * Fixed v1.5.0 bug.
+        Server locked up after unsuccessful attach to security.fdb.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+        Claudio Valderrama <cvalde at usa.net>
+
+    * Fixed unregistered bug.
+        Conflict between single-line comments and block ones in ISQL.
+      Contributor(s):
+        Claudio Valderrama <cvalde at usa.net>
+
+    * Fixed unregistered bug.
+        Bug in AddMonth() UDF when facing January.
+      Contributor(s):
+        Claudio Valderrama <cvalde at usa.net>
+
+    * Fixed bug SF #1124720.
+        Problem with "FOR EXECUTE STATEMENT ... DO SUSPEND".
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Fixed unregistered bug.
+        Bugchecks on AMD64 (and possibly other platforms) when database was migrated without backup/restore.
+      Contributor(s):
+        Nickolay Samofatov <nickolay at broadviewsoftware.com>
+
+    * ISQL improvement:
+        Command line switch -b to bail out on error when used in non-interactive mode.
+        Also, return an error code to the operating system.
+      Contributor(s):
+        Damyan Ivanov <divanov at creditreform.bg>
+        Claudio Valderrama <cvalde at usa.net>
+
+    * Fixed unregistered bug.
+        Server crashed during some DDL operations.
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Fixed unregistered bug.
+        Issues with descending indices used in referential constraints.
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Fixed v1.5.1 bug.
+        Generators were garbage-initialized after metadata-only backup/restore.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+  **************
+  * v1.5.2
+  **************
+
+    * Fixed v1.0 regression.
+        Blobs containing more than 65535 segments are not backed up by GBAK properly
+      Contributor(s):
+        Nickolay Samofatov <nickolay at broadviewsoftware.com>
+
+    * Fixed ISQL problems
+        1) statement terminators and '--' comments are no longer recognized in multi-line literals
+        2) tab characters are no longer translated to spaces in literal strings
+      Contributor(s):
+        Dimitry Sibiryakov <sd at topol.udm.net>
+        Claudio Varderrama <cvalde at usa.net>
+        Nickolay Samofatov <nickolay at broadviewsoftware.com>
+
+    * Fixed bug SF #1065511
+        XP SP2 slow to connect to Linux server
+      Contributor(s):
+        Nickolay Samofatov <nickolay at broadviewsoftware.com>
+
+    * Fixed unregistered bug.
+        Possible server crash when execute_immediate is used to release or rollback transaction to non-existing savepoint
+      Contributor(s):
+        Nickolay Samofatov <nickolay at broadviewsoftware.com>
+
+    * Fixed unregistered bug.
+        Server locked when trying to restore database at location, prohibited in firebird.conf.
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Fixed v1.5.0 regression.
+        Fix bugs in distribution of conjunctions to components of outer joins by optimizer.
+        Wrong outer join results could have been returned. The fix also makes engine use better plans for outer joins in a number of cases.
+      Contributor(s):
+        Arno Brinkman <firebird at abvisie.nl>
+
+    * Fixed 1.5.1 optimiser bug.
+        Fix bug with unneeded fetches in joined relations when "OR" is used on base relation.
+      Contributor(s):
+        Arno Brinkman <firebird at abvisie.nl>
+
+    * Fixed bug SF #728839.
+        Left join defeats UDF by mangling a null descriptor.
+      Contributor(s):
+        Claudio Varderrama <cvalde at usa.net>
+
+    * Fixed bug SF #544132.
+        UDF with NULL input parameter.
+      Contributor(s):
+        Claudio Varderrama <cvalde at usa.net>
+
+    * Fixed bug SF #1045970.
+        CPU 100% with FB 1.5.1 (when events are used and client network connection is terminated)
+      Note:
+        Related to the previous events bugfix introduced in v1.5.1
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed v1.5.0 regression.
+        Failed UDF name is never reported in the server log
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
+
+    * Fixed v1.5.1 regression.
+        1.5.0 was doing exit(3) on critical errors on Windows. No way you could use JIT debugger to analyse problems in your UDF routines
+        1.5.1 was calling debugger always and this introduced problem with automatic restarts of server
+        1.5.2 now calls debugger only if you set BugcheckAbort configuration file option to 1
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
+        Nickolay Samofatov <nickolay at broadviewsoftware.com>
+
+    * Fixed unregistered bug.
+        Error trying to delete from a naturally updatable view containing computed expressions
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed unregistered bug.
+        Numeric datatypes represented by floating-point variables are processed incorrect in EXECUTE STATEMENT
+      Contributor(s):
+        Alexander Peshkoff <peshkoff at hotmail.ru>
+
+    * Fixed unregistered bug.
+        Memory leak when a query contains both GROUP BY and DISTINCT and result set is empty
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
+
+    * Fixed unregistered bug.
+        Server leaks resources when an exception is thrown from the selectable stored procedure
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed unregistered bug.
+        Problem with deadlock detection when pessimistic locking (WITH LOCK syntax) is used
+      Contributor(s):
+        Nickolay Samofatov <nickolay at broadviewsoftware.com>
+
+    * Fixed unregistered bug.
+        Server crashes when NULL is passed to EXECUTE STATEMENT ... INTO
+      Contributor(s):
+        Alexander Peshkoff <peshkoff at hotmail.ru>
+
+    * Fixed unregistered bug.
+        Server log is polluted with sigpipe errors when running SuperServer on unix
+      Contributor(s):
+        Paul Reeves <preeves at ibphoenix.com>
+
+    * Fixed unregistered bug.
+        100% CPU usage by the cache_writer thread in some rare cases
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
+
+    * Fixed unregistered bug.
+        Server crashes with complex (lots of streams used in a sort/merge) queries
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed unregistered bug.
+        Possible server crash in op_connect handler
+      Contributor(s):
+        Aleksey Karyakin <karyakin at cmpmail.com>
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed unregistered bug.
+        Server blocking when events are used with NAT gateways
+      Contributor(s):
+        Chris Waters <chris at waters.co.nz>
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed unregistered bug.
+        Sweeper doesn't release its lock in the case of database shutdown
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
+
+    * Fixed unregistered bug.
+        Least significant bits of value are lost when rounding floating-point value to int/int64 value
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
+
+    * Fixed unregistered bug.
+        Backported fixes for a few memory access problems detected when testing HEAD under Valgrind
+      Contributor(s):
+        Nickolay Samofatov <nickolay at broadviewsoftware.com>
+
+    * Standard UDF library registration script changed
+        Declarations of string manipulation routines in ib_udf.sql are altered to accept strings with lengths up to 255 characters
+      Contributor(s):
+        Nickolay Samofatov <nickolay at broadviewsoftware.com>
+
+    * Fixed unregistered bug.
+        Run-time errors in 64-bit SuperServer builds on platforms such as Linux/AMD64/NPTL which use high-order bits of 64-bit thread ID
+      Contributor(s):
+        Nickolay Samofatov <nickolay at broadviewsoftware.com>
+
+    * Fixed unregistered bug.
+        CURRENT_TIMESTAMP yielding unpredictable results on 64-bit platforms
+      Contributor(s):
+        Nickolay Samofatov <nickolay at broadviewsoftware.com>
+
+    * Fixed v1.5.1 regression
+        Broken support for multi-dimensional array fields
+      Contributor(s):
+        Claudio Varderrama <cvalde at usa.net>
+
+    * Fixed v1.5.1 regression
+        Plans for selectable stored procedures containing multiple FOR loops reported in reverse order
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
+        Nickolay Samofatov <nickolay at broadviewsoftware.com>
+
+    * Performance improvement
+        Resource lists to check permissions are now computed on the fly as needed. This significantly reduces memory and CPU time consumption for complex schemas
+      Contributor(s):
+        Nickolay Samofatov <nickolay at broadviewsoftware.com>
+        Daniel Urban <daniel at sente.pl>
+
+    * POSIX build and packaging change
+        1) Work around bugs in GCC 3.3.2 and 3.3.3
+        2) Support GCC 3.4 build
+        3) Limit exports of Firebird libraries using version script
+        4) Link client library and UDF libraries with POSIX threads. This cures problems with single-threaded hosts like PHP linking with libfbclient.so from CS packages
+      Contributor(s):
+        Nickolay Samofatov <nickolay at broadviewsoftware.com>
+
+    * Fixed bug SF #1027636
+        The problem with output of Linux SuperServer startup script
+      Contributor(s):
+        Dale Mullins <dale_mullins at users.sourceforge.net>
+
+    * POSIX build and packaging change
+        Build system is extended to generate source bundles without autoconf dependency
+      Contributor(s):
+        Erik S. LaBianca <labiance at users.sourceforge.net>
+
+    * Fixed bug SF #1063254
+        EXISTS or SINGULAR predicate burried inside aggregate-functions caused wrong detection/mapping for aggregate queries.
+      Contributor(s):
+        Arno Brinkman <firebird at abvisie.nl>
+
+  **************
+  * v1.5.1
+  **************
+
+    * Fixed unregistered bug.
+        Fix 100% CPU consumption possible when events are used
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed v1.5 bug.
+        Fix QLI crash when variables are used
+      Contributor(s):
+        Vladimir Tsvigun <praktik at hm.ukrtel.net>
+
+    * Fixed v1.5 bug.
+        Import (unmodified) libedit-2.6.9 to provide line editing capabilities for isql. This fixes crashes while long lines are entered
+      Contributor(s):
+        Nickolay Samofatov <nickolay at broadviewsoftware.com>
+
+    * Fixed optimiser bug.
+        Fix bug with FULL JOIN and IS NULL in where clause.
+      Contributor(s):
+        Arno Brinkman <firebird at abvisie.nl>
+
+    * Fixed v1.5 bug.
+        Fix memory leak in cpl applet.
+      Contributor(s):
+        Paul Reeves <preeves at ibphoenix.com>
+
+    * Fixed v1.5 bug.
+        Fixed problem with system log overflow in case of missing aliases.conf
+      Contributor(s):
+        Alexander Peshkoff <peshkoff at hotmail.ru>
+
+    * Fixed v1.5 bug.
+        Problem with /etc/init.d/firebird modification.
+      Contributor(s):
+        Alexander Peshkoff <peshkoff at hotmail.ru>
+
+    * Fixed unregistered bug.
+        GSTAT doesn't work with remote connection strings.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed v1.5 limitation.
+        Allowed Services API in CS builds.
+      Contributor(s):
+        Nickolay Samofatov <nickolay at broadviewsoftware.com>
+
+    * Fixed bug SF #750659.
+        Broken soname for libib_util.so.
+      Contributor(s):
+        Nickolay Samofatov <nickolay at broadviewsoftware.com>
+
+    * Charset improvement.
+        Allowed using NONE as a fully transparent charset everywhere.
+      Contributor(s):
+        Jim Beesley <jim.beesley at sas.com>
+        Nickolay Samofatov <nickolay at broadviewsoftware.com>
+
+    * Added new collation.
+        LT_LT for ISO8859_13 charset (Lithuanian language).
+      Contributor(s):
+        Jonas Jasas Jr. <jon at stekas.com>
+
+    * Debugging enhancement.
+        Added config-driven ability to abort server process in the case of bugchecks or structured exceptions (to produce a core dump).
+      Contributor(s):
+        Nickolay Samofatov <nickolay at broadviewsoftware.com>
+
+    * Fixed v1.5 bug.
+        1) Problem with IS NULL used in outer joined views.
+        2) Use MERGE instead of JOIN when indices are not applicable for a join.
+      Contributor(s):
+        Arno Brinkman <firebird at abvisie.nl>
+
+    * Fixed v1.5 bug.
+        Procedure parameters are extracted incorrectly by ISQL.
+      Contributor(s):
+        Dimitry Sibiryakov <sd at topol.udm.net>
+
+    * Fixed unregistered bug.
+        -n option of GBAK is ignored for NOT NULL contraints.
+      Contributor(s):
+        Claudio Varderrama <cvalde at usa.net>
+
+    * Fixed bug SF #750659.
+        Metadata backup and generator values.
+      Contributor(s):
+        Claudio Varderrama <cvalde at usa.net>
+
+    * Fixed unregistered bug.
+        Memory leak in the Services API.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed unregistered bug.
+        Interdependent views cannot be restored properly.
+      Contributor(s):
+        Arno Brinkman <firebird at abvisie.nl>
+
+    * Fixed v1.5 bug.
+        Wrong mapping of COUNT(*) in a HAVING clause when used with IN, ANY/SOME, ALL.
+      Contributor(s):
+        Arno Brinkman <firebird at abvisie.nl>
+
+    * Fixed bug SF #919246.
+        Exception/freeze in gds32.
+      Contributor(s):
+        Nickolay Samofatov <nickolay at broadviewsoftware.com>
+
+    * Fixed bug SF #918653.
+        NULLS FIRST doesn't work in unions.
+      Contributor(s):
+        Nickolay Samofatov <nickolay at broadviewsoftware.com>
+
+    * Fixed bug SF #750664.
+        Problems with generators in a read-only database.
+      Contributor(s):
+        Nickolay Samofatov <nickolay at broadviewsoftware.com>
+
+    * Fixed unregistered bug.
+        Memory leak in isc_database_info().
+      Contributor(s):
+        Nickolay Samofatov <nickolay at broadviewsoftware.com>
+
+    * Fixed v1.5 bug.
+        Restore performance regression.
+      Contributor(s):
+        Nickolay Samofatov <nickolay at broadviewsoftware.com>
+
+    * Fixed bugs SF #627057, #922602.
+        Wrong invariant dependencies tracking logic.
+      Contributor(s):
+        Nickolay Samofatov <nickolay at broadviewsoftware.com>
+
+    * Fixed unregistered bug.
+        Server crashes on NULL in LIKE ESCAPE.
+      Contributor(s):
+        Nickolay Samofatov <nickolay at broadviewsoftware.com>
+
+    * Fixed unregistered bug.
+        Solved a number of problems with the win32 lock manager.
+        Problems manifested themselves as low performance when several operations were waiting on locks simultaneously.
+      Contributor(s):
+        Nickolay Samofatov <nickolay at broadviewsoftware.com>
+
+    * Fixed unregistered bug.
+        Length of string types containing binary data (OCTETS) is determined incorrectly in UDFs.
+      Contributor(s):
+        Fred Polizo Jr. <fpolizo at users.sourceforge.net>
+
+    * New port.
+        Introduced AMD64 port.
+      Contributor(s):
+        Nickolay Samofatov <nickolay at broadviewsoftware.com>
+
+    * Fixed v1.5 bug.
+        Memory leak in EXECUTE STATEMENT.
+      Contributor(s):
+        Alexander Peshkoff <peshkoff at hotmail.ru>
+
+    * Fixed v1.5 bug.
+        Problem with searching firebird.conf in $FIREBIRD on win32.
+      Contributor(s):
+        Alexander Peshkoff <peshkoff at hotmail.ru>
+
+    * Fixed bug QC #7449.
+        UDF arguments are prepared/optimized twice.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed unregistered bug.
+        Generator pages are not flushed properly.
+      Contributor(s):
+        Oleg LOA <loa at mail.ru>
+        Vlad Horsun <horsun at kdb.dp.ua>
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed bug QC #7496.
+        Memory leak in SPs when aggregation errors are handled in a WHEN block.
+      Contributor(s):
+        Oleg LOA <loa at mail.ru>
+
+    * Fixed SF bug #784121.
+        Expression evaluation is not supported in LEFT JOIN.
+      Contributor(s):
+        Claudio Varderrama <cvalde at usa.net>
+
+    * Fixed unregistered bug.
+        Server crashes when views and selectable procedures are intermixed.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Improved win32 installation utilities.
+        Added a service description string to the services configuration info.
+      Contributor(s):
+        Olivier Mascia <om at tipgroup.com>
+
+    * Fixed v1.5 bug.
+        Memory corruptions in the embedded DSQL API implementation.
+      Contributor(s):
+        Nickolay Samofatov <nickolay at broadviewsoftware.com>
+
+  **************
+  * v1.5 Final
+  **************
+
+    * None
+
+  **************
+  * v1.5 RC 9
+  **************
+
+    * Various installation fixes and improvements.
+      Contributor(s):
+        Mark O'Donohue <mark.odonohue at cytopia.com.au>
+        Alexander Peshkoff <peshkoff at hotmail.ru>
+        Nickolay Samofatov <skidder at bssys.com>
+        Paul Reeves <preeves at ibphoenix.com>
+        Olivier Mascia <om at tipgroup.com>
+
+    * Fixed RC8 bug.
+        Streamed blobs are restored incorrectly.
+      Contributor(s):
+        Nickolay Samofatov <skidder at bssys.com>
+
+    * Fixed RC8 bug.
+        Restored support for new BLR codes in the built-in BLR blob filter.
+      Contributor(s):
+        Alexander Peshkoff <peshkoff at hotmail.ru>
+        Dmitry Yemanov <yemanov at yandex.ru>
+        Nickolay Samofatov <skidder at bssys.com>
+
+    * Fixed RC8 bug.
+        Server crashes or wrong results related to views/SPs referenced from different contexts.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Upgraded examples.
+        Example database and scripts are upgraded to SQL dialect 3.
+      Contributor(s):
+        Helen Borrie <helebor at tpg.com.au>
+        Vlad Horsun <horsun at kdb.dp.ua>
+
+    * Fixed RC8 bug.
+        Record format is not updated properly in some cases.
+      Contributor(s):
+        Eugeny Kilin <john at citycard.izhnet.ru>
+
+    * Improved win32 installation utilities.
+        Link instreg, instsvc and instclient with C/C++ runtime statically to avoid dependencies from MS libraries.
+      Contributor(s):
+        Olivier Mascia <om at tipgroup.com>
+
+    * Fixed RC8 bug.
+        Changed isc_get_client_version() API to return ISC (i.e. compatibility) version info.
+      Contributor(s):
+        Paul Reeves <preeves at ibphoenix.com>
+
+    * Fixed unregistered bug.
+        Possibility of SEGV in ISQL when exiting w/o connect or create database.
+      Contributor(s):
+        Alexander Peshkoff <peshkoff at hotmail.ru>
+
+    * Fixed RC8 bug.
+        Fixed a couple of threading issues in the client library.
+      Contributor(s):
+        Nickolay Samofatov <skidder at bssys.com>
+
+    * Fixed RC8 bug.
+        Computed fields evaluate to NULL in triggers.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed RC8 bug.
+        Restored valid user permissions for the security database.
+      Contributor(s):
+        Paul Reeves <preeves at ibphoenix.com>
+
+    * Fixed bug SF #211781.
+        Win32: Server don't close thread handles.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed RC8 bug.
+        Fixed instclient.exe to generate correct file version info for gds32.
+      Contributor(s):
+        Olivier Mascia <om at tipgroup.com>
+
+  **************
+  * v1.5 RC 8
+  **************
+
+    * C/C++ client interface version added
+        FB_API_VER defined to 15 for Firebird 1.5 in ibase.h
+      Contributor(s):
+        Nickolay Samofatov <skidder at bssys.com>
+
+    * Fixed unregistered bug.
+        Server crash when closing a blob after a transaction is finished.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed unregistered bug.
+        Server crash in some cases of sort finilization.
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
+        Oleg LOA <loa at mail.ru>
+
+    * Fixed RC7 bug.
+        Wrong behaviour of CreateInternalWindow flag in the service mode.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed RC7 bug.
+        Wrong pathname resolution in the database creation.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed unregistered bug.
+        Server crash when GBAK is running as a service in multi-volume operations.
+      Contributor(s):
+        Oleg LOA <loa at mail.ru>
+
+    * Fixed unregistered bug.
+        Server crash when NULL is evaluated in the BETWEEN predicate.
+      Contributor(s):
+        Oleg LOA <loa at mail.ru>
+
+    * New win32 installation tool.
+        Added instclient.exe tool as a replacement for the previous instgds.exe.
+      Contributor(s):
+        Olivier Mascia <om at tipgroup.com>
+
+    * Fixed RC7 bug.
+        Fixed some race conditions in the server initialization code.
+      Contributor(s):
+        Nickolay Samofatov <skidder at bssys.com>
+
+    * Fixed RC7 bugs.
+        Some packaging/installation issues on Linux.
+      Contributor(s):
+        Mark O'Donohue <mark.odonohue at cytopia.com.au>
+
+    * Fixed unregistered bug.
+        Charset problem when mixing none (constants)/ascii charset and other character-sets in concatenation.
+      Contributor(s):
+        Arno Brinkman <firebird at abvisie.nl>
+
+    * Fixed RC7 bug.
+        Forcedly set SO_KEEPALIVE flag for POSIX CS connections independently of what was given by xinetd/inetd to us.
+      Contributor(s):
+        Nickolay Samofatov <skidder at bssys.com>
+
+    * Fixed bug SF #489762.
+        Trigger on view with union receive nulls.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed bug SF #489764.
+        Trigger with except-s on view with union.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+  **************
+  * v1.5 RC 7
+  **************
+
+    * Fixed unregistered bug.
+        Server crashes when explicit PLAN with MERGE and JOINs is specified.
+      Contributor(s):
+        Arno Brinkman <firebird at abvisie.nl>
+
+    * Fixed unregistered bug.
+        Possible issues in the metadata cache.
+      Contributor(s):
+        Eugeny Kilin <john at citycard.izhnet.ru>
+
+    * Fixed RC6 bug.
+        Problem in the cyclic metadata dependency handling.
+      Contributor(s):
+        Eugeny Kilin <john at citycard.izhnet.ru>
+        Nickolay Samofatov <skidder at bssys.com>
+
+    * Fixed RC6 bug.
+        Solved problems with global new/delete operators in host applications using STL.
+      Contributor(s):
+        Nickolay Samofatov <skidder at bssys.com>
+
+    * Fixed unregistered bug.
+        Reject user names with non-printable characters in GSEC.
+      Contributor(s):
+        Alexander Peshkoff <peshkoff at hotmail.ru>
+
+    * Fixed unregistered bug.
+        Failure of GROUP BY <constant> operation.
+      Contributor(s):
+        Arno Brinkman <firebird at abvisie.nl>
+
+    * Fixed unregistered bug.
+        Unnamed columns when some functions/operations are used in the select list.
+      Contributor(s):
+        Claudio Varderrama <cvalde at usa.net>
+
+    * Fixed RC6 bug.
+        Wrong index utilization in some cases.
+      Contributor(s):
+        Arno Brinkman <firebird at abvisie.nl>
+
+    * Fixed RC6 bug.
+        Server crash with explicit plans used in subqueries, when outer aggregation is performed.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * GSTAT enhancement.
+        Command-line switches "-r" and "-t" are now supported via the Services API.
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
+
+    * Fixed RC6 bug.
+        Removed handle leaks in the cached security database connection.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed RC6 bug.
+        Long prepare time for explicit plans in complex joins.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Security fix.
+        Verify secondary database pathnames against DatabaseAccess entry of firebird.conf.
+      Contributor(s):
+        Alexander Peshkoff <peshkoff at hotmail.ru>
+
+    * Fixed RC6 bug.
+        Server crashes in some cases of savepoints usage.
+      Contributor(s):
+        Nickolay Samofatov <skidder at bssys.com>
+
+    * Renamed the registry key.
+        1) The registry location is changed from "HKLM\SOFTWARE\FirebirdSQL\Firebird\CurrentVersion" to "HKLM\SOFTWARE\Firebird Project\Firebird Server\Instances".
+        2) The server path location is changed from "RootDirectory" to "DefaultInstance" for consistency with future versions.
+      Contributor(s):
+        Olivier Mascia <om at tipgroup.com>
+
+    * Enhanced win32 guardian.
+        Added switch to start Classic server as an application.
+      Contributor(s):
+        Paul Reeves <preeves at ibphoenix.com>
+
+    * Fixed RC6 bug.
+        1) Fixed various issues with the win32 CS lock manager.
+        2) Enabled automatic lock manager pool resizing.
+      Contributor(s):
+        Nickolay Samofatov <skidder at bssys.com>
+
+    * Fixed unregistered bug.
+        Possible server crash after unsuccessful index creation.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed RC6 bug.
+        Incorrect NULLs handling in unique indices.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Added new collation.
+        ISO_HUN for ISO8859_2 charset (Hungarian language).
+      Contributor(s):
+        Sandor Szollosi <ssani at freemail.hu>
+
+    * Fixed RC6 bug.
+        CURRENT_ROLE isn't cleared for an invalid role specified.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed unregistered bug.
+        Problems with parsing remote paths in GFIX (in-limbo transactions information).
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
+
+    * Fixed RC6 bug.
+        Problems with security.fdb access.
+      Contributor(s):
+        Alexander Peshkoff <peshkoff at hotmail.ru>
+
+  **************
+  * v1.5 RC 6
+  **************
+
+    * Fixed unregistered bug.
+        Fixed minor inconsistencies in charsets naming.
+      Contributor(s):
+        Peter Jacobi <pj at walter-graphtek.com>
+
+    * Fixed unregistered bug.
+        GSTAT crash in some switch combinations.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed unregistered bug.
+        Fixed broken savepoint handling in BREAK/LEAVE/EXIT.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed optimizer.
+        1) Prefer single indices instead of composite ones.
+        2) Prefer full-match unique indices.
+      Contributor(s):
+        Arno Brinkman <firebird at abvisie.nl>
+
+    * Fixes and enhancements to win32 instreg / instsvc install tools.
+        See their help output for details.
+      Contributor(s):
+        Olivier Mascia <om at tipgroup.com>
+
+    * Fixed unregistered bug.
+        Improved OCTETS output in ISQL.
+      Contributor(s):
+        Peter Jacobi <pj at walter-graphtek.com>
+
+    * Fixed RC5 bug.
+        Fixed BREAK/LEAVE incompatibility with FOR EXECUTE STATEMENT loops.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed RC5 bug.
+        Bug with expressions without fields inside aggregate-functions.
+      Contributor(s):
+        Arno Brinkman <firebird at abvisie.nl>
+
+    * Fixed RC5 bug.
+        EXECUTE STATEMENT returning BLOB datatype.
+      Contributor(s):
+        Alexander Peshkoff <peshkoff at hotmail.ru>
+
+    * Fixed RC5 bug.
+        Various issues with server-side database aliases. In particular, restore support for relative paths in local connection strings
+      Contributor(s):
+        Nickolay Samofatov <skidder at bssys.com>
+
+    * Fixed RC5 bug.
+        Possibly incorrect stream mapping in DSQL parser
+      Contributor(s):
+        Arno Brinkman <firebird at abvisie.nl>
+
+    * Fixed RC5 bug.
+        Make COALESCE/CASE output descriptor more SQL-standard.
+      Contributor(s):
+        Arno Brinkman <firebird at abvisie.nl>
+
+    * Fixed RC5 bug.
+        Engine crash during execution of DDL altering long recursive procedure->trigger chains
+      Contributor(s):
+        Nickolay Samofatov <skidder at bssys.com>
+
+    * Fixed RC5 bug.
+        Thread-safety issues in the SS client library and Windows CS listener process
+      Contributor(s):
+        Nickolay Samofatov <skidder at bssys.com>
+
+    * Fixed RC5 bug.
+        Fix more Windows CS lock-ups. It passes heavy stress-tests now, seems to be stable
+      Note:
+        Automatic lock table resizing has been disabled for this target. You may need to adjust LockMemSize parameter if you experience "lock manager out of room" errors or failures during database restore
+      Contributor(s):
+        Nickolay Samofatov <skidder at bssys.com>
+
+    * Fixed RC5 bug.
+        Rollback unplanned change of isc_que_events API function parameter types
+      Contributor(s):
+        Dimitry Sibiryakov <sd at topol.udm.net>
+
+    * Fixed RC5 bug.
+        Engine crashes if IO error happens early during database startup in SS builds
+      Contributor(s):
+        Nickolay Samofatov <skidder at bssys.com>
+
+    * Maximum number of indices per table increased
+        Backported appropriate changes from 1.0.3 tree
+      Notes:
+        1) Old maximum number of indices was 64, new max value is (DB_PAGE_SIZE/16)-2
+        2) When actual number of indices for a particular table exceeds 256 engine behavior may be unstable
+      Contributor(s):
+        Nickolay Samofatov <skidder at bssys.com>
+
+    * Fixed bug SF #721792
+        Long runnning connection causes mem leak in OS kernel device
+      Contributor(s):
+        Nickolay Samofatov <skidder at bssys.com>
+
+  **************
+  * v1.5 RC 5
+  **************
+
+    * Fixed RC4 bug.
+        Incorrect GDSCODE evaluation in the case of user-defined exceptions.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed bugs SF #774987, #775003.
+        1) ltrim('') and rtrim('') return NULL; rtrim forgets 1st char
+        2) log(x, y) in fact returns log(y, x)
+      Contributor(s):
+        Paul Vinkenoog <paul at vinkenoog.nl>
+        Nickolay Samofatov <skidder at bssys.com>
+
+    * Fixed RC4 bug.
+        Incorrect nested aggregates tracking.
+      Contributor(s):
+        Arno Brinkman <firebird at abvisie.nl>
+
+    * Fixed RC4 bug.
+        Various lockups in win32 CS.
+      Contributor(s):
+        Nickolay Samofatov <skidder at bssys.com>
+
+    * Fixed unregistered bug.
+        Server crash caused by lost transaction context.
+      Contributor(s):
+        Alexander Peshkoff <peshkoff at hotmail.ru>
+
+    * Explicit locking change.
+        Make FOR UPDATE and WITH LOCK independent subclauses.
+      Contributor(s):
+        Nickolay Samofatov <skidder at bssys.com>
+
+    * Fixed unregistered bug.
+        Server crash for any combination of sub-select & between.
+      Contributor(s):
+        Alexander Peshkoff <peshkoff at hotmail.ru>
+
+    * Fixed unregistered bug.
+        Occasional server crash on plan generation.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+  **************
+  * v1.5 RC 4
+  **************
+
+    * Fixed RC3 bug.
+        Server crash on some metadata operations.
+      Contributor(s):
+        Alexander Peshkoff <peshkoff at hotmail.ru>
+
+    * Fixed RC3 bug.
+        Fixed restore of backup file without required UDF(s).
+      Contributor(s):
+        Alexander Peshkoff <peshkoff at hotmail.ru>
+
+    * Fixed RC3 bug.
+        Metadata cache issues related to CREATE OR ALTER statement.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed RC3 bug.
+        Broken exception handling in SPs/triggers.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed bug SF #736318.
+        "<value> STARTING WITH <field>" fails when using indices.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed RC3 bug.
+        When one merge was done no other merge could be generated by the optimizer.
+      Contributor(s):
+        Arno Brinkman <firebird at abvisie.nl>
+
+    * Fixed RC3 bug.
+        Various tempfile-related issues.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed RC3 bug.
+        Wrong console input processing in ISQL.
+      Contributor(s):
+        Tomas Skoda <tomas.skoda at jdsoftware.sk>.
+
+    * Fixed unregistered bug.
+        Non-existent deadlock is raised after execution of pre-(update/delete) triggers.
+      Contributor(s):
+        Alexander Peshkoff <peshkoff at hotmail.ru>
+
+    * Parser improvement.
+        Make INSERTING/UPDATING/DELETING keywords non-reserved.
+      Contributor(s):
+        Nickolay Samofatov <skidder at bssys.com>
+
+    * Error reporting improvements.
+        Added new (more specific) error messages for some of v1.5 changes.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+        Arno Brinkman <firebird at abvisie.nl>
+        Alexander Peshkoff <peshkoff at hotmail.ru>
+
+    * Fixed RC3 bug.
+        Disabled explicit SELECT locking for non-trivial queries (aggregates, SPs, joins, unions).
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+        Nickolay Samofatov <skidder at bssys.com>
+
+    * Installation improvement / security fix.
+        Added -login switch to instsvc allowing to install FB service as non-localsystem account.
+      Contributor(s):
+        Alexander Peshkoff <peshkoff at hotmail.ru>
+
+    * Fixed RC3 bug.
+        1) Made savepoints SQL99-compliant.
+        2) Fixed bug related to exception handling when savepoints are used.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed RC3 bug.
+        'no current record for fetch operation' error for queries where a MERGE was done and/or SP/view/aggregates/unions were used together.
+      Contributor(s):
+        Arno Brinkman <firebird at abvisie.nl>
+
+    * Re-introduced trimming of VARCHAR fields in the remote protocols.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed unregistered bug.
+        Random server crash in the case of big queries being prepared.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed RC3 bug regarding API compatibility.
+      Contributor(s):
+        Dimitry Sibiryakov <sd at topol.udm.net>
+
+    * Fixed RC3 memory leaks.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed RC3 problem.
+         Server crash on restore (caused by GCC 3.2 bug).
+      Contributor(s):
+        Nickolay Samofatov <skidder at bssys.com>
+        Dimitry Sibiryakov <sd at topol.udm.net>
+
+  **************
+  * v1.5 RC 3
+  **************
+
+    * Fixed RC2 bug.
+        Server crash on restore of some databases.
+      Contributor(s):
+        Nickolay Samofatov <skidder at bssys.com>
+
+    * Configuration improvement.
+        Make path management in firebird.conf to follow the OS requirements.
+      Contributor(s):
+        Alexander Peshkoff <peshkoff at hotmail.ru>
+
+    * Fixed unregistered bug.
+        Wrong UDF arguments of types DATE/TIME (dialect 3).
+      Contributor(s):
+        Oleg LOA <loa at mail.ru>
+
+    * Fixed unregistered bug.
+        Possible reference integrity violation.
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed RC2 installation issues on Linux.
+        1) Permissions problem for firebird.conf (SF #745090).
+        2) Generate aliases.conf on install.
+        3) Use rpmbuild to create packages.
+      Contributor(s):
+        Erik S. LaBianca <labiance at users.sourceforge.net>
+        Nickolay Samofatov <skidder at bssys.com>
+
+    * Fixed RC2 bug.
+        Incorrect handling of numeric NULLs as EXCEPTION or EXECUTE STATEMENT arguments.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed RC2 bugs.
+        1) UDF linkage problems on Linux.
+        2) Allow C programs use our shared libraries on POSIX platforms.
+        3) Make libfbembed.so compatible with third-party tools such as Kylix.
+      Contributor(s):
+        Nickolay Samofatov <skidder at bssys.com>
+
+    * Fixed unregistered bug.
+        Allow easy adjustment of LockSemCount on POSIX platforms. No need to use gds_drop or reboot machine to make new setting take effect
+      Contributor(s):
+        Nickolay Samofatov <skidder at bssys.com>
+
+    * Parser improvement.
+        Make FIRST/SKIP keywords non-reserved.
+      Contributor(s):
+        Nickolay Samofatov <skidder at bssys.com>
+
+    * Fixed RC2 bug.
+        Problems with fbclient.dll on Win9x.
+      Contributor(s):
+        Alexander Peshkoff <peshkoff at hotmail.ru>
+
+    * Fixed RC2 bug.
+        Optimizer crash when all indices of a table had the selectivity of 1.
+      Contributor(s):
+        Arno Brinkman <firebird at abvisie.nl>
+
+    * Fixed RC2 bug.
+        Various issues with the lock manager.
+      Contributor(s):
+        Nickolay Samofatov <skidder at bssys.com>
+
+    * Fixed unregistered bug.
+        Wrong attachment reference after exception in PSQL.
+      Contributor(s):
+        Alexander Peshkoff <peshkoff at hotmail.ru>
+
+    * Fixed unregistered bug.
+        BREAK/LEAVE and EXIT statements are now available for usage in triggers.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed RC2 bug.
+        Server crash when NULL is used as EXECUTE STATEMENT argument.
+      Contributor(s):
+        Alexander Peshkoff <peshkoff at hotmail.ru>
+
+    * Fixed RC2 bug.
+        Server crash when explicit pessimistic locks are used from PSQL.
+      Contributor(s):
+        Nickolay Samofatov <skidder at bssys.com>
+
+  **************
+  * v1.5 RC 2
+  **************
+
+    * Fixed unregistered bug.
+        Possible index corruptions during garbage collection.
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed unregistered bug.
+        Solved problems with temporary files management:
+        1) Security hole on all POSIX platforms except FREEBSD/OPENBSD related to mktemp usage (possible DoS attacks or privileges elevation)
+        2) Only 27 unique filenames generated on win32 (which could cause unpredictable behavior in SS builds)
+      Contributor(s):
+        Nickolay Samofatov <skidder at bssys.com>
+
+    * Fixed RC1 bug.
+        Various server crashes in the remote protocol code.
+      Contributor(s):
+        Nickolay Samofatov <skidder at bssys.com>
+
+    * Event manager change.
+        Disabled usage of definite aux port in CS builds due to known issues.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed unregistered bug.
+        Enabled aggregate functions from different parent context to be used inside another aggregate function.
+      Example:
+        SELECT MAX((SELECT COUNT(*) FROM RDB$RELATIONS)) FROM RDB$RELATIONS
+      Contributor(s):
+        Arno Brinkman <firebird at abvisie.nl>
+
+    * Fixed RC1 bug.
+        Aggregates from a different parent context were not allowed in the HAVING clause.
+      Contributor(s):
+        Arno Brinkman <firebird at abvisie.nl>
+
+    * Fixed unregistered bug.
+        Possible crashes on disconnect when event notification is used.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Service manager changes.
+        Features of GSTAT/GSEC are not available via Services API in win32 CS (until v1.6 release).
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed unregistered bug.
+        Wrong record statistics is reported when operation fails due to some reason.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed RC1 bug.
+        Problems with the service manager being attached from different clients simultaneously.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed RC1 bug.
+        Various server crashes when any remote protocol is used.
+      Note:
+        IMPORTANT!!! - Don't forget to update the client library, because this bug existed in both server and client.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed unregistered bug.
+        stdin/stdout cannot be used to redirect console I/O in win32 build of GBAK.
+      Contributor(s):
+        Alexander Peshkoff <peshkoff at hotmail.ru>
+
+    * Fixed RC1 bug.
+        Server crash in EXECUTE STATEMENT combined with exception handling block.
+      Contributor(s):
+        Alexander Peshkoff <peshkoff at hotmail.ru>
+
+    * Fixed unregistered bug.
+        Broken lock table resizing in CS. No more "lock manager out of room" (Win32 CS 1.5 RC1) or crashes (possible in all other CS builds of Interbase/Firebird).
+      Contributor(s):
+        Nickolay Samofatov <skidder at bssys.com>
+
+    * INTL improvement.
+        Make UPPER function work for WIN1251 charset without explicit collations.
+      Contributor(s):
+        Nickolay Samofatov <skidder at bssys.com>
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed RC1 bug.
+        Cannot connect to the service manager with non-default password.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed RC1 bug.
+        Fixed problem with CREATE OR ALTER TRIGGER.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed RC1 bug.
+        Server crashes in some cases of error handling.
+      Contributor(s):
+        Alexander Peshkoff <peshkoff at hotmail.ru>
+
+    * Fixed unregistered bug.
+        Possible database corruption when you modify/delete the same record in pre-trigger for which this trigger was called.
+        This issue also was known as BUGCHECK(291) before.
+      Contributor(s):
+        Alexander Peshkoff <peshkoff at hotmail.ru>
+
+    * Fixed RC1 bug.
+        Incorrect values returned by ROW_COUNT.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed unregistered bug.
+        Buffer overrun in isc_database_info() call.
+      Contributor(s):
+        Oleg LOA <loa at mail.ru>
+
+    * IMPORTANT!!! - Configuration manager change.
+        Now the server exits on missing / wrong firebird.conf with error report in system log.
+      Contributor(s):
+        Alexander Peshkoff <peshkoff at hotmail.ru>
+
+    * Fixed RC1 bug.
+        SP with input parameters and aggregate tracking/validating methods failed.
+      Contributor(s):
+        Arno Brinkman <firebird at abvisie.nl>
+
+    * Fixed RC1 bug.
+        Crash on disconnect in the embedded server.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed RC1 bug.
+        Parameters from SPs in a sub-select were not remaped to the proper context in a aggregate query.
+      Example:
+        SELECT (SELECT SP.X FROM SP_TEST(T1.ID) SP) FROM TABLE1 T1 GROUP BY T1.ID
+      Contributor(s):
+        Arno Brinkman <firebird at abvisie.nl>
+
+    * Fixed RC1 bug.
+        Problem with start/stop commands of instsvc.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed Services API.
+        Enabled statistics Services API for POSIX CS builds.
+      Contributor(s):
+        Nickolay Samofatov <skidder at bssys.com>
+
+  **************
+  * v1.5 RC 1
+  **************
+
+    * Fixed Beta 4 bug.
+        EXECUTE STATEMENT and SQLDA > 32KB.
+      Contributor(s):
+        Alexander Peshkoff <peshkoff at hotmail.ru>
+
+    * Changed parser.
+        1) ROWS_AFFECTED is renamed to ROW_COUNT
+        2) CONNECTION_ID/TRANSACTION_ID are renamed to CURRENT_CONNECTION/CURRENT_TRANSACTION
+        3) Some of newly introduced tokens are made non-reserved
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed Beta 4 bugs.
+        1) sub-selects inside COALESCE function
+        2) parameter ordering
+      Contributor(s):
+        Arno Brinkman <firebird at abvisie.nl>
+
+    * Fixed Services API.
+        Partially enabled Services API for win32 CS builds.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed unregistered bug.
+        Wrong type of event delivery (unnecessary usage of OOB packets).
+      Contributor(s):
+        Jim Starkey <jas at netfrastructure.com>
+        Paul Reeves <preeves at ibphoenix.com>
+
+    * Fixed Beta 4 bug.
+        Optimizer couldn't ignore bad indices in some cases.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Improved lock manager
+        Deadlocks are now detected and reported as soon all blocking processes received notifications, i.e. instantly in all normal cases
+      Contributor(s):
+        Nickolay Samofatov <skidder at bssys.com>
+
+    * Fixed Beta 4 bug.
+        Locking and performance issues in win32 CS.
+      Contributor(s):
+        Nickolay Samofatov <skidder at bssys.com>
+
+    * Fixed Beta 4 bug.
+        Error during backup with "ignore in-limbo transactions" option.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed unregistered bug.
+        Server crashes in some Services API operations.
+      Contributor(s):
+        Arno Brinkman <firebird at abvisie.nl>
+
+    * Fixed Beta 4 bug.
+        Problems with IP address in connection strings.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed Beta 4 bug.
+        Compatibility problems with new IBX versions.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed Beta 4 bug.
+        EXECUTE STATEMENT: numeric variables and dialect 3 databases.
+      Contributor(s):
+        Alexander Peshkoff <peshkoff at hotmail.ru>
+
+    * Advanced security abilities.
+        Implemented configurable access for databases, external tables and UDF libraries.
+      Contributor(s):
+        Alexander Peshkoff <peshkoff at hotmail.ru>
+
+    * Fixed resource/memory leaks.
+      Contributor(s):
+        Mike Nordell <tamlin at algonet.se>
+        Alexander Peshkoff <peshkoff at hotmail.ru>
+        Nickolay Samofatov <skidder at bssys.com>
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed unregistered bug.
+        Buffer overrun with multidimensional arrays.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed Beta 4 bug.
+        RECREATE VIEW with check option.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed Beta 4 bug.
+        Problems with loading INTL plugins.
+      Contributor(s):
+        Mike Nordell <tamlin at algonet.se>
+
+  **************
+  * v1.5 Beta 4
+  **************
+
+    * Fixed bugs SF #213460, #678718.
+        Various issues with events used on multihomed hosts.
+      Note:
+        Now it's also possible to setup a definite port for event processing.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed some resource leaks.
+      Contributor(s):
+        Mike Nordell <tamlin at algonet.se>
+        Alexander Peshkoff <peshkoff at hotmail.ru>
+
+    * Fixed Beta 3 bug.
+        Bug with an aggregate sub-query inside a IN clause.
+      Contributor(s):
+        Arno Brinkman <firebird at abvisie.nl>
+
+    * Fixed Services API.
+        Enabled Services API for posix CS builds.
+      Notes:
+        1. Appropriate changes in Win32 CS are not ready yet
+        2. Backup/restore service was fixed, tested and should work
+        3. Database validation was partially fixed and may work
+        4. Other services are probably non-functional in CS builds yet
+      Contributor(s):
+        Nickolay Samofatov <skidder at bssys.com>
+
+    * SQL enhancement.
+        Allowed NULLs in unique constraints and indices (SQL-99 spec).
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+        Nickolay Samofatov <skidder at bssys.com>
+
+    * Fixed Beta 3 bug.
+        Problems with RECREATE VIEW.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Performance improvement.
+        VIO undo log now uses B+ tree to store savepoint record data. It improves performance when doing multiple updates of
+        record in a single transaction just a little (usually 2-3 orders of magnitude for 100000 records).
+      Contributor(s):
+        Nickolay Samofatov <skidder at bssys.com>
+
+    * Fixed unregistered bug.
+        Database corruption when backing out the savepoint after large number of DML operations
+        (so transaction-level savepoint is dropped) and record was updated _not_ under the savepoint and deleted under savepoint.
+      Contributor(s):
+        Nickolay Samofatov <skidder at bssys.com>
+
+    * Improved EXECUTE STATEMENT.
+        Now it's possible to return values from the dynamic SQL.
+      Syntax:
+        EXECUTE STATEMENT <value> INTO <var_list>; (singleton form)
+        or
+        FOR EXECUTE STATEMENT <value> INTO <var_list> DO <stmt_list>;
+      Contributor(s):
+        Alexander Peshkoff <peshkoff at hotmail.ru>
+
+    * Fixed Beta 3 bug.
+        With a large amount of SQL the server crashed on generating BLR.
+      Contributor(s):
+        Arno Brinkman <firebird at abvisie.nl>
+
+  **************
+  * v1.5 Beta 3
+  **************
+
+    * Fixed Beta 2 bug.
+        EXECUTE STATEMENT doesn't work in autocommit transactions.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed Beta 2 bug.
+        Server crashes due to problems in the optimizer.
+      Contributor(s):
+        Arno Brinkman <firebird at abvisie.nl>
+
+    * Fixed Beta 2 bug.
+        Minor ODS upgrade is no longer critical. Now you can attach any ODS 10.0 database without errors (no need to backup/restore).
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed Beta 2 bug.
+        "Wrong page type" error during some DDL operations.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed unregistered bug.
+        Server hangs during disconnect after mass updates.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Improved optimizer.
+        Sub-selects in SET clause of UPDATE now can use indices.
+      Contributor(s):
+        Arno Brinkman <firebird at abvisie.nl>
+
+    * Fixed unregistered bug.
+        "Context already in use" error in the case of DISTINCT with sub-selects.
+      Contributor(s):
+        Arno Brinkman <firebird at abvisie.nl>
+
+    * Enhanced isc_database_info abilities.
+        List of currently active transactions is now available via isc_database_info call.
+      Contributor(s):
+        Nickolay Samofatov <skidder at bssys.com>
+
+    * Fixed Beta 2 bug.
+        ISQL cannot work with scripts containing character code 0xFF.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed Beta 2 bug.
+        Ineffective PLANs made by the optimizer for SPs and views.
+      Contributor(s):
+        Arno Brinkman <firebird at abvisie.nl>
+
+    * Performance improvement.
+        Shortcut boolean evaluation.
+      Note:
+        The behaviour is controlled by "CompleteBooleanEvaluation" option of firebird.conf. Default is 0 (shortcut evaluation).
+      Contributor(s):
+        Mike Nordell <tamlin at algonet.se>
+
+    * Fixed Beta 2 bug.
+        Stack overflow during statement preparation.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+        Mike Nordell <tamlin at algonet.se>
+
+    * Performance improvement.
+        Speed-up for index operations (IA32 CPU architecture only)
+      Contributor(s):
+        Mike Nordell <tamlin at algonet.se>
+
+    * Fixed Beta 2 bug.
+        Wrong record operation statistics.
+      Contributor(s):
+        Evgeny Kilin <john at citycard.izhnet.ru>
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed Beta 2 bug.
+        Wrong line-number statistics in DSQL.
+      Contributor(s):
+        Nickolay Samofatov <skidder at bssys.com>
+
+    * Fixed Beta 2 bug.
+        Server crashes during some operations.
+      Contributor(s):
+        Alexander Peshkoff <peshkoff at hotmail.ru>
+
+    * Change in universal triggers.
+        Allowed access to both (OLD and NEW) contexts in universal triggers.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Improved optimizer.
+        When an equal-node and other nodes (geq, leq, between...) are available for an index retrieval, then use the equal node always instead of the others.
+      Contributor(s):
+        Arno Brinkman <firebird at abvisie.nl>
+
+    * Fixed unregistered bug.
+        Long delays during connecting/disconnecting on WinXP.
+      Contributor(s):
+        Arno Brinkman <firebird at abvisie.nl>
+
+    * Fixed Beta 2 bug.
+        Server crash during service manager operations.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Generic cleanup.
+        Removed a lot of unused code.
+      Contributor(s):
+        Blas Rodriguez Somoza <blas at puertareal.com>
+        Erik Kunze <erik.kunze at philosys.de>
+
+  **************
+  * v1.5 Beta 2
+  **************
+
+    * Fixed bug SF #523589.
+        View is affecting the result of a query.
+      Comment:
+        Problem was that RSE's (inside a view) where not flagged as variant.
+      Contributor(s):
+        Arno Brinkman <firebird at abvisie.nl>
+
+    * Changed behaviour of the forced writes mode.
+        Now, if FW=off (disabled), you can control how often dirty pages are flushed on disk.
+      Note:
+        It allows to use disabled FW mode with more reliablity than before (mostly it affects win32 platforms).
+      Contributor(s):
+        Blas Rodriguez Somoza <blas at puertareal.com>
+
+    * Renamed ISC4.GDB.
+        The security database has been renamed to security.fdb.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * New configuration file.
+        firebird.conf is finally published.
+      Note:
+        Directory handling options are not available yet.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * New user-defined functions.
+        Functions LPAD and RPAD are added to IB_UDF library.
+      Contributor(s):
+        Juan Guerrero <guerrero747 at yahoo.es>
+
+    * Fixed Beta 1 bug.
+        ISQL wasn't able to extract universal triggers.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed unregistered bug.
+        Sometimes GFIX didn't allow to specify "-user" and "-password" switches ("incompatible swiches" error).
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Security connection cache.
+        Connection to the security database is now cached, thus allowing to decrease time of subsequent database attachments.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Some improvements.
+        1. Reduce memory usage by the server.
+        2. Direct external I/O when the memory is not available for the sorting.
+        3. Increased number of streams and predicates supported by the optimizer.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed bug SF #508594.
+        LEFT JOIN with VIEWs.
+      Comment:
+        Simple LEFT JOIN on a VIEW with only an ON clause didn't use an index even if it was possible.
+      Contributor(s):
+        Arno Brinkman <firebird at abvisie.nl>
+
+    * Fixed Beta 1 bug.
+        Server crashes during retrieval of the database statistics.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed Beta 1 bug.
+        Wrong context was used with FieldX IN (sub-select) predicate.
+      Contributor(s):
+        Arno Brinkman <firebird at abvisie.nl>
+
+    * Fixed Beta 1 bug.
+        Yet another "deadlock" error during metadata updates.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed Beta 1 bug.
+        It wasn't possible to use non-aggregate related-fields from an aggregate query inside a sub-query.
+      Contributor(s):
+        Arno Brinkman <firebird at abvisie.nl>
+
+    * Fixed Beta 1 bug.
+        The client library cannot be loaded in some cases.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed Beta 1 bug.
+        The guardian service cannot stop the server.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * New character sets.
+        DOS737, DOS775, DOS858, DOS862, DOS864, DOS866, DOS869,
+        WIN1255, WIN1256, WIN1257,
+        ISO8859_3, ISO8859_4, ISO8859_5, ISO8859_6, ISO8859_7, ISO8859_8, ISO8859_9, ISO8859_13
+      Note:
+        Collations for the above charsets are not available yet.
+      Contributor(s):
+        Blas Rodriguez Somoza <blas at puertareal.com>
+
+  **************
+  * v1.5 Beta 1
+  **************
+
+    * CREATE VIEW changes.
+        Disallowed PLAN subclause.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Changed aggregate tracking behavior
+        Introduce backwards compatibilty within aggregates.  Deepest field inside aggregate determine where an aggregate-context should belong to.
+      Contributor(s):
+        Arno Brinkman <firebird at abvisie.nl>
+
+    * Improved optimizer.
+        Better optimizations of "complex" JOIN queries (LEFT JOIN, views, SPs, etc).
+      Contributor(s):
+        Arno Brinkman <firebird at abvisie.nl>
+
+    * Fixed Alpha 5 bug.
+        Major memory leaks are fixed.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * New API functions.
+        IB7-compliant functions to return version of the client library.
+        isc_get_client_version(), isc_get_client_major_version(), isc_get_client_minor_version()
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Sort/merge improvement.
+        Merging (SORT MERGE plans) is now done via in-memory sorting module.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed Alpha 5 bug.
+        "Invalid transaction handle (expecting explicit transaction start)" error.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * New memory manager.
+        Internal implementation of the memory manager has been changed to give us better performance.
+      Contributor(s):
+        Nickolay Samofatov <skidder at bssys.com>
+
+    * Win32 build changes.
+        1. Changed names of USER32 objects to allow the server run simultaneously with IB/FB1.
+        2. Map name for local (IPC) protocol is changed, so v1.5 client library is no longer compatible with the previous versions via IPC.
+        3. All transport protocol names (INET port and service, WNET pipe, IPC map) are now configurable via firebird.conf.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed unregistered bug.
+        Trashed RDB$FIELD_LENGTH for views that contain concatenation of long CHAR/VARCHAR fields.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Triggers improvement.
+        Added runtime action checks (INSERTING/UPDATING/DELETING predicates).
+      Example:
+        if (INSERTING) then
+          new.OPER_TYPE = 'I';
+        else
+          new.OPER_TYPE = 'U';
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed unregistered bug.
+        Cursors (WHERE CURRENT OF clause) cannot be used in triggers.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed Alpha 5 bug.
+        SAVEPOINT-related statements were allowed in PSQL via EXECUTE STATEMENT.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed bug SF #221921.
+        ORDER BY has no effect.
+      Contributor(s):
+        Arno Brinkman <firebird at abvisie.nl>
+
+    * Fixed bug SF #213859.
+        Subquery connected with 'IN' clause.
+      Contributor(s):
+        Arno Brinkman <firebird at abvisie.nl>
+
+    * Fixed Alpha 5 bug.
+        Wrong plan is used in the case of compound indices.
+      Contributor(s):
+        Arno Brinkman <firebird at abvisie.nl>,
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed Alpha 5 bug.
+        Backward compatibility with explicit plans is broken.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * ORDER BY improvement.
+        Allowed arbitrary expressions in the ORDER BY clause.
+      Contributor(s):
+        Nickolay Samofatov <skidder at bssys.com>
+
+    * Fixed unregistered bug.
+        When UNIONS where used in a VIEW and that VIEW was used in the WHERE clause inside an sub-select then the engine crashed.
+      Contributor(s):
+        Arno Brinkman <firebird at abvisie.nl>
+
+    * Fixed Alpha 5 bug.
+        Fixed FB XDR double representation for Linux server and client.
+        This fixes numerous bugs with double precision columns and UDF's when using Linux server and Jaybird or Windows client.
+      Contributor(s):
+        Nickolay Samofatov <skidder at bssys.com>
+
+    * Fixed Alpha 5 bug.
+        PLAN wasn't correctly returned.
+      Contributor(s):
+        Arno Brinkman <firebird at abvisie.nl>
+
+    * Fixed Alpha 5 bug.
+        Server crash or "deadlock" error during execution of ALTER PROCEDURE statement.
+      Contributor(s):
+        Nickolay Samofatov <skidder at bssys.com>
+
+    * Generic code cleanup.
+        Structures within Y-valve.
+      Contributor(s):
+        Alexander Peshkoff <peshkoff at hotmail.ru>
+        Nickolay Samofatov <skidder at bssys.com>
+
+    * Comments improvement.
+        Single-line comments (--) are now allowed in any position of the SQL statement.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed unregistered bug.
+        "Request sycnhronization error" with BREAK statement.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed bug SF #625899.
+        Bugcheck 291.
+      Contributor(s):
+        Alexander Peshkoff <peshkoff at hotmail.ru>
+
+    * PSQL change.
+        EXECUTE VARCHAR is renamed to EXECUTE STATEMENT.
+      Contributor(s):
+        Alexander Peshkoff <peshkoff at hotmail.ru>
+
+    * Fixed Alpha 5 bug and SF #219525.
+        No current record for fetch operation.
+      Contributor(s):
+        Arno Brinkman <firebird at abvisie.nl>
+
+    * Fixed unregistered bug.
+        QLI doesn't understand BIGINT (aka INT64) datatype.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed unregistered bug.
+        Length of text variables inside procs/triggers wasn't copied to descriptor structure.
+      Contributor(s):
+        Arno Brinkman <firebird at abvisie.nl>
+
+  **************
+  * v1.5 Alpha 5
+  **************
+
+    * FIRST/SKIP and ORDER BY changes.
+        1. Implemented ORDER BY clause in subqueries.
+        2. Disallowed FIRST/SKIP for views.
+        3. Allowed zero as valid argument for FIRST.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed unregistered bug.
+        Buffer overflow (MAXPATHLEN) and rewritten local function dirname.
+      Contributor(s):
+        Erik Kunze <erik.kunze at philosys.de>
+
+    * Fixed unregistered bug.
+        Make SQLDA parameter mapping consistent with order and number of parameters in source SQL string.
+      Notes:
+        You can enable older mapping behavior (for backward compatibility) using "OldParameterOrdering" configuration manager parameter.
+      Contributor(s):
+        Nickolay Samofatov <skidder at bssys.com>
+
+    * Fixed Alpha 4 bug.
+        Crash when grouping by invariant subquery.
+      Contributor(s):
+        Nickolay Samofatov <skidder at bssys.com>
+
+    * Improved optimizer.
+        Let sub-selects also use indices when their parent is a stored procedure.
+      Contributor(s):
+        Arno Brinkman <firebird at abvisie.nl>
+
+    * Fixed unregistered bug.
+        Removed request size limitation.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed unregistered bug.
+        Nulls first/last and collation handling in "order by" clause of unions.
+      Contributor(s):
+        Nickolay Samofatov <skidder at bssys.com>
+
+    * Fixed Alpha 4 bug.
+        Optimizer, LEFT OUTER JOIN and error "no current record for fetch operation".
+      Contributor(s):
+        Arno Brinkman <firebird at abvisie.nl>
+
+    * Fixed Alpha 4 bug.
+        Wrong privileges checks.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed Alpha 4 bug.
+        UDF node didn't contain any character set, was always NONE.
+      Contributor(s):
+        Arno Brinkman <firebird at abvisie.nl>
+
+    * Generic code cleanup.
+        Renamings, new safe macros, support for mingw.
+      Contributor(s):
+        Erik Kunze <erik.kunze at philosys.de>,
+        Ignacio J. Ortega <nacho at siapi.es>,
+        Dimitry Sibiryakov <sd at topol.udm.net>
+
+    * Explicit record locking.
+        Finalized explicit locking implementation. Should be stable and consistent now.
+      Contributor(s):
+        Nickolay Samofatov <skidder at bssys.com>
+
+    * Improved optimizer.
+        Better handling of AND nodes inside an OR node.
+      Contributor(s):
+        Arno Brinkman <firebird at abvisie.nl>
+
+    * Fixed Alpha 4 bug.
+        Restore problem for databases having views that use procedures AND are used by procedures.
+      Contributor(s):
+        Nickolay Samofatov <skidder at bssys.com>
+
+    * Fixed Alpha 4 bug.
+        Bad performance of the memory manager and some memory leaks.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed Alpha 4 bug.
+        Wrong ordinals of GDS32 exports.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+  **************
+  * v1.5 Alpha 4
+  **************
+
+    * Fixed Alpha 3 bug.
+        Database cannot be restored properly in some situations.
+      Contributor(s):
+        Nickolay Samofatov <skidder at bssys.com>
+
+    * Fixed Alpha 3 bug.
+        Dynamic exception messages don't work properly.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed unregistered bug.
+        Exceptions inside for/while loop in triggers are not handled correctly.
+      Contributor(s):
+        Alexander Peshkoff <peshkoff at hotmail.ru>
+
+    * Fixed bug SF #623992.
+        Double forward slash in connection string.
+      Contributor(s):
+        Paul Reeves <preeves at ibphoenix.com>,
+        Mark O'Donohue <mark.odonohue at cytopia.com.au>
+
+    * Fixed unregistered bug.
+        Deadlock during some database operations.
+      Contributor(s):
+        Alexander Peshkoff <peshkoff at hotmail.ru>
+
+    * Improved optimizer.
+        If a few indices with much different selectivity could be used for index retrieval, only better of them are used while others are ignored.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed Alpha 3 bug.
+        Memory corruption that prevented restore of databases with procedures using plan expressions with long index names.
+      Contributor(s):
+        Nickolay Samofatov <skidder at bssys.com>
+
+    * Fixed unregistered bug.
+        Quoted identifiers problem in plan expressions.
+      Contributor(s):
+        Nickolay Samofatov <skidder at bssys.com>
+
+    * Win32 Classic Server.
+        CS architecture is now supported on Win32 as well, but it still cannot be considered stable, so any feedback is welcome.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed Alpha 3 bug.
+        API routines are not accessible if gds32.dll is explicitly loaded.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed unregistered bug.
+        Stored procedures are no longer recompiled before deletion.
+      Contributor(s):
+        Nickolay Samofatov <skidder at bssys.com>
+
+    * New collation for WIN1251 charset.
+        WIN1251_UA for both Ukrainian and Russian languages.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Client library change.
+        API routines are no longer exported by ordinals.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * New configuration manager.
+        Enable the same plain file based configuration for all supported platforms. Default configuration file will be released in the first beta build.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Improved optimizer.
+        Added better support for using indices with "OR". Pick the best available compound index from all "AND" nodes.
+      Contributor(s):
+        Arno Brinkman <firebird at abvisie.nl>
+
+    * Fixed Alpha 3 bug.
+        Database appears corrupted (damaged BLOB pages).
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Savepoints.
+        Added support for explicit savepoint management.
+      Syntax:
+        SAVEPOINT savepoint_name; (create savepoint)
+        ROLLBACK [WORK] TO [SAVEPOINT] savepoint_name; (rollback to previously created savepoint)
+      Notes:
+        Not available in PSQL.
+      Contributor(s):
+        Nickolay Samofatov <skidder at bssys.com>
+
+    * Protocol cleanup.
+        IPX/SPX network protocol is no longer supported.
+      Contributor(s):
+        Sean Leyne <sleyne at atkin.com>
+
+    * Fixed Alpha 3 bug.
+        Memory corruption when working with long record verion chains.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Obsolete platforms cleanup.
+        Some platform are no longer supported by the current source code.
+        DELTA, IMP, DG_X86, M88K, UNIXWARE, Ultrix, NeXT, ALPHA_NT, DGUX, MPE/XL, DecOSF, SGI, HP700, Netware, MSDOS, SUN3_3
+      Contributor(s):
+        Sean Leyne <sleyne at atkin.com>
+
+    * Improved optimizer.
+        Added support for detecting use of index with sub-selects in aggregate select.
+      Contributor(s):
+        Arno Brinkman <firebird at abvisie.nl>
+
+    * Improved thread scheduler for Win32 SS.
+        Now the server should be more responsible under heavy load.
+      Contributor(s):
+        Alexander Peshkoff <peshkoff at hotmail.ru>
+
+    * Explicit record locking.
+        Added support for explicit locking. Wait behavior in isc_tpb_wait transaction modes is not stable yet.
+      Syntax:
+        SELECT <...> [FOR UPDATE [OF col [, col ...]] [WITH LOCK]]
+      Contributor(s):
+        Nickolay Samofatov <skidder at bssys.com>
+
+  **************
+  * v1.5 Alpha 3
+  **************
+
+    * Fixed bug SF #558364.
+        Triggers fail to compile if PLAN used.
+      Note:
+        Now you can use plans in triggers.
+      Contributor(s):
+        Ignacio J. Ortega <nacho at siapi.es>
+
+    * Fixed unregistered bug.
+        Distributed (2PC) transaction cannot be properly rolled back due to network errors.
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>,
+        Erik Kunze <erik.kunze at philosys.de>
+
+    * Fixed Alpha 2 bug.
+        Possible buffer overrun if dynamic exception messages are used.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed Alpha 2 bug.
+        Problem with sub-select and GROUP BY clause.
+      Contributor(s):
+        Arno Brinkman <firebird at abvisie.nl>
+
+    * Fixed Alpha 2 bug.
+        The server hangs with a bugcheck #284 (cannot restore singleton select data).
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Generic cleanup.
+        ISC_STATUS_LENGTH and MAXPATHLEN macros.
+      Contributor(s):
+        Erik Kunze <erik.kunze at philosys.de>
+
+    * Fixed Alpha 2 bug.
+        Version information is missing in libraries and tools.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed Alpha 2 bug.
+        Backported a few bits of FB1 code which have been lost.
+      Contributor(s):
+        Claudio Varderrama <cvalde at usa.net>,
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed bug SF #496784.
+        When optimizer find indexes for LEFT JOIN, work like INNER JOIN.
+      Note:
+        Fixed problem which caused complex outer joins to produce wrong results.
+      Contributor(s):
+        Nickolay Samofatov <skidder at bssys.com>
+
+    * Fixed Alpha 2 bug.
+        Changes in aliases.conf are not applied until the server is restarted.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+  **************
+  * v1.5 Alpha 2
+  **************
+
+    * Fixed unregistered bug.
+        BLOB subtype is ignored in system domains generated for expression fields in views.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed installation bug.
+        instreg.exe doesn't create "GuardianOptions" registry value.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed unregistered bug.
+        Resource leaks in DDL recursive procedure handling which caused some DDL to fail.
+      Contributor(s):
+        Nickolay Samofatov <skidder at bssys.com>
+
+    * Fixed unregistered bug.
+        Check constraint which uses only one table field is now dropped automatically when this field is dropped.
+      Contributor(s):
+        Nickolay Samofatov <skidder at bssys.com>
+
+    * Fixed Alpha 1 bug.
+        GROUP BY ordinal doesn't work with column aliases.
+      Contributor(s):
+        Arno Brinkman <firebird at abvisie.nl>
+
+    * Fixed Alpha 1 bug.
+        Views are not being created correctly (missing records in RDB$VIEW_RELATIONS).
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+  **************
+  * v1.5 Alpha 1
+  **************
+
+    * Fixed unregistered bug.
+        A well-known "decompression overran buffer" error appears during the schema creation.
+      Contributor(s):
+        Evgeny Kilin <john at citycard.izhnet.ru>
+
+    * New ROWS_AFFECTED system variable (SF #451927).
+        Return number of rows affected by the last INSERT/UPDATE/DELETE statement.
+      Notes:
+        1. Available in PSQL only.
+        2. For any other statement than INSERT/UPDATE/DELETE, result is always zero.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Dynamic exception messages (SF #446240).
+        Allow to throw an exception with another message than this exception has been created with.
+      Syntax:
+        EXCEPTION name [value];
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * New SQLCODE and GDSCODE system variables (SF #547383).
+        Provide an access to a code of the catched error within the WHEN-block.
+      Notes:
+        1. Available in PSQL only.
+        2. Makes sense in WHEN-block only, in other places returns 0 (success).
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Exception re-initiate semantics.
+        Allow an already catched exception to be re-thrown from the WHEN-block.
+      Syntax:
+        EXCEPTION;
+      Note:
+        Makes sense in WHEN-block only, in other places evaluates to no-op.
+      Contributor(s):
+        Digitman <digitman at hotbox.ru>
+
+    * Fixed unregistered bug.
+        The server crashes during the garbage collection under heavy load.
+      Contributor(s):
+        Nickolay Samofatov <skidder at bssys.com>
+
+    * Deferred metadata compilation.
+        Solve a lot of reasons of the well-known "object in use" error.
+      Contributor(s):
+        Nickolay Samofatov <skidder at bssys.com>
+
+    * New NULL order handling.
+        Allow user-defined ordering of NULLs.
+      Syntax:
+        [ORDER BY <order_list>]
+        <order_list> = {col | int} [COLLATE collation]
+          [ASC[ENDING] | DESC[ENDING]] [NULLS {FIRST | LAST}]
+          [, <order_list> ...]
+      Note:
+        Default behaviour is NULLS LAST.
+      Contributor(s):
+        Nickolay Samofatov <skidder at bssys.com>
+
+    * Fixed unregistered bug.
+        gstat shows wrong value for maxdup element.
+      Contributor(s):
+        Dmitry Kuzmenko <kdv at ibase.ru>
+
+    * New registry key is used on win32.
+        Currently it's SOFTWARE\Firebird Project\Firebird Server.
+      Contributor(s):
+        -
+
+    * User-defined constraint index names (SF #451925).
+        Allow an index name to be either constraint name or user-defined name.
+      Syntax:
+        <col_constraint> = [CONSTRAINT constraint]
+          {UNIQUE [<constraint_index>]
+          | PRIMARY KEY [<constraint_index>]
+          | REFERENCES other_table [( other_col [, other_col ...])]
+              [ON DELETE {NO ACTION|CASCADE|SET DEFAULT|SET NULL}]
+              [ON UPDATE {NO ACTION|CASCADE|SET DEFAULT|SET NULL}]
+              [<constraint_index>]
+          | CHECK ( <search_condition>)}
+        <tconstraint> = [CONSTRAINT constraint]
+          {{PRIMARY KEY | UNIQUE} ( col [, col ...]) [<constraint_index>]
+          | FOREIGN KEY ( col [, col ...]) REFERENCES other_table
+              [ON DELETE {NO ACTION|CASCADE|SET DEFAULT|SET NULL}]
+              [ON UPDATE {NO ACTION|CASCADE|SET DEFAULT|SET NULL}]
+              [<constraint_index>]
+          | CHECK ( <search_condition>)}
+        <constraint_index> = USING [ASC[ENDING] | DESC[ENDING]] INDEX name
+      Note:
+        Index is named the same way as a constraint by default.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * New RECREATE VIEW statement.
+        A shorthand for DROP VIEW / CREATE VIEW couple of statements.
+      Syntax:
+        RECREATE VIEW name <view_definition>;
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed unregistered bug.
+        Trigger which name starts with 'RDB$' cannot be altered or dropped at all.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Changed file names.
+        Renamed distribution files to make sure we're Firebird. Now they're fbserver, fbclient, firebird.msg etc.
+      Note:
+        The client library is fbclient now and it should be used in all new FB-based projects. gds32 contains nothing but redirected exports and is provided for compatibility only.
+      Contributor(s):
+        -
+
+    * Minor ODS upgrade.
+        Added new system indices (RDB$INDEX_41, RDB$INDEX_42, RDB$INDEX_43), now ODS version is 10.1.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>,
+        Nickolay Samofatov <skidder at bssys.com>
+
+    * New CREATE OR ALTER statement (SF #451935).
+        Allow either creating or altering a database object depending on its existance.
+      Syntax:
+        CREATE OR ALTER name <object_definition>;
+      Notes:
+        1. Applicable to SPs/triggers only.
+        2. The statement has the same meaning as CREATE OR REPLACE one in Oracle.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed unregistered bug.
+        Broken dependencies (like DB$34) appear in the database after metadata changes.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Enhanced declaration of local variables.
+        Simplify syntax and allow declaring and defining variable at the same time.
+      Syntax:
+        DECLARE [VARIABLE] name <variable_type> [{'=' | DEFAULT} value];
+      Example:
+        DECLARE my_var INTEGER = 123;
+      Contributor(s):
+        Claudio Valderrama <cvalde at usa.net>
+
+    * Disabled BREAK statement for triggers (like EXIT) due to known internal limitations.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Enhanced grouping (SF #555839, #546274).
+        Allow to GROUP BY internal functions and subqueries. Also allow to GROUP BY ordinal (i.e. column position).
+      Contributor(s):
+        Arno Brinkman <firebird at abvisie.nl>
+
+    * New COALESCE internal function (SF #451917).
+        Allow a column value to be calculated by a number of expressions, the first expression returning a non NULL value is returned as the column value.
+      Syntax:
+        COALESCE (value {, value} ... )
+      Notes:
+        1. COALESCE (V1, V2) is equivalent to the following case specification:
+             CASE WHEN V1 IS NOT NULL THEN V1 ELSE V2 END
+        2. COALESCE (V1, V2, ..., Vn), for n >= 3, is equivalent to the following case specification:
+             CASE WHEN V1 IS NOT NULL THEN V1 ELSE COALESCE (V2, ..., Vn) END
+        3. The function has the same meaning as NVL one in Oracle.
+      Example:
+        SELECT
+          PROJ_NAME AS Projectname,
+          COALESCE(e.FULL_NAME, '[> not assigned <]') AS Employeename
+        FROM
+          PROJECT p LEFT JOIN EMPLOYEE e ON (e.EMP_NO = p.TEAM_LEADER)
+      Contributor(s):
+        Arno Brinkman <firebird at abvisie.nl>
+
+    * New NULLIF internal function (SF #451917).
+        Return a NULL value for a sub-expression if it has a specific value, otherwise return the value of the sub-expression.
+      Syntax:
+        NULLIF (value, value)
+      Note:
+        NULLIF (V1, V2) is equivalent to the following case specification:
+          CASE WHEN V1 = V2 THEN NULL ELSE V1 END
+      Example:
+        UPDATE PRODUCTS
+          SET STOCK = NULLIF(STOCK, 0)
+      Contributor(s):
+        Arno Brinkman <firebird at abvisie.nl>
+
+    * New CASE internal function (SF #451917).
+        Allow the result of a column to be determined by a the results of a case expression.
+      Syntax:
+        <case_specification> = <simple_case> | <searched_case>
+
+        <simple_case> = CASE value <simple_when_clause> ... [ELSE value] END
+        <simple_when_clause> = WHEN value THEN value
+
+        <searched_case> = CASE <searched_when_clause> ... [ELSE value] END
+        <searched_when_clause> = WHEN <search_condition> THEN value
+      Note:
+        The function has the same meaning as DECODE one in Oracle.
+      Examples:
+        1. Simple case:
+          SELECT
+            o.ID,
+            o.Description,
+            CASE o.Status
+              WHEN 1 THEN 'confirmed'
+              WHEN 2 THEN 'in production'
+              WHEN 3 THEN 'ready'
+              WHEN 4 THEN 'shipped'
+              ELSE 'unknown status ''' || o.Status || ''''
+            END
+          FROM
+            Orders o
+        2. Searched case:
+          SELECT
+            o.ID,
+            o.Description,
+            CASE
+              WHEN (o.Status IS NULL) THEN 'new'
+              WHEN (o.Status = 1) THEN 'confirmed'
+              WHEN (o.Status = 3) THEN 'in production'
+              WHEN (o.Status = 4) THEN 'ready'
+              WHEN (o.Status = 5) THEN 'shipped'
+              ELSE 'unknown status ''' || o.Status || ''''
+            END
+          FROM
+            Orders o
+      Contributor(s):
+        Arno Brinkman <firebird at abvisie.nl>
+
+    * Fixed bug SF #545725.
+        Automatic/background sweep hangs.
+      Contributor(s):
+        Alexander Peshkoff <peshkoff at hotmail.ru>
+
+    * Fixed unregistered bug.
+        The server crashes when XSQLDA structures are prepared for not all statement parameters.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Enabled support for empty BEGIN...END blocks.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Partially fixed bug SF #567931.
+        Metadata security hole.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed unregistered bug.
+        INT64 arrays don't work.
+      Contributor(s):
+        Artem Petkevych <artem at protec.kiev.ua>
+
+    * Fixed bug SF #437859.
+        Execute procedure and string concat.
+      Note:
+        This change allows any expression to be used as a SP parameter.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed bug SF #562417.
+        Aggregate concatenated empty char.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Readline (cmd history) support added to ISQL.
+      Contributor(s):
+        Mark O'Donohue <mark.odonohue at cytopia.com.au>
+
+    * New BIGINT datatype (SF #446206).
+        Allow native SQL usage of 64-bit exact numerics.
+      Note:
+        Available in dialect 3 only.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Universal triggers (SF #451922).
+        Allow one trigger to be fired for a number of action types.
+      Syntax:
+        CREATE TRIGGER name FOR table
+          [ACTIVE | INACTIVE]
+          <trigger_action_prefix>
+          <trigger_action_suffix> [OR <trigger_action_suffix>] [OR <trigger_action_suffix>]
+          [POSITION number]
+          AS <trigger_body>
+        <trigger_action_prefix> = {BEFORE | AFTER}
+        <trigger_action_suffix> = {DELETE | INSERT | UPDATE}
+      Example:
+        CREATE TRIGGER my_trigger FOR my_table BEFORE INSERT OR UPDATE
+          AS BEGIN
+            IF (NEW.DOC_ID IS NULL) THEN
+              EXCEPTION my_exception;
+          END
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * New CONNECTION_ID and TRANSACTION_ID system variables (SF #446238, #446243).
+        Return appropriate internal identifier stored on the database header page.
+      Notes:
+        1. Available in SQL/PSQL.
+        2. The values are reset after a database is restored.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Server-side database aliases (SF #446180).
+        Any database can be attached to using an "alias" name instead of its physical pathname.
+        The list of known database aliases is stored in aliases.conf file under the server installation root.
+      Example:
+        alias entry in the configuration file: my_database = d:\dbs\my\database.gdb
+        connection string: localhost:my_database
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * New plugin manager and INTL interface.
+      Contributor(s):
+        John Bellardo <bellardo at cs.ucsd.edu>
+
+    * In-memory sorting.
+        If SORT plan is used for a SQL statement, the sorting is done in memory.
+        If there's not enough memory for this operation, old temporary file based method is used.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed bug SF #538201.
+        Crash with extract from null as date.
+      Contributor(s):
+        Claudio Varderrama <cvalde at usa.net>
+
+    * New EXECUTE VARCHAR statement (SF #446256).
+        Allow execution of dynamic SQL statements in SPs/triggers.
+      Syntax:
+        EXECUTE VARCHAR value;
+      Notes:
+        1. Available in PSQL only.
+        2. Currently cannot return values, so SELECT statements are not allowed.
+        3. Recursion level is limited to 50 (hardcoded).
+      Example:
+        EXECUTE VARCHAR my_var;
+      Contributor(s):
+        Alexander Peshkoff <peshkoff at hotmail.ru>
+
+    * Major code cleanup.
+      Contributor(s):
+        Sean Leyne <sleyne at atkin.com>,
+        Erik Kunze <erik.kunze at philosys.de>
+
+    * New memory manager.
+      Contributor(s):
+        John Bellardo <bellardo at cs.ucsd.edu>
+
+    * New exception handling logic.
+      Contributor(s):
+        Mike Nordell <tamlin at algonet.se>,
+        John Bellardo <bellardo at cs.ucsd.edu>
+
+    * New autoconf-based build configuration.
+      Contributor(s):
+        John Bellardo <bellardo at cs.ucsd.edu>,
+        Mark O'Donohue <mark.odonohue at cytopia.com.au>,
+        Erik Kunze <erik.kunze at philosys.de>
+
+    * The code port from C to C++.
+      Contributor(s):
+        Mike Nordell <tamlin at algonet.se>,
+        John Bellardo <bellardo at cs.ucsd.edu>,
+        Mark O'Donohue <mark.odonohue at cytopia.com.au>

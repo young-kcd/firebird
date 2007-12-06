@@ -32,7 +32,6 @@
 				PreprocessorDefinitions="NDEBUG,_LIB,_WINDOWS,WIN32,_X86_"
 				ExceptionHandling="FALSE"
 				RuntimeLibrary="2"
-				RuntimeTypeInfo="FALSE"
 				PrecompiledHeaderFile="..\..\..\temp\release\dsql_server_cs/dsql_server_classic.pch"
 				AssemblerListingLocation="..\..\..\temp\release\dsql_server_cs/"
 				ObjectFile="..\..\..\temp\release\dsql_server_cs/"
@@ -45,7 +44,7 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile="..\..\..\temp\release\dsql_server_cs\dsql_server.lib"
+				OutputFile="release\dsql_server_cs\dsql_server.lib"
 				SuppressStartupBanner="TRUE"/>
 			<Tool
 				Name="VCMIDLTool"/>
@@ -85,7 +84,6 @@
 				ExceptionHandling="FALSE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				RuntimeTypeInfo="FALSE"
 				PrecompiledHeaderFile="..\..\..\temp\debug\dsql_server_cs/dsql_server_classic.pch"
 				AssemblerListingLocation="..\..\..\temp\debug\dsql_server_cs/"
 				ObjectFile="..\..\..\temp\debug\dsql_server_cs/"
@@ -98,7 +96,7 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile="..\..\..\temp\debug\dsql_server_cs\dsql_server.lib"
+				OutputFile="debug\dsql_server_cs\dsql_server.lib"
 				SuppressStartupBanner="TRUE"/>
 			<Tool
 				Name="VCMIDLTool"/>

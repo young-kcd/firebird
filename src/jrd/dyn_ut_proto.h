@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Access method
  *	MODULE:		dyn_ut_proto.h
- *	DESCRIPTION:	Prototype Header file for dyn_util.epp
+ *	DESCRIPTION:	Prototype Header file for dyn_util.e
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -22,25 +22,16 @@
  */
 
 
-#ifndef JRD_DYN_UT_PROTO_H
-#define JRD_DYN_UT_PROTO_H
+#ifndef _JRD_DYN_UT_PROTO_H_
+#define _JRD_DYN_UT_PROTO_H_
 
-void	DYN_UTIL_store_check_constraints(Jrd::thread_db*, Jrd::Global*,
-			const Firebird::MetaName&, const Firebird::MetaName&);
-bool	DYN_UTIL_get_prot(Jrd::thread_db*, Jrd::Global*, const SCHAR*,
-			const SCHAR*, Jrd::SecurityClass::flags_t*);
-void	DYN_UTIL_generate_trigger_name(Jrd::thread_db*, Jrd::Global*, Firebird::MetaName&);
-void	DYN_UTIL_generate_index_name(Jrd::thread_db*, Jrd::Global*, Firebird::MetaName&, UCHAR);
-void	DYN_UTIL_generate_field_position(Jrd::thread_db*, Jrd::Global*,
-			const Firebird::MetaName&, SLONG*);
-void	DYN_UTIL_generate_field_name(Jrd::thread_db*, Jrd::Global*, TEXT*);
-void	DYN_UTIL_generate_field_name(Jrd::thread_db*, Jrd::Global*, Firebird::MetaName&);
-void	DYN_UTIL_generate_constraint_name(Jrd::thread_db*, Jrd::Global*, Firebird::MetaName&);
-SINT64	DYN_UTIL_gen_unique_id(Jrd::thread_db*, Jrd::Global*, SSHORT,
-							   const SCHAR*, Jrd::jrd_req**);
-bool    DYN_UTIL_is_array(Jrd::thread_db*, Jrd::Global*, const Firebird::MetaName&);
-void	DYN_UTIL_copy_domain(Jrd::thread_db*, Jrd::Global* gbl,
-			const Firebird::MetaName&, const Firebird::MetaName&);
+extern void DYN_UTIL_store_check_constraints(TDBB, GBL, TEXT *, TEXT *);
+extern BOOLEAN DYN_UTIL_get_prot(TDBB, GBL, SCHAR *, SCHAR *, USHORT *);
+extern void DYN_UTIL_generate_trigger_name(TDBB, GBL, TEXT *);
+extern void DYN_UTIL_generate_index_name(TDBB, GBL, TEXT *, UCHAR);
+extern void DYN_UTIL_generate_field_position(TDBB, GBL, TEXT *, SLONG *);
+extern void DYN_UTIL_generate_field_name(TDBB, GBL, TEXT *);
+extern void DYN_UTIL_generate_constraint_name(TDBB, GBL, TEXT *);
+extern SINT64 DYN_UTIL_gen_unique_id(TDBB, GBL, SSHORT, SCHAR *, BLK *);
 
-#endif // JRD_DYN_UT_PROTO_H
-
+#endif /* _JRD_DYN_UT_PROTO_H_ */

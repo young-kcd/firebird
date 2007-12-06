@@ -25,17 +25,18 @@
 //
 //____________________________________________________________
 //
-//	$Id: movg.cpp,v 1.8 2004-06-08 13:41:00 alexpeshkoff Exp $
+//	$Id: movg.cpp,v 1.3 2001-12-24 02:50:49 tamlin Exp $
 //
 
 #include "firebird.h"
 #include "../jrd/common.h"
 #include <stdarg.h>
 
+#include "gen/codes.h"
 #include "../jrd/iberr.h"
 #include "../jrd/dsc.h"
 #include "../gpre/movg_proto.h"
-//  TMN: Unfortunately we need to include gpre.h before gpre_proto.h since
+//  TMN: Unfortunately we need to include gpre.h before grep_proto.h since
 //  the latter references a macro from the former, and doesn't include that
 //  header file itself. We need to include gpre_proto.h since we use gpre
 //  functions.
@@ -43,9 +44,9 @@
 #include "../gpre/gpre.h"
 #include "../gpre/gpre_proto.h"
 #include "../jrd/cvt_proto.h"
-#include "../jrd/thd.h"
+#include "../jrd/thd_proto.h"
 
-static void post_error(ISC_STATUS, ...);
+static void post_error(void);
 
 
 //____________________________________________________________
@@ -53,10 +54,10 @@ static void post_error(ISC_STATUS, ...);
 //		Move (and possible convert) something to something else.
 //  
 
-void MOVG_move(const dsc* from, dsc* to)
+void MOVG_move(DSC * from, DSC * to)
 {
 
-	CVT_move(from, to, post_error);
+	CVT_move(from, to, (FPTR_VOID) post_error);
 }
 
 
@@ -65,7 +66,7 @@ void MOVG_move(const dsc* from, dsc* to)
 //		A conversion error occurred.  Complain.
 //  
 
-static void post_error(ISC_STATUS, ...)
+static void post_error(void)
 {
 
 	CPR_error("conversion error: illegal string literal");

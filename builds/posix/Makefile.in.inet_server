@@ -27,9 +27,10 @@
 #  Contributor(s):
 # 
 #
+#  $Id: Makefile.in.inet_server,v 1.11.2.4 2006-11-05 14:37:30 alexpeshkoff Exp $
 #
 ROOT=..
-ObjModuleType=std
+ObjModuleName=inet_server
 
 include     $(ROOT)/gen/make.defaults
 include     $(ROOT)/gen/make.platform
@@ -42,11 +43,9 @@ SERVER_Files = server_stub.cpp
 SERVER_Sources = $(addprefix remote/, $(SERVER_Files))
 SERVER_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(SERVER_Sources))))
 
-ifeq ($(PLATFORM),DARWIN)
-LINK_LIBS+=$(ICU_LIBS)
-endif
 AllObjects = $(SERVER_Objects)
-Dependencies = $(AllObjects:.o=.d) 
+Dependencies=$(AllObjects:.o=.$(DEP_EXT))
+
 
 .PHONY: fb_inet_server
 
@@ -55,7 +54,9 @@ Dependencies = $(AllObjects:.o=.d)
 fb_inet_server : $(LIBFBEMBED_SO) $(FB_CLASSIC_SERVER)
 
 $(FB_CLASSIC_SERVER):	$(SERVER_Objects)
-	$(EXE_LINK) $(LINK_OPTS) $^ -o $@ $(FBEMBED_LINK) $(LIB_GUI) $(LINK_LIBS)
+	$(LD) $(LINK_OPTS) $^ -o $@ $(FBEMBED_LINK) $(LIB_GUI) $(LINK_LIBS) 
+#	$(CHMOD_S7) $@
+
 
 include $(ROOT)/gen/make.shared.targets
 

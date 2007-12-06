@@ -21,30 +21,29 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef JRD_LOG_H
-#define JRD_LOG_H
+#ifndef _JRD_LOG_H_
+#define _JRD_LOG_H_
 
-//const int LOG_VERSION1	= 1;		// version to correspond with v2.5 access method 
-//const int LOG_VERSION2	= 2;		// version to correspond with v3.0 access method 
-const int LOG_VERSION3	= 3;		// version to correspond with v4.0 access method 
+#define LOG_VERSION1	1		/* version to correspond with v2.5 access method */
+#define LOG_VERSION2	2		/* version to correspond with v3.0 access method */
+#define LOG_VERSION3	3		/* version to correspond with v4.0 access method */
 
 /* the log buffer length should be long enough to fit
    any OSRI call atomically to prevent multiuser bugs */
 
-const int LOG_BUFFER_LENGTH	= 1024;
+#define LOG_BUFFER_LENGTH	1024
 
 /* replay log block */
-
-class str;
 
 class fblog : public pool_alloc<type_log>
 {
     public:
-	str*	log_string;		/* string block allocated to hold log buffer */
-	UCHAR*	log_buffer;			/* points to beginning of string data */
-	UCHAR*	log_ptr;				/* current end of buffer for logging */
-	void*	log_file;				/* db-specific file to write */
+	struct str *log_string;		/* string block allocated to hold log buffer */
+	UCHAR *log_buffer;			/* points to beginning of string data */
+	UCHAR *log_ptr;				/* current end of buffer for logging */
+	void *log_file;				/* db-specific file to write */
 };
+typedef fblog *LOG;
 
 
 
@@ -115,5 +114,4 @@ enum log_t {
 	log_max
 };
 
-#endif // JRD_LOG_H
-
+#endif /* _JRD_LOG_H_ */

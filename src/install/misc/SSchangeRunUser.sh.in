@@ -1,0 +1,210 @@
+#!/bin/sh
+
+# A routine to change the user that runs Firebird SS.
+# Under all circumstances postinstall.sh script tries to create
+# user and group named firebird. We don't need to repeat this attempts here.
+# If one changes runUser to something specific for him (some like user293),
+# he must take care to add correct user before it!
+
+RunUser=$1
+RunGroup=$2
+if [ "$3" ]
+then
+    Usage: SSchangeRunUser.sh [RunUser] [RunGroup]
+    exit 100
+fi
+
+#------------------------------------------------------------------------
+# Prompt for response, store result in Answer
+
+Answer=""
+
+AskQuestion() {
+    Test=$1
+    DefaultAns=$2
+    echo -n "${1}"
+    Answer=""
+    read Answer
+    if [ -z $Answer ]
+    then
+        Answer="$DefaultAns"
+    fi
+}
+
+
+
+#------------------------------------------------------------------------
+# Check for a previous install 
+
+
+checkInstallUser() {
+
+    if [ "`whoami`" != "root" ];
+      then
+        ehco ""
+        echo "--- Warning ----------------------------------------------"
+        echo ""
+        echo "    You need to be 'root' user to do this change"
+        echo ""
+        exit
+    fi
+}
+
+
+#------------------------------------------------------------------------
+#  stop super server if it is running
+#  Also will only stop firebird, since that has the init script
+
+
+stopServerIfRunning() {
+
+    checkString=`ps -efww| egrep "(fbserver|fbguard)" |grep -v grep`
+
+    if [ ! -z "$checkString" ] 
+      then
+	$StartupScript stop
+    fi
+}
+
+#------------------------------------------------------------------------
+#  check if it is running
+
+
+checkIfServerRunning() {
+
+    stopServerIfRunning
+
+# Check is server is being actively used.
+
+    checkString=`ps -efww| egrep "(fbserver|fbguard)" |grep -v grep`
+
+    if [ ! -z "$checkString" ] 
+      then
+        echo "An instance of the Firebird/InterBase Super server seems to be running." 
+        echo "Please quit all interbase applications and then proceed"
+        exit 1 
+    fi
+
+    checkString=`ps -efww| egrep "(fb_inet_server|gds_pipe)" |grep -v grep`
+
+    if [ ! -z "$checkString" ] 
+      then
+        echo "An instance of the Firebird/InterBase Classic server seems to be running." 
+        echo "Please quit all interbase applications and then proceed." 
+        exit 1 
+    fi
+
+
+
+# Stop lock manager if it is the only thing running.
+
+    for i in `ps -efww | grep "fb_lock_mgr" | grep -v "grep" | awk '{print $2}' `
+     do
+        kill $i
+     done
+
+}
+
+
+#------------------------------------------------------------------------
+#  changeInitRunUser
+
+
+changeInitRunUser() {
+
+    NewUser=$1
+
+    chmod u=rwx,g=rx,o= $StartupScript
+    ex $StartupScript <<EOF
+/FBRunUser/s/FBRunUser=.*/FBRunUser=$NewUser/g
+w
+q
+EOF
+    chmod u=rwx,g=rx,o= $StartupScript
+    
+}
+
+
+#------------------------------------------------------------------------
+#  check for RunUsetr and RunGroup
+
+checkIfUserIsPresent() {
+    checkString=`grep $RunUser /etc/passwd`
+    if [ -z "$checkString" ]
+    then
+	echo User $RunUser missing - script failed.
+	exit 20
+    fi
+    checkString=`grep $RunGroup /etc/group`
+    if [ -z "$checkString" ]
+    then
+	echo Group $RunGroup missing - script failed.
+	exit 21
+    fi
+}
+
+
+#------------------------------------------------------------------------
+#  main code
+
+
+checkInstallUser
+
+IBRootDir=@prefix@
+IBBin=$IBRootDir/bin
+
+if [ -z "$RunUser" ]
+then
+    AskQuestion "Enter new RunUser for firebird super server [firebird]: " firebird
+    RunUser="$Answer"
+fi
+if [ -z "$RunGroup" ]
+then
+    AskQuestion "Enter new RunGroup for firebird super server [firebird]: " firebird
+    RunGroup="$Answer"
+fi
+
+checkIfUserIsPresent
+    
+echo ""
+echo "Change Firebird install for $IBRootDir to uid=$RunUser gid=$RunGroup"
+echo ""
+AskQuestion "Press return to continue - or ^C to abort"
+
+# Locating startup script
+StartupScript=""
+if [ -f /etc/rc.d/init.d/firebird ]
+  then
+    StartupScript=/etc/rc.d/init.d/firebird
+elif [ -f /etc/init.d/firebird ]
+  then
+    StartupScript=/etc/init.d/firebird
+fi
+if [ -z $StartupScript ]
+then
+    echo "Failed to locate startup script for firebird."
+    exit 10
+fi
+
+# Stop server if running
+checkIfServerRunning
+
+# Update ownership and SUID bits for programs.
+echo "Updating $IBRootDir"
+chown $RunUser.$RunGroup $IBRootDir/isc_* $IBRootDir/firebird.log $IBRootDir/security.fdb
+
+# Update startup script
+echo "Updating startup script"
+changeInitRunUser $RunUser
+
+# start the db server
+if $StartupScript start
+then
+    echo ""
+    echo "Completed."
+else
+    echo ""
+    echo "Firebird startup failed."
+    exit 11
+fi
+exit 0

@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Command Oriented Query Language
- *	MODULE:		format.cpp
+ *	MODULE:		format.c
  *	DESCRIPTION:	Print planner and formatter
  *
  * The contents of this file are subject to the Interbase Public
@@ -22,12 +22,12 @@
  */
 
 #include "firebird.h"
-#include <stdio.h>
+#include "../jrd/ib_stdio.h"
 #include <string.h>
-#include "../common/classes/timestamp.h"
+#include "../jrd/jrd_time.h"
 #include "../qli/dtr.h"
 #include "../qli/exe.h"
-#include "../jrd/ibase.h"
+#include "../jrd/gds.h"
 #include "../qli/compile.h"
 #include "../qli/report.h"
 #include "../qli/format.h"
@@ -35,52 +35,50 @@
 #include "../qli/err_proto.h"
 #include "../qli/eval_proto.h"
 #include "../qli/exe_proto.h"
+#include "../qli/form_proto.h"
 #include "../qli/forma_proto.h"
 #include "../qli/mov_proto.h"
 #include "../qli/picst_proto.h"
 
-using MsgFormat::SafeArg;
-
-
+extern USHORT QLI_columns, QLI_lines;
+#ifdef PYXIS
+extern USHORT sw_forms;
+#endif
 #ifdef DEV_BUILD
-//extern bool QLI_hex_output; decl already done in dtr.h
+extern USHORT QLI_hex_output;
 
-inline bool is_printable(UCHAR x)
-{
-	return ((x >= ' ') && (x <= 127)) ||
-		     (x == '\n') ||
-		     (x == '\t') ||
-		     (x == '\r') ||
-		     (x == '\f');
-}
+#define PRINTABLE(x) ((((x) >= ' ') && ((x) <= 127)) ||\
+		     ((x) == '\n')||\
+		     ((x) == '\t')||\
+		     ((x) == '\r')||\
+		     ((x) == '\f'))
 #endif
 
-static USHORT decompose_header(const SCHAR*, const SCHAR**, USHORT*);
-static void format_index(qli_print_item*, qli_nod*, const bool);
-static TEXT* format_report(qli_vec*, USHORT, USHORT*);
-static void format_value(qli_print_item*, int);
-static TEXT* get_buffer(qli_str**, TEXT*, USHORT);
-static bool match_expr(const qli_nod*, const qli_nod*);
-static void print_blobs(qli_prt*, qli_print_item**, qli_print_item**);
-static int print_line(qli_print_item*, TEXT**);
-static void put_line(qli_prt*, TEXT**, TEXT*, TEXT);
-static void report_break(qli_brk*, qli_vec**, const bool);
-static void report_item(qli_print_item*, qli_vec**, USHORT*);
-static void report_line(qli_nod*, qli_vec**);
+static int decompose_header(SCHAR *, SCHAR **, SSHORT *);
+static void format_index(ITM, QLI_NOD, USHORT);
+static TEXT *format_report(VEC, USHORT, USHORT *);
+static void format_value(ITM, int);
+static TEXT *get_buffer(STR *, TEXT *, USHORT);
+static int match_expr(QLI_NOD, QLI_NOD);
+static void print_blobs(PRT, ITM *, ITM *);
+static int print_line(ITM, TEXT **);
+static void put_line(PRT, TEXT **, TEXT *, TEXT);
+static void report_break(BRK, VEC *, int);
+static void report_item(ITM, VEC *, USHORT *);
+static void report_line(QLI_NOD, VEC *);
 
-static qli_str* global_fmt_buffer;
-static qli_str* global_blob_buffer;
+static STR fmt_buffer, blob_buffer;
 
-#define BOTTOM_INIT			get_buffer (&global_fmt_buffer, NULL, 1024)
-#define BOTTOM_CHECK(ptr, length)	ptr = get_buffer (&global_fmt_buffer, ptr, length)
-#define BOTTOM_LINE			global_fmt_buffer->str_data
+#define BOTTOM_INIT			get_buffer (&fmt_buffer, NULL, 1024)
+#define BOTTOM_CHECK(ptr, length)	ptr = get_buffer (&fmt_buffer, ptr, length)
+#define BOTTOM_LINE			fmt_buffer->str_data
 
-#define BUFFER_INIT			get_buffer (&global_fmt_buffer, NULL, 1024)
-#define BUFFER_CHECK(ptr, length)	ptr = get_buffer (&global_fmt_buffer, ptr, length)
-#define BUFFER_BEGINNING		global_fmt_buffer->str_data
-#define BUFFER_REMAINING(ptr)		(global_fmt_buffer->str_length - (ptr - global_fmt_buffer->str_data))
+#define BUFFER_INIT			get_buffer (&fmt_buffer, NULL, 1024)
+#define BUFFER_CHECK(ptr, length)	ptr = get_buffer (&fmt_buffer, ptr, length)
+#define BUFFER_BEGINNING		fmt_buffer->str_data
+#define BUFFER_REMAINING(ptr)		(fmt_buffer->str_length - (ptr - fmt_buffer->str_data))
 
-int FMT_expression( qli_nod* node)
+int FMT_expression( QLI_NOD node)
 {
 /**************************************
  *
@@ -93,25 +91,26 @@ int FMT_expression( qli_nod* node)
  *	length.
  *
  **************************************/
-	qli_nod* sub = node->nod_arg[e_fmt_value];
-	pics* picture = PIC_analyze((const TEXT*) node->nod_arg[e_fmt_edit], &sub->nod_desc);
-	node->nod_arg[e_fmt_picture] = (qli_nod*) picture;
+	PICS picture;
+	QLI_NOD sub;
+	QLI_FLD field;
+
+	sub = node->nod_arg[e_fmt_value];
+	picture = PIC_analyze((TEXT*) node->nod_arg[e_fmt_edit], &sub->nod_desc);
+	node->nod_arg[e_fmt_picture] = (QLI_NOD) picture;
 
 	if (node->nod_type == nod_reference)
 		node = node->nod_arg[0];
 
-	qli_fld* field;
 	if (!(picture->pic_missing) && (node->nod_type == nod_field) &&
-		(field = (qli_fld*) node->nod_arg[e_fld_field]) && field->fld_missing)
-	{
+		(field = (QLI_FLD) node->nod_arg[e_fld_field]) && field->fld_missing)
 		PIC_missing(field->fld_missing, picture);
-	}
 
 	return picture->pic_length;
 }
 
 
-TEXT* FMT_format(qli_lls* stack)
+TEXT *FMT_format(LLS stack)
 {
 /**************************************
  *
@@ -124,33 +123,39 @@ TEXT* FMT_format(qli_lls* stack)
  *	headers.  Return a pointer to the header string.
  *
  **************************************/
-	USHORT lengths[10];
-	const TEXT* segments[10];
+	ITM item, item2;
+	STR header;
+	QLI_NOD value;
+	SSHORT segment;
+	USHORT j, l, offset, max_offset, number_segments, n, lengths[10], *ptr,
+		flag;
+	LLS temp, temp2;
+	TEXT *line, *p, *q, *segments[10], *bottom;
+	ULONG size;
 
-// Start by inverting the item stack into an item que
+/* Start by inverting the item stack into an item que */
 
-	qli_lls* temp = stack;
+	temp = stack;
 	stack = NULL;
 
-	if (global_fmt_buffer) {
-		ALLQ_release((FRB) global_fmt_buffer);
-		global_fmt_buffer = NULL;
+	if (fmt_buffer) {
+		ALL_release((FRB) fmt_buffer);
+		fmt_buffer = NULL;
 	}
 
 	while (temp) {
-		qli_print_item* item = (qli_print_item*) ALLQ_pop(&temp);
-		ALLQ_push((blk*) item, &stack);
+		item = (ITM) LLS_POP(&temp);
+		LLS_PUSH(item, &stack);
 	}
 
 /* Make a pass thru print items computing print lengths and header
    lengths, and the number of header segments. */
 
-	USHORT offset, max_offset, number_segments;
 	number_segments = offset = max_offset = 0;
-	TEXT* bottom = BOTTOM_INIT;
+	bottom = BOTTOM_INIT;
 
 	for (temp = stack; temp; temp = temp->lls_next) {
-		qli_print_item* item = (qli_print_item*) temp->lls_object;
+		item = (ITM) temp->lls_object;
 		switch (item->itm_type) {
 		case item_column:
 			offset = (item->itm_count) ? item->itm_count - 1 : 0;
@@ -170,32 +175,28 @@ TEXT* FMT_format(qli_lls* stack)
 			continue;
 		}
 
-		qli_nod* value = 0;
 		if (item->itm_type == item_value && (value = item->itm_value)) {
 			if (value->nod_type == nod_reference)
 				value = value->nod_arg[0];
-			format_index(item, value, true);
+			format_index(item, value, TRUE);
 		}
 
 		if (item->itm_query_header)
-		{
 			if (*item->itm_query_header == '-')
 				item->itm_query_header = NULL;
 			else {
-				const USHORT n =
+				n =
 					decompose_header(item->itm_query_header, segments,
-									 lengths);
+									 (SSHORT*) lengths);
 				number_segments = MAX(n, number_segments);
-				USHORT* ptr = lengths;
-				for (USHORT j = 0; j < n; j++, ptr++)
+				for (j = 0, ptr = lengths; j < n; j++, ptr++)
 					item->itm_header_length =
 						MAX(item->itm_header_length, *ptr);
 			}
-		}
 
 		format_value(item, 0);
 
-		// If the item would overflow the line, reset to beginning of line
+		/* If the item would overflow the line, reset to beginning of line */
 
 		if (offset + MAX(item->itm_print_length, item->itm_header_length) >
 			QLI_columns) offset = 0;
@@ -204,30 +205,29 @@ TEXT* FMT_format(qli_lls* stack)
 		   header information in the same location */
 
 		if (item->itm_query_header) {
-			const USHORT n = MAX(item->itm_print_length, item->itm_header_length);
+			n = MAX(item->itm_print_length, item->itm_header_length);
 			BOTTOM_CHECK(bottom, offset);
-			const TEXT* q = BOTTOM_LINE + offset;
+			q = BOTTOM_LINE + offset;
 			while (bottom < q)
 				*bottom++ = ' ';
-			bool flag = true;
-			USHORT l;
+			flag = TRUE;
 			if (offset && q[-1] != ' ')
-				flag = false;
+				flag = FALSE;
 			else if (l = MIN(n, bottom - q)) {
-				const TEXT* p = bottom;
+				p = bottom;
 				while (--l)
 					if (*p++ != ' ') {
-						flag = false;
+						flag = FALSE;
 						break;
 					}
 				if (flag && p < bottom && *p != ' ')
-					flag = false;
+					flag = FALSE;
 			}
 			if (flag && (l = n)) {
 				BOTTOM_CHECK(bottom, bottom - BOTTOM_LINE + n);
-				do {
+				do
 					*bottom++ = '=';
-				} while (--l);
+				while (--l);
 			}
 			else {
 				item->itm_query_header = NULL;
@@ -238,26 +238,25 @@ TEXT* FMT_format(qli_lls* stack)
 		/* Now that have settled the issue of header, decide where to put
 		   the field and header */
 
-		const USHORT n = MAX(item->itm_print_length, item->itm_header_length);
+		n = MAX(item->itm_print_length, item->itm_header_length);
 		item->itm_print_offset = offset + (n - item->itm_print_length) / 2;
 		item->itm_header_offset = offset + n / 2;
 		offset += n + 1;
 		max_offset = MAX(max_offset, offset);
 	}
 
-// Make another pass checking for overlapping fields
+/* Make another pass checking for overlapping fields */
 
 	for (temp = stack; temp; temp = temp->lls_next) {
-		qli_print_item* item = (qli_print_item*) temp->lls_object;
+		item = (ITM) temp->lls_object;
 		if (item->itm_type != item_value)
 			continue;
-		for (qli_lls* temp2 = temp->lls_next; temp2; temp2 = temp2->lls_next) {
-			qli_print_item* item2 = (qli_print_item*) temp2->lls_object;
+		for (temp2 = temp->lls_next; temp2; temp2 = temp2->lls_next) {
+			item2 = (ITM) temp2->lls_object;
 			if (item2->itm_type != item_value)
 				continue;
 			if (item2->itm_print_offset <
-				item->itm_print_offset + item->itm_print_length)
-			{
+				item->itm_print_offset + item->itm_print_length) {
 				item->itm_flags |= ITM_overlapped;
 				break;
 			}
@@ -267,52 +266,51 @@ TEXT* FMT_format(qli_lls* stack)
 	if (number_segments == 0)
 		return NULL;
 
-// Allocate a string block big enough to hold all lines of the print header
+/* Allocate a string block big enough to hold all lines of the print header */
 
-	const ULONG size = (max_offset + 1) * (number_segments + 1) + 2;
+	size = (max_offset + 1) * (number_segments + 1) + 2;
 
 	if (size >= 60000)
-		ERRQ_print_error(482, SafeArg() << max_offset << (number_segments + 1));
+		ERRQ_print_error(482, (TEXT *) max_offset,
+						 (TEXT *) (number_segments + 1), NULL, NULL, NULL);
 
-	qli_str* header = (qli_str*) ALLOCDV(type_str, size);
-	TEXT* p = header->str_data;
+	header = (STR) ALLOCDV(type_str, size);
+	p = header->str_data;
 
-// Generate the various lines of the header line at a time.
+/* Generate the various lines of the header line at a time. */
 
-	for (USHORT j = 0; j < number_segments; j++) {
+	for (j = 0; j < number_segments; j++) {
 		*p++ = '\n';
-		TEXT* const line = p;
+		line = p;
 		for (temp = stack; temp; temp = temp->lls_next) {
-			qli_print_item* item = (qli_print_item*) temp->lls_object;
+			item = (ITM) temp->lls_object;
 			if (item->itm_type != item_value)
 				continue;
-			const USHORT n = 
-				decompose_header(item->itm_query_header, segments, lengths);
-			const SSHORT segment = j - (number_segments - n);
+			n = decompose_header(item->itm_query_header, segments, (SSHORT*) lengths);
+			segment = j - (number_segments - n);
 			if (segment < 0)
 				continue;
-			USHORT l = lengths[segment];
-			const TEXT* q = line + item->itm_header_offset - l / 2;
+			l = lengths[segment];
+			q = line + item->itm_header_offset - l / 2;
 
 			while (p < q)
 				*p++ = ' ';
 			q = segments[segment];
 			if (l)
-				do {
+				do
 					*p++ = *q++;
-				} while (--l);
+				while (--l);
 		}
 	}
 
-// Make one last pass to put in underlining of headers
+/* Make one last pass to put in underlining of headers */
 
-	USHORT len = bottom - BOTTOM_LINE;
-	if (len) {
+	if (l = bottom - BOTTOM_LINE) {
 		*p++ = '\n';
 		bottom = BOTTOM_LINE;
-		do {
+		do
 			*p++ = *bottom++;
-		} while (--len);
+		while (--l);
 	}
 
 	*p++ = '\n';
@@ -323,7 +321,7 @@ TEXT* FMT_format(qli_lls* stack)
 }
 
 
-qli_nod* FMT_list(qli_nod* list)
+QLI_NOD FMT_list(QLI_NOD list)
 {
 /**************************************
  *
@@ -335,57 +333,56 @@ qli_nod* FMT_list(qli_nod* list)
  *	Rebuild and format a list of stuff for vertical formatting.
  *
  **************************************/
-	qli_print_item** item;
-	const qli_print_item* const* end;
-	qli_symbol* name;
-	qli_fld* field;
-	qli_nod* value;
+	ITM new_item, *item, *end, *new_ptr;
+	SYM name;
+	QLI_FLD field;
+	QLI_NOD value, new_nod;
+	USHORT column, expression;
+	DSC *desc;
+	STR header;
+	TEXT *p, *q, c;
 
-	qli_nod* new_nod = (qli_nod*) ALLOCDV(type_nod, list->nod_count * 2 + 1);
+	new_nod = (QLI_NOD) ALLOCDV(type_nod, list->nod_count * 2 + 1);
 	new_nod->nod_type = nod_list;
-	qli_print_item** new_ptr = (qli_print_item**) new_nod->nod_arg;
-	USHORT column = 0;
+	new_ptr = (ITM *) new_nod->nod_arg;
+	column = 0;
 
-	for (item = (qli_print_item**) list->nod_arg, end = item + list->nod_count;
-		 item < end; item++)
-	{
+	for (item = (ITM *) list->nod_arg, end = item + list->nod_count;
+		 item < end; item++) {
 		if ((*item)->itm_type != item_value || !(value = (*item)->itm_value))
 			continue;
 		(*item)->itm_flags |= ITM_overlapped;
 		format_value(*item, PIC_suppress_blanks);
 		if (value->nod_type == nod_reference)
 			value = value->nod_arg[0];
-		bool expression = true;
 		if (value->nod_type == nod_field ||
 			value->nod_type == nod_variable ||
-			value->nod_type == nod_function)
-		{
-			expression = false;
+			value->nod_type == nod_function) {
+			expression = FALSE;
 			if (value->nod_type != nod_function) {
-				field = (qli_fld*) value->nod_arg[e_fld_field];
+				field = (QLI_FLD) value->nod_arg[e_fld_field];
 				name = field->fld_name;
-				format_index(*item, value, false);
+				format_index(*item, value, FALSE);
 			}
 			else
-				name = ((qli_fun*) value->nod_arg[e_fun_function])->fun_symbol;
+				name = ((FUN) value->nod_arg[e_fun_function])->fun_symbol;
 		}
-		qli_print_item* new_item = (qli_print_item*) ALLOCD(type_itm);
-		*new_ptr++ = new_item;
+		else
+			expression = TRUE;
+		*new_ptr++ = new_item = (ITM) ALLOCD(type_itm);
 		new_item->itm_type = item_value;
-		new_item->itm_value = value = (qli_nod*) ALLOCDV(type_nod, 0);
+		new_item->itm_value = value = (QLI_NOD) ALLOCDV(type_nod, 0);
 		value->nod_type = nod_constant;
 		value->nod_flags |= NOD_local;
 		value->nod_desc.dsc_dtype = dtype_text;
-		const TEXT* q;
 		if (!expression && (!(q = (*item)->itm_query_header) || *q != '-')) {
 			if (q) {
 				if (*q != '"' && *q != '\'')
 					value->nod_desc.dsc_address = (UCHAR *) q;
 				else {
-					qli_str* header = (qli_str*) ALLOCDV(type_str, strlen(q));
-					TEXT* p = header->str_data;
-					value->nod_desc.dsc_address = (UCHAR*) p; // safe const_cast, see PIC_analyze
-					TEXT c;
+					header = (STR) ALLOCDV(type_str, strlen(q));
+					p = header->str_data;
+					value->nod_desc.dsc_address = (UCHAR *) p;
 					while (c = *q++) {
 						while (*q != c)
 							*p++ = *q++;
@@ -405,28 +402,24 @@ qli_nod* FMT_list(qli_nod* list)
 			new_item->itm_picture = PIC_analyze(0, &value->nod_desc);
 		}
 		else {
-			const dsc* desc = EVAL_value(value);
+			desc = EVAL_value(value);
 			new_item->itm_picture = PIC_analyze(0, desc);
 		}
 
 		if (!new_item->itm_picture->pic_missing &&
 			value->nod_type == nod_field && field->fld_missing)
-		{
 			PIC_missing(field->fld_missing, new_item->itm_picture);
-		}
 
 		*new_ptr++ = *item;
 	}
 
-	qli_print_item* new_item = (qli_print_item*) ALLOCD(type_itm);
-	*new_ptr++ = new_item;
+	*new_ptr++ = new_item = (ITM) ALLOCD(type_itm);
 	new_item->itm_type = item_skip;
 	new_item->itm_count = 1;
 	column += 2;
 
-	for (item = (qli_print_item**) list->nod_arg, end = item + list->nod_count;
-		 item < end; item++)
-	{
+	for (item = (ITM *) list->nod_arg, end = item + list->nod_count;
+		 item < end; item++) {
 		if ((*item)->itm_type != item_value || !(value = (*item)->itm_value))
 			continue;
 		if (value->nod_type == nod_reference)
@@ -434,13 +427,13 @@ qli_nod* FMT_list(qli_nod* list)
 		(*item)->itm_print_offset = column;
 	}
 
-	new_nod->nod_count = new_ptr - (qli_print_item**) new_nod->nod_arg;
+	new_nod->nod_count = new_ptr - (ITM *) new_nod->nod_arg;
 
 	return new_nod;
 }
 
 
-void FMT_print( qli_nod* list, qli_prt* print)
+void FMT_print( QLI_NOD list, PRT print)
 {
 /**************************************
  *
@@ -452,19 +445,23 @@ void FMT_print( qli_nod* list, qli_prt* print)
  *	Format a print line.  Return the number of lines printed.
  *
  **************************************/
-	qli_nod** ptr;
+	ITM item;
+	USHORT l;
+	DSC *desc;
+	TEXT *p, *q, *buffer;
+	QLI_NOD *ptr, *end;
+	RPT report;
+	ISC_STATUS_ARRAY status_vector;
 
-// Now go thru and make up the first line
+/* Now go thru and make up the first line */
 
 	if (!list)
 		return;
-
-	TEXT* buffer = NULL;
-	TEXT* p = BUFFER_INIT;
-	const qli_nod* const* const end = list->nod_arg + list->nod_count;
+	p = BUFFER_INIT;
+	end = list->nod_arg + list->nod_count;
 
 	for (ptr = list->nod_arg; ptr < end; ptr++) {
-		qli_print_item* item = (qli_print_item*) *ptr;
+		item = (ITM) * ptr;
 
 		/* Handle formating directives.  Most have been translated into
 		   column assignments and are no-ops. */
@@ -478,40 +475,31 @@ void FMT_print( qli_nod* list, qli_prt* print)
 		case item_new_page:
 			if (print->prt_new_page) {
 				put_line(print, &p, buffer, '\n');
-				(*print->prt_new_page) (print, false);
+				(*(void(*)(PRT, int))print->prt_new_page) (print, FALSE);
 			}
 			else {
 				put_line(print, &p, buffer, '\f');
-				QLI_skip_line = false;
+				QLI_skip_line = FALSE;
 			}
 			continue;
 
 		case item_skip:
-			{
+			put_line(print, &p, buffer, '\n');
+			print_blobs(print, (ITM*) list->nod_arg, (ITM*) ptr);
+			for (l = item->itm_count - 1; l > 0; --l)
 				put_line(print, &p, buffer, '\n');
-				print_blobs(print, (qli_print_item**) list->nod_arg, 
-					(qli_print_item**) ptr);
-				for (USHORT l = item->itm_count - 1; l > 0; --l)
-					put_line(print, &p, buffer, '\n');
-				QLI_skip_line = false;
-				continue;
-			}
+			QLI_skip_line = FALSE;
+			continue;
 
 		case item_column_header:
-			{
-				qli_rpt* report = print->prt_report;
-				if (report && report->rpt_column_header)
-					FMT_put(report->rpt_column_header, print);
-				continue;
-			}
+			if ((report = print->prt_report) && report->rpt_column_header)
+				FMT_put(report->rpt_column_header, print);
+			continue;
 
 		case item_report_header:
-			{
-				qli_rpt* report = print->prt_report;
-				if (report && report->rpt_header)
-					FMT_put(report->rpt_header, print);
-				continue;
-			}
+			if ((report = print->prt_report) && report->rpt_header)
+				FMT_put(report->rpt_header, print);
+			continue;
 
 		case item_column:
 		case item_tab:
@@ -525,18 +513,18 @@ void FMT_print( qli_nod* list, qli_prt* print)
 
 		BUFFER_CHECK(p, item->itm_print_offset + item->itm_print_length + 2);
 		buffer = BUFFER_BEGINNING;
-		const TEXT* const q = buffer + item->itm_print_offset;
+		q = buffer + item->itm_print_offset;
 		if (p > q) {
 			put_line(print, &p, buffer, '\n');
-			print_blobs(print, (qli_print_item**) list->nod_arg, (qli_print_item**) ptr);
+			print_blobs(print, (ITM*) list->nod_arg, (ITM*) ptr);
 		}
 		while (p < q)
 			*p++ = ' ';
 
-		// Next, handle simple formated values
+		/* Next, handle simple formated values */
 
 		if (item->itm_dtype != dtype_blob) {
-			const dsc* desc = EVAL_value(item->itm_value);
+			desc = EVAL_value(item->itm_value);
 			if (!(desc->dsc_missing & DSC_missing))
 				PIC_edit(desc, item->itm_picture, &p, BUFFER_REMAINING(p));
 			else if (item->itm_picture->pic_missing)
@@ -545,7 +533,7 @@ void FMT_print( qli_nod* list, qli_prt* print)
 			continue;
 		}
 
-		// Finally, handle blobs
+		/* Finally, handle blobs */
 
 		if (!(item->itm_stream = EXEC_open_blob(item->itm_value)))
 			continue;
@@ -563,21 +551,21 @@ void FMT_print( qli_nod* list, qli_prt* print)
 
 	put_line(print, &p, buffer, '\n');
 
-// Now go back until all blobs have been fetched
+/* Now go back until all blobs have been fetched */
 
-	print_blobs(print, (qli_print_item**) list->nod_arg, (qli_print_item**) end);
+	print_blobs(print, (ITM*) list->nod_arg, (ITM*) end);
 
-// Finish by closing all blobs
-	ISC_STATUS_ARRAY status_vector;
+/* Finish by closing all blobs */
+
 	for (ptr = list->nod_arg; ptr < end; ptr++) {
-		qli_print_item* item = (qli_print_item*) *ptr;
+		item = (ITM) * ptr;
 		if (item->itm_dtype == dtype_blob && item->itm_stream)
-			isc_close_blob(status_vector, &item->itm_stream);
+			gds__close_blob(status_vector, GDS_REF(item->itm_stream));
 	}
 }
 
 
-void FMT_put(const TEXT* line, qli_prt* print)
+void FMT_put( TEXT * line, PRT print)
 {
 /**************************************
  *
@@ -587,51 +575,55 @@ void FMT_put(const TEXT* line, qli_prt* print)
  *
  * Functional description
  *	Write out an output file.   Write
- *	fewer than 256 characters at a time
+ *	fewer than 256 characters at at time
  *	to avoid annoying VMS.
  *
  **************************************/
-	for (const TEXT* pnewline = line; *pnewline; pnewline++)
-		if (*pnewline == '\n' || *pnewline == '\f')
+	TEXT *p, *q, *end, buffer[256];
+
+	for (p = line; *p; p++)
+		if (*p == '\n' || *p == '\f')
 			--print->prt_lines_remaining;
 
-	TEXT buffer[256];
-	const TEXT* const end = buffer + sizeof(buffer) - 1;
-	const TEXT* q = line;
-	TEXT* p;
+	end = buffer + sizeof(buffer) - 1;
+	q = line;
 
 	if (print && print->prt_file)
 		while (*q) {
 			for (p = buffer; p < end && *q;)
 				*p++ = *q++;
 			*p = 0;
-			fprintf((FILE *) print->prt_file, "%s", buffer);
+			ib_fprintf((IB_FILE *) print->prt_file, "%s", buffer);
 		}
 	else {
+#ifdef PYXIS
+		if (sw_forms)
+			FORM_reset();
+#endif
 		while (*q) {
 			for (p = buffer; p < end && *q;)
 				*p++ = *q++;
 			*p = 0;
 #ifdef DEV_BUILD
 			if (QLI_hex_output) {
-				// Hex mode output to assist debugging of multicharset work
+				/* Hex mode output to assist debugging of multicharset work */
 
 				for (p = buffer; p < end && *p; p++)
-					if (is_printable(*p))
-						fprintf(stdout, "%c", *p);
+					if (PRINTABLE(*p))
+						ib_fprintf(ib_stdout, "%c", *p);
 					else
-						fprintf(stdout, "[%2.2X]", *(UCHAR *) p);
+						ib_fprintf(ib_stdout, "[%2.2X]", *(UCHAR *) p);
 			}
 			else
 #endif
-				fprintf(stdout, "%s", buffer);
+				ib_fprintf(ib_stdout, "%s", buffer);
 		}
-		QLI_skip_line = true;
+		QLI_skip_line = TRUE;
 	}
 }
 
 
-void FMT_report( qli_rpt* report)
+void FMT_report( RPT report)
 {
 /**************************************
  *
@@ -643,52 +635,51 @@ void FMT_report( qli_rpt* report)
  *	Format a report.
  *
  **************************************/
-	if (global_fmt_buffer) {
-		ALLQ_release((FRB) global_fmt_buffer);
-		global_fmt_buffer = NULL;
+	QLI_NOD list;
+	USHORT lengths[16], n, i, column, width;
+	TEXT *segments[16], *p, *q, *end;
+	STR string;
+	VEC columns_vec;
+
+	if (fmt_buffer) {
+		ALL_release((FRB) fmt_buffer);
+		fmt_buffer = NULL;
 	}
 
-	USHORT width = report->rpt_columns;
-	qli_vec* columns_vec = (qli_vec*) ALLOCDV(type_vec, 256);
+	width = report->rpt_columns;
+	columns_vec = (VEC) ALLOCDV(type_vec, 256);
 	columns_vec->vec_count = 256;
 	columns_vec->vec_object[0] = NULL;
 
-	report_break(report->rpt_top_rpt, &columns_vec, false);
-	report_break(report->rpt_top_page, &columns_vec, false);
-	report_break(report->rpt_top_breaks, &columns_vec, false);
+	report_break(report->rpt_top_rpt, &columns_vec, FALSE);
+	report_break(report->rpt_top_page, &columns_vec, FALSE);
+	report_break(report->rpt_top_breaks, &columns_vec, FALSE);
 
-	qli_nod* list = report->rpt_detail_line;
-	if (list)
+	if (list = report->rpt_detail_line)
 		report_line(list, &columns_vec);
 
-	report_break(report->rpt_bottom_breaks, &columns_vec, true);
-	report_break(report->rpt_bottom_page, &columns_vec, true);
-	report_break(report->rpt_bottom_rpt, &columns_vec, true);
+	report_break(report->rpt_bottom_breaks, &columns_vec, TRUE);
+	report_break(report->rpt_bottom_page, &columns_vec, TRUE);
+	report_break(report->rpt_bottom_rpt, &columns_vec, TRUE);
 
 	report->rpt_column_header = format_report(columns_vec, width, &width);
 
-// Handle report name, if any
+/* Handle report name, if any */
 
 	if (report->rpt_name) {
-		USHORT lengths[16];
-		const TEXT* segments[16];
-		const USHORT n =
-			decompose_header(report->rpt_name, segments, lengths);
-		USHORT i;
+		n = decompose_header(report->rpt_name, segments, (SSHORT*) lengths);
 		for (i = 0; i < n; i++)
 			width = MAX(width, lengths[i] + 15);
-
-		qli_str* string = (qli_str*) ALLOCDV(type_str, width * n);
-		TEXT* p = string->str_data;
-		report->rpt_header = p;
+		string = (STR) ALLOCDV(type_str, width * n);
+		report->rpt_header = p = string->str_data;
 		for (i = 0; i < n; i++) {
-			USHORT column = (width - lengths[i]) / 2;
+			column = (width - lengths[i]) / 2;
 			if (column > 0)
-				do {
+				do
 					*p++ = ' ';
-				} while (--column);
-			const TEXT* q = segments[i];
-			const TEXT* const end = q + lengths[i];
+				while (--column);
+			q = segments[i];
+			end = q + lengths[i];
 			while (q < end)
 				*p++ = *q++;
 			*p++ = '\n';
@@ -697,9 +688,9 @@ void FMT_report( qli_rpt* report)
 }
 
 
-static USHORT decompose_header(const SCHAR* string,
-							const SCHAR** segments,
-							USHORT* lengths)
+static int decompose_header(
+							SCHAR * string,
+							SCHAR ** segments, SSHORT * lengths)
 {
 /**************************************
  *
@@ -713,41 +704,39 @@ static USHORT decompose_header(const SCHAR* string,
  *	and the number of segments.
  *
  **************************************/
+	TEXT c;
+	SSHORT n;
+
 	if (!string)
 		return 0;
 
-	USHORT n = 0;
+	n = 0;
 
-// Handle simple name first
+/* Handle simple name first */
 
 	if (*string != '"' && *string != '\'')
-	{
 		while (*string) {
 			*segments = string;
 			while (*string && *string != '_')
 				string++;
 			*lengths++ = string - *segments++;
-			++n;
+			n++;
 			if (*string == '_')
 				string++;
 		}
-	}
 	else
-	{	
-		TEXT c;
 		while (c = *string++) {
 			*segments = string;
 			while (*string++ != c);
 			*lengths++ = string - *segments++ - 1;
-			++n;
+			n++;
 		}
-	}
 
 	return n;
 }
 
 
-static void format_index( qli_print_item* item, qli_nod* field, const bool print_flag)
+static void format_index( ITM item, QLI_NOD field, USHORT print_flag)
 {
 /**************************************
  *
@@ -759,73 +748,63 @@ static void format_index( qli_print_item* item, qli_nod* field, const bool print
  *	Format the label of a subscripted item.
  *
  **************************************/
-	qli_nod* args = 0;
+	QLI_NOD args, *ptr, *end, subscript;
+	USHORT l, length;
+	TEXT s[32], *p, *q, *r;
+	STR str;
 
 /* Don't bother with anything except non-indexed fields.  Also
    ignore subscripted fields with user specified query headers. */
 
-	{ // scope
-		const TEXT* qh;
-		if (field->nod_type != nod_field ||
-			!(args = field->nod_arg[e_fld_subs]) ||
-			((qh = item->itm_query_header) && (*qh == '"' || *qh == '\'')))
-		{
-			return;
-		}
-	} // scope
+	if (field->nod_type != nod_field ||
+		!(args = field->nod_arg[e_fld_subs]) ||
+		((p = item->itm_query_header) && (*p == '"' || *p == '\'')))
+		return;
 
-// Start the label with the current query header, if any
+/* Start the label with the current query header, if any */
 
-	USHORT l;
-	const TEXT* q;
 	if (item->itm_query_header) {
 		q = item->itm_query_header;
 		l = strlen(item->itm_query_header);
 	}
 	else {
-		q = ((qli_fld*) field->nod_arg[e_fld_field])->fld_name->sym_string;
-		l = ((qli_fld*) field->nod_arg[e_fld_field])->fld_name->sym_length;
+		q = ((QLI_FLD) field->nod_arg[e_fld_field])->fld_name->sym_string;
+		l = ((QLI_FLD) field->nod_arg[e_fld_field])->fld_name->sym_length;
 	}
 
-	USHORT length = l + 2;
-	qli_str* str = NULL;
-	TEXT* p = get_buffer(&str, NULL, length + 32);
+	length = l + 2;
+	str = NULL;
+	p = get_buffer(&str, NULL, length + 32);
 	while (l--)
 		*p++ = *q++;
 
-// Loop through the subscripts, adding to the label
+/* Loop through the subscripts, adding to the label */
 
-	const TEXT* r;
 	if (print_flag) {
 		r = "_[";
 		length++;
 	}
 	else
 		r = "[";
-
-	TEXT s[32];
-	qli_nod** ptr = args->nod_arg;
-	for (const qli_nod* const* const end = ptr + args->nod_count;
-		ptr < end; ptr++)
-	{
-		qli_nod* subscript = *ptr;
+	for (ptr = args->nod_arg, end = ptr + args->nod_count; ptr < end; ptr++) {
+		subscript = *ptr;
 		switch (subscript->nod_type) {
 		case nod_constant:
-			sprintf(s, "%"SLONGFORMAT, MOVQ_get_long(&subscript->nod_desc, 0));
+			sprintf(s, "%ld", MOVQ_get_long(&subscript->nod_desc, 0));
 			q = s;
 			l = strlen(s);
 			break;
 
 		case nod_variable:
 		case nod_field:
-			q = ((qli_fld*) subscript->nod_arg[e_fld_field])->fld_name->sym_string;
-			l = ((qli_fld*) subscript->nod_arg[e_fld_field])->fld_name->sym_length;
+			q = ((QLI_FLD) subscript->nod_arg[e_fld_field])->fld_name->sym_string;
+			l = ((QLI_FLD) subscript->nod_arg[e_fld_field])->fld_name->sym_length;
 			break;
 
 		default:
-			// Punt on anything but constants, fields, and variables
+			/* Punt on anything but constants, fields, and variables */
 
-			ALLQ_release((FRB) str);
+			ALL_release((FRB) str);
 			return;
 		}
 
@@ -845,7 +824,7 @@ static void format_index( qli_print_item* item, qli_nod* field, const bool print
 }
 
 
-static TEXT* format_report( qli_vec* columns_vec, USHORT width, USHORT* max_width)
+static TEXT *format_report( VEC columns_vec, USHORT width, USHORT * max_width)
 {
 /**************************************
  *
@@ -858,26 +837,27 @@ static TEXT* format_report( qli_vec* columns_vec, USHORT width, USHORT* max_widt
  *	headers.  Return a pointer to the header string.
  *
  **************************************/
-	qli_nod* node;
-	USHORT lengths[10];
-	const TEXT* segments[10];
+	ITM item;
+	STR header;
+	QLI_NOD node;
+	SSHORT segment;
+	USHORT j, l, offset, max_offset, number_segments, n, lengths[10],
+		*ptr, flag, column_width, max_print_width, right_adjust, right_offset;
+	LLS *col, *col_end, temp;
+	TEXT *line, *p, *q, *segments[10], *bottom;
 
 /* Make a pass thru print items computing print lengths and header
    lengths, and the number of header segments. */
 
-	USHORT number_segments, offset, max_offset;
 	number_segments = offset = max_offset = 0;
-	TEXT* bottom = BOTTOM_INIT;
+	bottom = BOTTOM_INIT;
 
-	qli_lls** col = (qli_lls**) columns_vec->vec_object;
-	for (const qli_lls* const* const col_end = col + columns_vec->vec_count;
-		col < col_end && *col; col++)
-	{
-		USHORT column_width = 0, max_print_width = 0;
-		bool right_adjust = false;
-		qli_lls* temp;
+	col = (LLS *) columns_vec->vec_object;
+	for (col_end = col + columns_vec->vec_count; col < col_end && *col; col++) {
+		column_width = max_print_width = 0;
+		right_adjust = FALSE;
 		for (temp = *col; temp; temp = temp->lls_next) {
-			qli_print_item* item = (qli_print_item*) temp->lls_object;
+			item = (ITM) temp->lls_object;
 			switch (item->itm_type) {
 			case item_column:
 				offset = (item->itm_count) ? item->itm_count - 1 : 0;
@@ -904,32 +884,31 @@ static TEXT* format_report( qli_vec* columns_vec, USHORT width, USHORT* max_widt
 				node = item->itm_value;
 				if (node->nod_desc.dsc_dtype >= dtype_short &&
 					node->nod_desc.dsc_dtype <= dtype_double)
-					right_adjust = true;
+					right_adjust = TRUE;
 			}
 
 			if (item->itm_query_header) {
-				const USHORT n =
+				n =
 					decompose_header(item->itm_query_header, segments,
-									 lengths);
+									 (SSHORT*) lengths);
 				number_segments = MAX(n, number_segments);
-				USHORT* ptr = lengths;
-				for (USHORT j = 0; j < n; j++, ptr++)
+				for (j = 0, ptr = lengths; j < n; j++, ptr++)
 					item->itm_header_length =
 						MAX(item->itm_header_length, *ptr);
 			}
 
 			format_value(item, 0);
-			const USHORT w = MAX(item->itm_print_length, item->itm_header_length);
-			column_width = MAX(column_width, w);
+			n = MAX(item->itm_print_length, item->itm_header_length);
+			column_width = MAX(column_width, n);
 		}
 
 		if (offset + column_width > width)
 			offset = 0;
 
-		const USHORT right_offset = column_width - max_print_width / 2;
+		right_offset = column_width - max_print_width / 2;
 
 		for (temp = *col; temp; temp = temp->lls_next) {
-			qli_print_item* item = (qli_print_item*) temp->lls_object;
+			item = (ITM) temp->lls_object;
 			if (item->itm_type != item_value)
 				continue;
 
@@ -947,22 +926,21 @@ static TEXT* format_report( qli_vec* columns_vec, USHORT width, USHORT* max_widt
 
 			if (item->itm_query_header) {
 				BOTTOM_CHECK(bottom, offset);
-				const TEXT* q = BOTTOM_LINE + offset;
+				q = BOTTOM_LINE + offset;
 				while (bottom < q)
 					*bottom++ = ' ';
-				bool flag = true;
-				USHORT l;
+				flag = TRUE;
 				if (offset && q[-1] != ' ')
-					flag = false;
+					flag = FALSE;
 				else if (l = MIN(column_width, bottom - q)) {
-					const TEXT* p = bottom;
+					p = bottom;
 					while (--l)
 						if (*p++ != ' ') {
-							flag = false;
+							flag = FALSE;
 							break;
 						}
 					if (flag && p < bottom && *p != ' ')
-						flag = false;
+						flag = FALSE;
 				}
 				if (flag) {
 					BOTTOM_CHECK(bottom, offset + column_width);
@@ -982,53 +960,52 @@ static TEXT* format_report( qli_vec* columns_vec, USHORT width, USHORT* max_widt
 	if (number_segments == 0)
 		return NULL;
 
-// Allocate a string block big enough to hold all lines of the print header
+/* Allocate a string block big enough to hold all lines of the print header */
 
-	USHORT len = bottom - BOTTOM_LINE;
-	qli_str* header = (qli_str*) ALLOCDV(type_str,
-					  (max_offset + 1) * (number_segments + 1) + 2 + len);
-	TEXT* p = header->str_data;
+	l = bottom - BOTTOM_LINE;
+	header =
+		(STR) ALLOCDV(type_str,
+					  (max_offset + 1) * (number_segments + 1) + 2 + l);
+	p = header->str_data;
 
-// Generate the various lines of the header line at a time.
+/* Generate the various lines of the header line at a time. */
 
-	for (USHORT j = 0; j < number_segments; j++) {
+	for (j = 0; j < number_segments; j++) {
 		*p++ = '\n';
-		TEXT* const line = p;
-		col = (qli_lls**) columns_vec->vec_object;
-		for (const qli_lls* const* const col_end = col + columns_vec->vec_count;
-			col < col_end && *col; col++)
-		{
-			for (qli_lls* temp = *col; temp; temp = temp->lls_next) {
-				qli_print_item* item = (qli_print_item*) temp->lls_object;
+		line = p;
+		col = (LLS *) columns_vec->vec_object;
+		for (col_end = col + columns_vec->vec_count; col < col_end && *col;
+			 col++)
+			for (temp = *col; temp; temp = temp->lls_next) {
+				item = (ITM) temp->lls_object;
 				if (item->itm_type != item_value)
 					continue;
-				const USHORT n =
+				n =
 					decompose_header(item->itm_query_header, segments,
-									 lengths);
-				SSHORT segment = j - (number_segments - n);
+									 (SSHORT*) lengths);
+				segment = j - (number_segments - n);
 				if (segment < 0)
 					continue;
-				USHORT l = lengths[segment];
-				const TEXT* q = line + item->itm_header_offset - l / 2;
+				l = lengths[segment];
+				q = line + item->itm_header_offset - l / 2;
 				while (p < q)
 					*p++ = ' ';
 				q = segments[segment];
 				if (l)
-					do {
+					do
 						*p++ = *q++;
-					} while (--l);
+					while (--l);
 			}
-		}
 	}
 
-// Make one last pass to put in underlining of headers
+/* Make one last pass to put in underlining of headers */
 
-	if (len = bottom - BOTTOM_LINE) {
+	if (l = bottom - BOTTOM_LINE) {
 		*p++ = '\n';
 		bottom = BOTTOM_LINE;
-		do {
+		do
 			*p++ = *bottom++;
-		} while (--len);
+		while (--l);
 	}
 
 	*p++ = '\n';
@@ -1039,7 +1016,7 @@ static TEXT* format_report( qli_vec* columns_vec, USHORT width, USHORT* max_widt
 }
 
 
-static void format_value( qli_print_item* item, int flags)
+static void format_value( ITM item, int flags)
 {
 /**************************************
  *
@@ -1050,8 +1027,13 @@ static void format_value( qli_print_item* item, int flags)
  * Functional description
  *
  **************************************/
-	const qli_nod* node = item->itm_value;
-	const dsc* desc = &node->nod_desc;
+	QLI_NOD node;
+	DSC *desc;
+	PICS picture;
+	QLI_FLD field;
+
+	node = item->itm_value;
+	desc = &node->nod_desc;
 	item->itm_dtype = desc->dsc_dtype;
 	item->itm_sub_type = desc->dsc_sub_type;
 
@@ -1060,39 +1042,36 @@ static void format_value( qli_print_item* item, int flags)
 		if (node->nod_type == nod_reference)
 			node = node->nod_arg[0];
 		if (node->nod_type == nod_field) {
-			const qli_fld* field = (qli_fld*) node->nod_arg[e_fld_field];
+			field = (QLI_FLD) node->nod_arg[e_fld_field];
 			if (field->fld_segment_length)
 				item->itm_print_length = field->fld_segment_length;
 		}
 	}
 	else {
-		pics* picture = PIC_analyze(item->itm_edit_string, desc);
-		item->itm_picture = picture;
+		item->itm_picture = picture =
+			PIC_analyze(item->itm_edit_string, desc);
 
 		if (node->nod_type == nod_reference)
 			node = node->nod_arg[0];
 
-		const qli_fld* field;
 		if (node->nod_type == nod_field) {
-			field = (qli_fld*) node->nod_arg[e_fld_field];
+			field = (QLI_FLD) node->nod_arg[e_fld_field];
 			if ((field->fld_flags & FLD_array) && !node->nod_arg[e_fld_subs])
-				ERRQ_print_error(480, field->fld_name->sym_string);
-				// msg 480 can not format unsubscripted array %s
+				ERRQ_print_error(480, field->fld_name->sym_string, NULL, NULL,
+								 NULL, NULL);	/* msg 480 can not format unsubscripted array %s */
 		}
 
 		if (!(item->itm_picture->pic_missing) &&
 			(node->nod_type == nod_field) &&
-			(field = (qli_fld*) node->nod_arg[e_fld_field]) && field->fld_missing)
-		{
+			(field = (QLI_FLD) node->nod_arg[e_fld_field]) && field->fld_missing)
 			PIC_missing(field->fld_missing, picture);
-		}
 		item->itm_print_length = picture->pic_length;
 		picture->pic_flags |= flags;
 	}
 }
 
 
-static TEXT* get_buffer(qli_str** str, TEXT* ptr, USHORT length)
+static TEXT *get_buffer( STR * str, TEXT * ptr, USHORT length)
 {
 /**************************************
  *
@@ -1106,8 +1085,12 @@ static TEXT* get_buffer(qli_str** str, TEXT* ptr, USHORT length)
  *	current buffer to the new one.
  *
  **************************************/
+	STR temp_str;
+	TEXT *p, *q;
+	USHORT l;
+
 	if (!*str) {
-		*str = (qli_str*) ALLOCPV(type_str, length);
+		*str = (STR) ALLOCPV(type_str, length);
 		(*str)->str_length = length;
 		return (*str)->str_data;
 	}
@@ -1115,25 +1098,24 @@ static TEXT* get_buffer(qli_str** str, TEXT* ptr, USHORT length)
 	if (length <= (*str)->str_length)
 		return (ptr) ? ptr : (*str)->str_data;
 
-	qli_str* temp_str = (qli_str*) ALLOCPV(type_str, length);
+	temp_str = (STR) ALLOCPV(type_str, length);
 	temp_str->str_length = length;
-	TEXT* p = temp_str->str_data;
-	const TEXT* q = (*str)->str_data;
+	p = temp_str->str_data;
+	q = (*str)->str_data;
 
-	USHORT l;
 	if (ptr && (l = ptr - q))
-		do {
+		do
 			*p++ = *q++;
-		} while (--l);
+		while (--l);
 
-	ALLQ_release((FRB) *str);
+	ALL_release((FRB) *str);
 	*str = temp_str;
 
 	return p;
 }
 
 
-static bool match_expr(const qli_nod* node1, const qli_nod* node2)
+static int match_expr( QLI_NOD node1, QLI_NOD node2)
 {
 /**************************************
  *
@@ -1145,11 +1127,12 @@ static bool match_expr(const qli_nod* node1, const qli_nod* node2)
  *	Compare two nodes for equality of value.
  *
  **************************************/
+	QLI_NOD *ptr1, *ptr2, *end;
 
-// If either is missing, they can't match.
+/* If either is missing, they can't match. */
 
 	if (!node1 || !node2)
-		return false;
+		return FALSE;
 
 	if (node1->nod_type == nod_reference)
 		node1 = node1->nod_arg[0];
@@ -1157,12 +1140,12 @@ static bool match_expr(const qli_nod* node1, const qli_nod* node2)
 	if (node2->nod_type == nod_reference)
 		node2 = node2->nod_arg[0];
 
-// A constant more or less matches anything
+/* A constant more or less matches anything */
 
 	if (node1->nod_type == nod_constant)
-		return true;
+		return TRUE;
 
-// Hasn't matched yet.  Check for statistical expression
+/* Hasn't matched yet.  Check for statistical expression */
 
 	switch (node1->nod_type) {
 	case nod_average:
@@ -1206,28 +1189,22 @@ static bool match_expr(const qli_nod* node1, const qli_nod* node2)
 		if (node1->nod_type == nod_field) {
 			if (node1->nod_arg[e_fld_field] != node2->nod_arg[e_fld_field] ||
 				node1->nod_arg[e_fld_context] !=
-				node2->nod_arg[e_fld_context])
-			{
-				return false;
-			}
-			return true;
+				node2->nod_arg[e_fld_context]) return FALSE;
+			return TRUE;
 		}
-		const qli_nod* const* ptr1 = node1->nod_arg;
-		const qli_nod* const* ptr2 = node2->nod_arg;
-		for (const qli_nod* const* end = ptr1 + node1->nod_count; ptr1 < end;
-			++ptr1, ++ptr2)
-		{
+		ptr1 = node1->nod_arg;
+		ptr2 = node2->nod_arg;
+		for (end = ptr1 + node1->nod_count; ptr1 < end; ptr1++, ptr2++)
 			if (!match_expr(*ptr1, *ptr2))
-				return false;
-		}
-		return true;
+				return FALSE;
+		return TRUE;
 	}
 
-	return false;
+	return FALSE;
 }
 
 
-static void print_blobs( qli_prt* print, qli_print_item** first, qli_print_item** last)
+static void print_blobs( PRT print, ITM * first, ITM * last)
 {
 /**************************************
  *
@@ -1239,14 +1216,17 @@ static void print_blobs( qli_prt* print, qli_print_item** first, qli_print_item*
  *	Print any blobs still active in item list.
  *
  **************************************/
+	ITM *ptr, item;
+	USHORT blob_active, do_line, length;
+	TEXT *p, *q, *buffer, *pp;
+	int c;
+
 	if (QLI_abort)
 		return;
 
-	qli_print_item** ptr;
-	
-	USHORT length = 0;
+	length = 0;
 	for (ptr = first; ptr < last; ptr++) {
-		const qli_print_item* item = *ptr;
+		item = *ptr;
 		if (item->itm_dtype == dtype_blob && item->itm_stream)
 			length =
 				MAX(length,
@@ -1254,25 +1234,25 @@ static void print_blobs( qli_prt* print, qli_print_item** first, qli_print_item*
 	}
 
 
-	TEXT* buffer = get_buffer(&global_blob_buffer, NULL, length);
+	buffer = get_buffer(&blob_buffer, NULL, length);
 
 	while (!QLI_abort) {
-		bool blob_active = false;
-		TEXT* p = buffer;
-		bool do_line = false;
+		blob_active = FALSE;
+		p = buffer;
+		do_line = FALSE;
 		for (ptr = first; ptr < last; ptr++) {
-			qli_print_item* item = *ptr;
+			item = *ptr;
 			if (item->itm_dtype != dtype_blob || !item->itm_stream)
 				continue;
-			const TEXT* const end = buffer + item->itm_print_offset;
-			while (p < end)
+			q = buffer + item->itm_print_offset;
+			while (p < q)
 				*p++ = ' ';
-			const TEXT* const pp = p;
-			const int c = print_line(item, &p);
+			pp = p;
+			c = print_line(item, &p);
 			if (c != EOF)
-				blob_active = true;
+				blob_active = TRUE;
 			if (pp != p || c == '\n')
-				do_line = true;
+				do_line = TRUE;
 		}
 		if (do_line)
 			put_line(print, &p, buffer, '\n');
@@ -1282,7 +1262,7 @@ static void print_blobs( qli_prt* print, qli_print_item** first, qli_print_item*
 }
 
 
-static int print_line( qli_print_item* item, TEXT** ptr)
+static int print_line( ITM item, TEXT ** ptr)
 {
 /**************************************
  *
@@ -1295,24 +1275,29 @@ static int print_line( qli_print_item* item, TEXT** ptr)
  *	last thing printed.
  *
  **************************************/
+	USHORT l, length;
+	TEXT *p;
+	ISC_STATUS_ARRAY status_vector;
+	ISC_STATUS status;
+
 	EXEC_poll_abort();
 
-// If we're already at end of stream, there's nothing to do
+/* If we're already at end of stream, there's nothing to do */
 
 	if (!item->itm_stream)
 		return EOF;
 
-	TEXT* p = *ptr;
-	const USHORT l = item->itm_print_length;
+	p = *ptr;
+	l = item->itm_print_length;
 
-	USHORT length;
-	ISC_STATUS_ARRAY status_vector;
-	const ISC_STATUS status = isc_get_segment(status_vector, &item->itm_stream,
-						&length, l, p);
-	if (status && status != isc_segment) {
-		ISC_STATUS* null_status = 0;
-		isc_close_blob(null_status, &item->itm_stream);
-		if (status != isc_segstr_eof)
+
+	if ((status = gds__get_segment(status_vector,
+								   GDS_REF(item->itm_stream),
+								   GDS_REF(length),
+								   l, GDS_VAL(p))) && status != gds_segment) {
+		long *null_status = 0;
+		gds__close_blob(null_status, GDS_REF(item->itm_stream));
+		if (status != gds_segstr_eof)
 			ERRQ_database_error(0, status_vector);
 		return EOF;
 	}
@@ -1335,7 +1320,7 @@ static int print_line( qli_print_item* item, TEXT** ptr)
 }
 
 
-static void put_line( qli_prt* print, TEXT** ptr, TEXT* buffer, TEXT terminator)
+static void put_line( PRT print, TEXT ** ptr, TEXT * buffer, TEXT terminator)
 {
 /**************************************
  *
@@ -1357,7 +1342,7 @@ static void put_line( qli_prt* print, TEXT** ptr, TEXT* buffer, TEXT terminator)
 }
 
 
-static void report_break( qli_brk* control, qli_vec** columns_vec, const bool bottom_flag)
+static void report_break( BRK control, VEC * columns_vec, int bottom_flag)
 {
 /**************************************
  *
@@ -1377,17 +1362,17 @@ static void report_break( qli_brk* control, qli_vec** columns_vec, const bool bo
 		if (control->brk_next)
 			report_break(control->brk_next, columns_vec, bottom_flag);
 		if (control->brk_line)
-			report_line((qli_nod*) control->brk_line, columns_vec);
+			report_line((QLI_NOD) control->brk_line, columns_vec);
 		return;
 	}
 
 	for (; control; control = control->brk_next)
 		if (control->brk_line)
-			report_line((qli_nod*) control->brk_line, columns_vec);
+			report_line((QLI_NOD) control->brk_line, columns_vec);
 }
 
 
-static void report_item( qli_print_item* item, qli_vec** columns_vec, USHORT* col_ndx)
+static void report_item( ITM item, VEC * columns_vec, USHORT * col_ndx)
 {
 /**************************************
  *
@@ -1400,17 +1385,21 @@ static void report_item( qli_print_item* item, qli_vec** columns_vec, USHORT* co
  *	someplace reasonable, stick it there.
  *
  **************************************/
+	ITM item2;
+	VEC columns;
+	LLS *col, *col_end, temp;
+	QLI_NOD node;
+	USHORT new_index;
+
 	if (item->itm_query_header && *item->itm_query_header == '-')
 		item->itm_query_header = NULL;
 
-// If it's a constant, dump it in the next logical column
+/* If it's a constant, dump it in the next logical column */
 
-	qli_nod* node;
-	qli_vec* columns = *columns_vec;
+	columns = *columns_vec;
 	if (columns->vec_object[*col_ndx] &&
-		(node = item->itm_value) && node->nod_type == nod_constant)
-	{
-		ALLQ_push((blk*) item, (qli_lls**) (columns->vec_object + *col_ndx));
+		(node = item->itm_value) && node->nod_type == nod_constant) {
+		LLS_PUSH(item, (LLS*) (columns->vec_object + *col_ndx));
 		return;
 	}
 
@@ -1418,33 +1407,31 @@ static void report_item( qli_print_item* item, qli_vec** columns_vec, USHORT* co
    expression.  If we find one, the item beSLONGs in that column;
    otherwise, someplace else. */
 
-	qli_lls** col = (qli_lls**) (columns->vec_object + *col_ndx);
-	const qli_lls* const* const col_end =
-		(qli_lls**) (columns->vec_object + columns->vec_count);
+	col = (LLS *) (columns->vec_object + *col_ndx);
+	col_end = (LLS *) (columns->vec_object + columns->vec_count);
 	for (; col < col_end && *col; col++)
-		for (qli_lls* temp = *col; temp; temp = temp->lls_next) {
-			qli_print_item* item2 = (qli_print_item*) temp->lls_object;
+		for (temp = *col; temp; temp = temp->lls_next) {
+			item2 = (ITM) temp->lls_object;
 			if (match_expr(item->itm_value, item2->itm_value)) {
-				ALLQ_push((blk*) item, col);
-				*col_ndx = col - (qli_lls**) columns->vec_object;
+				LLS_PUSH(item, col);
+				*col_ndx = col - (LLS *) columns->vec_object;
 				return;
 			}
 		}
 
-// Didn't fit -- make a new logical column
+/* Didn't fit -- make a new logical column */
 
-	const USHORT new_index = col - (qli_lls**) columns->vec_object;
-	*col_ndx = new_index;
+	*col_ndx = new_index = col - (LLS *) columns->vec_object;
 	if (new_index >= columns->vec_count) {
 		ALLQ_extend((BLK*) columns_vec, new_index + 16);
 		(*columns_vec)->vec_count = new_index + 16;
 	}
 
-	ALLQ_push((blk*) item, (qli_lls**) ((*columns_vec)->vec_object + new_index));
+	LLS_PUSH(item, (LLS*) ((*columns_vec)->vec_object + new_index));
 }
 
 
-static void report_line( qli_nod* list, qli_vec** columns_vec)
+static void report_line( QLI_NOD list, VEC * columns_vec)
 {
 /**************************************
  *
@@ -1456,12 +1443,13 @@ static void report_line( qli_nod* list, qli_vec** columns_vec)
  *	Process a report line.
  *
  **************************************/
-	USHORT col_ndx = 0;
-	qli_print_item** ptr = (qli_print_item**) list->nod_arg;
-	for (const qli_print_item* const* const end = ptr + list->nod_count;
-		ptr < end; ptr++)
-	{
-		qli_print_item* item = *ptr;
+	ITM item, *ptr, *end;
+	USHORT col_ndx;
+
+	col_ndx = 0;
+	for (ptr = (ITM *) list->nod_arg, end = ptr + list->nod_count; ptr < end;
+		 ptr++) {
+		item = *ptr;
 		report_item(item, columns_vec, &col_ndx);
 		switch (item->itm_type) {
 		case item_skip:
@@ -1471,5 +1459,3 @@ static void report_line( qli_nod* list, qli_vec** columns_vec)
 		}
 	}
 }
-
-

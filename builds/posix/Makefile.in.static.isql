@@ -27,10 +27,11 @@
 #  Contributor(s):
 # 
 #
+#  $Id: Makefile.in.static.isql,v 1.6.2.1 2006-11-05 14:37:30 alexpeshkoff Exp $
 #
 ROOT=..
-ObjModuleType=boot
-CFLAGS+= -DBOOT_BUILD
+ObjModuleName=static.isql
+CFLAGS:= -DBOOT_BUILD
 
 include     $(ROOT)/gen/make.defaults
 include     $(ROOT)/gen/make.platform
@@ -43,12 +44,12 @@ unexport ISC_USER
 unexport ISC_PASSWORD
 
 
-ISQL_Files = extract.epp isql.epp show.epp Extender.cpp
+ISQL_Files = extract.epp isql.epp show.epp
 ISQL_Sources = $(addprefix isql/, $(ISQL_Files))
 ISQL_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(ISQL_Sources))))
 
 AllObjects = $(ISQL_Objects)
-Dependencies = $(AllObjects:.o=.d) 
+Dependencies=$(AllObjects:.o=.$(DEP_EXT))
 
 
 
@@ -57,8 +58,8 @@ Dependencies = $(AllObjects:.o=.d)
 
 isql_static : $(ISQL_STATIC)
 
-$(ISQL_STATIC):	$(ISQL_Objects) $(COMMON_Objects) $(LIBFBSTATIC_A) 
-	$(LD) $(LINK_OPTS) $(ISQL_Objects) $(COMMON_Objects) -o $@ -L$(LIB) -lfbstatic $(LINK_LIBS) $(ICU_LIBS) $(LIBEDITLINE)
+$(ISQL_STATIC):	$(ISQL_Objects) $(LIBFBCOMMON_A) $(LIBFBSTATIC_A) 
+	$(LD) $(LINK_OPTS) $(ISQL_Objects) -o $@ -L$(LIB) -lfbstatic -lfbcommon $(LINK_LIBS)
 
 
 include $(ROOT)/gen/make.shared.targets

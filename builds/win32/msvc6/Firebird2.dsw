@@ -75,7 +75,7 @@ Package=<4>
 
 ###############################################################################
 
-Project: "config"=.\config.dsp - Package Owner=<4>
+Project: "common_utilities"=.\common_utilities.dsp - Package Owner=<4>
 
 Package=<5>
 {{{
@@ -159,21 +159,6 @@ Package=<4>
 
 ###############################################################################
 
-Project: "fb_event_print"=.\fb_event_print.dsp - Package Owner=<4>
-
-Package=<5>
-{{{
-}}}
-
-Package=<4>
-{{{
-    Begin Project Dependency
-    Project_Dep_Name common
-    End Project Dependency
-}}}
-
-###############################################################################
-
 Project: "fb_inet_server"=.\fb_inet_server.dsp - Package Owner=<4>
 
 Package=<5>
@@ -195,6 +180,9 @@ Package=<4>
     Project_Dep_Name dsql_server_classic
     End Project Dependency
     Begin Project Dependency
+    Project_Dep_Name ipserver
+    End Project Dependency
+    Begin Project Dependency
     Project_Dep_Name lock_classic
     End Project Dependency
     Begin Project Dependency
@@ -204,10 +192,10 @@ Package=<4>
     Project_Dep_Name utilities_classic
     End Project Dependency
     Begin Project Dependency
-    Project_Dep_Name common_classic
+    Project_Dep_Name wal_classic
     End Project Dependency
     Begin Project Dependency
-    Project_Dep_Name config
+    Project_Dep_Name common_classic
     End Project Dependency
 }}}
 
@@ -267,13 +255,13 @@ Package=<4>
     Project_Dep_Name utilities
     End Project Dependency
     Begin Project Dependency
+    Project_Dep_Name wal
+    End Project Dependency
+    Begin Project Dependency
     Project_Dep_Name dsql_server
     End Project Dependency
     Begin Project Dependency
     Project_Dep_Name engine_embed
-    End Project Dependency
-    Begin Project Dependency
-    Project_Dep_Name config
     End Project Dependency
 }}}
 
@@ -290,21 +278,6 @@ Package=<4>
     Begin Project Dependency
     Project_Dep_Name common
     End Project Dependency
-    Begin Project Dependency
-    Project_Dep_Name fbclient
-    End Project Dependency
-}}}
-
-###############################################################################
-
-Project: "fbrmclib"=.\fbrmclib.dsp - Package Owner=<4>
-
-Package=<5>
-{{{
-}}}
-
-Package=<4>
-{{{
     Begin Project Dependency
     Project_Dep_Name fbclient
     End Project Dependency
@@ -339,31 +312,16 @@ Package=<4>
     Project_Dep_Name utilities
     End Project Dependency
     Begin Project Dependency
+    Project_Dep_Name wal
+    End Project Dependency
+    Begin Project Dependency
     Project_Dep_Name remote
     End Project Dependency
     Begin Project Dependency
     Project_Dep_Name engine
     End Project Dependency
     Begin Project Dependency
-    Project_Dep_Name config
-    End Project Dependency
-}}}
-
-###############################################################################
-
-Project: "fbsvcmgr"=.\fbsvcmgr.dsp - Package Owner=<4>
-
-Package=<5>
-{{{
-}}}
-
-Package=<4>
-{{{
-    Begin Project Dependency
-    Project_Dep_Name common
-    End Project Dependency
-    Begin Project Dependency
-    Project_Dep_Name fbclient
+    Project_Dep_Name ipserver
     End Project Dependency
 }}}
 
@@ -377,6 +335,9 @@ Package=<5>
 
 Package=<4>
 {{{
+    Begin Project Dependency
+    Project_Dep_Name fbclient
+    End Project Dependency
 }}}
 
 ###############################################################################
@@ -391,9 +352,6 @@ Package=<4>
 {{{
     Begin Project Dependency
     Project_Dep_Name fbclient
-    End Project Dependency
-    Begin Project Dependency
-    Project_Dep_Name common
     End Project Dependency
 }}}
 
@@ -443,9 +401,6 @@ Package=<4>
     Begin Project Dependency
     Project_Dep_Name fbclient
     End Project Dependency
-    Begin Project Dependency
-    Project_Dep_Name common
-    End Project Dependency
 }}}
 
 ###############################################################################
@@ -461,9 +416,6 @@ Package=<4>
     Begin Project Dependency
     Project_Dep_Name fbclient
     End Project Dependency
-    Begin Project Dependency
-    Project_Dep_Name common
-    End Project Dependency
 }}}
 
 ###############################################################################
@@ -478,9 +430,6 @@ Package=<4>
 {{{
     Begin Project Dependency
     Project_Dep_Name fbclient
-    End Project Dependency
-    Begin Project Dependency
-    Project_Dep_Name common
     End Project Dependency
 }}}
 
@@ -551,6 +500,9 @@ Package=<5>
 
 Package=<4>
 {{{
+    Begin Project Dependency
+    Project_Dep_Name common_utilities
+    End Project Dependency
 }}}
 
 ###############################################################################
@@ -563,11 +515,29 @@ Package=<5>
 
 Package=<4>
 {{{
+    Begin Project Dependency
+    Project_Dep_Name common_utilities
+    End Project Dependency
 }}}
 
 ###############################################################################
 
 Project: "instsvc"=.\instsvc.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name common_utilities
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "intl"=.\intl.dsp - Package Owner=<4>
 
 Package=<5>
 {{{
@@ -582,7 +552,19 @@ Package=<4>
 
 ###############################################################################
 
-Project: "intl"=.\intl.dsp - Package Owner=<4>
+Project: "intlcpp"=.\intlcpp.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+}}}
+
+###############################################################################
+
+Project: "ipserver"=.\ipserver.dsp - Package Owner=<4>
 
 Package=<5>
 {{{
@@ -604,9 +586,6 @@ Package=<4>
 {{{
     Begin Project Dependency
     Project_Dep_Name fbclient
-    End Project Dependency
-    Begin Project Dependency
-    Project_Dep_Name common
     End Project Dependency
 }}}
 
@@ -636,24 +615,6 @@ Package=<4>
 
 ###############################################################################
 
-Project: "nbackup"=.\nbackup.dsp - Package Owner=<4>
-
-Package=<5>
-{{{
-}}}
-
-Package=<4>
-{{{
-    Begin Project Dependency
-    Project_Dep_Name common
-    End Project Dependency
-    Begin Project Dependency
-    Project_Dep_Name fbclient
-    End Project Dependency
-}}}
-
-###############################################################################
-
 Project: "qli"=.\qli.dsp - Package Owner=<4>
 
 Package=<5>
@@ -664,6 +625,9 @@ Package=<4>
 {{{
     Begin Project Dependency
     Project_Dep_Name fbclient
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name wal
     End Project Dependency
     Begin Project Dependency
     Project_Dep_Name common
@@ -709,6 +673,45 @@ Package=<4>
 ###############################################################################
 
 Project: "utilities_classic"=.\utilities_classic.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+}}}
+
+###############################################################################
+
+Project: "v5_examples"=.\v5_examples.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name fbclient
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "wal"=.\wal.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+}}}
+
+###############################################################################
+
+Project: "wal_classic"=.\wal_classic.dsp - Package Owner=<4>
 
 Package=<5>
 {{{

@@ -67,7 +67,7 @@ LINK32=link.exe
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MDd /W3 /Gm /GX /Zi /Od /I "../../../src/include" /I "../../../src/include/gen" /D "WIN32" /D "_DEBUG" /D "_CONSOLE" /D "_MBCS" /FD /GZ /c
 # SUBTRACT BASE CPP /YX
-# ADD CPP /nologo /MD /W3 /GX /Ot /Og /Oi /Op /Oy /Ob1 /I "../../../src/include" /I "../../../src/include/gen" /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /D "_MBCS" /D "SUPERCLIENT" /FD /EHc- /c
+# ADD CPP /nologo /MD /W3 /GX /Zi /Ot /Og /Oi /Op /Oy /Ob1 /I "../../../src/include" /I "../../../src/include/gen" /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /D "_MBCS" /D "SUPERCLIENT" /FD /EHc- /c
 # ADD BASE RSC /l 0x41d /d "_DEBUG"
 # ADD RSC /l 0x41d /d "_DEBUG"
 BSC32=bscmake.exe
@@ -84,16 +84,20 @@ LINK32=link.exe
 
 # Name "gsec - Win32 Debug"
 # Name "gsec - Win32 Release"
-# Begin Group "UTILITIES files"
+# Begin Group "UTILITITES files"
 
 # PROP Default_Filter "cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
 # Begin Source File
 
-SOURCE=..\..\..\src\utilities\gsec\call_service.cpp
+SOURCE=..\..\..\src\common\fb_exception.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\utilities\gsec\gsec.cpp
+SOURCE=..\..\..\src\utilities\gsec.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\gen\utilities\security.cpp
 # End Source File
 # End Group
 # Begin Group "JRD files"
@@ -107,21 +111,17 @@ SOURCE=..\..\..\src\jrd\enc.cpp
 
 SOURCE=..\..\..\src\jrd\isc.cpp
 # End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\jrd\isc_file.cpp
-# End Source File
 # End Group
 # Begin Group "Header files"
 
 # PROP Default_Filter "h;hpp;hxx;hm;inl"
 # Begin Source File
 
-SOURCE=..\..\..\src\utilities\gsec\gsec.h
+SOURCE=..\..\..\src\utilities\gsec.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\utilities\gsec\secur_proto.h
+SOURCE=..\..\..\src\utilities\secur_proto.h
 # End Source File
 # End Group
 # Begin Group "Resource files"

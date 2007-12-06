@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Access method
  *	MODULE:		dyn_dl_proto.h
- *	DESCRIPTION:	Prototype Header file for dyn_del.epp
+ *	DESCRIPTION:	Prototype Header file for dyn_delete.e
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -21,27 +21,25 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef JRD_DYN_DL_PROTO_H
-#define JRD_DYN_DL_PROTO_H
+#ifndef _JRD_DYN_DL_PROTO_H_
+#define _JRD_DYN_DL_PROTO_H_
 
-void	DYN_delete_collation(Jrd::Global*, const UCHAR**);
-void	DYN_delete_constraint(Jrd::Global*, const UCHAR**, const Firebird::MetaName*);
-void	DYN_delete_dimensions(Jrd::Global*, const UCHAR**, const Firebird::MetaName*, Firebird::MetaName*);
-void	DYN_delete_exception(Jrd::Global*, const UCHAR**);
-void	DYN_delete_filter(Jrd::Global*, const UCHAR**);
-void	DYN_delete_function(Jrd::Global*, const UCHAR**);
-void	DYN_delete_generator(Jrd::Global*, const UCHAR**);
-void	DYN_delete_global_field(Jrd::Global*, const UCHAR**);
-void	DYN_delete_index(Jrd::Global*, const UCHAR**);
-void	DYN_delete_local_field(Jrd::Global*, const UCHAR**, const Firebird::MetaName*, Firebird::MetaName*);
-void	DYN_delete_parameter(Jrd::Global*, const UCHAR**, Firebird::MetaName*);
-void	DYN_delete_procedure(Jrd::Global*, const UCHAR**);
-void	DYN_delete_relation(Jrd::Global*, const UCHAR**, const Firebird::MetaName*);
-void	DYN_delete_role(Jrd::Global*, const UCHAR**);
-void	DYN_delete_security_class(Jrd::Global*, const UCHAR**);
-void	DYN_delete_shadow(Jrd::Global*, const UCHAR**);
-void	DYN_delete_trigger(Jrd::Global*, const UCHAR**);
-void	DYN_delete_trigger_msg(Jrd::Global*, const UCHAR**, Firebird::MetaName*);
+extern void DYN_delete_constraint(GBL, UCHAR **, TEXT *);
+extern void DYN_delete_dimensions(GBL, UCHAR **, TEXT *, TEXT *);
+extern void DYN_delete_exception(GBL, UCHAR **);
+extern void DYN_delete_filter(GBL, UCHAR **);
+extern void DYN_delete_function(GBL, UCHAR **);
+extern void	DYN_delete_generator(GBL, UCHAR **);
+extern void DYN_delete_global_field(GBL, UCHAR **);
+extern void DYN_delete_index(GBL, UCHAR **);
+extern void DYN_delete_local_field(GBL, UCHAR **, TEXT *, TEXT *);
+extern void DYN_delete_parameter(GBL, UCHAR **, TEXT *);
+extern void DYN_delete_procedure(GBL, UCHAR **);
+extern void DYN_delete_relation(GBL, UCHAR **, TEXT *);
+extern void DYN_delete_role(GBL, UCHAR **);
+extern void DYN_delete_security_class(GBL, UCHAR **);
+extern void DYN_delete_shadow(GBL, UCHAR **);
+extern void DYN_delete_trigger(GBL, UCHAR **);
+extern void DYN_delete_trigger_msg(GBL, UCHAR **, TEXT *);
 
-#endif // JRD_DYN_DL_PROTO_H
-
+#endif /* _JRD_DYN_DL_PROTO_H_ */

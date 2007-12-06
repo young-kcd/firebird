@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Command Oriented Query Language
- *	MODULE:		hsh.cpp
+ *	MODULE:		hsh.c
  *	DESCRIPTION:	Hash table and symbol manager
  *
  * The contents of this file are subject to the Interbase Public
@@ -28,23 +28,19 @@
 #include "../qli/err_proto.h"
 #include "../qli/hsh_proto.h"
 
-typedef bool (*scompare_t)(const SCHAR*, int, const SCHAR*, int);
+#define HASH_SIZE	224
 
-static int hash(const SCHAR*, int);
-static bool scompare_ins(const SCHAR*, int, const SCHAR*, int);
-static bool scompare_sens(const SCHAR*, int, const SCHAR*, int);
+static int hash(SCHAR *, int);
+static BOOLEAN scompare(SCHAR *, int, SCHAR *,
+						int);
 
-const int HASH_SIZE = 224;
-static qli_symbol* hash_table[HASH_SIZE];
-static qli_symbol* key_symbols;
+static SYM hash_table[HASH_SIZE];
+static SYM key_symbols;
 
-struct qli_kword {
+struct word {
 	KWWORDS id;
-	const char* keyword;
-};
-
-const qli_kword keywords[] =
-{
+	SCHAR *keyword;
+} keywords[] = {
 #include "../qli/words.h"
    {KW_continuation, "-\n"}
 };
@@ -62,11 +58,13 @@ void HSH_fini(void)
  *	Release space used by keywords.
  *
  **************************************/
+	SYM symbol;
+
 	while (key_symbols) {
-		qli_symbol* symbol = key_symbols;
-		key_symbols = (qli_symbol*) key_symbols->sym_object;
+		symbol = key_symbols;
+		key_symbols = (SYM) key_symbols->sym_object;
 		HSH_remove(symbol);
-		ALLQ_release((FRB) symbol);
+		ALL_release((FRB) symbol);
 	}
 }
 
@@ -84,25 +82,26 @@ void HSH_init(void)
  *	inserting all known keywords.
  *
  **************************************/
-	const qli_kword* qword = keywords;
+	SCHAR *string;
+	SYM symbol;
+	int i;
+	struct word *word;
 
-	for (int i = 0; i < FB_NELEM(keywords); i++, qword++) {
-	    const char* string = qword->keyword;
-		while (*string)
-			++string;
-		qli_symbol* symbol = (qli_symbol*) ALLOCPV(type_sym, 0);
+	for (i = 0, word = keywords; i < FB_NELEM(keywords); i++, word++) {
+		for (string = word->keyword; *string; string++);
+		symbol = (SYM) ALLOCPV(type_sym, 0);
 		symbol->sym_type = SYM_keyword;
-		symbol->sym_length = string - qword->keyword;
-		symbol->sym_string = qword->keyword;
-		symbol->sym_keyword = (int) qword->id;
-		HSH_insert(symbol, true);
+		symbol->sym_length = string - word->keyword;
+		symbol->sym_string = word->keyword;
+		symbol->sym_keyword = (int) word->id;
+		HSH_insert(symbol);
 		symbol->sym_object = (BLK) key_symbols;
 		key_symbols = symbol;
 	}
 }
 
 
-void HSH_insert( qli_symbol* symbol, bool ignore_case)
+void HSH_insert( SYM symbol)
 {
 /**************************************
  *
@@ -114,13 +113,14 @@ void HSH_insert( qli_symbol* symbol, bool ignore_case)
  *	Insert a symbol into the hash table.
  *
  **************************************/
-	const int h = hash(symbol->sym_string, symbol->sym_length);
-	scompare_t scompare = ignore_case ? scompare_ins : scompare_sens;
+	int h;
+	SYM old;
 
-	for (qli_symbol* old = hash_table[h]; old; old = old->sym_collision)
+	h = hash(symbol->sym_string, symbol->sym_length);
+
+	for (old = hash_table[h]; old; old = old->sym_collision)
 		if (scompare(symbol->sym_string, symbol->sym_length,
-					 old->sym_string, old->sym_length))
-		{
+					 old->sym_string, old->sym_length)) {
 			symbol->sym_homonym = old->sym_homonym;
 			old->sym_homonym = symbol;
 			return;
@@ -131,7 +131,7 @@ void HSH_insert( qli_symbol* symbol, bool ignore_case)
 }
 
 
-qli_symbol* HSH_lookup(const SCHAR* string, int length)
+SYM HSH_lookup(SCHAR * string, int length)
 {
 /**************************************
  *
@@ -143,31 +143,23 @@ qli_symbol* HSH_lookup(const SCHAR* string, int length)
  *	Perform a string lookup against hash table.
  *
  **************************************/
-	scompare_t scompare = scompare_ins;
-	
-	if (length > 1 && string[0] == '"')
-	{
-		// This logic differs from DSQL. See how LEX_token works.
-		length -= 2;
-		++string;
-		scompare = scompare_sens;
-	}
-	for (qli_symbol* symbol = hash_table[hash(string, length)]; symbol;
+	SYM symbol;
+
+	for (symbol = hash_table[hash(string, length)]; symbol;
 		 symbol = symbol->sym_collision)
-	{
-		if (scompare(string, length, symbol->sym_string, symbol->sym_length))
-			return symbol;
-	}
+			if (scompare
+				(string, length, symbol->sym_string,
+				 symbol->sym_length)) return symbol;
 
 	return NULL;
 }
 
 
-void HSH_remove( qli_symbol* symbol)
+void HSH_remove( SYM symbol)
 {
 /**************************************
  *
- *	H S H _ r e m o v e
+ *	H S H _ r e m o v e 
  *
  **************************************
  *
@@ -175,12 +167,14 @@ void HSH_remove( qli_symbol* symbol)
  *	Remove a symbol from the hash table.
  *
  **************************************/
-	const int h = hash(symbol->sym_string, symbol->sym_length);
+	int h;
+	SYM *next, *ptr, homonym;
 
-	for (qli_symbol** next = &hash_table[h]; *next; next = &(*next)->sym_collision)
-		if (symbol == *next) {
-			qli_symbol* homonym = symbol->sym_homonym;
-			if (homonym) {
+	h = hash(symbol->sym_string, symbol->sym_length);
+
+	for (next = &hash_table[h]; *next; next = &(*next)->sym_collision)
+		if (symbol == *next)
+			if (homonym = symbol->sym_homonym) {
 				homonym->sym_collision = symbol->sym_collision;
 				*next = homonym;
 				return;
@@ -189,20 +183,18 @@ void HSH_remove( qli_symbol* symbol)
 				*next = symbol->sym_collision;
 				return;
 			}
-		}
-		else {
-			for (qli_symbol** ptr = &(*next)->sym_homonym; *ptr; ptr = &(*ptr)->sym_homonym)
-				if (symbol == *ptr) {
+		else
+			for (ptr = &(*next)->sym_homonym; *ptr;
+				 ptr = &(*ptr)->sym_homonym) if (symbol == *ptr) {
 					*ptr = symbol->sym_homonym;
 					return;
 				}
-		}
 
-	ERRQ_error(27);	// Msg 27 HSH_remove failed
+	ERRQ_error(27, NULL, NULL, NULL, NULL, NULL);	/* Msg 27 HSH_remove failed */
 }
 
 
-static int hash(const SCHAR* string, int length)
+static int hash( SCHAR * string, int length)
 {
 /**************************************
  *
@@ -214,10 +206,13 @@ static int hash(const SCHAR* string, int length)
  *	Returns the hash function of a string.
  *
  **************************************/
-	int value = 0;
+	int value;
+	SCHAR c;
+
+	value = 0;
 
 	while (length--) {
-		const SCHAR c = *string++;
+		c = *string++;
 		value = (value << 1) + UPPER(c);
 	}
 
@@ -225,54 +220,29 @@ static int hash(const SCHAR* string, int length)
 }
 
 
-static bool scompare_ins(const SCHAR* string1,
-					 int length1,
-					 const SCHAR* string2,
-					 int length2)
+static BOOLEAN scompare(
+						SCHAR * string1,
+						int length1,
+						SCHAR * string2, int length2)
 {
 /**************************************
  *
- *	s c o m p a r e _ i n s
+ *	s c o m p a r e
  *
  **************************************
  *
  * Functional description
- *	Compare two strings, case insensitive.
+ *	Compare two strings
  *
  **************************************/
+	SCHAR c1, c2;
+
 	if (length1 != length2)
-		return false;
+		return FALSE;
 
 	while (length1--)
-	{
-		const SCHAR c1 = *string1++;
-		const SCHAR c2 = *string2++;
-		if (c1 != c2 && UPPER(c1) != UPPER(c2))
-			return false;
-	}
+		if ((c1 = *string1++) != (c2 = *string2++) && UPPER(c1) != UPPER(c2))
+			return FALSE;
 
-	return true;
+	return TRUE;
 }
-
-
-static bool scompare_sens(const SCHAR* string1,
-					 int length1,
-					 const SCHAR* string2,
-					 int length2)
-{
-/**************************************
- *
- *	s c o m p a r e _ s e n s
- *
- **************************************
- *
- * Functional description
- *	Compare two strings, case sensitive: quotes identifiers.
- *
- **************************************/
-	if (length1 != length2)
-		return false;
-
-	return !memcmp(string1, string2, length1);
-}
-

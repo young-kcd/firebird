@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	Preprocessor
  *	MODULE:		msc_proto.h
- *	DESCRIPTION:	Prototype header file for msc.cpp
+ *	DESCRIPTION:	Prototype header file for msc.c
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -21,33 +21,41 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef GPRE_MSC_PROTO_H
-#define GPRE_MSC_PROTO_H
+#ifndef _GPRE_MSC_PROTO_H_
+#define _GPRE_MSC_PROTO_H_
 
 #include "../gpre/parse.h"
 
-act*		MSC_action(gpre_req*, enum act_t);
-UCHAR*		MSC_alloc(int);
-UCHAR*		MSC_alloc_permanent(int);
-GPRE_NOD	MSC_binary(NOD_T, GPRE_NOD, GPRE_NOD);
-gpre_ctx*	MSC_context(gpre_req*);
-void		MSC_copy(const char*, int, char*);
-void		MSC_copy_cat(const char*, int, const char*, int, char*);
-gpre_sym*			MSC_find_symbol(gpre_sym*, enum sym_t);
-void		MSC_free(UCHAR*);
-void		MSC_free_request(gpre_req*);
-void		MSC_init(void);
-bool		MSC_match(KWWORDS);
-GPRE_NOD	MSC_node(enum nod_t, SSHORT);
-GPRE_NOD	MSC_pop(gpre_lls**);
-PRV			MSC_privilege_block(void);
-void		MSC_push(GPRE_NOD, gpre_lls**);
-REF			MSC_reference(REF*);
-gpre_req*	MSC_request(enum req_t);
-SCHAR*		MSC_string(const TEXT*);
-gpre_sym*	MSC_symbol(enum sym_t, const TEXT*, USHORT, gpre_ctx*);
-GPRE_NOD	MSC_unary(NOD_T, GPRE_NOD);
-gpre_usn*	MSC_username(SCHAR*, USHORT);
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-#endif // GPRE_MSC_PROTO_H
+extern ACT MSC_action(GPRE_REQ, enum act_t);
+extern UCHAR *MSC_alloc(int);
+extern UCHAR *MSC_alloc_permanent(int);
+extern GPRE_NOD MSC_binary(NOD_T, GPRE_NOD, GPRE_NOD);
+extern GPRE_CTX MSC_context(GPRE_REQ);
+extern void MSC_copy(char *, int, char *);
+extern void MSC_copy_cat(char *, int, char *, int,char *);
+extern SYM MSC_find_symbol(SYM, enum sym_t);
+extern void MSC_free(UCHAR *);
+extern void MSC_free_request(GPRE_REQ);
+extern void MSC_init(void);
+extern BOOLEAN MSC_match(KWWORDS);
+extern BOOLEAN MSC_member(GPRE_NOD, LLS);
+extern GPRE_NOD MSC_node(enum nod_t, SSHORT);
+extern GPRE_NOD MSC_pop(LLS *);
+extern PRV MSC_privilege_block(void);
+extern void MSC_push(GPRE_NOD, LLS *);
+extern REF MSC_reference(REF *);
+extern GPRE_REQ MSC_request(enum req_t);
+extern SCHAR *MSC_string(TEXT *);
+extern SYM MSC_symbol(enum sym_t, TEXT *, USHORT, GPRE_CTX);
+extern GPRE_NOD MSC_unary(NOD_T, GPRE_NOD);
+extern USN MSC_username(SCHAR *, USHORT);
 
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
+
+#endif /* _GPRE_MSC_PROTO_H_ */

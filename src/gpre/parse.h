@@ -21,18 +21,28 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef GPRE_PARSE_H
-#define GPRE_PARSE_H
+#ifndef _GPRE_PARSE_H_
+#define _GPRE_PARSE_H_
 
+typedef enum kwwords {
+	KW_none = 0,
 #include "../gpre/words.h"
+	KW_max
+} KWWORDS;
+
 #include "../gpre/gpre.h"
+
+#define MATCH(keyword) 		MSC_match(keyword)
+#define KEYWORD(kw)		((int) token.tok_keyword == (int) kw)
+#define ADVANCE_TOKEN		PAR_get_token ()
+#define SYNTAX_ERROR		CPR_s_error
 
 /* Token block, used to hold a lexical token. */
 
 enum tok_t {
 	tok_ident,
 	tok_number,
-	tok_sglquoted,
+	tok_quoted,
 	tok_punct,
 	tok_introducer,
 	tok_dblquoted
@@ -40,33 +50,26 @@ enum tok_t {
 
 typedef struct tok {
 	enum tok_t tok_type;		/* type of token */
-	gpre_sym* tok_symbol;			/* hash block if recognized */
+	struct sym *tok_symbol;		/* hash block if recognized */
 	KWWORDS tok_keyword;		/* keyword number, if recognized */
 	SLONG tok_position;			/* byte number in input stream */
 	USHORT tok_length;
 	USHORT tok_white_space;
-	SCHAR tok_string[MAX_SYM_SIZE];
+	SCHAR tok_string[MAXSYMLEN];
 	USHORT tok_first;			/* first token in a statement */
-	gpre_sym* tok_charset;			/* Character set of token */
+	struct sym *tok_charset;	/* Character set of token */
 } *TOK;
 
-const size_t TOK_LEN = sizeof(tok);
+#define TOK_LEN sizeof (struct tok)
 
-// CVC: This function doesn't unescape embedded quotes.
-inline void strip_quotes(tok& tkn)
-{
-	int ij;
-	for (ij = 1; ij < tkn.tok_length - 1; ij++)
-		tkn.tok_string[ij - 1] = tkn.tok_string[ij];
-	--ij;
-	tkn.tok_string[ij] = 0;
-	tkn.tok_length = ij;
-}
+#ifdef PARSER_MAIN
+#define EXTERN
+#else
+#define EXTERN	extern
+#endif
 
-inline bool isQuoted(const int typ)
-{
-	return (typ == tok_sglquoted || typ == tok_dblquoted);
-}
+EXTERN struct tok token;
 
-#endif // GPRE_PARSE_H
+#undef EXTERN
 
+#endif /* _GPRE_PARSE_H_ */

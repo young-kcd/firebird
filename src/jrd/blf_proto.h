@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Access Method
  *	MODULE:		blf_proto.h
- *	DESCRIPTION:	Prototype header file for blob_filter.cpp
+ *	DESCRIPTION:	Prototype header file for blf.c
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -21,30 +21,22 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef JRD_BLF_PROTO_H
-#define JRD_BLF_PROTO_H
+#ifndef _JRD_BLF_PROTO_H_
+#define _JRD_BLF_PROTO_H_
 
-namespace Jrd {
-	struct bid;
-}
-
-// Does this file really need the extern C for external blob filters?
 extern "C" {
 
-//class Jrd::BlobControl;
-
-ISC_STATUS	BLF_close_blob(Jrd::thread_db*, Jrd::BlobControl**);
-ISC_STATUS	BLF_create_blob(Jrd::thread_db*, Jrd::jrd_tra*, Jrd::BlobControl**, Jrd::bid*,
-										 USHORT, const UCHAR*,
-										 Jrd::FPTR_BFILTER_CALLBACK, Jrd::BlobFilter*);
-ISC_STATUS	BLF_get_segment(Jrd::thread_db*, Jrd::BlobControl**, USHORT*, USHORT, UCHAR*);
-Jrd::BlobFilter*	BLF_lookup_internal_filter(Jrd::thread_db*, SSHORT, SSHORT);
-ISC_STATUS	BLF_open_blob(Jrd::thread_db*, Jrd::jrd_tra*, Jrd::BlobControl**, const Jrd::bid*,
-									   USHORT, const UCHAR*,
-									   Jrd::FPTR_BFILTER_CALLBACK, Jrd::BlobFilter*);
-ISC_STATUS	BLF_put_segment(Jrd::thread_db*, Jrd::BlobControl**, USHORT, const UCHAR*);
+extern ISC_STATUS DLL_EXPORT BLF_close_blob(TDBB, struct ctl **);
+extern ISC_STATUS DLL_EXPORT BLF_create_blob(TDBB, JRD_TRA, struct ctl **, SLONG *,
+										 USHORT, UCHAR *, ISC_STATUS(*)(), BLF);
+extern ISC_STATUS DLL_EXPORT BLF_get_segment(TDBB, struct ctl **, USHORT *,
+										 USHORT, UCHAR *);
+extern BLF DLL_EXPORT BLF_lookup_internal_filter(TDBB, SSHORT, SSHORT);
+extern ISC_STATUS DLL_EXPORT BLF_open_blob(TDBB, JRD_TRA, struct ctl **, SLONG *,
+									   USHORT, UCHAR *, ISC_STATUS(*)(), BLF);
+extern ISC_STATUS DLL_EXPORT BLF_put_segment(TDBB, struct ctl **, USHORT,
+										 UCHAR *);
 
 } /* extern "C" */
 
-#endif /* JRD_BLF_PROTO_H */
-
+#endif /* _JRD_BLF_PROTO_H_ */

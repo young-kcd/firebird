@@ -130,11 +130,15 @@ SOURCE=..\..\..\src\gpre\cob.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\src\gpre\ftn.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\src\gpre\exp.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\gpre\ftn.cpp
+SOURCE=..\..\..\src\common\fb_exception.cpp
 # End Source File
 # Begin Source File
 
@@ -162,6 +166,10 @@ SOURCE=..\..\..\src\gpre\msc.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\src\gpre\noform.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\src\gpre\par.cpp
 # End Source File
 # Begin Source File
@@ -175,10 +183,6 @@ SOURCE=..\..\..\src\gpre\pat.cpp
 # Begin Source File
 
 SOURCE=..\..\..\src\gpre\pretty.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\gpre\rmc.cpp
 # End Source File
 # Begin Source File
 
@@ -198,15 +202,11 @@ SOURCE=..\..\..\src\jrd\dsc.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\dsc.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\jrd\dsc_pub.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\src\jrd\isc.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\dsc.h
 # End Source File
 # End Group
 # Begin Group "Header files"
@@ -235,6 +235,18 @@ SOURCE=..\..\..\src\gpre\dyntable.h
 # Begin Source File
 
 SOURCE=..\..\..\src\gpre\exp_proto.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\gpre\form.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\gpre\form__proto.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\gpre\form_proto.h
 # End Source File
 # Begin Source File
 
@@ -319,18 +331,6 @@ SOURCE=..\..\..\src\gpre\words.h
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\version.rc
-# End Source File
-# End Group
-# Begin Group "AuthSspi"
-
-# PROP Default_Filter "cpp;h"
-# Begin Source File
-
-SOURCE=..\..\..\src\auth\trusted\AuthSspi.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\auth\trusted\AuthSspi.h
 # End Source File
 # End Group
 # End Target

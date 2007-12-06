@@ -32,7 +32,6 @@
 				PreprocessorDefinitions="WIN32,NDEBUG,_CONSOLE,SUPERCLIENT"
 				ExceptionHandling="FALSE"
 				RuntimeLibrary="2"
-				RuntimeTypeInfo="FALSE"
 				PrecompiledHeaderFile="..\..\..\temp\release\gsec/gsec.pch"
 				AssemblerListingLocation="..\..\..\temp\release\gsec/"
 				ObjectFile="..\..\..\temp\release\gsec/"
@@ -47,14 +46,15 @@
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
 				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
-				OutputFile="..\..\..\temp\release\firebird\bin\gsec.exe"
+				OutputFile="release/firebird/bin/gsec.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				GenerateDebugInformation="TRUE"
+				ProgramDatabaseFile="..\..\..\temp\release\gsec/gsec.pdb"
 				SubSystem="1"/>
 			<Tool
 				Name="VCMIDLTool"
-				TypeLibraryName="..\..\..\temp\release\gsec\gsec.tlb"/>
+				TypeLibraryName="..\..\..\temp\release\gsec/gsec.tlb"/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool
@@ -93,8 +93,7 @@
 				ExceptionHandling="FALSE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				RuntimeTypeInfo="FALSE"
-				PrecompiledHeaderFile="..\..\..\temp\debug\gsec\gsec.pch"
+				PrecompiledHeaderFile="..\..\..\temp\debug\gsec/gsec.pch"
 				AssemblerListingLocation="..\..\..\temp\debug\gsec/"
 				ObjectFile="..\..\..\temp\debug\gsec/"
 				ProgramDataBaseFileName="..\..\..\temp\debug\gsec/"
@@ -108,15 +107,15 @@
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
 				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
-				OutputFile="..\..\..\temp\debug\firebird\bin\gsec.exe"
+				OutputFile="debug/firebird/bin/gsec.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile="..\..\..\temp\debug\gsec\gsec.pdb"
+				ProgramDatabaseFile="..\..\..\temp\debug\gsec/gsec.pdb"
 				SubSystem="1"/>
 			<Tool
 				Name="VCMIDLTool"
-				TypeLibraryName="..\..\..\temp\debug\gsec\gsec.tlb"/>
+				TypeLibraryName="..\..\..\temp\debug\gsec/gsec.tlb"/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool
@@ -143,13 +142,16 @@
 	</References>
 	<Files>
 		<Filter
-			Name="UTILITIES files"
+			Name="UTILITITES files"
 			Filter="cpp;c;cxx;rc;def;r;odl;idl;hpj;bat">
 			<File
-				RelativePath="..\..\..\src\utilities\gsec\call_service.cpp">
+				RelativePath="..\..\..\src\common\fb_exception.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\src\utilities\gsec\gsec.cpp">
+				RelativePath="..\..\..\src\utilities\gsec.cpp">
+			</File>
+			<File
+				RelativePath="..\..\..\gen\utilities\security.cpp">
 			</File>
 		</Filter>
 		<Filter
@@ -161,24 +163,15 @@
 			<File
 				RelativePath="..\..\..\src\jrd\isc.cpp">
 			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\isc_file.cpp">
-			</File>
 		</Filter>
 		<Filter
 			Name="Header files"
 			Filter="h;hpp;hxx;hm;inl">
 			<File
-				RelativePath="..\..\..\src\utilities\gsec\call_service.h">
+				RelativePath="..\..\..\src\utilities\gsec.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\utilities\gsec\gsec.h">
-			</File>
-			<File
-				RelativePath="..\..\..\src\utilities\gsec\gsecswi.h">
-			</File>
-			<File
-				RelativePath="..\..\..\src\utilities\gsec\secur_proto.h">
+				RelativePath="..\..\..\src\utilities\secur_proto.h">
 			</File>
 		</Filter>
 		<Filter

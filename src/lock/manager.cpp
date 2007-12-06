@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Lock Manager
- *	MODULE:		manager.cpp
+ *	MODULE:		manager.c
  *	DESCRIPTION:	Lock manager process
  *
  * The contents of this file are subject to the Interbase Public
@@ -23,7 +23,9 @@
 
 #include "firebird.h"
 #include "../jrd/common.h"
-#include <stdio.h>
+#include "../jrd/ib_stdio.h"
+#include "../jrd/jrd.h"
+#include "../jrd/lck.h"
 #include "../jrd/divorce.h"
 #include "../lock/lock_proto.h"
 
@@ -51,7 +53,7 @@ int main( int argc, char **argv)
 	SLONG owner_handle;
 
 	if (setreuid(0, 0) < 0)
-		printf("lock manager: couldn't set uid to superuser\n");
+		ib_printf("lock manager: couldn't set uid to superuser\n");
 
 	if (argc < 2)
 		divorce_terminal(0);
@@ -59,15 +61,13 @@ int main( int argc, char **argv)
 	status_vector[1] = 0;
 	owner_handle = 0;
 	if (!LOCK_init
-		(status_vector, true, getpid(), LCK_OWNER_process,
+		(status_vector, TRUE, getpid(), LCK_OWNER_process,
 		 &owner_handle))
-	{
 #ifdef MANAGER_PROCESS
-			LOCK_manager(&owner_handle);
+			LOCK_manager(owner_handle);
 #else
 			;
 #endif
-	}
 
 	LOCK_fini(status_vector, &owner_handle);
 }

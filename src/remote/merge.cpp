@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Remote Interface/Server
- *	MODULE:		merge.cpp
- *	DESCRIPTION:	Merge database/server information
+ *	MODULE:		merge.c
+ *	DESCRIPTION:	Merge database/server inforation
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -23,29 +23,31 @@
 
 #include "firebird.h"
 #include <string.h>
-#include "../jrd/ibase.h"
+#include "../jrd/gds.h"
 #include "../remote/remote.h"
 #include "../remote/merge_proto.h"
 #include "../jrd/gds_proto.h"
 
-#define PUT_WORD(ptr, value)	{*(ptr)++ = static_cast<UCHAR>(value); *(ptr)++ = static_cast<UCHAR>(value >> 8);}
+#define PUT_WORD(ptr, value)	{*(ptr)++ = value; *(ptr)++ = value >> 8;}
 #define PUT(ptr, value)		*(ptr)++ = value;
 
 #ifdef NOT_USED_OR_REPLACED
 static SSHORT convert(ULONG, UCHAR *);
 #endif
-static ISC_STATUS merge_setup(const UCHAR**, UCHAR**, const UCHAR* const, USHORT);
+static ISC_STATUS merge_setup(UCHAR **, UCHAR **, UCHAR *, USHORT);
 
+#if (defined __cplusplus) && (defined SOLX86)
+/* Who else got mixed c and C++ linkage error - let join me. KLK
+*/
+extern "C" {
+#endif
 
-USHORT MERGE_database_info(const UCHAR* in,
-							UCHAR* out,
-							USHORT out_length,
-							USHORT impl,
-							USHORT class_,
-							USHORT base_level,
-							const UCHAR* version,
-							const UCHAR* id,
-							ULONG mask)
+USHORT DLL_EXPORT MERGE_database_info(
+									  UCHAR * in,
+									  UCHAR * out,
+									  USHORT out_length,
+									  USHORT impl,
+USHORT class_, USHORT base_level, UCHAR * version, UCHAR * id, ULONG mask)
 {
 /**************************************
  *
@@ -58,37 +60,36 @@ USHORT MERGE_database_info(const UCHAR* in,
  *	database block.  Return the actual length of the packet.
  *
  **************************************/
-	SSHORT l;
-	const UCHAR* p;
+	SSHORT length, l;
+	UCHAR *start, *end, *p;
 
-	UCHAR* start = out;
-	const UCHAR* const end = out + out_length;
+	start = out;
+	end = out + out_length;
 
 	for (;;)
-		switch (*out++ = *in++)
-		{
+		switch (*out++ = *in++) {
 		case isc_info_end:
 		case isc_info_truncated:
 			return out - start;
 
 		case isc_info_firebird_version:
 			l = strlen((char *) (p = version));
-			if (l > MAX_UCHAR)
-			    l = MAX_UCHAR;
 			if (merge_setup(&in, &out, end, l + 1))
 				return 0;
-			for (*out++ = (UCHAR) l; l; --l)
-				*out++ = *p++;
+			if ((*out++ = (UCHAR) l) != 0)
+				do
+					*out++ = *p++;
+				while (--l);
 			break;
 
 		case isc_info_db_id:
 			l = strlen((SCHAR *) (p = id));
-			if (l > MAX_UCHAR)
-				l = MAX_UCHAR;
 			if (merge_setup(&in, &out, end, l + 1))
 				return 0;
-			for (*out++ = (UCHAR) l; l; --l)
-				*out++ = *p++;
+			if ((*out++ = (UCHAR) l) != 0)
+				do
+					*out++ = *p++;
+				while (--l);
 			break;
 
 		case isc_info_implementation:
@@ -105,20 +106,23 @@ USHORT MERGE_database_info(const UCHAR* in,
 			break;
 
 		default:
-			{
-				USHORT length = (USHORT) gds__vax_integer(in, 2);
-				in += 2;
-				if (out + length + 2 >= end) {
-					out[-1] = isc_info_truncated;
-					return 0;
-				}
-				PUT_WORD(out, length);
-				while (length--)
-					*out++ = *in++;
+			length = (SSHORT) gds__vax_integer(in, 2);
+			in += 2;
+			if (out + length + 2 >= end) {
+				out[-1] = gds_info_truncated;
+				return 0;
 			}
+			PUT_WORD(out, (UCHAR) length);
+			if (length)
+				do
+					*out++ = *in++;
+				while (--length);
 			break;
 		}
 }
+#if (defined __cplusplus) && (defined SOLX86)
+}
+#endif
 
 #ifdef NOT_USED_OR_REPLACED
 static SSHORT convert( ULONG number, UCHAR * buffer)
@@ -134,10 +138,12 @@ static SSHORT convert( ULONG number, UCHAR * buffer)
  *	Return the length.
  *
  **************************************/
-	const UCHAR *p;
+	ULONG n;
+	UCHAR *p;
 
 #ifndef WORDS_BIGENDIAN
-	p = (UCHAR *) &number;
+	n = number;
+	p = (UCHAR *) & n;
 	*buffer++ = *p++;
 	*buffer++ = *p++;
 	*buffer++ = *p++;
@@ -145,7 +151,7 @@ static SSHORT convert( ULONG number, UCHAR * buffer)
 
 #else
 
-	p = (UCHAR *) &number;
+	p = (UCHAR *) & number;
 	p += 3;
 	*buffer++ = *p--;
 	*buffer++ = *p--;
@@ -159,9 +165,8 @@ static SSHORT convert( ULONG number, UCHAR * buffer)
 #endif
 
 static ISC_STATUS merge_setup(
-						  const UCHAR** in,
-						  UCHAR** out, const UCHAR* const end,
-						  USHORT delta_length)
+						  UCHAR ** in,
+						  UCHAR ** out, UCHAR * end, USHORT delta_length)
 {
 /**************************************
  *
@@ -175,28 +180,27 @@ static ISC_STATUS merge_setup(
  *	already there.
  *
  **************************************/
-	USHORT length = (USHORT) gds__vax_integer(*in, 2);
-	const USHORT new_length = length + delta_length;
+	USHORT length, new_length, count;
+
+	length = (USHORT) gds__vax_integer(*in, 2);
+	new_length = length + delta_length;
 
 	if (*out + new_length + 2 >= end) {
-		(*out)[-1] = isc_info_truncated;
+		(*out)[-1] = gds_info_truncated;
 		return FB_FAILURE;
 	}
 
 	*in += 2;
-	const USHORT count = 1 + *(*in)++;
-	PUT_WORD(*out, new_length);
+	count = 1 + *(*in)++;
+	PUT_WORD(*out, (UCHAR) new_length);
 	PUT(*out, (UCHAR) count);
 
 /* Copy data portion of information sans original count */
 
 	if (--length)
-	{
-		memcpy(*out, *in, length);
-		*out += length;
-		*in += length;
-	}
+		do
+			*(*out)++ = *(*in)++;
+		while (--length);
 
 	return FB_SUCCESS;
 }
-

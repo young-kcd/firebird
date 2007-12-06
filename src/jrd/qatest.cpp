@@ -1,5 +1,5 @@
 /*
- *	PROGRAM:	Firebird Access Method
+ *	PROGRAM:	InterBase Access Method
  *	MODULE:		qatest.c
  *	DESCRIPTION:	Entry points for QA testibility library
  *
@@ -90,19 +90,18 @@ defined APIs for this function.
 
 
 #include "firebird.h"
-#include <stdio.h>
+#include "../jrd/ib_stdio.h"
 #include <stdlib.h>
 #include <string.h>
 #include "../jrd/common.h"
 #include "../jrd/jrd.h"
 #include "../jrd/sdw.h"
-#include "../jrd/os/pio.h"
-#include "gen/iberror.h"
+#include "../jrd/pio.h"
+#include "gen/codes.h"
 #include "../jrd/err_proto.h"
 #include "../jrd/flu_proto.h"
 #include "../jrd/sch_proto.h"
-#include "../jrd/thd.h"
-#include "../jrd/thread_proto.h"
+#include "../jrd/thd_proto.h"
 #ifdef WIN_NT
 #include <windows.h>
 #ifdef TEXT
@@ -111,10 +110,10 @@ defined APIs for this function.
 #define TEXT	char
 #endif
 
-const int QATEST_testing			= 0;
-const int QATEST_delete_database	= 1;
-const int QATEST_delete_shadow		= 2;
-const int QATEST_exit				= 999;
+#define QATEST_testing		0
+#define QATEST_delete_database	1
+#define QATEST_delete_shadow	2
+#define QATEST_exit		999
 
 
 
@@ -134,13 +133,13 @@ int QATEST_entrypoint(ULONG * function, void *arg1, void *arg2, void *arg3)
  *	These entrypoints are *NOT* designed for customer use!
  *
  **************************************/
-	thread_db* tdbb;
+	TDBB tdbb;
 	char filename[MAXPATHLEN];
-	Shadow* shadow;
+	SDW shadow;
 #ifdef WIN_NT
 	HANDLE desc;
 #endif
-	jrd_file* file;
+	FIL file;
 
 
 	switch (*function) {
@@ -148,14 +147,14 @@ int QATEST_entrypoint(ULONG * function, void *arg1, void *arg2, void *arg3)
 		/* Parameter 1: SLONG *testvalue */
 		/* Entrypoint for testing the QA entrypoint method */
 
-		return 2 * (*(SLONG*) arg1);
+		return 2 * *(SLONG *) arg1;
 
 	case QATEST_delete_database:
 		/* Parameters: NONE */
 		/* Close current database file & delete */
 
-		tdbb = JRD_get_thread_data();
-		if (!(file = tdbb->getAttachment()->att_database->dbb_file))
+		tdbb = GET_THREAD_DATA;
+		if (!(file = tdbb->tdbb_attachment->att_database->dbb_file))
 			return -1;
 
 #ifdef WIN_NT
@@ -183,17 +182,18 @@ int QATEST_entrypoint(ULONG * function, void *arg1, void *arg2, void *arg3)
 		/* Parameter 1: ULONG *shadow_number */
 		/* Close & delete specified shadow file */
 
-		tdbb = JRD_get_thread_data();
-		if (!(shadow = tdbb->getAttachment()->att_database->dbb_shadow))
+		tdbb = GET_THREAD_DATA;
+		if (!(shadow = tdbb->tdbb_attachment->att_database->dbb_shadow))
 			return -1;
 		for (; shadow; shadow = shadow->sdw_next)
 			if (shadow->sdw_number == *(ULONG *) arg1) {
 #ifdef WIN_NT
 
 				desc =
-					(HANDLE) ((shadow->sdw_file->fil_flags & FIL_force_write) ?
-							  shadow->sdw_file->fil_force_write_desc :
-							  shadow->sdw_file->fil_desc);
+					(HANDLE) ((shadow->sdw_file->fil_flags & FIL_force_write)
+							  ? shadow->
+							  sdw_file->fil_force_write_desc : shadow->
+							  sdw_file->fil_desc);
 
 				CloseHandle(desc);
 				desc = INVALID_HANDLE_VALUE;
@@ -222,10 +222,10 @@ int QATEST_entrypoint(ULONG * function, void *arg1, void *arg2, void *arg3)
 	default:
 		sprintf(filename, "Unknown QATEST_entrypoint #%lu",	/* TXNN */
 				*function);
-		THREAD_ENTER();
-		ERR_post(isc_random,
-				 isc_arg_string, ERR_cstring(filename), 0);
-		THREAD_EXIT();
+		THREAD_ENTER;
+		ERR_post(gds_random,
+				 gds_arg_string, ERR_cstring((TEXT *) filename), 0);
+		THREAD_EXIT;
 		return 0;
 	}
 }

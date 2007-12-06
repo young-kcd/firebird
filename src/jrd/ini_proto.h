@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Access Method
  *	MODULE:		ini_proto.h
- *	DESCRIPTION:	Prototype header file for ini.cpp
+ *	DESCRIPTION:	Prototype header file for ini.c
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -21,18 +21,24 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef JRD_INI_PROTO_H
-#define JRD_INI_PROTO_H
+#ifndef _JRD_INI_PROTO_H_
+#define _JRD_INI_PROTO_H_
 
-namespace Jrd {
-	struct jrd_trg;
-}
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-void	INI_format(const TEXT*, const TEXT*);
-USHORT	INI_get_trig_flags(const TEXT*);
-void	INI_init();
-void	INI_init2();
-void	INI_update_database();
+extern void INI_format(const TEXT *, TEXT *);
+extern USHORT INI_get_trig_flags(TEXT *);
+extern void INI_init(void);
+extern void INI_init2(void);
+extern struct jrd_trg *INI_lookup_sys_trigger(struct jrd_rel *, struct jrd_trg *,
+										  const UCHAR**, UCHAR*, const SCHAR**,
+										  USHORT *);
+extern void INI_update_database(void);
 
-#endif // JRD_INI_PROTO_H
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
+#endif /* _JRD_INI_PROTO_H_ */

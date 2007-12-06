@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Access method
  *	MODULE:		dyn_df_proto.h
- *	DESCRIPTION:	Prototype Header file for dyn_def.epp
+ *	DESCRIPTION:	Prototype Header file for dyn_define.e
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -21,33 +21,32 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef JRD_DYN_DF_PROTO_H
-#define JRD_DYN_DF_PROTO_H
+#ifndef _JRD_DYN_DF_PROTO_H_
+#define _JRD_DYN_DF_PROTO_H_
 
-void DYN_define_collation(Jrd::Global*, const UCHAR**);
-void DYN_define_constraint(Jrd::Global*, const UCHAR**, const Firebird::MetaName*, Firebird::MetaName*);
-void DYN_define_dimension(Jrd::Global*, const UCHAR**, const Firebird::MetaName*, Firebird::MetaName*);
-void DYN_define_exception(Jrd::Global*, const UCHAR**);
-void DYN_define_file(Jrd::Global*, const UCHAR**, SLONG, SLONG*, USHORT);
-void DYN_define_filter(Jrd::Global*, const UCHAR**);
-void DYN_define_function(Jrd::Global*, const UCHAR**);
-void DYN_define_function_arg(Jrd::Global*, const UCHAR**, Firebird::MetaName*);
-void DYN_define_generator(Jrd::Global*, const UCHAR**);
-void DYN_define_global_field(Jrd::Global*, const UCHAR**, const Firebird::MetaName*, Firebird::MetaName*);
-void DYN_define_index(Jrd::Global*, const UCHAR**, const Firebird::MetaName*, UCHAR,
-					  Firebird::MetaName*, Firebird::MetaName*, Firebird::MetaName*, UCHAR*);
-void DYN_define_local_field(Jrd::Global*, const UCHAR**, const Firebird::MetaName*, Firebird::MetaName*);
-void DYN_define_parameter(Jrd::Global*, const UCHAR**, Firebird::MetaName*);
-void DYN_define_procedure(Jrd::Global*, const UCHAR**);
-void DYN_define_relation(Jrd::Global*, const UCHAR**);
-void DYN_define_role(Jrd::Global*, const UCHAR**);
-void DYN_define_security_class(Jrd::Global*, const UCHAR**);
-void DYN_define_shadow(Jrd::Global*, const UCHAR**);
-void DYN_define_sql_field(Jrd::Global*, const UCHAR**, const Firebird::MetaName*, Firebird::MetaName*);
-void DYN_define_trigger(Jrd::Global*, const UCHAR**, const Firebird::MetaName*, Firebird::MetaName*, const bool);
-void DYN_define_trigger_msg(Jrd::Global*, const UCHAR**, const Firebird::MetaName*);
-void DYN_define_view_relation(Jrd::Global*, const UCHAR**, const Firebird::MetaName*);
-void DYN_define_difference(Jrd::Global*, const UCHAR**);
+extern void DYN_define_cache(GBL, UCHAR **);
+extern void DYN_define_constraint(GBL, UCHAR **, TEXT *, TEXT *);
+extern void DYN_define_dimension(GBL, UCHAR **, TEXT *, TEXT *);
+extern void DYN_define_exception(GBL, UCHAR **);
+extern void DYN_define_file(GBL, UCHAR **, SLONG, SLONG *, USHORT);
+extern void DYN_define_filter(GBL, UCHAR **);
+extern void DYN_define_function(GBL, UCHAR **);
+extern void DYN_define_function_arg(GBL, UCHAR **, TEXT *);
+extern void DYN_define_generator(GBL, UCHAR **);
+extern void DYN_define_global_field(GBL, UCHAR **, TEXT *, TEXT *);
+extern void DYN_define_index(GBL, UCHAR **, TEXT *, UCHAR, TEXT *, TEXT *,
+							 TEXT *, UCHAR *);
+extern void DYN_define_local_field(GBL, UCHAR **, TEXT *, TEXT *);
+extern void DYN_define_log_file(GBL, UCHAR **, USHORT, USHORT);
+extern void DYN_define_parameter(GBL, UCHAR **, TEXT *);
+extern void DYN_define_procedure(GBL, UCHAR **);
+extern void DYN_define_relation(GBL, UCHAR **);
+extern void DYN_define_role(GBL, UCHAR **);
+extern void DYN_define_security_class(GBL, UCHAR **);
+extern void DYN_define_shadow(GBL, UCHAR **);
+extern void DYN_define_sql_field(GBL, UCHAR **, TEXT *, TEXT *);
+extern void DYN_define_trigger(GBL, UCHAR **, TEXT *, TEXT *, BOOLEAN);
+extern void DYN_define_trigger_msg(GBL, UCHAR **, TEXT *);
+extern void DYN_define_view_relation(GBL, UCHAR **, TEXT *);
 
-#endif // JRD_DYN_DF_PROTO_H
-
+#endif /* _JRD_DYN_DF_PROTO_H_ */

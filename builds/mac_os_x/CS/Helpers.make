@@ -361,8 +361,9 @@ fw_files_:
 headers_:
 	-mkdir -p $(FB_FW)/Versions/A/Headers
 	echo "#ifndef IBASE_H" > $(FW)/Headers/ibase.h
-	cat $(SRC_ROOT)/include/fb_types.h $(SRC_ROOT)/jrd/sqlda_pub.h $(SRC_ROOT)/jrd/dsc_pub.h  $(SRC_ROOT)/jrd/ibase.h $(SRC_ROOT)/jrd/inf_pub.h $(SRC_ROOT)/include/gen/iberror.h $(SRC_ROOT)/jrd/blr.h | grep -v "#include" >> $(FW)/Headers/ibase.h
+	cat $(SRC_ROOT)/include/fb_types.h $(SRC_ROOT)/jrd/ibase.h $(SRC_ROOT)/include/gen/iberror.h $(SRC_ROOT)/jrd/blr.h $(SRC_ROOT)/include/gen/codes.h $(SRC_ROOT)/jrd/gdsold.h | grep -v "#include" >> $(FW)/Headers/ibase.h
 	echo "#endif /*IBASE_H*/" >> $(FW)/Headers/ibase.h
+	echo "#include <ibase.h>" >> $(FW)/Headers/gds.h
 headers_clean:
 
 installer_clean:

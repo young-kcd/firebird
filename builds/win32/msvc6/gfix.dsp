@@ -67,7 +67,7 @@ LINK32=link.exe
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MDd /W3 /Gm /GX /Zi /Od /I "../../../src/include" /I "../../../src/include/gen" /D "WIN32" /D "_DEBUG" /D "_CONSOLE" /D "_MBCS" /FD /GZ /c
 # SUBTRACT BASE CPP /YX
-# ADD CPP /nologo /MD /W3 /GX /Ot /Og /Oi /Op /Oy /Ob1 /I "../../../src/include" /I "../../../src/include/gen" /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /D "_MBCS" /D "SUPERCLIENT" /FD /EHc- /c
+# ADD CPP /nologo /MD /W3 /GX /Zi /Ot /Og /Oi /Op /Oy /Ob1 /I "../../../src/include" /I "../../../src/include/gen" /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /D "_MBCS" /D "SUPERCLIENT" /FD /EHc- /c
 # ADD BASE RSC /l 0x41d /d "_DEBUG"
 # ADD RSC /l 0x41d /d "_DEBUG"
 BSC32=bscmake.exe
@@ -87,25 +87,13 @@ LINK32=link.exe
 # Begin Group "ALICE files"
 
 # PROP Default_Filter "cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
-# Begin Group "epp Files"
-
-# PROP Default_Filter "epp"
-# Begin Source File
-
-SOURCE=..\..\..\src\alice\alice_meta.epp
-# End Source File
-# End Group
-# Begin Group "Generated files"
-
-# PROP Default_Filter "cpp"
-# Begin Source File
-
-SOURCE=..\..\..\gen\alice\alice_meta.cpp
-# End Source File
-# End Group
 # Begin Source File
 
 SOURCE=..\..\..\src\alice\alice.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\gen\alice\alice_meta.cpp
 # End Source File
 # Begin Source File
 
@@ -138,10 +126,6 @@ SOURCE=..\..\..\src\jrd\isc.cpp
 # Begin Source File
 
 SOURCE=..\..\..\src\common\classes\locks.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\jrd\thd.cpp
 # End Source File
 # End Group
 # Begin Group "Header files"

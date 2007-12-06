@@ -22,6 +22,8 @@
 #  All Rights Reserved.
 #  Contributor(s): ______________________________________.
 
+# 12 nov 2004 Commented out absent in libfbembed functions (Konstantin)
+# 
 
 {
 global:
@@ -72,6 +74,7 @@ global:
 	gds__get_segment;
 	gds__get_slice;
 	gds__interprete;
+#KLK	gds_interprete_cpp;
 	gds__log;
 	gds__log_status;
 	gds__map_blobs;
@@ -111,6 +114,7 @@ global:
 	gds__start_multiple;
 	gds__start_request;
 	gds__start_transaction;
+	gds__temp_dir;
 	gds__temp_file;
 	gds__thread_enable;
 	gds__thread_enter;
@@ -126,12 +130,10 @@ global:
 	gds__version;
 	gds__vtof;
 	gds__vtov;
-	gds__default_printer;
 
-    gds__alloc_debug;
-
-    gds_alloc_flag_unfreed;
-    gds_alloc_report;
+	gds__alloc_debug;
+	gds_alloc_flag_unfreed;
+	gds_alloc_report;
 
 	perf_format;
 	perf_get_info;
@@ -244,7 +246,7 @@ global:
 # Error-handling functions
 
 	isc_interprete;
-	fb_interpret;
+#KLK	isc_interprete_cpp;
 	isc_print_sqlerror;
 	isc_print_status;
 	isc_sqlcode;
@@ -270,11 +272,6 @@ global:
 	isc_service_detach;
 	isc_service_query;
 	isc_service_start;
-	#functions called by utils
-	#SVC_putc;
-	#SVC_finish;
-        #SVC_output;
-	#CMD_UTIL_put_svc_status;
 
 # Transaction control functions
 
@@ -353,15 +350,14 @@ global:
 	KEYWORD_getTokens;
 
 #--------------------------------------
-#functions needed by Solaris utilities
-	SCH_ast;
-
-#commented it out with new style of thd //Konstantin
+#functions needed by Solaris utilities for FB pre 2.0
+#comment it out with new style of thd //Konstantin
 #
-#	THD_mutex_lock;
-#	THD_mutex_unlock;
-#	THD_mutex_destroy;
-#	THD_mutex_init;
+	THD_mutex_lock;
+	THD_mutex_unlock;
+	THD_mutex_destroy;
+	THD_mutex_init;
+	SCH_ast;
 #--------------------------------------
 
 local:

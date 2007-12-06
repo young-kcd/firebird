@@ -1,6 +1,6 @@
 /*
 *	PROGRAM:	Dynamic SQL runtime support
- *	MODULE:		movd.cpp
+ *	MODULE:		movd.c
  *	DESCRIPTION:	Data mover and converter and comparator, etc.
  *
  * The contents of this file are subject to the Interbase Public
@@ -23,17 +23,17 @@
 
 #include "firebird.h"
 #include "../jrd/common.h"
-#include <stdio.h>
+#include "../jrd/ib_stdio.h"
 #include <stdarg.h>
 #include <string.h>
 
 #include "../dsql/dsql.h"
-#include "gen/iberror.h"
+#include "gen/codes.h"
 #include "../jrd/iberr.h"
 #include "../dsql/errd_proto.h"
 #include "../dsql/movd_proto.h"
 #include "../jrd/cvt_proto.h"
-#include "../jrd/thd.h"
+#include "../jrd/thd_proto.h"
 
 static void post_error(ISC_STATUS, ...);
 
@@ -49,10 +49,10 @@ static void post_error(ISC_STATUS, ...);
     @param to
 
  **/
-void MOVD_move(const dsc* from, dsc* to)
+void MOVD_move( DSC * from, DSC * to)
 {
 
-	CVT_move(from, to, post_error);
+	CVT_move(from, to, (FPTR_VOID) post_error);
 }
 
 
@@ -69,11 +69,11 @@ void MOVD_move(const dsc* from, dsc* to)
  **/
 static void post_error( ISC_STATUS status, ...)
 {
-	ISC_STATUS *v;
-	const ISC_STATUS* temp, *v_end;
+	TSQL tdsql;
+	ISC_STATUS *v, *v_end, *temp;
 	ISC_STATUS_ARRAY temp_status;
 
-	tsql* tdsql = DSQL_get_thread_data();
+	tdsql = GET_THREAD_DATA;
 
 /* copy into a temporary array any other arguments which may 
  * have been handed to us, then post the error.
@@ -83,28 +83,25 @@ static void post_error( ISC_STATUS status, ...)
 	STUFF_STATUS(temp_status, status);
 
 	v = tdsql->tsql_status;
-	v_end = v + ISC_STATUS_LENGTH;
-	*v++ = isc_arg_gds;
-	*v++ = isc_dsql_error;
-	*v++ = isc_arg_gds;
-	*v++ = isc_sqlerr;
-	*v++ = isc_arg_number;
+	v_end = v + 20;
+	*v++ = gds_arg_gds;
+	*v++ = gds_dsql_error;
+	*v++ = gds_arg_gds;
+	*v++ = gds_sqlerr;
+	*v++ = gds_arg_number;
 	*v++ = -303;
 
-	for (temp = temp_status; v < v_end && (*v = *temp) != isc_arg_end;
+	for (temp = temp_status; v < v_end && (*v = *temp) != gds_arg_end;
 		 v++, temp++)
-	{
 		switch (*v) {
-		case isc_arg_cstring:
+		case gds_arg_cstring:
 			*++v = *++temp;
 			*++v = *++temp;
 			break;
 		default:
 			*++v = *++temp;
 			break;
-		}
-	}
+		};
 
 	ERRD_punt();
 }
-

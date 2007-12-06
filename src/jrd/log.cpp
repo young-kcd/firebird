@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Access Method
- *	MODULE:		log.cpp
+ *	MODULE:		log.c
  *	DESCRIPTION:	Log all OSRI calls
  *
  * The contents of this file are subject to the Interbase Public
@@ -23,17 +23,21 @@
 
 
 #include "firebird.h"
-#include <stdio.h>
+#include "../jrd/ib_stdio.h"
 #include <string.h>
 #include "../jrd/common.h"
 #include <stdarg.h>
+#ifdef WIN_NT
+#include <io.h>
+#endif
 #include "../jrd/jrd.h"
 #include "../jrd/log.h"
 #include "../jrd/ods.h"
+#include "../jrd/all_proto.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/log_proto.h"
 #include "../jrd/pag_proto.h"
-#include "../jrd/thd.h"
+#include "../jrd/thd_proto.h"
 
 
 
@@ -53,7 +57,7 @@ This is currently removed as
 
 This is a valuable function to re-activate in the product, but 
 until it is I've #ifdef'ed it out under REPLAY_OSRI_API_CALLS_SUBSYSTEM.
-I've also embedded the notes on how it works into log.cpp so they
+I've also embedded the notes on how it works into log.c so they
 can serve as a reference to a future completion of implementation.
 
 Not reviewed, removal & documentation only
@@ -85,7 +89,7 @@ may be safe to say that none of us use it.  :-)
 It sounds like a good feature.  In fact, a customer asked recently if
 there was a server-side feature akin to Delphi's "SQL Monitor" (which
 logs all BDE and InterBase API calls), and we had to say no.  Even if
-we had known about the REPLAY feature, I think we would have said no,
+we had known about the REPLY feature, I think we would have said no,
 since it is uncertified.
 
 I think we should keep it in the product, and even do some development
@@ -172,15 +176,18 @@ At 04:58 PM 11/6/96 -0800, David Schnepper wrote:
 
 */
 
-static void error(const TEXT*);
+static void error(TEXT *);
 static void log_char(SCHAR);
 static void log_flush(void);
 static void log_long(SLONG);
-static void log_pointer(const SCHAR*);
+static void log_pointer(SCHAR *);
 static void log_short(SSHORT);
-static void log_string(SSHORT, const SCHAR*);
-static void log_teb(SSHORT, const TEB*);
-static void open_log(const TEXT*, SSHORT, const SCHAR*);
+static void log_string(SSHORT, SCHAR *);
+static void log_teb(SSHORT, TEB *);
+static void open_log(TEXT *, SSHORT, SCHAR *);
+
+#define PUT(c)	log_char(c)
+
 
 void LOG_call(enum log_t call_type, ...)
 {
@@ -196,27 +203,28 @@ void LOG_call(enum log_t call_type, ...)
  *	bugs in a production environment.
  *
  **************************************/
+	DBB dbb;
+	SCHAR *arg_type;
 	SSHORT number;
 	SLONG long_number;
-	const SCHAR *pointer;
-	const SLONG *long_pointer;
+	SCHAR *pointer;
+	SLONG *long_pointer;
 	va_list ptr;
 
-	Database* dbb = GET_DBB();
+	dbb = GET_DBB;
 
 	if (!dbb || !dbb->dbb_log || !dbb->dbb_log->log_file)
 		return;
 
-	log_char((SCHAR) call_type);
+	PUT((SCHAR) call_type);
 
-	va_start(ptr, call_type);
+	VA_START(ptr, call_type);
 
 /* using the argument types described in the table, 
    pop the arguments off the call stack and put
    them into the log file */
 
-	for (const char* arg_type = arg_types1[(int) call_type]; *arg_type; arg_type++)
-	{
+	for (arg_type = arg_types1[(int) call_type]; *arg_type; arg_type++)
 		switch (*arg_type) {
 		case 'o':
 		case 's':
@@ -266,7 +274,6 @@ void LOG_call(enum log_t call_type, ...)
 		default:
 			error("argument type not known");
 		}
-	}
 
 	va_end(ptr);
 
@@ -286,7 +293,9 @@ void LOG_disable(void)
  *	Disable logging.
  *
  **************************************/
-	Database* dbb = GET_DBB();
+	DBB dbb;
+
+	dbb = GET_DBB;
 
 /* Get header page and look for logging entry */
 
@@ -299,7 +308,7 @@ void LOG_disable(void)
 }
 
 
-void LOG_enable(const TEXT* log_file_name, USHORT l_length)
+void LOG_enable(TEXT * log_file_name, USHORT l_length)
 {
 /**************************************
  *
@@ -311,7 +320,9 @@ void LOG_enable(const TEXT* log_file_name, USHORT l_length)
  *	Enable replay logging for the database.
  *
  **************************************/
-	Database* dbb = GET_DBB();
+	DBB dbb;
+
+	dbb = GET_DBB;
 
 /* if we are already enabled for another file, get rid of it */
 
@@ -348,12 +359,15 @@ void LOG_fini(void)
  *	Close down the log file for replay logging.
  *
  **************************************/
-	Database* dbb = GET_DBB();
-	fblog* log;
+	DBB dbb;
+	LOG log;
+
+	dbb = GET_DBB;
+
 	if (dbb && (log = dbb->dbb_log)) {
 		if (log->log_file) {
 			log_flush();
-			fclose(log->log_file);
+			ib_fclose(log->log_file);
 		}
 		ALL_release(log->log_string);
 		ALL_release(log);
@@ -361,7 +375,8 @@ void LOG_fini(void)
 	}
 }
 
-void LOG_init(const TEXT* name, USHORT length)
+
+void LOG_init(TEXT * name, USHORT length)
 {
 /**************************************
  *
@@ -376,24 +391,20 @@ void LOG_init(const TEXT* name, USHORT length)
  *	append to.
  *
  **************************************/
-	TEXT file_name[MAXPATHLEN];
-	USHORT log_length = sizeof(file_name);
+	USHORT log_length;
+	TEXT file_name[256];
 
 /* Get header page and look for logging entry */
 
 	if (!PAG_get_clump(HEADER_PAGE, HDR_log_name, &log_length, file_name))
 		return;
-		
-	if (log_length >= sizeof(file_name))
-		log_length = sizeof(file_name) - 1; // We can't handle more for now.
-	
 	file_name[log_length] = 0;
 
 	open_log(file_name, log_length, MODE_APPEND);
 }
 
 
-static void error(const TEXT* error_string)
+static void error(TEXT * error_string)
 {
 /**************************************
  *
@@ -406,13 +417,16 @@ static void error(const TEXT* error_string)
  *	both to the terminal and to the log.
  *
  **************************************/
-	Database* dbb = GET_DBB();
+	DBB dbb;
+	SSHORT length;
 
-	printf("ERROR in logging system: %s\n", error_string);
+	dbb = GET_DBB;
+
+	ib_printf("ERROR in logging system: %s\n", error_string);
 
 	if (dbb->dbb_log && dbb->dbb_log->log_file) {
 		log_short(log_error);
-		const SSHORT length = strlen(error_string);
+		length = strlen(error_string);
 		log_short(length);
 	}
 }
@@ -431,9 +445,12 @@ static void log_char(SCHAR c)
  *	for later flushing to the log.
  *
  **************************************/
-	Database* dbb = GET_DBB();
+	DBB dbb;
+	LOG log;
 
-	fblog* log = dbb->dbb_log;
+	dbb = GET_DBB;
+
+	log = dbb->dbb_log;
 	*log->log_ptr++ = c;
 
 /* this log flush could be done in the middle of an OSRI
@@ -461,18 +478,22 @@ static void log_flush(void)
  *	at it.
  *
  **************************************/
-	Database* dbb = GET_DBB();
+	DBB dbb;
+	LOG log;
+	UCHAR *buffer;
 
-	fblog* log = dbb->dbb_log;
+	dbb = GET_DBB;
+
+	log = dbb->dbb_log;
 	if (!(log->log_ptr - log->log_buffer))
 		return;
 
-	const UCHAR* buffer = log->log_buffer;
-	fwrite(buffer, sizeof(*buffer), log->log_ptr - log->log_buffer,
+	buffer = log->log_buffer;
+	ib_fwrite(buffer, sizeof(*buffer), log->log_ptr - log->log_buffer,
 			  log->log_file);
 	log->log_ptr = log->log_buffer;
 
-	fflush(log->log_file);
+	ib_fflush(log->log_file);
 }
 
 
@@ -488,14 +509,18 @@ static void log_long(SLONG number)
  *	Log a longword.
  *
  **************************************/
-	const SLONG vax_number = gds__vax_integer(&number, sizeof(number));
-	const char* p = (SCHAR *) & vax_number;
-	for (int i = 0; i < sizeof(number); i++)
-		log_char(*p++);
+	SLONG vax_number;
+	USHORT i;
+	SCHAR *p;
+
+	vax_number = gds__vax_integer(&number, sizeof(number));
+	p = (SCHAR *) & vax_number;
+	for (i = 0; i < sizeof(number); i++)
+		PUT(*p++);
 }
 
 
-static void log_pointer(const SCHAR* pointer)
+static void log_pointer(SCHAR * pointer)
 {
 /**************************************
  *
@@ -507,9 +532,12 @@ static void log_pointer(const SCHAR* pointer)
  *	Log a pointer.
  *
  **************************************/
-	const char* p = (SCHAR *) & pointer;
-	for (int i = 0; i < sizeof(pointer); i++)
-		log_char(*p++);
+	USHORT i;
+	SCHAR *p;
+
+	p = (SCHAR *) & pointer;
+	for (i = 0; i < sizeof(pointer); i++)
+		PUT(*p++);
 }
 
 
@@ -525,14 +553,18 @@ static void log_short(SSHORT number)
  *	Log a shortword.
  *
  **************************************/
-	const USHORT vax_number = (USHORT) gds__vax_integer(&number, sizeof(number));
-	const char* p = (SCHAR *) & vax_number;
-	for (int i = 0; i < sizeof(number); i++)
-		log_char(*p++);
+	USHORT vax_number;
+	USHORT i;
+	SCHAR *p;
+
+	vax_number = (USHORT) gds__vax_integer(&number, sizeof(number));
+	p = (SCHAR *) & vax_number;
+	for (i = 0; i < sizeof(number); i++)
+		PUT(*p++);
 }
 
 
-static void log_string(SSHORT buffer_size, const SCHAR* buffer)
+static void log_string(SSHORT buffer_size, SCHAR * buffer)
 {
 /**************************************
  *
@@ -544,12 +576,13 @@ static void log_string(SSHORT buffer_size, const SCHAR* buffer)
  *	Log a buffer of unknown content.
  *
  **************************************/
+
 	while (buffer_size--)
-		log_char(*buffer++);
+		PUT(*buffer++);
 }
 
 
-static void log_teb(SSHORT count, const TEB* vector)
+static void log_teb(SSHORT count, TEB * vector)
 {
 /**************************************
  *
@@ -561,10 +594,9 @@ static void log_teb(SSHORT count, const TEB* vector)
  *	Log a transaction element block.
  *
  **************************************/
-	if (count < 0)
-		return;
-		
-	for (TEB* const end = vector + count; vector < end; vector++) {
+	TEB *end;
+
+	for (end = vector + count; vector < end; vector++) {
 		log_pointer(*vector->teb_database);
 		log_long((SLONG) vector->teb_tpb_length);
 		log_string(vector->teb_tpb_length, vector->teb_tpb);
@@ -572,8 +604,7 @@ static void log_teb(SSHORT count, const TEB* vector)
 }
 
 
-static void open_log(const TEXT* file_name, SSHORT file_length, 
-					 const SCHAR* mode)
+static void open_log(TEXT * file_name, SSHORT file_length, SCHAR * mode)
 {
 /**************************************
  *
@@ -585,33 +616,34 @@ static void open_log(const TEXT* file_name, SSHORT file_length,
  *	Open the log file.
  *
  **************************************/
-	Database* dbb = GET_DBB();
+	DBB dbb;
+	LOG log;
+	SCHAR *log_name, buffer[MAXPATHLEN];
+	void *log_file;
+	int mask;
+
+	dbb = GET_DBB;
 
 	if (dbb->dbb_log)
 		LOG_fini();
 
-	SCHAR buffer[MAXPATHLEN];
-	const SCHAR* log_name;
 	if (file_length)
 		log_name = file_name;
-	else {
+	else
 		gds__prefix(buffer, LOG_FILE_NAME);
-		log_name = buffer;
-	}
+	log_name = buffer;
 
-	const int mask = umask(0111);
-	void* log_file = fopen(log_name, mode);
+	mask = umask(0111);
+	log_file = ib_fopen(log_name, mode);
 	umask(mask);
 
 	if (!log_file)
 		error("can't open log file");
 	else {
-		fblog* log = FB_NEW(*dbb->dbb_permanent) fblog();
-		dbb->dbb_log = log;
+		dbb->dbb_log = log = FB_NEW(*dbb->dbb_permanent) fblog();
 		log->log_file = log_file;
 		log->log_string = FB_NEW_RPT(*dbb->dbb_permanent, LOG_BUFFER_LENGTH) str();
 		log->log_ptr = log->log_buffer = log->log_string->str_data;
 	}
 }
-#endif // REPLAY_OSRI_API_CALLS_SUBSYSTEM
-
+#endif /* REPLAY_OSRI_API_CALLS_SUBSYSTEM */

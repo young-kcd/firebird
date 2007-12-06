@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Access Method
- *	MODULE:		nav.cpp
+ *	MODULE:		nav.c
  *	DESCRIPTION:	Navigational index walking
  *
  * The contents of this file are subject to the Interbase Public
@@ -23,21 +23,20 @@
 
 #include "firebird.h"
 #include <string.h>
-#include "memory_routines.h"
-#include "../jrd/common.h"
 #include "../jrd/jrd.h"
 #include "../jrd/ods.h"
 #include "../jrd/val.h"
 #include "../jrd/btr.h"
-#include "../jrd/btn.h"
 #include "../jrd/req.h"
 #include "../jrd/exe.h"
 #include "../jrd/sbm.h"
 #include "../jrd/rse.h"
-#include "gen/iberror.h"
+#include "gen/codes.h"
+#include "../jrd/rng.h"
 #include "../jrd/lck.h"
 #include "../jrd/cch.h"
 #include "../jrd/blr.h"
+#include "../jrd/all_proto.h"
 #include "../jrd/btr_proto.h"
 #include "../jrd/cch_proto.h"
 #include "../jrd/dbg_proto.h"
@@ -46,32 +45,34 @@
 #include "../jrd/gds_proto.h"
 #include "../jrd/mov_proto.h"
 #include "../jrd/nav_proto.h"
+#include "../jrd/rng_proto.h"
 #include "../jrd/rse_proto.h"
-#include "../jrd/thd.h"
+#include "../jrd/sbm_proto.h"
+#include "../jrd/thd_proto.h"
 #include "../jrd/vio_proto.h"
 
-using namespace Jrd;
+#define MOVE_BYTE(x_from, x_to)	*x_to++ = *x_from++;
 
-//#define MOVE_BYTE(x_from, x_to)	*x_to++ = *x_from++;
-
-static int compare_keys(const index_desc*, const UCHAR*, USHORT, 
-						const temporary_key*, USHORT);
-
+static SSHORT compare_keys(IDX *, UCHAR *, USHORT, KEY *, USHORT);
 #ifdef SCROLLABLE_CURSORS
 static void expand_index(WIN *);
 #endif
-static btree_exp* find_current(exp_index_buf*, Ods::btree_page*, const UCHAR*);
-static bool find_saved_node(RecordSource*, IRSB_NAV, WIN *, UCHAR **);
-static UCHAR* get_position(thread_db*, RecordSource*, IRSB_NAV, WIN *, RSE_GET_MODE, btree_exp**);
-static bool get_record(RecordSource*, IRSB_NAV, record_param*, temporary_key*, bool);
+#ifdef PC_ENGINE
+static BOOLEAN find_dbkey(RSB, ULONG);
+static BOOLEAN find_record(RSB, RSE_GET_MODE, KEY *, USHORT, USHORT);
+#endif
+static BTX find_current(EXP, BTR, BTN);
+static BOOLEAN find_saved_node(RSB, IRSB_NAV, WIN *, BTN *);
+static BTN get_position(TDBB, RSB, IRSB_NAV, WIN *, RSE_GET_MODE, BTX *);
+static BOOLEAN get_record(RSB, IRSB_NAV, RPB *, KEY *, BOOLEAN);
 static void init_fetch(IRSB_NAV);
-static UCHAR* nav_open(thread_db*, RecordSource*, IRSB_NAV, WIN *, RSE_GET_MODE, btree_exp**);
-static void set_position(IRSB_NAV, record_param*, WIN*, const UCHAR*, btree_exp*, const UCHAR*, USHORT);
-static bool setup_bitmaps(RecordSource*, IRSB_NAV);
+static BTN nav_open(TDBB, RSB, IRSB_NAV, WIN *, RSE_GET_MODE, BTX *);
+static void set_position(IRSB_NAV, RPB *, WIN *, BTN, BTX, UCHAR *, USHORT);
+static void setup_bitmaps(RSB, IRSB_NAV);
 
 
 #ifdef SCROLLABLE_CURSORS
-exp_index_buf* NAV_expand_index(WIN * window, IRSB_NAV impure)
+EXP NAV_expand_index(WIN * window, IRSB_NAV impure)
 {
 /**************************************
  *
@@ -90,54 +91,59 @@ exp_index_buf* NAV_expand_index(WIN * window, IRSB_NAV impure)
  *	expanded page to match that on the corresponding btree page.
  *
  **************************************/
+	BTR page;
+	EXP expanded_page;
+	BTN node, end, current_node;
+	BTX expanded_node, prior_expanded_node;
+	KEY key;
+	UCHAR *p, *q;
+	USHORT l;
 
-	// allocate the expanded page to allow room for all nodes fully expanded,
-	// plus leave room for an extra node with zero-length tail
-	// (note that the difference in size of a btree_exp node versus a btree_nod node could
-	// be deducted, but there is no easy way to get the no. of nodes on page) */
+/* allocate the expanded page to allow room for all nodes fully expanded,
+   plus leave room for an extra node with zero-length tail
+   (note that the difference in size of a BTX node versus a BTN node could
+   be deducted, but there is no easy way to get the no. of nodes on page) */
 
-	// if the right version of expanded page is available, there 
-	// is no work to be done 
-	exp_index_buf* expanded_page = window->win_expanded_buffer;
-	if (expanded_page &&
+/* if the right version of expanded page is available, there 
+ * is no work to be done 
+ */
+
+	if ((expanded_page = window->win_expanded_buffer) &&
 		(expanded_page->exp_incarnation == CCH_get_incarnation(window)))
-	{
 		return expanded_page;
-	}
 
-	// If different incarnation, reallocate the page
-	if (expanded_page) {
+/* If different incarnation, reallocate the page */
+
+	if (expanded_page)
 		ALL_free(expanded_page);
-	}
 
-	btree_page* page = (btree_page*) window->win_buffer;
+	page = (BTR) window->win_buffer;
 
-	expanded_page = (exp_index_buf*) ALL_malloc(EXP_SIZE + page->btr_prefix_total +
-		(SLONG) page->btr_length + BTX_SIZE, ERR_jmp);
+	expanded_page = (EXP) ALL_malloc(EXP_SIZE + page->btr_prefix_total +
+									 (SLONG) page->btr_length + BTX_SIZE,
+									 ERR_jmp);
 	window->win_expanded_buffer = expanded_page;
 	expanded_page->exp_incarnation = -1;
 
 	expand_index(window);
 
-	if (!impure) {
+	if (!impure)
 		return expanded_page;
-	}
 
-	// go through the nodes on the original page and reposition
-	UCHAR* pointer = BTreeNode::getPointerFirstNode(page);
-	const UCHAR* const endPointer = ((UCHAR*) page + page->btr_length);
-	btree_exp* expanded_node = (btree_exp*) expanded_page->exp_nodes;
-	const UCHAR* current_pointer = ((UCHAR*) page + impure->irsb_nav_offset);
+/* go through the nodes on the original page and reposition */
 
+	node = (BTN) page->btr_nodes;
+	expanded_node = (BTX) expanded_page->exp_nodes;
+
+	current_node = (BTN) ((UCHAR *) page + impure->irsb_nav_offset);
 	impure->irsb_nav_expanded_offset = -1;
 
-	IndexNode node;
-	while (pointer < endPointer) {
-		if (pointer == current_pointer) {
+	for (end = LAST_NODE(page); node < end;) {
+		if (node == current_node)
 			impure->irsb_nav_expanded_offset =
-				(UCHAR*) expanded_node - (UCHAR*) expanded_page;
-		}
-		pointer = BTreeNode::nextNode(pointer, &expanded_node);
+				(UCHAR *) expanded_node - (UCHAR *) expanded_page;
+
+		node = BTR_next_node(node, &expanded_node);
 	}
 
 	return expanded_page;
@@ -145,9 +151,294 @@ exp_index_buf* NAV_expand_index(WIN * window, IRSB_NAV impure)
 #endif
 
 
-bool NAV_get_record(thread_db* tdbb,
-					   RecordSource* rsb,
-					   IRSB_NAV impure, record_param* rpb, RSE_GET_MODE direction)
+#ifdef PC_ENGINE
+BOOLEAN NAV_find_record(RSB rsb,
+						USHORT operator, USHORT direction, JRD_NOD find_key)
+{
+/**************************************
+ *
+ *	N A V _ f i n d _ r e c o r d
+ *
+ **************************************
+ *
+ * Functional description
+ *	Find a record with the specified key value
+ *	in a stream opened on a navigational index.
+ *	This routine must set BOF, EOF, or CRACK.
+ *
+ **************************************/
+	TDBB tdbb;
+	JRD_REQ request;
+	IRSB_NAV impure;
+	IDX *idx;
+	KEY key_value;
+	WIN window;
+	BTN expanded_node;
+	BOOLEAN backwards;
+	USHORT search_flags;
+
+	backwards = (direction == blr_backward
+				 || direction == blr_backward_starting);
+
+	if (direction == blr_forward_starting
+		|| direction == blr_backward_starting) search_flags = irb_starting;
+	else
+		search_flags = 0;
+
+
+	tdbb = GET_THREAD_DATA;
+	request = tdbb->tdbb_request;
+	impure = (IRSB_NAV) ((UCHAR *) request + rsb->rsb_impure);
+	window.win_flags = 0;
+
+	init_fetch(impure);
+	if (!impure->irsb_nav_page) {
+		nav_open(tdbb, rsb, impure, &window, RSE_get_forward, &expanded_node);
+		CCH_RELEASE(tdbb, &window);
+	}
+
+/* finding a record invalidates the visited records */
+
+	SBM_reset(&impure->irsb_nav_records_visited);
+
+	idx =
+		(IDX *) ((SCHAR *) impure + (SLONG) rsb->rsb_arg[RSB_NAV_idx_offset]);
+
+	if ((idx == NULL) ||
+		(find_key->nod_count == 0) ||
+		(find_key->nod_count > idx->idx_count)) ERR_post(gds__invalid_key, 0);
+
+	if (find_key->nod_count < idx->idx_count)
+		search_flags |= irb_partial;
+
+	BTR_make_key(tdbb, find_key->nod_count, &find_key->nod_arg[0], idx,
+				 &key_value, search_flags & irb_starting);
+
+/* save the key value */
+
+	impure->irsb_nav_length = key_value.key_length;
+	MOVE_FAST(key_value.key_data, impure->irsb_nav_data,
+			  key_value.key_length);
+
+/* for descending indices, reverse the sense of the comparison operator 
+   to simplify the following switch statement */
+
+	if (idx->idx_flags & idx_descending) {
+		if (operator == blr_lss)
+			operator = blr_gtr;
+		else if (operator == blr_leq)
+			operator = blr_geq;
+		else if (operator == blr_gtr)
+			operator = blr_lss;
+		else if (operator == blr_geq)
+			operator = blr_leq;
+	}
+
+/* find the proper record by comparing the passed key with the records in
+   the record stream, optimizing the fetch as best as possible by using the
+   index to get as close to the proper record as possible */
+
+	switch (operator) {
+	case blr_lss:
+		if (backwards)
+			/* find the first record before the given key value */
+		{
+			find_record(rsb, RSE_get_first, &key_value, find_key->nod_count,
+						search_flags);
+			return NAV_get_record(rsb, impure,
+								  request->req_rpb + rsb->rsb_stream,
+								  RSE_get_backward);
+		}
+		else
+			/* find the first record in the stream, assuming its key value is < the passed key */
+		{
+			nav_open(tdbb, rsb, impure, &window, RSE_get_forward,
+					 &expanded_node);
+			CCH_RELEASE(tdbb, &window);
+			if (!NAV_get_record
+				(rsb, impure, request->req_rpb + rsb->rsb_stream,
+				 RSE_get_forward)) return FALSE;
+
+			if (compare_keys
+				(idx, impure->irsb_nav_data, impure->irsb_nav_length,
+				 &key_value, search_flags) < 0)
+				return TRUE;
+			else {
+				RSE_MARK_CRACK(tdbb, rsb, irsb_crack);
+				return FALSE;
+			}
+		}
+/*	break;  unreachable */
+
+	case blr_leq:
+		if (backwards)
+			/* find the last record with the matching key; barring that, find the first less than */
+		{
+			if (find_record
+				(rsb, RSE_get_last, &key_value, find_key->nod_count,
+				 search_flags)) return TRUE;
+			return NAV_get_record(rsb, impure,
+								  request->req_rpb + rsb->rsb_stream,
+								  RSE_get_backward);
+		}
+		else
+			/* find the first record in the stream, assuming its key value is <= the passed key */
+		{
+			nav_open(tdbb, rsb, impure, &window, RSE_get_forward,
+					 &expanded_node);
+			CCH_RELEASE(tdbb, &window);
+			if (!NAV_get_record
+				(rsb, impure, request->req_rpb + rsb->rsb_stream,
+				 RSE_get_forward)) return FALSE;
+
+			if (compare_keys
+				(idx, impure->irsb_nav_data, impure->irsb_nav_length,
+				 &key_value, search_flags) <= 0)
+				return TRUE;
+			else {
+				RSE_MARK_CRACK(tdbb, rsb, irsb_crack);
+				return FALSE;
+			}
+		}
+/*	break;  unreachable */
+
+	case blr_eql:
+		if (find_record(rsb, backwards ? RSE_get_last : RSE_get_first,
+						&key_value, find_key->nod_count, search_flags))
+			return TRUE;
+		else {
+			/* We need to override the crack semantics of find_record, because even 
+			   if we go to EOF or BOF as a result of the find, this is defined as a
+			   crack.  On the other hand, we do need to retain a forced crack if 
+			   one was set.  bug #7024 */
+
+			if (impure->irsb_flags & irsb_forced_crack)
+				RSE_MARK_CRACK(tdbb, rsb, irsb_crack | irsb_forced_crack);
+			else
+				RSE_MARK_CRACK(tdbb, rsb, irsb_crack);
+			return FALSE;
+		}
+/*	break;  unreachable */
+
+	case blr_gtr:
+		if (backwards)
+			/* find the last record in the stream, assuming its key value is > the passed key */
+		{
+			nav_open(tdbb, rsb, impure, &window, RSE_get_backward,
+					 &expanded_node);
+			CCH_RELEASE(tdbb, &window);
+			if (!NAV_get_record
+				(rsb, impure, request->req_rpb + rsb->rsb_stream,
+				 RSE_get_backward)) return FALSE;
+
+			if (compare_keys
+				(idx, impure->irsb_nav_data, impure->irsb_nav_length,
+				 &key_value, search_flags) > 0)
+				return TRUE;
+			else {
+				RSE_MARK_CRACK(tdbb, rsb, irsb_crack);
+				return FALSE;
+			}
+		}
+		else
+			/* find the first record after the last matching record */
+		{
+			find_record(rsb, RSE_get_last, &key_value, find_key->nod_count,
+						search_flags);
+
+			/* special case when the key is greater than the last record in the file;
+			   stream is defined to be on EOF; see bug #6151 */
+
+			if (impure->irsb_flags & irsb_eof)
+				return FALSE;
+
+			return NAV_get_record(rsb, impure,
+								  request->req_rpb + rsb->rsb_stream,
+								  RSE_get_forward);
+		}
+/*	break;  unreachable */
+
+	case blr_geq:
+		if (backwards)
+			/* find the last record in the stream, assuming its key value is >= the passed key */
+		{
+			nav_open(tdbb, rsb, impure, &window, RSE_get_backward,
+					 &expanded_node);
+			CCH_RELEASE(tdbb, &window);
+			if (!NAV_get_record
+				(rsb, impure, request->req_rpb + rsb->rsb_stream,
+				 RSE_get_backward)) return FALSE;
+
+			if (compare_keys
+				(idx, impure->irsb_nav_data, impure->irsb_nav_length,
+				 &key_value, search_flags) >= 0)
+				return TRUE;
+			else {
+				RSE_MARK_CRACK(tdbb, rsb, irsb_crack);
+				return FALSE;
+			}
+		}
+		else
+			/* find the first record of matching key; barring that, find the first greater */
+		{
+			if (find_record
+				(rsb, RSE_get_first, &key_value, find_key->nod_count,
+				 search_flags)) return TRUE;
+
+			/* special case when the key is greater than the last record in the file;
+			   stream is defined to be on EOF; see bug #6151 */
+
+			if (impure->irsb_flags & irsb_eof)
+				return FALSE;
+
+			return NAV_get_record(rsb, impure,
+								  request->req_rpb + rsb->rsb_stream,
+								  RSE_get_forward);
+		}
+/*	break;  unreachable */
+	}
+}
+#endif
+
+
+#ifdef PC_ENGINE
+void NAV_get_bookmark(RSB rsb, IRSB_NAV impure, BKM bookmark)
+{
+/**************************************
+ *
+ *	N A V _ g e t _ b o o k m a r k
+ *
+ **************************************
+ *
+ * Functional description
+ *	Return a descriptor containing a pointer
+ * 	to a bookmark data structure which describes
+ *	the current location of a navigational stream.
+ *
+ **************************************/
+
+/* store the info necessary to return to this location in the index */
+
+	bookmark->bkm_number = impure->irsb_nav_number;
+	bookmark->bkm_page = impure->irsb_nav_page;
+	bookmark->bkm_incarnation = impure->irsb_nav_incarnation;
+	bookmark->bkm_offset = impure->irsb_nav_offset;
+	bookmark->bkm_expanded_offset = impure->irsb_nav_expanded_offset;
+
+/* store the current key value, setting up the key descriptor to point at it */
+
+	bookmark->bkm_key_desc.dsc_dtype = dtype_text;
+	bookmark->bkm_key_desc.dsc_length = impure->irsb_nav_length;
+	bookmark->bkm_key_desc.dsc_address = bookmark->bkm_key_data;
+	MOVE_FAST(impure->irsb_nav_data, bookmark->bkm_key_data,
+			  impure->irsb_nav_length);
+}
+#endif
+
+
+BOOLEAN NAV_get_record(
+					   RSB rsb,
+					   IRSB_NAV impure, RPB * rpb, RSE_GET_MODE direction)
 {
 /**************************************
  *
@@ -159,71 +450,73 @@ bool NAV_get_record(thread_db* tdbb,
  *	Get a record from a stream, either in
  *	the forward or backward direction, or the
  *	current record.  This routine must set 
- *	BOF or EOF properly.
+ *	BOF, EOF, or CRACK properly.
  *
  **************************************/
-	SET_TDBB(tdbb);
+	TDBB tdbb;
+	IDX *idx;
+	IRB retrieval;
+	JRD_NOD retrieval_node;
+	BTR page;
+	BTN node, next;
+	EXP expanded_page;
+	BTX expanded_node, expanded_next = NULL;
+	WIN window;
+	SLONG number;
+	USHORT l;
+	KEY key, upper, lower;
+	UCHAR *p, *q;
+	BOOLEAN page_changed = FALSE;
+
+	DEBUG;
+
+	tdbb = GET_THREAD_DATA;
 
 #ifdef SCROLLABLE_CURSORS
-	// before we do anything, check for the case where an ascending index 
-	// was used to optimize a descending sort, or a descending index was 
-	// used to optimize an ascending sort--in either case, we need to flip 
-	// the nominal direction of navigation
-	if (rsb->rsb_flags & rsb_descending) {
-		if (direction == RSE_get_forward) {
+/* before we do anything, check for the case where an ascending index 
+   was used to optimize a descending sort, or a descending index was 
+   used to optimize an ascending sort--in either case, we need to flip 
+   the nominal direction of navigation */
+
+	if (rsb->rsb_flags & rsb_descending)
+		if (direction == RSE_get_forward)
 			direction = RSE_get_backward;
-		}
-		else if (direction == RSE_get_backward) {
+		else if (direction == RSE_get_backward)
 			direction = RSE_get_forward;
-		}
-	}
 #endif
 
 	init_fetch(impure);
-	index_desc* idx = (index_desc*) ((SCHAR*) impure + (IPTR) rsb->rsb_arg[RSB_NAV_idx_offset]);
+	idx =
+		(IDX *) ((SCHAR *) impure + (SLONG) rsb->rsb_arg[RSB_NAV_idx_offset]);
 
-	// The bitmap is only valid when we are continuing on in one 
-	// direction.  It is of no help when we change direction,
-	// and so we need to reset in that case.
-#ifdef SCROLLABLE_CURSORS
+/* The bitmap is only valid when we are continuing on in one 
+   direction.  It is of no help when we change direction,
+   and so we need to reset in that case. */
+
 	if (((impure->irsb_flags & irsb_backwards)
 		 && direction != RSE_get_backward)
 		|| (!(impure->irsb_flags & irsb_backwards)
 			&& direction != RSE_get_forward))
-	{
-		RecordBitmap::reset(impure->irsb_nav_records_visited);
-	}
+		SBM_reset(&impure->irsb_nav_records_visited);
 
-	if (direction == RSE_get_forward) {
+	if (direction == RSE_get_forward)
 		impure->irsb_flags &= ~irsb_backwards;
-	}
-	else if (direction == RSE_get_backward) {
+	else if (direction == RSE_get_backward)
 		impure->irsb_flags |= irsb_backwards;
-	}
-#endif
 
-	// find the last fetched position from the index
-	const USHORT pageSpaceID = rpb->rpb_relation->getPages(tdbb)->rel_pg_space_id; 
-	WIN window(pageSpaceID, impure->irsb_nav_page);
+/* find the last fetched position from the index */
 
-	btree_exp* expanded_next = NULL;
-	UCHAR* nextPointer = get_position(tdbb, rsb, impure, &window, 
-		direction, &expanded_next);
-	if (!nextPointer)
-		return false;
-	temporary_key key;
+	window.win_page = impure->irsb_nav_page;
+	window.win_flags = 0;
+	next =
+		get_position(tdbb, rsb, impure, &window, direction, &expanded_next);
 	MOVE_FAST(impure->irsb_nav_data, key.key_data, impure->irsb_nav_length);
-	jrd_nod* retrieval_node = (jrd_nod*) rsb->rsb_arg[RSB_NAV_index];
-	IndexRetrieval* retrieval = 
-		(IndexRetrieval*) retrieval_node->nod_arg[e_idx_retrieval];
+	retrieval_node = (JRD_NOD) rsb->rsb_arg[RSB_NAV_index];
+	retrieval = (IRB) retrieval_node->nod_arg[e_idx_retrieval];
 
-	// set the upper (or lower) limit for navigational retrieval
-	temporary_key upper;
-#ifdef SCROLLABLE_CURSORS
-	temporary_key lower;
-#endif
-	if ((direction == RSE_get_forward) && retrieval->irb_upper_count) 
-	{
+/* set the upper (or lower) limit for navigational retrieval */
+
+	if ((direction == RSE_get_forward) && retrieval->irb_upper_count) {
 		upper.key_length = impure->irsb_nav_upper_length;
 #ifdef SCROLLABLE_CURSORS
 		MOVE_FAST(
@@ -233,63 +526,55 @@ bool NAV_get_record(thread_db* tdbb,
 #else
 		MOVE_FAST(
 				  (impure->irsb_nav_data +
-				   (IPTR) rsb->rsb_arg[RSB_NAV_key_length]), upper.key_data,
+				   (SLONG) rsb->rsb_arg[RSB_NAV_key_length]), upper.key_data,
 				  upper.key_length);
 #endif
 	}
-#ifdef SCROLLABLE_CURSORS
-	else if ((direction == RSE_get_backward) && retrieval->irb_lower_count) 
-	{
+	else if ((direction == RSE_get_backward) && retrieval->irb_lower_count) {
 		lower.key_length = impure->irsb_nav_lower_length;
 		MOVE_FAST(
 				  (impure->irsb_nav_data +
-				   (IPTR) rsb->rsb_arg[RSB_NAV_key_length]), lower.key_data,
+				   (SLONG) rsb->rsb_arg[RSB_NAV_key_length]), lower.key_data,
 				  lower.key_length);
 	}
-#endif
 
-	// In the case of a DISTINCT, we must detect whether the key changed since the last 
-	// time a record was returned from the rsb.  It is not good enough to know whether the 
-	// key changed since the last node in the index, because the record represented 
-	// by the last index node may not have satisfied some boolean expression on the rsb.  
-	// So to find out whether the key has changed since the last time a record was actually 
-	// returned from the rsb, we save the record count each time we return a candidate record, 
-	// and see if the count is updated the next time we get here.
+/* In the case of a DISTINCT, we must detect whether the key changed since the last 
+   time a record was returned from the rsb.  It is not good enough to know whether the 
+   key changed since the last node in the index, because the record represented 
+   by the last index node may not have satisfied some boolean expression on the rsb.  
+   So to find out whether the key has changed since the last time a record was actually 
+   returned from the rsb, we save the record count each time we return a candidate record, 
+   and see if the count is updated the next time we get here.
 
-	// If the count has been updated, we know the record has been returned from the rsb, and 
-	// the index key must change before we can return another DISTINCT record candidate.  If 
-	// the last candidate did not qualify, we know we should return another record no matter 
-	// what.
+   If the count has been updated, we know the record has been returned from the rsb, and 
+   the index key must change before we can return another DISTINCT record candidate.  If 
+   the last candidate did not qualify, we know we should return another record no matter 
+   what.  */
 
 	if (rsb->rsb_record_count != impure->irsb_nav_count) {
 		impure->irsb_flags &= ~irsb_key_changed;
 		impure->irsb_nav_count = rsb->rsb_record_count;
 	}
-	else {
+	else
 		impure->irsb_flags |= irsb_key_changed;
-	}
 
-	// Find the next interesting node.  If necessary, skip to the next page
-	bool page_changed = false;
-	RecordNumber number;
-	Ods::IndexNode node;
-	while (true) {
-		Ods::btree_page* page = (Ods::btree_page*) window.win_buffer;
-		const UCHAR flags = page->btr_header.pag_flags;
+/* Find the next interesting node.  If necessary, skip to the next page */
 
-		UCHAR* pointer = nextPointer;
-		btree_exp* expanded_node = expanded_next;
-		if (pointer) {
-			BTreeNode::readNode(&node, pointer, flags, true);
-			number = node.recordNumber;
-		}
+	for (;;) {
+		node = next;
+		expanded_node = expanded_next;
+		if (node)
+			number =
+				BTR_get_quad(reinterpret_cast < char *>(BTN_NUMBER(node)));
+		page = (BTR) window.win_buffer;
 
 #ifdef SCROLLABLE_CURSORS
-		// in the backwards case, check to make sure we haven't hit the 
-		// beginning of a page, and if so fetch the left sibling page.
+		/* in the backwards case, check to make sure we haven't hit the 
+		   beginning of a page, and if so fetch the left sibling page. */
+
 		if (direction == RSE_get_backward) {
-			if (pointer < BTreeNode::getPointerFirstNode(page)) {
-				exp_index_buf* expanded_page = window.win_expanded_buffer;
+			if (node < (BTN) page->btr_nodes) {
+				expanded_page = window.win_expanded_buffer;
 
 				if (!page->btr_left_sibling) {
 					impure->irsb_flags |= irsb_bof;
@@ -297,162 +582,323 @@ bool NAV_get_record(thread_db* tdbb,
 				}
 
 				page = BTR_left_handoff(tdbb, &window, page, LCK_read);
-				expanded_page = NAV_expand_index(&window, 0);
-				nextPointer = BTR_last_node(page, expanded_page, &expanded_next);
 
-				page_changed = true;
+#ifdef PC_ENGINE
+				RNG_add_page(window.win_page);
+#endif
+				expanded_page = NAV_expand_index(&window, 0);
+				next = BTR_last_node(page, expanded_page, &expanded_next);
+
+				page_changed = TRUE;
 				continue;
 			}
 		}
 		else
-			// In the forwards case, check for end of page.  If we find
-			// it, do a simple handoff to the right sibling page.
+			/* In the forwards case, check for end of page.  If we find
+			   it, do a simple handoff to the right sibling page. */
 #endif
 		{
-			if (node.isEndLevel) {
-#ifdef SCROLLABLE_CURSORS
+			if (number == END_LEVEL) {
 				impure->irsb_flags |= irsb_eof;
-#endif
 				break;
 			}
-			if (node.isEndBucket) {
-				page = (Ods::btree_page*) window.win_buffer;
-				page = (Ods::btree_page*) CCH_HANDOFF(tdbb, &window, page->btr_sibling,
-					LCK_read, pag_index);
-				nextPointer = BTreeNode::getPointerFirstNode(page);
-				exp_index_buf* expanded_page = window.win_expanded_buffer;
-				if (expanded_page) {
-					expanded_next = (btree_exp*) expanded_page->exp_nodes;
-				}
+			if (number == END_BUCKET) {
+				page = (BTR) window.win_buffer;
+				page =
+					(BTR) CCH_HANDOFF(tdbb, &window, page->btr_sibling,
+									  LCK_read, pag_index);
+#ifdef PC_ENGINE
+				RNG_add_page(window.win_page);
+#endif
+				next = (BTN) page->btr_nodes;
+				if ( (expanded_page = window.win_expanded_buffer) )
+					expanded_next = (BTX) expanded_page->exp_nodes;
 
-				page_changed = true;
+				page_changed = TRUE;
 				continue;
 			}
 
-		}
-
-		// In the project (DISTINCT) case, we need to determine if the key has changed
-		// since the last record that was returned from the rsb.  That means that we must 
-		// know what the key was for that record
-
-
-		// in the case where we are on the same page, 
-		// we simply check to see if there is any data in the node;  if we are on a new 
-		// page, we must compare this node with the last key we saw 
-		// NOTE: the optimizer only uses indices which have the same number of fields as 
-		// those in the DISTINCT clause; there's no reason we couldn't use an index which 
-		// has extra fields to the right, we just need to add some code to check 
-		// when only the first n segment(s) of the key has changed, rather than the whole key
-		if (rsb->rsb_flags & rsb_project) {
-			if (page_changed) {
-				if (node.length != key.key_length) {
-					impure->irsb_flags |= irsb_key_changed;
+#ifdef IGNORE_NULL_IDX_KEY
+			if (number == END_NON_NULL) {
+				if (retrieval->irb_generic & irb_ignore_null_value_key) {
+					/* we have reached the END_NON_NULL marker. Return since we are
+					   * not interested in the remaining nodes.
+					 */
+					RSE_MARK_CRACK(tdbb, rdb, irsb_crack);
+					break;
 				}
 				else {
-					UCHAR* p = key.key_data;
-					const UCHAR* q = node.data;
-					USHORT l = key.key_length;
-					for (; l; l--) {
-						if (*p++ != *q++) {
-							break;
-						}
-					}
-					if (l) {
-						impure->irsb_flags |= irsb_key_changed;
-					}
+					/* ignore this node, and go to the next one */
+					next = BTR_next_node(node, &expanded_node);
+					expanded_next = expanded_node;
+					continue;
 				}
 			}
-			else if (node.length) {
-				impure->irsb_flags |= irsb_key_changed;
-			}
-		}
-		page_changed = false;
+#endif /* IGNORE_NULL_IDX_KEY */
 
-		// Build the current key value from the prefix and current node data.
+		}
+
+		/* In the project (DISTINCT) case, we need to determine if the key has changed
+		   since the last record that was returned from the rsb.  That means that we must 
+		   know what the key was for that record
+
+
+		   in the case where we are on the same page, 
+		   we simply check to see if there is any data in the node;  if we are on a new 
+		   page, we must compare this node with the last key we saw 
+		   NOTE: the optimizer only uses indices which have the same number of fields as 
+		   those in the DISTINCT clause; there's no reason we couldn't use an index which 
+		   has extra fields to the right, we just need to add some code to check 
+		   when only the first n segment(s) of the key has changed, rather than the whole key */
+
+		if (rsb->rsb_flags & rsb_project) {
+			if (page_changed) {
+				if (BTN_LENGTH(node) != key.key_length)
+					impure->irsb_flags |= irsb_key_changed;
+				else {
+					p = key.key_data;
+					q = BTN_DATA(node);
+					for (l = key.key_length; l; l--)
+						if (*p++ != *q++)
+							break;
+					if (l)
+						impure->irsb_flags |= irsb_key_changed;
+				}
+			}
+			else if (BTN_LENGTH(node))
+				impure->irsb_flags |= irsb_key_changed;
+		}
+		page_changed = FALSE;
+
+		/* Build the current key value from the prefix and current node data. */
+
 		if (expanded_node) {
-			memcpy(key.key_data, expanded_node->btx_data, node.length + node.prefix);
+			if ( (l = BTN_LENGTH(node) + BTN_PREFIX(node)) ) {
+				p = key.key_data;
+				q = expanded_node->btx_data;
+				do
+					*p++ = *q++;
+				while (--l);
+			}
+
 		}
 		else {
-			memcpy(key.key_data + node.prefix, node.data, node.length);
+			if ( (l = BTN_LENGTH(node)) ){
+				p = key.key_data + BTN_PREFIX(node);
+				q = BTN_DATA(node);
+				do
+					*p++ = *q++;
+				while (--l);
+			}
 		}
-		key.key_length = node.length + node.prefix;
 
-		// Make sure we haven't hit the upper (or lower) limit.
+		key.key_length = BTN_LENGTH(node) + BTN_PREFIX(node);
+
+		/* Make sure we haven't hit the upper (or lower) limit. */
+
 		if ((direction == RSE_get_forward) && retrieval->irb_upper_count &&
 			compare_keys(idx, key.key_data, key.key_length, &upper,
 						 retrieval->irb_generic & (irb_descending |
 												   irb_partial |
-												   irb_starting)) > 0) 
-		{
+												   irb_starting)) > 0) {
+			RSE_MARK_CRACK(tdbb, rsb, irsb_crack);
 			break;
 		}
 
-#ifdef SCROLLABLE_CURSORS
 		if ((direction == RSE_get_backward) && retrieval->irb_lower_count &&
 			compare_keys(idx, key.key_data, key.key_length, &lower,
 						 retrieval->irb_generic & (irb_descending |
 												   irb_partial |
-												   irb_starting)) < 0) 
-		{
+												   irb_starting)) < 0) {
+			RSE_MARK_CRACK(tdbb, rsb, irsb_crack);
 			break;
 		}
-#endif
 
-		// skip this record if:
-		// 1) there is an inversion tree for this index and this record
-		//    is not in the bitmap for the inversion, or
-		// 2) the record has already been visited, or
-		// 3) this is a projection and the new node is the same as the last
+		/* skip this record if:
+		   1) there is an inversion tree for this index and this record
+		   is not in the bitmap for the inversion, or
+		   2) the record has already been visited, or
+		   3) this is a projection and the new node is the same as the last */
 
 		if ((rsb->rsb_arg[RSB_NAV_inversion] &&
 			 (!impure->irsb_nav_bitmap
-			  || !RecordBitmap::test(*impure->irsb_nav_bitmap, number.getValue())))
-			|| RecordBitmap::test(impure->irsb_nav_records_visited, number.getValue())
+			  || !SBM_test(*impure->irsb_nav_bitmap, number)))
+			|| SBM_test(impure->irsb_nav_records_visited, number)
 			|| ((rsb->rsb_flags & rsb_project)
-				&& !(impure->irsb_flags & irsb_key_changed))) 
-		{
-#ifdef SCROLLABLE_CURSORS
+				&& !(impure->irsb_flags & irsb_key_changed))) {
 			if (direction == RSE_get_backward) {
-				nextPointer = BTreeNode::previousNode(&node, pointer, flags, &expanded_node);
+				next = BTR_previous_node(node, &expanded_node);
 				expanded_next = expanded_node;
 				continue;
 			}
-#endif
-			if (direction == RSE_get_forward)
-			{
-				nextPointer = BTreeNode::nextNode(&node, pointer, flags, &expanded_node);
+			else if (direction == RSE_get_forward
+					 && !(impure->irsb_flags & irsb_forced_crack)) {
+				next = BTR_next_node(node, &expanded_node);
 				expanded_next = expanded_node;
 				continue;
 			}
 		}
 
-		// reset the current navigational position in the index
+		/* reset the current navigational position in the index */
+
 		rpb->rpb_number = number;
-		set_position(impure, rpb, &window, pointer, expanded_node,
-					 key.key_data, key.key_length);
+#ifdef PC_ENGINE
+		if (direction != RSE_get_current)
+#endif
+			set_position(impure, rpb, &window, node, expanded_node,
+						 key.key_data, key.key_length);
 
 		CCH_RELEASE(tdbb, &window);
 
-		if (get_record(rsb, impure, rpb, &key, false)) {
-			return true;
+		if (get_record(rsb, impure, rpb, &key, FALSE)) {
+#ifdef PC_ENGINE
+			if (impure->irsb_flags & irsb_refresh)
+				RNG_add_record(rpb);
+#endif
+			return TRUE;
 		}
 
-		nextPointer = get_position(tdbb, rsb, impure, &window, direction, &expanded_next);
-		if (!nextPointer)
-			return false;
+#ifdef PC_ENGINE
+		/* if we're here, we didn't find the record at the current position, 
+		   so it must have been deleted out from under us; by definition we
+		   are on a crack (already marked by get_record()) */
+
+		if (direction == RSE_get_current)
+			return FALSE;
+#endif
+
+		next =
+			get_position(tdbb, rsb, impure, &window, direction,
+						 &expanded_next);
 	}
 
 	CCH_RELEASE(tdbb, &window);
 
-	// bof or eof must have been set at this point
-	return false;
+/* crack, bof, or eof must have been set at this point */
+
+	return FALSE;
 }
 
 
-static int compare_keys(
-						   const index_desc* idx,
-						   const UCHAR* key_string1,
-						   USHORT length1, const temporary_key* key2, USHORT flags)
+#ifdef PC_ENGINE
+BOOLEAN NAV_reset_position(RSB rsb, RPB * new_rpb)
+{
+/**************************************
+ *
+ *	N A V _ r e s e t _ p o s i t i o n
+ *
+ **************************************
+ *
+ * Functional description
+ *	Reset the stream represented by the passed 
+ *	rsb to the record indicated by the passed rpb.
+ *
+ **************************************/
+	TDBB tdbb;
+	JRD_REQ request;
+	KEY key_value;
+	IRSB_NAV impure;
+	IDX *idx;
+	WIN window;
+	BTN expanded_node;
+	ULONG record_number;
+
+	tdbb = GET_THREAD_DATA;
+	request = tdbb->tdbb_request;
+	impure = (IRSB_NAV) ((UCHAR *) request + rsb->rsb_impure);
+	window.win_flags = 0;
+
+	init_fetch(impure);
+	if (!impure->irsb_nav_page) {
+		nav_open(tdbb, rsb, impure, &window, RSE_get_current, &expanded_node);
+		CCH_RELEASE(tdbb, &window);
+	}
+
+/* resetting the stream invalidates the visited records */
+
+	SBM_reset(&impure->irsb_nav_records_visited);
+
+	idx =
+		(IDX *) ((SCHAR *) impure + (SLONG) rsb->rsb_arg[RSB_NAV_idx_offset]);
+
+/* save the record number, in case the passed new_rpb is 
+   the same as the one on the rpb, in which case it will 
+   be updated by find_record()--bug #7426 */
+
+	record_number = new_rpb->rpb_number;
+
+/* find the key value of the new position, and set the stream to it */
+
+	BTR_key(tdbb, new_rpb->rpb_relation, new_rpb->rpb_record, idx,
+			&key_value, 0);
+	if (!find_record(rsb, RSE_get_first, &key_value, idx->idx_count,	/* XXX */
+					 0))
+		return FALSE;
+
+/* now find the dbkey of the new record within the 
+   duplicates of this key value */
+
+	return find_dbkey(rsb, record_number);
+}
+#endif
+
+
+#ifdef PC_ENGINE
+BOOLEAN NAV_set_bookmark(RSB rsb, IRSB_NAV impure, RPB * rpb, BKM bookmark)
+{
+/**************************************
+ *
+ *	N A V _ s e t _ b o o k m a r k
+ *
+ **************************************
+ *
+ * Functional description
+ *	Set up the impure area so that the current 
+ *	position of the stream is that of the 
+ *	stored bookmark.
+ *
+ **************************************/
+
+/* setting to bookmark invalidates the visited records */
+
+	SBM_reset(&impure->irsb_nav_records_visited);
+
+/* save the bookmark state in the impure area for the stream */
+
+	impure->irsb_nav_number = bookmark->bkm_number;
+	impure->irsb_nav_incarnation = bookmark->bkm_incarnation;
+	impure->irsb_nav_offset = bookmark->bkm_offset;
+	impure->irsb_nav_expanded_offset = bookmark->bkm_expanded_offset;
+
+/* assuming we had already fetched a page when 
+   we set the bookmark, make sure the "first" flag
+   is not set so that we don't reopen the stream--bug 5709 */
+
+	if (impure->irsb_nav_page = bookmark->bkm_page)
+		impure->irsb_flags &= ~irsb_first;
+
+/* store the current key value, setting up the key descriptor to point at it */
+
+	impure->irsb_nav_length = bookmark->bkm_key_desc.dsc_length;
+	MOVE_FAST(bookmark->bkm_key_data, impure->irsb_nav_data,
+			  bookmark->bkm_key_desc.dsc_length);
+
+	if (impure->irsb_flags & (irsb_bof | irsb_eof | irsb_crack))
+		return FALSE;
+
+/* if we didn't find the record, it must have been deleted 
+   from under us; the desired semantics is to be on a crack 
+   at the previous position of the record */
+
+	return NAV_get_record(rsb, impure, rpb, RSE_get_current);
+}
+#endif
+
+
+static SSHORT compare_keys(
+						   IDX * idx,
+						   UCHAR * key_string1,
+						   USHORT length1, KEY * key2, USHORT flags)
 {
 /**************************************
  *      
@@ -468,100 +914,77 @@ static int compare_keys(
  *	index key.
  *
  **************************************/
-	const UCHAR* string1 = key_string1;
-	const UCHAR* string2 = key2->key_data;
-	const USHORT length2 = key2->key_length;
+	UCHAR *string1, *string2, *segment;
+	USHORT length2, l, remainder;
+	idx::idx_repeat * tail;
 
-	USHORT l = MIN(length1, length2);
-	if (l) {
-		do {
-			if (*string1++ != *string2++) {
+	string1 = key_string1;
+	string2 = key2->key_data;
+	length2 = key2->key_length;
+
+	if ( (l = MIN(length1, length2)) )
+		do
+			if (*string1++ != *string2++)
 				return (string1[-1] < string2[-1]) ? -1 : 1;
-			}
-		} while (--l);
-	}
+		while (--l);
 
-	// if the keys are identical, return 0
-	if (length1 == length2) {
+/* if the keys are identical, return 0 */
+
+	if (length1 == length2)
 		return 0;
-	}
 
-	// do a partial key search; if the index is a compound key,
-	// check to see if the segments are matching--for character
-	// fields, do partial matches within a segment if irb_starting
-	// is specified, for other types do only matches on the entire segment
+/* do a partial key search; if the index is a compound key,
+   check to see if the segments are matching--for character
+   fields, do partial matches within a segment if irb_starting
+   is specified, for other types do only matches on the entire segment */
 
 	if ((flags & (irb_partial | irb_starting)) && (length1 > length2)) {
-		// figure out what segment we're on; if it's a 
-		// character segment we've matched the partial string
-		const UCHAR* segment = 0;
-		const index_desc::idx_repeat* tail;
+		/* figure out what segment we're on; if it's a 
+		   character segment we've matched the partial string */
+
 		if (idx->idx_count > 1) {
-			segment = key_string1 +
-				((length2 - 1) / (Ods::STUFF_COUNT + 1)) * (Ods::STUFF_COUNT + 1);
+			segment =
+				key_string1 +
+				((length2 - 1) / (STUFF_COUNT + 1)) * (STUFF_COUNT + 1);
 			tail = idx->idx_rpt + (idx->idx_count - *segment);
 		}
-		else {
+		else
 			tail = &idx->idx_rpt[0];
-		}
 
-		// If it's a string type key, and we're allowing "starting with" fuzzy
-		// type matching, we're done
+		/* If it's a string type key, and we're allowing "starting with" fuzzy
+		 * type matching, we're done
+		 */
 		if ((flags & irb_starting) &&
 			(tail->idx_itype == idx_string ||
 			 tail->idx_itype == idx_byte_array ||
 			 tail->idx_itype == idx_metadata ||
-			 tail->idx_itype >= idx_first_intl_string)) 
-		{
-			return 0;
-		}
+			 tail->idx_itype >= idx_first_intl_string)) return 0;
+
 
 		if (idx->idx_count > 1) {
+			/* if we've exhausted the segment, we've found a match */
 
-			// If we search for NULLs at the begin then we're done if the first 
-			// segment isn't the first one possible (0 for ASC, 255 for DESC).
-			if (length2 == 0) {
-				if (flags & irb_descending) {
-					if (*segment != 255) {
-						return 0;
-					}
-				}
-				else {
-					if (*segment != 0) {
-						return 0;
-					}
-				}
-			}
+			if (!(remainder = length2 % (STUFF_COUNT + 1)) &&
+				(*string1 != *segment)) return 0;
 
-			// if we've exhausted the segment, we've found a match
-			USHORT remainder = length2 % (Ods::STUFF_COUNT + 1);
-			if (!remainder && (*string1 != *segment)) 
-			{
-				return 0;
-			}
+			/* if the rest of the key segment is 0's, we've found a match */
 
-			// if the rest of the key segment is 0's, we've found a match
 			if (remainder) {
-				for (remainder = Ods::STUFF_COUNT + 1 - remainder; remainder;
-					remainder--) 
-				{
-					if (*string1++) {
+				for (remainder = STUFF_COUNT + 1 - remainder; remainder;
+					 remainder--)
+					if (*string1++)
 						break;
-					}
-				}
-				if (!remainder) {
+
+				if (!remainder)
 					return 0;
-				}
 			}
 		}
 	}
 
-	if (flags & irb_descending) {
+	if (flags & irb_descending)
 		return (length1 < length2) ? 1 : -1;
-	}
-	else {
+	else
 		return (length1 < length2) ? -1 : 1;
-	}
 }
 
 
@@ -582,56 +1005,341 @@ static void expand_index(WIN * window)
  *	the prior node.
  *
  **************************************/
-	btree_page* page = (btree_page*) window->win_buffer;
-	exp_index_buf* expanded_page = window->win_expanded_buffer;
+	BTR page;
+	EXP expanded_page;
+	BTN node, end, prior_node, current_node;
+	BTX expanded_node, prior_expanded_node;
+	KEY key;
+	UCHAR *p, *q;
+	USHORT l;
+
+
+	page = (BTR) window->win_buffer;
+	expanded_page = window->win_expanded_buffer;
 	expanded_page->exp_incarnation = CCH_get_incarnation(window);
 
-	// go through the nodes on the original page and expand them
-	temporary_key key;
-	btree_exp* expanded_node = (btree_exp*) expanded_page->exp_nodes;
-	bool priorPointer = false;
-	UCHAR* pointer = BTreeNode::getPointerFirstNode(page);
-	const UCHAR* const endPointer = ((UCHAR*) page + page->btr_length);
+/* go through the nodes on the original page and expand them */
 
-	const UCHAR flags = page->pag_flags;
-	IndexNode node, priorNode;
+	node = (BTN) page->btr_nodes;
+	expanded_node = (BTX) expanded_page->exp_nodes;
+	prior_node = NULL;
 
-	while (pointer < endPointer) {
+	for (end = LAST_NODE(page); node < end;) {
+		for (p = key.key_data + BTN_PREFIX(node), q = BTN_DATA(node), l =
+			 BTN_LENGTH(node); l; l--)
+			*p++ = *q++;
+		l = BTN_LENGTH(node) + BTN_PREFIX(node);
+		for (p = expanded_node->btx_data, q = key.key_data; l; l--)
+			*p++ = *q++;
 
-		if (!priorPointer) {
-			pointer = BTreeNode::readNode(&node, pointer, flags, true);
-		}
+		/* point back to the prior nodes on the expanded page and the btree page */
 
-		memcpy(key.key_data + node.prefix, node.data, node_length);
-		memcpy(expanded_node->btx_data, key.key_data, node.length + node.prefix);
-
-		// point back to the prior nodes on the expanded page and the btree page
 		expanded_node->btx_btr_previous_length =
-			priorPointer ? BTreeNode::getLeafNodeSize(&priorNode, flags) : 0;
+			prior_node ? BTN_LENGTH(prior_node) : 0;
 		expanded_node->btx_previous_length =
-			priorPointer ? priorNode.length + priorNode.prefix : 0;
+			prior_node ? BTN_LENGTH(prior_node) + BTN_PREFIX(prior_node) : 0;
 
-		priorPointer = true;
-		priorNode = node;
-		pointer = BTreeNode::nextNode(&node, pointer, flags, &expanded_node);
+		prior_node = node;
+
+		node = BTR_next_node(node, &expanded_node);
 	}
 
-	// insert one additional expanded node to keep track of the length of the
-	// last node on page--this is necessary because the end of bucket marker
-	// contains the length and key of the first node on the next page
+/* insert one additional expanded node to keep track of the length of the
+   last node on page--this is necessary because the end of bucket marker
+   contains the length and key of the first node on the next page */
+
 	expanded_node->btx_btr_previous_length =
-		priorPointer ? BTreeNode::getLeafNodeSize(&priorNode, flags) : 0;
+		prior_node ? BTN_LENGTH(prior_node) : 0;
 	expanded_node->btx_previous_length =
-		priorPointer ? priorNode.length + priorNode.prefix : 0;
+		prior_node ? BTN_LENGTH(prior_node) + BTN_PREFIX(prior_node) : 0;
 
 	expanded_page->exp_length =
-		(UCHAR*) expanded_node - (UCHAR*) expanded_page + BTX_SIZE;
+		(UCHAR *) expanded_node - (UCHAR *) expanded_page + BTX_SIZE;
 }
 #endif
 
 
-static btree_exp* find_current(exp_index_buf* expanded_page, Ods::btree_page* page,
-	const UCHAR* current_pointer)
+#ifdef PC_ENGINE
+static BOOLEAN find_dbkey(RSB rsb, ULONG record_number)
+{
+/**************************************
+ *
+ *	f i n d _ d b k e y
+ *
+ **************************************
+ *
+ * Functional description
+ *	Look for the record with the passed dbkey in the
+ *	set of records with key value equal to the current 
+ *	record's key.  This is used to find a particular
+ *	record within a set of equivalent keys.
+ *
+ **************************************/
+	TDBB tdbb;
+	JRD_REQ request;
+	IRSB_NAV impure;
+	RPB *rpb;
+	WIN window;
+	BTN node;
+	BTX expanded_node = NULL;
+	KEY key;
+
+	tdbb = GET_THREAD_DATA;
+	request = tdbb->tdbb_request;
+	impure = (IRSB_NAV) ((UCHAR *) request + rsb->rsb_impure);
+	rpb = request->req_rpb + rsb->rsb_stream;
+
+	init_fetch(impure);
+
+/* if we're on a crack, this isn't going very far */
+
+	if (impure->irsb_flags & (irsb_bof | irsb_eof | irsb_crack))
+		return FALSE;
+
+/* find the last fetched position from the index,
+   and get the current key value */
+
+	window.win_page = impure->irsb_nav_page;
+	window.win_flags = 0;
+	node =
+		get_position(tdbb, rsb, impure, &window, RSE_get_current,
+					 &expanded_node);
+	MOVE_FAST(impure->irsb_nav_data, key.key_data, impure->irsb_nav_length);
+	key.key_length = impure->irsb_nav_length;
+
+/* In case of an error, we still need to release the window we hold
+ * during the parse.  See HACKs for bug 7041
+ */
+
+	try {
+
+/* loop through the equivalent values of the given key, looking for a
+   record which matches the passed dbkey */
+
+	for (;;) {
+		rpb->rpb_number = BTR_get_quad(BTN_NUMBER(node));
+
+		/* if we find an index entry with the proper dbkey, try to fetch the record */
+
+		if (rpb->rpb_number == record_number) {
+			if (get_record(rsb, impure, rpb, &key, TRUE)) {
+				set_position(impure, rpb, &window, node, expanded_node,
+							 key.key_data, key.key_length);
+				CCH_RELEASE(tdbb, &window);
+				return TRUE;
+			}
+
+			CCH_RELEASE(tdbb, &window);
+			return FALSE;
+		}
+
+		/* go to the next node; if we find a non-equivalent node, give up */
+
+		node = BTR_next_node(node, &expanded_node);
+		if (BTN_LENGTH(node)) {
+			CCH_RELEASE(tdbb, &window);
+			return FALSE;
+		}
+	}
+
+	}	// try
+	catch (const std::exception&) {
+		CCH_RELEASE(tdbb, &window);
+		Firebird::status_exception::raise(-1);
+	}
+}
+#endif
+
+
+#ifdef PC_ENGINE
+static BOOLEAN find_record(
+						   RSB rsb,
+						   RSE_GET_MODE mode,
+						   KEY * find_key,
+						   USHORT find_count, USHORT search_flags)
+{
+/**************************************
+ *
+ *	f i n d _ r e c o r d
+ *
+ **************************************
+ *
+ * Functional description
+ *	Find a record with the specified key value
+ *	in a stream opened on a navigational index.
+ *	Depending on the mode, get the first or 
+ *	last value with the given key.  This routine
+ *	must handle CRACK semantics.
+ *
+ **************************************/
+	TDBB tdbb;
+	JRD_REQ request;
+	IRSB_NAV impure;
+	RPB *rpb;
+	JRD_NOD retrieval_node;
+	IRB retrieval;
+	IDX *idx;
+	BTR page;
+	WIN window;
+	BTN node;
+	EXP expanded_page;
+	BTX expanded_node;
+	KEY lower, upper, *tmp, value;
+	USHORT upper_count, lower_count;
+	BOOLEAN result = FALSE, position_set = FALSE;
+	UCHAR *p, *q;
+	USHORT l;
+
+	tdbb = GET_THREAD_DATA;
+	request = tdbb->tdbb_request;
+	impure = (IRSB_NAV) ((UCHAR *) request + rsb->rsb_impure);
+	rpb = request->req_rpb + rsb->rsb_stream;
+	window.win_flags = 0;
+
+	retrieval_node = (JRD_NOD) rsb->rsb_arg[RSB_NAV_index];
+	retrieval = (IRB) retrieval_node->nod_arg[e_idx_retrieval];
+
+/* save the current equality retrieval key */
+
+	tmp = retrieval->irb_key;
+	lower_count = retrieval->irb_lower_count;
+	upper_count = retrieval->irb_upper_count;
+
+/* find the page that the key value should be on */
+
+	retrieval->irb_key = find_key;
+	retrieval->irb_upper_count = retrieval->irb_lower_count = find_count;
+
+	idx =
+		(IDX *) ((SCHAR *) impure + (SLONG) rsb->rsb_arg[RSB_NAV_idx_offset]);
+	page =
+		BTR_find_page(tdbb, retrieval, &window, idx, &lower, &upper, FALSE);
+
+/* restore the saved equality retrieval key */
+
+	retrieval->irb_key = tmp;
+	retrieval->irb_lower_count = lower_count;
+	retrieval->irb_upper_count = upper_count;
+
+/* find the appropriate leaf node */
+
+	while (!(node = BTR_find_leaf(page, find_key, impure->irsb_nav_data,
+								  0, idx->idx_flags & idx_descending, TRUE)))
+		page =
+			(BTR) CCH_HANDOFF(tdbb, &window, page->btr_sibling, LCK_read,
+							  pag_index);
+
+	if (expanded_page = window.win_expanded_buffer)
+		expanded_node = find_current(expanded_page, page, node);
+	else
+		expanded_node = NULL;
+
+/* seed the key value with the prefix seen up to the current key */
+
+	MOVE_FAST(impure->irsb_nav_data, value.key_data, BTN_PREFIX(node));
+
+/* In case of an error, we still need to release the window we hold
+ * during the parse.  See HACKs for bug 7041
+ */
+
+	try {
+
+/* loop through the equivalent values of the given key, finding
+   a valid record if possible; for RSE_get_last, save the last
+   valid record and keep looking for more
+
+   NOTE: this whole process could be made more efficient if we 
+   implemented a means of finding the last index key via 
+   BTR_find_page() and BTR_find_leaf(), then proceeding backwards
+   to find a valid record -deej */
+
+	for (;;)
+	{
+		rpb->rpb_number = BTR_get_quad(BTN_NUMBER(node));
+
+		/* if we have gone past the search key value, stop looking */
+
+		if (rpb->rpb_number == END_LEVEL) {
+			CCH_RELEASE(tdbb, &window);
+			RSE_MARK_CRACK(tdbb, rsb, irsb_eof);
+			return FALSE;
+		}
+
+		if (rpb->rpb_number == END_BUCKET) {
+			page =
+				(BTR) CCH_HANDOFF(tdbb, &window, page->btr_sibling, LCK_read,
+								  pag_index);
+			node = (BTN) page->btr_nodes;
+
+			if (expanded_page = window.win_expanded_buffer)
+				expanded_node = (BTX) expanded_page->exp_nodes;
+			continue;
+		}
+
+#ifdef IGNORE_NULL_IDX_KEY
+		if (rpb->rpb_number == END_NON_NULL) {
+			/* ignore this node, and go to the next one. */
+			node = BTR_next_node(node, &expanded_node);
+			continue;
+		}
+#endif /* IGNORE_NULL_IDX_KEY */
+
+		/* update the current stored key value */
+
+		value.key_length = BTN_LENGTH(node) + BTN_PREFIX(node);
+		p = value.key_data + BTN_PREFIX(node);
+		q = BTN_DATA(node);
+		for (l = BTN_LENGTH(node); l--;)
+			*p++ = *q++;
+
+		/* if the index key is greater than the search key, we didn't find the key */
+
+		if (compare_keys
+			(idx, value.key_data, value.key_length, find_key,
+			 search_flags) > 0) {
+			/* if we never saw a valid record, mark as a forced crack so that
+			   we will be at a position before the current record */
+
+			if (!position_set) {
+				set_position(impure, rpb, &window, node, expanded_node,
+							 value.key_data, value.key_length);
+				RSE_MARK_CRACK(tdbb, rsb, irsb_crack | irsb_forced_crack);
+			}
+
+			CCH_RELEASE(tdbb, &window);
+			return result;
+		}
+
+		/* anytime we successfully retrieve a record, set position 
+		   to it in case we go past a viable record in looking for
+		   the last record of equivalent key */
+
+		if (result = get_record(rsb, impure, rpb, &value, TRUE)) {
+			set_position(impure, rpb, &window, node, expanded_node,
+						 value.key_data, value.key_length);
+			position_set = TRUE;
+		}
+
+		/* if we're looking for the first record, we're done */
+
+		if (result && mode == RSE_get_first) {
+			CCH_RELEASE(tdbb, &window);
+			return result;
+		}
+
+		node = BTR_next_node(node, &expanded_node);
+	}
+
+	}	// try
+	catch (const std::exception&) {
+		CCH_RELEASE(tdbb, &window);
+		Firebird::status_exception::raise(-1);
+	}
+}
+#endif
+
+
+static BTX find_current(EXP expanded_page, BTR page, BTN current_node)
 {
 /**************************************
  *
@@ -645,32 +1353,30 @@ static btree_exp* find_current(exp_index_buf* expanded_page, Ods::btree_page* pa
  *	btree page.
  *
  **************************************/
-	if (!expanded_page) {
+	BTN node, end;
+	BTX expanded_node;
+
+	if (!expanded_page)
 		return NULL;
-	}
 
-	btree_exp* expanded_node = expanded_page->exp_nodes;
-	const UCHAR flags = page->btr_header.pag_flags;
-	UCHAR* pointer = BTreeNode::getPointerFirstNode(page);
-	const UCHAR* const endPointer = ((UCHAR*) page + page->btr_length);
-	Ods::IndexNode node;
-	while (pointer < endPointer) {
-		if (pointer == current_pointer) {
+	expanded_node = expanded_page->exp_nodes;
+
+	for (node = page->btr_nodes, end = LAST_NODE(page); node < end;
+		 node = NEXT_NODE(node)) {
+		if (node == current_node)
 			return expanded_node;
-		}
 
-		// AB: Together this looks pretty the same as BTreeNode::nextNode
-		pointer = BTreeNode::readNode(&node, pointer, flags, true);
-		expanded_node = (btree_exp*) ((UCHAR*) expanded_node->btx_data +
-			node.prefix + node.length);
+		expanded_node = NEXT_EXPANDED(expanded_node, node);
 	}
 
 	return NULL;
 }
 
 
-static bool find_saved_node(RecordSource* rsb, IRSB_NAV impure,
-						WIN * window, UCHAR ** return_pointer)
+static BOOLEAN find_saved_node(
+							   RSB rsb,
+							   IRSB_NAV impure,
+							   WIN * window, BTN * return_node)
 {
 /**************************************
  *
@@ -685,74 +1391,94 @@ static bool find_saved_node(RecordSource* rsb, IRSB_NAV impure,
  *	the actual node, return TRUE.
  *
  **************************************/
-	thread_db* tdbb = JRD_get_thread_data();
+	IDX *idx;
+	BTR page;
+	BTN node, end;
+	SLONG number;
+	KEY key;
+	UCHAR *p, *q;
+	USHORT l;
+	int result;
+	TDBB tdbb;
 
-	index_desc* idx = (index_desc*) ((SCHAR*) impure + (IPTR) rsb->rsb_arg[RSB_NAV_idx_offset]);
-	Ods::btree_page* page = (Ods::btree_page*) CCH_FETCH(tdbb, window, LCK_read, pag_index);
+	tdbb = GET_THREAD_DATA;
 
-	// the outer loop goes through all the sibling pages
-	// looking for the node (in case the page has split);
-	// the inner loop goes through the nodes on each page
-	temporary_key key;
-	const UCHAR flags = page->btr_header.pag_flags;
-	Ods::IndexNode node;
-	while (true) {
-		UCHAR* pointer = BTreeNode::getPointerFirstNode(page);
-		const UCHAR* const endPointer = ((UCHAR*) page + page->btr_length);
-		while (pointer < endPointer) {
+	idx =
+		(IDX *) ((SCHAR *) impure + (SLONG) rsb->rsb_arg[RSB_NAV_idx_offset]);
+	page = (BTR) CCH_FETCH(tdbb, window, LCK_read, pag_index);
 
-			pointer = BTreeNode::readNode(&node, pointer, flags, true);
+/* the outer loop goes through all the sibling pages
+   looking for the node (in case the page has split);
+   the inner loop goes through the nodes on each page */
 
-			if (node.isEndLevel) {
-				*return_pointer = node.nodePointer;
-				return false;
+	while (TRUE)
+		for (node = page->btr_nodes, end = LAST_NODE(page); node < end;
+			 node = NEXT_NODE(node)) {
+			number =
+				BTR_get_quad(reinterpret_cast < char *>(BTN_NUMBER(node)));
+			if (number == END_LEVEL) {
+				*return_node = node;
+				return FALSE;
 			}
-			if (node.isEndBucket) {
-				page = (Ods::btree_page*) CCH_HANDOFF(tdbb, window, page->btr_sibling,
-					LCK_read, pag_index);
+			if (number == END_BUCKET) {
+				page =
+					(BTR) CCH_HANDOFF(tdbb, window, page->btr_sibling,
+									  LCK_read, pag_index);
 				break;
 			}
+#ifdef IGNORE_NULL_IDX_KEY
+			if (number == END_NON_NULL) {
+				/* ignore this node, and go to the next one. */
+				continue;
+			}
+#endif /* IGNORE_NULL_IDX_KEY */
 
-			// maintain the running key value and compare it with the stored value
-			memcpy(key.key_data + node.prefix, node.data, node.length);
-			key.key_length = node.length + node.prefix;
-			const int result = compare_keys(idx, impure->irsb_nav_data,
-						impure->irsb_nav_length, &key, 0);
+			/* maintain the running key value and compare it with the stored value */
 
-			// if the keys are equal, return this node even if it is just a duplicate node;
-			// duplicate nodes that have already been returned will be filtered out at a 
-			// higher level by checking the sparse bit map of records already returned, and
-			// duplicate nodes that were inserted before the stored node can be
-			// safely returned since their position in the index is arbitrary
+			if ( (l = BTN_LENGTH(node)) ) {
+				p = key.key_data + BTN_PREFIX(node);
+				q = BTN_DATA(node);
+				do
+					*p++ = *q++;
+				while (--l);
+			}
+			key.key_length = BTN_LENGTH(node) + BTN_PREFIX(node);
+			result =
+				compare_keys(idx, impure->irsb_nav_data,
+							 impure->irsb_nav_length, &key, FALSE);
+
+			/* if the keys are equal, return this node even if it is just a duplicate node;
+			   duplicate nodes that have already been returned will be filtered out at a 
+			   higher level by checking the sparse bit map of records already returned, and
+			   duplicate nodes that were inserted before the stored node can be
+			   safely returned since their position in the index is arbitrary */
+
 			if (!result) {
-				*return_pointer = node.nodePointer;
-				if (node.recordNumber == impure->irsb_nav_number) {
-					return true;
-				}
-				else {
-					return false;
-				}
+				*return_node = node;
+				if (number == impure->irsb_nav_number)
+					return TRUE;
+				else
+					return FALSE;
 			}
 
-			// if the stored key is less than the current key, then the stored key
-			// has been deleted from the index and we should just return the next 
-			// key after it
+			/* if the stored key is less than the current key, then the stored key
+			   has been deleted from the index and we should just return the next 
+			   key after it */
+
 			if (result < 0) {
-				*return_pointer = node.nodePointer;
-				return false;
+				*return_node = node;
+				return FALSE;
 			}
-
 		}
-	}
 }
 
 
-static UCHAR* get_position(
-						thread_db* tdbb,
-						RecordSource* rsb,
+static BTN get_position(
+						TDBB tdbb,
+						RSB rsb,
 						IRSB_NAV impure,
 						WIN * window,
-						RSE_GET_MODE direction, btree_exp** expanded_node)
+						RSE_GET_MODE direction, BTX * expanded_node)
 {
 /**************************************
  *
@@ -767,116 +1493,111 @@ static UCHAR* get_position(
  *	any chance the page has changed, we need to resynch.
  *
  **************************************/
+	SLONG incarnation;
+	BTR page;
+	BTN node;
+	EXP expanded_page = NULL;
+	BOOLEAN found;
+
 	SET_TDBB(tdbb);
 
-	// If this is the first time, start at the beginning (or the end)
-#ifdef SCROLLABLE_CURSORS
-	if (!window->win_page.getPageNum() || impure->irsb_flags & (irsb_bof | irsb_eof))
-#else
-	if (!window->win_page.getPageNum())
-#endif
-	{
+/* If this is the first time, start at the beginning (or the end) */
+
+	if (!window->win_page || impure->irsb_flags & (irsb_bof | irsb_eof))
 		return nav_open(tdbb, rsb, impure, window, direction, expanded_node);
-	}
 
-	exp_index_buf* expanded_page = NULL;
+#ifdef PC_ENGINE
+/* if we are on a forced crack, don't really get the next node in 
+   the forward direction, since we are really supposed to be on a
+   position before the current node */
 
-	// Re-fetch page and get incarnation counter
-	Ods::btree_page* page = (Ods::btree_page*) CCH_FETCH(tdbb, window, LCK_read, pag_index);
+	if ((impure->irsb_flags & irsb_forced_crack)
+		&& (direction == RSE_get_forward))
+		direction = RSE_get_current;
+#endif
+
+/* Re-fetch page and get incarnation counter */
+
+	page = (BTR) CCH_FETCH(tdbb, window, LCK_read, pag_index);
 
 #ifdef SCROLLABLE_CURSORS
-	// we must ensure that if we are going backwards, we always 
-	// have an expanded buffer (and a valid position on that page)
-	if (direction == RSE_get_backward) {
+/* we must ensure that if we are going backwards, we always 
+   have an expanded buffer (and a valid position on that page) */
+
+	if (direction == RSE_get_backward)
 		NAV_expand_index(window, impure);
-	}
 	expanded_page = window->win_expanded_buffer;
 #endif
 
-	UCHAR* pointer = 0;
-	const UCHAR flags = page->btr_header.pag_flags;
-	const SLONG incarnation = CCH_get_incarnation(window);
-	Ods::IndexNode node;
+	incarnation = CCH_get_incarnation(window);
 	if (incarnation == impure->irsb_nav_incarnation) {
-		pointer = ((UCHAR*) page + impure->irsb_nav_offset);
-		if (!expanded_page) {		
-			// theoretically impossible
+		node = (BTN) ((UCHAR *) page + impure->irsb_nav_offset);
+		if (!expanded_page)		/* theoretically impossible */
 			*expanded_node = NULL;
-		}
-		else if (impure->irsb_nav_expanded_offset < 0) {
-			// position unknown or invalid 
-			*expanded_node = find_current(expanded_page, page, pointer);
-		}
-		else {
-			*expanded_node = (btree_exp*) ((UCHAR*) expanded_page +
-				impure->irsb_nav_expanded_offset);
-		}
-
-		// The new way of doing things is to have the current
-		// nav_offset be the last node fetched.  Go forward or
-		// backward from that point accordingly.
-#ifdef SCROLLABLE_CURSORS
-		if (direction == RSE_get_backward) {
-			pointer = BTreeNode::previousNode(&node, pointer, flags, expanded_node);
-			//node = (btree_nod*) BTR_previous_node( (UCHAR*)node, expanded_node);
-		}
+		else if (impure->irsb_nav_expanded_offset < 0)	/* position unknown or invalid */
+			*expanded_node = find_current(expanded_page, page, node);
 		else
-#endif
-			if (direction == RSE_get_forward) {
-			pointer = BTreeNode::nextNode(&node, pointer, flags, expanded_node);
-		}
-		return pointer;
+			*expanded_node =
+				(BTX) ((UCHAR *) expanded_page +
+					   impure->irsb_nav_expanded_offset);
+
+		/* The new way of doing things is to have the current
+		   nav_offset be the last node fetched.  Go forward or
+		   backward from that point accordingly. */
+
+		if (direction == RSE_get_backward)
+			node = BTR_previous_node(node, expanded_node);
+		else if (direction == RSE_get_forward)
+			node = BTR_next_node(node, expanded_node);
+		return node;
 	}
 
-	// Page is presumably changed.  If there is a previous
-	// stored position in the page, go back to it if possible.
+/* Page is presumably changed.  If there is a previous
+   stored position in the page, go back to it if possible. */
+
 	CCH_RELEASE(tdbb, window);
-	if (!impure->irsb_nav_page) {
+	if (!impure->irsb_nav_page)
 		return nav_open(tdbb, rsb, impure, window, direction, expanded_node);
-	}
 
-	const bool found = find_saved_node(rsb, impure, window, &pointer);
-	page = (Ods::btree_page*) window->win_buffer;
-	if (pointer) {
-		*expanded_node = find_current(window->win_expanded_buffer, page, pointer);
-#ifdef SCROLLABLE_CURSORS
-		if (direction == RSE_get_backward) {
-			pointer = BTreeNode::previousNode(&node, pointer, flags, expanded_node);
-			//node = (btree_nod*) BTR_previous_node((UCHAR*) node, expanded_node);
-		}
-		else
-#endif
-			if (direction == RSE_get_forward && found) {
-			// in the forward case, seek to the next node only if we found
-			// the actual node on page; if we did not find it, we are already
-			// at the next node (such as when the node is garbage collected)
-			pointer = BTreeNode::nextNode(&node, pointer, flags, expanded_node);
-		}
-		return pointer;
+	found = find_saved_node(rsb, impure, window, &node);
+	page = (BTR) window->win_buffer;
+	if (node) {
+		*expanded_node =
+			find_current(window->win_expanded_buffer, page, node);
+		if (direction == RSE_get_backward)
+			node = BTR_previous_node(node, expanded_node);
+
+		/* in the forward case, seek to the next node only if we found
+		   the actual node on page; if we did not find it, we are already
+		   at the next node (such as when the node is garbage collected) */
+
+		else if (direction == RSE_get_forward && found)
+			node = BTR_next_node(node, expanded_node);
+		return node;
 	}
 
 #ifdef SCROLLABLE_CURSORS
-	// As a last resort, return the first (or last if backwards) 
-	// node on the page.  The sparse bitmap will prevent us from 
-	// seeing records we have already visited before.
+/* As a last resort, return the first (or last if backwards) 
+   node on the page.  The sparse bitmap will prevent us from 
+   seeing records we have already visited before. */
+
 	if (direction == RSE_get_backward) {
 		expanded_page = NAV_expand_index(window, 0);
 		return BTR_last_node(page, expanded_page, expanded_node);
 	}
 
-	if (expanded_page = window->win_expanded_buffer) {
-		*expanded_node = (btree_exp*) expanded_page->exp_nodes;
-	}
+	if (expanded_page = window->win_expanded_buffer)
+		*expanded_node = (BTX) expanded_page->exp_nodes;
 #endif
 
-	return BTreeNode::getPointerFirstNode(page);
+	return (BTN) page->btr_nodes;
 }
 
 
-static bool get_record(
-						  RecordSource* rsb,
+static BOOLEAN get_record(
+						  RSB rsb,
 						  IRSB_NAV impure,
-						  record_param* rpb, temporary_key* key, bool inhibit_cleanup)
+						  RPB * rpb, KEY * key, BOOLEAN inhibit_cleanup)
 {
 /**************************************
  *
@@ -886,69 +1607,88 @@ static bool get_record(
  *
  * Functional description
  *	Get the record indicated by the passed rpb.
+ *	This routine must set or clear the CRACK flag.
  *
  **************************************/
-	thread_db* tdbb = JRD_get_thread_data();
-	jrd_req* request = tdbb->getRequest();
-	index_desc* idx = (index_desc*) ((SCHAR*) impure + (IPTR) rsb->rsb_arg[RSB_NAV_idx_offset]);
+	TDBB tdbb;
+	JRD_REQ request;
+	IDX *idx;
+	KEY value;
+	USHORT old_att_flags;
 
-	ULONG old_att_flags = 0;
-	bool result = false;
+	tdbb = GET_THREAD_DATA;
+	request = tdbb->tdbb_request;
+	idx =
+		(IDX *) ((SCHAR *) impure + (SLONG) rsb->rsb_arg[RSB_NAV_idx_offset]);
+
+	BOOLEAN result;
 
 	try {
 
 	if (inhibit_cleanup) {
-		// Inhibit garbage collection & other housekeeping - 
-		// to prevent a deadlock when we visit the record.
-		// There are cases when we are called here and have a window locked 
-		// HACK for bug 7041
+		/* Inhibit garbage collection & other housekeeping - 
+		 * to prevent a deadlock when we visit the record.
+		 * There are cases when we are called here and have a window locked 
+		 * HACK for bug 7041
+		 */
 
-		old_att_flags = (tdbb->getAttachment()->att_flags & ATT_no_cleanup);
-		tdbb->getAttachment()->att_flags |= ATT_no_cleanup;	// HACK
+		old_att_flags =
+			static_cast<USHORT>(tdbb->tdbb_attachment->att_flags & ATT_no_cleanup);
+		tdbb->tdbb_attachment->att_flags |= ATT_no_cleanup;	/* HACK */
 	}
 
-#ifdef SCROLLABLE_CURSORS
-	// the attempt to get a record, whether successful or not, takes
-	// us off bof or eof (otherwise we will keep trying to retrieve
-	// the first record)
+/* the attempt to get a record, whether successful or not, takes
+   us off bof or eof (otherwise we will keep trying to retrieve
+   the first record) */
 
 	impure->irsb_flags &= ~(irsb_bof | irsb_eof);
-#endif
 
 	result =
 		VIO_get(tdbb,
 				rpb,
 				rsb,
 				request->req_transaction,
-				request->req_pool);
-
-	temporary_key value;
+				reinterpret_cast<blk*>(request->req_pool));
 	if (result)
 	{
-		BTR_key(tdbb, rpb->rpb_relation, rpb->rpb_record,
-				reinterpret_cast<index_desc*>((SCHAR*) impure +
-					(IPTR) rsb->rsb_arg[RSB_NAV_idx_offset]),
-				&value,	0, false);
-		if (compare_keys(idx, key->key_data, key->key_length, &value, 0)) {
-			result = false;
-		} 
-		else {
-			// mark in the navigational bitmap that we have visited this record
-			RBM_SET(tdbb->getDefaultPool(), &impure->irsb_nav_records_visited, rpb->rpb_number.getValue());
+		BTR_key(tdbb,
+				rpb->rpb_relation,
+				rpb->rpb_record,
+				reinterpret_cast <
+				struct idx *>((SCHAR *) impure +
+							  (SLONG) rsb->rsb_arg[RSB_NAV_idx_offset]),
+				&value,
+				0);
+		if (compare_keys(idx, key->key_data, key->key_length, &value, FALSE)) {
+			result = FALSE;
+		} else {
+			/* the successful retrieval of a record
+			   means we are no longer on a crack */
+
+			RSE_MARK_CRACK(tdbb, rsb, 0);
+
+			/* mark in the navigational bitmap that we have visited this record */
+
+			SBM_set(tdbb, &impure->irsb_nav_records_visited, rpb->rpb_number);
 		}
 	}
 
+	if (!result) {
+		RSE_MARK_CRACK(tdbb, rsb, irsb_crack);
+	}
+
 	if (inhibit_cleanup) {
-		tdbb->getAttachment()->att_flags &= ~ATT_no_cleanup;
-		tdbb->getAttachment()->att_flags |= old_att_flags;
+		tdbb->tdbb_attachment->att_flags &= ~ATT_no_cleanup;
+		tdbb->tdbb_attachment->att_flags |= (old_att_flags & ATT_no_cleanup);
 	}
 
 	}	// try
-	catch (const Firebird::Exception&) {
-		// Cleanup the HACK should there be an error
-		tdbb->getAttachment()->att_flags &= ~ATT_no_cleanup;
-		tdbb->getAttachment()->att_flags |= old_att_flags;
-		throw;
+	catch (const std::exception&) {
+		/* Cleanup the HACK should there be an error */
+		tdbb->tdbb_attachment->att_flags &= ~ATT_no_cleanup;
+		tdbb->tdbb_attachment->att_flags |=
+			(old_att_flags & ATT_no_cleanup);
+		Firebird::status_exception::raise(-1);
 	}
 
 	return result;
@@ -967,6 +1707,7 @@ static void init_fetch(IRSB_NAV impure)
  *	Initialize for a fetch operation.
  *
  **************************************/
+
 	if (impure->irsb_flags & irsb_first) {
 		impure->irsb_flags &= ~irsb_first;
 		impure->irsb_nav_page = 0;
@@ -974,11 +1715,11 @@ static void init_fetch(IRSB_NAV impure)
 }
 
 
-static UCHAR* nav_open(
-					thread_db* tdbb,
-					RecordSource* rsb,
+static BTN nav_open(
+					TDBB tdbb,
+					RSB rsb,
 					IRSB_NAV impure,
-					WIN * window, RSE_GET_MODE direction, btree_exp** expanded_node)
+					WIN * window, RSE_GET_MODE direction, BTX * expanded_node)
 {
 /**************************************
  *
@@ -990,42 +1731,41 @@ static UCHAR* nav_open(
  *	Open a stream to walk an index.
  *
  **************************************/
+	IRB retrieval;
+	KEY lower, upper, *limit_ptr;
+	BTR page;
+	//EXP expanded_page;
+	BTN node;
+	JRD_NOD retrieval_node;
+	IDX *idx;
+
 	SET_TDBB(tdbb);
 
-	// initialize for a retrieval
-	if (!setup_bitmaps(rsb, impure))
-		return NULL;
+/* initialize for a retrieval */
 
+	setup_bitmaps(rsb, impure);
 	impure->irsb_nav_page = 0;
 	impure->irsb_nav_length = 0;
 
-#ifdef SCROLLABLE_CURSORS
-	if (direction == RSE_get_forward) {
+	if (direction == RSE_get_forward)
 		impure->irsb_flags |= irsb_bof;
-	}
-	else if (direction == RSE_get_backward) {
+	else if (direction == RSE_get_backward)
 		impure->irsb_flags |= irsb_eof;
-	}
-#endif
 
-	// Find the starting leaf page
-	jrd_nod* retrieval_node = (jrd_nod*) rsb->rsb_arg[RSB_NAV_index];
-	IndexRetrieval* retrieval =
-		(IndexRetrieval*) retrieval_node->nod_arg[e_idx_retrieval];
-	index_desc* idx = (index_desc*) ((SCHAR *) impure + (IPTR) rsb->rsb_arg[RSB_NAV_idx_offset]);
-	temporary_key lower, upper;
-#ifdef SCROLLABLE_CURSORS
-	Ods::btree_page* page = BTR_find_page(tdbb, retrieval, window, idx, &lower,
-		&upper, (direction == RSE_get_backward));
-#else
-	Ods::btree_page* page = BTR_find_page(tdbb, retrieval, window, idx, &lower,
-		&upper, false);
-#endif
-	impure->irsb_nav_page = window->win_page.getPageNum();
+/* Find the starting leaf page */
 
+	retrieval_node = (JRD_NOD) rsb->rsb_arg[RSB_NAV_index];
+	retrieval = (IRB) retrieval_node->nod_arg[e_idx_retrieval];
+	idx =
+		(IDX *) ((SCHAR *) impure + (SLONG) rsb->rsb_arg[RSB_NAV_idx_offset]);
+	page =
+		BTR_find_page(tdbb, retrieval, window, idx, &lower, &upper,
+					  (direction == RSE_get_backward));
+	impure->irsb_nav_page = window->win_page;
 
 #ifdef SCROLLABLE_CURSORS
-	// store the upper and lower bounds for the search in the impure area for the rsb
+/* store the upper and lower bounds for the search in the impure area for the rsb */
+
 	if (retrieval->irb_lower_count) {
 		impure->irsb_nav_lower_length = lower.key_length;
 		MOVE_FAST(lower.key_data,
@@ -1042,8 +1782,9 @@ static UCHAR* nav_open(
 				  upper.key_length);
 	}
 
-	// find the limit the search needs to begin with, if any
-	temporary_key* limit_ptr = NULL;
+/* find the limit the search needs to begin with, if any */
+
+	limit_ptr = NULL;
 	if (direction == RSE_get_forward) {
 		if (retrieval->irb_lower_count)
 			limit_ptr = &lower;
@@ -1053,92 +1794,88 @@ static UCHAR* nav_open(
 			limit_ptr = &upper;
 	}
 #else
+/* find the upper limit for the search (or lower for backwards) */
 
-	// find the upper limit for the search (or lower for backwards)
-	temporary_key* limit_ptr = NULL;
+	limit_ptr = NULL;
 	if (direction == RSE_get_forward) {
 		if (retrieval->irb_upper_count) {
 			impure->irsb_nav_upper_length = upper.key_length;
-			MOVE_FAST(upper.key_data, (impure->irsb_nav_data +
-				(IPTR) rsb->rsb_arg[RSB_NAV_key_length]),
-				upper.key_length);
+			MOVE_FAST(upper.key_data,
+					  (impure->irsb_nav_data +
+					   (SLONG) rsb->rsb_arg[RSB_NAV_key_length]),
+					  upper.key_length);
 		}
-		if (retrieval->irb_lower_count) {
+		if (retrieval->irb_lower_count)
 			limit_ptr = &lower;
-		}
 	}
 	else {
 		if (retrieval->irb_lower_count) {
 			impure->irsb_nav_lower_length = lower.key_length;
-			MOVE_FAST(lower.key_data, (impure->irsb_nav_data +
-				(IPTR) rsb->rsb_arg[RSB_NAV_key_length]),
-				lower.key_length);
+			MOVE_FAST(lower.key_data,
+					  (impure->irsb_nav_data +
+					   (SLONG) rsb->rsb_arg[RSB_NAV_key_length]),
+					  lower.key_length);
 		}
-		if (retrieval->irb_upper_count) {
+		if (retrieval->irb_upper_count)
 			limit_ptr = &upper;
-		}
 	}
 #endif
 
-	// If there is a starting descriptor, search down index to starting position.
-	// This may involve sibling buckets if splits are in progress.  If there 
-	// isn't a starting descriptor, walk down the left side of the index (or the
-	// right side if backwards).
+/* If there is a starting descriptor, search down index to starting position.
+   This may involve sibling buckets if splits are in progress.  If there 
+   isn't a starting descriptor, walk down the left side of the index (or the
+   right side if backwards). */
 
-	UCHAR* pointer = NULL;
 	if (limit_ptr) {
-		
-		// If END_BUCKET is reached BTR_find_leaf will return NULL
-		while (!(pointer = BTR_find_leaf(page, limit_ptr, impure->irsb_nav_data,
-									  0, (idx->idx_flags & idx_descending) != 0, true)))
-		{
-			  page = (Ods::btree_page*) CCH_HANDOFF(tdbb, window, page->btr_sibling,
-				  LCK_read, pag_index);
-		}
+		while (!(node = BTR_find_leaf(page, limit_ptr, impure->irsb_nav_data,
+									  0, idx->idx_flags & idx_descending,
+									  TRUE))
+			   || (BTR_get_quad(reinterpret_cast < char *>(BTN_NUMBER(node)))
+				   == END_BUCKET))
+			  page =
+				(BTR) CCH_HANDOFF(tdbb, window, page->btr_sibling, LCK_read,
+								  pag_index);
 
-		Ods::IndexNode node;
-		BTreeNode::readNode(&node, pointer, page->btr_header.pag_flags, true);
-
-		impure->irsb_nav_length = node.prefix + node.length;
+		impure->irsb_nav_length = BTN_PREFIX(node) + BTN_LENGTH(node);
 
 #ifdef SCROLLABLE_CURSORS
-		// ensure that if we are going backward, there is an expanded page
+		/* ensure that if we are going backward, there is an expanded page */
+
 		if (direction == RSE_get_backward && !window->win_expanded_buffer)
 			NAV_expand_index(window, 0);
 
-		// now find our current location on the expanded page
-		if (expanded_node && (expanded_page = window->win_expanded_buffer)) {
-			*expanded_node = find_current(expanded_page, page, pointer);
-		}
+		/* now find our current location on the expanded page */
+
+		if (expanded_node && (expanded_page = window->win_expanded_buffer))
+			*expanded_node = find_current(expanded_page, page, node);
 #endif
 	}
 #ifdef SCROLLABLE_CURSORS
 	else if (direction == RSE_get_backward) {
 		expanded_page = NAV_expand_index(window, 0);
-		pointer = BTR_last_node(page, expanded_page, expanded_node);
+		node = BTR_last_node(page, expanded_page, expanded_node);
 	}
 #endif
 	else {
-
-		pointer = BTreeNode::getPointerFirstNode(page);
-
+		node = (BTN) page->btr_nodes;
 #ifdef SCROLLABLE_CURSORS
-		if (expanded_node && (expanded_page = window->win_expanded_buffer)) {
-			*expanded_node = (btree_exp*) expanded_page->exp_nodes;
-		}
-		else {
+		if (expanded_node && (expanded_page = window->win_expanded_buffer))
+			*expanded_node = (BTX) expanded_page->exp_nodes;
+		else
 			*expanded_node = NULL;
-		}
 #endif
 	}
 
-	return pointer;
+	return node;
 }
 
 
-static void set_position(IRSB_NAV impure, record_param* rpb, WIN* window,
-				const UCHAR* pointer, btree_exp* expanded_node,
-				const UCHAR* key_data, USHORT length)
+static void set_position(
+						 IRSB_NAV impure,
+						 RPB * rpb,
+						 WIN * window,
+						 BTN node,
+						 BTX expanded_node, UCHAR * key_data, USHORT length)
 {
 /**************************************
  *
@@ -1153,31 +1890,32 @@ static void set_position(IRSB_NAV impure, record_param* rpb, WIN* window,
  *
  **************************************/
 
-	// We can actually set position without having a data page
-	// fetched; if not, just set the incarnation to the lowest possible
+/* We can actually set position without having a data page
+   fetched; if not, just set the incarnation to the lowest possible */
+
 	impure->irsb_nav_incarnation = CCH_get_incarnation(window);
-	impure->irsb_nav_page = window->win_page.getPageNum();
+	impure->irsb_nav_page = window->win_page;
 	impure->irsb_nav_number = rpb->rpb_number;
 
-	// save the current key value if it hasn't already been saved 
+/* save the current key value if it hasn't already been saved */
+
 	if (key_data) {
 		impure->irsb_nav_length = length;
 		MOVE_FAST(key_data, impure->irsb_nav_data, length);
 	}
 
-	// setup the offsets into the current index page and expanded index buffer
-	impure->irsb_nav_offset = pointer - (UCHAR*) window->win_buffer;
-	if (window->win_expanded_buffer) {
+/* setup the offsets into the current index page and expanded index buffer */
+
+	impure->irsb_nav_offset = (UCHAR *) node - (UCHAR *) window->win_buffer;
+	if (window->win_expanded_buffer)
 		impure->irsb_nav_expanded_offset =
-			(UCHAR*) expanded_node - (UCHAR*) window->win_expanded_buffer;
-	} 
-	else {
+			(UCHAR *) expanded_node - (UCHAR *) window->win_expanded_buffer;
+	else
 		impure->irsb_nav_expanded_offset = -1;
-	}
 }
 
 
-static bool setup_bitmaps(RecordSource* rsb, IRSB_NAV impure)
+static void setup_bitmaps(RSB rsb, IRSB_NAV impure)
 {
 /**************************************
  *
@@ -1190,26 +1928,31 @@ static bool setup_bitmaps(RecordSource* rsb, IRSB_NAV impure)
  *	with a stream.
  *
  **************************************/
-	thread_db* tdbb = JRD_get_thread_data();
+	TDBB tdbb;
 
-	// Start a bitmap which tells us we have already visited
-	// this record; this is to handle the case where there is more
-	// than one leaf node reference to the same record number; the
-	// bitmap allows us to filter out the multiple references.
-	RecordBitmap::reset(impure->irsb_nav_records_visited);
+	tdbb = GET_THREAD_DATA;
 
-	// the first time we open the stream, compute a bitmap
-	// for the inversion tree--this may cause problems for
-	// read-committed transactions since they will get one
-	// view of the database when the stream is opened
+/* Start a bitmap which tells us we have already visited
+   this record; this is to handle the case where there is more
+   than one leaf node reference to the same record number; the
+   bitmap allows us to filter out the multiple references. */
+
+	SBM_reset(&impure->irsb_nav_records_visited);
+
+/* the first time we open the stream, compute a bitmap
+   for the inversion tree--this may cause problems for
+   read-committed transactions since they will get one
+   view of the database when the stream is opened */
+
 	if (rsb->rsb_arg[RSB_NAV_inversion]) {
-		// There is no need to reset or release the bitmap, it is
-		// done in EVL_bitmap ().
+		/* There is no need to reset or release the bitmap, it is
+		 * done in EVL_bitmap ().
+		 */
+
 		impure->irsb_nav_bitmap = EVL_bitmap(tdbb,
-				reinterpret_cast<jrd_nod*>(rsb->rsb_arg[RSB_NAV_inversion]), NULL);
-		return (*impure->irsb_nav_bitmap != NULL);
+											 reinterpret_cast <
+											 jrd_nod *
+											 >(rsb->rsb_arg
+											   [RSB_NAV_inversion]));
 	}
-
-	return true;
 }
-

@@ -27,10 +27,10 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.client.gdef,v 1.14 2005-12-20 12:14:52 alexpeshkoff Exp $
+#  $Id: Makefile.in.client.gdef,v 1.5.2.3 2006-11-05 14:37:28 alexpeshkoff Exp $
 #
 ROOT=..
-ObjModuleType=std
+ObjModuleName=client.gdef
 
 include     $(ROOT)/gen/make.defaults
 include     $(ROOT)/gen/make.platform
@@ -43,30 +43,29 @@ unexport ISC_USER
 unexport ISC_PASSWORD
 
 
-GDEF_Other_Sources = gpre/pretty.cpp jrd/isc_file.cpp common/config/config.cpp \
-common/config/dir_list.cpp common/config/config_file.cpp $(OS_SPECIFIC_Sources) \
-jrd/isc.cpp
+GDEF_Other_Sources = common/classes/alloc.cpp common/fb_exception.cpp \
+gpre/pretty.cpp jrd/isc_file.cpp common/config/config.cpp common/config/dir_list.cpp \
+common/config/config_file.cpp $(OS_SPECIFIC_Sources)
 
 GDEF_Files=	exe.epp extract.epp \
 			ddl.cpp expand.cpp expr.cpp generate.cpp \
 			hsh.cpp lex.cpp parse.cpp trn.cpp
 
 GDEF_Sources = $(addprefix dudley/, $(GDEF_Files)) $(GDEF_Other_Sources)
-GDEF_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(GDEF_Sources)))) $(CLUMPLETS_Objects)
+GDEF_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(GDEF_Sources))))
 
-AllObjects = $(GDEF_Objects) $(CLUMPLETS_Objects)
-Dependencies = $(AllObjects:.o=.d)
+AllObjects = $(GDEF_Objects)
+Dependencies=$(AllObjects:.o=.$(DEP_EXT))
 
 
 .PHONY: all gdef
 
 all:	gdef 
 
-gdef:   $(GDEF)
+gdef:   $(BIN)/gdef
 
-$(GDEF): $(GDEF_Objects) $(LIBFBCLIENT_SO) $(COMMON_Objects)
-	$(LD) $(LINK_OPTS) $(GDEF_Objects) $(COMMON_Objects) -o $@ -L$(LIB) -lfbclient \
-$(LINK_LIBS) @PTHREAD_CFLAGS@ @PTHREAD_LIBS@
+$(BIN)/gdef: $(GDEF_Objects) $(LIBFBCLIENT_SO)  
+	$(LD) $(LINK_OPTS) $(GDEF_Objects) -o $@ $(FBCLIENT_LINK) $(LINK_LIBS)
 
 
 

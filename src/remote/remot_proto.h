@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Remote Interface/Server
  *	MODULE:		remot_proto.h
- *	DESCRIPTION:	Prototpe header file for remote.cpp
+ *	DESCRIPTION:	Prototpe header file for remot.c
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -21,24 +21,30 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef REMOTE_REMOT_PROTO_H
-#define REMOTE_REMOT_PROTO_H
+#ifndef _REMOTE_REMOT_PROTO_H_
+#define _REMOTE_REMOT_PROTO_H_
 
-struct blk;
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-void		REMOTE_cleanup_transaction (struct rtr *);
-ULONG		REMOTE_compute_batch_size (rem_port*, USHORT, P_OP, const rem_fmt*);
-void		REMOTE_get_timeout_params (rem_port*, const UCHAR*, USHORT);
-struct rrq*	REMOTE_find_request (struct rrq *, USHORT);
-void		REMOTE_free_packet (rem_port*, struct packet *, bool = false);
-struct rem_str*	REMOTE_make_string (const SCHAR*);
-void		REMOTE_release_messages (struct message *);
-void		REMOTE_release_request (struct rrq *);
-void		REMOTE_reset_request (struct rrq *, struct message *);
-void		REMOTE_reset_statement (struct rsr *);
-void		REMOTE_save_status_strings (ISC_STATUS *);
-OBJCT		REMOTE_set_object (rem_port*, blk*, OBJCT);
-bool_t		REMOTE_getbytes (XDR*, SCHAR*, u_int);
 
-#endif // REMOTE_REMOT_PROTO_H
+extern void DLL_EXPORT 	REMOTE_cleanup_transaction (struct rtr *);
+extern ULONG		REMOTE_compute_batch_size (struct port *, USHORT, P_OP, FMT);
+extern void DLL_EXPORT  REMOTE_get_timeout_params (struct port *, UCHAR *, USHORT);
+extern struct rrq	* DLL_EXPORT REMOTE_find_request (struct rrq *, USHORT);
+extern void DLL_EXPORT 	REMOTE_free_packet (struct port *, struct packet *);
+extern struct str	* DLL_EXPORT REMOTE_make_string (SCHAR *);
+extern void DLL_EXPORT	REMOTE_release_messages (struct message *);
+extern void DLL_EXPORT 	REMOTE_release_request (struct rrq *);
+extern void DLL_EXPORT	REMOTE_reset_request (struct rrq *, struct message *);
+extern void DLL_EXPORT	REMOTE_reset_statement (struct rsr *);
+extern void		REMOTE_save_status_strings (ISC_STATUS *);
+extern OBJCT DLL_EXPORT REMOTE_set_object (struct port *, struct blk *, OBJCT);
 
+#ifdef __cplusplus
+}	/* extern "C" */
+#endif
+
+
+#endif /* _REMOTE_REMOT_PROTO_H */ 

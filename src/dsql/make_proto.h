@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	Dynamic SQL runtime support
  *	MODULE:		make_proto.h
- *	DESCRIPTION:	Prototype Header file for make.cpp
+ *	DESCRIPTION:	Prototype Header file for make.c
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -23,30 +23,28 @@
  * 2002-07-20 Arno Brinkman: Added MAKE_desc_from_list
  */
 
-#ifndef DSQL_MAKE_PROTO_H
-#define DSQL_MAKE_PROTO_H
+#ifndef _DSQL_MAKE_PROTO_H_
+#define _DSQL_MAKE_PROTO_H_
 
 #include "../dsql/sym.h"
 
-dsql_nod* MAKE_const_slong(SLONG);
-dsql_nod* MAKE_constant(class dsql_str*, dsql_constant_type);
-dsql_nod* MAKE_str_constant(class dsql_str*, SSHORT);
-class dsql_str* MAKE_cstring(const char*);
-void MAKE_desc(dsql_req*, dsc*, dsql_nod*, dsql_nod*);
-void MAKE_desc_from_field(dsc*, const class dsql_fld*);
-void MAKE_desc_from_list(dsql_req*, dsc*, dsql_nod*, dsql_nod*, const TEXT*);
-dsql_nod* MAKE_field(class dsql_ctx*, class dsql_fld*, dsql_nod*);
-dsql_nod* MAKE_list(DsqlNodStack&);
-dsql_nod* MAKE_node(enum nod_t, int);
-class dsql_par* MAKE_parameter(class dsql_msg* , bool, bool, USHORT, const dsql_nod*);
-class dsql_str* MAKE_string(const char* , int);
-dsql_sym* MAKE_symbol(dsql_dbb*, const TEXT*, USHORT,
-						   enum sym_type, class dsql_req*);
-class dsql_str* MAKE_tagged_string(const char* str, size_t length, const char* charset);
-dsql_nod* MAKE_trigger_type(dsql_nod*, dsql_nod*);
-dsql_nod* MAKE_variable(class dsql_fld*, const TEXT*, USHORT, USHORT,
+struct dsql_nod* MAKE_constant(class str* , int);
+struct dsql_nod* MAKE_str_constant(class str* , SSHORT);
+class str* MAKE_cstring(const char*);
+void MAKE_desc(struct dsc* , struct dsql_nod*);
+void MAKE_desc_from_field(struct dsc* , class dsql_fld*);
+void MAKE_desc_from_list(struct dsc* , struct dsql_nod*, const TEXT*);
+struct dsql_nod* MAKE_field(class dsql_ctx* , class dsql_fld* , struct dsql_nod*);
+struct dsql_nod* MAKE_list(class dsql_lls*);
+struct dsql_nod* MAKE_node(ENUM nod_t, int);
+class par* MAKE_parameter(class dsql_msg* , USHORT, USHORT, USHORT);
+class str* MAKE_string(const char* , int);
+struct sym* MAKE_symbol(class dbb* , const TEXT* , USHORT,
+						   ENUM sym_type, class dsql_req*);
+class str* MAKE_tagged_string(const char* str, size_t length, const char* charset);
+struct dsql_nod* MAKE_trigger_type(struct dsql_nod*, struct dsql_nod*);
+struct dsql_nod* MAKE_variable(class dsql_fld* , const TEXT* , USHORT, USHORT,
 								 USHORT, USHORT);
 
 
-#endif // DSQL_MAKE_PROTO_H
-
+#endif /* _DSQL_MAKE_PROTO_H_ */

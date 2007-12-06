@@ -13,60 +13,40 @@
 # Copyright (C) Inprise Corporation.
 #
 # All Rights Reserved.
-# Contributor(s): Blas Rodriguez Somoza
-# Start of file prefix.mingw:	$(VERSION)	$(PLATFORM)
-#
-# 2003-Sep-27 BRS Removed IPSERVER after XNET is included
-# 
+# Contributor(s): ______________________________________.
+# Start of file prefix.win32:	$(VERSION)	$(PLATFORM)
 
-# -Wno-unused-variable is used due to unused gpre generated variables
-PROD_FLAGS=-O2  -march=i586 -DMINGW -mno-cygwin -Wall -Wshadow -Wundef -pedantic -Wno-long-long -Wno-unused-variable -Wno-sign-compare -Wno-parentheses -Wno-switch -fmessage-length=0 -Dlint -DWIN32_LEAN_AND_MEAN -MMD -mthreads
-DEV_FLAGS=-ggdb -march=i586 -DMINGW -mno-cygwin -Wall -Wshadow -Wundef -pedantic -Wno-long-long -Wno-unused-variable -Wno-sign-compare -Wno-parentheses -Wno-switch -fmessage-length=0 -Dlint -DWIN32_LEAN_AND_MEAN -MMD -mthreads
+PROD_FLAGS=-O2  -march=@CPU_TYPE@ -mcpu=@CPU_TYPE@ -DMINGW -mno-cygwin -Wall -Wno-unused-variable -Wno-unknown-pragmas -Wno-parentheses -Wno-switch -fmessage-length=0 -DIPSERVER -DMAXPATHLEN=255 -DWIN32_LEAN_AND_MEAN -MMD
+DEV_FLAGS=-ggdb -march=@CPU_TYPE@ -mcpu=@CPU_TYPE@ -DMINGW -mno-cygwin -Wall -Wno-unused-variable -Wno-unknown-pragmas -Wno-parentheses -Wno-switch -fmessage-length=0 -DIPSERVER -DMAXPATHLEN=255 -DDEBUG_GDS_ALLOC -DWIN32_LEAN_AND_MEAN -MMD 
 
-PLATFORM_PATH=os/win32
+PLATFORM_PATH=jrd/os/win32
 
-JRDBOOT_Extra_Files=isc_sync.cpp ThreadData.cpp
+JRDBOOT_Extra_Files=isc_sync.cpp thd.cpp
 
 OS_SPECIFIC_Files=thd_priority.cpp
 
-OS_ServerFiles= os/win32/srvr_w32 os/win32/window.cpp os/win32/chop.cpp os/win32/property.cpp os/win32/ibconfig.cpp os/win32/cntl.cpp 
+OS_ServerFiles=srvr_w32 window.cpp chop.cpp property.cpp ibconfig.cpp cntl.cpp 
 
-# Override link command for implicit stdc++ linking
-LIB_LINK=$(LD)
-
-LIB_LINK_OPTIONS+=-Wl,--enable-stdcall-fixup
-
-# Strip symbols from release versions to decrease size
-ifeq ($(IsProdTypeBuild),Y)
-LINK_OPTS+=-Wl,-s
-LIB_LINK_OPTIONS+=-Wl,-s
-endif
-# Generation of fbclient_ms.lib
-LIB_LINK_IMPLIB:=-Wl,--out-implib,firebird/lib/fbclient_ms.lib
+LIB_LINK_OPTIONS:=-shared -Wl,--add-stdcall-alias
+LIB_LINK_RPATH:=-Wl,-rpath,
+LIB_LINK_SONAME:=-Wl,-soname,
 LIB_GUI:= -mwindows -lcomctl32 -lgdi32
+EMBED_UTIL_TARGETS:=gstat gsec fb_lock_print
+CLIENT_UTIL_TARGETS:=gstat gsec ibguard instsvc instreg fb_lock_print
+WIN_IPSERVER_Files:=ipserver.cpp alli.cpp
 
-EMBED_UTIL_TARGETS:=gstat gsec nbackup fb_lock_print
-CLIENT_UTIL_TARGETS:=gstat gsec instsvc instreg nbackup fb_lock_print
-
-Physical_IO_Module=os/win32/winnt.cpp
+Physical_IO_Module=winnt.cpp
 
 # Add resources to some files
 FilesToAddVersionInfo=$(LIBFBEMBED_SO) $(LIBFBCLIENT_SO) $(LIBFBINTL_SO) \
  $(GSTAT) $(GSEC) $(GFIX) $(QLI) $(ISQL) $(GBAK) $(GPRE)
 # TODO: guardians also must be here
 FilesToAddDialog=$(FB_SUPER_SERVER) $(FB_CLASSIC_SERVER)
-FilesToAddDialog2=$(IBGUARD)
 
-# Suppress 'lib'-prefix
-LIB_PREFIX=
+# Override library names to suppress 'lib'-prefix
+LIBFBINTL_SO := $(patsubst %libfbintl.dll,%fbintl.dll,$(LIBFBINTL_SO))
+ClientLibraryName := $(patsubst lib%,%,$(ClientLibraryName))
 
 # Override library names to suppress version suffix
 ClientLibraryNameFull := $(ClientLibraryName)
 ClientLibraryNameMajor := $(ClientLibraryName)
-
-# Looks like MinGW 3 does not support version scripts but support def-files
-LINK_FIREBIRD_SYMBOLS = $(BLD_ROOT)/win32/defs/fbclient_s.def $(BLD_ROOT)/win32/defs/fbclient.def
-
-# This is required for newly built executable to find newly built shared
-# libraries because on Win32 there is no such thing as LD_LIBRARY_PATH
-LIB=$(BIN)

@@ -738,6 +738,7 @@
 				F616C4490200B0CF01EF0ADE,
 				F616C4670200B0CF01EF0ADE,
 				F616C4920200B0CF01EF0ADE,
+				F616C5230200B0CF01EF0ADE,
 				F616C53A0200B0CF01EF0ADE,
 				F616C55E0200B0CF01EF0ADE,
 				F616C6FC0200B0D001EF0ADE,
@@ -1679,6 +1680,31 @@
 			path = exp_proto.h;
 			refType = 4;
 		};
+		F616C41F0200B0CF01EF0ADE = {
+			isa = PBXFileReference;
+			path = form.cpp;
+			refType = 4;
+		};
+		F616C4200200B0CF01EF0ADE = {
+			isa = PBXFileReference;
+			path = form.h;
+			refType = 4;
+		};
+		F616C4210200B0CF01EF0ADE = {
+			isa = PBXFileReference;
+			path = form__proto.h;
+			refType = 4;
+		};
+		F616C4220200B0CF01EF0ADE = {
+			isa = PBXFileReference;
+			path = form_proto.h;
+			refType = 4;
+		};
+		F616C4230200B0CF01EF0ADE = {
+			isa = PBXFileReference;
+			path = form_trn.cpp;
+			refType = 4;
+		};
 		F616C4240200B0CF01EF0ADE = {
 			isa = PBXFileReference;
 			path = ftn.cpp;
@@ -1777,6 +1803,11 @@
 		F616C4380200B0CF01EF0ADE = {
 			isa = PBXFileReference;
 			path = msc_proto.h;
+			refType = 4;
+		};
+		F616C4390200B0CF01EF0ADE = {
+			isa = PBXFileReference;
+			path = noform.cpp;
 			refType = 4;
 		};
 		F616C43A0200B0CF01EF0ADE = {
@@ -1956,6 +1987,11 @@
 			path = blrtable.h;
 			refType = 4;
 		};
+		F616C4570200B0CF01EF0ADE = {
+			isa = PBXFileReference;
+			path = codes.h;
+			refType = 4;
+		};
 		F616C4580200B0CF01EF0ADE = {
 			isa = PBXFileReference;
 			path = codetext.h;
@@ -2022,6 +2058,11 @@
 			);
 			isa = PBXGroup;
 			path = jrd;
+			refType = 4;
+		};
+		F616C4650200B0CF01EF0ADE = {
+			isa = PBXFileReference;
+			path = gds.h;
 			refType = 4;
 		};
 		F616C4660200B0CF01EF0ADE = {
@@ -3142,6 +3183,85 @@
 			path = undef.h;
 			refType = 4;
 		};
+		F616C5230200B0CF01EF0ADE = {
+			children = (
+				F616C5240200B0CF01EF0ADE,
+				F616C5250200B0CF01EF0ADE,
+				F616C5260200B0CF01EF0ADE,
+				F616C5270200B0CF01EF0ADE,
+				F616C5280200B0CF01EF0ADE,
+				F616C5290200B0CF01EF0ADE,
+				F616C52A0200B0CF01EF0ADE,
+				F616C52B0200B0CF01EF0ADE,
+				F616C52C0200B0CF01EF0ADE,
+				F616C52D0200B0CF01EF0ADE,
+				F616C52E0200B0CF01EF0ADE,
+				F616C52F0200B0CF01EF0ADE,
+			);
+			isa = PBXGroup;
+			path = ipserver;
+			refType = 4;
+		};
+		F616C5240200B0CF01EF0ADE = {
+			isa = PBXFileReference;
+			path = alli.cpp;
+			refType = 4;
+		};
+		F616C5250200B0CF01EF0ADE = {
+			isa = PBXFileReference;
+			path = alli_proto.h;
+			refType = 4;
+		};
+		F616C5260200B0CF01EF0ADE = {
+			isa = PBXFileReference;
+			path = blk.h;
+			refType = 4;
+		};
+		F616C5270200B0CF01EF0ADE = {
+			isa = PBXFileReference;
+			path = ipapi_proto.h;
+			refType = 4;
+		};
+		F616C5280200B0CF01EF0ADE = {
+			isa = PBXFileReference;
+			path = ipc.h;
+			refType = 4;
+		};
+		F616C5290200B0CF01EF0ADE = {
+			isa = PBXFileReference;
+			path = ipcevent.cpp;
+			refType = 4;
+		};
+		F616C52A0200B0CF01EF0ADE = {
+			isa = PBXFileReference;
+			path = ipcli_proto.h;
+			refType = 4;
+		};
+		F616C52B0200B0CF01EF0ADE = {
+			isa = PBXFileReference;
+			path = ipclient.cpp;
+			refType = 4;
+		};
+		F616C52C0200B0CF01EF0ADE = {
+			isa = PBXFileReference;
+			path = ipevt_proto.h;
+			refType = 4;
+		};
+		F616C52D0200B0CF01EF0ADE = {
+			isa = PBXFileReference;
+			path = ips.h;
+			refType = 4;
+		};
+		F616C52E0200B0CF01EF0ADE = {
+			isa = PBXFileReference;
+			path = ipserver.cpp;
+			refType = 4;
+		};
+		F616C52F0200B0CF01EF0ADE = {
+			isa = PBXFileReference;
+			path = ipsrv_proto.h;
+			refType = 4;
+		};
 		F616C53A0200B0CF01EF0ADE = {
 			children = (
 				F616C53C0200B0CF01EF0ADE,
@@ -3811,6 +3931,16 @@
 			path = blrtable.h;
 			refType = 4;
 		};
+		F616C5840200B0CF01EF0ADE = {
+			isa = PBXFileReference;
+			path = bookmark.cpp;
+			refType = 4;
+		};
+		F616C5850200B0CF01EF0ADE = {
+			isa = PBXFileReference;
+			path = bookmark.h;
+			refType = 4;
+		};
 		F616C5860200B0CF01EF0ADE = {
 			children = (
 				F616C5870200B0CF01EF0ADE,
@@ -3824,6 +3954,11 @@
 			);
 			isa = PBXGroup;
 			path = boot_codes;
+			refType = 4;
+		};
+		F616C5870200B0CF01EF0ADE = {
+			isa = PBXFileReference;
+			path = codes.h;
 			refType = 4;
 		};
 		F616C5880200B0CF01EF0ADE = {
@@ -4059,11 +4194,6 @@
 		F616C5B60200B0CF01EF0ADE = {
 			isa = PBXFileReference;
 			path = dsc.h;
-			refType = 4;
-		};
-		F616C5B60200B0CF01EF0ADE = {
-			isa = PBXFileReference;
-			path = dsc_pub.h;
 			refType = 4;
 		};
 		F616C5B70200B0CF01EF0ADE = {
@@ -4306,6 +4436,16 @@
 			path = gds.def;
 			refType = 4;
 		};
+		F616C5E70200B0CF01EF0ADE = {
+			isa = PBXFileReference;
+			path = gds.h;
+			refType = 4;
+		};
+		F616C5E80200B0CF01EF0ADE = {
+			isa = PBXFileReference;
+			path = gds.hxx;
+			refType = 4;
+		};
 		F616C5E90200B0CF01EF0ADE = {
 			isa = PBXFileReference;
 			path = gds.pas;
@@ -4371,6 +4511,11 @@
 			path = gdsentry.mar;
 			refType = 4;
 		};
+		F616C5F60200B0CF01EF0ADE = {
+			isa = PBXFileReference;
+			path = gdsold.h;
+			refType = 4;
+		};
 		F616C5F70200B0CF01EF0ADE = {
 			isa = PBXFileReference;
 			path = grammar.cpp;
@@ -4394,6 +4539,16 @@
 		F616C5FB0200B0CF01EF0ADE = {
 			isa = PBXFileReference;
 			path = grant_proto.h;
+			refType = 4;
+		};
+		F616C5FC0200B0CF01EF0ADE = {
+			isa = PBXFileReference;
+			path = ib_stdio.cpp;
+			refType = 4;
+		};
+		F616C5FD0200B0CF01EF0ADE = {
+			isa = PBXFileReference;
+			path = ib_stdio.h;
 			refType = 4;
 		};
 		F616C5FE0200B0CF01EF0ADE = {
@@ -4458,7 +4613,7 @@
 		};
 		F616C60A0200B0CF01EF0ADE = {
 			isa = PBXFileReference;
-			path = inf_pub.h;
+			path = inf.h;
 			refType = 4;
 		};
 		F616C60B0200B0CF01EF0ADE = {
@@ -4691,6 +4846,21 @@
 			path = license.h;
 			refType = 4;
 		};
+		F616C63D0200B0CF01EF0ADE = {
+			isa = PBXFileReference;
+			path = llio.cpp;
+			refType = 4;
+		};
+		F616C63E0200B0CF01EF0ADE = {
+			isa = PBXFileReference;
+			path = llio.h;
+			refType = 4;
+		};
+		F616C63F0200B0CF01EF0ADE = {
+			isa = PBXFileReference;
+			path = llio_proto.h;
+			refType = 4;
+		};
 		F616C6400200B0CF01EF0ADE = {
 			isa = PBXFileReference;
 			path = lls.h;
@@ -4759,6 +4929,11 @@
 		F616C64F0200B0CF01EF0ADE = {
 			isa = PBXFileReference;
 			path = mblr_proto.h;
+			refType = 4;
+		};
+		F616C6500200B0CF01EF0ADE = {
+			isa = PBXFileReference;
+			path = mem.cpp;
 			refType = 4;
 		};
 		F616C6510200B0CF01EF0ADE = {
@@ -5183,6 +5358,21 @@
 			path = rlck_proto.h;
 			refType = 4;
 		};
+		F616C6A30200B0D001EF0ADE = {
+			isa = PBXFileReference;
+			path = rng.cpp;
+			refType = 4;
+		};
+		F616C6A40200B0D001EF0ADE = {
+			isa = PBXFileReference;
+			path = rng.h;
+			refType = 4;
+		};
+		F616C6A50200B0D001EF0ADE = {
+			isa = PBXFileReference;
+			path = rng_proto.h;
+			refType = 4;
+		};
 		F616C6A60200B0D001EF0ADE = {
 			isa = PBXFileReference;
 			path = rse.cpp;
@@ -5510,7 +5700,7 @@
 		};
 		F616C6E70200B0D001EF0ADE = {
 			isa = PBXFileReference;
-			path = validation.cpp;
+			path = val.cpp;
 			refType = 4;
 		};
 		F616C6E80200B0D001EF0ADE = {
@@ -5761,6 +5951,11 @@
 			);
 			isa = PBXGroup;
 			path = misc;
+			refType = 4;
+		};
+		F616C7F40200B0D001EF0ADE = {
+			isa = PBXFileReference;
+			path = codes.h;
 			refType = 4;
 		};
 		F616C7F50200B0D001EF0ADE = {
@@ -6205,6 +6400,21 @@
 			path = expand.cpp;
 			refType = 4;
 		};
+		F616C83D0200B0D001EF0ADE = {
+			isa = PBXFileReference;
+			path = form.cpp;
+			refType = 4;
+		};
+		F616C83E0200B0D001EF0ADE = {
+			isa = PBXFileReference;
+			path = form.h;
+			refType = 4;
+		};
+		F616C83F0200B0D001EF0ADE = {
+			isa = PBXFileReference;
+			path = form_proto.h;
+			refType = 4;
+		};
 		F616C8400200B0D001EF0ADE = {
 			isa = PBXFileReference;
 			path = forma_proto.h;
@@ -6278,6 +6488,11 @@
 		F616C84F0200B0D001EF0ADE = {
 			isa = PBXFileReference;
 			path = mov_proto.h;
+			refType = 4;
+		};
+		F616C8500200B0D001EF0ADE = {
+			isa = PBXFileReference;
+			path = noform.cpp;
 			refType = 4;
 		};
 		F616C8510200B0D001EF0ADE = {
@@ -6598,6 +6813,26 @@
 		F616C8800200B0D001EF0ADE = {
 			isa = PBXFileReference;
 			path = interface.cpp;
+			refType = 4;
+		};
+		F616C8810200B0D001EF0ADE = {
+			isa = PBXFileReference;
+			path = ipc.cpp;
+			refType = 4;
+		};
+		F616C8820200B0D001EF0ADE = {
+			isa = PBXFileReference;
+			path = ipc.h;
+			refType = 4;
+		};
+		F616C8830200B0D001EF0ADE = {
+			isa = PBXFileReference;
+			path = ipc_proto.h;
+			refType = 4;
+		};
+		F616C8840200B0D001EF0ADE = {
+			isa = PBXFileReference;
+			path = ipc_server.cpp;
 			refType = 4;
 		};
 		F616C8850200B0D001EF0ADE = {
@@ -7018,6 +7253,11 @@
 		F616C8CF0200B0D001EF0ADE = {
 			isa = PBXFileReference;
 			path = dba.epp;
+			refType = 4;
+		};
+		F616C8D00200B0D001EF0ADE = {
+			isa = PBXFileReference;
+			path = dba_full.epp;
 			refType = 4;
 		};
 		F616C8D10200B0D001EF0ADE = {

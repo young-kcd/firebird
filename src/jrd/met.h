@@ -21,12 +21,12 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef JRD_MET_H
-#define JRD_MET_H
+#ifndef _JRD_MET_H_
+#define _JRD_MET_H_
 
 /* Record types for record summary blob records */
 
-enum rsr_t {
+typedef enum rsr_t {
 	RSR_field_id,
 	RSR_field_name,
 	RSR_view_context,
@@ -50,49 +50,43 @@ enum rsr_t {
 	RSR_field_length,
 	RSR_field_sub_type,
 	RSR_field_not_null
-};
-	
-typedef rsr_t RSR_T;
+} RSR_T;
 
 /* Temporary field block */
 
-class TemporaryField : public pool_alloc<type_tfb>
+class tfb : public pool_alloc<type_tfb>
 {
     public:
-	TemporaryField*	tfb_next;		/* next block in chain */
-	USHORT			tfb_id;				/* id of field in relation */
-	USHORT			tfb_flags;
-	DSC				tfb_desc;
+	struct tfb *tfb_next;		/* next block in chain */
+	USHORT tfb_id;				/* id of field in relation */
+	USHORT tfb_flags;
+	DSC tfb_desc;
 };
+typedef tfb *TFB;
 
-// tfb_flags
+#define TFB_computed		1
+#define TFB_array			2
 
-const int TFB_computed			= 1;
-const int TFB_array				= 2;
+#define MET_object_active	0
+#define MET_object_inactive	1
+#define MET_object_unknown	2
 
-// index status
-
-const SSHORT MET_object_active		= 0;
-const SSHORT MET_object_inactive	= 1;
-const SSHORT MET_object_unknown	= 2;
-
-
-const int TRIGGER_PRE_STORE		= 1;
-const int TRIGGER_POST_STORE	= 2;
-const int TRIGGER_PRE_MODIFY	= 3;
-const int TRIGGER_POST_MODIFY	= 4;
-const int TRIGGER_PRE_ERASE		= 5;
-const int TRIGGER_POST_ERASE	= 6;
-const int TRIGGER_MAX			= 7;
+#define TRIGGER_PRE_STORE	1
+#define TRIGGER_POST_STORE	2
+#define TRIGGER_PRE_MODIFY	3
+#define TRIGGER_POST_MODIFY	4
+#define TRIGGER_PRE_ERASE	5
+#define TRIGGER_POST_ERASE	6
+#define TRIGGER_MAX			7
 
 // trigger type prefixes
-const int TRIGGER_PRE			= 0;
-const int TRIGGER_POST			= 1;
+#define TRIGGER_PRE			0
+#define TRIGGER_POST		1
 
 // trigger type suffixes
-const int TRIGGER_STORE			= 1;
-const int TRIGGER_MODIFY		= 2;
-const int TRIGGER_ERASE			= 3;
+#define TRIGGER_STORE		1
+#define TRIGGER_MODIFY		2
+#define TRIGGER_ERASE		3
 
 // that's how trigger action types are encoded
 /*
@@ -128,8 +122,8 @@ example #3:
 #define TRIGGER_ACTION_SLOT(value, slot) \
 	TRIGGER_ACTION(value, (slot * 2 - 1) )
 
-const int TRIGGER_COMBINED_MAX	= 128;
+#define TRIGGER_COMBINED_MAX 128
 
 #include "../jrd/obj.h"
 
-#endif /* JRD_MET_H */
+#endif /* _JRD_MET_H_ */

@@ -64,7 +64,7 @@ LIB32=link.exe -lib
 # PROP Intermediate_Dir "..\..\..\temp\release\common_cs"
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MDd /W3 /GX /Ot /Oi /Op /Oy /Ob2 /I "../../../src/include" /I "../../../src/include/gen" /D "WIN32" /D "NDEBUG" /D "_MBCS" /D "_LIB" /YX /FD /GZ /c
-# ADD CPP /nologo /MD /W3 /GX /Ot /Og /Oi /Op /Oy /Ob1 /I "../../../src/include" /I "../../../src/include/gen" /D "WIN32" /D "NDEBUG" /D "_MBCS" /D "_LIB" /FD /EHc- /c
+# ADD CPP /nologo /MD /W3 /GX /Zi /Ot /Og /Oi /Op /Oy /Ob1 /I "../../../src/include" /I "../../../src/include/gen" /D "WIN32" /D "NDEBUG" /D "_MBCS" /D "_LIB" /FD /EHc- /c
 # ADD BASE RSC /l 0x41d /d "_DEBUG"
 # ADD RSC /l 0x41d /d "_DEBUG"
 BSC32=bscmake.exe
@@ -99,10 +99,6 @@ SOURCE=..\..\..\src\common\classes\locks.cpp
 
 SOURCE=..\..\..\src\common\fb_exception.cpp
 # End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\common\StatusHolder.cpp
-# End Source File
 # End Group
 # Begin Group "CONFIG files"
 
@@ -129,15 +125,7 @@ SOURCE=..\..\..\src\common\config\dir_list.cpp
 # PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=..\..\..\src\common\classes\BaseStream.cpp
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\src\jrd\db_alias.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\common\classes\fb_string.cpp
 # End Source File
 # Begin Source File
 
@@ -145,39 +133,11 @@ SOURCE=..\..\..\src\jrd\os\win32\fbsyslog.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\common\classes\MetaName.cpp
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\src\jrd\os\win32\mod_loader.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\common\classes\MsgPrint.cpp
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\src\jrd\os\win32\path_utils.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\common\classes\SafeArg.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\common\classes\TempFile.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\common\classes\timestamp.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\common\classes\UserBlob.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\common\utils.cpp
 # End Source File
 # End Group
 # Begin Group "Header files"
@@ -190,14 +150,6 @@ SOURCE=..\..\..\src\common\classes\alloc.h
 # Begin Source File
 
 SOURCE=..\..\..\src\common\classes\array.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\common\classes\auto.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\common\classes\BaseStream.h
 # End Source File
 # Begin Source File
 
@@ -218,70 +170,6 @@ SOURCE=..\..\..\src\jrd\os\config_root.h
 # Begin Source File
 
 SOURCE=..\..\..\src\common\config\dir_list.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\common\classes\fb_pair.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\common\classes\GenericMap.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\common\classes\init.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\common\classes\MetaName.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\common\classes\MsgPrint.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\common\classes\objects_array.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\common\classes\SafeArg.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\common\StatusHolder.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\common\classes\TempFile.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\common\classes\timestamp.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\common\classes\UserBlob.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\common\utils_proto.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\common\classes\vector.h
-# End Source File
-# End Group
-# Begin Group "CLUMPLET files"
-
-# PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=..\..\..\src\common\classes\ClumpletReader.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\common\classes\ClumpletWriter.cpp
 # End Source File
 # End Group
 # End Target

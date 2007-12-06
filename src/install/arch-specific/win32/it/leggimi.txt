@@ -1,0 +1,156 @@
+
+==================================
+Firebird 1.5.5       (Win32 Build)
+==================================
+
+o Introduzione
+o Stabilità
+o Installazione dal file exe
+o Installazione dal file zip
+o Installazione del server embedded
+o Problemi aperti
+o Documentazione SQL
+o Segnalazione di errori
+o Richiesta di nuove funzionalità
+
+
+Introduzione
+============
+
+Benvenuti in Firebird 1.5.5. Fate riferimento
+alle release notes nella cartella doc/ per
+dettagli sulle correzioni e sulle piccole
+migliorie di questa versione.
+
+
+Stabilità
+=========
+
+L'uso di questo aggiornamento di Firebird in
+produzione non pone preoccupazioni. Tuttavia,
+l'installazione di QUALUNQUE software in
+produzione dovrebbe essere preceduta da prove
+in un ambiente di sviluppo, come prassi comune.
+
+Installazione dal file exe
+==========================
+
+Lanciate il file seguibile e seguite le istruzioni a
+video. Le stesse istruzioni saranno reperibili,
+successivamente, nel file doc/leggimi_installazione.txt.
+Inoltre, le release notes contengono informazioni più
+dettagliate.
+
+Questo aggiornamento contiene molte modifiche. Se avete
+un'installazione precedente di Firebird (compresa una
+versione 1.5 beta o release candidate), è opportuno che
+leggiate le release notes per sapere nomi e posizioni
+di tutti i nuovi file, sia lato client sia server.
+
+Non installate questa versione sopra una versione
+precedente di Firebird o InterBase.
+
+
+Installazione dal file zip
+==========================
+
+Per l'installazione dal file zip, seguite le
+istruzioni che troverete nel file
+doc/README_installation.txt (solo in inglese).
+Questo documento è incluso solo nel file zip.
+
+
+Installazione del server embedded
+=================================
+
+Il server embedded è progettato per essere installato
+come parte di un'applicazione che lo usa. Fate riferimento
+al file doc/README_embedded.txt (solo in inglese) per
+maggiori informazioni su come distribuire il server
+embedded. Questo documento è incluso solo del file
+di distribuzione di Firebird embedded.
+
+
+Problemi aperti
+===============
+
+Libreria client
+---------------
+Alcune applicazioni e librerie di vecchia
+concezione non riconosceranno la libreria
+fbclient.dll, oppure non la cercheranno in quella
+che è ora la sua cartella predefinita, cioè
+la cartella bin sotto la cartella radice di
+Firebird. And esempio, l'applicazione Borland
+IBConsole non funzionerà correttamente con
+fbclient.dll, nemmeno se rinominate il file
+in gds32.dll e lo copiate nella cartella di
+sistema.
+
+È fornito un programma, chiamato instclient.exe,
+in grado di creare un file gds32.dll compatibile
+e copiarlo nella cartella di sistema. Prima di
+usarlo, informatevi sui dettagli leggendo le
+release notes e il file
+doc/README_library_install.txt.
+
+UDF e Blob filter
+-----------------
+Per via di migliorie nella gestione della
+sicurezza, le vostre UDF potrebbero non essere
+visibili finché non ne impostate il percorso
+nel file firebird.conf. Lo stesso file, oltre alle
+release notes, contiene istruzioni su come fare.
+
+
+Documentazione SQL
+==================
+
+Fate riferimento alle release notes per informazioni
+sulle novità del linguaggio, le nuove parole chiave e
+le eventuali limitazioni.
+
+
+Segnalazione di errori
+======================
+
+o Siete sicuri di conoscere il funzionamento di
+  Firebird?
+
+  Forse ciò che state osservando come errore è il
+  comportamento corretto, e avete in realtà bisogno di
+  inoltrare una richiesta di supporto. In questo caso,
+  potete usare la mailing list firebird-support. Per
+  iscrivervi:
+  
+    mailto:firebird-support-subscribe@yahoogroups.com
+
+o Pensate ancora che si tratti di un errore?
+
+  Per prima cosa, controllate che il problema non sia
+  già stato segnalato nel Bug Tracker:
+
+    http://tracker.firebirdsql.org/secure/BrowseProject.jspa
+
+Vi raccomandiamo di non usare il Tracker per richieste
+di supporto. Nel dubbio, iscrivetevi alla mailing list
+  
+  mailto:firebird-support-subscribe@yahoogroups.com
+
+e chiedete lì. Se avete problemi con l'inglese,
+potete usare l'area dedicata a Firebird su
+Delphi & Dintorni:
+  
+  http://www.delphiedintorni.it
+
+
+Richiesta di nuove funzionalità
+===============================
+
+Prima di inoltrare richieste per nuove funzionalità,
+è opportuno consultare l'elenco di richieste già
+ricevute. È probabile che qualcun altro abbia avuto
+la vostra stessa idea. Le richieste di nuove
+funzionalità sono registrate qui:
+
+  http://tracker.firebirdsql.org/secure/CreateIssue!default.jspa

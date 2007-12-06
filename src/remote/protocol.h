@@ -19,6 +19,8 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ * Added TCP_NO_DELAY option for superserver on Linux
+ * FSG 16.03.2001
  *
  * 2002.02.15 Sean Leyne - This module needs to be cleanedup to remove obsolete ports/defines:
  *                            - "EPSON", "XENIX" +++
@@ -29,9 +31,11 @@
  * 2002.10.28 Sean Leyne - Code cleanup, removed obsolete "DecOSF" port
  *
  */
-
-#ifndef REMOTE_PROTOCOL_H
-#define REMOTE_PROTOCOL_H
+/*
+$Id: protocol.h,v 1.12 2003-06-08 18:12:13 dimitr Exp $
+*/
+#ifndef _REMOTE_PROTOCOL_H_
+#define _REMOTE_PROTOCOL_H_
 
 // dimitr: ask for asymmetric protocols only.
 // Comment it out to return back to FB 1.0 behaviour.
@@ -40,58 +44,43 @@
 /* The protocol is defined blocks, rather than messages, to
    separate the protocol from the transport layer.  */
 
-// p_cnct_version
-const USHORT CONNECT_VERSION2	= 2;
+#define CONNECT_VERSION2	2
 
 /* Protocol 4 is protocol 3 plus server management functions */
 
-const USHORT PROTOCOL_VERSION3	= 3;
-const USHORT PROTOCOL_VERSION4	= 4;
+#define PROTOCOL_VERSION3	3
+#define PROTOCOL_VERSION4	4
 
 /* Protocol 5 includes support for a d_float data type */
 
-const USHORT PROTOCOL_VERSION5	= 5;
+#define PROTOCOL_VERSION5	5
 
 /* Protocol 6 includes support for cancel remote events, blob seek,
    and unknown message type */
 
-const USHORT PROTOCOL_VERSION6	= 6;
+#define PROTOCOL_VERSION6	6
 
 /* Protocol 7 includes DSQL support */
 
-const USHORT PROTOCOL_VERSION7	= 7;
+#define PROTOCOL_VERSION7	7
 
 /* Protocol 8 includes collapsing first receive into a send, drop database,
    DSQL execute 2, DSQL execute immediate 2, DSQL insert, services, and
    transact request */
 
-const USHORT PROTOCOL_VERSION8	= 8;
+#define PROTOCOL_VERSION8	8
 
 /* Protocol 9 includes support for SPX32
    SPX32 uses WINSOCK instead of Novell SDK
    In order to differentiate between the old implementation
    of SPX and this one, different PROTOCOL VERSIONS are used */
 
-const USHORT PROTOCOL_VERSION9	= 9;
+#define PROTOCOL_VERSION9	9
 
 /* Protocol 10 includes support for warnings and removes the requirement for
  * encoding and decoding status codes */
 
-const USHORT PROTOCOL_VERSION10	= 10;
-
-// Since protocol 11 we must be separated from Borland Interbase.
-// Therefore always set highmost bit in protocol version to 1.
-// For unsigned protocol version this does not break version's compare.
-
-const USHORT FB_PROTOCOL_FLAG = 0x8000;
-const USHORT FB_PROTOCOL_MASK = ~FB_PROTOCOL_FLAG;
-
-// Protocol 11 has support for user authentication related 
-// operations (op_update_account_info, op_authenticate_user and 
-// op_trusted_auth). When specific operation is not supported,
-// we say "sorry".
-
-const USHORT PROTOCOL_VERSION11	= (FB_PROTOCOL_FLAG | 11);
+#define PROTOCOL_VERSION10	10
 
 #ifdef SCROLLABLE_CURSORS
 This Protocol includes support for scrollable cursors
@@ -99,7 +88,7 @@ and is purposely being undefined so that changes can be made
 to the remote protocol version to support new features without the 'fear' that
 they will be turned off once SCROLLABLE_CURSORS is turned on.
 
-#error PROTOCOL_SCROLLABLE_CURSORS	this needs to be defined
+#define PROTOCOL_SCROLLABLE_CURSORS	this needs to be defined
 
 #endif
 
@@ -107,7 +96,7 @@ they will be turned off once SCROLLABLE_CURSORS is turned on.
 
 typedef enum
 {
-	arch_generic	= 1,	/* Generic -- always use canonical forms */
+	arch_generic	= 1,	/* Generic -- always use cannonical forms */
 	arch_apollo		= 2,
 	arch_sun		= 3,
 	arch_vms		= 4,
@@ -146,31 +135,22 @@ typedef enum
 	arch_freebsd	= 37,
 	arch_netbsd		= 38,
 	arch_darwin_ppc		= 39,
-	arch_winnt_64	= 40,
 
-	arch_max		= 41	/* Keep this at the end */
+	arch_max		= 40	/* Keep this at the end */
 } P_ARCH;
 
 /* Protocol Types */
-// p_acpt_type
-const USHORT ptype_page			= 1;	/* Page server protocol */
-const USHORT ptype_rpc			= 2;	/* Simple remote procedure call */
-const USHORT ptype_batch_send	= 3;	/* Batch sends, no asynchrony */
-const USHORT ptype_out_of_band	= 4;	/* Batch sends w/ out of band notification */
-const USHORT ptype_lazy_send	= 5;	/* Deferred packets delivery */
+
+#define ptype_page			1	/* Page server protocol */
+#define ptype_rpc			2	/* Simple remote procedure call */
+#define ptype_batch_send	3	/* Batch sends, no asynchrony */
+#define ptype_out_of_band	4	/* Batch sends w/ out of band notification */
 
 /* Generic object id */
 
 typedef USHORT OBJCT;
-const int MAX_OBJCT_HANDLES	= 65000;
-const int INVALID_OBJECT = MAX_USHORT;
-
-/* Statement flags */
-
-const USHORT STMT_BLOB			= 1;
-const USHORT STMT_NO_BATCH		= 2;
-const USHORT STMT_DEFER_EXECUTE	= 4;
-
+#define MAX_OBJCT_HANDLES	65000
+
 /* Operation (packet) types */
 
 typedef enum
@@ -284,15 +264,6 @@ typedef enum
 
 	op_rollback_retaining	= 86,
 
-	// Two following opcode are used in vulcan.
-	// No plans to implement them completely for a while, but to 
-	// support protocol 11, where they are used, have them here.
-	op_update_account_info	= 87,
-	op_authenticate_user	= 88,
-
-	op_partial				= 89,	// packet is not complete - delay processing
-	op_trusted_auth			= 90,
-
 	op_max
 } P_OP;
 
@@ -306,25 +277,12 @@ typedef struct cstring
 	UCHAR*	cstr_address;
 } CSTRING;
 
-// CVC: Only used in p_blob, p_sgmt & p_ddl, to validate constness.
-// We want to ensure our original bpb is not overwritten.
-// In turn, p_blob is used only to create and open a blob, so it's correct
-// to demand that those functions do not change the bpb.
-// We want to ensure our incoming segment to be stored isn't overwritten,
-// in the case of send/batch commands.
-typedef struct cstring_const
-{
-	USHORT	cstr_length;
-	USHORT	cstr_allocated;
-	const UCHAR*	cstr_address;
-} CSTRING_CONST;
-
 
 #ifdef DEBUG_XDR_MEMORY
 
 /* Debug xdr memory allocations */
 
-const USHORT P_MALLOC_SIZE	= 64;	/* Xdr memory allocations per packet */
+#define P_MALLOC_SIZE	64	/* Xdr memory allocations per packet */
 
 typedef struct p_malloc
 {
@@ -378,19 +336,19 @@ where
 
 */
 
-const UCHAR CNCT_user		= 1;	// User name
-const UCHAR CNCT_passwd		= 2;
-//const UCHAR CNCT_ppo			= 3;	Apollo person, project, organization. OBSOLETE.
-const UCHAR CNCT_host		= 4;
-const UCHAR CNCT_group		= 5;	// Effective Unix group id
-const UCHAR CNCT_user_verification	= 6;	/* Attach/create using this connection
+#define CNCT_user		1	/* User name */
+#define CNCT_passwd		2
+#define CNCT_ppo		3	/* Apollo person, project, organization */
+#define CNCT_host		4
+#define CNCT_group		5	/* Effective Unix group id */
+#define CNCT_user_verification	6	/* Attach/create using this connection
 					   will use user verification */
 
 
 typedef struct bid	/* BLOB ID */
 {
-	ULONG	bid_quad_high;
-	ULONG	bid_quad_low;
+	ULONG	bid_relation_id;	/* Relation id (or null) */
+	ULONG	bid_number;			/* Record number */
 } *BID;
 
 
@@ -415,7 +373,7 @@ typedef struct p_resp
 } P_RESP;
 
 #define p_resp_partner	p_resp_blob_id.bid_number
-
+
 /* Attach and create database */
 
 typedef struct p_atch
@@ -478,13 +436,13 @@ typedef struct p_trrq {
 typedef struct p_blob {
     OBJCT	p_blob_transaction;	/* Transaction */
     struct bid	p_blob_id;		/* Blob id for open */
-    CSTRING_CONST	p_blob_bpb;		/* Blob parameter block */
+    CSTRING	p_blob_bpb;		/* Blob parameter block */
 } P_BLOB;
 
 typedef struct p_sgmt {
     OBJCT	p_sgmt_blob;		/* Blob handle id */
     USHORT	p_sgmt_length;		/* Length of segment */
-    CSTRING_CONST	p_sgmt_segment;		/* Data segment */
+    CSTRING	p_sgmt_segment;		/* Data segment */
 } P_SGMT;
 
 typedef struct p_seek {
@@ -508,7 +466,7 @@ typedef struct p_info {
 typedef struct p_event {
     OBJCT	p_event_database;	/* Database object id */
     CSTRING	p_event_items;		/* Event description block */
-    FPTR_EVENT_CALLBACK p_event_ast;		/* Address of ast routine */
+    SLONG	p_event_ast;		/* Address of ast routine */
     SLONG	p_event_arg;		/* Argument to ast routine */
     SLONG	p_event_rid;		/* Client side id of remote event */
 } P_EVENT;
@@ -528,15 +486,14 @@ typedef struct p_req {
     ULONG	p_req_partner;		/* Partner identification */
 } P_REQ;
 
-// p_req_type
-const USHORT P_REQ_async	= 1;	/* Auxiliary asynchronous port */
+#define P_REQ_async	1		/* Auxiliary asynchronous port */
 
 /* DDL request */
 
 typedef struct p_ddl {
      OBJCT	p_ddl_database;		/* Database object id */
      OBJCT	p_ddl_transaction;	/* Transaction */
-     CSTRING_CONST	p_ddl_blr;		/* Request blr */
+     CSTRING	p_ddl_blr;		/* Request blr */
 } P_DDL;
 
 /* Slice Operation */
@@ -546,16 +503,16 @@ typedef struct p_slc {
     struct bid	p_slc_id;		/* Slice id */
     CSTRING	p_slc_sdl;		/* Slice description language */
     CSTRING	p_slc_parameters;	/* Slice parameters */
-    lstring	p_slc_slice;		/* Slice proper */
+    LSTRING	p_slc_slice;		/* Slice proper */
     ULONG	p_slc_length;		/* Number of elements */
 } P_SLC;
 
 /* Response to get_slice */
 
 typedef struct p_slr {
-    lstring	p_slr_slice;		/* Slice proper */
+    LSTRING	p_slr_slice;		/* Slice proper */
     ULONG	p_slr_length;		/* Total length of slice */
-    UCHAR	*p_slr_sdl;			/* *** not transfered *** */
+    UCHAR	*p_slr_sdl;		/* *** not transfered *** */
     USHORT	p_slr_sdl_length;	/* *** not transfered *** */
 } P_SLR;
  
@@ -596,27 +553,7 @@ typedef struct p_sqlcur {
     CSTRING	p_sqlcur_cursor_name;	/* cursor name */
     USHORT	p_sqlcur_type;		/* type of cursor */
 } P_SQLCUR;
-
-typedef struct p_trau
-{
-	CSTRING	p_trau_data;					// Context
-} P_TRAU;
-
-struct p_update_account {
-    OBJCT			p_account_database;		// Database object id
-    CSTRING_CONST	p_account_apb;			// Account parameter block (apb)
-};
-
-struct p_authenticate {
-    OBJCT			p_auth_database;		// Database object id
-    CSTRING_CONST	p_auth_dpb;				// Database parameter block w/ user credentials
-	CSTRING			p_auth_items;			// Information
-	CSTRING			p_auth_recv_items;		// Receive information
-	USHORT			p_auth_buffer_length;	// Target buffer length
-};
-
-
-
+
 /* Generalize packet (sic!) */
 
 typedef struct packet {
@@ -651,10 +588,6 @@ typedef struct packet {
     P_SQLCUR	p_sqlcur;	/* DSQL Set cursor name */
     P_SQLFREE	p_sqlfree;	/* DSQL Free statement */
     P_TRRQ	p_trrq;		/* Transact request packet */
-	P_TRAU	p_trau;		/* Trusted authentication */
-	p_update_account p_account_update;
-	p_authenticate p_authenticate_user;
 } PACKET;
 
-#endif // REMOTE_PROTOCOL_H
-
+#endif /* _REMOTE_PROTOCOL_H_ */

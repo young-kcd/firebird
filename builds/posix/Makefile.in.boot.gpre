@@ -27,10 +27,11 @@
 #  Contributor(s):
 # 
 #
+#  $Id: Makefile.in.boot.gpre,v 1.14.2.3 2006-11-05 14:37:28 alexpeshkoff Exp $
 #
 ROOT=..
-ObjModuleType=boot
-CFLAGS += -DBOOT_BUILD
+ObjModuleName=boot.gpre
+CFLAGS := -DBOOT_BUILD
 
 include     $(ROOT)/gen/make.defaults
 include     $(ROOT)/gen/make.platform
@@ -40,14 +41,15 @@ include     $(ROOT)/gen/make.shared.variables
 @SET_MAKE@
 
 
-JRDBOOT_Files =	dsc.cpp gds.cpp isc.cpp isc_ipc.cpp $(JRDBOOT_Extra_Files)
+JRDBOOT_Files =	dsc.cpp gds.cpp isc_ipc.cpp isc.cpp dls.cpp $(JRDBOOT_Extra_Files)
 JRDBOOT_Sources = $(addprefix jrd/, $(JRDBOOT_Files))
 JRDBOOT_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(JRDBOOT_Sources))))
 
 
 GPRECOMMON_Files += cmd.cpp cme.cpp cmp.cpp c_cxx.cpp exp.cpp \
 		gpre.cpp hsh.cpp int_cxx.cpp jrdmet.cpp movg.cpp \
-		msc.cpp par.cpp pat.cpp sqe.cpp sql.cpp
+		msc.cpp par.cpp pat.cpp sqe.cpp sql.cpp noform.cpp\
+		@GPRE_LANGUAGE_MODULES@
 
 GPRE_Files = $(GPRECOMMON_Files) pretty.cpp gpre_meta_boot.cpp
 GPRE_Sources = $(addprefix gpre/, $(GPRE_Files))
@@ -55,12 +57,11 @@ GPRE_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(GPRE_Sources)))
 
 
 
-GPREBOOT_Objects = $(JRDBOOT_Objects) $(GPRE_Objects) $(OS_SPECIFIC_Objects) \
- $(FBCOMMON_Objects) $(FBCONFIG_Objects) $(FBCLASSES_ClientObjects) $(FBCLASSES_MsgObjects)
+GPREBOOT_Objects = $(JRDBOOT_Objects) $(GPRE_Objects) $(OS_SPECIFIC_Objects)
 
 AllObjects = $(GPREBOOT_Objects)
 
-Dependencies = $(AllObjects:.o=.d) 
+Dependencies=$(AllObjects:.o=.$(DEP_EXT))
 
 
 
@@ -69,8 +70,8 @@ Dependencies = $(AllObjects:.o=.d)
 
 gpre_boot : $(GPRE_BOOT)
 
-$(GPRE_BOOT):	$(GPREBOOT_Objects)
-	$(LD) $(LINK_OPTS) $^ -o $@ -L$(LIB) $(LINK_LIBS)
+$(GPRE_BOOT):	$(GPREBOOT_Objects) $(LIB)/libfbcommon.a  
+	$(LD) $(LINK_OPTS) $(GPREBOOT_Objects) -o $@ -L$(LIB) -lfbcommon  $(LINK_LIBS)
 	-$(RM) $(GPRE_CURRENT)
 	(cd $(@D); $(LN) $(@F) $(notdir $(GPRE_CURRENT)))
 

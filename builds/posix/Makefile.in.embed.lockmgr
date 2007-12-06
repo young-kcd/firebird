@@ -26,12 +26,12 @@
 #
 #  Contributor(s):
 # 
-#	Alex Peshkov
 #
+#  $Id: Makefile.in.embed.lockmgr,v 1.5.2.2 2006-11-05 14:37:29 alexpeshkoff Exp $
 #
 ROOT=..
-ObjModuleType=boot
-CFLAGS += -DBOOT_BUILD
+ObjModuleName=embed.lockmgr
+CFLAGS := -DBOOT_BUILD
 
 include     $(ROOT)/gen/make.defaults
 include     $(ROOT)/gen/make.platform
@@ -41,18 +41,12 @@ include     $(ROOT)/gen/make.shared.variables
 @SET_MAKE@
 
 
-LOCKMGR_Files = manager.cpp lock.cpp
+LOCKMGR_Files = manager.cpp
 LOCKMGR_Sources = $(addprefix lock/, $(LOCKMGR_Files))
 LOCKMGR_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(LOCKMGR_Sources))))
 
-JRD_Files = divorce.cpp isc_ipc.cpp isc.cpp isc_sync.cpp gds.cpp config_root.cpp fbsyslog.cpp path_utils.cpp
-JRD_Sources = $(addprefix jrd/, $(JRD_Files))
-JRD_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(JRD_Sources))))
-
-AllObjects = $(LOCKMGR_Objects) $(FBCONFIG_Objects) $(FBCLASSES_ClientObjects) $(FBCLASSES_MsgObjects) \
-$(FBCOMMON_Objects) $(JRD_Objects)
-
-Dependencies = $(AllObjects:.o=.d) 
+AllObjects = $(LOCKMGR_Objects)
+Dependencies=$(AllObjects:.o=.$(DEP_EXT))
 
 
 .PHONY: lock_mgr
@@ -62,8 +56,8 @@ all : lock_mgr
 
 lock_mgr : $(BIN)/fb_lock_mgr
 
-$(BIN)/fb_lock_mgr: $(AllObjects)
-	$(CXX) $(LINK_OPTS) $(AllObjects) -o $@ -L$(LIB) $(LINK_LIBS)
+$(BIN)/fb_lock_mgr: $(LOCKMGR_Objects) $(LIBFBCOMMON_A) $(LIBFBSTATIC_A)
+	$(CXX) $(LINK_OPTS) $(LOCKMGR_Objects) -o $@ -L$(LIB) -lfbstatic -lfbcommon $(LINK_LIBS)
 
 
 include $(ROOT)/gen/make.shared.targets

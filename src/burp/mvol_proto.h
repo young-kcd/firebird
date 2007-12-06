@@ -21,29 +21,32 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef BURP_MVOL_PROTO_H
-#define BURP_MVOL_PROTO_H
+#ifndef _BURP_MVOL_PROTO_H_
+#define _BURP_MVOL_PROTO_H_
+
+#ifndef __cplusplus
+#error This is a C++ only header file
+#endif
 
 #include "../burp/burp.h"
 
 
-FB_UINT64		MVOL_fini_read();
-FB_UINT64		MVOL_fini_write(int*, UCHAR**);
-void			MVOL_init(ULONG);
-void			MVOL_init_read(const char*, const char*, USHORT*, int*, UCHAR**);
-void			MVOL_init_write(const char*, const char*, int*, UCHAR**);
-bool			MVOL_split_hdr_write();
-bool			MVOL_split_hdr_read();
-int				MVOL_read(int*, UCHAR**);
-UCHAR*			MVOL_read_block(BurpGlobals*, UCHAR*, ULONG);
-void			MVOL_skip_block(BurpGlobals*, ULONG);
-UCHAR			MVOL_write(UCHAR, int*, UCHAR**);
-const UCHAR*	MVOL_write_block(BurpGlobals*, const UCHAR*, ULONG);
+UINT64  MVOL_fini_read();
+UINT64  MVOL_fini_write(int*, UCHAR**);
+void    MVOL_init(ULONG);
+void    MVOL_init_read(UCHAR*, UCHAR*, USHORT*, int*, UCHAR**);
+void    MVOL_init_write(UCHAR*, UCHAR*, int*, UCHAR**);
+bool    MVOL_split_hdr_write();
+bool    MVOL_split_hdr_read();
+int     MVOL_read(int*, UCHAR**);
+UCHAR*  MVOL_read_block(TGBL, UCHAR*, ULONG);
+void    MVOL_skip_block(TGBL, ULONG);
+UCHAR   MVOL_write(UCHAR, int*, UCHAR**);
+UCHAR*  MVOL_write_block(TGBL, UCHAR*, ULONG);
 
 #if defined WIN_NT
-DESC			MVOL_open(const char*, ULONG, ULONG);
+extern DESC MVOL_open (char *,ULONG,ULONG);
 #endif
 
 
-#endif	// BURP_MVOL_PROTO_H
-
+#endif	/* _BURP_MVOL_PROTO_H_ */

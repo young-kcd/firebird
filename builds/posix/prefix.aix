@@ -1,0 +1,46 @@
+# The contents of this file are subject to the Interbase Public
+# License Version 1.0 (the "License"); you may not use this file
+# except in compliance with the License. You may obtain a copy
+# of the License at http://www.Inprise.com/IPL.html
+#
+# Software distributed under the License is distributed on an
+# "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express
+# or implied. See the License for the specific language governing
+# rights and limitations under the License.
+#
+# The Original Code was created by Inprise Corporation
+# and its predecessors. Portions created by Inprise Corporation are
+# Copyright (C) Inprise Corporation.
+#
+# All Rights Reserved.
+# Contributor(s): ______________________________________.
+# Start of file prefix.aix:	$(VERSION)	$(PLATFORM)
+
+
+CXX:=xlC_r7
+LD:=xlC_r7
+CC:=xlc_r7
+LIB_LINK:=xlC_r7
+
+AIX_FLAGS=-qstaticinline -qchars=signed -qfuncsect -DAIX_PPC -DPowerPC -M
+SUPPRESS=-qsuppress=1540-0152:1540-1401:1540-1405
+COMMON_FLAGS=$(AIX_FLAGS) $(SUPPRESS)
+
+PROD_FLAGS=-O2 -DNDEBUG $(COMMON_FLAGS)
+DEV_FLAGS=-g -O0 $(COMMON_FLAGS)
+
+OS_ServerFiles=inet_server.cpp
+
+LIB_LINK_OPTIONS:=-G
+LIB_LINK_RPATH:=-Wl,-R,
+LIBGDS_LINK_OPTIONS:=-G $(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/lib 
+LINK_FBINTL_SYMBOLS:=-bE:$(ROOT)/gen/fbintl.vers
+LINK_FIREBIRD_SYMBOLS:=-bE:$(ROOT)/gen/firebird.vers
+LIB_LINK_SONAME_LINE:=
+
+EMBED_UTIL_TARGETS=gds_drop gstat gsec fb_lock_print
+CLIENT_UTIL_TARGETS=gds_drop gstat gsec fbguard fbmgr_bin fb_lock_print
+
+Physical_IO_Module=unix.cpp
+
+DEP_EXT:=u

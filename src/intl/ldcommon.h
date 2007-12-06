@@ -21,59 +21,65 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef INTL_LDCOMMON_H
-#define INTL_LDCOMMON_H
+#ifndef _INTL_LDCOMMON_H_
+#define _INTL_LDCOMMON_H_
 
-#include "../common/classes/alloc.h"
-#include "../jrd/intlobj_new.h"
-#include "../jrd/constants.h"
-#include "../jrd/gdsassert.h"
+/* #include "../jrd/gdsassert.h" */
+// Put the assert in here
+
+#include "../jrd/intlobj.h"
+#include "../intl/langdrv.h"
 #include "../intl/charsets.h"
 #include "../intl/country_codes.h"
 #include "../intl/ld.h"
-#include "../common/classes/Aligner.h"
 
 #undef DEBUG
 
+#define STATIC	static
+
 typedef USHORT UNICODE;
 
+/* Redirect the assertion code defined by gdsassert.h to a local routine */
+#ifdef assert
+#undef assert
+#endif
+#ifndef DEV_BUILD
+#define ERR_assert				/* nothing */
+#define assert(ex)				/* nothing */
+#else
+#include <stdlib.h> /* prototype for abort() */
+#define ERR_assert	LD_assert
+#define assert(ex)	{if (!(ex)){(void) LD_assert (__FILE__, __LINE__); abort();}}
+extern void LD_assert(const SCHAR*, int);
+#endif
+
 #ifndef MIN
-#define MIN(x, y) ((x) < (y) ? (x) : (y))
+#define MIN(x,y) ((x)<(y)?(x):(y))
 #endif
 #ifndef MAX
-#define MAX(x, y) ((x) > (y) ? (x) : (y))
+#define MAX(x,y) ((x)>(y)?(x):(y))
 #endif
 
 
 
-#define	TEXTTYPE_ENTRY(name)	INTL_BOOL name (texttype* cache, charset* cs,										\
-												const ASCII* tt_name, const ASCII* cs_name,							\
-												USHORT attributes,													\
-												const UCHAR* specific_attributes, ULONG specific_attributes_length,	\
-												const ASCII* config_info)
+#define	TEXTTYPE_ENTRY(name)	USHORT name (TEXTTYPE cache, SSHORT parm1, SSHORT dummy)
+
+#define	TEXTTYPE_RETURN	return (0)
 
 
 
-#ifdef NOT_USED_OR_REPLACED
-#define CONVERT_ENTRY(cs1, cs2, name)	INTL_BOOL	name (csconvert* csptr, const ASCII* dest_cs, const ASCII* source_cs)
 
-#define	CONVERT_RETURN	return (true)
-#endif
+#define CONVERT_ENTRY(cs1, cs2, name)	USHORT	name (CSCONVERT csptr, SSHORT dest_cs, SSHORT source_cs)
 
+#define	CONVERT_RETURN	return (0)
 
 
-#define CHARSET_ENTRY(name)	INTL_BOOL	name (charset* csptr, const ASCII* cs_name)
 
-#define CHARSET_RETURN	return (true)
 
-void CV_convert_init(csconvert*, pfn_INTL_convert, const void*, const void*);
+#define CHARSET_ENTRY(name)	USHORT	name (CHARSET csptr, SSHORT cs_id, SSHORT dummy)
 
-// Helpers to avoid alignment problems in INTL
-template <typename C>
-inline void put(UCHAR*& dest, const C src)
-{
-	memcpy(dest, &src, sizeof(C));
-	dest += sizeof(C);
-}
+#define CHARSET_RETURN	return (0)
 
-#endif /* INTL_LDCOMMON_H */
+extern void CV_convert_init(CSCONVERT, SSHORT, SSHORT, FPTR_SHORT, const void*, const void*);
+
+#endif /* _INTL_LDCOMMON_H_ */

@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Command Oriented Query Language
  *	MODULE:		proc_proto.h
- *	DESCRIPTION:	Prototype header file for proc.cpp
+ *	DESCRIPTION:	Prototype header file for proc.c
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -21,28 +21,23 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef QLI_PROC_PROTO_H
-#define QLI_PROC_PROTO_H
+#ifndef _QLI_PROC_PROTO_H_
+#define _QLI_PROC_PROTO_H_
 
-void	PRO_close(dbb*, FB_API_HANDLE);
-void	PRO_commit(dbb*);
-void	PRO_copy_procedure(dbb*, const TEXT*, dbb*, const TEXT*);
-void	PRO_create(dbb*, const TEXT*);
-int		PRO_delete_procedure(dbb*, const TEXT*);
-void	PRO_edit_procedure(dbb*, const TEXT*);
-FB_API_HANDLE	PRO_fetch_procedure(dbb*, const TEXT*);
-bool	PRO_get_line (FB_API_HANDLE, TEXT*, USHORT);
-void	PRO_invoke(dbb*, const TEXT*);
-FB_API_HANDLE	PRO_open_blob(dbb*, ISC_QUAD&);
-int		PRO_rename_procedure(dbb*, const TEXT*, const TEXT*);
-void	PRO_rollback(dbb*);
+extern void	PRO_close (struct dbb *, FRBRD *);
+extern void	PRO_commit (struct dbb *);
+extern void	PRO_copy_procedure (struct dbb *, TEXT *, struct dbb *, TEXT *);
+extern void	PRO_create (struct dbb *, TEXT *);
+extern int	PRO_delete_procedure (struct dbb *, TEXT *);
+extern void	PRO_edit_procedure (struct dbb *, TEXT *);
+extern FRBRD	*PRO_fetch_procedure (struct dbb *, TEXT *);
+extern int	PRO_get_line (FRBRD *, TEXT *, USHORT);
+extern void	PRO_invoke (struct dbb *, TEXT *);
+extern FRBRD	*PRO_open_blob (struct dbb *, SLONG *);
+extern int	PRO_rename_procedure (struct dbb *, TEXT *, TEXT *);
+extern void	PRO_rollback (struct dbb *);
+extern void	PRO_scan (struct dbb *, void (*)(), void *);
+extern void	PRO_setup (struct dbb *);
+extern FRBRD	*PRO_transaction (struct dbb *, int);
 
-typedef void (*extract_fn_t)(void* file, const TEXT* name,
-							  USHORT length, DBB database, ISC_QUAD& blob_id);
-void	PRO_scan(dbb*, extract_fn_t, void*);
-
-void	PRO_setup(dbb*);
-FB_API_HANDLE	PRO_transaction(dbb*, bool);
-
-#endif // QLI_PROC_PROTO_H
-
+#endif /* _QLI_PROC_PROTO_H_ */

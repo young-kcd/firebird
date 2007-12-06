@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Lock Manager
  *	MODULE:		lock_proto.h
- *	DESCRIPTION:	Prototype header file for lock.cpp
+ *	DESCRIPTION:	Prototype header file for lock.c
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -21,36 +21,24 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef LOCK_LOCK_PROTO_H
-#define LOCK_LOCK_PROTO_H
+#ifndef _LOCK_LOCK_PROTO_H_
+#define _LOCK_LOCK_PROTO_H_
 
-// Lock owner types
-// Placing it here helps avoid massive unneeded includes in lock/manager.cpp
-enum lck_owner_t {
-	LCK_OWNER_process = 1,		/* A process is the owner of the lock */
-	LCK_OWNER_database,			/* A database is the owner of the lock */
-	LCK_OWNER_attachment,		/* An atttachment is the owner of the lock */
-	LCK_OWNER_transaction		/* A transaction is the owner of the lock */
-};
-
-
-bool	LOCK_convert(SLONG, UCHAR, SSHORT, lock_ast_t, void*,
-						ISC_STATUS*);
+int	LOCK_convert(SLONG, UCHAR, SSHORT, int (*)(void *), void *,
+						ISC_STATUS *);
 int		LOCK_deq(SLONG);
 UCHAR	LOCK_downgrade(SLONG, ISC_STATUS *);
-SLONG	LOCK_enq(SLONG, SLONG, USHORT, const UCHAR*, USHORT, UCHAR,
-					  lock_ast_t, void*, SLONG, SSHORT, ISC_STATUS*,
+SLONG	LOCK_enq(SLONG, SLONG, USHORT, UCHAR *, USHORT, UCHAR,
+					  int (*)(void *), void *, SLONG, SSHORT, ISC_STATUS *,
 					  SLONG);
-bool	LOCK_set_owner_handle(SLONG, SLONG);
-void	LOCK_fini(ISC_STATUS*, SLONG *);
-int		LOCK_init(ISC_STATUS*, bool, LOCK_OWNER_T, UCHAR, SLONG *);
-void	LOCK_manager(SLONG*);
+void	LOCK_fini(ISC_STATUS *, SLONG *);
+int		LOCK_init(ISC_STATUS *, SSHORT, SLONG, UCHAR, SLONG *);
+void	LOCK_manager(SLONG);
 SLONG	LOCK_query_data(SLONG, USHORT, USHORT);
 SLONG	LOCK_read_data(SLONG);
-SLONG	LOCK_read_data2(SLONG, USHORT, const UCHAR*, USHORT, SLONG);
-void	LOCK_re_post(lock_ast_t, void*, SLONG);
-bool	LOCK_shut_manager(void);
+SLONG	LOCK_read_data2(SLONG, USHORT, UCHAR *, USHORT, SLONG);
+void	LOCK_re_post(int (*)(void *), void *, SLONG);
+BOOLEAN	LOCK_shut_manager(void);
 SLONG	LOCK_write_data(SLONG, SLONG);
 
-#endif /* LOCK_LOCK_PROTO_H */
-
+#endif /* _LOCK_LOCK_PROTO_H_ */

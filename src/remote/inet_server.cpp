@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Remote Server
- *	MODULE:		inet_server.cpp
+ *	MODULE:		inet_server.c
  *	DESCRIPTION:	Internet remote server.
  *
  * The contents of this file are subject to the Interbase Public
@@ -19,6 +19,8 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ * Added TCP_NO_DELAY option for superserver on Linux
+ * FSG 16.03.2001 
  *
  * 2002.10.28 Sean Leyne - Code cleanup, removed obsolete "MPEXL" port
  * 2002.10.28 Sean Leyne - Code cleanup, removed obsolete "DecOSF" port
@@ -29,15 +31,15 @@
  * 2002.10.30 Sean Leyne - Removed support for obsolete "PC_PLATFORM" define
  *
  */
-
+/*
+$Id: inet_server.cpp,v 1.26.2.5 2007-01-23 15:04:20 paulbeach Exp $
+*/
 #include "firebird.h"
-#include <stdio.h>
+#include "../jrd/ib_stdio.h"
 #include <stdlib.h>
-#include <errno.h>
 #include "../jrd/common.h"
 #include "../jrd/isc_proto.h"
 #include "../jrd/divorce.h"
-#include "../jrd/jrd_proto.h"
 #include "../common/config/config.h"
 #if !(defined VMS)
 #include <sys/param.h>
@@ -65,11 +67,21 @@
 #if HAVE_SYS_WAIT_H
 # include <sys/wait.h>
 #endif
+#ifndef WEXITSTATUS
+# define WEXITSTATUS(stat_val) ((unsigned)(stat_val) >> 8)
+#endif
+#ifndef WIFEXITED
+# define WIFEXITED(stat_val) (((stat_val) & 255) == 0)
+#endif
 
 #ifdef HAVE_STRING_H
 #include <string.h>
 #endif
 
+
+#ifdef WINDOWS_ROUTER
+#define MAX_ARGS	6
+#endif /* WINDOWS_ROUTER */
 
 #ifdef VMS
 #include <descrip.h>
@@ -80,7 +92,7 @@
 #include <unistd.h>
 #endif
 #include <errno.h>
-#include "../jrd/ibase.h"
+#include "../jrd/gds.h"
 #include "../jrd/jrd_pwd.h"
 #endif
 
@@ -92,9 +104,6 @@
 #include "../remote/serve_proto.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/sch_proto.h"
-#include "../jrd/thread_proto.h"
-#include "../common/utils_proto.h"
-#include "../common/classes/fb_string.h"
 
 #ifdef UNIX
 #ifdef NETBSD
@@ -104,52 +113,66 @@
 #endif
 #endif
 
-#ifdef HAVE_SYS_RESOURCE_H
-#include <sys/resource.h>
+#ifndef HPUX
+#define sigvector	sigvec
 #endif
 
-#if (defined SUPERSERVER && defined UNIX && defined SERVER_SHUTDOWN)
-#include "../common/classes/semaphore.h"
-#define SHUTDOWN_THREAD
+#ifndef NBBY
+#define	NBBY		8
 #endif
 
-#ifdef UNIX
-const char* TEMP_DIR = "/tmp";
-#define CHANGE_DIR chdir
+#ifndef SV_INTERRUPT
+#define SV_INTERRUPT	0
+#endif
+
+#ifndef NFDBITS
+#define NFDBITS		(sizeof(SLONG) * NBBY)
+
+#if !(defined DARWIN)
+#define	FD_SET(n, p)	((p)->fds_bits[(n)/NFDBITS] |= (1 << ((n) % NFDBITS)))
+#define	FD_CLR(n, p)	((p)->fds_bits[(n)/NFDBITS] &= ~(1 << ((n) % NFDBITS)))
+#define	FD_ISSET(n, p)	((p)->fds_bits[(n)/NFDBITS] & (1 << ((n) % NFDBITS)))
+#define FD_ZERO(p)	memset((SCHAR *)(p), 0, sizeof(*(p)))
+#endif
 #endif
 
 #ifdef SUPERSERVER
-const char* INTERBASE_USER_NAME		= "interbase";
-const char* INTERBASE_USER_SHORT	= "interbas";
-const char* FIREBIRD_USER_NAME		= "firebird";
+#ifndef WIN_NT
+#define TEMP_DIR "/tmp"
+#define CHANGE_DIR chdir
+#endif
+#define INTERBASE_USER_NAME     "interbase"
+#define INTERBASE_USER_SHORT    "interbas"
+#define FIREBIRD_USER_NAME	"firebird"
 #endif
 
 
-#ifdef VMS
+extern "C" {
+
+
 static int assign(SCHAR *);
-#else
-static void set_signal(int, void (*)(int));
+static void name_process(UCHAR *);
+static void signal_handler(void);
+#ifdef SUPERSERVER
+static void signal_sigpipe_handler(void);
 #endif
-static void signal_handler(int);
+static void set_signal(int, FPTR_VOID);
 
-#if (defined SUPERSERVER && defined UNIX )
-//static void signal_sigpipe_handler(int);
-#endif
-
-#ifdef SHUTDOWN_THREAD
-static THREAD_ENTRY_DECLARE shutdown_thread(THREAD_ENTRY_PARAM arg);
-static void signal_term(int);
-static void shutdown_init();
-static void shutdown_fini();
-#endif
+#ifdef WINDOWS_ROUTER
+static int atov(UCHAR *, UCHAR **, SSHORT);
+#endif /* WINDOWS_ROUTER */
 
 static TEXT protocol[128];
 static int INET_SERVER_start = 0;
 static USHORT INET_SERVER_flag = 0;
 
-extern "C" {
-
-int CLIB_ROUTINE server_main( int argc, char** argv)
+#ifdef WINDOWS_ROUTER
+int PASCAL WinMain(
+				   HINSTANCE hInstance,
+				   HINSTANCE hPrevInstance, LPSTR lpszCmdLine, int nCmdShow)
+#else /* WINDOWS_ROUTER */
+int CLIB_ROUTINE server_main( int argc, char **argv)
+#endif							/* WINDOWS_ROUTER */
 {
 /**************************************
  *
@@ -161,117 +184,134 @@ int CLIB_ROUTINE server_main( int argc, char** argv)
  *	Run the server with apollo mailboxes.
  *
  **************************************/
-	rem_port* port;
+	int n, clients;
+	PORT port;
+	int child, debug, channel, standalone, multi_threaded, multi_client;
+	TEXT *p, **end, c;
+	int done = FALSE;
+#if !(defined VMS)
+	fd_set mask;
+#endif
 
-// 01 Sept 2003, Nickolay Samofatov
-// In GCC version 3.1-3.3 we need to install special error handler
-// in order to get meaningful terminate() error message on stderr. 
-// In GCC 3.4 or later this is the default.
-//#if __GNUC__ == 3 && __GNUC_MINOR__ >= 1 && __GNUC_MINOR__ < 4
-//    std::set_terminate (__gnu_cxx::__verbose_terminate_handler);
-//#endif
+#ifdef WINDOWS_ROUTER
+/*
+ *	Construct an argc, argv so we can use the old parse code.
+ */
+	int argc;
+	char **argv, *argv2[MAX_ARGS];
+
+	argv = argv2;
+	argv[0] = "IB_server";
+	argc = 1 + atov(lpszCmdLine, argv + 1, MAX_ARGS - 1);
+
+#endif /* WINDOWS_ROUTER */
+
 
 #ifdef VMS
 	argc = VMS_parse(&argv, argc);
 #endif
 
-	const TEXT* const* const end = argc + argv;
+	end = argc + argv;
 	argv++;
-	bool debug = false, standalone = false;
-	INET_SERVER_flag = 0;
-	int channel = 0;
+	debug = standalone = INET_SERVER_flag = FALSE;
+	channel = 0;
 	protocol[0] = 0;
-	bool multi_client = false, multi_threaded = false;
+	multi_client = multi_threaded = FALSE;
 
 #ifdef SUPERSERVER
 	INET_SERVER_flag |= SRVR_multi_client;
-	multi_client = multi_threaded = standalone = true;
+	multi_client = multi_threaded = standalone = TRUE;
 #endif
 
-	int clients = 0;
-	bool done = false;
+	clients = 0;
 
 	while (argv < end) {
-		TEXT c;
-		const TEXT* p = *argv++;
+		p = *argv++;
 		if (*p++ == '-')
 			while (c = *p++) {
 				switch (UPPER(c)) {
 				case 'D':
 					INET_SERVER_flag |= SRVR_debug;
-					debug = standalone = true;
+					debug = standalone = TRUE;
+#ifdef NEVERDEF
+#ifdef SUPERSERVER
+					free_map_debug = 1;
+#endif
+#endif
 					break;
 #ifndef SUPERSERVER
 
 				case 'M':
 					INET_SERVER_flag |= SRVR_multi_client;
 					if (argv < end)
-					{
 						if (clients = atoi(*argv))
 							argv++;
-					}
-					multi_client = standalone = true;
+					multi_client = standalone = TRUE;
 					break;
 
 				case 'S':
-					standalone = true;
+					standalone = TRUE;
 					break;
 
 
 				case 'I':
-					standalone = false;
+					standalone = FALSE;
 					break;
 
 				case 'T':
-					multi_threaded = true;
+					multi_threaded = TRUE;
 					break;
 
 				case 'U':
-					multi_threaded = false;
+					multi_threaded = FALSE;
 					break;
 #endif /* SUPERSERVER */
 
 				case 'E':
-					if (ISC_set_prefix(p, *argv) == -1)
-						printf("Invalid argument Ignored\n");
+					if (ISC_get_prefix(p) == -1)
+						ib_printf("Invalid argument Ignored\n");
 					else
-						argv++;	/* do not skip next argument if this one
+						argv++;	/* donot skip next argument if this one 
 								   is invalid */
-					done = true;
+					done = TRUE;
 					break;
 
 				case 'P':
-					fb_utils::snprintf(protocol, sizeof(protocol), "/%s", *argv++);
+					protocol[0] = '/';
+					protocol[1] = 0;
+					strncat(protocol, *argv++, 
+						sizeof(protocol) - strlen(protocol) - 1);
+					protocol[sizeof(protocol) - 1] = 0;
 					break;
 
                 case 'H':
 				case '?':
-					printf("Firebird TCP/IP server options are:\n");
-					printf("  -d           : debug on\n");
+					ib_printf("Firebird TCP/IP server options are:\n");
+					ib_printf("  -d           : debug on\n");
                    
 #ifdef SUPERSERVER
                     // These options only applicable to super server
-					printf("  -m           : multiclient - on\n");
-					printf("  -s           : standalone - true\n");
-					printf("  -i           : standalone - false\n");
+					ib_printf("  -m           : multiclient - on\n");
+					ib_printf("  -s           : standalone - true\n");
+					ib_printf("  -i           : standalone - false\n");
 
-					printf("  -t           : multithread - true  (non pc only)\n");
-					printf("  -u           : multithread - false (pc only)\n");
-					printf("  -t           : multithread (non pc only\n");
+					ib_printf("  -t           : multithread - true  (non pc only)\n");
+					ib_printf("  -u           : multithread - false (pc only)\n");
+					ib_printf("  -t           : multithread (non pc only\n");
 #endif
 
-					printf("  -p<protocol> : specify protocol\n");
-					printf("  -h|? : print this help\n");
-                    printf("\n");
-                    printf("  (The following -e options used to be -h options)\n");
-					printf("  -e <firebird_root_dir>   : set firebird_root path\n");            
-					printf("  -el <firebird_lock_dir>  : set runtime firebird_lock dir\n");            
-					printf("  -em <firebird_msg_dir>   : set firebird_msg dir path\n");            
-					printf("  -z   : print version\n");            
+					ib_printf("  -p<protocol> : specify protocol\n");
+					ib_printf("  -h|? : print this help\n");
+                    ib_printf("\n");
+                    ib_printf("  (The following -e options used to be -h options)\n");
+					ib_printf("  -e<firebird_root_dir>   : set firebird_root path\n");            
+					ib_printf("  -el<firebird_lock_dir>   : set runtime firebird_lock dir\n");            
+					ib_printf("  -em<firebird_msg_dir>   : set firebird_msg dir path\n");            
+					ib_printf("  -z   : print version\n");            
 
 					exit(FINI_OK);
 				case 'Z':
-					printf("Firebird TCP/IP server version %s\n",
+					ib_printf("Firebird TCP/IP server version %s\n",
 							  GDS_VERSION);
 					exit(FINI_OK);
 				}
@@ -279,45 +319,11 @@ int CLIB_ROUTINE server_main( int argc, char** argv)
 					break;
 			}
 	}
-
-	// activate paths set with -e family of switches
-	ISC_set_prefix(0, 0);
-
 #if (defined SUPERSERVER && defined UNIX )
-	/* set_signal(SIGPIPE, signal_sigpipe_handler); */
-	set_signal(SIGPIPE, signal_handler);
+/*	set_signal(SIGPIPE, signal_sigpipe_handler); */
+    set_signal (SIGPIPE, signal_handler);
 	set_signal(SIGUSR1, signal_handler);
 	set_signal(SIGUSR2, signal_handler);
-#endif
-
-#if defined(UNIX) && defined(HAVE_SETRLIMIT) && defined(HAVE_GETRLIMIT)
-#if !(defined(DEV_BUILD))
-	if (Config::getBugcheckAbort())
-#endif
-	{
-		// try to force core files creation
-		struct rlimit core;
-		if (getrlimit(RLIMIT_CORE, &core) == 0)
-		{
-			core.rlim_cur = core.rlim_max;
-			if (setrlimit(RLIMIT_CORE, &core) != 0)
-			{
-				gds__log("setrlimit() failed, errno=%d", errno);
-			}
-		}
-		else
-		{
-			gds__log("getrlimit() failed, errno=%d", errno);
-		}
-
-		// we need some writable directory for core file
-		// on any unix /tmp seems to be the best place
-		if (CHANGE_DIR(TEMP_DIR)) {
-			/* error on changing the directory */
-			gds__log("Could not change directory to %s due to errno %d",
-					TEMP_DIR, errno);
-		}
-	}
 #endif
 
 /* Fork off a server, wait for it to die, then fork off another,
@@ -326,8 +332,7 @@ int CLIB_ROUTINE server_main( int argc, char** argv)
 #if !(defined SUPERSERVER || defined VMS)
 	if (multi_client && !debug) {
 		set_signal(SIGUSR1, signal_handler);
-		int child;
-		for (int n = 0; n < 100; n++) {
+		for (n = 0; n < 100; n++) {
 			INET_SERVER_start = 0;
 			if (!(child = fork()))
 				break;
@@ -338,7 +343,7 @@ int CLIB_ROUTINE server_main( int argc, char** argv)
 				}
 			gds__log("INET_SERVER/main: gds_inet_server restarted");
 		}
-		set_signal(SIGUSR1, SIG_DFL);
+		set_signal(SIGUSR1, (void(*)()) SIG_DFL);
 	}
 #endif
 
@@ -349,17 +354,16 @@ int CLIB_ROUTINE server_main( int argc, char** argv)
             // Remove restriction on username, for DEV builds
             // restrict only for production builds.  MOD 21-July-2002
 #ifndef DEV_BUILD
-			Firebird::string user_name;	/* holds the user name */
+			TEXT user_name[256];	/* holds the user name */
 			/* check user id */
-			ISC_get_user(&user_name, NULL, NULL, NULL);
+			ISC_get_user(user_name, NULL, NULL, NULL, NULL, NULL, NULL);
 
-			if (user_name != "root" &&
-				user_name != FIREBIRD_USER_NAME &&
-				user_name != INTERBASE_USER_NAME &&
-				user_name != INTERBASE_USER_SHORT)
-			{
+			if (strcmp(user_name, "root") &&
+				strcmp(user_name, FIREBIRD_USER_NAME) &&
+				strcmp(user_name, INTERBASE_USER_NAME) &&
+				strcmp(user_name, INTERBASE_USER_SHORT)) {
 				/* invalid user -- bail out */
-				fprintf(stderr,
+				ib_fprintf(ib_stderr,
 						   "%s: Invalid user (must be %s, %s, %s or root).\n",
 						   "fbserver", FIREBIRD_USER_NAME,
 						   INTERBASE_USER_NAME, INTERBASE_USER_SHORT);
@@ -368,37 +372,37 @@ int CLIB_ROUTINE server_main( int argc, char** argv)
 #endif
 #else
 			if (setreuid(0, 0) < 0)
-				printf("Inet_server: couldn't set uid to superuser.\n");
+				ib_printf("Inet_server: couldn't set uid to superuser.\n");
 #endif
 			INET_set_clients(clients);
 		}
 
 		if (!debug) {
-			int mask = 0; // FD_ZERO(&mask);
-			mask |= 1 << 2; // FD_SET(2, &mask);
-			divorce_terminal(mask);
+			FD_ZERO(&mask);
+			FD_SET(2, &mask);
+			divorce_terminal((int) &mask);
 		}
-		{ // scope block
+		{
 			ISC_STATUS_ARRAY status_vector;
-			THREAD_ENTER();
+			THREAD_ENTER;
 			port = INET_connect(protocol, 0, status_vector, INET_SERVER_flag,
 								0, 0);
-			THREAD_EXIT();
+			THREAD_EXIT;
 			if (!port) {
 				gds__print_status(status_vector);
 				exit(STARTUP_ERROR);
 			}
-		} // end scope block
+		}
 	}
 	else {
 #ifdef VMS
 		channel = assign("SYS$INPUT");
 #endif
-		THREAD_ENTER();
+		THREAD_ENTER;
 		port = INET_server(channel);
-		THREAD_EXIT();
+		THREAD_EXIT;
 		if (!port) {
-			fprintf(stderr, "fbserver: Unable to start INET_server\n");
+			ib_fprintf(ib_stderr, "fbserver: Unable to start INET_server\n");
 			exit(STARTUP_ERROR);
 		}
 	}
@@ -412,7 +416,7 @@ int CLIB_ROUTINE server_main( int argc, char** argv)
 				TEMP_DIR, errno);
 	}
 
-/* Server tries to attach to security2.fdb to make sure everything is OK
+/* Server tries to attash to security.fdb to make sure everything is OK
    This code fixes bug# 8429 + all other bug of that kind - from 
    now on the server exits if it cannot attach to the database
    (wrong or no license, not enough memory, etc.
@@ -422,17 +426,16 @@ int CLIB_ROUTINE server_main( int argc, char** argv)
 		ISC_STATUS_ARRAY status;
 		isc_db_handle db_handle = 0L;
 
-		SecurityDatabase::getPath(path);
-		const char dpb[] = {isc_dpb_version1, isc_dpb_gsec_attach, 1, 1};
-		isc_attach_database(status, strlen(path), path, &db_handle, sizeof dpb, dpb);
+		gds__prefix(path, USER_INFO_NAME);
+		isc_attach_database(status, strlen(path), path, &db_handle, 0, NULL);
 		if (status[0] == 1 && status[1] > 0) {
-			gds__log_status(path, status);
+			gds__log_status(USER_INFO_NAME, status);
 			isc_print_status(status);
 			exit(STARTUP_ERROR);
 		}
 		isc_detach_database(status, &db_handle);
 		if (status[0] == 1 && status[1] > 0) {
-			gds__log_status(path, status);
+			gds__log_status(USER_INFO_NAME, status);
 			isc_print_status(status);
 			exit(STARTUP_ERROR);
 		}
@@ -440,17 +443,14 @@ int CLIB_ROUTINE server_main( int argc, char** argv)
 
 #endif
 
-#ifdef SHUTDOWN_THREAD
-	shutdown_init();
-#endif
-
 	if (multi_threaded)
 		SRVR_multi_thread(port, INET_SERVER_flag);
 	else
+#ifdef WINDOWS_ROUTER
+		SRVR_WinMain(port, INET_SERVER_flag, hInstance, hPrevInstance,
+					 nCmdShow);
+#else
 		SRVR_main(port, INET_SERVER_flag);
-
-#ifdef SHUTDOWN_THREAD
-	shutdown_fini();
 #endif
 
 #ifdef DEBUG_GDS_ALLOC
@@ -460,9 +460,9 @@ int CLIB_ROUTINE server_main( int argc, char** argv)
 	//gds_alloc_report(0, __FILE__, __LINE__);
 	char name[MAXPATHLEN];
 	gds__prefix(name, "memdebug.log");
-	FILE* file = fopen(name, "w+t");
+	FILE* file = fopen(name, "w+b");
 	if (file) {
-	  fprintf(file, "Global memory pool allocated objects\n");
+	  fprintf(file,"Global memory pool allocated objects\n");
 	  getDefaultMemoryPool()->print_contents(file);
 	  fclose(file);
 	}
@@ -471,7 +471,59 @@ int CLIB_ROUTINE server_main( int argc, char** argv)
 	exit(FINI_OK);
 }
 
+
+#ifdef WINDOWS_ROUTER
+static int atov( UCHAR * str, UCHAR ** vec, SSHORT len)
+{
+/**************************************
+ *
+ *	a t o v
+ *
+ **************************************
+ *
+ * Functional description
+ *	Take a string and convert it to a vector.
+ *	White space delineates, but things in quotes are
+ *	kept together.
+ *
+ **************************************/
+	int i = 0, qt = 0, qq;
+	char *p1, *p2;
+
+	vec[0] = str;
+	for (p1 = p2 = str; i < len; i++) {
+		while (*p1 == ' ' || *p1 == '\t')
+			p1++;
+		while (qt || (*p1 != ' ' && *p1 != '\t')) {
+			qq = qt;
+			if (*p1 == '\'')
+				if (!qt)
+					qt = -1;
+				else if (qt == -1)
+					qt = 0;
+			if (*p1 == '"')
+				if (!qt)
+					qt = 1;
+				else if (qt == 1)
+					qt = 0;
+			if (*p1 == '\0' || *p1 == '\n') {
+				*p2++ = '\0';
+				vec[++i] = 0;
+				return i;
+			}
+			if (qq == qt)
+				*p2++ = *p1;
+			p1++;
+		}
+		p1++;
+		*p2++ = '\0';
+		vec[i + 1] = p2;
+	}
+	*p2 = '\0';
+	vec[i] = 0;
+	return i - 1;
 }
+#endif /* WINDOWS_ROUTER */
 
 
 #ifdef VMS
@@ -488,6 +540,7 @@ static int assign( SCHAR * string)
  *
  **************************************/
 	SSHORT channel;
+	int status;
 	struct dsc$descriptor_s desc;
 
 	desc.dsc$b_dtype = DSC$K_DTYPE_T;
@@ -495,7 +548,7 @@ static int assign( SCHAR * string)
 	desc.dsc$w_length = strlen(string);
 	desc.dsc$a_pointer = string;
 
-	int status = sys$assign(&desc, &channel, NULL, NULL);
+	status = sys$assign(&desc, &channel, NULL, NULL);
 
 	return (status & 1) ? channel : 0;
 }
@@ -506,7 +559,7 @@ static int assign( SCHAR * string)
 
 
 #if !(defined VMS)
-static void set_signal( int signal_number, void (*handler) (int))
+static void set_signal( int signal_number, void (*handler) (void))
 {
 /**************************************
  *
@@ -518,17 +571,33 @@ static void set_signal( int signal_number, void (*handler) (int))
  *	Establish signal handler.
  *
  **************************************/
+#ifdef SYSV_SIGNALS
+	sigset(signal_number, handler);
+#else
+
+#ifndef HAVE_SIGACTION
+	struct sigvec vec;
+	struct sigvec old_vec;
+
+	vec.sv_handler = handler;
+	vec.sv_mask = 0;
+	vec.sv_flags = SV_INTERRUPT;
+	sigvector(signal_number, &vec, &old_vec);
+#else
 	struct sigaction vec, old_vec;
 
-	vec.sa_handler = handler;
-	sigemptyset(&vec.sa_mask);
+	vec.sa_handler = (SIG_FPTR) handler;
+	memset(&vec.sa_mask, 0, sizeof(vec.sa_mask));
 	vec.sa_flags = 0;
 	sigaction(signal_number, &vec, &old_vec);
+#endif
+
+#endif
 }
 #endif
 
 
-static void signal_handler(int)
+static void signal_handler(void)
 {
 /**************************************
  *
@@ -544,9 +613,8 @@ static void signal_handler(int)
 	++INET_SERVER_start;
 }
 
-#ifdef NOT_USED_OR_REPLACED
 #if (defined SUPERSERVER && defined UNIX )
-static void signal_sigpipe_handler(int)
+static void signal_sigpipe_handler(void)
 {
 /****************************************************
  *
@@ -563,92 +631,7 @@ static void signal_sigpipe_handler(int)
 	gds__log
 		("Super Server/main: Bad client socket, send() resulted in SIGPIPE, caught by server\n                   client exited improperly or crashed ????");
 }
-#endif //SUPERSERVER && UNIX
 #endif
 
-#ifdef SHUTDOWN_THREAD
-static Firebird::SignalSafeSemaphore shutSem;
-static bool alreadyClosing = false;
 
-static THREAD_ENTRY_DECLARE shutdown_thread(THREAD_ENTRY_PARAM arg) 
-{
-/****************************************************
- *
- *	s h u t d o w n _ t h r e a d
- *
- ****************************************************
- *
- * Functional description
- *	In order to avoid blocking of the thread, 
- *	which received SIGTERM, run in separate thread.
- *
- **************************************/
-	try {
-	 	shutSem.enter();
-	}
-	catch (Firebird::status_exception& e)
-	{
-		TEXT buffer[1024];
-        const ISC_STATUS* vector = e.value();
-		if (! (vector && fb_interpret(buffer, sizeof(buffer), &vector)))
-		{
-			strcpy(buffer, "Unknown failure in semaphore::enter()");
-		}
-		gds__log(buffer, 0);
-		exit(0);
-	}
-	if (! alreadyClosing)
-	{
-		alreadyClosing = true;
-		JRD_shutdown_all(false);
-		SRVR_shutdown();
-		exit(0);
-	}
-	return 0;	//make compilers happy
-}
-
-static void signal_term(int)
-{
-/****************************************************
- *
- *	s i g n a l _ t e r m
- *
- ****************************************************
- *
- * Functional description
- *	Handle ^C and kill.
- *
- **************************************/
-	try
-	{
-	 	shutSem.release();
-	}
-	catch (Firebird::status_exception& e)
-	{
-		TEXT buffer[1024];
-        const ISC_STATUS* vector = e.value();
-		if (! (vector && fb_interpret(buffer, sizeof(buffer), &vector)))
-		{
-			strcpy(buffer, "Unknown failure in semaphore::release()");
-		}
-		gds__log(buffer, 0);
-		exit(0);
-	}
-}
-
-static void shutdown_init()
-{
-	gds__thread_start(shutdown_thread, 0, THREAD_medium, 0, 0);
-	// process signals 2 & 15 in order to exit gracefully
-	set_signal(SIGINT, signal_term);
-	set_signal(SIGTERM, signal_term);
-}
-
-static void shutdown_fini()
-{
-	set_signal(SIGINT, SIG_IGN);
-	set_signal(SIGTERM, SIG_IGN);
-	alreadyClosing = true;
-	shutSem.release();
-}
-#endif //SHUTDOWN_THREAD
+} // extern "C"

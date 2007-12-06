@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	Dynamic SQL runtime support
- *	MODULE:		metd.epp
+ *	MODULE:		met.epp
  *	DESCRIPTION:	Meta-data interface
  *
  * The contents of this file are subject to the Interbase Public
@@ -27,15 +27,14 @@
  *   This request is not cached.
  * 2001.02.23 Claudio Valderrama: Fix SF Bug #228135 with views spoiling
  *    NULLs in outer joins.
- * 2004.01.16 Vlad Horsun: make METD_get_col_default and 
- *   METD_get_domain_default return actual length of default BLR
- * 2004.01.16 Vlad Horsun: added support for default parameters 
  */
 
 #include "firebird.h"
 #include <string.h>
 #include "../dsql/dsql.h"
-#include "../jrd/ibase.h"
+#include "../dsql/node.h"
+#include "../dsql/sym.h"
+#include "../jrd/gds.h"
 #include "../jrd/align.h"
 #include "../jrd/intl.h"
 #include "../jrd/thd.h"
@@ -47,10 +46,8 @@
 #include "../dsql/errd_proto.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/sch_proto.h"
-#include "../jrd/thread_proto.h"
-#include "../jrd/why_proto.h"
-#include "../common/utils_proto.h"
-#include "../common/classes/init.h"
+#include "../jrd/thd_proto.h"
+#include "../jrd/constants.h"
 
 /* NOTE: The static definition of DB and gds_trans by gpre will not
          be used by the meta data routines.  Each of those routines has
@@ -61,121 +58,63 @@ V4 Multi-threading changes.
 
 -- direct calls to gds__ () & isc_ () entrypoints
 
-	THREAD_EXIT();
+	THREAD_EXIT;
 	    gds__ () or isc_ () call.
-	THREAD_ENTER();
+	THREAD_ENTER;
 
 -- calls through embedded GDML.
 
 the following protocol will be used.  Care should be taken if
 nested FOR loops are added.
 
-    THREAD_EXIT();                // last statment before FOR loop 
+    THREAD_EXIT;                // last statment before FOR loop 
 
     FOR ...............
 
-	THREAD_ENTER();           // First statment in FOR loop 
+	THREAD_ENTER;           // First statment in FOR loop 
 	.....some C code....
 	.....some C code....
-	THREAD_EXIT();            // last statment in FOR loop 
+	THREAD_EXIT;            // last statment in FOR loop 
 
     END_FOR;
 
-    THREAD_ENTER();               // First statment after FOR loop 
+    THREAD_ENTER;               // First statment after FOR loop 
 ***************************************************************/
 
+ASSERT_FILENAME 
 DATABASE DB = STATIC "yachts.lnk";
 
-static const UCHAR blr_bpb[] = {
-	isc_bpb_version1,
-	isc_bpb_source_type, 1, isc_blob_blr,
-	isc_bpb_target_type, 1, isc_blob_blr
+static const UCHAR blr_bpb[] = { isc_bpb_version1,
+	isc_bpb_source_type, 1, BLOB_blr,
+	isc_bpb_target_type, 1, BLOB_blr
 };
 
-//static void check_array(dsql_req*, const SCHAR*, dsql_fld*);
-static void convert_dtype(dsql_fld*, SSHORT);
-static void	free_function (dsql_udf*);
-static void free_procedure(dsql_prc*);
-static void free_relation(dsql_rel*);
-static void insert_symbol(dsql_dbb*, dsql_sym*);
-static dsql_sym* lookup_symbol(dsql_dbb*, USHORT, const char*, SYM_TYPE, USHORT = 0);
-static dsql_sym* lookup_symbol(dsql_dbb*, const dsql_str*, SYM_TYPE, USHORT = 0);
+static void check_array(DSQL_REQ, SCHAR *, DSQL_FLD);
+static void convert_dtype(DSQL_FLD, SSHORT);
+static void	free_function (UDF);
+static void free_procedure(DSQL_PRC);
+static void free_relation(DSQL_REL);
+static TEXT *metd_exact_name(TEXT *);
 
-namespace {
 #ifdef  SUPERSERVER
-	REC_MUTX_T rec_mutex;	// Recursive metadata mutex 
-	
-	class RecMutexInit
-	{
-	public:
-		static void init() {
-			THD_rec_mutex_init (&rec_mutex);
-		}
-		static void cleanup() {
-			THD_rec_mutex_destroy (&rec_mutex);
-		}
-	};
-	Firebird::InitMutex<RecMutexInit> recMutexInited;
+static REC_MUTX_T rec_mutex;	/* Recursive metadata mutex */
+static USHORT rec_mutex_inited = 0;
 
-	class RecMutexHolder {
-	public:
-		RecMutexHolder() {
-			recMutexInited.init();
-			THREAD_EXIT();
-			THD_rec_mutex_lock (&rec_mutex);
-			THREAD_ENTER();
-		}
-		~RecMutexHolder() {
-		    THD_rec_mutex_unlock (&rec_mutex);
-		}
-	};
+#define METD_REC_LOCK   if ( !rec_mutex_inited)\
+                        {\
+                            rec_mutex_inited = 1;\
+                            THD_rec_mutex_init (&rec_mutex);\
+                        }\
+                        THREAD_EXIT;\
+                        THD_rec_mutex_lock (&rec_mutex);\
+                        THREAD_ENTER;
+#define METD_REC_UNLOCK THD_rec_mutex_unlock (&rec_mutex)
 #else
-	class RecMutexHolder {
-	public:
-		RecMutexHolder() { }
-		~RecMutexHolder() { }
-	};
+#define METD_REC_LOCK
+#define METD_REC_UNLOCK
 #endif
-}
 
-
-void METD_drop_collation(dsql_req* request, const dsql_str* name)
-{
-/**************************************
- *
- *	M E T D _ d r o p _ c o l l a t i o n
- *
- **************************************
- *
- * Functional description
- *	Drop a collation from our metadata, and
- *	the next caller who wants it will
- *	look up the new version.
- *
- *	Dropping will be achieved by marking the collation
- *	as dropped.  Anyone with current access can continue
- *	accessing it.
- *
- **************************************/
-	RecMutexHolder holder;
-
-	// If the symbol wasn't defined, we've got nothing to do 
-	dsql_sym* symbol = lookup_symbol(request->req_dbb, name, SYM_intlsym_collation, 0);
-    
-	if (symbol)
-	{
-		dsql_intlsym* intlsym = (dsql_intlsym*) symbol->sym_object;
-		intlsym->intlsym_flags |= INTLSYM_dropped;
-	}
-
-	// mark other potential candidates as maybe dropped 
-	HSHD_set_flag(request->req_dbb,
-				  reinterpret_cast<const TEXT*>(name->str_data),
-				  name->str_length, SYM_intlsym_collation, INTLSYM_dropped);
-}
-
-
-void METD_drop_function(dsql_req* request, const dsql_str* name)
+void METD_drop_function (DSQL_REQ request, STR name)
 {
 /**************************************
  *
@@ -193,27 +132,40 @@ void METD_drop_function(dsql_req* request, const dsql_str* name)
  *	accessing it.
  *
  **************************************/
-    RecMutexHolder holder;
+    UDF	udf;
+    SYM	symbol;
 
-    // If the symbol wasn't defined, we've got nothing to do 
+    METD_REC_LOCK;
+
+    /* If the symbol wasn't defined, we've got nothing to do */
     
-    dsql_sym* symbol = lookup_symbol(request->req_dbb, name, SYM_udf);
+    symbol = HSHD_lookup(request->req_dbb,
+						 reinterpret_cast<TEXT*>(name->str_data),
+                         name->str_length, SYM_udf, 0);
+    for (; symbol; symbol = symbol->sym_homonym) {
+        if ((symbol->sym_type == SYM_udf) &&
+            ((udf = (UDF) symbol->sym_object) &&
+             (!(udf->udf_flags & UDF_dropped)))) {
+            break;
+        }
+    }
     
     if (symbol) {
-        dsql_udf* userFunc = (dsql_udf*) symbol->sym_object;
-        userFunc->udf_flags |= UDF_dropped;
+        udf = (UDF) symbol->sym_object;
+        udf->udf_flags |= UDF_dropped;
     }
 
-    // mark other potential candidates as maybe dropped 
+    /* mark other potential candidates as maybe dropped */
 
     HSHD_set_flag(request->req_dbb,
-				  reinterpret_cast<const TEXT*>(name->str_data),
+				  reinterpret_cast<TEXT*>(name->str_data),
 				  name->str_length, SYM_udf, UDF_dropped);
 
+    METD_REC_UNLOCK;
 }
 
 
-void METD_drop_procedure(dsql_req* request, const dsql_str* name)
+void METD_drop_procedure( DSQL_REQ request, STR name)
 {
 /**************************************
  *
@@ -231,26 +183,36 @@ void METD_drop_procedure(dsql_req* request, const dsql_str* name)
  *	accessing it.
  *
  **************************************/
-    RecMutexHolder holder;
+	DSQL_PRC procedure;
+	SYM symbol;
 
-	// If the symbol wasn't defined, we've got nothing to do 
+	METD_REC_LOCK;
 
-	dsql_sym* symbol = lookup_symbol(request->req_dbb, name, SYM_procedure);
+/* If the symbol wasn't defined, we've got nothing to do */
+
+	symbol = HSHD_lookup(request->req_dbb, (TEXT*)name->str_data,
+						 name->str_length, SYM_procedure, 0);
+	for (; symbol; symbol = symbol->sym_homonym)
+		if ((symbol->sym_type == SYM_procedure) &&
+			((procedure = (DSQL_PRC) symbol->sym_object) &&
+			 (!(procedure->prc_flags & PRC_dropped))))
+			break;
 
 	if (symbol) {
-		dsql_prc* procedure = (dsql_prc*) symbol->sym_object;
+		procedure = (DSQL_PRC) symbol->sym_object;
 		procedure->prc_flags |= PRC_dropped;
 	}
 
-	// mark other potential candidates as maybe dropped 
+/* mark other potential candidates as maybe dropped */
 
 	HSHD_set_flag(request->req_dbb, (TEXT*)name->str_data, name->str_length,
 				  SYM_procedure, PRC_dropped);
 
+	METD_REC_UNLOCK;
 }
 
 
-void METD_drop_relation(dsql_req* request, const dsql_str* name)
+void METD_drop_relation( DSQL_REQ request, STR name)
 {
 /**************************************
  *
@@ -268,28 +230,37 @@ void METD_drop_relation(dsql_req* request, const dsql_str* name)
  *      accessing it.
  *
  **************************************/
-    RecMutexHolder holder;
+	DSQL_REL relation;
+	SYM symbol;
 
-	// If the symbol wasn't defined, we've got nothing to do 
 
-	dsql_sym* symbol = lookup_symbol(request->req_dbb, name, SYM_relation);
+	METD_REC_LOCK;
+
+/* If the symbol wasn't defined, we've got nothing to do */
+
+	symbol = HSHD_lookup(request->req_dbb, (TEXT*)name->str_data,
+						 name->str_length, SYM_relation, 0);
+	for (; symbol; symbol = symbol->sym_homonym)
+		if ((symbol->sym_type == SYM_relation) &&
+			((relation = (DSQL_REL) symbol->sym_object) &&
+			 (!(relation->rel_flags & REL_dropped))))
+			break;
 
 	if (symbol) {
-		dsql_rel* relation = (dsql_rel*) symbol->sym_object;
+		relation = (DSQL_REL) symbol->sym_object;
 		relation->rel_flags |= REL_dropped;
 	}
 
-	// mark other potential candidates as maybe dropped 
+/* mark other potential candidates as maybe dropped */
 
 	HSHD_set_flag(request->req_dbb, (TEXT*)name->str_data, name->str_length,
 				  SYM_relation, REL_dropped);
 
+	METD_REC_UNLOCK;
 }
 
 
-dsql_intlsym* METD_get_collation(dsql_req* request,
-								 const dsql_str* name,
-								 USHORT charset_id)
+INTLSYM METD_get_collation(DSQL_REQ request, STR name)
 {
 /**************************************
  *
@@ -302,33 +273,40 @@ dsql_intlsym* METD_get_collation(dsql_req* request,
  *	If it doesn't exist, return NULL.
  *
  **************************************/
-    RecMutexHolder holder;
+	FRBRD *DB, *gds_trans;
+	DBB dbb;
+	INTLSYM iname;
+	SYM symbol;
 
-	// Start by seeing if symbol is already defined 
+/* Start by seeing if symbol is already defined */
 
-	dsql_sym* symbol = lookup_symbol(request->req_dbb, name, SYM_intlsym_collation, charset_id);
-	if (symbol)
-		return (dsql_intlsym*) symbol->sym_object;
+	symbol = HSHD_lookup(request->req_dbb, (TEXT*)name->str_data,
+						 name->str_length, SYM_intlsym, 0);
+	for (; symbol; symbol = symbol->sym_homonym)
+		if ((symbol->sym_type == SYM_intlsym) &&
+			(((INTLSYM) symbol->sym_object)->intlsym_type ==
+			 INTLSYM_collation)) return (INTLSYM) symbol->sym_object;
 
-	// Now see if it is in the database 
 
-	ISC_STATUS_ARRAY isc_status = {0};
-	dsql_dbb* dbb = request->req_dbb;
-	isc_db_handle DB = dbb->dbb_database_handle;
-	dsql_intlsym* iname = NULL;
+/* Now see if it is in the database */
 
-	THREAD_EXIT();
+	dbb = request->req_dbb;
+	DB = dbb->dbb_database_handle;
+	gds_trans = request->req_trans;
+	iname = NULL;
 
-	FOR(REQUEST_HANDLE dbb->dbb_requests[irq_collation] TRANSACTION_HANDLE request->req_trans)
+	THREAD_EXIT;
+
+	FOR(REQUEST_HANDLE dbb->dbb_requests[irq_collation])
 	X IN RDB$COLLATIONS
 		CROSS Y IN RDB$CHARACTER_SETS OVER RDB$CHARACTER_SET_ID
-		WITH X.RDB$COLLATION_NAME EQ name->str_data AND
-			 X.RDB$CHARACTER_SET_ID EQ charset_id;
+		WITH X.RDB$COLLATION_NAME EQ name->str_data;
 
-	THREAD_ENTER();
+	THREAD_ENTER;
 
-	iname = FB_NEW_RPT(*dbb->dbb_pool, name->str_length) dsql_intlsym;
+	iname = FB_NEW_RPT(*dbb->dbb_pool, name->str_length) intlsym;
 	strcpy(iname->intlsym_name, (TEXT *) name->str_data);
+	iname->intlsym_type = INTLSYM_collation;
 	iname->intlsym_flags = 0;
 	iname->intlsym_charset_id = X.RDB$CHARACTER_SET_ID;
 	iname->intlsym_collate_id = X.RDB$COLLATION_ID;
@@ -337,39 +315,37 @@ dsql_intlsym* METD_get_collation(dsql_req* request,
 							  iname->intlsym_collate_id);
 	iname->intlsym_bytes_per_char =
 		(Y.RDB$BYTES_PER_CHARACTER.NULL) ? 1 : (Y.RDB$BYTES_PER_CHARACTER);
-	THREAD_EXIT();
+	THREAD_EXIT;
 
-	END_FOR 
-	ON_ERROR
-		THREAD_ENTER();
-		ERRD_punt(isc_status);
-	END_ERROR;
+	END_FOR ON_ERROR
+		/* Assume V3 database */
+		END_ERROR;
 
-	THREAD_ENTER();
+	THREAD_ENTER;
 
 	if (!iname)
 		return NULL;
 
-	// Store in the symbol table 
+/* Store in the symbol table */
 
-	symbol = iname->intlsym_symbol = FB_NEW_RPT(*dbb->dbb_pool, 0) dsql_sym;
+	symbol = iname->intlsym_symbol = FB_NEW_RPT(*dbb->dbb_pool, 0) sym;
 	symbol->sym_object = (BLK) iname;
 	symbol->sym_string = iname->intlsym_name;
 	symbol->sym_length = name->str_length;
-	symbol->sym_type = SYM_intlsym_collation;
+	symbol->sym_type = SYM_intlsym;
 	symbol->sym_dbb = dbb;
-	insert_symbol(request->req_dbb, symbol);
+	HSHD_insert(symbol);
 
 	return iname;
 }
 
 
-USHORT METD_get_col_default(dsql_req* request,
-							const char* for_rel_name,
-							const char* for_col_name,
-							bool* has_default,
-							TEXT* buffer,
-							USHORT buff_length)
+void METD_get_col_default(DSQL_REQ    request,
+						  const char* for_rel_name,
+						  const char* for_col_name,
+						  BOOLEAN*    has_default,
+						  TEXT*       buffer,
+						  USHORT      buff_length)
 {
 /*************************************************************
  *
@@ -388,85 +364,85 @@ USHORT METD_get_col_default(dsql_req* request,
  *    Reads the system tables RDB$FIELDS and RDB$RELATION_FIELDS.
  *
  **************************************************************/
-	dsql_dbb* dbb;
+	FRBRD *DB, *gds_trans;
+	DBB dbb;
 	ISC_STATUS_ARRAY status_vect;
 
 	ISC_QUAD *blob_id;
 	TEXT *ptr_in_buffer;
 
 	ISC_STATUS stat;
-	USHORT length, result = 0;
-	isc_blob_handle blob_handle = 0;
+	USHORT length;
+	isc_blob_handle blob_handle = NULL;
 
-	*has_default = false;
+	*has_default = FALSE;
 
-	ISC_STATUS_ARRAY isc_status = {0};
 	dbb = request->req_dbb;
-	isc_db_handle DB = dbb->dbb_database_handle;
+	DB = dbb->dbb_database_handle;
+	gds_trans = request->req_trans;
 
-	// V4.x multi threading requirements 
-	THREAD_EXIT();
+/* V4.x multi threading requirements */
+	THREAD_EXIT;
 
-	FOR(REQUEST_HANDLE dbb->dbb_requests[irq_col_default] TRANSACTION_HANDLE request->req_trans)
+	FOR(REQUEST_HANDLE dbb->dbb_requests[irq_col_default])
 		RFL IN RDB$RELATION_FIELDS CROSS
 		FLD IN RDB$FIELDS WITH
 		RFL.RDB$RELATION_NAME EQ for_rel_name AND
 		RFL.RDB$FIELD_SOURCE EQ FLD.RDB$FIELD_NAME AND
 		RFL.RDB$FIELD_NAME EQ for_col_name
 		
-	THREAD_ENTER();
+	THREAD_ENTER;
 
 	if (!RFL.RDB$DEFAULT_VALUE.NULL) {
 		blob_id = &RFL.RDB$DEFAULT_VALUE;
-		*has_default = true;
+		*has_default = TRUE;
 	}
 	else if (!FLD.RDB$DEFAULT_VALUE.NULL) {
 		blob_id = &FLD.RDB$DEFAULT_VALUE;
-		*has_default = true;
+		*has_default = TRUE;
 	}
 	else
-		*has_default = false;
+		*has_default = FALSE;
 
 	if (*has_default) {
-		// open the blob 
-		THREAD_EXIT();
-		stat = isc_open_blob2(status_vect, &DB, &request->req_trans,
+		/* open the blob */
+		THREAD_EXIT;
+		stat = isc_open_blob2(status_vect, &DB, &gds_trans,
 							  &blob_handle, blob_id, sizeof(blr_bpb),
-							  blr_bpb);
-		THREAD_ENTER();
+							  (UCHAR*)blr_bpb);
+		THREAD_ENTER;
 		if (stat)
-			ERRD_punt(status_vect);
+			ERRD_punt();
 
-		// fetch segments. Assuming here that the buffer is big enough. 
+		/* fetch segments. Assuming here that the buffer is big enough. */
 		ptr_in_buffer = buffer;
-		while (true) {
-			THREAD_EXIT();
+		while (TRUE) {
+			THREAD_EXIT;
 			stat = isc_get_segment(status_vect, &blob_handle,
 								   &length, buff_length, ptr_in_buffer);
-			THREAD_ENTER();
+			THREAD_ENTER;
 			ptr_in_buffer = ptr_in_buffer + length;
 			buff_length = buff_length - length;
-			result += length;
 
 			if (!stat)
 				continue;
-			else if (stat == isc_segstr_eof) {
-				// null terminate the buffer 
+			else if (stat == gds_segstr_eof) {
+				/* null terminate the buffer */
 				*ptr_in_buffer = 0;
 				break;
 			}
 			else
-				ERRD_punt(status_vect);
+				ERRD_punt();
 
 		}
-		THREAD_EXIT();
+		THREAD_EXIT;
 		isc_close_blob(status_vect, &blob_handle);
-		THREAD_ENTER();
+		THREAD_ENTER;
 
 		/* the default string must be of the form:
 		   blr_version4 blr_literal ..... blr_eoc  */
-		fb_assert((buffer[0] == blr_version4) || (buffer[0] == blr_version5));
-		fb_assert(buffer[1] == blr_literal);
+		assert((buffer[0] == blr_version4) || (buffer[0] == blr_version5));
+		assert(buffer[1] == blr_literal);
 
 	}
 	else {
@@ -475,24 +451,17 @@ USHORT METD_get_col_default(dsql_req* request,
 		else
 			buffer[0] = blr_version4;
 		buffer[1] = blr_eoc;
-		result = 2;
 	}
 
-	THREAD_EXIT();
+	THREAD_EXIT;
 
-	END_FOR 
-	ON_ERROR 
-		THREAD_ENTER();
-		ERRD_punt(isc_status);
-	END_ERROR 
-	
-	THREAD_ENTER();
+	END_FOR ON_ERROR ERRD_punt();
+	END_ERROR THREAD_ENTER;
 
-	return result;
 }
 
 
-dsql_intlsym* METD_get_charset(dsql_req* request, USHORT length, const char* name) // UTF-8
+INTLSYM METD_get_charset(DSQL_REQ request, USHORT length, const char* name /* UTF-8 */)
 {
 /**************************************
  *
@@ -505,24 +474,30 @@ dsql_intlsym* METD_get_charset(dsql_req* request, USHORT length, const char* nam
  *	If it doesn't exist, return NULL.
  *
  **************************************/
-    RecMutexHolder holder;
+	FRBRD *DB, *gds_trans;
+	DBB dbb;
+	INTLSYM iname;
+	SYM symbol;
 
-	// Start by seeing if symbol is already defined 
+/* Start by seeing if symbol is already defined */
 
-	dsql_sym* symbol = lookup_symbol(request->req_dbb, length, name, SYM_intlsym_charset);
-	if (symbol)
-		return (dsql_intlsym*) symbol->sym_object;
+	symbol = HSHD_lookup(request->req_dbb, (TEXT*) name, length, SYM_intlsym, 0);
+	for (; symbol; symbol = symbol->sym_homonym)
+		if ((symbol->sym_type == SYM_intlsym) &&
+			(((INTLSYM) (symbol->sym_object))->intlsym_type ==
+			 INTLSYM_charset)) return (INTLSYM) symbol->sym_object;
 
-	// Now see if it is in the database 
 
-	ISC_STATUS_ARRAY isc_status = {0};
-	dsql_dbb* dbb = request->req_dbb;
-	isc_db_handle DB = dbb->dbb_database_handle;
-	dsql_intlsym* iname = NULL;
+/* Now see if it is in the database */
 
-	THREAD_EXIT();
+	dbb = request->req_dbb;
+	DB = dbb->dbb_database_handle;
+	gds_trans = request->req_trans;
+	iname = NULL;
 
-	FOR(REQUEST_HANDLE dbb->dbb_requests[irq_charset] TRANSACTION_HANDLE request->req_trans)
+	THREAD_EXIT;
+
+	FOR(REQUEST_HANDLE dbb->dbb_requests[irq_charset])
 	X IN RDB$COLLATIONS
 		CROSS Y IN RDB$CHARACTER_SETS OVER RDB$CHARACTER_SET_ID
 		CROSS Z IN RDB$TYPES
@@ -531,10 +506,11 @@ dsql_intlsym* METD_get_charset(dsql_req* request, USHORT length, const char* nam
 		AND Z.RDB$FIELD_NAME EQ "RDB$CHARACTER_SET_NAME"
 		AND Y.RDB$DEFAULT_COLLATE_NAME EQ X.RDB$COLLATION_NAME;
 
-	    THREAD_ENTER();
+	    THREAD_ENTER;
 
-        iname = FB_NEW_RPT(*dbb->dbb_pool, length) dsql_intlsym;
-        strcpy(iname->intlsym_name, name);
+        iname = FB_NEW_RPT(*dbb->dbb_pool, length) intlsym;
+        strcpy(iname->intlsym_name, (char*) name);
+        iname->intlsym_type = INTLSYM_charset;
         iname->intlsym_flags = 0;
         iname->intlsym_charset_id = X.RDB$CHARACTER_SET_ID;
         iname->intlsym_collate_id = X.RDB$COLLATION_ID;
@@ -544,36 +520,34 @@ dsql_intlsym* METD_get_charset(dsql_req* request, USHORT length, const char* nam
         iname->intlsym_bytes_per_char =
             (Y.RDB$BYTES_PER_CHARACTER.NULL) ? 1 : (Y.RDB$BYTES_PER_CHARACTER);
 
-        THREAD_EXIT();
+        THREAD_EXIT;
 
 	END_FOR 
     ON_ERROR
-		THREAD_ENTER();
-		ERRD_punt(isc_status);
+		/* Assume V3 database */
    	END_ERROR;
 
-	THREAD_ENTER();
+	THREAD_ENTER;
 
 	if (!iname)
 		return NULL;
 
-	// Store in the symbol table 
+/* Store in the symbol table */
 
-	symbol = iname->intlsym_symbol = FB_NEW_RPT(*dbb->dbb_pool, 0) dsql_sym;
+	symbol = iname->intlsym_symbol = FB_NEW_RPT(*dbb->dbb_pool, 0) sym;
 	symbol->sym_object = (BLK) iname;
 	symbol->sym_string = iname->intlsym_name;
 	symbol->sym_length = length;
-	symbol->sym_type = SYM_intlsym_charset;
+	symbol->sym_type = SYM_intlsym;
 	symbol->sym_dbb = dbb;
-	insert_symbol(request->req_dbb, symbol);
-
-	dbb->dbb_charsets_by_id.add(iname); 
+	HSHD_insert(symbol);
 
 	return iname;
 }
 
 
-USHORT METD_get_charset_bpc(dsql_req* request, SSHORT charset_id)
+USHORT METD_get_charset_bpc (DSQL_REQ request,
+                             SSHORT	charset_id)
 {
 /**************************************
  *
@@ -589,89 +563,48 @@ USHORT METD_get_charset_bpc(dsql_req* request, SSHORT charset_id)
  *	charset' id, not by name.
  *
  **************************************/
-	dsql_dbb* dbb;
-	USHORT bpc = 0;
-
-	ISC_STATUS_ARRAY isc_status = {0};
-	dbb = request->req_dbb;
-	isc_db_handle DB = dbb->dbb_database_handle;
-
-	if (charset_id == CS_dynamic)
-		charset_id = dbb->dbb_att_charset;
-
-	dsql_intlsym* cs_sym = 0;
-	size_t pos = 0;
-	if (dbb->dbb_charsets_by_id.find(charset_id, pos)) {
-		cs_sym = dbb->dbb_charsets_by_id[pos];
-	}
-	else {
-		const Firebird::MetaName cs_name = METD_get_charset_name(request, charset_id);
-		cs_sym = METD_get_charset(request, cs_name.length(), cs_name.c_str());
-	}
-	
-	fb_assert(cs_sym);
-	
-	return cs_sym ? cs_sym->intlsym_bytes_per_char : 0;
-}
-
-
-Firebird::MetaName METD_get_charset_name(dsql_req* request, SSHORT charset_id)
-{
-/**************************************
- *
- *	M E T D _ g e t _ c h a r s e t _ n a m e
- *
- **************************************
- *
- * Functional description
- *	Look up an international text type object.
- *	If it doesn't exist, return empty string.
- *	Go directly to system tables & return only the
- *	name.
- *
- **************************************/
-    Firebird::MetaName name;
+    FRBRD *DB, *gds_trans;
+    DBB	dbb;
+    isc_req_handle handle;
+    USHORT	bpc = 0;
     
-	ISC_STATUS_ARRAY isc_status = {0};
-    dsql_dbb* dbb = request->req_dbb;
-    isc_db_handle DB = dbb->dbb_database_handle;
+    dbb = request->req_dbb;
+    DB = dbb->dbb_database_handle;
+    gds_trans = request->req_trans;
     
-    if (charset_id == CS_dynamic)
-		charset_id = dbb->dbb_att_charset;
+    handle = 0;
     
-	size_t pos = 0;
-	if (dbb->dbb_charsets_by_id.find(charset_id, pos))
-	{
-		return dbb->dbb_charsets_by_id[pos]->intlsym_name;
-	}
-
-    THREAD_EXIT();
+    THREAD_EXIT;
     
-    FOR (REQUEST_HANDLE dbb->dbb_requests[irq_cs_name] TRANSACTION_HANDLE request->req_trans)
+    FOR (REQUEST_HANDLE handle)
         Y IN RDB$CHARACTER_SETS
         WITH Y.RDB$CHARACTER_SET_ID EQ charset_id
 
-        THREAD_ENTER();
+        THREAD_ENTER;
 
-		name = Y.RDB$CHARACTER_SET_NAME;
+        bpc = (Y.RDB$BYTES_PER_CHARACTER.NULL)	? 1 :
+                                       (Y.RDB$BYTES_PER_CHARACTER);
 
-        THREAD_EXIT();
+        THREAD_EXIT;
     END_FOR
     ON_ERROR
-		THREAD_ENTER();
-		ERRD_punt(isc_status);
+    /* Assume V3 database */
     END_ERROR;
+    /*************
+     THREAD_ENTER;
 
-    THREAD_ENTER();
+     Un comment these if any code is added after the END_ERROR and 
+     gds__release request ()
 
-	// put new charset into hash table if needed
-	METD_get_charset(request, name.length(), name.c_str());
+     THREAD_EXIT;
+    *************/
+    isc_release_request (gds_status, GDS_REF (handle));
+    THREAD_ENTER;
 
-    return name;
+    return bpc;
 }
 
-
-dsql_str* METD_get_default_charset(dsql_req* request)
+STR METD_get_default_charset(DSQL_REQ request)
 {
 /**************************************
  *
@@ -683,45 +616,62 @@ dsql_str* METD_get_default_charset(dsql_req* request)
  *	Find the default character set for a database
  *
  **************************************/
-	ISC_STATUS_ARRAY isc_status = {0};
-	dsql_dbb* dbb = request->req_dbb;
+	FRBRD *DB, *gds_trans;
+	DBB dbb;
+	isc_req_handle handle;
+	UCHAR *str_;
+	USHORT length;
+
+	dbb = request->req_dbb;
 	if (dbb->dbb_flags & DBB_no_charset)
 		return NULL;
 
 	if (dbb->dbb_dfl_charset)
-		return dbb->dbb_dfl_charset;
+		return request->req_dbb->dbb_dfl_charset;
 
-	// Now see if it is in the database 
+/* Now see if it is in the database */
 
-	isc_db_handle DB = dbb->dbb_database_handle;
+	DB = dbb->dbb_database_handle;
+	gds_trans = request->req_trans;
 
-	THREAD_EXIT();
+	handle = 0;
 
-	FOR(REQUEST_HANDLE dbb->dbb_requests[irq_default_cs] TRANSACTION_HANDLE request->req_trans)
+	THREAD_EXIT;
+
+	FOR(REQUEST_HANDLE handle)
 		FIRST 1 DBB IN RDB$DATABASE
 		WITH DBB.RDB$CHARACTER_SET_NAME NOT MISSING;
 
-	    THREAD_ENTER();
+	    THREAD_ENTER;
 
-        // Terminate ASCIIZ string on first trailing blank 
-        fb_utils::exact_name(DBB.RDB$CHARACTER_SET_NAME);
-        USHORT length = strlen(DBB.RDB$CHARACTER_SET_NAME);
-        dbb->dbb_dfl_charset = FB_NEW_RPT(*dbb->dbb_pool, length) dsql_str;
+        /* Terminate ASCIIZ string on first trailing blank */
+        metd_exact_name(DBB.RDB$CHARACTER_SET_NAME);
+        length = strlen(DBB.RDB$CHARACTER_SET_NAME);
+        dbb->dbb_dfl_charset = FB_NEW_RPT(*dbb->dbb_pool, length) str;
         dbb->dbb_dfl_charset->str_length = length;
         dbb->dbb_dfl_charset->str_charset = NULL;
-		const UCHAR* str_charset = (UCHAR*) DBB.RDB$CHARACTER_SET_NAME;
+        str_ = (UCHAR*) DBB.RDB$CHARACTER_SET_NAME;
         for (char* p = dbb->dbb_dfl_charset->str_data; length; --length) {
-            *p++ = *str_charset++;
+            *p++ = *str_++;
 		}
 
-        THREAD_EXIT();
+        THREAD_EXIT;
 	END_FOR 
     ON_ERROR
-		THREAD_ENTER();
-		ERRD_punt(isc_status);
+		/* Assume V3 database */
    	END_ERROR;
 
-	THREAD_ENTER();
+/*************
+THREAD_ENTER;
+
+Un comment these if any code is added after the END_ERROR and 
+gds__release request ()
+
+THREAD_EXIT;
+*************/
+
+	isc_release_request(gds_status, GDS_REF(handle));
+	THREAD_ENTER;
 
 	if (dbb->dbb_dfl_charset == NULL)
 		dbb->dbb_flags |= DBB_no_charset;
@@ -730,7 +680,7 @@ dsql_str* METD_get_default_charset(dsql_req* request)
 }
 
 
-USHORT METD_get_domain(dsql_req* request, dsql_fld* field, const char* name) // UTF-8
+USHORT METD_get_domain(DSQL_REQ request, DSQL_FLD field, const char* name /* UTF-8 */)
 {
 /**************************************
  *
@@ -745,16 +695,16 @@ USHORT METD_get_domain(dsql_req* request, dsql_fld* field, const char* name) // 
 
 	bool found = false;
 
-	ISC_STATUS_ARRAY isc_status = {0};
-	dsql_dbb* dbb = request->req_dbb;
-	isc_db_handle DB = dbb->dbb_database_handle;
+	DBB    dbb       = request->req_dbb;
+	FRBRD* DB        = dbb->dbb_database_handle;
+	FRBRD* gds_trans = request->req_trans;
 
-	THREAD_EXIT();
+	THREAD_EXIT;
 
-	FOR(REQUEST_HANDLE dbb->dbb_requests[irq_domain] TRANSACTION_HANDLE request->req_trans)
+	FOR(REQUEST_HANDLE dbb->dbb_requests[irq_domain])
         FLX IN RDB$FIELDS WITH FLX.RDB$FIELD_NAME EQ name 
 
-        THREAD_ENTER();
+        THREAD_ENTER;
 
 	    found = true;
         field->fld_length = FLX.RDB$FIELD_LENGTH;
@@ -773,35 +723,29 @@ USHORT METD_get_domain(dsql_req* request, dsql_fld* field, const char* name) // 
         
         if (!FLX.RDB$COMPUTED_BLR.NULL)
             field->fld_flags |= FLD_computed;
-
-		if (FLX.RDB$SYSTEM_FLAG == 1)
-			field->fld_flags |= FLD_system;
-
+        
         convert_dtype(field, FLX.RDB$FIELD_TYPE);
     
         if (FLX.RDB$FIELD_TYPE == blr_blob) {
             field->fld_seg_length = FLX.RDB$SEGMENT_LENGTH;
         }
 
-        THREAD_EXIT();
+        THREAD_EXIT;
 
 	END_FOR 
     ON_ERROR
-		THREAD_ENTER();
-		ERRD_punt(isc_status);
     END_ERROR;
 
-	THREAD_ENTER();
+	THREAD_ENTER;
     
 	return found ? TRUE : FALSE;
 }
 
 
-USHORT METD_get_domain_default(dsql_req* request,
-							   const TEXT* domain_name,
-							   bool* has_default,
-							   TEXT* buffer,
-							   USHORT buff_length)
+void METD_get_domain_default(DSQL_REQ request,
+							 TEXT * domain_name,
+							 BOOLEAN * has_default,
+							 TEXT * buffer, USHORT buff_length)
 {
 /*************************************************************
  *
@@ -813,74 +757,76 @@ USHORT METD_get_domain_default(dsql_req* request,
  *    Gets the default value for a domain of an existing table.
  *
  **************************************************************/
+	FRBRD *DB, *gds_trans;
+	DBB dbb;
 	ISC_STATUS_ARRAY status_vect;
 
-	*has_default = false;
+	ISC_QUAD *blob_id;
+	TEXT *ptr_in_buffer;
 
-	ISC_STATUS_ARRAY isc_status = {0};
-	dsql_dbb* dbb = request->req_dbb;
-	isc_db_handle DB = dbb->dbb_database_handle;
-	USHORT result = 0;
+	ISC_STATUS stat;
+	USHORT length;
+	isc_blob_handle blob_handle = NULL;
 
-	// V4.x multi threading requirements 
-	THREAD_EXIT();
+	*has_default = FALSE;
 
-	FOR(REQUEST_HANDLE dbb->dbb_requests[irq_domain_2] TRANSACTION_HANDLE request->req_trans)
-        FLD IN RDB$FIELDS WITH FLD.RDB$FIELD_NAME EQ domain_name
-        
-		THREAD_ENTER();
+	dbb = request->req_dbb;
+	DB = dbb->dbb_database_handle;
+	gds_trans = request->req_trans;
 
-        ISC_QUAD* blob_id;
+/* V4.x multi threading requirements */
+	THREAD_EXIT;
+
+	FOR(REQUEST_HANDLE dbb->dbb_requests[irq_domain_2])
+        FLD IN RDB$FIELDS WITH FLD.RDB$FIELD_NAME EQ domain_name THREAD_ENTER;
+
 	    if (!FLD.RDB$DEFAULT_VALUE.NULL) {
             blob_id = &FLD.RDB$DEFAULT_VALUE;
-            *has_default = true;
+            *has_default = TRUE;
         }
         else
-            *has_default = false;
+            *has_default = FALSE;
 
         if (*has_default) {
-            // open the blob 
-            THREAD_EXIT();
-            isc_blob_handle blob_handle = 0;
-            ISC_STATUS stat = isc_open_blob2(status_vect, &DB, &request->req_trans,
+            /* open the blob */
+            THREAD_EXIT;
+            stat = isc_open_blob2(status_vect, &DB, &gds_trans,
                                   &blob_handle, blob_id, sizeof(blr_bpb),
-                                  blr_bpb);
-            THREAD_ENTER();
+                                  (UCHAR*)blr_bpb);
+            THREAD_ENTER;
             if (stat)
-                ERRD_punt(status_vect);
+                ERRD_punt();
 
-            // fetch segments. Assume buffer is big enough.  
-            TEXT* ptr_in_buffer = buffer;
-            while (true) {
-                THREAD_EXIT();
-                USHORT length;
+            /* fetch segments. Assume buffer is big enough.  */
+            ptr_in_buffer = buffer;
+            while (TRUE) {
+                THREAD_EXIT;
                 stat = isc_get_segment(status_vect,
                                        &blob_handle,
                                        &length, buff_length, ptr_in_buffer);
-                THREAD_ENTER();
+                THREAD_ENTER;
                 ptr_in_buffer = ptr_in_buffer + length;
                 buff_length = buff_length - length;
-				result += length;
                 
                 if (!stat)
                     continue;
-                else if (stat == isc_segstr_eof) {
-                    // null terminate the buffer 
+                else if (stat == gds_segstr_eof) {
+                    /* null terminate the buffer */
                     *ptr_in_buffer = 0;
                     break;
                 }
                 else
-                    ERRD_punt(status_vect);
+                    ERRD_punt();
 
             }
-            THREAD_EXIT();
+            THREAD_EXIT;
             isc_close_blob(status_vect, &blob_handle);
-            THREAD_ENTER();
+            THREAD_ENTER;
 
             /* the default string must be of the form:
                blr_version4 blr_literal ..... blr_eoc  */
-            fb_assert((buffer[0] == blr_version4) || (buffer[0] == blr_version5));
-            fb_assert(buffer[1] == blr_literal);
+            assert((buffer[0] == blr_version4) || (buffer[0] == blr_version5));
+            assert(buffer[1] == blr_literal);
 
         }
         else {
@@ -889,67 +835,21 @@ USHORT METD_get_domain_default(dsql_req* request,
             else
                 buffer[0] = blr_version4;
             buffer[1] = blr_eoc;
-			result = 2;
         }
         
-        THREAD_EXIT();
+        THREAD_EXIT;
         
     END_FOR 
     ON_ERROR 
-		THREAD_ENTER();
-		ERRD_punt(isc_status);
+        ERRD_punt();
     END_ERROR 
 
-    THREAD_ENTER();
+    THREAD_ENTER;
 
-	return result;
 }
 
 
-bool METD_get_exception(dsql_req* request, const dsql_str* name)
-{
-/**************************************
- *
- *	M E T D _ g e t _ e x c e p t i o n 
- *
- **************************************
- *
- * Functional description
- *	Look up an exception.
- *
- **************************************/
-	dsql_dbb* dbb;
-	bool found = false;
-
-	ISC_STATUS_ARRAY isc_status = {0};
-	dbb = request->req_dbb;
-	isc_db_handle DB = dbb->dbb_database_handle;
-
-	THREAD_EXIT();
-
-	FOR(REQUEST_HANDLE dbb->dbb_requests[irq_exception] TRANSACTION_HANDLE request->req_trans)
-		X IN RDB$EXCEPTIONS WITH
-		X.RDB$EXCEPTION_NAME EQ name->str_data;
-
-		THREAD_ENTER();
-
-		found = true;
-
-		THREAD_EXIT();
-        
-	END_FOR 
-    ON_ERROR 
-		THREAD_ENTER();
-		ERRD_punt(isc_status);
-    END_ERROR;
-
-	THREAD_ENTER();
-
-	return found;
-}
-
-
-dsql_udf* METD_get_function(dsql_req* request, const dsql_str* name)
+UDF METD_get_function(DSQL_REQ request, STR name)
 {
 /**************************************
  *
@@ -962,206 +862,252 @@ dsql_udf* METD_get_function(dsql_req* request, const dsql_str* name)
  *	return NULL.
  *
  **************************************/
-	dsql_nod* udf_param_node;
-	dsql_nod** ptr;
+	FRBRD *DB, *gds_trans;
+	DBB dbb;
+	UDF udf_, temp;
+	USHORT return_arg, arg_count;
+	SYM symbol;
+    DLLS stack, stack_temp;
+    DSQL_NOD	udf_param_node, *ptr;
 
-    RecMutexHolder holder;
 
-	// Start by seeing if symbol is already defined 
+    METD_REC_LOCK;
 
-	dsql_sym* symbol = lookup_symbol(request->req_dbb, name, SYM_udf);
-	if (symbol)
-        return (dsql_udf*) symbol->sym_object;
+/* Start by seeing if symbol is already defined */
 
-	// Now see if it is in the database 
+	symbol = HSHD_lookup(request->req_dbb, (TEXT*) name->str_data,
+						 name->str_length, SYM_udf, 0);
+    if (symbol && (symbol->sym_type == SYM_udf) &&
+	    ((udf_ = (UDF) symbol->sym_object) &&
+         (!(udf_->udf_flags & UDF_dropped)))) {
+        METD_REC_UNLOCK;
+        return (UDF) symbol->sym_object;
+	}
 
-	ISC_STATUS_ARRAY isc_status = {0};
-	dsql_dbb* dbb = request->req_dbb;
-	isc_db_handle DB = dbb->dbb_database_handle;
-	dsql_udf* userFunc = NULL;
-    DsqlNodStack stack;
-    USHORT return_arg;
 
-	THREAD_EXIT();
+/* This was the old code that didn't do the loop above to check for the flag.
+	if (symbol) {
+        METD_REC_UNLOCK;
+		return (UDF) symbol->sym_object;
+    }
+*/
 
-	FOR(REQUEST_HANDLE dbb->dbb_requests[irq_function] TRANSACTION_HANDLE request->req_trans)
+/* Now see if it is in the database */
+
+	dbb = request->req_dbb;
+	DB = dbb->dbb_database_handle;
+	gds_trans = request->req_trans;
+	udf_ = NULL;
+    stack = 0;
+
+	THREAD_EXIT;
+
+	FOR(REQUEST_HANDLE dbb->dbb_requests[irq_function])
 	    X IN RDB$FUNCTIONS WITH
 		X.RDB$FUNCTION_NAME EQ name->str_data 
 
-        THREAD_ENTER();
+        THREAD_ENTER;
 
-	    userFunc = FB_NEW_RPT(*dbb->dbb_pool, name->str_length) dsql_udf;
+	    udf_ = FB_NEW_RPT(*dbb->dbb_pool, name->str_length) udf;
         /* Moved below as still can't say for sure it will be stored.
            Following the same logic for MET_get_procedure and MET_get_relation
-        userFunc->udf_next = dbb->dbb_functions;
-        dbb->dbb_functions = userFunc;
+        udf_->udf_next = dbb->dbb_functions;
+        dbb->dbb_functions = udf_;
         */
 
-        strcpy(userFunc->udf_name, (char*) name->str_data);
+        strcpy((char*) udf_->udf_name, (char*) name->str_data);
         return_arg = X.RDB$RETURN_ARGUMENT;
-        userFunc->udf_arguments = 0;
+        udf_->udf_arguments = 0;
 
-        THREAD_EXIT();
+        THREAD_EXIT;
 
 	END_FOR 
     ON_ERROR 
-		THREAD_ENTER();
-		ERRD_punt(isc_status);
     END_ERROR;
 
-	THREAD_ENTER();
+	THREAD_ENTER;
 
-	if (!userFunc) {
+	if (!udf_) {
+        METD_REC_UNLOCK;
 		return NULL;
     }
     
-	// Note: The following two requests differ in the fields which are
-	// new since ODS7 (DBB_v3 flag).  One of the two requests
-	// here will be cached in dbb_requests[ird_func_return],
-	// the one that is appropriate for the database we are
-	// working against.
+/* Note: The following two requests differ in the fields which are
+ *	 new since ODS7 (DBB_v3 flag).  One of the two requests
+ *	 here will be cached in dbb_requests [ird_func_return],
+ *	 the one that is appropriate for the database we are
+ *	 working against.
+ */
+	THREAD_EXIT;
 
-	THREAD_EXIT();
+	if (dbb->dbb_flags & DBB_v3) {
+		FOR(REQUEST_HANDLE dbb->dbb_requests[irq_func_return])
+		    X IN RDB$FUNCTION_ARGUMENTS WITH
+			X.RDB$FUNCTION_NAME EQ name->str_data AND
+			X.RDB$ARGUMENT_POSITION EQ return_arg 
 
-	FOR(REQUEST_HANDLE dbb->dbb_requests[irq_func_return] TRANSACTION_HANDLE request->req_trans)
-	    X IN RDB$FUNCTION_ARGUMENTS WITH
-        X.RDB$FUNCTION_NAME EQ name->str_data
-        SORTED BY X.RDB$ARGUMENT_POSITION
+            THREAD_ENTER;
 
-        THREAD_ENTER();
-
-        if (X.RDB$ARGUMENT_POSITION == return_arg) {
-            userFunc->udf_dtype = (X.RDB$FIELD_TYPE != blr_blob) ?
+		    udf_->udf_dtype = (X.RDB$FIELD_TYPE != blr_blob) ?
                 gds_cvt_blr_dtype[X.RDB$FIELD_TYPE] : dtype_blob;
-            userFunc->udf_scale = X.RDB$FIELD_SCALE;
-            
-            if (!X.RDB$FIELD_SUB_TYPE.NULL) {
-                userFunc->udf_sub_type = X.RDB$FIELD_SUB_TYPE;
-            }
-            else {
-                userFunc->udf_sub_type = 0;
-            }
-            /* CVC: We are overcoming a bug in ddl.c:put_field()
-               when any field is defined: the length is not given for blobs. */
-            if (X.RDB$FIELD_TYPE == blr_blob)
-                userFunc->udf_length = sizeof (ISC_QUAD);
-            else
-                userFunc->udf_length = X.RDB$FIELD_LENGTH;
-            
-            if (!X.RDB$CHARACTER_SET_ID.NULL) {
-                userFunc->udf_character_set_id = X.RDB$CHARACTER_SET_ID;
-            }
-        }
+            udf_->udf_scale = X.RDB$FIELD_SCALE;
+            udf_->udf_sub_type = X.RDB$FIELD_SUB_TYPE;
+            udf_->udf_length = X.RDB$FIELD_LENGTH;
 
-        else {
-            DSC* d;
-            /* udf_param_node = MAKE_node (type_nod, 0); */
-		    udf_param_node = FB_NEW_RPT(*dbb->dbb_pool, 0) dsql_nod;
-            d = &udf_param_node->nod_desc;
-            d->dsc_dtype = (X.RDB$FIELD_TYPE != blr_blob) ?
-                gds_cvt_blr_dtype[X.RDB$FIELD_TYPE] : dtype_blob;
-            d->dsc_scale = X.RDB$FIELD_SCALE;
-            if (!X.RDB$FIELD_SUB_TYPE.NULL) {
-                d->dsc_sub_type = X.RDB$FIELD_SUB_TYPE;
-            }
-            else {
-                d->dsc_sub_type = 0;
-            }
-            d->dsc_length = X.RDB$FIELD_LENGTH;
-            if (d->dsc_dtype == dtype_varying) {
-                d->dsc_length += sizeof (USHORT);
-            }
-            d->dsc_address = NULL;
+            THREAD_EXIT;
             
-            if (!X.RDB$CHARACTER_SET_ID.NULL) {
-                if (d->dsc_dtype != dtype_blob) {
-                    d->dsc_ttype() = X.RDB$CHARACTER_SET_ID;
+		END_FOR 
+        ON_ERROR
+        END_ERROR;
+	}
+	else {						/* V4 or greater dbb */
+
+		FOR(REQUEST_HANDLE dbb->dbb_requests[irq_func_return])
+		    X IN RDB$FUNCTION_ARGUMENTS WITH
+            X.RDB$FUNCTION_NAME EQ name->str_data
+            SORTED BY X.RDB$ARGUMENT_POSITION
+
+            THREAD_ENTER;
+
+            if (X.RDB$ARGUMENT_POSITION == return_arg) {
+                udf_->udf_dtype = (X.RDB$FIELD_TYPE != blr_blob) ?
+                    gds_cvt_blr_dtype[X.RDB$FIELD_TYPE] : dtype_blob;
+                udf_->udf_scale = X.RDB$FIELD_SCALE;
+                
+                if (!X.RDB$FIELD_SUB_TYPE.NULL) {
+                    udf_->udf_sub_type = X.RDB$FIELD_SUB_TYPE;
                 }
                 else {
-                    d->dsc_scale = X.RDB$CHARACTER_SET_ID;
+                    udf_->udf_sub_type = 0;
+                }
+                /* CVC: We are overcoming a bug in ddl.c:put_field()
+                   when any field is defined: the length is not given for blobs. */
+                if (X.RDB$FIELD_TYPE == blr_blob)
+                    udf_->udf_length = sizeof (ISC_QUAD);
+                else
+                    udf_->udf_length = X.RDB$FIELD_LENGTH;
+                
+                if (!X.RDB$CHARACTER_SET_ID.NULL) {
+                    udf_->udf_character_set_id = X.RDB$CHARACTER_SET_ID;
                 }
             }
-            
-            if (X.RDB$MECHANISM != Jrd::FUN_value && X.RDB$MECHANISM != Jrd::FUN_reference)
-			{
-                d->dsc_flags = DSC_nullable;
+
+            else {
+                DSC* d;
+                /* udf_param_node = MAKE_node (type_nod, 0); */
+			    udf_param_node = FB_NEW_RPT(*dbb->dbb_pool, 0) dsql_nod;
+                d = &udf_param_node->nod_desc;
+                d->dsc_dtype = (X.RDB$FIELD_TYPE != blr_blob) ?
+                    gds_cvt_blr_dtype [X.RDB$FIELD_TYPE] : dtype_blob;
+                d->dsc_scale = X.RDB$FIELD_SCALE;
+                if (!X.RDB$FIELD_SUB_TYPE.NULL) {
+                    d->dsc_sub_type = X.RDB$FIELD_SUB_TYPE;
+                }
+                else {
+                    d->dsc_sub_type = 0;
+                }
+                d->dsc_length = X.RDB$FIELD_LENGTH;
+                if (d->dsc_dtype == dtype_varying) {
+                    d->dsc_length += sizeof (USHORT);
+                }
+                d->dsc_address = 0;
+                
+                if (!X.RDB$CHARACTER_SET_ID.NULL) {
+                    if (d->dsc_dtype != dtype_blob) {
+                        d->dsc_ttype = X.RDB$CHARACTER_SET_ID;
+                    }
+                    else {
+                        d->dsc_scale = X.RDB$CHARACTER_SET_ID;
+                    }
+                }
+                
+                if (X.RDB$MECHANISM != FUN_value && X.RDB$MECHANISM != FUN_reference) {
+                    d->dsc_flags = DSC_nullable;
+                }
+                
+                LLS_PUSH (udf_param_node, &stack);
             }
-            
-            stack.push(udf_param_node);
-        }
 
-        THREAD_EXIT();
+            THREAD_EXIT;
 
-    END_FOR 
-    ON_ERROR 
-		THREAD_ENTER();
-		ERRD_punt(isc_status);
-    END_ERROR;
-
-	THREAD_ENTER();
-    
-	// Adjust the return type & length of the UDF to account for 
-	// cstring & varying.  While a UDF can return CSTRING, we convert it
-	// to VARCHAR for manipulation as CSTRING is not a SQL type.
-
-	if (userFunc->udf_dtype == dtype_cstring) {
-		userFunc->udf_dtype = dtype_varying;
-		userFunc->udf_length += sizeof(USHORT);
-		if (userFunc->udf_length > MAX_SSHORT)
-			userFunc->udf_length = MAX_SSHORT;
+        END_FOR 
+        ON_ERROR 
+        END_ERROR;
 	}
-	else if (userFunc->udf_dtype == dtype_varying)
-		userFunc->udf_length += sizeof(USHORT);
+
+	THREAD_ENTER;
+    
+/* Adjust the return type & length of the UDF to account for 
+ * cstring & varying.  While a UDF can return CSTRING, we convert it
+ * to CHAR for manipulation as CSTRING is not a SQL type.
+ * (Q: why not use varying?)
+ */
+
+	if (udf_->udf_dtype == dtype_cstring) {
+		udf_->udf_dtype = dtype_text;
+	}
+	else if (udf_->udf_dtype == dtype_varying)
+		udf_->udf_length += sizeof(USHORT);
 
     /* Can't call MAKE_list because it allocates an initial list node
        in the default pool. */
-	USHORT arg_count = stack.getCount();
-
-    /* userFunc->udf_arguments = MAKE_node (nod_list, count); */
-    userFunc->udf_arguments = FB_NEW_RPT(*dbb->dbb_pool, arg_count) dsql_nod;
-    userFunc->udf_arguments->nod_type = nod_list;
-    userFunc->udf_arguments->nod_count = arg_count;
-    
-    ptr = userFunc->udf_arguments->nod_arg + arg_count;
-    while (stack.hasData())
-	{
-        *--ptr = stack.pop();
-		// dimitr: adjust the UDF arguments for CSTRING
-		if ((*ptr)->nod_desc.dsc_dtype == dtype_cstring)
-			(*ptr)->nod_desc.dsc_dtype = dtype_text;
+    for (stack_temp = stack, arg_count = 0; stack_temp; stack_temp = stack_temp->lls_next) {
+        ++arg_count;
     }
 
+    /* udf->udf_arguments = MAKE_node (nod_list, count); */
+    udf_->udf_arguments = FB_NEW_RPT(*dbb->dbb_pool, arg_count) dsql_nod;
+    udf_->udf_arguments->nod_type = nod_list;
+    udf_->udf_arguments->nod_count = arg_count;
+    
+    ptr = udf_->udf_arguments->nod_arg + arg_count;
+    while (stack) {
+        *--ptr = (DSQL_NOD) LLS_POP (&stack);
+    }
+    
+    
     /* Since we could give up control due to the THREAD_EXIT and THEAD_ENTER
      * calls, another thread may have added the same udf in the mean time
      */
+    
+    symbol = HSHD_lookup(request->req_dbb,
+						 reinterpret_cast<TEXT*>(name->str_data),
+                         name->str_length, SYM_udf, 0);
 
-	if ((symbol = lookup_symbol(request->req_dbb, name, SYM_udf)))
-	{
-		// Get rid of all the stuff we just read in. Use existing one 
-		free_function (userFunc);
-		return (dsql_udf*) symbol->sym_object;
+    for (; symbol; symbol = symbol->sym_homonym) {
+        if ((symbol->sym_type == SYM_udf) &&
+            ((temp = (UDF) symbol->sym_object) &&
+             (!(temp->udf_flags & UDF_dropped)))) {
+            /* Get rid of all the stuff we just read in. Use existing one */
+            
+            free_function (udf_);
+            METD_REC_UNLOCK;
+            return (UDF) symbol->sym_object;
+        }
     }
+    
+    /* Add udf in the front of the list. */
+    udf_->udf_next = dbb->dbb_functions;
+    dbb->dbb_functions = udf_;
+    
 
-    // Add udf in the front of the list. 
-    userFunc->udf_next = dbb->dbb_functions;
-    dbb->dbb_functions = userFunc;
+/* Store in the symbol table */
+/* The UDF_new_udf flag is not used, so nothing extra to check. */
 
-	// Store in the symbol table 
-	// The UDF_new_udf flag is not used, so nothing extra to check. 
-
-	symbol = userFunc->udf_symbol = FB_NEW_RPT(*dbb->dbb_pool, 0) dsql_sym;
-	symbol->sym_object = (BLK) userFunc;
-	symbol->sym_string = userFunc->udf_name;
+	symbol = udf_->udf_symbol = FB_NEW_RPT(*dbb->dbb_pool, 0) sym;
+	symbol->sym_object = (BLK) udf_;
+	symbol->sym_string = udf_->udf_name;
 	symbol->sym_length = name->str_length;
 	symbol->sym_type = SYM_udf;
 	symbol->sym_dbb = dbb;
-	insert_symbol(request->req_dbb, symbol);
+	HSHD_insert(symbol);
 
-	return userFunc;
+    METD_REC_UNLOCK;
+	return udf_;
 }
 
 
-dsql_nod* METD_get_primary_key(dsql_req* request, const dsql_str* relation_name)
+DSQL_NOD METD_get_primary_key(DSQL_REQ request, STR relation_name)
 {
 /**************************************
  *
@@ -1175,17 +1121,22 @@ dsql_nod* METD_get_primary_key(dsql_req* request, const dsql_str* relation_name)
  *	node of the fields.
  *
  **************************************/
+	FRBRD *DB, *gds_trans;
+	DBB dbb;
+	DSQL_NOD list, field_node;
+	STR field_name;
+	USHORT count;
 
-	ISC_STATUS_ARRAY isc_status = {0};
-	dsql_dbb* dbb = request->req_dbb;
-	isc_db_handle DB = dbb->dbb_database_handle;
+	dbb = request->req_dbb;
+	DB = dbb->dbb_database_handle;
+	gds_trans = request->req_trans;
 
-	dsql_nod* list = NULL;
-	USHORT count = 0;
+	list = NULL;
+	count = 0;
 
-	THREAD_EXIT();
+	THREAD_EXIT;
 
-	FOR(REQUEST_HANDLE dbb->dbb_requests[irq_primary_key] TRANSACTION_HANDLE request->req_trans)
+	FOR(REQUEST_HANDLE dbb->dbb_requests[irq_primary_key])
 	    X IN RDB$INDICES CROSS
 		Y IN RDB$INDEX_SEGMENTS
 		OVER RDB$INDEX_NAME CROSS
@@ -1195,31 +1146,29 @@ dsql_nod* METD_get_primary_key(dsql_req* request, const dsql_str* relation_name)
 		AND Z.RDB$CONSTRAINT_TYPE EQ "PRIMARY KEY"
 		SORTED BY Y.RDB$FIELD_POSITION 
 
-        THREAD_ENTER();
+        THREAD_ENTER;
 
 	    if (!list)
             list = MAKE_node(nod_list, (int) X.RDB$SEGMENT_COUNT);
-		dsql_str* field_name = MAKE_cstring(Y.RDB$FIELD_NAME);
-        dsql_nod* field_node = MAKE_node(nod_field_name, (int) e_fln_count);
-        field_node->nod_arg[e_fln_name] = (dsql_nod*) field_name;
+        field_name = MAKE_cstring(Y.RDB$FIELD_NAME);
+        field_node = MAKE_node(nod_field_name, (int) e_fln_count);
+        field_node->nod_arg[e_fln_name] = (DSQL_NOD) field_name;
         list->nod_arg[count] = field_node;
         count++;
 
-        THREAD_EXIT();
+        THREAD_EXIT;
 
 	END_FOR 
     ON_ERROR 
-		THREAD_ENTER();
-		ERRD_punt(isc_status);
     END_ERROR;
 
-	THREAD_ENTER();
+	THREAD_ENTER;
     
 	return list;
 }
 
 
-dsql_prc* METD_get_procedure(dsql_req* request, const dsql_str* name)
+DSQL_PRC METD_get_procedure(DSQL_REQ request, STR name)
 {
 /**************************************
  *
@@ -1233,44 +1182,52 @@ dsql_prc* METD_get_procedure(dsql_req* request, const dsql_str* name)
  *	If it is marked dropped, try to read from system tables
  *
  **************************************/
-	dsql_dbb* dbb;
-	dsql_fld* parameter;
-	dsql_fld** ptr;
-	dsql_prc* temp;
-	SSHORT type, count, defaults;
+	FRBRD *DB, *gds_trans;
+	DBB dbb;
+	DSQL_FLD parameter, *ptr;
+	DSQL_PRC procedure, temp;
+	SYM symbol;
+	SSHORT type, count;
 
-	// see if the procedure is the one currently being defined in this request 
+
+	METD_REC_LOCK;
+
+/* Start by seeing if symbol is already defined */
+
+	symbol = HSHD_lookup(request->req_dbb, (TEXT*) name->str_data,
+						 name->str_length, SYM_procedure, 0);
+	for (; symbol; symbol = symbol->sym_homonym)
+		if ((symbol->sym_type == SYM_procedure) &&
+			((procedure = (DSQL_PRC) symbol->sym_object) &&
+			 (!(procedure->prc_flags & PRC_dropped)))) {
+			METD_REC_UNLOCK;
+			return (DSQL_PRC) symbol->sym_object;
+		}
+
+/* see if the procedure is the one currently being defined in this request */
 
 	if (((temp = request->req_procedure) != NULL) &&
-		!strcmp((char*) temp->prc_name, (char*) name->str_data))
-	{
+		!strcmp((char*) temp->prc_name, (char*) name->str_data)) {
+		METD_REC_UNLOCK;
 		return temp;
 	}
 
-    RecMutexHolder holder;
+/* now see if it is in the database */
 
-	// Start by seeing if symbol is already defined 
-
-	dsql_sym* symbol = lookup_symbol(request->req_dbb, name, SYM_procedure);
-	if (symbol)
-		return (dsql_prc*) symbol->sym_object;
-
-	// now see if it is in the database 
-
-	ISC_STATUS_ARRAY isc_status = {0};
 	dbb = request->req_dbb;
-	isc_db_handle DB = dbb->dbb_database_handle;
-	dsql_prc* procedure = NULL;
+	DB = dbb->dbb_database_handle;
+	gds_trans = request->req_trans;
+	procedure = NULL;
 
-	THREAD_EXIT();
+	THREAD_EXIT;
 
-	FOR(REQUEST_HANDLE dbb->dbb_requests[irq_procedure] TRANSACTION_HANDLE request->req_trans)
+	FOR(REQUEST_HANDLE dbb->dbb_requests[irq_procedure])
 	    X IN RDB$PROCEDURES WITH
 		X.RDB$PROCEDURE_NAME EQ name->str_data 
 
-        THREAD_ENTER();
+        THREAD_ENTER;
 
-	    fb_utils::exact_name(X.RDB$OWNER_NAME);
+	    metd_exact_name(X.RDB$OWNER_NAME);
 
         procedure = FB_NEW_RPT(*dbb->dbb_pool,
                                  name->str_length + strlen(X.RDB$OWNER_NAME)) dsql_prc;
@@ -1279,169 +1236,132 @@ dsql_prc* METD_get_procedure(dsql_req* request, const dsql_str* name)
         procedure->prc_name = procedure->prc_data;
         procedure->prc_owner = procedure->prc_data + name->str_length + 1;
         strcpy(procedure->prc_name, (TEXT *) name->str_data);
-        strcpy(procedure->prc_owner, X.RDB$OWNER_NAME);
+        strcpy(procedure->prc_owner, (TEXT *) X.RDB$OWNER_NAME);
 
-        THREAD_EXIT();
+        THREAD_EXIT;
 
 	END_FOR 
     ON_ERROR 
-		THREAD_ENTER();
-		ERRD_punt(isc_status);
     END_ERROR;
 
-	THREAD_ENTER();
+	THREAD_ENTER;
 
 	if (!procedure) {
+		METD_REC_UNLOCK;
 		return NULL;
 	}
 
-	// Lookup parameter stuff 
+/* Lookup parameter stuff */
 
 	for (type = 0; type < 2; type++) {
 		if (type)
 			ptr = &procedure->prc_outputs;
 		else
 			ptr = &procedure->prc_inputs;
-		count = defaults = 0; 
+		count = 0;
 
-		THREAD_EXIT();
+		THREAD_EXIT;
 
-		FOR(REQUEST_HANDLE dbb->dbb_requests[irq_parameters] TRANSACTION_HANDLE request->req_trans)
+		FOR(REQUEST_HANDLE dbb->dbb_requests[irq_parameters])
 		    PR IN RDB$PROCEDURE_PARAMETERS CROSS
-			FLD IN RDB$FIELDS
-			WITH FLD.RDB$FIELD_NAME EQ PR.RDB$FIELD_SOURCE
+			RFR IN RDB$FIELDS
+			WITH RFR.RDB$FIELD_NAME EQ PR.RDB$FIELD_SOURCE
 			AND PR.RDB$PROCEDURE_NAME EQ name->str_data
 			AND PR.RDB$PARAMETER_TYPE = type
 			SORTED BY DESCENDING PR.RDB$PARAMETER_NUMBER 
-
-			SSHORT pr_collation_id_null = TRUE;
-			SSHORT pr_collation_id;
-			SSHORT pr_default_value_null = TRUE;
-			SSHORT pr_null_flag_null = TRUE;
-			SSHORT pr_null_flag;
-			bool pr_type_of = false;
-
-			if (ENCODE_ODS(dbb->dbb_ods_version, dbb->dbb_minor_version) >= ODS_11_1)
-			{
-				FOR(REQUEST_HANDLE dbb->dbb_requests[irq_parameters2] TRANSACTION_HANDLE request->req_trans)
-					PR2 IN RDB$PROCEDURE_PARAMETERS
-					WITH PR2.RDB$PROCEDURE_NAME EQ PR.RDB$PROCEDURE_NAME AND
-						 PR2.RDB$PARAMETER_NAME EQ PR.RDB$PARAMETER_NAME
-
-					pr_collation_id_null = PR2.RDB$COLLATION_ID.NULL;
-					pr_collation_id = PR2.RDB$COLLATION_ID;
-
-					pr_default_value_null = PR2.RDB$DEFAULT_VALUE.NULL;
-
-					pr_null_flag_null = PR2.RDB$NULL_FLAG.NULL;
-					pr_null_flag = PR2.RDB$NULL_FLAG;
-
-					if (!PR2.RDB$PARAMETER_MECHANISM.NULL && PR2.RDB$PARAMETER_MECHANISM == prm_mech_type_of)
-						pr_type_of = true;
-
-				END_FOR
-			}
  
-			THREAD_ENTER();
+            THREAD_ENTER;
 
-			count++;
-			// allocate the field block 
+		    count++;
+            /* allocate the field block */
 
-			fb_utils::exact_name(PR.RDB$PARAMETER_NAME);
-			parameter = FB_NEW_RPT(*dbb->dbb_pool,
-								   strlen(PR.RDB$PARAMETER_NAME)) dsql_fld;
-			parameter->fld_next = *ptr;
-			*ptr = parameter;
+            metd_exact_name(PR.RDB$PARAMETER_NAME);
+            parameter = FB_NEW_RPT(*dbb->dbb_pool,
+                                     strlen(PR.RDB$PARAMETER_NAME)) dsql_fld;
+            parameter->fld_next = *ptr;
+            *ptr = parameter;
+            
+            /* get parameter information */
+            
+            strcpy(parameter->fld_name, (char*) PR.RDB$PARAMETER_NAME);
+            parameter->fld_id = PR.RDB$PARAMETER_NUMBER;
+            parameter->fld_length = RFR.RDB$FIELD_LENGTH;
+            parameter->fld_scale = RFR.RDB$FIELD_SCALE;
+            parameter->fld_sub_type = RFR.RDB$FIELD_SUB_TYPE;
+            parameter->fld_procedure = procedure;
+        
+            if (!RFR.RDB$CHARACTER_SET_ID.NULL)
+                parameter->fld_character_set_id = RFR.RDB$CHARACTER_SET_ID;
+            
+            if (!RFR.RDB$COLLATION_ID.NULL)
+                parameter->fld_collation_id = RFR.RDB$COLLATION_ID;
+            
+            convert_dtype(parameter, RFR.RDB$FIELD_TYPE);
+            
+            
+            if (!RFR.RDB$NULL_FLAG)
+                parameter->fld_flags |= FLD_nullable;
+            
+            if (RFR.RDB$FIELD_TYPE == blr_blob) {
+                parameter->fld_seg_length = RFR.RDB$SEGMENT_LENGTH;
+            }
 
-			// get parameter information 
-
-			strcpy(parameter->fld_name, PR.RDB$PARAMETER_NAME);
-			parameter->fld_id = PR.RDB$PARAMETER_NUMBER;
-			parameter->fld_length = FLD.RDB$FIELD_LENGTH;
-			parameter->fld_scale = FLD.RDB$FIELD_SCALE;
-			parameter->fld_sub_type = FLD.RDB$FIELD_SUB_TYPE;
-			parameter->fld_procedure = procedure;
-
-			if (!FLD.RDB$CHARACTER_SET_ID.NULL)
-				parameter->fld_character_set_id = FLD.RDB$CHARACTER_SET_ID;
-
-			if (!pr_collation_id_null)
-				parameter->fld_collation_id = pr_collation_id;
-			else if (!FLD.RDB$COLLATION_ID.NULL)
-				parameter->fld_collation_id = FLD.RDB$COLLATION_ID;
-
-			convert_dtype(parameter, FLD.RDB$FIELD_TYPE);
-
-			if (!pr_null_flag_null)
-			{
-				if (!pr_null_flag)
-					parameter->fld_flags |= FLD_nullable;
-			}
-			else if (!FLD.RDB$NULL_FLAG || pr_type_of)
-				parameter->fld_flags |= FLD_nullable;
-
-			if (FLD.RDB$FIELD_TYPE == blr_blob)
-				parameter->fld_seg_length = FLD.RDB$SEGMENT_LENGTH;
-
-			if (type == 0 &&
-				(!pr_default_value_null ||
-				 (fb_utils::implicit_domain(FLD.RDB$FIELD_NAME) &&
-				  !FLD.RDB$DEFAULT_VALUE.NULL)))
-			{
-				defaults++;
-			}
-
-			THREAD_EXIT();
+            THREAD_EXIT;
 
 		END_FOR 
         ON_ERROR 
-			THREAD_ENTER();
-			ERRD_punt(isc_status);
         END_ERROR;
 
-		THREAD_ENTER();
+		THREAD_ENTER;
 
 		if (type)
 			procedure->prc_out_count = count;
-		else {
+		else
 			procedure->prc_in_count = count;
-			procedure->prc_def_count = defaults;
+	}
+
+/* Since we could give up control due to the THREAD_EXIT and THEAD_ENTER
+ * calls, another thread may have added the same procedure in the mean time
+ */
+
+	symbol = HSHD_lookup(request->req_dbb, (TEXT*) name->str_data,
+						 name->str_length, SYM_procedure, 0);
+	for (; symbol; symbol = symbol->sym_homonym)
+		if ((symbol->sym_type == SYM_procedure) &&
+			((temp = (DSQL_PRC) symbol->sym_object) &&
+			 (!(temp->prc_flags & PRC_dropped)))) {
+			/* Get rid of all the stuff we just read in. Use existing one */
+
+			free_procedure(procedure);
+			METD_REC_UNLOCK;
+			return (DSQL_PRC) symbol->sym_object;
 		}
-	}
 
-	// Since we could give up control due to the THREAD_EXIT and THEAD_ENTER
-	// calls, another thread may have added the same procedure in the mean time
 
-	if ((symbol = lookup_symbol(request->req_dbb, name, SYM_procedure)))
-	{
-		// Get rid of all the stuff we just read in. Use existing one 
-		free_procedure(procedure);
-		return (dsql_prc*) symbol->sym_object;
-	}
-
-	// store in the symbol table unless the procedure is not yet committed 
-	// CVC: This is strange, because PRC_new_procedure is never set. 
+/* store in the symbol table unless the procedure is not yet committed */
+/* CVC: This is strange, because PRC_new_procedure is never set. */
 
 	if (!(procedure->prc_flags & PRC_new_procedure)) {
-		// add procedure in the front of the list 
+		/* add procedure in the front of the list */
 
 		procedure->prc_next = dbb->dbb_procedures;
 		dbb->dbb_procedures = procedure;
 
-		symbol = procedure->prc_symbol = FB_NEW_RPT(*dbb->dbb_pool, 0) dsql_sym;
+		symbol = procedure->prc_symbol = FB_NEW_RPT(*dbb->dbb_pool, 0) sym;
 		symbol->sym_object = (BLK) procedure;
 		symbol->sym_string = procedure->prc_name;
 		symbol->sym_length = name->str_length;
 		symbol->sym_type = SYM_procedure;
 		symbol->sym_dbb = dbb;
-		insert_symbol(request->req_dbb, symbol);
+		HSHD_insert(symbol);
 	}
 
+	METD_REC_UNLOCK;
 	return procedure;
 }
 
 
-dsql_rel* METD_get_relation(dsql_req* request, const dsql_str* name)
+DSQL_REL METD_get_relation(DSQL_REQ request, STR name)
 {
 /**************************************
  *
@@ -1454,98 +1374,78 @@ dsql_rel* METD_get_relation(dsql_req* request, const dsql_str* name)
  *	If it does, fetch field information as well.
  *
  **************************************/
-	dsql_dbb* dbb;
-	dsql_fld* field;
-	dsql_fld** ptr;
-	dsql_rel* temp;
+	FRBRD *DB, *gds_trans;
+	DBB dbb;
+	DSQL_FLD field, *ptr;
+	DSQL_REL relation, temp;
+	SYM symbol;
+	TSQL tdsql;
 
-	// See if the relation is the one currently being defined in this request 
+	tdsql = GET_THREAD_DATA;
+
+	METD_REC_LOCK;
+
+/* Start by seeing if symbol is already defined */
+
+	symbol = HSHD_lookup(request->req_dbb, (TEXT*) name->str_data,
+						 name->str_length, SYM_relation, 0);
+	for (; symbol; symbol = symbol->sym_homonym)
+		if ((symbol->sym_type == SYM_relation) &&
+			((relation = (DSQL_REL) symbol->sym_object) &&
+			 (!(relation->rel_flags & REL_dropped)))) {
+			METD_REC_UNLOCK;
+			return (DSQL_REL) symbol->sym_object;
+		}
+
+/* see if the relation is the one currently being defined in this request */
 
 	if (((temp = request->req_relation) != NULL) &&
-		!strcmp((char*) temp->rel_name, (char*) name->str_data))
-	{
+		!strcmp((char*) temp->rel_name, (char*) name->str_data)) {
+		METD_REC_UNLOCK;
 		return temp;
 	}
 
-	tsql* tdsql = DSQL_get_thread_data();
+/* now see if it is in the database */
 
-    RecMutexHolder holder;
-
-	// Start by seeing if symbol is already defined 
-
-	dsql_sym* symbol = lookup_symbol(request->req_dbb, name, SYM_relation);
-	if (symbol)
-		return (dsql_rel*) symbol->sym_object;
-
-	ISC_STATUS_ARRAY isc_status = {0};
 	dbb = request->req_dbb;
-	isc_db_handle DB = dbb->dbb_database_handle;
+	DB = dbb->dbb_database_handle;
+	gds_trans = request->req_trans;
+	relation = NULL;
 
-	// If the relation id or any of the field ids have not yet been assigned,
-	// and this is a type of request which does not use ids, prepare a
-	// temporary relation block to provide information without caching it
+	THREAD_EXIT;
 
-	bool permanent = true;
-
-	THREAD_EXIT();
-
-	FOR(REQUEST_HANDLE dbb->dbb_requests[irq_rel_ids] TRANSACTION_HANDLE request->req_trans)
-	    REL IN RDB$RELATIONS
-	    CROSS RFR IN RDB$RELATION_FIELDS OVER RDB$RELATION_NAME
-	    WITH REL.RDB$RELATION_NAME EQ name->str_data
-		AND (REL.RDB$RELATION_ID MISSING OR RFR.RDB$FIELD_ID MISSING)
-
-        THREAD_ENTER();
-
-		permanent = false;
-
-        THREAD_EXIT();
-
-	END_FOR 
-    ON_ERROR 
-		THREAD_ENTER();
-		ERRD_punt(isc_status);
-    END_ERROR;
-
-	THREAD_ENTER();
-
-	// Now see if it is in the database 
-
-	DsqlMemoryPool& pool =
-		permanent ? *dbb->dbb_pool : *tdsql->getDefaultPool();
-
-	dsql_rel* relation = NULL;
-
-	THREAD_EXIT();
-
-	FOR(REQUEST_HANDLE dbb->dbb_requests[irq_relation] TRANSACTION_HANDLE request->req_trans)
+	FOR(REQUEST_HANDLE dbb->dbb_requests[irq_relation])
 	    X IN RDB$RELATIONS WITH X.RDB$RELATION_NAME EQ name->str_data
+		/* allocate the relation block -- if the relation id has not yet 
+		   been assigned, and this is a type of request which does not 
+		   use ids, prepare a temporary relation block to provide 
+		   information without caching it */
+        THREAD_ENTER;
 
-        THREAD_ENTER();
-
-	    fb_utils::exact_name(X.RDB$OWNER_NAME);
-	    const int length = name->str_length + strlen(X.RDB$OWNER_NAME);
-
-        // Allocate from default or permanent pool as appropriate 
+	    metd_exact_name(X.RDB$OWNER_NAME);
 
         if (!X.RDB$RELATION_ID.NULL) {
-            relation = FB_NEW_RPT(pool, length) dsql_rel;
+            relation = FB_NEW_RPT(*dbb->dbb_pool,
+                                  name->str_length + strlen(X.RDB$OWNER_NAME)) dsql_rel;
             relation->rel_id = X.RDB$RELATION_ID;
         }
         else if (!DDL_ids(request)) {
-            relation = FB_NEW_RPT(pool, length) dsql_rel;
+            relation =
+                FB_NEW_RPT(*tdsql->tsql_default,
+                                   name->str_length + strlen(X.RDB$OWNER_NAME)) dsql_rel;
+            relation->rel_flags |= REL_new_relation;
         }
 
-        // fill out the relation information 
-
+        /* fill out the relation information */
+        
         if (relation) {
             relation->rel_name = relation->rel_data;
             relation->rel_owner = relation->rel_data + name->str_length + 1;
             strcpy(relation->rel_name, (TEXT *) name->str_data);
-            strcpy(relation->rel_owner, X.RDB$OWNER_NAME);
+            strcpy(relation->rel_owner, (TEXT *) X.RDB$OWNER_NAME);
             if (!(relation->rel_dbkey_length = X.RDB$DBKEY_LENGTH))
                 relation->rel_dbkey_length = 8;
-            // CVC: let's see if this is a table or a view. 
+            /* CVC: let's see if this is a table or a view. */
             if (!X.RDB$VIEW_BLR.NULL) {
                 relation->rel_flags |= REL_view;
             }
@@ -1554,199 +1454,233 @@ dsql_rel* METD_get_relation(dsql_req* request, const dsql_str* name)
 			}
         }
 
-        THREAD_EXIT();
+        THREAD_EXIT;
 
 	END_FOR 
     ON_ERROR 
-		THREAD_ENTER();
-		ERRD_punt(isc_status);
     END_ERROR;
 
-	THREAD_ENTER();
+	THREAD_ENTER;
 
 	if (!relation) {
+		METD_REC_UNLOCK;
 		return NULL;
 	}
 
-	// Lookup field stuff 
+/* Lookup field stuff */
 
 	ptr = &relation->rel_fields;
 
-	THREAD_EXIT();
+	THREAD_EXIT;
 
-	FOR(REQUEST_HANDLE dbb->dbb_requests[irq_fields] TRANSACTION_HANDLE request->req_trans)
-	    FLX IN RDB$FIELDS CROSS
-		RFR IN RDB$RELATION_FIELDS
-		WITH FLX.RDB$FIELD_NAME EQ RFR.RDB$FIELD_SOURCE
-		AND RFR.RDB$RELATION_NAME EQ name->str_data
-		SORTED BY RFR.RDB$FIELD_POSITION
+	if (dbb->dbb_flags & DBB_v3) {
+		FOR(REQUEST_HANDLE dbb->dbb_requests[irq_fields])
+		    FLX IN RDB$FIELDS CROSS
+			RFR IN RDB$RELATION_FIELDS
+			WITH FLX.RDB$FIELD_NAME EQ RFR.RDB$FIELD_SOURCE
+			AND RFR.RDB$RELATION_NAME EQ name->str_data
+			SORTED BY RFR.RDB$FIELD_POSITION 
 
-		THREAD_ENTER();
+            THREAD_ENTER;
 
-	    // allocate the field block 
+		    /* allocate the field block */
 
-	    fb_utils::exact_name(RFR.RDB$FIELD_NAME);
-	    const int length = strlen(RFR.RDB$FIELD_NAME);
+	        metd_exact_name(RFR.RDB$FIELD_NAME);
 
-        // Allocate from default or permanent pool as appropriate 
+            /* Allocate from default or permanent pool as appropriate */
+            
+            if (relation->rel_flags & REL_new_relation)
+                *ptr = field = FB_NEW_RPT(*tdsql->tsql_default,
+                                             strlen(RFR.RDB$FIELD_NAME)) dsql_fld;
+            else
+                *ptr = field = FB_NEW_RPT(*dbb->dbb_pool,
+                                            strlen(RFR.RDB$FIELD_NAME)) dsql_fld;
+            ptr = &field->fld_next;
+            
+            /* get field information */
+            
+            strcpy(field->fld_name, (char*) RFR.RDB$FIELD_NAME);
+            field->fld_id = RFR.RDB$FIELD_ID;
+            field->fld_length = FLX.RDB$FIELD_LENGTH;
+            field->fld_scale = FLX.RDB$FIELD_SCALE;
+            field->fld_sub_type = FLX.RDB$FIELD_SUB_TYPE;
+            field->fld_relation = relation;
+         
+            if (!FLX.RDB$COMPUTED_BLR.NULL)
+                field->fld_flags |= FLD_computed;
+            
+            convert_dtype(field, FLX.RDB$FIELD_TYPE);
+            
+            if (FLX.RDB$FIELD_TYPE == blr_blob) {
+                field->fld_seg_length = FLX.RDB$SEGMENT_LENGTH;
+            }
+            
+            if (!(dbb->dbb_flags & DBB_no_arrays))
+                check_array(request, FLX.RDB$FIELD_NAME, field);
+            
+            field->fld_flags |= FLD_nullable;
+            
+            THREAD_EXIT;
 
-		field = NULL;
+		END_FOR 
+        ON_ERROR 
+        END_ERROR;
+	}
+	else {						/* V4 ODS8 dbb */
 
-        if (!RFR.RDB$FIELD_ID.NULL) {
-            field = FB_NEW_RPT(pool, length) dsql_fld;
-			field->fld_id = RFR.RDB$FIELD_ID;
-        }
-        else if (!DDL_ids(request)) {
-            field = FB_NEW_RPT(pool, length) dsql_fld;
-        }
+		FOR(REQUEST_HANDLE dbb->dbb_requests[irq_fields])
+		    FLX IN RDB$FIELDS CROSS
+			RFR IN RDB$RELATION_FIELDS
+			WITH FLX.RDB$FIELD_NAME EQ RFR.RDB$FIELD_SOURCE
+			AND RFR.RDB$RELATION_NAME EQ name->str_data
+			SORTED BY RFR.RDB$FIELD_POSITION THREAD_ENTER;
 
-		if (field) {
-			*ptr = field;
-			ptr = &field->fld_next;
+		    /* allocate the field block */
 
-			// get field information 
+		    metd_exact_name(RFR.RDB$FIELD_NAME);
 
-			strcpy(field->fld_name, RFR.RDB$FIELD_NAME);
-			field->fld_length = FLX.RDB$FIELD_LENGTH;
-			field->fld_scale = FLX.RDB$FIELD_SCALE;
-			field->fld_sub_type = FLX.RDB$FIELD_SUB_TYPE;
-			field->fld_relation = relation;
+            /* Allocate from default or permanent pool as appropriate */
+            
+            if (relation->rel_flags & REL_new_relation)
+                *ptr = field = FB_NEW_RPT(*tdsql->tsql_default,
+                                             strlen(RFR.RDB$FIELD_NAME)) dsql_fld;
+            else
+                *ptr = field = FB_NEW_RPT(*dbb->dbb_pool,
+                                            strlen(RFR.RDB$FIELD_NAME)) dsql_fld;
+            
+            ptr = &field->fld_next;
+            
+            /* get field information */
+            
+            strcpy(field->fld_name, (char*) RFR.RDB$FIELD_NAME);
+            field->fld_id = RFR.RDB$FIELD_ID;
+            field->fld_length = FLX.RDB$FIELD_LENGTH;
+            field->fld_scale = FLX.RDB$FIELD_SCALE;
+            field->fld_sub_type = FLX.RDB$FIELD_SUB_TYPE;
+            field->fld_relation = relation;
+            
+            if (!FLX.RDB$COMPUTED_BLR.NULL)
+                field->fld_flags |= FLD_computed;
+            
+            convert_dtype(field, FLX.RDB$FIELD_TYPE);
+            
+            if (FLX.RDB$FIELD_TYPE == blr_blob) {
+                field->fld_seg_length = FLX.RDB$SEGMENT_LENGTH;
+            }
+            
+            if (!FLX.RDB$DIMENSIONS.NULL && FLX.RDB$DIMENSIONS) {
+                field->fld_element_dtype = field->fld_dtype;
+                field->fld_element_length = field->fld_length;
+                field->fld_dtype = dtype_array;
+                field->fld_length = sizeof(GDS__QUAD);
+                field->fld_dimensions = FLX.RDB$DIMENSIONS;
+            }
+            
+            if (!FLX.RDB$CHARACTER_SET_ID.NULL)
+                field->fld_character_set_id = FLX.RDB$CHARACTER_SET_ID;
+            
+            if (!RFR.RDB$COLLATION_ID.NULL)
+                field->fld_collation_id = RFR.RDB$COLLATION_ID;
+            else if (!FLX.RDB$COLLATION_ID.NULL)
+                field->fld_collation_id = FLX.RDB$COLLATION_ID;
 
-			if (!FLX.RDB$COMPUTED_BLR.NULL)
-				field->fld_flags |= FLD_computed;
+            if (!(RFR.RDB$NULL_FLAG || FLX.RDB$NULL_FLAG)
+             /*XXX:IOL    || (relation->rel_flags & REL_view)*/) {
+                field->fld_flags |= FLD_nullable;
+            }
+            
+            THREAD_EXIT;
 
-			convert_dtype(field, FLX.RDB$FIELD_TYPE);
-
-			if (FLX.RDB$FIELD_TYPE == blr_blob) {
-				field->fld_seg_length = FLX.RDB$SEGMENT_LENGTH;
-			}
-
-			if (!FLX.RDB$DIMENSIONS.NULL && FLX.RDB$DIMENSIONS) {
-				field->fld_element_dtype = field->fld_dtype;
-				field->fld_element_length = field->fld_length;
-				field->fld_dtype = dtype_array;
-				field->fld_length = sizeof(ISC_QUAD);
-				field->fld_dimensions = FLX.RDB$DIMENSIONS;
-			}
-
-			if (!FLX.RDB$CHARACTER_SET_ID.NULL)
-				field->fld_character_set_id = FLX.RDB$CHARACTER_SET_ID;
-
-			if (!RFR.RDB$COLLATION_ID.NULL)
-				field->fld_collation_id = RFR.RDB$COLLATION_ID;
-			else if (!FLX.RDB$COLLATION_ID.NULL)
-				field->fld_collation_id = FLX.RDB$COLLATION_ID;
-
-			if (!(RFR.RDB$NULL_FLAG || FLX.RDB$NULL_FLAG)
-				|| (relation->rel_flags & REL_view))
-			{
-				field->fld_flags |= FLD_nullable;
-			}
-
-            if (RFR.RDB$SYSTEM_FLAG == 1 || FLX.RDB$SYSTEM_FLAG == 1)
-                field->fld_flags |= FLD_system;
-		}
-
-        THREAD_EXIT();
-
-	END_FOR 
-    ON_ERROR 
-		THREAD_ENTER();
-		ERRD_punt(isc_status);
-    END_ERROR;
-
-	THREAD_ENTER();
-
-	// Since we could give up control due to the THREAD_EXIT and THREAD_ENTER,
-	// another thread may have added the same table in the mean time
-
-	if ((symbol = lookup_symbol(request->req_dbb, name, SYM_relation)))
-	{
-		free_relation(relation);
-		return (dsql_rel*) symbol->sym_object;
+		END_FOR 
+        ON_ERROR 
+        END_ERROR;
 	}
 
-	// Add relation to front of list 
+	THREAD_ENTER;
 
-	if (permanent) {
+/* Since we could give up control due to the THREAD_EXIT and THEAD_ENTER,
+ * another thread may have added the same table in the mean time
+ */
+
+	symbol = HSHD_lookup(request->req_dbb, (TEXT*) name->str_data,
+						 name->str_length, SYM_relation, 0);
+	for (; symbol; symbol = symbol->sym_homonym)
+		if ((symbol->sym_type == SYM_relation) &&
+			((temp = (DSQL_REL) symbol->sym_object) &&
+			 (!(temp->rel_flags & REL_dropped)))) {
+			free_relation(relation);
+			METD_REC_UNLOCK;
+			return (DSQL_REL) symbol->sym_object;
+		}
+
+
+/* Add relation to front of list */
+
+	if (!(relation->rel_flags & REL_new_relation)) {
 		relation->rel_next = dbb->dbb_relations;
 		dbb->dbb_relations = relation;
 
-		// store in the symbol table unless the relation is not yet committed 
+		/* store in the symbol table unless the relation is not yet committed */
 
-		symbol = relation->rel_symbol = FB_NEW_RPT(*dbb->dbb_pool, 0) dsql_sym;
+		symbol = relation->rel_symbol = FB_NEW_RPT(*dbb->dbb_pool, 0) sym;
 		symbol->sym_object = (BLK) relation;
 		symbol->sym_string = relation->rel_name;
 		symbol->sym_length = name->str_length;
 		symbol->sym_type = SYM_relation;
 		symbol->sym_dbb = dbb;
-		insert_symbol(request->req_dbb, symbol);
+		HSHD_insert(symbol);
 	}
-	else {
-		relation->rel_flags |= REL_new_relation;
-	}
+	METD_REC_UNLOCK;
+	return relation;
+}
+
+
+STR METD_get_trigger_relation(DSQL_REQ request, STR name, USHORT* trig_type)
+{
+/**************************************
+ *
+ *	M E T D _ g e t _ t r i g g e r _ r e l a t i o n
+ *
+ **************************************
+ *
+ * Functional description
+ *	Look up a trigger's relation and return it's current type
+ *
+ **************************************/
+	FRBRD *DB, *gds_trans;
+	DBB dbb;
+	STR relation;
+
+	dbb = request->req_dbb;
+	DB = dbb->dbb_database_handle;
+	gds_trans = request->req_trans;
+
+	relation = NULL;
+
+	THREAD_EXIT;
+
+	FOR(REQUEST_HANDLE dbb->dbb_requests[irq_trigger])
+	    X IN RDB$TRIGGERS WITH X.RDB$TRIGGER_NAME EQ name->str_data 
+        THREAD_ENTER;
+
+	    metd_exact_name(X.RDB$RELATION_NAME);
+
+        relation = MAKE_string(X.RDB$RELATION_NAME, strlen(X.RDB$RELATION_NAME));
+        *trig_type = X.RDB$TRIGGER_TYPE;
+        
+        THREAD_EXIT;
+
+	END_FOR 
+    ON_ERROR 
+    END_ERROR;
+
+	THREAD_ENTER;
 
 	return relation;
 }
 
 
-bool METD_get_trigger(dsql_req* request, const dsql_str* name, dsql_str** relation, USHORT* trig_type)
-{
-/**************************************
- *
- *	M E T D _ g e t _ t r i g g e r
- *
- **************************************
- *
- * Functional description
- *	Look up a trigger's relation and it's current type
- *
- **************************************/
-	dsql_dbb* dbb;
-
-	ISC_STATUS_ARRAY isc_status = {0};
-	dbb = request->req_dbb;
-	isc_db_handle DB = dbb->dbb_database_handle;
-
-	bool found = false;
-
-	if (relation)
-		*relation = NULL;
-
-	THREAD_EXIT();
-
-	FOR(REQUEST_HANDLE dbb->dbb_requests[irq_trigger] TRANSACTION_HANDLE request->req_trans)
-		X IN RDB$TRIGGERS WITH X.RDB$TRIGGER_NAME EQ name->str_data
-
-		THREAD_ENTER();
-
-		found = true;
-		*trig_type = X.RDB$TRIGGER_TYPE;
-
-		if (!X.RDB$RELATION_NAME.NULL)
-		{
-			if (relation)
-			{
-				fb_utils::exact_name(X.RDB$RELATION_NAME);
-				*relation = MAKE_string(X.RDB$RELATION_NAME, strlen(X.RDB$RELATION_NAME));
-			}
-		}
-
-		THREAD_EXIT();
-
-	END_FOR 
-    ON_ERROR 
-		THREAD_ENTER();
-		ERRD_punt(isc_status);
-    END_ERROR;
-
-	THREAD_ENTER();
-
-	return found;
-}
-
-
-bool METD_get_type(dsql_req* request, const dsql_str* name, char* field, SSHORT* value)
+USHORT METD_get_type(DSQL_REQ request, STR name, char* field, SSHORT * value)
 {
 /**************************************
  *
@@ -1758,186 +1692,43 @@ bool METD_get_type(dsql_req* request, const dsql_str* name, char* field, SSHORT*
  *	Look up a symbolic name in RDB$TYPES
  *
  **************************************/
-	dsql_dbb* dbb;
-	bool found = false;
+	FRBRD *DB, *gds_trans;
+	DBB dbb;
+	USHORT found;
 
-	ISC_STATUS_ARRAY isc_status = {0};
 	dbb = request->req_dbb;
-	isc_db_handle DB = dbb->dbb_database_handle;
+	DB = dbb->dbb_database_handle;
+	gds_trans = request->req_trans;
 
-	THREAD_EXIT();
+	found = FALSE;
 
-	FOR(REQUEST_HANDLE dbb->dbb_requests[irq_type] TRANSACTION_HANDLE request->req_trans)
-		X IN RDB$TYPES WITH
+	THREAD_EXIT;
+
+	FOR(REQUEST_HANDLE dbb->dbb_requests[irq_type])
+	    X IN RDB$TYPES WITH
 		X.RDB$FIELD_NAME EQ field AND X.RDB$TYPE_NAME EQ name->str_data;
 
-		THREAD_ENTER();
+	    THREAD_ENTER;
 
-		found = true;
-		*value = X.RDB$TYPE;
-
-		THREAD_EXIT();
+        found = TRUE;
+        *value = X.RDB$TYPE;
+        
+        THREAD_EXIT;
         
 	END_FOR 
     ON_ERROR 
-		THREAD_ENTER();
-		ERRD_punt(isc_status);
     END_ERROR;
 
-	THREAD_ENTER();
+	THREAD_ENTER;
 
 	return found;
 }
 
 
-dsql_rel* METD_get_view_base(dsql_req* request,
-							 const char* view_name,	// UTF-8
-							 MetaNamePairMap& fields)
-{
-/**************************************
- *
- *	M E T D _ g e t _ v i e w _ b a s e
- *
- **************************************
- *
- * Functional description
- *	Return the base table of a view or NULL if there
- *  is more than one.
- *  If there is only one base, put in fields a map of
- *  top view field name / bottom base field name.
- *  Ignores the field in the case of a base field name
- *  appearing more than one time in a level.
- *
- **************************************/
-
-	dsql_rel* relation = NULL;
-
-	ISC_STATUS_ARRAY isc_status = {0};
-	dsql_dbb* dbb = request->req_dbb;
-	isc_db_handle DB = dbb->dbb_database_handle;
-	bool first = true;
-	bool cont = true;
-	MetaNamePairMap previousAux;
-
-	fields.clear();
-
-	while (cont)
-	{
-		THREAD_EXIT();
-
-		FOR(REQUEST_HANDLE dbb->dbb_requests[irq_view_base]
-			TRANSACTION_HANDLE request->req_trans)
-			X IN RDB$VIEW_RELATIONS
-			WITH X.RDB$VIEW_NAME EQ view_name
-
-			// return NULL if there is more than one context
-			if (X.RDB$VIEW_CONTEXT != 1)
-			{
-				relation = NULL;
-				cont = false;
-				break;
-			}
-
-			THREAD_ENTER();
-
-			fb_utils::exact_name(X.RDB$CONTEXT_NAME);
-			fb_utils::exact_name(X.RDB$RELATION_NAME);
-
-			dsql_str* relation_name =
-				MAKE_string(X.RDB$RELATION_NAME, strlen(X.RDB$RELATION_NAME));
-			relation = METD_get_relation(request, relation_name);
-			delete relation_name;
-
-			Firebird::Array<Firebird::MetaName> ambiguities;
-			MetaNamePairMap currentAux;
-
-			THREAD_EXIT();
-
-			if (!relation)
-			{
-				cont = false;
-				break;
-			}
-
-			FOR(REQUEST_HANDLE dbb->dbb_requests[irq_view_base_flds]
-				TRANSACTION_HANDLE request->req_trans)
-				RFL IN RDB$RELATION_FIELDS
-				WITH RFL.RDB$RELATION_NAME EQ X.RDB$VIEW_NAME
-
-				if (RFL.RDB$BASE_FIELD.NULL || RFL.RDB$FIELD_NAME.NULL)
-					continue;
-
-				THREAD_ENTER();
-
-				const Firebird::MetaName baseField(RFL.RDB$BASE_FIELD);
-				if (currentAux.exist(baseField))
-					ambiguities.add(baseField);
-				else
-				{
-					const Firebird::MetaName fieldName(RFL.RDB$FIELD_NAME);
-					if (first)
-					{
-						fields.put(fieldName, baseField);
-						currentAux.put(baseField, fieldName);
-					}
-					else
-					{
-						Firebird::MetaName field;
-
-						if (previousAux.get(fieldName, field))
-						{
-							fields.put(field, baseField);
-							currentAux.put(baseField, field);
-						}
-					}
-				}
-
-				THREAD_EXIT();
-			END_FOR
-
-			for (const Firebird::MetaName* i = ambiguities.begin(); i != ambiguities.end(); ++i)
-			{
-				Firebird::MetaName field;
-
-				if (currentAux.get(*i, field))
-				{
-					currentAux.remove(*i);
-					fields.remove(field);
-				}
-			}
-
-			previousAux.takeOwnership(currentAux);
-
-			if (relation->rel_flags & REL_view)
-				view_name = X.RDB$RELATION_NAME;
-			else
-			{
-				cont = false;
-				break;
-			}
-
-			first = false;
-
-		END_FOR 
-		ON_ERROR 
-			THREAD_ENTER();
-			ERRD_punt(isc_status);
-		END_ERROR;
-
-		THREAD_ENTER();
-	}
-
-	if (!relation)
-		fields.clear();
-
-	return relation;
-}
-
-
-dsql_rel* METD_get_view_relation(dsql_req* request,
-								const char* view_name,         // UTF-8
-								const char* relation_or_alias, // UTF-8
-								USHORT level)
+DSQL_REL METD_get_view_relation(DSQL_REQ    request,
+								const char* view_name         /* UTF-8 */,
+								const char* relation_or_alias /* UTF-8 */,
+								USHORT      level)
 {
 /**************************************
  *
@@ -1952,58 +1743,54 @@ dsql_rel* METD_get_view_relation(dsql_req* request,
  *
  **************************************/
 
-	dsql_rel* relation = NULL;
+	DSQL_REL relation = 0;
 
-	ISC_STATUS_ARRAY isc_status = {0};
-	dsql_dbb* dbb = request->req_dbb;
-	isc_db_handle DB = dbb->dbb_database_handle;
+	DBB    dbb       = request->req_dbb;
+	FRBRD* DB        = dbb->dbb_database_handle;
+	FRBRD* gds_trans = request->req_trans;
 
-	THREAD_EXIT();
+	THREAD_EXIT;
 
-	FOR(REQUEST_HANDLE dbb->dbb_requests[irq_view] TRANSACTION_HANDLE request->req_trans, LEVEL level)
-		X IN RDB$VIEW_RELATIONS WITH X.RDB$VIEW_NAME EQ view_name
+	FOR(REQUEST_HANDLE dbb->dbb_requests[irq_view], LEVEL level)
+	    X IN RDB$VIEW_RELATIONS WITH X.RDB$VIEW_NAME EQ view_name 
 
-		THREAD_ENTER();
+        THREAD_ENTER;
 
-		fb_utils::exact_name(X.RDB$CONTEXT_NAME);
-		fb_utils::exact_name(X.RDB$RELATION_NAME);
-
-		if (!strcmp(X.RDB$RELATION_NAME, relation_or_alias) ||
-			!strcmp(X.RDB$CONTEXT_NAME, relation_or_alias))
+	    metd_exact_name(X.RDB$CONTEXT_NAME);
+        metd_exact_name(X.RDB$RELATION_NAME);
+        
+        if (!strcmp(X.RDB$RELATION_NAME, relation_or_alias) ||
+            !strcmp(X.RDB$CONTEXT_NAME, relation_or_alias))
 		{
-			dsql_str* relation_name = MAKE_string(X.RDB$RELATION_NAME,
-										strlen(X.RDB$RELATION_NAME));
-			relation = METD_get_relation(request, relation_name);
-			delete relation_name;
-			return relation;
-		}
+            STR relation_name = MAKE_string(X.RDB$RELATION_NAME,
+                                        strlen(X.RDB$RELATION_NAME));
+            relation = METD_get_relation(request, relation_name);
+            delete relation_name;
+            return relation;
+        }
 
 		relation =
-			METD_get_view_relation(request, X.RDB$RELATION_NAME,
-								   relation_or_alias, (USHORT)level + 1);
-		if (relation) {
-			return relation;
+            METD_get_view_relation(request, X.RDB$RELATION_NAME,
+                                   relation_or_alias, (USHORT)level + 1);
+        if (relation) {
+            return relation;
 		}
 
-		THREAD_EXIT();
+        THREAD_EXIT;
 
 	END_FOR 
     ON_ERROR 
-		THREAD_ENTER();
-		ERRD_punt(isc_status);
     END_ERROR;
 
-	THREAD_ENTER();
+	THREAD_ENTER;
 
 	return NULL;
 }
 
 
-#ifdef NOT_USED_OR_REPLACED
-/* - to make gpre happy too
-static void check_array(dsql_req* request, const TEXT* field_name, dsql_fld* field)
+static void check_array( DSQL_REQ request, TEXT * field_name, DSQL_FLD field)
 {
- **************************************
+/**************************************
  *
  *	c h e c k _ a r r a y
  *
@@ -2014,41 +1801,41 @@ static void check_array(dsql_req* request, const TEXT* field_name, dsql_fld* fie
  *	defined in the meta-data).  If we're not successful, indicate
  *	so in the database block to avoid wasting further effort.
  *
- **************************************
-	dsql_dbb* dbb;
+ **************************************/
+	FRBRD *DB, *gds_trans;
+	DBB dbb;
 
-	ISC_STATUS_ARRAY isc_status = {0};
 	dbb = request->req_dbb;
-	isc_db_handle DB = dbb->dbb_database_handle;
+	DB = dbb->dbb_database_handle;
+	gds_trans = request->req_trans;
 
-	THREAD_EXIT();
+	THREAD_EXIT;
 
-	FOR(REQUEST_HANDLE dbb->dbb_requests[irq_dimensions] TRANSACTION_HANDLE request->req_trans)
+	FOR(REQUEST_HANDLE dbb->dbb_requests[irq_dimensions])
 	    X IN RDB$FIELDS WITH X.RDB$FIELD_NAME EQ field_name 
 
-        THREAD_ENTER();
+        THREAD_ENTER;
 
 	    if (!X.RDB$DIMENSIONS.NULL && X.RDB$DIMENSIONS) {
             field->fld_element_dtype = field->fld_dtype;
             field->fld_element_length = field->fld_length;
             field->fld_dtype = dtype_array;
-            field->fld_length = sizeof(ISC_QUAD);
+            field->fld_length = sizeof(GDS__QUAD);
             field->fld_dimensions = X.RDB$DIMENSIONS;
         }
         
-        THREAD_EXIT();
+        THREAD_EXIT;
 
 	END_FOR 
     ON_ERROR 
         dbb->dbb_flags |= DBB_no_arrays;
 	END_ERROR;
 
-	THREAD_ENTER();
+	THREAD_ENTER;
 }
-*/
-#endif
 
-static void convert_dtype(dsql_fld* field, SSHORT field_type)
+
+static void convert_dtype( DSQL_FLD field, SSHORT field_type)
 {
 /**************************************
  *
@@ -2063,7 +1850,7 @@ static void convert_dtype(dsql_fld* field, SSHORT field_type)
  *
  **************************************/
 
-// fill out the type descriptor 
+/* fill out the type descriptor */
 
 	if (field_type == blr_text) {
 		field->fld_dtype = dtype_text;
@@ -2080,12 +1867,12 @@ static void convert_dtype(dsql_fld* field, SSHORT field_type)
 		field->fld_dtype = gds_cvt_blr_dtype[field_type];
 		field->fld_length = type_lengths[field->fld_dtype];
 
-		fb_assert(field->fld_dtype != dtype_unknown);
+		assert(field->fld_dtype != dtype_null);
 	}
 }
 
 
-static void free_function(dsql_udf* userFunc)
+static void free_function (UDF udf)
 {
 /**************************************
  *
@@ -2097,23 +1884,25 @@ static void free_function(dsql_udf* userFunc)
  *	Free memory allocated for a function block and args
  *
  **************************************/
+    USHORT	arg_count;
+    DSQL_NOD	args, udf_argument;
 
-    // release the arguments blocks 
+    /* release the arguments blocks */
 
-    if (userFunc->udf_arguments) {
-        dsql_nod* args = userFunc->udf_arguments;
-        for (USHORT arg_count = 0; arg_count < args->nod_count; ++arg_count) {
-            dsql_nod* udf_argument = args->nod_arg[arg_count];
+    if (udf->udf_arguments) {
+        args = udf->udf_arguments;
+        for (arg_count = 0; arg_count < args->nod_count; ++arg_count) {
+            udf_argument = args->nod_arg [arg_count];
             delete udf_argument;
 		}
 	}
 
     /* release the udf & symbol blocks */
 
-    delete userFunc;
+    delete udf;
 }
 
-static void free_procedure(dsql_prc* procedure)
+static void free_procedure( DSQL_PRC procedure)
 {
 /**************************************
  *
@@ -2125,8 +1914,7 @@ static void free_procedure(dsql_prc* procedure)
  *	Free memory allocated for a procedure block and params
  *
  **************************************/
-	dsql_fld* param;
-	dsql_fld* temp;
+	DSQL_FLD param, temp;
 
 /* release the input & output parameter blocks */
 
@@ -2148,7 +1936,7 @@ static void free_procedure(dsql_prc* procedure)
 }
 
 
-static void free_relation(dsql_rel* relation)
+static void free_relation( DSQL_REL relation)
 {
 /**************************************
  *
@@ -2160,10 +1948,9 @@ static void free_relation(dsql_rel* relation)
  *	Free memory allocated for a relation block and fields
  *
  **************************************/
-	dsql_fld* field;
-	dsql_fld* temp;
+	DSQL_FLD field, temp;
 
-// release the field blocks 
+/* release the field blocks */
 
 	for (field = relation->rel_fields; field;) {
 		temp = field;
@@ -2177,151 +1964,33 @@ static void free_relation(dsql_rel* relation)
 }
 
 
-static void insert_symbol(dsql_dbb* dbb, dsql_sym* symbol)
+static TEXT *metd_exact_name( TEXT * str)
 {
 /**************************************
  *
- *	i n s e r t _ s y m b o l
+ *	m e t d _ e x a c t _ n a m e
  *
  **************************************
  *
  * Functional description
- *	Insert a symbol in the hash table and
- *	inform the engine that we're using it.
+ *	Trim trailing spaces off a metadata name.
+ *
+ *	SQL delimited identifier may have blank as part of the name
+ *
+ *	Parameters:  str - the string to terminate
+ *	Returns:     str
  *
  **************************************/
-	HSHD_insert(symbol);
+	TEXT *p, *q;
+#define	BLANK			'\040'
 
-#ifndef SUPERSERVER
-	ISC_STATUS_ARRAY status;
-
-	THREAD_EXIT();
-	const ISC_STATUS s = gds__dsql_cache(status, &dbb->dbb_database_handle,
-		DSQL_CACHE_USE, symbol->sym_type, symbol->sym_string, NULL);
-	THREAD_ENTER();
-
-	if (s)
-		ERRD_punt(status);
-#endif	// SUPERSERVER
-}
-
-
-static dsql_sym* lookup_symbol(dsql_dbb* dbb, USHORT length, const char* name, SYM_TYPE type, USHORT charset_id)
-{
-/**************************************
- *
- *	l o o k u p _ s y m b o l
- *
- **************************************
- *
- * Functional description
- *	Lookup a symbol in the hash table and
- *	inform the engine that we're using it.
- *  The engine may inform that the symbol
- *	is obsolete, in this case mark it as
- *	dropped and return NULL.
- *
- **************************************/
-	dsql_intlsym* intlSym;
-	dsql_prc* procedure;
-	dsql_rel* relation;
-	dsql_udf* userFunc;
-
-    dsql_sym* symbol = HSHD_lookup(dbb, name, length, type, 0);
-
-    for (; symbol; symbol = symbol->sym_homonym)
-    {
-        if (symbol->sym_type == type)
-		{
-			if (type == SYM_intlsym_charset)
-				break;
-			else if (type == SYM_intlsym_collation &&
-					 (intlSym = (dsql_intlsym*) symbol->sym_object) &&
-					 (!(intlSym->intlsym_flags & INTLSYM_dropped)) &&
-					 (charset_id == 0 || intlSym->intlsym_charset_id == charset_id))
-			{
-				break;
-			}
-			else if (type == SYM_procedure &&
-					 (procedure = (dsql_prc*) symbol->sym_object) &&
-					 (!(procedure->prc_flags & PRC_dropped)))
-			{
-				break;
-			}
-			else if (type == SYM_relation &&
-					 (relation = (dsql_rel*) symbol->sym_object) &&
-					 (!(relation->rel_flags & REL_dropped)))
-			{
-				break;
-			}
-			else if (type == SYM_udf &&
-					 (userFunc = (dsql_udf*) symbol->sym_object) &&
-					 (!(userFunc->udf_flags & UDF_dropped)))
-			{
-				break;
-			}
-		}
-    }
-
-#ifndef SUPERSERVER
-	if (symbol)
-	{
-		ISC_STATUS_ARRAY status;
-		bool obsolete;
-
-		THREAD_EXIT();
-		const ISC_STATUS s = gds__dsql_cache(status, &dbb->dbb_database_handle,
-			DSQL_CACHE_USE, type, name, &obsolete);
-		THREAD_ENTER();
-
-		if (s)
-			ERRD_punt(status);
-
-		if (obsolete)
-		{
-			switch (type)
-			{
-				case SYM_intlsym_collation:
-					intlSym->intlsym_flags |= INTLSYM_dropped;
-					break;
-
-				case SYM_procedure:
-					procedure->prc_flags |= PRC_dropped;
-					break;
-
-				case SYM_relation:
-					relation->rel_flags |= REL_dropped;
-					break;
-
-				case SYM_udf:
-					userFunc->udf_flags |= UDF_dropped;
-					break;
-
-				default:
-					return symbol;
-			}
-
-			symbol = NULL;
-		}
+	q = str - 1;
+	for (p = str; *p; p++) {
+		if (*p != BLANK)
+			q = p;
 	}
-#endif	// SUPERSERVER
 
-	return symbol;    
-}
+	*(q + 1) = '\0';
 
-
-static dsql_sym* lookup_symbol(dsql_dbb* dbb, const dsql_str* name, SYM_TYPE type, USHORT charset_id)
-{
-/**************************************
- *
- *	l o o k u p _ s y m b o l
- *
- **************************************
- *
- * Functional description
- *	Wrapper for the above function.
- *
- **************************************/
-	return lookup_symbol(dbb, name->str_length,
-		reinterpret_cast<const TEXT*>(name->str_data), type, charset_id);
+	return str;
 }

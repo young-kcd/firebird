@@ -27,9 +27,10 @@
 #  Contributor(s):
 # 
 #
+#  $Id: Makefile.in.embed.gpre,v 1.9.2.4 2006-11-05 14:37:29 alexpeshkoff Exp $
 #
 ROOT=..
-ObjModuleType=std
+ObjModuleName=embed.gpre
 
 include     $(ROOT)/gen/make.defaults
 include     $(ROOT)/gen/make.platform
@@ -38,21 +39,20 @@ include     $(ROOT)/gen/make.shared.variables
 
 @SET_MAKE@
 
-GPRE_Other_Sources = jrd/dsc.cpp jrd/isc.cpp jrd/path_utils.cpp
+
+GPRE_Other_Sources = jrd/dsc.cpp common/fb_exception.cpp
+
 GPRE_Files = gpre_meta.epp \
 		cmd.cpp cme.cpp cmp.cpp c_cxx.cpp exp.cpp gpre.cpp \
 		hsh.cpp int_cxx.cpp jrdmet.cpp movg.cpp msc.cpp par.cpp \
-		pat.cpp pretty.cpp sqe.cpp sql.cpp \
+		pat.cpp pretty.cpp sqe.cpp sql.cpp noform.cpp \
 		@GPRE_LANGUAGE_MODULES@
 
 GPRE_Sources = $(addprefix gpre/, $(GPRE_Files)) $(GPRE_Other_Sources)
 GPRE_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(GPRE_Sources))))
 
-ifeq ($(PLATFORM),DARWIN)
-LINK_LIBS+=$(ICU_LIBS)
-endif
-AllObjects = $(GPRE_Objects) $(CLUMPLETS_Objects)
-Dependencies = $(AllObjects:.o=.d) 
+AllObjects = $(GPRE_Objects)
+Dependencies=$(AllObjects:.o=.$(DEP_EXT))
 
 
 .PHONY: gpre
@@ -60,7 +60,7 @@ Dependencies = $(AllObjects:.o=.d)
 
 gpre : $(LIBFBEMBED_SO) $(GPRE)
 
-$(GPRE):	$(GPRE_Objects) $(CLUMPLETS_Objects) $(FBCOMMON_Objects) $(FBCLASSES_Objects)
+$(GPRE):	$(GPRE_Objects)
 	$(LD) $(LINK_OPTS) $^ -o $@ $(FBEMBED_LINK) $(LINK_LIBS)
 
 

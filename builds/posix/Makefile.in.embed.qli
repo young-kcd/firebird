@@ -27,9 +27,10 @@
 #  Contributor(s):
 # 
 #
+#  $Id: Makefile.in.embed.qli,v 1.10.2.3 2006-11-05 14:37:30 alexpeshkoff Exp $
 #
 ROOT=..
-ObjModuleType=std
+ObjModuleName=embed.qli
 
 include     $(ROOT)/gen/make.defaults
 include     $(ROOT)/gen/make.platform
@@ -39,20 +40,19 @@ include     $(ROOT)/gen/make.shared.variables
 @SET_MAKE@
 
 
-QLI_Other_Sources = jrd/dsc.cpp gpre/pretty.cpp jrd/path_utils.cpp
+QLI_Other_Sources = common/classes/alloc.cpp common/fb_exception.cpp \
+jrd/dsc.cpp gpre/pretty.cpp jrd/isc_file.cpp common/config/dir_list.cpp \
+common/config/config.cpp common/config/config_file.cpp $(OS_SPECIFIC_Sources)
 
 QLI_Files=	all.cpp command.cpp compile.cpp dtr.cpp err.cpp eval.cpp \
-		expand.cpp exe.cpp format.cpp gener.cpp help.cpp \
+		expand.cpp exe.cpp noform.cpp format.cpp gener.cpp help.cpp \
 		hsh.cpp lex.cpp meta.cpp mov.cpp parse.cpp picstr.cpp proc.cpp \
 		report.cpp show.cpp
 QLI_Sources = $(addprefix qli/, $(QLI_Files)) $(QLI_Other_Sources)
 QLI_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(QLI_Sources))))
 
-ifeq ($(PLATFORM),DARWIN)
-LINK_LIBS+=$(ICU_LIBS)
-endif
-AllObjects = $(QLI_Objects) $(CLUMPLETS_Objects)
-Dependencies = $(AllObjects:.o=.d)
+AllObjects = $(QLI_Objects) 
+Dependencies=$(AllObjects:.o=.$(DEP_EXT))
 
 
 
@@ -63,14 +63,15 @@ all:	qli
 
 qli : create_yachts $(LIBFBEMBED_SO) $(QLI)
 
-$(QLI): $(QLI_Objects) $(CLUMPLETS_Objects) $(FBCOMMON_Objects) $(FBCLASSES_Objects)
+$(QLI): $(QLI_Objects)
 	$(LD) $(LINK_OPTS) $^ -o $@ $(FBEMBED_LINK) $(LINK_LIBS)
+	$(CHMOD_S7) $@
 
 # EKU: At this point yachts.lnk is a link to empty.fdb, but gpre will fail
 #      with it. metadata.fdb is what is needed here.
 create_yachts:
 	-$(RM) yachts.lnk
-	-$(LN) -f metadata.fdb yachts.lnk
+	-$(LN) -f $(SRC_ROOT)/metadata.fdb yachts.lnk
 
 
 include $(ROOT)/gen/make.shared.targets

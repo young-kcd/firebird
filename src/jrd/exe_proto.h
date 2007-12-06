@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Access Method
  *	MODULE:		exe_proto.h
- *	DESCRIPTION:	Prototype header file for exe.cpp
+ *	DESCRIPTION:	Prototype header file for exe.c
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -24,26 +24,27 @@
 #ifndef JRD_EXE_PROTO_H
 #define JRD_EXE_PROTO_H
 
-#include "../jrd/req.h"
-
-namespace Jrd {
-	class jrd_req;
-	class jrd_nod;
-	class jrd_tra;
-}
-
-void EXE_assignment(Jrd::thread_db*, Jrd::jrd_nod*);
-void EXE_assignment(Jrd::thread_db* tdbb, Jrd::jrd_nod* to, dsc* from_desc, bool from_null,
-	Jrd::jrd_nod* missing_node, Jrd::jrd_nod* missing2_node);
-void EXE_execute_db_triggers(Jrd::thread_db*, Jrd::jrd_tra*, enum Jrd::jrd_req::req_ta);
-Jrd::jrd_req* EXE_find_request(Jrd::thread_db*, Jrd::jrd_req*, bool);
-void EXE_receive(Jrd::thread_db*, Jrd::jrd_req*, USHORT, USHORT, UCHAR*, bool = false);
-void EXE_send(Jrd::thread_db*, Jrd::jrd_req*, USHORT, USHORT, const UCHAR*);
-void EXE_start(Jrd::thread_db*, Jrd::jrd_req*, Jrd::jrd_tra*);
-void EXE_unwind(Jrd::thread_db*, Jrd::jrd_req*);
-#ifdef SCROLLABLE_CURSORS
-void EXE_seek(Jrd::thread_db*, Jrd::jrd_req*, USHORT, ULONG);
+#ifdef __cplusplus
+extern "C" {
 #endif
 
-#endif // JRD_EXE_PROTO_H
+extern void EXE_assignment(TDBB, struct jrd_nod*);
+extern struct jrd_req *EXE_find_request(TDBB, struct jrd_req *, BOOLEAN);
+extern void EXE_receive(TDBB, struct jrd_req*, USHORT, USHORT, UCHAR*);
+extern void EXE_send(TDBB, struct jrd_req *, USHORT, USHORT, UCHAR *);
+extern void EXE_start(TDBB, struct jrd_req *, struct jrd_tra *);
+extern void EXE_unwind(TDBB, struct jrd_req *);
+#ifdef SCROLLABLE_CURSORS
+extern void EXE_seek(TDBB, struct jrd_req *, USHORT, ULONG);
+#endif
 
+#ifdef PC_ENGINE
+extern BOOLEAN EXE_crack(TDBB, struct rsb *, USHORT);
+extern void EXE_mark_crack(TDBB, struct rsb *, USHORT);
+#endif
+
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
+
+#endif /* JRD_EXE_PROTO_H */

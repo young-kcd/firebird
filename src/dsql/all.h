@@ -25,23 +25,29 @@
 #define DSQL_ALL_H
 
 #include "../common/classes/alloc.h"
-//#include "../jrd/block_cache.h"
+#include "../jrd/block_cache.h"
 
-struct blk;
+void		ALLD_init();				/* initialize pool system */
+void		ALLD_fini();				/* get rid of everything */
 
 class DsqlMemoryPool : public MemoryPool
 {
 protected:
 	// Dummy constructor and destructor. Should never be called
-	DsqlMemoryPool();
-	~DsqlMemoryPool();
+	DsqlMemoryPool() : MemoryPool(NULL, NULL), lls_cache(*this) {}
+	~DsqlMemoryPool() {}	
 public:
-	static DsqlMemoryPool* createPool();
+	static DsqlMemoryPool *createPool();
 	
 	static void deletePool(DsqlMemoryPool* pool);
+
+	static class blk* ALLD_pop(class dsql_lls**);
+	static void ALLD_push(class blk*, class dsql_lls**);
+
+private:
+	BlockCache<class dsql_lls> lls_cache;  /* Was plb_lls */
 };
 
-extern DsqlMemoryPool* DSQL_permanent_pool;
+extern DsqlMemoryPool *DSQL_permanent_pool;
 
 #endif	// DSQL_ALL_H
-

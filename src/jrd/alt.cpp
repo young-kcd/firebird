@@ -1,6 +1,6 @@
 /*
  *      PROGRAM:        JRD Access Method
- *      MODULE:         alt.cpp
+ *      MODULE:         alt.c
  *      DESCRIPTION:    Alternative entrypoints
  *
  * The contents of this file are subject to the Interbase Public
@@ -32,31 +32,41 @@
 
 #include "firebird.h"
 #include <string.h>
-#include <stdio.h>
+#include "../jrd/ib_stdio.h"
 #include "../jrd/common.h"
 
+#define IS_VALID_SERVER(server) if (!server || !*server) \
+				    { \
+                                    status[0] = isc_arg_gds; \
+                                    status[1] = isc_bad_protocol; \
+                                    status[2] = isc_arg_end; \
+                                    return NULL; \
+				    }
+
 #include <stdarg.h>
-#include "../jrd/ibase.h"
+#include "../jrd/gds.h"
 #include "../jrd/jrd_pwd.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/utl_proto.h"
 #include "../jrd/why_proto.h"
-#include "../utilities/gsec/gsec.h"
-#include "../utilities/gsec/secur_proto.h"
-#include "../utilities/gsec/call_service.h"
+#include "../utilities/gsec.h"
+#include "../utilities/secur_proto.h"
+
+#include "../jrd/gdsold.h"
 
 #include "../jrd/event.h"
-#include "../jrd/alt_proto.h"
-#include "../jrd/constants.h"
 
-#if !defined(SUPERSERVER) || defined(EMBEDDED) || defined(SUPERCLIENT)
-#if !defined(BOOT_BUILD)
-static ISC_STATUS executeSecurityCommand(ISC_STATUS*, const USER_SEC_DATA*, internal_user_data&);
-#endif // BOOT_BUILD
-#endif
+typedef struct teb {
+	FRBRD **teb_database;
+	int teb_tpb_length;
+	UCHAR *teb_tpb;
+} TEB;
 
-SLONG API_ROUTINE_VARARG isc_event_block(UCHAR** event_buffer,
-										 UCHAR** result_buffer,
+FRBRD *open_security_db(ISC_STATUS *, TEXT *, TEXT *, int, TEXT *);
+void get_security_error(ISC_STATUS *, int);
+
+SLONG API_ROUTINE_VARARG isc_event_block(SCHAR ** event_buffer,
+										 SCHAR ** result_buffer,
 										 USHORT count, ...)
 {
 /**************************************
@@ -73,27 +83,30 @@ SLONG API_ROUTINE_VARARG isc_event_block(UCHAR** event_buffer,
  *	Return 0 if any error occurs.
  *
  **************************************/
+	SCHAR *p, *q;
+	SCHAR *end;
+	SLONG length;
+	USHORT i;
 	va_list ptr;
 
-	va_start(ptr, count);
+	VA_START(ptr, count);
 
 /* calculate length of event parameter block, 
    setting initial length to include version
    and counts for each argument */
 
-	SLONG length = 1;
-	USHORT i = count;
+	length = 1;
+	i = count;
 	while (i--) {
-		const char* q = va_arg(ptr, SCHAR *);
+		q = va_arg(ptr, SCHAR *);
 		length += strlen(q) + 5;
 	}
-	va_end(ptr);
 
-	UCHAR* p = *event_buffer = (UCHAR *) gds__alloc((SLONG) length);
+	p = *event_buffer = (SCHAR *) gds__alloc((SLONG) length);
 /* FREE: apparently never freed */
 	if (!*event_buffer)			/* NOMEM: */
 		return 0;
-	if ((*result_buffer = (UCHAR *) gds__alloc((SLONG) length)) == NULL) {	/* NOMEM: */
+	if ((*result_buffer = (SCHAR *) gds__alloc((SLONG) length)) == NULL) {	/* NOMEM: */
 		/* FREE: apparently never freed */
 		gds__free(*event_buffer);
 		*event_buffer = NULL;
@@ -111,16 +124,15 @@ SLONG API_ROUTINE_VARARG isc_event_block(UCHAR** event_buffer,
 
 	*p++ = EPB_version1;
 
-	va_start(ptr, count);
+	VA_START(ptr, count);
 
 	i = count;
 	while (i--) {
-		const char* q = va_arg(ptr, SCHAR *);
+		q = va_arg(ptr, SCHAR *);
 
 		/* Strip the blanks from the ends */
-		const char* end = q + strlen(q);
-		while (--end >= q && *end == ' ')
-			;
+
+		for (end = q + strlen(q); --end >= q && *end == ' ';);
 		*p++ = end - q + 1;
 		while (q <= end)
 			*p++ = *q++;
@@ -129,15 +141,14 @@ SLONG API_ROUTINE_VARARG isc_event_block(UCHAR** event_buffer,
 		*p++ = 0;
 		*p++ = 0;
 	}
-	va_end(ptr);
 
-	return static_cast<SLONG>(p - *event_buffer);
+	return (int) (p - *event_buffer);
 }
 
 
-USHORT API_ROUTINE isc_event_block_a(SCHAR** event_buffer,
-									 SCHAR** result_buffer,
-									 USHORT count, TEXT** name_buffer)
+USHORT API_ROUTINE isc_event_block_a(SCHAR ** event_buffer,
+									 SCHAR ** result_buffer,
+									 USHORT count, TEXT ** name_buffer)
 {
 /**************************************
  *
@@ -152,28 +163,32 @@ USHORT API_ROUTINE isc_event_block_a(SCHAR** event_buffer,
  *	Return the size of the block.
  *
  **************************************/
-const int MAX_NAME_LENGTH		= 31;
+#define 	MAX_NAME_LENGTH		31
+	SCHAR *p, *q;
+	SCHAR *end;
+	TEXT **nb;
+	SLONG length;
+	USHORT i;
 
 /* calculate length of event parameter block, 
    setting initial length to include version
    and counts for each argument */
 
-	USHORT i = count;
-	TEXT** nb = name_buffer;
-	SLONG length = 0;
+	i = count;
+	nb = name_buffer;
+	length = 0;
 	while (i--) {
-		const TEXT* const q = *nb++;
+		q = *nb++;
 
 		/* Strip trailing blanks from string */
-		const char* end = q + MAX_NAME_LENGTH;
-		while (--end >= q && *end == ' ')
-			;
+
+		for (end = q + MAX_NAME_LENGTH; --end >= q && *end == ' ';);
 		length += end - q + 1 + 5;
 	}
 
 
 	i = count;
-	char* p = *event_buffer = (SCHAR *) gds__alloc((SLONG) length);
+	p = *event_buffer = (SCHAR *) gds__alloc((SLONG) length);
 /* FREE: apparently never freed */
 	if (!(*event_buffer))		/* NOMEM: */
 		return 0;
@@ -196,12 +211,11 @@ const int MAX_NAME_LENGTH		= 31;
 	nb = name_buffer;
 
 	while (i--) {
-		const TEXT* q = *nb++;
+		q = *nb++;
 
 		/* Strip trailing blanks from string */
-		const char* end = q + MAX_NAME_LENGTH;
-		while (--end >= q && *end == ' ')
-			;
+
+		for (end = q + MAX_NAME_LENGTH; --end >= q && *end == ' ';);
 		*p++ = end - q + 1;
 		while (q <= end)
 			*p++ = *q++;
@@ -216,10 +230,10 @@ const int MAX_NAME_LENGTH		= 31;
 
 
 void API_ROUTINE isc_event_block_s(
-								   SCHAR** event_buffer,
-								   SCHAR** result_buffer,
+								   SCHAR ** event_buffer,
+								   SCHAR ** result_buffer,
 								   USHORT count,
-	TEXT** name_buffer, USHORT* return_count)
+TEXT ** name_buffer, USHORT * return_count)
 {
 /**************************************
  *
@@ -239,43 +253,39 @@ void API_ROUTINE isc_event_block_s(
 
 
 ISC_STATUS API_ROUTINE_VARARG gds__start_transaction(
-												 ISC_STATUS* status_vector,
-												 FB_API_HANDLE* tra_handle,
+												 ISC_STATUS * status_vector,
+												 FRBRD **tra_handle,
 												 SSHORT count, ...)
 {
-	// This infamous structure is defined several times in different places
-	struct teb_t {
-		FB_API_HANDLE* teb_database;
-		int teb_tpb_length;
-		UCHAR* teb_tpb;
-	};
+	TEB tebs[16], *teb, *end;
+	ISC_STATUS status;
+	va_list ptr;
 
-	teb_t tebs[16];
-	teb_t* teb = tebs;
-
-	if (count > FB_NELEM(tebs))
-		teb = (teb_t*) gds__alloc(((SLONG) sizeof(teb_t) * count));
+	if (count <= FB_NELEM(tebs))
+		teb = tebs;
+	else
+		teb = (TEB *) gds__alloc(((SLONG) sizeof(struct teb) * count));
 	/* FREE: later in this module */
 
 	if (!teb) {					/* NOMEM: */
-		status_vector[0] = isc_arg_gds;
-		status_vector[1] = isc_virmemexh;
-		status_vector[2] = isc_arg_end;
+		status_vector[0] = gds_arg_gds;
+		status_vector[1] = gds_virmemexh;
+		status_vector[2] = gds_arg_end;
 		return status_vector[1];
 	}
 
-	const teb_t* const end = teb + count;
-	va_list ptr;
-	va_start(ptr, count);
+	end = teb + count;
+	VA_START(ptr, count);
 
-	for (teb_t* teb_iter = teb; teb_iter < end; ++teb_iter) {
-		teb_iter->teb_database = va_arg(ptr, FB_API_HANDLE*);
-		teb_iter->teb_tpb_length = va_arg(ptr, int);
-		teb_iter->teb_tpb = va_arg(ptr, UCHAR *);
+	for (; teb < end; teb++) {
+		teb->teb_database = va_arg(ptr, FRBRD **);
+		teb->teb_tpb_length = va_arg(ptr, int);
+		teb->teb_tpb = va_arg(ptr, UCHAR *);
 	}
-	va_end(ptr);
 
-	const ISC_STATUS status = isc_start_multiple(status_vector, tra_handle, count, teb);
+	teb = end - count;
+
+	status = isc_start_multiple(status_vector, tra_handle, count, teb);
 
 	if (teb != tebs)
 		gds__free(teb);
@@ -284,464 +294,531 @@ ISC_STATUS API_ROUTINE_VARARG gds__start_transaction(
 }
 
 
-ISC_STATUS API_ROUTINE gds__attach_database(ISC_STATUS* status_vector,
+ISC_STATUS API_ROUTINE gds__attach_database(ISC_STATUS * status_vector,
 										SSHORT file_length,
-										const SCHAR* file_name,
-										FB_API_HANDLE* db_handle,
-										SSHORT dpb_length, const SCHAR* dpb)
+										SCHAR * file_name,
+										FRBRD **db_handle,
+										SSHORT dpb_length, SCHAR * dpb)
 {
-	return isc_attach_database(status_vector, file_length, file_name,
-							   db_handle, dpb_length, dpb);
+	return isc_attach_database(GDS_VAL(status_vector),
+							   file_length,
+							   GDS_VAL(file_name),
+							   GDS_VAL(db_handle), dpb_length, GDS_VAL(dpb));
 }
 
-ISC_STATUS API_ROUTINE gds__blob_info(ISC_STATUS* status_vector,
-								  FB_API_HANDLE* blob_handle,
+ISC_STATUS API_ROUTINE gds__blob_info(ISC_STATUS * status_vector,
+								  FRBRD **blob_handle,
 								  SSHORT msg_length,
-								  const SCHAR* msg,
-								  SSHORT buffer_length, SCHAR* buffer)
+								  SCHAR * msg,
+								  SSHORT buffer_length, SCHAR * buffer)
 {
-	return isc_blob_info(status_vector, blob_handle, msg_length,
-						 msg, buffer_length, buffer);
+	return isc_blob_info(GDS_VAL(status_vector),
+						 GDS_VAL(blob_handle),
+						 msg_length,
+						 GDS_VAL(msg), buffer_length, GDS_VAL(buffer));
 }
 
 ISC_STATUS API_ROUTINE gds__cancel_blob(ISC_STATUS * status_vector,
-									FB_API_HANDLE* blob_handle)
+									FRBRD **blob_handle)
 {
-	return isc_cancel_blob(status_vector, blob_handle);
+	return isc_cancel_blob(GDS_VAL(status_vector), GDS_VAL(blob_handle));
 }
 
 ISC_STATUS API_ROUTINE gds__cancel_events(ISC_STATUS * status_vector,
-									  FB_API_HANDLE* db_handle, SLONG * event_id)
+									  FRBRD **db_handle, SLONG * event_id)
 {
-	return isc_cancel_events(status_vector, db_handle, event_id);
+	return isc_cancel_events(GDS_VAL(status_vector),
+							 GDS_VAL(db_handle), GDS_VAL(event_id));
 }
 
-ISC_STATUS API_ROUTINE gds__close_blob(ISC_STATUS * status_vector, FB_API_HANDLE* blob_handle)
+ISC_STATUS API_ROUTINE gds__close_blob(ISC_STATUS * status_vector, FRBRD **blob_handle)
 {
-	return isc_close_blob(status_vector, blob_handle);
+	return isc_close_blob(GDS_VAL(status_vector), GDS_VAL(blob_handle));
 }
 
 ISC_STATUS API_ROUTINE gds__commit_retaining(ISC_STATUS * status_vector,
-										 FB_API_HANDLE* tra_handle)
+										 FRBRD **tra_handle)
 {
-	return isc_commit_retaining(status_vector, tra_handle);
+	return isc_commit_retaining(GDS_VAL(status_vector), GDS_VAL(tra_handle));
 }
 
 ISC_STATUS API_ROUTINE gds__commit_transaction(ISC_STATUS * status_vector,
-										   FB_API_HANDLE *tra_handle)
+										   FRBRD **tra_handle)
 {
-	return isc_commit_transaction(status_vector, tra_handle);
+	return isc_commit_transaction(GDS_VAL(status_vector),
+								  GDS_VAL(tra_handle));
 }
 
-ISC_STATUS API_ROUTINE gds__compile_request(ISC_STATUS* status_vector,
-										FB_API_HANDLE* db_handle,
-										FB_API_HANDLE* req_handle,
-										SSHORT blr_length, const SCHAR* blr)
+ISC_STATUS API_ROUTINE gds__compile_request(ISC_STATUS * status_vector,
+										FRBRD **db_handle,
+										FRBRD **req_handle,
+										SSHORT blr_length, SCHAR * blr)
 {
-	return isc_compile_request(status_vector, db_handle, req_handle, blr_length,
-							   blr);
+	return isc_compile_request(GDS_VAL(status_vector),
+							   GDS_VAL(db_handle),
+							   GDS_VAL(req_handle), blr_length, GDS_VAL(blr));
 }
 
-ISC_STATUS API_ROUTINE gds__compile_request2(ISC_STATUS* status_vector,
-										 FB_API_HANDLE* db_handle,
-										 FB_API_HANDLE* req_handle,
-										 SSHORT blr_length, const SCHAR* blr)
+ISC_STATUS API_ROUTINE gds__compile_request2(ISC_STATUS * status_vector,
+										 FRBRD **db_handle,
+										 FRBRD **req_handle,
+										 SSHORT blr_length, SCHAR * blr)
 {
-	return isc_compile_request2(status_vector, db_handle, req_handle, blr_length,
-								blr);
+	return isc_compile_request2(GDS_VAL(status_vector),
+								GDS_VAL(db_handle),
+								GDS_VAL(req_handle),
+								blr_length, GDS_VAL(blr));
 }
 
-ISC_STATUS API_ROUTINE gds__create_blob(ISC_STATUS* status_vector,
-									FB_API_HANDLE* db_handle,
-									FB_API_HANDLE* tra_handle,
-									FB_API_HANDLE* blob_handle, GDS_QUAD* blob_id)
+ISC_STATUS API_ROUTINE gds__create_blob(ISC_STATUS * status_vector,
+									FRBRD **db_handle,
+									FRBRD **tra_handle,
+									FRBRD **blob_handle, GDS_QUAD * blob_id)
 {
-	return isc_create_blob(status_vector, db_handle, tra_handle, blob_handle, 
-						   blob_id);
+	return isc_create_blob(GDS_VAL(status_vector),
+						   GDS_VAL(db_handle),
+						   GDS_VAL(tra_handle),
+						   GDS_VAL(blob_handle), GDS_VAL(blob_id));
 }
 
-ISC_STATUS API_ROUTINE gds__create_blob2(ISC_STATUS* status_vector,
-									 FB_API_HANDLE* db_handle,
-									 FB_API_HANDLE* tra_handle,
-									 FB_API_HANDLE* blob_handle,
-									 GDS_QUAD* blob_id,
-									 SSHORT bpb_length, const SCHAR* bpb)
+ISC_STATUS API_ROUTINE gds__create_blob2(ISC_STATUS * status_vector,
+									 FRBRD **db_handle,
+									 FRBRD **tra_handle,
+									 FRBRD **blob_handle,
+									 GDS_QUAD * blob_id,
+									 SSHORT bpb_length, SCHAR * bpb)
 {
-	return isc_create_blob2(status_vector, db_handle, tra_handle, blob_handle,
-							blob_id, bpb_length, bpb);
+	return isc_create_blob2(GDS_VAL(status_vector),
+							GDS_VAL(db_handle),
+							GDS_VAL(tra_handle),
+							GDS_VAL(blob_handle),
+							GDS_VAL(blob_id), bpb_length, GDS_VAL(bpb));
 }
 
-ISC_STATUS API_ROUTINE gds__create_database(ISC_STATUS* status_vector,
+ISC_STATUS API_ROUTINE gds__create_database(ISC_STATUS * status_vector,
 										SSHORT file_length,
-										const SCHAR* file_name,
-										FB_API_HANDLE* db_handle,
+										SCHAR * file_name,
+										FRBRD **db_handle,
 										SSHORT dpb_length,
-										const SCHAR* dpb, SSHORT db_type)
+										SCHAR * dpb, SSHORT db_type)
 {
-	return isc_create_database(status_vector, file_length, file_name, db_handle,
-							   dpb_length, dpb, db_type);
+	return isc_create_database(GDS_VAL(status_vector),
+							   file_length,
+							   GDS_VAL(file_name),
+							   GDS_VAL(db_handle),
+							   dpb_length, GDS_VAL(dpb), db_type);
 }
 
-ISC_STATUS API_ROUTINE gds__database_cleanup(ISC_STATUS * status_vector,
-										FB_API_HANDLE* db_handle,
-										AttachmentCleanupRoutine *routine, void* arg)
+ISC_STATUS API_ROUTINE isc_database_cleanup(ISC_STATUS * status_vector,
+										FRBRD **db_handle,
+										DatabaseCleanupRoutine *routine, void* arg)
 {
 
-	return isc_database_cleanup(status_vector, db_handle, routine, arg);
+	return gds__database_cleanup(GDS_VAL(status_vector),
+								 (FRBRD **) db_handle,
+								 routine, arg);
 }
 
-ISC_STATUS API_ROUTINE gds__database_info(ISC_STATUS* status_vector,
-									  FB_API_HANDLE* db_handle,
+ISC_STATUS API_ROUTINE gds__database_info(ISC_STATUS * status_vector,
+									  FRBRD **db_handle,
 									  SSHORT msg_length,
-									  const SCHAR* msg,
-									  SSHORT buffer_length, SCHAR* buffer)
+									  SCHAR * msg,
+									  SSHORT buffer_length, SCHAR * buffer)
 {
-	return isc_database_info(status_vector, db_handle, msg_length,
-							 msg, buffer_length, buffer);
+	return isc_database_info(GDS_VAL(status_vector),
+							 GDS_VAL(db_handle),
+							 msg_length,
+							 GDS_VAL(msg), buffer_length, GDS_VAL(buffer));
 }
 
 ISC_STATUS API_ROUTINE gds__detach_database(ISC_STATUS * status_vector,
-										FB_API_HANDLE* db_handle)
+										FRBRD **db_handle)
 {
-	return isc_detach_database(status_vector, db_handle);
+	return isc_detach_database(GDS_VAL(status_vector), GDS_VAL(db_handle));
 }
 
 ISC_STATUS API_ROUTINE gds__get_segment(ISC_STATUS * status_vector,
-									FB_API_HANDLE* blob_handle,
+									FRBRD **blob_handle,
 									USHORT * return_length,
 									USHORT buffer_length, SCHAR * buffer)
 {
-	return isc_get_segment(status_vector, blob_handle, return_length,
-						   buffer_length, buffer);
+	return isc_get_segment(GDS_VAL(status_vector),
+						   GDS_VAL(blob_handle),
+						   GDS_VAL(return_length),
+						   buffer_length, GDS_VAL(buffer));
 }
 
-ISC_STATUS API_ROUTINE gds__get_slice(ISC_STATUS* status_vector,
-								  FB_API_HANDLE* db_handle,
-								  FB_API_HANDLE* tra_handle,
-								  GDS_QUAD* array_id,
+ISC_STATUS API_ROUTINE gds__get_slice(ISC_STATUS * status_vector,
+								  FRBRD **db_handle,
+								  FRBRD **tra_handle,
+								  GDS_QUAD * array_id,
 								  SSHORT sdl_length,
-								  const SCHAR* sdl,
+								  SCHAR * sdl,
 								  SSHORT parameters_leng,
-								  const SLONG* parameters,
+								  SLONG * parameters,
 								  SLONG slice_length,
-								  void* slice, SLONG* return_length)
+								  void *slice, SLONG * return_length)
 {
-	return isc_get_slice(status_vector, db_handle, tra_handle, array_id,
-						 sdl_length, sdl, parameters_leng, parameters,
-						 slice_length, (SCHAR *) slice, return_length);
+	return isc_get_slice(GDS_VAL(status_vector),
+						 GDS_VAL(db_handle),
+						 GDS_VAL(tra_handle),
+						 GDS_VAL(array_id),
+						 sdl_length,
+						 GDS_VAL(sdl),
+						 parameters_leng,
+						 GDS_VAL(parameters),
+						 slice_length,
+						 GDS_VAL((SCHAR *) slice), GDS_VAL(return_length));
 }
 
-ISC_STATUS API_ROUTINE gds__open_blob(ISC_STATUS* status_vector,
-								  FB_API_HANDLE* db_handle,
-								  FB_API_HANDLE* tra_handle,
-								  FB_API_HANDLE* blob_handle, GDS_QUAD* blob_id)
+ISC_STATUS API_ROUTINE gds__open_blob(ISC_STATUS * status_vector,
+								  FRBRD **db_handle,
+								  FRBRD **tra_handle,
+								  FRBRD **blob_handle, GDS_QUAD * blob_id)
 {
-	return isc_open_blob(status_vector, db_handle, tra_handle, blob_handle,
-						 blob_id);
+	return isc_open_blob(GDS_VAL(status_vector),
+						 GDS_VAL(db_handle),
+						 GDS_VAL(tra_handle),
+						 GDS_VAL(blob_handle), GDS_VAL(blob_id));
 }
 
-ISC_STATUS API_ROUTINE gds__open_blob2(ISC_STATUS* status_vector,
-								   FB_API_HANDLE* db_handle,
-								   FB_API_HANDLE* tra_handle,
-								   FB_API_HANDLE* blob_handle,
-								   GDS_QUAD* blob_id,
-								   SSHORT bpb_length, const SCHAR* bpb)
+ISC_STATUS API_ROUTINE gds__open_blob2(ISC_STATUS * status_vector,
+								   FRBRD **db_handle,
+								   FRBRD **tra_handle,
+								   FRBRD **blob_handle,
+								   GDS_QUAD * blob_id,
+								   SSHORT bpb_length, SCHAR * bpb)
 {
-	return isc_open_blob2(status_vector, db_handle, tra_handle, blob_handle,
-						  blob_id, bpb_length,
-						  reinterpret_cast<const UCHAR*>(bpb));
+	return isc_open_blob2(GDS_VAL(status_vector),
+						  GDS_VAL(db_handle),
+						  GDS_VAL(tra_handle),
+						  GDS_VAL(blob_handle),
+						  GDS_VAL(blob_id),
+						  bpb_length,
+						  reinterpret_cast<UCHAR*>(GDS_VAL(bpb)));
 }
 
-ISC_STATUS API_ROUTINE gds__prepare_transaction(ISC_STATUS* status_vector,
-											FB_API_HANDLE* tra_handle)
+ISC_STATUS API_ROUTINE gds__prepare_transaction(ISC_STATUS * status_vector,
+											FRBRD **tra_handle)
 {
-	return isc_prepare_transaction(status_vector, tra_handle);
+	return isc_prepare_transaction(GDS_VAL(status_vector),
+								   GDS_VAL(tra_handle));
 }
 
-ISC_STATUS API_ROUTINE gds__prepare_transaction2(ISC_STATUS* status_vector,
-											 FB_API_HANDLE* tra_handle,
-											 SSHORT msg_length, const SCHAR* msg)
+ISC_STATUS API_ROUTINE gds__prepare_transaction2(ISC_STATUS * status_vector,
+											 FRBRD **tra_handle,
+											 SSHORT msg_length, SCHAR * msg)
 {
-	return isc_prepare_transaction2(status_vector, tra_handle, msg_length,
-									reinterpret_cast<const UCHAR*>(msg));
+	return isc_prepare_transaction2(GDS_VAL(status_vector),
+									GDS_VAL(tra_handle),
+									msg_length,
+									reinterpret_cast<UCHAR*>(GDS_VAL(msg)));
 }
 
-ISC_STATUS API_ROUTINE gds__put_segment(ISC_STATUS* status_vector,
-									FB_API_HANDLE* blob_handle,
-									USHORT segment_length, const SCHAR* segment)
+ISC_STATUS API_ROUTINE gds__put_segment(ISC_STATUS * status_vector,
+									FRBRD **blob_handle,
+									USHORT segment_length, SCHAR * segment)
 {
-	return isc_put_segment(status_vector, blob_handle, segment_length, segment);
+	return isc_put_segment(GDS_VAL(status_vector),
+						   GDS_VAL(blob_handle),
+						   segment_length, GDS_VAL(segment));
 }
 
-ISC_STATUS API_ROUTINE gds__put_slice(ISC_STATUS* status_vector,
-								  FB_API_HANDLE* db_handle,
-								  FB_API_HANDLE* tra_handle,
-								  GDS_QUAD* array_id,
+ISC_STATUS API_ROUTINE gds__put_slice(ISC_STATUS * status_vector,
+								  FRBRD **db_handle,
+								  FRBRD **tra_handle,
+								  GDS_QUAD * array_id,
 								  SSHORT sdl_length,
-								  const SCHAR* sdl,
+								  SCHAR * sdl,
 								  SSHORT parameters_leng,
-								  const SLONG* parameters,
-								  SLONG slice_length, void* slice)
+								  SLONG * parameters,
+								  SLONG slice_length, void *slice)
 {
-	return isc_put_slice(status_vector, db_handle, tra_handle, array_id, 
-						 sdl_length, sdl, parameters_leng, parameters,
-						 slice_length, reinterpret_cast<SCHAR*>(slice));
+	return isc_put_slice(GDS_VAL(status_vector),
+						 GDS_VAL(db_handle),
+						 GDS_VAL(tra_handle),
+						 GDS_VAL(array_id),
+						 sdl_length,
+						 GDS_VAL(sdl),
+						 parameters_leng,
+						 GDS_VAL(parameters),
+						 slice_length, GDS_VAL((SCHAR *) slice));
 }
 
-ISC_STATUS API_ROUTINE gds__que_events(ISC_STATUS* status_vector,
-								   FB_API_HANDLE* db_handle,
-								   SLONG* event_id,
+ISC_STATUS API_ROUTINE gds__que_events(ISC_STATUS * status_vector,
+								   FRBRD **db_handle,
+								   SLONG * event_id,
 								   SSHORT events_length,
-								   const UCHAR* events,
-								   FPTR_EVENT_CALLBACK ast_address,
-								   void* ast_argument)
+								   SCHAR * events,
+								   void (*ast_address) (), void *ast_argument)
 {
-	return isc_que_events(status_vector, db_handle, event_id, events_length,
-						  events, ast_address, ast_argument);
+	return isc_que_events(GDS_VAL(status_vector),
+						  GDS_VAL(db_handle),
+						  GDS_VAL(event_id),
+						  events_length,
+						  GDS_VAL(events),
+						  GDS_VAL(ast_address),
+						  GDS_VAL((int *) ast_argument));
 }
 
 ISC_STATUS API_ROUTINE gds__receive(ISC_STATUS * status_vector,
-								FB_API_HANDLE* req_handle,
+								FRBRD **req_handle,
 								SSHORT msg_type,
 								SSHORT msg_length,
 								void *msg, SSHORT req_level)
 {
-	return isc_receive(status_vector, req_handle, msg_type,
-					   msg_length, (SCHAR *) msg, req_level);
+	return isc_receive(GDS_VAL(status_vector),
+					   GDS_VAL(req_handle),
+					   msg_type,
+					   msg_length, GDS_VAL((SCHAR *) msg), req_level);
 }
 
-ISC_STATUS API_ROUTINE gds__reconnect_transaction(ISC_STATUS* status_vector,
-											  FB_API_HANDLE* db_handle,
-											  FB_API_HANDLE* tra_handle,
-											  SSHORT msg_length,
-											  const SCHAR* msg)
+ISC_STATUS API_ROUTINE gds__reconnect_transaction(ISC_STATUS * status_vector,
+											  FRBRD **db_handle,
+											  FRBRD **tra_handle,
+											  SSHORT msg_length, SCHAR * msg)
 {
-	return isc_reconnect_transaction(status_vector, db_handle, tra_handle,
-									 msg_length, msg);
+	return isc_reconnect_transaction(GDS_VAL(status_vector),
+									 GDS_VAL(db_handle),
+									 GDS_VAL(tra_handle),
+									 msg_length, GDS_VAL(msg));
 }
 
 ISC_STATUS API_ROUTINE gds__release_request(ISC_STATUS * status_vector,
-										FB_API_HANDLE* req_handle)
+										FRBRD **req_handle)
 {
-	return isc_release_request(status_vector, req_handle);
+	return isc_release_request(GDS_VAL(status_vector), GDS_VAL(req_handle));
 }
 
-ISC_STATUS API_ROUTINE gds__request_info(ISC_STATUS* status_vector,
-									 FB_API_HANDLE* req_handle,
+ISC_STATUS API_ROUTINE gds__request_info(ISC_STATUS * status_vector,
+									 FRBRD **req_handle,
 									 SSHORT req_level,
 									 SSHORT msg_length,
-									 const SCHAR* msg,
-									 SSHORT buffer_length, SCHAR* buffer)
+									 SCHAR * msg,
+									 SSHORT buffer_length, SCHAR * buffer)
 {
-	return isc_request_info(status_vector, req_handle, req_level, msg_length,
-							msg, buffer_length, buffer);
+	return isc_request_info(GDS_VAL(status_vector),
+							GDS_VAL(req_handle),
+							req_level,
+							msg_length,
+							GDS_VAL(msg), buffer_length, GDS_VAL(buffer));
 }
 
 ISC_STATUS API_ROUTINE gds__rollback_transaction(ISC_STATUS * status_vector,
-											 FB_API_HANDLE* tra_handle)
+											 FRBRD **tra_handle)
 {
-	return isc_rollback_transaction(status_vector, tra_handle);
+	return isc_rollback_transaction(GDS_VAL(status_vector),
+									GDS_VAL(tra_handle));
 }
 
 ISC_STATUS API_ROUTINE gds__seek_blob(ISC_STATUS * status_vector,
-								  FB_API_HANDLE* blob_handle,
+								  FRBRD **blob_handle,
 								  SSHORT mode, SLONG offset, SLONG * result)
 {
-	return isc_seek_blob(status_vector, blob_handle, mode, offset, result);
+	return isc_seek_blob(GDS_VAL(status_vector),
+						 GDS_VAL(blob_handle), mode, offset, GDS_VAL(result));
 }
 
-ISC_STATUS API_ROUTINE gds__send(ISC_STATUS* status_vector,
-							 FB_API_HANDLE* req_handle,
+ISC_STATUS API_ROUTINE gds__send(ISC_STATUS * status_vector,
+							 FRBRD **req_handle,
 							 SSHORT msg_type,
-							 SSHORT msg_length, const void* msg,
-							 SSHORT req_level)
+							 SSHORT msg_length, void *msg, SSHORT req_level)
 {
-	return isc_send(status_vector, req_handle, msg_type, msg_length, 
-					(const SCHAR*) msg, req_level);
+	return isc_send(GDS_VAL(status_vector),
+					GDS_VAL(req_handle),
+					msg_type, msg_length, GDS_VAL((SCHAR *) msg), req_level);
 }
 
-ISC_STATUS API_ROUTINE gds__start_and_send(ISC_STATUS* status_vector,
-									   FB_API_HANDLE* req_handle,
-									   FB_API_HANDLE* tra_handle,
+ISC_STATUS API_ROUTINE gds__start_and_send(ISC_STATUS * status_vector,
+									   FRBRD **req_handle,
+									   FRBRD **tra_handle,
 									   SSHORT msg_type,
 									   SSHORT msg_length,
-									   const void* msg, SSHORT req_level)
+									   void *msg, SSHORT req_level)
 {
-	return isc_start_and_send(status_vector, req_handle, tra_handle, msg_type,
-							  msg_length, (const SCHAR*) msg, req_level);
+	return isc_start_and_send(GDS_VAL(status_vector),
+							  GDS_VAL(req_handle),
+							  GDS_VAL(tra_handle),
+							  msg_type,
+							  msg_length, GDS_VAL((SCHAR *) msg), req_level);
 }
 
 ISC_STATUS API_ROUTINE gds__start_multiple(ISC_STATUS * status_vector,
-									   FB_API_HANDLE* tra_handle,
+									   FRBRD **tra_handle,
 									   SSHORT db_count, void *teb_vector)
 {
-	return isc_start_multiple(status_vector, tra_handle, db_count, 
-							  (SCHAR *) teb_vector);
+	return isc_start_multiple(GDS_VAL(status_vector),
+							  GDS_VAL(tra_handle),
+							  db_count, GDS_VAL((SCHAR *) teb_vector));
 }
 
 ISC_STATUS API_ROUTINE gds__start_request(ISC_STATUS * status_vector,
-									  FB_API_HANDLE* req_handle,
-									  FB_API_HANDLE* tra_handle, SSHORT req_level)
+									  FRBRD **req_handle,
+									  FRBRD **tra_handle, SSHORT req_level)
 {
-	return isc_start_request(status_vector, req_handle, tra_handle, req_level);
+	return isc_start_request(GDS_VAL(status_vector),
+							 GDS_VAL(req_handle),
+							 GDS_VAL(tra_handle), req_level);
 }
 
-ISC_STATUS API_ROUTINE gds__transaction_info(ISC_STATUS* status_vector,
-										 FB_API_HANDLE* tra_handle,
+ISC_STATUS API_ROUTINE gds__transaction_info(ISC_STATUS * status_vector,
+										 FRBRD **tra_handle,
 										 SSHORT msg_length,
-										 const SCHAR* msg,
-										 SSHORT buffer_length, SCHAR* buffer)
+										 SCHAR * msg,
+										 SSHORT buffer_length, SCHAR * buffer)
 {
-	return isc_transaction_info(status_vector, tra_handle, msg_length,
-								msg, buffer_length, buffer);
+	return isc_transaction_info(GDS_VAL(status_vector),
+								GDS_VAL(tra_handle),
+								msg_length,
+								GDS_VAL(msg), buffer_length, GDS_VAL(buffer));
 }
 
 ISC_STATUS API_ROUTINE gds__unwind_request(ISC_STATUS * status_vector,
-									   FB_API_HANDLE* req_handle, SSHORT req_level)
+									   FRBRD **req_handle, SSHORT req_level)
 {
-	return isc_unwind_request(status_vector, req_handle, req_level);
+	return isc_unwind_request(GDS_VAL(status_vector),
+							  GDS_VAL(req_handle), req_level);
 }
 
-ISC_STATUS API_ROUTINE gds__ddl(ISC_STATUS* status_vector,
-							FB_API_HANDLE* db_handle,
-							FB_API_HANDLE* tra_handle,
-							SSHORT ddl_length, const SCHAR* ddl)
+ISC_STATUS API_ROUTINE gds__ddl(ISC_STATUS * status_vector,
+							FRBRD **db_handle,
+							FRBRD **tra_handle, SSHORT ddl_length, SCHAR * ddl)
 {
-	return isc_ddl(status_vector, db_handle, tra_handle, ddl_length, ddl);
+	return isc_ddl(GDS_VAL(status_vector),
+				   GDS_VAL(db_handle),
+				   GDS_VAL(tra_handle), ddl_length, GDS_VAL(ddl));
 }
 
-void API_ROUTINE gds__event_counts(
-								  ULONG* result_vector,
+void API_ROUTINE isc_event_counts(
+								  ULONG * result_vector,
 								  SSHORT length,
-								  UCHAR* before, const UCHAR* after)
+								  SCHAR * before, SCHAR * after)
 {
-	isc_event_counts(result_vector, length, before, after);
+	gds__event_counts(GDS_VAL(result_vector),
+					  length, GDS_VAL(before), GDS_VAL(after));
 }
 
 SLONG API_ROUTINE isc_free(SCHAR * blk)
 {
 
-	return gds__free(blk);
+	return gds__free((SLONG *) blk);
 }
 
-SLONG API_ROUTINE isc_ftof(const SCHAR* string1,
-						   const USHORT length1,
-						   SCHAR* string2, const USHORT length2)
+SLONG API_ROUTINE isc_ftof(SCHAR * string1,
+						   USHORT length1, SCHAR * string2, USHORT length2)
 {
-	return gds__ftof(string1, length1, string2, length2);
+	return gds__ftof(GDS_VAL(string1), length1, GDS_VAL(string2), length2);
 }
 
-void API_ROUTINE gds__get_client_version(SCHAR * buffer)
+void API_ROUTINE isc_get_client_version(SCHAR * buffer)
 {
-	isc_get_client_version(buffer);
+	gds__get_client_version(GDS_VAL(buffer));
 }
 
-int API_ROUTINE gds__get_client_major_version()
+int API_ROUTINE isc_get_client_major_version()
 {
-	return isc_get_client_major_version();
+	return gds__get_client_major_version();
 }
 
-int API_ROUTINE gds__get_client_minor_version()
+int API_ROUTINE isc_get_client_minor_version()
 {
-	return isc_get_client_minor_version();
+	return gds__get_client_minor_version();
 }
 
-ISC_STATUS API_ROUTINE isc_print_blr(const SCHAR* blr,
-								 FPTR_PRINT_CALLBACK callback,
-								 void* callback_argument, SSHORT language)
+ISC_STATUS API_ROUTINE isc_print_blr(SCHAR * blr,
+								 void (*callback) (),
+								 void *callback_argument, SSHORT language)
 {
-	return gds__print_blr(reinterpret_cast<const UCHAR*>(blr),
-						  callback,
-						  callback_argument, language);
+	return gds__print_blr((UCHAR *) blr, callback,
+						  (SCHAR *) callback_argument, language);
 }
 
-ISC_STATUS API_ROUTINE isc_print_status(const ISC_STATUS* status_vector)
+ISC_STATUS API_ROUTINE isc_print_status(ISC_STATUS * status_vector)
 {
-	return gds__print_status(status_vector);
+	return gds__print_status(GDS_VAL(status_vector));
 }
 
-void API_ROUTINE isc_qtoq(const GDS_QUAD* quad1, GDS_QUAD* quad2)
+void API_ROUTINE isc_qtoq(GDS_QUAD * quad1, GDS_QUAD * quad2)
 {
 	gds__qtoq(quad1, quad2);
 }
 
-SLONG API_ROUTINE isc_sqlcode(const ISC_STATUS* status_vector)
+SLONG API_ROUTINE isc_sqlcode(ISC_STATUS * status_vector)
 {
-	return gds__sqlcode(status_vector);
+	return gds__sqlcode(GDS_VAL(status_vector));
 }
 
-void API_ROUTINE isc_sqlcode_s(const ISC_STATUS* status_vector, ULONG * sqlcode)
+void API_ROUTINE isc_sqlcode_s(ISC_STATUS * status_vector, ULONG * sqlcode)
 {
 	*sqlcode = gds__sqlcode(status_vector);
 	return;
 }
 
-void API_ROUTINE isc_vtof(const SCHAR* string1, SCHAR* string2, USHORT length)
+void API_ROUTINE isc_vtof(SCHAR * string1, SCHAR * string2, USHORT length)
 {
 	gds__vtof(string1, string2, length);
 }
 
-void API_ROUTINE isc_vtov(const SCHAR* string1, SCHAR* string2, SSHORT length)
+void API_ROUTINE isc_vtov(SCHAR * string1, SCHAR * string2, SSHORT length)
 {
 	gds__vtov(string1, string2, length);
 }
 
-void API_ROUTINE gds__decode_date(const GDS_QUAD* date, void* time_structure)
+void API_ROUTINE gds__decode_date(GDS_QUAD * date, void *time_structure)
 {
 	isc_decode_date(date, time_structure);
 }
 
-void API_ROUTINE gds__encode_date(const void* time_structure, GDS_QUAD* date)
+void API_ROUTINE gds__encode_date(void *time_structure, GDS_QUAD * date)
 {
 	isc_encode_date(time_structure, date);
 }
 
-SLONG API_ROUTINE isc_vax_integer(const SCHAR* input, SSHORT length)
+SLONG API_ROUTINE isc_vax_integer(SCHAR * input, SSHORT length)
 {
-	return gds__vax_integer(reinterpret_cast<const UCHAR*>(input), length);
+	return gds__vax_integer((UCHAR *) input, length);
 }
 
 #ifndef REQUESTER
-ISC_STATUS API_ROUTINE gds__event_wait(ISC_STATUS * status_vector,
-									  FB_API_HANDLE* db_handle,
+ISC_STATUS API_ROUTINE isc_wait_for_event(ISC_STATUS * status_vector,
+									  FRBRD **db_handle,
 									  SSHORT events_length,
-									  const UCHAR* events,
-									  UCHAR* events_update)
+									  SCHAR * events, SCHAR * events_update)
 {
-	return isc_wait_for_event(status_vector, db_handle, events_length,
-						   events, events_update);
+	return gds__event_wait(GDS_VAL(status_vector),
+						   GDS_VAL(db_handle),
+						   events_length,
+						   GDS_VAL(events), GDS_VAL(events_update));
 }
 #endif
 
-/* CVC: This non-const signature is needed for compatibility, see gds.cpp. */
-SLONG API_ROUTINE isc_interprete(SCHAR* buffer, ISC_STATUS** status_vector_p)
+ISC_STATUS API_ROUTINE isc_interprete(SCHAR * buffer, ISC_STATUS ** status_vector_p)
 {
 	return gds__interprete(buffer, status_vector_p);
 }
 
-int API_ROUTINE gds__version(
-							FB_API_HANDLE* db_handle,
-							FPTR_VERSION_CALLBACK callback,
-							void* callback_argument)
+int API_ROUTINE isc_version(
+							FRBRD **db_handle,
+							void (*callback) (), void *callback_argument)
 {
-	return isc_version(db_handle, callback, callback_argument);
+	return gds__version(db_handle, callback, callback_argument);
 }
 
-void API_ROUTINE gds__set_debug(int flag)
+void API_ROUTINE isc_set_debug(int flag)
 {
 #ifndef SUPERCLIENT
 #ifndef REQUESTER
-	isc_set_debug(flag);
+	gds__set_debug(flag);
 #endif
 #endif
 }
 
 int API_ROUTINE isc_blob_display(
-								 ISC_STATUS* status_vector,
-								 ISC_QUAD* blob_id,
-								 FB_API_HANDLE* database,
-								 FB_API_HANDLE* transaction,
-								 const SCHAR* field_name, const SSHORT* name_length)
+								 ISC_STATUS * status_vector,
+								 GDS_QUAD * blob_id,
+								 FRBRD **database,
+								 FRBRD **transaction,
+								 SCHAR * field_name, SSHORT * name_length)
 {
 /**************************************
  *
@@ -762,11 +839,11 @@ int API_ROUTINE isc_blob_display(
 }
 
 int API_ROUTINE isc_blob_dump(
-							  ISC_STATUS* status_vector,
-							  ISC_QUAD* blob_id,
-							  FB_API_HANDLE* database,
-							  FB_API_HANDLE* transaction,
-							  const SCHAR* file_name, const SSHORT* name_length)
+							  ISC_STATUS * status_vector,
+							  GDS_QUAD * blob_id,
+							  FRBRD **database,
+							  FRBRD **transaction,
+							  SCHAR * file_name, SSHORT * name_length)
 {
 /**************************************
  *
@@ -788,11 +865,11 @@ int API_ROUTINE isc_blob_dump(
 }
 
 int API_ROUTINE isc_blob_edit(
-							  ISC_STATUS* status_vector,
-							  ISC_QUAD* blob_id,
-							  FB_API_HANDLE* database,
-							  FB_API_HANDLE* transaction,
-							  const SCHAR* field_name, const SSHORT* name_length)
+							  ISC_STATUS * status_vector,
+							  GDS_QUAD * blob_id,
+							  FRBRD **database,
+							  FRBRD **transaction,
+							  SCHAR * field_name, SSHORT * name_length)
 {
 /**************************************
  *
@@ -813,12 +890,171 @@ int API_ROUTINE isc_blob_edit(
 					  name_length);
 }
 
+int API_ROUTINE isc_add_user(ISC_STATUS * status, USER_SEC_DATA * user_data)
+{
+/**************************************
+ *
+ *      i s c _ a d d _ u s e r
+ *
+ **************************************
+ *
+ * Functional description
+ *      Adds a user to the server's security
+ *	database.
+ *      Return 0 if the user was added
+ *
+ *	    Return > 0 if any error occurs.
+ *
+ **************************************/
+#ifdef BOOT_BUILD
+return 1;
+#else
+	USHORT retval = 0, l;
+	struct user_data userInfo;
+	FRBRD *db_handle;
+
+	userInfo.operation = ADD_OPER;
+
+	if (user_data->user_name) {
+		if (strlen(user_data->user_name) > 31) {
+			status[0] = isc_arg_gds;
+			status[1] = isc_usrname_too_long;
+			status[2] = isc_arg_end;
+			return status[1];
+		}
+
+		for (l = 0;
+			 user_data->user_name[l] != ' '
+			 && l < strlen(user_data->user_name); l++)
+			userInfo.user_name[l] = UPPER(user_data->user_name[l]);
+
+		userInfo.user_name[l] = '\0';
+		userInfo.user_name_entered = TRUE;
+	}
+	else {
+		status[0] = isc_arg_gds;
+		status[1] = isc_usrname_required;
+		status[2] = isc_arg_end;
+		return status[1];
+	}
+
+	if (user_data->password) {
+		if (strlen(user_data->password) > 8) {
+			status[0] = isc_arg_gds;
+			status[1] = isc_password_too_long;
+			status[2] = isc_arg_end;
+			return status[1];
+		}
+
+		for (l = 0;
+			 l < strlen(user_data->password) && user_data->password[l] != ' ';
+			 l++)
+			userInfo.password[l] = user_data->password[l];
+
+		userInfo.password[l] = '\0';
+		userInfo.password_entered = TRUE;
+		userInfo.password_specified = TRUE;
+	}
+	else {
+		status[0] = isc_arg_gds;
+		status[1] = isc_password_required;
+		status[2] = isc_arg_end;
+		return status[1];
+	}
+
+
+	if ((user_data->sec_flags & sec_uid_spec)
+		&& (userInfo.uid_entered = user_data->uid)) {
+		userInfo.uid = user_data->uid;
+		userInfo.uid_specified = TRUE;
+	}
+	else {
+		userInfo.uid_specified = FALSE;
+		userInfo.uid_entered = FALSE;
+	}
+
+	if ((user_data->sec_flags & sec_gid_spec)
+		&& (userInfo.gid_entered = user_data->gid)) {
+		userInfo.gid = user_data->gid;
+		userInfo.gid_specified = TRUE;
+	}
+	else {
+		userInfo.gid_specified = FALSE;
+		userInfo.gid_entered = FALSE;
+	}
+
+	if ((user_data->sec_flags & sec_group_name_spec) && user_data->group_name) {
+		int l = MIN(ALT_NAME_LEN - 1, strlen(user_data->group_name));
+		strncpy(userInfo.group_name, user_data->group_name, l);
+		userInfo.group_name[l] = '\0';
+		userInfo.group_name_entered = TRUE;
+		userInfo.group_name_specified = TRUE;
+	}
+	else {
+		userInfo.group_name_entered = FALSE;
+		userInfo.group_name_specified = FALSE;
+	}
+
+	if ((user_data->sec_flags & sec_first_name_spec) && user_data->first_name) {
+		int l = MIN(NAME_LEN - 1, strlen(user_data->first_name));
+		strncpy(userInfo.first_name, user_data->first_name, l);
+		userInfo.first_name[l] = '\0';
+		userInfo.first_name_entered = TRUE;
+		userInfo.first_name_specified = TRUE;
+	}
+	else {
+		userInfo.first_name_entered = FALSE;
+		userInfo.first_name_specified = FALSE;
+	}
+
+	if ((user_data->sec_flags & sec_middle_name_spec)
+		&& user_data->middle_name) {
+		int l = MIN(NAME_LEN - 1, strlen(user_data->middle_name));
+		strncpy(userInfo.middle_name, user_data->middle_name, l);
+		userInfo.middle_name[l] = '\0';
+		userInfo.middle_name_entered = TRUE;
+		userInfo.middle_name_specified = TRUE;
+	}
+	else {
+		userInfo.middle_name_entered = FALSE;
+		userInfo.middle_name_specified = FALSE;
+	}
+
+	if ((user_data->sec_flags & sec_last_name_spec) && user_data->last_name) {
+		int l = MIN(NAME_LEN - 1, strlen(user_data->last_name));
+		strncpy(userInfo.last_name, user_data->last_name, l);
+		userInfo.last_name[l] = '\0';
+		userInfo.last_name_entered = TRUE;
+		userInfo.last_name_specified = TRUE;
+	}
+	else {
+		userInfo.last_name_entered = FALSE;
+		userInfo.last_name_specified = FALSE;
+	}
+
+	db_handle = open_security_db(status,
+								 user_data->dba_user_name,
+								 user_data->dba_password,
+								 user_data->protocol, user_data->server);
+	if (db_handle) {
+		ISC_STATUS_ARRAY user_status;
+		retval = SECURITY_exec_line(status, db_handle, &userInfo, NULL, NULL);
+		/* if retval != 0 then there was a gsec error */
+		if (retval)
+			get_security_error(status, retval);
+
+		isc_detach_database(user_status, &db_handle);
+	}
+	return status[1];			/* security database not opened */
+#endif
+}
+
 int API_ROUTINE isc_blob_load(
-							  ISC_STATUS* status_vector,
-							  ISC_QUAD* blob_id,
-							  FB_API_HANDLE* database,
-							  FB_API_HANDLE* transaction,
-							  const SCHAR* file_name, const SSHORT* name_length)
+							  ISC_STATUS * status_vector,
+							  GDS_QUAD * blob_id,
+							  FRBRD **database,
+							  FRBRD **transaction,
+							  SCHAR * file_name, SSHORT * name_length)
 {
 /**************************************
  *
@@ -839,164 +1075,7 @@ int API_ROUTINE isc_blob_load(
 					  name_length);
 }
 
-#if !defined(SUPERSERVER) || defined(EMBEDDED) || defined(SUPERCLIENT)
-// AP: isc_*_user entrypoints are used only in any kind of embedded 
-// server (both posix and windows) and fbclient
-
-// CVC: Who was the genius that named the input param "user_data" when the
-// function uses "struct user_data userInfo" to define a different variable type
-// only few lines below? Same for the other two isc_*_user functions.
-ISC_STATUS API_ROUTINE isc_add_user(ISC_STATUS* status, const USER_SEC_DATA* input_user_data)
-{
-/**************************************
- *
- *      i s c _ a d d _ u s e r
- *
- **************************************
- *
- * Functional description
- *      Adds a user to the server's security
- *	database.
- *      Return 0 if the user was added
- *
- *	    Return > 0 if any error occurs.
- *
- **************************************/
-#ifdef BOOT_BUILD
-return 1;
-#else // BOOT_BUILD
-	internal_user_data userInfo;
-	userInfo.operation = ADD_OPER;
-
-	if (input_user_data->user_name) {
-		if (strlen(input_user_data->user_name) > 31) {
-			status[0] = isc_arg_gds;
-			status[1] = isc_usrname_too_long;
-			status[2] = isc_arg_end;
-			return status[1];
-		}
-		size_t l;
-		for (l = 0;
-			 input_user_data->user_name[l] != ' '
-			 && l < strlen(input_user_data->user_name); l++)
-		{
-			userInfo.user_name[l] = UPPER(input_user_data->user_name[l]);
-		}
-
-		userInfo.user_name[l] = '\0';
-		userInfo.user_name_entered = true;
-	}
-	else {
-		status[0] = isc_arg_gds;
-		status[1] = isc_usrname_required;
-		status[2] = isc_arg_end;
-		return status[1];
-	}
-
-	if (input_user_data->password) {
-		if (strlen(input_user_data->password) > 8) {
-			status[0] = isc_arg_gds;
-			status[1] = isc_password_too_long;
-			status[2] = isc_arg_end;
-			return status[1];
-		}
-		size_t l;
-		for (l = 0;
-			 l < strlen(input_user_data->password) && input_user_data->password[l] != ' ';
-			 l++)
-		{
-			userInfo.password[l] = input_user_data->password[l];
-		}
-
-		userInfo.password[l] = '\0';
-		userInfo.password_entered = true;
-		userInfo.password_specified = true;
-	}
-	else {
-		status[0] = isc_arg_gds;
-		status[1] = isc_password_required;
-		status[2] = isc_arg_end;
-		return status[1];
-	}
-
-
-	if ((input_user_data->sec_flags & sec_uid_spec)
-		&& (userInfo.uid_entered = (input_user_data->uid)))
-	{
-		userInfo.uid = input_user_data->uid;
-		userInfo.uid_specified = true;
-	}
-	else {
-		userInfo.uid_specified = false;
-		userInfo.uid_entered = false;
-	}
-
-	if ((input_user_data->sec_flags & sec_gid_spec)
-		&& (userInfo.gid_entered = (input_user_data->gid)))
-	{
-		userInfo.gid = input_user_data->gid;
-		userInfo.gid_specified = true;
-	}
-	else {
-		userInfo.gid_specified = false;
-		userInfo.gid_entered = false;
-	}
-
-	if ((input_user_data->sec_flags & sec_group_name_spec) && input_user_data->group_name) {
-		int l = MIN(ALT_NAME_LEN - 1, strlen(input_user_data->group_name));
-		strncpy(userInfo.group_name, input_user_data->group_name, l);
-		userInfo.group_name[l] = '\0';
-		userInfo.group_name_entered = true;
-		userInfo.group_name_specified = true;
-	}
-	else {
-		userInfo.group_name_entered = false;
-		userInfo.group_name_specified = false;
-	}
-
-	if ((input_user_data->sec_flags & sec_first_name_spec) && input_user_data->first_name) {
-		int l = MIN(NAME_LEN - 1, strlen(input_user_data->first_name));
-		strncpy(userInfo.first_name, input_user_data->first_name, l);
-		userInfo.first_name[l] = '\0';
-		userInfo.first_name_entered = true;
-		userInfo.first_name_specified = true;
-	}
-	else {
-		userInfo.first_name_entered = false;
-		userInfo.first_name_specified = false;
-	}
-
-	if ((input_user_data->sec_flags & sec_middle_name_spec)
-		&& input_user_data->middle_name)
-	{
-		int l = MIN(NAME_LEN - 1, strlen(input_user_data->middle_name));
-		strncpy(userInfo.middle_name, input_user_data->middle_name, l);
-		userInfo.middle_name[l] = '\0';
-		userInfo.middle_name_entered = true;
-		userInfo.middle_name_specified = true;
-	}
-	else {
-		userInfo.middle_name_entered = false;
-		userInfo.middle_name_specified = false;
-	}
-
-	if ((input_user_data->sec_flags & sec_last_name_spec) && input_user_data->last_name) {
-		int l = MIN(NAME_LEN - 1, strlen(input_user_data->last_name));
-		strncpy(userInfo.last_name, input_user_data->last_name, l);
-		userInfo.last_name[l] = '\0';
-		userInfo.last_name_entered = true;
-		userInfo.last_name_specified = true;
-	}
-	else {
-		userInfo.last_name_entered = false;
-		userInfo.last_name_specified = false;
-	}
-
-	return executeSecurityCommand(status, input_user_data, userInfo);
-#endif // BOOT_BUILD
-}
-
-ISC_STATUS API_ROUTINE isc_delete_user(ISC_STATUS* status, const USER_SEC_DATA* input_user_data)
+int API_ROUTINE isc_delete_user(ISC_STATUS * status, USER_SEC_DATA * user_data)
 {
 /**************************************
  *
@@ -1014,27 +1093,28 @@ ISC_STATUS API_ROUTINE isc_delete_user(ISC_STATUS* status, const USER_SEC_DATA* 
  **************************************/
 #ifdef BOOT_BUILD
 return 1;
-#else // BOOT_BUILD
-	internal_user_data userInfo;
+#else
+	USHORT retval = 0, l;
+	FRBRD *db_handle;
+	struct user_data userInfo;
+
 	userInfo.operation = DEL_OPER;
 
-	if (input_user_data->user_name) {
-		if (strlen(input_user_data->user_name) > 32) {
+	if (user_data->user_name) {
+		if (strlen(user_data->user_name) > 32) {
 			status[0] = isc_arg_gds;
 			status[1] = isc_usrname_too_long;
 			status[2] = isc_arg_end;
 			return status[1];
 		}
-		size_t l;
+
 		for (l = 0;
-			 input_user_data->user_name[l] != ' '
-			 && l < strlen(input_user_data->user_name); l++)
-		{
-			userInfo.user_name[l] = UPPER(input_user_data->user_name[l]);
-		}
+			 user_data->user_name[l] != ' '
+			 && l < strlen(user_data->user_name); l++)
+			userInfo.user_name[l] = UPPER(user_data->user_name[l]);
 
 		userInfo.user_name[l] = '\0';
-		userInfo.user_name_entered = true;
+		userInfo.user_name_entered = TRUE;
 	}
 	else {
 		status[0] = isc_arg_gds;
@@ -1043,11 +1123,24 @@ return 1;
 		return status[1];
 	}
 
-	return executeSecurityCommand(status, input_user_data, userInfo);
-#endif // BOOT_BUILD
+	db_handle = open_security_db(status,
+								 user_data->dba_user_name,
+								 user_data->dba_password,
+								 user_data->protocol, user_data->server);
+	if (db_handle) {
+		ISC_STATUS_ARRAY user_status;
+		retval = SECURITY_exec_line(status, db_handle, &userInfo, NULL, NULL);
+		/* if retval != 0 then there was a gsec error */
+		if (retval)
+			get_security_error(status, retval);
+
+		isc_detach_database(user_status, &db_handle);
+	}
+	return status[1];			/* security database not opened */
+#endif
 }
 
-ISC_STATUS API_ROUTINE isc_modify_user(ISC_STATUS* status, const USER_SEC_DATA* input_user_data)
+int API_ROUTINE isc_modify_user(ISC_STATUS * status, USER_SEC_DATA * user_data)
 {
 /**************************************
  *
@@ -1065,27 +1158,28 @@ ISC_STATUS API_ROUTINE isc_modify_user(ISC_STATUS* status, const USER_SEC_DATA* 
  **************************************/
 #ifdef BOOT_BUILD
 return 1;
-#else // BOOT_BUILD
-	internal_user_data userInfo;
+#else
+	USHORT retval = 0, l;
+	struct user_data userInfo;
+	FRBRD *db_handle;
+
 	userInfo.operation = MOD_OPER;
 
-	if (input_user_data->user_name) {
-		if (strlen(input_user_data->user_name) > 32) {
+	if (user_data->user_name) {
+		if (strlen(user_data->user_name) > 32) {
 			status[0] = isc_arg_gds;
 			status[1] = isc_usrname_too_long;
 			status[2] = isc_arg_end;
 			return status[1];
 		}
-		size_t l;
+
 		for (l = 0;
-			 input_user_data->user_name[l] != ' '
-			 && l < strlen(input_user_data->user_name); l++)
-		{
-			userInfo.user_name[l] = UPPER(input_user_data->user_name[l]);
-		}
+			 user_data->user_name[l] != ' '
+			 && l < strlen(user_data->user_name); l++)
+			userInfo.user_name[l] = UPPER(user_data->user_name[l]);
 
 		userInfo.user_name[l] = '\0';
-		userInfo.user_name_entered = true;
+		userInfo.user_name_entered = TRUE;
 	}
 	else {
 		status[0] = isc_arg_gds;
@@ -1094,147 +1188,255 @@ return 1;
 		return status[1];
 	}
 
-	if (input_user_data->sec_flags & sec_password_spec) {
-		if (strlen(input_user_data->password) > 8) {
+	if (user_data->sec_flags & sec_password_spec) {
+		if (strlen(user_data->password) > 8) {
 			status[0] = isc_arg_gds;
 			status[1] = isc_password_too_long;
 			status[2] = isc_arg_end;
 			return status[1];
 		}
-		size_t l;
+
 		for (l = 0;
-			 l < strlen(input_user_data->password) && input_user_data->password[l] != ' ';
+			 l < strlen(user_data->password) && user_data->password[l] != ' ';
 			 l++)
-		{
-			userInfo.password[l] = input_user_data->password[l];
-		}
+			userInfo.password[l] = user_data->password[l];
 
 		userInfo.password[l] = '\0';
-		userInfo.password_entered = true;
-		userInfo.password_specified = true;
+		userInfo.password_entered = TRUE;
+		userInfo.password_specified = TRUE;
 	}
 	else {
-		userInfo.password_specified = false;
-		userInfo.password_entered = false;
+		userInfo.password_specified = FALSE;
+		userInfo.password_entered = FALSE;
 	}
 
 
-	if (input_user_data->sec_flags & sec_uid_spec) {
-		userInfo.uid = input_user_data->uid;
-		userInfo.uid_specified = true;
-		userInfo.uid_entered = true;
+	if (user_data->sec_flags & sec_uid_spec) {
+		userInfo.uid = user_data->uid;
+		userInfo.uid_specified = TRUE;
+		userInfo.uid_entered = TRUE;
 	}
 	else {
-		userInfo.uid_specified = false;
-		userInfo.uid_entered = false;
+		userInfo.uid_specified = FALSE;
+		userInfo.uid_entered = FALSE;
 	}
 
-	if (input_user_data->sec_flags & sec_gid_spec) {
-		userInfo.gid = input_user_data->gid;
-		userInfo.gid_specified = true;
-		userInfo.gid_entered = true;
+	if (user_data->sec_flags & sec_gid_spec) {
+		userInfo.gid = user_data->gid;
+		userInfo.gid_specified = TRUE;
+		userInfo.gid_entered = TRUE;
 	}
 	else {
-		userInfo.gid_specified = false;
-		userInfo.gid_entered = false;
+		userInfo.gid_specified = FALSE;
+		userInfo.gid_entered = FALSE;
 	}
 
-	if (input_user_data->sec_flags & sec_group_name_spec) {
-		int l = MIN(ALT_NAME_LEN - 1, strlen(input_user_data->group_name));
-		strncpy(userInfo.group_name, input_user_data->group_name, l);
+	if (user_data->sec_flags & sec_group_name_spec) {
+		int l = MIN(ALT_NAME_LEN - 1, strlen(user_data->group_name));
+		strncpy(userInfo.group_name, user_data->group_name, l);
 		userInfo.group_name[l] = '\0';
-		userInfo.group_name_entered = true;
-		userInfo.group_name_specified = true;
+		userInfo.group_name_entered = TRUE;
+		userInfo.group_name_specified = TRUE;
 	}
 	else {
-		userInfo.group_name_entered = false;
-		userInfo.group_name_specified = false;
+		userInfo.group_name_entered = FALSE;
+		userInfo.group_name_specified = FALSE;
 	}
 
-	if (input_user_data->sec_flags & sec_first_name_spec) {
-		int l = MIN(NAME_LEN - 1, strlen(input_user_data->first_name));
-		strncpy(userInfo.first_name, input_user_data->first_name, l);
+	if (user_data->sec_flags & sec_first_name_spec) {
+		int l = MIN(NAME_LEN - 1, strlen(user_data->first_name));
+		strncpy(userInfo.first_name, user_data->first_name, l);
 		userInfo.first_name[l] = '\0';
-		userInfo.first_name_entered = true;
-		userInfo.first_name_specified = true;
+		userInfo.first_name_entered = TRUE;
+		userInfo.first_name_specified = TRUE;
 	}
 	else {
-		userInfo.first_name_entered = false;
-		userInfo.first_name_specified = false;
+		userInfo.first_name_entered = FALSE;
+		userInfo.first_name_specified = FALSE;
 	}
 
-	if (input_user_data->sec_flags & sec_middle_name_spec) {
-		int l = MIN(NAME_LEN - 1, strlen(input_user_data->middle_name));
-		strncpy(userInfo.middle_name, input_user_data->middle_name, l);
+	if (user_data->sec_flags & sec_middle_name_spec) {
+		int l = MIN(NAME_LEN - 1, strlen(user_data->middle_name));
+		strncpy(userInfo.middle_name, user_data->middle_name, l);
 		userInfo.middle_name[l] = '\0';
-		userInfo.middle_name_entered = true;
-		userInfo.middle_name_specified = true;
+		userInfo.middle_name_entered = TRUE;
+		userInfo.middle_name_specified = TRUE;
 	}
 	else {
-		userInfo.middle_name_entered = false;
-		userInfo.middle_name_specified = false;
+		userInfo.middle_name_entered = FALSE;
+		userInfo.middle_name_specified = FALSE;
 	}
 
-	if (input_user_data->sec_flags & sec_last_name_spec) {
-		int l = MIN(NAME_LEN - 1, strlen(input_user_data->last_name));
-		strncpy(userInfo.last_name, input_user_data->last_name, l);
+	if (user_data->sec_flags & sec_last_name_spec) {
+		int l = MIN(NAME_LEN - 1, strlen(user_data->last_name));
+		strncpy(userInfo.last_name, user_data->last_name, l);
 		userInfo.last_name[l] = '\0';
-		userInfo.last_name_entered = true;
-		userInfo.last_name_specified = true;
+		userInfo.last_name_entered = TRUE;
+		userInfo.last_name_specified = TRUE;
 	}
 	else {
-		userInfo.last_name_entered = false;
-		userInfo.last_name_specified = false;
+		userInfo.last_name_entered = FALSE;
+		userInfo.last_name_specified = FALSE;
 	}
 
-	return executeSecurityCommand(status, input_user_data, userInfo);
-#endif // BOOT_BUILD
+	db_handle = open_security_db(status,
+								 user_data->dba_user_name,
+								 user_data->dba_password,
+								 user_data->protocol, user_data->server);
+	if (db_handle) {
+		ISC_STATUS_ARRAY user_status;
+		retval = SECURITY_exec_line(status, db_handle, &userInfo, NULL, NULL);
+		/* if retval != 0 then there was a gsec error */
+		if (retval)
+			get_security_error(status, retval);
+		isc_detach_database(user_status, &db_handle);
+	}
+	return status[1];			/* security database not opened */
+#endif
 }
 
-
-#if !defined(BOOT_BUILD)
-
-static ISC_STATUS executeSecurityCommand(
-					ISC_STATUS* status,
-					const USER_SEC_DATA* input_user_data,
-					internal_user_data& userInfo
-)
+FRBRD *open_security_db(
+					   ISC_STATUS * status,
+					   TEXT * username,
+					   TEXT * password, int protocol, TEXT * server)
 {
 /**************************************
  *
- *      e x e c u t e S e c u r i t y C o m m a n d
+ *      o p e n _ s e c u r i t y _ d b
+ *
+ **************************************
+ *
+ * Functional description
+ *     Opens the security database 
+ *
+ * Returns the database handle if successful
+ * Returns NULL otherwise
+ *
+ **************************************/
+#ifdef BOOT_BUILD
+return 0;
+#else
+	short dpb_length;
+	char dpb_buffer[256], *dpb, *p;
+	TEXT default_security_db[MAXPATHLEN], connect_string[1024], *database;
+	FRBRD *db_handle;
+	TEXT sec_server[256];
+
+	db_handle = NULL;
+
+	switch (protocol) {
+	case sec_protocol_tcpip:
+		IS_VALID_SERVER(server);
+		sprintf(sec_server, "%s:", server);
+		SECURITY_get_db_path(sec_server, default_security_db);
+		sprintf(connect_string, "%s%s", sec_server, default_security_db);
+		break;
+
+	case sec_protocol_netbeui:
+		IS_VALID_SERVER(server);
+		sprintf(sec_server, "\\\\%s\\", server);
+		SECURITY_get_db_path(sec_server, default_security_db);
+		sprintf(connect_string, "%s%s", sec_server, default_security_db);
+		break;
+
+	case sec_protocol_local:
+		SECURITY_get_db_path(NULL, default_security_db);
+		sprintf(connect_string, "%s", default_security_db);
+		break;
+
+	default:
+		status[0] = isc_arg_gds;
+		status[1] = isc_bad_protocol;
+		status[2] = isc_arg_end;
+		return NULL;
+	}
+
+	database = connect_string;
+	dpb = dpb_buffer;
+	*dpb++ = isc_dpb_version1;
+
+	if (username) {
+		*dpb++ = isc_dpb_user_name;
+		*dpb++ = strlen(username);
+		for (p = username; *p;)
+			*dpb++ = *p++;
+	}
+
+	if (password) {
+		*dpb++ = isc_dpb_password;
+		*dpb++ = strlen(password);
+		for (p = password; *p;)
+			*dpb++ = *p++;
+	}
+
+	dpb_length = dpb - dpb_buffer;
+
+	if (isc_attach_database
+		(status, 0, database, &db_handle, dpb_length, dpb_buffer)) db_handle =
+			NULL;
+
+	return db_handle;
+#endif
+}
+
+void get_security_error(ISC_STATUS * status, int gsec_err)
+{
+/**************************************
+ *
+ *      g e t _ s e c u r i t y _ e r r o r
  *
  **************************************
  *
  * Functional description
  *
- *    Executes command according to input_user_data
- *    and userInfo. Calls service manager to do job.
+ *    Converts the gsec error code to an isc
+ *    error code and adds it to the status vector
  **************************************/
 
-	isc_svc_handle handle = attachRemoteServiceManager(
-				status,
-				input_user_data->dba_user_name,
-				input_user_data->dba_password,
-				false,
-				input_user_data->protocol, 
-				input_user_data->server);
-	if (handle)
-	{
-		callRemoteServiceManager(status, handle, userInfo, 0, 0);
-		static Firebird::CircularStringsBuffer<1024> secExecBuf;
-		static Firebird::Mutex secExecMutex;
-		{
-			Firebird::MutexLockGuard lockMutex(secExecMutex);
-			secExecBuf.makePermanentVector(status, status);
-		}
-		ISC_STATUS_ARRAY user_status;
-		detachRemoteServiceManager(user_status, handle);
+	switch (gsec_err) {
+	case GsecMsg19:			/* gsec - add record error */
+		status[0] = isc_arg_gds;
+		status[1] = isc_error_adding_sec_record;
+		status[2] = isc_arg_end;
+		return;
+
+	case GsecMsg20:			/* gsec - modify record error */
+		status[0] = isc_arg_gds;
+		status[1] = isc_error_modifying_sec_record;
+		status[2] = isc_arg_end;
+		return;
+
+	case GsecMsg21:			/* gsec - find/modify record error */
+		status[0] = isc_arg_gds;
+		status[1] = isc_error_modifying_sec_record;
+		status[2] = isc_arg_end;
+		return;
+
+	case GsecMsg22:			/* gsec - record not found for user: */
+		status[0] = isc_arg_gds;
+		status[1] = isc_usrname_not_found;
+		status[2] = isc_arg_end;
+		return;
+
+	case GsecMsg23:			/* gsec - delete record error */
+		status[0] = isc_arg_gds;
+		status[1] = isc_error_deleting_sec_record;
+		status[2] = isc_arg_end;
+		return;
+
+	case GsecMsg24:			/* gsec - find/delete record error */
+		status[0] = isc_arg_gds;
+		status[1] = isc_error_deleting_sec_record;
+		status[2] = isc_arg_end;
+		return;
+
+	case GsecMsg75:			/* gsec error */
+		status[0] = isc_arg_gds;
+		status[1] = isc_error_updating_sec_db;
+		status[2] = isc_arg_end;
+		return;
+
+	default:
+		return;
 	}
-
-	return status[1];
 }
-
-#endif // BOOT_BUILD
-
-#endif // !defined(SUPERSERVER) || defined(EMBEDDED) || defined(SUPERCLIENT)

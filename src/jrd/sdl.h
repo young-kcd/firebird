@@ -24,31 +24,25 @@
 #ifndef JRD_SDL_H
 #define JRD_SDL_H
 
-#include "../common/classes/MetaName.h"
+typedef struct sdl_info {
+	USHORT sdl_info_fid;
+	USHORT sdl_info_rid;
+	TEXT sdl_info_field[32];
+	TEXT sdl_info_relation[32];
+	DSC sdl_info_element;
+	USHORT sdl_info_dimensions;
+	SLONG sdl_info_lower[16];
+	SLONG sdl_info_upper[16];
+} *SDL_INFO;
 
-struct sdl_info {
-	USHORT			sdl_info_fid;
-	USHORT			sdl_info_rid;
-	Firebird::MetaName	sdl_info_field;
-	Firebird::MetaName	sdl_info_relation;
-	dsc				sdl_info_element;
-	USHORT			sdl_info_dimensions;
-	SLONG			sdl_info_lower[MAX_ARRAY_DIMENSIONS];
-	SLONG			sdl_info_upper[MAX_ARRAY_DIMENSIONS];
-};
-
-
-struct array_slice {
-	enum slice_dir_t { slc_reading_array, slc_writing_array };
+typedef struct slice {
 	DSC slice_desc;
-	const BLOB_PTR* slice_end;
-	const BLOB_PTR* slice_high_water;
-	BLOB_PTR* slice_base;
+	BLOB_PTR *slice_end;
+	BLOB_PTR *slice_high_water;
+	BLOB_PTR *slice_base;
 	USHORT slice_element_length;
-	slice_dir_t slice_direction;
+	USHORT slice_direction;
 	SLONG slice_count;
-};
+} *SLICE;
 
-typedef void (*SDL_walk_callback)(array_slice*, ULONG, dsc*);
 #endif /* JRD_SDL_H */
-

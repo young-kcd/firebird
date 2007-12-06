@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Remote Interface
- *	MODULE:		remote.cpp
+ *	MODULE:		remote.c
  *	DESCRIPTION:	Common routines for remote interface/server
  *
  * The contents of this file are subject to the Interbase Public
@@ -24,7 +24,7 @@
 #include "firebird.h"
 #include <string.h>
 #include <stdlib.h>
-#include "../jrd/ibase.h"
+#include "../jrd/gds.h"
 #include "../remote/remote.h"
 #include "../jrd/file_params.h"
 #include "../jrd/gdsassert.h"
@@ -33,27 +33,29 @@
 #include "../remote/proto_proto.h"
 #include "../remote/remot_proto.h"
 #include "../jrd/gds_proto.h"
-#include "../jrd/thd.h"
-#include "../jrd/thread_proto.h"
+#include "../jrd/thd_proto.h"
 #include "../common/config/config.h"
 
-#ifdef REMOTE_DEBUG
-IMPLEMENT_TRACE_ROUTINE(remote_trace, "REMOTE")
+extern int xdrmem_create(XDR *, SCHAR *, u_int, enum xdr_op);
+
+extern "C" {
+
+#define DUMMY_INTERVAL		60	/* seconds */
+#define ATTACH_FAILURE_SPACE	2048	/* bytes */
+
+static TEXT *attach_failures = NULL, *attach_failures_ptr;
+
+static void cleanup_memory(void *);
+static SLONG get_parameter(UCHAR **);
+
+#ifdef SHLIB_DEFS
+#define xdrmem_create	(*_libgds_xdrmem_create)
 #endif
 
-int xdrmem_create(XDR *, SCHAR *, u_int, enum xdr_op);
-
-const SLONG DUMMY_INTERVAL		= 60;	/* seconds */
-const int ATTACH_FAILURE_SPACE	= 2048;	/* bytes */
-
-static TEXT* attach_failures = NULL;
-static TEXT* attach_failures_ptr;
-
-static void cleanup_memory(void*);
-static SLONG get_parameter(const UCHAR**);
+extern void DLL_EXPORT THD_init_data();
 
 
-void REMOTE_cleanup_transaction( RTR transaction)
+void DLL_EXPORT REMOTE_cleanup_transaction( RTR transaction)
 {
 /**************************************
  *
@@ -67,35 +69,34 @@ void REMOTE_cleanup_transaction( RTR transaction)
  *	receive while we still have something cached.
  *
  **************************************/
-	for (rrq* request = transaction->rtr_rdb->rdb_requests; request;
-		 request = request->rrq_next) 
-	{
+	RRQ request, level;
+	RSR statement;
+
+	for (request = transaction->rtr_rdb->rdb_requests; request;
+		 request = request->rrq_next) {
 		if (request->rrq_rtr == transaction) {
 			REMOTE_reset_request(request, 0);
 			request->rrq_rtr = NULL;
 		}
-		for (rrq* level = request->rrq_levels; level; level = level->rrq_next)
+		for (level = request->rrq_levels; level; level = level->rrq_next)
 			if (level->rrq_rtr == transaction) {
 				REMOTE_reset_request(level, 0);
 				level->rrq_rtr = NULL;
 			}
 	}
 
-	for (RSR statement = transaction->rtr_rdb->rdb_sql_requests; statement;
+	for (statement = transaction->rtr_rdb->rdb_sql_requests; statement;
 		 statement = statement->rsr_next)
-	{
 		if (statement->rsr_rtr == transaction) {
 			REMOTE_reset_statement(statement);
 			statement->rsr_flags &= ~RSR_fetched;
 			statement->rsr_rtr = NULL;
 		}
-	}
 }
 
 
-ULONG REMOTE_compute_batch_size(rem_port* port,
-								USHORT buffer_used, P_OP op_code,
-								const rem_fmt* format)
+ULONG REMOTE_compute_batch_size(PORT port,
+								USHORT buffer_used, P_OP op_code, FMT format)
 {
 /**************************************
  *
@@ -159,21 +160,23 @@ ULONG REMOTE_compute_batch_size(rem_port* port,
  * 
  **************************************/
 
-const USHORT MAX_PACKETS_PER_BATCH	= 4;	/* packets    - picked by SWAG */
-const USHORT MIN_PACKETS_PER_BATCH	= 2;	/* packets    - picked by SWAG */
-const USHORT DESIRED_ROWS_PER_BATCH	= 20;	/* data rows  - picked by SWAG */
-const USHORT MIN_ROWS_PER_BATCH		= 10;	/* data rows  - picked by SWAG */
+#define	MAX_PACKETS_PER_BATCH	 4	/* packets    - picked by SWAG */
+#define MIN_PACKETS_PER_BATCH	 2	/* packets    - picked by SWAG */
+#define DESIRED_ROWS_PER_BATCH	20	/* data rows  - picked by SWAG */
+#define MIN_ROWS_PER_BATCH	10	/* data rows  - picked by SWAG */
 
 	USHORT op_overhead = (USHORT) xdr_protocol_overhead(op_code);
+	USHORT num_packets;
+	ULONG row_size;
+	ULONG result;
 
 #ifdef DEBUG
-	fprintf(stderr,
+	ib_fprintf(ib_stderr,
 			   "port_buff_size = %d fmt_net_length = %d fmt_length = %d overhead = %d\n",
 			   port->port_buff_size, format->fmt_net_length,
 			   format->fmt_length, op_overhead);
 #endif
 
-	ULONG row_size;
 	if (port->port_flags & PORT_symmetric) {
 		/* Same architecture connection */
 		row_size = (ROUNDUP(format->fmt_length, 4)
@@ -185,13 +188,13 @@ const USHORT MIN_ROWS_PER_BATCH		= 10;	/* data rows  - picked by SWAG */
 					+ op_overhead);
 	}
 
-	USHORT num_packets = (USHORT) (((DESIRED_ROWS_PER_BATCH * row_size)	/* data set */
-							 + buffer_used	/* used in 1st pkt */
+	num_packets = (USHORT) (((DESIRED_ROWS_PER_BATCH * row_size)	/* data set */
+							 +buffer_used	/* used in 1st pkt */
 							 + (port->port_buff_size - 1))	/* to round up */
 							/port->port_buff_size);
 	if (num_packets > MAX_PACKETS_PER_BATCH) {
 		num_packets = (USHORT) (((MIN_ROWS_PER_BATCH * row_size)	/* data set */
-								 + buffer_used	/* used in 1st pkt */
+								 +buffer_used	/* used in 1st pkt */
 								 + (port->port_buff_size - 1))	/* to round up */
 								/port->port_buff_size);
 	}
@@ -200,7 +203,7 @@ const USHORT MIN_ROWS_PER_BATCH		= 10;	/* data rows  - picked by SWAG */
 /* Now that we've picked the number of packets in a batch,
    pack as many rows as we can into the set of packets */
 
-	ULONG result = (num_packets * port->port_buff_size - buffer_used) / row_size;
+	result = (num_packets * port->port_buff_size - buffer_used) / row_size;
 
 /* Must always send some messages, even if message size is more 
    than packet size. */
@@ -209,13 +212,12 @@ const USHORT MIN_ROWS_PER_BATCH		= 10;	/* data rows  - picked by SWAG */
 
 #ifdef DEBUG
 	{
-		// CVC: I don't see the point in replacing this with fb_utils::readenv().
-		const char* p = getenv("DEBUG_BATCH_SIZE");
-		if (p)
+		char *p;
+		if (p = getenv("DEBUG_BATCH_SIZE"))
 			result = atoi(p);
-		fprintf(stderr, "row_size = %lu num_packets = %d\n",
+		ib_fprintf(ib_stderr, "row_size = %lu num_packets = %d\n",
 				   row_size, num_packets);
-		fprintf(stderr, "result = %lu\n", result);
+		ib_fprintf(ib_stderr, "result = %lu\n", result);
 	}
 #endif
 
@@ -223,7 +225,7 @@ const USHORT MIN_ROWS_PER_BATCH		= 10;	/* data rows  - picked by SWAG */
 }
 
 
-rrq* REMOTE_find_request(rrq* request, USHORT level)
+RRQ DLL_EXPORT REMOTE_find_request(RRQ request, USHORT level)
 {
 /**************************************
  *
@@ -235,6 +237,9 @@ rrq* REMOTE_find_request(rrq* request, USHORT level)
  *	Find sub-request if level is non-zero.
  *
  **************************************/
+	REM_MSG msg;
+	FMT format;
+	rrq::rrq_repeat * tail, *end;
 
 /* See if we already know about the request level */
 
@@ -248,10 +253,10 @@ rrq* REMOTE_find_request(rrq* request, USHORT level)
 
 /* This is a new level -- make up a new request block. */
 
-	request->rrq_levels = (rrq*) ALLR_clone(&request->rrq_header);
+	request->rrq_levels = (RRQ) ALLR_clone(&request->rrq_header);
 /* NOMEM: handled by ALLR_clone, FREE: REMOTE_remove_request() */
 #ifdef DEBUG_REMOTE_MEMORY
-	printf("REMOTE_find_request       allocate request %x\n",
+	ib_printf("REMOTE_find_request       allocate request %x\n",
 			  request->rrq_levels);
 #endif
 	request = request->rrq_levels;
@@ -260,16 +265,14 @@ rrq* REMOTE_find_request(rrq* request, USHORT level)
 
 /* Allocate message block for known messages */
 
-	rrq::rrq_repeat* tail = request->rrq_rpt;
-	const rrq::rrq_repeat* const end = tail + request->rrq_max_msg;
+	tail = request->rrq_rpt;
+	end = tail + request->rrq_max_msg;
 	for (; tail <= end; tail++) {
-		const rem_fmt* format = tail->rrq_format;
-		if (!format)
+		if (!(format = tail->rrq_format))
 			continue;
-		REM_MSG msg = (REM_MSG) ALLR_block(type_msg, format->fmt_length);
-		tail->rrq_xdr = msg;
+		tail->rrq_xdr = msg = (REM_MSG) ALLOCV(type_msg, format->fmt_length);
 #ifdef DEBUG_REMOTE_MEMORY
-		printf("REMOTE_find_request       allocate message %x\n", msg);
+		ib_printf("REMOTE_find_request       allocate message %x\n", msg);
 #endif
 		msg->msg_next = msg;
 #ifdef SCROLLABLE_CURSORS
@@ -283,7 +286,7 @@ rrq* REMOTE_find_request(rrq* request, USHORT level)
 }
 
 
-void REMOTE_free_packet( rem_port* port, PACKET * packet, bool partial)
+void DLL_EXPORT REMOTE_free_packet( PORT port, PACKET * packet)
 {
 /**************************************
  *
@@ -292,8 +295,8 @@ void REMOTE_free_packet( rem_port* port, PACKET * packet, bool partial)
  **************************************
  *
  * Functional description
- *	Zero out a full packet block (partial == false) or
- *	part of packet used in last operation (partial == true)
+ *	Zero out a packet block.
+ *
  **************************************/
 	XDR xdr;
 	USHORT n;
@@ -303,30 +306,24 @@ void REMOTE_free_packet( rem_port* port, PACKET * packet, bool partial)
 					  sizeof(PACKET), XDR_FREE);
 		xdr.x_public = (caddr_t) port;
 
-		if (partial) {
+		for (n = (USHORT) op_connect; n < (USHORT) op_max; n++) {
+			packet->p_operation = (P_OP) n;
 			xdr_protocol(&xdr, packet);
 		}
-		else {
-			for (n = (USHORT) op_connect; n < (USHORT) op_max; n++) {
-				packet->p_operation = (P_OP) n;
-				xdr_protocol(&xdr, packet);
-			}
-		}
 #ifdef DEBUG_XDR_MEMORY
-		// All packet memory allocations should now be voided. 
-		// note: this code will may work properly if partial == true
+		/* All packet memory allocations should now be voided. */
 
 		for (n = 0; n < P_MALLOC_SIZE; n++)
-			fb_assert(packet->p_malloc[n].p_operation == op_void);
+			assert(packet->p_malloc[n].p_operation == op_void);
 #endif
 		packet->p_operation = op_void;
 	}
 }
 
 
-void REMOTE_get_timeout_params(
-										  rem_port* port,
-										  const UCHAR* dpb, USHORT dpb_length)
+void DLL_EXPORT REMOTE_get_timeout_params(
+										  PORT port,
+										  UCHAR * dpb, USHORT dpb_length)
 {
 /**************************************
  *
@@ -342,32 +339,35 @@ void REMOTE_get_timeout_params(
  *	is no other specification.
  *
  **************************************/
-	bool got_dpb_connect_timeout = false;
-	bool got_dpb_dummy_packet_interval = false;
+	UCHAR *p, *end;
+	USHORT len;
+	BOOLEAN got_dpb_connect_timeout, got_dpb_dummy_packet_interval;
 
-	fb_assert(isc_dpb_connect_timeout == isc_spb_connect_timeout);
-	fb_assert(isc_dpb_dummy_packet_interval == isc_spb_dummy_packet_interval);
+	assert(isc_dpb_connect_timeout == isc_spb_connect_timeout);
+	assert(isc_dpb_dummy_packet_interval == isc_spb_dummy_packet_interval);
 
+	got_dpb_connect_timeout = FALSE;
+	got_dpb_dummy_packet_interval = FALSE;
 	port->port_flags &= ~PORT_dummy_pckt_set;
 
 	if (dpb && dpb_length) {
-		const UCHAR* p = dpb;
-		const UCHAR* const end = p + dpb_length;
+		p = dpb;
+		end = p + dpb_length;
 
-		if (*p++ == isc_dpb_version1) {
+		if (*p++ == gds_dpb_version1) {
 			while (p < end)
 				switch (*p++) {
-				case isc_dpb_connect_timeout:
+				case gds_dpb_connect_timeout:
 					port->port_connect_timeout = get_parameter(&p);
-					got_dpb_connect_timeout = true;
+					got_dpb_connect_timeout = TRUE;
 					break;
 
 // 22 Aug 2003. Do not receive this parameter from the client as dummy packets
 //   either kill idle client process or cause unexpected disconnections. 
 //   This applies to all IB/FB versions.
-//				case isc_dpb_dummy_packet_interval:
+//				case gds_dpb_dummy_packet_interval:
 //					port->port_dummy_packet_interval = get_parameter(&p);
-//					got_dpb_dummy_packet_interval = true;
+//					got_dpb_dummy_packet_interval = TRUE;
 //					port->port_flags |= PORT_dummy_pckt_set;
 //					break;
 
@@ -382,9 +382,12 @@ void REMOTE_get_timeout_params(
 			has already called THREAD_ENTER
 		    **/
 					{
-						char* t_data;
-						int i = 0;
-						int l = *(p++);
+						char *t_data;
+						int l, i = 0;
+
+						THD_init_data();
+
+						l = *(p++);
 						if (l) {
 							t_data = (char *) malloc(l + 1);
 							do {
@@ -400,18 +403,16 @@ void REMOTE_get_timeout_params(
 						t_data[i] = 0;
 
 
-						ThreadData::putSpecificData((void *) t_data);
+						THD_putspecific_data((void *) t_data);
 
 					}
 					break;
 
 				default:
-					{
-						// Skip over this parameter - not important to us
-						const USHORT len = *p++;
-						p += len;
-						break;
-					}
+					/* Skip over this parameter - not important to us */
+					len = *p++;
+					p += len;
+					break;
 				}
 		}
 	}
@@ -437,14 +438,14 @@ void REMOTE_get_timeout_params(
 
 	port->port_dummy_timeout = port->port_dummy_packet_interval;
 #ifdef DEBUG
-	printf("REMOTE_get_timeout dummy = %lu conn = %lu\n",
+	ib_printf("REMOTE_get_timeout dummy = %lu conn = %lu\n",
 			  port->port_dummy_packet_interval, port->port_connect_timeout);
-	fflush(stdout);
+	ib_fflush(ib_stdout);
 #endif
 }
 
 
-rem_str* REMOTE_make_string(const SCHAR* input)
+STR DLL_EXPORT REMOTE_make_string(SCHAR * input)
 {
 /**************************************
  *
@@ -457,10 +458,10 @@ rem_str* REMOTE_make_string(const SCHAR* input)
  *	address of new string.
  *
  **************************************/
-	const USHORT length = strlen(input);
-	rem_str* string = (rem_str*) ALLR_block(type_str, length);
+	USHORT length = strlen(input);
+	STR string = (STR) ALLOCV(type_str, length);
 #ifdef DEBUG_REMOTE_MEMORY
-	printf("REMOTE_make_string        allocate string  %x\n", string);
+	ib_printf("REMOTE_make_string        allocate string  %x\n", string);
 #endif
 	strcpy(string->str_data, input);
 	string->str_length = length;
@@ -469,7 +470,7 @@ rem_str* REMOTE_make_string(const SCHAR* input)
 }
 
 
-void REMOTE_release_messages( REM_MSG messages)
+void DLL_EXPORT REMOTE_release_messages( REM_MSG messages)
 {
 /**************************************
  *
@@ -481,13 +482,14 @@ void REMOTE_release_messages( REM_MSG messages)
  *	Release a circular list of messages.
  *
  **************************************/
-	REM_MSG message = messages;
-	if (message)
-		while (true) {
-			REM_MSG temp = message;
+	REM_MSG message, temp;
+
+	if (message = messages)
+		while (TRUE) {
+			temp = message;
 			message = message->msg_next;
 #ifdef DEBUG_REMOTE_MEMORY
-			printf("REMOTE_release_messages   free message     %x\n",
+			ib_printf("REMOTE_release_messages   free message     %x\n",
 					  temp);
 #endif
 			ALLR_release(temp);
@@ -497,7 +499,7 @@ void REMOTE_release_messages( REM_MSG messages)
 }
 
 
-void REMOTE_release_request( rrq* request)
+void DLL_EXPORT REMOTE_release_request( RRQ request)
 {
 /**************************************
  *
@@ -509,9 +511,14 @@ void REMOTE_release_request( rrq* request)
  *	Release a request block and friends.
  *
  **************************************/
-	RDB rdb = request->rrq_rdb;
+	REM_MSG message;
+	RDB rdb;
+	RRQ *p, next;
+	rrq::rrq_repeat * tail, *end;
 
-	for (rrq** p = &rdb->rdb_requests; *p; p = &(*p)->rrq_next)
+	rdb = request->rrq_rdb;
+
+	for (p = &rdb->rdb_requests; *p; p = &(*p)->rrq_next)
 		if (*p == request) {
 			*p = request->rrq_next;
 			break;
@@ -520,15 +527,13 @@ void REMOTE_release_request( rrq* request)
 /* Get rid of request and all levels */
 
 	for (;;) {
-		rrq::rrq_repeat* tail = request->rrq_rpt;
-		const rrq::rrq_repeat* const end = tail + request->rrq_max_msg;
+		tail = request->rrq_rpt;
+		end = tail + request->rrq_max_msg;
 		for (; tail <= end; tail++)
-		{
-		    REM_MSG message = tail->rrq_message;
-			if (message) {
+			if (message = tail->rrq_message) {
 				if (!request->rrq_level) {
 #ifdef DEBUG_REMOTE_MEMORY
-					printf
+					ib_printf
 						("REMOTE_release_request    free format      %x\n",
 						 tail->rrq_format);
 #endif
@@ -536,10 +541,9 @@ void REMOTE_release_request( rrq* request)
 				}
 				REMOTE_release_messages(message);
 			}
-		}
-		rrq* next = request->rrq_levels;
+		next = request->rrq_levels;
 #ifdef DEBUG_REMOTE_MEMORY
-		printf("REMOTE_release_request    free request     %x\n", request);
+		ib_printf("REMOTE_release_request    free request     %x\n", request);
 #endif
 		ALLR_release(request);
 		if (!(request = next))
@@ -548,7 +552,7 @@ void REMOTE_release_request( rrq* request)
 }
 
 
-void REMOTE_reset_request( rrq* request, REM_MSG active_message)
+void DLL_EXPORT REMOTE_reset_request( RRQ request, REM_MSG active_message)
 {
 /**************************************
  *
@@ -562,23 +566,25 @@ void REMOTE_reset_request( rrq* request, REM_MSG active_message)
  *	some care to avoid zapping that message.
  *
  **************************************/
-	rrq::rrq_repeat* tail = request->rrq_rpt;
-	const rrq::rrq_repeat* const end = tail + request->rrq_max_msg;
-	for (; tail <= end; tail++) {
-	    REM_MSG message = tail->rrq_message;
-		if (message != NULL && message != active_message) {
+	REM_MSG message;
+	rrq::rrq_repeat * tail, *end;
+
+	tail = request->rrq_rpt;
+
+	for (end = tail + request->rrq_max_msg; tail <= end; tail++)
+		if ((message = tail->rrq_message) != NULL
+			&& message != active_message) {
 			tail->rrq_xdr = message;
 			tail->rrq_rows_pending = 0;
 			tail->rrq_reorder_level = 0;
 			tail->rrq_batch_count = 0;
-			while (true) {
+			while (TRUE) {
 				message->msg_address = NULL;
 				message = message->msg_next;
 				if (message == tail->rrq_message)
 					break;
 			}
 		}
-	}
 
 /* Initialize the request status to FB_SUCCESS */
 
@@ -586,7 +592,7 @@ void REMOTE_reset_request( rrq* request, REM_MSG active_message)
 }
 
 
-void REMOTE_reset_statement( RSR statement)
+void DLL_EXPORT REMOTE_reset_statement( RSR statement)
 {
 /**************************************
  *
@@ -598,7 +604,7 @@ void REMOTE_reset_statement( RSR statement)
  *	Reset a statement by releasing all buffers except 1
  *
  **************************************/
-	REM_MSG message;
+	REM_MSG message, temp;
 
 	if ((!statement) || (!(message = statement->rsr_message)))
 		return;
@@ -617,7 +623,6 @@ void REMOTE_reset_statement( RSR statement)
 
 /* find the entry before statement->rsr_message */
 
-	REM_MSG temp;
 	for (temp = message->msg_next; temp->msg_next != message;
 		 temp = temp->msg_next);
 
@@ -633,7 +638,7 @@ void REMOTE_reset_statement( RSR statement)
 }
 
 
-void REMOTE_save_status_strings( ISC_STATUS* vector)
+void REMOTE_save_status_strings( ISC_STATUS * vector)
 {
 /**************************************
  *
@@ -649,10 +654,14 @@ void REMOTE_save_status_strings( ISC_STATUS* vector)
  *	strings to a special buffer.
  *
  **************************************/
+	TEXT *p;
+	ISC_STATUS status;
+	USHORT l;
+
 	if (!attach_failures)
 	{
 		attach_failures =
-			(TEXT*) ALLOC_LIB_MEMORY((SLONG) ATTACH_FAILURE_SPACE);
+			(TEXT *) ALLOC_LIB_MEMORY((SLONG) ATTACH_FAILURE_SPACE);
 		/* FREE: freed by exit handler cleanup_memory() */
 		if (!attach_failures)	/* NOMEM: don't bother trying to copy */
 			return;
@@ -661,36 +670,35 @@ void REMOTE_save_status_strings( ISC_STATUS* vector)
 		 * reporting mechanisms will report it anyway, so flag it as
 		 * "known unfreed" to get the reports quiet.
 		 */
-		gds_alloc_flag_unfreed((void*) attach_failures);
+		gds_alloc_flag_unfreed((void *) attach_failures);
 #endif	/* DEBUG_GDS_ALLOC */
 		attach_failures_ptr = attach_failures;
 		gds__register_cleanup(cleanup_memory, 0);
 	}
 
-	TEXT* p;
-	USHORT l = 0; // silence non initialized warning
 	while (*vector)
 	{
-		const ISC_STATUS status = *vector++;
+		status = *vector++;
 		switch (status)
 		{
-		case isc_arg_cstring:
-			l = (USHORT) *vector++;
+		case gds_arg_cstring:
+			l = (USHORT) * vector++;
 
-		case isc_arg_interpreted:
-		case isc_arg_string:
-			p = (TEXT*) *vector;
-			if (status != isc_arg_cstring)
+		case gds_arg_interpreted:
+		case gds_arg_string:
+			p = (TEXT *) * vector;
+			if (status != gds_arg_cstring)
 				l = strlen(p) + 1;
 
 			/* If there isn't any more room in the buffer,
 			   start at the beginning again */
 
-			if (attach_failures_ptr + l > attach_failures + ATTACH_FAILURE_SPACE)
-				attach_failures_ptr = attach_failures;
+			if (attach_failures_ptr + l >
+				attach_failures + ATTACH_FAILURE_SPACE) attach_failures_ptr =
+					attach_failures;
 			*vector++ = (ISC_STATUS) attach_failures_ptr;
-			memcpy(attach_failures_ptr, p, l);
-			attach_failures_ptr += l;
+			while (l--)
+				*attach_failures_ptr++ = *p++;
 			break;
 
 		default:
@@ -701,7 +709,7 @@ void REMOTE_save_status_strings( ISC_STATUS* vector)
 }
 
 
-OBJCT REMOTE_set_object(rem_port* port, BLK object, OBJCT slot)
+OBJCT DLL_EXPORT REMOTE_set_object(PORT port, BLK object, OBJCT slot)
 {
 /**************************************
  *
@@ -713,11 +721,13 @@ OBJCT REMOTE_set_object(rem_port* port, BLK object, OBJCT slot)
  *	Set an object into the object vector.
  *
  **************************************/
+	VEC vector, new_vector;
+	BLK *p, *q, *end;
 
 /* If it fits, do it */
 
-	rem_vec* vector = port->port_object_vector;
-	if ((vector != NULL) && slot < vector->vec_count) {
+	if (((vector = port->port_object_vector) != NULL) &&
+		slot < vector->vec_count) {
 		vector->vec_object[slot] = object;
 		return slot;
 	}
@@ -728,22 +738,21 @@ OBJCT REMOTE_set_object(rem_port* port, BLK object, OBJCT slot)
 	if (slot + 10 > MAX_OBJCT_HANDLES)
 		return (OBJCT) NULL;
 
-	rem_vec* new_vector = (rem_vec*) ALLR_block(type_vec, slot + 10);
-	port->port_object_vector = new_vector;
+	port->port_object_vector = new_vector = (VEC) ALLOCV(type_vec, slot + 10);
 #ifdef DEBUG_REMOTE_MEMORY
-	printf("REMOTE_set_object         allocate vector  %x\n", new_vector);
+	ib_printf("REMOTE_set_object         allocate vector  %x\n", new_vector);
 #endif
 	port->port_objects = new_vector->vec_object;
 	new_vector->vec_count = slot + 10;
 
 	if (vector) {
-		blk** p = new_vector->vec_object;
-		blk* const* q = vector->vec_object;
-		const blk* const* const end = q + (int) vector->vec_count;
+		p = new_vector->vec_object;
+		q = vector->vec_object;
+		end = q + (int) vector->vec_count;
 		while (q < end)
 			*p++ = *q++;
 #ifdef DEBUG_REMOTE_MEMORY
-		printf("REMOTE_release_request    free vector      %x\n", vector);
+		ib_printf("REMOTE_release_request    free vector      %x\n", vector);
 #endif
 		ALLR_release(vector);
 	}
@@ -775,7 +784,7 @@ static void cleanup_memory( void *block)
 }
 
 
-static SLONG get_parameter(const UCHAR** ptr)
+static SLONG get_parameter( UCHAR ** ptr)
 {
 /**************************************
  *
@@ -789,123 +798,54 @@ static SLONG get_parameter(const UCHAR** ptr)
  *	This is a clone of jrd/jrd.c:get_parameter()
  *
  **************************************/
-	const SSHORT l = *(*ptr)++;
-	const SLONG parameter = gds__vax_integer(*ptr, l);
+	SLONG parameter;
+	SSHORT l;
+
+	l = *(*ptr)++;
+	parameter = gds__vax_integer(*ptr, l);
 	*ptr += l;
 
 	return parameter;
 }
 
 
+} // extern "C"
+
 
 // TMN: Beginning of C++ port - ugly but a start
 
-int rem_port::accept(p_cnct* cnct)
+int port::accept(p_cnct* cnct)
 {
 	return (*this->port_accept)(this, cnct);
 }
 
-void rem_port::disconnect()
+void port::disconnect()
 {
 	(*this->port_disconnect)(this);
 }
 
-rem_port* rem_port::receive(PACKET* pckt)
+port* port::receive(PACKET* pckt)
 {
 	return (*this->port_receive_packet)(this, pckt);
 }
 
-rem_port* rem_port::select_multi(UCHAR* buffer, SSHORT bufsize, SSHORT* length)
-{
-	return (*this->port_select_multi)(this, buffer, bufsize, length);
-}
-
-XDR_INT rem_port::send(PACKET* pckt)
+XDR_INT port::send(PACKET* pckt)
 {
 	return (*this->port_send_packet)(this, pckt);
 }
 
-XDR_INT rem_port::send_partial(PACKET* pckt)
+XDR_INT port::send_partial(PACKET* pckt)
 {
 	return (*this->port_send_partial)(this, pckt);
 }
 
-rem_port* rem_port::connect(PACKET* pckt, t_event_ast ast)
+port* port::connect(PACKET* pckt, void(*ast)())
 {
 	return (*this->port_connect)(this, pckt, ast);
 }
 
-rem_port* rem_port::request(PACKET* pckt)
+port* port::request(PACKET* pckt)
 {
 	return (*this->port_request)(this, pckt);
 }
 
-#ifdef SUPERSERVER
-bool_t REMOTE_getbytes (XDR * xdrs, SCHAR * buff, u_int count)
-{
-/**************************************
- *
- *	R E M O T E  _ g e t b y t e s
- *
- **************************************
- *
- * Functional description
- *	Get a bunch of bytes from a port buffer
- *
- **************************************/
-	SLONG bytecount = count;
-
-/* Use memcpy to optimize bulk transfers. */
-
-	while (bytecount > 0) {
-		if (xdrs->x_handy >= bytecount) {
-			memcpy(buff, xdrs->x_private, bytecount);
-			xdrs->x_private += bytecount;
-			xdrs->x_handy -= bytecount;
-			break;
-		}
-		else {
-			if (xdrs->x_handy > 0) {
-				memcpy(buff, xdrs->x_private, xdrs->x_handy);
-				xdrs->x_private += xdrs->x_handy;
-				buff += xdrs->x_handy;
-				bytecount -= xdrs->x_handy;
-				xdrs->x_handy = 0;
-			}
-			rem_port* port = (rem_port*) xdrs->x_public;
-			if (port->port_qoffset >= port->port_queue->getCount()) {
-				port->port_flags |= PORT_partial_data;
-				return FALSE;
-			}
-			xdrs->x_handy = (*port->port_queue)[port->port_qoffset].getCount();
-			fb_assert(xdrs->x_handy <= port->port_buff_size);
-			memcpy(xdrs->x_base, (*port->port_queue)[port->port_qoffset].begin(), xdrs->x_handy);
-			++port->port_qoffset;
-			xdrs->x_private = xdrs->x_base;
-		}
-	}
-	
-	return TRUE;
-}
-#endif //SUPERSERVER
-
-#ifdef TRUSTED_AUTH
-ServerAuth::ServerAuth(const char* fName, int fLen, const Firebird::ClumpletWriter& pb, 
-					   ServerAuth::Part2* p2, P_OP op)
-: fileName(*getDefaultMemoryPool()), clumplet(*getDefaultMemoryPool()), 
-  part2(p2), operation(op)
-{
-	fileName.assign(fName, fLen);
-	size_t pbLen = pb.getBufferLength();
-	if (pbLen)
-	{
-		memcpy(clumplet.getBuffer(pbLen), pb.getBuffer(), pbLen);
-	}
-	authSspi = FB_NEW(*getDefaultMemoryPool()) AuthSspi;
-}
-
-ServerAuth::~ServerAuth()
-{
-	delete authSspi;
-}
-#endif // TRUSTED_AUTH

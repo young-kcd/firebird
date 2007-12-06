@@ -21,8 +21,8 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef ISQL_WIN_PROTO_H
-#define ISQL_WIN_PROTO_H
+#ifndef _ISQL_WIN_PROTO_H_
+#define _ISQL_WIN_PROTO_H_
 
 BOOL CALLBACK _export aboutDlgProc(HWND, UINT, WPARAM, LPARAM);
 BOOL CALLBACK _export blobDlgProc(HWND, UINT, WPARAM, LPARAM);
@@ -41,5 +41,4 @@ BOOL CALLBACK _export termDlgProc(HWND, UINT, WPARAM, LPARAM);
 BOOL CALLBACK _export transDlgProc(HWND, UINT, WPARAM, LPARAM);
 int PASCAL WinMain(HINSTANCE, HINSTANCE, LPSTR, int);
 
-#endif // ISQL_WIN_PROTO_H 
-
+#endif /* _ISQL_WIN_PROTO_H_ */

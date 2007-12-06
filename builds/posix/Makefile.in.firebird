@@ -27,6 +27,7 @@
 #  Contributor(s):
 # 
 #
+#  $Id: Makefile.in.firebird,v 1.37.2.14 2004-09-18 06:56:31 skidder Exp $
 #
 
 ROOT=..
@@ -44,14 +45,13 @@ ISC_PASSWORD=	masterkey
 TEST_PATH = @FIREBIRD_BUILD_DIR@
 # Firebird libs path set at link time (-R) so do not override local requirements - nmcc 28/12/2002
 #LD_LIBRARY_PATH=$(RealFirebirdPath)/lib
-LD_LIBRARY_PATH=$(LIB)
 
 #export ISC_USER
 #export ISC_PASSWORD
 #export INTERBASE
 export FIREBIRD
 export DYLD_FRAMEWORK_PATH
-export LD_LIBRARY_PATH
+#export LD_LIBRARY_PATH
 
 ######################################################################
 ###########  Build process overview  #################################
@@ -65,9 +65,9 @@ export LD_LIBRARY_PATH
 #    This is possible because of a special version of gpre_meta.cpp,
 #    gpre_meta_boot.cpp.  It is a copy of the gpre_meta.epp file with all
 #    the embeded commands removed.  There are pregenerated copy of the
-#    iberror.h and related files in the source tree.  These are used for the
+#    codes.h and related files in the source tree.  These are used for the
 #    entire build process.  In the future we should check for the ability
-#    to regenerate iberror.h and friends (ie, a working FB install) and only
+#    to regenerate codes.h and friends (ie, a working FB install) and only
 #    use the static files as a last resort.
 #
 #  The bootstrap version of gpre (gpre_boot) is used to build all the
@@ -88,7 +88,7 @@ export LD_LIBRARY_PATH
 #
 #  All of the aforementioned work is done in the
 #    first phase of the compilation.  I called it the first phase because
-#    none of the work (except iberror.h and friends) requires database access.
+#    none of the work (except codes.h and friends) requires database access.
 #    Phase 2 builds all the tools necessary to compile the rest of FB.  Those
 #    tools are gbak and the gds.$(SHRLIB_EXT) shared library.
 #
@@ -130,7 +130,8 @@ export LD_LIBRARY_PATH
 # MOD 28-July-2002)
 .PHONY: all firebird firebird_boot firebird_basic 
 .PHONY: firebird_embedded firebird_server classic_programs super_programs
-.PHONY: firebird_super firebird_classic btyacc_binary
+.PHONY: firebird_super firebird_classic
+.PHONY: extlib
 
 
 # The main targets are firebird_embedded or firebird_server
@@ -141,20 +142,20 @@ export LD_LIBRARY_PATH
 
 firebird : firebird_@FIREBIRD_ARCH_TYPE@ $(PLATFORM_POSTBUILD_TARGET)
 
-firebird_classic firebird_embedded: firebird_basic classic_targets
-firebird_super firebird_server: firebird_basic super_targets
+firebird_classic firebird_embedded: firebird_basic classic_targets extlib
+firebird_super firebird_server: firebird_basic super_targets extlib
 
 
 
 
 # In building embedded/server version some targets are common, mainly the 
-# boot kit, security2.fdb database and messages files.  Boot builds a number of
+# boot kit, security.fdb database and messages files.  Boot builds a number of
 # static programs gpre_static gbak_static isql_static though an involved 
 # process.  These are used to compile the rest of the source, as it saves
 # some complications particularly for super in needing to start the server
 # that you are currently building. MOD 28-July-2002
 
-firebird_basic: btyacc_binary external_libraries firebird_boot basic_targets
+firebird_basic: external_libraries firebird_boot basic_targets
 
 firebird_boot: updateBuildNum boot_phase1 boot_phase2 
 
@@ -171,33 +172,28 @@ firebird_boot: updateBuildNum boot_phase1 boot_phase2
 
 updateBuildNum : jrd/build_no.h $(GEN_ROOT)/Make.Version
 
-jrd/build_no.h : $(SRC_ROOT)/misc/writeBuildNum.sh
+jrd/build_no.h : misc/writeBuildNum.sh
 	(cd ..; ./src/misc/writeBuildNum.sh rebuildHeader)
 
-$(GEN_ROOT)/Make.Version : $(SRC_ROOT)/misc/writeBuildNum.sh
-	$(SRC_ROOT)/misc/writeBuildNum.sh createMakeVersion $@
+$(GEN_ROOT)/Make.Version : misc/writeBuildNum.sh
+	misc/writeBuildNum.sh createMakeVersion $@
 
 
 # 
 # Libraries that come from outside the project but are built 
-# as part of the project are included here.  Currently IBM ICU and 
-# editline are the only externals libraries we have included.
+# as part of the project are included here.  Currently editline
+# is the only external library we have included.
 # 
-
-external_libraries:
-ifeq ($(STD_ICU),false)
-	$(MAKE) -f $(GEN_ROOT)/Makefile.extern.icu
-endif
-ifeq ($(STD_EDITLINE),false)
+EXTERNAL_LIBRARIES=
 ifeq ($(EDITLINE_FLG),Y)
+EXTERNAL_LIBRARIES:= $(EXTERNAL_LIBRARIES) $(LIBEDITLINE_A)
+endif
+
+external_libraries: $(EXTERNAL_LIBRARIES)
+
+$(LIBEDITLINE_A): 
 	$(MAKE) -f $(GEN_ROOT)/Makefile.extern.editline
-endif
-endif
 
-btyacc_binary: $(BTYACC)
-
-$(BTYACC): 
-	$(MAKE) -C $(ROOT)/extern/btyacc
 
 #---------------------------------------------------------------------------
 # Phase1: make a gpre_static from scratch so we can parse .e and .epp files
@@ -215,15 +211,18 @@ $(BTYACC):
 # $(BIN)/gpre_static).
 #
 .PHONY: boot_phase1 boot_phase1_build
-.PHONY: libfbstatic gpre_boot gpre_static
+.PHONY: libfbcommon libfbstatic gpre_boot gpre_static
 
 boot_phase1: $(GPRE_STATIC)
 
 $(GPRE_STATIC):
 	$(MAKE) boot_phase1_build
 
-boot_phase1_build: gpre_boot libfbstatic gpre_static @MANAGER_PROCESS_TARGET@
+boot_phase1_build: libfbcommon gpre_boot libfbstatic gpre_static @MANAGER_PROCESS_TARGET@
 
+
+libfbcommon:
+	$(MAKE) -f $(GEN_ROOT)/Makefile.libfbcommon $@
 
 gpre_boot:
 	$(MAKE) -f $(GEN_ROOT)/Makefile.boot.gpre $@
@@ -248,37 +247,40 @@ lock_mgr :
 #  (It's probably possible to directly build the dynamic library - but thats
 #  for another day). We still don't have the security database stuff.
 #
-# Phase2 is complete with the building of an security2.fdb user store database
+# Phase2 is complete with the building of an security.fdb user store database
 # in order to do that isql and gdef tools need to be built without security
 # to do that a special alt_boot.o is inserted into the shared library.
-# Again once security2.fdb is built then were not too worried about the
+# Again once security.fdb is built then were not too worried about the
 # components (in fact some of them have to be rebuilt again to incorperate
 # the security module)
 #
 
 .PHONY: create_db empty_db gbak_static isql_static ref_databases
 
-boot_phase2 : libfbstatic $(ISC_GDB)
+boot_phase2 : $(ISC_GDB)
 
-$(ISC_GDB): create_db empty_db gbak_static isql_static ref_databases
+$(ISC_GDB):
+	$(MAKE) boot_phase2_build
+
+boot_phase2_build: create_db empty_db gbak_static isql_static
 
 create_db:
-	$(MAKE) -f $(GEN_ROOT)/Makefile.embed.util $(CREATE_DB)
+	$(MAKE) -f $(GEN_ROOT)/Makefile.embed.util $@
 
-gbak_static:
-	$(MAKE) -f $(GEN_ROOT)/Makefile.static.gbak
+gbak_static: @MANAGER_PROCESS_TARGET@
+	$(MAKE) -f $(GEN_ROOT)/Makefile.static.gbak $@
 
-isql_static:
-	$(MAKE) -f $(GEN_ROOT)/Makefile.static.isql
+isql_static: 
+	$(MAKE) -f $(GEN_ROOT)/Makefile.static.isql $@
 
 empty_db :
 	$(MAKE) -f $(GEN_ROOT)/Makefile.refDatabases $@
 
-ref_databases : $(GBAK_STATIC)
+ref_databases : gbak_static
 	$(MAKE) -f $(GEN_ROOT)/Makefile.refDatabases $@
 
 
-security2.fdb: gdef isql 		# build the security database
+security.fdb: gdef isql 		# build the security database
 	$(MAKE) -C utilities $@
 
 
@@ -293,15 +295,15 @@ security2.fdb: gdef isql 		# build the security database
 #  for another day). We still don't have the security database stuff.
 #
 # Notes:
-# mainly we need gdef and isql to be able to build security2.fdb.  I wonder
-# if we could reduce the tricky dependancy by restoring the security2.fdb
+# mainly we need gdef and isql to be able to build security.fdb.  I wonder
+# if we could reduce the tricky dependancy by restoring the security.fdb
 # database earlier, then perhaps we could build the jrdlib in one step and
 # include the security bits and pieces.
 
-.PHONY: ref_databases msgs msgs_intl generated_headers intl extlib includes
+.PHONY: ref_databases msgs msgs_intl generated_headers intl includes
 
-basic_targets: ref_databases msgs msgs_intl generated_headers \
-               intl extlib includes otherfiles examples_cp
+basic_targets: ref_databases msgs msgs_intl generated_headers intl includes examples \
+		otherfiles
 
 # hack to make code regeneration work
 generated_headers :
@@ -323,8 +325,9 @@ extlib:                # external programs than can be called
 includes:	include_generic 
 
                        # examples still need a good makefile to ship with them
-examples_cp:
-	$(MAKE) -f Makefile.examples -C $(GEN_ROOT)/examples/
+examples:
+	$(MAKE) -C ../gen/v5_examples -f ../Makefile.v5_examples
+#	$(MAKE) -f $(GEN_ROOT)/Makefile.v5_examples
 
 otherfiles: misc_files
 
@@ -334,8 +337,9 @@ otherfiles: misc_files
 .PHONY: libfbembed inet_server embed_gfix embed_gbak embed_isql 
 .PHONY: embed_gpre embed_util
 
-classic_targets: $(PLAT_CLASSIC_PRE_TARGET) libfbembed inet_server embed_gfix embed_gbak embed_isql \
-	embed_gpre embed_util embed_gdef embed_qli embed_fbudf libfbclient $(PLAT_CLASSIC_POST_TARGET)
+classic_targets: $(PLAT_CLASSIC_PRE_TARGET) libfbembed inet_server \
+	embed_gfix embed_gbak embed_isql embed_gpre embed_util embed_gdef \
+	embed_qli libfbclient $(PLAT_CLASSIC_POST_TARGET)
 
 libfbembed:
 	$(MAKE) -f $(GEN_ROOT)/Makefile.libfbembed $@
@@ -364,16 +368,18 @@ embed_gdef:
 embed_qli:
 	$(MAKE) -f $(GEN_ROOT)/Makefile.embed.qli
 
-embed_fbudf:
-	$(MAKE) -f $(GEN_ROOT)/Makefile.embed.fbudf
 
 #_ Firebird Server Targets (super and super client)__________________________
 
-.PHONY: fbserver 
-.PHONY: libfbclient client_gfix client_gbak client_isql client_gpre client_util client_fbudf
+.PHONY: libfbserver fbserver 
+.PHONY: libfbclient client_gfix client_gbak client_isql client_gpre client_util
 
-super_targets: $(PLAT_SUPER_PRE_TARGET) fbserver libfbclient client_gfix client_gbak client_gsec\
-			client_isql client_gpre client_util client_fbudf client_gdef client_qli $(PLAT_SUPER_POST_TRAGET) 
+super_targets: $(PLAT_SUPER_PRE_TARGET) libfbserver fbserver libfbclient \
+		client_gfix client_gbak client_isql client_gpre client_util \
+		client_qli client_gdef $(PLAT_SUPER_POST_TARGET)
+
+libfbserver:
+	$(MAKE) -f $(GEN_ROOT)/Makefile.libfbserver $@
 
 fbserver:
 	$(MAKE) -f $(GEN_ROOT)/Makefile.fbserver $@
@@ -387,9 +393,6 @@ client_gfix:
 client_gbak:
 	$(MAKE) -f $(GEN_ROOT)/Makefile.client.gbak
 
-client_gsec:
-	$(MAKE) -f $(GEN_ROOT)/Makefile.client.gsec
-
 client_gpre:
 	$(MAKE) -f $(GEN_ROOT)/Makefile.client.gpre
 
@@ -399,8 +402,8 @@ client_isql:
 client_util:
 	$(MAKE) -f $(GEN_ROOT)/Makefile.client.util	
 
-client_fbudf:
-	$(MAKE) -f $(GEN_ROOT)/Makefile.client.fbudf
+client_qli:
+	$(MAKE) -f $(GEN_ROOT)/Makefile.client.qli
 
 # Not sure we need this target in super - problems with WAL includes
 # MOD 04-Oct-2002
@@ -408,8 +411,7 @@ client_fbudf:
 client_gdef:
 	$(MAKE) -f $(GEN_ROOT)/Makefile.client.gdef
 
-client_qli:
-	$(MAKE) -f $(GEN_ROOT)/Makefile.client.qli
+
 
 
 #sysdba_user gstat:			# add sysdba user and build gstat program
@@ -427,29 +429,36 @@ client_qli:
 INCLUDE_DEST=	$(FIREBIRD)/include
 
 include_generic: $(INCLUDE_DEST)/ib_util.h  \
+				 $(INCLUDE_DEST)/gds.h \
                  $(INCLUDE_DEST)/ibase.h
 
 # ib_util.h actually is a marker for a number of headers
 
-# All these files are #includes in ibase.h here we cat them all together
+# All these files are #includes in gds.h here we cat them all together
 # and remove the embedded #includes to make it simpler for external usage.
 
-IBASE_ExtraFiles = include/types_pub.h include/consts_pub.h dsql/sqlda_pub.h jrd/dsc_pub.h jrd/ibase.h jrd/inf_pub.h jrd/blr.h include/gen/iberror.h 
+GDS_ExtraFiles = misc/gds_header.txt include/fb_types.h \
+             jrd/ibase.h jrd/blr.h include/gen/iberror.h \
+             jrd/gdsold.h include/gen/codes.h
+
+SRC_GDS_ExtraFiles = $(addprefix $(SRC_ROOT)/, $(GDS_ExtraFiles))
+
+$(INCLUDE_DEST)/gds.h: $(SRC_GDS_ExtraFiles)
+	$(CAT) $^ |grep -v '^#include' > $@
+
+
+IBASE_ExtraFiles = include/fb_types.h jrd/ibase.h jrd/blr.h include/gen/iberror.h
 SRC_IBASE_ExtraFiles = $(addprefix $(SRC_ROOT)/, $(IBASE_ExtraFiles))
-MAKE_HEADER_Src = $(addprefix $(SRC_ROOT)/, misc/makeHeader.cpp)
-MAKE_HEADER_Bin = ./makeHeader
 
 $(INCLUDE_DEST)/ibase.h: $(SRC_IBASE_ExtraFiles)
-	$(CXX) -o $(MAKE_HEADER_Bin) $(MAKE_HEADER_Src)
-	$(CP) $^ .
-	$(MAKE_HEADER_Bin) <ibase.h >$@
-	$(RM) -f ibase.h
+	$(CAT) $^ |grep -v '^#include' > $@
 
 # Copy all the other headers to the distribution directory.  we use
 # ib_util.h as the marker for all the files.
 
 OtherDistribHeaders = extlib/ib_util.h \
 	               jrd/perf.h  \
+	               jrd/blr.h \
 	               include/gen/iberror.h
 
 SRC_OtherDistribHeaders = $(addprefix $(SRC_ROOT)/, $(OtherDistribHeaders))
@@ -488,14 +497,13 @@ rebuild_codes :
 #INSTALL_MiscFiles = $(addprefix $(FIREBIRD)/misc/, $(CLASSIC_MiscFiles))
 #endif
 
-MiscFiles =  firebird.conf fbintl.conf
+MiscFiles =  firebird.conf
 INSTALL_MiscFiles = $(addprefix $(FIREBIRD)/misc/, $(MiscFiles))
-
 
 misc_files : $(INSTALL_MiscFiles)
 
 
-$(FIREBIRD)/misc/% :: $(BLD_ROOT)/install/misc/%
+$(FIREBIRD)/misc/% :: $(SRC_ROOT)/install/misc/%
 	$(CP) $^ $@
 
 
@@ -513,52 +521,30 @@ SrcTarFile=Firebird$(ArchPrefix)-$(Version).tar.bz2
 srctarfile: $(SrcTarFile)
 
 $(SrcTarFile) :
-	$(SRC_ROOT)/misc/src_bundle.sh
+	$(GEN_ROOT)/../src/misc/src_bundle.sh
 
 
 #___________________________________________________________________________
 # 
-.PHONY: clean clean_objects clean_dependancies clean_extern_objects clean_build \
-		clean_gpre_gen clean_icu clean_dbs clean_examples clean_makefiles \
-		clean_editline clean_all
 
+clean: clean_objects clean_dependancies clean_extern_objects clean_build clean_gpre_gen clean_editline
 
-clean: clean_objects clean_dependancies clean_extern_objects clean_build \
-		clean_yacc_gen clean_gpre_gen clean_icu clean_dbs clean_examples
-
-ifeq ($(EDITLINE_FLG),Y)
-clean: clean_editline
-endif
-
-clean_config clean_all: clean clean_makefiles
+clean_config: clean clean_makefiles
 	$(RM) $(ROOT)/configure
-	$(RM) $(ROOT)/aclocal.m4
-	$(RM) $(ROOT)/config.log
-	$(RM) $(ROOT)/config.status
-	$(RM) $(ROOT)/libtool
-	$(RM_R) $(ROOT)/autom4te.cache
-	-make -C $(ROOT)/extern/editline distclean
-	-make -C $(ROOT)/extern/icu/source distclean
-	-make -C $(ROOT)/extern/btyacc distclean
 
+# Not sure if this one is still needed MOD 7-Oct-2002
 clean_dbs:
-	$(RM) *.fdb *.FDB msg.timestamp
-	$(RM) yachts.lnk
+	-$(RM) refDatabases/*\.fdb
 
-clean_examples:
-	$(RM) $(GEN_ROOT)/examples/*
 
 clean_editline:
-	-make -C $(ROOT)/extern/editline clean
-
-clean_icu:
-	-make -C $(ROOT)/extern/icu/source clean
+	-make -C $(SRC_ROOT)/extern/editline clean
 
 clean_objects:
 	$(RM) `find $(TMP_ROOT)/ -type f -name '*.o' -print`
 
 clean_extern_objects:
-	$(RM) `find $(ROOT)/extern/ -type f -name '*.o' -print`
+	$(RM) `find $(TMP_ROOT)/extern/ -type f -name '*.o' -print`
 
 # Clear out dependancies files created by the gcc compiler
 # since when .o and other files are deleted the dependant 
@@ -574,21 +560,22 @@ clean_dependancies:
 
 clean_build:
 	$(RM) `find $(GEN_ROOT)/firebird -type f -print`
+	$(RM) `find $(GEN_ROOT)/firebird -type l -print`
 #	$(RM) $(GDSLIB_OBJECTS) $(GDSLIB_PHASE3_OBJECTS)
 
 # 
 clean_makefiles:
-	$(RM) $(GEN_ROOT)/Make*
-	$(RM) $(GEN_ROOT)/make*
-	$(RM) $(ROOT)/Makefile
-	$(RM) $(SRC_ROOT)/include/gen/autoconfig.h
-
+	$(RM) $(GEN_ROOT)/Makefile.*
+	
 clean_gpre_gen:
 	-$(RM) `find $(SRC_ROOT) -type f -name '*.epp' -print | sed 's/epp$$/cpp/'`
-
-clean_yacc_gen:
-	$(RM) $(ROOT)/src/dsql/parse.cpp $(ROOT)/src/dsql/dsql.tab.h
+	
 
 #___________________________________________________________________________
-# Extra platform specific targets
-@POSTFIX_INCLUDE@ 
+# 
+
+
+#___________________________________________________________________________
+# 
+# Extra, platform specific, targets
+@POSTFIX_INCLUDE@

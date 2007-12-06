@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Access Method
  *	MODULE:		met_proto.h
- *	DESCRIPTION:	Prototype header file for met.cpp
+ *	DESCRIPTION:	Prototype header file for met.c
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -21,104 +21,78 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef JRD_MET_PROTO_H
-#define JRD_MET_PROTO_H
+#ifndef _JRD_MET_PROTO_H_
+#define _JRD_MET_PROTO_H_
 
 #include "../jrd/exe.h"
+#include "../jrd/jrn.h"
 #include "../jrd/blob_filter.h"
-#include "../common/classes/MetaName.h"
 
-struct dsc;
-
-namespace Jrd {
-	class jrd_tra;
-	class jrd_req;
-	class jrd_prc;
-	class Format;
-	class jrd_rel;
-	class CompilerScratch;
-	class jrd_nod;
-	class Database;
-	struct bid;
-	struct index_desc;
-	class jrd_fld;
-	class Shadow;
-	class DeferredWork;
-}
-
-struct SubtypeInfo
-{
-	SubtypeInfo()
-		: attributes(0),
-		  ignoreAttributes(true)
-	{
-	}
-
-	Firebird::MetaName charsetName;
-	Firebird::MetaName collationName;
-	Firebird::MetaName baseCollationName;
-	USHORT attributes;
-	bool ignoreAttributes;
-	Firebird::UCharBuffer specificAttributes;
-};
-
-void		MET_activate_shadow(Jrd::thread_db*);
-ULONG		MET_align(Jrd::Database* dbb, const dsc*, ULONG);
-Jrd::DeferredWork*	MET_change_fields(Jrd::thread_db*, Jrd::jrd_tra*, const dsc*);
-Jrd::Format*	MET_current(Jrd::thread_db*, Jrd::jrd_rel*);
-void		MET_delete_dependencies(Jrd::thread_db*, const Firebird::MetaName&, int);
-void		MET_delete_shadow(Jrd::thread_db*, USHORT);
-void		MET_error(const TEXT*, ...);
-Jrd::Format*	MET_format(Jrd::thread_db*, Jrd::jrd_rel*, USHORT);
-bool		MET_get_char_coll_subtype(Jrd::thread_db*, USHORT*, const UCHAR*, USHORT);
-bool		MET_get_char_coll_subtype_info(Jrd::thread_db*, USHORT, SubtypeInfo* info);
-Jrd::jrd_nod*	MET_get_dependencies(Jrd::thread_db*, Jrd::jrd_rel*, const UCHAR*,
-								Jrd::CompilerScratch*, Jrd::bid*, Jrd::jrd_req**,
-								Jrd::CompilerScratch**, Firebird::MetaName&, int, USHORT,
-								Firebird::MetaName = Firebird::MetaName());
-Jrd::jrd_fld*	MET_get_field(Jrd::jrd_rel*, USHORT);
-void		MET_get_shadow_files(Jrd::thread_db*, bool);
-void		MET_load_db_triggers(Jrd::thread_db*, int);
-void		MET_load_trigger(Jrd::thread_db*, Jrd::jrd_rel*, const Firebird::MetaName&, Jrd::trig_vec**);
-void		MET_lookup_cnstrt_for_index(Jrd::thread_db*, Firebird::MetaName& constraint, const Firebird::MetaName& index_name);
-void		MET_lookup_cnstrt_for_trigger(Jrd::thread_db*, Firebird::MetaName&, Firebird::MetaName&, const Firebird::MetaName&);
-void		MET_lookup_exception(Jrd::thread_db*, SLONG, /* OUT */ Firebird::MetaName&, /* OUT */ TEXT*, size_t);
-SLONG		MET_lookup_exception_number(Jrd::thread_db*, const Firebird::MetaName&);
-int			MET_lookup_field(Jrd::thread_db*, Jrd::jrd_rel*, const Firebird::MetaName&, const Firebird::MetaName*);
-Jrd::BlobFilter*	MET_lookup_filter(Jrd::thread_db*, SSHORT, SSHORT);
-SLONG		MET_lookup_generator(Jrd::thread_db*, const TEXT*);
-void		MET_lookup_generator_id(Jrd::thread_db*, SLONG, Firebird::MetaName&);
-void		MET_lookup_index(Jrd::thread_db*, Firebird::MetaName&, const Firebird::MetaName&, USHORT);
-SLONG		MET_lookup_index_name(Jrd::thread_db*, const Firebird::MetaName&, SLONG*, SSHORT*);
-bool		MET_lookup_partner(Jrd::thread_db*, Jrd::jrd_rel*, struct Jrd::index_desc*, const TEXT*);
-Jrd::jrd_prc*	MET_lookup_procedure(Jrd::thread_db*, const Firebird::MetaName&, bool);
-Jrd::jrd_prc*	MET_lookup_procedure_id(Jrd::thread_db*, SSHORT, bool, bool, USHORT);
-Jrd::jrd_rel*	MET_lookup_relation(Jrd::thread_db*, const Firebird::MetaName&);
-Jrd::jrd_rel*	MET_lookup_relation_id(Jrd::thread_db*, SLONG, bool);
-Jrd::jrd_nod*	MET_parse_blob(Jrd::thread_db*, Jrd::jrd_rel*, Jrd::bid*, Jrd::CompilerScratch**,
-								  Jrd::jrd_req**, bool);
-void		MET_parse_sys_trigger(Jrd::thread_db*, Jrd::jrd_rel*);
-bool		MET_post_existence(Jrd::thread_db*, Jrd::jrd_rel*);
-void		MET_prepare(Jrd::thread_db*, Jrd::jrd_tra*, USHORT, const UCHAR*);
-Jrd::jrd_prc*	MET_procedure(Jrd::thread_db*, int, bool, USHORT);
-Jrd::jrd_rel*	MET_relation(Jrd::thread_db*, USHORT);
-bool		MET_relation_default_class (Jrd::thread_db*, const Firebird::MetaName&, const Firebird::MetaName&);
-void		MET_release_existence(Jrd::jrd_rel*);
-void		MET_release_trigger(Jrd::thread_db*, Jrd::trig_vec**, const Firebird::MetaName&);
-void		MET_release_triggers(Jrd::thread_db*, Jrd::trig_vec**);
-#ifdef DEV_BUILD
-void		MET_verify_cache(Jrd::thread_db*);
+#ifdef __cplusplus
+extern "C" {
 #endif
-void		MET_clear_cache(Jrd::thread_db*);
-bool		MET_procedure_in_use(Jrd::thread_db*, Jrd::jrd_prc*);
-void		MET_remove_procedure(Jrd::thread_db*, int, Jrd::jrd_prc*);
-void		MET_revoke(Jrd::thread_db*, Jrd::jrd_tra*, const TEXT*, const TEXT*, const TEXT*);
-void		MET_scan_relation(Jrd::thread_db*, Jrd::jrd_rel*);
-const TEXT* MET_trigger_msg(Jrd::thread_db*, const Firebird::MetaName&, USHORT);
-void		MET_update_shadow(Jrd::thread_db*, Jrd::Shadow*, USHORT);
-void		MET_update_transaction(Jrd::thread_db*, Jrd::jrd_tra*, const bool);
-void		MET_get_domain(Jrd::thread_db*, const Firebird::MetaName&, dsc*, Jrd::FieldInfo*);
-void		MET_update_partners(Jrd::thread_db*);
 
-#endif // JRD_MET_PROTO_H
+void MET_activate_shadow(TDBB);
+ULONG MET_align(struct dsc *, USHORT);
+void MET_change_fields(TDBB, struct jrd_tra *, struct dsc *);
+struct fmt *MET_current(TDBB, struct jrd_rel *);
+void MET_delete_dependencies(TDBB, TEXT *, USHORT);
+void MET_delete_shadow(TDBB, USHORT);
+void MET_error(TEXT *, ...);
+SCHAR *MET_exact_name(TEXT *);
+struct fmt *MET_format(TDBB, struct jrd_rel *, USHORT);
+BOOLEAN MET_get_char_subtype(TDBB, SSHORT *, UCHAR *, USHORT);
+struct jrd_nod *MET_get_dependencies(TDBB, struct jrd_rel*, TEXT*,
+								class Csb*, struct bid*, struct jrd_req**,
+								class Csb **, const TEXT*, USHORT);
+struct jrd_fld *MET_get_field(struct jrd_rel *, USHORT);
+void MET_get_shadow_files(TDBB, USHORT);
+int MET_get_walinfo(TDBB, struct logfiles **, ULONG *,
+						   struct logfiles **);
+void MET_load_trigger(TDBB, struct jrd_rel *, TEXT *, TRIG_VEC *);
+void DLL_EXPORT MET_lookup_cnstrt_for_index(TDBB, TEXT* constraint, const TEXT* index_name);
+void MET_lookup_cnstrt_for_trigger(TDBB, TEXT *, TEXT *, TEXT *);
+void MET_lookup_exception(TDBB, SLONG, /* INOUT */ TEXT*, /* INOUT */ TEXT*);
+SLONG MET_lookup_exception_number(TDBB, TEXT*);
+int MET_lookup_field(TDBB, struct jrd_rel*, const TEXT*, const TEXT*);
+BLF MET_lookup_filter(TDBB, SSHORT, SSHORT);
+SLONG MET_lookup_generator(TDBB, TEXT *);
+void MET_lookup_generator_id(TDBB, SLONG, TEXT *);
+void DLL_EXPORT MET_lookup_index(TDBB, TEXT *, TEXT *, USHORT);
+SLONG MET_lookup_index_name(TDBB, TEXT *, SLONG *, SSHORT *);
+int MET_lookup_partner(TDBB, struct jrd_rel *, struct idx *, UCHAR *);
+struct jrd_prc *MET_lookup_procedure(TDBB, SCHAR *, BOOLEAN);
+struct jrd_prc *MET_lookup_procedure_id(TDBB, SSHORT, BOOLEAN, BOOLEAN, USHORT);
+struct jrd_rel *MET_lookup_relation(TDBB, const char*);
+struct jrd_rel *MET_lookup_relation_id(TDBB, SLONG, BOOLEAN);
+struct jrd_nod *MET_parse_blob(TDBB, struct jrd_rel *, struct bid*, class Csb **,
+								  struct jrd_req **, BOOLEAN, BOOLEAN);
+void MET_parse_sys_trigger(TDBB, struct jrd_rel *);
+int MET_post_existence(TDBB, struct jrd_rel *);
+void MET_prepare(TDBB, struct jrd_tra *, USHORT, UCHAR *);
+struct jrd_prc *MET_procedure(TDBB, int, BOOLEAN, USHORT);
+struct jrd_rel *MET_relation(TDBB, USHORT);
+extern BOOLEAN 		MET_relation_owns_trigger (TDBB, const TEXT *, const TEXT *);
+extern BOOLEAN		MET_relation_default_class (TDBB, const TEXT *, const TEXT *);
+void MET_release_existence(struct jrd_rel *);
+void MET_release_triggers(TDBB, TRIG_VEC *);
+#ifdef DEV_BUILD
+void MET_verify_cache(TDBB);
+#endif
+BOOLEAN MET_clear_cache(TDBB, JRD_PRC);
+BOOLEAN	MET_procedure_in_use(TDBB, JRD_PRC);
+void MET_remove_procedure(TDBB, int, JRD_PRC);
+void MET_revoke(TDBB, struct jrd_tra *, TEXT *, TEXT *, TEXT *);
+TEXT*MET_save_name(TDBB, const TEXT*);
+void MET_scan_relation(TDBB, struct jrd_rel *);
+const TEXT* MET_trigger_msg(TDBB, const TEXT*, USHORT);
+void MET_update_shadow(TDBB, struct sdw *, USHORT);
+void MET_update_transaction(TDBB, struct jrd_tra *, USHORT);
+void MET_update_partners(TDBB);
 
+
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
+
+#endif /* _JRD_MET_PROTO_H_ */

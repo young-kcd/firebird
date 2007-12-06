@@ -27,7 +27,6 @@
 				ExceptionHandling="FALSE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				RuntimeTypeInfo="FALSE"
 				PrecompiledHeaderFile="..\..\..\temp\debug\gstat/gstat.pch"
 				AssemblerListingLocation="..\..\..\temp\debug\gstat/"
 				ObjectFile="..\..\..\temp\debug\gstat/"
@@ -42,15 +41,15 @@
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
 				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
-				OutputFile="..\..\..\temp\debug\firebird\bin\gstat.exe"
+				OutputFile="debug/firebird/bin/gstat.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile="..\..\..\temp\debug\gstat\gstat.pdb"
+				ProgramDatabaseFile="..\..\..\temp\debug\gstat/gstat.pdb"
 				SubSystem="1"/>
 			<Tool
 				Name="VCMIDLTool"
-				TypeLibraryName="..\..\..\temp\debug\gstat\gstat.tlb"/>
+				TypeLibraryName="..\..\..\temp\debug\gstat/gstat.tlb"/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool
@@ -94,7 +93,6 @@
 				PreprocessorDefinitions="NDEBUG,WIN32,_CONSOLE,SUPERCLIENT,CLIENT"
 				ExceptionHandling="FALSE"
 				RuntimeLibrary="2"
-				RuntimeTypeInfo="FALSE"
 				PrecompiledHeaderFile="..\..\..\temp\release\gstat/gstat.pch"
 				AssemblerListingLocation="..\..\..\temp\release\gstat/"
 				ObjectFile="..\..\..\temp\release\gstat/"
@@ -109,14 +107,15 @@
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
 				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
-				OutputFile="..\..\..\temp\release\firebird\bin\gstat.exe"
+				OutputFile="release/firebird/bin/gstat.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				GenerateDebugInformation="TRUE"
+				ProgramDatabaseFile="..\..\..\temp\release\gstat/gstat.pdb"
 				SubSystem="1"/>
 			<Tool
 				Name="VCMIDLTool"
-				TypeLibraryName="..\..\..\temp\release\gstat\gstat.tlb"/>
+				TypeLibraryName="..\..\..\temp\release\gstat/gstat.tlb"/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool
@@ -146,29 +145,32 @@
 			Name="UTILITIES files"
 			Filter="cpp;c;cxx;rc;def;r;odl;idl;hpj;bat">
 			<File
-				RelativePath="..\..\..\gen\utilities\gstat\dba.cpp">
+				RelativePath="..\..\..\src\jrd\db_alias.cpp">
+			</File>
+			<File
+				RelativePath="..\..\..\gen\utilities\dba.cpp">
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\enc.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\src\common\fb_exception.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\src\utilities\gstat\ppg.cpp">
+				RelativePath="..\..\..\src\jrd\isc.cpp">
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\isc_file.cpp">
+			</File>
+			<File
+				RelativePath="..\..\..\src\utilities\ppg.cpp">
 			</File>
 		</Filter>
 		<Filter
 			Name="Header files"
 			Filter="h;hpp;hxx;hm;inl">
 			<File
-				RelativePath="..\..\..\src\jrd\btn.h">
-			</File>
-			<File
-				RelativePath="..\..\..\src\utilities\gstat\dbaswi.h">
-			</File>
-			<File
 				RelativePath="..\..\..\src\jrd\enc_proto.h">
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\os\guid.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\utilities\ppg_proto.h">
@@ -191,28 +193,6 @@
 						Name="VCResourceCompilerTool"
 						AdditionalIncludeDirectories="..\..\..\src\jrd;$(NoInherit)"/>
 				</FileConfiguration>
-			</File>
-		</Filter>
-		<Filter
-			Name="JRD files"
-			Filter="">
-			<File
-				RelativePath="..\..\..\src\jrd\btn.cpp">
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\enc.cpp">
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\os\win32\guid.cpp">
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\isc.cpp">
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\isc_file.cpp">
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\ods.cpp">
 			</File>
 		</Filter>
 	</Files>
