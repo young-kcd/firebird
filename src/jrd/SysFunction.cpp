@@ -1571,18 +1571,18 @@ static dsc* evlHash(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_
 
 	impure->vlu_misc.vlu_int64 = 0;
 
-	MoveBuffer buffer;
 	UCHAR* address;
 
 	if (value->isBlob())
 	{
+		UCHAR buffer[BUFFER_LARGE];
 		blb* blob = BLB_open(tdbb, tdbb->getRequest()->req_transaction,
 			reinterpret_cast<bid*>(value->dsc_address));
 
 		while (!(blob->blb_flags & BLB_eof))
 		{
-			address = buffer.begin();
-			SLONG length = BLB_get_data(tdbb, blob, address, buffer.getCapacity(), false);
+			address = buffer;
+			SLONG length = BLB_get_data(tdbb, blob, address, sizeof(buffer), false);
 
 			for (const UCHAR* end = address + length; address < end; ++address)
 			{
@@ -1599,6 +1599,7 @@ static dsc* evlHash(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_
 	}
 	else
 	{
+		MoveBuffer buffer;
 		ULONG length = MOV_make_string2(tdbb, value, value->getTextType(), &address, buffer, false);
 
 		for (const UCHAR* end = address + length; address < end; ++address)
