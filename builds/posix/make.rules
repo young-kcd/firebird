@@ -26,7 +26,7 @@
 #   Contributor(s):
 #
 #
-#   $Id: make.rules,v 1.28.4.2 2007-08-15 13:49:21 alexpeshkoff Exp $
+#   $Id: make.rules,v 1.28.4.3 2007-12-07 10:05:50 paulbeach Exp $
 #
 
 #____________________________________________________________________________
@@ -115,6 +115,10 @@ $(SRC_ROOT)/dsql/%.cpp:: $(SRC_ROOT)/dsql/%.epp
 $(OBJ)/jrd/%.o: $(SRC_ROOT)/jrd/$(PLATFORM_PATH)/%.cpp
 	$(CXX) $(CXXFLAGS) -c $(firstword $<) -o $@
 
+ifneq ($(strip $(PLATFORM_FALLBACK)),)
+$(OBJ)/jrd/%.o: $(SRC_ROOT)/jrd/$(PLATFORM_FALLBACK)/%.cpp
+	$(CXX) $(CXXFLAGS) -c $(firstword $<) -o $@
+endif
 $(OBJ)/%.o: $(SRC_ROOT)/%.c 
 	$(CC) $(CXXFLAGS) -c $(firstword $<) -o $@
 

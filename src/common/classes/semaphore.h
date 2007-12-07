@@ -77,27 +77,49 @@ public:
 #include <semaphore.h>
 #include <errno.h>
 
+#ifndef WORKING_SEM_INIT
+#include <fcntl.h>
+#endif
 namespace Firebird {
+#ifndef WORKING_SEM_INIT
+static const char* semName = "/firebird_temp_sem";
+#endif
 
 class SignalSafeSemaphore {
 private:
-	sem_t sem;
+#ifdef WORKING_SEM_INIT
+	sem_t sem[1];
+#else
+	sem_t* sem;
+#endif
 	bool  init;
 public:
 	SignalSafeSemaphore() : init(false) {
-		if (sem_init(&sem, 0, 0) == -1) {
-			//gds__log("Error on semaphore.h: constructor");
+#ifdef WORKING_SEM_INIT
+		if (sem_init(sem, 0, 0) == -1) {
 			system_call_failed::raise("sem_init");
 		}
+#else
+		sem = sem_open(semName, O_CREAT | O_EXCL, 0700, 0);
+		if (sem == SEM_FAILED) {
+			system_call_failed::raise("sem_open");
+		}
+		sem_unlink(semName);
+#endif
 		init = true;
 	}
 	
 	~SignalSafeSemaphore() {
 		fb_assert(init == true);
-		if (sem_destroy(&sem) == -1) {
-			//gds__log("Error on semaphore.h: destructor");
+#ifdef WORKING_SEM_INIT
+		if (sem_destroy(sem) == -1) {
 			system_call_failed::raise("sem_destroy");
 		}
+#else
+		if (sem_close(sem) == -1) {
+			system_call_failed::raise("sem_close");
+		}
+#endif
 		init = false;
 
 	}
@@ -105,7 +127,7 @@ public:
 	void enter() {
 		fb_assert(init == true);
 		do {
-			if (sem_wait(&sem) != -1)
+			if (sem_wait(sem) != -1)
 				return;
 		} while (errno == EINTR);
 		system_call_failed::raise("semaphore.h: enter: sem_wait()");
@@ -114,7 +136,7 @@ public:
 	void release(SLONG count = 1) {
 		fb_assert(init == true);
 		for (int i = 0; i < count; i++)
-			if (sem_post(&sem) == -1) {
+			if (sem_post(sem) == -1) {
 				system_call_failed::raise("semaphore.h: release: sem_post()");
 			}
 	}
@@ -128,7 +150,7 @@ public:
 		if (seconds == 0) {
 			// Instant try
 			do {
-				if (sem_trywait(&sem) != -1) 
+				if (sem_trywait(sem) != -1) 
 					return true;
 			} while (errno == EINTR);
 			if (errno == EAGAIN) 
@@ -138,7 +160,7 @@ public:
 		if (seconds < 0) {
 			// Unlimited wait, like enter()
 			do {
-				if (sem_wait(&sem) != -1)
+				if (sem_wait(sem) != -1)
 					return true;
 			} while (errno == EINTR);
 			system_call_failed::raise("sem_wait");
@@ -149,7 +171,7 @@ public:
 		timeout.tv_nsec = 0;
 		int errcode = 0;
 		do {
-			int rc = sem_timedwait(&sem, &timeout);
+			int rc = sem_timedwait(sem, &timeout);
 			if (rc == 0) 
 				return true;
 			// fix for CORE-988, also please see 
@@ -179,7 +201,7 @@ typedef SignalSafeSemaphore Semaphore;
 // Should implement Semaphore indepedent from SignalSafeSemaphore.
 // In the worst case no SignalSafeSemaphore at all (and no SS for that platform).
 
-#ifdef HAVE_SYS_SEM_H
+#if defined(HAVE_SYS_SEM_H) && defined(HAVE_SEMTIMEDOP)
 
 #include <sys/types.h>
 #include <sys/ipc.h>
@@ -266,7 +288,12 @@ public:
 
 } // namespace Firebird
 
-#else //HAVE_SYS_SEM_H
+#else //defined(HAVE_SYS_SEM_H) && defined(HAVE_SEMTIMEDOP)
+
+// This implementation will NOT work with FB > 2.1
+#ifdef SOLARIS
+#error Mutex/Condition based semaphore is NOT OK for Solaris
+#endif
 
 #include <pthread.h>
 #include <errno.h>
@@ -442,7 +469,7 @@ public:
 
 } // namespace Firebird
 
-#endif //HAVE_SYS_SEM_H
+#endif //defined(HAVE_SYS_SEM_H) && defined(HAVE_SEMTIMEDOP)
 
 #endif //HAVE_SEM_TIMEDWAIT
 

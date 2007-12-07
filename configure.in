@@ -525,8 +525,22 @@ if test "$ac_cv_header_semaphore_h" = "yes"; then
 savedFlags="$CFLAGS"
 CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
 AC_CHECK_FUNCS(sem_timedwait)
+AC_CHECK_FUNCS(sem_init)
+if test "$ac_cv_func_sem_init" = "yes"; then
+AC_MSG_CHECKING(for working sem_int())
+AC_TRY_RUN([#include <semaphore.h>
+	main () {
+		sem_t s;
+		exit(sem_init(&s,0,0));
+		}
+	],
+[AC_DEFINE(WORKING_SEM_INIT,1,[Define this is sem_init() works on the platform])
+AC_MSG_RESULT(yes)],
+[AC_MSG_RESULT(no)])
+fi
 CFLAGS="$savedFlags"
 fi
+AC_CHECK_FUNCS(semtimedop)
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_BIGENDIAN
