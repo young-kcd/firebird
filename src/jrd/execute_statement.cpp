@@ -198,7 +198,7 @@ err_handler:
 	}
 }
 
-bool ExecuteStatement::Fetch(thread_db* tdbb, jrd_nod** JrdVar)
+bool ExecuteStatement::Fetch(thread_db* tdbb, jrd_nod** jrdVar)
 {
 	// If already bugged - we should never get here
 	fb_assert(! (tdbb->tdbb_status_vector[0] == 1 && 
@@ -229,11 +229,10 @@ bool ExecuteStatement::Fetch(thread_db* tdbb, jrd_nod** JrdVar)
 	}
 
 	const XSQLVAR *var = Sqlda->sqlvar;
-	for (int i = 0; i < Sqlda->sqld; i++, var++, JrdVar++) {
-		dsc* d = EVL_assign_to(tdbb, *JrdVar);
-		if (d->dsc_dtype >= FB_NELEM(sqlType))
+	for (int i = 0; i < Sqlda->sqld; i++, var++) {
+		dsc* d = EVL_assign_to(tdbb, jrdVar[i]);
+		if (d->dsc_dtype >= FB_NELEM(sqlType) || sqlType[d->dsc_dtype] < 0)
 		{
-rec_err:
 			tdbb->tdbb_status_vector[0] = isc_arg_gds;
 			tdbb->tdbb_status_vector[1] = isc_exec_sql_invalid_var;
 			tdbb->tdbb_status_vector[2] = isc_arg_number;
@@ -244,9 +243,6 @@ rec_err:
 			tdbb->tdbb_status_vector[6] = isc_arg_end;
 			Firebird::status_exception::raise(tdbb->tdbb_status_vector);
 		}
-
-		if (sqlType[d->dsc_dtype] < 0)
-			goto rec_err;
 
 		// build the src descriptor
 		dsc src;
@@ -261,7 +257,7 @@ rec_err:
 			src.dsc_length += sizeof(SSHORT);
 
 		// and assign to the target
-		EXE_assignment(tdbb, *JrdVar, &src, (var->sqltype & 1) && (*var->sqlind < 0), NULL, NULL);
+		EXE_assignment(tdbb, jrdVar[i], &src, (var->sqltype & 1) && (*var->sqlind < 0), NULL, NULL);
 	}
 
 	if (SingleMode) {
