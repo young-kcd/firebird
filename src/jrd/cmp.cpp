@@ -2035,7 +2035,6 @@ jrd_req* CMP_make_request(thread_db* tdbb, CompilerScratch* csb)
 
 	csb->csb_impure = REQ_SIZE + REQ_TAIL * MAX(csb->csb_n_stream, 1);
 	csb->csb_exec_sta.clear();
-	csb->csb_node = pass2(tdbb, csb, csb->csb_node, 0);
 
 	// Compile (pass2) domains DEFAULT and constraints
 	found = csb->csb_map_field_info.getFirst();
@@ -2048,6 +2047,8 @@ jrd_req* CMP_make_request(thread_db* tdbb, CompilerScratch* csb)
 
 		found = csb->csb_map_field_info.getNext();
 	}
+
+	csb->csb_node = pass2(tdbb, csb, csb->csb_node, 0);
 
 	if (csb->csb_impure > MAX_REQUEST_SIZE) {
 		IBERROR(226);			// msg 226 request size limit exceeded
@@ -2065,7 +2066,6 @@ jrd_req* CMP_make_request(thread_db* tdbb, CompilerScratch* csb)
 	request->req_access = csb->csb_access;
 	request->req_external = csb->csb_external;
 	request->req_map_field_info.takeOwnership(csb->csb_map_field_info);
-	request->req_map_item_info.takeOwnership(csb->csb_map_item_info);
 	request->req_id = dbb->generateId();
 
 	// CVC: Unused.
@@ -4951,6 +4951,44 @@ static jrd_nod* pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node
 		node->nod_arg[e_src_info_node] = 
 			pass2(tdbb, csb, node->nod_arg[e_src_info_node], node);
 		return node;
+		
+	case nod_variable:
+		{
+			Item item(nod_variable, (IPTR) node->nod_arg[e_var_id]);
+			ItemInfo itemInfo;
+			if (csb->csb_map_item_info.get(item, itemInfo))
+			{
+				node->nod_arg[e_var_info] = reinterpret_cast<jrd_nod*>
+					(FB_NEW(*tdbb->getDefaultPool()) ItemInfo(*tdbb->getDefaultPool(), itemInfo));
+			}
+		}
+		break;
+
+	case nod_init_variable:
+		{
+			Item item(nod_variable, (IPTR) node->nod_arg[e_init_var_id]);
+			ItemInfo itemInfo;
+			if (csb->csb_map_item_info.get(item, itemInfo))
+			{
+				node->nod_arg[e_init_var_info] = reinterpret_cast<jrd_nod*>
+					(FB_NEW(*tdbb->getDefaultPool()) ItemInfo(*tdbb->getDefaultPool(), itemInfo));
+			}
+		}
+		break;
+
+	case nod_argument:
+		{
+			Item item(nod_argument, 
+					  (IPTR) node->nod_arg[e_arg_message]->nod_arg[e_msg_number],
+					  (IPTR) node->nod_arg[e_arg_number]);
+			ItemInfo itemInfo;
+			if (csb->csb_map_item_info.get(item, itemInfo))
+			{
+				node->nod_arg[e_arg_info] = reinterpret_cast<jrd_nod*>
+					(FB_NEW(*tdbb->getDefaultPool()) ItemInfo(*tdbb->getDefaultPool(), itemInfo));
+			}
+		}
+		break;
 
 	default:
 		break;

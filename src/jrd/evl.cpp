@@ -873,10 +873,14 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* const node)
 
 			if (!(*impure_flags & VLU_checked))
 			{
-				EVL_validate(tdbb,
-					Item(nod_argument, (IPTR) node->nod_arg[e_arg_message]->nod_arg[e_msg_number],
-						(IPTR) node->nod_arg[e_arg_number]),
-					&impure->vlu_desc, request->req_flags & req_null);
+				if (node->nod_arg[e_arg_info])
+				{
+					EVL_validate(tdbb, 
+						Item(nod_argument, (IPTR) node->nod_arg[e_arg_message]->nod_arg[e_msg_number],
+							(IPTR) node->nod_arg[e_arg_number]),
+						reinterpret_cast<const ItemInfo*>(node->nod_arg[e_arg_info]), 
+						&impure->vlu_desc, request->req_flags & req_null);
+				}
 				*impure_flags |= VLU_checked;
 			}
 
@@ -1060,8 +1064,12 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* const node)
 
 			if (!(impure2->vlu_flags & VLU_checked))
 			{
-				EVL_validate(tdbb, Item(nod_variable, (IPTR) node->nod_arg[e_var_id]),
-					&impure->vlu_desc, impure->vlu_desc.dsc_flags & DSC_null);
+				if (node->nod_arg[e_var_info])
+				{
+					EVL_validate(tdbb, Item(nod_variable, (IPTR) node->nod_arg[e_var_id]),
+						reinterpret_cast<const ItemInfo*>(node->nod_arg[e_var_info]), 
+						&impure->vlu_desc, impure->vlu_desc.dsc_flags & DSC_null);
+				}
 				impure2->vlu_flags |= VLU_checked;
 			}
 
@@ -1961,24 +1969,6 @@ void EVL_make_value(thread_db* tdbb, const dsc* desc, impure_value* value)
 		if (address && length)
 			MOVE_FAST(address, p, length);
 	} // scope
-}
-
-
-void EVL_validate(thread_db* tdbb, const Item& item, dsc* desc, bool null)
-{
-/**************************************
- *
- *	E V L _ v a l i d a t e
- *
- **************************************
- *
- * Functional description
- *	Validate argument/variable for not null and check constraint
- *
- **************************************/
-	MapItemInfo::ValueType itemInfo;
-	if (tdbb->getRequest()->req_map_item_info.get(item, itemInfo))
-		EVL_validate(tdbb, item, &itemInfo, desc, null);
 }
 
 

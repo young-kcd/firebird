@@ -260,7 +260,8 @@ const int e_arg_flag		= 0;
 const int e_arg_indicator	= 1;
 const int e_arg_message		= 2;
 const int e_arg_number		= 3;
-const int e_arg_length		= 4;
+const int e_arg_info		= 4;
+const int e_arg_length		= 5;
 
 const int e_msg_number			= 0;
 const int e_msg_format			= 1;
@@ -402,7 +403,8 @@ const int e_xcp_length		= 2;
 
 const int e_var_id			= 0;
 const int e_var_variable	= 1;
-const int e_var_length		= 2;
+const int e_var_info		= 2;
+const int e_var_length		= 3;
 
 const int e_dcl_id			= 0;
 const int e_dcl_desc		= 1;
@@ -494,7 +496,8 @@ const int e_src_info_length		= 3;
 // nod_init_variable
 const int e_init_var_id			= 0;
 const int e_init_var_variable	= 1;
-const int e_init_var_length		= 2;
+const int e_init_var_info		= 2;
+const int e_init_var_length		= 3;
 
 // nod_domain_validation
 const int e_domval_desc			= 0;

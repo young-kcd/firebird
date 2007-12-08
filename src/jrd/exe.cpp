@@ -323,17 +323,26 @@ void EXE_assignment(thread_db* tdbb, jrd_nod* to, dsc* from_desc, bool from_null
 	switch (to->nod_type)
 	{
 		case nod_variable:
-			EVL_validate(tdbb, Item(nod_variable, (IPTR) to->nod_arg[e_var_id]),
-				from_desc, null == -1);
+			if (to->nod_arg[e_var_info])
+			{
+				EVL_validate(tdbb, 
+					Item(nod_variable, (IPTR) to->nod_arg[e_var_id]),
+					reinterpret_cast<const ItemInfo*>(to->nod_arg[e_var_info]),
+					from_desc, null == -1);
+			}
 			impure_flags = &((impure_value*) ((SCHAR *) request +
 				to->nod_arg[e_var_variable]->nod_impure))->vlu_flags;
 			break;
 
 		case nod_argument:
-			EVL_validate(tdbb,
-				Item(nod_argument, (IPTR) to->nod_arg[e_arg_message]->nod_arg[e_msg_number],
-					(IPTR) to->nod_arg[e_arg_number]),
-				from_desc, null == -1);
+			if (to->nod_arg[e_arg_info])
+			{
+				EVL_validate(tdbb,
+					Item(nod_argument, (IPTR) to->nod_arg[e_arg_message]->nod_arg[e_msg_number],
+						(IPTR) to->nod_arg[e_arg_number]),
+					reinterpret_cast<const ItemInfo*>(to->nod_arg[e_arg_info]),
+					from_desc, null == -1);
+			}
 			impure_flags = (USHORT*) ((UCHAR *) request +
 				(IPTR) to->nod_arg[e_arg_message]->nod_arg[e_msg_impure_flags] +
 				(sizeof(USHORT) * (IPTR) to->nod_arg[e_arg_number]));
@@ -2687,8 +2696,9 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 		case nod_init_variable:
 			if (request->req_operation == jrd_req::req_evaluate)
 			{
-				MapItemInfo::ValueType itemInfo;
-				if (request->req_map_item_info.get(Item(nod_variable, (IPTR) node->nod_arg[e_init_var_id]), itemInfo))
+				const ItemInfo* itemInfo = 
+					reinterpret_cast<const ItemInfo*>(node->nod_arg[e_init_var_info]);
+				if (itemInfo)
 				{
 					jrd_nod* var_node = node->nod_arg[e_init_var_variable];
 					DSC* to_desc = &((impure_value*) ((SCHAR *) request + var_node->nod_impure))->vlu_desc;
@@ -2696,8 +2706,8 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 					to_desc->dsc_flags |= DSC_null;
 
 					MapFieldInfo::ValueType fieldInfo;
-					if (itemInfo.fullDomain &&
-						request->req_map_field_info.get(itemInfo.field, fieldInfo) &&
+					if (itemInfo->fullDomain &&
+						request->req_map_field_info.get(itemInfo->field, fieldInfo) &&
 						fieldInfo.defaultValue)
 					{
 						dsc* value = EVL_expr(tdbb, fieldInfo.defaultValue);
