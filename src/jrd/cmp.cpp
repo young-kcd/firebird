@@ -141,6 +141,7 @@ static jrd_nod* pass1_update(thread_db*, CompilerScratch*, jrd_rel*, const trig_
 static jrd_nod* pass2(thread_db*, CompilerScratch*, jrd_nod* const, jrd_nod*);
 static void pass2_rse(thread_db*, CompilerScratch*, RecordSelExpr*);
 static jrd_nod* pass2_union(thread_db*, CompilerScratch*, jrd_nod*);
+static jrd_nod* pass2_validation(thread_db*, CompilerScratch*, const Item&);
 static void plan_check(const CompilerScratch*, const RecordSelExpr*);
 static void plan_set(CompilerScratch*, RecordSelExpr*, jrd_nod*);
 static void post_procedure_access(thread_db*, CompilerScratch*, jrd_prc*);
@@ -2036,6 +2037,8 @@ jrd_req* CMP_make_request(thread_db* tdbb, CompilerScratch* csb)
 	csb->csb_impure = REQ_SIZE + REQ_TAIL * MAX(csb->csb_n_stream, 1);
 	csb->csb_exec_sta.clear();
 
+	csb->csb_node = pass2(tdbb, csb, csb->csb_node, 0);
+
 	// Compile (pass2) domains DEFAULT and constraints
 	found = csb->csb_map_field_info.getFirst();
 	while (found)
@@ -2047,8 +2050,6 @@ jrd_req* CMP_make_request(thread_db* tdbb, CompilerScratch* csb)
 
 		found = csb->csb_map_field_info.getNext();
 	}
-
-	csb->csb_node = pass2(tdbb, csb, csb->csb_node, 0);
 
 	if (csb->csb_impure > MAX_REQUEST_SIZE) {
 		IBERROR(226);			// msg 226 request size limit exceeded
@@ -4828,6 +4829,25 @@ static jrd_nod* pass1_update(thread_db* tdbb,
 }
 
 
+static jrd_nod* pass2_validation(thread_db* tdbb, CompilerScratch* csb, const Item& item)
+{
+/**************************************
+ *
+ *	p a s s 2 _ v a l i d a t i o n
+ *
+ **************************************
+ *
+ * Functional description
+ *	Copy items' information into appropriate node
+ *
+ **************************************/
+	ItemInfo itemInfo;
+	return csb->csb_map_item_info.get(item, itemInfo) ?
+		reinterpret_cast<jrd_nod*>(FB_NEW(*tdbb->getDefaultPool()) ItemInfo(*tdbb->getDefaultPool(), itemInfo)) :
+		0;
+}
+
+
 static jrd_nod* pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node, jrd_nod* parent)
 {
 /**************************************
@@ -4953,41 +4973,20 @@ static jrd_nod* pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node
 		return node;
 		
 	case nod_variable:
-		{
-			Item item(nod_variable, (IPTR) node->nod_arg[e_var_id]);
-			ItemInfo itemInfo;
-			if (csb->csb_map_item_info.get(item, itemInfo))
-			{
-				node->nod_arg[e_var_info] = reinterpret_cast<jrd_nod*>
-					(FB_NEW(*tdbb->getDefaultPool()) ItemInfo(*tdbb->getDefaultPool(), itemInfo));
-			}
-		}
+		node->nod_arg[e_var_info] = 
+			pass2_validation(tdbb, csb, Item(nod_variable, (IPTR) node->nod_arg[e_var_id]));
 		break;
 
 	case nod_init_variable:
-		{
-			Item item(nod_variable, (IPTR) node->nod_arg[e_init_var_id]);
-			ItemInfo itemInfo;
-			if (csb->csb_map_item_info.get(item, itemInfo))
-			{
-				node->nod_arg[e_init_var_info] = reinterpret_cast<jrd_nod*>
-					(FB_NEW(*tdbb->getDefaultPool()) ItemInfo(*tdbb->getDefaultPool(), itemInfo));
-			}
-		}
+		node->nod_arg[e_init_var_info] =
+			pass2_validation(tdbb, csb, Item(nod_variable, (IPTR) node->nod_arg[e_init_var_id]));
 		break;
 
 	case nod_argument:
-		{
-			Item item(nod_argument, 
-					  (IPTR) node->nod_arg[e_arg_message]->nod_arg[e_msg_number],
-					  (IPTR) node->nod_arg[e_arg_number]);
-			ItemInfo itemInfo;
-			if (csb->csb_map_item_info.get(item, itemInfo))
-			{
-				node->nod_arg[e_arg_info] = reinterpret_cast<jrd_nod*>
-					(FB_NEW(*tdbb->getDefaultPool()) ItemInfo(*tdbb->getDefaultPool(), itemInfo));
-			}
-		}
+		node->nod_arg[e_arg_info] =
+			pass2_validation(tdbb, csb, Item(nod_argument, 
+				(IPTR) node->nod_arg[e_arg_message]->nod_arg[e_msg_number],
+				(IPTR) node->nod_arg[e_arg_number]));
 		break;
 
 	default:
