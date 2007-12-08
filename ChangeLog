@@ -1,3 +1,17 @@
+2007-12-07 11:05  paulbeach
+
+	* firebird2/: builds/install/arch-specific/darwin/FB.info
+	(1.1.2.3), builds/install/arch-specific/darwin/install-script
+	(1.1.2.3),
+	builds/install/arch-specific/darwin/launchd.org.firebird.gds.plist
+	(1.1.2.1), builds/install/arch-specific/darwin/preupgrade-script
+	(1.1.2.3), builds/posix/make.rules (1.28.4.3),
+	builds/posix/postfix.darwin (1.1.4.5), builds/posix/prefix.darwin
+	(1.14.12.5), configure.in (1.241.2.15),
+	src/common/classes/semaphore.h (1.24.2.10):
+
+	MacOS 10.5 (Leopard) updates
+
 2007-12-05 10:32  robocop
 
 	* firebird2/src/dsql/pass1.cpp (1.260.2.9):
