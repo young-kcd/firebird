@@ -534,7 +534,7 @@ AC_TRY_RUN([#include <semaphore.h>
 		exit(sem_init(&s,0,0));
 		}
 	],
-[AC_DEFINE(WORKING_SEM_INIT,1,[Define this is sem_init() works on the platform])
+[AC_DEFINE(WORKING_SEM_INIT,1,[Define this if sem_init() works on the platform])
 AC_MSG_RESULT(yes)],
 [AC_MSG_RESULT(no)])
 fi
