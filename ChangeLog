@@ -1,3 +1,30 @@
+2007-12-08 15:03  alexpeshkoff
+
+	* firebird2/src/jrd/cmp.cpp (1.272):
+
+	1. Restored correct compilation order in pass2.  2. Avoid code
+	duplication.
+
+2007-12-08 14:41  alexpeshkoff
+
+	* firebird2/src/jrd/: cmp.cpp (1.271), evl.cpp (1.243), evl_proto.h
+	(1.25), exe.cpp (1.231), exe.h (1.107), req.h (1.70):
+
+	Optimized code for domain-based variables (and procedure arguments)
+
+2007-12-08 14:39  alexpeshkoff
+
+	* firebird2/src/jrd/execute_statement.cpp (1.28):
+
+	Cleanup
+
+2007-12-08 08:46  robocop
+
+	* firebird2/: configure.in (1.266),
+	builds/install/arch-specific/darwin/FB.info (1.5):
+
+	Misc.
+
 2007-12-07 15:29  asfernandes
 
 	* firebird2/src/jrd/SysFunction.cpp (1.32):
