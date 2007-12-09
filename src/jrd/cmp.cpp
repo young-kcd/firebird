@@ -459,7 +459,6 @@ jrd_req* CMP_clone_request(thread_db* tdbb, jrd_req* request, USHORT level, bool
 		return clone;
 	}
 
-
 	if (validate) {
 		jrd_prc* procedure = request->req_procedure;
 		if (procedure) {
@@ -561,8 +560,8 @@ jrd_req* CMP_compile2(thread_db* tdbb, const UCHAR* blr, USHORT internal_flag,
 	// and will be freed by CMP_release
 	JrdMemoryPool* new_pool = 0;
 
-	try {
-
+	try
+	{
 		new_pool = JrdMemoryPool::createPool();
 		Jrd::ContextPoolHolder context(tdbb, new_pool);
 
@@ -576,9 +575,9 @@ jrd_req* CMP_compile2(thread_db* tdbb, const UCHAR* blr, USHORT internal_flag,
 		CMP_verify_access(tdbb, request);
 
 		delete csb;
-
 	}
-	catch (const Firebird::Exception& ex) {
+	catch (const Firebird::Exception& ex)
+	{
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);		
 		if (request) {
 			CMP_release(tdbb, request);
