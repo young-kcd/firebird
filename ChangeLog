@@ -1,3 +1,9 @@
+2007-12-08 08:04  robocop
+
+	* firebird2/configure.in (1.241.2.16):
+
+	Misc.
+
 2007-12-07 11:05  paulbeach
 
 	* firebird2/: builds/install/arch-specific/darwin/FB.info
