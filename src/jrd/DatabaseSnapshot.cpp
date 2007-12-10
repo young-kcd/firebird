@@ -361,16 +361,19 @@ int DatabaseSnapshot::blockingAst(void* ast_object)
 
 	Jrd::ContextPoolHolder context(tdbb, dbb->dbb_permanent);
 
-	try {
-		// Write the data to the shared memory
-		dumpData(tdbb);
+	if (!(dbb->dbb_ast_flags & DBB_monitor_off))
+	{
+		try {
+			// Write the data to the shared memory
+			dumpData(tdbb, true);
 
-		// Release the lock and mark dbb as requesting a new one
-		LCK_release(tdbb, lock);
-		dbb->dbb_ast_flags |= DBB_monitor_off;
-	}
-	catch (const Exception&) {
-		gds__log("Unexpected exception at the AST level");
+			// Release the lock and mark dbb as requesting a new one
+			LCK_release(tdbb, lock);
+			dbb->dbb_ast_flags |= DBB_monitor_off;
+		}
+		catch (const Exception&) {
+			gds__log("Unexpected exception at the AST level");
+		}
 	}
 
 	JRD_restore_thread_data();
@@ -382,41 +385,43 @@ DatabaseSnapshot::DatabaseSnapshot(thread_db* tdbb, MemoryPool& pool)
 	: snapshot(pool), idMap(pool), idCounter(0)
 {
 	// Initialize record buffers
-	RecordBuffer* dbb_buffer =
+	RecordBuffer* const dbb_buffer =
 		allocBuffer(tdbb, pool, rel_mon_database);
-	RecordBuffer* att_buffer =
+	RecordBuffer* const att_buffer =
 		allocBuffer(tdbb, pool, rel_mon_attachments);
-	RecordBuffer* tra_buffer =
+	RecordBuffer* const tra_buffer =
 		allocBuffer(tdbb, pool, rel_mon_transactions);
-	RecordBuffer* stmt_buffer =
+	RecordBuffer* const stmt_buffer =
 		allocBuffer(tdbb, pool, rel_mon_statements);
-	RecordBuffer* call_buffer =
+	RecordBuffer* const call_buffer =
 		allocBuffer(tdbb, pool, rel_mon_calls);
-	RecordBuffer* io_stat_buffer =
+	RecordBuffer* const io_stat_buffer =
 		allocBuffer(tdbb, pool, rel_mon_io_stats);
-	RecordBuffer* rec_stat_buffer =
+	RecordBuffer* const rec_stat_buffer =
 		allocBuffer(tdbb, pool, rel_mon_rec_stats);
 
-	Database* dbb = tdbb->getDatabase();
+	Database* const dbb = tdbb->getDatabase();
 	fb_assert(dbb);
 
-	Attachment* attachment = tdbb->getAttachment();
+	const Attachment* const attachment = tdbb->getAttachment();
 	fb_assert(attachment);
-
-	// Dump data for our own dbb
-	dumpData(tdbb);
-
-	// Release the lock and mark dbb as requesting a new one
-	LCK_release(tdbb, dbb->dbb_monitor_lock);
-	dbb->dbb_ast_flags |= DBB_monitor_off;
 
 	// This variable defines whether we're interested in the global data
 	// (i.e. all attachments) and hence should signal other processes
 	// or it's enough to return the local data (our own attachment) only.
 	const bool broadcast = attachment->att_user->locksmith();
 
+	AutoPtr<ClumpletReader> reader = NULL;
+
 	if (broadcast)
 	{
+		dumpData(tdbb, true);
+
+		// Release our own lock and mark dbb as requesting a new one
+		LCK_release(tdbb, dbb->dbb_monitor_lock);
+		dbb->dbb_ast_flags |= DBB_monitor_off;
+
+		// Signal other processes to dump their data
 		Lock temp_lock, *lock = &temp_lock;
 		lock->lck_dbb = dbb;
 		lock->lck_length = sizeof(SLONG);
@@ -425,12 +430,18 @@ DatabaseSnapshot::DatabaseSnapshot(thread_db* tdbb, MemoryPool& pool)
 		lock->lck_owner_handle = LCK_get_owner_handle(tdbb, lock->lck_type);
 		lock->lck_parent = dbb->dbb_lock;
 
-		LCK_lock(tdbb, lock, LCK_EX, LCK_WAIT);
-		LCK_release(tdbb, lock);
+		if (LCK_lock(tdbb, lock, LCK_EX, LCK_WAIT))
+			LCK_release(tdbb, lock);
+
+		// Read the shared memory
+		DumpGuard guard(dump);
+		reader = dump->readData(tdbb);
+	}
+	else
+	{
+		reader = dumpData(tdbb, false);
 	}
 
-	DumpGuard guard(dump);
-	AutoPtr<ClumpletReader> reader(dump->readData(tdbb));
 	reader->rewind();
 
 	// Parse the dump
@@ -439,7 +450,6 @@ DatabaseSnapshot::DatabaseSnapshot(thread_db* tdbb, MemoryPool& pool)
 
 	int rid = 0;
 	bool database_processed = false, database_seen = false;
-	bool self_processed = false;
 	bool fields_processed = false, allowed = false;
 
 	while (!reader->isEof())
@@ -509,9 +519,6 @@ DatabaseSnapshot::DatabaseSnapshot(thread_db* tdbb, MemoryPool& pool)
 			{
 				if (fid == f_mon_db_name)
 				{
-					if (self_processed && !broadcast)
-						break;
-
 					database_processed = database_seen;
 
 					// Do we look at our own database record?
@@ -529,19 +536,6 @@ DatabaseSnapshot::DatabaseSnapshot(thread_db* tdbb, MemoryPool& pool)
 					putField(record, fid, source, length);
 					fields_processed = true;
 				}
-			}
-			else if (rid == rel_mon_attachments)
-			{
-				if (fid == f_mon_att_id)
-				{
-					if (self_processed && !broadcast)
-						break;
-				}
-
-				self_processed = true;
-
-				putField(record, fid, source, length);
-				fields_processed = true;
 			}
 			// The generic logic that covers all relations
 			// except MON$DATABASE
@@ -792,21 +786,20 @@ const char* DatabaseSnapshot::checkNull(int rid, int fid, const char* source, si
 }
 
 
-void DatabaseSnapshot::dumpData(thread_db* tdbb)
+ClumpletReader* DatabaseSnapshot::dumpData(thread_db* tdbb, bool broadcast)
 {
 	fb_assert(tdbb);
-	Database* dbb = tdbb->getDatabase();
+	Database* const dbb = tdbb->getDatabase();
 	fb_assert(dbb);
 
+	const Attachment* const self_attachment = tdbb->getAttachment();
+	fb_assert(self_attachment);
+
 	MemoryPool& pool = *tdbb->getDefaultPool();
-	ClumpletWriter* ptr = FB_NEW(pool)
+	ClumpletWriter* writer = FB_NEW(pool)
 		ClumpletWriter(pool, ClumpletReader::WideUnTagged, MAX_ULONG);
-	AutoPtr<ClumpletWriter> writer(ptr);
 
 	writer->insertBytes(TAG_DBB, (UCHAR*) &dbb->dbb_guid, sizeof(FB_GUID));
-
-	const Attachment* self_attachment = tdbb->getAttachment();
-	fb_assert(self_attachment);
 
 	jrd_tra* transaction = NULL;
 	jrd_req* request = NULL;
@@ -816,103 +809,71 @@ void DatabaseSnapshot::dumpData(thread_db* tdbb)
 
 	putDatabase(dbb, *writer, dbb->generateId());
 
-	// Self attachment information
-
-	putAttachment(self_attachment, *writer, dbb->generateId());
-
-	// Self transactions information
-
-	for (transaction = self_attachment->att_transactions;
-		transaction; transaction = transaction->tra_next)
-	{
-		putTransaction(transaction, *writer, dbb->generateId());
-	}
-
-	// Self requests information
-
-	for (request = self_attachment->att_requests;
-		request; request = request->req_request)
-	{
-		if (!(request->req_flags & (req_internal | req_sys_trigger)))
-		{
-			putRequest(request, *writer, dbb->generateId());
-		}
-	}
-
-	// Self call stack information
-
-	for (transaction = self_attachment->att_transactions;
-		transaction; transaction = transaction->tra_next)
-	{
-		for (request = transaction->tra_requests;
-			request; request = request->req_tra_next)
-		{
-			if (!(request->req_flags & (req_internal | req_sys_trigger)) &&
-				request->req_caller)
-			{
-				putCall(request, *writer, dbb->generateId());
-			}
-		}
-	}
-
-	// Other attachments information
+	// Attachment information
 
 	for (Attachment* attachment = dbb->dbb_attachments;
 		attachment; attachment = attachment->att_next)
 	{
-		if (attachment == self_attachment)
-			continue;
-
-		putAttachment(attachment, *writer, dbb->generateId());
-
-		// Transaction information
-
-		for (transaction = attachment->att_transactions;
-			transaction; transaction = transaction->tra_next)
+		if (broadcast || attachment == self_attachment)
 		{
-			putTransaction(transaction, *writer, dbb->generateId());
-		}
+			putAttachment(attachment, *writer, dbb->generateId());
 
-		// Request information
+			// Transaction information
 
-		for (request = attachment->att_requests;
-			request; request = request->req_request)
-		{
-			if (!(request->req_flags & (req_internal | req_sys_trigger)))
+			for (transaction = attachment->att_transactions;
+				transaction; transaction = transaction->tra_next)
 			{
-				putRequest(request, *writer, dbb->generateId());
+				putTransaction(transaction, *writer, dbb->generateId());
 			}
-		}
 
-		// Call stack information
+			// Request information
 
-		for (transaction = attachment->att_transactions;
-			transaction; transaction = transaction->tra_next)
-		{
-			for (request = transaction->tra_requests;
-				request; request = request->req_tra_next)
+			for (request = attachment->att_requests;
+				request; request = request->req_request)
 			{
-				if (!(request->req_flags & (req_internal | req_sys_trigger)) &&
-					request->req_caller)
+				if (!(request->req_flags & (req_internal | req_sys_trigger)))
 				{
-					putCall(request, *writer, dbb->generateId());
+					putRequest(request, *writer, dbb->generateId());
+				}
+			}
+
+			// Call stack information
+
+			for (transaction = attachment->att_transactions;
+				transaction; transaction = transaction->tra_next)
+			{
+				for (request = transaction->tra_requests;
+					request; request = request->req_tra_next)
+				{
+					if (!(request->req_flags & (req_internal | req_sys_trigger)) &&
+						request->req_caller)
+					{
+						putCall(request, *writer, dbb->generateId());
+					}
 				}
 			}
 		}
 	}
 
-	if (!dump)
+	if (broadcast)
 	{
-		// Initialize the shared memory region
-		MutexLockGuard guard(initMutex);
 		if (!dump)
 		{
-			dump = FB_NEW(*getDefaultMemoryPool()) SharedMemory;
+			// Initialize the shared memory region
+			MutexLockGuard guard(initMutex);
+			if (!dump)
+			{
+				dump = FB_NEW(*getDefaultMemoryPool()) SharedMemory;
+			}
 		}
+
+		DumpGuard guard(dump);
+		dump->writeData(tdbb, *writer);
+
+		delete writer;
 	}
 
-	DumpGuard guard(dump);
-	dump->writeData(tdbb, *writer);
+	return broadcast ? NULL : writer;
 }
 
 
