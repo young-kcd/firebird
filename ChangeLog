@@ -1,3 +1,24 @@
+2007-12-09 14:48  asfernandes
+
+	* firebird2/src/jrd/cmp.cpp (1.273):
+
+	Misc
+
+2007-12-09 14:09  asfernandes
+
+	* firebird2/builds/install/arch-specific/darwin/install-script
+	(1.5):
+
+	Misc
+
+2007-12-09 10:15  dimitr
+
+	* firebird2/src/jrd/dfw.epp (1.219):
+
+	Bugfix for CORE-1641. The solution is to move some of the phase 3
+	code to phase 4, so that both create_trigger() and modify_trigger()
+	are in sync. To be reviewed by Adriano.
+
 2007-12-08 15:03  alexpeshkoff
 
 	* firebird2/src/jrd/cmp.cpp (1.272):
