@@ -4514,7 +4514,7 @@ bool JRD_reschedule(thread_db* tdbb, SLONG quantum, bool punt)
 					return true;
 				}
 			}
-	#ifdef CANCEL_OPERATION
+#ifdef CANCEL_OPERATION
 
 			/* If a cancel has been raised, defer its acknowledgement
 			   when executing in the context of an internal request or
@@ -4544,7 +4544,7 @@ bool JRD_reschedule(thread_db* tdbb, SLONG quantum, bool punt)
 					}
 				}
 			}
-	#endif
+#endif
 		}
 	}
 
