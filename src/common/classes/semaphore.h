@@ -290,11 +290,6 @@ public:
 
 #else //defined(HAVE_SYS_SEM_H) && defined(HAVE_SEMTIMEDOP)
 
-// This implementation will NOT work with FB > 2.1
-#ifdef SOLARIS
-#error Mutex/Condition based semaphore is NOT OK for Solaris
-#endif
-
 #include <pthread.h>
 #include <errno.h>
 

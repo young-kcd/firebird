@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# $Id: install-script,v 1.1.2.3 2007-12-07 10:05:47 paulbeach Exp $
+# $Id: install-script,v 1.1.2.4 2007-12-10 11:14:39 paulbeach Exp $
 #
 # Script args:
 # $0: full path to script
@@ -15,7 +15,7 @@
 # 10.2 Jaguar
 # 10.3 Panther (xinetd)
 # 10.4 Tiger - Uses Launchd (xinetd for backward compatibility)
-# 10.5 Leopard - Uses Lanchd (No xinetd) (no ni* commands)
+# 10.5 Leopard - Uses Launchd (No xinetd) (no ni* commands)
 
 OSVERSION=`sw_vers -productVersion | awk -F '.' '{print $2}'`
 echo $OSVERSION
