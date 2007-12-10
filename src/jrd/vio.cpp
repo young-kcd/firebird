@@ -2897,6 +2897,7 @@ void VIO_verb_cleanup(thread_db* tdbb, jrd_tra* transaction)
 	VerbAction* action;
 	jrd_tra* old_tran = tdbb->tdbb_transaction;
 	try {
+		tdbb->tdbb_flags |= TDBB_verb_cleanup;
 		tdbb->tdbb_transaction = transaction;
 
 		while ( (action = sav_point->sav_verb_actions) ) {
@@ -3044,9 +3045,11 @@ void VIO_verb_cleanup(thread_db* tdbb, jrd_tra* transaction)
 			delete action;
 		}
 		tdbb->tdbb_transaction = old_tran;
+		tdbb->tdbb_flags &= ~TDBB_verb_cleanup;
 	}
 	catch (...) {
 		tdbb->tdbb_transaction = old_tran;
+		tdbb->tdbb_flags &= ~TDBB_verb_cleanup;
 		throw;
 	}
 

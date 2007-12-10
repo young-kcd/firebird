@@ -4467,78 +4467,85 @@ bool JRD_reschedule(thread_db* tdbb, SLONG quantum, bool punt)
 		THREAD_ENTER();
 	}
 
-/* If database has been shutdown then get out */
+	// Test various flags and unwind/throw if required.
+	// But do that only if we're not in the verb cleanup state,
+	// which should never be interrupted.
 
-	Database* dbb = tdbb->tdbb_database;
-	Attachment* attachment = tdbb->tdbb_attachment;
-	if (attachment)
+	if (!(tdbb->tdbb_flags & TDBB_verb_cleanup))
 	{
-		Firebird::PathName file_name = attachment->att_filename;
+		/* If database has been shutdown then get out */
 
-		if (dbb->dbb_ast_flags & DBB_shutdown &&
-			attachment->att_flags & ATT_shutdown)
+		Database* dbb = tdbb->tdbb_database;
+		Attachment* attachment = tdbb->tdbb_attachment;
+		if (attachment)
 		{
-			if (punt) {
-				CCH_unwind(tdbb, false);
-				ERR_post(isc_shutdown, isc_arg_string,
-						 ERR_cstring(file_name), 0);
-			}
-			else {
-				ISC_STATUS* status = tdbb->tdbb_status_vector;
-				*status++ = isc_arg_gds;
-				*status++ = isc_shutdown;
-				*status++ = isc_arg_string;
-				*status++ = (ISC_STATUS) ERR_cstring(file_name);
-				*status++ = isc_arg_end;
-				return true;
-			}
-		}
-		else if (attachment->att_flags & ATT_shutdown &&
-			!(tdbb->tdbb_flags & TDBB_shutdown_manager))
-		{
-			if (punt) {
-				CCH_unwind(tdbb, false);
-				ERR_post(isc_att_shutdown, 0);
-			}
-			else {
-				ISC_STATUS* status = tdbb->tdbb_status_vector;
-				*status++ = isc_arg_gds;
-				*status++ = isc_att_shutdown;
-				*status++ = isc_arg_end;
-				return true;
-			}
-		}
-#ifdef CANCEL_OPERATION
+			Firebird::PathName file_name = attachment->att_filename;
 
-		/* If a cancel has been raised, defer its acknowledgement
-		   when executing in the context of an internal request or
-		   the system transaction. */
-
-		if ((attachment->att_flags & ATT_cancel_raise) &&
-			!(attachment->att_flags & ATT_cancel_disable))
-		{
-			const jrd_tra* transaction;
-			jrd_req* request = tdbb->tdbb_request;
-			if ((!request ||
-				 !(request->req_flags & (req_internal | req_sys_trigger))) &&
-				(!(transaction = tdbb->tdbb_transaction) ||
-				 !(transaction->tra_flags & TRA_system)))
+			if (dbb->dbb_ast_flags & DBB_shutdown &&
+				attachment->att_flags & ATT_shutdown)
 			{
-				attachment->att_flags &= ~ATT_cancel_raise;
 				if (punt) {
 					CCH_unwind(tdbb, false);
-					ERR_post(isc_cancelled, 0);
+					ERR_post(isc_shutdown, isc_arg_string,
+							 ERR_cstring(file_name), 0);
 				}
 				else {
 					ISC_STATUS* status = tdbb->tdbb_status_vector;
 					*status++ = isc_arg_gds;
-					*status++ = isc_cancelled;
+					*status++ = isc_shutdown;
+					*status++ = isc_arg_string;
+					*status++ = (ISC_STATUS) ERR_cstring(file_name);
 					*status++ = isc_arg_end;
 					return true;
 				}
 			}
+			else if (attachment->att_flags & ATT_shutdown &&
+				!(tdbb->tdbb_flags & TDBB_shutdown_manager))
+			{
+				if (punt) {
+					CCH_unwind(tdbb, false);
+					ERR_post(isc_att_shutdown, 0);
+				}
+				else {
+					ISC_STATUS* status = tdbb->tdbb_status_vector;
+					*status++ = isc_arg_gds;
+					*status++ = isc_att_shutdown;
+					*status++ = isc_arg_end;
+					return true;
+				}
+			}
+	#ifdef CANCEL_OPERATION
+
+			/* If a cancel has been raised, defer its acknowledgement
+			   when executing in the context of an internal request or
+			   the system transaction. */
+
+			if ((attachment->att_flags & ATT_cancel_raise) &&
+				!(attachment->att_flags & ATT_cancel_disable))
+			{
+				const jrd_tra* transaction;
+				jrd_req* request = tdbb->tdbb_request;
+				if ((!request ||
+					 !(request->req_flags & (req_internal | req_sys_trigger))) &&
+					(!(transaction = tdbb->tdbb_transaction) ||
+					 !(transaction->tra_flags & TRA_system)))
+				{
+					attachment->att_flags &= ~ATT_cancel_raise;
+					if (punt) {
+						CCH_unwind(tdbb, false);
+						ERR_post(isc_cancelled, 0);
+					}
+					else {
+						ISC_STATUS* status = tdbb->tdbb_status_vector;
+						*status++ = isc_arg_gds;
+						*status++ = isc_cancelled;
+						*status++ = isc_arg_end;
+						return true;
+					}
+				}
+			}
+	#endif
 		}
-#endif
 	}
 
 	tdbb->tdbb_quantum = (tdbb->tdbb_quantum <= 0) ?

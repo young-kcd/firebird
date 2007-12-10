@@ -1042,6 +1042,7 @@ const USHORT TDBB_set_backup_state		= 8;	/* Setting state for backup lock */
 const USHORT TDBB_backup_merge			= 16;	/* Merging changes from difference file */
 const USHORT TDBB_stack_trace_done		= 32;	/* PSQL stack trase is added into status-vector */
 const USHORT TDBB_shutdown_manager		= 64;	/* Server shutdown thread */
+const USHORT TDBB_verb_cleanup			= 128;	/* Verb cleanup is in progress */
 
 
 // duplicate context of firebird string to store in jrd_nod::nod_arg
