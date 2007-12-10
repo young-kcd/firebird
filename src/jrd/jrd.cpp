@@ -4575,93 +4575,100 @@ bool JRD_reschedule(thread_db* tdbb, SLONG quantum, bool punt)
 
 	Database* dbb = tdbb->getDatabase();
 
-	// If database has been shutdown then get out
+	// Test various flags and unwind/throw if required.
+	// But do that only if we're not in the verb cleanup state,
+	// which should never be interrupted.
 
-	Attachment* attachment = tdbb->getAttachment();
-	jrd_tra* transaction = tdbb->getTransaction();
-	jrd_req* request = tdbb->getRequest();
-
-	if (attachment)
+	if (!(tdbb->tdbb_flags & TDBB_verb_cleanup))
 	{
-		if (dbb->dbb_ast_flags & DBB_shutdown &&
-			attachment->att_flags & ATT_shutdown)
-		{
-			const Firebird::PathName& file_name = attachment->att_filename;
-			if (punt) {
-				CCH_unwind(tdbb, false);
-				ERR_post(isc_shutdown, isc_arg_string,
-						 ERR_cstring(file_name), 0);
-			}
-			else {
-				ISC_STATUS* status = tdbb->tdbb_status_vector;
-				*status++ = isc_arg_gds;
-				*status++ = isc_shutdown;
-				*status++ = isc_arg_string;
-				*status++ = (ISC_STATUS) ERR_cstring(file_name);
-				*status++ = isc_arg_end;
-				return true;
-			}
-		}
-		else if (attachment->att_flags & ATT_shutdown &&
-			!(tdbb->tdbb_flags & TDBB_shutdown_manager))
-		{
-			if (punt) {
-				CCH_unwind(tdbb, false);
-				ERR_post(isc_att_shutdown, 0);
-			}
-			else {
-				ISC_STATUS* status = tdbb->tdbb_status_vector;
-				*status++ = isc_arg_gds;
-				*status++ = isc_att_shutdown;
-				*status++ = isc_arg_end;
-				return true;
-			}
-		}
+		// If database has been shutdown then get out
 
-		// If a cancel has been raised, defer its acknowledgement
-		// when executing in the context of an internal request or
-		// the system transaction.
+		Attachment* attachment = tdbb->getAttachment();
+		jrd_tra* transaction = tdbb->getTransaction();
+		jrd_req* request = tdbb->getRequest();
 
-		if ((attachment->att_flags & ATT_cancel_raise) &&
-			!(attachment->att_flags & ATT_cancel_disable))
+		if (attachment)
 		{
-			if ((!request ||
-				 !(request->req_flags & (req_internal | req_sys_trigger))) &&
-				(!transaction || !(transaction->tra_flags & TRA_system)))
+			if (dbb->dbb_ast_flags & DBB_shutdown &&
+				attachment->att_flags & ATT_shutdown)
 			{
-				attachment->att_flags &= ~ATT_cancel_raise;
+				const Firebird::PathName& file_name = attachment->att_filename;
 				if (punt) {
 					CCH_unwind(tdbb, false);
-					ERR_post(isc_cancelled, 0);
+					ERR_post(isc_shutdown, isc_arg_string,
+							 ERR_cstring(file_name), 0);
 				}
 				else {
 					ISC_STATUS* status = tdbb->tdbb_status_vector;
 					*status++ = isc_arg_gds;
-					*status++ = isc_cancelled;
+					*status++ = isc_shutdown;
+					*status++ = isc_arg_string;
+					*status++ = (ISC_STATUS) ERR_cstring(file_name);
 					*status++ = isc_arg_end;
 					return true;
 				}
 			}
+			else if (attachment->att_flags & ATT_shutdown &&
+				!(tdbb->tdbb_flags & TDBB_shutdown_manager))
+			{
+				if (punt) {
+					CCH_unwind(tdbb, false);
+					ERR_post(isc_att_shutdown, 0);
+				}
+				else {
+					ISC_STATUS* status = tdbb->tdbb_status_vector;
+					*status++ = isc_arg_gds;
+					*status++ = isc_att_shutdown;
+					*status++ = isc_arg_end;
+					return true;
+				}
+			}
+
+			// If a cancel has been raised, defer its acknowledgement
+			// when executing in the context of an internal request or
+			// the system transaction.
+
+			if ((attachment->att_flags & ATT_cancel_raise) &&
+				!(attachment->att_flags & ATT_cancel_disable))
+			{
+				if ((!request ||
+					 !(request->req_flags & (req_internal | req_sys_trigger))) &&
+					(!transaction || !(transaction->tra_flags & TRA_system)))
+				{
+					attachment->att_flags &= ~ATT_cancel_raise;
+					if (punt) {
+						CCH_unwind(tdbb, false);
+						ERR_post(isc_cancelled, 0);
+					}
+					else {
+						ISC_STATUS* status = tdbb->tdbb_status_vector;
+						*status++ = isc_arg_gds;
+						*status++ = isc_cancelled;
+						*status++ = isc_arg_end;
+						return true;
+					}
+				}
+			}
 		}
-	}
 
-	// Handle request cancellation
+		// Handle request cancellation
 
-	if (transaction && (transaction->tra_flags & TRA_cancel_request))
-	{
-		transaction->tra_flags &= ~TRA_cancel_request;
-		tdbb->tdbb_flags |= TDBB_sys_error;
+		if (transaction && (transaction->tra_flags & TRA_cancel_request))
+		{
+			transaction->tra_flags &= ~TRA_cancel_request;
+			tdbb->tdbb_flags |= TDBB_sys_error;
 
-		if (punt) {
-			CCH_unwind(tdbb, false);
-			ERR_post(isc_cancelled, 0);
-		}
-		else {
-			ISC_STATUS* status = tdbb->tdbb_status_vector;
-			*status++ = isc_arg_gds;
-			*status++ = isc_cancelled;
-			*status++ = isc_arg_end;
-			return true;
+			if (punt) {
+				CCH_unwind(tdbb, false);
+				ERR_post(isc_cancelled, 0);
+			}
+			else {
+				ISC_STATUS* status = tdbb->tdbb_status_vector;
+				*status++ = isc_arg_gds;
+				*status++ = isc_cancelled;
+				*status++ = isc_arg_end;
+				return true;
+			}
 		}
 	}
 

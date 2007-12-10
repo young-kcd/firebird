@@ -991,6 +991,7 @@ const USHORT TDBB_stack_trace_done		= 16;	// PSQL stack trace is added into stat
 const USHORT TDBB_shutdown_manager		= 32;	// Server shutdown thread
 const USHORT TDBB_deferred				= 64;	// deferred work performed now
 const USHORT TDBB_sys_error				= 128;	// error shouldn't be handled by the looper
+const USHORT TDBB_verb_cleanup			= 256;	// verb cleanup is in progress
 
 // duplicate context of firebird string to store in jrd_nod::nod_arg
 inline char* stringDup(MemoryPool& p, const Firebird::string& s)
