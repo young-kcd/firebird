@@ -22,6 +22,7 @@
  *
  * 2001.10.03 Claudio Valderrama: add int64, user_group, role, generator,
  *   udf, blob_filter and FB's new system flags for special triggers.
+ * Adriano dos Santos Fernandes
  *
  */
 
