@@ -3764,6 +3764,9 @@ ISC_STATUS GDS_START_AND_SEND(ISC_STATUS* user_status,
 	if (check_database(tdbb, request->req_attachment, user_status))
 		return user_status[1];
 
+	if (check_transaction(tdbb, request->req_transaction, user_status))
+		return user_status[1];
+
 #ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
 	LOG_call(log_start_and_send, *req_handle, *tra_handle, msg_type,
 			 msg_length, msg, level);
@@ -3822,6 +3825,9 @@ ISC_STATUS GDS_START(ISC_STATUS * user_status,
 	CHECK_HANDLE(request, type_req, isc_bad_req_handle);
 
 	if (check_database(tdbb, request->req_attachment, user_status))
+		return user_status[1];
+
+	if (check_transaction(tdbb, request->req_transaction, user_status))
 		return user_status[1];
 
 #ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
@@ -5030,16 +5036,12 @@ static ISC_STATUS check_transaction(thread_db* tdbb, jrd_tra* transaction, ISC_S
 		transaction->tra_flags &= ~TRA_cancel_request;
 		tdbb->tdbb_flags |= TDBB_sys_error;
 
-		if (user_status)
-		{
-			tdbb->tdbb_status_vector = user_status;
-		}
-		ISC_STATUS* ptr = tdbb->tdbb_status_vector;
+		ISC_STATUS* ptr = tdbb->tdbb_status_vector = user_status;
 		fb_assert(ptr);
 		*ptr++ = isc_arg_gds;
 		*ptr++ = isc_cancelled;
 		*ptr++ = isc_arg_end;
-		return user_status ? error(user_status) : tdbb->tdbb_status_vector[1];
+		return error(user_status);
 	}
 
 	return FB_SUCCESS;
@@ -5249,12 +5251,6 @@ static jrd_tra* find_transaction(thread_db* tdbb, jrd_tra* transaction, ISC_STAT
 
 	for (; transaction; transaction = transaction->tra_sibling)
 		if (transaction->tra_attachment == tdbb->getAttachment()) {
-
-			if (check_transaction(tdbb, transaction, 0))
-			{
-				ERR_punt();
-			}
-
 			tdbb->setTransaction(transaction);
 			return transaction;
 		}
