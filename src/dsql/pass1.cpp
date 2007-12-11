@@ -312,12 +312,12 @@ enum field_match_val {
     @param relation_node
 
  **/
-dsql_ctx* PASS1_make_context(dsql_req* request, dsql_nod* relation_node)
+dsql_ctx* PASS1_make_context(dsql_req* request, const dsql_nod* relation_node)
 {
 	DEV_BLKCHK(request, dsql_type_req);
 	DEV_BLKCHK(relation_node, dsql_type_nod);
 
-	tsql* tdsql = DSQL_get_thread_data();
+	tsql* const tdsql = DSQL_get_thread_data();
 
 	dsql_rel* relation = NULL;
 	dsql_prc* procedure = NULL;
@@ -4525,7 +4525,7 @@ static dsql_nod* pass1_derived_table(dsql_req* request, dsql_nod* input, bool pr
 	node->nod_arg[e_derived_table_column_alias] = input->nod_arg[e_derived_table_column_alias];
 
 	// Create the context now, because we need to know it for the tables inside.
-	dsql_ctx* context = PASS1_make_context(request, node);
+	dsql_ctx* const context = PASS1_make_context(request, node);
 	node->nod_arg[e_derived_table_context] = (dsql_nod*) context;
 
 	// Save some values to restore after rse process.
@@ -6143,7 +6143,7 @@ static dsql_nod* pass1_join(dsql_req* request, dsql_nod* input, bool proc_flag)
 	DEV_BLKCHK(request, dsql_type_req);
 	DEV_BLKCHK(input, dsql_type_nod);
 
-	dsql_nod* node = MAKE_node(input->nod_type, input->nod_count);
+	dsql_nod* const node = MAKE_node(input->nod_type, input->nod_count);
 
 	// First process type
 
@@ -8257,7 +8257,7 @@ static dsql_nod* pass1_sys_function(dsql_req* request, dsql_nod* input, bool pro
 
 	if (node->nod_arg[e_sysfunc_args])
 	{
-		const SysFunction* sf = SysFunction::lookup(((dsql_str*) node->nod_arg[e_sysfunc_name])->str_data);
+		const SysFunction* const sf = SysFunction::lookup(((dsql_str*) node->nod_arg[e_sysfunc_name])->str_data);
 
 		if (sf && sf->setParamsFunc)
 		{

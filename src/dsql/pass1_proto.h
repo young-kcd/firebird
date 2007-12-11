@@ -24,7 +24,7 @@
 #ifndef DSQL_PASS1_PROTO_H
 #define DSQL_PASS1_PROTO_H
 
-dsql_ctx* PASS1_make_context(dsql_req*, dsql_nod*);
+dsql_ctx* PASS1_make_context(dsql_req* request, const dsql_nod* relation_node);
 dsql_nod* PASS1_node(dsql_req*, dsql_nod*, bool);
 dsql_nod* PASS1_rse(dsql_req*, dsql_nod*, dsql_nod*);
 dsql_nod* PASS1_statement(dsql_req*, dsql_nod*, bool);
