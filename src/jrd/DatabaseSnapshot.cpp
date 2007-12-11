@@ -411,7 +411,7 @@ DatabaseSnapshot::DatabaseSnapshot(thread_db* tdbb, MemoryPool& pool)
 	// or it's enough to return the local data (our own attachment) only.
 	const bool broadcast = attachment->att_user->locksmith();
 
-	AutoPtr<ClumpletReader> reader = NULL;
+	AutoPtr<ClumpletReader> reader(NULL);
 
 	if (broadcast)
 	{
