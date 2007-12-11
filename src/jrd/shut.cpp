@@ -565,11 +565,12 @@ static bool shutdown_locks(Database* dbb, SSHORT flag)
 	}
 
 	if (dbb->dbb_use_count) {
+#ifdef SUPERSERVER
 		/* Let active database threads rundown */
-
 		THREAD_EXIT();
 		THREAD_SLEEP(1 * 1000);
 		THREAD_ENTER();
+#endif
 		return false;
 	}
 
