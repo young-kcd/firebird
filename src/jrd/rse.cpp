@@ -3678,16 +3678,12 @@ bool RSBRecurse::get(thread_db* tdbb, RecordSource* rsb, irsb_recurse* irsb)
 			irsb->irsb_data = FB_NEW(*request->req_pool) char[record->rec_length];
 			memcpy(irsb->irsb_data, record->rec_data, record->rec_length);
 
-			// (Re-)Open a new child stream & reset record number
-			rsb_ptr = &rsb->rsb_arg[2];
-			if (irsb->irsb_level > 1) {
-				RSE_close(tdbb, *rsb_ptr);
-			}
-
 			irsb_recurse r = *irsb;
 			memset(irsb, 0, inner_size);
 			*irsb = r;
 
+			// (Re-)Open a new child stream & reset record number
+			rsb_ptr = &rsb->rsb_arg[2];
 			RSE_open(tdbb, *rsb_ptr);
 
 			irsb->irsb_level++;
