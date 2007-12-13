@@ -1980,7 +1980,7 @@ ISC_STATUS GDS_DSQL_FETCH(ISC_STATUS* user_status,
 				}
 
 				// hvlad: clear isc_req_sync error as it is received because of our batch 
-				// fetching code not because of wrong client application
+				// fetching code, not because of wrong client application
 				if (stmt_have_exception(statement) == isc_req_sync) {
 					stmt_clear_exception(statement);
 				}
