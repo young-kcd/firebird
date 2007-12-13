@@ -26,7 +26,7 @@
 #   Contributor(s):
 # 
 # 
-#   $Id: make.defaults,v 1.44.4.5 2007-08-15 13:49:21 alexpeshkoff Exp $
+#   $Id: make.defaults,v 1.44.4.6 2007-12-13 16:37:51 alexpeshkoff Exp $
 # 
 
 
@@ -202,9 +202,9 @@ CLIENTLIB_LINK:= @CC@
 EXE_LINK:= @CXX@
 STATICEXE_LINK:= @CXX@
 
-LINK_LIBS = @LIBS@ @EDITLINE_A@
+LINK_LIBS = @EDITLINE_A@ @LIBS@
 ICU_LIBS = -licuuc -licudata -licui18n
-STATICLINK_LIBS = @LIBS@ @EDITLINE_A@
+STATICLINK_LIBS = @EDITLINE_A@ @LIBS@
 SO_LINK_LIBS = @LIBS@
 
 # LINKER OPTIONS
