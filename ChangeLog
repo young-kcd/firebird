@@ -1,3 +1,17 @@
+2007-12-12 14:42  hvlad
+
+	* firebird2/src/remote/interface.cpp (1.154):
+
+	Fixed bug CORE-1651 : False isc_req_sync error may be reported by
+	fbclient to the client application
+
+2007-12-12 10:01  hvlad
+
+	* firebird2/src/jrd/rse.cpp (1.141):
+
+	Fixed bug CORE-1649 : AV when recursive query used MERGE JOIN in
+	execution plan
+
 2007-12-12 00:50  asfernandes
 
 	* firebird2/src/jrd/types.h (1.19):
