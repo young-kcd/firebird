@@ -1966,7 +1966,7 @@ ISC_STATUS GDS_DSQL_FETCH(ISC_STATUS* user_status,
 		{
 			if (statement->rsr_flags & RSR_eof)
 			{
-				// hvlad: we may had queued fetch packet but received EOF before start 
+				// hvlad: we may have queued fetch packet but received EOF before start 
 				// handling of this packet. Handle it now. 
 				fb_assert(statement->rsr_batch_count == 0 || 
 						  statement->rsr_batch_count == 1);
