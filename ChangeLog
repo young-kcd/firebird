@@ -1,3 +1,11 @@
+2007-12-13 17:37  alexpeshkoff
+
+	* firebird2/builds/posix/make.defaults (1.44.4.6):
+
+	There is a bug in alt-linux - it's sensitive to order of libraries
+	in command line.  Taking into an account, that others are not
+	sensitive, place editline in the beginning of libraries list.
+
 2007-12-10 12:14  paulbeach
 
 	* firebird2/: builds/install/arch-specific/darwin/install-script
