@@ -1,3 +1,21 @@
+2007-12-14 00:25  asfernandes
+
+	* firebird2/src/remote/interface.cpp (1.156):
+
+	Misc
+
+2007-12-13 12:04  paul_reeves
+
+	* firebird2/builds/win32/msvc8/fb2control.vcproj (1.10):
+
+	Fix build
+
+2007-12-13 09:28  robocop
+
+	* firebird2/src/remote/interface.cpp (1.155):
+
+	Totally misc.
+
 2007-12-12 14:42  hvlad
 
 	* firebird2/src/remote/interface.cpp (1.154):
