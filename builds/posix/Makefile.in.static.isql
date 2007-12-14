@@ -58,7 +58,7 @@ Dependencies = $(AllObjects:.o=.d)
 isql_static : $(ISQL_STATIC)
 
 $(ISQL_STATIC):	$(ISQL_Objects) $(COMMON_Objects) $(LIBFBSTATIC_A) 
-	$(LD) $(LINK_OPTS) $(ISQL_Objects) $(COMMON_Objects) -o $@ -L$(LIB) -lfbstatic $(LINK_LIBS) $(ICU_LIBS) $(LIBEDITLINE)
+	$(STATICEXE_LINK) $(LINK_OPTS) $(ISQL_Objects) $(COMMON_Objects) -o $@ -L$(LIB) -lfbstatic $(LIBEDITLINE) $(LINK_LIBS) $(ICU_LIBS)
 
 
 include $(ROOT)/gen/make.shared.targets

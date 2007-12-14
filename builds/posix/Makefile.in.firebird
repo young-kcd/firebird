@@ -440,7 +440,7 @@ MAKE_HEADER_Src = $(addprefix $(SRC_ROOT)/, misc/makeHeader.cpp)
 MAKE_HEADER_Bin = ./makeHeader
 
 $(INCLUDE_DEST)/ibase.h: $(SRC_IBASE_ExtraFiles)
-	$(CXX) -o $(MAKE_HEADER_Bin) $(MAKE_HEADER_Src)
+	$(STATICEXE_LINK) -o $(MAKE_HEADER_Bin) $(MAKE_HEADER_Src)
 	$(CP) $^ .
 	$(MAKE_HEADER_Bin) <ibase.h >$@
 	$(RM) -f ibase.h

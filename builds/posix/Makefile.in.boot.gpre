@@ -70,7 +70,7 @@ Dependencies = $(AllObjects:.o=.d)
 gpre_boot : $(GPRE_BOOT)
 
 $(GPRE_BOOT):	$(GPREBOOT_Objects)
-	$(LD) $(LINK_OPTS) $^ -o $@ -L$(LIB) $(LINK_LIBS)
+	$(STATICEXE_LINK) $(LINK_OPTS) $^ -o $@ -L$(LIB) $(LINK_LIBS)
 	-$(RM) $(GPRE_CURRENT)
 	(cd $(@D); $(LN) $(@F) $(notdir $(GPRE_CURRENT)))
 

@@ -18,7 +18,7 @@
 # All Rights Reserved.
 # Contributor(s): ______________________________________.
 #
-# $Id: Makefile.in.client.gsec,v 1.8 2005-12-20 12:14:52 alexpeshkoff Exp $
+# $Id: Makefile.in.client.gsec,v 1.9 2007-12-14 11:31:56 alexpeshkoff Exp $
 #
 ROOT=..
 ObjModuleType=superclient
@@ -49,7 +49,7 @@ all: gsec
 gsec: $(LIBFBCLIENT_SO) $(GSEC)
 
 $(GSEC):	$(GSEC_Objects) $(COMMON_Objects)
-	$(LD) $(LINK_OPTS) $^ -o $@ -L$(LIB) -lfbclient $(LINK_LIBS) @PTHREAD_CFLAGS@ @PTHREAD_LIBS@
+	$(EXE_LINK) $(LINK_OPTS) $^ -o $@ -L$(LIB) -lfbclient $(LINK_LIBS) @PTHREAD_CFLAGS@ @PTHREAD_LIBS@
 
 include $(ROOT)/gen/make.shared.targets
 
