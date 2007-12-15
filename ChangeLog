@@ -1,3 +1,23 @@
+2007-12-14 12:31  alexpeshkoff
+
+	* firebird2/builds/posix/: Makefile.in.boot.gpre (1.29),
+	Makefile.in.client.gbak (1.19), Makefile.in.client.gdef (1.15),
+	Makefile.in.client.gfix (1.22), Makefile.in.client.gpre (1.26),
+	Makefile.in.client.gsec (1.9), Makefile.in.client.isql (1.19),
+	Makefile.in.client.qli (1.14), Makefile.in.client.util (1.49),
+	Makefile.in.codes (1.21), Makefile.in.embed.gbak (1.20),
+	Makefile.in.embed.gdef (1.13), Makefile.in.embed.gfix (1.23),
+	Makefile.in.embed.gpre (1.24), Makefile.in.embed.isql (1.18),
+	Makefile.in.embed.lockmgr (1.14), Makefile.in.embed.qli (1.23),
+	Makefile.in.embed.util (1.34), Makefile.in.fbserver (1.23),
+	Makefile.in.firebird (1.80), Makefile.in.msgs (1.18),
+	Makefile.in.static.gbak (1.16), Makefile.in.static.gpre (1.20),
+	Makefile.in.static.isql (1.15):
+
+	1. Use EXE_LINK or STATICEXE_LINK (what appropriate) to link
+	executables instead of plain LD.  2. Fron-ported fix for broken in
+	ALt-Linux ld - changed order of libraries in command line.
+
 2007-12-14 00:25  asfernandes
 
 	* firebird2/src/remote/interface.cpp (1.156):
