@@ -287,7 +287,7 @@ void SRVR_main(rem_port* main_port, USHORT flags)
 		if (!port) {
 			break;
 		}
-		if (!process_packet(port, &send, &receive, 0)) {
+		if (!process_packet(port, &send, &receive, &port)) {
 			break;
 		}
 	}
@@ -3362,7 +3362,14 @@ bool process_packet(rem_port* port,
 	bool res;
 	try {
 		res = process_packet2(port, sendL, receive, result);
-		port->port_flags &= ~PORT_busy;
+		if (res && result)
+		{
+			port = *result;
+			if (port)
+			{
+				port->port_flags &= ~PORT_busy;
+			}
+		}
 		return res;
 	}
 	catch(...)
