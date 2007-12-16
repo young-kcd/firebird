@@ -949,16 +949,12 @@ void BTR_insert(thread_db* tdbb, WIN * root_window, index_insertion* insertion)
 	window.win_page = root->irt_rpt[idx->idx_id].irt_root;
 	bucket = (btree_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_index);
 
-	// the original page was marked as not garbage-collectable, but 
-	// since it is the root page it won't be garbage-collected anyway, 
-	// so go ahead and mark it as garbage-collectable now.
-	CCH_MARK(tdbb, &window);
-	bucket->btr_header.pag_flags &= ~btr_dont_gc;
-
 	if (window.win_page.getPageNum() != idx->idx_root) {
 		// AB: It could be possible that the "top" page meanwhile was changed by 
 		// another insert. In that case we are going to insert our split_page
 		// in the existing "top" page instead of making a new "top" page.
+
+		CCH_RELEASE(tdbb, root_window);
 
 		index_insertion propagate = *insertion;
 		propagate.iib_number.setValue(split_page);
@@ -969,19 +965,30 @@ void BTR_insert(thread_db* tdbb, WIN * root_window, index_insertion* insertion)
 		ret_key.key_flags = 0;
 		ret_key.key_length = 0;
 		split_page = insert_node(tdbb, &window, &propagate, &ret_key, &recordNumber, NULL, NULL);
-		if (split_page == NO_SPLIT) {
-			return;
-		}
-		else {
+
+		if (split_page != NO_SPLIT) 
+		{
+			CCH_RELEASE(tdbb, root_window);
+			if (split_page == NO_VALUE_PAGE) {
+				CCH_RELEASE(tdbb, &window);
+			}
 			BUGCHECK(204);	// msg 204 index inconsistent
 		}
+		return;
 	}
+
+	// the original page was marked as not garbage-collectable, but 
+	// since it is the top page it won't be garbage-collected anyway, 
+	// so go ahead and mark it as garbage-collectable now.
+	CCH_MARK(tdbb, &window);
+	bucket->btr_header.pag_flags &= ~btr_dont_gc;
 
 	WIN new_window(relPages->rel_pg_space_id, split_page);
 	btree_page* new_bucket = 
 		(btree_page*) CCH_FETCH(tdbb, &new_window, LCK_read, pag_index);
 
 	if (bucket->btr_level != new_bucket->btr_level) {
+		CCH_RELEASE(tdbb, root_window);
 		CCH_RELEASE(tdbb, &new_window);
 		CCH_RELEASE(tdbb, &window);
 		BUGCHECK(204);	// msg 204 index inconsistent
