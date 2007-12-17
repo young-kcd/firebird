@@ -3972,13 +3972,12 @@ static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM arg)
 					}
 
 					++relation->rel_sweep_count;
-					SLONG dp_sequence = -1;
 					rpb.rpb_relation = relation;
 
 					if (relation->rel_gc_bitmap)
 						while (relation->rel_gc_bitmap->getFirst())
 					{
-						dp_sequence = relation->rel_gc_bitmap->current();
+						ULONG dp_sequence = relation->rel_gc_bitmap->current();
 						
 						if (!(dbb->dbb_flags & DBB_garbage_collector)) {
 							--relation->rel_sweep_count;
@@ -4005,7 +4004,7 @@ static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM arg)
 						}
 
 						found = flush = true;
-						rpb.rpb_number.setValue((dp_sequence * dbb->dbb_max_records) - 1);
+						rpb.rpb_number.setValue(((SINT64)dp_sequence * dbb->dbb_max_records) - 1);
 						const RecordNumber last(rpb.rpb_number.getValue() + dbb->dbb_max_records);
 
 						/* Attempt to garbage collect all records on the data page. */
@@ -4032,8 +4031,6 @@ static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM arg)
 					}
 
 rel_exit:
-					dp_sequence = -1;
-
 					if (relation->rel_gc_bitmap) {
 						if (!relation->rel_gc_bitmap->getFirst())
 						{
