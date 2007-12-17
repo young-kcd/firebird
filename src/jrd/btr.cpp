@@ -968,7 +968,6 @@ void BTR_insert(thread_db* tdbb, WIN * root_window, index_insertion* insertion)
 
 		if (split_page != NO_SPLIT) 
 		{
-			CCH_RELEASE(tdbb, root_window);
 			if (split_page == NO_VALUE_PAGE) {
 				CCH_RELEASE(tdbb, &window);
 			}
