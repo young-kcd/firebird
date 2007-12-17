@@ -15,8 +15,17 @@
 # All Rights Reserved.
 # Contributor(s): ______________________________________.
 # Start of file prefix.darwin:	$(VERSION)	@PLATFORM@
-#$Id: prefix.darwin,v 1.8.2.17 2003-11-25 23:18:50 bellardo Exp $
+#$Id: prefix.darwin,v 1.8.2.18 2007-12-17 14:48:25 paulbeach Exp $
 # 2 Oct 2002, Nickolay Samofatov - Major Cleanup
+#
+# 6th Dec 2007 - NOTE:
+# This will not compile using gcc 4.01 on MacOS. There is a problem
+# with the STL Header files from 4.0+. You need to use an earlier 
+# version of these files from 3.x. To get this to compile I downloaded
+# a copy of gcc 3.4.6, extracted the libstdc++/include/bits directory and
+# then placed it in /usr/include/c++/4.0.0. Making sure that the original 
+# bits dorectory was saved for future use. There may be a better way to do
+# this so I am open to suggestions - Paul Beach
 
 LD=@CXX@
 
@@ -25,18 +34,20 @@ export MACOSX_DEPLOYMENT_TARGET
 
 OS_ServerFiles=inet_server.cpp
 
-PROD_FLAGS=-O3 -DNDEBUG -DDARWIN -pipe -MMD -p -fPIC @DARWIN_VERSPEC_CFLAGS@
-DEV_FLAGS=-g -DDARWIN -DDEBUG_GDS_ALLOC -pipe -MMD -p -fPIC -Wall @DARWIN_VERSPEC_CFLAGS@
+PROD_FLAGS=-O3 -DNDEBUG -DDARWIN -pipe -MMD -p -fPIC -arch i386 -mmacosx-version-min=10.4
+DEV_FLAGS=-g -DDARWIN -DDEBUG_GDS_ALLOC -pipe -MMD -p -fPIC -Wall -arch i386 -mmacosx-version-min=10.4
 LIB_LINK_OPTIONS:=-bundle -flat_namespace -undefined suppress
 LIB_SHLIB_LINK_OPTIONS:=-dynamiclib -flat_namespace
-LIB_EMBED_LINK_OPTIONS:=-install_name Firebird.framework/Versions/A/Firebird \
+LIB_EMBED_LINK_OPTIONS:=-install_name /Library/Frameworks/Firebird.framework/Versions/A/Firebird \
 	-current_version 1.0.0 -compatibility_version 1.0.0 -seg1addr 0x30000000
-LIB_CLIENT_LINK_OPTIONS:=-install_name Firebird.framework/Versions/A/Firebird \
+LIB_CLIENT_LINK_OPTIONS:=-install_name /Library/Frameworks/Firebird.framework/Versions/A/Firebird \
 	-current_version 1.0.0 -compatibility_version 1.0.0 -seg1addr 0x30000000
-#LIB_LINK_RPATH:=-Wl,-rpath,
-#LIB_LINK_SONAME:=-Wl,-soname,
 LIB_LINK_RPATH_LINE:=
 LIB_LINK_SONAME_LINE:=
+LIB_LINK_MAPFILE:=-Wl,-exported_symbols_list,
+LINK_FIREBIRD_SYMBOLS=$(LIB_LINK_MAPFILE)$(ROOT)/builds/posix/firebird.darwin.embed.vers
+LINK_FIREBIRD_CLIENT_SYMBOLS=$(LIB_LINK_MAPFILE)$(ROOT)/builds/posix/firebird.darwin.client.vers
+LINK_FBINTL_SYMBOLS=$(LIB_LINK_MAPFILE)$(ROOT)/builds/posix/fbintl.darwin.vers
 EMBED_UTIL_TARGETS=gstat gds_drop gds_relay gsec fb_lock_print
 CLIENT_UTIL_TARGETS=gds_drop gds_relay gstat gsec fbguard fbmgr_bin fb_lock_print
 

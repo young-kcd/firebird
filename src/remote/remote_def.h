@@ -80,7 +80,7 @@
 #define ARCHITECTURE		arch_netbsd
 #endif
 
-#ifdef DARWIN
+#if defined(DARWIN) && defined(__ppc__)
 #define	ARCHITECTURE		arch_darwin_ppc
 #endif
 

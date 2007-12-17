@@ -1714,7 +1714,7 @@ static SSHORT open_files(TEXT * file1,
 
 	tdgbl->action->act_action = ACT_restore;
 	if (!strcmp(fil->fil_name, "stdin")) {
-		fil->fil_fd = reinterpret_cast<DESC>(GBAK_STDIN_DESC);
+		fil->fil_fd = GBAK_STDIN_DESC;
 		tdgbl->file_desc = fil->fil_fd;
 		tdgbl->gbl_sw_files = fil->fil_next;
 	}

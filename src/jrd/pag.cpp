@@ -143,8 +143,8 @@ static const int CLASS_FREEBSD_I386 = 21; // FreeBSD/i386
 static const int CLASS_NETBSD_I386 = 22;  // NetBSD/i386
 static const int CLASS_DARWIN_PPC = 23;   // Darwin/PowerPC
 static const int CLASS_LINUX_AMD64 = 24;  // LINUX on AMD64 systems
-
-static const int CLASS_MAX10 = CLASS_LINUX_AMD64;
+static const int CLASS_DARWIN_I386 = 25;  // Darwin/Intel
+static const int CLASS_MAX10 = CLASS_DARWIN_I386;
 
 // ARCHITECTURE COMPATIBILITY CLASSES
 
@@ -189,6 +189,7 @@ static ArchitectureType archMatrix10[CLASS_MAX10 + 1] = {
     archIntel86, // CLASS_NETBSD_I386
 	archUnknown, // CLASS_DARWIN_PPC
 	archUnknown  // CLASS_LINUX_AMD64
+	archIntel86  // CLASS_DARWIN_I386
 };
 
 #ifdef sun
@@ -247,9 +248,13 @@ static ArchitectureType archMatrix10[CLASS_MAX10 + 1] = {
 #endif
 
 #ifdef DARWIN
+#ifdef i386
+#define CLASS		CLASS_DARWIN_I386
+#endif
+#ifdef __ppc__
 #define CLASS		CLASS_DARWIN_PPC
 #endif
-
+#endif
 
 int PAG_add_clump(
 				  SLONG page_num,

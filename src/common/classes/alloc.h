@@ -241,7 +241,7 @@ void operator delete(void* mem) throw();
 
 void operator delete[](void* mem) throw();
 
-#ifdef AIX
+#if (defined AIX || defined DARWIN)
 #define FB_STATIC_INLINE_NEW inline
 #else
 #define FB_STATIC_INLINE_NEW static inline

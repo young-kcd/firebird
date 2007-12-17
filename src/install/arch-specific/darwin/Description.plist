@@ -7,7 +7,7 @@
 	<key>IFPkgDescriptionDescription</key>
 	<string>_FB_BUILD_SUFFIX_</string>
 	<key>IFPkgDescriptionTitle</key>
-	<string>Firebird SQL Database</string>
+	<string>Firebird Database</string>
 	<key>IFPkgDescriptionVersion</key>
 	<string>_SMFB_BUILD_SUFFIX_</string>
 </dict>

@@ -49,7 +49,7 @@
  *
  */
 /*
-$Id: common.h,v 1.73.2.6 2007-02-03 08:35:49 robocop Exp $
+$Id: common.h,v 1.73.2.7 2007-12-17 14:48:36 paulbeach Exp $
 */
 
 #ifndef JRD_COMMON_H
@@ -241,12 +241,17 @@ typedef RETSIGTYPE (*SIG_FPTR) ();
 /*#define DOUBLE_ALIGN    4*/
 #define BSD_UNIX        1
 #define UNIX            1
-#define IMPLEMENTATION  63
+#ifdef i386
+#define I386 
+#define IMPLEMENTATION isc_info_db_impl_darwin_x86 /* 67 */
+#endif
+#ifdef __ppc__
+#define IMPLEMENTATION isc_info_db_impl_darwin_ppc /* 63 */
+#endif
 #define IEEE
 #define QUADCONST(n) (n##LL)
 #define QUADFORMAT "q"
-#define MAP_ANONYMOUS
-#define MAP_ANNON
+#define MAP_ANON
 
 #define MEMMOVE(from,to,length)		memmove ((void *)to, (void *)from, (size_t)length)
 #define MOVE_FAST(from,to,length)	memcpy (to, from, (int) (length))

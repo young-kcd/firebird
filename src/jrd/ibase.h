@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: ibase.h,v 1.40.2.6 2004-03-29 03:50:10 skidder Exp $
+$Id: ibase.h,v 1.40.2.7 2007-12-17 14:48:37 paulbeach Exp $
  */
 
 #ifndef JRD_IBASE_H
@@ -1571,11 +1571,12 @@ enum  info_db_implementations
 
 	isc_info_db_impl_freebsd = 61,
 	isc_info_db_impl_netbsd = 62,
-	isc_info_db_impl_darwin = 63,
+	isc_info_db_impl_darwin_ppc = 63,
 	isc_info_db_impl_sinixz = 64,
 
 	isc_info_db_impl_linux_sparc = 65,
 	isc_info_db_impl_linux_amd64 = 66,
+	isc_info_db_impl_darwin_x86 = 67,
 
 	isc_info_db_impl_last_value   /* Leave this LAST! */
     };

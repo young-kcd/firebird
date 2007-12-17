@@ -1,6 +1,6 @@
-Title Firebird SQL Database
-Version 1.5 RC 7
-Description Firebird 1.5 RC 7
+Title Firebird Database
+Version 1.5.5 
+Description Firebird 1.5.5
 DefaultLocation /tmp/install
 DeleteWarning 
 
