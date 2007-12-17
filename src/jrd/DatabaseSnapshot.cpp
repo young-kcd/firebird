@@ -796,8 +796,8 @@ ClumpletReader* DatabaseSnapshot::dumpData(thread_db* tdbb, bool broadcast)
 	fb_assert(self_attachment);
 
 	MemoryPool& pool = *tdbb->getDefaultPool();
-	ClumpletWriter* writer = FB_NEW(pool)
-		ClumpletWriter(pool, ClumpletReader::WideUnTagged, MAX_ULONG);
+	AutoPtr<ClumpletWriter> writer(FB_NEW(pool)
+		ClumpletWriter(pool, ClumpletReader::WideUnTagged, MAX_ULONG));
 
 	writer->insertBytes(TAG_DBB, (UCHAR*) &dbb->dbb_guid, sizeof(FB_GUID));
 
@@ -870,10 +870,10 @@ ClumpletReader* DatabaseSnapshot::dumpData(thread_db* tdbb, bool broadcast)
 		DumpGuard guard(dump);
 		dump->writeData(tdbb, *writer);
 
-		delete writer;
+		return NULL;
 	}
 
-	return broadcast ? NULL : writer;
+	return writer.release();
 }
 
 

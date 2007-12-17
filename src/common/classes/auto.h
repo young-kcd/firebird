@@ -48,12 +48,45 @@ class AutoPtr {
 private:
 	Where* ptr;
 public:
-	AutoPtr<Where, Clear>(Where* v = NULL) {ptr = v;}
-	AutoPtr<Where, Clear>& operator= (Where* v) { Clear::clear(ptr); ptr = v; return *this; }
-	operator Where*() {return ptr;}
-	bool operator !() const { return ptr ? false : true; }
-	Where* operator->() { return ptr; }
-	~AutoPtr() { Clear::clear(ptr); }
+	AutoPtr<Where, Clear>(Where* v = NULL)
+		: ptr(v)
+	{}
+
+	~AutoPtr() {
+		Clear::clear(ptr);
+	}
+
+	AutoPtr<Where, Clear>& operator= (Where* v) {
+		Clear::clear(ptr);
+		ptr = v;
+		return *this;
+	}
+
+	operator Where*() {
+		return ptr;
+	}
+
+	bool operator !() const {
+		return ptr ? false : true;
+	}
+
+	Where* operator->() {
+		return ptr;
+	}
+
+	Where* release() {
+		Where* tmp = ptr;
+		ptr = NULL;
+		return tmp;
+	}
+
+	void reset(Where* v = NULL) {
+		if (v != ptr) {
+			Clear::clear(ptr);
+			ptr = v;
+		}
+	}
+
 private:
 	AutoPtr<Where, Clear>(AutoPtr<Where, Clear>&);
 	void operator=(AutoPtr<Where, Clear>&);
