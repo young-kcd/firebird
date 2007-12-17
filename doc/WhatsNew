@@ -1,3 +1,294 @@
+  ***************************
+  * v2.1 Release Candidate 1
+  ***************************
+
+    * Bugfix CORE-1651
+        False isc_req_sync error may be reported by fbclient to the client application
+      Contributor(s):
+        Vlad Horsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-1649
+        AV when recursive query used MERGE JOIN in execution plan
+      Contributor(s):
+        Vlad Horsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-1648
+        RDB$TYPES doesn't list types for database triggers
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-1644
+        Compilation error on GCC 4.1.1
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-1642
+        Non-privileged monitoring reports wrong attachment data
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-1641
+        CREATE TRIGGER causes two trigger object copies to exist in the metadata cache
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-1637
+        Problem in GSEC
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-1624
+        MERGE works incorrectly with parameters in MATCHING clause
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-1610
+        Full shutdown causes database corruption
+        if it happens when SuperServer is running a query modifying data
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-1603
+        Possible buffer overflow with long user name
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-1602
+        Domain admins are not mapped to SYSDBA by the trusted authentication
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-1601
+        Server crashes inside the page validation routine
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-1597
+        GLOBAL TEMPORARY TABLEs allowed to be created in ODS less than 11.1
+      Contributor(s):
+        Vlad Horsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-1594
+        Bug in CsConvert::convert()
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+		Dmitry Kovalenko <dmitry.lipetsk at gmail.com>
+
+    * Bugfix CORE-1593
+        Full domain user name can be longer than 31 char(for trusted authentication)
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-1589
+        Start-stop script for SuperServer on Linux does not always stop service
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+        Emil Totev <emilt at tot-consult.com>
+
+    * Bugfix CORE-1584
+        Server crashes or bugchecks when inserting into monitoring tables
+      Contributor(s):
+        Vlad Horsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-1582
+        ABS() rounds NUMERIC values
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-1579
+        Corrupt BLOB in UDF if followed by a char* that is a timestamp
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-1574
+        Multi-file database problems
+      Contributor(s):
+        Vlad Horsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-1567
+        Selecting from MON$STATEMENTS yields an error and an exit() call
+        with Firebird Embedded 2.1 Beta 2
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-1562
+        Shutdown does not kill high load query connections
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-1561
+        select from mon$statements lockup
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-1560
+        NULLIF crashes when first parameter is constant empty string
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-1551
+        AV when all statements are cancelled
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-1549
+        Subquery-based predicates are not evaluated early in the join order
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-1548
+        Incorrect error code in GFIX
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-1543
+        Incorrect error code in GFIX
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-1540
+        Fatal lock manager error restoring backup
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-1539
+        select * from rdb$triggers where rdb$trigger_source like 'CHECK%'
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-1537
+        NBackup creates difference file in bad place
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-1533
+        JOIN on first record of ordered derived table returns wrong record
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-1530
+        UNION DISTINCT accept BLOB fields
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-1528
+        Functions DATEDIFF, ABS(integer const) don't work in dialect 1
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-1522
+        Inconsistent DATEDIFF() behaviour
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-1519
+        AV in isc_dsql_fetch()
+      Contributor(s):
+        Vlad Horsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-1514
+        Many new 2.1 built-in functions have incorrect NULL semantics
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-1510
+        Bad XSQLVAR [NULL flags] for (2*COALESCE(NULL,NULL))
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+		Dmitry Kovalenko <dmitry.lipetsk at gmail.com>
+
+    * Bugfix CORE-1509
+        Conversion from double to varchar inserts trailing spaces
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-1501
+        Wrong access to SLONG data in dsql_nod
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-1500
+        Data in EXECUTE STATEMENT internal buffer is not aligned correctly
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-1493
+        ISQL doesn't mangle blob filter and udf information with embedded quotes
+        when extracting a script
+      Contributor(s):
+        Claudio Valderrama <cvalde at usa.net>
+
+    * Bugfix CORE-1492
+        BLOB isn't compatible with [VAR]CHAR in COALESCE
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-1489
+        DATEADD works with NULL arguments wrongly
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-1481
+        GFIX may report false errors when using in-memory metadata
+      Contributor(s):
+        Vlad Horsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-1375
+        Wrong mapping for 0x212C in cs_gb2312.h
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-1199
+        Internal GDS software consistency check (CCH_precedence: block marked (212))
+      Contributor(s):
+        Vlad Horsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-374
+        Restore with SPs in 'COMPUTED BY' fields fails
+      Contributor(s):
+        Nickolay Samofatov <skidder at users.sourceforge.net>
+
+    * Improvement CORE-1623
+        Improve memory consumption of HASH(blob)
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Improvement CORE-1581
+        Support physical backups when database is located on raw device
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Improvement CORE-1569
+        Make the second parameter of the ROUND function optional
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Improvement CORE-1558
+        Help people get core files in case of abort() on BUGCHECK
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Improvement CORE-1546
+        Improve random number quality of builtin RAND
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Improvements CORE-1490, CORE-1497
+        Change keywords used in DATEADD/DATEDIFF functions (expanded syntax)
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * New feature CORE-1625
+        Implement new setting to relax strict SQL standard's alias checking rules
+      Contributor(s):
+        Vlad Horsun <hvlad at users.sourceforge.net>
+
+    * New feature CORE-1511
+        POSITION(<string_expr_1>, <string_expr_2> [, <start_pos>])
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+
   **************
   * v2.1 Beta 2
   **************
