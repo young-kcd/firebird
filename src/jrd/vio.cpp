@@ -4004,7 +4004,7 @@ static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM arg)
 						}
 
 						found = flush = true;
-						rpb.rpb_number.setValue(((SINT64)dp_sequence * dbb->dbb_max_records) - 1);
+						rpb.rpb_number.setValue(((SINT64) dp_sequence * dbb->dbb_max_records) - 1);
 						const RecordNumber last(rpb.rpb_number.getValue() + dbb->dbb_max_records);
 
 						/* Attempt to garbage collect all records on the data page. */

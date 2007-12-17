@@ -72,7 +72,7 @@
         Bug in CsConvert::convert()
       Contributor(s):
         Adriano dos Santos Fernandes <adrianosf at uol.com.br>
-		Dmitry Kovalenko <dmitry.lipetsk at gmail.com>
+	    Dmitry Kovalenko <dmitry.lipetsk at gmail.com>
 
     * Bugfix CORE-1593
         Full domain user name can be longer than 31 char(for trusted authentication)
