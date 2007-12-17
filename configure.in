@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.141.2.41 2007-01-22 12:27:43 paulbeach Exp $
+dnl $Id: configure.in,v 1.141.2.42 2007-12-17 14:18:16 paulbeach Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -712,6 +712,7 @@ mkdir -p temp/client.util/utilities
 mkdir -p temp/client.util/iscguard
 mkdir -p temp/client.util/remote
 mkdir -p temp/client.util/jrd/os/win32
+mkdir -p temp/client.util/jrd/os/darwin
 mkdir -p temp/intl/intl
 
 mkdir -p temp/libfbcommon/common/classes
@@ -784,6 +785,7 @@ mkdir -p temp/client.gpre/jrd
 mkdir -p temp/client.gpre/common
 mkdir -p temp/client.gdef/jrd/os/posix
 mkdir -p temp/client.gdef/jrd/os/win32
+mkdir -p temp/client.gdef/jrd/os/darwin
 mkdir -p temp/client.gdef/common/classes
 mkdir -p temp/client.gdef/common/config
 mkdir -p temp/client.gdef/gpre
@@ -793,12 +795,14 @@ mkdir -p temp/client.qli/gpre
 mkdir -p temp/client.qli/jrd
 mkdir -p temp/client.qli/jrd/os/posix
 mkdir -p temp/client.qli/jrd/os/win32
+mkdir -p temp/client.qli/jrd/os/darwin
 mkdir -p temp/client.isql/common
 mkdir -p temp/client.util/jrd/os/posix
 mkdir -p temp/client.util/common/classes
 mkdir -p temp/client.util/common/config
 mkdir -p temp/embed.util/jrd/os/posix
 mkdir -p temp/embed.util/jrd/os/win32
+mkdir -p temp/embed.util/jrd/os/darwin
 mkdir -p temp/embed.util/common/classes
 mkdir -p temp/embed.util/common/config
 mkdir -p temp/embed.gbak/remote
@@ -810,6 +814,7 @@ mkdir -p temp/embed.isql/common
 mkdir -p temp/embed.gdef/jrd
 mkdir -p temp/embed.gdef/jrd/os/posix
 mkdir -p temp/embed.gdef/jrd/os/win32
+mkdir -p temp/embed.gdef/jrd/os/darwin
 mkdir -p temp/embed.gdef/gpre
 mkdir -p temp/embed.gdef/common/classes
 mkdir -p temp/embed.gdef/common/config
@@ -819,6 +824,7 @@ mkdir -p temp/embed.qli/common/classes
 mkdir -p temp/embed.qli/common/config
 mkdir -p temp/embed.qli/jrd/os/posix
 mkdir -p temp/embed.qli/jrd/os/win32
+mkdir -p temp/embed.qli/jrd/os/darwin
 mkdir -p temp/embed.gpre/jrd
 mkdir -p temp/embed.gpre/common
 
