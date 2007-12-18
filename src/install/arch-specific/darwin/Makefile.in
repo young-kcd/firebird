@@ -159,7 +159,7 @@ install: install_@FIREBIRD_ARCH_TYPE@
 	
 install_super install_server:
 	installer -verbose -dumplog -pkg \
-			`pwd`/$(ROOT)/gen/firebird/FirebirdSS-$(FB_MAJOR_VERS).$(FB_MINOR_VERS).$(FB_REV_NO)-$(FB_BUILD_NO)-(FB_PLATFORM).pkg -target /
+			`pwd`/$(ROOT)/gen/firebird/FirebirdSS-$(FB_MAJOR_VERS).$(FB_MINOR_VERS).$(FB_REV_NO)-$(FB_BUILD_NO)-$(FB_PLATFORM).pkg -target /
 
 install_embedded install_classic:
 	installer -verbose -dumplog -pkg \
