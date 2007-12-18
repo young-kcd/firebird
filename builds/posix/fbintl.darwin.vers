@@ -20,5 +20,5 @@
 #   All Rights Reserved.
 #   Contributor(s): ______________________________________.
 	
-	_LD_lookup_charset
-	_LD_lookup_texttype
+	_LD_lookup
+
