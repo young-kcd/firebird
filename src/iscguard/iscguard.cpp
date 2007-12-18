@@ -70,7 +70,7 @@ static THREAD_ENTRY_DECLARE WINDOW_main(THREAD_ENTRY_PARAM);
 #ifdef NOT_USED_OR_REPLACED
 static void StartGuardian(HWND);
 #endif
-static bool parse_args(LPCSTR, TEXT*);
+static bool parse_args(LPCSTR);
 #ifdef NOT_USED_OR_REPLACED
 static void HelpCmd(HWND, HINSTANCE, WPARAM);
 #endif
@@ -123,7 +123,7 @@ int WINAPI WinMain(
 
 	if (service_flag) {
 		strcpy(instance, FB_DEFAULT_INSTANCE);
-		service_flag = parse_args(lpszCmdLine, instance);
+		service_flag = parse_args(lpszCmdLine);
 		MemoryPool& pool = *getDefaultMemoryPool();
 		service_name = FB_NEW(pool) Firebird::string(pool);
 		service_name->printf(ISCGUARD_SERVICE, instance);
@@ -169,7 +169,7 @@ int WINAPI WinMain(
 	return (TRUE);
 }
 
-static bool parse_args(LPCSTR lpszArgs, TEXT* instance)
+static bool parse_args(LPCSTR lpszArgs)
 {
 /**************************************
 *
