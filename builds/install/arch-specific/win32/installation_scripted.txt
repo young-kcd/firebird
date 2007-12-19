@@ -3,6 +3,7 @@ Setup Command Line Parameters
 =============================
 
 Contents
+o Summary
 o Setup Command Line Parameters
 o Parameters specific to Firebird installs
 o Setup exit codes
@@ -13,6 +14,37 @@ o Uninstaller Exit Codes
 
 (These notes are taken directly from the InnoSetup 5.1.12 documentation,
 except for Firebird specific parameters.)
+
+Quick summary of available parameters
+-------------------------------
+
+Setup parameters specific to the Firebird Installer
+
+/? | /h | /HELP
+/FORCE
+/NOCPL
+/NOGDS32
+/COPYFBCLIENT
+/COMPONENTS="comma separated list of component names"
+/TASKS="comma separated list of task names"
+/MERGETASKS="comma separated list of task names"
+
+Setup parameters specific to the Firebird Uninstaller
+/CLEAN
+
+General parameters available to all InnoSetup based installers
+/SP-
+/SILENT | /VERYSILENT [/SUPPRESSMSGBOXES]
+/LOG[="filename"]
+/NOCANCEL
+/NORESTART
+/RESTARTEXITCODE=exit code
+/LOADINF="filename"
+/SAVEINF="filename"
+/LANG=language
+/DIR="x:\dirname"
+/GROUP="folder name"
+/NOICONS
 
 
 Setup Command Line Parameters
@@ -143,6 +175,9 @@ program.
 
 Parameters specific to Firebird installs
 ----------------------------------------
+
+/? | /h | /HELP
+  Invoke this file as a help screen at installation time.
 
 /COMPONENTS="comma separated list of component names"
 

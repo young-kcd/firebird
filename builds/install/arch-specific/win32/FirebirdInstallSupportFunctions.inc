@@ -36,7 +36,9 @@ Function Prototypes
   function GetInstalledVersion(BinaryFile: String): Array of Integer;
   function ConvertIBVerStrToFbVerStr( VerStr: String) : String;
   function GetRegistryEntry(RegKey, RegEntry: string): String;
-
+  procedure CreateHelpDlg;
+  function ShowHelpDlg: Integer;
+  procedure CloseHelpDlg;
  *)
 
 (*
@@ -248,6 +250,59 @@ function GetRegistryEntry(RegKey, RegEntry: string): String;
 begin
   result := '';
   RegQueryStringValue(HKEY_LOCAL_MACHINE, RegKey, RegEntry, Result);
+end;
+
+
+var
+  HelpDlg: TForm;
+
+procedure CreateHelpDlg;
+var
+  HelpFileName: String;
+  HelpMemo: TMemo;
+  OKButton: TButton;
+begin
+  ExtractTemporaryFile ('installation_scripted.txt');
+  HelpFileName := ExpandConstant ('{tmp}\installation_scripted.txt');
+  HelpDlg := TForm.create(nil);
+  with HelpDlg do begin
+      BorderStyle := bsDialog;
+      Position := poScreenCenter;
+      ClientWidth := 450;
+      ClientHeight := 550;
+      Caption := 'Firebird Installation - command-line parameters.';
+  end;
+  HelpMemo := TMemo.Create(HelpDlg);
+  with HelpMemo do begin
+      Parent := HelpDlg;
+      ScrollBars := ssVertical;
+      Lines.LoadFromFile(HelpFileName);
+      Align := alTop;
+      Height := 500;
+      ReadOnly := True;
+    end;
+  OKButton := TButton.create(HelpDlg);
+  with OKButton do begin
+      Parent := HelpDlg;
+      Left := (Parent.width  div 2) - width div 2;
+      top := Parent.Clientheight - 40;
+      Caption := 'OK';
+      ModalResult := mrOK;
+  end;
+  HelpDlg.ActiveControl := OKButton;
+end;
+
+function ShowHelpDlg: Integer;
+begin
+  result := HelpDlg.ShowModal;
+end;
+
+procedure CloseHelpDlg;
+begin
+  with HelpDlg do begin
+     Close;
+     Free;
+  end;
 end;
 
 

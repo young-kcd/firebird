@@ -23,7 +23,7 @@
 
 ;   Usage Notes:
 ;
-;   This script has been designed to work with Inno Setup v5.1.10
+;   This script has been designed to work with Inno Setup v5.2.2
 ;   It is available as a quick start pack from here:
 ;     http://www.jrsoftware.org/isdl.php#qsp
 ;
@@ -151,6 +151,9 @@
 
 
 #define PlatformTarget GetEnv("FB_TARGET_PLATFORM")
+#if PlatformTarget == ""
+#define PlatformTarget "win32"
+#endif
 
 ;This location is relative to SourceDir (declared below)
 #define FilesDir="output_" + PlatformTarget
@@ -458,6 +461,7 @@ Source: {#WOW64Dir}\bin\Microsoft.VC80.CRT.manifest; DestDir: {syswow64}; Compon
 #endif
 ;Docs
 Source: {#ScriptsDir}\installation_scripted.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: skipifsourcedoesntexist  ignoreversion
+Source: {#ScriptsDir}\installation_scripted.txt; DestDir: {tmp}; Flags: DontCopy;
 Source: {#FilesDir}\doc\*.*; DestDir: {app}\doc; Components: DevAdminComponent; Flags: skipifsourcedoesntexist  ignoreversion
 Source: {#FilesDir}\doc\sql.extensions\*.*; DestDir: {app}\doc\sql.extensions; Components: DevAdminComponent; Flags: skipifsourcedoesntexist ignoreversion
 
@@ -698,6 +702,18 @@ begin
   end
 
   CommandLine:=GetCmdTail;
+  
+  if ((pos('HELP',Uppercase(CommandLine)) > 0) or
+    (pos('/?',Uppercase(CommandLine)) > 0) or
+    (pos('/H',Uppercase(CommandLine)) > 0) ) then begin
+    CreateHelpDlg;
+    ShowHelpDlg;
+    CloseHelpDlg;
+    result := False;
+    Exit;
+    
+  end;
+
   if pos('FORCE',Uppercase(CommandLine))>0 then
     ForceInstall:=True;
 
