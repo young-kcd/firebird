@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# $Id: install-script,v 1.1.2.4 2007-12-10 11:14:39 paulbeach Exp $
+# $Id: install-script,v 1.1.2.5 2007-12-19 09:01:00 paulbeach Exp $
 #
 # Script args:
 # $0: full path to script
@@ -165,7 +165,7 @@ else
 fi
 
 # Install the startup item
-echo "Install the startup item"
+echo "Re-install the the SuperServer startup item - if it already exists"
 if [ -f "$FB_FW/Versions/A/Resources/.SuperServer" ]; then
 	if [ -e "$INST_RES/Firebird.startup" ]; then
 		rm -rf /Library/StartupItems/Firebird
@@ -198,7 +198,7 @@ if [ -f /Library/LaunchDemons/org.firebird.gds.plist ]; then
 fi
 
 # Install ourselves in the correct place - SuperServer
-echo "Install ourselves in the correct place SuperServer"
+echo "Install StartupIem in the correct place SuperServer"
 if [ -f "$FB_FW/Versions/A/Resources/.SuperServer" ]; then
 	cp -r $1/Contents/Resources/StartupItem /Library/StartupItems/Firebird
 fi
@@ -283,7 +283,8 @@ then
 	fi
 fi
 
-# And last but not least, start the server
-#if [ -f "$FB_FW/Versions/A/Resources/.SuperServer" ]; then
-#	/Library/StartupItems/Firebird/Firebird start
-#fi
+ And last but not least, start the server
+if [ -f "$FB_FW/Versions/A/Resources/.SuperServer" ]; then
+	chmod u+xg+xo+x /Library/StartupItems/Firebird/Firebird
+	/Library/StartupItems/Firebird/Firebird start
+fi

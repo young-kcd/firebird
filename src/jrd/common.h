@@ -290,7 +290,7 @@ static inline int sinixz_sigaction(int sig, const struct sinixz_sigaction *act,
 #define IEEE
 #define QUADCONST(n) (n##LL)
 #define QUADFORMAT "q"
-#define MAP_ANNON
+#define MAP_ANON
 
 #define MEMMOVE(from, to, length)		memmove ((void *)to, (void *)from, (size_t)length)
 #define MOVE_FAST(from, to, length)	memcpy (to, from, (int) (length))

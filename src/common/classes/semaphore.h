@@ -29,6 +29,7 @@
 #ifndef CLASSES_SEMAPHORE_H
 #define CLASSES_SEMAPHORE_H
 
+#include "../jrd/gdsassert.h"
 #ifdef WIN_NT
 // Note: windows do not need signal safe version of the class
 
@@ -76,10 +77,16 @@ public:
 
 #include <semaphore.h>
 #include <errno.h>
+#include <time.h>
 
 #ifndef WORKING_SEM_INIT
 #include <fcntl.h>
+#if defined(DARWIN)
+#ifdef SUPERSERVER
+#define MIXED_SEMAPHORE_AND_FILE_HANDLE
 #endif
+#endif
+#endif //WORKING_SEM_INIT
 namespace Firebird {
 #ifndef WORKING_SEM_INIT
 static const char* semName = "/firebird_temp_sem";
@@ -91,9 +98,18 @@ private:
 	sem_t sem[1];
 #else
 	sem_t* sem;
+#ifdef MIXED_SEMAPHORE_AND_FILE_HANDLE
+	static bool divorceDone;
+	static SignalSafeSemaphore* initialList;
+	void linkToInitialList();
+	SignalSafeSemaphore* next;
 #endif
+#endif //WORKING_SEM_INIT
 	bool  init;
 public:
+#ifdef MIXED_SEMAPHORE_AND_FILE_HANDLE
+	static bool SignalSafeSemaphore::checkHandle(int n);
+#endif
 	SignalSafeSemaphore() : init(false) {
 #ifdef WORKING_SEM_INIT
 		if (sem_init(sem, 0, 0) == -1) {
@@ -105,6 +121,9 @@ public:
 			system_call_failed::raise("sem_open");
 		}
 		sem_unlink(semName);
+#ifdef MIXED_SEMAPHORE_AND_FILE_HANDLE
+		linkToInitialList();
+#endif
 #endif
 		init = true;
 	}

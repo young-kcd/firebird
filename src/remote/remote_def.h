@@ -64,7 +64,7 @@ const P_ARCH ARCHITECTURE	= arch_linux;
 const P_ARCH ARCHITECTURE	= arch_freebsd;
 #elif defined(NETBSD)
 const P_ARCH ARCHITECTURE	= arch_netbsd;
-#elif defined(DARWIN)
+#elif defined(DARWIN) && defined(__ppc__)
 const P_ARCH ARCHITECTURE	= arch_darwin_ppc;
 #elif defined(I386)
 const P_ARCH ARCHITECTURE	= arch_intel_32;

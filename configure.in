@@ -49,6 +49,7 @@ case "$target" in
     LOCK_MANAGER_FLG=Y
     EDITLINE_FLG=Y
     SHRLIB_EXT=dylib
+    ICU_PLATFORM=MacOSX
     ;;
 
   amd64-*-freebsd*)

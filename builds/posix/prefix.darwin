@@ -15,12 +15,14 @@
 # All Rights Reserved.
 # Contributor(s): ______________________________________.
 # Start of file prefix.darwin:	$(VERSION)	@PLATFORM@
-#$Id: prefix.darwin,v 1.14.12.5 2007-12-07 10:05:50 paulbeach Exp $
+#$Id: prefix.darwin,v 1.14.12.6 2007-12-19 09:01:05 paulbeach Exp $
 # 2 Oct 2002, Nickolay Samofatov - Major Cleanup
 
 DYLD_LIBRARY_PATH=$(FIREBIRD)/lib
 export DYLD_LIBRARY_PATH
 
+MACOSX_DEPLOYMENT_TARGET=10.4
+export MACOSX_DEPLOYMENT_TARGET
 OS_ServerFiles=inet_server.cpp
 
 PROD_FLAGS=-O3 -DNDEBUG -DDARWIN -pipe -p -MMD -fPIC -fno-common -arch i386

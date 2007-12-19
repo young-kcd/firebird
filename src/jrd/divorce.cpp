@@ -52,6 +52,7 @@
 #include "firebird.h"
 #include "../jrd/common.h"
 #include "../jrd/divorce.h"
+#include "../common/classes/semaphore.h"
 
 #ifdef _AIX
 #include <sys/select.h>
@@ -96,13 +97,23 @@ void divorce_terminal(int mask)
  *	process.  Close all files except for marked by the input mask.
  *
  **************************************/
-	int s, fid;
+	int fid;
 
 /* Close all files other than those explicitly requested to stay open */
 
 	for (fid = 0; fid < NOFILE; fid++)
+	{
+#ifdef MIXED_SEMAPHORE_AND_FILE_HANDLE
+		if (Firebird::SignalSafeSemaphore::checkHandle(fid))
+		{
+			continue;
+		}
+#endif
 		if (!(mask & (1 << fid)))
-			s = close(fid);
+		{
+			close(fid);
+		}
+	}
 
 #ifdef SIGTTOU
 	/* ignore all the teminal related signal if define */
@@ -118,8 +129,8 @@ void divorce_terminal(int mask)
 	fid = open("/dev/tty", 2);
 
 	if (fid >= 0) {
-		s = ioctl(fid, TIOCNOTTY, 0);
-		s = close(fid);
+		ioctl(fid, TIOCNOTTY, 0);
+		close(fid);
 	}
 #endif
 
@@ -128,13 +139,13 @@ void divorce_terminal(int mask)
 
 #ifdef HAVE_SETPGRP
 #ifdef SETPGRP_VOID
-	s = setpgrp();
+	setpgrp();
 #else
-	s = setpgrp(0, 0);
+	setpgrp(0, 0);
 #endif /* SETPGRP_VOID */
 #else
 #ifdef HAVE_SETPGID
-	s = setpgid(0, 0);
+	setpgid(0, 0);
 #endif /* HAVE_SETPGID */
 #endif /* HAVE_SETPGRP */
 }
