@@ -87,6 +87,7 @@ public:
 #endif
 #endif
 #endif //WORKING_SEM_INIT
+
 namespace Firebird {
 #ifndef WORKING_SEM_INIT
 static const char* semName = "/firebird_temp_sem";
