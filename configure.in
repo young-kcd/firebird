@@ -41,9 +41,24 @@ service_thread_CS=""
 
 
 case "$target" in
-  *-*-darwin*)
-    MAKEFILE_PREFIX=darwin
+  i686-*-darwin*)
+    MAKEFILE_PREFIX=darwin_i386
+    MAKEFILE_POSTFIX=darwin
     PLATFORM=DARWIN
+    INSTALL_PREFIX=darwin
+    AC_DEFINE(DARWIN, 1, [Define this if OS is DARWIN])
+	XE_APPEND(-framework CoreFoundation,LIBS)
+    LOCK_MANAGER_FLG=Y
+    EDITLINE_FLG=Y
+    SHRLIB_EXT=dylib
+    ICU_PLATFORM=MacOSX
+    ;;
+
+  powerpc-*-darwin*)
+    MAKEFILE_PREFIX=darwin_ppc
+    MAKEFILE_POSTFIX=darwin
+    PLATFORM=DARWIN
+    INSTALL_PREDIX=darwin
     AC_DEFINE(DARWIN, 1, [Define this if OS is DARWIN])
 	XE_APPEND(-framework CoreFoundation,LIBS)
     LOCK_MANAGER_FLG=Y
@@ -1018,8 +1033,8 @@ case "$PLATFORM" in
     ;;
 esac
 
-if test -f ${MAKE_SRC_DIR}/postfix.${MAKEFILE_PREFIX};then
-	POSTFIX_FILE=gen/make.platform.postfix:${MAKE_SRC_DIR}/postfix.${MAKEFILE_PREFIX}
+if test -f ${MAKE_SRC_DIR}/postfix.${MAKEFILE_POSTFIX};then
+	POSTFIX_FILE=gen/make.platform.postfix:${MAKE_SRC_DIR}/postfix.${MAKEFILE_POSTFIX}
 	POSTFIX_INCLUDE='include $(ROOT)/gen/make.platform.postfix'
 else
 	POSTFIX_FILE=
