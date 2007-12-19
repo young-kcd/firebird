@@ -62,7 +62,7 @@ case "$target" in
     ;;
 
   powerpc-*-darwin*)
-    MAKEFILE_PREFIX=darwin_ppc
+    MAKEFILE_PREFIX=darwin_powerpc
     MAKEFILE_POSTFIX=darwin
     PLATFORM=DARWIN
     INSTALL_PREFIX=darwin
