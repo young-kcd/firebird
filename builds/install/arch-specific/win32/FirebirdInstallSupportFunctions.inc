@@ -25,8 +25,14 @@
 
 Function Prototypes
 
-  function UsingWin2k: boolean;
-  function UsingWinXP: boolean;
+  function IsVista: boolean;
+  function IsWin2k3: boolean;
+  function IsWinXP: boolean;
+  function IsWin2K: boolean;
+  function IsWinNT: boolean;
+  function IsWinME: boolean;
+  function IsWin98: boolean;
+  function IsWin95: boolean;
   function CheckWinsock2(): Boolean;
   function GetAppPath: String;
   function GetSysPath: String;
@@ -56,20 +62,81 @@ Windows NT versions:
 5.2.3790      Windows 2003 Standard
 *)
 
-function UsingWin2k: boolean;
-//return true if using Win2k OR later
+function IsVista: boolean;
+var
+  Version: TWindowsVersion;
 begin
-  Result := (InstallOnThisVersion('0,5.0', '0,0') = irInstall);
+  GetWindowsVersionEx(Version);
+  if (Version.Major = 6) and (Version.Minor = 0) then
+     result:=true;
 end;
 
-
-function UsingWinXP: boolean;
-// return true if using WinXP OR later.
-// Currently not used in this script.
+function IsWin2k3: boolean;
+var
+  Version: TWindowsVersion;
 begin
-  Result := (InstallOnThisVersion('0,5.01', '0,0') = irInstall);
+  GetWindowsVersionEx(Version);
+  if (Version.Major = 5) and (Version.Minor = 2) then
+     result:=true;
 end;
 
+function IsWinXP: boolean;
+var
+  Version: TWindowsVersion;
+begin
+  GetWindowsVersionEx(Version);
+  if (Version.Major = 5) and (Version.Minor = 1) then
+     result:=true;
+end;
+
+function IsWin2K: boolean;
+var
+  Version: TWindowsVersion;
+begin
+  GetWindowsVersionEx(Version);
+  if (Version.Major = 5) and (Version.Minor = 0) then
+     result:=true;
+end;
+
+function IsWinNT: boolean;
+var
+  Version: TWindowsVersion;
+begin
+  GetWindowsVersionEx(Version);
+  if (Version.Major = 4) and (Version.Minor = 0) then
+    if Version.NTPlatform then
+     result:=true;
+end;
+
+function IsWinME: boolean;
+var
+  Version: TWindowsVersion;
+begin
+  GetWindowsVersionEx(Version);
+  if (Version.Major = 4) and (Version.Minor = 9) then
+//    if Version.NTPlatform then
+     result:=true;
+end;
+
+function IsWin98: boolean;
+var
+  Version: TWindowsVersion;
+begin
+  GetWindowsVersionEx(Version);
+  if (Version.Major = 4) and (Version.Minor = 1) then
+//    if Version.NTPlatform then
+     result:=true;
+end;
+
+function IsWin95: boolean;
+var
+  Version: TWindowsVersion;
+begin
+  GetWindowsVersionEx(Version);
+  if (Version.Major = 4) and (Version.Minor = 0) then
+    if not Version.NTPlatform then
+     result:=true;
+end;
 
 const
   sWinSock2 = 'ws2_32.dll';
