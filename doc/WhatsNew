@@ -2,6 +2,12 @@
   * v2.1 Release Candidate 1
   ***************************
 
+    * Performance optimizations
+        A number of internal optimizations were done in order to avoid
+        the performance degradation introduced along with the new features
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
     * Bugfix CORE-1651
         False isc_req_sync error may be reported by fbclient to the client application
       Contributor(s):
