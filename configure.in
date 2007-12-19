@@ -58,7 +58,7 @@ case "$target" in
     MAKEFILE_PREFIX=darwin_ppc
     MAKEFILE_POSTFIX=darwin
     PLATFORM=DARWIN
-    INSTALL_PREDIX=darwin
+    INSTALL_PREFIX=darwin
     AC_DEFINE(DARWIN, 1, [Define this if OS is DARWIN])
 	XE_APPEND(-framework CoreFoundation,LIBS)
     LOCK_MANAGER_FLG=Y
