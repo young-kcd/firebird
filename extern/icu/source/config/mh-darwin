@@ -74,7 +74,7 @@ STATIC_O = ao
 	@echo "generating dependency information for $<"
 	@$(GEN_DEPS.c) $< > /dev/null
 	@mv $@ $@~
-	@echo -n "$@ " > $@
+#	@echo -n "$@ " > $@
 	@cat < $@~ >> $@
 	@-rm $@~
 
@@ -82,7 +82,7 @@ STATIC_O = ao
 	@echo "generating dependency information for $<"
 	@$(GEN_DEPS.cc) $< >/dev/null
 	@mv $@ $@~
-	@echo -n "$@ " > $@
+#	@echo -n "$@ " > $@
 	@cat < $@~ >> $@
 	@-rm $@~
 
