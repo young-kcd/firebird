@@ -3,7 +3,7 @@
   ***************************
 
     * Performance optimizations
-        A number of internal optimizations were done in order to avoid
+        A number of internal optimizations were done in order to minimize
         the performance degradation introduced along with the new features
       Contributor(s):
         Alex Peshkov <peshkoff at mail.ru>
@@ -283,6 +283,11 @@
         Change keywords used in DATEADD/DATEDIFF functions (expanded syntax)
       Contributor(s):
         Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Improvement CORE-548
+        Help on Firebird setup command line switches
+      Contributor(s):
+        Paul Reeves <preeves at ibphoenix.com>
 
     * New feature CORE-1625
         Implement new setting to relax strict SQL standard's alias checking rules
