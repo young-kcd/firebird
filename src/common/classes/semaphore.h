@@ -117,7 +117,11 @@ public:
 		}
 #else
 		sem = sem_open(semName, O_CREAT | O_EXCL, 0700, 0);
+#if defined(DARWIN) && defined(__ppc__)
+		if (sem == (sem_t*)SEM_FAILED) {
+#else
 		if (sem == SEM_FAILED) {
+#endif
 			system_call_failed::raise("sem_open");
 		}
 		sem_unlink(semName);
