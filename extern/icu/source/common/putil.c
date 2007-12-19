@@ -48,6 +48,14 @@
 #define _XOPEN_SOURCE 4
 #endif
 
+#if defined(DARWIN)
+/* Have to undef this because we cannot build a 
+backwards compatible version of ICU for Tiger (MacOS 10.4)
+on Leopard (MacOS 10.5). Due to UNIX2003 support included
+in MacOS 10.5 */
+#undef _XOPEN_SOURCE 4
+#endif
+
 /* Define __USE_POSIX and __USE_XOPEN for Linux and glibc. */
 #ifndef __USE_POSIX
 #define __USE_POSIX
