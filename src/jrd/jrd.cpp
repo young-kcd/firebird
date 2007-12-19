@@ -1317,13 +1317,9 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 		attachment->att_dbkey_trans = TRA_start(tdbb, 0, 0);
 	}
 
-	JRD_SS_MUTEX_UNLOCK;
-	
 	// Recover database after crash during backup difference file merge
 	dbb->dbb_backup_manager->end_backup(tdbb, true); // true = do recovery
 	
-	*handle = attachment;	
-
 	if (!(attachment->att_flags & ATT_no_db_triggers))
 	{
 		jrd_tra* transaction = 0;
@@ -1353,6 +1349,10 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 			throw;
 		}
 	}
+
+	JRD_SS_MUTEX_UNLOCK;
+	
+	*handle = attachment;	
 
 #ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
 	LOG_call(log_handle_returned, *handle);
