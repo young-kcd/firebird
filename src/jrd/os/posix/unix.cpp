@@ -69,6 +69,10 @@
 
 using namespace Jrd;
 
+#ifdef DARWIN
+#define O_DIRECT F_NOCACHE
+#endif
+
 // Some operating systems have problems with use of write/read with 
 // big (>2Gb) files. On the other hand, pwrite/pread works fine for them.
 // Therefore:
