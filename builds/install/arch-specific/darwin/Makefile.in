@@ -162,7 +162,7 @@ install_super install_server:
 
 install_classic install_serverc:
 	installer -verbose -dumplog -pkg \
-			`pwd`/$(ROOT)/gen/firebird/Firebird-CS-$(FB_INST_VERS).$*FB_MINOR_VERS)-$(FB_PLATFORM)..pkg -target /
+			`pwd`/$(ROOT)/gen/firebird/Firebird-CS-$(FB_INST_VERS).$(FB_MINOR_VERS)-$(FB_PLATFORM).pkg -target /
 
 darwin_installer_common: force
 	$(QUIET_ECHO) "Building Firebird Installer..."
