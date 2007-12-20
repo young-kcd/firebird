@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# $Id: install-script,v 1.1.2.8 2007-12-17 14:48:35 paulbeach Exp $
+# $Id: install-script,v 1.1.2.9 2007-12-20 10:16:43 paulbeach Exp $
 #
 # Script args:
 # $0: full path to script
@@ -158,7 +158,7 @@ else
 fi
 
 # Install the startup item
-echo "Install the startup item"
+echo "Re-install the the SuperServer startup item - if it already exists"
 if [ -f "$FB_FW/Versions/A/Resources/.SuperServer" ]; then
 	if [ -e "$INST_RES/Firebird.startup" ]; then
 		rm -rf /Library/StartupItems/Firebird
@@ -184,14 +184,14 @@ if [ -f /etc/xinetd.d/firebird ]; then
 	HUPNEEDED='y'
 fi
 
-if [ -f /Library/LaunchDemons/org.firebird.gds.plist ]; then
+if [ -f /Library/LaunchDaemons/org.firebird.gds.plist ]; then
 	launchctl unload /Library/LaunchDaemons/org.firebird.gds.plist
 	rm /Library/LaunchDaemons/org.firebird.gds.plist
 	HUPNEEDED='y'
 fi
 
 # Install ourselves in the correct place - SuperServer
-echo "Install ourselves in the correct place SuperServer"
+echo "Install StartupItem in the correct place SuperServer"
 if [ -f "$FB_FW/Versions/A/Resources/.SuperServer" ]; then
 	cp -r $1/Contents/Resources/StartupItem /Library/StartupItems/Firebird
 fi
@@ -237,7 +237,9 @@ fi
 
 # launchd
 echo "Test launchd"
-if [ -f "$FB_FW/Versions/A/Resources/org.firebird.gds.plist" ]; then
+if [ -f "$FB_FW/Versions/A/Resources/.SuperServer" ]; then
+echo -n
+else
 cp $FB_FW/Resources/org.firebird.gds.plist /Library/LaunchDaemons/org.firebird.gds.plist
 launchctl load /Library/LaunchDaemons/org.firebird.gds.plist
 fi
