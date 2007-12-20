@@ -8,7 +8,7 @@
 <string>org.firebird.gds</string>
 <key>ProgramArguments</key>
 <array>
-<string>/Library/Frameworks/Firebird.framework/resources/bin/fb_inet_server</string>
+<string>/Library/Frameworks/Firebird.framework/Resources/bin/fb_inet_server</string>
 </array>
 <key>InetdCompatibility</key>
 <dict>
