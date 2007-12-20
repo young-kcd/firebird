@@ -590,15 +590,11 @@ static THREAD_ENTRY_DECLARE shutdown_thread(THREAD_ENTRY_PARAM arg)
 	{
 		TEXT buffer[1024];
         const ISC_STATUS* vector = e.value();
-		if (e.status_known() && (vector = e.value()) &&
-			  fb_interpret(buffer, sizeof(buffer), &vector))
+		if (! (vector && fb_interpret(buffer, sizeof(buffer), &vector)))
 		{
-			gds__log_status("(shutdown thread)", e.value());
+			strcpy(buffer, "Unknown failure in shutdown thread in shutSem:enter()");
 		}
-		else 
-		{
-			gds__log("Unknown failure in shutdown thread in shutSem.enter()", 0);
-		}
+		gds__log(buffer, 0);
 		exit(0);
 	}
 	if (! alreadyClosing)
