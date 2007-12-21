@@ -1,3 +1,180 @@
+2007-12-20 15:20  paulbeach
+
+	* firebird2/configure.in (1.269):
+
+	Apply MacOS changes to HEAD
+
+2007-12-20 13:40  paulbeach
+
+	* firebird2/src/jrd/os/posix/unix.cpp (1.77):
+
+	Apply MacOS changes to HEAD
+
+2007-12-20 12:34  paulbeach
+
+	* firebird2/builds/install/arch-specific/darwin/: Makefile.in
+	(1.4), install-script (1.7), launchd.org.firebird.gds.plist (1.3):
+
+	Apply MacOS changes to HEAD
+
+2007-12-20 10:02  paulbeach
+
+	* firebird2/src/remote/inet_server.cpp (1.71):
+
+	Apply MacOS changes to HEAD
+
+2007-12-19 16:21  dimitr
+
+	* firebird2/doc/WhatsNew (1.143):
+
+	More additions.
+
+2007-12-19 15:35  paulbeach
+
+	* firebird2/: extern/icu/source/common/putil.c (1.6),
+	src/common/classes/semaphore.h (1.44),
+	src/common/classes/semaphore.cpp (1.2), src/jrd/divorce.cpp (1.12),
+	src/remote/inet_server.cpp (1.70):
+
+	Apply MacOS changes to HEAD
+
+2007-12-19 15:14  dimitr
+
+	* firebird2/src/jrd/err.cpp (1.69):
+
+	Fixed the primary reason of the crash reported by Roman Simakov in
+	fb-devel.  I'm wondering why it didn't cause problems earlier.
+
+2007-12-19 15:12  dimitr
+
+	* firebird2/src/jrd/jrd.cpp (1.359):
+
+	Protect the mutex from being released twice.
+
+2007-12-19 15:07  paul_reeves
+
+	*
+	firebird2/builds/install/arch-specific/win32/FirebirdInstallSupportFunctions.inc
+	(1.4):
+
+	Add some generic functions to test for host O/S
+
+2007-12-19 14:49  dimitr
+
+	* firebird2/doc/WhatsNew (1.142):
+
+	A few additions.
+
+2007-12-19 14:46  paulbeach
+
+	* firebird2/configure.in (1.268):
+
+	Apply MacOS changes to HEAD
+
+2007-12-19 14:40  dimitr
+
+	* firebird2/builds/install/misc/firebird.conf (1.40):
+
+	Just better English. Credits go to Helen.
+
+2007-12-19 14:34  paul_reeves
+
+	* firebird2/builds/install/arch-specific/win32/:
+	FirebirdInstallSupportFunctions.inc (1.3), FirebirdInstall_20.iss
+	(1.27), installation_scripted.txt (1.7):
+
+	Implement feature request CORE-548 Installer now generates a help
+	screen when passed /?, /h or /help on the command-line
+
+2007-12-19 14:33  dimitr
+
+	* firebird2/doc/WhatsNew (1.141):
+
+	Updated docs.
+
+2007-12-19 14:25  paulbeach
+
+	* firebird2/builds/posix/: prefix.darwin_i386 (1.2),
+	prefix.darwin_powerpc (1.2):
+
+	Apply MacOS changes to HEAD
+
+2007-12-19 14:22  paulbeach
+
+	* firebird2/: configure.in (1.267), builds/posix/prefix.darwin
+	(1.24):
+
+	Apply MacOS changes to HEAD
+
+2007-12-19 14:08  alexpeshkoff
+
+	* firebird2/src/jrd/tpc.cpp (1.30):
+
+	Fix for CORE-1657: AV with long inactive read-only read-commited
+	transaction
+
+2007-12-18 12:34  alexpeshkoff
+
+	* firebird2/src/jrd/: btn.cpp (1.25), btn.h (1.18):
+
+	Made specially actively used function inline.  This gives up to 8%
+	performance increase on test, actively using indices.
+
+2007-12-18 08:34  dimitr
+
+	* firebird2/src/iscguard/iscguard.cpp (1.54):
+
+	Fixed inability of the guardian to start the server (service mode
+	only).
+
+2007-12-18 00:58  asfernandes
+
+	* firebird2/: doc/WhatsNew (1.140), src/jrd/vio.cpp (1.199):
+
+	Misc
+
+2007-12-17 14:48  dimitr
+
+	* firebird2/src/: common/classes/auto.h (1.13),
+	jrd/DatabaseSnapshot.cpp (1.44):
+
+	1) Make the class members more readable.  2) Add two methods:
+	release() and reset() (accordingly to the ISO/IEC 14882 standard
+	re. auto_ptr).	3) Utilize release() in DatabaseSnapshot.
+
+2007-12-17 14:00  dimitr
+
+	* firebird2/doc/WhatsNew (1.139):
+
+	Updated docs.
+
+2007-12-17 13:15  hvlad
+
+	* firebird2/src/jrd/vio.cpp (1.198):
+
+	Fixed unregistered bug : wrong record number calculation in garbage
+	collector thread
+
+2007-12-17 08:36  hvlad
+
+	* firebird2/src/jrd/btr.cpp (1.204):
+
+	Correction for fix for CORE-1199. Thanks to Claudio
+
+2007-12-16 21:14  hvlad
+
+	* firebird2/src/jrd/btr.cpp (1.203):
+
+	Fixed bug CORE-1199 : Firebird SS: internal gds software
+	consistency check (CCH_precedence: block marked (212), file:
+	cch.cpp line: 3640)
+
+2007-12-15 11:30  dimitr
+
+	* firebird2/src/remote/server.cpp (1.157):
+
+	Fixed possible crashes due to an already disconnected port.
+
 2007-12-14 12:31  alexpeshkoff
 
 	* firebird2/builds/posix/: Makefile.in.boot.gpre (1.29),
