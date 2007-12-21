@@ -1,3 +1,123 @@
+2007-12-20 11:37  paulbeach
+
+	* firebird2/builds/install/arch-specific/darwin/install-script
+	(1.1.2.7):
+
+	Minor corrections
+
+2007-12-20 11:16  paulbeach
+
+	* firebird2/builds/install/arch-specific/darwin/: install-script
+	(1.1.2.6), launchd.org.firebird.gds.plist (1.1.2.2):
+
+	Minor corrections
+
+2007-12-20 10:37  alexpeshkoff
+
+	* firebird2/src/jrd/err.cpp (1.61.4.3):
+
+	Backported Dmitry's fix for unregistered AV
+
+2007-12-19 14:46  paulbeach
+
+	* firebird2/configure.in (1.241.2.20):
+
+	YATypo
+
+2007-12-19 14:22  alexpeshkoff
+
+	* firebird2/src/jrd/tpc.cpp (1.21.4.2):
+
+	Backported fix for CORE-1657: AV with long inactive read-only
+	read-commited transaction
+
+2007-12-19 14:20  alexpeshkoff
+
+	* firebird2/src/common/classes/semaphore.h (1.24.2.14):
+
+	misc
+
+2007-12-19 14:15  paulbeach
+
+	* firebird2/configure.in (1.241.2.19):
+
+	typo
+
+2007-12-19 13:50  paulbeach
+
+	* firebird2/: configure.in (1.241.2.18),
+	builds/posix/prefix.darwin_i386 (1.1.2.1),
+	builds/posix/prefix.darwin_powerpc (1.1.2.1),
+	builds/posix/prefix.darwin (1.14.12.9):
+
+	Differentiate between ppc and i386 for MacOS
+
+2007-12-19 12:43  paulbeach
+
+	* firebird2/src/common/classes/semaphore.h (1.24.2.13):
+
+	Support oldver versions of MacOS header file semaphore.h
+
+2007-12-19 12:11  paulbeach
+
+	* firebird2/builds/posix/prefix.darwin (1.14.12.8):
+
+	Set the deployment target as a compile option as well - just to
+	make sure
+
+2007-12-19 11:43  paulbeach
+
+	* firebird2/extern/icu/source/config/mh-darwin (1.2.4.3):
+
+	Correction
+
+2007-12-19 11:03  paulbeach
+
+	* firebird2/builds/posix/prefix.darwin (1.14.12.7):
+
+	Correction
+
+2007-12-19 10:35  paulbeach
+
+	* firebird2/extern/icu/source/common/putil.c (1.4.4.2):
+
+	Updated to support MacOS 10.5 and backwards compatibility with 10.4
+
+2007-12-19 10:21  paulbeach
+
+	* firebird2/extern/icu/source/: common/putil.c (1.4.4.1),
+	config/mh-darwin (1.2.4.2):
+
+	Updated to support MacOS 10.5 and backwards compatibility with 10.4
+
+2007-12-19 10:01  paulbeach
+
+	* firebird2/: builds/install/arch-specific/darwin/install-script
+	(1.1.2.5), builds/posix/make.shared.variables (1.60.4.1),
+	builds/posix/prefix.darwin (1.14.12.6), configure.in (1.241.2.17),
+	src/common/classes/semaphore.cpp (1.1.2.1),
+	src/common/classes/semaphore.h (1.24.2.12), src/jrd/common.h
+	(1.137.2.9), src/jrd/divorce.cpp (1.11.12.1),
+	src/remote/inet_server.cpp (1.58.4.7), src/remote/remote_def.h
+	(1.27.4.2):
+
+	SuperServer support for MacOS
+
+2007-12-18 10:15  paulbeach
+
+	* firebird2/builds/install/arch-specific/darwin/Makefile.in
+	(1.1.12.4):
+
+	Correct typos
+
+2007-12-17 20:43  hvlad
+
+	* firebird2/src/jrd/btr.cpp (1.162.2.14):
+
+	Backported fix for bug CORE-1199 : Firebird SS: internal gds
+	software consistency check (CCH_precedence: block marked (212),
+	file: cch.cpp line: 3640)
+
 2007-12-13 17:37  alexpeshkoff
 
 	* firebird2/builds/posix/make.defaults (1.44.4.6):
