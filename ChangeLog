@@ -1,3 +1,72 @@
+2007-12-20 11:16  paulbeach
+
+	* firebird2/src/install/arch-specific/darwin/: install-script
+	(1.1.2.9), launchd.org.firebird.gds.plist (1.1.2.2):
+
+	Minor corrections
+
+2007-12-18 14:38  paulbeach
+
+	* firebird2/src/install/arch-specific/darwin/Makefile.in
+	(1.2.2.12):
+
+	Typo
+
+2007-12-18 14:22  paulbeach
+
+	* firebird2/builds/posix/: prefix.darwin (1.8.2.19),
+	prefix.darwin_ppc (1.1.2.1):
+
+	Correct __Unwind_Resume symbol not found for fbserver, and add the
+	prefix file for Darwin PPC
+
+2007-12-18 12:06  paulbeach
+
+	* firebird2/builds/posix/fbintl.darwin.vers (1.2.8.3):
+
+	Correct symbol lookup problem
+
+2007-12-18 10:15  paulbeach
+
+	* firebird2/src/install/arch-specific/darwin/Makefile.in
+	(1.2.2.11):
+
+	Correct typos
+
+2007-12-17 15:48  paulbeach
+
+	* firebird2/: builds/posix/Makefile.in.libfbclient (1.14.2.7),
+	builds/posix/make.defaults (1.25.2.11), builds/posix/postfix.darwin
+	(1.1.2.12), builds/posix/fbintl.darwin.vers (1.2.8.2),
+	builds/posix/firebird.darwin.client.vers (1.2.8.2),
+	builds/posix/firebird.darwin.embed.vers (1.2.8.2),
+	builds/posix/prefix.darwin (1.8.2.18), src/burp/burp.cpp
+	(1.33.2.4), src/common/classes/alloc.h (1.21.2.7),
+	src/install/arch-specific/darwin/Description.plist (1.1.2.3),
+	src/install/arch-specific/darwin/FB.info (1.1.2.3),
+	src/install/arch-specific/darwin/Makefile.in (1.2.2.10),
+	src/install/arch-specific/darwin/ReadMe.txt (1.1.2.2),
+	src/install/arch-specific/darwin/buildsuffix.c (1.1.2.2),
+	src/install/arch-specific/darwin/buildno.c (1.1.2.1),
+	src/install/arch-specific/darwin/install-script (1.1.2.8),
+	src/install/arch-specific/darwin/launchd.org.firebird.gds.plist
+	(1.1.2.1), src/install/arch-specific/darwin/majorvers.c (1.1.2.2),
+	src/install/arch-specific/darwin/minorvers.c (1.1.2.2),
+	src/install/arch-specific/darwin/preupgrade-script (1.1.2.4),
+	src/install/arch-specific/darwin/revno.c (1.1.2.1),
+	src/jrd/common.h (1.73.2.7), src/jrd/ibase.h (1.40.2.7),
+	src/jrd/license.h (1.30.2.3), src/jrd/pag.cpp (1.37.2.12),
+	src/jrd/utl.cpp (1.35.2.5), src/remote/remote_def.h (1.23.2.2),
+	src/remote/xdr.cpp (1.9.2.7):
+
+	MacOS Intel 1.5.5 Port and Build
+
+2007-12-17 15:18  paulbeach
+
+	* firebird2/configure.in (1.141.2.42):
+
+	MacOS Intel 1.5.5 Port and Build
+
 2007-11-28 15:10  paul_reeves
 
 	* firebird2/src/install/arch-specific/win32/:
@@ -135,6 +204,35 @@
 	* firebird2/builds/posix/prefix.hpux (1.1.2.1):
 
 	Missing prefix file
+
+2007-06-11 16:21  paulbeach
+
+	* firebird2/builds/posix/firebird.darwin.client.vers (1.2.8.1):
+
+	file firebird.darwin.client.vers was added on branch B1_5_Release
+	on 2007-12-17 14:48:25 +0000
+
+2007-06-11 16:21  paulbeach
+
+	* firebird2/builds/posix/firebird.darwin.embed.vers (1.2.8.1):
+
+	file firebird.darwin.embed.vers was added on branch B1_5_Release on
+	2007-12-17 14:48:25 +0000
+
+2007-06-11 16:21  paulbeach
+
+	* firebird2/builds/posix/fbintl.darwin.vers (1.2.8.1):
+
+	file fbintl.darwin.vers was added on branch B1_5_Release on
+	2007-12-17 14:48:25 +0000
+
+2007-06-11 16:21  paulbeach
+
+	* firebird2/builds/posix/: fbintl.darwin.vers (1.2),
+	firebird.darwin.client.vers (1.2), firebird.darwin.embed.vers
+	(1.2):
+
+	MacOS Port into HEAD
 
 2007-02-21 18:00  makowski
 
