@@ -131,6 +131,12 @@ if %FBBUILD_ISX_PACK% EQU 1 (
   ) else (@echo     o Inno Setup found at %INNO5_SETUP_PATH%.)
 )
 
+if not defined WIX (
+	call :ERROR WIX not defined. WiX is needed to build the MSI kits of the CRT runtimes.
+	@goto :EOF
+  ) else (@echo     o WiX found at %WIX%.)
+)
+
 ::End of CHECK_ENVIRONMENT
 ::------------------------
 @goto :EOF
@@ -351,6 +357,22 @@ for /R %FB_OUTPUT_DIR%\doc %%v in (.) do (
 @goto :EOF
 
 
+:BUILD_CRT_MSI
+:: Generate runtimes as an MSI file.
+:: This requires WiX to be installed
+::============
+if %MSVC_VERSION% GEQ 8 (
+if not exist %FB_OUTPUT_DIR%\system32\vccrt%MSVC_VERSION%_%FB_TARGET_PLATFORM%.msi (
+	%WIX%\candle.exe -v0 %FB_ROOT_PATH%\builds\win32\msvc%MSVC_VERSION%\VCCRT_%FB_TARGET_PLATFORM%.wxs -out %FB_GEN_DIR%\vccrt_%FB_TARGET_PLATFORM%.wixobj
+	%WIX%\light.exe %FB_GEN_DIR%\vccrt_%FB_TARGET_PLATFORM%.wixobj -out %FB_OUTPUT_DIR%\system32\vccrt%MSVC_VERSION%_%FB_TARGET_PLATFORM%.msi
+))
+
+
+::End of BUILD_CRT_MSI
+::--------------------
+@goto :EOF
+
+
 :IBASE_H
 :: Concatenate header files into ibase.h
 ::======================================
@@ -516,8 +538,8 @@ if "%FBBUILD_SHIP_PDB%" == "ship_pdb" (
 )
 
 @%SEVENZIP%\7z.exe a -r -tzip -mx9 %FBBUILD_ZIPFILE% %FBBUILD_ZIP_PACK_ROOT%\*.*
-
-::End of ZIP_PACK
+@echo   End of ZIP_PACK
+@echo.
 ::----------------
 @goto :EOF
 
@@ -575,7 +597,6 @@ for %%v in (IPLicense.txt IDPLicense.txt ) do (
 :EMB_PACK
 ::=======
 if %FBBUILD_EMB_PACK% EQU 0 goto :EOF
-@echo Now building embedded package
 :: Now we can zip it up and copy the package to the install images directory.
 if "%FBBUILD_SHIP_PDB%" == "ship_pdb" (
   @del %FBBUILD_INSTALL_IMAGES%\%FBBUILD_FILE_ID%_embed_win32_pdb.zip > nul
@@ -588,7 +609,8 @@ if "%FBBUILD_SHIP_PDB%" == "ship_pdb" (
 @%SEVENZIP%\7z.exe a -r -tzip -mx9 %FBBUILD_EMBFILE% %FBBUILD_EMB_PACK_ROOT%\*.*
 
 
-::End of EMB_PACK
+@echo   End of EMB_PACK
+@echo.
 ::---------------
 goto :EOF
 
@@ -620,12 +642,13 @@ endlocal
 ::
 ::=================================================
 if %FBBUILD_ISX_PACK% NEQ 1 goto :EOF
-@Echo Now let's compile the InnoSetup scripts
+@Echo   Now let's compile the InnoSetup scripts
 @Echo.
 %INNO5_SETUP_PATH%\iscc %FB_ROOT_PATH%\builds\install\arch-specific\win32\FirebirdInstall_%FBBUILD_FILE_ID%.iss
 @echo.
 
-::End of ISX_PACK
+@echo   End of ISX_PACK
+@echo.
 ::---------------
 @goto :EOF
 
@@ -742,6 +765,12 @@ popd
 @Echo   Copying additonal files needed for installation, documentation etc.
 @(@call :COPY_XTRA ) || (@echo Error calling COPY_XTRA & @goto :EOF)
 @Echo.
+
+if defined WIX (
+@Echo   Building MSI runtimes
+@call :BUILD_CRT_MSI ) || (@echo Error calling BUILD_CRT_MSI & @goto :EOF)
+@Echo.
+)
 
 @Echo   Concatenating header files for ibase.h
 @(@call :IBASE_H ) || (@echo Error calling IBASE_H & @goto :EOF)

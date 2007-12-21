@@ -235,7 +235,14 @@ PrivilegesRequired=admin
 
 
 #if PlatformTarget == "x64"
+ArchitecturesAllowed=x64
 ArchitecturesInstallIn64BitMode=x64
+#endif
+
+;This feature is incomplete, as more thought is required.
+#ifdef setuplogging
+;New with IS 5.2
+SetupLogging=yes
 #endif
 
 [Languages]
@@ -323,6 +330,13 @@ Name: CopyFbClientAsGds32Task; Description: {cm:CopyFbClientAsGds32Task}; Compon
 
 
 [Run]
+#if msvc_version == 8
+Filename: msiexec.exe; Parameters: "/qn /i ""{tmp}\vccrt{#msvc_version}_Win32.msi"" /L*v {tmp}\vccrt{#msvc_version}_Win32.log "; Check: HasWI30; Components: ClientComponent;
+#if PlatformTarget == "x64"
+Filename: msiexec.exe; Parameters: "/qn /i ""{tmp}\vccrt{#msvc_version}_x64.msi"" /L*v {tmp}\vccrt{#msvc_version}_x64.log ";  Check: HasWI30; Components: ClientComponent;
+#endif
+#endif
+
 ;Always register Firebird
 Filename: {app}\bin\instreg.exe; Parameters: "install "; StatusMsg: {cm:instreg}; MinVersion: 4.0,4.0; Components: ClientComponent; Flags: runminimized
 
@@ -433,32 +447,67 @@ Source: {#FilesDir}\bin\icuuc30.dll; DestDir: {app}\bin; Components: ServerCompo
 Source: {#FilesDir}\bin\icuin30.dll; DestDir: {app}\bin; Components: ServerComponent; Flags: sharedfile ignoreversion
 Source: {#FilesDir}\bin\icudt30.dll; DestDir: {app}\bin; Components: ServerComponent; Flags: sharedfile ignoreversion
 
-; Install MS libs locally if Win2K or later, else place in <sys> if NT4 or Win95/98/ME.
-; NOTE: These dll's MUST never be sourced from the local system32 directory.
-; Deploy libraries from vcredist if MSVC6 is used. Use %FrameworkSDKDir% is compiling with Visual Studio.
-; The BuildExecutableInstall.bat will attempt to locate them and place them in {#FilesDir}\system32\
+;Rules for installation of MS runtimes
+;MSVC6 and MSVC7
+;  Install locally and in <sys> for all versions.
+;  NOTE: These dll's MUST never be sourced from the local system32 directory.
+;  Deploy libraries from vcredist if MSVC6 is used. Use %FrameworkSDKDir% is compiling with Visual Studio.
+;  The BuildExecutableInstall.bat will attempt to locate them and place them in {#FilesDir}\system32\
+;
+;MSVC8
+;  If Win9n, or a WinNT version without Windows Installer 3 or later then install libraries directly into <sys>
+;  using normal version info control.
+;  If host O/S has Windows Installer 3 or later then use msi.
+;MSVC9
+;  More info to come
+;
 #if msvc_version == 6
 Source: {#FilesDir}\bin\msvcrt.dll; DestDir: {app}\bin; Components: ClientComponent;
 Source: {#FilesDir}\bin\msvcrt.dll; DestDir: {sys}; Components: ClientComponent; Flags: sharedfile onlyifdoesntexist uninsneveruninstall;
-#elif msvc_version >= 7
+#endif
+#if msvc_version == 7
 Source: {#FilesDir}\bin\msvcr{#msvc_version}?.dll; DestDir: {app}\bin; Components: ClientComponent; Flags: sharedfile;
-Source: {#FilesDir}\bin\msvcr{#msvc_version}?.dll; DestDir: {sys}; Components: ClientComponent; Flags: sharedfile uninsneveruninstall;
 Source: {#FilesDir}\bin\msvcp{#msvc_version}?.dll; DestDir: {app}\bin; Components: ClientComponent; Flags: sharedfile;
+Source: {#FilesDir}\bin\msvcr{#msvc_version}?.dll; DestDir: {sys}; Components: ClientComponent; Flags: sharedfile uninsneveruninstall;
 Source: {#FilesDir}\bin\msvcp{#msvc_version}?.dll; DestDir: {sys}; Components: ClientComponent; Flags: sharedfile uninsneveruninstall;
+#endif
+
+#if msvc_version >= 8
+;If Host O/S has Windows Installer 3.0 installed then we don't need to do local install of runtime libraries
+;In fact, local install is next to useless as the fbintl.dll will still fail to load.
+Source: {#FilesDir}\bin\msvcr{#msvc_version}?.dll; DestDir: {app}\bin; Check: HasNotWI30; Components: ClientComponent; Flags: sharedfile;
+Source: {#FilesDir}\bin\msvcp{#msvc_version}?.dll; DestDir: {app}\bin; Check: HasNotWI30; Components: ClientComponent; Flags: sharedfile;
+Source: {#FilesDir}\bin\Microsoft.VC80.CRT.manifest; DestDir: {app}\bin; Check: HasNotWI30; Components: ClientComponent; Flags: sharedfile;
 #if PlatformTarget == "x64"
 ;If we are installing on x64 we need some 32-bit libraries for compatibility with 32-bit applications
-Source: {#WOW64Dir}\bin\msvcr{#msvc_version}?.dll; DestDir: {app}\WOW64; Components: ClientComponent; Flags: sharedfile;
-Source: {#WOW64Dir}\bin\msvcr{#msvc_version}?.dll; DestDir: {syswow64}; Components: ClientComponent; Flags: sharedfile uninsneveruninstall;
-Source: {#WOW64Dir}\bin\msvcp{#msvc_version}?.dll; DestDir: {app}\WOW64; Components: ClientComponent; Flags: sharedfile;
-Source: {#WOW64Dir}\bin\msvcp{#msvc_version}?.dll; DestDir: {syswow64}; Components: ClientComponent; Flags: sharedfile uninsneveruninstall;
+Source: {#WOW64Dir}\bin\msvcr{#msvc_version}?.dll; DestDir: {app}\WOW64; Check: HasNotWI30; Components: ClientComponent; Flags: sharedfile;
+Source: {#WOW64Dir}\bin\msvcp{#msvc_version}?.dll; DestDir: {app}\WOW64; Check: HasNotWI30; Components: ClientComponent; Flags: sharedfile;
+Source: {#WOW64Dir}\bin\Microsoft.VC80.CRT.manifest; DestDir: {app}\WOW64; Check: HasNotWI30; Components: ClientComponent; Flags: sharedfile;
 #endif
-#endif
-#if msvc_version = 8
-Source: {#FilesDir}\bin\Microsoft.VC80.CRT.manifest; DestDir: {app}\bin; Components: ClientComponent; Flags: sharedfile;
+#endif  /* if msvc_version >= 8 */
+
+#if msvc_version == 8
+;Try to install CRT libraries to <sys> via msi, _IF_ msvc_version is 8.
 #if PlatformTarget == "x64"
-Source: {#WOW64Dir}\bin\Microsoft.VC80.CRT.manifest; DestDir: {syswow64}; Components: ClientComponent; Flags: sharedfile uninsneveruninstall;
+;MinVersion 0,5.0 means no version of Win9x and at least Win2k if NT O/S
+;In addition, O/S must have Windows Installer 3.0.
+Source: {#FilesDir}\system32\vccrt8_x64.msi; DestDir: {tmp};  Check: HasWI30; MinVersion: 0,5.0; Components: ClientComponent;
+Source: {#WOW64Dir}\system32\vccrt8_Win32.msi; DestDir: {tmp}; Check: HasWI30; MinVersion: 0,5.0; Components: ClientComponent;
+#else
+Source: {#FilesDir}\system32\vccrt8_Win32.msi; DestDir: {tmp}; Check: HasWI30; MinVersion: 0,5.0; Components: ClientComponent;
 #endif
+
+;Otherwise, have a go at copying the files into <sys>.
+Source: {#FilesDir}\bin\msvcr{#msvc_version}?.dll; DestDir: {sys}; Check: HasNotWI30; Components: ClientComponent; Flags: sharedfile uninsneveruninstall;
+Source: {#FilesDir}\bin\msvcp{#msvc_version}?.dll; DestDir: {sys}; Check: HasNotWI30; Components: ClientComponent; Flags: sharedfile uninsneveruninstall;
+Source: {#FilesDir}\bin\Microsoft.VC80.CRT.manifest; DestDir: {sys}; Check: HasNotWI30; Components: ClientComponent; Flags: sharedfile uninsneveruninstall;
+#if PlatformTarget == "x64"
+Source: {#WOW64Dir}\bin\msvcr{#msvc_version}?.dll; DestDir: {syswow64}; Check: HasNotWI30; Components: ClientComponent; Flags: sharedfile uninsneveruninstall;
+Source: {#WOW64Dir}\bin\msvcp{#msvc_version}?.dll; DestDir: {syswow64}; Check: HasNotWI30; Components: ClientComponent; Flags: sharedfile uninsneveruninstall;
+Source: {#WOW64Dir}\bin\Microsoft.VC80.CRT.manifest; DestDir: {syswow64}; Check: HasNotWI30; Components: ClientComponent; Flags: sharedfile uninsneveruninstall;
 #endif
+#endif /* if msvc_version == 8 */
+
 ;Docs
 Source: {#ScriptsDir}\installation_scripted.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: skipifsourcedoesntexist  ignoreversion
 Source: {#ScriptsDir}\installation_scripted.txt; DestDir: {tmp}; Flags: DontCopy;
@@ -483,7 +532,7 @@ Source: {#FilesDir}\misc\upgrade\metadata\*.*; DestDir: {app}\misc\upgrade\metad
 ;Note - Win9x requires 8.3 filenames for the uninsrestartdelete option to work
 Source: {#FilesDir}\system32\Firebird2Control.cpl; DestDir: {sys}; Components: ServerComponent\SuperServerComponent; MinVersion: 0,4.0; Flags: sharedfile ignoreversion promptifolder restartreplace uninsrestartdelete; Check: InstallCPLApplet
 Source: {#FilesDir}\system32\Firebird2Control.cpl; DestDir: {sys}; Destname: FIREBI~1.CPL; Components: ServerComponent\SuperServerComponent; MinVersion: 4.0,0; Flags: sharedfile ignoreversion promptifolder restartreplace uninsrestartdelete; Check: InstallCPLApplet
-#endif
+#endif /* files */
 
 #ifdef examples
 Source: {#FilesDir}\examples\*.*; DestDir: {app}\examples; Components: DevAdminComponent;  Flags: ignoreversion;
@@ -501,6 +550,9 @@ Source: {#FilesDir}\bin\fbclient.pdb; DestDir: {app}\bin; Components: ClientComp
 Source: {#FilesDir}\bin\fb_inet_server.pdb; DestDir: {app}\bin; Components: ServerComponent\ClassicServerComponent;
 Source: {#FilesDir}\bin\fbserver.pdb; DestDir: {app}\bin; Components: ServerComponent\SuperServerComponent;
 ;Source: {#FilesDir}\bin\fbembed.pdb; DestDir: {app}\bin; Components: ClientComponent;
+#if PlatformTarget == "x64"
+Source: {#WOW64Dir}\bin\fbclient.pdb; DestDir: {app}\WOW64; Components: ClientComponent;
+#endif
 #endif
 
 [UninstallRun]
@@ -556,6 +608,9 @@ Var
                                 // user config files - firebird.conf, firebird.log,
                                 // aliases.conf and the security database.
 
+#ifdef setuplogging
+  OkToCopyLog : Boolean;        // Set when installation is complete.
+#endif
 
 #include "FirebirdInstallSupportFunctions.inc"
 
@@ -714,16 +769,16 @@ begin
     
   end;
 
-  if pos('FORCE',Uppercase(CommandLine))>0 then
+  if pos('FORCE',Uppercase(CommandLine)) > 0 then
     ForceInstall:=True;
 
-  if pos('NOCPL', Uppercase(CommandLine))>0 then
+  if pos('NOCPL', Uppercase(CommandLine)) > 0 then
     NoCPL := True;
 
-  if pos('NOGDS32', Uppercase(CommandLine))>0 then
+  if pos('NOGDS32', Uppercase(CommandLine)) > 0 then
     NoLegacyClient := True;
 
-  if pos('COPYFBCLIENT', Uppercase(CommandLine))>0 then
+  if pos('COPYFBCLIENT', Uppercase(CommandLine)) > 0 then
     CopyFbClient := True;
 
   //By default we want to install and confugure,
@@ -762,6 +817,14 @@ begin
     if MsgBox(ExpandConstant('{cm:Winsock2Web1}')+#13#13+ExpandConstant('{cm:Winsock2Web2}'), mbInformation, MB_YESNO) = idYes then
       // User wants to visit the web page
       ShellExec('open', sMSWinsock2Update, '', '', SW_SHOWNORMAL, ewNoWait, ErrCode);
+      
+#ifdef setuplogging
+  if OkToCopyLog then
+    FileCopy (ExpandConstant ('{log}'), ExpandConstant ('{app}\InstallationLogFile.log'), FALSE);
+    
+  RestartReplace (ExpandConstant ('{log}'), '');
+#endif /* setuplogging */
+
 end;
 
 //This function tries to find an existing install of Firebird 1.5
@@ -986,6 +1049,10 @@ begin
         if FileCopy(GetAppPath+'\doc\'+ReadMeFileStr, GetAppPath+'\'+ReadMeFileStr, false) then
           DeleteFile(GetAppPath+'\doc\'+ReadMeFileStr);
       end;
+
+#ifdef setuplogging
+      OkToCopyLog := True;
+#endif
 
     end;
   end;

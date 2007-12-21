@@ -19,6 +19,7 @@ Contents
 --------
 
 o Before installation
+o Problems with installation of MS VC runtime libraries
 o Known installation problems
 o Uninstallation
 o Other Notes
@@ -34,8 +35,25 @@ this package. It is especially important to verify that
 fbclient.dll and gds32.dll are removed from <system32>.
 
 
-Known installation problems
----------------------------
+Problems with installation of MS VC runtime libraries
+-----------------------------------------------------
+
+Much work has been done to ensure that the MS Visual
+C runtime libraries are correctly installed by the
+binary installer. However, in case of problems it may
+be necessary to deploy the official vcredist.exe. The
+correct versions for this build of Firebird can be
+found here:
+
+    http://www.microsoft.com/downloads/details.aspx?familyid=32BC1BEE-A3F9-4C13-9C99-220B62A191EE&displaylang=en
+
+  and x64 here:
+
+    http://www.microsoft.com/downloads/details.aspx?familyid=90548130-4468-4BBC-9673-D6ACABD5D13B&displaylang=en
+
+
+Other Known installation problems
+---------------------------------
 
 o It is only possible to use the binary installer
   to install the default instance of Firebird 2.1. If
@@ -59,18 +77,11 @@ o There are known areas of overlap between the
     installed they will both point to the same default
     instance.
 
-o It is possible to deploy the client library
-  (fbclient or gds32) to the <system32> directory.
-  However, the necessary microsoft runtime libraries
-  will be missing. To resolve this it is necessary to
-  manually install vcredist.exe. Different versions are
-  available for x86 here:
-
-    http://www.microsoft.com/downloads/details.aspx?familyid=32BC1BEE-A3F9-4C13-9C99-220B62A191EE&displaylang=en
-
-  and x64 here:
-
-    http://www.microsoft.com/downloads/details.aspx?familyid=90548130-4468-4BBC-9673-D6ACABD5D13B&displaylang=en
+o When installing under Vista be sure to install as an
+  administrator. ie, if using the binary installer
+  right click and choose 'Run as administrator'.
+  Otherwise the installer will be unable to start the
+  Firebird service at the end of installation.
 
 
 Uninstallation
@@ -108,6 +119,11 @@ o A new feature of the uninstaller is an option to
   run it with the /CLEAN parameter. This will check
   the shared file count of each of the above files. If
   possible it will delete them.
+
+o Uninstallation will not remove the MS VC runtime
+  libraries from the system directory. These can be
+  removed manually via the control panel, but this
+  should not be required under normal circumstances.
 
 
 Other Notes

@@ -42,7 +42,8 @@
     function CopyFbClientLib: boolean;
     function ShowCopyFbClientLibTask: boolean;
 
-
+    function HasWI30: boolean;
+    function HasNotWI30: boolean;
  *)
 
 
@@ -732,4 +733,24 @@ begin
     result := ((not CopyFbClient) and ConfigureFirebird);
 end;
 
+function HasWI30: boolean;
+//We need at least Windows Installer 3.0 available if we
+//are installing the msi bundles for the VC8 CRT libraries.
+var
+  VersionStr: String;
+  VerInt: array of Integer;
+begin
+  Result := False;
+  VersionStr := WIVersion;
+  DecodeVersion( VersionStr, VerInt);
+  if (VerInt[0] >= 3) then
+    Result := True;
+
+end;
+
+function HasNotWI30: boolean;
+//Used to check if O/S does NOT have minimum version of Windows Installer
+begin
+  result := NOT HasWI30;
+end;
 
