@@ -1,3 +1,45 @@
+2007-12-22 01:53  asfernandes
+
+	* firebird2/: builds/install/arch-specific/darwin/install-script
+	(1.8),
+	builds/install/arch-specific/win32/FirebirdInstallEnvironmentChecks.inc
+	(1.9),
+	builds/install/arch-specific/win32/FirebirdInstallSupportFunctions.inc
+	(1.6), builds/install/arch-specific/win32/FirebirdInstall_20.iss
+	(1.29), src/common/classes/semaphore.h (1.45):
+
+	Misc
+
+2007-12-21 13:22  paul_reeves
+
+	* firebird2/builds/win32/run_all.bat (1.15):
+
+	MInor tweaks to a) speed up testing the installer, and b) document
+	the available options.
+
+2007-12-21 13:21  paul_reeves
+
+	* firebird2/builds/win32/msvc8/: VCCRT_Shared_Body.wxi (1.1),
+	VCCRT_Shared_Header.wxi (1.1), VCCRT_Win32.wxi (1.1),
+	VCCRT_Win32.wxs (1.1), VCCRT_x64.wxi (1.1), VCCRT_x64.wxs (1.1):
+
+	Add support to build VCRT merge modules. These files are VC8
+	specific, and technically they belong under the
+	'install\arch-specific\win32\msvc8' directory. But that directory
+	does not exist (and may never exist), so they can be parked here
+	for the time being.
+
+2007-12-21 13:10  paul_reeves
+
+	* firebird2/builds/install/arch-specific/win32/:
+	BuildExecutableInstall.bat (1.33),
+	FirebirdInstallEnvironmentChecks.inc (1.8),
+	FirebirdInstallSupportFunctions.inc (1.5), FirebirdInstall_20.iss
+	(1.28), installation_readme.txt (1.15):
+
+	Add support to deploy VCRT libraries via msi, if windows installer
+	3.0 is available.
+
 2007-12-20 15:20  paulbeach
 
 	* firebird2/configure.in (1.269):
