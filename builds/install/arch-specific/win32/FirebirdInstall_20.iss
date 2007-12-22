@@ -451,7 +451,7 @@ Source: {#FilesDir}\bin\icudt30.dll; DestDir: {app}\bin; Components: ServerCompo
 ;MSVC6 and MSVC7
 ;  Install locally and in <sys> for all versions.
 ;  NOTE: These dll's MUST never be sourced from the local system32 directory.
-;  Deploy libraries from vcredist if MSVC6 is used. Use %FrameworkSDKDir% is compiling with Visual Studio.
+;  Deploy libraries from vcredist if MSVC6 is used. Use %FrameworkSDKDir% if compiling with Visual Studio.
 ;  The BuildExecutableInstall.bat will attempt to locate them and place them in {#FilesDir}\system32\
 ;
 ;MSVC8

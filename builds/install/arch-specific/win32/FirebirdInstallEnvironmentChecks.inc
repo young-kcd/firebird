@@ -742,7 +742,7 @@ var
 begin
   Result := False;
   VersionStr := WIVersion;
-  DecodeVersion( VersionStr, VerInt);
+  DecodeVersion(VersionStr, VerInt);
   if (VerInt[0] >= 3) then
     Result := True;
 

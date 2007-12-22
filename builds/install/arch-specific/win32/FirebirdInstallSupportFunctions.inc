@@ -114,7 +114,7 @@ var
 begin
   GetWindowsVersionEx(Version);
   if (Version.Major = 6) and (Version.Minor = 0) then
-     result:=true;
+     result := true;
 end;
 
 function IsWin2k3: boolean;
@@ -123,7 +123,7 @@ var
 begin
   GetWindowsVersionEx(Version);
   if (Version.Major = 5) and (Version.Minor = 2) then
-     result:=true;
+     result := true;
 end;
 
 function IsWinXP: boolean;
@@ -132,7 +132,7 @@ var
 begin
   GetWindowsVersionEx(Version);
   if (Version.Major = 5) and (Version.Minor = 1) then
-     result:=true;
+     result := true;
 end;
 
 function IsWin2K: boolean;
@@ -141,7 +141,7 @@ var
 begin
   GetWindowsVersionEx(Version);
   if (Version.Major = 5) and (Version.Minor = 0) then
-     result:=true;
+     result := true;
 end;
 
 function IsWinNT: boolean;
@@ -151,7 +151,7 @@ begin
   GetWindowsVersionEx(Version);
   if (Version.Major = 4) and (Version.Minor = 0) then
     if Version.NTPlatform then
-     result:=true;
+     result := true;
 end;
 
 function IsWinME: boolean;
@@ -161,7 +161,7 @@ begin
   GetWindowsVersionEx(Version);
   if (Version.Major = 4) and (Version.Minor = 9) then
 //    if Version.NTPlatform then
-     result:=true;
+     result := true;
 end;
 
 function IsWin98: boolean;
@@ -171,7 +171,7 @@ begin
   GetWindowsVersionEx(Version);
   if (Version.Major = 4) and (Version.Minor = 1) then
 //    if Version.NTPlatform then
-     result:=true;
+     result := true;
 end;
 
 function IsWin95: boolean;
@@ -181,7 +181,7 @@ begin
   GetWindowsVersionEx(Version);
   if (Version.Major = 4) and (Version.Minor = 0) then
     if not Version.NTPlatform then
-     result:=true;
+     result := true;
 end;
 
 const
@@ -224,7 +224,7 @@ function WIVersion: string;
 var
   VersionStr: string;
 begin
-  GetVersionNumbersString( GetSysPath + '\msi.dll', VersionStr );
+  GetVersionNumbersString(GetSysPath + '\msi.dll', VersionStr);
   result := VersionStr;
 end;
 
@@ -310,7 +310,7 @@ var
 begin
 
   if places > 4 then
-    places :=4;
+    places := 4;
 
   SetArrayLength( verint1, 4 );
   DecodeVersion( ver1, verint1 );
@@ -407,7 +407,7 @@ begin
   with OKButton do begin
       Parent := HelpDlg;
       Left := (Parent.width  div 2) - width div 2;
-      top := Parent.Clientheight - 40;
+      top := Parent.ClientHeight - 40;
       Caption := 'OK';
       ModalResult := mrOK;
   end;
