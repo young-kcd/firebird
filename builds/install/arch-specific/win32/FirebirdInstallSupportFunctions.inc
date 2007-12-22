@@ -105,7 +105,7 @@ v4.0    4.0.6001.16531 or greater   Released with Windows Vista SP1 and
         for all our installation needs this would be a serious problem.
 
  NB3 - Our installer will not run msiexec on systems before XP. However, some early XP and W2K3
-       systems to not have v3.0 of the Windows Installer.
+       systems do not have v3.0 of the Windows Installer.
 *)
 
 function IsVista: boolean;
