@@ -1,3 +1,10 @@
+2007-12-22 10:14  robocop
+
+	* firebird2/src/common/classes/semaphore.h (1.24.2.15):
+
+	I don't see the point in using the class name to qualify a method
+	declaration inside the class definition.
+
 2007-12-20 11:37  paulbeach
 
 	* firebird2/builds/install/arch-specific/darwin/install-script
