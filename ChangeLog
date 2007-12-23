@@ -1,3 +1,24 @@
+2007-12-22 10:38  robocop
+
+	* firebird2/doc/WhatsNew (1.144):
+
+	Formatting and IMHO give due credit where needed.
+
+2007-12-22 10:37  robocop
+
+	* firebird2/src/common/classes/semaphore.h (1.46):
+
+	I don't see the point in using the class name to qualify a method
+	declaration inside the class definition.
+
+2007-12-22 10:36  robocop
+
+	*
+	firebird2/builds/install/arch-specific/win32/FirebirdInstallSupportFunctions.inc
+	(1.7):
+
+	Totally misc.
+
 2007-12-22 01:53  asfernandes
 
 	* firebird2/: builds/install/arch-specific/darwin/install-script
