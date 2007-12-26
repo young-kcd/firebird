@@ -153,7 +153,7 @@
         Alex Peshkov <peshkoff at mail.ru>
 
     * Bugfix CORE-1543
-        Incorrect error code in GFIX
+        Security bug in trusted authentication
       Contributor(s):
         Alex Peshkov <peshkoff at mail.ru>
 
