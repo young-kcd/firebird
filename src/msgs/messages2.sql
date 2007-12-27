@@ -2911,7 +2911,7 @@ Fetches = !f', NULL, NULL);
 ('GsecMsg12', 'global', 'gsec.e', NULL, 18, 12, NULL, 'FNAME          user''s first name', NULL, NULL);
 ('GsecMsg13', 'global', 'gsec.e', NULL, 18, 13, NULL, 'MNAME          user''s middle name/initial', NULL, NULL);
 ('GsecMsg14', 'global', 'gsec.e', NULL, 18, 14, NULL, 'LNAME          user''s last name', NULL, NULL);
-('gsec_cant_open_db', 'main', 'gsec.e', NULL, 18, 15, NULL, 'unable to open database', NULL, NULL);
+('gsec_cant_open_db', 'common_main', 'gsec.e', NULL, 18, 15, NULL, 'unable to open database', NULL, NULL);
 ('gsec_switches_error', 'exec_line', 'gsec.e', NULL, 18, 16, NULL, 'error in switch specifications', NULL, NULL);
 ('gsec_no_op_spec', 'exec_line', 'gsec.e', NULL, 18, 17, NULL, 'no operation specified', NULL, NULL);
 ('gsec_no_usr_name', 'exec_line', 'gsec.e', NULL, 18, 18, NULL, 'no user name specified', NULL, NULL);
@@ -2990,7 +2990,8 @@ Fetches = !f', NULL, NULL);
 -- Do not change the arguments of the previous GSEC messages.
 -- Write the new GSEC messages here.
 ('GsecMsg91', 'printhelp', 'gsec.cpp', NULL, 18, 91, NULL, '-trusted (use trusted authentication)', NULL, NULL);
-('GsecMsg92', 'main', 'gsec.cpp', NULL, 18, 92, NULL, 'Invalid switch specified in interactive mode', NULL, NULL);
+('GsecMsg92', 'common_main', 'gsec.cpp', NULL, 18, 92, NULL, 'invalid switch specified in interactive mode', NULL, NULL);
+('GsecMsg93', 'common_main', 'gsec.cpp', NULL, 18, 93, NULL, 'error closing security database', NULL, NULL);
 -- LICENSE
 ('license_no_file', 'NODE_license', 'jrd/node.c', NULL, 19, 0, NULL, 'The license file does not exist or could not be opened for read', NULL, NULL);
 ('stop_stop_1', 'not_licensed', 'jrd/node.c', 'This message has 20 leading space characters (2 tab chars and 4 '' '') in
