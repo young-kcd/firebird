@@ -15,7 +15,7 @@
 # All Rights Reserved.
 # Contributor(s): ______________________________________.
 # Start of file prefix.darwin:	$(VERSION)	@PLATFORM@
-#$Id: prefix.darwin_powerpc,v 1.1.2.1 2007-12-19 12:50:55 paulbeach Exp $
+#$Id: prefix.darwin_powerpc,v 1.1.2.2 2007-12-27 13:05:35 paulbeach Exp $
 # 2 Oct 2002, Nickolay Samofatov - Major Cleanup
 
 DYLD_LIBRARY_PATH=$(FIREBIRD)/lib
@@ -26,8 +26,8 @@ export MACOSX_DEPLOYMENT_TARGET
 
 OS_ServerFiles=inet_server.cpp
 
-PROD_FLAGS=-O3 -DNDEBUG -DDARWIN -pipe -p -MMD -fPIC -fno-common -arch i386 -mmacosx-version-min=10.2
-DEV_FLAGS=-ggdb -DDARWIN -pipe -p -MMD -fPIC -fno-common -Wall -arch i386 -mmacosx-version-min=10.2
+PROD_FLAGS=-O3 -DNDEBUG -DDARWIN -pipe -p -MMD -fPIC -fno-common -arch ppc -mmacosx-version-min=10.2
+DEV_FLAGS=-ggdb -DDARWIN -pipe -p -MMD -fPIC -fno-common -Wall -arch ppc -mmacosx-version-min=10.2
 EMBED_UTIL_TARGETS=gstat gds_drop gds_relay gsec nbackup fb_lock_print
 CLIENT_UTIL_TARGETS=gds_drop gds_relay gstat gsec fbguard fbmgr_bin nbackup fb_lock_print
 
