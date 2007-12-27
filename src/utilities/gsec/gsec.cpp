@@ -465,7 +465,7 @@ int common_main(int argc,
 	if (db_handle) {
 		ISC_STATUS_ARRAY loc_status;
 		if (isc_detach_database(loc_status, &db_handle)) {
-			GSEC_error_redirect(loc_status, 0);
+			GSEC_error_redirect(loc_status, GsecMsg93);
 		}
 	}
 #endif //SUPERCLIENT
