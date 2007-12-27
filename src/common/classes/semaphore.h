@@ -171,10 +171,10 @@ public:
 	{
 		fb_assert(init == true);
 		for (int i = 0; i < count; i++)
-		{
 			if (sem_post(sem) == -1)
+			{
 				system_call_failed::raise("semaphore.h: release: sem_post()");
-		}
+			}
 	}
 
 #ifdef HAVE_SEM_TIMEDWAIT
