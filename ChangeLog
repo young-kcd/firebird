@@ -1,3 +1,10 @@
+2007-12-29 01:59  asfernandes
+
+	* firebird2/: builds/install/arch-specific/darwin/install-script
+	(1.1.2.8), src/misc/src_bundle.sh (1.2.14.2):
+
+	Misc
+
 2007-12-27 14:05  paulbeach
 
 	* firebird2/builds/posix/prefix.darwin_powerpc (1.1.2.2):
