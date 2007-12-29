@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# $Id: install-script,v 1.1.2.7 2007-12-20 10:37:31 paulbeach Exp $
+# $Id: install-script,v 1.1.2.8 2007-12-29 00:59:35 asfernandes Exp $
 #
 # Script args:
 # $0: full path to script
@@ -155,7 +155,7 @@ else
 fi
 
 # Install the startup item
-echo "Re-install the the SuperServer startup item - if it already exists"
+echo "Re-install the SuperServer startup item - if it already exists"
 if [ -f "$FB_FW/Versions/A/Resources/.SuperServer" ]; then
 	if [ -e "$INST_RES/Firebird.startup" ]; then
 		rm -rf /Library/StartupItems/Firebird
