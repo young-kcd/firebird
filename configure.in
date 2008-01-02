@@ -953,14 +953,16 @@ dnl EKU: handle platform specific installation and packaging
 dnl: Common Files
 case "$PLATFORM" in
   [LINUX|GENTOOFREEBSD|HPUX])
-    INSTALL_MISC=builds/install/misc
     AC_CONFIG_FILES([
-    gen/install/misc/firebird.conf:${INSTALL_MISC}/firebird.conf
-    gen/install/misc/aliases.conf:${INSTALL_MISC}/aliases.conf.in
-    gen/install/misc/fbintl.conf:builds/install/misc/fbintl.conf
-    gen/install/bin/fb_config:${INSTALL_MISC}/fb_config.in
-    gen/install/bin/changeRunUser.sh:${INSTALL_MISC}/changeRunUser.sh.in
-    gen/install/bin/restoreRootRunUser.sh:${INSTALL_MISC}/restoreRootRunUser.sh.in],
+    gen/install/misc/firebird.conf:builds/install/misc/firebird.conf
+    gen/install/misc/aliases.conf:builds/install/misc/aliases.conf.in
+    gen/install/misc.fbintl.conf:builds/install/misc/fbintl.conf
+    gen/firebird/bin/fb_config:builds/install/misc/fb_config.in
+    gen/firebird/bin/posixLibrary.sh:builds/install/misc/posixLibrary.sh.in
+    gen/firebird/bin/classicLibrary.sh:builds/install/misc/classicLibrary.sh.in
+    gen/firebird/bin/superLibrary.sh:builds/install/misc/superLibrary.sh.in
+    gen/firebird/bin/changeRunUser.sh:builds/install/misc/changeRunUser.sh.in
+    gen/firebird/bin/restoreRootRunUser.sh:builds/install/misc/restoreRootRunUser.sh.in],
    [chmod a+x gen/install/scripts/*.sh gen/install/*sh 2>/dev/null])
    ;;
 esac
@@ -1008,23 +1010,23 @@ case "$PLATFORM" in
     ;;
 
   HPUX)
-    HP_INSTALL=builds/install/arch-specific/hpux/${FIREBIRD_ARCH_TYPE}
-    HP_INSTALL_MISC=builds/install/arch-specific/hpux/misc
+    HP_INSTALL_SRC_DIR=builds/install/arch-specific/hpux/${FIREBIRD_ARCH_TYPE}
     AC_CONFIG_FILES([
-    gen/install/makeinstallImage.sh:${HP_INSTALL}/makeinstallImage.sh.in
-    gen/install/scripts/preInstall.sh:${HP_INSTALL}/preInstall.sh.in
-    gen/install/scripts/tarInstall.sh:${HP_INSTALL}/tarInstall.sh.in
-    gen/install/scripts/tarmainInstall.sh:${HP_INSTALL}/tarmainInstall.sh.in
-    gen/install/scripts/tarUninstall.sh:${HP_INSTALL}/tarUninstall.sh.in
-    gen/install/scripts/tarmainUninstall.sh:${HP_INSTALL}/tarmainUninstall.sh.in
-    gen/install/scripts/postInstall.sh:${HP_INSTALL}/postInstall.sh.in
-    gen/install/scripts/preUninstall.sh:${HP_INSTALL}/preUninstall.sh.in
-    gen/install/scripts/postUninstall.sh:${HP_INSTALL}/postUninstall.sh.in
-    gen/install/misc/firebird.init.d.hpux:${HP_INSTALL_MISC}/firebird.init.d.hpux.in
-    gen/install/misc/rc.config.firebird.hpux:${HP_INSTALL_MISC}/rc.config.firebird.hpux.in
-    gen/install/bin/changedbaPassword.sh:${HP_INSTALL_MISC}/changedbaPassword.sh.in
-    gen/install/bin/changegdslibrarycompatibleLink.sh:${HP_INSTALL_MISC}/changegdslibrarycompatibleLink.sh.in
-    gen/install/bin/createaliasDB.sh:${HP_INSTALL_MISC}/createaliasDB.sh.in], 
+    gen/install/makeinstallImage.sh:${HP_INSTALL_SRC_DIR}/makeinstallImage.sh.in
+    gen/firebird/bin/preInstall.sh:${HP_INSTALL_SRC_DIR}/preInstall.sh.in
+    gen/firebird/bin/tarInstall.sh:${HP_INSTALL_SRC_DIR}/tarInstall.sh.in
+    gen/firebird/bin/tarmainInstall.sh:${HP_INSTALL_SRC_DIR}/tarmainInstall.sh.in
+    gen/firebird/bin/tarUninstall.sh:${HP_INSTALL_SRC_DIR}/tarUninstall.sh.in
+    gen/firebird/bin/tarmainUninstall.sh:${HP_INSTALL_SRC_DIR}/tarmainUninstall.sh.in
+    gen/firebird/bin/postInstall.sh:${HP_INSTALL_SRC_DIR}/postInstall.sh.in
+    gen/firebird/bin/preUninstall.sh:${HP_INSTALL_SRC_DIR}/preUninstall.sh.in
+    gen/firebird/bin/postUninstall.sh:${HP_INSTALL_SRC_DIR}/postUninstall.sh.in
+    gen/install/misc/firebird.init.d.hpux:builds/install/arch-specific/hpux/misc/firebird.init.d.hpux.in
+    gen/install/misc/rc.config.firebird.hpux:builds/install/arch-specific/hpux/misc/rc.config.firebird.hpux.in
+    gen/firebird/bin/changedbaPassword.sh:builds/install/arch-specific/hpux/misc/changedbaPassword.sh.in
+    gen/firebird/bin/changegdslibrarycompatibleLink.sh:builds/install/arch-specific/hpux/misc/changegdslibrarycompatibleLink.sh.in
+    gen/firebird/bin/hpuxLibrary.sh:builds/install/arch-specific/hpux/misc/hpuxLibrary.sh.in
+    gen/firebird/bin/createaliasDB.sh:builds/install/arch-specific/hpux/misc/createaliasDB.sh.in], 
     [chmod a+x gen/install/scripts/*.sh gen/install/*.sh 2>/dev/null])
     ;;
 
