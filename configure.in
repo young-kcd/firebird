@@ -952,16 +952,15 @@ MAKE_SRC_DIR=builds/posix
 dnl EKU: handle platform specific installation and packaging
 dnl: Common Files
 case "$PLATFORM" in
-  [LINUX|HPUX])
+  [LINUX|GENTOOFREEBSD|HPUX])
     INSTALL_MISC=builds/install/misc
     AC_CONFIG_FILES([
     gen/install/misc/firebird.conf:${INSTALL_MISC}/firebird.conf
     gen/install/misc/aliases.conf:${INSTALL_MISC}/aliases.conf.in
+    gen/install/misc/fbintl.conf:builds/install/misc/fbintl.conf
     gen/install/bin/fb_config:${INSTALL_MISC}/fb_config.in
-    gen/install/bin/CSchangeRunUser.sh:${INSTALL_MISC}/CSchangeRunUser.sh.in
-    gen/install/bin/CSrestoreRootRunUser.sh:${INSTALL_MISC}/CSrestoreRootRunUser.sh.in
-    gen/install/bin/SSchangeRunUser.sh:${INSTALL_MISC}/SSchangeRunUser.sh.in
-    gen/install/bin/SSrestoreRootRunUser.sh:${INSTALL_MISC}/SSrestoreRootRunUser.sh.in],
+    gen/install/bin/changeRunUser.sh:${INSTALL_MISC}/changeRunUser.sh.in
+    gen/install/bin/restoreRootRunUser.sh:${INSTALL_MISC}/restoreRootRunUser.sh.in],
    [chmod a+x gen/install/scripts/*.sh gen/install/*sh 2>/dev/null])
    ;;
 esac
@@ -988,9 +987,6 @@ case "$PLATFORM" in
                      gen/firebird/bin/tarMainUninstall.sh:${INSTALL_SRC_DIR}/tarMainUninstall.sh.in
                      gen/install/scripts/rpmheader.txt:${INSTALL_SRC_DIR}/rpmheader.txt.in
                      gen/install/scripts/rpmfiles.txt:${INSTALL_SRC_DIR}/rpmfiles.txt.in
-                     gen/install/misc/firebird.conf:builds/install/misc/firebird.conf
-                     gen/install/misc/aliases.conf:builds/install/misc/aliases.conf.in
-                     gen/install/misc/fbintl.conf:builds/install/misc/fbintl.conf
                      gen/install/misc/firebird.xinetd:builds/install/arch-specific/linux/misc/firebird.xinetd.in
                      gen/install/misc/firebird.init.d.generic:builds/install/arch-specific/linux/misc/firebird.init.d.generic.in
                      gen/install/misc/firebird.init.d.mandrake:builds/install/arch-specific/linux/misc/firebird.init.d.mandrake.in
@@ -1003,8 +999,6 @@ case "$PLATFORM" in
                      gen/firebird/bin/changeGdsLibraryCompatibleLink.sh:builds/install/misc/changeGdsLibraryCompatibleLink.sh.in
                      gen/firebird/bin/createAliasDB.sh:builds/install/misc/createAliasDB.sh.in
                      gen/firebird/bin/fb_config:builds/install/misc/fb_config.in
-            	     gen/firebird/bin/changeRunUser.sh:builds/install/misc/changeRunUser.sh.in
-                     gen/firebird/bin/restoreRootRunUser.sh:builds/install/misc/restoreRootRunUser.sh.in
                      gen/firebird/bin/posixLibrary.sh:builds/install/misc/posixLibrary.sh.in
                      gen/firebird/bin/classicLibrary.sh:builds/install/misc/classicLibrary.sh.in
                      gen/firebird/bin/superLibrary.sh:builds/install/misc/superLibrary.sh.in
