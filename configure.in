@@ -953,7 +953,7 @@ dnl EKU: handle platform specific installation and packaging
 dnl: Common Files
 case "$PLATFORM" in
   [LINUX|HPUX])
-    INSTALL_MISC=src/install/misc
+    INSTALL_MISC=builds/install/misc
     AC_CONFIG_FILES([
     gen/install/misc/firebird.conf:${INSTALL_MISC}/firebird.conf
     gen/install/misc/aliases.conf:${INSTALL_MISC}/aliases.conf.in
@@ -1014,8 +1014,8 @@ case "$PLATFORM" in
     ;;
 
   HPUX)
-    HP_INSTALL=src/install/arch-specific/hpux/${FIREBIRD_ARCH_TYPE}
-    HP_INSTALL_MISC=src/install/arch-specific/hpux/misc
+    HP_INSTALL=builds/install/arch-specific/hpux/${FIREBIRD_ARCH_TYPE}
+    HP_INSTALL_MISC=builds/install/arch-specific/hpux/misc
     AC_CONFIG_FILES([
     gen/install/makeinstallImage.sh:${HP_INSTALL}/makeinstallImage.sh.in
     gen/install/scripts/preInstall.sh:${HP_INSTALL}/preInstall.sh.in
