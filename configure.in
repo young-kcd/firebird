@@ -950,6 +950,23 @@ MAKE_SRC_DIR=builds/posix
 
 
 dnl EKU: handle platform specific installation and packaging
+dnl: Common Files
+case "$PLATFORM" in
+  [LINUX|HPUX])
+    INSTALL_MISC=src/install/misc
+    AC_CONFIG_FILES([
+    gen/install/misc/firebird.conf:${INSTALL_MISC}/firebird.conf
+    gen/install/misc/aliases.conf:${INSTALL_MISC}/aliases.conf.in
+    gen/install/bin/fb_config:${INSTALL_MISC}/fb_config.in
+    gen/install/bin/CSchangeRunUser.sh:${INSTALL_MISC}/CSchangeRunUser.sh.in
+    gen/install/bin/CSrestoreRootRunUser.sh:${INSTALL_MISC}/CSrestoreRootRunUser.sh.in
+    gen/install/bin/SSchangeRunUser.sh:${INSTALL_MISC}/SSchangeRunUser.sh.in
+    gen/install/bin/SSrestoreRootRunUser.sh:${INSTALL_MISC}/SSrestoreRootRunUser.sh.in],
+   [chmod a+x gen/install/scripts/*.sh gen/install/*sh 2>/dev/null])
+   ;;
+esac
+
+dnl: Platform Specific Files
 
 case "$PLATFORM" in
   LINUX|GENTOOFREEBSD)
@@ -996,6 +1013,26 @@ case "$PLATFORM" in
       ],[chmod a+x gen/install/scripts/*.sh gen/install/*sh 2>/dev/null])
     ;;
 
+  HPUX)
+    HP_INSTALL=src/install/arch-specific/hpux/${FIREBIRD_ARCH_TYPE}
+    HP_INSTALL_MISC=src/install/arch-specific/hpux/misc
+    AC_CONFIG_FILES([
+    gen/install/makeinstallImage.sh:${HP_INSTALL}/makeinstallImage.sh.in
+    gen/install/scripts/preInstall.sh:${HP_INSTALL}/preInstall.sh.in
+    gen/install/scripts/tarInstall.sh:${HP_INSTALL}/tarInstall.sh.in
+    gen/install/scripts/tarmainInstall.sh:${HP_INSTALL}/tarmainInstall.sh.in
+    gen/install/scripts/tarUninstall.sh:${HP_INSTALL}/tarUninstall.sh.in
+    gen/install/scripts/tarmainUninstall.sh:${HP_INSTALL}/tarmainUninstall.sh.in
+    gen/install/scripts/postInstall.sh:${HP_INSTALL}/postInstall.sh.in
+    gen/install/scripts/preUninstall.sh:${HP_INSTALL}/preUninstall.sh.in
+    gen/install/scripts/postUninstall.sh:${HP_INSTALL}/postUninstall.sh.in
+    gen/install/misc/firebird.init.d.hpux:${HP_INSTALL_MISC}/firebird.init.d.hpux.in
+    gen/install/misc/rc.config.firebird.hpux:${HP_INSTALL_MISC}/rc.config.firebird.hpux.in
+    gen/install/bin/changedbaPassword.sh:${HP_INSTALL_MISC}/changedbaPassword.sh.in
+    gen/install/bin/changegdslibrarycompatibleLink.sh:${HP_INSTALL_MISC}/changegdslibrarycompatibleLink.sh.in
+    gen/install/bin/createaliasDB.sh:${HP_INSTALL_MISC}/createaliasDB.sh.in], 
+    [chmod a+x gen/install/scripts/*.sh gen/install/*.sh 2>/dev/null])
+    ;;
 
   FREEBSD)
     AC_CONFIG_FILES([gen/install/install.sh:builds/install/arch-specific/freebsd/install.sh.in
