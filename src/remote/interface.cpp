@@ -147,6 +147,7 @@ static bool batch_dsql_fetch(trdb *, rem_port*, struct rmtque *,
 								ISC_STATUS *, USHORT);
 static bool check_response(RDB, PACKET *);
 static bool clear_queue(rem_port*, ISC_STATUS *);
+static bool clear_stmt_que(trdb*, rem_port*, ISC_STATUS*, RSR);
 static void disconnect(rem_port*);
 #ifdef SCROLLABLE_CURSORS
 static REM_MSG dump_cache(rem_port*, ISC_STATUS *, rrq::rrq_repeat *);
@@ -1968,21 +1969,8 @@ ISC_STATUS GDS_DSQL_FETCH(ISC_STATUS* user_status,
 			{
 				// hvlad: we may have queued fetch packet but received EOF before start 
 				// handling of this packet. Handle it now. 
-				fb_assert(statement->rsr_batch_count == 0 || 
-						  statement->rsr_batch_count == 1);
-				while (statement->rsr_batch_count)
-				{
-					if (!receive_queued_packet(tdrdb, port, user_status, statement->rsr_id))
-						return error(user_status);
-
-					// We must receive isc_req_sync as we did fetch after EOF
-					fb_assert(stmt_have_exception(statement) == isc_req_sync);
-				}
-
-				// hvlad: clear isc_req_sync error as it is received because of our batch 
-				// fetching code, not because of wrong client application
-				if (stmt_have_exception(statement) == isc_req_sync) {
-					stmt_clear_exception(statement);
+				if (!clear_stmt_que(tdrdb, port, user_status, statement)) {
+					return error(user_status);
 				}
 
 				// hvlad: as we processed all queued packets at code above we can leave RSR_eof flag. 
@@ -5045,6 +5033,42 @@ static rem_port* analyze_service(Firebird::PathName& service_name,
 	return port;
 }
 
+static bool clear_stmt_que(trdb* tdrdb, rem_port* port, ISC_STATUS* user_status, RSR statement)
+{
+/**************************************
+ *
+ *	c l e a r _ s t m t _ q u e
+ *
+ **************************************
+ *
+ * Functional description
+ *
+ * Receive and handle all queued packets for completely 
+ * fetched statement. There is must be no more than one
+ * such packet and it must contain isc_req_sync response.
+ *
+ **************************************/
+
+	fb_assert(statement->rsr_batch_count == 0 || 
+			  statement->rsr_batch_count == 1);
+
+	while (statement->rsr_batch_count)
+	{
+		if (!receive_queued_packet(tdrdb, port, user_status, statement->rsr_id))
+			return false;
+
+		// We must receive isc_req_sync as we did fetch after EOF
+		fb_assert(stmt_have_exception(statement) == isc_req_sync);
+	}
+
+	// hvlad: clear isc_req_sync error as it is received because of our batch 
+	// fetching code, not because of wrong client application
+	if (stmt_have_exception(statement) == isc_req_sync) {
+		stmt_clear_exception(statement);
+	}
+
+	return true;
+}
 
 static bool batch_dsql_fetch(trdb*	tdrdb,
 							 rem_port*	port,
@@ -5186,6 +5210,11 @@ static bool batch_dsql_fetch(trdb*	tdrdb,
 				statement->rsr_rows_pending = 0;
 			}
 			dequeue_receive(port);
+
+			// clear next queued batch(es) if present
+			if (packet->p_sqldata.p_sqldata_status == 100) {
+				clear_stmt_que(tdrdb, port, tmp_status, statement);
+			}
 			break;
 		}
 		statement->rsr_msgs_waiting++;
