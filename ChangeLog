@@ -1,3 +1,27 @@
+2008-01-02 17:08  paulbeach
+
+	* firebird2/configure.in (1.241.2.24):
+
+	HPUX Installer - Configure should be working now
+
+2008-01-02 14:54  paulbeach
+
+	* firebird2/configure.in (1.241.2.23):
+
+	HPUX
+
+2008-01-02 14:20  paulbeach
+
+	* firebird2/configure.in (1.241.2.22):
+
+	HPUX
+
+2008-01-02 13:47  paulbeach
+
+	* firebird2/configure.in (1.241.2.21):
+
+	HPUX
+
 2007-12-29 01:59  asfernandes
 
 	* firebird2/: builds/install/arch-specific/darwin/install-script
