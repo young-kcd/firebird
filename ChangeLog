@@ -1,3 +1,10 @@
+2008-01-02 09:54  hvlad
+
+	* firebird2/src/remote/interface.cpp (1.157):
+
+	More general fix for bug CORE-1561 : False isc_req_sync error may
+	be reported by fbclient to the client application
+
 2007-12-28 01:13  asfernandes
 
 	* firebird2/: builds/posix/prefix.darwin_i386 (1.4),
