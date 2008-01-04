@@ -539,6 +539,7 @@ removeLinksForBackCompatibility() {
     removeIfOnlyAlink @libdir@/libgds.so.0
 }
 
+
 #------------------------------------------------------------------------
 #  For security reasons most files in firebird installation are
 #  root-owned and world-readable(executable) only (including firebird).
@@ -550,6 +551,23 @@ MakeFileFirebirdWritable() {
     FileName=$1
     chown $RunUser:$RunUser $FileName
     chmod 0644 $FileName
+}
+
+
+#------------------------------------------------------------------------
+#  Set correct permissions for $FbRoot/doc tree 
+
+fixDocPermissions() {
+	cd $FBRootDir
+
+	for i in `find doc -print`; do
+		chown root:root $i
+		if [ -d $i ]; then
+			chmod 0755 $i
+		else
+			chmod 0644 $i
+		fi
+	done
 }
 
 

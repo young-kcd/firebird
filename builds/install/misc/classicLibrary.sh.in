@@ -110,8 +110,11 @@ fixFilePermissions() {
 		chown $RunUser:$RunUser $i
         chmod ug=rw,o= $i
     done
-	
-	cd ..
+
+	# fix up doc permissions
+	fixDocPermissions
+
+	cd $FBRootDir
 }
 
 
