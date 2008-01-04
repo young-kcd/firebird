@@ -76,9 +76,12 @@ RealFirebirdPath = @NEW_FIREBIRD_DIR@
 #____________________________________________________________________________
 # From here we may set some global options to both compiler and linker.
 
-GLOB_OPTIONS=
+# Use configure's CFLAGS as global options for all compilers and linkers
+GLOB_OPTIONS=@CFLAGS@
+
 # Possible use - profiling.
-#GLOB_OPTIONS= -pg
+#GLOB_OPTIONS+= -pg
+
 CFLAGS:= $(CFLAGS) $(GLOB_OPTIONS)
 
 #____________________________________________________________________________

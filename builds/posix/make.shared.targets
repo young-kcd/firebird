@@ -80,7 +80,7 @@ $(SRC_ROOT)/include/gen/blrtable.h: $(BLRTABLE)
 	$(BLRTABLE) > $(SRC_ROOT)/include/gen/blrtable.h
 
 $(BLRTABLE): $(BLRTABLE_Objects)
-	$(CXX) $(LINK_OPTS) $^ -o $@ -L$(LIB) $(LINK_LIBS)
+	$(STATICEXE_LINK) $(LINK_OPTS) $^ -o $@ -L$(LIB) $(LINK_LIBS)
 
 # Adding resources as prerequisite for some files
 

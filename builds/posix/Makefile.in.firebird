@@ -186,11 +186,11 @@ $(GEN_ROOT)/Make.Version : $(SRC_ROOT)/misc/writeBuildNum.sh
 
 external_libraries:
 ifeq ($(STD_ICU),false)
-	$(MAKE) -f $(GEN_ROOT)/Makefile.extern.icu
+	$(MAKE) CFLAGS=@CFLAGS@ -f $(GEN_ROOT)/Makefile.extern.icu
 endif
 ifeq ($(STD_EDITLINE),false)
 ifeq ($(EDITLINE_FLG),Y)
-	$(MAKE) -f $(GEN_ROOT)/Makefile.extern.editline
+	$(MAKE) CFLAGS=@CFLAGS@ -f $(GEN_ROOT)/Makefile.extern.editline
 endif
 endif
 

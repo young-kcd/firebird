@@ -64,7 +64,7 @@ lock_mgr : $(BIN)/fb_lock_mgr
 
 # keep here CXX as linker in order to avoid overwriting of gmon.out by one from lock manager process
 $(BIN)/fb_lock_mgr: $(AllObjects)
-	$(CXX) $(LINK_OPTS) $(AllObjects) -o $@ -L$(LIB) $(LINK_LIBS)
+	$(CXX) @CFLAGS@ $(LINK_OPTS) $(AllObjects) -o $@ -L$(LIB) $(LINK_LIBS)
 
 
 include $(ROOT)/gen/make.shared.targets
