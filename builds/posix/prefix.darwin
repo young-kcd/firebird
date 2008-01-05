@@ -15,7 +15,7 @@
 # All Rights Reserved.
 # Contributor(s): ______________________________________.
 # Start of file prefix.darwin:	$(VERSION)	@PLATFORM@
-#$Id: prefix.darwin,v 1.8.2.19 2007-12-18 13:22:22 paulbeach Exp $
+#$Id: prefix.darwin,v 1.8.2.20 2008-01-05 07:59:04 robocop Exp $
 # 2 Oct 2002, Nickolay Samofatov - Major Cleanup
 #
 # 6th Dec 2007 - NOTE:
@@ -24,7 +24,7 @@
 # version of these files from 3.x. To get this to compile I downloaded
 # a copy of gcc 3.4.6, extracted the libstdc++/include/bits directory and
 # then placed it in /usr/include/c++/4.0.0. Making sure that the original 
-# bits dorectory was saved for future use. There may be a better way to do
+# bits directory was saved for future use. There may be a better way to do
 # this so I am open to suggestions - Paul Beach
 
 LD=@CXX@
