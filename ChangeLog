@@ -1,3 +1,23 @@
+2008-01-04 16:11  alexpeshkoff
+
+	* firebird2/builds/install/misc/: classicLibrary.sh.in (1.4.4.4),
+	posixLibrary.sh.in (1.4.4.6), superLibrary.sh.in (1.1.6.3):
+
+	Fixed CORE-1674: Wrong access rights in doc subdirectory
+
+2008-01-04 14:31  alexpeshkoff
+
+	* firebird2/builds/posix/make.rules (1.28.4.4):
+
+	misc
+
+2008-01-04 14:06  alexpeshkoff
+
+	* firebird2/builds/install/arch-specific/darwin/install-script
+	(1.1.2.9):
+
+	misc
+
 2008-01-02 17:08  paulbeach
 
 	* firebird2/configure.in (1.241.2.24):
