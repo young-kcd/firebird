@@ -1,3 +1,32 @@
+2008-01-04 18:54  alexpeshkoff
+
+	* firebird2/src/jrd/svc.cpp (1.191):
+
+	Make SS kill itself on unix platforms when doing shutdown.  It
+	helps with correct semaphores cleanup, important for some
+	platforms.
+
+2008-01-04 18:34  alexpeshkoff
+
+	* firebird2/builds/posix/: Makefile.in.embed.lockmgr (1.15),
+	Makefile.in.firebird (1.81), make.defaults (1.60),
+	make.shared.targets (1.25):
+
+	Pass through CFLAGS, set for ./configure. This is minimum
+	cross-build support.  It makes it possible to build, for example,
+	for i386 on amd64 linux. Just use:   ./configure CFLAGS=-m32
+	--host=i386-cross-linux or, certainly:	 ./autogen.sh CFLAGS=-m32
+	--host=i386-cross-linux Should also help when doing builds in other
+	cases when 32/64 bit choice is possible.
+
+2008-01-04 16:14  alexpeshkoff
+
+	* firebird2/builds/install/misc/: classicLibrary.sh.in (1.8),
+	posixLibrary.sh.in (1.10), superLibrary.sh.in (1.4):
+
+	Frontported fix for CORE-1674: Wrong access rights in doc
+	subdirectory
+
 2008-01-02 09:54  hvlad
 
 	* firebird2/src/remote/interface.cpp (1.157):
