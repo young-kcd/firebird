@@ -1,3 +1,9 @@
+2008-01-05 08:59  robocop
+
+	* firebird2/builds/posix/prefix.darwin (1.8.2.20):
+
+	Totally misc.
+
 2007-12-20 11:16  paulbeach
 
 	* firebird2/src/install/arch-specific/darwin/: install-script
