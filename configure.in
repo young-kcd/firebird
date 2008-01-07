@@ -162,6 +162,7 @@ case "$target" in
     LOCK_MANAGER_FLG=Y
     EDITLINE_FLG=Y
     SHRLIB_EXT=sl
+    libdir=/usr/lib/pa20_64
     ;;
 
   i386-pc-solaris*)
@@ -956,7 +957,7 @@ case "$PLATFORM" in
     AC_CONFIG_FILES([
     gen/install/misc/firebird.conf:builds/install/misc/firebird.conf
     gen/install/misc/aliases.conf:builds/install/misc/aliases.conf.in
-    gen/install/misc.fbintl.conf:builds/install/misc/fbintl.conf
+    gen/install/misc/fbintl.conf:builds/install/misc/fbintl.conf
     gen/firebird/bin/fb_config:builds/install/misc/fb_config.in
     gen/firebird/bin/posixLibrary.sh:builds/install/misc/posixLibrary.sh.in
     gen/firebird/bin/classicLibrary.sh:builds/install/misc/classicLibrary.sh.in
@@ -1000,10 +1001,6 @@ case "$PLATFORM" in
                      gen/firebird/bin/changeDBAPassword.sh:builds/install/misc/changeDBAPassword.sh.in
                      gen/firebird/bin/changeGdsLibraryCompatibleLink.sh:builds/install/misc/changeGdsLibraryCompatibleLink.sh.in
                      gen/firebird/bin/createAliasDB.sh:builds/install/misc/createAliasDB.sh.in
-                     gen/firebird/bin/fb_config:builds/install/misc/fb_config.in
-                     gen/firebird/bin/posixLibrary.sh:builds/install/misc/posixLibrary.sh.in
-                     gen/firebird/bin/classicLibrary.sh:builds/install/misc/classicLibrary.sh.in
-                     gen/firebird/bin/superLibrary.sh:builds/install/misc/superLibrary.sh.in
                      gen/firebird/bin/linuxLibrary.sh:builds/install/arch-specific/linux/misc/linuxLibrary.sh.in
                      gen/firebird/bin/superLinux.sh:builds/install/arch-specific/linux/misc/superLinux.sh.in
       ],[chmod a+x gen/install/scripts/*.sh gen/install/*sh 2>/dev/null])
