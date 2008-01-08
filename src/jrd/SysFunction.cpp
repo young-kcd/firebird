@@ -1093,14 +1093,14 @@ static dsc* evlCeil(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_
 		case dtype_long:
 		case dtype_int64:
 			{
-				SSHORT scale = 1;
+				SINT64 scale = 1;
 
 				fb_assert(impure->vlu_desc.dsc_scale <= 0);
 				for (int i = -impure->vlu_desc.dsc_scale; i > 0; --i)
 					scale *= 10;
 
-				SLONG v1 = MOV_get_int64(&impure->vlu_desc, impure->vlu_desc.dsc_scale);
-				SLONG v2 = MOV_get_int64(&impure->vlu_desc, 0) * scale;
+				SINT64 v1 = MOV_get_int64(&impure->vlu_desc, impure->vlu_desc.dsc_scale);
+				SINT64 v2 = MOV_get_int64(&impure->vlu_desc, 0) * scale;
 
 				impure->vlu_misc.vlu_int64 = v1 / scale;
 
@@ -1505,14 +1505,14 @@ static dsc* evlFloor(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd
 		case dtype_long:
 		case dtype_int64:
 			{
-				SSHORT scale = 1;
+				SINT64 scale = 1;
 
 				fb_assert(impure->vlu_desc.dsc_scale <= 0);
 				for (int i = -impure->vlu_desc.dsc_scale; i > 0; --i)
 					scale *= 10;
 
-				SLONG v1 = MOV_get_int64(&impure->vlu_desc, impure->vlu_desc.dsc_scale);
-				SLONG v2 = MOV_get_int64(&impure->vlu_desc, 0) * scale;
+				SINT64 v1 = MOV_get_int64(&impure->vlu_desc, impure->vlu_desc.dsc_scale);
+				SINT64 v2 = MOV_get_int64(&impure->vlu_desc, 0) * scale;
 
 				impure->vlu_misc.vlu_int64 = v1 / scale;
 
