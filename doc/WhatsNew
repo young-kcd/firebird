@@ -8,6 +8,11 @@
       Contributor(s):
         Alex Peshkov <peshkoff at mail.ru>
 
+    * Bugfix CORE-1677
+        Floor & ceiling functions return wrong results with exact numeric arguments
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
     * Bugfix CORE-1657
         AV with long inactive read-only read-commited transaction
       Contributor(s):
