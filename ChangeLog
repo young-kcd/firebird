@@ -1,3 +1,48 @@
+2008-01-07 13:03  paulbeach
+
+	*
+	firebird2/builds/install/arch-specific/hpux/classic/postInstall.sh.in
+	(1.1.2.2):
+
+	HPUX Port
+
+2008-01-07 12:29  paulbeach
+
+	* firebird2/builds/install/arch-specific/hpux/: Makefile.in
+	(1.1.2.1), classic/makeinstallImage.sh.in (1.1.2.1),
+	classic/postInstall.sh.in (1.1.2.1), classic/postUninstall.sh.in
+	(1.1.2.1), classic/preInstall.sh.in (1.1.2.1),
+	classic/preUninstall.sh.in (1.1.2.1), classic/tarInstall.sh.in
+	(1.1.2.1), classic/tarUninstall.sh.in (1.1.2.1),
+	classic/tarmainInstall.sh.in (1.1.2.1),
+	classic/tarmainUninstall.sh.in (1.1.2.1),
+	misc/changedbaPassword.sh.in (1.1.2.1),
+	misc/changegdslibrarycompatibleLink.sh.in (1.1.2.1),
+	misc/createaliasDB.sh.in (1.1.2.1), misc/firebird.init.d.hpux.in
+	(1.1.2.1), misc/hpuxLibrary.sh.in (1.1.2.1),
+	misc/rc.config.firebird.hpux.in (1.1.2.1),
+	super/makeinstallImage.sh.in (1.1.2.1), super/postInstall.sh.in
+	(1.1.2.1), super/postUninstall.sh.in (1.1.2.1),
+	super/preInstall.sh.in (1.1.2.1), super/preUninstall.sh.in
+	(1.1.2.1), super/tarInstall.sh.in (1.1.2.1),
+	super/tarUninstall.sh.in (1.1.2.1), super/tarmainInstall.sh.in
+	(1.1.2.1), super/tarmainUninstall.sh.in (1.1.2.1):
+
+	HPUX Port
+
+2008-01-07 12:20  paulbeach
+
+	* firebird2/builds/: install/misc/posixLibrary.sh.in (1.4.4.7),
+	posix/prefix.hpux (1.1.4.3):
+
+	HPUX Port
+
+2008-01-07 12:11  paulbeach
+
+	* firebird2/configure.in (1.241.2.25):
+
+	HPUX Installer - Configure should be working now
+
 2008-01-04 16:11  alexpeshkoff
 
 	* firebird2/builds/install/misc/: classicLibrary.sh.in (1.4.4.4),
