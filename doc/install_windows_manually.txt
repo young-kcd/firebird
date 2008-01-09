@@ -64,6 +64,9 @@ parameter:
 
   install_super.bat secondservice
 
+NOTE: If you are running multiple Firebird services it is essential that you 
+do not configure the FIREBIRD environment variable at the system level.
+
 
 Uninstallation
 --------------
