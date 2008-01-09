@@ -92,7 +92,7 @@
 		}															\
 	}
 
-#define CHECK_HANDLE_MEMBER(blk, cast, type, id, err)					\
+#define CHECK_HANDLE_MEMBER(blk, cast, type, id, err)				\
 	{																\
 		if ((this->port_flags & PORT_lazy) && id == INVALID_OBJECT)	\
 		{															\

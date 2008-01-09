@@ -27,8 +27,6 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in,v 1.7 2008-01-09 15:47:36 alexpeshkoff Exp $
-#
 ROOT=..
 
 
