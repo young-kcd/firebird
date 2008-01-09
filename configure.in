@@ -510,12 +510,13 @@ AC_CHECK_LIB(dl, main)
 AC_CHECK_LIB(c, main)
 AC_CHECK_LIB(m, main)
 if test "$EDITLINE_FLG" = "Y"; then
-	AC_CHECK_LIB(curses, tgetent, , \
-		AC_CHECK_LIB(ncurses, tgetent, , \
-			AC_CHECK_LIB(termcap, tgetent, , \
-				AC_CHECK_LIB(tinfo, tgetent, , \
+	AC_CHECK_LIB(curses, tgetent, TERMLIB=curses, \
+		AC_CHECK_LIB(ncurses, tgetent, TERMLIB=ncurses, \
+			AC_CHECK_LIB(termcap, tgetent, TERMLIB=termcap, \
+				AC_CHECK_LIB(tinfo, tgetent, TERMLIB=tinfo, \
 					AC_MSG_ERROR(termcap support not found)))))  
 fi
+AC_SUBST(TERMLIB)
 if test "$RT_LIB_CHECK" = "true"; then
 	AC_CHECK_LIB(rt, main)
 fi
