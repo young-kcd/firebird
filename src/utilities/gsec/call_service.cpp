@@ -561,6 +561,7 @@ static int typeBuffer(ISC_STATUS* status, char* buf, int offset,
 	{
 		memmove(&buf[offset], p, loop);
 		p = buf;
+		loop += offset;
 		offset = 0;
 	}
 
