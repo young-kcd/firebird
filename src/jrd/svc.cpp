@@ -1281,7 +1281,6 @@ ISC_STATUS SVC_query2(Service* service,
 		case isc_info_svc_to_eof:
 		case isc_info_svc_limbo_trans:
 		case isc_info_svc_get_users:
-		{
 			if (info + 4 >= end) {
 				*info++ = isc_info_truncated;
 				break;
@@ -1327,7 +1326,6 @@ ISC_STATUS SVC_query2(Service* service,
 				}
 			}
 			break;
-		}
 
 		default:
 			*status++ = isc_wish_list;
