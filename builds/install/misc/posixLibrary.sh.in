@@ -374,41 +374,6 @@ EOT
     fi
 }
 
-
-#------------------------------------------------------------------------
-#  Generate new sysdba password - this routine is used only in the 
-#  rpm file not in the install script.
-
-generateNewDBAPassword() {
-    # openssl generates random data.
-	openssl </dev/null >/dev/null 2&>/dev/null
-    if [ $? -eq 0 ]
-    then
-        # We generate 20 random chars, strip any '/''s and get the first 8
-        NewPasswd=`openssl rand -base64 20 | tr -d '/' | cut -c1-8`
-    fi
-
-    # mkpasswd is a bit of a hassle, but check to see if it's there
-    if [ -z "$NewPasswd" ]
-    then
-        if [ -f /usr/bin/mkpasswd ]
-        then
-            NewPasswd=`/usr/bin/mkpasswd -l 8`
-        fi
-    fi
-
-	# On some systems the mkpasswd program doesn't appear and on others
-	# there is another mkpasswd which does a different operation.  So if
-	# the specific one isn't available then keep the original password.
-    if [ -z "$NewPasswd" ]
-    then
-        NewPasswd="masterkey"
-    fi
-
-    writeNewPassword $NewPasswd
-}
-
-
 #------------------------------------------------------------------------
 #  Change sysdba password.
 
