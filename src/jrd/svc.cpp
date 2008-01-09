@@ -2157,8 +2157,8 @@ static void service_enqueue_byte(UCHAR ch, Service* service)
 
 /* Ensure that service is not detached. */
 	if (!(service->svc_flags & SVC_detached)) {
+		service->svc_stdout[service_add_one(service->svc_stdout_tail)] = ch;
 		service->svc_stdout_tail = service_add_one(service->svc_stdout_tail);
-		service->svc_stdout[service->svc_stdout_tail] = ch;
 	}
 }
 
