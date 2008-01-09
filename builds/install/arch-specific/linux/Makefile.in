@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in,v 1.6 2005-05-27 22:15:05 asfernandes Exp $
+#  $Id: Makefile.in,v 1.6.4.1 2008-01-09 17:06:02 alexpeshkoff Exp $
 #
 ROOT=..
 
@@ -103,6 +103,10 @@ RPMSrcDir=$(GEN_ROOT)/install/scripts
 
 TarInstallDir=$(GEN_ROOT)/install
 
+#Target for required libraries detection
+RpmRequiredVersionTarget=$(GEN_ROOT)/firebird/bin/isql
+#Curses library
+TermLib=@TERMLIB@.so
 
 
 dist : packages
@@ -195,7 +199,10 @@ $(RPMFile) : $(GEN_ROOT)/install/rpmscript buildImageDir
 
 $(GEN_ROOT)/install/rpmscript :
 	echo $@
-	cat $(RPMSrcDir)/rpmheader.txt > $@
+	awk < $(RPMSrcDir)/rpmheader.txt 'BEGIN {fl=1;} ($$1 == "Requires:") {fl=0;} (fl) {print $$0;}' > $@
+	echo -n "Requires: `ldd $(RpmRequiredVersionTarget) | grep $(TermLib) | awk '{print $$1;}'`" >> $@
+	echo ", `ldd $(RpmRequiredVersionTarget) | grep libstdc++ | awk '{print $$1;}'`" >> $@
+	awk < $(RPMSrcDir)/rpmheader.txt 'BEGIN {fl=0;} (fl) {print $$0;} ($$1 == "Requires:") {fl=1;}' >> $@
 	echo "" >> $@
 	echo "%prep" >> $@
 #	cat $(ClassicSrcDir)/prepinstall.sh >> $@

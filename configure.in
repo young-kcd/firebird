@@ -460,12 +460,14 @@ AC_CHECK_LIB(dl, main)
 AC_CHECK_LIB(c, main)
 AC_CHECK_LIB(m, main)
 if test "$EDITLINE_FLG" = "Y"; then
-	AC_CHECK_LIB(curses, tgetent, , \
-		AC_CHECK_LIB(ncurses, tgetent, , \
-			AC_CHECK_LIB(termcap, tgetent, , \
-				AC_CHECK_LIB(tinfo, tgetent, , \
+	AC_CHECK_LIB(curses, tgetent, TERMLIB=curses, \
+		AC_CHECK_LIB(ncurses, tgetent, TERMLIB=ncurses, \
+			AC_CHECK_LIB(termcap, tgetent, TERMLIB=termcap, \
+				AC_CHECK_LIB(tinfo, tgetent, TERMLIB=tinfo, \
 					AC_MSG_ERROR(termcap support not found)))))  
 	AC_SUBST(EDITLINE_A, -leditline)
+	AC_SUBST(TERMLIB)
+	XE_APPEND(-l$TERMLIB, LIBS)
 fi
 
 
@@ -538,6 +540,7 @@ AC_CHECK_FUNCS(pthread_keycreate pthread_key_create)
 AC_CHECK_FUNCS(llrint)
 AC_CHECK_FUNCS(localtime_r)
 AC_CHECK_FUNCS(gmtime_r)
+
 if test "$ac_cv_header_semaphore_h" = "yes"; then
 savedFlags="$CFLAGS"
 CFLAGS="$CFLAGS $PTHREAD_CFLAGS"

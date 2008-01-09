@@ -11,7 +11,7 @@ AutoReqProv: no
 # BuildArchitectures: @CPU_TYPE@
 # BuildRoot: /var/tmp/%{name}-buildroot
 BuildRoot: @BUILD_ROOT_DIR@/gen/buildroot
-Requires: libncurses.so.5 libstdc++.so.5
+Requires: ### will be set in Makefile to current libncurses and libstdc ###
 Provides: libfbclient.so.2 libfbembed.so.2 libgds.so
 
 %description
