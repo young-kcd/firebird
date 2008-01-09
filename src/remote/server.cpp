@@ -77,7 +77,8 @@
 
 #define CHECK_HANDLE(blk,cast,type,id,err)							\
 	{																\
-		if (id >= port->port_object_vector->vec_count ||			\
+		if (!port->port_objects ||									\
+			id >= port->port_object_vector->vec_count ||			\
 			!(blk = (cast) port->port_objects [id]) ||				\
 			((BLK) blk)->blk_type != (UCHAR) type)					\
 		{															\
@@ -90,7 +91,8 @@
 
 #define CHECK_HANDLE_MEMBER(blk,cast,type,id,err)					\
 	{																\
-		if (id >= this->port_object_vector->vec_count ||			\
+		if (!this->port_objects ||									\
+			id >= this->port_object_vector->vec_count ||			\
 			!(blk = (cast) this->port_objects [id]) ||				\
 			((BLK) blk)->blk_type != (UCHAR) type)					\
 		{															\

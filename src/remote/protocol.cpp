@@ -1300,12 +1300,19 @@ static bool_t xdr_request(
 		return TRUE;
 
 	port = (PORT) xdrs->x_public;
+
+	if (!port->port_objects || request_id >= port->port_object_vector->vec_count)
+		return FALSE;
+
 	request = (RRQ) port->port_objects[request_id];
 
 	if (!request)
 		return FALSE;
 
 	if (incarnation && !(request = REMOTE_find_request(request, incarnation)))
+		return FALSE;
+
+	if (message_number > request->rrq_max_msg)
 		return FALSE;
 
 	tail = &request->rrq_rpt[message_number];
@@ -1584,6 +1591,8 @@ static bool_t xdr_sql_blr(
 
 	port = (PORT) xdrs->x_public;
 	if (statement_id >= 0) {
+		if (!port->port_objects || statement_id >= port->port_object_vector->vec_count)
+ 			return FALSE;
 		if (!(statement = (RSR) port->port_objects[statement_id]))
 			return FALSE;
 	}
@@ -1674,6 +1683,8 @@ static bool_t xdr_sql_message( XDR * xdrs, SLONG statement_id)
 
 	port = (PORT) xdrs->x_public;
 	if (statement_id >= 0) {
+		if (!port->port_objects || statement_id >= port->port_object_vector->vec_count)
+ 			return FALSE;
 		if (!(statement = (RSR) port->port_objects[statement_id]))
 			return FALSE;
 	}
