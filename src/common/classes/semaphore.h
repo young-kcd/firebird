@@ -115,7 +115,7 @@ private:
 	bool  init;
 public:
 #ifdef MIXED_SEMAPHORE_AND_FILE_HANDLE
-	static bool checkHandle(int n);
+	static bool SignalSafeSemaphore::checkHandle(int n);
 #endif
 	SignalSafeSemaphore()
 		: init(false)
