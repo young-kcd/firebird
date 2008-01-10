@@ -1,3 +1,63 @@
+2008-01-10 00:57  asfernandes
+
+	* firebird2/: builds/install/arch-specific/linux/Makefile.in (1.8),
+	src/remote/server.cpp (1.159):
+
+	Misc
+
+2008-01-09 17:14  alexpeshkoff
+
+	* firebird2/configure.in (1.271):
+
+	Fixed CORE-1421: RPM libstdc++ version dependency
+
+2008-01-09 16:47  alexpeshkoff
+
+	* firebird2/builds/install/arch-specific/linux/: Makefile.in (1.7),
+	classic/rpmheader.txt.in (1.7), super/rpmheader.txt.in (1.8):
+
+	Fixed CORE-1421: RPM libstdc++ version dependency
+
+2008-01-09 15:43  paul_reeves
+
+	* firebird2/doc/install_windows_manually.txt (1.2):
+
+	Clarify a point
+
+2008-01-09 12:05  paulbeach
+
+	* firebird2/builds/install/:
+	arch-specific/linux/misc/linuxLibrary.sh.in (1.7),
+	misc/posixLibrary.sh.in (1.12):
+
+	Move generateNewDBAPassword function from posixLibrary to
+	linuxLibrary. This function makes no sense on HPUX.
+
+2008-01-09 11:20  dimitr
+
+	* firebird2/src/remote/: protocol.cpp (1.61), server.cpp (1.158):
+
+	Fixed CORE-1681.
+
+2008-01-09 10:24  alexpeshkoff
+
+	* firebird2/src/jrd/svc.cpp (1.193):
+
+	Removed accidentially added scope in switch
+
+2008-01-09 10:21  alexpeshkoff
+
+	* firebird2/src/utilities/gsec/call_service.cpp (1.16):
+
+	Fixed CORE-1680: gsec display only shows some first users when
+	there are many users (>50) in security database
+
+2008-01-09 10:09  alexpeshkoff
+
+	* firebird2/src/jrd/svc.cpp (1.192):
+
+	Fixed CORE-1679: Gagbage bytes in isc_service_query() output
+
 2008-01-08 19:29  dimitr
 
 	* firebird2/doc/WhatsNew (1.146):
