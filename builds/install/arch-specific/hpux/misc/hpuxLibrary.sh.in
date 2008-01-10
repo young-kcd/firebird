@@ -89,3 +89,9 @@ stopSuperServerIfRunning() {
 		fi
     fi
 }
+#-----------------------------------------------------------------------
+# Blank stub on HPUX - don't use openssl
+
+generateNewDBAPassword() {
+echo "generateNewDBAPassword" >/dev/null 2>&1
+}
