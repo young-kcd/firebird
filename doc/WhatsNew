@@ -8,6 +8,16 @@
       Contributor(s):
         Alex Peshkov <peshkoff at mail.ru>
 
+    * Bugfix CORE-1681
+        Garbage data in the incoming remote packet may crash the server
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-1679
+        Garbage bytes in isc_service_query() output
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
     * Bugfix CORE-1677
         Floor & ceiling functions return wrong results with exact numeric arguments
       Contributor(s):
