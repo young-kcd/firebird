@@ -515,8 +515,9 @@ if test "$EDITLINE_FLG" = "Y"; then
 			AC_CHECK_LIB(termcap, tgetent, TERMLIB=termcap, \
 				AC_CHECK_LIB(tinfo, tgetent, TERMLIB=tinfo, \
 					AC_MSG_ERROR(termcap support not found)))))  
+	AC_SUBST(TERMLIB)
+	XE_APPEND(-l$TERMLIB, LIBS)
 fi
-AC_SUBST(TERMLIB)
 if test "$RT_LIB_CHECK" = "true"; then
 	AC_CHECK_LIB(rt, main)
 fi
