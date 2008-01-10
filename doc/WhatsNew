@@ -13,6 +13,11 @@
       Contributor(s):
         Dmitry Yemanov <dimitr at firebirdsql.org>
 
+    * Bugfix CORE-1680
+        "gsec display" only shows some first users when there are many users (>50) in security database
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
     * Bugfix CORE-1679
         Garbage bytes in isc_service_query() output
       Contributor(s):
@@ -88,6 +93,11 @@
         Server crashes inside the page validation routine
       Contributor(s):
         Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-1599
+        RPM libstdc++ version dependency
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
 
     * Bugfix CORE-1597
         GLOBAL TEMPORARY TABLEs allowed to be created in ODS less than 11.1
