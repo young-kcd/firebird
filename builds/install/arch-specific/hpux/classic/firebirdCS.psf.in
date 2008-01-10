@@ -1,0 +1,140 @@
+depot
+layout_version 1.0
+vendor
+tag Firebird
+title Firebird Project
+description "Firebird Database"
+end
+
+product
+tag Firebird
+title "Firebird Database for HP-UX"
+description "Firebird Relational Database Classic"
+revision 2.0.3
+category database
+category_title Database
+preinstall install/scripts/preInstall.sh
+postinstall install/scripts/postInstall.sh
+preremove install/scripts/preUninstall.sh
+postremove install/scripts/postUninstall.sh
+#
+architecture HP-UX_B.11_64
+os_name HP-UX
+os_release ?.11.*
+os_version ? 
+#
+fileset
+tag main
+file -u 0666 -g firebird -o firebird firebird/security2.fdb /opt/firebird/security2.fdb
+file -u 0644 -g firebird -o firebird firebird/misc/firebird.conf /opt/firebird/firebird.conf
+file -u 0644 -g firebird -o firebird ../builds/install/misc/aliases.conf.in /opt/firebird/aliases.conf
+file -u 0644 -g firebird -o firebird firebird/misc/fbintl.conf /opt/firebird/fbintl.conf
+file -u 0644 -g firebird -o firebird ../doc/WhatsNew /opt/firebird/WhatsNew
+end
+#
+fileset
+tag scripts
+file -u 0555 -g firebird -o firebird install/bin/changeRunUser.sh /opt/firebird/bin/changeRunUser.sh
+file -u 0555 -g firebird -o firebird install/bin/restoreRootRunUser.sh /opt/firebird/bin/restoreRootRunUser.sh
+file -u 0555 -g firebird -o firebird install/bin/changedbaPassword.sh /opt/firebird/bin/changedbaPassword.sh
+end
+fileset 
+tag include
+file -u 0644 -g firebird -o firebird firebird/include/ib_util.h /opt/firebird/include/ib_util.h
+file -u 0644 -g firebird -o firebird firebird/include/perf.h /opt/firebird/include/perf.h
+file -u 0644 -g firebird -o firebird firebird/include/iberror.h /opt/firebird/include/iberror.h
+file -u 0644 -g firebird -o firebird firebird/include/ibase.h /opt/firebird/include/ibase.h
+end
+fileset
+tag intl
+file -u 0755 -g firebird -o firebird firebird/intl/libfbintl.sl /opt/firebird/intl/libfbintl.sl
+end
+fileset
+tag UDF
+file -u 0755 -g firebird -o firebird firebird/UDF/ib_udf.sl /opt/firebird/UDF/ib_udf.sl
+file -u 0755 -g firebird -o firebird firebird/UDF/fbudf.sl /opt/firebird/UDF/fbudf.sl
+file -u 0644 -g firebird -o firebird ../src/extlib/ib_udf.sql /opt/firebird/UDF/ib_udf.sql 
+file -u 0644 -g firebird -o firebird ../src/extlib/ib_udf2.sql /opt/firebird/UDF/ib_udf2.sql 
+file -u 0644 -g firebird -o firebird ../src/extlib/fbudf/fbudf.sql /opt/firebird/UDF/fbudf.sql 
+end
+fileset
+tag bin
+file -u 0755 -g firebird -o firebird firebird/bin/fb_inet_server /opt/firebird/bin/fb_inet_server
+file -u 0755 -g firebird -o firebird firebird/bin/gfix /opt/firebird/bin/gfix
+file -u 0755 -g firebird -o firebird firebird/bin/gbak /opt/firebird/bin/gbak
+file -u 0755 -g firebird -o firebird firebird/bin/gsplit /opt/firebird/bin/gsplit
+file -u 0755 -g firebird -o firebird firebird/bin/gsec /opt/firebird/bin/gsec
+file -u 0755 -g firebird -o firebird firebird/bin/isql /opt/firebird/bin/isql
+file -u 0755 -g firebird -o firebird firebird/bin/gpre /opt/firebird/bin/gpre
+file -u 0755 -g firebird -o firebird firebird/bin/gds_drop /opt/firebird/bin/gds_drop
+file -u 0755 -g firebird -o firebird firebird/bin/gstat /opt/firebird/bin/gstat
+file -u 0755 -g firebird -o firebird firebird/bin/fb_lock_print /opt/firebird/bin/fb_lock_print
+file -u 0755 -g firebird -o firebird firebird/bin/fb_lock_mgr /opt/firebird/bin/fb_lock_mgr
+file -u 0755 -g firebird -o firebird firebird/bin/gdef /opt/firebird/bin/gdef
+file -u 0755 -g firebird -o firebird firebird/bin/qli /opt/firebird/bin/qli
+# From 2.0
+file -u 0755 -g firebird -o firebird firebird/bin/nbackup /opt/firebird/bin/nbackup
+# From 2.1
+# file -u 0755 -g firebird -o firebird firebird/bin/fbsvcmgr /opt/firebird/bin/fbsvcmgr
+end
+fileset
+tag upgrade
+file -u 0644 -g firebird -o firebird ../src/misc/upgrade/v2/ib_udf2_params.txt /opt/firebird/upgrade/ib_udf2.params.txt
+file -u 0644 -g firebird -o firebird ../src/misc/upgrade/v2/ib_udf_params.txt /opt/firebird/upgrade/ib_udf_params.txt
+file -u 0644 -g firebird -o firebird ../src/misc/upgrade/v2/ib_udf_upgrade.sql /opt/firebird/upgrade/ib_udf_upgrade.sql
+file -u 0644 -g firebird -o firebird ../src/misc/upgrade/v2/security_database.sql /opt/firebird/upgrade/security_database.sql
+file -u 0644 -g firebird -o firebird ../src/misc/upgrade/v2/security_database.txt /opt/firebird/upgrade/security_database.txt
+# file -u 0644 -g firebird -o firebird ../src/misc/upgrade/v2.1/metadata_charset.txt /opt/firebird/upgrade/metadata_charset.txt
+# file -u 0644 -g firebird -o firebird ../src/misc/upgrade/v2.1/metadata_charset_create.sql /opt/firebird/upgrade/metadata_charset_create.sql
+# file -u 0644 -g firebird -o firebird ../src/misc/upgrade/v2.1/metadata_charset_drop.sql /opt/firebird/upgrade/metadata_charset_drop.sql
+end
+fileset 
+tag examples
+file -u 0644 -g firebird -o firebird firebird/examples/README /opt/firebird/examples/README
+file -u 0644 -g firebird -o firebird firebird/examples/functions.c /opt/firebird/examples/functions/functions.c
+directory firebird/examples/api=/opt/firebird/examples/api
+file_permissions -u 0644 -g firebird -o firebird
+file *
+direcory firebird/examples/dyn=/opt/firebird/examples/dyn
+file_permissions -u 0644 -g firebird -o firebird
+file *
+directory firebird/examples/empbuild=/opt/firebird/examples/empbuild
+file_permissions -u 0644 -g firebird -o firebird
+file *
+directory firebird/examples/include=/opt/firebird/examples/include
+file_permissions -u 0644 -g firebird -o firebird
+file *
+directory firebird/examples/stat=/opt/firebird/examples/stat
+file_permissions -u 0644 -g firebird -o firebird
+directory firebird/examples/udf=/opt/firebird/examples/udf
+file_permissions -u 0644 -g firebird -o firebird
+file *
+end
+fileset
+tag lib
+file -u 0755 -g firebird -o firebird firebird/lib/libfbclient.sl.2.0.3 /opt/firebird/lib/libfbclient.sl.2.0.3
+file -u 0755 -g firebird -o firebird firebird/lib/libfbembed.sl.2.0.3 /opt/firebird/lib/libfbembed.sl.2.0.3
+file -u 0755 -g firebird -o firebird firebird/lib/libib_util.sl /opt/firebird/lib/libib_util.sl
+file -u 0755 -g firebird -o firebird firebird/lib/libicudata.sl.30.0 /opt/firebird/lib/libicudata.sl.30.0
+file -u 0755 -g firebird -o firebird firebird/lib/libicui18n.sl.30.0 /opt/firebird/lib/libicui18n.sl.30.0
+file -u 0755 -g firebird -o firebird firebird/lib/libicuuc.sl.30.0 /opt/firebird/lib/libicuuc.sl.30.0
+end
+fileset
+tag help
+file -u 0755 -g firebird -o firebird firebird/help/help.fdb /opt/firebird/help/help.fdb
+end
+fileset
+tag messages
+file -u 0666 -g firebird -o firebird firebird/firebird.msg /opt/firebird/firebird.msg
+file -u 0666 -g firebird -o firebird firebird/fr_FR.msg /opt/firebird/fr_FR.msg
+file -u 0666 -g firebird -o firebird firebird/de_DE.msg /opt/firebird/de_DE.msg
+end
+fileset
+tag docs
+directory ../doc=/opt/firebird/doc
+file_permissions -u 0644 -g firebird -o firebird
+file *
+end
+end
+
+
