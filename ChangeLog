@@ -1,3 +1,33 @@
+2008-01-10 15:18  paulbeach
+
+	*
+	firebird2/builds/install/arch-specific/hpux/misc/hpuxLibrary.sh.in
+	(1.1.2.3):
+
+	No -M for useradd on HPUX
+
+2008-01-10 12:19  paulbeach
+
+	*
+	firebird2/builds/install/arch-specific/hpux/classic/postUninstall.sh.in
+	(1.1.2.3):
+
+	HPUX Depot install
+
+2008-01-10 10:49  paulbeach
+
+	* firebird2/: builds/install/arch-specific/hpux/Makefile.in
+	(1.1.2.2),
+	builds/install/arch-specific/hpux/classic/postInstall.sh.in
+	(1.1.2.3),
+	builds/install/arch-specific/hpux/classic/postUninstall.sh.in
+	(1.1.2.2),
+	builds/install/arch-specific/hpux/classic/firebirdCS.psf.in
+	(1.1.2.1), builds/install/arch-specific/hpux/misc/hpuxLibrary.sh.in
+	(1.1.2.2), configure.in (1.241.2.27):
+
+	HPUX Depot install
+
 2008-01-09 18:04  alexpeshkoff
 
 	* firebird2/: configure.in (1.241.2.26),
