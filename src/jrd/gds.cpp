@@ -3465,7 +3465,7 @@ static int blr_print_word(gds_ctl* control)
 }
 
 
-void gds__cleanup(void)
+namespace
 {
 /**************************************
  *
@@ -3477,34 +3477,42 @@ void gds__cleanup(void)
  *	Exit handler for image exit.
  *
  **************************************/
+	class GdsCleanup
+	{
+	public:
+		~GdsCleanup()
+		{
+			if (! initialized)
+				return;
 #ifdef UNIX
-	if (gds_pid != getpid())
-		return;
+			if (gds_pid != getpid())
+				return;
 #endif
+			gds__msg_close(NULL);
 
-	gds__msg_close(NULL);
+			CLEAN clean;
 
-	CLEAN clean;
+			while ( (clean = cleanup_handlers) ) 
+			{
+				cleanup_handlers = clean->clean_next;
+				FPTR_VOID_PTR routine = clean->clean_routine;
+				void* arg = clean->clean_arg;
 
-	while (clean = cleanup_handlers) {
-		cleanup_handlers = clean->clean_next;
-		FPTR_VOID_PTR routine = clean->clean_routine;
-		void* arg = clean->clean_arg;
+				/* We must free the handler before calling it because there
+				   may be a handler (and is) that frees all memory that has
+				   been allocated. */
 
-		/* We must free the handler before calling it because there
-		   may be a handler (and is) that frees all memory that has
-		   been allocated. */
+				FREE_LIB_MEMORY(clean);
 
-		FREE_LIB_MEMORY(clean);
+				(*routine)(arg);
+			}
 
-		(*routine)(arg);
-	}
+			initialized = false;
+		}
+	};
 
-#ifdef V4_THREADING
-/* V4_DESTROY; */
-#endif
-	initialized = false;
-}
+	GdsCleanup cleanupInstance;
+} // anonymous namespace
 
 
 static void init(void)
@@ -3566,8 +3574,6 @@ static void init(void)
 #endif
 #endif /* SUPERSERVER */
 #endif /* UNIX */
-
-	atexit(gds__cleanup);
 
 	initialized = true;
 
