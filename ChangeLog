@@ -1,3 +1,10 @@
+2008-01-11 13:55  alexpeshkoff
+
+	* firebird2/src/jrd/gds.cpp (1.193.2.4):
+
+	Backported fix for CORE-1671: atexit() calls in client libraries
+	cause segfaults if the libraries are used in dlopen()ed modules
+
 2008-01-10 15:18  paulbeach
 
 	*
