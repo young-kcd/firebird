@@ -417,7 +417,7 @@ void BackupManager::end_backup(thread_db* tdbb, bool recover)
 		if ( (recover || backup_state != nbak_state_stalled) && (backup_state != nbak_state_merge ) ) {
 			NBAK_TRACE(("invalid state %d", backup_state));
 			endLock.unlock(tdbb, LCK_write);
-			unlock_shared_database(tdbb);
+			unlock_clean_database(tdbb);
 			return;
 		}
 		header = (Ods::header_page*) window.win_buffer;
