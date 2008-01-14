@@ -6594,7 +6594,7 @@ static bool write_page(
 			char buffer[1000], *ptr = buffer;
 			strcpy(ptr, "NBAK,Write page ");
 			ptr += strlen(ptr);
-			gds__ulstr(ptr, bdb->bdb_page, 0, 0);
+			gds__ulstr(ptr, bdb->bdb_page.getPageNum(), 0, 0);
 			ptr += strlen(ptr);
 
 			strcpy(ptr, ", backup_state=");
