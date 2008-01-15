@@ -61,6 +61,9 @@ inline qli_rlb* CHECK_RLB(qli_rlb*& in)
 #define STUFF(blr)	*rlb->rlb_data++ = blr
 #define STUFF_WORD(blr)	{STUFF (blr); STUFF (blr >> 8);}
 
+struct qli_msg; // forward decl.
+
+
 // Request block 
 
 struct qli_req {
@@ -69,10 +72,10 @@ struct qli_req {
     dbb*			req_database;	// Database for request 
     FB_API_HANDLE	req_handle;		// Database request handle 
     qli_rlb*		req_blr;
-    struct qli_msg*	req_messages;	// Messages associated with request 
-    struct qli_msg*	req_receive;	// Current receive message, if any  
-    struct qli_msg*	req_send;		// Current send message, if any  
-    struct qli_msg*	req_continue;	// Message to continue FOR loop after optional actions 
+    qli_msg*		req_messages;	// Messages associated with request
+    qli_msg*		req_receive;	// Current receive message, if any
+    qli_msg*		req_send;		// Current send message, if any
+    qli_msg*		req_continue;	// Message to continue FOR loop after optional actions
     USHORT			req_flags;		// Flags for state of request compilation, etc. 
     USHORT			req_context;	// Next available context 
     USHORT			req_msg_number;	// Next available message number 
@@ -107,7 +110,7 @@ struct qli_ctx {
     qli_nod*		ctx_stream;		// Stream of context 
     struct qli_fld*	ctx_variable;	// Variable reference 
     qli_req*		ctx_request;	// Request block 
-    struct qli_msg*	ctx_message;	// Message for data 
+    qli_msg*		ctx_message;	// Message for data
     qli_nod*		ctx_rse;		// RSE node for root context 
     qli_nod*		ctx_sub_rse;	// RSE node aggregate 
     qli_ctx*		ctx_parent;		// Parent context for map 
@@ -130,8 +133,8 @@ struct qli_msg {
     blk			msg_header;
     qli_req*	msg_request;		// Parent request 
     qli_ctx*	msg_context;		// Contexts in message 
-    struct qli_msg* msg_next;		// Next message in request 
-    struct qli_par* msg_parameters;	// Field instances 
+    qli_msg*	msg_next;			// Next message in request
+    struct qli_par*	msg_parameters;	// Field instances
     USHORT		msg_number;			// Message number 
     USHORT		msg_length;			// Message length 
     USHORT		msg_parameter;		// Next parameter number 
@@ -194,7 +197,7 @@ const USHORT ITM_overlapped	= 1;			// Overlapped by another item
 
 struct qli_prt {
     blk		prt_header;
-    struct file*	prt_file;		// FILE pointer 
+    FILE*	prt_file;		// FILE pointer 
     struct qli_rpt*	prt_report;		// Report block (if report) 
     void	(*prt_new_page)(qli_prt*, bool);	// New page routine, if any 
     USHORT	prt_lines_per_page;

@@ -586,46 +586,36 @@ void FMT_put(const TEXT* line, qli_prt* print)
  **************************************
  *
  * Functional description
- *	Write out an output file.   Write
- *	fewer than 256 characters at a time
- *	to avoid annoying VMS.
+ *	Write out an output file.
  *
  **************************************/
 	for (const TEXT* pnewline = line; *pnewline; pnewline++)
+	{
 		if (*pnewline == '\n' || *pnewline == '\f')
 			--print->prt_lines_remaining;
-
-	TEXT buffer[256];
-	const TEXT* const end = buffer + sizeof(buffer) - 1;
-	const TEXT* q = line;
-	TEXT* p;
+	}
 
 	if (print && print->prt_file)
-		while (*q) {
-			for (p = buffer; p < end && *q;)
-				*p++ = *q++;
-			*p = 0;
-			fprintf((FILE *) print->prt_file, "%s", buffer);
-		}
+	{
+		fprintf(print->prt_file, "%s", line);
+	}
 	else {
-		while (*q) {
-			for (p = buffer; p < end && *q;)
-				*p++ = *q++;
-			*p = 0;
 #ifdef DEV_BUILD
-			if (QLI_hex_output) {
-				// Hex mode output to assist debugging of multicharset work
+		if (QLI_hex_output)
+		{
+			// Hex mode output to assist debugging of multicharset work
 
-				for (p = buffer; p < end && *p; p++)
-					if (is_printable(*p))
-						fprintf(stdout, "%c", *p);
-					else
-						fprintf(stdout, "[%2.2X]", *(UCHAR *) p);
+			for (const TEXT* p = line; *p; p++)
+			{
+				if (is_printable(*p))
+					fprintf(stdout, "%c", *p);
+				else
+					fprintf(stdout, "[%2.2X]", *(UCHAR*) p);
 			}
-			else
-#endif
-				fprintf(stdout, "%s", buffer);
 		}
+		else
+#endif
+			fprintf(stdout, "%s", line);
 		QLI_skip_line = true;
 	}
 }
@@ -1382,8 +1372,10 @@ static void report_break( qli_brk* control, qli_vec** columns_vec, const bool bo
 	}
 
 	for (; control; control = control->brk_next)
+	{
 		if (control->brk_line)
 			report_line((qli_nod*) control->brk_line, columns_vec);
+	}
 }
 
 

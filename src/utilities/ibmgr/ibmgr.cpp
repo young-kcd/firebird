@@ -95,10 +95,6 @@ int CLIB_ROUTINE main( int argc, char **argv)
  *	the specified argc/argv to IBMGR_exec_line (see below).
  *
  **************************************/
-#ifdef VMS
-	argc = VMS_parse(&argv, argc);
-#endif
-
 
 /* Let's see if we have something in
    environment variables

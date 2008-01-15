@@ -116,10 +116,6 @@ int main( int argc, char *argv[])
 	p_upper_bound = c_upper_bound = d_upper_bound = BIG_NUMBER;
 	USHORT pg_type = 0;
 
-#ifdef VMS
-	argc = VMS_parse(&argv, argc);
-#endif
-
 	const TEXT* const* const end = argv + argc;
 	++argv;
 	struct swc switch_space;

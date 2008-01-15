@@ -3251,16 +3251,20 @@ static qli_syntax* parse_blr( UCHAR ** ptr, qli_symbol* symbol)
 		constant->con_desc.dsc_scale = scale;
 		constant->con_desc.dsc_length = length;
 		constant->con_desc.dsc_address = p = constant->con_data;
-		if (dtype == dtype_text)
+		switch (dtype)
+		{
+		case dtype_text:
 			while (l--)
 				*p++ = BLR_BYTE;
-		else if (dtype == dtype_short) {
-			*(SSHORT *) p = gds__vax_integer(blr, l);
+			break;
+		case dtype_short:
+			*(SSHORT*) p = gds__vax_integer(blr, l);
 			blr += l;
-		}
-		else if (dtype == dtype_long) {
-			*(SLONG *) p = gds__vax_integer(blr, l);
+			break;
+		case dtype_long:
+			*(SLONG*) p = gds__vax_integer(blr, l);
 			blr += l;
+			break;
 		}
 		node = make_node(nod_constant, 1);
 		node->syn_count = 0;
@@ -3275,8 +3279,10 @@ static qli_syntax* parse_blr( UCHAR ** ptr, qli_symbol* symbol)
 		node = make_node(operatr, args);
 		arg = node->syn_arg;
 		while (--args >= 0)
+		{
 			if (!(*arg++ = parse_blr(&blr, symbol)))
 				return NULL;
+		}
 	}
 
 	*ptr = blr;

@@ -609,7 +609,8 @@ static void gen_compile( qli_req* request)
 	ISC_STATUS_ARRAY status_vector;
 	if (isc_compile_request(status_vector, &dbb->dbb_handle,
 							 &request->req_handle, length,
-							 (const char*) rlb->rlb_base)) {
+							 (const char*) rlb->rlb_base)) 
+	{
 		GEN_rlb_release (rlb);
 		ERRQ_database_error(dbb, status_vector);
 	}
@@ -681,7 +682,6 @@ static void gen_descriptor(const dsc* desc, qli_req* request)
 		STUFF(blr_quad);
 		STUFF(desc->dsc_scale);
 		break;
-
 
 	case dtype_real:
 		STUFF(blr_float);
@@ -1321,17 +1321,21 @@ static void gen_map(qli_map* map, qli_req* request)
 
 	USHORT count = 0;
 	for (temp = map; temp; temp = temp->map_next)
+	{
 		if (temp->map_node->nod_type != nod_function)
 			temp->map_position = count++;
+	}
 
 	STUFF(blr_map);
 	STUFF_WORD(count);
 
 	for (temp = map; temp; temp = temp->map_next)
+	{
 		if (temp->map_node->nod_type != nod_function) {
 			STUFF_WORD(temp->map_position);
 			gen_expression(temp->map_node, request);
 		}
+	}
 }
 
 

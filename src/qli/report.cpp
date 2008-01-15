@@ -190,15 +190,13 @@ static void bottom_break( qli_brk* control, qli_prt* print)
  *	Force all lower breaks then take break.
  *
  **************************************/
-	qli_lls* stack;
-
 	if (!control)
 		return;
 
 	if (control->brk_next)
 		bottom_break(control->brk_next, print);
 
-	for (stack = control->brk_statisticals; stack; stack = stack->lls_next)
+	for (qli_lls* stack = control->brk_statisticals; stack; stack = stack->lls_next)
 		EVAL_break_compute((qli_nod*) stack->lls_object);
 
 	FMT_print((qli_nod*) control->brk_line, print);
@@ -217,11 +215,11 @@ static void increment_break( qli_brk* control)
  *	Toss another record into running computations.
  *
  **************************************/
-	qli_lls* stack;
-
 	for (; control; control = control->brk_next)
-		for (stack = control->brk_statisticals; stack;
-			 stack = stack->lls_next) EVAL_break_increment((qli_nod*) stack->lls_object);
+	{
+		for (qli_lls* stack = control->brk_statisticals; stack; stack = stack->lls_next)
+			EVAL_break_increment((qli_nod*) stack->lls_object);
+	}
 }
 
 
@@ -237,11 +235,11 @@ static void initialize_break( qli_brk* control)
  *	Execute a control break.
  *
  **************************************/
-	qli_lls* stack;
-
 	for (; control; control = control->brk_next)
-		for (stack = control->brk_statisticals; stack;
-			 stack = stack->lls_next) EVAL_break_init((qli_nod*) stack->lls_object);
+	{
+		for (qli_lls* stack = control->brk_statisticals; stack; stack = stack->lls_next)
+			EVAL_break_init((qli_nod*) stack->lls_object);
+	}
 }
 
 
@@ -311,11 +309,9 @@ static void top_break( qli_brk* control, qli_prt* print)
  *	Execute a control break.
  *
  **************************************/
-	qli_lls* stack;
-
-	for (; control; control = control->brk_next) {
-		for (stack = control->brk_statisticals; stack;
-			 stack = stack->lls_next)
+	for (; control; control = control->brk_next) 
+	{
+		for (qli_lls* stack = control->brk_statisticals; stack; stack = stack->lls_next)
 		{
 			EVAL_break_compute((qli_nod*) stack->lls_object);
 		}
