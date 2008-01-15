@@ -6,13 +6,13 @@
   FORMAL BUILD NUMBER:17840 
 */
 
-#define PRODUCT_VER_STRING "2.1.0.17840"
-#define FILE_VER_STRING "WI-T2.1.0.17840"
-#define LICENSE_VER_STRING "WI-T2.1.0.17840"
-#define FILE_VER_NUMBER 2, 1, 0, 17840
+#define PRODUCT_VER_STRING "2.5.0.17840"
+#define FILE_VER_STRING "WI-T2.5.0.17840"
+#define LICENSE_VER_STRING "WI-T2.5.0.17840"
+#define FILE_VER_NUMBER 2, 5, 0, 17840
 #define FB_MAJOR_VER "2"
-#define FB_MINOR_VER "1"
+#define FB_MINOR_VER "5"
 #define FB_REV_NO "0"
 #define FB_BUILD_NO "17840"
 #define FB_BUILD_TYPE "T"
-#define FB_BUILD_SUFFIX "Firebird 2.1 Release Candidate 1"
+#define FB_BUILD_SUFFIX "Firebird 2.5 Unstable "
