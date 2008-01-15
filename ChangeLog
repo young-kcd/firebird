@@ -1,3 +1,15 @@
+2008-01-14 17:33  roman-simakov
+
+	* firebird2/src/jrd/nbak.cpp (1.73):
+
+	fix wrong database unlocking
+
+2008-01-14 17:22  roman-simakov
+
+	* firebird2/src/jrd/cch.cpp (1.177):
+
+	small fix debug code under NBAK_DEBUG
+
 2008-01-10 15:18  paulbeach
 
 	*
