@@ -3,9 +3,9 @@
 # This file is used both to rebuild the header file and to set the 
 # environment variables on the config call
 
-BuildVersion="$Id: writeBuildNum.sh,v 1.17894 2007-12-29 09:42:19 alexpeshkoff Exp $"
+BuildVersion="$Id: writeBuildNum.sh,v 1.17894.2.1 2008-01-15 19:19:47 dimitr Exp $"
 
-BuildType=T
+BuildType=V
 MajorVer=2
 MinorVer=1
 RevNo=0
