@@ -3374,13 +3374,13 @@ static void validate_parent(const lhb* alhb, const SRQ_PTR isSomeoneParent)
 	const srq* lock_srq;
 	SRQ_LOOP(owner->own_requests, lock_srq) 
 	{
-		const lrq* request = (LRQ) ((UCHAR *) lock_srq - OFFSET(LRQ, lrq_own_requests));
+		const lrq* request = (lrq*) ((UCHAR *) lock_srq - OFFSET(lrq*, lrq_own_requests));
 
 		if (!(request->lrq_flags & LRQ_repost)) 
 		{
 			if (request->lrq_lock != isSomeoneParent)
 			{
-				const lbl* lock = (LBL) SRQ_ABS_PTR(request->lrq_lock);
+				const lbl* lock = (lbl*) SRQ_ABS_PTR(request->lrq_lock);
 
 				if (lock->lbl_parent == isSomeoneParent)
 				{
@@ -3460,7 +3460,7 @@ static void validate_lhb(const lhb* alhb)
 
 	CHECK(alhb->lhb_used <= alhb->lhb_length);
 
-	validate_history(lhb->lhb_history);
+	validate_history(alhb->lhb_history);
 
 	DEBUG_MSG(0, ("validate_lhb completed:\n"));
 }
