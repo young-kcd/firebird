@@ -212,7 +212,7 @@ void BLB_close(thread_db* tdbb, class blb* blob)
 
 	if (blob->blb_level == 0)
 	{
-		Database* dbb = tdbb->tdbb_database;
+		Database* dbb = tdbb->getDatabase();
 
 		blob->blb_temp_size = dbb->dbb_page_size - blob->blb_space_remaining;
 

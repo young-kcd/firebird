@@ -1176,7 +1176,7 @@ static dsc* evlCharToUuid(Jrd::thread_db* tdbb, const SysFunction* function, Jrd
 {
 	fb_assert(args->nod_count == 1);
 
-	jrd_req* request = tdbb->tdbb_request;
+	jrd_req* request = tdbb->getRequest();
 
 	request->req_flags &= ~req_null;
 	const dsc* value = EVL_expr(tdbb, args->nod_arg[0]);
@@ -2835,7 +2835,7 @@ static dsc* evlUuidToChar(Jrd::thread_db* tdbb, SysFunction* function, Jrd::jrd_
 {
 	fb_assert(args->nod_count == 1);
 
-	jrd_req* request = tdbb->tdbb_request;
+	jrd_req* request = tdbb->getRequest();
 
 	request->req_flags &= ~req_null;
 	const dsc* value = EVL_expr(tdbb, args->nod_arg[0]);

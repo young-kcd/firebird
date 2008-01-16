@@ -2707,14 +2707,15 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 		case nod_auto_trans:
 			if (request->req_operation == jrd_req::req_evaluate)
 			{
-				fb_assert(tdbb->tdbb_transaction == request->req_transaction);
+				fb_assert(tdbb->getTransaction() == request->req_transaction);
 
 				request->req_auto_trans.push(request->req_transaction);
-				tdbb->tdbb_transaction = request->req_transaction = TRA_start(tdbb,
+				request->req_transaction = TRA_start(tdbb,
 					request->req_transaction->tra_flags,
 					request->req_transaction->tra_lock_timeout);
+				tdbb->setTransaction(request->req_transaction)l
 
-				if (!(tdbb->tdbb_attachment->att_flags & ATT_no_db_triggers))
+				if (!(tdbb->getAttachment()->att_flags & ATT_no_db_triggers))
 				{
 					// run ON TRANSACTION START triggers
 					EXE_execute_db_triggers(tdbb, request->req_transaction, jrd_req::req_trigger_trans_start);
@@ -2727,7 +2728,7 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 			switch (request->req_operation)
 			{
 			case jrd_req::req_return:
-				if (!(tdbb->tdbb_attachment->att_flags & ATT_no_db_triggers))
+				if (!(tdbb->getAttachment()->att_flags & ATT_no_db_triggers))
 				{
 					// run ON TRANSACTION COMMIT triggers
 					EXE_execute_db_triggers(tdbb, request->req_transaction, jrd_req::req_trigger_trans_commit);
@@ -2740,7 +2741,7 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 				{
 					try
 					{
-						if (!(tdbb->tdbb_attachment->att_flags & ATT_no_db_triggers))
+						if (!(tdbb->getAttachment()->att_flags & ATT_no_db_triggers))
 						{
 							// run ON TRANSACTION COMMIT triggers
 							EXE_execute_db_triggers(tdbb, request->req_transaction, jrd_req::req_trigger_trans_commit);
@@ -2759,7 +2760,7 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 					ISC_STATUS_ARRAY temp_status = {0};
 					tdbb->tdbb_status_vector = temp_status;
 
-					if (!(tdbb->tdbb_attachment->att_flags & ATT_no_db_triggers))
+					if (!(tdbb->getAttachment()->att_flags & ATT_no_db_triggers))
 					{
 						try
 						{
@@ -2768,7 +2769,7 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 						}
 						catch (const Firebird::Exception&)
 						{
-							if (tdbb->tdbb_database->dbb_flags & DBB_bugcheck)
+							if (tdbb->getDatabase()->dbb_flags & DBB_bugcheck)
 							{
 								tdbb->tdbb_status_vector = save_status;
 								throw;
@@ -2782,7 +2783,7 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 					}
 					catch (const Firebird::Exception&)
 					{
-						if (tdbb->tdbb_database->dbb_flags & DBB_bugcheck)
+						if (tdbb->getDatabase()->dbb_flags & DBB_bugcheck)
 						{
 							tdbb->tdbb_status_vector = save_status;
 							throw;
@@ -2797,7 +2798,8 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 				fb_assert(false);
 			}
 
-			tdbb->tdbb_transaction = request->req_transaction = request->req_auto_trans.pop();
+			request->req_transaction = request->req_auto_trans.pop();
+			tdbb->setTransaction(request->req_transaction);
 			node = node->nod_parent;
 			break;
 
