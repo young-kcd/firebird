@@ -30,7 +30,7 @@
 #
 ROOT=..
 ObjModuleType=superclient
-CFLAGS+=-DSUPERCLIENT @PTHREAD_CFLAGS@
+CFLAGS+=-DSUPERCLIENT
 
 include     $(ROOT)/gen/make.defaults
 include     $(ROOT)/gen/make.platform
@@ -81,14 +81,13 @@ lib_fbudf: $(UDF)/fbudf.$(SHRLIB_EXT)
 $(UDF)/fbudf.$(SHRLIB_EXT):	$(AllObjects)
 ifeq ($(PLATFORM),win32)
 	$(LIB_LINK) $(LIB_LINK_OPTIONS) $(LIB_LINK_SONAME)fbudf.$(SHRLIB_EXT) \
--o $@ $^ @PTHREAD_CFLAGS@ @PTHREAD_LIBS@
+-o $@ $^
 endif
 ifeq ($(PLATFORM),DARWIN)
-	$(LIB_LINK) $(LIB_BUNDLE_OPTIONS) \
--L$(LIB) -lm -o $@ $^ @PTHREAD_CFLAGS@ @PTHREAD_LIBS@
+	$(LIB_LINK) $(LIB_BUNDLE_OPTIONS) -L$(LIB) -lm -o $@ $^ @PTHREAD_CFLAGS@ @PTHREAD_LIBS@
 else
 	$(LIB_LINK) $(LIB_LINK_OPTIONS) $(LIB_LINK_SONAME)fbudf.$(SHRLIB_EXT) \
-$(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/lib -L$(LIB) -lm -o $@ $^ @PTHREAD_CFLAGS@ @PTHREAD_LIBS@
+$(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/lib -L$(LIB) -lm -o $@ $^ $(THR_LIBS)
 endif
 
 

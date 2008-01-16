@@ -28,7 +28,7 @@
 				ImproveFloatingPointConsistency="TRUE"
 				FavorSizeOrSpeed="1"
 				OmitFramePointers="TRUE"
-				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen;../../../extern/icu/include"
+				AdditionalIncludeDirectories="../../../src/include;../../../src/include/gen;../../../extern/icu/source/i18n;../../../extern/icu/source/common"
 				PreprocessorDefinitions="NDEBUG;_WINDOWS;_USRDLL;INTL_EXPORTS;WINDOWS_ONLY;SUPERCLIENT;WIN32;_X86_"
 				ExceptionHandling="FALSE"
 				RuntimeLibrary="2"
@@ -94,7 +94,7 @@
 				Name="VCCLCompilerTool"
 				AdditionalOptions="/EHsc-"
 				Optimization="0"
-				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen;../../../extern/icu/include"
+				AdditionalIncludeDirectories="../../../src/include;../../../src/include/gen;../../../extern/icu/source/i18n;../../../extern/icu/source/common"
 				PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;WINDOWS_ONLY;SUPERCLIENT;WIN32;_X86_;DEV_BUILD"
 				ExceptionHandling="FALSE"
 				BasicRuntimeChecks="3"
@@ -678,10 +678,10 @@
 				RelativePath="..\..\..\src\jrd\IntlUtil.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\unicode_util.cpp">
+				RelativePath="..\..\..\src\jrd\os\win32\mod_loader.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\os\win32\mod_loader.cpp">
+				RelativePath="..\..\..\src\jrd\unicode_util.cpp">
 			</File>
 		</Filter>
 		<File

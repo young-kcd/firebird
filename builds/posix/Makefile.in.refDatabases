@@ -54,13 +54,10 @@ MSG_FILES = $(addprefix $(SRC_ROOT)/msgs/, $(MSG_SCRIPTS))
 .PHONY: empty_db refDatabases
 
 # This is where you are going to have trouble if there is one, at creating 
-# the first empty database.  Things to watch out for, fb_lock_mgr not being
-# able to be started, $INTERBASE variable pointing in the wrong place, 
-# shared library path LD_LIBRARY_PATH not pointing to new stuff (mind you this
-# point it should be creating using create_db statically linked). 
-# Also you don't need to worry about lock mgr not being able to set uid to
-# superuser.  You do not have to be root to build classic, it's just a warning
-# and the build process works fine. 
+# the first empty database.  Things to watch out for, $INTERBASE variable 
+# pointing in the wrong place, shared library path LD_LIBRARY_PATH
+# not pointing to new stuff (mind you this point it should be creating
+# using create_db statically linked).
 
 empty_db : empty.fdb yachts.lnk
 

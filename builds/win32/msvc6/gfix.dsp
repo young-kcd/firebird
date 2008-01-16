@@ -109,6 +109,10 @@ SOURCE=..\..\..\src\alice\alice.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\src\alice\aliceMain.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\src\alice\all.cpp
 # End Source File
 # Begin Source File
@@ -142,6 +146,10 @@ SOURCE=..\..\..\src\common\classes\locks.cpp
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\thd.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\ThreadData.cpp
 # End Source File
 # End Group
 # Begin Group "Header files"

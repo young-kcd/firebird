@@ -698,11 +698,9 @@ INTL_BOOL UnicodeUtil::utf32WellFormed(ULONG len, const ULONG* str, ULONG* offen
 				*offending_position = (str - strStart) * sizeof(*str);
 			return false;	// malformed
 		}
-		else
-		{
-			++str;
-			len -= sizeof(*str);
-		}
+
+		++str;
+		len -= sizeof(*str);
 	}
 
 	return true;	// well-formed
@@ -739,7 +737,7 @@ UnicodeUtil::ICU* UnicodeUtil::loadICU(const Firebird::string& icuVersion,
 		}
 		else
 		{
-			size_t pos = i->find('.');
+			const size_t pos = i->find('.');
 			if (pos == i->npos)
 				continue;
 
@@ -867,11 +865,9 @@ UnicodeUtil::ICU* UnicodeUtil::loadICU(const Firebird::string& icuVersion,
 			delete icu;
 			return icu2;
 		}
-		else
-		{
-			icuModules.modules().put(version, icu);
-			return icu;
-		}
+
+		icuModules.modules().put(version, icu);
+		return icu;
 	}
 
 	return NULL;
@@ -1077,14 +1073,11 @@ USHORT UnicodeUtil::Utf16Collation::stringToKey(USHORT srcLen, const USHORT* src
 			return INTL_BAD_KEY_LENGTH;
 	}
 
-	if (srcLen != 0)
-	{
-		return icu->ucolGetSortKey(static_cast<const UCollator*>(coll),
-			// safe cast - alignment not changed
-			reinterpret_cast<const UChar*>(src), srcLen, dst, dstLen);
-	}
-	else
+	if (srcLen == 0)
 		return 0;
+
+	return icu->ucolGetSortKey(static_cast<const UCollator*>(coll),
+		reinterpret_cast<const UChar*>(src), srcLen, dst, dstLen);
 }
 
 

@@ -152,6 +152,9 @@
 				RelativePath="..\..\..\src\common\fb_exception.cpp">
 			</File>
 			<File
+				RelativePath="..\..\..\src\utilities\gstat\gstatMain.cpp">
+			</File>
+			<File
 				RelativePath="..\..\..\src\utilities\gstat\ppg.cpp">
 			</File>
 		</Filter>
@@ -213,6 +216,9 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\ods.cpp">
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\ThreadData.cpp">
 			</File>
 		</Filter>
 	</Files>

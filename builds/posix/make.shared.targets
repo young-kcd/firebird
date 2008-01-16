@@ -41,7 +41,7 @@
 
 # This rule creates parse.cpp from parse.y 
 
-$(SRC_ROOT)/dsql/parse.cpp: $(SRC_ROOT)/dsql/parse.y $(SRC_ROOT)/dsql/btyacc_fb.ske
+$(SRC_ROOT)/dsql/parse.cpp $(SRC_ROOT)/dsql/dsql.tab.h: $(SRC_ROOT)/dsql/parse.y $(SRC_ROOT)/dsql/btyacc_fb.ske
 	$(BTYACC) -l -d -S $(SRC_ROOT)/dsql/btyacc_fb.ske $<
 	$(MV) $(GEN_ROOT)/y_tab.c $(SRC_ROOT)/dsql/parse.cpp
 	$(MV) $(GEN_ROOT)/y_tab.h $(SRC_ROOT)/dsql/dsql.tab.h

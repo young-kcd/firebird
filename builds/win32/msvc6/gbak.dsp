@@ -118,6 +118,10 @@ SOURCE=..\..\..\src\burp\burp.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\src\burp\burpMain.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\src\burp\canonical.cpp
 # End Source File
 # Begin Source File
@@ -143,6 +147,10 @@ SOURCE=..\..\..\src\jrd\sdl.h
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\sdl_proto.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\ThreadData.cpp
 # End Source File
 # End Group
 # Begin Group "REMOTE files"

@@ -29,7 +29,7 @@
 				ImproveFloatingPointConsistency="TRUE"
 				FavorSizeOrSpeed="1"
 				OmitFramePointers="TRUE"
-				AdditionalIncludeDirectories="../../../src/include;../../../src/include/gen;../../../extern/icu/include;../../../src/vulcan"
+				AdditionalIncludeDirectories="../../../src/include;../../../src/include/gen;../../../extern/icu/source/i18n;../../../extern/icu/source/common;../../../src/vulcan"
 				PreprocessorDefinitions="WIN32,NDEBUG,_WINDOWS,_LIB,_X86_,SUPERSERVER,EMBEDDED,NAMESPACE=Vulcan"
 				ExceptionHandling="FALSE"
 				RuntimeLibrary="2"
@@ -82,7 +82,7 @@
 				Name="VCCLCompilerTool"
 				AdditionalOptions="/EHsc-"
 				Optimization="0"
-				AdditionalIncludeDirectories="../../../src/include;../../../src/include/gen;../../../extern/icu/include;../../../src/vulcan"
+				AdditionalIncludeDirectories="../../../src/include;../../../src/include/gen;../../../extern/icu/source/i18n;../../../extern/icu/source/common;../../../src/vulcan"
 				PreprocessorDefinitions="WIN32,_DEBUG,_WINDOWS,_LIB,_X86_,SUPERSERVER,DEV_BUILD,EMBEDDED,NAMESPACE=Vulcan"
 				ExceptionHandling="FALSE"
 				BasicRuntimeChecks="3"
@@ -278,9 +278,6 @@
 				RelativePath="..\..\..\src\jrd\IntlUtil.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\inuse.cpp">
-			</File>
-			<File
 				RelativePath="..\..\..\src\jrd\isc.cpp">
 			</File>
 			<File
@@ -392,9 +389,6 @@
 				RelativePath="..\..\..\src\jrd\svc.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\sym.cpp">
-			</File>
-			<File
 				RelativePath="..\..\..\src\jrd\SysFunction.cpp">
 			</File>
 			<File
@@ -411,6 +405,9 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\ThreadData.cpp">
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\ThreadStart.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\tpc.cpp">
@@ -724,9 +721,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\IntlUtil.h">
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\inuse_proto.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\irq.h">

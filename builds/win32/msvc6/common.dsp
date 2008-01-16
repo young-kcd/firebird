@@ -179,6 +179,10 @@ SOURCE=..\..\..\src\common\classes\UserBlob.cpp
 
 SOURCE=..\..\..\src\common\utils.cpp
 # End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\common\UtilSvc.cpp
+# End Source File
 # End Group
 # Begin Group "Header files"
 

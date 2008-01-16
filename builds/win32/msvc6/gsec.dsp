@@ -50,7 +50,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:console /debug /machine:I386 /pdbtype:sept
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib shell32.lib comctl32.lib advapi32.lib ws2_32.lib mpr.lib version.lib /nologo /subsystem:console /incremental:no /debug /machine:I386 /out:"..\..\..\temp\debug\firebird/bin/gsec.exe" /pdbtype:sept
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib shell32.lib comctl32.lib advapi32.lib ws2_32.lib mpr.lib version.lib ole32.lib /nologo /subsystem:console /incremental:no /debug /machine:I386 /out:"..\..\..\temp\debug\firebird/bin/gsec.exe" /pdbtype:sept
 
 !ELSEIF  "$(CFG)" == "gsec - Win32 Release"
 
@@ -75,7 +75,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:console /debug /machine:I386 /pdbtype:sept
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib shell32.lib comctl32.lib advapi32.lib ws2_32.lib mpr.lib version.lib /nologo /subsystem:console /incremental:no /machine:I386 /out:"..\..\..\temp\release\firebird/bin/gsec.exe" /pdbtype:sept
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib shell32.lib comctl32.lib advapi32.lib ws2_32.lib mpr.lib version.lib ole32.lib /nologo /subsystem:console /incremental:no /machine:I386 /out:"..\..\..\temp\release\firebird/bin/gsec.exe" /pdbtype:sept
 # SUBTRACT LINK32 /debug
 
 !ENDIF 
@@ -95,6 +95,14 @@ SOURCE=..\..\..\src\utilities\gsec\call_service.cpp
 
 SOURCE=..\..\..\src\utilities\gsec\gsec.cpp
 # End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\utilities\gsec\gsecMain.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\gen\utilities\gsec\security.cpp
+# End Source File
 # End Group
 # Begin Group "JRD files"
 
@@ -105,11 +113,23 @@ SOURCE=..\..\..\src\jrd\enc.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\src\jrd\os\win32\guid.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\src\jrd\isc.cpp
 # End Source File
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\isc_file.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\sha.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\ThreadData.cpp
 # End Source File
 # End Group
 # Begin Group "Header files"

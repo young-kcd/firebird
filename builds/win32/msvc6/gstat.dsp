@@ -113,7 +113,7 @@ SOURCE=..\..\..\src\jrd\os\guid.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\utilities\gstat\ppg_proto.h
+SOURCE=..\..\..\src\utilities\gstat\gstatMain.cpp
 # End Source File
 # End Group
 # Begin Group "Resource files"
@@ -150,6 +150,30 @@ SOURCE=..\..\..\src\jrd\isc_file.cpp
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\ods.cpp
+# End Source File
+# End Group
+# Begin Group "JRD files"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\btn.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\enc.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\os\win32\guid.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\ods.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\ThreadData.cpp
 # End Source File
 # End Group
 # End Target

@@ -329,10 +329,6 @@ SOURCE=..\..\..\src\jrd\IntlUtil.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\inuse.cpp
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\src\jrd\isc.cpp
 # End Source File
 # Begin Source File
@@ -514,10 +510,6 @@ SOURCE=..\..\..\src\jrd\svc.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\sym.cpp
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\src\jrd\SysFunction.cpp
 # End Source File
 # Begin Source File
@@ -539,6 +531,10 @@ SOURCE=..\..\..\src\jrd\os\win32\thd_priority.cpp
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\ThreadData.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\ThreadStart.cpp
 # End Source File
 # Begin Source File
 
@@ -980,10 +976,6 @@ SOURCE=..\..\..\src\jrd\IntlUtil.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\inuse_proto.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\src\jrd\irq.h
 # End Source File
 # Begin Source File
@@ -1337,10 +1329,6 @@ SOURCE=..\..\..\src\jrd\svc_undoc.h
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\syidef.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\jrd\sym.h
 # End Source File
 # Begin Source File
 

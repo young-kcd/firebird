@@ -152,6 +152,9 @@
 				RelativePath="..\..\..\gen\alice\alice_meta.cpp">
 			</File>
 			<File
+				RelativePath="..\..\..\src\alice\aliceMain.cpp">
+			</File>
+			<File
 				RelativePath="..\..\..\src\alice\all.cpp">
 			</File>
 			<File
@@ -178,6 +181,9 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\thd.cpp">
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\ThreadData.cpp">
 			</File>
 		</Filter>
 		<Filter
