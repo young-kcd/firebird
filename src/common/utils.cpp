@@ -25,6 +25,7 @@
 // =====================================
 // Utility functions
 
+#include "firebird.h"
 #include "../jrd/common.h"
 
 #ifdef HAVE_SYS_TYPES_H
@@ -285,6 +286,8 @@ int snprintf(char* buffer, size_t count, const char* format...)
 // Copy password to newly allocated place and replace existing one in argv with spaces.
 // Allocated space is released upon exit from utility.
 // This is planned leak of a few bytes of memory in utilities.
+// This function is deprecated. Use UtilSvc::hidePasswd(ArgvType&, int) whenever possible.
+// However, there are several usages through fb_utils::get_passwd(char* arg);
 char* cleanup_passwd(char* arg)
 {
 	if (! arg) 
@@ -292,7 +295,7 @@ char* cleanup_passwd(char* arg)
 		return arg;
 	}
 
-	int lpass = strlen(arg);
+	const int lpass = strlen(arg);
 	char* savePass = (char*) gds__alloc(lpass + 1);
 	if (! savePass)
 	{

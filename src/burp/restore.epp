@@ -77,10 +77,11 @@ const int DB_VERSION_DDL4		= 40;  // ods4 db
 const int DB_VERSION_DDL5		= 50;  // ods5 db
 const int DB_VERSION_DDL8		= 80;  // ods8 db
 const int DB_VERSION_CURRENT	= DB_VERSION_DDL8;  // IB4.0 is ods8 
-const int DB_VERSION_DDL9       = 90;  // ods9 db, IB5
-const int DB_VERSION_DDL10      = 100; // ods10 db, IB6, FB1, FB1.5
-const int DB_VERSION_DDL11      = 110; // ods11 db, FB2
-const int DB_VERSION_DDL11_1    = 111; // ods11.1 db, FB2.1
+const int DB_VERSION_DDL9		= 90;  // ods9 db, IB5
+const int DB_VERSION_DDL10		= 100; // ods10 db, IB6, FB1, FB1.5
+const int DB_VERSION_DDL11		= 110; // ods11 db, FB2
+const int DB_VERSION_DDL11_1	= 111; // ods11.1 db, FB2.1
+const int DB_VERSION_DDL11_2	= 112; // ods11.2 db, FB2.5
 
 const int DEFERRED_ACTIVE		= 3;	/* RDB$INDEX_INACTIVE setting for Foreign Keys
 										* This setting is used temporarily while
@@ -141,6 +142,7 @@ bool	get_rel_constraint(BurpGlobals* tdgbl);
 bool	get_relation(BurpGlobals* tdgbl);
 bool	get_relation_data(BurpGlobals* tdgbl);
 bool	get_sql_roles(BurpGlobals* tdgbl);
+bool	get_mapping(BurpGlobals* tdgbl);
 bool	get_security_class(BurpGlobals* tdgbl);
 void	get_source_blob(BurpGlobals* tdgbl, ISC_QUAD&, bool);
 USHORT	get_text (BurpGlobals* tdgbl, TEXT*, ULONG);
@@ -603,7 +605,7 @@ int RESTORE_restore (const TEXT* file_name,
 
 	if (tdgbl->gbl_sw_password)
 	{
-		dpb.insertString(tdgbl->gbl_sw_service_gbak ? 
+		dpb.insertString(tdgbl->uSvc->isService() ? 
 								isc_dpb_password_enc : isc_dpb_password,
 							 tdgbl->gbl_sw_password, 
 							 strlen(tdgbl->gbl_sw_password));
@@ -648,7 +650,7 @@ int RESTORE_restore (const TEXT* file_name,
 		}
 		if (tdgbl->gbl_sw_password)
 		{
-			dpb.insertString(tdgbl->gbl_sw_service_gbak ? 
+			dpb.insertString(tdgbl->uSvc->isService() ? 
 									isc_dpb_password_enc : isc_dpb_password,
 								 tdgbl->gbl_sw_password, 
 								 strlen(tdgbl->gbl_sw_password));
@@ -698,19 +700,19 @@ void add_files(BurpGlobals*	tdgbl,
 
 	for (burp_fil* file = tdgbl->gbl_sw_files; file; file = file->fil_next)
 	{
-		if (strcmp (file->fil_name, file_name))
+		if (file->fil_name != file_name)
 		{
 			count++;
 			STORE (REQUEST_HANDLE req_handle1)
 				X IN RDB$FILES
-				strcpy (X.RDB$FILE_NAME, file->fil_name);
+				strcpy (X.RDB$FILE_NAME, file->fil_name.c_str());
 				X.RDB$FILE_START = start;
 			END_STORE;
 			ON_ERROR
 				general_on_error ();
 			END_ERROR;
 				MISC_release_request_silent(req_handle1);
-			BURP_verbose (57, SafeArg() << file->fil_name << start);
+			BURP_verbose (57, SafeArg() << file->fil_name.c_str() << start);
 			// msg 57 adding file %s, starting at page %ld 
 		}
 		else if (((SLONG) file->fil_length) >= start - 1)
@@ -846,9 +848,10 @@ void check_db_version(BurpGlobals* tdgbl)
 
 	const rel_field_t rel_fields[] =
 	{
-		{"RDB$FIELDS",		"RDB$FIELD_PRECISION",	DB_VERSION_DDL10}, // FB1, FB1.5
-		{"RDB$ROLES",		"RDB$DESCRIPTION",		DB_VERSION_DDL11}, // FB2
-		{"RDB$RELATIONS",	"RDB$RELATION_TYPE",	DB_VERSION_DDL11_1}, // FB2.1
+		{"RDB$FIELDS",					"RDB$FIELD_PRECISION",	DB_VERSION_DDL10},		// FB1, FB1.5
+		{"RDB$ROLES",					"RDB$DESCRIPTION",		DB_VERSION_DDL11},		// FB2
+		{"RDB$RELATIONS",				"RDB$RELATION_TYPE",	DB_VERSION_DDL11_1},	// FB2.1
+		{"RDB$PROCEDURE_PARAMETERS",	"RDB$FIELD_NAME",		DB_VERSION_DDL11_2},	// FB2.5
 		{0, 0, 0}
 	};
 		
@@ -1002,7 +1005,7 @@ void create_database(BurpGlobals*	tdgbl,
 	}
 	if (tdgbl->gbl_sw_password)
 	{
-		dpb.insertString(tdgbl->gbl_sw_service_gbak ? 
+		dpb.insertString(tdgbl->uSvc->isService() ? 
 								isc_dpb_password_enc : isc_dpb_password,
 							 tdgbl->gbl_sw_password, 
 							 strlen(tdgbl->gbl_sw_password));
@@ -5012,6 +5015,16 @@ bool get_procedure_prm (BurpGlobals* tdgbl, GDS_NAME procptr)
 						bad_attribute (scan_next_attr, attribute, 291);
 					break;
 
+				// DB_VERSION_DDL11_2
+				case att_procedureprm_field_name:
+					GET_TEXT(X.RDB$FIELD_NAME);
+					break;
+
+				// DB_VERSION_DDL11_2
+				case att_procedureprm_relation_name:
+					GET_TEXT(X.RDB$RELATION_NAME);
+					break;
+
 				default:
 					bad_attribute (scan_next_attr, attribute, 291);
 					// msg 291 procedure parameter
@@ -5752,6 +5765,84 @@ bool get_sql_roles(BurpGlobals* tdgbl)
 		}
 	}
 
+	return true;
+}
+
+bool get_mapping(BurpGlobals* tdgbl)
+{
+/**************************************
+ *
+ *	g e t _ m a p p i n g
+ *
+ **************************************
+ *
+ * Functional description
+ *	Restore mapping to users and roles
+ *	Restricted version - only single 
+ *	mapping is accepted
+ *
+ **************************************/
+	ATT_TYPE		attribute;
+	scan_attr_t		scan_next_attr;
+	TEXT			temp[GDS_NAME_LEN];
+	SSHORT			l;
+	Firebird::string role, os;
+
+	if (tdgbl->RESTORE_ods >= DB_VERSION_DDL11_1)
+	{
+		skip_init(&scan_next_attr);
+		while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
+		{
+			switch (attribute)
+			{
+			case att_map_role:
+				l = GET_TEXT(temp);
+				role.assign(temp, l);
+				break;
+
+			case att_map_os:
+				l = GET_TEXT(temp);
+				os.assign(temp, l);
+				break;
+
+			default:
+				// msg 299 name mapping
+				bad_attribute (scan_next_attr, attribute, 299);
+				break;
+			}
+		}
+
+		if (tdgbl->RESTORE_ods < DB_VERSION_DDL11_2)
+		{
+			return true;	// silently skip attributes on old server
+		}
+
+		if (os != DOMAIN_ADMINS || role != ADMIN_ROLE)
+		{
+			BURP_error(300, false);
+			return true;
+		}
+
+		if (tdgbl->firstMap)
+		{
+			tdgbl->firstMap = false;
+			BURP_verbose(301);
+			//msg 301, restoring names mapping
+		}
+		BURP_verbose(298, ADMIN_ROLE);
+		//msg 298, restoring map @1
+		Firebird::string sql;
+		sql.printf("%s ('%s',%d) %s", 
+			"UPDATE OR INSERT INTO RDB$ROLES(RDB$ROLE_NAME, RDB$SYSTEM_FLAG) VALUES",
+			ADMIN_ROLE, ROLE_FLAG_MAY_TRUST | ROLE_FLAG_DBO, 
+			"MATCHING (RDB$ROLE_NAME)");
+		isc_dsql_execute_immediate(tdgbl->status, &tdgbl->db_handle, &tdgbl->tr_handle, 
+								   sql.length(), sql.c_str(), 1, NULL);
+		if (tdgbl->status[1])
+		{
+			general_on_error ();
+		}
+	}
 	return true;
 }
 
@@ -7365,6 +7456,12 @@ bool restore(BurpGlobals*	tdgbl,
 
 		case rec_sql_roles:
 			if (!get_sql_roles(tdgbl))
+				return false;
+			flag = true;
+			break;
+
+		case rec_mapping:
+			if (!get_mapping(tdgbl))
 				return false;
 			flag = true;
 			break;

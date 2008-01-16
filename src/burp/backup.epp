@@ -47,6 +47,7 @@
 #include "../jrd/align.h"
 #include "../jrd/gdsassert.h"
 #include "../jrd/thd.h"
+#include "../jrd/constants.h"
 #include "../common/stuff.h"
 #include "../burp/backu_proto.h"
 #include "../burp/burp_proto.h"
@@ -126,6 +127,7 @@ void write_functions(void);
 void write_function_args(GDS_NAME);
 void write_generators(void);
 void write_sql_roles(void);
+void write_mapping(void);
 void write_global_fields(void);
 void write_procedures(void);
 void write_procedure_prms(GDS_NAME);
@@ -158,13 +160,17 @@ enum backup_capabilities
 	BCK_ods10			= 8192,	// FIELD_PRECISION
 	BCK_ods11			= 16384,// rdb$description in rdb$roles and rdb$generators
 								// rdb$base_collation_name and rdb$specific_attributes in rdb$collations
-	BCK_ods11_1			= 32768 // rdb$relation_type in rdb$relations
+	BCK_ods11_1			= 32768,// rdb$relation_type in rdb$relations
 								// rdb$procedure_type in rdb$procedures
 								// rdb$valid_blr in rdb$triggers
 								// rdb$valid_blr in rdb$procedures
 								// rdb$default_value, rdb$default_source, rdb$collation_id,
 								// rdb$null_flag and rdb$parameter_mechanism in rdb$procedure_parameters
+	BCK_ods11_2			= 65536	// rdb$field_name and rdb$relation_name in rdb$procedure_parameters
+								// rdb$admin system role
 };
+// ASF: Engine that works with ODS11.1 supports access to non-existent system fields.
+// Reads returns NULL and writes do nothing.
 
 #ifdef DEBUG
 UCHAR debug_on = 0;		// able to turn this on in debug mode 
@@ -217,6 +223,8 @@ const rfr_tab_t rfr_table[] =
 	//{"RDB$PROCEDURE_PARAMETERS", "RDB$COLLATION_ID", BCK_ods11_1},
 	//{"RDB$PROCEDURE_PARAMETERS", "RDB$NULL_FLAG", BCK_ods11_1},
 	//{"RDB$PROCEDURE_PARAMETERS", "RDB$PARAMETER_MECHANISM", BCK_ods11_1},
+	{"RDB$PROCEDURE_PARAMETERS", "RDB$FIELD_NAME", BCK_ods11_2},
+	//{"RDB$PROCEDURE_PARAMETERS", "RDB$RELATION_NAME", BCK_ods11_2},
 	{0, 0, 0}
 };
 
@@ -333,7 +341,7 @@ int BACKUP_backup(const TEXT* dbb_file, const TEXT* file_name)
 			tdgbl->action->act_file = fil;
 			if (MVOL_split_hdr_write() == FALSE)
 			{
-				BURP_error(269, true, tdgbl->action->act_file->fil_name);
+				BURP_error(269, true, tdgbl->action->act_file->fil_name.c_str());
 				// msg 269 can't write a header record to file %s 
 			}
 		}
@@ -498,6 +506,14 @@ int BACKUP_backup(const TEXT* dbb_file, const TEXT* file_name)
 		BURP_verbose(248);
 		// msg 248 writing SQL roles 
 		write_sql_roles();
+	}
+
+	if (tdgbl->BCK_capabilities & BCK_ods11)
+	{
+		// Write names mapping
+		BURP_verbose(296);
+		// msg 296 writing mapping 
+		write_mapping();
 	}
 
 	// Finish up 
@@ -3438,7 +3454,8 @@ void write_procedures(void)
 
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
-	if (tdgbl->BCK_capabilities & BCK_ods11_1) {
+	if (tdgbl->BCK_capabilities & BCK_ods11_1)
+	{
 		FOR (REQUEST_HANDLE req_handle1)
 			X IN RDB$PROCEDURES
 			WITH X.RDB$SYSTEM_FLAG MISSING OR X.RDB$SYSTEM_FLAG NE 1
@@ -3521,7 +3538,7 @@ void write_procedure_prms( GDS_NAME procptr)
 
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
-	if (tdgbl->BCK_capabilities & BCK_ods11)
+	if (tdgbl->BCK_capabilities & BCK_ods11_1)
 	{
 		FOR (REQUEST_HANDLE tdgbl->handles_write_procedure_prms_req_handle1)
 			X IN RDB$PROCEDURE_PARAMETERS WITH X.RDB$PROCEDURE_NAME EQ procptr
@@ -3544,6 +3561,13 @@ void write_procedure_prms( GDS_NAME procptr)
 				put_numeric (att_procedureprm_null_flag, X.RDB$NULL_FLAG);
 			if (!X.RDB$PARAMETER_MECHANISM.NULL)
 				put_numeric (att_procedureprm_mechanism, X.RDB$PARAMETER_MECHANISM);
+
+			// BCK_ods11_2
+			if (!X.RDB$FIELD_NAME.NULL)
+				PUT_TEXT(att_procedureprm_field_name, X.RDB$FIELD_NAME);
+			if (!X.RDB$RELATION_NAME.NULL)
+				PUT_TEXT(att_procedureprm_relation_name, X.RDB$RELATION_NAME);
+
 			put(tdgbl, att_end);
 		END_FOR;
 		ON_ERROR
@@ -3896,7 +3920,7 @@ void write_sql_roles(void)
 	{
 		FOR (REQUEST_HANDLE req_handle1)
 			X IN RDB$ROLES
-			WITH X.RDB$SYSTEM_FLAG NE 1 OR X.RDB$SYSTEM_FLAG MISSING
+			WITH X.RDB$SYSTEM_FLAG EQ 0 OR X.RDB$SYSTEM_FLAG MISSING
 
 			put(tdgbl, rec_sql_roles);
 			const SSHORT l = PUT_TEXT(att_role_name, X.RDB$ROLE_NAME);
@@ -3935,6 +3959,48 @@ void write_sql_roles(void)
 	}
 
 	MISC_release_request_silent(req_handle1);
+}
+
+void write_mapping(void)
+{
+/**************************************
+ *
+ *	w r i t e _ m a p p i n g
+ *
+ **************************************
+ *
+ * Functional description
+ * 	write a record in the burp file for
+ *	each names mapping. 
+ *
+ **************************************/
+	isc_req_handle req_handle = 0;
+
+	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
+
+	if (tdgbl->BCK_capabilities & BCK_ods11_2)
+	{
+		FOR (REQUEST_HANDLE req_handle)
+			X IN RDB$ROLES
+			WITH X.RDB$ROLE_NAME EQ ADMIN_ROLE
+
+			if (X.RDB$SYSTEM_FLAG == (ROLE_FLAG_MAY_TRUST | ROLE_FLAG_DBO))
+			{
+				put(tdgbl, rec_mapping);
+				put_text(att_map_os, DOMAIN_ADMINS, strlen(DOMAIN_ADMINS) + 1);
+				put_text(att_map_role, ADMIN_ROLE, strlen(ADMIN_ROLE) + 1);
+				put(tdgbl, att_end);
+				BURP_verbose (297, ADMIN_ROLE);
+				// msg 297 writing mapping for @1
+			}
+		
+		END_FOR;
+		ON_ERROR
+			general_on_error();
+		END_ERROR;
+	}
+
+	MISC_release_request_silent(req_handle);
 }
 
 void write_triggers(void)

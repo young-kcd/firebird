@@ -24,12 +24,12 @@
 #ifndef BURP_BURP_PROTO_H
 #define BURP_BURP_PROTO_H
 
-#include "../jrd/thd.h"
+#include "../jrd/ThreadData.h"
 #include "../common/classes/MsgPrint.h"
+#include "../common/UtilSvc.h"
 
-#ifdef SERVICE_THREAD
 THREAD_ENTRY_DECLARE BURP_main(THREAD_ENTRY_PARAM);
-#endif
+int		gbak(Firebird::UtilSvc*);
 
 void	BURP_abort(void);
 void	BURP_error(USHORT, bool, const MsgFormat::SafeArg& arg = MsgFormat::SafeArg());

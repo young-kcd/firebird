@@ -48,21 +48,13 @@ namespace fb_utils
 	bool readenv(const char* env_name, Firebird::PathName& env_value);
 	int snprintf(char* buffer, size_t count, const char* format...);
 	char* cleanup_passwd(char* arg);
-#ifdef SERVICE_THREAD
-	inline const char* get_passwd(const char* arg)
-	{
-		return arg;
-	}
-	typedef const char* arg_string;
-#else
 	inline char* get_passwd(char* arg)
 	{
 		return cleanup_passwd(arg);
 	}
 	typedef char* arg_string;
-#endif
 
-// Warning: Only wrappers:
+	// Warning: Only wrappers:
 
 	// ********************
 	// s t r i c m p

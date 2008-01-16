@@ -28,6 +28,7 @@
 #define BURP_BURPSWI_H
 
 #include "../jrd/common.h"
+#include "../jrd/constants.h"
 #include "../jrd/ibase.h"
 
 /* Local copies of global variables.  They will be copied into
@@ -84,9 +85,8 @@ const int IN_SW_BURP_NOD			= 39;      // do not run database triggers
 #ifdef TRUSTED_AUTH
 const int IN_SW_BURP_TRUSTED_USER   = 40;      // force trusted auth
 #endif
-#ifdef TRUSTED_SERVICES
 const int IN_SW_BURP_TRUSTED_SVC    = 41;      // trusted user name to use on attach 
-#endif
+const int IN_SW_BURP_TRUSTED_ROLE   = 42;      // use trusted role on attach 
 /**************************************************************************/
     // used 0BCDEFGILMNOPRSTUVYZ    available AHJQWX 
 
@@ -156,9 +156,8 @@ static in_sw_tab_t burp_in_sw_table [] =
     {IN_SW_BURP_TRUSTED_USER, 0,		"TRUSTED",			0, 0, 0, FALSE, 295, 0, NULL},
 				// msg 295: @1TRU(STED)            use trusted authentication
 #endif
-#ifdef TRUSTED_SERVICES
-    {IN_SW_BURP_TRUSTED_SVC, 0,	 		"TRUSTED_SVC",	    0, 0, 0, FALSE, 0, 0, NULL},
-#endif
+    {IN_SW_BURP_TRUSTED_SVC, 0,	 		TRUSTED_USER_SWITCH, 0, 0, 0, FALSE, 0, 0, NULL},
+	{IN_SW_BURP_TRUSTED_ROLE, 0, 		TRUSTED_ROLE_SWITCH, 0, 0, 0, FALSE, 0, 0, NULL},
 /*
     {IN_SW_BURP_U,    0,				"UNPROTECTED",	    0, 0, 0, FALSE, 0, 0, NULL},
 */
