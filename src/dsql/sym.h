@@ -50,7 +50,7 @@ typedef sym_type SYM_TYPE;
 class dsql_sym : public pool_alloc_rpt<UCHAR, dsql_type_sym> {
 public:
 	void *sym_dbb;				// generic DB structure handle 
-	TEXT *sym_string;			// address of asciz string 
+	const TEXT *sym_string;			// address of asciz string 
 	USHORT sym_length;			// length of string (exc. term.) 
 	SYM_TYPE sym_type;			// symbol type 
 	USHORT sym_keyword;			// keyword number, if keyword 

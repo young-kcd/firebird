@@ -41,7 +41,7 @@
 #include "../dsql/utld_proto.h"
 #include "../jrd/gds_proto.h"
 
-#if !defined(REQUESTER) && !defined(SUPERCLIENT)
+#if !defined(SUPERCLIENT)
 #include "../dsql/metd_proto.h"
 #endif
 
@@ -1060,7 +1060,7 @@ static void xsqlvar_to_sqlvar(const XSQLVAR* xsqlvar, SQLVAR* sqlvar)
 }
 
 
-#if !defined(REQUESTER) && !defined(SUPERCLIENT)
+#if !defined(SUPERCLIENT)
 
 UCHAR DSqlDataTypeUtil::maxBytesPerChar(UCHAR charSet)
 {

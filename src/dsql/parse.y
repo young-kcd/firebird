@@ -554,6 +554,7 @@ static LexerState lex;
 %token MILLISECOND
 %token MINVALUE
 %token MOD
+%token OS_NAME
 %token OVERLAY
 %token PAD
 %token PI
@@ -578,6 +579,16 @@ static LexerState lex;
 %token TEMPORARY 
 %token TRUNC
 %token WEEK
+
+// tokens added for Firebird 2.5
+
+%token AUTONOMOUS
+%token CHAR_TO_UUID
+%token FIRSTNAME
+%token LASTNAME
+%token MIDDLENAME
+%token SIMILAR
+%token UUID_TO_CHAR
 
 /* precedence declarations for expression evaluation */
 
@@ -925,6 +936,8 @@ create_clause	: EXCEPTION exception_clause
 			{ $$ = $2; }
 		| COLLATION collation_clause
 			{ $$ = $2; }
+		| USER create_user_clause
+			{ $$ = $2; }
 		;
 
 
@@ -958,10 +971,8 @@ replace_clause	: PROCEDURE replace_procedure_clause
 			{ $$ = $2; }
 		| TRIGGER replace_trigger_clause
 			{ $$ = $2; }
-/*
 		| VIEW replace_view_clause
 			{ $$ = $2; }
-*/
 		| EXCEPTION replace_exception_clause
 			{ $$ = $2; }
 		;
@@ -1384,6 +1395,13 @@ data_type_descriptor :	init_data_type data_type
 				((dsql_fld*) $3)->fld_type_of_name = ((dsql_fld*) $3)->fld_name;
 				$$ = $3;
 			}
+		| TYPE OF COLUMN symbol_column_name '.' symbol_column_name
+			{
+				lex.g_field = make_field(NULL);
+				lex.g_field->fld_type_of_table = ((dsql_str*) $4);
+				lex.g_field->fld_type_of_name = ((dsql_str*) $6)->str_data;
+				$$ = (dsql_nod*) lex.g_field;
+			}
 		| column_def_name
 			{
 				((dsql_fld*) $1)->fld_type_of_name = ((dsql_fld*) $1)->fld_name;
@@ -1712,11 +1730,18 @@ simple_proc_statement	: assignment
 			{ $$ = make_node (nod_exit, 0, NULL); }
 		;
 
-complex_proc_statement	: if_then_else
-		| while
-		| for_select
-		| for_exec_into
-		;
+complex_proc_statement
+	: in_autonomous_transaction
+	| if_then_else
+	| while
+	| for_select
+	| for_exec_into
+	;
+
+in_autonomous_transaction
+	: KW_IN AUTONOMOUS TRANSACTION DO proc_block
+		{ $$ = make_node(nod_auto_trans, (int) e_auto_trans_count, $5); }
+	;
 
 excp_statement	: EXCEPTION symbol_exception_name
 			{ $$ = make_node (nod_exception_stmt, (int) e_xcp_count, $2, NULL); }
@@ -1951,7 +1976,6 @@ rview_clause	: symbol_view_name column_parens_opt AS begin_string select_expr
 					  $1, $2, $5, $6, $7); }   
 		;		
 
-/*
 replace_view_clause	: symbol_view_name column_parens_opt AS begin_string select_expr
 															check_opt end_trigger
 			{ $$ = make_node (nod_replace_view, (int) e_view_count, 
@@ -1963,7 +1987,6 @@ alter_view_clause	: symbol_view_name column_parens_opt AS begin_string select_ex
  			{ $$ = make_node (nod_mod_view, (int) e_view_count, 
 					  $1, $2, $5, $6, $7); }   
  		;		
-*/
 
 
 /* these rules will capture the input string for storage in metadata */
@@ -2194,10 +2217,8 @@ alter_clause	: EXCEPTION alter_exception_clause
 		| TABLE simple_table_name alter_ops
 			{ $$ = make_node (nod_mod_relation, (int) e_alt_count, 
 						$2, make_list ($3)); }
-/*
  		| VIEW alter_view_clause
  			{ $$ = $2; }
-*/
 		| TRIGGER alter_trigger_clause
 			{ $$ = $2; }
 		| PROCEDURE alter_procedure_clause
@@ -2214,6 +2235,10 @@ alter_clause	: EXCEPTION alter_exception_clause
 			{ $$ = $2; }
 		| EXTERNAL FUNCTION alter_udf_clause
 			{ $$ = $3; }
+		| ROLE alter_role_clause
+			{ $$ = $2; }
+		| USER alter_user_clause
+			{ $$ = $2; }
 		;
 
 alter_domain_ops	: alter_domain_op
@@ -2260,13 +2285,20 @@ alter_op	: DROP simple_column_name drop_behaviour
 		| col_opt alter_column_name TO simple_column_name
 			{ $$ = make_node(nod_mod_field_name, 2, $2, $4); }
 		| col_opt alter_col_name TYPE alter_data_type_or_domain
-			{ $$ = make_node(nod_mod_field_type, e_mod_fld_type_count, $2, $4, NULL); }
+			{ $$ = make_node(nod_mod_field_type, e_mod_fld_type_count, $2, $4, NULL, NULL); }
+		| col_opt alter_col_name TYPE non_array_type def_computed
+			{
+				// Due to parser hacks, we should not pass $4 (non_array_type) to make_node. 
+				$$ = make_node(nod_mod_field_type, e_mod_fld_type_count, $2, NULL, NULL, $5);
+			}
+		| col_opt alter_col_name def_computed
+			{ $$ = make_node(nod_mod_field_type, e_mod_fld_type_count, $2, NULL, NULL, $3); }
 		| col_opt alter_col_name SET domain_default end_trigger
 			{ $$ = make_node(nod_mod_field_type, e_mod_fld_type_count, $2, NULL,
-					make_node(nod_def_default, (int) e_dft_count, $4, $5)); }
+					make_node(nod_def_default, (int) e_dft_count, $4, $5), NULL); }
 		| col_opt alter_col_name DROP DEFAULT
 			{ $$ = make_node(nod_mod_field_type, e_mod_fld_type_count, $2, NULL,
-					make_node(nod_del_default, (int) 0, NULL)); }
+					make_node(nod_del_default, (int) 0, NULL), NULL); }
 		;
 
 alter_column_name  : keyword_or_column
@@ -2375,6 +2407,20 @@ alter_udf_clause    : symbol_UDF_name entry_op module_op
 			{ $$ = make_node(nod_mod_udf, e_mod_udf_count, $1, $2, $3); }
 			;
 
+alter_role_clause	: symbol_role_name alter_role_action OS_NAME os_security_name
+			{ $$ = make_node(nod_mod_role, e_mod_role_count, $4, $1, $2); }
+			;
+
+alter_role_action	: ADD
+			{ $$ = MAKE_constant ((dsql_str*) isc_dyn_map_role, CONSTANT_SLONG); }
+		| DROP
+			{ $$ = MAKE_constant ((dsql_str*) isc_dyn_unmap_role, CONSTANT_SLONG); }
+		;
+	
+os_security_name	: STRING
+			{ $$ = $1; }
+		;
+
 entry_op	: ENTRY_POINT sql_string
 			{ $$ = $2; }
 		|
@@ -2468,6 +2514,8 @@ drop_clause	: EXCEPTION symbol_exception_name
 			{ $$ = make_node (nod_del_generator, (int) 1, $2); }
 		| COLLATION symbol_collation_name
 			{ $$ = make_node (nod_del_collation, (int) 1, $2); }
+		| USER drop_user_clause
+			{ $$ = $2; }
 		;
 
 
@@ -2491,6 +2539,11 @@ domain_or_non_array_type_name
 domain_type
 	:	TYPE OF symbol_column_name
 			{ lex.g_field->fld_type_of_name = ((dsql_str*) $3)->str_data; }
+	|	TYPE OF COLUMN symbol_column_name '.' symbol_column_name
+			{
+				lex.g_field->fld_type_of_name = ((dsql_str*) $6)->str_data;
+				lex.g_field->fld_type_of_table = ((dsql_str*) $4);
+			}
 	|	symbol_column_name
 			{
 				lex.g_field->fld_type_of_name = ((dsql_str*) $1)->str_data;
@@ -3826,6 +3879,7 @@ predicate : comparison_predicate
 		| quantified_predicate
 		| exists_predicate
 		| containing_predicate
+		| similar_predicate
 		| starting_predicate
 		| singular_predicate
 		| trigger_action_predicate
@@ -3933,6 +3987,17 @@ containing_predicate	: value CONTAINING value
 		{ $$ = make_node (nod_not, 1, make_node (nod_containing, 2, $1, $4)); }
 	;
 
+similar_predicate
+	: value SIMILAR TO value
+		{ $$ = make_node(nod_similar, e_similar_count, $1, $4, NULL); }
+	| value NOT SIMILAR TO value
+		{ $$ = make_node(nod_not, 1, make_node(nod_similar, e_similar_count, $1, $5, NULL)); }
+	| value SIMILAR TO value ESCAPE value
+		{ $$ = make_node(nod_similar, e_similar_count, $1, $4, $6); }
+	| value NOT SIMILAR TO value ESCAPE value
+		{ $$ = make_node(nod_not, 1, make_node(nod_similar, e_similar_count, $1, $5, $7)); }
+	;
+
 starting_predicate	: value STARTING value
 		{ $$ = make_node (nod_starting, 2, $1, $3); }
 	| value NOT STARTING value
@@ -3985,6 +4050,48 @@ table_subquery	: '(' column_select ')'
 			{ $$ = $2; } 
 		;
 
+/* USER control SQL interface */
+
+create_user_clause : symbol_user_name passwd_clause firstname_opt middlename_opt lastname_opt
+		{ $$ = make_node(nod_add_user, (int) e_user_count, $1, $2, $3, $4, $5); }
+	;
+
+alter_user_clause : symbol_user_name passwd_opt firstname_opt middlename_opt lastname_opt
+		{ $$ = make_node(nod_mod_user, (int) e_user_count, $1, $2, $3, $4, $5); }
+	| symbol_user_name SET passwd_opt firstname_opt middlename_opt lastname_opt
+		{ $$ = make_node(nod_mod_user, (int) e_user_count, $1, $3, $4, $5, $6); }
+	;
+
+drop_user_clause : symbol_user_name
+		{ $$ = make_node(nod_del_user, (int) e_del_user_count, $1); }
+
+passwd_clause : PASSWORD sql_string
+		{ $$ = $2; }
+	;
+	
+passwd_opt : passwd_clause
+		{ $$ = $1; }
+	|
+		{ $$ = NULL; }
+	;
+
+firstname_opt : FIRSTNAME sql_string
+		{ $$ = $2; }
+	|
+		{ $$ = NULL; }
+	;
+
+middlename_opt : MIDDLENAME sql_string
+		{ $$ = $2; }
+	|
+		{ $$ = NULL; }
+	;
+
+lastname_opt : LASTNAME sql_string
+		{ $$ = $2; }
+	|
+		{ $$ = NULL; }
+	;
 
 /* value types */
 
@@ -4377,6 +4484,7 @@ system_function_std_syntax
 	| BIN_SHR
 	| BIN_XOR
 	| CEIL
+	| CHAR_TO_UUID
 	| COS
 	| COSH
 	| COT
@@ -4408,6 +4516,7 @@ system_function_std_syntax
 	| TAN
 	| TANH
 	| TRUNC
+	| UUID_TO_CHAR
 	;
 
 system_function_special_syntax
@@ -4709,16 +4818,16 @@ valid_symbol_name	: SYMBOL
 /* list of non-reserved words */
 
 non_reserved_word :
-	ACTION					/* added in IB 5.0 */
+	ACTION					// added in IB 5.0/
 	| CASCADE
 	| FREE_IT
 	| RESTRICT
 	| ROLE
-	| TYPE					/* added in IB 6.0 */
-	| KW_BREAK				/* added in FB 1.0 */
+	| TYPE					// added in IB 6.0
+	| KW_BREAK				// added in FB 1.0
 	| KW_DESCRIPTOR
 	| SUBSTRING
-	| COALESCE				/* added in FB 1.5 */
+	| COALESCE				// added in FB 1.5
 	| LAST
 	| LEAVE
 	| LOCK
@@ -4730,7 +4839,7 @@ non_reserved_word :
 	| DELETING
 	| FIRST
 	| SKIP
-	| BLOCK					/* added in FB 2.0 */
+	| BLOCK					// added in FB 2.0
 	| BACKUP
 	| KW_DIFFERENCE
 	| IIF
@@ -4747,7 +4856,7 @@ non_reserved_word :
 	| UNDO
 	| REQUESTS
 	| TIMEOUT
-	| ABS					/* added in FB 2.1 */
+	| ABS					// added in FB 2.1
 	| ACCENT
 	| ACOS
 	| ALWAYS
@@ -4784,6 +4893,7 @@ non_reserved_word :
 	| MILLISECOND
 	| MINVALUE
 	| MOD
+	| OS_NAME
 	| OVERLAY
 	| PAD
 	| PI
@@ -4805,6 +4915,12 @@ non_reserved_word :
 	| TEMPORARY
 	| TRUNC
 	| WEEK
+	| AUTONOMOUS			// added in FB 2.5
+	| CHAR_TO_UUID
+	| FIRSTNAME
+	| MIDDLENAME
+	| LASTNAME
+	| UUID_TO_CHAR
 	;
 
 %%
@@ -4943,16 +5059,15 @@ static dsql_fld* make_field (dsql_nod* field_name)
 
 	if (field_name == NULL)
 	{
-		dsql_fld* field =
-			FB_NEW_RPT(*tdsql->getDefaultPool(), sizeof (INTERNAL_FIELD_NAME)) dsql_fld;
-		strcpy (field->fld_name, INTERNAL_FIELD_NAME);
+		dsql_fld* field = FB_NEW(*tdsql->getDefaultPool())
+			dsql_fld(*tdsql->getDefaultPool());
+		field->fld_name = INTERNAL_FIELD_NAME;
 		return field;
 	}
 	const dsql_str* string = (dsql_str*) field_name->nod_arg[1];
-	dsql_fld* field =
-		FB_NEW_RPT(*tdsql->getDefaultPool(), strlen ((SCHAR*) string->str_data)) dsql_fld;
-	strcpy (field->fld_name, (TEXT*) string->str_data);
-	field->fld_type_of_name = NULL;
+	dsql_fld* field = FB_NEW(*tdsql->getDefaultPool())
+		dsql_fld(*tdsql->getDefaultPool());
+	field->fld_name = string->str_data;
 	field->fld_explicit_collation = false;
 	field->fld_not_nullable = false;
 	field->fld_full_domain = false;

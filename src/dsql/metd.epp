@@ -104,29 +104,16 @@ static dsql_sym* lookup_symbol(dsql_dbb*, const dsql_str*, SYM_TYPE, USHORT = 0)
 namespace {
 #ifdef  SUPERSERVER
 	REC_MUTX_T rec_mutex;	// Recursive metadata mutex 
-	
-	class RecMutexInit
-	{
-	public:
-		static void init() {
-			THD_rec_mutex_init (&rec_mutex);
-		}
-		static void cleanup() {
-			THD_rec_mutex_destroy (&rec_mutex);
-		}
-	};
-	Firebird::InitMutex<RecMutexInit> recMutexInited;
 
 	class RecMutexHolder {
 	public:
 		RecMutexHolder() {
-			recMutexInited.init();
 			THREAD_EXIT();
-			THD_rec_mutex_lock (&rec_mutex);
+			THD_rec_mutex_lock(&rec_mutex);
 			THREAD_ENTER();
 		}
 		~RecMutexHolder() {
-		    THD_rec_mutex_unlock (&rec_mutex);
+		    THD_rec_mutex_unlock(&rec_mutex);
 		}
 	};
 #else
@@ -990,14 +977,14 @@ dsql_udf* METD_get_function(dsql_req* request, const dsql_str* name)
 
         THREAD_ENTER();
 
-	    userFunc = FB_NEW_RPT(*dbb->dbb_pool, name->str_length) dsql_udf;
+	    userFunc = FB_NEW(*dbb->dbb_pool) dsql_udf(*dbb->dbb_pool);
         /* Moved below as still can't say for sure it will be stored.
            Following the same logic for MET_get_procedure and MET_get_relation
         userFunc->udf_next = dbb->dbb_functions;
         dbb->dbb_functions = userFunc;
         */
 
-        strcpy(userFunc->udf_name, (char*) name->str_data);
+        userFunc->udf_name = name->str_data;
         return_arg = X.RDB$RETURN_ARGUMENT;
         userFunc->udf_arguments = 0;
 
@@ -1151,8 +1138,8 @@ dsql_udf* METD_get_function(dsql_req* request, const dsql_str* name)
 
 	symbol = userFunc->udf_symbol = FB_NEW_RPT(*dbb->dbb_pool, 0) dsql_sym;
 	symbol->sym_object = (BLK) userFunc;
-	symbol->sym_string = userFunc->udf_name;
-	symbol->sym_length = name->str_length;
+	symbol->sym_string = userFunc->udf_name.c_str();
+	symbol->sym_length = userFunc->udf_name.length();
 	symbol->sym_type = SYM_udf;
 	symbol->sym_dbb = dbb;
 	insert_symbol(request->req_dbb, symbol);
@@ -1242,7 +1229,7 @@ dsql_prc* METD_get_procedure(dsql_req* request, const dsql_str* name)
 	// see if the procedure is the one currently being defined in this request 
 
 	if (((temp = request->req_procedure) != NULL) &&
-		!strcmp((char*) temp->prc_name, (char*) name->str_data))
+		temp->prc_name == name->str_data)
 	{
 		return temp;
 	}
@@ -1272,14 +1259,11 @@ dsql_prc* METD_get_procedure(dsql_req* request, const dsql_str* name)
 
 	    fb_utils::exact_name(X.RDB$OWNER_NAME);
 
-        procedure = FB_NEW_RPT(*dbb->dbb_pool,
-                                 name->str_length + strlen(X.RDB$OWNER_NAME)) dsql_prc;
+        procedure = FB_NEW(*dbb->dbb_pool) dsql_prc(*dbb->dbb_pool);
         procedure->prc_id = X.RDB$PROCEDURE_ID;
         
-        procedure->prc_name = procedure->prc_data;
-        procedure->prc_owner = procedure->prc_data + name->str_length + 1;
-        strcpy(procedure->prc_name, (TEXT *) name->str_data);
-        strcpy(procedure->prc_owner, X.RDB$OWNER_NAME);
+        procedure->prc_name = name->str_data;
+        procedure->prc_owner = X.RDB$OWNER_NAME;
 
         THREAD_EXIT();
 
@@ -1348,14 +1332,17 @@ dsql_prc* METD_get_procedure(dsql_req* request, const dsql_str* name)
 			// allocate the field block 
 
 			fb_utils::exact_name(PR.RDB$PARAMETER_NAME);
-			parameter = FB_NEW_RPT(*dbb->dbb_pool,
-								   strlen(PR.RDB$PARAMETER_NAME)) dsql_fld;
+			fb_utils::exact_name(PR.RDB$FIELD_SOURCE);
+
+			parameter = FB_NEW(*dbb->dbb_pool) dsql_fld(*dbb->dbb_pool);
 			parameter->fld_next = *ptr;
 			*ptr = parameter;
 
 			// get parameter information 
 
-			strcpy(parameter->fld_name, PR.RDB$PARAMETER_NAME);
+			parameter->fld_name = PR.RDB$PARAMETER_NAME;
+			parameter->fld_source = PR.RDB$FIELD_SOURCE;
+
 			parameter->fld_id = PR.RDB$PARAMETER_NUMBER;
 			parameter->fld_length = FLD.RDB$FIELD_LENGTH;
 			parameter->fld_scale = FLD.RDB$FIELD_SCALE;
@@ -1430,8 +1417,8 @@ dsql_prc* METD_get_procedure(dsql_req* request, const dsql_str* name)
 
 		symbol = procedure->prc_symbol = FB_NEW_RPT(*dbb->dbb_pool, 0) dsql_sym;
 		symbol->sym_object = (BLK) procedure;
-		symbol->sym_string = procedure->prc_name;
-		symbol->sym_length = name->str_length;
+		symbol->sym_string = procedure->prc_name.c_str();
+		symbol->sym_length = procedure->prc_name.length();
 		symbol->sym_type = SYM_procedure;
 		symbol->sym_dbb = dbb;
 		insert_symbol(request->req_dbb, symbol);
@@ -1462,7 +1449,7 @@ dsql_rel* METD_get_relation(dsql_req* request, const dsql_str* name)
 	// See if the relation is the one currently being defined in this request 
 
 	if (((temp = request->req_relation) != NULL) &&
-		!strcmp((char*) temp->rel_name, (char*) name->str_data))
+		temp->rel_name == name->str_data)
 	{
 		return temp;
 	}
@@ -1524,25 +1511,22 @@ dsql_rel* METD_get_relation(dsql_req* request, const dsql_str* name)
         THREAD_ENTER();
 
 	    fb_utils::exact_name(X.RDB$OWNER_NAME);
-	    const int length = name->str_length + strlen(X.RDB$OWNER_NAME);
 
         // Allocate from default or permanent pool as appropriate 
 
         if (!X.RDB$RELATION_ID.NULL) {
-            relation = FB_NEW_RPT(pool, length) dsql_rel;
+            relation = FB_NEW(pool) dsql_rel(pool);
             relation->rel_id = X.RDB$RELATION_ID;
         }
         else if (!DDL_ids(request)) {
-            relation = FB_NEW_RPT(pool, length) dsql_rel;
+            relation = FB_NEW(pool) dsql_rel(pool);
         }
 
         // fill out the relation information 
 
         if (relation) {
-            relation->rel_name = relation->rel_data;
-            relation->rel_owner = relation->rel_data + name->str_length + 1;
-            strcpy(relation->rel_name, (TEXT *) name->str_data);
-            strcpy(relation->rel_owner, X.RDB$OWNER_NAME);
+            relation->rel_name = name->str_data;
+            relation->rel_owner = X.RDB$OWNER_NAME;
             if (!(relation->rel_dbkey_length = X.RDB$DBKEY_LENGTH))
                 relation->rel_dbkey_length = 8;
             // CVC: let's see if this is a table or a view. 
@@ -1586,19 +1570,19 @@ dsql_rel* METD_get_relation(dsql_req* request, const dsql_str* name)
 	    // allocate the field block 
 
 	    fb_utils::exact_name(RFR.RDB$FIELD_NAME);
-	    const int length = strlen(RFR.RDB$FIELD_NAME);
+	    fb_utils::exact_name(RFR.RDB$FIELD_SOURCE);
+	    const int length = strlen(RFR.RDB$FIELD_NAME) + strlen(RFR.RDB$FIELD_SOURCE);
 
         // Allocate from default or permanent pool as appropriate 
 
 		field = NULL;
 
         if (!RFR.RDB$FIELD_ID.NULL) {
-            field = FB_NEW_RPT(pool, length) dsql_fld;
+            field = FB_NEW(pool) dsql_fld(pool);
 			field->fld_id = RFR.RDB$FIELD_ID;
         }
-        else if (!DDL_ids(request)) {
-            field = FB_NEW_RPT(pool, length) dsql_fld;
-        }
+        else if (!DDL_ids(request))
+            field = FB_NEW(pool) dsql_fld(pool);
 
 		if (field) {
 			*ptr = field;
@@ -1606,7 +1590,8 @@ dsql_rel* METD_get_relation(dsql_req* request, const dsql_str* name)
 
 			// get field information 
 
-			strcpy(field->fld_name, RFR.RDB$FIELD_NAME);
+			field->fld_name = RFR.RDB$FIELD_NAME;
+			field->fld_source = RFR.RDB$FIELD_SOURCE;
 			field->fld_length = FLX.RDB$FIELD_LENGTH;
 			field->fld_scale = FLX.RDB$FIELD_SCALE;
 			field->fld_sub_type = FLX.RDB$FIELD_SUB_TYPE;
@@ -1676,8 +1661,8 @@ dsql_rel* METD_get_relation(dsql_req* request, const dsql_str* name)
 
 		symbol = relation->rel_symbol = FB_NEW_RPT(*dbb->dbb_pool, 0) dsql_sym;
 		symbol->sym_object = (BLK) relation;
-		symbol->sym_string = relation->rel_name;
-		symbol->sym_length = name->str_length;
+		symbol->sym_string = relation->rel_name.c_str();
+		symbol->sym_length = relation->rel_name.length();
 		symbol->sym_type = SYM_relation;
 		symbol->sym_dbb = dbb;
 		insert_symbol(request->req_dbb, symbol);

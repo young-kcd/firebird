@@ -40,9 +40,7 @@
 #include "../common/classes/GenericMap.h"
 #include "../common/classes/MetaName.h"
 #include "../common/classes/stack.h"
-#define REQUESTER
 #include "../jrd/val.h"  // Get rid of duplicated FUN_T enum.
-#undef REQUESTER
 
 #ifdef DEV_BUILD
 // This macro enables DSQL tracing code
@@ -96,6 +94,7 @@ class dsql_intlsym;
 typedef Firebird::Stack<dsql_ctx*> DsqlContextStack;
 typedef Firebird::Stack<dsql_str*> DsqlStrStack;
 typedef Firebird::Stack<dsql_nod*> DsqlNodStack;
+class Firebird::MetaName;
 
 //======================================================================
 // remaining node definitions for local processing
@@ -181,19 +180,24 @@ enum dbb_flags_vals {
 };
 
 //! Relation block
-class dsql_rel : public pool_alloc_rpt<SCHAR, dsql_type_dsql_rel>
+class dsql_rel : public pool_alloc<dsql_type_dsql_rel>
 {
 public:
+	dsql_rel(DsqlMemoryPool& p)
+		: rel_name(p),
+		  rel_owner(p)
+	{
+	}
+
 	dsql_rel*	rel_next;			//!< Next relation in database
 	dsql_sym*	rel_symbol;			//!< Hash symbol for relation
 	class dsql_fld*	rel_fields;		//!< Field block
 	dsql_rel*	rel_base_relation;	//!< base relation for an updatable view
-	TEXT*		rel_name;			//!< Name of relation
-	TEXT*		rel_owner;			//!< Owner of relation
+	Firebird::MetaName rel_name;	//!< Name of relation
+	Firebird::MetaName rel_owner;	//!< Owner of relation
 	USHORT		rel_id;				//!< Relation id
 	USHORT		rel_dbkey_length;
 	USHORT		rel_flags;
-	TEXT		rel_data[3];
 };
 
 // rel_flags bits
@@ -205,9 +209,16 @@ enum rel_flags_vals {
 	REL_creating		= 16 //!< we are creating the bare relation in memory
 };
 
-class dsql_fld : public pool_alloc_rpt<SCHAR, dsql_type_fld>
+class dsql_fld : public pool_alloc<dsql_type_fld>
 {
 public:
+	dsql_fld(DsqlMemoryPool& p)
+		: fld_type_of_name(p),
+		  fld_name(p),
+		  fld_source(p)
+	{
+	}
+
 	dsql_fld*	fld_next;				//!< Next field in relation
 	dsql_rel*	fld_relation;			//!< Parent relation
 	class dsql_prc*	fld_procedure;			//!< Parent procedure
@@ -229,11 +240,13 @@ public:
 	SSHORT		fld_character_set_id;	//!< ID of field's character set
 	SSHORT		fld_collation_id;		//!< ID of field's collation
 	SSHORT		fld_ttype;				//!< ID of field's language_driver
-	TEXT*		fld_type_of_name;		//!< TYPE OF
+	Firebird::MetaName fld_type_of_name;	//!< TYPE OF
+	dsql_str*	fld_type_of_table;		//!< TYPE OF table name
 	bool		fld_explicit_collation;	//!< COLLATE was explicit specified
 	bool		fld_not_nullable;		//!< NOT NULL was explicit specified
 	bool		fld_full_domain;		//!< Domain name without TYPE OF prefix
-	TEXT		fld_name[2];
+	Firebird::MetaName fld_name;
+	Firebird::MetaName fld_source;
 };
 
 // values used in fld_flags
@@ -260,21 +273,26 @@ public:
 };
 
 //! Stored Procedure block
-class dsql_prc : public pool_alloc_rpt<SCHAR, dsql_type_prc>
+class dsql_prc : public pool_alloc<dsql_type_prc>
 {
 public:
+	dsql_prc(DsqlMemoryPool& p)
+		: prc_name(p),
+		  prc_owner(p)
+	{
+	}
+
 	dsql_prc*	prc_next;		//!< Next relation in database
 	dsql_sym*	prc_symbol;		//!< Hash symbol for procedure
 	dsql_fld*	prc_inputs;		//!< Input parameters
 	dsql_fld*	prc_outputs;	//!< Output parameters
-	TEXT*		prc_name;		//!< Name of procedure
-	TEXT*		prc_owner;		//!< Owner of procedure
+	Firebird::MetaName prc_name;	//!< Name of procedure
+	Firebird::MetaName prc_owner;	//!< Owner of procedure
 	SSHORT		prc_in_count;
 	SSHORT		prc_def_count;	//!< number of inputs with default values
 	SSHORT		prc_out_count;
 	USHORT		prc_id;			//!< Procedure id
 	USHORT		prc_flags;
-	TEXT		prc_data[3];
 };
 
 // prc_flags bits
@@ -285,9 +303,14 @@ enum prc_flags_vals {
 };
 
 //! User defined function block
-class dsql_udf : public pool_alloc_rpt<SCHAR, dsql_type_udf>
+class dsql_udf : public pool_alloc<dsql_type_udf>
 {
 public:
+	dsql_udf(DsqlMemoryPool& p)
+		: udf_name(p)
+	{
+	}
+
 	dsql_udf*	udf_next;
 	dsql_sym*	udf_symbol;		//!< Hash symbol for udf
 	USHORT		udf_dtype;
@@ -298,8 +321,7 @@ public:
 	USHORT		udf_character_length;
     dsql_nod*	udf_arguments;
     USHORT      udf_flags;
-
-	TEXT		udf_name[2];
+	Firebird::MetaName udf_name;
 };
 
 // udf_flags bits
@@ -377,12 +399,13 @@ class dsql_req : public pool_alloc<dsql_type_req>
 {
 public:
 	// begin - member functions that should be private
-	inline void		append_uchar(UCHAR byte);
-	inline void		append_ushort(USHORT val);
-	inline void		append_ulong(ULONG val);
+	void		append_uchar(UCHAR byte);
+	void		append_ushort(USHORT val);
+	void		append_ulong(ULONG val);
 	void		append_cstring(UCHAR verb, const char* string);
 	void		append_meta_string(const char* string);
 	void		append_string(UCHAR verb, const char* string, USHORT len);
+	void		append_string(UCHAR verb, const Firebird::MetaName& name);
 	void		append_number(UCHAR verb, SSHORT number);
 	void		begin_blr(UCHAR verb);
 	void		end_blr();
@@ -537,7 +560,8 @@ enum req_flags_vals {
 	REQ_selectable			= 0x02000,
 	REQ_CTE_recursive		= 0x04000,
 	REQ_dsql_upd_or_ins		= 0x08000,
-	REQ_returning_into		= 0x10000
+	REQ_returning_into		= 0x10000,
+	REQ_in_auto_trans_block	= 0x20000
 };
 
 //! Blob
@@ -626,7 +650,7 @@ public:
 		return *this;
 	}
 
-	bool getImplicitJoinField(const TEXT* name, dsql_nod*& node);
+	bool getImplicitJoinField(const Firebird::MetaName& name, dsql_nod*& node);
 };
 
 // Flag values for ctx_flags
@@ -680,7 +704,7 @@ public:
 	USHORT		par_index;			//!< Index into SQLDA, if appropriate
 };
 
-#include "../jrd/thd.h"
+#include "../jrd/ThreadData.h"
 
 // DSQL threading declarations
 

@@ -85,6 +85,7 @@ static void stuff_context(dsql_req*, const dsql_ctx*);
 static void stuff_cstring(dsql_req*, const char*);
 static void stuff_meta_string(dsql_req*, const char*);
 static void stuff_string(dsql_req*, const char*, int);
+static void stuff_string(dsql_req* request, const Firebird::MetaName& name);
 static void stuff_word(dsql_req*, USHORT);
 
 // STUFF is defined in dsql.h for use in common with ddl.c 
@@ -363,6 +364,21 @@ void GEN_expr( dsql_req* request, dsql_nod* node)
 	case nod_containing:
 		blr_operator = blr_containing;
 		break;
+	case nod_similar:
+		stuff(request, blr_similar);
+		GEN_expr(request, node->nod_arg[e_similar_value]);
+		GEN_expr(request, node->nod_arg[e_similar_pattern]);
+
+		if (node->nod_arg[e_similar_escape])
+		{
+			stuff(request, 1);
+			GEN_expr(request, node->nod_arg[e_similar_escape]);
+		}
+		else
+			stuff(request, 0);
+
+		return;
+
 	case nod_starting:
 		blr_operator = blr_starting;
 		break;
@@ -742,32 +758,34 @@ void GEN_request( dsql_req* request, dsql_nod* node)
 	{	
 		stuff(request, blr_begin);
 
-		if (request->req_type == REQ_SELECT ||
-			request->req_type == REQ_SELECT_UPD ||
-			request->req_type == REQ_EMBED_SELECT)
+		switch (request->req_type)
 		{
+		case REQ_SELECT:
+		case REQ_SELECT_UPD:
+		case REQ_EMBED_SELECT:
 			gen_select(request, node);
-  		}
-		else if (request->req_type == REQ_EXEC_BLOCK ||
-				 request->req_type == REQ_SELECT_BLOCK )
-		{
+			break;
+		case REQ_EXEC_BLOCK:
+		case REQ_SELECT_BLOCK:
 			GEN_statement(request, node);
-  		}
-		else {
-			dsql_msg* message = request->req_send;
-			if (!message->msg_parameter)
-				request->req_send = NULL;
-			else {
-				GEN_port(request, message);
-				stuff(request, blr_receive);
-				stuff(request, message->msg_number);
+			break;
+		default:
+			{
+				dsql_msg* message = request->req_send;
+				if (!message->msg_parameter)
+					request->req_send = NULL;
+				else {
+					GEN_port(request, message);
+					stuff(request, blr_receive);
+					stuff(request, message->msg_number);
+				}
+				message = request->req_receive;
+				if (!message->msg_parameter)
+					request->req_receive = NULL;
+				else
+					GEN_port(request, message);
+				GEN_statement(request, node);
 			}
-			message = request->req_receive;
-			if (!message->msg_parameter)
-				request->req_receive = NULL;
-			else
-				GEN_port(request, message);
-			GEN_statement(request, node);
 		}		
 		stuff(request, blr_end);
 	}
@@ -987,6 +1005,12 @@ void GEN_statement( dsql_req* request, dsql_nod* node)
 
 	case nod_exec_block:
 		DDL_gen_block(request, node);
+		return;
+
+	case nod_auto_trans:
+		stuff(request, blr_auto_trans);
+		stuff(request, 0);	// to extend syntax in the future
+		GEN_statement(request, node->nod_arg[e_auto_trans_action]);
 		return;
 
 	case nod_for_select:
@@ -1741,7 +1765,7 @@ static void gen_field( dsql_req* request, const dsql_ctx* context,
 	else {
 		stuff(request, blr_field);
 		stuff_context(request, context);
-		stuff_cstring(request, field->fld_name);
+		stuff_string(request, field->fld_name);
 	}
 
 	if (indices) {
@@ -2065,7 +2089,7 @@ static void gen_relation( dsql_req* request, dsql_ctx* context)
 				stuff(request, blr_relation2);
 			else
 				stuff(request, blr_relation);
-			stuff_meta_string(request, relation->rel_name);
+			stuff_meta_string(request, relation->rel_name.c_str());
 		}
 
 		if (context->ctx_alias)
@@ -2080,7 +2104,7 @@ static void gen_relation( dsql_req* request, dsql_ctx* context)
 		}
 		else {
 			stuff(request, blr_procedure);
-			stuff_meta_string(request, procedure->prc_name);
+			stuff_meta_string(request, procedure->prc_name.c_str());
 		}
 		stuff_context(request, context);
 
@@ -2843,7 +2867,7 @@ static void gen_udf( dsql_req* request, const dsql_nod* node)
 {
 	const dsql_udf* userFunc = (dsql_udf*) node->nod_arg[0];
 	stuff(request, blr_function);
-	stuff_cstring(request, userFunc->udf_name);
+	stuff_string(request, userFunc->udf_name);
 
 	const dsql_nod* list;
 	if ((node->nod_count == 2) && (list = node->nod_arg[1])) {
@@ -2957,7 +2981,7 @@ static void stuff_context(dsql_req* request, const dsql_ctx* context)
     @param string
 
  **/
-static void stuff_cstring( dsql_req* request, const char* string)
+static void stuff_cstring(dsql_req* request, const char* string)
 {
 	stuff_string(request, string, strlen(string));
 }
@@ -2999,6 +3023,12 @@ static void stuff_string(dsql_req* request, const char* string, int len)
 
 	while (len--)
 		stuff(request, *string++);
+}
+
+
+static void stuff_string(dsql_req* request, const Firebird::MetaName& name)
+{
+	stuff_string(request, name.c_str(), name.length());
 }
 
 

@@ -88,6 +88,7 @@ nested FOR loops are added.
 #include "../jrd/y_handle.h"
 #include "../common/config/config.h"
 #include "../common/utils_proto.h"
+#include "../jrd/scroll_cursors.h"
 
 #ifdef SCROLLABLE_CURSORS
 #include "../jrd/scroll_cursors.h"
@@ -95,10 +96,6 @@ nested FOR loops are added.
 
 #ifdef HAVE_CTYPE_H
 #include <ctype.h>
-#endif
-
-#ifdef VMS
-#include <descrip.h>
 #endif
 
 static void		cleanup(void*);
@@ -131,7 +128,7 @@ static UCHAR*	var_info(dsql_msg*, const UCHAR*, const UCHAR* const, UCHAR*,
 extern dsql_nod* DSQL_parse;
 
 #ifdef DSQL_DEBUG
-	unsigned DSQL_debug;
+unsigned DSQL_debug = 0;
 #endif
 
 static bool init_flag = false;
@@ -1103,17 +1100,17 @@ ISC_STATUS GDS_DSQL_FETCH_CPP(	ISC_STATUS*	user_status,
 							ret_length, parameter->par_user_desc.dsc_length,
 							reinterpret_cast<char*>(buffer));
 			THREAD_ENTER();
-			if (!s) {
+			switch (s)
+			{
+			case 0:
 				return 0;
-			}
-			else if (s == isc_segment) {
+			case isc_segment:
 				return 101;
-			}
-			else if (s == isc_segstr_eof) {
+			case isc_segstr_eof:
 				return 100;
-			}
-			else
+			default:
 				punt();
+			}
 		}
 
 		THREAD_EXIT();
@@ -1851,7 +1848,7 @@ void DSQL_pretty(const dsql_nod* node, int column)
 		return;
 
 	case (TEXT) dsql_type_fld:
-		trace_line("%sFIELD: %s\n", buffer, ((dsql_fld*) node)->fld_name);
+		trace_line("%sFIELD: %s\n", buffer, ((dsql_fld*) node)->fld_name.c_str());
 		return;
 
 	case (TEXT) dsql_type_sym:
@@ -2210,6 +2207,9 @@ void DSQL_pretty(const dsql_nod* node, int column)
 		break;
 	case nod_select_expr:
 		verb = "select expr";
+		break;
+	case nod_similar:
+		verb = "similar";
 		break;
 	case nod_starting:
 		verb = "starting";
@@ -2660,11 +2660,11 @@ void DSQL_pretty(const dsql_nod* node, int column)
 			const dsql_fld* field = (dsql_fld*) node->nod_arg[e_fld_field];
 			trace_line("%sfield %s.%s, context %d\n", buffer,
 				(relation != NULL ?
-					relation->rel_name :
+					relation->rel_name.c_str() :
 					(procedure != NULL ?
-						procedure->prc_name :
+						procedure->prc_name.c_str() :
 						"unknown_db_object")),
-				field->fld_name, context->ctx_context);
+				field->fld_name.c_str(), context->ctx_context);
 			return;
 		}
 	
@@ -2704,11 +2704,11 @@ void DSQL_pretty(const dsql_nod* node, int column)
 			const dsql_prc* procedure = context->ctx_procedure;
 			if ( relation != NULL ) {
 				trace_line("%srelation %s, context %d\n",
-					buffer, relation->rel_name, context->ctx_context);
+					buffer, relation->rel_name.c_str(), context->ctx_context);
 			}
 			else if ( procedure != NULL ) {
 				trace_line("%sprocedure %s, context %d\n",
-					buffer, procedure->prc_name, context->ctx_context);
+					buffer, procedure->prc_name.c_str(), context->ctx_context);
 			}
 			else {
 				trace_line("%sUNKNOWN DB OBJECT, context %d\n",
@@ -2753,7 +2753,7 @@ void DSQL_pretty(const dsql_nod* node, int column)
 		//switch (node->nod_arg[e_udf_name]->nod_header.blk_type) {
 		switch (MemoryPool::blk_type(node->nod_arg[e_udf_name])) {
 		case dsql_type_udf:
-			trace_line ("%s\"\n", ((dsql_udf*) node->nod_arg[e_udf_name])->udf_name);
+			trace_line ("%s\"\n", ((dsql_udf*) node->nod_arg[e_udf_name])->udf_name.c_str());
 			break;
 		case dsql_type_str:
 			string = (dsql_str*) node->nod_arg[e_udf_name];
@@ -2872,6 +2872,22 @@ void DSQL_pretty(const dsql_nod* node, int column)
 		if (node->nod_count == 2)
 			DSQL_pretty(*ptr, column + 1);
 		return;
+		
+	case nod_mod_role:
+		verb = "mod_role";
+		break;
+
+	case nod_add_user:
+		verb = "add_user";
+		break;
+
+	case nod_mod_user:
+		verb = "mod_user";
+		break;
+
+	case nod_del_user:
+		verb = "del_user";
+		break;
 
 	default:
 		sprintf(s, "unknown type %d", node->nod_type);
@@ -4067,15 +4083,18 @@ static bool get_rsb_item(SSHORT*		explain_length_ptr,
 		case isc_info_rsb_ext_sequential:
 		case isc_info_rsb_ext_indexed:
 		case isc_info_rsb_virt_sequential:
-			if (rsb_type == isc_info_rsb_indexed ||
-				rsb_type == isc_info_rsb_ext_indexed) 
+			switch (rsb_type)
 			{
+			case isc_info_rsb_indexed:
+			case isc_info_rsb_ext_indexed:
 				p = " INDEX (";
-			}
-			else if (rsb_type == isc_info_rsb_navigate)
+				break;
+			case isc_info_rsb_navigate:
 				p = " ORDER ";
-			else
+				break;
+			default:
 				p = " NATURAL";
+			}
 
 			if ((plan_length -= strlen(p)) < 0)
 				return false;
@@ -4222,10 +4241,6 @@ static dsql_dbb* init(FB_API_HANDLE* db_handle)
 		DsqlContextPoolHolder context(DSQL_get_thread_data(), DSQL_permanent_pool);
 		HSHD_init();
 
-#ifdef DSQL_DEBUG
-		DSQL_debug = Config::getTraceDSQL();
-#endif
-
 		LEX_dsql_init();
 
 		gds__register_cleanup(cleanup, 0);
@@ -4277,7 +4292,7 @@ static dsql_dbb* init(FB_API_HANDLE* db_handle)
 
 /* assume that server can not report current character set,
    and if not then emulate pre-patch actions. */
-	database->dbb_att_charset = 127;
+	database->dbb_att_charset = CS_dynamic;
 
 	const UCHAR* data = reinterpret_cast<UCHAR*>(buffer);
 	UCHAR p;
@@ -4582,19 +4597,10 @@ static USHORT parse_blr(
 			break;
 
 		case blr_double:
-#ifndef VMS
 		case blr_d_float:
-#endif
 			desc.dsc_dtype = dtype_double;
 			desc.dsc_length = sizeof(double);
 			break;
-
-#ifdef VMS
-		case blr_d_float:
-			desc.dsc_dtype = dtype_d_float;
-			desc.dsc_length = sizeof(double);
-			break;
-#endif
 
 		case blr_timestamp:
 			desc.dsc_dtype = dtype_timestamp;

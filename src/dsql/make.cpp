@@ -1454,7 +1454,7 @@ dsql_nod* MAKE_field(dsql_ctx* context, dsql_fld* field, dsql_nod* indices)
 		{
 			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 607,
 					  isc_arg_gds, isc_dsql_only_can_subscript_array,
-					  isc_arg_string, field->fld_name, 0);
+					  isc_arg_string, field->fld_name.c_str(), 0);
 		}
 
 		MAKE_desc_from_field(&node->nod_desc, field);
@@ -1817,7 +1817,7 @@ static void make_parameter_names(dsql_par* parameter, const dsql_nod* item)
 	switch (item->nod_type) {
 	case nod_field:
 		field = (dsql_fld*) item->nod_arg[e_fld_field];
-		name_alias = field->fld_name;
+		name_alias = field->fld_name.c_str();
 		context = (dsql_ctx*) item->nod_arg[e_fld_context];
 		break;
 	case nod_dbkey:
@@ -1830,7 +1830,7 @@ static void make_parameter_names(dsql_par* parameter, const dsql_nod* item)
 		alias = item->nod_arg[e_alias_value];
 		if (alias->nod_type == nod_field) {
 			field = (dsql_fld*) alias->nod_arg[e_fld_field];
-			parameter->par_name = field->fld_name;
+			parameter->par_name = field->fld_name.c_str();
 			context = (dsql_ctx*) alias->nod_arg[e_fld_context];
 		}
 		else if (alias->nod_type == nod_dbkey) {
@@ -1848,7 +1848,7 @@ static void make_parameter_names(dsql_par* parameter, const dsql_nod* item)
 		alias = item->nod_arg[e_derived_field_value];
 		if (alias->nod_type == nod_field) {
 			field = (dsql_fld*) alias->nod_arg[e_fld_field];
-			parameter->par_name = field->fld_name;
+			parameter->par_name = field->fld_name.c_str();
 			context = (dsql_ctx*) alias->nod_arg[e_fld_context];
 		}
 		else if (alias->nod_type == nod_dbkey) {
@@ -1868,7 +1868,7 @@ static void make_parameter_names(dsql_par* parameter, const dsql_nod* item)
 			switch (map_node->nod_type) {
 			case nod_field:
 				field = (dsql_fld*) map_node->nod_arg[e_fld_field];
-				name_alias = field->fld_name;
+				name_alias = field->fld_name.c_str();
 				context = (dsql_ctx*) map_node->nod_arg[e_fld_context];
 				break;
 			case nod_alias:
@@ -1877,7 +1877,7 @@ static void make_parameter_names(dsql_par* parameter, const dsql_nod* item)
 				alias = map_node->nod_arg[e_alias_value];
 				if (alias->nod_type == nod_field) {
 					field = (dsql_fld*) alias->nod_arg[e_fld_field];
-					parameter->par_name = field->fld_name;
+					parameter->par_name = field->fld_name.c_str();
 					context = (dsql_ctx*) alias->nod_arg[e_fld_context];
 				}
 				break;
@@ -1887,7 +1887,7 @@ static void make_parameter_names(dsql_par* parameter, const dsql_nod* item)
 				alias = map_node->nod_arg[e_derived_field_value];
 				if (alias->nod_type == nod_field) {
 					field = (dsql_fld*) alias->nod_arg[e_fld_field];
-					parameter->par_name = field->fld_name;
+					parameter->par_name = field->fld_name.c_str();
 					context = (dsql_ctx*) alias->nod_arg[e_fld_context];
 				}
 				break;
@@ -1918,13 +1918,13 @@ static void make_parameter_names(dsql_par* parameter, const dsql_nod* item)
 	case nod_variable:
 		{
 			dsql_var* variable = (dsql_var*) item->nod_arg[e_var_variable];
-			name_alias = variable->var_field->fld_name;
+			name_alias = variable->var_field->fld_name.c_str();
 			break;
 		}
 	case nod_udf: 
 		{
 			dsql_udf* userFunc = (dsql_udf*) item->nod_arg[0];
-			name_alias = userFunc->udf_name;
+			name_alias = userFunc->udf_name.c_str();
 			break;
 		}
 	case nod_sys_function:
@@ -2062,13 +2062,13 @@ static void make_parameter_names(dsql_par* parameter, const dsql_nod* item)
 	{
 		if (context->ctx_relation)
 		{
-			parameter->par_rel_name = context->ctx_relation->rel_name;
-			parameter->par_owner_name = context->ctx_relation->rel_owner;
+			parameter->par_rel_name = context->ctx_relation->rel_name.c_str();
+			parameter->par_owner_name = context->ctx_relation->rel_owner.c_str();
 		}
 		else if (context->ctx_procedure)
 		{
-			parameter->par_rel_name = context->ctx_procedure->prc_name;
-			parameter->par_owner_name = context->ctx_procedure->prc_owner;
+			parameter->par_rel_name = context->ctx_procedure->prc_name.c_str();
+			parameter->par_owner_name = context->ctx_procedure->prc_owner.c_str();
 		}
 
 		parameter->par_rel_alias = context->ctx_alias;

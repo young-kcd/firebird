@@ -353,7 +353,13 @@ enum nod_t
 	nod_merge_when, // 280
 	nod_merge_update,
 	nod_merge_insert,
-	nod_sys_function
+	nod_sys_function,
+	nod_auto_trans,
+	nod_similar,
+	nod_mod_role,
+	nod_add_user,
+	nod_mod_user,
+	nod_del_user
 };
 
 typedef nod_t NOD_TYPE;
@@ -940,6 +946,7 @@ enum node_args {
 	e_mod_fld_type_field = 0,				// nod_mod_field_type
 	e_mod_fld_type_dom_name,
 	e_mod_fld_type_default,
+	e_mod_fld_type_computed,
 	e_mod_fld_type_count,
 
 	e_mod_fld_pos_orig_name = 0,	// nod_mod_field_position
@@ -1011,7 +1018,7 @@ enum node_args {
 	e_comment_string,
 	e_comment_count,
 
-	e_mod_udf_name = 0,
+	e_mod_udf_name = 0,				// nod_mod_udf
 	e_mod_udf_entry_pt,
 	e_mod_udf_module,
 	e_mod_udf_count,
@@ -1038,10 +1045,33 @@ enum node_args {
 	e_sysfunc_args,
 	e_sysfunc_count,
 
+	e_auto_trans_action = 0,		// nod_auto_trans
+	e_auto_trans_count,
+
+	e_similar_value = 0,
+	e_similar_pattern,
+	e_similar_escape,
+	e_similar_count,
+
 	e_src_info_line = 0,			// nod_src_info
 	e_src_info_column,
 	e_src_info_stmt,
-	e_src_info_count
+	e_src_info_count,
+
+	e_mod_role_os_name = 0,			// nod_mod_role
+	e_mod_role_db_name,
+	e_mod_role_action,				// 0 - drop, 1 - add
+	e_mod_role_count,
+
+	e_del_user_name = 0,			// nod_del_user
+	e_del_user_count, 
+	
+	e_user_name = 0, 				// nod_add(mod)_user
+	e_user_passwd, 
+	e_user_first,
+	e_user_middle,
+	e_user_last,
+	e_user_count
 };
 
 #endif // DSQL_NODE_H

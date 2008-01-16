@@ -27,7 +27,7 @@
 #ifndef DSQL_UTLD_PROTO_H
 #define DSQL_UTLD_PROTO_H
 
-#if !defined(REQUESTER) && !defined(SUPERCLIENT)
+#if !defined(SUPERCLIENT)
 #include "../jrd/DataTypeUtil.h"
 #endif
 
@@ -42,7 +42,7 @@ void		UTLD_save_status_strings(ISC_STATUS*);
 SCHAR*		UTLD_skip_sql_info(SCHAR*);
 
 
-#if !defined(REQUESTER) && !defined(SUPERCLIENT)
+#if !defined(SUPERCLIENT)
 
 class dsql_req;
 

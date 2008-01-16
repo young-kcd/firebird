@@ -31,10 +31,10 @@ void	GEN_return(dsql_req*, const dsql_nod*, bool);
 void	GEN_start_transaction(dsql_req*, const dsql_nod*);
 void	GEN_statement(dsql_req*, dsql_nod*);
 
-inline UCHAR stuff(dsql_req* request, const UCHAR byte)
+// CVC: I think this can be replaced by request->append_uchar(byte) in the calling code.
+inline void stuff(dsql_req* request, const UCHAR byte)
 {
 	request->req_blr_data.add(byte);
-	return byte;
 }
 
 #endif //  DSQL_GEN_PROTO_H

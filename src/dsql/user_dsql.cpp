@@ -50,10 +50,6 @@
 #include "../jrd/why_proto.h"
 #include "../dsql/user__proto.h"
 
-#ifdef VMS
-#include <descrip.h>
-#endif
-
 enum name_type {
 	NAME_statement = 1,
 	NAME_cursor = 2
@@ -384,48 +380,6 @@ ISC_STATUS API_ROUTINE isc_embed_dsql_exec_immed2(	ISC_STATUS*	user_status,
 								in_sqlda,
 								out_sqlda);
 }
-
-
-#ifdef VMS
-//____________________________________________________________
-//
-//	An execute immediate for COBOL to call
-//
-ISC_STATUS API_ROUTINE isc_embed_dsql_execute_immed_d(ISC_STATUS* user_status,
-												  FB_API_HANDLE* db_handle,
-												  FB_API_HANDLE* trans_handle,
-												  struct dsc$descriptor_s *
-												  string, USHORT dialect,
-												  XSQLDA* sqlda)
-{
-	return isc_embed_dsql_exec_immed2_d(user_status,
-										db_handle, trans_handle, string,
-										dialect, sqlda, NULL);
-}
-#endif
-
-
-#ifdef VMS
-//____________________________________________________________
-//
-//	An execute immediate for COBOL to call
-//
-ISC_STATUS API_ROUTINE isc_embed_dsql_exec_immed2_d(ISC_STATUS* user_status,
-												FB_API_HANDLE* db_handle,
-												FB_API_HANDLE* trans_handle,
-												struct dsc$descriptor_s *
-												string, USHORT dialect,
-												XSQLDA* in_sqlda,
-												XSQLDA* out_sqlda)
-{
-	USHORT len = string->dsc$w_length;
-
-	return isc_embed_dsql_exec_immed2(user_status, db_handle,
-									  trans_handle, len,
-									  string->dsc$a_pointer, dialect,
-									  in_sqlda, out_sqlda);
-}
-#endif
 
 
 //____________________________________________________________
@@ -773,33 +727,6 @@ ISC_STATUS API_ROUTINE isc_embed_dsql_prepare(ISC_STATUS*	user_status,
 }
 
 
-#ifdef VMS
-ISC_STATUS API_ROUTINE isc_embed_dsql_prepare_d(ISC_STATUS* user_status,
-											FB_API_HANDLE* db_handle,
-											FB_API_HANDLE* trans_handle,
-											SCHAR* stmt_name,
-											struct dsc$descriptor_s * string,
-											USHORT dialect, XSQLDA* sqlda)
-{
-/**************************************
- *
- *	i s c _ e m b e d _ d s q l _ p r e p a r e _ d
- *
- **************************************
- *
- * Functional description
- *	A prepare for COBOL to call
- *
- **************************************/
-	const USHORT len = string->dsc$w_length;
-
-	return isc_embed_dsql_prepare(user_status, db_handle,
-								  trans_handle, stmt_name, len,
-								  string->dsc$a_pointer, dialect, sqlda);
-}
-#endif
-
-
 ISC_STATUS API_ROUTINE isc_embed_dsql_release(ISC_STATUS* user_status,
 										  const SCHAR* stmt_name)
 {
@@ -857,33 +784,6 @@ ISC_STATUS API_ROUTINE isc_embed_dsql_release(ISC_STATUS* user_status,
 }
 
 
-#ifdef VMS
-int API_ROUTINE isc_dsql_execute_immediate_d(
-											 ISC_STATUS* user_status,
-											 int db_handle,
-											 int trans_handle,
-											 struct dsc$descriptor_s* string,
-											 USHORT dialect, XSQLDA* sqlda)
-{
-/**************************************
- *
- *	i s c _ d s q l _ e x e c u t e _ i m m e d i a t e _ d
- *
- **************************************
- *
- * Functional description
- *	An execute immediate for COBOL to call
- *
- **************************************/
-	const USHORT len = string->dsc$w_length;
-
-	return isc_dsql_execute_immediate(user_status, db_handle, trans_handle,
-									  len, string->dsc$a_pointer, dialect,
-									  sqlda);
-}
-#endif
-
-
 ISC_STATUS API_ROUTINE isc_dsql_fetch_a(ISC_STATUS* user_status,
 									int* sqlcode,
 									int* stmt_handle,
@@ -901,7 +801,7 @@ ISC_STATUS API_ROUTINE isc_dsql_fetch_a(ISC_STATUS* user_status,
  **************************************/
 	*sqlcode = 0;
 
-	const ISC_STATUS s = isc_dsql_fetch(	user_status,
+	const ISC_STATUS s = isc_dsql_fetch(user_status,
 						reinterpret_cast<FB_API_HANDLE*>(stmt_handle),
 						dialect,
 						reinterpret_cast<XSQLDA*>(sqlda));
@@ -933,38 +833,16 @@ ISC_STATUS API_ROUTINE isc_dsql_fetch2_a(ISC_STATUS* user_status,
 	*sqlcode = 0;
 
 	const ISC_STATUS s =
-		isc_dsql_fetch2(user_status, stmt_handle, dialect, sqlda, direction,
-						offset);
+		isc_dsql_fetch2(user_status, 
+				reinterpret_cast<FB_API_HANDLE*>(stmt_handle), 
+				dialect, 
+				reinterpret_cast<XSQLDA*>(sqlda), 
+				direction,
+				offset);
 	if (s == 100)
 		*sqlcode = 100;
 
 	return FB_SUCCESS;
-}
-#endif
-
-
-#ifdef VMS
-int API_ROUTINE isc_dsql_prepare_d(	ISC_STATUS*						user_status,
-									int							trans_handle,
-									int							stmt_handle,
-									struct dsc$descriptor_s*	string,
-									USHORT						dialect,
-									XSQLDA*						sqlda)
-{
-/**************************************
- *
- *	i s c _ d s q l _ p r e p a r e _ d
- *
- **************************************
- *
- * Functional description
- *	A prepare for COBOL to call
- *
- **************************************/
-	const USHORT len = string->dsc$w_length;
-
-	return isc_dsql_prepare(user_status, trans_handle, stmt_handle,
-							len, string->dsc$a_pointer, dialect, sqlda);
 }
 #endif
 
@@ -1039,20 +917,6 @@ ISC_STATUS API_ROUTINE isc_execute_immediate(ISC_STATUS* status_vector,
 										DIALECT_sqlda, NULL);
 }
 
-#ifdef VMS
-ISC_STATUS API_ROUTINE isc_execute_immediate_d(ISC_STATUS* status_vector,
-										   SLONG* db_handle,
-										   SLONG* tra_handle,
-										   struct dsc$descriptor_s * string)
-{
-	USHORT len = string->dsc$w_length;
-
-	return isc_execute_immediate(status_vector,
-								 db_handle,
-								 tra_handle, &len, string->dsc$a_pointer);
-}
-#endif
-
 ISC_STATUS API_ROUTINE isc_fetch(ISC_STATUS* status_vector,
 							 const SCHAR* cursor_name, SQLDA* sqlda)
 {
@@ -1101,23 +965,6 @@ ISC_STATUS API_ROUTINE isc_prepare(	ISC_STATUS*	status_vector,
 									DIALECT_sqlda,
 									reinterpret_cast<XSQLDA*>(sqlda));
 }
-
-#ifdef VMS
-ISC_STATUS API_ROUTINE isc_prepare_d(ISC_STATUS* status_vector,
-								 SLONG* db_handle,
-								 SLONG* tra_handle,
-								 SCHAR* statement_name,
-								 struct dsc$descriptor_s * string,
-								 SQLDA* sqlda)
-{
-	USHORT len = string->dsc$w_length;
-
-	return isc_prepare(status_vector,
-					   db_handle,
-					   tra_handle,
-					   statement_name, &len, string->dsc$a_pointer, sqlda);
-}
-#endif
 
 ISC_STATUS API_ROUTINE isc_dsql_release(ISC_STATUS*	status_vector,
 									const SCHAR*	statement_name)
@@ -1198,17 +1045,6 @@ ISC_STATUS API_ROUTINE gds__execute_immediate(ISC_STATUS*	status_vector,
 									sql);
 }
 
-#ifdef VMS
-ISC_STATUS API_ROUTINE gds__execute_immediate_d(ISC_STATUS*	status_vector,
-											SLONG*	db_handle,
-											SLONG*	tra_handle,
-											const SCHAR*	sql_string)
-{
-	return isc_execute_immediate_d(status_vector,
-								   db_handle, tra_handle, sql_string);
-}
-#endif
-
 ISC_STATUS API_ROUTINE gds__fetch(ISC_STATUS*	status_vector,
 							  const SCHAR*	statement_name,
 							  SQLDA*	sqlda)
@@ -1248,19 +1084,6 @@ ISC_STATUS API_ROUTINE gds__prepare(ISC_STATUS*	status_vector,
 						sql,
 						sqlda);
 }
-
-#ifdef VMS
-ISC_STATUS API_ROUTINE gds__prepare_d(ISC_STATUS* status_vector,
-								  SLONG* db_handle,
-								  SLONG* tra_handle,
-								  SCHAR* statement_name,
-								  SLONG* sql_desc, SQLDA* sqlda)
-{
-	return isc_prepare_d(status_vector,
-						 db_handle,
-						 tra_handle, statement_name, sql_desc, sqlda);
-}
-#endif
 
 ISC_STATUS API_ROUTINE gds__to_sqlda(SQLDA* sqlda,
 								 int number,
