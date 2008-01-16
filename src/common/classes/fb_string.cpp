@@ -362,7 +362,7 @@ extern "C" {
 #define FB_VA_COPY(to, from) va_copy(to, from)
 #define FB_CLOSE_VACOPY(to) va_end(to)
 #else
-#define FB_VA_COPY(to, from) memcpy(to, from, sizeof (va_list))
+#define FB_VA_COPY(to, from) to = from
 #define FB_CLOSE_VACOPY(to)
 #endif
 
