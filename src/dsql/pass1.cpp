@@ -1241,7 +1241,7 @@ dsql_nod* PASS1_statement(dsql_req* request, dsql_nod* input, bool proc_flag)
 	}
 #endif
 
-	dsql_nod* node;
+	dsql_nod* node = NULL;
 	const DsqlContextStack::iterator base(*request->req_context);
 
 // Dispatch on node type.  Fall thru on easy ones

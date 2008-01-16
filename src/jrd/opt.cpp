@@ -3606,7 +3606,7 @@ static void find_used_streams(const RecordSource* rsb, UCHAR* streams)
 
 	const RecordSource* const* ptr;
 	const RecordSource* const* end;
-	USHORT stream;
+	USHORT stream = 0;
 	bool found = false;
 
 	switch (rsb->rsb_type) {
@@ -3895,7 +3895,8 @@ static RecordSource* gen_aggregate(thread_db* tdbb, OptimizerBlk* opt, jrd_nod* 
 	// only the simplest case, although it is probably possible
 	// to use an index in more complex situations
 	jrd_nod** ptr;
-	jrd_nod* agg_operator;
+	jrd_nod* agg_operator = NULL;
+
 	if ((map->nod_count == 1) &&
 		(ptr = map->nod_arg) &&
 		(agg_operator = (*ptr)->nod_arg[e_asgn_from]) &&

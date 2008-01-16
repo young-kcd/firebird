@@ -3481,7 +3481,7 @@ static bool_t packet_send( rem_port* port, const SCHAR* buffer, SSHORT buffer_le
 		THREAD_EXIT();
 		int count = 0;
 		SSHORT n;
-		int inetErrNo;
+		int inetErrNo = 0;
 		const char* b = buffer;
 		while ((n = send((SOCKET) port->port_handle, b, 1, MSG_OOB | FB_SEND_FLAGS)) == -1 &&
 				(INET_ERRNO == ENOBUFS || INTERRUPT_ERROR(INET_ERRNO)))
