@@ -82,8 +82,7 @@ GSEC_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(GSEC_Sources)))
 
 
 GSTAT_Other_Sources = jrd/btn.cpp jrd/db_alias.cpp common/utils.cpp jrd/ods.cpp \
-common/UtilSvc.cpp jrd/ThreadData.cpp $(OS_SPECIFIC_Sources)
-# jrd/isc_file.cpp !!!!!!!!!!!!
+common/UtilSvc.cpp jrd/ThreadData.cpp jrd/isc_file.cpp $(OS_SPECIFIC_Sources)
 
 GSTAT_Files =  dba.epp ppg.cpp gstatMain.cpp
 GSTAT_Sources = $(addprefix utilities/gstat/, $(GSTAT_Files)) $(GSTAT_Other_Sources)
