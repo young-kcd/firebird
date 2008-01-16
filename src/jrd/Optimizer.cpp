@@ -454,6 +454,7 @@ bool OPT_expression_equal2(thread_db* tdbb, OptimizerBlk* opt,
 
 		case nod_between:
 		case nod_like:
+		case nod_similar:
 		case nod_missing:
 		case nod_any:
 		case nod_ansi_any:

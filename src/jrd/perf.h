@@ -39,11 +39,7 @@
 #include <sys/types.h>
 #include <sys/times.h>
 #else
-#ifdef VMS
-#include <types.h>
-#else
 #include <sys/types.h>
-#endif
 
 #ifdef __cplusplus
 extern "C" {

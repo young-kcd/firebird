@@ -63,11 +63,6 @@ static const SCHAR items[] = {
 static const SCHAR* report =
 	"elapsed = !e cpu = !u reads = !r writes = !w fetches = !f marks = !m$";
 
-#ifdef VMS
-#define TICK	100
-extern void ftime();
-#endif
-
 #if defined(WIN_NT) && !defined(CLOCKS_PER_SEC)
 #define TICK	100
 #endif
@@ -172,12 +167,8 @@ int API_ROUTINE perf_format(
 
 			case 'u':
 			case 's':
-#ifdef VMS
-				sprintf(p, "%"SLONGFORMAT".%.2"SLONGFORMAT, delta / 100, (delta % 100));
-#else
 				sprintf(p, "%"SLONGFORMAT".%.2"SLONGFORMAT, delta / TICK,
 						(delta % TICK) * 100 / TICK);
-#endif
 				while (*p)
 					p++;
 				break;

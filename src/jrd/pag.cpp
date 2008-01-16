@@ -181,7 +181,8 @@ enum ArchitectureType {
 // compiler used to produce the build. Yes, some 32-bit RISC builds use 64-bit alignment.
 // This is why we declare all such builds "Unknown" for ODS10.
 
-static ArchitectureType archMatrix10[CLASS_MAX10 + 1] = {
+static const ArchitectureType archMatrix10[CLASS_MAX10 + 1] =
+{
 	archUnknown, // CLASS_UNKNOWN
 	archUnknown, // CLASS_APOLLO_68K
 	archUnknown, // CLASS_SOLARIS_SPARC
@@ -209,7 +210,8 @@ static ArchitectureType archMatrix10[CLASS_MAX10 + 1] = {
 	archUnknown  // CLASS_LINUX_AMD64
 };
 
-static ArchitectureType archMatrix[CLASS_MAX + 1] = {
+static const ArchitectureType archMatrix[CLASS_MAX + 1] =
+{
 	archUnknown,      // CLASS_UNKNOWN
 	archUnknown,      // CLASS_APOLLO_68K
 	archBigEndian,    // CLASS_SOLARIS_SPARC
@@ -254,10 +256,6 @@ const SSHORT CLASS		= CLASS_SOLARIS_SPARC;
 const SSHORT CLASS		= CLASS_HPUX_PA;
 #endif
 
-#ifdef VMS
-const SSHORT CLASS		= CLASS_VMS_VAX;
-#endif
-
 #ifdef AIX
 const SSHORT CLASS		= CLASS_AIX_PPC;
 #endif
@@ -275,10 +273,6 @@ const SSHORT CLASS		= CLASS_WINDOWS_AMD64;
 #error no support on other hardware for Windows
 #endif
 #endif	// WIN_NT
-
-#ifdef SINIXZ
-const SSHORT CLASS		= CLASS_LINUX_I386;
-#endif
 
 #ifdef LINUX
 #if defined(i386) || defined(i586)
@@ -583,6 +577,7 @@ int PAG_add_header_entry(header_page* header, USHORT type, USHORT len, const UCH
  *	RETURNS
  *		TRUE - modified page
  *		FALSE - nothing done
+ * CVC: Nobody checks the result of this function!
  *
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
@@ -598,7 +593,7 @@ int PAG_add_header_entry(header_page* header, USHORT type, USHORT len, const UCH
 	if (*p != HDR_end)
 		return FALSE;
 
-/* We are at HDR_end, add the entry */
+	// We are at HDR_end, add the entry
 
 	const int free_space = dbb->dbb_page_size - header->hdr_end;
 
@@ -608,13 +603,13 @@ int PAG_add_header_entry(header_page* header, USHORT type, USHORT len, const UCH
 		*p++ = static_cast<UCHAR>(type);
 		*p++ = static_cast<UCHAR>(len);
 
-		if (len)
-		{
-			if (entry)
+		if (len) {
+			if (entry) {
 				memcpy(p, entry, len);
-			else
+			}
+			else {
 				memset(p, 0, len);
-
+			}
 			p += len;
 		}
 

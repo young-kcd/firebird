@@ -1349,11 +1349,9 @@ static FB_UINT64 calculate_priority_level(const OptimizerBlk* opt, const index_d
 		// Calculate our priority level.
 		return unique_prefix + ((idx_eql_count * max_idx * max_idx) +
 			(idx_field_count * max_idx) + (max_idx - idx->idx_count));
+	}
 
-	}
-	else {
-		return LOWEST_PRIORITY_LEVEL;
-	}
+	return LOWEST_PRIORITY_LEVEL;
 }
 
 
@@ -1995,11 +1993,15 @@ static bool check_for_nod_from(const jrd_nod* node)
  *	Check for nod_from under >=0 nod_cast nodes.
  *
  **************************************/
-	if (node->nod_type == nod_from)
+	switch (node->nod_type)
+	{
+	case nod_from:
 		return true;
-	if (node->nod_type == nod_cast)
+	case nod_cast:
 		return check_for_nod_from(node->nod_arg[e_cast_source]);
-	return false;
+	default:
+		return false;
+	}
 }
 
 static SLONG decompose(thread_db*		tdbb,
@@ -2201,7 +2203,8 @@ static USHORT distribute_equalities(NodeStack& org_stack, CompilerScratch* csb, 
 			boolean->nod_type != nod_lss &&
 			boolean->nod_type != nod_matches &&
 			boolean->nod_type != nod_contains &&
-			boolean->nod_type != nod_like)
+			boolean->nod_type != nod_like &&
+			boolean->nod_type != nod_similar)
 		{
 			continue;
 		}
@@ -2853,6 +2856,7 @@ static bool expression_possible_unknown(const jrd_nod* node)
 		case nod_like:
 		case nod_between:
 		case nod_contains:
+		case nod_similar:
 		case nod_starts:
 		case nod_eql:
 		case nod_neq:
@@ -3037,6 +3041,7 @@ static bool expression_contains_stream(CompilerScratch* csb,
 
 		case nod_like:
 		case nod_between:
+		case nod_similar:
 		case nod_sleuth:
 		case nod_missing:
 		case nod_value_if:
@@ -3421,15 +3426,17 @@ static jrd_nod* find_dbkey(jrd_nod* dbkey, USHORT stream, SLONG* position)
  *
  **************************************/
 	DEV_BLKCHK(dbkey, type_nod);
-	if (dbkey->nod_type == nod_dbkey) {
+	if (dbkey->nod_type == nod_dbkey)
+	{
 		if ((USHORT)(IPTR) dbkey->nod_arg[0] == stream)
 			return dbkey;
-		else {
-			*position = *position + 1;
-			return NULL;
-		}
+
+		*position = *position + 1;
+		return NULL;
 	}
-	else if (dbkey->nod_type == nod_concatenate) {
+
+	if (dbkey->nod_type == nod_concatenate)
+	{
         jrd_nod** ptr = dbkey->nod_arg;
 		for (const jrd_nod* const* const end = ptr + dbkey->nod_count;
 			 ptr < end; ptr++)
@@ -3593,7 +3600,7 @@ static void find_used_streams(const RecordSource* rsb, UCHAR* streams)
  *	and add them to the stream list.
  *
  **************************************/
-	if (!(rsb)) {
+	if (! rsb) {
 		return;
 	}
 
@@ -4177,7 +4184,8 @@ static void gen_join(thread_db*		tdbb,
 		return;
 	}
 
-	if (dbb->dbb_ods_version >= ODS_VERSION11) {
+	if (dbb->dbb_ods_version >= ODS_VERSION11)
+	{
 		// For ODS11 and higher databases we can use new calculations
 		if (plan_clause && streams[0] > 1) {
 			// this routine expects a join/merge
@@ -4185,23 +4193,22 @@ static void gen_join(thread_db*		tdbb,
 						project_clause, plan_clause);
 			return;
 		}
-		else {
-			OptimizerInnerJoin* innerJoin = FB_NEW(*tdbb->getDefaultPool())
-				OptimizerInnerJoin(*tdbb->getDefaultPool(), opt, streams, river_stack,
-				sort_clause, project_clause, plan_clause);
 
-			stream_array_t temp;
-			MOVE_FAST(streams, temp, streams[0] + 1);
+		OptimizerInnerJoin* innerJoin = FB_NEW(*tdbb->getDefaultPool())
+			OptimizerInnerJoin(*tdbb->getDefaultPool(), opt, streams, river_stack,
+			sort_clause, project_clause, plan_clause);
 
-			USHORT count;
-			do {
-				count = innerJoin->findJoinOrder();
-			} while (form_river(tdbb, opt, count, streams, temp, river_stack,
-						sort_clause, project_clause, 0));
+		stream_array_t temp;
+		MOVE_FAST(streams, temp, streams[0] + 1);
 
-			delete innerJoin;
-			return;
-		}
+		USHORT count;
+		do {
+			count = innerJoin->findJoinOrder();
+		} while (form_river(tdbb, opt, count, streams, temp, river_stack,
+					sort_clause, project_clause, 0));
+
+		delete innerJoin;
+		return;
 	}
 
 	// If there is only a single stream, don't bother with a join.
@@ -5107,10 +5114,9 @@ static RecordSource* gen_retrieval(thread_db*     tdbb,
 		return gen_rsb(tdbb, opt, rsb, inversion, stream, relation, alias,
 					   *return_boolean, csb_tail->csb_cardinality);
 	}
-	else {
-		return gen_rsb(tdbb, opt, rsb, inversion, stream, relation, alias,
-					   opt_boolean, csb_tail->csb_cardinality);
-	}
+
+	return gen_rsb(tdbb, opt, rsb, inversion, stream, relation, alias,
+				   opt_boolean, csb_tail->csb_cardinality);
 }
 
 
@@ -5959,6 +5965,7 @@ static void get_expression_streams(const jrd_nod* node,
 
 		case nod_like:
 		case nod_between:
+		case nod_similar:
 		case nod_sleuth:
 		case nod_missing:
 		case nod_value_if:
@@ -6409,17 +6416,16 @@ static jrd_nod* make_inversion(thread_db* tdbb, OptimizerBlk* opt,
 			{
 				return compose(&inversion, inversion2, nod_bit_in);
 			}
-		    else if ((inversion->nod_type == nod_bit_in) &&
+
+			if ((inversion->nod_type == nod_bit_in) &&
 				(inversion2->nod_type == nod_index) &&
 				(reinterpret_cast<IndexRetrieval*>(inversion->nod_arg[1]->nod_arg[e_idx_retrieval])->irb_index ==
 				reinterpret_cast<IndexRetrieval*>(inversion2->nod_arg[e_idx_retrieval])->irb_index))
 			{
     			return compose(&inversion, inversion2, nod_bit_in);
 			}
-			else
-			{
-				return compose(&inversion, inversion2, nod_bit_or);
-			}
+
+			return compose(&inversion, inversion2, nod_bit_or);
 		}
 		if (inversion->nod_type == nod_index) {
 			delete inversion->nod_arg[e_idx_retrieval];
@@ -7127,6 +7133,7 @@ static bool node_equality(const jrd_nod* node1, const jrd_nod* node2)
 		case nod_matches:
 		case nod_contains:
 		case nod_like:
+		case nod_similar:
 		default:
 			break;
 	}
@@ -7224,8 +7231,8 @@ static jrd_nod* optimize_like(thread_db* tdbb, CompilerScratch* csb, jrd_nod* li
 	// If the first character is a wildcard char, forget it.
 	if ((!escape_node ||
 		 (memcmp(first_canonic, escape_canonic, canWidth) != 0)) &&
-		(memcmp(first_canonic, matchTextType->getSqlMatchOneCanonic(), canWidth) == 0 ||
-		 memcmp(first_canonic, matchTextType->getSqlMatchAnyCanonic(), canWidth) == 0))
+		(memcmp(first_canonic, matchTextType->getCanonicalChar(TextType::CHAR_SQL_MATCH_ONE), canWidth) == 0 ||
+		 memcmp(first_canonic, matchTextType->getCanonicalChar(TextType::CHAR_SQL_MATCH_ANY), canWidth) == 0))
 	{
 		return NULL;
 	}
@@ -7269,8 +7276,8 @@ static jrd_nod* optimize_like(thread_db* tdbb, CompilerScratch* csb, jrd_nod* li
 			patternPtrStart = patternPtr;
 			patternPtr += canWidth;
 		}
-		else if (memcmp(patternPtrStart, matchTextType->getSqlMatchOneCanonic(), canWidth) == 0 ||
-				 memcmp(patternPtrStart, matchTextType->getSqlMatchAnyCanonic(), canWidth) == 0)
+		else if (memcmp(patternPtrStart, matchTextType->getCanonicalChar(TextType::CHAR_SQL_MATCH_ONE), canWidth) == 0 ||
+				 memcmp(patternPtrStart, matchTextType->getCanonicalChar(TextType::CHAR_SQL_MATCH_ANY), canWidth) == 0)
 		{
 			break;
 		}
@@ -7409,12 +7416,7 @@ static bool river_reference(const River* river, const jrd_nod* node, bool* field
 			}
 			// if this was the first call then field_found tells
 			// us if any field (referenced by river) was found.
-			if (root_caller) {
-				return *field_found;
-			}
-			else {
-				return true;
-			}
+			return root_caller ? *field_found : true;
 		}
 	}
 /*
@@ -7424,10 +7426,12 @@ static bool river_reference(const River* river, const jrd_nod* node, bool* field
 	DEV_BLKCHK(node, type_nod);
 	if (node->nod_type != nod_field)
 		return false;
-	for (streams = river->riv_streams, end =
-		 streams + river->riv_count; streams < end; streams++)
+	for (streams = river->riv_streams, end = streams + river->riv_count;
+		 streams < end; streams++)
+	{
 		if ((USHORT) node->nod_arg[e_fld_stream] == *streams)
 			return true;
+	}
 	return false;
 */
 	return false;

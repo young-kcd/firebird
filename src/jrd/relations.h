@@ -298,6 +298,8 @@ RELATION(nam_proc_parameters, rel_prc_prms, ODS_8_0, rel_persistent)
 	FIELD(f_prm_coll_id, nam_collate_id, fld_collate_id, 0, 0, 0, 0)
 	FIELD(f_prm_null_flag, nam_null_flag, fld_null_flag, 0, 0, 0, 0)
 	FIELD(f_prm_mech, nam_prm_mechanism, fld_mechanism, 1, 0, 0, 0)
+	FIELD(f_prm_fname, nam_f_name, fld_f_name, 1, 0, 0, 0)
+	FIELD(f_prm_rname, nam_r_name, fld_r_name, 1, 0, 0, 0)
 END_RELATION 
 RELATION(nam_charsets, rel_charsets, ODS_8_0, rel_persistent)
 	FIELD(f_cs_cs_name, nam_charset_name, fld_charset_name, 1, 0, 0, 0)
