@@ -48,44 +48,6 @@ const int STATIC_PATTERN_BUFFER		= 256;
 namespace Firebird {
 
 template <typename CharType>
-class StartsEvaluator {
-public:
-	StartsEvaluator(const CharType* _pattern_str, SLONG _pattern_len) : 
-		// No need to copy string because this class is used briefly
-		pattern_str(_pattern_str), pattern_len(_pattern_len)
-	{
-		reset();
-	}
-	void reset() {
-		result = true;
-		offset = 0;
-	}
-	bool getResult() {
-		return offset >= pattern_len && result;
-	}
-	bool processNextChunk(const CharType* data, SLONG data_len) 
-	{
-		// Should work fine when called with data_len equal to zero
-		if (!result || offset >= pattern_len)
-			return false;
-		const SLONG comp_length = 
-			data_len < pattern_len - offset ? data_len : pattern_len - offset;
-		if (memcmp(data, pattern_str + offset, sizeof(CharType) * comp_length) != 0) 
-		{
-			result = false;
-			return false;
-		}
-		offset += comp_length;
-		return offset < pattern_len;
-	}
-private:
-	SLONG offset;
-	const CharType* pattern_str;
-	SLONG pattern_len;
-	bool result;
-};
-
-template <typename CharType>
 static void preKmp(const CharType *x, int m, SLONG kmpNext[]) 
 {
 	SLONG i = 0;
@@ -108,45 +70,103 @@ static void preKmp(const CharType *x, int m, SLONG kmpNext[])
 	kmpNext[++i] = ++j;
 }
 
-class StaticAllocator {
+class StaticAllocator
+{
 public:
-	StaticAllocator(MemoryPool& _pool) : chunksToFree(_pool), pool(_pool), allocated(0) {}
+	StaticAllocator(MemoryPool& _pool)
+		: pool(_pool), chunksToFree(_pool), allocated(0)
+	{
+	}
 
-	~StaticAllocator() {
+	~StaticAllocator()
+	{
 		for (size_t i = 0; i < chunksToFree.getCount(); i++)
 			pool.deallocate(chunksToFree[i]);
 	}
 
-	void* alloc(SLONG count) {
+	void* alloc(SLONG count)
+	{
 		void* result;
 		SLONG localCount = ROUNDUP(count, ALIGNMENT);
-		if (allocated + localCount <= STATIC_PATTERN_BUFFER) {
+		if (allocated + localCount <= STATIC_PATTERN_BUFFER)
+		{
 			result = allocBuffer + allocated;
 			allocated += localCount; 
 		}
-		else {
+		else
+		{
 			result = pool.allocate(count);
 			chunksToFree.add(result);
 		}
 		return result;
 	}
+
+protected:
+	MemoryPool& pool;
+
 private:
 	Array<void*> chunksToFree;
-	MemoryPool& pool;
 	char allocBuffer[STATIC_PATTERN_BUFFER];
 	int allocated;
 };
 
 template <typename CharType>
-class ContainsEvaluator : private StaticAllocator {
+class StartsEvaluator : private StaticAllocator
+{
 public:
-	ContainsEvaluator(MemoryPool& _pool, const CharType* _pattern_str, SLONG _pattern_len) : 
-		StaticAllocator(_pool),	pattern_len(_pattern_len)
+	StartsEvaluator(MemoryPool& _pool, const CharType* _pattern_str, SLONG _pattern_len)
+		: StaticAllocator(_pool), pattern_len(_pattern_len)
 	{
-		CharType* temp = reinterpret_cast<CharType*>(alloc(_pattern_len * sizeof(CharType)));
+		CharType* temp = static_cast<CharType*>(alloc(_pattern_len * sizeof(CharType)));
 		memcpy(temp, _pattern_str, _pattern_len * sizeof(CharType));
 		pattern_str = temp;
-		kmpNext = reinterpret_cast<SLONG*>(alloc((_pattern_len + 1) * sizeof(SLONG)));
+
+		reset();
+	}
+
+	void reset() {
+		result = true;
+		offset = 0;
+	}
+
+	bool getResult() {
+		return offset >= pattern_len && result;
+	}
+
+	bool processNextChunk(const CharType* data, SLONG data_len) 
+	{
+		// Should work fine when called with data_len equal to zero
+		if (!result || offset >= pattern_len)
+			return false;
+		const SLONG comp_length = 
+			data_len < pattern_len - offset ? data_len : pattern_len - offset;
+		if (memcmp(data, pattern_str + offset, sizeof(CharType) * comp_length) != 0) 
+		{
+			result = false;
+			return false;
+		}
+		offset += comp_length;
+		return offset < pattern_len;
+	}
+
+private:
+	SLONG offset;
+	const CharType* pattern_str;
+	SLONG pattern_len;
+	bool result;
+};
+
+template <typename CharType>
+class ContainsEvaluator : private StaticAllocator
+{
+public:
+	ContainsEvaluator(MemoryPool& _pool, const CharType* _pattern_str, SLONG _pattern_len)
+		: StaticAllocator(_pool), pattern_len(_pattern_len)
+	{
+		CharType* temp = static_cast<CharType*>(alloc(_pattern_len * sizeof(CharType)));
+		memcpy(temp, _pattern_str, _pattern_len * sizeof(CharType));
+		pattern_str = temp;
+		kmpNext = static_cast<SLONG*>(alloc((_pattern_len + 1) * sizeof(SLONG)));
 		preKmp<CharType>(_pattern_str, _pattern_len, kmpNext);
 		reset();
 	}
@@ -204,7 +224,8 @@ enum MatchType {
 };
 
 template <typename CharType>
-class LikeEvaluator : private StaticAllocator {
+class LikeEvaluator : private StaticAllocator
+{
 public:
 	LikeEvaluator(MemoryPool& _pool, const CharType* _pattern_str, 
 		SLONG pattern_len, CharType escape_char, bool use_escape, CharType sql_match_any, 
@@ -262,7 +283,7 @@ LikeEvaluator<CharType>::LikeEvaluator(
 : StaticAllocator(_pool), patternItems(_pool), branches(_pool), match_type(MATCH_NONE)
 {
 	// Create local copy of the string.
-	CharType* pattern_str = reinterpret_cast<CharType*>(alloc(pattern_len*sizeof(CharType)));
+	CharType* pattern_str = static_cast<CharType*>(alloc(pattern_len*sizeof(CharType)));
 	memcpy(pattern_str, _pattern_str, pattern_len * sizeof(CharType));
 
 	patternItems.grow(1);
@@ -299,7 +320,7 @@ LikeEvaluator<CharType>::LikeEvaluator(
 					continue;
 				}
 			}
-			ERR_post(isc_like_escape_invalid, 0);
+			ERR_post(isc_escape_invalid, 0);
 		}
 		// percent sign
 		if (c == sql_match_any) {
@@ -364,7 +385,7 @@ LikeEvaluator<CharType>::LikeEvaluator(
 		case piEscapedString: {
 			const CharType *curPos = itemL->str.data;
 			itemL->str.data = 
-				reinterpret_cast<CharType*>(alloc(itemL->str.length * sizeof(CharType)));
+				static_cast<CharType*>(alloc(itemL->str.length * sizeof(CharType)));
 			for (SLONG j = 0; j < itemL->str.length; j++) {
 				if (use_escape && *curPos == escape_char) 
 					curPos++;
@@ -378,7 +399,7 @@ LikeEvaluator<CharType>::LikeEvaluator(
 				itemL->type = piDirectMatch;
 			else {
 				itemL->str.kmpNext = 
-					reinterpret_cast<SLONG*>(alloc((itemL->str.length + 1) * sizeof(SLONG)));
+					static_cast<SLONG*>(alloc((itemL->str.length + 1) * sizeof(SLONG)));
 				preKmp<CharType>(itemL->str.data, itemL->str.length, itemL->str.kmpNext);
 				directMatch = true;
 			}

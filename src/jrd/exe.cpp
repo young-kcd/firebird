@@ -432,30 +432,22 @@ void EXE_assignment(thread_db* tdbb, jrd_nod* to, dsc* from_desc, bool from_null
 			MOV_move(tdbb, from_desc, to_desc);
 		else if (from_desc->dsc_dtype == dtype_short)
 		{
-			*((SSHORT *) to_desc->dsc_address) =
-				*((SSHORT *) from_desc->dsc_address);
+			*((SSHORT*) to_desc->dsc_address) =
+				*((SSHORT*) from_desc->dsc_address);
 		}
 		else if (from_desc->dsc_dtype == dtype_long)
 		{
-			*((SLONG *) to_desc->dsc_address) =
-				*((SLONG *) from_desc->dsc_address);
+			*((SLONG*) to_desc->dsc_address) =
+				*((SLONG*) from_desc->dsc_address);
 		}
 		else if (from_desc->dsc_dtype == dtype_int64)
 		{
-			*((SINT64 *) to_desc->dsc_address) =
-				*((SINT64 *) from_desc->dsc_address);
-		}
-		else if (((U_IPTR) from_desc->dsc_address & (ALIGNMENT - 1)) ||
-				 ((U_IPTR) to_desc->dsc_address & (ALIGNMENT - 1)))
-		{
-			MOVE_FAST(from_desc->dsc_address, to_desc->dsc_address,
-					  from_desc->dsc_length);
+			*((SINT64*) to_desc->dsc_address) =
+				*((SINT64*) from_desc->dsc_address);
 		}
 		else
-		{
-			MOVE_FASTER(from_desc->dsc_address, to_desc->dsc_address,
-						from_desc->dsc_length);
-		}
+			memcpy(to_desc->dsc_address, from_desc->dsc_address, from_desc->dsc_length);
+
 		to_desc->dsc_flags &= ~DSC_null;
 	}
 	else if (missing2_node && (missing = EVL_expr(tdbb, missing2_node)))
@@ -665,8 +657,8 @@ jrd_req* EXE_find_request(thread_db* tdbb, jrd_req* request, bool validate)
 					clone = next;
 					break;
 				}
-				else
-					count++;
+
+				count++;
 			}
 			else if (!(next->req_flags & req_in_use) && !clone)
 				clone = next;
@@ -765,10 +757,7 @@ void EXE_receive(thread_db*		tdbb,
 				 isc_arg_number, (SLONG) format->fmt_length, 0);
 	}
 
-	if ((U_IPTR) buffer & (ALIGNMENT - 1))
-		MOVE_FAST((SCHAR *) request + message->nod_impure, buffer, length);
-	else
-		MOVE_FASTER((SCHAR *) request + message->nod_impure, buffer, length);
+	memcpy(buffer, (SCHAR*) request + message->nod_impure, length);
 
 	// ASF: temporary blobs returned to the client should not be released
 	// with the request, but in the transaction end.
@@ -891,7 +880,9 @@ void EXE_send(thread_db*		tdbb,
 /* look for an asynchronous send message--if such 
    a message was defined, we allow the user to send 
    us a message at any time during request execution */
-	jrd_nod* save_next = NULL, save_message = NULL;
+	jrd_nod* save_next = NULL;
+	jrd_nod* save_message = NULL;
+	jrd_req::req_s save_operation = jrd_req::req_evaluate;
 	
 	if ((message = request->req_async_message) &&
 		(node = message->nod_arg[e_send_message]) &&
@@ -900,11 +891,11 @@ void EXE_send(thread_db*		tdbb,
 		/* save the current state of the request so we can go 
 		   back to what was interrupted */
 
-		const USHORT save_operation = request->req_operation;
+		save_operation = request->req_operation;
 		save_message = request->req_message;
 		save_next = request->req_next;
 
-		request->req_operation = req_receive;
+		request->req_operation = jrd_req::req_receive;
 		request->req_message = node;
 		request->req_next = message->nod_arg[e_send_statement];
 
@@ -951,10 +942,7 @@ void EXE_send(thread_db*		tdbb,
 				 isc_arg_number, (SLONG) format->fmt_length, 0);
 	}
 
-	if ((U_IPTR) buffer & (ALIGNMENT - 1))
-		MOVE_FAST(buffer, (SCHAR *) request + message->nod_impure, length);
-	else
-		MOVE_FASTER(buffer, (SCHAR *) request + message->nod_impure, length);
+	memcpy((SCHAR*) request + message->nod_impure, buffer, length);
 
 	for (USHORT i = 0; i < format->fmt_count; ++i)
 	{
@@ -1339,7 +1327,7 @@ static jrd_nod* erase(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 	}
 
 	request->req_operation = jrd_req::req_return;
-	RLCK_reserve_relation(tdbb, transaction, relation, true, true);
+	RLCK_reserve_relation(tdbb, transaction, relation, true);
 
 /* If the stream was sorted, the various fields in the rpb are
    probably junk.  Just to make sure that everything is cool,
@@ -1494,23 +1482,17 @@ static void exec_sql(thread_db* tdbb, jrd_req* request, DSC* dsc)
 
 	Firebird::string SqlStatementText;
 	ExecuteStatement::getString(tdbb, SqlStatementText, dsc, request);
-		
+
 	ISC_STATUS_ARRAY local;
 	memset(local, 0, sizeof(local));
 	ISC_STATUS* status = local;
 
-#if (defined DEV_BUILD && !defined MULTI_THREAD)
-	tdbb->getDatabase()->dbb_flags |= DBB_exec_statement;
-#endif
 	tdbb->getTransaction()->tra_callback_count++;
 	callback_execute_immediate(status,
 							   tdbb->getAttachment(),
 							   tdbb->getTransaction(),
 							   SqlStatementText);
 	tdbb->getTransaction()->tra_callback_count--;
-#if (defined DEV_BUILD && !defined MULTI_THREAD)
-	tdbb->getDatabase()->dbb_flags &= ~DBB_exec_statement;
-#endif
 
 	if (status[1]) {
  		memcpy(tdbb->tdbb_status_vector, status, sizeof(local));
@@ -2248,9 +2230,7 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 					VIO_start_save_point(tdbb, transaction);
 					const Savepoint* save_point = transaction->tra_save_point;
 					count = save_point->sav_number;
-					MOVE_FAST(&count,
-							  (SCHAR *) request + node->nod_impure,
-							  sizeof(SLONG));
+					memcpy((SCHAR*) request + node->nod_impure, &count, sizeof(SLONG));
 				}
 				node = node->nod_arg[e_blk_action];
 				break;
@@ -2266,8 +2246,8 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 						// Do not perform the error handling stuff.
 
 						if (transaction != dbb->dbb_sys_trans) {
-							MOVE_FAST((SCHAR *) request + node->nod_impure,
-									  &count, sizeof(SLONG));
+							memcpy(&count, (SCHAR*) request + node->nod_impure, sizeof(SLONG));
+
 							for (const Savepoint* save_point = transaction->tra_save_point;
 								 save_point && count <= save_point->sav_number;
 								 save_point = transaction->tra_save_point)
@@ -2281,8 +2261,7 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 					}
 					if (transaction != dbb->dbb_sys_trans)
 					{
-						MOVE_FAST((SCHAR *) request + node->nod_impure,
-								  &count, sizeof(SLONG));
+						memcpy(&count, (SCHAR*) request + node->nod_impure, sizeof(SLONG));
 						/* Since there occurred an error (req_unwind), undo all savepoints
 						   up to, but not including, the savepoint of this block.  The
 						   savepoint of this block will be dealt with below. */
@@ -2390,8 +2369,8 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 
 			case jrd_req::req_return:
 				if (transaction != dbb->dbb_sys_trans) {
-					MOVE_FAST((SCHAR *) request + node->nod_impure,
-							  &count, sizeof(SLONG));
+					memcpy(&count, (SCHAR*) request + node->nod_impure, sizeof(SLONG));
+
 					for (const Savepoint* save_point = transaction->tra_save_point;
 						 save_point && count <= save_point->sav_number;
 						 save_point = transaction->tra_save_point)
@@ -2485,14 +2464,14 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 					request->req_operation = jrd_req::req_evaluate;
 					break;
 				}
-				else if (node->nod_arg[e_if_false]) {
+
+				if (node->nod_arg[e_if_false]) {
 					node = node->nod_arg[e_if_false];
 					request->req_operation = jrd_req::req_evaluate;
 					break;
 				}
-				else {
-					request->req_operation = jrd_req::req_return;
-				}
+
+				request->req_operation = jrd_req::req_return;
 			}
 			node = node->nod_parent;
 			break;
@@ -2725,6 +2704,103 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 			node = node->nod_parent;
 			break;
 
+		case nod_auto_trans:
+			if (request->req_operation == jrd_req::req_evaluate)
+			{
+				fb_assert(tdbb->tdbb_transaction == request->req_transaction);
+
+				request->req_auto_trans.push(request->req_transaction);
+				tdbb->tdbb_transaction = request->req_transaction = TRA_start(tdbb,
+					request->req_transaction->tra_flags,
+					request->req_transaction->tra_lock_timeout);
+
+				if (!(tdbb->tdbb_attachment->att_flags & ATT_no_db_triggers))
+				{
+					// run ON TRANSACTION START triggers
+					EXE_execute_db_triggers(tdbb, request->req_transaction, jrd_req::req_trigger_trans_start);
+				}
+
+				node = node->nod_arg[e_auto_trans_action];
+				break;
+			}
+
+			switch (request->req_operation)
+			{
+			case jrd_req::req_return:
+				if (!(tdbb->tdbb_attachment->att_flags & ATT_no_db_triggers))
+				{
+					// run ON TRANSACTION COMMIT triggers
+					EXE_execute_db_triggers(tdbb, request->req_transaction, jrd_req::req_trigger_trans_commit);
+				}
+				TRA_commit(tdbb, request->req_transaction, false);
+				break;
+
+			case jrd_req::req_unwind:
+				if (request->req_flags & req_leave)
+				{
+					try
+					{
+						if (!(tdbb->tdbb_attachment->att_flags & ATT_no_db_triggers))
+						{
+							// run ON TRANSACTION COMMIT triggers
+							EXE_execute_db_triggers(tdbb, request->req_transaction, jrd_req::req_trigger_trans_commit);
+						}
+						TRA_commit(tdbb, request->req_transaction, false);
+					}
+					catch (...)
+					{
+						request->req_flags &= ~req_leave;
+						throw;
+					}
+				}
+				else
+				{
+					ISC_STATUS* save_status = tdbb->tdbb_status_vector;
+					ISC_STATUS_ARRAY temp_status = {0};
+					tdbb->tdbb_status_vector = temp_status;
+
+					if (!(tdbb->tdbb_attachment->att_flags & ATT_no_db_triggers))
+					{
+						try
+						{
+							// run ON TRANSACTION ROLLBACK triggers
+							EXE_execute_db_triggers(tdbb, request->req_transaction, jrd_req::req_trigger_trans_rollback);
+						}
+						catch (const Firebird::Exception&)
+						{
+							if (tdbb->tdbb_database->dbb_flags & DBB_bugcheck)
+							{
+								tdbb->tdbb_status_vector = save_status;
+								throw;
+							}
+						}
+					}
+
+					try
+					{
+						TRA_rollback(tdbb, request->req_transaction, false, false);
+					}
+					catch (const Firebird::Exception&)
+					{
+						if (tdbb->tdbb_database->dbb_flags & DBB_bugcheck)
+						{
+							tdbb->tdbb_status_vector = save_status;
+							throw;
+						}
+					}
+
+					tdbb->tdbb_status_vector = save_status;
+				}
+				break;
+
+			default:
+				fb_assert(false);
+			}
+
+			tdbb->tdbb_transaction = request->req_transaction = request->req_auto_trans.pop();
+			node = node->nod_parent;
+			break;
+
 		default:
 			BUGCHECK(168);		/* msg 168 looper: action not yet implemented */
 		}
@@ -2777,6 +2853,8 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 		}
 	}
 	} // while()
+
+	fb_assert(request->req_auto_trans.getCount() == 0);
 
 	// If there is no node, assume we have finished processing the
 	// request unless we are in the middle of processing an
@@ -2892,8 +2970,7 @@ static jrd_nod* modify(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 			impure->sta_state = 0;
 			Record* org_record = org_rpb->rpb_record;
 			const Record* new_record = new_rpb->rpb_record;
-			MOVE_FASTER(new_record->rec_data, org_record->rec_data,
-						new_record->rec_length);
+			memcpy(org_record->rec_data, new_record->rec_data, new_record->rec_length);
 			request->req_operation = jrd_req::req_evaluate;
 			return node->nod_arg[e_mod_statement];
 		}
@@ -3008,7 +3085,7 @@ static jrd_nod* modify(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 	}
 
 	impure->sta_state = 0;
-	RLCK_reserve_relation(tdbb, transaction, relation, true, true);
+	RLCK_reserve_relation(tdbb, transaction, relation, true);
 
 /* Fall thru on evaluate to set up for modify before executing sub-statement.
    This involves finding the appropriate format, making sure a record block
@@ -3039,8 +3116,7 @@ static jrd_nod* modify(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
    fetched and moved separately, remembering to set the missing flag. */
 
 	if (new_format->fmt_version == org_format->fmt_version) {
-		MOVE_FASTER(org_record->rec_data, new_rpb->rpb_address,
-					new_rpb->rpb_length);
+		memcpy(new_rpb->rpb_address, org_record->rec_data, new_rpb->rpb_length);
 	}
 	else {
 		DSC org_desc, new_desc;
@@ -3139,7 +3215,8 @@ static void release_blobs(thread_db* tdbb, jrd_req* request)
 			while (true) 
 			{
 				const ULONG blob_temp_id = request->req_blobs.current();
-				if (transaction->tra_blobs.locate(blob_temp_id)) {
+				if (transaction->tra_blobs.locate(blob_temp_id))
+				{
 					BlobIndex *current = &transaction->tra_blobs.current();
 					if (current->bli_materialized)
 					{
@@ -3157,13 +3234,13 @@ static void release_blobs(thread_db* tdbb, jrd_req* request)
 
 					if (request->req_blobs.locate(Firebird::locGreat, blob_temp_id))
 						continue;
-					else
-						break;
-				} 
-				else {
-					// Blob accounting inconsistent
-					fb_assert(false);
+
+					break;
 				}
+
+				// Blob accounting inconsistent, only detected in DEV_BUILD.
+				fb_assert(false);
+
 				if (!request->req_blobs.getNext())
 					break;
 			}
@@ -3672,7 +3749,7 @@ static jrd_nod* store(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 		}
 		request->req_records_affected.bumpModified(false);
 		impure->sta_state = 0;
-		RLCK_reserve_relation(tdbb, transaction, relation, true, true);
+		RLCK_reserve_relation(tdbb, transaction, relation, true);
 		break;
 
 	case jrd_req::req_return:

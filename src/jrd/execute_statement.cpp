@@ -42,7 +42,7 @@
 #include "../jrd/exe_proto.h"
 #include "../jrd/sch_proto.h"
 #include "../jrd/thread_proto.h"
-#define	WHY_NO_API 
+#define	WHY_NO_API
 #include "../jrd/why_proto.h"
 #include "../jrd/y_handle.h"
 #include "../jrd/align.h"
@@ -86,9 +86,6 @@ static InitInstance<GenericMap<Pair<NonPooled<SSHORT, UCHAR> > > > sqlTypeToDscT
 
 void startCallback(thread_db* tdbb)
 {
-#if (defined DEV_BUILD && !defined MULTI_THREAD)
-	tdbb->getDatabase()->dbb_flags |= DBB_exec_statement;
-#endif
 	tdbb->getTransaction()->tra_callback_count++;
 	THREAD_EXIT();
 }
@@ -96,9 +93,6 @@ void startCallback(thread_db* tdbb)
 void finishCallback(thread_db* tdbb)
 {
 	THREAD_ENTER();
-#if (defined DEV_BUILD && !defined MULTI_THREAD)
-	tdbb->getDatabase()->dbb_flags &= ~DBB_exec_statement;
-#endif
 	tdbb->getTransaction()->tra_callback_count--;
 }
 
@@ -201,13 +195,13 @@ err_handler:
 bool ExecuteStatement::Fetch(thread_db* tdbb, jrd_nod** jrdVar)
 {
 	// If already bugged - we should never get here
-	fb_assert(! (tdbb->tdbb_status_vector[0] == 1 && 
+	fb_assert(! (tdbb->tdbb_status_vector[0] == 1 &&
 			  tdbb->tdbb_status_vector[1] != 0));
 	if (! Statement)
 		return false;
 
 	ISC_STATUS_ARRAY local;
-	ISC_STATUS *status = local;
+	ISC_STATUS* status = local;
 	memset(local, 0, sizeof(local));
 	status = local;
 
@@ -238,7 +232,7 @@ bool ExecuteStatement::Fetch(thread_db* tdbb, jrd_nod** jrdVar)
 			tdbb->tdbb_status_vector[2] = isc_arg_number;
 			tdbb->tdbb_status_vector[3] = i + 1;
 			tdbb->tdbb_status_vector[4] = isc_arg_string;
-			tdbb->tdbb_status_vector[5] = 
+			tdbb->tdbb_status_vector[5] =
 				(ISC_STATUS)(U_IPTR) ERR_cstring(StartOfSqlOperator);
 			tdbb->tdbb_status_vector[6] = isc_arg_end;
 			Firebird::status_exception::raise(tdbb->tdbb_status_vector);
@@ -262,8 +256,7 @@ bool ExecuteStatement::Fetch(thread_db* tdbb, jrd_nod** jrdVar)
 
 	if (SingleMode) {
 		startCallback(tdbb);
-		if (isc_dsql_fetch(status, &Statement,
-				SQLDA_VERSION1, Sqlda) == 100)
+		if (isc_dsql_fetch(status, &Statement, SQLDA_VERSION1, Sqlda) == 100)
 		{
 			isc_dsql_free_statement(status, &Statement, DSQL_drop);
 			finishCallback(tdbb);
@@ -291,7 +284,7 @@ void ExecuteStatement::Close(thread_db* tdbb)
 		startCallback(tdbb);
 		isc_dsql_free_statement(0, &Statement, DSQL_drop);
 		finishCallback(tdbb);
-		
+
 		Statement = 0;
 	}
 	char* p = reinterpret_cast<char*>(Sqlda);

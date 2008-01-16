@@ -32,7 +32,7 @@
 #include <string.h>
 #include "../jrd/common.h"
 #include "gen/iberror.h"
-#include "../jrd/thd.h"
+#include "../jrd/ThreadStart.h"
 #include "../jrd/event.h"
 #include "../jrd/gdsassert.h"
 #include "../jrd/isc_signal.h"
@@ -65,21 +65,13 @@
 #define MUTEX		event_mutex
 #endif
 
-#ifndef AST_TYPE
-#define AST_TYPE	void
-#endif
-
 #ifndef MUTEX
 #define MUTEX		EVENT_header->evh_mutex
 #endif
 
 #define SRQ_BASE                  ((UCHAR *) EVENT_header)
 
-// Not used
-// #define EVENT_FLAG		64
-const int SEMAPHORES		= 1;
-const int MAX_EVENT_BUFFER	= 65500;
-
+const int MAX_EVENT_BUFFER = 65500;
 
 
 static EVH acquire(void);
@@ -89,7 +81,7 @@ static void delete_event(EVNT);
 static void delete_process(SLONG);
 static void delete_request(EVT_REQ);
 static void delete_session(SLONG);
-static AST_TYPE deliver(void* arg);
+static void deliver();
 static void deliver_request(EVT_REQ);
 static void exit_handler(void *);
 static EVNT find_event(USHORT, const TEXT*, EVNT);
@@ -106,20 +98,17 @@ static void release(void);
 static void remove_que(srq *);
 static bool request_completed(EVT_REQ);
 static ISC_STATUS return_ok(ISC_STATUS *);
-#ifdef MULTI_THREAD
 static THREAD_ENTRY_DECLARE watcher_thread(THREAD_ENTRY_PARAM);
-#endif
 
-static SSHORT acquire_count;
 static EVH EVENT_header = NULL;
-static SLONG EVENT_process_offset, EVENT_default_size;
+static SLONG EVENT_process_offset;
 #ifdef SOLARIS_MT
 static PRB EVENT_process;
 #endif
 static SH_MEM_T EVENT_data;
 
 #if defined(WIN_NT)
-static MTX_T event_mutex[1];
+static MTX_T event_mutex;
 #endif
 
 
@@ -184,11 +173,7 @@ SLONG EVENT_create_session(ISC_STATUS* status_vector)
 	acquire();
 	SES session = (SES) alloc_global(type_ses, (SLONG) sizeof(ses), false);
 	PRB process = (PRB) SRQ_ABS_PTR(EVENT_process_offset);
-	session->ses_process = EVENT_process_offset;
-
-#ifdef MULTI_THREAD
 	session->ses_flags = 0;
-#endif
 
 	insert_tail(&process->prb_sessions, &session->ses_sessions);
 	SRQ_INIT(session->ses_requests);
@@ -289,30 +274,18 @@ EVH EVENT_init(ISC_STATUS* status_vector)
 	if (EVENT_header)
 		return EVENT_header;
 
-	EVENT_default_size = Config::getEventMemSize();
-
-#ifdef UNIX
-	EVENT_data.sh_mem_semaphores = SEMAPHORES;
-#endif
-
 	gds__prefix_lock(buffer, EVENT_FILE);
 	const TEXT* event_file = buffer;
 
 	if (!(EVENT_header = (EVH) ISC_map_file(status_vector,
 											event_file,
-											init, 0, EVENT_default_size,
+											init, 0, Config::getEventMemSize(),
 											&EVENT_data))) 
 	{
 		return NULL;
 	}
 
 	gds__register_cleanup(exit_handler, 0);
-
-#ifdef UNIX
-#ifndef MULTI_THREAD
-	ISC_signal(EVENT_SIGNAL, deliver, 0);
-#endif
-#endif
 
 	return EVENT_header;
 }
@@ -499,17 +472,9 @@ static EVH acquire(void)
  **************************************/
 
 	int mutex_state;
-#ifdef MULTI_THREAD
-	if (mutex_state = ISC_mutex_lock(MUTEX))
+	if (mutex_state = ISC_mutex_lock(&MUTEX))
 		mutex_bugcheck("mutex lock", mutex_state);
 	EVENT_header->evh_current_process = EVENT_process_offset;
-#else
-	if (++acquire_count == 1) {
-		if (mutex_state = ISC_mutex_lock(MUTEX))
-			mutex_bugcheck("mutex lock", mutex_state);
-		EVENT_header->evh_current_process = EVENT_process_offset;
-	}
-#endif
 
 	if (EVENT_header->evh_length > EVENT_data.sh_mem_length_mapped) {
 		const SLONG length = EVENT_header->evh_length;
@@ -525,7 +490,7 @@ static EVH acquire(void)
 
 		PRB process = (PRB) SRQ_ABS_PTR(EVENT_process_offset);
 		process->prb_flags |= PRB_remap;
-		event_t* event = process->prb_event;
+		event_t* event = &process->prb_event;
 
 		post_process(process);
 
@@ -604,7 +569,7 @@ static FRB alloc_global(UCHAR type, ULONG length, bool recurse)
 
 		PRB process = (PRB) SRQ_ABS_PTR(EVENT_process_offset);
 		process->prb_flags |= PRB_remap;
-		event_t* event = process->prb_event;
+		event_t* event = &process->prb_event;
 		post_process(process);
 
 		while (true) {
@@ -696,16 +661,13 @@ static SLONG create_process(void)
 	SRQ_INIT(process->prb_sessions);
 	EVENT_process_offset = SRQ_REL_PTR(process);
 
-#ifdef MULTI_THREAD
+	ISC_event_init(&process->prb_event, 0, EVENT_SIGNAL);
+
 #ifdef SOLARIS_MT
 	ISC_STATUS_ARRAY local_status;
-	ISC_event_init(process->prb_event, 0, EVENT_SIGNAL);
 	EVENT_process = (PRB) ISC_map_object(local_status, &EVENT_data,
 										 EVENT_process_offset,
 										 sizeof(prb));
-#else
-	ISC_event_init(process->prb_event, EVENT_SIGNAL, 0);
-#endif
 #endif
 
 	process->prb_process_id = getpid();
@@ -713,10 +675,8 @@ static SLONG create_process(void)
 	probe_processes();
 	release();
 
-#ifdef MULTI_THREAD
 	if (gds__thread_start(watcher_thread, NULL, THREAD_medium, THREAD_blast, 0))
 		ERR_bugcheck_msg("cannot start thread");
-#endif
 
 	return EVENT_process_offset;
 }
@@ -775,7 +735,6 @@ static void delete_process(SLONG process_offset)
 	free_global((FRB) process);
 
 	if (EVENT_process_offset == process_offset) {
-#ifdef MULTI_THREAD
 		/* Terminate the event watcher thread */
 		/* When we come through the exit handler, the event semaphore might
 		   have already been released by another exit handler.  So we cannot
@@ -786,19 +745,18 @@ static void delete_process(SLONG process_offset)
 		process->prb_flags |= PRB_exiting;
 		BOOLEAN timeout = FALSE;
 		while (process->prb_flags & PRB_exiting && !timeout) {
-			ISC_event_post(process->prb_event);
-			SLONG value = ISC_event_clear(process->prb_event);
+			ISC_event_post(&process->prb_event);
+			const SLONG value = ISC_event_clear(&process->prb_event);
 			release();
 #ifdef SOLARIS_MT
-			event_t* events = EVENT_process->prb_event;
+			event_t* events = &EVENT_process->prb_event;
 #else
-			event_t* events = process->prb_event;
+			event_t* events = &process->prb_event;
 #endif
-			timeout = ISC_event_wait(1, &events, &value, 5 * 1000000, 0, 0);
+			timeout = ISC_event_wait(1, &events, &value, 5 * 1000000);
 			acquire();
 		}
 		EVENT_process_offset = 0;
-#endif
 	}
 }
 
@@ -851,7 +809,6 @@ static void delete_session(SLONG session_id)
  **************************************/
 	SES session = (SES) SRQ_ABS_PTR(session_id);
 
-#ifdef MULTI_THREAD
 	// if session currently delivered events, delay its deletion until deliver ends
 	if (session->ses_flags & SES_delivering)
 	{
@@ -866,7 +823,6 @@ static void delete_session(SLONG session_id)
 
 		return;
 	}
-#endif
 
 /* Delete all requests */
 
@@ -894,7 +850,7 @@ static void delete_session(SLONG session_id)
 }
 
 
-static AST_TYPE deliver(void* arg)
+static void deliver()
 {
 /**************************************
  *
@@ -906,11 +862,6 @@ static AST_TYPE deliver(void* arg)
  *	We've been poked -- deliver any satisfying requests.
  *
  **************************************/
-#ifdef UNIX
-	if (acquire_count)
-		return;
-#endif
-
 	acquire();
 	PRB process = (PRB) SRQ_ABS_PTR(EVENT_process_offset);
 	process->prb_flags &= ~PRB_pending;
@@ -919,9 +870,7 @@ static AST_TYPE deliver(void* arg)
 	while (que2 != &process->prb_sessions)
 	{
 		SES session = (SES) ((UCHAR *) que2 - OFFSET(SES, ses_sessions));
-#ifdef MULTI_THREAD
 		session->ses_flags |= SES_delivering;
-#endif
 		const SLONG session_offset = SRQ_REL_PTR(session);
 		const SLONG que2_offset = SRQ_REL_PTR(que2);
 		for (bool flag = true; flag;) {
@@ -934,16 +883,11 @@ static AST_TYPE deliver(void* arg)
 					process = (PRB) SRQ_ABS_PTR(EVENT_process_offset);
 					session = (SES) SRQ_ABS_PTR(session_offset);
 					que2 = (srq *) SRQ_ABS_PTR(que2_offset);
-#ifdef MULTI_THREAD
 					flag = !(session->ses_flags & SES_purge);
-#else
-					flag = true;
-#endif
 					break;
 				}
 			}
 		}
-#ifdef MULTI_THREAD
 		session->ses_flags &= ~SES_delivering;
 		if (session->ses_flags & SES_purge)
 		{
@@ -952,7 +896,6 @@ static AST_TYPE deliver(void* arg)
 			break;
 		}
 		else
-#endif
 			que2 = SRQ_NEXT((*que2));
 	}
 
@@ -1052,9 +995,6 @@ static void exit_handler(void* arg)
 		delete_process(EVENT_process_offset);
 		release();
 	}
-
-	while (acquire_count > 0)
-		release();
 
 	ISC_STATUS_ARRAY local_status;
 
@@ -1196,7 +1136,7 @@ static void init(void* arg, SH_MEM shmem_data, bool initialize)
 #if defined(WIN_NT)
 	char buffer[MAXPATHLEN];
 	gds__prefix_lock(buffer, EVENT_FILE);
-	if (mutex_state = ISC_mutex_init(MUTEX, buffer))
+	if ( (mutex_state = ISC_mutex_init(&MUTEX, buffer)) )
 		mutex_bugcheck("mutex init", mutex_state);
 #endif
 
@@ -1211,7 +1151,7 @@ static void init(void* arg, SH_MEM shmem_data, bool initialize)
 	SRQ_INIT(EVENT_header->evh_events);
 
 #if !defined(WIN_NT)
-	if (mutex_state = ISC_mutex_init(MUTEX, shmem_data->sh_mem_mutex_arg))
+	if ( (mutex_state = ISC_mutex_init(&MUTEX)) )
 		mutex_bugcheck("mutex init", mutex_state);
 #endif
 
@@ -1315,17 +1255,7 @@ static void post_process(PRB process)
 	process->prb_flags &= ~PRB_wakeup;
 	process->prb_flags |= PRB_pending;
 	release();
-
-#ifdef MULTI_THREAD
-	ISC_event_post(process->prb_event);
-#else
-
-#ifdef UNIX
-	if (SRQ_REL_PTR(process) != EVENT_process_offset)
-		ISC_kill(process->prb_process_id, EVENT_SIGNAL);
-#endif
-
-#endif
+	ISC_event_post(&process->prb_event);
 	acquire();
 }
 
@@ -1349,8 +1279,7 @@ static void probe_processes(void)
 		PRB process = (PRB) ((UCHAR *) event_srq - OFFSET(PRB, prb_processes));
 		const SLONG process_offset = SRQ_REL_PTR(process);
 		if (process_offset != EVENT_process_offset &&
-			!ISC_check_process_existence(process->prb_process_id,
-										 process->prb_process_uid[0], false))
+			!ISC_check_process_existence(process->prb_process_id, false))
 		{
 			event_srq = (srq *) SRQ_ABS_PTR(event_srq->srq_backward);
 			delete_process(process_offset);
@@ -1393,24 +1322,9 @@ static void release(void)
 	validate();
 #endif
 
-#ifdef MULTI_THREAD
 	EVENT_header->evh_current_process = 0;
-	if (mutex_state = ISC_mutex_unlock(MUTEX))
+	if (mutex_state = ISC_mutex_unlock(&MUTEX))
 		mutex_bugcheck("mutex lock", mutex_state);
-#else
-	if (!--acquire_count) {
-		EVENT_header->evh_current_process = 0;
-		if (mutex_state = ISC_mutex_unlock(MUTEX))
-			mutex_bugcheck("mutex lock", mutex_state);
-#ifdef UNIX
-		if (EVENT_process_offset) {
-			PRB process = (PRB) SRQ_ABS_PTR(EVENT_process_offset);
-			if (process->prb_flags & PRB_pending)
-				ISC_kill(process->prb_process_id, EVENT_SIGNAL);
-		}
-#endif
-	}
-#endif
 }
 
 
@@ -1526,7 +1440,6 @@ static int validate(void)
 #endif
 
 
-#ifdef MULTI_THREAD
 static THREAD_ENTRY_DECLARE watcher_thread(THREAD_ENTRY_PARAM)
 {
 /**************************************
@@ -1546,7 +1459,7 @@ static THREAD_ENTRY_DECLARE watcher_thread(THREAD_ENTRY_PARAM)
 
 		if (process->prb_flags & PRB_exiting) {
 			process->prb_flags &= ~PRB_exiting;
-			ISC_event_post(process->prb_event);
+			ISC_event_post(&process->prb_event);
 			release();
 			break;
 		}
@@ -1568,20 +1481,18 @@ static THREAD_ENTRY_DECLARE watcher_thread(THREAD_ENTRY_PARAM)
 		}
 #endif
 
-		SLONG value = ISC_event_clear(process->prb_event);
+		const SLONG value = ISC_event_clear(&process->prb_event);
 		release();
-		deliver(NULL);
+		deliver();
 		acquire();
 		process = (PRB) SRQ_ABS_PTR(EVENT_process_offset);
 		release();
 #ifdef SOLARIS_MT
-		event_t* events = EVENT_process->prb_event;
+		event_t* events = &EVENT_process->prb_event;
 #else
-		event_t* events = process->prb_event;
+		event_t* events = &process->prb_event;
 #endif
-		ISC_event_wait(1, &events, &value, 0, 0, 0);
+		ISC_event_wait(1, &events, &value, 0);
 	}
 	return 0;
 }
-#endif
-

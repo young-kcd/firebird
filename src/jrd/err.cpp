@@ -35,7 +35,7 @@
 #include "../jrd/iberr.h"
 #include <errno.h>
 
-#if ( !defined( REQUESTER) && !defined( SUPERCLIENT))
+#if !defined(SUPERCLIENT)
 #include "../jrd/jrd.h"
 #include "../jrd/os/pio.h"
 #include "../jrd/val.h"
@@ -65,7 +65,7 @@ static void internal_error(ISC_STATUS status, int number,
 static void internal_post(ISC_STATUS status, va_list args);
 
 
-#if ( !defined( REQUESTER) && !defined( SUPERCLIENT))
+#if !defined(SUPERCLIENT)
 void ERR_bugcheck(int number, const TEXT* file, int line)
 {
 /**************************************
@@ -88,7 +88,7 @@ void ERR_bugcheck(int number, const TEXT* file, int line)
 #endif
 
 
-#if ( !defined( REQUESTER) && !defined( SUPERCLIENT))
+#if !defined( SUPERCLIENT)
 void ERR_bugcheck_msg(const TEXT* msg)
 {
 /**************************************
@@ -112,7 +112,7 @@ void ERR_bugcheck_msg(const TEXT* msg)
 #endif
 
 
-#if ( !defined( REQUESTER) && !defined( SUPERCLIENT))
+#if !defined(SUPERCLIENT)
 void ERR_corrupt(int number)
 {
 /**************************************
@@ -152,7 +152,7 @@ const TEXT* ERR_cstring(const TEXT* in_string)
 }
 
 
-#if ( !defined( REQUESTER) && !defined( SUPERCLIENT))
+#if !defined(SUPERCLIENT)
 void ERR_duplicate_error(IDX_E	code,
 						const jrd_rel*		relation,
 						USHORT index_number)
@@ -221,7 +221,7 @@ void ERR_duplicate_error(IDX_E	code,
 #endif
 
 
-#if ( !defined( REQUESTER) && !defined( SUPERCLIENT))
+#if !defined(SUPERCLIENT)
 void ERR_error(int number)
 {
 /**************************************
@@ -246,7 +246,7 @@ void ERR_error(int number)
 #endif
 
 
-#if ( !defined( REQUESTER) && !defined( SUPERCLIENT))
+#if !defined(SUPERCLIENT)
 void ERR_error_msg(const TEXT* msg)
 {
 /**************************************
@@ -267,7 +267,7 @@ void ERR_error_msg(const TEXT* msg)
 #endif
 
 
-#if ( !defined( REQUESTER) && !defined( SUPERCLIENT))
+#if !defined(SUPERCLIENT)
 void ERR_log(int facility, int number, const TEXT* message)
 {
 /**************************************
@@ -302,7 +302,7 @@ void ERR_log(int facility, int number, const TEXT* message)
 #endif
 
 
-#if ( !defined( REQUESTER) && !defined( SUPERCLIENT))
+#if !defined(SUPERCLIENT)
 bool ERR_post_warning(ISC_STATUS status, ...)
 {
 /**************************************
@@ -388,16 +388,15 @@ bool ERR_post_warning(ISC_STATUS status, ...)
 		va_end(args);
 		return true;
 	}
-	else {
-		/* not enough free space */
-		va_end(args);
-		return false;
-	}
+
+	/* not enough free space */
+	va_end(args);
+	return false;
 }
 #endif
 
 
-#if ( !defined( REQUESTER) && !defined( SUPERCLIENT))
+#if !defined(SUPERCLIENT)
 void ERR_post_nothrow(ISC_STATUS status, ...)
 /**************************************
  *
@@ -533,7 +532,7 @@ static void internal_post(ISC_STATUS status, va_list args)
 #endif
 
 
-#if ( !defined( REQUESTER) && !defined(SUPERCLIENT))
+#if !defined(SUPERCLIENT)
 void ERR_punt(void)
 {
 /**************************************
@@ -587,7 +586,7 @@ const TEXT* ERR_string(const TEXT* in_string, int length)
 }
 
 
-#if ( !defined( REQUESTER) && !defined( SUPERCLIENT))
+#if !defined(SUPERCLIENT)
 void ERR_warning(ISC_STATUS status, ...)
 {
 /**************************************
@@ -613,7 +612,7 @@ void ERR_warning(ISC_STATUS status, ...)
 #endif
 
 
-#if ( !defined( REQUESTER) && !defined( SUPERCLIENT))
+#if !defined(SUPERCLIENT)
 static void internal_error(ISC_STATUS status, int number, 
 						   const TEXT* file, int line)
 {

@@ -76,11 +76,7 @@ struct tmp {
 
 typedef tmp *TMP;
 
-#ifdef VMS
-const char* const WILD_CARD_UIC = "<*,*>";
-#else
 const char* const WILD_CARD_UIC = "(*.*)";
-#endif
 
 /* TXNN: Used on filter of internal data structure to text */
 static const TEXT acl_privs[] = "?CGDRWPIEUTX??";
@@ -546,12 +542,18 @@ ISC_STATUS filter_text(USHORT action, BlobControl* control)
 		USHORT l = control->ctl_buffer_length - buffer_used;
 		const ISC_STATUS status = caller(isc_blob_filter_get_segment, control, l,
 						control->ctl_buffer + buffer_used, &l);
-		if (status == isc_segment)
+		switch (status)
+		{
+		case isc_segment:
 			control->ctl_data[2] = isc_segment;
-		else if (status)
-			return status;
-		else
+			break;
+		case 0:
 			control->ctl_data[2] = FB_SUCCESS;
+			break;
+		default:
+			return status;
+		}
+
 		buffer_used += l;
 	}
 
@@ -624,10 +626,9 @@ ISC_STATUS filter_text(USHORT action, BlobControl* control)
 		control->ctl_data[0] = left_length;
 		return isc_segment;
 	}
-	else {
-		control->ctl_data[0] = 0;
-		return control->ctl_data[2];
-	}
+
+	control->ctl_data[0] = 0;
+	return control->ctl_data[2];
 }
 
 
@@ -880,17 +881,24 @@ ISC_STATUS filter_transliterate_text(USHORT action, BlobControl* control)
 						(USHORT) MIN((aux->ctlaux_buffer1_len - length), control->ctl_buffer_length),
 						aux->ctlaux_buffer1 + length,
 						&bytes_read_from_source);
-		if (status == isc_segment)	/* source has more segment bytes */
+						
+		switch (status)
+		{
+		case isc_segment:		/* source has more segment bytes */
 			aux->ctlaux_source_blob_status = status;
-		else if (status == isc_segstr_eof) {	/* source blob is finished */
+			break;
+		case isc_segstr_eof:	/* source blob is finished */
 			if (length == 0)	/* are we done too? */
 				return isc_segstr_eof;
 			aux->ctlaux_source_blob_status = FB_SUCCESS;
-		}
-		else if (status)		/* general error */
-			return status;
-		else					/* complete segment in buffer */
+			break;
+		case 0:                 /* complete segment in buffer */
 			aux->ctlaux_source_blob_status = FB_SUCCESS;
+			break;
+		default:				/* general error */
+			return status;
+		}
+
 		length += bytes_read_from_source;
 	}
 
@@ -982,9 +990,17 @@ ISC_STATUS filter_trans(USHORT action, BlobControl* control)
 		TEXT* out = line;
 		const UCHAR* const end = temp + length;
 
-		while (p < end) {
+		while (p < end)
+		{
 			const UCHAR c = *p++;
 			length = *p++;
+			if (p + length > end)
+			{
+				sprintf(out, "item %d with inconsistent length", (int) p[-1]);
+				string_put(control, line);
+				goto break_out;
+			}
+
 			switch (c) {
 			case TDR_HOST_SITE:
 				sprintf(out, "Host site: %.*s", length, p);
@@ -1171,8 +1187,8 @@ static void string_put(BlobControl* control, const char* line)
 	string->tmp_length = l;
 	memcpy(string->tmp_string, line, l);
 
-	TMP prior;
-	if (prior = (TMP) control->ctl_data[1])
+	TMP prior = (TMP) control->ctl_data[1];
+	if (prior)
 		prior->tmp_next = string;
 	else
 		control->ctl_data[0] = (IPTR) string;
