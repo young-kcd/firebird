@@ -220,6 +220,8 @@ static const struct
 	{"init_variable", variable},
 	{"recurse", union_ops},
 	{"sys_function", function},
+	{"auto_trans", one},
+	{"similar", similar},
 	{0, 0}
 };
 

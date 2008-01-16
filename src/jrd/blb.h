@@ -28,6 +28,8 @@
 #define JRD_BLB_H
 
 #include "../jrd/RecordNumber.h"
+#include "../common/classes/array.h"
+#include "../common/classes/File.h"
 
 namespace Jrd {
 
@@ -126,9 +128,15 @@ struct bid {
 
 /* Your basic blob block. */
 
-class blb : public pool_alloc_rpt<UCHAR, type_blb>
+class blb : public pool_alloc<type_blb>
 {
-    public:
+public:
+	blb(MemoryPool& pool, USHORT page_size)
+		: blb_buffer(pool, page_size / sizeof(SLONG)),
+		  blb_has_buffer(true)
+	{
+	}
+
 	Attachment*	blb_attachment;	/* database attachment */
 	jrd_rel*	blb_relation;	/* Relation, if known */
 	jrd_tra*	blb_transaction;	/* Parent transaction block */
@@ -157,8 +165,31 @@ class blb : public pool_alloc_rpt<UCHAR, type_blb>
 	ULONG blb_lead_page;		/* First page number */
 	ULONG blb_seek;				/* Seek location */
 	ULONG blb_temp_id;          // ID of newly created blob in transaction
-	/* blb_data must be longword aligned */
-	UCHAR blb_data[1];			/* A page's worth of blob */
+	size_t blb_temp_size;		// size stored in transaction temp space
+	offset_t blb_temp_offset;	// offset in transaction temp space
+
+private:
+	Firebird::Array<SLONG> blb_buffer;	// buffer used in opened blobs - must be longword aligned
+	bool blb_has_buffer;
+
+public:
+	bool hasBuffer() const
+	{
+		return blb_has_buffer;
+	}
+
+	UCHAR* getBuffer()
+	{
+		fb_assert(blb_has_buffer);
+		return (UCHAR*) blb_buffer.begin();
+	}
+
+	void freeBuffer()
+	{
+		fb_assert(blb_has_buffer);
+		blb_buffer.free();
+		blb_has_buffer = false;
+	}
 };
 
 const int BLB_temporary	= 1;			/* Newly created blob */

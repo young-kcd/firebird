@@ -382,7 +382,7 @@ set bulk_insert INSERT INTO SYSTEM_ERRORS (SQL_CODE, SQL_CLASS, SQL_SUBCLASS, FA
 (-842, NULL, NULL, 0, 379, NULL, 'expec_short', NULL, NULL)
 (-842, NULL, NULL, 0, 380, NULL, 'expec_long', NULL, NULL)
 (-842, NULL, NULL, 0, 381, NULL, 'expec_ushort', NULL, NULL)
-(-105, NULL, NULL, 0, 382, NULL, 'like_escape_invalid', NULL, NULL)
+(-105, NULL, NULL, 0, 382, NULL, 'escape_invalid', NULL, NULL)
 (-901, NULL, NULL, 0, 383, NULL, 'svcnoexe', NULL, NULL)
 (-901, NULL, NULL, 0, 384, NULL, 'net_lookup_err', NULL, NULL)
 (-901, NULL, NULL, 0, 385, NULL, 'service_unknown', NULL, NULL)
@@ -564,6 +564,7 @@ set bulk_insert INSERT INTO SYSTEM_ERRORS (SQL_CODE, SQL_CLASS, SQL_SUBCLASS, FA
 (-820, NULL, NULL, 0, 561, NULL, 'need_difference', NULL, NULL)
 (-902, NULL, NULL, 0, 562, NULL, 'long_login', NULL, NULL)
 (-205, NULL, NULL, 0, 563, NULL, 'fldnotdef2', NULL, NULL)
+(-105, NULL, NULL, 0, 564, NULL, 'invalid_similar_pattern', NULL, NULL)
 -- GFIX
 (-901, NULL, NULL, 3, 1, NULL, 'gfix_db_name', NULL, NULL)
 (-901, NULL, NULL, 3, 2, NULL, 'gfix_invalid_sw', NULL, NULL)
@@ -625,6 +626,7 @@ set bulk_insert INSERT INTO SYSTEM_ERRORS (SQL_CODE, SQL_CLASS, SQL_SUBCLASS, FA
 (-817, NULL, NULL, 7, 30, NULL, 'dsql_incompatible_trigger_type', NULL, NULL)
 (-817, NULL, NULL, 7, 31, NULL, 'dsql_db_trigger_type_cant_change', NULL, NULL)
 --  DYN
+(-901, '', '', 8, 176, NULL, 'dyn_column_does_not_exist', NULL, NULL)
 (-901, '', '', 8, 188, NULL, 'dyn_role_does_not_exist', NULL, NULL)
 (-901, '', '', 8, 189, NULL, 'dyn_no_grant_admin_opt', NULL, NULL)
 (-901, '', '', 8, 190, NULL, 'dyn_user_not_role_member', NULL, NULL)
@@ -649,6 +651,7 @@ set bulk_insert INSERT INTO SYSTEM_ERRORS (SQL_CODE, SQL_CLASS, SQL_SUBCLASS, FA
 (-829, NULL, NULL, 8, 245, NULL, 'dyn_precision_too_small', NULL, NULL)
 (106,  NULL, NULL, 8, 247, NULL, 'dyn_miss_priv_warning', NULL, NULL)
 (-901, NULL, NULL, 8, 248, NULL, 'dyn_ods_not_supp_feature', NULL, NULL)
+(-829, NULL, NULL, 8, 249, NULL, 'dyn_cannot_addrem_computed', NULL, NULL)
 --  GBAK
 (-901, NULL, NULL, 12, 1, NULL, 'gbak_unknown_switch', NULL, NULL)
 (-901, NULL, NULL, 12, 2, NULL, 'gbak_page_size_missing', NULL, NULL)
@@ -768,6 +771,8 @@ COMMIT WORK;
 (-104, NULL, NULL, 13, 946, NULL, 'dsql_cte_nested_with', NULL, NULL)
 (-104, NULL, NULL, 13, 947, NULL, 'dsql_col_more_than_once_using', NULL, NULL)
 (-901, NULL, NULL, 13, 948, NULL, 'dsql_unsupp_feature_dialect', NULL, NULL)
+(-104, NULL, NULL, 13, 949, NULL, 'dsql_col_more_than_once_view', NULL, NULL)
+(-901, NULL, NULL, 13, 950, NULL, 'dsql_unsupported_in_auto_trans', NULL, NULL)
 -- GSEC
 (-901, NULL, NULL, 18, 15, NULL, 'gsec_cant_open_db', NULL, NULL)
 (-901, NULL, NULL, 18, 16, NULL, 'gsec_switches_error', NULL, NULL)
@@ -837,6 +842,8 @@ COMMIT WORK;
 (-901, NULL, NULL, 22, 4, NULL, 'fbsvcmgr_info_err', NULL, NULL)
 (-901, NULL, NULL, 22, 5, NULL, 'fbsvcmgr_query_err', NULL, NULL)
 (-901, NULL, NULL, 22, 6, NULL, 'fbsvcmgr_switch_unknown', NULL, NULL)
+-- UTILITIES
+(-901, NULL, NULL, 23, 1, NULL, 'utl_trusted_switch', NULL, NULL)
 --
 stop
 

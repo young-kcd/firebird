@@ -33,8 +33,8 @@
 #ifdef THREAD_PSCHED
 
 #include "../jrd/common.h"
+#include "../jrd/ThreadStart.h"
 #include "../jrd/os/thd_priority.h"
-#include "../jrd/thd.h"
 #ifdef WIN_NT
 #include <windows.h> // HANDLE
 #endif

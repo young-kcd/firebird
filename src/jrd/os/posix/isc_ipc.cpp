@@ -165,48 +165,6 @@ void ISC_enter(void)
 #endif
 }
 
-namespace {
-	volatile int inhibitCounter = 0;
-	Firebird::Mutex inhibitMutex;
-	sigset_t savedSigmask;
-	volatile bool inSignalHandler = false;
-}
-
-SignalInhibit::SignalInhibit() throw()
-	: locked(!inSignalHandler)	// When called from signal handler, no need
-								// to care - signals are already inhibited.
-{
-	if (!locked)
-		return;
-
-	Firebird::MutexLockGuard lock(inhibitMutex);
-
-	if (inhibitCounter == 0) {
-		sigset_t set;
-		sigfillset(&set);
-		sigprocmask(SIG_BLOCK, &set, &savedSigmask);
-	}
-	inhibitCounter++;
-}
-
-void SignalInhibit::enable() throw()
-{
-	if (!locked)
-		return;
-
-	locked = false;
-
-	Firebird::MutexLockGuard lock(inhibitMutex);
-
-	fb_assert(inhibitCounter > 0);
-	inhibitCounter--;
-	if (inhibitCounter == 0) {
-		// Return to the mask as it were before the first recursive 
-		// call to ISC_inhibit
-		sigprocmask(SIG_SETMASK, &savedSigmask, NULL);
-	}
-}		
-
 void ISC_exit(void)
 {
 /**************************************

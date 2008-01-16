@@ -480,7 +480,7 @@ without specifying a character set.', NULL);
 ('expec_short', '', 'dsql parse.y', NULL, 0, 379, NULL, 'Short integer expected', NULL, NULL);
 ('expec_long', '', 'dsql parse.y', NULL, 0, 380, NULL, 'Long integer expected', NULL, NULL);
 ('expec_ushort', '', 'dsql parse.y', NULL, 0, 381, NULL, 'Unsigned short integer expected', NULL, NULL);
-('like_escape_invalid', 'string_function()', 'evl.c', NULL, 0, 382, NULL, 'Invalid ESCAPE sequence', NULL, NULL);
+('escape_invalid', 'string_function()', 'evl.c', NULL, 0, 382, NULL, 'Invalid ESCAPE sequence', NULL, NULL);
 ('svcnoexe', 'service_close', 'svc.c', NULL, 0, 383, NULL, 'service @1 does not have an associated executable', NULL, NULL);
 ('net_lookup_err', 'INET_connect', 'inet.c', NULL, 0, 384, NULL, 'Failed to locate host machine.', NULL, NULL);
 ('service_unknown', 'INET_connect', 'inet.c', NULL, 0, 385, NULL, 'Undefined service @1/@2.', NULL, NULL);
@@ -665,6 +665,7 @@ COMMIT WORK;
 ('need_difference', 'BackupManager::begin_backup', 'nbak.cpp', NULL, 0, 561, NULL, 'Difference file name should be set explicitly for database on raw device', NULL, NULL);
 ('long_login', 'getUserInfo', 'jrd.cpp', NULL, 0, 562, NULL, 'Login name too long (@1 characters, maximum allowed @2)', NULL, NULL);
 ('fldnotdef2', NULL, NULL, NULL, 0, 563, NULL, 'column @1 is not defined in procedure @2', NULL, 'An undefined field was referenced in blr.');
+('invalid_similar_pattern', 'SimilarToMatcher::Evaluator', 'SimilarToMatcher.h', NULL, 0, 564, NULL, 'Invalid SIMILAR TO pattern', NULL, NULL);
 -- QLI
 (NULL, NULL, NULL, NULL, 1, 0, NULL, 'expected type', NULL, NULL);
 (NULL, NULL, NULL, NULL, 1, 1, NULL, 'bad block type', NULL, NULL);
@@ -2027,6 +2028,8 @@ COMMIT WORK;
 (NULL, 'revoke_permission', 'dyn.epp', NULL, 8, 246, NULL, '@1 is not grantor of @2 on @3 to @4.', NULL, NULL);
 ('dyn_miss_priv_warning', 'revoke_permission', 'dyn.epp', NULL, 8, 247, NULL, 'Warning: @1 on @2 is not granted to @3.', NULL, NULL);
 ('dyn_ods_not_supp_feature', 'DYN_define_relation', 'dyn_def.epp', NULL, 8, 248, NULL, 'Feature ''@1'' is not supported in ODS @2.@3', NULL, NULL);
+('dyn_cannot_addrem_computed', 'DYN_modify_sql_field', 'dyn_mod.epp', NULL, 8, 249, NULL, 'Cannot add or remove COMPUTED from column @1', NULL, NULL);
+(NULL, 'dyn_user', 'dyn.epp', NULL, 8, 250, NULL, 'Password should not be empty string', NULL, NULL);
 COMMIT WORK;
 -- TEST
 (NULL, 'main', 'test.c', NULL, 11, 0, 0, 'This is a modified text message', NULL, NULL);
@@ -2289,9 +2292,9 @@ ERROR: Backup incomplete', NULL, NULL);
 ('', 'RESTORE_restore', 'restore.e', NULL, 12, 246, NULL, 'Database is not online due to failure to activate one or more indices.', NULL, NULL);
 ('', 'RESTORE_restore', 'restore.e', NULL, 12, 247, NULL, 'Run gfix -online to bring database online without active indices.', NULL, NULL);
 ('write_role_1', 'BACKUP_backup', 'backup.e', NULL, 12, 248, NULL, 'writing SQL roles', NULL, NULL);
-('write_role_2', 'write_sql_roles', 'backup.e', NULL, 12, 249, NULL, 'writing SQL role: @1', NULL, NULL);
+('write_role_2', 'write_sql_roles', 'backup.e', NULL, 12, 249, NULL, '    writing SQL role: @1', NULL, NULL);
 ('gbak_restore_role_failed', 'get_sql_roles', 'restore.e', NULL, 12, 250, NULL, 'SQL role', NULL, NULL);
-('restore_role', 'get_sql_roles', 'restore.e', NULL, 12, 251, NULL, 'restoring SQL role: @1', NULL, NULL);
+('restore_role', 'get_sql_roles', 'restore.e', NULL, 12, 251, NULL, '    restoring SQL role: @1', NULL, NULL);
 ('gbak_role_op', 'BURP_gbak', 'burp.c', NULL, 12, 252, NULL, '        @1RO(LE)               Firebird SQL role', NULL, NULL);
 ('gbak_role_op_missing', 'BURP_gbak', 'burp.c', NULL, 12, 253, NULL, 'SQL role parameter missing', NULL, NULL);
 ('gbak_convert_ext_tables', 'BURP_gbak', 'burp.c', NULL, 12, 254, NULL, '        @1CO(NVERT)            backup external files as tables', NULL, NULL);
@@ -2339,6 +2342,12 @@ ERROR: Backup incomplete', NULL, NULL);
 -- Do not change the arguments of the previous GBAK messages.
 -- Write the new GBAK messages here.
 (NULL, '', 'burp.cpp', NULL, 12, 295, NULL, '	@1TRU(STED)            use trusted authentication', NULL, NULL);
+('write_map_1', 'BACKUP_backup', 'backup.epp', NULL, 12, 296, NULL, 'writing names mapping', NULL, NULL);
+('write_map_2', 'write_mapping', 'backup.epp', NULL, 12, 297, NULL, '    writing map for @1', NULL, NULL);
+('get_map_1', 'get_mapping', 'restore.epp', NULL, 12, 298, NULL, '    restoring map for @1', NULL, NULL);
+('get_map_2', 'get_mapping', 'restore.epp', NULL, 12, 299, NULL, 'name mapping', NULL, NULL);
+('get_map_3', 'get_mapping', 'restore.epp', NULL, 12, 300, NULL, 'cannot restore arbitrary mapping', NULL, NULL);
+('get_map_4', 'get_mapping', 'restore.epp', NULL, 12, 301, NULL, 'restoring names mapping', NULL, NULL);
 -- SQLERR
 (NULL, NULL, NULL, NULL, 13, 1, NULL, 'Firebird error', NULL, NULL);
 (NULL, NULL, NULL, NULL, 13, 74, NULL, 'Rollback not performed', NULL, NULL);
@@ -2532,6 +2541,8 @@ constrained - no 2 table rows can have duplicate column values', NULL, NULL);
 -- Write the new SQLERR messages here.
 ('dsql_col_more_than_once_using', 'pass1_join', 'dsql.cpp', NULL, 13, 947, NULL, 'column @1 appears more than once in USING clause', NULL, NULL);
 ('dsql_unsupp_feature_dialect', NULL, NULL, NULL, 13, 948, NULL, 'feature is not supported in dialect @1', NULL, NULL);
+('dsql_col_more_than_once_view', 'define_view', 'ddl.cpp', NULL, 13, 949, NULL, 'column @1 appears more than once in ALTER VIEW', NULL, NULL);
+('dsql_unsupported_in_auto_trans', 'PASS1_statement', 'pass1.cpp', NULL, 13, 950, NULL, '@1 is not supported inside IN AUTONOMOUS TRANSACTION block', NULL, NULL);
 -- SQLWARN
 (NULL, NULL, NULL, NULL, 14, 100, NULL, 'Row not found for fetch, update or delete, or the result of a query is an empty table.', NULL, NULL);
 (NULL, NULL, NULL, NULL, 14, 101, NULL, 'segment buffer length shorter than expected', NULL, NULL);
@@ -2896,6 +2907,7 @@ Fetches = !f', NULL, NULL);
 ('NO_CONNECTED_USERS', 'SHOW_metadata', 'show.epp', NULL, 17, 157, NULL, 'There are no connected users', NULL, NULL);
 ('USERS_IN_DB', 'SHOW_metadata', 'show.epp', NULL, 17, 158, NULL, 'Users in the database', NULL, NULL);
 ('OUTPUT_TRUNCATED', 'SHOW_metadata', 'show.epp', NULL, 17, 159, NULL, 'Output was truncated', NULL, NULL);
+('VALID_OPTIONS', 'SHOW_metadata', 'show.epp', NULL, 17, 160, NULL, 'Valid options are:', NULL, NULL);
 -- GSEC
 ('GsecMsg1', 'get_line', 'gsec.e', NULL, 18, 1, NULL, 'GSEC>', NULL, NULL);
 ('GsecMsg2', 'printhelp', 'gsec.e', 'This message is used in the Help display. It should be the same as number 1 (but in lower case).', 18, 2, NULL, 'gsec', NULL, NULL);
@@ -3225,6 +3237,9 @@ Analyzing database pages ...', NULL, NULL);
 ('', 'printInfo', 'gserv.cpp', NULL, 22, 44, NULL, 'Automated recovery would commit this transaction', NULL, NULL);
 ('', 'printInfo', 'gserv.cpp', NULL, 22, 45, NULL, 'Automated recovery would rollback this transaction', NULL, NULL);
 ('', 'printInfo', 'gserv.cpp', NULL, 22, 46, NULL, 'No idea should it be commited or rolled back', NULL, NULL);
+-- UTL (messages common for many utilities)
+-- All messages use the new format.
+('utl_trusted_switch', 'checkService', 'UtilSvc.cpp', NULL, 23, 1, NULL, 'Switches trusted_svc and trusted_role are not supported from command line', NULL, NULL);
 stop
 
 COMMIT WORK;

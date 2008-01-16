@@ -62,6 +62,8 @@
 #define blr_domain_name		(unsigned char)18
 #define blr_domain_name2	(unsigned char)19
 #define blr_not_nullable	(unsigned char)20
+#define blr_column_name		(unsigned char)21
+#define blr_column_name2	(unsigned char)22
 
 // first sub parameter for blr_domain_name[2]
 #define blr_domain_type_of	(unsigned char)0
@@ -348,5 +350,10 @@
 #define blr_init_variable	(unsigned char)184
 #define blr_recurse			(unsigned char)185
 #define blr_sys_function	(unsigned char)186
+
+// FB 2.5 specific BLR
+
+#define blr_auto_trans		(unsigned char)187
+#define blr_similar			(unsigned char)188
 
 #endif // JRD_BLR_H

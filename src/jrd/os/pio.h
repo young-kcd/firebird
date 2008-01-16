@@ -57,28 +57,6 @@ class jrd_file : public pool_alloc_rpt<SCHAR, type_fil>
 #endif
 
 
-#ifdef VMS
-
-class jrd_file : public pool_alloc_rpt<SCHAR, type_fil>
-{
-    public:
-	jrd_file*	fil_next;		/* Next file in database */
-	ULONG fil_min_page;			/* Minimum page number in file */
-	ULONG fil_max_page;			/* Maximum page number in file */
-	USHORT fil_sequence;		/* Sequence number of file */
-	USHORT fil_fudge;			/* Fudge factor for page relocation */
-	int fil_desc;
-	int fil_trace;				/* Trace file, if any */
-	Firebird::Mutex fil_mutex;
-	USHORT fil_length;			/* Length of expanded file name */
-	USHORT fil_fid[3];			/* File id */
-	USHORT fil_did[3];			/* Directory id */
-	USHORT fil_flags;
-	SCHAR fil_string[1];		/* Expanded file name */
-};
-
-#endif
-
 #ifdef WIN_NT
 #ifdef SUPERSERVER_V2
 const int MAX_FILE_IO	= 32;			/* Maximum "allocated" overlapped I/O events */

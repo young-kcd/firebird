@@ -440,8 +440,6 @@ void PIO_header(Database* dbb, SCHAR * address, int length)
 	PageSpace* pageSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
 	jrd_file* file = pageSpace->file;
 
-	SignalInhibit siHolder;
-
 	if (file->fil_desc == -1)
 		unix_error("PIO_header", file, isc_io_read_err, 0);
 
@@ -557,7 +555,6 @@ USHORT PIO_init_data(Database* dbb, jrd_file* main_file, ISC_STATUS* status_vect
 	FB_UINT64 bytes, offset;
 
 	ThreadExit teHolder;
-	SignalInhibit siHolder;
 
 	jrd_file* file = seek_file(main_file, &bdb, &offset, status_vector);
 
@@ -700,7 +697,6 @@ bool PIO_read(jrd_file* file, BufferDesc* bdb, Ods::pag* page, ISC_STATUS* statu
 	}
 
 	ThreadExit teHolder;
-	SignalInhibit siHolder;
 
 	Database* dbb = bdb->bdb_dbb;
 	const FB_UINT64 size = dbb->dbb_page_size;
@@ -793,7 +789,6 @@ bool PIO_write(jrd_file* file, BufferDesc* bdb, Ods::pag* page, ISC_STATUS* stat
 		return unix_error("write", file, isc_io_write_err, status_vector);
 
 	ThreadExit teHolder;
-	SignalInhibit siHolder;
 
 	Database* dbb = bdb->bdb_dbb;
 	const SLONG size = dbb->dbb_page_size;
