@@ -69,16 +69,9 @@ static bool get_line(Firebird::UtilSvc::ArgvType&, TEXT*, size_t);
 static bool get_switches(Firebird::UtilSvc::ArgvType&, const in_sw_tab_t*, tsec*, bool*);
 static SSHORT parse_cmd_line(Firebird::UtilSvc::ArgvType&, tsec*);
 static void printhelp(void);
-<<<<<<< gsec.cpp
-#ifndef SERVICE_THREAD
-static int output_main(Jrd::Service*, const UCHAR*);
-#endif
-inline void msg_get(USHORT, TEXT*);
 static void get_security_error(ISC_STATUS*, int);
 static void insert_error(ISC_STATUS*, ISC_STATUS);
-=======
-inline void msg_get(USHORT number, TEXT* msg);
->>>>>>> 1.72.2.6
+static void msg_get(USHORT number, TEXT* msg);
 
 inline void gsec_exit(int code, tsec* tdsec)
 {
@@ -302,18 +295,13 @@ int gsec(Firebird::UtilSvc* uSvc)
 			MOVE_CLEAR(user_data, sizeof(internal_user_data));
 			if (get_line(local_argv, stuff, sizeof(stuff)))
 				break;
-<<<<<<< gsec.cpp
-			if (local_argc > 1) {
-				ret = parse_cmd_line(local_argc, local_argv, tdsec);
+			if (local_argv.getCount() > 1) {
+				ret = parse_cmd_line(local_argv, tdsec);
 				if (ret == 1)
 				{
 					// quit command
 					break;
 				}
-=======
-			if (local_argv.getCount() > 1) {
-				ret = parse_cmd_line(local_argv, tdsec);
->>>>>>> 1.72.2.6
 				if (user_data->dba_user_name_entered || 
 					user_data->dba_password_entered ||
 					user_data->database_name_entered
@@ -332,34 +320,10 @@ int gsec(Firebird::UtilSvc* uSvc)
 					callRemoteServiceManager(status, sHandle, *user_data, data_print, NULL);
 					if (status[1])
 					{
-<<<<<<< gsec.cpp
-						ret = SECURITY_exec_line(status, db_handle, 
-							user_data, data_print, NULL);
-						if (ret) 
-						{
-							GSEC_print(ret, user_data->user_name);
-							if (status[1]) {
-								GSEC_print_status(status);
-							}
-							continue;
-						}
-					}
-					else
-#endif //SUPERCLIENT
-					{
-						callRemoteServiceManager(status, sHandle, *user_data, data_print, NULL);
-						if (status[1])
-						{
-							GSEC_print_status(status);
-							continue;
-						}
-					}
-=======
 						GSEC_print(GsecMsg75, user_data->user_name);
 						GSEC_print_status(status);
 						break;
 					}
->>>>>>> 1.72.2.6
 				}
 			}
 		}
@@ -1139,49 +1103,23 @@ void GSEC_print_status(const ISC_STATUS* status_vector, bool exitOnError)
  *	to allow redirecting output.
  *
  **************************************/
-	if (status_vector) {
+	if (status_vector) 
+	{
 		const ISC_STATUS* vector = status_vector;
 		tsec* tdsec = tsec::getSpecific();
-<<<<<<< gsec.cpp
-		ISC_STATUS* status = tdsec->tsec_service_blk->svc_status;
-		if (status != status_vector) {
-		    int i = 0;
-			while (*status && (++i < ISC_STATUS_LENGTH))
-				status++;
-			for (int j = 0; status_vector[j] && (i < ISC_STATUS_LENGTH); j++, i++)
-				*status++ = status_vector[j];
-		}
-#else
-=======
 		tdsec->utilSvc->stuffStatus(status_vector);
 
->>>>>>> 1.72.2.6
 		SCHAR s[1024];
-<<<<<<< gsec.cpp
 		while (fb_interpret(s, sizeof(s), &vector)) 
 		{
 			TRANSLATE_CP(s);
 			const char* nl = (s[0] ? s[strlen(s) - 1] != '\n' : true) ? "\n" : "";
-=======
-		const char* nl = vector[0] == isc_arg_interpreted ? "" : "\n";
-		if (fb_interpret(s, sizeof(s), &vector)) {
->>>>>>> 1.72.2.6
 			int exitCode = util_print("%s%s", s, nl);
 			if (exitOnError && exitCode != 0) 
 			{
 				gsec_exit(exitCode, tsec::getSpecific());
 			}
-<<<<<<< gsec.cpp
-=======
-			while (fb_interpret(s, sizeof(s), &vector)) {
-				exitCode = util_print("%s%s", s, nl);
-				if (exitOnError && exitCode != 0) {
-					gsec_exit(exitCode, tsec::getSpecific());
-				}
-			}
->>>>>>> 1.72.2.6
 		}
-#endif
 	}
 }
 
@@ -1353,7 +1291,7 @@ void GSEC_print_partial(USHORT number)
 }
 
 
-inline void msg_get(USHORT number, TEXT* msg)
+static void msg_get(USHORT number, TEXT* msg)
 {
 /**************************************
  *
