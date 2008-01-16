@@ -524,15 +524,6 @@ static void CLIB_ROUTINE signal_action(int number, siginfo_t *siginfo, void *con
  *
  **************************************/
 
-#ifndef SUPERSERVER
-	// Save signal delivery status.
-	const bool restoreState = inSignalHandler;
-	inSignalHandler = true;
-	sigset_t set, localSavedSigmask;
-	sigfillset(&set);
-	sigprocmask(SIG_BLOCK, &set, &localSavedSigmask);
-#endif
-
 	// Invoke everybody who may have expressed an interest.
 	for (SIG sig = signals; sig; sig = sig->sig_next)
 	{
@@ -563,10 +554,5 @@ static void CLIB_ROUTINE signal_action(int number, siginfo_t *siginfo, void *con
 			}
 		}
 	}
-
-#ifndef SUPERSERVER
-	sigprocmask(SIG_SETMASK, &localSavedSigmask, NULL);
-	inSignalHandler = restoreState;
-#endif
 }
 
