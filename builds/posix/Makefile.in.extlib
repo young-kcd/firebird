@@ -90,21 +90,11 @@ lib_ib_util: $(LIBIBUTIL_SO)
 
 $(LIBIBUTIL_SO):	$(UTIL_Objects)
 ifeq ($(PLATFORM),DARWIN)
-<<<<<<< Makefile.in.extlib
 	$(CLIENTLIB_LINK) $(LIB_LINK_OPTIONS) $(LIB_LINK_RPATH)$(IbUtilLibraryName) $(LIB_LINK_SONAME) \
--o $@ $^ @PTHREAD_CFLAGS@ @PTHREAD_LIBS@
-=======
-	$(LIB_LINK) $(LIB_LINK_OPTIONS) $(LIB_LINK_RPATH)$(IbUtilLibraryName) $(LIB_LINK_SONAME) \
--o $@ $^  $(THR_LIBS)
->>>>>>> 1.22.2.1
+-o $@ $^ $(THR_LIBS)
 else
-<<<<<<< Makefile.in.extlib
 	$(CLIENTLIB_LINK) $(LIB_LINK_OPTIONS) $(LIB_LINK_SONAME)$(IbUtilLibraryName) \
-$(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/lib -o $@ $^ @PTHREAD_CFLAGS@ @PTHREAD_LIBS@
-=======
-	$(LIB_LINK) $(LIB_LINK_OPTIONS) $(LIB_LINK_SONAME)$(IbUtilLibraryName) \
-$(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/lib -o $@ $^  $(THR_LIBS)
->>>>>>> 1.22.2.1
+$(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/lib -o $@ $^ $(THR_LIBS)
 endif
 
 include $(ROOT)/gen/make.shared.targets

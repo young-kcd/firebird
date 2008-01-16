@@ -253,23 +253,19 @@ LIBIBUTIL_SO = $(LIB)/$(IbUtilLibraryName)
 # LINKER OPTIONS
 #
 
-<<<<<<< make.defaults
 UNDEF_PLATFORM = -Wl,--no-undefined
 ifneq ($(IsProdTypeBuild),Y)
   UNDEF_FLAGS = $(UNDEF_PLATFORM)
 endif
-LINK_OPTS = $(LDFLAGS) $(UNDEF_FLAGS) $(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/lib $(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/intl  
-LIB_LINK_OPTIONS = $(LDFLAGS) $(UNDEF_FLAGS) -shared
 
-=======
 LINK_FIREBIRD_SYMBOLS = $(LIB_LINK_MAPFILE)$(ROOT)/builds/posix/firebird.vers
 LINK_FBINTL_SYMBOLS = $(LIB_LINK_MAPFILE)$(ROOT)/builds/posix/fbintl.vers
 
 LIB_PATH_OPTS = $(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/lib $(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/intl
 
-LINK_OPTS = $(LDFLAGS) $(THR_FLAGS) $(LIB_PATH_OPTS)
+LINK_OPTS = $(LDFLAGS) $(THR_FLAGS) $(UNDEF_FLAGS) $(LIB_PATH_OPTS)
 LIB_LINK_OPTIONS = $(LDFLAGS) $(THR_FLAGS) -shared
->>>>>>> 1.55.2.2
+
 LIB_LINK_RPATH = -Wl,-rpath,
 LIB_LINK_SONAME = -Wl,-soname,
 LIB_LINK_MAPFILE= -Wl,--version-script,

@@ -256,33 +256,16 @@ gpre_static:
 
 boot_phase2 : libfbstatic $(ISC_GDB)
 
-<<<<<<< Makefile.in.firebird
 $(ISC_GDB): create_db empty_db gbak_static isql_static ref_databases
 
 create_db:
 	$(MAKE) -f $(GEN_ROOT)/Makefile.embed.util $(CREATE_DB)
-=======
-$(ISC_GDB): create_db empty_db gbak_static isql_static ref_databases
->>>>>>> 1.78.2.3
 
-<<<<<<< Makefile.in.firebird
-gbak_static:
-	$(MAKE) -f $(GEN_ROOT)/Makefile.static.gbak
-=======
-create_db:
-	$(MAKE) -f $(GEN_ROOT)/Makefile.embed.util $(CREATE_DB)
->>>>>>> 1.78.2.3
-
-<<<<<<< Makefile.in.firebird
-isql_static:
-	$(MAKE) -f $(GEN_ROOT)/Makefile.static.isql
-=======
 gbak_static:
 	$(MAKE) -f $(GEN_ROOT)/Makefile.static.gbak
 
 isql_static:
 	$(MAKE) -f $(GEN_ROOT)/Makefile.static.isql
->>>>>>> 1.78.2.3
 
 empty_db :
 	$(MAKE) -f $(GEN_ROOT)/Makefile.refDatabases $@

@@ -27,12 +27,6 @@
 #  Contributor(s):
 # 
 #
-<<<<<<< Makefile.in.client.gdef
-#  $Id: Makefile.in.client.gdef,v 1.16 2008-01-16 10:36:32 dimitr Exp $
-=======
-#  $Id: Makefile.in.client.gdef,v 1.16 2008-01-16 10:36:32 dimitr Exp $
->>>>>>> 1.14.12.1
-#
 ROOT=..
 ObjModuleType=std
 
@@ -69,12 +63,7 @@ all:	gdef
 gdef:   $(GDEF)
 
 $(GDEF): $(GDEF_Objects) $(LIBFBCLIENT_SO) $(COMMON_Objects)
-<<<<<<< Makefile.in.client.gdef
-	$(EXE_LINK) $(LINK_OPTS) $(GDEF_Objects) $(COMMON_Objects) -o $@ -L$(LIB) -lfbclient \
-$(LINK_LIBS) @PTHREAD_CFLAGS@ @PTHREAD_LIBS@
-=======
-	$(LD) $(LINK_OPTS) $(GDEF_Objects) $(COMMON_Objects) -o $@ -L$(LIB) -lfbclient $(LINK_LIBS) 
->>>>>>> 1.14.12.1
+	$(EXE_LINK) $(LINK_OPTS) $(GDEF_Objects) $(COMMON_Objects) -o $@ -L$(LIB) -lfbclient $(LINK_LIBS) 
 
 
 

@@ -192,11 +192,7 @@ case "$target" in
     PTHREAD_CFLAGS=-threads
     PTHREAD_LIBS=-lthread
     ICU_PLATFORM=SOLARISX86GCC
-<<<<<<< configure.in
-    service_thread_CS=true
     RT_LIB_CHECK=true
-=======
->>>>>>> 1.257.2.2
     ;;
 
   sparc-sun-solaris*)
@@ -210,11 +206,7 @@ case "$target" in
     PTHREAD_CFLAGS=-threads
     PTHREAD_LIBS=-lthread
     ICU_PLATFORM=SOLARISGCC
-<<<<<<< configure.in
-    service_thread_CS=true
     RT_LIB_CHECK=true
-=======
->>>>>>> 1.257.2.2
     ;;
 
   i*-sni-sysv4)

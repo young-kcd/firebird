@@ -82,13 +82,8 @@ GSEC_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(GSEC_Sources)))
 
 
 GSTAT_Other_Sources = jrd/btn.cpp jrd/db_alias.cpp common/utils.cpp jrd/ods.cpp \
-<<<<<<< Makefile.in.embed.util
-jrd/isc_file.cpp $(OS_SPECIFIC_Sources)
-=======
-common/config/config.cpp common/config/config_file.cpp \
-common/UtilSvc.cpp jrd/ThreadData.cpp \
-$(OS_SPECIFIC_Sources)
->>>>>>> 1.31.2.3
+common/UtilSvc.cpp jrd/ThreadData.cpp $(OS_SPECIFIC_Sources)
+# jrd/isc_file.cpp !!!!!!!!!!!!
 
 GSTAT_Files =  dba.epp ppg.cpp gstatMain.cpp
 GSTAT_Sources = $(addprefix utilities/gstat/, $(GSTAT_Files)) $(GSTAT_Other_Sources)

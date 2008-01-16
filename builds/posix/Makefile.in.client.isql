@@ -59,11 +59,7 @@ Dependencies = $(AllObjects:.o=.d)
 isql : $(LIBFBCLIENT_SO) $(ISQL)
 
 $(ISQL):	$(ISQL_Objects) $(CLUMPLETS_Objects) $(FBCOMMON_Objects) $(FBCLASSES_Objects)
-<<<<<<< Makefile.in.client.isql
-	$(EXE_LINK) $(LINK_OPTS) $^ -o $@ -L$(LIB) -lfbclient $(LIBEDITLINE) $(LINK_LIBS) @PTHREAD_CFLAGS@ @PTHREAD_LIBS@
-=======
-	$(LD) $(LINK_OPTS) $^ -o $@ -L$(LIB) -lfbclient $(LINK_LIBS) $(LIBEDITLINE)
->>>>>>> 1.18.2.2
+	$(EXE_LINK) $(LINK_OPTS) $^ -o $@ -L$(LIB) -lfbclient $(LINK_LIBS) $(LIBEDITLINE)
 
 
 include $(ROOT)/gen/make.shared.targets

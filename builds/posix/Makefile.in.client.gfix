@@ -58,11 +58,7 @@ Dependencies = $(AllObjects:.o=.d)
 gfix : $(LIBFBCLIENT_SO) $(GFIX)
 
 $(GFIX):	$(AllObjects)
-<<<<<<< Makefile.in.client.gfix
-	$(EXE_LINK) $(LINK_OPTS) $^ -o $@ -L$(LIB) -lfbclient $(LINK_LIBS) @PTHREAD_CFLAGS@ @PTHREAD_LIBS@
-=======
-	$(LD) $(LINK_OPTS) $^ -o $@ -L$(LIB) -lfbclient $(LINK_LIBS)
->>>>>>> 1.21.2.2
+	$(EXE_LINK) $(LINK_OPTS) $^ -o $@ -L$(LIB) -lfbclient $(LINK_LIBS)
 
 
 include $(ROOT)/gen/make.shared.targets

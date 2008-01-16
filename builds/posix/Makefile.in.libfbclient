@@ -113,19 +113,11 @@ $(LIBFBCLIENT_SO):	$(FBCLIENT_Objects)
 ifeq ($(PLATFORM),DARWIN)
 	$(CLIENTLIB_LINK) $(LINK_FIREBIRD_CLIENT_SYMBOLS) $(LIB_LINK_OPTIONS) $(LIB_LINK_IMPLIB) \
 $(LIB_CLIENT_LINK_OPTIONS) $(LIB_LINK_SONAME) \
-<<<<<<< Makefile.in.libfbclient
--o $@ $^ $(SO_LINK_LIBS) $(STATIC_CXXSUPPORT_LIB) @PTHREAD_CFLAGS@ @PTHREAD_LIBS@
-=======
--o $@ $^ $(SO_LINK_LIBS)
->>>>>>> 1.36.2.1
+-o $@ $^ $(SO_LINK_LIBS) $(STATIC_CXXSUPPORT_LIB)
 else
 	$(CLIENTLIB_LINK) $(LINK_FIREBIRD_SYMBOLS) $(LIB_LINK_OPTIONS) $(LIB_LINK_IMPLIB) \
 $(LIB_LINK_SONAME)$(ClientLibraryNameMajor) $(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/lib \
-<<<<<<< Makefile.in.libfbclient
--o $@ $^ $(SO_LINK_LIBS) $(STATIC_CXXSUPPORT_LIB) @PTHREAD_CFLAGS@ @PTHREAD_LIBS@
-=======
--o $@ $^ $(SO_LINK_LIBS) -lsupc++
->>>>>>> 1.36.2.1
+-o $@ $^ $(SO_LINK_LIBS) $(STATIC_CXXSUPPORT_LIB)
 endif
 
 AllObjects = $(FBCLIENT_Objects)
