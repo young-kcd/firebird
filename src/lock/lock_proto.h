@@ -43,14 +43,11 @@ SLONG	LOCK_enq(SLONG, SLONG, USHORT, const UCHAR*, USHORT, UCHAR,
 					  SLONG);
 bool	LOCK_set_owner_handle(SLONG, SLONG);
 void	LOCK_fini(ISC_STATUS*, SLONG *);
-int		LOCK_init(ISC_STATUS*, bool, LOCK_OWNER_T, UCHAR, SLONG *);
-void	LOCK_manager(SLONG*);
+int		LOCK_init(ISC_STATUS*, LOCK_OWNER_T, UCHAR, SLONG *);
 SLONG	LOCK_query_data(SLONG, USHORT, USHORT);
 SLONG	LOCK_read_data(SLONG);
 SLONG	LOCK_read_data2(SLONG, USHORT, const UCHAR*, USHORT, SLONG);
 void	LOCK_re_post(lock_ast_t, void*, SLONG);
-bool	LOCK_shut_manager(void);
 SLONG	LOCK_write_data(SLONG, SLONG);
 
 #endif /* LOCK_LOCK_PROTO_H */
-

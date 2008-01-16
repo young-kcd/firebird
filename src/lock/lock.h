@@ -54,23 +54,11 @@
 
 #include "../jrd/common.h"
 #include "../jrd/file_params.h"
-#include "../jrd/isc_signal.h"
 #include "../jrd/que.h"
 
-#define EXTEND_SIZE     32768
+typedef IPTR LOCK_OWNER_T; // Data type for the Owner ID
 
-// not used
-//#ifdef SCO_UNIX
-//#define SEMAPHORES      25
-//#endif
-//
-//#ifdef SINIXZ
-//#define SEMAPHORES      25
-//#endif
-//
-//#ifndef SEMAPHORES
-//#define SEMAPHORES      32
-//#endif
+#define EXTEND_SIZE     32768
 
 /* Maximum lock series for gathering statistics
    and querying data */
@@ -113,8 +101,11 @@ const UCHAR type_his	= 5;
 const UCHAR type_smbx	= 6;
 const UCHAR type_shb	= 7;
 const UCHAR type_own	= 8;
+const UCHAR type_MAX	= type_own;
 
-const UCHAR type_MAX		= type_own;
+// Version number of the lock table.
+// Must be increased every time the shmem layout is changed.
+const UCHAR BASE_LHB_VERSION = 17;
 
 #if SIZEOF_VOID_P == 8
 const UCHAR PLATFORM_LHB_VERSION	= 128;	// 64-bit target
@@ -122,7 +113,7 @@ const UCHAR PLATFORM_LHB_VERSION	= 128;	// 64-bit target
 const UCHAR PLATFORM_LHB_VERSION	= 0;	// 32-bit target
 #endif
 
-const UCHAR CLASSIC_LHB_VERSION	= PLATFORM_LHB_VERSION + 16; // Firebird 2.0
+const UCHAR CLASSIC_LHB_VERSION	= PLATFORM_LHB_VERSION + BASE_LHB_VERSION;
 const UCHAR SS_LHB_VERSION		= CLASSIC_LHB_VERSION + 100;
 
 #ifdef SUPERSERVER
@@ -131,40 +122,27 @@ const UCHAR LHB_VERSION			= SS_LHB_VERSION;
 const UCHAR LHB_VERSION			= CLASSIC_LHB_VERSION;
 #endif
 
-const SLONG LHB_PATTERN			= 123454321;
-
-//
-// Define methods that lock manager uses to handle events
-// USE_WAKEUP_EVENTS - use UNIX events to handle owner wakeup.
-//    makes no sense on Windows because signals are simulated VIA events
-//    otherwise signals are used to wakeup owners
-#ifdef UNIX
-#define USE_WAKEUP_EVENTS
-#endif
-
 #ifndef SUPERSERVER
-#ifdef MULTI_THREAD
-// USE_BLOCKING_THREAD - use thread to handle blocking ASTs
-//   real UNIX guys use signals instead  - but their CS is not MT
+// Use thread to handle blocking ASTs
 #define USE_BLOCKING_THREAD
-#else
-// USE_BLOCKING_SIGNALS - use UNIX signals to deliver blocking ASTs
-#define USE_BLOCKING_SIGNALS
-// STATIC_SEMAPHORES - preallocate semaphores for UNIX events
-// if undefined UNIX events allocate semaphores dynamically
-#ifdef UNIX
-#define USE_STATIC_SEMAPHORES
-#endif
+
+// Attempt to handle possible starvation on a lock table mutex.
+// Currently enabled for Solaris CS only, requires testing
+// on other platforms.
+// WARNING:	the code uses CS-specific logic (process-level owner pointers),
+//			so it cannot be used on SS without modification.
+#ifdef SOLARIS_MT
+#define PREVENT_OWNER_STARVATION
 #endif
 #endif
 
 /* Lock header block -- one per lock file, lives up front */
 
-typedef struct lhb {
+struct lhb {
 	UCHAR lhb_type;				/* memory tag - always type_lbh */
 	UCHAR lhb_version;			/* Version of lock table */
-	SRQ_PTR lhb_secondary;			/* Secondary lock header block */
-	SRQ_PTR lhb_active_owner;		/* Active owner, if any */
+	SRQ_PTR lhb_secondary;		/* Secondary lock header block */
+	SRQ_PTR lhb_active_owner;	/* Active owner, if any */
 	srq lhb_owners;				/* Que of active owners */
 	srq lhb_free_owners;		/* Free owners blocks */
 	srq lhb_free_locks;			/* Free lock blocks */
@@ -174,10 +152,8 @@ typedef struct lhb {
 	USHORT lhb_hash_slots;		/* Number of hash slots allocated */
 	USHORT lhb_flags;			/* Miscellaneous info */
 	MTX_T lhb_mutex[1];			/* Mutex controlling access */
-	SRQ_PTR lhb_manager;			/* Lock manager owner block */
 	SRQ_PTR lhb_history;
 	ULONG lhb_process_count;	/* To give a unique id to each process attachment to the lock table */
-	SRQ_PTR lhb_mask;				/* Semaphore mask block */
 	ULONG lhb_scan_interval;	/* Deadlock scan interval (secs) */
 	ULONG lhb_acquire_spins;
 	FB_UINT64 lhb_acquires;
@@ -196,39 +172,32 @@ typedef struct lhb {
 	FB_UINT64 lhb_denies;
 	FB_UINT64 lhb_timeouts;
 	FB_UINT64 lhb_blocks;
-	FB_UINT64 lhb_direct_sigs;
-	FB_UINT64 lhb_indirect_sigs;
 	FB_UINT64 lhb_wakeups;
 	FB_UINT64 lhb_scans;
 	FB_UINT64 lhb_deadlocks;
-	ULONG lhb_wait_time;
-	FB_UINT64 lhb_reserved[2];		/* For future use */
 	srq lhb_data[LCK_MAX_SERIES];
 	srq lhb_hash[1];			/* Hash table */
-} *LHB;
+};
 
 // lhb_flags
 const USHORT LHB_lock_ordering		= 1;	/* Lock ordering is enabled */
-const USHORT LHB_shut_manager		= 2;	/* Lock manager shutdown flag */
 
 /* Secondary header block -- exists only in V3.3 and later lock
    managers.  It is pointed to by the word in the lhb that used to contain
    a pattern. */
 
-typedef struct shb {
+struct shb {
 	UCHAR shb_type;				/* memory tag - always type_shb */
-	UCHAR shb_flags;
 	SRQ_PTR shb_history;
 	SRQ_PTR shb_remove_node;		/* Node removing itself */
 	SRQ_PTR shb_insert_que;			/* Queue inserting into */
 	SRQ_PTR shb_insert_prior;		/* Prior of inserting queue */
-	SLONG shb_misc[10];			/* Unused space */
-} *SHB;
+};
 
 
 /* Lock block */
 
-typedef struct lbl
+struct lbl
 {
 	UCHAR lbl_type;				/* mem tag: type_lbl=in use, type_null=free */
 	UCHAR lbl_state;			/* High state granted */
@@ -240,17 +209,17 @@ typedef struct lbl
 	SLONG lbl_data;				/* user data */
 	SRQ_PTR lbl_parent;				/* Parent */
 	UCHAR lbl_series;			/* Lock series */
-	UCHAR lbl_flags;			/* Misc flags */
+	UCHAR lbl_flags;			// Unused. Misc flags
 	USHORT lbl_pending_lrq_count;	/* count of lbl_requests with LRQ_pending */
 	USHORT lbl_counts[LCK_max];	/* Counts of granted locks */
 	UCHAR lbl_key[1];			/* Key value */
-} *LBL;
+};
 
 /* No flags are defined for LBL at this time */
 
 /* Lock requests */
 
-typedef struct lrq {
+struct lrq {
 	UCHAR lrq_type;				/* mem tag: type_lrq=in use, type_null=free */
 	UCHAR lrq_requested;		/* Level requested  */
 	UCHAR lrq_state;			/* State of lock request */
@@ -263,7 +232,7 @@ typedef struct lrq {
 	srq lrq_own_blocks;			/* Owner block que */
 	lock_ast_t lrq_ast_routine;	/* Block ast routine */
 	void* lrq_ast_argument;		/* Ast argument */
-} *LRQ;
+};
 
 // lrq_flags
 const USHORT LRQ_blocking		= 1;		/* Request is blocking */
@@ -291,67 +260,42 @@ struct own
 	srq own_blocks;				/* Lock requests blocking */
 	SRQ_PTR own_pending_request;	/* Request we're waiting on */
 	int own_process_id;			/* Owner's process ID */
-	int own_process_uid;		/* Owner's process UID */
-	FB_UINT64 own_acquire_time;		/* lhb_acquires when owner last tried acquire() */
-	ULONG own_acquire_realtime;	/* GET_TIME when owner last tried acquire() */
-#ifdef WIN_NT
-	void *own_wakeup_hndl;		/* Handle of wakeup event */
-#ifndef SUPERSERVER
-	void *own_blocking_hndl;	/* Handle of blocking event */
+	FB_UINT64 own_acquire_time;	/* lhb_acquires when owner last tried acquire() */
+#ifdef USE_BLOCKING_THREAD
+	event_t own_blocking;		/* Blocking event block */
 #endif
-#endif							/* WIN_NT */
-#ifdef SOLARIS_MT
-	event_t own_blocking[1];	/* Blocking event block */
-	event_t own_stall[1];		/* Owner is stalling for other owner */
+#ifdef PREVENT_OWNER_STARVATION
+	event_t own_stall;			/* Owner is stalling for other owner */
 #endif
-#if !(defined WIN_NT) || (defined WIN_NT && !defined SUPERSERVER)
-	event_t own_wakeup[1];		/* Wakeup event block */
-#endif
-	USHORT own_semaphore;		/* Owner semaphore -- see note below */
+	event_t own_wakeup;			/* Wakeup event block */
 	USHORT own_flags;			/* Misc stuff */
 };
 
 /* Flags in own_flags */
 const USHORT OWN_blocking	= 1;		// Owner is blocking
 const USHORT OWN_scanned	= 2;		// Owner has been deadlock scanned
-const USHORT OWN_manager	= 4;		// Owner is privileged manager
+const USHORT OWN_waiting	= 4;		// Owner is waiting inside wait_for_request()
 const USHORT OWN_signal		= 8;		// Owner needs signal delivered
-const USHORT OWN_wakeup		= 32;		// Owner has been awoken
-const USHORT OWN_starved	= 128;		// This thread may be starved
+const USHORT OWN_wakeup		= 16;		// Owner has been awoken
+const USHORT OWN_starved	= 32;		// This thread may be starved
 
 /* Flags in own_ast_flags */
 const UATOM OWN_signaled	= 16;		/* Signal is thought to be delivered */
 
-/* Flags in own_semaphore */
-const USHORT OWN_semavail	= 0x8000;	/* Process semaphore is available */
-
 /* Flags in own_ast_hung_flag */
 const UATOM OWN_hung		= 64;		/* Owner may be hung by OS-level bug */
 
-/* NOTE: own_semaphore, when USE_WAKEUP_EVENTS is set, is used to indicate when a 
-   owner is waiting inside wait_for_request().  post_wakeup() will only
-   attempt to wakeup owners that are waiting.  The reason for this is
-   likely historical - a flag bit could be used for this instead. */
-
-/* Semaphore mask block */
-// How can this thing use type_smb if this is unrelated?
-// There was a clash between this smb and rse's smb (Sort Map Block).
-
-struct semaphore_mask {
-	UCHAR smb_type;				/* memory tag - always type_smb */
-	ULONG smb_mask[1];			/* Mask of available semaphores */
-};
 
 /* Lock manager history block */
 
-typedef struct his {
+struct his {
 	UCHAR his_type;				/* memory tag - always type_his */
 	UCHAR his_operation;		/* operation that occured */
 	SRQ_PTR his_next;				/* SRQ_PTR to next item in history list */
 	SRQ_PTR his_process;			/* owner to record for this operation */
 	SRQ_PTR his_lock;				/* lock to record for operation */
 	SRQ_PTR his_request;			/* request to record for operation */
-} *HIS;
+};
 
 /* his_operation definitions */
 // should be UCHAR according to his_operation but is USHORT in lock.cpp:post_operation 
@@ -377,4 +321,3 @@ const UCHAR his_del_owner	= 19;
 const UCHAR his_MAX			= his_del_owner;
 
 #endif // ISC_LOCK_LOCK_H
-

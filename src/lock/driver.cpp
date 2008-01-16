@@ -90,8 +90,7 @@ void main( int argc, char **argv)
 	printf("pid = %d\n\n", getpid());
 	printf("\n");
 
-	if (LOCK_init(status_vector, true,
-				  getpid(), 1, &lck_owner_handle)) {
+	if (LOCK_init(status_vector, getpid(), 1, &lck_owner_handle)) {
 		printf("LOCK_init failed\n");
 		isc_print_status(status_vector);
 		exit(0);
@@ -374,7 +373,7 @@ static void print_help(void)
 }
 
 
-SCH_ast(void)
+void SCH_ast(enum ast_t action)
 {
 /**************************************
  *

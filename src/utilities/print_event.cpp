@@ -242,8 +242,7 @@ static void event_table_dump(void)
 			{
 				printf("SESSION (%ld)\n", block->hdr_length);
 				SES session = (SES) block;
-				printf("\tInterests: %ld, process: %ld\n",
-						  session->ses_interests, session->ses_process);
+				printf("\tInterests: %ld\n", session->ses_interests);
 				prt_que("\tSessions", &session->ses_sessions);
 				prt_que("\tRequests", &session->ses_requests);
 			}
