@@ -59,7 +59,7 @@ int GlobalRWLock::blocking_ast_cached_lock(void* ast_object)
 	tdbb->setRequest(NULL);
 	tdbb->setTransaction(NULL);
 
-	GlobalRWLock->blockingAstHandler(tdbb);
+	globalRWLock->blockingAstHandler(tdbb);
 
 	return 0;	
 }
