@@ -110,6 +110,10 @@ EDITLINE_FLG=@EDITLINE_FLG@
 STD_EDITLINE=@STD_EDITLINE@
 STD_ICU=@STD_ICU@
 
+# threading options - set by configure
+THR_FLAGS=@PTHREAD_CFLAGS@
+THR_LIBS=@PTHREAD_LIBS@
+
 # Default programs and tools to be used in the build process
 
 SH=			sh -c
@@ -161,10 +165,10 @@ CLIENTLIB_LINK:= @CC@ $(GLOB_OPTIONS)
 EXE_LINK:= @CXX@ $(GLOB_OPTIONS)
 STATICEXE_LINK:= @CXX@ $(GLOB_OPTIONS)
 
-LINK_LIBS = @LIBS@
+LINK_LIBS = @LIBS@ $(THR_LIBS)
 ICU_LIBS = -licuuc -licudata -licui18n
-STATICLINK_LIBS = @LIBS@
-SO_LINK_LIBS = @LIBS@
+STATICLINK_LIBS = @LIBS@ $(THR_LIBS)
+SO_LINK_LIBS = @LIBS@ $(THR_LIBS)
 
 # Default extensions
 
@@ -194,7 +198,6 @@ vpath %.dll $(LIB)
 
 # From jrd
 
-JRD_BOOT=		$(LIB)/jrd_boot.a
 BLRTABLE	= $(BIN)/blrtable$(EXEC_EXT)
 
 
@@ -250,6 +253,7 @@ LIBIBUTIL_SO = $(LIB)/$(IbUtilLibraryName)
 # LINKER OPTIONS
 #
 
+<<<<<<< make.defaults
 UNDEF_PLATFORM = -Wl,--no-undefined
 ifneq ($(IsProdTypeBuild),Y)
   UNDEF_FLAGS = $(UNDEF_PLATFORM)
@@ -257,13 +261,19 @@ endif
 LINK_OPTS = $(LDFLAGS) $(UNDEF_FLAGS) $(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/lib $(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/intl  
 LIB_LINK_OPTIONS = $(LDFLAGS) $(UNDEF_FLAGS) -shared
 
+=======
+LINK_FIREBIRD_SYMBOLS = $(LIB_LINK_MAPFILE)$(ROOT)/builds/posix/firebird.vers
+LINK_FBINTL_SYMBOLS = $(LIB_LINK_MAPFILE)$(ROOT)/builds/posix/fbintl.vers
+
+LIB_PATH_OPTS = $(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/lib $(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/intl
+
+LINK_OPTS = $(LDFLAGS) $(THR_FLAGS) $(LIB_PATH_OPTS)
+LIB_LINK_OPTIONS = $(LDFLAGS) $(THR_FLAGS) -shared
+>>>>>>> 1.55.2.2
 LIB_LINK_RPATH = -Wl,-rpath,
 LIB_LINK_SONAME = -Wl,-soname,
 LIB_LINK_MAPFILE= -Wl,--version-script,
 FBEMBED_LINK= -L$(LIB) -lfbembed
-
-LINK_FIREBIRD_SYMBOLS = $(LIB_LINK_MAPFILE)$(ROOT)/builds/posix/firebird.vers
-LINK_FBINTL_SYMBOLS = $(LIB_LINK_MAPFILE)$(ROOT)/builds/posix/fbintl.vers
 
 FB_SUPER_SERVER	= $(BIN)/fbserver$(EXEC_EXT)
 FB_CLASSIC_SERVER = $(BIN)/fb_inet_server$(EXEC_EXT)

@@ -40,12 +40,15 @@ include     $(ROOT)/gen/make.shared.variables
 
 
 GBAKSTATIC_Files = backup.epp  restore.epp \
-			burp.cpp canonical.cpp misc.cpp mvol.cpp
+			burp.cpp canonical.cpp misc.cpp mvol.cpp burpMain.cpp
+
+GBAK_Other_Sources = common/UtilSvc.cpp
+GBAK_Other_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(GBAK_Other_Sources))))
 
 GBAKSTATIC_Sources = $(addprefix burp/, $(GBAKSTATIC_Files))
 GBAKSTATIC_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(GBAKSTATIC_Sources))))
 
-AllObjects = $(GBAKSTATIC_Objects)
+AllObjects = $(GBAKSTATIC_Objects) $(GBAK_Other_Objects)
 Dependencies = $(AllObjects:.o=.d) 
 
 
@@ -55,8 +58,13 @@ Dependencies = $(AllObjects:.o=.d)
 
 gbak_static : $(GBAK_STATIC)
 
+<<<<<<< Makefile.in.static.gbak
 $(GBAK_STATIC) : $(GBAKSTATIC_Objects) $(COMMON_Objects) $(LIBFBSTATIC_A) 
 	$(STATICEXE_LINK) $(LINK_OPTS) $^ -o $@ -L$(LIB) $(LINK_LIBS) $(ICU_LIBS)
+=======
+$(GBAK_STATIC) : $(AllObjects) $(COMMON_Objects) $(LIBFBSTATIC_A) 
+	$(CXX) $(LINK_OPTS) $^ -o $@ -L$(LIB) $(LINK_LIBS) $(ICU_LIBS)
+>>>>>>> 1.15.2.1
 
 
 include $(ROOT)/gen/make.shared.targets
