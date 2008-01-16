@@ -1112,7 +1112,6 @@ void GSEC_print_status(const ISC_STATUS* status_vector, bool exitOnError)
 		SCHAR s[1024];
 		while (fb_interpret(s, sizeof(s), &vector)) 
 		{
-			TRANSLATE_CP(s);
 			const char* nl = (s[0] ? s[strlen(s) - 1] != '\n' : true) ? "\n" : "";
 			int exitCode = util_print("%s%s", s, nl);
 			if (exitOnError && exitCode != 0) 
