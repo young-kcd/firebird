@@ -37,11 +37,9 @@
 #include "../utilities/gsec/gsec_proto.h"
 #include "../jrd/jrd_pwd.h"
 #include "../jrd/license.h"
-#include "../jrd/svc.h"
-#include "../jrd/svc_proto.h"
+#include "../jrd/constants.h"
 #include "../utilities/gsec/secur_proto.h"
 #include "../utilities/gsec/gsecswi.h"
-#include "../utilities/common/cmd_util_proto.h"
 #include "../common/classes/ClumpletWriter.h"
 
 #include "../utilities/gsec/call_service.h"
@@ -59,45 +57,46 @@ using MsgFormat::SafeArg;
 #include <io.h>
 #endif
 
-#if defined (WIN95)
-static bool fAnsiCP = false;
-#define TRANSLATE_CP(a) if (!fAnsiCP) CharToOem(a, a)
-#else
-#define TRANSLATE_CP(a)
-#endif
-
 const int MAXARGS	= 20;		/* max number of args allowed on command line */
 const int MAXSTUFF	= 1000;		/* longest interactive command line */
 
-#ifndef SERVICE_THREAD
-class tsec *gdsec;
-#endif
-
-static int common_main(int, fb_utils::arg_string*, Jrd::pfn_svc_output, Jrd::Service*);
 static void util_output(const SCHAR*, ...);
 static int util_print(const SCHAR*, ...);
 static int vutil_print(const SCHAR*, va_list);
 
 static void data_print(void*, const internal_user_data*, bool);
-static bool get_line(int*, SCHAR**, TEXT*, size_t);
-static bool get_switches(int, fb_utils::arg_string*, const in_sw_tab_t*, tsec*, bool*);
-static SSHORT parse_cmd_line(int, fb_utils::arg_string*, tsec*);
+static bool get_line(Firebird::UtilSvc::ArgvType&, TEXT*, size_t);
+static bool get_switches(Firebird::UtilSvc::ArgvType&, const in_sw_tab_t*, tsec*, bool*);
+static SSHORT parse_cmd_line(Firebird::UtilSvc::ArgvType&, tsec*);
 static void printhelp(void);
+<<<<<<< gsec.cpp
 #ifndef SERVICE_THREAD
 static int output_main(Jrd::Service*, const UCHAR*);
 #endif
 inline void msg_get(USHORT, TEXT*);
 static void get_security_error(ISC_STATUS*, int);
 static void insert_error(ISC_STATUS*, ISC_STATUS);
+=======
+inline void msg_get(USHORT number, TEXT* msg);
+>>>>>>> 1.72.2.6
 
-void inline gsec_exit(int code, tsec* tdsec)
+inline void gsec_exit(int code, tsec* tdsec)
 {
 	tdsec->tsec_exit_code = code;
 	if (tdsec->tsec_throw)
 		Firebird::LongJump::raise();
 }
 
-#ifdef SERVICE_THREAD
+inline void envPick(Firebird::UtilSvc* uSvc, TEXT* dest, size_t size, const TEXT* var)
+{
+	if ((!uSvc->isService()) && dest && (!dest[0]))
+	{
+		Firebird::string val;
+		if (fb_utils::readenv(var, val))
+			val.copyTo(dest, size);
+	}
+}
+
 THREAD_ENTRY_DECLARE GSEC_main(THREAD_ENTRY_PARAM arg)
 {
 /**********************************************
@@ -108,69 +107,16 @@ THREAD_ENTRY_DECLARE GSEC_main(THREAD_ENTRY_PARAM arg)
  * Functional Description:
  *   Entrypoint for GSEC via the services manager
  **********************************************/
-	Jrd::Service* service = (Jrd::Service*)arg;
-	const int exit_code = common_main(service->svc_argc, service->svc_argv.begin(),
-						  SVC_output, service);
+	Firebird::UtilSvc* uSvc = (Firebird::UtilSvc*) arg;
+	const int exit_code = gsec(uSvc);
 
 /* Mark service thread as finished. */
-/* If service is detached, cleanup memory being used by service. */
-	SVC_finish(service, Jrd::SVC_finished);
+	uSvc->finish();
 
-	return (THREAD_ENTRY_RETURN)(IPTR)(exit_code);
+	return (THREAD_ENTRY_RETURN)(IPTR) exit_code;
 }
 
-#else
-
-int CLIB_ROUTINE main( int argc, char* argv[])
-{
-/**************************************
- *
- *	m a i n
- *
- **************************************
- *
- * Functional description
- *	If there is no command line, prompt for one, read it
- *	and make an artificial argc/argv.   Otherwise, pass
- *	the specified argc/argv to SECURITY_exec_line (see below).
- *
- **************************************/
- 	return common_main(argc, argv, output_main, NULL);
-}
-
-static int output_main(Jrd::Service* output_data, const UCHAR* output_buf)
-{
-/**************************************
- *
- *	o u t p u t _ m a i n
- *
- **************************************
- *
- * Functional description
- *	Routine which is passed to GBAK for calling back when there is output.
- *
- **************************************/
-//	fprintf(stderr, "%s", output_buf);
-	fprintf(stdout, "%s", output_buf);
-	return 0;
-}
-
-inline void envPick(TEXT* dest, size_t size, const TEXT* var)
-{
-	if (dest && (!dest[0]))
-	{
-		Firebird::string val;
-		if (fb_utils::readenv(var, val))
-			val.copyTo(dest, size);
-	}
-}
-
-#endif /* SERVICE_THREAD */
-
-int common_main(int argc,
-				fb_utils::arg_string argv[],
-				Jrd::pfn_svc_output output_proc,
-				Jrd::Service* output_data)
+int gsec(Firebird::UtilSvc* uSvc)
 {
 /**************************************
  *
@@ -180,19 +126,15 @@ int common_main(int argc,
  *
  * Functional description
  *	If there is no command line, prompt for one, read it
- *	and make an artificial argc/argv.   Otherwise, pass
- *	the specified argc/argv to SECURITY_exec_line (see below).
+ *	and make an artificial argv.   Otherwise, pass
+ *	the specified argv to SECURITY_exec_line (see below).
  *
  **************************************/
-#ifndef SERVICE_THREAD
-	TEXT stuff[MAXSTUFF];		/* a place to put stuff */
-#endif
+	Firebird::UtilSvc::ArgvType& argv = uSvc->argv;
 
-#ifdef VMS
-	argc = VMS_parse(&argv, argc);
-#endif
+	TEXT stuff[MAXSTUFF];		// a place to put stuff in interactive mode
 
-	tsec tsecInstance(output_proc, output_data);
+	tsec tsecInstance(uSvc);
 	tsec* tdsec = &tsecInstance;
 	tsec::putSpecific(tdsec);
 
@@ -205,49 +147,11 @@ int common_main(int argc,
 	// by 3 file descriptors to use in re-directing stdin, stdout and stderr.
 
 	tdsec->tsec_throw = true;
-	tdsec->tsec_interactive = true;
+	tdsec->tsec_interactive = !uSvc->isService();
 	internal_user_data* user_data = tdsec->tsec_user_data;
 
-	if (argc > 1 && !strcmp(argv[1], "-svc")) {
-		tdsec->tsec_service_gsec = true;
-		argv++;
-		argc--;
-	}
-#ifdef SERVICE_THREAD
-	else if (argc > 1 && !strcmp(argv[1], "-svc_thd")) {
-		tdsec->tsec_service_gsec = true;
-		tdsec->tsec_service_thd = true;
-		tdsec->tsec_service_blk = output_data;
-		tdsec->tsec_status = tdsec->tsec_service_blk->svc_status;
-		argv++;
-		argc--;
-	}
-#endif
-	else if (argc > 4 && !strcmp(argv[1], "-svc_re")) {
-		tdsec->tsec_service_gsec = true;
-		long redir_in = atol(argv[2]);
-		long redir_out = atol(argv[3]);
-		long redir_err = atol(argv[4]);
-#ifdef WIN_NT
-		redir_in = _open_osfhandle(redir_in, 0);
-		redir_out = _open_osfhandle(redir_out, 0);
-		redir_err = _open_osfhandle(redir_err, 0);
-#endif
-		if (redir_in != 0)
-			if (dup2((int) redir_in, 0))
-				close((int) redir_in);
-		if (redir_out != 1)
-			if (dup2((int) redir_out, 1))
-				close((int) redir_out);
-		if (redir_err != 2)
-			if (dup2((int) redir_err, 2))
-				close((int) redir_err);
-		argv += 4;
-		argc -= 4;
-	}
-
 	ISC_STATUS* status = tdsec->tsec_status;
-	SSHORT ret = parse_cmd_line(argc, argv, tdsec);
+	SSHORT ret = parse_cmd_line(argv, tdsec);
 	Firebird::PathName databaseName;
 	bool databaseNameEntered = user_data->database_name_entered;
 	if (user_data->database_name_entered)
@@ -257,33 +161,28 @@ int common_main(int argc,
 	else
 	{
 		TEXT database_name[MAXPATHLEN];
-		SecurityDatabase::getPath(database_name);
+		Jrd::SecurityDatabase::getPath(database_name);
 		databaseName = database_name;
 	}
 	
 	Firebird::PathName serverName;
-	bool useServices = false;
+	bool useServices = !uSvc->isService();
 	switch (ISC_extract_host(databaseName, serverName, true))
 	{
 	case ISC_PROTOCOL_TCPIP:
 		serverName += ":";
-		useServices = true;
 		break;
 	case ISC_PROTOCOL_WLAN:
 		serverName = "\\\\" + serverName + "\\";
-		useServices = true;
 		break;
 	}
 		
-	if (! useServices)
+	if (!useServices)
 	{
 		serverName = "";
 	}
 	databaseName.copyTo(user_data->database_name, sizeof(user_data->database_name));
 	
-#ifdef SUPERCLIENT
-	useServices = true;
-#else //SUPERCLIENT
 	FB_API_HANDLE db_handle = 0;
 
 	if (! useServices) 
@@ -291,14 +190,17 @@ int common_main(int argc,
 		Firebird::ClumpletWriter dpb(Firebird::ClumpletReader::Tagged, MAX_DPB_SIZE, isc_dpb_version1);
 		dpb.insertByte(isc_dpb_gsec_attach, 1); // not 0 - yes, I'm gsec
 
-#ifdef TRUSTED_SERVICES
 		if (user_data->dba_trust_user_name_entered) 
 		{
+			uSvc->checkService();
 			dpb.insertString(isc_dpb_trusted_auth, 
 				user_data->dba_trust_user_name, strlen(user_data->dba_trust_user_name));
+			if (user_data->trusted_role && !user_data->sql_role_name_entered)
+			{
+				dpb.insertString(isc_dpb_trusted_role, ADMIN_ROLE, strlen(ADMIN_ROLE));
+			}
 		}
 		else
-#endif
 		{
 #ifdef TRUSTED_AUTH
 			if (user_data->trusted_auth) 
@@ -314,7 +216,7 @@ int common_main(int argc,
 
 			if (user_data->dba_password_entered) 
 			{
-				dpb.insertString(tdsec->tsec_service_gsec ? 
+				dpb.insertString(tdsec->utilSvc->isService() ? 
 								isc_dpb_password_enc : isc_dpb_password, 
 					user_data->dba_password, strlen(user_data->dba_password));
 			}
@@ -332,20 +234,17 @@ int common_main(int argc,
 			GSEC_error_redirect(status, GsecMsg15);
 		}
 	}
-#endif //SUPERCLIENT
 
 	isc_svc_handle sHandle = 0;
 	if (useServices)
 	{
-#ifndef SERVICE_THREAD
 #ifdef TRUSTED_AUTH
 		if (!(user_data->trusted_auth))
 #endif
 		{
-			envPick(user_data->dba_user_name, sizeof user_data->dba_user_name, "ISC_USER");
-			envPick(user_data->dba_password, sizeof user_data->dba_password, "ISC_PASSWORD");
+			envPick(uSvc, user_data->dba_user_name, sizeof user_data->dba_user_name, "ISC_USER");
+			envPick(uSvc, user_data->dba_password, sizeof user_data->dba_password, "ISC_PASSWORD");
 		}
-#endif //SERVICE_THREAD
 		sHandle = attachRemoteServiceManager(
 					status,
 					user_data->dba_user_name,
@@ -364,15 +263,12 @@ int common_main(int argc,
 
 	if (!tdsec->tsec_interactive) {
 		if (ret == 0) {
-#ifdef SERVICE_THREAD
 			/* Signal the start of the service here ONLY if we are displaying users
 			 * since the number of users may exceed the service buffer.  This
 			 * will cause the service to wait for the client to request data.  However,
 			 * if the server is not signaled, then the client can never request anything */
 			if (user_data->operation == DIS_OPER)
-				tdsec->tsec_service_blk->svc_started();
-#endif
-#ifndef SUPERCLIENT
+				uSvc->started();
 			if (! useServices)
 			{
 				ret = SECURITY_exec_line(status, db_handle, 
@@ -388,7 +284,6 @@ int common_main(int argc,
 				}
 			}
 			else
-#endif //SUPERCLIENT
 			{
 				callRemoteServiceManager(status, sHandle, *user_data, data_print, NULL);
 				if (status[1])
@@ -399,16 +294,15 @@ int common_main(int argc,
 			}
 		}
 	}
-#ifndef SERVICE_THREAD
 	else {
-		int local_argc;
-		char* local_argv[MAXARGS];
+		Firebird::UtilSvc::ArgvType local_argv;
 		for (;;) {
 			MOVE_CLEAR(status, sizeof(ISC_STATUS_ARRAY));
 			/* Clear out user data each time through this loop. */
 			MOVE_CLEAR(user_data, sizeof(internal_user_data));
-			if (get_line(&local_argc, local_argv, stuff, sizeof(stuff)))
+			if (get_line(local_argv, stuff, sizeof(stuff)))
 				break;
+<<<<<<< gsec.cpp
 			if (local_argc > 1) {
 				ret = parse_cmd_line(local_argc, local_argv, tdsec);
 				if (ret == 1)
@@ -416,6 +310,10 @@ int common_main(int argc,
 					// quit command
 					break;
 				}
+=======
+			if (local_argv.getCount() > 1) {
+				ret = parse_cmd_line(local_argv, tdsec);
+>>>>>>> 1.72.2.6
 				if (user_data->dba_user_name_entered || 
 					user_data->dba_password_entered ||
 					user_data->database_name_entered
@@ -431,9 +329,10 @@ int common_main(int argc,
 				databaseName.copyTo(user_data->database_name, sizeof(user_data->database_name));
 				user_data->database_name_entered = databaseNameEntered;
 				if (ret == 0) {
-#ifndef SUPERCLIENT
-					if (!useServices)
+					callRemoteServiceManager(status, sHandle, *user_data, data_print, NULL);
+					if (status[1])
 					{
+<<<<<<< gsec.cpp
 						ret = SECURITY_exec_line(status, db_handle, 
 							user_data, data_print, NULL);
 						if (ret) 
@@ -455,20 +354,23 @@ int common_main(int argc,
 							continue;
 						}
 					}
+=======
+						GSEC_print(GsecMsg75, user_data->user_name);
+						GSEC_print_status(status);
+						break;
+					}
+>>>>>>> 1.72.2.6
 				}
 			}
 		}
 	}
-#endif
 
-#ifndef SUPERCLIENT
 	if (db_handle) {
 		ISC_STATUS_ARRAY loc_status;
 		if (isc_detach_database(loc_status, &db_handle)) {
 			GSEC_error_redirect(loc_status, GsecMsg93);
 		}
 	}
-#endif //SUPERCLIENT
 	if (sHandle)
 	{
 		ISC_STATUS_ARRAY loc_status;
@@ -489,7 +391,7 @@ int common_main(int argc,
 		/* All calls to gsec_exit(), normal and error exits, wind up here */
 		const int exit_code = tdsec->tsec_exit_code;
 
-		tdsec->tsec_service_blk->svc_started();
+		tdsec->utilSvc->started();
 		tdsec->tsec_throw = false;
 
 		return exit_code;
@@ -499,7 +401,7 @@ int common_main(int argc,
 		ISC_STATUS *status = tdsec->tsec_status;
 		e.stuff_exception(status);
 
-		tdsec->tsec_service_blk->svc_started();
+		tdsec->utilSvc->started();
 		tdsec->tsec_throw = false;
 
 		GSEC_print_status(status, false);
@@ -524,58 +426,13 @@ static void data_print(void* arg, const internal_user_data* data, bool first)
  **************************************/
 	tsec* tdsec = tsec::getSpecific();
 
-#ifdef SERVICE_THREAD
-#define STUFF_USER(item) SVC_putc(tdsec->tsec_service_blk, item)
-#else
-#define STUFF_USER(item) fputc(item, stderr)
-#endif
-	if (tdsec->tsec_service_gsec) {
-		int i, len;
-		/* Send the username */
-		len = strlen(data->user_name);
-		STUFF_USER((UCHAR) isc_spb_sec_username);
-		STUFF_USER((UCHAR) len);
-		STUFF_USER((UCHAR) (len >> 8));
-		for (i = 0; i < len; i++)
-			STUFF_USER((UCHAR) data->user_name[i]);
-
-		/* Send the first name */
-		len = strlen(data->first_name);
-		STUFF_USER((UCHAR) isc_spb_sec_firstname);
-		STUFF_USER((UCHAR) len);
-		STUFF_USER((UCHAR) (len >> 8));
-		for (i = 0; i < len; i++)
-			STUFF_USER((UCHAR) data->first_name[i]);
-
-		/* Send the middle name */
-		len = strlen(data->middle_name);
-		STUFF_USER((UCHAR) isc_spb_sec_middlename);
-		STUFF_USER((UCHAR) len);
-		STUFF_USER((UCHAR) (len >> 8));
-		for (i = 0; i < len; i++)
-			STUFF_USER((UCHAR) data->middle_name[i]);
-
-		/* Send the last name */
-		len = strlen(data->last_name);
-		STUFF_USER((UCHAR) isc_spb_sec_lastname);
-		STUFF_USER((UCHAR) len);
-		STUFF_USER((UCHAR) (len >> 8));
-		for (i = 0; i < len; i++)
-			STUFF_USER((UCHAR) data->last_name[i]);
-
-		/* Send the uid */
-		STUFF_USER((UCHAR) isc_spb_sec_userid);
-		STUFF_USER((UCHAR) data->uid);
-		STUFF_USER((UCHAR) (data->uid >> 8));
-		STUFF_USER((UCHAR) (data->uid >> 16));
-		STUFF_USER((UCHAR) (data->uid >> 24));
-
-		/* Send the gid */
-		STUFF_USER((UCHAR) isc_spb_sec_groupid);
-		STUFF_USER((UCHAR) data->gid);
-		STUFF_USER((UCHAR) (data->gid >> 8));
-		STUFF_USER((UCHAR) (data->gid >> 16));
-		STUFF_USER((UCHAR) (data->gid >> 24));
+	if (tdsec->utilSvc->isService()) {
+		tdsec->utilSvc->putLine(isc_spb_sec_username, data->user_name);
+		tdsec->utilSvc->putLine(isc_spb_sec_firstname, data->first_name);
+		tdsec->utilSvc->putLine(isc_spb_sec_middlename, data->middle_name);
+		tdsec->utilSvc->putLine(isc_spb_sec_lastname, data->last_name);
+		tdsec->utilSvc->putSLong(isc_spb_sec_userid, data->uid);
+		tdsec->utilSvc->putSLong(isc_spb_sec_groupid, data->gid);
 	}
 	else {
 		if (first) {
@@ -592,7 +449,7 @@ static void data_print(void* arg, const internal_user_data* data, bool first)
 }
 
 
-static bool get_line(int* argc, SCHAR** argv, TEXT* stuff, size_t maxstuff)
+static bool get_line(Firebird::UtilSvc::ArgvType& argv, TEXT* stuff, size_t maxstuff)
 {
 /**************************************
  *
@@ -601,13 +458,14 @@ static bool get_line(int* argc, SCHAR** argv, TEXT* stuff, size_t maxstuff)
  **************************************
  *
  * Functional description
- *	Read the current line and put its pieces into an argc/argv
+ *	Read the current line and put its pieces into an argv
  *	structure.   Reads a max of MAXARGS - 1 pieces (argv [0] is
  *	unused), and a max of MAXSTUFF characters, at which point
  *
  **************************************/
 	GSEC_print_partial(GsecMsg1);
-	*argc = 1;
+	argv.clear();
+	argv.push("gsec");
 	TEXT* cursor = stuff;
 	int count = (int) maxstuff - 1;
 	bool first = true;
@@ -616,13 +474,13 @@ static bool get_line(int* argc, SCHAR** argv, TEXT* stuff, size_t maxstuff)
    non-newline for that matter), ignore it; if it's a newline, we're
    done; otherwise, put it in the current argument */
 
-	while (*argc < MAXARGS && count > 0) {
+	while (count > 0) {
 		TEXT c = getc(stdin);
 		if (c > ' ' && c <= '~') {
 			/* note that the first argument gets a '-' appended to the front to fool
 			   the switch checker into thinking it came from the command line */
 
-			for (argv[(*argc)++] = cursor; count > 0; count--) {
+			for (argv.push(cursor); count > 0; count--) {
 				if (first) {
 					first = false;
 					if (c != '?') {
@@ -656,8 +514,7 @@ static bool get_line(int* argc, SCHAR** argv, TEXT* stuff, size_t maxstuff)
 
 
 static bool get_switches(
-							int argc,
-							fb_utils::arg_string* argv,
+							Firebird::UtilSvc::ArgvType& argv,
 							const in_sw_tab_t* in_sw_table,
 							tsec* tdsec, bool* quitflag)
 {
@@ -686,8 +543,8 @@ static bool get_switches(
 	*quitflag = false;
 	USHORT last_sw = IN_SW_GSEC_0;
 	tdsec->tsec_sw_version = false;
-	for (--argc; argc > 0; argc--) {
-		fb_utils::arg_string string = *++argv;
+	for (size_t argc = 1; argc < argv.getCount(); ++argc) {
+		const char* string = argv[argc];
 		if (*string == '?')
 			user_data->operation = HELP_OPER;
 		else if (*string != '-') {
@@ -702,11 +559,7 @@ static bool get_switches(
 				for (l = 0; l < 32 && string[l] && string[l] != ' '; l++)
 					user_data->user_name[l] = UPPER(string[l]);
 				if (l == 32) {
-#ifdef SERVICE_THREAD
-					GSEC_error(GsecMsg76);
-#else
-					GSEC_print(GsecMsg76);
-#endif
+					GSEC_diag(GsecMsg76);
 					/* invalid user name (maximum 31 bytes allowed) */
 					return false;
 				}
@@ -716,7 +569,7 @@ static bool get_switches(
 			case IN_SW_GSEC_PASSWORD:
 				for (l = 0; l < 9 && string[l] && string[l] != ' '; l++)
 					user_data->password[l] = string[l];
-				if ((l == 9) && !(tdsec->tsec_service_gsec)) {
+				if ((l == 9) && !(tdsec->utilSvc->isService())) {
 					GSEC_print(GsecMsg77);
 					// warning password maximum 8 significant bytes used
 				}
@@ -732,54 +585,50 @@ static bool get_switches(
 				user_data->gid_entered = true;
 				break;
 			case IN_SW_GSEC_SYSU:
-				strncpy(user_data->sys_user_name, string, sizeof(user_data->sys_user_name));
+				fb_utils::copy_terminate(user_data->sys_user_name, string, sizeof(user_data->sys_user_name));
 				user_data->sys_user_entered = true;
 				break;
 			case IN_SW_GSEC_GROUP:
-				strncpy(user_data->group_name, string, sizeof(user_data->group_name));
+				fb_utils::copy_terminate(user_data->group_name, string, sizeof(user_data->group_name));
 				user_data->group_name_entered = true;
 				break;
 			case IN_SW_GSEC_FNAME:
-				strncpy(user_data->first_name, string, sizeof(user_data->first_name));
+				fb_utils::copy_terminate(user_data->first_name, string, sizeof(user_data->first_name));
 				user_data->first_name_entered = true;
 				break;
 			case IN_SW_GSEC_MNAME:
-				strncpy(user_data->middle_name, string, sizeof(user_data->middle_name));
+				fb_utils::copy_terminate(user_data->middle_name, string, sizeof(user_data->middle_name));
 				user_data->middle_name_entered = true;
 				break;
 			case IN_SW_GSEC_LNAME:
-				strncpy(user_data->last_name, string, sizeof(user_data->last_name));
+				fb_utils::copy_terminate(user_data->last_name, string, sizeof(user_data->last_name));
 				user_data->last_name_entered = true;
 				break;
 			case IN_SW_GSEC_DATABASE:
-				strncpy(user_data->database_name, string, sizeof(user_data->database_name));
+				fb_utils::copy_terminate(user_data->database_name, string, sizeof(user_data->database_name));
 				user_data->database_name_entered = true;
 				break;
 			case IN_SW_GSEC_DBA_USER_NAME:
-				strncpy(user_data->dba_user_name, string, sizeof(user_data->dba_user_name));
+				fb_utils::copy_terminate(user_data->dba_user_name, string, sizeof(user_data->dba_user_name));
 				user_data->dba_user_name_entered = true;
 				break;
 			case IN_SW_GSEC_DBA_PASSWORD:
-				strncpy(user_data->dba_password, fb_utils::get_passwd(string), sizeof(user_data->dba_password));
+				tdsec->utilSvc->hidePasswd(argv, argc);
+				fb_utils::copy_terminate(user_data->dba_password, argv[argc], sizeof(user_data->dba_password));
 				user_data->dba_password_entered = true;
 				break;
 			case IN_SW_GSEC_SQL_ROLE_NAME:
-				strncpy(user_data->sql_role_name, string, sizeof(user_data->sql_role_name));
+				fb_utils::copy_terminate(user_data->sql_role_name, string, sizeof(user_data->sql_role_name));
 				user_data->sql_role_name_entered = true;
 				break;
-#ifdef TRUSTED_SERVICES
 			case IN_SW_GSEC_DBA_TRUST_USER:
-				strncpy(user_data->dba_trust_user_name, string, sizeof(user_data->dba_trust_user_name));
+				tdsec->utilSvc->checkService();
+				fb_utils::copy_terminate(user_data->dba_trust_user_name, string, sizeof(user_data->dba_trust_user_name));
 				user_data->dba_trust_user_name_entered = true;
 				break;
-#endif
 			case IN_SW_GSEC_Z:
 			case IN_SW_GSEC_0:
-#ifdef SERVICE_THREAD
-				GSEC_error(GsecMsg29);
-#else
-				GSEC_print(GsecMsg29);
-#endif
+				GSEC_diag(GsecMsg29);
 				/* gsec - invalid parameter, no switch defined */
 				return false;
 			}
@@ -865,6 +714,10 @@ static bool get_switches(
 				user_data->user_name[0] = '\0';
 				tdsec->tsec_interactive = false;
 				break;
+			case IN_SW_GSEC_DBA_TRUST_USER:
+			case IN_SW_GSEC_DBA_TRUST_ROLE:
+				tdsec->utilSvc->checkService();
+				// fall through ...
 			case IN_SW_GSEC_PASSWORD:
 			case IN_SW_GSEC_UID:
 			case IN_SW_GSEC_GID:
@@ -874,9 +727,6 @@ static bool get_switches(
 			case IN_SW_GSEC_MNAME:
 			case IN_SW_GSEC_LNAME:
 			case IN_SW_GSEC_DATABASE:
-#ifdef TRUSTED_SERVICES
-			case IN_SW_GSEC_DBA_TRUST_USER:
-#endif
 			case IN_SW_GSEC_DBA_USER_NAME:
 			case IN_SW_GSEC_DBA_PASSWORD:
 			case IN_SW_GSEC_SQL_ROLE_NAME:
@@ -962,8 +812,8 @@ static bool get_switches(
 					user_data->dba_user_name_specified = true;
 					user_data->dba_user_name[0] = '\0';
 					break;
-#ifdef TRUSTED_SERVICES
 				case IN_SW_GSEC_DBA_TRUST_USER:
+					tdsec->utilSvc->checkService();
 					if (user_data->dba_trust_user_name_specified) {
 						err_msg_no = GsecMsg79;
 						break;
@@ -971,7 +821,10 @@ static bool get_switches(
 					user_data->dba_trust_user_name_specified = true;
 					user_data->dba_trust_user_name[0] = '\0';
 					break;
-#endif
+				case IN_SW_GSEC_DBA_TRUST_ROLE:
+					tdsec->utilSvc->checkService();
+					user_data->trusted_role = true;
+					break;
 				case IN_SW_GSEC_DBA_PASSWORD:
 					if (user_data->dba_password_specified) {
 						err_msg_no = GsecMsg80;
@@ -1007,19 +860,11 @@ static bool get_switches(
 				break;
 #endif
 			case IN_SW_GSEC_0:
-#ifdef SERVICE_THREAD
-				GSEC_error(GsecMsg40);
-#else
-				GSEC_print(GsecMsg40);
-#endif
+				GSEC_diag(GsecMsg40);
 				/* gsec - invalid switch specified */
 				return false;
 			case IN_SW_GSEC_AMBIG:
-#ifdef SERVICE_THREAD
-				GSEC_error(GsecMsg41);
-#else
-				GSEC_print(GsecMsg41);
-#endif
+				GSEC_diag(GsecMsg41);
 				/* gsec - ambiguous switch specified */
 				return false;
 			}
@@ -1231,7 +1076,7 @@ static void printhelp(void)
 }
 
 
-static SSHORT parse_cmd_line(int argc, fb_utils::arg_string* argv, tsec* tdsec)
+static SSHORT parse_cmd_line(Firebird::UtilSvc::ArgvType& argv, tsec* tdsec)
 {
 /**************************************
  *
@@ -1253,12 +1098,8 @@ static SSHORT parse_cmd_line(int argc, fb_utils::arg_string* argv, tsec* tdsec)
 /* Call a subroutine to process the input line. */
 
 	SSHORT ret = 0;
-	if (!get_switches(argc, argv, gsec_in_sw_table, tdsec, &quitflag)) {
-#ifdef SERVICE_THREAD
-		GSEC_error(GsecMsg16);
-#else
-		GSEC_print(GsecMsg16);
-#endif
+	if (!get_switches(argv, gsec_in_sw_table, tdsec, &quitflag)) {
+		GSEC_diag(GsecMsg16);
 		/* gsec - error in switch specifications */
 		ret = -1;
 	}
@@ -1300,8 +1141,8 @@ void GSEC_print_status(const ISC_STATUS* status_vector, bool exitOnError)
  **************************************/
 	if (status_vector) {
 		const ISC_STATUS* vector = status_vector;
-#ifdef SERVICE_THREAD
 		tsec* tdsec = tsec::getSpecific();
+<<<<<<< gsec.cpp
 		ISC_STATUS* status = tdsec->tsec_service_blk->svc_status;
 		if (status != status_vector) {
 		    int i = 0;
@@ -1311,16 +1152,34 @@ void GSEC_print_status(const ISC_STATUS* status_vector, bool exitOnError)
 				*status++ = status_vector[j];
 		}
 #else
+=======
+		tdsec->utilSvc->stuffStatus(status_vector);
+
+>>>>>>> 1.72.2.6
 		SCHAR s[1024];
+<<<<<<< gsec.cpp
 		while (fb_interpret(s, sizeof(s), &vector)) 
 		{
 			TRANSLATE_CP(s);
 			const char* nl = (s[0] ? s[strlen(s) - 1] != '\n' : true) ? "\n" : "";
+=======
+		const char* nl = vector[0] == isc_arg_interpreted ? "" : "\n";
+		if (fb_interpret(s, sizeof(s), &vector)) {
+>>>>>>> 1.72.2.6
 			int exitCode = util_print("%s%s", s, nl);
 			if (exitOnError && exitCode != 0) 
 			{
 				gsec_exit(exitCode, tsec::getSpecific());
 			}
+<<<<<<< gsec.cpp
+=======
+			while (fb_interpret(s, sizeof(s), &vector)) {
+				exitCode = util_print("%s%s", s, nl);
+				if (exitOnError && exitCode != 0) {
+					gsec_exit(exitCode, tsec::getSpecific());
+				}
+			}
+>>>>>>> 1.72.2.6
 		}
 #endif
 	}
@@ -1344,7 +1203,8 @@ static int vutil_print(const SCHAR* format, va_list arglist)
 	Firebird::string buf;
 	buf.vprintf(format, arglist);
 	
-	return tdsec->tsec_output_proc(tdsec->tsec_output_data, (UCHAR*)(buf.c_str()));
+	tdsec->utilSvc->output(buf.c_str());
+	return 0;
 }
 
 static void util_output(const SCHAR* format, ...)
@@ -1409,6 +1269,25 @@ void GSEC_error_redirect(const ISC_STATUS* status_vector,
 	GSEC_error(errcode);
 }
 
+void GSEC_diag(USHORT errcode)
+{
+/**************************************
+ *
+ *	 G S E C _ d i a g
+ *
+ **************************************
+ *
+ * Functional description
+ *	Call error if service, print if utility.
+ *
+ **************************************/
+	tsec* tdsec = tsec::getSpecific();
+	if (tdsec->utilSvc->isService())
+		GSEC_error(errcode);
+	else
+		GSEC_print(errcode);
+}
+
 void GSEC_error(USHORT errcode)
 {
 /**************************************
@@ -1424,12 +1303,8 @@ void GSEC_error(USHORT errcode)
 	static const SafeArg dummy;
 
 	tsec* tdsec = tsec::getSpecific();
-#ifdef SERVICE_THREAD
-	ISC_STATUS* status = tdsec->tsec_service_blk->svc_status;
-
-	CMD_UTIL_put_svc_status(status, GSEC_MSG_FAC, errcode, dummy);
-	tdsec->tsec_service_blk->svc_started();
-#endif
+	tdsec->utilSvc->stuffStatus(GSEC_MSG_FAC, errcode, dummy);
+	tdsec->utilSvc->started();
 
 	GSEC_print(errcode);
 	gsec_exit(FINI_ERROR, tdsec);
@@ -1455,7 +1330,6 @@ void GSEC_print(USHORT number,
 		arg << str;
 
 	fb_msg_format(0, GSEC_MSG_FAC, number, sizeof(buffer), buffer, arg);
-	TRANSLATE_CP(buffer);
 	util_output("%s\n", buffer);
 }
 
@@ -1475,7 +1349,6 @@ void GSEC_print_partial(USHORT number)
 	TEXT buffer[256];
 
 	fb_msg_format(0, GSEC_MSG_FAC, number, sizeof(buffer), buffer, dummy);
-	TRANSLATE_CP(buffer);
 	util_output("%s ", buffer);
 }
 
