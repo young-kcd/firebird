@@ -65,7 +65,7 @@ bool AuthSspi::initEntries()
 }
 
 AuthSspi::AuthSspi()
-	: hasContext(false), ctName(*getDefaultMemoryPool())
+	: hasContext(false), ctName(*getDefaultMemoryPool()), wheel(false)
 {
 	TimeStamp timeOut;
 	hasCredentials = initEntries() && (fAcquireCredentialsHandle(0, "NTLM", 
@@ -236,15 +236,12 @@ bool AuthSspi::accept(AuthSspi::DataHolder& data)
 	switch(x) 
 	{
 	case SEC_E_OK:
-		if (checkAdminPrivilege(&ctxtHndl))
-		{
-			ctName = "SYSDBA";
-		}
-		else if (fQueryContextAttributes(&ctxtHndl, SECPKG_ATTR_NAMES, &name) == SEC_E_OK)
+		if (fQueryContextAttributes(&ctxtHndl, SECPKG_ATTR_NAMES, &name) == SEC_E_OK)
 		{
 			ctName = name.sUserName;
 			ctName.upper();
 			fFreeContextBuffer(name.sUserName);
+			wheel = checkAdminPrivilege(&ctxtHndl);
 		}
 		fDeleteSecurityContext(&ctxtHndl);
 		hasContext = false;
@@ -275,12 +272,15 @@ bool AuthSspi::accept(AuthSspi::DataHolder& data)
 	return true;
 }
 
-bool AuthSspi::getLogin(Firebird::string& login)
+bool AuthSspi::getLogin(Firebird::string& login, bool& wh)
 {
+	wh = false;
 	if (ctName.hasData())
 	{
 		login = ctName;
 		ctName.erase();
+		wh = wheel;
+		wheel = false;
 		return true;
 	}
 	return false;

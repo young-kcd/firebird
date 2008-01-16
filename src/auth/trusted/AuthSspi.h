@@ -25,6 +25,7 @@ private:
 	CtxtHandle ctxtHndl;
 	bool hasContext;
 	Firebird::string ctName;
+	bool wheel;
 
 	// Handle of library
 	static HINSTANCE library;
@@ -61,7 +62,7 @@ public:
 	bool accept(DataHolder& data);
 
 	// returns Windows user name, matching accepted security context
-	bool getLogin(Firebird::string& login);
+	bool getLogin(Firebird::string& login, bool& wh);
 };
 
 #endif // TRUSTED_AUTH
