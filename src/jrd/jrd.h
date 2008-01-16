@@ -408,6 +408,7 @@ const ULONG DBB_suspend_bgio		= 0x8000L;	// Suspend I/O by background threads
 const ULONG DBB_being_opened		= 0x10000L;	// database is being attached to
 const ULONG DBB_gc_cooperative		= 0x20000L;	// cooperative garbage collection
 const ULONG DBB_gc_background		= 0x40000L;	// background garbage collection by gc_thread
+const ULONG DBB_no_fs_cache			= 0x80000L;	// Not using file system cache
 
 //
 // dbb_ast_flags

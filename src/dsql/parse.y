@@ -2412,9 +2412,9 @@ alter_role_clause	: symbol_role_name alter_role_action OS_NAME os_security_name
 			;
 
 alter_role_action	: ADD
-			{ $$ = MAKE_constant ((dsql_str*) isc_dyn_map_role, CONSTANT_SLONG); }
+			{ $$ = MAKE_const_slong (isc_dyn_map_role); }
 		| DROP
-			{ $$ = MAKE_constant ((dsql_str*) isc_dyn_unmap_role, CONSTANT_SLONG); }
+			{ $$ = MAKE_const_slong (isc_dyn_unmap_role); }
 		;
 	
 os_security_name	: STRING
