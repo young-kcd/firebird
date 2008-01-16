@@ -36,6 +36,7 @@
 #include "../jrd/intl.h"
 #include "../jrd/req.h"
 #include "../jrd/blb_proto.h"
+#include "../jrd/cvt_proto.h"
 #include "../jrd/evl_proto.h"
 #include "../jrd/intl_proto.h"
 #include "../jrd/mov_proto.h"
@@ -77,11 +78,13 @@ static void setParamsSecondInteger(DataTypeUtilBase* dataTypeUtil, const SysFunc
 
 // specific setParams functions
 static void setParamsAsciiVal(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, int argsCount, dsc** args);
+static void setParamsCharToUuid(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, int argsCount, dsc** args);
 static void setParamsDateAdd(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, int argsCount, dsc** args);
 static void setParamsDateDiff(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, int argsCount, dsc** args);
 static void setParamsOverlay(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, int argsCount, dsc** args);
 static void setParamsPosition(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, int argsCount, dsc** args);
 static void setParamsRoundTrunc(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, int argsCount, dsc** args);
+static void setParamsUuidToChar(DataTypeUtilBase* dataTypeUtil, SysFunction* function, int argsCount, dsc** args);
 
 // generic make functions
 static void makeDoubleResult(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
@@ -98,7 +101,6 @@ static void makeBin(DataTypeUtilBase* dataTypeUtil, const SysFunction* function,
 static void makeBinShift(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
 static void makeCeilFloor(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
 static void makeDateAdd(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
-static void makeGenUuid(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
 static void makeLeftRight(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
 static void makeMod(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
 static void makeOverlay(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
@@ -107,6 +109,8 @@ static void makeReplace(DataTypeUtilBase* dataTypeUtil, const SysFunction* funct
 static void makeReverse(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
 static void makeRound(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
 static void makeTrunc(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
+static void makeUuid(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
+static void makeUuidToChar(DataTypeUtilBase* dataTypeUtil,const  SysFunction* function, dsc* result, int argsCount, const dsc** args);
 
 // generic stdmath function
 static dsc* evlStdMath(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args, Jrd::impure_value* impure);
@@ -119,6 +123,7 @@ static dsc* evlAtan2(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd
 static dsc* evlBin(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args, Jrd::impure_value* impure);
 static dsc* evlBinShift(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args, Jrd::impure_value* impure);
 static dsc* evlCeil(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args, Jrd::impure_value* impure);
+static dsc* evlCharToUuid(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args, Jrd::impure_value* impure);
 static dsc* evlDateAdd(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args, Jrd::impure_value* impure);
 static dsc* evlDateDiff(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args, Jrd::impure_value* impure);
 static dsc* evlExp(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args, Jrd::impure_value* impure);
@@ -143,6 +148,7 @@ static dsc* evlRound(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd
 static dsc* evlSign(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args, Jrd::impure_value* impure);
 static dsc* evlSqrt(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args, Jrd::impure_value* impure);
 static dsc* evlTrunc(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args, Jrd::impure_value* impure);
+static dsc* evlUuidToChar(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args, Jrd::impure_value* impure);
 
 
 static void add10msec(ISC_TIMESTAMP* v, int msec, SINT64 multiplier)
@@ -244,6 +250,13 @@ static void setParamsAsciiVal(DataTypeUtilBase* dataTypeUtil, const SysFunction*
 }
 
 
+static void setParamsCharToUuid(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, int argsCount, dsc** args)
+{
+	if (argsCount >= 1 && args[0]->isUnknown())
+		args[0]->makeText(36, ttype_ascii);
+}
+
+
 static void setParamsDateAdd(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, int argsCount, dsc** args)
 {
 	if (argsCount >= 1 && args[0]->isUnknown())
@@ -328,6 +341,13 @@ static void setParamsRoundTrunc(DataTypeUtilBase* dataTypeUtil, const SysFunctio
 				args[1]->makeLong(0);
 		}
 	}
+}
+
+
+static void setParamsUuidToChar(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, int argsCount, dsc** args)
+{
+	if (argsCount >= 1 && args[0]->isUnknown())
+		args[0]->makeText(16, ttype_binary);
 }
 
 
@@ -579,14 +599,6 @@ static void makeDateAdd(DataTypeUtilBase* dataTypeUtil, const SysFunction* funct
 
 	*result = *args[2];
 	result->setNullable(isNullable);
-}
-
-
-static void makeGenUuid(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args)
-{
-	fb_assert(argsCount == function->minArgCount);
-
-	result->makeText(16, ttype_binary);
 }
 
 
@@ -858,6 +870,37 @@ static void makeTrunc(DataTypeUtilBase* dataTypeUtil, const SysFunction* functio
 }
 
 
+static void makeUuid(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args)
+{
+	fb_assert(argsCount == function->minArgCount);
+
+	if (argsCount > 0 && args[0]->isNull())
+		result->makeNullString();
+	else
+		result->makeText(16, ttype_binary);
+
+	if (argsCount > 0 && args[0]->isNullable())
+		result->setNullable(true);
+}
+
+
+static void makeUuidToChar(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args)
+{
+	fb_assert(argsCount == function->minArgCount);
+
+	const dsc* value = args[0];
+
+	if (value->isNull())
+	{
+		result->makeNullString();
+		return;
+	}
+
+	result->makeText(36, ttype_ascii);
+	result->setNullable(value->isNullable());
+}
+
+
 static dsc* evlStdMath(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args, Jrd::impure_value* impure)
 {
 	fb_assert(args->nod_count == 1);
@@ -1124,6 +1167,60 @@ static dsc* evlCeil(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_
 			impure->vlu_desc.makeDouble(&impure->vlu_misc.vlu_double);
 			break;
 	}
+
+	return &impure->vlu_desc;
+}
+
+
+static dsc* evlCharToUuid(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args, Jrd::impure_value* impure)
+{
+	fb_assert(args->nod_count == 1);
+
+	jrd_req* request = tdbb->tdbb_request;
+
+	request->req_flags &= ~req_null;
+	const dsc* value = EVL_expr(tdbb, args->nod_arg[0]);
+	if (request->req_flags & req_null)	// return NULL if value is NULL
+		return NULL;
+
+	if (!value->isText())
+		status_exception::raise(isc_expression_eval_err, 0);
+
+	USHORT ttype;
+	UCHAR* data;
+	USHORT len = CVT_get_string_ptr(value, &ttype, &data, NULL, 0, ERR_post);
+
+	// validate the UUID
+	if (len != 36)
+		status_exception::raise(isc_expression_eval_err, 0);
+
+	for (int i = 0; i < 36; ++i)
+	{
+		if (i == 8 || i == 13 || i == 18 || i == 23)
+		{
+			if (data[i] != '-')
+				status_exception::raise(isc_expression_eval_err, 0);
+		}
+		else if (!((UPPER7(data[i]) >= 'A' && UPPER7(data[i]) <= 'F') ||
+				   (data[i] >= '0' && data[i] <= '9')))
+		{
+			status_exception::raise(isc_expression_eval_err, 0);
+		}
+	}
+
+	// convert to binary representation
+	char buffer[39];
+	buffer[0] = '{';
+	buffer[37] = '}';
+	buffer[38] = '\0';
+	memcpy(buffer + 1, data, 36);
+
+	FB_GUID guid;
+	StringToGuid(&guid, buffer);
+
+	dsc result;
+	result.makeText(16, ttype_binary, reinterpret_cast<UCHAR*>(guid.data));
+	EVL_make_value(tdbb, &result, impure);
 
 	return &impure->vlu_desc;
 }
@@ -2613,7 +2710,7 @@ static dsc* evlSign(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_
 	if (request->req_flags & req_null)	// return NULL if value is NULL
 		return NULL;
 
-	double val = MOV_get_double(value);
+	const double val = MOV_get_double(value);
 
 	if (val > 0)
 		impure->vlu_misc.vlu_short = 1;
@@ -2734,6 +2831,38 @@ static dsc* evlTrunc(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd
 }
 
 
+static dsc* evlUuidToChar(Jrd::thread_db* tdbb, SysFunction* function, Jrd::jrd_nod* args, Jrd::impure_value* impure)
+{
+	fb_assert(args->nod_count == 1);
+
+	jrd_req* request = tdbb->tdbb_request;
+
+	request->req_flags &= ~req_null;
+	const dsc* value = EVL_expr(tdbb, args->nod_arg[0]);
+	if (request->req_flags & req_null)	// return NULL if value is NULL
+		return NULL;
+
+	if (!value->isText())
+		status_exception::raise(isc_expression_eval_err, 0);
+
+	USHORT ttype;
+	UCHAR* data;
+	USHORT len = CVT_get_string_ptr(value, &ttype, &data, NULL, 0, ERR_post);
+
+	if (len != sizeof(FB_GUID))
+		status_exception::raise(isc_expression_eval_err, 0);
+
+	char buffer[39];
+	GuidToString(buffer, reinterpret_cast<const FB_GUID*>(data));
+
+	dsc result;
+	result.makeText(36, ttype_ascii, reinterpret_cast<UCHAR*>(buffer) + 1);
+	EVL_make_value(tdbb, &result, impure);
+
+	return &impure->vlu_desc;
+}
+
+
 #if (defined(_MSC_VER) && (_MSC_VER <= 1200))
 SysFunction::SysFunction(const char* s, int minCount, int maxCount, SetParamsFunc sp, MakeFunc mf, EvlFunc ef, void* v)
 	: name(s), minArgCount(minCount), maxArgCount(maxCount), setParamsFunc(sp), makeFunc(mf), evlFunc(ef), misc(v)
@@ -2770,6 +2899,7 @@ const SysFunction SysFunction::functions[] =
 		SF("BIN_XOR", 1, -1, setParamsInteger, makeBin, evlBin, (void*) funBinXor),
 		SF("CEIL", 1, 1, setParamsDouble, makeCeilFloor, evlCeil, NULL),
 		SF("CEILING", 1, 1, setParamsDouble, makeCeilFloor, evlCeil, NULL),
+		SF("CHAR_TO_UUID", 1, 1, setParamsCharToUuid, makeUuid, evlCharToUuid, NULL),
 		SF("COS", 1, 1, setParamsDouble, makeDoubleResult, evlStdMath, (VoidPtrStdMathFunc) cos),
 		SF("COSH", 1, 1, setParamsDouble, makeDoubleResult, evlStdMath, (VoidPtrStdMathFunc) cosh),
 		SF("COT", 1, 1, setParamsDouble, makeDoubleResult, evlStdMath, (VoidPtrStdMathFunc) cot),
@@ -2777,7 +2907,7 @@ const SysFunction SysFunction::functions[] =
 		SF("DATEDIFF", 3, 3, setParamsDateDiff, makeInt64Result, evlDateDiff, NULL),
 		SF("EXP", 1, 1, setParamsDouble, makeDoubleResult, evlExp, NULL),
 		SF("FLOOR", 1, 1, setParamsDouble, makeCeilFloor, evlFloor, NULL),
-		SF("GEN_UUID", 0, 0, NULL, makeGenUuid, evlGenUuid, NULL),
+		SF("GEN_UUID", 0, 0, NULL, makeUuid, evlGenUuid, NULL),
 		SF("HASH", 1, 1, NULL, makeInt64Result, evlHash, NULL),
 		SF("LEFT", 2, 2, setParamsSecondInteger, makeLeftRight, evlLeft, NULL),
 		SF("LN", 1, 1, setParamsDouble, makeDoubleResult, evlLn, NULL),
@@ -2804,6 +2934,7 @@ const SysFunction SysFunction::functions[] =
 		SF("TAN", 1, 1, setParamsDouble, makeDoubleResult, evlStdMath, (VoidPtrStdMathFunc) tan),
 		SF("TANH", 1, 1, setParamsDouble, makeDoubleResult, evlStdMath, (VoidPtrStdMathFunc) tanh),
 		SF("TRUNC", 1, 2, setParamsRoundTrunc, makeTrunc, evlTrunc, NULL),
+		SF("UUID_TO_CHAR", 1, 1, setParamsUuidToChar, makeUuidToChar, evlUuidToChar, NULL),
 		SF("", 0, 0, NULL, NULL, NULL, NULL)
 	};
 
