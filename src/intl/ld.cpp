@@ -536,7 +536,7 @@ INTL_BOOL FB_DLL_EXPORT LD_lookup_texttype(texttype* tt, const ASCII* texttype_n
 				fb_assert(charSets[j].charSetName);
 
 				INTL_BOOL ret = collations[i].ptr(tt, &cs, texttype_name, charset_name,
-					attributes, specific_attributes, specific_attributes_length);
+					attributes, specific_attributes, specific_attributes_length, config_info);
 
 				if (cs.charset_fn_destroy)
 					cs.charset_fn_destroy(&cs);
