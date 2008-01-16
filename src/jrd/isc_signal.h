@@ -24,19 +24,33 @@
 #ifndef JRD_ISC_SIGNAL_H
 #define JRD_ISC_SIGNAL_H
 
+#ifdef SUPERSERVER
+
+// On all platforms, value of zero means in-process signals.
+
+const int BLOCKING_SIGNAL	= 0;
+const int WAKEUP_SIGNAL		= 0;
+const int STALL_SIGNAL		= 0;
+const int EVENT_SIGNAL		= 0;
+
+#else // Classic
+
+// On Windows, all cross-process signal numbers must be unique,
+// as they're used as a part of the shared kernel objects names.
+// On POSIX, the only requirement is being non-zero.
+
 #ifdef WIN_NT
-/* There is no interprocess signaling on Windows NT.  We simulate it
-   by sending messages through named pipes. */
-#define BLOCKING_SIGNAL		1000	/* Lock manager */
-#define WAKEUP_SIGNAL		1100	/* Lock manager */
-#define EVENT_SIGNAL		1200	/* Event manager */
-#define CACHE_SIGNALS		1300	/* Shared cache */
+const int BLOCKING_SIGNAL	= 1000;
+const int WAKEUP_SIGNAL		= 1100;
+const int STALL_SIGNAL		= 1200;
+const int EVENT_SIGNAL		= 1300;
 #else
-#	define BLOCKING_SIGNAL SIGUSR1 // from lock.h
-#	ifdef UNIX // from event.cpp
-#		define EVENT_SIGNAL	SIGUSR2
-#	endif
+const int BLOCKING_SIGNAL	= 1;
+const int WAKEUP_SIGNAL		= 1;
+const int STALL_SIGNAL		= 1;
+const int EVENT_SIGNAL		= 1;
 #endif
 
-#endif /* JRD_ISC_SIGNAL_H */
+#endif // SUPERSERVER
 
+#endif // JRD_ISC_SIGNAL_H

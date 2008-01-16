@@ -73,16 +73,6 @@
 #include <sys/timeb.h>
 #endif
 
-#ifdef VMS
-#include <file.h>
-#include <perror.h>
-#include <descrip.h>
-#include <types.h>
-#include <stat.h>
-#include <rmsdef.h>
-
-#else /* !VMS */
-
 #include <sys/types.h>
 #include <sys/stat.h>
 #ifdef HAVE_SYS_FILE_H
@@ -100,8 +90,6 @@
 #include "../jrd/err_proto.h"
 #endif
 #endif
-
-#endif /* VMS */
 
 #include "../common/config/config.h"
 
@@ -127,9 +115,7 @@ static const char* FB_PID_FILE = "fb_%d";
 #include "../jrd/fil.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/isc_proto.h"
-#ifndef REQUESTER
 #include "../jrd/os/isc_i_proto.h"
-#endif
 
 #ifdef WIN_NT
 #define _WINSOCKAPI_
@@ -263,21 +249,9 @@ ULONG API_ROUTINE gds__free(void* blk)
 static SLONG gds_pid = 0;
 #endif
 
-/* VMS structure to declare exit handler */
-
-#ifdef VMS
-static SLONG exit_status = 0;
-static struct
-{
-	SLONG link;
-	int (*exit_handler) ();
-	SLONG args;
-	SLONG arg[1];
-} exit_description;
-#endif
-
 /* BLR Pretty print stuff */
 
+#define BLR_PEEK    *(control->ctl_blr)
 #define BLR_BYTE	*(control->ctl_blr)++
 #define PUT_BYTE(byte)	control->ctl_string += byte
 
@@ -302,6 +276,7 @@ const int op_literals	= 18;
 const int op_relation	= 20;
 const int op_exec_into	= 21;
 const int op_cursor_stmt	= 22;
+const int op_byte_opt_verb	= 23;
 
 static const UCHAR
 	/* generic print formats */
@@ -357,8 +332,9 @@ static const UCHAR
 	dcl_cursor[] = { op_word, op_line, op_verb, op_indent, op_word, op_line, op_args, 0},
 	cursor_stmt[] = { op_cursor_stmt, 0 },
 	strlength[] = { op_byte, op_line, op_verb, 0},
-	trim[] = { op_byte, op_byte, op_line, op_verb, 0},
-	modify2[] = { op_byte, op_byte, op_line, op_verb, op_verb, 0};
+	trim[] = { op_byte, op_byte_opt_verb, op_verb, 0},
+	modify2[] = { op_byte, op_byte, op_line, op_verb, op_verb, 0},
+	similar[] = { op_line, op_verb, op_verb, op_indent, op_byte_opt_verb, 0};
 
 #include "../jrd/blp.h"
 
@@ -941,25 +917,6 @@ static SLONG safe_interpret(char* const s, const size_t bufsize,
 		sprintf(s, "unknown dos error %ld", code);	// TXNN
 		break;
 
-#ifdef VMS
-	case isc_arg_vms:
-		{
-			SSHORT ll = 0;
-			struct dsc$descriptor_s desc;
-			desc.dsc$b_class = DSC$K_CLASS_S;
-			desc.dsc$b_dtype = DSC$K_DTYPE_T;
-			desc.dsc$w_length = bufsize;
-			desc.dsc$a_pointer = s;
-			TEXT flags[4];
-			ISC_STATUS status = sys$getmsg(code, &ll, &desc, 15, flags);
-			if (status & 1)
-				s[ll] = 0;
-			else
-				sprintf(s, "uninterpreted VMS code %x", code);	// TXNN
-		}
-		break;
-#endif
-
 #ifdef WIN_NT
 	case isc_arg_win32:
 		if (!FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_MAX_WIDTH_MASK,
@@ -1343,6 +1300,12 @@ void API_ROUTINE gds__log_status(const TEXT* database,
 	do {
 		while (*p)
 			p++;
+			
+		if (p + 2 > end)
+		{
+			p = const_cast<TEXT*>(end) + 1;
+			break;
+		}
 			
 		*p++ = '\n';
 		*p++ = '\t';
@@ -1751,12 +1714,11 @@ SLONG API_ROUTINE gds__get_prefix(SSHORT arg_type, const TEXT* passed_string)
 }
 
 
-#ifndef VMS
 void API_ROUTINE gds__prefix(TEXT* resultString, const TEXT* file)
 {
 /**************************************
  *
- *	g d s _ $ p r e f i x	( n o n - V M S )
+ *	g d s _ $ p r e f i x
  *
  **************************************
  *
@@ -1771,63 +1733,13 @@ void API_ROUTINE gds__prefix(TEXT* resultString, const TEXT* file)
 	strcpy(resultString, fb_prefix);	// safe - no BO
 	safe_concat_path(resultString, file);
 }
-#endif /* !defined(VMS) */
 
 
-#ifdef VMS
-void API_ROUTINE gds__prefix(TEXT* string, const TEXT* root)
-{
-/**************************************
- *
- *	g d s _ $ p r e f i x	( V M S )
- *
- **************************************
- *
- * Functional description
- *	Find appropriate Firebird file prefix.
- *	Override conditional defines with
- *	the enviroment variable FIREBIRD if it is set.
- *
- **************************************/
-	if (*root != '[') {
-		strcpy(string, root);
-		return;
-	}
-
-/* Check for the existence of a Firebird logical name.  If there is
-   one use it, otherwise use the system directories. */
-	TEXT temp[256];
-	if (ISC_expand_logical_once(ISC_LOGICAL, sizeof(ISC_LOGICAL) - 2, temp, sizeof(temp)))
-	{
-		strcpy(string, ISC_LOGICAL);
-		strcat(string, root);
-		return;
-	}
-
-	TEXT* p = temp;
-	for (const TEXT* q = root; *p = UPPER7(*q); q++)
-		if (*p++ == ']')
-			break;
-
-	const SSHORT len = p - temp;
-	for (const isc_vms_prefix* prefix = trans_prefix; prefix->isc_prefix; prefix++)
-		if (!strncmp(temp, prefix->isc_prefix, len)) {
-			strcpy(string, prefix->vms_prefix);
-			strcat(string, &root[len]);
-			return;
-		}
-
-	strcpy(string, &root[len]);
-}
-#endif
-
-
-#ifndef VMS
 void API_ROUTINE gds__prefix_lock(TEXT* string, const TEXT* root)
 {
 /********************************************************
  *
- *	g d s _ $ p r e f i x _ l o c k	( n o n - V M S )
+ *	g d s _ $ p r e f i x _ l o c k
  *
  ********************************************************
  *
@@ -1848,63 +1760,13 @@ void API_ROUTINE gds__prefix_lock(TEXT* string, const TEXT* root)
 	strcpy(string, fb_prefix_lock);	// safe - no BO
 	safe_concat_path(string, root);
 }
-#endif
 
 
-#ifdef VMS
-void API_ROUTINE gds__prefix_lock(TEXT* string, const TEXT* root)
-{
-/************************************************
- *
- *	g d s _ $ p r e f i x _ l o c k	( V M S )
- *
- ************************************************
- *
- * Functional description
- *	Find appropriate Firebird lock file prefix.
- *	Override conditional defines with the enviroment
- *      variable FIREBIRD_LOCK if it is set.
- *
- *************************************************/
-	if (*root != '[') {
-		strcpy(string, root);
-		return;
-	}
-
-/* Check for the existence of a Firebird logical name.  If there is 
-   one use it, otherwise use the system directories. */
-	TEXT temp[256];
-	if (ISC_expand_logical_once
-		(ISC_LOGICAL_LOCK, sizeof(ISC_LOGICAL_LOCK) - 2, temp, sizeof(temp)))
-	{
-		strcpy(string, ISC_LOGICAL_LOCK);
-		strcat(string, root);
-		return;
-	}
-
-	TEXT* p = temp;
-	for (const TEXT* q = root; *p = UPPER7(*q); q++)
-		if (*p++ == ']')
-			break;
-
-	const SSHORT len = p - temp;
-	for (const isc_vms_prefix* prefix = trans_prefix; prefix->isc_prefix; prefix++)
-		if (!strncmp(temp, prefix->isc_prefix, len)) {
-			strcpy(string, prefix->vms_prefix);
-			strcat(string, &root[len]);
-			return;
-		}
-
-	strcpy(string, &root[len]);
-}
-#endif
-
-#ifndef VMS
 void API_ROUTINE gds__prefix_msg(TEXT* string, const TEXT* root)
 {
 /********************************************************
  *
- *      g d s _ $ p r e f i x _ m s g ( n o n - V M S )
+ *      g d s _ $ p r e f i x _ m s g
  *
  ********************************************************
  *
@@ -1922,59 +1784,6 @@ void API_ROUTINE gds__prefix_msg(TEXT* string, const TEXT* root)
 	strcpy(string, fb_prefix_msg);	// safe - no BO
 	safe_concat_path(string, root);
 }
-#endif
-
-#ifdef VMS
-void API_ROUTINE gds__prefix_msg(TEXT* string, const TEXT* root)
-{
-/************************************************
- *
- *      g d s _ $ p r e f i x _ m s g ( V M S )
- *
- ************************************************
- *
- * Functional description
- *      Find appropriate Firebird message file prefix.
- *      Override conditional defines with the enviroment
- *      variable FIREBIRD_MSG if it is set.
- *
- *************************************************/
-	if (*root != '[') {
-		strcpy(string, root);
-		return;
-	}
-
-
-/* Check for the existence of a Firebird logical name.  If there is
-   one use it, otherwise use the system directories. */
-
-/* ISC_LOGICAL_MSG macro needs to be defined, check non VMS version of routine
-   for functionality. */
-	TEXT temp[256];
-	if (ISC_expand_logical_once
-		(ISC_LOGICAL_MSG, sizeof(ISC_LOGICAL_MSG) - 2, temp, sizeof(temp)))
-	{
-		strcpy(string, ISC_LOGICAL_MSG);
-		strcat(string, root);
-		return;
-	}
-
-	TEXT* p = temp;
-	for (const TEXT* q = root; *p = UPPER7(*q); q++)
-		if (*p++ == ']')
-			break;
-
-	const SSHORT len = p - temp;
-	for (const isc_vms_prefix* prefix = trans_prefix; prefix->isc_prefix; prefix++)
-		if (!strncmp(temp, prefix->isc_prefix, len)) {
-			strcpy(string, prefix->vms_prefix);
-			strcat(string, &root[len]);
-			return;
-		}
-
-	strcpy(string, &root[len]);
-}
-#endif
 
 
 ISC_STATUS API_ROUTINE gds__print_status(const ISC_STATUS* vec)
@@ -2245,16 +2054,9 @@ void API_ROUTINE gds__put_error(const TEXT* string)
  *
  **************************************/
 
-#ifdef VMS
-	struct dsc$descriptor_s desc;
-
-	ISC_make_desc(string, &desc, 0);
-	lib$put_output(&desc);
-#else
 	fputs(string, stderr);
 	fputc('\n', stderr);
 	fflush(stderr);
-#endif
 }
 
 
@@ -2434,28 +2236,24 @@ void* API_ROUTINE gds__temp_file(
  *
  **************************************/
 	try {
+		// This legacy wrapper cannot process these parameters.
+		// Fortunately, utilities never pass non-default values.
+		fb_assert(!dir && !unlink_flag);
 
-	// This legacy wrapper cannot process these parameters.
-	// Fortunately, utilities never pass non-default values.
-	fb_assert(!dir && !unlink_flag);
+		Firebird::PathName filename = TempFile::create(string);
 
-	Firebird::PathName filename = TempFile::create(string);
+		if (expanded_string)
+		{
+			strcpy(expanded_string, filename.c_str());
+		}
 
-	if (expanded_string)
-	{
-		strcpy(expanded_string, filename.c_str());
-	}
+		if (stdio_flag)
+		{
+			FILE* result = fopen(filename.c_str(), "w+b");
+			return result ? result : (void*) (IPTR) (-1);
+		}
 
-	if (stdio_flag)
-	{
-		FILE* result = fopen(filename.c_str(), "w+b");
-		return result ? result : (void*) (IPTR) (-1);
-	}
-	else
-	{
 		return (void*) (IPTR) open(filename.c_str(), O_RDWR | O_EXCL | O_TRUNC);
-	}
-
 	}
 	catch (const Firebird::Exception&)
 	{
@@ -2492,7 +2290,6 @@ void API_ROUTINE gds__unregister_cleanup(FPTR_VOID_PTR routine, void *arg)
 }
 
 
-#ifndef VMS
 BOOLEAN API_ROUTINE gds__validate_lib_path(const TEXT* module,
 										   const TEXT* ib_env_var,
 										   TEXT* resolved_module,
@@ -2561,66 +2358,6 @@ BOOLEAN API_ROUTINE gds__validate_lib_path(const TEXT* module,
 	}
 	return FALSE;
 }
-#endif
-
-
-#ifdef VMS
-BOOLEAN API_ROUTINE gds__validate_lib_path(const TEXT* module,
-										   const TEXT* ib_env_var,
-										   TEXT* resolved_module,
-										   SLONG length)
-{
-/**************************************
- *
- *	g d s _ $ v a l i d a t e _ l i b _ p a t h	( V M S )
- *
- **************************************
- *
- * Functional description
- *	Find the Firebird external library path variable.
- *	Validate that the path to the library module name 
- *	in the path specified.  If the external lib path
- *	is not defined then accept any path, and return true.
- * 	If the module is not in the path return FALSE.
- *
- **************************************/
-	TEXT *p, *q;
-	TEXT path[MAXPATHLEN];
-	TEXT abs_module_path[MAXPATHLEN];
-	TEXT abs_module[MAXPATHLEN];
-
-/* Check for the existence of a Firebird logical name.  If there is
-   one use it, otherwise use the system directories. */
-
-	COMPILER ERROR ! BEFORE DOING A VMS POST PLEASE
-		MAKE SURE THAT THIS FUNCTION WORKS THE SAME WAY
-		AS THE NON -
-		VMS ONE
-		DOES.
-	if (!
-				 (ISC_expand_logical_once
-				  (ib_env_var, strlen(ib_env_var) - 2, path, sizeof(path))))
-		return TRUE;
-
-	if (ISC_expand_logical_once(module, strlen(module) - 2, abs_module, sizeof(abs_module)))
-	{
-		/* Extract the path from the module name */
-		for (p = abs_module, q = NULL; *p; p++)
-			if (*p == ']')
-				q = p;
-
-		memset(abs_module_path, 0, MAXPATHLEN);
-		strncpy(abs_module_path, abs_module, q - abs_module + 1);
-
-		/* Check to see if the module path is the same as lib path
-		   if it is return TURE.  If not then the module path is 
-		   not valid so return FALSE */
-		if (!strcmp(path, abs_module_path))
-			return TRUE;
-	}
-	return FALSE;
-}
-#endif
 
 
 SLONG API_ROUTINE gds__vax_integer(const UCHAR* ptr, SSHORT length)
@@ -2766,38 +2503,6 @@ void API_ROUTINE isc_sql_interprete(
 	else
 		fb_msg_format(0, 14, sqlcode, length, buffer, arg);
 }
-
-
-#ifdef VMS
-int unlink(const SCHAR* file)
-{
-/**************************************
- *
- *	u n l i n k
- *
- **************************************
- *
- * Functional description
- *	Get rid of a file and all of its versions.
- *
- **************************************/
-	int status;
-	struct dsc$descriptor_s desc;
-
-	ISC_make_desc(file, &desc, 0);
-
-	for (;;) {
-		status = lib$delete_file(&desc);
-		if (!(status & 1))
-			break;
-	}
-
-	if (!status || status == RMS$_FNF)
-		return 0;
-
-	return -1;
-}
-#endif
 
 
 static void blr_error(gds_ctl* control, const TEXT* string, ...)
@@ -2996,7 +2701,6 @@ static void blr_print_cond(gds_ctl* control)
 		blr_error(control, "*** invalid condition type ***");
 		break;
 	}
-	return;
 }
 
 
@@ -3122,6 +2826,20 @@ static int blr_print_dtype(gds_ctl* control)
 		length = 0;
 		break;
 
+	case blr_column_name:
+		string = "column_name";
+		// Don't bother with this length.
+		// It will not be used for blr_column_name.
+		length = 0;
+		break;
+
+	case blr_column_name2:
+		string = "column_name2";
+		// Don't bother with this length.
+		// It will not be used for blr_column_name2.
+		length = 0;
+		break;
+
 	case blr_not_nullable:
 		string = "not_nullable";
 		break;
@@ -3180,6 +2898,8 @@ static int blr_print_dtype(gds_ctl* control)
 
 	case blr_domain_name:
 	case blr_domain_name2:
+	case blr_column_name:
+	case blr_column_name2:
 		{
 			// 0 = blr_domain_type_of; 1 = blr_domain_full
 			blr_print_byte(control);
@@ -3187,7 +2907,7 @@ static int blr_print_dtype(gds_ctl* control)
 			for (UCHAR n = blr_print_byte(control); n > 0; --n)
 				blr_print_char(control);
 
-			if (dtype == blr_domain_name2)
+			if (dtype == blr_domain_name2 || dtype == blr_column_name2)
 				blr_print_word(control);
 
 			break;
@@ -3301,6 +3021,13 @@ static void blr_print_verb(gds_ctl* control, SSHORT level)
 
 		case op_byte:
 			n = blr_print_byte(control);
+			break;
+
+		case op_byte_opt_verb:
+			n = blr_print_byte(control);
+			blr_print_line(control, (SSHORT) offset);
+			if (n != 0)
+				blr_print_verb(control, level);
 			break;
 
 		case op_word:
@@ -3529,13 +3256,6 @@ static void init(void)
 	if (initialized)
 		return;
 
-#ifdef VMS
-	exit_description.exit_handler = cleanup;
-	exit_description.args = 1;
-	exit_description.arg[0] = &exit_status;
-	ISC_STATUS status = sys$dclexh(&exit_description);
-#endif
-
 #ifdef UNIX
 	gds_pid = getpid();
 #ifdef SUPERSERVER
@@ -3571,9 +3291,7 @@ static void init(void)
 
 	gdsPrefixInit();
 
-#ifndef REQUESTER
 	ISC_signal_init();
-#endif
 }
 
 static void sanitize(Firebird::string& locale)

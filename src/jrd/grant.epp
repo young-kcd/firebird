@@ -1167,10 +1167,11 @@ static SecurityClass::flags_t squeeze_acl(UCHAR*	acl_base,
 				case id_node:
 				case id_user:
 					{
-					hit = false;
-					for (UCHAR l = *acl++; l; acl++, l--);
-					break;
+						hit = false;
+						// Seems strange with the same increment just after the switch.
+						acl += *acl + 1;
 					}
+					break;
 
 				case id_group:
 					if (user_type != obj_user_group)

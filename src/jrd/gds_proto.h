@@ -142,12 +142,6 @@ UCHAR*   mmap_anon(SLONG);
 #endif
 
 
-
-#ifdef VMS
-int		unlink(const SCHAR*);
-#endif
-
-
 #ifdef __cplusplus
 } /* extern "C" */
 #endif

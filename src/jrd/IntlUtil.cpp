@@ -614,10 +614,7 @@ bool IntlUtil::isAttributeEscape(Jrd::CharSet* cs, const UCHAR* s, ULONG size)
 	UCHAR uc[sizeof(ULONG)];
 	ULONG uSize = cs->getConvToUnicode().convert(size, s, sizeof(uc), uc);
 
-	if (uSize == 2 && *(USHORT*)uc == '\\')
-		return true;
-
-	return false;
+	return (uSize == 2 && *(USHORT*) uc == '\\');
 }
 
 

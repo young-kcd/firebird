@@ -73,36 +73,7 @@
 
 #include "../common/config/config.h"
 
-/* VMS Specific Stuff */
-
-#ifdef VMS
-
-#include <rms.h>
-#include <descrip.h>
-#include <ssdef.h>
-#include <jpidef.h>
-#include <prvdef.h>
-#include <secdef.h>
-#include <lckdef.h>
-#include "../jrd/lnmdef.h"
-
-
-const char* LOGICAL_NAME_TABLE	= "LNM$FILE_DEV";
-const char* DEFAULT_FILE_NAME	= ".fdb";
-const char INET_FLAG		= '^';
-
-struct itm {
-	SSHORT itm_length;
-	SSHORT itm_code;
-	SCHAR *itm_buffer;
-	SSHORT *itm_return_length;
-};
-typedef itm ITM;
-
-#else /* of ifdef VMS */
-const char INET_FLAG		= ':';
-#endif
-
+const char INET_FLAG = ':';
 
 #ifdef SUPERSERVER
 #define GETWD(buf)		JRD_getdir(buf)
@@ -244,7 +215,7 @@ namespace {
 #endif //NO_NFS
 } // anonymous namespace 
 
-#if (!defined NO_NFS || defined FREEBSD || defined NETBSD || defined SINIXZ)
+#if (!defined NO_NFS || defined FREEBSD || defined NETBSD)
 static void expand_filename2(tstring&, bool);
 #endif
 
@@ -545,7 +516,7 @@ iscProtocol ISC_extract_host(Firebird::PathName& file_name,
 }
 
 
-#if (!defined NO_NFS || defined FREEBSD || defined NETBSD || defined SINIXZ)
+#if (!defined NO_NFS || defined FREEBSD || defined NETBSD)
 bool ISC_expand_filename(tstring& buff, bool expand_mounts)
 {
 /**************************************
@@ -562,59 +533,6 @@ bool ISC_expand_filename(tstring& buff, bool expand_mounts)
 
 	expand_filename2(buff, expand_mounts);
 	return true;
-}
-#endif
-
-
-#ifdef VMS
-int ISC_expand_filename(const TEXT* file_name,
-						USHORT file_length, TEXT* expanded_name, USHORT bufsize)
-{
-/**************************************
- *
- *	I S C _ e x p a n d _ f i l e n a m e		( V M S )
- *
- **************************************
- *
- * Functional description
- *	Fully expand a file name.  If the file doesn't exist, do something
- *	intelligent.
- *
- **************************************/
-	TEXT temp[NAM$C_MAXRSS], temp2[NAM$C_MAXRSS];
-
-	int length = ISC_expand_logical(file_name, file_length, expanded_name, bufsize);
-
-	TEXT* p;
-	for (p = expanded_name; *p; p++)
-		if (p[0] == ':' && p[1] == ':')
-			return length;
-
-	struct FAB fab = cc$rms_fab;
-	struct NAM nam = cc$rms_nam;
-	fab.fab$l_nam = &nam;
-	nam.nam$l_esa = temp;
-	nam.nam$b_ess = sizeof(temp);
-	nam.nam$l_rsa = temp2;
-	nam.nam$b_rss = sizeof(temp2);
-	fab.fab$l_fna = expanded_name;
-	fab.fab$b_fns = length;
-	fab.fab$l_dna = DEFAULT_FILE_NAME;
-	fab.fab$b_dns = sizeof(DEFAULT_FILE_NAME) - 1;
-
-	if ((sys$parse(&fab) & 1) && (sys$search(&fab) & 1)) {
-		p = temp2;
-		int l = length = nam.nam$b_rsl
-		if (l)
-			do {
-				if (bufsize-- == 1)
-					break;
-				*expanded_name++ = *p++;
-			} while (--l);
-		*expanded_name = 0;
-	}
-
-	return length;
 }
 #endif
 
@@ -991,68 +909,6 @@ bool ISC_expand_filename(tstring& file_name, bool expand_mounts)
 #endif
 
 
-#ifdef VMS
-int ISC_expand_logical(const TEXT* file_name,
-					   USHORT file_length, TEXT* expanded_name, USHORT bufsize)
-{
-/**************************************
- *
- *	I S C _ e x p a n d _ l o g i c a l
- *
- **************************************
- *
- * Functional description
- *	Fully expand a file name.  If the file doesn't exist, do something
- *	intelligent.
- *
- **************************************/
-	ITM items[2];
-	struct dsc$descriptor_s desc1, desc2;
-
-	if (!file_length)
-		file_length = strlen(file_name);
-
-	ISC_make_desc(file_name, &desc1, file_length);
-	ISC_make_desc(LOGICAL_NAME_TABLE, &desc2, sizeof(LOGICAL_NAME_TABLE) - 1);
-
-	USHORT l;
-	items[0].itm_length = bufsize; //256;
-	items[0].itm_code = LNM$_STRING;
-	items[0].itm_buffer = expanded_name;
-	items[0].itm_return_length = &l;
-
-	items[1].itm_length = 0;
-	items[1].itm_code = 0;
-
-	int attr = LNM$M_CASE_BLIND;
-
-	if (l = file_length) {
-		if (l > bufsize)
-		    l = bufsize;
-		TEXT* p = expanded_name;
-		do {
-			*p++ = *file_name++;
-		} while (--l);
-	}
-
-	for (int n = 0; n < 10; n++) {
-		const int status = sys$trnlnm(&attr, &desc2, &desc1, NULL, items);
-		if (!(status & 1))
-			break;
-		desc1.dsc$a_pointer = expanded_name;
-		desc1.dsc$w_length = file_length = l;
-	}
-
-	if (file_length >= bufsize)
-		file_length = bufsize - 1;
-
-	expanded_name[file_length] = 0;
-
-	return file_length;
-}
-#endif
-
-
 #if defined(WIN_NT)
 void ISC_expand_share(tstring& file_name)
 {
@@ -1200,7 +1056,7 @@ int ISC_strip_extension(TEXT* file_name)
 #endif
 
 
-#if (!defined NO_NFS || defined FREEBSD || defined NETBSD || defined SINIXZ)
+#if (!defined NO_NFS || defined FREEBSD || defined NETBSD)
 static void expand_filename2(tstring& buff, bool expand_mounts)
 {
 /**************************************

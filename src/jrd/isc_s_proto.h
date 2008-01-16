@@ -30,17 +30,14 @@
 #define JRD_ISC_S_PROTO_H
 
 #include "../jrd/isc.h"
-BOOLEAN	ISC_check_restart(void);
-int		ISC_event_blocked(USHORT, struct event_t **, SLONG *);
-SLONG	ISC_event_clear(struct event_t *);
-void	ISC_event_fini(struct event_t *);
-int		ISC_event_init(struct event_t *, int, int);
+// If that file wouldn't be included, we do a FW declaration of struct event_t here.
 
-#if defined(WIN_NT)
-int		ISC_event_init_shared(struct event_t*, int, const TEXT*, struct event_t*, bool);
-#endif
-int		ISC_event_post(struct event_t *);
-int		ISC_event_wait(SSHORT, struct event_t **, SLONG *, SLONG, FPTR_VOID_PTR, void *);
+SLONG	ISC_event_clear(event_t *);
+void	ISC_event_fini(event_t *);
+int		ISC_event_init(event_t *, int, int);
+
+int		ISC_event_post(event_t *);
+int		ISC_event_wait(SSHORT, event_t* const*, const SLONG*, const SLONG);
 
 #ifdef WIN_NT
 void*	ISC_make_signal(bool, bool, int, int);
@@ -52,14 +49,14 @@ UCHAR*	ISC_map_file(ISC_STATUS*, const TEXT*, FPTR_INIT_GLOBAL_REGION,
 #if defined(WIN_NT)
 int		ISC_mutex_init(struct mtx*, const TEXT*);
 #else
-int		ISC_mutex_init(struct mtx*, SLONG);
+int		ISC_mutex_init(struct mtx*);
 #endif
 
 int		ISC_mutex_lock(struct mtx *);
 int		ISC_mutex_lock_cond(struct mtx *);
 int		ISC_mutex_unlock(struct mtx *);
 
-#ifdef HAVE_MMAP
+#if defined HAVE_MMAP || defined WIN_NT
 UCHAR*	ISC_map_object(ISC_STATUS *, SH_MEM, SLONG, SLONG);
 void	ISC_unmap_object(ISC_STATUS *, SH_MEM, UCHAR **, SLONG);
 #endif

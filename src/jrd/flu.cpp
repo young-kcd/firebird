@@ -65,7 +65,7 @@
 
 #include <string.h>
 
-#if (defined SOLARIS || defined SCO_EV || defined LINUX || defined AIX_PPC || defined SINIXZ || defined FREEBSD || defined NETBSD || HPUX)
+#if (defined SOLARIS || defined SCO_EV || defined LINUX || defined AIX_PPC || defined FREEBSD || defined NETBSD || defined HPUX)
 #define DYNAMIC_SHARED_LIBRARIES
 #endif
 
@@ -339,89 +339,3 @@ namespace Jrd
 	}
 
 } // namespace Jrd
-
-
-
-// ********************************************************** //
-
-// VMS stuff is kept in order someone would like to implement
-// VMS-style mod_loader. AP.
-
-/* VMS Specific Stuff */
-
-#ifdef VMS
-
-#include <descrip.h>
-#include <ssdef.h>
-
-static int condition_handler(int *, int *, int *);
-
-FPTR_INT ISC-lookup-entrypoint(TEXT* module,
-							   TEXT* name,
-							   const TEXT* ib_path_env_var,
-							   bool ShowAccessError)
-{
-/**************************************
- *
- *	I S C _ l o o k u p _ e n t r y p o i n t  ( V M S )
- *
- **************************************
- *
- * Functional description
- *	Lookup entrypoint of function.
- *
- **************************************/
-	struct dsc$descriptor mod_desc, nam_desc;
-	TEXT absolute_module[MAXPATHLEN];
-
-	FPTR_INT function = FUNCTIONS_entrypoint(module, name);
-	if (function)
-		return function;
-
-	if (ib_path_env_var == NULL)
-		strcpy(absolute_module, module);
-	else
-		if (!gds__validate_lib_path
-			(module, ib_path_env_var, absolute_module, sizeof(absolute_module)))
-		{
-			return NULL;
-		}
-
-	REPLACE THIS COMPILER ERROR WITH CODE TO VERIFY THAT THE MODULE IS FOUND
-		EITHER IN $FIREBIRD:UDF, or $FIREBIRD:intl,
-		OR IN ONE OF THE DIRECTORIES NAMED IN EXTERNAL_FUNCTION_DIRECTORY
-		LINES IN ISC_CONFIG.for (p = absolute_module; *p && *p != ' '; p++);
-
-	ISC_make_desc(absolute_module, &mod_desc, p - absolute_module);
-
-	const TEXT* p = name;
-	while (*p && *p != ' ')
-	{
-		++p;
-	}
-
-	ISC_make_desc(name, &nam_desc, p - name);
-	VAXC$ESTABLISH(condition_handler);
-
-	if (!(lib$find_image_symbol(&mod_desc, &nam_desc, &function, NULL) & 1))
-		return NULL;
-
-	return function;
-}
-
-static int condition_handler(int *sig, int *mech, int *enbl)
-{
-/**************************************
- *
- *	c o n d i t i o n _ h a n d l e r
- *
- **************************************
- *
- * Functional description
- *	Ignore signal from "lib$find_symbol".
- *
- **************************************/
-
-	return SS$_CONTINUE;
-}
-#endif

@@ -55,6 +55,7 @@
 #include "../jrd/obj.h"
 #include "../jrd/acl.h"
 #include "../jrd/irq.h"
+#include "../jrd/IntlManager.h"
 
 using namespace Jrd;
 
@@ -344,6 +345,8 @@ void INI_format(const TEXT* owner, const TEXT* charset)
 	CMP_release(tdbb, handle1);
 	handle1 = NULL;
 
+	// Store DATABASE record
+
 	STORE(REQUEST_HANDLE handle1) X IN RDB$DATABASE
 		X.RDB$RELATION_ID = (int) USER_DEF_REL_INIT_ID;
 		X.RDB$CHARACTER_SET_NAME.NULL = TRUE;
@@ -360,15 +363,37 @@ void INI_format(const TEXT* owner, const TEXT* charset)
 	CMP_release(tdbb, handle1);
 	handle1 = NULL;
 
-/* Create indices for system relations */
+	// Store ADMIN_ROLE record
+
+	STORE(REQUEST_HANDLE handle1) X IN RDB$ROLES
+		PAD (ADMIN_ROLE, X.RDB$ROLE_NAME);
+		X.RDB$ROLE_NAME.NULL = FALSE;
+		if (string.length()) {
+			PAD (string.c_str(), X.RDB$OWNER_NAME);
+		}
+		else {
+			PAD (SYSDBA_USER_NAME, X.RDB$OWNER_NAME);
+		}
+		X.RDB$OWNER_NAME.NULL = FALSE;
+		X.RDB$DESCRIPTION.NULL = TRUE;
+		X.RDB$SYSTEM_FLAG = ROLE_FLAG_DBO;	// Mark it as privileged role
+		X.RDB$SYSTEM_FLAG.NULL = FALSE;
+	END_STORE
+
+	CMP_release(tdbb, handle1);
+	handle1 = NULL;
+
+	// Create indices for system relations
 	add_index_set(dbb, false, 0, 0);
 
-/* Create parameter types */
+	// Create parameter types
 
 	handle1 = NULL;
 
 	for (const rtyp* type = types; type->rtyp_name; ++type)
 	{
+		// this STORE should be compatible with two below,
+		// as they use the same compiled request
 		STORE(REQUEST_HANDLE handle1) X IN RDB$TYPES
 			PAD(names[type->rtyp_field], X.RDB$FIELD_NAME);
 			PAD(type->rtyp_name, X.RDB$TYPE_NAME);
@@ -377,13 +402,38 @@ void INI_format(const TEXT* owner, const TEXT* charset)
 		END_STORE;
 	}
 
+	for (const IntlManager::CharSetDefinition* charSet = IntlManager::defaultCharSets;
+		 charSet->name; ++charSet)
+	{
+		// this STORE should be compatible with one above and below,
+		// as they use the same compiled request
+		STORE(REQUEST_HANDLE handle1) X IN RDB$TYPES
+			PAD(names[nam_charset_name], X.RDB$FIELD_NAME);
+			PAD(charSet->name, X.RDB$TYPE_NAME);
+			X.RDB$TYPE = charSet->id;
+			X.RDB$SYSTEM_FLAG = RDB_system;
+		END_STORE;
+	}
+
+	for (const IntlManager::CharSetAliasDefinition* alias = IntlManager::defaultCharSetAliases;
+		alias->name; ++alias)
+	{
+		// this STORE should be compatible with two above,
+		// as they use the same compiled request
+		STORE(REQUEST_HANDLE handle1) X IN RDB$TYPES
+			PAD(names[nam_charset_name], X.RDB$FIELD_NAME);
+			PAD(alias->name, X.RDB$TYPE_NAME);
+			X.RDB$TYPE = alias->charSetId;
+			X.RDB$SYSTEM_FLAG = RDB_system;
+		END_STORE;
+	}
+
 	CMP_release(tdbb, handle1);
 
-/* Store symbols for international character sets & collations */
-
+	// Store symbols for international character sets & collations
 	store_intlnames(tdbb, dbb);
 
-/* Create generators to be used by system triggers */
+	// Create generators to be used by system triggers
 
 	handle1 = NULL;
 	for (const gen* generator = generators; generator->gen_name; generator++)
@@ -392,8 +442,7 @@ void INI_format(const TEXT* owner, const TEXT* charset)
 	}
 	CMP_release(tdbb, handle1);
 
-// Adjust the value of the hidden generator RDB$GENERATORS
-
+	// Adjust the value of the hidden generator RDB$GENERATORS
 	DPM_gen_id(tdbb, 0, true, FB_NELEM(generators) - 1);
 
 /* store system-defined triggers */
@@ -692,6 +741,13 @@ void INI_init2(void)
 						 relfld[RFLD_R_NAME] == nam_proc_parameters)
 				{
 					if (ENCODE_ODS(major_version, minor_original) >= ODS_11_1)
+						n = init2_helper(fld, n, relation);
+				}
+				else if ((fld[RFLD_F_NAME] == nam_f_name ||
+						  fld[RFLD_F_NAME] == nam_r_name) &&
+						 relfld[RFLD_R_NAME] == nam_proc_parameters)
+				{
+					if (ENCODE_ODS(major_version, minor_original) >= ODS_11_2)
 						n = init2_helper(fld, n, relation);
 				}
 				else
@@ -1196,8 +1252,8 @@ static void add_security_to_sys_rel(thread_db*	tdbb,
 
 	STORE(REQUEST_HANDLE handle1)
 		CLS IN RDB$SECURITY_CLASSES
-        jrd_vtof((char*)sec_class_name, CLS.RDB$SECURITY_CLASS,
-                 sizeof(CLS.RDB$SECURITY_CLASS));
+		jrd_vtof((char*)sec_class_name, CLS.RDB$SECURITY_CLASS,
+				sizeof(CLS.RDB$SECURITY_CLASS));
 		CLS.RDB$ACL = blob_id_1;
 	END_STORE;
 
@@ -1207,8 +1263,8 @@ static void add_security_to_sys_rel(thread_db*	tdbb,
 
 	STORE(REQUEST_HANDLE handle1)
 		CLS IN RDB$SECURITY_CLASSES
-        jrd_vtof(default_class.c_str(), CLS.RDB$SECURITY_CLASS,
-                 sizeof(CLS.RDB$SECURITY_CLASS));
+		jrd_vtof(default_class.c_str(), CLS.RDB$SECURITY_CLASS,
+				sizeof(CLS.RDB$SECURITY_CLASS));
 		CLS.RDB$ACL = blob_id_2;
 	END_STORE;
 
@@ -1220,8 +1276,8 @@ static void add_security_to_sys_rel(thread_db*	tdbb,
 		WITH REL.RDB$RELATION_NAME EQ rel_name
 		MODIFY REL USING
 			REL.RDB$DEFAULT_CLASS.NULL = FALSE;
-            jrd_vtof(default_class.c_str(), REL.RDB$DEFAULT_CLASS,
-                     sizeof(REL.RDB$DEFAULT_CLASS));
+			jrd_vtof(default_class.c_str(), REL.RDB$DEFAULT_CLASS,
+					sizeof(REL.RDB$DEFAULT_CLASS));
 		END_MODIFY;
 
 	END_FOR;
@@ -1529,13 +1585,15 @@ static void store_intlnames(thread_db* tdbb, Database* dbb)
 	SET_TDBB(tdbb);
 
 	jrd_req* handle = NULL;
-	for (const CS_TYPE* csptr = cs_types; csptr->init_charset_name; csptr++)
+
+	for (const IntlManager::CharSetDefinition* charSet = IntlManager::defaultCharSets;
+		 charSet->name; ++charSet)
 	{
 		STORE(REQUEST_HANDLE handle) X IN RDB$CHARACTER_SETS USING
-			PAD(csptr->init_charset_name, X.RDB$CHARACTER_SET_NAME);
-			PAD(csptr->init_charset_name, X.RDB$DEFAULT_COLLATE_NAME);
-			X.RDB$CHARACTER_SET_ID = csptr->init_charset_id;
-			X.RDB$BYTES_PER_CHARACTER = csptr->init_charset_bytes_per_char;
+			PAD(charSet->name, X.RDB$CHARACTER_SET_NAME);
+			PAD(charSet->name, X.RDB$DEFAULT_COLLATE_NAME);
+			X.RDB$CHARACTER_SET_ID = charSet->id;
+			X.RDB$BYTES_PER_CHARACTER = charSet->maxBytes;
 			X.RDB$SYSTEM_FLAG = RDB_system;
 		END_STORE;
 	}
@@ -1545,31 +1603,32 @@ static void store_intlnames(thread_db* tdbb, Database* dbb)
 
 	jrd_tra* trans = dbb->dbb_sys_trans;
 
-	for (const COLL_TYPE* collptr = coll_types; collptr->init_collation_name; collptr++)
+	for (const IntlManager::CollationDefinition* collation = IntlManager::defaultCollations;
+		collation->name; ++collation)
 	{
 		STORE(REQUEST_HANDLE handle) X IN RDB$COLLATIONS USING
-			PAD(collptr->init_collation_name, X.RDB$COLLATION_NAME);
+			PAD(collation->name, X.RDB$COLLATION_NAME);
 
-			if (collptr->init_collation_base_name)
+			if (collation->baseName)
 			{
 				X.RDB$BASE_COLLATION_NAME.NULL = false;
-				PAD(collptr->init_collation_base_name, X.RDB$BASE_COLLATION_NAME);
+				PAD(collation->baseName, X.RDB$BASE_COLLATION_NAME);
 			}
 			else
 				X.RDB$BASE_COLLATION_NAME.NULL = true;
 
-			X.RDB$CHARACTER_SET_ID = collptr->init_collation_charset;
-			X.RDB$COLLATION_ID = collptr->init_collation_id;
+			X.RDB$CHARACTER_SET_ID = collation->charSetId;
+			X.RDB$COLLATION_ID = collation->collationId;
 			X.RDB$SYSTEM_FLAG = RDB_system;
-			X.RDB$COLLATION_ATTRIBUTES = collptr->init_collation_attributes;
+			X.RDB$COLLATION_ATTRIBUTES = collation->attributes;
 
-			if (collptr->init_collation_specific_attributes)
+			if (collation->specificAttributes)
 			{
 				blb* blob = BLB_create(tdbb, trans, &X.RDB$SPECIFIC_ATTRIBUTES);
 				BLB_put_segment(tdbb,
 								blob,
-								reinterpret_cast<const UCHAR*>(collptr->init_collation_specific_attributes),
-								strlen(collptr->init_collation_specific_attributes));
+								reinterpret_cast<const UCHAR*>(collation->specificAttributes),
+								strlen(collation->specificAttributes));
 				BLB_close(tdbb, blob);
 				X.RDB$SPECIFIC_ATTRIBUTES.NULL = FALSE;
 			}
@@ -1585,7 +1644,7 @@ static void store_intlnames(thread_db* tdbb, Database* dbb)
 
 static void store_function_argument(
 	thread_db* tdbb, Database* dbb,
-    jrd_req* &handle,
+	jrd_req*& handle,
 	const char* function_name, SLONG argument_position, SLONG mechanism, SLONG type, SLONG scale,
 	SLONG length, SLONG sub_type, SLONG charset, SLONG precision, SLONG char_length)
 {
@@ -1606,7 +1665,7 @@ static void store_function_argument(
 
 static void store_function(
 	thread_db* tdbb, Database* dbb,
-    jrd_req* &handle,
+	jrd_req*& handle,
 	const char* function_name, const char* module, const char* entrypoint, SLONG argument)
 {
 	STORE(REQUEST_HANDLE handle) F IN RDB$FUNCTIONS

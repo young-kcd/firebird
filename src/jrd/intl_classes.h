@@ -40,23 +40,29 @@ typedef USHORT TTYPE_ID;
 
 namespace Jrd {
 
-class LikeObject {
+class PatternMatcher
+{
 public:
+	PatternMatcher(MemoryPool& aPool, TextType* aTextType)
+		: pool(aPool),
+		  textType(aTextType)
+	{
+	}
+
+	virtual ~PatternMatcher()
+	{
+	}
+
 	virtual void reset() = 0;
-	virtual bool process(thread_db*, TextType*, const UCHAR*, SLONG) = 0;
+	virtual bool process(const UCHAR*, SLONG) = 0;
 	virtual bool result() = 0;
-	virtual ~LikeObject() {}
+
+protected:
+	MemoryPool& pool;
+	TextType* textType;
 };
 
-class ContainsObject {
-public:
-	virtual void reset() = 0;
-	virtual bool process(Jrd::thread_db*, Jrd::TextType*, const UCHAR*, SLONG) = 0;
-	virtual bool result() = 0;
-	virtual ~ContainsObject() {}
-};
-
-} //namespace Jrd
+} // namespace Jrd
 
 
 #include "../jrd/CsConvert.h"

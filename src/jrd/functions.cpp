@@ -276,7 +276,8 @@ vary* get_context(const vary* ns_vary, const vary* name_vary)
 		return make_result_str(result_str);
 	} 
 	
-	if (ns_str == USER_TRANSACTION_NAMESPACE) {
+	if (ns_str == USER_TRANSACTION_NAMESPACE)
+	{
 		Firebird::string result_str;
 
 		if (!transaction->tra_context_vars.get(name_str, result_str))
@@ -331,7 +332,9 @@ static SLONG set_context(const vary* ns_vary, const vary* name_vary, const vary*
 		return att->att_context_vars.put(name_str,
 			Firebird::string(value_vary->vary_string, value_vary->vary_length));
 	} 
-	else if (ns_str == USER_TRANSACTION_NAMESPACE) {
+
+	if (ns_str == USER_TRANSACTION_NAMESPACE)
+	{
 		jrd_tra* tra = tdbb->getTransaction();
 
 		if (!tra) {
@@ -350,13 +353,12 @@ static SLONG set_context(const vary* ns_vary, const vary* name_vary, const vary*
 		return tra->tra_context_vars.put(name_str,
 			Firebird::string(value_vary->vary_string, value_vary->vary_length));
 	} 
-	else {
-		// "Invalid namespace name %s passed to %s"
-		ERR_post(isc_ctx_namespace_invalid,
-			isc_arg_string, ERR_cstring(ns_str.c_str()),
-			isc_arg_string, RDB_SET_CONTEXT, 0);
-		return 0;
-	}
+
+	// "Invalid namespace name %s passed to %s"
+	ERR_post(isc_ctx_namespace_invalid,
+		isc_arg_string, ERR_cstring(ns_str.c_str()),
+		isc_arg_string, RDB_SET_CONTEXT, 0);
+	return 0;
 }
 
 static int test(const long* n, char *result)
@@ -400,10 +402,7 @@ static int test(const long* n, char *result)
 
 static dsc* ni(dsc* v, dsc* v2)
 {
-	if (v)
-		return v;
-	else
-		return v2;
+	return v ? v : v2;
 }
 
 
@@ -419,33 +418,33 @@ static SLONG* byteLen(const dsc* v)
 {
 	if (!v || !v->dsc_address || (v->dsc_flags & DSC_null))
 		return 0;
-	else
+
+	SLONG& rc = *(SLONG*) malloc(sizeof(SLONG));
+	switch (v->dsc_dtype)
 	{
-		SLONG& rc = *(SLONG*) malloc(sizeof(SLONG));
-		switch (v->dsc_dtype)
+	case dtype_text:
 		{
-		case dtype_text:
-			{
-				const UCHAR* const ini = v->dsc_address;
-				const UCHAR* end = ini + v->dsc_length;
-				while (ini < end && *--end == ' '); // empty loop body
-				rc = end - ini + 1;
-				break;
-			}
-		case dtype_cstring:
-			{
-				rc = 0;
-				for (const UCHAR* p = v->dsc_address; *p; ++p, ++rc); // empty loop body
-				break;
-			}
-		case dtype_varying:
-			rc = reinterpret_cast<const vary*>(v->dsc_address)->vary_length;
-			break;
-		default:
-			rc = DSC_string_length(v);
+			const UCHAR* const ini = v->dsc_address;
+			const UCHAR* end = ini + v->dsc_length;
+			while (ini < end && *--end == ' ')
+				; // empty loop body
+			rc = end - ini + 1;
 			break;
 		}
-		
-		return &rc;
+	case dtype_cstring:
+		{
+			rc = 0;
+			for (const UCHAR* p = v->dsc_address; *p; ++p, ++rc)
+				; // empty loop body
+			break;
+		}
+	case dtype_varying:
+		rc = reinterpret_cast<const vary*>(v->dsc_address)->vary_length;
+		break;
+	default:
+		rc = DSC_string_length(v);
+		break;
 	}
+	
+	return &rc;
 }

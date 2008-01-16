@@ -119,10 +119,14 @@ const int irq_trg_validate	= 81;		/* trigger blr validate */
 const int irq_l_domain		= 82;		// lookup a domain
 const int irq_m_fields2		= 83;		// process a modification of RDB$FIELDS for procedures (ODS 11.1)
 const int irq_m_fields3		= 84;		// process a modification of RDB$FIELDS for triggers (ODS 11.1)
-const int irq_r_params2		= 85;		/* scan procedure parameters (ODS 11.1) */
-const int irq_l_trg_dbg		= 86;		// lookup trigger debug_info (ODS 11.1)
-const int irq_l_colls		= 87;		// lookup collations
+const int irq_m_fields4		= 85;		// process a modification of RDB$FIELDS for procedures (TYPE OF COLUMN)
+const int irq_m_fields5		= 86;		// process a modification of RDB$FIELDS for triggers (TYPE OF COLUMN)
+const int irq_r_params2		= 87;		// scan procedure parameters (ODS 11.1)
+const int irq_l_trg_dbg		= 88;		// lookup trigger debug_info (ODS 11.1)
+const int irq_l_colls		= 89;		// lookup collations
+const int irq_l_relfield	= 90;		// lookup a relation field
+const int irq_verify_trusted_role = 91; // ensure trusted role exists
 
-const int irq_MAX			= 88;
+const int irq_MAX			= 92;
 
 #endif /* JRD_IRQ_H */

@@ -197,11 +197,13 @@ bool IDX_check_master_types (thread_db* tdbb, index_desc& idx, jrd_rel* partner_
 
 	int i;
 	for (i = 0; i < idx.idx_count; i++)
+	{
 		if (idx.idx_rpt[i].idx_itype != partner_idx.idx_rpt[i].idx_itype)
 		{
 			bad_segment = i;
 			return false;
 		}
+	}
 
 	return true;
 }
@@ -1491,12 +1493,11 @@ static int index_block_flush(void* ast_object)
  *
  **************************************/
 	IndexBlock* index_block = static_cast<IndexBlock*>(ast_object);
-	thread_db thd_context, *tdbb;
 
 /* Since this routine will be called asynchronously, we must establish
    a thread context. */
 
-	JRD_set_thread_data(tdbb, thd_context);
+	ThreadContextHolder tdbb;
 
 	Lock* lock = index_block->idb_lock;
 
@@ -1521,10 +1522,6 @@ static int index_block_flush(void* ast_object)
 	MOVE_CLEAR(&index_block->idb_expression_desc, sizeof(struct dsc));
 
 	LCK_release(tdbb, lock);
-
-/* Restore the prior thread context */
-
-	JRD_restore_thread_data();
 
 	return 0;
 }
@@ -1611,7 +1608,7 @@ static bool key_equal(const temporary_key* key1, const temporary_key* key2)
  *	Compare two keys for equality.
  *
  **************************************/
-	USHORT l = key1->key_length;
+	const USHORT l = key1->key_length;
 	return (l == key2->key_length && !memcmp(key1->key_data, key2->key_data, l));
 }
 

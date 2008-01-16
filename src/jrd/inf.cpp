@@ -843,7 +843,7 @@ SCHAR* INF_put_item(SCHAR item,
 	STUFF_WORD(ptr, length);
 
 	if (length) {
-		MEMMOVE(string, ptr, length);
+		memmove(ptr, string, length);
 		ptr += length;
 	}
 

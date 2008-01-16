@@ -119,7 +119,6 @@
 #include "../jrd/lck_proto.h"
 #include "../jrd/met_proto.h"
 #include "../jrd/thd.h"
-#include "../jrd/evl_string.h"
 #include "../jrd/intlobj_new.h"
 #include "../jrd/jrd.h"
 #include "../jrd/mov_proto.h"
@@ -1174,112 +1173,6 @@ USHORT INTL_string_to_key(thread_db* tdbb,
 }
 
 
-int INTL_str_to_upper(thread_db* tdbb, DSC * pString)
-{
-/**************************************
- *
- *      I N T L _ s t r _ t o _ u p p e r
- *
- **************************************
- *
- * Functional description
- *      Given an input string, convert it to uppercase
- *
- **************************************/
-	SET_TDBB(tdbb);
-
-	fb_assert(pString != NULL);
-	fb_assert(pString->dsc_address != NULL);
-
-	UCHAR* src;
-	UCHAR buffer[MAX_KEY];
-	USHORT ttype;
-	USHORT len =
-		CVT_get_string_ptr(pString, &ttype, &src,
-						   reinterpret_cast<vary*>(buffer),
-						   sizeof(buffer), ERR_post);
-
-	UCHAR* dest;
-	switch (ttype) {
-	case ttype_binary:
-		/* cannot uppercase binary strings */
-		break;
-
-	case ttype_none:
-	case ttype_ascii:
-		dest = src;
-		while (len--) {
-			*dest++ = UPPER7(*src);
-			src++;
-		}
-		break;
-
-	default:
-		TextType* obj = INTL_texttype_lookup(tdbb, ttype);
-		obj->str_to_upper(len, src, len, src);	// ASF: this works for all cases? (src and dst buffers are the same)
-		break;
-	}
-/*
- * Added to remove compiler errors. Callers are not checking
- * the return code from this function 4/5/95.
-*/
-	return (0);
-}
-
-
-int INTL_str_to_lower(thread_db* tdbb, DSC * pString)
-{
-/**************************************
- *
- *      I N T L _ s t r _ t o _ l o w e r
- *
- **************************************
- *
- * Functional description
- *      Given an input string, convert it to lowercase
- *
- **************************************/
-	SET_TDBB(tdbb);
-
-	fb_assert(pString != NULL);
-	fb_assert(pString->dsc_address != NULL);
-
-	UCHAR* src;
-	UCHAR buffer[MAX_KEY];
-	USHORT ttype;
-	USHORT len =
-		CVT_get_string_ptr(pString, &ttype, &src,
-						   reinterpret_cast<vary*>(buffer),
-						   sizeof(buffer), ERR_post);
-
-	UCHAR* dest;
-	switch (ttype) {
-	case ttype_binary:
-		/* cannot lowercase binary strings */
-		break;
-
-	case ttype_none:
-	case ttype_ascii:
-		dest = src;
-		while (len--) {
-			*dest++ = LOWWER7(*src);
-			src++;
-		}
-		break;
-
-	default:
-		TextType* obj = INTL_texttype_lookup(tdbb, ttype);
-		obj->str_to_lower(len, src, len, src);	// ASF: this works for all cases? (src and dst buffers are the same)
-		break;
-	}
-/*
- * Added to remove compiler errors. Callers are not checking
- * the return code from this function 4/5/95.
-*/
-	return (0);
-}
-
-
 static bool all_spaces(
 						  thread_db* tdbb,
 						  CHARSET_ID charset,
@@ -1362,11 +1255,9 @@ static int blocking_ast_collation(void* ast_object)
 
 		if (tt->existenceLock)
 		{
-			thread_db thd_context, *tdbb;
-
 			// Since this routine will be called asynchronously, we must establish
-			// a thread context.
-			JRD_set_thread_data(tdbb, thd_context);
+			// a thread context for LCK_release().
+			ThreadContextHolder tdbb;
 
 			tdbb->setDatabase(tt->existenceLock->lck_dbb);
 			tdbb->setAttachment(tt->existenceLock->lck_attachment);

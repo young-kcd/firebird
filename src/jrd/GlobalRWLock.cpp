@@ -44,33 +44,22 @@ namespace Jrd {
 
 int GlobalRWLock::blocking_ast_cached_lock(void* ast_object)
 {
-	Jrd::GlobalRWLock *GlobalRWLock = 
+	Jrd::GlobalRWLock* globalRWLock = 
 		static_cast<Jrd::GlobalRWLock*>(ast_object);
-
-	ISC_ast_enter();
 
 	/* Since this routine will be called asynchronously, we must establish
 		a thread context. */
-	Jrd::thread_db thd_context, *tdbb;
-	JRD_set_thread_data(tdbb, thd_context);
+	ThreadContextHolder tdbb;
 
-	ISC_STATUS_ARRAY ast_status;
-	Jrd::Database* dbb = GlobalRWLock->cached_lock->lck_dbb;
+	Jrd::Database* dbb = globalRWLock->cached_lock->lck_dbb;
 
 	tdbb->setDatabase(dbb);
 	tdbb->setAttachment(NULL);
 	tdbb->tdbb_quantum = QUANTUM;
 	tdbb->setRequest(NULL);
 	tdbb->setTransaction(NULL);
-	tdbb->tdbb_status_vector = ast_status;
 
 	GlobalRWLock->blockingAstHandler(tdbb);
-
-	/* Restore the prior thread context */
-
-	JRD_restore_thread_data();
-
-	ISC_ast_exit();
 
 	return 0;	
 }
@@ -132,7 +121,8 @@ bool GlobalRWLock::lock(thread_db* tdbb, locklevel_t level, SSHORT wait, SLONG o
 			}
 		}
 
-		bool all_compatible = !writer.entry_count && (level == LCK_read || readers.getCount() == 0);
+		const bool all_compatible =
+			!writer.entry_count && (level == LCK_read || readers.getCount() == 0);
 
 		// We own the lock and all present requests are compatible with us
 		// In case of any congestion we force all requests through the lock

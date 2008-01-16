@@ -120,9 +120,10 @@ public:
 	}
 	void setLockData(SLONG lck_data);
 
-	// Release phisical lock if possible. Use to force refetch
+	// Release physical lock if possible. Use to force refetch
 	// Returns true if lock was released
 	bool tryReleaseLock(thread_db* tdbb);
+
 protected:
 	Lock* cached_lock;
 	// Flag to indicate that somebody is waiting via lock manager.
@@ -138,6 +139,7 @@ protected:
 	virtual void invalidate(thread_db* tdbb, bool ast_handler) {}
 
 	virtual void blockingAstHandler(thread_db* tdbb);
+
 private:
 	Firebird::Mutex lockMutex;	// Protects status of logical lock, counters and blocking flag
 	lck_owner_t		physicalLockOwner;	// Holds cached lock

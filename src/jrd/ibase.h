@@ -173,7 +173,7 @@ typedef struct bstream
 /* it's more accurate to use void* than int* as the blob pointer    */
 /********************************************************************/
 
-#if !defined(JRD_VAL_H) && !defined(REQUESTER)
+#if !defined(JRD_VAL_H)
 /* Blob passing structure */
 
 /* This enum applies to parameter "mode" in blob_lseek */
@@ -193,7 +193,7 @@ typedef struct blobcallback {
     ISC_LONG (*blob_lseek)
 		(void* hnd, ISC_USHORT mode, ISC_LONG offset);
 }  *BLOBCALLBACK;
-#endif /* !defined(JRD_VAL_H) && !defined(REQUESTER) */
+#endif /* !defined(JRD_VAL_H) */
 
 
 /********************************************************************/
