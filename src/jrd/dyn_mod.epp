@@ -3397,7 +3397,7 @@ void DYN_modify_sql_field(Global*					gbl,
 void DYN_modify_mapping(Global* gbl, const UCHAR** ptr)
 {
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 	jrd_req* request = CMP_find_request(tdbb, drq_m_map, DYN_REQUESTS);
 	bool found = false;
@@ -3415,7 +3415,7 @@ void DYN_modify_mapping(Global* gbl, const UCHAR** ptr)
 		Firebird::status_exception::raise(isc_no_meta_update, isc_arg_gds, isc_wish_list, isc_arg_end);
 	}
 
-	if (!(tdbb->tdbb_attachment && tdbb->tdbb_attachment->locksmith()))
+	if (!(tdbb->getAttachment() && tdbb->getAttachment()->locksmith()))
 		ERR_post(isc_adm_task_denied, 0);
 
 	found = false;

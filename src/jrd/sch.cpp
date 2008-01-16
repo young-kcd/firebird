@@ -495,9 +495,9 @@ bool SCH_thread_enter_check()
 	// If active thread is not null and thread_id matches
 	// then we are the active thread
 
-	sch_mutex_lock(thread_mutex);
-	const bool ret = ((active_thread) && (active_thread->thread_id == ThreadData::getId()));
-	sch_mutex_unlock(thread_mutex);
+	sch_mutex_lock();
+	const bool ret = ((active_thread) && (active_thread->thread_id == getThreadId()));
+	sch_mutex_unlock();
 
 	return ret;
 }

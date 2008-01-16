@@ -98,8 +98,7 @@ public:
 		tra_blobs(p),
 		tra_resources(*p),
 		tra_context_vars(*p),
-		tra_lock_timeout(DEFAULT_LOCK_TIMEOUT),
-		tra_stats(*p)
+		tra_lock_timeout(DEFAULT_LOCK_TIMEOUT)
 	{}
 
 	~jrd_tra()

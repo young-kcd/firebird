@@ -488,7 +488,7 @@ bool DYN_UTIL_find_field_source(thread_db* tdbb,
  **************************************/
 
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 	jrd_req* request = NULL;
 
