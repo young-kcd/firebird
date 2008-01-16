@@ -164,8 +164,6 @@ public:
 
 #else
 
-#ifdef MULTI_THREAD
-
 #ifdef SOLARIS_MT
 
 #include <thread.h>
@@ -318,32 +316,6 @@ public:
 } // namespace Firebird
 
 #endif /*solaris threading (not posix)*/
-
-#else
-
-namespace Firebird {
-
-// Non-threaded version
-class RWLock
-{
-private:
-	// Forbid copy constructor
-	RWLock(const RWLock& source);
-public:
-	RWLock() {		
-	}
-	~RWLock() {	}
-	void beginRead() { }
-	bool tryBeginRead() { return true; }
-	void endRead() { }
-	bool tryBeginWrite() { return true; }
-	void beginWrite() {	}
-	void endWrite() { }
-};
-
-} // namespace Firebird
-
-#endif /*MULTI_THREAD*/
 
 #endif /*!WIN_NT*/
 

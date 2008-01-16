@@ -36,12 +36,7 @@
 //
 // TLS variable type should be smaller than size of pointer to stay portable
 
-#if !defined(MULTI_THREAD)
-// Single-threaded case
-# define TLS_DECLARE(TYPE, NAME) TYPE NAME
-# define TLS_GET(NAME) NAME
-# define TLS_SET(NAME, VALUE) NAME = (VALUE)
-#elif defined(HAVE___THREAD)
+#if defined(HAVE___THREAD)
 // Recent GCC supports __thread keyword. Sun compiler and HP-UX should have it too
 # define TLS_DECLARE(TYPE, NAME) __thread TYPE NAME
 # define TLS_GET(NAME) NAME

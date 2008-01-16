@@ -30,6 +30,7 @@
 #define CLASSES_SEMAPHORE_H
 
 #include "../jrd/gdsassert.h"
+
 #ifdef WIN_NT
 // Note: Windows does not need signal safe version of the class
 
@@ -74,9 +75,7 @@ public:
 
 } // namespace Firebird
 
-#else //WIN_NT
-
-#ifdef MULTI_THREAD
+#else // WIN_NT
 
 #ifdef HAVE_SEMAPHORE_H
 
@@ -225,18 +224,18 @@ public:
 		system_call_failed::raise("sem_timedwait", errcode);
 		return false;	// avoid warnings
 	}
-#endif //HAVE_SEM_TIMEDWAIT
+#endif // HAVE_SEM_TIMEDWAIT
 };
 
 #ifdef HAVE_SEM_TIMEDWAIT
 // In case when sem_timedwait() is implemented by host OS, 
 // SignalSafeSemaphore and Semaphore are just the same
 typedef SignalSafeSemaphore Semaphore;
-#endif //HAVE_SEM_TIMEDWAIT
+#endif // HAVE_SEM_TIMEDWAIT
 
 } // namespace Firebird
 
-#endif //HAVE_SEMAPHORE_H
+#endif // HAVE_SEMAPHORE_H
 
 #ifndef HAVE_SEM_TIMEDWAIT
 // Should implement Semaphore independent from SignalSafeSemaphore.
@@ -272,14 +271,14 @@ public:
 		if (semctl(semId, 0, SETVAL, arg) < 0)
 			system_call_failed::raise("semaphore.h: Semaphore: semctl()");
 	}
-	
+
 	~Semaphore()
 	{
 		semun arg;
 		if (semctl(semId, 0, IPC_RMID, arg) < 0)
 			system_call_failed::raise("semaphore.h: ~Semaphore: semctl()");
 	}
-	
+
 	bool tryEnter(int seconds = 0) // Returns true in case of success
 	{
 		timespec timeout;
@@ -316,12 +315,12 @@ public:
 
 		return true;
 	}
-	
+
 	void enter()
 	{
 		tryEnter(-1);
 	}
-	
+
 	void release(SLONG count = 1)
 	{
 		sembuf sb;
@@ -341,7 +340,7 @@ public:
 
 } // namespace Firebird
 
-#else //defined(HAVE_SYS_SEM_H) && defined(HAVE_SEMTIMEDOP)
+#else // defined(HAVE_SYS_SEM_H) && defined(HAVE_SEMTIMEDOP)
 
 // This implementation will NOT work with FB > 2.1
 #ifdef SOLARIS
@@ -529,29 +528,10 @@ public:
 
 } // namespace Firebird
 
-#endif //defined(HAVE_SYS_SEM_H) && defined(HAVE_SEMTIMEDOP)
+#endif // defined(HAVE_SYS_SEM_H) && defined(HAVE_SEMTIMEDOP)
 
-#endif //HAVE_SEM_TIMEDWAIT
+#endif // HAVE_SEM_TIMEDWAIT
 
-#else //MULTI_THREAD
-
-namespace Firebird 
-{
-class SignalSafeSemaphore 
-{
-public:
-	SignalSafeSemaphore() { }
-	~SignalSafeSemaphore() { }
-
-	void enter() { }
-	void release(SLONG count = 1) { }
-	bool tryEnter(int seconds = 0) { return true; }
-};
-typedef SignalSafeSemaphore Semaphore;
-} // namespace Firebird
-
-#endif //MULTI_THREAD
-
-#endif //WIN_NT
+#endif // WIN_NT
 
 #endif // CLASSES_SEMAPHORE_H

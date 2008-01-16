@@ -366,4 +366,3 @@ bool ClumpletWriter::deleteWithTag(UCHAR tag)
 }
 
 } // namespace
-

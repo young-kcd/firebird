@@ -31,7 +31,6 @@
 
 #include "firebird.h"
 
-#ifdef MULTI_THREAD
 #ifdef WIN_NT
 // It is relatively easy to avoid using this header. Maybe do the same stuff like
 // in thd.h ? This is Windows platform maintainers choice
@@ -44,11 +43,9 @@
 #include <synch.h>
 #endif
 #endif
-#endif /* MULTI_THREAD */
 
 namespace Firebird {
 
-#ifdef MULTI_THREAD
 #ifdef WIN_NT
 
 // Generic process-local mutex and spinlock. The latter
@@ -166,25 +163,6 @@ public:
 #endif //SOLARIS_MT
 
 #endif //WIN_NT
-
-#else //MULTI_THREAD
-
-// Non-MT version
-class Mutex {
-public:
-	Mutex() {
-	}
-	~Mutex() {
-	}
-	void enter() {
-	}
-	void leave() {
-	}
-};
-
-typedef Mutex Spinlock;
-
-#endif //MULTI_THREAD
 
 // RAII holder of mutex lock
 class MutexLockGuard {

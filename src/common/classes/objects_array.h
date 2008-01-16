@@ -281,7 +281,7 @@ namespace Firebird
 		static const T& generate(const void* sender, const T* Item) { return Item; }
 	};
 
-	// Template for default value comparsion
+	// Template for default value comparator
 	template <typename T>
 	class ObjectComparator {
 	public:
@@ -304,6 +304,7 @@ namespace Firebird
 		typedef ObjectsArray <ObjectValue, SortedArray<ObjectValue*, 
 				ObjectStorage, const ObjectKey*, ObjectKeyOfValue, 
 				ObjectCmp> > inherited;
+
 	public:
 		explicit SortedObjectsArray(MemoryPool& p) : 
 			ObjectsArray <ObjectValue, SortedArray<ObjectValue*, 
@@ -315,6 +316,12 @@ namespace Firebird
 				ObjectStorage, const ObjectKey*, ObjectKeyOfValue, 
 				ObjectCmp>*>(this)->find(pItem, pos);
 		}
+		size_t add(const ObjectValue& item) {
+			return inherited::add(item);
+		}
+
+	private:
+		ObjectValue& add();	// Unusable when sorted
 	};
 
 } // namespace Firebird
