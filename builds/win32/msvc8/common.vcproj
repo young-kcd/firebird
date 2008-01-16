@@ -370,6 +370,10 @@
 				RelativePath="..\..\..\src\common\utils.cpp"
 				>
 			</File>
+			<File
+				RelativePath="..\..\..\src\common\UtilSvc.cpp"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="Header files"

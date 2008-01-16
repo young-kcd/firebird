@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="8.00"
+	Version="8,00"
 	Name="engine_embed"
 	ProjectGUID="{F55ACA54-70DF-4343-8E16-FA97C757CCF6}"
 	>
@@ -467,10 +467,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\inuse.cpp"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\src\jrd\isc.cpp"
 				>
 			</File>
@@ -619,10 +615,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\sym.cpp"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\src\jrd\SysFunction.cpp"
 				>
 			</File>
@@ -644,6 +636,10 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\ThreadData.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\ThreadStart.cpp"
 				>
 			</File>
 			<File
@@ -1060,10 +1056,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\IntlUtil.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\inuse_proto.h"
 				>
 			</File>
 			<File
@@ -1552,4 +1544,6 @@
 			</File>
 		</Filter>
 	</Files>
+	<Globals>
+	</Globals>
 </VisualStudioProject>
