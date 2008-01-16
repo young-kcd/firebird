@@ -87,7 +87,7 @@
 #include "../remote/remote.h"
 #include "gen/iberror.h"
 #include "../jrd/license.h"
-#include "../jrd/thd.h"
+#include "../jrd/ThreadStart.h"
 #include "../utilities/install/install_nt.h"
 #include "../remote/os/win32/cntl_proto.h"
 #include "../remote/inet_proto.h"
@@ -109,9 +109,10 @@
 
 
 static THREAD_ENTRY_DECLARE inet_connect_wait_thread(THREAD_ENTRY_PARAM);
-static THREAD_ENTRY_DECLARE start_connections_thread(THREAD_ENTRY_PARAM);
 static THREAD_ENTRY_DECLARE wnet_connect_wait_thread(THREAD_ENTRY_PARAM);
 static THREAD_ENTRY_DECLARE xnet_connect_wait_thread(THREAD_ENTRY_PARAM);
+static THREAD_ENTRY_DECLARE start_connections_thread(THREAD_ENTRY_PARAM);
+static THREAD_ENTRY_DECLARE process_connection_thread(THREAD_ENTRY_PARAM);
 static HANDLE parse_args(LPCSTR, USHORT*);
 static void service_connection(rem_port*);
 
@@ -121,11 +122,6 @@ static TEXT protocol_inet[128];
 static TEXT protocol_wnet[128];
 static TEXT instance[MAXPATHLEN];
 static USHORT server_flag;
-
-static const int SIGSHUT = 666;
-static int shutdown_pid = 0;
-
-//const char* const FBCLIENTDLL = "fbclient.dll";
 
 
 int WINAPI WinMain(HINSTANCE	hThisInst,
@@ -199,30 +195,12 @@ int WINAPI WinMain(HINSTANCE	hThisInst,
 	}
 #endif
 
-	if (server_flag & SRVR_multi_client) {
-		gds__thread_enable(-1);
-	}
-
 	protocol_inet[0] = 0;
 	protocol_wnet[0] = 0;
 
 	strcpy(instance, FB_DEFAULT_INSTANCE);
 
 	HANDLE connection_handle = parse_args(lpszArgs, &server_flag);
-
-	if (shutdown_pid) {
-		int rc = ISC_kill(shutdown_pid, SIGSHUT, 0);
-		if (rc < 0)
-		{
-			char buffer[100];
-			sprintf(buffer, "Cannot terminate process with pid = %d", shutdown_pid);
-			MessageBox(NULL, buffer,
-				"Firebird server failure",
-				MB_OK | MB_ICONHAND | MB_SYSTEMMODAL  | MB_DEFAULT_DESKTOP_ONLY);
-			return STARTUP_ERROR; // see /jrd/common.h
-		}
-		return 0;
-	}
 
 	if ((server_flag & (SRVR_inet | SRVR_wnet | SRVR_xnet)) == 0) {
 
@@ -317,16 +295,8 @@ int WINAPI WinMain(HINSTANCE	hThisInst,
 			gds__thread_start(xnet_connect_wait_thread, 0, THREAD_medium, 0,
 							  0);
 		}
-		// No need to waste a thread if we are running as a window
-		if (Config::getCreateInternalWindow()) {
-			nReturnValue = WINDOW_main(hThisInst, nWndMode, server_flag);
-		}
-		else {
-			HANDLE hEvent =
-				ISC_make_signal(TRUE, TRUE, GetCurrentProcessId(), SIGSHUT);
-			WaitForSingleObject(hEvent, INFINITE);
-			JRD_shutdown_all(false);
-		}
+
+		nReturnValue = WINDOW_main(hThisInst, nWndMode, server_flag);
 	}
 
 #ifdef DEBUG_GDS_ALLOC
@@ -537,7 +507,7 @@ static THREAD_ENTRY_DECLARE start_connections_thread(THREAD_ENTRY_PARAM)
 }
 
 
-static HANDLE parse_args( LPCSTR lpszArgs, USHORT * pserver_flag)
+static HANDLE parse_args( LPCSTR lpszArgs, USHORT* pserver_flag)
 {
 /**************************************
  *
@@ -554,17 +524,20 @@ static HANDLE parse_args( LPCSTR lpszArgs, USHORT * pserver_flag)
  *      INVALID_HANDLE_VALUE otherwise.
  *
  **************************************/
-	TEXT buffer[32];
 	bool delimited = false;
 
 	HANDLE connection_handle = INVALID_HANDLE_VALUE;
 
 	const TEXT* p = lpszArgs;
-	while (*p) {
+	while (*p)
+	{
 		TEXT c;
 		if (*p++ == '-')
+		{
 			while ((*p) && (c = *p++) && (c != ' '))
-				switch (UPPER(c)) {
+			{
+				switch (UPPER(c))
+				{
 				case 'A':
 					*pserver_flag |= SRVR_non_service;
 					break;
@@ -582,10 +555,10 @@ static HANDLE parse_args( LPCSTR lpszArgs, USHORT * pserver_flag)
 					while (*p && *p == ' ')
 						p++;
 					if (*p) {
-						char *pp = buffer;
-						while (*p && *p != ' ') {
+						TEXT buffer[32];
+						char* pp = buffer;
+						while (*p && *p != ' ' && (pp - buffer < sizeof(buffer) - 1))
 							*pp++ = *p++;
-						}
 						*pp++ = '\0';
 						connection_handle = (HANDLE) atol(buffer);
 					}
@@ -594,19 +567,6 @@ static HANDLE parse_args( LPCSTR lpszArgs, USHORT * pserver_flag)
 
 				case 'I':
 					*pserver_flag |= SRVR_inet;
-					break;
-
-				case 'K':
-					while (*p && *p == ' ')
-						p++;
-					if (*p) {
-						char *pp = buffer;
-						while (*p && *p != ' ') {
-							*pp++ = *p++;
-						}
-						*pp++ = '\0';
-						shutdown_pid = atoi(buffer);
-					}
 					break;
 
 				case 'N':
@@ -696,7 +656,8 @@ static HANDLE parse_args( LPCSTR lpszArgs, USHORT * pserver_flag)
 					 * of p. */
 					break;
 				}
+			}
+		}
 	}
 	return connection_handle;
 }
-

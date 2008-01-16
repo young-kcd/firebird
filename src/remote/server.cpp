@@ -35,7 +35,7 @@
 #include "../jrd/ibase.h"
 #include "../jrd/gdsassert.h"
 #include "../remote/remote.h"
-#include "../jrd/thd.h"
+#include "../jrd/ThreadStart.h"
 #include "../jrd/isc.h"
 #include "../jrd/license.h"
 #include "../common/classes/timestamp.h"
@@ -64,6 +64,7 @@
 #include "../jrd/os/isc_i_proto.h"
 #endif
 #include "../remote/proto_proto.h"	// xdr_protocol_overhead()
+#include "../jrd/scroll_cursors.h"
 
 /** CHECK_HANDLE checks -
     if the id passwd is within the vector bounds,
@@ -147,10 +148,8 @@ static bool		link_request(SERVER_REQ, rem_port*, SERVER_REQ, const char *);
 
 static bool		accept_connection(rem_port*, P_CNCT*, PACKET*);
 static ISC_STATUS	allocate_statement(rem_port*, P_RLSE*, PACKET*);
-#ifdef MULTI_THREAD
 static SLONG	append_request_chain(SERVER_REQ, SERVER_REQ*);
 static SLONG	append_request_next(SERVER_REQ, SERVER_REQ*);
-#endif
 static void		attach_database(rem_port*, P_OP, P_ATCH*, PACKET*);
 static void		attach_service(rem_port*, P_ATCH*, PACKET*);
 static void		attach_database2(rem_port*, P_OP, const char*, int, 
@@ -159,6 +158,7 @@ static void		attach_service2(rem_port*, P_OP, const char*, int,
 								const UCHAR*, int, PACKET*);
 #ifdef TRUSTED_AUTH
 static void		trusted_auth(rem_port*, P_TRAU*, PACKET*);
+static bool		canUseTrusted();
 #endif
 
 #ifdef NOT_USED_OR_REPLACED
@@ -181,11 +181,10 @@ static REM_MSG	dump_cache(rrq::rrq_repeat*);
 
 static bool		get_next_msg_no(rrq*, USHORT, USHORT*);
 static RTR		make_transaction(RDB, FB_API_HANDLE);
-static bool		process_packet2(rem_port* port,
-								PACKET* sendL,
-								PACKET* receive,
-								rem_port** result);
-
+static bool		process_packet(rem_port* port,
+							   PACKET* sendL,
+							   PACKET* receive,
+							   rem_port** result);
 static void		release_blob(RBL);
 static void		release_event(RVNT);
 static void		release_request(rrq*);
@@ -198,10 +197,9 @@ static REM_MSG	scroll_cache(rrq::rrq_repeat*, USHORT *, ULONG *);
 #endif
 
 static void		server_ast(void*, USHORT, const UCHAR*);
+static void		set_server(rem_port*, USHORT);
 static void		success(ISC_STATUS*);
-#ifdef MULTI_THREAD
 static THREAD_ENTRY_DECLARE loopThread(THREAD_ENTRY_PARAM);
-#endif
 static void		zap_packet(PACKET*, bool);
 
 static bool		bad_port_context(ISC_STATUS*, RDB, const ISC_LONG);
@@ -228,9 +226,7 @@ static SERVER_REQ	active_requests		= NULL;
 static bool			shutting_down		= false;
 static SRVR			servers;
 
-#ifdef MULTI_THREAD
 static Firebird::Semaphore requests_semaphore;
-#endif
 
 
 static const UCHAR request_info[] =
@@ -436,18 +432,13 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
  *	Multi-threaded flavor of server.
  *
  **************************************/
-	SERVER_REQ request = 0;
-	rem_port* port = 0;		// Was volatile PORT port = NULL;
+	SERVER_REQ request = NULL;
+	rem_port* port = NULL;		// Was volatile PORT port = NULL;
 	SLONG pending_requests;
-	ISC_STATUS_ARRAY status_vector;
-	trdb thd_context(status_vector);
-	trdb* tdrdb;
 
-	gds__thread_enable(-1);
+	ISC_STATUS_ARRAY status_vector;
 
 	THREAD_ENTER();
-
-	REM_set_thread_data(tdrdb, &thd_context);
 
 	try {
 
@@ -479,7 +470,6 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 				{
 					gds__log("SRVR_multi_thread/RECEIVE: error on main_port, shutting down");
 					THREAD_EXIT();
-					REM_restore_thread_data();
 					return;
 				}
 				if (dataSize)
@@ -635,7 +625,6 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 	}
 
 	THREAD_EXIT();
-	REM_restore_thread_data();
 #endif //SUPERSERVER
 }
 
@@ -784,7 +773,7 @@ static ISC_STATUS allocate_statement( rem_port* port, P_RLSE * allocate, PACKET*
 			THREAD_EXIT();
 			GDS_DSQL_FREE(status_vector, &statement->rsr_handle, DSQL_drop);
 			THREAD_ENTER();
-			ALLR_release(statement);
+			ALLR_free(statement);
 			status_vector[0] = isc_arg_gds;
 			status_vector[1] = isc_too_many_handles;
 			status_vector[2] = isc_arg_end;
@@ -795,7 +784,6 @@ static ISC_STATUS allocate_statement( rem_port* port, P_RLSE * allocate, PACKET*
 }
 
 
-#ifdef MULTI_THREAD
 static SLONG append_request_chain( SERVER_REQ request, SERVER_REQ * que_inst)
 {
 /**************************************
@@ -844,7 +832,6 @@ static SLONG append_request_next( SERVER_REQ request, SERVER_REQ * que_inst)
 
 	return requests;
 }
-#endif
 
 
 static void addClumplets(Firebird::ClumpletWriter& dpb_buffer, 
@@ -931,6 +918,9 @@ static void attach_database(rem_port* port,
 	else
 		dpb_buffer.reset(isc_dpb_version1);
 
+	// remove trusted role if present (security measure)
+	dpb_buffer.deleteWithTag(isc_dpb_trusted_role);
+
 #ifdef TRUSTED_AUTH
 	// Do we need trusted authentication?
 	if (dpb_buffer.find(isc_dpb_trusted_auth))
@@ -943,10 +933,10 @@ static void attach_database(rem_port* port,
 				dpb_buffer.getBytes(), dpb_buffer.getClumpLength());
 			dpb_buffer.deleteClumplet();
 
-			// remove extra trusted_auth if present (security measure)
+			// remove extra trusted auth if present (security measure)
 			dpb_buffer.deleteWithTag(isc_dpb_trusted_auth);
 
-			if (port->port_protocol >= PROTOCOL_VERSION11)
+			if (canUseTrusted() && port->port_protocol >= PROTOCOL_VERSION11)
 			{
 				port->port_trusted_auth = FB_NEW(*getDefaultMemoryPool()) 
 					ServerAuth(file, l, dpb_buffer, attach_database2, operation);
@@ -974,8 +964,11 @@ static void attach_database(rem_port* port,
 			return;
 		}
 	}
+#else
+	// remove trusted auth if present (security measure)
+	dpb_buffer.deleteWithTag(isc_dpb_trusted_auth);
 #endif //TRUSTED_AUTH
-	
+
 	attach_database2(port, operation, file, l, dpb_buffer.getBuffer(), 
 		dpb_buffer.getBufferLength(), send);
 }
@@ -1006,9 +999,14 @@ static void attach_database2(rem_port* port,
 		AuthSspi* authSspi = port->port_trusted_auth->authSspi;
 
 		Firebird::string trustedUserName;
-		if (authSspi->getLogin(trustedUserName))
+		bool wheel = false;
+		if (authSspi->getLogin(trustedUserName, wheel))
 		{
 			dpb_buffer.insertString(isc_dpb_trusted_auth, trustedUserName);
+			if (wheel && !dpb_buffer.find(isc_dpb_sql_role_name))
+			{
+				dpb_buffer.insertString(isc_dpb_trusted_role, ADMIN_ROLE, strlen(ADMIN_ROLE));
+			}
 		}
 	}
 #endif //TRUSTED_AUTH
@@ -1188,8 +1186,10 @@ static ISC_STATUS cancel_events( rem_port* port, P_EVENT * stuff, PACKET* send)
 
 	RVNT event;
 	for (event = rdb->rdb_events; event; event = event->rvnt_next)
+	{
 		if (event->rvnt_rid == stuff->p_event_rid)
 			break;
+	}
 
 /* If no event found, pretend it was cancelled */
 
@@ -1306,15 +1306,16 @@ static USHORT check_statement_type( RSR statement)
 			switch (*info)
 			{
 			case isc_info_sql_stmt_type:
-				if (type == isc_info_sql_stmt_get_segment ||
-					type == isc_info_sql_stmt_put_segment)
+				switch (type)
 				{
+				case isc_info_sql_stmt_get_segment:
+				case isc_info_sql_stmt_put_segment:
 					ret |= STMT_BLOB;
-				}
-				else if (type == isc_info_sql_stmt_select ||
-					type == isc_info_sql_stmt_select_for_upd)
-				{
+					break;
+				case isc_info_sql_stmt_select:
+				case isc_info_sql_stmt_select_for_upd:
 					ret |= STMT_DEFER_EXECUTE;
+					break;
 				}
 				break;
 			case isc_info_sql_batch_fetch:
@@ -1398,7 +1399,7 @@ ISC_STATUS rem_port::compile(P_CMPL* compileL, PACKET* sendL)
 		THREAD_EXIT();
 		isc_release_request(status_vector, &requestL->rrq_handle);
 		THREAD_ENTER();
-		ALLR_release(requestL);
+		ALLR_free(requestL);
 		status_vector[0] = isc_arg_gds;
 		status_vector[1] = isc_too_many_handles;
 		status_vector[2] = isc_arg_end;
@@ -1532,7 +1533,7 @@ void rem_port::disconnect(PACKET* sendL, PACKET* receiveL)
 			RTR transaction;
 			while (transaction = rdb->rdb_transactions) {
 				THREAD_EXIT();
-				if (!(transaction->rtr_flags & RTR_limbo))
+				if (!transaction->rtr_limbo)
 					isc_rollback_transaction(status_vector,
 											 &transaction->rtr_handle);
 #ifdef SUPERSERVER
@@ -1576,14 +1577,14 @@ void rem_port::disconnect(PACKET* sendL, PACKET* receiveL)
 	this->port_context = NULL;
 	if (this->port_async)
 		this->port_async->port_context = NULL;
-	ALLR_release(rdb);
+	ALLR_free(rdb);
 	if (this->port_object_vector)
 	{
 #ifdef DEBUG_REMOTE_MEMORY
 		printf("disconnect(server)        free vector      %x\n",
 				  this->port_object_vector);
 #endif
-		ALLR_release(this->port_object_vector);
+		ALLR_free(this->port_object_vector);
 		this->port_object_vector = NULL;
 	}
 	if (this->port_connection)
@@ -1592,7 +1593,7 @@ void rem_port::disconnect(PACKET* sendL, PACKET* receiveL)
 		printf("disconnect(server)        free string      %x\n",
 				  this->port_connection);
 #endif
-		ALLR_release(this->port_connection);
+		ALLR_free(this->port_connection);
 		this->port_connection = NULL;
 	}
 	if (this->port_version)
@@ -1601,7 +1602,7 @@ void rem_port::disconnect(PACKET* sendL, PACKET* receiveL)
 		printf("disconnect(server)        free string      %x\n",
 				  this->port_version);
 #endif
-		ALLR_release(this->port_version);
+		ALLR_free(this->port_version);
 		this->port_version = NULL;
 	}
 	if (this->port_passwd)
@@ -1610,7 +1611,7 @@ void rem_port::disconnect(PACKET* sendL, PACKET* receiveL)
 		printf("disconnect(server)        free string      %x\n",
 				  this->port_passwd);
 #endif
-		ALLR_release(this->port_passwd);
+		ALLR_free(this->port_passwd);
 		this->port_passwd = NULL;
 	}
 	if (this->port_user_name)
@@ -1619,7 +1620,7 @@ void rem_port::disconnect(PACKET* sendL, PACKET* receiveL)
 		printf("disconnect(server)        free string      %x\n",
 				  this->port_user_name);
 #endif
-		ALLR_release(this->port_user_name);
+		ALLR_free(this->port_user_name);
 		this->port_user_name = NULL;
 	}
 	if (this->port_host)
@@ -1628,7 +1629,7 @@ void rem_port::disconnect(PACKET* sendL, PACKET* receiveL)
 		printf("disconnect(server)        free string      %x\n",
 				  this->port_host);
 #endif
-		ALLR_release(this->port_host);
+		ALLR_free(this->port_host);
 		this->port_host = NULL;
 	}
 	this->disconnect();
@@ -1919,7 +1920,7 @@ ISC_STATUS rem_port::end_transaction(P_OP operation, P_RLSE * release, PACKET* s
 
 	case op_prepare:
 		if (!isc_prepare_transaction(status_vector, &transaction->rtr_handle))
-				transaction->rtr_flags |= RTR_limbo;
+			transaction->rtr_limbo = true;
 		break;
 	}
 	THREAD_ENTER();
@@ -2313,13 +2314,13 @@ ISC_STATUS rem_port::fetch(P_SQLDATA * sqldata, PACKET* sendL)
 			THREAD_ENTER();
 			statement->rsr_flags |= RSR_fetched;
 			if (s) {
-				if (s == 100 || s == 101) {
+				if (s == 100 || s == 101)
+				{
 					count2 = 0;
 					break;
 				}
-				else {
-					return this->send_response(sendL, 0, 0, status_vector, false);
-				}
+
+				return this->send_response(sendL, 0, 0, status_vector, false);
 			}
 			message->msg_address = message->msg_buffer;
 		}
@@ -2379,8 +2380,11 @@ ISC_STATUS rem_port::fetch(P_SQLDATA * sqldata, PACKET* sendL)
 	for (; count2; --count2) {
 		if (message->msg_address) {
 			if (!next)
-				for (next = statement->rsr_buffer; next->msg_next != message;
-					 next = next->msg_next);
+			{
+				next = statement->rsr_buffer;
+				while (next->msg_next != message)
+					next = next->msg_next;
+			}
 			message = (REM_MSG) ALLR_block(type_msg, statement->rsr_fmt_length);
 			message->msg_number = next->msg_number;
 			message->msg_next = next->msg_next;
@@ -3083,7 +3087,7 @@ static RTR make_transaction (RDB rdb, FB_API_HANDLE handle)
 		rdb->rdb_transactions = transaction;
 	}
 	else {
-		ALLR_release(transaction);
+		ALLR_free(transaction);
 		transaction = NULL;
 	}
 
@@ -3163,7 +3167,7 @@ ISC_STATUS rem_port::open_blob(P_OP op, P_BLOB* stuff, PACKET* sendL)
 			THREAD_EXIT();
 			isc_cancel_blob(status_vector, &blob->rbl_handle);
 			THREAD_ENTER();
-			ALLR_release(blob);
+			ALLR_free(blob);
 			status_vector[0] = isc_arg_gds;
 			status_vector[1] = isc_too_many_handles;
 			status_vector[2] = isc_arg_end;
@@ -3200,7 +3204,7 @@ ISC_STATUS rem_port::prepare(P_PREP * stuff, PACKET* sendL)
 								  stuff->p_prep_data.cstr_length,
 								  stuff->p_prep_data.cstr_address))
 	{
-		transaction->rtr_flags |= RTR_limbo;
+		transaction->rtr_limbo = true;
 	}
 	THREAD_ENTER();
 
@@ -3355,41 +3359,15 @@ ISC_STATUS rem_port::prepare_statement(P_SQLST * prepareL, PACKET* sendL)
 
 
 // Declared in serve_proto.h
-bool process_packet(rem_port* port,
-					PACKET* sendL,
-					PACKET* receive,
-					rem_port** result)
-{
-	port->port_flags |= PORT_busy;
-	bool res;
-	try {
-		res = process_packet2(port, sendL, receive, result);
-		if (res && result)
-		{
-			port = *result;
-			if (port)
-			{
-				port->port_flags &= ~PORT_busy;
-			}
-		}
-		return res;
-	}
-	catch(...)
-	{
-		port->port_flags &= ~PORT_busy;
-		throw;
-	}
-}
 
-
-static bool process_packet2(rem_port* port,
-							PACKET* sendL,
-							PACKET* receive,
-							rem_port** result)
+static bool process_packet(rem_port* port,
+						   PACKET* sendL,
+						   PACKET* receive,
+						   rem_port** result)
 {
 /**************************************
  *
- *	p r o c e s s _ p a c k e t 2
+ *	p r o c e s s _ p a c k e t
  *
  **************************************
  *
@@ -3398,10 +3376,7 @@ static bool process_packet2(rem_port* port,
  *	sent.
  *
  **************************************/
-	trdb thd_context(port->port_status_vector);
-	// BRS: This is the same as REM_set_thread_data
-	trdb* tdrdb = &thd_context;
-	tdrdb->putSpecific();
+	port->port_flags |= PORT_busy;
 
 	try {
 		P_OP op = receive->p_operation;
@@ -3420,7 +3395,7 @@ static bool process_packet2(rem_port* port,
 				}
 				else {
 					gds__log("SERVER/process_packet: connect reject, server exiting");
-					ThreadData::restoreSpecific();
+					port->disconnect(sendL, receive);
 					return false;
 				}
 			}
@@ -3467,6 +3442,7 @@ static bool process_packet2(rem_port* port,
 				SRVR server = port->port_server;
 				if (!server)
 					break;
+
 				if ((server->srvr_flags & SRVR_multi_client) &&
 					port != server->srvr_parent_port)
 				{
@@ -3475,16 +3451,14 @@ static bool process_packet2(rem_port* port,
 					port = NULL;
 					break;
 				}
-				else {
-					if ((server->srvr_flags & SRVR_multi_client) &&
-						port == server->srvr_parent_port)
-					{
-						gds__log("SERVER/process_packet: Multi-client server shutdown", 0);
-					}
-					port->disconnect(sendL, receive);
-					ThreadData::restoreSpecific();
-					return false;
+
+				if ((server->srvr_flags & SRVR_multi_client) &&
+					port == server->srvr_parent_port)
+				{
+					gds__log("SERVER/process_packet: Multi-client server shutdown", 0);
 				}
+				port->disconnect(sendL, receive);
+				return false;
 			}
 
 		case op_receive:
@@ -3656,7 +3630,6 @@ static bool process_packet2(rem_port* port,
 			if (!port->port_parent) {
 				gds__log("SERVER/process_packet: broken port, server exiting", 0);
 				port->disconnect(sendL, receive);
-				ThreadData::restoreSpecific();
 				return false;
 			}
 			port->disconnect(sendL, receive);
@@ -3668,34 +3641,24 @@ static bool process_packet2(rem_port* port,
 
 	}	// try
 	catch (const Firebird::Exception& ex) {
-		// NS: trdb_status_vector is usually NULL at this point.
-		// This needs to be fixed, probably via eliminating trdb_status_vector
-		// completely, but this work is not for now.
-		ISC_STATUS* status_ptr;
-
 		ISC_STATUS_ARRAY local_status;
 		memset(local_status, 0, sizeof(local_status));
 
-		if (tdrdb->trdb_status_vector) {
-			status_ptr = tdrdb->trdb_status_vector;
-		} 
-		else {
-			status_ptr = local_status;
-		}
-
-		Firebird::stuff_exception(status_ptr, ex);
-
-		gds__log_status("unknown, SERVER/process_packet", status_ptr);
+		Firebird::stuff_exception(local_status, ex);
+		gds__log_status("unknown, SERVER/process_packet", local_status);
 
 		/*  It would be nice to log an error to the user, instead of just terminating them!  */
-		port->send_response(sendL, 0, 0, status_ptr, false);
+		port->send_response(sendL, 0, 0, local_status, false);
 		port->disconnect(sendL, receive);	/*  Well, how about this...  */
 
-		ThreadData::restoreSpecific();
 		return false;
 	}
 
-	ThreadData::restoreSpecific();
+	if (port)
+	{
+		port->port_flags &= ~PORT_busy;
+	}
+
 	return true;
 }
 
@@ -3703,6 +3666,16 @@ static bool process_packet2(rem_port* port,
 #ifdef TRUSTED_AUTH
 static void trusted_auth(rem_port* port, P_TRAU* p_trau, PACKET* send)
 {
+/**************************************
+ *
+ *	t r u s t e d _ a u t h
+ *
+ **************************************
+ *
+ * Functional description
+ *	Server side of trusted auth handshake.
+ *
+ **************************************/
 	ISC_STATUS_ARRAY status_vector;
 	ServerAuth* sa = port->port_trusted_auth;
 	if (! sa)
@@ -3741,6 +3714,30 @@ static void trusted_auth(rem_port* port, P_TRAU* p_trau, PACKET* send)
 
 	sa->part2(port, sa->operation, sa->fileName.c_str(), sa->fileName.length(), 
 		sa->clumplet.begin(), sa->clumplet.getCount(), send);
+}
+
+
+static bool canUseTrusted()
+{
+/**************************************
+ *
+ *	c a n U s e T r u s t e d
+ *
+ **************************************
+ *
+ * Functional description
+ *	Cache config setting for trusted auth.
+ *
+ **************************************/
+	static AmCache useTrusted = AM_UNKNOWN;
+
+	if (useTrusted == AM_UNKNOWN)
+	{
+		Firebird::PathName authMethod(Config::getAuthMethod());
+		useTrusted = (authMethod == AmTrusted || authMethod == AmMixed) ? AM_ENABLED : AM_DISABLED;
+	}
+
+	return useTrusted == AM_ENABLED;
 }
 #endif // TRUSTED_AUTH
 
@@ -4185,8 +4182,9 @@ ISC_STATUS rem_port::receive_msg(P_DATA * data, PACKET* sendL)
 #ifdef SCROLLABLE_CURSORS
 				prior = message->msg_prior;
 #else
-				for (prior = tail->rrq_xdr; prior->msg_next != message;
-					 prior = prior->msg_next);
+				prior = tail->rrq_xdr;
+				while (prior->msg_next != message)
+					prior = prior->msg_next;
 #endif
 
 			/* allocate a new message block and put it in the cache */
@@ -4286,7 +4284,7 @@ static void release_blob(RBL blob)
 	if (blob->rbl_buffer != blob->rbl_data) {
 		ALLR_free(blob->rbl_buffer);
 	}
-	ALLR_release(blob);
+	ALLR_free(blob);
 }
 
 
@@ -4305,12 +4303,14 @@ static void release_event( RVNT event)
 	RDB rdb = event->rvnt_rdb;
 
 	for (RVNT* p = &rdb->rdb_events; *p; p = &(*p)->rvnt_next)
+	{
 		if (*p == event) {
 			*p = event->rvnt_next;
 			break;
 		}
+	}
 
-	ALLR_release(event);
+	ALLR_free(event);
 }
 
 
@@ -4345,14 +4345,14 @@ static void release_statement( RSR * statement)
  *
  **************************************/
 	if ((*statement)->rsr_select_format)
-		ALLR_release((*statement)->rsr_select_format);
+		ALLR_free((*statement)->rsr_select_format);
 	if ((*statement)->rsr_bind_format)
-		ALLR_release((*statement)->rsr_bind_format);
+		ALLR_free((*statement)->rsr_bind_format);
 
 	stmt_release_exception(*statement);
 	REMOTE_release_messages((*statement)->rsr_message);
 
-	ALLR_release((*statement));
+	ALLR_free((*statement));
 	*statement = NULL;
 }
 
@@ -4373,10 +4373,12 @@ static void release_sql_request( RSR statement)
 	rdb->rdb_port->port_objects[statement->rsr_id] = NULL;
 
 	for (RSR* p = &rdb->rdb_sql_requests; *p; p = &(*p)->rsr_next)
+	{
 		if (*p == statement) {
 			*p = statement->rsr_next;
 			break;
 		}
+	}
 
 	release_statement(&statement);
 }
@@ -4401,15 +4403,17 @@ static void release_transaction( RTR transaction)
 		release_blob(transaction->rtr_blobs);
 
 	for (RTR* p = &rdb->rdb_transactions; *p; p = &(*p)->rtr_next)
+	{
 		if (*p == transaction) {
 			*p = transaction->rtr_next;
 			break;
 		}
+	}
 
 #ifdef DEBUG_REMOTE_MEMORY
 	printf("release_transact(server)  free transaction %x\n", transaction);
 #endif
-	ALLR_release(transaction);
+	ALLR_free(transaction);
 }
 
 
@@ -4517,18 +4521,17 @@ static REM_MSG scroll_cache(
 
 		return dump_cache(tail);
 	}
-	else {
-		/* lookahead cache is in same direction we want to scroll, so scroll 
-		   forward through the cache, decrementing the offset */
 
-		for (message = tail->rrq_xdr; message->msg_address;) {
-			if (*offset == 1)
-				break;
-			(*offset)--;
-			message = message->msg_next;
-			if (message == tail->rrq_message)
-				break;
-		}
+	/* lookahead cache is in same direction we want to scroll, so scroll
+	   forward through the cache, decrementing the offset */
+
+	for (message = tail->rrq_xdr; message->msg_address;) {
+		if (*offset == 1)
+			break;
+		(*offset)--;
+		message = message->msg_next;
+		if (message == tail->rrq_message)
+			break;
 	}
 
 	return message;
@@ -4822,6 +4825,9 @@ static void attach_service(rem_port* port, P_ATCH* attach, PACKET* sendL)
 	Firebird::ClumpletWriter spb(Firebird::ClumpletReader::SpbAttach, MAX_DPB_SIZE, 
 		attach->p_atch_dpb.cstr_address, attach->p_atch_dpb.cstr_length, isc_spb_current_version);
 
+	// remove trusted role if present (security measure)
+	spb.deleteWithTag(isc_spb_trusted_role);
+
 #ifdef TRUSTED_AUTH
 	// Do we can & need trusted authentication?
 	if (spb.find(isc_spb_trusted_auth))
@@ -4834,10 +4840,10 @@ static void attach_service(rem_port* port, P_ATCH* attach, PACKET* sendL)
 				spb.getBytes(), spb.getClumpLength());
 			spb.deleteClumplet();
 
-			// remove extra trusted tags if present (security measure)
+			// remove extra trusted auth if present (security measure)
 			spb.deleteWithTag(isc_spb_trusted_auth);
 
-			if (port->port_protocol >= PROTOCOL_VERSION11)
+			if (canUseTrusted() && port->port_protocol >= PROTOCOL_VERSION11)
 			{
 				port->port_trusted_auth = FB_NEW(*getDefaultMemoryPool()) 
 					ServerAuth(service_name, service_length, spb, attach_service2, op_trusted_auth);
@@ -4865,6 +4871,9 @@ static void attach_service(rem_port* port, P_ATCH* attach, PACKET* sendL)
 			return;
 		}
 	}
+#else // TRUSTED_AUTH
+	// remove trusted auth if present (security measure)
+	spb.deleteWithTag(isc_spb_trusted_auth);
 #endif // TRUSTED_AUTH
 	
 	attach_service2(port, op_trusted_auth, service_name, service_length, 
@@ -4917,9 +4926,14 @@ ISC_STATUS rem_port::service_attach(const char* service_name,
 		AuthSspi* authSspi = port_trusted_auth->authSspi;
 
 		Firebird::string trustedUserName;
-		if (authSspi->getLogin(trustedUserName))
+		bool wheel = false;
+		if (authSspi->getLogin(trustedUserName, wheel))
 		{
 			spb.insertString(isc_spb_trusted_auth, trustedUserName);
+			if (wheel && !spb.find(isc_spb_sql_role_name))
+			{
+				spb.insertString(isc_spb_trusted_role, ADMIN_ROLE, strlen(ADMIN_ROLE));
+			}
 		}
 	}
 #endif // TRUSTED_AUTH
@@ -5252,7 +5266,7 @@ ISC_STATUS rem_port::start_transaction(P_OP operation, P_STTR * stuff, PACKET* s
 		{
 			object = transaction->rtr_id;
 			if (operation == op_reconnect)
-				transaction->rtr_flags |= RTR_limbo;
+				transaction->rtr_limbo = true;
 #ifdef DEBUG_REMOTE_MEMORY
 			printf("start_transaction(server) allocate trans   %x\n",
 					  transaction);
@@ -5304,7 +5318,6 @@ static void success( ISC_STATUS * status_vector)
 	status_vector[2] = isc_arg_end;
 }
 
-#ifdef MULTI_THREAD
 static THREAD_ENTRY_DECLARE loopThread(THREAD_ENTRY_PARAM flags)
 {
 /**************************************
@@ -5516,7 +5529,6 @@ static THREAD_ENTRY_DECLARE loopThread(THREAD_ENTRY_PARAM flags)
 
 	return 0;
 }
-#endif
 
 
 void SRVR_shutdown()
@@ -5535,16 +5547,14 @@ void SRVR_shutdown()
  **************************************/
 	shutting_down = true;
 
-#ifdef MULTI_THREAD
-	int limit = threads_waiting;
+	const int limit = threads_waiting;
 	for (int i = 0; i < limit; i++)
 	{
 		requests_semaphore.release();
 	}
-	
+
 	// let them terminate
 	THREAD_SLEEP(1 * 1000);
-#endif
 }
 
 

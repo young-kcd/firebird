@@ -39,9 +39,7 @@
 #include "../jrd/divorce.h"
 #include "../jrd/jrd_proto.h"
 #include "../common/config/config.h"
-#if !(defined VMS)
 #include <sys/param.h>
-#endif
 
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
@@ -70,10 +68,6 @@
 #include <string.h>
 #endif
 
-
-#ifdef VMS
-#include <descrip.h>
-#endif
 
 #ifdef SUPERSERVER
 #ifdef HAVE_UNISTD_H
@@ -111,6 +105,7 @@
 #if (defined SUPERSERVER && defined UNIX && defined SERVER_SHUTDOWN)
 #include "../common/classes/semaphore.h"
 #define SHUTDOWN_THREAD
+#include "../jrd/ThreadStart.h"
 #endif
 
 #ifdef UNIX
@@ -125,11 +120,7 @@ const char* FIREBIRD_USER_NAME		= "firebird";
 #endif
 
 
-#ifdef VMS
-static int assign(SCHAR *);
-#else
 static void set_signal(int, void (*)(int));
-#endif
 static void signal_handler(int);
 
 #if (defined SUPERSERVER && defined UNIX )
@@ -170,10 +161,6 @@ int CLIB_ROUTINE server_main( int argc, char** argv)
 //#if __GNUC__ == 3 && __GNUC_MINOR__ >= 1 && __GNUC_MINOR__ < 4
 //    std::set_terminate (__gnu_cxx::__verbose_terminate_handler);
 //#endif
-
-#ifdef VMS
-	argc = VMS_parse(&argv, argc);
-#endif
 
 	const TEXT* const* const end = argc + argv;
 	argv++;
@@ -249,8 +236,8 @@ int CLIB_ROUTINE server_main( int argc, char** argv)
 					printf("Firebird TCP/IP server options are:\n");
 					printf("  -d           : debug on\n");
                    
-#ifdef SUPERSERVER
-                    // These options only applicable to super server
+#ifndef SUPERSERVER
+                    // These options are not applicable to super server
 					printf("  -m           : multiclient - on\n");
 					printf("  -s           : standalone - true\n");
 					printf("  -i           : standalone - false\n");
@@ -323,7 +310,7 @@ int CLIB_ROUTINE server_main( int argc, char** argv)
 /* Fork off a server, wait for it to die, then fork off another,
    but give up after 100 tries */
 
-#if !(defined SUPERSERVER || defined VMS)
+#ifndef SUPERSERVER
 	if (multi_client && !debug) {
 		set_signal(SIGUSR1, signal_handler);
 		int child;
@@ -391,9 +378,6 @@ int CLIB_ROUTINE server_main( int argc, char** argv)
 		} // end scope block
 	}
 	else {
-#ifdef VMS
-		channel = assign("SYS$INPUT");
-#endif
 		THREAD_ENTER();
 		port = INET_server(channel);
 		THREAD_EXIT();
@@ -422,7 +406,7 @@ int CLIB_ROUTINE server_main( int argc, char** argv)
 		ISC_STATUS_ARRAY status;
 		isc_db_handle db_handle = 0L;
 
-		SecurityDatabase::getPath(path);
+		Jrd::SecurityDatabase::getPath(path);
 		const char dpb[] = {isc_dpb_version1, isc_dpb_gsec_attach, 1, 1};
 		isc_attach_database(status, strlen(path), path, &db_handle, sizeof dpb, dpb);
 		if (status[0] == 1 && status[1] > 0) {
@@ -474,38 +458,6 @@ int CLIB_ROUTINE server_main( int argc, char** argv)
 }
 
 
-#ifdef VMS
-static int assign( SCHAR * string)
-{
-/**************************************
- *
- *	a s s i g n
- *
- **************************************
- *
- * Functional description
- *	Assign a channel for communications.
- *
- **************************************/
-	SSHORT channel;
-	struct dsc$descriptor_s desc;
-
-	desc.dsc$b_dtype = DSC$K_DTYPE_T;
-	desc.dsc$b_class = DSC$K_CLASS_S;
-	desc.dsc$w_length = strlen(string);
-	desc.dsc$a_pointer = string;
-
-	int status = sys$assign(&desc, &channel, NULL, NULL);
-
-	return (status & 1) ? channel : 0;
-}
-#endif
-
-
-
-
-
-#if !(defined VMS)
 static void set_signal( int signal_number, void (*handler) (int))
 {
 /**************************************
@@ -525,7 +477,6 @@ static void set_signal( int signal_number, void (*handler) (int))
 	vec.sa_flags = 0;
 	sigaction(signal_number, &vec, &old_vec);
 }
-#endif
 
 
 static void signal_handler(int)

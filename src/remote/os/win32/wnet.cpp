@@ -51,13 +51,11 @@
 
 const int MAX_DATA		= 2048;
 const int BUFFER_SIZE	= MAX_DATA;
-const int MAX_SEQUENCE	= 256;
 
 const char* PIPE_PREFIX			= "pipe"; // win32-specific
 const char* SERVER_PIPE_SUFFIX	= "server";
 const char* EVENT_PIPE_SUFFIX	= "event";
 
-int xdrmem_create();
 
 static int		accept_connection(rem_port*, P_CNCT *);
 static rem_port*		alloc_port(rem_port*);
@@ -65,7 +63,7 @@ static rem_port*		aux_connect(rem_port*, PACKET*, t_event_ast);
 static rem_port*		aux_request(rem_port*, PACKET*);
 static void		cleanup_port(rem_port*);
 static void		disconnect(rem_port*);
-static void		exit_handler(rem_port*);
+static void		exit_handler(void*);
 static rem_str*		make_pipe_name(const TEXT*, const TEXT*, const TEXT*);
 static rem_port*		receive(rem_port*, PACKET *);
 static int		send_full(rem_port*, PACKET *);
@@ -89,7 +87,6 @@ static void		packet_print(const TEXT*, const UCHAR*, const int);
 #endif
 static int		packet_receive(rem_port*, UCHAR *, SSHORT, SSHORT *);
 static int		packet_send(rem_port*, const SCHAR*, SSHORT);
-static void		wnet_copy(const UCHAR*, SCHAR*, int);
 static void		wnet_make_file_name(TEXT *, DWORD);
 
 static xdr_t::xdr_ops wnet_ops =
@@ -189,7 +186,7 @@ rem_port* WNET_analyze(Firebird::PathName& file_name,
 
 	rem_port* port = WNET_connect(node_name, packet, status_vector, 0);
 	if (!port) {
-		ALLR_release(rdb);
+		ALLR_free(rdb);
 		return NULL;
 	}
 
@@ -226,7 +223,7 @@ rem_port* WNET_analyze(Firebird::PathName& file_name,
 
 		port = WNET_connect(node_name, packet, status_vector, 0);
 		if (!port) {
-			ALLR_release(rdb);
+			ALLR_free(rdb);
 			return NULL;
 		}
 
@@ -263,7 +260,7 @@ rem_port* WNET_analyze(Firebird::PathName& file_name,
 
 		port = WNET_connect(node_name, packet, status_vector, 0);
 		if (!port) {
-			ALLR_release(rdb);
+			ALLR_free(rdb);
 			return NULL;
 		}
 
@@ -360,7 +357,6 @@ rem_port* WNET_connect(const TEXT*		name,
 		return port;
 	}
 
-#ifndef REQUESTER
 /* We're a server, so wait for a host to show up */
 
 	LPSECURITY_ATTRIBUTES security_attr = ISC_get_security_desc();
@@ -407,8 +403,7 @@ rem_port* WNET_connect(const TEXT*		name,
 			{
 				port->port_server_flags |= SRVR_multi_client;
 			}
-			gds__register_cleanup(reinterpret_cast <
-								  void (*)(void *) >(exit_handler), port);
+			gds__register_cleanup(exit_handler, port);
 			return port;
 		}
 
@@ -439,7 +434,6 @@ rem_port* WNET_connect(const TEXT*		name,
 		}
 		CloseHandle(port->port_handle);
 	}
-#endif /* REQUESTER */
 }
 
 
@@ -618,7 +612,6 @@ static rem_port* aux_connect( rem_port* port, PACKET* packet, t_event_ast ast)
  *	done a successfull connect request ("packet" contains the response).
  *
  **************************************/
-#ifndef REQUESTER
 /* If this is a server, we're got an auxiliary connection.  Accept it */
 
 	if (port->port_server_flags) {
@@ -634,7 +627,6 @@ static rem_port* aux_connect( rem_port* port, PACKET* packet, t_event_ast ast)
 		port->port_flags |= PORT_async;
 		return port;
 	}
-#endif /* REQUESTER */
 
 /* The server will be sending its process id in the packet to
  * create a unique pipe name.
@@ -647,7 +639,7 @@ static rem_port* aux_connect( rem_port* port, PACKET* packet, t_event_ast ast)
 	if (response->p_resp_data.cstr_length) {
 		// Avoid B.O.
 		size_t len = MIN(response->p_resp_data.cstr_length, sizeof(str_pid) - 1);
-		wnet_copy(response->p_resp_data.cstr_address, str_pid, len);
+		memcpy(str_pid, response->p_resp_data.cstr_address, len);
 		str_pid[len] = 0;
 		p = str_pid;
 	}
@@ -699,7 +691,6 @@ static rem_port* aux_request( rem_port* vport, PACKET* packet)
  **************************************/
 	rem_port* new_port = NULL;  // If this is the client, we will return NULL
 
-#ifndef REQUESTER
 	const DWORD server_pid = GetCurrentProcessId();
 	vport->port_async = new_port = alloc_port(vport->port_parent);
 	new_port->port_server_flags = vport->port_server_flags;
@@ -731,11 +722,7 @@ static rem_port* aux_request( rem_port* vport, PACKET* packet)
 
 	P_RESP* response = &packet->p_resp;
 	response->p_resp_data.cstr_length = strlen(str_pid);
-	wnet_copy(reinterpret_cast<UCHAR*>(str_pid),
-			  reinterpret_cast<char*>(response->p_resp_data.cstr_address),
-			  response->p_resp_data.cstr_length);
-
-#endif /* REQUESTER */
+	memcpy(response->p_resp_data.cstr_address, str_pid, response->p_resp_data.cstr_length);
 
 	return new_port;
 }
@@ -778,39 +765,24 @@ static void disconnect(rem_port* port)
 	}
 	else if (port->port_async)
 	{
-/* If we're MULTI_THREAD then we cannot free the port because another
- * thread might be using it.  If we're SUPERSERVER we must free the
- * port to avoid a memory leak.  What we really need to know is if we
- * have multi-threaded events, but this is transport specific.
- */
-#if     (defined (MULTI_THREAD) && !defined (SUPERSERVER))
-		port->port_async->port_flags |= PORT_disconnect;
-#else
+#ifdef SUPERSERVER
 		disconnect(port->port_async);
 		port->port_async = NULL;
+#else
+		port->port_async->port_flags |= PORT_disconnect;
 #endif
 	}
 
-#ifndef REQUESTER
 	if (port->port_server_flags & SRVR_server)
 	{
 		FlushFileBuffers(port->port_handle);
 		DisconnectNamedPipe(port->port_handle);
-		/* CVC: It's never set, so how could it be active?
-		if (port->port_flags & PORT_impersonate)
-		{
-			RevertToSelf();
-			port->port_flags &= ~PORT_impersonate;
-		}
-		*/
 	}
-#endif /* REQUESTER */
 	if (port->port_handle) {
 		CloseHandle(port->port_handle);
 		port->port_handle = 0;
 	}
-	gds__unregister_cleanup(reinterpret_cast<void (*)(void*)>(exit_handler),
-	                        port);
+	gds__unregister_cleanup(exit_handler, port);
 	cleanup_port(port);
 }
 
@@ -830,37 +802,37 @@ static void cleanup_port( rem_port* port)
  **************************************/
 
 	if (port->port_version)
-		ALLR_free((UCHAR *) port->port_version);
+		ALLR_free(port->port_version);
 
 	if (port->port_connection)
-		ALLR_free((UCHAR *) port->port_connection);
+		ALLR_free(port->port_connection);
 
 	if (port->port_user_name)
-		ALLR_free((UCHAR *) port->port_user_name);
+		ALLR_free(port->port_user_name);
 
 	if (port->port_protocol_str)
-		ALLR_free((UCHAR *) port->port_protocol_str);
+		ALLR_free(port->port_protocol_str);
 
 	if (port->port_address_str)
-		ALLR_free((UCHAR *) port->port_address_str);
+		ALLR_free(port->port_address_str);
 
 	if (port->port_host)
-		ALLR_free((UCHAR *) port->port_host);
+		ALLR_free(port->port_host);
 
 	if (port->port_object_vector)
-		ALLR_free((UCHAR *) port->port_object_vector);
+		ALLR_free(port->port_object_vector);
 
 #ifdef DEBUG_XDR_MEMORY
 	if (port->port_packet_vector)
-		ALLR_free((UCHAR *) port->port_packet_vector);
+		ALLR_free(port->port_packet_vector);
 #endif
 
-	ALLR_release((UCHAR *) port);
+	ALLR_free(port);
 	return;
 }
 
 
-static void exit_handler( rem_port* main_port)
+static void exit_handler(void* main_port)
 {
 /**************************************
  *
@@ -873,7 +845,7 @@ static void exit_handler( rem_port* main_port)
  *	to allow restart.
  *
  **************************************/
-	for (rem_port* vport = main_port; vport; vport = vport->port_next)
+	for (rem_port* vport = static_cast<rem_port*>(main_port); vport; vport = vport->port_next)
 		CloseHandle(vport->port_handle);
 }
 
@@ -1113,7 +1085,6 @@ static void wnet_gen_error( rem_port* port, ISC_STATUS status, ...)
  *	save the status vector strings in a permanent place.
  *
  **************************************/
-	port->port_flags |= PORT_broken;
 	port->port_state = state_broken;
 
 	ISC_STATUS* status_vector = NULL;
@@ -1324,7 +1295,7 @@ static bool_t wnet_putlong( XDR * xdrs, const SLONG* lp)
  **************************************/
 	const SLONG l = htonl(*lp);
 	return (*xdrs->x_ops->x_putbytes) (xdrs,
-									   reinterpret_cast<const char*>(AOF32L(l)),
+									   reinterpret_cast<const char*>(&l),
 									   4);
 }
 
@@ -1355,25 +1326,12 @@ static bool_t wnet_read( XDR * xdrs)
 		p += xdrs->x_handy;
 	}
 
-/* If an ACK is pending, do an ACK.  The alternative is deadlock. */
-
-/*
-if (port->port_flags & PORT_pend_ack)
-    if (!packet_send (port, 0, 0))
-	return FALSE;
-*/
-
 	while (true) {
 		SSHORT length = end - p;
 		if (!packet_receive
 			(port, reinterpret_cast<UCHAR*>(p), length, &length))
 		{
 			return FALSE;
-	/***
-	if (!packet_send (port, 0, 0))
-	    return FALSE;
-	continue;
-	***/
 		}
 		if (length >= 0) {
 			p += length;
@@ -1384,8 +1342,7 @@ if (port->port_flags & PORT_pend_ack)
 			return FALSE;
 	}
 
-	port->port_flags |= PORT_pend_ack;
-	xdrs->x_handy = (int) ((SCHAR *) p - xdrs->x_base);
+	xdrs->x_handy = (int) (p - xdrs->x_base);
 	xdrs->x_private = xdrs->x_base;
 
 	return TRUE;
@@ -1438,7 +1395,6 @@ static bool_t wnet_write( XDR * xdrs, bool_t end_flag)
    that with a negative length.  A positive length marks the end. */
 
 	while (length) {
-		vport->port_misc1 = (vport->port_misc1 + 1) % MAX_SEQUENCE;
 		const SSHORT l = MIN(length, MAX_DATA);
 		length -= l;
 		if (!packet_send(vport, p, (SSHORT) (length ? -l : l)))
@@ -1550,25 +1506,7 @@ static int packet_send( rem_port* port, const SCHAR* buffer, SSHORT buffer_lengt
 	packet_print("send", (UCHAR*)buffer, buffer_length);
 #endif
 
-	port->port_flags &= ~PORT_pend_ack;
-
 	return TRUE;
-}
-
-
-static void wnet_copy(const UCHAR* from, SCHAR* to, int length)
-{
-/**************************************
- *
- *      w n e t _ c o p y
- *
- **************************************
- *
- * Functional description
- *      Copy a number of bytes;
- *
- **************************************/
-	memcpy(to, from, length);
 }
 
 
@@ -1610,4 +1548,3 @@ static void wnet_make_file_name( TEXT* name, DWORD number)
 	}
 	*p++ = 0;
 }
-

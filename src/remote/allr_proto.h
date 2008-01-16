@@ -39,7 +39,6 @@ blk*	ALLR_block(UCHAR, ULONG);
 
 blk*	ALLR_clone(blk*);
 void	ALLR_free (void *);
-void	ALLR_release (void *);
 rem_vec*	ALLR_vector (rem_vec**, ULONG);
 
 #endif // REMOTE_ALLR_PROTO_H

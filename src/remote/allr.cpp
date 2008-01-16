@@ -60,11 +60,6 @@ static const struct
 
 
 
-#ifdef SUPERSERVER
-SLONG allr_delta_alloc = 0;
-#endif
-
-
 //____________________________________________________________
 //
 //	Allocate a block.
@@ -84,13 +79,10 @@ UCHAR* ALLR_alloc(ULONG size)
 
 	if (block)
 	{
-#ifdef SUPERSERVER
-		allr_delta_alloc += size;
-#endif
 		return block;
 	}
 
-	// FREE: caller must free - usually using ALLR_release.
+	// FREE: caller must free - usually using ALLR_free.
 	// NOMEM: post a user level error, if we have a status vector,
 	//        otherwise just an error return
 
@@ -112,52 +104,11 @@ BLK ALLR_block(UCHAR type, ULONG count)
 {
 	if (type <= (UCHAR) type_MIN || type >= (UCHAR) type_MAX)
 	{
-		TRDB tdrdb = REM_get_thread_data();
-		ISC_STATUS* status_vector = tdrdb->trdb_status_vector;
-
-		if (status_vector)
-		{
-			status_vector[0] = isc_arg_gds;
-			status_vector[1] = isc_bug_check;
-			status_vector[2] = isc_arg_string;
-			status_vector[4] = isc_arg_end;
-#ifndef EMBEDDED
-			TEXT errmsg[128];
-			const SSHORT lookup_result =
-				gds__msg_lookup(0,
-								JRD_BUGCHK,
-								150,
-								sizeof(errmsg),
-								errmsg,
-								NULL);
-			if (lookup_result < 1)
-			{
-				status_vector[3] =
-					(ISC_STATUS) "request to allocate invalid block type";
-			}
-			else
-			{
-				status_vector[3] = (ISC_STATUS) errmsg;
-				REMOTE_save_status_strings(tdrdb->trdb_status_vector);
-			}
-#else
-			// The old code was suspicious. The address of a local, non-static var
-			// was being passed. If REMOTE_save_status_strings() is not called,
-			// then embedded engine clearly shouldn't try to read the status
-			// vector where the exception is trapped, because "errmsg" would
-			// vanish before that => illegal address in the stack. This was
-			// exactly the state of the code prior to this change: embedded
-			// isn't allowed to call REMOTE_save_status_strings().
-			// Therefore, the solution for embedded was to hardcode bugcheck 150.
-			status_vector[3] = (ISC_STATUS) "request to allocate invalid block type";
-#endif
-			Firebird::status_exception::raise(status_vector);
-		}
 		Firebird::BadAlloc::raise();
 	}
 
-	ULONG size		= REM_block_sizes[type].typ_root_length;
-	ULONG tail		= REM_block_sizes[type].typ_tail_length;
+	ULONG size = REM_block_sizes[type].typ_root_length;
+	ULONG tail = REM_block_sizes[type].typ_tail_length;
 
 	if (tail && count > 1) {
 		size += (count - 1) * tail;
@@ -171,7 +122,7 @@ BLK ALLR_block(UCHAR type, ULONG count)
 #endif
 
 	// NOMEM: callee handled
-	// FREE:  caller must handle - use ALLR_release
+	// FREE:  caller must handle - use ALLR_free
 
 	block->blk_type = type;
 	block->blk_length = size;
@@ -198,7 +149,7 @@ BLK ALLR_clone(BLK block)
 	BLK clone = (BLK) ALLR_alloc(l);
 
 	// NOMEM: ALLR_alloc() handled
-	// FREE:  caller must handle  - use ALLR_release
+	// FREE:  caller must handle  - use ALLR_free
 
 	memcpy(clone, block, l);
 	return clone;
@@ -211,21 +162,7 @@ BLK ALLR_clone(BLK block)
 //
 void ALLR_free( void *block)
 {
-#ifdef SUPERSERVER
-	allr_delta_alloc -= gds__free(block);
-#else
 	gds__free(block);
-#endif
-}
-
-
-//____________________________________________________________
-//
-//	Release a structured block.
-//
-void ALLR_release( void *block)
-{
-	ALLR_free(block);
 }
 
 
@@ -259,8 +196,7 @@ rem_vec* ALLR_vector(rem_vec** ptr, ULONG count)
 	while (q < end) {
 		*p++ = *q++;
 	}
-	ALLR_release(vector);
+	ALLR_free(vector);
 
 	return new_vector;
 }
-

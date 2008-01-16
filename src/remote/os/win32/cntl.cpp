@@ -25,7 +25,7 @@
 #include <stdio.h>
 #include "../jrd/common.h"
 #include "../remote/remote.h"
-#include "../jrd/thd.h"
+#include "../jrd/ThreadStart.h"
 #include "../utilities/install/install_nt.h"
 #include "../remote/os/win32/cntl_proto.h"
 #include "../jrd/gds_proto.h"
@@ -59,7 +59,6 @@ static HANDLE stop_event_handle;
 static Firebird::Mutex thread_mutex;
 static cntl_thread* threads = NULL;
 static HANDLE hMutex = NULL;
-static bool bGuarded = false;
 
 
 void CNTL_init(ThreadEntryPoint* handler, const TEXT* name)
@@ -263,7 +262,7 @@ static void WINAPI control_thread( DWORD action)
 	switch (action) {
 	case SERVICE_CONTROL_STOP:
 		report_status(SERVICE_STOP_PENDING, NO_ERROR, 1, 3000);
-		if (bGuarded == true)
+		if (hMutex)
 			ReleaseMutex(hMutex);
 		SetEvent(stop_event_handle);
 		return;
@@ -271,18 +270,15 @@ static void WINAPI control_thread( DWORD action)
 	case SERVICE_CONTROL_INTERROGATE:
 		break;
 
-#if (defined SUPERCLIENT || defined SUPERSERVER)
 	case SERVICE_CREATE_GUARDIAN_MUTEX:
 		hMutex = OpenMutex(SYNCHRONIZE, FALSE, mutex_name->c_str());
 		if (hMutex) {
 			UINT error_mode = SEM_FAILCRITICALERRORS | SEM_NOGPFAULTERRORBOX |
 				SEM_NOOPENFILEERRORBOX | SEM_NOALIGNMENTFAULTEXCEPT;
 			SetErrorMode(error_mode);
-			bGuarded = true;
 			WaitForSingleObject(hMutex, INFINITE);
 		}
 		break;
-#endif
 
 	default:
 		break;
@@ -377,4 +373,3 @@ static USHORT report_status(
 
 	return ret;
 }
-

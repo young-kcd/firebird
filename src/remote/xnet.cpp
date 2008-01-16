@@ -53,8 +53,6 @@
 #pragma FB_COMPILER_MESSAGE("POSIX implementation is required")
 #endif // WIN_NT
 
-const int MAX_SEQUENCE = 256;
-
 static int accept_connection(rem_port*, P_CNCT *);
 static rem_port* alloc_port(rem_port*, UCHAR *, ULONG, UCHAR *, ULONG);
 static rem_port* aux_connect(rem_port*, PACKET*, t_event_ast);
@@ -268,7 +266,7 @@ rem_port* XNET_analyze(Firebird::PathName& file_name,
 
 	rem_port* port = XNET_connect(node_name, packet, status_vector, 0);
 	if (!port) {
-		ALLR_release((BLK) rdb);
+		ALLR_free(rdb);
 		return NULL;
 	}
 
@@ -304,7 +302,7 @@ rem_port* XNET_analyze(Firebird::PathName& file_name,
 		}
 
 		if (!(port = XNET_connect(node_name, packet, status_vector, 0))) {
-			ALLR_release((BLK) rdb);
+			ALLR_free(rdb);
 			return NULL;
 		}
 
@@ -340,7 +338,7 @@ rem_port* XNET_analyze(Firebird::PathName& file_name,
 		}
 
 		if (!(port = XNET_connect(node_name, packet, status_vector, 0))) {
-			ALLR_release((BLK) rdb);
+			ALLR_free(rdb);
 			return NULL;
 		}
 
@@ -368,7 +366,7 @@ rem_port* XNET_analyze(Firebird::PathName& file_name,
 	temp.printf("%s/P%d", port->port_version->str_data, 
 						  port->port_protocol & FB_PROTOCOL_MASK);
 
-	ALLR_free((UCHAR *) port->port_version);
+	ALLR_free(port->port_version);
 	port->port_version = REMOTE_make_string(temp.c_str());
 
 	if (packet->p_acpt.p_acpt_architecture == ARCHITECTURE)
@@ -654,7 +652,7 @@ static rem_port* alloc_port(rem_port* parent,
 		port->port_server = parent->port_server;
 		port->port_server_flags = parent->port_server_flags;
 		if (port->port_connection)
-			ALLR_free((UCHAR *) port->port_connection);
+			ALLR_free(port->port_connection);
 		port->port_connection =
 			REMOTE_make_string(parent->port_connection->str_data);
 	}
@@ -976,7 +974,7 @@ static void cleanup_comm(XCC xcc)
 
 	XPM xpm = xcc->xcc_xpm;
 
-	ALLR_free((UCHAR *) xcc);
+	ALLR_free(xcc);
 
 	// if this was the last area for this map, unmap it
 
@@ -1003,8 +1001,7 @@ static void cleanup_comm(XCC xcc)
 					}
 				}
 			}
-
-			ALLR_free((UCHAR *) xpm);
+			ALLR_free(xpm);
 		}
 
 		XNET_UNLOCK();
@@ -1031,34 +1028,34 @@ static void cleanup_port(rem_port* port)
 	}
 	
 	if (port->port_version) {
-		ALLR_free((UCHAR *) port->port_version);
+		ALLR_free(port->port_version);
 	}
 
 	if (port->port_connection) {
-		ALLR_free((UCHAR *) port->port_connection);
+		ALLR_free(port->port_connection);
 	}
 
 	if (port->port_user_name) {
-		ALLR_free((UCHAR *) port->port_user_name);
+		ALLR_free(port->port_user_name);
 	}
 
 	if (port->port_host) {
-		ALLR_free((UCHAR *) port->port_host);
+		ALLR_free(port->port_host);
 	}
 
 	if (port->port_object_vector) {
-		ALLR_free((UCHAR *) port->port_object_vector);
+		ALLR_free(port->port_object_vector);
 	}
 
 	if (port->port_protocol_str) {
-		ALLR_free((UCHAR *) port->port_protocol_str);
+		ALLR_free(port->port_protocol_str);
 	}
 
 	if (port->port_address_str) {
-		ALLR_free((UCHAR *) port->port_address_str);
+		ALLR_free(port->port_address_str);
 	}
 
-	ALLR_free((BLK) port);
+	ALLR_free(port);
 }
 
 
@@ -1475,16 +1472,11 @@ static void disconnect(rem_port* port)
 		}
 	}
 	else if (port->port_async) {
-		/* If we're MULTI_THREAD then we cannot free the port because another
-		 * thread might be using it.  If we're SUPERSERVER we must free the
-		 * port to avoid a memory leak.  What we really need to know is if we
-		 * have multi-threaded events, but this is transport specific.
-		 * -smistry 10/29/98 */
-#if (defined (MULTI_THREAD) && !defined (SUPERSERVER))
-		port->port_async->port_flags |= PORT_disconnect;
-#else
+#ifdef SUPERSERVER
 		disconnect(port->port_async);
 		port->port_async = NULL;
+#else
+		port->port_async->port_flags |= PORT_disconnect;
 #endif
 	}
 
@@ -1679,15 +1671,15 @@ static void xnet_gen_error( rem_port* port, ISC_STATUS status, ...)
  *	save the status vector strings in a permanent place.
  *
  **************************************/
-	ISC_STATUS *status_vector = NULL;
-
-	port->port_flags |= PORT_broken;
 	port->port_state = state_broken;
 
-	if (port->port_context != NULL)
+	ISC_STATUS* status_vector = NULL;
+	if (port->port_context != NULL) {
 		status_vector = port->port_context->rdb_status_vector;
-	if (status_vector == NULL)
+	}
+	if (status_vector == NULL) {
 		status_vector = port->port_status_vector;
+	}
 	if (status_vector != NULL) {
 		STUFF_STATUS(status_vector, status)
 		REMOTE_save_status_strings(status_vector);
@@ -1965,7 +1957,7 @@ static bool_t xnet_putlong(XDR * xdrs, const SLONG* lp)
  *
  **************************************/
 
-	return (*xdrs->x_ops->x_putbytes) (xdrs, reinterpret_cast<const char*>(AOF32L(*lp)), 4);
+	return (*xdrs->x_ops->x_putbytes) (xdrs, reinterpret_cast<const char*>(lp), 4);
 }
 
 
@@ -2027,7 +2019,7 @@ static bool_t xnet_read(XDR * xdrs)
 			}
 			else {
 				THREAD_ENTER();
-				// Another side is dead or something bad has happaned
+				// Another side is dead or something bad has happened
 #ifdef SUPERCLIENT
 				server_shutdown(port);
 				xnet_error(port, isc_lost_db_connection, 0);								
@@ -2067,7 +2059,6 @@ static bool_t xnet_write(XDR * xdrs)
 
 	xch->xch_length = xdrs->x_private - xdrs->x_base;
 	if (SetEvent(xcc->xcc_event_send_channel_filled)) {
-		port->port_misc1 = (port->port_misc1 + 1) % MAX_SEQUENCE;
 		xdrs->x_private = xdrs->x_base;
 		xdrs->x_handy = xch->xch_size;
 
@@ -2128,7 +2119,7 @@ void release_all()
 		nextxpm = nextxpm->xpm_next;
 		UnmapViewOfFile(xpm->xpm_address);
 		CloseHandle(xpm->xpm_handle);
-		ALLR_free((UCHAR *) xpm);
+		ALLR_free(xpm);
 	}
 
 	global_client_maps = NULL;
@@ -2355,8 +2346,10 @@ static XPM get_free_slot(ULONG* map_num, ULONG* slot_num, ULONG* timestamp)
 		// find an available unused comm area
 
 		for (i = 0; i < global_slots_per_map; i++)
+		{
 			if (xpm->xpm_ids[i] == XPM_FREE)
 				break;
+		}
 
 		if (i < global_slots_per_map) {
 			xpm->xpm_count++;

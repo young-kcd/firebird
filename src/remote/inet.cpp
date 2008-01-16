@@ -82,7 +82,7 @@
 #endif
 #endif /* SUPERSERVER */
 
-#if !(defined VMS || defined WIN_NT)
+#ifndef WIN_NT
 #include <netinet/tcp.h>
 #include <netinet/in.h>
 #include <netdb.h>
@@ -91,7 +91,7 @@
 #ifndef INADDR_NONE
 #define INADDR_NONE (unsigned long)-1
 #endif
-#endif // !(defined VMS || defined WIN_NT)
+#endif // !WIN_NT
 
 #if (defined DARWIN || defined HPUX)
 extern "C" int innetgr(const char*, const char*, const char*, const char*);
@@ -108,10 +108,8 @@ const int INET_RETRY_CALL	= 5;
 #include "../remote/remot_proto.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/isc_proto.h"
-#ifndef REQUESTER
 #include "../jrd/os/isc_i_proto.h"
 #include "../jrd/sch_proto.h"
-#endif /* REQUESTER */
 
 #include "../jrd/thread_proto.h"
 #include "../common/config/config.h"
@@ -122,25 +120,10 @@ const int INET_RETRY_CALL	= 5;
 extern int h_errno;
 #endif
 
-#ifdef VMS
-#include <perror.h>
-#include <socket.h>
-#define NO_FORK
-const USHORT MAX_PTYPE	= ptype_batch_send;
-const char* PROXY_FILE	= "[sysmgr]gds_proxy.dat";
-const char* HOSTS_FILE = "";
-const char* GDS_HOSTS_FILE = "";
-#error "vms implementation must be completed"
-#else // VMS
 const char* PROXY_FILE	= "/etc/gds_proxy";
 const char* HOSTS_FILE	= "/etc/hosts.equiv";
-#ifdef MULTI_THREAD
 const USHORT MAX_PTYPE	= ptype_lazy_send;
-#else
-const USHORT MAX_PTYPE	= ptype_out_of_band;
-#endif
 const char* GDS_HOSTS_FILE	= "/etc/gds_hosts.equiv";
-#endif // VMS
 
 #ifdef WIN_NT
 
@@ -200,7 +183,6 @@ static bool first_time = true;
 //#define DEBUG	1
 //
 
-#ifndef REQUESTER
 #ifdef DEBUG
 #ifdef HAVE_SYS_TIMEB_H
 # include <sys/timeb.h>
@@ -244,13 +226,10 @@ static ULONG inet_debug_timer(void)
 #endif /* HAVE_GETTIMEOFDAY */
 }
 #endif /* DEBUG */
-#endif /* !REQUESTER */
 
 const SLONG MAX_DATA_LW		= 1448;		/* Low  Water mark */
 const SLONG MAX_DATA_HW		= 32768;	/* High Water mark */
 const SLONG DEF_MAX_DATA	= 8192;
-
-const int MAX_SEQUENCE		= 256;
 
 const int MAXHOSTLEN		= 64;
 
@@ -264,6 +243,10 @@ typedef struct slct
 	fd_set	slct_fdset;
 } SLCT;
 
+#ifdef SUPERSERVER
+#define DEFER_PORT_CLEANUP
+#endif
+
 static int		accept_connection(rem_port*, P_CNCT *);
 #ifdef HAVE_SETITIMER
 static void		alarm_handler(int);
@@ -272,11 +255,7 @@ static rem_port*		alloc_port(rem_port*);
 static rem_port*		aux_connect(rem_port*, PACKET*, t_event_ast);
 static rem_port*		aux_request(rem_port*, PACKET*);
 #if !defined(WIN_NT)
-#ifndef VMS
 static int		check_host(rem_port*, TEXT*, const TEXT*, const struct passwd*);
-#else
-static int		check_host(rem_port*, TEXT*, const TEXT*);
-#endif // VMS
 static bool		check_proxy(rem_port*, TEXT*, Firebird::string&);
 #endif // WIN_NT
 static void		cleanup_port(rem_port*);
@@ -292,13 +271,14 @@ static int fork(SOCKET, USHORT);
 #endif
 
 static in_addr get_bind_address();
-static in_addr get_host_address(const Firebird::string&);
+static in_addr get_host_address(const Firebird::string& name,
+								in_addr* const host_addr_arr,
+								const int arr_size);
 
 static void copy_p_cnct_repeat_array(	p_cnct::p_cnct_repeat*			pDest,
 										const p_cnct::p_cnct_repeat*	pSource,
 										size_t							nEntries);
 
-static void		inet_copy(const void*, UCHAR*, int);
 static int		inet_destroy(XDR *);
 static void		inet_gen_error(rem_port*, ISC_STATUS, ...);
 #if !defined(SUPERSERVER) || defined(EMBEDDED)
@@ -323,7 +303,6 @@ static rem_port*		inet_try_connect(	PACKET*,
 									const UCHAR*,
 									USHORT);
 static bool_t	inet_write(XDR *, int);
-static void		inet_zero(sockaddr_in*, int);
 #if !(defined WIN_NT)
 static int		parse_hosts(const TEXT*, const TEXT*, const TEXT*);
 static int		parse_line(const TEXT*, const TEXT*, const TEXT*, const TEXT*);
@@ -344,7 +323,7 @@ static int		select_wait(rem_port*, SLCT *);
 static int		send_full(rem_port*, PACKET *);
 static int		send_partial(rem_port*, PACKET *);
 
-#ifdef  SUPERSERVER
+#ifdef DEFER_PORT_CLEANUP
 static void		unhook_disconnected_ports(rem_port*);
 #endif
 
@@ -385,7 +364,7 @@ static XDR::xdr_ops inet_ops =
 #define	FD_SET(n, p)	((p)->fds_bits[(n) / NFDBITS] |= (1 << ((n) % NFDBITS)))
 #define	FD_CLR(n, p)	((p)->fds_bits[(n) / NFDBITS] &= ~(1 << ((n) % NFDBITS)))
 #define	FD_ISSET(n, p)	((p)->fds_bits[(n) / NFDBITS] & (1 << ((n) % NFDBITS)))
-#define FD_ZERO(p)	inet_zero(p, sizeof(*(p)))
+#define FD_ZERO(p)	memset(p, 0, sizeof(*(p)))
 #endif
 #endif
 
@@ -404,11 +383,7 @@ static WSADATA INET_wsadata;
 #define	INTERRUPT_ERROR(x)	(SYSCALL_INTERRUPTED(x))
 #endif
 
-#ifdef  SUPERSERVER
-
-static Firebird::Mutex	port_mutex;
-
-#define DEFER_PORT_CLEANUP
+static Firebird::Mutex port_mutex;
 
 inline void START_PORT_CRITICAL() 
 {
@@ -419,15 +394,8 @@ inline void START_PORT_CRITICAL()
 
 inline void STOP_PORT_CRITICAL()
 {
-	THREAD_EXIT();
 	port_mutex.leave();
-	THREAD_ENTER();
 }
-
-#else
-inline void START_PORT_CRITICAL() { }
-inline void STOP_PORT_CRITICAL() { }
-#endif
 
 
 rem_port* INET_analyze(Firebird::PathName& file_name,
@@ -476,7 +444,6 @@ rem_port* INET_analyze(Firebird::PathName& file_name,
 	if ((eff_uid == -1) || uv_flag) {
 		user_id.insertTag(CNCT_user_verification);
 	}
-#if !(defined VMS)
 	else
 	{
 		/* Communicate group id info to server, as user maybe running under group
@@ -484,9 +451,8 @@ rem_port* INET_analyze(Firebird::PathName& file_name,
 
 		eff_gid = htonl(eff_gid);
 		user_id.insertBytes(CNCT_group, 
-			reinterpret_cast<UCHAR*>(AOF32L(eff_gid)), sizeof(SLONG));
+			reinterpret_cast<UCHAR*>(&eff_gid), sizeof(SLONG));
 	}
-#endif
 
 /* Establish connection to server */
 
@@ -504,7 +470,7 @@ rem_port* INET_analyze(Firebird::PathName& file_name,
 	{
 		REMOTE_PROTOCOL(PROTOCOL_VERSION8, ptype_rpc, MAX_PTYPE, 1),
 		REMOTE_PROTOCOL(PROTOCOL_VERSION10, ptype_rpc, MAX_PTYPE, 2),
-		REMOTE_PROTOCOL(PROTOCOL_VERSION11, ptype_rpc, MAX_PTYPE, 3),
+		REMOTE_PROTOCOL(PROTOCOL_VERSION11, ptype_rpc, MAX_PTYPE, 3)
 #ifdef SCROLLABLE_CURSORS
 		,
 		REMOTE_PROTOCOL(PROTOCOL_SCROLLABLE_CURSORS, ptype_rpc, MAX_PTYPE, 99)
@@ -657,9 +623,6 @@ rem_port* INET_connect(const TEXT* name,
 	status_vector[0] = isc_arg_gds;
 	status_vector[1] = 0;
 	status_vector[2] = isc_arg_end;
-#ifdef VMS
-	ISC_tcp_setup(ISC_wait, gds__completion_ast);
-#endif
 
 	Firebird::string host;
 	Firebird::string protocol;
@@ -696,26 +659,7 @@ rem_port* INET_connect(const TEXT* name,
 /* Set up Inter-Net socket address */
 
 	struct sockaddr_in address;
-	inet_zero(&address, sizeof(address));
-
-#ifdef VMS
-	/* V M S */
-	if (getservport(protocol.c_str(), "tcp", &address.sin_port) == -1) {
-		inet_error(port, "getservbyname", isc_net_connect_err, 0);
-		disconnect(port);
-		return NULL;
-	}
-	if (packet) {
-		if (getaddr(host.c_str(), &address) == -1) {
-			inet_error(port, "gethostbyname", isc_net_connect_err, 0);
-			disconnect(port);
-			return NULL;
-		}
-	}
-	else {
-		address.sin_addr.s_addr = INADDR_ANY;
-	}
-#else
+	memset(&address, 0, sizeof(address));
 
 	TEXT msg[BUFFER_SMALL];
 
@@ -723,11 +667,15 @@ rem_port* INET_connect(const TEXT* name,
 
 	address.sin_family = AF_INET;
 
+	// define maximum numbers of addresses for a host that we can handle
+	const int MAX_HOST_ADDRESS_NUMBER = 8;
+
 	in_addr host_addr;
+	in_addr host_addr_arr[MAX_HOST_ADDRESS_NUMBER];
 
 	if (packet) {
 		// client connection
-		host_addr = get_host_address(host);
+		host_addr = get_host_address(host, host_addr_arr, MAX_HOST_ADDRESS_NUMBER);
 
 		if (host_addr.s_addr == INADDR_NONE)
 		{
@@ -750,10 +698,6 @@ rem_port* INET_connect(const TEXT* name,
 		// server connection
 		host_addr = get_bind_address();
 	}
-
-	inet_copy(&host_addr,
-				(UCHAR*) &address.sin_addr,
-				sizeof(address.sin_addr));
 
 	THREAD_EXIT();
 
@@ -829,7 +773,6 @@ rem_port* INET_connect(const TEXT* name,
 	}							/* else (service found) */
 
 /* end of modifications by luz */
-#endif /* VMS */
 
 /* Allocate a port block and initialize a socket for communications */
 
@@ -847,21 +790,32 @@ rem_port* INET_connect(const TEXT* name,
     int n;
     
 	if (packet) {
-		THREAD_EXIT();
-		n = connect((SOCKET) port->port_handle,
+		int inetErrNo = 0;
+		for (int i = 0; i < MAX_HOST_ADDRESS_NUMBER; i++)
+		{
+			address.sin_addr = host_addr_arr[i];
+			if (address.sin_addr.s_addr == 0L)
+				break; // all addresses tried and failed - get out and print the last error
+
+			// If host has two addresses and the first one failed,
+			// but the second one succeeded - no need to worry
+
+			THREAD_EXIT();
+			n = connect((SOCKET) port->port_handle,
 					(struct sockaddr *) &address, sizeof(address));
-		const int inetErrNo = INET_ERRNO;
-		THREAD_ENTER();
-		if (n != -1 && send_full(port, packet))
-			return port;
-		else {
-			inet_error(port, "connect", isc_net_connect_err, inetErrNo);
-			disconnect(port);
-			return NULL;
+			inetErrNo = INET_ERRNO;
+			THREAD_ENTER();
+			if (n != -1 && send_full(port, packet))
+				return port;
 		}
+		inet_error(port, "connect", isc_net_connect_err, inetErrNo);
+		disconnect(port);
+		return NULL;
 	}
 
-/* We're a server, so wait for a host to show up */
+	// We're a server, so wait for a host to show up
+
+	memcpy(&address.sin_addr, &host_addr, sizeof(address.sin_addr));
 
 	if (flag & SRVR_multi_client) {
 		struct linger lingerInfo;
@@ -1027,9 +981,6 @@ rem_port* INET_server(int sock)
  *
  **************************************/
 	int n = 0;
-#ifdef VMS
-	ISC_tcp_setup(ISC_wait, gds__completion_ast);
-#endif
 	rem_port* port = alloc_port(0);
 	port->port_server_flags |= SRVR_server;
 	port->port_handle = (HANDLE) sock;
@@ -1132,34 +1083,7 @@ static int accept_connection(rem_port* port,
 		port->port_flags |= PORT_not_trusted; // never tested
 	}
 
-#if !defined(WIN_NT)
-
-#ifdef VMS
-	else
-	{
-		TEXT host[MAXHOSTLEN];
-		const int trusted = check_host(port, host, name);
-		if (!trusted) {
-			return FALSE;
-		}
-
-		if (trusted == -1) {
-			eff_gid = eff_uid = -1;
-			port->port_flags |= PORT_not_trusted; // never tested
-		}
-		else
-		{
-			check_proxy(port, host, name);
-
-			if (!port->port_parent) {
-				if (!chuser(name))
-					return FALSE;
-				ISC_get_user(name, &eff_uid, &eff_gid, 0, 0, 0, 0);
-			}
-			/* ??? How to get uic for multi-client server case ??? */
-		}
-	}
-#else
+#ifndef WIN_NT
 	else
 	{
 		/* Security check should be against remote name passed - so do
@@ -1242,7 +1166,6 @@ static int accept_connection(rem_port* port,
 			}
 		}
 	}
-#endif /* VMS */
 
 #endif /* !WIN_NT */
 
@@ -1257,7 +1180,7 @@ static int accept_connection(rem_port* port,
 	struct sockaddr_in address;
 	socklen_t l = sizeof(address);
 
-	inet_zero(&address, sizeof(address));
+	memset(&address, 0, sizeof(address));
 	int status = getpeername((SOCKET) port->port_handle, (struct sockaddr *) &address, &l);
 	if (status == 0) {
 		Firebird::string addr_str;
@@ -1444,7 +1367,7 @@ static rem_port* aux_connect(rem_port* port, PACKET* packet, t_event_ast ast)
  * should be configured to be a fixed port number in the server configuration.
  */
 
-	inet_zero(&address, sizeof(address));
+	memset(&address, 0, sizeof(address));
 	int status = getpeername((SOCKET) port->port_handle, (struct sockaddr *) &address, &l);
 	if (status != 0) {
 		inet_error(port, "socket", isc_net_event_connect_err, INET_ERRNO);
@@ -1510,9 +1433,7 @@ static rem_port* aux_request( rem_port* port, PACKET* packet)
 
 	address.sin_family = AF_INET;
 	in_addr bind_addr = get_bind_address();
-	inet_copy(&bind_addr,
-				(UCHAR*) &address.sin_addr,
-				sizeof(address.sin_addr));
+	memcpy(&address.sin_addr, &bind_addr, sizeof(address.sin_addr));
 	address.sin_port = htons(Config::getRemoteAuxPort());
 
 	SOCKET n = socket(AF_INET, SOCK_STREAM, 0);
@@ -1563,55 +1484,15 @@ static rem_port* aux_request( rem_port* port, PACKET* packet)
 		inet_error(port, "getsockname", isc_net_event_listen_err, INET_ERRNO);
 		return NULL;
 	}
-	inet_copy(&port_address.sin_addr,
-				(UCHAR*) &address.sin_addr,
-				sizeof(address.sin_addr));
+	memcpy(&address.sin_addr, &port_address.sin_addr, sizeof(address.sin_addr));
 
 	response->p_resp_data.cstr_length = sizeof(address);
-	inet_copy(&address,
-			  response->p_resp_data.cstr_address,
-			  response->p_resp_data.cstr_length);
+	memcpy(response->p_resp_data.cstr_address, &address, sizeof(address));
 
 	return new_port;
 }
 
 #ifndef WIN_NT
-#ifdef VMS
-static int check_host(rem_port* port,
-					  TEXT* host_name,
-					  const TEXT* user_name)
-{
-/**************************************
- *
- *	c h e c k _ h o s t	( V M S )
- *
- **************************************
- *
- * Functional description
- *	Check the host on the other end of the socket to see it
- *	it's an equivalent host.
- *
- **************************************/
-	struct sockaddr_in address;
-	TEXT hosts_file[MAXPATHLEN];
-
-	int length = sizeof(address);
-
-	if (getpeername((int) port->port_handle, &address, &length) == -1)
-		return FALSE;
-
-	if (getnamebyaddr(&address, sizeof(address), host_name) == -1)
-		return FALSE;
-
-	gethosts(hosts_file);
-	const int result = parse_hosts(hosts_file, host_name, user_name);
-	if (result == -1)
-		result = FALSE;
-
-	return result;
-}
-#else
-
 static int check_host(
 					  rem_port* port,
 					  TEXT* host_name,
@@ -1641,7 +1522,7 @@ static int check_host(
 	if((ntohl(address.sin_addr.s_addr) >> IN_CLASSA_NSHIFT) == IN_LOOPBACKNET)
 		return 1;
 
-	const struct hostent* host = gethostbyaddr((SCHAR *) & address.sin_addr,
+	const struct hostent* host = gethostbyaddr((SCHAR*) &address.sin_addr,
 							   sizeof(address.sin_addr), address.sin_family);
 	if (!host)
 	{
@@ -1674,7 +1555,6 @@ static int check_host(
 	}
 	return result;
 }
-#endif // !non VMS
 #endif // !defined(WIN_NT)
 
 #if !(defined WIN_NT)
@@ -1699,11 +1579,7 @@ static bool check_proxy(rem_port* port,
 	TEXT target_user[BUFFER_TINY];
 	TEXT line[BUFFER_SMALL];
 
-#ifndef VMS
 	strcpy(proxy_file, PROXY_FILE);
-#else
-	gds__prefix(proxy_file, PROXY_FILE);
-#endif
 	FILE* proxy = fopen(proxy_file, "r");
 	if (!proxy)
 		return false;
@@ -1761,7 +1637,6 @@ static void disconnect( rem_port* port)
  *
  **************************************/
 
-#ifndef VMS
 /* SO_LINGER was turned off on the initial bind when the server was started.
  * This will force a reset to be sent to the client when the socket is closed.
  * We only want this behavior in the case of the server terminiating
@@ -1792,9 +1667,7 @@ static void disconnect( rem_port* port)
 
 #endif /* WIN_NT */
 
-#endif /* !VMS */
-
-#if !(defined VMS || defined WIN_NT)
+#ifndef WIN_NT
 	if (port->port_ast) {
 		ISC_signal_cancel(SIGURG, inet_handler, port);
 	}
@@ -1819,12 +1692,7 @@ static void disconnect( rem_port* port)
 #endif
 	}
 	else if (port->port_async) {
-#ifdef MULTI_THREAD
 		port->port_async->port_flags |= PORT_disconnect;
-#else
-		disconnect(port->port_async);
-		port->port_async = NULL;
-#endif
 	}
 
 	if (port->port_handle) {
@@ -1871,29 +1739,29 @@ static void cleanup_port( rem_port* port)
  **************************************/
 
 	if (port->port_version)
-		ALLR_free((UCHAR *) port->port_version);
+		ALLR_free(port->port_version);
 
 	if (port->port_connection)
-		ALLR_free((UCHAR *) port->port_connection);
+		ALLR_free(port->port_connection);
 
 	if (port->port_user_name)
-		ALLR_free((UCHAR *) port->port_user_name);
+		ALLR_free(port->port_user_name);
 
 	if (port->port_host)
-		ALLR_free((UCHAR *) port->port_host);
+		ALLR_free(port->port_host);
 
 	if (port->port_object_vector)
-		ALLR_free((UCHAR *) port->port_object_vector);
+		ALLR_free(port->port_object_vector);
 
 	if (port->port_protocol_str)
-		ALLR_free((UCHAR *) port->port_protocol_str);
+		ALLR_free(port->port_protocol_str);
 
 	if (port->port_address_str)
-		ALLR_free((UCHAR *) port->port_address_str);
+		ALLR_free(port->port_address_str);
 
 #ifdef DEBUG_XDR_MEMORY
 	if (port->port_packet_vector)
-		ALLR_free((UCHAR *) port->port_packet_vector);
+		ALLR_free(port->port_packet_vector);
 #endif
 
 #ifdef SUPERSERVER
@@ -1904,7 +1772,7 @@ static void cleanup_port( rem_port* port)
 	delete port->port_trusted_auth;
 #endif
 
-	ALLR_release((UCHAR *) port);
+	ALLR_free(port);
 	return;
 }
 
@@ -1932,12 +1800,10 @@ static void exit_handler( void *arg)
 	}
 #endif
 
-#ifndef VMS
 	for (rem_port* port = main_port; port; port = port->port_next) {
 		shutdown((int) port->port_handle, 2);
 		SOCLOSE((SOCKET) port->port_handle);
 	}
-#endif
 }
 
 #ifdef NO_FORK
@@ -2030,7 +1896,9 @@ static in_addr get_bind_address()
 	return config_address;
 }
 
-static in_addr get_host_address(const Firebird::string& name)
+static in_addr get_host_address(const Firebird::string& name,
+								in_addr* const host_addr_arr,
+								const int arr_size)
 {
 /**************************************
  *
@@ -2039,17 +1907,18 @@ static in_addr get_host_address(const Firebird::string& name)
  **************************************
  *
  * Functional description
- *	Return host address.
+ *  Fills array with addresses up to arr_size (must be at least 2)
+ *	Return first address from the list.
  *
  **************************************/
-	in_addr address;
 
 	THREAD_EXIT();
 
-	address.s_addr = inet_addr(name.c_str());
+	host_addr_arr[0].s_addr = inet_addr(name.c_str());
+	host_addr_arr[1].s_addr = 0L;
 
-	if (address.s_addr == INADDR_NONE) {
-
+	if (host_addr_arr[0].s_addr == INADDR_NONE)
+	{
 		const hostent* host = gethostbyname(name.c_str());
 
 		/* On Windows NT/9x, gethostbyname can only accomodate
@@ -2069,14 +1938,26 @@ static in_addr get_host_address(const Firebird::string& name)
 			}
 		}
 
-		if (host) {
-			inet_copy(host->h_addr, (UCHAR*) &address, sizeof(address));
+		// We can't work with other types for now. Maybe AF_NETBIOS for MS, too?
+		if (host && host->h_addrtype == AF_INET)
+		{
+			const in_addr* const* list = reinterpret_cast<in_addr**>(host->h_addr_list);
+			for (int i = 0; i < arr_size; ++i)
+			{
+				if (list[i] == NULL)
+				{
+					// Mark the end of the useful entries in host_addr_arr.
+					host_addr_arr[i].s_addr = 0L;
+					break;
+				}
+				host_addr_arr[i] = *list[i];
+			}
 		}
 	}
 
 	THREAD_ENTER();
 
-	return address;
+	return host_addr_arr[0];
 }
 
 //____________________________________________________________
@@ -2092,36 +1973,6 @@ static void copy_p_cnct_repeat_array(	p_cnct::p_cnct_repeat*			pDest,
 	}
 }
 
-
-static void inet_copy(const void* from, UCHAR* to, int length)
-{
-/**************************************
- *
- *	i n e t _ c o p y
- *
- **************************************
- *
- * Functional description
- *	Copy a number of bytes;
- *
- **************************************/
-	memcpy(to, from, length);
-}
-
-static void inet_zero(sockaddr_in* address, int length)
-{
-/**************************************
- *
- *	i n e t _  z e r o
- *
- **************************************
- *
- * Functional description
- *	Zero a block of memory.
- *
- **************************************/
-	memset(address, 0, length);
-}
 
 #if !(defined WIN_NT)
 static int parse_hosts( const TEXT* file_name, const TEXT* host_name,
@@ -2210,7 +2061,7 @@ static int parse_line(
 
 	if (strcmp(entry1, host_name))
 	{
-#if (defined UNIX) && !(defined SINIXZ) && !(defined NETBSD)
+#if (defined UNIX) && !(defined NETBSD)
 		if (entry1[1] == '@')
 		{
 			if (!innetgr(&entry1[2], host_name, 0, 0))
@@ -2239,21 +2090,16 @@ static int parse_line(
 
 /* if they're in the user group: + they're in, - they're out */
 
-#if (defined UNIX) && !(defined SINIXZ) && !(defined NETBSD)
-	if (entry2[1] == '@') {
-		if (innetgr(&entry2[2], 0, user_name, 0)) {
-			if (entry2[0] == '+')
-				return TRUE;
-			else
-				return FALSE;
-		}
-		else {
-			/* if they're NOT in the user group AND we're excluding it
-			   - they're in */
+#if (defined UNIX) && !(defined NETBSD)
+	if (entry2[1] == '@') 
+	{
+		if (innetgr(&entry2[2], 0, user_name, 0))
+			return entry2[0] == '+' ? TRUE : FALSE;
 
-			if (entry2[0] == '-')
-				return TRUE;
-		}
+		// if they're NOT in the user group AND we're excluding it - they're in 
+
+		if (entry2[0] == '-')
+			return TRUE;
 	}
 #endif
 
@@ -2467,7 +2313,7 @@ static rem_port* select_accept( rem_port* main_port)
 	setsockopt((SOCKET) port->port_handle, SOL_SOCKET, SO_KEEPALIVE,
 			   (SCHAR*) &optval, sizeof(optval));
 
-#if !(defined SUPERSERVER || defined VMS || defined WIN_NT)
+#if !(defined SUPERSERVER || defined WIN_NT)
 	int n;
 	for (n = 0, port = main_port->port_clients; port;
 		 n++, port = port->port_next);
@@ -2516,11 +2362,12 @@ static rem_port* select_port( rem_port* main_port, SLCT * selct)
 /* TMN: No, they are "black-box" handles. */
 
 	START_PORT_CRITICAL();
-#ifdef  DEFER_PORT_CLEANUP
+#ifdef DEFER_PORT_CLEANUP
 	unhook_disconnected_ports(main_port);
 #endif
 	for (rem_port* port = main_port; port; port = port->port_next) {
-		if (FD_ISSET(port->port_handle, &selct->slct_fdset)) {
+		if (FD_ISSET(port->port_handle, &selct->slct_fdset))
+		{
 			port->port_dummy_timeout = port->port_dummy_packet_interval;
 
 #pragma FB_COMPILER_MESSAGE("TODO: Make porthandle a SOCKET on Win32")
@@ -2530,7 +2377,7 @@ static rem_port* select_port( rem_port* main_port, SLCT * selct)
 			STOP_PORT_CRITICAL();
 			return port;
 		}
-		else if (port->port_dummy_timeout < 0) {
+		if (port->port_dummy_timeout < 0) {
 			STOP_PORT_CRITICAL();
 			return port;
 		}
@@ -2539,7 +2386,7 @@ static rem_port* select_port( rem_port* main_port, SLCT * selct)
 	STOP_PORT_CRITICAL();
 #else // !defined(WIN_NT)
 	START_PORT_CRITICAL();
-#ifdef  DEFER_PORT_CLEANUP
+#ifdef DEFER_PORT_CLEANUP
 	unhook_disconnected_ports(main_port);
 #endif
 	for (rem_port* port = main_port; port; port = port->port_next) {
@@ -2555,7 +2402,7 @@ static rem_port* select_port( rem_port* main_port, SLCT * selct)
 			STOP_PORT_CRITICAL();
 			return port;
 		}
-		else if (port->port_dummy_timeout < 0) {
+		if (port->port_dummy_timeout < 0) {
 			STOP_PORT_CRITICAL();
 			return port;
 		}
@@ -2606,13 +2453,12 @@ static int select_wait( rem_port* main_port, SLCT * selct)
 		}
 
 		START_PORT_CRITICAL();
-#ifdef  DEFER_PORT_CLEANUP
+#ifdef DEFER_PORT_CLEANUP
 		unhook_disconnected_ports(main_port);
 #endif
 		for (rem_port* port = main_port; port; port = port->port_next)
 		{
-			if ((port->port_state == state_active) ||
-				(port->port_state == state_pending))
+			if (port->port_state == state_pending)
 			{
 				/* Adjust down the port's keepalive timer. */
 
@@ -2723,21 +2569,20 @@ static int select_wait( rem_port* main_port, SLCT * selct)
 				THREAD_ENTER();
 				return TRUE;
 			}
-			else if (INTERRUPT_ERROR(inetErrNo))
+			if (INTERRUPT_ERROR(inetErrNo))
 				continue;
-			else if (inetErrNo == NOTASOCKET)
+			if (inetErrNo == NOTASOCKET)
 			{
 				checkPorts = true;
 				break;
 			}
-			else {
-				THREAD_ENTER();
-				SNPRINTF(msg, FB_NELEM(msg),
-						 "INET/select_wait: select failed, errno = %d",
-						 inetErrNo);
-				gds__log(msg, 0);
-				return FALSE;
-			}
+
+			THREAD_ENTER();
+			SNPRINTF(msg, FB_NELEM(msg),
+					 "INET/select_wait: select failed, errno = %d",
+					 inetErrNo);
+			gds__log(msg, 0);
+			return FALSE;
 		}	// for (;;)
 
 		THREAD_ENTER();
@@ -2847,6 +2692,7 @@ static void alarm_handler( int x)
  **************************************/
 }
 #endif
+
 static XDR_INT inet_destroy( XDR* xdrs)
 {
 /**************************************
@@ -2877,7 +2723,6 @@ static void inet_gen_error( rem_port* port, ISC_STATUS status, ...)
  *	save the status vector strings in a permanent place.
  *
  **************************************/
-	port->port_flags |= PORT_broken;
 	port->port_state = state_broken;
 
 	ISC_STATUS* status_vector = NULL;
@@ -2910,25 +2755,28 @@ static bool_t inet_getbytes( XDR * xdrs, SCHAR * buff, u_int count)
 
 /* Use memcpy to optimize bulk transfers. */
 
-	while (bytecount > (SLONG) sizeof(ISC_QUAD)) {
-		if (xdrs->x_handy >= bytecount) {
+	while (bytecount > (SLONG) sizeof(ISC_QUAD))
+	{
+		if (xdrs->x_handy >= bytecount)
+		{
 			memcpy(buff, xdrs->x_private, bytecount);
 			xdrs->x_private += bytecount;
 			xdrs->x_handy -= bytecount;
 			return TRUE;
 		}
-		else {
-			if (xdrs->x_handy > 0) {
-				memcpy(buff, xdrs->x_private, xdrs->x_handy);
-				xdrs->x_private += xdrs->x_handy;
-				buff += xdrs->x_handy;
-				bytecount -= xdrs->x_handy;
-				xdrs->x_handy = 0;
-			}
-			if (!inet_read(xdrs))
-				return FALSE;
+
+		if (xdrs->x_handy > 0)
+		{
+			memcpy(buff, xdrs->x_private, xdrs->x_handy);
+			xdrs->x_private += xdrs->x_handy;
+			buff += xdrs->x_handy;
+			bytecount -= xdrs->x_handy;
+			xdrs->x_handy = 0;
 		}
-	}
+
+		if (!inet_read(xdrs))
+			return FALSE;
+}
 
 /* Scalar values and bulk transfer remainder fall thru
    to be moved byte-by-byte to avoid memcpy setup costs. */
@@ -3062,22 +2910,10 @@ static void inet_error(
 	TEXT msg[BUFFER_SMALL];
 
 	if (status) {
-#ifdef VMS
-		if ((status >= sys_nerr || !sys_errlist[status]) &&
-			status < WIN_NERR && win_errlist[status])
-		{
-			inet_gen_error(port, isc_network_error,
-						   isc_arg_string,
-						   (ISC_STATUS) port->port_connection->str_data,
-						   isc_arg_gds, operation, isc_arg_string,
-						   (ISC_STATUS) win_errlist[status], 0);
-		}
-		else
-#endif
-			inet_gen_error(port, isc_network_error,
-						   isc_arg_string,
-						   (ISC_STATUS) port->port_connection->str_data,
-						   isc_arg_gds, operation, SYS_ERR, status, 0);
+		inet_gen_error(port, isc_network_error,
+					   isc_arg_string,
+					   (ISC_STATUS) port->port_connection->str_data,
+					   isc_arg_gds, operation, SYS_ERR, status, 0);
 
 		SNPRINTF(msg, FB_NELEM(msg),
 				 "INET/inet_error: %s errno = %d", function, status);
@@ -3109,24 +2945,27 @@ static bool_t inet_putbytes( XDR* xdrs, const SCHAR* buff, u_int count)
 
 /* Use memcpy to optimize bulk transfers. */
 
-	while (bytecount > (SLONG) sizeof(ISC_QUAD)) {
-		if (xdrs->x_handy >= bytecount) {
+	while (bytecount > (SLONG) sizeof(ISC_QUAD))
+	{
+		if (xdrs->x_handy >= bytecount)
+		{
 			memcpy(xdrs->x_private, buff, bytecount);
 			xdrs->x_private += bytecount;
 			xdrs->x_handy -= bytecount;
 			return TRUE;
 		}
-		else {
-			if (xdrs->x_handy > 0) {
-				memcpy(xdrs->x_private, buff, xdrs->x_handy);
-				xdrs->x_private += xdrs->x_handy;
-				buff += xdrs->x_handy;
-				bytecount -= xdrs->x_handy;
-				xdrs->x_handy = 0;
-			}
-			if (!inet_write(xdrs, 0))
-				return FALSE;
+
+		if (xdrs->x_handy > 0)
+		{
+			memcpy(xdrs->x_private, buff, xdrs->x_handy);
+			xdrs->x_private += xdrs->x_handy;
+			buff += xdrs->x_handy;
+			bytecount -= xdrs->x_handy;
+			xdrs->x_handy = 0;
 		}
+
+		if (!inet_write(xdrs, 0))
+			return FALSE;
 	}
 
 /* Scalar values and bulk transfer remainder fall thru
@@ -3168,7 +3007,7 @@ static bool_t inet_putlong( XDR* xdrs, const SLONG* lp)
  **************************************/
 	const SLONG l = htonl(*lp);
 	return (*xdrs->x_ops->x_putbytes) (xdrs,
-									   reinterpret_cast<const char*>(AOF32L(l)),
+									   reinterpret_cast<const char*>(&l),
 									   4);
 }
 
@@ -3198,25 +3037,12 @@ static bool_t inet_read( XDR * xdrs)
 		p += xdrs->x_handy;
 	}
 
-/* If an ACK is pending, do an ACK.  The alternative is deadlock. */
-
-/*
-if (port->port_flags & PORT_pend_ack)
-    if (!packet_send (port, 0, 0))
-	return FALSE;
-*/
-
 	while (true) {
 		SSHORT length = end - p;
 		if (!packet_receive
 			(port, reinterpret_cast<UCHAR*>(p), length, &length))
 		{
 			return FALSE;
-			/***
-			if (!packet_send (port, 0, 0))
-			    return FALSE;
-			continue;
-			***/
 		}
 		if (length >= 0) {
 			p += length;
@@ -3227,7 +3053,6 @@ if (port->port_flags & PORT_pend_ack)
 			return FALSE;
 	}
 
-	port->port_flags |= PORT_pend_ack;
 	xdrs->x_handy = (int) ((SCHAR *) p - xdrs->x_base);
 	xdrs->x_private = xdrs->x_base;
 
@@ -3294,7 +3119,7 @@ static rem_port* inet_try_connect(
 		INET_connect(node_name, packet, status_vector, FALSE, dpb,
 					 dpb_length);
 	if (!port) {
-		ALLR_release((BLK) rdb);
+		ALLR_free(rdb);
 		return NULL;
 	}
 
@@ -3306,7 +3131,7 @@ static rem_port* inet_try_connect(
 		inet_error(port, "receive in try_connect", isc_net_connect_err,
 				   INET_ERRNO);
 		disconnect(port);
-		ALLR_release((BLK) rdb);
+		ALLR_free(rdb);
 		return NULL;
 	}
 
@@ -3339,7 +3164,6 @@ static bool_t inet_write( XDR * xdrs, bool_t end_flag)
 	//p = xdrs->x_base; redundant
 
 	while (length) {
-		port->port_misc1 = (port->port_misc1 + 1) % MAX_SEQUENCE;
 		const SSHORT l = (SSHORT) MIN(length, INET_max_data);
 		length -= l;
 		if (!packet_send(port, p, (SSHORT) ((length) ? -l : l)))
@@ -3398,8 +3222,6 @@ static bool_t inet_write( XDR * xdrs, bool_t end_flag)
 /*
 xdrs->x_handy += JAP_decode (aux_buffer, length, p2);
 */
-	port->port_flags |= PORT_pend_ack;
-
 	return TRUE;
 #endif
 }
@@ -3448,7 +3270,6 @@ static int packet_receive(
  *	a duplicate message, just ignore it.
  *
  **************************************/
-#ifndef REQUESTER
 /* set the time interval for sending dummy packets to the client */
 
 	timeval timeout;
@@ -3479,23 +3300,12 @@ static int packet_receive(
 
 	// Unsed to send a dummy packet, but too big to be defined in the loop.
 	PACKET packet;
-#endif
-
-#ifdef VMS
-	if (ISC_tcp_gettype() == TCP_TYPE_MULTINET)
-	{
-		ph = ph / 16;
-	}
-#endif
 
 	int n = 0;
 	int inetErrNo;
 
 	for (;;)
 	{
-
-#ifndef REQUESTER
-
 		/* Implement an error-detection protocol to ensure that the client
 		   is still there.  Use the select() call with a timeout to wait on
 		   the connection for an incoming packet.  If none comes within a
@@ -3508,14 +3318,7 @@ static int packet_receive(
 		/* Don't send op_dummy packets on aux port; the server won't
 		   read them because it only writes to aux ports. */
 
-		if (port->port_flags & PORT_async)
-		{
-			;
-		}
-		else
-#ifdef VMS
-		if (ISC_tcp_gettype() == TCP_TYPE_MULTINET)
-#endif
+		if (!(port->port_flags & PORT_async))
 		{
 			fd_set slct_fdset;
 			FD_ZERO(&slct_fdset);
@@ -3574,7 +3377,6 @@ static int packet_receive(
 				return FALSE;
 			}
 		}
-#endif /* REQUESTER */
 
 		THREAD_EXIT();
 		n =
@@ -3596,7 +3398,6 @@ static int packet_receive(
 		return FALSE;
 	}
 
-#ifndef REQUESTER
 #ifdef DEBUG
 	{
 		INET_count_recv++;
@@ -3611,7 +3412,6 @@ static int packet_receive(
 			return FALSE;
 		}
 	}
-#endif
 #endif
 
 	*length = n;
@@ -3633,13 +3433,7 @@ static bool_t packet_send( rem_port* port, const SCHAR* buffer, SSHORT buffer_le
  *
  **************************************/
 
-#ifdef SINIXZ
-// Please systems with ill-defined send() function, like SINIX-Z.
-	char* data = const_cast<char*>(buffer);
-#else
 	const char* data = buffer;
-#endif
-
 	SSHORT length = buffer_length;
 
 	while (length) {
@@ -3688,11 +3482,7 @@ static bool_t packet_send( rem_port* port, const SCHAR* buffer, SSHORT buffer_le
 		int count = 0;
 		SSHORT n;
 		int inetErrNo;
-#ifdef SINIXZ
-		char* b = const_cast<char*>(buffer);
-#else
 		const char* b = buffer;
-#endif
 		while ((n = send((SOCKET) port->port_handle, b, 1, MSG_OOB | FB_SEND_FLAGS)) == -1 &&
 				(INET_ERRNO == ENOBUFS || INTERRUPT_ERROR(INET_ERRNO)))
 		{
@@ -3750,7 +3540,6 @@ static bool_t packet_send( rem_port* port, const SCHAR* buffer, SSHORT buffer_le
 		}
 	}
 
-#ifndef REQUESTER
 #ifdef DEBUG
 	{
 		INET_count_send++;
@@ -3766,9 +3555,6 @@ static bool_t packet_send( rem_port* port, const SCHAR* buffer, SSHORT buffer_le
 		}
 	}
 #endif
-#endif
-
-	port->port_flags &= ~PORT_pend_ack;
 
 	return TRUE;
 }
@@ -3799,7 +3585,7 @@ static void unhook_port( rem_port* port, rem_port* parent)
 	}
 }
 
-#ifdef  SUPERSERVER
+#ifdef DEFER_PORT_CLEANUP
 static void unhook_disconnected_ports(rem_port* main_port)
 {
 /**************************************

@@ -31,10 +31,6 @@
 
 #include "../jrd/common.h"
 
-#ifdef VMS
-#error "VMS remote must be completed"
-#endif
-
 #ifdef WIN_NT
 #include <sys/types.h>
 #include <winsock.h>

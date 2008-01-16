@@ -30,7 +30,9 @@
 #define REMOTE_REMOTE_H
 
 #include "../jrd/common.h"
+#include "../remote/allr_proto.h"
 #include "../remote/remote_def.h"
+#include "../jrd/ThreadData.h"
 #include "../jrd/thd.h"
 #include "../common/classes/objects_array.h"
 #include "../auth/trusted/AuthSspi.h"
@@ -40,12 +42,12 @@
 
 /* Include some apollo include files for tasking */
 
-#if !(defined VMS || defined WIN_NT)
+#ifndef WIN_NT
 #include <signal.h>
 #include <fcntl.h>
 #include <sys/socket.h>
 #include <sys/ioctl.h>
-#endif /* !VMS || !WIN_NT */
+#endif // !WIN_NT
 
 
 // Uncomment this line if you need to trace module activity
@@ -106,12 +108,9 @@ typedef struct rtr
 	rtr*		rtr_next;
 	struct rbl*	rtr_blobs;
 	FB_API_HANDLE rtr_handle;
-	USHORT		rtr_flags;
+	bool		rtr_limbo;
 	USHORT		rtr_id;
 } *RTR;
-
-// rtr_flags
-const USHORT RTR_limbo	= 1;
 
 typedef struct rbl
 {
@@ -188,12 +187,8 @@ struct rem_fmt
 	USHORT		fmt_net_length;
 	USHORT		fmt_count;
 	USHORT		fmt_version;
-	USHORT		fmt_flags; // unused
 	struct dsc	fmt_desc[1];
 };
-
-// fmt_flags (not used)
-//#define FMT_has_P10_specific_datatypes	0x1	/* datatypes don't exist in P9 */
 
 /* Windows declares a msg structure, so rename the structure 
    to avoid overlap problems. */
@@ -227,11 +222,7 @@ typedef struct rpr
 	message*	rpr_out_msg;	/* output message */
 	rem_fmt*	rpr_in_format;	/* Format of input message */
 	rem_fmt*	rpr_out_format;	/* Format of output message */
-	USHORT		rpr_flags; // unused
 } *RPR;
-
-// rpr_flags (not used)
-//#define RPR_eof		1		/* End-of-stream encountered */
 
 struct rrq
 {
@@ -380,9 +371,7 @@ enum state_t
 {
 	state_closed,		/* no connection */
 	state_pending,		/* connection is pending */
-	state_eof,			/* other side has shut down */
 	state_broken,		/* connection is broken */
-	state_active,		/* connection is complete */
 	state_disconnected          /* port is disconnected */
 };
 
@@ -457,8 +446,6 @@ struct rem_port
 	ISC_STATUS*		port_status_vector;
 	HANDLE			port_handle;		/* handle for connection (from by OS) */
 	int				port_channel;		/* handle for connection (from by OS) */
-	int				port_misc1;
-	SLONG			port_semaphore;
 	struct linger	port_linger;		/* linger value as defined by SO_LINGER */
 
 	/* port function pointers (C "emulation" of virtual functions) */
@@ -491,9 +478,6 @@ struct rem_port
 	rsr*			port_statement;		/* Statement for execute immediate */
 	rmtque*			port_receive_rmtque;	/* for client, responses waiting */
 	USHORT			port_requests_queued;	/* requests currently queued */
-#ifdef VMS
-	USHORT			port_iosb[4];
-#endif
 	void*			port_xcc;				/* interprocess structure */
 	PacketQueue*	port_deferred_packets;	/* queue of deferred packets */
 	OBJCT			port_last_object_id;	/* cached last id */
@@ -545,7 +529,7 @@ struct rem_port
 		size_t save_qoffset;
 #endif
 
-		RecvQueState(rem_port* port)
+		RecvQueState(const rem_port* port)
 		{ 
 			save_handy = port->port_receive.x_handy;
 			save_private = port->port_receive.x_private - port->port_receive.x_base;
@@ -555,7 +539,7 @@ struct rem_port
 		}
 	};
 
-	RecvQueState getRecvState()
+	RecvQueState getRecvState() const
 	{
 		return RecvQueState(this);
 	}
@@ -620,60 +604,22 @@ struct rem_port
 };
 
 // port_flags
-const USHORT PORT_symmetric		= 1;	/* Server/client archiectures are symmetic */
-const USHORT PORT_rpc			= 2;	/* Protocol is remote procedure call */
-const USHORT PORT_pend_ack		= 4;	/* An ACK is pending on the port */
-const USHORT PORT_broken		= 8;	/* Connect is broken */
-const USHORT PORT_async			= 16;	/* Port is asynchronous channel for events */
-const USHORT PORT_no_oob		= 32;	/* Don't send out of band data */
-const USHORT PORT_disconnect	= 64;	/* Disconnect is in progress */
-//const USHORT PORT_pend_rec		= 128;	// A record is pending on the port
-// This is set only in inet.cpp but never tested.
-const USHORT PORT_not_trusted	= 256;	/* Connection is from an untrusted node */
-// This is tested only in wnet.cpp but never set.
-//const USHORT PORT_impersonate	= 512;	// A remote user is being impersonated
-const USHORT PORT_dummy_pckt_set= 1024;	/* A dummy packet interval is set  */
-const USHORT PORT_partial_data	= 2048;	/* Physical packet doesn't contain all API packet */
-const USHORT PORT_lazy			= 4096;	/* Deferred operations are allowed */
-const USHORT PORT_busy			= 8192;	// disable receive - port is busy now
+const USHORT PORT_symmetric		= 1;	// Server/client archiectures are symmetic
+const USHORT PORT_rpc			= 2;	// Protocol is remote procedure call
+const USHORT PORT_async			= 4;	// Port is asynchronous channel for events
+const USHORT PORT_no_oob		= 8;	// Don't send out of band data
+const USHORT PORT_disconnect	= 16;	// Disconnect is in progress
+// This is set only in inet.cpp but never tested
+const USHORT PORT_not_trusted	= 32;	// Connection is from an untrusted node
+const USHORT PORT_dummy_pckt_set= 64;	// A dummy packet interval is set
+const USHORT PORT_partial_data	= 128;	// Physical packet doesn't contain all API packet
+const USHORT PORT_lazy			= 256;	// Deferred operations are allowed
+const USHORT PORT_busy			= 512;	// Disable receive -- port is busy now
 
-
-/* Misc declarations */
-
-#include "../remote/allr_proto.h"
-#include "../jrd/thd.h"
-
-/* Thread specific remote database block */
-
-class trdb : public ThreadData
-{
-public:
-	trdb(ISC_STATUS* status) 
-		: ThreadData(ThreadData::tddRDB), trdb_status_vector(status)
-	{
-		trdb_database = 0;
-	}
-	rdb*	trdb_database;
-	ISC_STATUS*	trdb_status_vector;
-};
-
-typedef trdb* TRDB;
-
-
-inline trdb* REM_get_thread_data() {
-	return (trdb*) ThreadData::getSpecific();
-}
-inline void REM_set_thread_data(trdb* &tdrdb, trdb* thd_context) {
-	tdrdb = thd_context;
-	tdrdb->putSpecific();
-}
-inline void REM_restore_thread_data() {
-	ThreadData::restoreSpecific();
-}
 
 /* Queuing structure for Client batch fetches */
 
-typedef bool (*t_rmtque_fn)(trdb*, rem_port*, rmtque*, ISC_STATUS*, USHORT);
+typedef bool (*t_rmtque_fn)(rem_port*, rmtque*, ISC_STATUS*, USHORT);
 
 typedef struct rmtque
 {
@@ -688,4 +634,3 @@ typedef struct rmtque
 } *RMTQUE;
 
 #endif // REMOTE_REMOTE_H
-

@@ -20,9 +20,6 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  */
-/*
-$Id: parser.cpp,v 1.18 2004-05-17 10:21:03 brodsom Exp $
-*/
 
 #include "firebird.h"
 #include <string.h>
@@ -164,21 +161,11 @@ REM_MSG PARSE_messages(const UCHAR* blr, USHORT blr_length)
 				break;
 
 			case blr_double:
-#ifndef VMS
 			case blr_d_float:
-#endif
 				desc->dsc_dtype = dtype_double;
 				desc->dsc_length = sizeof(double);
 				align = type_alignments[dtype_double];
 				break;
-
-#ifdef VMS
-			case blr_d_float:
-				desc->dsc_dtype = dtype_d_float;
-				desc->dsc_length = sizeof(double);
-				align = type_alignments[dtype_d_float];
-				break;
-#endif
 
 /*          this case cannot occur as switch paramater is char and blr_blob
             is 261. blob_ids are actually passed around as blr_quad.
@@ -210,11 +197,11 @@ REM_MSG PARSE_messages(const UCHAR* blr, USHORT blr_length)
 
 			default:
 				fb_assert(FALSE);
-				ALLR_release(format);
+				ALLR_free(format);
 				while (next = message) {
 					message = message->msg_next;
-					ALLR_release(next->msg_address);
-					ALLR_release(next);
+					ALLR_free(next->msg_address);
+					ALLR_free(next);
 				}
 				return (REM_MSG) - 1;
 			}

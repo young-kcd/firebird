@@ -79,7 +79,11 @@ ISC_STATUS	REM_put_slice(ISC_STATUS*, struct rdb**, struct rtr**, BID, USHORT,
 ISC_STATUS	REM_que_events(ISC_STATUS*, struct rdb**, SLONG*, SSHORT,
 	const UCHAR*, FPTR_EVENT_CALLBACK, void*);
 ISC_STATUS	REM_query_service(ISC_STATUS *, struct rdb **, USHORT, SCHAR *, USHORT, SCHAR *, USHORT, SCHAR *);
+#ifdef SCROLLABLE_CURSORS
+ISC_STATUS	REM_receive(ISC_STATUS*, struct rrq**, USHORT, USHORT, UCHAR*, SSHORT, USHORT, ULONG);
+#else
 ISC_STATUS	REM_receive(ISC_STATUS *, struct rrq **, USHORT, USHORT, UCHAR *, SSHORT);
+#endif
 ISC_STATUS	REM_reconnect_transaction(ISC_STATUS*, struct rdb**, struct rtr**,
 	USHORT, const UCHAR*);
 ISC_STATUS	REM_release_request(ISC_STATUS *, struct rrq **);

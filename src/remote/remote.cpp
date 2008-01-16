@@ -32,6 +32,7 @@
 #include "../remote/allr_proto.h"
 #include "../remote/proto_proto.h"
 #include "../remote/remot_proto.h"
+#include "../remote/xdr_proto.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/thd.h"
 #include "../jrd/thread_proto.h"
@@ -40,8 +41,6 @@
 #ifdef REMOTE_DEBUG
 IMPLEMENT_TRACE_ROUTINE(remote_trace, "REMOTE")
 #endif
-
-int xdrmem_create(XDR *, SCHAR *, u_int, enum xdr_op);
 
 const SLONG DUMMY_INTERVAL		= 60;	/* seconds */
 const int ATTACH_FAILURE_SPACE	= 2048;	/* bytes */
@@ -490,7 +489,7 @@ void REMOTE_release_messages( REM_MSG messages)
 			printf("REMOTE_release_messages   free message     %x\n",
 					  temp);
 #endif
-			ALLR_release(temp);
+			ALLR_free(temp);
 			if (message == messages)
 				break;
 		}
@@ -512,10 +511,12 @@ void REMOTE_release_request( rrq* request)
 	RDB rdb = request->rrq_rdb;
 
 	for (rrq** p = &rdb->rdb_requests; *p; p = &(*p)->rrq_next)
+	{
 		if (*p == request) {
 			*p = request->rrq_next;
 			break;
 		}
+	}
 
 /* Get rid of request and all levels */
 
@@ -532,7 +533,7 @@ void REMOTE_release_request( rrq* request)
 						("REMOTE_release_request    free format      %x\n",
 						 tail->rrq_format);
 #endif
-					ALLR_release(tail->rrq_format);
+					ALLR_free(tail->rrq_format);
 				}
 				REMOTE_release_messages(message);
 			}
@@ -541,7 +542,7 @@ void REMOTE_release_request( rrq* request)
 #ifdef DEBUG_REMOTE_MEMORY
 		printf("REMOTE_release_request    free request     %x\n", request);
 #endif
-		ALLR_release(request);
+		ALLR_free(request);
 		if (!(request = next))
 			break;
 	}
@@ -617,9 +618,9 @@ void REMOTE_reset_statement( RSR statement)
 
 /* find the entry before statement->rsr_message */
 
-	REM_MSG temp;
-	for (temp = message->msg_next; temp->msg_next != message;
-		 temp = temp->msg_next);
+	REM_MSG temp = message->msg_next;
+	while (temp->msg_next != message)
+		temp = temp->msg_next;
 
 	temp->msg_next = message->msg_next;
 	message->msg_next = message;
@@ -745,7 +746,7 @@ OBJCT REMOTE_set_object(rem_port* port, BLK object, OBJCT slot)
 #ifdef DEBUG_REMOTE_MEMORY
 		printf("REMOTE_release_request    free vector      %x\n", vector);
 #endif
-		ALLR_release(vector);
+		ALLR_free(vector);
 	}
 
 	new_vector->vec_object[slot] = object;
