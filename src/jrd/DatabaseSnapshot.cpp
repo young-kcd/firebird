@@ -73,15 +73,10 @@ const UCHAR TAG_RECORD	= '\xFE'; //-2U;
 
 const size_t DatabaseSnapshot::SharedMemory::VERSION = 1;
 const size_t DatabaseSnapshot::SharedMemory::DEFAULT_SIZE = 1048576;
-const size_t DatabaseSnapshot::SharedMemory::SEMAPHORES = 1;
 
 
 DatabaseSnapshot::SharedMemory::SharedMemory()
 {
-#ifdef UNIX
-	handle.sh_mem_semaphores = SEMAPHORES;
-#endif
-
 	TEXT filename[MAXPATHLEN];
 	gds__prefix_lock(filename, MONITOR_FILE);
 
@@ -310,7 +305,7 @@ void DatabaseSnapshot::SharedMemory::init(void* arg, SH_MEM_T* shmemData, bool i
 	header->length = 0;
 
 #ifndef WIN_NT
-	checkMutex("init", ISC_mutex_init(&header->mutex, shmemData->sh_mem_mutex_arg));
+	checkMutex("init", ISC_mutex_init(&header->mutex));
 #endif
 }
 
@@ -347,8 +342,7 @@ int DatabaseSnapshot::blockingAst(void* ast_object)
 	Database* dbb = static_cast<Database*>(ast_object);
 	fb_assert(dbb);
 
-	thread_db thd_context, *tdbb;
-	JRD_set_thread_data(tdbb, thd_context);
+	ThreadContextHolder tdbb;
 
 	Lock* lock = dbb->dbb_monitor_lock;
 	fb_assert(lock);
@@ -376,7 +370,6 @@ int DatabaseSnapshot::blockingAst(void* ast_object)
 		}
 	}
 
-	JRD_restore_thread_data();
 	return 0;
 }
 

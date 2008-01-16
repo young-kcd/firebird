@@ -69,13 +69,6 @@ using namespace Ods;
 
 //#define DEBUG_BTR_SPLIT
 
-/*********************************************
-      eliminate this conversion - kk
-#ifdef VMS
-extern double	MTH$CVT_G_D();
-#endif
-**********************************************/
-
 const int MAX_LEVELS	= 16;
 
 //inline void MOVE_BYTE(UCHAR*& x_from, UCHAR*& x_to)
@@ -876,7 +869,7 @@ btree_page* BTR_find_page(thread_db* tdbb,
 #ifdef SCROLLABLE_CURSORS
 			if (backwards) {
 				pointer = BTR_last_node(page, NAV_expand_index(window, 0), 0);
-			{
+			}
 			else
 #endif
 			{
@@ -1350,7 +1343,7 @@ UCHAR *BTR_last_node(btree_page* page, exp_index_buf* expanded_page, btree_exp**
 	// starting at the end of the page, find the
 	// first node that is not an end marker
 	UCHAR *pointer = ((UCHAR*)page + page->btr_length);
-	const UCHAR flags = page->pag_flags;
+	const UCHAR flags = page->btr_header.pag_flags;
 	IndexNode node;
 	while (true) {
 		pointer = BTreeNode::previousNode(&node, pointer, flags, &enode);
@@ -1387,7 +1380,7 @@ btree_page* BTR_left_handoff(thread_db* tdbb, WIN * window, btree_page* page,
 	const Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
-	const SLONG original_page = window->win_page;
+	const PageNumber original_page(window->win_page);
 	const SLONG left_sibling = page->btr_left_sibling;
 
 	CCH_RELEASE(tdbb, window);
@@ -1691,7 +1684,8 @@ bool BTR_next_index(thread_db* tdbb,
 		}
 	}
 
-	for (; id < root->irt_count; ++id) {
+	for (; id < root->irt_count; ++id)
+	{
 		const index_root_page::irt_repeat* irt_desc = root->irt_rpt + id;
 		if (!irt_desc->irt_root &&
 			(irt_desc->irt_flags & irt_in_progress) && transaction) 
@@ -1717,9 +1711,8 @@ bool BTR_next_index(thread_db* tdbb,
 				root = (index_root_page*) CCH_FETCH(tdbb, window, LCK_read, pag_root);
 				continue;
 			}
-			else {
-				root = (index_root_page*) CCH_FETCH(tdbb, window, LCK_read, pag_root);
-			}
+
+			root = (index_root_page*) CCH_FETCH(tdbb, window, LCK_read, pag_root);
 		}
 		if (BTR_description(tdbb, relation, root, idx, id)) {
 			return true;
@@ -2173,31 +2166,33 @@ bool BTR_types_comparable(const dsc& target, const dsc& source)
 		// should we also check for the INTL stuff here?
 		return (DTYPE_IS_TEXT(source.dsc_dtype));
 	}
-	else if (DTYPE_IS_NUMERIC(target.dsc_dtype))
+
+	if (DTYPE_IS_NUMERIC(target.dsc_dtype))
 	{
 		return (DTYPE_IS_TEXT(source.dsc_dtype) ||
 			DTYPE_IS_NUMERIC(source.dsc_dtype));
 	}
-	else if (target.dsc_dtype == dtype_sql_date)
+
+	if (target.dsc_dtype == dtype_sql_date)
 	{
 		return (DTYPE_IS_TEXT(source.dsc_dtype) ||
 			source.dsc_dtype == dtype_sql_date);
 	}
-	else if (target.dsc_dtype == dtype_sql_time)
+
+	if (target.dsc_dtype == dtype_sql_time)
 	{
 		return (DTYPE_IS_TEXT(source.dsc_dtype) ||
 			source.dsc_dtype == dtype_sql_time);
 	}
-	else if (target.dsc_dtype == dtype_timestamp)
+
+	if (target.dsc_dtype == dtype_timestamp)
 	{
 		return (DTYPE_IS_TEXT(source.dsc_dtype) ||
 			DTYPE_IS_DATE(source.dsc_dtype));
 	}
-	else
-	{
-		fb_assert(DTYPE_IS_BLOB(target.dsc_dtype));
-		return false;
-	}
+
+	fb_assert(DTYPE_IS_BLOB(target.dsc_dtype));
+	return false;
 }
 
 
@@ -2234,10 +2229,9 @@ static SLONG add_node(thread_db* tdbb,
 			if (split != NO_VALUE_PAGE) {
 				return split;
 			}
-			else {
-				bucket = (btree_page*) CCH_HANDOFF(tdbb, window,
-					bucket->btr_sibling, LCK_write, pag_index);
-			}
+
+			bucket = (btree_page*) CCH_HANDOFF(tdbb, window,
+				bucket->btr_sibling, LCK_write, pag_index);
 		}
 	}
 
@@ -2379,7 +2373,8 @@ static void compress(thread_db* tdbb,
 	UCHAR* p = key->key_data;
 
 	if (isNull) {
-		if (dbb->dbb_ods_version >= ODS_VERSION7) {
+		if (dbb->dbb_ods_version >= ODS_VERSION7)
+		{
 			UCHAR pad = 0;
 			key->key_flags &= ~key_empty;
 			// AB: NULL should be threated as lowest value possible.
@@ -2391,17 +2386,17 @@ static void compress(thread_db* tdbb,
 				}
 			}
 			else {
-				if (descending) {
+				if (descending)
+				{
 					// DESC NULLs are stored as 1 byte
 					*p++ = pad;
 					key->key_length = (p - key->key_data);
 					return;
 				}
-				else {
-					// ASC NULLs are stored with no data
-					key->key_length = 0;
-					return;
-				}
+
+				// ASC NULLs are stored with no data
+				key->key_length = 0;
+				return;
 			}
 
 			size_t length;
@@ -2439,11 +2434,10 @@ static void compress(thread_db* tdbb,
 			key->key_length = (p - key->key_data);
 			return;
 		}
-		else {
-			// for dbb->dbb_ods_version < ODS_VERSION7
-			key->key_flags &= ~key_empty;
-			memset(&temp, 0, sizeof(temp));
-		}
+
+		// for dbb->dbb_ods_version < ODS_VERSION7
+		key->key_flags &= ~key_empty;
+		memset(&temp, 0, sizeof(temp));
 	}
 
 	if (itype == idx_string ||
@@ -2698,12 +2692,6 @@ static void compress(thread_db* tdbb,
 	// a nonzero value for the 5-7 bits of the mantissa.
 
 
-	//***************************************************************
-	//#ifdef VMS
-	//temp.temp_double = MTH$CVT_G_D (&temp.temp_double);
-	//#endif
-	//***************************************************************
-
 	*p++ = temp.temp_char[1];
 	*p++ = temp.temp_char[0];
 	*p++ = temp.temp_char[3];
@@ -2914,8 +2902,6 @@ static CONTENTS delete_node(thread_db* tdbb, WIN *window, UCHAR *pointer)
 	length = page->btr_length - (localPointer - (UCHAR*) page);
 	if (length) {
 		// Could be overlapping buffers. 
-		// Use MEMMOVE macro which is memmove() in most platforms, instead 
-		// of MOVE_FAST which is memcpy() in most platforms. 
 		// memmove() is guaranteed to work non-destructivly on overlapping buffers. 
 		memmove(pointer, localPointer, length);
 		pointer += length;
@@ -3110,9 +3096,8 @@ static DSC *eval(thread_db* tdbb, jrd_nod* node, DSC * temp, bool *isNull)
 	if (desc && !(tdbb->getRequest()->req_flags & req_null)) {
 		return desc;
 	}
-	else {
-		*isNull = true;
-	}
+
+	*isNull = true;
 
 	temp->dsc_dtype = dtype_text;
 	temp->dsc_flags = 0;
@@ -3990,14 +3975,13 @@ static index_root_page* fetch_root(thread_db* tdbb, WIN* window, const jrd_rel* 
  **************************************/
 	SET_TDBB(tdbb);
 
-	if ((window->win_page = relPages->rel_index_root) == 0) {
-		if (relation->rel_id == 0) {
+	if ((window->win_page = relPages->rel_index_root) == 0)
+	{
+		if (relation->rel_id == 0)
 			return NULL;
-		}
-		else {
-			DPM_scan_pages(tdbb);
-			window->win_page = relPages->rel_index_root;
-		}
+
+		DPM_scan_pages(tdbb);
+		window->win_page = relPages->rel_index_root;
 	}
 
 	return (index_root_page*) CCH_FETCH(tdbb, window, LCK_read, pag_root);
@@ -4045,7 +4029,8 @@ static UCHAR* find_node_start_point(btree_page* bucket, temporary_key* key,
 	UCHAR* p = key->key_data + prefix;
 
 
-	if (flags & btr_large_keys) {
+	if (flags & btr_large_keys)
+	{
 		IndexNode node;
 		pointer = BTreeNode::readNode(&node, pointer, flags, leafPage);
 		// Check if pointer is still valid
@@ -4093,30 +4078,31 @@ static UCHAR* find_node_start_point(btree_page* bucket, temporary_key* key,
 				const UCHAR* q = node.data;
 				const UCHAR* const nodeEnd = q + node.length;
 				if (descending) {
-					while (true) {
-						if (q == nodeEnd || (retrieval && p == key_end)) {
+					while (true)
+					{
+						if (q == nodeEnd || (retrieval && p == key_end))
 							goto done1;
-						}
-						else if (p == key_end || *p > *q) {
+
+						if (p == key_end || *p > *q)
 							break;
-						}
-						else if (*p++ < *q++) {
+
+						if (*p++ < *q++)
 							goto done1;
-						}
 					}
 				}
-				else if (node.length > 0 || firstPass) {
+				else if (node.length > 0 || firstPass)
+				{
 					firstPass = false;
-					while (true) {
-						if (p == key_end) {
+					while (true)
+					{
+						if (p == key_end)
 							goto done1;
-						}
-						else if (q == nodeEnd || *p > *q) {
+							
+						if (q == nodeEnd || *p > *q)
 							break;
-						}
-						else if (*p++ < *q++) {
+							
+						if (*p++ < *q++)
 							goto done1;
-						}
 					}
 				}
 				prefix = (USHORT)(p - key->key_data);
@@ -4133,9 +4119,8 @@ static UCHAR* find_node_start_point(btree_page* bucket, temporary_key* key,
 					// in the next page, but the first node of a page must not change!!
 					goto done1;
 				}
-				else {
-					return NULL;
-				}
+
+				return NULL;
 			}
 			pointer = BTreeNode::readNode(&node, pointer, flags, leafPage);
 
@@ -4152,109 +4137,107 @@ static UCHAR* find_node_start_point(btree_page* bucket, temporary_key* key,
 
 		return node.nodePointer;
 	}
-	else {
-		// Uses fastest approach when possible.
-		register btree_nod* node = (btree_nod*)pointer;
 
-		// If this is an non-leaf bucket of a descending index, the dummy node on the
-		// front will trip us up.  NOTE: This code may be apocryphal.  I don't see 
-		// anywhere that a dummy node is stored for a descending index.  - deej
-		//
-		// AB: This node ("dummy" node) is inserted on every first page in a level.
-		// Because it's length and prefix is 0 a descending index would see it 
-		// always as the first matching node. 
-		if (!leafPage && descending && 
-			(pointer == BTreeNode::getPointerFirstNode(bucket)) && 
-			(node->btn_length == 0)) 
+	// Uses fastest approach when possible.
+	register btree_nod* node = (btree_nod*)pointer;
+
+	// If this is an non-leaf bucket of a descending index, the dummy node on the
+	// front will trip us up.  NOTE: This code may be apocryphal.  I don't see 
+	// anywhere that a dummy node is stored for a descending index.  - deej
+	//
+	// AB: This node ("dummy" node) is inserted on every first page in a level.
+	// Because it's length and prefix is 0 a descending index would see it 
+	// always as the first matching node. 
+	if (!leafPage && descending && 
+		(pointer == BTreeNode::getPointerFirstNode(bucket)) && 
+		(node->btn_length == 0)) 
+	{
+		if (flags & btr_all_record_number) {
+			node = NEXT_NODE_RECNR(node);
+		}
+		else {
+			node = NEXT_NODE(node);
+		}
+	}
+
+	while (true) {
+		// Pick up data from node
+
+		if (value && node->btn_length) {
+			memcpy(value + node->btn_prefix, node->btn_data, node->btn_length);
+		}
+
+		// If the page/record number is -1, the node is the last in the level
+		// and, by definition, is the insertion point.  Otherwise, if the
+		// prefix of the current node is less than the running prefix, the 
+		// node must have a value greater than the key, so it is the insertion
+		// point. 
+		const SLONG number = get_long(node->btn_number);
+
+		if (number == END_LEVEL || node->btn_prefix < prefix) {
+			if (return_value) {
+				*return_value = prefix;
+			}
+			return (UCHAR*)node;
+		}
+
+		// If the node prefix is greater than current prefix , it must be less 
+		// than the key, so we can skip it.  If it has zero length, then
+		// it is a duplicate, and can also be skipped.
+		if (node->btn_prefix == prefix) {
+			const UCHAR* q = node->btn_data;
+			const UCHAR* const nodeEnd = q + node->btn_length;
+			if (descending) {
+				while (true)
+				{
+					if (q == nodeEnd || retrieval && p == key_end)
+						goto done2;
+						
+					if (p == key_end || *p > *q)
+						break;
+
+					if (*p++ < *q++)
+						goto done2;
+				}
+			}
+			else if (node->btn_length > 0 || firstPass) {
+				firstPass = false;
+				while (true)
+				{
+					if (p == key_end)
+						goto done2;
+						
+					if (q == nodeEnd || *p > *q)
+						break;
+
+					if (*p++ < *q++)
+						goto done2;
+				}
+			}
+			prefix = (USHORT)(p - key->key_data);
+		}
+		if (number == END_BUCKET)
 		{
-			if (flags & btr_all_record_number) {
-				node = NEXT_NODE_RECNR(node);
-			}
-			else {
-				node = NEXT_NODE(node);
-			}
+			if (pointer_by_marker)
+				goto done2;
+
+			return NULL;
 		}
 
-		while (true) {
-			// Pick up data from node
-
-			if (value && node->btn_length) {
-				memcpy(value + node->btn_prefix, node->btn_data, node->btn_length);
-			}
-
-			// If the page/record number is -1, the node is the last in the level
-			// and, by definition, is the insertion point.  Otherwise, if the
-			// prefix of the current node is less than the running prefix, the 
-			// node must have a value greater than the key, so it is the insertion
-			// point. 
-			const SLONG number = get_long(node->btn_number);
-
-			if (number == END_LEVEL || node->btn_prefix < prefix) {
-				if (return_value) {
-					*return_value = prefix;
-				}
-				return (UCHAR*)node;
-			}
-
-			// If the node prefix is greater than current prefix , it must be less 
-			// than the key, so we can skip it.  If it has zero length, then
-			// it is a duplicate, and can also be skipped.
-			if (node->btn_prefix == prefix) {
-				const UCHAR* q = node->btn_data;
-				const UCHAR* const nodeEnd = q + node->btn_length;
-				if (descending) {
-					while (true) {
-						if (q == nodeEnd || retrieval && p == key_end) {
-							goto done2;
-						}
-						else if (p == key_end || *p > *q) {
-							break;
-						}
-						else if (*p++ < *q++) {
-							goto done2;
-						}
-					}
-				}
-				else if (node->btn_length > 0 || firstPass) {
-					firstPass = false;
-					while (true) {
-						if (p == key_end) {
-							goto done2;
-						}
-						else if (q == nodeEnd || *p > *q) {
-							break;
-						}
-						else if (*p++ < *q++) {
-							goto done2;
-						}
-					}
-				}
-				prefix = (USHORT)(p - key->key_data);
-			}
-			if (number == END_BUCKET) {
-				if (pointer_by_marker) {
-					goto done2;
-				}
-				else {
-					return NULL;
-				}
-			}
-
-			// Get next node
-			if (!leafPage && (flags & btr_all_record_number)) {
-				node = NEXT_NODE_RECNR(node);
-			}
-			else {
-				node = NEXT_NODE(node);
-			}
+		// Get next node
+		if (!leafPage && (flags & btr_all_record_number)) {
+			node = NEXT_NODE_RECNR(node);
 		}
-
-	  done2:
-		if (return_value) {
-			*return_value = prefix;
+		else {
+			node = NEXT_NODE(node);
 		}
-		return (UCHAR*)node;
-	}  
+	}
+
+  done2:
+	if (return_value) {
+		*return_value = prefix;
+	}
+	return (UCHAR*)node;
 }
 
 
@@ -4319,8 +4302,10 @@ static UCHAR* find_area_start_point(btree_page* bucket, const temporary_key* key
 			bool done = false;
 
 			if ((jumpNode.prefix <= testPrefix) && descending) {
-				while (true) {
-					if (q == nodeEnd) {
+				while (true)
+				{
+					if (q == nodeEnd)
+					{
 						done = true;
 						// Check if this is a exact match or a duplicate.
 						// If the node is pointing to its end and the length is 
@@ -4358,19 +4343,19 @@ static UCHAR* find_area_start_point(btree_page* bucket, const temporary_key* key
 						}
 						break;
 					}
-					else if (retrieval && keyPointer == keyEnd) {
+
+					if (retrieval && keyPointer == keyEnd) {
 						done = true;
 						break;
 					}
-					else if (keyPointer == keyEnd) {
-						// End of key reached
+
+					if (keyPointer == keyEnd)   // End of key reached
 						break;
-					} 
-					else if (*keyPointer > *q) {
-						// Our key is bigger so check next node.
+
+					if (*keyPointer > *q)   // Our key is bigger so check next node.
 						break;
-					}
-					else if (*keyPointer++ < *q++) {
+
+					if (*keyPointer++ < *q++) {
 						done = true;
 						break;
 					}
@@ -4379,7 +4364,8 @@ static UCHAR* find_area_start_point(btree_page* bucket, const temporary_key* key
 			}
 			else if (jumpNode.prefix <= testPrefix) {
 				while (true) {
-					if (keyPointer == keyEnd) {
+					if (keyPointer == keyEnd)
+					{
 						// Reached end of our key we're searching for.
 						done = true;
 						// Check if this is a exact match or a duplicate
@@ -4417,15 +4403,14 @@ static UCHAR* find_area_start_point(btree_page* bucket, const temporary_key* key
 						}
 						break;
 					} 
-					else if (q == nodeEnd) {
-						// End of node data reached
+
+					if (q == nodeEnd)	// End of node data reached
 						break;
-					}
-					else if (*keyPointer > *q) {
-						// Our key is bigger so check next node.
+
+					if (*keyPointer > *q)	// Our key is bigger so check next node.
 						break;
-					}
-					else if (*keyPointer++ < *q++) {
+
+					if (*keyPointer++ < *q++) {
 						done = true;
 						break;
 					}
@@ -4561,32 +4546,34 @@ static SLONG find_page(btree_page* bucket, const temporary_key* key,
 			if (node.prefix == prefix) {
 				if (descending) {
 					// Descending indexes
-					while (true) {
+					while (true)
+					{
 						// Check for exact match and if we need to do
 						// record number matching.
-						if (q == nodeEnd || p == keyEnd) {
+						if (q == nodeEnd || p == keyEnd)
+						{
 							if (find_record_number != NO_VALUE && 
 								q == nodeEnd && p == keyEnd) 
 							{
 								return BTreeNode::findPageInDuplicates(bucket, 
 									node.nodePointer, previousNumber, find_record_number);
 							}
-							else {
-								return previousNumber;
-							}
-						}
-						else if (*p > *q) {
-							break;
-						}
-						else if (*p++ < *q++) {
+
 							return previousNumber;
 						}
+
+						if (*p > *q)
+							break;
+
+						if (*p++ < *q++)
+							return previousNumber;
 					}
 				}
 				else if (node.length > 0 || firstPass) {
 					firstPass = false;
 					// Ascending index
-					while (true) {
+					while (true)
+					{
 						if (p == keyEnd) {
 							// Check for exact match and if we need to do
 							// record number matching.
@@ -4596,16 +4583,15 @@ static SLONG find_page(btree_page* bucket, const temporary_key* key,
 								return BTreeNode::findPageInDuplicates(bucket, 
 									node.nodePointer, previousNumber, find_record_number);
 							}
-							else {
-								return previousNumber;
-							}
-						}
-						else if (q == nodeEnd || *p > *q) {
-							break;
-						}
-						else if (*p++ < *q++) {
+
 							return previousNumber;
 						}
+
+						if (q == nodeEnd || *p > *q)
+							break;
+
+						if (*p++ < *q++)
+							return previousNumber;
 					}
 				}
 			}
@@ -4682,7 +4668,8 @@ static SLONG find_page(btree_page* bucket, const temporary_key* key,
 			const UCHAR* const nodeEnd = q + node->btn_length;
 			if (node->btn_prefix == prefix) {
 				if (descending) {
-					while (true) {
+					while (true)
+					{
 						if (q == nodeEnd || p == keyEnd) {
 							if (find_record_number != NO_VALUE && 
 								q == nodeEnd && p == keyEnd) 
@@ -4691,23 +4678,24 @@ static SLONG find_page(btree_page* bucket, const temporary_key* key,
 									(UCHAR*)node, get_long(prior->btn_number), 
 									find_record_number);
 							}
-							else {
-								return get_long(prior->btn_number);
-							}
-						}
-						else if (*p > *q) {
-							break;
-						}
-						else if (*p++ < *q++) {
+
 							return get_long(prior->btn_number);
 						}
+
+						if (*p > *q)
+							break;
+
+						if (*p++ < *q++)
+							return get_long(prior->btn_number);
 					}
 				}
 				else if (node->btn_length > 0 || firstPass) {
 					firstPass = false;
 					// Ascending index
-					while (true) {
-						if (p == keyEnd) {
+					while (true)
+					{
+						if (p == keyEnd)
+						{
 							// Check for exact match and if we need to do
 							// record number matching.
 							if (find_record_number != NO_VALUE && 
@@ -4717,16 +4705,15 @@ static SLONG find_page(btree_page* bucket, const temporary_key* key,
 									(UCHAR*)node, get_long(prior->btn_number), 
 									find_record_number);
 							}
-							else {
-								return get_long(prior->btn_number);
-							}
-						}
-						else if (q == nodeEnd || *p > *q) {
-							break;
-						}
-						else if (*p++ < *q++) {
+
 							return get_long(prior->btn_number);
 						}
+
+						if (q == nodeEnd || *p > *q)
+							break;
+
+						if (*p++ < *q++)
+							return get_long(prior->btn_number);
 					}
 				}
 			}
@@ -5582,51 +5569,53 @@ static SLONG insert_node(thread_db* tdbb,
 		{
 			break;
 		}
-		else {
-			// We have a equal node, so find the correct insertion point.
-			if (beforeInsertNode.isEndBucket) {
-				if (validateDuplicates) {
-					return NO_VALUE_PAGE;
-				}
-				if (allRecordNumber && 
-					(newRecordNumber < beforeInsertNode.recordNumber)) 
-				{
-					break;
-				}
-				else {
-					return NO_VALUE_PAGE;
-				}
+
+		// We have a equal node, so find the correct insertion point.
+		if (beforeInsertNode.isEndBucket) {
+			if (validateDuplicates) {
+				return NO_VALUE_PAGE;
 			}
-			if (beforeInsertNode.isEndLevel) {
+
+			if (allRecordNumber && 
+				(newRecordNumber < beforeInsertNode.recordNumber)) 
+			{
 				break;
 			}
-			if (leafPage && validateDuplicates) {
-				// Save the duplicate so the main caller can validate them.
-				RBM_SET(tdbb->getDefaultPool(), &insertion->iib_duplicates, 
-					beforeInsertNode.recordNumber.getValue());
-			}
-			// AB: Never insert a duplicate node with the same record number.
-			// This would lead to nodes which will never be deleted.
-			/*if (leafPage && (newRecordNumber == beforeInsertNode.recordNumber)) {
-				// AB: It seems this is not enough, because on mass duplicate
-				// update to many nodes are deleted, possible staying and
-				// going are wrong checked before BTR_remove is called.
-				CCH_RELEASE(tdbb, window);
-				return 0;
-			}*/ 
-			//else 
-			if (allRecordNumber && !validateDuplicates) { 
-				// if recordnumber is higher we need to insert before it.
-				if (newRecordNumber <= beforeInsertNode.recordNumber) {
-					break;
-				}
-			}
-			else if (!unique) {
-				break;
-			}
-			prefix = newPrefix;
-			pointer = BTreeNode::readNode(&beforeInsertNode, pointer, flags, leafPage);
+
+			return NO_VALUE_PAGE;
 		}
+
+		if (beforeInsertNode.isEndLevel) {
+			break;
+		}
+
+		if (leafPage && validateDuplicates) {
+			// Save the duplicate so the main caller can validate them.
+			RBM_SET(tdbb->getDefaultPool(), &insertion->iib_duplicates, 
+				beforeInsertNode.recordNumber.getValue());
+		}
+		// AB: Never insert a duplicate node with the same record number.
+		// This would lead to nodes which will never be deleted.
+		/*if (leafPage && (newRecordNumber == beforeInsertNode.recordNumber)) {
+			// AB: It seems this is not enough, because on mass duplicate
+			// update to many nodes are deleted, possible staying and
+			// going are wrong checked before BTR_remove is called.
+			CCH_RELEASE(tdbb, window);
+			return 0;
+		}*/ 
+		//else 
+		if (allRecordNumber && !validateDuplicates) { 
+			// if recordnumber is higher we need to insert before it.
+			if (newRecordNumber <= beforeInsertNode.recordNumber) {
+				break;
+			}
+		}
+		else if (!unique) {
+			break;
+		}
+
+		prefix = newPrefix;
+		pointer = BTreeNode::readNode(&beforeInsertNode, pointer, flags, leafPage);
 	}
 
 	if (nodeOffset > dbb->dbb_page_size) {
@@ -6354,7 +6343,8 @@ static CONTENTS remove_leaf_node(thread_db* tdbb, index_insertion* insertion, WI
 	USHORT l = node.length;
 	if (l) {
 		do {
-			if (*p++ != *q++) {
+			if (*p++ != *q++)
+			{
 #ifdef DEBUG_BTR
 				CCH_RELEASE(tdbb, window);
 				CORRUPT(204);	// msg 204 index inconsistent
@@ -6553,7 +6543,8 @@ static bool scan(thread_db* tdbb, UCHAR* pointer, RecordBitmap** bitmap, RecordB
 				p = key->key_data + prefix;
 				const UCHAR* q = node.data;
 				USHORT l = node.length;
-				for (; l; --l, prefix++) {
+				for (; l; --l, prefix++)
+				{
 					if (skipUpperKey && partUpper) {
 						if (upperPrefix >= key->key_length) 
 						{
@@ -6570,29 +6561,26 @@ static bool scan(thread_db* tdbb, UCHAR* pointer, RecordBitmap** bitmap, RecordB
 						}
 					}
 
-					if (p >= end_key) {
-						if (flag) {
+					if (p >= end_key)
+					{
+						if (flag)
 							break;
-						}
-						else {
-							return false;
-						}
+
+						return false;
 					}
-					if (p > (end_key - count)) {
-						if (*p++ == *q++) {
+					if (p > (end_key - count))
+					{
+						if (*p++ == *q++)
 							break;
-						}
-						else {
-							continue;
-						}
+
+						continue;
 					}
-					if (*p < *q) {
-						if ((flag & irb_starting) && (key->key_flags & key_empty)) {
+					if (*p < *q)
+					{
+						if ((flag & irb_starting) && (key->key_flags & key_empty))
 							break;
-						}
-						else {
-							return false;
-						}
+
+						return false;
 					}
 					if (*p++ > *q++) {
 						break;
@@ -6685,7 +6673,8 @@ static bool scan(thread_db* tdbb, UCHAR* pointer, RecordBitmap** bitmap, RecordB
 				p = key->key_data + prefix;
 				const UCHAR* q = node->btn_data;
 				USHORT l = node->btn_length;
-				for (; l; --l, prefix++) {
+				for (; l; --l, prefix++)
+				{
 					if (skipUpperKey && partUpper) {
 						if (upperPrefix >= key->key_length) 
 						{
@@ -6702,29 +6691,28 @@ static bool scan(thread_db* tdbb, UCHAR* pointer, RecordBitmap** bitmap, RecordB
 						}
 					}
 
-					if (p >= end_key) {
-						if (flag) {
+					if (p >= end_key)
+					{
+						if (flag)
 							break;
-						}
-						else {
-							return false;
-						}
+
+						return false;
 					}
-					if (p > (end_key - count)) {
-						if (*p++ == *q++) {
+
+					if (p > (end_key - count))
+					{
+						if (*p++ == *q++)
 							break;
-						}
-						else {
-							continue;
-						}
+
+						continue;
 					}
-					if (*p < *q) {
-						if ((flag & irb_starting) && (key->key_flags & key_empty)) {
+
+					if (*p < *q)
+					{
+						if ((flag & irb_starting) && (key->key_flags & key_empty))
 							break;
-						}
-						else {
-							return false;
-						}
+
+						return false;
 					}
 					if (*p++ > *q++) {
 						break;

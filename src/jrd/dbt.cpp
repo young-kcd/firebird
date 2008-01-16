@@ -493,24 +493,3 @@ TEXT* dbt_blocks[] =
 	0
 };
 #undef BLKDEF
-
-
-
-const char* DBT_jrd_type_map(int type)
-{
-#define BLKDEF(enum_c, str_c, ext) case enum_c: return str_c[0];
-	switch (type)
-	{
-	#include "../jrd/blk.h"
-	default:
-		break;
-	}
-#undef BLKDEF
-	return "Uknown Jrd Obj";
-}
-
-void MP_GDB_print(MemoryPool *p)
-{
-	p->print_contents(stdout, DBT_jrd_type_map);
-}
-

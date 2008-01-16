@@ -132,8 +132,8 @@ ULONG FixedWidthCharSet::length(ULONG srcLen, const UCHAR* src, bool countTraili
 
 	if (getStruct()->charset_fn_length)
 		return getStruct()->charset_fn_length(getStruct(), srcLen, src);
-	else
-		return srcLen / minBytesPerChar();
+
+	return srcLen / minBytesPerChar();
 }
 
 
@@ -174,18 +174,16 @@ ULONG MultiByteCharSet::length(ULONG srcLen, const UCHAR* src, bool countTrailin
 
 	if (getStruct()->charset_fn_length)
 		return getStruct()->charset_fn_length(getStruct(), srcLen, src);
-	else
-	{
-		ULONG len = getConvToUnicode().convertLength(srcLen);
 
-		// convert to UTF16
-		Firebird::HalfStaticArray<USHORT, BUFFER_SMALL / sizeof(USHORT)> str;
-		len = getConvToUnicode().convert(srcLen, src, len,
-						str.getBuffer(len / sizeof(USHORT)));
+	ULONG len = getConvToUnicode().convertLength(srcLen);
 
-		// calculate length of UTF16
-		return UnicodeUtil::utf16Length(len, str.begin());
-	}
+	// convert to UTF16
+	Firebird::HalfStaticArray<USHORT, BUFFER_SMALL / sizeof(USHORT)> str;
+	len = getConvToUnicode().convert(srcLen, src, len,
+					str.getBuffer(len / sizeof(USHORT)));
+
+	// calculate length of UTF16
+	return UnicodeUtil::utf16Length(len, str.begin());
 }
 
 
@@ -241,8 +239,8 @@ CharSet* CharSet::createInstance(MemoryPool& pool, USHORT id, charset* cs)
 {
 	if (cs->charset_min_bytes_per_char != cs->charset_max_bytes_per_char)
 		return FB_NEW(pool) MultiByteCharSet(id, cs);
-	else
-		return FB_NEW(pool) FixedWidthCharSet(id, cs);
+
+	return FB_NEW(pool) FixedWidthCharSet(id, cs);
 }
 
 

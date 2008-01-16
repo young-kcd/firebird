@@ -64,6 +64,16 @@ public:
 	}
 
 public:
+	void convert(ULONG srcLen,
+				 const UCHAR* src,
+				 Firebird::UCharBuffer& dst,
+				 ULONG* badInputPos = NULL,
+				 bool ignoreTrailingSpaces = false)
+	{
+		dst.getBuffer(convertLength(srcLen));
+		dst.resize(convert(srcLen, src, dst.getCapacity(), dst.begin(), badInputPos, ignoreTrailingSpaces));
+	}
+
 	// CVC: Beware of this can of worms: csconvert_convert gets assigned
 	// different functions that not necessarily take the same argument. Typically,
 	// the src pointer and the dest pointer use different types.
@@ -164,8 +174,8 @@ public:
 						{
 							if (badInputPos)
 								break;
-							else
-								Firebird::status_exception::raise(isc_arith_except, 0);
+
+							Firebird::status_exception::raise(isc_arith_except, 0);
 						}
 					}
 
@@ -201,60 +211,58 @@ public:
 
 			return len;
 		}
-		else
-		{
-			ULONG len = (*cnvt1->csconvert_fn_convert)(
-				cnvt1, srcLen, src, dstLen, dst, &errCode, &errPos);
 
-			if (len == INTL_BAD_STR_LENGTH)
+		const ULONG len = (*cnvt1->csconvert_fn_convert)(
+			cnvt1, srcLen, src, dstLen, dst, &errCode, &errPos);
+
+		if (len == INTL_BAD_STR_LENGTH)
+		{
+			Firebird::status_exception::raise(
+				isc_arith_except,
+				isc_arg_gds, isc_transliteration_failed,
+				0);
+		}
+
+		if (errCode == CS_BAD_INPUT && badInputPos)
+			*badInputPos = errPos;
+		else if (errCode != 0)
+		{
+			if (ignoreTrailingSpaces && errCode == CS_TRUNCATION_ERROR)
+			{
+				const UCHAR* end = src + srcLen - charSet1->charset_space_length;
+
+				for (const UCHAR* p = src + errPos; p <= end; p += charSet1->charset_space_length)
+				{
+					if (memcmp(p, charSet1->charset_space_character,
+							charSet1->charset_space_length) != 0)
+					{
+						if (badInputPos)
+						{
+							*badInputPos = errPos;
+							break;
+						}
+
+						Firebird::status_exception::raise(isc_arith_except, 0);
+					}
+				}
+			}
+			else if (errCode == CS_TRUNCATION_ERROR)
+			{
+				if (badInputPos)
+					*badInputPos = errPos;
+				else
+					Firebird::status_exception::raise(isc_arith_except, 0);
+			}
+			else
 			{
 				Firebird::status_exception::raise(
 					isc_arith_except,
 					isc_arg_gds, isc_transliteration_failed,
 					0);
 			}
-
-			if (errCode == CS_BAD_INPUT && badInputPos)
-				*badInputPos = errPos;
-			else if (errCode != 0)
-			{
-				if (ignoreTrailingSpaces && errCode == CS_TRUNCATION_ERROR)
-				{
-					const UCHAR* end = src + srcLen - charSet1->charset_space_length;
-
-					for (const UCHAR* p = src + errPos; p <= end; p += charSet1->charset_space_length)
-					{
-						if (memcmp(p, charSet1->charset_space_character,
-								charSet1->charset_space_length) != 0)
-						{
-							if (badInputPos)
-							{
-								*badInputPos = errPos;
-								break;
-							}
-							else
-								Firebird::status_exception::raise(isc_arith_except, 0);
-						}
-					}
-				}
-				else if (errCode == CS_TRUNCATION_ERROR)
-				{
-					if (badInputPos)
-						*badInputPos = errPos;
-					else
-						Firebird::status_exception::raise(isc_arith_except, 0);
-				}
-				else
-				{
-					Firebird::status_exception::raise(
-						isc_arith_except,
-						isc_arg_gds, isc_transliteration_failed,
-						0);
-				}
-			}
-
-			return len;
 		}
+
+		return len;
 	}
 
 	// To be used for measure length of conversion

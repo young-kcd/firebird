@@ -60,7 +60,7 @@
 #include "../jrd/sch_proto.h"
 #include "../jrd/sdw_proto.h"
 #include "../jrd/shut_proto.h"
-#include "../jrd/thd.h"
+#include "../jrd/ThreadStart.h"
 #include "../jrd/thread_proto.h"
 #include "../jrd/tra_proto.h"
 #include "../common/config/config.h"
@@ -206,12 +206,6 @@ const SLONG MIN_BUFFER_SEGMENT = 65536;
 
 #define BLOCK(fld_ptr, type, fld) (type)((SCHAR*) fld_ptr - OFFSET (type, fld))
 
-#ifdef MULTI_THREAD
-#ifndef VMS
-#define INTERLOCK_CACHE
-#endif
-#endif
-
 //
 //#define BCB_MUTEX_ACQUIRE
 //#define BCB_MUTEX_RELEASE
@@ -332,16 +326,13 @@ int CCH_down_grade_dbb(void* ast_object)
 
 /* Since this routine will be called asynchronously, we must establish
    a thread context. */
-	thread_db thd_context, *tdbb;
-	JRD_set_thread_data(tdbb, thd_context);
+	ThreadContextHolder tdbb;
 
-	ISC_STATUS_ARRAY ast_status;
 	tdbb->setDatabase(dbb);
 	tdbb->setAttachment(lock->lck_attachment);
 	tdbb->tdbb_quantum = QUANTUM;
 	tdbb->setRequest(NULL);
 	tdbb->setTransaction(NULL);
-	tdbb->tdbb_status_vector = ast_status;
 
 	dbb->dbb_ast_flags |= DBB_blocking;
 
@@ -349,44 +340,35 @@ int CCH_down_grade_dbb(void* ast_object)
 
 	if (SHUT_blocking_ast(dbb)) {
 		dbb->dbb_ast_flags &= ~DBB_blocking;
-		JRD_restore_thread_data();
 		return 0;
 	}
 
-/*
-if (dbb->dbb_use_count)
-    {
-	JRD_restore_thread_data();
-    return;
-    }
-*/
+	/*
+	if (dbb->dbb_use_count)
+	    return;
+	*/
 
 /* If we are already shared, there is nothing more we can do.
    If any case, the other guy probably wants exclusive access,
    and we can't give it anyway */
 
 	if ((lock->lck_logical == LCK_SW) || (lock->lck_logical == LCK_SR)) {
-		JRD_restore_thread_data();
 		return 0;
 	}
 
 	if (dbb->dbb_flags & DBB_bugcheck) {
 		LCK_convert(tdbb, lock, LCK_SW, LCK_WAIT);
 		dbb->dbb_ast_flags &= ~DBB_blocking;
-		JRD_restore_thread_data();
 		return 0;
 	}
 
 /* If we are supposed to be exclusive, stay exclusive */
 
 	if ((dbb->dbb_flags & DBB_exclusive) || (dbb->dbb_ast_flags & DBB_shutdown_single)) {
-		JRD_restore_thread_data();
 		return 0;
 	}
 
 /* Assert any page locks that have been requested, but not asserted */
-
-	ISC_ast_enter();
 
 	dbb->dbb_ast_flags |= DBB_assert_locks;
 	BufferControl* bcb = dbb->dbb_bcb;
@@ -411,11 +393,6 @@ if (dbb->dbb_use_count)
 	}
 
 	dbb->dbb_ast_flags &= ~DBB_blocking;
-	ISC_ast_exit();
-
-/* Restore the prior thread context */
-
-	JRD_restore_thread_data();
 	return 0;
 }
 
@@ -564,8 +541,9 @@ bool CCH_exclusive_attachment(thread_db* tdbb, USHORT level, SSHORT wait_flag)
 					break;
 				}
 			}
-			else {				/* Requesting exclusive database access */
-
+			else
+			{
+				// Requesting exclusive database access
 				found = true;
 				if (attachment->att_flags & ATT_exclusive_pending) {
 					tdbb->getAttachment()->att_flags &= ~ATT_exclusive_pending;
@@ -665,7 +643,7 @@ pag* CCH_fake(thread_db* tdbb, WIN * window, SSHORT latch_wait)
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->getDatabase();
 
-	SLONG attachment_lock_handle = BackupManager::attachment_lock_handle(tdbb);
+	const SLONG attachment_lock_handle = BackupManager::attachment_lock_handle(tdbb);
 	if (window->win_page == HEADER_PAGE_NUMBER)
 		dbb->dbb_backup_manager->lock_shared_database(tdbb, true);
 /* if there has been a shadow added recently, go out and
@@ -992,6 +970,7 @@ void CCH_fetch_page(
 			if (isTempPage || !read_shadow) {
 				break;
 			}
+
 			if (!CCH_rollover_to_shadow(dbb, file, false)) {
 				PAGE_LOCK_RELEASE(bdb->bdb_lock);
 				if (database_locked) {
@@ -1040,6 +1019,7 @@ void CCH_fetch_page(
 				if (!read_shadow) {
 					break;
 				}
+
 				if (!CCH_rollover_to_shadow(dbb, file, false)) {
 					PAGE_LOCK_RELEASE(bdb->bdb_lock);
 					if (database_locked) {
@@ -1206,9 +1186,9 @@ void CCH_fini(thread_db* tdbb)
 			event_t* event = dbb->dbb_reader_event;
 			bcb->bcb_flags &= ~BCB_cache_reader;
 			ISC_event_post(event);
-			SLONG count = ISC_event_clear(event);
+			const SLONG count = ISC_event_clear(event);
 			THREAD_EXIT();
-			ISC_event_wait(1, &event, &count, 0, NULL, 0);
+			ISC_event_wait(1, &event, &count, 0);
 			THREAD_ENTER();
 			/* Now dispose off the cache reader associated semaphore */
 			ISC_event_fini(event);
@@ -1231,12 +1211,12 @@ void CCH_fini(thread_db* tdbb)
 			event_t* event = dbb->dbb_writer_event_fini;
 			/* initialize initialization event */
 			ISC_event_init(event, 0, 0);
-			SLONG count = ISC_event_clear(event);
+			const SLONG count = ISC_event_clear(event);
 
 			bcb->bcb_flags &= ~BCB_cache_writer;
 			ISC_event_post(dbb->dbb_writer_event); /* Wake up running thread */
 			THREAD_EXIT();
-			ISC_event_wait(1, &event, &count, 0, NULL, 0);
+			ISC_event_wait(1, &event, &count, 0);
 			THREAD_ENTER();
 			/* Cleanup initialization event */
 			ISC_event_fini(event);
@@ -1772,7 +1752,7 @@ void CCH_init(thread_db* tdbb, ULONG number)
 	}
 
 	THREAD_EXIT();
-	ISC_event_wait(1, &event, &count, 5 * 1000000, NULL, 0);
+	ISC_event_wait(1, &event, &count, 5 * 1000000);
 	THREAD_ENTER();
 #endif
 
@@ -1794,7 +1774,7 @@ void CCH_init(thread_db* tdbb, ULONG number)
 			ERR_bugcheck_msg("cannot start thread");
 		}
 		THREAD_EXIT();
-		ISC_event_wait(1, &event, &count, 5 * 1000000, NULL, 0);
+		ISC_event_wait(1, &event, &count, 5 * 1000000);
 		THREAD_ENTER();
 		/* Clean up initialization event */
 		ISC_event_fini(event);
@@ -1830,7 +1810,7 @@ void CCH_mark(thread_db* tdbb, WIN * window, USHORT mark_system, USHORT must_wri
 
 	CCH_TRACE(("MARK PAGE=%d", window->win_page));
 
-	SLONG attachment_lock_owner = BackupManager::attachment_lock_handle(tdbb);
+	const SLONG attachment_lock_owner = BackupManager::attachment_lock_handle(tdbb);
 
 	bool was_marked = bdb->bdb_flags & BDB_marked;
 	if (!was_marked)
@@ -1897,7 +1877,9 @@ void CCH_mark(thread_db* tdbb, WIN * window, USHORT mark_system, USHORT must_wri
 			// Backup lock owner can be database or attachment
 			fb_assert(bdb->bdb_backup_lock_owner == BackupManager::database_lock_handle(tdbb));
 			dbb->dbb_backup_manager->release_dirty_page(tdbb, bdb->bdb_backup_lock_owner);
-		} else {
+		}
+		else
+		{
 			fb_assert(bdb->bdb_backup_lock_owner == 0);
 		}
 		bdb->bdb_backup_lock_owner = attachment_lock_owner;
@@ -2191,7 +2173,7 @@ void CCH_release(thread_db* tdbb, WIN * window, bool release_tail)
 		if (marked) {
 			if (bdb->bdb_flags & BDB_dirty) {
 				fb_assert(bdb->bdb_backup_lock_owner == BackupManager::attachment_lock_handle(tdbb));
-				SLONG database_lock_handle = BackupManager::database_lock_handle(tdbb);
+				const SLONG database_lock_handle = BackupManager::database_lock_handle(tdbb);
 				dbb->dbb_backup_manager->change_dirty_page_owner(tdbb, 
 					bdb->bdb_backup_lock_owner, database_lock_handle);
 				bdb->bdb_backup_lock_owner = database_lock_handle;
@@ -2752,16 +2734,14 @@ static int blocking_ast_bdb(void* ast_object)
  **************************************/
 	BufferDesc* bdb = static_cast<BufferDesc*>(ast_object);
 
-	ISC_ast_enter();
+	ISC_STATUS_ARRAY ast_status;
 
 /* Since this routine will be called asynchronously, we must establish
    a thread context. */
-	thread_db thd_context, *tdbb;
-	JRD_set_thread_data(tdbb, thd_context);
+	ThreadContextHolder tdbb(ast_status);
 
 	BLKCHK(bdb, type_bdb);
 	
-	ISC_STATUS_ARRAY ast_status;
 	Database* dbb = bdb->bdb_dbb;
 
 	tdbb->setDatabase(dbb);
@@ -2769,7 +2749,6 @@ static int blocking_ast_bdb(void* ast_object)
 	tdbb->tdbb_quantum = QUANTUM;
 	tdbb->setRequest(NULL);
 	tdbb->setTransaction(NULL);
-	tdbb->tdbb_status_vector = ast_status;
 
 /* Do some fancy footwork to make sure that pages are
    not removed from the btc tree at AST level.  Then
@@ -2777,7 +2756,6 @@ static int blocking_ast_bdb(void* ast_object)
 
 	const bool keep_pages = (dbb->dbb_bcb->bcb_flags & BCB_keep_pages) != 0;
 	dbb->dbb_bcb->bcb_flags |= BCB_keep_pages;
-	ast_status[1] = 0;
 
 	down_grade(tdbb, bdb);
 
@@ -2788,12 +2766,6 @@ static int blocking_ast_bdb(void* ast_object)
 	if (ast_status[1]) {
 		gds__log_status(dbb->dbb_filename.c_str(), ast_status);
 	}
-
-/* Restore the prior thread context */
-
-	JRD_restore_thread_data();
-
-	ISC_ast_exit();
 
     return 0;
 }
@@ -3487,9 +3459,8 @@ static void btc_insert_unbalanced(Database* dbb, BufferDesc* bdb)
 				bdb->bdb_parent = node;
 				break;
 			}
-			else {
-				node = node->bdb_left;
-			}
+
+			node = node->bdb_left;
 		}
 		else {
 			if (!node->bdb_right) {
@@ -3497,8 +3468,8 @@ static void btc_insert_unbalanced(Database* dbb, BufferDesc* bdb)
 				bdb->bdb_parent = node;
 				break;
 			}
-			else
-				node = node->bdb_right;
+
+			node = node->bdb_right;
 		}
 	}
 
@@ -3544,10 +3515,9 @@ static void btc_remove_balanced(BufferDesc* bdb)
 //			BTC_MUTEX_RELEASE;
 			return;
 		}
-		else {
-			cache_bugcheck(211);
-			/* msg 211 attempt to remove page from dirty page list when not there */
-		}
+
+		cache_bugcheck(211);
+		/* msg 211 attempt to remove page from dirty page list when not there */
 	}
 
 /* stack the way to node from root */
@@ -3582,18 +3552,16 @@ static void btc_remove_balanced(BufferDesc* bdb)
 			stack[stackp].comp = -1;
 			break;
 		}
-		else
-		{
-			stack[stackp].bdb_node = p;
-			stack[stackp].comp = comp;
-			
-			p = (comp > 0) ? p->bdb_right : p->bdb_left;
 
-			// node not found, bad tree
-			if (!p)
-			{
-				cache_bugcheck(211);
-			}
+		stack[stackp].bdb_node = p;
+		stack[stackp].comp = comp;
+		
+		p = (comp > 0) ? p->bdb_right : p->bdb_left;
+
+		// node not found, bad tree
+		if (!p)
+		{
+			cache_bugcheck(211);
 		}
 	}
 
@@ -3988,10 +3956,9 @@ static void btc_remove_unbalanced(BufferDesc* bdb)
 //			BTC_MUTEX_RELEASE;
 			return;
 		}
-		else {
-			cache_bugcheck(211);
-			/* msg 211 attempt to remove page from dirty page list when not there */
-		}
+
+		cache_bugcheck(211);
+		/* msg 211 attempt to remove page from dirty page list when not there */
 	}
 
 /* make a new child out of the left and right children */
@@ -4072,23 +4039,18 @@ static THREAD_ENTRY_DECLARE cache_reader(THREAD_ENTRY_PARAM arg)
 	Database* dbb = (Database*)arg;
 	THREAD_ENTER();
 
-/* Establish a thread context. */
-/* Note: Since this function operates as its own thread,
-   we have no need to restore the THREAD CONTEXT on exit.
-   Once we reach the end, the thread will die, thus implicitly
-   killing all its contexts. */
-	thread_db thd_context, *tdbb;
-	JRD_set_thread_data(tdbb, thd_context);
-
 	ISC_STATUS_ARRAY status_vector;
+
+/* Establish a thread context. */
+	ThreadContextHolder tdbb(status_vector);
+
 /* Dummy attachment needed for lock owner identification. */
 	tdbb->setDatabase(dbb);
-	Jrd::ContextPoolHolder context(tdbb, dbb->dbb_bufferpool);
-	tdbb->tdbb_status_vector = status_vector;
 	tdbb->tdbb_quantum = QUANTUM;
 	tdbb->setAttachment(FB_NEW(*dbb->dbb_bufferpool) Attachment());
 	tdbb->getAttachment()->att_database = dbb;
 	tdbb->getAttachment()->att_filename = dbb->dbb_filename;
+	Jrd::ContextPoolHolder context(tdbb, dbb->dbb_bufferpool);
 
 /* This try block is specifically to protect the LCK_init call: if
    LCK_init fails we won't be able to accomplish anything anyway, so
@@ -4123,7 +4085,7 @@ static THREAD_ENTRY_DECLARE cache_reader(THREAD_ENTRY_PARAM arg)
 	prefetch_init(&prefetch2, tdbb);
 
 	while (bcb->bcb_flags & BCB_cache_reader) {
-		SLONG count = ISC_event_clear(reader_event);
+		const SLONG count = ISC_event_clear(reader_event);
 		bcb->bcb_flags |= BCB_reader_active;
 		bool found = false;
 		SLONG starting_page = -1;
@@ -4131,7 +4093,7 @@ static THREAD_ENTRY_DECLARE cache_reader(THREAD_ENTRY_PARAM arg)
 
 		if (dbb->dbb_flags & DBB_suspend_bgio) {
 			THREAD_EXIT();
-			ISC_event_wait(1, &reader_event, &count, 10 * 1000000, NULL, 0);
+			ISC_event_wait(1, &reader_event, &count, 10 * 1000000);
 			THREAD_ENTER();
 			continue;
 		}
@@ -4201,7 +4163,7 @@ static THREAD_ENTRY_DECLARE cache_reader(THREAD_ENTRY_PARAM arg)
 		else {
 			bcb->bcb_flags &= ~BCB_reader_active;
 			THREAD_EXIT();
-			ISC_event_wait(1, &reader_event, &count, 10 * 1000000, NULL, 0);
+			ISC_event_wait(1, &reader_event, &count, 10 * 1000000);
 			THREAD_ENTER();
 		}
 		bcb = dbb->dbb_bcb;
@@ -4244,23 +4206,18 @@ static THREAD_ENTRY_DECLARE cache_writer(THREAD_ENTRY_PARAM arg)
 	Database* dbb = (Database*)arg;
 	THREAD_ENTER();
 
-/* Establish a thread context. */
-/* Note: Since this function operates as its own thread,
-   we have no need to restore the THREAD CONTEXT on exit.
-   Once we reach the end, the thread will die, thus implicitly
-   killing all its contexts. */
-	thread_db thd_context, *tdbb;
-	JRD_set_thread_data(tdbb, thd_context);
-
 	ISC_STATUS_ARRAY status_vector;
+
+/* Establish a thread context. */
+	ThreadContextHolder tdbb(status_vector);
+
 /* Dummy attachment needed for lock owner identification. */
 
 	tdbb->setDatabase(dbb);
-	Jrd::ContextPoolHolder context(tdbb, dbb->dbb_bufferpool);
-	tdbb->tdbb_status_vector = status_vector;
 	tdbb->tdbb_quantum = QUANTUM;
 	tdbb->setAttachment(FB_NEW(*dbb->dbb_bufferpool) Attachment(dbb));
 	tdbb->getAttachment()->att_filename = dbb->dbb_filename;
+	Jrd::ContextPoolHolder context(tdbb, dbb->dbb_bufferpool);
 
 /* This try block is specifically to protect the LCK_init call: if
    LCK_init fails we won't be able to accomplish anything anyway, so
@@ -4291,13 +4248,13 @@ static THREAD_ENTRY_DECLARE cache_writer(THREAD_ENTRY_PARAM arg)
 	try {
 		while (bcb->bcb_flags & BCB_cache_writer)
 		{
-			SLONG count = ISC_event_clear(writer_event);
+			const SLONG count = ISC_event_clear(writer_event);
 			bcb->bcb_flags |= BCB_writer_active;
 			SLONG starting_page = -1;
 
 			if (dbb->dbb_flags & DBB_suspend_bgio) {
 				THREAD_EXIT();
-				ISC_event_wait(1, &writer_event, &count, 10 * 1000000, NULL, 0);
+				ISC_event_wait(1, &writer_event, &count, 10 * 1000000);
 				THREAD_ENTER();
 				bcb = dbb->dbb_bcb;
 				continue;
@@ -4367,7 +4324,7 @@ static THREAD_ENTRY_DECLARE cache_writer(THREAD_ENTRY_PARAM arg)
 			else {
 				bcb->bcb_flags &= ~BCB_writer_active;
 				THREAD_EXIT();
-				ISC_event_wait(1, &writer_event, &count, 10 * 1000000, NULL, 0);
+				ISC_event_wait(1, &writer_event, &count, 10 * 1000000);
 				THREAD_ENTER();
 			}
 			bcb = dbb->dbb_bcb;
@@ -4426,9 +4383,8 @@ static void check_precedence(thread_db* tdbb, WIN * window, PageNumber page)
 		if (-page.getPageNum() <= dbb->dbb_last_header_write) {
 			return;
 		}
-		else {
-			page = PageNumber(DB_PAGE_SPACE, 0);
-		}
+
+		page = PageNumber(DB_PAGE_SPACE, 0);
 	}
 
 /* Start by finding the buffer containing the high priority page */
@@ -4471,13 +4427,15 @@ static void check_precedence(thread_db* tdbb, WIN * window, PageNumber page)
    search was too complex to complete, just write the high page and
    forget about about establishing the relationship. */
 
-	if (QUE_NOT_EMPTY(high->bdb_lower)) {
+	if (QUE_NOT_EMPTY(high->bdb_lower))
+	{
 		const SSHORT relationship = related(low, high, PRE_SEARCH_LIMIT);
 		if (relationship == PRE_EXISTS) {
 //			PRE_MUTEX_RELEASE;
 			return;
 		}
-		else if (relationship == PRE_UNKNOWN) {
+
+		if (relationship == PRE_UNKNOWN) {
 			const PageNumber high_page = high->bdb_page;
 //			PRE_MUTEX_RELEASE;
 			if (!write_buffer
@@ -4651,16 +4609,7 @@ static void down_grade(thread_db* tdbb, BufferDesc* bdb)
 
 	if (!(bdb->bdb_flags & BDB_dirty)) {
 		bdb->bdb_ast_flags &= ~BDB_blocking;
-#ifdef VMS
-		if (lock->lck_logical == LCK_write) {
-			LCK_convert(tdbb, lock, LCK_read, LCK_WAIT);
-		}
-		else {
-			PAGE_LOCK_RELEASE(bdb->bdb_lock);
-		}
-#else
 		LCK_downgrade(tdbb, lock);
-#endif
 		release_bdb(tdbb, bdb, false, false, false);
 		return; // true;
 	}
@@ -4720,11 +4669,7 @@ static void down_grade(thread_db* tdbb, BufferDesc* bdb)
 	}
 	else {
 		bdb->bdb_ast_flags &= ~BDB_blocking;
-#ifdef VMS
-		LCK_convert(tdbb, lock, LCK_read, LCK_WAIT);
-#else
 		LCK_downgrade(tdbb, lock);
-#endif
 	}
 
 /* Clear precedence relationships to lower precedence buffers.  Since it
@@ -4947,6 +4892,7 @@ static BufferDesc* get_buffer(thread_db* tdbb, const PageNumber page, LATCH latc
 //					BCB_MUTEX_RELEASE;
 					const SSHORT latch_return =
 						latch_bdb(tdbb, latch, bdb, page, latch_wait);
+
 					if (latch_return) {
 						if (latch_return == 1) {
 							return NULL;	/* permitted timeout happened */
@@ -4954,12 +4900,11 @@ static BufferDesc* get_buffer(thread_db* tdbb, const PageNumber page, LATCH latc
 //						BCB_MUTEX_ACQUIRE;
 						goto find_page;
 					}
-					else {
-						bdb->bdb_flags &= ~(BDB_faked | BDB_prefetch);
-						dbb->dbb_fetches++;
-						tdbb->bumpStats(RuntimeStatistics::PAGE_FETCHES);
-						return bdb;
-					}
+
+					bdb->bdb_flags &= ~(BDB_faked | BDB_prefetch);
+					dbb->dbb_fetches++;
+					tdbb->bumpStats(RuntimeStatistics::PAGE_FETCHES);
+					return bdb;
 				}
 			}
 		}
@@ -4974,7 +4919,8 @@ static BufferDesc* get_buffer(thread_db* tdbb, const PageNumber page, LATCH latc
 				 que_inst != &bcb->bcb_in_use; que_inst = que_inst->que_backward)
 			{
 				BufferDesc* bdb = BLOCK(que_inst, BufferDesc*, bdb_in_use);
-				if (page == FREE_PAGE) {
+				if (page == FREE_PAGE)
+				{
 					if (bdb->bdb_use_count ||
 						bdb->bdb_flags & BDB_free_pending)
 					{
@@ -5107,12 +5053,10 @@ static BufferDesc* get_buffer(thread_db* tdbb, const PageNumber page, LATCH latc
 					ISC_event_post(dbb->dbb_writer_event);
 				}
 				if (walk) {
-					if (!--walk) {
+					if (!--walk)
 						break;
-					}
-					else {
-						continue;
-					}
+
+					continue;
 				}
 			}
 #endif
@@ -5448,12 +5392,11 @@ static SSHORT latch_bdb(
 		THREAD_EXIT();
 		if (latch_wait == 1) {
 			timeout_occurred =
-				ISC_event_wait(1, &event, &count, 120 * 1000000, NULL, event);
+				ISC_event_wait(1, &event, &count, 120 * 1000000);
 		}
 		else {
 			timeout_occurred =
-				ISC_event_wait(1, &event, &count, -latch_wait * 1000000,
-							   NULL, event);
+				ISC_event_wait(1, &event, &count, -latch_wait * 1000000);
 		}
 		THREAD_ENTER();
 //		LATCH_MUTEX_ACQUIRE;
@@ -6167,42 +6110,36 @@ static void release_bdb(
 //					LATCH_MUTEX_RELEASE;
 					return;
 				}
-				else {
-					++bdb->bdb_use_count;
-					bdb->bdb_exclusive = lwt->lwt_tdbb;
-					lwt->lwt_flags &= ~LWT_pending;
-					ISC_event_post(&lwt->lwt_event);
-//					LATCH_MUTEX_RELEASE;
-					return;
-				}
+				++bdb->bdb_use_count;
+				bdb->bdb_exclusive = lwt->lwt_tdbb;
+				lwt->lwt_flags &= ~LWT_pending;
+				ISC_event_post(&lwt->lwt_event);
+//				LATCH_MUTEX_RELEASE;
+				return;
 
 			case LATCH_io:
-				if (bdb->bdb_io) {
-					break;
-				}
-				else {
+				if (!bdb->bdb_io)
+				{
 					++bdb->bdb_use_count;
 					bdb->bdb_io = lwt->lwt_tdbb;
 					lwt->lwt_flags &= ~LWT_pending;
 					ISC_event_post(&lwt->lwt_event);
 					granted = true;
-					break;
 				}
+				break;
 
 			case LATCH_mark:
 				if (bdb->bdb_exclusive != lwt->lwt_tdbb) {
 					cache_bugcheck(298);	/* missing exclusive latch */
 				}
-				if (bdb->bdb_io) {
-					break;
-				}
-				else {
+				if (!bdb->bdb_io)
+				{
 					bdb->bdb_io = lwt->lwt_tdbb;
 					lwt->lwt_flags &= ~LWT_pending;
 					ISC_event_post(&lwt->lwt_event);
 					granted = true;
-					break;
 				}
+				break;
 
 			case LATCH_shared:
 				if (bdb->bdb_exclusive) {
@@ -6340,7 +6277,7 @@ static void unmark(thread_db* tdbb, WIN * window)
 		if (marked) {
 			fb_assert(bdb->bdb_backup_lock_owner == BackupManager::attachment_lock_handle(tdbb));
 
-			SLONG database_lock_handle = BackupManager::database_lock_handle(tdbb);
+			const SLONG database_lock_handle = BackupManager::database_lock_handle(tdbb);
 			tdbb->getDatabase()->dbb_backup_manager->change_dirty_page_owner(tdbb, 
 				bdb->bdb_backup_lock_owner, database_lock_handle);
 			bdb->bdb_backup_lock_owner = database_lock_handle;
@@ -6514,14 +6451,14 @@ static int write_buffer(
 	if (!result) {
 		return 0;
 	}
-	else
+
 #ifdef SUPERSERVER
 	if (!write_this_page) {
 		return 2;
 	}
-	else
 #endif
-		return 1;
+
+	return 1;
 }
 
 
@@ -6622,9 +6559,11 @@ static bool write_page(
 			if (!isTempPage && (backup_state == nbak_state_stalled ||
 					backup_state == nbak_state_merge) ) 
 			{
+
 				const bool res = 
 					dbb->dbb_backup_manager->write_difference(status, 
 						bdb->bdb_difference_page, bdb->bdb_buffer);
+
 				if (!res) 
 				{
 					bdb->bdb_flags |= BDB_io_error;
@@ -6641,14 +6580,17 @@ static bool write_page(
 			}
 			else {
 				// We need to write our pages to main database files
+
 				jrd_file* file = pageSpace->file;
 				while (!PIO_write(file, bdb, page, status)) {
+
 					if (isTempPage || !CCH_rollover_to_shadow(dbb, file, inAst))
 					{
 						bdb->bdb_flags |= BDB_io_error;
 						dbb->dbb_flags |= DBB_suspend_bgio;
 						return false;
 					}
+
 					file = pageSpace->file;
 				}
 

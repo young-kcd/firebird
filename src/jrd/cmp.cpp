@@ -45,7 +45,6 @@
 #include "../jrd/common.h"
 #include "../jrd/ibase.h"
 #include "../jrd/jrd.h"
-#include "../jrd/sym.h"
 #include "../jrd/req.h"
 #include "../jrd/val.h"
 #include "../jrd/align.h"
@@ -259,7 +258,9 @@ static void build_external_access(thread_db* tdbb, ExternalAccessList& list, jrd
 	for (ExternalAccess *item = request->req_external.begin(); item < request->req_external.end(); item++) 
 	{
 		size_t i;
-		if (list.find(*item, i)) continue;
+		if (list.find(*item, i))
+			continue;
+
 		list.insert(i, *item);
 
 		// Add externals recursively
@@ -271,7 +272,8 @@ static void build_external_access(thread_db* tdbb, ExternalAccessList& list, jrd
 		else {
 			jrd_rel* relation = MET_lookup_relation_id(tdbb, item->exa_rel_id, false);
 
-			if (!relation) continue;
+			if (!relation)
+				continue;
 
 			trig_vec *vec1, *vec2;
 			switch (item->exa_action) {
@@ -354,7 +356,7 @@ static void verify_trigger_access(thread_db* tdbb, jrd_rel* owner_relation, trig
 							(access->acc_view_id) ? access->acc_view_id : 
 								(view ? view->rel_id : 0),
 							t.request->req_trg_name, NULL, access->acc_mask,
-							access->acc_type, access->acc_name);
+							access->acc_type, access->acc_name, access->acc_r_name);
 		}
 	}
 }
@@ -379,14 +381,16 @@ void CMP_verify_access(thread_db* tdbb, jrd_req* request)
 	for (ExternalAccess* item = external.begin(); item < external.end(); item++) {
 		if (item->exa_action == ExternalAccess::exa_procedure) {
 			jrd_prc* prc = MET_lookup_procedure_id(tdbb, item->exa_prc_id, false, false, 0);
-			if (!prc->prc_request) continue;
+			if (!prc->prc_request)
+				continue;
+
 			for (const AccessItem* access = prc->prc_request->req_access.begin();
 				 access < prc->prc_request->req_access.end();
 				 access++) 
 			{
 				const SecurityClass* sec_class = SCL_get_class(access->acc_security_name.c_str());
-				SCL_check_access(sec_class, access->acc_view_id, NULL, prc->prc_name, 
-								 access->acc_mask, access->acc_type, access->acc_name);
+				SCL_check_access(sec_class, access->acc_view_id, NULL, prc->prc_name, access->acc_mask,
+								 access->acc_type, access->acc_name, access->acc_r_name);
 			}
 		} 
 		else {
@@ -395,7 +399,8 @@ void CMP_verify_access(thread_db* tdbb, jrd_req* request)
 			if (item->exa_view_id)
 				view = MET_lookup_relation_id(tdbb, item->exa_view_id, false);
 
-			if (!relation) continue;
+			if (!relation)
+				continue;
 
 			switch (item->exa_action) {
 			case ExternalAccess::exa_insert:
@@ -420,8 +425,8 @@ void CMP_verify_access(thread_db* tdbb, jrd_req* request)
 		access++) 
 	{
 		const SecurityClass* sec_class = SCL_get_class(access->acc_security_name.c_str());
-		SCL_check_access(sec_class, access->acc_view_id, NULL, NULL,
-						 access->acc_mask, access->acc_type, access->acc_name);
+		SCL_check_access(sec_class, access->acc_view_id, NULL, NULL, access->acc_mask,
+						 access->acc_type, access->acc_name, access->acc_r_name);
 	}
 }
 
@@ -710,7 +715,8 @@ Format* CMP_format(thread_db* tdbb, CompilerScratch* csb, USHORT stream)
 	if (tail->csb_relation) {
 		return tail->csb_format = MET_current(tdbb, tail->csb_relation);
 	}
-	else if (tail->csb_procedure) {
+
+	if (tail->csb_procedure) {
 		return tail->csb_format = tail->csb_procedure->prc_format;
 	}
 
@@ -773,9 +779,6 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC * de
 		case dtype_int64:
 		case dtype_real:
 		case dtype_double:
-#ifdef VMS
-		case dtype_d_float:
-#endif
 		case dtype_text:
 		case dtype_cstring:
 		case dtype_varying:
@@ -834,9 +837,6 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC * de
 
 		case dtype_real:
 		case dtype_double:
-#ifdef VMS
-		case dtype_d_float:
-#endif
 		case dtype_text:
 		case dtype_cstring:
 		case dtype_varying:
@@ -1192,9 +1192,6 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC * de
 			case dtype_long:
 			case dtype_real:
 			case dtype_double:
-#ifdef VMS
-			case dtype_d_float:
-#endif
 				node->nod_flags |= nod_double;
 				desc->dsc_dtype = DEFAULT_DOUBLE;
 				desc->dsc_length = sizeof(double);
@@ -1487,9 +1484,6 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC * de
 				return;
 
 			case dtype_double:
-#ifdef VMS
-			case dtype_d_float:
-#endif
 				node->nod_flags |= nod_double;
 				desc->dsc_dtype = DEFAULT_DOUBLE;
 				desc->dsc_length = sizeof(double);
@@ -2149,6 +2143,14 @@ jrd_req* CMP_make_request(thread_db* tdbb, CompilerScratch* csb)
 		{
 			 rpb->rpb_stream_flags |= RPB_s_update;
 		}
+
+		// if no fields are referenced, mark the stream as not requiring record's data
+
+		if (!tail->csb_fields)
+		{
+			 rpb->rpb_stream_flags |= RPB_s_no_data;
+		}
+
 		rpb->rpb_relation = tail->csb_relation;
 
 		delete tail->csb_fields;
@@ -2188,7 +2190,8 @@ void CMP_post_access(thread_db* tdbb,
 					 SLONG view_id,
 					 SecurityClass::flags_t mask,
 					 const TEXT* type_name,
-					 const Firebird::MetaName& name)
+					 const Firebird::MetaName& name,
+					 const Firebird::MetaName& r_name)
 {
 /**************************************
  *
@@ -2212,7 +2215,7 @@ void CMP_post_access(thread_db* tdbb,
 
 	SET_TDBB(tdbb);
 	
-	AccessItem access(security_name, view_id, name, type_name, mask);
+	AccessItem access(security_name, view_id, name, type_name, mask, r_name);
 
 	size_t i;
 
@@ -3304,9 +3307,10 @@ static jrd_nod* pass1(thread_db* tdbb,
 
 	switch (node->nod_type) {
 	case nod_like:
+	case nod_similar:
 		ptr = node->nod_arg;
 		ptr[0] = pass1(tdbb, csb, ptr[0], view, view_stream, validate_expr);
-		// We need to take care of invariantness of like pattern expression to be
+		// We need to take care of invariantness of like/similar pattern expression to be
 		// able to pre-compile its pattern
 		node->nod_flags |= nod_invariant;
 		csb->csb_current_nodes.push(node);
@@ -3319,7 +3323,7 @@ static jrd_nod* pass1(thread_db* tdbb,
 
 		// If there is no top-level RSE present and patterns are not constant,
 		// unmark node as invariant because it may be dependent on data or variables.
-		// See the same for nod_contains below.
+		// See the same for nod_contains and nod_starts below.
 		if ((node->nod_flags & nod_invariant) && 
 			(ptr[1]->nod_type != nod_literal || 
 			 (node->nod_count == 3 && ptr[2]->nod_type != nod_literal)))
@@ -3338,10 +3342,11 @@ static jrd_nod* pass1(thread_db* tdbb,
 		return node;
 
 	case nod_contains:
+	case nod_starts:
 		ptr = node->nod_arg;
 		ptr[0] = pass1(tdbb, csb, ptr[0], view, view_stream, validate_expr);
-		// We need to take care of invariantness of contains expression to be
-		// able to pre-compile it for searching
+		// We need to take care of invariantness of contains and starts
+		// expression to be able to pre-compile it for searching
 		node->nod_flags |= nod_invariant;
 		csb->csb_current_nodes.push(node);
 		ptr[1] = pass1(tdbb, csb, ptr[1], view, view_stream, validate_expr);
@@ -3490,7 +3495,7 @@ static jrd_nod* pass1(thread_db* tdbb,
 									(tail->csb_view) ? tail->csb_view->rel_id : 
 										(view ? view->rel_id : 0),
 									SCL_sql_update, object_column,
-									field->fld_name);
+									field->fld_name, relation->rel_name);
 				}
 			}
 			else if (tail->csb_flags & csb_erase) {
@@ -3509,7 +3514,8 @@ static jrd_nod* pass1(thread_db* tdbb,
 				CMP_post_access(tdbb, csb, field->fld_security_name,
 								(tail->csb_view) ? tail->csb_view->rel_id : 
 									(view ? view->rel_id : 0),
-								SCL_sql_insert, object_column, field->fld_name);
+								SCL_sql_insert, object_column, 
+								field->fld_name, relation->rel_name);
 			}
 			else {
 				CMP_post_access(tdbb, csb, relation->rel_security_name,
@@ -3519,7 +3525,7 @@ static jrd_nod* pass1(thread_db* tdbb,
 				CMP_post_access(tdbb, csb, field->fld_security_name,
 								(tail->csb_view) ? tail->csb_view->rel_id : 
 									(view ? view->rel_id : 0),
-								SCL_read, object_column, field->fld_name);
+								SCL_read, object_column, field->fld_name, relation->rel_name);
 			}
 
 			if (!(sub = field->fld_computation) && !(sub = field->fld_source)) {
@@ -4950,6 +4956,7 @@ static jrd_nod* pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node
 
 	case nod_like:
 	case nod_contains:
+	case nod_similar:
 		if (node->nod_flags & nod_invariant) {
 			csb->csb_invariants.push(node);
 		}
@@ -5226,7 +5233,7 @@ static jrd_nod* pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node
 					(jrd_nod*) FUN_resolve(csb, function, value);
 				if (!node->nod_arg[e_fun_function]) {
 					ERR_post(isc_funmismat, isc_arg_string,
-							function->fun_symbol->sym_string.c_str(), 0);
+							function->fun_name.c_str(), 0);
 				}
 			}
 			dsc descriptor_a;
@@ -5262,6 +5269,7 @@ static jrd_nod* pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node
 		// boolean nodes taking three values as inputs
 	case nod_like:
 	case nod_between:
+	case nod_similar:
 	case nod_sleuth:
 		if (node->nod_count > 2) {
 			if (node->nod_arg[2]->nod_flags & nod_agg_dbkey) {
@@ -5302,7 +5310,7 @@ static jrd_nod* pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node
 				node->nod_arg[0]->nod_flags |= nod_date;
 		}
 		if (node->nod_flags & nod_invariant) {
-			// This may currently happen for nod_like and nod_contains
+			// This may currently happen for nod_like, nod_contains and nod_similar
 			csb->csb_impure += sizeof(impure_value);
 		}
 		break;
@@ -5618,9 +5626,8 @@ static void plan_set(CompilerScratch* csb, RecordSelExpr* rse, jrd_nod* plan)
 
 				break;
 			}
-			else {
-				view_relation = NULL;
-			}
+
+			view_relation = NULL;
 
 			// if the user didn't specify an alias (or didn't specify one
 			// for this level), check to make sure there is one and only one 
@@ -6005,16 +6012,15 @@ static SSHORT strcmp_space(const char* p, const char* q)
  **************************************/
 
 	for (; *p && *p != ' ' && *q && *q != ' '; p++, q++)
+	{
 		if (*p != *q)
 			break;
+	}
 
 	if ((!*p || *p == ' ') && (!*q || *q == ' '))
 		return 0;
 
-	if (*p > *q)
-		return 1;
-	else
-		return -1;
+	return (*p > *q) ? 1 : -1;
 }
 
 

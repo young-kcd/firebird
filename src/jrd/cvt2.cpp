@@ -53,10 +53,6 @@
 
 using namespace Jrd;
 
-#ifdef VMS
-double MTH$CVT_D_G(), MTH$CVT_G_D();
-#endif
-
 /* The original order of dsc_type values corresponded to the priority
    of conversion (that is, always convert the lesser to the greater
    type.)  Introduction of dtype_int64 breaks that assumption: its
@@ -180,15 +176,6 @@ SSHORT CVT2_compare(const dsc* arg1, const dsc* arg2, FPTR_ERROR err)
 				return 1;
 			return -1;
 
-#ifdef VMS
-		case SPECIAL_DOUBLE:
-			if (*(double *) p1 == *(double *) p2)
-				return 0;
-			if (CNVT_TO_DFLT((double *) p1) > CNVT_TO_DFLT((double *) p2))
-				return 1;
-			return -1;
-#endif
-
 		case dtype_text:
 		case dtype_varying:
 		case dtype_cstring:
@@ -248,40 +235,45 @@ SSHORT CVT2_compare(const dsc* arg1, const dsc* arg2, FPTR_ERROR err)
 
 		int fill = length - length2;
 		const UCHAR pad = charset1 == ttype_binary || charset2 == ttype_binary ? '\0' : ' ';
-		if (length >= length2) {
+
+		if (length >= length2)
+		{
 			if (length2)
+			{
 				do
+				{
 					if (*p1++ != *p2++)
-						if (p1[-1] > p2[-1])
-							return 1;
-						else
-							return -1;
-				while (--length2);
+						return (p1[-1] > p2[-1]) ? 1 : -1;
+				} while (--length2);
+			}
+
 			if (fill > 0)
+			{
 				do
+				{
 					if (*p1++ != pad)
-						if (p1[-1] > pad)
-							return 1;
-						else
-							return -1;
-				while (--fill);
+						return (p1[-1] > pad) ? 1 : -1;
+				} while (--fill);
+			}
+
 			return 0;
 		}
+		
 		if (length)
+		{
 			do
+			{
 				if (*p1++ != *p2++)
-					if (p1[-1] > p2[-1])
-						return 1;
-					else
-						return -1;
-			while (--length);
+					return (p1[-1] > p2[-1]) ? 1 : -1;
+			} while (--length);
+		}
+
 		do
+		{
 			if (*p2++ != pad)
-				if (pad > p2[-1])
-					return 1;
-				else
-					return -1;
-		while (++fill);
+				return (pad > p2[-1]) ? 1 : -1;
+		} while (++fill);
+
 		return 0;
 	}
 
@@ -388,9 +380,6 @@ SSHORT CVT2_compare(const dsc* arg1, const dsc* arg2, FPTR_ERROR err)
 		}
 
 	case dtype_double:
-#ifdef VMS
-	case dtype_d_float:
-#endif
 		{
 			const double temp1 = CVT_get_double(arg1, err);
 			const double temp2 = CVT_get_double(arg2, err);
@@ -689,15 +678,14 @@ USHORT CVT2_make_string2(const dsc* desc,
 			*address = from_buf;
 			return from_len;
 		}
-		else {
-			USHORT length = INTL_convert_bytes(tdbb, cs1, NULL, 0,
-											   cs2, from_buf, from_len, err);
-			UCHAR* tempptr = temp.getBuffer(length);
-			length = INTL_convert_bytes(tdbb, cs1, tempptr, length,
-										cs2, from_buf, from_len, err);
-			*address = tempptr;
-			return length;
-		}
+
+		USHORT length = INTL_convert_bytes(tdbb, cs1, NULL, 0,
+										   cs2, from_buf, from_len, err);
+		UCHAR* tempptr = temp.getBuffer(length);
+		length = INTL_convert_bytes(tdbb, cs1, tempptr, length,
+									cs2, from_buf, from_len, err);
+		*address = tempptr;
+		return length;
 	}
 
 /* Not string data, then  -- convert value to varying string. */

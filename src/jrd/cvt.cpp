@@ -38,11 +38,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <limits.h>
-#ifndef REQUESTER
 #include "../jrd/jrd.h"
-//#else
-//#include "../jrd/common.h"
-#endif
 #include "../jrd/req.h"
 #include "../jrd/val.h"
 #include "../jrd/quad.h"
@@ -62,9 +58,7 @@
 #include <sys/types.h>
 #endif
 
-#if !(defined REQUESTER && defined SUPERCLIENT)
 #include "../jrd/intl_classes.h"
-#endif
 
 #ifdef sun
 #define DBL_MAX_10_EXP          308
@@ -76,10 +70,6 @@
 
 #ifndef DBL_MAX_10_EXP
 #include <float.h>
-#endif
-
-#ifdef VMS
-double MTH$CVT_D_G(), MTH$CVT_G_D();
 #endif
 
 /* ERR_post is used to flag whether we were called from mov.cpp or
@@ -141,7 +131,7 @@ double MTH$CVT_D_G(), MTH$CVT_G_D();
 #define CVT_FAILURE_SPACE       128
 
 #define CVT_COPY_BUFF(from, to, len) \
-{if (len) {MOVE_FAST(from, to, len); from += len; to += len; len = 0;} }
+{if (len) {memcpy(to, from, len); from += len; to += len; len = 0;} }
 
 enum EXPECT_DATETIME {
 	expect_timestamp,
@@ -149,7 +139,7 @@ enum EXPECT_DATETIME {
 	expect_sql_time
 };
 
-#if (defined REQUESTER || defined SUPERCLIENT)
+#if defined SUPERCLIENT
 static TEXT cvt_failures[CVT_FAILURE_SPACE];
 static TEXT* cvt_failures_ptr = NULL;
 static const TEXT* error_string(const char*, SSHORT);
@@ -199,37 +189,42 @@ double CVT_date_to_double(const dsc* desc, FPTR_ERROR err)
  **************************************/
 	SLONG temp[2], *date;
 
-/* If the input descriptor is not in date form, convert it. */
+	// If the input descriptor is not in date form, convert it.
 
-	if (desc->dsc_dtype == dtype_timestamp)
+	switch (desc->dsc_dtype)
+	{
+	case dtype_timestamp:
 		date = (SLONG*) desc->dsc_address;
-	else if (desc->dsc_dtype == dtype_sql_time) {
-		/* Temporarily convert the time to a timestamp for conversion */
+		break;
+	case dtype_sql_time:
+		// Temporarily convert the time to a timestamp for conversion
 		date = temp;
 		date[0] = 0;
 		date[1] = *(SLONG*) desc->dsc_address;
-	}
-	else if (desc->dsc_dtype == dtype_sql_date) {
-		/* Temporarily convert the date to a timestamp for conversion */
+		break;
+	case dtype_sql_date:
+		// Temporarily convert the date to a timestamp for conversion
 		date = temp;
 		date[0] = *(SLONG*) desc->dsc_address;
 		date[1] = 0;
-	}
-	else {
-		/* Unknown type - most likely a string.  Try to convert it to a 
-		   timestamp -- or die trying (reporting an error).
-		   Don't worry about users putting a TIME or DATE here - this
-		   conversion is occuring in really flexible spots - we don't
-		   want to overdo it. */
+		break;
+	default:
+		{
+			// Unknown type - most likely a string.  Try to convert it to a
+			// timestamp -- or die trying (reporting an error).
+			// Don't worry about users putting a TIME or DATE here - this
+			// conversion is occuring in really flexible spots - we don't
+			// want to overdo it.
 
-		dsc temp_desc;
-		MOVE_CLEAR(&temp_desc, sizeof(temp_desc));
+			dsc temp_desc;
+			MOVE_CLEAR(&temp_desc, sizeof(temp_desc));
 
-		temp_desc.dsc_dtype = dtype_timestamp;
-		temp_desc.dsc_length = sizeof(temp);
-		date = temp;
-		temp_desc.dsc_address = (UCHAR*) date;
-		CVT_move(desc, &temp_desc, err);
+			temp_desc.dsc_dtype = dtype_timestamp;
+			temp_desc.dsc_length = sizeof(temp);
+			date = temp;
+			temp_desc.dsc_address = (UCHAR*) date;
+			CVT_move(desc, &temp_desc, err);
+		}
 	}
 
 /* Instead of returning the calculated double value in the return
@@ -315,11 +310,6 @@ double CVT_get_double(const dsc* desc, FPTR_ERROR err)
 		   invalid alignment address for doubles */
 		MOVE_FAST(desc->dsc_address, &value, sizeof(double));
 		return value;
-
-#ifdef VMS
-	case SPECIAL_DOUBLE:
-		return CNVT_TO_DFLT((double*) desc->dsc_address);
-#endif
 
 	case dtype_varying:
 	case dtype_cstring:
@@ -569,9 +559,6 @@ SLONG CVT_get_long(const dsc* desc, SSHORT scale, FPTR_ERROR err)
 
 	case dtype_real:
 	case dtype_double:
-#ifdef VMS
-	case dtype_d_float:
-#endif
 		if (desc->dsc_dtype == dtype_real)
 		{
 			d = *((float*) p);
@@ -582,12 +569,7 @@ SLONG CVT_get_long(const dsc* desc, SSHORT scale, FPTR_ERROR err)
 			d = *((double*) p);
 			eps = eps_double;
 		}
-#ifdef VMS
-		else {
-			d = CNVT_TO_DFLT((double*) p);
-			eps = eps_double;
-		}
-#endif
+
 		if (scale > 0)
 			d /= power_of_ten(scale);
 		else if (scale < 0)
@@ -724,8 +706,8 @@ UCHAR CVT_get_numeric(const UCHAR* string,
 				/* possibility of an overflow */
 				if (value > NUMERIC_LIMIT)
 					break;
-				else if (((*p > '8') && (sign == -1))
-						 || ((*p > '7') && (sign != -1)))
+
+				if ((*p > '8' && sign == -1) || (*p > '7' && sign != -1))
 					break;
 			}
 
@@ -771,19 +753,19 @@ UCHAR CVT_get_numeric(const UCHAR* string,
 		*(SLONG *) ptr = (SLONG) ((sign == -1) ? -value : value);
 		return dtype_long;
 	}
-	else if ((sign == -1) && (-value == LONG_MIN_int64)) {
+
+	if ((sign == -1) && (-value == LONG_MIN_int64)) {
 		*(SLONG *) ptr = LONG_MIN;
 		return dtype_long;
 	}
-	else {
-		/* Either MAX_SLONG < value <= MAX_SINT64, or
-		   ((value == MIN_SINT64) && (sign == -1)).
-		   In the first case, the number can be negated, while in the second
-		   negating the value will not change it on a 2s-complement system. */
 
-		*(SINT64 *) ptr = ((sign == -1) ? -value : value);
-		return dtype_int64;
-	}
+	/* Either MAX_SLONG < value <= MAX_SINT64, or
+	   ((value == MIN_SINT64) && (sign == -1)).
+	   In the first case, the number can be negated, while in the second
+	   negating the value will not change it on a 2s-complement system. */
+
+	*(SINT64 *) ptr = ((sign == -1) ? -value : value);
+	return dtype_int64;
 }
 
 
@@ -833,25 +815,24 @@ SQUAD CVT_get_quad(const dsc* desc, SSHORT scale, FPTR_ERROR err)
 
 	case dtype_real:
 	case dtype_double:
-#ifdef VMS
-	case dtype_d_float:
-#endif
 		if (desc->dsc_dtype == dtype_real)
 			d = *((float*) p);
 		else if (desc->dsc_dtype == DEFAULT_DOUBLE)
 			d = *((double*) p);
-#ifdef VMS
-		else
-			d = CNVT_TO_DFLT((double*) p);
-#endif
+
 		if (scale > 0)
+		{
 			do {
 				d /= 10.;
 			} while (--scale);
+		}
 		else if (scale < 0)
+		{
 			do {
 				d *= 10.;
 			} while (++scale);
+		}
+
 		if (d > 0)
 			d += 0.5;
 		else
@@ -866,8 +847,10 @@ SQUAD CVT_get_quad(const dsc* desc, SSHORT scale, FPTR_ERROR err)
 
 			if (d > (double) QUAD_MIN_real - 1.)
 				return QUAD_MIN_int;
-			else if (d < (double) QUAD_MAX_real + 1.)
+
+			if (d < (double) QUAD_MAX_real + 1.)
 				return QUAD_MAX_int;
+
 			(*err)(isc_arith_except, 0);
 		}
 		return QUAD_FROM_DOUBLE(d, err);
@@ -979,9 +962,6 @@ SINT64 CVT_get_int64(const dsc* desc, SSHORT scale, FPTR_ERROR err)
 
 	case dtype_real:
 	case dtype_double:
-#ifdef VMS
-	case dtype_d_float:
-#endif
 		if (desc->dsc_dtype == dtype_real)
 		{
 			d = *((float*) p);
@@ -992,12 +972,7 @@ SINT64 CVT_get_int64(const dsc* desc, SSHORT scale, FPTR_ERROR err)
 			d = *((double*) p);
 			eps = eps_double;
 		}
-#ifdef VMS
-		else {
-			d = CNVT_TO_DFLT((double*) p);
-			eps = eps_double;
-		}
-#endif
+
 		if (scale > 0)
 			d /= power_of_ten(scale);
 		else if (scale < 0)
@@ -1254,11 +1229,13 @@ USHORT CVT_make_string(const dsc*          desc,
 	if (desc->dsc_dtype <= dtype_any_text && INTL_TTYPE(desc) == to_interp) {
 		*address = reinterpret_cast<char*>(desc->dsc_address);
 		const USHORT from_len = desc->dsc_length;
+
 		if (desc->dsc_dtype == dtype_text)
 			return from_len;
+
 		if (desc->dsc_dtype == dtype_cstring)
-			return MIN((USHORT) strlen((char *) desc->dsc_address),
-					   from_len - 1);
+			return MIN((USHORT) strlen((char *) desc->dsc_address), from_len - 1);
+
 		if (desc->dsc_dtype == dtype_varying) {
 			vary* varying = (vary*) desc->dsc_address;
 			*address = varying->vary_string;
@@ -1305,7 +1282,7 @@ void CVT_move(const dsc* from, dsc* to, FPTR_ERROR err)
 
 	if (DSC_EQUIV(from, to, false)) {
 		if (length) {
-			MOVE_FAST(q, p, length);
+			memcpy(p, q, length);
 		}
 		return;
 	}
@@ -1374,9 +1351,6 @@ void CVT_move(const dsc* from, dsc* to, FPTR_ERROR err)
 		case dtype_quad:
 		case dtype_real:
 		case dtype_double:
-#ifdef VMS
-		case dtype_d_float:
-#endif
 			conversion_error(from, err);
 			break;
 		}
@@ -1408,9 +1382,6 @@ void CVT_move(const dsc* from, dsc* to, FPTR_ERROR err)
 		case dtype_quad:
 		case dtype_real:
 		case dtype_double:
-#ifdef VMS
-		case dtype_d_float:
-#endif
 			conversion_error(from, err);
 			break;
 		}
@@ -1442,9 +1413,6 @@ void CVT_move(const dsc* from, dsc* to, FPTR_ERROR err)
 		case dtype_quad:
 		case dtype_real:
 		case dtype_double:
-#ifdef VMS
-		case dtype_d_float:
-#endif
 			conversion_error(from, err);
 			break;
 		}
@@ -1480,8 +1448,9 @@ void CVT_move(const dsc* from, dsc* to, FPTR_ERROR err)
 			 * unless really required is a good optimization.
 			 */
 
-#ifndef REQUESTER
-#ifndef SUPERCLIENT
+#ifdef SUPERCLIENT
+			(*err) (isc_arith_except, 0);
+#else
 			CHARSET_ID charset1, charset2;
 			if ((INTL_TTYPE(from) == ttype_dynamic) && (err == ERR_post))
 				charset1 = INTL_charset(NULL, INTL_TTYPE(from));
@@ -1507,14 +1476,8 @@ void CVT_move(const dsc* from, dsc* to, FPTR_ERROR err)
 					INTL_convert_string(to, from, err);
 					return;
 				}
-				else
-#endif
-#endif
-					(*err) (isc_arith_except, 0);
-#ifndef REQUESTER
-#ifndef SUPERCLIENT
+				(*err) (isc_arith_except, 0);
 			}
-#endif
 #endif
 
 			{ // scope
@@ -1525,10 +1488,10 @@ void CVT_move(const dsc* from, dsc* to, FPTR_ERROR err)
 				q = ptr;
 			} // end scope
 
-			USHORT to_size = TEXT_LEN(to);
+			const USHORT to_size = TEXT_LEN(to);
 			UCHAR* start = to->dsc_address;
 			UCHAR fill_char = ASCII_SPACE;
-#if !defined(REQUESTER) && !defined(SUPERCLIENT)
+#if !defined(SUPERCLIENT)
 			CharSet* toCharSet = (err != ERR_post || charset2 == ttype_dynamic || charset2 == CS_METADATA ?
 									NULL : INTL_charset_lookup(NULL, charset2));
 			if (charset2 == ttype_binary)
@@ -1541,7 +1504,7 @@ void CVT_move(const dsc* from, dsc* to, FPTR_ERROR err)
 			switch (to->dsc_dtype) {
 			case dtype_text:
 				length = MIN(length, to->dsc_length);
-#if !defined(REQUESTER) && !defined(SUPERCLIENT)
+#if !defined(SUPERCLIENT)
 				if (toCharSet && !toCharSet->wellFormed(length, q))
 					(*err)(isc_malformed_string, 0);
 				toLength = length;
@@ -1554,12 +1517,11 @@ void CVT_move(const dsc* from, dsc* to, FPTR_ERROR err)
 
 				CVT_COPY_BUFF(q, p, length);
 				if (fill > 0) {
-					do {
-						*p++ = fill_char;
-					} while (--fill);
-					/* Note: above is correct only for narrow 
-					   and multi-byte character sets which 
-					   use ASCII for the SPACE character.  */
+					memset(p, fill_char, fill);
+					p += fill;
+					// Note: above is correct only for narrow
+					// and multi-byte character sets which
+					// use ASCII for the SPACE character.
 				}
 				break;
 
@@ -1569,7 +1531,7 @@ void CVT_move(const dsc* from, dsc* to, FPTR_ERROR err)
 				   byte to represent end-of-string */
 
 				length = MIN(length, to->dsc_length - 1);
-#if !defined(REQUESTER) && !defined(SUPERCLIENT)
+#if !defined(SUPERCLIENT)
 				if (toCharSet && !toCharSet->wellFormed(length, q))
 					(*err)(isc_malformed_string, 0);
 				toLength = length;
@@ -1583,7 +1545,7 @@ void CVT_move(const dsc* from, dsc* to, FPTR_ERROR err)
 			case dtype_varying:
 				length =
 					MIN(length, (SLONG) (to->dsc_length - sizeof(USHORT)));
-#if !defined(REQUESTER) && !defined(SUPERCLIENT)
+#if !defined(SUPERCLIENT)
 				if (toCharSet && !toCharSet->wellFormed(length, q))
 					(*err)(isc_malformed_string, 0);
 				toLength = length;
@@ -1598,7 +1560,7 @@ void CVT_move(const dsc* from, dsc* to, FPTR_ERROR err)
 				break;
 			}
 
-#if !defined(REQUESTER) && !defined(SUPERCLIENT)
+#if !defined(SUPERCLIENT)
 			if (toCharSet)
 			{
 				Jrd::thread_db* tdbb = NULL;
@@ -1636,9 +1598,6 @@ void CVT_move(const dsc* from, dsc* to, FPTR_ERROR err)
 
 		case dtype_real:
 		case dtype_double:
-#ifdef VMS
-		case dtype_d_float:
-#endif
 			float_to_text(from, to, err);
 			return;
 
@@ -1720,13 +1679,6 @@ void CVT_move(const dsc* from, dsc* to, FPTR_ERROR err)
 		*(double*) p = CVT_get_double(from, err);
 	#endif
 		return;
-
-#ifdef VMS
-	case SPECIAL_DOUBLE:
-		*(double*) p = CVT_get_double(from, err);
-		*(double*) p = CNVT_FROM_DFLT((double*) p);
-		return;
-#endif
 	}
 
 	if (from->dsc_dtype == dtype_array || from->dsc_dtype == dtype_blob)
@@ -1763,7 +1715,7 @@ static void conversion_error(const dsc* desc, FPTR_ERROR err)
 		const USHORT length =
 			CVT_make_string(desc, ttype_ascii, &string,
 							(vary*) s, sizeof(s), err);
-#if (defined REQUESTER || defined SUPERCLIENT)
+#if defined SUPERCLIENT
 		p = error_string(string, length);
 #else
 		p = ERR_string(string, length);
@@ -1983,8 +1935,8 @@ static SSHORT decompose(const char* string,
 		else if (*p == ' ')
 		{
 			// skip spaces
-			for (; p < end && *p == ' '; p++)
-				;
+			while (p < end && *p == ' ')
+				++p;
 
 			// throw if there is something after the spaces
 			if (p < end)
@@ -2054,7 +2006,7 @@ static SSHORT decompose(const char* string,
 }
 
 
-#if (defined REQUESTER || defined SUPERCLIENT)
+#if defined SUPERCLIENT
 static const TEXT* error_string(const char* in_string, SSHORT length)
 {
 /**************************************
@@ -2342,7 +2294,7 @@ static void integer_to_text(const dsc* from, dsc* to, FPTR_ERROR err)
 		int trailing = to->dsc_length - length;
 		if (trailing > 0)
 		{
-#if !defined(REQUESTER) && !defined(SUPERCLIENT)
+#if !defined(SUPERCLIENT)
 			CHARSET_ID chid;
 			if ((INTL_TTYPE(to) == ttype_dynamic) && (err == ERR_post))
 				chid = INTL_charset(NULL, INTL_TTYPE(to));

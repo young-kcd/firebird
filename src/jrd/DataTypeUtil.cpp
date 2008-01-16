@@ -256,17 +256,20 @@ void DataTypeUtilBase::makeFromList(dsc* result, const char* expressionName, int
 
 		if (DTYPE_IS_DATE(arg->dsc_dtype)) {
 			any_datetime = true;
-			if (arg->dsc_dtype == dtype_sql_date) {
+			switch (arg->dsc_dtype)
+			{
+			case dtype_sql_date:
 				all_time = false;
 				all_timestamp = false;
-			} 
-			else if (arg->dsc_dtype == dtype_sql_time) { 
+				break;
+			case dtype_sql_time:
 				all_date = false;
 				all_timestamp = false;
-			}
-			else if (arg->dsc_dtype == dtype_timestamp) {
+				break;
+			case dtype_timestamp:
 				all_date = false;
 				all_time = false;
+				break;
 			}
 		}
 		else {
@@ -370,7 +373,8 @@ void DataTypeUtilBase::makeFromList(dsc* result, const char* expressionName, int
 		}
 		return;
 	}
-	else if (all_numeric) {
+
+	if (all_numeric) {
 		// If all of the arguments are a numeric datatype.
 		if (any_approx) {
 			if (max_significant_digits <= type_significant_bits[dtype_real]) {
@@ -398,7 +402,8 @@ void DataTypeUtilBase::makeFromList(dsc* result, const char* expressionName, int
 		}
 		return;
 	}
-	else if (all_date || all_time || all_timestamp) {
+
+	if (all_date || all_time || all_timestamp) {
 		// If all of the arguments are the same datetime datattype.
 		result->dsc_dtype  = max_dtype;
 		result->dsc_length = max_dtype_length;
@@ -406,7 +411,8 @@ void DataTypeUtilBase::makeFromList(dsc* result, const char* expressionName, int
 		result->dsc_sub_type = 0;
 		return;
 	}
-	else if (all_blob && all_same_sub_type) {
+
+	if (all_blob && all_same_sub_type) {
 		// If all of the arguments are the same BLOB datattype.
 		result->dsc_dtype  = max_dtype;
 		result->dsc_sub_type = max_sub_type;
@@ -421,17 +427,16 @@ void DataTypeUtilBase::makeFromList(dsc* result, const char* expressionName, int
 		result->dsc_length = max_length;
 		return;
 	}
-	else {
-		// We couldn't do anything with this list, mostly because the
-		// datatypes aren't comparable.
-		// Let's try to give a usefull error message.
-		status_exception::raise(
-			isc_sqlerr, isc_arg_number, (SLONG) - 104,
-			isc_arg_gds, isc_dsql_datatypes_not_comparable,
-			isc_arg_string, "",
-			isc_arg_string, expressionName, 0);
-		// "Datatypes %sare not comparable in expression %s"
-	}
+
+	// We couldn't do anything with this list, mostly because the
+	// datatypes aren't comparable.
+	// Let's try to give a usefull error message.
+	status_exception::raise(
+		isc_sqlerr, isc_arg_number, (SLONG) - 104,
+		isc_arg_gds, isc_dsql_datatypes_not_comparable,
+		isc_arg_string, "",
+		isc_arg_string, expressionName, 0);
+	// "Datatypes %sare not comparable in expression %s"
 }
 
 

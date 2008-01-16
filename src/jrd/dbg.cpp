@@ -535,8 +535,8 @@ int DBG_block(BLK block)
 		}
 		fprintf(dbg_file, "\n");
 		break;
-        default:    /* Shut up compiler warnings */
-                break;
+    default:    /* Shut up compiler warnings */
+		break;
 	}
 
 	return TRUE;
@@ -898,13 +898,11 @@ int DBG_supervisor(int arg)
 
 	debug = 0;
 
-#ifndef VMS
 	fprintf(dbg_file, "\nEntering JRD diagnostic DBG_supervisor\n");
 	int yyparse();
 	yyparse();
 	fprintf(dbg_file, "\nLeaving JRD diagnostic DBG_supervisor\n");
 	DBG_init();
-#endif
 
 	return TRUE;
 }
