@@ -130,9 +130,6 @@ struct dsc
 	GDS_QUAD	asQuad() const;
 	float		asReal() const;
 	double		asDouble() const;
-#ifdef VMS
-	double		asDFloat() const;
-#endif
 	GDS_DATE	asSqlDate() const;
 	GDS_TIME	asSqlTime() const;
 	GDS_TIMESTAMP asSqlTimestamp() const;
@@ -427,23 +424,14 @@ inline bool dsc::isSqlDecimal() const
 
 // Floating point types?
 
-#ifdef VMS
-//#define DTYPE_IS_APPROX(d)       (((d) == dtype_double) || 
-//				 ((d) == dtype_real)  || 
-//				 ((d) == dtype_d_float))
-#else
 //#define DTYPE_IS_APPROX(d)       (((d) == dtype_double) || 
 //				  ((d) == dtype_real))
-#endif
 
 inline bool dsc::isApprox() const
 {
 	switch (dsc_dtype) {
 	case dtype_real:
 	case dtype_double:
-#ifdef VMS
-	case dtype_d_float:
-#endif
 		return true;
 	default:
 		return false;
@@ -462,11 +450,7 @@ inline bool dsc::isApprox() const
 inline bool dsc::isANumber() const
 {
 	return dsc_dtype >= dtype_byte
-#ifdef VMS
-		&& dsc_dtype <= dtype_d_float
-#else
 		&& dsc_dtype <= dtype_double
-#endif
 		|| dsc_dtype == dtype_int64;
 }
 
@@ -647,15 +631,6 @@ inline double dsc::asDouble() const
 		return *reinterpret_cast<double*>(dsc_address);
 	return 0;
 }
-
-#ifdef VMS
-inline double dsc::asDFloat() const
-{
-	if (dsc_dtype == dtype_d_float)
-		return *reinterpret_cast<double*>(dsc_address);
-	return 0;
-}
-#endif
 
 inline GDS_DATE dsc::asSqlDate() const
 {

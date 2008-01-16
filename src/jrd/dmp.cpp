@@ -897,16 +897,18 @@ static void dmp_pip(const page_inv_page* page, ULONG sequence)
 
 	for (int n = 0; n < control->pgc_ppp;) {
 		while (n < control->pgc_ppp)
+		{
 			if (BIT(n))
 				break;
-			else
-				n++;
+			n++;
+		}
 		fprintf(dbg_file, "%d - ", n);
 		while (n < control->pgc_ppp)
+		{
 			if (!BIT(n))
 				break;
-			else
-				n++;
+			n++;
+		}
 		fprintf(dbg_file, "%d, ", n - 1);
 	}
 

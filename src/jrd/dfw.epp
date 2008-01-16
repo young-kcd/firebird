@@ -766,18 +766,15 @@ static bool add_file(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 
 	case 3:
 		if (CCH_exclusive(tdbb, LCK_EX, WAIT_PERIOD))
-		{
 			return true;
-		}
-		else
-		{
-			ERR_post(isc_no_meta_update,
-					 isc_arg_gds, isc_lock_timeout,
-					 isc_arg_gds, isc_obj_in_use,
-					 isc_arg_string, ERR_cstring(dbb->dbb_filename.c_str()),
-					 0);
-			return false;
-		}
+
+		ERR_post(isc_no_meta_update,
+				 isc_arg_gds, isc_lock_timeout,
+				 isc_arg_gds, isc_obj_in_use,
+				 isc_arg_string, ERR_cstring(dbb->dbb_filename.c_str()),
+				 0);
+		return false;
+
 	case 4:
 		CCH_flush(tdbb, FLUSH_FINI, 0L);
 		max = PageSpace::maxAlloc(dbb) + 1;
@@ -1255,7 +1252,7 @@ static void check_dependencies(thread_db* tdbb,
 				AND DEP.RDB$DEPENDED_ON_TYPE = dpdo_type
 				AND DEP.RDB$FIELD_NAME EQ field_name
 				REDUCED TO DEP.RDB$DEPENDENT_NAME 
-            if (!REQUEST(irq_ch_f_dpd))
+			if (!REQUEST(irq_ch_f_dpd))
 				REQUEST(irq_ch_f_dpd) = request;
 
 			/* If the found object is also being deleted, there's no dependency */
@@ -1266,7 +1263,7 @@ static void check_dependencies(thread_db* tdbb,
 									0,
 									transaction))
 			{
-				dep_counts[DEP.RDB$DEPENDENT_TYPE]++;
+				++dep_counts[DEP.RDB$DEPENDENT_TYPE];
 			}
 		END_FOR;
 
@@ -1283,7 +1280,7 @@ static void check_dependencies(thread_db* tdbb,
 				AND DEP.RDB$DEPENDED_ON_TYPE = dpdo_type
 				REDUCED TO DEP.RDB$DEPENDENT_NAME 
 
-            if (!REQUEST(irq_ch_dpd))
+			if (!REQUEST(irq_ch_dpd))
 				REQUEST(irq_ch_dpd) = request;
 
 			/* If the found object is also being deleted, there's no dependency */
@@ -1294,7 +1291,7 @@ static void check_dependencies(thread_db* tdbb,
 									0,
 									transaction))
 			{
-				dep_counts[DEP.RDB$DEPENDENT_TYPE]++;
+				++dep_counts[DEP.RDB$DEPENDENT_TYPE];
 			}
 		END_FOR;
 
@@ -1302,59 +1299,69 @@ static void check_dependencies(thread_db* tdbb,
 			REQUEST(irq_ch_dpd) = request;
 	}
 
-	for (i = 0; i < obj_type_MAX; i++) {
-		if (dep_counts[i])
+	SLONG total = 0;
+	for (i = 0; i < obj_type_MAX; i++)
+		total += dep_counts[i];
+		
+	if (!total)
+		return;
+
+	if (field_name)
+	{
+		ERR_post(	isc_no_meta_update,
+					isc_arg_gds, isc_no_delete,	/* Msg353: can not delete */
+					isc_arg_gds, isc_field_name,
+					isc_arg_string, ERR_cstring(field_name),
+					isc_arg_gds, isc_dependency,
+					isc_arg_number, total,
+					0);	/* Msg310: there are %ld dependencies */
+	}
+	else
+	{
+		ISC_STATUS obj_type;
+		switch (dpdo_type)
 		{
-            ISC_STATUS obj_type;
-			switch (dpdo_type)
-			{
-			case obj_relation:
-				obj_type = isc_table_name;
-				break;
-			case obj_procedure:
-				obj_type = isc_proc_name;
-				break;
-			case obj_collation:
-				obj_type = isc_collation_name;
-				break;
-			case obj_exception:
-				obj_type = isc_exception_name;
-				break;
-			case obj_field:
-				obj_type = isc_domain_name;
-				break;
-			case obj_generator:
-				obj_type = isc_generator_name;
-				break;
-			case obj_udf:
-				obj_type = isc_udf_name;
-				break;
-			case obj_index:
-				obj_type = isc_index_name;
-				break;
-			default:
-				fb_assert(FALSE);
-				break;
-			}
-			if (field_name) {
-				ERR_post(	isc_no_meta_update,
-							isc_arg_gds, isc_no_delete,	/* Msg353: can not delete */
-							isc_arg_gds, isc_field_name,
-							isc_arg_string, ERR_cstring(field_name),
-							isc_arg_gds, isc_dependency,
-							isc_arg_number, dep_counts[i],
-							0);	/* Msg310: there are %ld dependencies */
-			}
-			else {
-				ERR_post(	isc_no_meta_update,
-							isc_arg_gds, isc_no_delete,	/* can not delete */
-							isc_arg_gds, obj_type,
-							isc_arg_string, ERR_cstring(dpdo_name),
-							isc_arg_gds, isc_dependency,
-							isc_arg_number, dep_counts[i],
-							0);	/* there are %ld dependencies */
-			}
+		case obj_relation:
+			obj_type = isc_table_name;
+			break;
+		/* Currently we don't get this type due to an internal bug.
+		case obj_view:
+			obj_type = isc_view_name;
+			break;
+		*/
+		case obj_procedure:
+			obj_type = isc_proc_name;
+			break;
+		case obj_collation:
+			obj_type = isc_collation_name;
+			break;
+		case obj_exception:
+			obj_type = isc_exception_name;
+			break;
+		case obj_field:
+			obj_type = isc_domain_name;
+			break;
+		case obj_generator:
+			obj_type = isc_generator_name;
+			break;
+		case obj_udf:
+			obj_type = isc_udf_name;
+			break;
+		case obj_index:
+			obj_type = isc_index_name;
+			break;
+		default:
+			fb_assert(FALSE);
+			break;
 		}
+
+		ERR_post(	isc_no_meta_update,
+					isc_arg_gds, isc_no_delete,	/* can not delete */
+					isc_arg_gds, obj_type,
+					isc_arg_string, ERR_cstring(dpdo_name),
+					isc_arg_gds, isc_dependency,
+					isc_arg_number, total,
+					0);	/* there are %ld dependencies */
 	}
 }
 
@@ -2096,7 +2103,6 @@ static bool create_relation(thread_db*	tdbb,
 		lock->lck_type = LCK_relation;
 		lock->lck_owner_handle = LCK_get_owner_handle(tdbb, lock->lck_type);
 		lock->lck_parent = dbb->dbb_lock;
-		lock->lck_owner = tdbb->getAttachment();
 
 		LCK_lock_non_blocking(tdbb, lock, LCK_EX, LCK_WAIT);
 
@@ -4333,6 +4339,7 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 								dbb->dbb_sys_trans,
 								&REL.RDB$RUNTIME);
 				jrd_req* request_fmtx = CMP_find_request(tdbb, irq_format2, IRQ_REQUESTS);
+
 				FOR(REQUEST_HANDLE request_fmtx)
 					RFR IN RDB$RELATION_FIELDS CROSS
 						FLD IN RDB$FIELDS WITH
@@ -4511,7 +4518,7 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 				if (!REQUEST(irq_format2))
 					REQUEST(irq_format2) = request_fmtx;
 					
-				if (!physical_fields)
+				if (null_view && !physical_fields)
 				{
 					EXE_unwind(tdbb, request_fmt1);
 					ERR_post(isc_no_meta_update,
@@ -4580,6 +4587,7 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 
 		relation->rel_flags &= ~REL_scanned;
 		DFW_post_work(transaction, dfw_scan_relation, NULL, relation->rel_id);
+
 		break;
 	}
 
@@ -4649,7 +4657,7 @@ static bool modify_procedure(	thread_db*	tdbb,
 				ERR_post(isc_no_meta_update,
 						 isc_arg_gds, isc_obj_in_use,
 						 isc_arg_string, ERR_cstring(work->dfw_name),
-						0);
+						 0);
 			}
 		}
 
@@ -4667,12 +4675,6 @@ static bool modify_procedure(	thread_db*	tdbb,
 
 		try {
 
-#ifdef SUPERSERVER
-		if (!(tdbb->getDatabase()->dbb_flags & DBB_sp_rec_mutex_init))
-		{
-			THD_rec_mutex_init(&tdbb->getDatabase()->dbb_sp_rec_mutex);
-			tdbb->getDatabase()->dbb_flags |= DBB_sp_rec_mutex_init;
-		}
 		THREAD_EXIT();
 		if (THD_rec_mutex_lock(&tdbb->getDatabase()->dbb_sp_rec_mutex))
 		{
@@ -4680,7 +4682,7 @@ static bool modify_procedure(	thread_db*	tdbb,
 			return false;
 		}
 		THREAD_ENTER();
-#endif /* SUPERSERVER */
+
 		// Do not allow to modify procedure used by user requests
 		if (procedure->prc_use_count && MET_procedure_in_use(tdbb, procedure))
 		{
@@ -4715,9 +4717,7 @@ static bool modify_procedure(	thread_db*	tdbb,
 													  true,
 													  PRC_being_altered)))
 			{
-#ifdef SUPERSERVER
 				THD_rec_mutex_unlock(&tdbb->getDatabase()->dbb_sp_rec_mutex);
-#endif
 				return false;
 			}
 			procedure->prc_alter_count = ++prc_alter_count;
@@ -4771,16 +4771,11 @@ static bool modify_procedure(	thread_db*	tdbb,
 		catch (const Firebird::Exception& ex)
 		{
 			Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
-#ifdef SUPERSERVER
 			THD_rec_mutex_unlock(&tdbb->getDatabase()->dbb_sp_rec_mutex);
-#endif
 			ERR_punt();
 		}
 
-#ifdef SUPERSERVER
 		THD_rec_mutex_unlock(&tdbb->getDatabase()->dbb_sp_rec_mutex);
-#endif
-
 		return true;
 
 	case 5:
@@ -5132,7 +5127,7 @@ static Lock* protect_relation(thread_db* tdbb, jrd_tra* transaction, jrd_rel* re
 * releaseLock set to true if there was no existing lock before
 *
 **************************************/
-	Lock* relLock = RLCK_transaction_relation_lock(transaction, relation);
+	Lock* relLock = RLCK_transaction_relation_lock(tdbb, transaction, relation);
 	
 	releaseLock = (relLock->lck_logical == LCK_none); 
 	
@@ -5489,9 +5484,7 @@ static bool validate_text_type(thread_db* tdbb,
 	{
 		return false;
 	}
-	else {
-		return true;
-	}
-}
 
+	return true;
+}
 

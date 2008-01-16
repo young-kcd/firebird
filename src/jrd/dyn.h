@@ -66,16 +66,21 @@ public:
     const UCHAR* dyn_default_src;
     const UCHAR* dyn_default_val;
     bool dyn_drop_default;
+    const UCHAR* dyn_computed_src;
+    const UCHAR* dyn_computed_val;
+    bool dyn_drop_computed;
 public:
 	explicit dyn_fld(MemoryPool& p) 
 		: dyn_null_flag(false), dyn_dtype(0), dyn_precision(0), dyn_charlen(0), 
 		dyn_collation(0), dyn_charset(0), dyn_fld_source(p), dyn_rel_name(p),
 		dyn_fld_name(p), dyn_charbytelen(0),
-		dyn_default_src(0), dyn_default_val(0), dyn_drop_default(false) { }
+		dyn_default_src(0), dyn_default_val(0), dyn_drop_default(false),
+		dyn_computed_src(0), dyn_computed_val(0), dyn_drop_computed(false) { }
 	dyn_fld()
 		: dyn_null_flag(false), dyn_dtype(0), dyn_precision(0), dyn_charlen(0), 
 		dyn_collation(0), dyn_charset(0), dyn_charbytelen(0),
-		dyn_default_src(0), dyn_default_val(0), dyn_drop_default(false) { }
+		dyn_default_src(0), dyn_default_val(0), dyn_drop_default(false),
+		dyn_computed_src(0), dyn_computed_val(0), dyn_drop_computed(false) { }
 };
 
 } //namespace Jrd
@@ -88,6 +93,7 @@ void	DYN_execute(Jrd::Global*, const UCHAR**, const Firebird::MetaName*, Firebir
 SLONG	DYN_get_number(const UCHAR**);
 USHORT	DYN_get_string(const TEXT**, Firebird::MetaName&, size_t, bool);
 USHORT	DYN_get_string(const TEXT**, Firebird::PathName&, size_t, bool);
+USHORT	DYN_get_string(const TEXT**, Firebird::string&, size_t, bool);
 USHORT	DYN_get_string(const TEXT**, Firebird::UCharBuffer&, size_t, bool);
 USHORT	DYN_get_string(const TEXT**, TEXT*, size_t, bool);
 

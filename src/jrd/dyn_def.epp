@@ -121,7 +121,6 @@ static const UCHAR who_blr[] =
 
 
 static void check_unique_name(thread_db*, Global*, const Firebird::MetaName&, bool);
-static bool find_field_source(thread_db*, Global*, const Firebird::MetaName&, USHORT, const TEXT*, TEXT*);
 static bool get_who(thread_db*, Global*, Firebird::MetaName&);
 static bool is_it_user_name(Global*, const Firebird::MetaName&, thread_db*);
 
@@ -514,13 +513,29 @@ void DYN_define_constraint(Global*		gbl,
 		// msg 127: "STORE RDB$REF_CONSTRAINTS failed"
 		// msg 232: "%s cannot reference %s"
 		switch (id) {
-			case drq_s_rel_con:	number = 121;	local_id = id;	break;
-			case drq_s_ref_con:	number = 127;	local_id = id;	break;
-			case drq_c_unq_nam:	number = 121;					break;
-			case drq_n_idx_seg:	number = 124;					break;
-			case drq_c_dup_con:	number = 125;					break;
-			case drq_l_rel_info: number = 232;					break;
-			default:			number = 125;					break;
+			case drq_s_rel_con:
+				number = 121;
+				local_id = id;
+				break;
+			case drq_s_ref_con:
+				number = 127;
+				local_id = id;
+				break;
+			case drq_c_unq_nam:
+				number = 121;
+				break;
+			case drq_n_idx_seg:
+				number = 124;
+				break;
+			case drq_c_dup_con:
+				number = 125;
+				break;
+			case drq_l_rel_info:
+				number = 232;
+				break;
+			default:
+				number = 125;
+				break;
 		}
 
 		DYN_rundown_request(request, local_id);
@@ -757,12 +772,26 @@ void DYN_define_constraint(Global*		gbl,
 		// msg 125: "Integrity constraint lookup failed"
 		// msg 127: "STORE RDB$REF_CONSTRAINTS failed"
 		switch (id) {
-			case drq_s_rel_con:	number = 121;	local_id = id;	break;
-			case drq_s_ref_con:	number = 127;	local_id = id;	break;
-			case drq_c_unq_nam:	number = 121;					break;
-			case drq_n_idx_seg:	number = 124;					break;
-			case drq_c_dup_con:	number = 125;					break;
-			default:			number = 125;					break;
+			case drq_s_rel_con:
+				number = 121;
+				local_id = id;
+				break;
+			case drq_s_ref_con:
+				number = 127;
+				local_id = id;
+				break;
+			case drq_c_unq_nam:
+				number = 121;
+				break;
+			case drq_n_idx_seg:
+				number = 124;
+				break;
+			case drq_c_dup_con:
+				number = 125;
+				break;
+			default:
+				number = 125;
+				break;
 		}
 
 		DYN_rundown_request(request, local_id);
@@ -2567,7 +2596,6 @@ void DYN_define_local_field(Global*		gbl,
 				DYN_put_blr_blob(gbl, ptr, &RFR.RDB$DEFAULT_VALUE);
 				break;
 
-
 			case isc_dyn_fld_default_source:
 				has_default = true;
 				RFR.RDB$DEFAULT_SOURCE.NULL = FALSE;
@@ -2713,8 +2741,8 @@ void DYN_define_local_field(Global*		gbl,
 		if (!RFR.RDB$VIEW_CONTEXT.NULL)
 		{
 			fb_assert(relation_name);
-			find_field_source(tdbb, gbl, *relation_name, RFR.RDB$VIEW_CONTEXT,
-							  RFR.RDB$BASE_FIELD, RFR.RDB$FIELD_SOURCE);
+			DYN_UTIL_find_field_source(tdbb, gbl, *relation_name, RFR.RDB$VIEW_CONTEXT,
+				RFR.RDB$BASE_FIELD, RFR.RDB$FIELD_SOURCE);
 		}
 	END_STORE;
 
@@ -2787,7 +2815,7 @@ void DYN_define_parameter( Global* gbl, const UCHAR** ptr, Firebird::MetaName* p
 	f_precision_null = f_charset_null = f_collation_null = f_notnull_null = TRUE;
 	id = drq_s_prms;
 
-	Firebird::MetaName prc_name;
+	Firebird::MetaName prc_name, rel_name, fld_name;
 	prm_mech_t mechanism = prm_mech_normal;
 	bool explicit_domain = false;
 
@@ -2941,6 +2969,14 @@ void DYN_define_parameter( Global* gbl, const UCHAR** ptr, Firebird::MetaName* p
 			case isc_dyn_prm_mechanism:
 				mechanism = (prm_mech_t) DYN_get_number(ptr);
 				break;
+ 
+			case isc_dyn_rel_name:
+				GET_STRING(ptr, rel_name);
+				break;
+
+			case isc_dyn_fld_name:
+				GET_STRING(ptr, fld_name);
+				break;
 
 			default:
 				--(*ptr);
@@ -2950,9 +2986,11 @@ void DYN_define_parameter( Global* gbl, const UCHAR** ptr, Firebird::MetaName* p
 
 		if (P.RDB$FIELD_SOURCE.NULL) {
 			/* Need to store dummy global field */
+			jrd_req* old_request = request;
 			id = drq_s_prm_src;
-			jrd_req* request2 = CMP_find_request(tdbb, drq_s_prm_src, DYN_REQUESTS);
-			STORE(REQUEST_HANDLE request2 TRANSACTION_HANDLE gbl->gbl_transaction)
+			request = CMP_find_request(tdbb, drq_s_prm_src, DYN_REQUESTS);
+
+			STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 				PS IN RDB$FIELDS USING
 				DYN_UTIL_generate_field_name(tdbb, gbl, PS.RDB$FIELD_NAME);
 				strcpy(P.RDB$FIELD_SOURCE, PS.RDB$FIELD_NAME);
@@ -2986,8 +3024,9 @@ void DYN_define_parameter( Global* gbl, const UCHAR** ptr, Firebird::MetaName* p
 				}
 			END_STORE;
 			if (!DYN_REQUEST(drq_s_prm_src))
-				DYN_REQUEST(drq_s_prm_src) = request2;
+				DYN_REQUEST(drq_s_prm_src) = request;
 			id = drq_s_prms;
+			request = old_request;
 		}
 	END_STORE;
 
@@ -2995,19 +3034,23 @@ void DYN_define_parameter( Global* gbl, const UCHAR** ptr, Firebird::MetaName* p
 		DYN_REQUEST(drq_s_prms) = request;
 	}
 
+	request = NULL;
+	id = -1;
+
 	if (explicit_domain)
 	{
 		if (ENCODE_ODS(dbb->dbb_ods_version, dbb->dbb_minor_original) >= ODS_11_1)
 		{
-			jrd_req* request2 = CMP_find_request(tdbb, drq_s_prms2, DYN_REQUESTS);
+			request = CMP_find_request(tdbb, drq_s_prms2, DYN_REQUESTS);
+			id = drq_s_prms2;
 
-			FOR(REQUEST_HANDLE request2 TRANSACTION_HANDLE gbl->gbl_transaction)
+			FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 				P IN RDB$PROCEDURE_PARAMETERS WITH
 					P.RDB$PROCEDURE_NAME EQ prc_name.c_str() AND
 					P.RDB$PARAMETER_NAME EQ parameter_name.c_str()
 
 				if (!DYN_REQUEST(drq_s_prms2))
-					DYN_REQUEST(drq_s_prms2) = request2;
+					DYN_REQUEST(drq_s_prms2) = request;
 
 				MODIFY P USING
 					P.RDB$COLLATION_ID.NULL = f_collation_null;
@@ -3030,7 +3073,7 @@ void DYN_define_parameter( Global* gbl, const UCHAR** ptr, Firebird::MetaName* p
 			END_FOR
 
 			if (!DYN_REQUEST(drq_s_prms2))
-				DYN_REQUEST(drq_s_prms2) = request2;
+				DYN_REQUEST(drq_s_prms2) = request;
 		}
 		else
 		{
@@ -3042,19 +3085,59 @@ void DYN_define_parameter( Global* gbl, const UCHAR** ptr, Firebird::MetaName* p
 		}
 	}
 
+	if (rel_name.hasData() && fld_name.hasData())
+	{
+		if (ENCODE_ODS(dbb->dbb_ods_version, dbb->dbb_minor_original) >= ODS_11_2)
+		{
+			request = CMP_find_request(tdbb, drq_s_prms3, DYN_REQUESTS);
+			id = drq_s_prms3;
+
+			FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
+				P IN RDB$PROCEDURE_PARAMETERS WITH
+					P.RDB$PROCEDURE_NAME EQ prc_name.c_str() AND
+					P.RDB$PARAMETER_NAME EQ parameter_name.c_str()
+
+				if (!DYN_REQUEST(drq_s_prms3))
+					DYN_REQUEST(drq_s_prms3) = request;
+
+				MODIFY P USING
+					P.RDB$RELATION_NAME.NULL = FALSE;
+					strcpy(P.RDB$RELATION_NAME, rel_name.c_str());
+
+					P.RDB$FIELD_NAME.NULL = FALSE;
+					strcpy(P.RDB$FIELD_NAME, fld_name.c_str());
+				END_MODIFY
+			END_FOR
+
+			if (!DYN_REQUEST(drq_s_prms3))
+				DYN_REQUEST(drq_s_prms3) = request;
+		}
+		else
+		{
+			request = NULL;
+			id = -1;
+
+			ERR_post(isc_dsql_feature_not_supported_ods,
+					 isc_arg_number, 11,
+					 isc_arg_number, 2,
+					 0);	// ODS_11_2
+		}
+	}
+
 	}
 	catch (const Firebird::Exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
-		if (id == drq_s_prms) {
-			DYN_rundown_request(request, drq_s_prms);
+
+		if (id == -1 || id == drq_s_prms || id == drq_s_prm_src ||
+			id == drq_s_prms2 || id == drq_s_prms3)
+		{
+			if (id != -1)
+				DYN_rundown_request(request, id);
+
 			DYN_error_punt(true, 136);
-			/* msg 163: "STORE RDB$PROCEDURE_PARAMETERS failed" */
+			// msg 136: "STORE RDB$PROCEDURE_PARAMETERS failed"
 		}
-		else if (id == drq_s_prm_src) {
-			DYN_rundown_request(request, drq_s_prm_src);
-			DYN_error_punt(true, 136);
-			/* msg 136: "STORE RDB$PROCEDURE_PARAMETERS failed" */
-		}
+
 		DYN_rundown_request(request, -1);
 
 		/* Control should never reach this point,
@@ -4567,96 +4650,6 @@ static void check_unique_name(	thread_db*	tdbb,
 
 local_punt_false_132:
 	DYN_error_punt(false, 132, object_name.c_str());
-}
-
-
-static bool find_field_source(thread_db*	tdbb,
-								 Global*	gbl,
-								 const Firebird::MetaName& view_name,
-								 USHORT	context,
-								 const TEXT* local_name,
-								 TEXT* output_field_name)
-{
-/**************************************
- *
- *	f i n d _ f i e l d _ s o u r c e
- *
- **************************************
- *
- * Functional description
- *	Find the original source for a view field.
- *
- **************************************/
-
-	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
-
-	jrd_req* request = NULL;
-
-	/* CVC: It seems the logic of this function was changed over time. It's unlikely
-	it will cause a failure that leads to call DYN_error_punt(), unless the request finds
-	problems due to database corruption or unexpected ODS changes. Under normal
-	circumstances, it will return either true or false. When true, we found a field source
-	for the view's name/context/field and are loading this value in the last parameter,
-	that can be used against rdb$fields' rdb$field_name. */
-
-	bool found = false;
-
-	try {
-		request = CMP_find_request(tdbb, drq_l_fld_src2, DYN_REQUESTS);
-
-		FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
-			VRL IN RDB$VIEW_RELATIONS CROSS
-				RFR IN RDB$RELATION_FIELDS OVER RDB$RELATION_NAME
-				WITH VRL.RDB$VIEW_NAME EQ view_name.c_str() AND
-				VRL.RDB$VIEW_CONTEXT EQ context AND
-				RFR.RDB$FIELD_NAME EQ local_name
-
-			if (!DYN_REQUEST(drq_l_fld_src2)) {
-				DYN_REQUEST(drq_l_fld_src2) = request;
-			}
-
-			found = true;
-			fb_utils::exact_name_limit(RFR.RDB$FIELD_SOURCE, sizeof(RFR.RDB$FIELD_SOURCE));
-			strcpy(output_field_name, RFR.RDB$FIELD_SOURCE);
-		END_FOR;
-		if (!DYN_REQUEST(drq_l_fld_src2)) {
-			DYN_REQUEST(drq_l_fld_src2) = request;
-		}
-
-		if (!found)
-		{
-			request = CMP_find_request(tdbb, drq_l_fld_src3, DYN_REQUESTS);
-
-			FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
-				VRL IN RDB$VIEW_RELATIONS CROSS
-					PPR IN RDB$PROCEDURE_PARAMETERS
-					WITH VRL.RDB$RELATION_NAME EQ PPR.RDB$PROCEDURE_NAME AND
-					VRL.RDB$VIEW_NAME EQ view_name.c_str() AND
-					VRL.RDB$VIEW_CONTEXT EQ context AND
-					PPR.RDB$PARAMETER_NAME EQ local_name
-
-				if (!DYN_REQUEST(drq_l_fld_src3)) {
-					DYN_REQUEST(drq_l_fld_src3) = request;
-				}
-
-				found = true;
-				fb_utils::exact_name_limit(PPR.RDB$FIELD_SOURCE, sizeof(PPR.RDB$FIELD_SOURCE));
-				strcpy(output_field_name, PPR.RDB$FIELD_SOURCE);
-			END_FOR;
-			if (!DYN_REQUEST(drq_l_fld_src3)) {
-				DYN_REQUEST(drq_l_fld_src3) = request;
-			}
-		}
-	}
-	catch (const Firebird::Exception& ex) {
-		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
-		DYN_rundown_request(request, -1);
-		DYN_error_punt(true, 80);
-		/* msg 80: "Specified domain or source field does not exist" */
-	}
-
-	return found;
 }
 
 
