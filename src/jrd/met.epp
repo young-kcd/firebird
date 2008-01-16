@@ -3141,7 +3141,7 @@ jrd_prc* MET_procedure(thread_db* tdbb, int id, bool noscan, USHORT flags)
 				}
 
 				SSHORT pa_collation_id_null = true;
-				SSHORT pa_collation_id;
+				SSHORT pa_collation_id = 0;
 				SSHORT pa_default_value_null = true;
 				bid pa_default_value;
 
