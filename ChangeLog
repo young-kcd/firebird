@@ -1,3 +1,21 @@
+2008-01-15 21:15  dimitr
+
+	* firebird2/src/qli/: all.cpp (1.30), command.cpp (1.27),
+	compile.cpp (1.28), dtr.cpp (1.46), eval.cpp (1.49), exe.cpp
+	(1.54), exe.h (1.24), exe_proto.h (1.10), expand.cpp (1.36),
+	format.cpp (1.35), gener.cpp (1.40), help.epp (1.25), hsh.cpp
+	(1.19), lex.cpp (1.41), meta.epp (1.70), mov.cpp (1.42), parse.cpp
+	(1.43), picstr.cpp (1.29), proc.epp (1.31), report.cpp (1.18):
+
+	Started the merge. More tomorrow.
+
+2008-01-15 21:12  dimitr
+
+	* firebird2/src/utilities/: rebuild/rebuild.cpp (1.24),
+	ibmgr/ibmgr.cpp (1.25):
+
+	Started the merge. More tomorrow.
+
 2008-01-14 17:33  roman-simakov
 
 	* firebird2/src/jrd/nbak.cpp (1.73):
