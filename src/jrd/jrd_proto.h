@@ -160,17 +160,9 @@ void	JRD_process_close();
 void	JRD_database_close(Jrd::Attachment**, Jrd::Attachment**);
 #endif /* SERVER_SHUTDOWN */
 
-void	JRD_set_cache_default(ULONG *);
 void	JRD_blocked(Jrd::Attachment*, Jrd::BlockingThread**);
-void	JRD_mutex_lock(Firebird::Mutex&);
-void	JRD_mutex_unlock(Firebird::Mutex&);
 bool	JRD_reschedule(Jrd::thread_db*, SLONG, bool);
-void	JRD_restore_context(void);
-void	JRD_set_context(Jrd::thread_db*);
-void	JRD_inuse_clear(Jrd::thread_db* tdbb);
 void	JRD_unblock(Jrd::BlockingThread**);
-void	JRD_thread_security_disable(bool disable);
-bool	JRD_get_thread_security_disabled();
 
 // Call this function from the debugger if desired
 void	JRD_print_pools(const char* filename);

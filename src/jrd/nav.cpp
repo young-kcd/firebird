@@ -110,7 +110,7 @@ exp_index_buf* NAV_expand_index(WIN * window, IRSB_NAV impure)
 		ALL_free(expanded_page);
 	}
 
-	btree_page* page = (btree_page*) window->win_buffer;
+	Ods::btree_page* page = (Ods::btree_page*) window->win_buffer;
 
 	expanded_page = (exp_index_buf*) ALL_malloc(EXP_SIZE + page->btr_prefix_total +
 		(SLONG) page->btr_length + BTX_SIZE, ERR_jmp);
@@ -131,7 +131,7 @@ exp_index_buf* NAV_expand_index(WIN * window, IRSB_NAV impure)
 
 	impure->irsb_nav_expanded_offset = -1;
 
-	IndexNode node;
+	Ods::IndexNode node;
 	while (pointer < endPointer) {
 		if (pointer == current_pointer) {
 			impure->irsb_nav_expanded_offset =
@@ -344,22 +344,12 @@ bool NAV_get_record(thread_db* tdbb,
 		// has extra fields to the right, we just need to add some code to check 
 		// when only the first n segment(s) of the key has changed, rather than the whole key
 		if (rsb->rsb_flags & rsb_project) {
-			if (page_changed) {
-				if (node.length != key.key_length) {
+			if (page_changed)
+			{
+				if (node.length != key.key_length || (key.key_length &&
+					memcmp(key.key_data, node.data, key.key_length)))
+				{
 					impure->irsb_flags |= irsb_key_changed;
-				}
-				else {
-					UCHAR* p = key.key_data;
-					const UCHAR* q = node.data;
-					USHORT l = key.key_length;
-					for (; l; l--) {
-						if (*p++ != *q++) {
-							break;
-						}
-					}
-					if (l) {
-						impure->irsb_flags |= irsb_key_changed;
-					}
 				}
 			}
 			else if (node.length) {
@@ -559,9 +549,8 @@ static int compare_keys(
 	if (flags & irb_descending) {
 		return (length1 < length2) ? 1 : -1;
 	}
-	else {
-		return (length1 < length2) ? -1 : 1;
-	}
+
+	return (length1 < length2) ? -1 : 1;
 }
 
 
@@ -582,7 +571,7 @@ static void expand_index(WIN * window)
  *	the prior node.
  *
  **************************************/
-	btree_page* page = (btree_page*) window->win_buffer;
+	Ods::btree_page* page = (Ods::btree_page*) window->win_buffer;
 	exp_index_buf* expanded_page = window->win_expanded_buffer;
 	expanded_page->exp_incarnation = CCH_get_incarnation(window);
 
@@ -593,8 +582,8 @@ static void expand_index(WIN * window)
 	UCHAR* pointer = BTreeNode::getPointerFirstNode(page);
 	const UCHAR* const endPointer = ((UCHAR*) page + page->btr_length);
 
-	const UCHAR flags = page->pag_flags;
-	IndexNode node, priorNode;
+	const UCHAR flags = page->btr_header.pag_flags;
+	Ods::IndexNode node, priorNode;
 
 	while (pointer < endPointer) {
 
@@ -602,7 +591,7 @@ static void expand_index(WIN * window)
 			pointer = BTreeNode::readNode(&node, pointer, flags, true);
 		}
 
-		memcpy(key.key_data + node.prefix, node.data, node_length);
+		memcpy(key.key_data + node.prefix, node.data, node.length);
 		memcpy(expanded_node->btx_data, key.key_data, node.length + node.prefix);
 
 		// point back to the prior nodes on the expanded page and the btree page
@@ -682,7 +671,7 @@ static bool find_saved_node(RecordSource* rsb, IRSB_NAV impure,
  *	A page has changed.  Find the new position of the 
  *	previously stored node.  The node could even be on 
  *	a sibling page if the page has split.  If we find
- *	the actual node, return TRUE.
+ *	the actual node, return true.
  *
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
@@ -726,12 +715,7 @@ static bool find_saved_node(RecordSource* rsb, IRSB_NAV impure,
 			// safely returned since their position in the index is arbitrary
 			if (!result) {
 				*return_pointer = node.nodePointer;
-				if (node.recordNumber == impure->irsb_nav_number) {
-					return true;
-				}
-				else {
-					return false;
-				}
+				return node.recordNumber == impure->irsb_nav_number;
 			}
 
 			// if the stored key is less than the current key, then the stored key
@@ -1084,6 +1068,10 @@ static UCHAR* nav_open(
 	// This may involve sibling buckets if splits are in progress.  If there 
 	// isn't a starting descriptor, walk down the left side of the index (or the
 	// right side if backwards).
+
+#ifdef SCROLLABLE_CURSORS
+	exp_index_buf* expanded_page = 0;
+#endif
 
 	UCHAR* pointer = NULL;
 	if (limit_ptr) {

@@ -105,9 +105,7 @@ static const SCHAR arg_types1[log_max][10] = {
 
 /* this is the replay log filename definition */
 
-#ifdef VMS
-static const char* LOG_FILE_NAME	= "[SYSMGR]replay.log";
-#elif defined (WIN_NT)
+#ifdef WIN_NT
 static const char* LOG_FILE_NAME	= "replay.log";
 #else
 static const char* LOG_FILE_NAME	= FB_PREFIX "/replay.log";

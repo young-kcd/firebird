@@ -92,14 +92,6 @@
 #endif
 #endif /* sun */
 
-#ifdef VMS
-#ifdef __ALPHA
-#define FB_PLATFORM     "AV"
-#else
-#define FB_PLATFORM	"VM"
-#endif
-#endif
-
 #ifdef AIX
 #define FB_PLATFORM	"IA"
 #endif
@@ -118,10 +110,6 @@
 
 #ifdef LINUX
 #define FB_PLATFORM     "LI"	/* Linux on Intel */
-#endif
-
-#ifdef SINIXZ
-#define FB_PLATFORM     "SZ"	/* SINIX for PC  */
 #endif
 
 #ifdef FREEBSD

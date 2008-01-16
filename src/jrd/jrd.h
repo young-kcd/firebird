@@ -36,6 +36,7 @@
 #include "../jrd/btn.h"
 #include "../jrd/all.h"
 #include "../jrd/jrd_proto.h"
+#include "../jrd/val.h"
 #if defined(UNIX) && defined(SUPERSERVER)
 #include <setjmp.h>
 #endif
@@ -88,8 +89,11 @@
 
 
 // Thread data block / IPC related data blocks
-#include "../jrd/thd.h"
+#include "../jrd/ThreadData.h"
 #include "../jrd/isc.h"
+
+// recursive mutexes
+#include "../jrd/thd.h"
 
 // Definition of block types for data allocation in JRD
 #include "../jrd/jrd_blks.h"
@@ -103,6 +107,9 @@
 #include "../jrd/pag.h"
 
 #include "../jrd/RuntimeStatistics.h"
+
+// Error codes
+#include "../include/gen/iberror.h"
 
 class str;
 class CharSetContainer;
@@ -316,7 +323,8 @@ public:
 	vcl*		dbb_pc_transactions;	// active precommitted transactions
 	BackupManager *dbb_backup_manager;	// physical backup manager
 	Firebird::TimeStamp dbb_creation_date; // creation date
-	Symbol*	dbb_hash_table[HASH_SIZE];	// keep this at the end
+	Firebird::GenericMap<Firebird::Pair<Firebird::Left<
+		Firebird::MetaName, UserFunction*> > > dbb_functions;	// User defined functions
 
 	ULONG generateId()
 	{
@@ -334,7 +342,8 @@ private:
 		dbb_database_name(p),
 		dbb_encrypt_key(p),
 		dbb_pools(p, 4),
-		dbb_charsets(p)
+		dbb_charsets(p),
+		dbb_functions(p)
 	{
 		dbb_pools.resize(1);
 	}
@@ -357,10 +366,11 @@ private:
 			JrdMemoryPool::deletePool(dbb_bufferpool);
 	}
 
-	// temporal measure to avoid unstable state of lock file -
-	// this is anyway called in ~Database(), and in theory should be private
 public:
+	// temporary measure to avoid unstable state of lock file -
+	// this is anyway called in ~Database(), and in theory should be private
 	void destroyIntlObjects();			// defined in intl.cpp
+
 private:
 
 	// The delete operators are no-oped because the Database memory is allocated from the
@@ -377,37 +387,28 @@ private:
 //
 // bit values for dbb_flags
 //
-//const ULONG DBB_no_garbage_collect	= 0x1L; // Obsolete.
-const ULONG DBB_damaged				= 0x2L;
-const ULONG DBB_exclusive			= 0x4L;		// Database is accessed in exclusive mode
-const ULONG DBB_bugcheck			= 0x8L;		// Bugcheck has occurred
+const ULONG DBB_damaged				= 0x1L;
+const ULONG DBB_exclusive			= 0x2L;		// Database is accessed in exclusive mode
+const ULONG DBB_bugcheck			= 0x4L;		// Bugcheck has occurred
 #ifdef GARBAGE_THREAD
-const ULONG DBB_garbage_collector	= 0x10L;	// garbage collector thread exists
-const ULONG DBB_gc_active			= 0x20L;	// ... and is actively working.
-const ULONG DBB_gc_pending			= 0x40L;	// garbage collection requested
+const ULONG DBB_garbage_collector	= 0x8L;		// garbage collector thread exists
+const ULONG DBB_gc_active			= 0x10L;	// ... and is actively working.
+const ULONG DBB_gc_pending			= 0x20L;	// garbage collection requested
 #endif
-const ULONG DBB_force_write			= 0x80L;	// Database is forced write
-const ULONG DBB_no_reserve			= 0x100L;	// No reserve space for versions
-const ULONG DBB_no_fs_cache			= 0x200L;	// Not using file system cache
-//const ULONG DBB_add_log				= 0x200L;	// write ahead log has been added
-//const ULONG DBB_delete_log			= 0x400L;	// write ahead log has been deleted
-//const ULONG DBB_cache_manager		= 0x800L;	// Shared cache manager
-const ULONG DBB_DB_SQL_dialect_3	= 0x1000L;	// database SQL dialect 3
-const ULONG DBB_read_only			= 0x2000L;	// DB is ReadOnly (RO). If not set, DB is RW
-const ULONG DBB_being_opened_read_only	= 0x4000L;	// DB is being opened RO. If unset, opened as RW
-const ULONG DBB_not_in_use			= 0x8000L;	// Database to be ignored while attaching
-const ULONG DBB_lck_init_done		= 0x10000L;	// LCK_init() called for the database
-const ULONG DBB_sp_rec_mutex_init	= 0x20000L;	// Stored procedure mutex initialized
-const ULONG DBB_sweep_in_progress	= 0x40000L;	// A database sweep operation is in progress
-const ULONG DBB_security_db			= 0x80000L;	// ISC security database
-//const ULONG DBB_sweep_thread_started	= 0x100000L;	// A database sweep thread has been started
-const ULONG DBB_suspend_bgio		= 0x200000L;	// Suspend I/O by background threads
-const ULONG DBB_being_opened		= 0x400000L;	// database is being attached to
-const ULONG DBB_gc_cooperative		= 0x0800000L;	// cooperative garbage collection
-const ULONG DBB_gc_background		= 0x1000000L;	// background garbage collection by gc_thread
-#if (defined DEV_BUILD && !defined MULTI_THREAD)
-const ULONG DBB_exec_statement		= 0x2000000L;	// execute statement runs against database
-#endif
+const ULONG DBB_force_write			= 0x40L;	// Database is forced write
+const ULONG DBB_no_reserve			= 0x80L;	// No reserve space for versions
+const ULONG DBB_DB_SQL_dialect_3	= 0x100L;	// database SQL dialect 3
+const ULONG DBB_read_only			= 0x200L;	// DB is ReadOnly (RO). If not set, DB is RW
+const ULONG DBB_being_opened_read_only	= 0x400L;	// DB is being opened RO. If unset, opened as RW
+const ULONG DBB_not_in_use			= 0x800L;	// Database to be ignored while attaching
+const ULONG DBB_lck_init_done		= 0x1000L;	// LCK_init() called for the database
+const ULONG DBB_sweep_in_progress	= 0x2000L;	// A database sweep operation is in progress
+const ULONG DBB_security_db			= 0x4000L;	// ISC security database
+const ULONG DBB_suspend_bgio		= 0x8000L;	// Suspend I/O by background threads
+const ULONG DBB_being_opened		= 0x10000L;	// database is being attached to
+const ULONG DBB_gc_cooperative		= 0x20000L;	// cooperative garbage collection
+const ULONG DBB_gc_background		= 0x40000L;	// background garbage collection by gc_thread
+
 //
 // dbb_ast_flags
 //
@@ -439,15 +440,11 @@ const int DBB_max_count				= 8;
 //
 // Database mutexes
 //
-const int DBB_MUTX_init_fini		= 0;	// During startup and shutdown
-//const int DBB_MUTX_statistics		= 1;	// Memory size and counts
-//const int DBB_MUTX_replay			= 2;	// Replay logging
-const int DBB_MUTX_dyn				= 3;	// Dynamic ddl
-//const int DBB_MUTX_cache			= 4;	// Process-private cache management
-const int DBB_MUTX_clone			= 5;	// Request cloning
-const int DBB_MUTX_cmp_clone		= 6;	// Compiled request cloning
-const int DBB_MUTX_flush_count		= 7;	// flush count/time
-const int DBB_MUTX_max				= 8;
+const int DBB_MUTX_dyn				= 0;	// Dynamic ddl
+const int DBB_MUTX_clone			= 1;	// Request cloning
+const int DBB_MUTX_cmp_clone		= 2;	// Compiled request cloning
+const int DBB_MUTX_flush_count		= 3;	// flush count/time
+const int DBB_MUTX_max				= 4;
 
 //
 // Flags to indicate normal internal requests vs. dyn internal requests
@@ -602,9 +599,6 @@ const ULONG ATT_exclusive			= 32;	// attachment wants exclusive database access
 const ULONG ATT_attach_pending		= 64;	// Indicate attachment is only pending
 const ULONG ATT_exclusive_pending	= 128;	// Indicate exclusive attachment pending
 const ULONG ATT_gbak_attachment		= 256;	// Indicate GBAK attachment
-#ifdef GOVERNOR
-const ULONG ATT_security_db			= 512;	// Indicates an implicit attachment to the security db
-#endif
 
 #ifdef GARBAGE_THREAD
 const ULONG ATT_notify_gc			= 1024;	// Notify garbage collector to expunge, purge ..
@@ -884,7 +878,7 @@ private:
 	RuntimeStatistics *reqStat, *traStat, *attStat, *dbbStat;
 
 public:
-	thread_db() 
+	explicit thread_db(ISC_STATUS* status)
 		: ThreadData(ThreadData::tddDBB)
 	{
 		tdbb_default = 0;
@@ -892,17 +886,19 @@ public:
 		attachment = 0;
 		transaction = 0;
 		request = 0;
-		tdbb_status_vector = 0;
 		tdbb_quantum = 0;
 		tdbb_flags = 0;
 		tdbb_temp_attid = tdbb_temp_traid = 0;
-		JRD_inuse_clear(this);
 		reqStat = traStat = attStat = dbbStat = RuntimeStatistics::getDummy();
+
+		tdbb_status_vector = status;
+		tdbb_status_vector[0] = isc_arg_gds;
+		tdbb_status_vector[1] = FB_SUCCESS;
+		tdbb_status_vector[2] = isc_arg_end;
 	}
 	ISC_STATUS*	tdbb_status_vector;
 	SSHORT		tdbb_quantum;		// Cycles remaining until voluntary schedule
 	USHORT		tdbb_flags;
-	struct iuo	tdbb_mutexes;
 
 	SLONG		tdbb_temp_attid;	// current temporary table scope
 	SLONG		tdbb_temp_traid;	// current temporary table scope
@@ -992,6 +988,41 @@ const USHORT TDBB_shutdown_manager		= 32;	// Server shutdown thread
 const USHORT TDBB_deferred				= 64;	// deferred work performed now
 const USHORT TDBB_sys_error				= 128;	// error shouldn't be handled by the looper
 const USHORT TDBB_verb_cleanup			= 256;	// verb cleanup is in progress
+
+
+class ThreadContextHolder
+{
+public:
+	explicit ThreadContextHolder(ISC_STATUS* status = NULL)
+		: context(status ? status : local_status)
+	{
+		context.putSpecific();
+	}
+
+	~ThreadContextHolder()
+	{
+		ThreadData::restoreSpecific();
+	}
+
+	thread_db* operator->()
+	{
+		return &context;
+	}
+
+	operator thread_db*()
+	{
+		return &context;
+	}
+
+private:
+	// copying is prohibited
+	ThreadContextHolder(const ThreadContextHolder&);
+	ThreadContextHolder& operator= (const ThreadContextHolder&);
+
+	ISC_STATUS_ARRAY local_status;
+	thread_db context;
+};
+
 
 // duplicate context of firebird string to store in jrd_nod::nod_arg
 inline char* stringDup(MemoryPool& p, const Firebird::string& s)
@@ -1087,8 +1118,8 @@ inline void CHECK_DBB(const Jrd::Database* dbb) {
 	fb_assert(dbb && MemoryPool::blk_type(dbb) == type_dbb);
 }
 
-#else
-// PROD_BUILD
+#else // PROD_BUILD
+
 inline Jrd::thread_db* JRD_get_thread_data() {
 	return (Jrd::thread_db*) ThreadData::getSpecific();
 }
@@ -1119,40 +1150,10 @@ inline void SET_DBB(Jrd::Database* &dbb) {
 	CHECK_DBB(dbb);
 }
 
-#ifdef MULTI_THREAD
-#define THD_JRD_MUTEX_LOCK(mutx)        JRD_mutex_lock(mutx)
-#define THD_JRD_MUTEX_UNLOCK(mutx)      JRD_mutex_unlock(mutx)
-#else
-#define THD_JRD_MUTEX_LOCK(mutx)
-#define THD_JRD_MUTEX_UNLOCK(mutx)
-#endif
-
 
 // global variables for engine
 
-
-#if !defined(REQUESTER)
-
 extern int debug;
-
-#endif // REQUESTER
-
-
-/* Define the xxx_thread_data macros.  These are needed in the whole 
-   component, but they are defined differently for use in jrd.cpp (JRD_MAIN)
-   Here we have a function which sets some flags, and then calls THD_put_specific
-   so in this case we define the macro as calling that function. */
-// CVC: This may be obsolete now that different subsystems use different macro/function names.
-
-inline static void JRD_set_thread_data(Jrd::thread_db* &tdbb, Jrd::thread_db& thd_context)
-{
-	tdbb = &thd_context;
-	tdbb->putSpecific();
-}
-
-inline void JRD_restore_thread_data() {
-	ThreadData::restoreSpecific();
-}
 
 namespace Jrd {
 	typedef Firebird::SubsystemContextPoolHolder <Jrd::thread_db, JrdMemoryPool> 
