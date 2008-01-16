@@ -529,10 +529,7 @@ void TempSpace::releaseSpace(offset_t position, size_t size)
 char* TempSpace::inMemory(offset_t begin, size_t size) const
 {
 	const Block* block = findBlock(begin);
-	if (block)
-		return block->inMemory(begin, size);
-	else
-		return NULL;
+	return block ? block->inMemory(begin, size) : NULL;
 }
 
 //
@@ -547,6 +544,7 @@ char* TempSpace::findMemory(offset_t& begin, offset_t end, size_t size) const
 	offset_t local_offset = begin;
 	const offset_t save_begin = begin;
 	const Block* block = findBlock(local_offset);
+
 	while (block && (begin + size <= end))
 	{
 		char* mem = block->inMemory(local_offset, size);
@@ -554,13 +552,12 @@ char* TempSpace::findMemory(offset_t& begin, offset_t end, size_t size) const
 		{
 			return mem;
 		}
-		else 
-		{
-			begin += block->size - local_offset;
-			local_offset = 0;
-			block = block->next;
-		}
+
+		begin += block->size - local_offset;
+		local_offset = 0;
+		block = block->next;
 	}
+
 	begin = save_begin;
 	return NULL;
 }

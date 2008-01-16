@@ -30,6 +30,7 @@
 #include <stdio.h>
 #include <errno.h>
 #include "../jrd/common.h"
+#include "../jrd/ThreadStart.h"
 #include "../jrd/thd.h"
 #include "../jrd/isc.h"
 #include "../jrd/os/thd_priority.h"
@@ -37,6 +38,7 @@
 #include "../jrd/isc_s_proto.h"
 #include "../jrd/gdsassert.h"
 #include "../common/classes/fb_tls.h"
+#include "../common/classes/locks.h"
 
 
 #ifdef WIN_NT
@@ -55,38 +57,40 @@
 #endif
 
 
-#ifdef SUPERSERVER
-int THD_rec_mutex_destroy(REC_MUTX_T * rec_mutex)
+FB_THREAD_ID getThreadId()
 {
 /**************************************
  *
- *	T H D _ r e c _ m u t e x _ d e s t r o y   ( S U P E R S E R V E R )
+ *	T H D _ g e t _ t h r e a d _ i d
  *
  **************************************
  *
  * Functional description
+ *	Get platform's notion of a thread ID.
  *
  **************************************/
+	FB_THREAD_ID id = 1;
+#ifdef WIN_NT
+	id = GetCurrentThreadId();
+#endif
+#ifdef SOLARIS_MT
+	id = thr_self();
+#endif
+#ifdef USE_POSIX_THREADS
 
-	return 0;
-}
+// The following is just a temp. decision.
+#ifdef HP10
 
+	id = (FB_THREAD_ID) (pthread_self().field1);
 
-int THD_rec_mutex_init(REC_MUTX_T * rec_mutex)
-{
-/**************************************
- *
- *	T H D _ r e c _ m u t e x _ i n i t   ( S U P E R S E R V E R )
- *
- **************************************
- *
- * Functional description
- *
- **************************************/
+#else
 
-	rec_mutex->rec_mutx_id = 0;
-	rec_mutex->rec_mutx_count = 0;
-	return 0;
+	id = (FB_THREAD_ID) pthread_self();
+
+#endif // HP10
+#endif // USE_POSIX_THREADS
+
+	return id;
 }
 
 
@@ -94,14 +98,14 @@ int THD_rec_mutex_lock(REC_MUTX_T * rec_mutex)
 {
 /**************************************
  *
- *	T H D _ r e c _ m u t e x _ l o c k   ( S U P E R S E R V E R )
+ *	T H D _ r e c _ m u t e x _ l o c k
  *
  **************************************
  *
  * Functional description
  *
  **************************************/
-	if (rec_mutex->rec_mutx_id == ThreadData::getId())
+	if (rec_mutex->rec_mutx_id == getThreadId())
 	{
 		rec_mutex->rec_mutx_count++;
 	}
@@ -115,7 +119,7 @@ int THD_rec_mutex_lock(REC_MUTX_T * rec_mutex)
 		{
 			return e.getErrorCode();
 		}
-		rec_mutex->rec_mutx_id = ThreadData::getId();
+		rec_mutex->rec_mutx_id = getThreadId();
 		rec_mutex->rec_mutx_count = 1;
 	}
 	return 0;
@@ -126,7 +130,7 @@ int THD_rec_mutex_unlock(REC_MUTX_T * rec_mutex)
 {
 /**************************************
  *
- *	T H D _ r e c _ m u t e x _ u n l o c k   ( S U P E R S E R V E R )
+ *	T H D _ r e c _ m u t e x _ u n l o c k
  *
  **************************************
  *
@@ -134,7 +138,7 @@ int THD_rec_mutex_unlock(REC_MUTX_T * rec_mutex)
  *
  **************************************/
 
-	if (rec_mutex->rec_mutx_id != ThreadData::getId())
+	if (rec_mutex->rec_mutx_id != getThreadId())
 		return FB_FAILURE;
 
 	rec_mutex->rec_mutx_count--;
@@ -153,88 +157,6 @@ int THD_rec_mutex_unlock(REC_MUTX_T * rec_mutex)
 	}
 	return 0;
 }
-#endif // SUPERSERVER
-
-
-#ifdef WIN_NT
-#define THREAD_SUSPEND_DEFINED
-int THD_resume(THD_T thread)
-{
-/**************************************
- *
- *	T H D _ r e s u m e			( W I N _ N T )
- *
- **************************************
- *
- * Functional description
- *	Resume execution of a thread that has been
- *	suspended.
- *
- **************************************/
-
-	if (ResumeThread(thread) == 0xFFFFFFFF)
-		return GetLastError();
-
-	return 0;
-}
-
-
-int THD_suspend(THD_T thread)
-{
-/**************************************
- *
- *	T H D _ s u s p e n d			( W I N _ N T )
- *
- **************************************
- *
- * Functional description
- *	Suspend execution of a thread.
- *
- **************************************/
-
-	if (SuspendThread(thread) == 0xFFFFFFFF)
-		return GetLastError();
-
-	return 0;
-}
-#endif
-
-
-#ifndef THREAD_SUSPEND_DEFINED
-int THD_resume(THD_T thread)
-{
-/**************************************
- *
- *	T H D _ r e s u m e			( G e n e r i c )
- *
- **************************************
- *
- * Functional description
- *	Resume execution of a thread that has been
- *	suspended.
- *
- **************************************/
-
-	return 0;
-}
-
-
-int THD_suspend(THD_T thread)
-{
-/**************************************
- *
- *	T H D _ s u s p e n d			( G e n e r i c )
- *
- **************************************
- *
- * Functional description
- *	Suspend execution of a thread.
- *
- **************************************/
-
-	return 0;
-}
-#endif
 
 
 void THD_sleep(ULONG milliseconds)
@@ -253,30 +175,14 @@ void THD_sleep(ULONG milliseconds)
 #ifdef WIN_NT
 	SleepEx(milliseconds, FALSE);
 #else
-
-#ifdef MULTI_THREAD
 	event_t timer;
 	event_t* timer_ptr = &timer;
 
 	ISC_event_init(&timer, 0, 0);
-	SLONG count = ISC_event_clear(&timer);
+	const SLONG count = ISC_event_clear(&timer);
 
-	ISC_event_wait(1, &timer_ptr, &count, milliseconds * 1000, NULL, 0);
+	ISC_event_wait(1, &timer_ptr, &count, milliseconds * 1000);
 	ISC_event_fini(&timer);
-#else // MULTI_THREAD
-	int seconds;
-
-/* Insure that process sleeps some amount of time. */
-
-	if (!(seconds = milliseconds / 1000))
-		++seconds;
-
-/* Feedback unslept time due to premature wakeup from signals. */
-
-	while (seconds = sleep(seconds));
-
-#endif // MULTI_THREAD
-
 #endif // WIN_NT
 }
 
@@ -293,8 +199,6 @@ void THD_yield(void)
  *	Thread relinquishes the processor.
  *
  **************************************/
-#ifdef MULTI_THREAD
-
 #ifdef USE_POSIX_THREADS
 /* use sched_yield() instead of pthread_yield(). Because pthread_yield() 
    is not part of the (final) POSIX 1003.1c standard. Several drafts of 
@@ -319,5 +223,4 @@ void THD_yield(void)
 #ifdef WIN_NT
 	SleepEx(0, FALSE);
 #endif
-#endif // MULTI_THREAD
 }

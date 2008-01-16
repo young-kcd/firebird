@@ -42,6 +42,7 @@
 #include "../jrd/sbm.h" // For bid structure
 
 #include "../jrd/DatabaseSnapshot.h"
+#include "../jrd/TempSpace.h"
 
 namespace Jrd {
 
@@ -81,22 +82,30 @@ typedef Firebird::BePlusTree<BlobIndex, ULONG, MemoryPool, BlobIndex> BlobIndexT
 /* Transaction block */
 
 const int DEFAULT_LOCK_TIMEOUT = -1; // infinite
+const char* const TRA_TEMP_SPACE = "fb_trans_";
 
 class jrd_tra : public pool_alloc_rpt<SCHAR, type_tra>
 {
-    public:
+public:
 	enum wait_t {
 		tra_no_wait,
 		tra_probe,
 		tra_wait
 	};
 
-	jrd_tra(MemoryPool& p) :
-		tra_blobs(&p),
-		tra_resources(p),
-		tra_context_vars(p),
-		tra_lock_timeout(DEFAULT_LOCK_TIMEOUT)
+	explicit jrd_tra(JrdMemoryPool* p) :
+		tra_pool(p),
+		tra_blobs(p),
+		tra_resources(*p),
+		tra_context_vars(*p),
+		tra_lock_timeout(DEFAULT_LOCK_TIMEOUT),
+		tra_stats(*p)
 	{}
+
+	~jrd_tra()
+	{
+		delete tra_temp_space;
+	}
 
 	Attachment* tra_attachment;	/* database attachment */
 	SLONG tra_number;			/* transaction number */
@@ -129,11 +138,25 @@ class jrd_tra : public pool_alloc_rpt<SCHAR, type_tra>
 	jrd_req* tra_requests;		// Doubly linked list of requests active in this transaction
 	DatabaseSnapshot* tra_db_snapshot; // Database state snapshot (for monitoring purposes)
 	RuntimeStatistics tra_stats;
+
+private:
+	TempSpace* tra_temp_space;	// temp space storage
+
+public:
 	UCHAR tra_transactions[1];
 
+public:
 	SSHORT getLockWait() const
 	{
 		return -tra_lock_timeout;
+	}
+
+	TempSpace* getTempSpace()
+	{
+		if (!tra_temp_space)
+			tra_temp_space = FB_NEW(*tra_pool) TempSpace(*tra_pool, TRA_TEMP_SPACE);
+
+		return tra_temp_space;
 	}
 };
 
@@ -146,7 +169,6 @@ const ULONG TRA_system			= 1L;		/* system transaction */
 //const ULONG TRA_update			= 2L;		// update is permitted 
 const ULONG TRA_prepared		= 4L;		/* transaction is in limbo */
 const ULONG TRA_reconnected		= 8L;		/* reconnect in progress */
-// How can RLCK_reserve_relation test for it if it's not set anywhere?
 //const ULONG TRA_reserving		= 16L;		// relations explicityly locked
 const ULONG TRA_degree3			= 32L;		/* serializeable transaction */
 //const ULONG TRA_committing		= 64L;		// commit in progress

@@ -56,6 +56,7 @@ void	TRA_rollback(Jrd::thread_db*, Jrd::jrd_tra*, const bool, const bool);
 void	TRA_set_state(Jrd::thread_db*, Jrd::jrd_tra*, SLONG, SSHORT);
 void	TRA_shutdown_attachment(Jrd::thread_db*, Jrd::Attachment*);
 int		TRA_snapshot_state(Jrd::thread_db*, const Jrd::jrd_tra*, SLONG);
+Jrd::jrd_tra*	TRA_start(Jrd::thread_db*, ULONG flags, SSHORT lock_timeout);
 Jrd::jrd_tra*	TRA_start(Jrd::thread_db*, int, const UCHAR*);
 int		TRA_state(const UCHAR*, ULONG, ULONG);
 bool	TRA_sweep(Jrd::thread_db*, Jrd::jrd_tra*);
