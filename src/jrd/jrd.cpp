@@ -6580,18 +6580,13 @@ static void getUserInfo(UserId& user, const DatabaseOptions& options)
 	bool wheel = false;
 	if (options.dpb_trusted_login.hasData())
 	{
-		options.dpb_trusted_login.copyTo(name, sizeof(name));
+		name = options.dpb_trusted_login;
 	}
 	else
 	{
 		if (options.dpb_user_name.isEmpty()) 
 		{
-	       wheel = ISC_get_user(name,
-    	                        &id,
-        	                    &group,
-            	                project,
-                	            organization,
-                    	        &node_id,
+	       wheel = ISC_get_user(&name, &id, &group,
                         	    options.dpb_sys_user_name.nullStr());
 		}
 

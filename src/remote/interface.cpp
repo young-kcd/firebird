@@ -144,7 +144,7 @@ static bool batch_dsql_fetch(rem_port*, struct rmtque *,
 								ISC_STATUS *, USHORT);
 static bool check_response(RDB, PACKET *);
 static bool clear_queue(rem_port*, ISC_STATUS *);
-static bool clear_stmt_que(trdb*, rem_port*, ISC_STATUS*, RSR);
+static bool clear_stmt_que(rem_port*, ISC_STATUS*, RSR);
 static void disconnect(rem_port*);
 #ifdef SCROLLABLE_CURSORS
 static REM_MSG dump_cache(rem_port*, ISC_STATUS *, rrq::rrq_repeat *);
@@ -1845,8 +1845,8 @@ ISC_STATUS GDS_DSQL_FETCH(ISC_STATUS* user_status,
 			{
 				// hvlad: we may have queued fetch packet but received EOF before start 
 				// handling of this packet. Handle it now. 
-				if (!clear_stmt_que(tdrdb, port, user_status, statement)) {
-					return error(user_status);
+				if (!clear_stmt_que(port, user_status, statement)) {
+					return user_status[1];
 				}
 
 				// hvlad: as we processed all queued packets at code above we can leave RSR_eof flag. 
@@ -4683,7 +4683,7 @@ static rem_port* analyze_service(Firebird::PathName& service_name,
 	return port;
 }
 
-static bool clear_stmt_que(trdb* tdrdb, rem_port* port, ISC_STATUS* user_status, RSR statement)
+static bool clear_stmt_que(rem_port* port, ISC_STATUS* user_status, RSR statement)
 {
 /**************************************
  *
@@ -4704,7 +4704,7 @@ static bool clear_stmt_que(trdb* tdrdb, rem_port* port, ISC_STATUS* user_status,
 
 	while (statement->rsr_batch_count)
 	{
-		if (!receive_queued_packet(tdrdb, port, user_status, statement->rsr_id))
+		if (!receive_queued_packet(port, user_status, statement->rsr_id))
 			return false;
 
 		// We must receive isc_req_sync as we did fetch after EOF
@@ -4862,7 +4862,7 @@ static bool batch_dsql_fetch(rem_port*	port,
 
 			// clear next queued batch(es) if present
 			if (packet->p_sqldata.p_sqldata_status == 100) {
-				clear_stmt_que(tdrdb, port, tmp_status, statement);
+				clear_stmt_que(port, tmp_status, statement);
 			}
 			break;
 		}
