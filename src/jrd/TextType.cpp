@@ -240,7 +240,7 @@ USHORT TextType::string_to_key(USHORT srcLen,
 
 	if (getCharSet()->isMultiByte())
 	{
-		dstLen = UnicodeUtil::utf16ToKey(srcLen, reinterpret_cast<const USHORT*>(src), 
+		dstLen = UnicodeUtil::utf16ToKey(srcLen, Firebird::Aligner<USHORT>(src, srcLen), 
 										 dstLen, dst, key_type);
 	}
 	else
@@ -321,8 +321,8 @@ SSHORT TextType::compare(ULONG len1,
 	if (getCharSet()->isMultiByte())
 	{
 		INTL_BOOL error_flag;
-		return UnicodeUtil::utf16Compare(len1, reinterpret_cast<const USHORT*>(str1), 
-										 len2, reinterpret_cast<const USHORT*>(str2), &error_flag);
+		return UnicodeUtil::utf16Compare(len1, Firebird::Aligner<USHORT>(str1, len1), 
+										 len2, Firebird::Aligner<USHORT>(str2, len2), &error_flag);
 	}
 
 	SSHORT cmp = memcmp(str1, str2, MIN(len1, len2));
@@ -386,7 +386,9 @@ ULONG TextType::canonical(ULONG srcLen,
 			dstLen, Firebird::OutAligner<ULONG>(dst, dstLen), &errCode, &errPos) / sizeof(ULONG);
 	}
 
-	fb_assert(tt->texttype_canonical_width == getCharSet()->minBytesPerChar());
+	fb_assert(
+		(tt->texttype_canonical_width == 0 && !tt->texttype_fn_canonical) ||
+		tt->texttype_canonical_width == getCharSet()->minBytesPerChar());
 	fb_assert(dstLen >= srcLen);
 
 	memcpy(dst, src, srcLen);
