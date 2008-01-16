@@ -60,7 +60,7 @@
 #include "../jrd/btr.h"
 #include "../jrd/exe.h"
 #include "../jrd/rse.h"
-#include "../jrd/thd.h"
+#include "../jrd/ThreadStart.h"
 #include "../jrd/thread_proto.h"
 #ifdef VIO_DEBUG
 #include "../jrd/all.h"
@@ -459,10 +459,10 @@ void VIO_bump_count(thread_db* tdbb, USHORT count_id, jrd_rel* relation)
 	}
 #endif
 
-#ifdef PROD_BUILD
-/* The sweeper threads run in the background without
-   any way to inspect these counters. For debugging
-   purposes, they are maintained in the DEV_BUILD. */
+#ifndef DEV_BUILD
+	// The sweeper threads run in the background without
+	// any way to inspect these counters. For debugging
+	// purposes, they are maintained in the DEV_BUILD.
 
 	if (tdbb->tdbb_flags & TDBB_sweeper) {
 		return;
@@ -1531,12 +1531,12 @@ void VIO_fini(thread_db* tdbb)
 		event_t* gc_event_fini = dbb->dbb_gc_event_fini;
 		/* initialize finalization event */
 		ISC_event_init(gc_event_fini, 0, 0);
-		SLONG count = ISC_event_clear(gc_event_fini);
+		const SLONG count = ISC_event_clear(gc_event_fini);
 
 		dbb->dbb_flags &= ~DBB_garbage_collector;
 		ISC_event_post(dbb->dbb_gc_event); /* Wake up running thread */
 		THREAD_EXIT();
-		ISC_event_wait(1, &gc_event_fini, &count, 0, NULL, 0);
+		ISC_event_wait(1, &gc_event_fini, &count, 0);
 		THREAD_ENTER();
 		/* Cleanup finalization event */
 		ISC_event_fini(gc_event_fini);
@@ -1632,12 +1632,10 @@ bool VIO_garbage_collect(thread_db* tdbb, record_param* rpb,
 				{
 					return true;
 				}
-				else
-				{
-					CCH_RELEASE(tdbb, &rpb->getWindow(tdbb));
-					expunge(tdbb, rpb, transaction, (SLONG) 0);
-					return false;
-				}
+
+				CCH_RELEASE(tdbb, &rpb->getWindow(tdbb));
+				expunge(tdbb, rpb, transaction, (SLONG) 0);
+				return false;
 			}
 
 			if (rpb->rpb_transaction_nr >= transaction->tra_oldest_active ||
@@ -1760,7 +1758,13 @@ bool VIO_get(thread_db* tdbb, record_param* rpb, RecordSource* rsb, jrd_tra* tra
 	}
 #endif
 	if (pool) {
-		VIO_data(tdbb, rpb, pool);
+		if (rpb->rpb_stream_flags & RPB_s_no_data) {
+			CCH_RELEASE(tdbb, &rpb->getWindow(tdbb));
+			rpb->rpb_address = NULL;
+			rpb->rpb_length = 0;
+		}
+		else
+			VIO_data(tdbb, rpb, pool);
 	}
 
 	VIO_bump_count(tdbb, DBB_read_idx_count, rpb->rpb_relation);
@@ -1880,18 +1884,17 @@ bool VIO_get_current(
 			}
 		}
 
-		if (state == tra_committed) {
+		switch (state)
+		{
+		case tra_committed:
 			return !(rpb->rpb_flags & rpb_deleted);
-		}
-		else if (state == tra_dead) {
-			if (transaction->tra_attachment->att_flags & ATT_no_cleanup) {
+		case tra_dead:
+			if (transaction->tra_attachment->att_flags & ATT_no_cleanup)
 				return !foreign_key;
-			}
 
 			VIO_backout(tdbb, rpb, transaction);
 			continue;
-		}
-		else if (state == tra_precommitted) {
+		case tra_precommitted:
 			THREAD_EXIT();
 			THREAD_SLEEP(100);	/* milliseconds */
 			THREAD_ENTER();
@@ -1971,7 +1974,8 @@ bool VIO_get_current(
 /*
 			if (!rpb->rpb_b_page)
 				return !foreign_key;
-			else if (old_rpb)
+
+			if (old_rpb)
 			{
 				Record* data = rpb->rpb_prior;
 				*old_rpb = *rpb;
@@ -2006,9 +2010,8 @@ bool VIO_get_current(
 				has_old_values = true;
 				return true;
 			}
-			else
 */
-				return !foreign_key;
+			return !foreign_key;
 
 		case tra_dead:
 			if (transaction->tra_attachment->att_flags & ATT_no_cleanup) {
@@ -2056,7 +2059,7 @@ void VIO_init(thread_db* tdbb)
 		event_t* gc_event_init = dbb->dbb_gc_event_init;
 		/* Initialize initialization event */
 		ISC_event_init(gc_event_init, 0, 0);
-		SLONG count = ISC_event_clear(gc_event_init);
+		const SLONG count = ISC_event_clear(gc_event_init);
 
 		if (gds__thread_start
 			(garbage_collector, dbb, THREAD_medium, 0, 0))
@@ -2064,7 +2067,7 @@ void VIO_init(thread_db* tdbb)
 			ERR_bugcheck_msg("cannot start thread");
 		}
 		THREAD_EXIT();
-		ISC_event_wait(1, &gc_event_init, &count, 10 * 1000000, NULL, 0);
+		ISC_event_wait(1, &gc_event_init, &count, 10 * 1000000);
 		THREAD_ENTER();
 		/* Clean up initialization event */
 		ISC_event_fini(gc_event_init);
@@ -2464,7 +2467,13 @@ bool VIO_next_record(thread_db* tdbb,
 	} while (!VIO_chase_record_version(tdbb, rpb, rsb, transaction, pool, false));
 
 	if (pool) {
-		VIO_data(tdbb, rpb, pool);
+		if (rpb->rpb_stream_flags & RPB_s_no_data) {
+			CCH_RELEASE(tdbb, &rpb->getWindow(tdbb));
+			rpb->rpb_address = NULL;
+			rpb->rpb_length = 0;
+		}
+		else
+			VIO_data(tdbb, rpb, pool);
 	}
 
 #ifdef VIO_DEBUG
@@ -3852,20 +3861,16 @@ static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM arg)
 	event_t* gc_event = dbb->dbb_gc_event;
 	record_param rpb;
 	MOVE_CLEAR(&rpb, sizeof(record_param));
+	jrd_rel* relation = NULL;
+	jrd_tra* transaction = NULL;
+
 	ISC_STATUS_ARRAY status_vector;
 	MOVE_CLEAR(status_vector, sizeof(status_vector));
-	jrd_rel* relation = 0;
-	jrd_tra* transaction = 0;
 
 /* Establish a thread context. */
-/* Note: Since this function operates as its own thread,
-   we have no need to restore the THREAD CONTEXT on exit.
-   Once we reach the end, the thread will die, thus implicitly
-   killing all its contexts. */
-	thread_db thd_context, *tdbb;
-	JRD_set_thread_data(tdbb, thd_context);
+	ThreadContextHolder tdbb(status_vector);
+
 	tdbb->setDatabase(dbb);
-	tdbb->tdbb_status_vector = status_vector;
 	tdbb->tdbb_quantum = SWEEP_QUANTUM;
 	tdbb->tdbb_flags = TDBB_sweeper;
 
@@ -3873,7 +3878,7 @@ static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM arg)
 
 /* Surrender if resources to start up aren't available. */
 	bool found = false, flush = false;
-	
+
 	try {
 		ISC_event_init(gc_event, 0, 0);
 
@@ -3932,7 +3937,7 @@ static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM arg)
 				while (dbb->dbb_flags & DBB_suspend_bgio) {
 					count = ISC_event_clear(gc_event);
 					THREAD_EXIT();
-					ISC_event_wait(1, &gc_event, &count, 10 * 1000000, NULL, 0);
+					ISC_event_wait(1, &gc_event, &count, 10 * 1000000);
 					THREAD_ENTER();
 					if (!(dbb->dbb_flags & DBB_garbage_collector)) {
 						goto gc_exit;
@@ -4093,8 +4098,7 @@ rel_exit:
 					}
 					dbb->dbb_flags &= ~DBB_gc_active;
 					THREAD_EXIT();
-					int timeout = ISC_event_wait(1, &gc_event, &count, 
-												 10 * 1000000, NULL, 0);
+					int timeout = ISC_event_wait(1, &gc_event, &count, 10 * 1000000);
 					THREAD_ENTER();
 					dbb->dbb_flags |= DBB_gc_active;
 					if (!timeout) {
@@ -4136,7 +4140,6 @@ gc_exit:
 		ISC_event_post(dbb->dbb_gc_event_fini);	
 		ISC_event_fini(gc_event);
 
-		JRD_restore_thread_data();
 		THREAD_EXIT();
 
 	}	// try

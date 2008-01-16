@@ -79,11 +79,9 @@
 #include "../jrd/gds_proto.h"
 #include "../jrd/isc_proto.h"
 #include "../jrd/isc_f_proto.h"
-#ifndef REQUESTER
 #include "../jrd/os/isc_i_proto.h"
 #include "../jrd/isc_s_proto.h"
 #include "../jrd/sch_proto.h"
-#endif
 #include "../jrd/thread_proto.h"
 #include "../jrd/utl_proto.h"
 #include "../dsql/dsql_proto.h"
@@ -93,8 +91,11 @@
 #include "../common/classes/auto.h"
 #include "../common/classes/init.h"
 #include "../jrd/constants.h"
+#ifdef SCROLLABLE_CURSORS
+#include "../jrd/blr.h"
+#endif
 
-#if !defined (SUPERCLIENT) && !defined (REQUESTER) && !defined(SERVER_SHUTDOWN)
+#if !defined (SUPERCLIENT) && !defined(SERVER_SHUTDOWN)
 #define CANCEL_disable  1
 #define CANCEL_enable   2
 #define CANCEL_raise    3
@@ -170,13 +171,13 @@ inline void nullCheck(const FB_API_HANDLE* ptr, ISC_STATUS code)
 //#define RETURN_SUCCESS			{ subsystem_exit(); CHECK_STATUS_SUCCESS (status); return FB_SUCCESS; }
 	// gone to YEntry
 
-#if defined(REQUESTER) || defined (SUPERCLIENT)
+#if defined (SUPERCLIENT)
 #define NO_LOCAL_DSQL
 #endif
 
-#if !defined (SUPERCLIENT) && !defined (REQUESTER)
+#if !defined (SUPERCLIENT)
 static BOOLEAN shutdown_flag = FALSE;
-#endif /* !SUPERCLIENT && !REQUESTER */
+#endif /* !SUPERCLIENT */
 
 typedef ISC_STATUS(*PTR) (ISC_STATUS* user_status, ...);
 
@@ -364,10 +365,8 @@ static bool set_path(const Firebird::PathName&, Firebird::PathName&);
 static void subsystem_enter(void) throw();
 static void subsystem_exit(void) throw();
 
-#ifndef REQUESTER
 static event_t why_event[1];
 static SSHORT why_initialized = 0;
-#endif
 static SLONG why_enabled = 0;
 
 /* subsystem_usage is used to count how many active ATTACHMENTs are 
@@ -394,7 +393,7 @@ static const USHORT FPE_RESET_INIT_ONLY			= 0x0;	/* Don't reset FPE after init *
 static const USHORT FPE_RESET_NEXT_API_CALL		= 0x1;	/* Reset FPE on next gds call */
 static const USHORT FPE_RESET_ALL_API_CALL		= 0x2;	/* Reset FPE on all gds call */
 
-#if !(defined REQUESTER || defined SUPERCLIENT || defined SUPERSERVER)
+#if !(defined SUPERCLIENT || defined SUPERSERVER)
 extern ULONG isc_enter_count;
 static ULONG subsystem_usage = 0;
 static USHORT subsystem_FPE_reset = FPE_RESET_INIT_ONLY;
@@ -557,7 +556,7 @@ namespace
 
 			if (killed)
 			{
-#if !defined (SUPERCLIENT) && !defined (REQUESTER)
+#if !defined (SUPERCLIENT)
 				JRD_process_close();
 #endif
 				propagateKill();
@@ -572,7 +571,7 @@ namespace
 					Jrd::Attachment** released = 
 						releasedBuffer.getBuffer(totalAttachmentCount() + 1);
 					*released = 0;
-#if !defined (SUPERCLIENT) && !defined (REQUESTER)
+#if !defined (SUPERCLIENT)
 					JRD_database_close(&attach, released);
 #endif
 					markShutdown(released);
@@ -647,7 +646,7 @@ namespace
 
 		static void Handler()
 		{
-#if !defined (SUPERCLIENT) && !defined (REQUESTER)
+#if !defined (SUPERCLIENT)
 			shutdown_flag = true;
 #endif
 			if (inside)
@@ -662,7 +661,7 @@ namespace
 				// this function must in theory use only signal-safe code
 				// but as long as we have not entered engine, 
 				// any call to it should be safe
-#if !defined (SUPERCLIENT) && !defined (REQUESTER)
+#if !defined (SUPERCLIENT)
 				JRD_process_close();
 #endif
 				propagateKill();
@@ -709,11 +708,7 @@ namespace
 } // anonymous namespace
 
 
-#ifdef VMS
-#define CALL(proc, handle)	(*get_entrypoint(proc, handle))
-#else
 #define CALL(proc, handle)	(get_entrypoint(proc, handle))
-#endif
 
 
 #define GDS_ATTACH_DATABASE		isc_attach_database
@@ -888,10 +883,6 @@ extern "C" {
 
 static ISC_STATUS no_entrypoint(ISC_STATUS * user_status, ...);
 
-#ifdef VMS
-#define RDB
-#endif
-
 #ifdef SUPERCLIENT
 #define ENTRYPOINT(gen,cur,bridge,rem,os2_rem,csi,rdb,pipe,bridge_pipe,win,winipi)	ISC_STATUS rem(ISC_STATUS * user_status, ...);
 #else
@@ -900,21 +891,12 @@ static ISC_STATUS no_entrypoint(ISC_STATUS * user_status, ...);
 
 #include "../jrd/entry.h"
 
-#ifdef RDB
-#define ENTRYPOINT(gen,cur,bridge,rem,os2_rem,csi,rdb,pipe,bridge_pipe,win,winipi)	ISC_STATUS rdb(ISC_STATUS * user_status, ...);
-#include "../jrd/entry.h"
-#endif
-
 static const IMAGE images[] =
 {
 	{"REMINT", "REMINT"},			/* Remote */
 
-# if !defined(REQUESTER) && !defined(SUPERCLIENT)
+#if !defined(SUPERCLIENT)
 	{"GDSSHR", "GDSSHR"},			/* Primary access method */
-#endif
-
-#ifdef RDB
-	{"GDSRDB", "GDSRDB"},			/* Rdb Interface */
 #endif
 
 };
@@ -923,17 +905,11 @@ static const IMAGE images[] =
 
 static ENTRY entrypoints[PROC_count * SUBSYSTEMS] =
 {
-
 #define ENTRYPOINT(gen,cur,bridge,rem,os2_rem,csi,rdb,pipe,bridge_pipe,win,winipi)	{NULL, rem},
 #include "../jrd/entry.h"
 
-# if !defined(REQUESTER) && !defined(SUPERCLIENT)
+#if !defined(SUPERCLIENT)
 #define ENTRYPOINT(gen,cur,bridge,rem,os2_rem,csi,rdb,pipe,bridge_pipe,win,winipi)	{NULL, cur},
-#include "../jrd/entry.h"
-#endif
-
-#ifdef RDB
-#define ENTRYPOINT(gen,cur,bridge,rem,os2_rem,csi,rdb,pipe,bridge_pipe,win,winipi)	{NULL, rdb},
 #include "../jrd/entry.h"
 #endif
 };
@@ -1045,7 +1021,7 @@ namespace YValve
 {
 	void Attachment::cancel2()
 	{
-#if !defined (SUPERCLIENT) && !defined (REQUESTER) && !defined(SERVER_SHUTDOWN)
+#if !defined (SUPERCLIENT) && !defined(SERVER_SHUTDOWN)
 		ISC_STATUS_ARRAY local;
 		jrd8_cancel_operation(local, &handle, CANCEL_raise);
 #endif
@@ -1096,13 +1072,13 @@ ISC_STATUS API_ROUTINE GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 											  isc_arg_end);
 		}
 
-#if !defined (SUPERCLIENT) && !defined (REQUESTER)
+#if !defined (SUPERCLIENT)
 		if (shutdown_flag)
 		{
 			Firebird::status_exception::raise(isc_shutwarn,
 											  isc_arg_end);
 		}
-#endif /* !SUPERCLIENT && !REQUESTER */
+#endif /* !SUPERCLIENT */
 
 		SUBSYSTEM_USAGE_INCR;
 
@@ -1666,13 +1642,13 @@ ISC_STATUS API_ROUTINE GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 											  isc_arg_end);
 		}
 
-#if !defined (SUPERCLIENT) && !defined (REQUESTER)
+#if !defined (SUPERCLIENT)
 		if (shutdown_flag)
 		{
 			Firebird::status_exception::raise(isc_shutwarn,
 											  isc_arg_end);
 		}
-#endif /* !SUPERCLIENT && !REQUESTER */
+#endif /* !SUPERCLIENT */
 
 		SUBSYSTEM_USAGE_INCR;
 
@@ -3676,7 +3652,6 @@ int API_ROUTINE gds__enable_subsystem(TEXT * subsystem)
 }
 
 
-#ifndef REQUESTER
 ISC_STATUS API_ROUTINE isc_wait_for_event(ISC_STATUS * user_status,
 									  FB_API_HANDLE * handle,
 									  USHORT length,
@@ -3703,7 +3678,7 @@ ISC_STATUS API_ROUTINE isc_wait_for_event(ISC_STATUS * user_status,
 			ISC_event_init(why_event, 0, 0);
 		}
 
-		SLONG value = ISC_event_clear(why_event);
+		const SLONG value = ISC_event_clear(why_event);
 		SLONG id;
 
 		if (GDS_QUE_EVENTS
@@ -3713,7 +3688,7 @@ ISC_STATUS API_ROUTINE isc_wait_for_event(ISC_STATUS * user_status,
 		}
 
 		event_t* event_ptr = why_event;
-		ISC_event_wait(1, &event_ptr, &value, -1, 0, NULL);
+		ISC_event_wait(1, &event_ptr, &value, -1);
 	}
 	catch (const Firebird::Exception& e)
 	{
@@ -3722,7 +3697,6 @@ ISC_STATUS API_ROUTINE isc_wait_for_event(ISC_STATUS * user_status,
 
 	return status[1];
 }
-#endif
 
 
 ISC_STATUS API_ROUTINE GDS_INTL_FUNCTION(ISC_STATUS * user_status,
@@ -4430,7 +4404,7 @@ SLONG API_ROUTINE isc_reset_fpe(USHORT fpe_status)
  *	Prior setting of the FPE reset flag
  *
  **************************************/
-#if !(defined REQUESTER || defined SUPERCLIENT || defined SUPERSERVER)
+#if !(defined SUPERCLIENT || defined SUPERSERVER)
 	SLONG prior;
 	prior = (SLONG) subsystem_FPE_reset;
 	switch (fpe_status) {
@@ -4667,12 +4641,12 @@ ISC_STATUS API_ROUTINE GDS_SERVICE_ATTACH(ISC_STATUS* user_status,
 			Firebird::status_exception::raise(isc_bad_spb_form, isc_arg_end);
 		}
 
-#if !defined (SUPERCLIENT) && !defined (REQUESTER)
+#if !defined (SUPERCLIENT)
 		if (shutdown_flag) 
 		{
 			Firebird::status_exception::raise(isc_shutwarn, isc_arg_end);
 		}
-#endif /* !SUPERCLIENT && !REQUESTER */
+#endif /* !SUPERCLIENT */
 
 		SUBSYSTEM_USAGE_INCR;
 
@@ -5444,7 +5418,6 @@ static void check_status_vector(const ISC_STATUS* status)
 	}
 }*/
 
-#ifndef REQUESTER
 static void event_ast(void* buffer_void,
 					  USHORT length,
 					  const UCHAR* items)
@@ -5462,10 +5435,8 @@ static void event_ast(void* buffer_void,
 	memcpy(buffer_void, items, length);
 	ISC_event_post(why_event);
 }
-#endif
 
 
-#ifndef REQUESTER
 static void exit_handler(event_t* why_eventL)
 {
 /**************************************
@@ -5485,13 +5456,12 @@ static void exit_handler(event_t* why_eventL)
 
 	why_initialized = FALSE;
 	why_enabled = 0;
-#if !(defined REQUESTER || defined SUPERCLIENT || defined SUPERSERVER)
+#if !(defined SUPERCLIENT || defined SUPERSERVER)
 	isc_enter_count = 0;
 	subsystem_usage = 0;
 	subsystem_FPE_reset = FPE_RESET_INIT_ONLY;
 #endif
 }
-#endif
 
 
 static Transaction* find_transaction(Attachment* dbb,
@@ -6113,7 +6083,7 @@ static void subsystem_enter(void) throw()
 	try 
 	{
 		THREAD_ENTER();
-#if !(defined REQUESTER || defined SUPERCLIENT || defined SUPERSERVER)
+#if !(defined SUPERCLIENT || defined SUPERSERVER)
 		isc_enter_count++;
 		if (subsystem_usage == 0 ||
 			(subsystem_FPE_reset &
@@ -6160,7 +6130,7 @@ static void subsystem_exit(void) throw()
 
 	try
 	{
-#if !(defined REQUESTER || defined SUPERCLIENT || defined SUPERSERVER)
+#if !(defined SUPERCLIENT || defined SUPERSERVER)
 		if (subsystem_usage == 0 ||
 			(subsystem_FPE_reset &
 			 (FPE_RESET_NEXT_API_CALL | FPE_RESET_ALL_API_CALL)))
@@ -6179,7 +6149,7 @@ static void subsystem_exit(void) throw()
 }
 
 
-#if !defined (SUPERCLIENT) && !defined (REQUESTER)
+#if !defined (SUPERCLIENT)
 BOOLEAN WHY_set_shutdown(BOOLEAN flag)
 {
 /**************************************
@@ -6216,4 +6186,4 @@ BOOLEAN WHY_get_shutdown()
 
 	return shutdown_flag;
 }
-#endif /* SERVER_SHUTDOWN && !SUPERCLIENT && !REQUESTER */
+#endif /* SERVER_SHUTDOWN && !SUPERCLIENT */

@@ -25,6 +25,7 @@
 #define GSEC_GSECSWI_H
 
 #include "../jrd/common.h"
+#include "../jrd/constants.h"
 
 /* Switch handling constants.  Note that the first IN_SW_DATA_ITEMS
    switch constants refer to data items.  The remaining switch constants
@@ -52,11 +53,10 @@ const int IN_SW_GSEC_DBA_PASSWORD	= 18;	/* Database Admin. Password */
 const int IN_SW_GSEC_SQL_ROLE_NAME	= 19;	/* SQL Role to assume */
 const int IN_SW_GSEC_AMBIG			= 20;	/* ambiguous switch */
 const int IN_SW_GSEC_USERNAME		= 21;	/* placeholder for the username */
-#ifdef TRUSTED_SERVICES
 const int IN_SW_GSEC_DBA_TRUST_USER	= 22;	/* Database Admin. Trusted User name */
-#endif
+const int IN_SW_GSEC_DBA_TRUST_ROLE	= 23;	/* use trusted role for auth */
 #ifdef TRUSTED_AUTH
-const int IN_SW_GSEC_TRUSTED_AUTH	= 23;	/* Use trusted authentication */
+const int IN_SW_GSEC_TRUSTED_AUTH	= 24;	/* Use trusted authentication */
 #endif
 
 
@@ -80,9 +80,10 @@ static struct in_sw_tab_t gsec_in_sw_table [] = {
     {IN_SW_GSEC_DBA_USER_NAME,	0,			"USER",		0, 0, 0, FALSE,	0,	1, NULL},	/* Database Admin. User name */
     {IN_SW_GSEC_DBA_PASSWORD, 	0,			"PASSWORD",	0, 0, 0, FALSE,	0,	2, NULL},	/* Database Admin. Password */
     {IN_SW_GSEC_SQL_ROLE_NAME,	isc_spb_sql_role_name,		"ROLE",		0, 0, 0, FALSE,	0,	2, NULL},	/* SQL Role to assume */
-#ifdef TRUSTED_SERVICES
-	{IN_SW_GSEC_DBA_TRUST_USER,	0,			"TRUSTED_SVC",	0, 0, 0, FALSE,	0,	1, NULL},	/* Database Admin. Trusted User name */
-#endif
+	{IN_SW_GSEC_DBA_TRUST_USER,	0,			TRUSTED_USER_SWITCH,	0, 0, 0, FALSE,	0,	
+											sizeof(TRUSTED_USER_SWITCH) - 1, NULL},		/* Database Admin. Trusted User name */
+	{IN_SW_GSEC_DBA_TRUST_ROLE,	0,			TRUSTED_ROLE_SWITCH,	0, 0, 0, FALSE,	0,	
+											sizeof(TRUSTED_ROLE_SWITCH) - 1, NULL},		/* Use trusted role for auth */
 #ifdef TRUSTED_AUTH
 	{IN_SW_GSEC_TRUSTED_AUTH,	0,			"TRUSTED",	0, 0, 0, FALSE,	0,	1, NULL},	/* Database Admin. Trusted User name */
 #endif

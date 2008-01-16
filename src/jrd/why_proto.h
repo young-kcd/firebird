@@ -245,10 +245,8 @@ ISC_STATUS API_ROUTINE isc_transaction_info(ISC_STATUS*, FB_API_HANDLE*, SSHORT,
 											const SCHAR*, SSHORT, UCHAR*);
 
 ISC_STATUS API_ROUTINE isc_unwind_request(ISC_STATUS*, FB_API_HANDLE*, SSHORT);
-#ifndef REQUESTER
 ISC_STATUS API_ROUTINE isc_wait_for_event(ISC_STATUS*, FB_API_HANDLE*, USHORT,
 										const UCHAR*, UCHAR*);
-#endif
 
 SLONG API_ROUTINE isc_reset_fpe(USHORT);
 

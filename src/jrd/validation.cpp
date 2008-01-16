@@ -2002,7 +2002,7 @@ static RTN walk_record(thread_db* tdbb,
 			end = p + line->dpg_length - OFFSETA(rhd*, rhd_data);
 		}
 		while (p < end) {
-			const char c = *p++;
+			const signed char c = *p++;
 			if (c >= 0) {
 				record_length += c;
 				p += c;
