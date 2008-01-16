@@ -814,8 +814,8 @@ C --
       PARAMETER (GDS__expec_long                       = 335544700)
       INTEGER*4 GDS__expec_ushort                    
       PARAMETER (GDS__expec_ushort                     = 335544701)
-      INTEGER*4 GDS__like_escape_invalid             
-      PARAMETER (GDS__like_escape_invalid              = 335544702)
+      INTEGER*4 GDS__escape_invalid                  
+      PARAMETER (GDS__escape_invalid                   = 335544702)
       INTEGER*4 GDS__svcnoexe                        
       PARAMETER (GDS__svcnoexe                         = 335544703)
       INTEGER*4 GDS__net_lookup_err                  
@@ -1178,6 +1178,8 @@ C --
       PARAMETER (GDS__long_login                       = 335544882)
       INTEGER*4 GDS__fldnotdef2                      
       PARAMETER (GDS__fldnotdef2                       = 335544883)
+      INTEGER*4 GDS__invalid_similar_pattern         
+      PARAMETER (GDS__invalid_similar_pattern          = 335544884)
       INTEGER*4 GDS__gfix_db_name                    
       PARAMETER (GDS__gfix_db_name                     = 335740929)
       INTEGER*4 GDS__gfix_invalid_sw                 
@@ -1294,6 +1296,8 @@ C --
       PARAMETER (GDS__dsql_incompatible_trigger_type   = 336003102)
       INTEGER*4 GDS__dsql_db_trigger_type_cant_change
       PARAMETER (GDS__dsql_db_trigger_type_cant_change = 336003103)
+      INTEGER*4 GDS__dyn_column_does_not_exist       
+      PARAMETER (GDS__dyn_column_does_not_exist        = 336068784)
       INTEGER*4 GDS__dyn_role_does_not_exist         
       PARAMETER (GDS__dyn_role_does_not_exist          = 336068796)
       INTEGER*4 GDS__dyn_no_grant_admin_opt          
@@ -1342,6 +1346,8 @@ C --
       PARAMETER (GDS__dyn_miss_priv_warning            = 336068855)
       INTEGER*4 GDS__dyn_ods_not_supp_feature        
       PARAMETER (GDS__dyn_ods_not_supp_feature         = 336068856)
+      INTEGER*4 GDS__dyn_cannot_addrem_computed      
+      PARAMETER (GDS__dyn_cannot_addrem_computed       = 336068857)
       INTEGER*4 GDS__gbak_unknown_switch             
       PARAMETER (GDS__gbak_unknown_switch              = 336330753)
       INTEGER*4 GDS__gbak_page_size_missing          
@@ -1574,6 +1580,10 @@ C --
       PARAMETER (GDS__dsql_col_more_than_once_using    = 336397235)
       INTEGER*4 GDS__dsql_unsupp_feature_dialect     
       PARAMETER (GDS__dsql_unsupp_feature_dialect      = 336397236)
+      INTEGER*4 GDS__dsql_col_more_than_once_view    
+      PARAMETER (GDS__dsql_col_more_than_once_view     = 336397237)
+      INTEGER*4 GDS__dsql_unsupported_in_auto_trans  
+      PARAMETER (GDS__dsql_unsupported_in_auto_trans   = 336397238)
       INTEGER*4 GDS__gsec_cant_open_db               
       PARAMETER (GDS__gsec_cant_open_db                = 336723983)
       INTEGER*4 GDS__gsec_switches_error             
@@ -1704,3 +1714,5 @@ C --
       PARAMETER (GDS__fbsvcmgr_query_err               = 336986117)
       INTEGER*4 GDS__fbsvcmgr_switch_unknown         
       PARAMETER (GDS__fbsvcmgr_switch_unknown          = 336986118)
+      INTEGER*4 GDS__utl_trusted_switch              
+      PARAMETER (GDS__utl_trusted_switch               = 337051649)

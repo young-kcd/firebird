@@ -414,7 +414,7 @@ const
 	gds_expec_short                      = 335544699;
 	gds_expec_long                       = 335544700;
 	gds_expec_ushort                     = 335544701;
-	gds_like_escape_invalid              = 335544702;
+	gds_escape_invalid                   = 335544702;
 	gds_svcnoexe                         = 335544703;
 	gds_net_lookup_err                   = 335544704;
 	gds_service_unknown                  = 335544705;
@@ -596,6 +596,7 @@ const
 	gds_need_difference                  = 335544881;
 	gds_long_login                       = 335544882;
 	gds_fldnotdef2                       = 335544883;
+	gds_invalid_similar_pattern          = 335544884;
 	gds_gfix_db_name                     = 335740929;
 	gds_gfix_invalid_sw                  = 335740930;
 	gds_gfix_incmp_sw                    = 335740932;
@@ -654,6 +655,7 @@ const
 	gds_upd_ins_with_complex_view        = 336003101;
 	gds_dsql_incompatible_trigger_type   = 336003102;
 	gds_dsql_db_trigger_type_cant_change = 336003103;
+	gds_dyn_column_does_not_exist        = 336068784;
 	gds_dyn_role_does_not_exist          = 336068796;
 	gds_dyn_no_grant_admin_opt           = 336068797;
 	gds_dyn_user_not_role_member         = 336068798;
@@ -678,6 +680,7 @@ const
 	gds_dyn_precision_too_small          = 336068853;
 	gds_dyn_miss_priv_warning            = 336068855;
 	gds_dyn_ods_not_supp_feature         = 336068856;
+	gds_dyn_cannot_addrem_computed       = 336068857;
 	gds_gbak_unknown_switch              = 336330753;
 	gds_gbak_page_size_missing           = 336330754;
 	gds_gbak_page_size_toobig            = 336330755;
@@ -794,6 +797,8 @@ const
 	gds_dsql_cte_nested_with             = 336397234;
 	gds_dsql_col_more_than_once_using    = 336397235;
 	gds_dsql_unsupp_feature_dialect      = 336397236;
+	gds_dsql_col_more_than_once_view     = 336397237;
+	gds_dsql_unsupported_in_auto_trans   = 336397238;
 	gds_gsec_cant_open_db                = 336723983;
 	gds_gsec_switches_error              = 336723984;
 	gds_gsec_no_op_spec                  = 336723985;
@@ -859,3 +864,4 @@ const
 	gds_fbsvcmgr_info_err                = 336986116;
 	gds_fbsvcmgr_query_err               = 336986117;
 	gds_fbsvcmgr_switch_unknown          = 336986118;
+	gds_utl_trusted_switch               = 337051649;

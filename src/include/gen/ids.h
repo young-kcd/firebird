@@ -299,6 +299,8 @@
 	const USHORT  f_prm_coll_id = 9;
 	const USHORT  f_prm_null_flag = 10;
 	const USHORT  f_prm_mech = 11;
+	const USHORT  f_prm_fname = 12;
+	const USHORT  f_prm_rname = 13;
  
 
 	const USHORT  f_cs_cs_name = 0;

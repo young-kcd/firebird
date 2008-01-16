@@ -436,7 +436,7 @@ const ISC_LONG isc_scale_nogt                       = 335544698L;
 const ISC_LONG isc_expec_short                      = 335544699L;
 const ISC_LONG isc_expec_long                       = 335544700L;
 const ISC_LONG isc_expec_ushort                     = 335544701L;
-const ISC_LONG isc_like_escape_invalid              = 335544702L;
+const ISC_LONG isc_escape_invalid                   = 335544702L;
 const ISC_LONG isc_svcnoexe                         = 335544703L;
 const ISC_LONG isc_net_lookup_err                   = 335544704L;
 const ISC_LONG isc_service_unknown                  = 335544705L;
@@ -618,6 +618,7 @@ const ISC_LONG isc_not_valid_for                    = 335544880L;
 const ISC_LONG isc_need_difference                  = 335544881L;
 const ISC_LONG isc_long_login                       = 335544882L;
 const ISC_LONG isc_fldnotdef2                       = 335544883L;
+const ISC_LONG isc_invalid_similar_pattern          = 335544884L;
 const ISC_LONG isc_gfix_db_name                     = 335740929L;
 const ISC_LONG isc_gfix_invalid_sw                  = 335740930L;
 const ISC_LONG isc_gfix_incmp_sw                    = 335740932L;
@@ -676,6 +677,7 @@ const ISC_LONG isc_upd_ins_doesnt_match_matching    = 336003100L;
 const ISC_LONG isc_upd_ins_with_complex_view        = 336003101L;
 const ISC_LONG isc_dsql_incompatible_trigger_type   = 336003102L;
 const ISC_LONG isc_dsql_db_trigger_type_cant_change = 336003103L;
+const ISC_LONG isc_dyn_column_does_not_exist        = 336068784L;
 const ISC_LONG isc_dyn_role_does_not_exist          = 336068796L;
 const ISC_LONG isc_dyn_no_grant_admin_opt           = 336068797L;
 const ISC_LONG isc_dyn_user_not_role_member         = 336068798L;
@@ -700,6 +702,7 @@ const ISC_LONG isc_dyn_scale_too_big                = 336068852L;
 const ISC_LONG isc_dyn_precision_too_small          = 336068853L;
 const ISC_LONG isc_dyn_miss_priv_warning            = 336068855L;
 const ISC_LONG isc_dyn_ods_not_supp_feature         = 336068856L;
+const ISC_LONG isc_dyn_cannot_addrem_computed       = 336068857L;
 const ISC_LONG isc_gbak_unknown_switch              = 336330753L;
 const ISC_LONG isc_gbak_page_size_missing           = 336330754L;
 const ISC_LONG isc_gbak_page_size_toobig            = 336330755L;
@@ -816,6 +819,8 @@ const ISC_LONG isc_dsql_cte_miss_nonrecursive       = 336397233L;
 const ISC_LONG isc_dsql_cte_nested_with             = 336397234L;
 const ISC_LONG isc_dsql_col_more_than_once_using    = 336397235L;
 const ISC_LONG isc_dsql_unsupp_feature_dialect      = 336397236L;
+const ISC_LONG isc_dsql_col_more_than_once_view     = 336397237L;
+const ISC_LONG isc_dsql_unsupported_in_auto_trans   = 336397238L;
 const ISC_LONG isc_gsec_cant_open_db                = 336723983L;
 const ISC_LONG isc_gsec_switches_error              = 336723984L;
 const ISC_LONG isc_gsec_no_op_spec                  = 336723985L;
@@ -881,7 +886,8 @@ const ISC_LONG isc_fbsvcmgr_bad_rs                  = 336986115L;
 const ISC_LONG isc_fbsvcmgr_info_err                = 336986116L;
 const ISC_LONG isc_fbsvcmgr_query_err               = 336986117L;
 const ISC_LONG isc_fbsvcmgr_switch_unknown          = 336986118L;
-const ISC_LONG isc_err_max                          = 826;
+const ISC_LONG isc_utl_trusted_switch               = 337051649L;
+const ISC_LONG isc_err_max                          = 832;
 
 #else /* c definitions */
 
@@ -1287,7 +1293,7 @@ const ISC_LONG isc_err_max                          = 826;
 #define isc_expec_short                      335544699L
 #define isc_expec_long                       335544700L
 #define isc_expec_ushort                     335544701L
-#define isc_like_escape_invalid              335544702L
+#define isc_escape_invalid                   335544702L
 #define isc_svcnoexe                         335544703L
 #define isc_net_lookup_err                   335544704L
 #define isc_service_unknown                  335544705L
@@ -1469,6 +1475,7 @@ const ISC_LONG isc_err_max                          = 826;
 #define isc_need_difference                  335544881L
 #define isc_long_login                       335544882L
 #define isc_fldnotdef2                       335544883L
+#define isc_invalid_similar_pattern          335544884L
 #define isc_gfix_db_name                     335740929L
 #define isc_gfix_invalid_sw                  335740930L
 #define isc_gfix_incmp_sw                    335740932L
@@ -1527,6 +1534,7 @@ const ISC_LONG isc_err_max                          = 826;
 #define isc_upd_ins_with_complex_view        336003101L
 #define isc_dsql_incompatible_trigger_type   336003102L
 #define isc_dsql_db_trigger_type_cant_change 336003103L
+#define isc_dyn_column_does_not_exist        336068784L
 #define isc_dyn_role_does_not_exist          336068796L
 #define isc_dyn_no_grant_admin_opt           336068797L
 #define isc_dyn_user_not_role_member         336068798L
@@ -1551,6 +1559,7 @@ const ISC_LONG isc_err_max                          = 826;
 #define isc_dyn_precision_too_small          336068853L
 #define isc_dyn_miss_priv_warning            336068855L
 #define isc_dyn_ods_not_supp_feature         336068856L
+#define isc_dyn_cannot_addrem_computed       336068857L
 #define isc_gbak_unknown_switch              336330753L
 #define isc_gbak_page_size_missing           336330754L
 #define isc_gbak_page_size_toobig            336330755L
@@ -1667,6 +1676,8 @@ const ISC_LONG isc_err_max                          = 826;
 #define isc_dsql_cte_nested_with             336397234L
 #define isc_dsql_col_more_than_once_using    336397235L
 #define isc_dsql_unsupp_feature_dialect      336397236L
+#define isc_dsql_col_more_than_once_view     336397237L
+#define isc_dsql_unsupported_in_auto_trans   336397238L
 #define isc_gsec_cant_open_db                336723983L
 #define isc_gsec_switches_error              336723984L
 #define isc_gsec_no_op_spec                  336723985L
@@ -1732,7 +1743,8 @@ const ISC_LONG isc_err_max                          = 826;
 #define isc_fbsvcmgr_info_err                336986116L
 #define isc_fbsvcmgr_query_err               336986117L
 #define isc_fbsvcmgr_switch_unknown          336986118L
-#define isc_err_max                          826
+#define isc_utl_trusted_switch               337051649L
+#define isc_err_max                          832
 
 #endif
 

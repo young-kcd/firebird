@@ -402,7 +402,7 @@ static const struct {
 	{335544699, -842}, /* 379 expec_short                      */
 	{335544700, -842}, /* 380 expec_long                       */
 	{335544701, -842}, /* 381 expec_ushort                     */
-	{335544702, -105}, /* 382 like_escape_invalid              */
+	{335544702, -105}, /* 382 escape_invalid                   */
 	{335544703, -901}, /* 383 svcnoexe                         */
 	{335544704, -901}, /* 384 net_lookup_err                   */
 	{335544705, -901}, /* 385 service_unknown                  */
@@ -584,6 +584,7 @@ static const struct {
 	{335544881, -820}, /* 561 need_difference                  */
 	{335544882, -902}, /* 562 long_login                       */
 	{335544883, -205}, /* 563 fldnotdef2                       */
+	{335544884, -105}, /* 564 invalid_similar_pattern          */
 	{335740929, -901}, /*   1 gfix_db_name                     */
 	{335740930, -901}, /*   2 gfix_invalid_sw                  */
 	{335740932, -901}, /*   4 gfix_incmp_sw                    */
@@ -642,6 +643,7 @@ static const struct {
 	{336003101, -817}, /*  29 upd_ins_with_complex_view        */
 	{336003102, -817}, /*  30 dsql_incompatible_trigger_type   */
 	{336003103, -817}, /*  31 dsql_db_trigger_type_cant_change */
+	{336068784, -901}, /* 176 dyn_column_does_not_exist        */
 	{336068796, -901}, /* 188 dyn_role_does_not_exist          */
 	{336068797, -901}, /* 189 dyn_no_grant_admin_opt           */
 	{336068798, -901}, /* 190 dyn_user_not_role_member         */
@@ -666,6 +668,7 @@ static const struct {
 	{336068853, -829}, /* 245 dyn_precision_too_small          */
 	{336068855,  106}, /* 247 dyn_miss_priv_warning            */
 	{336068856, -901}, /* 248 dyn_ods_not_supp_feature         */
+	{336068857, -829}, /* 249 dyn_cannot_addrem_computed       */
 	{336330753, -901}, /*   1 gbak_unknown_switch              */
 	{336330754, -901}, /*   2 gbak_page_size_missing           */
 	{336330755, -901}, /*   3 gbak_page_size_toobig            */
@@ -782,6 +785,8 @@ static const struct {
 	{336397234, -104}, /* 946 dsql_cte_nested_with             */
 	{336397235, -104}, /* 947 dsql_col_more_than_once_using    */
 	{336397236, -901}, /* 948 dsql_unsupp_feature_dialect      */
+	{336397237, -104}, /* 949 dsql_col_more_than_once_view     */
+	{336397238, -901}, /* 950 dsql_unsupported_in_auto_trans   */
 	{336723983, -901}, /*  15 gsec_cant_open_db                */
 	{336723984, -901}, /*  16 gsec_switches_error              */
 	{336723985, -901}, /*  17 gsec_no_op_spec                  */
@@ -847,5 +852,6 @@ static const struct {
 	{336986116, -901}, /*   4 fbsvcmgr_info_err                */
 	{336986117, -901}, /*   5 fbsvcmgr_query_err               */
 	{336986118, -901}, /*   6 fbsvcmgr_switch_unknown          */
+	{337051649, -901}, /*   1 utl_trusted_switch               */
 	{0, 0}
 };
