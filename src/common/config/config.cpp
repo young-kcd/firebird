@@ -76,19 +76,11 @@ const ConfigImpl::ConfigEntry ConfigImpl::entries[] =
 	{TYPE_INTEGER,		"ConnectionTimeout",		(ConfigValue) 180},			// seconds
 	{TYPE_INTEGER,		"DummyPacketInterval",		(ConfigValue) 0},			// seconds
 	{TYPE_INTEGER,		"LockMemSize",				(ConfigValue) 1048576},		// bytes
-#if defined(SINIXZ) || defined(FREEBSD) || defined(NETBSD)
-	{TYPE_INTEGER,		"LockSemCount",				(ConfigValue) 25},			// semaphores
-#else
-	{TYPE_INTEGER,		"LockSemCount",				(ConfigValue) 32},			// semaphores
-#endif
-	{TYPE_INTEGER,		"LockSignal",				(ConfigValue) 16},			// signal #
 	{TYPE_BOOLEAN,		"LockGrantOrder",			(ConfigValue) true},
 	{TYPE_INTEGER,		"LockHashSlots",			(ConfigValue) 1009},		// slots
 	{TYPE_INTEGER,		"LockAcquireSpins",			(ConfigValue) 0},
 	{TYPE_INTEGER,		"EventMemSize",				(ConfigValue) 65536},		// bytes
 	{TYPE_INTEGER,		"DeadlockTimeout",			(ConfigValue) 10},			// seconds
-	{TYPE_INTEGER,		"SolarisStallValue",		(ConfigValue) 60},			// seconds
-	{TYPE_BOOLEAN,		"TraceMemoryPools",			(ConfigValue) false},		// for internal use only
 	{TYPE_INTEGER,		"PrioritySwitchDelay",		(ConfigValue) 100},			// milliseconds
 	{TYPE_BOOLEAN,		"UsePriorityScheduler",		(ConfigValue) true},
 	{TYPE_INTEGER,		"PriorityBoost",			(ConfigValue) 5},			// ratio oh high- to low-priority thread ticks in jrd.cpp
@@ -104,7 +96,6 @@ const ConfigImpl::ConfigEntry ConfigImpl::entries[] =
 	{TYPE_INTEGER,		"MaxUnflushedWriteTime",	(ConfigValue) -1},
 #endif
 	{TYPE_INTEGER,		"ProcessPriorityLevel",		(ConfigValue) 0},
-	{TYPE_BOOLEAN,		"CreateInternalWindow",		(ConfigValue) true},
 	{TYPE_BOOLEAN,		"CompleteBooleanEvaluation", (ConfigValue) false},
 	{TYPE_INTEGER,		"RemoteAuxPort",			(ConfigValue) 0},
 	{TYPE_STRING,		"RemoteBindAddress",		(ConfigValue) 0},
@@ -117,7 +108,6 @@ const ConfigImpl::ConfigEntry ConfigImpl::entries[] =
 #else
  	{TYPE_BOOLEAN,		"BugcheckAbort",			(ConfigValue) false},	// whether to abort() engine when internal error is found
 #endif
-	{TYPE_INTEGER,		"TraceDSQL",				(ConfigValue) 0},		// bitmask
 	{TYPE_BOOLEAN,		"LegacyHash",				(ConfigValue) true},	// let use old passwd hash verification
 	{TYPE_STRING,		"GCPolicy",					(ConfigValue) GCPolicyDefault},	// garbage collection policy
 	{TYPE_BOOLEAN,		"Redirection",				(ConfigValue) false},
@@ -136,15 +126,12 @@ const ConfigImpl::ConfigEntry ConfigImpl::entries[] =
 // was: const static ConfigImpl sysConfig;
 
 static ConfigImpl *sys_config = NULL;
-#ifdef MULTI_THREAD
 static Firebird::Mutex config_init_lock;
-#endif
 
 const ConfigImpl& ConfigImpl::instance()
 {
 	if (!sys_config) 
 	{
-#ifdef MULTI_THREAD
 		try {
 			config_init_lock.enter();
 			if (!sys_config) {
@@ -156,10 +143,6 @@ const ConfigImpl& ConfigImpl::instance()
 			throw;
 		}
 		config_init_lock.leave();
-#else
-		sys_config = FB_NEW(*getDefaultMemoryPool()) ConfigImpl(*getDefaultMemoryPool());
-
-#endif
 	}
 	return *sys_config;
 }
@@ -367,16 +350,6 @@ int Config::getLockMemSize()
 	return (int) sysConfig.values[KEY_LOCK_MEM_SIZE];
 }
 
-int Config::getLockSemCount()
-{
-	return (int) sysConfig.values[KEY_LOCK_SEM_COUNT];
-}
-
-int Config::getLockSignal()
-{
-	return (int) sysConfig.values[KEY_LOCK_SIGNAL];
-}
-
 bool Config::getLockGrantOrder()
 {
 	return (bool) sysConfig.values[KEY_LOCK_GRANT_ORDER];
@@ -400,16 +373,6 @@ int Config::getEventMemSize()
 int Config::getDeadlockTimeout()
 {
 	return (int) sysConfig.values[KEY_DEADLOCK_TIMEOUT];
-}
-
-int Config::getSolarisStallValue()
-{
-	return (int) sysConfig.values[KEY_SOLARIS_STALL_VALUE];
-}
-
-bool Config::getTraceMemoryPools()
-{
-	return (bool) sysConfig.values[KEY_TRACE_MEMORY_POOLS];
 }
 
 int Config::getPrioritySwitchDelay()
@@ -470,11 +433,6 @@ int Config::getProcessPriorityLevel()
 	return (int) sysConfig.values[KEY_PROCESS_PRIORITY_LEVEL];
 }
 
-bool Config::getCreateInternalWindow()
-{
-	return (bool) sysConfig.values[KEY_CREATE_INTERNAL_WINDOW];
-}
-
 bool Config::getCompleteBooleanEvaluation()
 {
 	return (bool) sysConfig.values[KEY_COMPLETE_BOOLEAN_EVALUATION];
@@ -517,11 +475,6 @@ const char *Config::getTempDirectories()
 bool Config::getBugcheckAbort()
 {
 	return (bool) sysConfig.values[KEY_BUGCHECK_ABORT];
-}
-
-int Config::getTraceDSQL()
-{
-	return (int) sysConfig.values[KEY_TRACE_DSQL];
 }
 
 bool Config::getLegacyHash()
