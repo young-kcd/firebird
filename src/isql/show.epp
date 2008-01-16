@@ -54,6 +54,7 @@
 #include "../common/utils_proto.h"
 #include "../jrd/constants.h"
 #include "../common/classes/UserBlob.h"
+#include "../isql/OptionsBase.h"
 
 #ifdef HAVE_CTYPE_H
 #include <ctype.h>
@@ -262,97 +263,6 @@ const char* trigger_action(int type)
 
 	return buffer;
 }
-
-// There was too much string comparison inside SHOW_metadata.
-// Handle all cases except VERSION and SQL DIALECT inside this class.
-class ShowOptions
-{
-public:
-	enum show_commands
-	{
-		role, table, view, system, index, domain, exception,
-		filter, function, generator, grant, procedure, trigger,
-		check, database, comment, dependency, collation, security_class,
-		users, wrong
-	};
-	static show_commands getCommand(const char* cmd);
-
-private:
-	struct map
-	{
-		show_commands kw;
-		const char* text;
-		size_t abbrlen;
-	};
-	static const map options[];
-};
-
-const ShowOptions::map ShowOptions::options[] =
-{
-	//{role, "ROLE"},
-	{role, "ROLES", 4},
-	//{table, "TABLE"},
-	{table, "TABLES", 5},
-	//{view, "VIEW"},
-	{view, "VIEWS", 4},
-	//{system, "SYS"},
-	{system, "SYSTEM", 3},
-	//{index, "IND"},
-	{index, "INDEXES", 3},
-	{index, "INDICES", 7},
-	//{domain, "DOMAIN"},
-	{domain, "DOMAINS", 6},
-	//{exception, "EXCEPTION"},
-	{exception, "EXCEPTIONS", 5},
-	//{filter, "FILTER"},
-	{filter, "FILTERS", 6},
-	//{function, "FUNCTION"},
-	{function, "FUNCTIONS", 4},
-	//{generator, "GEN"},
-	//{generator, "GENERATOR"},
-	{generator, "GENERATORS", 3},
-	//{generator, "SEQ"},
-	//{generator, "SEQUENCE"},
-	{generator, "SEQUENCES", 3},
-	//{grant, "GRANT"},
-	{grant, "GRANTS", 5},
-	//{procedure, "PROC"},
-	//{procedure, "PROCEDURE"},
-	{procedure, "PROCEDURES", 4},
-	//{trigger, "TRIG"},
-	//{trigger, "TRIGGER"},
-	{trigger, "TRIGGERS", 4},
-	//{check, "CHECK"},
-	{check, "CHECKS", 5},
-	{database, "DB", 2},
-	{database, "DATABASE", 8},
-	//{comment, "COMMENT"},
-	{comment, "COMMENTS", 7},
-	{dependency, "DEPENDENCY", 5},
-	{dependency, "DEPENDENCIES", 5},
-	{collation, "COLLATES", 7},
-	{collation, "COLLATIONS", 9},
-	{security_class, "SECURITY CLASSES", 12},
-	{security_class, "SECCLASSES", 6},
-	{users, "USERS", 4}
-};
-
-// Return the keyword associated with the string. There may be several strings
-// for the same keyword (see table above). Return last (unused) keyword on error.
-// Assume the command string is uppercased already.
-ShowOptions::show_commands ShowOptions::getCommand(const char* cmd)
-{
-	for (int i = 0; i < FB_NELEM(options); ++i)
-	{
-		// As long as we know our input is already uppercased, the call to
-		// fb_utils::strnicmp as been replaced by strncmp until the need arises.
-		size_t swlen = strlen(cmd);
-		if (swlen >= options[i].abbrlen && !strncmp(cmd, options[i].text, swlen))
-			return options[i].kw;
-	}
-	return wrong;
-}
-
 
 
 // *************************
@@ -1100,14 +1010,87 @@ processing_state SHOW_metadata(const SCHAR* const* cmd,
  *	cmd -- Array of words for the command
  *
  **************************************/
-	processing_state ret = SKIP;
-	int key = 0;
+
+	class ShowOptions : public OptionsBase
+	{
+	public:
+		enum show_commands
+		{
+			role, table, view, system, index, domain, exception,
+			filter, function, generator, grant, procedure, trigger,
+			check, database, comment, dependency, collation, security_class,
+			users, wrong
+		};
+		ShowOptions(const optionsMap* inmap, size_t insize, int wrongval)
+			: OptionsBase(inmap, insize, wrongval)
+		{}
+	};
+
+	static const ShowOptions::optionsMap options[] =
+	{
+		//{role, "ROLE"},
+		{ShowOptions::role, "ROLES", 4},
+		//{table, "TABLE"},
+		{ShowOptions::table, "TABLES", 5},
+		//{view, "VIEW"},
+		{ShowOptions::view, "VIEWS", 4},
+		//{system, "SYS"},
+		{ShowOptions::system, "SYSTEM", 3},
+		//{index, "IND"},
+		{ShowOptions::index, "INDEXES", 3},
+		{ShowOptions::index, "INDICES", 0},
+		//{domain, "DOMAIN"},
+		{ShowOptions::domain, "DOMAINS", 6},
+		//{exception, "EXCEPTION"},
+		{ShowOptions::exception, "EXCEPTIONS", 5},
+		//{filter, "FILTER"},
+		{ShowOptions::filter, "FILTERS", 6},
+		//{function, "FUNCTION"},
+		{ShowOptions::function, "FUNCTIONS", 4},
+		//{generator, "GEN"},
+		//{generator, "GENERATOR"},
+		{ShowOptions::generator, "GENERATORS", 3},
+		//{generator, "SEQ"},
+		//{generator, "SEQUENCE"},
+		{ShowOptions::generator, "SEQUENCES", 3},
+		//{grant, "GRANT"},
+		{ShowOptions::grant, "GRANTS", 5},
+		//{procedure, "PROC"},
+		//{procedure, "PROCEDURE"},
+		{ShowOptions::procedure, "PROCEDURES", 4},
+		//{trigger, "TRIG"},
+		//{trigger, "TRIGGER"},
+		{ShowOptions::trigger, "TRIGGERS", 4},
+		//{check, "CHECK"},
+		{ShowOptions::check, "CHECKS", 5},
+		{ShowOptions::database, "DB", 0},
+		{ShowOptions::database, "DATABASE", 0},
+		//{comment, "COMMENT"},
+		{ShowOptions::comment, "COMMENTS", 7},
+		{ShowOptions::dependency, "DEPENDENCY", 5},
+		{ShowOptions::dependency, "DEPENDENCIES", 5},
+		{ShowOptions::collation, "COLLATES", 7},
+		{ShowOptions::collation, "COLLATIONS", 9},
+		{ShowOptions::security_class, "SECURITY CLASSES", 12},
+		{ShowOptions::security_class, "SECCLASSES", 6},
+		{ShowOptions::users, "USERS", 0}
+	};
+	
+	const ShowOptions showoptions(options, FB_NELEM(options), ShowOptions::wrong);
+
 
 	// Can't show nothing, return an error
 
-	if (!cmd[1])
+	if (!cmd[1] || !*cmd[1])
+	{
+		TEXT msg_string[MSG_LENGTH];
+		ISQL_msg_get(VALID_OPTIONS, msg_string);
+		isqlGlob.printf("%s\n", msg_string);
+		showoptions.showCommands(isqlGlob.Out);
 		return ps_ERR;
+	}
 		
+	processing_state ret = SKIP;
 	// Only show version and show sql dialect work if there is no db attached
 	bool handled = true;
 	if ((!strcmp(cmd[1], "VERSION")) || (!strcmp(cmd[1], "VER")))
@@ -1140,8 +1123,9 @@ processing_state SHOW_metadata(const SCHAR* const* cmd,
 		return ret;
 		
 	TEXT SQL_id_for_grant[BUFFER_LENGTH128];
+	int key = 0;
 
-	switch (ShowOptions::getCommand(cmd[1]))
+	switch (showoptions.getCommand(cmd[1]))
 	{
 	case ShowOptions::role:
 		if (isqlGlob.major_ods >= ODS_VERSION9)
@@ -1226,7 +1210,7 @@ processing_state SHOW_metadata(const SCHAR* const* cmd,
 	case ShowOptions::system:
 		if (*cmd[2])
 		{
-			switch (ShowOptions::getCommand(cmd[2]))
+			switch (showoptions.getCommand(cmd[2]))
 			{
 			case ShowOptions::collation:
 				show_collations("", 1);
@@ -1815,6 +1799,22 @@ static void show_proc_charsets(
 					prp_collation_null = PRP2.RDB$COLLATION_ID.NULL;
 					if (!prp_collation_null)
 						collation = PRP2.RDB$COLLATION_ID;
+				END_FOR 
+			}
+
+			if (prp_collation_null &&
+				ENCODE_ODS(isqlGlob.major_ods, isqlGlob.minor_ods) >= ODS_11_2)
+			{
+				FOR PRP2 IN RDB$PROCEDURE_PARAMETERS CROSS
+					RFL IN RDB$RELATION_FIELDS
+					WITH PRP2.RDB$PROCEDURE_NAME EQ PRP.RDB$PROCEDURE_NAME AND
+						 PRP2.RDB$PARAMETER_NAME EQ PRP.RDB$PARAMETER_NAME AND
+						 RFL.RDB$RELATION_NAME = PRP2.RDB$RELATION_NAME AND
+						 RFL.RDB$FIELD_NAME = PRP2.RDB$FIELD_NAME
+
+					prp_collation_null = RFL.RDB$COLLATION_ID.NULL;
+					if (!prp_collation_null)
+						collation = RFL.RDB$COLLATION_ID;
 				END_FOR 
 			}
 
@@ -3683,11 +3683,44 @@ static processing_state show_proc(const SCHAR* procname)
 				END_FOR 
 			}
 
-			// Decide if this is a user-created domain
-			if (!(fb_utils::implicit_domain(FLD.RDB$FIELD_NAME) && FLD.RDB$SYSTEM_FLAG != 1))
+			char relationName[BUFFER_LENGTH128] = "";
+			char relationField[BUFFER_LENGTH128] = "";
+
+			if (ENCODE_ODS(isqlGlob.major_ods, isqlGlob.minor_ods) >= ODS_11_2)
 			{
-				fb_utils::exact_name(FLD.RDB$FIELD_NAME);
-				isqlGlob.printf("(%s%s) ", (mechanism == prm_mech_type_of ? "TYPE OF " : ""), FLD.RDB$FIELD_NAME);
+				FOR PRM2 IN RDB$PROCEDURE_PARAMETERS
+					WITH PRM2.RDB$PROCEDURE_NAME EQ PRM.RDB$PROCEDURE_NAME AND
+						 PRM2.RDB$PARAMETER_NAME EQ PRM.RDB$PARAMETER_NAME
+
+					if (!PRM2.RDB$RELATION_NAME.NULL)
+					{
+						strcpy(relationName, PRM2.RDB$RELATION_NAME);
+						fb_utils::exact_name(relationName);
+					}
+
+					if (!PRM2.RDB$FIELD_NAME.NULL)
+					{
+						strcpy(relationField, PRM2.RDB$FIELD_NAME);
+						fb_utils::exact_name(relationField);
+					}
+
+				END_FOR 
+			}
+
+			const bool basedOnColumn = relationName[0] && relationField[0];
+			// Decide if this is a user-created domain
+			if (!fb_utils::implicit_domain(FLD.RDB$FIELD_NAME) || FLD.RDB$SYSTEM_FLAG == 1 ||
+				basedOnColumn)
+			{
+				isqlGlob.printf("(%s", (mechanism == prm_mech_type_of ? "TYPE OF " : ""));
+
+				if (basedOnColumn)
+					isqlGlob.printf("COLUMN %s.%s) ", relationName, relationField);
+				else
+				{
+					fb_utils::exact_name(FLD.RDB$FIELD_NAME);
+					isqlGlob.printf("%s) ", FLD.RDB$FIELD_NAME);
+				}
 			}
 
 			isqlGlob.printf("%s%s", type_name, lenstring);
@@ -4573,7 +4606,7 @@ static processing_state show_users()
 	fb_assert(avary->vary_length < sizeof(my_user) - sizeof(avary->vary_length));
 	avary->vary_string[avary->vary_length] = 0; // Just for the debugger.
 
-    UCHAR buffer[BUFFER_LENGTH512];
+	UCHAR buffer[BUFFER_LENGTH512];
 	ISC_STATUS_ARRAY status_vector;
 	if (isc_database_info(status_vector, &DB,
 							sizeof(user_items), user_items,

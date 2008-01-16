@@ -802,6 +802,36 @@ static void get_procedure_args(const char* proc_name)
 				END_FOR 
 			}
 
+			char relationName[BUFFER_LENGTH128] = "";
+			char relationField[BUFFER_LENGTH128] = "";
+
+			if (ENCODE_ODS(isqlGlob.major_ods, isqlGlob.minor_ods) >= ODS_11_2)
+			{
+				FOR PRM2 IN RDB$PROCEDURE_PARAMETERS
+					WITH PRM2.RDB$PROCEDURE_NAME EQ PRM.RDB$PROCEDURE_NAME AND
+						 PRM2.RDB$PARAMETER_NAME EQ PRM.RDB$PARAMETER_NAME
+
+					if (!PRM2.RDB$RELATION_NAME.NULL)
+					{
+						fb_utils::exact_name(PRM2.RDB$RELATION_NAME);
+						if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
+							ISQL_copy_SQL_id(PRM2.RDB$RELATION_NAME, relationName, DBL_QUOTE);
+						else
+							strcpy(relationName, PRM2.RDB$RELATION_NAME);
+					}
+
+					if (!PRM2.RDB$FIELD_NAME.NULL)
+					{
+						fb_utils::exact_name(PRM2.RDB$FIELD_NAME);
+						if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
+							ISQL_copy_SQL_id(PRM2.RDB$FIELD_NAME, relationField, DBL_QUOTE);
+						else
+							strcpy(relationField, PRM2.RDB$FIELD_NAME);
+					}
+
+				END_FOR 
+			}
+
 			if (first_time)
 			{
 				first_time = false;
@@ -830,19 +860,26 @@ static void get_procedure_args(const char* proc_name)
 
 			isqlGlob.printf("%s ", SQL_identifier);
 
-			if (!(fb_utils::implicit_domain(FLD.RDB$FIELD_NAME) && FLD.RDB$SYSTEM_FLAG != 1))
+			const bool basedOnColumn = relationName[0] && relationField[0];
+			if (!fb_utils::implicit_domain(FLD.RDB$FIELD_NAME) || FLD.RDB$SYSTEM_FLAG == 1 ||
+				basedOnColumn)
 			{
 				if (prm_mech == prm_mech_type_of)
 					isqlGlob.printf("TYPE OF ");
 
-				fb_utils::exact_name(FLD.RDB$FIELD_NAME);
-				if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
-				{
-					ISQL_copy_SQL_id (FLD.RDB$FIELD_NAME, SQL_identifier, DBL_QUOTE);
-					isqlGlob.prints(SQL_identifier);
-				}
+				if (basedOnColumn)
+					isqlGlob.printf("%s.%s", relationName, relationField);
 				else
-					isqlGlob.prints(FLD.RDB$FIELD_NAME);
+				{
+					fb_utils::exact_name(FLD.RDB$FIELD_NAME);
+					if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
+					{
+						ISQL_copy_SQL_id (FLD.RDB$FIELD_NAME, SQL_identifier, DBL_QUOTE);
+						isqlGlob.prints(SQL_identifier);
+					}
+					else
+						isqlGlob.prints(FLD.RDB$FIELD_NAME);
+				}
 
 				// International character sets
 				// Print only the collation
