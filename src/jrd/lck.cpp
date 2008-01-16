@@ -83,17 +83,17 @@ static void set_lock_attachment(Lock*, Attachment*);
 #ifdef SUPERSERVER
 
 inline LOCK_OWNER_T LCK_OWNER_ID_DBB(thread_db* tdbb) {
-	return (LOCK_OWNER_T) tdbb->tdbb_database;
+	return (LOCK_OWNER_T) tdbb->getDatabase();
 }
 inline LOCK_OWNER_T LCK_OWNER_ID_ATT(thread_db* tdbb) {
-	return (LOCK_OWNER_T) tdbb->tdbb_attachment;
+	return (LOCK_OWNER_T) tdbb->getAttachment();
 }
 
 inline SLONG* LCK_OWNER_HANDLE_DBB(thread_db* tdbb) {
-	return &tdbb->tdbb_database->dbb_lock_owner_handle;
+	return &tdbb->getDatabase()->dbb_lock_owner_handle;
 }
 inline SLONG* LCK_OWNER_HANDLE_ATT(thread_db* tdbb) {
-	return &tdbb->tdbb_attachment->att_lock_owner_handle;
+	return &tdbb->getAttachment()->att_lock_owner_handle;
 }
 
 #else	/* SUPERSERVER */
@@ -593,7 +593,7 @@ void LCK_init(thread_db* tdbb, enum lck_owner_t owner_type)
 				  owner_id, owner_type, owner_handle_ptr))
 	{
 		if (tdbb->tdbb_status_vector[1] == isc_lockmanerr)
-			tdbb->tdbb_database->dbb_flags |= DBB_bugcheck;
+			tdbb->getDatabase()->dbb_flags |= DBB_bugcheck;
 		ERR_punt();
 	}
 }

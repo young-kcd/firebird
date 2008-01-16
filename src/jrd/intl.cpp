@@ -1268,9 +1268,6 @@ static int blocking_ast_collation(void* ast_object)
 
 			LCK_release(tdbb, tt->existenceLock);
 			tt->existenceLock = NULL;
-
-			// Restore the prior thread context
-			JRD_restore_thread_data();
 		}
 	}
 

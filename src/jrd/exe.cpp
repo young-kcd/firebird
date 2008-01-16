@@ -2713,7 +2713,7 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 				request->req_transaction = TRA_start(tdbb,
 					request->req_transaction->tra_flags,
 					request->req_transaction->tra_lock_timeout);
-				tdbb->setTransaction(request->req_transaction)l
+				tdbb->setTransaction(request->req_transaction);
 
 				if (!(tdbb->getAttachment()->att_flags & ATT_no_db_triggers))
 				{

@@ -130,18 +130,18 @@ Lock* RLCK_transaction_relation_lock(thread_db* tdbb,
 
 	const SSHORT relLockLen = relation->getRelLockKeyLength();
 	lock = FB_NEW_RPT(*transaction->tra_pool, relLockLen) Lock();
-	lock->lck_dbb = tdbb->tdbb_database;
+	lock->lck_dbb = tdbb->getDatabase();
 	lock->lck_length = relLockLen;
 	relation->getRelLockKey(tdbb, &lock->lck_key.lck_string[0]);
 	lock->lck_type = LCK_relation;
 	lock->lck_owner_handle = LCK_get_owner_handle(tdbb, lock->lck_type);
-	lock->lck_parent = tdbb->tdbb_database->dbb_lock;
+	lock->lck_parent = tdbb->getDatabase()->dbb_lock;
 	// the lck_object is used here to find the relation
 	// block from the lock block
 	lock->lck_object = relation;
 	// enter all relation locks into the intra-process lock manager and treat
 	// them as compatible within the attachment according to IPLM rules
-	lock->lck_compatible = tdbb->tdbb_attachment;
+	lock->lck_compatible = tdbb->getAttachment();
 	// for relations locked within a transaction, add a second level of
 	// compatibility within the intra-process lock manager which specifies
 	// that relation locks are incompatible with locks taken out by other

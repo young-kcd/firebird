@@ -276,7 +276,7 @@ Firebird::MetaName MET_get_relation_field(thread_db* tdbb, const Firebird::MetaN
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 	bool found = false;
 	Firebird::MetaName sourceName;
 
@@ -4456,7 +4456,7 @@ static void make_relation_scope_name(const TEXT* rel_name,
 static jrd_nod* parse_field_blr(thread_db* tdbb, bid* blob_id, const Firebird::MetaName name)
 {
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->tdbb_database;
+	Database* dbb = tdbb->getDatabase();
 
 	CompilerScratch* csb = CompilerScratch::newCsb(*tdbb->getDefaultPool(), 5, name);
 

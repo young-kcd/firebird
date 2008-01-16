@@ -24,16 +24,6 @@
 #ifndef LOCK_LOCK_PROTO_H
 #define LOCK_LOCK_PROTO_H
 
-// Lock owner types
-// Placing it here helps avoid massive unneeded includes in lock/manager.cpp
-enum lck_owner_t {
-	LCK_OWNER_process = 1,		/* A process is the owner of the lock */
-	LCK_OWNER_database,			/* A database is the owner of the lock */
-	LCK_OWNER_attachment,		/* An atttachment is the owner of the lock */
-	LCK_OWNER_transaction		/* A transaction is the owner of the lock */
-};
-
-
 bool	LOCK_convert(SLONG, UCHAR, SSHORT, lock_ast_t, void*,
 						ISC_STATUS*);
 int		LOCK_deq(SLONG);

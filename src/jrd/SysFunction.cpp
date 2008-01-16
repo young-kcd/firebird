@@ -2831,7 +2831,7 @@ static dsc* evlTrunc(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd
 }
 
 
-static dsc* evlUuidToChar(Jrd::thread_db* tdbb, SysFunction* function, Jrd::jrd_nod* args, Jrd::impure_value* impure)
+static dsc* evlUuidToChar(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args, Jrd::impure_value* impure)
 {
 	fb_assert(args->nod_count == 1);
 
