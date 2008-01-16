@@ -38,6 +38,7 @@
 #include "../include/fb_blk.h"
 #include "../common/classes/array.h"
 #include "../common/classes/SafeArg.h"
+#include "../common/UtilSvc.h"
 
 void SVC_STATUS_ARG(ISC_STATUS*& status, const MsgFormat::safe_cell& value);
 void SVC_STATUS_ARG(ISC_STATUS*& status, const char* value);
@@ -74,20 +75,6 @@ const USHORT isc_action_max				= 14;
 //define isc_info_max                  67
 
 
-/* switches for username and password used when a username and/or password
- * is specified by the client application
- */
-#define USERNAME_SWITCH "-USER"
-#define PASSWORD_SWITCH "-PASSWORD"
-#ifdef SERVICE_THREAD
-#define SERVICE_THD_PARAM "-svc_thd"
-#else
-#define SERVICE_THD_PARAM "-svc"
-#endif
-#ifdef TRUSTED_SERVICES
-#define TRUSTED_USER_SWITCH "-TRUSTED_SVC"
-#endif
-
 /* Macro used to store services thread specific data */
 /* Currently we store empty string, see bug #10394 */
 // BRS 01/07/2004 commented
@@ -105,11 +92,11 @@ const USHORT isc_action_max				= 14;
 struct serv_entry; // forward decl.
 
 /* Service manager block */
-class Service : public pool_alloc<type_svc>
+class Service : public Firebird::UtilSvc, public LocalType<type_svc>
 {
 private:
 	ISC_STATUS_ARRAY svc_status_array;
-	Firebird::string svc_parsed_sw;		// Here point elements of svc_argv
+	Firebird::string svc_parsed_sw;		// Here point elements of argv
 
 public:
 	Service(serv_entry *se, Firebird::MemoryPool& p);
@@ -122,8 +109,6 @@ public:
 	ULONG	svc_stdout_head;
 	ULONG	svc_stdout_tail;
 	UCHAR*	svc_stdout;
-	Firebird::HalfStaticArray<const char*, 20>	svc_argv;
-	ULONG	svc_argc;
 	Firebird::Semaphore	svcStart;
 	serv_entry*	svc_service;
 	UCHAR*	svc_resp_buf;
@@ -136,39 +121,41 @@ public:
 	bool	svc_do_shutdown;
 	Firebird::string	svc_username;
 	Firebird::string	svc_enc_password;
-#ifdef TRUSTED_SERVICES
 	Firebird::string	svc_trusted_login;
-#endif
+	bool                svc_trusted_role;
 	Firebird::string	svc_switches;	// Full set of switches
 	Firebird::string	svc_perm_sw;	// Switches, taken from services table 
 										// and/or passed using spb_command_line
 	
 	void	svc_started();
-	void	parseSwitches();			// Create svc_argv, svc_argc and svc_parsed_sw
+	void	parseSwitches();			// Create argv, argc and svc_parsed_sw
+
+	// utilities interface with service
+public:
+    virtual void printf(const SCHAR* format, ...);
+	virtual bool isService();
+	virtual void started();
+	virtual void finish();
+    virtual void putLine(char, const char*);
+    virtual void putSLong(char, SLONG);
+	virtual void putChar(char, char);
+	virtual void stuffStatus(const ISC_STATUS*);
+	virtual void stuffStatus(const USHORT, const USHORT, const MsgFormat::SafeArg&);
+	virtual void hidePasswd(ArgvType&, int);
+    virtual ISC_STATUS* getStatus();
+	virtual void checkService();
 };
 
 /* Bitmask values for the svc_flags variable */
 
 //const int SVC_eof			= 1;
 const int SVC_timeout		= 2;
-const int SVC_forked		= 4;
+//const int SVC_forked		= 4;
 const int SVC_detached		= 8;
 const int SVC_finished		= 16;
 const int SVC_thd_running	= 32;
 const int SVC_evnt_fired	= 64;
 const int SVC_cmd_line		= 128;
-
-// Method used to signify that the service started has done basic
-// initialization and can be considered a successful startup.
-
-#ifndef SERVICE_THREAD
-
-inline void Service::svc_started()
-{
-	// null definition, no overhead.
-}
-
-#endif /* SERVICE_THREAD */
 
 typedef int (*pfn_svc_output)(Service*, const UCHAR*);
 
@@ -177,9 +164,7 @@ struct serv_entry
 	USHORT				serv_action;
 	const TEXT*			serv_name;
 	const TEXT*			serv_std_switches;
-	const TEXT*			serv_executable;
 	ThreadEntryPoint*	serv_thd;
-	bool*				serv_in_use;
 };
 
 } //namespace Jrd

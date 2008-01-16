@@ -33,6 +33,7 @@
 
 #include "../jrd/exe.h"
 #include "../jrd/RecordNumber.h"
+#include "../common/classes/stack.h"
 #include "../common/classes/timestamp.h"
 
 
@@ -108,8 +109,9 @@ const USHORT rpb_gc_active	= 256;		/* garbage collecting dead record version */
 
 /* Stream flags */
 
-const USHORT RPB_s_refetch	= 0x1;		/* re-fetch required due to sort */
-const USHORT RPB_s_update	= 0x2;		/* input stream fetched for update */
+const USHORT RPB_s_refetch	= 0x1;		// re-fetch required due to sort
+const USHORT RPB_s_update	= 0x2;		// input stream fetched for update
+const USHORT RPB_s_no_data	= 0x4;		// nobody is going to access the data
 
 #define SET_NULL(record, id)	record->rec_data [id >> 3] |=  (1 << (id & 7))
 #define CLEAR_NULL(record, id)	record->rec_data [id >> 3] &= ~(1 << (id & 7))
@@ -190,7 +192,7 @@ public:
 		req_blobs(pool), req_external(*pool), req_access(*pool), req_resources(*pool),
 		req_trg_name(*pool), req_fors(*pool), req_exec_sta(*pool),
 		req_invariants(*pool), req_timestamp(true), req_sql_text(*pool), req_domain_validation(NULL),
-		req_map_field_info(*pool)
+		req_map_field_info(*pool), req_map_item_info(*pool), req_auto_trans(*pool)
 	{}
 
 	Attachment*	req_attachment;		// database attachment
@@ -256,6 +258,8 @@ public:
 
 	dsc*			req_domain_validation;	// Current VALUE for constraint validation
 	MapFieldInfo	req_map_field_info;		// Map field name to field info
+	MapItemInfo		req_map_item_info;		// Map item to item info
+	Firebird::Stack<jrd_tra*> req_auto_trans;	// Autonomous transactions
 
 	enum req_ta {
 		// order should be maintained because the numbers are stored in BLR

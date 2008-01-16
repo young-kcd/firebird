@@ -66,11 +66,7 @@
 #include "../common/config/config.h"
 
 
-#ifdef VMS
-const int UIC_BASE	= 8;
-#else
 const int UIC_BASE	= 10;
-#endif
 
 const SLONG BLOB_BUFFER_SIZE	= 4096;	/* used to read in acl blob */
 
@@ -125,7 +121,7 @@ void SCL_check_access(const SecurityClass* s_class,
 					  const Firebird::MetaName& prc_name,
 					  SecurityClass::flags_t mask,
 					  const TEXT* type,
-					  const Firebird::MetaName& name)
+					  const char* name)
 {
 /**************************************
  *
@@ -149,18 +145,19 @@ void SCL_check_access(const SecurityClass* s_class,
 				 0);
 	}
 
-	// Don't run internal handles thru the security gauntlet.
-	if (JRD_get_thread_security_disabled())
-	{
-		return;
-	}
-
 	const Attachment* const attachment = tdbb->getAttachment();
 
 	// Allow the database owner to back up a database even if he does not have
 	// read access to all the tables in the database
 
 	if ((attachment->att_flags & ATT_gbak_attachment) && (mask & SCL_read))
+	{
+		return;
+	}
+
+	// Allow the locksmith any access to database 
+
+	if (attachment->locksmith())
 	{
 		return;
 	}
@@ -208,9 +205,42 @@ void SCL_check_access(const SecurityClass* s_class,
 		ERR_post(isc_no_priv,
 				isc_arg_string, names->p_names_string,
 				isc_arg_string, type,
-				isc_arg_string, ERR_cstring(name.c_str()),
+				isc_arg_string, ERR_cstring(name),
 				0);
 	}
+}
+
+
+void SCL_check_access(const SecurityClass* s_class,
+					  SLONG view_id,
+					  const Firebird::MetaName& trg_name,
+					  const Firebird::MetaName& prc_name,
+					  SecurityClass::flags_t mask,
+					  const TEXT* type,
+					  const Firebird::MetaName& name,
+					  const Firebird::MetaName& r_name)
+{
+/**************************************
+ *
+ *	S C L _ c h e c k _ a c c e s s
+ *
+ **************************************
+ *
+ * Functional description
+ *	Check security class for desired permission.
+ *	Alternate entrypoint.
+ *
+ **************************************/
+	Firebird::string fullFieldName(name.c_str());
+	if (r_name.hasData())
+	{
+		fullFieldName = r_name.c_str();
+		fullFieldName += '.';
+		fullFieldName += name.c_str();
+	}
+
+	SCL_check_access(s_class, view_id, trg_name, prc_name,
+		mask, type, fullFieldName.c_str());
 }
 
 
@@ -318,14 +348,18 @@ void SCL_check_index(thread_db* tdbb, const Firebird::MetaName& index_name, UCHA
 			WITH RF.RDB$RELATION_NAME EQ reln_name.c_str()
 			AND ISEG.RDB$INDEX_NAME EQ idx_name_ptr->c_str()
 
+		Firebird::string fullFieldName(reln_name.c_str());
+		fullFieldName += '.';
+		fullFieldName += RF.RDB$FIELD_NAME;
+		fullFieldName.rtrim();
         if (!RF.RDB$SECURITY_CLASS.NULL) {
 			s_class = SCL_get_class(RF.RDB$SECURITY_CLASS);
-			SCL_check_access(s_class, 0, NULL, NULL, mask,
-							 object_column, RF.RDB$FIELD_NAME);
+			SCL_check_access(s_class, 0, NULL, NULL, mask, 
+							 object_column, fullFieldName);
 		}
 		else {
 			  SCL_check_access(default_s_class, 0, NULL, NULL, mask,
-							   object_column, RF.RDB$FIELD_NAME);
+							   object_column, fullFieldName);
 		}
 
 	END_FOR;
@@ -634,7 +668,7 @@ void SCL_init(bool create,
                 AND RR.RDB$ROLE_NAME         EQ UU.RDB$RELATION_NAME
                 AND UU.RDB$OBJECT_TYPE       EQ obj_sql_role
                 AND (UU.RDB$USER             EQ login_name
-                     OR UU.RDB$USER               EQ "PUBLIC")
+                     OR UU.RDB$USER          EQ "PUBLIC")
                 AND UU.RDB$USER_TYPE         EQ obj_user
                 AND UU.RDB$PRIVILEGE         EQ "M"
                 
@@ -648,6 +682,26 @@ void SCL_init(bool create,
 
             if (!REQUEST (irq_verify_role_name))
                 REQUEST (irq_verify_role_name) = request;
+
+			if (!found && (tempId.usr_flags & USR_trole))
+			{
+	            jrd_req* request = CMP_find_request (tdbb, irq_verify_trusted_role, IRQ_REQUESTS);
+
+	            FOR (REQUEST_HANDLE request) FIRST 1 RR IN RDB$ROLES
+        	        WITH RR.RDB$ROLE_NAME  EQ sql_role
+            	    AND RR.RDB$SYSTEM_FLAG NOT MISSING
+                
+            	    if (!REQUEST (irq_verify_trusted_role))
+	                    REQUEST (irq_verify_trusted_role) = request;
+
+	                if (RR.RDB$SYSTEM_FLAG & ROLE_FLAG_MAY_TRUST)
+	                    found = true;
+
+	            END_FOR;
+
+	            if (!REQUEST (irq_verify_trusted_role))
+    	            REQUEST (irq_verify_trusted_role) = request;
+			}
 
             if (!found)
 			{
@@ -669,10 +723,11 @@ void SCL_init(bool create,
 	user->usr_sql_role_name = role_name.c_str();
 	tdbb->getAttachment()->att_user = user;
 
-	jrd_req* handle = NULL;
-	jrd_req* handle1 = NULL;
-
 	if (!create) {
+		jrd_req* handle = NULL;
+		jrd_req* handle1 = NULL;
+		jrd_req* handle2 = NULL;
+
 		FOR(REQUEST_HANDLE handle) X IN RDB$DATABASE
 
 			if (!X.RDB$SECURITY_CLASS.NULL)
@@ -698,6 +753,17 @@ void SCL_init(bool create,
 			}
 		END_FOR;
 		CMP_release(tdbb, handle1);
+
+		FOR(REQUEST_HANDLE handle2) R IN RDB$ROLES
+			WITH R.RDB$ROLE_NAME EQ role_name.c_str()
+
+			if (!R.RDB$SYSTEM_FLAG.NULL)
+			{
+				if (R.RDB$SYSTEM_FLAG & ROLE_FLAG_DBO)
+					user->usr_flags |= USR_dba;
+			}
+		END_FOR;
+		CMP_release(tdbb, handle2);
 	}
 	else {
 		user->usr_flags |= USR_owner;

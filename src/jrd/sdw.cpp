@@ -346,7 +346,6 @@ void SDW_check(void)
 			lock->lck_owner_handle =
 				LCK_get_owner_handle(tdbb, lock->lck_type);
 			lock->lck_parent = dbb->dbb_lock;
-			lock->lck_owner = tdbb->getAttachment();
 
 			LCK_lock(tdbb, lock, LCK_EX, LCK_NO_WAIT);
 			if (lock->lck_physical == LCK_EX) {
@@ -652,10 +651,7 @@ bool SDW_lck_update(SLONG sdw_update_flags)
 	}
 
 	if (!sdw_update_flags) {
-		if (LCK_read_data(lock))
-			return false;
-		else
-			return true;
+		return !LCK_read_data(lock);
 	}
 
 	if (LCK_read_data(lock))
@@ -750,7 +746,6 @@ bool SDW_rollover_to_shadow(jrd_file* file, const bool inAst)
 	update_lock->lck_owner_handle =
 		LCK_get_owner_handle(tdbb, update_lock->lck_type);
 	update_lock->lck_parent = dbb->dbb_lock;
-	update_lock->lck_owner = tdbb->getAttachment();
 
 	SLONG sdw_update_flags = SDW_rollover;
 
@@ -952,8 +947,8 @@ void SDW_start(const TEXT* file_name,
 	{
 		if (shadow && (shadow->sdw_flags & SDW_rollover))
 			return;
-		else
-			ERR_post(isc_shadow_accessed, 0);
+
+		ERR_post(isc_shadow_accessed, 0);
 	}
 
 // Verify shadow file path against DatabaseAccess entry of firebird.conf
@@ -1118,12 +1113,9 @@ int SDW_start_shadowing(void* ast_object)
 	if (lock->lck_physical != LCK_SR)
 		return 0;
 
-	ISC_ast_enter();
-
 /* Since this routine will be called asynchronously, we must establish
    a thread context. */
-	thread_db thd_context, *tdbb;
-	JRD_set_thread_data(tdbb, thd_context);
+	ThreadContextHolder tdbb;
 
 	tdbb->setDatabase(new_dbb);
 	tdbb->tdbb_quantum = QUANTUM;
@@ -1136,11 +1128,6 @@ int SDW_start_shadowing(void* ast_object)
 
 	LCK_release(tdbb, lock);
 
-/* Restore the prior thread context */
-
-	JRD_restore_thread_data();
-
-	ISC_ast_exit();
 	return 0;
 }
 

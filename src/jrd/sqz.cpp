@@ -171,6 +171,7 @@ USHORT SQZ_compress_length(DataComprControl* dcc, const SCHAR* input, int space)
 	while (true) {
 		const SCHAR* control = dcc->dcc_string;
 		while (control < dcc->dcc_end)
+		{
 			if (--space <= 0)
 				return input - start;
 			else if ((length = *control++) & 128) {
@@ -185,6 +186,7 @@ USHORT SQZ_compress_length(DataComprControl* dcc, const SCHAR* input, int space)
 				}
 				input += length;
 			}
+		}
 		if (!(dcc = dcc->dcc_next))
 			BUGCHECK(178);		/* msg 178 record length inconsistent */
 	}

@@ -59,6 +59,8 @@ const SecurityClass::flags_t SCL_execute		= 8192;
 const USHORT USR_locksmith	= 1;		/* User has great karma */
 const USHORT USR_dba		= 2;		/* User has DBA privileges */
 const USHORT USR_owner		= 4;		/* User owns database */
+const USHORT USR_trole		= 8;		/* Role was set by trusted auth */
+
 
 class UserId
 {
@@ -75,7 +77,7 @@ public:
 
 	bool locksmith() const
 	{
-		return usr_flags & (USR_locksmith | USR_owner);
+		return usr_flags & (USR_locksmith | USR_owner | USR_dba);
 	}
 
 	UserId() :	usr_user_id(0), usr_group_id(0), 

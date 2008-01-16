@@ -311,7 +311,7 @@ bool RSE_get_record(thread_db* tdbb, RecordSource* rsb, RSE_GET_MODE mode)
 				ERR_post(isc_record_lock_not_supp, 0);
 			}
 
-			RLCK_reserve_relation(tdbb, transaction, relation, true, true);
+			RLCK_reserve_relation(tdbb, transaction, relation, true);
 
 			// Fetch next record if current was deleted before being locked
 			if (!VIO_writelock(tdbb, org_rpb, rsb, transaction)) {
@@ -419,7 +419,7 @@ void RSE_open(thread_db* tdbb, RecordSource* rsb)
 			}
 
 			RLCK_reserve_relation(tdbb, request->req_transaction,
-								  rpb->rpb_relation, false, true);
+								  rpb->rpb_relation, false);
 
 			rpb->rpb_number.setValue(BOF_NUMBER);
 			return;
@@ -648,23 +648,25 @@ static SSHORT compare(thread_db* tdbb, jrd_nod* node1, jrd_nod* node2)
 		const dsc* desc1 = EVL_expr(tdbb, *ptr1);
 		const ULONG flags = request->req_flags;
 		const dsc* desc2 = EVL_expr(tdbb, *ptr2);
-		if (flags & req_null) {
+		if (flags & req_null)
+		{
 			if (!(request->req_flags & req_null)) {
 				return -1;
 			}
-			else {
-				// AB: When both expression evaluated NULL then
-				// we return 0 ( (NULL = NULL) = true).
-				//
-				// Currently this (0 and higher) isn't used by the
-				// MERGE procedure, but when we allow MERGE to
-				// handle outer-joins we must not forget this one !!!
-				return 0;
-			}
+
+			// AB: When both expression evaluated NULL then
+			// we return 0 ( (NULL = NULL) = true).
+			//
+			// Currently this (0 and higher) isn't used by the
+			// MERGE procedure, but when we allow MERGE to
+			// handle outer-joins we must not forget this one !!!
+			return 0;
 		}
-		else if (request->req_flags & req_null) {
+
+		if (request->req_flags & req_null) {
 			return 1;
 		}
+
 		// AB: MOV_compare can't handle NULL parameters
 		// therefore check before passing all null flags.
 		const SSHORT result = MOV_compare(desc1, desc2);
@@ -690,10 +692,12 @@ static SSHORT compare_longs(const SLONG* p, const SLONG* q, USHORT count)
  *
  **************************************/
 	for (; count; p++, q++, --count)
+	{
 		if (*p > *q)
 			return 1;
-		else if (*p < *q)
+		if (*p < *q)
 			return -1;
+	}
 
 	return 0;
 }
@@ -803,11 +807,9 @@ static bool fetch_left(thread_db* tdbb, RecordSource* rsb, IRSB impure, RSE_GET_
 				{
 					if (mode == RSE_get_backward)
 						return false;
-					else
-					{
-						if (!rsb->rsb_arg[RSB_LEFT_inner_streams])
-							return false;
-					}
+
+					if (!rsb->rsb_left_inner_streams)
+						return false;
 
 					/* We have a full outer join.  Open up the inner stream
 					   one more time. */
@@ -821,7 +823,7 @@ static bool fetch_left(thread_db* tdbb, RecordSource* rsb, IRSB impure, RSE_GET_
 				/* check if the outer record qualifies for the boolean */
 
 				if (rsb->rsb_arg[RSB_LEFT_boolean] &&
-					!EVL_boolean(tdbb, rsb->rsb_arg[RSB_LEFT_boolean]))
+					!EVL_boolean(tdbb, (jrd_nod*) rsb->rsb_arg[RSB_LEFT_boolean]))
 				{
 					/* The boolean pertaining to the left sub-stream is false
 					   so just join sub-stream to a null valued right sub-stream */
@@ -839,7 +841,7 @@ static bool fetch_left(thread_db* tdbb, RecordSource* rsb, IRSB impure, RSE_GET_
 			while (get_record(tdbb, rsb->rsb_arg[RSB_LEFT_inner], NULL, mode))
 			{
 				if (!rsb->rsb_arg[RSB_LEFT_inner_boolean] ||
-					EVL_boolean(tdbb, rsb->rsb_arg[RSB_LEFT_inner_boolean]))
+					EVL_boolean(tdbb, (jrd_nod*) rsb->rsb_arg[RSB_LEFT_inner_boolean]))
 				{
 					impure->irsb_flags |= irsb_joined;
 					return true;
@@ -876,8 +878,8 @@ static bool fetch_left(thread_db* tdbb, RecordSource* rsb, IRSB impure, RSE_GET_
 					if (!get_record(tdbb, full, NULL, mode)) {
 						if (mode == RSE_get_forward)
 							return false;
-						else
-							goto return_to_outer;
+
+						goto return_to_outer;
 					}
 
 					RSE_open(tdbb, rsb->rsb_arg[RSB_LEFT_outer]);
@@ -885,24 +887,19 @@ static bool fetch_left(thread_db* tdbb, RecordSource* rsb, IRSB impure, RSE_GET_
 						   get_record(tdbb, rsb->rsb_arg[RSB_LEFT_outer],
 									  NULL, mode))
 					{
-							if (
-								(!rsb->rsb_arg[RSB_LEFT_boolean]
-								 || EVL_boolean(tdbb,
-												rsb->
-												rsb_arg[RSB_LEFT_boolean]))
-								&& (!rsb->rsb_arg[RSB_LEFT_inner_boolean]
-									|| EVL_boolean(tdbb,
-												   rsb->rsb_arg
-												   [RSB_LEFT_inner_boolean]))
-								&& (full == rsb->rsb_arg[RSB_LEFT_inner]
-									|| EVL_boolean(tdbb,
-												   rsb->
-												   rsb_arg
-												   [RSB_LEFT_inner]->rsb_arg
-												   [0])))
-							{
-								break;
-							}
+						if (
+							(!rsb->rsb_arg[RSB_LEFT_boolean]
+							 || EVL_boolean(tdbb,
+											(jrd_nod*) rsb->rsb_arg[RSB_LEFT_boolean]))
+							&& (!rsb->rsb_arg[RSB_LEFT_inner_boolean]
+								|| EVL_boolean(tdbb,
+											   (jrd_nod*) rsb->rsb_arg[RSB_LEFT_inner_boolean]))
+							&& (full == rsb->rsb_arg[RSB_LEFT_inner]
+								|| EVL_boolean(tdbb,
+											   (jrd_nod*) rsb->rsb_arg[RSB_LEFT_inner]->rsb_arg[0])))
+						{
+							break;
+						}
 					}
 					RSE_close(tdbb, rsb->rsb_arg[RSB_LEFT_outer]);
 				} while (found);
@@ -911,8 +908,8 @@ static bool fetch_left(thread_db* tdbb, RecordSource* rsb, IRSB impure, RSE_GET_
 			{
 				if (mode == RSE_get_forward)
 					return false;
-				else
-					goto return_to_outer;
+
+				goto return_to_outer;
 			}
 
 			join_to_nulls(tdbb, rsb, rsb->rsb_left_inner_streams);
@@ -1311,7 +1308,7 @@ static bool get_merge_join(
 		/* Map data into target records and do comparison */
 
 		map_sort_data(tdbb, request, map, get_merge_data(tdbb, mfb, record));
-		const int result = compare(tdbb, highest_ptr[1], ptr[1]);
+		const int result = compare(tdbb, (jrd_nod*) highest_ptr[1], (jrd_nod*) ptr[1]);
 		if (ptr != highest_ptr)
 		{
 			if (((result > 0) && (impure->irsb_flags & irsb_backwards)) ||
@@ -1333,7 +1330,7 @@ static bool get_merge_join(
 			if (highest_ptr != ptr)
 			{
 				int result;
-				while (result = compare(tdbb, highest_ptr[1], ptr[1]))
+				while (result = compare(tdbb, (jrd_nod*) highest_ptr[1], (jrd_nod*) ptr[1]))
 				{
 					if (((result > 0)
 						 && (impure->irsb_flags & irsb_backwards))
@@ -1928,7 +1925,7 @@ static bool get_record(thread_db*	tdbb,
 #ifdef SCROLLABLE_CURSORS
 		if (impure->irsb_flags & irsb_bof)
 		{
-			rpb->rpb_number = -1;
+			rpb->rpb_number.setValue(BOF_NUMBER);
 		}
 #endif
 		if (!NAV_get_record(tdbb, rsb, (IRSB_NAV) impure, rpb, mode))
@@ -2733,14 +2730,20 @@ static void map_sort_data(thread_db* tdbb, jrd_req* request, SortMap* map, UCHAR
 		const SSHORT id = item->smb_field_id;
 		if (id < 0)
 		{
-			if (id == SMB_TRANS_ID)
+			switch (id)
+			{
+			case SMB_TRANS_ID:
 				rpb->rpb_transaction_nr = *reinterpret_cast<SLONG*>(from.dsc_address);
-			else if (id == SMB_DBKEY)
+				break;
+			case SMB_DBKEY:
 				rpb->rpb_number.setValue(*reinterpret_cast<SINT64*>(from.dsc_address));
-			else if (id == SMB_DBKEY_VALID)
+				break;
+			case SMB_DBKEY_VALID:
 				rpb->rpb_number.setValid(*from.dsc_address != 0);
-			else
+				break;
+			default:
 				fb_assert(false);
+			}
 			rpb->rpb_stream_flags |= RPB_s_refetch;
 			continue;
 		}
@@ -2969,14 +2972,20 @@ static void open_sort(thread_db* tdbb, RecordSource* rsb, irsb_sort* impure, FB_
 				from = &temp;
 				record_param* rpb = &request->req_rpb[item->smb_stream];
 				if (item->smb_field_id < 0) {
-					if (item->smb_field_id == SMB_TRANS_ID)
+					switch (item->smb_field_id)
+					{
+					case SMB_TRANS_ID:
 						*reinterpret_cast<SLONG*>(to.dsc_address) = rpb->rpb_transaction_nr;
-					else if (item->smb_field_id == SMB_DBKEY)
+						break;
+					case SMB_DBKEY:
 						*reinterpret_cast<SINT64*>(to.dsc_address) = rpb->rpb_number.getValue();
-					else if (item->smb_field_id == SMB_DBKEY_VALID)
+						break;
+					case SMB_DBKEY_VALID:
 						*to.dsc_address = (UCHAR) rpb->rpb_number.isValid();
-					else
+						break;
+					default:
 						fb_assert(false);
+					}
 					continue;
 				}
 				if (!EVL_field
@@ -3702,31 +3711,29 @@ bool RSBRecurse::get(thread_db* tdbb, RecordSource* rsb, irsb_recurse* irsb)
 		{
 			return false;
 		}
-		else 
+
+		RSE_close(tdbb, *rsb_ptr);
+		delete[] irsb->irsb_data;
+
+		char* tmp = irsb->irsb_stack;
+		memcpy(irsb, tmp, inner_size);
+
+		char* p = tmp + inner_size;
+		RecordSource** ptr = rsb->rsb_arg + rsb->rsb_count + 1;
+		const RecordSource* const* end = ptr + streams;
+		for (; ptr < end; ptr++) 
 		{
-			RSE_close(tdbb, *rsb_ptr);
-			delete[] irsb->irsb_data;
+			record_param* rpb = request->req_rpb + (USHORT)(U_IPTR) *ptr;
+			Record* rec = rpb->rpb_record;
+			memmove(rpb, p, sizeof(record_param));
+			p += sizeof(record_param);
 
-			char* tmp = irsb->irsb_stack;
-			memcpy(irsb, tmp, inner_size);
-
-			char* p = tmp + inner_size;
-			RecordSource** ptr = rsb->rsb_arg + rsb->rsb_count + 1;
-			const RecordSource* const* end = ptr + streams;
-			for (; ptr < end; ptr++) 
-			{
-				record_param* rpb = request->req_rpb + (USHORT)(U_IPTR) *ptr;
-				Record* rec = rpb->rpb_record;
-				memmove(rpb, p, sizeof(record_param));
-				p += sizeof(record_param);
-
-				if (!rpb->rpb_record) {
-					rpb->rpb_record = rec;
-				}
-				fb_assert(rpb->rpb_record == rec);
+			if (!rpb->rpb_record) {
+				rpb->rpb_record = rec;
 			}
-			delete[] tmp;
+			fb_assert(rpb->rpb_record == rec);
 		}
+		delete[] tmp;
 
 		if (irsb->irsb_level > 1) 
 		{

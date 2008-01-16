@@ -118,16 +118,15 @@ bool SHUT_blocking_ast(Database* dbb)
 
 	if ((flag & isc_dpb_shut_force) && !delay)
 		return shutdown_locks(dbb, flag);
-	else {
-		if (flag & isc_dpb_shut_attachment)
-			dbb->dbb_ast_flags |= DBB_shut_attach;
-		if (flag & isc_dpb_shut_force)
-			dbb->dbb_ast_flags |= DBB_shut_force;
-		if (flag & isc_dpb_shut_transaction)
-			dbb->dbb_ast_flags |= DBB_shut_tran;
-		dbb->dbb_shutdown_delay = delay; // not tested anywhere
-		return false;
-	}
+
+	if (flag & isc_dpb_shut_attachment)
+		dbb->dbb_ast_flags |= DBB_shut_attach;
+	if (flag & isc_dpb_shut_force)
+		dbb->dbb_ast_flags |= DBB_shut_force;
+	if (flag & isc_dpb_shut_transaction)
+		dbb->dbb_ast_flags |= DBB_shut_tran;
+	dbb->dbb_shutdown_delay = delay; // not tested anywhere
+	return false;
 }
 
 

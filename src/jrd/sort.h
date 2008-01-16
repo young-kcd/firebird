@@ -244,7 +244,7 @@ struct sort_context
 	sort_record**	scb_first_pointer;	/* Memory for sort */
 	sort_record**	scb_next_pointer;	/* Address for next pointer */
 #ifdef SCROLLABLE_CURSORS
-	SORTP **scb_last_pointer;	/* Address for last pointer in block */
+	sort_record**	scb_last_pointer;	/* Address for last pointer in block */
 #endif
 	//USHORT scb_length;			// Record length. Unused.
 	USHORT scb_longs;			/* Length of record in longwords */

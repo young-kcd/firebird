@@ -43,31 +43,20 @@ enum ast_t
 };
 
 int		API_ROUTINE gds__thread_enable(int);
-void	API_ROUTINE gds__thread_enter(void);
-void	API_ROUTINE gds__thread_exit(void);
-#ifdef VMS
-int		API_ROUTINE gds__ast_active(void);
-void	API_ROUTINE gds__completion_ast(void);
-int		API_ROUTINE gds__thread_wait(int (*)(), SLONG);
-#endif // VMS
+void	API_ROUTINE gds__thread_enter();
+void	API_ROUTINE gds__thread_exit();
 
 } // extern "C"
 
 struct thread;
 
-void	SCH_abort(void);
-
-extern "C" 
 void	SCH_ast(enum ast_t);
-
-thread*	SCH_current_thread(void);
-void	SCH_enter(void);
-void	SCH_exit(void);
-void	SCH_hiber(void);
-void	SCH_init(void);
-bool	SCH_schedule(void);
-bool	SCH_thread_enter_check(void);
-bool	SCH_validate(void);
+thread*	SCH_current_thread();
+void	SCH_enter();
+void	SCH_exit();
+void	SCH_hiber();
+bool	SCH_schedule();
+bool	SCH_thread_enter_check();
 void	SCH_wake(thread*);
 
 

@@ -25,9 +25,7 @@
 #include <string.h>
 #include "../jrd/common.h"
 #include <stdarg.h>
-#ifndef REQUESTER
 #include "../jrd/jrd.h"
-#endif
 #include "../jrd/ibase.h"
 #include "../jrd/val.h"
 #include "../jrd/sdl.h"
@@ -979,19 +977,10 @@ static const UCHAR* sdl_desc(const UCHAR* ptr, DSC* desc)
 		break;
 
 	case blr_double:
-#ifndef VMS
 	case blr_d_float:
-#endif
 		desc->dsc_dtype = dtype_double;
 		desc->dsc_length = sizeof(double);
 		break;
-
-#ifdef VMS
-	case blr_d_float:
-		desc->dsc_dtype = dtype_d_float;
-		desc->dsc_length = sizeof(double);
-		break;
-#endif
 
 	case blr_timestamp:
 		desc->dsc_dtype = dtype_timestamp;

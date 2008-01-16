@@ -33,13 +33,13 @@
 #include "firebird.h"
 #include <stdio.h>
 #include <string.h>
-//#include "../common/classes/timestamp.h"
 #include "../jrd/common.h"
 #include "../jrd/thd.h"
 #include "../jrd/file_params.h"
 #include <stdarg.h>
 #include "../jrd/jrd.h"
 #include "../jrd/svc.h"
+#include "../jrd/constants.h"
 #include "../jrd/jrd_pwd.h"
 #include "../alice/aliceswi.h"
 #include "../burp/burpswi.h"
@@ -65,6 +65,7 @@
 #include "../common/classes/ClumpletWriter.h"
 #include "../jrd/ibase.h"
 #include "../common/utils_proto.h"
+#include "../utilities/common/cmd_util_proto.h"
 #include "../jrd/scl.h"
 
 #ifdef SERVER_SHUTDOWN
@@ -101,12 +102,8 @@ const int SVC_user_none			= 0;
 
 #if !defined(WIN_NT)
 #  include <signal.h>
-#  ifndef VMS
-#    include <sys/param.h>
-#    include <sys/stat.h>
-#  else
-#    include <stat.h>
-#  endif
+#  include <sys/param.h>
+#  include <sys/stat.h>
 #  include <errno.h>
 #else
 #  include <windows.h>
@@ -116,10 +113,6 @@ const int SVC_user_none			= 0;
 #  include <sys/stat.h>
 #endif
 
-#ifdef VMS
-#define waitpid(x, y, z)	wait (y)
-#endif
-
 #define statistics	stat
 
 const int GET_LINE		= 1;
@@ -127,166 +120,6 @@ const int GET_EOF		= 2;
 const int GET_BINARY	= 4;
 
 const TEXT SVC_TRMNTR	= '\377';
-
-namespace Jrd {
-	Service::Service(serv_entry *se, Firebird::MemoryPool& p) :
-		svc_parsed_sw(p), 
-		svc_handle(0), svc_status(svc_status_array), svc_input(0), svc_output(0),
-		svc_stdout_head(0), svc_stdout_tail(0), svc_stdout(0), svc_argv(p), svc_argc(0),
-		svc_service(se), svc_resp_buf(0), svc_resp_ptr(0), svc_resp_buf_len(0),
-		svc_resp_len(0), svc_flags(0), svc_user_flag(0), svc_spb_version(0), svc_do_shutdown(false),
-		svc_username(p), svc_enc_password(p), 
-#ifdef TRUSTED_SERVICES
-		svc_trusted_login(p),
-#endif
-		svc_switches(p), svc_perm_sw(p)
-
-	{
-		memset(svc_status_array, 0, sizeof svc_status_array);
-	}
-	
-	Service::~Service()
-	{
-		// If we forked an executable, close down it's pipes
-#ifndef SERVICE_THREAD
-		if (svc_flags & SVC_forked)
-		{
-#ifndef WIN_NT
-			if (svc_input)
-			{
-				fclose(svc_input);
-			}
-			if (svc_output)
-			{
-				fclose(svc_output);
-			}
-#endif //WIN_NT
-		}
-#else //SERVICE_THREAD
-		if (svc_stdout)
-		{
-			gds__free(svc_stdout);
-		}
-#endif //SERVICE_THREAD
-
-		if (svc_resp_buf)
-		{
-			gds__free(svc_resp_buf);
-		}
-
-#ifdef WIN_NT
-		CloseHandle((HANDLE) svc_handle);
-#endif
-	}
-	
-	void Service::parseSwitches()
-	{
-		svc_parsed_sw = svc_switches;
-		svc_parsed_sw.trim();
-		svc_argc = 2;
-		
-		if (svc_parsed_sw.isEmpty())
-		{
-			svc_argv.getBuffer(svc_argc + 1)[1] = 0;
-			return;
-		}
-		
-		bool inStr = false;
-		for (size_t i = 0; i < svc_parsed_sw.length(); ++i)
-		{
-
-			switch (svc_parsed_sw[i])
-			{
-			case SVC_TRMNTR:
-				svc_parsed_sw.erase(i, 1);
-				if (inStr)
-				{
-					if (i < svc_parsed_sw.length() && svc_parsed_sw[i] != SVC_TRMNTR)
-					{
-						inStr = false;
-						--i;
-					}
-				}
-				else
-				{
-					inStr = true;
-					--i;
-				}
-				break;
-				
-			case ' ':
-				if (!inStr)
-				{
-					++svc_argc;
-					svc_parsed_sw[i] = 0;
-				}
-				break;
-			}
-		}
-		
-		const char** argv = svc_argv.getBuffer(svc_argc + 1);
-		argv++;	// leave space for argv[0]
-		*argv++ = svc_parsed_sw.c_str();
-		for (const char *p = svc_parsed_sw.begin(); 
-			p < svc_parsed_sw.end(); ++p)
-		{
-			if (!*p) 
-			{
-				*argv++ = p + 1;
-			}
-		}
-		*argv = 0;
-	}
-} //namespace
-	
-using namespace Jrd;
-
-#ifdef SERVICE_THREAD
-
-void Service::svc_started()
-{
-	if (!(svc_flags & SVC_evnt_fired)) {
-		svc_flags |= SVC_evnt_fired;
-		svcStart.release();
-	}
-}
-
-#endif /* SERVICE_THREAD */
-
-/* This checks if the service has forked a process.  If not,
-   it will post the isc_svcnoexe error. */
-
-static inline void is_service_running(const Service* service)
-{
-	if (!(service->svc_flags & SVC_forked)) {
-		THREAD_ENTER();
-		ERR_post (isc_svcnoexe, isc_arg_string,
-			service->svc_service->serv_name, 0); 
-	}
-}
-
-static inline void need_admin_privs(ISC_STATUS** status, const char* message)
-{
-	ISC_STATUS* stat = *status;
-	*stat++ = isc_insufficient_svc_privileges;
-	*stat++ = isc_arg_string;
-	*stat++ = (ISC_STATUS)(U_IPTR) ERR_string(message, strlen(message));
-	*stat++ = isc_arg_end;
-	*status = stat;
-}
-
-bool ck_space_for_numeric(char*& info, const char* const end)
-{
-	if ((info + 1 + sizeof (ULONG)) > end)
-    {
-		if (info < end)
-			*info++ = isc_info_truncated;
-		THREAD_ENTER();
-		return false;
-	}
-	return true;
-}
-
 
 /* Option block for service parameter block */
 // What's the point of defining spb if a char* var will have the same name, Borland???
@@ -300,14 +133,17 @@ struct Serv_param_block {
 	Firebird::string	spb_command_line;
 	Firebird::string	spb_network_protocol;
 	Firebird::string    spb_remote_address;
-#ifdef TRUSTED_SERVICES
 	Firebird::string	spb_trusted_login;
-#endif
+	bool				spb_trusted_role;
 	USHORT				spb_version;
 
-	Serv_param_block() : spb_version(0) { }
+	Serv_param_block() : 
+		spb_trusted_role(false),
+		spb_version(0)
+	{ }
 };
 
+using namespace Jrd;
 
 static const TEXT* error_string(const TEXT* data, USHORT length);
 static const TEXT* error_string(const Firebird::string& s);
@@ -324,23 +160,236 @@ static void get_action_svc_data(const Firebird::ClumpletReader&,
 static bool get_action_svc_parameter(UCHAR tag, const in_sw_tab_t*,
 		                             Firebird::string&);
 
-#ifdef SERVICE_THREAD
 static UCHAR service_dequeue_byte(Service*);
 static void service_enqueue_byte(UCHAR, Service*);
 static USHORT service_add_one(USHORT i);
 static USHORT service_empty(Service* service);
 static USHORT service_full(Service* service);
 static void service_fork(ThreadEntryPoint*, Service*);
-#else
-#ifndef WIN_NT
-static void timeout_handler(void* service);
-#endif
-static void cleanup(Service* service);
-static void service_fork(TEXT*, Service*);
-static void io_error(const TEXT*, SLONG, const TEXT*, ISC_STATUS);
-#endif
 static void service_get(Service*, SCHAR *, USHORT, USHORT, USHORT, USHORT *);
 static void service_put(Service*, const SCHAR*, USHORT);
+
+Service::Service(serv_entry* se, Firebird::MemoryPool& p) :
+	Firebird::UtilSvc(p), 
+	svc_parsed_sw(getPool()), 
+	svc_handle(0), svc_status(svc_status_array), svc_input(0), svc_output(0),
+	svc_stdout_head(0), svc_stdout_tail(0), svc_stdout(0), 
+	svc_service(se), svc_resp_buf(0), svc_resp_ptr(0), svc_resp_buf_len(0),
+	svc_resp_len(0), svc_flags(0), svc_user_flag(0), svc_spb_version(0), svc_do_shutdown(false),
+	svc_username(getPool()), svc_enc_password(getPool()), 
+	svc_trusted_login(getPool()),
+	svc_switches(getPool()), svc_perm_sw(getPool())
+{
+	memset(svc_status_array, 0, sizeof svc_status_array);
+}
+	
+Service::~Service()
+{
+	if (svc_stdout)
+	{
+		gds__free(svc_stdout);
+	}
+
+	if (svc_resp_buf)
+	{
+		gds__free(svc_resp_buf);
+	}
+
+#ifdef WIN_NT
+	CloseHandle((HANDLE) svc_handle);
+#endif
+}
+	
+void Service::parseSwitches()
+{
+	svc_parsed_sw = svc_switches;
+	svc_parsed_sw.trim();
+	argv.clear();
+	argv.push("service");	// why not use it for argv[0]
+
+	if (svc_parsed_sw.isEmpty())
+	{
+		return;
+	}
+
+	bool inStr = false;
+	for (size_t i = 0; i < svc_parsed_sw.length(); ++i)
+	{
+		switch (svc_parsed_sw[i])
+		{
+		case SVC_TRMNTR:
+			svc_parsed_sw.erase(i, 1);
+			if (inStr)
+			{
+				if (i < svc_parsed_sw.length() && svc_parsed_sw[i] != SVC_TRMNTR)
+				{
+					inStr = false;
+					--i;
+				}
+			}
+			else
+			{
+				inStr = true;
+				--i;
+			}
+			break;
+				
+		case ' ':
+			if (!inStr)
+			{
+				svc_parsed_sw[i] = 0;
+			}
+			break;
+		}
+	}
+
+	argv.push(svc_parsed_sw.c_str());
+
+	for (const char* p = svc_parsed_sw.begin(); 
+		p < svc_parsed_sw.end(); ++p)
+	{
+		if (!*p) 
+		{
+			argv.push(p + 1);
+		}
+	}
+}
+
+void Service::printf(const SCHAR* format, ...)
+{
+	// Ensure that service is not detached.
+	if (svc_flags & SVC_detached) 
+	{
+		return;
+	}
+
+	Firebird::string buf;
+	va_list arglist;
+	va_start(arglist, format);
+	buf.vprintf(format, arglist);
+	va_end(arglist);
+
+	for (size_t n = 0; n < buf.length() && !(svc_flags & SVC_detached); ++n) 
+	{
+		service_enqueue_byte(buf[n], this);
+	}
+}
+
+bool Service::isService()
+{
+	return true;
+}
+
+void Service::started()
+{
+	if (!(svc_flags & SVC_evnt_fired)) 
+	{
+		svc_flags |= SVC_evnt_fired;
+		svcStart.release();
+	}
+}
+
+void Service::finish()
+{
+	SVC_finish(this, SVC_finished);
+}
+
+void Service::putLine(char tag, const char* val)
+{
+	size_t len = strlen(val);
+	len &= 0xFFFF;
+	SVC_putc(this, tag);
+	SVC_putc(this, len);
+	SVC_putc(this, len >> 8);
+
+	for (size_t i = 0; i < len; i++)
+	{
+		SVC_putc(this, val[i]);
+	}
+}
+
+void Service::putSLong(char tag, SLONG val)
+{
+	SVC_putc(this, tag);
+	SVC_putc(this, val);
+	SVC_putc(this, val >> 8);
+	SVC_putc(this, val >> 16);
+	SVC_putc(this, val >> 24);
+}
+	
+void Service::putChar(char tag, char val)
+{
+	SVC_putc(this, tag);
+	SVC_putc(this, val);
+}
+
+void Service::stuffStatus(const ISC_STATUS* status_vector)
+{
+	if (status_vector != svc_status) 
+	{
+		ISC_STATUS* status = svc_status;
+		int i = 0;
+
+		while (*status && (++i < ISC_STATUS_LENGTH))
+		{
+			status++;
+		}
+
+		for (int j = 0; status_vector[j] && (i < ISC_STATUS_LENGTH); j++, i++)
+		{
+			*status++ = status_vector[j];
+		}
+	}
+}
+
+void Service::stuffStatus(const USHORT facility, const USHORT errcode, const MsgFormat::SafeArg& args)
+{
+	CMD_UTIL_put_svc_status(svc_status, facility, errcode, args);
+}
+
+void Service::hidePasswd(ArgvType&, int)
+{
+	// no action
+}
+
+ISC_STATUS* Service::getStatus()
+{
+	return svc_status;
+}
+
+void Service::checkService()
+{
+	// no action
+}
+
+void Service::svc_started()
+{
+	if (this)		// !!!!!!! temporary requirement to build
+		started();
+}
+
+static inline void need_admin_privs(ISC_STATUS** status, const char* message)
+{
+	ISC_STATUS* stat = *status;
+	*stat++ = isc_insufficient_svc_privileges;
+	*stat++ = isc_arg_string;
+	*stat++ = (ISC_STATUS)(U_IPTR) ERR_string(message, strlen(message));
+	*stat++ = isc_arg_end;
+	*status = stat;
+}
+
+bool ck_space_for_numeric(char*& info, const char* const end)
+{
+	if ((info + 1 + sizeof(ULONG)) > end)
+    {
+		if (info < end)
+			*info++ = isc_info_truncated;
+		THREAD_ENTER();
+		return false;
+	}
+	return true;
+}
+
 
 #ifdef DEBUG
 THREAD_ENTRY_DECLARE test_thread(THREAD_ENTRY_PARAM);
@@ -362,7 +411,7 @@ const char* const SPB_SEC_USERNAME = "isc_spb_sec_username";
 static Firebird::Mutex svc_mutex, thd_mutex;
 
 /* Service Functions */
-#if defined(SERVICE_THREAD) && !defined(BOOT_BUILD)
+#if !defined(BOOT_BUILD)
 #include "../burp/burp_proto.h"
 #include "../alice/alice_proto.h"
 int main_lock_print();
@@ -380,7 +429,7 @@ THREAD_ENTRY_DECLARE main_gstat(THREAD_ENTRY_PARAM arg);
 #define MAIN_GSEC		NULL
 #endif
 
-#if defined(SERVICE_THREAD) && !defined(EMBEDDED) && !defined(BOOT_BUILD)
+#if !defined(EMBEDDED) && !defined(BOOT_BUILD)
 #include "../utilities/gsec/gsec_proto.h"
 #define MAIN_GSEC		GSEC_main
 #else
@@ -445,46 +494,45 @@ void SVC_STATUS_ARG(ISC_STATUS*& status, const char* value)
 static serv_entry services[] =
 {
 
-	{ isc_action_max, "print_cache", "-svc", "bin/fb_cache_print", NULL, 0 },
-	{ isc_action_max, "print_locks", "-svc", "bin/fb_lock_print", NULL, 0 },
-	{ isc_action_max, "start_cache", "-svc", "bin/fb_cache_manager", NULL, 0 },
-	{ isc_action_max, "analyze_database", "-svc", "bin/gstat", NULL, 0 },
-	{ isc_action_max, "backup", "-svc -b", "bin/gbak",	MAIN_GBAK, 0 },
-	{ isc_action_max, "create", "-svc -c", "bin/gbak",	MAIN_GBAK, 0 },
-	{ isc_action_max, "restore", "-svc -r", "bin/gbak",	MAIN_GBAK, 0 },
-	{ isc_action_max, "gdef", "-svc", "bin/gdef", NULL, 0 },
-	{ isc_action_max, "gsec", "-svc", "bin/gsec", NULL, 0 },
-	{ isc_action_max, "disable_journal", "-svc -disable", "bin/gjrn", NULL, 0 },
-	{ isc_action_max, "dump_journal", "-svc -online_dump", "bin/gjrn", NULL, 0 },
-	{ isc_action_max, "enable_journal", "-svc -enable", "bin/gjrn", NULL, 0 },
-	{ isc_action_max, "monitor_journal", "-svc -console", "bin/gjrn", NULL, 0 },
-	{ isc_action_max, "query_server", NULL, NULL, NULL, 0 },
-	{ isc_action_max, "start_journal", "-svc -server", "bin/gjrn", NULL, 0 },
-	{ isc_action_max, "stop_cache", "-svc -shut -cache", "bin/gfix", NULL, 0 },
-	{ isc_action_max, "stop_journal", "-svc -console", "bin/gjrn", NULL, 0 },
-	{ isc_action_max, "anonymous", NULL, NULL, NULL, 0 },
+	{ isc_action_max, "print_cache", "", NULL },
+	{ isc_action_max, "print_locks", "", NULL },
+	{ isc_action_max, "start_cache", "", NULL },
+	{ isc_action_max, "analyze_database", "", MAIN_GFIX },
+	{ isc_action_max, "backup", "-b", MAIN_GBAK },
+	{ isc_action_max, "create", "-c", MAIN_GBAK },
+	{ isc_action_max, "restore", "-r", MAIN_GBAK },
+	{ isc_action_max, "gdef", "-svc", NULL },
+	{ isc_action_max, "gsec", "-svc", MAIN_GSEC },
+	{ isc_action_max, "disable_journal", "-disable", NULL },
+	{ isc_action_max, "dump_journal", "-online_dump", NULL },
+	{ isc_action_max, "enable_journal", "-enable", NULL },
+	{ isc_action_max, "monitor_journal", "-console", NULL },
+	{ isc_action_max, "query_server", NULL, NULL },
+	{ isc_action_max, "start_journal", "-server", NULL },
+	{ isc_action_max, "stop_cache", "-shut -cache", MAIN_GFIX },
+	{ isc_action_max, "stop_journal", "-console", NULL },
+	{ isc_action_max, "anonymous", NULL, NULL },
 
-/* NEW VERSION 2 calls, the name field MUST be different from those names above
- */
-	{ isc_action_max, "service_mgr", NULL, NULL, NULL, 0 },
-	{ isc_action_svc_backup, "Backup Database", NULL, "bin/gbak",	MAIN_GBAK, 0 },
-	{ isc_action_svc_restore, "Restore Database", NULL, "bin/gbak",	MAIN_GBAK, 0 },
-	{ isc_action_svc_repair, "Repair Database", NULL, "bin/gfix",	MAIN_GFIX, 0 },
-	{ isc_action_svc_add_user, "Add User", NULL, "bin/gsec",	MAIN_GSEC, 0 },
-	{ isc_action_svc_delete_user, "Delete User", NULL, "bin/gsec",	MAIN_GSEC, 0 },
-	{ isc_action_svc_modify_user, "Modify User", NULL, "bin/gsec",	MAIN_GSEC, 0 },
-	{ isc_action_svc_display_user, "Display User", NULL, "bin/gsec",	MAIN_GSEC, 0 },
-	{ isc_action_svc_properties, "Database Properties", NULL, "bin/gfix",	MAIN_GFIX, 0 },
-	{ isc_action_svc_lock_stats, "Lock Stats", NULL, "bin/fb_lock_print",	TEST_THREAD, 0 },
-	{ isc_action_svc_db_stats, "Database Stats", NULL, "bin/gstat",	MAIN_GSTAT, 0 },
-	{ isc_action_svc_get_fb_log, "Get Log File", NULL, NULL,	SVC_read_fb_log, 0 },
+	// NEW VERSION 2 calls, the name field MUST be different from those names above
+	{ isc_action_max, "service_mgr", NULL, NULL },
+	{ isc_action_svc_backup, "Backup Database", NULL, MAIN_GBAK },
+	{ isc_action_svc_restore, "Restore Database", NULL, MAIN_GBAK },
+	{ isc_action_svc_repair, "Repair Database", NULL, MAIN_GFIX },
+	{ isc_action_svc_add_user, "Add User", NULL, MAIN_GSEC },
+	{ isc_action_svc_delete_user, "Delete User", NULL, MAIN_GSEC },
+	{ isc_action_svc_modify_user, "Modify User", NULL, MAIN_GSEC },
+	{ isc_action_svc_display_user, "Display User", NULL, MAIN_GSEC },
+	{ isc_action_svc_properties, "Database Properties", NULL, MAIN_GFIX },
+	{ isc_action_svc_lock_stats, "Lock Stats", NULL, TEST_THREAD },
+	{ isc_action_svc_db_stats, "Database Stats", NULL, MAIN_GSTAT },
+	{ isc_action_svc_get_fb_log, "Get Log File", NULL, SVC_read_fb_log },
 /* actions with no names are undocumented */
-	{ isc_action_svc_set_config, NULL, NULL, NULL,	TEST_THREAD, 0 },
-	{ isc_action_svc_default_config, NULL, NULL, NULL,	TEST_THREAD, 0 },
-	{ isc_action_svc_set_env, NULL, NULL, NULL,	TEST_THREAD, 0 },
-	{ isc_action_svc_set_env_lock, NULL, NULL, NULL,	TEST_THREAD, 0 },
-	{ isc_action_svc_set_env_msg, NULL, NULL, NULL,	TEST_THREAD, 0 },
-	{ 0, NULL, NULL, NULL, NULL, 0 }
+	{ isc_action_svc_set_config, NULL, NULL, TEST_THREAD },
+	{ isc_action_svc_default_config, NULL, NULL, TEST_THREAD },
+	{ isc_action_svc_set_env, NULL, NULL, TEST_THREAD },
+	{ isc_action_svc_set_env_lock, NULL, NULL, TEST_THREAD },
+	{ isc_action_svc_set_env_msg, NULL, NULL, TEST_THREAD },
+	{ 0, NULL, NULL, NULL }
 };
 
 /* The SERVER_CAPABILITIES_FLAG is used to mark architectural
@@ -558,25 +606,6 @@ Service* SVC_attach(USHORT	service_length,
  	Firebird::ClumpletWriter spb(Firebird::ClumpletReader::SpbAttach, MAX_DPB_SIZE, 
 		reinterpret_cast<const UCHAR*>(spb_data), spb_length, isc_spb_current_version);
 
-/* Insert internal switch SERVICE_THD_PARAM in the service parameter block. */
-	/* dimitr: it looks that we shouldn't execute the below code
-	           if the first switch of the command line is "-svc_re",
-			   but I couldn't find where such a switch is specified
-			   by any of the client tools, so it seems that in fact
-			   it's not used at all. Hence I ignore this situation. */
-	if (spb.find(isc_spb_command_line)) {
-		Firebird::string cl;
-		spb.getString(cl);
-		if (cl.substr(0, 5) == "-svc ")
-			cl.erase(0, 5);
-		else if (cl.substr(0, 9) == "-svc_thd ")
-			cl.erase(0, 9);
-		cl.insert(0, ' ');
-		cl.insert(0, SERVICE_THD_PARAM);
-		spb.deleteClumplet();
-		spb.insertString(isc_spb_command_line, cl);
-	}
-
 /* Process the service parameter block. */
 	Serv_param_block options;
 	get_options(spb, &options);
@@ -587,13 +616,11 @@ Service* SVC_attach(USHORT	service_length,
 		user_flag = SVC_user_none;
 	}
 	else {
-#ifdef TRUSTED_SERVICES
 		if (options.spb_trusted_login.hasData())
 		{
 			options.spb_user_name = options.spb_trusted_login;
 		}
 		else
-#endif
 		{
 			if (!options.spb_user_name.hasData())
 			{
@@ -626,11 +653,13 @@ Service* SVC_attach(USHORT	service_length,
 		}
 
 /* Check that the validated user has the authority to access this service */
-		if (fb_utils::stricmp(options.spb_user_name.c_str(), SYSDBA_USER_NAME))
+		if (fb_utils::stricmp(options.spb_user_name.c_str(), SYSDBA_USER_NAME) &&
+			!options.spb_trusted_role)
 		{
 			user_flag = SVC_user_any;
 		}
-		else {
+		else 
+		{
 			user_flag = SVC_user_dba | SVC_user_any;
 		}
 	}
@@ -647,21 +676,17 @@ Service* SVC_attach(USHORT	service_length,
    we cannot use the JRD allocator. */
 	service = FB_NEW(*getDefaultMemoryPool()) Service(serv, *getDefaultMemoryPool());
 
-	service->svc_flags =
-		(serv->serv_executable ? SVC_forked : 0) | (switches.hasData() ? SVC_cmd_line : 0);
+	service->svc_flags = switches.hasData() ? SVC_cmd_line : 0;
 	service->svc_perm_sw = switches;
 	service->svc_user_flag = user_flag;
 	
-#ifdef SERVICE_THREAD
 	service->svc_stdout_head = 1;
 	service->svc_stdout_tail = SVC_STDOUT_BUFFER_SIZE;
 	service->svc_stdout = NULL;
-#endif
 	service->svc_spb_version = options.spb_version;
 	service->svc_username = options.spb_user_name;
-#ifdef TRUSTED_SERVICES
 	service->svc_trusted_login = options.spb_trusted_login;
-#endif
+	service->svc_trusted_role = options.spb_trusted_role;
 
 /* The password will be issued to the service threads on NT since
  * there is no OS authentication.  If the password is not yet
@@ -681,33 +706,12 @@ Service* SVC_attach(USHORT	service_length,
 		service->svc_enc_password.erase(0, 2);
 	}
 
-/* If an executable is defined for the service, try to fork a new process.
+/* If an executable is defined for the service, try to fork a new thread.
  * Only do this if we are working with a version 1 service */
 
-#ifndef SERVICE_THREAD
-	if (serv->serv_executable && options.spb_version == isc_spb_version1)
-#else
 	if (serv->serv_thd && options.spb_version == isc_spb_version1)
-#endif
 	{
-#ifndef SERVICE_THREAD
-		TEXT service_path[MAXPATHLEN];
-		gds__prefix(service_path, serv->serv_executable);
-		service_fork(service_path, service);
-#else
-		/* if service is single threaded, only call if not currently running */
-		if (serv->serv_in_use == NULL) {	/* No worry for multi-threading */
-			service_fork(serv->serv_thd, service);
-		}
-		else if (!*(serv->serv_in_use)) {
-			*(serv->serv_in_use) = true;
-			service_fork(serv->serv_thd, service);
-		}
-		else {
-			ERR_post(isc_service_att_err, isc_arg_gds,
-					 isc_svc_in_use, isc_arg_string, serv->serv_name, 0);
-		}
-#endif
+		service_fork(serv->serv_thd, service);
 	}
 
 	}	// try
@@ -755,19 +759,12 @@ void SVC_detach(Service* service)
 	}
 #endif /* SERVER_SHUTDOWN */
 
-#ifdef SERVICE_THREAD
 
 /* Mark service as detached. */
 /* If service thread is finished, cleanup memory being used by service. */
 
 	SVC_finish(service, SVC_detached);
 
-#else
-
-/* Go ahead and cleanup memory being used by service */
-	cleanup(service);
-
-#endif
 }
 
 
@@ -792,51 +789,6 @@ void SVC_shutdown_init(shutdown_fct_t fptr,
 #endif // SERVER_SHUTDOWN
 
 
-#ifdef SERVICE_THREAD
-void SVC_fprintf(Service* service, const SCHAR* format, ...)
-{
-/**************************************
- *
- *	S V C _ f p r i n t f
- *
- **************************************/
-/* Ensure that service is not detached. */
-	if (!(service->svc_flags & SVC_detached)) {
-		va_list arglist;
-		char buf[1000];
-		ULONG i = 0;
-
-		va_start(arglist, format);
-		// CVC: No bounds checking on "buf"; we assume everything fits in it.
-		// Where is that limit documented??? I changed to vsnprintf
-		//n = vsprintf(buf, format, arglist);
-		int n = VSNPRINTF(buf, sizeof(buf), format, arglist);
-		va_end(arglist);
-		// Nothing is said if this answer generated by service_enqueue_bytes
-		// should be null terminated always. Given the old code that called
-		// vsprintf, it's clear that '\0' was't sent, so in the new code,
-		// n is adjusted in case of insufficient buffer to behave the same.
-		// Changed ULONG to int, since this is the official type of the
-		// printf family and makes negative test natural.
-		// We could send a truncated answer in this case, since vsnprintf
-		// returns negative when buffer is not enough. Since the old code
-		// didn't send anything after an error, enable this to test if sending
-		// a partial result would crash the receiver. Failure may happen before
-		// reaching end of buffer for other reasons, so we might transfer trash.
-		//if (n < 0)
-		//{
-		//    n = sizeof(buf) - 1;
-		//    buf[n] = 0;
-		//}
-		while (n > 0 && !(service->svc_flags & SVC_detached)) {
-			service_enqueue_byte(buf[i], service);
-			n--;
-			i++;
-		}
-	}
-}
-
-
 void SVC_putc(Service* service, const UCHAR ch)
 {
 /**************************************
@@ -857,11 +809,10 @@ void SVC_putc(Service* service, const UCHAR ch)
 
 int SVC_output(Service* output_data, const UCHAR* output_buf)
 {
-	SVC_fprintf(output_data, "%s", output_buf);
+	output_data->output(reinterpret_cast<const char*>(output_buf));
 
 	return 0;
 }
-#endif /*SERVICE_THREAD*/
 
 
 ISC_STATUS SVC_query2(Service* service,
@@ -1286,12 +1237,18 @@ ISC_STATUS SVC_query2(Service* service,
 				break;
 			}
 
-			if (item == isc_info_svc_line)
+			switch (item)
+			{
+			case isc_info_svc_line:
 				get_flags = GET_LINE;
-			else if (item == isc_info_svc_to_eof)
+				break;
+			case isc_info_svc_to_eof:
 				get_flags = GET_EOF;
-			else
+				break;
+			default:
 				get_flags = GET_BINARY;
+				break;
+			}
 
 			service_get(service, info + 3, end - (info + 5), get_flags,
 						timeout, &length);
@@ -1757,9 +1714,10 @@ void SVC_query(Service*		service,
 				if (!length && !(service->svc_flags & SVC_finished))
 					*info++ = isc_info_data_not_ready;
 				else
-					if (item == isc_info_svc_to_eof &&
-						!(service->svc_flags & SVC_finished))
+				{
+					if (item == isc_info_svc_to_eof && !(service->svc_flags & SVC_finished))
 						*info++ = isc_info_truncated;
+				}
 			}
 			break;
 		}
@@ -1808,8 +1766,10 @@ void* SVC_start(Service* service, USHORT spb_length, const SCHAR* spb_data)
 	const UCHAR svc_id = spb.getClumpTag();
 	serv_entry* serv;
 	for (serv = services; serv->serv_action; serv++)
+	{
 		if (serv->serv_action == svc_id)
 			break;
+	}
 
 	if (!serv->serv_name)
 		ERR_post(isc_service_att_err, isc_arg_gds, isc_service_not_supported, 0);
@@ -1870,20 +1830,23 @@ void* SVC_start(Service* service, USHORT spb_length, const SCHAR* spb_data)
 		/* add the username and password to the end of svc_switches if needed */
 		if (service->svc_switches.hasData()) 
 		{
-#ifdef TRUSTED_SERVICES
 			if (service->svc_trusted_login.hasData()) 
 			{
-				service->svc_switches += ' ';
+				service->svc_switches += " -";
 				service->svc_switches += TRUSTED_USER_SWITCH;
 				service->svc_switches += ' ';
 				service->svc_switches += service->svc_username;
+				if (service->svc_trusted_role)
+				{
+					service->svc_switches += " -";
+					service->svc_switches += TRUSTED_ROLE_SWITCH;
+				}
 			}
 			else
-#endif
 			{
 				if (service->svc_username.hasData())
 				{
-					service->svc_switches += ' ';
+					service->svc_switches += " -";
 					service->svc_switches += USERNAME_SWITCH;
 					service->svc_switches += ' ';
 					service->svc_switches += service->svc_username;
@@ -1891,7 +1854,7 @@ void* SVC_start(Service* service, USHORT spb_length, const SCHAR* spb_data)
 
 				if (service->svc_enc_password.hasData())
 				{
-					service->svc_switches += ' ';
+					service->svc_switches += " -";
 					service->svc_switches += PASSWORD_SWITCH;
 					service->svc_switches += ' ';
 					service->svc_switches += service->svc_enc_password;
@@ -1913,20 +1876,9 @@ void* SVC_start(Service* service, USHORT spb_length, const SCHAR* spb_data)
        	ERR_post(isc_adm_task_denied, 0);
     }
 
-#ifndef SERVICE_THREAD
-	TEXT service_path[MAXPATHLEN];
-
-	if (serv->serv_executable) {
-		gds__prefix(service_path, serv->serv_executable);
-		service->svc_flags = SVC_forked;
-		service_fork(service_path, service);
-	}
-
-#else
 
 /* Break up the command line into individual arguments. */
 	service->parseSwitches();
-	service->svc_argv[0] = (TEXT *)(serv->serv_thd);
 
 /*
  * the service block can be reused hence free a memory from the
@@ -1979,7 +1931,6 @@ void* SVC_start(Service* service, USHORT spb_length, const SCHAR* spb_data)
 				0);
 	}
 
-#endif /* SERVICE_THREAD */
 
 	return reinterpret_cast<void*>(reserved);
 }
@@ -2000,34 +1951,25 @@ THREAD_ENTRY_DECLARE SVC_read_fb_log(THREAD_ENTRY_PARAM arg)
  **************************************/
 	bool svc_started = false;
 	Service* service = (Service*)arg;
-#ifdef SERVICE_THREAD
 	ISC_STATUS *status = service->svc_status;
 	*status++ = isc_arg_gds;
-#endif
 
 	TEXT name[MAXPATHLEN];
 	gds__prefix(name, LOGFILE);
 	FILE* file = fopen(name, "r");
 	if (file != NULL) {
-#ifdef SERVICE_THREAD
 		*status++ = FB_SUCCESS;
 		*status++ = isc_arg_end;
-#endif
 		service->svc_started();
 		svc_started = true;
 		TEXT buffer[100];
 		while (!feof(file) && !ferror(file)) {
 			fgets(buffer, sizeof(buffer), file);
-#ifdef SERVICE_THREAD
-			SVC_fprintf(service, "%s", buffer);
-#else
-			service_put(service, buffer, sizeof(buffer));
-#endif
+			service->output(buffer);
 		}
 	}
 
 	if (!file || file && ferror(file)) {
-#ifdef SERVICE_THREAD
 		*status++ = isc_sys_request;
 		if (!file) {
 			SVC_STATUS_ARG(status, "fopen");
@@ -2038,7 +1980,6 @@ THREAD_ENTRY_DECLARE SVC_read_fb_log(THREAD_ENTRY_PARAM arg)
 		*status++ = SYS_ARG;
 		*status++ = errno;
 		*status++ = isc_arg_end;
-#endif
 		if (!svc_started)
 		{
 			service->svc_started();
@@ -2048,11 +1989,7 @@ THREAD_ENTRY_DECLARE SVC_read_fb_log(THREAD_ENTRY_PARAM arg)
 	if (file)
 		fclose(file);
 
-#ifdef SERVICE_THREAD
 	SVC_finish(service, SVC_finished);
-#else
-	cleanup(service);
-#endif
 	return (FINI_OK);
 }
 
@@ -2096,11 +2033,13 @@ static void get_options(Firebird::ClumpletReader&	spb,
 			spb.getString(options->spb_password_enc);
 			break;
 
-#ifdef TRUSTED_SERVICES
 		case isc_spb_trusted_auth:
 			spb.getString(options->spb_trusted_login);
 			break;
-#endif
+
+		case isc_spb_trusted_role:
+			options->spb_trusted_role = true;
+			break;
 
 		case isc_spb_command_line:
 			spb.getString(options->spb_command_line);
@@ -2140,29 +2079,6 @@ static void get_options(Firebird::ClumpletReader&	spb,
 }
 
 
-#ifndef SERVICE_THREAD
-static void io_error(const TEXT* string,
-					 SLONG status,
-					 const TEXT* filename, ISC_STATUS operation)
-{
-/**************************************
- *
- *	i o _ e r r o r
- *
- **************************************
- *
- * Functional description
- *	Report an I/O error.
- *
- **************************************/
-
-	ERR_post(isc_io_error, isc_arg_string, string, isc_arg_string, filename,
-			 isc_arg_gds, operation, SYS_ERR, status, 0);
-}
-#endif
-
-
-#ifdef SERVICE_THREAD
 static USHORT service_add_one(USHORT i)
 {
 /**************************************
@@ -2210,10 +2126,10 @@ static USHORT service_full(Service* service)
 	if (service_add_one(service_add_one(service->svc_stdout_tail)) ==
 		service->svc_stdout_head)
 	{
-		return (1);
+		return 1;
 	}
-	else
-		return (0);
+
+	return 0;
 }
 
 
@@ -2231,7 +2147,7 @@ static UCHAR service_dequeue_byte(Service* service)
 	const UCHAR ch = service->svc_stdout[service->svc_stdout_head];
 	service->svc_stdout_head = service_add_one(service->svc_stdout_head);
 
-	return (ch);
+	return ch;
 }
 
 
@@ -2258,7 +2174,7 @@ static void service_enqueue_byte(UCHAR ch, Service* service)
 }
 
 
-static void service_fork(ThreadEntryPoint* service_executable, Service* service)
+static void service_fork(ThreadEntryPoint* service_thread, Service* service)
 {
 /**************************************
  *
@@ -2274,11 +2190,13 @@ static void service_fork(ThreadEntryPoint* service_executable, Service* service)
 	// Break up the command line into individual arguments.
 	service->parseSwitches();
 
-	USHORT argc = service->svc_argc;
-	service->svc_argv[0] = (TEXT *)(service_executable);
+	if (service->svc_service && service->svc_service->serv_name)
+	{
+		service->argv[0] = service->svc_service->serv_name;
+	}
 
 	THREAD_EXIT();
-	gds__thread_start(service_executable,
+	gds__thread_start(service_thread,
 						service, THREAD_medium, 0, (void*)&service->svc_handle);
 	THREAD_ENTER();
 }
@@ -2327,7 +2245,8 @@ static void service_get(Service*		service,
 			return;
 		}
 
-		while (!service_empty(service) && length > 0) {
+		while (!service_empty(service) && length > 0)
+		{
 			const int ch = service_dequeue_byte(service);
 			length--;
 
@@ -2339,8 +2258,8 @@ static void service_get(Service*		service,
 				buffer[(*return_length)++] = ' ';
 				return;
 			}
-			else
-				buffer[(*return_length)++] = ch;
+
+			buffer[(*return_length)++] = ch;
 		}
 
 		if (service_empty(service) && (service->svc_flags & SVC_finished))
@@ -2365,278 +2284,6 @@ static void service_put(Service* service, const SCHAR* buffer, USHORT length)
 
 /* Nothing */
 }
-#endif /* SERVICE_THREAD */
-
-
-#ifndef SERVICE_THREAD
-
-#ifdef WIN_NT
-
-static void service_fork(TEXT* service_path, Service* service)
-{
-/**************************************
- *
- *	s e r v i c e _ f o r k		( W I N _ N T )
- *
- **************************************
- *
- * Functional description
- *	Startup a service. Just a stub.
- *
- **************************************/
-	ERR_post(isc_service_att_err, isc_arg_gds, isc_service_not_supported, 0);
-}
-
-static void service_get(
-						Service* service,
-						SCHAR * buffer,
-						USHORT length,
-						USHORT flags, USHORT timeout, USHORT * return_length)
-{
-/**************************************
- *
- *	s e r v i c e _ g e t		( W I N _ N T )
- *
- **************************************
- *
- * Functional description
- *	Get input from a service.
- *	Just a stub
- *
- **************************************/
-}
-
-static void service_put(Service* service, const SCHAR* buffer, USHORT length)
-{
-/**************************************
- *
- *	s e r v i c e _ p u t		( W I N _ N T )
- *
- **************************************
- *
- * Functional description
- *	Send output to a service.
- *	Just a stub
- *
- **************************************/
-}
-
-#else
-
-static void service_fork(TEXT* service_path, Service* service)
-{
-/**************************************
- *
- *	s e r v i c e _ f o r k		( G E N E R I C )
- *
- **************************************
- *
- * Functional description
- *	Startup a service.
- *
- **************************************/
-	int pair1[2], pair2[2];
-
-	if (pipe(pair1) < 0 || pipe(pair2) < 0)
-		io_error("pipe", errno, "", isc_io_create_err);
-
-/* Probe service executable to see it if plausibly exists. */
-
-	struct stat stat_buf;
-	if (statistics(service_path, &stat_buf) == -1)
-		io_error("stat", errno, service_path, isc_io_access_err);
-
-/* Break up the command line into individual arguments. */
-	service->parseSwitches();
-	const char **argv = &service->svc_argv[0];
-	*argv = service_path;
-
-/* At last we can fork the sub-process.  If the fork succeeds, repeat
-   it so that we don't have defunct processes hanging around. */
-
-	THREAD_EXIT();
-
-	int pid;
-	
-	switch (pid = vfork()) {
-	case -1:
-		THREAD_ENTER();
-		ERR_post(isc_sys_request, isc_arg_string, "vfork", SYS_ERR, errno, 0);
-		break;
-
-	case 0:
-		if (vfork() != 0)
-			_exit(FINI_OK);
-
-		close(pair1[0]);
-		close(pair2[1]);
-		if (pair2[0] != 0) {
-			close(0);
-			dup(pair2[0]);
-			close(pair2[0]);
-		}
-		if (pair1[1] != 1) {
-			close(1);
-			dup(pair1[1]);
-			close(pair1[1]);
-		}
-		close(2);
-		dup(1);
-#ifdef DEV_BUILD
-		{
-			char buf[2 * MAXPATHLEN];
-			const char** s = argv;
-
-			strcpy (buf, "service_fork:");
-			while (*s != (char *)0)
-			{
-				strcat(buf, " ");
-				strcat(buf, *s);
-				s++;
-			}
-			gds__log(buf);
-		}
-#endif
-		execvp(argv[0], const_cast<char* const*>(argv));
-		_exit(FINI_ERROR);
-	}
-
-	close(pair1[1]);
-	close(pair2[0]);
-
-	waitpid(pid, NULL, 0);
-
-	THREAD_ENTER();
-
-	if (!(service->svc_input = fdopen(pair1[0], "r")) ||
-		!(service->svc_output = fdopen(pair2[1], "w")))
-	{
-		io_error("fdopen", errno, "service path", isc_io_access_err);
-	}
-}
-
-
-static void service_get(
-						Service* service,
-						SCHAR * buffer,
-						USHORT length,
-						USHORT flags, USHORT timeout, USHORT * return_length)
-{
-/**************************************
- *
- *	s e r v i c e _ g e t		( G E N E R I C )
- *
- **************************************
- *
- * Functional description
- *	Get input from a service.  It is assumed
- *	that we have checked out of the scheduler.
- *
- **************************************/
-	struct itimerval sv_timr;
-	struct sigaction sv_hndlr;
-
-	is_service_running(service);
-
-	errno = 0;
-	service->svc_flags &= ~SVC_timeout;
-	SCHAR* buf = buffer;
-
-	SSHORT iter = 0;
-	if (timeout) {
-		ISC_set_timer((SLONG) (timeout * 100000), timeout_handler, service,
-					  (SLONG*)&sv_timr, (void**)&sv_hndlr);
-		iter = timeout * 10;
-	}
-
-	while (!timeout || iter) {
-		const int c = getc((FILE *) service->svc_input);
-		if (c != EOF) {
-			*buf++ = (flags & GET_LINE) && (c == '\n') ? ' ' : c;
-			if (!(--length))
-				break;
-			if (((flags & GET_LINE) && c == '\n') ||
-				(!(flags & GET_BINARY) && c == '\001'))
-			{
-				break;
-			}
-		}
-		else if (!errno) {
-			service->svc_flags |= SVC_finished;
-			break;
-		}
-		else if (SYSCALL_INTERRUPTED(errno)) {
-			if (timeout)
-				--iter;
-		}
-		else {
-			const int errno_save = errno;
-			if (timeout)
-				ISC_reset_timer(timeout_handler, service, (SLONG*)&sv_timr,
-								(void**)&sv_hndlr);
-			io_error("getc", errno_save, "service pipe", isc_io_read_err);
-		}
-	}
-
-	if (timeout) {
-		ISC_reset_timer(timeout_handler, service, (SLONG*)&sv_timr, (void**)&sv_hndlr);
-		if (!iter)
-			service->svc_flags |= SVC_timeout;
-	}
-
-	*return_length = buf - buffer;
-}
-
-
-static void service_put(Service* service, const SCHAR* buffer, USHORT length)
-{
-/**************************************
- *
- *	s e r v i c e _ p u t		( G E N E R I C )
- *
- **************************************
- *
- * Functional description
- *	Send output to a service.  It is assumed
- *	that we have checked out of the scheduler.
- *
- **************************************/
-
-	is_service_running(service);
-
-	while (length--) {
-		if (putc(*buffer, (FILE *) service->svc_output) != EOF)
-			buffer++;
-		else if (SYSCALL_INTERRUPTED(errno)) {
-			rewind((FILE *) service->svc_output);
-			length++;
-		}
-		else
-			io_error("putc", errno, "service pipe", isc_io_write_err);
-	}
-
-	if (fflush((FILE *) service->svc_output) == EOF)
-		io_error("fflush", errno, "service pipe", isc_io_write_err);
-}
-
-
-static void timeout_handler(void* service)
-{
-/**************************************
- *
- *	t i m e o u t _ h a n d l e r
- *
- **************************************
- *
- * Functional description
- *	Called when no input has been received
- *	through a pipe for a specificed period
- *	of time.
- *
- **************************************/
-}
-#endif // !WIN_NT
-#endif // SERVICE_THREAD
 
 
 static void cleanup(Service* service)
@@ -2683,11 +2330,6 @@ void SVC_finish(Service* service, USHORT flag)
 		}
 		else if (service->svc_flags & SVC_finished)
 		{
-			if (service->svc_service && service->svc_service->serv_in_use)
-			{
-				*(service->svc_service->serv_in_use) = false;
-			}
-
 			service->svc_flags &= ~SVC_thd_running;
 
 #ifdef WIN_NT
@@ -2719,7 +2361,7 @@ static const TEXT* error_string(const TEXT* data, USHORT length)
 		return ERR_string(data, length);
 
 	data = "(null string)";
-	return ERR_string(data, strlen(data));
+	return ERR_string(data, strlen(data)); // Maybe it's enough with the static string?
 }
 
 
@@ -2751,9 +2393,6 @@ static void conv_switches(Firebird::ClumpletReader& spb, Firebird::string& switc
 	{
 		return;
 	}
-
-	sw.insert(0, ' ');
-	sw.insert(0, SERVICE_THD_PARAM);
 
 	switches = sw;
 	return;
@@ -2812,30 +2451,31 @@ static bool process_switches(Firebird::ClumpletReader&	spb,
 		{
 		case isc_action_svc_delete_user:
 		case isc_action_svc_display_user:
-			if (!found) {
+			if (!found)
+			{
 				if (!get_action_svc_parameter(svc_action, gsec_action_in_sw_table, switches))
 				{
 					return false;
 				}
-				else {
-					if (spb.isEof() && svc_action == isc_action_svc_display_user)
-					{
-						// in case of "display all users" the spb buffer contains
-						// nothing but isc_action_svc_display_user or isc_spb_dbname
-						break;
-					}
 
-					if (spb.getClumpTag() != isc_spb_sec_username &&
-						spb.getClumpTag() != isc_spb_dbname)
-					{
-						// unexpected item in service parameter block, expected @1
-						ERR_post(isc_unexp_spb_form, isc_arg_string,
-								 error_string(SPB_SEC_USERNAME,
-												strlen(SPB_SEC_USERNAME)),
-								 0);
-					}
-					found = true;
+				if (spb.isEof() && svc_action == isc_action_svc_display_user)
+				{
+					// in case of "display all users" the spb buffer contains
+					// nothing but isc_action_svc_display_user or isc_spb_dbname
+					break;
 				}
+
+				if (spb.getClumpTag() != isc_spb_sec_username &&
+					spb.getClumpTag() != isc_spb_dbname)
+				{
+					// unexpected item in service parameter block, expected @1
+					ERR_post(isc_unexp_spb_form, isc_arg_string,
+							 error_string(SPB_SEC_USERNAME,
+											strlen(SPB_SEC_USERNAME)),
+							 0);
+				}
+
+				found = true;
 			}
 
 			switch (spb.getClumpTag()) 
@@ -2853,27 +2493,26 @@ static bool process_switches(Firebird::ClumpletReader&	spb,
 				
 			default:
 				return false;
-				break;
 			}
 			break;
 
 		case isc_action_svc_add_user:
 		case isc_action_svc_modify_user:
-			if (!found) {
+			if (!found)
+			{
 				if (!get_action_svc_parameter(svc_action, gsec_action_in_sw_table, switches))
 				{
 					return false;
 				}
-				else {
-					if (spb.getClumpTag() != isc_spb_sec_username) {
-						// unexpected item in service parameter block, expected @1
-						ERR_post(isc_unexp_spb_form, isc_arg_string,
-								 error_string(SPB_SEC_USERNAME,
-												strlen(SPB_SEC_USERNAME)),
-								 0);
-					}
-					found = true;
+
+				if (spb.getClumpTag() != isc_spb_sec_username) {
+					// unexpected item in service parameter block, expected @1
+					ERR_post(isc_unexp_spb_form, isc_arg_string,
+							 error_string(SPB_SEC_USERNAME,
+											strlen(SPB_SEC_USERNAME)),
+							 0);
 				}
+				found = true;
 			}
 
 			switch (spb.getClumpTag()) 
@@ -2905,7 +2544,6 @@ static bool process_switches(Firebird::ClumpletReader&	spb,
 
 			default:
 				return false;
-				break;
 			}
 			break;
 
@@ -2928,7 +2566,6 @@ static bool process_switches(Firebird::ClumpletReader&	spb,
 
 			default:
 				return false;
-				break;
 			}
 			break;
 
@@ -2977,7 +2614,6 @@ static bool process_switches(Firebird::ClumpletReader&	spb,
 				break;
 			default:
 				return false;
-				break;
 			}
 			break;
 
@@ -3018,12 +2654,10 @@ static bool process_switches(Firebird::ClumpletReader&	spb,
 				break;
 			default:
 				return false;
-				break;
 			}
 			break;
 		default:
 			return false;
-			break;
 		}
 		
 		spb.moveNext();

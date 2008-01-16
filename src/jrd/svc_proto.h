@@ -24,7 +24,7 @@
 #ifndef JRD_SVC_PROTO_H
 #define JRD_SVC_PROTO_H
 
-#include "../jrd/thd.h"
+#include "../jrd/ThreadStart.h"
 
 namespace Jrd {
 	class Service;
@@ -34,7 +34,6 @@ namespace Jrd {
 extern "C" {
 Jrd::Service* SVC_attach(USHORT, const TEXT*, USHORT, const SCHAR*);
 void   SVC_detach(Jrd::Service*);
-void   SVC_fprintf(Jrd::Service*, const SCHAR*, ...);
 void   SVC_putc(Jrd::Service*, const UCHAR);
 void   SVC_query(Jrd::Service*, USHORT, const SCHAR*, USHORT, const SCHAR*,
 	USHORT, SCHAR*);
@@ -43,7 +42,6 @@ ISC_STATUS SVC_query2(Jrd::Service*, Jrd::thread_db*, USHORT, const SCHAR*,
 void*  SVC_start(Jrd::Service*, USHORT, const SCHAR*);
 void   SVC_finish(Jrd::Service*, USHORT);
 THREAD_ENTRY_DECLARE SVC_read_fb_log(THREAD_ENTRY_PARAM);
-int SVC_output(Jrd::Service*, const UCHAR*);
 
 #ifdef SERVER_SHUTDOWN
 typedef void (*shutdown_fct_t) (ULONG);
