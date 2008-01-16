@@ -34,13 +34,6 @@ static int full_debug = 0;
 #include "../jrd/intl.c"
 
 
-#ifdef VMS
-char *defaults[] = {
-	"<null>",
-	"ask", "ask", "ask", "ask", "ask", "ask", "ask"
-};
-#endif
-
 /*
 void try_fc(char* c, FUN_PTR f)
 {
@@ -60,16 +53,11 @@ void my_err()
 
 int main(int argc, char** argv)
 {
-#ifdef VMS
-	char** vector = defaults;
-	argc = FB_NELEM(defaults);
-#else
 	if (argc <= 1) {
 		printf("usage: dtest Intl_module_name\n");
 		return (1);
 	}
 	char** vector = argv;
-#endif
 
 	struct texttype this_textobj;
 	for (int i = 1; i < argc; i++) {

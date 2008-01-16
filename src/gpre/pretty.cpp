@@ -632,6 +632,7 @@ static int print_dyn_verb( CTL control, SSHORT level)
 //	case isc_dyn_log_file_raw:
 //	case isc_dyn_log_file_overflow:
 	case isc_dyn_single_validation:
+	case isc_dyn_del_computed:
 	case isc_dyn_del_default:
 	case isc_dyn_del_validation:
 	case isc_dyn_idx_statistic:

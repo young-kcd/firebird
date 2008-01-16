@@ -131,18 +131,6 @@ static bool global_first_flag = false;
 
 const int INDENT = 3;
 
-#ifdef VMS
-const char* const SHORT_DCL		= "gds__short";
-const char* const LONG_DCL		= "integer";
-const char* const POINTER_DCL		= "gds__ptr_type";
-const char* const PACKED_ARRAY	= "packed array";
-const char* const OPEN_BRACKET	= "(";
-const char* const CLOSE_BRACKET	= ")";
-const char* const REF_PAR			= "%REF ";
-const char* const SIZEOF			= "size";
-const char* const STATIC_STRING	= "[STATIC]";
-const char* const ISC_BADDRESS	= "ISC_BADDRESS";
-#else
 const char* const SHORT_DCL		= "integer16";
 const char* const LONG_DCL		= "integer32";
 const char* const POINTER_DCL		= "UNIV_PTR";
@@ -153,7 +141,6 @@ const char* const REF_PAR			= "";
 const char* const SIZEOF			= "sizeof";
 const char* const STATIC_STRING	= "STATIC";
 const char* const ISC_BADDRESS	= "ADDR";
-#endif
 
 const char* const FB_DP_VOLATILE		= "";
 const char* const GDS_EVENT_COUNTS	= "GDS__EVENT_COUNTS";
@@ -249,6 +236,7 @@ void PAS_action(const act* action, int column)
 	case ACT_release:
 	case ACT_rfinish:
 	case ACT_rollback:
+	case ACT_rollback_retain_context:
 	case ACT_s_fetch:
 	case ACT_s_start:
 	case ACT_select:
@@ -460,6 +448,9 @@ void PAS_action(const act* action, int column)
 		gen_finish(action, column);
 		break;
 	case ACT_rollback:
+		gen_trans(action, column);
+		break;
+	case ACT_rollback_retain_context:
 		gen_trans(action, column);
 		break;
 	case ACT_routine:
@@ -822,9 +813,6 @@ static void gen_blob_close( const act* action, USHORT column)
 static void gen_blob_end(const act* action, USHORT column)
 {
 	const blb* blob = (blb*) action->act_object;
-#ifdef VMS
-	gen_get_segment(action, column + INDENT);
-#endif
 	printa(column + INDENT, "end;");
 	if (action->act_error)
 		printa(column, "GDS__CLOSE_BLOB (gds__status2, gds__%d);",
@@ -850,18 +838,11 @@ static void gen_blob_for( const act* action, USHORT column)
 	gen_blob_open(action, column);
 	if (action->act_error)
 		printa(column, "if (gds__status[2] = 0) then begin");
-#ifdef VMS
-	gen_get_segment(action, column + INDENT);
-	printa(column + INDENT,
-		   "while ((gds__status[2] = 0) or (gds__status[2] = gds__segment)) do");
-	printa(column + INDENT, "begin");
-#else
 	printa(column, "while (true) do begin");
 	gen_get_segment(action, column + INDENT);
 	printa(column + INDENT,
 		   "if ((gds__status[2] <> 0) and (gds__status[2] <> gds__segment)) then");
 	printa(column + 2 * INDENT, "exit;");
-#endif
 }
 
 
@@ -1192,11 +1173,7 @@ static void gen_database( const act* action, int column)
 	global_first_flag = true;
 
 	fprintf(gpreGlob.out_file, "\n(**** GPRE Preprocessor Definitions ****)\n");
-#ifdef VMS
-	fprintf(gpreGlob.out_file, "%%include 'firebird:[syslib]gds.pas'\n");
-#else
 	fprintf(gpreGlob.out_file, "%%include '/firebird/include/gds.ins.pas';\n");
-#endif
 
 	indent = column + INDENT;
 	bool flag = true;
@@ -1292,15 +1269,9 @@ static void gen_database( const act* action, int column)
 			}
 	}
 
-#ifdef VMS
-	if (array_flag)
-		printa(indent,
-			   "gds__array_length\t: integer;\t\t\t(* slice return value *)");
-#else
 	if (array_flag)
 		printa(indent,
 			   "gds__array_length\t: integer32;\t\t\t(* slice return value *)");
-#endif
 
 	printa(indent,
 		   "gds__null\t\t: ^gds__status_vector := nil;\t(* null status vector *)");
@@ -1308,50 +1279,6 @@ static void gen_database( const act* action, int column)
 		   "gds__blob_null\t: gds__quad := %s0,0%s;\t\t(* null blob id *)",
 		   OPEN_BRACKET, CLOSE_BRACKET);
 
-#ifdef VMS
-	if (all_static) {
-		printa(indent,
-			   "gds__trans\t\t: %s gds__handle := nil;\t\t(* default transaction *)",
-			   STATIC_STRING);
-		printa(indent,
-			   "gds__status\t\t: %s gds__status_vector;\t\t(* status vector *)",
-			   STATIC_STRING);
-		printa(indent,
-			   "gds__status2\t\t: %s gds__status_vector;\t\t(* status vector *)",
-			   STATIC_STRING);
-		printa(indent,
-			   "SQLCODE\t: %s integer := 0;\t\t\t(* SQL status code *)",
-			   STATIC_STRING);
-	}
-	else if (all_extern) {
-		printa(indent,
-			   "gds__trans\t\t: [COMMON (gds__trans)] gds__handle;\t\t(* default transaction *)");
-		printa(indent,
-			   "gds__status\t\t: [COMMON (gds__status)] gds__status_vector;\t\t(* status vector *)");
-		printa(indent,
-			   "gds__status2\t\t: [COMMON (gds__status2)] gds__status_vector;\t\t(* status vector *)");
-		printa(indent,
-			   "SQLCODE\t: [COMMON (SQLCODE)] integer;\t\t\t(* SQL status code *)");
-	}
-	else {
-		printa(indent,
-			   "gds__trans\t\t: [COMMON (gds__trans)] gds__handle := nil;\t\t(* default transaction *)");
-		printa(indent,
-			   "gds__status\t\t: [COMMON (gds__status)] gds__status_vector;\t\t(* status vector *)");
-		printa(indent,
-			   "gds__status2\t\t: [COMMON (gds__status2)] gds__status_vector;\t\t(* status vector *)");
-		printa(indent,
-			   "SQLCODE\t: [COMMON (SQLCODE)] integer := 0;\t\t\t(* SQL status code *)");
-	}
-	printa(indent,
-		   "gds__window\t\t: [COMMON (gds__window)] gds__handle := nil;\t\t(* window handle *)");
-	printa(indent,
-		   "gds__width\t\t: [COMMON (gds__width)] %s := 80;\t(* window width *)",
-		   SHORT_DCL);
-	printa(indent,
-		   "gds__height\t\t: [COMMON (gds__height)] %s := 24;\t(* window height *)",
-		   SHORT_DCL);
-#else
 	if (all_static) {
 		printa(indent,
 			   "gds__trans\t\t: %s gds__handle := nil;\t\t(* default transaction *)",
@@ -1390,21 +1317,13 @@ static void gen_database( const act* action, int column)
 	printa(column, "\nvar (gds__height)");
 	printa(indent, "gds__height\t\t: %s := 24;\t(* window height *)",
 		   SHORT_DCL);
-#endif
 
 	for (db = gpreGlob.isc_databases; db; db = db->dbb_next) {
 		if (db->dbb_scope != DBB_STATIC) {
-#ifdef VMS
-			printa(indent,
-				   "%s\t: [COMMON (%s)] gds__handle%s;	(* database handle *)",
-				   db->dbb_name->sym_string, db->dbb_name->sym_string,
-				   (db->dbb_scope == DBB_EXTERN) ? "" : "\t:= nil");
-#else
 			printa(column, "\nvar (%s)", db->dbb_name->sym_string);
 			printa(indent, "%s\t: gds__handle%s;	(* database handle *)",
 				   db->dbb_name->sym_string,
 				   (db->dbb_scope == DBB_EXTERN) ? "" : "\t:= nil");
-#endif
 		}
 	}
 
@@ -2051,9 +1970,9 @@ static void gen_fetch( const act* action, int column)
 	request = action->act_request;
 
 #ifdef SCROLLABLE_CURSORS
-	gpre_port*		port;
-	const ref*		reference;
-	VAL		value;
+	gpre_port*	port;
+	ref*		reference;
+	VAL			value;
 	const TEXT*	direction;
 	const TEXT*	offset;
 
@@ -3175,38 +3094,17 @@ static void gen_t_start( const act* action, int column)
 			}
 		}
 
-#ifndef VMS
 		printa(column, "gds__teb[%d].tpb_len := %d;", count, tpb_val->tpb_length);
 		printa(column, "gds__teb[%d].tpb_ptr := ADDR(gds__tpb_%d);",
 			   count, tpb_val->tpb_ident);
 		printa(column, "gds__teb[%d].dbb_ptr := ADDR(%s);",
 			   count, db->dbb_name->sym_string);
-#endif
 	}
 
-#ifdef VMS
-//  Now build the start_transaction.  Use lots of %REF and %IMMED to
-//  convince the PASCAL compiler not to hassle us about the argument list. 
-
-	printa(column, "GDS__START_TRANSACTION (%s, %%REF %s, %%IMMED %d",
-		   status_vector(action),
-		   (trans->tra_handle) ? trans->tra_handle : "gds__trans",
-		   trans->tra_db_count);
-
-	for (tpb_val = trans->tra_tpb; tpb_val; tpb_val = tpb_val->tpb_tra_next) {
-		putc(',', gpreGlob.out_file);
-		align(column + INDENT);
-		fprintf(gpreGlob.out_file, "%%REF %s, %%IMMED %d, %%REF gds__tpb_%d",
-				   tpb_val->tpb_database->dbb_name->sym_string,
-				   tpb_val->tpb_length, tpb_val->tpb_ident);
-	}
-	fprintf(gpreGlob.out_file, ")");
-#else
 	printa(column, "GDS__START_MULTIPLE (%s, %s, %d, gds__teb);",
 		   status_vector(action),
 		   (trans->tra_handle) ? trans->tra_handle : "gds__trans",
 		   trans->tra_db_count);
-#endif
 
 	set_sqlcode(action, column);
 }
@@ -3269,12 +3167,19 @@ static void gen_trans( const act* action, int column)
 
 	align(column);
 
-	if (action->act_type == ACT_commit_retain_context)
+	if (action->act_type == ACT_commit_retain_context) {
 		fprintf(gpreGlob.out_file, "GDS__COMMIT_RETAINING (%s, %s);",
 				   status_vector(action),
 				   (action->act_object) ?
 				   		(const TEXT*) action->act_object : "gds__trans");
-	else
+	}
+	else if (action->act_type == ACT_rollback_retain_context) {
+		fprintf(gpreGlob.out_file, "GDS__ROLLBACK_RETAINING (%s, %s);",
+				   status_vector(action),
+				   (action->act_object) ?
+				   		(const TEXT*) action->act_object : "gds__trans");
+	}
+	else {
 		fprintf(gpreGlob.out_file, "GDS__%s_TRANSACTION (%s, %s);",
 				(action->act_type == ACT_commit) ?
 					"COMMIT" : (action->act_type == ACT_rollback) ?
@@ -3282,6 +3187,7 @@ static void gen_trans( const act* action, int column)
 				status_vector(action),
 				(action->act_object) ?
 				   		(const TEXT*) action->act_object : "gds__trans");
+	}
 
 	set_sqlcode(action, column);
 }
@@ -3567,24 +3473,21 @@ static void make_ready(
 
 	align(column);
 	if (filename)
-#ifdef VMS
-		fprintf(gpreGlob.out_file,
-				   "GDS__ATTACH_DATABASE_d (%s, %%STDESCR %s, %s, %s, %s);",
-				   vector, filename, db->dbb_name->sym_string,
-				   (request ? s1 : "0"), (request ? s2 : "0"));
-#else
+	{
 		fprintf(gpreGlob.out_file,
 				   "GDS__ATTACH_DATABASE (%s, %s (%s), %s, %s, %s, %s);",
 				   vector, SIZEOF, filename, filename,
 				   db->dbb_name->sym_string, (request ? s1 : "0"),
 				   (request ? s2 : "0"));
-#endif
+	}
 	else
+	{
 		fprintf(gpreGlob.out_file,
 				   "GDS__ATTACH_DATABASE (%s, %d, '%s', %s, %s, %s);", vector,
 				   strlen(db->dbb_filename), db->dbb_filename,
 				   db->dbb_name->sym_string, (request ? s1 : "0"),
 				   (request ? s2 : "0"));
+	}
 }
 
 
@@ -3689,32 +3592,14 @@ static void t_start_auto( const act* action, const gpre_req* request,
 		}
 
 		count++;
-#ifndef VMS
 		printa(column, "gds__teb[%d].tpb_len:= 0;", count);
 		printa(column, "gds__teb[%d].tpb_ptr := ADDR(gds__null);", count);
 		printa(column, "gds__teb[%d].dbb_ptr := ADDR(%s);", count,
 			   db->dbb_name->sym_string);
-#endif
 	}
 
-#ifdef VMS
-	column += INDENT;
-	printa(column, "GDS__START_TRANSACTION (%s, %%REF %s, %%IMMED %d",
-		   vector, request_trans(action, request), count);
-
-	for (db = gpreGlob.isc_databases; db; db = db->dbb_next) {
-		putc(',', gpreGlob.out_file);
-		align(column + INDENT);
-		fprintf(gpreGlob.out_file, "%%REF %s, %%IMMED 0, %%REF 0",
-				   db->dbb_name->sym_string);
-	}
-	fprintf(gpreGlob.out_file, ");");
-	column -= INDENT;
-
-#else
 	printa(column, "GDS__START_MULTIPLE (%s, %s, %d, gds__teb);",
 		   vector, request_trans(action, request), count);
-#endif
 
 	if (gpreGlob.sw_auto && request)
 		column -= INDENT;
@@ -3722,4 +3607,3 @@ static void t_start_auto( const act* action, const gpre_req* request,
 	set_sqlcode(action, column);
 	ends(column);
 }
-

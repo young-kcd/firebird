@@ -105,6 +105,7 @@
 #define isc_dpb_no_db_triggers            72
 #define isc_dpb_trusted_auth			  73
 #define isc_dpb_process_name              74
+#define isc_dpb_trusted_role			  75
 
 /**************************************************/
 /* clumplet tags used inside isc_dpb_address_path */
@@ -255,6 +256,7 @@
 #define isc_spb_process_id                110
 #define isc_spb_trusted_auth			  111
 #define isc_spb_process_name              112
+#define isc_spb_trusted_role              113
 
 
 #define isc_spb_connect_timeout           isc_dpb_connect_timeout
@@ -621,6 +623,7 @@
 #define isc_dyn_del_validation            198
 #define isc_dyn_single_validation         199
 #define isc_dyn_fld_character_set         203
+#define isc_dyn_del_computed              242
 
 /***********************************/
 /* Local field specific attributes */
@@ -804,7 +807,7 @@
 #define isc_dyn_mod_prc_parameter         230
 
 /***********************/
-/* collation values     */
+/* collation values    */
 /***********************/
 #define isc_dyn_def_collation						231
 #define isc_dyn_coll_for_charset					232
@@ -815,11 +818,33 @@
 #define isc_dyn_coll_specific_attributes			236
 #define isc_dyn_del_collation						237
 
+/******************************************/
+/* Mapping OS security objects to DB ones */
+/******************************************/
+#define isc_dyn_mapping								243
+#define isc_dyn_map_role							1
+#define isc_dyn_unmap_role							2
+#define isc_dyn_map_user							3
+#define isc_dyn_unmap_user							4
+
+/********************/
+/* Users control    */
+/********************/
+#define isc_dyn_user								244
+#define isc_dyn_user_add							1
+#define isc_dyn_user_mod							2
+#define isc_dyn_user_del							3
+#define isc_dyn_user_passwd							4
+#define isc_dyn_user_first							5
+#define isc_dyn_user_middle							6
+#define isc_dyn_user_last							7
+#define isc_user_end								0
+
 /****************************/
 /* Last $dyn value assigned */
 /****************************/
 
-#define isc_dyn_last_dyn_value            242
+#define isc_dyn_last_dyn_value            245
 
 /******************************************/
 /* Array slice description language (SDL) */

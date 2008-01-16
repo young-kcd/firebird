@@ -1000,16 +1000,12 @@ TEXT* PAR_native_value(bool array_ref,
 	}
 
 	int length = string - buffer;
-	SCHAR* const s2 = string = (SCHAR *) MSC_alloc(length + 1);
-	const SCHAR* s1 = buffer;
+	string = (SCHAR *) MSC_alloc(length + 1);
 
-	if (length) {
-		do {
-			*string++ = *s1++;
-		} while (--length);
-	}
+	if (length)
+		memcpy(string, buffer, length); // MSC_alloc filled the string with zeroes.
 
-	return s2;
+	return string;
 }
 
 
@@ -1233,7 +1229,8 @@ static bool match_parentheses()
 {
 	USHORT paren_count = 0;
 
-	if (MSC_match(KW_LEFT_PAREN)) {
+	if (MSC_match(KW_LEFT_PAREN))
+	{
 		paren_count++;
 		while (paren_count) {
 			if (MSC_match(KW_RIGHT_PAREN))
@@ -1245,8 +1242,8 @@ static bool match_parentheses()
 		}
 		return true;
 	}
-	else
-		return false;
+
+	return false;
 }
 
 
@@ -2914,26 +2911,29 @@ static act* par_start_transaction()
 			trans->tra_flags |= TRA_ro;
 			continue;
 		}
-		else if (MSC_match(KW_READ_WRITE))
+		if (MSC_match(KW_READ_WRITE))
 			continue;
 
 		if (MSC_match(KW_CONSISTENCY)) {
 			trans->tra_flags |= TRA_con;
 			continue;
 		}
-// ***    else if (MSC_match (KW_READ_COMMITTED))
+
+// ***    if (MSC_match (KW_READ_COMMITTED))
 // { 
 // trans->tra_flags |= TRA_read_committed;
 // continue;
 // } **
-		else if (MSC_match(KW_CONCURRENCY))
+
+		if (MSC_match(KW_CONCURRENCY))
 			continue;
 
 		if (MSC_match(KW_NO_WAIT)) {
 			trans->tra_flags |= TRA_nw;
 			continue;
 		}
-		else if (MSC_match(KW_WAIT))
+
+		if (MSC_match(KW_WAIT))
 			continue;
 
 		if (MSC_match(KW_AUTOCOMMIT)) {
@@ -2943,8 +2943,8 @@ static act* par_start_transaction()
 
 		if (gpreGlob.sw_language == lang_cobol || gpreGlob.sw_language == lang_fortran)
 			break;
-		else
-			CPR_s_error("transaction keyword");
+
+		CPR_s_error("transaction keyword");
 	}
 
 //  send out for the list of reserved relations 
@@ -3120,7 +3120,7 @@ static act* par_variable()
 	if (!is_null)
 		return action;
 
-//  We've got a explicit null flag referernce rather than a field
+//  We've got a explicit null flag reference rather than a field
 //  reference.  If there's already a null reference for the field,
 //  use it; otherwise make one up. 
 

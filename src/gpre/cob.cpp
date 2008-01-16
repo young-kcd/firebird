@@ -58,78 +58,10 @@
 #include <string.h>
 #endif
 
-//  vms requires all caps in function call names; hp requires lc 
-
-#ifdef VMS
-#define GIVING_SUPPORTED
-static const char* const COMMIT			= "COMMIT";
-static const char* const ROLLBACK		= "ROLLBACK";
-static const char* const OMITTED 		= "OMITTED";
-static const char* const RAW_BLR_TEMPLATE = "03  %s%d%s%d PIC S9(9) USAGE COMP VALUE IS %"SLONGFORMAT".";
-static const char* const RAW_TPB_TEMPLATE = "03  %s%d%s%d PIC S9(9) USAGE COMP VALUE IS %"SLONGFORMAT".";
-static const char* const BY_VALUE		= "BY VALUE ";
-static const char* const END_VALUE		= "";
-static const char* const BY_REF			= "BY REFERENCE ";
-static const char* const BY_DESC			= "BY DESCRIPTOR ";
-static const char* const ISC_BLOB		= "ISC_%s_BLOB";
-static const char* const CLOSE			= "CLOSE";
-static const char* const CANCEL			= "CANCEL";
-static const char* const COMP_VALUE		= "COMP";
-static const char* const ISC_CANCEL_BLOB				= "ISC_CANCEL_BLOB";
-static const char* const ISC_COMPILE_REQUEST			= "ISC_COMPILE_REQUEST";
-static const char* const ISC_CREATE_DATABASE			= "ISC_CREATE_DATABASE";
-static const char* const ISC_DDL						= "ISC_DDL";
-static const char* const ISC_COMMIT_TRANSACTION		= "ISC_COMMIT_TRANSACTION";
-static const char* const ISC_ROLLBACK_TRANSACTION	= "ISC_ROLLBACK_TRANSACTION";
-static const char* const ISC_DROP_DATABASE 			= "ISC_DROP_DATABASE";
-static const char* const ISC_CLOSE 					= "ISC_EMBED_DSQL_CLOSE";
-static const char* const ISC_DECLARE 		= "ISC_EMBED_DSQL_DECLARE";
-static const char* const ISC_DESCRIBE 		= "ISC_EMBED_DSQL_DESCRIBE";
-static const char* const ISC_DESCRIBE_BIND	= "ISC_EMBED_DSQL_DESCRIBE_BIND";
-static const char* const ISC_EXECUTE 		= "ISC_EMBED_DSQL_EXECUTE";
-static const char* const ISC_EXECUTE2 		= "ISC_EMBED_DSQL_EXECUTE2";
-static const char* const ISC_EXECUTE_IMMEDIATE	= "ISC_EMBED_DSQL_EXECUTE_IMMED_D";
-static const char* const ISC_EXECUTE_IMMEDIATE2	= "ISC_EMBED_DSQL_EXECUTE_IMMED2_D";
-static const char* const ISC_FETCH 			= "ISC_EMBED_DSQL_FETCH";
-static const char* const ISC_INSERT 			= "ISC_EMBED_DSQL_INSERT";
-static const char* const ISC_OPEN			= "ISC_EMBED_DSQL_OPEN";
-static const char* const ISC_OPEN2			= "ISC_EMBED_DSQL_OPEN2";
-static const char* const ISC_PREPARE	 		= "ISC_EMBED_DSQL_PREPARE_D";
-static const char* const ISC_DSQL_ALLOCATE	= "ISC_DSQL_ALLOC_STATEMENT2";
-static const char* const ISC_DSQL_EXECUTE	= "ISC_DSQL_EXECUTE_M";
-static const char* const ISC_DSQL_FREE		= "ISC_DSQL_FREE_STATEMENT";
-static const char* const ISC_DSQL_SET_CURSOR	= "ISC_DSQL_SET_CURSOR_NAME";
-static const char* const ISC_SQLCODE_CALL	= "ISC_SQLCODE";
-static const char* const ISC_DETACH_DATABASE = "ISC_DETACH_DATABASE";
-static const char* const ISC_GET_SLICE 		= "ISC_GET_SLICE";
-static const char* const ISC_PUT_SLICE 		= "ISC_PUT_SLICE";
-static const char* const ISC_GET_SEGMENT 	= "ISC_GET_SEGMENT";
-static const char* const ISC_PUT_SEGMENT 	= "ISC_PUT_SEGMENT";
-static const char* const ISC_RECEIVE 		= "ISC_RECEIVE";
-static const char* const ISC_RELEASE_REQUEST	= "ISC_RELEASE_REQUEST";
-static const char* const ISC_UNWIND_REQUEST 	= "ISC_UNWIND_REQUEST";
-static const char* const ISC_SEND 			= "ISC_SEND";
-static const char* const ISC_START_TRANSACTION 	= "ISC_START_TRANSACTION";
-static const char* const ISC_START_AND_SEND 	= "ISC_START_AND_SEND";
-static const char* const ISC_START_REQUEST 	= "ISC_START_REQUEST";
-static const char* const ISC_TRANSACT_REQUEST 	= "ISC_TRANSACT_REQUEST";
-static const char* const ISC_COMMIT_RETAINING 	= "ISC_COMMIT_RETAINING";
-static const char* const ISC_ATTACH_DATABASE_D 	= "ISC_ATTACH_DATABASE_D";
-static const char* const ISC_ATTACH_DATABASE 	= "ISC_ATTACH_DATABASE";
-static const char* const ISC_MODIFY_DPB 			= "ISC_MODIFY_DPB";
-static const char* const ISC_FREE				= "ISC_FREE";
-static const char* const ISC_PREPARE_TRANSACTION	= "ISC_PREPARE_TRANSACTION";
-static const char* const ISC_EVENT_BLOCK		= "ISC_EVENT_BLOCK_A";
-static const char* const ISC_EVENT_COUNTS	= "ISC_EVENT_COUNTS";
-static const char* const ISC_EVENT_WAIT		= "ISC_EVENT_WAIT";
-static const char* const ISC_BADDRESS		= "ISC_BADDRESS";
-
-#else // VMS
-
 static const char* const COMMIT			= "commit";
 static const char* const ROLLBACK		= "rollback";
 
-#if defined AIX || defined AIX_PPC || defined SOLARIS || defined HP10 || defined HP11 || defined SINIXZ || defined LINUX || defined DARWIN || defined FREEBSD || defined NETBSD || defined WIN_NT
+#if defined AIX || defined AIX_PPC || defined SOLARIS || defined HP10 || defined HP11 || defined LINUX || defined DARWIN || defined FREEBSD || defined NETBSD || defined WIN_NT
 static const char* const OMITTED 		= "BY VALUE 0";
 static const char* const BY_VALUE		= "BY VALUE ";
 static const char* const END_VALUE		= "";
@@ -185,6 +117,7 @@ static const char* const ISC_START_AND_SEND 	= "isc_start_and_send";
 static const char* const ISC_START_REQUEST 	= "isc_start_request";
 static const char* const ISC_TRANSACT_REQUEST 	= "isc_transact_request";
 static const char* const ISC_COMMIT_RETAINING 	= "isc_commit_retaining";
+static const char* const ISC_ROLLBACK_RETAINING	= "isc_rollback_retaining";
 static const char* const ISC_ATTACH_DATABASE_D 	= "isc_attach_database";
 static const char* const ISC_ATTACH_DATABASE 	= "isc_attach_database";
 static const char* const ISC_MODIFY_DPB		= "isc_modify_dpb";
@@ -206,8 +139,6 @@ static const char* const ISC_BADDRESS		= "isc_baddress";
 #else
 static const char* const ISC_BADDRESS		= "isc_baddress_s";
 #endif
-
-#endif // VMS
 
 #ifdef GIVING_SUPPORTED
 static const char* const FETCH_CALL_TEMPLATE		= "CALL \"%s\" USING %s, %s%s, %s%d%s, %s%s GIVING SQLCODE";
@@ -630,6 +561,9 @@ void COB_action(const act* action, int column)
 		gen_finish(action);
 		return;
 	case ACT_rollback:
+		gen_trans(action);
+		break;
+	case ACT_rollback_retain_context:
 		gen_trans(action);
 		break;
 	case ACT_routine:
@@ -1171,17 +1105,10 @@ static void gen_blob_for( const act* action)
 
 static void gen_blob_open( const act* action)
 {
-#ifdef VMS
-	const TEXT* pattern1 =
-		"CALL \"ISC_%IFCREATE%ELOPEN%EN_BLOB2\" USING %V1, %RF%DH%RE, %RF%RT%RE, %RF%BH%RE, %RF%FR%RE, %VF%N1%VE, %RF%I1%RE\n";
-	const TEXT* pattern2 =
-		"CALL \"ISC_%IFCREATE%ELOPEN%EN_BLOB2\" USING %V1, %RF%DH%RE, %RF%RT%RE, %RF%BH%RE, %RF%FR%RE, %VF0%VE, %VF0%VE\n";
-#else
 	const TEXT* pattern1 =
 		"CALL \"isc_%IFcreate%ELopen%EN_blob2\" USING %V1, %RF%DH%RE, %RF%RT%RE, %RF%BH%RE, %RF%FR%RE, %VF%N1%VE, %RF%I1%RE\n";
 	const TEXT* pattern2 =
 		"CALL \"isc_%IFcreate%ELopen%EN_blob2\" USING %V1, %RF%DH%RE, %RF%RT%RE, %RF%BH%RE, %RF%FR%RE, %VF0%VE, %VF0%VE\n";
-#endif
 
 	if (gpreGlob.sw_auto && (action->act_flags & ACT_sql)) {
 		t_start_auto(action->act_request, status_vector(action), action, true);
@@ -1489,14 +1416,10 @@ static void gen_create_database( const act* action)
 	}
 
 	TEXT dbname[128]; // MAXPATHLEN if VMS code is enabled.
-#ifdef VMS
-	sprintf(dbname, "\"%s\"", db->dbb_filename);
-#else
 	for (const dbb* dbisc = gpreGlob.isc_databases; dbisc; dbisc = dbisc->dbb_next)
 		if (strcmp(dbisc->dbb_filename, db->dbb_filename) == 0)
 			db->dbb_id = dbisc->dbb_id;
 	sprintf(dbname, "%s%ddb", names[isc_b_pos], db->dbb_id);
-#endif
 
 	sprintf(output_buffer,
 			"%sCALL \"%s\" USING %s, %s%d%s, %s%s, %s%s, %s, %s, %s0%s\n",
@@ -1607,12 +1530,8 @@ static void gen_cursor_open( const act* action, const gpre_req* request)
 			   request_trans(action, request));
 			   
 	TEXT s[MAX_CURSOR_SIZE];
-#ifndef VMS
 	make_name_formatted(s, "ISC-CONST-%s",
 						((open_cursor*) action->act_object)->opn_cursor);
-#else
-	make_name(s, ((open_cursor*) action->act_object)->opn_cursor);
-#endif
 	printa(names[COLUMN], true,
 		   "CALL \"%s\" USING %s, %s%s%dS, %s%s, %s0%s",
 		   ISC_DSQL_SET_CURSOR,
@@ -1666,7 +1585,6 @@ static void gen_database( const act* action)
 
 		// generate variables to hold database name strings for attach call 
 
-#ifndef VMS
 		db->dbb_id = ++count;
 		if (db->dbb_runtime) {
 			printa(names[COLUMN_0], false,
@@ -1678,7 +1596,6 @@ static void gen_database( const act* action)
 				   "01  %s%ddb PIC X(%d) VALUE IS \"%s\".", names[isc_b_pos],
 				   db->dbb_id, strlen(db->dbb_filename), db->dbb_filename);
 		}
-#endif
 
 		for (const tpb* tpb_iterator = db->dbb_tpbs;
 			 tpb_iterator;
@@ -1688,7 +1605,6 @@ static void gen_database( const act* action)
 		}
 	}
 
-#ifndef VMS
 //  loop through actions: find readys to generate vars for quoted strings 
 
 	TEXT fname[80], s1[MAX_CURSOR_SIZE];
@@ -1785,7 +1701,6 @@ static void gen_database( const act* action)
 				   names[isc_b_pos], request->req_ident, strlen(sname), sname);
 		}
 	}
-#endif
 
 	printa(names[COLUMN_0], false, "01  %s%s PIC S9(9) USAGE COMP%s.",
 		   names[isc_trans_pos],
@@ -1917,11 +1832,7 @@ static void gen_dyn_close( const act* action)
 	TEXT s[MAX_CURSOR_SIZE];
 
 	const dyn* statement = (DYN) action->act_object;
-#ifndef VMS
 	make_name_formatted(s, "ISC-CONST-%s", statement->dyn_cursor_name);
-#else
-	make_name(s, statement->dyn_cursor_name);
-#endif
 	printa(names[COLUMN], true,
 		   "CALL \"%s\" USING %s, %s%s",
 		   ISC_CLOSE, status_vector(action), BY_REF, s);
@@ -1940,13 +1851,8 @@ static void gen_dyn_declare( const act* action)
 
 	const dyn* statement = (DYN) action->act_object;
 
-#ifndef VMS
 	make_name_formatted(s1, "ISC-CONST-%s", statement->dyn_statement_name);
 	make_name_formatted(s2, "ISC-CONST-%s", statement->dyn_cursor_name);
-#else
-	make_name(s1, statement->dyn_statement_name);
-	make_name(s2, statement->dyn_cursor_name);
-#endif
 
 	printa(names[COLUMN], true,
 		   "CALL \"%s\" USING %s, %s%s, %s%s",
@@ -1967,11 +1873,7 @@ static void gen_dyn_describe(const act* action,
 
 	const dyn* statement = (DYN) action->act_object;
 
-#ifndef VMS
 	make_name_formatted(s, "ISC-CONST-%s", statement->dyn_statement_name);
-#else
-	make_name(s, statement->dyn_statement_name);
-#endif
 
 	printa(names[COLUMN], true,
 		   "CALL \"%s\" USING %s, %s%s, %s%d%s, %s%s",
@@ -2011,11 +1913,7 @@ static void gen_dyn_execute( const act* action)
 		printa(names[COLUMN], false, "IF %s NOT = 0 THEN", transaction);
 	}
 
-#ifndef VMS
 	make_name_formatted(s, "ISC-CONST-%s", statement->dyn_statement_name);
-#else
-	make_name(s, statement->dyn_statement_name);
-#endif
 
 	printa(names[COLUMN], true,
 		   (statement->dyn_sqlda2) ?
@@ -2049,11 +1947,7 @@ static void gen_dyn_fetch( const act* action)
 
 	const dyn* statement = (DYN) action->act_object;
 
-#ifndef VMS
 	make_name_formatted(s, "ISC-CONST-%s", statement->dyn_cursor_name);
-#else
-	make_name(s, statement->dyn_cursor_name);
-#endif
 
 	printa(names[COLUMN], true, FETCH_CALL_TEMPLATE,
 		   ISC_FETCH,
@@ -2096,14 +1990,10 @@ static void gen_dyn_immediate( const act* action)
 	const dbb* database = statement->dyn_database;
 
 	TEXT s[64];
-#ifndef VMS
 	const TEXT* s2 = "ISC-CONST-DYN-IMMEDL";
 	printa(names[COLUMN], true, GET_LEN_CALL_TEMPLATE,
 		   STRING_LENGTH, statement->dyn_string, s2);
 	sprintf(s, " %s%s%s,", BY_VALUE, s2, END_VALUE);
-#else
-	s[0] = 0;
-#endif
 
 	if (gpreGlob.sw_auto) {
 		t_start_auto(request, status_vector(action), action, true);
@@ -2142,11 +2032,7 @@ static void gen_dyn_insert( const act* action)
 
 	const dyn* statement = (DYN) action->act_object;
 
-#ifndef VMS
 	make_name_formatted(s, "ISC-CONST-%s", statement->dyn_cursor_name);
-#else
-	make_name(s, statement->dyn_cursor_name);
-#endif
 
 	printa(names[COLUMN], true,
 		   "CALL \"%s\" USING %s, %s%s, %s%d%s, %s%s",
@@ -2184,11 +2070,7 @@ static void gen_dyn_open( const act* action)
 		request = NULL;
 	}
 
-#ifndef VMS
 	make_name_formatted(s, "ISC-CONST-%s", statement->dyn_cursor_name);
-#else
-	make_name(s, statement->dyn_cursor_name);
-#endif
 
 	if (gpreGlob.sw_auto) {
 		t_start_auto(request, status_vector(action), action, true);
@@ -2241,17 +2123,12 @@ static void gen_dyn_prepare( const act* action)
 	}
 
 	TEXT s[MAX_CURSOR_SIZE], s3[80];
-#ifndef VMS
 	make_name_formatted(s, "ISC-CONST-%s", statement->dyn_statement_name);
 	TEXT s2[MAX_CURSOR_SIZE + 1];
 	sprintf(s2, "%sL", s);
 	printa(names[COLUMN], true, GET_LEN_CALL_TEMPLATE,
 		   STRING_LENGTH, statement->dyn_string, s2);
 	fb_utils::snprintf(s3, sizeof(s3), " %s%s%s,", BY_VALUE, s2, END_VALUE);
-#else
-	make_name(s, statement->dyn_statement_name);
-	s3[0] = 0;
-#endif
 
 	if (gpreGlob.sw_auto) {
 		t_start_auto(request, status_vector(action), action, true);
@@ -2959,21 +2836,16 @@ static void gen_procedure( const act* action)
 	args.pat_port = in_port;
 	args.pat_port2 = out_port;
 	const TEXT* pattern;
-#ifndef VMS
 	if (in_port && in_port->por_length)
+	{
 		pattern =
 			"CALL \"isc_transact_request\" USING %V1, %RF%DH%RE, %RF%RT%RE, %VF%RS%VE, %RF%RI%RE, %VF%PL%VE, %RF%PI%RE, %VF%QL%VE, %RF%QI%RE\n";
+	}
 	else
+	{
 		pattern =
 			"CALL \"isc_transact_request\" USING %V1, %RF%DH%RE, %RF%RT%RE, %VF%RS%VE, %RI, %VF0%VE, 0, %VF%QL%VE, %RF%QI%RE\n";
-#else
-	if (in_port && in_port->por_length)
-		pattern =
-			"CALL \"isc_transact_request\" USING %V1, %RF%DH%RE, %RF%RT%RE, %VF%RS%VE, %RF%RI%RE, %VF%PL%VE, %RF%PI%RE, %VF%QL%VE, %RF%QI%RE\n";
-	else
-		pattern =
-			"CALL \"isc_transact_request\" USING %V1, %RF%DH%RE, %RF%RT%RE, %VF%RS%VE, %RI, %VF0%VE, 0, %VF%QL%VE, %RF%QI%RE\n";
-#endif
+	}
 
 //  Get database attach and transaction started 
 
@@ -3046,13 +2918,8 @@ static void gen_raw(
 			   enum req_t request_type, int request_length, int ident)
 {
 	union {
-#ifdef VMS
-		SCHAR bytewise_blr[4];
-		SLONG longword_blr;
-#else
 		UCHAR bytewise_blr[4];
 		ULONG longword_blr;
-#endif
 	} blr_hunk;
 
 	int length = 1;
@@ -3116,17 +2983,15 @@ static void gen_ready( const act* action)
 			filename = db->dbb_runtime;
 			if (filename) {
 				namelength = strlen(filename);
-#ifndef VMS
 				sprintf(dbname, "%s%ddb", names[isc_b_pos], dbisc->dbb_id);
 				filename = dbname;
-#endif
 			}
 			else
 				namelength = 0;
 		}
 		else
 			namelength = strlen(filename);
-#ifndef VMS
+
 		/* string literal or user defined variable? */
 
 		if (ready->rdy_id) {
@@ -3136,7 +3001,7 @@ static void gen_ready( const act* action)
 		}
 		else
 			namelength = 0;
-#endif
+
 		make_ready(db, filename, vector, ready->rdy_request, namelength);
 		set_sqlcode(action);
 	}
@@ -3709,12 +3574,10 @@ static void gen_t_start( const act* action)
 				printa(names[COLUMN], false, "IF %s = 0 THEN",
 					   db->dbb_name->sym_string);
 				const USHORT namelength = filename ? strlen(filename) : 0;
-#ifndef VMS
 				if (filename) {
 					sprintf(dbname, "%s%ddb", names[isc_b_pos], db->dbb_id);
 					filename = dbname;
 				}
-#endif
 				make_ready(db, filename, status_vector(action), 0,
 						   namelength);
 				set_sqlcode(action);
@@ -3752,11 +3615,7 @@ static void gen_t_start( const act* action)
 static void gen_tpb(const tpb* tpb_buffer)
 {
 	union {
-#ifdef VMS
-		SCHAR bytewise_tpb[4];
-#else
 		UCHAR bytewise_tpb[4];
-#endif
 		SLONG longword_tpb;
 	} tpb_hunk;
 
@@ -3802,14 +3661,23 @@ static void gen_tpb(const tpb* tpb_buffer)
 static void gen_trans( const act* action)
 {
 
-	if (action->act_type == ACT_commit_retain_context)
+	if (action->act_type == ACT_commit_retain_context) {
 		printa(names[COLUMN], true, "CALL \"%s\" USING %s, %s%s",
 			   ISC_COMMIT_RETAINING,
 			   status_vector(action),
 			   BY_REF,
 			   (action->act_object) ?
 			   		(const TEXT*) (action->act_object) : names[isc_trans_pos]);
-	else
+	}
+	else if (action->act_type == ACT_rollback_retain_context) {
+		printa(names[COLUMN], true, "CALL \"%s\" USING %s, %s%s",
+			   ISC_ROLLBACK_RETAINING,
+			   status_vector(action),
+			   BY_REF,
+			   (action->act_object) ?
+			   		(const TEXT*) (action->act_object) : names[isc_trans_pos]);
+	}
+	else {
 		printa(names[COLUMN], true, "CALL \"%s\" USING %s, %s%s",
 			   (action->act_type == ACT_commit) ?
 			   	ISC_COMMIT_TRANSACTION : (action->act_type == ACT_rollback) ?
@@ -3817,6 +3685,8 @@ static void gen_trans( const act* action)
 			   status_vector(action), BY_REF,
 			   (action->act_object) ?
 			   		(const TEXT*) (action->act_object) : names[isc_trans_pos]);
+	}
+
 	set_sqlcode(action);
 }
 
@@ -4029,12 +3899,7 @@ static void make_array_declaration( REF reference)
 
 static void make_name(TEXT* const string, const gpre_sym* symbol)
 {
-
-#ifndef VMS
 	make_name_formatted(string, "%s", symbol);
-#else
-	fb_utils::snprintf(string, MAX_CURSOR_SIZE, "'%s '", symbol->sym_string);
-#endif
 }
 
 
@@ -4252,32 +4117,6 @@ static void make_ready(
 		}
 	}
 
-#ifdef VMS
-
-	if (filename) {
-		sprintf(output_buffer,
-				"%sCALL \"%s\" USING %s, %s%s, %s%s, %s, %s\n",
-				names[COLUMN],
-				ISC_ATTACH_DATABASE_D,
-				vector,
-				BY_DESC, filename,
-				BY_REF, db->dbb_name->sym_string,
-				request ? s1Tmp : OMITTED, request ? s2Tmp : OMITTED);
-	}
-	else {
-		sprintf(output_buffer,
-				"%sCALL \"%s\" USING %s, %s%d%s, %s \"%s\", %s%s, %s, %s\n",
-				names[COLUMN],
-				ISC_ATTACH_DATABASE,
-				vector,
-				BY_VALUE, strlen(db->dbb_filename), END_VALUE,
-				BY_REF, db->dbb_filename,
-				BY_REF, db->dbb_name->sym_string,
-				request ? s1Tmp : OMITTED, request ? s2Tmp : OMITTED);
-	}
-
-#else
-
 	TEXT dbname[128];
 	if (!filename) {
 		sprintf(dbname, "%s%ddb", names[isc_b_pos], dbisc->dbb_id);
@@ -4294,8 +4133,6 @@ static void make_ready(
 			BY_REF, filename,
 			BY_REF, db->dbb_name->sym_string,
 			request ? s1Tmp : OMITTED, request ? s2Tmp : OMITTED);
-
-#endif
 
 	COB_print_buffer(output_buffer, true);
 
@@ -4447,12 +4284,10 @@ static void t_start_auto(const gpre_req* request,
 					fprintf(gpreGlob.out_file, " AND %s(2) = 0", names[isc_status_pos]);
 				fprintf(gpreGlob.out_file, " THEN\n");
 				const USHORT namelength = filename ? strlen(filename) : 0;
-#ifndef VMS
 				if (filename) {
 					sprintf(dbname, "%s%ddb", names[isc_b_pos], db->dbb_id);
 					filename = dbname;
 				}
-#endif
 				make_ready(db, filename, vector, 0, namelength);
 				printa(names[COLUMN], false, "END-IF");
 				if (buffer[0])

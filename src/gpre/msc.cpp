@@ -25,7 +25,6 @@
 //
 //____________________________________________________________
 //
-//	$Id: msc.cpp,v 1.22 2004-05-24 17:13:37 brodsom Exp $
 //
 //  
 //  
@@ -107,12 +106,8 @@ UCHAR* MSC_alloc(int size)
 	}
 
 	space->spc_remaining -= size;
-	UCHAR* const blk = ((UCHAR*) space + sizeof(spc) + space->spc_remaining);
-	UCHAR* p = blk;
-	const UCHAR* const end = p + size;
-
-	while (p < end)
-		*p++ = 0;
+	UCHAR* blk = ((UCHAR*) space + sizeof(spc) + space->spc_remaining);
+	memset(blk, 0, size);
 
 	return blk;
 }
@@ -142,13 +137,9 @@ UCHAR* MSC_alloc_permanent(int size)
 	}
 
 	permanent_space->spc_remaining -= size;
-	UCHAR* const blk = ((UCHAR*) permanent_space + sizeof(spc) +
+	UCHAR* blk = ((UCHAR*) permanent_space + sizeof(spc) +
 		 permanent_space->spc_remaining);
-	UCHAR* p = blk;
-	const UCHAR* const end = p + size;
-
-	while (p < end)
-		*p++ = 0;
+	memset(blk, 0, size);
 
 	return blk;
 }
@@ -201,11 +192,9 @@ void MSC_copy(const char* from, int length, char* to)
 {
 
 	if (length)
-		do {
-			*to++ = *from++;
-		} while (--length);
+		memcpy(to, from, length);
 
-	*to = 0;
+	to[length] = 0;
 }
 
 //____________________________________________________________
@@ -218,15 +207,11 @@ void MSC_copy_cat(const char* from1, int length1, const char* from2, int length2
 {
 
 	if (length1)
-		do {
-			*to++ = *from1++;
-		} while (--length1);
+		memcpy(to, from1, length1);
 	if (length2)
-		do {
-			*to++ = *from2++;
-		} while (--length2);
+		memcpy(to + length1, from2, length2);
 
-	*to = 0;
+	to[length1 + length2] = 0;
 }
 
 //____________________________________________________________
@@ -480,9 +465,7 @@ gpre_sym* MSC_symbol(enum sym_t type, const TEXT* string, USHORT length, gpre_ct
 	symbol->sym_string = p;
 
 	if (length)
-		do {
-			*p++ = *string++;
-		} while (--length);
+		memcpy(p, string, length);
 
 	return symbol;
 }

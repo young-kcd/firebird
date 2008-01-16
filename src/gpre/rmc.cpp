@@ -94,6 +94,7 @@ static const char* const ISC_START_AND_SEND 	= "isc_start_and_send";
 static const char* const ISC_START_REQUEST 	= "isc_start_request";
 static const char* const ISC_TRANSACT_REQUEST 	= "isc_transact_request";
 static const char* const ISC_COMMIT_RETAINING 	= "isc_commit_retaining";
+static const char* const ISC_ROLLBACK_RETAINING	= "isc_rollback_retaining";
 static const char* const ISC_ATTACH_DATABASE_D 	= "isc_attach_database";
 static const char* const ISC_ATTACH_DATABASE 	= "isc_attach_database";
 static const char* const ISC_MODIFY_DPB		= "isc_modify_dpb";
@@ -484,6 +485,9 @@ void RMC_action(const act* action, int column)
 	case ACT_rollback:
 		gen_trans(action);
 		break;
+	case ACT_rollback_retain_context:
+		gen_trans(action);
+		break;
 	case ACT_routine:
 		return;
 	case ACT_s_end:
@@ -713,6 +717,7 @@ static void asgn_from( const act* action, const ref* reference)
 			value = gen_name(temp, reference->ref_source, true);
 		else
 			value = reference->ref_value;
+
 		if (!reference->ref_master || (reference->ref_flags & REF_literal))
 		{
 			if ((reference->ref_field->fld_dtype == dtype_date) &&
@@ -3828,13 +3833,21 @@ static void gen_tpb(const tpb* tpb_buffer)
 static void gen_trans( const act* action)
 {
 
-	if (action->act_type == ACT_commit_retain_context)
+	if (action->act_type == ACT_commit_retain_context) {
 		printa(names[COLUMN], true, "CALL \"%s\" USING %s, %s",
 			   ISC_COMMIT_RETAINING,
 			   status_vector(action),
 			   (action->act_object) ?
 			   		(const TEXT*) (action->act_object) : names[isc_trans_pos]);
-	else
+	}
+	else if (action->act_type == ACT_rollback_retain_context) {
+		printa(names[COLUMN], true, "CALL \"%s\" USING %s, %s",
+			   ISC_ROLLBACK_RETAINING,
+			   status_vector(action),
+			   (action->act_object) ?
+			   		(const TEXT*) (action->act_object) : names[isc_trans_pos]);
+	}
+	else {
 		printa(names[COLUMN], true, "CALL \"%s\" USING %s, %s",
 			   (action->act_type == ACT_commit) ?
 			   	ISC_COMMIT_TRANSACTION : (action->act_type == ACT_rollback) ?
@@ -3842,6 +3855,7 @@ static void gen_trans( const act* action)
 			   status_vector(action),
 			   (action->act_object) ?
 			   		(const TEXT*) (action->act_object) : names[isc_trans_pos]);
+	}
 	set_sqlcode(action);
 }
 
@@ -4068,6 +4082,13 @@ static void make_array_declaration( REF reference)
 			return;
 		}
 	}
+
+#ifdef DEV_BUILD
+	while (*p)
+		++p;
+
+	fb_assert(p - string1 < sizeof(string1));
+#endif
 
 	printa(space, false, string1);
 }

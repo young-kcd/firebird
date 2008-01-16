@@ -371,6 +371,9 @@ void ADA_action( const act* action, int column)
 	case ACT_rollback:
 		gen_trans(action, column);
 		break;
+	case ACT_rollback_retain_context:
+		gen_trans(action, column);
+		break;
 	case ACT_routine:
 		gen_routine(action, column);
 		return;
@@ -3194,13 +3197,21 @@ static void gen_tpb(const tpb* tpb_buffer, int column)
 static void gen_trans( const act* action, int column)
 {
 
-	if (action->act_type == ACT_commit_retain_context)
+	if (action->act_type == ACT_commit_retain_context) {
 		printa(column, "firebird.COMMIT_RETAINING (%s %s%s);",
 			   status_vector(action),
 			   gpreGlob.ada_package,
 			   (action->act_object) ?
 			   		(const TEXT*) action->act_object : "gds_trans");
-	else
+	}
+	else if (action->act_type == ACT_rollback_retain_context) {
+		printa(column, "firebird.ROLLBACK_RETAINING (%s %s%s);",
+			   status_vector(action),
+			   gpreGlob.ada_package,
+			   (action->act_object) ?
+			   		(const TEXT*) action->act_object : "gds_trans");
+	}
+	else {
 		printa(column, "firebird.%s_TRANSACTION (%s %s%s);",
 			   (action->act_type == ACT_commit) ?
 			   		"COMMIT" : (action->act_type == ACT_rollback) ?
@@ -3208,6 +3219,7 @@ static void gen_trans( const act* action, int column)
 			   status_vector(action), gpreGlob.ada_package,
 			   (action->act_object) ?
 			   		(const TEXT*) action->act_object : "gds_trans");
+	}
 
 	set_sqlcode(action, column);
 }

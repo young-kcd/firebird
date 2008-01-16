@@ -159,23 +159,7 @@ static TEXT output_buffer[512];
 static bool global_first_flag = false;
 static adl* array_decl_list;
 
-#ifdef VMS
-const char* const INCLUDE_ISC_FTN	= "       include  'firebird:[syslib]gds.for\' \n\n";
-const char* const DOUBLE_DCL		= "DOUBLE PRECISION";
-const char* const I2CONST_1			= "%VAL(";
-const char* const I2CONST_2			= ")";
-const char* const I2_1				= "";
-const char* const I2_2				= "";
-const char* const VAL_1				= "%VAL(";
-const char* const VAL_2				= ")";
-const char* const REF_1				= "%REF(";
-const char* const REF_2				= ")";
-const char* const I4CONST_1			= "%VAL(";
-const char* const I4CONST_2			= ")";
-const char* const COMMENT			= "C     ";
-const char* const INLINE_COMMENT	= "!";
-const char* const COMMA				= ",";
-#elif (defined AIX || defined AIX_PPC)
+#if (defined AIX || defined AIX_PPC)
 const char* const INCLUDE_ISC_FTN	= "       INCLUDE  '%s\' \n\n";
 const char* const INCLUDE_FTN_FILE	= "include/gds.f";
 const char* const DOUBLE_DCL		= "DOUBLE PRECISION";
@@ -194,23 +178,6 @@ const char* const INLINE_COMMENT	= "!";
 const char* const COMMA				= ",";
 #elif defined(sun)
 const char* const INCLUDE_ISC_FTN	= "       INCLUDE  '%s\' \n\n";
-const char* const INCLUDE_FTN_FILE	= "include/gds.f";
-const char* const DOUBLE_DCL		= "DOUBLE PRECISION";
-const char* const I2CONST_1			= "";
-const char* const I2CONST_2			= "";
-const char* const I2_1				= "";
-const char* const I2_2				= "";
-const char* const VAL_1				= "";
-const char* const VAL_2				= "";
-const char* const REF_1				= "";
-const char* const REF_2				= "";
-const char* const I4CONST_1			= "";
-const char* const I4CONST_2			= "";
-const char* const COMMENT			= "*     ";
-const char* const INLINE_COMMENT	= "\n*                ";
-const char* const COMMA				= ",";
-#elif defined(SINIXZ)
-const char* const INCLUDE_ISC_FTN	= "       INCLUDE  '/usr/firebird/include/gds.f\' \n\n";
 const char* const INCLUDE_FTN_FILE	= "include/gds.f";
 const char* const DOUBLE_DCL		= "DOUBLE PRECISION";
 const char* const I2CONST_1			= "";
@@ -342,11 +309,7 @@ const char* const ISC_EVENT_COUNTS			= "ISC_EVENT_COUNTS";
 const char* const DSQL_I2CONST_1			= I2CONST_1;
 const char* const DSQL_I2CONST_2			= I2CONST_2;
 
-#ifdef VMS
-const char* const NULL_SQLDA	= "%VAL(0)";
-#else
 const char* const NULL_SQLDA	= "0";
-#endif
 
 
 //____________________________________________________________
@@ -553,6 +516,9 @@ void FTN_action(const act* action, int column)
 		gen_trans(action);
 		break;
 	case ACT_rollback:
+		gen_trans(action);
+		break;
+	case ACT_rollback_retain_context:
 		gen_trans(action);
 		break;
 	case ACT_routine:
@@ -3555,12 +3521,19 @@ static void gen_tpb_decls(const tpb* tpb_buffer)
 
 static void gen_trans(const act* action)
 {
-	if (action->act_type == ACT_commit_retain_context)
+	if (action->act_type == ACT_commit_retain_context) {
 		printa(COLUMN, "CALL ISC_COMMIT_RETAINING (%s, %s)",
 			   status_vector(action),
 			   (action->act_object) ?
 			   		(const TEXT*) (action->act_object) : "GDS__TRANS");
-	else
+	}
+	else if (action->act_type == ACT_rollback_retain_context) {
+		printa(COLUMN, "CALL ISC_ROLLBACK_RETAINING (%s, %s)",
+			   status_vector(action),
+			   (action->act_object) ?
+			   		(const TEXT*) (action->act_object) : "GDS__TRANS");
+	}
+	else {
 		printa(COLUMN, "CALL ISC_%s_TRANSACTION (%s, %s)",
 			   (action->act_type == ACT_commit) ?
 			   		"COMMIT" : (action->act_type == ACT_rollback) ?
@@ -3568,6 +3541,8 @@ static void gen_trans(const act* action)
 				status_vector(action),
 			   (action->act_object) ?
 			   		(const TEXT*) (action->act_object) : "GDS__TRANS");
+	}
+
 	status_and_stop(action);
 
 }

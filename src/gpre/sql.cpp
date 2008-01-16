@@ -2182,8 +2182,8 @@ static act* act_declare(void)
 		PAR_get_token();
 		if (MSC_match(KW_FUNCTION))
 			return (act_declare_udf());
-		else
-			CPR_s_error("FUNCTION");
+
+		CPR_s_error("FUNCTION");
 		break;
 	}
 
@@ -2473,7 +2473,8 @@ static act* act_declare_udf(void)
 
 	gpre_fld** ptr = &udf_declaration->decl_udf_arg_list;
 	while (true) {
-		if (MSC_match(KW_RETURNS)) {
+		if (MSC_match(KW_RETURNS))
+		{
 			if (MSC_match(KW_PARAMETER)) {
 				const SLONG return_parameter = EXP_pos_USHORT_ordinal(true);
 				if (return_parameter > 10)
@@ -2495,15 +2496,14 @@ static act* act_declare_udf(void)
 			}
 			break;
 		}
-		else {
-			gpre_fld* field = (gpre_fld*) MSC_alloc(FLD_LEN);
-			field->fld_flags |= (FLD_meta | FLD_meta_cstring);
-			SQL_par_field_dtype(request, field, true);
-			SQL_adjust_field_dtype(field);
-			*ptr = field;
-			ptr = &(field->fld_next);
-			MSC_match(KW_COMMA);
-		}
+
+		gpre_fld* field = (gpre_fld*) MSC_alloc(FLD_LEN);
+		field->fld_flags |= (FLD_meta | FLD_meta_cstring);
+		SQL_par_field_dtype(request, field, true);
+		SQL_adjust_field_dtype(field);
+		*ptr = field;
+		ptr = &(field->fld_next);
+		MSC_match(KW_COMMA);
 	}
 
 	if (MSC_match(KW_ENTRY_POINT))
@@ -4349,6 +4349,10 @@ static act* act_transaction( enum act_t type)
 		MSC_match(KW_SNAPSHOT);
 		action->act_type = type = ACT_commit_retain_context;
 	}
+	else if ((type == ACT_rollback) && (MSC_match(KW_RETAIN))) {
+		MSC_match(KW_SNAPSHOT);
+		action->act_type = type = ACT_rollback_retain_context;
+	}
 
 	return action;
 }
@@ -5327,19 +5331,21 @@ static gpre_req* par_cursor( gpre_sym** symbol_ptr)
 		gpreGlob.token_global.tok_keyword = KW_none;
 
 	symbol = MSC_find_symbol(gpreGlob.token_global.tok_symbol, SYM_cursor);
+
 	if (!symbol)
 		symbol = MSC_find_symbol(gpreGlob.token_global.tok_symbol, SYM_delimited_cursor);
+
 	if (symbol) {
 		PAR_get_token();
 		if (symbol_ptr)
 			*symbol_ptr = symbol;
 		return (gpre_req*) symbol->sym_object;
 	}
-	else {
-		symbol = MSC_find_symbol(gpreGlob.token_global.tok_symbol, SYM_dyn_cursor);
-		if (symbol)
-			PAR_error("DSQL cursors require DSQL update & delete statements");
-	}
+
+	symbol = MSC_find_symbol(gpreGlob.token_global.tok_symbol, SYM_dyn_cursor);
+	if (symbol)
+		PAR_error("DSQL cursors require DSQL update & delete statements");
+
 	CPR_s_error("<cursor name>");
 	return NULL;				// silence compiler
 }
@@ -5916,7 +5922,8 @@ static bool par_transaction_modes(gpre_tra* trans,
 								  bool expect_iso)
 {
 
-	if (MSC_match(KW_READ)) {
+	if (MSC_match(KW_READ))
+	{
 		if (MSC_match(KW_ONLY)) {
 			if (expect_iso)
 				CPR_s_error("SNAPSHOT");
@@ -5924,7 +5931,8 @@ static bool par_transaction_modes(gpre_tra* trans,
 			trans->tra_flags |= TRA_ro;
 			return true;
 		}
-		else if (MSC_match(KW_WRITE)) {
+
+		if (MSC_match(KW_WRITE)) {
 			if (expect_iso)
 				CPR_s_error("SNAPSHOT");
 
@@ -5939,12 +5947,11 @@ static bool par_transaction_modes(gpre_tra* trans,
 		if (MSC_match(KW_NO)) {
 			if (MSC_match(KW_VERSION))
 				return true;
-			else if (MSC_match(KW_WAIT)) {
+			if (MSC_match(KW_WAIT)) {
 				trans->tra_flags |= TRA_nw;
 				return true;
 			}
-			else
-				CPR_s_error("WAIT or VERSION");
+			CPR_s_error("WAIT or VERSION");
 		}
 
 		if (MSC_match(KW_VERSION))
@@ -5952,15 +5959,14 @@ static bool par_transaction_modes(gpre_tra* trans,
 
 		return true;
 	}
-	else if (MSC_match(KW_SNAPSHOT)) {
+
+	if (MSC_match(KW_SNAPSHOT)) {
 		if (MSC_match(KW_TABLE)) {
 			trans->tra_flags |= TRA_con;
 
 			MSC_match(KW_STABILITY);
-			return true;
 		}
-		else
-			return true;
+		return true;
 	}
 	return false;
 }
@@ -6039,20 +6045,18 @@ static USHORT resolve_dtypes(KWWORDS typ,
 		break;
 
 	case KW_TIME:
-		if ((gpreGlob.sw_ods_version < 10) || (gpreGlob.sw_server_version < 6)) {
+		if ((gpreGlob.sw_ods_version < 10) || (gpreGlob.sw_server_version < 6))
+		{
 			sprintf(err_mesg,
 					"Encountered column type TIME which is not supported by pre 6.0 Servers\n");
 			PAR_error(err_mesg);
 			return dtype_unknown;	// TMN: FIX FIX
 			/* return; */
 		}
-		else
-			return dtype_sql_time;
-		break;
+		return dtype_sql_time;
 
 	case KW_TIMESTAMP:
 		return dtype_timestamp;
-		break;
 
 	default:
 		sprintf(err_mesg, "resolve_dtypes(): Unknown dtype %d\n", typ);

@@ -16,10 +16,9 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * 2007.05.23 Stephen W. Boyd			- Added SKIP keyword
- * 2007.06.15 Stephen W. Boyd			- Added CURRENT_CONNECTION, CURRENT_ROLE,
- *										  CURRENT_TRANSACTION and CURRENT_USER keywords
+ * Stephen W. Boyd						- Added support for new features.
  */
+
 /* Sort this file with "sort -b +1 +0" */
 
 {"ABNORMAL", KW_ABNORMAL},
@@ -144,6 +143,7 @@
 	{"ENTRY_POINT", KW_ENTRY_POINT},
 	{"==", KW_EQ},
 	{"EQ", KW_EQ},
+	{"EQUIV", KW_EQUIV},
 	{"=", KW_EQUALS},
 	{"ERASE", KW_ERASE},
 	{"ERROR", KW_ERROR},
@@ -273,6 +273,7 @@
 	{"NO_WAIT", KW_NO_WAIT},
 	{"NO_WAIT", KW_NO_WAIT},
 	{"NULL", KW_NULL},
+	{"NULLIF", KW_NULLIF},
 	{"NUMERIC", KW_NUMERIC},
 	{"NUM_LOG_BUFFERS", KW_NUM_LOG_BUFS},
 	{"OF", KW_OF},
@@ -452,4 +453,9 @@
 	{"CURRENT_CONNECTION", KW_CURRENT_CONNECTION},
 	{"CURRENT_ROLE", KW_CURRENT_ROLE},
 	{"CURRENT_TRANSACTION", KW_CURRENT_TRANSACTION},
-	{"CURRENT_USER", KW_CURRENT_USER}
+	{"CURRENT_USER", KW_CURRENT_USER},
+	{"COALESCE", KW_COALESCE},
+	{"WHEN", KW_WHEN},
+	{"THEN", KW_THEN},
+	{"SUBSTRING", KW_SUBSTRING},
+

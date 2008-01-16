@@ -146,12 +146,10 @@ bool MET_database(dbb* database, bool print_version)
 	 */
 	UCHAR sql_buffer[sizeof(sql_version_info) * (1 + 2 + 4)];
 
-#ifndef REQUESTER
 	if (gpreGlob.sw_language == lang_internal) {
 		JRDMET_init(database);
 		return true;
 	}
-#endif
 
 	DB = 0;
 
@@ -490,7 +488,8 @@ bool MET_get_domain_default(dbb* database,
 			}
 			// fetch segments. Assume buffer is big enough.  
 			TEXT* ptr_in_buffer = buffer;
-			while (true) {
+			while (true)
+			{
 				SSHORT length;
 				stat = isc_get_segment(status_vect, &blob_handle, (USHORT*) &length,
 									   buff_length, ptr_in_buffer);
@@ -499,13 +498,12 @@ bool MET_get_domain_default(dbb* database,
 
 				if (!stat)
 					continue;
-				else if (stat == isc_segstr_eof) {
+				if (stat == isc_segstr_eof) {
 					// null terminate the buffer 
 					*ptr_in_buffer = 0;
 					break;
 				}
-				else
-					CPR_exit(FINI_ERROR);
+				CPR_exit(FINI_ERROR);
 			}
 			isc_close_blob(status_vect, &blob_handle);
 
@@ -599,7 +597,8 @@ bool MET_get_column_default(const gpre_rel* relation,
 
 			// fetch segments. Assuming here that the buffer is big enough. 
 			TEXT* ptr_in_buffer = buffer;
-			while (true) {
+			while (true)
+			{
 				SSHORT length;
 				stat = isc_get_segment(status_vect, &blob_handle,
 									   (USHORT*)&length, buff_length, ptr_in_buffer);
@@ -607,13 +606,12 @@ bool MET_get_column_default(const gpre_rel* relation,
 				buff_length = buff_length - length;
 				if (!stat)
 					continue;
-				else if (stat == isc_segstr_eof) {
+				if (stat == isc_segstr_eof) {
 					// null terminate the buffer 
 					*ptr_in_buffer = 0;
 					break;
 				}
-				else
-					CPR_exit(FINI_ERROR);
+				CPR_exit(FINI_ERROR);
 			}
 			isc_close_blob(status_vect, &blob_handle);
 
@@ -711,17 +709,19 @@ gpre_fld* MET_field(gpre_rel* relation, const char* string)
 	gpre_fld* field = NULL;
 	gpre_sym* symbol;
 	for (symbol = HSH_lookup(name); symbol; symbol = symbol->sym_homonym)
+	{
 		if (symbol->sym_type == SYM_keyword &&
 			symbol->sym_keyword == (int) KW_DBKEY)
 		{
 			return relation->rel_dbkey;
 		}
-		else if (symbol->sym_type == SYM_field &&
+		if (symbol->sym_type == SYM_field &&
 				 (field = (gpre_fld*) symbol->sym_object) &&
 				 field->fld_relation == relation)
 		{
 			return field;
 		}
+	}
 
 	if (gpreGlob.sw_language == lang_internal)
 		return NULL;
@@ -1244,9 +1244,14 @@ udf* MET_get_udf(dbb* database, const TEXT* string)
 	
 	udf* the_udf = NULL;
 	for (gpre_sym* symbol = HSH_lookup(name); symbol; symbol = symbol->sym_homonym)
+	{
 		if (symbol->sym_type == SYM_udf &&
 			(the_udf = (udf*) symbol->sym_object) && the_udf->udf_database == database)
+		{
 			break;
+		}
+	}
+
 	if (!the_udf)
 		return NULL;
 
@@ -2061,15 +2066,13 @@ static bool get_intl_char_subtype(
 		return resolve_charset_and_collation(id, period + 1, buffer);
 	}
 
-	else {
-		/* Is it a character set name (implying charset default collation sequence) */
-		bool res = resolve_charset_and_collation(id, buffer, NULL);
-		if (!res) {
-			/* Is it a collation name (implying implementation-default character set) */
-			res = resolve_charset_and_collation(id, NULL, buffer);
-		}
-		return res;
+	// Is it a character set name (implying charset default collation sequence)
+	bool res = resolve_charset_and_collation(id, buffer, NULL);
+	if (!res) {
+		// Is it a collation name (implying implementation-default character set)
+		res = resolve_charset_and_collation(id, NULL, buffer);
 	}
+	return res;
 }
 
 
@@ -2155,7 +2158,8 @@ static bool resolve_charset_and_collation(
 
 		return found;
 	}
-	else if (charset == NULL) {
+
+	if (charset == NULL) {
 		FOR(REQUEST_HANDLE request)
 			FIRST 1 CS IN RDB$CHARACTER_SETS
 			CROSS COLL IN RDB$COLLATIONS

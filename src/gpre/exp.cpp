@@ -77,6 +77,7 @@ struct rel_ops {
 static const rel_ops relops[] = {
 	{ nod_eq, KW_EQ, 2 },
 	{ nod_eq, KW_EQUALS, 2 },
+	{ nod_equiv, KW_EQUIV, 2 },
 	{ nod_ne, KW_NE, 2 },
 	{ nod_gt, KW_GT, 2 },
 	{ nod_ge, KW_GE, 2 },
@@ -129,10 +130,11 @@ GPRE_NOD EXP_array(gpre_req* request, gpre_fld* field, bool subscript_flag, bool
 gpre_fld* EXP_cast(gpre_fld* field)
 {
 	const dtypes* dtype = data_types;
-	while (true) {
+	while (true)
+	{
 		if (dtype->dtype_keyword == KW_none)
 			return NULL;
-		else if (MSC_match(dtype->dtype_keyword))
+		if (MSC_match(dtype->dtype_keyword))
 			break;
 		++dtype;
 	}
@@ -756,15 +758,15 @@ gpre_rse* EXP_rse(gpre_req* request, gpre_sym* initial_symbol)
 					direction = false;
 					continue;
 				}
-				else if (MSC_match(KW_DESCENDING)) {
+				if (MSC_match(KW_DESCENDING)) {
 					direction = true;
 					continue;
 				}
-				else if (MSC_match(KW_EXACTCASE)) {
+				if (MSC_match(KW_EXACTCASE)) {
 					insensitive = false;
 					continue;
 				}
-				else if (MSC_match(KW_ANYCASE)) {
+				if (MSC_match(KW_ANYCASE)) {
 					insensitive = true;
 					continue;
 				}
@@ -1383,6 +1385,18 @@ static GPRE_NOD par_primitive_value( gpre_req* request, gpre_fld* field)
 
 	if (MSC_match(KW_USER_NAME))
 		return MSC_node(nod_user_name, 0);
+
+	if (MSC_match(KW_NULLIF))
+	{
+		gpre_nod* node = MSC_node(nod_nullif, 2);
+		EXP_left_paren(0);
+		node->nod_arg[0] = par_value(request, field);
+		if (!MSC_match(KW_COMMA))
+			CPR_s_error("<comma>");
+		node->nod_arg[1] = par_value(request, field);
+		EXP_match_paren();
+		return node;
+	}
 
 //  Check for user defined functions 
 

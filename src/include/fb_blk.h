@@ -7,13 +7,25 @@ struct blk
 {
 };
 typedef blk* BLK;
-
-
-//typedef PtrWrapper<BLK> BlkPtr;
 typedef blk* BlkPtr;
 
+// Traditional way to check handle type
+template<SSHORT BlockType>
+class PoolType : public blk
+{
+public:
+	bool checkHandle() const
+	{
+		if (!this)
+		{
+			return false;
+		}
+		return MemoryPool::blk_type(this) == BlockType;
+	}
+};
+
 template<SSHORT BLOCK_TYPE = 0>
-class pool_alloc : public blk
+class pool_alloc : public PoolType<BLOCK_TYPE>
 {
     public:
 #ifdef DEBUG_GDS_ALLOC
@@ -43,7 +55,7 @@ private:
 };
 
 template<typename RPT, SSHORT BLOCK_TYPE = 0>
-class pool_alloc_rpt : public blk
+class pool_alloc_rpt : public PoolType<BLOCK_TYPE>
 {
     public:
 		typedef RPT blk_repeat_type;
@@ -70,6 +82,26 @@ private:
     /* These operators are off-limits */
 	void* operator new(size_t s) { return 0; }
     void* operator new[](size_t s) { return 0; }
+};
+
+// New way to check handle type
+template<SSHORT BlockType>
+class LocalType
+{
+private:
+	const SSHORT blockType;
+
+public:
+	LocalType() : blockType(BlockType) { }
+
+	bool checkHandle() const
+	{
+		if (!this)
+		{
+			return false;
+		}
+		return blockType == BlockType;
+	}
 };
 
 #endif	/* INCLUDE_FB_BLK */

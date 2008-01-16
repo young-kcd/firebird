@@ -38,15 +38,10 @@
 //  FSG (Frank Schlottmann-Gödde) 8.Mar.2002 - tiny cobol support
 //       fixed Bug No. 526204 
 //
+//  Stephen W. Boyd                - Added support for new features.
+//
 // 2002.10.30 Sean Leyne - Removed support for obsolete "PC_PLATFORM" define
 //
-// Added support for RM/Cobol
-// Stephen W. Boyd 31.Aug.2006
-//
-// Added -noqli switch to suppress parsing of QLI keywords.  This was
-// causing problems with Cobol programs since the QLI and Cobol reserved word
-// lists intersect.
-// Stephen W. Boyd 21.Mar.2007
 //____________________________________________________________
 //
 //
@@ -70,13 +65,6 @@
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
-#endif
-
-#ifdef VMS
-#include <descrip.h>
-extern "C" {
-	int lib$get_foreign();
-} // extern "C"
 #endif
 
 // Globals
@@ -204,10 +192,8 @@ static const ext_table_t dml_ext_table[] =
 {
 	{ lang_c, IN_SW_GPRE_C, ".e", ".c" },
 
-#ifndef VMS
 #ifndef WIN_NT
 	{ lang_scxx, IN_SW_GPRE_SCXX, ".E", ".C" },
-#endif
 #endif
 
 	{ lang_cxx, IN_SW_GPRE_CXX, ".exx", ".cxx" },
@@ -217,25 +203,15 @@ static const ext_table_t dml_ext_table[] =
 	{ lang_pascal, IN_SW_GPRE_P, ".epas", ".pas" },
 
 #ifdef GPRE_FORTRAN
-#ifdef VMS
-	{ lang_fortran, IN_SW_GPRE_F, ".efor", ".for" },
-#else
 	{ lang_fortran, IN_SW_GPRE_F, ".ef", ".f" },
-#endif
 #endif // GPRE_FORTRAN
 
 #ifdef GPRE_COBOL
-#ifdef VMS
-	{ lang_cobol, IN_SW_GPRE_COB, ".ecob", ".cob" },
-#else 
 	{ lang_cobol, IN_SW_GPRE_COB, ".ecbl", ".cbl" },
-#endif
 #endif // GPRE_COBOL
 
 #ifdef GPRE_ADA
-#ifdef VMS
-	{ lang_ada, IN_SW_GPRE_ADA, ".eada", ".ada" },
-#elif defined(HPUX)
+#ifdef HPUX
 	{ lang_ada, IN_SW_GPRE_ADA, ".eada", ".ada" },
 #else
 	{ lang_ada, IN_SW_GPRE_ADA, ".ea", ".a" },
@@ -263,15 +239,6 @@ const UCHAR CHR_INTRODUCER	= 32;
 const UCHAR CHR_DBLQUOTE	= 64;
 
 
-//  macro compares chars; case sensitive for some platforms 
-
-#ifdef EITHER_CASE
-#define SAME(p, q)	UPPER7 (*p) == UPPER7 (*q)
-#else
-#define SAME(p, q)	*p == *q
-#endif
-
-
 //____________________________________________________________
 //
 //	Main line routine for C preprocessor.  Initializes
@@ -295,10 +262,6 @@ int main(int argc, char* argv[])
 	strcpy(gpreGlob.ada_package, "");
 	gpreGlob.ada_flags = 0;
 	input_char = input_buffer;
-
-#ifdef VMS
-	argc = VMS_parse(&argv, argc);
-#endif
 
 	//  Initialize character class table 
 	int i;
@@ -567,11 +530,7 @@ int main(int argc, char* argv[])
 #ifndef BOOT_BUILD
 #ifdef GPRE_ADA
 		case IN_SW_GPRE_ADA:
-#ifdef VMS
-			gpreGlob.ada_null_address = "system.address_zero";
-#else
 			gpreGlob.ada_null_address = "0";
-#endif
 			gpreGlob.sw_case = true;
 			gpreGlob.sw_language = lang_ada;
 			sw_lines = false;
@@ -770,44 +729,6 @@ int main(int argc, char* argv[])
 	}
 #endif
 
-#ifdef VMS
-//  
-//  If we're on VMS, we may have an RMS sequential file rather than
-//  a stream file, and keeping track of our place will be harder.
-//  So... for VMS, copy the input to a stream file.
-//  
-//  If this is Alpha OpenVMS, then we also have to do some more
-//  work, since RMS is a little different...
-//  
-	FILE *temp;
-	TEXT temp_name[MAXPATHLEN];
-
-#ifndef __ALPHA
-	// Replace this kludge with TempFile since gds__temp_file doesn't exist anymore.
-	temp = (FILE *) gds__temp_file(TRUE, "temp", 0);
-	strcpy(temp_name, "temporary file");
-#else
-	// Replace this kludge with TempFile since gds__temp_file doesn't exist anymore.
-	temp = (FILE *) gds__temp_file(TRUE, "temp", temp_name);
-#endif
-	if (temp) {
-		SSHORT c;
-		while ((c = get_char(input_file)) != EOF)
-			putc(c, temp);
-		fclose(input_file);
-#ifdef __ALPHA
-		fclose(temp);
-		temp = fopen(temp_name, FOPEN_READ_TYPE);
-#endif
-	}
-	else {
-		fprintf(stderr, "gpre: can't open %s\n", temp_name);
-		CPR_exit(FINI_ERROR);
-	}
-
-	input_file = temp;
-#endif
-
 #if defined(GPRE_COBOL) && !defined(BOOT_BUILD)
 //  if cobol is defined we need both sw_cobol and sw_cob_dialect to
 //  determine how the string substitution table is set up
@@ -896,11 +817,7 @@ int main(int argc, char* argv[])
 			// Warning: modifying program's args.
 			TEXT* p;
 			for (p = out_file_name; *p; p++);
-#ifdef VMS
-			while (p != out_file_name && *p != '.' && *p != ']')
-#else
 			while (p != out_file_name && *p != '.' && *p != '/')
-#endif
 				p--;
 			if (!explicitt)
 				*p = 0;
@@ -943,11 +860,6 @@ int main(int argc, char* argv[])
 
 	MET_fini(0);
 	fclose(input_file);
-#ifdef VMS
-#ifdef __ALPHA
-	delete(temp_name);
-#endif
-#endif
 
 	if (!sw_standard_out) {
 		fclose(gpreGlob.out_file);
@@ -1361,8 +1273,10 @@ TOK CPR_token()
 static bool all_digits(const char* str1)
 {
 	for (; *str1; str1++)
+	{
 		if (!(classes(*str1) & CHR_DIGIT))
 			return false;
+	}
 
 	return true;
 }
@@ -1404,8 +1318,10 @@ static SSHORT compare_ASCII7z(const char* str1, const char* str2)
 {
 
 	for (; *str1; str1++, str2++)
+	{
 		if (UPPER7(*str1) != UPPER7(*str2))
 			return (UPPER7(*str1) - UPPER7(*str2));
+	}
 
 	return 0;
 }
@@ -1500,9 +1416,7 @@ static bool file_rename(TEXT* file_nameL,
 
 //  back up to the last extension (if any) 
 
-#if defined(VMS)
-	while ((p != file_nameL) && (*p != '.') && (*p != ']'))
-#elif defined(WIN_NT)
+#ifdef WIN_NT
 	while ((p != file_nameL) && (*p != '.') && (*p != '/') && (*p != '\\'))
 #else
 	while ((p != file_nameL) && (*p != '.') && (*p != '/'))
@@ -1527,17 +1441,22 @@ static bool file_rename(TEXT* file_nameL,
 //  
 
 	TEXT* ext = p;
-	for (const TEXT* q = extension; SAME(p, q); p++, q++)
-		if (!*p) {
+	for (const TEXT* q = extension; *p == *q; p++, q++)
+	{
+		if (!*p)
+		{
 			if (new_extension)
-				while (*ext++ = *new_extension++);
+			{
+				while (*ext++ = *new_extension++)
+					;
+			}
 			return false;
 		}
+	}
 
-#ifndef VMS
 //  Didn't match extension, so add the extension 
-	while (*terminator++ = *extension++);
-#endif
+	while (*terminator++ = *extension++)
+		;
 
 	return true;
 }
@@ -1683,25 +1602,19 @@ static void finish_based( act* action)
 
 static int get_char( FILE * file)
 {
-	if (input_char != input_buffer) {
+	if (input_char != input_buffer)
 		return (int) *--input_char;
 
+	const USHORT pc = getc(file);
+
+	//  Dump this char to stderr, so we can see
+	//  what input line will cause this ugly
+	//  core dump.
+	//  FSG 14.Nov.2000
+	if (sw_verbose) {
+		fprintf(stderr, "%c", pc);
 	}
-	else
-	{
-		const USHORT pc = getc(file);
-
-//  Dump this char to stderr, so we can see
-//  what input line will cause this ugly
-//  core dump.
-//  FSG 14.Nov.2000 
-		if (sw_verbose) {
-			fprintf(stderr, "%c", pc);
-		}
-		return pc;
-	}
-
-
+	return pc;
 }
 
 
@@ -1748,12 +1661,10 @@ static bool get_switches(int			argc,
 					}
 					continue;
 				}
-				else
-				{
-					// both input and output files have been defined, hence
-					// there is an unknown switch
-					in_sw = IN_SW_GPRE_0;
-				}
+
+				// both input and output files have been defined, hence
+				// there is an unknown switch
+				in_sw = IN_SW_GPRE_0;
 			}
 			else
 			{
@@ -1872,14 +1783,15 @@ static bool get_switches(int			argc,
 			file_array[2] = *++argv;
 			string = *argv;
 			if (*string == '=')
+			{
 				if (!arg_is_string
 					(--argc, argv,
 					 "Command line syntax: -d requires database name:\n "))
 				{
 					return false;
 				}
-				else
-					file_array[2] = *++argv;
+				file_array[2] = *++argv;
+			}
 			break;
 
 		case IN_SW_GPRE_BASE:
@@ -1893,14 +1805,15 @@ static bool get_switches(int			argc,
 			file_array[3] = *++argv;
 			string = *argv;
 			if (*string == '=')
+			{
 				if (!arg_is_string
 					(--argc, argv,
 					 "Command line syntax: -b requires database base directory:\n "))
 				{
 					return false;
 				}
-				else
-					file_array[3] = *++argv;
+				file_array[3] = *++argv;
+			}
 			break;
 
 		case IN_SW_GPRE_HANDLES:
@@ -2233,8 +2146,7 @@ static TOK get_token()
 					return_char(peek);
 					break;
 				}
-				else
-					gpreGlob.token_global.tok_white_space++;
+				gpreGlob.token_global.tok_white_space++;
 			}
 		}
 	}
@@ -2471,11 +2383,9 @@ static SLONG pass1(const TEXT* base_directory)
 							action->act_length = -1;
 							break;
 						}
-						else
-						{
-							action->act_position = global_last_action->act_position;
-							action->act_length = 0;
-						}
+
+						action->act_position = global_last_action->act_position;
+						action->act_length = 0;
 					}
 				} while (action);
 
@@ -2906,7 +2816,7 @@ static SSHORT skip_white()
 		}
 
 #if !defined(sun) && defined(GPRE_FORTRAN)
-		// skip fortran embedded comments on VMS or hpux or sgi 
+		// skip fortran embedded comments on hpux or sgi 
 
 		if (c == '!'
 			&& (gpreGlob.sw_language == lang_fortran))
@@ -2920,11 +2830,14 @@ static SSHORT skip_white()
 				return_char(c3);
 				return c;
 			}
-			else {
-				if ((c = c3) != '\n' && c != EOF)
-					while ((c = nextchar()) != '\n' && c != EOF);
-				continue;
+
+			if ((c = c3) != '\n' && c != EOF)
+			{
+				while ((c = nextchar()) != '\n' && c != EOF)
+					;
 			}
+
+			continue;
 		}
 #endif
 
