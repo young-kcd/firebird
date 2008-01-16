@@ -1307,6 +1307,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\jrd\RandomGenerator.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\jrd\rdb.h"
 				>
 			</File>
