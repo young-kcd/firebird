@@ -369,22 +369,6 @@ void CME_expr(GPRE_NOD node, gpre_req* request)
 		request->add_long(internal_transaction_id);
 		return;
 
-	case nod_current_connection:
-		request->add_byte(blr_internal_info);
-		request->add_byte(blr_literal);
-		request->add_byte(blr_long);
-		request->add_byte(0);
-		request->add_long(internal_connection_id);
-		return;
-
-	case nod_current_transaction:
-		request->add_byte(blr_internal_info);
-		request->add_byte(blr_literal);
-		request->add_byte(blr_long);
-		request->add_byte(0);
-		request->add_long(internal_transaction_id);
-		return;
-
 	case nod_coalesce:
 		{ // scope
 		// Begin by casting the result of coalesce to the proper data type
