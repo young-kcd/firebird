@@ -35,10 +35,6 @@ dnl Use /usr/lib for library links on most platforms except some 64-bit ones
 libdir=/usr/lib
 ICU_PLATFORM=LinuxRedHat
 
-dnl Should Classic Server run services as thread or as process?
-dnl Default - run as processes (empty value).
-service_thread_CS=""
-
 dnl Should system editline and/or icu be used 
 STD_EDITLINE=false
 STD_ICU=false
@@ -196,8 +192,11 @@ case "$target" in
     PTHREAD_CFLAGS=-threads
     PTHREAD_LIBS=-lthread
     ICU_PLATFORM=SOLARISX86GCC
+<<<<<<< configure.in
     service_thread_CS=true
     RT_LIB_CHECK=true
+=======
+>>>>>>> 1.257.2.2
     ;;
 
   sparc-sun-solaris*)
@@ -211,8 +210,11 @@ case "$target" in
     PTHREAD_CFLAGS=-threads
     PTHREAD_LIBS=-lthread
     ICU_PLATFORM=SOLARISGCC
+<<<<<<< configure.in
     service_thread_CS=true
     RT_LIB_CHECK=true
+=======
+>>>>>>> 1.257.2.2
     ;;
 
   i*-sni-sysv4)
@@ -234,7 +236,6 @@ case "$target" in
     RAW_DEVICES_FLG=N
     SHRLIB_EXT=dll
 	ICU_PLATFORM=MinGW
-    service_thread_CS=true
     ;;
 
   *)
@@ -250,7 +251,6 @@ AC_SUBST(MAKEFILE_PREFIX)
 AC_SUBST(PLATFORM)
 AC_SUBST(SHRLIB_EXT)
 AC_SUBST(ICU_PLATFORM)
-AC_SUBST(service_thread_CS)
 AC_DEFINE(CASE_SENSITIVITY, false, [Define this if paths are case sensitive])
 AC_SUBST(RPM64)
 
@@ -300,30 +300,6 @@ if test "$RAW_DEVICES_FLG" = "Y"; then
   AC_DEFINE(SUPPORT_RAW_DEVICES, 1,
     [Define this if databases on raw devices should be supported])
 fi
-
-MANAGER_PROCESS_TARGET=
-if test "$FIREBIRD_ARCH_TYPE" = "classic"; then
-  dnl The lock manager process is only need on systems, that do not support
-  dnl sending signals to process groups (man 2 kill).
-  AC_ARG_WITH(lock-manager,
-    [  --with-lock-manager     build lock manager],
-    [case "$withval" in
-       yes) LOCK_MANAGER_FLG=Y;;
-       no)  LOCK_MANAGER_FLG=N;;
-       *)   AC_MSG_ERROR(bad value '${withval}' for --with-lock-manager);;
-     esac])
-
-  if test "$LOCK_MANAGER_FLG" = "Y"; then
-    dnl EKU: we should determine the necessity by target system
-    dnl      at least SOLARIS-MT, DARWIN and SINIX-Z do not require a lock
-    dnl      manager process
-    dnl EKU: is this really true???
-    AC_DEFINE(MANAGER_PROCESS, 1,
-      [Define this if the lock manager process is needed])
-    MANAGER_PROCESS_TARGET=lock_mgr
-  fi
-fi
-AC_SUBST(MANAGER_PROCESS_TARGET)
 
 AC_ARG_WITH(editline,
   [  --with-editline         support fancy command line editing],
@@ -529,6 +505,23 @@ AC_TRY_COMPILE([#define _ISOC99_SOURCE 1
     [double x = INFINITY;],
     [AC_DEFINE(HAVE_INFINITY, 1,
        [Define this if INFINITY is defined in math.h])])
+
+dnl check for va_copy() in stdarg.h
+dnl _ISOC99_SOURCE is defined to emulate C++ compilation in plain-C conftest.c
+AC_TRY_COMPILE([#define _ISOC99_SOURCE 1
+#include <stdarg.h>
+void vafun(const char* fmt, ...)
+{
+	va_list par, par2; 
+	va_start(par, fmt); 
+	va_copy(par2, par); 
+	va_end(par2); 
+	va_end(par);
+}
+],
+    [exit(0);],
+    [AC_DEFINE(HAVE_VA_COPY, 1,
+       [Define this if va_copy() is defined in stdarg.h])])
 
 dnl Check for functions
 AC_CHECK_FUNCS(gettimeofday)
