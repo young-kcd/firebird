@@ -1433,7 +1433,6 @@ static THREAD_ENTRY_DECLARE blocking_action_thread(THREAD_ENTRY_PARAM arg)
 		blocking_action(*owner_offset_ptr, (SRQ_PTR) NULL);
 		release(*owner_offset_ptr);
 
-
 		AST_EXIT();
 
 		if (atStartup)
