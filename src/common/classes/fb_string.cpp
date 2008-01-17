@@ -359,23 +359,37 @@ extern "C" {
 		va_end(params);
 	}
 
+// Need macros here - va_copy()/va_end() should be called in SAME function
+#ifdef HAVE_VA_COPY
+#define FB_VA_COPY(to, from) va_copy(to, from)
+#define FB_CLOSE_VACOPY(to) va_end(to)
+#else
+#define FB_VA_COPY(to, from) to = from
+#define FB_CLOSE_VACOPY(to)
+#endif
+
 	void AbstractString::vprintf(const char* format, va_list params) {
 #ifndef HAVE_VSNPRINTF
 #error NS: I am lazy to implement version of this routine based on plain vsprintf.
 #error Please find an implementation of vsnprintf function for your platform.
 #error For example, consider importing library from http://www.ijs.si/software/snprintf/
-#error to Firebird src\extern repository
+#error to Firebird extern repository
 #endif
 		enum {tempsize = 256};
 		char temp[tempsize];
-		int l = VSNPRINTF(temp, tempsize, format, params);
+		va_list paramsCopy;
+		FB_VA_COPY(paramsCopy, params);
+		int l = VSNPRINTF(temp, tempsize, format, paramsCopy);
+		FB_CLOSE_VACOPY(paramsCopy);
 		if (l < 0) {
 			size_type n = sizeof(temp);
 			while (true) {
 				n *= 2;
 				if (n > max_length())
 					n = max_length();
-				l = VSNPRINTF(baseAssign(n), n + 1, format, params);
+				FB_VA_COPY(paramsCopy, params);
+				l = VSNPRINTF(baseAssign(n), n + 1, format, paramsCopy);
+				FB_CLOSE_VACOPY(paramsCopy);
 				if (l >= 0)
 					break;
 				if (n >= max_length()) {
@@ -392,7 +406,9 @@ extern "C" {
 		}
 		else {
 			resize(l);
-			VSNPRINTF(begin(), l + 1, format, params);
+			FB_VA_COPY(paramsCopy, params);
+			VSNPRINTF(begin(), l + 1, format, paramsCopy);
+			FB_CLOSE_VACOPY(paramsCopy);
 		}
 	}
 

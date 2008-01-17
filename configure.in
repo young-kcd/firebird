@@ -470,6 +470,22 @@ if test "$EDITLINE_FLG" = "Y"; then
 	XE_APPEND(-l$TERMLIB, LIBS)
 fi
 
+dnl check for va_copy() in stdarg.h
+dnl _ISOC99_SOURCE is defined to emulate C++ compilation in plain-C conftest.c
+AC_TRY_COMPILE([#define _ISOC99_SOURCE 1
+#include <stdarg.h>
+void vafun(const char* fmt, ...)
+{
+	va_list par, par2; 
+	va_start(par, fmt); 
+	va_copy(par2, par); 
+	va_end(par2); 
+	va_end(par);
+}
+],
+    [exit(0);],
+    [AC_DEFINE(HAVE_VA_COPY, 1,
+       [Define this if va_copy() is defined in stdarg.h])])
 
 dnl Check for functions
 AC_CHECK_FUNCS(gettimeofday)
