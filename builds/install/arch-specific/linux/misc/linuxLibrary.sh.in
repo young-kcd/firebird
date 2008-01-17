@@ -47,7 +47,7 @@ addFirebirdUser() {
 	TryAddUser "-u 84 -r -M" >/dev/null 2>&1
 	TryAddUser "-u 84 -M" >/dev/null 2>&1
 	TryAddUser "-r -M" >/dev/null 2>&1
-	TryAddUser "-M"
+	TryAddUser "-M" >/dev/null 2>&1
 	TryAddUser "-u 84 -r" >/dev/null 2>&1
 	TryAddUser "-u 84" >/dev/null 2>&1
 	TryAddUser "-r" >/dev/null 2>&1
