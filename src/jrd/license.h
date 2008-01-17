@@ -133,7 +133,7 @@
 #endif
 
 #ifdef DARWIN
-#ifdef i386
+#if defined(i386) || (__x86_64__)
 #define FB_PLATFORM	"UI"	/* Darwin/Intel */
 #endif
 #if defined (DARWIN) && defined (_powerpc_)
