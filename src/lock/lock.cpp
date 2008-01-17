@@ -151,34 +151,34 @@ const SRQ_PTR DUMMY_OWNER_CREATE	= -1;
 const SRQ_PTR DUMMY_OWNER_DELETE	= -2;
 
 static void acquire(SRQ_PTR);
-static UCHAR *alloc(SSHORT, ISC_STATUS *);
-static lbl* alloc_lock(USHORT, ISC_STATUS *);
+static UCHAR *alloc(SSHORT, ISC_STATUS*);
+static lbl* alloc_lock(USHORT, ISC_STATUS*);
 static void blocking_action(SRQ_PTR, SRQ_PTR);
 #ifdef USE_BLOCKING_THREAD
 static THREAD_ENTRY_DECLARE blocking_action_thread(THREAD_ENTRY_PARAM);
 #endif
-static void bug(ISC_STATUS *, const TEXT *);
+static void bug(ISC_STATUS*, const TEXT*);
 #ifdef DEV_BUILD
-static void bug_assert(const TEXT *, ULONG);
+static void bug_assert(const TEXT*, ULONG);
 #endif
 static bool convert(SRQ_PTR, UCHAR, SSHORT, lock_ast_t, void*, ISC_STATUS*);
-static bool create_owner(ISC_STATUS *, LOCK_OWNER_T, UCHAR, SLONG *);
+static bool create_owner(ISC_STATUS*, LOCK_OWNER_T, UCHAR, SRQ_PTR*);
 #ifdef DEV_BUILD
 static void current_is_active_owner(bool, ULONG);
 #endif
-static void deadlock_clear(void);
+static void deadlock_clear();
 static lrq* deadlock_scan(own*, lrq*);
-static lrq* deadlock_walk(lrq*, bool *);
+static lrq* deadlock_walk(lrq*, bool*);
 static void dequeue(SRQ_PTR);
 #ifdef DEBUG
 static void debug_delay(ULONG);
 #endif
-static void exit_handler(void *);
+static void exit_handler(void*);
 static lbl* find_lock(SRQ_PTR, USHORT, const UCHAR*, USHORT, USHORT*);
 static lrq* get_request(SRQ_PTR);
 static void grant(lrq*, lbl*);
 static SRQ_PTR grant_or_que(lrq*, lbl*, SSHORT);
-static bool init_lock_table(ISC_STATUS *);
+static bool init_lock_table(ISC_STATUS*);
 static void init_owner_block(own*, UCHAR, LOCK_OWNER_T);
 static void lock_initialize(void*, SH_MEM, bool);
 static void insert_data_que(lbl*);
@@ -194,10 +194,10 @@ static bool probe_owners(SRQ_PTR);
 static void purge_owner(SRQ_PTR, own*);
 static void remove_que(SRQ);
 static void release(SRQ_PTR);
-static void release_mutex(void);
+static void release_mutex();
 static void release_request(lrq*);
 #ifdef USE_BLOCKING_THREAD
-static void shutdown_blocking_thread(ISC_STATUS *);
+static void shutdown_blocking_thread(ISC_STATUS*);
 #endif
 static bool signal_owner(own*, SRQ_PTR);
 #ifdef VALIDATE_LOCK_TABLE
@@ -209,7 +209,7 @@ static void validate_owner(const SRQ_PTR, USHORT);
 static void validate_request(const SRQ_PTR, USHORT, USHORT);
 static void validate_shb(const SRQ_PTR);
 #endif
-static USHORT wait_for_request(lrq*, SSHORT, ISC_STATUS *);
+static USHORT wait_for_request(lrq*, SSHORT, ISC_STATUS*);
 
 static SSHORT LOCK_bugcheck = 0;
 static lhb* volatile LOCK_header = NULL;
@@ -262,12 +262,12 @@ static inline bool lockOrdering()
 }
 
 
-bool LOCK_convert(SRQ_PTR		request_offset,
-				 UCHAR		type,
-				 SSHORT		lck_wait,
-				 lock_ast_t ast_routine,
-				 void*		ast_argument,
-				 ISC_STATUS*	status_vector)
+bool LOCK_convert(SRQ_PTR request_offset,
+				  UCHAR type,
+				  SSHORT lck_wait,
+				  lock_ast_t ast_routine,
+				  void* ast_argument,
+				  ISC_STATUS* status_vector)
 {
 /**************************************
  *
@@ -301,7 +301,7 @@ bool LOCK_convert(SRQ_PTR		request_offset,
 }
 
 
-int LOCK_deq( SRQ_PTR request_offset)
+bool LOCK_deq(SRQ_PTR request_offset)
 {
 /**************************************
  *
@@ -319,7 +319,7 @@ int LOCK_deq( SRQ_PTR request_offset)
 	SRQ_PTR owner_offset = request->lrq_owner;
 	own* owner = (own*) SRQ_ABS_PTR(owner_offset);
 	if (!owner->own_count)
-		return FALSE;
+		return false;
 
 	acquire(owner_offset);
 	owner = NULL;				/* remap */
@@ -333,11 +333,12 @@ int LOCK_deq( SRQ_PTR request_offset)
 
 	dequeue(request_offset);
 	release(owner_offset);
-	return TRUE;
+	return true;
 }
 
 
-UCHAR LOCK_downgrade(SRQ_PTR request_offset, ISC_STATUS * status_vector)
+UCHAR LOCK_downgrade(SRQ_PTR request_offset,
+					 ISC_STATUS* status_vector)
 {
 /**************************************
  *
@@ -356,7 +357,7 @@ UCHAR LOCK_downgrade(SRQ_PTR request_offset, ISC_STATUS * status_vector)
 	SRQ_PTR owner_offset = request->lrq_owner;
 	own* owner = (own*) SRQ_ABS_PTR(owner_offset);
 	if (!owner->own_count)
-		return FALSE;
+		return FALSE; // Warning! Can be treated as LCK_none by the caller!
 
 	acquire(owner_offset);
 	owner = NULL;				/* remap */
@@ -397,18 +398,18 @@ UCHAR LOCK_downgrade(SRQ_PTR request_offset, ISC_STATUS * status_vector)
 	return state;
 }
 
-SLONG LOCK_enq(	SRQ_PTR		prior_request,
-				SRQ_PTR		parent_request,
-				USHORT	series,
-				const UCHAR*	value,
-				USHORT	length,
-				UCHAR	type,
-				lock_ast_t ast_routine,
-				void*	ast_argument,
-				SLONG	data,
-				SSHORT	lck_wait,
-				ISC_STATUS*	status_vector,
-				SRQ_PTR		owner_offset)
+SRQ_PTR LOCK_enq(SRQ_PTR prior_request,
+				 SRQ_PTR parent_request,
+				 USHORT series,
+				 const UCHAR* value,
+				 USHORT length,
+				 UCHAR type,
+				 lock_ast_t ast_routine,
+				 void* ast_argument,
+				 SLONG data,
+				 SSHORT lck_wait,
+				 ISC_STATUS* status_vector,
+				 SRQ_PTR owner_offset)
 {
 /**************************************
  *
@@ -496,7 +497,7 @@ SLONG LOCK_enq(	SRQ_PTR		prior_request,
 
 		insert_tail(&lock->lbl_requests, &request->lrq_lbl_requests);
 		request->lrq_data = data;
-		const SLONG lock_id = grant_or_que(request, lock, lck_wait);
+		const SRQ_PTR lock_id = grant_or_que(request, lock, lck_wait);
 		if (!lock_id) {
 			*status_vector++ = isc_arg_gds;
 			*status_vector++ = (lck_wait > 0) ? isc_deadlock :
@@ -564,13 +565,14 @@ SLONG LOCK_enq(	SRQ_PTR		prior_request,
 	insert_tail(&lock->lbl_requests, &request->lrq_lbl_requests);
 	request->lrq_lock = SRQ_REL_PTR(lock);
 	grant(request, lock);
-	const SLONG lock_id = SRQ_REL_PTR(request);
+	const SRQ_PTR lock_id = SRQ_REL_PTR(request);
 	release(request->lrq_owner);
 
 	return lock_id;
 }
 
-bool LOCK_set_owner_handle(SRQ_PTR request_offset, SRQ_PTR new_owner_offset)
+bool LOCK_set_owner_handle(SRQ_PTR request_offset,
+						   SRQ_PTR new_owner_offset)
 {
 /**************************************
  *
@@ -620,7 +622,8 @@ bool LOCK_set_owner_handle(SRQ_PTR request_offset, SRQ_PTR new_owner_offset)
 	return true;
 }
 
-void LOCK_fini( ISC_STATUS* status_vector, SRQ_PTR * owner_offset)
+void LOCK_fini(ISC_STATUS* status_vector,
+			   SRQ_PTR* owner_offset)
 {
 /**************************************
  *
@@ -677,7 +680,7 @@ void LOCK_fini( ISC_STATUS* status_vector, SRQ_PTR * owner_offset)
 int LOCK_init(ISC_STATUS* status_vector,
 			  LOCK_OWNER_T owner_id,
 			  UCHAR owner_type,
-			  SLONG * owner_handle)
+			  SRQ_PTR* owner_handle)
 {
 /**************************************
  *
@@ -765,7 +768,9 @@ int LOCK_init(ISC_STATUS* status_vector,
 }
 
 
-SLONG LOCK_query_data(SRQ_PTR parent_request, USHORT series, USHORT aggregate)
+SLONG LOCK_query_data(SRQ_PTR parent_request,
+					  USHORT series,
+					  USHORT aggregate)
 {
 /**************************************
  *
@@ -898,7 +903,9 @@ SLONG LOCK_read_data(SRQ_PTR request_offset)
 
 SLONG LOCK_read_data2(SRQ_PTR parent_request,
 					  USHORT series,
-					  const UCHAR* value, USHORT length, SRQ_PTR owner_offset)
+					  const UCHAR* value,
+					  USHORT length,
+					  SRQ_PTR owner_offset)
 {
 /**************************************
  *
@@ -942,7 +949,9 @@ SLONG LOCK_read_data2(SRQ_PTR parent_request,
 }
 
 
-void LOCK_re_post( lock_ast_t ast, void* arg, SRQ_PTR owner_offset)
+void LOCK_re_post(lock_ast_t ast,
+				  void* arg,
+				  SRQ_PTR owner_offset)
 {
 /**************************************
  *
@@ -1009,7 +1018,8 @@ void LOCK_re_post( lock_ast_t ast, void* arg, SRQ_PTR owner_offset)
 }
 
 
-SLONG LOCK_write_data(SRQ_PTR request_offset, SLONG data)
+SLONG LOCK_write_data(SRQ_PTR request_offset,
+					  SLONG data)
 {
 /**************************************
  *
@@ -1043,7 +1053,7 @@ SLONG LOCK_write_data(SRQ_PTR request_offset, SLONG data)
 }
 
 
-static void acquire( SRQ_PTR owner_offset)
+static void acquire(SRQ_PTR owner_offset)
 {
 /**************************************
  *
@@ -1217,7 +1227,7 @@ static void acquire( SRQ_PTR owner_offset)
 }
 
 
-static UCHAR* alloc( SSHORT size, ISC_STATUS * status_vector)
+static UCHAR* alloc(SSHORT size, ISC_STATUS* status_vector)
 {
 /**************************************
  *
@@ -1280,7 +1290,7 @@ static UCHAR* alloc( SSHORT size, ISC_STATUS * status_vector)
 }
 
 
-static lbl* alloc_lock( USHORT length, ISC_STATUS * status_vector)
+static lbl* alloc_lock(USHORT length, ISC_STATUS* status_vector)
 {
 /**************************************
  *
@@ -1464,7 +1474,7 @@ static THREAD_ENTRY_DECLARE blocking_action_thread(THREAD_ENTRY_PARAM arg)
 
 
 #ifdef DEV_BUILD
-static void bug_assert( const TEXT* string, ULONG line)
+static void bug_assert(const TEXT* string, ULONG line)
 {
 /**************************************
  *
@@ -1490,7 +1500,7 @@ static void bug_assert( const TEXT* string, ULONG line)
 #endif
 
 
-static void bug( ISC_STATUS * status_vector, const TEXT* string)
+static void bug(ISC_STATUS* status_vector, const TEXT* string)
 {
 /**************************************
  *
@@ -1568,12 +1578,12 @@ static void bug( ISC_STATUS * status_vector, const TEXT* string)
 }
 
 
-static bool convert(SRQ_PTR		request_offset,
-					UCHAR	type,
-					SSHORT	lck_wait,
+static bool convert(SRQ_PTR request_offset,
+					UCHAR type,
+					SSHORT lck_wait,
 					lock_ast_t ast_routine,
-					void*		ast_argument,
-					ISC_STATUS*	status_vector)
+					void* ast_argument,
+					ISC_STATUS* status_vector)
 {
 /**************************************
  *
@@ -1672,7 +1682,7 @@ static bool convert(SRQ_PTR		request_offset,
 static bool create_owner(ISC_STATUS* status_vector,
 						 LOCK_OWNER_T owner_id,
 						 UCHAR owner_type,
-						 SLONG* owner_handle)
+						 SRQ_PTR* owner_handle)
 {
 /**************************************
  *
@@ -1829,7 +1839,7 @@ static void current_is_active_owner(bool expect_acquired, ULONG line)
 #endif // DEV_BUILD
 
 
-static void deadlock_clear(void)
+static void deadlock_clear()
 {
 /**************************************
  *
@@ -1904,7 +1914,7 @@ static lrq* deadlock_scan(own* owner,
 
 
 static lrq* deadlock_walk(lrq* request,
-						  bool * maybe_deadlock)
+						  bool* maybe_deadlock)
 {
 /**************************************
  *
@@ -2032,7 +2042,7 @@ static lrq* deadlock_walk(lrq* request,
 }
 
 
-static void dequeue( SRQ_PTR request_offset)
+static void dequeue(SRQ_PTR request_offset)
 {
 /**************************************
  *
@@ -2062,7 +2072,7 @@ static ULONG delay_count = 0;
 static ULONG last_signal_line = 0;
 static ULONG last_delay_line = 0;
 
-static void debug_delay( ULONG lineno)
+static void debug_delay(ULONG lineno)
 {
 /**************************************
  *
@@ -2097,7 +2107,7 @@ if ((delay_count % 500) == 0)
 #endif
 
 
-static void exit_handler( void *arg)
+static void exit_handler(void* arg)
 {
 /**************************************
  *
@@ -2159,10 +2169,11 @@ static void exit_handler( void *arg)
 }
 
 
-static lbl* find_lock(
-					 SRQ_PTR parent,
-					 USHORT series,
-					 const UCHAR* value, USHORT length, USHORT* slot)
+static lbl* find_lock(SRQ_PTR parent,
+					  USHORT series,
+					  const UCHAR* value,
+					  USHORT length,
+					  USHORT* slot)
 {
 /**************************************
  *
@@ -2215,7 +2226,7 @@ static lbl* find_lock(
 }
 
 
-static lrq* get_request( SRQ_PTR offset)
+static lrq* get_request(SRQ_PTR offset)
 {
 /**************************************
  *
@@ -2230,7 +2241,7 @@ static lrq* get_request( SRQ_PTR offset)
 	TEXT s[32];
 
 	lrq* request = (lrq*) SRQ_ABS_PTR(offset);
-	if ((SLONG) offset == -1 || request->lrq_type != type_lrq) {
+	if (offset == -1 || request->lrq_type != type_lrq) {
 		sprintf(s, "invalid lock id (%"SLONGFORMAT")", offset);
 		bug(NULL, s);
 	}
@@ -2245,7 +2256,7 @@ static lrq* get_request( SRQ_PTR offset)
 }
 
 
-static void grant( lrq* request, lbl* lock)
+static void grant(lrq* request, lbl* lock)
 {
 /**************************************
  *
@@ -2284,7 +2295,7 @@ static void grant( lrq* request, lbl* lock)
 }
 
 
-static SRQ_PTR grant_or_que( lrq* request, lbl* lock, SSHORT lck_wait)
+static SRQ_PTR grant_or_que(lrq* request, lbl* lock, SSHORT lck_wait)
 {
 /**************************************
  *
@@ -2356,7 +2367,7 @@ static SRQ_PTR grant_or_que( lrq* request, lbl* lock, SSHORT lck_wait)
 }
 
 
-static bool init_lock_table( ISC_STATUS * status_vector)
+static bool init_lock_table(ISC_STATUS* status_vector)
 {
 /**************************************
  *
@@ -2551,7 +2562,7 @@ static void lock_initialize(void* arg, SH_MEM shmem_data, bool initialize)
 }
 
 
-static void insert_data_que( lbl* lock)
+static void insert_data_que(lbl* lock)
 {
 /**************************************
  *
@@ -2588,7 +2599,7 @@ static void insert_data_que( lbl* lock)
 }
 
 
-static void insert_tail( SRQ lock_srq, SRQ node)
+static void insert_tail(SRQ lock_srq, SRQ node)
 {
 /**************************************
  *
@@ -2636,7 +2647,7 @@ static void insert_tail( SRQ lock_srq, SRQ node)
 }
 
 
-static USHORT lock_state( lbl* lock)
+static USHORT lock_state(lbl* lock)
 {
 /**************************************
  *
@@ -2776,7 +2787,7 @@ static void post_history(USHORT operation,
 }
 
 
-static void post_pending( lbl* lock)
+static void post_pending(lbl* lock)
 {
 /**************************************
  *
@@ -2844,7 +2855,7 @@ static void post_pending( lbl* lock)
 }
 
 
-static void post_wakeup( own* owner)
+static void post_wakeup(own* owner)
 {
 /**************************************
  *
@@ -2867,7 +2878,7 @@ static void post_wakeup( own* owner)
 
 
 #ifndef SUPERSERVER
-static bool probe_owners( SRQ_PTR probing_owner_offset)
+static bool probe_owners(SRQ_PTR probing_owner_offset)
 {
 /**************************************
  *
@@ -2957,7 +2968,7 @@ static void purge_owner(SRQ_PTR purging_owner_offset, own* owner)
 }
 
 
-static void remove_que( SRQ node)
+static void remove_que(SRQ node)
 {
 /**************************************
  *
@@ -3022,7 +3033,7 @@ static void remove_que( SRQ node)
 }
 
 
-static void release( SRQ_PTR owner_offset)
+static void release(SRQ_PTR owner_offset)
 {
 /**************************************
  *
@@ -3079,7 +3090,7 @@ static void release( SRQ_PTR owner_offset)
 }
 
 
-static void release_mutex(void)
+static void release_mutex()
 {
 /**************************************
  *
@@ -3108,7 +3119,7 @@ static void release_mutex(void)
 }
 
 
-static void release_request( lrq* request)
+static void release_request(lrq* request)
 {
 /**************************************
  *
@@ -3191,7 +3202,7 @@ static void release_request( lrq* request)
 
 
 #ifdef USE_BLOCKING_THREAD
-static void shutdown_blocking_thread( ISC_STATUS * status_vector)
+static void shutdown_blocking_thread(ISC_STATUS* status_vector)
 {
 /**************************************
  *
@@ -3246,7 +3257,7 @@ static void shutdown_blocking_thread( ISC_STATUS * status_vector)
 }
 #endif
 
-static bool signal_owner( own* blocking_owner, SRQ_PTR blocked_owner_offset)
+static bool signal_owner(own* blocking_owner, SRQ_PTR blocked_owner_offset)
 {
 /**************************************
  *
@@ -3837,9 +3848,9 @@ static void validate_shb(const SRQ_PTR shb_ptr)
 #endif
 
 
-static USHORT wait_for_request(
-							   lrq* request,
-							   SSHORT lck_wait, ISC_STATUS * status_vector)
+static USHORT wait_for_request(lrq* request,
+							   SSHORT lck_wait,
+							   ISC_STATUS* status_vector)
 {
 /**************************************
  *
@@ -4166,4 +4177,3 @@ static USHORT wait_for_request(
 
 	return FB_SUCCESS;
 }
-
