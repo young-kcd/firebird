@@ -243,7 +243,7 @@ static const ArchitectureType archMatrix[CLASS_MAX + 1] =
 	archBigEndian,    // CLASS_LINUX_PPC
 	archLittleEndian, // CLASS_DARWIN_I386
 	archLittleEndian, // CLASS_LINUX_MIPSEL
-	archBigEndian  // CLASS_LINUX_MIPS
+	archBigEndian	  // CLASS_LINUX_MIPS
 };
 
 #ifdef sun
