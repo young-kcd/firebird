@@ -273,7 +273,9 @@ void SRVR_main(rem_port* main_port, USHORT flags)
 	PACKET send, receive;
 	zap_packet(&receive, true);
 	zap_packet(&send, true);
-	THREAD_ENTER();
+
+	SchedulerContext scHolder;
+
 	set_server(main_port, flags);
 
 	while (true)
@@ -289,8 +291,6 @@ void SRVR_main(rem_port* main_port, USHORT flags)
 			break;
 		}
 	}
-
-	THREAD_EXIT();
 }
 
 
@@ -438,7 +438,7 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 
 	ISC_STATUS_ARRAY status_vector;
 
-	THREAD_ENTER();
+	SchedulerContext scHolder;
 
 	try {
 
@@ -469,7 +469,6 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 				if (!(port = main_port->select_multi(buffer, dataSize, &dataSize)))
 				{
 					gds__log("SRVR_multi_thread/RECEIVE: error on main_port, shutting down");
-					THREAD_EXIT();
 					return;
 				}
 				if (dataSize)
@@ -624,7 +623,6 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 		gds__log("SRVR_multi_thread: error during startup, shutting down");
 	}
 
-	THREAD_EXIT();
 #endif //SUPERSERVER
 }
 
