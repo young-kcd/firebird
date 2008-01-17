@@ -2465,7 +2465,7 @@ static void service_fork(TEXT* service_path, Service* service)
 		break;
 
 	case 0:
-		if (vfork() != 0)
+		if (vfork() > 0)
 			_exit(FINI_OK);
 
 		close(pair1[0]);
