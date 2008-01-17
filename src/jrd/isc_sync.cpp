@@ -497,11 +497,11 @@ int ISC_event_init(event_t* event, int semid, int semnum)
 
 		pthread_mutexattr_init(&mattr);
 		pthread_condattr_init(&cattr);
-#if _POSIX_THREAD_PROCESS_SHARED >= 200112L
+#ifdef PTHREAD_PROCESS_SHARED
 		pthread_mutexattr_setpshared(&mattr, PTHREAD_PROCESS_SHARED);
 		pthread_condattr_setpshared(&cattr, PTHREAD_PROCESS_SHARED);
 #else
-#error Your system must support THREAD_PROCESS_SHARED to use firebird.
+#error Your system must support PTHREAD_PROCESS_SHARED to use firebird.
 #endif
 		pthread_mutex_init(event->event_mutex, &mattr);
 		pthread_cond_init(event->event_semnum, &cattr);
