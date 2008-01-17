@@ -81,12 +81,13 @@ darwin_finish_cs_framework:
 	cp ../gen/firebird/bin/gpre $(FB_FW)/Resources/bin
 	cp ../gen/firebird/bin/gdef $(FB_FW)/Resources/bin
 	cp ../gen/firebird/bin/qli $(FB_FW)/Resources/bin
-	#cp ../gen/firebird/bin/fb_lock_mgr $(FB_FW)/Resources/bin
+	cp ../gen/firebird/bin/fb_lock_mgr $(FB_FW)/Resources/bin
 	cp ../gen/firebird/bin/fb_lock_print $(FB_FW)/Resources/bin
 	cp ../gen/firebird/bin/gds_drop $(FB_FW)/Resources/bin
 	cp ../gen/firebird/bin/gsec $(FB_FW)/Resources/bin
 	cp ../gen/firebird/bin/gstat $(FB_FW)/Resources/bin
 	cp ../gen/firebird/bin/nbackup $(FB_FW)/Resources/bin
+	cp ../gen/firebird/bin/fbsvcmgr $(FB_FW)/Resources/bin
 	cp ../src/extlib/ib_udf.sql $(FB_FW)/Resources/English.lproj/var/UDF
 	cp ../src/extlib/fbudf/fbudf.sql $(FB_FW)/Resources/English.lproj/var/UDF
 	cp ../builds/install/arch-specific/darwin/FrameworkInfo.plist \
@@ -145,6 +146,7 @@ darwin_finish_ss_framework:
 	cp ../gen/firebird/bin/nbackup $(FB_FW)/Resources/bin
 	cp ../gen/firebird/bin/qli $(FB_FW)/Resources/bin
 	cp ../gen/firebird/bin/gdef $(FB_FW)/Resources/bin
+	cp ../gen/firebird/bin/fbsvcmgr $(FB_FW)/Resources/bin
 	cp ../src/extlib/ib_udf.sql $(FB_FW)/Resources/English.lproj/var/UDF
 	cp ../src/extlib/fbudf/fbudf.sql $(FB_FW)/Resources/English.lproj/var/UDF
 	cp ../builds/install/arch-specific/darwin/FrameworkInfo.plist \

@@ -22,3 +22,5 @@
 	
 	_LD_lookup_charset
 	_LD_lookup_texttype
+	_LD_setup_attributes
+	_LD_version
