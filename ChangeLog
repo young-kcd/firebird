@@ -1,3 +1,585 @@
+2008-01-16 15:37  asfernandes
+
+	* firebird2/src/: dsql/pass1.cpp (1.350), jrd/opt.cpp (1.303),
+	remote/inet.cpp (1.200):
+
+	Eliminate some warnings
+
+2008-01-16 15:26  asfernandes
+
+	* firebird2/src/jrd/met.epp (1.230):
+
+	Eliminate warning
+
+2008-01-16 15:01  asfernandes
+
+	* firebird2/src/jrd/TextType.cpp (1.7):
+
+	Fix the merge
+
+2008-01-16 14:55  dimitr
+
+	* firebird2/builds/win32/msvc8/: engine.vcproj (1.14),
+	engine_classic.vcproj (1.14), engine.vcproj (1.15),
+	engine_classic.vcproj (1.15):
+
+	The merge is being fixed.
+
+2008-01-16 14:40  alexpeshkoff
+
+	* firebird2/builds/posix/Makefile.in.client.util (1.52):
+
+	Fixing merge
+
+2008-01-16 14:37  dimitr
+
+	* firebird2/: src/common/classes/fb_string.cpp (1.36),
+	doc/sql.extensions/README.column_type_psql.txt (1.2),
+	doc/sql.extensions/README.domains_psql.txt (1.3):
+
+	The merge is being fixed.
+
+2008-01-16 14:29  dimitr
+
+	* firebird2/builds/win32/msvc8/gstat.vcproj (1.9):
+
+	The merge is being fixed.
+
+2008-01-16 14:26  alexpeshkoff
+
+	* firebird2/builds/posix/Makefile.in.embed.util (1.37):
+
+	Fixing merge
+
+2008-01-16 14:19  dimitr
+
+	* firebird2/src/utilities/: gsec/gsec.cpp (1.80),
+	install/install_svc.cpp (1.35):
+
+	The merge is being fixed.
+
+2008-01-16 14:18  alexpeshkoff
+
+	* firebird2/src/intl/ld.cpp (1.33):
+
+	Fixing merge
+
+2008-01-16 14:07  alexpeshkoff
+
+	* firebird2/src/lock/lock.cpp (1.131):
+
+	Fixing merge
+
+2008-01-16 14:03  dimitr
+
+	* firebird2/builds/win32/msvc8/Firebird2Boot.sln (1.6):
+
+	The merge is being fixed.
+
+2008-01-16 13:30  alexpeshkoff
+
+	* firebird2/src/jrd/GlobalRWLock.cpp (1.11):
+
+	Fixing merge
+
+2008-01-16 13:29  dimitr
+
+	* firebird2/src/: jrd/jrd.cpp (1.361), remote/interface.cpp
+	(1.159):
+
+	The merge is being fixed.
+
+2008-01-16 13:28  alexpeshkoff
+
+	* firebird2/: src/include/gen/codetext.h (1.71),
+	src/include/gen/iberror.h (1.72), src/include/gen/ids.h (1.30),
+	src/include/gen/msg_facs.h (1.11), src/include/gen/msgs.h (1.90),
+	src/include/gen/rdb_codes.h (1.68), src/include/gen/sql_code.h
+	(1.76), lang_helpers/gds_codes.ftn (1.63),
+	lang_helpers/gds_codes.pas (1.63):
+
+	Fixing merge (generated headers)
+
+2008-01-16 13:19  dimitr
+
+	* firebird2/src/: lock/lock_proto.h (1.14),
+	include/gen/autoconfig_msvc.h (1.108), jrd/tra.cpp (1.145),
+	jrd/intl.cpp (1.101):
+
+	The merge is being fixed.
+
+2008-01-16 13:14  dimitr
+
+	* firebird2/src/jrd/: SysFunction.cpp (1.36), exe.cpp (1.234):
+
+	The merge is being fixed.
+
+2008-01-16 13:08  dimitr
+
+	* firebird2/src/jrd/: SysFunction.cpp (1.35), blb.cpp (1.155),
+	dyn.epp (1.113), exe.cpp (1.233), lck.cpp (1.69), lck_proto.h
+	(1.16), met.epp (1.229), rlck.cpp (1.40):
+
+	The merge is being fixed.
+
+2008-01-16 13:08  alexpeshkoff
+
+	* firebird2/src/jrd/dyn_util.epp (1.48):
+
+	Fixing merge
+
+2008-01-16 13:04  alexpeshkoff
+
+	* firebird2/src/jrd/: tra.h (1.69), dyn_mod.epp (1.93):
+
+	Fixing merge
+
+2008-01-16 13:01  alexpeshkoff
+
+	* firebird2/src/jrd/sch.cpp (1.44):
+
+	Fixing merge
+
+2008-01-16 12:51  dimitr
+
+	* firebird2/src/dsql/parse.y (1.254):
+
+	The merge is being fixed.
+
+2008-01-16 12:48  dimitr
+
+	* firebird2/src/jrd/jrd.h (1.205):
+
+	The merge is being fixed.
+
+2008-01-16 12:47  alexpeshkoff
+
+	* firebird2/: configure.in (1.275),
+	builds/posix/Makefile.in.client.gbak (1.21),
+	builds/posix/Makefile.in.client.gdef (1.17),
+	builds/posix/Makefile.in.client.gfix (1.24),
+	builds/posix/Makefile.in.client.gpre (1.28),
+	builds/posix/Makefile.in.client.gsec (1.11),
+	builds/posix/Makefile.in.client.isql (1.21),
+	builds/posix/Makefile.in.client.qli (1.16),
+	builds/posix/Makefile.in.client.util (1.51),
+	builds/posix/Makefile.in.embed.util (1.36),
+	builds/posix/Makefile.in.extlib (1.25),
+	builds/posix/Makefile.in.fbserver (1.25),
+	builds/posix/Makefile.in.firebird (1.84),
+	builds/posix/Makefile.in.libfbclient (1.39),
+	builds/posix/Makefile.in.static.gbak (1.18),
+	builds/posix/make.defaults (1.62):
+
+	Merge continued
+
+2008-01-16 12:41  dimitr
+
+	* firebird2/src/gpre/cme.cpp (1.43):
+
+	The merge is being fixed.
+
+2008-01-16 12:35  dimitr
+
+	* firebird2/builds/win32/msvc8/: empbuild.vcproj (1.7),
+	Firebird2Boot.sln (1.5):
+
+	The merge is being fixed.
+
+2008-01-16 12:31  dimitr
+
+	* firebird2/builds/win32/msvc8/: alice_classic.vcproj (1.6),
+	build_msg.vcproj (1.6), burp_classic.vcproj (1.6), codes.vcproj
+	(1.5), common.vcproj (1.8), common_classic.vcproj (1.8),
+	dsql_server_classic.vcproj (1.6), empbuild.vcproj (1.6),
+	engine.vcproj (1.13), engine_classic.vcproj (1.13),
+	engine_embed.vcproj (1.13), fb_inet_server.vcproj (1.13),
+	fbclient.vcproj (1.10), fbclient_static.vcproj (1.5),
+	fbrmclib.vcproj (1.5), fbserver.vcproj (1.14), Firebird2.sln (1.8),
+	Firebird2Boot.sln (1.4), gbak.vcproj (1.6), gbak_embed.vcproj
+	(1.8), gdef.vcproj (1.6), gfix.vcproj (1.6), gpre.vcproj (1.8),
+	gpre_embed.vcproj (1.6), gpre_static.vcproj (1.5), gsec.vcproj
+	(1.7), gstat.vcproj (1.8), intl.vcproj (1.15), intlbuild.vcproj
+	(1.6), isql.vcproj (1.8), isql_embed.vcproj (1.6), qli.vcproj
+	(1.6), utilities.vcproj (1.6), utilities_classic.vcproj (1.6),
+	v5_examples.vcproj (1.5):
+
+	The merge continued.
+
+2008-01-16 12:16  dimitr
+
+	* firebird2/src/jrd/: TextType.cpp (1.6), SysFunction.cpp (1.34):
+
+	The merge continued.
+
+2008-01-16 11:47  dimitr
+
+	* firebird2/configure.in (1.274):
+
+	Committed with conflicts by Alex's request.
+
+2008-01-16 11:41  dimitr
+
+	* firebird2/builds/win32/msvc6/: common.dsp (1.38),
+	common_static.dsp (1.16), engine.dsp (1.75), engine_classic.dsp
+	(1.71), engine_embed.dsp (1.50), fbclient.dsp (1.58),
+	fbclient_static.dsp (1.22), fbrmclib.dsp (1.4), gbak.dsp (1.25),
+	gbak_embed.dsp (1.3), gfix.dsp (1.24), gsec.dsp (1.23), gstat.dsp
+	(1.25), isql.dsp (1.28), isql_embed.dsp (1.6):
+
+	The merge continued.
+
+2008-01-16 11:37  dimitr
+
+	* firebird2/builds/win32/: msvc7/common.vcproj (1.28),
+	msvc7/common_classic.vcproj (1.25), msvc7/common_static.vcproj
+	(1.13), msvc7/engine.vcproj (1.66), msvc7/engine_classic.vcproj
+	(1.66), msvc7/engine_embed.vcproj (1.55), msvc7/fbclient.vcproj
+	(1.47), msvc7/fbclient_static.vcproj (1.20), msvc7/fbrmclib.vcproj
+	(1.2), msvc7/gbak.vcproj (1.21), msvc7/gbak_embed.vcproj (1.3),
+	msvc7/gfix.vcproj (1.22), msvc7/gsec.vcproj (1.25),
+	msvc7/gstat.vcproj (1.28), msvc7/intl.vcproj (1.34),
+	msvc7/isql.vcproj (1.23), msvc7/isql_embed.vcproj (1.4),
+	defs/fbrmclib.def (1.2):
+
+	The merge continued.
+
+2008-01-16 11:37  alexpeshkoff
+
+	* firebird2/src/jrd/os/posix/isc_ipc.cpp (1.27):
+
+	make it compile
+
+2008-01-16 11:36  dimitr
+
+	* firebird2/builds/posix/: Makefile.in.client.gbak (1.20),
+	Makefile.in.client.gdef (1.16), Makefile.in.client.gfix (1.23),
+	make.defaults (1.61), Makefile.in.client.gpre (1.27),
+	Makefile.in.client.gsec (1.10), Makefile.in.client.isql (1.20),
+	Makefile.in.client.qli (1.15), Makefile.in.client.util (1.50),
+	Makefile.in.embed.util (1.35), Makefile.in.extlib (1.24),
+	Makefile.in.fbserver (1.24), Makefile.in.firebird (1.83),
+	Makefile.in.libfbclient (1.38), Makefile.in.static.gbak (1.17):
+
+	Committed with conflicts by Alex's request.
+
+2008-01-16 11:34  dimitr
+
+	* firebird2/builds/posix/: make.rules (1.36), make.shared.targets
+	(1.26), Makefile.in.client.fbudf (1.12), Makefile.in.embed.fbudf
+	(1.7), Makefile.in.embed.gbak (1.21), make.shared.variables (1.78),
+	Makefile.in.embed.gfix (1.24), Makefile.in.embed.isql (1.19),
+	Makefile.in.intl (1.33), Makefile.in.refDatabases (1.32),
+	Makefile.in.static.isql (1.16), postfix.darwin (1.7):
+
+	The merge continued.
+
+2008-01-16 11:31  dimitr
+
+	* firebird2/: src/jrd/unicode_util.cpp (1.25),
+	builds/mac_os_x/CS/CS.pbproj/project.pbxproj (1.14):
+
+	The merge continued.
+
+2008-01-16 11:29  alexpeshkoff
+
+	* firebird2/src/utilities/gsec/gsec.cpp (1.79):
+
+	Merge continued
+
+2008-01-16 11:25  dimitr
+
+	* firebird2/src/jrd/: TempSpace.cpp (1.14), TextType.h (1.4),
+	thd.cpp (1.53), thd.h (1.51), thread_proto.h (1.8), tra.h (1.68),
+	tra_proto.h (1.21):
+
+	The merge continued.
+
+2008-01-16 11:17  dimitr
+
+	* firebird2/src/jrd/: utl.cpp (1.106), utl_proto.h (1.23), val.h
+	(1.35), validation.cpp (1.31), vio.cpp (1.200), why.cpp (1.136),
+	why_proto.h (1.37):
+
+	The merge continued.
+
+2008-01-16 11:13  dimitr
+
+	* firebird2/src/jrd/: ThreadData.cpp (1.8), ThreadData.h (1.2),
+	ThreadStart.cpp (1.2), ThreadStart.h (1.2):
+
+	The merge continued.
+
+2008-01-16 11:12  dimitr
+
+	* firebird2/src/utilities/gsec/gsec.cpp (1.78):
+
+	Committed with conflicts by Alex's request.
+
+2008-01-16 11:09  dimitr
+
+	* firebird2/src/utilities/gsec/: gsec.h (1.30), gsecMain.cpp (1.2),
+	gsec_proto.h (1.15), gsecswi.h (1.8), security.epp (1.17):
+
+	The merge continued.
+
+2008-01-16 11:08  alexpeshkoff
+
+	* firebird2/src/common/config/config.h (1.48):
+
+	make it compile
+
+2008-01-16 10:48  dimitr
+
+	* firebird2/src/jrd/: SimilarToMatcher.h (1.2), req.h (1.71),
+	rlck.cpp (1.39), rlck_proto.h (1.15), rse.cpp (1.142), sch.cpp
+	(1.43), sch_proto.h (1.8), scl.epp (1.87), scl.h (1.16),
+	scl_proto.h (1.26), sdl.cpp (1.46), sdw.cpp (1.71), sha.cpp (1.8),
+	shut.cpp (1.51), sort.cpp (1.105), sort.h (1.36), sort_proto.h
+	(1.21), sqz.cpp (1.22), svc.cpp (1.194), svc.h (1.44), svc_proto.h
+	(1.20), sym.cpp (1.18), sym.h (1.6):
+
+	The merge continued.
+
+2008-01-16 10:41  dimitr
+
+	* firebird2/src/jrd/: Optimizer.cpp (1.79), nod.h (1.26), ods.h
+	(1.44), opt.cpp (1.302), pag.cpp (1.156), par.cpp (1.181), perf.cpp
+	(1.37), Relation.cpp (1.8), perf.h (1.9), pwd.cpp (1.54),
+	relations.h (1.22):
+
+	The merge continued.
+
+2008-01-16 10:29  dimitr
+
+	* firebird2/src/jrd/: jrd.cpp (1.360), jrd.h (1.204), jrd_proto.h
+	(1.52), jrd_pwd.h (1.21), lck.cpp (1.68), lck.h (1.34), license.h
+	(1.36), log2.h (1.5), met.epp (1.228), met_proto.h (1.61), mov.cpp
+	(1.33), mov_proto.h (1.16), nav.cpp (1.70):
+
+	The merge continued.
+
+2008-01-16 10:07  dimitr
+
+	* firebird2/src/jrd/: GlobalRWLock.cpp (1.10), GlobalRWLock.h
+	(1.10), flu.cpp (1.60), fun.epp (1.83), functions.cpp (1.31),
+	gds.cpp (1.232), gds_proto.h (1.47), grammar.cpp (1.10), grammar.y
+	(1.3), grant.epp (1.60), ibase.h (1.126), IntlManager.cpp (1.19),
+	IntlManager.h (1.8), IntlUtil.cpp (1.15), idx.cpp (1.126), inf.cpp
+	(1.80), ini.epp (1.92), ini.h (1.29), intl.cpp (1.100),
+	intl_builtin.cpp (1.41), intl_classes.h (1.28), intl_proto.h
+	(1.22), inuse.cpp (1.13), inuse_proto.h (1.5), irq.h (1.14),
+	isc.cpp (1.71), isc.h (1.32), isc_f_proto.h (1.23), isc_file.cpp
+	(1.113), isc_proto.h (1.19), isc_s_proto.h (1.18), isc_signal.h
+	(1.6), isc_sync.cpp (1.120), jlx.c (1.10):
+
+	The merge continued.
+
+2008-01-16 09:54  dimitr
+
+	* firebird2/src/jrd/: err.cpp (1.70), err_proto.h (1.27), event.cpp
+	(1.66), event.h (1.20), evl.cpp (1.244), evl_string.h (1.25),
+	exe.cpp (1.232), exe.h (1.108), execute_statement.cpp (1.29),
+	file_params.h (1.29), filters.cpp (1.57):
+
+	The merge continued.
+
+2008-01-16 09:46  dimitr
+
+	* firebird2/src/jrd/: dfw.epp (1.220), dmp.cpp (1.35), dpm.epp
+	(1.75), drq.h (1.20), dsc.cpp (1.32), dsc.h (1.39), dsc2.h (1.11),
+	dyn.epp (1.112), dyn.h (1.36), dyn_def.epp (1.160), dyn_del.epp
+	(1.74), dyn_md_proto.h (1.10), dyn_mod.epp (1.92), dyn_ut_proto.h
+	(1.15), dyn_util.epp (1.47):
+
+	The merge continued.
+
+2008-01-16 09:37  dimitr
+
+	* firebird2/doc/README.UserSql (1.2):
+
+	The merge continued.
+
+2008-01-16 09:31  dimitr
+
+	* firebird2/src/jrd/: CharSet.cpp (1.6), CharSet.h (1.5), btn.cpp
+	(1.26), btn.h (1.19), btr.cpp (1.205), cch.cpp (1.178), cmp.cpp
+	(1.274), Collation.cpp (1.10), Collation.h (1.4), CsConvert.h
+	(1.10), DataTypeUtil.cpp (1.14), DatabaseSnapshot.cpp (1.45),
+	DebugInterface.cpp (1.6), cmp_proto.h (1.32), common.h (1.159),
+	constants.h (1.49), cvt.cpp (1.86), cvt2.cpp (1.57), dbg.cpp
+	(1.35), dbt.cpp (1.36):
+
+	The merge continued.
+
+2008-01-16 09:16  dimitr
+
+	* firebird2/src/jrd/: alt.cpp (1.67), alt_proto.h (1.16), blb.cpp
+	(1.154), blb.h (1.28), blp.h (1.32), blr.h (1.36):
+
+	The merge continued.
+
+2008-01-16 09:12  dimitr
+
+	* firebird2/src/jrd/os/: posix/isc_ipc.cpp (1.26), posix/unix.cpp
+	(1.78), win32/isc_ipc.cpp (1.20), win32/thd_priority.cpp (1.28),
+	isc_i_proto.h (1.9), pio.h (1.15):
+
+	The merge continued.
+
+2008-01-16 09:08  dimitr
+
+	* firebird2/src/: msgs/facilities2.sql (1.19), msgs/history2.sql
+	(1.6), msgs/messages2.sql (1.22), msgs/system_errors2.sql (1.13),
+	jrd/os/vms/dfloat_stub.cpp (1.13), jrd/os/vms/lnmdef.h (1.3),
+	jrd/os/vms/map.cpp (1.15), jrd/os/vms/map_proto.h (1.5),
+	jrd/os/vms/mblr.cpp (1.8), jrd/os/vms/mblr.h (1.4),
+	jrd/os/vms/mblr_proto.h (1.4), jrd/os/vms/prv_m_bypass.h (1.3),
+	jrd/os/vms/rdb.cpp (1.17), jrd/os/vms/rdb.h (1.4),
+	jrd/os/vms/rdbcodes.h (1.2), jrd/os/vms/rdbgpas.cpp (1.6),
+	jrd/os/vms/rdbint.cpp (1.17), jrd/os/vms/syidef.h (1.3),
+	jrd/os/vms/vms.cpp (1.28), jrd/os/vms/vms.h (1.5),
+	jrd/os/vms/vms_command.cpp (1.3), jrd/os/vms/vmsthread.cpp (1.5):
+
+	The merge continued.
+
+2008-01-16 08:55  dimitr
+
+	* firebird2/src/remote/: allr.cpp (1.34), allr_proto.h (1.10),
+	inet.cpp (1.199), inet_server.cpp (1.72), inter_proto.h (1.16),
+	interface.cpp (1.158), parser.cpp (1.19), protocol.cpp (1.62),
+	remote.cpp (1.49), remote.h (1.59), remote_def.h (1.30),
+	serve_proto.h (1.11), server.cpp (1.160), xdr.cpp (1.27), xdr.h
+	(1.12), xnet.cpp (1.96):
+
+	The merge continued.
+
+2008-01-16 08:51  dimitr
+
+	* firebird2/src/remote/os/win32/: cntl.cpp (1.25), srvr_w32.cpp
+	(1.42), wnet.cpp (1.44):
+
+	The merge continued.
+
+2008-01-16 08:47  dimitr
+
+	* firebird2/src/utilities/: install/install_nt.h (1.15),
+	install/install_svc.cpp (1.34), install/servi_proto.h (1.14),
+	install/services.cpp (1.24), gstat/dba.epp (1.84),
+	gstat/dba_proto.h (1.2), gstat/dbaswi.h (1.9), gstat/gstatMain.cpp
+	(1.2), gstat/ppg.cpp (1.31), gstat/ppg_proto.h (1.13):
+
+	The merge continued.
+
+2008-01-16 08:40  dimitr
+
+	* firebird2/src/utilities/: analyse.cpp (1.15), cache.cpp (1.18),
+	drop.cpp (1.35), print_event.cpp (1.9):
+
+	The merge continued.
+
+2008-01-16 08:35  dimitr
+
+	* firebird2/src/: lock/driver.cpp (1.19), lock/lock.cpp (1.130),
+	lock/lock.h (1.39), lock/lock_proto.h (1.13), lock/print.cpp
+	(1.61), misc/blrtable.cpp (1.35), msgs/build_file.epp (1.31),
+	msgs/check_msgs.epp (1.14):
+
+	The merge continued.
+
+2008-01-16 08:23  dimitr
+
+	* firebird2/src/isql/: ColList.cpp (1.2), ColList.h (1.2),
+	InputDevices.cpp (1.2), InputDevices.h (1.2), OptionsBase.cpp
+	(1.2), extract.epp (1.89), isql.epp (1.224), isql.h (1.66),
+	OptionsBase.h (1.2), show.epp (1.127):
+
+	The merge continued.
+
+2008-01-16 08:13  dimitr
+
+	* firebird2/src/: intl/cv_icu.cpp (1.3), intl/ld.cpp (1.32),
+	iscguard/cntl_guard.cpp (1.22), iscguard/cntlg_proto.h (1.7):
+
+	The merge continued.
+
+2008-01-16 08:07  dimitr
+
+	* firebird2/src/: gpre/ada.cpp (1.52), gpre/c_cxx.cpp (1.68),
+	gpre/cmd.cpp (1.41), gpre/cme.cpp (1.42), gpre/cob.cpp (1.65),
+	gpre/exp.cpp (1.40), gpre/fbrmclib.cpp (1.5), gpre/ftn.cpp (1.61),
+	gpre/gpre.cpp (1.87), gpre/gpre.h (1.91), gpre/gpre_meta.epp
+	(1.56), gpre/gpre_meta_boot.cpp (1.51), gpre/gpreswi.h (1.18),
+	gpre/hsh.cpp (1.23), gpre/hsh.h (1.8), gpre/msc.cpp (1.23),
+	gpre/par.cpp (1.66), gpre/pas.cpp (1.53), gpre/pat.cpp (1.29),
+	gpre/pretty.cpp (1.32), gpre/rmc.cpp (1.6), gpre/sqe.cpp (1.49),
+	gpre/sql.cpp (1.66), gpre/words.h (1.8), include/consts_pub.h
+	(1.14), include/fb_blk.h (1.13), include/fb_types.h (1.54),
+	include/firebird.h (1.45), intl/utils/dtest.c (1.5),
+	intl/utils/dtest2.c (1.5):
+
+	The merge continued.
+
+2008-01-16 07:52  dimitr
+
+	* firebird2/src/: dsql/ddl.cpp (1.208), dsql/dsql.cpp (1.205),
+	dsql/dsql.h (1.114), dsql/gen.cpp (1.134), dsql/gen_proto.h (1.14),
+	dsql/keywords.cpp (1.67), dsql/make.cpp (1.147), dsql/metd.epp
+	(1.102), dsql/node.h (1.98), dsql/parse.y (1.253), dsql/pass1.cpp
+	(1.349), dsql/sym.h (1.12), dsql/user_dsql.cpp (1.48),
+	dsql/utld.cpp (1.43), dsql/utld_proto.h (1.19), dudley/ddl.cpp
+	(1.41), dudley/ddl.h (1.37), dudley/exe.epp (1.64),
+	dudley/extract.epp (1.46):
+
+	The merge continued.
+
+2008-01-16 07:32  dimitr
+
+	* firebird2/src/common/mp/: AtomicCounter.h (1.2),
+	crit_section_guard.h (1.2), crit_section_lock.h (1.2), mutex.h
+	(1.2), semaphore.h (1.2), thread.h (1.2):
+
+	Cleanup.
+
+2008-01-16 07:31  dimitr
+
+	* firebird2/src/: common/config/config.cpp (1.85),
+	common/config/config.h (1.47), config/Parameters.h (1.3),
+	dbs/security.sql (1.10):
+
+	The merge continued.
+
+2008-01-16 07:24  dimitr
+
+	* firebird2/src/common/classes/: ClumpletWriter.cpp (1.21),
+	fb_string.cpp (1.35), fb_tls.h (1.16), locks.h (1.26),
+	objects_array.h (1.20), rwlock.h (1.32), TempFile.cpp (1.11),
+	semaphore.h (1.51):
+
+	The merge continued.
+
+2008-01-16 07:11  dimitr
+
+	* firebird2/src/: burp/backup.epp (1.105), burp/burp.cpp (1.128),
+	burp/burp.h (1.85), burp/burpMain.cpp (1.2), burp/burp_proto.h
+	(1.22), burp/burpswi.h (1.20), burp/canonical.cpp (1.39),
+	burp/misc.cpp (1.19), burp/mvol.cpp (1.51), burp/mvol_proto.h
+	(1.11), burp/restore.epp (1.127), common/UtilSvc.cpp (1.2),
+	common/UtilSvc.h (1.2), common/utils.cpp (1.43),
+	common/utils_proto.h (1.21):
+
+	The merge continued.
+
+2008-01-16 06:57  dimitr
+
+	* firebird2/src/: alice/alice.cpp (1.98), alice/alice.h (1.57),
+	alice/aliceMain.cpp (1.2), alice/alice_proto.h (1.14),
+	alice/aliceswi.h (1.17), alice/exe.cpp (1.49), alice/tdr.cpp
+	(1.53), auth/trusted/AuthSspi.cpp (1.12), auth/trusted/AuthSspi.h
+	(1.10):
+
+	The merge continued.
+
 2008-01-15 21:15  dimitr
 
 	* firebird2/src/qli/: all.cpp (1.30), command.cpp (1.27),
