@@ -1,0 +1,74 @@
+#! /bin/sh
+
+#------------------------------------------------------------------------
+#  stop server if it is running
+
+
+stopServerIfRunning() {
+    checkString=`ps -ef | egrep "(fbserver|fbguard)" |grep -v grep`
+
+    if [ ! -z "$checkString" ] 
+      then
+        InitFile=/sbin/init.d/firebird
+      if [ -x $InitFile ]
+       then
+       $InitFile stop
+      fi
+    fi
+
+    checkString=`ps -ef | egrep "(fbserver|fbguard)" |grep -v grep`
+    if [ ! -z "$checkString" ] 
+      then
+	  # careful shutdown of server failed :)
+	  # this may be for very many reasons, therefore kill it
+	  killall -9 fbguard >/dev/null 2>&1
+	  killall -9 fbserver >/dev/null 2>&1
+	fi
+
+}
+
+
+
+#= Main PreUn ================================================================
+
+
+
+    FBRootDir=@prefix@
+    FBBin=$FBRootDir/bin
+    SecurityDatabase=security.fdb
+
+
+    stopServerIfRunning
+
+    cd $FBRootDir
+    if [ -f $SecurityDatabase ] 
+      then 
+        cp $SecurityDatabase /tmp 
+        echo "Saved a copy of SecurityDatabase ($SecurityDatabase) in /tmp" 
+		chown root:root /tmp/$SecurityDatabase
+		chmod 0600 /tmp/$SecurityDatabase
+    fi 
+        
+
+    for i in isc_init1* isc_event1* isc_lock1* isc_guard* firebird.log SYSDBA.password
+      do
+        if [ -f $i ]
+          then
+            rm -f $i
+        fi
+      done
+
+
+    rm -f $FBBin/fbmgr
+
+#	testStr=`grep firebird /etc/passwd`
+#	if [ ! -z "$testStr" ]
+#	  then
+#		userdel firebird
+#	fi
+#
+#	testStr=`grep firebird /etc/group`
+#	if [ ! -z "$testStr" ]
+#	  then
+#		groupdel firebird
+#	fi
