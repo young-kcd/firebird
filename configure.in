@@ -190,7 +190,7 @@ case "$target" in
   *-*-hpux*)
     MAKEFILE_PREFIX=hpux
     PLATFORM=HPUX
-    AC_DEFINE(hpux, 1, [Define this if OS is HP-UX])
+    AC_DEFINE(HPUX, 1, [Define this if OS is HP-UX])
     LOCK_MANAGER_FLG=Y
     EDITLINE_FLG=Y
     SHRLIB_EXT=sl
