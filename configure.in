@@ -98,6 +98,18 @@ case "$target" in
     SHRLIB_EXT=so
     ;;
 
+  mips-*-linux*)
+    MAKEFILE_PREFIX=linux_mips
+    INSTALL_PREFIX=linux
+    PLATFORM=LINUX
+    AC_DEFINE(LINUX)
+    LOCK_MANAGER_FLG=Y
+    EDITLINE_FLG=Y
+    SHRLIB_EXT=so
+    PTHREAD_CFLAGS=-pthread
+    PTHREAD_LIBS=-lpthread
+    ;;
+
   mipsel-*-linux*)
     MAKEFILE_PREFIX=linux_mipsel
     INSTALL_PREFIX=linux
