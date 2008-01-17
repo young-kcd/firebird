@@ -111,7 +111,10 @@ fixFilePermissions() {
         chmod ug=rw,o= $i
     done
 	
-	cd ..
+	# fix up doc permissions
+	fixDocPermissions
+
+	cd $FBRootDir
 }
 
 

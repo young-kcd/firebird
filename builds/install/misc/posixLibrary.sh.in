@@ -521,6 +521,23 @@ MakeFileFirebirdWritable() {
 
 
 #------------------------------------------------------------------------
+#  Set correct permissions for $FbRoot/doc tree
+
+fixDocPermissions() {
+	cd $FBRootDir
+
+	for i in `find doc -print`; do
+		chown root:root $i
+		if [ -d $i ]; then
+			chmod 0755 $i
+		else
+			chmod 0644 $i
+		fi
+	done
+}
+
+
+#------------------------------------------------------------------------
 # Run process and check status
 
 runAndCheckExit() {
