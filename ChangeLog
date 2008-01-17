@@ -1,3 +1,9 @@
+2008-01-16 12:04  paulbeach
+
+	* firebird2/src/jrd/svc.cpp (1.166.2.9):
+
+	Make the service api work on MacOS
+
 2008-01-11 13:55  alexpeshkoff
 
 	* firebird2/src/jrd/gds.cpp (1.193.2.4):
