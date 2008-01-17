@@ -138,6 +138,10 @@
 #define IMPLEMENTATION  isc_info_db_impl_linux_mipsel /* 71  */
 #endif /* mipsel */
 
+#ifdef MIPS
+#define IMPLEMENTATION  isc_info_db_impl_linux_mips /* 72  */
+#endif /* mips */
+
 #define MEMMOVE(from, to, length)		memmove ((void *)to, (void *)from, (size_t) length)
 #define MOVE_FAST(from, to, length)       memcpy (to, from, (int) (length))
 #define MOVE_FASTER(from, to, length)     memcpy (to, from, (int) (length))
