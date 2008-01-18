@@ -156,7 +156,7 @@ static const int CLASS_LINUX_MIPSEL = 29;    // LINUX/MIPSEL
 static const int CLASS_LINUX_MIPS = 30;    // LINUX/MIPS
 static const int CLASS_DARWIN_X64 = 31;   // Darwin/x64
 static const int CLASS_MAX10 = CLASS_LINUX_AMD64;	// This should not be changed, no new ports with ODS10
-static const int CLASS_MAX = CLASS_LINUX_MIPS;
+static const int CLASS_MAX = CLASS_DARWIN_X64;
 
 // ARCHITECTURE COMPATIBILITY CLASSES
 
@@ -244,7 +244,7 @@ static const ArchitectureType archMatrix[CLASS_MAX + 1] =
 	archBigEndian,    // CLASS_LINUX_PPC
 	archLittleEndian, // CLASS_DARWIN_I386
 	archLittleEndian, // CLASS_LINUX_MIPSEL
-	archBigEndian	  // CLASS_LINUX_MIPS
+	archBigEndian,	  // CLASS_LINUX_MIPS
 	archLittleEndian  // CLASS_DARWIN_X64
 };
 
