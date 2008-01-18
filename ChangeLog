@@ -1,3 +1,116 @@
+2008-01-17 17:17  alexpeshkoff
+
+	* firebird2/src/jrd/isc_sync.cpp (1.121):
+
+	typo
+
+2008-01-17 17:07  alexpeshkoff
+
+	* firebird2/src/jrd/gds.cpp (1.233):
+
+	rolled back my bad attempt to fix CORE 1671
+
+2008-01-17 15:38  asfernandes
+
+	* firebird2/src/jrd/: pag.cpp (1.158), utl.cpp (1.108):
+
+	Misc
+
+2008-01-17 14:40  dimitr
+
+	* firebird2/src/lock/: lock.cpp (1.133), lock_proto.h (1.15):
+
+	Cleanup.
+
+2008-01-17 14:10  dimitr
+
+	* firebird2/src/lock/lock.cpp (1.132):
+
+	Misc.
+
+2008-01-17 14:05  dimitr
+
+	* firebird2/src/: jrd/thread_proto.h (1.9), remote/server.cpp
+	(1.161):
+
+	Preparation for merging my own changes.
+
+2008-01-17 13:54  alexpeshkoff
+
+	* firebird2/src/remote/xdr.cpp (1.28):
+
+	Applied Damyan's patch - MIPS linux port
+
+2008-01-17 13:36  alexpeshkoff
+
+	* firebird2/src/jrd/: common.h (1.160), inf_pub.h (1.21), pag.cpp
+	(1.157), utl.cpp (1.107):
+
+	Applied Damyan's patch - MIPS linux port
+
+2008-01-17 13:28  paulbeach
+
+	* firebird2/builds/posix/postfix.darwin (1.9):
+
+	Darwin and HPUX mods
+
+2008-01-17 13:25  alexpeshkoff
+
+	* firebird2/: builds/posix/prefix.linux_mips (1.2), configure.in
+	(1.276):
+
+	Applied Damyan's patch - MIPS linux port
+
+2008-01-17 13:09  paulbeach
+
+	* firebird2/builds/: install/arch-specific/darwin/FB.info (1.6),
+	posix/fbintl.darwin.vers (1.3), posix/fbintl.hpux.vers (1.2),
+	posix/postfix.darwin (1.8), posix/prefix.darwin_i386 (1.5),
+	posix/prefix.darwin_powerpc (1.5), posix/prefix.hpux (1.4):
+
+	Darwin and HPUX mods
+
+2008-01-17 12:56  dimitr
+
+	* firebird2/extern/icu/source/: data/makedata_8.vcproj (1.4),
+	tools/pkgdata/pkgdata_8.vcproj (1.4), stubdata/stubdata_8.vcproj
+	(1.4), tools/toolutil/toolutil_8.vcproj (1.4),
+	extra/uconv/uconv_8.vcproj (1.4):
+
+	Finished the merge.
+
+2008-01-17 12:53  dimitr
+
+	* firebird2/extern/icu/source/: test/cintltst/cintltst_8.vcproj
+	(1.4), common/common_8.vcproj (1.4), tools/ctestfw/ctestfw_8.vcproj
+	(1.4), tools/gencmn/decmn_8.vcproj (1.4),
+	tools/gencmn/gencmn_8.vcproj (1.4), tools/genrb/derb_8.vcproj
+	(1.4), tools/genrb/genrb_8.vcproj (1.4),
+	tools/genbrk/genbrk_8.vcproj (1.4),
+	tools/genccode/genccode_8.vcproj (1.4),
+	tools/gencnval/gencnval_8.vcproj (1.4),
+	tools/gennames/gennames_8.vcproj (1.4),
+	tools/gennorm/gennorm_8.vcproj (1.4),
+	tools/genpname/genpname_8.vcproj (1.4),
+	tools/genprops/genprops_8.vcproj (1.4),
+	tools/gensprep/gensprep_8.vcproj (1.4),
+	tools/gentest/gentest_8.vcproj (1.4), tools/genuca/genuca_8.vcproj
+	(1.4), i18n/i18n_8.vcproj (1.4), tools/icuswap/icuswap_8.vcproj
+	(1.4), test/intltest/intltest_8.vcproj (1.4), io/io_8.vcproj (1.4),
+	test/iotest/iotest_8.vcproj (1.4), layout/layout_8.vcproj (1.4),
+	layoutex/layoutex_8.vcproj (1.4), tools/makeconv/makeconv_8.vcproj
+	(1.4):
+
+	Finished the merge.
+
+2008-01-17 12:36  alexpeshkoff
+
+	*
+	firebird2/builds/install/arch-specific/linux/misc/linuxLibrary.sh.in
+	(1.8):
+
+	misc
+
 2008-01-16 15:37  asfernandes
 
 	* firebird2/src/: dsql/pass1.cpp (1.350), jrd/opt.cpp (1.303),
