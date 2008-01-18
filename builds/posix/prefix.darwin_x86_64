@@ -15,13 +15,14 @@
 # All Rights Reserved.
 # Contributor(s): ______________________________________.
 # Start of file prefix.darwin:	$(VERSION)	@PLATFORM@
-#$Id: prefix.darwin_x86_64,v 1.1.2.2 2008-01-18 13:20:18 paulbeach Exp $
+#$Id: prefix.darwin_x86_64,v 1.1.2.3 2008-01-18 15:12:26 paulbeach Exp $
 # 2 Oct 2002, Nickolay Samofatov - Major Cleanup
 
 # To use this file to build 64bit version of Firebird for MacOS 10.5 (Leopard)
 # 1. edit configure.in so that MAKEFILE_PREFIX=darwin_x86_64
 # 2. uncomment the CPU_TYPE
 # 3. edit extern/icu/source/config/mh-darwin and set the right 64bit flags (-arch x86_64)
+# for CFLAGS, CXXFLAGS & LD_FLAGS
 # 4. export CFLAGS='-arch x86_64'
 # 5. export CXXFLAGS='-arch x86_64'
 
