@@ -30,6 +30,7 @@
 #include "../jrd/CharSet.h"
 #include "../jrd/IntlUtil.h"
 #include "../jrd/gdsassert.h"
+#include "../common/classes/alloc.h"
 #include "../common/classes/auto.h"
 #include "../common/classes/GenericMap.h"
 #include "../common/classes/init.h"
