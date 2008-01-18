@@ -154,8 +154,9 @@ static const int CLASS_LINUX_PPC = 27;    // LINUX/PowerPC
 static const int CLASS_DARWIN_I386 = 28;	//Darwin/Intel
 static const int CLASS_LINUX_MIPSEL = 29;    // LINUX/MIPSEL
 static const int CLASS_LINUX_MIPS = 30;    // LINUX/MIPS
+static const int CLASS_DARWIN_X64 = 31;   // Darwin/x64
 static const int CLASS_MAX10 = CLASS_LINUX_AMD64;	// This should not be changed, no new ports with ODS10
-static const int CLASS_MAX = CLASS_LINUX_MIPS;
+static const int CLASS_MAX = CLASS_DARWIN_X64;
 
 // ARCHITECTURE COMPATIBILITY CLASSES
 
@@ -241,7 +242,8 @@ static ArchitectureType archMatrix[CLASS_MAX + 1] = {
 	archBigEndian,    // CLASS_LINUX_PPC
 	archLittleEndian, // CLASS_DARWIN_I386
 	archLittleEndian, // CLASS_LINUX_MIPSEL
-	archBigEndian  // CLASS_LINUX_MIPS
+	archBigEndian,  // CLASS_LINUX_MIPS
+	archLittleEndian  // CLASS_DARWIN_X64
 };
 
 #ifdef sun
@@ -315,13 +317,17 @@ const SSHORT CLASS		= CLASS_NETBSD_I386;
 #endif
 
 #ifdef DARWIN
-#if defined(i386) || defined (__x86_64__)
+#if defined(i386)
 const SSHORT CLASS		= CLASS_DARWIN_I386;
+#endif
+#ifdef DARWIN64
+const SSHORT CLASS		= CLASS_DARWIN_X64;
 #endif
 #ifdef powerpc
 const SSHORT CLASS		= CLASS_DARWIN_PPC;
 #endif
 #endif
+
 static const char* const SCRATCH = "fb_table_";
 
 static const int MIN_EXTEND_BYTES = 128 * 1024;	// 128KB

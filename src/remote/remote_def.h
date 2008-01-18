@@ -70,6 +70,8 @@ const P_ARCH ARCHITECTURE	= arch_darwin_ppc;
 const P_ARCH ARCHITECTURE	= arch_winnt_64;
 #elif defined(I386)
 const P_ARCH ARCHITECTURE	= arch_intel_32;
+#elif defined(DARWIN64)
+const P_ARCH ARCHITECTURE	= arch_darwin_64;
 #endif
 
 

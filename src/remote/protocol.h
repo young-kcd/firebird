@@ -147,8 +147,8 @@ typedef enum
 	arch_netbsd		= 38,
 	arch_darwin_ppc		= 39,
 	arch_winnt_64	= 40,
-
-	arch_max		= 41	/* Keep this at the end */
+	arch_darwin_64		= 41,
+	arch_max		= 42	/* Keep this at the end */
 } P_ARCH;
 
 /* Protocol Types */
