@@ -11,6 +11,7 @@ SHAREDLIBCPPFLAGS =
 
 # Pad out the paths to the maximum possible length
 LD_FLAGS += -headerpad_max_install_names
+#LD_FLAGS += -headerpad_max_install_names -arch x86_64
 
 # Set CFLAGS and CXXFLAGS for relevant MacOS architecture
 # and backwards compatibility. Set accordingly before building.
