@@ -202,7 +202,7 @@ enum  info_db_implementations
 	isc_info_db_impl_linux_mips = 72,
 	isc_info_db_impl_darwin_x64 = 73,
 
-	isc_info_db_impl_last_value   /* Leave this LAST! */
+	isc_info_db_impl_last_value   // Leave this LAST!
 };
 
 #define isc_info_db_impl_isc_a            isc_info_db_impl_isc_apl_68K
