@@ -164,6 +164,10 @@
 #define I386
 #define IMPLEMENTATION isc_info_db_impl_darwin_x86 /* 70 */
 #endif
+#ifdef __x86_64__
+#define DARWIN64
+#define IMPLEMENTATION isc_info_db_impl_darwin_x64 /* 73 */
+#endif
 #define IEEE
 #define QUADCONST(n) (n##LL)
 #define QUADFORMAT "q"
