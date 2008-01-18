@@ -1,3 +1,24 @@
+2008-01-17 18:04  alexpeshkoff
+
+	* firebird2/: configure.in (1.241.2.28),
+	src/common/classes/fb_string.cpp (1.31.2.1):
+
+	Backported fix for CORE-1692: Firebird::string::vprintf() fails
+	with long resulting string
+
+2008-01-17 17:19  alexpeshkoff
+
+	* firebird2/src/jrd/gds.cpp (1.193.2.5):
+
+	rolled back my bad attempt to fix CORE 1671
+
+2008-01-17 12:15  paulbeach
+
+	* firebird2/builds/posix/: prefix.darwin_i386 (1.1.2.2),
+	prefix.darwin_powerpc (1.1.2.3):
+
+	Minor mod for international symbols
+
 2008-01-16 12:04  paulbeach
 
 	* firebird2/src/jrd/svc.cpp (1.166.2.9):
