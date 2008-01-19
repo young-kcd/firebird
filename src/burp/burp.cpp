@@ -721,7 +721,7 @@ int gbak(Firebird::UtilSvc* uSvc)
 
 				Firebird::string up(redirect);
 				up.upper();
-				tdgbl->sw_redirect = up == output_suppress ? NOOUTPUT : REDIRECT;
+				tdgbl->sw_redirect = (up == output_suppress) ? NOOUTPUT : REDIRECT;
 
 				if (tdgbl->sw_redirect == REDIRECT)		// not NOREDIRECT, and not NOOUTPUT 
 				{
@@ -1946,6 +1946,7 @@ static void burp_output( const SCHAR* format, ...)
 		buf.vprintf(format, arglist);
 		va_end(arglist);
 		tdgbl->uSvc->output(buf.c_str());
+		fflush(stdout);
 	}
 }
 
