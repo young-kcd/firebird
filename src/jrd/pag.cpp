@@ -320,7 +320,7 @@ const SSHORT CLASS		= CLASS_DARWIN_X64;
 #ifdef powerpc
 const SSHORT CLASS		= CLASS_DARWIN_PPC;
 #endif
-#endif
+#endif	// DARWIN
 static const char* const SCRATCH = "fb_table_";
 
 static const int MIN_EXTEND_BYTES = 128 * 1024;	// 128KB

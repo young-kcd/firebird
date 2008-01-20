@@ -145,9 +145,9 @@ typedef enum
 	arch_linux		= 36,
 	arch_freebsd	= 37,
 	arch_netbsd		= 38,
-	arch_darwin_ppc		= 39,
+	arch_darwin_ppc	= 39,
 	arch_winnt_64	= 40,
-	arch_darwin_64		= 41,
+	arch_darwin_64	= 41,
 	arch_max		= 42	/* Keep this at the end */
 } P_ARCH;
 
