@@ -319,11 +319,9 @@ const SSHORT CLASS		= CLASS_NETBSD_I386;
 #ifdef DARWIN
 #if defined(i386)
 const SSHORT CLASS		= CLASS_DARWIN_I386;
-#endif
-#ifdef DARWIN64
+#elif defined DARWIN64
 const SSHORT CLASS		= CLASS_DARWIN_X64;
-#endif
-#ifdef powerpc
+#elif defined powerpc
 const SSHORT CLASS		= CLASS_DARWIN_PPC;
 #endif
 #endif  // DARWIN
