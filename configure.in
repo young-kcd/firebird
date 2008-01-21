@@ -287,9 +287,11 @@ AC_ARG_ENABLE(debug,
 AC_SUBST(PROD_BUILD_FLG)
 
 dnl Find out how to use threads on this platform
+pre_acx_pthread_cflags=$CFLAGS
 ACX_PTHREAD([
   AC_DEFINE(HAVE_MULTI_THREAD, 1,
     [Define this if multi-threading should be supported])])
+CFLAGS=$pre_acx_pthread_cflags
 
 AC_SUBST(PTHREAD_LIBS)
 AC_SUBST(PTHREAD_CFLAGS)
