@@ -1,3 +1,10 @@
+2008-01-21 00:51  asfernandes
+
+	* firebird2/src/: jrd/license.h (1.38), jrd/pag.cpp (1.161),
+	remote/protocol.h (1.37):
+
+	Misc
+
 2008-01-19 14:30  dimitr
 
 	* firebird2/src/burp/burp.cpp (1.129):
