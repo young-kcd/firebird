@@ -197,7 +197,7 @@ echo "Install ourselves in the correct place Classic"
 
 # inetd.d - older versions of MacOS
 echo "Test inetd"
-if [ -f /var/run/inted.pid -a -d /etc/inetd.d ]; then
+if [ -f /var/run/inetd.pid -a -d /etc/inetd.d ]; then
 	if [ -f /etc/inetd.conf ]; then
 	echo "gds_db stream  tcp     nowait  root $FB_FW/Resources/bin/fb_inet_server fb_inet_server" > /etc/.fb.inetd.conf.entry
 	cat /etc/inetd.conf /etc/.fb.inetd.conf.entry > /etc/.interbase.temp.install.inetd.conf
