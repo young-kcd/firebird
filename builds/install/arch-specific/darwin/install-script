@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# $Id: install-script,v 1.1.2.9 2008-01-04 13:06:28 alexpeshkoff Exp $
+# $Id: install-script,v 1.1.2.10 2008-01-22 09:37:42 paulbeach Exp $
 #
 # Script args:
 # $0: full path to script
@@ -151,6 +151,7 @@ else
 
     chmod a+s "$FB_FW/Resources/bin/gds_drop"
     chmod a+s "$FB_FW/Resources/bin/fb_lock_mgr"
+    chown root "$FB_FW/Resources/bin/fb_lock_mgr"
     chmod a+s "$FB_FW/Resources/bin/fb_inet_server"
 fi
 
