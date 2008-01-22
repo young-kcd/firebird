@@ -1007,8 +1007,17 @@ static void invoke(UserFunction* function,
 	else
 	{
 		THREAD_EXIT();
-		typedef UCHAR* pUCHAR;
-		UCHAR* temp_ptr = CALL_UDF(function->fun_entrypoint, pUCHAR);
+		UCHAR* temp_ptr;
+		try
+		{
+			typedef UCHAR* pUCHAR;
+			temp_ptr = CALL_UDF(function->fun_entrypoint, pUCHAR);
+		}
+		catch (...)
+		{
+			THREAD_ENTER();
+			throw;
+		}
 		THREAD_ENTER();
 		
 		if (temp_ptr != NULL)
