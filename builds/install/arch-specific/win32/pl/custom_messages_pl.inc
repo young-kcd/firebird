@@ -51,7 +51,7 @@ pl.FbRunning3=       lub zatrzymaæ us³ugê.
 pl.PreviousInstallBroken=   (Instalacja wygl¹da na b³êdn¹, z powodu konfliktu wersji.)
 pl.PreviousInstallGood=   (Instalacja wygl¹da na poprawn¹.)
 
-pl.IconReadme=Firebird 2.0 - przeczytaj mnie
+pl.IconReadme=Firebird 2.1 - przeczytaj mnie
 pl.IconUninstall=Deinstalacja Firebird'a
 pl.ReleaseNotes= Informacje o wydaniu. (Wymagany Acrobat Reader.)
 pl.InstallationGuide= installation guide. (Wymagany Acrobat Reader.)
