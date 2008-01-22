@@ -1,3 +1,16 @@
+2008-01-22 03:49  asfernandes
+
+	* firebird2/src/jrd/fun.epp (1.84):
+
+	Fixed a problem (not reproducable in stable releases) that causes
+	assertion when rdb$*_context functions throws exceptions.
+
+2008-01-21 11:14  alexpeshkoff
+
+	* firebird2/configure.in (1.278):
+
+	Restored build flags
+
 2008-01-21 00:51  asfernandes
 
 	* firebird2/src/: jrd/license.h (1.38), jrd/pag.cpp (1.161),
