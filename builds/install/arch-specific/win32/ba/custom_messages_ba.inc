@@ -1,4 +1,4 @@
-ba.MyAppName=Firebird Database Server 2.0
+ba.MyAppName=Firebird Database Server %1
 ba.ServerInstall=Puna instalacija Server-a i razvojnih alata.
 ba.SuperServerInstall=Puna instalacija Super Server-a i razvojnih alata.
 ba.ClassicServerInstall=Puna instalacijaClassic Server-a i razvojnih alata.
@@ -20,7 +20,7 @@ ba.CopyFbClientAsGds32Task=Generiši client biblioteku (library) kao GDS32.DLL za
 ba.InstallCPLAppletTask="Instaliraj Control &Panel Applet?"
 ba.instreg=Upisujem u registry
 ba.instclientCopyFbClient=Kopiram fbclient u folder <sys>
-ba.instclientGenGds32=Generišem gds32.dll u folder <sys> 
+ba.instclientGenGds32=Generišem gds32.dll u folder <sys>
 ba.instclientDecLibCountGds32="Umanjujem brojaè upotrebe za biblioteku gds32 i uklanjam ako treba."
 ba.instclientDecLibCountFbClient="Umanjujem brojaè upotrebe za biblioteku fbclient i uklanjam ako treba."
 ba.instsvcSetup=Podešavam service
@@ -45,15 +45,18 @@ ba.InstalledProdCountSingular=verzija ima
 ba.InstalledProdCountPlural=verzije imaju
 
 ba.FbRunning1=Postojeæi Firebird %1 Server je pokrenut.
-ba.FbRunning2= Morate zatvoriti aplikaciju ili zaustaviti 
+ba.FbRunning2= Morate zatvoriti aplikaciju ili zaustaviti
 ba.FbRunning3=         service prije nastavka.
 
 ba.PreviousInstallBroken=   (Instalacija je neuspješna zbog razlike u verzijama.)
 ba.PreviousInstallGood=   (Instalacija je uspješna.)
 
-ba.IconReadme=Firebird 2.0 Readme
+ba.IconReadme=Firebird 2.1 Readme
 ba.IconUninstall=Deinstalacija Firebird-a
 ba.ReleaseNotes= release notes. (Potreban je Acrobat Reader.)
+ba.InstallationGuide= installation guide. (Potreban je Acrobat Reader.)
+ba.BugFixes= bug fixes. (Potreban je Acrobat Reader.)
+
 ba.Uninstall=Deinstalacija Firebird-a
 ba.Winsock2Web1=Winsock 2 nije instaliran.
 ba.Winsock2Web2=Želite li da posjetite Winsock 2 Update Home Page?

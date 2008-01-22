@@ -3,10 +3,10 @@
 Firebird 2.1.0       (Windows Build)
 ====================================
 
-  *** Beta 2 ***
 
 o Introduction
 o Intended Users
+o Known Issues
 o Features in this release (all platforms)
 o Bugs fixed in this release
 o Installation
@@ -16,16 +16,28 @@ o Reporting Bugs
 Introduction
 ============
 
-Welcome to the second beta release of Firebird 2.1
+Welcome to Firebird 2.1.
 
 
 Intended Users
 ==============
 
-This beta release is intended for experienced Firebird
-users. It has not been thoroughly tested and new
-features are only sparsely documented. Do not use this
-release in a production environment.
+This release candidate is intended for experienced
+Firebird users. It has been reasonably well tested and
+all new features should now be properly documented.
+
+Do not use this release in a production environment.
+
+
+Known Issues
+============
+
+Windows Vista - The binary installer fails to start
+Firebird as a service at installation time, however,
+the service does start correctly after a reboot. As a
+workaround, you can shift-right click on the Firebird
+control panel applet, choose 'Run as...' and start the
+service from there.
 
 
 Features in this release
@@ -34,18 +46,15 @@ Features in this release
 Please see the Release Notes for details of new
 features.
 
+
 Installation
 ============
 
-Binary installation packages are available, but they do
-not support multiple service instance installation.
-Be sure to read the installation_readme.txt in the doc
-directory for more information concerning installation
-issues.
-
-You can also use the zip packages to install Firebird
-manually. There is more info on manual installation
-in doc\install_windows_manually.txt.
+Installation issues are covered in detail in the
+Installation Guide available in the doc directory after
+install. A brief summary of installation issues can
+also be found in the installation_readme.txt, also
+available from the doc directory after installation.
 
 
 Reporting Bugs
@@ -59,17 +68,17 @@ Before you report a bug:
  o Perhaps some has already reported this? Browse
    existing bug reports here:
 
-	http://tracker.firebirdsql.org/secure/BrowseProject.jspa
+    http://tracker.firebirdsql.org/secure/BrowseProject.jspa
 
  o If in doubt why not discuss the problem on the
    Firebird-devel list? You can subscribe here:
 
-	http://lists.sourceforge.net/lists/listinfo/firebird-devel
+    http://lists.sourceforge.net/lists/listinfo/firebird-devel
 
    and the list is viewable via a newsgroup interface
    here:
 
-	news://news.atkin.com/
+    news://news.atkin.com/
 
 
 Please don't use the Firebird-devel list for technical

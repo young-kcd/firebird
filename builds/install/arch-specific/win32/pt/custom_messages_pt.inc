@@ -1,4 +1,4 @@
-pt.MyAppName=Servidor SQL Firebird 2.0
+pt.MyAppName=Servidor SQL Firebird %1
 pt.ServerInstall=Instalação completa do Server e ferramentas de desenvolvimento.
 pt.SuperServerInstall=Instalação completa do Super Server e ferramentas de desenvolvimento.
 pt.ClassicServerInstall=Instalação completa do Classic Server e ferramentas de desenvolvimento.
@@ -51,9 +51,11 @@ pt.FbRunning3=                 antes de continuar.
 pt.PreviousInstallBroken=   (A Instalação aparenta estar danificada por disparidade no texto da versão.)
 pt.PreviousInstallGood=   (A Instalação aparenta estar correcta.)
 
-pt.IconReadme=Firebird 2.0 Leia-me
+pt.IconReadme=Firebird 2.1 Leia-me
 pt.IconUninstall=Remoção do Firebird
 pt.ReleaseNotes= Notas de Lançamento. (Requer Acrobat Reader.)
+pt.InstallationGuide= installation guide. (Requer Acrobat Reader.)
+pt.BugFixes= bug fixes. (Requer Acrobat Reader.)
 pt.Uninstall=Remoção do Firebird
 pt.Winsock2Web1=A biblioteca Winsock 2 não está instalada.
 pt.Winsock2Web2=Pretende visitar a página de actualização na Internet do Winsock 2?

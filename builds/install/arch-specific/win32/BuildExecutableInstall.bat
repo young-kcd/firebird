@@ -311,7 +311,7 @@ mkdir %FB_OUTPUT_DIR%\misc\upgrade\ib_udf 2>nul
 @if %ERRORLEVEL% GEQ 1 ( (call :ERROR Copying doc\sql.extensions failed  ) & (goto :EOF))
 
 @echo   Copying pdf docs...
-@for %%v in ( Firebird-2.0-QuickStart.pdf Firebird_v1.5.4.ReleaseNotes.pdf Firebird_v2.0.3.ReleaseNotes.pdf Firebird_v2.1.0.ReleaseNotes.pdf ) do (
+@for %%v in ( Firebird-2.0-QuickStart.pdf Firebird_v1.5.4.ReleaseNotes.pdf Firebird_v2.0.3.ReleaseNotes.pdf Firebird_v2.1.0.ReleaseNotes.pdf Firebird_v2.1.0.InstallationGuide.pdf Firebird_v2.1.0.BugFixes.pdf) do (
   @echo     ... %%v
   (@copy /Y %FB_EXTERNAL_DOCS%\%%v %FB_OUTPUT_DIR%\doc\%%v > nul) || (call :WARNING Copying %FB_EXTERNAL_DOCS%\%%v failed.)
 )

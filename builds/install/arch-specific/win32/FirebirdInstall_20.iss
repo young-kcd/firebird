@@ -168,13 +168,18 @@
 #define AppVer MajorVer + "_" + MinorVer
 #define GroupnameVer MajorVer + "." + MinorVer
 
-
-;If we are building the pdb package then
-;we don't include files or examples.
-#ifdef ship_pdb
-#undef files
-#undef examples
-#endif
+; We can save space by shipping a pdb package that just includes
+; the pdb files. It would then upgrade an existing installation,
+; however, it wouldn't work on its own. This practice would go
+; against previous policy, which was to make the pdb package a
+; complete package. OTOH, now we have 32-bit and 64-bit platforms
+; to support we would benefit from slimming down the pdb packages.
+;;Uncomment the following lines to build the pdb package
+;;with just the pdb files.
+;#ifdef ship_pdb
+;#undef files
+;#undef examples
+;#endif
 
 
 ;Some more strings to distinguish the name of final executable
@@ -379,8 +384,10 @@ Name: {group}\Firebird Server; Filename: {app}\bin\fbserver.exe; Parameters: -a;
 Name: {group}\Firebird Guardian; Filename: {app}\bin\fbguard.exe; Parameters: -a; Flags: runminimized; MinVersion: 4.0,4.0;  Check: InstallGuardianIcon; IconIndex: 1; Components: ServerComponent\SuperServerComponent; Comment: Run Firebird Super Server (with guardian)
 Name: {group}\Firebird ISQL Tool; Filename: {app}\bin\isql.exe; WorkingDir: {app}; MinVersion: 4.0,4.0;  Comment: {cm:RunISQL}
 Name: {group}\Firebird 2.1.0 Release Notes; Filename: {app}\doc\Firebird_v2.1.0.ReleaseNotes.pdf; MinVersion: 4.0,4.0; Comment: {#MyAppName} {cm:ReleaseNotes}
+Name: {group}\Firebird 2.1.0 Installation Guide; Filename: {app}\doc\Firebird_v2.1.0.InstallationGuide.pdf; MinVersion: 4.0,4.0; Comment: {#MyAppName} {cm:InstallationGuide}
+Name: {group}\Firebird 2.1.0 Bug Fixes; Filename: {app}\doc\Firebird_v2.1.0.BugFixes.pdf; MinVersion: 4.0,4.0; Comment: {#MyAppName} {cm:BugFixes}
 Name: {group}\Firebird 2.0.3 Release Notes; Filename: {app}\doc\Firebird_v2.0.1.ReleaseNotes.pdf; MinVersion: 4.0,4.0; Comment: {#MyAppName} {cm:ReleaseNotes}
-Name: {group}\Firebird 1.5.4 Release Notes; Filename: {app}\doc\Firebird_v1.5.4.ReleaseNotes.pdf; MinVersion: 4.0,4.0; Comment: {#MyAppName} {cm:ReleaseNotes}
+Name: {group}\Firebird 1.5.5 Release Notes; Filename: {app}\doc\Firebird_v1.5.5.ReleaseNotes.pdf; MinVersion: 4.0,4.0; Comment: {#MyAppName} {cm:ReleaseNotes}
 Name: {group}\Firebird 2.0 Quick Start Guide; Filename: {app}\doc\Firebird-2.0-QuickStart.pdf; MinVersion: 4.0,4.0; Comment: {#MyAppName}
 Name: "{group}\After Installation"; Filename: "{app}\doc\After_Installation.url"; Comment: "New User? Here's a quick guide to what you should do next."
 Name: "{group}\Firebird Web-site"; Filename: "{app}\doc\firebirdsql.org.url"
