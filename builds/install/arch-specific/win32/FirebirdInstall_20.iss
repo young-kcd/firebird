@@ -378,7 +378,7 @@ Name: {group}\Firebird Server; Filename: {app}\bin\fb_inet_server.exe; Parameter
 Name: {group}\Firebird Server; Filename: {app}\bin\fbserver.exe; Parameters: -a; Flags: runminimized; MinVersion: 4.0,4.0;  Check: InstallServerIcon; IconIndex: 0; Components: ServerComponent\SuperServerComponent; Comment: Run Firebird Superserver (without guardian)
 Name: {group}\Firebird Guardian; Filename: {app}\bin\fbguard.exe; Parameters: -a; Flags: runminimized; MinVersion: 4.0,4.0;  Check: InstallGuardianIcon; IconIndex: 1; Components: ServerComponent\SuperServerComponent; Comment: Run Firebird Super Server (with guardian)
 Name: {group}\Firebird ISQL Tool; Filename: {app}\bin\isql.exe; WorkingDir: {app}; MinVersion: 4.0,4.0;  Comment: {cm:RunISQL}
-Name: {group}\Firebird 2.1.0 Release Notes; Filename: {app}\doc\Firebird_v2.1.0.ReleaseNotes.pdf; MinVersion: 4.0,4.0; Comment: {#MyAppName} {cm:ReleaseNotes}
+Name: {group}\Firebird 2.5.0 Release Notes; Filename: {app}\doc\Firebird_v2.5.0.ReleaseNotes.pdf; MinVersion: 4.0,4.0; Comment: {#MyAppName} {cm:ReleaseNotes}
 Name: {group}\Firebird 2.0.3 Release Notes; Filename: {app}\doc\Firebird_v2.0.1.ReleaseNotes.pdf; MinVersion: 4.0,4.0; Comment: {#MyAppName} {cm:ReleaseNotes}
 Name: {group}\Firebird 1.5.4 Release Notes; Filename: {app}\doc\Firebird_v1.5.4.ReleaseNotes.pdf; MinVersion: 4.0,4.0; Comment: {#MyAppName} {cm:ReleaseNotes}
 Name: {group}\Firebird 2.0 Quick Start Guide; Filename: {app}\doc\Firebird-2.0-QuickStart.pdf; MinVersion: 4.0,4.0; Comment: {#MyAppName}

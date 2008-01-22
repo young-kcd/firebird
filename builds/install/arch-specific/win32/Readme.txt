@@ -1,6 +1,6 @@
 
 ====================================
-Firebird 2.1.0       (Windows Build)
+Firebird 2.5.0       (Windows Build)
 ====================================
 
   *** Beta 2 ***
@@ -16,7 +16,7 @@ o Reporting Bugs
 Introduction
 ============
 
-Welcome to the second beta release of Firebird 2.1
+Welcome to the ... release of Firebird 2.5
 
 
 Intended Users
@@ -74,7 +74,7 @@ Before you report a bug:
 
 Please don't use the Firebird-devel list for technical
 support unless the question specifically relates to a
-new feature in Firebird 2.1
+new feature in Firebird 2.5
 
 
 Happy Testing!
