@@ -1,3 +1,10 @@
+2008-01-22 10:37  paulbeach
+
+	* firebird2/builds/install/arch-specific/darwin/install-script
+	(1.1.2.10):
+
+	Minor Mods
+
 2008-01-18 20:00  hvlad
 
 	* firebird2/src/jrd/vio.cpp (1.151.2.10):
