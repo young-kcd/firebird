@@ -30,15 +30,9 @@
 #include <stdio.h>
 #include <errno.h>
 #include "../jrd/common.h"
-#include "../jrd/ThreadStart.h"
-#include "../jrd/thd.h"
-#include "../jrd/isc.h"
-#include "../jrd/os/thd_priority.h"
-#include "../jrd/gds_proto.h"
-#include "../jrd/isc_s_proto.h"
+#include "../common/thd.h"
 #include "../jrd/gdsassert.h"
-#include "../common/classes/fb_tls.h"
-#include "../common/classes/locks.h"
+#include "../common/classes/semaphore.h"
 
 
 #ifdef WIN_NT
@@ -56,6 +50,9 @@
 #include <signal.h>
 #endif
 
+#ifdef USE_POSIX_THREADS
+#include <pthread.h>
+#endif
 
 FB_THREAD_ID getThreadId()
 {
@@ -73,89 +70,21 @@ FB_THREAD_ID getThreadId()
 #ifdef WIN_NT
 	id = GetCurrentThreadId();
 #endif
+
 #ifdef SOLARIS_MT
 	id = thr_self();
 #endif
-#ifdef USE_POSIX_THREADS
 
+#ifdef USE_POSIX_THREADS
 // The following is just a temp. decision.
 #ifdef HP10
-
 	id = (FB_THREAD_ID) (pthread_self().field1);
-
 #else
-
 	id = (FB_THREAD_ID) pthread_self();
-
 #endif // HP10
 #endif // USE_POSIX_THREADS
 
 	return id;
-}
-
-
-int THD_rec_mutex_lock(REC_MUTX_T * rec_mutex)
-{
-/**************************************
- *
- *	T H D _ r e c _ m u t e x _ l o c k
- *
- **************************************
- *
- * Functional description
- *
- **************************************/
-	if (rec_mutex->rec_mutx_id == getThreadId())
-	{
-		rec_mutex->rec_mutx_count++;
-	}
-	else 
-	{
-	    try 
-		{
-			rec_mutex->rec_mutx_mtx.enter();
-		}
-		catch (const Firebird::system_call_failed& e)
-		{
-			return e.getErrorCode();
-		}
-		rec_mutex->rec_mutx_id = getThreadId();
-		rec_mutex->rec_mutx_count = 1;
-	}
-	return 0;
-}
-
-
-int THD_rec_mutex_unlock(REC_MUTX_T * rec_mutex)
-{
-/**************************************
- *
- *	T H D _ r e c _ m u t e x _ u n l o c k
- *
- **************************************
- *
- * Functional description
- *
- **************************************/
-
-	if (rec_mutex->rec_mutx_id != getThreadId())
-		return FB_FAILURE;
-
-	rec_mutex->rec_mutx_count--;
-
-	if (rec_mutex->rec_mutx_count == 0)
-	{
-		rec_mutex->rec_mutx_id = 0;
-	    try 
-		{
-			rec_mutex->rec_mutx_mtx.leave();
-		}
-		catch (const Firebird::system_call_failed& e)
-		{
-			return e.getErrorCode();
-		}
-	}
-	return 0;
 }
 
 
@@ -175,14 +104,8 @@ void THD_sleep(ULONG milliseconds)
 #ifdef WIN_NT
 	SleepEx(milliseconds, FALSE);
 #else
-	event_t timer;
-	event_t* timer_ptr = &timer;
-
-	ISC_event_init(&timer, 0, 0);
-	const SLONG count = ISC_event_clear(&timer);
-
-	ISC_event_wait(1, &timer_ptr, &count, milliseconds * 1000);
-	ISC_event_fini(&timer);
+	Firebird::Semaphore timer;
+	timer.tryEnter(0, milliseconds);
 #endif // WIN_NT
 }
 
