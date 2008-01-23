@@ -1,4 +1,4 @@
-fr.MyAppName=Firebird Serveur SQL 2.0
+fr.MyAppName=Firebird Serveur SQL %1
 fr.ServerInstall=Installation complète Serveur et outils de dévelopement.
 fr.SuperServerInstall=Installation complète Super Serveur et outils de dévelopement.
 fr.ClassicServerInstall=Installation complète Serveur Classique et outils de dévelopement.
@@ -52,9 +52,11 @@ fr.FbRunning3=           le service pour continuer.
 fr.PreviousInstallBroken=   (L'installation semble être cassée à cause d'une disparité de la chaîne de version.)
 fr.PreviousInstallGood=   (L'installation semble être bonne.)
 
-fr.IconReadme=Firebird 2.0 Lisez Moi
+fr.IconReadme=Firebird 2.1 Lisez Moi
 fr.IconUninstall=Désinstaller Firebird
 fr.ReleaseNotes= notes de version. (Nécessite Acrobat Reader.)
+fr.InstallationGuide= installation guide. (Nécessite Acrobat Reader.)
+fr.BugFixes= bug fixes. (Nécessite Acrobat Reader.)
 fr.Uninstall=Désinstaller Firebird
 fr.Winsock2Web1=Winsock 2 n'est pas installé.
 fr.Winsock2Web2=Voulez-vous visiter la page web de mise à jour de Winsock 2 ?

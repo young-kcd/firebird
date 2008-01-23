@@ -1,4 +1,4 @@
-hu.MyAppName=Firebird Adatbázisszerver 2.0.
+hu.MyAppName=Firebird Adatbázisszerver %1.
 hu.ServerInstall=Szerver és a fejlesztõi eszközök teljes telepítése
 hu.SuperServerInstall=Szuper Szerver és a fejlesztõi eszközök teljes telepítése
 hu.ClassicServerInstall=Hagyományos Szerver és a fejlesztõi eszközök teljes telepítése
@@ -51,15 +51,17 @@ hu.FbRunning3=          vagy le kell állítani szolgáltatást.
 hu.PreviousInstallBroken=   (A telepítés hibásnak tûnik a nem megfelelõ verzió-azonosító miatt.)
 hu.PreviousInstallGood=   (A telepítés hibátlannak tûnik.)
 
-hu.IconReadme=Firebird 2.0 - Olvass El
+hu.IconReadme=Firebird 2.1 - Olvass El
 hu.IconUninstall=A Firebird eltávolítása
-hu.ReleaseNotes=Firebird 2.0 - Újdonságok (Acrobat Reader programot igényel)
+hu.ReleaseNotes=Firebird 2.1 - Újdonságok (Acrobat Reader programot igényel)
+hu.InstallationGuide= installation guide. (Acrobat Reader programot igényel)
+hu.BugFixes= bug fixes. (Acrobat Reader programot igényel)
 hu.Uninstall=A Firebird eltávolítása
 hu.Winsock2Web1=A Winsock 2 kiterjesztés nincs telepítve.
 hu.Winsock2Web2=Meg kívánja látogatni a Winsock 2 frissítés honlapját?
 hu.NoWinsock2=Kérem telepítse a Winsock 2 frissítést, mielõtt folytatná!
 hu.MSWinsock2Update=http://www.microsoft.com/windows95/downloads/contents/WUAdminTools/S_WUNetworkingTools/W95Sockets2/Default.asp
-  	 
+
 hu.RunCSNoGuardian=Hagyományos Szerver futtatása (Guardian nélkül)
 hu.RunSSNoGuardian=Szuper Szerver futtatása (Guardian nélkül)
 hu.RunSSWithGuardian=A Szuper Szerver futtatása (Guardian segítségével)

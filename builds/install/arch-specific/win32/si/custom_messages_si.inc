@@ -1,4 +1,4 @@
-si.MyAppName=Firebird Database Server 2.0
+si.MyAppName=Firebird Database Server %1
 si.ServerInstall=Polna instalacija serverja in razvojnih orodij.
 si.SuperServerInstall=Polna instalacija super serverja in razvojnih orodij.
 si.ClassicServerInstall=Polna instalacija klasiènega serverja in razvojnih orodij.
@@ -44,16 +44,18 @@ si.InstalledProducts='pri ponovni instalaciji je bila najdena obstojeèa %s Fireb
 si.InstalledProdCountSingular=verzija ima
 si.InstalledProdCountPlural=verzije imajo
 
-si.FbRunning1=Obstojeèa verzija Firebird 2.0 Server je zagnana.
+si.FbRunning1=Obstojeèa verzija Firebird 2.1 Server je zagnana.
 si.FbRunning2=Zaprite vse aplikacije oz. jih zakljuèite v
 si.FbRunning3=nastavitah servisov.
 
 si.PreviousInstallBroken=   (Instalacije je bila prekinjena zaradi neujemanja informacije o verzijah.)
 si.PreviousInstallGood=   (Instalacije je uspela.)
 
-si.IconReadme=Firebird 2.0 Readme
+si.IconReadme=Firebird 2.1 Readme
 si.IconUninstall=Deinstalacija Firebird serverja
 si.ReleaseNotes= informacija o izdaji. (Potreben je programAcrobat Reader.)
+si.InstallationGuide= installation guide. (Potreben je programAcrobat Reader.)
+si.BugFixes= bug fixes. (Potreben je programAcrobat Reader.)
 si.Uninstall=Deinstalacija Firebird
 si.Winsock2Web1=Winsock 2 komponente niso instalirane.
 si.Winsock2Web2=Ali želite obiskati domaèo stran za Winsock 2 posodobitev?

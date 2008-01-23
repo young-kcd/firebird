@@ -1,4 +1,4 @@
-pl.MyAppName=Serwer bazy danych Firebird 2.0
+pl.MyAppName=Serwer bazy danych Firebird %1
 pl.ServerInstall=Pe³na instalacja (Server) i narzêdzi programistycznych.
 pl.SuperServerInstall=Pe³na instalacja (Super Server) i narzêdzi programistycznych.
 pl.ClassicServerInstall=Pe³na instalacja (Classic Server) i narzêdzi programistycznych.
@@ -54,6 +54,8 @@ pl.PreviousInstallGood=   (Instalacja wygl¹da na poprawn¹.)
 pl.IconReadme=Firebird 2.0 - przeczytaj mnie
 pl.IconUninstall=Deinstalacja Firebird'a
 pl.ReleaseNotes= Informacje o wydaniu. (Wymagany Acrobat Reader.)
+pl.InstallationGuide= installation guide. (Wymagany Acrobat Reader.)
+pl.BugFixes= bug fixes. (Wymagany Acrobat Reader.)
 pl.Uninstall=Deinstalacja Firebird'a
 pl.Winsock2Web1=Winsock 2 nie jest zainstalowany.
 pl.Winsock2Web2=Czy chcesz odwiedziæ stronê z aktualizacjami Winsock 2 ?

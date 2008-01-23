@@ -1,5 +1,11 @@
-Firebird Database Server 2.1
+Firebird Database Server 2.5
 ==================================================
+
+---------------------
+The information below refers to Firebird 2.1. 
+Documentation on the installation of Firebird 2.5 
+has not been prepared yet. 
+----------------------
 
 
 This document is a guide to installing this package of
@@ -9,10 +15,10 @@ Firebird 2.1 in general. In addition, these notes are
 primarily aimed at users of the binary installer.
 
 It is assumed that readers of this document are already
-familiar Firebird 2.0. If you are evaluating Fb 2.1 as
-part of a migration from Fb 1.5 you are advised to
-review the Fb 2.0 documentation to understand the
-changes made between 1.5 and 2.0.
+familiar with Firebird 2.0. If you are evaluating
+Firebird 2.1 as part of a migration from Fb 1.5 you are
+advised to review the Fb 2.0 documentation to
+understand the changes made between 1.5 and 2.0.
 
 
 Contents
@@ -61,9 +67,9 @@ o It is only possible to use the binary installer
   should manually install them with the zipped install
   image.
 
-o Unfortunately, (at the time of Beta 2) the installer
-  cannot detect if a previous version of Firebird
-  Classic server are running.
+o Unfortunately, the installer cannot reliably detect
+  if a previous version of Firebird Classic server
+  is running.
 
 o There are known areas of overlap between the
   32-bit and 64-bit installs:
