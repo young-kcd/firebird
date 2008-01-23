@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="Windows-1252"?>
+<?xml version="1.0" encoding="windows-1251"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="8,00"
@@ -335,6 +335,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\common\classes\init.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\common\classes\MetaName.cpp"
 				>
 			</File>
@@ -356,6 +360,10 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\common\classes\TempFile.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\common\thd.cpp"
 				>
 			</File>
 			<File

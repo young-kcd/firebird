@@ -86,12 +86,15 @@ class Spinlock : public Mutex
 {
 private:
 	static tSetCriticalSectionSpinCount* SetCriticalSectionSpinCount;
-	init();
+
+	void init();
+
 public:
 	Spinlock()
 	{
 		init();
 	}
+
 	explicit Spinlock(MemoryPool&)
 	{
 		init();

@@ -1,7 +1,7 @@
-<?xml version="1.0" encoding="Windows-1252"?>
+<?xml version="1.0" encoding="windows-1251"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="8.00"
+	Version="8,00"
 	Name="fbclient"
 	ProjectGUID="{492E7BDA-8948-408D-A43E-4C0A5B86AFB8}"
 	>
@@ -344,6 +344,14 @@
 				RelativePath="..\..\..\src\jrd\os\win32\config_root.cpp"
 				>
 			</File>
+			<File
+				RelativePath="..\..\..\src\common\classes\init.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\common\thd.cpp"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="JRD files"
@@ -403,10 +411,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\status.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\thd.cpp"
 				>
 			</File>
 			<File
@@ -579,7 +583,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\thd.h"
+				RelativePath="..\..\..\src\common\thd.h"
 				>
 			</File>
 			<File

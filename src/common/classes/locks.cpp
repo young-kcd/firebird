@@ -40,30 +40,33 @@ namespace Firebird {
 tSetCriticalSectionSpinCount* 
 	Spinlock::SetCriticalSectionSpinCount = INIT_SPIN_COUNT;
 
-Spinlock::init() {
+void Spinlock::init()
+{
 	if (SetCriticalSectionSpinCount == MISS_SPIN_COUNT)
 		return;
+
 	if (SetCriticalSectionSpinCount == INIT_SPIN_COUNT) {
 		HMODULE kernel32 = LoadLibrary("kernel32.dll");
-		if (! kernel32) {
+		if (!kernel32) {
 			SetCriticalSectionSpinCount = MISS_SPIN_COUNT;
 			return;
 		}
 		SetCriticalSectionSpinCount = 
 			(tSetCriticalSectionSpinCount *) GetProcAddress(
 					kernel32, "SetCriticalSectionSpinCount");
-		if (! SetCriticalSectionSpinCount) {
+		if (!SetCriticalSectionSpinCount) {
 			SetCriticalSectionSpinCount = MISS_SPIN_COUNT;
 			return;
 		}
 	}
+
 	SetCriticalSectionSpinCount(&spinlock, 4000);
 }
 
 #endif  // WIN_NT
 
 
-// in some cases recursive mutex's are not protected by try/catch
+// In some cases recursive mutex's are not protected by try/catch
 // therefore keep old (return value) logic 
 
 int RecursiveMutex::enter()
@@ -88,7 +91,6 @@ int RecursiveMutex::enter()
 	return 0;
 }
 
-
 int RecursiveMutex::leave()
 {
 	if (threadId != getThreadId())
@@ -111,5 +113,4 @@ int RecursiveMutex::leave()
 	return 0;
 }
 
-
-}		// namespace Firebird
+} // namespace Firebird

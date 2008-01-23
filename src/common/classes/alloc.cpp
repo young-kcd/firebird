@@ -446,7 +446,7 @@ void* MemoryPool::external_alloc(size_t &size)
 	// This method is assumed to return NULL in case it cannot alloc
 # if !defined(DEBUG_GDS_ALLOC) && (defined(WIN_NT) || defined(HAVE_MMAP))
 	if (size == EXTENT_SIZE) {
-		MutexLockGuard guard(cache_mutex);
+		MutexLockGuard guard(*cache_mutex);
 		void *result = NULL;
 		if (extents_cache.getCount()) {
 			// Use most recently used object to encourage caching
@@ -515,7 +515,7 @@ void* MemoryPool::external_alloc(size_t &size)
 void MemoryPool::external_free(void *blk, size_t &size, bool pool_destroying) {
 # if !defined(DEBUG_GDS_ALLOC) && (defined(WIN_NT) || defined(HAVE_MMAP))
 	if (size == EXTENT_SIZE) {
-		MutexLockGuard guard(cache_mutex);
+		MutexLockGuard guard(*cache_mutex);
 		if (extents_cache.getCount() < extents_cache.getCapacity()) {
 			extents_cache.add(blk);
 			return;
