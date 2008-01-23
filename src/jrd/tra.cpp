@@ -987,8 +987,10 @@ jrd_tra* TRA_reconnect(thread_db* tdbb, const UCHAR* id, USHORT length)
 		}
 
 		const SLONG number = trans->tra_number;
-		trans->~jrd_tra();
-		JrdMemoryPool::deletePool(trans->tra_pool);
+		JrdMemoryPool* tra_pool = trans->tra_pool;
+		delete trans;
+		if (tra_pool)
+			JrdMemoryPool::deletePool(tra_pool);
 
 		TEXT text[128];
 		USHORT flags = 0;
@@ -1124,13 +1126,10 @@ void TRA_release_transaction(thread_db* tdbb, jrd_tra* transaction)
 
 	delete transaction->tra_db_snapshot;
 
-	// Release the transaction
-
-	transaction->~jrd_tra();
-
 	// Release the transaction pool.
 
 	JrdMemoryPool* tra_pool = transaction->tra_pool;
+	delete transaction;
 	if (tra_pool)
 		JrdMemoryPool::deletePool(tra_pool);
 }
