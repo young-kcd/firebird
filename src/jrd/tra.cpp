@@ -987,6 +987,7 @@ jrd_tra* TRA_reconnect(thread_db* tdbb, const UCHAR* id, USHORT length)
 		}
 
 		const SLONG number = trans->tra_number;
+		trans->~jrd_tra();
 		JrdMemoryPool::deletePool(trans->tra_pool);
 
 		TEXT text[128];
