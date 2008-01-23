@@ -61,7 +61,6 @@
 #include "../jrd/pag_proto.h"
 #include "../jrd/pcmet_proto.h"
 #include "../jrd/sort_proto.h"
-#include "../jrd/thd.h"
 #include "../jrd/tra_proto.h"
 
 using namespace Jrd;

@@ -1,7 +1,7 @@
 #ifndef JRD_THREAD_PROTO_H
 #define JRD_THREAD_PROTO_H
 
-#include "../jrd/thd.h"
+#include "../common/thd.h"
 #include "../jrd/sch_proto.h"
 
 inline void THREAD_ENTER() {
@@ -22,12 +22,12 @@ class SchedulerContext {
 public:
 	SchedulerContext()
 	{
-		THREAD_ENTER();
+		SCH_enter();
 	}
 
 	~SchedulerContext()
 	{
-		THREAD_EXIT();
+		SCH_exit();
 	}
 
 private:

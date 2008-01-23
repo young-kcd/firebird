@@ -7,6 +7,7 @@
 #include <stdarg.h>
 #include "gen/iberror.h"
 #include "../common/classes/alloc.h"
+#include "../common/classes/init.h"
 
 namespace {
 
@@ -18,12 +19,12 @@ typedef Firebird::CircularStringsBuffer<ENGINE_FAILURE_SPACE> CircularBuffer;
 
 class InterlockedStringsBuffer : public CircularBuffer {
 public:
+	InterlockedStringsBuffer(Firebird::MemoryPool&)
+		: CircularBuffer() { }
 	virtual char* alloc(const char* string, size_t length) 
 	{
-		buffer_lock.enter();
-		char* new_string = CircularBuffer::alloc(string, length);
-		buffer_lock.leave();
-		return new_string;
+		Firebird::MutexLockGuard guard(buffer_lock);
+		return CircularBuffer::alloc(string, length);
 	}
 private:
 	Firebird::Mutex buffer_lock;
@@ -71,7 +72,7 @@ void fill_status(ISC_STATUS *ptr, ISC_STATUS status, va_list status_args)
 	}	
 }
 
-InterlockedStringsBuffer engine_failures;
+Firebird::GlobalPtr<InterlockedStringsBuffer> engine_failures;
 
 } // namespace
 
@@ -353,7 +354,7 @@ const char* status_string(const char* string)
 
 const char* status_nstring(const char* string, size_t length) 
 {
-	return engine_failures.alloc(string, length);
+	return engine_failures->alloc(string, length);
 }
 
 // Serialize exception into status_vector, put transient strings from exception into given StringsBuffer

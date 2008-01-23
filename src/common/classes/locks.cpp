@@ -27,6 +27,8 @@
 
 #include "../../include/firebird.h"
 #include "../../common/classes/locks.h"
+#include "../../common/thd.h"
+#include "../../jrd/common.h"
 
 namespace Firebird {
 
@@ -38,7 +40,7 @@ namespace Firebird {
 tSetCriticalSectionSpinCount* 
 	Spinlock::SetCriticalSectionSpinCount = INIT_SPIN_COUNT;
 
-Spinlock::Spinlock() {
+Spinlock::init() {
 	if (SetCriticalSectionSpinCount == MISS_SPIN_COUNT)
 		return;
 	if (SetCriticalSectionSpinCount == INIT_SPIN_COUNT) {
@@ -59,5 +61,55 @@ Spinlock::Spinlock() {
 }
 
 #endif  // WIN_NT
+
+
+// in some cases recursive mutex's are not protected by try/catch
+// therefore keep old (return value) logic 
+
+int RecursiveMutex::enter()
+{
+	if (threadId == getThreadId())
+	{
+		++count;
+	}
+	else 
+	{
+	    try 
+		{
+			mutex.enter();
+		}
+		catch (const Firebird::system_call_failed& e)
+		{
+			return e.getErrorCode();
+		}
+		threadId = getThreadId();
+		count = 1;
+	}
+	return 0;
+}
+
+
+int RecursiveMutex::leave()
+{
+	if (threadId != getThreadId())
+	{
+		return FB_FAILURE;
+	}
+
+	if (--count == 0)
+	{
+		threadId = 0;
+	    try 
+		{
+			mutex.leave();
+		}
+		catch (const Firebird::system_call_failed& e)
+		{
+			return e.getErrorCode();
+		}
+	}
+	return 0;
+}
+
 
 }		// namespace Firebird

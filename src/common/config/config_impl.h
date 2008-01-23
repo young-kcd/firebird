@@ -65,6 +65,7 @@ public:
 	};
 
 public:
+	explicit ConfigImpl(MemoryPool& p);
     ~ConfigImpl();
 
 	static string getValue(ConfigFile&, const ConfigKey);
@@ -73,11 +74,7 @@ public:
 	static bool asBoolean(const string&);
 	static const char* asString(const string&);
 
-	inline static const ConfigImpl& instance();
-
 private:
-	explicit ConfigImpl(MemoryPool& p);
-
 	static const ConfigEntry entries[];
 	const char *root_dir;
 	ConfigValue *values;

@@ -26,7 +26,6 @@
 
 #include <stdio.h>
 
-#include "../jrd/thd.h"
 #include "../jrd/jrd_pwd.h"
 #include "../jrd/isc.h"
 #include "../jrd/svc_undoc.h"

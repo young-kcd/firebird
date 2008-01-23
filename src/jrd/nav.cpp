@@ -47,7 +47,6 @@
 #include "../jrd/mov_proto.h"
 #include "../jrd/nav_proto.h"
 #include "../jrd/rse_proto.h"
-#include "../jrd/thd.h"
 #include "../jrd/vio_proto.h"
 
 using namespace Jrd;

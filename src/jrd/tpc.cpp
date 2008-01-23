@@ -37,7 +37,6 @@
 #include "../jrd/gds_proto.h"
 #include "../jrd/lck_proto.h"
 #include "../jrd/mov_proto.h"
-#include "../jrd/thd.h"
 #include "../jrd/tpc_proto.h"
 #include "../jrd/tra_proto.h"
 #include "../common/classes/auto.h"

@@ -127,7 +127,7 @@ private:
 	static void putCall(const jrd_req*, Firebird::ClumpletWriter&, int);
 	static void putStatistics(const RuntimeStatistics*, Firebird::ClumpletWriter&, int, int);
 
-	static Firebird::Mutex initMutex;
+	static Firebird::GlobalPtr<Firebird::Mutex> initMutex;
 	static SharedMemory* dump;
 	static int pid;
 

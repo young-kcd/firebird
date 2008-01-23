@@ -50,7 +50,6 @@
 #include "../dsql/metd_proto.h"
 #include "../dsql/misc_func.h"
 #include "../dsql/utld_proto.h"
-#include "../jrd/thd.h"
 #include "../jrd/thread_proto.h"
 #include "../jrd/dsc_proto.h"
 #include "../jrd/why_proto.h"

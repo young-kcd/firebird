@@ -28,6 +28,7 @@
 #include "../common/classes/array.h"
 #include "../common/classes/TempFile.h"
 #include "../common/config/dir_list.h"
+#include "../common/classes/init.h"
 
 class TempSpace : public Firebird::File {
 public:
@@ -167,7 +168,7 @@ private:
 	Segment* freeSegments;
 	Segment* notUsedSegments;
 
-	static Firebird::Mutex initMutex;
+	static Firebird::GlobalPtr<Firebird::Mutex> initMutex;
 	static Firebird::TempDirectoryList* tempDirs;
 	static size_t minBlockSize;
 	static offset_t globalCacheUsage;

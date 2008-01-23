@@ -104,7 +104,6 @@
 #include "../jrd/rlck_proto.h"
 #include "../jrd/rse_proto.h"
 #include "../jrd/scl_proto.h"
-#include "../jrd/thd.h"
 #include "../jrd/sort_proto.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/align.h"

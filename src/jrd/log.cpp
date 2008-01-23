@@ -33,7 +33,6 @@
 #include "../jrd/gds_proto.h"
 #include "../jrd/log_proto.h"
 #include "../jrd/pag_proto.h"
-#include "../jrd/thd.h"
 
 
 

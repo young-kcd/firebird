@@ -34,7 +34,6 @@
 #include "../remote/remot_proto.h"
 #include "../remote/xdr_proto.h"
 #include "../jrd/gds_proto.h"
-#include "../jrd/thd.h"
 #include "../jrd/thread_proto.h"
 #include "../common/config/config.h"
 

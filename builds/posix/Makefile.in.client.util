@@ -60,12 +60,12 @@ CREATEDB_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(CREATEDB_So
 
 
 DROP_Other_Sources = common/utils.cpp lock/lock.cpp jrd/isc_sync.cpp jrd/isc_ipc.cpp jrd/isc.cpp \
-common/classes/fb_string.cpp common/classes/alloc.cpp common/fb_exception.cpp \
 common/config/config.cpp common/config/config_file.cpp $(OS_SPECIFIC_Sources)
 
 DROP_Files= drop.cpp
 DROP_Sources = $(addprefix utilities/, $(DROP_Files)) $(DROP_Other_Sources)
-DROP_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(DROP_Sources))))
+DROP_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(DROP_Sources)))) \
+$(FBCOMMON_ClientObjects) $(FBCLASSES_ClientObjects)
 
 
 GSTAT_Other_Sources = jrd/btn.cpp jrd/db_alias.cpp jrd/ods.cpp common/utils.cpp \
@@ -81,7 +81,7 @@ common/fb_exception.cpp common/utils.cpp
 
 FBSVCMGR_Sources = $(addprefix utilities/, $(FBSVCMGR_Files)) $(FBSVCMGR_Other_Sources)
 FBSVCMGR_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(FBSVCMGR_Sources)))) \
-$(FBCLASSES_MsgObjects) $(CLUMPLETS_Objects)
+$(FBCLASSES_MsgObjects) $(CLUMPLETS_Objects) $(FBCOMMON_ClientObjects)
 
 
 FBGUARD_Other_Sources = jrd/isc.cpp jrd/divorce.cpp jrd/path_utils.cpp

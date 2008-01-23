@@ -103,7 +103,6 @@
 #include "../jrd/sch_proto.h"
 #include "../jrd/scl_proto.h"
 #include "../jrd/sdw_proto.h"
-#include "../jrd/thd.h"
 #include "../jrd/thread_proto.h"
 #include "../jrd/event_proto.h"
 #include "../jrd/nbak.h"
@@ -4676,7 +4675,7 @@ static bool modify_procedure(	thread_db*	tdbb,
 		try {
 
 		THREAD_EXIT();
-		if (THD_rec_mutex_lock(&tdbb->getDatabase()->dbb_sp_rec_mutex))
+		if (tdbb->getDatabase()->dbb_sp_rec_mutex.enter())
 		{
 			THREAD_ENTER();
 			return false;
@@ -4717,7 +4716,7 @@ static bool modify_procedure(	thread_db*	tdbb,
 													  true,
 													  PRC_being_altered)))
 			{
-				THD_rec_mutex_unlock(&tdbb->getDatabase()->dbb_sp_rec_mutex);
+				tdbb->getDatabase()->dbb_sp_rec_mutex.leave();
 				return false;
 			}
 			procedure->prc_alter_count = ++prc_alter_count;
@@ -4771,11 +4770,11 @@ static bool modify_procedure(	thread_db*	tdbb,
 		catch (const Firebird::Exception& ex)
 		{
 			Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
-			THD_rec_mutex_unlock(&tdbb->getDatabase()->dbb_sp_rec_mutex);
+			tdbb->getDatabase()->dbb_sp_rec_mutex.leave();
 			ERR_punt();
 		}
 
-		THD_rec_mutex_unlock(&tdbb->getDatabase()->dbb_sp_rec_mutex);
+		tdbb->getDatabase()->dbb_sp_rec_mutex.leave();
 		return true;
 
 	case 5:

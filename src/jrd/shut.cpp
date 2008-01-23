@@ -36,7 +36,6 @@
 #include "../jrd/rlck_proto.h"
 #include "../jrd/sch_proto.h"
 #include "../jrd/shut_proto.h"
-#include "../jrd/thd.h"
 #include "../jrd/thread_proto.h"
 #include "../jrd/tra_proto.h"
 

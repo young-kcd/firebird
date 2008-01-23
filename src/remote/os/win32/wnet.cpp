@@ -31,7 +31,7 @@
 #include <string.h>
 #include "../remote/remote.h"
 #include "../jrd/ibase.h"
-#include "../jrd/thd.h"
+#include "../common/thd.h"
 #include "../jrd/iberr.h"
 
 #include "../utilities/install/install_nt.h"

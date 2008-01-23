@@ -58,7 +58,7 @@
 #include "../remote/os/win32/ibsvrhlp.h"
 #include "../remote/os/win32/chop_proto.h"
 
-#include "../jrd/thd.h"			/* get jrd_proto.h to declare the function */
+#include "../common/thd.h"			/* get jrd_proto.h to declare the function */
 #include "../jrd/jrd_proto.h"	/* JRD_num_attachments() */
 #include <stdio.h>				/* sprintf() */
 

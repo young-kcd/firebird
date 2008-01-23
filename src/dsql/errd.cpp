@@ -58,7 +58,6 @@
 //#undef IBERROR
 
 #include "../jrd/gds_proto.h"
-#include "../jrd/thd.h"
 #include "../common/utils_proto.h"
 
 

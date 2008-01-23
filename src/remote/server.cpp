@@ -54,6 +54,7 @@
 #include "../jrd/thread_proto.h"
 #include "../jrd/why_proto.h"
 #include "../jrd/constants.h"
+#include "../common/classes/init.h"
 #include "../common/classes/semaphore.h"
 #include "../common/classes/ClumpletWriter.h"
 #include "../common/config/config.h"
@@ -226,7 +227,7 @@ static SERVER_REQ	active_requests		= NULL;
 static bool			shutting_down		= false;
 static SRVR			servers;
 
-static Firebird::Semaphore requests_semaphore;
+static Firebird::GlobalPtr<Firebird::Semaphore> requests_semaphore;
 
 
 static const UCHAR request_info[] =
@@ -548,7 +549,7 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 						}
 
 						REMOTE_TRACE(("Post event"));
-						requests_semaphore.release();
+						requests_semaphore->release();
 					}
 					request = 0;
 				}
@@ -5502,7 +5503,7 @@ static THREAD_ENTRY_DECLARE loopThread(THREAD_ENTRY_PARAM flags)
 			THREAD_EXIT();
 			/* Wait for 1 minute (60 seconds) on a new request */
 			REMOTE_TRACE(("Wait for event"));
-			if (!requests_semaphore.tryEnter(60)) {
+			if (!requests_semaphore->tryEnter(60)) {
 				REMOTE_TRACE(("timeout!"));
 				timedout_count++;
 			}
@@ -5548,7 +5549,7 @@ void SRVR_shutdown()
 	const int limit = threads_waiting;
 	for (int i = 0; i < limit; i++)
 	{
-		requests_semaphore.release();
+		requests_semaphore->release();
 	}
 
 	// let them terminate

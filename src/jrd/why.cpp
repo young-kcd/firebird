@@ -66,7 +66,6 @@
 #include "gen/msg_facs.h"
 #include "../jrd/acl.h"
 #include "../jrd/inf_pub.h"
-#include "../jrd/thd.h"
 #include "../jrd/isc.h"
 #include "../jrd/fil.h"
 #include "../jrd/flu.h"
@@ -203,9 +202,9 @@ namespace YValve
 {
 	typedef Firebird::BePlusTree<BaseHandle*, FB_API_HANDLE, MemoryPool, BaseHandle> HandleMapping;
 
-	static Firebird::AutoPtr<HandleMapping> handleMapping;
+	static Firebird::GlobalPtr<HandleMapping> handleMapping;
 	static ULONG handle_sequence_number = 0;
-	static Firebird::RWLock handleMappingLock;
+	static Firebird::GlobalPtr<Firebird::RWLock> handleMappingLock;
 
 	static Firebird::InitInstance<Firebird::SortedArray<Attachment*> > attachments;
 
@@ -215,12 +214,9 @@ namespace YValve
 	{
 		fb_assert(par || (imp != USHORT(~0)));
 
-		handleMappingLock.beginWrite();
-		try 
-		{
-			if (!handleMapping)
-				handleMapping = FB_NEW(*getDefaultMemoryPool())
-					HandleMapping(getDefaultMemoryPool());
+		{ // scope for write lock on handleMappingLock
+			Firebird::WriteLockGuard sync(handleMappingLock);
+			fb_assert(handleMapping);
 			// Loop until we find an empty handle slot.
 			// This is to care of case when counter rolls over
 			do {
@@ -234,12 +230,6 @@ namespace YValve
 					temp = ++handle_sequence_number;
 				public_handle = (FB_API_HANDLE)(IPTR)temp;
 			} while (!handleMapping->add(this));
-
-			handleMappingLock.endWrite();
-		}
-		catch (const Firebird::Exception&) {
-			handleMappingLock.endWrite();
-			throw;
 		}
 
 		if (pub)
@@ -251,20 +241,18 @@ namespace YValve
 	BaseHandle* BaseHandle::translate(FB_API_HANDLE handle) {
 		Firebird::ReadLockGuard sync(handleMappingLock);
 
-		if (handleMapping) 
+		fb_assert(handleMapping);
+		HandleMapping::Accessor accessor(&handleMapping);
+		if (accessor.locate(handle))
 		{
-			HandleMapping::Accessor accessor(handleMapping);
-			if (accessor.locate(handle))
+			BaseHandle* h = accessor.current();
+			if (h->flags & HANDLE_shutdown)
 			{
-				BaseHandle* h = accessor.current();
-				if (h->flags & HANDLE_shutdown)
-				{
-					Firebird::status_exception::raise(isc_shutdown, isc_arg_string,
-							h->parent ? h->parent->db_path.c_str() : "(unknown)",
-							isc_arg_end);
-				}
-				return h;
+				Firebird::status_exception::raise(isc_shutdown, isc_arg_string,
+						h->parent ? h->parent->db_path.c_str() : "(unknown)",
+						isc_arg_end);
 			}
+			return h;
 		}
 
 		return 0;
@@ -294,7 +282,8 @@ namespace YValve
 		Firebird::WriteLockGuard sync(handleMappingLock);
 
 		// Silently ignore bad handles for PROD_BUILD
-		if (handleMapping && handleMapping->locate(public_handle)) 
+		fb_assert(handleMapping);
+		if (handleMapping->locate(public_handle)) 
 		{
 			handleMapping->fastRemove();
 		}

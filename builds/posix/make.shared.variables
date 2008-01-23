@@ -17,7 +17,7 @@ WHY_Sources = why.cpp
 JRD_ClientFiles = alt.cpp cvt.cpp db_alias.cpp dsc.cpp \
 		enc.cpp gds.cpp isc.cpp isc_file.cpp isc_ipc.cpp \
 		isc_sync.cpp perf.cpp sch.cpp sdl.cpp status.cpp \
-		thd.cpp ThreadData.cpp ThreadStart.cpp utl.cpp \
+		ThreadData.cpp ThreadStart.cpp utl.cpp \
         $(WHY_Sources)
 
 # These are in the win32 release but not unix one for super? 
@@ -240,7 +240,7 @@ VULCAN_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(VULCAN_Source
 #
 # common
 
-FBCOMMON_ClientFiles = fb_exception.cpp classes/MetaName.cpp StatusHolder.cpp
+FBCOMMON_ClientFiles = fb_exception.cpp thd.cpp classes/MetaName.cpp StatusHolder.cpp classes/init.cpp
 FBCOMMON_ServerFiles = utils.cpp
 
 FBCOMMON_ClientObjects = $(addprefix $(OBJ)/common/, $(addsuffix .o, $(basename $(FBCOMMON_ClientFiles))))

@@ -262,7 +262,7 @@ private:
 	void removeFreeBlock(MemoryBlock* blk);
 	
 	void free_blk_extent(MemoryBlock* blk);
-	
+
 	// Allocates small block from this pool. Pool must be locked during call
 	void* internal_alloc(size_t size, SSHORT type = 0
 #ifdef DEBUG_GDS_ALLOC
@@ -370,6 +370,10 @@ public:
 		return result;	
 	}
 
+	// Initialize and finalize global memory pool
+	static void init();
+	static void cleanup();
+	
 	/// Returns the type associated with the allocated memory.
 	static SSHORT blk_type(const void* mem) {
 		return ((MemoryBlock*)((char *)mem - MEM_ALIGN(sizeof(MemoryBlock))))->mbk_type;

@@ -33,7 +33,7 @@
 #include "../remote/allr_proto.h"
 #include "../remote/remote_def.h"
 #include "../jrd/ThreadData.h"
-#include "../jrd/thd.h"
+#include "../common/thd.h"
 #include "../common/classes/objects_array.h"
 #include "../auth/trusted/AuthSspi.h"
 #include "../common/classes/fb_string.h"

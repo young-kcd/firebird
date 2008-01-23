@@ -118,7 +118,6 @@
 #include "../jrd/isc_proto.h"
 #include "../jrd/lck_proto.h"
 #include "../jrd/met_proto.h"
-#include "../jrd/thd.h"
 #include "../jrd/intlobj_new.h"
 #include "../jrd/jrd.h"
 #include "../jrd/mov_proto.h"

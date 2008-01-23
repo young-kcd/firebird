@@ -30,7 +30,7 @@
 #include "../dsql/errd_proto.h"
 #include "../dsql/hsh_proto.h"
 #include "../jrd/sch_proto.h"
-#include "../jrd/thd.h"
+#include "../common/classes/init.h"
 
 
 const int HASH_SIZE = 1021;
@@ -39,7 +39,7 @@ static bool remove_symbol(dsql_sym**, dsql_sym*);
 static bool scompare(const TEXT*, USHORT, const TEXT*, const USHORT);
 
 static DSQL_SYM* hash_table;
-static Firebird::Mutex hash_mutex;
+static Firebird::GlobalPtr<Firebird::Mutex> hash_mutex;
 
 /**
   

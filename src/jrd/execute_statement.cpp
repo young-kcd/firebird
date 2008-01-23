@@ -35,7 +35,6 @@
 #include "../jrd/jrd.h"
 #include "../jrd/tra.h"
 #include "../jrd/dsc.h"
-#include "../jrd/thd.h"
 #include "../jrd/err_proto.h"
 #include "../jrd/mov_proto.h"
 #include "../jrd/evl_proto.h"

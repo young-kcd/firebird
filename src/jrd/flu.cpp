@@ -72,7 +72,7 @@
 
 namespace {
 	Firebird::InitInstance<Jrd::Module::LoadedModules> loadedModules;
-	Firebird::Mutex modulesMutex;
+	Firebird::GlobalPtr<Firebird::Mutex> modulesMutex;
 
 	template <typename S>
 	void terminate_at_space(S& s, const char* psz)

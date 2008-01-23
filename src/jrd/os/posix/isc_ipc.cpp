@@ -47,8 +47,8 @@
 #include "../jrd/isc_proto.h"
 #include "../jrd/os/isc_i_proto.h"
 #include "../jrd/isc_s_proto.h"
-#include "../jrd/thd.h"
 #include "../common/classes/locks.h"
+#include "../common/classes/init.h"
 
 #ifdef HAVE_VFORK_H
 #include <vfork.h>
@@ -115,7 +115,7 @@ static bool initialized_signals = false;
 static SIG volatile signals = NULL;
 static SLONG volatile overflow_count = 0;
 
-static Firebird::Mutex sig_mutex;
+static Firebird::GlobalPtr<Firebird::Mutex> sig_mutex;
 
 static int process_id = 0;
 
@@ -295,7 +295,7 @@ static bool isc_signal2(
 	if (!process_id)
 		process_id = getpid();
 
-	sig_mutex.enter();
+	Firebird::MutexLockGuard guard(sig_mutex);
 
 /* See if this signal has ever been cared about before */
 
@@ -338,8 +338,6 @@ static bool isc_signal2(
 
 	que_signal(signal_number, handler, arg, flags, old_sig_w_siginfo);
 
-	sig_mutex.leave();
-	
 	return rc;
 }
 
@@ -362,7 +360,7 @@ void ISC_signal_cancel(
 	SIG sig;
 	volatile SIG* ptr;
 
-	sig_mutex.enter();
+	Firebird::MutexLockGuard guard(sig_mutex);
 
 	for (ptr = &signals; sig = *ptr;) {
 		if (sig->sig_signal == signal_number &&
@@ -375,9 +373,6 @@ void ISC_signal_cancel(
 		else
 			ptr = &(*ptr)->sig_next;
 	}
-
-	sig_mutex.leave();
-
 }
 
 

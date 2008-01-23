@@ -45,7 +45,6 @@
 #include "../jrd/isc_proto.h"
 #include "../jrd/os/isc_i_proto.h"
 #include "../jrd/isc_s_proto.h"
-#include "../jrd/thd.h"
 
 #include <windows.h>
 #include <process.h>
@@ -66,8 +65,6 @@
 
 static USHORT initialized_signals = FALSE;
 static SLONG volatile overflow_count = 0;
-
-static Firebird::Mutex	sig_mutex;
 
 static int process_id = 0;
 

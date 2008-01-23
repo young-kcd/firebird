@@ -93,7 +93,7 @@
 #include "../jrd/isc.h"
 
 // recursive mutexes
-#include "../jrd/thd.h"
+#include "../common/thd.h"
 
 // Definition of block types for data allocation in JRD
 #include "../jrd/jrd_blks.h"
@@ -237,7 +237,7 @@ public:
 
 	DatabaseModules	modules;			// external function/filter modules
 	Firebird::Mutex* dbb_mutexes;		// Database block mutexes
-	REC_MUTX_T dbb_sp_rec_mutex;		// Recursive mutex for accessing/updating stored procedure metadata
+	Firebird::RecursiveMutex dbb_sp_rec_mutex;	// Recursive mutex for accessing/updating stored procedure metadata
 	//SLONG dbb_sort_size;				// Size of sort space per sort, unused for now
 
 	UATOM dbb_ast_flags;				// flags modified at AST level
@@ -1092,8 +1092,6 @@ public:
  * We can't always validate the database field, as during initialization
  * there is no database set up.
  */
-
-#include "../jrd/thd.h"
 
 #if defined(DEV_BUILD)
 #include "../jrd/err_proto.h"

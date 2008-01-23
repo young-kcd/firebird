@@ -96,7 +96,6 @@
 #include "../jrd/ods_proto.h"
 #include "../jrd/pag_proto.h"
 #include "../jrd/os/pio_proto.h"
-#include "../jrd/thd.h"
 #include "../jrd/thread_proto.h"
 #include "../jrd/isc_f_proto.h"
 #include "../jrd/TempSpace.h"

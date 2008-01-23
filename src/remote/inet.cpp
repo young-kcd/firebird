@@ -53,6 +53,7 @@
 #include <stdarg.h>
 
 #include "../common/classes/timestamp.h"
+#include "../common/classes/init.h"
 
 #ifdef HAVE_PWD_H
 #include <pwd.h>
@@ -102,7 +103,7 @@ const int INET_RETRY_CALL	= 5;
 #include "../remote/remote.h"
 #include "../jrd/ibase.h"
 #include "../jrd/iberr.h"
-#include "../jrd/thd.h"
+#include "../common/thd.h"
 #include "../remote/inet_proto.h"
 #include "../remote/proto_proto.h"
 #include "../remote/remot_proto.h"
@@ -383,18 +384,18 @@ static WSADATA INET_wsadata;
 #define	INTERRUPT_ERROR(x)	(SYSCALL_INTERRUPTED(x))
 #endif
 
-static Firebird::Mutex port_mutex;
+static Firebird::GlobalPtr<Firebird::Mutex> port_mutex;
 
 inline void START_PORT_CRITICAL() 
 {
 	THREAD_EXIT();
-	port_mutex.enter();
+	port_mutex->enter();
 	THREAD_ENTER();
 }
 
 inline void STOP_PORT_CRITICAL()
 {
-	port_mutex.leave();
+	port_mutex->leave();
 }
 
 

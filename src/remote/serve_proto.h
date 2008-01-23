@@ -32,8 +32,6 @@ extern "C" {
 #define rem_port void
 #endif
 
-#include "../jrd/thd.h"
-
 void SRVR_main(rem_port*, USHORT);
 void SRVR_multi_thread(rem_port*, USHORT);
 void SRVR_shutdown();

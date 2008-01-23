@@ -58,6 +58,7 @@
 #include "../jrd/thread_proto.h"
 #include "../common/config/config.h"
 #include "../common/classes/semaphore.h"
+#include "../common/classes/init.h"
 
 #include <errno.h>
 
@@ -220,8 +221,8 @@ static int LOCK_pid = 0;
 static SH_MEM_T LOCK_data;
 
 #ifdef USE_BLOCKING_THREAD
-static Firebird::Semaphore cleanupSemaphore;
-static Firebird::Semaphore startupSemaphore;
+static Firebird::GlobalPtr<Firebird::Semaphore> cleanupSemaphore;
+static Firebird::GlobalPtr<Firebird::Semaphore> startupSemaphore;
 #endif
 
 #ifdef WIN_NT
@@ -1430,7 +1431,7 @@ static THREAD_ENTRY_DECLARE blocking_action_thread(THREAD_ENTRY_PARAM arg)
 		{
 			if (atStartup)
 			{
-				startupSemaphore.release();
+				startupSemaphore->release();
 			}
 			break;
 		}
@@ -1448,7 +1449,7 @@ static THREAD_ENTRY_DECLARE blocking_action_thread(THREAD_ENTRY_PARAM arg)
 		if (atStartup)
 		{
 			atStartup = false;
-			startupSemaphore.release();
+			startupSemaphore->release();
 		}
 
 		event_t* event_ptr = &LOCK_owner->own_blocking;
@@ -1466,7 +1467,7 @@ static THREAD_ENTRY_DECLARE blocking_action_thread(THREAD_ENTRY_PARAM arg)
 /* Main thread won't wait forever, so check LOCK_owner is still mapped */
 
 	if (LOCK_owner)
-		cleanupSemaphore.release();
+		cleanupSemaphore->release();
 
 	return 0;
 }
@@ -3233,7 +3234,7 @@ static void shutdown_blocking_thread(ISC_STATUS* status_vector)
 		LOCK_owner->own_flags |= OWN_waiting;
 
 		// wait for AST thread to start (or 5 secs)
-		startupSemaphore.tryEnter(5);
+		startupSemaphore->tryEnter(5);
 
 		// Wakeup the AST thread - it might be blocking or stalled
 		ISC_event_post(&LOCK_owner->own_blocking);
@@ -3245,7 +3246,7 @@ static void shutdown_blocking_thread(ISC_STATUS* status_vector)
 		AST_ENABLE();
 
 		// Wait for the AST thread to finish cleanup or for 5 seconds
-		cleanupSemaphore.tryEnter(5);
+		cleanupSemaphore->tryEnter(5);
 
 		/* Either AST thread terminated, or our timeout expired */
 

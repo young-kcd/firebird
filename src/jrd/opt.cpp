@@ -58,7 +58,6 @@
 #include "../jrd/sort.h"
 #include "../jrd/rse.h"
 #include "../jrd/intl.h"
-#include "../jrd/thd.h"
 #include "../jrd/gdsassert.h"
 #include "../jrd/btr_proto.h"
 #include "../jrd/cch_proto.h"

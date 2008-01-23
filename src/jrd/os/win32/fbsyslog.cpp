@@ -46,7 +46,7 @@ private:
 	tReportEvent *fReportEvent;
 	bool InitFlag;
 public:
-	SyslogAccess() {
+	SyslogAccess(Firebird::MemoryPool&) {
 		InitializeCriticalSection(&cs); 
 		InitFlag = false;
 		LogHandle = 0;
@@ -84,7 +84,7 @@ void SyslogAccess::Record(WORD wType, const Firebird::string& Msg)
 	LeaveCriticalSection(&cs);
 }
 
-class SyslogAccess iSyslogAccess;
+Firebird::InitInstance<SyslogAccess> iSyslogAccess;
 } // namespace
 
 namespace Firebird {
@@ -100,6 +100,6 @@ namespace Firebird {
 			wType = EVENTLOG_ERROR_TYPE;
 			break;
 		}
-		iSyslogAccess.Record(wType, Msg);
+		iSyslogAccess().Record(wType, Msg);
 	}
 } // namespace Firebird

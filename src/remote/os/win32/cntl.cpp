@@ -53,10 +53,10 @@ static USHORT report_status(DWORD, DWORD, DWORD, DWORD);
 
 static ThreadEntryPoint* main_handler;
 static SERVICE_STATUS_HANDLE service_handle;
-static Firebird::string* service_name = NULL;
-static Firebird::string* mutex_name = NULL;
+static Firebird::GlobalPtr<Firebird::string> service_name;
+static Firebird::GlobalPtr<Firebird::string> mutex_name;
 static HANDLE stop_event_handle;
-static Firebird::Mutex thread_mutex;
+static Firebird::GlobalPtr<Firebird::Mutex> thread_mutex;
 static cntl_thread* threads = NULL;
 static HANDLE hMutex = NULL;
 
@@ -74,10 +74,7 @@ void CNTL_init(ThreadEntryPoint* handler, const TEXT* name)
  **************************************/
 
 	main_handler = handler;
-	MemoryPool& pool = *getDefaultMemoryPool();
-	service_name = FB_NEW(pool) Firebird::string(pool);
 	service_name->printf(REMOTE_SERVICE, name);
-	mutex_name = FB_NEW(pool) Firebird::string(pool);
 	mutex_name->printf(GUARDIAN_MUTEX, name);
 }
 
@@ -103,10 +100,9 @@ void* CNTL_insert_thread()
 					GetCurrentProcess(), &new_thread->thread_handle, 0, FALSE,
 					DUPLICATE_SAME_ACCESS);
 
-	thread_mutex.enter();
+	Firebird::MutexLockGuard guard(thread_mutex);
 	new_thread->thread_next = threads;
 	threads = new_thread;
-    thread_mutex.leave();
 
 	return new_thread;
 }
@@ -188,18 +184,19 @@ void CNTL_remove_thread(void* athread)
  * Functional description
  *
  **************************************/
-	thread_mutex.enter();
-	cntl_thread* const rem_thread = (cntl_thread*) athread;
+	{ // scope for lock on thread_mutex
+		Firebird::MutexLockGuard guard(thread_mutex);
+		cntl_thread* const rem_thread = (cntl_thread*) athread;
 
-	for (cntl_thread** thread_ptr = &threads;
-		 *thread_ptr; thread_ptr = &(*thread_ptr)->thread_next)
-	{
-		if (*thread_ptr == rem_thread) {
-			*thread_ptr = rem_thread->thread_next;
-			break;
+		for (cntl_thread** thread_ptr = &threads;
+			 *thread_ptr; thread_ptr = &(*thread_ptr)->thread_next)
+		{
+			if (*thread_ptr == rem_thread) {
+				*thread_ptr = rem_thread->thread_next;
+				break;
+			}
 		}
 	}
-	thread_mutex.leave();
 
 	CloseHandle(rem_thread->thread_handle);
 

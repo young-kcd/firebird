@@ -38,7 +38,6 @@
 #include "../jrd/ibase.h"
 #include "../jrd/align.h"
 #include "../jrd/intl.h"
-#include "../jrd/thd.h"
 #include "../dsql/alld_proto.h"
 #include "../dsql/ddl_proto.h"
 #include "../dsql/metd_proto.h"
@@ -103,17 +102,17 @@ static dsql_sym* lookup_symbol(dsql_dbb*, const dsql_str*, SYM_TYPE, USHORT = 0)
 
 namespace {
 #ifdef  SUPERSERVER
-	REC_MUTX_T rec_mutex;	// Recursive metadata mutex 
+	Firebird::GlobalPtr<Firebird::RecursiveMutex> rec_mutex;	// Recursive metadata mutex 
 
 	class RecMutexHolder {
 	public:
 		RecMutexHolder() {
 			THREAD_EXIT();
-			THD_rec_mutex_lock(&rec_mutex);
+			rec_mutex->enter();
 			THREAD_ENTER();
 		}
 		~RecMutexHolder() {
-		    THD_rec_mutex_unlock(&rec_mutex);
+		    rec_mutex->leave();
 		}
 	};
 #else

@@ -34,7 +34,6 @@
 #include <stdio.h>
 #include <string.h>
 #include "../jrd/common.h"
-#include "../jrd/thd.h"
 #include "../jrd/file_params.h"
 #include <stdarg.h>
 #include "../jrd/jrd.h"
@@ -62,6 +61,7 @@
 #include "../utilities/gsec/gsecswi.h"
 #include "../utilities/gstat/dbaswi.h"
 #include "../common/classes/alloc.h"
+#include "../common/classes/init.h"
 #include "../common/classes/ClumpletWriter.h"
 #include "../jrd/ibase.h"
 #include "../common/utils_proto.h"
@@ -408,7 +408,7 @@ static ULONG shutdown_param = 0L;
 
 const char* const SPB_SEC_USERNAME = "isc_spb_sec_username";
 
-static Firebird::Mutex svc_mutex, thd_mutex;
+static Firebird::GlobalPtr<Firebird::Mutex> svc_mutex, thd_mutex;
 
 /* Service Functions */
 #if !defined(BOOT_BUILD)
@@ -1780,23 +1780,25 @@ void* SVC_start(Service* service, USHORT spb_length, const SCHAR* spb_data)
 		ERR_post(isc_bad_spb_form, 0);
 	}
 
-	thd_mutex.enter();
-	if (service->svc_flags & SVC_thd_running) {
-		thd_mutex.leave();
-		ERR_post(isc_svc_in_use, isc_arg_string,
-				 error_string(serv->serv_name, strlen(serv->serv_name)),
-				 0);
+	{ // scope for locked thd_mutex
+		Firebird::MutexLockGuard guard(thd_mutex);
+
+		if (service->svc_flags & SVC_thd_running) {
+			ERR_post(isc_svc_in_use, isc_arg_string,
+					 error_string(serv->serv_name, strlen(serv->serv_name)),
+					 0);
+		}
+
+		/* Another service may have been started with this service block.
+		 * If so, we must reset the service flags.
+		 */
+		service->svc_switches.erase();
+		if (!(service->svc_flags & SVC_detached))
+		{
+			service->svc_flags = 0;
+		}
+		service->svc_flags |= SVC_thd_running;
 	}
-	/* Another service may have been started with this service block.
-	 * If so, we must reset the service flags.
-	 */
-	service->svc_switches.erase();
-	if (!(service->svc_flags & SVC_detached))
-	{
-		service->svc_flags = 0;
-	}
-	service->svc_flags |= SVC_thd_running;
-	thd_mutex.leave();
 
 	thread_db* tdbb = JRD_get_thread_data();
 
@@ -2319,7 +2321,7 @@ void SVC_finish(Service* service, USHORT flag)
  *
  **************************************/
 
-	svc_mutex.enter();
+	Firebird::MutexLockGuard guard(svc_mutex);
 	if (service && ((flag == SVC_finished) || (flag == SVC_detached)))
 	{
 		service->svc_flags |= flag;
@@ -2338,7 +2340,6 @@ void SVC_finish(Service* service, USHORT flag)
 			service->svc_handle = 0;
 		}
 	}
-	svc_mutex.leave();
 }
 
 

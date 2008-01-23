@@ -27,7 +27,7 @@
 #include <stdio.h>
 #include "../remote/remote.h"
 #include "../jrd/ibase.h"
-#include "../jrd/thd.h"
+#include "../common/thd.h"
 #include "../jrd/iberr.h"
 #include "../remote/xnet.h"
 #include "../utilities/install/install_nt.h"
@@ -158,14 +158,14 @@ inline void make_event_name(char* buffer, size_t size, const char* format, ULONG
 	fb_utils::snprintf(buffer, size, format, xnet_endpoint, arg1, arg2, arg3);
 }
 
-static Firebird::Mutex	xnet_mutex;
+static Firebird::GlobalPtr<Firebird::Mutex> xnet_mutex;
 
 inline void XNET_LOCK() {
 	if (!xnet_shutdown)
 	{
 		THREAD_EXIT();
 	}
-	xnet_mutex.enter();
+	xnet_mutex->enter();
 	if (!xnet_shutdown)
 	{
 		THREAD_ENTER();
@@ -173,7 +173,7 @@ inline void XNET_LOCK() {
 }
 
 inline void XNET_UNLOCK() {
-	xnet_mutex.leave();
+	xnet_mutex->leave();
 }
 
 static int xnet_error(rem_port*, ISC_STATUS, int);

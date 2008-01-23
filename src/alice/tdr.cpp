@@ -46,7 +46,6 @@
 #include "../jrd/gds_proto.h"
 #include "../jrd/isc_proto.h"
 #include "../jrd/svc_proto.h"
-#include "../jrd/thd.h"
 #include "../jrd/constants.h"
 #include "../common/classes/ClumpletWriter.h"
 

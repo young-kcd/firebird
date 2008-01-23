@@ -64,7 +64,6 @@
 #include "../jrd/mov_proto.h"
 #include "../jrd/pag_proto.h"
 #include "../jrd/sqz_proto.h"
-#include "../jrd/thd.h"
 
 #ifdef DEV_BUILD
 #include "../jrd/dbg_proto.h"

@@ -40,27 +40,34 @@
 namespace Firebird
 {
 
+class MemoryPool;
+
 class Semaphore
 {
 private:
 	HANDLE hSemaphore;
-public:
-	Semaphore()
+	void init()
 	{ 
 		hSemaphore = CreateSemaphore(NULL, 0 /*initial count*/, INT_MAX, NULL);
 		if (hSemaphore == NULL)
 			system_call_failed::raise("CreateSemaphore");
 	}
+
+public:
+	Semaphore() { init(); }
+	explicit Semaphore(class MemoryPool&) { init(); }
+
 	~Semaphore()
 	{
 		if (hSemaphore && !CloseHandle(hSemaphore))
 			system_call_failed::raise("CloseHandle");
 	}	
 
-	bool tryEnter(int seconds = 0)
+	bool tryEnter(int seconds = 0, int milliseconds = 0)
 	{
+		milliseconds += seconds * 1000;
 		DWORD result = WaitForSingleObject(
-			hSemaphore, seconds >= 0 ? seconds * 1000 : INFINITE);
+			hSemaphore, milliseconds >= 0 ? milliseconds : INFINITE);
 		if (result == WAIT_FAILED)
 			system_call_failed::raise("WaitForSingleObject");
 		return result != WAIT_TIMEOUT;
@@ -111,13 +118,8 @@ private:
 	SignalSafeSemaphore* next;
 #endif
 #endif // WORKING_SEM_INIT
-	bool  init;
-public:
-#ifdef MIXED_SEMAPHORE_AND_FILE_HANDLE
-	static bool checkHandle(int n);
-#endif
-	SignalSafeSemaphore()
-		: init(false)
+
+	void init()
 	{
 #ifdef WORKING_SEM_INIT
 		if (sem_init(sem, 0, 0) == -1) {
@@ -137,12 +139,18 @@ public:
 		linkToInitialList();
 #endif
 #endif
-		init = true;
 	}
 	
+public:
+	SignalSafeSemaphore() { init(); }
+	explicit SignalSafeSemaphore(class MemoryPool&) { init(); }
+
+#ifdef MIXED_SEMAPHORE_AND_FILE_HANDLE
+	static bool checkHandle(int n);
+#endif
+
 	~SignalSafeSemaphore()
 	{
-		fb_assert(init == true);
 #ifdef WORKING_SEM_INIT
 		if (sem_destroy(sem) == -1) {
 			system_call_failed::raise("sem_destroy");
@@ -152,13 +160,10 @@ public:
 			system_call_failed::raise("sem_close");
 		}
 #endif
-		init = false;
-
 	}
 	
 	void enter()
 	{
-		fb_assert(init == true);
 		do {
 			if (sem_wait(sem) != -1)
 				return;
@@ -168,7 +173,6 @@ public:
 	
 	void release(SLONG count = 1)
 	{
-		fb_assert(init == true);
 		for (int i = 0; i < count; i++)
 		{
 			if (sem_post(sem) == -1)
@@ -181,11 +185,11 @@ public:
 #ifdef HAVE_SEM_TIMEDWAIT
 	// In case when sem_timedwait() is implemented by host OS, 
 	// class SignalSafeSemaphore may have this function:
-	bool tryEnter(int seconds = 0)
+	bool tryEnter(int seconds = 0, int milliseconds = 0)
 	{
+		milliseconds += seconds * 1000;
 		// Return true in case of success
-		fb_assert(init == true);
-		if (seconds == 0)
+		if (milliseconds == 0)
 		{
 			// Instant try
 			do {
@@ -196,7 +200,7 @@ public:
 				return false;
 			system_call_failed::raise("sem_trywait");
 		}
-		if (seconds < 0)
+		if (milliseconds < 0)
 		{
 			// Unlimited wait, like enter()
 			do {
@@ -207,8 +211,8 @@ public:
 		}
 		// Wait with timeout
 		struct timespec timeout;
-		timeout.tv_sec = time(NULL) + seconds;
-		timeout.tv_nsec = 0;
+		timeout.tv_sec = time(NULL) + milliseconds / 1000;
+		timeout.tv_nsec = (milliseconds % 1000) * 1000;
 		int errcode = 0;
 		do {
 			int rc = sem_timedwait(sem, &timeout);
@@ -260,10 +264,10 @@ private:
 		struct semid_ds*	buf;
 		unsigned short*		array;
 	};
-public:
-	Semaphore()
-		: semId(semget(IPC_PRIVATE, 1, 0600))
+
+	void init()
 	{
+		semId = semget(IPC_PRIVATE, 1, 0600);
 		if (semId < 0)
 			system_call_failed::raise("semaphore.h: Semaphore: semget()");
 		semun arg;
@@ -272,6 +276,10 @@ public:
 			system_call_failed::raise("semaphore.h: Semaphore: semctl()");
 	}
 
+public:
+	Semaphore() { init(); }
+	explicit Semaphore(class MemoryPool&) { init(); }
+
 	~Semaphore()
 	{
 		semun arg;
@@ -279,11 +287,12 @@ public:
 			system_call_failed::raise("semaphore.h: ~Semaphore: semctl()");
 	}
 
-	bool tryEnter(int seconds = 0) // Returns true in case of success
+	bool tryEnter(int seconds = 0, int milliseconds = 0) // Returns true in case of success
 	{
+		milliseconds += seconds * 1000;
 		timespec timeout;
-		timeout.tv_sec = time(NULL) + seconds;
-		timeout.tv_nsec = 0;
+		timeout.tv_sec = time(NULL) + milliseconds / 1000;
+		timeout.tv_nsec = (milliseconds % 1000) * 1000;
 		timespec* t = &timeout;
 
 		sembuf sb;
@@ -291,11 +300,11 @@ public:
 		sb.sem_op = -1;
 		sb.sem_flg = 0;
 
-		if (seconds < 0) {
+		if (milliseconds < 0) {
 			// Unlimited wait
 			t = 0;
 		}
-		else if (seconds == 0) {
+		else if (milliseconds == 0) {
 			// just try
 			t = 0;
 			sb.sem_flg = IPC_NOWAIT;
@@ -358,10 +367,8 @@ class Semaphore
 private:
 	pthread_mutex_t	mu;
 	pthread_cond_t	cv;
-	bool			init;
-public:
-	Semaphore()
-		: init(false)
+
+	void init()
 	{
 		int err = pthread_mutex_init(&mu, NULL);
 		if (err != 0) {
@@ -373,12 +380,14 @@ public:
 			//gds__log("Error on semaphore.h: constructor");
 			system_call_failed::raise("pthread_cond_init", err);
 		}
-		init = true;
 	}
 	
+public:
+	Semaphore() { init(); }
+	explicit Semaphore(class MemoryPool&) { init(); }
+
 	~Semaphore()
 	{
-		fb_assert(init == true);
 		int err = pthread_mutex_destroy(&mu);
 		if (err != 0) {
 			//gds__log("Error on semaphore.h: destructor");
@@ -389,21 +398,19 @@ public:
 			//gds__log("Error on semaphore.h: destructor");
 			//system_call_failed::raise("pthread_cond_destroy", err);
 		}
-		
-		init = false;
 	}
 	
-	bool tryEnter(int seconds = 0)
+	bool tryEnter(int seconds = 0, int milliseconds = 0)
 	{
 		bool rt = false;
+		// Return true in case of success
 		int err2 = 0;
 		int err = 0;
-		// Return true in case of success
-		fb_assert(init == true);
-		if (seconds == 0)
+		milliseconds += seconds * 1000;
+
+		if (milliseconds == 0)
 		{
 			// Instant try
-			
 			err2 = pthread_mutex_trylock(&mu);
 			if (err2 == 0)
 			{
@@ -427,7 +434,7 @@ public:
 			system_call_failed::raise("pthread_mutex_trylock", err2);
 		}
 
-		if (seconds < 0)
+		if (milliseconds < 0)
 		{
 			// Unlimited wait, like enter()
 			err2 = pthread_mutex_lock(&mu);
@@ -451,12 +458,12 @@ public:
 				return false;
 
 			system_call_failed::raise("pthread_mutex_lock", err2);
-		} //seconds < 0 
+		}
 
 		// Wait with timeout
 		timespec timeout;
-		timeout.tv_sec = time(NULL) + seconds;
-		timeout.tv_nsec = 0;
+		timeout.tv_sec = time(NULL) + milliseconds / 1000;
+		timeout.tv_nsec = (milliseconds % 1000) * 1000;
 		err2 = pthread_mutex_lock(&mu);
 
 		if (err2 == 0)
@@ -485,7 +492,6 @@ public:
 	
 	void enter()
 	{
-		fb_assert(init == true);
 		int err = 0;
 		int	err2 = pthread_mutex_lock(&mu);
 		if (err2 == 0)
@@ -506,7 +512,6 @@ public:
 	void release(SLONG count = 1)
 	{
 		int err = 0;
-		fb_assert(init == true);
 		for (int i = 0; i < count; i++) 
 		{
 			err = pthread_mutex_lock(&mu) ;

@@ -34,6 +34,7 @@
 #include <string.h>
 #include <stdio.h>
 #include "../jrd/common.h"
+#include "../common/classes/init.h"
 
 #include <stdarg.h>
 #include "../jrd/ibase.h"
@@ -1217,13 +1218,15 @@ static ISC_STATUS executeSecurityCommand(
 				input_user_data->server);
 	if (handle)
 	{
+		static Firebird::GlobalPtr<Firebird::Mutex> secExecMutex;
+		static Firebird::GlobalPtr<Firebird::CircularStringsBuffer<1024> > secExecBuf;
+
 		callRemoteServiceManager(status, handle, userInfo, 0, 0);
-		static Firebird::CircularStringsBuffer<1024> secExecBuf;
-		static Firebird::Mutex secExecMutex;
 		{
 			Firebird::MutexLockGuard lockMutex(secExecMutex);
-			secExecBuf.makePermanentVector(status, status);
+			secExecBuf->makePermanentVector(status, status);
 		}
+
 		ISC_STATUS_ARRAY user_status;
 		detachRemoteServiceManager(user_status, handle);
 	}

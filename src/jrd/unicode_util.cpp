@@ -101,15 +101,22 @@ public:
 class UnicodeUtil::ICUModules
 {
 public:
+	ICUModules(MemoryPool&)
+	{
+	}
+
 	~ICUModules()
 	{
 		for (bool found = modules().getFirst(); found; found = modules().getNext())
 			delete modules().current()->second;
 	}
-
 	InitInstance<GenericMap<Pair<Left<string, ICU*> > > > modules;
 	RWLock lock;
-} icuModules;
+};
+
+namespace {
+	GlobalPtr<UnicodeUtil::ICUModules> icuModules;
+}
 
 
 static const char* const COLL_30_VERSION = "41.128.4.4";	// ICU 3.0 collator version
@@ -749,10 +756,10 @@ UnicodeUtil::ICU* UnicodeUtil::loadICU(const Firebird::string& icuVersion,
 		if (version != majorVersion + "." + minorVersion)
 			continue;
 
-		ReadLockGuard readGuard(icuModules.lock);
+		ReadLockGuard readGuard(icuModules->lock);
 
 		ICU* icu;
-		if (icuModules.modules().get(version, icu))
+		if (icuModules->modules().get(version, icu))
 			return icu;
 
 		PathName filename;
@@ -856,18 +863,18 @@ UnicodeUtil::ICU* UnicodeUtil::loadICU(const Firebird::string& icuVersion,
 		// RWLock don't allow lock upgrade (read->write) so we
 		// release read and acquire a write lock.
 		readGuard.release();
-		WriteLockGuard writeGuard(icuModules.lock);
+		WriteLockGuard writeGuard(icuModules->lock);
 
 		// In this small amount of time, one may already loaded the
 		// same version, so withing the write lock we verify again.
 		ICU* icu2;
-		if (icuModules.modules().get(version, icu2))
+		if (icuModules->modules().get(version, icu2))
 		{
 			delete icu;
 			return icu2;
 		}
 
-		icuModules.modules().put(version, icu);
+		icuModules->modules().put(version, icu);
 		return icu;
 	}
 

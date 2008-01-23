@@ -56,12 +56,11 @@ private:
 	Mutex blockedReadersLock;
 	HANDLE writers_event, readers_semaphore;
 
-	// Forbid copy constructor
-	RWLock(const RWLock& source);
-
-public:
-	RWLock() : lock(0), blockedReaders(0), blockedWriters(0)
+	void init()
 	{ 
+		lock = 0;
+		blockedReaders = 0;
+		blockedWriters = 0;
 		readers_semaphore = CreateSemaphore(NULL, 0 /*initial count*/, 
 			INT_MAX, NULL); 
 		if (readers_semaphore == NULL)
@@ -70,6 +69,13 @@ public:
 		if (writers_event == NULL)
 			system_call_failed::raise("CreateEvent");
 	}
+
+	// Forbid copy constructor
+	RWLock(const RWLock& source);
+
+public:
+	RWLock() { init(); }
+	RWLock(Firebird::MemoryPool&) { init(); }
 	~RWLock()
 	{
 		if (readers_semaphore && !CloseHandle(readers_semaphore))
@@ -179,14 +185,18 @@ private:
 	rwlock_t lock;
 	// Forbid copy constructor
 	RWLock(const RWLock& source);
-public:
-	RWLock()
-	{		
+
+	void init()
+	{ 
 		if (rwlock_init(&lock, USYNC_PROCESS, NULL))
 		{
 			system_call_failed::raise("rwlock_init");
 		}
 	}
+
+public:
+	RWLock() { init(); }
+	RWLock(Firebird::MemoryPool&) { init(); }
 	~RWLock()
 	{
 		if (rwlock_destroy(&lock))
@@ -245,14 +255,17 @@ public:
 namespace Firebird
 {
 
+class MemoryPool;
+
 class RWLock
 {
 private:
 	pthread_rwlock_t lock;
 	// Forbid copy constructor
 	RWLock(const RWLock& source);
-public:
-	RWLock() {		
+
+	void init()
+	{ 
 #if defined(LINUX) && !defined(USE_VALGRIND)
 		pthread_rwlockattr_t attr;
 		if (pthread_rwlockattr_init(&attr))
@@ -268,6 +281,10 @@ public:
 			system_call_failed::raise("pthread_rwlock_init");
 #endif
 	}
+
+public:
+	RWLock() { init(); }
+	RWLock(class MemoryPool&) { init(); }
 	~RWLock()
 	{
 		if (pthread_rwlock_destroy(&lock))

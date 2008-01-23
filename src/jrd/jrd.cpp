@@ -143,7 +143,7 @@ int debug;
 
 namespace
 {
-	REC_MUTX_T databases_rec_mutex;
+	Firebird::GlobalPtr<Firebird::RecursiveMutex> databases_rec_mutex;
 	Database* databases = NULL;
 
 	class EngineStartup
@@ -164,16 +164,18 @@ namespace
 
 	Firebird::InitMutex<EngineStartup> engineStartup;
 
+	// Here we always ignore mutex errors, Possibly not good.
+
 	inline void dbMutexLock()
 	{
 		THREAD_EXIT();
-		THD_rec_mutex_lock(&databases_rec_mutex);
+		databases_rec_mutex->enter();
 		THREAD_ENTER();
 	}
 
 	inline void dbMutexUnlock()
 	{
-		THD_rec_mutex_unlock(&databases_rec_mutex);
+		databases_rec_mutex->leave();
 	}
 } // anonymous
 
@@ -194,7 +196,7 @@ void Jrd::Trigger::compile(thread_db* tdbb)
 		Database* dbb = tdbb->getDatabase();
 
 		THREAD_EXIT();
-		const int error = THD_rec_mutex_lock(&dbb->dbb_sp_rec_mutex);
+		const int error = dbb->dbb_sp_rec_mutex.enter();
 		THREAD_ENTER();
 
 		if (error) {
@@ -202,7 +204,7 @@ void Jrd::Trigger::compile(thread_db* tdbb)
 		}
 		if (request)
 		{
-			THD_rec_mutex_unlock(&dbb->dbb_sp_rec_mutex);
+			dbb->dbb_sp_rec_mutex.leave();
 			return;
 		}
 #endif /* SUPERSERVER */
@@ -248,7 +250,7 @@ void Jrd::Trigger::compile(thread_db* tdbb)
 			}
 
 #ifdef SUPERSERVER
-			THD_rec_mutex_unlock(&dbb->dbb_sp_rec_mutex);
+			dbb->dbb_sp_rec_mutex.leave();
 #endif
 			throw;
 		}
@@ -267,7 +269,7 @@ void Jrd::Trigger::compile(thread_db* tdbb)
 		compile_in_progress = false;
 
 #ifdef SUPERSERVER
-		THD_rec_mutex_unlock(&dbb->dbb_sp_rec_mutex);
+		dbb->dbb_sp_rec_mutex.leave();
 #endif
 	}
 }

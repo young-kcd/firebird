@@ -46,7 +46,6 @@
 #include "../alice/alice_meta.h"
 #include "../alice/tdr_proto.h"
 #include "../jrd/gds_proto.h"
-#include "../jrd/thd.h"
 #include "../jrd/constants.h"
 #include "../common/classes/ClumpletWriter.h"
 

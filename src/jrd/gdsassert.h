@@ -36,20 +36,20 @@
  * 1996-Feb-09 David Schnepper 
  */
 
-#define FB_GDS_ASSERT_FAILURE_STRING	"GDS Assertion failure: %s %"LINEFORMAT"\n"
+#define FB_GDS_ASSERT_FAILURE_STRING	"GDS Assertion (%s) failure: %s %"LINEFORMAT"\n"
 
 #ifdef SUPERSERVER
 
 #if !defined(fb_assert)
-#define fb_assert(ex)	{if (!(ex)) {gds__log (FB_GDS_ASSERT_FAILURE_STRING, __FILE__, __LINE__); abort();}}
-#define fb_assert_continue(ex)	{if (!(ex)) {gds__log (FB_GDS_ASSERT_FAILURE_STRING, __FILE__, __LINE__);}}
+#define fb_assert(ex)	{if (!(ex)) {gds__log (FB_GDS_ASSERT_FAILURE_STRING, #ex, __FILE__, __LINE__); abort();}}
+#define fb_assert_continue(ex)	{if (!(ex)) {gds__log (FB_GDS_ASSERT_FAILURE_STRING, #ex, __FILE__, __LINE__);}}
 #endif
 
 #else	// !SUPERSERVER
 
 #if !defined(fb_assert)
-#define fb_assert(ex)	{if (!(ex)) {fprintf (stderr, FB_GDS_ASSERT_FAILURE_STRING, __FILE__, __LINE__); abort();}}
-#define fb_assert_continue(ex)	{if (!(ex)) {fprintf (stderr, FB_GDS_ASSERT_FAILURE_STRING, __FILE__, __LINE__);}}
+#define fb_assert(ex)	{if (!(ex)) {fprintf (stderr, FB_GDS_ASSERT_FAILURE_STRING, #ex, __FILE__, __LINE__); abort();}}
+#define fb_assert_continue(ex)	{if (!(ex)) {fprintf (stderr, FB_GDS_ASSERT_FAILURE_STRING, #ex, __FILE__, __LINE__);}}
 #endif
 
 #endif	// SUPERSERVER

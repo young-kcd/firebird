@@ -1,5 +1,5 @@
 /*
- *	PROGRAM:	JRD Access Method
+ *	PROGRAM:	Common Access Method
  *	MODULE:		init.h
  *	DESCRIPTION:	InitMutex, InitInstance - templates to help with initialization
  *
@@ -27,46 +27,118 @@
 #ifndef CLASSES_INIT_INSTANCE_H
 #define CLASSES_INIT_INSTANCE_H
 
+#include "fb_types.h"
+#include "../common/classes/alloc.h"
+
 namespace Firebird {
+
+// InstanceControl - interface for almost all global variables
+
+class InstanceControl
+{
+public:
+	InstanceControl();
+	static void destructors();
+	static void registerGdsCleanup(FPTR_VOID cleanup);
+protected:
+	virtual void dtor() = 0;
+private:
+	static InstanceControl* instanceList;
+	static FPTR_VOID gdsCleanup;
+	InstanceControl* next;
+};
+
+// GlobalPtr - template to help declaring global varables
+
+template <typename T>
+class GlobalPtr : private InstanceControl
+{
+private:
+	T* instance;
+	void dtor()
+	{
+		delete instance;
+		instance = 0;
+	}
+public:
+	GlobalPtr() 
+		: InstanceControl()
+	{
+		instance = FB_NEW(*getDefaultMemoryPool()) T(*getDefaultMemoryPool());
+		// This means - for objects with ctors/dtors that want to ;be global,
+		// provide ctor with MemoryPool& parameter. Even if it is ignored!
+	}
+	T* operator->() const throw()
+	{
+		return instance;
+	}
+	operator T&() const throw()
+	{
+		return *instance;
+	}
+	T* operator&() const throw()
+	{
+		return instance;
+	}
+	bool operator!() const throw()
+	{
+		return instance ? false : true;
+	}
+};
+
+// Support for common mutex for various inits
+
+class StaticMutex
+{
+protected:
+	static RecursiveMutex* mutex;
+public:
+	static void create();
+	static void release();
+};
 
 // InitMutex - executes static void C::init() once and only once
 
 template <typename C>
-class InitMutex : private Mutex {
+class InitMutex : private StaticMutex
+{
 private:
 	volatile bool flag;
 public:
-	InitMutex() : flag(false) { }
-	void init() {
+	InitMutex() 
+		: flag(false) { }
+	void init() 
+	{
 		if (!flag) {
 			try {
-				enter();
+				mutex->enter();
 				if (!flag) {
 					C::init();
 					flag = true;
 				}
 			}
 			catch (const Firebird::Exception&) {
-				leave();
+				mutex->leave();
 				throw;
 			}
-			leave();
+			mutex->leave();
 		}
 	} 
-	void cleanup() {
+	void cleanup() 
+	{
 		if (flag) {
 			try {
-				enter();
+				mutex->enter();
 				if (flag) {
 					C::cleanup();
 					flag = false;
 				}
 			}
 			catch (const Firebird::Exception&) {
-				leave();
+				mutex->leave();
 				throw;
 			}
-			leave();
+			mutex->leave();
 		}
 	} 
 };
@@ -75,35 +147,40 @@ public:
 // DefaultInit uses default memory pool for it.
 
 template <typename T>
-class DefaultInit {
+class DefaultInit 
+{
 public:
-	static T* init() {
+	static T* init() 
+	{
 		return FB_NEW(*getDefaultMemoryPool()) T(*getDefaultMemoryPool());
 	}
 };
 
 template <typename T, 
-	typename C = DefaultInit<T> >
-class InitInstance : private Mutex {
+	typename I = DefaultInit<T> >
+class InitInstance : private StaticMutex
+{
 private:
 	T* instance;
 	volatile bool flag;
 public:
-	InitInstance<T, C>() : flag(false) { }
-	T& operator()() {
+	InitInstance() 
+		: flag(false) { }
+	T& operator()() 
+	{
 		if (!flag) {
 			try {
-				enter();
+				mutex->enter();
 				if (!flag) {
-					instance = C::init();
+					instance = I::init();
 					flag = true;
 				}
 			}
 			catch (const Firebird::Exception&) {
-				leave();
+				mutex->leave();
 				throw;
 			}
-			leave();
+			mutex->leave();
 		}
 		return *instance;
 	}

@@ -56,7 +56,6 @@
 #include "../jrd/DataTypeUtil.h"
 #include "../jrd/ods.h"
 #include "../jrd/ini.h"
-#include "../jrd/thd.h"
 #include "../jrd/dsc_proto.h"
 #include "../jrd/cvt_proto.h"
 #include "../jrd/thread_proto.h"

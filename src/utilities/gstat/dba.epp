@@ -50,7 +50,7 @@
 #include "../utilities/gstat/dbaswi.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/isc_f_proto.h"
-#include "../jrd/thd.h"
+#include "../common/thd.h"
 #include "../jrd/enc_proto.h"
 #include "../common/utils_proto.h"
 #include "../common/classes/ClumpletWriter.h"

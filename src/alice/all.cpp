@@ -24,14 +24,13 @@
 //
 //____________________________________________________________
 //
-//	$Id: all.cpp,v 1.29 2004-09-01 14:51:33 alexpeshkoff Exp $
+//	$Id: all.cpp,v 1.30 2008-01-23 15:51:31 alexpeshkoff Exp $
 //
 
 #include "firebird.h"
 #include "../jrd/common.h"
 #include "../alice/all.h"
 #include "../alice/alice.h"
-#include "../jrd/thd.h"
 #include "../common/classes/alloc.h"
 
 AliceMemoryPool* AliceMemoryPool::createPool() {

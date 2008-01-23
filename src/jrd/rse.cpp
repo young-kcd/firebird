@@ -66,7 +66,6 @@
 #include "../jrd/rlck_proto.h"
 #include "../jrd/rse_proto.h"
 #include "../jrd/sort_proto.h"
-#include "../jrd/thd.h"
 #include "../jrd/vio_proto.h"
 #include "../jrd/VirtualTable.h"
 

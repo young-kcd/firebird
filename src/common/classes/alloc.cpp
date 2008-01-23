@@ -48,10 +48,15 @@
 #define FREE_PATTERN 0xDEADBEEF
 #define ALLOC_PATTERN 0xFEEDABED
 #ifdef DEBUG_GDS_ALLOC
-# define PATTERN_FILL(ptr, size, pattern) for (size_t _i = 0; _i < size / sizeof(unsigned int); _i++) \
-	((unsigned int*)(ptr))[_i] = (pattern)
+inline void PATTERN_FILL(void *ptr, size_t size, unsigned int pattern) 
+{
+	for (size_t i = 0; i < size / sizeof(unsigned int); i++)
+	{
+		((unsigned int*)ptr)[i] = pattern;
+	}
+}
 #else
-# define PATTERN_FILL(ptr, size, pattern) ((void)0)
+inline void PATTERN_FILL(void *, size_t, unsigned int) { }
 #endif
 
 // TODO (in order of importance):
@@ -158,8 +163,8 @@ int dev_zero_fd = -1; /* Cached file descriptor for /dev/zero. */
 // Extents cache is not used when DEBUG_GDS_ALLOC or USE_VALGRIND is enabled.
 // This slows down things a little due to frequent syscalls mapping/unmapping 
 // memory but allows to detect more allocation errors
-Firebird::Vector<void*, MAP_CACHE_SIZE> extents_cache;
-Mutex cache_mutex;
+Vector<void*, MAP_CACHE_SIZE> extents_cache;
+Mutex* cache_mutex;		// Will be initialized manually in MemoryPool::init
 
 // avoid races during initialization
 size_t map_page_size = 0;
@@ -240,28 +245,48 @@ MemoryPool* MemoryPool::getContextPool()
 	return TLS_GET(contextPool);
 }
 
-// Initialize default stats group
+// Default stats group and default pool
 MemoryStats* MemoryPool::default_stats_group = 0;
+MemoryPool* MemoryPool::processMemoryPool = 0;
 
-// Initialize process memory pool to avoid possible race conditions.
-// At this point also set contextMemoryPool for main thread (or all
-// process in case of no threading).
-namespace {
-	char msBuffer[sizeof(MemoryStats) + ALLOC_ALIGNMENT];
-	MemoryPool* createProcessMemoryPool()
-	{
-		MemoryPool::default_stats_group =
-			new((void*)(IPTR) MEM_ALIGN((size_t)(IPTR) msBuffer)) MemoryStats;
-		MemoryPool* p = MemoryPool::createPool();
-		fb_assert(p);
-#ifndef SUPERCLIENT
-		MemoryPool::setContextPool(p);
+// Initialize process memory pool (called from InstanceControl).
+// At this point also set contextMemoryPool for main thread 
+// (or all process in case of no threading).
+
+void MemoryPool::init()
+{
+#if defined(WIN_NT) || defined(HAVE_MMAP)
+	static char mtxBuffer[sizeof(Mutex) + ALLOC_ALIGNMENT];
+	cache_mutex =
+		new((void*)(IPTR) MEM_ALIGN((size_t)(IPTR) mtxBuffer)) Mutex;
 #endif
-		return p;
-	}
-} // anonymous namespace
-MemoryPool* MemoryPool::processMemoryPool = createProcessMemoryPool();
 
+	static char msBuffer[sizeof(MemoryStats) + ALLOC_ALIGNMENT];
+	MemoryPool::default_stats_group =
+		new((void*)(IPTR) MEM_ALIGN((size_t)(IPTR) msBuffer)) MemoryStats;
+
+	// Now it's safe to actually create MemoryPool
+	processMemoryPool = MemoryPool::createPool();
+	fb_assert(processMemoryPool);
+
+#ifndef SUPERCLIENT
+	MemoryPool::setContextPool(processMemoryPool);
+#endif
+}
+
+// Should be last routine, called by InstanceControl,
+// being therefore the very last routine in firebird module.
+
+void MemoryPool::cleanup()
+{
+	deletePool(processMemoryPool);
+	processMemoryPool = 0;
+	default_stats_group = 0;
+
+#if defined(WIN_NT) || defined(HAVE_MMAP)
+	cache_mutex->~Mutex();
+#endif
+}
 
 void MemoryPool::setStatsGroup(MemoryStats& statsL)
 {
@@ -374,7 +399,7 @@ void MemoryPool::external_free(void *blk, size_t &size, bool pool_destroying)
 	// In normal case all blocks pass through queue of sufficent length by themselves
 	if (pool_destroying) {
 		// Synchronize delayed free queue using extents mutex
-		cache_mutex.enter();
+		MutexLockGuard guard(*cache_mutex);
 
 		// Extend circular buffer if possible
 		if (delayedExtentCount < FB_NELEM(delayedExtents)) {
@@ -383,7 +408,6 @@ void MemoryPool::external_free(void *blk, size_t &size, bool pool_destroying)
 			item->size = size;
 			item->handle = handle;
 			delayedExtentCount++;
-			cache_mutex.leave();
 			return;
 		}
 
@@ -405,8 +429,6 @@ void MemoryPool::external_free(void *blk, size_t &size, bool pool_destroying)
 		delayedExtentsPos++;
 		if (delayedExtentsPos >= FB_NELEM(delayedExtents))
 			delayedExtentsPos = 0;
-
-		cache_mutex.leave();
 	}
 	else {
 		// Let Valgrind forget about unmapped block
@@ -424,14 +446,13 @@ void* MemoryPool::external_alloc(size_t &size)
 	// This method is assumed to return NULL in case it cannot alloc
 # if !defined(DEBUG_GDS_ALLOC) && (defined(WIN_NT) || defined(HAVE_MMAP))
 	if (size == EXTENT_SIZE) {
-		cache_mutex.enter();
+		MutexLockGuard guard(cache_mutex);
 		void *result = NULL;
 		if (extents_cache.getCount()) {
 			// Use most recently used object to encourage caching
 			result = extents_cache[extents_cache.getCount() - 1];
 			extents_cache.shrink(extents_cache.getCount() - 1);
 		}
-		cache_mutex.leave();
 		if (result) {
 			return result;
 		}
@@ -494,13 +515,11 @@ void* MemoryPool::external_alloc(size_t &size)
 void MemoryPool::external_free(void *blk, size_t &size, bool pool_destroying) {
 # if !defined(DEBUG_GDS_ALLOC) && (defined(WIN_NT) || defined(HAVE_MMAP))
 	if (size == EXTENT_SIZE) {
-		cache_mutex.enter();
+		MutexLockGuard guard(cache_mutex);
 		if (extents_cache.getCount() < extents_cache.getCapacity()) {
 			extents_cache.add(blk);
-			cache_mutex.leave();
 			return;
 		}
-		cache_mutex.leave();
 	}
 # endif
 # if defined WIN_NT

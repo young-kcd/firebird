@@ -25,6 +25,7 @@
 #include "../../common/config/config.h"
 #include "../../common/config/config_impl.h"
 #include "../../common/config/config_file.h"
+#include "../../common/classes/init.h"
 
 #ifdef HAVE_STDLIB_H
 #include <stdlib.h>
@@ -123,31 +124,7 @@ const ConfigImpl::ConfigEntry ConfigImpl::entries[] =
  *	Static instance of the system configuration file
  */
 
-// was: const static ConfigImpl sysConfig;
-
-static ConfigImpl *sys_config = NULL;
-static Firebird::Mutex config_init_lock;
-
-const ConfigImpl& ConfigImpl::instance()
-{
-	if (!sys_config) 
-	{
-		try {
-			config_init_lock.enter();
-			if (!sys_config) {
-				sys_config = FB_NEW(*getDefaultMemoryPool()) ConfigImpl(*getDefaultMemoryPool());
-			}
-		}
-		catch (const Firebird::Exception&) {
-			config_init_lock.leave();
-			throw;
-		}
-		config_init_lock.leave();
-	}
-	return *sys_config;
-}
-
-#define sysConfig ConfigImpl::instance()
+static Firebird::InitInstance<ConfigImpl> sysConfig;
 
 /******************************************************************************
  *
@@ -255,7 +232,7 @@ const char* ConfigImpl::asString(const string &value)
 
 const char* Config::getInstallDirectory()
 {
-	return sysConfig.getInstallDirectory();
+	return sysConfig().getInstallDirectory();
 }
 
 static Firebird::PathName* rootFromCommandLine = 0;
@@ -280,44 +257,44 @@ const char* Config::getRootDirectory()
 		return rootFromCommandLine->c_str();
 	}
 
-	const char* result = (char*) sysConfig.values[KEY_ROOT_DIRECTORY];
-	return result ? result : sysConfig.root_dir;
+	const char* result = (char*) sysConfig().values[KEY_ROOT_DIRECTORY];
+	return result ? result : sysConfig().root_dir;
 }
 
 int Config::getTempBlockSize()
 {
-	return (int) sysConfig.values[KEY_TEMP_BLOCK_SIZE];
+	return (int) sysConfig().values[KEY_TEMP_BLOCK_SIZE];
 }
 
 int Config::getTempCacheLimit()
 {
-	int v = (int) sysConfig.values[KEY_TEMP_CACHE_LIMIT];
+	int v = (int) sysConfig().values[KEY_TEMP_CACHE_LIMIT];
 	return v < 0 ? 0 : v;
 }
 
 bool Config::getRemoteFileOpenAbility()
 {
-	return (bool) sysConfig.values[KEY_REMOTE_FILE_OPEN_ABILITY];
+	return (bool) sysConfig().values[KEY_REMOTE_FILE_OPEN_ABILITY];
 }
 
 int Config::getGuardianOption()
 {
-	return (int) sysConfig.values[KEY_GUARDIAN_OPTION];
+	return (int) sysConfig().values[KEY_GUARDIAN_OPTION];
 }
 
 int Config::getCpuAffinityMask()
 {
-	return (int) sysConfig.values[KEY_CPU_AFFINITY_MASK];
+	return (int) sysConfig().values[KEY_CPU_AFFINITY_MASK];
 }
 
 bool Config::getOldParameterOrdering()
 {
-	return (bool) sysConfig.values[KEY_OLD_PARAMETER_ORDERING];
+	return (bool) sysConfig().values[KEY_OLD_PARAMETER_ORDERING];
 }
 
 int Config::getTcpRemoteBufferSize()
 {
-	int rc = (int) sysConfig.values[KEY_TCP_REMOTE_BUFFER_SIZE];
+	int rc = (int) sysConfig().values[KEY_TCP_REMOTE_BUFFER_SIZE];
 	if (rc < 1448)
 		rc = 1448;
 	if (rc > MAX_SSHORT)
@@ -327,57 +304,57 @@ int Config::getTcpRemoteBufferSize()
 
 bool Config::getTcpNoNagle()
 {
-	return (bool) sysConfig.values[KEY_TCP_NO_NAGLE];
+	return (bool) sysConfig().values[KEY_TCP_NO_NAGLE];
 }
 
 int Config::getDefaultDbCachePages()
 {
-	return (int) sysConfig.values[KEY_DEFAULT_DB_CACHE_PAGES];
+	return (int) sysConfig().values[KEY_DEFAULT_DB_CACHE_PAGES];
 }
 
 int Config::getConnectionTimeout()
 {
-	return (int) sysConfig.values[KEY_CONNECTION_TIMEOUT];
+	return (int) sysConfig().values[KEY_CONNECTION_TIMEOUT];
 }
 
 int Config::getDummyPacketInterval()
 {
-	return (int) sysConfig.values[KEY_DUMMY_PACKET_INTERVAL];
+	return (int) sysConfig().values[KEY_DUMMY_PACKET_INTERVAL];
 }
 
 int Config::getLockMemSize()
 {
-	return (int) sysConfig.values[KEY_LOCK_MEM_SIZE];
+	return (int) sysConfig().values[KEY_LOCK_MEM_SIZE];
 }
 
 bool Config::getLockGrantOrder()
 {
-	return (bool) sysConfig.values[KEY_LOCK_GRANT_ORDER];
+	return (bool) sysConfig().values[KEY_LOCK_GRANT_ORDER];
 }
 
 int Config::getLockHashSlots()
 {
-	return (int) sysConfig.values[KEY_LOCK_HASH_SLOTS];
+	return (int) sysConfig().values[KEY_LOCK_HASH_SLOTS];
 }
 
 int Config::getLockAcquireSpins()
 {
-	return (int) sysConfig.values[KEY_LOCK_ACQUIRE_SPINS];
+	return (int) sysConfig().values[KEY_LOCK_ACQUIRE_SPINS];
 }
 
 int Config::getEventMemSize()
 {
-	return (int) sysConfig.values[KEY_EVENT_MEM_SIZE];
+	return (int) sysConfig().values[KEY_EVENT_MEM_SIZE];
 }
 
 int Config::getDeadlockTimeout()
 {
-	return (int) sysConfig.values[KEY_DEADLOCK_TIMEOUT];
+	return (int) sysConfig().values[KEY_DEADLOCK_TIMEOUT];
 }
 
 int Config::getPrioritySwitchDelay()
 {
-	int rc = (int) sysConfig.values[KEY_PRIORITY_SWITCH_DELAY];
+	int rc = (int) sysConfig().values[KEY_PRIORITY_SWITCH_DELAY];
 	if (rc < 1)
 		rc = 1;
 	return rc;
@@ -385,7 +362,7 @@ int Config::getPrioritySwitchDelay()
 
 int Config::getPriorityBoost()
 {
-	int rc = (int) sysConfig.values[KEY_PRIORITY_BOOST];
+	int rc = (int) sysConfig().values[KEY_PRIORITY_BOOST];
 	if (rc < 1)
 		rc = 1;
 	if (rc > 1000)
@@ -395,53 +372,53 @@ int Config::getPriorityBoost()
 
 bool Config::getUsePriorityScheduler()
 {
-	return (bool) sysConfig.values[KEY_USE_PRIORITY_SCHEDULER];
+	return (bool) sysConfig().values[KEY_USE_PRIORITY_SCHEDULER];
 }
 
 const char *Config::getRemoteServiceName()
 {
-	return (const char*) sysConfig.values[KEY_REMOTE_SERVICE_NAME];
+	return (const char*) sysConfig().values[KEY_REMOTE_SERVICE_NAME];
 }
 
 unsigned short Config::getRemoteServicePort()
 {
-	return (unsigned short) sysConfig.values[KEY_REMOTE_SERVICE_PORT];
+	return (unsigned short) sysConfig().values[KEY_REMOTE_SERVICE_PORT];
 }
 
 const char *Config::getRemotePipeName()
 {
-	return (const char*) sysConfig.values[KEY_REMOTE_PIPE_NAME];
+	return (const char*) sysConfig().values[KEY_REMOTE_PIPE_NAME];
 }
 
 const char *Config::getIpcName()
 {
-	return (const char*) sysConfig.values[KEY_IPC_NAME];
+	return (const char*) sysConfig().values[KEY_IPC_NAME];
 }
 
 int Config::getMaxUnflushedWrites()
 {
-	return (int) sysConfig.values[KEY_MAX_UNFLUSHED_WRITES];
+	return (int) sysConfig().values[KEY_MAX_UNFLUSHED_WRITES];
 }
 
 int Config::getMaxUnflushedWriteTime()
 {
-	return (int) sysConfig.values[KEY_MAX_UNFLUSHED_WRITE_TIME];
+	return (int) sysConfig().values[KEY_MAX_UNFLUSHED_WRITE_TIME];
 }
 
 int Config::getProcessPriorityLevel()
 {
-	return (int) sysConfig.values[KEY_PROCESS_PRIORITY_LEVEL];
+	return (int) sysConfig().values[KEY_PROCESS_PRIORITY_LEVEL];
 }
 
 bool Config::getCompleteBooleanEvaluation()
 {
-	return (bool) sysConfig.values[KEY_COMPLETE_BOOLEAN_EVALUATION];
+	return (bool) sysConfig().values[KEY_COMPLETE_BOOLEAN_EVALUATION];
 }
 
 int Config::getRemoteAuxPort()
 {
 #ifdef SUPERSERVER
-	return (int) sysConfig.values[KEY_REMOTE_AUX_PORT];
+	return (int) sysConfig().values[KEY_REMOTE_AUX_PORT];
 #else
 	return 0;
 #endif
@@ -449,70 +426,70 @@ int Config::getRemoteAuxPort()
 
 const char *Config::getRemoteBindAddress()
 {
-	return (const char*) sysConfig.values[KEY_REMOTE_BIND_ADDRESS];
+	return (const char*) sysConfig().values[KEY_REMOTE_BIND_ADDRESS];
 }
 
 const char *Config::getExternalFileAccess()
 {
-	return (const char*) sysConfig.values[KEY_EXTERNAL_FILE_ACCESS];
+	return (const char*) sysConfig().values[KEY_EXTERNAL_FILE_ACCESS];
 }
 
 const char *Config::getDatabaseAccess()
 {
-	return (const char*) sysConfig.values[KEY_DATABASE_ACCESS];
+	return (const char*) sysConfig().values[KEY_DATABASE_ACCESS];
 }
 
 const char *Config::getUdfAccess()
 {
-	return (const char*) sysConfig.values[KEY_UDF_ACCESS];
+	return (const char*) sysConfig().values[KEY_UDF_ACCESS];
 }
 
 const char *Config::getTempDirectories()
 {
-	return (const char*) sysConfig.values[KEY_TEMP_DIRECTORIES];
+	return (const char*) sysConfig().values[KEY_TEMP_DIRECTORIES];
 }
 
 bool Config::getBugcheckAbort()
 {
-	return (bool) sysConfig.values[KEY_BUGCHECK_ABORT];
+	return (bool) sysConfig().values[KEY_BUGCHECK_ABORT];
 }
 
 bool Config::getLegacyHash()
 {
-	return (bool) sysConfig.values[KEY_LEGACY_HASH];
+	return (bool) sysConfig().values[KEY_LEGACY_HASH];
 }
 
 const char *Config::getGCPolicy()
 {
-	return (const char *) sysConfig.values[KEY_GC_POLICY];
+	return (const char *) sysConfig().values[KEY_GC_POLICY];
 }
 
 bool Config::getRedirection()
 {
-	return (bool) sysConfig.values[KEY_REDIRECTION];
+	return (bool) sysConfig().values[KEY_REDIRECTION];
 }
 
 bool Config::getOldColumnNaming()
 {
-	return (bool) sysConfig.values[KEY_OLD_COLUMN_NAMING];
+	return (bool) sysConfig().values[KEY_OLD_COLUMN_NAMING];
 }
 
 const char *Config::getAuthMethod()
 {
-	return (const char *) sysConfig.values[KEY_AUTH_METHOD];
+	return (const char *) sysConfig().values[KEY_AUTH_METHOD];
 }
 
 int Config::getDatabaseGrowthIncrement()
 {
-	return (int) sysConfig.values[KEY_DATABASE_GROWTH_INCREMENT];
+	return (int) sysConfig().values[KEY_DATABASE_GROWTH_INCREMENT];
 }
 
 int Config::getMaxFileSystemCache()
 {
-	return (int) sysConfig.values[KEY_MAX_FILESYSTEM_CACHE];
+	return (int) sysConfig().values[KEY_MAX_FILESYSTEM_CACHE];
 }
 
 bool Config::getRelaxedAliasChecking()
 {
-	return (bool) sysConfig.values[KEY_RELAXED_ALIAS_CHECKING];
+	return (bool) sysConfig().values[KEY_RELAXED_ALIAS_CHECKING];
 }

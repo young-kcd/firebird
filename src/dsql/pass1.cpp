@@ -143,7 +143,6 @@
 #include <stdio.h>
 #include "../jrd/ibase.h"
 #include "../dsql/dsql.h"
-#include "../jrd/thd.h"
 #include "../jrd/intl.h"
 #include "../jrd/blr.h"
 #include "../jrd/constants.h"

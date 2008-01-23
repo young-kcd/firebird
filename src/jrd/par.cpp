@@ -63,7 +63,6 @@
 #include "../jrd/gds_proto.h"
 #include "../jrd/met_proto.h"
 #include "../jrd/par_proto.h"
-#include "../jrd/thd.h"
 #include "../common/utils_proto.h"
 #include "../jrd/SysFunction.h"
 

@@ -64,7 +64,6 @@
 #include "../jrd/mov_proto.h"
 #include "../jrd/ods_proto.h"
 #include "../jrd/os/pio_proto.h"
-#include "../jrd/thd.h"
 #include "../common/classes/init.h"
 
 using namespace Jrd;

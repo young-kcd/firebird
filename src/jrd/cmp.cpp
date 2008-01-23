@@ -75,7 +75,6 @@
 #include "../jrd/opt_proto.h"
 #include "../jrd/par_proto.h"
 #include "../jrd/scl_proto.h"
-#include "../jrd/thd.h"
 #include "../jrd/met_proto.h"
 #include "../jrd/mov_proto.h"
 #include "../jrd/dsc_proto.h"

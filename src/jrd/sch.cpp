@@ -40,6 +40,7 @@
 #include "../jrd/gdsassert.h"
 #include "../jrd/os/thd_priority.h"
 #include "../common/classes/locks.h"
+#include "../common/classes/init.h"
 
 #ifdef	WIN_NT
 #include <windows.h>
@@ -76,14 +77,14 @@ static void stall_ast(THREAD);
 static THREAD free_threads = NULL;
 static THREAD active_thread = NULL;
 static THREAD ast_thread = NULL;
-static Firebird::Mutex thread_mutex;
+static Firebird::GlobalPtr<Firebird::Mutex> thread_mutex;
 
 namespace {
 
 class SchedulerInit
 {
 public:
-	SchedulerInit()
+	SchedulerInit(Firebird::MemoryPool&)
 	{}
 
 	~SchedulerInit()
@@ -123,14 +124,14 @@ public:
 
 } // namespace
 
-static SchedulerInit initHolder;
+static Firebird::GlobalPtr<SchedulerInit> initHolder;
 
 
 static inline void sch_mutex_lock()
 {
 	try
 	{
-		thread_mutex.enter();
+		thread_mutex->enter();
 	}
 	catch (const Firebird::system_call_failed& e)
 	{
@@ -142,7 +143,7 @@ static inline void sch_mutex_unlock()
 {
 	try
 	{
-		thread_mutex.leave();
+		thread_mutex->leave();
 	}
 	catch (const Firebird::system_call_failed& e)
 	{

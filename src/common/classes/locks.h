@@ -46,6 +46,8 @@
 
 namespace Firebird {
 
+class MemoryPool;	// Needed for ctors that must always ignaore it
+
 #ifdef WIN_NT
 
 // Generic process-local mutex and spinlock. The latter
@@ -58,6 +60,9 @@ protected:
 	CRITICAL_SECTION spinlock;
 public:
 	Mutex() {
+		InitializeCriticalSection(&spinlock);
+	}
+	explicit Mutex(MemoryPool&) {
 		InitializeCriticalSection(&spinlock);
 	}
 	~Mutex() {
@@ -79,8 +84,16 @@ typedef WINBASEAPI DWORD WINAPI tSetCriticalSectionSpinCount (
 class Spinlock : public Mutex {
 private:
 	static tSetCriticalSectionSpinCount* SetCriticalSectionSpinCount;
+	init();
 public:
-	Spinlock();
+	Spinlock()
+	{
+		init();
+	}
+	explicit Spinlock(MemoryPool&)
+	{
+		init();
+	}
 };
 
 #else //WIN_NT
@@ -92,6 +105,10 @@ private:
 	mutex_t mlock;
 public:
 	Mutex() {
+		if (mutex_init(&mlock, USYNC_PROCESS, NULL))
+			system_call_failed::raise("mutex_init");
+	}
+	explicit Mutex(MemoryPool&) {
 		if (mutex_init(&mlock, USYNC_PROCESS, NULL))
 			system_call_failed::raise("mutex_init");
 	}
@@ -122,6 +139,10 @@ public:
 		if (pthread_mutex_init(&mlock, 0))
 			system_call_failed::raise("pthread_mutex_init");
 	}
+	explicit Mutex(MemoryPool&) {
+		if (pthread_mutex_init(&mlock, 0))
+			system_call_failed::raise("pthread_mutex_init");
+	}
 	~Mutex() {
 		if (pthread_mutex_destroy(&mlock))
 			system_call_failed::raise("pthread_mutex_destroy");
@@ -142,6 +163,10 @@ private:
 	pthread_spinlock_t spinlock;
 public:
 	Spinlock() {
+		if (pthread_spin_init(&spinlock, false))
+			system_call_failed::raise("pthread_spin_init");
+	}
+	explicit Spinlock(MemoryPool&) {
 		if (pthread_spin_init(&spinlock, false))
 			system_call_failed::raise("pthread_spin_init");
 	}
@@ -174,6 +199,25 @@ private:
 	// Forbid copy constructor
 	MutexLockGuard(const MutexLockGuard& source);
 	Mutex *lock;
+};
+
+// Recursive mutex
+class RecursiveMutex {
+	Firebird::Mutex mutex;
+	FB_THREAD_ID threadId;
+	int count;
+
+public:
+	RecursiveMutex()
+		: mutex(), threadId(0), count(0)
+	{}
+
+	RecursiveMutex(class Firebird::MemoryPool&)
+		: mutex(), threadId(0), count(0)
+	{}
+	
+	int enter();
+	int leave();
 };
 
 } //namespace Firebird

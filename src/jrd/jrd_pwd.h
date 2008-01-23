@@ -28,7 +28,6 @@
 #define JRD_PWD_H
 
 #include "../jrd/ibase.h"
-#include "../jrd/thd.h"
 #include "../jrd/sha.h"
 #ifdef HAVE_STDLIB_H
 #include <stdlib.h>

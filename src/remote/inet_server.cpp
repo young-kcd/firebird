@@ -38,6 +38,7 @@
 #include "../jrd/isc_proto.h"
 #include "../jrd/divorce.h"
 #include "../jrd/jrd_proto.h"
+#include "../common/classes/init.h"
 #include "../common/config/config.h"
 #include <sys/param.h>
 
@@ -80,7 +81,7 @@
 
 #include "../remote/remote.h"
 #include "../jrd/license.h"
-#include "../jrd/thd.h"
+#include "../common/thd.h"
 #include "../jrd/file_params.h"
 #include "../remote/inet_proto.h"
 #include "../remote/serve_proto.h"
@@ -518,7 +519,7 @@ static void signal_sigpipe_handler(int)
 #endif
 
 #ifdef SHUTDOWN_THREAD
-static Firebird::SignalSafeSemaphore shutSem;
+static Firebird::GlobalPtr<Firebird::SignalSafeSemaphore> shutSem;
 static bool alreadyClosing = false;
 
 static THREAD_ENTRY_DECLARE shutdown_thread(THREAD_ENTRY_PARAM arg) 
@@ -535,7 +536,7 @@ static THREAD_ENTRY_DECLARE shutdown_thread(THREAD_ENTRY_PARAM arg)
  *
  **************************************/
 	try {
-	 	shutSem.enter();
+	 	shutSem->enter();
 	}
 	catch (Firebird::status_exception& e)
 	{
@@ -572,7 +573,7 @@ static void signal_term(int)
  **************************************/
 	try
 	{
-	 	shutSem.release();
+	 	shutSem->release();
 	}
 	catch (Firebird::status_exception& e)
 	{
@@ -600,6 +601,6 @@ static void shutdown_fini()
 	set_signal(SIGINT, SIG_IGN);
 	set_signal(SIGTERM, SIG_IGN);
 	alreadyClosing = true;
-	shutSem.release();
+	shutSem->release();
 }
 #endif //SHUTDOWN_THREAD

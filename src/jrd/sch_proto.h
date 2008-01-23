@@ -24,8 +24,6 @@
 #ifndef JRD_SCH_PROTO_H
 #define JRD_SCH_PROTO_H
 
-#include "../jrd/isc.h"
-
 extern "C" {
 
 /* AST actions taken by SCH_ast() */
@@ -47,6 +45,11 @@ void	API_ROUTINE gds__thread_enter();
 void	API_ROUTINE gds__thread_exit();
 
 } // extern "C"
+
+// Thread quanta
+
+const int QUANTUM			= 100;	// Default quantum
+const int SWEEP_QUANTUM		= 10;	// Make sweeps less disruptive
 
 struct thread;
 

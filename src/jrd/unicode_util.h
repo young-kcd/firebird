@@ -37,9 +37,9 @@ class UnicodeUtil
 {
 private:
 	struct ICU;
-	class ICUModules;
 
 public:
+	class ICUModules;
 	// routines semantically equivalent with intlobj_new.h
 
 	static USHORT utf16KeyLength(USHORT len);	// BOCU-1

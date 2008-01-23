@@ -46,7 +46,6 @@
 #include "../jrd/ods.h"
 #include "../jrd/align.h"
 #include "../jrd/gdsassert.h"
-#include "../jrd/thd.h"
 #include "../jrd/constants.h"
 #include "../common/stuff.h"
 #include "../burp/backu_proto.h"

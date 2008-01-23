@@ -50,7 +50,6 @@
 #include "../jrd/err_proto.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/intl_proto.h"
-#include "../jrd/thd.h"
 #include "../common/classes/timestamp.h"
 
 

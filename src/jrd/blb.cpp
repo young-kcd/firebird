@@ -69,7 +69,6 @@
 #include "../jrd/mov_proto.h"
 #include "../jrd/pag_proto.h"
 #include "../jrd/sdl_proto.h"
-#include "../jrd/thd.h"
 #include "../jrd/dsc_proto.h"
 #include "../common/classes/array.h"
 

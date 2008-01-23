@@ -24,7 +24,6 @@
 #include "firebird.h"
 #include "../jrd/common.h"
 #include "gen/iberror.h"
-#include "../jrd/thd.h"
 #include "../jrd/gdsassert.h"
 #include "../jrd/event_proto.h"
 #include "../jrd/gds_proto.h"

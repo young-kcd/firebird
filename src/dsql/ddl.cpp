@@ -75,7 +75,6 @@
 #include "../common/classes/MetaName.h"
 #include "../dsql/dsql.h"
 #include "../jrd/ibase.h"
-#include "../jrd/thd.h"
 #include "../jrd/intl.h"
 #include "../jrd/flags.h"
 #include "../jrd/constants.h"

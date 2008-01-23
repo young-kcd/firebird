@@ -63,7 +63,6 @@
 #include "../jrd/met_proto.h"
 #include "../jrd/mov_proto.h"
 #include "../jrd/sort_proto.h"
-#include "../jrd/thd.h"
 #include "../jrd/vio_proto.h"
 #include "../jrd/tra_proto.h"
 

@@ -89,9 +89,9 @@ HWND hPSDlg, hWndGbl;
 static int nRestarts = 0;		/* the number of times the server was restarted */
 static bool service_flag = true;
 static TEXT instance[MAXPATHLEN];
-static Firebird::string* service_name = NULL;
-static Firebird::string* remote_name = NULL;
-static Firebird::string* mutex_name = NULL;
+static Firebird::GlobalPtr<Firebird::string> service_name;
+static Firebird::GlobalPtr<Firebird::string> remote_name;
+static Firebird::GlobalPtr<Firebird::string> mutex_name;
 /* unsigned short shutdown_flag = FALSE; */
 static log_info* log_entry;
 
@@ -124,12 +124,8 @@ int WINAPI WinMain(
 	if (service_flag) {
 		strcpy(instance, FB_DEFAULT_INSTANCE);
 		service_flag = parse_args(lpszCmdLine);
-		MemoryPool& pool = *getDefaultMemoryPool();
-		service_name = FB_NEW(pool) Firebird::string(pool);
 		service_name->printf(ISCGUARD_SERVICE, instance);
-		remote_name = FB_NEW(pool) Firebird::string(pool);
 		remote_name->printf(REMOTE_SERVICE, instance);
-		mutex_name = FB_NEW(pool) Firebird::string(pool);
 		mutex_name->printf(GUARDIAN_MUTEX, instance);
 	}
 

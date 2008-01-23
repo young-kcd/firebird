@@ -106,7 +106,6 @@ static const TEXT gdslogid[] = "";
 static const char* FB_PID_FILE = "fb_%d";
 
 #include "gen/sql_code.h"
-#include "../jrd/thd.h"
 #include "gen/iberror.h"
 #include "../jrd/ibase.h"
 
@@ -226,7 +225,7 @@ typedef clean *CLEAN;
 
 static CLEAN	cleanup_handlers = NULL;
 static gds_msg* global_default_msg = NULL;
-static bool initialized = false;
+static bool volatile initialized = false;
 
 void* API_ROUTINE gds__alloc_debug(SLONG size_request,
                                    const TEXT* filename,
@@ -3226,9 +3225,9 @@ void gds__cleanup(void)
 		(*routine)(arg);
 	}
 
+	Firebird::InstanceControl::registerGdsCleanup(0);	
 	initialized = false;
 }
-
 
 static void init(void)
 {
@@ -3242,6 +3241,12 @@ static void init(void)
  *	Do anything necessary to initialize module/system.
  *
  **************************************/
+	if (initialized)
+		return;
+
+	static Firebird::GlobalPtr<Firebird::Mutex> gdsInitMutex;
+	Firebird::MutexLockGuard guard(gdsInitMutex);
+
 	if (initialized)
 		return;
 
@@ -3278,7 +3283,7 @@ static void init(void)
 
 	initialized = true;
 
-	atexit(gds__cleanup);
+	Firebird::InstanceControl::registerGdsCleanup(gds__cleanup);
 
 	gdsPrefixInit();
 

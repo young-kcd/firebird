@@ -67,7 +67,7 @@ common/config/config.cpp common/config/config_file.cpp $(OS_SPECIFIC_Sources)
 
 DROP_Files= drop.cpp
 DROP_Sources = $(addprefix utilities/, $(DROP_Files)) $(DROP_Other_Sources)
-DROP_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(DROP_Sources))))
+DROP_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(DROP_Sources)))) $(FBCOMMON_ClientObjects)
 
 
 GSEC_Other_Sources = jrd/enc.cpp jrd/sha.cpp jrd/guid.cpp \
@@ -95,7 +95,7 @@ common/fb_exception.cpp common/utils.cpp
 
 FBSVCMGR_Sources = $(addprefix utilities/, $(FBSVCMGR_Files)) $(FBSVCMGR_Other_Sources)
 FBSVCMGR_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(FBSVCMGR_Sources)))) \
-$(FBCLASSES_MsgObjects) $(CLUMPLETS_Objects)
+$(FBCLASSES_MsgObjects) $(CLUMPLETS_Objects) $(FBCOMMON_ClientObjects)
 
 
 IBGUARD_Files =  guard.cpp util.cpp

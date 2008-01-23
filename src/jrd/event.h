@@ -31,7 +31,6 @@
 #define JRD_EVENT_H
 
 #include "../jrd/isc.h"
-#include "../jrd/thd.h"
 #include "../jrd/file_params.h"
 #include "../jrd/que.h"
 

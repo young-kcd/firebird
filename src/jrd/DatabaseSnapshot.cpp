@@ -312,7 +312,7 @@ void DatabaseSnapshot::SharedMemory::init(void* arg, SH_MEM_T* shmemData, bool i
 
 // DatabaseSnapshot class
 
-Mutex DatabaseSnapshot::initMutex;
+GlobalPtr<Mutex> DatabaseSnapshot::initMutex;
 DatabaseSnapshot::SharedMemory* DatabaseSnapshot::dump = NULL;
 int DatabaseSnapshot::pid = getpid();
 

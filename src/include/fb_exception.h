@@ -36,7 +36,10 @@
 
 namespace Firebird {
 
-class StringsBuffer {
+class MemoryPool;
+
+class StringsBuffer 
+{
 public:
 	virtual char* alloc(const char* string, size_t length) = 0;
 	virtual ~StringsBuffer() {}
@@ -45,13 +48,12 @@ public:
 };
 
 template <size_t BUFFER_SIZE>
-class CircularStringsBuffer : public StringsBuffer {
+class CircularStringsBuffer : public StringsBuffer 
+{
 public:
-	CircularStringsBuffer() throw() {
-		// This is to ensure we have zero at the end of buffer in case of buffer overflow
-		memset(buffer, 0, BUFFER_SIZE); 
-		buffer_ptr = buffer;
-	}
+	CircularStringsBuffer() throw() { init(); }
+	CircularStringsBuffer(MemoryPool&) throw() { init(); }
+
 	virtual char* alloc(const char* string, size_t length) {
 		// fb_assert(length + 1 < BUFFER_SIZE);
 		// If there isn't any more room in the buffer, start at the beginning again
@@ -63,7 +65,15 @@ public:
 		buffer_ptr += length + 1;	
 		return new_string;
 	}
+
 private:
+	void init() throw()
+	{
+		// This is to ensure we have zero at the end of buffer in case of buffer overflow
+		memset(buffer, 0, BUFFER_SIZE); 
+		buffer_ptr = buffer;
+	}
+
 	char buffer[BUFFER_SIZE];
 	char *buffer_ptr;
 };

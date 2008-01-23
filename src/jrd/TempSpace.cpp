@@ -33,7 +33,7 @@
 
 // Static definitions/initializations
 
-Firebird::Mutex TempSpace::initMutex;
+Firebird::GlobalPtr<Firebird::Mutex> TempSpace::initMutex;
 Firebird::TempDirectoryList* TempSpace::tempDirs = NULL;
 size_t TempSpace::minBlockSize = 0;
 offset_t TempSpace::globalCacheUsage = 0;

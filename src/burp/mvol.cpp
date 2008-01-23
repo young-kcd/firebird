@@ -44,7 +44,6 @@
 #include "../burp/mvol_proto.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/gdsassert.h"
-#include "../jrd/thd.h"
 #include <fcntl.h>
 #include <sys/types.h>
 
