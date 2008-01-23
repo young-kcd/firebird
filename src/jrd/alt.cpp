@@ -1222,7 +1222,8 @@ static ISC_STATUS executeSecurityCommand(
 		static Firebird::GlobalPtr<Firebird::CircularStringsBuffer<1024> > secExecBuf;
 
 		callRemoteServiceManager(status, handle, userInfo, 0, 0);
-		{
+		
+		{	// scope for MutexLockGuard
 			Firebird::MutexLockGuard lockMutex(secExecMutex);
 			secExecBuf->makePermanentVector(status, status);
 		}

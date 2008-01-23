@@ -75,7 +75,7 @@ private:
 	}
 
 	char buffer[BUFFER_SIZE];
-	char *buffer_ptr;
+	char* buffer_ptr;
 };
 
 class Exception

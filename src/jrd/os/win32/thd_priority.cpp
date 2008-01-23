@@ -124,11 +124,13 @@ void ThreadPriorityScheduler::attach()
 		{
 			Firebird::system_call_failed::raise("DuplicateHandle", GetLastError());
 		}
-		{
+
+		{	// scope for MutexLockGuard
 			Firebird::MutexLockGuard guard(mutex);
 			next = chain;
 			chain = this;
 		}
+
 #ifdef DEBUG_THREAD_PSCHED
 		gds__log("^ handle=%p priority=%d", handle, 
 				flags & THPS_BOOSTED ? 

@@ -21,11 +21,8 @@
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
 //  TMN (Mike Nordell) 11.APR.2001 - Reduce compiler warnings
-//  
-//
 //____________________________________________________________
 //
-//	$Id: movg.cpp,v 1.9 2008-01-23 15:51:51 alexpeshkoff Exp $
 //
 
 #include "firebird.h"

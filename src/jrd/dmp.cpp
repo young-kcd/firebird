@@ -43,7 +43,6 @@
 #include "../jrd/sqz_proto.h"
 
 
-
 void (*dbg_block) (const BufferDesc*);
 
 void (*dmp_active) (void) = DMP_active;

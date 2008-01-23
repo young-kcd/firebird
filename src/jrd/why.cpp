@@ -238,7 +238,8 @@ namespace YValve
 		}
 	}
 
-	BaseHandle* BaseHandle::translate(FB_API_HANDLE handle) {
+	BaseHandle* BaseHandle::translate(FB_API_HANDLE handle)
+	{
 		Firebird::ReadLockGuard sync(handleMappingLock);
 
 		fb_assert(handleMapping);

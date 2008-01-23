@@ -164,7 +164,7 @@ namespace
 
 	Firebird::InitMutex<EngineStartup> engineStartup;
 
-	// Here we always ignore mutex errors, Possibly not good.
+	// Here we always ignore mutex errors. Possibly not good.
 
 	inline void dbMutexLock()
 	{

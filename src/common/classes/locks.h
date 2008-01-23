@@ -55,7 +55,8 @@ class MemoryPool;	// Needed for ctors that must always ignaore it
 
 // Windows version of the class
 
-class Mutex {
+class Mutex
+{
 protected:
 	CRITICAL_SECTION spinlock;
 public:
@@ -81,7 +82,8 @@ typedef WINBASEAPI DWORD WINAPI tSetCriticalSectionSpinCount (
 	DWORD dwSpinCount
 );
 
-class Spinlock : public Mutex {
+class Spinlock : public Mutex
+{
 private:
 	static tSetCriticalSectionSpinCount* SetCriticalSectionSpinCount;
 	init();
@@ -100,7 +102,8 @@ public:
 
 #ifdef SOLARIS_MT
 
-class Mutex {
+class Mutex
+{
 private:
 	mutex_t mlock;
 public:
@@ -131,7 +134,8 @@ typedef Mutex Spinlock;
 #else  //SOLARIS_MT
 
 // Pthreads version of the class
-class Mutex {
+class Mutex
+{
 private:
 	pthread_mutex_t mlock;
 public:
@@ -158,7 +162,8 @@ public:
 };
 
 #ifndef DARWIN
-class Spinlock {
+class Spinlock
+{
 private:
 	pthread_spinlock_t spinlock;
 public:
@@ -190,7 +195,8 @@ public:
 #endif //WIN_NT
 
 // RAII holder of mutex lock
-class MutexLockGuard {
+class MutexLockGuard
+{
 public:
 	explicit MutexLockGuard(Mutex &alock) 
 		: lock(&alock) { lock->enter(); }
@@ -202,7 +208,9 @@ private:
 };
 
 // Recursive mutex
-class RecursiveMutex {
+class RecursiveMutex
+{
+private:
 	Firebird::Mutex mutex;
 	FB_THREAD_ID threadId;
 	int count;

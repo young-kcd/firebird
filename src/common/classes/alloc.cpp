@@ -48,11 +48,11 @@
 #define FREE_PATTERN 0xDEADBEEF
 #define ALLOC_PATTERN 0xFEEDABED
 #ifdef DEBUG_GDS_ALLOC
-inline void PATTERN_FILL(void *ptr, size_t size, unsigned int pattern) 
+inline void PATTERN_FILL(void* ptr, size_t size, unsigned int pattern) 
 {
 	for (size_t i = 0; i < size / sizeof(unsigned int); i++)
 	{
-		((unsigned int*)ptr)[i] = pattern;
+		((unsigned int*) ptr)[i] = pattern;
 	}
 }
 #else

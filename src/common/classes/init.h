@@ -65,7 +65,7 @@ public:
 		: InstanceControl()
 	{
 		instance = FB_NEW(*getDefaultMemoryPool()) T(*getDefaultMemoryPool());
-		// This means - for objects with ctors/dtors that want to ;be global,
+		// This means - for objects with ctors/dtors that want to be global,
 		// provide ctor with MemoryPool& parameter. Even if it is ignored!
 	}
 	T* operator->() const throw()
