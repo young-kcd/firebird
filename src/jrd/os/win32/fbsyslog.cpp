@@ -21,10 +21,12 @@
 
 #include "firebird.h"
 #include "../jrd/os/fbsyslog.h"
+#include "../common/classes/init.h"
 
 #include <Windows.h>
 
 namespace {
+
 typedef HANDLE WINAPI tRegisterEventSource(
 		LPCTSTR lpUNCServerName, 
 		LPCTSTR lpSourceName);
@@ -85,21 +87,24 @@ void SyslogAccess::Record(WORD wType, const Firebird::string& Msg)
 }
 
 Firebird::InitInstance<SyslogAccess> iSyslogAccess;
+
 } // namespace
 
 namespace Firebird {
-	void Syslog::Record(Severity level, const Firebird::string& Msg) 
-	{
-		WORD wType = EVENTLOG_ERROR_TYPE;
-		switch (level) {
-		case Warning:
-			wType = EVENTLOG_INFORMATION_TYPE;
-			break;
-		case Error:
-		default:
-			wType = EVENTLOG_ERROR_TYPE;
-			break;
-		}
-		iSyslogAccess().Record(wType, Msg);
+
+void Syslog::Record(Severity level, const Firebird::string& Msg) 
+{
+	WORD wType = EVENTLOG_ERROR_TYPE;
+	switch (level) {
+	case Warning:
+		wType = EVENTLOG_INFORMATION_TYPE;
+		break;
+	case Error:
+	default:
+		wType = EVENTLOG_ERROR_TYPE;
+		break;
 	}
+	iSyslogAccess().Record(wType, Msg);
+}
+
 } // namespace Firebird

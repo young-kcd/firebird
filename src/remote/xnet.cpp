@@ -40,6 +40,7 @@
 #include "../jrd/isc_proto.h"
 #include "../jrd/sch_proto.h"
 #include "../jrd/thread_proto.h"
+#include "../common/classes/init.h"
 #include "../common/classes/fb_string.h"
 #include "../common/config/config.h"
 #include "../common/classes/ClumpletWriter.h"

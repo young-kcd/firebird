@@ -31,6 +31,7 @@
 #include "../jrd/gds_proto.h"
 #include "../jrd/sch_proto.h"
 #include "../common/classes/fb_string.h"
+#include "../common/classes/init.h"
 
 #ifdef WIN_NT
 #include <windows.h>

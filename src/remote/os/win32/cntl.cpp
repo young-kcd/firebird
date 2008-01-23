@@ -33,6 +33,7 @@
 #include "../jrd/sch_proto.h"
 #include "../jrd/thread_proto.h"
 #include "../jrd/jrd_proto.h"
+#include "../common/classes/init.h"
 
 #ifdef WIN_NT
 #include <windows.h>
@@ -184,9 +185,10 @@ void CNTL_remove_thread(void* athread)
  * Functional description
  *
  **************************************/
+	cntl_thread* const rem_thread = (cntl_thread*) athread;
+
 	{ // scope for lock on thread_mutex
 		Firebird::MutexLockGuard guard(thread_mutex);
-		cntl_thread* const rem_thread = (cntl_thread*) athread;
 
 		for (cntl_thread** thread_ptr = &threads;
 			 *thread_ptr; thread_ptr = &(*thread_ptr)->thread_next)
