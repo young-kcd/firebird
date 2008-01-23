@@ -1123,6 +1123,10 @@ void TRA_release_transaction(thread_db* tdbb, jrd_tra* transaction)
 
 	delete transaction->tra_db_snapshot;
 
+	// Release the transaction
+
+	transaction->~jrd_tra();
+
 	// Release the transaction pool.
 
 	JrdMemoryPool* tra_pool = transaction->tra_pool;
