@@ -127,7 +127,7 @@ if not defined FB2_SNAPSHOT (
 if not defined WIX (
     call :ERROR WIX not defined. WiX is needed to build the MSI kits of the CRT runtimes.
     @goto :EOF
-  ) else (@echo     o WiX found at %WIX%.)
+) else (@echo     o WiX found at %WIX%.)
 
 
 if not DEFINED FB_EXTERNAL_DOCS (
