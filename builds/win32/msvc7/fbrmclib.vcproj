@@ -164,6 +164,9 @@
 			<File
 				RelativePath="..\..\..\src\common\fb_exception.cpp">
 			</File>
+			<File
+				RelativePath="..\..\..\src\common\classes\init.cpp">
+			</File>
 		</Filter>
 		<Filter
 			Name="JRD files"

@@ -164,9 +164,6 @@
 			<File
 				RelativePath="..\..\..\src\jrd\isc_sync.cpp">
 			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\thd.cpp">
-			</File>
 		</Filter>
 		<Filter
 			Name="Resource files"

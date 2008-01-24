@@ -670,6 +670,15 @@
 			<File
 				RelativePath="..\..\..\src\common\classes\fb_string.cpp">
 			</File>
+			<File
+				RelativePath="..\..\..\src\common\classes\init.cpp">
+			</File>
+			<File
+				RelativePath="..\..\..\src\common\classes\locks.cpp">
+			</File>
+			<File
+				RelativePath="..\..\..\src\common\thd.cpp">
+			</File>
 		</Filter>
 		<Filter
 			Name="JRD files"

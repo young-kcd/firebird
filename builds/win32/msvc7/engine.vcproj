@@ -394,9 +394,6 @@
 				RelativePath="..\..\..\src\jrd\TextType.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\thd.cpp">
-			</File>
-			<File
 				RelativePath="..\..\..\src\jrd\os\win32\thd_priority.cpp">
 			</File>
 			<File
@@ -884,9 +881,6 @@
 				RelativePath="..\..\..\src\jrd\perf_proto.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\RandomGenerator.h">
-			</File>
-			<File
 				RelativePath="..\..\..\src\jrd\os\pio.h">
 			</File>
 			<File
@@ -909,6 +903,9 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\que.h">
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\RandomGenerator.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\rdb.h">
