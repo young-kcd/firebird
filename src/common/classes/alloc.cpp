@@ -1771,12 +1771,10 @@ void MemoryPool::deallocate(void *block)
 MemoryPool& AutoStorage::getAutoMemoryPool() { 
 #ifndef SUPERCLIENT
 	MemoryPool* p = MemoryPool::getContextPool();
-#if defined(EMBEDDED) || (!defined(SUPERSERVER))
 	if (! p)
 	{
 		p = getDefaultMemoryPool();
 	}
-#endif
 #else //SUPERCLIENT
 	MemoryPool* p = getDefaultMemoryPool();
 #endif //SUPERCLIENT
