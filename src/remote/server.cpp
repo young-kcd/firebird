@@ -271,6 +271,9 @@ void SRVR_main(rem_port* main_port, USHORT flags)
 	ISC_enter();				/* Setup floating point exception handler once and for all. */
 #endif
 
+	// Setup context pool for main thread
+	Firebird::ContextPoolHolder mainThreadContext(getDefaultMemoryPool());
+
 	PACKET send, receive;
 	zap_packet(&receive, true);
 	zap_packet(&send, true);
