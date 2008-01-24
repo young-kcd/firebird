@@ -198,7 +198,7 @@ set FBBUILD_FB25_CUR_VER=%FB_MAJOR_VER%.%FB_MINOR_VER%.%FB_REV_NO%
 :: as well as set up the correct shortcuts
 set FBBUILD_FB15_CUR_VER=1.5.5
 set FBBUILD_FB20_CUR_VER=2.0.3
-set FBBUILD_FB20_CUR_VER=2.1.0
+set FBBUILD_FB21_CUR_VER=2.1.0
 
 ::End of SED_MAGIC
 ::----------------
