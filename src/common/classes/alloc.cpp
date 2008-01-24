@@ -268,10 +268,6 @@ void MemoryPool::init()
 	// Now it's safe to actually create MemoryPool
 	processMemoryPool = MemoryPool::createPool();
 	fb_assert(processMemoryPool);
-
-#ifndef SUPERCLIENT
-	MemoryPool::setContextPool(processMemoryPool);
-#endif
 }
 
 // Should be last routine, called by InstanceControl,
@@ -1775,12 +1771,12 @@ void MemoryPool::deallocate(void *block)
 MemoryPool& AutoStorage::getAutoMemoryPool() { 
 #ifndef SUPERCLIENT
 	MemoryPool* p = MemoryPool::getContextPool();
-#ifdef EMBEDDED
+#if defined(EMBEDDED) || (!defined(SUPERSERVER))
 	if (! p)
 	{
 		p = getDefaultMemoryPool();
 	}
-#endif //EMBEDDED
+#endif
 #else //SUPERCLIENT
 	MemoryPool* p = getDefaultMemoryPool();
 #endif //SUPERCLIENT
