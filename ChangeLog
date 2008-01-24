@@ -1,3 +1,181 @@
+2008-01-23 20:34  dimitr
+
+	* firebird2/builds/win32/msvc8/fbrmclib.vcproj (1.6):
+
+	Fixed the win32 build.
+
+2008-01-23 20:27  dimitr
+
+	* firebird2/builds/win32/msvc8/: gfix.vcproj (1.7),
+	gpre_boot.vcproj (1.6), intl.vcproj (1.16):
+
+	Fixed the win32 build.
+
+2008-01-23 20:24  dimitr
+
+	* firebird2/builds/win32/msvc8/: common.vcproj (1.9),
+	common_classic.vcproj (1.9), engine.vcproj (1.16),
+	engine_classic.vcproj (1.16), engine_embed.vcproj (1.14),
+	fb_lock_print.vcproj (1.7), fbclient.vcproj (1.11):
+
+	Fixed the win32 build.
+
+2008-01-23 20:20  dimitr
+
+	* firebird2/src/common/classes/: alloc.cpp (1.98), locks.cpp
+	(1.10), locks.h (1.29):
+
+	Fixed the win32 build.
+
+2008-01-23 20:02  asfernandes
+
+	* firebird2/src/: alice/all.cpp (1.31), common/classes/alloc.cpp
+	(1.97), common/classes/init.h (1.8), common/classes/locks.h (1.28),
+	gpre/movg.cpp (1.10), include/fb_exception.h (1.26), jrd/alt.cpp
+	(1.69), jrd/dmp.cpp (1.37), jrd/jrd.cpp (1.363), jrd/why.cpp
+	(1.138), jrd/os/win32/thd_priority.cpp (1.30):
+
+	Misc
+
+2008-01-23 20:01  dimitr
+
+	* firebird2/src/: jrd/os/win32/fbsyslog.cpp (1.8),
+	iscguard/cntl_guard.cpp (1.24), iscguard/iscguard.cpp (1.56):
+
+	Fixed the win32 build.
+
+2008-01-23 19:56  dimitr
+
+	* firebird2/src/remote/: xnet.cpp (1.98), os/win32/cntl.cpp (1.27):
+
+	Fixed the win32 build.
+
+2008-01-23 16:55  alexpeshkoff
+
+	* firebird2/src/common/classes/init.cpp (1.1):
+
+	added new file to support GlobalPtr
+
+2008-01-23 16:54  alexpeshkoff
+
+	* firebird2/src/: jrd/thd.cpp (1.54), jrd/thd.h (1.52),
+	common/thd.cpp (1.1), common/thd.h (1.1):
+
+	move remaining thd.x files to common
+
+2008-01-23 16:51  alexpeshkoff
+
+	* firebird2/: builds/posix/Makefile.in.client.util (1.53),
+	builds/posix/Makefile.in.embed.util (1.38),
+	builds/posix/make.shared.variables (1.79), src/alice/alice.cpp
+	(1.99), src/alice/alice_meta.epp (1.50), src/alice/all.cpp (1.30),
+	src/alice/exe.cpp (1.50), src/alice/tdr.cpp (1.54),
+	src/burp/backup.epp (1.106), src/burp/burp.cpp (1.130),
+	src/burp/mvol.cpp (1.52), src/burp/restore.epp (1.128),
+	src/common/fb_exception.cpp (1.32), src/common/classes/alloc.cpp
+	(1.96), src/common/classes/alloc.h (1.72),
+	src/common/classes/init.h (1.7), src/common/classes/locks.cpp
+	(1.9), src/common/classes/locks.h (1.27),
+	src/common/classes/rwlock.h (1.33), src/common/classes/semaphore.h
+	(1.52), src/common/classes/tree.h (1.67),
+	src/common/config/config.cpp (1.86),
+	src/common/config/config_impl.h (1.17), src/dsql/alld.cpp (1.32),
+	src/dsql/ddl.cpp (1.209), src/dsql/dsql.cpp (1.206),
+	src/dsql/errd.cpp (1.40), src/dsql/gen.cpp (1.135),
+	src/dsql/hsh.cpp (1.37), src/dsql/make.cpp (1.148),
+	src/dsql/metd.epp (1.103), src/dsql/movd.cpp (1.18),
+	src/dsql/parse.y (1.255), src/dsql/pass1.cpp (1.351),
+	src/gpre/movg.cpp (1.9), src/include/fb_exception.h (1.25),
+	src/iscguard/cntl_guard.cpp (1.23), src/iscguard/iscguard.cpp
+	(1.55), src/jrd/DatabaseSnapshot.cpp (1.46),
+	src/jrd/DatabaseSnapshot.h (1.12), src/jrd/TempSpace.cpp (1.15),
+	src/jrd/TempSpace.h (1.8), src/jrd/alt.cpp (1.68), src/jrd/blb.cpp
+	(1.156), src/jrd/blob_filter.cpp (1.34), src/jrd/btr.cpp (1.206),
+	src/jrd/cmp.cpp (1.275), src/jrd/cvt.cpp (1.87), src/jrd/cvt2.cpp
+	(1.58), src/jrd/dbg.cpp (1.36), src/jrd/dfw.epp (1.221),
+	src/jrd/dmp.cpp (1.36), src/jrd/dpm.epp (1.76), src/jrd/dyn.epp
+	(1.114), src/jrd/dyn_def.epp (1.161), src/jrd/dyn_del.epp (1.75),
+	src/jrd/dyn_mod.epp (1.94), src/jrd/dyn_util.epp (1.49),
+	src/jrd/enc.cpp (1.26), src/jrd/err.cpp (1.71), src/jrd/event.h
+	(1.21), src/jrd/evl.cpp (1.245), src/jrd/exe.cpp (1.235),
+	src/jrd/execute_statement.cpp (1.30), src/jrd/ext.cpp (1.76),
+	src/jrd/fil.h (1.18), src/jrd/filters.cpp (1.59), src/jrd/flu.cpp
+	(1.61), src/jrd/fun.epp (1.85), src/jrd/gds.cpp (1.234),
+	src/jrd/gdsassert.h (1.14), src/jrd/grant.epp (1.61),
+	src/jrd/idx.cpp (1.127), src/jrd/inf.cpp (1.81), src/jrd/ini.epp
+	(1.93), src/jrd/intl.cpp (1.102), src/jrd/isc_sync.cpp (1.122),
+	src/jrd/jrd.cpp (1.362), src/jrd/jrd.h (1.206), src/jrd/jrd_pwd.h
+	(1.22), src/jrd/lck.cpp (1.70), src/jrd/log.cpp (1.27),
+	src/jrd/met.epp (1.231), src/jrd/nav.cpp (1.71), src/jrd/nbak.cpp
+	(1.74), src/jrd/opt.cpp (1.304), src/jrd/pag.cpp (1.162),
+	src/jrd/par.cpp (1.182), src/jrd/pcmet.epp (1.45), src/jrd/pwd.cpp
+	(1.55), src/jrd/qatest.cpp (1.20), src/jrd/rse.cpp (1.143),
+	src/jrd/sch.cpp (1.45), src/jrd/sch_proto.h (1.9), src/jrd/scl.epp
+	(1.88), src/jrd/sdw.cpp (1.72), src/jrd/shut.cpp (1.52),
+	src/jrd/sqz.cpp (1.23), src/jrd/svc.cpp (1.195), src/jrd/svc.h
+	(1.45), src/jrd/thread_proto.h (1.10), src/jrd/tpc.cpp (1.31),
+	src/jrd/unicode_util.cpp (1.28), src/jrd/unicode_util.h (1.12),
+	src/jrd/validation.cpp (1.32), src/jrd/why.cpp (1.137),
+	src/jrd/os/thd_priority.h (1.24), src/jrd/os/posix/isc_ipc.cpp
+	(1.28), src/jrd/os/posix/unix.cpp (1.79),
+	src/jrd/os/vms/vmsevent.cpp (1.18), src/jrd/os/win32/fbsyslog.cpp
+	(1.7), src/jrd/os/win32/isc_ipc.cpp (1.21),
+	src/jrd/os/win32/thd_priority.cpp (1.29), src/lock/lock.cpp
+	(1.134), src/remote/allr.cpp (1.35), src/remote/inet.cpp (1.201),
+	src/remote/inet_server.cpp (1.73), src/remote/remote.cpp (1.50),
+	src/remote/remote.h (1.60), src/remote/serve_proto.h (1.12),
+	src/remote/server.cpp (1.162), src/remote/xnet.cpp (1.97),
+	src/remote/os/win32/cntl.cpp (1.26),
+	src/remote/os/win32/property.cpp (1.18),
+	src/remote/os/win32/window.cpp (1.19), src/remote/os/win32/wnet.cpp
+	(1.45), src/utilities/gstat/dba.epp (1.85):
+
+	Fixed CORE-1671: atexit() calls in client libraries cause segfaults
+	  and CORE-1079: Every attach of fbclient/fbembed library leaks
+	64KB of memory
+
+	To do it: - created new template GlobalPtr, controlling access to
+	destructors of global objects.	- applied it to global objects.
+
+	Also some related cleanup.
+
+2008-01-23 16:39  alexpeshkoff
+
+	* firebird2/builds/posix/prefix.linux_amd64 (1.13):
+
+	use valgrind for amd64 DEV_BUILD
+
+2008-01-23 15:20  alexpeshkoff
+
+	* firebird2/src/jrd/tra.cpp (1.148):
+
+	better way to fix a problem - suggested by Dmitry
+
+2008-01-23 15:12  alexpeshkoff
+
+	* firebird2/src/jrd/tra.cpp (1.147):
+
+	One more deletePool - also added destructor
+
+2008-01-23 14:44  alexpeshkoff
+
+	* firebird2/src/jrd/tra.cpp (1.146):
+
+	Call transaction destructor before removing transaction pool
+
+2008-01-23 07:58  paul_reeves
+
+	* firebird2/builds/install/arch-specific/win32/:
+	BuildExecutableInstall.bat (1.34), FirebirdInstall_20.iss (1.31),
+	Readme.txt (1.17), custom_messages.inc (1.6),
+	installation_readme.txt (1.16), ba/custom_messages_ba.inc (1.4),
+	de/custom_messages_de.inc (1.4), es/custom_messages_es.inc (1.3),
+	fr/custom_messages_fr.inc (1.4), hu/custom_messages_hu.inc (1.4),
+	it/custom_messages_it.inc (1.3), pl/custom_messages_pl.inc (1.4),
+	pt/custom_messages_pt.inc (1.5), si/custom_messages_si.inc (1.4):
+
+	Keep 2.5 'sort of' up-to-date
+
 2008-01-22 15:38  paulbeach
 
 	* firebird2/src/jrd/unicode_util.cpp (1.27):
