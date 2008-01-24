@@ -191,6 +191,14 @@ set FBBUILD_FILE_ID=%FBBUILD_PRODUCT_VER_STRING%-%FBBUILD_PACKAGE_NUMBER%_%FB_TA
 sed -f  %temp%.\b$3.txt FirebirdInstall_20.iss > FirebirdInstall_%FBBUILD_FILE_ID%.iss
 del %temp%.\b$?.txt
 
+set FBBUILD_FB21_CUR_VER=%FB_MAJOR_VER%.%FB_MINOR_VER%.%FB_REV_NO%
+
+:: Now set some version strings of our legacy releases.
+:: This helps us copy the correct documentation,
+:: as well as set up the correct shortcuts
+set FBBUILD_FB15_CUR_VER=1.5.5
+set FBBUILD_FB20_CUR_VER=2.0.3
+
 
 ::End of SED_MAGIC
 ::----------------
@@ -322,7 +330,7 @@ mkdir %FB_OUTPUT_DIR%\misc\upgrade\ib_udf 2>nul
 :: if the docs are available then we can include them.
 if defined FB_EXTERNAL_DOCS (
 @echo   Copying pdf docs...
-@for %%v in ( Firebird-2.0-QuickStart.pdf Firebird_v1.5.4.ReleaseNotes.pdf Firebird_v2.0.3.ReleaseNotes.pdf Firebird_v2.1.0.ReleaseNotes.pdf Firebird_v2.1.0.InstallationGuide.pdf Firebird_v2.1.0.BugFixes.pdf) do (
+@for %%v in ( Firebird-2.0-QuickStart.pdf Firebird_v%FBBUILD_FB15_CUR_VER%.ReleaseNotes.pdf Firebird_v%FBBUILD_FB20_CUR_VER%.ReleaseNotes.pdf Firebird_v%FBBUILD_FB21_CUR_VER%.ReleaseNotes.pdf Firebird_v%FBBUILD_FB21_CUR_VER%.InstallationGuide.pdf Firebird_v%FBBUILD_FB21_CUR_VER%.BugFixes.pdf) do (
   @echo     ... %%v
   (@copy /Y %FB_EXTERNAL_DOCS%\%%v %FB_OUTPUT_DIR%\doc\%%v > nul) || (call :WARNING Copying %FB_EXTERNAL_DOCS%\%%v failed.)
 )

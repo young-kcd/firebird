@@ -168,6 +168,11 @@
 #define AppVer MajorVer + "_" + MinorVer
 #define GroupnameVer MajorVer + "." + MinorVer
 
+;These variables are set in BuildExecutableInstall
+#define FB15_cur_ver GetEnv("FBBUILD_FB15_CUR_VER")
+#define FB20_cur_ver GetEnv("FBBUILD_FB20_CUR_VER")
+#define FB21_cur_ver GetEnv("FBBUILD_FB21_CUR_VER")
+
 ; We can save space by shipping a pdb package that just includes
 ; the pdb files. It would then upgrade an existing installation,
 ; however, it wouldn't work on its own. This practice would go
@@ -383,21 +388,21 @@ Name: {group}\Firebird Server; Filename: {app}\bin\fb_inet_server.exe; Parameter
 Name: {group}\Firebird Server; Filename: {app}\bin\fbserver.exe; Parameters: -a; Flags: runminimized; MinVersion: 4.0,4.0;  Check: InstallServerIcon; IconIndex: 0; Components: ServerComponent\SuperServerComponent; Comment: Run Firebird Superserver (without guardian)
 Name: {group}\Firebird Guardian; Filename: {app}\bin\fbguard.exe; Parameters: -a; Flags: runminimized; MinVersion: 4.0,4.0;  Check: InstallGuardianIcon; IconIndex: 1; Components: ServerComponent\SuperServerComponent; Comment: Run Firebird Super Server (with guardian)
 Name: {group}\Firebird ISQL Tool; Filename: {app}\bin\isql.exe; WorkingDir: {app}; MinVersion: 4.0,4.0;  Comment: {cm:RunISQL}
-Name: {group}\Firebird 2.1.0 Release Notes; Filename: {app}\doc\Firebird_v2.1.0.ReleaseNotes.pdf; MinVersion: 4.0,4.0; Comment: {#MyAppName} {cm:ReleaseNotes}
-Name: {group}\Firebird 2.1.0 Installation Guide; Filename: {app}\doc\Firebird_v2.1.0.InstallationGuide.pdf; MinVersion: 4.0,4.0; Comment: {#MyAppName} {cm:InstallationGuide}
-Name: {group}\Firebird 2.1.0 Bug Fixes; Filename: {app}\doc\Firebird_v2.1.0.BugFixes.pdf; MinVersion: 4.0,4.0; Comment: {#MyAppName} {cm:BugFixes}
-Name: {group}\Firebird 2.0.3 Release Notes; Filename: {app}\doc\Firebird_v2.0.1.ReleaseNotes.pdf; MinVersion: 4.0,4.0; Comment: {#MyAppName} {cm:ReleaseNotes}
-Name: {group}\Firebird 1.5.5 Release Notes; Filename: {app}\doc\Firebird_v1.5.5.ReleaseNotes.pdf; MinVersion: 4.0,4.0; Comment: {#MyAppName} {cm:ReleaseNotes}
+Name: {group}\Firebird {#FB21_cur_ver} Release Notes; Filename: {app}\doc\Firebird_v{#FB21_cur_ver}.ReleaseNotes.pdf; MinVersion: 4.0,4.0; Comment: {#MyAppName} {cm:ReleaseNotes}
+Name: {group}\Firebird {#FB21_cur_ver} Installation Guide; Filename: {app}\doc\Firebird_v{#FB21_cur_ver}.InstallationGuide.pdf; MinVersion: 4.0,4.0; Comment: {#MyAppName} {cm:InstallationGuide}
+Name: {group}\Firebird {#FB21_cur_ver} Bug Fixes; Filename: {app}\doc\Firebird_v{#FB21_cur_ver}.BugFixes.pdf; MinVersion: 4.0,4.0; Comment: {#MyAppName} {cm:BugFixes}
+Name: {group}\Firebird {#FB20_cur_ver} Release Notes; Filename: {app}\doc\Firebird_v{#FB20_cur_ver}.ReleaseNotes.pdf; MinVersion: 4.0,4.0; Comment: {#MyAppName} {cm:ReleaseNotes}
+Name: {group}\Firebird {#FB15_cur_ver} Release Notes; Filename: {app}\doc\Firebird_v{#FB15_cur_ver}.ReleaseNotes.pdf; MinVersion: 4.0,4.0; Comment: {#MyAppName} {cm:ReleaseNotes}
 Name: {group}\Firebird 2.0 Quick Start Guide; Filename: {app}\doc\Firebird-2.0-QuickStart.pdf; MinVersion: 4.0,4.0; Comment: {#MyAppName}
 Name: "{group}\After Installation"; Filename: "{app}\doc\After_Installation.url"; Comment: "New User? Here's a quick guide to what you should do next."
 Name: "{group}\Firebird Web-site"; Filename: "{app}\doc\firebirdsql.org.url"
 ;Always install the original english version
-Name: {group}\{cm:IconReadme,{#MajorVer}.{#MinorVer}.{#PointRelease}}; Filename: {app}\readme.txt; MinVersion: 4.0,4.0;
+Name: {group}\{cm:IconReadme,{#FB21_cur_ver}}; Filename: {app}\readme.txt; MinVersion: 4.0,4.0;
 #ifdef i18n
 ;And install translated readme.txt if non-default language is chosen.
-Name: {group}\{cm:IconReadme,{#MajorVer}.{#MinorVer}.{#PointRelease}}; Filename: {app}\{cm:ReadMeFile}; MinVersion: 4.0,4.0; Components: DevAdminComponent; Check: NonDefaultLanguage;
+Name: {group}\{cm:IconReadme,{#FB21_cur_ver}}; Filename: {app}\{cm:ReadMeFile}; MinVersion: 4.0,4.0; Components: DevAdminComponent; Check: NonDefaultLanguage;
 #endif
-Name: {group}\{cm:Uninstall,{#MajorVer}.{#MinorVer}.{#PointRelease}}; Filename: {uninstallexe}; Comment: Uninstall Firebird
+Name: {group}\{cm:Uninstall,{#FB21_cur_ver}}; Filename: {uninstallexe}; Comment: Uninstall Firebird
 
 [Files]
 #ifdef files
