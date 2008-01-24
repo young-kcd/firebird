@@ -191,6 +191,14 @@ set FBBUILD_FILE_ID=%FBBUILD_PRODUCT_VER_STRING%-%FBBUILD_PACKAGE_NUMBER%_%FB_TA
 sed -f  %temp%.\b$3.txt FirebirdInstall_20.iss > FirebirdInstall_%FBBUILD_FILE_ID%.iss
 del %temp%.\b$?.txt
 
+set FBBUILD_FB25_CUR_VER=%FB_MAJOR_VER%.%FB_MINOR_VER%.%FB_REV_NO%
+
+:: Now set some version strings of our legacy releases.
+:: This helps us copy the correct documentation,
+:: as well as set up the correct shortcuts
+set FBBUILD_FB15_CUR_VER=1.5.5
+set FBBUILD_FB20_CUR_VER=2.0.3
+set FBBUILD_FB20_CUR_VER=2.1.0
 
 ::End of SED_MAGIC
 ::----------------
