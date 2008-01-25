@@ -7144,33 +7144,39 @@ static SSHORT print_item(TEXT** s,
 				const double value = *(double*) var->sqldata;
 				// Don't let numeric/decimal doubles overflow print length
 				// Special handling for 0 -- don't test log for length
-				// CVC: I can't produce any example with dscale < 0 but the
-				// old code assumed sqlscale would be negative.
-				fb_assert(dscale >= 0);
 				int rounded = 0;
 				if (dscale && (!value || (rounded = ceil(fabs(log10(fabs(value))))) < length - 10))
 				{
-					// CVC: Test values are
-					// select -2.488355210669293e+01 from rdb$database;
-					// select +2.488355210669293e+01 from rdb$database;
-					// select +2.488355210669293e-01 from rdb$database;
-					// select -2.488355210669293e-01 from rdb$database;
-					// and sprintf should return length + 1.
-					// See http://tracker.firebirdsql.org/browse/CORE-1363
-					// The only way to enter this code is with a literal value (see above).
-					// Taking SQL_DOUBLE from table fields or expressions will
-					// yield dscale being zero.
-					// This means that dscale is not what Borland expected; it's simply
-					// the length of the incoming literal.
 					int precision = 0;
-					if (value > 1)
-						precision = length - rounded - 1; // nnn.nnn
-					else if (value >= 0)
-						precision = length - 2; // 0.nnn
-					else if (value >= -1)
-						precision = length - 3; // -0.nnn
-					else // -nnn.nnn
-						precision = length - rounded - 2;
+					
+					// Take into account old database containing negative scales for double
+					if (dscale > 0)
+					{
+						// CVC: Test values are
+						// select -2.488355210669293e+01 from rdb$database;
+						// select +2.488355210669293e+01 from rdb$database;
+						// select +2.488355210669293e-01 from rdb$database;
+						// select -2.488355210669293e-01 from rdb$database;
+						// and sprintf should return length + 1.
+						// See http://tracker.firebirdsql.org/browse/CORE-1363
+						// The only way to enter this code is with a literal value (see above).
+						// Taking SQL_DOUBLE from table fields or expressions will
+						// yield dscale being zero.
+						// This means that dscale is not what Borland expected; it's simply
+						// the length of the incoming literal.
+						if (value > 1)
+							precision = length - rounded - 1; // nnn.nnn
+						else if (value >= 0)
+							precision = length - 2; // 0.nnn
+						else if (value >= -1)
+							precision = length - 3; // -0.nnn
+						else // -nnn.nnn
+							precision = length - rounded - 2;
+					}
+					else
+					{
+						precision = -dscale;
+					}
 						
 					sprintf(p, "%*.*f ", length, precision, value);
 
