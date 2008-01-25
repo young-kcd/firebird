@@ -1094,38 +1094,53 @@ static processing_state list_all_grants2(bool show_role_list,
 		FOR XX IN RDB$ROLES
 			SORTED BY XX.RDB$ROLE_NAME
 
-			if (first_role)
+			bool system_flag = false;
+			if (isqlGlob.major_ods >= ODS_VERSION11) 
 			{
-				isqlGlob.printf("%s/* Grant roles for this database */%s",
-						 NEWLINE,
-						 NEWLINE);
-				first_role = false;
+				FOR SF IN RDB$ROLES
+					WITH SF.RDB$ROLE_NAME = XX.RDB$ROLE_NAME 
+					 AND SF.RDB$SYSTEM_FLAG > 0
+					 
+					system_flag = true;
+					
+				END_FOR
 			}
 
-			// Null terminate name string
-			fb_utils::exact_name(XX.RDB$ROLE_NAME);
-			fb_utils::exact_name(XX.RDB$OWNER_NAME);
-
-			if (strcmp (prev_owner, XX.RDB$OWNER_NAME) != 0)
+			if (! system_flag)
 			{
-				isqlGlob.printf("%s/* Role: %s, Owner: %s */%s",
-						 NEWLINE,
-						 XX.RDB$ROLE_NAME,
-						 XX.RDB$OWNER_NAME,
-						 NEWLINE);
-				strcpy (prev_owner, XX.RDB$OWNER_NAME);
-			}
+				if (first_role)
+				{
+					isqlGlob.printf("%s/* Grant roles for this database */%s",
+							 NEWLINE,
+							 NEWLINE);
+					first_role = false;
+				}
 
-			if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
-			{
+				// Null terminate name string
+				fb_utils::exact_name(XX.RDB$ROLE_NAME);
+				fb_utils::exact_name(XX.RDB$OWNER_NAME);
 
-				ISQL_copy_SQL_id (XX.RDB$ROLE_NAME, SQL_identifier, DBL_QUOTE);
-				isqlGlob.printf("CREATE ROLE %s;%s",
-						 SQL_identifier, NEWLINE);
+				if (strcmp (prev_owner, XX.RDB$OWNER_NAME) != 0)
+				{
+					isqlGlob.printf("%s/* Role: %s, Owner: %s */%s",
+							 NEWLINE,
+							 XX.RDB$ROLE_NAME,
+							 XX.RDB$OWNER_NAME,
+							 NEWLINE);
+					strcpy (prev_owner, XX.RDB$OWNER_NAME);
+				}
+
+				if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
+				{
+
+					ISQL_copy_SQL_id (XX.RDB$ROLE_NAME, SQL_identifier, DBL_QUOTE);
+					isqlGlob.printf("CREATE ROLE %s;%s",
+							 SQL_identifier, NEWLINE);
+				}
+				else
+					isqlGlob.printf("CREATE ROLE %s;%s",
+							 XX.RDB$ROLE_NAME, NEWLINE);
 			}
-			else
-				isqlGlob.printf("CREATE ROLE %s;%s",
-						 XX.RDB$ROLE_NAME, NEWLINE);
 
 		END_FOR
 		ON_ERROR
