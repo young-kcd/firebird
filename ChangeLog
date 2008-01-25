@@ -1,3 +1,50 @@
+2008-01-24 16:02  alexpeshkoff
+
+	* firebird2/builds/win32/msvc7/: common.vcproj (1.29),
+	common_classic.vcproj (1.26), common_static.vcproj (1.14),
+	engine.vcproj (1.67), engine_classic.vcproj (1.67),
+	engine_embed.vcproj (1.56), fb_lock_print.vcproj (1.25),
+	fbclient.vcproj (1.48), fbrmclib.vcproj (1.3), gds32.vcproj (1.24),
+	gfix.vcproj (1.23), gpre_boot.vcproj (1.31), intl.vcproj (1.35):
+
+	Fixed VC7 build
+
+2008-01-24 16:01  alexpeshkoff
+
+	* firebird2/src/common/classes/alloc.cpp (1.100):
+
+	Remove conditional compilation - it was raising hell in windows
+	build
+
+2008-01-24 12:09  alexpeshkoff
+
+	* firebird2/src/common/classes/alloc.cpp (1.99):
+
+	do not initialize context pool in init() - TLS may be not ready for
+	it
+
+2008-01-24 12:08  alexpeshkoff
+
+	* firebird2/src/remote/server.cpp (1.163):
+
+	Initialize context pool on server startup
+
+2008-01-24 12:04  paul_reeves
+
+	*
+	firebird2/builds/install/arch-specific/win32/BuildExecutableInstall.bat
+	(1.36):
+
+	fix typo
+
+2008-01-24 11:32  paul_reeves
+
+	* firebird2/builds/install/arch-specific/win32/:
+	BuildExecutableInstall.bat (1.35), FirebirdInstall_20.iss (1.32):
+
+	Forward port attempt to minimize hard-coded version string hell
+	from windows install kits.
+
 2008-01-23 20:34  dimitr
 
 	* firebird2/builds/win32/msvc8/fbrmclib.vcproj (1.6):
