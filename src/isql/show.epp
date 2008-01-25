@@ -3783,9 +3783,24 @@ static processing_state show_role(const SCHAR* object)
 			X.RDB$ROLE_NAME NOT MISSING
 			SORTED BY X.RDB$ROLE_NAME
 
-			first = false;
-			isqlGlob.printf("%38s%s", X.RDB$ROLE_NAME, (odd ? " " : NEWLINE));
-			odd = !odd;
+			bool system_flag = false;
+			if (isqlGlob.major_ods >= ODS_VERSION11) 
+			{
+				FOR SF IN RDB$ROLES
+					WITH SF.RDB$ROLE_NAME = X.RDB$ROLE_NAME 
+					 AND SF.RDB$SYSTEM_FLAG > 0
+					 
+					system_flag = true;
+					
+				END_FOR
+			}
+
+			if (! system_flag)
+			{
+				first = false;
+				isqlGlob.printf("%38s%s", X.RDB$ROLE_NAME, (odd ? " " : NEWLINE));
+				odd = !odd;
+			}
 
 		END_FOR
 		ON_ERROR

@@ -7149,35 +7149,33 @@ static SSHORT print_item(TEXT** s,
 				{
 					int precision = 0;
 					
+					// CVC: Test values are
+					// select -2.488355210669293e+01 from rdb$database;
+					// select +2.488355210669293e+01 from rdb$database;
+					// select +2.488355210669293e-01 from rdb$database;
+					// select -2.488355210669293e-01 from rdb$database;
+					// and sprintf should return length + 1.
+					// See http://tracker.firebirdsql.org/browse/CORE-1363
+					// The only way to enter this code is with a literal value (see above).
+					// Taking SQL_DOUBLE from table fields or expressions will
+					// yield dscale being zero.
+					// This means that dscale is not what Borland expected; it's simply
+					// the length of the incoming literal.
+					if (value > 1)
+						precision = length - rounded - 1; // nnn.nnn
+					else if (value >= 0)
+						precision = length - 2; // 0.nnn
+					else if (value >= -1)
+						precision = length - 3; // -0.nnn
+					else // -nnn.nnn
+						precision = length - rounded - 2;
+
 					// Take into account old database containing negative scales for double
-					if (dscale > 0)
-					{
-						// CVC: Test values are
-						// select -2.488355210669293e+01 from rdb$database;
-						// select +2.488355210669293e+01 from rdb$database;
-						// select +2.488355210669293e-01 from rdb$database;
-						// select -2.488355210669293e-01 from rdb$database;
-						// and sprintf should return length + 1.
-						// See http://tracker.firebirdsql.org/browse/CORE-1363
-						// The only way to enter this code is with a literal value (see above).
-						// Taking SQL_DOUBLE from table fields or expressions will
-						// yield dscale being zero.
-						// This means that dscale is not what Borland expected; it's simply
-						// the length of the incoming literal.
-						if (value > 1)
-							precision = length - rounded - 1; // nnn.nnn
-						else if (value >= 0)
-							precision = length - 2; // 0.nnn
-						else if (value >= -1)
-							precision = length - 3; // -0.nnn
-						else // -nnn.nnn
-							precision = length - rounded - 2;
-					}
-					else
+					if (dscale < 0 && precision > -dscale)
 					{
 						precision = -dscale;
 					}
-						
+
 					sprintf(p, "%*.*f ", length, precision, value);
 
 					if (List) {
