@@ -227,26 +227,26 @@ const FB_UINT64 LOWEST_PRIORITY_LEVEL		= 0;
 
 static const UCHAR sort_dtypes[] =
 {
-	0,							/* dtype_unknown */
-	SKD_text,					/* dtype_text */
-	SKD_cstring,				/* dtype_cstring */
-	SKD_varying,				/* dtype_varying */
+	0,							// dtype_unknown
+	SKD_text,					// dtype_text
+	SKD_cstring,				// dtype_cstring
+	SKD_varying,				// dtype_varying
 	0,
 	0,
-	0,							/* dtype_packed */
-	0,							/* dtype_byte */
-	SKD_short,					/* dtype_short */
-	SKD_long,					/* dtype_long */
-	SKD_quad,					/* dtype_quad */
-	SKD_float,					/* dtype_real */
-	SKD_double,					/* dtype_double */
-	SKD_double,					/* dtype_d_float */
-	SKD_sql_date,				/* dtype_sql_date */
-	SKD_sql_time,				/* dtype_sql_time */
-	SKD_timestamp2,				/* dtype_timestamp */
-	0,							/* dtype_blob */
-	0,							/* dtype_array */
-	SKD_int64					/* dtype_int64 */
+	0,							// dtype_packed
+	0,							// dtype_byte
+	SKD_short,					// dtype_short
+	SKD_long,					// dtype_long
+	SKD_quad,					// dtype_quad
+	SKD_float,					// dtype_real
+	SKD_double,					// dtype_double
+	SKD_double,					// dtype_d_float
+	SKD_sql_date,				// dtype_sql_date
+	SKD_sql_time,				// dtype_sql_time
+	SKD_timestamp2,				// dtype_timestamp
+	SKD_quad,					// dtype_blob
+	0,							// dtype_array
+	SKD_int64					// dtype_int64
 };
 
 typedef UCHAR stream_array_t[MAX_STREAMS + 1];
