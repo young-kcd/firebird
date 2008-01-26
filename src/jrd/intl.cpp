@@ -380,7 +380,7 @@ void CharSetContainer::unloadCollation(thread_db* tdbb, USHORT tt_id)
 		}
 
 		if (charset_collations[id]->existenceLock)
-			LCK_convert_non_blocking(tdbb, charset_collations[id]->existenceLock, LCK_EX, LCK_WAIT);
+			LCK_convert(tdbb, charset_collations[id]->existenceLock, LCK_EX, LCK_WAIT);
 
 		charset_collations[id]->obsolete = true;
 
@@ -1254,15 +1254,13 @@ static int blocking_ast_collation(void* ast_object)
 
 		if (tt->existenceLock)
 		{
-			// Since this routine will be called asynchronously, we must establish
-			// a thread context for LCK_release().
+			Database* dbb = tt->existenceLock->lck_dbb;
+			Database::SyncGuard dsGuard(dbb, true);
+
 			ThreadContextHolder tdbb;
 
-			tdbb->setDatabase(tt->existenceLock->lck_dbb);
+			tdbb->setDatabase(dbb);
 			tdbb->setAttachment(tt->existenceLock->lck_attachment);
-			tdbb->tdbb_quantum = QUANTUM;
-			tdbb->setRequest(NULL);
-			tdbb->setTransaction(NULL);
 			Jrd::ContextPoolHolder context(tdbb, 0);
 
 			LCK_release(tdbb, tt->existenceLock);

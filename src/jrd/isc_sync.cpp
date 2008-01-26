@@ -826,9 +826,6 @@ void ISC_exception_post(ULONG sig_num, const TEXT* err_msg)
  *   but not on Linux. This may result in lock-up during signal handling.
  *
  **************************************/
-	if (!SCH_thread_enter_check())
-		THREAD_ENTER();
-
 	// If there's no err_msg, we asumed the switch() finds no case or we crash.
 	// Too much goodwill put on the caller. Weak programming style.
 	// Therefore, lifted this safety net from the NT version.
@@ -909,11 +906,6 @@ ULONG ISC_exception_post(ULONG except_code, const TEXT* err_msg)
 	ULONG result = 0;
 	bool is_critical = true;
 	
-	if (!SCH_thread_enter_check ())
-	{
-		THREAD_ENTER();
-	}
-
 	thread_db* tdbb = JRD_get_thread_data();
 
 	if (!err_msg)

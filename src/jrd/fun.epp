@@ -67,7 +67,12 @@ using namespace Jrd;
 
 typedef void* UDF_ARG;
 
-#define CALL_UDF(ptr, udftype) ((udftype (*)(UDF_ARG, UDF_ARG, UDF_ARG, UDF_ARG, UDF_ARG, UDF_ARG, UDF_ARG, UDF_ARG, UDF_ARG, UDF_ARG))(ptr)) (args [0], args[1], args[2], args[3], args [4], args [5], args [6], args [7], args [8], args [9])
+template <typename T>
+T CALL_UDF(Database* dbb, int (*entrypoint)(), UDF_ARG* args)
+{
+	Database::Checkout dcoHolder(dbb);
+	return ((T (*)(UDF_ARG, UDF_ARG, UDF_ARG, UDF_ARG, UDF_ARG, UDF_ARG, UDF_ARG, UDF_ARG, UDF_ARG, UDF_ARG))(entrypoint)) (args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9]);
+}
 
 DATABASE DB = FILENAME "ODS.RDB";
 
@@ -136,17 +141,17 @@ static SSHORT blob_get_segment(blb*, UCHAR*, USHORT, USHORT*);
 static void blob_put_segment(blb*, const UCHAR*, USHORT);
 static SLONG blob_lseek(blb*, USHORT, SLONG);
 static SLONG get_scalar_array(fun_repeat*, DSC*, scalar_array_desc*, UCharStack&);
-static void invoke(UserFunction*, 
+static void invoke(thread_db* tdbb,
+				   UserFunction*, 
 				   fun_repeat*, 
 				   impure_value*,
 				   UDF_ARG*,
 				   const udf_blob* const return_blob_struct,
 				   bool&,
-				   bool&
-);
+				   bool&);
 
 
-void FUN_evaluate(UserFunction* function, jrd_nod* node, impure_value* value)
+void FUN_evaluate(thread_db* tdbb, UserFunction* function, jrd_nod* node, impure_value* value)
 {
 /**************************************
  *
@@ -162,7 +167,7 @@ void FUN_evaluate(UserFunction* function, jrd_nod* node, impure_value* value)
 	UDF_ARG args[MAX_UDF_ARGUMENTS + 1];
 	Firebird::HalfStaticArray<UCHAR, 800> temp;
 
-	thread_db* tdbb = JRD_get_thread_data();
+	SET_TDBB(tdbb);
 
 	// Start by constructing argument list
 	UCHAR* temp_ptr = temp.getBuffer(function->fun_temp_length + DOUBLE_ALIGN);
@@ -523,7 +528,7 @@ void FUN_evaluate(UserFunction* function, jrd_nod* node, impure_value* value)
 	// internal blob and this has been always the tale.
 	bool result_was_null = false;
 	
-	invoke(function, return_ptr, value, args, return_blob_struct,
+	invoke(tdbb, function, return_ptr, value, args, return_blob_struct,
 		unsup_datatype, result_was_null);
 
 	if (unsup_datatype) {
@@ -561,7 +566,7 @@ void FUN_evaluate(UserFunction* function, jrd_nod* node, impure_value* value)
 }
 
 
-UserFunction* FUN_lookup_function(const Firebird::MetaName& name, bool ShowAccessError)
+UserFunction* FUN_lookup_function(thread_db* tdbb, const Firebird::MetaName& name, bool ShowAccessError)
 {
 /**************************************
  *
@@ -573,7 +578,7 @@ UserFunction* FUN_lookup_function(const Firebird::MetaName& name, bool ShowAcces
  *	Lookup function by name.
  *
  **************************************/
-	thread_db* tdbb = JRD_get_thread_data();
+	SET_TDBB(tdbb);
 	Database* dbb = tdbb->getDatabase();
 
 	UserFunction* function = NULL;
@@ -679,7 +684,7 @@ UserFunction* FUN_lookup_function(const Firebird::MetaName& name, bool ShowAcces
 }
 
 
-UserFunction* FUN_resolve(CompilerScratch* csb, UserFunction* function, jrd_nod* args)
+UserFunction* FUN_resolve(thread_db* tdbb, CompilerScratch* csb, UserFunction* function, jrd_nod* args)
 {
 /**************************************
  *
@@ -693,7 +698,7 @@ UserFunction* FUN_resolve(CompilerScratch* csb, UserFunction* function, jrd_nod*
  **************************************/
 	DSC arg;
 
-	thread_db* tdbb = JRD_get_thread_data();
+	SET_TDBB(tdbb);
 
 	UserFunction* best = NULL;
 	int best_score = 0;
@@ -749,11 +754,10 @@ static SLONG blob_lseek( blb* blob, USHORT mode, SLONG offset)
  *	lseek a  a blob segement.  Return the offset 
  *
  **************************************/
-	// add thread enter and thread_exit wrappers
-	THREAD_ENTER();
-	const SLONG return_offset = BLB_lseek(blob, mode, offset);
-	THREAD_EXIT();
-	return (return_offset);
+	// As this is a call-back from a UDF, must reacquire the engine mutex
+	thread_db* tdbb = JRD_get_thread_data();
+	Database::Checkout dcoHolder(tdbb->getDatabase());
+	return BLB_lseek(blob, mode, offset);
 }
 
 
@@ -770,10 +774,9 @@ static void blob_put_segment( blb* blob, const UCHAR* buffer, USHORT length)
  *
  **************************************/
 	// As this is a call-back from a UDF, must reacquire the engine mutex
-	THREAD_ENTER();
 	thread_db* tdbb = JRD_get_thread_data();
+	Database::Checkout dcoHolder(tdbb->getDatabase());
 	BLB_put_segment(tdbb, blob, buffer, length);
-	THREAD_EXIT();
 }
 
 
@@ -796,11 +799,11 @@ static SSHORT blob_get_segment(
  *		-1	-- Current segment is incomplete.
  *
  **************************************/
-	// add thread enter and thread_exit wrappers
-	THREAD_ENTER();
 	thread_db* tdbb = JRD_get_thread_data();
-	*return_length = BLB_get_segment(tdbb, blob, buffer, length);
-	THREAD_EXIT();
+	{ // scope
+		Database::Checkout dcoHolder(tdbb->getDatabase());
+		*return_length = BLB_get_segment(tdbb, blob, buffer, length);
+	}
 
 	if (blob->blb_flags & BLB_eof)
 		return 0;
@@ -913,7 +916,8 @@ namespace {
 */
 
 
-static void invoke(UserFunction* function, 
+static void invoke(thread_db* tdbb,
+				   UserFunction* function, 
 				   fun_repeat* return_ptr, 
 				   impure_value* value,
 				   UDF_ARG* args,
@@ -933,14 +937,13 @@ static void invoke(UserFunction* function,
  *	use CHECK_FOR_EXCEPTIONS macros without conflicts with destructors
  *
  **************************************/
-	thread_db* tdbb = JRD_get_thread_data();
+	SET_TDBB(tdbb);
+	Database* dbb = tdbb->getDatabase();
 
 	START_CHECK_FOR_EXCEPTIONS(function->fun_exception_message.c_str());
 	if (function->fun_return_arg)
 	{
-		THREAD_EXIT();
-		CALL_UDF(function->fun_entrypoint, void);
-		THREAD_ENTER();
+		CALL_UDF<void>(dbb, function->fun_entrypoint, args);
 		result_is_null = return_ptr->fun_mechanism == FUN_descriptor
 				&& (value->vlu_desc.dsc_flags & DSC_null)
 			|| return_ptr->fun_mechanism == FUN_blob_struct && return_blob_struct &&
@@ -955,10 +958,8 @@ static void invoke(UserFunction* function,
 		case dtype_sql_time:
 		case dtype_sql_date:
 		case dtype_long:
-			THREAD_EXIT();
 			value->vlu_misc.vlu_long =
-				CALL_UDF(function->fun_entrypoint, SLONG);
-			THREAD_ENTER();
+				CALL_UDF<SLONG>(dbb, function->fun_entrypoint, args);
 			break;
 
 		case dtype_short:
@@ -966,10 +967,8 @@ static void invoke(UserFunction* function,
 			// must always be returned as a LONG.  See v3.2 release notes
 			// 1994-September-28 David Schnepper 
 
-			THREAD_EXIT();
 			value->vlu_misc.vlu_short = (SSHORT)
-				CALL_UDF(function->fun_entrypoint, SLONG);
-			THREAD_ENTER();
+				CALL_UDF<SLONG>(dbb, function->fun_entrypoint, args);
 			break;
 
 		case dtype_real:
@@ -977,24 +976,18 @@ static void invoke(UserFunction* function,
 			// must always be returned as a DOUBLE.  See v3.2 release notes
 			// 1994-September-28 David Schnepper 
 
-			THREAD_EXIT();
 			value->vlu_misc.vlu_float = (float)
-				CALL_UDF(function->fun_entrypoint, double);
-			THREAD_ENTER();
+				CALL_UDF<double>(dbb, function->fun_entrypoint, args);
 			break;
 
 		case dtype_int64:
-			THREAD_EXIT();
 			value->vlu_misc.vlu_int64 =
-				CALL_UDF(function->fun_entrypoint, SINT64);
-			THREAD_ENTER();
+				CALL_UDF<SINT64>(dbb, function->fun_entrypoint, args);
 			break;
 
 		case dtype_double:
-			THREAD_EXIT();
 			value->vlu_misc.vlu_double =
-				CALL_UDF(function->fun_entrypoint, double);
-			THREAD_ENTER();
+				CALL_UDF<double>(dbb, function->fun_entrypoint, args);
 			break;
 
 		case dtype_timestamp:
@@ -1005,19 +998,8 @@ static void invoke(UserFunction* function,
 	}
 	else
 	{
-		THREAD_EXIT();
-		UCHAR* temp_ptr;
-		try
-		{
-			typedef UCHAR* pUCHAR;
-			temp_ptr = CALL_UDF(function->fun_entrypoint, pUCHAR);
-		}
-		catch (...)
-		{
-			THREAD_ENTER();
-			throw;
-		}
-		THREAD_ENTER();
+		UCHAR* temp_ptr =
+			CALL_UDF<UCHAR*>(dbb, function->fun_entrypoint, args);
 		
 		if (temp_ptr != NULL)
 		{

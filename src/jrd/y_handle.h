@@ -120,9 +120,7 @@ namespace YValve
 			{
 				if (calls[i].Routine)
 				{
-					THREAD_EXIT();
 					calls[i].Routine(public_handle, calls[i].clean_arg);
-					THREAD_ENTER();
 				}
 			}
 		}

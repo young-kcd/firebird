@@ -382,7 +382,10 @@ void MET_update_partners(thread_db* tdbb)
 		}
 
 		// signal other processes
-		LCK_lock_non_blocking(tdbb, relation->rel_partners_lock, LCK_EX, LCK_WAIT);
+		if (relation->rel_flags & REL_check_partners)
+			LCK_lock(tdbb, relation->rel_partners_lock, LCK_EX, LCK_WAIT);
+		else
+			LCK_convert(tdbb, relation->rel_partners_lock, LCK_EX, LCK_WAIT);
 		LCK_release(tdbb, relation->rel_partners_lock);
 		relation->rel_flags |= REL_check_partners;
 	}
@@ -1080,7 +1083,7 @@ void MET_delete_shadow( thread_db* tdbb, USHORT shadow_number)
 	}
 
 /* notify other processes to check for shadow deletion */
-	if (SDW_lck_update((SLONG) 0)) {
+	if (SDW_lck_update(tdbb, 0)) {
 		SDW_notify();
 	}
 }
@@ -2343,8 +2346,11 @@ bool MET_lookup_partner(thread_db*	tdbb,
 		if (!REQUEST(irq_foreign2))
 			REQUEST(irq_foreign2) = request;
 
-		LCK_lock(tdbb, relation->rel_partners_lock, LCK_SR, LCK_WAIT);
-		relation->rel_flags &= ~REL_check_partners;
+		if (relation->rel_flags & REL_check_partners)
+		{
+			LCK_lock(tdbb, relation->rel_partners_lock, LCK_SR, LCK_WAIT);
+			relation->rel_flags &= ~REL_check_partners;
+		}
 	}
 
 	if (idx->idx_flags & idx_foreign)
@@ -2619,6 +2625,7 @@ jrd_rel* MET_lookup_relation(thread_db* tdbb, const Firebird::MetaName& name)
 				{
 					LCK_lock(tdbb, relation->rel_partners_lock,
 							LCK_SR, LCK_WAIT);
+					relation->rel_flags &= ~REL_check_partners;
 				}
 
 				if (relation->rel_flags & REL_check_existence)
@@ -2626,6 +2633,7 @@ jrd_rel* MET_lookup_relation(thread_db* tdbb, const Firebird::MetaName& name)
 					check_relation = relation;
 					LCK_lock(tdbb, check_relation->rel_existence_lock,
 							 LCK_SR, LCK_WAIT);
+					check_relation->rel_flags &= ~REL_check_existence;
 					break;
 				}
 
@@ -2661,12 +2669,10 @@ jrd_rel* MET_lookup_relation(thread_db* tdbb, const Firebird::MetaName& name)
 	}
 
 	if (check_relation) {
-		check_relation->rel_flags &= ~REL_check_existence;
 		if (check_relation != relation) {
 			LCK_release(tdbb, check_relation->rel_existence_lock);
 			LCK_release(tdbb, check_relation->rel_partners_lock);
 			check_relation->rel_flags |= REL_deleted;
-			check_relation->rel_flags &= ~REL_check_partners;
 		}
 	}
 
@@ -2711,12 +2717,14 @@ jrd_rel* MET_lookup_relation_id(thread_db* tdbb, SLONG id, bool return_deleted)
 		if (relation->rel_flags & REL_check_partners)
 		{
 			LCK_lock(tdbb, relation->rel_partners_lock, LCK_SR, LCK_WAIT);
+			relation->rel_flags &= ~REL_check_partners;
 		}
 
 		if (relation->rel_flags & REL_check_existence)
 		{
 			check_relation = relation;
 			LCK_lock(tdbb, check_relation->rel_existence_lock, LCK_SR, LCK_WAIT);
+			check_relation->rel_flags &= ~REL_check_existence;
 		}
 		else
 		{
@@ -2745,12 +2753,10 @@ jrd_rel* MET_lookup_relation_id(thread_db* tdbb, SLONG id, bool return_deleted)
 		REQUEST(irq_l_rel_id) = request;
 
 	if (check_relation) {
-		check_relation->rel_flags &= ~REL_check_existence;
 		if (check_relation != relation) {
 			LCK_release(tdbb, check_relation->rel_existence_lock);
 			LCK_release(tdbb, check_relation->rel_partners_lock);
 			check_relation->rel_flags |= REL_deleted;
-			check_relation->rel_flags &= ~REL_check_partners;
 		}
 	}
 
@@ -3005,15 +3011,11 @@ jrd_prc* MET_procedure(thread_db* tdbb, int id, bool noscan, USHORT flags)
 		vector->resize(id + 10);
 	}
 
-	THREAD_EXIT();
-
-	if (dbb->dbb_sp_rec_mutex.enter())
-	{
-		THREAD_ENTER();
-		return NULL;
+	{ // scope
+		Database::Checkout dcoHolder(dbb);
+		if (dbb->dbb_sp_rec_mutex.enter())
+			return NULL;
 	}
-
-	THREAD_ENTER();
 
 	jrd_prc* procedure = (*vector)[id];
 	if (procedure)
@@ -3495,7 +3497,7 @@ bool MET_relation_default_class (thread_db* tdbb, const Firebird::MetaName& rela
 }
 
 
-void MET_release_existence( jrd_rel* relation)
+void MET_release_existence(thread_db* tdbb, jrd_rel* relation)
 {
 /**************************************
  *
@@ -3515,7 +3517,7 @@ void MET_release_existence( jrd_rel* relation)
 
 	if (!relation->rel_use_count) {
 		if (relation->rel_flags & REL_blocking) {
-			LCK_re_post(relation->rel_existence_lock);
+			LCK_re_post(tdbb, relation->rel_existence_lock);
 		}
 		
 		if (relation->rel_file) {
@@ -3715,12 +3717,11 @@ void MET_scan_relation( thread_db* tdbb, jrd_rel* relation)
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->getDatabase();
 
-	THREAD_EXIT();
-	if (dbb->dbb_sp_rec_mutex.enter()) {
-		THREAD_ENTER();
-		return;
+	{ // scope
+		Database::Checkout dcoHolder(dbb);
+		if (dbb->dbb_sp_rec_mutex.enter())
+			return;
 	}
-	THREAD_ENTER();
 
 	if (relation->rel_flags & REL_scanned
 		|| relation->rel_flags & REL_deleted)
@@ -4214,16 +4215,13 @@ static int blocking_ast_procedure(void* ast_object)
  **************************************/
 	jrd_prc* procedure = static_cast<jrd_prc*>(ast_object);
 
-/* Since this routine will be called asynchronously, we must establish
-   a thread context. */
+	Database* dbb = procedure->prc_existence_lock->lck_dbb;
+	Database::SyncGuard dsGuard(dbb, true);
 
 	ThreadContextHolder tdbb;
 
-	tdbb->setDatabase(procedure->prc_existence_lock->lck_dbb);
+	tdbb->setDatabase(dbb);
 	tdbb->setAttachment(procedure->prc_existence_lock->lck_attachment);
-	tdbb->tdbb_quantum = QUANTUM;
-	tdbb->setRequest(NULL);
-	tdbb->setTransaction(NULL);
 	Jrd::ContextPoolHolder context(tdbb, 0);
 
 	if (procedure->prc_existence_lock) {
@@ -4253,16 +4251,13 @@ static int blocking_ast_relation(void* ast_object)
  **************************************/
 	jrd_rel* relation = static_cast<jrd_rel*>(ast_object);
 
-/* Since this routine will be called asynchronously, we must establish
-   a thread context. */
+	Database* dbb = relation->rel_existence_lock->lck_dbb;
+	Database::SyncGuard dsGuard(dbb, true);
 
 	ThreadContextHolder tdbb;
 
-	tdbb->setDatabase(relation->rel_existence_lock->lck_dbb);
+	tdbb->setDatabase(dbb);
 	tdbb->setAttachment(relation->rel_existence_lock->lck_attachment);
-	tdbb->tdbb_quantum = QUANTUM;
-	tdbb->setRequest(NULL);
-	tdbb->setTransaction(NULL);
 	Jrd::ContextPoolHolder context(tdbb, 0);
 
 	if (relation->rel_use_count) {
@@ -4270,9 +4265,8 @@ static int blocking_ast_relation(void* ast_object)
 	}
 	else {
 		relation->rel_flags &= ~REL_blocking;
-		relation->rel_flags |= (REL_check_existence | REL_check_partners);
-		if (relation->rel_existence_lock)
-			LCK_release(tdbb, relation->rel_existence_lock);
+		LCK_release(tdbb, relation->rel_existence_lock);
+		relation->rel_flags |= REL_check_existence;
 	}
 
 	return 0;
@@ -4283,22 +4277,19 @@ static int partners_ast_relation(void* ast_object)
 {
 	jrd_rel* relation = static_cast<jrd_rel*>(ast_object);
 
-/* Since this routine will be called asynchronously, we must establish
-   a thread context. */
+	Database* dbb = relation->rel_partners_lock->lck_dbb;
+	Database::SyncGuard dsGuard(dbb, true);
 
 	ThreadContextHolder tdbb;
 
 	fb_assert(relation->rel_partners_lock);
 
-	tdbb->setDatabase(relation->rel_partners_lock->lck_dbb);
+	tdbb->setDatabase(dbb);
 	tdbb->setAttachment(relation->rel_partners_lock->lck_attachment);
-	tdbb->tdbb_quantum = QUANTUM;
-	tdbb->setRequest(NULL);
-	tdbb->setTransaction(NULL);
 	Jrd::ContextPoolHolder context(tdbb, 0);
 
-	relation->rel_flags |= REL_check_partners;
 	LCK_release(tdbb, relation->rel_partners_lock);
+	relation->rel_flags |= REL_check_partners;
 
 	return 0;
 }

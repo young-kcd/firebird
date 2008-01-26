@@ -26,20 +26,6 @@
 
 extern "C" {
 
-/* AST actions taken by SCH_ast() */
-
-enum ast_t
-{
-	AST_alloc,
-	AST_init,
-	AST_fini,
-	AST_check,
-	AST_disable,
-	AST_enable,
-	AST_enter,
-	AST_exit
-};
-
 int		API_ROUTINE gds__thread_enable(int);
 void	API_ROUTINE gds__thread_enter();
 void	API_ROUTINE gds__thread_exit();
@@ -51,17 +37,4 @@ void	API_ROUTINE gds__thread_exit();
 const int QUANTUM			= 100;	// Default quantum
 const int SWEEP_QUANTUM		= 10;	// Make sweeps less disruptive
 
-struct thread;
-
-void	SCH_ast(enum ast_t);
-thread*	SCH_current_thread();
-void	SCH_enter();
-void	SCH_exit();
-void	SCH_hiber();
-bool	SCH_schedule();
-bool	SCH_thread_enter_check();
-void	SCH_wake(thread*);
-
-
 #endif // JRD_SCH_PROTO_H
-

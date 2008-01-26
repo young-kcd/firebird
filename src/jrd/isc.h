@@ -35,9 +35,6 @@
 #include "../jrd/common.h"
 #include "../jrd/sch_proto.h"
 
-// For AstInhibit
-#include "../jrd/os/isc_i_proto.h"
-
 // Firebird platform-specific synchronization data structures
 
 #ifdef UNIX
@@ -201,91 +198,5 @@ struct ipccfg
 
 typedef ipccfg *IPCCFG;
 */
-
-/* AST thread scheduling macros */
-
-#ifdef AST_THREAD
-inline void AST_ALLOC() {
-	SCH_ast(AST_alloc);
-}
-inline void AST_INIT() {
-	SCH_ast(AST_init);
-}
-inline void AST_FINI() {
-	SCH_ast(AST_fini);
-}
-inline void AST_CHECK() {
-	SCH_ast(AST_check);
-}
-inline void AST_DISABLE() {
-	SCH_ast(AST_disable);
-}
-inline void AST_ENABLE() {
-	SCH_ast(AST_enable);
-}
-inline void AST_ENTER() {
-	SCH_ast(AST_enter);
-}
-inline void AST_EXIT() {
-	SCH_ast(AST_exit);
-}
-#else
-inline void AST_ALLOC() {
-}
-inline void AST_INIT() {
-}
-inline void AST_FINI() {
-}
-inline void AST_CHECK() {
-}
-inline void AST_DISABLE() {
-}
-inline void AST_ENABLE() {
-}
-inline void AST_ENTER() {
-}
-inline void AST_EXIT() {
-}
-#endif
-
-
-namespace Jrd {
-
-	// This class inhibits AST processing.
-
-	class AstInhibit
-	{
-	public:
-		// Constructor inhibits processing.
-		AstInhibit() : enabled(false)
-		{
-			AST_DISABLE();
-		}
-
-		// Destructor re-enables processing.
-		~AstInhibit()
-		{
-			enable();
-		}
-
-		// Let one re-enable processing in advance.
-		void enable()
-		{
-			if (enabled)
-				return;
-
-			enabled = true;
-
-			AST_ENABLE();
-		}
-
-	private:
-		// Forbid copy constructor
-		AstInhibit(const AstInhibit&);
-		bool enabled;
-	};
-
-} // namespace Jrd
-
 
 #endif // JRD_ISC_H

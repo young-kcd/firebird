@@ -1529,16 +1529,17 @@ void VIO_fini(thread_db* tdbb)
 	if (dbb->dbb_flags & DBB_garbage_collector)
 	{
 		event_t* gc_event_fini = dbb->dbb_gc_event_fini;
-		/* initialize finalization event */
+		// Initialize finalization event
 		ISC_event_init(gc_event_fini, 0, 0);
 		const SLONG count = ISC_event_clear(gc_event_fini);
 
 		dbb->dbb_flags &= ~DBB_garbage_collector;
-		ISC_event_post(dbb->dbb_gc_event); /* Wake up running thread */
-		THREAD_EXIT();
-		ISC_event_wait(1, &gc_event_fini, &count, 0);
-		THREAD_ENTER();
-		/* Cleanup finalization event */
+		ISC_event_post(dbb->dbb_gc_event); // Wake up running thread
+		{ // scope
+			Database::Checkout dcoHolder(dbb);
+			ISC_event_wait(1, &gc_event_fini, &count, 0);
+		}
+		// Cleanup finalization event
 		ISC_event_fini(gc_event_fini);
 	}
 }
@@ -1802,6 +1803,7 @@ bool VIO_get_current(
  *
  **************************************/
 	SET_TDBB(tdbb);
+	Database* dbb = tdbb->getDatabase();
 
 #ifdef VIO_DEBUG
 	if (debug_flag > DEBUG_TRACE) {
@@ -1895,9 +1897,8 @@ bool VIO_get_current(
 			VIO_backout(tdbb, rpb, transaction);
 			continue;
 		case tra_precommitted:
-			THREAD_EXIT();
+			Database::Checkout dcoHolder(dbb);
 			THREAD_SLEEP(100);	/* milliseconds */
-			THREAD_ENTER();
 			continue;
 		}
 
@@ -1920,9 +1921,8 @@ bool VIO_get_current(
 				jrd_tra::tra_probe);
 
 			if (state == tra_active) {
-				THREAD_EXIT();
-				THREAD_SLEEP(100);	/* milliseconds */
-				THREAD_ENTER();
+				Database::Checkout dcoHolder(dbb);
+				THREAD_SLEEP(100);	// milliseconds
 				continue;
 			}
 		}
@@ -2057,7 +2057,7 @@ void VIO_init(thread_db* tdbb)
 
 	if (!(dbb->dbb_flags & DBB_garbage_collector)) {
 		event_t* gc_event_init = dbb->dbb_gc_event_init;
-		/* Initialize initialization event */
+		// Initialize initialization event
 		ISC_event_init(gc_event_init, 0, 0);
 		const SLONG count = ISC_event_clear(gc_event_init);
 
@@ -2066,10 +2066,11 @@ void VIO_init(thread_db* tdbb)
 		{
 			ERR_bugcheck_msg("cannot start thread");
 		}
-		THREAD_EXIT();
-		ISC_event_wait(1, &gc_event_init, &count, 10 * 1000000);
-		THREAD_ENTER();
-		/* Clean up initialization event */
+		{ // scope
+			Database::Checkout dcoHolder(dbb);
+			ISC_event_wait(1, &gc_event_init, &count, 10 * 1000000);
+		}
+		// Clean up initialization event
 		ISC_event_fini(gc_event_init);
 	}
 
@@ -3856,8 +3857,9 @@ static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM arg)
  *
  **************************************/
 	Database* dbb = (Database*)arg;
-	THREAD_ENTER();
 	CHECK_DBB(dbb);
+	Database::SyncGuard dsGuard(dbb);
+
 	event_t* gc_event = dbb->dbb_gc_event;
 	record_param rpb;
 	MOVE_CLEAR(&rpb, sizeof(record_param));
@@ -3936,9 +3938,10 @@ static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM arg)
 
 				while (dbb->dbb_flags & DBB_suspend_bgio) {
 					count = ISC_event_clear(gc_event);
-					THREAD_EXIT();
-					ISC_event_wait(1, &gc_event, &count, 10 * 1000000);
-					THREAD_ENTER();
+					{ // scope
+						Database::Checkout dcoHolder(dbb);
+						ISC_event_wait(1, &gc_event, &count, 10 * 1000000);
+					}
 					if (!(dbb->dbb_flags & DBB_garbage_collector)) {
 						goto gc_exit;
 					}
@@ -4097,9 +4100,11 @@ rel_exit:
 						continue;
 					}
 					dbb->dbb_flags &= ~DBB_gc_active;
-					THREAD_EXIT();
-					int timeout = ISC_event_wait(1, &gc_event, &count, 10 * 1000000);
-					THREAD_ENTER();
+					int timeout = 0;
+					{ // scope
+						Database::Checkout dcoHolder(dbb);
+						timeout = ISC_event_wait(1, &gc_event, &count, 10 * 1000000);
+					}
 					dbb->dbb_flags |= DBB_gc_active;
 					if (!timeout) {
 						count = ISC_event_clear(gc_event);
@@ -4118,7 +4123,6 @@ rel_exit:
 			--relation->rel_sweep_count;
 		}
     }
-
 
 gc_exit:
 
@@ -4140,8 +4144,6 @@ gc_exit:
 		ISC_event_post(dbb->dbb_gc_event_fini);	
 		ISC_event_fini(gc_event);
 
-		THREAD_EXIT();
-
 	}	// try
 	catch (const Firebird::Exception& ex) {
 		/* Perfunctory error reporting -- got any better ideas ? */
@@ -4150,6 +4152,7 @@ gc_exit:
 		jrd_file* file = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE)->file;
 		gds__log_status(file->fil_string, status_vector);
 	}
+
 	return 0;
 }
 #endif
@@ -4384,6 +4387,7 @@ static int prepare_update(	thread_db*		tdbb,
  *
  **************************************/
 	SET_TDBB(tdbb);
+	Database* dbb = tdbb->getDatabase();
 
 #ifdef VIO_DEBUG
 	if (debug_flag > DEBUG_TRACE_ALL) {
@@ -4668,9 +4672,8 @@ static int prepare_update(	thread_db*		tdbb,
 						jrd_tra::tra_probe);
 
 				if (state == tra_active) {
-					THREAD_EXIT();
-					THREAD_SLEEP(100);	/* milliseconds */
-					THREAD_ENTER();
+					Database::Checkout dcoHolder(dbb);
+					THREAD_SLEEP(100);	// milliseconds
 					continue;
 				}
 			}
@@ -4727,9 +4730,8 @@ static int prepare_update(	thread_db*		tdbb,
 		}
 
 		if (state == tra_precommitted) {
-			THREAD_EXIT();
-			THREAD_SLEEP(100);	/* milliseconds */
-			THREAD_ENTER();
+			Database::Checkout dcoHolder(dbb);
+			THREAD_SLEEP(100);	// milliseconds
 		}
 		else {
 			VIO_backout(tdbb, rpb, transaction);

@@ -6072,7 +6072,6 @@ static void subsystem_enter(void) throw()
 
 	try 
 	{
-		THREAD_ENTER();
 #if !(defined SUPERCLIENT || defined SUPERSERVER)
 		isc_enter_count++;
 		if (subsystem_usage == 0 ||
@@ -6129,7 +6128,6 @@ static void subsystem_exit(void) throw()
 		}
 		isc_enter_count--;
 #endif
-		THREAD_EXIT();
 	}
 	catch(const Firebird::Exception&)
 	{

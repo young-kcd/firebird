@@ -47,17 +47,12 @@ int GlobalRWLock::blocking_ast_cached_lock(void* ast_object)
 	Jrd::GlobalRWLock* globalRWLock = 
 		static_cast<Jrd::GlobalRWLock*>(ast_object);
 
-	/* Since this routine will be called asynchronously, we must establish
-		a thread context. */
+	Jrd::Database* dbb = globalRWLock->cached_lock->lck_dbb;
+	Database::SyncGuard dsGuard(dbb, true);
+
 	ThreadContextHolder tdbb;
 
-	Jrd::Database* dbb = globalRWLock->cached_lock->lck_dbb;
-
 	tdbb->setDatabase(dbb);
-	tdbb->setAttachment(NULL);
-	tdbb->tdbb_quantum = QUANTUM;
-	tdbb->setRequest(NULL);
-	tdbb->setTransaction(NULL);
 
 	globalRWLock->blockingAstHandler(tdbb);
 
@@ -103,7 +98,7 @@ bool GlobalRWLock::lock(thread_db* tdbb, locklevel_t level, SSHORT wait, SLONG o
 	fb_assert(owner_handle);
 
 	{ // this is a first scope for a code where counters are locked
-		CountersLockHolder lockHolder(lockMutex);
+		CountersLockHolder lockHolder(tdbb->getDatabase(), lockMutex);
 
 		COS_TRACE(("lock type=%i, level=%i, readerscount=%i, owner=%i", cached_lock->lck_type, level, readers.getCount(), owner_handle));
 		// Check if this is a recursion case
@@ -180,7 +175,7 @@ bool GlobalRWLock::lock(thread_db* tdbb, locklevel_t level, SSHORT wait, SLONG o
 	COS_TRACE(("Lock is got, type=%i", cached_lock->lck_type));
 
 	{ // this is a second scope for a code where counters are locked
-		CountersLockHolder lockHolder(lockMutex);
+		CountersLockHolder lockHolder(tdbb->getDatabase(), lockMutex);
 
 		fb_assert(internal_blocking > 0);
 		internal_blocking--;
@@ -236,7 +231,7 @@ void GlobalRWLock::unlock(thread_db* tdbb, locklevel_t level, SLONG owner_handle
 {
 	SET_TDBB(tdbb);
 
-	CountersLockHolder lockHolder(lockMutex);
+	CountersLockHolder lockHolder(tdbb->getDatabase(), lockMutex);
 
 	COS_TRACE(("unlock level=%i", level));
 
@@ -290,7 +285,7 @@ void GlobalRWLock::blockingAstHandler(thread_db* tdbb)
 {
 	SET_TDBB(tdbb);
 
-	CountersLockHolder lockHolder(lockMutex);
+	CountersLockHolder lockHolder(tdbb->getDatabase(), lockMutex);
 
 	COS_TRACE_AST("bloackingAstHandler");
 	// When we request a new lock counters are not updated until we get it.
@@ -307,9 +302,9 @@ void GlobalRWLock::blockingAstHandler(thread_db* tdbb)
 		external_blocking = true;
 }
 
-void GlobalRWLock::setLockData(SLONG lck_data)
+void GlobalRWLock::setLockData(thread_db* tdbb, SLONG lck_data)
 {
-	LCK_write_data(cached_lock, lck_data);
+	LCK_write_data(tdbb, cached_lock, lck_data);
 } 
 
 void GlobalRWLock::changeLockOwner(thread_db* tdbb, locklevel_t level, SLONG old_owner_handle, SLONG new_owner_handle)
@@ -319,7 +314,7 @@ void GlobalRWLock::changeLockOwner(thread_db* tdbb, locklevel_t level, SLONG old
 	if (old_owner_handle == new_owner_handle)
 		return;
 
-	CountersLockHolder lockHolder(lockMutex);
+	CountersLockHolder lockHolder(tdbb->getDatabase(), lockMutex);
 
 	if (level == LCK_read) {
 		size_t n;
@@ -350,7 +345,7 @@ void GlobalRWLock::changeLockOwner(thread_db* tdbb, locklevel_t level, SLONG old
 
 bool GlobalRWLock::tryReleaseLock(thread_db* tdbb)
 {
-	CountersLockHolder lockHolder(lockMutex);
+	CountersLockHolder lockHolder(tdbb->getDatabase(), lockMutex);
 	if (!writer.entry_count && !readers.getCount())
 	{
 		LCK_release(tdbb, cached_lock);

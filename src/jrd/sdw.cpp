@@ -335,7 +335,7 @@ void SDW_check(void)
 	}
 
 	if (SDW_check_conditional()) {
-		if (SDW_lck_update((SLONG) 0)) {
+		if (SDW_lck_update(tdbb, 0)) {
 			Lock temp_lock;
 			Lock* lock = &temp_lock;
 			lock->lck_dbb = dbb;
@@ -615,7 +615,7 @@ void SDW_init(bool activate, bool delete_files)
 }
 
 
-bool SDW_lck_update(SLONG sdw_update_flags)
+bool SDW_lck_update(thread_db* tdbb, SLONG sdw_update_flags)
 {
 /**************************************
  *
@@ -650,17 +650,17 @@ bool SDW_lck_update(SLONG sdw_update_flags)
 	}
 
 	if (!sdw_update_flags) {
-		return !LCK_read_data(lock);
+		return !LCK_read_data(tdbb, lock);
 	}
 
-	if (LCK_read_data(lock))
+	if (LCK_read_data(tdbb, lock))
 		return false;
 
-	LCK_write_data(lock, lock->lck_id);
-	if (LCK_read_data(lock) != lock->lck_id)
+	LCK_write_data(tdbb, lock, lock->lck_id);
+	if (LCK_read_data(tdbb, lock) != lock->lck_id)
 		return false;
 
-	LCK_write_data(lock, sdw_update_flags);
+	LCK_write_data(tdbb, lock, sdw_update_flags);
 	return true;
 }
 
@@ -755,7 +755,7 @@ bool SDW_rollover_to_shadow(jrd_file* file, const bool inAst)
 	// code must be executed for valid active attachments only.
 	if (tdbb->getAttachment()->att_flags & ATT_lck_init_done) {
 		if (update_lock->lck_physical != LCK_EX ||
-			file != pageSpace->file || !SDW_lck_update(sdw_update_flags))
+			file != pageSpace->file || !SDW_lck_update(tdbb, sdw_update_flags))
 		{
 			LCK_release(tdbb, update_lock);
 			LCK_lock(tdbb, update_lock, LCK_SR, LCK_NO_WAIT);
@@ -774,7 +774,7 @@ bool SDW_rollover_to_shadow(jrd_file* file, const bool inAst)
 		}
 	}
 	else {
-		if (!SDW_lck_update(sdw_update_flags))
+		if (!SDW_lck_update(tdbb, sdw_update_flags))
 			return true;
 	}
 
@@ -795,13 +795,13 @@ bool SDW_rollover_to_shadow(jrd_file* file, const bool inAst)
 	}
 
 	if (!shadow) {
-		LCK_write_data(shadow_lock, (SLONG) 0);
+		LCK_write_data(tdbb, shadow_lock, (SLONG) 0);
 		LCK_release(tdbb, update_lock);
 		return false;
 	}
 
 	if (file != pageSpace->file) {
-		LCK_write_data(shadow_lock, (SLONG) 0);
+		LCK_write_data(tdbb, shadow_lock, (SLONG) 0);
 		LCK_release(tdbb, update_lock);
 		return true;
 	}
@@ -833,12 +833,12 @@ bool SDW_rollover_to_shadow(jrd_file* file, const bool inAst)
 	if (!inAst) {
 		if ( (start_conditional = SDW_check_conditional()) ) {
 			sdw_update_flags = (SDW_rollover | SDW_conditional);
-			LCK_write_data(shadow_lock, sdw_update_flags);
+			LCK_write_data(tdbb, shadow_lock, sdw_update_flags);
 		}
 	}
 
 	SDW_notify();
-	LCK_write_data(shadow_lock, (SLONG) 0);
+	LCK_write_data(tdbb, shadow_lock, (SLONG) 0);
 	LCK_release(tdbb, shadow_lock);
 	delete shadow_lock;
 	dbb->dbb_shadow_lock = 0;
@@ -1105,6 +1105,7 @@ int SDW_start_shadowing(void* ast_object)
  *
  **************************************/
 	Database* new_dbb = static_cast<Database*>(ast_object);
+	Database::SyncGuard dsGuard(new_dbb, true);
 
 	// Shouldn't we find a way to call check_if_got_ast() here?
 
@@ -1117,12 +1118,9 @@ int SDW_start_shadowing(void* ast_object)
 	ThreadContextHolder tdbb;
 
 	tdbb->setDatabase(new_dbb);
-	tdbb->tdbb_quantum = QUANTUM;
-	tdbb->setRequest(NULL);
-	tdbb->setTransaction(NULL);
 
 	new_dbb->dbb_ast_flags |= DBB_get_shadows;
-	if (LCK_read_data(lock) & SDW_rollover)
+	if (LCK_read_data(tdbb, lock) & SDW_rollover)
 		update_dbb_to_sdw(new_dbb);
 
 	LCK_release(tdbb, lock);

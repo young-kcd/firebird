@@ -2326,7 +2326,7 @@ bool PageSpace::extend(thread_db* tdbb, const ULONG pageNum)
 		{
 			try 
 			{
-				PIO_extend(file, extPages, dbb->dbb_page_size);
+				PIO_extend(dbb, file, extPages, dbb->dbb_page_size);
 				break;
 			}
 			catch (Firebird::status_exception) 

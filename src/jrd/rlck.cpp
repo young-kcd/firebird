@@ -86,11 +86,9 @@ Lock* RLCK_reserve_relation(thread_db* tdbb,
 
 	USHORT result;
 	if (lock->lck_logical)
-		result = LCK_convert_non_blocking(tdbb, lock, level,
-										  transaction->getLockWait());
+		result = LCK_convert(tdbb, lock, level, transaction->getLockWait());
 	else
-		result = LCK_lock_non_blocking(tdbb, lock, level,
-									   transaction->getLockWait());
+		result = LCK_lock(tdbb, lock, level, transaction->getLockWait());
 	if (!result)
 		ERR_punt();
 

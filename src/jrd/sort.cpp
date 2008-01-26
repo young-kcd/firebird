@@ -2508,10 +2508,6 @@ static ULONG order(sort_context* scb)
 	SORTP* buffer = record_buffer.getBuffer(scb->scb_longs);
 		//(SORTP*) scb->scb_pool->allocate(scb->scb_longs * sizeof(ULONG));
 
-	// Check out the engine
-
-	THREAD_EXIT();
-
 	// Length of the key part of the record
 	const SSHORT length = scb->scb_longs - SIZEOF_SR_BCKPTR_IN_LONGS;
 
@@ -2580,10 +2576,6 @@ static ULONG order(sort_context* scb)
 
 	//delete buffer;
 
-	// Check back into the engine
-
-	THREAD_ENTER();
-
 	return (((SORTP *) output) -
 			((SORTP *) scb->scb_last_record)) / (scb->scb_longs -
 												 SIZEOF_SR_BCKPTR_IN_LONGS);
@@ -2607,7 +2599,7 @@ static void order_and_save(sort_context* scb)
  *		scratch file as one big chunk
  *
  **************************************/
-	THREAD_EXIT();
+	Database::Checkout dcoHolder(scb->scb_attachment->att_database);
 
 	run_control* run = scb->scb_runs;
 	run->run_records = 0;
@@ -2652,16 +2644,12 @@ static void order_and_save(sort_context* scb)
 	}
 	else 
 	{
-		THREAD_ENTER();
 		order(scb);
-		THREAD_EXIT();
 
 		SORT_write_block(scb->scb_status_vector, scb->scb_space,
 						run->run_seek, (UCHAR*) scb->scb_last_record,
 						run->run_size);
 	}
-
-	THREAD_ENTER();
 }
 
 
@@ -2759,9 +2747,7 @@ static void sort(sort_context* scb)
  *
  **************************************/
 
-	// Check out the engine
-
-	THREAD_EXIT();
+	Database::Checkout dcoHolder(scb->scb_attachment->att_database);
 
 	// First, insert a pointer to the high key
 
@@ -2798,11 +2784,8 @@ static void sort(sort_context* scb)
 
 	// If duplicate handling hasn't been requested, we're done
 
-	if (!scb->scb_dup_callback) {
-		// Check back into the engine
-		THREAD_ENTER();
+	if (!scb->scb_dup_callback)
 		return;
-	}
 
 	// Make another pass and eliminate duplicates. It's possible to do this
 	// is the same pass the final ordering, but the logic is complicated enough
@@ -2848,10 +2831,6 @@ static void sort(sort_context* scb)
 #endif
 		}
 	}
-
-	// Check back into the engine
-
-	THREAD_ENTER();
 }
 
 

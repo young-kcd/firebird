@@ -118,7 +118,7 @@ public:
 	SLONG getLockData() {
 		return cached_lock->lck_data;
 	}
-	void setLockData(SLONG lck_data);
+	void setLockData(thread_db* tdbb, SLONG lck_data);
 
 	// Release physical lock if possible. Use to force refetch
 	// Returns true if lock was released
@@ -153,30 +153,19 @@ private:
 		SLONG, ObjectOwnerData, Firebird::DefaultComparator<SLONG> > readers;
 	ObjectOwnerData writer;
 
-	// In current implementation, threads are not used along with signals
-	// Anyways, if we own mutex only with signals disabled this code
-	// becomes signal-safe even in presense of threads.
-	//
-	class EngineMutexLockGuard {
+	class CountersLockHolder {
 	public:
-		explicit EngineMutexLockGuard(Firebird::Mutex& alock) 
+		CountersLockHolder(Database* dbb, Firebird::Mutex& alock) 
 			: lock(&alock) 
 		{ 
-			ThreadExit te;
+			Database::Checkout dcoHolder(dbb, true);
 			lock->enter(); 
 		}
-		~EngineMutexLockGuard() { lock->leave(); }
+		~CountersLockHolder() { lock->leave(); }
 	private:
 		// Forbid copy constructor
-		EngineMutexLockGuard(const EngineMutexLockGuard& source);
+		CountersLockHolder(const CountersLockHolder& source);
 		Firebird::Mutex* lock;
-	};
-
-	class CountersLockHolder : public AstInhibit, public EngineMutexLockGuard
-	{
-	public:
-		CountersLockHolder(Firebird::Mutex& mtx)
-			: AstInhibit(), EngineMutexLockGuard(mtx) { }
 	};
 
 	static int blocking_ast_cached_lock(void* ast_object);

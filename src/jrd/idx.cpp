@@ -520,7 +520,7 @@ void IDX_create_index(
 		if (idx_lock)
 		{
 			if (!idx_lock->idl_count) {
-				LCK_lock_non_blocking(tdbb, idx_lock->idl_lock, LCK_SR, LCK_WAIT);
+				LCK_lock(tdbb, idx_lock->idl_lock, LCK_SR, LCK_WAIT);
 			}
 			++idx_lock->idl_count;
 		}
@@ -1492,22 +1492,15 @@ static int index_block_flush(void* ast_object)
  *
  **************************************/
 	IndexBlock* index_block = static_cast<IndexBlock*>(ast_object);
+	Lock* lock = index_block->idb_lock;
 
-/* Since this routine will be called asynchronously, we must establish
-   a thread context. */
+	Database* dbb = lock->lck_dbb;
+	Database::SyncGuard dsGuard(dbb, true);
 
 	ThreadContextHolder tdbb;
 
-	Lock* lock = index_block->idb_lock;
-
-	if (lock->lck_attachment) 
-	{
-		tdbb->setDatabase(lock->lck_attachment->att_database);
-	}
+	tdbb->setDatabase(dbb);
 	tdbb->setAttachment(lock->lck_attachment);
-	tdbb->tdbb_quantum = QUANTUM;
-	tdbb->setRequest(NULL);
-	tdbb->setTransaction(NULL);
 
 /* release the index expression request, which also has
    the effect of releasing the expression tree */
@@ -1654,10 +1647,10 @@ static void signal_index_deletion(thread_db* tdbb, jrd_rel* relation, USHORT id)
 /* signal other processes to clear out the index block */
 
 	if (lock->lck_physical == LCK_SR) {
-		LCK_convert_non_blocking(tdbb, lock, LCK_EX, LCK_WAIT);
+		LCK_convert(tdbb, lock, LCK_EX, LCK_WAIT);
 	}
 	else {
-		LCK_lock_non_blocking(tdbb, lock, LCK_EX, LCK_WAIT);
+		LCK_lock(tdbb, lock, LCK_EX, LCK_WAIT);
 	}
 
 /* and clear out our index block as well */

@@ -152,11 +152,6 @@ static vary* make_result_str(const Firebird::string& str) {
 
 vary* get_context(const vary* ns_vary, const vary* name_vary)
 {
-	// Complain if namespace or variable name is null
-	if (!ns_vary || !name_vary) {
-		ERR_post(isc_ctx_bad_argument, isc_arg_string, RDB_GET_CONTEXT, 0);
-	}
-
 	thread_db* tdbb = JRD_get_thread_data();
 
 	Database* dbb;
@@ -171,6 +166,13 @@ vary* get_context(const vary* ns_vary, const vary* name_vary)
 	{
 		fb_assert(false);
 		return NULL;
+	}
+
+	Database::SyncGuard dsGuard(dbb);
+
+	// Complain if namespace or variable name is null
+	if (!ns_vary || !name_vary) {
+		ERR_post(isc_ctx_bad_argument, isc_arg_string, RDB_GET_CONTEXT, 0);
 	}
 
 	const Firebird::string ns_str(ns_vary->vary_string, ns_vary->vary_length);
@@ -227,13 +229,7 @@ vary* get_context(const vary* ns_vary, const vary* name_vary)
 		if (name_str == SESSION_ID_NAME) 
 		{
 			Firebird::string session_id;
-
-			// This synchronization is necessary to keep SuperServer happy.
-			// PAG_attachment_id() may modify database header, call lock manager, etc
-			THREAD_ENTER();
-			SLONG att_id = PAG_attachment_id(tdbb);
-			THREAD_EXIT();
-
+			const SLONG att_id = PAG_attachment_id(tdbb);
 			session_id.printf("%d", att_id);
 			return make_result_str(session_id);
 		}

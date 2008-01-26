@@ -133,7 +133,6 @@ int QATEST_entrypoint(ULONG * function, void *arg1, void *arg2, void *arg3)
  *	These entrypoints are *NOT* designed for customer use!
  *
  **************************************/
-	thread_db* tdbb;
 	char filename[MAXPATHLEN];
 	Shadow* shadow;
 #ifdef WIN_NT
@@ -141,6 +140,10 @@ int QATEST_entrypoint(ULONG * function, void *arg1, void *arg2, void *arg3)
 #endif
 	jrd_file* file;
 
+	thread_db* tdbb = JRD_get_thread_data();
+	Database* dbb = tdbb->getDatabase();
+
+	Database::SyncGuard dsGuard(dbb);
 
 	switch (*function) {
 	case QATEST_testing:
@@ -153,8 +156,7 @@ int QATEST_entrypoint(ULONG * function, void *arg1, void *arg2, void *arg3)
 		/* Parameters: NONE */
 		/* Close current database file & delete */
 
-		tdbb = JRD_get_thread_data();
-		if (!(file = tdbb->getAttachment()->att_database->dbb_file))
+		if (!(file = dbb->dbb_file))
 			return -1;
 
 #ifdef WIN_NT
@@ -183,7 +185,7 @@ int QATEST_entrypoint(ULONG * function, void *arg1, void *arg2, void *arg3)
 		/* Close & delete specified shadow file */
 
 		tdbb = JRD_get_thread_data();
-		if (!(shadow = tdbb->getAttachment()->att_database->dbb_shadow))
+		if (!(shadow = dbb->dbb_shadow))
 			return -1;
 		for (; shadow; shadow = shadow->sdw_next)
 			if (shadow->sdw_number == *(ULONG *) arg1) {
@@ -221,10 +223,8 @@ int QATEST_entrypoint(ULONG * function, void *arg1, void *arg2, void *arg3)
 	default:
 		sprintf(filename, "Unknown QATEST_entrypoint #%lu",	/* TXNN */
 				*function);
-		THREAD_ENTER();
 		ERR_post(isc_random,
 				 isc_arg_string, ERR_cstring(filename), 0);
-		THREAD_EXIT();
 		return 0;
 	}
 }

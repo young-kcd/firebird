@@ -5,10 +5,10 @@
 #include "../jrd/sch_proto.h"
 
 inline void THREAD_ENTER() {
-	SCH_enter();
+	gds__thread_enter();
 }
 inline void THREAD_EXIT() {
-	SCH_exit();
+	gds__thread_exit();
 }
 
 inline void THREAD_SLEEP(ULONG msecs) {
@@ -22,12 +22,12 @@ class SchedulerContext {
 public:
 	SchedulerContext()
 	{
-		SCH_enter();
+		THREAD_ENTER();
 	}
 
 	~SchedulerContext()
 	{
-		SCH_exit();
+		THREAD_EXIT();
 	}
 
 private:

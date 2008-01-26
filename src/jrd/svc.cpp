@@ -567,6 +567,8 @@ Service* SVC_attach(USHORT	service_length,
  *	Connect to a Firebird service.
  *
  **************************************/
+	SchedulerContext scHolder;
+
 /* If the service name begins with a slash, ignore it. */
 	thread_db* tdbb = JRD_get_thread_data();
 
@@ -603,7 +605,8 @@ Service* SVC_attach(USHORT	service_length,
 	Service* service = 0;
 
 	try {
- 	Firebird::ClumpletWriter spb(Firebird::ClumpletReader::SpbAttach, MAX_DPB_SIZE, 
+
+	Firebird::ClumpletWriter spb(Firebird::ClumpletReader::SpbAttach, MAX_DPB_SIZE, 
 		reinterpret_cast<const UCHAR*>(spb_data), spb_length, isc_spb_current_version);
 
 /* Process the service parameter block. */
@@ -736,6 +739,7 @@ void SVC_detach(Service* service)
  *	Close down a service.
  *
  **************************************/
+	SchedulerContext scHolder;
 
 #ifdef SERVER_SHUTDOWN
 	if (service->svc_do_shutdown) {
@@ -769,8 +773,7 @@ void SVC_detach(Service* service)
 
 
 #ifdef SERVER_SHUTDOWN
-void SVC_shutdown_init(shutdown_fct_t fptr,
-			ULONG param)
+void SVC_shutdown_init(shutdown_fct_t fptr, ULONG param)
 {
 /**************************************
  *
@@ -834,6 +837,8 @@ ISC_STATUS SVC_query2(Service* service,
  *	Provide information on service object
  *
  **************************************/
+	SchedulerContext scHolder;
+
 	SCHAR item;
 	char buffer[MAXPATHLEN];
 	USHORT l, length, version, get_flags;
@@ -1056,7 +1061,6 @@ ISC_STATUS SVC_query2(Service* service,
 				items += sizeof(USHORT);
 				strncpy(fname, items, length2);
 				fname[length2] = 0;
-				JRD_print_all_counters(fname);
 				break;
 			}
 #endif
@@ -1333,6 +1337,8 @@ void SVC_query(Service*		service,
  *	Provide information on service object.
  *
  **************************************/
+	SchedulerContext scHolder;
+
 	SCHAR item, *p;
 	char buffer[256];
 	TEXT PathBuffer[MAXPATHLEN];
@@ -1496,7 +1502,6 @@ void SVC_query(Service*		service,
 				items += sizeof(USHORT);
 				strncpy(fname, items, length2);
 				fname[length2] = 0;
-				JRD_print_all_counters(fname);
 				break;
 			}
 #endif
@@ -1749,7 +1754,8 @@ void* SVC_start(Service* service, USHORT spb_length, const SCHAR* spb_data)
  *      Start a Firebird service
  *
  **************************************/
- 	
+	SchedulerContext scHolder;
+
 /* 	NOTE: The parameter RESERVED must not be used
  *	for any purpose as there are networking issues
  *	involved (as with any handle that goes over the
@@ -1757,7 +1763,7 @@ void* SVC_start(Service* service, USHORT spb_length, const SCHAR* spb_data)
  *	a later date.
  */  
 
-	isc_resv_handle reserved = (isc_resv_handle)0;	/* Reserved for future functionality */
+	isc_resv_handle reserved = (isc_resv_handle) 0;	// Reserved for future functionality
 
 	Firebird::ClumpletReader spb(Firebird::ClumpletReader::SpbStart, 
 		reinterpret_cast<const UCHAR*>(spb_data), spb_length);

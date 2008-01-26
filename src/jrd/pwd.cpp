@@ -235,19 +235,19 @@ namespace {
 
 void SecurityDatabase::fini()
 {
+	Firebird::MutexLockGuard guard(mutex);
 	counter -= (is_cached) ? 1 : 0;
 #ifndef EMBEDDED
 	if (counter == 1 && lookup_db)
 	{
-		THREAD_EXIT();
 		isc_detach_database(status, &lookup_db);
-		THREAD_ENTER();
 	}
 #endif
 }
 
 void SecurityDatabase::init()
 {
+	Firebird::MutexLockGuard guard(mutex);
 	counter += (is_cached) ? 1 : 0;
 }
 
@@ -269,9 +269,7 @@ bool SecurityDatabase::lookup_user(const TEXT* user_name, int* uid, int* gid, TE
 	strncpy(uname, user_name, sizeof uname);
 	uname[sizeof uname - 1] = 0;
 
-	THREAD_EXIT();
-	mutex.enter();
-	THREAD_ENTER();
+	Firebird::MutexLockGuard guard(mutex);
 
 	// Attach database and compile request
 
@@ -283,9 +281,7 @@ bool SecurityDatabase::lookup_user(const TEXT* user_name, int* uid, int* gid, TE
 			lookup_db = 0;
 			isc_detach_database(status, &tmp);
 		}
-		THREAD_ENTER();
-		mutex.leave();
-		ERR_post(isc_psw_attach, 0);
+		Firebird::status_exception::raise(isc_psw_attach, 0);
 	}
 
 	// Lookup
@@ -294,9 +290,7 @@ bool SecurityDatabase::lookup_user(const TEXT* user_name, int* uid, int* gid, TE
 
 	if (isc_start_transaction(status, &lookup_trans, 1, &lookup_db, sizeof(TPB), TPB))
 	{
-		THREAD_ENTER();
-		mutex.leave();
-		ERR_post(isc_psw_start_trans, 0);
+		Firebird::status_exception::raise(isc_psw_start_trans, 0);
 	}
 
 	if (!isc_start_and_send(status, &lookup_req, &lookup_trans, 0, sizeof(uname), uname, 0))
@@ -325,8 +319,6 @@ bool SecurityDatabase::lookup_user(const TEXT* user_name, int* uid, int* gid, TE
 	{
 		isc_detach_database(status, &lookup_db);
 	}
-	THREAD_ENTER();
-	mutex.leave();
 
 	return found;
 }
@@ -337,11 +329,8 @@ bool SecurityDatabase::prepare()
 
 	if (lookup_db)
 	{
-		THREAD_EXIT();
 		return true;
 	}
-
-	THREAD_EXIT();
 
 	lookup_db = lookup_req = 0;
 
@@ -521,7 +510,5 @@ ISC_STATUS DelayFailedLogin::stuff_exception(ISC_STATUS* const status_vector, Fi
 
 void DelayFailedLogin::sleep() const
 {
-	THREAD_EXIT();
 	THREAD_SLEEP(1000 * seconds);
-	THREAD_ENTER();
 }

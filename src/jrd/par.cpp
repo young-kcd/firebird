@@ -1468,7 +1468,7 @@ static jrd_nod* par_function(thread_db* tdbb, CompilerScratch* csb)
 	Firebird::MetaName name;
 	const USHORT count = par_name(csb, name);
 
-	UserFunction* function = FUN_lookup_function(name,
+	UserFunction* function = FUN_lookup_function(tdbb, name,
 					!(tdbb->getAttachment()->att_flags & ATT_gbak_attachment));
 	if (!function) {
 		if (tdbb->tdbb_flags & TDBB_prc_being_dropped) {

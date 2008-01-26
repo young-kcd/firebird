@@ -256,7 +256,7 @@ int TPC_snapshot_state(thread_db* tdbb, SLONG number)
 
 			/* If we can't get a lock on the transaction, it must be active. */
 
-			if (!LCK_lock_non_blocking(tdbb, temp_lock, LCK_read, LCK_NO_WAIT)) {
+			if (!LCK_lock(tdbb, temp_lock, LCK_read, LCK_NO_WAIT)) {
 				INIT_STATUS(tdbb->tdbb_status_vector);
 				return tra_active;
 			}

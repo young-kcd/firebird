@@ -87,7 +87,7 @@ void VirtualTable::erase(thread_db* tdbb, record_param* rpb)
 	temp_lock.lck_length = sizeof(SLONG);
 	temp_lock.lck_key.lck_long = id;
 
-	if (LCK_lock_non_blocking(tdbb, &temp_lock, LCK_EX, -1))
+	if (LCK_lock(tdbb, &temp_lock, LCK_EX, -1))
 		LCK_release(tdbb, &temp_lock);
 }
 

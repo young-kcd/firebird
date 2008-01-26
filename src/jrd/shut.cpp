@@ -59,11 +59,11 @@ const bool IGNORE_SAME_MODE = false;
 
 static bool bad_mode(thread_db*, bool);
 static void check_backup_state(thread_db*);
-static bool notify_shutdown(Database*, SSHORT, SSHORT);
-static bool shutdown_locks(Database*, SSHORT);
+static bool notify_shutdown(thread_db*, SSHORT, SSHORT);
+static bool shutdown_locks(thread_db*, SSHORT);
 
 
-bool SHUT_blocking_ast(Database* dbb)
+bool SHUT_blocking_ast(thread_db* tdbb)
 {
 /**************************************
  *
@@ -76,8 +76,11 @@ bool SHUT_blocking_ast(Database* dbb)
  *	shutdown instructions.
  *
  **************************************/
+	SET_TDBB(tdbb);
+	Database* dbb = tdbb->getDatabase();
+
 	shutdown_data data;
-	data.data_long = LCK_read_data(dbb->dbb_lock);
+	data.data_long = LCK_read_data(tdbb, dbb->dbb_lock);
 	const SSHORT flag = data.data_items.flag;
 	const SSHORT delay = data.data_items.delay;
 
@@ -116,7 +119,7 @@ bool SHUT_blocking_ast(Database* dbb)
 	}
 
 	if ((flag & isc_dpb_shut_force) && !delay)
-		return shutdown_locks(dbb, flag);
+		return shutdown_locks(tdbb, flag);
 
 	if (flag & isc_dpb_shut_attachment)
 		dbb->dbb_ast_flags |= DBB_shut_attach;
@@ -129,7 +132,7 @@ bool SHUT_blocking_ast(Database* dbb)
 }
 
 
-bool SHUT_database(Database* dbb, SSHORT flag, SSHORT delay)
+bool SHUT_database(thread_db* tdbb, SSHORT flag, SSHORT delay)
 {
 /**************************************
  *
@@ -141,7 +144,8 @@ bool SHUT_database(Database* dbb, SSHORT flag, SSHORT delay)
  *	Schedule database for shutdown
  *
  **************************************/
-	thread_db* tdbb = JRD_get_thread_data();
+	SET_TDBB(tdbb);
+	Database* dbb = tdbb->getDatabase();
 	Attachment* attachment = tdbb->getAttachment();
 
 /* Only platform's user locksmith can shutdown or bring online
@@ -203,11 +207,11 @@ bool SHUT_database(Database* dbb, SSHORT flag, SSHORT delay)
 /* Database is being shutdown. First notification gives shutdown
    type and delay in seconds. */
 
-	bool exclusive = notify_shutdown(dbb, flag, delay);
+	bool exclusive = notify_shutdown(tdbb, flag, delay);
 
 /* Notify local attachments */
 
-	SHUT_blocking_ast(dbb);
+	SHUT_blocking_ast(tdbb);
 
 /* Try to get exclusive database lock periodically up to specified delay. If we
    haven't gotten it report shutdown error for weaker forms. For forced shutdown
@@ -219,7 +223,7 @@ bool SHUT_database(Database* dbb, SSHORT flag, SSHORT delay)
 	{
 		for (; timeout >= 0; timeout -= SHUT_WAIT_TIME)
 		{
-			if ((exclusive = notify_shutdown(dbb, flag, timeout)) ||
+			if ((exclusive = notify_shutdown(tdbb, flag, timeout)) ||
 				!(dbb->dbb_ast_flags & (DBB_shut_attach | DBB_shut_tran |
 										DBB_shut_force)))
 			{
@@ -232,8 +236,8 @@ bool SHUT_database(Database* dbb, SSHORT flag, SSHORT delay)
 					   flag & (isc_dpb_shut_attachment |
 							   isc_dpb_shut_transaction)))
 	{
-		notify_shutdown(dbb, 0, 0);	/* Tell everyone we're giving up */
-		SHUT_blocking_ast(dbb);
+		notify_shutdown(tdbb, 0, 0);	/* Tell everyone we're giving up */
+		SHUT_blocking_ast(tdbb);
 		attachment->att_flags &= ~ATT_shutdown_manager;
 		++dbb->dbb_use_count;
 		ERR_post(isc_shutfail, 0);
@@ -265,7 +269,7 @@ bool SHUT_database(Database* dbb, SSHORT flag, SSHORT delay)
 
 	if (!exclusive && (flag & isc_dpb_shut_force)) {
 		// TMN: Ugly counting!
-		while (!notify_shutdown(dbb, flag, 0));
+		while (!notify_shutdown(tdbb, flag, 0));
 	}
 
 	++dbb->dbb_use_count;
@@ -304,7 +308,7 @@ bool SHUT_database(Database* dbb, SSHORT flag, SSHORT delay)
 }
 
 
-bool SHUT_init(Database* dbb)
+bool SHUT_init(thread_db* tdbb)
 {
 /**************************************
  *
@@ -318,11 +322,11 @@ bool SHUT_init(Database* dbb)
  *
  **************************************/
 
-	return SHUT_blocking_ast(dbb);
+	return SHUT_blocking_ast(tdbb);
 }
 
 
-bool SHUT_online(Database* dbb, SSHORT flag)
+bool SHUT_online(thread_db* tdbb, SSHORT flag)
 {
 /**************************************
  *
@@ -334,8 +338,8 @@ bool SHUT_online(Database* dbb, SSHORT flag)
  *	Move database to "more online" state
  *
  **************************************/
-
-	thread_db* tdbb = JRD_get_thread_data();
+	SET_TDBB(tdbb);
+	Database* dbb = tdbb->getDatabase();
 	Attachment* attachment = tdbb->getAttachment();
 
 /* Only platform's user locksmith can shutdown or bring online
@@ -416,12 +420,12 @@ bool SHUT_online(Database* dbb, SSHORT flag)
 	/* Notify existing database clients that a currently
 	   scheduled shutdown is cancelled. */
 
-	if (notify_shutdown(dbb, shut_mode, -1))
+	if (notify_shutdown(tdbb, shut_mode, -1))
 		CCH_release_exclusive(tdbb);
 
 	/* Notify local attachments */
 
-	SHUT_blocking_ast(dbb);
+	SHUT_blocking_ast(tdbb);
 
 	}	// try
 	catch (const Firebird::Exception& ex) {
@@ -473,7 +477,7 @@ static void check_backup_state(thread_db* tdbb)
 }
 
 
-static bool notify_shutdown(Database* dbb, SSHORT flag, SSHORT delay)
+static bool notify_shutdown(thread_db* tdbb, SSHORT flag, SSHORT delay)
 {
 /**************************************
  *
@@ -488,14 +492,14 @@ static bool notify_shutdown(Database* dbb, SSHORT flag, SSHORT delay)
  *	flags and delay via lock data.
  *
  **************************************/
+	Database* dbb = tdbb->getDatabase();
 
-	thread_db* tdbb = JRD_get_thread_data();
 	shutdown_data data;
 
 	data.data_items.flag = flag;
 	data.data_items.delay = delay;
 
-	LCK_write_data(dbb->dbb_lock, data.data_long);
+	LCK_write_data(tdbb, dbb->dbb_lock, data.data_long);
 
 /* Send blocking ASTs to database users */
 
@@ -503,10 +507,10 @@ static bool notify_shutdown(Database* dbb, SSHORT flag, SSHORT delay)
 		CCH_exclusive(tdbb, LCK_PW, delay > 0 ? -SHUT_WAIT_TIME : -1);
 
 	if (exclusive && (delay != -1)) {
-		return shutdown_locks(dbb, flag);
+		return shutdown_locks(tdbb, flag);
 	}
 	if ((flag & isc_dpb_shut_force) && !delay) {
-		return shutdown_locks(dbb, flag);
+		return shutdown_locks(tdbb, flag);
 	}
 	if ((flag & isc_dpb_shut_transaction) &&
 		!(TRA_active_transactions(tdbb, dbb)))
@@ -518,7 +522,7 @@ static bool notify_shutdown(Database* dbb, SSHORT flag, SSHORT delay)
 }
 
 
-static bool shutdown_locks(Database* dbb, SSHORT flag)
+static bool shutdown_locks(thread_db* tdbb, SSHORT flag)
 {
 /**************************************
  *
@@ -531,7 +535,7 @@ static bool shutdown_locks(Database* dbb, SSHORT flag)
  *	locks if database is quiet.
  *
  **************************************/
-	thread_db* tdbb = JRD_get_thread_data();
+	Database* dbb = tdbb->getDatabase();
 
 /* Mark database and all active attachments as shutdown. */
 
@@ -564,10 +568,9 @@ static bool shutdown_locks(Database* dbb, SSHORT flag)
 
 	if (dbb->dbb_use_count) {
 #ifdef SUPERSERVER
-		/* Let active database threads rundown */
-		THREAD_EXIT();
+		// Let active database threads rundown
+		Database::Checkout dcoHolder(dbb);
 		THREAD_SLEEP(1 * 1000);
-		THREAD_ENTER();
 #endif
 		return false;
 	}

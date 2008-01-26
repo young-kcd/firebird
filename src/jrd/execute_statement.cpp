@@ -83,17 +83,29 @@ const SSHORT sqlType[] =
 
 static InitInstance<GenericMap<Pair<NonPooled<SSHORT, UCHAR> > > > sqlTypeToDscType;
 
-void startCallback(thread_db* tdbb)
+class CallbackWrapper
 {
-	tdbb->getTransaction()->tra_callback_count++;
-	THREAD_EXIT();
-}
+public:
+	explicit CallbackWrapper(thread_db* arg)
+		: tdbb(arg)
+	{
+		tdbb->getTransaction()->tra_callback_count++;
+		tdbb->getDatabase()->checkout();
+	}
 
-void finishCallback(thread_db* tdbb)
-{
-	THREAD_ENTER();
-	tdbb->getTransaction()->tra_callback_count--;
-}
+	~CallbackWrapper()
+	{
+		tdbb->getDatabase()->checkin();
+		tdbb->getTransaction()->tra_callback_count--;
+	}
+
+private:
+	// copying is prohibited
+	CallbackWrapper(const CallbackWrapper&);
+	CallbackWrapper& operator=(const CallbackWrapper&);
+
+	thread_db* tdbb;
+};
 
 } // anonymous namespace
 
@@ -109,12 +121,8 @@ void ExecuteStatement::Open(thread_db* tdbb, jrd_nod* sql, SSHORT nVars, bool Si
 			sqlTypeToDscType().put(sqlType[i], static_cast<UCHAR>(i));
 	}
 
-	if (tdbb->getTransaction()->tra_callback_count >= MAX_CALLBACKS) {
-		tdbb->tdbb_status_vector[0] = isc_arg_gds;
-		tdbb->tdbb_status_vector[1] = isc_exec_sql_max_call_exceeded;
-		tdbb->tdbb_status_vector[2] = isc_arg_end;
-		ERR_punt();
-	}
+	if (tdbb->getTransaction()->tra_callback_count >= MAX_CALLBACKS)
+		ERR_post(isc_exec_sql_max_call_exceeded, 0);
 
 	Sqlda = 0;
 	Transaction = 0;
@@ -141,52 +149,68 @@ void ExecuteStatement::Open(thread_db* tdbb, jrd_nod* sql, SSHORT nVars, bool Si
 	Sqlda->sqln = nVars;
 	Sqlda->version = 1;
 
-	// For normal diagnostic
-	const int max_diag_len = 50;
+	ISC_STATUS_ARRAY local_status;
+	memset(local_status, 0, sizeof(local_status));
 
-	// this check uses local error handler for local status vector
-	ISC_STATUS_ARRAY local;
-	ISC_STATUS *status = local;
-	memset(local, 0, sizeof(local));
+	try
+	{
+		CallbackWrapper cwHolder(tdbb);
 
-#	define Chk(x) if ((x) != 0) goto err_handler
-	startCallback(tdbb);
+		ISC_STATUS* status = local_status;
 
-	Chk(isc_dsql_allocate_statement(status, &Attachment, &Statement));
+		if (isc_dsql_allocate_statement(status, &Attachment, &Statement))
+			throw status;
 
-	Chk(isc_dsql_prepare(status, &Transaction, &Statement,
-		SqlText.length(), SqlText.c_str(), SQL_DIALECT_CURRENT, Sqlda));
-	if (! Sqlda->sqld) {  // Non-select statement - reject for a while
-		/*Chk(isc_dsql_execute(status, &Transaction,
-			&Statement, SQLDA_VERSION1, 0)); */
-		Chk(isc_dsql_free_statement(status, &Statement, DSQL_drop));
-		Statement = 0;
-		status[0] = isc_arg_gds;
-		status[1] = isc_exec_sql_invalid_req;
-		status[2] = isc_arg_string;
-		status[3] = (ISC_STATUS)(U_IPTR) ERR_cstring(StartOfSqlOperator);
-		status[4] = isc_arg_end;
-		Chk(status[1]);
+		if (isc_dsql_prepare(status, &Transaction, &Statement,
+							 SqlText.length(), SqlText.c_str(),
+							 SQL_DIALECT_CURRENT, Sqlda))
+		{
+			throw status;
+		}
+
+		if (!Sqlda->sqld) {  // Non-select statement - reject for a while
+			/*if (isc_dsql_execute(status, &Transaction,
+								   &Statement, SQLDA_VERSION1, 0))
+			{
+				throw status;
+			}*/
+			if (isc_dsql_free_statement(status, &Statement, DSQL_drop))
+				throw status;
+
+			Statement = 0;
+
+			status[0] = isc_arg_gds;
+			status[1] = isc_exec_sql_invalid_req;
+			status[2] = isc_arg_string;
+			status[3] = (ISC_STATUS)(U_IPTR) ERR_cstring(StartOfSqlOperator);
+			status[4] = isc_arg_end;
+			throw status;
+		}
+		else {
+			if (ReMakeSqlda(status, tdbb))
+				throw status;
+
+			if (isc_dsql_describe(status, &Statement,
+								  SQLDA_VERSION1, Sqlda))
+			{
+				throw status;
+			}
+
+			Buffer = FB_NEW(*tdbb->getTransaction()->tra_pool) 
+				SCHAR[XSQLDA_LENGTH(ParseSqlda())];
+
+			ParseSqlda();
+
+			if (isc_dsql_execute(status, &Transaction,
+								 &Statement, SQLDA_VERSION1, 0))
+			{
+				throw status;
+			}
+		}
 	}
-	else {
-		Chk(ReMakeSqlda(status, tdbb));
-		Chk(isc_dsql_describe(status, &Statement,
-				SQLDA_VERSION1, Sqlda));
-		Buffer = 0;		// Buffer is used in ParseSqlda
-						// First dummy parse - to define buffer size
-		Buffer = FB_NEW(*tdbb->getTransaction()->tra_pool) 
-			SCHAR[XSQLDA_LENGTH(ParseSqlda())];
-		ParseSqlda();
-		Chk(isc_dsql_execute(status, &Transaction,
-				&Statement, SQLDA_VERSION1, 0));
-	}
-
-#	undef Chk
-err_handler:
-	finishCallback(tdbb);
-
-	if (status[0] == 1 && status[1]) {
-		memcpy(tdbb->tdbb_status_vector, status, sizeof(local));
+	catch (const ISC_STATUS* status)
+	{
+		memcpy(tdbb->tdbb_status_vector, status, ISC_STATUS_LENGTH);
 		Firebird::status_exception::raise(tdbb->tdbb_status_vector);
 	}
 }
@@ -204,21 +228,21 @@ bool ExecuteStatement::Fetch(thread_db* tdbb, jrd_nod** jrdVar)
 	memset(local, 0, sizeof(local));
 	status = local;
 
-	startCallback(tdbb);
-	if (isc_dsql_fetch(status, &Statement,
-			SQLDA_VERSION1, Sqlda) == 100)
-	{
-		isc_dsql_free_statement(status, &Statement, DSQL_drop);
-		finishCallback(tdbb);
+	{ // scope
+		CallbackWrapper cwHolder(tdbb);
+		if (isc_dsql_fetch(status, &Statement,
+				SQLDA_VERSION1, Sqlda) == 100)
+		{
+			isc_dsql_free_statement(status, &Statement, DSQL_drop);
 
-		Statement = 0;
-		return false;
-	}
-	finishCallback(tdbb);
+			Statement = 0;
+			return false;
+		}
 
-	if (status[0] == 1 && status[1]) {
-		memcpy(tdbb->tdbb_status_vector, status, sizeof(local));
-		Firebird::status_exception::raise(tdbb->tdbb_status_vector);
+		if (status[0] == 1 && status[1]) {
+			memcpy(tdbb->tdbb_status_vector, status, sizeof(local));
+			Firebird::status_exception::raise(tdbb->tdbb_status_vector);
+		}
 	}
 
 	const XSQLVAR *var = Sqlda->sqlvar;
@@ -226,15 +250,10 @@ bool ExecuteStatement::Fetch(thread_db* tdbb, jrd_nod** jrdVar)
 		dsc* d = EVL_assign_to(tdbb, jrdVar[i]);
 		if (d->dsc_dtype >= FB_NELEM(sqlType) || sqlType[d->dsc_dtype] < 0)
 		{
-			tdbb->tdbb_status_vector[0] = isc_arg_gds;
-			tdbb->tdbb_status_vector[1] = isc_exec_sql_invalid_var;
-			tdbb->tdbb_status_vector[2] = isc_arg_number;
-			tdbb->tdbb_status_vector[3] = i + 1;
-			tdbb->tdbb_status_vector[4] = isc_arg_string;
-			tdbb->tdbb_status_vector[5] =
-				(ISC_STATUS)(U_IPTR) ERR_cstring(StartOfSqlOperator);
-			tdbb->tdbb_status_vector[6] = isc_arg_end;
-			Firebird::status_exception::raise(tdbb->tdbb_status_vector);
+			ERR_post(isc_exec_sql_invalid_var,
+					 isc_arg_number, i + 1,
+					 isc_arg_string, ERR_cstring(StartOfSqlOperator),
+					 0);
 		}
 
 		// build the src descriptor
@@ -254,16 +273,14 @@ bool ExecuteStatement::Fetch(thread_db* tdbb, jrd_nod** jrdVar)
 	}
 
 	if (SingleMode) {
-		startCallback(tdbb);
+		CallbackWrapper cwHolder(tdbb);
 		if (isc_dsql_fetch(status, &Statement, SQLDA_VERSION1, Sqlda) == 100)
 		{
 			isc_dsql_free_statement(status, &Statement, DSQL_drop);
-			finishCallback(tdbb);
 
 			Statement = 0;
 			return false;
 		}
-		finishCallback(tdbb);
 
 		if (! (status[0] == 1 && status[1])) {
 			status[0] = isc_arg_gds;
@@ -280,9 +297,8 @@ void ExecuteStatement::Close(thread_db* tdbb)
 {
 	if (Statement) {
 		// for a while don't check for errors while freeing statement
-		startCallback(tdbb);
+		CallbackWrapper cwHolder(tdbb);
 		isc_dsql_free_statement(0, &Statement, DSQL_drop);
-		finishCallback(tdbb);
 
 		Statement = 0;
 	}
@@ -299,8 +315,8 @@ void ExecuteStatement::Close(thread_db* tdbb)
 
 XSQLDA* ExecuteStatement::MakeSqlda(thread_db* tdbb, short n)
 {
-	return (XSQLDA *)
-		(FB_NEW(*tdbb->getTransaction()->tra_pool) char[XSQLDA_LENGTH(n)]);
+	return (XSQLDA*)
+		FB_NEW(*tdbb->getTransaction()->tra_pool) char[XSQLDA_LENGTH(n)];
 }
 
 ISC_STATUS ExecuteStatement::ReMakeSqlda(ISC_STATUS *vector, thread_db* tdbb)
@@ -349,10 +365,9 @@ void ExecuteStatement::getString(thread_db* tdbb, Firebird::string& s, const dsc
 	UCHAR* p = 0;
 	const SSHORT l = (d && !(r->req_flags & req_null)) ?
 		MOV_make_string2(tdbb, d, d->getTextType(), &p, buffer) : 0; // !!! How call Msgs ?
-	if (! p) {
+	if (!p) {
 		ERR_post(isc_exec_sql_invalid_arg, 0);
 	}
 
 	s.assign((const char*)p, l);
 }
-
