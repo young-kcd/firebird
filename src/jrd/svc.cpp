@@ -640,11 +640,13 @@ Service* SVC_attach(USHORT	service_length,
 							(options.spb_network_protocol.isEmpty() || 
 							 options.spb_remote_address.isEmpty() ? "" : "/") +
 										  options.spb_remote_address;
-			
+
+				THREAD_EXIT();
 				SecurityDatabase::verifyUser(name, options.spb_user_name.nullStr(),
 						                     options.spb_password.nullStr(), 
 											 options.spb_password_enc.nullStr(),
 											 &id, &group, &node_id, remote);
+				THREAD_ENTER();
 			}
 		}
 

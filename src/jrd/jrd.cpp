@@ -508,7 +508,7 @@ static ISC_STATUS	rollback(ISC_STATUS*, jrd_tra**, const bool);
 static void		shutdown_database(Database*, const bool);
 static void		strip_quotes(Firebird::string&);
 static void		purge_attachment(thread_db*, ISC_STATUS*, Attachment*, const bool);
-static void		getUserInfo(UserId&, const DatabaseOptions&);
+static void		getUserInfo(Database*, UserId&, const DatabaseOptions&);
 
 //____________________________________________________________
 //
@@ -690,7 +690,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 
 	// First check for correct credentials supplied
 	UserId userId;
-	getUserInfo(userId, options);
+	getUserInfo(dbb, userId, options);
 
 #ifndef NO_NFS
 	// Don't check nfs if single user
@@ -1665,7 +1665,7 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 
 	// First check for correct credentials supplied
 	UserId userId;
-	getUserInfo(userId, options);
+	getUserInfo(dbb, userId, options);
 
 #ifndef NO_NFS
 	// Don't check nfs if single user
@@ -6118,8 +6118,10 @@ bool Attachment::locksmith() const
     @param options
 
  **/
-static void getUserInfo(UserId& user, const DatabaseOptions& options)
+static void getUserInfo(Database* dbb, UserId& user, const DatabaseOptions& options)
 {
+	Database::Checkout dcoHolder(dbb);
+
 	int id = -1, group = -1;	// CVC: This var contained trash
 	int node_id = 0;
 	Firebird::string name;
