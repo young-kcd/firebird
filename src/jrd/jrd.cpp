@@ -168,15 +168,118 @@ namespace
 
 	inline void dbMutexLock()
 	{
-		THREAD_EXIT();
 		databases_rec_mutex->enter();
-		THREAD_ENTER();
 	}
 
 	inline void dbMutexUnlock()
 	{
 		databases_rec_mutex->leave();
 	}
+
+	class DbMutexGuard
+	{
+	public:
+		DbMutexGuard()
+		{
+			dbMutexLock();
+		}
+
+		~DbMutexGuard()
+		{
+			dbMutexUnlock();
+		}
+
+	private:
+		// copying is prohibited
+		DbMutexGuard(const DbMutexGuard&);
+		DbMutexGuard& operator=(const DbMutexGuard&);
+	};
+
+	inline void validateHandle(thread_db* tdbb, Attachment* attachment)
+	{
+		if (!attachment->checkHandle() ||
+			!attachment->att_database->checkHandle())
+		{
+			Firebird::status_exception::raise(isc_bad_db_handle, 0);
+		}
+
+		Database* const dbb = attachment->att_database;
+
+		const Attachment* attach = dbb->dbb_attachments;
+		for (; attach; attach = attach->att_next)
+			if (attach == attachment)
+				break;
+
+		if (!attach)
+			Firebird::status_exception::raise(isc_bad_db_handle, 0);
+
+		tdbb->setAttachment(attachment);
+		tdbb->setDatabase(dbb);
+	}
+
+	inline void validateHandle(thread_db* tdbb, jrd_tra* transaction)
+	{
+		if (!transaction->checkHandle())
+			Firebird::status_exception::raise(isc_bad_trans_handle, 0);
+
+		validateHandle(tdbb, transaction->tra_attachment);
+
+		tdbb->setTransaction(transaction);
+	}
+
+	inline void validateHandle(thread_db* tdbb, jrd_req* request)
+	{
+		if (!request->checkHandle())
+			Firebird::status_exception::raise(isc_bad_req_handle, 0);
+
+		validateHandle(tdbb, request->req_attachment);
+	}
+
+	inline void validateHandle(thread_db* tdbb, blb* blob)
+	{
+		if (!blob->checkHandle())
+			Firebird::status_exception::raise(isc_bad_segstr_handle, 0);
+
+		validateHandle(tdbb, blob->blb_transaction);
+		validateHandle(tdbb, blob->blb_attachment);
+	}
+
+	inline void validateHandle(Service* service)
+	{
+		if (!service->checkHandle())
+			Firebird::status_exception::raise(isc_bad_svc_handle, 0);
+	}
+
+	class DatabaseContextHolder : public Jrd::ContextPoolHolder
+	{
+	public:
+		DatabaseContextHolder(thread_db* arg)
+			: Jrd::ContextPoolHolder(arg, arg->getDatabase()->dbb_permanent),
+			  tdbb(arg)
+		{
+			Database* dbb = tdbb->getDatabase();
+			dbb->dbb_sync.lock();
+			++dbb->dbb_use_count;
+		}
+
+		~DatabaseContextHolder()
+		{
+			Database* dbb = tdbb->getDatabase();
+			if (dbb->checkHandle())
+			{
+				--dbb->dbb_use_count;
+				dbb->dbb_sync.unlock();
+			}
+		}
+
+	private:
+		// copying is prohibited
+		DatabaseContextHolder(const DatabaseContextHolder&);
+		DatabaseContextHolder& operator=(const DatabaseContextHolder&);
+
+		thread_db* tdbb;
+	};
+
 } // anonymous
 
 #ifdef  WIN_NT
@@ -192,22 +295,21 @@ void Jrd::Trigger::compile(thread_db* tdbb)
 	{
 		SET_TDBB(tdbb);
 
-#ifdef SUPERSERVER
 		Database* dbb = tdbb->getDatabase();
 
-		THREAD_EXIT();
-		const int error = dbb->dbb_sp_rec_mutex.enter();
-		THREAD_ENTER();
-
-		if (error) {
-			Firebird::system_call_failed::raise("mutex_lock", error);
+		{ // scope
+			Database::Checkout dcoHolder(dbb);
+			const int error = dbb->dbb_sp_rec_mutex.enter();
+			if (error) {
+				Firebird::system_call_failed::raise("mutex_lock", error);
+			}
 		}
+
 		if (request)
 		{
 			dbb->dbb_sp_rec_mutex.leave();
 			return;
 		}
-#endif /* SUPERSERVER */
 
 		compile_in_progress = true;
 		// Allocate statement memory pool
@@ -249,9 +351,7 @@ void Jrd::Trigger::compile(thread_db* tdbb)
 				JrdMemoryPool::deletePool(new_pool);
 			}
 
-#ifdef SUPERSERVER
 			dbb->dbb_sp_rec_mutex.leave();
-#endif
 			throw;
 		}
 		
@@ -268,16 +368,14 @@ void Jrd::Trigger::compile(thread_db* tdbb)
 
 		compile_in_progress = false;
 
-#ifdef SUPERSERVER
 		dbb->dbb_sp_rec_mutex.leave();
-#endif
 	}
 }
 
 void Jrd::Trigger::release(thread_db* tdbb)
 {
 	if (blr.getCount() == 0 //sys_trigger
-				|| !request || CMP_clone_is_active(request))
+		|| !request || CMP_clone_is_active(request))
 	{
 		return; // FALSE;
 	}
@@ -365,22 +463,19 @@ public:
 			reinterpret_cast<char*>(&this->dpb_sys_user_name) - 
 			reinterpret_cast<char*>(this));
 	}
-	void get(const UCHAR*, USHORT);
+	void get(const UCHAR*, USHORT, bool&);
 };
 
 #ifndef SUPERSERVER
 static int blocking_ast_dsql_cache(void*);
 #endif
-static blb*			check_blob(thread_db*, ISC_STATUS*, blb**);
-static ISC_STATUS	check_database(thread_db*, Attachment*, ISC_STATUS*);
-static ISC_STATUS	check_transaction(thread_db*, jrd_tra*, ISC_STATUS*);
+static void			check_database(thread_db* tdbb);
+static void			check_transaction(thread_db*, jrd_tra*);
 static ISC_STATUS	commit(ISC_STATUS*, jrd_tra**, const bool);
 static ISC_STATUS	compile_request(ISC_STATUS*, Attachment**, jrd_req**, SSHORT, const SCHAR*, USHORT, const char*, USHORT, const UCHAR*);
 static bool			drop_files(const jrd_file*);
-static ISC_STATUS	error(ISC_STATUS*, const Firebird::Exception& ex);
-static ISC_STATUS	error(ISC_STATUS*);
 static void			find_intl_charset(thread_db*, Attachment*, const DatabaseOptions*);
-static jrd_tra*		find_transaction(thread_db*, jrd_tra*, ISC_STATUS);
+static jrd_tra*		find_transaction(thread_db*, ISC_STATUS);
 static void			init_database_locks(thread_db*, Database*);
 static ISC_STATUS	handle_error(ISC_STATUS*, ISC_STATUS);
 static void			run_commit_triggers(thread_db* tdbb, jrd_tra* transaction);
@@ -405,17 +500,15 @@ static BOOLEAN	handler_NT(SSHORT);
 #endif	// WIN_NT
 
 static Database*	init(thread_db*, ISC_STATUS*, const Firebird::PathName&, bool);
-static ISC_STATUS	prepare(thread_db*, jrd_tra*, ISC_STATUS*, USHORT, const UCHAR*);
-static void		release_attachment(Attachment*);
+static void		prepare(thread_db*, jrd_tra*, USHORT, const UCHAR*);
+static void		release_attachment(thread_db*, Attachment*);
 static void		detachLocksFromAttachment(Attachment*);
-static ISC_STATUS	return_success(thread_db*);
-static bool		rollback(thread_db*, jrd_tra*, ISC_STATUS*, const bool);
+static ISC_STATUS	rollback(ISC_STATUS*, jrd_tra**, const bool);
 
 static void		shutdown_database(Database*, const bool);
 static void		strip_quotes(Firebird::string&);
 static void		purge_attachment(thread_db*, ISC_STATUS*, Attachment*, const bool);
 static void		getUserInfo(UserId&, const DatabaseOptions&);
-
 
 //____________________________________________________________
 //
@@ -444,20 +537,11 @@ static void check_autocommit(jrd_req* request, thread_db* tdbb)
 	}
 }
 
-#define CHECK_HANDLE(blk, error)	\
-	if (!blk->checkHandle())		\
-		return handle_error (user_status, error)
-
-#define NULL_CHECK(ptr, code)		\
-	if (*ptr)	\
-		return handle_error (user_status, code)
-
 const int SWEEP_INTERVAL		= 20000;
 
 const char DBL_QUOTE			= '\042';
 const char SINGLE_QUOTE			= '\'';
 const int BUFFER_LENGTH128		= 128;
-bool invalid_client_SQL_dialect = false;
 
 #define GDS_ATTACH_DATABASE		jrd8_attach_database
 #define GDS_BLOB_INFO			jrd8_blob_info
@@ -554,7 +638,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 	if (*handle) {
 		return handle_error(user_status, isc_bad_db_handle);
 	}
-	
+
 	Firebird::PathName file_name(_file_name, 
 		_file_length ? _file_length : strlen(_file_name));
 	Firebird::PathName expanded_name(file_name);
@@ -585,30 +669,24 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 		return user_status[1];
 	}
 
-	// use database context pool
-	Jrd::ContextPoolHolder context(tdbb, dbb->dbb_permanent);
+	tdbb->setDatabase(dbb);
+	DatabaseContextHolder dbbHolder(tdbb);
 
 	dbb->dbb_flags |= DBB_being_opened;
-	tdbb->setDatabase(dbb);
-	tdbb->setAttachment(NULL);
-	tdbb->setRequest(NULL);
-	tdbb->setTransaction(NULL);
 
 	// Initialize special error handling
 
 	ISC_STATUS* const status = user_status;
 	Attachment* attachment = NULL;
 
-	// Count active thread in database
-
-	++dbb->dbb_use_count;
 	bool initing_security = false;
 
 	try {
 
 	// Process database parameter block
+	bool invalid_client_SQL_dialect = false;
 	DatabaseOptions options;
-	options.get(dpb, dpb_length);
+	options.get(dpb, dpb_length, invalid_client_SQL_dialect);
 
 	// First check for correct credentials supplied
 	UserId userId;
@@ -675,11 +753,6 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 	dbb->dbb_attachments = attachment;
 	dbb->dbb_flags &= ~DBB_being_opened;
 	dbb->dbb_sys_trans->tra_attachment = attachment;
-	tdbb->tdbb_quantum = (ThreadPriorityScheduler::boosted() ? 
-		Config::getPriorityBoost() : 1) * QUANTUM;
-	tdbb->setRequest(NULL);
-	tdbb->setTransaction(NULL);
-	tdbb->tdbb_flags = 0;
 
 	attachment->att_charset = options.dpb_interp;
 
@@ -735,7 +808,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 		PageSpace* pageSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
 		pageSpace->file =
 			PIO_open(dbb, expanded_name, options.dpb_trace != 0, file_name, false);
-		SHUT_init(dbb);
+		SHUT_init(tdbb);
 		PAG_header_init();
 		INI_init2();
 		PAG_init();
@@ -802,7 +875,6 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 				 isc_arg_gds, isc_valid_client_dialects,
 				 isc_arg_string, "1, 2 or 3", 0);
 	}
-	invalid_client_SQL_dialect = false;
 
 	if (userId.usr_sql_role_name.hasData())
 	{
@@ -900,8 +972,8 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 	if (options.dpb_shutdown)
 	{
 		dbMutexUnlock();
-		if (!SHUT_database
-			(dbb, options.dpb_shutdown, options.dpb_shutdown_delay)) 
+		if (!SHUT_database(tdbb, options.dpb_shutdown,
+						   options.dpb_shutdown_delay))
 		{
 			dbMutexLock();
 			if (user_status[1] != FB_SUCCESS)
@@ -920,7 +992,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 	if (options.dpb_online)
 	{
 		dbMutexUnlock();
-		if (!SHUT_online(dbb, options.dpb_online)) 
+		if (!SHUT_online(tdbb, options.dpb_online)) 
 		{
 			dbMutexLock();
 			if (user_status[1] != FB_SUCCESS)
@@ -1153,10 +1225,10 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 
 	// Recover database after crash during backup difference file merge
 	dbb->dbb_backup_manager->end_backup(tdbb, true); // true = do recovery
-	
+
 	if (!(attachment->att_flags & ATT_no_db_triggers))
 	{
-		jrd_tra* transaction = 0;
+		jrd_tra* transaction = NULL;
 
 		try
 		{
@@ -1171,7 +1243,8 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 			MET_load_db_triggers(tdbb, DB_TRIGGER_TRANS_ROLLBACK);
 
 			// run ON CONNECT triggers
-			EXE_execute_db_triggers(tdbb, transaction, jrd_req::req_trigger_connect);
+			EXE_execute_db_triggers(tdbb, transaction,
+									jrd_req::req_trigger_connect);
 
 			// and commit the transaction
 			TRA_commit(tdbb, transaction, false);
@@ -1192,10 +1265,8 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 	LOG_call(log_handle_returned, *handle);
 #endif	
 
-	return return_success(tdbb);
-
 	}	// try
-	catch (const Jrd::DelayFailedLogin& ex)
+	catch (const DelayFailedLogin& ex)
 	{
 		ISC_STATUS s = unwindAttach(ex, user_status, tdbb, attachment, dbb);
 		ex.sleep();
@@ -1205,6 +1276,8 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 	{
 		return unwindAttach(ex, user_status, tdbb, attachment, dbb);
 	}
+
+	return FB_SUCCESS;
 }
 
 
@@ -1227,24 +1300,24 @@ ISC_STATUS GDS_BLOB_INFO(ISC_STATUS*	user_status,
  **************************************/
 	ThreadContextHolder tdbb(user_status);
 
-	const blb* blob = check_blob(tdbb, user_status, blob_handle);
-	if (!blob) {
-		return user_status[1];
-	}
-
 #ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
 	LOG_call(log_blob_info2, *blob_handle, item_length, items, buffer_length);
 #endif
 
 	try {
+		blb* blob = *blob_handle;
+		validateHandle(tdbb, blob);
+		DatabaseContextHolder dbbHolder(tdbb);
+		check_database(tdbb);
+
 		INF_blob_info(blob, items, item_length, buffer, buffer_length);
 	}
 	catch (const Firebird::Exception& ex)
 	{
-		return error(user_status, ex);
+		Firebird::stuff_exception(user_status, ex);
 	}
 
-	return return_success(tdbb);
+	return user_status[1];
 }
 
 
@@ -1262,26 +1335,25 @@ ISC_STATUS GDS_CANCEL_BLOB(ISC_STATUS * user_status, blb** blob_handle)
  **************************************/
 	ThreadContextHolder tdbb(user_status);
 
-	if (*blob_handle) {
-		blb* blob = check_blob(tdbb, user_status, blob_handle);
-		if (!blob)
-			return user_status[1];
-
 #ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
-		LOG_call(log_cancel_blob, *blob_handle);
+	LOG_call(log_cancel_blob, *blob_handle);
 #endif
 
-		try {
-			BLB_cancel(tdbb, blob);
-			*blob_handle = NULL;
-		}
-		catch (const Firebird::Exception& ex)
-		{
-			return error(user_status, ex);
-		}
+	try {
+		blb* blob = *blob_handle;
+		validateHandle(tdbb, blob);
+		DatabaseContextHolder dbbHolder(tdbb);
+		check_database(tdbb);
+
+		BLB_cancel(tdbb, blob);
+		*blob_handle = NULL;
+	}
+	catch (const Firebird::Exception& ex)
+	{
+		Firebird::stuff_exception(user_status, ex);
 	}
 
-	return return_success(tdbb);
+	return user_status[1];
 }
 
 
@@ -1301,24 +1373,24 @@ ISC_STATUS GDS_CANCEL_EVENTS(ISC_STATUS*	user_status,
  **************************************/
 	ThreadContextHolder tdbb(user_status);
 
-	if (check_database(tdbb, *handle, user_status)) {
-		return user_status[1];
-	}
-
 #ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
 	LOG_call(log_cancel_events, *handle, *id);
 #endif
 
 	try
 	{
+		validateHandle(tdbb, *handle);
+		DatabaseContextHolder dbbHolder(tdbb);
+		check_database(tdbb);
+
 		EVENT_cancel(*id);
 	}
 	catch (const Firebird::Exception& ex)
 	{
-		return error(user_status, ex);
+		Firebird::stuff_exception(user_status, ex);
 	}
 
-	return return_success(tdbb);
+	return user_status[1];
 }
 
 
@@ -1338,50 +1410,35 @@ ISC_STATUS GDS_CANCEL_OPERATION(ISC_STATUS* user_status,
  **************************************/
 	ThreadContextHolder tdbb(user_status);
 
-	Attachment* attachment = *handle;
-
-	// Check out the database handle.  This is mostly code from
-	// the routine "check_database"
-
-	Database* dbb;
-	if (!attachment ||
-		(MemoryPool::blk_type(attachment) != type_att) ||
-		!(dbb = attachment->att_database) ||
-		MemoryPool::blk_type(dbb) != type_dbb)
+	try
 	{
-		return handle_error(user_status, isc_bad_db_handle);
-	}
+		Attachment* attachment = *handle;
+		validateHandle(tdbb, attachment);
+		DatabaseContextHolder dbbHolder(tdbb);
 
-	// Make sure this is a valid attachment
-
-	const Attachment* attach;
-	for (attach = dbb->dbb_attachments; attach; attach = attach->att_next)
-	{
-		if (attach == attachment)
+		switch (option) {
+		case CANCEL_disable:
+			attachment->att_flags |= ATT_cancel_disable;
 			break;
+
+		case CANCEL_enable:
+			attachment->att_flags &= ~ATT_cancel_disable;
+			break;
+
+		case CANCEL_raise:
+			attachment->att_flags |= ATT_cancel_raise;
+			break;
+
+		default:
+			fb_assert(false);
+		}
+	}
+	catch (const Firebird::Exception& ex)
+	{
+		Firebird::stuff_exception(user_status, ex);
 	}
 
-	if (!attach)
-		return handle_error(user_status, isc_bad_db_handle);
-
-	switch (option) {
-	case CANCEL_disable:
-		attachment->att_flags |= ATT_cancel_disable;
-		break;
-
-	case CANCEL_enable:
-		attachment->att_flags &= ~ATT_cancel_disable;
-		break;
-
-	case CANCEL_raise:
-		attachment->att_flags |= ATT_cancel_raise;
-		break;
-
-	default:
-		fb_assert(FALSE);
-	}
-
-	return FB_SUCCESS;
+	return user_status[1];
 }
 
 
@@ -1399,26 +1456,26 @@ ISC_STATUS GDS_CLOSE_BLOB(ISC_STATUS * user_status, blb** blob_handle)
  **************************************/
 	ThreadContextHolder tdbb(user_status);
 
-	blb* blob = check_blob(tdbb, user_status, blob_handle);
-	if (!blob)
-		return user_status[1];
-
 #ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
 	LOG_call(log_close_blob, *blob_handle);
 #endif
 
 	try
 	{
+		blb* blob = *blob_handle;
+		validateHandle(tdbb, blob);
+		DatabaseContextHolder dbbHolder(tdbb);
+		check_database(tdbb);
+
 		BLB_close(tdbb, blob);
 		*blob_handle = NULL;
 	}
 	catch (const Firebird::Exception& ex)
 	{
-		return error(user_status, ex);
+		Firebird::stuff_exception(user_status, ex);
 	}
 
-
-	return return_success(tdbb);
+	return user_status[1];
 }
 
 
@@ -1435,12 +1492,10 @@ ISC_STATUS GDS_COMMIT(ISC_STATUS * user_status, jrd_tra** tra_handle)
  *
  **************************************/
 
-	if (commit(user_status, tra_handle, false))
-		return user_status[1];
+	if (commit(user_status, tra_handle, false) == FB_SUCCESS)
+		*tra_handle = NULL;
 
-	*tra_handle = NULL;
-
-	return FB_SUCCESS;
+	return user_status[1];
 }
 
 
@@ -1500,11 +1555,6 @@ ISC_STATUS GDS_CREATE_BLOB2(ISC_STATUS* user_status,
  **************************************/
 	ThreadContextHolder tdbb(user_status);
 
-	NULL_CHECK(blob_handle, isc_bad_segstr_handle);
-
-	if (check_database(tdbb, *db_handle, user_status))
-		return user_status[1];
-
 #ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
 	LOG_call(log_create_blob2, *db_handle, *tra_handle, *blob_handle, blob_id,
 			 bpb_length, bpb);
@@ -1512,22 +1562,30 @@ ISC_STATUS GDS_CREATE_BLOB2(ISC_STATUS* user_status,
 
 	try
 	{
-		jrd_tra* transaction = find_transaction(tdbb, *tra_handle, isc_segstr_wrong_db);
+		if (*blob_handle)
+			Firebird::status_exception::raise(isc_bad_segstr_handle, 0);
+
+		validateHandle(tdbb, *db_handle);
+		validateHandle(tdbb, *tra_handle);
+		DatabaseContextHolder dbbHolder(tdbb);
+		check_database(tdbb);
+
+		jrd_tra* transaction = find_transaction(tdbb, isc_segstr_wrong_db);
+
 		blb* blob = BLB_create2(tdbb, transaction, blob_id, bpb_length, bpb);
 		*blob_handle = blob;
 	
-	#ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
+#ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
 		LOG_call(log_handle_returned, *blob_handle);
 		LOG_call(log_handle_returned, blob_id->bid_stuff.bid_temp_id);
-	#endif
+#endif
 	}
 	catch (const Firebird::Exception& ex)
 	{
-		return error(user_status, ex);
+		Firebird::stuff_exception(user_status, ex);
 	}
 
-
-	return return_success(tdbb);
+	return user_status[1];
 }
 
 
@@ -1585,27 +1643,22 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 		return user_status[1];
 	}
 
-	// use database context pool
-	Jrd::ContextPoolHolder context(tdbb, dbb->dbb_permanent);
+	tdbb->setDatabase(dbb);
+	DatabaseContextHolder dbbHolder(tdbb);
 
 	dbb->dbb_flags |= DBB_being_opened;
-	tdbb->setDatabase(dbb);
-	tdbb->setAttachment(NULL);
-	tdbb->setRequest(NULL);
-	tdbb->setTransaction(NULL);
 
 	ISC_STATUS* const status = user_status;
 	Attachment* attachment = NULL;
 
-	// Count active thread in database
-	++dbb->dbb_use_count;
 	bool initing_security = false;
 
 	try {
 
 	// Process database parameter block
+	bool invalid_client_SQL_dialect = false;
 	DatabaseOptions options;
-	options.get(dpb, dpb_length);
+	options.get(dpb, dpb_length, invalid_client_SQL_dialect);
 	if (!invalid_client_SQL_dialect && options.dpb_sql_dialect == 99) {
 		options.dpb_sql_dialect = 0;
 	}
@@ -1644,10 +1697,6 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 	dbb->dbb_attachments = attachment;
 	dbb->dbb_flags &= ~DBB_being_opened;
 	dbb->dbb_sys_trans->tra_attachment = attachment;
-	tdbb->tdbb_quantum = QUANTUM;
-	tdbb->setRequest(NULL);
-	tdbb->setTransaction(NULL);
-	tdbb->tdbb_flags = 0;
 
 	if (options.dpb_working_directory.hasData()) {
 		attachment->att_working_directory = options.dpb_working_directory;
@@ -1796,8 +1845,8 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 		ERR_post(isc_bad_shutdown_mode, isc_arg_string, ERR_string(file_name), 0);
 	
 	if (options.dpb_shutdown) {
-		if (!SHUT_database
-			(dbb, options.dpb_shutdown, options.dpb_shutdown_delay)) 
+		if (!SHUT_database(tdbb, options.dpb_shutdown,
+						   options.dpb_shutdown_delay))
 		{
 			ERR_post(isc_no_priv,
 					 isc_arg_string, "shutdown or online",
@@ -1860,17 +1909,16 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 	else
 		dbb->dbb_database_name = dbb->dbb_filename;
 
-	dbMutexUnlock();
-
-	*handle = attachment;
 	CCH_flush(tdbb, FLUSH_FINI, 0);
 
 	dbb->dbb_backup_manager->dbCreating = false;
 
-	return return_success(tdbb);
+	dbMutexUnlock();
+
+	*handle = attachment;
 
 	}	// try
-	catch (const Jrd::DelayFailedLogin& ex)
+	catch (const DelayFailedLogin& ex)
 	{
 		ISC_STATUS s = unwindAttach(ex, user_status, tdbb, attachment, dbb);
 		ex.sleep();
@@ -1880,6 +1928,8 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 	{
 		return unwindAttach(ex, user_status, tdbb, attachment, dbb);
 	}
+
+	return FB_SUCCESS;
 }
 
 
@@ -1902,23 +1952,25 @@ ISC_STATUS GDS_DATABASE_INFO(ISC_STATUS* user_status,
  **************************************/
 	ThreadContextHolder tdbb(user_status);
 
-	if (check_database(tdbb, *handle, user_status))
-		return user_status[1];
-
 #ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
 	LOG_call(log_database_info2, *handle, item_length, items, buffer_length);
 #endif
 
 	try
 	{
+		Attachment* attachment = *handle;
+		validateHandle(tdbb, attachment);
+		DatabaseContextHolder dbbHolder(tdbb);
+		check_database(tdbb);
+
 		INF_database_info(items, item_length, buffer, buffer_length);
 	}
 	catch (const Firebird::Exception& ex)
 	{
-		return error(user_status, ex);
+		Firebird::stuff_exception(user_status, ex);
 	}
 
-	return return_success(tdbb);
+	return user_status[1];
 }
 
 
@@ -1939,62 +1991,54 @@ ISC_STATUS GDS_DDL(ISC_STATUS* user_status,
  **************************************/
 	ThreadContextHolder tdbb(user_status);
 
-	Attachment* attachment = *db_handle;
-	if (check_database(tdbb, attachment, user_status))
-		return user_status[1];
-
 #ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
 	LOG_call(log_ddl, *db_handle, *tra_handle, ddl_length, ddl);
 #endif
 
-	jrd_tra* transaction = NULL;
-
 	try {
+		Attachment* attachment = *db_handle;
+		validateHandle(tdbb, attachment);
+		validateHandle(tdbb, *tra_handle);
+		DatabaseContextHolder dbbHolder(tdbb);
+		check_database(tdbb);
 
-		transaction = find_transaction(tdbb, *tra_handle, isc_segstr_wrong_db);
+		jrd_tra* transaction = find_transaction(tdbb, isc_segstr_wrong_db);
 
 		DYN_ddl(attachment, transaction, ddl_length,
 				reinterpret_cast<const UCHAR*>(ddl));
 
-	}	// try
-	catch (const Firebird::Exception& ex) {
-		return error(user_status, ex);
-	}
+		// Perform an auto commit for autocommit transactions.
+		// This is slightly tricky. If the commit retain works,
+		// all is well. If TRA_commit() fails, we perform
+		// a rollback_retain(). This will backout the
+		// effects of the transaction, mark it dead and
+		// start a new transaction.
 
-/*
- * Perform an auto commit for autocommit transactions.
- * This is slightly tricky.  If the commit retain works,
- * all is well.  If TRA_commit () fails, we perform
- * a rollback_retain ().  This will backout the
- * effects of the transaction, mark it dead and
- * start a new transaction.
- */
+		if (transaction->tra_flags & TRA_perform_autocommit)
+		{
+			transaction->tra_flags &= ~TRA_perform_autocommit;
 
-	if (transaction->tra_flags & TRA_perform_autocommit)
-	{
-		transaction->tra_flags &= ~TRA_perform_autocommit;
-
-		try {
-			TRA_commit(tdbb, transaction, true);
-		}
-		catch (const Firebird::Exception& ex) {
-			ISC_STATUS_ARRAY temp_status;
-			tdbb->tdbb_status_vector = temp_status;
 			try {
-				TRA_rollback(tdbb, transaction, true, false);
+				TRA_commit(tdbb, transaction, true);
 			}
 			catch (const Firebird::Exception&) {
-			    // CVC, TMN: Do nothing, see FB1 code, this will fall into
-			    // the two lines below, achieving the same logic than going
-			    // back to the SETJMP(env) in FB1.
+				ISC_STATUS_ARRAY temp_status;
+				tdbb->tdbb_status_vector = temp_status;
+				try {
+					TRA_rollback(tdbb, transaction, true, false);
+				}
+				catch (const Firebird::Exception&)
+				{} // no-op
+				tdbb->tdbb_status_vector = user_status;
+				throw;
 			}
-			tdbb->tdbb_status_vector = user_status;
-
-			return error(user_status, ex);
 		}
 	}
+	catch (const Firebird::Exception& ex) {
+		Firebird::stuff_exception(user_status, ex);
+	}
 
-	return return_success(tdbb);
+	return user_status[1];
 }
 
 
@@ -2012,75 +2056,46 @@ ISC_STATUS GDS_DETACH(ISC_STATUS* user_status, Attachment** handle)
  **************************************/
 	ThreadContextHolder tdbb(user_status);
 
-	Attachment* attachment = *handle;
-
-	// Check out the database handle.  This is mostly code from
-	// the routine "check_database"
-
-	Database* dbb;
-	if (!attachment ||
-		(MemoryPool::blk_type(attachment) != type_att) ||
-		!(dbb = attachment->att_database) ||
-		MemoryPool::blk_type(dbb) != type_dbb)
+	try
 	{
-		return handle_error(user_status, isc_bad_db_handle);
-	}
+		DbMutexGuard guard;
 
-	// Make sure this is a valid attachment
+		Attachment* attachment = *handle;
+		validateHandle(tdbb, attachment);
+		DatabaseContextHolder dbbHolder(tdbb);
 
-	Attachment* attach;
-	for (attach = dbb->dbb_attachments; attach; attach = attach->att_next)
-	{
-		if (attach == attachment)
-			break;
-	}
+		Database* dbb = tdbb->getDatabase();
 
-	if (!attach)
-		return handle_error(user_status, isc_bad_db_handle);
+		// if this is the last attachment, mark dbb as not in use
 
-	// if this is the last attachment, mark dbb as not in use
-
-	dbMutexLock();
-	if (dbb->dbb_attachments == attachment && !attachment->att_next &&
-		!(dbb->dbb_flags & DBB_being_opened))
-		dbb->dbb_flags |= DBB_not_in_use;
-
-	Jrd::ContextPoolHolder context(tdbb, dbb->dbb_permanent);
-	tdbb->setDatabase(dbb);
-	tdbb->setAttachment(attachment);
-	tdbb->setRequest(NULL);
-	tdbb->setTransaction(NULL);
-
-	// Count active thread in database
-
-	++dbb->dbb_use_count;
+		if (dbb->dbb_attachments == attachment &&
+			!attachment->att_next &&
+			!(dbb->dbb_flags & DBB_being_opened))
+		{
+			dbb->dbb_flags |= DBB_not_in_use;
+		}
 
 #ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
-	LOG_call(log_detach, *handle);
-	LOG_call(log_statistics, dbb->dbb_reads, dbb->dbb_writes,
-			 dbb->dbb_max_memory);
+		LOG_call(log_detach, *handle);
+		LOG_call(log_statistics, dbb->dbb_reads, dbb->dbb_writes,
+				 dbb->dbb_max_memory);
 #endif
 
-	try {
+		// Purge attachment, don't rollback open transactions
 
-	// Purge attachment, don't rollback open transactions
+		attachment->att_flags |= ATT_cancel_disable;
 
-	attachment->att_flags |= ATT_cancel_disable;
+		purge_attachment(tdbb, user_status, attachment, false);
 
-	purge_attachment(tdbb, user_status, attachment, false);
-
-	dbMutexUnlock();
-
-	*handle = NULL;
-
-	return return_success(tdbb);
-
-	}	// try
-	catch (const Firebird::Exception& ex) {
-		dbb->dbb_flags &= ~DBB_not_in_use;
-		dbMutexUnlock();
-		return error(user_status, ex);
+		*handle = NULL;
 	}
+	catch (const Firebird::Exception& ex) {
+		Database* dbb = tdbb->getDatabase();
+		dbb->dbb_flags &= ~DBB_not_in_use;
+		Firebird::stuff_exception(user_status, ex);
+	}
+
+	return user_status[1];
 }
 
 
@@ -2098,116 +2113,66 @@ ISC_STATUS GDS_DROP_DATABASE(ISC_STATUS* user_status, Attachment** handle)
  **************************************/
 	ThreadContextHolder tdbb(user_status);
 
-	Attachment* attachment = *handle;
-
-	// Check out the database handle.  This is mostly code from
-	// the routine "check_database"
-
-	Database* dbb;
-	if (!attachment ||
-		(MemoryPool::blk_type(attachment) != type_att) ||
-		!(dbb = attachment->att_database) ||
-		MemoryPool::blk_type(dbb) != type_dbb)
+	try
 	{
-		return handle_error(user_status, isc_bad_db_handle);
-	}
+		DbMutexGuard guard;
 
-	// Make sure this is a valid attachment
+		Attachment* attachment = *handle;
+		validateHandle(tdbb, attachment);
+		DatabaseContextHolder dbbHolder(tdbb);
 
-	Attachment* attach;
-	for (attach = dbb->dbb_attachments; attach; attach = attach->att_next)
-	{
-		if (attach == attachment)
-			break;
-	}
-
-	if (!attach)
-		return handle_error(user_status, isc_bad_db_handle);
-
-	bool err = false; // so much for uninitialized vars... if something
-	// failed before the first call to drop_files, which was the value?
-	{
-		Jrd::ContextPoolHolder context(tdbb, dbb->dbb_permanent);
-		tdbb->setDatabase(dbb);
-		tdbb->setAttachment(attachment);
-		tdbb->setRequest(NULL);
-		tdbb->setTransaction(NULL);
-
-		// Count active thread in database
-
-		++dbb->dbb_use_count;
+		Database* dbb = tdbb->getDatabase();
 
 #ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
 		LOG_call(log_drop_database, *handle);
 		LOG_call(log_statistics, dbb->dbb_reads, dbb->dbb_writes,
-			 dbb->dbb_max_memory);
+				 dbb->dbb_max_memory);
 #endif
-		try
-		{
-			const Firebird::PathName& file_name = tdbb->getAttachment()->att_filename;
+		const Firebird::PathName& file_name = attachment->att_filename;
 
-			if (!attachment->locksmith())
-				ERR_post(isc_no_priv,
-						 isc_arg_string, "drop",
-						 isc_arg_string, "database",
-						 isc_arg_string, ERR_cstring(file_name), 0);
+		if (!attachment->locksmith())
+			ERR_post(isc_no_priv,
+					 isc_arg_string, "drop",
+					 isc_arg_string, "database",
+					 isc_arg_string, ERR_cstring(file_name), 0);
 
-			if (attachment->att_flags & ATT_shutdown) {
-				if (dbb->dbb_ast_flags & DBB_shutdown) {
-					ERR_post(isc_shutdown, isc_arg_string,
-							 ERR_cstring(file_name), 0);
-				}
-				else {
-					ERR_post(isc_att_shutdown, 0);
-				}
+		if (attachment->att_flags & ATT_shutdown) {
+			if (dbb->dbb_ast_flags & DBB_shutdown) {
+				ERR_post(isc_shutdown, isc_arg_string,
+						 ERR_cstring(file_name), 0);
 			}
-
-			if (!CCH_exclusive(tdbb, LCK_PW, WAIT_PERIOD))
-				ERR_post(isc_lock_timeout,
-						 isc_arg_gds, isc_obj_in_use,
-						 isc_arg_string, ERR_cstring(file_name), 0);
-
-			dbMutexLock();
+			else {
+				ERR_post(isc_att_shutdown, 0);
+			}
 		}
-		catch (const Firebird::Exception& ex)
-		{
-			return error(user_status, ex);
-		}
+
+		if (!CCH_exclusive(tdbb, LCK_PW, WAIT_PERIOD))
+			ERR_post(isc_lock_timeout,
+					 isc_arg_gds, isc_obj_in_use,
+					 isc_arg_string, ERR_cstring(file_name), 0);
 	
-		try {
+		// Check if same process has more attachments
 
-			// Check if same process has more attachments
-
-			if ((attach = dbb->dbb_attachments) && (attach->att_next)) {
-				ERR_post(isc_no_meta_update, isc_arg_gds, isc_obj_in_use,
-						isc_arg_string, "DATABASE", 0);
-			}
-
-			// Forced release of all transactions
-			purge_transactions(tdbb, attachment, true, attachment->att_flags);
-
-			attachment->att_flags |= ATT_cancel_disable;
-
-/* Here we have database locked in exclusive mode.
-   Just mark the header page with an 0 ods version so that no other
-   process can attach to this database once we release our exclusive
-   lock and start dropping files. */
-
-		   	WIN window(HEADER_PAGE_NUMBER);
-			Ods::header_page* header = (Ods::header_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
-			CCH_MARK_MUST_WRITE(tdbb, &window);
-			header->hdr_ods_version = 0;
-			CCH_RELEASE(tdbb, &window);
-
-		}	// try
-		catch (const Firebird::Exception& ex) {
-			dbMutexUnlock();
-			return error(user_status, ex);
+		if (dbb->dbb_attachments && dbb->dbb_attachments->att_next) {
+			ERR_post(isc_no_meta_update, isc_arg_gds, isc_obj_in_use,
+					isc_arg_string, "DATABASE", 0);
 		}
-	} // dbb permanent context
-    
-	// A default catch all
-	try {
+
+		// Forced release of all transactions
+		purge_transactions(tdbb, attachment, true, attachment->att_flags);
+
+		attachment->att_flags |= ATT_cancel_disable;
+
+		// Here we have database locked in exclusive mode.
+		// Just mark the header page with an 0 ods version so that no other
+		// process can attach to this database once we release our exclusive
+		// lock and start dropping files.
+
+   		WIN window(HEADER_PAGE_NUMBER);
+		Ods::header_page* header = (Ods::header_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
+		CCH_MARK_MUST_WRITE(tdbb, &window);
+		header->hdr_ods_version = 0;
+		CCH_RELEASE(tdbb, &window);
 
 		// This point on database is useless
 		// mark the dbb unusable
@@ -2220,34 +2185,31 @@ ISC_STATUS GDS_DROP_DATABASE(ISC_STATUS* user_status, Attachment** handle)
 		const Shadow* shadow = dbb->dbb_shadow;
 
 		// Unlink attachment from database
-		release_attachment(attachment);
+		release_attachment(tdbb, attachment);
 
 		shutdown_database(dbb, false);
 
-		// drop the files here.
-		err = drop_files(file);
+		// drop the files here
+		bool err = drop_files(file);
 		for (; shadow; shadow = shadow->sdw_next) 
 		{
 			err = err || drop_files(shadow->sdw_file);
 		}
-	}	// try
+
+		Database::deleteDbb(dbb);
+		tdbb->setDatabase(NULL);
+
+		if (err) {
+			user_status[0] = isc_arg_gds;
+			user_status[1] = isc_drdb_completed_with_errs;
+			user_status[2] = isc_arg_end;
+		}
+	}
 	catch (const Firebird::Exception& ex) {
-		dbMutexUnlock();
-		return error(user_status, ex);
-	}
-	dbMutexUnlock();
-
-	Database::deleteDbb(dbb);
-	tdbb->setDatabase(NULL);
-	if (err) {
-		user_status[0] = isc_arg_gds;
-		user_status[1] = isc_drdb_completed_with_errs;
-		user_status[2] = isc_arg_end;
-		return user_status[1];
+		Firebird::stuff_exception(user_status, ex);
 	}
 
-	return return_success(tdbb);
-
+	return user_status[1];
 }
 
 
@@ -2267,11 +2229,13 @@ ISC_STATUS GDS_INTL_FUNCTION(ISC_STATUS* user_status, Attachment** handle,
  **************************************/
 	ThreadContextHolder tdbb(user_status);
 
-	if (check_database(tdbb, *handle, user_status))
-		return user_status[1];
-
 	try
 	{
+		Attachment* attachment = *handle;
+		validateHandle(tdbb, attachment);
+		DatabaseContextHolder dbbHolder(tdbb);
+		check_database(tdbb);
+
 		CharSet* charSet = INTL_charset_lookup(tdbb, charSetNumber);
 
 		switch (function)
@@ -2302,15 +2266,14 @@ ISC_STATUS GDS_INTL_FUNCTION(ISC_STATUS* user_status, Attachment** handle,
 
 			default:
 				fb_assert(false);
-				break;
 		}
 	}
 	catch (const Firebird::Exception& ex)
 	{
-		return error(user_status, ex);
+		Firebird::stuff_exception(user_status, ex);
 	}
 
-	return return_success(tdbb);
+	return user_status[1];
 }
 
 
@@ -2330,21 +2293,23 @@ ISC_STATUS GDS_DSQL_CACHE(ISC_STATUS* user_status, Attachment** handle,
  **************************************/
 	ThreadContextHolder tdbb(user_status);
 
-	if (check_database(tdbb, *handle, user_status))
-		return user_status[1];
-
 #ifdef SUPERSERVER
 	if (obsolete)
 		*obsolete = false;
 #else
 	try
 	{
+		Attachment* attachment = *handle;
+		validateHandle(tdbb, attachment);
+		DatabaseContextHolder dbbHolder(tdbb);
+		check_database(tdbb);
+
 		Database* dbb = tdbb->getDatabase();
 
 		Firebird::string key((char*)&type, sizeof(type));
 		key.append(name);
 
-		DSqlCacheItem* item = tdbb->getAttachment()->att_dsql_cache.put(key);
+		DSqlCacheItem* item = attachment->att_dsql_cache.put(key);
 		if (item)
 		{
 			item->obsolete = false;
@@ -2362,7 +2327,7 @@ ISC_STATUS GDS_DSQL_CACHE(ISC_STATUS* user_status, Attachment** handle,
 		}
 		else
 		{
-			item = &tdbb->getAttachment()->att_dsql_cache.current()->second;
+			item = &attachment->att_dsql_cache.current()->second;
 		}
 
 		if (obsolete)
@@ -2388,11 +2353,11 @@ ISC_STATUS GDS_DSQL_CACHE(ISC_STATUS* user_status, Attachment** handle,
 	}
 	catch (const Firebird::Exception& ex)
 	{
-		return error(user_status, ex);
+		Firebird::stuff_exception(user_status, ex);
 	}
 #endif	// SUPERSERVER
 
-	return return_success(tdbb);
+	return user_status[1];
 }
 
 
@@ -2438,37 +2403,34 @@ ISC_STATUS GDS_GET_SEGMENT(ISC_STATUS * user_status,
  **************************************/
 	ThreadContextHolder tdbb(user_status);
 
-	blb* blob = check_blob(tdbb, user_status, blob_handle);
-	if (!blob)
-		return user_status[1];
-
 #ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
 	LOG_call(log_get_segment2, *blob_handle, length, buffer_length);
 #endif
 
 	try
 	{
-		*length = BLB_get_segment(tdbb, blob, buffer, buffer_length);
-		tdbb->tdbb_status_vector[0] = isc_arg_gds;
-		tdbb->tdbb_status_vector[2] = isc_arg_end;
-		Database* dbb = tdbb->getDatabase();
-	
-		if (blob->blb_flags & BLB_eof) {
-			--dbb->dbb_use_count;
-			return (user_status[1] = isc_segstr_eof);
-		}
+		blb* blob = *blob_handle;
+		validateHandle(tdbb, blob);
+		DatabaseContextHolder dbbHolder(tdbb);
+		check_database(tdbb);
 
-		if (blob->blb_fragment_size) {
-			--dbb->dbb_use_count;
-			return (user_status[1] = isc_segment);
+		*length = BLB_get_segment(tdbb, blob, buffer, buffer_length);
+		user_status[0] = isc_arg_gds;
+		user_status[2] = isc_arg_end;
+
+		if (blob->blb_flags & BLB_eof) {
+			user_status[1] = isc_segstr_eof;
+		}
+		else if (blob->blb_fragment_size) {
+			user_status[1] = isc_segment;
 		}
 	}
 	catch (const Firebird::Exception& ex)
 	{
-		return error(user_status, ex);
+		Firebird::stuff_exception(user_status, ex);
 	}
 
-	return return_success(tdbb);
+	return user_status[1];
 }
 
 
@@ -2496,9 +2458,6 @@ ISC_STATUS GDS_GET_SLICE(ISC_STATUS* user_status,
  **************************************/
 	ThreadContextHolder tdbb(user_status);
 
-	if (check_database(tdbb, *db_handle, user_status))
-		return user_status[1];
-
 #ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
 	LOG_call(log_get_slice2, *db_handle, *tra_handle, *array_id, sdl_length,
 			 sdl, param_length, param, slice_length);
@@ -2506,8 +2465,12 @@ ISC_STATUS GDS_GET_SLICE(ISC_STATUS* user_status,
 
 	try
 	{
-		jrd_tra* transaction =
-			find_transaction(tdbb, *tra_handle, isc_segstr_wrong_db);
+		validateHandle(tdbb, *db_handle);
+		validateHandle(tdbb, *tra_handle);
+		DatabaseContextHolder dbbHolder(tdbb);
+		check_database(tdbb);
+
+		jrd_tra* transaction = find_transaction(tdbb, isc_segstr_wrong_db);
 	
 		if (!array_id->gds_quad_low && !array_id->gds_quad_high) {
 			MOVE_CLEAR(slice, slice_length);
@@ -2525,10 +2488,10 @@ ISC_STATUS GDS_GET_SLICE(ISC_STATUS* user_status,
 	}
 	catch (const Firebird::Exception& ex)
 	{
-		return error(user_status, ex);
+		Firebird::stuff_exception(user_status, ex);
 	}
 
-	return return_success(tdbb);
+	return user_status[1];
 }
 
 
@@ -2552,11 +2515,6 @@ ISC_STATUS GDS_OPEN_BLOB2(ISC_STATUS* user_status,
  **************************************/
 	ThreadContextHolder tdbb(user_status);
 
-	NULL_CHECK(blob_handle, isc_bad_segstr_handle);
-
-	if (check_database(tdbb, *db_handle, user_status))
-		return user_status[1];
-
 #ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
 	LOG_call(log_open_blob2, *db_handle, *tra_handle, *blob_handle, blob_id,
 			 bpb_length, bpb);
@@ -2564,21 +2522,29 @@ ISC_STATUS GDS_OPEN_BLOB2(ISC_STATUS* user_status,
 
 	try
 	{
-		jrd_tra* transaction =
-			find_transaction(tdbb, *tra_handle, isc_segstr_wrong_db);
+		if (*blob_handle)
+			Firebird::status_exception::raise(isc_bad_segstr_handle, 0);
+
+		validateHandle(tdbb, *db_handle);
+		validateHandle(tdbb, *tra_handle);
+		DatabaseContextHolder dbbHolder(tdbb);
+		check_database(tdbb);
+
+		jrd_tra* transaction = find_transaction(tdbb, isc_segstr_wrong_db);
+
 		blb* blob = BLB_open2(tdbb, transaction, blob_id, bpb_length, bpb, true);
 		*blob_handle = blob;
 	
-	#ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
+#ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
 		LOG_call(log_handle_returned, *blob_handle);
-	#endif
+#endif
 	}
 	catch (const Firebird::Exception& ex)
 	{
-		return error(user_status, ex);
+		Firebird::stuff_exception(user_status, ex);
 	}
 
-	return return_success(tdbb);
+	return user_status[1];
 }
 
 
@@ -2600,20 +2566,25 @@ ISC_STATUS GDS_PREPARE(ISC_STATUS * user_status,
  **************************************/
 	ThreadContextHolder tdbb(user_status);
 
-	CHECK_HANDLE((*tra_handle), isc_bad_trans_handle);
-	jrd_tra* transaction = *tra_handle;
-
-	if (check_database(tdbb, transaction->tra_attachment, user_status))
-		return user_status[1];
-
 #ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
 	LOG_call(log_prepare2, *tra_handle, length, msg);
 #endif
 
-	if (prepare(tdbb, transaction, user_status, length, msg))
-		return error(user_status);
+	try
+	{
+		jrd_tra* transaction = *tra_handle;
+		validateHandle(tdbb, transaction);
+		DatabaseContextHolder dbbHolder(tdbb);
+		check_database(tdbb);
 
-	return return_success(tdbb);
+		prepare(tdbb, transaction, length, msg);
+	}
+	catch (const Firebird::Exception& ex)
+	{
+		Firebird::stuff_exception(user_status, ex);
+	}
+
+	return user_status[1];
 }
 
 
@@ -2634,24 +2605,25 @@ ISC_STATUS GDS_PUT_SEGMENT(ISC_STATUS* user_status,
  **************************************/
 	ThreadContextHolder tdbb(user_status);
 
-	blb* blob = check_blob(tdbb, user_status, blob_handle);
-	if (!blob)
-		return user_status[1];
-
 #ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
 	LOG_call(log_put_segment, *blob_handle, buffer_length, buffer);
 #endif
 
 	try
 	{
+		blb* blob = *blob_handle;
+		validateHandle(tdbb, blob);
+		DatabaseContextHolder dbbHolder(tdbb);
+		check_database(tdbb);
+
 		BLB_put_segment(tdbb, blob, buffer, buffer_length);
 	}
 	catch (const Firebird::Exception& ex)
 	{
-		return error(user_status, ex);
+		Firebird::stuff_exception(user_status, ex);
 	}
 
-	return return_success(tdbb);
+	return user_status[1];
 }
 
 
@@ -2678,9 +2650,6 @@ ISC_STATUS GDS_PUT_SLICE(ISC_STATUS* user_status,
  **************************************/
 	ThreadContextHolder tdbb(user_status);
 
-	if (check_database(tdbb, *db_handle, user_status))
-		return user_status[1];
-
 #ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
 	LOG_call(log_put_slice, *db_handle, *tra_handle, *array_id, sdl_length,
 			 sdl, param_length, param, slice_length, slice);
@@ -2688,8 +2657,13 @@ ISC_STATUS GDS_PUT_SLICE(ISC_STATUS* user_status,
 
 	try
 	{
-		jrd_tra* transaction =
-			find_transaction(tdbb, *tra_handle, isc_segstr_wrong_db);
+		validateHandle(tdbb, *db_handle);
+		validateHandle(tdbb, *tra_handle);
+		DatabaseContextHolder dbbHolder(tdbb);
+		check_database(tdbb);
+
+		jrd_tra* transaction = find_transaction(tdbb, isc_segstr_wrong_db);
+
 		BLB_put_slice(tdbb,
 				  transaction,
 				  reinterpret_cast<bid*>(array_id),
@@ -2699,10 +2673,10 @@ ISC_STATUS GDS_PUT_SLICE(ISC_STATUS* user_status,
 	}
 	catch (const Firebird::Exception& ex)
 	{
-		return error(user_status, ex);
+		Firebird::stuff_exception(user_status, ex);
 	}
 
-	return return_success(tdbb);
+	return user_status[1];
 }
 
 
@@ -2726,40 +2700,41 @@ ISC_STATUS GDS_QUE_EVENTS(ISC_STATUS* user_status,
  **************************************/
 	ThreadContextHolder tdbb(user_status);
 
-	if (check_database(tdbb, *handle, user_status))
-		return user_status[1];
-
 #ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
 	LOG_call(log_que_events, *handle, length, items);
 #endif
 
 	try
 	{
+		Attachment* attachment = *handle;
+		validateHandle(tdbb, attachment);
+		DatabaseContextHolder dbbHolder(tdbb);
+		check_database(tdbb);
+
 		Database* dbb = tdbb->getDatabase();
 		Lock* lock = dbb->dbb_lock;
-		Attachment* attachment = tdbb->getAttachment();
-	
+
 		if (!attachment->att_event_session &&
 			!(attachment->att_event_session = EVENT_create_session(user_status)))
 		{
-			return error(user_status);
+			return user_status[1];
 		}
 	
 		*id = EVENT_que(user_status,
 						attachment->att_event_session,
 						lock->lck_length,
-						(const TEXT*) & lock->lck_key, length, items, ast, arg);
+						(const TEXT*) &lock->lck_key, length, items, ast, arg);
 	
-	#ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
+#ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
 		LOG_call(log_handle_returned, *id);
-	#endif
+#endif
 	}
 	catch (const Firebird::Exception& ex)
 	{
-		return error(user_status, ex);
+		Firebird::stuff_exception(user_status, ex);
 	}
 
-	return return_success(tdbb);
+	return user_status[1];
 }
 
 
@@ -2787,21 +2762,18 @@ ISC_STATUS GDS_RECEIVE(ISC_STATUS * user_status,
  **************************************/
 	ThreadContextHolder tdbb(user_status);
 
-	CHECK_HANDLE((*req_handle), isc_bad_req_handle);
-	jrd_req* request = *req_handle;
-
-	if (check_database(tdbb, request->req_attachment, user_status))
-		return user_status[1];
-
-	if (check_transaction(tdbb, request->req_transaction, user_status))
-		return user_status[1];
-
 #ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
 	LOG_call(log_receive2, *req_handle, msg_type, msg_length, level);
 #endif
 
 	try
 	{
+		jrd_req* request = *req_handle;
+		validateHandle(tdbb, request);
+		DatabaseContextHolder dbbHolder(tdbb);
+		check_database(tdbb);
+		check_transaction(tdbb, request->req_transaction);
+
 		verify_request_synchronization(request, level);
 
 #ifdef SCROLLABLE_CURSORS
@@ -2814,17 +2786,15 @@ ISC_STATUS GDS_RECEIVE(ISC_STATUS * user_status,
 	
 		check_autocommit(request, tdbb);
 	
-		if (request->req_flags & req_warning) {
+		if (request->req_flags & req_warning)
 			request->req_flags &= ~req_warning;
-			return error(user_status);
-		}
 	}
 	catch (const Firebird::Exception& ex)
 	{
-		return error(user_status, ex);
+		Firebird::stuff_exception(user_status, ex);
 	}
 
-	return return_success(tdbb);
+	return user_status[1];
 }
 
 
@@ -2846,31 +2816,33 @@ ISC_STATUS GDS_RECONNECT(ISC_STATUS* user_status,
  **************************************/
 	ThreadContextHolder tdbb(user_status);
 
-	NULL_CHECK(tra_handle, isc_bad_trans_handle);
-	Attachment* attachment = *db_handle;
-
-	if (check_database(tdbb, attachment, user_status))
-		return user_status[1];
-
 #ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
 	LOG_call(log_reconnect, *db_handle, *tra_handle, length, id);
 #endif
 
 	try
 	{
+		if (*tra_handle)
+			Firebird::status_exception::raise(isc_bad_trans_handle, 0);
+
+		Attachment* attachment = *db_handle;
+		validateHandle(tdbb, attachment);
+		DatabaseContextHolder dbbHolder(tdbb);
+		check_database(tdbb);
+
 		jrd_tra* transaction = TRA_reconnect(tdbb, id, length);
 		*tra_handle = transaction;
 	
-	#ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
+#ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
 		LOG_call(log_handle_returned, *tra_handle);
-	#endif
+#endif
 	}
 	catch (const Firebird::Exception& ex)
 	{
-		return error(user_status, ex);
+		Firebird::stuff_exception(user_status, ex);
 	}
 
-	return return_success(tdbb);
+	return user_status[1];
 }
 
 
@@ -2888,28 +2860,26 @@ ISC_STATUS GDS_RELEASE_REQUEST(ISC_STATUS * user_status, jrd_req** req_handle)
  **************************************/
 	ThreadContextHolder tdbb(user_status);
 
-	CHECK_HANDLE((*req_handle), isc_bad_req_handle);
-	jrd_req* request = *req_handle;
-	Attachment* attachment = request->req_attachment;
-
-	if (check_database(tdbb, attachment, user_status))
-		return user_status[1];
-
 #ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
 	LOG_call(log_release_request, *req_handle);
 #endif
 
 	try
 	{
+		jrd_req* request = *req_handle;
+		validateHandle(tdbb, request);
+		DatabaseContextHolder dbbHolder(tdbb);
+		check_database(tdbb);
+
 		CMP_release(tdbb, request);
 		*req_handle = NULL;
 	}
 	catch (const Firebird::Exception& ex)
 	{
-		return error(user_status, ex);
+		Firebird::stuff_exception(user_status, ex);
 	}
 
-	return return_success(tdbb);
+	return user_status[1];
 }
 
 
@@ -2933,12 +2903,6 @@ ISC_STATUS GDS_REQUEST_INFO(ISC_STATUS* user_status,
  **************************************/
 	ThreadContextHolder tdbb(user_status);
 
-	jrd_req* request = *req_handle;
-	CHECK_HANDLE(request, isc_bad_req_handle);
-
-	if (check_database(tdbb, request->req_attachment, user_status))
-		return user_status[1];
-
 #ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
 	LOG_call(log_request_info2, *req_handle, level, item_length, items,
 			 buffer_length);
@@ -2946,16 +2910,21 @@ ISC_STATUS GDS_REQUEST_INFO(ISC_STATUS* user_status,
 
 	try
 	{
+		jrd_req* request = *req_handle;
+		validateHandle(tdbb, request);
+		DatabaseContextHolder dbbHolder(tdbb);
+		check_database(tdbb);
+
 		verify_request_synchronization(request, level);
 
 		INF_request_info(request, items, item_length, buffer, buffer_length);
 	}
 	catch (const Firebird::Exception& ex)
 	{
-		return error(user_status, ex);
+		Firebird::stuff_exception(user_status, ex);
 	}
 
-	return return_success(tdbb);
+	return user_status[1];
 }
 
 
@@ -2972,22 +2941,7 @@ ISC_STATUS GDS_ROLLBACK_RETAINING(ISC_STATUS * user_status,
  *	Abort a transaction but keep the environment valid
  *
  **************************************/
-	ThreadContextHolder tdbb(user_status);
-
-	jrd_tra* transaction = *tra_handle;
-	CHECK_HANDLE(transaction, isc_bad_trans_handle);
-
-	if (check_database(tdbb, transaction->tra_attachment, user_status))
-		return user_status[1];
-
-#ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
-	LOG_call(log_rollback, *tra_handle);
-#endif
-
-	if (rollback(tdbb, transaction, user_status, true))
-		return error(user_status);
-
-	return return_success(tdbb);
+	return rollback(user_status, tra_handle, true);
 }
 
 
@@ -3003,23 +2957,10 @@ ISC_STATUS GDS_ROLLBACK(ISC_STATUS * user_status, jrd_tra** tra_handle)
  *	Abort a transaction.
  *
  **************************************/
-	ThreadContextHolder tdbb(user_status);
+	if (rollback(user_status, tra_handle, false) == FB_SUCCESS)
+		*tra_handle = NULL;
 
-	jrd_tra* transaction = *tra_handle;
-	CHECK_HANDLE(transaction, isc_bad_trans_handle);
-
-	if (check_database(tdbb, transaction->tra_attachment, user_status))
-		return user_status[1];
-
-#ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
-	LOG_call(log_rollback, *tra_handle);
-#endif
-
-	if (rollback(tdbb, transaction, user_status, false))
-		return error(user_status);
-
-	*tra_handle = NULL;
-	return return_success(tdbb);
+	return user_status[1];
 }
 
 
@@ -3041,24 +2982,25 @@ ISC_STATUS GDS_SEEK_BLOB(ISC_STATUS * user_status,
  **************************************/
 	ThreadContextHolder tdbb(user_status);
 
-	blb* blob = check_blob(tdbb, user_status, blob_handle);
-	if (!blob)
-		return user_status[1];
-
 #ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
 	LOG_call(log_blob_seek, *blob_handle, mode, offset);
 #endif
 
 	try
 	{
+		blb* blob = *blob_handle;
+		validateHandle(tdbb, blob);
+		DatabaseContextHolder dbbHolder(tdbb);
+		check_database(tdbb);
+
 		*result = BLB_lseek(blob, mode, offset);
 	}
 	catch (const Firebird::Exception& ex)
 	{
-		return error(user_status, ex);
+		Firebird::stuff_exception(user_status, ex);
 	}
 
-	return return_success(tdbb);
+	return user_status[1];
 }
 
 
@@ -3081,21 +3023,18 @@ ISC_STATUS GDS_SEND(ISC_STATUS * user_status,
  **************************************/
 	ThreadContextHolder tdbb(user_status);
 
-	CHECK_HANDLE((*req_handle), isc_bad_req_handle);
-	jrd_req* request = *req_handle;
-
-	if (check_database(tdbb, request->req_attachment, user_status))
-		return user_status[1];
-
-	if (check_transaction(tdbb, request->req_transaction, user_status))
-		return user_status[1];
-
 #ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
 	LOG_call(log_send, *req_handle, msg_type, msg_length, msg, level);
 #endif
 
 	try
 	{
+		jrd_req* request = *req_handle;
+		validateHandle(tdbb, request);
+		DatabaseContextHolder dbbHolder(tdbb);
+		check_database(tdbb);
+		check_transaction(tdbb, request->req_transaction);
+
 		verify_request_synchronization(request, level);
 	
 		EXE_send(tdbb, request, msg_type, msg_length,
@@ -3103,17 +3042,15 @@ ISC_STATUS GDS_SEND(ISC_STATUS * user_status,
 	
 		check_autocommit(request, tdbb);
 	
-		if (request->req_flags & req_warning) {
+		if (request->req_flags & req_warning)
 			request->req_flags &= ~req_warning;
-			return error(user_status);
-		}
 	}
 	catch (const Firebird::Exception& ex)
 	{
-		return error(user_status, ex);
+		Firebird::stuff_exception(user_status, ex);
 	}
 
-	return return_success(tdbb);
+	return user_status[1];
 }
 
 
@@ -3136,32 +3073,28 @@ ISC_STATUS GDS_SERVICE_ATTACH(ISC_STATUS* user_status,
  **************************************/
 	ThreadContextHolder tdbb(user_status);
 
-	if (*svc_handle)
-		return handle_error(user_status, isc_bad_svc_handle);
-
-	tdbb->setDatabase(NULL);
-
-	dbMutexLock();
-
 	try
 	{
+		if (*svc_handle)
+			Firebird::status_exception::raise(isc_bad_svc_handle, 0);
+
+		tdbb->setDatabase(NULL);
+
+		DbMutexGuard guard;
+
 		*svc_handle = SVC_attach(service_length, service_name, spb_length, spb);
 	}
-	catch (const Jrd::DelayFailedLogin& ex)
+	catch (const DelayFailedLogin& ex)
 	{
-		dbMutexUnlock();
-		ISC_STATUS s = error(user_status, ex);
 		ex.sleep();
-		return s;
+		Firebird::stuff_exception(user_status, ex);
 	}
 	catch (const Firebird::Exception& ex)
 	{
-		dbMutexUnlock();
-		return error(user_status, ex);
+		Firebird::stuff_exception(user_status, ex);
 	}
 
-	dbMutexUnlock();
-	return return_success(tdbb);
+	return user_status[1];
 }
 
 
@@ -3179,23 +3112,20 @@ ISC_STATUS GDS_SERVICE_DETACH(ISC_STATUS* user_status, Service** svc_handle)
  **************************************/
 	ThreadContextHolder tdbb(user_status);
 
-	Service* service = *svc_handle;
-	CHECK_HANDLE(service, isc_bad_svc_handle);
-
 	try
 	{
-		tdbb->setDatabase(NULL);
-	
+		Service* service = *svc_handle;
+		validateHandle(service);
+
 		SVC_detach(service);
-	
 		*svc_handle = NULL;
 	}
 	catch (const Firebird::Exception& ex)
 	{
-		return error(user_status, ex);
+		Firebird::stuff_exception(user_status, ex);
 	}
 
-	return return_success(tdbb);
+	return user_status[1];
 }
 
 
@@ -3227,16 +3157,15 @@ ISC_STATUS GDS_SERVICE_QUERY(ISC_STATUS*	user_status,
  **************************************/
 	ThreadContextHolder tdbb(user_status);
 
-	Service* service = *svc_handle;
-	CHECK_HANDLE(service, isc_bad_svc_handle);
-
-	tdbb->setDatabase(NULL);
-
 	try
 	{
-		if (service->svc_spb_version == isc_spb_version1)
+		Service* service = *svc_handle;
+		validateHandle(service);
+
+		if (service->svc_spb_version == isc_spb_version1) {
 			SVC_query(service, send_item_length, send_items, recv_item_length,
 					recv_items, buffer_length, buffer);
+		}
 		else {
 			// For SVC_query2, we are going to completly dismantle user_status (since at this point it is
 			// meaningless anyway).  The status vector returned by this function can hold information about
@@ -3245,26 +3174,23 @@ ISC_STATUS GDS_SERVICE_QUERY(ISC_STATUS*	user_status,
 			SVC_query2(service, tdbb, send_item_length, send_items,
 					recv_item_length, recv_items, buffer_length, buffer);
 	
-			// if there is a status vector from a service thread, copy it into the thread status
+			// If there is a status vector from a service thread, copy it into the thread status
 			int len, warning;
 			PARSE_STATUS(service->svc_status, len, warning);
 			if (len) {
-				MOVE_FASTER(service->svc_status, tdbb->tdbb_status_vector,
-							sizeof(ISC_STATUS) * len);
-	
+				memcpy(tdbb->tdbb_status_vector, service->svc_status,
+					   sizeof(ISC_STATUS) * len);
 				// Empty out the service status vector
 				memset(service->svc_status, 0, sizeof(ISC_STATUS_ARRAY));
 			}
-	
-			if (user_status[1])
-				return error(user_status);
 		}
 	}
 	catch (const Firebird::Exception& ex)
 	{
-		return error(user_status, ex);
+		Firebird::stuff_exception(user_status, ex);
 	}
-	return return_success(tdbb);
+
+	return user_status[1];
 }
 
 
@@ -3291,35 +3217,29 @@ ISC_STATUS GDS_SERVICE_START(ISC_STATUS*	user_status,
  **************************************/
 	ThreadContextHolder tdbb(user_status);
 
-	Service* service = *svc_handle;
-	CHECK_HANDLE(service, isc_bad_svc_handle);
-
-	tdbb->setDatabase(NULL);
-
 	try
 	{
+		Service* service = *svc_handle;
+		validateHandle(service);
+
 		SVC_start(service, spb_length, spb);
 	
 		if (service->svc_status[1]) {
 			ISC_STATUS* svc_status = service->svc_status;
 			ISC_STATUS* tdbb_status = tdbb->tdbb_status_vector;
-	
+
 			while (*svc_status) {
 				*tdbb_status++ = *svc_status++;
 			}
 			*tdbb_status = isc_arg_end;
 		}
-	
-		if (user_status[1]) {
-			return error(user_status);
-		}
 	}
 	catch (const Firebird::Exception& ex)
 	{
-		return error(user_status, ex);
+		Firebird::stuff_exception(user_status, ex);
 	}
 
-	return return_success(tdbb);
+	return user_status[1];
 }
 
 
@@ -3343,15 +3263,6 @@ ISC_STATUS GDS_START_AND_SEND(ISC_STATUS* user_status,
  **************************************/
 	ThreadContextHolder tdbb(user_status);
 
-	jrd_req* request = *req_handle;
-	CHECK_HANDLE(request, isc_bad_req_handle);
-
-	if (check_database(tdbb, request->req_attachment, user_status))
-		return user_status[1];
-
-	if (check_transaction(tdbb, request->req_transaction, user_status))
-		return user_status[1];
-
 #ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
 	LOG_call(log_start_and_send, *req_handle, *tra_handle, msg_type,
 			 msg_length, msg, level);
@@ -3359,7 +3270,14 @@ ISC_STATUS GDS_START_AND_SEND(ISC_STATUS* user_status,
 
 	try
 	{
-		jrd_tra* transaction = find_transaction(tdbb, *tra_handle, isc_req_wrong_db);
+		jrd_req* request = *req_handle;
+		validateHandle(tdbb, request);
+		validateHandle(tdbb, *tra_handle);
+		DatabaseContextHolder dbbHolder(tdbb);
+		check_database(tdbb);
+		check_transaction(tdbb, request->req_transaction);
+
+		jrd_tra* transaction = find_transaction(tdbb, isc_req_wrong_db);
 	
 		if (level)
 			request = CMP_clone_request(tdbb, request, level, false);
@@ -3371,17 +3289,15 @@ ISC_STATUS GDS_START_AND_SEND(ISC_STATUS* user_status,
 	
 		check_autocommit(request, tdbb);
 	
-		if (request->req_flags & req_warning) {
+		if (request->req_flags & req_warning)
 			request->req_flags &= ~req_warning;
-			return error(user_status);
-		}
 	}
 	catch (const Firebird::Exception& ex)
 	{
-		return error(user_status, ex);
+		Firebird::stuff_exception(user_status, ex);
 	}
 
-	return return_success(tdbb);
+	return user_status[1];
 }
 
 
@@ -3402,43 +3318,38 @@ ISC_STATUS GDS_START(ISC_STATUS * user_status,
  **************************************/
 	ThreadContextHolder tdbb(user_status);
 
-	jrd_req* request = *req_handle;
-	CHECK_HANDLE(request, isc_bad_req_handle);
-
-	if (check_database(tdbb, request->req_attachment, user_status))
-		return user_status[1];
-
-	if (check_transaction(tdbb, request->req_transaction, user_status))
-		return user_status[1];
-
 #ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
 	LOG_call(log_start, *req_handle, *tra_handle, level);
 #endif
 
 	try
 	{
-		jrd_tra* transaction =
-			find_transaction(tdbb, *tra_handle, isc_req_wrong_db);
-	
+		jrd_req* request = *req_handle;
+		validateHandle(tdbb, request);
+		validateHandle(tdbb, *tra_handle);
+		DatabaseContextHolder dbbHolder(tdbb);
+		check_database(tdbb);
+		check_transaction(tdbb, request->req_transaction);
+
+		jrd_tra* transaction = find_transaction(tdbb, isc_req_wrong_db);
+
 		if (level)
 			request = CMP_clone_request(tdbb, request, level, false);
-	
+
 		EXE_unwind(tdbb, request);
 		EXE_start(tdbb, request, transaction);
-	
+
 		check_autocommit(request, tdbb);
-	
-		if (request->req_flags & req_warning) {
+
+		if (request->req_flags & req_warning)
 			request->req_flags &= ~req_warning;
-			return error(user_status);
-		}
 	}
 	catch (const Firebird::Exception& ex)
 	{
-		return error(user_status, ex);
+		Firebird::stuff_exception(user_status, ex);
 	}
 
-	return return_success(tdbb);
+	return user_status[1];
 }
 
 
@@ -3457,72 +3368,62 @@ ISC_STATUS GDS_START_MULTIPLE(ISC_STATUS * user_status,
  *	Start a transaction.
  *
  **************************************/
-	TEB* v;
-
 	ThreadContextHolder tdbb(user_status);
-
-	NULL_CHECK(tra_handle, isc_bad_trans_handle);
-	
-	if (count < 1 || count > MAX_DB_PER_TRANS)
-	{
-		ERR_post_nothrow(isc_max_db_per_trans_allowed, isc_arg_number, MAX_DB_PER_TRANS, 0);
-		return error(user_status);
-	}
-
-	const TEB* const end = vector + count;
-
-	for (v = vector; v < end; v++) {
-		if (check_database(tdbb, *v->teb_database, user_status))
-			return user_status[1];
-		Database* dbb = tdbb->getDatabase();
-		--dbb->dbb_use_count;
-	}
-
-	if (check_database(tdbb, *vector->teb_database, user_status))
-		return user_status[1];
 
 	jrd_tra* prior = NULL;
 	jrd_tra* transaction = NULL;
 
-	try {
+	try
+	{
+		if (*tra_handle)
+			Firebird::status_exception::raise(isc_bad_trans_handle, 0);
 
-		for (v = vector; v < end; v++)
+		if (count < 1 || count > MAX_DB_PER_TRANS)
+		{
+			Firebird::status_exception::raise(isc_max_db_per_trans_allowed,
+											  isc_arg_number, MAX_DB_PER_TRANS,
+											  0);
+		}
+
+		for (TEB* v = vector; v < vector + count; v++)
 		{
 			Attachment* attachment = *v->teb_database;
-			if (check_database(tdbb, attachment, user_status)) {
-				return user_status[1];
-			}
+			validateHandle(tdbb, attachment);
+			DatabaseContextHolder dbbHolder(tdbb);
+			check_database(tdbb);
+
 #ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
 			LOG_call(log_start_multiple, *tra_handle, count, vector);
 #endif
+
 			transaction = TRA_start(tdbb, v->teb_tpb_length, v->teb_tpb);
+
 			transaction->tra_sibling = prior;
 			prior = transaction;
-			Database* dbb = tdbb->getDatabase();
 
 			// run ON TRANSACTION START triggers
-			EXE_execute_db_triggers(tdbb, transaction, jrd_req::req_trigger_trans_start);
-
-			--dbb->dbb_use_count;
+			EXE_execute_db_triggers(tdbb, transaction,
+									jrd_req::req_trigger_trans_start);
 		}
 
-	}	// try
-	catch (const Firebird::Exception& ex) {
-		Database* dbb = tdbb->getDatabase();
-		--dbb->dbb_use_count;
-		if (prior) {
+		*tra_handle = transaction;
+
+#ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
+		LOG_call(log_handle_returned, *tra_handle);
+#endif
+	}
+	catch (const Firebird::Exception& ex)
+	{
+		if (prior)
+		{
 			ISC_STATUS_ARRAY temp_status;
-			rollback(tdbb, prior, temp_status, false);
+			rollback(temp_status, &prior, false);
 		}
-		return error(user_status, ex);
+
+		Firebird::stuff_exception(user_status, ex);
 	}
 
-	*tra_handle = transaction;
-#ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
-	LOG_call(log_handle_returned, *tra_handle);
-#endif
-
-	return return_success(tdbb);
+	return user_status[1];
 }
 
 
@@ -3541,45 +3442,37 @@ ISC_STATUS GDS_START_TRANSACTION(ISC_STATUS * user_status,
  *	Start a transaction.
  *
  **************************************/
-	if (count < 1 || USHORT(count) > MAX_DB_PER_TRANS)
+	try
 	{
-		ThreadContextHolder tdbb(user_status);
-		ERR_post_nothrow(isc_max_db_per_trans_allowed, isc_arg_number, MAX_DB_PER_TRANS, 0);
-		return error(user_status);
+		if (count < 1 || USHORT(count) > MAX_DB_PER_TRANS)
+		{
+			Firebird::status_exception::raise(isc_max_db_per_trans_allowed,
+											  isc_arg_number, MAX_DB_PER_TRANS,
+											  0);
+		}
+
+		Firebird::HalfStaticArray<TEB, 16> tebs;
+		tebs.grow(count);
+
+		va_list ptr;
+		va_start(ptr, count);
+
+		for (TEB* teb_iter = tebs.begin(); teb_iter < tebs.end(); teb_iter++) {
+			teb_iter->teb_database = va_arg(ptr, Attachment**);
+			teb_iter->teb_tpb_length = va_arg(ptr, int);
+			teb_iter->teb_tpb = va_arg(ptr, UCHAR*);
+		}
+
+		va_end(ptr);
+
+		GDS_START_MULTIPLE(user_status, tra_handle, count, tebs.begin());
 	}
-
-	TEB tebs[16];
-	TEB* teb = tebs;
-
-	if (count > FB_NELEM(tebs))
+	catch (const Firebird::Exception& ex)
 	{
-		teb = (TEB*) gds__alloc(((SLONG) sizeof(TEB) * count));
-		// FREE: later in this module
+		Firebird::stuff_exception(user_status, ex);
 	}
 
-	if (!teb) {		// NOMEM:
-		ThreadContextHolder tdbb(user_status);
-		ERR_post_nothrow(isc_virmemexh, 0);
-		return error(user_status);
-	}
-
-	const TEB* const end = teb + count;
-	va_list ptr;
-	va_start(ptr, count);
-
-	for (TEB* teb_iter = teb; teb_iter < end; teb_iter++) {
-		teb_iter->teb_database = va_arg(ptr, Attachment**);
-		teb_iter->teb_tpb_length = va_arg(ptr, int);
-		teb_iter->teb_tpb = va_arg(ptr, UCHAR *);
-	}
-	va_end(ptr);
-
-	ISC_STATUS status = GDS_START_MULTIPLE(user_status, tra_handle, count, teb);
-	
-	if (teb != tebs)
-		gds__free(teb);
-		
-	return status;
+	return user_status[1];
 }
 
 
@@ -3605,128 +3498,121 @@ ISC_STATUS GDS_TRANSACT_REQUEST(ISC_STATUS*	user_status,
  **************************************/
 	ThreadContextHolder tdbb(user_status);
 
-	Attachment* attachment = *db_handle;
-	if (check_database(tdbb, attachment, user_status))
-		return user_status[1];
-
 #ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
 	LOG_call(log_transact_request, *db_handle, *tra_handle,
 			 blr_length, blr, in_msg_length, in_msg, out_msg_length);
 #endif
 
 	jrd_req* request = NULL;
-	JrdMemoryPool* new_pool = 0;
+	JrdMemoryPool* new_pool = NULL;
 
 	try 
 	{
+		Attachment* attachment = *db_handle;
+		validateHandle(tdbb, attachment);
+		validateHandle(tdbb, *tra_handle);
+		DatabaseContextHolder dbbHolder(tdbb);
+		check_database(tdbb);
 
-	jrd_tra* transaction = find_transaction(tdbb, *tra_handle, isc_req_wrong_db);
-	jrd_nod* in_message = NULL;
-	jrd_nod* out_message = NULL;
+		jrd_tra* transaction = find_transaction(tdbb, isc_req_wrong_db);
 
-	{
-		new_pool = JrdMemoryPool::createPool();
-		Jrd::ContextPoolHolder context(tdbb, new_pool);
+		jrd_nod* in_message = NULL;
+		jrd_nod* out_message = NULL;
 
-		CompilerScratch* csb = PAR_parse(tdbb, reinterpret_cast<const UCHAR*>(blr), FALSE);
-		request = CMP_make_request(tdbb, csb);
-		CMP_verify_access(tdbb, request);
+		{ // scope
+			new_pool = JrdMemoryPool::createPool();
+			Jrd::ContextPoolHolder context(tdbb, new_pool);
 
-		jrd_nod* node;
-		for (size_t i = 0; i < csb->csb_rpt.getCount(); i++)
-		{
-			if ( (node = csb->csb_rpt[i].csb_message) )
+			CompilerScratch* csb =
+				PAR_parse(tdbb, reinterpret_cast<const UCHAR*>(blr), FALSE);
+			request = CMP_make_request(tdbb, csb);
+			CMP_verify_access(tdbb, request);
+
+			jrd_nod* node;
+			for (size_t i = 0; i < csb->csb_rpt.getCount(); i++)
 			{
-				if ((int) (IPTR) node->nod_arg[e_msg_number] == 0) 
+				if ( (node = csb->csb_rpt[i].csb_message) )
 				{
-					in_message = node;
-				}
-				else if ((int) (IPTR) node->nod_arg[e_msg_number] == 1) 
-				{
-					out_message = node;
+					if ((int) (IPTR) node->nod_arg[e_msg_number] == 0) 
+					{
+						in_message = node;
+					}
+					else if ((int) (IPTR) node->nod_arg[e_msg_number] == 1) 
+					{
+						out_message = node;
+					}
 				}
 			}
 		}
-	} // new context
 
-	request->req_attachment = attachment;
+		request->req_attachment = attachment;
 
-	USHORT len;
-	if (in_msg_length)
-	{
-		if (in_message) {
-			const Format* format = (Format*) in_message->nod_arg[e_msg_format];
+		USHORT len;
+		if (in_msg_length)
+		{
+			if (in_message) {
+				const Format* format = (Format*) in_message->nod_arg[e_msg_format];
+				len = format->fmt_length;
+			}
+			else {
+				len = 0;
+			}
+
+			if (in_msg_length != len)
+			{
+				ERR_post(isc_port_len,
+						 isc_arg_number, (SLONG) in_msg_length,
+						 isc_arg_number, (SLONG) len,
+						 0);
+			}
+
+			memcpy((SCHAR*) request + in_message->nod_impure, in_msg,
+				   in_msg_length);
+		}
+
+		EXE_start(tdbb, request, transaction);
+
+		if (out_message) {
+			const Format* format = (Format*) out_message->nod_arg[e_msg_format];
 			len = format->fmt_length;
 		}
 		else {
 			len = 0;
 		}
-		if (in_msg_length != len)
-		{
+
+		if (out_msg_length != len) {
 			ERR_post(isc_port_len,
-					 isc_arg_number, (SLONG) in_msg_length,
+					 isc_arg_number, (SLONG) out_msg_length,
 					 isc_arg_number, (SLONG) len, 0);
 		}
-		if ((U_IPTR) in_msg & (ALIGNMENT - 1)) {
-			MOVE_FAST(in_msg, (SCHAR *) request + in_message->nod_impure,
-					  in_msg_length);
+
+		if (out_msg_length) {
+			memcpy(out_msg, (SCHAR*) request + out_message->nod_impure,
+				   out_msg_length);
 		}
-		else {
-			MOVE_FASTER(in_msg, (SCHAR *) request + in_message->nod_impure,
-						in_msg_length);
-		}
+
+		check_autocommit(request, tdbb);
+
+		CMP_release(tdbb, request);
 	}
-
-	EXE_start(tdbb, request, transaction);
-
-	if (out_message) {
-		const Format* format = (Format*) out_message->nod_arg[e_msg_format];
-		len = format->fmt_length;
-	}
-	else {
-		len = 0;
-	}
-	if (out_msg_length != len) {
-		ERR_post(isc_port_len,
-				 isc_arg_number, (SLONG) out_msg_length,
-				 isc_arg_number, (SLONG) len, 0);
-	}
-
-	if (out_msg_length) {
-		if ((U_IPTR) out_msg & (ALIGNMENT - 1)) {
-			MOVE_FAST((SCHAR *) request + out_message->nod_impure, out_msg,
-					  out_msg_length);
-		}
-		else {
-			MOVE_FASTER((SCHAR *) request + out_message->nod_impure, out_msg,
-						out_msg_length);
-		}
-	}
-
-	check_autocommit(request, tdbb);
-
-	CMP_release(tdbb, request);
-
-	return return_success(tdbb);
-
-	}	// try
 	catch (const Firebird::Exception& ex)
 	{
-		// Set up to trap error in case release pool goes wrong.
-
-		try {
+		try
+		{
 			if (request) {
 				CMP_release(tdbb, request);
 			}
 			else if (new_pool) {
 				JrdMemoryPool::deletePool(new_pool);
 			}
-		}	// try
-		catch (const Firebird::Exception&) {
 		}
+		catch (const Firebird::Exception&)
+		{} // no-op
 
-		return error(user_status, ex);
-	}	// catch
+		Firebird::stuff_exception(user_status, ex);
+	}
+
+	return user_status[1];
 }
 
 
@@ -3749,12 +3635,6 @@ ISC_STATUS GDS_TRANSACTION_INFO(ISC_STATUS* user_status,
  **************************************/
 	ThreadContextHolder tdbb(user_status);
 
-	jrd_tra* transaction = *tra_handle;
-	CHECK_HANDLE(transaction, isc_bad_trans_handle);
-
-	if (check_database(tdbb, transaction->tra_attachment, user_status))
-		return user_status[1];
-
 #ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
 	LOG_call(log_transaction_info2, *tra_handle, item_length, items,
 			 buffer_length);
@@ -3762,15 +3642,20 @@ ISC_STATUS GDS_TRANSACTION_INFO(ISC_STATUS* user_status,
 
 	try
 	{
+		jrd_tra* transaction = *tra_handle;
+		validateHandle(tdbb, transaction);
+		DatabaseContextHolder dbbHolder(tdbb);
+		check_database(tdbb);
+
 		INF_transaction_info(transaction, items, item_length, buffer,
 						 buffer_length);
 	}
 	catch (const Firebird::Exception& ex)
 	{
-		return error(user_status, ex);
+		Firebird::stuff_exception(user_status, ex);
 	}
 
-	return return_success(tdbb);
+	return user_status[1];
 }
 
 
@@ -3791,115 +3676,29 @@ ISC_STATUS GDS_UNWIND(ISC_STATUS * user_status,
  **************************************/
 	ThreadContextHolder tdbb(user_status);
 
-	CHECK_HANDLE((*req_handle), isc_bad_req_handle);
-	jrd_req* request = *req_handle;
-
-	// Make sure blocks look and feel kosher
-
-	Database* dbb;
-	Attachment* attachment = request->req_attachment;
-	if (!attachment ||
-		(MemoryPool::blk_type(attachment) != type_att) ||
-		!(dbb = attachment->att_database) ||
-		MemoryPool::blk_type(dbb) != type_dbb)
-	{
-		return handle_error(user_status, isc_bad_db_handle);
-	}
-
-	// Make sure this is a valid attachment
-
-	Attachment* attach;
-	for (attach = dbb->dbb_attachments; attach; attach = attach->att_next)
-	{
-		if (attach == attachment) {
-			break;
-		}
-	}
-
-	if (!attach) {
-		return handle_error(user_status, isc_bad_db_handle);
-	}
-
-	tdbb->setDatabase(dbb);
-	tdbb->setAttachment(attachment);
-
 #ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
 	LOG_call(log_unwind, *req_handle, level);
 #endif
 
-	try {
+	try
+	{
+		jrd_req* request = *req_handle;
+		validateHandle(tdbb, request);
+		DatabaseContextHolder dbbHolder(tdbb);
+		check_database(tdbb);
 
 		// Pick up and validate request level
 		verify_request_synchronization(request, level);
 
-		tdbb->setRequest(NULL);
-		tdbb->setTransaction(NULL);
-
-		// Unwind request.  This just tweaks some bits
-
+		// Unwind request. This just tweaks some bits.
 		EXE_unwind(tdbb, request);
-
-		// Restore old state and get out
-
-		user_status[0] = isc_arg_gds;
-		user_status[2] = isc_arg_end;
-
-		return (user_status[1] = FB_SUCCESS);
-
-	}	// try
-	catch (const Firebird::Exception& ex) {
-		Firebird::stuff_exception(user_status, ex);
-		return user_status[1];
 	}
-}
-
-
-void JRD_blocked(Attachment* blocking, BlockingThread** bt_que)
-{
-/**************************************
- *
- *	J R D _ b l o c k e d
- *
- **************************************
- *
- * Functional description
- *	We're blocked by another thread.  Unless it would cause
- *	a deadlock, wait for the other other thread (it will
- *	wake us up.
- *
- **************************************/
-	thread_db* tdbb = JRD_get_thread_data();
-	Database*  dbb  = tdbb->getDatabase();
-
-	// Check for deadlock.  If there is one, complain
-
-	Attachment* attachment;
-	for (attachment = blocking;
-		 attachment;
-		 attachment = attachment->att_blocking)
+	catch (const Firebird::Exception& ex)
 	{
-		if (attachment == tdbb->getAttachment()) {
-			ERR_post(isc_deadlock, 0);
-		}
+		Firebird::stuff_exception(user_status, ex);
 	}
 
-	BlockingThread* block = dbb->dbb_free_btbs;
-	if (block) {
-		dbb->dbb_free_btbs = block->btb_next;
-	}
-	else {
-		block = FB_NEW(*dbb->dbb_permanent) BlockingThread;
-	}
-
-	block->btb_thread_id = SCH_current_thread();
-	block->btb_next = *bt_que;
-	*bt_que = block;
-	attachment = tdbb->getAttachment();
-	attachment->att_blocking = blocking;
-
-	SCH_hiber();
-
-	attachment->att_blocking = NULL;
+	return user_status[1];
 }
 
 
@@ -3979,27 +3778,6 @@ bool JRD_getdir(Firebird::PathName& buf)
 #endif // SUPERSERVER
 
 
-#ifdef SUPERSERVER
-void JRD_print_all_counters(const char* fname)
-{
-/*****************************************************
- *
- *	J R D _ p r i n t _ a l l _ c o u n t e r s
- *
- *****************************************************
- *
- * Functional description
- *	print memory counters from DSQL, ENGINE & REMOTE
- *      component
- *
- ******************************************************/
-	// Skidder: This may be ported to new memory pools, but
-    // I think this debugging feature may be safely eradicated
-	return;
-}
-
-#endif
-
 #ifdef DEBUG_PROCS
 void JRD_print_procedure_info(thread_db* tdbb, const char* mesg)
 {
@@ -4068,24 +3846,13 @@ bool JRD_reschedule(thread_db* tdbb, SLONG quantum, bool punt)
  *	control so that somebody else may run.
  *
  **************************************/
-
-	// Force garbage collection activity to yield the
-	// processor in case client threads haven't had
-	// an opportunity to enter the scheduling queue.
-
-#ifdef SUPERSERVER
-	if (!(tdbb->tdbb_flags & TDBB_sweeper))
-		SCH_schedule();
-	else {
-		THREAD_EXIT();
-		THREAD_YIELD();
-		THREAD_ENTER();
-	}
-#else
-	AST_CHECK();
-#endif
-
 	Database* dbb = tdbb->getDatabase();
+
+	if (dbb->dbb_sync.hasContention())
+	{
+		Database::Checkout dcoHolder(dbb);
+		THREAD_YIELD();
+	}
 
 	// Test various flags and unwind/throw if required.
 	// But do that only if we're not in the verb cleanup state,
@@ -4192,42 +3959,9 @@ bool JRD_reschedule(thread_db* tdbb, SLONG quantum, bool punt)
 	}
 
 	tdbb->tdbb_quantum = (tdbb->tdbb_quantum <= 0) ?
-#ifdef SUPERSERVER
-		(quantum ? quantum : (ThreadPriorityScheduler::boosted() ? 
-			Config::getPriorityBoost() : 1) * QUANTUM) :
-#else
-		(quantum ? quantum : QUANTUM) :
-#endif
-		tdbb->tdbb_quantum;
+		(quantum ? quantum : QUANTUM) : tdbb->tdbb_quantum;
 
 	return false;
-}
-
-
-void JRD_unblock(BlockingThread** bt_que)
-{
-/**************************************
- *
- *	J R D _ u n b l o c k
- *
- **************************************
- *
- * Functional description
- *	Unblock a linked list of blocked threads.  Rather
- *	than worrying about which, let 'em all loose.
- *
- **************************************/
-	Database* dbb = GET_DBB();
-
-	BlockingThread* block;
-	while (block = *bt_que) {
-		*bt_que = block->btb_next;
-		if (block->btb_thread_id) {
-			SCH_wake(block->btb_thread_id);
-		}
-		block->btb_next = dbb->dbb_free_btbs;
-		dbb->dbb_free_btbs = block;
-	}
 }
 
 
@@ -4280,15 +4014,13 @@ static int blocking_ast_dsql_cache(void* ast_object)
  **************************************/
 	DSqlCacheItem* item = static_cast<DSqlCacheItem*>(ast_object);
 
-	// Since this routine will be called asynchronously, we must establish
-	// a thread context.
+	Database* dbb = item->lock->lck_dbb;
+	Database::SyncGuard dsGuard(dbb, true);
+
 	ThreadContextHolder tdbb;
 
-	tdbb->setDatabase(item->lock->lck_dbb);
+	tdbb->setDatabase(dbb);
 	tdbb->setAttachment(item->lock->lck_attachment);
-	tdbb->tdbb_quantum = QUANTUM;
-	tdbb->setRequest(NULL);
-	tdbb->setTransaction(NULL);
 	Jrd::ContextPoolHolder context(tdbb, 0);
 
 	item->obsolete = true;
@@ -4300,42 +4032,7 @@ static int blocking_ast_dsql_cache(void* ast_object)
 #endif	// SUPERSERVER
 
 
-static blb* check_blob(thread_db* tdbb, ISC_STATUS* user_status, blb** blob_handle)
-{
-/**************************************
- *
- *	c h e c k _ b l o b
- *
- **************************************
- *
- * Functional description
- *	Check out a blob handle for goodness.  Return
- *	the address of the blob if ok, NULL otherwise.
- *
- **************************************/
-	jrd_tra* transaction = 0;
-
-	SET_TDBB(tdbb);
-	 // this const made to check no accidental changes happen
-	const blb* const blob = *blob_handle;
-
-	if (!blob ||
-		(MemoryPool::blk_type(blob) != type_blb) ||
-		check_database(tdbb, blob->blb_attachment, user_status) ||
-		!(transaction = blob->blb_transaction) ||
-		MemoryPool::blk_type(transaction) != type_tra)
-	{
-		handle_error(user_status, isc_bad_segstr_handle);
-		return NULL;
-	}
-
-	tdbb->setTransaction(transaction);
-
-	return const_cast<blb*>(blob); // harmless, see comment above
-}
-
-
-static ISC_STATUS check_database(thread_db* tdbb, Attachment* attachment, ISC_STATUS* user_status)
+static void check_database(thread_db* tdbb)
 {
 /**************************************
  *
@@ -4344,58 +4041,20 @@ static ISC_STATUS check_database(thread_db* tdbb, Attachment* attachment, ISC_ST
  **************************************
  *
  * Functional description
- *	Check an attachment for validity, setting
- *	up environment.
+ *	Check an attachment for validity.
  *
  **************************************/
 	SET_TDBB(tdbb);
 
-	// Make sure blocks look and feel kosher
-	Database* dbb;
-	if (!attachment ||
-		(MemoryPool::blk_type(attachment) != type_att) ||
-		!(dbb = attachment->att_database) ||
-		MemoryPool::blk_type(dbb)!= type_dbb)
+	Database* dbb = tdbb->getDatabase();
+	Attachment* attachment = tdbb->getAttachment();
+
+	if (dbb->dbb_flags & DBB_bugcheck)
 	{
-		return handle_error(user_status, isc_bad_db_handle);
-	}
-
-	// Make sure this is a valid attachment
-
-#ifndef SUPERSERVER
-	const Attachment* attach;
-	for (attach = dbb->dbb_attachments; attach; attach = attach->att_next)
-	{
-		if (attach == attachment)
-			break;
-	}
-
-	if (!attach)
-		return handle_error(user_status, isc_bad_db_handle);
-#endif
-
-	tdbb->setDatabase(dbb);
-	tdbb->setAttachment(attachment);
-	tdbb->tdbb_quantum = QUANTUM;
-	tdbb->setRequest(NULL);
-	tdbb->setTransaction(NULL);
-	Jrd::ContextPoolHolder context(tdbb, dbb->dbb_permanent);
-
-	// Count active threads in database
-
-	++dbb->dbb_use_count;
-
-	// Want to avoid problems of literal strings v/s non-const pointers.
-    static TEXT string[] = "can't continue after bugcheck";
-    ISC_STATUS* ptr = user_status;
-    
-	if (dbb->dbb_flags & DBB_bugcheck) {
-		*ptr++ = isc_arg_gds;
-		*ptr++ = isc_bug_check;
-		*ptr++ = isc_arg_string;
-		*ptr++ = (ISC_STATUS) string; // Warning: possible address truncation.
-		*ptr = isc_arg_end;
-		return error(user_status);
+		static const char* const string = "can't continue after bugcheck";
+		Firebird::status_exception::raise(isc_bug_check,
+										  isc_arg_string, string,
+										  0);
 	}
 
 	if (attachment->att_flags & ATT_shutdown ||
@@ -4403,42 +4062,37 @@ static ISC_STATUS check_database(thread_db* tdbb, Attachment* attachment, ISC_ST
 		 ((dbb->dbb_ast_flags & DBB_shutdown_full) ||
 		 !attachment->locksmith())))
 	{
-		*ptr++ = isc_arg_gds;
-		if (dbb->dbb_ast_flags & DBB_shutdown) {
-			*ptr++ = isc_shutdown;
-			*ptr++ = isc_arg_string;
-			*ptr++ = (ISC_STATUS) ERR_cstring(attachment->att_filename);
+		if (dbb->dbb_ast_flags & DBB_shutdown)
+		{
+			const Firebird::PathName& filename = attachment->att_filename;
+			Firebird::status_exception::raise(isc_shutdown,
+											  isc_arg_string, ERR_cstring(filename),
+											  0);
 		}
-		else {
-			*ptr++ = isc_att_shutdown;
+		else
+		{
+			Firebird::status_exception::raise(isc_att_shutdown, 0);
 		}
-		*ptr = isc_arg_end;
-
-		return error(user_status);
 	}
 
 	if ((attachment->att_flags & ATT_cancel_raise) &&
 		!(attachment->att_flags & ATT_cancel_disable))
 	{
 		attachment->att_flags &= ~ATT_cancel_raise;
-		*ptr++ = isc_arg_gds;
-		*ptr++ = isc_cancelled;
-		*ptr++ = isc_arg_end;
-		return error(user_status);
+		Firebird::status_exception::raise(isc_cancelled, 0);
 	}
 
 	// Enable signal handler for the monitoring stuff
 
-	if (dbb->dbb_ast_flags & DBB_monitor_off) {
+	if (dbb->dbb_ast_flags & DBB_monitor_off)
+	{
 		dbb->dbb_ast_flags &= ~DBB_monitor_off;
 		LCK_lock(tdbb, dbb->dbb_monitor_lock, LCK_SR, LCK_WAIT);
 	}
-
-	return FB_SUCCESS;
 }
 
 
-static ISC_STATUS check_transaction(thread_db* tdbb, jrd_tra* transaction, ISC_STATUS * user_status)
+static void check_transaction(thread_db* tdbb, jrd_tra* transaction)
 {
 /**************************************
  *
@@ -4458,21 +4112,14 @@ static ISC_STATUS check_transaction(thread_db* tdbb, jrd_tra* transaction, ISC_S
 		transaction->tra_flags &= ~TRA_cancel_request;
 		tdbb->tdbb_flags |= TDBB_sys_error;
 
-		ISC_STATUS* ptr = tdbb->tdbb_status_vector = user_status;
-		fb_assert(ptr);
-		*ptr++ = isc_arg_gds;
-		*ptr++ = isc_cancelled;
-		*ptr++ = isc_arg_end;
-		return error(user_status);
+		Firebird::status_exception::raise(isc_cancelled, 0);
 	}
-
-	return FB_SUCCESS;
 }
 
-	
-static ISC_STATUS commit(
-					 ISC_STATUS* user_status,
-					 jrd_tra** tra_handle, const bool retaining_flag)
+
+static ISC_STATUS commit(ISC_STATUS* user_status,
+						 jrd_tra** tra_handle,
+						 const bool retaining_flag)
 {
 /**************************************
  *
@@ -4486,51 +4133,48 @@ static ISC_STATUS commit(
  **************************************/
 	ThreadContextHolder tdbb(user_status);
 
-	CHECK_HANDLE((*tra_handle), isc_bad_trans_handle);
-	jrd_tra* transaction = *tra_handle;
-	jrd_tra* next = transaction;
-
-	if (check_database(tdbb, transaction->tra_attachment, user_status))
-		return user_status[1];
-
 #ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
 	LOG_call((retaining_flag) ? log_commit_retaining : log_commit,
 			 *tra_handle);
 #endif
 
-	try {
-
-	if (transaction->tra_sibling &&
-		!(transaction->tra_flags & TRA_prepared) &&
-		prepare(tdbb, transaction, user_status, 0, NULL))
+	try
 	{
-		return error(user_status);
+		jrd_tra* transaction = *tra_handle;
+		validateHandle(tdbb, transaction);
+		DatabaseContextHolder dbbHolder(tdbb);
+
+		if (transaction->tra_sibling &&
+			!(transaction->tra_flags & TRA_prepared))
+		{
+			prepare(tdbb, transaction, 0, NULL);
+		}
+
+		const Attachment* const attachment = tdbb->getAttachment();
+
+		if (!(attachment->att_flags & ATT_no_db_triggers) &&
+			!(transaction->tra_flags & TRA_prepared))
+		{
+			// run ON TRANSACTION COMMIT triggers
+			run_commit_triggers(tdbb, transaction);
+		}
+
+		jrd_tra* next = transaction;
+
+		while ( (transaction = next) )
+		{
+			next = transaction->tra_sibling;
+			validateHandle(tdbb, transaction->tra_attachment);
+			tdbb->setTransaction(transaction);
+			check_database(tdbb);
+			TRA_commit(tdbb, transaction, retaining_flag);
+		}
 	}
-
-	if (!(tdbb->getAttachment()->att_flags & ATT_no_db_triggers) &&
-		!(transaction->tra_flags & TRA_prepared))
-	{
-		// run ON TRANSACTION COMMIT triggers
-		run_commit_triggers(tdbb, transaction);
-	}
-
-	while ( (transaction = next) ) {
-		next = transaction->tra_sibling;
-		check_database(tdbb, transaction->tra_attachment, user_status);
-		tdbb->setTransaction(transaction);
-		TRA_commit(tdbb, transaction, retaining_flag);
-		Database* dbb = tdbb->getDatabase();
-		--dbb->dbb_use_count;
-	}
-
-	return return_success(tdbb);
-
-	}	// try
 	catch (const Firebird::Exception& ex) {
-		Database* dbb = tdbb->getDatabase();
-		--dbb->dbb_use_count;
-		return error(user_status, ex);
+		Firebird::stuff_exception(user_status, ex);
 	}
+
+	return user_status[1];
 }
 
 
@@ -4553,39 +4197,42 @@ ISC_STATUS compile_request(ISC_STATUS* user_status,
  **************************************/
 	ThreadContextHolder tdbb(user_status);
 
-	NULL_CHECK(req_handle, isc_bad_req_handle);
-	Attachment* attachment = *db_handle;
-
-	if (check_database(tdbb, attachment, user_status))
-		return user_status[1];
-
 #ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
 	LOG_call(log_compile, *db_handle, *req_handle, blr_length, blr);
 #endif
 
 	try
 	{
-		jrd_req* request = CMP_compile2(tdbb, reinterpret_cast<const UCHAR*>(blr), FALSE,
-			dbginfo_length, dbginfo);
+		if (*req_handle)
+			Firebird::status_exception::raise(isc_bad_req_handle, 0);
+
+		Attachment* attachment = *db_handle;
+		validateHandle(tdbb, attachment);
+		DatabaseContextHolder dbbHolder(tdbb);
+		check_database(tdbb);
+
+		jrd_req* request =
+			CMP_compile2(tdbb, reinterpret_cast<const UCHAR*>(blr), FALSE,
+						 dbginfo_length, dbginfo);
 
 		request->req_attachment = attachment;
 		request->req_request = attachment->att_requests;
 		attachment->att_requests = request;
 
 		request->req_sql_text.assign(string, string_length);
-	
-		DEBUG;
+
 		*req_handle = request;
-	#ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
+
+#ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
 		LOG_call(log_handle_returned, *req_handle);
-	#endif
+#endif
 	}
 	catch (const Firebird::Exception& ex)
 	{
-		return error(user_status, ex);
+		Firebird::stuff_exception(user_status, ex);
 	}
 
-	return return_success(tdbb);
+	return user_status[1];
 }
 
 
@@ -4626,7 +4273,7 @@ static bool drop_files(const jrd_file* file)
 }
 
 
-static jrd_tra* find_transaction(thread_db* tdbb, jrd_tra* transaction, ISC_STATUS error_code)
+static jrd_tra* find_transaction(thread_db* tdbb, ISC_STATUS error_code)
 {
 /**************************************
  *
@@ -4639,64 +4286,21 @@ static jrd_tra* find_transaction(thread_db* tdbb, jrd_tra* transaction, ISC_STAT
  *	that corresponds to the current database.
  *
  **************************************/
-
 	SET_TDBB(tdbb);
 
-	if (!transaction || MemoryPool::blk_type(transaction) != type_tra)
-		ERR_post(isc_bad_trans_handle, 0);
+	jrd_tra* transaction = tdbb->getTransaction();
+	const Attachment* const attachment = tdbb->getAttachment();
 
 	for (; transaction; transaction = transaction->tra_sibling)
 	{
-		if (transaction->tra_attachment == tdbb->getAttachment())
+		if (transaction->tra_attachment == attachment)
 		{
-			tdbb->setTransaction(transaction);
 			return transaction;
 		}
 	}
 
-	ERR_post(error_code, 0);
-	return NULL;		// Added to remove compiler warnings
-}
-
-
-static ISC_STATUS error(ISC_STATUS* user_status, const Firebird::Exception& ex)
-{
-/**************************************
- *
- *	e r r o r
- *
- **************************************
- *
- * Functional description
- *	An error returned has been trapped.  Return a status code.
- *
- **************************************/
-	Firebird::stuff_exception(user_status, ex);
-	return error(user_status);
-}
-
-
-static ISC_STATUS error(ISC_STATUS* user_status)
-{
-/**************************************
- *
- *	e r r o r
- *
- **************************************
- *
- * Functional description
- *	An error returned has been trapped.  Return a status code.
- *
- **************************************/
-	thread_db* tdbb = JRD_get_thread_data();
-
-	// Decrement count of active threads in database
-	Database* dbb = tdbb->getDatabase();
-	if (dbb) {
-		--dbb->dbb_use_count;
-	}
-
-	return user_status[1];
+	Firebird::status_exception::raise(error_code, 0);
+	return NULL;	// Added to remove compiler warnings
 }
 
 
@@ -4744,7 +4348,7 @@ static void find_intl_charset(thread_db* tdbb, Attachment* attachment, const Dat
 }
 
 
-void DatabaseOptions::get(const UCHAR* dpb, USHORT dpb_length)
+void DatabaseOptions::get(const UCHAR* dpb, USHORT dpb_length, bool& invalid_client_SQL_dialect)
 {
 /**************************************
  *
@@ -5086,7 +4690,7 @@ void DatabaseOptions::get(const UCHAR* dpb, USHORT dpb_length)
 		case isc_dpb_sql_dialect:
 			dpb_sql_dialect = (USHORT) rdr.getInt();
 			if (dpb_sql_dialect > SQL_DIALECT_V6)
-					invalid_client_SQL_dialect = true;
+				invalid_client_SQL_dialect = true;
 			break;
 
 		case isc_dpb_set_db_sql_dialect:
@@ -5247,19 +4851,16 @@ static Database* init(thread_db*	tdbb,
 	// Check to see if the database is already actively attached
 
 	Database* dbb;
+#ifdef SUPERSERVER
 	for (dbb = databases; dbb; dbb = dbb->dbb_next)
 	{
 		if (!(dbb->dbb_flags & (DBB_bugcheck | DBB_not_in_use)) &&
-#ifndef SUPERSERVER
-			!(dbb->dbb_ast_flags & DBB_shutdown &&
-			  dbb->dbb_ast_flags & DBB_shutdown_locks) &&
-#endif
 			 (dbb->dbb_filename == expanded_filename))
 		{
 			return (attach_flag) ? dbb : NULL;
 		}
 	}
-
+#endif
 
 	try {
 #ifdef SUPERSERVER
@@ -5282,8 +4883,10 @@ static Database* init(thread_db*	tdbb,
 	// provide context pool for the rest stuff
 	Jrd::ContextPoolHolder context(tdbb, perm);
 
+#ifdef SUPERSERVER
 	dbb->dbb_next = databases;
 	databases = dbb;
+#endif
 
 	dbb->dbb_mutexes = FB_NEW(*dbb->dbb_permanent) Firebird::Mutex[DBB_MUTX_max];
 	dbb->dbb_internal = vec<jrd_req*>::newVector(*dbb->dbb_permanent, irq_MAX);
@@ -5397,11 +5000,10 @@ static void init_database_locks(thread_db* tdbb, Database* dbb)
 }
 
 
-static ISC_STATUS prepare(thread_db*		tdbb,
-					  jrd_tra*		transaction,
-					  ISC_STATUS*	status_vector,
-					  USHORT	length,
-					  const UCHAR*	msg)
+static void prepare(thread_db* tdbb,
+					jrd_tra* transaction,
+					USHORT length,
+					const UCHAR* msg)
 {
 /**************************************
  *
@@ -5410,13 +5012,10 @@ static ISC_STATUS prepare(thread_db*		tdbb,
  **************************************
  *
  * Functional description
- *	Attempt to prepare a transaction.  If it fails at any point, return
- *	an error.
+ *	Attempt to prepare a transaction.
  *
  **************************************/
 	SET_TDBB(tdbb);
-
-	try {
 
 	if (!(transaction->tra_flags & TRA_prepared))
 	{
@@ -5425,25 +5024,14 @@ static ISC_STATUS prepare(thread_db*		tdbb,
 	}
 
 	for (; transaction; transaction = transaction->tra_sibling) {
-		check_database(tdbb, transaction->tra_attachment, status_vector);
+		DatabaseContextHolder dbbHolder(tdbb);
+		check_database(tdbb);
 		TRA_prepare(tdbb, transaction, length, msg);
-		Database* dbb = tdbb->getDatabase();
-		--dbb->dbb_use_count;
 	}
-
-	}	// try
-	catch (const Firebird::Exception& ex) {
-		Firebird::stuff_exception(status_vector, ex);
-		Database* dbb = tdbb->getDatabase();
-		--dbb->dbb_use_count;
-		return status_vector[1];
-	}
-
-	return FB_SUCCESS;
 }
 
 
-static void release_attachment(Attachment* attachment)
+static void release_attachment(thread_db* tdbb, Attachment* attachment)
 {
 /**************************************
  *
@@ -5455,13 +5043,12 @@ static void release_attachment(Attachment* attachment)
  *	Disconnect attachment block from database block.
  *
  **************************************/
-	thread_db* tdbb = JRD_get_thread_data();
-	Database*  dbb  = tdbb->getDatabase();
+	SET_TDBB(tdbb);
+	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
-	if (!attachment) {
+	if (!attachment)
 		return;
-	}
 
 #ifdef SUPERSERVER
 	if (dbb->dbb_relations)
@@ -5495,6 +5082,7 @@ static void release_attachment(Attachment* attachment)
 		LCK_release(tdbb, attachment->att_dsql_cache.current()->second.lock);
 	}
 #endif
+
 	for (vcl** vector = attachment->att_counts;
 		 vector < attachment->att_counts + DBB_max_count; ++vector)
 	{
@@ -5522,9 +5110,6 @@ static void release_attachment(Attachment* attachment)
 	if (attachment->att_compatibility_table)
 		delete attachment->att_compatibility_table;
 
-	if (MemoryPool::blk_type(dbb) != type_dbb)
-		return;
-
 	// remove the attachment block from the dbb linked list
 
 	for (Attachment** ptr = &dbb->dbb_attachments; *ptr; ptr = &(*ptr)->att_next) {
@@ -5550,9 +5135,6 @@ static void detachLocksFromAttachment(Attachment* attachment)
  * block doesn't get dereferenced after it is released
  *
  **************************************/
-	// Disable delivery of ASTs for the moment while queue of locks is in flux
-	AstInhibit aiHolder;
-
 	Lock* long_lock = attachment->att_long_locks;
 	while (long_lock) {
 		Lock* next = long_lock->lck_next;
@@ -5577,52 +5159,9 @@ Jrd::Attachment::~Attachment()
 }
 
 
-static ISC_STATUS return_success(thread_db* tdbb)
-{
-/**************************************
- *
- *	r e t u r n _ s u c c e s s
- *
- **************************************
- *
- * Functional description
- *	Set up status vector to reflect successful execution.
- *
- **************************************/
-	SET_TDBB(tdbb);
-
-	// Decrement count of active threads in database
-
-	Database* dbb = tdbb->getDatabase();
-	if (dbb) 
-	{
-		--dbb->dbb_use_count;
-	}
-
-	ISC_STATUS* const user_status = tdbb->tdbb_status_vector;
-	ISC_STATUS* p = user_status;
-
-	// If the status vector has not been initialized, then
-	// initialize the status vector to indicate success.
-	// Else pass the status vector along at it stands.
-	if (p[0] != isc_arg_gds ||
-		p[1] != FB_SUCCESS ||
-		(p[2] != isc_arg_end && p[2] != isc_arg_gds &&
-		 p[2] != isc_arg_warning))
-	{
-		*p++ = isc_arg_gds;
-		*p++ = FB_SUCCESS;
-		*p = isc_arg_end;
-	}
-
-	return user_status[1];
-}
-
-
-static bool rollback(thread_db*	tdbb,
-						jrd_tra*		next,
-						ISC_STATUS*	status_vector,
-						const bool	retaining_flag)
+static ISC_STATUS rollback(ISC_STATUS* user_status,
+						   jrd_tra** tra_handle,
+						   const bool retaining_flag)
 {
 /**************************************
  *
@@ -5634,51 +5173,69 @@ static bool rollback(thread_db*	tdbb,
  *	Abort a transaction.
  *
  **************************************/
-	jrd_tra* transaction;
-	ISC_STATUS_ARRAY local_status;
+	ThreadContextHolder tdbb(user_status);
 
-	SET_TDBB(tdbb);
+#ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
+	LOG_call(log_rollback, *tra_handle);
+#endif
 
-	while ( (transaction = next) )
+	try
 	{
-		next = transaction->tra_sibling;
-		check_database(tdbb, transaction->tra_attachment, status_vector);
+		jrd_tra* transaction = *tra_handle;
+		validateHandle(tdbb, transaction);
+		DatabaseContextHolder dbbHolder(tdbb);
 
-		try {
-			if (!(tdbb->getAttachment()->att_flags & ATT_no_db_triggers))
+		jrd_tra* next = transaction;
+
+		while ( (transaction = next) )
+		{
+			next = transaction->tra_sibling;
+
+			ISC_STATUS_ARRAY local_status;
+
+			try
 			{
-				ISC_STATUS_ARRAY temp_status = {0};
-				tdbb->tdbb_status_vector = temp_status;
+				validateHandle(tdbb, transaction->tra_attachment);
+				check_database(tdbb);
 
-				try
+				const Database* const dbb = tdbb->getDatabase();
+				const Attachment* const attachment = tdbb->getAttachment();
+
+				if (!(attachment->att_flags & ATT_no_db_triggers))
 				{
-					// run ON TRANSACTION ROLLBACK triggers
-					EXE_execute_db_triggers(tdbb, transaction, jrd_req::req_trigger_trans_rollback);
+					try
+					{
+						ISC_STATUS_ARRAY temp_status = {0};
+						tdbb->tdbb_status_vector = temp_status;
+
+						// run ON TRANSACTION ROLLBACK triggers
+						EXE_execute_db_triggers(tdbb, transaction,
+												jrd_req::req_trigger_trans_rollback);
+					}
+					catch (const Firebird::Exception&)
+					{
+						if (dbb->dbb_flags & DBB_bugcheck)
+							throw;
+					}
 				}
-				catch (const Firebird::Exception&)
-				{
-					if (tdbb->getDatabase()->dbb_flags & DBB_bugcheck)
-						throw;
-				}
+
+				tdbb->tdbb_status_vector = user_status;
+				tdbb->setTransaction(transaction);
+				TRA_rollback(tdbb, transaction, retaining_flag, false);
 			}
-
-			tdbb->tdbb_status_vector = status_vector;
-			tdbb->setTransaction(transaction);
-			TRA_rollback(tdbb, transaction, retaining_flag, false);
-			Database* dbb = tdbb->getDatabase();
-			--dbb->dbb_use_count;
-
-		}	// try
-		catch (const Firebird::Exception& ex) {
-			Firebird::stuff_exception(status_vector, ex);
-			status_vector = local_status;
-			Database* dbb = tdbb->getDatabase();
-			--dbb->dbb_use_count;
-			continue;
+			catch (const Firebird::Exception& ex) {
+				Firebird::stuff_exception(user_status, ex);
+				user_status = local_status;
+				continue;
+			}
 		}
 	}
+	catch (const Firebird::Exception& ex)
+	{
+		Firebird::stuff_exception(user_status, ex);
+	}
 
-	return (status_vector == local_status);
+	return user_status[1];
 }
 
 
@@ -5854,7 +5411,7 @@ static void strip_quotes(Firebird::string& out)
 }
 
 
-static ISC_STATUS shutdown_dbb(thread_db* tdbb, Database* dbb, Attachment** released)
+static bool shutdown_dbb(thread_db* tdbb, Database* dbb, Attachment** released)
 {
 /**************************************
  *
@@ -5868,6 +5425,10 @@ static ISC_STATUS shutdown_dbb(thread_db* tdbb, Database* dbb, Attachment** rele
  *	and shutdown database.
  *
  **************************************/
+	tdbb->setDatabase(dbb);
+	tdbb->tdbb_flags |= TDBB_shutdown_manager;
+	DatabaseContextHolder dbbHolder(tdbb);
+
 	if (!(dbb->dbb_flags & (DBB_bugcheck | DBB_not_in_use | DBB_security_db)) &&
 		!(dbb->dbb_ast_flags & DBB_shutdown &&
 		  dbb->dbb_ast_flags & DBB_shutdown_locks))
@@ -5877,30 +5438,24 @@ static ISC_STATUS shutdown_dbb(thread_db* tdbb, Database* dbb, Attachment** rele
 		for (Attachment* attach = dbb->dbb_attachments; attach; attach = att_next)
 		{
 			att_next = attach->att_next;
-			tdbb->setDatabase(dbb);
 			tdbb->setAttachment(attach);
-			tdbb->setRequest(NULL);
-			tdbb->setTransaction(NULL);
-			tdbb->tdbb_flags |= TDBB_shutdown_manager;
-			Jrd::ContextPoolHolder context(tdbb, dbb->dbb_permanent);
-			++dbb->dbb_use_count;
 
 			// purge_attachment() below can do an ERR_post
-			ISC_STATUS_ARRAY user_status;
-			tdbb->tdbb_status_vector = user_status;
+			ISC_STATUS_ARRAY temp_status;
+			tdbb->tdbb_status_vector = temp_status;
 
-			try 
+			try
 			{
 				// purge attachment, rollback any open transactions
-				purge_attachment(tdbb, user_status, attach, true);
+				purge_attachment(tdbb, temp_status, attach, true);
 			}
-			catch (const Firebird::Exception& ex) 
+			catch (const Firebird::Exception&)
 			{
 				if (released)
 				{
-					*released = 0;
+					*released = NULL;
 				}
-				return error(user_status, ex);
+				return false;
 			}
 			
 			// attach became invalid pointer
@@ -5911,15 +5466,16 @@ static ISC_STATUS shutdown_dbb(thread_db* tdbb, Database* dbb, Attachment** rele
 			}
 		}
 	}
+
 	if (released)
 	{
-		*released = 0;
+		*released = NULL;
 	}
-	return FB_SUCCESS;
+	return true;
 }
 
 
-static ISC_STATUS shutdown_all()
+static bool shutdown_all()
 {
 /**************************************
  *
@@ -5933,31 +5489,22 @@ static ISC_STATUS shutdown_all()
  *	and shutdown every database.
  *
  **************************************/
-	THREAD_ENTER();
-	// NOTE!!!
-	// This routine doesn't contain THREAD_EXIT to help ensure
-	// that no threads will get in and try to access the data
-	// structures we released here
-
 	ThreadContextHolder tdbb;
 
-	dbMutexLock();
+	DbMutexGuard guard;
 
 	Database* dbb_next;
 	for (Database* dbb = databases; dbb; dbb = dbb_next)
 	{
 		dbb_next = dbb->dbb_next;
-		
-		ISC_STATUS rc = shutdown_dbb(tdbb, dbb, NULL);
-		if (rc != FB_SUCCESS)
+
+		if (!shutdown_dbb(tdbb, dbb, NULL))
 		{
-			dbMutexUnlock();
-			return rc;
+			return false;
 		}
 	}
 
-	dbMutexUnlock();
-	return FB_SUCCESS;
+	return true;
 }
 
 
@@ -6006,13 +5553,16 @@ TEXT* JRD_num_attachments(TEXT* const buf, USHORT buf_len, USHORT flag,
 	USHORT total = 0;
 	Firebird::HalfStaticArray<Firebird::PathName, 8> dbFiles;
 
-	THREAD_ENTER();
+	dbMutexLock();
 
 	// Zip through the list of databases and count the number of local
 	// connections.  If buf is not NULL then copy all the database names
 	// that will fit into it.
 
-	for (Database* dbb = databases; dbb; dbb = dbb->dbb_next) {
+	for (Database* dbb = databases; dbb; dbb = dbb->dbb_next)
+	{
+		Database::SyncGuard dsGuard(dbb);
+
 #ifdef WIN_NT
 		// Get drive letters for db files
 
@@ -6054,7 +5604,7 @@ TEXT* JRD_num_attachments(TEXT* const buf, USHORT buf_len, USHORT flag,
 		}
 	}
 
-	THREAD_EXIT();
+	dbMutexUnlock();
 
 	*atts = num_att;
 	*dbs = num_dbs;
@@ -6162,7 +5712,7 @@ static THREAD_ENTRY_DECLARE shutdown_thread(THREAD_ENTRY_PARAM arg)
  *
  **************************************/
 
-	*static_cast<int*>(arg) = (shutdown_all() == FB_SUCCESS);
+	*static_cast<int*>(arg) = shutdown_all();
 	return 0;
 }
 
@@ -6199,7 +5749,7 @@ void JRD_shutdown_all(bool asyncMode)
 	}
 	else // sync mode
 	{
-		flShutdownComplete = (shutdown_all() == FB_SUCCESS);
+		flShutdownComplete = shutdown_all();
 	}
 
 	if (!flShutdownComplete)
@@ -6223,9 +5773,9 @@ void JRD_process_close()
 
 void JRD_database_close(Attachment** handle, Attachment** released)
 {
-	THREAD_ENTER();
-
 	ThreadContextHolder tdbb;
+
+	DbMutexGuard guard;
 
 	Database* dbb = databases;
 	for (; dbb; dbb = dbb->dbb_next)
@@ -6342,9 +5892,9 @@ static void purge_attachment(thread_db*		tdbb,
 				!(attachment->att_flags & ATT_shutdown))
 			{
 				ISC_STATUS_ARRAY temp_status = {0};
-				jrd_tra* transaction = NULL;
-
 				tdbb->tdbb_status_vector = temp_status;
+
+				jrd_tra* transaction = NULL;
 
 				try
 				{
@@ -6352,7 +5902,8 @@ static void purge_attachment(thread_db*		tdbb,
 					transaction = TRA_start(tdbb, 0, NULL);
 
 					// run ON DISCONNECT triggers
-					EXE_execute_db_triggers(tdbb, transaction, jrd_req::req_trigger_disconnect);
+					EXE_execute_db_triggers(tdbb, transaction,
+											jrd_req::req_trigger_disconnect);
 
 					// and commit the transaction
 					TRA_commit(tdbb, transaction, false);
@@ -6402,11 +5953,11 @@ static void purge_attachment(thread_db*		tdbb,
 
 	// Unlink attachment from database
 
-	release_attachment(attachment);
+	release_attachment(tdbb, attachment);
 
 	// If there are still attachments, do a partial shutdown
 
-	if (MemoryPool::blk_type(dbb) == type_dbb)
+	if (dbb->checkHandle())
 	{
 		if (dbb->dbb_attachments || (dbb->dbb_flags & DBB_being_opened))
 		{
@@ -6418,17 +5969,13 @@ static void purge_attachment(thread_db*		tdbb,
 			while ( (request = attachment->att_requests) ) {
 				CMP_release(tdbb, request);
 			}
-			
+
 			SecurityClass* sec_class;
 			while ( (sec_class = attachment->att_security_classes) ) {
 				SCL_release(sec_class);
 			}
-			
-			UserId* user = attachment->att_user;
-			if (user) {
-				delete user;
-			}
-			
+
+			delete attachment->att_user;
 			delete attachment;
 		}
 		else
@@ -6462,7 +6009,8 @@ static void run_commit_triggers(thread_db* tdbb, jrd_tra* transaction)
 	try
 	{
 		// run ON TRANSACTION COMMIT triggers
-		EXE_execute_db_triggers(tdbb, transaction, jrd_req::req_trigger_trans_commit);
+		EXE_execute_db_triggers(tdbb, transaction,
+								jrd_req::req_trigger_trans_commit);
 		VIO_verb_cleanup(tdbb, transaction);
 	}
 	catch (const Firebird::Exception&)
@@ -6527,7 +6075,7 @@ static vdnResult verify_database_name(const Firebird::PathName& name, ISC_STATUS
 	}
 	if (name == SecurityNameBuffer || name == ExpandedSecurityNameBuffer)
 		return vdnSecurity;
-	
+
 	// Check for .conf
 	if (!ISC_verify_database_access(name)) {
 		status[0] = isc_arg_gds;
@@ -6627,7 +6175,8 @@ static void getUserInfo(UserId& user, const DatabaseOptions& options)
 	{
 		Firebird::status_exception::raise(isc_long_login, 
 										  isc_arg_number, name.length(), 
-										  isc_arg_number, USERNAME_LENGTH, 0);
+										  isc_arg_number, USERNAME_LENGTH,
+										  0);
 	}
 
 	user.usr_user_name = name;
@@ -6661,9 +6210,9 @@ static ISC_STATUS unwindAttach(const Firebird::Exception& ex,
 	try
 	{
 		dbb->dbb_flags &= ~DBB_being_opened;
-		release_attachment(attachment);
+		release_attachment(tdbb, attachment);
 
-		if (MemoryPool::blk_type(dbb) == type_dbb)
+		if (dbb->checkHandle())
 		{
 			if (!dbb->dbb_attachments)
 			{
@@ -6682,7 +6231,8 @@ static ISC_STATUS unwindAttach(const Firebird::Exception& ex,
 	tdbb->tdbb_status_vector = save_status;
 	dbMutexUnlock();
 
-	return error(userStatus, ex);
+	Firebird::stuff_exception(userStatus, ex);
+	return userStatus[1];
 }
 
 void thread_db::setTransaction(jrd_tra* val)
