@@ -1,3 +1,21 @@
+2008-01-25 17:48  alexpeshkoff
+
+	* firebird2/src/isql/: isql.epp (1.226), show.epp (1.128):
+
+	Better fixes for isql problems, thanks to Claudio
+
+2008-01-25 12:28  alexpeshkoff
+
+	* firebird2/src/isql/isql.epp (1.225):
+
+	Fixed assertion in TCS:C_SQL_JOIN_46
+
+2008-01-25 10:53  alexpeshkoff
+
+	* firebird2/src/isql/extract.epp (1.90):
+
+	Do not extract system roles
+
 2008-01-24 16:02  alexpeshkoff
 
 	* firebird2/builds/win32/msvc7/: common.vcproj (1.29),
