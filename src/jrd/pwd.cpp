@@ -419,7 +419,7 @@ void SecurityDatabase::verifyUser(Firebird::string& name,
 	else
 	{
 		remoteFailedLogins().loginFail(remoteId);
-		ERR_post(isc_login, 0);
+		Firebird::status_exception::raise(isc_login, 0);
 	}
 
 	static AmCache useNative = AM_UNKNOWN;
@@ -432,7 +432,7 @@ void SecurityDatabase::verifyUser(Firebird::string& name,
 	if (useNative == AM_DISABLED)
 	{
 		remoteFailedLogins().loginFail(remoteId);
-		ERR_post(isc_login, 0);
+		Firebird::status_exception::raise(isc_login, 0);
 	}
 
 	// Look up the user name in the userinfo database and use the parameters
@@ -454,7 +454,7 @@ void SecurityDatabase::verifyUser(Firebird::string& name,
 	{
 		usernameFailedLogins().loginFail(name);
 		remoteFailedLogins().loginFail(remoteId);
-		ERR_post(isc_login, 0);
+		Firebird::status_exception::raise(isc_login, 0);
 	}
 
 	TEXT pwt[MAX_PASSWORD_LENGTH + 2];
@@ -481,7 +481,7 @@ void SecurityDatabase::verifyUser(Firebird::string& name,
 		{
 			usernameFailedLogins().loginFail(name);
 			remoteFailedLogins().loginFail(remoteId);
-			ERR_post(isc_login, 0);
+			Firebird::status_exception::raise(isc_login, 0);
 		}
 	}
 
