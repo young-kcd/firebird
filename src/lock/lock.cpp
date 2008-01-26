@@ -282,6 +282,8 @@ bool LOCK_convert(SRQ_PTR request_offset,
  **************************************/
 	LOCK_TRACE(("LOCK_convert (%d, %d)\n", type, lck_wait));
 
+	SchedulerContext scHolder;
+
 	lrq* request = get_request(request_offset);
 	own* owner = (own*) SRQ_ABS_PTR(request->lrq_owner);
 	if (!owner->own_count)
@@ -316,6 +318,8 @@ bool LOCK_deq(SRQ_PTR request_offset)
  **************************************/
 	LOCK_TRACE(("LOCK_deq (%ld)\n", request_offset));
 
+	SchedulerContext scHolder;
+
 	lrq* request = get_request(request_offset);
 	SRQ_PTR owner_offset = request->lrq_owner;
 	own* owner = (own*) SRQ_ABS_PTR(owner_offset);
@@ -323,7 +327,6 @@ bool LOCK_deq(SRQ_PTR request_offset)
 		return false;
 
 	acquire(owner_offset);
-	owner = NULL;				/* remap */
 	++LOCK_header->lhb_deqs;
 	request = (lrq*) SRQ_ABS_PTR(request_offset);	/* remap */
 	lbl* lock = (lbl*) SRQ_ABS_PTR(request->lrq_lock);
@@ -353,6 +356,8 @@ UCHAR LOCK_downgrade(SRQ_PTR request_offset,
  *
  **************************************/
 	LOCK_TRACE(("LOCK_downgrade (%ld)\n", request_offset));
+
+	SchedulerContext scHolder;
 
 	lrq* request = get_request(request_offset);
 	SRQ_PTR owner_offset = request->lrq_owner;
@@ -426,12 +431,13 @@ SRQ_PTR LOCK_enq(SRQ_PTR prior_request,
  **************************************/
 	LOCK_TRACE(("LOCK_enq (%ld)\n", parent_request));
 
+	SchedulerContext scHolder;
+
 	own* owner = (own*) SRQ_ABS_PTR(owner_offset);
 	if (!owner_offset || !owner->own_count)
 		return 0;
 
 	acquire(owner_offset);
-	owner = NULL;				/* remap */
 
 	ASSERT_ACQUIRED;
 	++LOCK_header->lhb_enqs;
@@ -444,14 +450,12 @@ SRQ_PTR LOCK_enq(SRQ_PTR prior_request,
 	if (prior_request)
 		dequeue(prior_request);
 
-	lrq* request = 0;
-	SRQ_PTR parent;
+	lrq* request = NULL;
+	SRQ_PTR parent = 0;
 	if (parent_request) {
 		request = get_request(parent_request);
 		parent = request->lrq_lock;
 	}
-	else
-		parent = 0;
 
 /* Allocate or reuse a lock request block */
 
@@ -543,20 +547,10 @@ SRQ_PTR LOCK_enq(SRQ_PTR prior_request,
 	lock->lbl_flags = 0;
 	lock->lbl_pending_lrq_count = 0;
 
-	{ // scope
-		SSHORT l = LCK_max;
-		USHORT* ps = lock->lbl_counts;
-		while (l--)
-			*ps++ = 0;
-	} // scope
+	memset(lock->lbl_counts, 0, sizeof(lock->lbl_counts));
 
-	if (lock->lbl_length = length)
-	{
-		UCHAR* p = lock->lbl_key;
-		do {
-			*p++ = *value++;
-		} while (--length);
-	}
+	lock->lbl_length = length;
+	memcpy(lock->lbl_key, value, length);
 
 	request = (lrq*) SRQ_ABS_PTR(request_offset);
 
@@ -586,6 +580,8 @@ bool LOCK_set_owner_handle(SRQ_PTR request_offset,
  *
  **************************************/
 	LOCK_TRACE(("LOCK_set_owner_handle (%ld)\n", request_offset));
+
+	SchedulerContext scHolder;
 
 	lrq* request = get_request(request_offset);
 
@@ -638,6 +634,8 @@ void LOCK_fini(ISC_STATUS* status_vector,
  *
  **************************************/
 	LOCK_TRACE(("LOCK_fini(%ld)\n", *owner_offset));
+
+	SchedulerContext scHolder;
 
 	SRQ_PTR offset = *owner_offset;
 	own* owner = (own*) SRQ_ABS_PTR(offset);
@@ -702,6 +700,8 @@ int LOCK_init(ISC_STATUS* status_vector,
  **************************************/
 	LOCK_TRACE(("LOCK_init (ownerid=%ld)\n", owner_id));
 
+	SchedulerContext scHolder;
+
 /* If everything is already initialized, just bump the use count. */
 	own* owner = 0;
 	if (*owner_handle) {
@@ -743,7 +743,6 @@ int LOCK_init(ISC_STATUS* status_vector,
 #endif
 
 #ifdef USE_BLOCKING_THREAD
-	AST_ALLOC();
 	const ULONG status = gds__thread_start(blocking_action_thread, 
 					&LOCK_owner_offset, THREAD_high, 0, 0);
 	if (status) {
@@ -784,16 +783,17 @@ SLONG LOCK_query_data(SRQ_PTR parent_request,
  *	lock hierarchy calculating aggregates as we go.
  *
  **************************************/
-	lrq* parent;
-
-/* Get root of lock hierarchy */
-
-	if (parent_request && series < LCK_MAX_SERIES)
-		parent = get_request(parent_request);
-	else {
+	if (!parent_request || series >= LCK_MAX_SERIES)
+	{
 		CHECK(false);
 		return 0;
 	}
+
+	SchedulerContext scHolder;
+
+/* Get root of lock hierarchy */
+
+	lrq* parent = get_request(parent_request);
 
 	acquire(parent->lrq_owner);
 	parent = (lrq*) SRQ_ABS_PTR(parent_request);	/* remap */
@@ -885,6 +885,8 @@ SLONG LOCK_read_data(SRQ_PTR request_offset)
  **************************************/
 	LOCK_TRACE(("LOCK_read_data(%ld)\n", request_offset));
 
+	SchedulerContext scHolder;
+
 	lrq* request = get_request(request_offset);
 	acquire(request->lrq_owner);
 	++LOCK_header->lhb_read_data;
@@ -919,6 +921,8 @@ SLONG LOCK_read_data2(SRQ_PTR parent_request,
  *
  **************************************/
 	LOCK_TRACE(("LOCK_read_data2(%ld)\n", parent_request));
+
+	SchedulerContext scHolder;
 
 	acquire(owner_offset);
 	++LOCK_header->lhb_read_data;
@@ -969,6 +973,8 @@ void LOCK_re_post(lock_ast_t ast,
 	lrq* request;
 
 	LOCK_TRACE(("LOCK_re_post(%ld)\n", owner_offset));
+
+	SchedulerContext scHolder;
 
 	acquire(owner_offset);
 
@@ -1033,6 +1039,8 @@ SLONG LOCK_write_data(SRQ_PTR request_offset,
  *
  **************************************/
 	LOCK_TRACE(("LOCK_write_data (%ld)\n", request_offset));
+
+	SchedulerContext scHolder;
 
 	lrq* request = get_request(request_offset);
 	acquire(request->lrq_owner);
@@ -1339,7 +1347,7 @@ static void blocking_action(SRQ_PTR blocking_owner_offset,
 {
 /**************************************
  *
- *	b l o c k i n g _ a c t i o n 2
+ *	b l o c k i n g _ a c t i o n
  *
  **************************************
  *
@@ -1396,7 +1404,9 @@ static void blocking_action(SRQ_PTR blocking_owner_offset,
 
 		if (routine) {
 			release(blocked_owner_offset);
+			THREAD_EXIT();
 			(*routine)(arg);
+			THREAD_ENTER();
 			acquire(blocked_owner_offset);
 			owner = (own*) SRQ_ABS_PTR(blocking_owner_offset);
 		}
@@ -1419,12 +1429,11 @@ static THREAD_ENTRY_DECLARE blocking_action_thread(THREAD_ENTRY_PARAM arg)
  **************************************/
 	SRQ_PTR* owner_offset_ptr = (SRQ_PTR*) arg;
 	bool atStartup = true;
-	AST_INIT();					/* Check into scheduler as AST thread */
 
 	while (true) {
-		AST_ENTER();
+		THREAD_ENTER();
 
-		/* See if main thread has requested us to go away */
+		// See if main thread has requested us to go away
 		if (!*owner_offset_ptr ||
 			LOCK_owner->own_process_id != LOCK_pid ||
 			!LOCK_owner->own_owner_id)
@@ -1444,7 +1453,7 @@ static THREAD_ENTRY_DECLARE blocking_action_thread(THREAD_ENTRY_PARAM arg)
 		blocking_action(*owner_offset_ptr, (SRQ_PTR) NULL);
 		release(*owner_offset_ptr);
 
-		AST_EXIT();
+		THREAD_EXIT();
 
 		if (atStartup)
 		{
@@ -1456,12 +1465,7 @@ static THREAD_ENTRY_DECLARE blocking_action_thread(THREAD_ENTRY_PARAM arg)
 		ISC_event_wait(1, &event_ptr, &value, 0);
 	}
 
-/* Main thread asked us to go away, do our cleanup, then tell
- * main thread we're done (see shutdown_blocking_action()).
- */
-
-	AST_EXIT();
-	AST_FINI();					/* Check out of scheduler as AST thread */
+	THREAD_EXIT();
 
 /* Wakeup the main thread waiting for our exit. */
 /* Main thread won't wait forever, so check LOCK_owner is still mapped */
@@ -3234,7 +3238,9 @@ static void shutdown_blocking_thread(ISC_STATUS* status_vector)
 		LOCK_owner->own_flags |= OWN_waiting;
 
 		// wait for AST thread to start (or 5 secs)
+		THREAD_EXIT();
 		startupSemaphore->tryEnter(5);
+		THREAD_ENTER();
 
 		// Wakeup the AST thread - it might be blocking or stalled
 		ISC_event_post(&LOCK_owner->own_blocking);
@@ -3242,11 +3248,10 @@ static void shutdown_blocking_thread(ISC_STATUS* status_vector)
 		ISC_event_post(&LOCK_owner->own_stall);
 #endif
 
-		// Tell the scheduler to allow AST's to run
-		AST_ENABLE();
-
 		// Wait for the AST thread to finish cleanup or for 5 seconds
+		THREAD_EXIT();
 		cleanupSemaphore->tryEnter(5);
+		THREAD_ENTER();
 
 		/* Either AST thread terminated, or our timeout expired */
 
@@ -3591,7 +3596,6 @@ static void validate_lock(const SRQ_PTR lock_ptr, USHORT freed, const SRQ_PTR lr
 
 	if (lock->lbl_parent && (freed == EXPECT_inuse))
 		validate_lock(lock->lbl_parent, EXPECT_inuse, (SRQ_PTR) 0);
-
 }
 #endif
 
@@ -3976,24 +3980,10 @@ static USHORT wait_for_request(lrq* request,
 			if (!(owner->own_flags & OWN_wakeup))
 #endif
 			{
-/* Until here we've been the only thread in the engine (We no longer
-   release engine in LCK.C module to avoid problems with more than
-   one thread running in out not-yet-MT-safe engine). We already
-   tried to execute AST routine provided (sometimes) by blocking
-   owner hoping our lock request would be satisfied. Did not help!
-   The only thing we could do now is to wait. But let's do it without
-   monopolizing the engine
-*/
-#ifdef SUPERSERVER
 				THREAD_EXIT();
-#endif
-				AST_ENABLE();
 				ret = ISC_event_wait(1, &event_ptr, &value,
 									 (timeout - current_time) * 1000000);
-				AST_DISABLE();
-#ifdef SUPERSERVER
 				THREAD_ENTER();
-#endif
 			}
 		}
 

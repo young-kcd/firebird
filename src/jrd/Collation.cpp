@@ -955,9 +955,6 @@ void Collation::destroy()
 
 		tdbb->setDatabase(existenceLock->lck_dbb);
 		tdbb->setAttachment(existenceLock->lck_attachment);
-		tdbb->tdbb_quantum = QUANTUM;
-		tdbb->setRequest(NULL);
-		tdbb->setTransaction(NULL);
 		Jrd::ContextPoolHolder context(tdbb, 0);
 
 		LCK_release(tdbb, existenceLock);
@@ -979,7 +976,7 @@ void Collation::decUseCount(thread_db* tdbb)
 	if (--useCount == 0)
 	{
 		if (existenceLock)
-			LCK_re_post(existenceLock);
+			LCK_re_post(tdbb, existenceLock);
 	}
 }
 

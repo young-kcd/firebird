@@ -276,7 +276,7 @@ bool PIO_expand(const TEXT* file_name, USHORT file_length, TEXT* expanded_name,
 }
 
 
-void PIO_extend(jrd_file* main_file, const ULONG extPages, const USHORT pageSize)
+void PIO_extend(Database* dbb, jrd_file* main_file, const ULONG extPages, const USHORT pageSize)
 {
 /**************************************
  *
@@ -304,7 +304,7 @@ void PIO_extend(jrd_file* main_file, const ULONG extPages, const USHORT pageSize
 	if (!main_file->fil_ext_lock)
 		return;
 
-	ThreadExit teHolder;
+	Database::Checkout dcoHolder(dbb, true);
 	FileExtendLockGuard extLock(main_file->fil_ext_lock, true);
 
 	ULONG leftPages = extPages;
@@ -571,10 +571,9 @@ USHORT PIO_init_data(Database* dbb, jrd_file* main_file, ISC_STATUS* status_vect
  *	Initialize tail of file with zeros
  *
  **************************************/
-
 	const char* zero_buff = zeros().get();
 
-	ThreadExit teHolder;
+	Database::Checkout dcoHolder(dbb, true);
 	FileExtendLockGuard extLock(main_file->fil_ext_lock, false);
 
 	// Fake buffer, used in seek_file. Page space ID have no matter there
@@ -729,7 +728,7 @@ bool PIO_read(jrd_file* file, BufferDesc* bdb, Ods::pag* page, ISC_STATUS* statu
 	Database* dbb = bdb->bdb_dbb;
 	const DWORD size = dbb->dbb_page_size;
 
-	ThreadExit teHolder;
+	Database::Checkout dcoHolder(dbb, true);
 	FileExtendLockGuard extLock(file->fil_ext_lock, false);
 
 	OVERLAPPED overlapped, *overlapped_ptr;
@@ -812,7 +811,7 @@ bool PIO_read_ahead(Database*		dbb,
  **************************************/
 	OVERLAPPED overlapped, *overlapped_ptr;
 
-	ThreadExit teHolder;
+	Database::Checkout dcoHolder(dbb, true);
 
 /* If an I/O status block was passed the caller wants to
    queue an asynchronous I/O. */
@@ -898,7 +897,7 @@ bool PIO_read_ahead(Database*		dbb,
 
 
 #ifdef SUPERSERVER_V2
-bool PIO_status(phys_io_blk* piob, ISC_STATUS* status_vector)
+bool PIO_status(Database* dbb, phys_io_blk* piob, ISC_STATUS* status_vector)
 {
 /**************************************
  *
@@ -910,8 +909,7 @@ bool PIO_status(phys_io_blk* piob, ISC_STATUS* status_vector)
  *	Check the status of an asynchronous I/O.
  *
  **************************************/
-
-	ThreadExit teHolder;
+	Database::Checkout dcoHolder(dbb, true);
 
 	if (!(piob->piob_flags & PIOB_success)) {
 		if (piob->piob_flags & PIOB_error) {
@@ -951,10 +949,10 @@ bool PIO_write(jrd_file* file, BufferDesc* bdb, Ods::pag* page, ISC_STATUS* stat
  **************************************/
 	OVERLAPPED overlapped, *overlapped_ptr;
 
-	Database*   dbb  = bdb->bdb_dbb;
+	Database* dbb = bdb->bdb_dbb;
 	const DWORD size = dbb->dbb_page_size;
 
-	ThreadExit teHolder;
+	Database::Checkout dcoHolder(dbb, true);
 	FileExtendLockGuard extLock(file->fil_ext_lock, false);
 
 	file = seek_file(file, bdb, status_vector, &overlapped,

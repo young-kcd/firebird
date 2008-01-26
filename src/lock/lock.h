@@ -56,7 +56,7 @@
 #include "../jrd/file_params.h"
 #include "../jrd/que.h"
 
-typedef IPTR LOCK_OWNER_T; // Data type for the Owner ID
+typedef FB_UINT64 LOCK_OWNER_T; // Data type for the Owner ID
 
 #define EXTEND_SIZE     32768
 

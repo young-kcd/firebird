@@ -69,7 +69,6 @@ nested FOR loops are added.
 #include "../jrd/align.h"
 #include "../jrd/intl.h"
 #include "../jrd/iberr.h"
-//#include "../dsql/sqlda.h"
 #include "../dsql/alld_proto.h"
 #include "../dsql/ddl_proto.h"
 #include "../dsql/dsql_proto.h"
@@ -85,11 +84,9 @@ nested FOR loops are added.
 #include "../jrd/thread_proto.h"
 #include "../jrd/why_proto.h"
 #include "../jrd/y_handle.h"
+#include "../common/classes/init.h"
 #include "../common/config/config.h"
 #include "../common/utils_proto.h"
-#include "../common/classes/init.h"
-#include "../jrd/scroll_cursors.h"
-
 #ifdef SCROLLABLE_CURSORS
 #include "../jrd/scroll_cursors.h"
 #endif
@@ -122,6 +119,7 @@ static void		punt(void);
 static UCHAR*	put_item(UCHAR, USHORT, const UCHAR*, UCHAR*, const UCHAR* const);
 static void		release_request(dsql_req*, bool);
 static ISC_STATUS	return_success(void);
+static void		sql_info(dsql_req*, USHORT, const UCHAR*, USHORT, UCHAR*);
 static UCHAR*	var_info(dsql_msg*, const UCHAR*, const UCHAR* const, UCHAR*,
 	const UCHAR* const, USHORT);
 
@@ -435,6 +433,8 @@ GDS_DSQL_ALLOCATE_CPP(	ISC_STATUS*    user_status,
 						FB_API_HANDLE*    db_handle,
 						dsql_req** req_handle)
 {
+	SchedulerContext scHolder;
+
 	tsql* tdsql;
 	tsql thd_context(user_status, tdsql);
 
@@ -502,6 +502,8 @@ ISC_STATUS	GDS_DSQL_EXECUTE_CPP(
 				USHORT		out_msg_length,
 				UCHAR*		out_msg)
 {
+	SchedulerContext scHolder;
+
 	tsql* tdsql;
 	tsql thd_context(user_status, tdsql);
 	ISC_STATUS sing_status;
@@ -642,6 +644,8 @@ static ISC_STATUS dsql8_execute_immediate_common(ISC_STATUS*	user_status,
  *	Common part of prepare and execute a statement.
  *
  **************************************/
+	SchedulerContext scHolder;
+
 	tsql* tdsql;
 	tsql thd_context(user_status, tdsql);
 
@@ -840,8 +844,8 @@ ISC_STATUS callback_execute_immediate( ISC_STATUS* status,
 	YValve::Transaction* why_trans_handle = 0;
 	dsql_dbb* database = 0;
 
-	THREAD_EXIT();
-	databases_mutex->enter();
+	Firebird::MutexLockGuard guard(databases_mutex);
+
 	try 
 	{
 		// 1. Locate why_db_handle, corresponding to jrd_database_handle 
@@ -864,20 +868,16 @@ ISC_STATUS callback_execute_immediate( ISC_STATUS* status,
 	}
 	catch (const Firebird::Exception& e)
 	{
-		databases_mutex->leave();
-		THREAD_ENTER();
 		return e.stuff_exception(status);
 	}
 
-
 	// 3. Call execute... function 
-	databases_mutex->leave();
-    THREAD_ENTER();
 	const ISC_STATUS rc = dsql8_execute_immediate_common(status,
 						&database->dbb_database_handle, &why_trans_handle->public_handle,
 						sql_operator.length(), sql_operator.c_str(), 
 						database->dbb_db_SQL_dialect,
 						0, NULL, 0, 0, NULL, 0, NULL, 0, 0, NULL, requests);
+
 	delete why_trans_handle;
 	return rc;
 }
@@ -886,35 +886,37 @@ ISC_STATUS callback_execute_immediate( ISC_STATUS* status,
 YValve::Attachment*	GetWhyAttachment(ISC_STATUS* status,
 									 Jrd::Attachment* jrd_attachment_handle)
 {
-	THREAD_EXIT();
-	databases_mutex->enter();
+	Firebird::MutexLockGuard guard(databases_mutex);
+
 	dsql_dbb* database;
 	YValve::Attachment* db_handle = 0;
+
 	for (database = databases; database; database = database->dbb_next)
 	{
 		try 
 		{
 			db_handle = YValve::translate<YValve::Attachment>(&database->dbb_database_handle);
 		}
-		catch(const Firebird::Exception&)
+		catch (const Firebird::Exception&)
 		{
 			// here we may simply continue - anyway in case of not found
 			// database, error will be correctly reported
 			continue;
 		}
+
 		if (db_handle->handle == jrd_attachment_handle)
 		{
 			break;
 		}
 	}
+
 	if (! database) 
 	{
 		status[0] = isc_arg_gds;
 		status[1] = isc_bad_db_handle;
 		status[2] = isc_arg_end;
 	}
-	databases_mutex->leave();
-	THREAD_ENTER();
+
 	return database ? db_handle : 0;
 }
 
@@ -949,6 +951,8 @@ ISC_STATUS GDS_DSQL_FETCH_CPP(	ISC_STATUS*	user_status,
 #endif
 							)
 {
+	SchedulerContext scHolder;
+
 	ISC_STATUS s;
 	tsql* tdsql;
 	tsql thd_context(user_status, tdsql);
@@ -1159,6 +1163,8 @@ ISC_STATUS GDS_DSQL_FREE_CPP(ISC_STATUS*	user_status,
 						 dsql_req**		req_handle,
 						 USHORT		option)
 {
+	SchedulerContext scHolder;
+
 	tsql* tdsql;
 	tsql thd_context(user_status, tdsql);
 
@@ -1219,6 +1225,8 @@ ISC_STATUS GDS_DSQL_INSERT_CPP(	ISC_STATUS*	user_status,
 							USHORT	msg_length,
 							const UCHAR*	dsql_msg_buf)
 {
+	SchedulerContext scHolder;
+
 	tsql* tdsql;
 	tsql thd_context(user_status, tdsql);
 
@@ -1307,6 +1315,8 @@ ISC_STATUS GDS_DSQL_PREPARE_CPP(ISC_STATUS*			user_status,
 							USHORT			buffer_length,
 							UCHAR*			buffer)
 {
+	SchedulerContext scHolder;
+
 	tsql* tdsql;
 	tsql thd_context(user_status, tdsql);
 
@@ -1425,12 +1435,7 @@ ISC_STATUS GDS_DSQL_PREPARE_CPP(ISC_STATUS*			user_status,
 
 			*req_handle = request;
 
-			return GDS_DSQL_SQL_INFO_CPP(user_status,
-									req_handle,
-									item_length,
-									items,
-									buffer_length,
-									buffer);
+			sql_info(request, item_length, items, buffer_length, buffer);
 
 		}	// try
 		catch (const Firebird::Exception& ex) {
@@ -1445,6 +1450,8 @@ ISC_STATUS GDS_DSQL_PREPARE_CPP(ISC_STATUS*			user_status,
 		Firebird::stuff_exception(tdsql->tsql_status, ex);
 		return tdsql->tsql_status[1];
 	}
+
+	return return_success();
 }
 
 
@@ -1466,6 +1473,8 @@ ISC_STATUS GDS_DSQL_SET_CURSOR_CPP(	ISC_STATUS*	user_status,
 								const TEXT*	input_cursor,
 								USHORT	type)
 {
+	SchedulerContext scHolder;
+
 	tsql* tdsql;
 	tsql thd_context(user_status, tdsql);
 
@@ -1576,217 +1585,18 @@ ISC_STATUS GDS_DSQL_SQL_INFO_CPP(	ISC_STATUS*		user_status,
 								USHORT		info_length,
 								UCHAR*		info)
 {
-	UCHAR buffer[256];
+	SchedulerContext scHolder;
+
 	tsql* tdsql;
 	tsql thd_context(user_status, tdsql);
 
 	try
 	{
 		init(0);
-		memset(buffer, 0, sizeof(buffer));
-
-		// Pre-initialize buffer. This is necessary because we don't want to transfer rubbish over the wire
-		memset(info, 0, info_length); 
 
 		dsql_req* request = *req_handle;
-	
-		const UCHAR* const end_items = items + item_length;
-		const UCHAR* const end_info = info + info_length;
-		UCHAR *start_info;
-		if (*items == isc_info_length) {
-			start_info = info;
-			items++;
-		}
-		else {
-			start_info = 0;
-		}
 
-		// CVC: Is it the idea that this pointer remains with its previous value
-		// in the loop or should it be made NULL in each iteration?
-		dsql_msg** message = NULL;
-		USHORT first_index = 0;
-
-		while (items < end_items && *items != isc_info_end)
-		{
-			USHORT length, number;
-			UCHAR item = *items++; // cannot be const
-			if (item == isc_info_sql_select || item == isc_info_sql_bind)
-			{
-				message = (item == isc_info_sql_select) ?
-					&request->req_receive : &request->req_send;
-				if (info + 1 >= end_info) {
-					*info = isc_info_truncated;
-					return return_success();
-				}
-				*info++ = item;
-			}
-			else if (item == isc_info_sql_stmt_type)
-			{
-				switch (request->req_type) {
-				case REQ_SELECT:
-				case REQ_EMBED_SELECT:
-					number = isc_info_sql_stmt_select;
-					break;
-				case REQ_SELECT_UPD:
-					number = isc_info_sql_stmt_select_for_upd;
-					break;
-				case REQ_DDL:
-					number = isc_info_sql_stmt_ddl;
-					break;
-				case REQ_GET_SEGMENT:
-					number = isc_info_sql_stmt_get_segment;
-					break;
-				case REQ_PUT_SEGMENT:
-					number = isc_info_sql_stmt_put_segment;
-					break;
-				case REQ_COMMIT:
-				case REQ_COMMIT_RETAIN:
-					number = isc_info_sql_stmt_commit;
-					break;
-				case REQ_ROLLBACK:
-				case REQ_ROLLBACK_RETAIN:
-					number = isc_info_sql_stmt_rollback;
-					break;
-				case REQ_START_TRANS:
-					number = isc_info_sql_stmt_start_trans;
-					break;
-				case REQ_INSERT:
-					number = isc_info_sql_stmt_insert;
-					break;
-				case REQ_UPDATE:
-				case REQ_UPDATE_CURSOR:
-					number = isc_info_sql_stmt_update;
-					break;
-				case REQ_DELETE:
-				case REQ_DELETE_CURSOR:
-					number = isc_info_sql_stmt_delete;
-					break;
-				case REQ_EXEC_PROCEDURE:
-					number = isc_info_sql_stmt_exec_procedure;
-					break;
-				case REQ_SET_GENERATOR:
-					number = isc_info_sql_stmt_set_generator;
-					break;
-				case REQ_SAVEPOINT:
-					number = isc_info_sql_stmt_savepoint;
-					break;
-				case REQ_EXEC_BLOCK: 
-					number = isc_info_sql_stmt_exec_procedure;
-					break;
-				case REQ_SELECT_BLOCK: 
-					number = isc_info_sql_stmt_select;
-					break;
-				default:
-					number = 0;
-					break;
-				}
-				length = convert((SLONG) number, buffer);
-				info = put_item(item, length, buffer, info, end_info);
-				if (!info) {
-					return return_success();
-				}
-			}
-			else if (item == isc_info_sql_sqlda_start) {
-				length = *items++;
-				first_index =
-					static_cast<USHORT>(gds__vax_integer(items, length));
-				items += length;
-			}
-			else if (item == isc_info_sql_batch_fetch) {
-				if (request->req_flags & REQ_no_batch)
-					number = 0;
-				else
-					number = 1;
-				length = convert((SLONG) number, buffer);
-				if (!(info = put_item(item, length, buffer, info, end_info))) {
-					return return_success();
-				}
-			}
-			else if (item == isc_info_sql_records) {
-				length = get_request_info(request, (SSHORT) sizeof(buffer),
-										  buffer);
-				if (length && !(info = put_item(item, length, buffer, info, 
-												end_info))) 
-				{
-					return return_success();
-				}
-			}
-			else if (item == isc_info_sql_get_plan) {
-			/* be careful, get_plan_info() will reallocate the buffer to a
-			   larger size if it is not big enough */
-
-				UCHAR* buffer_ptr = buffer;
-				length =
-					get_plan_info(request, (SSHORT) sizeof(buffer), reinterpret_cast<SCHAR**>(&buffer_ptr));
-
-				if (length) {
-					info = put_item(item, length, buffer_ptr, info, end_info);
-				}
-
-				if (length > sizeof(buffer)) {
-					gds__free(buffer_ptr);
-				}
-
-				if (!info) {
-					return return_success();
-				}
-			}
-			else if (!message ||
-				 	(item != isc_info_sql_num_variables
-				  	&& item != isc_info_sql_describe_vars))
-			{
-				buffer[0] = item;
-				item = isc_info_error;
-				length = 1 + convert((SLONG) isc_infunk, buffer + 1);
-				if (!(info = put_item(item, length, buffer, info, end_info))) {
-					return return_success();
-				}
-			}
-			else
-			{
-				number = (*message) ? (*message)->msg_index : 0;
-				length = convert((SLONG) number, buffer);
-				if (!(info = put_item(item, length, buffer, info, end_info))) {
-					return return_success();
-				}
-				if (item == isc_info_sql_num_variables) {
-					continue;
-				}
-
-				const UCHAR* end_describe = items;
-				while (end_describe < end_items &&
-				   	*end_describe != isc_info_end &&
-				   	*end_describe != isc_info_sql_describe_end) 
-				{
-					end_describe++;
-				}
-
-				info = var_info(*message,
-							items,
-							end_describe,
-							info,
-							end_info,
-							first_index);
-				if (!info) {
-					return return_success();
-				}
-
-				items = end_describe;
-				if (*items == isc_info_sql_describe_end) {
-					items++;
-				}
-			}
-		}
-
-		*info++ = isc_info_end;
-
-		if (start_info && (end_info - info >= 7))
-		{
-			SLONG number = info - start_info;
-			memmove(start_info + 7, start_info, number);
-			USHORT length = convert(number, buffer);
-			put_item(isc_info_length, length, buffer, start_info, end_info);
-		}
+		sql_info(request, item_length, items, info_length, info);
 	}
 	catch (const Firebird::Exception& ex)
 	{
@@ -3029,18 +2839,9 @@ static void cleanup_transaction (FB_API_HANDLE tra_handle, void* arg)
 			   The close routine will have done that. */
 
 			cursors_mutex->leave();
-			/*
-			 * we are expected to be within the subsystem when we do this
-			 * cleanup, for now do a thread_enter/thread_exit here.
-			 * Note that the function dsql8_free_statement() calls the local function.
-			 * Over the long run, it might be better to move the subsystem_exit()
-			 * call in why.c below the cleanup handlers. smistry 9-27-98
-			 */
-			THREAD_ENTER(); //ttt
 			GDS_DSQL_FREE_CPP(	local_status,
 								&open_cursor->opn_request,
 								DSQL_close);
-			THREAD_EXIT();
 			cursors_mutex->enter();
 			open_cursor_ptr = &open_cursors;
 		}
@@ -3534,12 +3335,12 @@ static ISC_STATUS execute_request(dsql_req*			request,
 	UCHAR buffer[20]; // Not used after retrieved.
 	if (request->req_type == REQ_UPDATE_CURSOR)
 	{
-		GDS_DSQL_SQL_INFO_CPP(	local_status,
-								&request,
-								sizeof(sql_records_info),
-								sql_records_info,
-								sizeof(buffer),
-								buffer);
+		sql_info(request,
+				 sizeof(sql_records_info),
+				 sql_records_info,
+				 sizeof(buffer),
+				 buffer);
+
 		if (!request->req_updates)
 		{
 			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 913,
@@ -3549,12 +3350,12 @@ static ISC_STATUS execute_request(dsql_req*			request,
 	}
 	else if (request->req_type == REQ_DELETE_CURSOR)
 	{
-		GDS_DSQL_SQL_INFO_CPP(	local_status,
-								&request,
-								sizeof(sql_records_info),
-								sql_records_info,
-								sizeof(buffer),
-								buffer);
+		sql_info(request,
+				 sizeof(sql_records_info),
+				 sql_records_info,
+				 sizeof(buffer),
+				 buffer);
+
 		if (!request->req_deletes)
 		{
 			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 913,
@@ -5061,6 +4862,232 @@ static ISC_STATUS return_success(void)
 
 
 /**
+
+	sql_info
+
+	@brief	Return DSQL information buffer.
+
+	@param request
+	@param item_length
+	@param items
+	@param info_length
+	@param info
+
+ **/
+
+static void sql_info(dsql_req* request,
+					 USHORT item_length,
+					 const UCHAR* items,
+					 USHORT info_length,
+					 UCHAR* info)
+{
+	UCHAR buffer[256];
+	memset(buffer, 0, sizeof(buffer));
+
+	// Pre-initialize buffer. This is necessary because we don't want to transfer rubbish over the wire
+	memset(info, 0, info_length); 
+
+	const UCHAR* const end_items = items + item_length;
+	const UCHAR* const end_info = info + info_length;
+	UCHAR *start_info;
+	if (*items == isc_info_length) {
+		start_info = info;
+		items++;
+	}
+	else {
+		start_info = 0;
+	}
+
+	// CVC: Is it the idea that this pointer remains with its previous value
+	// in the loop or should it be made NULL in each iteration?
+	dsql_msg** message = NULL;
+	USHORT first_index = 0;
+
+	while (items < end_items && *items != isc_info_end)
+	{
+		USHORT length, number;
+		UCHAR item = *items++; // cannot be const
+		if (item == isc_info_sql_select || item == isc_info_sql_bind)
+		{
+			message = (item == isc_info_sql_select) ?
+				&request->req_receive : &request->req_send;
+			if (info + 1 >= end_info) {
+				*info = isc_info_truncated;
+				return;
+			}
+			*info++ = item;
+		}
+		else if (item == isc_info_sql_stmt_type)
+		{
+			switch (request->req_type) {
+			case REQ_SELECT:
+			case REQ_EMBED_SELECT:
+				number = isc_info_sql_stmt_select;
+				break;
+			case REQ_SELECT_UPD:
+				number = isc_info_sql_stmt_select_for_upd;
+				break;
+			case REQ_DDL:
+				number = isc_info_sql_stmt_ddl;
+				break;
+			case REQ_GET_SEGMENT:
+				number = isc_info_sql_stmt_get_segment;
+				break;
+			case REQ_PUT_SEGMENT:
+				number = isc_info_sql_stmt_put_segment;
+				break;
+			case REQ_COMMIT:
+			case REQ_COMMIT_RETAIN:
+				number = isc_info_sql_stmt_commit;
+				break;
+			case REQ_ROLLBACK:
+			case REQ_ROLLBACK_RETAIN:
+				number = isc_info_sql_stmt_rollback;
+				break;
+			case REQ_START_TRANS:
+				number = isc_info_sql_stmt_start_trans;
+				break;
+			case REQ_INSERT:
+				number = isc_info_sql_stmt_insert;
+				break;
+			case REQ_UPDATE:
+			case REQ_UPDATE_CURSOR:
+				number = isc_info_sql_stmt_update;
+				break;
+			case REQ_DELETE:
+			case REQ_DELETE_CURSOR:
+				number = isc_info_sql_stmt_delete;
+				break;
+			case REQ_EXEC_PROCEDURE:
+				number = isc_info_sql_stmt_exec_procedure;
+				break;
+			case REQ_SET_GENERATOR:
+				number = isc_info_sql_stmt_set_generator;
+				break;
+			case REQ_SAVEPOINT:
+				number = isc_info_sql_stmt_savepoint;
+				break;
+			case REQ_EXEC_BLOCK: 
+				number = isc_info_sql_stmt_exec_procedure;
+				break;
+			case REQ_SELECT_BLOCK: 
+				number = isc_info_sql_stmt_select;
+				break;
+			default:
+				number = 0;
+				break;
+			}
+			length = convert((SLONG) number, buffer);
+			info = put_item(item, length, buffer, info, end_info);
+			if (!info) {
+				return;
+			}
+		}
+		else if (item == isc_info_sql_sqlda_start) {
+			length = *items++;
+			first_index =
+				static_cast<USHORT>(gds__vax_integer(items, length));
+			items += length;
+		}
+		else if (item == isc_info_sql_batch_fetch) {
+			if (request->req_flags & REQ_no_batch)
+				number = 0;
+			else
+				number = 1;
+			length = convert((SLONG) number, buffer);
+			if (!(info = put_item(item, length, buffer, info, end_info))) {
+				return;
+			}
+		}
+		else if (item == isc_info_sql_records) {
+			length = get_request_info(request, (SSHORT) sizeof(buffer),
+									  buffer);
+			if (length && !(info = put_item(item, length, buffer, info, 
+											end_info))) 
+			{
+				return;
+			}
+		}
+		else if (item == isc_info_sql_get_plan) {
+		/* be careful, get_plan_info() will reallocate the buffer to a
+		   larger size if it is not big enough */
+
+			UCHAR* buffer_ptr = buffer;
+			length =
+				get_plan_info(request, (SSHORT) sizeof(buffer), reinterpret_cast<SCHAR**>(&buffer_ptr));
+
+			if (length) {
+				info = put_item(item, length, buffer_ptr, info, end_info);
+			}
+
+			if (length > sizeof(buffer)) {
+				gds__free(buffer_ptr);
+			}
+
+			if (!info) {
+				return;
+			}
+		}
+		else if (!message ||
+			 	(item != isc_info_sql_num_variables
+			  	&& item != isc_info_sql_describe_vars))
+		{
+			buffer[0] = item;
+			item = isc_info_error;
+			length = 1 + convert((SLONG) isc_infunk, buffer + 1);
+			if (!(info = put_item(item, length, buffer, info, end_info))) {
+				return;
+			}
+		}
+		else
+		{
+			number = (*message) ? (*message)->msg_index : 0;
+			length = convert((SLONG) number, buffer);
+			if (!(info = put_item(item, length, buffer, info, end_info))) {
+				return;
+			}
+			if (item == isc_info_sql_num_variables) {
+				continue;
+			}
+
+			const UCHAR* end_describe = items;
+			while (end_describe < end_items &&
+			   	*end_describe != isc_info_end &&
+			   	*end_describe != isc_info_sql_describe_end) 
+			{
+				end_describe++;
+			}
+
+			info = var_info(*message,
+						items,
+						end_describe,
+						info,
+						end_info,
+						first_index);
+			if (!info) {
+				return;
+			}
+
+			items = end_describe;
+			if (*items == isc_info_sql_describe_end) {
+				items++;
+			}
+		}
+	}
+
+	*info++ = isc_info_end;
+
+	if (start_info && (end_info - info >= 7))
+	{
+		SLONG number = info - start_info;
+		memmove(start_info + 7, start_info, number);
+		USHORT length = convert(number, buffer);
+		put_item(isc_info_length, length, buffer, start_info, end_info);
+	}
+}
+
+
+/**
   
  	var_info
   
@@ -5282,4 +5309,3 @@ static UCHAR* var_info(
 
 	return info;
 }
-

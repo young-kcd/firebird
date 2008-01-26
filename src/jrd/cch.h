@@ -55,7 +55,6 @@ class Precedence;
 class thread_db;
 struct que;
 class BufferDesc;
-//class BlockingThread;
 class Database;
 
 /* Page buffer cache size constraints. */
@@ -139,7 +138,6 @@ public:
 #endif 
 	Ods::pag*	bdb_buffer;				/* Actual buffer */
 	exp_index_buf*	bdb_expanded_buffer;	/* expanded index buffer */
-	//BlockingThread*	bdb_blocked;		// Blocked attachments block 
 	PageNumber	bdb_page;				/* Database page number in buffer */
 	SLONG		bdb_incarnation;
 	ULONG		bdb_transactions;		/* vector of dirty flags to reduce commit overhead */

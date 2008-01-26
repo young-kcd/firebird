@@ -356,7 +356,6 @@ static TEXT_PTR IndexLock[] = {	"INDEX LOCK", 0};
 static TEXT_PTR Shadow[] = {	"SHADOW", 0};
 static TEXT_PTR Savepoint[] = {	"SAVE POINT", 0};
 static TEXT_PTR VerbAction[] = {	"VERB", 0};
-static TEXT_PTR BlockingThread[] = {	"BLOCKED THREAD", 0};
 static TEXT_PTR BlobFilter[] = {	"BLOB FILTER", 0};
 static TEXT_PTR ArrayField[] = {	"ARRAY DESCRIPTION", 0};
 static TEXT_PTR blb_map[] = {	"MAP BLOCK", 0};

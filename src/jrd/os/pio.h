@@ -122,32 +122,6 @@ const UCHAR PIOB_success	= 2;	/* I/O successfully completed */
 const UCHAR PIOB_pending	= 4;	/* Asynchronous I/O not yet completed */
 #endif
 
-// This class ensures that all actions in the appropriate scope
-// are performed outside the engine. Used in many PIO routines.
-
-class ThreadExit
-{
-public:
-	ThreadExit()
-	{
-#ifdef SUPERSERVER
-		THREAD_EXIT();
-#endif
-	}
-
-	~ThreadExit()
-	{
-#ifdef SUPERSERVER
-		THREAD_ENTER();
-#endif
-	}
-
-private:
-	// prohibited
-	ThreadExit(const ThreadExit&);
-	ThreadExit& operator=(const ThreadExit&);
-};
-
 } //namespace Jrd
 
 #endif // JRD_PIO_H

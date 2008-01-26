@@ -101,7 +101,7 @@ IMPLEMENT_TRACE_ROUTINE(cch_trace, "CCH")
 #define PAGE_LOCK_RELEASE(lock)			LCK_release (tdbb, lock)
 #define PAGE_LOCK_ASSERT(lock)			LCK_assert (tdbb, lock)
 #define PAGE_LOCK_OPT(lock, lock_type, wait)	LCK_lock_opt (tdbb, lock, lock_type, wait)
-#define PAGE_LOCK_RE_POST(lock)			LCK_re_post (lock)
+#define PAGE_LOCK_RE_POST(lock)			LCK_re_post (tdbb, lock)
 #define PAGE_OVERHEAD	(sizeof (bcb_repeat) + sizeof(BufferDesc) + \
 			 sizeof (Lock) + (int) dbb->dbb_page_size)
 #endif
@@ -119,7 +119,7 @@ static THREAD_ENTRY_DECLARE cache_reader(THREAD_ENTRY_PARAM);
 static THREAD_ENTRY_DECLARE cache_writer(THREAD_ENTRY_PARAM);
 #endif
 static void check_precedence(thread_db*, WIN *, PageNumber);
-static void clear_precedence(Database*, BufferDesc*);
+static void clear_precedence(thread_db*, BufferDesc*);
 static BufferDesc* dealloc_bdb(BufferDesc*);
 #ifndef PAGE_LATCHING
 static void down_grade(thread_db*, BufferDesc*);
@@ -313,6 +313,7 @@ int CCH_down_grade_dbb(void* ast_object)
  *
  **************************************/
 	Database* dbb = static_cast<Database*>(ast_object);
+	Database::SyncGuard dsGuard(dbb, true);
 
 /* Ignore the request if the database or lock block does not appear
    to be valid . */
@@ -330,23 +331,15 @@ int CCH_down_grade_dbb(void* ast_object)
 
 	tdbb->setDatabase(dbb);
 	tdbb->setAttachment(lock->lck_attachment);
-	tdbb->tdbb_quantum = QUANTUM;
-	tdbb->setRequest(NULL);
-	tdbb->setTransaction(NULL);
 
 	dbb->dbb_ast_flags |= DBB_blocking;
 
 /* Database shutdown will release the database lock; just return. */
 
-	if (SHUT_blocking_ast(dbb)) {
+	if (SHUT_blocking_ast(tdbb)) {
 		dbb->dbb_ast_flags &= ~DBB_blocking;
 		return 0;
 	}
-
-	/*
-	if (dbb->dbb_use_count)
-	    return;
-	*/
 
 /* If we are already shared, there is nothing more we can do.
    If any case, the other guy probably wants exclusive access,
@@ -572,9 +565,8 @@ bool CCH_exclusive_attachment(thread_db* tdbb, USHORT level, SSHORT wait_flag)
 
 		if (remaining > CCH_EXCLUSIVE_RETRY_INTERVAL)
 		{
-			THREAD_EXIT();
+			Database::Checkout dcoHolder(dbb);
 			THREAD_SLEEP(CCH_EXCLUSIVE_RETRY_INTERVAL * 1000);
-			THREAD_ENTER();
 		}
 
 		if (tdbb->getAttachment()->att_flags & ATT_cancel_raise) {
@@ -683,7 +675,7 @@ pag* CCH_fake(thread_db* tdbb, WIN * window, SSHORT latch_wait)
 	}
 	else if (QUE_NOT_EMPTY(bdb->bdb_lower)) {
 		/* Clear residual precedence left over from AST-level I/O. */
-		clear_precedence(dbb, bdb);
+		clear_precedence(tdbb, bdb);
 	}
 
 	bdb->bdb_flags = (BDB_writer | BDB_faked);
@@ -858,7 +850,6 @@ SSHORT CCH_fetch_lock(
 		SDW_get_shadows();
 	}
 
-
 /* Look for the page in the cache. */
 
 	BufferDesc* bdb = get_buffer(tdbb, window->win_page,
@@ -916,7 +907,6 @@ void CCH_fetch_page(
 	pag* page = bdb->bdb_buffer;
 	bdb->bdb_incarnation = ++dbb->dbb_page_incarnation;
 
-	AST_CHECK();
 	++dbb->dbb_reads;
 	tdbb->bumpStats(RuntimeStatistics::PAGE_READS);
 	page = bdb->bdb_buffer;
@@ -1071,8 +1061,6 @@ void CCH_fetch_page(
 	}
 #endif /* NO_CHECKSUM */
 
-	AST_CHECK();
-
 	bdb->bdb_flags &= ~(BDB_not_valid | BDB_read_pending);
 	window->win_buffer = bdb->bdb_buffer;
 }
@@ -1187,10 +1175,11 @@ void CCH_fini(thread_db* tdbb)
 			bcb->bcb_flags &= ~BCB_cache_reader;
 			ISC_event_post(event);
 			const SLONG count = ISC_event_clear(event);
-			THREAD_EXIT();
-			ISC_event_wait(1, &event, &count, 0);
-			THREAD_ENTER();
-			/* Now dispose off the cache reader associated semaphore */
+			{ // scope
+				Database::Checkout dcoHolder(dbb);
+				ISC_event_wait(1, &event, &count, 0);
+			}
+			// Now dispose off the cache reader associated semaphore
 			ISC_event_fini(event);
 		}
 #endif
@@ -1200,25 +1189,25 @@ void CCH_fini(thread_db* tdbb)
 	/* Wait for cache writer startup to complete. */
 		while ((bcb = dbb->dbb_bcb) && (bcb->bcb_flags & BCB_writer_start))
 		{
-			THREAD_EXIT();
+			Database::Checkout dcoHolder(dbb);
 			THREAD_YIELD();
-			THREAD_ENTER();
 		}
 
 	/* Shutdown the dedicated cache writer for this database. */
 
 		if ((bcb = dbb->dbb_bcb) && (bcb->bcb_flags & BCB_cache_writer)) {
 			event_t* event = dbb->dbb_writer_event_fini;
-			/* initialize initialization event */
+			// Initialize initialization event
 			ISC_event_init(event, 0, 0);
 			const SLONG count = ISC_event_clear(event);
 
 			bcb->bcb_flags &= ~BCB_cache_writer;
-			ISC_event_post(dbb->dbb_writer_event); /* Wake up running thread */
-			THREAD_EXIT();
-			ISC_event_wait(1, &event, &count, 0);
-			THREAD_ENTER();
-			/* Cleanup initialization event */
+			ISC_event_post(dbb->dbb_writer_event); // Wake up running thread
+			{ // scope
+				Database::Checkout dcoHolder(dbb);
+				ISC_event_wait(1, &event, &count, 0);
+			}
+			// Cleanup initialization event
 			ISC_event_fini(event);
 		}
 #endif
@@ -1751,9 +1740,10 @@ void CCH_init(thread_db* tdbb, ULONG number)
 		ERR_bugcheck_msg("cannot start thread");
 	}
 
-	THREAD_EXIT();
-	ISC_event_wait(1, &event, &count, 5 * 1000000);
-	THREAD_ENTER();
+	{ // scope
+		Database::Checkout dcoHolder(dbb);
+		ISC_event_wait(1, &event, &count, 5 * 1000000);
+	}
 #endif
 
 #ifdef CACHE_WRITER
@@ -1773,9 +1763,10 @@ void CCH_init(thread_db* tdbb, ULONG number)
 			bcb->bcb_flags &= ~BCB_writer_start;
 			ERR_bugcheck_msg("cannot start thread");
 		}
-		THREAD_EXIT();
-		ISC_event_wait(1, &event, &count, 5 * 1000000);
-		THREAD_ENTER();
+		{ // scope
+			Database::Checkout dcoHolder(dbb);
+			ISC_event_wait(1, &event, &count, 5 * 1000000);
+		}
 		/* Clean up initialization event */
 		ISC_event_fini(event);
 	}
@@ -2309,7 +2300,7 @@ void CCH_release_exclusive(thread_db* tdbb)
 	}
 
 	if (dbb->dbb_ast_flags & DBB_blocking) {
-		LCK_re_post(dbb->dbb_lock);
+		LCK_re_post(tdbb, dbb->dbb_lock);
 	}
 }
 
@@ -2629,7 +2620,7 @@ bool CCH_write_all_shadows(thread_db* tdbb,
 			else {
 				sdw->sdw_flags |= SDW_delete;
 				if (!inAst && SDW_check_conditional()) {
-					if (SDW_lck_update((SLONG) 0)) {
+					if (SDW_lck_update(tdbb, 0)) {
 						SDW_notify();
 						CCH_unwind(tdbb, false);
 						SDW_dump_pages();
@@ -2733,6 +2724,8 @@ static int blocking_ast_bdb(void* ast_object)
  *
  **************************************/
 	BufferDesc* bdb = static_cast<BufferDesc*>(ast_object);
+	Database* dbb = bdb->bdb_dbb;
+	Database::SyncGuard dsGuard(dbb, true);
 
 	ISC_STATUS_ARRAY ast_status;
 
@@ -2742,13 +2735,7 @@ static int blocking_ast_bdb(void* ast_object)
 
 	BLKCHK(bdb, type_bdb);
 	
-	Database* dbb = bdb->bdb_dbb;
-
 	tdbb->setDatabase(dbb);
-	tdbb->setAttachment(NULL);
-	tdbb->tdbb_quantum = QUANTUM;
-	tdbb->setRequest(NULL);
-	tdbb->setTransaction(NULL);
 
 /* Do some fancy footwork to make sure that pages are
    not removed from the btc tree at AST level.  Then
@@ -4037,7 +4024,7 @@ static THREAD_ENTRY_DECLARE cache_reader(THREAD_ENTRY_PARAM arg)
  *
  **************************************/
 	Database* dbb = (Database*)arg;
-	THREAD_ENTER();
+	Database::SyncGuard dsGuard(dbb);
 
 	ISC_STATUS_ARRAY status_vector;
 
@@ -4046,7 +4033,6 @@ static THREAD_ENTRY_DECLARE cache_reader(THREAD_ENTRY_PARAM arg)
 
 /* Dummy attachment needed for lock owner identification. */
 	tdbb->setDatabase(dbb);
-	tdbb->tdbb_quantum = QUANTUM;
 	tdbb->setAttachment(FB_NEW(*dbb->dbb_bufferpool) Attachment());
 	tdbb->getAttachment()->att_database = dbb;
 	tdbb->getAttachment()->att_filename = dbb->dbb_filename;
@@ -4070,7 +4056,6 @@ static THREAD_ENTRY_DECLARE cache_reader(THREAD_ENTRY_PARAM arg)
 	catch (const Firebird::Exception& ex) {
 		Firebird::stuff_exception(status_vector, ex);
 		gds__log_status(dbb->dbb_file->fil_string, status_vector);
-		THREAD_EXIT();
 		return -1;
 	}
 
@@ -4092,9 +4077,8 @@ static THREAD_ENTRY_DECLARE cache_reader(THREAD_ENTRY_PARAM arg)
 		prf* next_prefetch = &prefetch1;
 
 		if (dbb->dbb_flags & DBB_suspend_bgio) {
-			THREAD_EXIT();
+			Database::Checkout dcoHolder(dbb);
 			ISC_event_wait(1, &reader_event, &count, 10 * 1000000);
-			THREAD_ENTER();
 			continue;
 		}
 
@@ -4162,9 +4146,8 @@ static THREAD_ENTRY_DECLARE cache_reader(THREAD_ENTRY_PARAM arg)
 		}
 		else {
 			bcb->bcb_flags &= ~BCB_reader_active;
-			THREAD_EXIT();
+			Database::Checkout dcoHolder(dbb);
 			ISC_event_wait(1, &reader_event, &count, 10 * 1000000);
-			THREAD_ENTER();
 		}
 		bcb = dbb->dbb_bcb;
 	}
@@ -4174,7 +4157,6 @@ static THREAD_ENTRY_DECLARE cache_reader(THREAD_ENTRY_PARAM arg)
 	tdbb->setAttachment(0);
 	bcb->bcb_flags &= ~BCB_cache_reader;
 	ISC_event_post(reader_event);
-	THREAD_EXIT();
 
 	}	// try
 	catch (const Firebird::Exception& ex) {
@@ -4204,7 +4186,7 @@ static THREAD_ENTRY_DECLARE cache_writer(THREAD_ENTRY_PARAM arg)
  *
  **************************************/
 	Database* dbb = (Database*)arg;
-	THREAD_ENTER();
+	Database::SyncGuard dsGuard(dbb);
 
 	ISC_STATUS_ARRAY status_vector;
 
@@ -4214,7 +4196,6 @@ static THREAD_ENTRY_DECLARE cache_writer(THREAD_ENTRY_PARAM arg)
 /* Dummy attachment needed for lock owner identification. */
 
 	tdbb->setDatabase(dbb);
-	tdbb->tdbb_quantum = QUANTUM;
 	tdbb->setAttachment(FB_NEW(*dbb->dbb_bufferpool) Attachment(dbb));
 	tdbb->getAttachment()->att_filename = dbb->dbb_filename;
 	Jrd::ContextPoolHolder context(tdbb, dbb->dbb_bufferpool);
@@ -4241,7 +4222,6 @@ static THREAD_ENTRY_DECLARE cache_writer(THREAD_ENTRY_PARAM arg)
 
 		ISC_event_fini(writer_event);
 		bcb->bcb_flags &= ~(BCB_cache_writer | BCB_writer_start);
-		THREAD_EXIT();
 		return (THREAD_ENTRY_RETURN)(-1);
 	}
 
@@ -4253,9 +4233,10 @@ static THREAD_ENTRY_DECLARE cache_writer(THREAD_ENTRY_PARAM arg)
 			SLONG starting_page = -1;
 
 			if (dbb->dbb_flags & DBB_suspend_bgio) {
-				THREAD_EXIT();
-				ISC_event_wait(1, &writer_event, &count, 10 * 1000000);
-				THREAD_ENTER();
+				{ //scope
+					Database::Checkout dcoHolder(dbb);
+					ISC_event_wait(1, &writer_event, &count, 10 * 1000000);
+				}
 				bcb = dbb->dbb_bcb;
 				continue;
 			}
@@ -4271,9 +4252,10 @@ static THREAD_ENTRY_DECLARE cache_writer(THREAD_ENTRY_PARAM arg)
 			}
 #endif
 
-			THREAD_EXIT();
-			THREAD_YIELD();
-			THREAD_ENTER();
+			{ // scope
+				Database::Checkout dcoHolder(dbb);
+				THREAD_YIELD();
+			}
 
 			if (bcb->bcb_flags & BCB_free_pending) {
 				BufferDesc* bdb = get_buffer(tdbb, FREE_PAGE, LATCH_none, 1);
@@ -4323,9 +4305,8 @@ static THREAD_ENTRY_DECLARE cache_writer(THREAD_ENTRY_PARAM arg)
 #endif
 			else {
 				bcb->bcb_flags &= ~BCB_writer_active;
-				THREAD_EXIT();
+				Database::Checkout dcoHolder(dbb);
 				ISC_event_wait(1, &writer_event, &count, 10 * 1000000);
-				THREAD_ENTER();
 			}
 			bcb = dbb->dbb_bcb;
 		}
@@ -4337,7 +4318,6 @@ static THREAD_ENTRY_DECLARE cache_writer(THREAD_ENTRY_PARAM arg)
 		/* Notify the finalization caller that we're finishing. */
 		ISC_event_post(dbb->dbb_writer_event_fini);
 		ISC_event_fini(writer_event);
-		THREAD_EXIT();
 
 	}	// try
 	catch (const Firebird::Exception& ex) {
@@ -4495,7 +4475,7 @@ static void check_precedence(thread_db* tdbb, WIN * window, PageNumber page)
 
 
 
-static void clear_precedence(Database* dbb, BufferDesc* bdb)
+static void clear_precedence(thread_db* tdbb, BufferDesc* bdb)
 {
 /**************************************
  *
@@ -4507,7 +4487,8 @@ static void clear_precedence(Database* dbb, BufferDesc* bdb)
  *	Clear precedence relationships to lower precedence block.
  *
  **************************************/
-	SET_DBB(dbb);
+	SET_TDBB(tdbb);
+	Database* dbb = tdbb->getDatabase();
 
 //	PRE_MUTEX_ACQUIRE;
 	BufferControl* bcb = dbb->dbb_bcb;
@@ -4913,7 +4894,7 @@ static BufferDesc* get_buffer(thread_db* tdbb, const PageNumber page, LATCH latc
 			/* This code is only used by the background I/O threads:
 			   cache writer, cache reader and garbage collector. */
 
-			THREAD_EXIT();
+			Database::Checkout dcoHolder(dbb);
 
 			for (que_inst = bcb->bcb_in_use.que_backward;
 				 que_inst != &bcb->bcb_in_use; que_inst = que_inst->que_backward)
@@ -4927,7 +4908,6 @@ static BufferDesc* get_buffer(thread_db* tdbb, const PageNumber page, LATCH latc
 						continue;
 					}
 					if (bdb->bdb_flags & BDB_db_dirty) {
-						THREAD_ENTER();
 //						BCB_MUTEX_RELEASE;
 						return bdb;
 					}
@@ -4939,7 +4919,6 @@ static BufferDesc* get_buffer(thread_db* tdbb, const PageNumber page, LATCH latc
 				else {			/* if (page == CHECKPOINT_PAGE) */
 
 					if (bdb->bdb_flags & BDB_checkpoint) {
-						THREAD_ENTER();
 //						BCB_MUTEX_RELEASE;
 						return bdb;
 					}
@@ -4950,7 +4929,6 @@ static BufferDesc* get_buffer(thread_db* tdbb, const PageNumber page, LATCH latc
 				bcb->bcb_flags &= ~BCB_free_pending;
 			}
 
-			THREAD_ENTER();
 //			BCB_MUTEX_RELEASE;
 			return NULL;
 		}
@@ -5123,7 +5101,7 @@ static BufferDesc* get_buffer(thread_db* tdbb, const PageNumber page, LATCH latc
 			}
 //			PRE_MUTEX_RELEASE;
 
-			clear_precedence(dbb, bdb);
+			clear_precedence(tdbb, bdb);
 
 			/* remove the buffer from the "mod" queue and place it
 			   in it's new spot, provided it's not a negative (scratch) page */
@@ -5389,7 +5367,7 @@ static SSHORT latch_bdb(
 		 count = ISC_event_clear(event))
 	{
 //		LATCH_MUTEX_RELEASE;
-		THREAD_EXIT();
+		Database::Checkout dcoHolder(dbb);
 		if (latch_wait == 1) {
 			timeout_occurred =
 				ISC_event_wait(1, &event, &count, 120 * 1000000);
@@ -5398,7 +5376,6 @@ static SSHORT latch_bdb(
 			timeout_occurred =
 				ISC_event_wait(1, &event, &count, -latch_wait * 1000000);
 		}
-		THREAD_ENTER();
 //		LATCH_MUTEX_ACQUIRE;
 	}
 
@@ -5507,7 +5484,6 @@ static SSHORT lock_buffer(
 	if (lock->lck_logical >= lock_type) {
 		return 0;
 	}
-
 
 	TEXT errmsg[MAX_ERRMSG_LEN + 1];
 	ISC_STATUS* status = tdbb->tdbb_status_vector;
@@ -5782,14 +5758,14 @@ static void prefetch_epilogue(Prefetch* prefetch, ISC_STATUS* status_vector)
 		return;
 	}
 
+	thread_db* tdbb = prefetch->prf_tdbb;
+	Database* dbb = tdbb->getDatabase();
+
 	prefetch->prf_piob.piob_wait = TRUE;
-	const bool async_status = PIO_status(&prefetch->prf_piob, status_vector);
+	const bool async_status = PIO_status(dbb, &prefetch->prf_piob, status_vector);
 
 /* If there was an I/O error release all buffer latches acquired
    for the prefetch request. */
-
-	thread_db* tdbb = prefetch->prf_tdbb;
-	Database* dbb = tdbb->getDatabase();
 
 	if (!async_status) {
 		BufferDesc** next_bdb = prefetch->prf_bdbs;
@@ -6372,7 +6348,7 @@ static int write_buffer(
 	if (!(bdb->bdb_flags & BDB_dirty) &&
 		!(write_thru && bdb->bdb_flags & BDB_db_dirty))
 	{
-		clear_precedence(dbb, bdb);
+		clear_precedence(tdbb, bdb);
 		release_bdb(tdbb, bdb, true, false, false);
 		return 1;
 	}
@@ -6439,11 +6415,11 @@ static int write_buffer(
 		&& !(bdb->bdb_flags & BDB_marked))
 	{
 		if ( (result = write_page(tdbb, bdb, write_thru, status, false)) ) {
-			clear_precedence(dbb, bdb);
+			clear_precedence(tdbb, bdb);
 		}
 	}
 	else {
-		clear_precedence(dbb, bdb);
+		clear_precedence(tdbb, bdb);
 	}
 
 	release_bdb(tdbb, bdb, true, false, false);
@@ -6513,7 +6489,6 @@ static bool write_page(
 //	if (true || write_thru) then finally if (true)
 // I won't wipe out the if() itself to allow my changes be verified easily by others
 	if (true) {
-		AST_CHECK();
 		dbb->dbb_writes++;
 		tdbb->bumpStats(RuntimeStatistics::PAGE_WRITES);
 
@@ -6615,7 +6590,6 @@ static bool write_page(
 			bdb->bdb_flags &= ~(BDB_db_dirty | BDB_checkpoint);
 		}
 #endif
-		AST_CHECK();
 	}
 
 	if (!result) {

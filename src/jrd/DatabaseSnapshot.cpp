@@ -341,6 +341,7 @@ int DatabaseSnapshot::blockingAst(void* ast_object)
 {
 	Database* dbb = static_cast<Database*>(ast_object);
 	fb_assert(dbb);
+	Database::SyncGuard dsGuard(dbb, true);
 
 	ThreadContextHolder tdbb;
 
@@ -349,9 +350,6 @@ int DatabaseSnapshot::blockingAst(void* ast_object)
 
 	tdbb->setDatabase(lock->lck_dbb);
 	tdbb->setAttachment(lock->lck_attachment);
-	tdbb->tdbb_quantum = QUANTUM;
-	tdbb->setRequest(NULL);
-	tdbb->setTransaction(NULL);
 
 	Jrd::ContextPoolHolder context(tdbb, dbb->dbb_permanent);
 

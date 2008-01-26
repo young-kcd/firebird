@@ -284,7 +284,7 @@ bool PIO_expand(const TEXT* file_name, USHORT file_length, TEXT* expanded_name, 
 }
 
 
-void PIO_extend(jrd_file* /*main_file*/, const ULONG /*extPages*/, const USHORT /*pageSize*/)
+void PIO_extend(Database* dbb, jrd_file* /*main_file*/, const ULONG /*extPages*/, const USHORT /*pageSize*/)
 {
 /**************************************
  *
@@ -553,7 +553,7 @@ USHORT PIO_init_data(Database* dbb, jrd_file* main_file, ISC_STATUS* status_vect
 
 	FB_UINT64 bytes, offset;
 
-	ThreadExit teHolder;
+	Database::Checkout dcoHolder(dbb, true);
 
 	jrd_file* file = seek_file(main_file, &bdb, &offset, status_vector);
 
@@ -695,9 +695,9 @@ bool PIO_read(jrd_file* file, BufferDesc* bdb, Ods::pag* page, ISC_STATUS* statu
 		return unix_error("read", file, isc_io_read_err, status_vector);
 	}
 
-	ThreadExit teHolder;
-
 	Database* dbb = bdb->bdb_dbb;
+	Database::Checkout dcoHolder(dbb, true);
+
 	const FB_UINT64 size = dbb->dbb_page_size;
 
 #ifdef ISC_DATABASE_ENCRYPTION
@@ -787,9 +787,9 @@ bool PIO_write(jrd_file* file, BufferDesc* bdb, Ods::pag* page, ISC_STATUS* stat
 	if (file->fil_desc == -1)
 		return unix_error("write", file, isc_io_write_err, status_vector);
 
-	ThreadExit teHolder;
-
 	Database* dbb = bdb->bdb_dbb;
+	Database::Checkout dcoHolder(dbb, true);
+
 	const SLONG size = dbb->dbb_page_size;
 
 #ifdef ISC_DATABASE_ENCRYPTION

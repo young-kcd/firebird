@@ -2095,10 +2095,7 @@ jrd_req* CMP_make_request(thread_db* tdbb, CompilerScratch* csb)
 				{
 					if (!index->idl_count)
 					{
-						LCK_lock_non_blocking(	tdbb,
-												index->idl_lock,
-												LCK_SR,
-												LCK_WAIT);
+						LCK_lock(tdbb, index->idl_lock, LCK_SR, LCK_WAIT);
 					}
 					++index->idl_count;
 				}
@@ -2349,7 +2346,7 @@ void CMP_release(thread_db* tdbb, jrd_req* request)
 			case Resource::rsc_relation:
 				{
 					jrd_rel* relation = resource->rsc_rel;
-					MET_release_existence(relation);
+					MET_release_existence(tdbb, relation);
 					break;
 				}
 			case Resource::rsc_index:
@@ -5229,7 +5226,7 @@ static jrd_nod* pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node
 				jrd_nod* value = node->nod_arg[e_fun_args];
 				UserFunction* function = (UserFunction*) node->nod_arg[e_fun_function];
 				node->nod_arg[e_fun_function] =
-					(jrd_nod*) FUN_resolve(csb, function, value);
+					(jrd_nod*) FUN_resolve(tdbb, csb, function, value);
 				if (!node->nod_arg[e_fun_function]) {
 					ERR_post(isc_funmismat, isc_arg_string,
 							function->fun_name.c_str(), 0);
