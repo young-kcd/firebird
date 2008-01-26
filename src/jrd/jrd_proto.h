@@ -34,7 +34,6 @@ namespace Jrd {
 	struct bid;
 	class jrd_req;
 	class Service;
-	class BlockingThread;
 	class thread_db;
 	struct teb;
 }
@@ -160,15 +159,12 @@ void	JRD_process_close();
 void	JRD_database_close(Jrd::Attachment**, Jrd::Attachment**);
 #endif /* SERVER_SHUTDOWN */
 
-void	JRD_blocked(Jrd::Attachment*, Jrd::BlockingThread**);
 bool	JRD_reschedule(Jrd::thread_db*, SLONG, bool);
-void	JRD_unblock(Jrd::BlockingThread**);
 
 // Call this function from the debugger if desired
 void	JRD_print_pools(const char* filename);
 
 #ifdef SUPERSERVER
-void	JRD_print_all_counters(const TEXT*);
 bool	JRD_getdir(Firebird::PathName&);
 #endif
 

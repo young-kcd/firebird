@@ -41,6 +41,7 @@
 #include <setjmp.h>
 #endif
 
+#include "../common/classes/fb_atomic.h"
 #include "../common/classes/fb_string.h"
 #include "../common/classes/MetaName.h"
 #include "../common/classes/array.h"
@@ -135,7 +136,6 @@ class jrd_nod;
 class BufferControl;
 class BackupManager;
 class SparseBitmap;
-class BlockingThread;
 class jrd_rel;
 class ExternalFile;
 class ViewContext;
@@ -183,9 +183,121 @@ public:
 typedef Firebird::ObjectsArray<Trigger> trig_vec;
 
 
-class Database : private pool_alloc<type_dbb>
+class Database : public pool_alloc<type_dbb>
 {
+	class Sync
+	{
+	public:
+		Sync()
+			: threadId(0), isAst(false)
+		{}
+
+		~Sync()
+		{}
+
+		void lock(bool ast = false)
+		{
+			const FB_THREAD_ID currentId = getThreadId();
+
+			stateMutex.enter();
+
+			if (threadId != currentId)
+			{
+				stateMutex.leave();
+				++waiters;
+				syncMutex.enter();
+				--waiters;
+				stateMutex.enter();
+				threadId = currentId;
+				isAst = ast;
+			}
+
+			stateMutex.leave();
+		}
+
+		void unlock(bool checkout = false)
+		{
+			Firebird::MutexLockGuard guard(stateMutex);
+
+			fb_assert(threadId == getThreadId());
+
+			if (!(isAst && checkout))
+			{
+				threadId = 0;
+				syncMutex.leave();
+			}
+		}
+
+		bool hasContention() const
+		{
+			return (waiters.value() > 0);
+		}
+
+	private:
+		// copying is prohibited
+		Sync(const Sync&);
+		Sync& operator=(const Sync&);
+
+		Firebird::Mutex syncMutex;
+		Firebird::Mutex stateMutex;
+		Firebird::AtomicCounter waiters;
+		FB_THREAD_ID threadId;
+		bool isAst;
+	};
+
 public:
+
+	class SyncGuard
+	{
+	public:
+		SyncGuard(Database* arg, bool ast = false)
+			: dbb(arg)
+		{
+			dbb->dbb_sync.lock(ast);
+		}
+
+		~SyncGuard()
+		{
+			dbb->dbb_sync.unlock();
+		}
+
+	private:
+		// copying is prohibited
+		SyncGuard(const SyncGuard&);
+		SyncGuard& operator=(const SyncGuard&);
+
+		Database* dbb;
+	};
+
+	class Checkout
+	{
+	public:
+		explicit Checkout(Database* arg, bool flag = false)
+			: dbb(arg), io(flag)
+		{
+#ifndef SUPERSERVER
+			if (!io)
+#endif
+				dbb->checkout();
+		}
+
+		~Checkout()
+		{
+#ifndef SUPERSERVER
+			if (!io)
+#endif
+				dbb->checkin();
+		}
+
+	private:
+		// copying is prohibited
+		Checkout(const Checkout&);
+		Checkout& operator=(const Checkout&);
+
+		Database* dbb;
+		bool io;
+	};
+
 	typedef int (*crypt_routine) (const char*, void*, int, void*);
 
 	static Database* newDbb(MemoryPool& p) {
@@ -200,7 +312,7 @@ public:
 	// risk an aborted engine.
 	static void deleteDbb(Database* toDelete)
 	{
-		if (toDelete == 0)
+		if (!toDelete)
 			return;
 		JrdMemoryPool *perm = toDelete->dbb_permanent;
 #ifdef SUPERSERVER
@@ -213,7 +325,15 @@ public:
 		delete toDelete;
 		JrdMemoryPool::noDbbDeletePool(perm);
 	}
-	
+
+	static ULONG getLockOwnerId()
+	{
+		static Firebird::AtomicCounter counter;
+		return ++counter;
+	}
+
+	mutable Sync dbb_sync;				// Database sync primitive
+
 	Database*	dbb_next;				// Next database block in system
 	Attachment* dbb_attachments;		// Active attachments
 	BufferControl*	dbb_bcb;			// Buffer control block
@@ -292,8 +412,6 @@ public:
 	event_t dbb_gc_event_fini[1];		// Event for finalization garbage collector
 #endif
 
-	BlockingThread*	dbb_free_btbs;		// Unused BlockingThread blocks
-
 	ULONG dbb_current_id;				// Generator of dbb-local ids
 	Firebird::MemoryStats dbb_memory_stats;
 
@@ -305,6 +423,7 @@ public:
 	SLONG dbb_last_header_write;		// Transaction id of last header page physical write
 	SLONG dbb_flush_cycle;				// Current flush cycle
 	SLONG dbb_sweep_interval;			// Transactions between sweep
+	ULONG dbb_lock_owner_id;			// ID for the lock manager
 	SLONG dbb_lock_owner_handle;		// Handle for the lock manager
 
 	USHORT unflushed_writes;			// unflushed writes
@@ -331,6 +450,16 @@ public:
 		return ++dbb_current_id;
 	}
 
+	void checkin() const
+	{
+		dbb_sync.lock();
+	}
+
+	void checkout() const
+	{
+		dbb_sync.unlock(true);
+	}
+
 	// returns true if primary file is located on raw device
 	bool onRawDevice();
 
@@ -346,6 +475,7 @@ private:
 		dbb_functions(p)
 	{
 		dbb_pools.resize(1);
+		dbb_lock_owner_id = getLockOwnerId();
 	}
 
 	~Database()
@@ -516,6 +646,7 @@ public:
 		, att_dsql_cache(*dbb->dbb_permanent)
 #endif
 		{
+			att_lock_owner_id = Database::getLockOwnerId();
 		}
 
 	~Attachment();
@@ -556,6 +687,7 @@ public:
 	sort_context*	att_active_sorts;		// Active sorts
 	Lock*		att_id_lock;				// Attachment lock (if any)
 	SLONG		att_attachment_id;			// Attachment ID
+	ULONG		att_lock_owner_id;			// ID for the lock manager
 	SLONG		att_lock_owner_handle;		// Handle for the lock manager
 	SLONG		att_event_session;			// Event session id, if any
 	SecurityClass*	att_security_class;		// security class for database
@@ -813,15 +945,6 @@ struct teb {
 
 typedef teb TEB;
 
-// Blocking Thread Block
-
-class BlockingThread : public pool_alloc<type_btb>
-{
-public:
-	BlockingThread* btb_next;
-	thread* btb_thread_id;
-};
-
 // Window block for loading cached pages into
 // CVC: Apparently, the only possible values are HEADER_PAGE==0 and LOG_PAGE==2
 // and reside in ods.h, although I watched a place with 1 and others with members
@@ -882,12 +1005,12 @@ public:
 	explicit thread_db(ISC_STATUS* status)
 		: ThreadData(ThreadData::tddDBB)
 	{
-		tdbb_default = 0;
-		database = 0;
-		attachment = 0;
-		transaction = 0;
-		request = 0;
-		tdbb_quantum = 0;
+		tdbb_default = NULL;
+		database = NULL;
+		attachment = NULL;
+		transaction = NULL;
+		request = NULL;
+		tdbb_quantum = QUANTUM;
 		tdbb_flags = 0;
 		tdbb_temp_attid = tdbb_temp_traid = 0;
 		reqStat = traStat = attStat = dbbStat = RuntimeStatistics::getDummy();
