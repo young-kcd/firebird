@@ -1036,7 +1036,7 @@ void EXE_start(thread_db* tdbb, jrd_req* request, jrd_tra* transaction)
 
 	Lock* lock = transaction->tra_cancel_lock;
 	if (lock && lock->lck_logical == LCK_none)
-		LCK_lock_non_blocking(tdbb, lock, LCK_SR, LCK_WAIT);
+		LCK_lock(tdbb, lock, LCK_SR, LCK_WAIT);
 
 	TRA_attach_request(transaction, request);
 	request->req_flags &= REQ_FLAGS_INIT_MASK;

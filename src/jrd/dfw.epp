@@ -1957,18 +1957,15 @@ static bool create_index(	thread_db*	tdbb,
 
 			if (partner_relation)
 			{
+				// signal to other processes about new constraint
+				LCK_convert(tdbb, relation->rel_partners_lock, LCK_EX, LCK_WAIT);
+				LCK_release(tdbb, relation->rel_partners_lock);
 				relation->rel_flags |= REL_check_partners;
 
-				// signal to other processes about new constraint
-				LCK_convert_non_blocking(tdbb, relation->rel_partners_lock,
-										 LCK_EX, LCK_WAIT);
-				LCK_release(tdbb, relation->rel_partners_lock);
-
 				if (relation != partner_relation) {
-					partner_relation->rel_flags |= REL_check_partners;
-					LCK_convert_non_blocking(tdbb, partner_relation->rel_partners_lock,
-											 LCK_EX, LCK_WAIT);
+					LCK_convert(tdbb, partner_relation->rel_partners_lock, LCK_EX, LCK_WAIT);
 					LCK_release(tdbb, partner_relation->rel_partners_lock);
+					partner_relation->rel_flags |= REL_check_partners;
 				}
 			}
 			if (relationLock && releaseRelationLock) {
@@ -2103,7 +2100,7 @@ static bool create_relation(thread_db*	tdbb,
 		lock->lck_owner_handle = LCK_get_owner_handle(tdbb, lock->lck_type);
 		lock->lck_parent = dbb->dbb_lock;
 
-		LCK_lock_non_blocking(tdbb, lock, LCK_EX, LCK_WAIT);
+		LCK_lock(tdbb, lock, LCK_EX, LCK_WAIT);
 
 		/* Assign a relation ID and dbkey length to the new relation.
 		   Probe the candidate relation ID returned from the system
@@ -2896,7 +2893,10 @@ static void check_partners(thread_db* tdbb, const USHORT rel_id)
 	jrd_rel *relation = (*relations)[rel_id];
 	fb_assert(relation);
 
-	LCK_lock_non_blocking(tdbb, relation->rel_partners_lock, LCK_EX, LCK_WAIT);
+	if (relation->rel_flags & REL_check_partners)
+		LCK_lock(tdbb, relation->rel_partners_lock, LCK_EX, LCK_WAIT);
+	else
+		LCK_convert(tdbb, relation->rel_partners_lock, LCK_EX, LCK_WAIT);
 	LCK_release(tdbb, relation->rel_partners_lock);
 	relation->rel_flags |= REL_check_partners;
 }
@@ -2990,13 +2990,13 @@ static bool delete_index(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 			if (!isTempIndex)
 			{
 				if (index->idl_count ||
-					!LCK_lock_non_blocking(tdbb, index->idl_lock, LCK_EX,
-										transaction->getLockWait()))
+					!LCK_lock(tdbb, index->idl_lock, LCK_EX,
+							  transaction->getLockWait()))
 				{
 					// restore lock used by temp index instance
 					if (temp_lock_released)
 					{
-						LCK_lock_non_blocking(tdbb, index->idl_lock, LCK_SR, LCK_WAIT);
+						LCK_lock(tdbb, index->idl_lock, LCK_SR, LCK_WAIT);
 						index->idl_count++;
 					}
 					
@@ -3184,8 +3184,8 @@ static bool delete_procedure(	thread_db*	tdbb,
 
 		if (procedure->prc_existence_lock)
 		{
-			LCK_convert_non_blocking(tdbb, procedure->prc_existence_lock,
-									 LCK_SR, transaction->getLockWait());
+			LCK_convert(tdbb, procedure->prc_existence_lock, LCK_SR,
+						transaction->getLockWait());
 		}
 		return false;
 
@@ -3202,8 +3202,8 @@ static bool delete_procedure(	thread_db*	tdbb,
 
 		if (procedure->prc_existence_lock)
 		{
-			if (!LCK_convert_non_blocking(tdbb, procedure->prc_existence_lock,
-										  LCK_EX, transaction->getLockWait()))
+			if (!LCK_convert(tdbb, procedure->prc_existence_lock, LCK_EX,
+							 transaction->getLockWait()))
 			{
 				ERR_post(isc_no_meta_update,
 						 isc_arg_gds, isc_obj_in_use,
@@ -3311,8 +3311,8 @@ static bool delete_relation(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 
 		if (relation->rel_existence_lock)
 		{
-			LCK_convert_non_blocking(tdbb, relation->rel_existence_lock,
-									 LCK_SR, transaction->getLockWait());
+			LCK_convert(tdbb, relation->rel_existence_lock, LCK_SR,
+						transaction->getLockWait());
 		}
 
 		relation->rel_flags &= ~REL_deleting;
@@ -3376,8 +3376,8 @@ static bool delete_relation(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 			MET_clear_cache(tdbb);
 		if (relation->rel_use_count ||
 			(relation->rel_existence_lock &&
-			 !LCK_convert_non_blocking(tdbb, relation->rel_existence_lock,
-									   LCK_EX, transaction->getLockWait())))
+				!LCK_convert(tdbb, relation->rel_existence_lock, LCK_EX,
+							 transaction->getLockWait())))
 		{
 			if (adjusted) {
 				++relation->rel_use_count;
@@ -3415,9 +3415,8 @@ static bool delete_relation(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 				break;
 			}
 
-			THREAD_EXIT();
+			Database::Checkout dcoHolder(dbb);
 			THREAD_SLEEP(1 * 1000);
-			THREAD_ENTER();
 		}
 
 		if (relation->rel_sweep_count)
@@ -4629,8 +4628,8 @@ static bool modify_procedure(	thread_db*	tdbb,
 
 		if (procedure->prc_existence_lock)
 		{
-			LCK_convert_non_blocking(tdbb, procedure->prc_existence_lock,
-									 LCK_SR, transaction->getLockWait());
+			LCK_convert(tdbb, procedure->prc_existence_lock, LCK_SR,
+						transaction->getLockWait());
 		}
 		return false;
 	}
@@ -4650,8 +4649,8 @@ static bool modify_procedure(	thread_db*	tdbb,
 		{
 			/* Let procedure be deleted if only this transaction is using it */
 
-			if (!LCK_convert_non_blocking(tdbb, procedure->prc_existence_lock,
-										  LCK_EX, transaction->getLockWait()))
+			if (!LCK_convert(tdbb, procedure->prc_existence_lock, LCK_EX,
+							 transaction->getLockWait()))
 			{
 				ERR_post(isc_no_meta_update,
 						 isc_arg_gds, isc_obj_in_use,
@@ -4674,13 +4673,11 @@ static bool modify_procedure(	thread_db*	tdbb,
 
 		try {
 
-		THREAD_EXIT();
-		if (tdbb->getDatabase()->dbb_sp_rec_mutex.enter())
-		{
-			THREAD_ENTER();
-			return false;
+		{ // scope
+			Database::Checkout dcoHolder(dbb);
+			if (tdbb->getDatabase()->dbb_sp_rec_mutex.enter())
+				return false;
 		}
-		THREAD_ENTER();
 
 		// Do not allow to modify procedure used by user requests
 		if (procedure->prc_use_count && MET_procedure_in_use(tdbb, procedure))
@@ -5134,13 +5131,13 @@ static Lock* protect_relation(thread_db* tdbb, jrd_tra* transaction, jrd_rel* re
 
 	if (!releaseLock) {
 		if ( (relLock->lck_logical < LCK_PR) &&
-			!LCK_convert_non_blocking(tdbb, relLock, LCK_PR, transaction->getLockWait()) )
+			!LCK_convert(tdbb, relLock, LCK_PR, transaction->getLockWait()) )
 		{
 			inUse = true;
 		}
 	}
 	else {
-		if ( !LCK_lock_non_blocking(tdbb, relLock, LCK_PR, transaction->getLockWait()) ) {
+		if (!LCK_lock(tdbb, relLock, LCK_PR, transaction->getLockWait())) {
 			inUse = true;
 		}
 	}

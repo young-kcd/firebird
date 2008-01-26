@@ -2208,6 +2208,8 @@ static void dyn_user(Global* gbl, const UCHAR** ptr)
 	char securityDatabaseName[MAXPATHLEN];
 	SecurityDatabase::getPath(securityDatabaseName);
 
+	Database::Checkout dcoHolder(dbb);
+
 	Firebird::ClumpletWriter dpb(Firebird::ClumpletReader::Tagged, MAX_DPB_SIZE, isc_dpb_version1);
 	dpb.insertByte(isc_dpb_gsec_attach, TRUE);
 	dpb.insertString(isc_dpb_trusted_auth, tdbb->getAttachment()->att_user->usr_user_name);
@@ -2216,10 +2218,9 @@ static void dyn_user(Global* gbl, const UCHAR** ptr)
 	ISC_STATUS_ARRAY status;
 	try 
 	{
-		THREAD_EXIT();
 		isc_attach_database(status, 0, securityDatabaseName, &securityDatabase, 
 			dpb.getBufferLength(), reinterpret_cast<const char*>(dpb.getBuffer()));
-		THREAD_ENTER();
+
 		if (status[1])
 		{
 			Firebird::status_exception::raise(status);
@@ -2303,10 +2304,8 @@ static void dyn_user(Global* gbl, const UCHAR** ptr)
 			}
 		}
 
-		THREAD_EXIT();
 		int errcode = (! userData.user_name_entered) ? GsecMsg18 :
 			SECURITY_exec_line(status, securityDatabase, &userData, NULL, NULL);
-		THREAD_ENTER();
 
 		switch (errcode)
 		{
@@ -2319,9 +2318,8 @@ static void dyn_user(Global* gbl, const UCHAR** ptr)
 			Firebird::status_exception::raise(ENCODE_ISC_MSG(errcode, GSEC_MSG_FAC), isc_arg_end);
 		}
 
-		THREAD_EXIT();
 		isc_detach_database(status, &securityDatabase);
-		THREAD_ENTER();
+
 		if (status[1])
 		{
 			securityDatabase = 0;
@@ -2332,9 +2330,7 @@ static void dyn_user(Global* gbl, const UCHAR** ptr)
 	{
 		if (securityDatabase)
 		{
-			THREAD_EXIT();
 			isc_detach_database(status, &securityDatabase);
-			THREAD_ENTER();
 		}
 		e.stuff_exception(status);
 		memmove(&status[2], &status[0], sizeof(status) - 2 * sizeof(status[0]));

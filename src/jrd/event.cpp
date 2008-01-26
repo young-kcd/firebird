@@ -574,9 +574,7 @@ static FRB alloc_global(UCHAR type, ULONG length, bool recurse)
 
 		while (true) {
 			release();
-			THREAD_EXIT();
 			Sleep(3);
-			THREAD_ENTER();
 			acquire();
 
 			process = (PRB) SRQ_ABS_PTR(EVENT_process_offset);
@@ -816,9 +814,7 @@ static void delete_session(SLONG session_id)
 
 		// give a chance for delivering thread to detect SES_purge flag we just set
 		release();
-		THREAD_EXIT();
 		THREAD_SLEEP(100);
-		THREAD_ENTER();
 		acquire();
 
 		return;

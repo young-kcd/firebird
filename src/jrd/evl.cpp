@@ -912,7 +912,7 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* const node)
 		}
 
 	case nod_function:
-		FUN_evaluate(reinterpret_cast<UserFunction*>(node->nod_arg[e_fun_function]),
+		FUN_evaluate(tdbb, reinterpret_cast<UserFunction*>(node->nod_arg[e_fun_function]),
 				     node->nod_arg[e_fun_args], impure);
 		return &impure->vlu_desc;
 
