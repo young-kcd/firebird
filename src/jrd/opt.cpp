@@ -245,7 +245,7 @@ static const UCHAR sort_dtypes[] =
 	SKD_sql_date,				/* dtype_sql_date */
 	SKD_sql_time,				/* dtype_sql_time */
 	SKD_timestamp2,				/* dtype_timestamp */
-	0,							/* dtype_blob */
+	SKD_quad,					/* dtype_blob */
 	0,							/* dtype_array */
 	SKD_int64					/* dtype_int64 */
 };

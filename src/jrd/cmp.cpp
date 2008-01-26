@@ -5917,7 +5917,7 @@ static void process_map(thread_db* tdbb, CompilerScratch* csb, jrd_nod* map,
 			*desc = desc2;
 		}
 		else if (max == dtype_blob) {
-			desc->dsc_dtype = dtype_blob;
+			desc->dsc_dtype = dtype_quad;
 			desc->dsc_length = sizeof(ISC_QUAD);
 			desc->dsc_scale = 0;
 			desc->dsc_sub_type = 0;
