@@ -332,7 +332,7 @@ static SERVER_REQ alloc_request()
 #if defined(DEV_BUILD) && defined(DEBUG)
 	int request_count = 0;
 #endif
-	
+
 	/* Allocate a memory block to store the request in */
 	if (request)
 	{
@@ -363,7 +363,7 @@ static SERVER_REQ alloc_request()
 		printf("alloc_request         allocate request %x\n", request);
 #endif
 	}
-	
+
 	request->req_next = NULL;
 	request->req_chain = NULL;
 	return request;
@@ -5344,7 +5344,8 @@ static THREAD_ENTRY_DECLARE loopThread(THREAD_ENTRY_PARAM flags)
 
 	USHORT inactive_count = 0;
 	USHORT timedout_count = 0;
-	THREAD_ENTER();
+
+	SchedulerContext scHolder;
 
 	rem_port* port;
 
@@ -5521,8 +5522,6 @@ static THREAD_ENTRY_DECLARE loopThread(THREAD_ENTRY_PARAM flags)
 			--threads_waiting;
 		}
 	}
-
-	THREAD_EXIT();
 
 #ifdef WIN_NT
 	if (!((SLONG) flags & SRVR_non_service))
