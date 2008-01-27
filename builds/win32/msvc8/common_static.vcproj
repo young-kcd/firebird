@@ -189,6 +189,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\common\classes\init.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\common\classes\MetaName.cpp"
 				>
 			</File>
@@ -206,6 +210,10 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\common\classes\SafeArg.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\common\thd.cpp"
 				>
 			</File>
 			<File
@@ -274,6 +282,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\common\classes\init.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\common\classes\MetaName.h"
 				>
 			</File>
@@ -287,6 +299,10 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\common\StatusHolder.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\common\thd.h"
 				>
 			</File>
 			<File
