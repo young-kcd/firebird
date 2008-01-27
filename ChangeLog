@@ -1,3 +1,127 @@
+2008-01-27 03:33  mkubecek
+
+	* firebird2/src/common/classes/fb_atomic.h (1.5):
+
+	added missing namespace
+
+2008-01-27 00:23  dimitr
+
+	* firebird2/src/remote/server.cpp (1.164):
+
+	Misc.
+
+2008-01-26 19:06  dimitr
+
+	* firebird2/src/jrd/: cmp.cpp (1.277), opt.cpp (1.305):
+
+	Restored the legacy logic for blob sorting, thus rolling back
+	changes for CORE-859 and CORE-1530.
+
+2008-01-26 18:34  dimitr
+
+	* firebird2/src/jrd/pwd.cpp (1.57):
+
+	No ERR_post() calls outside the engine, please.
+
+2008-01-26 18:33  dimitr
+
+	* firebird2/src/jrd/: jrd.cpp (1.365), svc.cpp (1.197):
+
+	Sigh, we have to release the dbb when doing authentication.
+
+2008-01-26 14:51  dimitr
+
+	* firebird2/src/jrd/jrd.cpp (1.364):
+
+	Major synchronization changes. Description of the commit will be
+	posted to fb-devel.
+
+2008-01-26 14:30  dimitr
+
+	* firebird2/src/jrd/: jrd.h (1.207), jrd_proto.h (1.53):
+
+	Major synchronization changes. Description of the commit will be
+	posted to fb-devel.
+
+2008-01-26 14:26  dimitr
+
+	* firebird2/src/jrd/: lck.cpp (1.71), lck.h (1.35), lck_proto.h
+	(1.17):
+
+	Major synchronization changes. Description of the commit will be
+	posted to fb-devel.
+
+2008-01-26 14:17  dimitr
+
+	* firebird2/src/jrd/: VirtualTable.cpp (1.8), tpc.cpp (1.32),
+	tra.cpp (1.149), validation.cpp (1.33), vio.cpp (1.201), why.cpp
+	(1.139), y_handle.h (1.23):
+
+	Major synchronization changes. Description of the commit will be
+	posted to fb-devel.
+
+2008-01-26 14:14  dimitr
+
+	* firebird2/src/jrd/: sch.cpp (1.46), sch_proto.h (1.10), sdw.cpp
+	(1.73), sdw_proto.h (1.15), shut.cpp (1.53), shut_proto.h (1.7),
+	sort.cpp (1.106), svc.cpp (1.196), thread_proto.h (1.11):
+
+	Major synchronization changes. Description of the commit will be
+	posted to fb-devel.
+
+2008-01-26 14:09  dimitr
+
+	* firebird2/src/jrd/: met.epp (1.232), met_proto.h (1.62), pag.cpp
+	(1.163), par.cpp (1.183), pcmet.epp (1.46), pwd.cpp (1.56),
+	qatest.cpp (1.21), rlck.cpp (1.41):
+
+	Major synchronization changes. Description of the commit will be
+	posted to fb-devel.
+
+2008-01-26 14:03  dimitr
+
+	* firebird2/src/jrd/: execute_statement.cpp (1.31), fun.epp (1.86),
+	fun_proto.h (1.15), functions.cpp (1.32), GlobalRWLock.cpp (1.12),
+	GlobalRWLock.h (1.11), idx.cpp (1.128), intl.cpp (1.103), isc.h
+	(1.33), isc_sync.cpp (1.123):
+
+	Major synchronization changes. Description of the commit will be
+	posted to fb-devel.
+
+2008-01-26 13:57  dimitr
+
+	* firebird2/src/jrd/: dfw.epp (1.222), dyn.epp (1.115), event.cpp
+	(1.67), evl.cpp (1.246), exe.cpp (1.236):
+
+	Major synchronization changes. Description of the commit will be
+	posted to fb-devel.
+
+2008-01-26 13:52  dimitr
+
+	* firebird2/src/jrd/: Collation.cpp (1.11), DatabaseSnapshot.cpp
+	(1.47), blk.h (1.28), cch.cpp (1.179), cch.h (1.34), cmp.cpp
+	(1.276), dbt.cpp (1.37):
+
+	Major synchronization changes. Description of the commit will be
+	posted to fb-devel.
+
+2008-01-26 13:47  dimitr
+
+	* firebird2/src/: lock/lock.cpp (1.135), lock/lock.h (1.40),
+	jrd/os/pio.h (1.16), jrd/os/pio_proto.h (1.26),
+	jrd/os/posix/unix.cpp (1.80), jrd/os/win32/winnt.cpp (1.59):
+
+	Major synchronization changes. Description of the commit will be
+	posted to fb-devel.
+
+2008-01-26 13:43  dimitr
+
+	* firebird2/src/: remote/interface.cpp (1.160), dsql/dsql.cpp
+	(1.207):
+
+	Major synchronization changes. Description of the commit will be
+	posted to fb-devel.
+
 2008-01-25 17:48  alexpeshkoff
 
 	* firebird2/src/isql/: isql.epp (1.226), show.epp (1.128):
