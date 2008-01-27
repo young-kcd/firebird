@@ -24,7 +24,7 @@
  *  Contributor(s): ______________________________________.
  * 
  *
- *  $Id: fb_atomic.h,v 1.4 2004-06-30 01:26:06 skidder Exp $
+ *  $Id: fb_atomic.h,v 1.5 2008-01-27 02:33:14 mkubecek Exp $
  *
  */
  
@@ -81,6 +81,8 @@ private:
 
 #elif defined(__GNUC__) && (defined(i386) || defined(I386) || defined(_M_IX86) || defined(AMD64))
 
+namespace Firebird {
+
 // Assembler version for x86 and AMD64. Note it uses xaddl thus it requires i486
 class AtomicCounter
 {
@@ -120,6 +122,8 @@ public:
 private:
 	volatile counter_type counter;
 };
+
+} // namespace Firebird
 
 #else
 
