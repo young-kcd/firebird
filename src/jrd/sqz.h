@@ -31,8 +31,7 @@ namespace Jrd {
 
 class DataComprControl : public pool_alloc<type_dcc>
 {
-    public:
-	JrdMemoryPool* dcc_pool;
+public:
 	DataComprControl* dcc_next;	// Next block if overflow
 	const SCHAR* dcc_end;		// End of control string
 	SCHAR dcc_string[128];

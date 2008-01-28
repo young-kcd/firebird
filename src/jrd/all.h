@@ -52,8 +52,6 @@ public:
 	static JrdMemoryPool *createPool();
 	static JrdMemoryPool** deletePool(JrdMemoryPool* pool);
 	static void noDbbDeletePool(JrdMemoryPool* pool);
-
-	Jrd::DataComprControl* plb_dccs;
 };
 
 #endif	// JRD_ALL_H

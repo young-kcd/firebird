@@ -79,7 +79,6 @@ void ALL_check_memory()
 JrdMemoryPool *JrdMemoryPool::createDbPool(Firebird::MemoryStats &stats) {
 	JrdMemoryPool* result = (JrdMemoryPool *)internal_create(
 		sizeof(JrdMemoryPool), NULL, stats);
-	result->plb_dccs = NULL;
 	return result;
 }
 
@@ -93,7 +92,6 @@ JrdMemoryPool *JrdMemoryPool::createPool() {
 #else
 	JrdMemoryPool *result = (JrdMemoryPool *)internal_create(sizeof(JrdMemoryPool), dbb->dbb_permanent);
 #endif
-	result->plb_dccs = NULL;
 	dbb->dbb_pools.push(result);
 	return result;
 }
