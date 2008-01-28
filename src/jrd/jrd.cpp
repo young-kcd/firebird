@@ -5340,6 +5340,13 @@ static void shutdown_database(Database* dbb, const bool release_pools)
 					EXT_fini(*ptr, false);
 				}
 
+				for (IndexLock* index_lock = relation->rel_index_locks; index_lock;
+					index_lock = index_lock->idl_next)
+				{
+					if (index_lock->idl_lock)
+						LCK_release(tdbb, index_lock->idl_lock);
+				}
+
 				for (IndexBlock* index_block = relation->rel_index_blocks; index_block;
 					index_block = index_block->idb_next)
 				{
