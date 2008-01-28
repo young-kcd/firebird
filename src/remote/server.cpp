@@ -228,6 +228,7 @@ static bool			shutting_down		= false;
 static SRVR			servers;
 
 static Firebird::GlobalPtr<Firebird::Semaphore> requests_semaphore;
+static Firebird::GlobalPtr<Firebird::Semaphore> cleanup_semaphore;
 
 
 static const UCHAR request_info[] =
@@ -5514,11 +5515,12 @@ static THREAD_ENTRY_DECLARE loopThread(THREAD_ENTRY_PARAM flags)
 			else {
 				REMOTE_TRACE(("got it"));
 			}
+			THREAD_ENTER();
 			if (shutting_down)
 			{
+				cleanup_semaphore->release();
 				return 0;
 			}
-			THREAD_ENTER();
 			--threads_waiting;
 		}
 	}
@@ -5542,7 +5544,7 @@ void SRVR_shutdown()
  *
  * Functional description
  *	Shutdown working threads, waiting for work
- *  Function is called when shutdowm thread ENTERed,
+ *  Function is called when shutdown thread ENTERed,
  *	and will never EXIT
  *
  **************************************/
@@ -5555,7 +5557,7 @@ void SRVR_shutdown()
 	}
 
 	// let them terminate
-	THREAD_SLEEP(1 * 1000);
+	cleanup_semaphore->tryEnter(1);
 }
 
 
