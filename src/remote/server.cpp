@@ -228,7 +228,6 @@ static bool			shutting_down		= false;
 static SRVR			servers;
 
 static Firebird::GlobalPtr<Firebird::Semaphore> requests_semaphore;
-static Firebird::GlobalPtr<Firebird::Semaphore> cleanup_semaphore;
 
 
 static const UCHAR request_info[] =
@@ -5518,7 +5517,6 @@ static THREAD_ENTRY_DECLARE loopThread(THREAD_ENTRY_PARAM flags)
 			THREAD_ENTER();
 			if (shutting_down)
 			{
-				cleanup_semaphore->release();
 				return 0;
 			}
 			--threads_waiting;
@@ -5557,7 +5555,7 @@ void SRVR_shutdown()
 	}
 
 	// let them terminate
-	cleanup_semaphore->tryEnter(1);
+	THREAD_SLEEP(1 * 1000);
 }
 
 
