@@ -742,7 +742,7 @@ UserFunction* FUN_resolve(thread_db* tdbb, CompilerScratch* csb, UserFunction* f
 }
 
 
-static SLONG blob_lseek( blb* blob, USHORT mode, SLONG offset)
+static SLONG blob_lseek(blb* blob, USHORT mode, SLONG offset)
 {
 /**************************************
  *
@@ -751,7 +751,7 @@ static SLONG blob_lseek( blb* blob, USHORT mode, SLONG offset)
  **************************************
  *
  * Functional description
- *	lseek a  a blob segement.  Return the offset 
+ *	lseek a blob segement.  Return the offset 
  *
  **************************************/
 	// As this is a call-back from a UDF, must reacquire the engine mutex
@@ -761,7 +761,7 @@ static SLONG blob_lseek( blb* blob, USHORT mode, SLONG offset)
 }
 
 
-static void blob_put_segment( blb* blob, const UCHAR* buffer, USHORT length)
+static void blob_put_segment(blb* blob, const UCHAR* buffer, USHORT length)
 {
 /**************************************
  *
@@ -770,7 +770,7 @@ static void blob_put_segment( blb* blob, const UCHAR* buffer, USHORT length)
  **************************************
  *
  * Functional description
- *	Put  segment into a blob.  Return nothing 
+ *	Put segment into a blob.  Return nothing 
  *
  **************************************/
 	// As this is a call-back from a UDF, must reacquire the engine mutex
