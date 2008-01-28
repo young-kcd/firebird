@@ -1,3 +1,9 @@
+2008-01-27 13:36  hvlad
+
+	* firebird2/builds/win32/msvc8/common_static.vcproj (1.7):
+
+	Restore broken boot build
+
 2008-01-27 03:33  mkubecek
 
 	* firebird2/src/common/classes/fb_atomic.h (1.5):
