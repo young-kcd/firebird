@@ -756,7 +756,8 @@ static SLONG blob_lseek(blb* blob, USHORT mode, SLONG offset)
  **************************************/
 	// As this is a call-back from a UDF, must reacquire the engine mutex
 	thread_db* tdbb = JRD_get_thread_data();
-	Database::Checkout dcoHolder(tdbb->getDatabase());
+	Database::SyncGuard dsGuard(tdbb->getDatabase());
+
 	return BLB_lseek(blob, mode, offset);
 }
 
@@ -775,7 +776,8 @@ static void blob_put_segment(blb* blob, const UCHAR* buffer, USHORT length)
  **************************************/
 	// As this is a call-back from a UDF, must reacquire the engine mutex
 	thread_db* tdbb = JRD_get_thread_data();
-	Database::Checkout dcoHolder(tdbb->getDatabase());
+	Database::SyncGuard dsGuard(tdbb->getDatabase());
+
 	BLB_put_segment(tdbb, blob, buffer, length);
 }
 
@@ -799,11 +801,11 @@ static SSHORT blob_get_segment(
  *		-1	-- Current segment is incomplete.
  *
  **************************************/
+	// As this is a call-back from a UDF, must reacquire the engine mutex
 	thread_db* tdbb = JRD_get_thread_data();
-	{ // scope
-		Database::Checkout dcoHolder(tdbb->getDatabase());
-		*return_length = BLB_get_segment(tdbb, blob, buffer, length);
-	}
+	Database::SyncGuard dsGuard(tdbb->getDatabase());
+
+	*return_length = BLB_get_segment(tdbb, blob, buffer, length);
 
 	if (blob->blb_flags & BLB_eof)
 		return 0;
