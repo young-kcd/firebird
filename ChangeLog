@@ -1,3 +1,56 @@
+2008-01-29 03:28  asfernandes
+
+	* firebird2/src/dsql/: hsh.cpp (1.38), hsh_proto.h (1.7):
+
+	Misc
+
+2008-01-29 02:36  asfernandes
+
+	* firebird2/src/: common/classes/fb_atomic.h (1.6),
+	jrd/GlobalRWLock.h (1.12), jrd/cch.cpp (1.180), jrd/jrd.cpp
+	(1.367):
+
+	Misc
+
+2008-01-28 18:35  dimitr
+
+	* firebird2/src/jrd/: all.cpp (1.51), all.h (1.26), sqz.cpp (1.24),
+	sqz.h (1.8):
+
+	Cleanup. I'm pretty sure the code I'm removing can never be
+	executed. Can anybody prove me wrong?
+
+2008-01-28 18:27  dimitr
+
+	* firebird2/src/jrd/jrd.cpp (1.366):
+
+	Let's explicitly release all locks we own.
+
+2008-01-28 18:03  dimitr
+
+	* firebird2/src/jrd/fun.epp (1.88):
+
+	Fixed wrong checkout reported by Adriano.
+
+2008-01-28 17:44  asfernandes
+
+	* firebird2/src/jrd/fun.epp (1.87):
+
+	Misc
+
+2008-01-28 15:09  dimitr
+
+	* firebird2/src/remote/server.cpp (1.166):
+
+	Oops. Incomplete stuff has been accidentally committed. Rolled back
+	now.
+
+2008-01-28 14:44  dimitr
+
+	* firebird2/src/remote/server.cpp (1.165):
+
+	Misc sync changes.
+
 2008-01-27 13:36  hvlad
 
 	* firebird2/builds/win32/msvc8/common_static.vcproj (1.7):
