@@ -90,6 +90,7 @@ private:
 	static const UCHAR TPB[4];
 
 	Firebird::Mutex mutex;
+	Firebird::RecursiveMutex counterMutex;
 
 	ISC_STATUS_ARRAY status;
 

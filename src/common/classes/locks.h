@@ -197,19 +197,6 @@ public:
 
 #endif //WIN_NT
 
-// RAII holder of mutex lock
-class MutexLockGuard
-{
-public:
-	explicit MutexLockGuard(Mutex &alock) 
-		: lock(&alock) { lock->enter(); }
-	~MutexLockGuard() { lock->leave(); }
-private:
-	// Forbid copy constructor
-	MutexLockGuard(const MutexLockGuard& source);
-	Mutex *lock;
-};
-
 // Recursive mutex
 class RecursiveMutex
 {
@@ -230,6 +217,23 @@ public:
 	int enter();
 	int leave();
 };
+
+// RAII holder
+template <typename M>
+class LockGuard
+{
+public:
+	explicit LockGuard(M &alock) 
+		: lock(&alock) { lock->enter(); }
+	~LockGuard() { lock->leave(); }
+private:
+	// Forbid copy constructor
+	LockGuard(const LockGuard& source);
+	M *lock;
+};
+
+typedef LockGuard<Mutex> MutexLockGuard;
+typedef LockGuard<RecursiveMutex> RecursiveMutexLockGuard;
 
 } //namespace Firebird
 

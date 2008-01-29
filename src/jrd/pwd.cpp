@@ -235,7 +235,7 @@ namespace {
 
 void SecurityDatabase::fini()
 {
-	Firebird::MutexLockGuard guard(mutex);
+	Firebird::RecursiveMutexLockGuard guard(counterMutex);
 	counter -= (is_cached) ? 1 : 0;
 #ifndef EMBEDDED
 	if (counter == 1 && lookup_db)
@@ -247,7 +247,7 @@ void SecurityDatabase::fini()
 
 void SecurityDatabase::init()
 {
-	Firebird::MutexLockGuard guard(mutex);
+	Firebird::RecursiveMutexLockGuard guard(counterMutex);
 	counter += (is_cached) ? 1 : 0;
 }
 
