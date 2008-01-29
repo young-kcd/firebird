@@ -28,7 +28,6 @@
 
 #include "../jrd/ibase.h"
 #include "../jrd/ThreadData.h"
-#include "../alice/all.h"
 #include "../include/fb_blk.h"
 #include "../common/classes/alloc.h"
 #include "../common/classes/array.h"
@@ -143,10 +142,10 @@ enum tdr_state_vals {
 class AliceGlobals : public ThreadData
 {
 private:
-	AliceMemoryPool* ALICE_default_pool;
-	friend class Firebird::SubsystemContextPoolHolder <AliceGlobals, AliceMemoryPool>;
+	MemoryPool* ALICE_default_pool;
+	friend class Firebird::SubsystemContextPoolHolder <AliceGlobals, MemoryPool>;
 
-	void setDefaultPool(AliceMemoryPool* p)
+	void setDefaultPool(MemoryPool* p)
 	{
 		ALICE_default_pool = p;
 	}
@@ -166,7 +165,7 @@ public:
 		memset(&ALICE_data, 0, sizeof(user_action));
 	}
 
-	AliceMemoryPool* getDefaultPool()
+	MemoryPool* getDefaultPool()
 	{
 		return ALICE_default_pool;
 	}
@@ -193,7 +192,7 @@ public:
 	}
 };
 
-typedef Firebird::SubsystemContextPoolHolder <AliceGlobals, AliceMemoryPool> 
+typedef Firebird::SubsystemContextPoolHolder <AliceGlobals, MemoryPool> 
 	AliceContextPoolHolder;
 
 #endif	// ALICE_ALICE_H

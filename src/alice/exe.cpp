@@ -41,8 +41,6 @@
 #include "../alice/alice.h"
 #include "../alice/alice_proto.h"
 #include "../alice/aliceswi.h"
-#include "../alice/all.h"
-#include "../alice/all_proto.h"
 #include "../alice/alice_meta.h"
 #include "../alice/tdr_proto.h"
 #include "../jrd/gds_proto.h"
@@ -69,7 +67,7 @@ static const TEXT val_errors[] =
 int EXE_action(const TEXT* database, const ULONG switches)
 {
 	bool error = false;
-	AliceAutoPool newPool(AliceMemoryPool::createPool());
+	Firebird::AutoMemoryPool newPool(MemoryPool::createPool());
 	{
 		AliceGlobals* tdgbl = AliceGlobals::getSpecific();
 		AliceContextPoolHolder context(tdgbl, newPool);
@@ -136,7 +134,7 @@ int EXE_action(const TEXT* database, const ULONG switches)
 int EXE_two_phase(const TEXT* database, const ULONG switches)
 {
 	bool error = false;
-	AliceAutoPool newPool(AliceMemoryPool::createPool());
+	Firebird::AutoMemoryPool newPool(MemoryPool::createPool());
 	{
 		AliceGlobals* tdgbl = AliceGlobals::getSpecific();
 		AliceContextPoolHolder context(tdgbl, newPool);

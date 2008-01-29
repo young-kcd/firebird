@@ -35,7 +35,6 @@
 #include "../jrd/ibase.h"
 //#include "../jrd/license.h"
 #include "../alice/alice.h"
-#include "../alice/all.h"
 #include "../alice/alice_meta.h"
 #include "../jrd/gds_proto.h"
 #include "../include/fb_exception.h"

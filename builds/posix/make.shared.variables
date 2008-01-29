@@ -133,7 +133,7 @@ GPRELIB_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(GPRELIB_Sour
 #
 # alice
 
-ALICE_Files=alice.cpp all.cpp exe.cpp alice_meta.epp tdr.cpp
+ALICE_Files=alice.cpp exe.cpp alice_meta.epp tdr.cpp
 ALICE_Sources = $(addprefix alice/, $(ALICE_Files))
 ALICE_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(ALICE_Sources))))
 

@@ -1,7 +1,7 @@
-<?xml version="1.0" encoding="Windows-1252"?>
+<?xml version="1.0" encoding="windows-1251"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="8.00"
+	Version="8,00"
 	Name="alice"
 	ProjectGUID="{0D616380-1A5A-4230-A80B-021360E4E669}"
 	>
@@ -270,10 +270,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\alice\all.cpp"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\src\alice\exe.cpp"
 				>
 			</File>
@@ -321,14 +317,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\alice\all.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\alice\all_proto.h"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\src\alice\alloc.h"
 				>
 			</File>
@@ -354,4 +342,6 @@
 			</File>
 		</Filter>
 	</Files>
+	<Globals>
+	</Globals>
 </VisualStudioProject>

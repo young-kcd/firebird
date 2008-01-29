@@ -106,10 +106,6 @@ SOURCE=..\..\..\src\alice\alice.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\alice\all.cpp
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\src\alice\exe.cpp
 # End Source File
 # Begin Source File
@@ -135,14 +131,6 @@ SOURCE=..\..\..\src\alice\alice_proto.h
 # Begin Source File
 
 SOURCE=..\..\..\src\alice\aliceswi.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\alice\all.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\alice\all_proto.h
 # End Source File
 # Begin Source File
 

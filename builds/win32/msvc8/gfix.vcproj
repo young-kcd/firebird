@@ -332,10 +332,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\alice\all.cpp"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\src\alice\exe.cpp"
 				>
 			</File>
@@ -382,14 +378,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\alice\aliceswi.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\alice\all.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\alice\all_proto.h"
 				>
 			</File>
 			<File

@@ -45,8 +45,6 @@
 #include "../jrd/license.h"
 #include "../alice/alice.h"
 #include "../alice/aliceswi.h"
-#include "../alice/all.h"
-#include "../alice/all_proto.h"
 #include "../alice/exe_proto.h"
 #include "../jrd/msg_encode.h"
 #include "../jrd/gds_proto.h"
