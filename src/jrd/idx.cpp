@@ -1655,5 +1655,13 @@ static void signal_index_deletion(thread_db* tdbb, jrd_rel* relation, USHORT id)
 
 /* and clear out our index block as well */
 
-	index_block_flush(index_block);
+	if (index_block->idb_expression_request) {
+		CMP_release(tdbb, index_block->idb_expression_request);
+	}
+
+	index_block->idb_expression_request = NULL;
+	index_block->idb_expression = NULL;
+	MOVE_CLEAR(&index_block->idb_expression_desc, sizeof(struct dsc));
+
+	LCK_release(tdbb, lock);
 }
