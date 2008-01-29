@@ -596,7 +596,7 @@ void SCL_init(BOOLEAN	create,
 	BLK handle, handle1;
 	volatile BLK request;
 	USR user;
-	TEXT name[129], project[33], organization[33], *p;
+	TEXT name[256], project[33], organization[33], *p;
 	USHORT length;
 	int id, group, wheel, node_id;
 	TEXT role_name[33], login_name[129], *q;
