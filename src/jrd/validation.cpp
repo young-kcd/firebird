@@ -685,7 +685,7 @@ bool VAL_validate(thread_db* tdbb, USHORT switches)
  *	Validate a database.
  *
  **************************************/
-	MemoryPool* val_pool = 0;
+	MemoryPool* val_pool = NULL;
 
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->getDatabase();

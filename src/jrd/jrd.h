@@ -361,7 +361,7 @@ public:
 	BlobFilter*	dbb_blob_filters;		// known blob filters
 	trig_vec*	dbb_triggers[DB_TRIGGER_MAX];
 
-	DatabaseModules	dbb_modules;			// external function/filter modules
+	DatabaseModules	dbb_modules;		// external function/filter modules
 	Firebird::Mutex* dbb_mutexes;		// Database block mutexes
 	Firebird::RecursiveMutex dbb_sp_rec_mutex;	// Recursive mutex for accessing/updating stored procedure metadata
 	//SLONG dbb_sort_size;				// Size of sort space per sort, unused for now

@@ -24,7 +24,6 @@
 #include "firebird.h"
 #include "../jrd/jrd.h"
 #include "../jrd/all.h"
-
 #include <string.h>
 #include <stdio.h>
 

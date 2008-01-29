@@ -224,8 +224,13 @@ class LockGuard
 {
 public:
 	explicit LockGuard(M &alock) 
-		: lock(&alock) { lock->enter(); }
+		: lock(&alock)
+	{
+		lock->enter();
+	}
+
 	~LockGuard() { lock->leave(); }
+
 private:
 	// Forbid copy constructor
 	LockGuard(const LockGuard& source);
