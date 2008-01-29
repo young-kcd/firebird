@@ -1025,12 +1025,8 @@ static void attach_database2(rem_port* port,
 	addClumplets(dpb_buffer, dpbParam, port);
 	
 /* Disable remote gsec attachments */
-	for (dpb_buffer.setCurOffset(1); !dpb_buffer.isEof(); ) {
-		if (dpb_buffer.getClumpTag() == isc_dpb_gsec_attach)
-			dpb_buffer.deleteClumplet();
-		else
-			dpb_buffer.moveNext();
-	}
+	dpb_buffer.deleteWithTag(isc_dpb_gsec_attach);
+	dpb_buffer.deleteWithTag(isc_dpb_sec_attach);
 
 	dpb = dpb_buffer.getBuffer();
 	dl = dpb_buffer.getBufferLength();
