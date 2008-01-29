@@ -72,7 +72,6 @@
 #include "../jrd/lck.h"
 #include "../jrd/sdw.h"
 #include "../jrd/flags.h"
-#include "../jrd/all.h"
 #include "../jrd/intl.h"
 #include "../intl/charsets.h"
 #include "../jrd/align.h"
@@ -2669,15 +2668,13 @@ static bool create_field(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 
 			if (!validation.isEmpty())
 			{
-				JrdMemoryPool* new_pool = JrdMemoryPool::createPool();
-				{
-					Jrd::ContextPoolHolder context(tdbb, new_pool);
+				MemoryPool* new_pool = dbb->createPool();
+				Jrd::ContextPoolHolder context(tdbb, new_pool);
 
-					MET_get_dependencies(tdbb, NULL, NULL, NULL, &validation,
-						NULL, NULL, depName, obj_validation, 0, depName);
+				MET_get_dependencies(tdbb, NULL, NULL, NULL, &validation,
+					NULL, NULL, depName, obj_validation, 0, depName);
 
-					JrdMemoryPool::deletePool(new_pool);
-				}
+				dbb->deletePool(new_pool);
 			}
 		}
 		
@@ -2805,15 +2802,13 @@ static bool modify_field(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 				MET_delete_dependencies(tdbb, depName, obj_validation);
 			else
 			{
-				JrdMemoryPool* new_pool = JrdMemoryPool::createPool();
-				{
-					Jrd::ContextPoolHolder context(tdbb, new_pool);
+				MemoryPool* new_pool = dbb->createPool();
+				Jrd::ContextPoolHolder context(tdbb, new_pool);
 
-					MET_get_dependencies(tdbb, NULL, NULL, NULL, &validation,
-						NULL, NULL, depName, obj_validation, 0, depName);
+				MET_get_dependencies(tdbb, NULL, NULL, NULL, &validation,
+					NULL, NULL, depName, obj_validation, 0, depName);
 
-					JrdMemoryPool::deletePool(new_pool);
-				}
+				dbb->deletePool(new_pool);
 			}
 		}
 
@@ -3974,7 +3969,7 @@ static void get_procedure_dependencies(DeferredWork* work, bool compile)
 	{
 		jrd_req* request = NULL;
 		/* Nickolay Samofatov: allocate statement memory pool... */
-		JrdMemoryPool* new_pool = JrdMemoryPool::createPool();
+		MemoryPool* new_pool = dbb->createPool();
 		// block is used to ensure MET_verify_cache
 		// works in not deleted context
 		{
@@ -3988,7 +3983,7 @@ static void get_procedure_dependencies(DeferredWork* work, bool compile)
 			if (request)
 				CMP_release(tdbb, request);
 			else
-				JrdMemoryPool::deletePool(new_pool);
+				dbb->deletePool(new_pool);
 		}
 
 #ifdef DEV_BUILD
@@ -4047,7 +4042,7 @@ static void get_trigger_dependencies(DeferredWork* work, bool compile)
 	{
 		jrd_req* request = NULL;
 		/* Nickolay Samofatov: allocate statement memory pool... */
-		JrdMemoryPool* new_pool = JrdMemoryPool::createPool();
+		MemoryPool* new_pool = dbb->createPool();
 		const USHORT par_flags = (USHORT)
 			(type & 1) ? csb_pre_trigger : csb_post_trigger;
 
@@ -4060,7 +4055,7 @@ static void get_trigger_dependencies(DeferredWork* work, bool compile)
 		if (request)
 			CMP_release(tdbb, request);
 		else
-			JrdMemoryPool::deletePool(new_pool);
+			dbb->deletePool(new_pool);
 	}
 }
 
@@ -4785,7 +4780,7 @@ static bool modify_procedure(	thread_db*	tdbb,
 			{
 				SSHORT valid_blr = FALSE;
 
-				JrdMemoryPool* new_pool = JrdMemoryPool::createPool();
+				MemoryPool* new_pool = dbb->createPool();
 				try
 				{
 					Jrd::ContextPoolHolder context(tdbb, new_pool);
@@ -4798,7 +4793,7 @@ static bool modify_procedure(	thread_db*	tdbb,
 				{
 				}
 
-				JrdMemoryPool::deletePool(new_pool);
+				dbb->deletePool(new_pool);
 
 				jrd_req* request = CMP_find_request(tdbb, irq_prc_validate, IRQ_REQUESTS);
 
@@ -4914,11 +4909,11 @@ static bool modify_trigger(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 						for (i = 0; i < TRIGGER_MAX; ++i)
 							triggers[i] = NULL;
 
-						JrdMemoryPool* new_pool = JrdMemoryPool::createPool();
+						MemoryPool* new_pool = dbb->createPool();
 						try
 						{
 							Jrd::ContextPoolHolder context(tdbb, new_pool);
-	
+
 							MET_load_trigger(tdbb, relation, work->dfw_name, triggers);
 	
 							for (i = 0; i < TRIGGER_MAX; ++i)
@@ -4936,11 +4931,11 @@ static bool modify_trigger(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 						}
 						catch (const Firebird::Exception&)
 						{
-							JrdMemoryPool::deletePool(new_pool);
+							dbb->deletePool(new_pool);
 							throw;
 						}
 
-						JrdMemoryPool::deletePool(new_pool);
+						dbb->deletePool(new_pool);
 					}
 				}
 				catch (const Firebird::Exception&)

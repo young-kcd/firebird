@@ -84,7 +84,6 @@
 #include "../jrd/tra.h"
 #ifdef VIO_DEBUG
 #include "../jrd/vio_debug.h"
-#include "../jrd/all.h"
 #endif
 #include "../jrd/cch_proto.h"
 #include "../jrd/dpm_proto.h"

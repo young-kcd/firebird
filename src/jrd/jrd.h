@@ -300,10 +300,10 @@ public:
 
 	typedef int (*crypt_routine) (const char*, void*, int, void*);
 
-	static Database* newDbb(MemoryPool& p) {
-		return FB_NEW(p) Database(p);
+	static Database* newDbb(MemoryPool* p) {
+		return FB_NEW(*p) Database(p);
 	}
-	
+
 	// The deleteDbb function MUST be used to delete a Database object.
 	// The function hides some tricky order of operations.  Since the
 	// memory for the vectors in the Database is allocated out of the Database's
@@ -314,7 +314,7 @@ public:
 	{
 		if (!toDelete)
 			return;
-		JrdMemoryPool *perm = toDelete->dbb_permanent;
+		MemoryPool* perm = toDelete->dbb_permanent;
 #ifdef SUPERSERVER
 		// Memory pool destruction below decrements memory statistics for 
 		// SuperServer situated in database block we are about to deallocate
@@ -323,7 +323,7 @@ public:
 		perm->setStatsGroup(temp_stats);
 #endif
 		delete toDelete;
-		JrdMemoryPool::noDbbDeletePool(perm);
+		MemoryPool::deletePool(perm);
 	}
 
 	static ULONG getLockOwnerId()
@@ -355,7 +355,7 @@ public:
 	BlobFilter*	dbb_blob_filters;		// known blob filters
 	trig_vec*	dbb_triggers[DB_TRIGGER_MAX];
 
-	DatabaseModules	modules;			// external function/filter modules
+	DatabaseModules	dbb_modules;			// external function/filter modules
 	Firebird::Mutex* dbb_mutexes;		// Database block mutexes
 	Firebird::RecursiveMutex dbb_sp_rec_mutex;	// Recursive mutex for accessing/updating stored procedure metadata
 	//SLONG dbb_sort_size;				// Size of sort space per sort, unused for now
@@ -380,13 +380,10 @@ public:
 	Firebird::PathName dbb_database_name;	// database ID (file name or alias)
 	Firebird::string dbb_encrypt_key;	// encryption key
 
-	JrdMemoryPool* dbb_permanent;
-	JrdMemoryPool* dbb_bufferpool;
+	MemoryPool* dbb_permanent;
+	MemoryPool* dbb_bufferpool;
 
-	typedef JrdMemoryPool* pool_ptr;
-	typedef Firebird::Array<pool_ptr> pool_vec_type;
-
-	pool_vec_type dbb_pools;			// pools
+	Firebird::Array<MemoryPool*> dbb_pools;		// pools
 
 	vec<jrd_req*>*	dbb_internal;		// internal requests
 	vec<jrd_req*>*	dbb_dyn_req;		// internal dyn requests
@@ -463,18 +460,43 @@ public:
 	// returns true if primary file is located on raw device
 	bool onRawDevice();
 
-private:
-	explicit Database(MemoryPool& p)
-	:	dbb_page_manager(p),
-		modules(p),
-		dbb_filename(p),
-		dbb_database_name(p),
-		dbb_encrypt_key(p),
-		dbb_pools(p, 4),
-		dbb_charsets(p),
-		dbb_functions(p)
+	MemoryPool* createPool()
 	{
-		dbb_pools.resize(1);
+#ifdef SUPERSERVER
+		MemoryPool* pool = MemoryPool::createPool(dbb_permanent, dbb_memory_stats);
+#else
+		MemoryPool* pool = MemoryPool::createPool(dbb_permanent);
+#endif
+		dbb_pools.add(pool);
+		return pool;
+	}
+
+	void deletePool(MemoryPool* pool)
+	{
+		for (size_t i = 0; i < dbb_pools.getCount(); ++i)
+		{
+			if (dbb_pools[i] == pool)
+			{
+				dbb_pools.remove(i);
+				break;
+			}
+		}
+		MemoryPool::deletePool(pool);
+	}
+
+private:
+	explicit Database(MemoryPool* p)
+	:	dbb_permanent(p),
+		dbb_page_manager(*p),
+		dbb_modules(*p),
+		dbb_filename(*p),
+		dbb_database_name(*p),
+		dbb_encrypt_key(*p),
+		dbb_pools(*p, 4),
+		dbb_charsets(*p),
+		dbb_functions(*p)
+	{
+		dbb_pools.add(p);
 		dbb_lock_owner_id = getLockOwnerId();
 	}
 
@@ -482,18 +504,11 @@ private:
 	{
 		destroyIntlObjects();
 
-		pool_ptr* itr = dbb_pools.begin();
-		while (itr != dbb_pools.end())
+		fb_assert(dbb_pools[0] == dbb_permanent);
+		for (size_t i = 1; i < dbb_pools.getCount(); ++i)
 		{
-			if (*itr && *itr == dbb_bufferpool)
-				dbb_bufferpool = 0;
-			if (*itr && *itr != dbb_permanent)
-				itr = JrdMemoryPool::deletePool(*itr);
-			else
-				++itr;
+			MemoryPool::deletePool(dbb_pools[i]);
 		}
-		if (dbb_bufferpool)
-			JrdMemoryPool::deletePool(dbb_bufferpool);
 	}
 
 public:
@@ -989,12 +1004,12 @@ const USHORT WIN_garbage_collect	= 8;	// scan left a page for garbage collector
 class thread_db : public ThreadData
 {
 private:
-	JrdMemoryPool*	tdbb_default;
-	void setDefaultPool(JrdMemoryPool* p)
+	MemoryPool*	tdbb_default;
+	void setDefaultPool(MemoryPool* p)
 	{
 		tdbb_default = p;
 	}
-	friend class Firebird::SubsystemContextPoolHolder <Jrd::thread_db, JrdMemoryPool>;
+	friend class Firebird::SubsystemContextPoolHolder <Jrd::thread_db, MemoryPool>;
 	Database*	database;
 	Attachment*	attachment;
 	jrd_tra*	transaction;
@@ -1031,7 +1046,7 @@ public:
 	sigjmp_buf tdbb_sigsetjmp;
 #endif
 
-	JrdMemoryPool* getDefaultPool()
+	MemoryPool* getDefaultPool()
 	{
 		return tdbb_default;
 	}
@@ -1278,7 +1293,7 @@ inline void SET_DBB(Jrd::Database* &dbb) {
 extern int debug;
 
 namespace Jrd {
-	typedef Firebird::SubsystemContextPoolHolder <Jrd::thread_db, JrdMemoryPool> 
+	typedef Firebird::SubsystemContextPoolHolder <Jrd::thread_db, MemoryPool> 
 		ContextPoolHolder;
 }
 

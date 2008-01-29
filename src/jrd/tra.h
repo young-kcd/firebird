@@ -93,7 +93,7 @@ public:
 		tra_wait
 	};
 
-	explicit jrd_tra(JrdMemoryPool* p) :
+	explicit jrd_tra(MemoryPool* p) :
 		tra_pool(p),
 		tra_blobs(p),
 		tra_resources(*p),
@@ -114,7 +114,7 @@ public:
 								   gargage-collected by this tx */
 	jrd_tra*	tra_next;		/* next transaction in database */
 	jrd_tra*	tra_sibling;	/* next transaction in group */
-	JrdMemoryPool* tra_pool;		/* pool for transaction */
+	MemoryPool* tra_pool;		/* pool for transaction */
 	BlobIndexTree tra_blobs;		/* list of active blobs */
 	ArrayField*	tra_arrays;		/* Linked list of active arrays */
 	Lock*		tra_lock;		/* lock for transaction */

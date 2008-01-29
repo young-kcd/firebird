@@ -188,7 +188,7 @@ private:
 class jrd_req : public pool_alloc_rpt<record_param, type_req>
 {
 public:
-	jrd_req(JrdMemoryPool* pool) :
+	jrd_req(MemoryPool* pool) :
 		req_blobs(pool), req_external(*pool), req_access(*pool), req_resources(*pool),
 		req_trg_name(*pool), req_fors(*pool), req_exec_sta(*pool),
 		req_invariants(*pool), req_timestamp(true), req_sql_text(*pool), req_domain_validation(NULL),
@@ -200,7 +200,7 @@ public:
 	USHORT		req_count;			// number of streams
 	USHORT		req_incarnation;	// incarnation number
 	ULONG		req_impure_size;	// size of impure area
-	JrdMemoryPool* req_pool;
+	MemoryPool* req_pool;
 	vec<jrd_req*>*	req_sub_requests;	// vector of sub-requests
 
 	// Transaction pointer and doubly linked list pointers for requests in this 

@@ -315,7 +315,7 @@ void Jrd::Trigger::compile(thread_db* tdbb)
 
 		compile_in_progress = true;
 		// Allocate statement memory pool
-		JrdMemoryPool* new_pool = JrdMemoryPool::createPool();
+		MemoryPool* new_pool = dbb->createPool();
 		// Trigger request is not compiled yet. Lets do it now
 		USHORT par_flags = (USHORT)
 			(flags & TRG_ignore_perm) ? csb_ignore_perm : 0;
@@ -350,7 +350,7 @@ void Jrd::Trigger::compile(thread_db* tdbb)
 				request = NULL;
 			}
 			else {
-				JrdMemoryPool::deletePool(new_pool);
+				dbb->deletePool(new_pool);
 			}
 
 			dbb->dbb_sp_rec_mutex.leave();
@@ -3511,9 +3511,6 @@ ISC_STATUS GDS_TRANSACT_REQUEST(ISC_STATUS*	user_status,
 			 blr_length, blr, in_msg_length, in_msg, out_msg_length);
 #endif
 
-	jrd_req* request = NULL;
-	JrdMemoryPool* new_pool = NULL;
-
 	try 
 	{
 		Attachment* attachment = *db_handle;
@@ -3522,13 +3519,18 @@ ISC_STATUS GDS_TRANSACT_REQUEST(ISC_STATUS*	user_status,
 		DatabaseContextHolder dbbHolder(tdbb);
 		check_database(tdbb);
 
+		Database* dbb = tdbb->getDatabase();
+
 		jrd_tra* transaction = find_transaction(tdbb, isc_req_wrong_db);
 
 		jrd_nod* in_message = NULL;
 		jrd_nod* out_message = NULL;
 
-		{ // scope
-			new_pool = JrdMemoryPool::createPool();
+		jrd_req* request = NULL;
+		MemoryPool* new_pool = dbb->createPool();
+
+		try
+		{
 			Jrd::ContextPoolHolder context(tdbb, new_pool);
 
 			CompilerScratch* csb =
@@ -3551,6 +3553,15 @@ ISC_STATUS GDS_TRANSACT_REQUEST(ISC_STATUS*	user_status,
 					}
 				}
 			}
+		}
+		catch (const Firebird::Exception&)
+		{
+			if (request)
+				CMP_release(tdbb, request);
+			else
+				dbb->deletePool(new_pool);
+
+			throw;
 		}
 
 		request->req_attachment = attachment;
@@ -3605,18 +3616,6 @@ ISC_STATUS GDS_TRANSACT_REQUEST(ISC_STATUS*	user_status,
 	}
 	catch (const Firebird::Exception& ex)
 	{
-		try
-		{
-			if (request) {
-				CMP_release(tdbb, request);
-			}
-			else if (new_pool) {
-				JrdMemoryPool::deletePool(new_pool);
-			}
-		}
-		catch (const Firebird::Exception&)
-		{} // no-op
-
 		Firebird::stuff_exception(user_status, ex);
 	}
 
@@ -4873,20 +4872,18 @@ static Database* init(thread_db*	tdbb,
 	try {
 #ifdef SUPERSERVER
 	Firebird::MemoryStats temp_stats;
-	JrdMemoryPool* perm = JrdMemoryPool::createDbPool(temp_stats);
-	dbb = Database::newDbb(*perm);
+	MemoryPool* perm = MemoryPool::createPool(NULL, temp_stats);
+	dbb = Database::newDbb(perm);
 	perm->setStatsGroup(dbb->dbb_memory_stats);
 #else
-	JrdMemoryPool* perm = JrdMemoryPool::createDbPool(*MemoryPool::default_stats_group);
-	dbb = Database::newDbb(*perm);
+	MemoryPool* perm = MemoryPool::createPool(NULL);
+	dbb = Database::newDbb(perm);
 #endif
-	dbb->dbb_permanent = perm;
 	dbb->dbb_mutexes = temp_mutx;
 
 	tdbb->setDatabase(dbb);
 
-	dbb->dbb_pools[0] = perm;
-	dbb->dbb_bufferpool = JrdMemoryPool::createPool();
+	dbb->dbb_bufferpool = dbb->createPool();
 
 	// provide context pool for the rest stuff
 	Jrd::ContextPoolHolder context(tdbb, perm);

@@ -53,7 +53,6 @@
 #include "../jrd/rse.h"
 #include "../jrd/scl.h"
 #include "../jrd/tra.h"
-#include "../jrd/all.h"
 #include "../jrd/lck.h"
 #include "../jrd/irq.h"
 #include "../jrd/drq.h"
@@ -556,17 +555,18 @@ jrd_req* CMP_compile2(thread_db* tdbb, const UCHAR* blr, USHORT internal_flag,
  *	Compile a BLR request.
  *
  **************************************/
-	jrd_req* request = 0;
+	jrd_req* request = NULL;
 
 	SET_TDBB(tdbb);
+	Database* dbb = tdbb->getDatabase();
 
 	// 26.09.2002 Nickolay Samofatov: default memory pool will become statement pool 
 	// and will be freed by CMP_release
-	JrdMemoryPool* new_pool = 0;
+	MemoryPool* new_pool = NULL;
 
 	try
 	{
-		new_pool = JrdMemoryPool::createPool();
+		new_pool = dbb->createPool();
 		Jrd::ContextPoolHolder context(tdbb, new_pool);
 
 		CompilerScratch* csb = PAR_parse(tdbb, blr, internal_flag, dbginfo_length, dbginfo);
@@ -583,12 +583,10 @@ jrd_req* CMP_compile2(thread_db* tdbb, const UCHAR* blr, USHORT internal_flag,
 	catch (const Firebird::Exception& ex)
 	{
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);		
-		if (request) {
+		if (request)
 			CMP_release(tdbb, request);
-		}
-		else if (new_pool) {
-			JrdMemoryPool::deletePool(new_pool);
-		}
+		else
+			dbb->deletePool(new_pool);
 		ERR_punt();
 	}
 
@@ -2332,6 +2330,7 @@ void CMP_release(thread_db* tdbb, jrd_req* request)
  *
  **************************************/
 	SET_TDBB(tdbb);
+	Database* dbb = tdbb->getDatabase();
 
 	DEV_BLKCHK(request, type_req);
 
@@ -2405,7 +2404,7 @@ void CMP_release(thread_db* tdbb, jrd_req* request)
 		}
 	}
 
-	JrdMemoryPool::deletePool(request->req_pool);
+	dbb->deletePool(request->req_pool);
 }
 
 

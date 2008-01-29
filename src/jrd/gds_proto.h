@@ -134,7 +134,7 @@ void	gds__ulstr(char* buffer, ULONG value, const int minlen, const char filler);
 
 void	gds__default_printer(void*, SSHORT, const TEXT*);
 void	gds__trace_printer(void*, SSHORT, const TEXT*);
-void	gds__print_pool(class JrdMemoryPool*, const TEXT*, ...);
+void	gds__print_pool(Firebird::MemoryPool*, const TEXT*, ...);
 
 
 #if (defined SOLARIS && !defined(MAP_ANON))

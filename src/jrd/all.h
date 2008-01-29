@@ -24,15 +24,12 @@
 #ifndef JRD_ALL_H
 #define JRD_ALL_H
 
-#include "../jrd/jrd.h"
 #include "../common/classes/alloc.h"
 #include "../jrd/lls.h"
-#include "../common/classes/fb_string.h"
 
 
 namespace Jrd {
 	class Database;
-	class DataComprControl;
 }
 
 void ALL_print_memory_pool_info(FILE*, Jrd::Database*);
@@ -41,18 +38,4 @@ void ALL_print_memory_pool_info(FILE*, Jrd::Database*);
 void ALL_check_memory(void);
 #endif
 
-class JrdMemoryPool : public MemoryPool
-{
-protected:
-	// Dummy constructor and destructor. Should never be called
-	JrdMemoryPool();
-	~JrdMemoryPool();
-public:
-	static JrdMemoryPool *createDbPool(Firebird::MemoryStats &stats);
-	static JrdMemoryPool *createPool();
-	static JrdMemoryPool** deletePool(JrdMemoryPool* pool);
-	static void noDbbDeletePool(JrdMemoryPool* pool);
-};
-
 #endif	// JRD_ALL_H
-

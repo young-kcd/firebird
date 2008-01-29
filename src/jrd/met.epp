@@ -64,7 +64,6 @@
 #include "../jrd/os/pio.h"
 #include "../jrd/sdw.h"
 #include "../jrd/flags.h"
-#include "../jrd/all.h"
 #include "../jrd/lls.h"
 #include "../jrd/intl.h"
 #include "../jrd/align.h"
@@ -224,7 +223,7 @@ void MET_get_domain(thread_db* tdbb, const Firebird::MetaName& name, dsc* desc, 
 			{
 				fieldInfo->nullable = FLD.RDB$NULL_FLAG.NULL || FLD.RDB$NULL_FLAG == 0;
 
-				JrdMemoryPool* csb_pool = JrdMemoryPool::createPool();
+				MemoryPool* csb_pool = dbb->createPool();
 				Jrd::ContextPoolHolder context(tdbb, csb_pool);
 				try
 				{
@@ -240,7 +239,7 @@ void MET_get_domain(thread_db* tdbb, const Firebird::MetaName& name, dsc* desc, 
 				}
 				catch (const Firebird::Exception&)
 				{
-					JrdMemoryPool::deletePool(csb_pool);
+					dbb->deletePool(csb_pool);
 					throw;
 				}
 			}
@@ -308,7 +307,7 @@ Firebird::MetaName MET_get_relation_field(thread_db* tdbb, const Firebird::MetaN
 					(FLD.RDB$NULL_FLAG.NULL || FLD.RDB$NULL_FLAG == 0) :
 					RFL.RDB$NULL_FLAG == 0;
 
-				JrdMemoryPool* csb_pool = JrdMemoryPool::createPool();
+				MemoryPool* csb_pool = dbb->createPool();
 				Jrd::ContextPoolHolder context(tdbb, csb_pool);
 				try
 				{
@@ -331,7 +330,7 @@ Firebird::MetaName MET_get_relation_field(thread_db* tdbb, const Firebird::MetaN
 				}
 				catch (const Firebird::Exception&)
 				{
-					JrdMemoryPool::deletePool(csb_pool);
+					dbb->deletePool(csb_pool);
 					throw;
 				}
 			}
@@ -2005,7 +2004,7 @@ BlobFilter* MET_lookup_filter(thread_db* tdbb, SSHORT from, SSHORT to)
         if (!REQUEST(irq_r_filters))
             REQUEST(irq_r_filters) = request;
 		filter = (FPTR_BFILTER_CALLBACK)
-			Module::lookup(X.RDB$MODULE_NAME, X.RDB$ENTRYPOINT, dbb->modules);
+			Module::lookup(X.RDB$MODULE_NAME, X.RDB$ENTRYPOINT, dbb->dbb_modules);
 		if (filter)
 		{
 			blf = FB_NEW(*dbb->dbb_permanent) BlobFilter(*dbb->dbb_permanent);
@@ -2901,7 +2900,7 @@ void MET_parse_sys_trigger(thread_db* tdbb, jrd_rel* relation)
 				par_flags |= csb_post_trigger;
 
 			{
-				Jrd::ContextPoolHolder context(tdbb, JrdMemoryPool::createPool());
+				Jrd::ContextPoolHolder context(tdbb, dbb->createPool());
 				PAR_blr(tdbb, relation, blr.begin(), NULL, NULL,
 						&request, true, par_flags);
 			}
@@ -3192,7 +3191,7 @@ jrd_prc* MET_procedure(thread_db* tdbb, int id, bool noscan, USHORT flags)
 					 (fb_utils::implicit_domain(F.RDB$FIELD_NAME) && !F.RDB$DEFAULT_VALUE.NULL)))
 				{
 					procedure->prc_defaults++;
-					Jrd::ContextPoolHolder context(tdbb, JrdMemoryPool::createPool());
+					Jrd::ContextPoolHolder context(tdbb, dbb->createPool());
 					CompilerScratch* csb = CompilerScratch::newCsb(*tdbb->getDefaultPool(), 5);
 
 					if (!pa_default_value_null)
@@ -3243,7 +3242,7 @@ jrd_prc* MET_procedure(thread_db* tdbb, int id, bool noscan, USHORT flags)
 
 			prc_t prc_type = prc_legacy;
 
-			JrdMemoryPool *csb_pool = JrdMemoryPool::createPool();
+			MemoryPool* csb_pool = dbb->createPool();
 
 			{
 				Jrd::ContextPoolHolder context(tdbb, csb_pool);
@@ -3288,7 +3287,7 @@ jrd_prc* MET_procedure(thread_db* tdbb, int id, bool noscan, USHORT flags)
 						procedure->prc_request = NULL;
 					}
 					else {
-						JrdMemoryPool::deletePool(csb_pool);
+						dbb->deletePool(csb_pool);
 					}
 					
 					ERR_post(isc_bad_proc_BLR, procedure->prc_name.c_str(), 0);

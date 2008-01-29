@@ -49,9 +49,7 @@
 #include "../jrd/exe.h"
 #include "../jrd/lls.h"
 #include "../jrd/rse.h"	// for MAX_STREAMS
-
 #include "../jrd/scl.h"
-#include "../jrd/all.h"
 #include "../jrd/req.h"
 #include "../jrd/blb.h"
 #include "../jrd/intl.h"

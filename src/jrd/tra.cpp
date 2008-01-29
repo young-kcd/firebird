@@ -35,7 +35,6 @@
 #include "../jrd/lck.h"
 #include "../jrd/ibase.h"
 #include "../jrd/lls.h"
-#include "../jrd/all.h"
 #include "../jrd/btr.h"
 #include "../jrd/req.h"
 #include "../jrd/exe.h"
@@ -963,7 +962,7 @@ jrd_tra* TRA_reconnect(thread_db* tdbb, const UCHAR* id, USHORT length)
 		ERR_post(isc_read_only_database, 0);
 
 
-	Jrd::ContextPoolHolder context(tdbb, JrdMemoryPool::createPool());
+	Jrd::ContextPoolHolder context(tdbb, dbb->createPool());
 	jrd_tra* trans = FB_NEW_RPT(*tdbb->getDefaultPool(), 0) jrd_tra(tdbb->getDefaultPool());
 	trans->tra_number = gds__vax_integer(id, length);
 	trans->tra_flags |= TRA_prepared | TRA_reconnected | TRA_write;
@@ -988,10 +987,9 @@ jrd_tra* TRA_reconnect(thread_db* tdbb, const UCHAR* id, USHORT length)
 		}
 
 		const SLONG number = trans->tra_number;
-		JrdMemoryPool* tra_pool = trans->tra_pool;
+		MemoryPool* tra_pool = trans->tra_pool;
 		delete trans;
-		if (tra_pool)
-			JrdMemoryPool::deletePool(tra_pool);
+		dbb->deletePool(tra_pool);
 
 		TEXT text[128];
 		USHORT flags = 0;
@@ -1024,6 +1022,8 @@ void TRA_release_transaction(thread_db* tdbb, jrd_tra* transaction)
  *
  **************************************/
 	SET_TDBB(tdbb);
+	Database* dbb = tdbb->getDatabase();
+	Attachment* attachment = tdbb->getAttachment();
 
 	if (transaction->tra_blobs.getFirst()) 
 		while (true) 
@@ -1069,7 +1069,7 @@ void TRA_release_transaction(thread_db* tdbb, jrd_tra* transaction)
 	}
 
 	{
-		vec<jrd_rel*>& rels = *tdbb->getDatabase()->dbb_relations;
+		vec<jrd_rel*>& rels = *dbb->dbb_relations;
 		for (size_t i = 0; i < rels.count(); i++)
 		{
 			jrd_rel* relation = rels[i];
@@ -1110,8 +1110,8 @@ void TRA_release_transaction(thread_db* tdbb, jrd_tra* transaction)
 
 	// Unlink the transaction from the database block
 
-	for (jrd_tra** ptr = &tdbb->getAttachment()->att_transactions;
-							*ptr; ptr = &(*ptr)->tra_next) 
+	for (jrd_tra** ptr = &attachment->att_transactions;
+		 *ptr; ptr = &(*ptr)->tra_next) 
 	{ 
 		if (*ptr == transaction) {
 			*ptr = transaction->tra_next;
@@ -1129,10 +1129,9 @@ void TRA_release_transaction(thread_db* tdbb, jrd_tra* transaction)
 
 	// Release the transaction pool.
 
-	JrdMemoryPool* tra_pool = transaction->tra_pool;
+	MemoryPool* tra_pool = transaction->tra_pool;
 	delete transaction;
-	if (tra_pool)
-		JrdMemoryPool::deletePool(tra_pool);
+	dbb->deletePool(tra_pool);
 }
 
 
@@ -1498,7 +1497,7 @@ jrd_tra* TRA_start(thread_db* tdbb, ULONG flags, SSHORT lock_timeout)
 	// To handle the problems of relation locks, allocate a temporary
 	// transaction block first, seize relation locks, then go ahead and
 	// make up the real transaction block.
-	Jrd::ContextPoolHolder context(tdbb, JrdMemoryPool::createPool());
+	Jrd::ContextPoolHolder context(tdbb, dbb->createPool());
 	jrd_tra* temp = FB_NEW_RPT(*tdbb->getDefaultPool(), 0) jrd_tra(tdbb->getDefaultPool());
 
 	temp->tra_flags = flags;
@@ -1534,7 +1533,7 @@ jrd_tra* TRA_start(thread_db* tdbb, int tpb_length, const UCHAR* tpb)
 	// To handle the problems of relation locks, allocate a temporary
 	// transaction block first, seize relation locks, then go ahead and
 	// make up the real transaction block.
-	Jrd::ContextPoolHolder context(tdbb, JrdMemoryPool::createPool());
+	Jrd::ContextPoolHolder context(tdbb, dbb->createPool());
 	jrd_tra* temp = FB_NEW_RPT(*tdbb->getDefaultPool(), 0) jrd_tra(tdbb->getDefaultPool());
 
 	transaction_options(tdbb, temp, tpb, tpb_length);

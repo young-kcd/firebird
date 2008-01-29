@@ -32,7 +32,6 @@
 #include "../jrd/cch.h"
 #include "../jrd/dbg.h"
 #include "../jrd/val.h"
-#include "../jrd/all.h"
 #include "../jrd/exe.h"
 #include "../jrd/req.h"
 #include "../jrd/rse.h"
@@ -70,7 +69,7 @@ int (*dbg_block) (blk *) = DBG_block;
 int (*dbg_eval) (int) = DBG_eval;
 int (*dbg_open) () = DBG_open;
 int (*dbg_close) () = DBG_close;
-int (*dbg_pool) (JrdMemoryPool*) = DBG_pool;
+int (*dbg_pool) (MemoryPool*) = DBG_pool;
 int (*dbg_pretty) (const jrd_nod*, int) = DBG_pretty;
 int (*dbg_window) (int *) = DBG_window;
 int (*dbg_rpb) (record_param*) = DBG_rpb;
@@ -695,7 +694,7 @@ int DBG_open(void)
 }
 
 
-int DBG_pool(JrdMemoryPool *pool)
+int DBG_pool(MemoryPool *pool)
 {
 /**************************************
  *

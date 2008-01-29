@@ -24,7 +24,6 @@
 #ifndef JRD_SQZ_H
 #define JRD_SQZ_H
 
-#include "../jrd/all.h"
 #include "../include/fb_blk.h"
 
 namespace Jrd {

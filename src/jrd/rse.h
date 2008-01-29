@@ -409,7 +409,7 @@ public:
 	};
 	Firebird::HalfStaticArray<opt_conjunct, OPT_STATIC_ITEMS> opt_conjuncts;
 	Firebird::HalfStaticArray<opt_stream, OPT_STATIC_ITEMS> opt_streams;
-	OptimizerBlk(JrdMemoryPool* pool) : opt_conjuncts(*pool), opt_streams(*pool) {}
+	OptimizerBlk(MemoryPool* pool) : opt_conjuncts(*pool), opt_streams(*pool) {}
 };
 
 // values for opt_stream_flags

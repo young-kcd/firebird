@@ -650,7 +650,7 @@ UserFunction* FUN_lookup_function(thread_db* tdbb, const Firebird::MetaName& nam
 			X.RDB$ENTRYPOINT, X.RDB$MODULE_NAME);
 
 		function->fun_entrypoint =
-			Module::lookup(X.RDB$MODULE_NAME, X.RDB$ENTRYPOINT, dbb->modules);
+			Module::lookup(X.RDB$MODULE_NAME, X.RDB$ENTRYPOINT, dbb->dbb_modules);
 
 		// Could not find a function with given MODULE, ENTRYPOINT.
 		// Try the list of internally implemented functions.

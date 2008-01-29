@@ -1802,7 +1802,7 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 	BLKCHK(in_node, type_nod);
 
 	// Save the old pool and request to restore on exit
-	JrdMemoryPool* old_pool = tdbb->getDefaultPool();
+	MemoryPool* old_pool = tdbb->getDefaultPool();
 	Jrd::ContextPoolHolder context(tdbb, request->req_pool);
 
 	jrd_req* old_request = tdbb->getRequest();

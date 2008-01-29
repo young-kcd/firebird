@@ -49,6 +49,7 @@
 #include "../jrd/dsc.h"
 #include "../jrd/constants.h"
 
+#include "../common/classes/alloc.h"
 #include "../common/classes/locks.h"
 #include "../common/classes/timestamp.h"
 #include "../common/classes/init.h"
@@ -1214,7 +1215,7 @@ void API_ROUTINE gds__log(const TEXT* text, ...)
 #endif
 }
 
-void API_ROUTINE gds__print_pool(JrdMemoryPool* pool, const TEXT* text, ...)
+void API_ROUTINE gds__print_pool(MemoryPool* pool, const TEXT* text, ...)
 {
 /**************************************
  *

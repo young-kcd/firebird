@@ -22,22 +22,13 @@
  */
 
 #include "firebird.h"
-#include <string.h>
-#include "../jrd/common.h"
-#include <stdio.h>
-
-#include "gen/iberror.h"
 #include "../jrd/jrd.h"
 #include "../jrd/all.h"
-#include "../jrd/tra.h"
-#include "../jrd/err_proto.h"
-#include "../common/classes/array.h"
+
+#include <string.h>
+#include <stdio.h>
 
 using namespace Jrd;
-
-const int PERM_EXTEND_SIZE		= 16 * 1024;
-const int CACH_EXTEND_SIZE		= 16 * 1024;
-
 
 #ifdef DEV_BUILD
 void ALL_check_memory()
@@ -63,10 +54,10 @@ void ALL_check_memory()
 	Database* dbb = GET_DBB();
 
 	// walk through all the pools in the database
-	Firebird::Array<JrdMemoryPool*>::iterator itr;
+	Firebird::Array<MemoryPool*>::iterator itr;
 	for (itr = dbb->dbb_pools.begin(); itr < dbb->dbb_pools.end(); ++itr)
 	{
-		JrdMemoryPool* pool = *itr;
+		MemoryPool* pool = *itr;
 		if (pool) {
 			// walk through all the hunks in the pool
 			pool->verify_pool();
@@ -74,47 +65,6 @@ void ALL_check_memory()
 	}
 }
 #endif /* DEV_BUILD */
-
-
-JrdMemoryPool *JrdMemoryPool::createDbPool(Firebird::MemoryStats &stats) {
-	JrdMemoryPool* result = (JrdMemoryPool *)internal_create(
-		sizeof(JrdMemoryPool), NULL, stats);
-	return result;
-}
-
-JrdMemoryPool *JrdMemoryPool::createPool() {
-    Database* dbb = GET_DBB();
-	fb_assert(dbb);
-		
-#ifdef SUPERSERVER
-	JrdMemoryPool* result = (JrdMemoryPool *)internal_create(sizeof(JrdMemoryPool),
-		dbb->dbb_permanent,	dbb->dbb_memory_stats);
-#else
-	JrdMemoryPool *result = (JrdMemoryPool *)internal_create(sizeof(JrdMemoryPool), dbb->dbb_permanent);
-#endif
-	dbb->dbb_pools.push(result);
-	return result;
-}
-
-JrdMemoryPool** JrdMemoryPool::deletePool(JrdMemoryPool* pool) {
-	Database* dbb = GET_DBB();
-	JrdMemoryPool** rc = 0;
-	for (size_t n = 0; n < dbb->dbb_pools.getCount(); ++n)
-	{
-		if (dbb->dbb_pools[n] == pool)
-		{
-			rc = dbb->dbb_pools.remove(n);
-			break;
-		}
-	}
-	fb_assert(rc);
-	MemoryPool::deletePool(pool);
-	return rc;
-}
-
-void JrdMemoryPool::noDbbDeletePool(JrdMemoryPool* pool) {
-	MemoryPool::deletePool(pool);
-}
 
 
 void ALL_print_memory_pool_info(FILE* fptr, Database* databases)
@@ -172,7 +122,7 @@ void ALL_print_memory_pool_info(FILE* fptr, Database* databases)
 		fprintf(fptr, " and %d attachment(s)\n\n", j);
 		for (itr = 0; itr < dbb->dbb_pools.getCount(); ++itr)
 		{
-			JrdMemoryPool *myPool = dbb->dbb_pools[itr];
+			MemoryPool *myPool = dbb->dbb_pools[itr];
 			if (myPool) 
 			{
 				myPool->print_contents(fptr, true);
@@ -180,4 +130,3 @@ void ALL_print_memory_pool_info(FILE* fptr, Database* databases)
 		}
 	}
 }
-

@@ -63,7 +63,6 @@
 #include "../jrd/ThreadStart.h"
 #include "../jrd/thread_proto.h"
 #ifdef VIO_DEBUG
-#include "../jrd/all.h"
 #include "../jrd/vio_debug.h"
 #endif
 #include "../jrd/blb_proto.h"
@@ -95,7 +94,7 @@ static void check_class(thread_db*, jrd_tra*, record_param*, record_param*, USHO
 static void check_control(thread_db*);
 static bool check_user(thread_db*, const dsc*);
 static void check_rel_field_class(record_param*, SecurityClass::flags_t, jrd_tra*);
-static void delete_record(thread_db*, record_param*, SLONG, JrdMemoryPool*);
+static void delete_record(thread_db*, record_param*, SLONG, MemoryPool*);
 static UCHAR* delete_tail(thread_db*, record_param*, SLONG, UCHAR*, const UCHAR*);
 static void expunge(thread_db*, record_param*, const jrd_tra*, SLONG);
 static bool dfw_should_know(record_param* org_rpb, record_param* new_rpb,
@@ -479,7 +478,7 @@ void VIO_bump_count(thread_db* tdbb, USHORT count_id, jrd_rel* relation)
 
 bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb, RecordSource* rsb, 
 							  jrd_tra* transaction,
-							  JrdMemoryPool* pool, bool writelock)
+							  MemoryPool* pool, bool writelock)
 {
 /**************************************
  *
@@ -969,7 +968,7 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb, RecordSource* 
 }
 
 
-void VIO_data(thread_db* tdbb, record_param* rpb, JrdMemoryPool* pool)
+void VIO_data(thread_db* tdbb, record_param* rpb, MemoryPool* pool)
 {
 /**************************************
  *
@@ -1712,7 +1711,7 @@ Record* VIO_gc_record(thread_db* tdbb, jrd_rel* relation)
 }
 
 
-bool VIO_get(thread_db* tdbb, record_param* rpb, RecordSource* rsb, jrd_tra* transaction, JrdMemoryPool* pool)
+bool VIO_get(thread_db* tdbb, record_param* rpb, RecordSource* rsb, jrd_tra* transaction, MemoryPool* pool)
 {
 /**************************************
  *
@@ -1780,7 +1779,7 @@ bool VIO_get_current(
 					record_param* old_rpb, 
 					record_param* rpb, 
 					jrd_tra* transaction, 
-					JrdMemoryPool* pool, 
+					MemoryPool* pool, 
 					bool foreign_key, 
 					bool &has_old_values)
 {
@@ -2422,7 +2421,7 @@ bool VIO_next_record(thread_db* tdbb,
 					 record_param* rpb,
 					 RecordSource* rsb,
 					 jrd_tra* transaction,
-					 JrdMemoryPool* pool,
+					 MemoryPool* pool,
 					 bool backwards,
 					 bool onepage)
 {
@@ -2497,7 +2496,7 @@ bool VIO_next_record(thread_db* tdbb,
 
 
 Record* VIO_record(thread_db* tdbb, record_param* rpb, const Format* format, 
-				   JrdMemoryPool *pool)
+				   MemoryPool *pool)
 {
 /**************************************
  *
@@ -3468,7 +3467,7 @@ static bool check_user(thread_db* tdbb, const dsc* desc)
 
 
 static void delete_record(thread_db* tdbb, record_param* rpb, SLONG prior_page,
-	JrdMemoryPool* pool)
+	MemoryPool* pool)
 {
 /**************************************
  *

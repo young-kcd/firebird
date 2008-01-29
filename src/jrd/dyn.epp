@@ -51,7 +51,6 @@
 #include "../jrd/flags.h"
 #include "../jrd/ibase.h"
 #include "../jrd/lls.h"
-#include "../jrd/all.h"
 #include "../jrd/met.h"
 #include "../jrd/btr.h"
 #include "../jrd/intl.h"
@@ -115,6 +114,7 @@ void DYN_ddl(Attachment* attachment, jrd_tra* transaction, USHORT length,
  **************************************/
 
 	thread_db* tdbb = JRD_get_thread_data();
+	Database* dbb = tdbb->getDatabase();
 
 	const UCHAR* ptr = ddl;
 
@@ -131,13 +131,10 @@ void DYN_ddl(Attachment* attachment, jrd_tra* transaction, USHORT length,
 
 	// Create a pool for DYN to operate in.  It will be released when
 	// the routine exits.
-	JrdMemoryPool* tempPool = JrdMemoryPool::createPool();
+	MemoryPool* tempPool = dbb->createPool();
 	Jrd::ContextPoolHolder context(tdbb, tempPool);
 
-	Database* dbb = tdbb->getDatabase();
-
 	try {
-
 		dbb->dbb_mutexes[DBB_MUTX_dyn].enter();
 
 		VIO_start_save_point(tdbb, transaction);

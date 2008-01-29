@@ -133,7 +133,7 @@ RelationPages* jrd_rel::getPagesInternal(thread_db* tdbb, SLONG tran, bool alloc
 
 	if (!rel_pages_inst) 
 	{
-		JrdMemoryPool* pool = dbb->dbb_permanent;
+		MemoryPool* pool = dbb->dbb_permanent;
 		rel_pages_inst = FB_NEW(*pool) RelationPagesInstances(*pool);
 	}
 
@@ -184,11 +184,11 @@ RelationPages* jrd_rel::getPagesInternal(thread_db* tdbb, SLONG tran, bool alloc
 #endif
 
 		// create indexes
-		JrdMemoryPool *pool = tdbb->getDefaultPool();
+		MemoryPool *pool = tdbb->getDefaultPool();
 		const bool poolCreated = !pool;
 
 		if (poolCreated)
-			pool = JrdMemoryPool::createPool();
+			pool = dbb->createPool();
 		Jrd::ContextPoolHolder context(tdbb, pool);
 
 		IndexDescAlloc* indices = NULL;
@@ -229,7 +229,7 @@ RelationPages* jrd_rel::getPagesInternal(thread_db* tdbb, SLONG tran, bool alloc
 		}
 
 		if (poolCreated)
-			JrdMemoryPool::deletePool(pool);
+			dbb->deletePool(pool);
 		delete indices;
 
 		return newPages;

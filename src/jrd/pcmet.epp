@@ -31,7 +31,6 @@
 #include "../jrd/val.h"
 #include "../jrd/ods.h"
 #include "../jrd/btr.h"
-#include "../jrd/all.h"
 #include "../jrd/req.h"
 #include "../jrd/exe.h"
 #include "../jrd/met.h"
@@ -69,12 +68,12 @@ bool PCMET_expression_index(thread_db* tdbb, SSHORT phase, DeferredWork* work,
  **************************************/
 	jrd_rel* relation;
 	index_desc idx;
-	JrdMemoryPool* new_pool = NULL;
+	MemoryPool* new_pool = NULL;
 	jrd_req* current_request, *request;
 	jrd_tra* current_transaction;
 
 	SET_TDBB(tdbb);
-	const Database* dbb = tdbb->getDatabase();
+	Database* dbb = tdbb->getDatabase();
 
 	switch (phase)
 	{
@@ -154,7 +153,7 @@ bool PCMET_expression_index(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 				CompilerScratch* csb = 0;
 				/* allocate a new pool to contain the expression tree 
 				   for the expression index */
-				new_pool = JrdMemoryPool::createPool();
+				new_pool = dbb->createPool();
 				{
 					Jrd::ContextPoolHolder context(tdbb, new_pool);
 					MET_scan_relation(tdbb, relation);
@@ -222,10 +221,7 @@ bool PCMET_expression_index(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 
 		// Get rid of the pool containing the expression tree
 
-		if (new_pool)
-		{
-			JrdMemoryPool::deletePool(new_pool);
-		}
+		dbb->deletePool(new_pool);
 		break;
 	}
 
@@ -247,7 +243,7 @@ void PCMET_lookup_index(thread_db* tdbb, jrd_rel* relation, index_desc* idx)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	const Database* dbb = tdbb->getDatabase();
+	Database* dbb = tdbb->getDatabase();
 
 	// Check the index blocks for the relation to see if we 
 	// have a cached block
@@ -299,7 +295,7 @@ void PCMET_lookup_index(thread_db* tdbb, jrd_rel* relation, index_desc* idx)
 		   with the index block in the "permanent" metadata cache */
 
 		{
-			Jrd::ContextPoolHolder context(tdbb, JrdMemoryPool::createPool());
+			Jrd::ContextPoolHolder context(tdbb, dbb->createPool());
 			idx->idx_expression =
 				MET_parse_blob(tdbb, relation, &IDX.RDB$EXPRESSION_BLR, &csb,
 							   &idx->idx_expression_request, false);

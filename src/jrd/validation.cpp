@@ -551,7 +551,6 @@ VI. ADDITIONAL NOTES
 #include "../jrd/val.h"
 #include "../jrd/btr.h"
 #include "../jrd/btn.h"
-#include "../jrd/all.h"
 #include "../jrd/lck.h"
 #include "../jrd/cch.h"
 #include "../jrd/rse.h"
@@ -686,7 +685,7 @@ bool VAL_validate(thread_db* tdbb, USHORT switches)
  *	Validate a database.
  *
  **************************************/
-	JrdMemoryPool* val_pool = 0;
+	MemoryPool* val_pool = 0;
 
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->getDatabase();
@@ -694,7 +693,7 @@ bool VAL_validate(thread_db* tdbb, USHORT switches)
 
 	try {
 
-	val_pool = JrdMemoryPool::createPool();
+	val_pool = dbb->createPool();
 	Jrd::ContextPoolHolder context(tdbb, val_pool);
 
 	vdr control;
@@ -737,12 +736,12 @@ bool VAL_validate(thread_db* tdbb, USHORT switches)
 	}	// try
 	catch (const Firebird::Exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
-		JrdMemoryPool::deletePool(val_pool);
+		dbb->deletePool(val_pool);
 		tdbb->tdbb_flags &= ~TDBB_sweeper;
 		return false;
 	}
 
-	JrdMemoryPool::deletePool(val_pool);
+	dbb->deletePool(val_pool);
 	return true;
 }
 
