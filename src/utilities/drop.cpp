@@ -298,18 +298,3 @@ static int shm_exclusive( SLONG key, SLONG length)
 	return id;
 }
 #endif
-
-
-void SCH_ast(enum ast_t action)
-{
-/**************************************
- *
- *	S C H _ a s t 
- *
- **************************************
- *
- * Functional description
- *	Stub to prevent link error
- *
- **************************************/
-}
