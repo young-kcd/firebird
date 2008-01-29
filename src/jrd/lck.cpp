@@ -94,25 +94,25 @@ inline SLONG* LCK_OWNER_HANDLE_ATT(thread_db* tdbb) {
 	return &tdbb->getAttachment()->att_lock_owner_handle;
 }
 
-#else	/* SUPERSERVER */
+#else	// SUPERSERVER
+
+static SLONG process_owner_handle = 0;
 
 inline LOCK_OWNER_T LCK_OWNER_ID_DBB(thread_db* tdbb) {
-	const LOCK_OWNER_T id = tdbb->getDatabase()->dbb_lock_owner_id;
-	return ((LOCK_OWNER_T) getpid() << 32) | id;
+	return getpid();
 }
 inline LOCK_OWNER_T LCK_OWNER_ID_ATT(thread_db* tdbb) {
-	const LOCK_OWNER_T id = tdbb->getDatabase()->dbb_lock_owner_id;
-	return ((LOCK_OWNER_T) getpid() << 32) | id;
+	return getpid();
 }
 
 inline SLONG* LCK_OWNER_HANDLE_DBB(thread_db* tdbb) {
-	return &tdbb->getDatabase()->dbb_lock_owner_handle;
+	return &process_owner_handle;
 }
 inline SLONG* LCK_OWNER_HANDLE_ATT(thread_db* tdbb) {
-	return &tdbb->getDatabase()->dbb_lock_owner_handle;
+	return &process_owner_handle;
 }
 
-#endif	/* SUPERSERVER */
+#endif	// SUPERSERVER
 
 
 static const bool compatibility[LCK_max][LCK_max] =
