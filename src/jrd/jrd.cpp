@@ -2207,8 +2207,8 @@ ISC_STATUS GDS_DROP_DATABASE(ISC_STATUS* user_status, Attachment** handle)
 			err = err || drop_files(shadow->sdw_file);
 		}
 
-		Database::deleteDbb(dbb);
 		tdbb->setDatabase(NULL);
+		Database::deleteDbb(dbb);
 
 		if (err) {
 			user_status[0] = isc_arg_gds;
