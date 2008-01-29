@@ -2093,7 +2093,10 @@ ISC_STATUS GDS_DETACH(ISC_STATUS* user_status, Attachment** handle)
 	}
 	catch (const Firebird::Exception& ex) {
 		Database* dbb = tdbb->getDatabase();
-		dbb->dbb_flags &= ~DBB_not_in_use;
+		if (dbb)
+		{
+			dbb->dbb_flags &= ~DBB_not_in_use;
+		}
 		Firebird::stuff_exception(user_status, ex);
 	}
 
@@ -5383,8 +5386,8 @@ static void shutdown_database(Database* dbb, const bool release_pools)
 	delete[] dbb->dbb_mutexes;
 
 	if (release_pools) {
-		Database::deleteDbb(dbb);
 		tdbb->setDatabase(NULL);
+		Database::deleteDbb(dbb);
 	}
 
 	SecurityDatabase::shutdown();

@@ -193,7 +193,13 @@ class Database : public pool_alloc<type_dbb>
 		{}
 
 		~Sync()
-		{}
+		{
+			if (threadId)
+			{
+				syncMutex.leave();
+				threadId = 0;
+			}
+		}
 
 		void lock(bool ast = false)
 		{
