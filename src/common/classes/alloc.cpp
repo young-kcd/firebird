@@ -1188,6 +1188,9 @@ MemoryPool* MemoryPool::internal_create(size_t instance_size, MemoryPool* parent
 
 void MemoryPool::deletePool(MemoryPool* pool)
 {
+	if (!pool)
+		return;
+
 #ifdef USE_VALGRIND
 	VALGRIND_DESTROY_MEMPOOL(pool);
 
