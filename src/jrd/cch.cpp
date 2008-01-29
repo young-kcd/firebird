@@ -4023,7 +4023,7 @@ static THREAD_ENTRY_DECLARE cache_reader(THREAD_ENTRY_PARAM arg)
  *	busy at a time.
  *
  **************************************/
-	Database* dbb = (Database*)arg;
+	Database* dbb = (Database*) arg;
 	Database::SyncGuard dsGuard(dbb);
 
 	ISC_STATUS_ARRAY status_vector;

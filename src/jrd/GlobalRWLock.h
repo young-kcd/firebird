@@ -162,9 +162,11 @@ private:
 			lock->enter(); 
 		}
 		~CountersLockHolder() { lock->leave(); }
+
 	private:
 		// Forbid copy constructor
 		CountersLockHolder(const CountersLockHolder& source);
+
 		Firebird::Mutex* lock;
 	};
 

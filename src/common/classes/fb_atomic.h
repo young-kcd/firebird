@@ -23,9 +23,6 @@
  *  All Rights Reserved.
  *  Contributor(s): ______________________________________.
  * 
- *
- *  $Id: fb_atomic.h,v 1.5 2008-01-27 02:33:14 mkubecek Exp $
- *
  */
  
 #ifndef CLASSES_FB_ATOMIC_H

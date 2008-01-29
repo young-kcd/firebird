@@ -207,8 +207,10 @@ namespace
 
 		const Attachment* attach = dbb->dbb_attachments;
 		for (; attach; attach = attach->att_next)
+		{
 			if (attach == attachment)
 				break;
+		}
 
 		if (!attach)
 			Firebird::status_exception::raise(isc_bad_db_handle, 0);
@@ -374,8 +376,8 @@ void Jrd::Trigger::compile(thread_db* tdbb)
 
 void Jrd::Trigger::release(thread_db* tdbb)
 {
-	if (blr.getCount() == 0 //sys_trigger
-		|| !request || CMP_clone_is_active(request))
+	if (blr.getCount() == 0 ||	//sys_trigger
+		!request || CMP_clone_is_active(request))
 	{
 		return; // FALSE;
 	}
@@ -2131,13 +2133,17 @@ ISC_STATUS GDS_DROP_DATABASE(ISC_STATUS* user_status, Attachment** handle)
 		const Firebird::PathName& file_name = attachment->att_filename;
 
 		if (!attachment->locksmith())
+		{
 			ERR_post(isc_no_priv,
 					 isc_arg_string, "drop",
 					 isc_arg_string, "database",
 					 isc_arg_string, ERR_cstring(file_name), 0);
+		}
 
-		if (attachment->att_flags & ATT_shutdown) {
-			if (dbb->dbb_ast_flags & DBB_shutdown) {
+		if (attachment->att_flags & ATT_shutdown)
+		{
+			if (dbb->dbb_ast_flags & DBB_shutdown)
+			{
 				ERR_post(isc_shutdown, isc_arg_string,
 						 ERR_cstring(file_name), 0);
 			}
@@ -2147,10 +2153,12 @@ ISC_STATUS GDS_DROP_DATABASE(ISC_STATUS* user_status, Attachment** handle)
 		}
 
 		if (!CCH_exclusive(tdbb, LCK_PW, WAIT_PERIOD))
+		{
 			ERR_post(isc_lock_timeout,
 					 isc_arg_gds, isc_obj_in_use,
 					 isc_arg_string, ERR_cstring(file_name), 0);
-	
+		}
+
 		// Check if same process has more attachments
 
 		if (dbb->dbb_attachments && dbb->dbb_attachments->att_next) {
