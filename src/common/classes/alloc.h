@@ -41,6 +41,7 @@
 #include <stdio.h>
 #include "../jrd/common.h"
 #include "../common/classes/fb_atomic.h"
+#include "../common/classes/auto.h"
 #include "../common/classes/tree.h"
 #include "../common/classes/locks.h"
 #ifdef HAVE_STDLIB_H
@@ -322,6 +323,12 @@ public:
 	// Deallocate pool and all its contents
 	static void deletePool(MemoryPool* pool);
 
+	// Just a helper for AutoPtr. Does the same as above.
+	static void clear(MemoryPool* pool)
+	{
+		deletePool(pool);
+	}
+
 	// Allocate memory block. Result is not zero-initialized.
 	// It case of problems this method throws Firebird::BadAlloc
 	void* allocate(size_t size, SSHORT type = 0
@@ -526,7 +533,9 @@ namespace Firebird
 		}
 		explicit AutoStorage(MemoryPool& p) : PermanentStorage(p) { }
 	};
-	
+
+	typedef AutoPtr<MemoryPool, MemoryPool> AutoMemoryPool;
+
 } // namespace Firebird
 
 
