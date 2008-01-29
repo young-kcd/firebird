@@ -235,7 +235,7 @@ inline void MemoryPool::decrement_mapping(size_t size)
 
 MemoryPool* MemoryPool::setContextPool(MemoryPool* newPool)
 {
-	MemoryPool* old = TLS_GET(contextPool);
+	MemoryPool* const old = TLS_GET(contextPool);
 	TLS_SET(contextPool, newPool);
 	return old;
 }
