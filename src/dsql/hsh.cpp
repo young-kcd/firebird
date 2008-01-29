@@ -50,7 +50,7 @@ static Firebird::GlobalPtr<Firebird::Mutex> hash_mutex;
 
 
  **/
-void HSHD_init(void)
+void HSHD_init()
 {
 	UCHAR* p = (UCHAR *) gds__alloc(sizeof(DSQL_SYM) * HASH_SIZE);
 	// This is appropriate to throw exception here, callers check for it
@@ -78,7 +78,7 @@ void HSHD_init(void)
 
 
  **/
-void HSHD_debug(void)
+void HSHD_debug()
 {
 	Firebird::MutexLockGuard guard(hash_mutex);
 
@@ -114,7 +114,7 @@ void HSHD_debug(void)
 
 
  **/
-void HSHD_fini(void)
+void HSHD_fini()
 {
 	for (SSHORT i = 0; i < HASH_SIZE; i++)
 	{
