@@ -15,7 +15,7 @@
 # All Rights Reserved.
 # Contributor(s): ______________________________________.
 # Start of file prefix.darwin:	$(VERSION)	@PLATFORM@
-#$Id: prefix.darwin_powerpc,v 1.1.2.3 2008-01-17 11:15:57 paulbeach Exp $
+#$Id: prefix.darwin_powerpc,v 1.1.2.4 2008-01-30 10:21:46 paulbeach Exp $
 # 2 Oct 2002, Nickolay Samofatov - Major Cleanup
 
 DYLD_LIBRARY_PATH=$(FIREBIRD)/lib
@@ -37,13 +37,13 @@ PLATFORM_PATH=os/darwin
 LINK_OPTS:=
 LIB_BUNDLE_OPTIONS:=$(LD_FLAGS) -bundle -flat_namespace -undefined suppress
 LIB_LINK_OPTIONS:=$(LD_FLAGS) -dynamiclib -flat_namespace
-LIB_LINK_SONAME:=-current_version 2.0.0 -compatibility_version 2.0.0 -seg1addr 0x30000000
+LIB_LINK_SONAME:=-current_version 2.0.3 -compatibility_version 2.0.3 -seg1addr 0x30000000
 LIB_LINK_MAPFILE:=-Wl,-exported_symbols_list,
 LINK_FIREBIRD_EMBED_SYMBOLS=$(LIB_LINK_MAPFILE)$(ROOT)/builds/posix/firebird.darwin.embed.vers
 LINK_FIREBIRD_CLIENT_SYMBOLS=$(LIB_LINK_MAPFILE)$(ROOT)/builds/posix/firebird.darwin.client.vers
 LINK_FBINTL_SYMBOLS=$(LIB_LINK_MAPFILE)$(ROOT)/builds/posix/fbintl.darwin.vers
 
-LIB_LINK_RPATH:=-install_name /Library/Frameworks//Firebird.framework/Versions/A/Libraries/
+LIB_LINK_RPATH:=-install_name /Library/Frameworks/Firebird.framework/Versions/A/Libraries/
 LIB_EMBED_LINK_OPTIONS:=-install_name /Library/Frameworks/Firebird.framework/Versions/A/Firebird
 LIB_CLIENT_LINK_OPTIONS:=-install_name /Library/Frameworks/Firebird.framework/Versions/A/Firebird
 FBEMBED_LINK:=-F../gen/firebird -framework Firebird -L$(LIB) -lfbembed
