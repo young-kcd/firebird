@@ -89,8 +89,7 @@ private:
 	static const UCHAR PWD_REQUEST[256];
 	static const UCHAR TPB[4];
 
-	Firebird::Mutex mutex;
-	Firebird::RecursiveMutex counterMutex;
+	Firebird::RecursiveMutex mutex;
 
 	ISC_STATUS_ARRAY status;
 

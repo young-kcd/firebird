@@ -235,7 +235,7 @@ namespace {
 
 void SecurityDatabase::fini()
 {
-	Firebird::RecursiveMutexLockGuard guard(counterMutex);
+	Firebird::RecursiveMutexLockGuard guard(mutex);
 	counter -= (is_cached) ? 1 : 0;
 #ifndef EMBEDDED
 	if (counter == 1 && lookup_db)
@@ -247,7 +247,7 @@ void SecurityDatabase::fini()
 
 void SecurityDatabase::init()
 {
-	Firebird::RecursiveMutexLockGuard guard(counterMutex);
+	Firebird::RecursiveMutexLockGuard guard(mutex);
 	counter += (is_cached) ? 1 : 0;
 }
 
@@ -269,7 +269,7 @@ bool SecurityDatabase::lookup_user(const TEXT* user_name, int* uid, int* gid, TE
 	strncpy(uname, user_name, sizeof uname);
 	uname[sizeof uname - 1] = 0;
 
-	Firebird::MutexLockGuard guard(mutex);
+	Firebird::RecursiveMutexLockGuard guard(mutex);
 
 	// Attach database and compile request
 
