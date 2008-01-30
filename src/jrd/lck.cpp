@@ -79,12 +79,10 @@ static void set_lock_attachment(Lock*, Attachment*);
 #ifdef SUPERSERVER
 
 inline LOCK_OWNER_T LCK_OWNER_ID_DBB(thread_db* tdbb) {
-	const LOCK_OWNER_T id = tdbb->getDatabase()->dbb_lock_owner_id;
-	return ((LOCK_OWNER_T) getpid() << 32) | id;
+	return tdbb->getDatabase()->dbb_lock_owner_id;
 }
 inline LOCK_OWNER_T LCK_OWNER_ID_ATT(thread_db* tdbb) {
-	const LOCK_OWNER_T id = tdbb->getAttachment()->att_lock_owner_id;
-	return ((LOCK_OWNER_T) getpid() << 32) | id;
+	return tdbb->getAttachment()->att_lock_owner_id;
 }
 
 inline SLONG* LCK_OWNER_HANDLE_DBB(thread_db* tdbb) {
