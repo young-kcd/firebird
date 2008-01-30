@@ -503,6 +503,7 @@ jrd_req* CMP_clone_request(thread_db* tdbb, jrd_req* request, USHORT level, bool
 	clone->req_invariants = request->req_invariants;
 	clone->req_fors = request->req_fors;
 	clone->req_exec_sta = request->req_exec_sta;
+	clone->req_map_field_info.assign(request->req_map_field_info);
 
 	record_param* rpb1 = clone->req_rpb;
 	const record_param* const end = rpb1 + clone->req_count;
