@@ -659,7 +659,7 @@ static void unicodeDestroy(texttype* tt)
 static USHORT unicodeKeyLength(texttype* tt, USHORT len)
 {
 	return tt->texttype_impl->collation->keyLength(
-		len / tt->texttype_impl->cs->charset_min_bytes_per_char * 4);
+		len / tt->texttype_impl->cs->charset_max_bytes_per_char * 4);
 }
 
 
