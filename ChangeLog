@@ -1,3 +1,9 @@
+2008-01-29 12:35  alexpeshkoff
+
+	* firebird2/src/jrd/scl.epp (1.21.2.6):
+
+	Backported fix for CORE-1603: buffer overflow with long user name
+
 2008-01-09 10:53  dimitr
 
 	* firebird2/src/remote/: protocol.cpp (1.26.2.2), server.cpp
