@@ -290,7 +290,6 @@ bool LOCK_convert(SRQ_PTR request_offset,
 		return false;
 
 	acquire(request->lrq_owner);
-	owner = NULL;				/* remap */
 	++LOCK_header->lhb_converts;
 	request = (lrq*) SRQ_ABS_PTR(request_offset);	/* remap */
 	lbl* lock = (lbl*) SRQ_ABS_PTR(request->lrq_lock);
@@ -366,7 +365,6 @@ UCHAR LOCK_downgrade(SRQ_PTR request_offset,
 		return FALSE; // Warning! Can be treated as LCK_none by the caller!
 
 	acquire(owner_offset);
-	owner = NULL;				/* remap */
 	++LOCK_header->lhb_downgrades;
 
 	request = (lrq*) SRQ_ABS_PTR(request_offset);	/* Re-init after a potential remap */
