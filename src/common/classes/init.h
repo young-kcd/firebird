@@ -68,15 +68,15 @@ public:
 		// This means - for objects with ctors/dtors that want to be global,
 		// provide ctor with MemoryPool& parameter. Even if it is ignored!
 	}
-	T* operator->() const throw()
+	T* operator->() throw()
 	{
 		return instance;
 	}
-	operator T&() const throw()
+	operator T&() throw()
 	{
 		return *instance;
 	}
-	T* operator&() const throw()
+	T* operator&() throw()
 	{
 		return instance;
 	}
