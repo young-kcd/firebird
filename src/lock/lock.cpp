@@ -1005,20 +1005,8 @@ void LOCK_re_post(lock_ast_t ast,
 
 	DEBUG_DELAY;
 
-#ifdef USE_BLOCKING_THREAD
 	signal_owner((own*) SRQ_ABS_PTR(owner_offset), (SRQ_PTR) NULL);
-#else
-/* The deadlock detection looks at the OWN_signaled bit to decide
- * whether processes have things to look at - as we're putting
- * a repost item on the blocking queue, we DO have additional work
- * to do, so set the flag to indicate so.
- */
-	owner->own_flags &= ~OWN_signal;
-	owner->own_ast_flags |= OWN_signaled;
-	DEBUG_DELAY;
-	blocking_action(owner_offset, (SRQ_PTR) NULL);
-	DEBUG_DELAY;
-#endif
+
 	release(owner_offset);
 }
 
