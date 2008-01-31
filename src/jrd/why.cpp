@@ -198,16 +198,20 @@ static SCHAR *alloc(SLONG);
 #endif
 static void free_block(void*);
 
-namespace YValve
+namespace
 {
 	typedef Firebird::BePlusTree<BaseHandle*, FB_API_HANDLE, MemoryPool, BaseHandle> HandleMapping;
 
-	static Firebird::GlobalPtr<HandleMapping> handleMapping;
-	static ULONG handle_sequence_number = 0;
-	static Firebird::GlobalPtr<Firebird::RWLock> handleMappingLock;
+	Firebird::GlobalPtr<HandleMapping> handleMapping;
+	ULONG handle_sequence_number = 0;
+	Firebird::GlobalPtr<Firebird::RWLock> handleMappingLock;
 
-	static Firebird::InitInstance<Firebird::SortedArray<Attachment*> > attachments;
+	Firebird::InitInstance<Firebird::SortedArray<Attachment*> > attachments;
+	Firebird::GlobalPtr<Firebird::RecursiveMutex> attachmentsMutex;
+};
 
+namespace YValve
+{
 	BaseHandle::BaseHandle(UCHAR t, FB_API_HANDLE* pub, Attachment* par, USHORT imp)
 		: type(t), flags(0), implementation(par ? par->implementation : imp), 
 		  parent(par), user_handle(0)
@@ -307,14 +311,14 @@ namespace YValve
 		  db_path(*getDefaultMemoryPool()),
 		  db_prepare_buffer(*getDefaultMemoryPool())
 	{
-		toParent<Attachment>(attachments(), this);
+		toParent<Attachment>(attachments(), this, attachmentsMutex);
 		parent = this;
 	}
 
 	Attachment::~Attachment()
 	{
 		cleanup.call(&public_handle);
-		fromParent<Attachment>(attachments(), this);
+		fromParent<Attachment>(attachments(), this, attachmentsMutex);
 	}
 
 }
@@ -468,11 +472,6 @@ namespace
 
 #ifndef SERVER_SHUTDOWN		// appears this macro has now nothing with shutdown
 
-	int totalAttachmentCount()
-	{
-		return attachments().getCount();
-	}
-	
 	template <typename Array>
 	void markHandlesShutdown(Array handles)
 	{
@@ -484,6 +483,7 @@ namespace
 	
 	void markShutdown(Attachment* attach)
 	{
+		Firebird::RecursiveMutexLockGuard guard(attach->mutex);
 		attach->flags |= HANDLE_shutdown;
 
 		markHandlesShutdown(attach->transactions);
@@ -491,7 +491,8 @@ namespace
 		markHandlesShutdown(attach->requests);
 		markHandlesShutdown(attach->blobs);
 	}
-	
+
+	// should be called with locked attachmentsMutex	
 	void markShutdown(Jrd::Attachment** list)
 	{
 		while (Jrd::Attachment* ja = *list++)
@@ -558,8 +559,10 @@ namespace
 				{
 					Jrd::Attachment* attach = handle->getAttachmentHandle();
 					Firebird::HalfStaticArray<Jrd::Attachment*, 2> releasedBuffer;
+
+					Firebird::RecursiveMutexLockGuard guard(attachmentsMutex);
 					Jrd::Attachment** released = 
-						releasedBuffer.getBuffer(totalAttachmentCount() + 1);
+						releasedBuffer.getBuffer(attachments().getCount() + 1);
 					*released = 0;
 #if !defined (SUPERCLIENT)
 					JRD_database_close(&attach, released);
@@ -608,6 +611,14 @@ namespace
 			}
 
 			// Someone else watches signals - let him shutdown gracefully
+			
+			// Using recursive mutex in signal handler routine - 
+			// relatively safe cause we need read-only access.
+			// With correctly implemented insert / remove methods in array
+			// and memcpy/memmove copying data with at least sizeof(void*)
+			// portions, this code is really safe.
+			
+			Firebird::RecursiveMutexLockGuard guard(attachmentsMutex);
 			for (size_t n = 0; n < attachments().getCount(); ++n)
 			{
 				markShutdown(attachments()[n]);
@@ -1040,7 +1051,7 @@ ISC_STATUS API_ROUTINE GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 	ISC_STATUS *ptr;
 	ISC_STATUS_ARRAY temp;
 	StoredAtt* handle = 0;
-	Attachment* database = 0;
+	Attachment* attachment = 0;
 	USHORT n;
 
 	YEntry status(user_status);
@@ -1125,8 +1136,8 @@ ISC_STATUS API_ROUTINE GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 												reinterpret_cast<const char*>(newDpb.getBuffer()),
 												expanded_filename.c_str()))
 			{
-				database = new Attachment(handle, public_handle, n);
-				database->db_path = expanded_filename;
+				attachment = new Attachment(handle, public_handle, n);
+				attachment->db_path = expanded_filename;
 
 				status[0] = isc_arg_gds;
 				status[1] = 0;
@@ -1156,9 +1167,9 @@ ISC_STATUS API_ROUTINE GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 		{
 			CALL(PROC_DETACH, n) (temp, handle);
 		}
-		if (database)
+		if (attachment)
 		{
-			delete database;
+			delete attachment;
 		}
 
   		e.stuff_exception(status);
@@ -1267,10 +1278,10 @@ ISC_STATUS API_ROUTINE GDS_CANCEL_EVENTS(ISC_STATUS * user_status,
 	YEntry status(user_status);
 	try 
 	{
-		Attachment* database = translate<Attachment>(handle);
-		status.setPrimaryHandle(database);
-		CALL(PROC_CANCEL_EVENTS, database->implementation) (status,
-															&database->handle,
+		Attachment* attachment = translate<Attachment>(handle);
+		status.setPrimaryHandle(attachment);
+		CALL(PROC_CANCEL_EVENTS, attachment->implementation) (status,
+															&attachment->handle,
 															id);
 	}
 	catch (const Firebird::Exception& e)
@@ -1299,10 +1310,10 @@ ISC_STATUS API_ROUTINE GDS_CANCEL_OPERATION(ISC_STATUS * user_status,
 	YEntry status(user_status);
 	try 
 	{
-		Attachment* database = translate<Attachment>(handle);
-		status.setPrimaryHandle(database);
-		CALL(PROC_CANCEL_OPERATION, database->implementation) (status,
-															   &database->handle,
+		Attachment* attachment = translate<Attachment>(handle);
+		status.setPrimaryHandle(attachment);
+		CALL(PROC_CANCEL_OPERATION, attachment->implementation) (status,
+															   &attachment->handle,
 															   option);
 	}
 	catch (const Firebird::Exception& e)
@@ -1610,7 +1621,7 @@ ISC_STATUS API_ROUTINE GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 	ISC_STATUS *ptr;
 	ISC_STATUS_ARRAY temp;
 	StoredAtt* handle = 0;
-	Attachment* database = 0;
+	Attachment* attachment = 0;
 	USHORT n;
 
 	YEntry status(user_status);
@@ -1700,11 +1711,11 @@ ISC_STATUS API_ROUTINE GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 	            ISC_expand_filename (expanded_filename, true);
 #endif
 
-				database = new Attachment(handle, public_handle, n);
+				attachment = new Attachment(handle, public_handle, n);
 #ifdef WIN_NT
-				database->db_path = expanded_filename;
+				attachment->db_path = expanded_filename;
 #else
-				database->db_path = temp_filename;
+				attachment->db_path = temp_filename;
 #endif
 
 				status[0] = isc_arg_gds;
@@ -1725,9 +1736,9 @@ ISC_STATUS API_ROUTINE GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 		{
 			CALL(PROC_DROP_DATABASE, n) (temp, handle);
 		}
-		if (database)
+		if (attachment)
 		{
-			delete database;
+			delete attachment;
 		}
 	}
 
@@ -1748,16 +1759,16 @@ ISC_STATUS API_ROUTINE isc_database_cleanup(ISC_STATUS * user_status,
  **************************************
  *
  * Functional description
- *	Register a database specific cleanup handler.
+ *	Register an attachment specific cleanup handler.
  *
  **************************************/
 	YEntry status(user_status);
 	try 
 	{
-		Attachment* database = translate<Attachment>(handle);
-		status.setPrimaryHandle(database);
+		Attachment* attachment = translate<Attachment>(handle);
+		status.setPrimaryHandle(attachment);
 
-		database->cleanup.add(routine, arg);
+		attachment->cleanup.add(routine, arg);
 	}
 	catch (const Firebird::Exception& e)
 	{
@@ -1788,10 +1799,10 @@ ISC_STATUS API_ROUTINE GDS_DATABASE_INFO(ISC_STATUS* user_status,
 	YEntry status(user_status);
 	try 
 	{
-		Attachment* database = translate<Attachment>(handle);
-		status.setPrimaryHandle(database);
-		CALL(PROC_DATABASE_INFO, database->implementation) (status,
-															&database->handle,
+		Attachment* attachment = translate<Attachment>(handle);
+		status.setPrimaryHandle(attachment);
+		CALL(PROC_DATABASE_INFO, attachment->implementation) (status,
+															&attachment->handle,
 															item_length,
 															items,
 															buffer_length,
@@ -1825,12 +1836,12 @@ ISC_STATUS API_ROUTINE GDS_DDL(ISC_STATUS* user_status,
 	YEntry status(user_status);
 	try 
 	{
-		Attachment* database = translate<Attachment>(db_handle);
-		status.setPrimaryHandle(database);
-		Transaction* transaction = findTransaction(tra_handle, database);
+		Attachment* attachment = translate<Attachment>(db_handle);
+		status.setPrimaryHandle(attachment);
+		Transaction* transaction = findTransaction(tra_handle, attachment);
 
-		CALL(PROC_DDL, database->implementation) (status,
-												  &database->handle,
+		CALL(PROC_DDL, attachment->implementation) (status,
+												  &attachment->handle,
 												  &transaction->handle,
 												  length, ddl);
 	}
@@ -1853,7 +1864,7 @@ ISC_STATUS API_ROUTINE GDS_DETACH(ISC_STATUS * user_status,
  **************************************
  *
  * Functional description
- *	Close down a database.
+ *	Close down a attachment.
  *
  **************************************/
 	YEntry status(user_status);
@@ -3329,8 +3340,9 @@ ISC_STATUS API_ROUTINE GDS_DSQL_PREPARE(ISC_STATUS* user_status,
 		sqlda_sup& dasup = statement->das;
 
 		buffer_len = sqlda_buffer_size(PREPARE_BUFFER_SIZE, sqlda, dialect);
-		Attachment*	database = statement->parent;
-		buffer = database->db_prepare_buffer.getBuffer(buffer_len);
+		Attachment*	attachment = statement->parent;
+		Firebird::MutexLockGuard guard(attachment->prepareMutex);
+		buffer = attachment->db_prepare_buffer.getBuffer(buffer_len);
 
 		if (!GDS_DSQL_PREPARE_M(status,
 								tra_handle,
@@ -5465,7 +5477,7 @@ static Transaction* find_transaction(Attachment* dbb,
  *
  * Functional description
  *	Find the element of a possible multiple database transaction
- *	that corresponds to the current database.
+ *	that corresponds to the current attachment.
  *
  **************************************/
 
@@ -5517,9 +5529,9 @@ static int get_database_info(ISC_STATUS * status,
 	// Our caller (prepare) assumed each call consumes at most 256 bytes (item, len, data)
 	// hence if we don't check here, we have a B.O.
 	TEXT* p = *ptr;
-	Attachment* database = transaction->parent;
+	Attachment* attachment = transaction->parent;
 	*p++ = TDR_DATABASE_PATH;
-	const TEXT* q = database->db_path.c_str();
+	const TEXT* q = attachment->db_path.c_str();
 	size_t len = strlen(q);
 	if (len > 254)
 		len = 254;

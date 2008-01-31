@@ -97,12 +97,14 @@ namespace YValve
 				: Routine(0), clean_arg(0) { }
 		};
 		Firebird::HalfStaticArray<st_clean, 1> calls;
+		Firebird::Mutex mutex;
 
 	public:
 		Clean() : calls(*getDefaultMemoryPool()) { }
 
 		void add(CleanupRoutine *r, void* a)
 		{
+			Firebird::MutexLockGuard guard(mutex);
 			for (size_t i = 0; i < calls.getCount(); ++i)
 			{
 				if (calls[i].Routine == r && 
@@ -116,6 +118,7 @@ namespace YValve
 
 		void call(CleanupArg public_handle)
 		{
+			Firebird::MutexLockGuard guard(mutex);
 			for (size_t i = 0; i < calls.getCount(); ++i)
 			{
 				if (calls[i].Routine)
@@ -152,14 +155,16 @@ namespace YValve
 	};
 	
 	template <typename HType>
-		void toParent(Firebird::SortedArray<HType*>& members, HType* newMember)
+		void toParent(Firebird::SortedArray<HType*>& members, HType* newMember, Firebird::RecursiveMutex& mutex)
 	{
+		Firebird::RecursiveMutexLockGuard guard(mutex);
 		members.add(newMember);
 	}
 
 	template <typename HType>
-		void fromParent(Firebird::SortedArray<HType*>& members, HType* newMember)
+		void fromParent(Firebird::SortedArray<HType*>& members, HType* newMember, Firebird::RecursiveMutex& mutex)
 	{
+		Firebird::RecursiveMutexLockGuard guard(mutex);
 		size_t pos;
 		if (members.find(newMember, pos))
 		{
@@ -199,11 +204,15 @@ namespace YValve
 		Firebird::SortedArray<Request*> requests;
 		Firebird::SortedArray<Blob*> blobs;
 		Firebird::SortedArray<Statement*> statements;
+		// Each array can be protected with personal mutex, but possibility 
+		// of collision is so slow here, that I prefer to save resources, using single mutex.
+		Firebird::RecursiveMutex mutex;
 
 		Clean<AttachmentCleanupRoutine, FB_API_HANDLE*> cleanup;
 		StoredAtt* handle;
 		Firebird::PathName db_path;
 		Firebird::Array<SCHAR> db_prepare_buffer;
+		Firebird::Mutex prepareMutex;
 
 		static ISC_STATUS hError()
 		{
@@ -243,7 +252,7 @@ namespace YValve
 			: BaseHandle(hType(), pub, par), 
 			  next(0), handle(h)
 		{
-			toParent<Transaction>(parent->transactions, this);
+			toParent<Transaction>(parent->transactions, this, parent->mutex);
 		}
 
 		Transaction(FB_API_HANDLE* pub, USHORT a_implementation)
@@ -257,7 +266,7 @@ namespace YValve
 			cleanup.call(public_handle);
 			if (parent)
 			{
-				fromParent<Transaction>(parent->transactions, this);
+				fromParent<Transaction>(parent->transactions, this, parent->mutex);
 			}
 		}
 	};
@@ -281,12 +290,12 @@ namespace YValve
 		Request(StoredReq* h, FB_API_HANDLE* pub, Attachment* par)
 			: BaseHandle(hType(), pub, par), handle(h)
 		{
-			toParent<Request>(parent->requests, this);
+			toParent<Request>(parent->requests, this, parent->mutex);
 		}
 
 		~Request() 
 		{ 
-			fromParent<Request>(parent->requests, this);
+			fromParent<Request>(parent->requests, this, parent->mutex);
 		}
 	};
 	
@@ -309,12 +318,12 @@ namespace YValve
 		Blob(StoredBlb* h, FB_API_HANDLE* pub, Attachment* par)
 			: BaseHandle(hType(), pub, par), handle(h)
 		{
-			toParent<Blob>(parent->blobs, this);
+			toParent<Blob>(parent->blobs, this, parent->mutex);
 		}
 
 		~Blob() 
 		{ 
-			fromParent<Blob>(parent->blobs, this);
+			fromParent<Blob>(parent->blobs, this, parent->mutex);
 		}
 	};
 	
@@ -338,7 +347,7 @@ namespace YValve
 		Statement(StoredStm* h, FB_API_HANDLE* pub, Attachment* par)
 			: BaseHandle(hType(), pub, par), handle(h)
 		{
-			toParent<Statement>(parent->statements, this);
+			toParent<Statement>(parent->statements, this, parent->mutex);
 			memset(&das, 0, sizeof das);
 		}
 
@@ -352,7 +361,7 @@ namespace YValve
 
 		~Statement() 
 		{ 
-			fromParent<Statement>(parent->statements, this);
+			fromParent<Statement>(parent->statements, this, parent->mutex);
 		}
 	};
 
