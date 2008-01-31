@@ -381,10 +381,7 @@ void MET_update_partners(thread_db* tdbb)
 		}
 
 		// signal other processes
-		if (relation->rel_flags & REL_check_partners)
-			LCK_lock(tdbb, relation->rel_partners_lock, LCK_EX, LCK_WAIT);
-		else
-			LCK_convert(tdbb, relation->rel_partners_lock, LCK_EX, LCK_WAIT);
+		LCK_lock(tdbb, relation->rel_partners_lock, LCK_EX, LCK_WAIT);
 		LCK_release(tdbb, relation->rel_partners_lock);
 		relation->rel_flags |= REL_check_partners;
 	}
@@ -2345,11 +2342,8 @@ bool MET_lookup_partner(thread_db*	tdbb,
 		if (!REQUEST(irq_foreign2))
 			REQUEST(irq_foreign2) = request;
 
-		if (relation->rel_flags & REL_check_partners)
-		{
-			LCK_lock(tdbb, relation->rel_partners_lock, LCK_SR, LCK_WAIT);
-			relation->rel_flags &= ~REL_check_partners;
-		}
+		LCK_lock(tdbb, relation->rel_partners_lock, LCK_SR, LCK_WAIT);
+		relation->rel_flags &= ~REL_check_partners;
 	}
 
 	if (idx->idx_flags & idx_foreign)
@@ -2620,19 +2614,10 @@ jrd_rel* MET_lookup_relation(thread_db* tdbb, const Firebird::MetaName& name)
 
 			if (relation->rel_name == name)
 			{
-				if (relation->rel_flags & REL_check_partners)
-				{
-					LCK_lock(tdbb, relation->rel_partners_lock,
-							LCK_SR, LCK_WAIT);
-					relation->rel_flags &= ~REL_check_partners;
-				}
-
 				if (relation->rel_flags & REL_check_existence)
 				{
 					check_relation = relation;
-					LCK_lock(tdbb, check_relation->rel_existence_lock,
-							 LCK_SR, LCK_WAIT);
-					check_relation->rel_flags &= ~REL_check_existence;
+					LCK_lock(tdbb, check_relation->rel_existence_lock, LCK_SR, LCK_WAIT);
 					break;
 				}
 
@@ -2668,9 +2653,11 @@ jrd_rel* MET_lookup_relation(thread_db* tdbb, const Firebird::MetaName& name)
 	}
 
 	if (check_relation) {
+		check_relation->rel_flags &= ~REL_check_existence;
 		if (check_relation != relation) {
 			LCK_release(tdbb, check_relation->rel_existence_lock);
 			LCK_release(tdbb, check_relation->rel_partners_lock);
+			check_relation->rel_flags &= ~REL_check_partners;
 			check_relation->rel_flags |= REL_deleted;
 		}
 	}
@@ -2713,17 +2700,10 @@ jrd_rel* MET_lookup_relation_id(thread_db* tdbb, SLONG id, bool return_deleted)
 			return return_deleted ? relation : NULL;
 		}
 
-		if (relation->rel_flags & REL_check_partners)
-		{
-			LCK_lock(tdbb, relation->rel_partners_lock, LCK_SR, LCK_WAIT);
-			relation->rel_flags &= ~REL_check_partners;
-		}
-
 		if (relation->rel_flags & REL_check_existence)
 		{
 			check_relation = relation;
 			LCK_lock(tdbb, check_relation->rel_existence_lock, LCK_SR, LCK_WAIT);
-			check_relation->rel_flags &= ~REL_check_existence;
 		}
 		else
 		{
@@ -2752,9 +2732,11 @@ jrd_rel* MET_lookup_relation_id(thread_db* tdbb, SLONG id, bool return_deleted)
 		REQUEST(irq_l_rel_id) = request;
 
 	if (check_relation) {
+		check_relation->rel_flags &= ~REL_check_existence;
 		if (check_relation != relation) {
 			LCK_release(tdbb, check_relation->rel_existence_lock);
 			LCK_release(tdbb, check_relation->rel_partners_lock);
+			check_relation->rel_flags &= ~REL_check_partners;
 			check_relation->rel_flags |= REL_deleted;
 		}
 	}
@@ -3446,6 +3428,7 @@ jrd_rel* MET_relation(thread_db* tdbb, USHORT id)
 	}
 
 	relation->rel_flags |= (REL_check_existence | REL_check_partners);
+	LCK_lock(tdbb, relation->rel_partners_lock, LCK_SR, LCK_WAIT);
 	return relation;
 }
 
@@ -4264,8 +4247,9 @@ static int blocking_ast_relation(void* ast_object)
 	}
 	else {
 		relation->rel_flags &= ~REL_blocking;
-		LCK_release(tdbb, relation->rel_existence_lock);
-		relation->rel_flags |= REL_check_existence;
+		relation->rel_flags |= (REL_check_existence | REL_check_partners);
+		if (relation->rel_existence_lock)
+			LCK_release(tdbb, relation->rel_existence_lock);
 	}
 
 	return 0;
