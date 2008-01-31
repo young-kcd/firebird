@@ -24,9 +24,10 @@
 
 #include <syslog.h>
 #include <unistd.h>
+#include <string.h>
 
 namespace Firebird {
-void Syslog::Record(Severity level, const string& Msg)
+void Syslog::Record(Severity level, const char* Msg)
 {
 	int priority = LOG_ERR;
 	switch (level) {
@@ -38,7 +39,7 @@ void Syslog::Record(Severity level, const string& Msg)
 		priority = LOG_ERR;
 		break;
 	}
-	syslog(priority | LOG_LOCAL3, "%s (%m)", Msg.c_str());
+	syslog(priority | LOG_LOCAL3, "%s (%m)", Msg);
 	
 	// try to put it also on controlling tty
 	int fd = 2;
@@ -48,7 +49,7 @@ void Syslog::Record(Severity level, const string& Msg)
 	}
 	if (isatty(fd))
 	{
-		write(fd, Msg.c_str(), Msg.length());
+		write(fd, Msg, strlen(Msg));
 		write(fd, "\n", 1);
 	}
 }
