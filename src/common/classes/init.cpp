@@ -37,6 +37,13 @@
 
 namespace
 {
+	void cleanError()
+	{
+#ifdef DEV_BUILD
+		// we do not have big choice in error reporting when running destructors
+		abort();
+#endif
+	}
 
 	// This helps initialize globals, needed before regular ctors run
 	bool initDone = false;
@@ -44,8 +51,22 @@ namespace
 	void allClean()
 	{
 		Firebird::InstanceControl::destructors();
-		Firebird::StaticMutex::release();
-		Firebird::MemoryPool::cleanup();
+		try
+		{
+			Firebird::StaticMutex::release();
+		}
+		catch(...)
+		{
+			cleanError();
+		}
+		try
+		{
+			Firebird::MemoryPool::cleanup();
+		}
+		catch(...)
+		{
+			cleanError();
+		}
 	}
 
 #ifndef DEBUG_INIT
@@ -98,13 +119,27 @@ namespace Firebird
 		// Call gds__cleanup() if present
 		if (gdsCleanup)
 		{
-			gdsCleanup();
+			try
+			{
+				gdsCleanup();
+			}
+			catch(...)
+			{
+				cleanError();
+			}
 		}
 
 		// Destroy global objects
 		for (InstanceControl* i = instanceList; i; i = i->next)
 		{
-			i->dtor();
+			try
+			{
+				i->dtor();
+			}
+			catch(...)
+			{
+				cleanError();
+			}
 		}
 	}
 
