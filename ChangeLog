@@ -1,3 +1,44 @@
+2008-01-30 20:05  asfernandes
+
+	* firebird2/src/jrd/cmp.cpp (1.279):
+
+	Fixed CORE-1716 - Wrong variable initialization in recursive
+	procedures
+
+2008-01-30 14:27  asfernandes
+
+	* firebird2/src/jrd/IntlUtil.cpp (1.16):
+
+	Fixed CORE-1715 - Incorrect "key size exceeds implementation
+	restriction for index" error
+
+2008-01-30 11:34  dimitr
+
+	* firebird2/src/lock/lock.cpp (1.136):
+
+	Misc.
+
+2008-01-30 11:33  dimitr
+
+	* firebird2/src/lock/lock.h (1.41):
+
+	More complete temporary rollback to the old logic. We don't need
+	64-bit owner IDs at this point.
+
+2008-01-30 11:15  dimitr
+
+	* firebird2/src/jrd/lck.cpp (1.73):
+
+	More complete temporary rollback to the old logic. We don't need
+	64-bit owner IDs at this point.
+
+2008-01-30 09:57  alexpeshkoff
+
+	* firebird2/src/jrd/: jrd_pwd.h (1.24), pwd.cpp (1.59):
+
+	partially roll back my last changes - use single mutex to
+	synchronize access to security database
+
 2008-01-29 19:07  asfernandes
 
 	* firebird2/src/: common/classes/locks.h (1.31), jrd/all.cpp
