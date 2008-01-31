@@ -1,3 +1,9 @@
+2008-01-30 11:21  paulbeach
+
+	* firebird2/builds/posix/prefix.darwin_powerpc (1.1.2.4):
+
+	Minor MacOS ppc changes
+
 2008-01-22 10:37  paulbeach
 
 	* firebird2/builds/install/arch-specific/darwin/install-script
