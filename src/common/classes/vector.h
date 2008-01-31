@@ -65,8 +65,8 @@ public:
 	}
 	size_t add(const T& item) {
 		fb_assert(count < Capacity);
-		data[count++] = item;
-  		return count;
+		data[count] = item;
+  		return ++count;
 	}
 	T* remove(size_t index) {
   		fb_assert(index < count);

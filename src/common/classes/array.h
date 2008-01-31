@@ -156,8 +156,8 @@ public:
 	}
 	size_t add(const T& item) {
 		ensureCapacity(count + 1);
-		data[count++] = item;
-  		return count;
+		data[count] = item;
+  		return ++count;
 	}
 	// NOTE: remove method must be signal safe
 	// This function may be called in AST. The function doesn't wait.
