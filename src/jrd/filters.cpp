@@ -649,6 +649,7 @@ ISC_STATUS filter_transliterate_text(USHORT action, BlobControl* control)
  **************************************/
 	struct ctlaux {
 		CsConvert ctlaux_obj1;	/* Intl object that does tx for us */
+		USHORT ctlaux_init_action;	// isc_blob_filter_open or isc_blob_filter_create?
 		BYTE *ctlaux_buffer1;	/* Temporary buffer for transliteration */
 		BlobControl* ctlaux_subfilter;	/* For chaining transliterate filters */
 		ISC_STATUS ctlaux_source_blob_status;	/* marks when source is EOF, etc */
@@ -694,6 +695,7 @@ ISC_STATUS filter_transliterate_text(USHORT action, BlobControl* control)
 #endif
 		control->ctl_data[0] = (IPTR) aux;
 
+		aux->ctlaux_init_action = action;
 		aux->ctlaux_source_blob_status = FB_SUCCESS;
 		aux->ctlaux_buffer1_unused = 0;
 		aux->ctlaux_expansion_factor = EXP_SCALE * 1;
@@ -765,16 +767,26 @@ ISC_STATUS filter_transliterate_text(USHORT action, BlobControl* control)
 		return FB_SUCCESS;
 
 	case isc_blob_filter_close:
+		// ASF: Raise error at close functions is something bad,
+		// but I know no better thing to do here.
+		if (aux->ctlaux_init_action == isc_blob_filter_create &&
+			aux->ctlaux_buffer1_unused != 0)
+		{
+			return isc_transliteration_failed;
+		}
+
 		if (aux && aux->ctlaux_buffer1) {
 			gds__free(aux->ctlaux_buffer1);
 			aux->ctlaux_buffer1 = NULL;
 			aux->ctlaux_buffer1_len = 0;
 		}
+
 		if (aux) {
 			gds__free(aux);
 			control->ctl_data[0] = 0;
 			aux = NULL;
 		}
+
 		return FB_SUCCESS;
 
 	case isc_blob_filter_get_segment:
@@ -782,10 +794,25 @@ ISC_STATUS filter_transliterate_text(USHORT action, BlobControl* control)
 		break;
 
 	case isc_blob_filter_put_segment:
+	{
+		USHORT len = control->ctl_buffer_length;
+		Firebird::HalfStaticArray<BYTE, BUFFER_MEDIUM> buffer;
+		BYTE* p;
+
+		if (aux->ctlaux_buffer1_unused != 0)
+		{
+			p = buffer.getBuffer(aux->ctlaux_buffer1_unused + len);
+			memcpy(p, aux->ctlaux_buffer1, aux->ctlaux_buffer1_unused);
+			memcpy(p + aux->ctlaux_buffer1_unused, control->ctl_buffer, len);
+			len += aux->ctlaux_buffer1_unused;
+		}
+		else
+			p = control->ctl_buffer;
+
 		/* Now convert from the input buffer into the temporary buffer */
 
 		/* How much space do we need to convert? */
-		result_length = aux->ctlaux_obj1.convertLength(control->ctl_buffer_length);
+		result_length = aux->ctlaux_obj1.convertLength(len);
 
 		/* Allocate a new buffer if we don't have enough */
 		if (result_length > aux->ctlaux_buffer1_len) {
@@ -801,13 +828,17 @@ ISC_STATUS filter_transliterate_text(USHORT action, BlobControl* control)
 
 		try
 		{
-			result_length = aux->ctlaux_obj1.convert(control->ctl_buffer_length, control->ctl_buffer,
-				aux->ctlaux_buffer1_len, aux->ctlaux_buffer1);
+			err_position = len;
+			result_length = aux->ctlaux_obj1.convert(len, p,
+				aux->ctlaux_buffer1_len, aux->ctlaux_buffer1, &err_position);
 		}
 		catch (const Firebird::status_exception&)
 		{
 			return isc_transliteration_failed;
 		}
+
+		if (len > 0 && err_position == 0)
+			return isc_transliteration_failed;
 
 		/* hand the text off to the next stage of the filter */
 
@@ -816,6 +847,11 @@ ISC_STATUS filter_transliterate_text(USHORT action, BlobControl* control)
 
 		if (status)
 			return status;
+
+		aux->ctlaux_buffer1_unused = len - err_position;
+
+		if (aux->ctlaux_buffer1_unused != 0)
+			memmove(aux->ctlaux_buffer1, p + err_position, aux->ctlaux_buffer1_unused);
 
 		/* update local control variables for segment length */
 
@@ -826,6 +862,7 @@ ISC_STATUS filter_transliterate_text(USHORT action, BlobControl* control)
 		control->ctl_number_segments++;
 
 		return FB_SUCCESS;
+	}
 
 	case isc_blob_filter_seek:
 		return isc_uns_ext;
