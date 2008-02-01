@@ -1,3 +1,50 @@
+2008-01-31 14:39  dimitr
+
+	* firebird2/src/lock/lock.cpp (1.137):
+
+	Cleanup. singnal_owner() is able to handle the direct call itself.
+
+2008-01-31 14:36  dimitr
+
+	* firebird2/src/jrd/: dfw.epp (1.224), met.epp (1.234):
+
+	Rolled back my "partner check" changes upon Vlad's request. But one
+	minor change is still done to avoid races in SS. To be reviewed
+	after the CS build is fixed.
+
+2008-01-31 13:04  alexpeshkoff
+
+	* firebird2/src/: common/config/config_file.cpp (1.29),
+	jrd/os/fbsyslog.h (1.6), jrd/os/posix/fbsyslog.cpp (1.7),
+	jrd/os/win32/fbsyslog.cpp (1.9):
+
+	Make syslog interface as light as possible
+
+2008-01-31 13:02  alexpeshkoff
+
+	* firebird2/src/jrd/: why.cpp (1.140), y_handle.h (1.24):
+
+	MT-safety changes in yValve
+
+2008-01-31 13:01  alexpeshkoff
+
+	* firebird2/src/common/classes/init.cpp (1.2):
+
+	Ignore exceptions in destructors in release build
+
+2008-01-31 12:03  alexpeshkoff
+
+	* firebird2/src/common/classes/: array.h (1.42), vector.h (1.18):
+
+	First add an element, next increase count -  makes class safer in
+	MT world
+
+2008-01-31 11:53  alexpeshkoff
+
+	* firebird2/src/common/classes/init.h (1.9):
+
+	having this methods const dangerous - thanks to Claudio
+
 2008-01-30 20:05  asfernandes
 
 	* firebird2/src/jrd/cmp.cpp (1.279):
