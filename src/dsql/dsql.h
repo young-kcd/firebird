@@ -169,7 +169,22 @@ public:
 
 	dsql_dbb(DsqlMemoryPool& p) : 
 		dbb_charsets_by_id(p, 16) 
-		{};
+	{
+	}
+
+public:
+	void checkout()
+	{
+		syncMutex.leave();
+	}
+
+	void checkin()
+	{
+		syncMutex.enter();
+	}
+
+private:
+	Firebird::Mutex syncMutex;
 };
 
 //! values used in dbb_flags
@@ -744,6 +759,52 @@ public:
 
 typedef Firebird::SubsystemContextPoolHolder <tsql, DsqlMemoryPool> 
 	DsqlContextPoolHolder;
+
+class DsqlCheckout
+{
+public:
+	explicit DsqlCheckout(dsql_dbb* arg)
+		: dbb(arg)
+	{
+		dbb->checkout();
+	}
+
+	~DsqlCheckout()
+	{
+		dbb->checkin();
+	}
+
+private:
+	// copying is prohibited
+	DsqlCheckout(const DsqlCheckout&);
+	DsqlCheckout& operator =(const DsqlCheckout&);
+
+private:
+	dsql_dbb* dbb;
+};
+
+class DsqlSyncGuard
+{
+public:
+	explicit DsqlSyncGuard(dsql_dbb* arg)
+		: dbb(arg)
+	{
+		dbb->checkin();
+	}
+
+	~DsqlSyncGuard()
+	{
+		dbb->checkout();
+	}
+
+private:
+	// copying is prohibited
+	DsqlSyncGuard(const DsqlSyncGuard&);
+	DsqlSyncGuard& operator =(const DsqlSyncGuard&);
+
+private:
+	dsql_dbb* dbb;
+};
 
 inline tsql* DSQL_get_thread_data() {
 	return (tsql*) ThreadData::getSpecific();

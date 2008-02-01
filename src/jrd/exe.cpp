@@ -1479,18 +1479,24 @@ static void exec_sql(thread_db* tdbb, jrd_req* request, DSC* dsc)
 		ERR_post(isc_exec_sql_max_call_exceeded, 0);
 	}
 
-	Firebird::string SqlStatementText;
-	ExecuteStatement::getString(tdbb, SqlStatementText, dsc, request);
+	Firebird::string sqlStatementText;
+	ExecuteStatement::getString(tdbb, sqlStatementText, dsc, request);
 
 	ISC_STATUS_ARRAY local;
 	memset(local, 0, sizeof(local));
 	ISC_STATUS* status = local;
 
 	tdbb->getTransaction()->tra_callback_count++;
-	callback_execute_immediate(status,
-							   tdbb->getAttachment(),
-							   tdbb->getTransaction(),
-							   SqlStatementText);
+
+	{	// scope
+		Database::Checkout dcoHolder(tdbb->getDatabase());
+
+		callback_execute_immediate(status,
+								   tdbb->getAttachment(),
+								   tdbb->getTransaction(),
+								   sqlStatementText);
+	}
+
 	tdbb->getTransaction()->tra_callback_count--;
 
 	if (status[1]) {

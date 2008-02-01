@@ -318,15 +318,15 @@ void DDL_execute(dsql_req* request)
 #endif
 
 	const USHORT length = request->req_blr_data.getCount();
+	ISC_STATUS s;
 
-	THREAD_EXIT();
+	{	// scope
+		DsqlCheckout dcoHolder(request->req_dbb);
 
-	ISC_STATUS s =
-		isc_ddl(tdsql->tsql_status, &request->req_dbb->dbb_database_handle,
-				&request->req_trans, length,
-				(const char*)(request->req_blr_data.begin()));
-
-	THREAD_ENTER();
+		s = isc_ddl(tdsql->tsql_status, &request->req_dbb->dbb_database_handle,
+					&request->req_trans, length,
+					(const char*)(request->req_blr_data.begin()));
+	}
 
 	// for delete & modify, get rid of the cached relation metadata
 
@@ -386,10 +386,10 @@ void DDL_execute(dsql_req* request)
 #ifndef SUPERSERVER
 	if (string)
 	{
-		THREAD_EXIT();
+		DsqlCheckout dcoHolder(request->req_dbb);
+
 		s = gds__dsql_cache(tdsql->tsql_status,
 			&request->req_dbb->dbb_database_handle, DSQL_CACHE_RELEASE, sym_type, string->str_data, NULL);
-		THREAD_ENTER();
 
 		if (s)
 			Firebird::status_exception::raise(tdsql->tsql_status);
@@ -7110,15 +7110,17 @@ void dsql_req::append_meta_string(const char* string)
 	ISC_STATUS_ARRAY status_vector = {0};
 	Firebird::UCharBuffer nameBuffer;
 
-	THREAD_EXIT();
-	const ISC_STATUS s =
-		gds__intl_function(status_vector, &req_dbb->dbb_database_handle,
-			INTL_FUNCTION_CONV_TO_METADATA, CS_dynamic,
-			strlen(string), (const UCHAR*) string, &nameBuffer);
-	THREAD_ENTER();
+	{	// scope
+		DsqlCheckout dcoHolder(req_dbb);
 
-	if (s)
-		ERRD_punt(status_vector);
+		const ISC_STATUS s =
+			gds__intl_function(status_vector, &req_dbb->dbb_database_handle,
+				INTL_FUNCTION_CONV_TO_METADATA, CS_dynamic,
+				strlen(string), (const UCHAR*) string, &nameBuffer);
+
+		if (s)
+			ERRD_punt(status_vector);
+	}
 
 	append_string(0, (const TEXT*) nameBuffer.begin(), nameBuffer.getCount());
 }
