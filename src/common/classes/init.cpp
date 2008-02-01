@@ -55,15 +55,16 @@ namespace
 		{
 			Firebird::StaticMutex::release();
 		}
-		catch(...)
+		catch (...)
 		{
 			cleanError();
 		}
+		
 		try
 		{
 			Firebird::MemoryPool::cleanup();
 		}
-		catch(...)
+		catch (...)
 		{
 			cleanError();
 		}
@@ -89,6 +90,7 @@ namespace
 		{
 			return;
 		}
+
 		Firebird::MemoryPool::init();
 		Firebird::StaticMutex::create();
 
@@ -123,7 +125,7 @@ namespace Firebird
 			{
 				gdsCleanup();
 			}
-			catch(...)
+			catch (...)
 			{
 				cleanError();
 			}
@@ -136,7 +138,7 @@ namespace Firebird
 			{
 				i->dtor();
 			}
-			catch(...)
+			catch (...)
 			{
 				cleanError();
 			}

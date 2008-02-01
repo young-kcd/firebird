@@ -1864,7 +1864,7 @@ ISC_STATUS API_ROUTINE GDS_DETACH(ISC_STATUS * user_status,
  **************************************
  *
  * Functional description
- *	Close down a attachment.
+ *	Close down an attachment.
  *
  **************************************/
 	YEntry status(user_status);

@@ -56,10 +56,10 @@ public:
 	~SyslogAccess() {
 		DeleteCriticalSection(&cs);
 	}
-	void Record(WORD wType, const char* Msg);
+	void Record(WORD wType, const char* msg);
 };
 
-void SyslogAccess::Record(WORD wType, const char* Msg) 
+void SyslogAccess::Record(WORD wType, const char* msg) 
 {
 	EnterCriticalSection(&cs);
 	if (! InitFlag) {
@@ -75,13 +75,13 @@ void SyslogAccess::Record(WORD wType, const char* Msg)
 	bool use9x = true;
 	if (LogHandle) {
 		LPCTSTR sb[1];
-		sb[0] = Msg;
+		sb[0] = msg;
 		if (fReportEvent(LogHandle, wType, 0, 0, 0, 1, 0, sb, 0)) {
 			use9x = false;
 		}
 	}
 	if (use9x) {
-		::MessageBox(0, Msg, "Firebird Error", MB_ICONSTOP);
+		::MessageBox(0, msg, "Firebird Error", MB_ICONSTOP);
 	}
 	LeaveCriticalSection(&cs);
 }
@@ -92,7 +92,7 @@ Firebird::InitInstance<SyslogAccess> iSyslogAccess;
 
 namespace Firebird {
 
-void Syslog::Record(Severity level, const char* Msg) 
+void Syslog::Record(Severity level, const char* msg) 
 {
 	WORD wType = EVENTLOG_ERROR_TYPE;
 	switch (level) {
@@ -104,7 +104,7 @@ void Syslog::Record(Severity level, const char* Msg)
 		wType = EVENTLOG_ERROR_TYPE;
 		break;
 	}
-	iSyslogAccess().Record(wType, Msg);
+	iSyslogAccess().Record(wType, msg);
 }
 
 } // namespace Firebird
