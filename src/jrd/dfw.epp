@@ -1958,12 +1958,12 @@ static bool create_index(	thread_db*	tdbb,
 			{
 				// signal to other processes about new constraint
 				relation->rel_flags |= REL_check_partners;
-				LCK_convert(tdbb, relation->rel_partners_lock, LCK_EX, LCK_WAIT);
+				LCK_lock(tdbb, relation->rel_partners_lock, LCK_EX, LCK_WAIT);
 				LCK_release(tdbb, relation->rel_partners_lock);
 
 				if (relation != partner_relation) {
 					partner_relation->rel_flags |= REL_check_partners;
-					LCK_convert(tdbb, partner_relation->rel_partners_lock, LCK_EX, LCK_WAIT);
+					LCK_lock(tdbb, partner_relation->rel_partners_lock, LCK_EX, LCK_WAIT);
 					LCK_release(tdbb, partner_relation->rel_partners_lock);
 				}
 			}
