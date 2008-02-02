@@ -27,7 +27,7 @@
 bool	LOCK_convert(SLONG, UCHAR, SSHORT, lock_ast_t, void*, ISC_STATUS*);
 bool	LOCK_deq(SLONG);
 UCHAR	LOCK_downgrade(SLONG, ISC_STATUS *);
-SLONG	LOCK_enq(SLONG, SLONG, USHORT, const UCHAR*, USHORT, UCHAR,
+SLONG	LOCK_enq(SLONG, SLONG, const USHORT, const UCHAR*, const USHORT, UCHAR,
 				 lock_ast_t, void*, SLONG, SSHORT, ISC_STATUS*, SLONG);
 bool	LOCK_set_owner_handle(SLONG, SLONG);
 void	LOCK_fini(ISC_STATUS*, SLONG *);

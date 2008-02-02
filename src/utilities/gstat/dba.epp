@@ -318,7 +318,7 @@ int gstat(Firebird::UtilSvc* uSvc)
 	tddba->dba_status = tddba->dba_status_vector;
 	status_vector = tddba->dba_status;
 
-	bool called_as_service = uSvc->isService();
+	const bool called_as_service = uSvc->isService();
 	if (called_as_service)
 	{
 		tddba->dba_status = uSvc->getStatus();
