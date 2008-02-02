@@ -27,6 +27,7 @@
 #include "../remote/remote.h"
 #include "../jrd/ThreadStart.h"
 #include "../utilities/install/install_nt.h"
+#include "../remote/serve_proto.h"
 #include "../remote/os/win32/cntl_proto.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/isc_proto.h"
@@ -91,12 +92,8 @@ void* CNTL_insert_thread()
  * Functional description
  *
  **************************************/
-	THREAD_ENTER();
 	cntl_thread* new_thread = (cntl_thread*) ALLR_alloc((SLONG) sizeof(cntl_thread));
-/* NOMEM: ALLR_alloc() handled */
-/* FREE:  in CTRL_remove_thread() */
 
-	THREAD_EXIT();
 	DuplicateHandle(GetCurrentProcess(), GetCurrentThread(),
 					GetCurrentProcess(), &new_thread->thread_handle, 0, FALSE,
 					DUPLICATE_SAME_ACCESS);
@@ -202,9 +199,7 @@ void CNTL_remove_thread(void* athread)
 
 	CloseHandle(rem_thread->thread_handle);
 
-	THREAD_ENTER();
 	ALLR_free(rem_thread);
-	THREAD_EXIT();
 }
 
 
@@ -333,6 +328,7 @@ static THREAD_ENTRY_DECLARE cleanup_thread(THREAD_ENTRY_PARAM)
 	}
 
 	JRD_shutdown_all(false);
+	SRVR_shutdown();
 	return 0;
 }
 

@@ -223,6 +223,7 @@ LRESULT CALLBACK WindowFunc(HWND hWnd,
 				gds_alloc_report(ALLOC_verbose, fn, 0);
 #endif
 				JRD_shutdown_all(false);
+				SRVR_shutdown();
 				DestroyWindow(hWnd);
 			}
 		}
@@ -435,6 +436,7 @@ LRESULT CALLBACK WindowFunc(HWND hWnd,
 					}
 
 					JRD_shutdown_all(false);
+					SRVR_shutdown();
 					PostMessage(hWnd, WM_DESTROY, 0, 0);
 					return TRUE;
 				}
@@ -457,6 +459,7 @@ LRESULT CALLBACK WindowFunc(HWND hWnd,
 				GetDriveLetter(pdbcv->dbcv_unitmask, szDrives);
 				MessageBox(hWnd, tmp, szDrives, MB_OK | MB_ICONHAND);
 				JRD_shutdown_all(false);
+				SRVR_shutdown();
 				PostMessage(hWnd, WM_DESTROY, 0, 0);
 			}
 			return TRUE;
