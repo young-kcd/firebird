@@ -409,7 +409,7 @@ SVC SVC_attach(USHORT	service_length,
 	TEXT service_path[MAXPATHLEN];
 #endif
 	SPB options;
-	TEXT name[129] /*, project[33] */ ;
+	TEXT name[256] /*, project[33] */ ;
 	int id = 0;
 	int group;
 	int node_id;
