@@ -41,8 +41,7 @@ namespace Firebird {
 class StandaloneUtilityInterface : public UtilSvc
 {
 public:
-	StandaloneUtilityInterface(Firebird::MemoryPool& p, int ac, char** av)
-		: UtilSvc(p)
+	StandaloneUtilityInterface(int ac, char** av)
 	{
 		while (ac--)
 		{
@@ -59,8 +58,7 @@ public:
 
 		if (rc < 0)
 		{
-			Firebird::system_call_failed::raise(
-				"StandaloneUtilityInterface::printf()/vprintf()");
+			Firebird::system_call_failed::raise("StandaloneUtilityInterface::printf()/vprintf()");
 		}
 	}
 
@@ -102,8 +100,7 @@ public:
 
 UtilSvc* UtilSvc::createStandalone(int ac, char** av)
 {
-	return FB_NEW(*getDefaultMemoryPool()) 
-		StandaloneUtilityInterface(*getDefaultMemoryPool(), ac, av);
+	return new StandaloneUtilityInterface(ac, av);
 }
 
 } // namespace Firebird

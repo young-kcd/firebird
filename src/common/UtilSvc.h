@@ -39,13 +39,13 @@ namespace MsgFormat {
 
 namespace Firebird {
 
-class UtilSvc : public PermanentStorage
+class UtilSvc : public Firebird::GlobalStorage
 {
 public:
 	typedef Firebird::HalfStaticArray<const char*, 20> ArgvType;
 
 public:
-	explicit UtilSvc(Firebird::MemoryPool& p) : PermanentStorage(p), argv(getPool()) { }
+	UtilSvc() : argv(getPool()) { }
 
 	void output(const char* text)
 	{
