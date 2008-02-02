@@ -841,8 +841,8 @@ static void edit_float( const dsc* desc, pics* picture, TEXT** output)
 				else if (c == 'Z' && d == '0')
 					d = ' ';
 				*out++ = d;
-				break;
 			}
+			break;
 
 		case '.':
 			*out++ = (*p == c) ? *p++ : c;
