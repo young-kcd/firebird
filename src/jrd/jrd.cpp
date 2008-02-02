@@ -5182,6 +5182,7 @@ static ISC_STATUS rollback(ISC_STATUS* user_status,
  *
  **************************************/
 	ThreadContextHolder tdbb(user_status);
+	ISC_STATUS_ARRAY local_status;
 
 #ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
 	LOG_call(log_rollback, *tra_handle);
@@ -5198,8 +5199,6 @@ static ISC_STATUS rollback(ISC_STATUS* user_status,
 		while ( (transaction = next) )
 		{
 			next = transaction->tra_sibling;
-
-			ISC_STATUS_ARRAY local_status;
 
 			try
 			{
@@ -5234,7 +5233,6 @@ static ISC_STATUS rollback(ISC_STATUS* user_status,
 			catch (const Firebird::Exception& ex) {
 				Firebird::stuff_exception(user_status, ex);
 				user_status = local_status;
-				continue;
 			}
 		}
 	}
