@@ -865,16 +865,17 @@ ISC_STATUS callback_execute_immediate( ISC_STATUS* status,
 
 	try 
 	{
-		Firebird::MutexLockGuard guard(databases_mutex);
-
 		dsql_dbb* database = NULL;
 
 		// 1. Locate why_db_handle, corresponding to jrd_database_handle 
-		for (database = databases; database; database = database->dbb_next)
-		{
-			if (YValve::translate<YValve::Attachment>(&database->dbb_database_handle)->handle == jrd_attachment_handle)
+		{ // guard scope
+			Firebird::MutexLockGuard guard(databases_mutex);
+			for (database = databases; database; database = database->dbb_next)
 			{
-				break;
+				if (YValve::translate<YValve::Attachment>(&database->dbb_database_handle)->handle == jrd_attachment_handle)
+				{
+					break;
+				}
 			}
 		}
 		if (!database) 
