@@ -114,7 +114,8 @@ USHORT SQZ_compress(DataComprControl* dcc, const SCHAR* input, SCHAR* output, in
 					*output = 0;
 				return input - start;
 			}
-			else if ((length = *output++ = *control++) & 128)
+
+			if ((length = *output++ = *control++) & 128)
 			{
 				// TMN: This is bad code. It assumes char is 8 bits
 				// and that bit 7 is the sign-bit.
@@ -135,6 +136,7 @@ USHORT SQZ_compress(DataComprControl* dcc, const SCHAR* input, SCHAR* output, in
 					}
 					return input - start;
 				}
+
 				if (length > 0) {
 					MOVE_FAST(input, output, length);
 					output += length;
@@ -173,7 +175,8 @@ USHORT SQZ_compress_length(DataComprControl* dcc, const SCHAR* input, int space)
 		{
 			if (--space <= 0)
 				return input - start;
-			else if ((length = *control++) & 128) {
+
+			if ((length = *control++) & 128) {
 				--space;
 				input += (-length) & 255;
 			}

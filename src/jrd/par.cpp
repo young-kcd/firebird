@@ -433,7 +433,7 @@ USHORT PAR_desc(thread_db* tdbb, CompilerScratch* csb, DSC* desc, ItemInfo* item
 	case blr_column_name:
 	case blr_column_name2:
 		{
-			bool fullDomain = (BLR_BYTE == blr_domain_full);
+			const bool fullDomain = (BLR_BYTE == blr_domain_full);
 			Firebird::MetaName* relationName = FB_NEW(csb->csb_pool) Firebird::MetaName(csb->csb_pool);
 			par_name(csb, *relationName);
 			Firebird::MetaName* fieldName = FB_NEW(csb->csb_pool) Firebird::MetaName(csb->csb_pool);

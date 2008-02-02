@@ -829,7 +829,7 @@ SLONG BLB_get_slice(thread_db* tdbb,
 /* Checkout slice description language */
 	SLONG variables[64];
 	sdl_info info;
-	MOVE_FAST(param, variables, MIN(sizeof(variables), param_length));
+	memcpy(variables, param, MIN(sizeof(variables), param_length));
 
 	if (SDL_info(tdbb->tdbb_status_vector, sdl, &info, variables)) {
 		ERR_punt();
@@ -1799,7 +1799,7 @@ void BLB_put_slice(	thread_db*	tdbb,
 	arg.slice_base = array->arr_data;
 
 	SLONG variables[64];
-	MOVE_FAST(param, variables, MIN(sizeof(variables), param_length));
+	memcpy(variables, param, MIN(sizeof(variables), param_length));
 
 	if (SDL_walk(tdbb->tdbb_status_vector,
 				 sdl,
@@ -1933,7 +1933,7 @@ static ArrayField* alloc_array(jrd_tra* transaction, Ods::InternalArrayDesc* pro
 
 	// Copy prototype descriptor
 
-	MOVE_FAST(proto_desc, &array->arr_desc, proto_desc->iad_length);
+	memcpy(&array->arr_desc, proto_desc, proto_desc->iad_length);
 
 	// Link into transaction block
 
@@ -2824,8 +2824,8 @@ static void slice_callback(array_slice* arg, ULONG count, DSC* descriptors)
 								  &p,
 								  reinterpret_cast<vary*>(tmp_buffer.getBuffer(tmp_len)),
 								  tmp_len);
-			MOVE_FAST(&len, array_desc->dsc_address, sizeof(USHORT));
-			MOVE_FAST(p, array_desc->dsc_address + sizeof(USHORT), (int) len);
+			memcpy(array_desc->dsc_address, &len, sizeof(USHORT));
+			memcpy(array_desc->dsc_address + sizeof(USHORT), p, (int) len);
 		}
 		else
 		{
@@ -2860,8 +2860,7 @@ static void slice_callback(array_slice* arg, ULONG count, DSC* descriptors)
 				temp_desc.dsc_sub_type = array_desc->dsc_sub_type;
 				temp_desc.dsc_scale = array_desc->dsc_scale;
 				temp_desc.dsc_flags = array_desc->dsc_flags;
-				MOVE_FAST(array_desc->dsc_address, &temp_desc.dsc_length,
-						  sizeof(USHORT));
+				memcpy(&temp_desc.dsc_length, array_desc->dsc_address, sizeof(USHORT));
 				temp_desc.dsc_address =
 					array_desc->dsc_address + sizeof(USHORT);
 				MOV_move(tdbb, &temp_desc, slice_desc);

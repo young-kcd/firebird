@@ -297,8 +297,8 @@ start_label:
 		delete m;
 		if (*pt)
 			goto start_label;
-		else
-			break;
+
+		break;
 	}
 }
 

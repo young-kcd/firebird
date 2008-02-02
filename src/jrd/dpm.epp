@@ -492,13 +492,12 @@ int DPM_compress( thread_db* tdbb, data_page* page)
 			// This should also work just a little bit faster too.
 			const SSHORT l = ROUNDUP(index->dpg_length, ODS_ALIGNMENT);
 			space -= l;
-			MOVE_FAST((UCHAR *) page + index->dpg_offset, temp_page + space, l);
+			memcpy(temp_page + space, (UCHAR *) page + index->dpg_offset, l);
 			index->dpg_offset = space;
 		}
 	}
 
-	MOVE_FASTER(temp_page + space,
-				(UCHAR *) page + space, dbb->dbb_page_size - space);
+	memcpy((UCHAR *) page + space, temp_page + space, dbb->dbb_page_size - space);
 
 	if (page->dpg_header.pag_type != pag_data) {
 		BUGCHECK(251);			/* msg 251 damaged data page */

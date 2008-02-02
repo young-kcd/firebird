@@ -79,7 +79,8 @@ static Firebird::InitInstance<GenericMap<Pair<Left<PathName, ModuleLoader::Modul
 static Firebird::InitInstance<GenericMap<Pair<Full<string, ExternalInfo> > > > charSetCollations;
 
 
-const IntlManager::CharSetDefinition IntlManager::defaultCharSets[] = {
+const IntlManager::CharSetDefinition IntlManager::defaultCharSets[] =
+{
 	{"NONE", CS_NONE, 1},
 	{"OCTETS", CS_BINARY, 1},
 	{"ASCII", CS_ASCII, 1},

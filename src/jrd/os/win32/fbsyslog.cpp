@@ -48,7 +48,7 @@ private:
 	tReportEvent *fReportEvent;
 	bool InitFlag;
 public:
-	SyslogAccess(Firebird::MemoryPool&) {
+	explicit SyslogAccess(Firebird::MemoryPool&) {
 		InitializeCriticalSection(&cs); 
 		InitFlag = false;
 		LogHandle = 0;

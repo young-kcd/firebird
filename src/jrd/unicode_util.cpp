@@ -101,7 +101,7 @@ public:
 class UnicodeUtil::ICUModules
 {
 public:
-	ICUModules(MemoryPool&)
+	explicit ICUModules(MemoryPool&)
 	{
 	}
 

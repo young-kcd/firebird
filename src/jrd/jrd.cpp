@@ -195,7 +195,7 @@ namespace
 		DbMutexGuard& operator=(const DbMutexGuard&);
 	};
 
-	inline void validateHandle(thread_db* tdbb, Attachment* attachment)
+	inline void validateHandle(thread_db* tdbb, Attachment* const attachment)
 	{
 		if (!attachment->checkHandle() ||
 			!attachment->att_database->checkHandle())
@@ -206,11 +206,8 @@ namespace
 		Database* const dbb = attachment->att_database;
 
 		const Attachment* attach = dbb->dbb_attachments;
-		for (; attach; attach = attach->att_next)
-		{
-			if (attach == attachment)
-				break;
-		}
+		while (attach && attach != attachment)
+			attach = attach->att_next;
 
 		if (!attach)
 			Firebird::status_exception::raise(isc_bad_db_handle, 0);
@@ -506,7 +503,6 @@ static void		prepare(thread_db*, jrd_tra*, USHORT, const UCHAR*);
 static void		release_attachment(thread_db*, Attachment*);
 static void		detachLocksFromAttachment(Attachment*);
 static ISC_STATUS	rollback(ISC_STATUS*, jrd_tra**, const bool);
-
 static void		shutdown_database(Database*, const bool);
 static void		strip_quotes(Firebird::string&);
 static void		purge_attachment(thread_db*, ISC_STATUS*, Attachment*, const bool);
@@ -1245,8 +1241,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 			MET_load_db_triggers(tdbb, DB_TRIGGER_TRANS_ROLLBACK);
 
 			// run ON CONNECT triggers
-			EXE_execute_db_triggers(tdbb, transaction,
-									jrd_req::req_trigger_connect);
+			EXE_execute_db_triggers(tdbb, transaction, jrd_req::req_trigger_connect);
 
 			// and commit the transaction
 			TRA_commit(tdbb, transaction, false);
@@ -3588,8 +3583,7 @@ ISC_STATUS GDS_TRANSACT_REQUEST(ISC_STATUS*	user_status,
 						 0);
 			}
 
-			memcpy((SCHAR*) request + in_message->nod_impure, in_msg,
-				   in_msg_length);
+			memcpy((SCHAR*) request + in_message->nod_impure, in_msg, in_msg_length);
 		}
 
 		EXE_start(tdbb, request, transaction);
@@ -4061,7 +4055,7 @@ static void check_database(thread_db* tdbb)
 
 	if (dbb->dbb_flags & DBB_bugcheck)
 	{
-		static const char* const string = "can't continue after bugcheck";
+		static const char string[] = "can't continue after bugcheck";
 		Firebird::status_exception::raise(isc_bug_check,
 										  isc_arg_string, string,
 										  0);
@@ -4154,8 +4148,7 @@ static ISC_STATUS commit(ISC_STATUS* user_status,
 		validateHandle(tdbb, transaction);
 		DatabaseContextHolder dbbHolder(tdbb);
 
-		if (transaction->tra_sibling &&
-			!(transaction->tra_flags & TRA_prepared))
+		if (transaction->tra_sibling && !(transaction->tra_flags & TRA_prepared))
 		{
 			prepare(tdbb, transaction, 0, NULL);
 		}
@@ -4298,10 +4291,10 @@ static jrd_tra* find_transaction(thread_db* tdbb, ISC_STATUS error_code)
  **************************************/
 	SET_TDBB(tdbb);
 
-	jrd_tra* transaction = tdbb->getTransaction();
 	const Attachment* const attachment = tdbb->getAttachment();
 
-	for (; transaction; transaction = transaction->tra_sibling)
+	for (jrd_tra* transaction = tdbb->getTransaction(); transaction;
+		transaction = transaction->tra_sibling)
 	{
 		if (transaction->tra_attachment == attachment)
 		{

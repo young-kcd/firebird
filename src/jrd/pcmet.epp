@@ -260,8 +260,7 @@ void PCMET_lookup_index(thread_db* tdbb, jrd_rel* relation, index_desc* idx)
 	{
 		idx->idx_expression = index_block->idb_expression;
 		idx->idx_expression_request = index_block->idb_expression_request;
-		MOVE_FAST(&index_block->idb_expression_desc,
-				  &idx->idx_expression_desc, sizeof(struct dsc));
+		memcpy(&idx->idx_expression_desc, &index_block->idb_expression_desc, sizeof(struct dsc));
 		return;
 	}
 
@@ -331,7 +330,6 @@ void PCMET_lookup_index(thread_db* tdbb, jrd_rel* relation, index_desc* idx)
 
 	index_block->idb_expression = idx->idx_expression;
 	index_block->idb_expression_request = idx->idx_expression_request;
-	MOVE_FAST(&idx->idx_expression_desc, &index_block->idb_expression_desc,
-			  sizeof(struct dsc));
+	memcpy(&index_block->idb_expression_desc, &idx->idx_expression_desc, sizeof(struct dsc));
 }
 

@@ -979,7 +979,7 @@ static jrd_file* setup_file(Database* dbb, const Firebird::PathName& file_name, 
 	file->fil_desc = desc;
 	file->fil_length = file_name.length();
 	file->fil_max_page = -1UL;
-	MOVE_FAST(file_name.c_str(), file->fil_string, file_name.length());
+	memcpy(file->fil_string, file_name.c_str(), file_name.length());
 	file->fil_string[file_name.length()] = '\0';
 
 /* If this isn't the primary file, we're done */
@@ -1014,7 +1014,7 @@ static jrd_file* setup_file(Database* dbb, const Firebird::PathName& file_name, 
 	lock->lck_length = l;
 	lock->lck_dbb = dbb;
 	lock->lck_ast = CCH_down_grade_dbb;
-	MOVE_FAST(lock_string, lock->lck_key.lck_string, l);
+	memcpy(lock->lck_key.lck_string, lock_string, l);
 
 /* Try to get an exclusive lock on database.  If this fails, insist
    on at least a shared lock */

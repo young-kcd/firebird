@@ -301,7 +301,7 @@ public:
 		Checkout& operator=(const Checkout&);
 
 		Database* dbb;
-		bool io;
+		const bool io;
 	};
 
 	typedef int (*crypt_routine) (const char*, void*, int, void*);
@@ -426,7 +426,7 @@ public:
 	SLONG dbb_last_header_write;		// Transaction id of last header page physical write
 	SLONG dbb_flush_cycle;				// Current flush cycle
 	SLONG dbb_sweep_interval;			// Transactions between sweep
-	ULONG dbb_lock_owner_id;			// ID for the lock manager
+	const ULONG dbb_lock_owner_id;		// ID for the lock manager
 	SLONG dbb_lock_owner_handle;		// Handle for the lock manager
 
 	USHORT unflushed_writes;			// unflushed writes
@@ -498,12 +498,12 @@ private:
 		dbb_database_name(*p),
 		dbb_encrypt_key(*p),
 		dbb_permanent(p),
+		dbb_lock_owner_id(getLockOwnerId()),
 		dbb_pools(*p, 4),
 		dbb_charsets(*p),
 		dbb_functions(*p)
 	{
 		dbb_pools.add(p);
-		dbb_lock_owner_id = getLockOwnerId();
 	}
 
 	~Database()
@@ -656,6 +656,7 @@ class Attachment : public pool_alloc<type_att>
 public:
 	explicit Attachment(Database* dbb) :
 		att_database(dbb), 
+		att_lock_owner_id(Database::getLockOwnerId()),
 		att_lc_messages(*dbb->dbb_permanent),
 		att_working_directory(*dbb->dbb_permanent), 
 		att_filename(*dbb->dbb_permanent),
@@ -667,7 +668,6 @@ public:
 		, att_dsql_cache(*dbb->dbb_permanent)
 #endif
 		{
-			att_lock_owner_id = Database::getLockOwnerId();
 		}
 
 	~Attachment();
@@ -708,7 +708,7 @@ public:
 	sort_context*	att_active_sorts;		// Active sorts
 	Lock*		att_id_lock;				// Attachment lock (if any)
 	SLONG		att_attachment_id;			// Attachment ID
-	ULONG		att_lock_owner_id;			// ID for the lock manager
+	const ULONG	att_lock_owner_id;			// ID for the lock manager
 	SLONG		att_lock_owner_handle;		// Handle for the lock manager
 	SLONG		att_event_session;			// Event session id, if any
 	SecurityClass*	att_security_class;		// security class for database
