@@ -498,8 +498,8 @@ private:
 		dbb_database_name(*p),
 		dbb_encrypt_key(*p),
 		dbb_permanent(p),
-		dbb_lock_owner_id(getLockOwnerId()),
 		dbb_pools(*p, 4),
+		dbb_lock_owner_id(getLockOwnerId()),
 		dbb_charsets(*p),
 		dbb_functions(*p)
 	{
