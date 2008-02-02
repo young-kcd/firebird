@@ -466,7 +466,7 @@ static THREAD_ENTRY_DECLARE xnet_connect_wait_thread(THREAD_ENTRY_PARAM)
 }
 
 
-static void service_connection( rem_port* port)
+static void service_connection(rem_port* port)
 {
 /**************************************
  *
@@ -478,7 +478,7 @@ static void service_connection( rem_port* port)
  *
  **************************************/
 
-	SRVR_main(port, (USHORT) (server_flag & ~SRVR_multi_client));
+	SRVR_main(port, server_flag & ~SRVR_multi_client);
 }
 
 
@@ -507,7 +507,7 @@ static THREAD_ENTRY_DECLARE start_connections_thread(THREAD_ENTRY_PARAM)
 }
 
 
-static HANDLE parse_args( LPCSTR lpszArgs, USHORT* pserver_flag)
+static HANDLE parse_args(LPCSTR lpszArgs, USHORT* pserver_flag)
 {
 /**************************************
  *

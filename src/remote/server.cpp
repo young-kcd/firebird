@@ -5316,7 +5316,7 @@ static void success( ISC_STATUS * status_vector)
 	status_vector[2] = isc_arg_end;
 }
 
-static THREAD_ENTRY_DECLARE loopThread(THREAD_ENTRY_PARAM flags)
+static THREAD_ENTRY_DECLARE loopThread(THREAD_ENTRY_PARAM arg)
 {
 /**************************************
  *
@@ -5332,9 +5332,11 @@ static THREAD_ENTRY_DECLARE loopThread(THREAD_ENTRY_PARAM flags)
 	ISC_enter();				/* Setup floating point exception handler once and for all. */
 #endif
 
+	const SLONG flags = (SLONG)(IPTR) arg;
+
 #ifdef WIN_NT
 	void* thread = NULL; // silence non initialized warning
-	if (!((SLONG) flags & SRVR_non_service))
+	if (!(flags & SRVR_non_service))
 		thread = CNTL_insert_thread();
 #endif
 
@@ -5520,7 +5522,7 @@ static THREAD_ENTRY_DECLARE loopThread(THREAD_ENTRY_PARAM flags)
 	}
 
 #ifdef WIN_NT
-	if (!((SLONG) flags & SRVR_non_service))
+	if (!(flags & SRVR_non_service))
 		CNTL_remove_thread(thread);
 #endif
 
@@ -5537,11 +5539,11 @@ void SRVR_shutdown()
  **************************************
  *
  * Functional description
- *	Shutdown working threads, waiting for work
- *  Function is called when shutdown thread ENTERed,
- *	and will never EXIT
+ *	Shutdown working threads, waiting for work.
  *
  **************************************/
+	THREAD_ENTER();
+
 	shutting_down = true;
 
 	const int limit = threads_waiting;
@@ -5549,6 +5551,8 @@ void SRVR_shutdown()
 	{
 		requests_semaphore->release();
 	}
+
+	THREAD_EXIT();
 
 	// let them terminate
 	THREAD_SLEEP(1 * 1000);
