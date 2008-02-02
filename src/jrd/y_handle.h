@@ -61,19 +61,7 @@ namespace YValve
 	class Service;
 
 	// force use of default memory pool for Y-Valve objects
-	class DefaultMemory
-	{
-	public:
-		void* operator new(size_t size)
-		{
-			return getDefaultMemoryPool()->allocate(size);
-		}
-		
-		void operator delete(void* mem)
-		{
-			getDefaultMemoryPool()->deallocate(mem);
-		}
-	};
+	typedef Firebird::GlobalStorage DefaultMemory;
 	
 	// stored handle types
 	typedef Jrd::jrd_tra StoredTra;
