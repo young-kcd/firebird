@@ -856,14 +856,19 @@ ISC_STATUS callback_execute_immediate( ISC_STATUS* status,
 		requests = 0;
 	}
 
-	YValve::Attachment* why_db_handle = 0;
-	YValve::Transaction* why_trans_handle = 0;
-	dsql_dbb* database = 0;
+	FB_API_HANDLE db_handle;
+	USHORT dialect;
 
-	Firebird::MutexLockGuard guard(databases_mutex);
+	YValve::Attachment* why_db_handle = NULL;
+	YValve::Transaction* why_trans_handle = NULL;
+
 
 	try 
 	{
+		Firebird::MutexLockGuard guard(databases_mutex);
+
+		dsql_dbb* database = NULL;
+
 		// 1. Locate why_db_handle, corresponding to jrd_database_handle 
 		for (database = databases; database; database = database->dbb_next)
 		{
@@ -872,11 +877,15 @@ ISC_STATUS callback_execute_immediate( ISC_STATUS* status,
 				break;
 			}
 		}
-		if (! database) 
+		if (!database) 
 		{
 			Firebird::status_exception::raise(isc_bad_db_handle, isc_arg_end);
 		}
-		why_db_handle = YValve::translate<YValve::Attachment>(&database->dbb_database_handle);
+
+		db_handle = database->dbb_database_handle;
+		dialect = database->dbb_db_SQL_dialect;
+
+		why_db_handle = YValve::translate<YValve::Attachment>(&db_handle);
 
 		// 2. Create why_trans_handle - it's new, but points to the same jrd
     	//	  transaction as original before callback.
@@ -889,9 +898,8 @@ ISC_STATUS callback_execute_immediate( ISC_STATUS* status,
 
 	// 3. Call execute... function 
 	const ISC_STATUS rc = dsql8_execute_immediate_common(status,
-						&database->dbb_database_handle, &why_trans_handle->public_handle,
-						sql_operator.length(), sql_operator.c_str(), 
-						database->dbb_db_SQL_dialect,
+						&db_handle, &why_trans_handle->public_handle,
+						sql_operator.length(), sql_operator.c_str(), dialect,
 						0, NULL, 0, 0, NULL, 0, NULL, 0, 0, NULL, requests);
 
 	delete why_trans_handle;
