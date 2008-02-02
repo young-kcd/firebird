@@ -124,7 +124,7 @@ int WINDOW_main( HINSTANCE hThisInst, int nWndMode, USHORT usServerFlagMask)
 						  APP_HSIZE,
 						  APP_VSIZE, HWND_DESKTOP, NULL, hInstance, NULL);
 #ifdef SERVER_SHUTDOWN
-	Service::shutdown_init(WINDOW_shutdown, (ULONG) hWnd);
+	Jrd::Service::shutdown_init(WINDOW_shutdown, (ULONG) hWnd);
 #endif
 // Do the proper ShowWindow depending on if the app is an icon on
 // the desktop, or in the task bar.
