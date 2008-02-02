@@ -92,21 +92,23 @@ static const TEXT history_names[][10] = {
 	"SCAN", "DEAD", "ENTER", "BUG", "ACTIVE", "CLEANUP", "DEL_OWNER"
 };
 
-static const UCHAR compatibility[] = {
+// The same table is in lock.cpp, maybe worth moving to a common file?
+static const UCHAR compatibility[LCK_max][LCK_max] =
+{
 
 /*							Shared	Prot	Shared	Prot
 			none	null	Read	Read	Write	Write	Exclusive */
 
-/* none */	1,		1,		1,		1,		1,		1,		1,
-/* null */	1,		1,		1,		1,		1,		1,		1,
-/* SR */	1,		1,		1,		1,		1,		1,		0,
-/* PR */	1,		1,		1,		1,		0,		0,		0,
-/* SW */	1,		1,		1,		0,		1,		0,		0,
-/* PW */	1,		1,		1,		0,		0,		0,		0,
-/* EX */	1,		1,		0,		0,		0,		0,		0
+/* none */	{true,	true,	true,	true,	true,	true,	true},
+/* null */	{true,	true,	true,	true,	true,	true,	true},
+/* SR */	{true,	true,	true,	true,	true,	true,	false},
+/* PR */	{true,	true,	true,	true,	false,	false,	false},
+/* SW */	{true,	true,	true,	false,	true,	false,	false},
+/* PW */	{true,	true,	true,	false,	false,	false,	false},
+/* EX */	{true,	true,	false,	false,	false,	false,	false}
 };
 
-#define COMPATIBLE(st1, st2)	compatibility [st1 * LCK_max + st2]
+//#define COMPATIBLE(st1, st2)	compatibility [st1 * LCK_max + st2]
 
 
 
@@ -1086,8 +1088,8 @@ static void prt_owner_wait_cycle(
 				if (owner_request == lock_request)
 					break;
 
-				if (COMPATIBLE(owner_request->lrq_requested, MAX(lock_request->lrq_state,
-								   lock_request->lrq_requested)))
+				if (compatibility[owner_request->lrq_requested]
+								[MAX(lock_request->lrq_state, lock_request->lrq_requested)])
 				{
 					continue;
 				}
@@ -1098,7 +1100,7 @@ static void prt_owner_wait_cycle(
 				if (lock_request == owner_request)
 					continue;
 
-				if (COMPATIBLE(owner_request->lrq_requested, lock_request->lrq_state)) 
+				if (compatibility[owner_request->lrq_requested][lock_request->lrq_state])
 					continue;
 			}
 			const own* lock_owner = (own*) SRQ_ABS_PTR(lock_request->lrq_owner);
