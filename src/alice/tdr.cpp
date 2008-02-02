@@ -43,7 +43,6 @@
 #include "../alice/tdr_proto.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/isc_proto.h"
-#include "../jrd/svc_proto.h"
 #include "../jrd/constants.h"
 #include "../common/classes/ClumpletWriter.h"
 

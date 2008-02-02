@@ -110,7 +110,6 @@
 #include "../jrd/sdw_proto.h"
 #include "../jrd/shut_proto.h"
 #include "../jrd/sort_proto.h"
-#include "../jrd/svc_proto.h"
 #include "../jrd/thread_proto.h"
 #include "../jrd/tra_proto.h"
 #include "../jrd/val_proto.h"
@@ -3084,11 +3083,7 @@ ISC_STATUS GDS_SERVICE_ATTACH(ISC_STATUS* user_status,
 		if (*svc_handle)
 			Firebird::status_exception::raise(isc_bad_svc_handle, 0);
 
-		tdbb->setDatabase(NULL);
-
-		DbMutexGuard guard;
-
-		*svc_handle = SVC_attach(service_length, service_name, spb_length, spb);
+		*svc_handle = new Service(service_length, service_name, spb_length, spb);
 	}
 	catch (const DelayFailedLogin& ex)
 	{
@@ -3123,7 +3118,7 @@ ISC_STATUS GDS_SERVICE_DETACH(ISC_STATUS* user_status, Service** svc_handle)
 		Service* service = *svc_handle;
 		validateHandle(service);
 
-		SVC_detach(service);
+		service->detach();
 		*svc_handle = NULL;
 	}
 	catch (const Firebird::Exception& ex)
@@ -3168,8 +3163,8 @@ ISC_STATUS GDS_SERVICE_QUERY(ISC_STATUS*	user_status,
 		Service* service = *svc_handle;
 		validateHandle(service);
 
-		if (service->svc_spb_version == isc_spb_version1) {
-			SVC_query(service, send_item_length, send_items, recv_item_length,
+		if (service->getVersion() == isc_spb_version1) {
+			service->query(send_item_length, send_items, recv_item_length,
 					recv_items, buffer_length, buffer);
 		}
 		else {
@@ -3177,17 +3172,16 @@ ISC_STATUS GDS_SERVICE_QUERY(ISC_STATUS*	user_status,
 			// meaningless anyway).  The status vector returned by this function can hold information about
 			// the call to query the service manager and/or a service thread that may have been running.
 
-			SVC_query2(service, tdbb, send_item_length, send_items,
+			service->query2(tdbb, send_item_length, send_items,
 					recv_item_length, recv_items, buffer_length, buffer);
 	
 			// If there is a status vector from a service thread, copy it into the thread status
 			int len, warning;
-			PARSE_STATUS(service->svc_status, len, warning);
+			PARSE_STATUS(service->getStatus(), len, warning);
 			if (len) {
-				memcpy(tdbb->tdbb_status_vector, service->svc_status,
-					   sizeof(ISC_STATUS) * len);
+				memcpy(tdbb->tdbb_status_vector, service->getStatus(), sizeof(ISC_STATUS) * len);
 				// Empty out the service status vector
-				memset(service->svc_status, 0, sizeof(ISC_STATUS_ARRAY));
+				memset(service->getStatus(), 0, sizeof(ISC_STATUS_ARRAY));
 			}
 		}
 	}
@@ -3228,10 +3222,10 @@ ISC_STATUS GDS_SERVICE_START(ISC_STATUS*	user_status,
 		Service* service = *svc_handle;
 		validateHandle(service);
 
-		SVC_start(service, spb_length, spb);
+		service->start(spb_length, spb);
 	
-		if (service->svc_status[1]) {
-			ISC_STATUS* svc_status = service->svc_status;
+		if (service->getStatus()[1]) {
+			ISC_STATUS* svc_status = service->getStatus();
 			ISC_STATUS* tdbb_status = tdbb->tdbb_status_vector;
 
 			while (*svc_status) {

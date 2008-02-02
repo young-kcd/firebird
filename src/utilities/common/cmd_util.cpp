@@ -39,7 +39,6 @@
 #endif
 
 #include "../jrd/svc.h"
-#include "../jrd/svc_proto.h"
 #include "cmd_util_proto.h"
 
 using MsgFormat::SafeArg;

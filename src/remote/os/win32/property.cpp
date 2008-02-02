@@ -48,7 +48,6 @@
 #include "../remote/os/win32/window.rh"
 #include "../remote/os/win32/property.rh"
 
-#include "../jrd/svc_proto.h"
 #include "../remote/os/win32/window_proto.h"
 #include "../remote/os/win32/propty_proto.h"
 #include "../remote/os/win32/ibconfig.h"

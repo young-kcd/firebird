@@ -689,9 +689,7 @@ const unsigned int MAX_FILE_NAME_SIZE		= 256;
 #endif
 #endif
 
-
 #include "../jrd/svc.h"
-#include "../jrd/svc_proto.h"
 
 #include "../burp/std_desc.h"
 

@@ -32,7 +32,6 @@
 #include "../jrd/file_params.h"
 
 #include "../jrd/svc_undoc.h"
-#include "../jrd/svc_proto.h"
 #include "../jrd/ods.h"			// to get MAX_PAGE_SIZE
 #include "../remote/os/win32/window_proto.h"
 

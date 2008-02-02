@@ -31,7 +31,7 @@
 #include "../remote/os/win32/window.rh"
 #include "../remote/os/win32/property.rh"
 
-#include "../jrd/svc_proto.h"
+#include "../jrd/svc.h"
 #include "../jrd/sch_proto.h"
 #include "../common/thd.h"
 #include "../jrd/thread_proto.h"
@@ -124,7 +124,7 @@ int WINDOW_main( HINSTANCE hThisInst, int nWndMode, USHORT usServerFlagMask)
 						  APP_HSIZE,
 						  APP_VSIZE, HWND_DESKTOP, NULL, hInstance, NULL);
 #ifdef SERVER_SHUTDOWN
-	SVC_shutdown_init(WINDOW_shutdown, (ULONG) hWnd);
+	Service::shutdown_init(WINDOW_shutdown, (ULONG) hWnd);
 #endif
 // Do the proper ShowWindow depending on if the app is an icon on
 // the desktop, or in the task bar.

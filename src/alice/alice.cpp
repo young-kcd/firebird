@@ -49,7 +49,6 @@
 #include "../jrd/msg_encode.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/svc.h"
-#include "../jrd/svc_proto.h"
 #include "../alice/alice_proto.h"
 #include "../common/utils_proto.h"
 
