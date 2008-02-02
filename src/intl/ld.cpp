@@ -272,7 +272,7 @@ struct
 {
 	const char* charSetName;
 	EXTERN_charset((*ptr));
-} static charSets[] =
+} static const charSets[] =
 {
 	// builtin charsets should not be listed here
 	{"SJIS_0208", CS_sjis},
@@ -328,7 +328,7 @@ struct
 	const char* charSetName;
 	const char* collationName;
 	EXTERN_texttype((*ptr));
-} static collations[] =
+} static const collations[] =
 {
 	// builtin collations should not be listed here
 	{"SJIS_0208", "SJIS_0208", JIS220_init},
