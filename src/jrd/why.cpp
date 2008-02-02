@@ -1871,57 +1871,60 @@ ISC_STATUS API_ROUTINE GDS_DETACH(ISC_STATUS * user_status,
 	try 
 	{
 		Attachment* dbb = translate<Attachment>(handle);
-		size_t i;
+		{ // guard scope
+			Firebird::RecursiveMutexLockGuard guard(dbb->mutex);
+			size_t i;
 
 #if defined(SUPERSERVER) && !defined(EMBEDDED)
 
-		// Drop all DSQL statements to reclaim DSQL memory pools.
+			// Drop all DSQL statements to reclaim DSQL memory pools.
 
-		while ((i = dbb->statements.getCount()))
-		{
-			FB_API_HANDLE temp_handle;
-			Statement* statement = dbb->statements[i - 1];
-			if (!statement->user_handle) {
-				temp_handle = statement->public_handle;
-				statement->user_handle = &temp_handle;
-			}
-
-			subsystem_exit();
-			ISC_STATUS rc = GDS_DSQL_FREE(status, statement->user_handle, DSQL_drop);
-			subsystem_enter();
-
-			if (rc)
+			while ((i = dbb->statements.getCount()))
 			{
-				return status[1];
+				FB_API_HANDLE temp_handle;
+				Statement* statement = dbb->statements[i - 1];
+				if (!statement->user_handle) {
+					temp_handle = statement->public_handle;
+					statement->user_handle = &temp_handle;
+				}
+
+				subsystem_exit();
+				ISC_STATUS rc = GDS_DSQL_FREE(status, statement->user_handle, DSQL_drop);
+				subsystem_enter();
+
+				if (rc)
+				{
+					return status[1];
+				}
 			}
-		}
 #endif
 
 
-		if (CALL(PROC_DETACH, dbb->implementation) (status, &dbb->handle))
-			return status[1];
+			if (CALL(PROC_DETACH, dbb->implementation) (status, &dbb->handle))
+				return status[1];
 
-		// Release associated request handles
+			// Release associated request handles
 
-		while ((i = dbb->requests.getCount()))
-		{
-			delete dbb->requests[i - 1];
-		}
+			while ((i = dbb->requests.getCount()))
+			{
+				delete dbb->requests[i - 1];
+			}
 
 #ifndef SUPERSERVER
-		while ((i = dbb->statements.getCount()))
-		{
-			release_dsql_support(dbb->statements[i - 1]->das);
-			delete dbb->statements[i - 1];
-		}
+			while ((i = dbb->statements.getCount()))
+			{
+				release_dsql_support(dbb->statements[i - 1]->das);
+				delete dbb->statements[i - 1];
+			}
 #endif
 
-		while ((i = dbb->blobs.getCount()))
-		{
-			delete dbb->blobs[i - 1];
-		}
+			while ((i = dbb->blobs.getCount()))
+			{
+				delete dbb->blobs[i - 1];
+			}
 
-		SUBSYSTEM_USAGE_DECR;
+			SUBSYSTEM_USAGE_DECR;
+		}
 
 		delete dbb;
 		*handle = 0;
