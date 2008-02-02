@@ -75,7 +75,7 @@ private:
 
 public:
 	RWLock() { init(); }
-	RWLock(Firebird::MemoryPool&) { init(); }
+	explicit RWLock(Firebird::MemoryPool&) { init(); }
 	~RWLock()
 	{
 		if (readers_semaphore && !CloseHandle(readers_semaphore))
@@ -196,7 +196,7 @@ private:
 
 public:
 	RWLock() { init(); }
-	RWLock(Firebird::MemoryPool&) { init(); }
+	explicit RWLock(Firebird::MemoryPool&) { init(); }
 	~RWLock()
 	{
 		if (rwlock_destroy(&lock))
@@ -284,7 +284,7 @@ private:
 
 public:
 	RWLock() { init(); }
-	RWLock(class MemoryPool&) { init(); }
+	explicit RWLock(class MemoryPool&) { init(); }
 	~RWLock()
 	{
 		if (pthread_rwlock_destroy(&lock))

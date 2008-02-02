@@ -52,7 +52,7 @@ class CircularStringsBuffer : public StringsBuffer
 {
 public:
 	CircularStringsBuffer() throw() { init(); }
-	CircularStringsBuffer(MemoryPool&) throw() { init(); }
+	explicit CircularStringsBuffer(MemoryPool&) throw() { init(); }
 
 	virtual char* alloc(const char* string, size_t length) {
 		// fb_assert(length + 1 < BUFFER_SIZE);

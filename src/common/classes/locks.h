@@ -46,7 +46,7 @@
 
 namespace Firebird {
 
-class MemoryPool;	// Needed for ctors that must always ignaore it
+class MemoryPool;	// Needed for ctors that must always ignore it
 
 #ifdef WIN_NT
 
@@ -210,7 +210,7 @@ public:
 		: mutex(), threadId(0), count(0)
 	{}
 
-	RecursiveMutex(class Firebird::MemoryPool&)
+	explicit RecursiveMutex(MemoryPool&)
 		: mutex(), threadId(0), count(0)
 	{}
 	

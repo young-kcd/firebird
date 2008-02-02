@@ -19,7 +19,7 @@ typedef Firebird::CircularStringsBuffer<ENGINE_FAILURE_SPACE> CircularBuffer;
 
 class InterlockedStringsBuffer : public CircularBuffer {
 public:
-	InterlockedStringsBuffer(Firebird::MemoryPool&)
+	explicit InterlockedStringsBuffer(Firebird::MemoryPool&)
 		: CircularBuffer() { }
 	virtual char* alloc(const char* string, size_t length) 
 	{

@@ -161,11 +161,11 @@ static int api_gbak(Firebird::UtilSvc* uSvc)
 	int itr;
 
 	Firebird::UtilSvc::ArgvType& argv = uSvc->argv;
-	int argc = uSvc->argv.getCount();
+	const int argc = uSvc->argv.getCount();
 
 	for (itr = 1; itr < argc; ++itr)
 	{
-		in_sw_tab_t* inSw = findSwitch(argv[itr], false);
+		const in_sw_tab_t* inSw = findSwitch(argv[itr], false);
 		if (! inSw)
 		{
 			continue;

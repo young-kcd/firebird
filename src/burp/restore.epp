@@ -5831,7 +5831,7 @@ bool get_mapping(BurpGlobals* tdgbl)
 		BURP_verbose(298, ADMIN_ROLE);
 		//msg 298, restoring map @1
 		Firebird::string sql;
-		sql.printf("%s ('%s',%d) %s", 
+		sql.printf("%s ('%s', %d) %s", 
 			"UPDATE OR INSERT INTO RDB$ROLES(RDB$ROLE_NAME, RDB$SYSTEM_FLAG) VALUES",
 			ADMIN_ROLE, ROLE_FLAG_MAY_TRUST | ROLE_FLAG_DBO, 
 			"MATCHING (RDB$ROLE_NAME)");

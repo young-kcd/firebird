@@ -157,7 +157,6 @@ int CMD_compile_ddl(gpre_req* request)
 		create_database_modify_dyn(request, action);
 		break;
 
-
 	case ACT_create_domain:
 		create_domain(request, action);
 		break;
