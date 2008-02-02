@@ -500,6 +500,27 @@ inline void* operator new[](size_t s, Firebird::MemoryPool& pool) {
 
 namespace Firebird
 {
+	// Global storage makes it possible to use new and delete for classes,
+	// based on it, to behave traditionally, i.e. get memory from permanent pool.
+	class GlobalStorage {
+	public:
+		void* operator new(size_t size)
+		{
+			return getDefaultMemoryPool()->allocate(size);
+		}
+
+		void operator delete(void* mem)
+		{
+			getDefaultMemoryPool()->deallocate(mem);
+		}
+
+		MemoryPool& getPool() const 
+		{ 
+			return *getDefaultMemoryPool();
+		}
+	};
+	
+
 	// Permanent storage is used as base class for all objects,
 	// performing memory allocation in methods other than 
 	// constructors of this objects. Permanent means that pool,
