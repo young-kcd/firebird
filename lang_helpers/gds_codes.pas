@@ -681,6 +681,7 @@ const
 	gds_dyn_miss_priv_warning            = 336068855;
 	gds_dyn_ods_not_supp_feature         = 336068856;
 	gds_dyn_cannot_addrem_computed       = 336068857;
+	gds_dyn_no_empty_pw                  = 336068858;
 	gds_gbak_unknown_switch              = 336330753;
 	gds_gbak_page_size_missing           = 336330754;
 	gds_gbak_page_size_toobig            = 336330755;

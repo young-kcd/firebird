@@ -2029,7 +2029,7 @@ COMMIT WORK;
 ('dyn_miss_priv_warning', 'revoke_permission', 'dyn.epp', NULL, 8, 247, NULL, 'Warning: @1 on @2 is not granted to @3.', NULL, NULL);
 ('dyn_ods_not_supp_feature', 'DYN_define_relation', 'dyn_def.epp', NULL, 8, 248, NULL, 'Feature ''@1'' is not supported in ODS @2.@3', NULL, NULL);
 ('dyn_cannot_addrem_computed', 'DYN_modify_sql_field', 'dyn_mod.epp', NULL, 8, 249, NULL, 'Cannot add or remove COMPUTED from column @1', NULL, NULL);
-(NULL, 'dyn_user', 'dyn.epp', NULL, 8, 250, NULL, 'Password should not be empty string', NULL, NULL);
+('dyn_no_empty_pw', 'dyn_user', 'dyn.epp', NULL, 8, 250, NULL, 'Password should not be empty string', NULL, NULL);
 COMMIT WORK;
 -- TEST
 (NULL, 'main', 'test.c', NULL, 11, 0, 0, 'This is a modified text message', NULL, NULL);
