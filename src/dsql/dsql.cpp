@@ -862,7 +862,6 @@ ISC_STATUS callback_execute_immediate( ISC_STATUS* status,
 	YValve::Attachment* why_db_handle = NULL;
 	YValve::Transaction* why_trans_handle = NULL;
 
-
 	try 
 	{
 		dsql_dbb* database = NULL;
