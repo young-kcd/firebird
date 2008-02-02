@@ -99,7 +99,10 @@ public:
 	typedef void (*shutdown_fct_t) (ULONG);
 	static void shutdown_init(shutdown_fct_t fptr, ULONG param);
 #endif // SERVER_SHUTDOWN
-	
+
+	// Firebird log reader
+	static THREAD_ENTRY_DECLARE readFbLog(THREAD_ENTRY_PARAM arg);
+
 public:		// utilities interface with service
 	// printf() to svc_stdout
     virtual void printf(const SCHAR* format, ...);
@@ -147,8 +150,6 @@ private:
 	// Service must have private destructor, called from finish
 	// when both (server and client) threads are finished
 	~Service();
-	// Firebird log reader
-	static THREAD_ENTRY_DECLARE readFbLog(THREAD_ENTRY_PARAM arg);
 	void	readFbLog();
 	// Create argv, argc and svc_parsed_sw
 	void	parseSwitches();
