@@ -21,7 +21,7 @@
 
 /* Sort this file with "sort -b +1 +0" */
 
-{"ABNORMAL", KW_ABNORMAL},
+	{"ABNORMAL", KW_ABNORMAL},
 #ifdef SCROLLABLE_CURSORS
 	{"ABSOLUTE", KW_ABSOLUTE},
 #endif

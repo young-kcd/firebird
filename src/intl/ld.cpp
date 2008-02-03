@@ -556,10 +556,6 @@ INTL_BOOL FB_DLL_EXPORT LD_lookup_texttype(texttype* tt, const ASCII* texttype_n
 	}
 }
 
-#undef DRIVER
-#undef CHARSET_INIT
-#undef CONVERT_INIT_BI
-
 
 ULONG FB_DLL_EXPORT LD_setup_attributes(
 	const ASCII* textTypeName, const ASCII* charSetName, const ASCII* configInfo,

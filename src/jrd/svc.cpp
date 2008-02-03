@@ -189,8 +189,10 @@ namespace {
 								address_stack.moveNext();
 								continue;
 							}
+
 							Firebird::ClumpletReader address(Firebird::ClumpletReader::UnTagged, 
 								address_stack.getBytes(), address_stack.getClumpLength());
+
 							while (!address.isEof()) 
 							{
 								switch (address.getClumpTag()) 
@@ -204,13 +206,15 @@ namespace {
 								default:
 									break;
 								}
+
 								address.moveNext();
 							}
+
 							break;
 						}
 					}
-					break;
 
+					break;
 				}
 			}
 		}
@@ -1091,8 +1095,7 @@ ISC_STATUS Service::query2(thread_db* tdbb,
 			put(&item, 1);
 			get(&item, 1, GET_BINARY, 0, &length);
 			get(buffer, 2, GET_BINARY, 0, &length);
-			l = (USHORT) gds__vax_integer(reinterpret_cast<
-										  UCHAR*>(buffer), 2);
+			l = (USHORT) gds__vax_integer(reinterpret_cast<UCHAR*>(buffer), 2);
 			get(buffer, l, GET_BINARY, 0, &length);
 			if (!(info = INF_put_item(item, length, buffer, info, end))) {
 				return 0;
@@ -1142,13 +1145,9 @@ ISC_STATUS Service::query2(thread_db* tdbb,
 				{
 					*info++ = isc_info_data_not_ready;
 				}
-				else
+				else if (item == isc_info_svc_to_eof && !(svc_flags & SVC_finished))
 				{
-					if (item == isc_info_svc_to_eof &&
-						!(svc_flags & SVC_finished))
-					{
-						*info++ = isc_info_truncated;
-					}
+					*info++ = isc_info_truncated;
 				}
 			}
 			break;
@@ -1382,27 +1381,19 @@ void Service::query(USHORT			send_item_length,
 		case isc_info_svc_version:
 			/* The version of the service manager */
 
-			length =
-				INF_convert(SERVICE_VERSION, buffer);
-			if (!
-				(info =
-				 INF_put_item(item, length, buffer, info, end)))
-			{
+			length = INF_convert(SERVICE_VERSION, buffer);
+			info = INF_put_item(item, length, buffer, info, end);
+			if (!info)
 				return;
-			}
 			break;
 
 		case isc_info_svc_capabilities:
 			/* bitmask defining any specific architectural differences */
 
-			length =
-				INF_convert(SERVER_CAPABILITIES_FLAG, buffer);
-			if (!
-				(info =
-				 INF_put_item(item, length, buffer, info, end)))
-			{
+			length = INF_convert(SERVER_CAPABILITIES_FLAG, buffer);
+			info = INF_put_item(item, length, buffer, info, end);
+			if (!info)
 				return;
-			}
 			break;
 
 		case isc_info_svc_server_version:
@@ -1695,8 +1686,9 @@ void Service::start(USHORT spb_length, const SCHAR* spb_data)
 		gds__free(svc_stdout);
 
 	svc_stdout = (UCHAR*)gds__alloc((SLONG) SVC_STDOUT_BUFFER_SIZE + 1);
-/* FREE: at SVC_detach() */
-	if (!svc_stdout)	/* NOMEM: */
+
+	// FREE: at SVC_detach()
+	if (!svc_stdout)	// NOMEM:
 	{
 		Firebird::status_exception::raise(isc_virmemexh, 0);
 	}
@@ -1704,8 +1696,7 @@ void Service::start(USHORT spb_length, const SCHAR* spb_data)
 	if (serv->serv_thd) {
 		svc_flags &= ~SVC_evnt_fired;
 
-		gds__thread_start(serv->serv_thd, this, THREAD_medium, 0,
-						  (void *) &svc_handle);
+		gds__thread_start(serv->serv_thd, this, THREAD_medium, 0, (void *) &svc_handle);
 
 		// Check for the service being detached. This will prevent the thread
 		// from waiting infinitely if the client goes away.
@@ -1736,7 +1727,7 @@ void Service::start(USHORT spb_length, const SCHAR* spb_data)
 
 THREAD_ENTRY_DECLARE Service::readFbLog(THREAD_ENTRY_PARAM arg)
 {
-	Service* service = (Service*)arg;
+	Service* service = (Service*) arg;
 	service->readFbLog();
 	return 0;
 }
@@ -1833,7 +1824,7 @@ void Service::start(ThreadEntryPoint* service_thread)
 		argv[0] = svc_service->serv_name;
 	}
 
-	gds__thread_start(service_thread, this, THREAD_medium, 0, (void*)&svc_handle);
+	gds__thread_start(service_thread, this, THREAD_medium, 0, (void*) &svc_handle);
 }
 
 
@@ -1894,7 +1885,7 @@ void Service::get(SCHAR*	buffer,
 
 void Service::put(const SCHAR* buffer, USHORT length)
 {
-/* Nothing */
+	// Nothing
 }
 
 
@@ -2234,10 +2225,10 @@ bool Service::get_action_svc_bitmask(const Firebird::ClumpletReader& spb,
 void Service::get_action_svc_string(const Firebird::ClumpletReader& spb,
 									Firebird::string& switches)
 {
-// All string parameters are delimited by SVC_TRMNTR.
-// This is done to ensure that paths with spaces are handled correctly
-// when creating the argc / argv paramters for the service.
-// SVC_TRMNTRs inside the string are duplicated.
+	// All string parameters are delimited by SVC_TRMNTR.
+	// This is done to ensure that paths with spaces are handled correctly
+	// when creating the argc / argv paramters for the service.
+	// SVC_TRMNTRs inside the string are duplicated.
 
 	Firebird::string s;
 	spb.getString(s);

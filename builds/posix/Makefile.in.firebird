@@ -331,7 +331,8 @@ otherfiles: misc_files
 .PHONY: embed_gpre embed_util
 
 classic_targets: $(PLAT_CLASSIC_PRE_TARGET) libfbembed inet_server embed_gfix embed_gbak embed_isql \
-	embed_gpre embed_util embed_gdef embed_qli embed_fbudf libfbclient $(PLAT_CLASSIC_POST_TARGET)
+	embed_gpre embed_util embed_gdef embed_fbudf libfbclient $(PLAT_CLASSIC_POST_TARGET)
+#embed_qli
 
 libfbembed:
 	$(MAKE) -f $(GEN_ROOT)/Makefile.libfbembed $@
@@ -369,7 +370,8 @@ embed_fbudf:
 .PHONY: libfbclient client_gfix client_gbak client_isql client_gpre client_util client_fbudf
 
 super_targets: $(PLAT_SUPER_PRE_TARGET) fbserver libfbclient client_gfix client_gbak client_gsec\
-			client_isql client_gpre client_util client_fbudf client_gdef client_qli $(PLAT_SUPER_POST_TRAGET) 
+			client_isql client_gpre client_util client_fbudf client_gdef $(PLAT_SUPER_POST_TRAGET) 
+#client_qli
 
 fbserver:
 	$(MAKE) -f $(GEN_ROOT)/Makefile.fbserver $@

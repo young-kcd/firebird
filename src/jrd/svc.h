@@ -194,7 +194,7 @@ private:
 	// Create 'SYSDBA needed' error in status vector 
 	static void need_admin_privs(ISC_STATUS** status, const char* message);
 	// Does info buffer have enough space for SLONG?
-	static bool Service::ck_space_for_numeric(char*& info, const char* const end);
+	static bool ck_space_for_numeric(char*& info, const char* const end);
 
 private:
 	ISC_STATUS_ARRAY svc_status_array;

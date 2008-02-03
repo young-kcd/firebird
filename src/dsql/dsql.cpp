@@ -4071,6 +4071,9 @@ static bool get_rsb_item(SSHORT*		explain_length_ptr,
  **/
 static dsql_dbb* init(FB_API_HANDLE* db_handle)
 {
+	if (init_flag && !db_handle)	// no need to enter in the critical section
+		return NULL;
+
 	databases_mutex->enter();
 
 	if (!init_flag)

@@ -5203,8 +5203,7 @@ static ISC_STATUS rollback(ISC_STATUS* user_status,
 						tdbb->tdbb_status_vector = temp_status;
 
 						// run ON TRANSACTION ROLLBACK triggers
-						EXE_execute_db_triggers(tdbb, transaction,
-												jrd_req::req_trigger_trans_rollback);
+						EXE_execute_db_triggers(tdbb, transaction, jrd_req::req_trigger_trans_rollback);
 					}
 					catch (const Firebird::Exception&)
 					{

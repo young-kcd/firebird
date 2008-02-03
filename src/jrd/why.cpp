@@ -1899,7 +1899,6 @@ ISC_STATUS API_ROUTINE GDS_DETACH(ISC_STATUS * user_status,
 			}
 #endif
 
-
 			if (CALL(PROC_DETACH, dbb->implementation) (status, &dbb->handle))
 				return status[1];
 
