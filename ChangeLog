@@ -1,3 +1,9 @@
+2008-02-02 14:30  alexpeshkoff
+
+	* firebird2/src/jrd/svc.cpp (1.67.2.11):
+
+	backport for core 1603
+
 2008-01-29 12:35  alexpeshkoff
 
 	* firebird2/src/jrd/scl.epp (1.21.2.6):
