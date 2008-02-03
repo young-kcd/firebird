@@ -310,6 +310,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\dsql\Parser.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\dsql\pass1.cpp"
 				>
 			</File>
@@ -446,6 +450,10 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\dsql\parse_proto.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\dsql\Parser.h"
 				>
 			</File>
 			<File

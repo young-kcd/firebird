@@ -71,6 +71,7 @@ nested FOR loops are added.
 #include "../jrd/align.h"
 #include "../jrd/intl.h"
 #include "../jrd/iberr.h"
+#include "../dsql/Parser.h"
 #include "../dsql/alld_proto.h"
 #include "../dsql/ddl_proto.h"
 #include "../dsql/dsql_proto.h"
@@ -146,8 +147,6 @@ static void		sql_info(dsql_req*, USHORT, const UCHAR*, USHORT, UCHAR*);
 static UCHAR*	var_info(dsql_msg*, const UCHAR*, const UCHAR* const, UCHAR*,
 	const UCHAR* const, USHORT);
 
-extern dsql_nod* DSQL_parse;
-
 #ifdef DSQL_DEBUG
 unsigned DSQL_debug = 0;
 #endif
@@ -181,7 +180,6 @@ static const UCHAR sql_records_info[] = {
 
 static Firebird::GlobalPtr<Firebird::Mutex> databases_mutex;
 static Firebird::GlobalPtr<Firebird::Mutex> cursors_mutex;
-static Firebird::GlobalPtr<Firebird::Mutex> parse_mutex;	// ASF: to be removed when the parser become MT-safe
 
 
 #ifdef DSQL_DEBUG
@@ -4534,8 +4532,10 @@ static dsql_req* prepare(
 	MOVE_CLEAR(local_status, sizeof(local_status));
 
 	if (client_dialect > SQL_DIALECT_CURRENT)
+	{
 		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 901,
 				  isc_arg_gds, isc_wish_list, 0);
+	}
 
 	if (!string_length)
 		string_length = strlen(string);
@@ -4551,19 +4551,14 @@ static dsql_req* prepare(
 		}
 	}
 
-	Firebird::MutexLockGuard guard(parse_mutex);
+	// Parse the SQL statement.  If it croaks, return 
 
-// Allocate a storage pool and get ready to parse 
+	Parser parser(client_dialect, request->req_dbb->dbb_db_SQL_dialect, parser_version,
+		string, string_length, request->req_dbb->dbb_att_charset);
 
-	LEX_string(string, string_length, request->req_dbb->dbb_att_charset);
+	dsql_nod* node = parser.parse();
 
-// Parse the SQL statement.  If it croaks, return 
-
-	bool stmt_ambiguous = false;
-	if (dsql_yyparse(client_dialect,
-	                 request->req_dbb->dbb_db_SQL_dialect,
-	                 parser_version,
-	                 &stmt_ambiguous))
+	if (!node)
 	{
 		// CVC: Apparently, dsql_ypparse won't return if the command is incomplete,
 		// because yyerror() will call ERRD_post().
@@ -4600,13 +4595,13 @@ static dsql_req* prepare(
  * Error will be caught at execute time.
  */
 
-	dsql_nod* node = PASS1_statement(request, DSQL_parse, false);
+	node = PASS1_statement(request, node, false);
 	if (!node)
 		return request;
 
 // stop here for requests not requiring code generation 
 
-	if (request->req_type == REQ_DDL && stmt_ambiguous &&
+	if (request->req_type == REQ_DDL && parser.isStmtAmbiguous() &&
 		request->req_dbb->dbb_db_SQL_dialect != client_dialect)
 	{
 		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 817,

@@ -119,7 +119,6 @@ const int UNSIGNED	= 2;
 // Using this option causes build problems on Win32 with bison 1.28
 //#define YYSTACK_USE_ALLOCA 1
 
-typedef dsql_nod* YYSTYPE;
 #define YYSTYPE YYSTYPE
 #if defined(DEBUG) || defined(DEV_BUILD)
 #define YYDEBUG		1
@@ -136,34 +135,21 @@ inline SLONG trigger_type_suffix(const int slot1, const int slot2, const int slo
 }
 
 
-dsql_nod* DSQL_parse;
-
-
-#define YYPARSE_PARAM_TYPE
-#define YYPARSE_PARAM USHORT client_dialect, USHORT db_dialect, USHORT parser_version, bool* stmt_ambiguous
-
 #include "../dsql/chars.h"
 
 const int MAX_TOKEN_LEN = 256;
 
-static const TEXT* lex_position();
 #ifdef NOT_USED_OR_REPLACED
 static bool		long_int(dsql_nod*, SLONG*);
 #endif
 static dsql_fld*	make_field (dsql_nod*);
 static dsql_fil*	make_file();
-static dsql_nod*	make_list (dsql_nod*);
-static dsql_nod*	make_node (NOD_TYPE, int, ...);
-static dsql_nod*	make_parameter (void);
-static dsql_nod*	make_flag_node (NOD_TYPE, SSHORT, int, ...);
 static void	prepare_console_debug (int, int  *);
 #ifdef NOT_USED_OR_REPLACED
 static bool	short_int(dsql_nod*, SLONG*, SSHORT);
 #endif
 static void	stack_nodes (dsql_nod*, DsqlNodStack&);
-inline static int	yylex (USHORT, USHORT, USHORT, bool*);
 
-static void	yyerror(const TEXT*);
 static void	yyabandon (SLONG, ISC_STATUS);
 
 inline void check_bound(const char* const to, const char* const string)
@@ -177,37 +163,6 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 	check_bound(to, string); 
 	*to++ = ch;
 }
-
-struct LexerState {
-	/* This is, in fact, parser state. Not used in lexer itself */
-	dsql_fld* g_field;
-	dsql_fil* g_file;
-	dsql_nod* g_field_name;
-	int dsql_debug;
-	
-	/* Actual lexer state begins from here */
-	const TEXT* beginning;
-	const TEXT* ptr;
-	const TEXT* end;
-	const TEXT* last_token;
-	const TEXT* line_start;
-	const TEXT* last_token_bk;
-	const TEXT* line_start_bk;
-	SSHORT	lines, att_charset;
-	SSHORT	lines_bk;
-	int  prev_keyword;
-	USHORT	param_number;
-	
-	int yylex (
-		USHORT	client_dialect,
-		USHORT	db_dialect,
-		USHORT	parser_version,
-		bool* stmt_ambiguous);
-};
-
-/* Get ready for thread-safety. Move this to BISON object pointer when we 
-   switch to generating "pure" reenterant parser. */
-static LexerState lex;
 
 %}
 
@@ -2623,7 +2578,7 @@ non_charset_simple_type	: national_character_type
 			}
 		| DATE
 			{ 
-			*stmt_ambiguous = true;
+			stmt_ambiguous = true;
 			if (client_dialect <= SQL_DIALECT_V5)
 				{
 				/* Post warning saying that DATE is equivalent to TIMESTAMP */
@@ -4963,38 +4918,7 @@ void LEX_dsql_init (void)
 }
 
 
-void LEX_string (
-	const TEXT* string,
-	USHORT	length,
-	SSHORT	character_set)
-{
-/**************************************
- *
- *	L E X _ s t r i n g
- *
- **************************************
- *
- * Functional description
- *	Initialize LEX to process a string.
- *
- **************************************/
-
-	lex.line_start = lex.ptr = string;
-	lex.end = string + length;
-	lex.lines = 1;
-	lex.att_charset = character_set;
-	lex.line_start_bk = lex.line_start;
-	lex.lines_bk = lex.lines;
-	lex.param_number = 1;
-	lex.prev_keyword = -1;
-#ifdef DSQL_DEBUG
-	if (DSQL_debug & 32)
-		dsql_trace("Source DSQL string:\n%.*s", (int)length, string);
-#endif
-}
-
-
-static const TEXT* lex_position (void)
+const TEXT* Parser::lex_position()
 {
 /**************************************
  *
@@ -5095,7 +5019,7 @@ static dsql_fil* make_file()
 }
 
 
-static dsql_nod* make_list (dsql_nod* node)
+dsql_nod* Parser::make_list (dsql_nod* node)
 {
 /**************************************
  *
@@ -5135,7 +5059,7 @@ static dsql_nod* make_list (dsql_nod* node)
 }
 
 
-static dsql_nod* make_parameter (void)
+dsql_nod* Parser::make_parameter()
 {
 /**************************************
  *
@@ -5161,9 +5085,7 @@ static dsql_nod* make_parameter (void)
 }
 
 
-static dsql_nod* make_node (NOD_TYPE	type,
-						   int count,
-						   ...)
+dsql_nod* Parser::make_node(NOD_TYPE type, int count, ...)
 {
 /**************************************
  *
@@ -5195,10 +5117,7 @@ static dsql_nod* make_node (NOD_TYPE	type,
 }
 
 
-static dsql_nod* make_flag_node (NOD_TYPE	type,
-								SSHORT	flag,
-								int		count,
-								...)
+dsql_nod* Parser::make_flag_node(NOD_TYPE type, SSHORT flag, int count, ...)
 {
 /**************************************
  *
@@ -5389,97 +5308,88 @@ static void stack_nodes (dsql_nod*	node,
 		stack_nodes (*ptr, stack);
 }
 
-inline static int yylex (
-	USHORT	client_dialect,
-	USHORT	db_dialect,
-	USHORT	parser_version,
-	bool* stmt_ambiguous)
+int Parser::yylex()
 {
-	lex.prev_keyword =
-		lex.yylex(client_dialect, db_dialect, parser_version, stmt_ambiguous);
+	lex.prev_keyword = yylexAux();
 	return lex.prev_keyword;
 }
 
-int LexerState::yylex (
-	USHORT	client_dialect,
-	USHORT	db_dialect,
-	USHORT	parser_version,
-	bool* stmt_ambiguous)
+int Parser::yylexAux()
 {
 /**************************************
  *
- *	y y l e x
+ *	y y l e x A u x
  *
  **************************************
  *
  * Functional description: lexer.
  *
  **************************************/
-	UCHAR	tok_class;
-	char  string[MAX_TOKEN_LEN];
-	SSHORT	c;
+	UCHAR tok_class;
+	char string[MAX_TOKEN_LEN];
+	SSHORT c;
 
 	/* Find end of white space and skip comments */
 
 	for (;;)
 	{
-		if (ptr >= end)
+		if (lex.ptr >= lex.end)
 			return -1;
 
-		c = *ptr++;
+		c = *lex.ptr++;
 
 		/* Process comments */
 
 		if (c == '\n') {
-			lines++;
-			line_start = ptr;
+			lex.lines++;
+			lex.line_start = lex.ptr;
 			continue;
 		}
 
-		if ((c == '-') && (*ptr == '-'))
+		if ((c == '-') && (*lex.ptr == '-'))
 		{
 			
 			/* single-line */
 			
-			ptr++;
-			while (ptr < end) {
-				if ((c = *ptr++) == '\n') {
-					lines++;
-					line_start = ptr /* + 1*/; /* CVC: +1 left out. */
+			lex.ptr++;
+			while (lex.ptr < lex.end) {
+				if ((c = *lex.ptr++) == '\n') {
+					lex.lines++;
+					lex.line_start = lex.ptr /* + 1*/; /* CVC: +1 left out. */
 					break;
 				}
 			}
-			if (ptr >= end)
+			if (lex.ptr >= lex.end)
 				return -1;
 			continue;
 		}
-		else if ((c == '/') && (*ptr == '*'))
+		else if ((c == '/') && (*lex.ptr == '*'))
 		{
 			
 			/* multi-line */
 			
-			const TEXT& start_block = ptr[-1];
-			ptr++;
-			while (ptr < end) {
-				if ((c = *ptr++) == '*') {
-					if (*ptr == '/')
+			const TEXT& start_block = lex.ptr[-1];
+			lex.ptr++;
+			while (lex.ptr < lex.end) {
+				if ((c = *lex.ptr++) == '*') {
+					if (*lex.ptr == '/')
 						break;
 				}
 				if (c == '\n') {
-					lines++;
-					line_start = ptr /* + 1*/; /* CVC: +1 left out. */
+					lex.lines++;
+					lex.line_start = lex.ptr /* + 1*/; /* CVC: +1 left out. */
 
 				}
 			}
-			if (ptr >= end)
+			if (lex.ptr >= lex.end)
 			{
 				// I need this to report the correct beginning of the block,
 				// since it's not a token really.
-				last_token = &start_block;
+				lex.last_token = &start_block;
 				yyerror("unterminated block comment");
 				return -1;
 			}
-			ptr++;
+			lex.ptr++;
 			continue;
 		}
 
@@ -5491,7 +5401,7 @@ int LexerState::yylex (
 
 	/* Depending on tok_class of token, parse token */
 
-	last_token = ptr - 1;
+	lex.last_token = lex.ptr - 1;
 
 	if (tok_class & CHR_INTRODUCER)
 	{
@@ -5499,11 +5409,11 @@ int LexerState::yylex (
 		 * to become the name of the character set
 		 */
 		char* p = string;
-		for (; ptr < end && classes(*ptr) & CHR_IDENT; ptr++)
+		for (; lex.ptr < lex.end && classes(*lex.ptr) & CHR_IDENT; lex.ptr++)
 		{
-			if (ptr >= end)
+			if (lex.ptr >= lex.end)
 				return -1;
-			check_copy_incr(p, UPPER7(*ptr), string);
+			check_copy_incr(p, UPPER7(*lex.ptr), string);
 		}
 		
 		check_bound(p, string);
@@ -5527,7 +5437,7 @@ int LexerState::yylex (
 		char* p;
 		for (p = buffer; ; ++p)
 		{
-			if (ptr >= end)
+			if (lex.ptr >= lex.end)
 			{
 				if (buffer != string)
 					gds__free (buffer);
@@ -5535,12 +5445,12 @@ int LexerState::yylex (
 				return -1;
 			}
 			// Care about multi-line constants and identifiers
-			if (*ptr == '\n') {
-				lines++;
-				line_start = ptr + 1;
+			if (*lex.ptr == '\n') {
+				lex.lines++;
+				lex.line_start = lex.ptr + 1;
 			}
-			/* *ptr is quote - if next != quote we're at the end */
-			if ((*ptr == c) && ((++ptr == end) || (*ptr != c)))
+			/* *lex.ptr is quote - if next != quote we're at the end */
+			if ((*lex.ptr == c) && ((++lex.ptr == lex.end) || (*lex.ptr != c)))
 				break;
 			if (p > buffer_end)
 			{
@@ -5560,11 +5470,11 @@ int LexerState::yylex (
 				buffer_len = 2 * buffer_len;
 				buffer_end = buffer + buffer_len - 1;
 			}
-			*p = *ptr++;
+			*p = *lex.ptr++;
 		}
 		if (c == '"')
 		{
-			*stmt_ambiguous = true; /* string delimited by double quotes could be
+			stmt_ambiguous = true; /* string delimited by double quotes could be
 					**   either a string constant or a SQL delimited
 					**   identifier, therefore marks the SQL
 					**   statement as ambiguous  */
@@ -5622,10 +5532,10 @@ int LexerState::yylex (
  *   ptr points to the next character.
  */
 
-	fb_assert(ptr <= end);
+	fb_assert(lex.ptr <= lex.end);
 
 	if ((tok_class & CHR_DIGIT) ||
-		((c == '.') && (ptr < end) && (classes(*ptr) & CHR_DIGIT)))
+		((c == '.') && (lex.ptr < lex.end) && (classes(*lex.ptr) & CHR_DIGIT)))
 	{
 		/* The following variables are used to recognize kinds of numbers. */
 
@@ -5638,9 +5548,9 @@ int LexerState::yylex (
 		FB_UINT64 number		= 0;
 		FB_UINT64 limit_by_10	= MAX_SINT64 / 10;
 
-		for (--ptr ; ptr < end ; ptr++)
+		for (--lex.ptr ; lex.ptr < lex.end ; lex.ptr++)
 		{
-			c = *ptr;
+			c = *lex.ptr;
 			if (have_exp_digit && (! (classes(c) & CHR_DIGIT)))
 				/* First non-digit after exponent and digit terminates
 				 the token. */
@@ -5711,10 +5621,10 @@ int LexerState::yylex (
 
 			if (have_exp_digit)
 			{
-				yylval = (dsql_nod*) MAKE_string(last_token, ptr - last_token);
-				last_token_bk = last_token;
-				line_start_bk = line_start;
-				lines_bk = lines;
+				yylval = (dsql_nod*) MAKE_string(lex.last_token, lex.ptr - lex.last_token);
+				lex.last_token_bk = lex.last_token;
+				lex.line_start_bk = lex.line_start;
+				lex.lines_bk = lex.lines;
 
 				return FLOAT_NUMBER;
 			}
@@ -5748,17 +5658,17 @@ int LexerState::yylex (
 						 */
 						ERRD_post_warning( isc_dsql_warning_number_ambiguous,
 							   isc_arg_string,
-							   ERR_string( last_token, ptr - last_token ),
+							   ERR_string( lex.last_token, lex.ptr - lex.last_token ),
 							   isc_arg_end );
 						ERRD_post_warning( isc_dsql_warning_number_ambiguous1,
 							   isc_arg_end );
 					}
 
-					yylval = (dsql_nod*) MAKE_string(last_token, ptr - last_token);
+					yylval = (dsql_nod*) MAKE_string(lex.last_token, lex.ptr - lex.last_token);
 
-					last_token_bk = last_token;
-					line_start_bk = line_start;
-					lines_bk = lines;
+					lex.last_token_bk = lex.last_token;
+					lex.line_start_bk = lex.line_start;
+					lex.lines_bk = lex.lines;
 
 					if (client_dialect < SQL_DIALECT_V6_TRANSITION)
 						return FLOAT_NUMBER;
@@ -5777,8 +5687,8 @@ int LexerState::yylex (
 
 	/* Restore the status quo ante, before we started our unsuccessful
 	   attempt to recognize a number. */
-	ptr = last_token;
-	c   = *ptr++;
+	lex.ptr = lex.last_token;
+	c   = *lex.ptr++;
 	/* We never touched tok_class, so it doesn't need to be restored. */
 
 	/* end of number-recognition code */
@@ -5788,41 +5698,41 @@ int LexerState::yylex (
 	{
 		char* p = string;
 		check_copy_incr(p, UPPER (c), string);
-		for (; ptr < end && classes(*ptr) & CHR_IDENT; ptr++)
+		for (; lex.ptr < lex.end && classes(*lex.ptr) & CHR_IDENT; lex.ptr++)
 		{
-			if (ptr >= end)
+			if (lex.ptr >= lex.end)
 				return -1;
-			check_copy_incr(p, UPPER (*ptr), string);
+			check_copy_incr(p, UPPER (*lex.ptr), string);
 		}
 
 		check_bound(p, string);
 		*p = 0;
 		dsql_sym* sym =
 			HSHD_lookup (NULL, (TEXT *) string, (SSHORT)(p - string), SYM_keyword, parser_version);
-		if (sym && (sym->sym_keyword != COMMENT || prev_keyword == -1))
+		if (sym && (sym->sym_keyword != COMMENT || lex.prev_keyword == -1))
 		{
 			yylval = (dsql_nod*) sym->sym_object;
-			last_token_bk = last_token;
-			line_start_bk = line_start;
-			lines_bk = lines;
+			lex.last_token_bk = lex.last_token;
+			lex.line_start_bk = lex.line_start;
+			lex.lines_bk = lex.lines;
 			return sym->sym_keyword;
 		}
 		yylval = (dsql_nod*) MAKE_string(string, p - string);
-		last_token_bk = last_token;
-		line_start_bk = line_start;
-		lines_bk = lines;
+		lex.last_token_bk = lex.last_token;
+		lex.line_start_bk = lex.line_start;
+		lex.lines_bk = lex.lines;
 		return SYMBOL;
 	}
 
 	/* Must be punctuation -- test for double character punctuation */
 
-	if (last_token + 1 < end)
+	if (lex.last_token + 1 < lex.end)
 	{
 		dsql_sym* sym =
-			HSHD_lookup (NULL, last_token, (SSHORT) 2, SYM_keyword, (USHORT) parser_version);
+			HSHD_lookup (NULL, lex.last_token, (SSHORT) 2, SYM_keyword, (USHORT) parser_version);
 		if (sym)
 		{
-			++ptr;
+			++lex.ptr;
 			return sym->sym_keyword;
 		}
 	}
@@ -5833,7 +5743,7 @@ int LexerState::yylex (
 }
 
 
-static void yyerror_detailed(const TEXT* error_string, int yychar, YYSTYPE&, YYPOSN&)
+void Parser::yyerror_detailed(const TEXT* error_string, int yychar, YYSTYPE&, YYPOSN&)
 {
 /**************************************
  *
@@ -5876,7 +5786,7 @@ static void yyerror_detailed(const TEXT* error_string, int yychar, YYSTYPE&, YYP
 
 // The argument passed to this function is ignored. Therefore, messages like
 // "syntax error" and "yacc stack overflow" are never seen.
-static void yyerror(const TEXT* error_string)
+void Parser::yyerror(const TEXT* error_string)
 {
 	YYSTYPE errt_value =  0;
 	YYPOSN errt_posn = -1;
