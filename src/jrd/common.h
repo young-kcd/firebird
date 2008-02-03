@@ -704,8 +704,6 @@ struct ISC_TIMESTAMP
 /* data movement and allocation macros */
 
 #define MOVE_CLEAR(to, length)			memset(to, 0, (size_t) (length))
-#define MOVE_FAST(from, to, length)		memcpy(to, from, (size_t) (length))
-#define MOVE_FASTER(from, to, length)	memcpy(to, from, (size_t) (length))
 
 #ifndef ALLOC_LIB_MEMORY
 #define ALLOC_LIB_MEMORY(size)          gds__alloc (size)

@@ -618,7 +618,7 @@ int copy( const TEXT* from, TEXT* to, ULONG size_len)
 
 	const ULONG l = (ULONG) MISC_symbol_length(from, size_len);
 
-	MOVE_FAST(from, to, l);
+	memcpy(to, from, l);
 	*(to + l) = '\0';
 
 	return (int) l;

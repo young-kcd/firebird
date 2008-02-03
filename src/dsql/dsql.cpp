@@ -4698,7 +4698,7 @@ static dsql_req* prepare(
 // check for warnings 
 	if (tdsql->tsql_status[2] == isc_arg_warning) {
 		// save a status vector 
-		MOVE_FASTER(tdsql->tsql_status, local_status, sizeof(ISC_STATUS_ARRAY));
+		memcpy(local_status, tdsql->tsql_status, sizeof(ISC_STATUS_ARRAY));
 	}
 
 	ISC_STATUS status;
@@ -4729,8 +4729,7 @@ static dsql_req* prepare(
 		len -= 2;
 
 		if ((len + indx - 1) < ISC_STATUS_LENGTH)
-			MOVE_FASTER(&local_status[2], &tdsql->tsql_status[indx],
-						sizeof(ISC_STATUS) * len);
+			memcpy(&tdsql->tsql_status[indx], &local_status[2], sizeof(ISC_STATUS) * len);
 	}
 
 // free blr memory

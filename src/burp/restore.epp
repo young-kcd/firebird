@@ -7567,7 +7567,7 @@ void restore_security_class(BurpGlobals*	tdgbl,
 		get_acl(tdgbl, owner_nm, &X.RDB$ACL, &new_blob_id);
 
 		MODIFY X;
-			MOVE_FAST (&new_blob_id, &X.RDB$ACL, sizeof(ISC_QUAD));
+			memcpy(&X.RDB$ACL, &new_blob_id, sizeof(ISC_QUAD));
 		END_MODIFY;
 		ON_ERROR
 			MISC_release_request_silent(req_handle2);

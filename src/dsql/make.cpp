@@ -1660,7 +1660,7 @@ dsql_sym* MAKE_symbol(dsql_dbb* database,
 	symbol->sym_string = p;
 
 	if (length)
-		MOVE_FAST(name, p, length);
+		memcpy(p, name, length);
 
 	HSHD_insert(symbol);
 
