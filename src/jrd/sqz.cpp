@@ -131,14 +131,14 @@ USHORT SQZ_compress(DataComprControl* dcc, const SCHAR* input, SCHAR* output, in
 					output[-1] = length;
 					if (length > 0)
 					{
-						MOVE_FAST(input, output, length);
+						memcpy(output, input, length);
 						input += length;
 					}
 					return input - start;
 				}
 
 				if (length > 0) {
-					MOVE_FAST(input, output, length);
+					memcpy(output, input, length);
 					output += length;
 					input += length;
 				}
@@ -234,7 +234,7 @@ SCHAR* SQZ_decompress(const SCHAR*	input,
 			{
 				BUGCHECK(179);	/* msg 179 decompression overran buffer */
 			}
-			MOVE_FAST(input, output, l);
+			memcpy(output, input, l);
 			output += l;
 			input += l;
 		}
@@ -405,7 +405,7 @@ void SQZ_fast(DataComprControl* dcc, const SCHAR* input, SCHAR* output)
 			}
 			else if (length > 0)
 			{
-				MOVE_FAST(input, output, length);
+				memcpy(output, input, length);
 				output += length;
 				input += length;
 			}

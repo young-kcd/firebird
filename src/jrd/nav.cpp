@@ -211,7 +211,7 @@ bool NAV_get_record(thread_db* tdbb,
 	if (!nextPointer)
 		return false;
 	temporary_key key;
-	MOVE_FAST(impure->irsb_nav_data, key.key_data, impure->irsb_nav_length);
+	memcpy(key.key_data, impure->irsb_nav_data, impure->irsb_nav_length);
 	jrd_nod* retrieval_node = (jrd_nod*) rsb->rsb_arg[RSB_NAV_index];
 	IndexRetrieval* retrieval = 
 		(IndexRetrieval*) retrieval_node->nod_arg[e_idx_retrieval];
@@ -225,25 +225,22 @@ bool NAV_get_record(thread_db* tdbb,
 	{
 		upper.key_length = impure->irsb_nav_upper_length;
 #ifdef SCROLLABLE_CURSORS
-		MOVE_FAST(
-				  (impure->irsb_nav_data +
-				   (2 * (SLONG) rsb->rsb_arg[RSB_NAV_key_length])),
-				  upper.key_data, upper.key_length);
+		memcpy(upper.key_data,
+				(impure->irsb_nav_data + (2 * (SLONG) rsb->rsb_arg[RSB_NAV_key_length])),
+				upper.key_length);
 #else
-		MOVE_FAST(
-				  (impure->irsb_nav_data +
-				   (IPTR) rsb->rsb_arg[RSB_NAV_key_length]), upper.key_data,
-				  upper.key_length);
+		memcpy(upper.key_data,
+				(impure->irsb_nav_data + (IPTR) rsb->rsb_arg[RSB_NAV_key_length]),
+				upper.key_length);
 #endif
 	}
 #ifdef SCROLLABLE_CURSORS
 	else if ((direction == RSE_get_backward) && retrieval->irb_lower_count) 
 	{
 		lower.key_length = impure->irsb_nav_lower_length;
-		MOVE_FAST(
-				  (impure->irsb_nav_data +
-				   (IPTR) rsb->rsb_arg[RSB_NAV_key_length]), lower.key_data,
-				  lower.key_length);
+		memcpy(lower.key_data,
+				(impure->irsb_nav_data + (IPTR) rsb->rsb_arg[RSB_NAV_key_length]),
+				lower.key_length);
 	}
 #endif
 
@@ -1011,18 +1008,16 @@ static UCHAR* nav_open(
 	// store the upper and lower bounds for the search in the impure area for the rsb
 	if (retrieval->irb_lower_count) {
 		impure->irsb_nav_lower_length = lower.key_length;
-		MOVE_FAST(lower.key_data,
-				  (impure->irsb_nav_data +
-				   (SLONG) rsb->rsb_arg[RSB_NAV_key_length]),
-				  lower.key_length);
+		memcpy((impure->irsb_nav_data + (SLONG) rsb->rsb_arg[RSB_NAV_key_length]),
+				lower.key_data,
+				lower.key_length);
 	}
 
 	if (retrieval->irb_upper_count) {
 		impure->irsb_nav_upper_length = upper.key_length;
-		MOVE_FAST(upper.key_data,
-				  (impure->irsb_nav_data +
-				   (2 * (SLONG) rsb->rsb_arg[RSB_NAV_key_length])),
-				  upper.key_length);
+		memcpy((impure->irsb_nav_data + (2 * (SLONG) rsb->rsb_arg[RSB_NAV_key_length])),
+				upper.key_data,
+				upper.key_length);
 	}
 
 	// find the limit the search needs to begin with, if any
@@ -1042,9 +1037,9 @@ static UCHAR* nav_open(
 	if (direction == RSE_get_forward) {
 		if (retrieval->irb_upper_count) {
 			impure->irsb_nav_upper_length = upper.key_length;
-			MOVE_FAST(upper.key_data, (impure->irsb_nav_data +
-				(IPTR) rsb->rsb_arg[RSB_NAV_key_length]),
-				upper.key_length);
+			memcpy((impure->irsb_nav_data + (IPTR) rsb->rsb_arg[RSB_NAV_key_length]),
+					upper.key_data,
+					upper.key_length);
 		}
 		if (retrieval->irb_lower_count) {
 			limit_ptr = &lower;
@@ -1053,9 +1048,9 @@ static UCHAR* nav_open(
 	else {
 		if (retrieval->irb_lower_count) {
 			impure->irsb_nav_lower_length = lower.key_length;
-			MOVE_FAST(lower.key_data, (impure->irsb_nav_data +
-				(IPTR) rsb->rsb_arg[RSB_NAV_key_length]),
-				lower.key_length);
+			memcpy((impure->irsb_nav_data + (IPTR) rsb->rsb_arg[RSB_NAV_key_length]),
+					lower.key_data,
+					lower.key_length);
 		}
 		if (retrieval->irb_upper_count) {
 			limit_ptr = &upper;
@@ -1149,7 +1144,7 @@ static void set_position(IRSB_NAV impure, record_param* rpb, WIN* window,
 	// save the current key value if it hasn't already been saved 
 	if (key_data) {
 		impure->irsb_nav_length = length;
-		MOVE_FAST(key_data, impure->irsb_nav_data, length);
+		memcpy(impure->irsb_nav_data, key_data, length);
 	}
 
 	// setup the offsets into the current index page and expanded index buffer

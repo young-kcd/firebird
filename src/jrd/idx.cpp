@@ -1378,8 +1378,7 @@ static IDX_E check_partner_index(
 		MOVE_CLEAR(&retrieval, sizeof(IndexRetrieval));
 		//retrieval.blk_type = type_irb;
 		retrieval.irb_index = partner_idx.idx_id;
-		MOVE_FAST(&partner_idx, &retrieval.irb_desc,
-				  sizeof(retrieval.irb_desc));
+		memcpy(&retrieval.irb_desc, &partner_idx, sizeof(retrieval.irb_desc));
 		retrieval.irb_generic = irb_equality | (fuzzy ? irb_starting : 0);
 		retrieval.irb_relation = partner_relation;
 		retrieval.irb_key = &key;

@@ -2553,8 +2553,7 @@ static void modify_lfield_index(thread_db*	tdbb,
 			IDXS.RDB$FIELD_NAME EQ field_name.c_str()
 			/* Change the name of the field in the index */
 		MODIFY IDXS USING
-			MOVE_FASTER(new_fld_name.c_str(), IDXS.RDB$FIELD_NAME,
-						sizeof(IDXS.RDB$FIELD_NAME));
+			memcpy(IDXS.RDB$FIELD_NAME, new_fld_name.c_str(), sizeof(IDXS.RDB$FIELD_NAME));
 		END_MODIFY;
 
 		/* Set the index name to itself to tell the index to rebuild */

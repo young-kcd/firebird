@@ -305,9 +305,9 @@ double CVT_get_double(const dsc* desc, FPTR_ERROR err)
 		return *((float*) desc->dsc_address);
 
 	case DEFAULT_DOUBLE:
-		/* a MOVE_FAST is done in case dsc_address is on a platform dependant
+		/* memcpy is done in case dsc_address is on a platform dependant
 		   invalid alignment address for doubles */
-		MOVE_FAST(desc->dsc_address, &value, sizeof(double));
+		memcpy(&value, desc->dsc_address, sizeof(double));
 		return value;
 
 	case dtype_varying:
@@ -1672,8 +1672,8 @@ void CVT_move(const dsc* from, dsc* to, FPTR_ERROR err)
 
 	case DEFAULT_DOUBLE:
 	#ifdef HPUX
-		double d_value = CVT_get_double(from, err);
-		MOVE_FAST(&d_value, p, sizeof(double));
+		const double d_value = CVT_get_double(from, err);
+		memcpy(p, &d_value, sizeof(double));
 	#else
 		*(double*) p = CVT_get_double(from, err);
 	#endif

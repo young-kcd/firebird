@@ -1778,13 +1778,13 @@ USHORT Service::add_one(USHORT i)
 }
 
 
-bool Service::empty()
+bool Service::empty() const
 {
 	return add_one(svc_stdout_tail) == svc_stdout_head;
 }
 
 
-bool Service::full()
+bool Service::full() const
 {
 	return add_one(add_one(svc_stdout_tail)) == svc_stdout_head;
 }

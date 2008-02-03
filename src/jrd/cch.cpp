@@ -2539,7 +2539,7 @@ bool CCH_write_all_shadows(thread_db* tdbb,
 			);
 
 		page = (pag*) spare_buffer;
-		MOVE_FAST((const UCHAR*) bdb->bdb_buffer, (UCHAR*) page, HDR_SIZE);
+		memcpy(page, bdb->bdb_buffer, HDR_SIZE);
 		old_buffer = bdb->bdb_buffer;
 		bdb->bdb_buffer = page;
 	}
@@ -5786,8 +5786,7 @@ static void prefetch_epilogue(Prefetch* prefetch, ISC_STATUS* status_vector)
 		if (*next_bdb) {
 			pag* page = (*next_bdb)->bdb_buffer;
 			if (next_buffer != reinterpret_cast<char*>(page)) {
-				MOVE_FASTER(next_buffer, (SCHAR *) page,
-							(ULONG) dbb->dbb_page_size);
+				memcpy(page, next_buffer, (ULONG) dbb->dbb_page_size);
 			}
 			if (page->pag_checksum == CCH_checksum(*next_bdb)) {
 				(*next_bdb)->bdb_flags &= ~(BDB_read_pending | BDB_not_valid);

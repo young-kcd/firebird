@@ -1292,7 +1292,7 @@ static bool get_merge_join(
 			mfb->mfb_current_block = 0;
 			UCHAR* first_data = get_merge_data(tdbb, mfb, 0);
 			if (first_data != last_data)
-				MOVE_FASTER(last_data, first_data, map->smb_length);
+				memcpy(first_data, last_data, map->smb_length);
 			mfb->mfb_equal_records = 1;
 			record = 0;
 		}
@@ -1377,7 +1377,7 @@ static bool get_merge_join(
 			first_data = FB_NEW(*tdbb->getDefaultPool()) UCHAR[key_length];
 		else
 			first_data = (UCHAR *) key;
-		MOVE_FASTER(get_merge_data(tdbb, mfb, 0), first_data, key_length);
+		memcpy(first_data, get_merge_data(tdbb, mfb, 0), key_length);
 
 		SLONG record;
 		while ((record = get_merge_record(tdbb, sort_rsb, tail, mode)) >= 0)
@@ -1499,7 +1499,7 @@ static bool get_merge_join(thread_db* tdbb, RecordSource* rsb, irsb_mrg* impure)
 			mfb->mfb_current_block = 0;
 			UCHAR* first_data = get_merge_data(tdbb, mfb, 0);
 			if (first_data != last_data)
-				MOVE_FASTER(last_data, first_data, map->smb_length);
+				memcpy(first_data, last_data, map->smb_length);
 			mfb->mfb_equal_records = 1;
 			record = 0;
 		}
@@ -1571,7 +1571,7 @@ static bool get_merge_join(thread_db* tdbb, RecordSource* rsb, irsb_mrg* impure)
 			first_data = FB_NEW(*tdbb->getDefaultPool()) UCHAR[key_length];
 		else
 			first_data = (UCHAR *) key;
-		MOVE_FASTER(get_merge_data(tdbb, mfb, 0), first_data, key_length);
+		memcpy(first_data, get_merge_data(tdbb, mfb, 0), key_length);
 
 		SLONG record;
 		while ((record = get_merge_record(tdbb, sort_rsb, tail)) >= 0)
@@ -1689,7 +1689,7 @@ static SLONG get_merge_record(
 		(record % mfb->mfb_blocking_factor) * mfb->mfb_record_size;
 	UCHAR* merge_data = mfb->mfb_block_data + merge_offset;
 
-	MOVE_FASTER(sort_data, merge_data, map->smb_length);
+	memcpy(merge_data, sort_data, map->smb_length);
 	++mfb->mfb_equal_records;
 
 #ifdef SCROLLABLE_CURSORS
@@ -3119,24 +3119,25 @@ static void proc_assignment(thread_db* tdbb,
 		desc2 = *to_desc;
 		desc2.dsc_address = record->rec_data + (IPTR) desc2.dsc_address;
 		if (!DSC_EQUIV(&desc1, &desc2, false))
-			MOV_move(tdbb, &desc1, &desc2);
-
-		else if (desc1.dsc_dtype == dtype_short)
-			*reinterpret_cast<SSHORT*>(desc2.dsc_address) = *reinterpret_cast<SSHORT*>(desc1.dsc_address);
-
-		else if (desc1.dsc_dtype == dtype_long)
-			*reinterpret_cast<SLONG*>(desc2.dsc_address) = *reinterpret_cast<SLONG*>(desc1.dsc_address);
-
-		else if (desc1.dsc_dtype == dtype_int64)
-			*reinterpret_cast<SINT64*>(desc2.dsc_address) = *reinterpret_cast<SINT64*>(desc1.dsc_address);
-
-		else if (((U_IPTR) desc1.dsc_address & (ALIGNMENT - 1)) ||
-				 ((U_IPTR) desc2.dsc_address & (ALIGNMENT - 1)))
 		{
-			MOVE_FAST(desc1.dsc_address, desc2.dsc_address, desc1.dsc_length);
+			MOV_move(tdbb, &desc1, &desc2);
+			return;
 		}
-		else
-			MOVE_FASTER(desc1.dsc_address, desc2.dsc_address, desc1.dsc_length);
+
+		switch (desc1.dsc_dtype)
+		{
+		case dtype_short:
+			*reinterpret_cast<SSHORT*>(desc2.dsc_address) = *reinterpret_cast<SSHORT*>(desc1.dsc_address);
+			break;
+		case dtype_long:
+			*reinterpret_cast<SLONG*>(desc2.dsc_address) = *reinterpret_cast<SLONG*>(desc1.dsc_address);
+			break;
+		case dtype_int64:
+			*reinterpret_cast<SINT64*>(desc2.dsc_address) = *reinterpret_cast<SINT64*>(desc1.dsc_address);
+			break;
+		default:
+			memcpy(desc2.dsc_address, desc1.dsc_address, desc1.dsc_length);
+		}
 	}
 }
 
@@ -3434,9 +3435,9 @@ static void restore_record(record_param* rpb)
 			BUGCHECK(284);
 		record->rec_format = rec_copy->rec_format;
 		record->rec_number = rec_copy->rec_number;
-		MOVE_FAST(rec_copy->rec_data, record->rec_data, size);
+		memcpy(record->rec_data, rec_copy->rec_data, size);
 
-		MOVE_FAST(rpb_copy->srpb_rpb, rpb, sizeof(record_param));
+		memcpy(rpb, rpb_copy->srpb_rpb, sizeof(record_param));
 		rpb->rpb_record = record;
 
 		delete rec_copy;
@@ -3536,14 +3537,14 @@ static void save_record(thread_db* tdbb, record_param* rpb)
 		else
 			rpb->rpb_copy = rpb_copy = FB_NEW(*tdbb->getDefaultPool()) SaveRecordParam();
 
-		MOVE_FAST(rpb, rpb_copy->srpb_rpb, sizeof(record_param));
+		memcpy(rpb_copy->srpb_rpb, rpb, sizeof(record_param));
 		Record* rec_copy = FB_NEW_RPT(*tdbb->getDefaultPool(), size) Record(*tdbb->getDefaultPool());
 		rpb_copy->srpb_rpb->rpb_record = rec_copy;
 
 		rec_copy->rec_length = size;
 		rec_copy->rec_format = record->rec_format;
 		rec_copy->rec_number = record->rec_number;
-		MOVE_FAST(record->rec_data, rec_copy->rec_data, size);
+		memcpy(rec_copy->rec_data, record->rec_data, size);
 	}
 }
 

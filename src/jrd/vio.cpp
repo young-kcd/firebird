@@ -1031,8 +1031,7 @@ void VIO_data(thread_db* tdbb, record_param* rpb, MemoryPool* pool)
 					record = realloc_record(rpb->rpb_record, prior->rec_length);
 				}
 			}
-			MOVE_FASTER(prior->rec_data, record->rec_data,
-						prior->rec_format->fmt_length);
+			memcpy(record->rec_data, prior->rec_data, prior->rec_format->fmt_length);
 		}
 	}
 	else
@@ -3524,8 +3523,7 @@ static void delete_record(thread_db* tdbb, record_param* rpb, SLONG prior_page,
 						record = realloc_record(rpb->rpb_record, prior->rec_length);
 					}
 				}
-				MOVE_FASTER(prior->rec_data, record->rec_data,
-							prior->rec_format->fmt_length);
+				memcpy(record->rec_data, prior->rec_data, prior->rec_format->fmt_length);
 			}
 		}
 		else {

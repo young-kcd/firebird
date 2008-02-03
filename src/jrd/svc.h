@@ -141,7 +141,7 @@ public:		// external interface with service
 	// Detach from service
 	void detach();
 	// get service version
-	USHORT getVersion() 
+	USHORT getVersion() const
 	{
 		return svc_spb_version;
 	}
@@ -158,9 +158,9 @@ private:
 	// Put character to stdout buffer
 	void	enqueueByte(UCHAR c);
 	// true if there is any data in stdout buffer
-	bool	empty();
+	bool	empty() const;
 	// true if no more space in stdout buffer
-	bool	full();
+	bool	full() const;
 	// start service thread
 	void	start(ThreadEntryPoint* service_thread);
 	// Set the flag (either SVC_finished for the main service thread or SVC_detached for the client thread).

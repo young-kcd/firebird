@@ -3941,7 +3941,7 @@ void MET_scan_relation( thread_db* tdbb, jrd_rel* relation)
 
 			case RSR_array_desc:
 				if (array)
-					MOVE_FAST(p, &array->arr_desc, length);
+					memcpy(&array->arr_desc, p, length);
 				break;
 
 			default:    /* Shut up compiler warning */

@@ -517,8 +517,7 @@ ISC_STATUS filter_text(USHORT action, BlobControl* control)
 	const USHORT length = control->ctl_data[0];
 	if (length) {
 		buffer_used = MIN(length, control->ctl_buffer_length);
-		MOVE_FAST((void *) control->ctl_data[1], control->ctl_buffer,
-				  buffer_used);
+		memcpy(control->ctl_buffer, (void*) control->ctl_data[1], buffer_used);
 
 		/* remember how much did not get used */
 
@@ -591,7 +590,7 @@ ISC_STATUS filter_text(USHORT action, BlobControl* control)
 
 			/* save data after found newline */
 
-			MOVE_FAST(p + 1, (void *) control->ctl_data[1], l - 1);
+			memcpy((void*) control->ctl_data[1], p + 1, l - 1);
 
 			/* if there was data in control buffer not moved to user's buffer,
 			   move it to be contiguous with what was saved from user's buffer
@@ -603,7 +602,7 @@ ISC_STATUS filter_text(USHORT action, BlobControl* control)
 
 			if (left_over) {
 				p = reinterpret_cast<UCHAR*>(control->ctl_data[1]) + l - 1;
-				MOVE_FAST(left_over, p, left_length);
+				memcpy(p, left_over, left_length);
 				control->ctl_data[0] += left_length;
 			}
 			return FB_SUCCESS;
@@ -621,7 +620,7 @@ ISC_STATUS filter_text(USHORT action, BlobControl* control)
 
 	control->ctl_segment_length = buffer_used;
 	if (left_over) {
-		MOVE_FAST(left_over, (void *) control->ctl_data[1], left_length);
+		memcpy((void*) control->ctl_data[1], left_over, left_length);
 		control->ctl_data[0] = left_length;
 		return isc_segment;
 	}
@@ -1212,16 +1211,16 @@ static void string_put(BlobControl* control, const char* line)
  *	Add a line of string to a string formatted blob.
  *
  **************************************/
-	const USHORT l = strlen(line);
-	TMP string = (TMP) gds__alloc((SLONG) (sizeof(tmp) + l));
+	const USHORT len = strlen(line);
+	TMP string = (TMP) gds__alloc((SLONG) (sizeof(tmp) + len));
 /* FREE: on isc_blob_filter_close in string_filter() */
 	if (!string) {				/* NOMEM: */
 		fb_assert(FALSE);			/* out of memory */
 		return;					/* & No error handling at this level */
 	}
 	string->tmp_next = NULL;
-	string->tmp_length = l;
-	memcpy(string->tmp_string, line, l);
+	string->tmp_length = len;
+	memcpy(string->tmp_string, line, len);
 
 	TMP prior = (TMP) control->ctl_data[1];
 	if (prior)
@@ -1231,7 +1230,7 @@ static void string_put(BlobControl* control, const char* line)
 
 	control->ctl_data[1] = (IPTR) string;
 	++control->ctl_number_segments;
-	control->ctl_total_length += l;
-	control->ctl_max_segment = MAX(control->ctl_max_segment, l);
+	control->ctl_total_length += len;
+	control->ctl_max_segment = MAX(control->ctl_max_segment, len);
 }
 

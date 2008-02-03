@@ -325,8 +325,7 @@ void TPC_update_cache(thread_db* tdbb, const Ods::tx_inv_page* tip_page, SLONG s
 	for (; tip_cache; tip_cache = tip_cache->tpc_next) {
 		if (first_trans == tip_cache->tpc_base) {
 			const USHORT l = TRANS_OFFSET(trans_per_tip);
-			MOVE_FAST(tip_page->tip_transactions, tip_cache->tpc_transactions,
-					  l);
+			memcpy(tip_cache->tpc_transactions, tip_page->tip_transactions, l);
 			break;
 		}
 	}

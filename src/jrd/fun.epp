@@ -641,7 +641,7 @@ UserFunction* FUN_lookup_function(thread_db* tdbb, const Firebird::MetaName& nam
 		function->fun_return_arg = X.RDB$RETURN_ARGUMENT;
 		function->fun_type = X.RDB$FUNCTION_TYPE;
 		function->fun_temp_length = length;
-		MOVE_FAST(temp, function->fun_rpt, (count + 1) * sizeof(fun_repeat));
+		memcpy(function->fun_rpt, temp, (count + 1) * sizeof(fun_repeat));
 
 		// Prepare the exception message to be used in case this function ever
 		// causes an exception.  This is done at this time to save us from preparing

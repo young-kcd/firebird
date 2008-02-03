@@ -1584,17 +1584,17 @@ void PAG_init2(USHORT shadow_number)
 				case HDR_file:
 					file_length = p[1];
 					file_name = buf;
-					MOVE_FAST(p + 2, buf, file_length);
+					memcpy(buf, p + 2, file_length);
 					break;
 
 				case HDR_last_page:
-					MOVE_FAST(p + 2, &last_page, sizeof(last_page));
+					memcpy(&last_page, p + 2, sizeof(last_page));
 					break;
 
 				case HDR_sweep_interval:
 					// CVC: Let's copy it always.
 					//if (!(dbb->dbb_flags & DBB_read_only))
-						MOVE_FAST(p + 2, &dbb->dbb_sweep_interval, sizeof(SLONG));
+						memcpy(&dbb->dbb_sweep_interval, p + 2, sizeof(SLONG));
 					break;
 				}
 			}

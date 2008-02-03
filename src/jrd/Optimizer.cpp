@@ -49,8 +49,8 @@
 
 namespace Jrd {
 
-bool OPT_computable(CompilerScratch* csb, jrd_nod* node, SSHORT stream,
-				bool idx_use, bool allowOnlyCurrentStream)
+bool OPT_computable(CompilerScratch* csb, const jrd_nod* node, SSHORT stream,
+				const bool idx_use, const bool allowOnlyCurrentStream)
 {
 /**************************************
  *
@@ -92,10 +92,10 @@ bool OPT_computable(CompilerScratch* csb, jrd_nod* node, SSHORT stream,
 	}
 
 	// Recurse thru interesting sub-nodes
-	jrd_nod** ptr = node->nod_arg;
+	const jrd_nod* const* ptr = node->nod_arg;
 
 	if (node->nod_type == nod_union) {
-		jrd_nod* clauses = node->nod_arg[e_uni_clauses];
+		const jrd_nod* clauses = node->nod_arg[e_uni_clauses];
 		ptr = clauses->nod_arg;
 		for (const jrd_nod* const* const end = ptr + clauses->nod_count;
 			ptr < end; ptr += 2)
@@ -116,8 +116,8 @@ bool OPT_computable(CompilerScratch* csb, jrd_nod* node, SSHORT stream,
 	}
 
 	RecordSelExpr* rse;
-	jrd_nod* sub;
-	jrd_nod* value;
+	const jrd_nod* sub;
+	const jrd_nod* value;
 	USHORT n;
 	
 	switch (node->nod_type) {
@@ -1681,7 +1681,7 @@ jrd_nod* OptimizerRetrieval::makeIndexNode(const index_desc* idx) const
 	IndexRetrieval* retrieval = FB_NEW_RPT(pool, idx->idx_count * 2) IndexRetrieval();
 	node->nod_arg[e_idx_retrieval] = (jrd_nod*) retrieval;
 	retrieval->irb_index = idx->idx_id;
-	MOVE_FAST(idx, &retrieval->irb_desc, sizeof(retrieval->irb_desc));
+	memcpy(&retrieval->irb_desc, idx, sizeof(retrieval->irb_desc));
 	if (csb) {
 		node->nod_impure = CMP_impure(csb, sizeof(impure_inversion));
 	}
@@ -2842,7 +2842,7 @@ bool InnerJoinStreamInfo::independent() const
 }
 
 
-OptimizerInnerJoin::OptimizerInnerJoin(MemoryPool& p, OptimizerBlk* opt, UCHAR*	streams,
+OptimizerInnerJoin::OptimizerInnerJoin(MemoryPool& p, OptimizerBlk* opt, const UCHAR* streams,
 		RiverStack& river_stack, jrd_nod** sort_clause, 
 		jrd_nod** project_clause, jrd_nod* plan_clause) :
 	pool(p), innerStreams(p)

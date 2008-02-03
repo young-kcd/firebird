@@ -5636,7 +5636,7 @@ TEXT* JRD_num_attachments(TEXT* const buf, USHORT buf_len, USHORT flag,
 				for (size_t n = 0; n < dbFiles.getCount(); ++n) {
 					*lbufp++ = (TEXT) dbFiles[n].length();
 					*lbufp++ = (TEXT) (dbFiles[n].length() >> 8);
-					MOVE_FAST(dbFiles[n].c_str(), lbufp, dbFiles[n].length());
+					memcpy(lbufp, dbFiles[n].c_str(), dbFiles[n].length());
 					lbufp += dbFiles[n].length();
 					total++;
 				}

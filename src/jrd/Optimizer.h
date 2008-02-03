@@ -64,7 +64,7 @@ struct index_desc;
 class OptimizerBlk;
 class jrd_rel;
 
-bool OPT_computable(CompilerScratch*, jrd_nod*, SSHORT, bool, bool);
+bool OPT_computable(CompilerScratch*, const jrd_nod*, SSHORT, const bool, const bool);
 bool OPT_expression_equal(thread_db*, OptimizerBlk*, const index_desc*,
 							 jrd_nod*, USHORT);
 bool OPT_expression_equal2(thread_db*, OptimizerBlk*, jrd_nod*,
@@ -247,7 +247,7 @@ typedef Firebird::HalfStaticArray<InnerJoinStreamInfo*, 8> StreamInfoList;
 class OptimizerInnerJoin
 {
 public:
-	OptimizerInnerJoin(MemoryPool& p, OptimizerBlk* opt, UCHAR*	streams,
+	OptimizerInnerJoin(MemoryPool& p, OptimizerBlk* opt, const UCHAR* streams,
 		RiverStack& river_stack, jrd_nod** sort_clause, 
 		jrd_nod** project_clause, jrd_nod* plan_clause);
 	~OptimizerInnerJoin();

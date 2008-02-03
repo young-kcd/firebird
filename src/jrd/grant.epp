@@ -205,7 +205,7 @@ bool GRANT_privileges( thread_db* tdbb, SSHORT phase, DeferredWork* work,
 				   off the relation acl because we need to add a default field
 				   acl in that case. */
 
-				MOVE_FAST(str_buffer.begin(), str_default_buffer.begin(),
+				memcpy(str_default_buffer.begin(), str_buffer.begin(),
 						  (int) (acl - str_buffer.begin()));
 				UCHAR* default_acl =
 					str_default_buffer.begin() + (acl - str_buffer.begin());
@@ -628,7 +628,7 @@ static void grant_user(UCHAR**						acl_ptr,
 	CHECK_AND_MOVE(acl, length, start_ptr, length_ptr);
 	if (length) {
 		CHECK_ACL_BOUND(acl, start_ptr, length_ptr, length);
-		MOVE_FAST(user.c_str(), acl, length);
+		memcpy(acl, user.c_str(), length);
 		acl += length;
 	}
 
@@ -749,7 +749,7 @@ static SecurityClass::flags_t save_field_privileges(thread_db*	tdbb,
 	field_length = start_length = *length_ptr;
 	ULONG* field_length_ptr = &field_length;
 
-	MOVE_FAST(str_relation_buffer.begin(), str_field_buffer.begin(),
+	memcpy(str_field_buffer.begin(), str_relation_buffer.begin(),
 			  (int) (*acl_ptr - str_relation_buffer.begin()));
 	const int field_buffer_start_index = (int) (*acl_ptr - str_relation_buffer.begin());
 	UCHAR* field_acl = str_field_buffer.begin() + field_buffer_start_index;

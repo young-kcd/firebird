@@ -596,7 +596,7 @@ void TRA_get_inventory(thread_db* tdbb, UCHAR* bit_vector, ULONG base, ULONG top
 		ULONG l = base % trans_per_tip;
 		const UCHAR* q = tip->tip_transactions + TRANS_OFFSET(l);
 		l = TRANS_OFFSET(MIN((top + TRA_MASK - base), trans_per_tip - l));
-		MOVE_FAST(q, p, l);
+		memcpy(p, q, l);
 		p += l;
 	}
 
@@ -615,7 +615,7 @@ void TRA_get_inventory(thread_db* tdbb, UCHAR* bit_vector, ULONG base, ULONG top
 		TPC_update_cache(tdbb, tip, sequence - 1);
 		if (p) {
 			const ULONG l = TRANS_OFFSET(MIN((top + TRA_MASK - base), trans_per_tip));
-			MOVE_FAST(tip->tip_transactions, p, l);
+			memcpy(p, tip->tip_transactions, l);
 			p += l;
 		}
 	}

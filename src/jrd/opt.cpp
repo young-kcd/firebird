@@ -126,7 +126,7 @@ static RecordSource* gen_aggregate(thread_db*, OptimizerBlk*, jrd_nod*, NodeStac
 static RecordSource* gen_boolean(thread_db*, OptimizerBlk*, RecordSource*, jrd_nod*);
 static void gen_deliver_unmapped(thread_db*, NodeStack*, jrd_nod*, NodeStack*, UCHAR);
 static RecordSource* gen_first(thread_db*, OptimizerBlk*, RecordSource*, jrd_nod*);
-static void gen_join(thread_db*, OptimizerBlk*, UCHAR*, RiverStack&, jrd_nod**, jrd_nod**, jrd_nod*);
+static void gen_join(thread_db*, OptimizerBlk*, const UCHAR*, RiverStack&, jrd_nod**, jrd_nod**, jrd_nod*);
 static RecordSource* gen_navigation(thread_db*, OptimizerBlk*, USHORT, jrd_rel*, VaryingString*, index_desc*, jrd_nod**);
 #ifdef SCROLLABLE_CURSORS
 static RecordSource* gen_nav_rsb(thread_db*, OptimizerBlk*, USHORT, jrd_rel*, VaryingString*, index_desc*, RSE_GET_MODE);
@@ -173,7 +173,7 @@ static void set_made_river(OptimizerBlk*, const River*);
 static void set_position(const jrd_nod*, jrd_nod*, const jrd_nod*);
 static void set_rse_inactive(CompilerScratch*, const RecordSelExpr*);
 static void sort_indices_by_selectivity(CompilerScratch::csb_repeat*);
-static SSHORT sort_indices_by_priority(CompilerScratch::csb_repeat*, index_desc**, FB_UINT64*);
+static SSHORT sort_indices_by_priority(const CompilerScratch::csb_repeat*, index_desc**, FB_UINT64*);
 
 
 /* macro definitions */
@@ -535,7 +535,7 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 			River* river = FB_NEW_RPT(*tdbb->getDefaultPool(), i) River();
 			river->riv_count = (UCHAR) i;
 			river->riv_rsb = rsb;
-			MOVE_FAST(local_streams + 1, river->riv_streams, i);
+			memcpy(river->riv_streams, local_streams + 1, i);
 			// AB: Save all inner-part streams
 			if (rse->rse_jointype == blr_inner ||
 			   (rse->rse_jointype == blr_left && (ptr - rse->rse_relation) == 0))
@@ -806,7 +806,7 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 				RiverStack::iterator stack2(rivers_stack);
 				for (; stack2.hasData(); ++stack2) {
 					River* subRiver = stack2.object();
-					MOVE_FAST(subRiver->riv_streams, stream_itr, subRiver->riv_count);
+					memcpy(stream_itr, subRiver->riv_streams, subRiver->riv_count);
 					stream_itr += subRiver->riv_count;
 				}
 				river->riv_rsb = make_cross(tdbb, opt, rivers_stack);
@@ -4153,7 +4153,7 @@ static RecordSource* gen_first(thread_db* tdbb, OptimizerBlk* opt,
 
 static void gen_join(thread_db*		tdbb,
 					 OptimizerBlk*	opt,
-					 UCHAR*			streams,
+					 const UCHAR*			streams,
 					 RiverStack&	river_stack,
 					 jrd_nod**		sort_clause,
 					 jrd_nod**		project_clause,
@@ -4199,7 +4199,7 @@ static void gen_join(thread_db*		tdbb,
 			sort_clause, project_clause, plan_clause);
 
 		stream_array_t temp;
-		MOVE_FAST(streams, temp, streams[0] + 1);
+		memcpy(temp, streams, streams[0] + 1);
 
 		USHORT count;
 		do {
@@ -4228,7 +4228,7 @@ static void gen_join(thread_db*		tdbb,
 
 	// Compute cardinality and indexed relationships for all streams.
 	const UCHAR* const end_stream = streams + 1 + streams[0];
-	for (UCHAR* stream = streams + 1; stream < end_stream; stream++) {
+	for (const UCHAR* stream = streams + 1; stream < end_stream; stream++) {
 		CompilerScratch::csb_repeat* csb_tail = &csb->csb_rpt[*stream];
 		fb_assert(csb_tail);
 		jrd_rel* relation = csb_tail->csb_relation;
@@ -4294,7 +4294,7 @@ static void gen_join(thread_db*		tdbb,
 		// copy the streams vector to a temporary space to be used
 		// to form rivers out of streams
 		stream_array_t temp;
-		MOVE_FAST(streams, temp, streams[0] + 1);
+		memcpy(temp, streams, streams[0] + 1);
 
         USHORT count;
 		do {
@@ -4751,7 +4751,7 @@ static RecordSource* gen_retrieval(thread_db*     tdbb,
 	// inner flag. This condition is only statisfied for the second stream in
 	// the full join. This condition is only set from the call in gen_outer() in
 	// case of a full join.
-	if ((inner_flag == true) && (outer_flag == true)) {
+	if (inner_flag && outer_flag) {
 		/* the inner flag back to false and set the full flag */
 		inner_flag = false;
 		full = true;
@@ -5697,7 +5697,7 @@ static bool gen_sort_merge(thread_db* tdbb, OptimizerBlk* opt, RiverStack& org_r
 	while (org_rivers.hasData()) {
 		River* river2 = org_rivers.pop();
 		if (TEST_DEP_BIT(selected_rivers, river2->riv_number)) {
-			MOVE_FAST(river2->riv_streams, stream, river2->riv_count);
+			memcpy(stream, river2->riv_streams, river2->riv_count);
 			stream += river2->riv_count;
 			// If this is the lowest position put in the new river.
 			if (river2->riv_number == lowestRiverPosition) {
@@ -6292,7 +6292,7 @@ static jrd_nod* make_index_node(thread_db* tdbb, jrd_rel* relation,
 		FB_NEW_RPT(*tdbb->getDefaultPool(), idx->idx_count * 2) IndexRetrieval();
 	node->nod_arg[e_idx_retrieval] = (jrd_nod*) retrieval;
 	retrieval->irb_index = idx->idx_id;
-	MOVE_FAST(idx, &retrieval->irb_desc, sizeof(retrieval->irb_desc));
+	memcpy(&retrieval->irb_desc, idx, sizeof(retrieval->irb_desc));
 	if (csb)
 		node->nod_impure = CMP_impure(csb, sizeof(impure_inversion));
 	return node;
@@ -7717,14 +7717,14 @@ static void sort_indices_by_selectivity(CompilerScratch::csb_repeat* csb_tail)
 		index_desc* idx = csb_tail->csb_idx->items;
 		for (j = 0; j < csb_tail->csb_indices; j++) {
 			idx->idx_runtime_flags &= ~idx_marker;
-			MOVE_FAST(&idx_sort[j], idx, sizeof(index_desc));
+			memcpy(idx, &idx_sort[j], sizeof(index_desc));
 			++idx;
 		}
 	}
 }
 
 
-static SSHORT sort_indices_by_priority(CompilerScratch::csb_repeat* csb_tail,
+static SSHORT sort_indices_by_priority(const CompilerScratch::csb_repeat* csb_tail,
 									   index_desc** idx_walk,
 									   FB_UINT64* idx_priority_level)
 {

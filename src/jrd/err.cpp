@@ -469,8 +469,7 @@ static void internal_post(ISC_STATUS status, va_list args)
 		 status_vector[2] != isc_arg_warning))
 	{
 		/* this is a blank status vector just stuff the status */
-		MOVE_FASTER(tmp_status, status_vector,
-					sizeof(ISC_STATUS) * tmp_status_len);
+		memcpy(status_vector, tmp_status, sizeof(ISC_STATUS) * tmp_status_len);
 		return;
 	}
 
@@ -509,7 +508,7 @@ static void internal_post(ISC_STATUS status, va_list args)
 	if (warning_indx) {
 		/* copy current warning(s) to a temp buffer */
 		MOVE_CLEAR(warning_status, sizeof(warning_status));
-		MOVE_FASTER(&status_vector[warning_indx], warning_status,
+		memcpy(warning_status, &status_vector[warning_indx],
 					sizeof(ISC_STATUS) * (ISC_STATUS_LENGTH - warning_indx));
 		PARSE_STATUS(warning_status, warning_count, warning_indx);
 	}
@@ -518,12 +517,11 @@ static void internal_post(ISC_STATUS status, va_list args)
    and first warning */
 
 	if ((i = err_status_len + tmp_status_len) < ISC_STATUS_LENGTH) {
-		MOVE_FASTER(tmp_status, &status_vector[err_status_len],
+		memcpy(&status_vector[err_status_len], tmp_status,
 					sizeof(ISC_STATUS) * tmp_status_len);
 		/* copy current warning(s) to the status_vector */
 		if (warning_count && i + warning_count - 1 < ISC_STATUS_LENGTH) {
-			MOVE_FASTER(warning_status, &status_vector[i - 1],
-						sizeof(ISC_STATUS) * warning_count);
+			memcpy(&status_vector[i - 1], warning_status, sizeof(ISC_STATUS) * warning_count);
 		}
 	}
 	return;
