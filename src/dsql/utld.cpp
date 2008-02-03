@@ -40,10 +40,10 @@
 #include "../jrd/constants.h"
 #include "../dsql/utld_proto.h"
 #include "../jrd/gds_proto.h"
-
 #if !defined(SUPERCLIENT)
 #include "../dsql/metd_proto.h"
 #endif
+#include "../common/classes/init.h"
 
 
 static void cleanup(void *);
@@ -77,6 +77,7 @@ static inline void ch_stuff_word(BLOB_PTR*& p, const SSHORT value, bool& same_fl
 /* these statics define a round-robin data area for storing
    textual error messages returned to the user */
 
+static Firebird::GlobalPtr<Firebird::Mutex> failuresMutex;
 static TEXT *DSQL_failures, *DSQL_failures_ptr;
 
 const int  DSQL_FAILURE_SPACE = 2048;
@@ -779,7 +780,9 @@ ISC_STATUS	UTLD_parse_sqlda(
  **/
 void	UTLD_save_status_strings(ISC_STATUS* vector)
 {
-// allocate space for failure strings if it hasn't already been allocated
+	Firebird::MutexLockGuard guard(failuresMutex);
+
+	// allocate space for failure strings if it hasn't already been allocated
 
 	if (!DSQL_failures)
 	{
@@ -808,6 +811,7 @@ void	UTLD_save_status_strings(ISC_STATUS* vector)
 		case isc_arg_interpreted:
 		case isc_arg_string:
 			p = (TEXT *) * vector;
+
 			if (status != isc_arg_cstring)
 				l = strlen(p) + 1;
 
@@ -816,13 +820,20 @@ void	UTLD_save_status_strings(ISC_STATUS* vector)
 
 			if (DSQL_failures_ptr + l > DSQL_failures + DSQL_FAILURE_SPACE)
 				DSQL_failures_ptr = DSQL_failures;
+
 			*vector++ = (ISC_STATUS) DSQL_failures_ptr;
+
 			if (l)
+			{
 				do
+				{
 					*DSQL_failures_ptr++ = *p++;
-				while (--l && (DSQL_failures_ptr < DSQL_failures + DSQL_FAILURE_SPACE));
+				} while (--l && (DSQL_failures_ptr < DSQL_failures + DSQL_FAILURE_SPACE));
+			}
+
 			if (l)
 				*(DSQL_failures_ptr - 1) = '\0';
+
 			break;
 
 		default:
@@ -843,8 +854,9 @@ void	UTLD_save_status_strings(ISC_STATUS* vector)
     @param arg
 
  **/
-static void cleanup( void *arg)
+static void cleanup(void *arg)
 {
+	Firebird::MutexLockGuard guard(failuresMutex);
 
 	if (DSQL_failures)
 		FREE_LIB_MEMORY(DSQL_failures);
