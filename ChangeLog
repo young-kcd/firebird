@@ -1,3 +1,191 @@
+2008-02-03 03:38  asfernandes
+
+	* firebird2/builds/posix/Makefile.in.firebird (1.86):
+
+	Oops
+
+2008-02-03 03:32  asfernandes
+
+	* firebird2/: builds/posix/Makefile.in.firebird (1.85),
+	src/dsql/dsql.cpp (1.212), src/gpre/hsh.h (1.10), src/intl/ld.cpp
+	(1.35), src/jrd/jrd.cpp (1.374), src/jrd/svc.cpp (1.199),
+	src/jrd/svc.h (1.48), src/jrd/why.cpp (1.143):
+
+	Misc
+
+2008-02-03 00:48  dimitr
+
+	* firebird2/src/dsql/dsql.cpp (1.211):
+
+	Misc.
+
+2008-02-02 21:26  dimitr
+
+	* firebird2/src/jrd/svc.h (1.47):
+
+	Fixed the Windows build.
+
+2008-02-02 21:21  dimitr
+
+	* firebird2/src/remote/os/win32/window.cpp (1.22):
+
+	Fixed the Windows build.
+
+2008-02-02 19:33  alexpeshkoff
+
+	* firebird2/src/: alice/alice.cpp (1.101), alice/tdr.cpp (1.56),
+	burp/burp.h (1.86), jrd/jrd.cpp (1.373), jrd/svc.cpp (1.198),
+	jrd/svc.h (1.46), jrd/svc_proto.h (1.21),
+	remote/os/win32/ibconfig.cpp (1.21), remote/os/win32/property.cpp
+	(1.19), remote/os/win32/srvr_w32.cpp (1.44),
+	remote/os/win32/window.cpp (1.21), utilities/common/cmd_util.cpp
+	(1.15):
+
+	Services cleanup - make class Service traditional C++ class
+
+2008-02-02 19:21  alexpeshkoff
+
+	* firebird2/src/utilities/common/: cmd_util.cpp (1.14),
+	cmd_util_proto.h (1.6):
+
+	added 2 functions, later placed in services
+
+2008-02-02 19:20  alexpeshkoff
+
+	* firebird2/src/jrd/why.cpp (1.142):
+
+	Lock mutex in detach - thanks to Claudio
+
+2008-02-02 19:18  alexpeshkoff
+
+	* firebird2/src/jrd/y_handle.h (1.25):
+
+	make it use GlobalStorage
+
+2008-02-02 19:16  alexpeshkoff
+
+	* firebird2/src/common/: UtilSvc.cpp (1.3), UtilSvc.h (1.3):
+
+	use GlobalStorage in UtilSvc
+
+2008-02-02 19:08  alexpeshkoff
+
+	* firebird2/src/jrd/jrd.h (1.213):
+
+	fixed gcc warning
+
+2008-02-02 18:43  alexpeshkoff
+
+	* firebird2/src/common/classes/alloc.h (1.74):
+
+	One more common storage class
+
+2008-02-02 18:42  alexpeshkoff
+
+	* firebird2/src/dsql/dsql.cpp (1.210):
+
+	Do not hold mutex more then needed
+
+2008-02-02 18:07  robocop
+
+	* firebird2/src/qli/picstr.cpp (1.30):
+
+	Style
+
+2008-02-02 18:06  robocop
+
+	* firebird2/src/lock/print.cpp (1.62):
+
+	Use a native, two dimensional array.
+
+2008-02-02 18:05  robocop
+
+	* firebird2/src/: lock/lock.cpp (1.138), lock/lock_proto.h (1.16),
+	utilities/gstat/dba.epp (1.86):
+
+	Constness
+
+2008-02-02 18:02  robocop
+
+	* firebird2/src/jrd/: blb.cpp (1.157), dpm.epp (1.77), exe.cpp
+	(1.239), filters.cpp (1.60), IntlManager.cpp (1.20), jrd.cpp
+	(1.372), jrd.h (1.212), par.cpp (1.185), pcmet.epp (1.48), sqz.cpp
+	(1.25), unicode_util.cpp (1.29), os/fbsyslog.h (1.7),
+	os/posix/unix.cpp (1.81), os/vms/extvms.cpp (1.30),
+	os/win32/fbsyslog.cpp (1.11), os/win32/thd_priority.cpp (1.31),
+	os/win32/winnt.cpp (1.60):
+
+	Mostly style, constness, native memcpy and explicit constructors.
+
+2008-02-02 17:58  robocop
+
+	* firebird2/src/intl/ld.cpp (1.34):
+
+	constness
+
+2008-02-02 17:57  robocop
+
+	* firebird2/src/: burp/burp.cpp (1.131), burp/restore.epp (1.129),
+	common/fb_exception.cpp (1.33), common/classes/locks.h (1.32),
+	common/classes/rwlock.h (1.34), common/classes/tree.h (1.68),
+	gpre/cmd.cpp (1.42), gpre/hsh.h (1.9), include/fb_exception.h
+	(1.27):
+
+	Misc, explicit constructors, extra commas in enumerations,
+	constness, etc.
+
+2008-02-02 17:52  robocop
+
+	*
+	firebird2/builds/install/arch-specific/win32/pl/custom_messages_pl.inc
+	(1.5):
+
+	Misc.
+
+2008-02-02 17:51  robocop
+
+	* firebird2/: src/msgs/messages2.sql (1.23),
+	src/msgs/system_errors2.sql (1.14), lang_helpers/gds_codes.ftn
+	(1.64), lang_helpers/gds_codes.pas (1.64),
+	src/include/gen/codetext.h (1.72), src/include/gen/iberror.h
+	(1.73), src/include/gen/msgs.h (1.91), src/include/gen/rdb_codes.h
+	(1.69), src/include/gen/sql_code.h (1.77):
+
+	I thought this DYN message deserves to be translatable.
+
+2008-02-02 15:59  dimitr
+
+	* firebird2/src/jrd/dfw.epp (1.225):
+
+	More fixes for check_partners. Will this ever end? :-(
+
+2008-02-02 15:42  dimitr
+
+	* firebird2/src/remote/os/win32/: cntl.cpp (1.28), window.cpp
+	(1.20):
+
+	1) Call SRVR_shutdown() when shutting down the server process.	2)
+	Get rid of the unnecessary sync calls.
+
+2008-02-02 15:38  dimitr
+
+	* firebird2/src/remote/: server.cpp (1.168), os/win32/srvr_w32.cpp
+	(1.43):
+
+	Misc.
+
+2008-02-02 15:36  dimitr
+
+	* firebird2/src/jrd/jrd.cpp (1.371):
+
+	Fixed issue spotted by Claudio privately.
+
+2008-02-02 13:21  dimitr
+
+	* firebird2/src/dsql/dsql.cpp (1.209):
+
+	Fix for an issue spotted by Claudio in fb-devel.
+
 2008-02-01 21:18  asfernandes
 
 	* firebird2/src/: dsql/alld.cpp (1.33), dsql/ddl.cpp (1.210),
