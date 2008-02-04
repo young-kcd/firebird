@@ -110,35 +110,21 @@ public:
 	void init() 
 	{
 		if (!flag) {
-			try {
-				mutex->enter();
-				if (!flag) {
-					C::init();
-					flag = true;
-				}
+			RecursiveMutexLockGuard guard(*mutex);
+			if (!flag) {
+				C::init();
+				flag = true;
 			}
-			catch (const Firebird::Exception&) {
-				mutex->leave();
-				throw;
-			}
-			mutex->leave();
 		}
 	} 
 	void cleanup() 
 	{
 		if (flag) {
-			try {
-				mutex->enter();
-				if (flag) {
-					C::cleanup();
-					flag = false;
-				}
+			RecursiveMutexLockGuard guard(*mutex);
+			if (flag) {
+				C::cleanup();
+				flag = false;
 			}
-			catch (const Firebird::Exception&) {
-				mutex->leave();
-				throw;
-			}
-			mutex->leave();
 		}
 	} 
 };
@@ -169,18 +155,11 @@ public:
 	T& operator()() 
 	{
 		if (!flag) {
-			try {
-				mutex->enter();
-				if (!flag) {
-					instance = I::init();
-					flag = true;
-				}
+			RecursiveMutexLockGuard guard(*mutex);
+			if (!flag) {
+				instance = I::init();
+				flag = true;
 			}
-			catch (const Firebird::Exception&) {
-				mutex->leave();
-				throw;
-			}
-			mutex->leave();
 		}
 		return *instance;
 	}
