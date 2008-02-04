@@ -4153,7 +4153,7 @@ static RecordSource* gen_first(thread_db* tdbb, OptimizerBlk* opt,
 
 static void gen_join(thread_db*		tdbb,
 					 OptimizerBlk*	opt,
-					 const UCHAR*			streams,
+					 const UCHAR*	streams,
 					 RiverStack&	river_stack,
 					 jrd_nod**		sort_clause,
 					 jrd_nod**		project_clause,
@@ -4765,6 +4765,7 @@ static RecordSource* gen_retrieval(thread_db*     tdbb,
 
 	VaryingString* alias = OPT_make_alias(tdbb, csb, csb_tail);
 	csb_tail->csb_flags |= csb_active;
+
 /* bug #8180 reported by Bill Karwin: when a DISTINCT and an ORDER BY
    are done on different fields, and the ORDER BY can be mapped to an
    index, then the records are returned in the wrong order because the
@@ -4786,6 +4787,7 @@ static RecordSource* gen_retrieval(thread_db*     tdbb,
 	if (sort_ptr && *sort_ptr && project_ptr && *project_ptr) {
 		sort_ptr = NULL;
 	}
+
 /* Time to find inversions.  For each index on the relation
    match all unused booleans against the index looking for upper
    and lower bounds that can be computed by the index.  When

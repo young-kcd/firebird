@@ -2782,7 +2782,7 @@ void DSQL_pretty(const dsql_nod* node, int column)
     @param arg
 
  **/
-static void cleanup(void *arg)
+static void cleanup(void* arg)
 {
 	dsqlGlobals.cleanup();
 }

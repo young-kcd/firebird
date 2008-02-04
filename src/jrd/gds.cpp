@@ -2286,6 +2286,7 @@ void API_ROUTINE gds__unregister_cleanup(FPTR_VOID_PTR routine, void *arg)
 	}
 
 	Firebird::MutexLockGuard guard(cleanup_handlers_mutex);
+
 	for (CLEAN* clean_ptr = &cleanup_handlers; clean = *clean_ptr;
 		 clean_ptr = &clean->clean_next) 
 	{
@@ -3201,7 +3202,7 @@ static int blr_print_word(gds_ctl* control)
 }
 
 
-void gds__cleanup(void)
+void gds__cleanup()
 {
 /**************************************
  *
