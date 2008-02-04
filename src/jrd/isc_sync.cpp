@@ -2049,7 +2049,7 @@ void ISC_unmap_object(ISC_STATUS * status_vector,
 		return; // false;
 	}
 
-	*object_pointer = 0;
+	*object_pointer = NULL;
 	return; // true;
 }
 #endif
@@ -2120,6 +2120,8 @@ void ISC_unmap_object(ISC_STATUS* status_vector,
 
 	const UCHAR* start = (UCHAR*) ((U_IPTR) *object_pointer & ~(page_size - 1));
 	UnmapViewOfFile(start);
+
+	*object_pointer = NULL;
 }
 #endif
 
