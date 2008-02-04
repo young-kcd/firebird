@@ -1,3 +1,42 @@
+2008-02-03 20:15  asfernandes
+
+	* firebird2/: builds/posix/make.shared.variables (1.81),
+	builds/win32/msvc8/dsql_server.vcproj (1.6),
+	builds/win32/msvc8/dsql_server_classic.vcproj (1.7),
+	src/dsql/Parser.cpp (1.1), src/dsql/Parser.h (1.1),
+	src/dsql/btyacc_fb.ske (1.4), src/dsql/dsql.cpp (1.214),
+	src/dsql/parse.y (1.256), src/dsql/parse_proto.h (1.10):
+
+	Encapsulate the parser and make it thread safe
+
+2008-02-03 15:27  asfernandes
+
+	* firebird2/src/dsql/utld.cpp (1.44):
+
+	Protect DSQL_failures
+
+2008-02-03 12:20  robocop
+
+	* firebird2/src/: burp/backup.epp (1.107), burp/restore.epp
+	(1.130), dsql/dsql.cpp (1.213), dsql/errd.cpp (1.41), dsql/make.cpp
+	(1.149), jrd/common.h (1.162):
+
+	Style, constness and macro cleanup.
+
+2008-02-03 11:41  robocop
+
+	* firebird2/src/: jrd/cch.cpp (1.181), jrd/cvt.cpp (1.88),
+	jrd/Optimizer.cpp (1.80), jrd/Optimizer.h (1.21), jrd/dyn_mod.epp
+	(1.96), jrd/err.cpp (1.72), jrd/filters.cpp (1.61), jrd/fun.epp
+	(1.90), jrd/grant.epp (1.62), jrd/idx.cpp (1.130), jrd/jrd.cpp
+	(1.375), jrd/met.epp (1.235), jrd/nav.cpp (1.72), jrd/opt.cpp
+	(1.306), jrd/pag.cpp (1.165), jrd/rse.cpp (1.144), jrd/sqz.cpp
+	(1.26), jrd/svc.cpp (1.200), jrd/svc.h (1.49), jrd/tpc.cpp (1.33),
+	jrd/tra.cpp (1.151), jrd/vio.cpp (1.203),
+	utilities/common/cmd_util.cpp (1.16):
+
+	Style, constness and macro cleanup.
+
 2008-02-03 03:38  asfernandes
 
 	* firebird2/builds/posix/Makefile.in.firebird (1.86):
