@@ -38,14 +38,13 @@ class DatabaseSnapshot {
 	class SharedMemory {
 		static const size_t VERSION;
 		static const size_t DEFAULT_SIZE;
-		static const size_t SEMAPHORES;
 
 		struct Header {
 			size_t version;
 			size_t length;
-	#ifndef WIN_NT
+#ifndef WIN_NT
 			MTX_T mutex;
-	#endif
+#endif
 		};
 
 	public:
@@ -70,9 +69,9 @@ class DatabaseSnapshot {
 		static void init(void*, SH_MEM_T*, bool);
 
 		SH_MEM_T handle;
-	#ifdef WIN_NT
+#ifdef WIN_NT
 		MTX_T mutex;
-	#endif
+#endif
 		Header* base;
 	};
 
