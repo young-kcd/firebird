@@ -453,27 +453,12 @@ THREAD_ENTRY_DECLARE main_gstat(THREAD_ENTRY_PARAM arg);
 #endif
 
 
-/* Entries which have a NULL serv_executable field will not fork
-   a process on the server, but will establish a valid connection
-   which can be used for isc_info_svc calls.
-
-  The format of the structure is:
-
-  isc_action_svc call,
-  old service name (for compatibility),
-  old cmd-line switches (for compatibility),
-  executable to fork (for compatibility),
-  thread to execute,
-  in use flag (for compatibility)
-*/
-// And the code modifies this flag in this global array???
-
 struct serv_entry
 {
-	USHORT				serv_action;
-	const TEXT*			serv_name;
-	const TEXT*			serv_std_switches;
-	ThreadEntryPoint*	serv_thd;
+	USHORT				serv_action;		// isc_action_svc_....
+	const TEXT*			serv_name;			// old service name
+	const TEXT*			serv_std_switches;	// old cmd-line switches
+	ThreadEntryPoint*	serv_thd;			// thread to execute
 };
 
 static const serv_entry services[] =
