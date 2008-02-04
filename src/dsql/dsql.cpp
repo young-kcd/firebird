@@ -98,27 +98,6 @@ nested FOR loops are added.
 #include <ctype.h>
 #endif
 
-namespace
-{
-	class DsqlDatabaseContextHolder : public DsqlContextPoolHolder
-	{
-	public:
-		DsqlDatabaseContextHolder(dsql_dbb* dbb, tsql* tdsql, DsqlMemoryPool* pool)
-			: DsqlContextPoolHolder(tdsql, pool),
-			  sync(dbb)
-		{
-		}
-
-	private:
-		// copying is prohibited
-		DsqlDatabaseContextHolder(const DsqlDatabaseContextHolder&);
-		DsqlDatabaseContextHolder& operator =(const DsqlDatabaseContextHolder&);
-
-	private:
-		DsqlSyncGuard sync;
-	};
-}	// namespace
-
 static void		cleanup(void*);
 static void		cleanup_database(FB_API_HANDLE*, void*);
 static void		cleanup_transaction(FB_API_HANDLE, void*);
@@ -151,35 +130,82 @@ static UCHAR*	var_info(dsql_msg*, const UCHAR*, const UCHAR* const, UCHAR*,
 unsigned DSQL_debug = 0;
 #endif
 
-static bool init_flag = false;
-static dsql_dbb* databases;
-static dsql_opn* open_cursors;
+namespace
+{
+	class DsqlDatabaseContextHolder : public DsqlContextPoolHolder
+	{
+	public:
+		DsqlDatabaseContextHolder(dsql_dbb* dbb, tsql* tdsql, DsqlMemoryPool* pool)
+			: DsqlContextPoolHolder(tdsql, pool),
+			  sync(dbb)
+		{
+		}
 
-static const SCHAR db_hdr_info_items[] = {
-	isc_info_db_sql_dialect,
-	isc_info_ods_version,
-	isc_info_ods_minor_version,
-	isc_info_base_level,
-	isc_info_db_read_only,
-	frb_info_att_charset,
-	isc_info_end
-};
+	private:
+		// copying is prohibited
+		DsqlDatabaseContextHolder(const DsqlDatabaseContextHolder&);
+		DsqlDatabaseContextHolder& operator =(const DsqlDatabaseContextHolder&);
 
-static const SCHAR explain_info[] = {
-	isc_info_access_path
-};
+	private:
+		DsqlSyncGuard sync;
+	};
 
-static const SCHAR record_info[] = {
-	isc_info_req_update_count, isc_info_req_delete_count,
-	isc_info_req_select_count, isc_info_req_insert_count
-};
+	dsql_dbb* databases = NULL;
+	dsql_opn* open_cursors = NULL;
 
-static const UCHAR sql_records_info[] = {
-	isc_info_sql_records
-};
+	class DsqlGlobals
+	{
+	public:
+		static void init()
+		{
+			ALLD_init();
+			
+			DsqlContextPoolHolder context(DSQL_get_thread_data(), DSQL_permanent_pool);
 
-static Firebird::GlobalPtr<Firebird::Mutex> databases_mutex;
-static Firebird::GlobalPtr<Firebird::Mutex> cursors_mutex;
+			HSHD_init();
+			LEX_dsql_init();
+
+			gds__register_cleanup(::cleanup, 0);
+		}
+
+		static void cleanup()
+		{
+			databases = NULL;
+			open_cursors = NULL;
+			HSHD_fini();
+			ALLD_fini();
+		}
+	};
+
+	Firebird::InitMutex<DsqlGlobals> dsqlGlobals;
+
+	Firebird::GlobalPtr<Firebird::Mutex> databases_mutex;
+	Firebird::GlobalPtr<Firebird::Mutex> cursors_mutex;
+
+	const SCHAR db_hdr_info_items[] = {
+		isc_info_db_sql_dialect,
+		isc_info_ods_version,
+		isc_info_ods_minor_version,
+		isc_info_base_level,
+		isc_info_db_read_only,
+		frb_info_att_charset,
+		isc_info_end
+	};
+
+	const SCHAR explain_info[] = {
+		isc_info_access_path
+	};
+
+	const SCHAR record_info[] = {
+		isc_info_req_update_count, isc_info_req_delete_count,
+		isc_info_req_select_count, isc_info_req_insert_count
+	};
+
+	const UCHAR sql_records_info[] = {
+		isc_info_sql_records
+	};
+
+}	// namespace
 
 
 #ifdef DSQL_DEBUG
@@ -2756,16 +2782,9 @@ void DSQL_pretty(const dsql_nod* node, int column)
     @param arg
 
  **/
-static void cleanup( void *arg)
+static void cleanup(void *arg)
 {
-
-	if (init_flag) {
-		init_flag = false;
-		databases = 0;
-		open_cursors = 0;
-		HSHD_fini();
-		ALLD_fini();
-	}
+	dsqlGlobals.cleanup();
 }
 
 
@@ -2796,7 +2815,7 @@ static void cleanup_database(FB_API_HANDLE* db_handle, void* flag)
 /*	if (flag)
 		THREAD_EXIT();*/
 
-	databases_mutex->enter();
+	Firebird::MutexLockGuard guard(databases_mutex);
 
 	dsql_dbb* dbb;
 	for (dsql_dbb** dbb_ptr = &databases; dbb = *dbb_ptr; dbb_ptr = &dbb->dbb_next)
@@ -2829,7 +2848,6 @@ static void cleanup_database(FB_API_HANDLE* db_handle, void* flag)
 		cleanup(0);
 		gds__unregister_cleanup(cleanup, 0);
 	}
-	databases_mutex->leave();
 }
 
 
@@ -4069,56 +4087,37 @@ static bool get_rsb_item(SSHORT*		explain_length_ptr,
  **/
 static dsql_dbb* init(FB_API_HANDLE* db_handle)
 {
-	if (init_flag && !db_handle)	// no need to enter in the critical section
+	dsqlGlobals.init();
+
+	if (!db_handle)
 		return NULL;
 
-	databases_mutex->enter();
+	dsql_dbb* database = NULL;
 
-	if (!init_flag)
-	{
-		init_flag = true;
-		ALLD_init();
-		
-		// may be someone needs context pool later - 
-		// lets set it correctly here, not in ALLD_init()
-		DsqlContextPoolHolder context(DSQL_get_thread_data(), DSQL_permanent_pool);
-		HSHD_init();
+	{ // scope
+		Firebird::MutexLockGuard guard(databases_mutex);
 
-		LEX_dsql_init();
+		// Look for database block.  If we don't find one, allocate one.
 
-		gds__register_cleanup(cleanup, 0);
-	}
-
-	if (!db_handle) {
-		databases_mutex->leave();
-		return NULL;
-	}
-
-	// Look for database block.  If we don't find one, allocate one.
-
-	dsql_dbb* database;
-	for (database = databases; database; database = database->dbb_next)
-	{
-		if (database->dbb_database_handle == *db_handle) {
-			databases_mutex->leave();
-			return database;
+		for (database = databases; database; database = database->dbb_next)
+		{
+			if (database->dbb_database_handle == *db_handle)
+				return database;
 		}
+
+		DsqlMemoryPool* pool = DsqlMemoryPool::createPool();
+		database = FB_NEW(*pool) dsql_dbb(*pool);
+		database->dbb_pool = pool;
+		database->dbb_next = databases;
+		databases = database;
+		database->dbb_database_handle = *db_handle;
 	}
-
-	DsqlMemoryPool* pool = DsqlMemoryPool::createPool();
-	database = FB_NEW(*pool) dsql_dbb(*pool);
-	database->dbb_pool = pool;
-	database->dbb_next = databases;
-	databases = database;
-	database->dbb_database_handle = *db_handle;
-
-	databases_mutex->leave();
 
 	ISC_STATUS_ARRAY user_status;
 
 	isc_database_cleanup(user_status, db_handle, cleanup_database, NULL);
 
-	SCHAR buffer[128];
+	SCHAR buffer[BUFFER_TINY];
 
 	const ISC_STATUS s =
 		isc_database_info(user_status, db_handle,
