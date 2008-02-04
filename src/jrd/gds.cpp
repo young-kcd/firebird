@@ -224,6 +224,7 @@ struct clean
 
 typedef clean *CLEAN;
 
+static Firebird::GlobalPtr<Firebird::Mutex> cleanup_handlers_mutex;
 static CLEAN	cleanup_handlers = NULL;
 static gds_msg* global_default_msg = NULL;
 static bool volatile initialized = false;
@@ -2098,11 +2099,11 @@ void API_ROUTINE gds__register_cleanup(FPTR_VOID_PTR routine, void* arg)
 */
 
 	if (!initialized)
+	{
 		init();
+	}
 
 	CLEAN clean = (CLEAN) ALLOC_LIB_MEMORY((SLONG) sizeof(struct clean));
-	clean->clean_next = cleanup_handlers;
-	cleanup_handlers = clean;
 	clean->clean_routine = routine;
 	clean->clean_arg = arg;
 
@@ -2110,6 +2111,10 @@ void API_ROUTINE gds__register_cleanup(FPTR_VOID_PTR routine, void* arg)
 /* Startup function - known to be unfreed */
 	gds_alloc_flag_unfreed((void *) clean);
 #endif
+
+	Firebird::MutexLockGuard guard(cleanup_handlers_mutex);
+	clean->clean_next = cleanup_handlers;
+	cleanup_handlers = clean;
 }
 
 
@@ -2275,7 +2280,12 @@ void API_ROUTINE gds__unregister_cleanup(FPTR_VOID_PTR routine, void *arg)
  *
  **************************************/
 	CLEAN clean;
+	if (!initialized)
+	{
+		return;
+	}
 
+	Firebird::MutexLockGuard guard(cleanup_handlers_mutex);
 	for (CLEAN* clean_ptr = &cleanup_handlers; clean = *clean_ptr;
 		 clean_ptr = &clean->clean_next) 
 	{
@@ -3210,7 +3220,11 @@ void gds__cleanup(void)
 
 	gds__msg_close(NULL);
 
+	Firebird::MutexLockGuard guard(cleanup_handlers_mutex);
 	CLEAN clean;
+
+	initialized = false;
+	Firebird::InstanceControl::registerGdsCleanup(0);	
 
 	while ( (clean = cleanup_handlers) ) {
 		cleanup_handlers = clean->clean_next;
@@ -3225,9 +3239,6 @@ void gds__cleanup(void)
 
 		(*routine)(arg);
 	}
-
-	Firebird::InstanceControl::registerGdsCleanup(0);	
-	initialized = false;
 }
 
 static void init(void)
