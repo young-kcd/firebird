@@ -130,8 +130,10 @@ static const bool compatibility[LCK_max][LCK_max] =
 //#define COMPATIBLE(st1, st2)	compatibility [st1 * LCK_max + st2]
 const int LOCK_HASH_SIZE	= 19;
 
+// Lock manager wrapper functions.
+// Exist to ensure the dbb mutex is unlocked before calling the LM.
 
-inline bool LOCK_convert(Database* dbb,
+inline bool lock_convert(Database* dbb,
 						 SLONG request_offset,
 						 UCHAR type,
 						 SSHORT lck_wait,
@@ -144,14 +146,14 @@ inline bool LOCK_convert(Database* dbb,
 						ast_routine, ast_argument, status_vector);
 }
 
-inline bool LOCK_deq(Database* dbb,
+inline bool lock_deq(Database* dbb,
 					 SLONG request_offset)
 {
 	Database::Checkout dcoHolder(dbb);
 	return LOCK_deq(request_offset);
 }
 
-inline UCHAR LOCK_downgrade(Database* dbb,
+inline UCHAR lock_downgrade(Database* dbb,
 							SLONG request_offset,
 							ISC_STATUS* status_vector)
 {
@@ -159,7 +161,7 @@ inline UCHAR LOCK_downgrade(Database* dbb,
 	return LOCK_downgrade(request_offset, status_vector);
 }
 
-inline SLONG LOCK_enq(Database* dbb,
+inline SLONG lock_enq(Database* dbb,
 					  SLONG prior_request,
 					  SLONG parent_request,
 					  USHORT series,
@@ -179,7 +181,7 @@ inline SLONG LOCK_enq(Database* dbb,
 					lck_wait, status_vector, owner_offset);
 }
 
-inline bool LOCK_set_owner_handle(Database* dbb,
+inline bool lock_set_owner_handle(Database* dbb,
 								  SLONG request_offset,
 								  SLONG new_owner_offset)
 {
@@ -187,7 +189,7 @@ inline bool LOCK_set_owner_handle(Database* dbb,
 	return LOCK_set_owner_handle(request_offset, new_owner_offset);
 }
 
-inline void LOCK_fini(Database* dbb,
+inline void lock_fini(Database* dbb,
 					  ISC_STATUS* status_vector,
 					  SLONG* owner_offset)
 {
@@ -195,7 +197,7 @@ inline void LOCK_fini(Database* dbb,
 	LOCK_fini(status_vector, owner_offset);
 }
 
-inline int LOCK_init(Database* dbb,
+inline int lock_init(Database* dbb,
 					 ISC_STATUS* status_vector,
 					 LOCK_OWNER_T owner_id,
 					 UCHAR owner_type,
@@ -205,7 +207,7 @@ inline int LOCK_init(Database* dbb,
 	return LOCK_init(status_vector, owner_id, owner_type, owner_handle);
 }
 
-inline SLONG LOCK_query_data(Database* dbb,
+inline SLONG lock_query_data(Database* dbb,
 							 SLONG parent_request,
 							 USHORT series,
 							 USHORT aggregate)
@@ -214,14 +216,14 @@ inline SLONG LOCK_query_data(Database* dbb,
 	return LOCK_query_data(parent_request, series, aggregate);
 }
 
-inline SLONG LOCK_read_data(Database* dbb,
+inline SLONG lock_read_data(Database* dbb,
 							SLONG request_offset)
 {
 	Database::Checkout dcoHolder(dbb);
 	return LOCK_read_data(request_offset);
 }
 
-inline SLONG LOCK_read_data2(Database* dbb,
+inline SLONG lock_read_data2(Database* dbb,
 							 SLONG parent_request,
 							 USHORT series,
 							 const UCHAR* value,
@@ -232,7 +234,7 @@ inline SLONG LOCK_read_data2(Database* dbb,
 	return LOCK_read_data2(parent_request, series, value, length, owner_offset);
 }
 
-inline void LOCK_re_post(Database* dbb,
+inline void lock_re_post(Database* dbb,
 						 lock_ast_t ast,
 						 void* arg,
 						 SLONG owner_offset)
@@ -241,7 +243,7 @@ inline void LOCK_re_post(Database* dbb,
 	LOCK_re_post(ast, arg, owner_offset);
 }
 
-inline SLONG LOCK_write_data(Database* dbb,
+inline SLONG lock_write_data(Database* dbb,
 							 SLONG request_offset,
 							 SLONG data)
 {
@@ -262,7 +264,7 @@ inline bool CONVERT(thread_db* tdbb, Lock* lock, USHORT level, SSHORT wait, ISC_
 {
 	return (lock->lck_compatible) ?
 		internal_enqueue(tdbb, lock, level, wait, true) :
-		LOCK_convert(tdbb->getDatabase(), lock->lck_id,
+		lock_convert(tdbb->getDatabase(), lock->lck_id,
 					 level, wait, lock->lck_ast, lock->lck_object, status);
 }
 
@@ -271,14 +273,14 @@ inline void DEQUEUE(thread_db* tdbb, Lock* lock)
 	if (lock->lck_compatible)
 		internal_dequeue(tdbb, lock);
 	else
-		LOCK_deq(tdbb->getDatabase(), lock->lck_id);
+		lock_deq(tdbb->getDatabase(), lock->lck_id);
 }
 
 inline USHORT DOWNGRADE(thread_db* tdbb, Lock* lock, ISC_STATUS* status)
 {
 	return (lock->lck_compatible) ?
 		internal_downgrade(tdbb, lock) :
-		LOCK_downgrade(tdbb->getDatabase(), lock->lck_id, status);
+		lock_downgrade(tdbb->getDatabase(), lock->lck_id, status);
 }
 
 #ifdef DEV_BUILD
@@ -492,7 +494,7 @@ void LCK_fini(thread_db* tdbb, enum lck_owner_t owner_type)
 		break;
 	}
 
-	LOCK_fini(tdbb->getDatabase(), tdbb->tdbb_status_vector, owner_handle_ptr);
+	lock_fini(tdbb->getDatabase(), tdbb->tdbb_status_vector, owner_handle_ptr);
 }
 
 
@@ -592,7 +594,7 @@ bool LCK_set_owner_handle(Jrd::thread_db* tdbb, Jrd::Lock* lock, SLONG owner_han
 	fb_assert(lock->lck_physical > LCK_none);
 
 	const bool result =
-		LOCK_set_owner_handle(tdbb->getDatabase(), lock->lck_id, owner_handle);
+		lock_set_owner_handle(tdbb->getDatabase(), lock->lck_id, owner_handle);
 
 	if (result)
 		lock->lck_owner_handle = owner_handle;
@@ -634,7 +636,7 @@ void LCK_init(thread_db* tdbb, enum lck_owner_t owner_type)
 		break;
 	}
 
-	if (LOCK_init(tdbb->getDatabase(), tdbb->tdbb_status_vector,
+	if (lock_init(tdbb->getDatabase(), tdbb->tdbb_status_vector,
 				  owner_id, owner_type, owner_handle_ptr))
 	{
 		if (tdbb->tdbb_status_vector[1] == isc_lockmanerr)
@@ -736,7 +738,7 @@ SLONG LCK_query_data(thread_db* tdbb, Lock* parent, enum lck_t lock_type, USHORT
  **************************************/
 
 	fb_assert(LCK_CHECK_LOCK(parent));
-	return LOCK_query_data(tdbb->getDatabase(), parent->lck_id, lock_type, aggregate);
+	return lock_query_data(tdbb->getDatabase(), parent->lck_id, lock_type, aggregate);
 }
 
 
@@ -762,7 +764,7 @@ SLONG LCK_read_data(thread_db* tdbb, Lock* lock)
 #else
 	Lock* parent = lock->lck_parent;
 	const SLONG data =
-		LOCK_read_data2(tdbb->getDatabase(),
+		lock_read_data2(tdbb->getDatabase(),
 					    parent ? parent->lck_id : 0,
 						lock->lck_type,
 						(UCHAR *) & lock->lck_key,
@@ -825,7 +827,7 @@ void LCK_re_post(thread_db* tdbb, Lock* lock)
 		return;
 	}
 
-	LOCK_re_post(tdbb->getDatabase(), lock->lck_ast, lock->lck_object,
+	lock_re_post(tdbb->getDatabase(), lock->lck_ast, lock->lck_object,
 				 lock->lck_owner_handle);
 
 	fb_assert(LCK_CHECK_LOCK(lock));
@@ -846,7 +848,7 @@ void LCK_write_data(thread_db* tdbb, Lock* lock, SLONG data)
  **************************************/
 
 	fb_assert(LCK_CHECK_LOCK(lock));
-	LOCK_write_data(tdbb->getDatabase(), lock->lck_id, data);
+	lock_write_data(tdbb->getDatabase(), lock->lck_id, data);
 	lock->lck_data = data;
 	fb_assert(LCK_CHECK_LOCK(lock));
 }
@@ -931,7 +933,7 @@ static void enqueue(thread_db* tdbb, Lock* lock, USHORT level, SSHORT wait)
 	fb_assert(LCK_CHECK_LOCK(lock));
 
 	Lock* parent = lock->lck_parent;
-	lock->lck_id = LOCK_enq(tdbb->getDatabase(),
+	lock->lck_id = lock_enq(tdbb->getDatabase(),
 							lock->lck_id,
 							parent ? parent->lck_id : 0,
 							lock->lck_type,
@@ -1306,7 +1308,7 @@ static void internal_dequeue(thread_db* tdbb, Lock* lock)
 
 	Lock* match;
 	if (hash_remove_lock(lock, &match)) {
-		if (!LOCK_deq(tdbb->getDatabase(), lock->lck_id))
+		if (!lock_deq(tdbb->getDatabase(), lock->lck_id))
 			bug_lck("LOCK_deq() failed in Lock:internal_dequeue");
 		lock->lck_id = 0;
 		lock->lck_physical = lock->lck_logical = LCK_none;
@@ -1351,7 +1353,7 @@ static USHORT internal_downgrade(thread_db* tdbb, Lock* first)
 
 	if (level < first->lck_physical)
 	{
-		if (LOCK_convert(tdbb->getDatabase(),
+		if (lock_convert(tdbb->getDatabase(),
 						 first->lck_id,
 						 level,
 						 LCK_NO_WAIT,
@@ -1424,7 +1426,7 @@ static bool internal_enqueue(
 
 			if (level > match->lck_physical)
 			{
-				if (!LOCK_convert(tdbb->getDatabase(),
+				if (!lock_convert(tdbb->getDatabase(),
 								  match->lck_id,
 								  level,
 								  wait,
@@ -1454,7 +1456,7 @@ static bool internal_enqueue(
 /* enqueue the lock, but swap out the ast and the ast argument
    with the local ast handler, passing it the lock block itself */
 
-	lock->lck_id = LOCK_enq(tdbb->getDatabase(),
+	lock->lck_id = lock_enq(tdbb->getDatabase(),
 							lock->lck_id,
 							lock->lck_parent ? lock->lck_parent->lck_id : 0,
 							lock->lck_type,
