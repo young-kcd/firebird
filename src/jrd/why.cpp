@@ -165,11 +165,6 @@ inline void nullCheck(const FB_API_HANDLE* ptr, ISC_STATUS code)
 	}
 }
 
-//#define GET_STATUS			{ if (!(status = user_status)) status = local; init_status(status); }
-	// gone to YEntry
-//#define RETURN_SUCCESS			{ subsystem_exit(); CHECK_STATUS_SUCCESS (status); return FB_SUCCESS; }
-	// gone to YEntry
-
 #if defined (SUPERCLIENT)
 #define NO_LOCAL_DSQL
 #endif
@@ -197,6 +192,8 @@ static SCHAR *alloc_debug(SLONG, const char*, int);
 static SCHAR *alloc(SLONG);
 #endif
 static void free_block(void*);
+static ISC_STATUS detach_or_drop_database(ISC_STATUS * user_status, FB_API_HANDLE * handle,
+										  const int proc, const ISC_STATUS specCode = 0);
 
 namespace
 {
@@ -1859,12 +1856,29 @@ ISC_STATUS API_ROUTINE GDS_DETACH(ISC_STATUS * user_status,
 {
 /**************************************
  *
- *	g d s _ $ d e t a c h
+ *	g d s _ d e t a c h
  *
  **************************************
  *
  * Functional description
  *	Close down an attachment.
+ *
+ **************************************/
+	return detach_or_drop_database(user_status, handle, PROC_DETACH);
+}
+
+
+static ISC_STATUS detach_or_drop_database(ISC_STATUS * user_status, FB_API_HANDLE * handle,
+										  const int proc, const ISC_STATUS specCode)
+{
+/**************************************
+ *
+ *	d e t a c h _ o r _ d r o p _ d a t a b a s e 
+ *
+ **************************************
+ *
+ * Functional description
+ *	Common code for that calls.
  *
  **************************************/
 	YEntry status(user_status);
@@ -1878,7 +1892,6 @@ ISC_STATUS API_ROUTINE GDS_DETACH(ISC_STATUS * user_status,
 #if defined(SUPERSERVER) && !defined(EMBEDDED)
 
 			// Drop all DSQL statements to reclaim DSQL memory pools.
-
 			while ((i = dbb->statements.getCount()))
 			{
 				FB_API_HANDLE temp_handle;
@@ -1899,10 +1912,13 @@ ISC_STATUS API_ROUTINE GDS_DETACH(ISC_STATUS * user_status,
 			}
 #endif
 
-			if (CALL(PROC_DETACH, dbb->implementation) (status, &dbb->handle))
+			if (CALL(proc, dbb->implementation) (status, &dbb->handle) && 
+			    status[1] != specCode)
+			{
 				return status[1];
+			}
 
-			// Release associated request handles
+			// Release associated handles
 
 			while ((i = dbb->requests.getCount()))
 			{
@@ -1935,7 +1951,6 @@ ISC_STATUS API_ROUTINE GDS_DETACH(ISC_STATUS * user_status,
 
 	return status[1];
 }
-
 
 int API_ROUTINE gds__disable_subsystem(TEXT * subsystem)
 {
@@ -1978,72 +1993,7 @@ ISC_STATUS API_ROUTINE GDS_DROP_DATABASE(ISC_STATUS * user_status,
  *	Close down a database and then purge it.
  *
  **************************************/
-	YEntry status(user_status);
-	try 
-	{
-		Attachment* dbb = translate<Attachment>(handle);
-		size_t i;
-
-#if defined(SUPERSERVER) && !defined(EMBEDDED)
-
-		// Drop all DSQL statements to reclaim DSQL memory pools.
-
-		while ((i = dbb->statements.getCount()))
-		{
-			FB_API_HANDLE temp_handle;
-			Statement* statement = dbb->statements[i - 1];
-			if (!statement->user_handle) {
-				temp_handle = statement->public_handle;
-				statement->user_handle = &temp_handle;
-			}
-
-			subsystem_exit();
-			ISC_STATUS rc = GDS_DSQL_FREE(status, statement->user_handle, DSQL_drop);
-			subsystem_enter();
-
-			if (rc)
-			{
-				return status[1];
-			}
-		}
-#endif
-
-	CALL(PROC_DROP_DATABASE, dbb->implementation) (status, &dbb->handle);
-
-	if (status[1] && (status[1] != isc_drdb_completed_with_errs))
-		return status[1];
-
-		// Release associated request handles
-
-		while ((i = dbb->requests.getCount()))
-		{
-			delete dbb->requests[i - 1];
-		}
-
-#ifndef SUPERSERVER
-		while ((i = dbb->statements.getCount()))
-		{
-			release_dsql_support(dbb->statements[i - 1]->das);
-			delete dbb->statements[i - 1];
-		}
-#endif
-
-		while ((i = dbb->blobs.getCount()))
-		{
-			delete dbb->blobs[i - 1];
-		}
-
-		SUBSYSTEM_USAGE_DECR;
-
-		delete dbb;
-		*handle = 0;
-	}
-	catch (const Firebird::Exception& e)
-	{
-		e.stuff_exception(status);
-	}
-
-	return status[1];
+	return detach_or_drop_database(user_status, handle, PROC_DROP_DATABASE, isc_drdb_completed_with_errs);
 }
 
 
