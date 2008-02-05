@@ -1,3 +1,59 @@
+2008-02-04 20:19  dimitr
+
+	* firebird2/src/jrd/DatabaseSnapshot.h (1.13):
+
+	Cleanup.
+
+2008-02-04 18:01  asfernandes
+
+	* firebird2/src/: dsql/dsql.cpp (1.216), dsql/utld.cpp (1.45),
+	jrd/gds.cpp (1.237), jrd/opt.cpp (1.307):
+
+	Misc
+
+2008-02-04 16:00  dimitr
+
+	* firebird2/src/jrd/isc_sync.cpp (1.124):
+
+	Make the routine behavior consistent across platforms.
+
+2008-02-04 15:53  alexpeshkoff
+
+	* firebird2/src/jrd/gds.cpp (1.236):
+
+	protected cleanup liknked list with mutex
+
+2008-02-04 15:10  alexpeshkoff
+
+	* firebird2/src/jrd/why.cpp (1.144):
+
+	Avoid code dup and fix unprotected by mutex access to attachment -
+	thanks to Claudio
+
+2008-02-04 13:45  dimitr
+
+	* firebird2/src/dsql/dsql.cpp (1.215):
+
+	Cleanup and refactoring.
+
+2008-02-04 13:01  alexpeshkoff
+
+	* firebird2/src/jrd/svc.cpp (1.201):
+
+	removed old comments: they are wrong now
+
+2008-02-04 12:59  alexpeshkoff
+
+	* firebird2/src/common/classes/init.h (1.10):
+
+	Use LockGuard instead of try/catch
+
+2008-02-04 11:06  dimitr
+
+	* firebird2/src/jrd/lck.cpp (1.74):
+
+	Changed the LM wrapper functions prefix (by Claudio's request).
+
 2008-02-03 20:15  asfernandes
 
 	* firebird2/: builds/posix/make.shared.variables (1.81),
