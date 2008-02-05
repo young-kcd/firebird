@@ -255,12 +255,12 @@ public:
 	SSHORT		fld_character_set_id;	//!< ID of field's character set
 	SSHORT		fld_collation_id;		//!< ID of field's collation
 	SSHORT		fld_ttype;				//!< ID of field's language_driver
-	Firebird::MetaName fld_type_of_name;	//!< TYPE OF
+	Firebird::string fld_type_of_name;	//!< TYPE OF
 	dsql_str*	fld_type_of_table;		//!< TYPE OF table name
 	bool		fld_explicit_collation;	//!< COLLATE was explicit specified
 	bool		fld_not_nullable;		//!< NOT NULL was explicit specified
 	bool		fld_full_domain;		//!< Domain name without TYPE OF prefix
-	Firebird::MetaName fld_name;
+	Firebird::string fld_name;
 	Firebird::MetaName fld_source;
 };
 
@@ -421,6 +421,7 @@ public:
 	void		append_meta_string(const char* string);
 	void		append_string(UCHAR verb, const char* string, USHORT len);
 	void		append_string(UCHAR verb, const Firebird::MetaName& name);
+	void		append_string(UCHAR verb, const Firebird::string& name);
 	void		append_number(UCHAR verb, SSHORT number);
 	void		begin_blr(UCHAR verb);
 	void		end_blr();

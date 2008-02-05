@@ -274,6 +274,15 @@ inline void dsql_req::append_string(UCHAR verb, const Firebird::MetaName& name)
 }
 
 
+//
+//	Write out a string valued attribute. (Overload 3.)
+//
+inline void dsql_req::append_string(UCHAR verb, const Firebird::string& name)
+{
+	append_string(verb, name.c_str(), name.length());
+}
+
+
 inline void dsql_req::append_uchar(UCHAR byte)
 {
 	req_blr_data.add(byte);
