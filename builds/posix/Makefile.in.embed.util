@@ -91,7 +91,7 @@ GSTAT_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(GSTAT_Sources)
 
 FBSVCMGR_Files= fbsvcmgr.cpp
 FBSVCMGR_Other_Sources = common/classes/fb_string.cpp common/classes/alloc.cpp \
-common/fb_exception.cpp common/utils.cpp
+common/fb_exception.cpp common/utils.cpp common/classes/locks.cpp
 
 FBSVCMGR_Sources = $(addprefix utilities/, $(FBSVCMGR_Files)) $(FBSVCMGR_Other_Sources)
 FBSVCMGR_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(FBSVCMGR_Sources)))) \
