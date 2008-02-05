@@ -104,7 +104,7 @@ static dsql_sym* lookup_symbol(dsql_dbb*, const dsql_str*, SYM_TYPE, USHORT = 0)
 
 namespace {
 #ifdef  SUPERSERVER
-	Firebird::GlobalPtr<Firebird::RecursiveMutex> rec_mutex;	// Recursive metadata mutex 
+	Firebird::GlobalPtr<Firebird::Mutex> rec_mutex;	// Metadata mutex 
 
 	class RecMutexHolder {
 	public:

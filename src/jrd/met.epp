@@ -2992,11 +2992,7 @@ jrd_prc* MET_procedure(thread_db* tdbb, int id, bool noscan, USHORT flags)
 		vector->resize(id + 10);
 	}
 
-	{ // scope
-		Database::Checkout dcoHolder(dbb);
-		if (dbb->dbb_sp_rec_mutex.enter())
-			return NULL;
-	}
+	Database::CheckoutLockGuard guard(dbb, dbb->dbb_sp_rec_mutex);
 
 	jrd_prc* procedure = (*vector)[id];
 	if (procedure)
@@ -3030,7 +3026,6 @@ jrd_prc* MET_procedure(thread_db* tdbb, int id, bool noscan, USHORT flags)
 		if ((procedure->prc_flags & PRC_being_scanned) ||
 			(procedure->prc_flags & PRC_scanned))
 		{
-			dbb->dbb_sp_rec_mutex.leave();
 			return procedure;
 		}
 	}
@@ -3329,12 +3324,10 @@ jrd_prc* MET_procedure(thread_db* tdbb, int id, bool noscan, USHORT flags)
 	fb_assert(procedure->prc_flags & PRC_being_scanned);
 
 	procedure->prc_flags &= ~PRC_being_scanned;
-	dbb->dbb_sp_rec_mutex.leave();
 
 	}	// try
 	catch (const Firebird::Exception&) {
 		procedure->prc_flags &= ~(PRC_being_scanned | PRC_scanned);
-		dbb->dbb_sp_rec_mutex.leave();
 		if (procedure->prc_existence_lock)
 		{
 			LCK_release(tdbb, procedure->prc_existence_lock);
@@ -3694,42 +3687,37 @@ void MET_scan_relation( thread_db* tdbb, jrd_rel* relation)
  *      expressions, and validation expressions.
  *
  **************************************/
-	trig_vec* triggers[TRIGGER_MAX];
-
 	SET_TDBB(tdbb);
+	trig_vec* triggers[TRIGGER_MAX];
 	Database* dbb = tdbb->getDatabase();
-
-	{ // scope
-		Database::Checkout dcoHolder(dbb);
-		if (dbb->dbb_sp_rec_mutex.enter())
-			return;
-	}
-
-	if (relation->rel_flags & REL_scanned
-		|| relation->rel_flags & REL_deleted)
-	{
-		dbb->dbb_sp_rec_mutex.leave();
-		return;
-	}
-
-	relation->rel_flags |= REL_being_scanned;
-	const bool dependencies =
-		(relation->rel_flags & REL_get_dependencies) ? true : false;
-	const bool sys_triggers = (relation->rel_flags & REL_sys_triggers) ? true : false;
-	relation->rel_flags &= ~(REL_get_dependencies | REL_sys_triggers);
-	for (USHORT itr = 0; itr < TRIGGER_MAX; ++itr) {
-		triggers[itr] = NULL;
-	}
 	Jrd::ContextPoolHolder context(tdbb, dbb->dbb_permanent);
+	bool dependencies = false;
+	bool sys_triggers = false;
+
 	blb* blob = NULL;
+	jrd_req* request = NULL;
 
 /* If anything errors, catch it to reset the scan flag.  This will
    make sure that the error will be caught if the operation is tried
    again. */
 
-	jrd_req* request = NULL;
-
 	try {
+
+	Database::CheckoutLockGuard guard(dbb, dbb->dbb_sp_rec_mutex);
+
+	if (relation->rel_flags & REL_scanned
+		|| relation->rel_flags & REL_deleted)
+	{
+		return;
+	}
+
+	relation->rel_flags |= REL_being_scanned;
+	dependencies = (relation->rel_flags & REL_get_dependencies) ? true : false;
+	sys_triggers = (relation->rel_flags & REL_sys_triggers) ? true : false;
+	relation->rel_flags &= ~(REL_get_dependencies | REL_sys_triggers);
+	for (USHORT itr = 0; itr < TRIGGER_MAX; ++itr) {
+		triggers[itr] = NULL;
+	}
 
 /* Since this can be called recursively, find an inactive clone of the request */
 
@@ -4046,7 +4034,6 @@ void MET_scan_relation( thread_db* tdbb, jrd_rel* relation)
 	}
 
 	relation->rel_flags &= ~REL_being_scanned;
-	dbb->dbb_sp_rec_mutex.leave();
 
 	relation->rel_current_format = NULL;
 
@@ -4061,8 +4048,6 @@ void MET_scan_relation( thread_db* tdbb, jrd_rel* relation)
 		}
 		if (blob)
 			BLB_close(tdbb, blob);
-
-		dbb->dbb_sp_rec_mutex.leave();
 
 		// Some functions inside FOR loop may throw, in which case request
 		// remained active forever. AP: 13-may-05.

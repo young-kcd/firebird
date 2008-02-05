@@ -47,6 +47,7 @@
 namespace Firebird {
 
 class MemoryPool;	// Needed for ctors that must always ignore it
+class Exception;	// Needed for catch
 
 #ifdef WIN_NT
 
@@ -105,6 +106,8 @@ public:
 
 #ifdef SOLARIS_MT
 
+#error: Make mutexes on Solaris recursive!
+
 class Mutex
 {
 private:
@@ -141,25 +144,33 @@ class Mutex
 {
 private:
 	pthread_mutex_t mlock;
+	static bool attrDone;
+	static pthread_mutexattr_t attr;
+	static void initAttr();
+	void init() {
+		if (! attrDone)
+			initAttr();
+		int rc = pthread_mutex_init(&mlock, &attr);
+		if (rc < 0)
+			system_call_failed::raise("pthread_mutex_init");
+	}
+	
 public:
-	Mutex() {
-		if (pthread_mutex_init(&mlock, 0))
-			system_call_failed::raise("pthread_mutex_init");
-	}
-	explicit Mutex(MemoryPool&) {
-		if (pthread_mutex_init(&mlock, 0))
-			system_call_failed::raise("pthread_mutex_init");
-	}
+	Mutex() { init(); }
+	explicit Mutex(MemoryPool&) { init(); }
 	~Mutex() {
-		if (pthread_mutex_destroy(&mlock))
+		int rc = pthread_mutex_destroy(&mlock);
+		if (rc < 0)
 			system_call_failed::raise("pthread_mutex_destroy");
 	}
 	void enter() {
-		if (pthread_mutex_lock(&mlock))
+		int rc = pthread_mutex_lock(&mlock);
+		if (rc < 0)
 			system_call_failed::raise("pthread_mutex_lock");
 	}
 	void leave() {
-		if (pthread_mutex_unlock(&mlock))
+		int rc = pthread_mutex_unlock(&mlock);
+		if (rc < 0)
 			system_call_failed::raise("pthread_mutex_unlock");
 	}
 };
@@ -197,48 +208,48 @@ public:
 
 #endif //WIN_NT
 
-// Recursive mutex
-class RecursiveMutex
-{
-private:
-	Firebird::Mutex mutex;
-	FB_THREAD_ID threadId;
-	int count;
-
-public:
-	RecursiveMutex()
-		: mutex(), threadId(0), count(0)
-	{}
-
-	explicit RecursiveMutex(MemoryPool&)
-		: mutex(), threadId(0), count(0)
-	{}
-	
-	int enter();
-	int leave();
-};
 
 // RAII holder
-template <typename M>
-class LockGuard
+class MutexLockGuard
 {
 public:
-	explicit LockGuard(M &alock) 
+	explicit MutexLockGuard(Mutex &alock) 
 		: lock(&alock)
 	{
 		lock->enter();
 	}
 
-	~LockGuard() { lock->leave(); }
+	~MutexLockGuard() 
+	{ 
+		try {
+			lock->leave();
+		}
+		catch(const Exception&)
+		{
+			onDtorException();
+		}
+	}
+
+	static void onDtorException()
+	{
+		// If LockGuard's dtor is executed during exception processing,
+		// (remember - this guards live on the stack), exception 
+		// in leave() causes std::terminate() to be called, therefore
+		// loosing original exception information. Not good for us. 
+		// Therefore ignore in release and abort in debug.
+#ifdef DEV_BUILD
+		halt();
+#endif
+	}
 
 private:
 	// Forbid copy constructor
-	LockGuard(const LockGuard& source);
-	M *lock;
+	MutexLockGuard(const MutexLockGuard& source);
+	Mutex *lock;
+#ifdef DEV_BUILD
+	static void halt();
+#endif
 };
-
-typedef LockGuard<Mutex> MutexLockGuard;
-typedef LockGuard<RecursiveMutex> RecursiveMutexLockGuard;
 
 } //namespace Firebird
 

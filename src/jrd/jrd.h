@@ -264,7 +264,14 @@ public:
 
 		~SyncGuard()
 		{
-			dbb->dbb_sync.unlock();
+			try
+			{
+				dbb->dbb_sync.unlock();
+			}
+			catch(const Firebird::Exception&)
+			{
+				Firebird::MutexLockGuard::onDtorException();
+			}
 		}
 
 	private:
@@ -302,6 +309,35 @@ public:
 
 		Database* dbb;
 		const bool io;
+	};
+	
+	class CheckoutLockGuard
+	{
+	public:
+		CheckoutLockGuard(Database* dbb, Firebird::Mutex& m)
+			: mutex(&m)
+		{
+			Checkout dcoHolder(dbb);
+			mutex->enter();
+		}
+
+		~CheckoutLockGuard()
+		{
+			try {
+				mutex->leave();
+			}
+			catch(const Firebird::Exception&)
+			{
+				Firebird::MutexLockGuard::onDtorException();
+			}
+		}
+
+	private:
+		// copying is prohibited
+		CheckoutLockGuard(const CheckoutLockGuard&);
+		CheckoutLockGuard& operator=(const CheckoutLockGuard&);
+
+		Firebird::Mutex* mutex;
 	};
 
 	typedef int (*crypt_routine) (const char*, void*, int, void*);
@@ -363,7 +399,7 @@ public:
 
 	DatabaseModules	dbb_modules;		// external function/filter modules
 	Firebird::Mutex* dbb_mutexes;		// Database block mutexes
-	Firebird::RecursiveMutex dbb_sp_rec_mutex;	// Recursive mutex for accessing/updating stored procedure metadata
+	Firebird::Mutex dbb_sp_rec_mutex;	// Mutex for accessing/updating stored procedure metadata
 	//SLONG dbb_sort_size;				// Size of sort space per sort, unused for now
 
 	UATOM dbb_ast_flags;				// flags modified at AST level

@@ -143,16 +143,16 @@ namespace YValve
 	};
 	
 	template <typename HType>
-		void toParent(Firebird::SortedArray<HType*>& members, HType* newMember, Firebird::RecursiveMutex& mutex)
+		void toParent(Firebird::SortedArray<HType*>& members, HType* newMember, Firebird::Mutex& mutex)
 	{
-		Firebird::RecursiveMutexLockGuard guard(mutex);
+		Firebird::MutexLockGuard guard(mutex);
 		members.add(newMember);
 	}
 
 	template <typename HType>
-		void fromParent(Firebird::SortedArray<HType*>& members, HType* newMember, Firebird::RecursiveMutex& mutex)
+		void fromParent(Firebird::SortedArray<HType*>& members, HType* newMember, Firebird::Mutex& mutex)
 	{
-		Firebird::RecursiveMutexLockGuard guard(mutex);
+		Firebird::MutexLockGuard guard(mutex);
 		size_t pos;
 		if (members.find(newMember, pos))
 		{
@@ -194,7 +194,7 @@ namespace YValve
 		Firebird::SortedArray<Statement*> statements;
 		// Each array can be protected with personal mutex, but possibility 
 		// of collision is so slow here, that I prefer to save resources, using single mutex.
-		Firebird::RecursiveMutex mutex;
+		Firebird::Mutex mutex;
 
 		Clean<AttachmentCleanupRoutine, FB_API_HANDLE*> cleanup;
 		StoredAtt* handle;

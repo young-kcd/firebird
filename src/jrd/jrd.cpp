@@ -142,8 +142,16 @@ int debug;
 
 namespace
 {
-	Firebird::GlobalPtr<Firebird::RecursiveMutex> databases_rec_mutex;
 	Database* databases = NULL;
+	Firebird::GlobalPtr<Firebird::Mutex> databases_rec_mutex;
+	inline void dbMutexLock()
+	{
+		databases_rec_mutex->enter();
+	}
+	inline void dbMutexUnlock()
+	{
+		databases_rec_mutex->leave();
+	}
 
 	class EngineStartup
 	{
@@ -163,18 +171,6 @@ namespace
 
 	Firebird::InitMutex<EngineStartup> engineStartup;
 
-	// Here we always ignore mutex errors. Possibly not good.
-
-	inline void dbMutexLock()
-	{
-		databases_rec_mutex->enter();
-	}
-
-	inline void dbMutexUnlock()
-	{
-		databases_rec_mutex->leave();
-	}
-
 	class DbMutexGuard
 	{
 	public:
@@ -185,7 +181,13 @@ namespace
 
 		~DbMutexGuard()
 		{
-			dbMutexUnlock();
+			try {
+				dbMutexUnlock();
+			}
+			catch(const Firebird::Exception&)
+			{
+				Firebird::MutexLockGuard::onDtorException();
+			}
 		}
 
 	private:
@@ -295,17 +297,10 @@ void Jrd::Trigger::compile(thread_db* tdbb)
 
 		Database* dbb = tdbb->getDatabase();
 
-		{ // scope
-			Database::Checkout dcoHolder(dbb);
-			const int error = dbb->dbb_sp_rec_mutex.enter();
-			if (error) {
-				Firebird::system_call_failed::raise("mutex_lock", error);
-			}
-		}
+		Database::CheckoutLockGuard guard(dbb, dbb->dbb_sp_rec_mutex);
 
 		if (request)
 		{
-			dbb->dbb_sp_rec_mutex.leave();
 			return;
 		}
 
@@ -349,7 +344,6 @@ void Jrd::Trigger::compile(thread_db* tdbb)
 				dbb->deletePool(new_pool);
 			}
 
-			dbb->dbb_sp_rec_mutex.leave();
 			throw;
 		}
 		
@@ -365,8 +359,6 @@ void Jrd::Trigger::compile(thread_db* tdbb)
 		}
 
 		compile_in_progress = false;
-
-		dbb->dbb_sp_rec_mutex.leave();
 	}
 }
 
@@ -4843,6 +4835,8 @@ static Database* init(thread_db*	tdbb,
 
 	engineStartup.init();
 
+	try {
+
 	dbMutexLock();
 
 	// Check to see if the database is already actively attached
@@ -4859,7 +4853,6 @@ static Database* init(thread_db*	tdbb,
 	}
 #endif
 
-	try {
 #ifdef SUPERSERVER
 	Firebird::MemoryStats temp_stats;
 	MemoryPool* perm = MemoryPool::createPool(NULL, temp_stats);
@@ -5490,17 +5483,23 @@ static bool shutdown_all()
  **************************************/
 	ThreadContextHolder tdbb;
 
-	DbMutexGuard guard;
+	try {
+		DbMutexGuard guard;
 
-	Database* dbb_next;
-	for (Database* dbb = databases; dbb; dbb = dbb_next)
-	{
-		dbb_next = dbb->dbb_next;
-
-		if (!shutdown_dbb(tdbb, dbb, NULL))
+		Database* dbb_next;
+		for (Database* dbb = databases; dbb; dbb = dbb_next)
 		{
-			return false;
+			dbb_next = dbb->dbb_next;
+
+			if (!shutdown_dbb(tdbb, dbb, NULL))
+			{
+				return false;
+			}
 		}
+	}
+	catch (const Firebird::Exception&)
+	{
+		return false;
 	}
 
 	return true;
@@ -5552,6 +5551,7 @@ TEXT* JRD_num_attachments(TEXT* const buf, USHORT buf_len, USHORT flag,
 	USHORT total = 0;
 	Firebird::HalfStaticArray<Firebird::PathName, 8> dbFiles;
 
+	try {
 	dbMutexLock();
 
 	// Zip through the list of databases and count the number of local
@@ -5604,6 +5604,14 @@ TEXT* JRD_num_attachments(TEXT* const buf, USHORT buf_len, USHORT flag,
 	}
 
 	dbMutexUnlock();
+	}
+	catch (const Firebird::Exception&)
+	{
+		// Here we ignore possible errors from databases_rec_mutex.
+		// They were always silently ignored, and for this function 
+		// we really have no way to notify world about mutex problem.
+		//		AP. 2008.
+	}
 
 	*atts = num_att;
 	*dbs = num_dbs;
@@ -5774,20 +5782,28 @@ void JRD_database_close(Attachment** handle, Attachment** released)
 {
 	ThreadContextHolder tdbb;
 
-	DbMutexGuard guard;
+	try {
+		DbMutexGuard guard;
 
-	Database* dbb = databases;
-	for (; dbb; dbb = dbb->dbb_next)
-	{
-		for (Attachment* attach = dbb->dbb_attachments; attach; attach = attach->att_next)
+		Database* dbb = databases;
+		for (; dbb; dbb = dbb->dbb_next)
 		{
-			if (attach == *handle)
+			for (Attachment* attach = dbb->dbb_attachments; attach; attach = attach->att_next)
 			{
-				// got dbb to be closed
-				shutdown_dbb(tdbb, dbb, released);
-				return;
+				if (attach == *handle)
+				{
+					// got dbb to be closed
+					shutdown_dbb(tdbb, dbb, released);
+					return;
+				}
 			}
 		}
+	}
+	catch (const Firebird::Exception&)
+	{
+		// This function is called from yValve as a last attempt to help 
+		// when terminate signal is sent to firebird server.
+		// Ignore possible mutex problems.
 	}
 }
 

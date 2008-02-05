@@ -91,7 +91,7 @@ public:
 class StaticMutex
 {
 protected:
-	static RecursiveMutex* mutex;
+	static Mutex* mutex;
 public:
 	static void create();
 	static void release();
@@ -110,7 +110,7 @@ public:
 	void init() 
 	{
 		if (!flag) {
-			RecursiveMutexLockGuard guard(*mutex);
+			MutexLockGuard guard(*mutex);
 			if (!flag) {
 				C::init();
 				flag = true;
@@ -120,7 +120,7 @@ public:
 	void cleanup() 
 	{
 		if (flag) {
-			RecursiveMutexLockGuard guard(*mutex);
+			MutexLockGuard guard(*mutex);
 			if (flag) {
 				C::cleanup();
 				flag = false;
@@ -155,7 +155,7 @@ public:
 	T& operator()() 
 	{
 		if (!flag) {
-			RecursiveMutexLockGuard guard(*mutex);
+			MutexLockGuard guard(*mutex);
 			if (!flag) {
 				instance = I::init();
 				flag = true;

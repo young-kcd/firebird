@@ -204,7 +204,7 @@ namespace
 	Firebird::GlobalPtr<Firebird::RWLock> handleMappingLock;
 
 	Firebird::InitInstance<Firebird::SortedArray<Attachment*> > attachments;
-	Firebird::GlobalPtr<Firebird::RecursiveMutex> attachmentsMutex;
+	Firebird::GlobalPtr<Firebird::Mutex> attachmentsMutex;
 };
 
 namespace YValve
@@ -480,7 +480,7 @@ namespace
 	
 	void markShutdown(Attachment* attach)
 	{
-		Firebird::RecursiveMutexLockGuard guard(attach->mutex);
+		Firebird::MutexLockGuard guard(attach->mutex);
 		attach->flags |= HANDLE_shutdown;
 
 		markHandlesShutdown(attach->transactions);
@@ -557,7 +557,7 @@ namespace
 					Jrd::Attachment* attach = handle->getAttachmentHandle();
 					Firebird::HalfStaticArray<Jrd::Attachment*, 2> releasedBuffer;
 
-					Firebird::RecursiveMutexLockGuard guard(attachmentsMutex);
+					Firebird::MutexLockGuard guard(attachmentsMutex);
 					Jrd::Attachment** released = 
 						releasedBuffer.getBuffer(attachments().getCount() + 1);
 					*released = 0;
@@ -615,7 +615,7 @@ namespace
 			// and memcpy/memmove copying data with at least sizeof(void*)
 			// portions, this code is really safe.
 			
-			Firebird::RecursiveMutexLockGuard guard(attachmentsMutex);
+			Firebird::MutexLockGuard guard(attachmentsMutex);
 			for (size_t n = 0; n < attachments().getCount(); ++n)
 			{
 				markShutdown(attachments()[n]);
@@ -1886,7 +1886,7 @@ static ISC_STATUS detach_or_drop_database(ISC_STATUS * user_status, FB_API_HANDL
 	{
 		Attachment* dbb = translate<Attachment>(handle);
 		{ // guard scope
-			Firebird::RecursiveMutexLockGuard guard(dbb->mutex);
+			Firebird::MutexLockGuard guard(dbb->mutex);
 			size_t i;
 
 #if defined(SUPERSERVER) && !defined(EMBEDDED)

@@ -30,9 +30,13 @@
 #include "../../common/thd.h"
 #include "../../jrd/common.h"
 
+#ifdef HAVE_STDLIB_H
+#include <stdlib.h>
+#endif
+
 namespace Firebird {
 
-#ifdef WIN_NT
+#if defined(WIN_NT)
 
 #define MISS_SPIN_COUNT ((tSetCriticalSectionSpinCount *)(-1))
 #define INIT_SPIN_COUNT ((tSetCriticalSectionSpinCount *)(0))
@@ -63,54 +67,36 @@ void Spinlock::init()
 	SetCriticalSectionSpinCount(&spinlock, 4000);
 }
 
-#endif  // WIN_NT
+#elif defined(SOLARIS_MT)
 
+#error Fix me!
 
-// In some cases recursive mutex's are not protected by try/catch
-// therefore keep old (return value) logic 
+#else //posix mutex
 
-int RecursiveMutex::enter()
+bool Mutex::attrDone = false;
+pthread_mutexattr_t Mutex::attr;
+void Mutex::initAttr()
 {
-	if (threadId == getThreadId())
-	{
-		++count;
-	}
-	else 
-	{
-	    try 
-		{
-			mutex.enter();
-		}
-		catch (const Firebird::system_call_failed& e)
-		{
-			return e.getErrorCode();
-		}
-		threadId = getThreadId();
-		count = 1;
-	}
-	return 0;
+	// Throw exceptions on errors, but they will not be processed in first mutex constructor...
+	int rc = pthread_mutexattr_init(&attr);
+	if (rc < 0)
+		system_call_failed::raise("pthread_mutexattr_init", rc);
+
+	rc = pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
+	if (rc < 0)
+		system_call_failed::raise("pthread_mutexattr_settype", rc);
+
+	attrDone = true;
 }
 
-int RecursiveMutex::leave()
-{
-	if (threadId != getThreadId())
-	{
-		return FB_FAILURE;
-	}
+#endif
 
-	if (--count == 0)
-	{
-		threadId = 0;
-	    try 
-		{
-			mutex.leave();
-		}
-		catch (const Firebird::system_call_failed& e)
-		{
-			return e.getErrorCode();
-		}
-	}
-	return 0;
+
+#ifdef DEV_BUILD
+void MutexLockGuard::halt()
+{
+	abort();
 }
+#endif
 
 } // namespace Firebird

@@ -4663,107 +4663,89 @@ static bool modify_procedure(	thread_db*	tdbb,
 			return false;
 		}
 
-		try {
+		{ // guard scope
+			Database::CheckoutLockGuard guard(dbb, dbb->dbb_sp_rec_mutex);
 
-		{ // scope
-			Database::Checkout dcoHolder(dbb);
-			if (tdbb->getDatabase()->dbb_sp_rec_mutex.enter())
-				return false;
-		}
-
-		// Do not allow to modify procedure used by user requests
-		if (procedure->prc_use_count && MET_procedure_in_use(tdbb, procedure))
-		{
-			/*
-			ERR_post(isc_no_meta_update,
-					 isc_arg_gds, isc_obj_in_use,
-					 isc_arg_string, ERR_cstring(work->dfw_name),
-					 0);
-			*/
-			gds__log("Modifying procedure %s which is currently in use by active user requests",
-					 work->dfw_name.c_str());
-
-			USHORT prc_alter_count = procedure->prc_alter_count;
-			if (prc_alter_count > MAX_PROC_ALTER)
+			// Do not allow to modify procedure used by user requests
+			if (procedure->prc_use_count && MET_procedure_in_use(tdbb, procedure))
 			{
-				ERR_post(isc_no_meta_update,
-						 isc_arg_gds, isc_proc_name,
-						 isc_arg_string, ERR_cstring(work->dfw_name),
-						 isc_arg_gds, isc_version_err,
-						 0);
-				/* Msg357: too many versions */
-			}
-
-			if (procedure->prc_existence_lock) {
-				LCK_release(tdbb, procedure->prc_existence_lock);
-			}
-			(*tdbb->getDatabase()->dbb_procedures)[procedure->prc_id] = NULL;
-
-			if (!(procedure = MET_lookup_procedure_id(tdbb,
-													  work->dfw_id,
-													  false,
-													  true,
-													  PRC_being_altered)))
-			{
-				tdbb->getDatabase()->dbb_sp_rec_mutex.leave();
-				return false;
-			}
-			procedure->prc_alter_count = ++prc_alter_count;
-		}
-
-		procedure->prc_flags |= PRC_being_altered;
-		if (procedure->prc_request)
-		{
-			if (CMP_clone_is_active(procedure->prc_request))
+				/*
 				ERR_post(isc_no_meta_update,
 						 isc_arg_gds, isc_obj_in_use,
 						 isc_arg_string, ERR_cstring(work->dfw_name),
 						 0);
+				*/
+				gds__log("Modifying procedure %s which is currently in use by active user requests",
+						 work->dfw_name.c_str());
 
-			/* release the request */
+				USHORT prc_alter_count = procedure->prc_alter_count;
+				if (prc_alter_count > MAX_PROC_ALTER)
+				{
+					ERR_post(isc_no_meta_update,
+							 isc_arg_gds, isc_proc_name,
+							 isc_arg_string, ERR_cstring(work->dfw_name),
+							 isc_arg_gds, isc_version_err,
+							 0);
+					/* Msg357: too many versions */
+				}
 
-			CMP_release(tdbb, procedure->prc_request);
-			procedure->prc_request = 0;
+				if (procedure->prc_existence_lock) {
+					LCK_release(tdbb, procedure->prc_existence_lock);
+				}
+				(*tdbb->getDatabase()->dbb_procedures)[procedure->prc_id] = NULL;
+
+				if (!(procedure = MET_lookup_procedure_id(tdbb, work->dfw_id, false,
+														  true, PRC_being_altered)))
+				{
+					return false;
+				}
+				procedure->prc_alter_count = ++prc_alter_count;
+			}
+
+			procedure->prc_flags |= PRC_being_altered;
+			if (procedure->prc_request)
+			{
+				if (CMP_clone_is_active(procedure->prc_request))
+					ERR_post(isc_no_meta_update,
+							 isc_arg_gds, isc_obj_in_use,
+							 isc_arg_string, ERR_cstring(work->dfw_name),
+							 0);
+
+				/* release the request */
+
+				CMP_release(tdbb, procedure->prc_request);
+				procedure->prc_request = 0;
+			}
+
+			/* delete dependency lists */
+
+			MET_delete_dependencies(tdbb, work->dfw_name, obj_procedure);
+
+			/* the procedure has just been scanned by MET_lookup_procedure_id
+			   and its PRC_scanned flag is set. We are going to reread it
+			   from file (create all new dependencies) and do not want this
+			   flag to be set. That is why we do not add PRC_obsolete and
+			   PRC_being_altered flags, we set only these two flags
+			 */
+			procedure->prc_flags = (PRC_obsolete | PRC_being_altered);
+
+			if (procedure->prc_existence_lock) {
+				LCK_release(tdbb, procedure->prc_existence_lock);
+			}
+
+			/* remove procedure from cache */
+
+			MET_remove_procedure(tdbb, work->dfw_id, NULL);
+
+			/* Now handle the new definition */
+			const DeferredWork* arg = work->dfw_args;
+			while (arg && (arg->dfw_type != dfw_arg_check_blr)) 
+				arg = arg->dfw_next;
+
+			get_procedure_dependencies(work, arg == NULL);
+
+			procedure->prc_flags &= ~(PRC_obsolete | PRC_being_altered);
 		}
-
-		/* delete dependency lists */
-
-		MET_delete_dependencies(tdbb, work->dfw_name, obj_procedure);
-
-		/* the procedure has just been scanned by MET_lookup_procedure_id
-		   and its PRC_scanned flag is set. We are going to reread it
-		   from file (create all new dependencies) and do not want this
-		   flag to be set. That is why we do not add PRC_obsolete and
-		   PRC_being_altered flags, we set only these two flags
-		 */
-		procedure->prc_flags = (PRC_obsolete | PRC_being_altered);
-
-		if (procedure->prc_existence_lock) {
-			LCK_release(tdbb, procedure->prc_existence_lock);
-		}
-
-		/* remove procedure from cache */
-
-		MET_remove_procedure(tdbb, work->dfw_id, NULL);
-
-		/* Now handle the new definition */
-		const DeferredWork* arg = work->dfw_args;
-		while (arg && (arg->dfw_type != dfw_arg_check_blr)) 
-			arg = arg->dfw_next;
-
-		get_procedure_dependencies(work, arg == NULL);
-
-		procedure->prc_flags &= ~(PRC_obsolete | PRC_being_altered);
-
-		}	// try
-		catch (const Firebird::Exception& ex)
-		{
-			Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
-			tdbb->getDatabase()->dbb_sp_rec_mutex.leave();
-			ERR_punt();
-		}
-
-		tdbb->getDatabase()->dbb_sp_rec_mutex.leave();
 		return true;
 
 	case 5:

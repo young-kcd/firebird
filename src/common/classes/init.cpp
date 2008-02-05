@@ -151,11 +151,11 @@ namespace Firebird
 		gdsCleanup = cleanup;
 	}
 
-	RecursiveMutex* StaticMutex::mutex = 0;
+	Mutex* StaticMutex::mutex = 0;
 
 	void StaticMutex::create()
 	{
-		mutex = FB_NEW(*getDefaultMemoryPool()) RecursiveMutex;
+		mutex = FB_NEW(*getDefaultMemoryPool()) Mutex;
 	}
 
 	void StaticMutex::release()
