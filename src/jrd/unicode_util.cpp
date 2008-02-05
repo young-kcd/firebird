@@ -718,9 +718,12 @@ INTL_BOOL UnicodeUtil::utf32WellFormed(ULONG len, const ULONG* str, ULONG* offen
 UnicodeUtil::ICU* UnicodeUtil::loadICU(const Firebird::string& icuVersion,
 	const Firebird::string& configInfo)
 {
-#ifdef WIN_NT
+#if defined(WIN_NT)
 	const char* const inTemplate = "icuin%s%s.dll";
 	const char* const ucTemplate = "icuuc%s%s.dll";
+#elif defined(DARWIN)
+	const char* const inTemplate = "/Library/Frameworks/Firebird.framework/Versions/A/Libraries/libicui18n.dylib";
+	const char* const ucTemplate = "/Library/Frameworks/Firebird.framework/versions/A/Libraries/libicuuc.dylib";
 #else
 	const char* const inTemplate = "libicui18n.so.%s%s";
 	const char* const ucTemplate = "libicuuc.so.%s%s";
@@ -765,7 +768,7 @@ UnicodeUtil::ICU* UnicodeUtil::loadICU(const Firebird::string& icuVersion,
 		PathName filename;
 		filename.printf(ucTemplate, majorVersion.c_str(), minorVersion.c_str());
 
-		icu = new ICU();
+		icu = FB_NEW(*getDefaultMemoryPool()) ICU();
 
 		icu->ucModule = ModuleLoader::loadModule(filename);
 		if (!icu->ucModule)

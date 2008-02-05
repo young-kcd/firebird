@@ -32,12 +32,6 @@
 
 #include "CsConvert.h"
 
-
-namespace Firebird
-{
-	class MemoryPool;
-}
-
 namespace Jrd {
 
 class CharSet

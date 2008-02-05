@@ -62,10 +62,10 @@ darwin_finish_cs_framework:
 	cp -r ../gen/firebird/UDF $(FB_FW)/Resources/English.lproj/var/UDF
 	mkdir -p $(FB_FW)/Resources/English.lproj/var/intl
 	cp -r ../gen/firebird/intl/libfbintl.dylib \
-		$(FB_FW)/Resources/English.lproj/var/intl/fbintl.dylib
+		$(FB_FW)/Resources/English.lproj/var/intl/fbintl
 	cp ../builds/install/misc/fbintl.conf \
 		$(FB_FW)/Resources/English.lproj/var/intl/fbintl.conf
-	chmod a+rx $(FB_FW)/Resources/English.lproj/var/intl/fbintl.dylib
+	chmod a+rx $(FB_FW)/Resources/English.lproj/var/intl/fbintl
 	cp -r ../gen/firebird/help $(FB_FW)/Resources/English.lproj/var/help
 	cp ../gen/firebird/security2.fdb $(FB_FW)/Resources/English.lproj/var
 	mkdir -p $(FB_FW)/Resources/doc
@@ -116,10 +116,10 @@ darwin_finish_ss_framework:
 	cp -r ../gen/firebird/UDF $(FB_FW)/Resources/English.lproj/var/UDF
 	mkdir -p $(FB_FW)/Resources/English.lproj/var/intl
 	cp -r ../gen/firebird/intl/libfbintl.dylib \
-		$(FB_FW)/Resources/English.lproj/var/intl/fbintl.dylib
+		$(FB_FW)/Resources/English.lproj/var/intl/fbintl
 	cp ../builds/install/misc/fbintl.conf \
 		$(FB_FW)/Resources/English.lproj/var/intl/fbintl.conf
-	chmod a+rx $(FB_FW)/Resources/English.lproj/var/intl/fbintl.dylib
+	chmod a+rx $(FB_FW)/Resources/English.lproj/var/intl/fbintl
 	cp -r ../gen/firebird/help $(FB_FW)/Resources/English.lproj/var/help
 	cp ../gen/firebird/security2.fdb $(FB_FW)/Resources/English.lproj/var
 	mkdir -p $(FB_FW)/Resources/doc
