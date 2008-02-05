@@ -3295,9 +3295,9 @@ static void define_trigger(dsql_req* request, NOD_TYPE op)
 			   to know what relation the trigger relates to. */
 
 			dsql_str* relation_name = NULL;
-			METD_get_trigger(request, trigger_name, &relation_name, &trig_type);
+			bool found = METD_get_trigger(request, trigger_name, &relation_name, &trig_type);
 
-			if (relation_name)
+			if (found && relation_name)
 			{
 				if (type_node && ((IPTR) type_node->getSlong() & TRIGGER_TYPE_MASK) != TRIGGER_TYPE_DML)
 				{
@@ -3313,7 +3313,7 @@ static void define_trigger(dsql_req* request, NOD_TYPE op)
 				// Warning: implicit const cast
 				relation_node->nod_arg[e_rln_name] = (dsql_nod*) relation_name;
 			}
-			else if (type_node && (USHORT) type_node->getSlong() != trig_type)
+			else if (found && type_node && (USHORT) type_node->getSlong() != trig_type)
 			{
 				ERRD_post(isc_dsql_command_err,
 						  isc_arg_gds, isc_dsql_db_trigger_type_cant_change,
