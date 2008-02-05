@@ -25,6 +25,7 @@
  */
 
 #include "firebird.h"
+#include "../common/classes/alloc.h"
 #include "ldcommon.h"
 #include "ld_proto.h"
 #include "lc_icu.h"
@@ -72,7 +73,7 @@ static bool texttype_default_init(texttype* tt,
 	}
 
 	// name comes from stack. Copy it.
-	tt->texttype_name = new ASCII[strlen(name) + 1];
+	tt->texttype_name = FB_NEW(*getDefaultMemoryPool())  ASCII[strlen(name) + 1];
 	strcpy(const_cast<ASCII*>(tt->texttype_name), name);
 
 	tt->texttype_version = TEXTTYPE_VERSION_1;
@@ -92,7 +93,7 @@ static bool texttype_unicode_init(texttype* tt,
 								  ULONG specificAttributesLength,
 								  const ASCII* configInfo)
 {
-	charset* cs = new charset;
+	charset* cs = FB_NEW(*getDefaultMemoryPool())  charset;
 	memset(cs, 0, sizeof(*cs));
 
 	// test if that charset exist
@@ -119,7 +120,7 @@ bool LCICU_setup_attributes(const ASCII* name, const ASCII* charSetName, const A
 
 	if (len > 8 && strcmp(name + len - 8, "_UNICODE") == 0)
 	{
-		AutoPtr<charset, Jrd::CharSet::Delete> cs(new charset);
+		AutoPtr<charset, Jrd::CharSet::Delete> cs(FB_NEW(*getDefaultMemoryPool()) charset);
 		memset(cs, 0, sizeof(*cs));
 
 		// test if that charset exist

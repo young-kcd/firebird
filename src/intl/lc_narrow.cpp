@@ -23,6 +23,7 @@
  */
 
 #include "firebird.h"
+#include "../common/classes/alloc.h"
 #include "../intl/ldcommon.h"
 #include "../jrd/CharSet.h"
 #include "../jrd/IntlUtil.h"
@@ -807,7 +808,7 @@ bool LC_NARROW_family2(
 	tt->texttype_fn_str_to_upper	= fam2_str_to_upper;
 	tt->texttype_fn_str_to_lower	= fam2_str_to_lower;
 	tt->texttype_fn_destroy			= LC_NARROW_destroy;
-	tt->texttype_impl				= new TextTypeImpl;
+	tt->texttype_impl				= FB_NEW(*getDefaultMemoryPool()) TextTypeImpl;
 	tt->texttype_impl->texttype_collation_table	= (const BYTE*) noCaseOrderTbl;
 	tt->texttype_impl->texttype_toupper_table	= toUpperConversionTbl;
 	tt->texttype_impl->texttype_tolower_table	= toLowerConversionTbl;

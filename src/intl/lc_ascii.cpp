@@ -22,6 +22,7 @@
  */
 
 #include "firebird.h"
+#include "../common/classes/alloc.h"
 #include "../intl/ldcommon.h"
 #include "../jrd/CharSet.h"
 #include "../jrd/IntlUtil.h"
@@ -116,7 +117,7 @@ static inline bool FAMILY_ASCII(texttype* cache,
 		cache->texttype_fn_str_to_upper	= famasc_str_to_upper;
 		cache->texttype_fn_str_to_lower	= famasc_str_to_lower;
 
-		TextTypeImpl* impl = new TextTypeImpl();
+		TextTypeImpl* impl = FB_NEW(*getDefaultMemoryPool()) TextTypeImpl();
 		cache->texttype_impl = impl;
 		
 		memset(&impl->cs, 0, sizeof(impl->cs));
