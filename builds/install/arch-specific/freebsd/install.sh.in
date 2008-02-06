@@ -31,7 +31,7 @@
 #   Contributor(s):
 #  
 # 
-#   $Id: install.sh.in,v 1.9 2005-05-27 22:14:45 asfernandes Exp $
+#   $Id: install.sh.in,v 1.10 2008-02-06 11:26:47 alexpeshkoff Exp $
 # 
 
 #  Install script for FirebirdSQL database engine
@@ -259,7 +259,7 @@ cd $InstallFirebirdPrefix
 
 # Lock files
 
-for i in isc_init1 isc_lock1 isc_event1
+for i in isc_init1 isc_lock1 isc_event1 isc_monitor1
 do
 	FileName=$i.`hostname`
 	touch $FileName
