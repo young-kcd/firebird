@@ -268,7 +268,7 @@ public:
 			{
 				dbb->dbb_sync.unlock();
 			}
-			catch(const Firebird::Exception&)
+			catch (const Firebird::Exception&)
 			{
 				Firebird::MutexLockGuard::onDtorException();
 			}
@@ -326,7 +326,7 @@ public:
 			try {
 				mutex->leave();
 			}
-			catch(const Firebird::Exception&)
+			catch (const Firebird::Exception&)
 			{
 				Firebird::MutexLockGuard::onDtorException();
 			}

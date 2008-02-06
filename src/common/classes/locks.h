@@ -147,6 +147,7 @@ private:
 	static bool attrDone;
 	static pthread_mutexattr_t attr;
 	static void initAttr();
+
 	void init() {
 		if (! attrDone)
 			initAttr();
@@ -224,7 +225,7 @@ public:
 		try {
 			lock->leave();
 		}
-		catch(const Exception&)
+		catch (const Exception&)
 		{
 			onDtorException();
 		}
@@ -245,10 +246,12 @@ public:
 private:
 	// Forbid copy constructor
 	MutexLockGuard(const MutexLockGuard& source);
-	Mutex *lock;
+
 #ifdef DEV_BUILD
 	static void halt();
 #endif
+
+	Mutex* lock;
 };
 
 } //namespace Firebird

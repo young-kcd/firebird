@@ -3705,8 +3705,7 @@ void MET_scan_relation( thread_db* tdbb, jrd_rel* relation)
 
 	Database::CheckoutLockGuard guard(dbb, dbb->dbb_sp_rec_mutex);
 
-	if (relation->rel_flags & REL_scanned
-		|| relation->rel_flags & REL_deleted)
+	if (relation->rel_flags & REL_scanned || relation->rel_flags & REL_deleted)
 	{
 		return;
 	}
@@ -3715,6 +3714,7 @@ void MET_scan_relation( thread_db* tdbb, jrd_rel* relation)
 	dependencies = (relation->rel_flags & REL_get_dependencies) ? true : false;
 	sys_triggers = (relation->rel_flags & REL_sys_triggers) ? true : false;
 	relation->rel_flags &= ~(REL_get_dependencies | REL_sys_triggers);
+
 	for (USHORT itr = 0; itr < TRIGGER_MAX; ++itr) {
 		triggers[itr] = NULL;
 	}

@@ -144,10 +144,12 @@ namespace
 {
 	Database* databases = NULL;
 	Firebird::GlobalPtr<Firebird::Mutex> databases_rec_mutex;
+
 	inline void dbMutexLock()
 	{
 		databases_rec_mutex->enter();
 	}
+
 	inline void dbMutexUnlock()
 	{
 		databases_rec_mutex->leave();
@@ -184,7 +186,7 @@ namespace
 			try {
 				dbMutexUnlock();
 			}
-			catch(const Firebird::Exception&)
+			catch (const Firebird::Exception&)
 			{
 				Firebird::MutexLockGuard::onDtorException();
 			}

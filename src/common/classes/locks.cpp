@@ -75,6 +75,7 @@ void Spinlock::init()
 
 bool Mutex::attrDone = false;
 pthread_mutexattr_t Mutex::attr;
+
 void Mutex::initAttr()
 {
 	// Throw exceptions on errors, but they will not be processed in first mutex constructor...
