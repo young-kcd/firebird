@@ -331,6 +331,8 @@ static void		unhook_disconnected_ports(rem_port*);
 static void		unhook_port(rem_port*, rem_port*);
 static int		xdrinet_create(XDR *, rem_port*, UCHAR *, USHORT, enum xdr_op);
 static bool		setNoNagleOption(rem_port*);
+static FPTR_VOID tryStopMainThread = 0;
+
 
 
 static XDR::xdr_ops inet_ops =
@@ -2536,6 +2538,12 @@ static int select_wait( rem_port* main_port, SLCT * selct)
 
 		for (;;)
 		{
+			// Before waiting for incoming packet, check for server shutdown 
+			if (tryStopMainThread)
+			{
+				tryStopMainThread();
+			}
+
 			// Some platforms change the timeout in the select call.
 			// Reset timeout for each iteration to avoid problems.
 			timeout.tv_sec = SELECT_TIMEOUT;
@@ -3644,4 +3652,20 @@ static bool setNoNagleOption(rem_port* port)
 		}
 	}
 	return true;
+}
+
+void setStopMainThread(FPTR_VOID func)
+{
+/**************************************
+ *
+ *   s e t S t o p M a i n T h r e a d
+ *
+ **************************************
+ *
+ * Functional description
+ *	Set function called by main thread
+ *	in order to check for shutdown.
+ *
+ **************************************/
+	tryStopMainThread = func;
 }

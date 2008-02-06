@@ -33,6 +33,7 @@ rem_port*	INET_connect(const TEXT*, struct packet*, ISC_STATUS*, USHORT,
 rem_port*	INET_reconnect(HANDLE, ISC_STATUS*);
 rem_port*	INET_server(int);
 void	INET_set_clients(int);
+void	setStopMainThread(FPTR_VOID func);
 
 #endif // REMOTE_INET_PROTO_H
 

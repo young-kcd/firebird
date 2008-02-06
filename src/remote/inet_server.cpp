@@ -133,6 +133,7 @@ static THREAD_ENTRY_DECLARE shutdown_thread(THREAD_ENTRY_PARAM arg);
 static void signal_term(int);
 static void shutdown_init();
 static void shutdown_fini();
+static void tryStopMainThread();
 #endif
 
 static TEXT protocol[128];
@@ -520,6 +521,7 @@ static void signal_sigpipe_handler(int)
 
 #ifdef SHUTDOWN_THREAD
 static Firebird::GlobalPtr<Firebird::SignalSafeSemaphore> shutSem;
+static Firebird::GlobalPtr<Firebird::Semaphore> mainThreadStopSem;
 static bool alreadyClosing = false;
 
 static THREAD_ENTRY_DECLARE shutdown_thread(THREAD_ENTRY_PARAM arg) 
@@ -552,8 +554,15 @@ static THREAD_ENTRY_DECLARE shutdown_thread(THREAD_ENTRY_PARAM arg)
 	if (! alreadyClosing)
 	{
 		alreadyClosing = true;
+		// shutdown databases
 		JRD_shutdown_all(false);
+		// shutdown worker threads
 		SRVR_shutdown();
+		// shutdown main thread - send self-signal to close select() 
+		// in main thread and wait for it to get into safe state
+		kill(getpid(), SIGTERM);
+		mainThreadStopSem->enter();
+		// ready
 		exit(0);
 	}
 	return 0;	//make compilers happy
@@ -571,6 +580,10 @@ static void signal_term(int)
  *	Handle ^C and kill.
  *
  **************************************/
+ 	if (alreadyClosing)
+	{
+		return;
+	}
 	try
 	{
 	 	shutSem->release();
@@ -594,6 +607,7 @@ static void shutdown_init()
 	// process signals 2 & 15 in order to exit gracefully
 	set_signal(SIGINT, signal_term);
 	set_signal(SIGTERM, signal_term);
+	setStopMainThread(tryStopMainThread);
 }
 
 static void shutdown_fini()
@@ -602,5 +616,28 @@ static void shutdown_fini()
 	set_signal(SIGTERM, SIG_IGN);
 	alreadyClosing = true;
 	shutSem->release();
+}
+
+static void tryStopMainThread()
+{
+/****************************************************
+ *
+ *	t r y S t o p M a i n T h r e a d
+ *
+ ****************************************************
+ *
+ * Functional description
+ *	Called by main thread to test is not shutdown started. 
+ *	In that case release semaphore and wait indefinitely.
+ *
+ **************************************/
+	if (alreadyClosing)
+	{
+		mainThreadStopSem->release();
+		for (;;)
+		{
+			THD_yield();
+		}
+	}
 }
 #endif //SHUTDOWN_THREAD
