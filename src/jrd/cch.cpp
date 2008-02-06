@@ -140,7 +140,8 @@ static void prefetch_prologue(Prefetch*, SLONG *);
 static SSHORT related(const BufferDesc*, const BufferDesc*, SSHORT);
 static void release_bdb(thread_db*, BufferDesc*, const bool, const bool, const bool);
 static void unmark(thread_db*, WIN *);
-static bool writeable(const BufferDesc*);
+static bool writeable(BufferDesc*);
+static bool is_writeable(BufferDesc*, const ULONG);
 static int write_buffer(thread_db*, BufferDesc*, const PageNumber, const bool, ISC_STATUS*, const bool);
 static bool write_page(thread_db*, BufferDesc*, const bool, ISC_STATUS*, const bool);
 static void set_diff_page(thread_db*, BufferDesc*);
@@ -6261,7 +6262,8 @@ static void unmark(thread_db* tdbb, WIN * window)
 	}
 }
 
-static bool writeable(const BufferDesc* bdblock)
+
+static inline bool writeable(BufferDesc* bdb)
 {
 /**************************************
  *
@@ -6273,25 +6275,73 @@ static bool writeable(const BufferDesc* bdblock)
  *	See if a buffer is writeable.  A buffer is writeable if
  *	neither it nor any of it's higher precedence cousins are
  *	marked for write.
+ *  This is the starting point of recursive walk of precedence 
+ *  graph. writeable_mark value used to mark alerady seen
+ *  buffers to avoid repeated walk of the same sub-graph.
+ *  Currently this function can't be called from more than one
+ *  thread simultaneously. When SMP will be implemented we must
+ *  take additional care about thread-safety.
  *
  **************************************/
-	if (bdblock->bdb_flags & BDB_marked) {
+	if (bdb->bdb_flags & BDB_marked) {
 		return false;
 	}
 
-/* If there are buffers that must be written first, check them, too. */
+	BufferControl *bcb = bdb->bdb_dbb->dbb_bcb;
+	if (++bcb->bcb_writeable_mark == 0)
+	{
+		for (ULONG i = 0; i < bcb->bcb_count; i++) {
+			bcb->bcb_rpt[i].bcb_bdb->bdb_writeable_mark = 0;
+		}
 
-	for (const que* queue = bdblock->bdb_higher.que_forward;
-		queue != &bdblock->bdb_higher; queue = queue->que_forward)
+		bcb->bcb_writeable_mark = 1;
+	}
+
+	return is_writeable(bdb, bcb->bcb_writeable_mark);
+}
+
+
+static bool is_writeable(BufferDesc* bdb, const ULONG mark)
+{
+/**************************************
+ *
+ *	i s _ w r i t e a b l e
+ *
+ **************************************
+ *
+ * Functional description
+ *	See if a buffer is writeable.  A buffer is writeable if
+ *	neither it nor any of it's higher precedence cousins are
+ *	marked for write.
+ *
+ **************************************/
+
+	// If there are buffers that must be written first, check them, too. 
+
+	for (const que* queue = bdb->bdb_higher.que_forward;
+		queue != &bdb->bdb_higher; queue = queue->que_forward)
 	{
 		const Precedence* precedence = BLOCK(queue, Precedence*, pre_higher);
-		if (!(precedence->pre_flags & PRE_cleared) &&
-			!writeable(precedence->pre_hi))
+
+		if (!(precedence->pre_flags & PRE_cleared))
 		{
-			return false;
+			BufferDesc *high = precedence->pre_hi;
+			
+			if (high->bdb_flags & BDB_marked) {
+				return false;
+			}
+
+			if (high->bdb_writeable_mark != mark) 
+			{
+				if (QUE_EMPTY(high->bdb_higher))
+					high->bdb_writeable_mark = mark;
+				else if (!is_writeable(high, mark))
+					return false;
+			}
 		}
 	}
 
+	bdb->bdb_writeable_mark = mark;
 	return true;
 }
 
