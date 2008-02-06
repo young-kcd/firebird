@@ -28,7 +28,7 @@ fixFilePermissions() {
     # Lock files
     cd $FBRootDir
 
-    for i in isc_init1 isc_lock1 isc_event1 isc_guard1
+    for i in isc_init1 isc_lock1 isc_event1 isc_guard1 isc_monitor1
     do
         FileName=$i.`hostname`
         touch $FileName

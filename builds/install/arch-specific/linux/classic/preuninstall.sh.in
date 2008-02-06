@@ -31,7 +31,7 @@
 #   Contributor(s):
 #  
 # 
-#   $Id: preuninstall.sh.in,v 1.5 2005-08-16 10:04:11 alexpeshkoff Exp $
+#   $Id: preuninstall.sh.in,v 1.5.18.1 2008-02-06 11:33:41 alexpeshkoff Exp $
 # 
 
 # The pre uninstall routines for Firebird Classic
@@ -46,7 +46,7 @@
         echo "Saved a copy of $SecurityDatabase in /tmp" 
     fi 
     
-    for i in isc_init1* isc_event1* isc_lock1* isc_guard* firebird.log SYSDBA.password
+    for i in isc_*1* firebird.log SYSDBA.password
     do
         if [ -f $i ]
         then
