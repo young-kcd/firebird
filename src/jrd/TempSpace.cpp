@@ -374,21 +374,19 @@ TempFile* TempSpace::setupFile(size_t size)
 			PathUtils::ensureSeparator(dirname);
 			if (!directory.compare(dirname))
 			{
-				file = tempFiles[i];
+				file = tempFiles[j];
 				break;
 			}
 		}
 
-		if (!file)
-		{
-			file = FB_NEW(pool) TempFile(pool, filePrefix, directory);
-			tempFiles.add(file);
-		}
-
-		fb_assert(file);
-
 		try
 		{
+			if (!file)
+			{
+				file = FB_NEW(pool) TempFile(pool, filePrefix, directory);
+				tempFiles.add(file);
+			}
+
 			file->extend(size);
 		}
 		catch (const Firebird::system_call_failed&)
