@@ -394,11 +394,6 @@ TempFile* TempSpace::setupFile(size_t size)
 			if (i < tempDirs->getCount() - 1)
 			{
 				// no room, let's try another directory
-				Firebird::string text;
-				text.printf("Temporary directory %s has no free space, "
-							"attempting to switch to the next configured one",
-							directory.c_str());
-				gds__log(text.c_str());
 				file = NULL;
 			}
 			else
