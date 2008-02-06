@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# $Id: install-script,v 1.1.2.10 2008-01-22 09:37:42 paulbeach Exp $
+# $Id: install-script,v 1.1.2.11 2008-02-06 16:20:57 paulbeach Exp $
 #
 # Script args:
 # $0: full path to script
@@ -278,7 +278,7 @@ then
 	fi
 fi
 
- And last but not least, start the server
+# And last but not least, start the server
 echo "Start SuperServer"
 if [ -f "$FB_FW/Versions/A/Resources/.SuperServer" ]; then
 	chmod u+xg+xo+x /Library/StartupItems/Firebird/Firebird
