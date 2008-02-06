@@ -1,3 +1,70 @@
+2008-02-06 01:43  asfernandes
+
+	* firebird2/src/: common/classes/locks.cpp (1.12),
+	common/classes/locks.h (1.34), jrd/jrd.cpp (1.377), jrd/jrd.h
+	(1.215), jrd/met.epp (1.238), jrd/os/darwin/mod_loader.cpp (1.10):
+
+	Misc
+
+2008-02-05 15:46  asfernandes
+
+	* firebird2/src/dsql/ddl.cpp (1.212):
+
+	Fixed problem when altering non existent database trigger
+
+2008-02-05 15:33  asfernandes
+
+	* firebird2/src/dsql/parse.y (1.257):
+
+	Improvement CORE-1453 - Allow usage of functions in LIST delimiter
+	parameter
+
+2008-02-05 14:55  dimitr
+
+	* firebird2/src/jrd/met.epp (1.237):
+
+	My other changes for check partners. For Vlad's review.
+
+2008-02-05 13:48  paulbeach
+
+	* firebird2/: builds/posix/postfix.darwin (1.10),
+	src/intl/lc_ascii.cpp (1.22), src/intl/lc_icu.cpp (1.8),
+	src/intl/lc_narrow.cpp (1.27), src/jrd/CharSet.h (1.6),
+	src/jrd/unicode_util.cpp (1.30), src/jrd/os/darwin/mod_loader.cpp
+	(1.9):
+
+	1. Updated MacOS mod_loader to handle Bundles and Dynamic Libraries
+	(yes the loading of the two is different) 2. Support the loading of
+	the ICU Libraries dynamically 3. new = FB_NEW - prevent asserts.
+
+2008-02-05 12:48  alexpeshkoff
+
+	* firebird2/src/dsql/: ddl.cpp (1.211), dsql.h (1.116):
+
+	Fixed error in TCS's DSQL_DOMAIN_01 and PROC_LEVEL0_TESTS_2 - long
+	domain name was silently truncated instead of throwing an error
+
+2008-02-05 09:21  alexpeshkoff
+
+	* firebird2/src/: common/classes/init.cpp (1.4),
+	common/classes/init.h (1.11), common/classes/locks.cpp (1.11),
+	common/classes/locks.h (1.33), dsql/metd.epp (1.105), jrd/dfw.epp
+	(1.226), jrd/jrd.cpp (1.376), jrd/jrd.h (1.214), jrd/jrd_pwd.h
+	(1.25), jrd/met.epp (1.236), jrd/pwd.cpp (1.60), jrd/why.cpp
+	(1.145), jrd/y_handle.h (1.26):
+
+	Mutexes cleanup: 1. Make all firebird mutexes recursive.  2. Enable
+	exceptions to be thrown by mutexes and process them in code where
+	needed.  3. Catch and ignore exceptions in various MutexGuard
+	dtors.
+
+2008-02-05 09:04  alexpeshkoff
+
+	* firebird2/builds/posix/: Makefile.in.client.util (1.54),
+	Makefile.in.embed.util (1.39):
+
+	Mutexes cleanup
+
 2008-02-04 20:19  dimitr
 
 	* firebird2/src/jrd/DatabaseSnapshot.h (1.13):
