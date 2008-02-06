@@ -276,7 +276,7 @@ then
 	fi
 fi
 
- And last but not least, start the server
+# And last but not least, start the server
 echo "Start SuperServer"
 if [ -f "$FB_FW/Versions/A/Resources/.SuperServer" ]; then
 	chmod u+xg+xo+x /Library/StartupItems/Firebird/Firebird
