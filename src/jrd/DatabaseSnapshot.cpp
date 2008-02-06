@@ -115,6 +115,22 @@ void DatabaseSnapshot::SharedMemory::acquire()
 #else
 	checkMutex("lock", ISC_mutex_lock(&base->mutex));
 #endif
+	if (base->allocated > handle.sh_mem_length_mapped)
+	{
+#if (defined HAVE_MMAP || defined WIN_NT)
+		const size_t newSize = base->allocated;
+		ISC_STATUS_ARRAY statusVector;
+		base = (Header*) ISC_remap_file(statusVector, &handle, newSize, FALSE);
+		if (!base)
+		{
+			Firebird::status_exception::raise(statusVector);
+		}
+#else
+		Firebird::status_exception::raise(isc_random, isc_arg_string,
+										  "Monitoring table space exhausted",
+										  0);
+#endif
+	}
 }
 
 
@@ -133,7 +149,7 @@ ClumpletReader* DatabaseSnapshot::SharedMemory::readData(thread_db* tdbb)
 	garbageCollect(tdbb, false);
 
 	const UCHAR* const buffer = (UCHAR*) base + sizeof(Header);
-	const size_t length = base->length;
+	const size_t length = base->used;
 
 	MemoryPool& pool = *tdbb->getDefaultPool();
 
@@ -152,18 +168,17 @@ void DatabaseSnapshot::SharedMemory::writeData(thread_db* tdbb, ClumpletWriter& 
 	const size_t length = writer.getBufferLength();
 
 	// Do we need to extend the allocated memory?
-	fb_assert(handle.sh_mem_length_mapped >= 0);
-	if (base->length + length > size_t(handle.sh_mem_length_mapped))
+	while (base->used + length > base->allocated)
 	{
-		extend(base->length + length);
+		extend();
 	}
 
 	// Get the remapped pointer
 	UCHAR* buffer = (UCHAR*) base + sizeof(Header);
 	// Copy the data at the insertion point
-	memcpy(buffer + base->length, writer.getBuffer(), length);
+	memcpy(buffer + base->used, writer.getBuffer(), length);
 	// Adjust the length
-	base->length += length;
+	base->used += length;
 }
 
 
@@ -175,7 +190,7 @@ void DatabaseSnapshot::SharedMemory::garbageCollect(thread_db* tdbb, bool self)
 
 	// Get the buffer length
 	UCHAR* buffer = (UCHAR*) base + sizeof(Header);
-	const size_t length = base->length;
+	const size_t length = base->used;
 
 	if (!length)
 	{
@@ -254,24 +269,31 @@ void DatabaseSnapshot::SharedMemory::garbageCollect(thread_db* tdbb, bool self)
 
 	// If we have compacted the data, let's adjust the stored length
 	const size_t newLength = writer.getBufferLength();
-	if (newLength < base->length)
+	if (newLength < base->used)
 	{
 		memcpy(buffer, writer.getBuffer(), newLength);
-		base->length = newLength;
+		base->used = newLength;
 	}
 }
 
 
-void DatabaseSnapshot::SharedMemory::extend(size_t newLength)
+void DatabaseSnapshot::SharedMemory::extend()
 {
-	fb_assert(newLength > base->length);
-	newLength = FB_ALIGN(newLength, DEFAULT_SIZE);
+	const size_t newSize = handle.sh_mem_length_mapped + DEFAULT_SIZE;
 
-	// Temporary code. To be replaced with an attempt to remap the memory
-	// plus a new GDS error code if the remap was unsuccessful.
-	release();
-	gds__log("Monitoring table space exhausted");
-	exit(FINI_ERROR);
+#if (defined HAVE_MMAP || defined WIN_NT)
+	ISC_STATUS_ARRAY statusVector;
+	base = (Header*) ISC_remap_file(statusVector, &handle, newSize, TRUE);
+	if (!base)
+	{
+		Firebird::status_exception::raise(statusVector);
+	}
+	base->allocated = handle.sh_mem_length_mapped;
+#else
+	Firebird::status_exception::raise(isc_random, isc_arg_string,
+									  "Monitoring table space exhausted",
+									  0);
+#endif
 }
 
 
@@ -307,7 +329,8 @@ void DatabaseSnapshot::SharedMemory::init(void* arg, SH_MEM_T* shmemData, bool i
 	// Initialize the shared data header
 	Header* header = (Header*) shmemData->sh_mem_address;
 	header->version = VERSION;
-	header->length = 0;
+	header->used = 0;
+	header->allocated = 0;
 
 #ifndef WIN_NT
 	checkMutex("init", ISC_mutex_init(&header->mutex, shmemData->sh_mem_mutex_arg));
