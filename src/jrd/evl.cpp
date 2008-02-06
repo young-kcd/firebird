@@ -1385,21 +1385,7 @@ USHORT EVL_group(thread_db* tdbb, RecordSource* rsb, jrd_nod *const node, USHORT
 	// if we found the last record last time, we're all done
 
 	if (state == 2)
-	{
-		for (ptr = map->nod_arg, end = ptr + map->nod_count; ptr < end; ptr++)
-		{
-			const jrd_nod* from = (*ptr)->nod_arg[e_asgn_from];
-			impure_value_ex* impure = (impure_value_ex*) ((SCHAR *) request + from->nod_impure);
-
-			if ((from->nod_type == nod_agg_list || from->nod_type == nod_agg_list_distinct) &&
-				impure->vlu_blob)
-			{
-				BLB_close(tdbb, impure->vlu_blob);
-			}
-		}
-
 		return 0;
-	}
 
 	try {
 
@@ -1742,6 +1728,18 @@ USHORT EVL_group(thread_db* tdbb, RecordSource* rsb, jrd_nod *const node, USHORT
 	}
 
   break_out:
+
+	for (ptr = map->nod_arg, end = ptr + map->nod_count; ptr < end; ptr++)
+	{
+		const jrd_nod* from = (*ptr)->nod_arg[e_asgn_from];
+		impure_value_ex* impure = (impure_value_ex*) ((SCHAR *) request + from->nod_impure);
+
+		if ((from->nod_type == nod_agg_list || from->nod_type == nod_agg_list_distinct) &&
+			impure->vlu_blob)
+		{
+			BLB_close(tdbb, impure->vlu_blob);
+		}
+	}
 
 /* Finish up any residual computations and get out */
 
