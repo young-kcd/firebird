@@ -309,16 +309,15 @@ const SSHORT CLASS		= CLASS_NETBSD_I386;
 #endif
 
 #ifdef DARWIN
-#ifdef i386
+#if defined(i386)
 const SSHORT CLASS		= CLASS_DARWIN_I386;
-#endif
-#ifdef DARWIN64
+#elif defined(DARWIN64)
 const SSHORT CLASS		= CLASS_DARWIN_X64;
-#endif
-#ifdef powerpc
+#elif defined(powerpc)
 const SSHORT CLASS		= CLASS_DARWIN_PPC;
 #endif
-#endif	// DARWIN
+#endif  // DARWIN
+
 static const char* const SCRATCH = "fb_table_";
 
 static const int MIN_EXTEND_BYTES = 128 * 1024;	// 128KB
