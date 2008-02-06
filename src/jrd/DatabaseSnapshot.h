@@ -41,7 +41,8 @@ class DatabaseSnapshot {
 
 		struct Header {
 			size_t version;
-			size_t length;
+			size_t used;
+			size_t allocated;
 #ifndef WIN_NT
 			MTX_T mutex;
 #endif
@@ -63,7 +64,7 @@ class DatabaseSnapshot {
 		SharedMemory& operator =(const SharedMemory&);
 
 		void garbageCollect(thread_db*, bool);
-		void extend(size_t);
+		void extend();
 
 		static void checkMutex(const TEXT*, int);
 		static void init(void*, SH_MEM_T*, bool);
