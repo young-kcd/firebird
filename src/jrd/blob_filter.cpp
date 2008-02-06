@@ -193,7 +193,10 @@ ISC_STATUS BLF_get_segment(thread_db* tdbb,
 	else
 		*length = 0;
 
-	if (status != user_status[1]) {
+	if (status != user_status[1] && 
+		status != isc_segment && 
+		status != isc_segstr_eof) 
+	{
 		user_status[1] = status;
 		user_status[2] = isc_arg_end;
 	}
