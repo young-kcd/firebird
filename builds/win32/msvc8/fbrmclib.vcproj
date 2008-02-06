@@ -187,6 +187,10 @@
 				RelativePath="..\..\..\src\common\classes\init.cpp"
 				>
 			</File>
+			<File
+				RelativePath="..\..\..\src\common\classes\locks.cpp"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="JRD files"
