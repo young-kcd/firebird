@@ -719,6 +719,9 @@ UnicodeUtil::ICU* UnicodeUtil::loadICU(const Firebird::string& icuVersion,
 #elif defined(DARWIN)
 	const char* const inTemplate = "/Library/Frameworks/Firebird.framework/Versions/A/Libraries/libicui18n.dylib";
 	const char* const ucTemplate = "/Library/Frameworks/Firebird.framework/versions/A/Libraries/libicuuc.dylib";
+#elif defined(HPUX)
+	const char* const inTemplate = "libicui18n.sl.%s%s";
+	const char* const ucTemplate = "libicuuc.sl.%s%s";
 #else
 	const char* const inTemplate = "libicui18n.so.%s%s";
 	const char* const ucTemplate = "libicuuc.so.%s%s";
