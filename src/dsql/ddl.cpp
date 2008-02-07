@@ -894,6 +894,9 @@ static bool is_array_or_blob(dsql_req* request, const dsql_nod* node)
 	case nod_trim:
 		return is_array_or_blob(request, node->nod_arg[e_trim_value]);
 
+	case nod_derived_field:
+		return is_array_or_blob(request, node->nod_arg[e_derived_field_value]);
+
 	default:
 		fb_assert(false);
 		return false;
