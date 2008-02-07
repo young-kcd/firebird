@@ -1,3 +1,10 @@
+2008-02-06 17:19  paulbeach
+
+	* firebird2/builds/install/arch-specific/darwin/install-script
+	(1.1.2.11):
+
+	Oops - there should be a comment here
+
 2008-01-30 11:21  paulbeach
 
 	* firebird2/builds/posix/prefix.darwin_powerpc (1.1.2.4):
