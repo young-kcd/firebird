@@ -1734,10 +1734,10 @@ USHORT EVL_group(thread_db* tdbb, RecordSource* rsb, jrd_nod *const node, USHORT
 		const jrd_nod* from = (*ptr)->nod_arg[e_asgn_from];
 		impure_value_ex* impure = (impure_value_ex*) ((SCHAR *) request + from->nod_impure);
 
-		if ((from->nod_type == nod_agg_list || from->nod_type == nod_agg_list_distinct) &&
-			impure->vlu_blob)
+		if ((from->nod_type == nod_agg_list) && impure->vlu_blob)
 		{
 			BLB_close(tdbb, impure->vlu_blob);
+			impure->vlu_blob = NULL;
 		}
 	}
 
@@ -3052,6 +3052,12 @@ static void compute_agg_distinct(thread_db* tdbb, jrd_nod* node)
 		default:	// Shut up some warnings
 			break;
 		}
+	}
+
+	if (node->nod_type == nod_agg_list_distinct && impure->vlu_blob)
+	{
+		BLB_close(tdbb, impure->vlu_blob);
+		impure->vlu_blob = NULL;
 	}
 }
 
