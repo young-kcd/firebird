@@ -3208,14 +3208,14 @@ lock_clause : WITH LOCK
 
 select_expr	: with_clause select_expr_body order_clause rows_clause
 				{ $$ = make_node (nod_select_expr, (int) e_sel_count, $2, $3, $4, $1); }
-			| select_expr_body order_clause rows_clause
-				{ $$ = make_node (nod_select_expr, (int) e_sel_count, $1, $2, $3, NULL); }
  		;
  
 with_clause	: WITH RECURSIVE with_list
 				{ $$ = make_flag_node (nod_with, NOD_UNION_RECURSIVE, 1, make_list($3)); }
 			| WITH with_list
 				{ $$ = make_node (nod_with, 1, make_list($2)); }
+		    |
+				{ $$ = NULL; }
  		;
  
 with_list	: with_item 
@@ -3227,14 +3227,14 @@ with_item	: symbol_table_alias_name derived_column_list AS '(' select_expr ')'
 				{ $$ = make_node (nod_derived_table, (int) e_derived_table_count, $5, $1, $2, NULL); }
 		;
 
-column_select	: select_expr_body order_clause rows_clause
+column_select	: with_clause select_expr_body order_clause rows_clause
 			{ $$ = make_flag_node (nod_select_expr, NOD_SELECT_EXPR_VALUE,
-					(int) e_sel_count, $1, $2, $3, NULL); }
+					(int) e_sel_count, $2, $3, $4, $1); }
 		;
 
-column_singleton	: select_expr_body order_clause rows_clause
+column_singleton	: with_clause select_expr_body order_clause rows_clause
 			{ $$ = make_flag_node (nod_select_expr, NOD_SELECT_EXPR_VALUE | NOD_SELECT_EXPR_SINGLETON,
-					(int) e_sel_count, $1, $2, $3, NULL); }
+					(int) e_sel_count, $2, $3, $4, $1); }
 		;
 
 select_expr_body	: query_term
