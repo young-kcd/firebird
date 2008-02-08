@@ -24,7 +24,7 @@
  *  Contributor(s): ______________________________________.
  * 
  *
- *  $Id: fb_atomic.h,v 1.4.26.1 2008-02-06 16:51:52 paulbeach Exp $
+ *  $Id: fb_atomic.h,v 1.4.26.2 2008-02-08 10:48:03 paulbeach Exp $
  *
  */
  
@@ -79,7 +79,7 @@ private:
 
 } // namespace Firebird
 
-#elif defined(__GNUC__) && (defined(i386) || defined(I386) || defined(_M_IX86) || defined(AMD64) || defined(DARWIN64))
+#elif defined(__GNUC__) && (defined(i386) || defined(I386) || defined(_M_IX86) || defined(AMD64) || defined(__x86_64__))
 
 // Assembler version for x86 and AMD64. Note it uses xaddl thus it requires i486
 class AtomicCounter
