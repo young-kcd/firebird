@@ -76,7 +76,7 @@ private:
 
 } // namespace Firebird
 
-#elif defined(__GNUC__) && (defined(i386) || defined(I386) || defined(_M_IX86) || defined(AMD64) || defined(DARWIN64))
+#elif defined(__GNUC__) && (defined(i386) || defined(I386) || defined(_M_IX86) || defined(AMD64) || defined(__x86_64__))
 
 namespace Firebird {
 
