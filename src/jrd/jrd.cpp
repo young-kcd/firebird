@@ -6931,7 +6931,9 @@ void JRD_shutdown_all(bool asyncMode)
 	if (!initialized)
 	{
 		// see comments in shutdown_all
+#ifndef EMBEDDED
 		THREAD_ENTER();
+#endif
 		return;
 	}
 
