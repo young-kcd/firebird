@@ -218,6 +218,7 @@ private:
 	Firebird::string	svc_enc_password;
 	Firebird::string	svc_trusted_login;
 	bool                svc_trusted_role;
+	bool				svc_uses_security_database;
 	Firebird::string	svc_switches;	// Full set of switches
 	Firebird::string	svc_perm_sw;	// Switches, taken from services table 
 										// and/or passed using spb_command_line

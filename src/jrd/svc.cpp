@@ -530,7 +530,7 @@ Service::Service(USHORT	service_length, const TEXT* service_name,
 	svc_resp_buf(0), svc_resp_ptr(0), svc_resp_buf_len(0),
 	svc_resp_len(0), svc_flags(0), svc_user_flag(0), svc_spb_version(0), svc_do_shutdown(false),
 	svc_username(getPool()), svc_enc_password(getPool()), 
-	svc_trusted_login(getPool()),
+	svc_trusted_login(getPool()), svc_trusted_role(false), svc_uses_security_database(false),
 	svc_switches(getPool()), svc_perm_sw(getPool())
 {
 	memset(svc_status_array, 0, sizeof svc_status_array);
@@ -585,6 +585,8 @@ Service::Service(USHORT	service_length, const TEXT* service_name,
 							 options.spb_remote_address.isEmpty() ? "" : "/") +
 										  options.spb_remote_address;
 
+				svc_uses_security_database = true;
+				SecurityDatabase::initialize();
 				SecurityDatabase::verifyUser(name, options.spb_user_name.nullStr(),
 						                     options.spb_password.nullStr(), 
 											 options.spb_password_enc.nullStr(),
@@ -674,6 +676,11 @@ void Service::detach()
 		}
 	}
 #endif //SERVER_SHUTDOWN
+
+	if (svc_uses_security_database)
+	{
+		SecurityDatabase::shutdown();
+	}
 
 	// Mark service as detached.
 	finish(SVC_detached);
