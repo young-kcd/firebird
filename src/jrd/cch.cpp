@@ -6287,7 +6287,7 @@ static inline bool writeable(BufferDesc* bdb)
 		return false;
 	}
 
-	BufferControl *bcb = bdb->bdb_dbb->dbb_bcb;
+	BufferControl* bcb = bdb->bdb_dbb->dbb_bcb;
 	if (++bcb->bcb_writeable_mark == 0)
 	{
 		for (ULONG i = 0; i < bcb->bcb_count; i++) {
@@ -6325,7 +6325,7 @@ static bool is_writeable(BufferDesc* bdb, const ULONG mark)
 
 		if (!(precedence->pre_flags & PRE_cleared))
 		{
-			BufferDesc *high = precedence->pre_hi;
+			BufferDesc* high = precedence->pre_hi;
 			
 			if (high->bdb_flags & BDB_marked) {
 				return false;
