@@ -6265,3 +6265,16 @@ void thread_db::setRequest(jrd_req* val)
 	request = val;
 	reqStat = val ? &val->req_stats : RuntimeStatistics::getDummy();
 }
+
+Database::~Database()
+{
+	delete dbb_sys_trans;
+
+	destroyIntlObjects();
+
+	fb_assert(dbb_pools[0] == dbb_permanent);
+	for (size_t i = 1; i < dbb_pools.getCount(); ++i)
+	{
+		MemoryPool::deletePool(dbb_pools[i]);
+	}
+}

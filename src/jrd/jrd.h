@@ -542,16 +542,7 @@ private:
 		dbb_pools.add(p);
 	}
 
-	~Database()
-	{
-		destroyIntlObjects();
-
-		fb_assert(dbb_pools[0] == dbb_permanent);
-		for (size_t i = 1; i < dbb_pools.getCount(); ++i)
-		{
-			MemoryPool::deletePool(dbb_pools[i]);
-		}
-	}
+	~Database();
 
 public:
 	// temporary measure to avoid unstable state of lock file -
