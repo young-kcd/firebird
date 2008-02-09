@@ -190,6 +190,7 @@ public:
 	USHORT	nod_count;
 	dsc		asb_desc;
 	USHORT	asb_length;
+	bool	asb_intl;
 	sort_key_def* asb_key_desc;	/* for the aggregate   */
 	UCHAR	asb_key_data[1];
 };

@@ -1705,11 +1705,29 @@ USHORT EVL_group(thread_db* tdbb, RecordSource* rsb, jrd_nod *const node, USHORT
 					impure_agg_sort* asb_impure =
 						(impure_agg_sort*) ((SCHAR *) request + asb->nod_impure);
 					UCHAR* data;
-					SORT_put(tdbb, asb_impure->iasb_sort_handle,
-							 reinterpret_cast<ULONG**>(&data));
-					MOVE_CLEAR(data, ROUNDUP_LONG(asb->asb_key_desc->skd_length));
-					asb->asb_desc.dsc_address = data;
+					SORT_put(tdbb, asb_impure->iasb_sort_handle, reinterpret_cast<ULONG**>(&data));
+
+					MOVE_CLEAR(data, asb->asb_length);
+
+					if (asb->asb_intl)
+					{
+						// convert to an international byte array
+						dsc to;
+						to.dsc_dtype = dtype_text;
+						to.dsc_flags = 0;
+						to.dsc_sub_type = 0;
+						to.dsc_scale = 0;
+						to.dsc_ttype() = ttype_sort_key;
+						to.dsc_length = asb->asb_key_desc[0].skd_length;
+						to.dsc_address = data;
+						INTL_string_to_key(tdbb, INTL_TEXT_TO_INDEX(desc->getTextType()),
+							desc, &to, INTL_KEY_SORT);
+					}
+
+					asb->asb_desc.dsc_address = data +
+						(asb->asb_intl ? asb->asb_key_desc[1].skd_offset : 0);
 					MOV_move(tdbb, desc, &asb->asb_desc);
+
 					break;
 				}
 
@@ -3000,7 +3018,8 @@ static void compute_agg_distinct(thread_db* tdbb, jrd_nod* node)
 			break;
 		}
 
-		desc->dsc_address = data;
+		desc->dsc_address = data + (asb->asb_intl ? asb->asb_key_desc[1].skd_offset : 0);
+
 		switch (node->nod_type) {
 		case nod_agg_total_distinct:
 		case nod_agg_average_distinct:
@@ -3828,7 +3847,7 @@ static void init_agg_distinct(thread_db* tdbb, const jrd_nod* node)
 
 	asb_impure->iasb_sort_handle =
 		SORT_init(tdbb, ROUNDUP_LONG(asb->asb_length),
-				  1, 1, sort_key, reject_duplicate, 0, 0);
+		(asb->asb_intl ? 2 : 1), 1, sort_key, reject_duplicate, 0, 0);
 }
 
 
