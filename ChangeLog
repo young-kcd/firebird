@@ -1,3 +1,46 @@
+2008-02-08 17:57  alexpeshkoff
+
+	* firebird2/src/jrd/: svc.cpp (1.202), svc.h (1.50):
+
+	Fixed CORE-1726: isc_service_start failed
+
+2008-02-08 17:54  alexpeshkoff
+
+	* firebird2/src/jrd/: jrd.cpp (1.378), jrd.h (1.216):
+
+	Fixed filehandles and temp diskspace leak - delete dbb_sys_trans
+	makes it close TempSpace
+
+2008-02-08 11:48  paulbeach
+
+	* firebird2/src/common/classes/fb_atomic.h (1.8):
+
+	64bit MacOS use __x86_64__ instead of DARWIN64 as per Adriano
+
+2008-02-08 02:25  asfernandes
+
+	* firebird2/: builds/install/arch-specific/freebsd/install.sh.in
+	(1.11),
+	builds/install/arch-specific/linux/classic/preuninstall.sh.in
+	(1.7), builds/install/arch-specific/netbsd/install.sh.in (1.5),
+	src/jrd/cch.cpp (1.183), src/jrd/evl.cpp (1.249):
+
+	Misc
+
+2008-02-07 15:45  asfernandes
+
+	* firebird2/src/jrd/evl.cpp (1.248):
+
+	Fixed problem (invalid BLOB id) with LIST(DISTINCT)
+
+2008-02-07 15:10  hvlad
+
+	* firebird2/src/dsql/: ddl.cpp (1.213), parse.y (1.258):
+
+	Frontport fix for bug CORE-1724 : Common table expressions cannot
+	be used in computed columns and quantified predicates (IN / ANY /
+	ALL)
+
 2008-02-06 21:18  dimitr
 
 	* firebird2/builds/win32/msvc8/fbrmclib.vcproj (1.7):
