@@ -1721,7 +1721,7 @@ USHORT EVL_group(thread_db* tdbb, RecordSource* rsb, jrd_nod *const node, USHORT
 						to.dsc_length = asb->asb_key_desc[0].skd_length;
 						to.dsc_address = data;
 						INTL_string_to_key(tdbb, INTL_TEXT_TO_INDEX(desc->getTextType()),
-							desc, &to, INTL_KEY_SORT);
+							desc, &to, INTL_KEY_UNIQUE);
 					}
 
 					asb->asb_desc.dsc_address = data +
