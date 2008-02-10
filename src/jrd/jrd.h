@@ -681,22 +681,7 @@ struct DSqlCacheItem
 class Attachment : public pool_alloc<type_att>
 {
 public:
-	explicit Attachment(Database* dbb) :
-		att_database(dbb), 
-		att_lock_owner_id(Database::getLockOwnerId()),
-		att_lc_messages(*dbb->dbb_permanent),
-		att_working_directory(*dbb->dbb_permanent), 
-		att_filename(*dbb->dbb_permanent),
-		att_context_vars(*dbb->dbb_permanent),
-		att_network_protocol(*dbb->dbb_permanent),
-		att_remote_address(*dbb->dbb_permanent),
-		att_remote_process(*dbb->dbb_permanent)
-#ifndef SUPERSERVER
-		, att_dsql_cache(*dbb->dbb_permanent)
-#endif
-		{
-		}
-
+	explicit Attachment(Database* dbb);
 	~Attachment();
 
 /*	Attachment()

@@ -252,6 +252,7 @@ namespace
 			Firebird::status_exception::raise(isc_bad_svc_handle, 0);
 	}
 
+
 	class DatabaseContextHolder : public Jrd::ContextPoolHolder
 	{
 	public:
@@ -280,6 +281,35 @@ namespace
 		DatabaseContextHolder& operator=(const DatabaseContextHolder&);
 
 		thread_db* tdbb;
+	};
+
+
+	// shuts SecurityDatabase in case of errors during attach or create
+	// when attachment is created, control is passed to it using clear
+	class SecurityInitHolder
+	{
+	public:
+		SecurityInitHolder()
+			: shutdown(true)
+		{
+			SecurityDatabase::initialize();
+		}
+		
+		void clear()
+		{
+			shutdown = false;
+		}
+		
+		~SecurityInitHolder()
+		{
+			if (shutdown)
+			{
+				SecurityDatabase::shutdown();
+			}
+		}
+
+	private:
+		bool shutdown;
 	};
 
 } // anonymous
@@ -425,6 +455,7 @@ public:
 	bool	dpb_no_db_triggers;
 	bool	dpb_gbak_attach;
 	bool	dpb_trusted_role;
+	ULONG	dpb_flags;			// to OR'd with dbb_flags
 
 // here begin compound objects
 // for constructor to work properly dpb_sys_user_name 
@@ -499,7 +530,7 @@ static ISC_STATUS	rollback(ISC_STATUS*, jrd_tra**, const bool);
 static void		shutdown_database(Database*, const bool);
 static void		strip_quotes(Firebird::string&);
 static void		purge_attachment(thread_db*, ISC_STATUS*, Attachment*, const bool);
-static void		getUserInfo(Database*, UserId&, const DatabaseOptions&);
+static void		getUserInfo(UserId&, const DatabaseOptions&);
 
 //____________________________________________________________
 //
@@ -626,7 +657,8 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
  **************************************/
 	ThreadContextHolder tdbb(user_status);
 
-	if (*handle) {
+	if (*handle) 
+	{
 		return handle_error(user_status, isc_bad_db_handle);
 	}
 
@@ -645,15 +677,32 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 		expanded_name = _expanded_filename;
 	}
 
+	UserId userId;
+	DatabaseOptions options;
+	bool invalid_client_SQL_dialect = false;
+	SecurityInitHolder siHolder;
+
+	try {
+		// Process database parameter block
+		options.get(dpb, dpb_length, invalid_client_SQL_dialect);
+
+		// Ccheck for correct credentials supplied
+		getUserInfo(userId, options);
+	}
+	catch (const Firebird::Exception& e)
+	{
+		e.stuff_exception(user_status);
+		return user_status[1];
+	}
+
 	// Check database against conf file.
 	const vdnResult vdn = verify_database_name(expanded_name, user_status);
 	if (!is_alias && vdn == vdnFail)
 	{
 		return user_status[1];
-	} 
+	}
 
 	// Unless we're already attached, do some initialization
-
 	Database* dbb = init(tdbb, user_status, expanded_name, true);
 	if (!dbb) {
 		dbMutexUnlock();
@@ -674,15 +723,6 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 
 	try {
 
-	// Process database parameter block
-	bool invalid_client_SQL_dialect = false;
-	DatabaseOptions options;
-	options.get(dpb, dpb_length, invalid_client_SQL_dialect);
-
-	// First check for correct credentials supplied
-	UserId userId;
-	getUserInfo(dbb, userId, options);
-
 #ifndef NO_NFS
 	// Don't check nfs if single user
 	if (!options.dpb_single_user)
@@ -696,7 +736,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 		}
 	}
 
-/* If database to be opened is SecurityDatabase, then only 
+/* If database to be opened is security database, then only 
    gsec or SecurityDatabase may open it. This protects from use
    of old gsec to write wrong password hashes into it. */
 	if (vdn == vdnSecurity && !options.dpb_gsec_attach && !options.dpb_sec_attach)
@@ -775,8 +815,19 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 	attachment->att_flags |= ATT_lck_init_done;
 	if (dbb->dbb_filename.empty())
 	{
+#if defined(DEV_BUILD) && defined(SUPERSERVER)
+		// make sure we do not reopen same DB twice
+		for (Database* d=databases; d; d = d->dbb_next)
+		{
+			if (d->dbb_filename == expanded_name)
+			{
+				Firebird::fatal_exception::raise(("Attempt to reopen " + expanded_name).c_str());
+			}
+		}
+#endif
 		first = true;
 		dbb->dbb_filename = expanded_name;
+		dbb->dbb_flags |= options.dpb_flags;
 		
 		// NS: Use alias as database ID only if accessing database using file name is not possible.
 		//
@@ -834,6 +885,14 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 			   the backout logic
 		INI_update_database();
 		*/
+	}
+	else
+	{
+		if (dbb->dbb_flags & options.dpb_flags != options.dpb_flags)
+		{
+			// looks like someone tries to attach incompatibly
+			Firebird::status_exception::raise(isc_bad_dpb_content, 0);
+		}
 	}
 
     // Attachments to a ReadOnly database need NOT do garbage collection
@@ -1267,6 +1326,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 		return unwindAttach(ex, user_status, tdbb, attachment, dbb);
 	}
 
+	siHolder.clear();
 	return FB_SUCCESS;
 }
 
@@ -1620,6 +1680,27 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 		expanded_name = _expanded_filename;
 	}
 
+	UserId userId;
+	DatabaseOptions options;
+	SecurityInitHolder siHolder;
+
+	try {
+		// Process database parameter block
+		bool invalid_client_SQL_dialect = false;
+		options.get(dpb, dpb_length, invalid_client_SQL_dialect);
+		if (!invalid_client_SQL_dialect && options.dpb_sql_dialect == 99) {
+			options.dpb_sql_dialect = 0;
+		}
+
+		// Ccheck for correct credentials supplied
+		getUserInfo(userId, options);
+	}
+	catch (const Firebird::Exception& e)
+	{
+		e.stuff_exception(user_status);
+		return user_status[1];
+	}
+
 	// Check database against conf file.
 	const vdnResult vdn = verify_database_name(expanded_name, user_status);
 	if (!is_alias && vdn == vdnFail)
@@ -1636,7 +1717,7 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 	tdbb->setDatabase(dbb);
 	DatabaseContextHolder dbbHolder(tdbb);
 
-	dbb->dbb_flags |= DBB_being_opened;
+	dbb->dbb_flags |= (DBB_being_opened | options.dpb_flags);
 
 	ISC_STATUS* const status = user_status;
 	Attachment* attachment = NULL;
@@ -1644,18 +1725,6 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 	bool initing_security = false;
 
 	try {
-
-	// Process database parameter block
-	bool invalid_client_SQL_dialect = false;
-	DatabaseOptions options;
-	options.get(dpb, dpb_length, invalid_client_SQL_dialect);
-	if (!invalid_client_SQL_dialect && options.dpb_sql_dialect == 99) {
-		options.dpb_sql_dialect = 0;
-	}
-
-	// First check for correct credentials supplied
-	UserId userId;
-	getUserInfo(dbb, userId, options);
 
 #ifndef NO_NFS
 	// Don't check nfs if single user
@@ -1919,6 +1988,7 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 		return unwindAttach(ex, user_status, tdbb, attachment, dbb);
 	}
 
+	siHolder.clear();
 	return FB_SUCCESS;
 }
 
@@ -2052,32 +2122,34 @@ ISC_STATUS GDS_DETACH(ISC_STATUS* user_status, Attachment** handle)
 
 		Attachment* attachment = *handle;
 		validateHandle(tdbb, attachment);
-		DatabaseContextHolder dbbHolder(tdbb);
+		
+		{ // holder scope
+			DatabaseContextHolder dbbHolder(tdbb);
 
-		Database* dbb = tdbb->getDatabase();
+			Database* dbb = tdbb->getDatabase();
 
-		// if this is the last attachment, mark dbb as not in use
-
-		if (dbb->dbb_attachments == attachment &&
-			!attachment->att_next &&
-			!(dbb->dbb_flags & DBB_being_opened))
-		{
-			dbb->dbb_flags |= DBB_not_in_use;
-		}
+			// if this is the last attachment, mark dbb as not in use
+			if (dbb->dbb_attachments == attachment &&
+				!attachment->att_next &&
+				!(dbb->dbb_flags & DBB_being_opened))
+			{
+				dbb->dbb_flags |= DBB_not_in_use;
+			}
 
 #ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
-		LOG_call(log_detach, *handle);
-		LOG_call(log_statistics, dbb->dbb_reads, dbb->dbb_writes,
-				 dbb->dbb_max_memory);
+			LOG_call(log_detach, *handle);
+			LOG_call(log_statistics, dbb->dbb_reads, dbb->dbb_writes,
+					 dbb->dbb_max_memory);
 #endif
 
-		// Purge attachment, don't rollback open transactions
+			// Purge attachment, don't rollback open transactions
+			attachment->att_flags |= ATT_cancel_disable;
+			purge_attachment(tdbb, user_status, attachment, false);
 
-		attachment->att_flags |= ATT_cancel_disable;
+			*handle = NULL;
+		}
 
-		purge_attachment(tdbb, user_status, attachment, false);
-
-		*handle = NULL;
+		SecurityDatabase::shutdown();
 	}
 	catch (const Firebird::Exception& ex) {
 		Database* dbb = tdbb->getDatabase();
@@ -4353,8 +4425,6 @@ void DatabaseOptions::get(const UCHAR* dpb, USHORT dpb_length, bool& invalid_cli
  **************************************/
 	SSHORT num_old_files = 0;
 
-	Database* dbb = GET_DBB();
-
 	ULONG page_cache_size = Config::getDefaultDbCachePages();
 	if (page_cache_size < MIN_PAGE_BUFFERS)
 		page_cache_size = MIN_PAGE_BUFFERS;
@@ -4460,7 +4530,7 @@ void DatabaseOptions::get(const UCHAR* dpb, USHORT dpb_length, bool& invalid_cli
 		case isc_dpb_verify:
 			dpb_verify = (USHORT) rdr.getInt();
 			if (dpb_verify & isc_dpb_ignore)
-				dbb->dbb_flags |= DBB_damaged;
+				dpb_flags |= DBB_damaged;
 			break;
 
 		case isc_dpb_trace:
@@ -4469,7 +4539,7 @@ void DatabaseOptions::get(const UCHAR* dpb, USHORT dpb_length, bool& invalid_cli
 
 		case isc_dpb_damaged:
 			if (rdr.getInt() & 1)
-				dbb->dbb_flags |= DBB_damaged;
+				dpb_flags |= DBB_damaged;
 			break;
 
 		case isc_dpb_enable_journal:
@@ -4643,7 +4713,7 @@ void DatabaseOptions::get(const UCHAR* dpb, USHORT dpb_length, bool& invalid_cli
 		case isc_dpb_sec_attach:
 			dpb_sec_attach = rdr.getInt() != 0;
 			dpb_buffers = 50;
-			dbb->dbb_flags |= DBB_security_db;
+			dpb_flags |= DBB_security_db;
 			break;
 
 		case isc_dpb_gbak_attach:
@@ -4936,8 +5006,6 @@ static Database* init(thread_db*	tdbb,
 
 	INTL_init(tdbb);
 
-	SecurityDatabase::initialize();
-
 	return dbb;
 
 	}	// try
@@ -5137,7 +5205,7 @@ static void detachLocksFromAttachment(Attachment* attachment)
 }
 
 
-Jrd::Attachment::~Attachment()
+Attachment::~Attachment()
 {
 // For normal attachments that happens release_attachment(),
 // but for special ones like GC should be done also in dtor - 
@@ -5147,6 +5215,23 @@ Jrd::Attachment::~Attachment()
 //		AP 2007
 	detachLocksFromAttachment(this);
 }
+
+
+Attachment::Attachment(Database* dbb) :
+		att_database(dbb), 
+		att_lock_owner_id(Database::getLockOwnerId()),
+		att_lc_messages(*dbb->dbb_permanent),
+		att_working_directory(*dbb->dbb_permanent), 
+		att_filename(*dbb->dbb_permanent),
+		att_context_vars(*dbb->dbb_permanent),
+		att_network_protocol(*dbb->dbb_permanent),
+		att_remote_address(*dbb->dbb_permanent),
+		att_remote_process(*dbb->dbb_permanent)
+#ifndef SUPERSERVER
+		, att_dsql_cache(*dbb->dbb_permanent)
+#endif
+		{
+		}
 
 
 static ISC_STATUS rollback(ISC_STATUS* user_status,
@@ -5368,8 +5453,6 @@ static void shutdown_database(Database* dbb, const bool release_pools)
 		tdbb->setDatabase(NULL);
 		Database::deleteDbb(dbb);
 	}
-
-	SecurityDatabase::shutdown();
 }
 
 
@@ -6135,10 +6218,8 @@ bool Attachment::locksmith() const
     @param options
 
  **/
-static void getUserInfo(Database* dbb, UserId& user, const DatabaseOptions& options)
+static void getUserInfo(UserId& user, const DatabaseOptions& options)
 {
-	Database::Checkout dcoHolder(dbb);
-
 	int id = -1, group = -1;	// CVC: This var contained trash
 	int node_id = 0;
 	Firebird::string name;
