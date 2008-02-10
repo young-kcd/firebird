@@ -31,10 +31,8 @@
 #   Contributor(s):
 #  
 # 
-#   $Id: install.sh.in,v 1.9.18.1 2008-02-06 11:33:33 alexpeshkoff Exp $
-# 
 
-#  Install script for FirebirdSQL database engine
+#  Install script for Firebird database engine
 
 #------------------------------------------------------------------------
 # copyIfExists

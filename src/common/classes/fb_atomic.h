@@ -22,9 +22,6 @@
  *
  *  All Rights Reserved.
  *  Contributor(s): ______________________________________.
- * 
- *
- *  $Id: fb_atomic.h,v 1.4.26.2 2008-02-08 10:48:03 paulbeach Exp $
  *
  */
  
