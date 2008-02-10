@@ -284,8 +284,8 @@ namespace
 	};
 
 
-	// shuts SecurityDatabase in case of errors during attach or create
-	// when attachment is created, control is passed to it using clear
+	// Shuts SecurityDatabase in case of errors during attach or create.
+	// When attachment is created, control is passed to it using clear
 	class SecurityInitHolder
 	{
 	public:
@@ -813,11 +813,12 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 
 	LCK_init(tdbb, LCK_OWNER_attachment);	// For the attachment
 	attachment->att_flags |= ATT_lck_init_done;
+
 	if (dbb->dbb_filename.empty())
 	{
 #if defined(DEV_BUILD) && defined(SUPERSERVER)
 		// make sure we do not reopen same DB twice
-		for (Database* d=databases; d; d = d->dbb_next)
+		for (Database* d = databases; d; d = d->dbb_next)
 		{
 			if (d->dbb_filename == expanded_name)
 			{
@@ -1692,7 +1693,7 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 			options.dpb_sql_dialect = 0;
 		}
 
-		// Ccheck for correct credentials supplied
+		// Check for correct credentials supplied
 		getUserInfo(userId, options);
 	}
 	catch (const Firebird::Exception& e)
@@ -2122,7 +2123,7 @@ ISC_STATUS GDS_DETACH(ISC_STATUS* user_status, Attachment** handle)
 
 		Attachment* attachment = *handle;
 		validateHandle(tdbb, attachment);
-		
+
 		{ // holder scope
 			DatabaseContextHolder dbbHolder(tdbb);
 
