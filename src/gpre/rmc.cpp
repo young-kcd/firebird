@@ -1651,7 +1651,7 @@ static void gen_cursor_close( const act* action, const gpre_req* request)
 		   "CALL \"%s\" USING %s, %s%dS, %d",
 		   ISC_DSQL_FREE,
 		   status_vector(action),
-		   names[isc_a_pos], request->req_ident, 1);
+		   names[isc_a_pos], request->req_ident, 2);
 	printa(names[COLUMN], false, "IF %s(2) = 0 THEN", names[isc_status_pos]);
 }
 
