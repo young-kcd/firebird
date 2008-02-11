@@ -526,8 +526,8 @@ Service::Service(USHORT	service_length, const TEXT* service_name,
 				 USHORT spb_length, const SCHAR* spb_data)
 	: svc_parsed_sw(getPool()), 
 	svc_handle(0), svc_status(svc_status_array), 
-	svc_stdout_head(1), svc_stdout_tail(SVC_STDOUT_BUFFER_SIZE), svc_stdout(0), 
-	svc_resp_buf(0), svc_resp_ptr(0), svc_resp_buf_len(0),
+	svc_stdout_head(1), svc_stdout_tail(SVC_STDOUT_BUFFER_SIZE), 
+	svc_resp_alloc(getPool()), svc_resp_buf(0), svc_resp_ptr(0), svc_resp_buf_len(0),
 	svc_resp_len(0), svc_flags(0), svc_user_flag(0), svc_spb_version(0), svc_do_shutdown(false),
 	svc_username(getPool()), svc_enc_password(getPool()), 
 	svc_trusted_login(getPool()), svc_trusted_role(false), svc_uses_security_database(false),
@@ -689,16 +689,6 @@ void Service::detach()
 
 Service::~Service()
 {
-	// Cleanup memory being used by service.
-	if (svc_stdout)
-	{
-		gds__free(svc_stdout);
-	}
-	if (svc_resp_buf)
-	{
-		gds__free(svc_resp_buf);
-	}
-
 #ifdef WIN_NT
 	CloseHandle((HANDLE) svc_handle);
 #endif
@@ -1048,11 +1038,10 @@ ISC_STATUS Service::query2(thread_db* tdbb,
 				*info++ = isc_info_truncated;
 				l -= length;
 				if (l > svc_resp_buf_len) {
-					if (svc_resp_buf)
-						gds__free(svc_resp_buf);
-					svc_resp_buf = (UCHAR *) gds__alloc((SLONG) l);
-					/* FREE: in SVC_detach() */
-					if (!svc_resp_buf) {	/* NOMEM: */
+					try {
+						svc_resp_buf = svc_resp_alloc.getBuffer(l);
+					}
+					catch(const Firebird::BadAlloc&) {	/* NOMEM: */
 						DEV_REPORT("SVC_query: out of memory");
 						/* NOMEM: not really handled well */
 						l = 0;	/* set the length to zero */
@@ -1455,12 +1444,10 @@ void Service::query(USHORT			send_item_length,
 				l -= length;
 				if (l > svc_resp_buf_len)
 				{
-					if (svc_resp_buf)
-						gds__free(svc_resp_buf);
-					svc_resp_buf = (UCHAR *) gds__alloc((SLONG) l);
-					/* FREE: in SVC_detach() */
-					if (!svc_resp_buf)
-					{	/* NOMEM: */
+					try {
+						svc_resp_buf = svc_resp_alloc.getBuffer(l);
+					}
+					catch(const Firebird::BadAlloc&) {	/* NOMEM: */
 						DEV_REPORT("SVC_query: out of memory");
 						/* NOMEM: not really handled well */
 						l = 0;	/* set the length to zero */
@@ -1673,11 +1660,6 @@ void Service::start(USHORT spb_length, const SCHAR* spb_data)
  */
 
 	memset((void *) svc_status, 0, sizeof(ISC_STATUS_ARRAY));
-
-	if (svc_stdout)
-		gds__free(svc_stdout);
-
-	svc_stdout = (UCHAR*)gds__alloc((SLONG) SVC_STDOUT_BUFFER_SIZE + 1);
 
 	// FREE: at SVC_detach()
 	if (!svc_stdout)	// NOMEM:

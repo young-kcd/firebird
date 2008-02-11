@@ -31,7 +31,6 @@
 #include "../jrd/jrd_pwd.h"
 #include "../jrd/isc.h"
 #include "../jrd/svc_undoc.h"
-//#include "../jrd/isc_s_proto.h"
 #include "../jrd/ThreadStart.h"
 #include "../jrd/jrd_blks.h"
 
@@ -203,9 +202,10 @@ private:
 	ISC_STATUS*	svc_status;				// status vector for svc_handle
 	ULONG	svc_stdout_head;
 	ULONG	svc_stdout_tail;
-	UCHAR*	svc_stdout;					// output from service
+	UCHAR	svc_stdout[SVC_STDOUT_BUFFER_SIZE + 1];		// output from service
 	Firebird::Semaphore	svcStart;
 	const serv_entry*	svc_service;
+	Firebird::Array<UCHAR> svc_resp_alloc;
 	UCHAR*	svc_resp_buf;
 	const UCHAR*	svc_resp_ptr;
 	USHORT	svc_resp_buf_len;
