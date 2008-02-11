@@ -36,7 +36,6 @@
  *
  * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
  * 2003.03.24 Nickolay Samofatov - clean up defines, improve deadlock detection logic
- *
  */
 
 #ifndef ISC_LOCK_LOCK_H
@@ -56,16 +55,13 @@
 #include "../jrd/file_params.h"
 #include "../jrd/que.h"
 
-typedef ULONG LOCK_OWNER_T; // Data type for the Owner ID
+typedef FB_UINT64 LOCK_OWNER_T; // Data type for the Owner ID
 
-#define EXTEND_SIZE     32768
-
-/* Maximum lock series for gathering statistics
-   and querying data */
+// Maximum lock series for gathering statistics and querying data
 
 const int LCK_MAX_SERIES	= 7;
 
-/* Lock query data aggregates */
+// Lock query data aggregates
 
 const int LCK_MIN		= 1;
 const int LCK_MAX		= 2;
@@ -74,7 +70,7 @@ const int LCK_SUM		= 4;
 const int LCK_AVG		= 5;
 const int LCK_ANY		= 6;
 
-/* Lock states */
+// Lock states
 // in LCK_convert the type of level is USHORT instead of UCHAR
 const UCHAR LCK_none	= 0;
 const UCHAR LCK_null	= 1;
@@ -90,7 +86,7 @@ enum locklevel_t {LCK_read = LCK_PR, LCK_write = LCK_EX};
 const SSHORT LCK_WAIT		= 1;
 const SSHORT LCK_NO_WAIT	= 0;
 
-/* Lock block types */
+// Lock block types
 
 const UCHAR type_null	= 0;
 const UCHAR type_lhb	= 1;
@@ -101,7 +97,8 @@ const UCHAR type_his	= 5;
 const UCHAR type_smbx	= 6;
 const UCHAR type_shb	= 7;
 const UCHAR type_own	= 8;
-const UCHAR type_MAX	= type_own;
+const UCHAR type_lpr	= 9;
+const UCHAR type_MAX	= type_lpr;
 
 // Version number of the lock table.
 // Must be increased every time the shmem layout is changed.
@@ -123,38 +120,29 @@ const UCHAR LHB_VERSION			= CLASSIC_LHB_VERSION;
 #endif
 
 #ifndef SUPERSERVER
-// Use thread to handle blocking ASTs
 #define USE_BLOCKING_THREAD
-
-// Attempt to handle possible starvation on a lock table mutex.
-// Currently enabled for Solaris CS only, requires testing
-// on other platforms.
-// WARNING:	the code uses CS-specific logic (process-level owner pointers),
-//			so it cannot be used on SS without modification.
-#ifdef SOLARIS_MT
-#define PREVENT_OWNER_STARVATION
-#endif
 #endif
 
-/* Lock header block -- one per lock file, lives up front */
+// Lock header block -- one per lock file, lives up front
 
 struct lhb {
-	UCHAR lhb_type;				/* memory tag - always type_lbh */
-	UCHAR lhb_version;			/* Version of lock table */
-	SRQ_PTR lhb_secondary;		/* Secondary lock header block */
-	SRQ_PTR lhb_active_owner;	/* Active owner, if any */
-	srq lhb_owners;				/* Que of active owners */
-	srq lhb_free_owners;		/* Free owners blocks */
-	srq lhb_free_locks;			/* Free lock blocks */
-	srq lhb_free_requests;		/* Free lock requests */
-	SLONG lhb_length;			/* Size of lock table */
-	SLONG lhb_used;				/* Bytes of lock table in use */
-	USHORT lhb_hash_slots;		/* Number of hash slots allocated */
-	USHORT lhb_flags;			/* Miscellaneous info */
-	MTX_T lhb_mutex[1];			/* Mutex controlling access */
+	UCHAR lhb_type;					// memory tag - always type_lbh
+	UCHAR lhb_version;				// Version of lock table
+	SRQ_PTR lhb_secondary;			// Secondary lock header block
+	SRQ_PTR lhb_active_owner;		// Active owner, if any
+	srq lhb_owners;					// Que of active owners
+	srq lhb_processes;				// Que of active processes
+	srq lhb_free_processes;			// Free process blocks
+	srq lhb_free_owners;			// Free owner blocks
+	srq lhb_free_locks;				// Free lock blocks
+	srq lhb_free_requests;			// Free lock requests
+	SLONG lhb_length;				// Size of lock table
+	SLONG lhb_used;					// Bytes of lock table in use
+	USHORT lhb_hash_slots;			// Number of hash slots allocated
+	USHORT lhb_flags;				// Miscellaneous info
+	MTX_T lhb_mutex[1];				// Mutex controlling access
 	SRQ_PTR lhb_history;
-	ULONG lhb_process_count;	/* To give a unique id to each process attachment to the lock table */
-	ULONG lhb_scan_interval;	/* Deadlock scan interval (secs) */
+	ULONG lhb_scan_interval;		// Deadlock scan interval (secs)
 	ULONG lhb_acquire_spins;
 	FB_UINT64 lhb_acquires;
 	FB_UINT64 lhb_acquire_blocks;
@@ -176,128 +164,123 @@ struct lhb {
 	FB_UINT64 lhb_scans;
 	FB_UINT64 lhb_deadlocks;
 	srq lhb_data[LCK_MAX_SERIES];
-	srq lhb_hash[1];			/* Hash table */
+	srq lhb_hash[1];			// Hash table
 };
 
 // lhb_flags
-const USHORT LHB_lock_ordering		= 1;	/* Lock ordering is enabled */
+const USHORT LHB_lock_ordering		= 1;	// Lock ordering is enabled
 
-/* Secondary header block -- exists only in V3.3 and later lock
-   managers.  It is pointed to by the word in the lhb that used to contain
-   a pattern. */
+// Secondary header block -- exists only in V3.3 and later lock managers.
+// It is pointed to by the word in the lhb that used to contain a pattern.
 
 struct shb {
-	UCHAR shb_type;				/* memory tag - always type_shb */
+	UCHAR shb_type;					// memory tag - always type_shb
 	SRQ_PTR shb_history;
-	SRQ_PTR shb_remove_node;		/* Node removing itself */
-	SRQ_PTR shb_insert_que;			/* Queue inserting into */
-	SRQ_PTR shb_insert_prior;		/* Prior of inserting queue */
+	SRQ_PTR shb_remove_node;		// Node removing itself
+	SRQ_PTR shb_insert_que;			// Queue inserting into
+	SRQ_PTR shb_insert_prior;		// Prior of inserting queue
 };
 
-
-/* Lock block */
+// Lock block
 
 struct lbl
 {
-	UCHAR lbl_type;				/* mem tag: type_lbl=in use, type_null=free */
-	UCHAR lbl_state;			/* High state granted */
-	UCHAR lbl_size;				/* Key bytes allocated */
-	UCHAR lbl_length;			/* Key bytes used */
-	srq lbl_requests;			/* Requests granted */
-	srq lbl_lhb_hash;			/* Collision que for hash table */
-	srq lbl_lhb_data;			/* Lock data que by series */
-	SLONG lbl_data;				/* user data */
-	SRQ_PTR lbl_parent;				/* Parent */
-	UCHAR lbl_series;			/* Lock series */
-	UCHAR lbl_flags;			// Unused. Misc flags
-	USHORT lbl_pending_lrq_count;	/* count of lbl_requests with LRQ_pending */
-	USHORT lbl_counts[LCK_max];	/* Counts of granted locks */
-	UCHAR lbl_key[1];			/* Key value */
+	UCHAR lbl_type;					// mem tag: type_lbl=in use, type_null=free
+	UCHAR lbl_state;				// High state granted
+	UCHAR lbl_size;					// Key bytes allocated
+	UCHAR lbl_length;				// Key bytes used
+	srq lbl_requests;				// Requests granted
+	srq lbl_lhb_hash;				// Collision que for hash table
+	srq lbl_lhb_data;				// Lock data que by series
+	SLONG lbl_data;					// User data
+	SRQ_PTR lbl_parent;				// Parent
+	UCHAR lbl_series;				// Lock series
+	UCHAR lbl_flags;				// Unused. Misc flags
+	USHORT lbl_pending_lrq_count;	// count of lbl_requests with LRQ_pending
+	USHORT lbl_counts[LCK_max];		// Counts of granted locks
+	UCHAR lbl_key[1];				// Key value
 };
-
-/* No flags are defined for LBL at this time */
 
 /* Lock requests */
 
 struct lrq {
-	UCHAR lrq_type;				/* mem tag: type_lrq=in use, type_null=free */
-	UCHAR lrq_requested;		/* Level requested  */
-	UCHAR lrq_state;			/* State of lock request */
-	USHORT lrq_flags;			/* Misc crud */
-	SRQ_PTR lrq_owner;				/* Owner making request */
-	SRQ_PTR lrq_lock;				/* Lock requested */
-	SLONG lrq_data;				/* Lock data requested */
-	srq lrq_own_requests;		/* Locks granted for owner */
-	srq lrq_lbl_requests;		/* Que of requests (active, pending) */
-	srq lrq_own_blocks;			/* Owner block que */
-	lock_ast_t lrq_ast_routine;	/* Block ast routine */
-	void* lrq_ast_argument;		/* Ast argument */
+	UCHAR lrq_type;					// mem tag: type_lrq=in use, type_null=free
+	UCHAR lrq_requested;			// Level requested
+	UCHAR lrq_state;				// State of lock request
+	USHORT lrq_flags;				// Misc crud
+	SRQ_PTR lrq_owner;				// Owner making request
+	SRQ_PTR lrq_lock;				// Lock requested
+	SLONG lrq_data;					// Lock data requested
+	srq lrq_own_requests;			// Locks granted for owner
+	srq lrq_lbl_requests;			// Que of requests (active, pending)
+	srq lrq_own_blocks;				// Owner block que
+	lock_ast_t lrq_ast_routine;		// Block ast routine
+	void* lrq_ast_argument;			// Ast argument
 };
 
 // lrq_flags
-const USHORT LRQ_blocking		= 1;		/* Request is blocking */
-const USHORT LRQ_pending		= 2;		/* Request is pending */
-const USHORT LRQ_converting		= 4;		/* Request is pending conversion */
-const USHORT LRQ_rejected		= 8;		/* Request is rejected */
-const USHORT LRQ_timed_out		= 16;		/* Wait timed out */
-const USHORT LRQ_deadlock		= 32;		/* Request has been seen by the deadlock-walk */
-const USHORT LRQ_repost			= 64;		/* Request block used for repost */
-const USHORT LRQ_scanned		= 128;		/* Request already scanned for deadlock */
-const USHORT LRQ_blocking_seen	= 256;		/* Blocking notification received by owner */
+const USHORT LRQ_blocking		= 1;		// Request is blocking
+const USHORT LRQ_pending		= 2;		// Request is pending
+const USHORT LRQ_converting		= 4;		// Request is pending conversion
+const USHORT LRQ_rejected		= 8;		// Request is rejected
+const USHORT LRQ_timed_out		= 16;		// Wait timed out
+const USHORT LRQ_deadlock		= 32;		// Request has been seen by the deadlock-walk
+const USHORT LRQ_repost			= 64;		// Request block used for repost
+const USHORT LRQ_scanned		= 128;		// Request already scanned for deadlock
+const USHORT LRQ_blocking_seen	= 256;		// Blocking notification received by owner
 
-/* Owner block */
+// Process block
+
+struct prc
+{
+	UCHAR prc_type;					// memory tag - always type_lpr
+	int prc_process_id;				// Process ID
+	srq prc_lhb_processes;			// Process que
+	srq prc_owners;					// Owners
+#ifdef USE_BLOCKING_THREAD
+	event_t prc_blocking;			// Blocking event block
+#endif
+	USHORT prc_flags;				// Unused. Misc flags
+};
+
+// Owner block
 
 struct own
 {
-	UCHAR own_type;				/* memory tag - always type_own */
-	UCHAR own_owner_type;		/* type of owner */
-	SSHORT own_count;			/* init count for the owner */
-	LOCK_OWNER_T own_owner_id;	/* Owner ID */
-	UATOM own_ast_flags;		/* flags shared by main and ast codes */
-	UATOM own_ast_hung_flags;	/* unprotected - OWN_hung flag */
-	srq own_lhb_owners;			/* Owner que */
-	srq own_requests;			/* Lock requests granted */
-	srq own_blocks;				/* Lock requests blocking */
-	SRQ_PTR own_pending_request;	/* Request we're waiting on */
-	int own_process_id;			/* Owner's process ID */
-	FB_UINT64 own_acquire_time;	/* lhb_acquires when owner last tried acquire() */
-#ifdef USE_BLOCKING_THREAD
-	event_t own_blocking;		/* Blocking event block */
-#endif
-#ifdef PREVENT_OWNER_STARVATION
-	event_t own_stall;			/* Owner is stalling for other owner */
-#endif
-	event_t own_wakeup;			/* Wakeup event block */
-	USHORT own_flags;			/* Misc stuff */
+	UCHAR own_type;					// memory tag - always type_own
+	UCHAR own_owner_type;			// type of owner
+	SSHORT own_count;				// init count for the owner
+	LOCK_OWNER_T own_owner_id;		// Owner ID
+	srq own_lhb_owners;				// Owner que (global)
+	srq own_prc_owners;				// Owner que (process wide)
+	srq own_requests;				// Lock requests granted
+	srq own_blocks;					// Lock requests blocking
+	SRQ_PTR own_pending_request;	// Request we're waiting on
+	SRQ_PTR own_process;			// Process we belong to
+	FB_UINT64 own_acquire_time;		// lhb_acquires when owner last tried acquire()
+	event_t own_wakeup;				// Wakeup event block
+	USHORT own_flags;				// Misc stuff
 };
 
-/* Flags in own_flags */
+// Flags in own_flags
 const USHORT OWN_blocking	= 1;		// Owner is blocking
 const USHORT OWN_scanned	= 2;		// Owner has been deadlock scanned
 const USHORT OWN_waiting	= 4;		// Owner is waiting inside wait_for_request()
-const USHORT OWN_signal		= 8;		// Owner needs signal delivered
-const USHORT OWN_wakeup		= 16;		// Owner has been awoken
-const USHORT OWN_starved	= 32;		// This thread may be starved
+const USHORT OWN_wakeup		= 8;		// Owner has been awoken
+const USHORT OWN_signaled	= 16;		// Signal is thought to be delivered
 
-/* Flags in own_ast_flags */
-const UATOM OWN_signaled	= 16;		/* Signal is thought to be delivered */
-
-/* Flags in own_ast_hung_flag */
-const UATOM OWN_hung		= 64;		/* Owner may be hung by OS-level bug */
-
-
-/* Lock manager history block */
+// Lock manager history block
 
 struct his {
-	UCHAR his_type;				/* memory tag - always type_his */
-	UCHAR his_operation;		/* operation that occured */
-	SRQ_PTR his_next;				/* SRQ_PTR to next item in history list */
-	SRQ_PTR his_process;			/* owner to record for this operation */
-	SRQ_PTR his_lock;				/* lock to record for operation */
-	SRQ_PTR his_request;			/* request to record for operation */
+	UCHAR his_type;					// memory tag - always type_his
+	UCHAR his_operation;			// operation that occured
+	SRQ_PTR his_next;				// SRQ_PTR to next item in history list
+	SRQ_PTR his_process;			// owner to record for this operation
+	SRQ_PTR his_lock;				// lock to record for operation
+	SRQ_PTR his_request;			// request to record for operation
 };
 
-/* his_operation definitions */
+// his_operation definitions
 // should be UCHAR according to his_operation but is USHORT in lock.cpp:post_operation 
 const UCHAR his_enq			= 1;
 const UCHAR his_deq			= 2;

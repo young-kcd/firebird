@@ -502,37 +502,11 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 
 	if (sw_owners) {
 		const srq* que_inst;
-
-#if defined USE_BLOCKING_THREAD && defined UNIX
-		/* The Lock Starvation recovery code on Solaris rotates the owner
-		   queue once per acquire.  This makes it difficult to read the
-		   printouts when multiple runs are made.  So we scan the list
-		   of owners once to find the lowest owner_id, and start the printout
-		   from there. */
-		SRQ_PTR least_owner_id = 0x7FFFFFFF;
-		const srq* least_owner_ptr = &LOCK_header->lhb_owners;
-		SRQ_LOOP(LOCK_header->lhb_owners, que_inst) {
-			own* this_owner = (own*) ((UCHAR*) que_inst - OFFSET(own*, own_lhb_owners));
-			if (SRQ_REL_PTR(this_owner) < least_owner_id) {
-				least_owner_id = SRQ_REL_PTR(this_owner);
-				least_owner_ptr = que_inst;
-			}
-		}
-		que_inst = least_owner_ptr;
-		do {
-			if (que_inst != &LOCK_header->lhb_owners)
-				prt_owner(outfile, LOCK_header,
-						  (own*) ((UCHAR*) que_inst - OFFSET(own*, own_lhb_owners)),
-						  sw_requests, sw_waitlist);
-			que_inst = SRQ_NEXT((*que_inst));
-		} while (que_inst != least_owner_ptr);
-#else
 		SRQ_LOOP(LOCK_header->lhb_owners, que_inst) {
 			prt_owner(outfile, LOCK_header,
 					  (own*) ((UCHAR*) que_inst - OFFSET(own*, own_lhb_owners)),
 					  sw_requests, sw_waitlist);
 		}
-#endif /* USE_BLOCKING_THREAD */
 	}
 
 /* Print known locks */
@@ -959,31 +933,23 @@ static void prt_owner(OUTFILE outfile,
  *      Print a formatted owner block.
  *
  **************************************/
+	const prc* process = (prc*) SRQ_ABS_PTR(owner->own_process);
+
 	FPRINTF(outfile, "OWNER BLOCK %6"SLONGFORMAT"\n", SRQ_REL_PTR(owner));
-	FPRINTF(outfile, "\tOwner id: %6"ULONGFORMAT
-			", type: %1d, flags: 0x%02X, pending: %6"SLONGFORMAT"\n",
+	FPRINTF(outfile, "\tOwner id: %6"QUADFORMAT"d, type: %1d, pending: %6"SLONGFORMAT"\n",
 			owner->own_owner_id, owner->own_owner_type,
-			(owner->own_flags | (UCHAR) owner->own_ast_flags),
 			owner->own_pending_request);
 	FPRINTF(outfile, "\tProcess id: %6d, %s\n",
-			owner->own_process_id,
-			ISC_check_process_existence(owner->own_process_id, false) ? "Alive" : "Dead");
-#ifdef PREVENT_OWNER_STARVATION
-	FPRINTF(outfile, "\tLast Acquire: %6"UQUADFORMAT" (%6"UQUADFORMAT" ago)",
-			owner->own_acquire_time,
-			LOCK_header->lhb_acquires - owner->own_acquire_time);
-	FPRINTF(outfile, "\n");
-#endif
+			process->prc_process_id,
+			ISC_check_process_existence(process->prc_process_id, false) ? "Alive" : "Dead");
 	{
-		const UCHAR tmp = (owner->own_flags | (UCHAR) owner->own_ast_flags
-			   | (UCHAR) owner->own_ast_hung_flags);
-		FPRINTF(outfile, "\tFlags: 0x%02X ", tmp);
-		FPRINTF(outfile, " %s", (tmp & OWN_hung) ? "hung" : "    ");
-		FPRINTF(outfile, " %s", (tmp & OWN_blocking) ? "blkg" : "    ");
-		FPRINTF(outfile, " %s", (tmp & OWN_starved) ? "STRV" : "    ");
-		FPRINTF(outfile, " %s", (tmp & OWN_signal) ? "sgnl" : "    ");
-		FPRINTF(outfile, " %s", (tmp & OWN_wakeup) ? "wake" : "    ");
-		FPRINTF(outfile, " %s", (tmp & OWN_scanned) ? "scan" : "    ");
+		const USHORT flags = owner->own_flags;
+		FPRINTF(outfile, "\tFlags: 0x%02X ", flags);
+		FPRINTF(outfile, " %s", (flags & OWN_blocking) ? "blkg" : "    ");
+		FPRINTF(outfile, " %s", (flags & OWN_wakeup) ? "wake" : "    ");
+		FPRINTF(outfile, " %s", (flags & OWN_scanned) ? "scan" : "    ");
+		FPRINTF(outfile, " %s", (flags & OWN_waiting) ? "wait" : "    ");
+		FPRINTF(outfile, " %s", (flags & OWN_signaled) ? "sgnl" : "    ");
 		FPRINTF(outfile, "\n");
 	}
 
