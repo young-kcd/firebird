@@ -1654,18 +1654,8 @@ void Service::start(USHORT spb_length, const SCHAR* spb_data)
 	// Break up the command line into individual arguments.
 	parseSwitches();
 
-/*
- * the service block can be reused hence free a memory from the
- * previous usage as well as init a status vector.
- */
-
+	// The service block can be reused hence init a status vector.
 	memset((void *) svc_status, 0, sizeof(ISC_STATUS_ARRAY));
-
-	// FREE: at SVC_detach()
-	if (!svc_stdout)	// NOMEM:
-	{
-		Firebird::status_exception::raise(isc_virmemexh, 0);
-	}
 
 	if (serv->serv_thd) {
 		svc_flags &= ~SVC_evnt_fired;
