@@ -79,10 +79,10 @@ static void set_lock_attachment(Lock*, Attachment*);
 #ifdef SUPERSERVER
 
 inline LOCK_OWNER_T LCK_OWNER_ID_DBB(thread_db* tdbb) {
-	return tdbb->getDatabase()->dbb_lock_owner_id;
+	return (LOCK_OWNER_T) getpid() << 32 | tdbb->getDatabase()->dbb_lock_owner_id;
 }
 inline LOCK_OWNER_T LCK_OWNER_ID_ATT(thread_db* tdbb) {
-	return tdbb->getAttachment()->att_lock_owner_id;
+	return (LOCK_OWNER_T) getpid() << 32 | tdbb->getAttachment()->att_lock_owner_id;
 }
 
 inline SLONG* LCK_OWNER_HANDLE_DBB(thread_db* tdbb) {
@@ -94,20 +94,18 @@ inline SLONG* LCK_OWNER_HANDLE_ATT(thread_db* tdbb) {
 
 #else	// SUPERSERVER
 
-static SLONG process_owner_handle = 0;
-
 inline LOCK_OWNER_T LCK_OWNER_ID_DBB(thread_db* tdbb) {
-	return getpid();
+	return (LOCK_OWNER_T) getpid() << 32 | tdbb->getDatabase()->dbb_lock_owner_id;
 }
 inline LOCK_OWNER_T LCK_OWNER_ID_ATT(thread_db* tdbb) {
-	return getpid();
+	return (LOCK_OWNER_T) getpid() << 32 | tdbb->getDatabase()->dbb_lock_owner_id;
 }
 
 inline SLONG* LCK_OWNER_HANDLE_DBB(thread_db* tdbb) {
-	return &process_owner_handle;
+	return &tdbb->getDatabase()->dbb_lock_owner_handle;
 }
 inline SLONG* LCK_OWNER_HANDLE_ATT(thread_db* tdbb) {
-	return &process_owner_handle;
+	return &tdbb->getDatabase()->dbb_lock_owner_handle;
 }
 
 #endif	// SUPERSERVER
@@ -197,7 +195,7 @@ inline void lock_fini(Database* dbb,
 	LOCK_fini(status_vector, owner_offset);
 }
 
-inline int lock_init(Database* dbb,
+inline bool lock_init(Database* dbb,
 					 ISC_STATUS* status_vector,
 					 LOCK_OWNER_T owner_id,
 					 UCHAR owner_type,
@@ -533,10 +531,8 @@ SLONG LCK_get_owner_handle(thread_db* tdbb, enum lck_t lock_type)
 	case LCK_attachment:
 	case LCK_page_space:
 	case LCK_relation:
-	case LCK_file_extend:
 	case LCK_tra:
 	case LCK_sweep:
-	case LCK_record:
 	case LCK_update_shadow:
 	case LCK_dsql_cache:
 	case LCK_backup_end:
@@ -636,7 +632,7 @@ void LCK_init(thread_db* tdbb, enum lck_owner_t owner_type)
 		break;
 	}
 
-	if (lock_init(tdbb->getDatabase(), tdbb->tdbb_status_vector,
+	if (!lock_init(tdbb->getDatabase(), tdbb->tdbb_status_vector,
 				  owner_id, owner_type, owner_handle_ptr))
 	{
 		if (tdbb->tdbb_status_vector[1] == isc_lockmanerr)
