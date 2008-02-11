@@ -26,31 +26,22 @@
 
 #ifdef SUPERSERVER
 
-// On all platforms, value of zero means in-process signals.
+// In-process signals
 
 const int BLOCKING_SIGNAL	= 0;
 const int WAKEUP_SIGNAL		= 0;
 const int STALL_SIGNAL		= 0;
 const int EVENT_SIGNAL		= 0;
 
-#else // Classic
-
-// On Windows, all cross-process signal numbers must be unique,
-// as they're used as a part of the shared kernel objects names.
-// On POSIX, the only requirement is being non-zero.
-
-#ifdef WIN_NT
-const int BLOCKING_SIGNAL	= 1000;
-const int WAKEUP_SIGNAL		= 1100;
-const int STALL_SIGNAL		= 1200;
-const int EVENT_SIGNAL		= 1300;
 #else
+
+// Cross-process signals
+
 const int BLOCKING_SIGNAL	= 1;
 const int WAKEUP_SIGNAL		= 1;
 const int STALL_SIGNAL		= 1;
 const int EVENT_SIGNAL		= 1;
-#endif
 
-#endif // SUPERSERVER
+#endif
 
 #endif // JRD_ISC_SIGNAL_H

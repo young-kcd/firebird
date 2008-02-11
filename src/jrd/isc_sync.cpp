@@ -702,7 +702,10 @@ void ISC_event_fini(event_t* event)
  *
  **************************************/
 
-	CloseHandle((HANDLE) event->event_handle);
+	if (event->event_pid == process_id)
+	{
+		CloseHandle((HANDLE) event->event_handle);
+	}
 }
 
 
@@ -719,11 +722,15 @@ int ISC_event_init(event_t* event, int unused, int type)
  *
  **************************************/
 
+	static int idCounter = 0;
+
+	const int id = type ? ++idCounter : 0;
+
 	event->event_pid = process_id = getpid();
 	event->event_count = 0;
-	event->event_type = type;
+	event->event_id = id;
 
-	event->event_handle = ISC_make_signal(true, true, process_id, type);
+	event->event_handle = ISC_make_signal(true, true, process_id, id);
 
 	return (event->event_handle) ? TRUE : FALSE;
 }
@@ -745,11 +752,9 @@ int ISC_event_post(event_t* event)
 	++event->event_count;
 
 	if (event->event_pid != process_id)
-		ISC_kill(event->event_pid, event->event_type, event->event_handle);
+		return ISC_kill(event->event_pid, event->event_id, event->event_handle);
 	else
-		SetEvent((HANDLE) event->event_handle);
-
-	return 0;
+		return SetEvent((HANDLE) event->event_handle) ? 0 : -1;
 }
 
 
@@ -1090,20 +1095,20 @@ void *ISC_make_signal(
  **************************************/
 
 	const BOOLEAN man_rst = manual_reset ? TRUE : FALSE;
-	
+
 	if (!signal_number)
 		return CreateEvent(NULL, man_rst, FALSE, NULL);
 
 	TEXT event_name[BUFFER_TINY];
 	sprintf(event_name, "_firebird_process%u_signal%d", process_idL, signal_number);
 
-	HANDLE hEvent;
+	HANDLE hEvent = OpenEvent(EVENT_ALL_ACCESS, TRUE, event_name);
+
 	if (create_flag) {
+		fb_assert(!hEvent);
 		hEvent = CreateEvent(ISC_get_security_desc(), man_rst, FALSE, event_name);
 	}
-	else {
-		hEvent = OpenEvent(EVENT_ALL_ACCESS, TRUE, event_name);
-	}
+
 	return hEvent;
 }
 #endif

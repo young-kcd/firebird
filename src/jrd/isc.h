@@ -125,7 +125,7 @@ typedef mtx *MTX;
 struct event_t
 {
 	SLONG		event_pid;
-	SLONG		event_type;
+	SLONG		event_id;
 	SLONG		event_count;
 	void*		event_handle;
 };
