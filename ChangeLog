@@ -1,3 +1,97 @@
+2008-02-11 18:39  dimitr
+
+	* firebird2/src/jrd/jrd.cpp (1.381):
+
+	Move the dbb<->att check under the mutex protection.
+
+2008-02-11 18:34  dimitr
+
+	* firebird2/src/jrd/: isc.h (1.34), isc_signal.h (1.7),
+	isc_sync.cpp (1.125):
+
+	Allow mixed in-process/cross-process events on Windows (like they
+	work in POSIX).
+
+2008-02-11 18:31  dimitr
+
+	* firebird2/src/jrd/: lck.cpp (1.75), lck.h (1.36):
+
+	Adjustments for the changed LM. Restore the 64-bit owner IDs.
+	Cleanup.
+
+2008-02-11 18:30  dimitr
+
+	* firebird2/src/lock/: lock.cpp (1.139), lock.h (1.42),
+	lock_proto.h (1.17), print.cpp (1.63):
+
+	Major changes in the lock manager, targeted to allow mixed
+	in-process/cross-process working modes. Namely, they are: 1)
+	Separate process and owner blocks. Multiplex blocking signals via
+	single blocking thread.  2) Enable direct in-process AST delivery.
+	3) Drop PREVENT_OWNER_STARVATION code as not compatible with the
+	new LM structure.  4) Synchronize LM using its own mutex instead of
+	SCH.  5) Implement wakeup'n'remap code for waiting owners.  6) Add
+	more debugging points for memory remaps.  7) Cleanup and style.
+	Hopefully, this attempt is more POSIX-friendly than my previous
+	one.
+
+2008-02-11 10:59  alexpeshkoff
+
+	* firebird2/src/jrd/svc.cpp (1.204):
+
+	test for out-of-memory condition has no sense here any more
+
+2008-02-11 10:55  alexpeshkoff
+
+	* firebird2/src/jrd/: svc.cpp (1.203), svc.h (1.51):
+
+	avoid gds__alloc/free in services
+
+2008-02-11 10:52  alexpeshkoff
+
+	* firebird2/src/common/classes/: init.cpp (1.5), locks.cpp (1.13),
+	locks.h (1.35):
+
+	Explicit init for mutexes - thanks to Claudio
+
+2008-02-10 18:58  asfernandes
+
+	* firebird2/src/jrd/evl.cpp (1.251):
+
+	Correction
+
+2008-02-10 18:33  sboyd
+
+	* firebird2/src/gpre/rmc.cpp (1.7):
+
+	Changed the option for calls to isc_dsql_free_statement from
+	DSQL_close to DSQL_drop.  This allows cursors used in separately
+	compiled subprograms which are CALLed and subsequently CANCELed to
+	function properly.  Failure to use DSQL_drop resulted in -502
+	errors.
+
+2008-02-10 18:26  asfernandes
+
+	* firebird2/src/jrd/jrd.cpp (1.380):
+
+	Misc
+
+2008-02-10 17:38  alexpeshkoff
+
+	* firebird2/src/jrd/: jrd.cpp (1.379), jrd.h (1.217):
+
+	1. Cleanup:  - moved Attachment constructor (big enough) into .cpp
+	file  - avoid use of dbb in Database::get() and getUserInfo() 2.
+	Complete fix for CORE-1726 - SecurityDatabase::init() is now not
+	Database, but Attachment counted.
+
+2008-02-09 16:19  asfernandes
+
+	* firebird2/src/jrd/: evl.cpp (1.250), exe.h (1.109), opt.cpp
+	(1.308):
+
+	Fixed CORE-1254 - Problem with DISTINCT and insensitive collations
+
 2008-02-08 17:57  alexpeshkoff
 
 	* firebird2/src/jrd/: svc.cpp (1.202), svc.h (1.50):
