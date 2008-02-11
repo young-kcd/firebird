@@ -880,7 +880,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 	}
 	else
 	{
-		if (dbb->dbb_flags & options.dpb_flags != options.dpb_flags)
+		if ((dbb->dbb_flags & options.dpb_flags) != options.dpb_flags)
 		{
 			// looks like someone tries to attach incompatibly
 			Firebird::status_exception::raise(isc_bad_dpb_content, 0);
