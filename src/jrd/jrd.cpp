@@ -206,17 +206,8 @@ namespace
 			Firebird::status_exception::raise(isc_bad_db_handle, 0);
 		}
 
-		Database* const dbb = attachment->att_database;
-
-		const Attachment* attach = dbb->dbb_attachments;
-		while (attach && attach != attachment)
-			attach = attach->att_next;
-
-		if (!attach)
-			Firebird::status_exception::raise(isc_bad_db_handle, 0);
-
 		tdbb->setAttachment(attachment);
-		tdbb->setDatabase(dbb);
+		tdbb->setDatabase(attachment->att_database);
 	}
 
 	inline void validateHandle(thread_db* tdbb, jrd_tra* transaction)
@@ -4113,6 +4104,13 @@ static void check_database(thread_db* tdbb)
 
 	Database* dbb = tdbb->getDatabase();
 	Attachment* attachment = tdbb->getAttachment();
+
+	const Attachment* attach = dbb->dbb_attachments;
+	while (attach && attach != attachment)
+		attach = attach->att_next;
+
+	if (!attach)
+		Firebird::status_exception::raise(isc_bad_db_handle, 0);
 
 	if (dbb->dbb_flags & DBB_bugcheck)
 	{
