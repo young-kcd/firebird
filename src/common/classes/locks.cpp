@@ -73,12 +73,12 @@ void Spinlock::init()
 
 #else //posix mutex
 
-bool Mutex::attrDone = false;
 pthread_mutexattr_t Mutex::attr;
 
-void Mutex::initAttr()
+void Mutex::initMutexes()
 {
-	// Throw exceptions on errors, but they will not be processed in first mutex constructor...
+	// Throw exceptions on errors, but they will not be processed in init
+	// (first constructor). Better logging facilities are required here.
 	int rc = pthread_mutexattr_init(&attr);
 	if (rc < 0)
 		system_call_failed::raise("pthread_mutexattr_init", rc);
@@ -86,8 +86,6 @@ void Mutex::initAttr()
 	rc = pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
 	if (rc < 0)
 		system_call_failed::raise("pthread_mutexattr_settype", rc);
-
-	attrDone = true;
 }
 
 #endif

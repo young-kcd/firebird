@@ -91,6 +91,7 @@ namespace
 			return;
 		}
 
+		Firebird::Mutex::initMutexes();
 		Firebird::MemoryPool::init();
 		Firebird::StaticMutex::create();
 

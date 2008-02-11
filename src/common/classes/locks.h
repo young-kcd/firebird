@@ -60,6 +60,7 @@ class Mutex
 {
 protected:
 	CRITICAL_SECTION spinlock;
+
 public:
 	Mutex() {
 		InitializeCriticalSection(&spinlock);
@@ -76,6 +77,9 @@ public:
 	void leave() {
 		LeaveCriticalSection(&spinlock);
 	}
+	
+public:
+	static void initMutexes() { }
 };
 
 typedef WINBASEAPI DWORD WINAPI tSetCriticalSectionSpinCount (
@@ -112,6 +116,7 @@ class Mutex
 {
 private:
 	mutex_t mlock;
+
 public:
 	Mutex() {
 		if (mutex_init(&mlock, USYNC_PROCESS, NULL))
@@ -133,6 +138,9 @@ public:
 		if (mutex_unlock(&mlock))
 			system_call_failed::raise("mutex_unlock");
 	}
+	
+public:
+	static void initMutexes() { }
 };
 
 typedef Mutex Spinlock;
@@ -144,18 +152,15 @@ class Mutex
 {
 private:
 	pthread_mutex_t mlock;
-	static bool attrDone;
 	static pthread_mutexattr_t attr;
-	static void initAttr();
 
+private:
 	void init() {
-		if (! attrDone)
-			initAttr();
 		int rc = pthread_mutex_init(&mlock, &attr);
 		if (rc < 0)
 			system_call_failed::raise("pthread_mutex_init");
 	}
-	
+
 public:
 	Mutex() { init(); }
 	explicit Mutex(MemoryPool&) { init(); }
@@ -174,6 +179,9 @@ public:
 		if (rc < 0)
 			system_call_failed::raise("pthread_mutex_unlock");
 	}
+	
+public:
+	static void initMutexes();
 };
 
 #ifndef DARWIN
