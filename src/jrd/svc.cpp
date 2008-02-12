@@ -2465,9 +2465,10 @@ static void service_fork(TEXT* service_path, Service* service)
 		break;
 
 	case 0:
+#ifndef DARWIN
 		if (vfork() > 0)
 			_exit(FINI_OK);
-
+#endif
 		close(pair1[0]);
 		close(pair2[1]);
 		if (pair2[0] != 0) {
