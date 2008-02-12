@@ -37,7 +37,7 @@
 #include "../common/classes/objects_array.h"
 #include "../common/classes/rwlock.h"
 #include "unicode/ustring.h"
-///#include "unicode/utrans.h"
+#include "unicode/utrans.h"
 #include "unicode/uchar.h"
 #include "unicode/ucnv.h"
 #include "unicode/ucol.h"
@@ -94,6 +94,23 @@ public:
 	UCollationResult (U_EXPORT2 *ucolStrColl)(const UCollator* coll, const UChar* source,
 		int32_t sourceLength, const UChar* target, int32_t targetLength);
 	void (U_EXPORT2 *ucolGetVersion)(const UCollator* coll, UVersionInfo info);
+
+	void (U_EXPORT2 *utransClose)(UTransliterator* trans);
+	UTransliterator* (U_EXPORT2 *utransOpen)(
+		const char* id,
+		UTransDirection dir,
+		const UChar* rules,         /* may be Null */
+		int32_t rulesLength,        /* -1 if null-terminated */ 
+		UParseError* parseError,    /* may be Null */
+		UErrorCode* status);
+	void (U_EXPORT2 *utransTransUChars)(
+		const UTransliterator* trans,
+		UChar* text,
+		int32_t* textLength,
+		int32_t textCapacity,
+		int32_t start,
+		int32_t* limit,
+		UErrorCode* status);
 };
 
 
@@ -845,6 +862,15 @@ UnicodeUtil::ICU* UnicodeUtil::loadICU(const Firebird::string& icuVersion,
 		symbol.printf("ucol_getVersion_%s_%s", majorVersion.c_str(), minorVersion.c_str());
 		icu->inModule->findSymbol(symbol, icu->ucolGetVersion);
 
+		symbol.printf("utrans_open_%s_%s", majorVersion.c_str(), minorVersion.c_str());
+		icu->inModule->findSymbol(symbol, icu->utransOpen);
+
+		symbol.printf("utrans_close_%s_%s", majorVersion.c_str(), minorVersion.c_str());
+		icu->inModule->findSymbol(symbol, icu->utransClose);
+
+		symbol.printf("utrans_transUChars_%s_%s", majorVersion.c_str(), minorVersion.c_str());
+		icu->inModule->findSymbol(symbol, icu->utransTransUChars);
+
 		if (!icu->uVersionToString || !icu->ulocCountAvailable || !icu->ulocGetAvailable ||
 			!icu->usetClose || !icu->usetGetItem || !icu->usetGetItemCount || !icu->usetOpen ||
 			!icu->ucolClose || !icu->ucolGetContractions || !icu->ucolGetSortKey || !icu->ucolOpen ||
@@ -931,7 +957,10 @@ UnicodeUtil::Utf16Collation* UnicodeUtil::Utf16Collation::create(
 	if (error)
 		return NULL;
 
-	if ((attributes & ~(TEXTTYPE_ATTR_PAD_SPACE | TEXTTYPE_ATTR_CASE_INSENSITIVE)) ||
+	if ((attributes & ~(TEXTTYPE_ATTR_PAD_SPACE | TEXTTYPE_ATTR_CASE_INSENSITIVE |
+			TEXTTYPE_ATTR_ACCENT_INSENSITIVE)) ||
+		((attributes & (TEXTTYPE_ATTR_CASE_INSENSITIVE | TEXTTYPE_ATTR_ACCENT_INSENSITIVE)) ==
+			TEXTTYPE_ATTR_ACCENT_INSENSITIVE) ||
 		(specificAttributes.count() - attributeCount) != 0)
 	{
 		return NULL;
@@ -969,7 +998,14 @@ UnicodeUtil::Utf16Collation* UnicodeUtil::Utf16Collation::create(
 
 	icu->ucolSetAttribute(partialCollator, UCOL_STRENGTH, UCOL_PRIMARY, &status);
 
-	if (attributes & TEXTTYPE_ATTR_CASE_INSENSITIVE)
+	if ((attributes & (TEXTTYPE_ATTR_CASE_INSENSITIVE | TEXTTYPE_ATTR_ACCENT_INSENSITIVE)) ==
+			(TEXTTYPE_ATTR_CASE_INSENSITIVE | TEXTTYPE_ATTR_ACCENT_INSENSITIVE))
+	{
+		icu->ucolSetAttribute(compareCollator, UCOL_STRENGTH, UCOL_PRIMARY, &status);
+		tt->texttype_flags |= TEXTTYPE_SEPARATE_UNIQUE;
+		tt->texttype_canonical_width = 4;	// UTF-32
+	}
+	else if (attributes & TEXTTYPE_ATTR_CASE_INSENSITIVE)
 	{
 		icu->ucolSetAttribute(compareCollator, UCOL_STRENGTH, UCOL_SECONDARY, &status);
 		tt->texttype_flags |= TEXTTYPE_SEPARATE_UNIQUE;
@@ -1144,7 +1180,38 @@ ULONG UnicodeUtil::Utf16Collation::canonical(ULONG srcLen, const USHORT* src, UL
 
 	HalfStaticArray<USHORT, BUFFER_SMALL / 2> upperStr;
 
-	if (attributes & TEXTTYPE_ATTR_CASE_INSENSITIVE)
+	if ((attributes & (TEXTTYPE_ATTR_CASE_INSENSITIVE | TEXTTYPE_ATTR_ACCENT_INSENSITIVE)) ==
+			(TEXTTYPE_ATTR_CASE_INSENSITIVE | TEXTTYPE_ATTR_ACCENT_INSENSITIVE))
+	{
+		fb_assert(srcLen % sizeof(*src) == 0);
+
+		memcpy(upperStr.getBuffer(srcLen / sizeof(USHORT)), src, srcLen);
+
+		UErrorCode errorCode = U_ZERO_ERROR;
+		UTransliterator* trans = icu->utransOpen("Any-Upper; NFD; [:Nonspacing Mark:] Remove; NFC",
+			UTRANS_FORWARD, NULL, 0, NULL, &errorCode);
+
+		if (errorCode <= 0)
+		{
+			int32_t capacity = dstLen;
+			int32_t len = srcLen / sizeof(USHORT);
+			int32_t limit = len;
+
+			icu->utransTransUChars(trans, reinterpret_cast<UChar*>(upperStr.begin()),
+				&len, capacity, 0, &limit, &errorCode);
+			icu->utransClose(trans);
+
+			len *= sizeof(USHORT);
+			if (len > dstLen)
+				len = INTL_BAD_STR_LENGTH;
+
+			srcLen = len;
+			src = upperStr.begin();
+		}
+		else
+			return INTL_BAD_STR_LENGTH;
+	}
+	else if (attributes & TEXTTYPE_ATTR_CASE_INSENSITIVE)
 	{
 		srcLen = utf16UpperCase(srcLen, src,
 			srcLen, upperStr.getBuffer(srcLen / sizeof(USHORT)), exceptions);
