@@ -37,7 +37,7 @@
 #include "../common/classes/objects_array.h"
 #include "../common/classes/rwlock.h"
 #include "unicode/ustring.h"
-///#include "unicode/utrans.h"
+#include "unicode/utrans.h"
 #include "unicode/uchar.h"
 #include "unicode/ucnv.h"
 #include "unicode/ucol.h"
@@ -931,7 +931,10 @@ UnicodeUtil::Utf16Collation* UnicodeUtil::Utf16Collation::create(
 	if (error)
 		return NULL;
 
-	if ((attributes & ~(TEXTTYPE_ATTR_PAD_SPACE | TEXTTYPE_ATTR_CASE_INSENSITIVE)) ||
+	if ((attributes & ~(TEXTTYPE_ATTR_PAD_SPACE | TEXTTYPE_ATTR_CASE_INSENSITIVE |
+			TEXTTYPE_ATTR_ACCENT_INSENSITIVE)) ||
+		(attributes & (TEXTTYPE_ATTR_CASE_INSENSITIVE | TEXTTYPE_ATTR_ACCENT_INSENSITIVE) ==
+			TEXTTYPE_ATTR_ACCENT_INSENSITIVE) ||
 		(specificAttributes.count() - attributeCount) != 0)
 	{
 		return NULL;
@@ -969,7 +972,14 @@ UnicodeUtil::Utf16Collation* UnicodeUtil::Utf16Collation::create(
 
 	icu->ucolSetAttribute(partialCollator, UCOL_STRENGTH, UCOL_PRIMARY, &status);
 
-	if (attributes & TEXTTYPE_ATTR_CASE_INSENSITIVE)
+	if ((attributes & (TEXTTYPE_ATTR_CASE_INSENSITIVE | TEXTTYPE_ATTR_ACCENT_INSENSITIVE)) ==
+			(TEXTTYPE_ATTR_CASE_INSENSITIVE | TEXTTYPE_ATTR_ACCENT_INSENSITIVE))
+	{
+		icu->ucolSetAttribute(compareCollator, UCOL_STRENGTH, UCOL_PRIMARY, &status);
+		tt->texttype_flags |= TEXTTYPE_SEPARATE_UNIQUE;
+		tt->texttype_canonical_width = 4;	// UTF-32
+	}
+	else if (attributes & TEXTTYPE_ATTR_CASE_INSENSITIVE)
 	{
 		icu->ucolSetAttribute(compareCollator, UCOL_STRENGTH, UCOL_SECONDARY, &status);
 		tt->texttype_flags |= TEXTTYPE_SEPARATE_UNIQUE;
@@ -1144,7 +1154,37 @@ ULONG UnicodeUtil::Utf16Collation::canonical(ULONG srcLen, const USHORT* src, UL
 
 	HalfStaticArray<USHORT, BUFFER_SMALL / 2> upperStr;
 
-	if (attributes & TEXTTYPE_ATTR_CASE_INSENSITIVE)
+	if ((attributes & (TEXTTYPE_ATTR_CASE_INSENSITIVE | TEXTTYPE_ATTR_ACCENT_INSENSITIVE)) ==
+			(TEXTTYPE_ATTR_CASE_INSENSITIVE | TEXTTYPE_ATTR_ACCENT_INSENSITIVE))
+	{
+		fb_assert(srcLen % sizeof(*src) == 0);
+
+		memcpy(upperStr.getBuffer(srcLen / sizeof(USHORT)), src, srcLen);
+
+		UErrorCode errorCode = U_ZERO_ERROR;
+		UTransliterator* trans = utrans_open("Any-Upper; NFD; [:Nonspacing Mark:] Remove; NFC",
+			UTRANS_FORWARD, NULL, 0, NULL, &errorCode);
+
+		if (errorCode <= 0)
+		{
+			int32_t capacity = dstLen;
+			int32_t len = srcLen / sizeof(USHORT);
+			int32_t limit = len;
+
+			utrans_transUChars(trans, upperStr.begin(), &len, capacity, 0, &limit, &errorCode);
+			utrans_close(trans);
+
+			len *= sizeof(USHORT);
+			if (len > dstLen)
+				len = INTL_BAD_STR_LENGTH;
+
+			srcLen = len;
+			src = upperStr.begin();
+		}
+		else
+			return INTL_BAD_STR_LENGTH;
+	}
+	else if (attributes & TEXTTYPE_ATTR_CASE_INSENSITIVE)
 	{
 		srcLen = utf16UpperCase(srcLen, src,
 			srcLen, upperStr.getBuffer(srcLen / sizeof(USHORT)), exceptions);
