@@ -1,3 +1,70 @@
+2008-02-12 18:21  dimitr
+
+	* firebird2/src/dsql/: dsql.cpp (1.217), sqlda_pub.h (1.6):
+
+	Front-ported the DSQL_unprepare feature from Vulcan.
+
+2008-02-12 17:13  paulbeach
+
+	*
+	firebird2/builds/install/arch-specific/darwin/launchd.org.firebird.gds.plist
+	(1.4):
+
+	update the launchdaemon plist file with the correct dtd url
+
+2008-02-12 17:02  asfernandes
+
+	* firebird2/extern/icu/source/common/unicode/uconfig.h (1.3):
+
+	Missing changes - please rebuild ICU
+
+2008-02-12 15:47  asfernandes
+
+	* firebird2/src/jrd/: IntlManager.cpp (1.23), unicode_util.cpp
+	(1.34):
+
+	Reimplementation of CORE-824 for ICU 3.0
+
+2008-02-12 15:26  asfernandes
+
+	* firebird2/src/jrd/: IntlManager.cpp (1.22), unicode_util.cpp
+	(1.33):
+
+	Rollback CORE-824 until I got it fixed - done --with-system-icu 3.6
+
+2008-02-12 15:08  dimitr
+
+	* firebird2/src/jrd/y_handle.h (1.27):
+
+	Totally misc.
+
+2008-02-12 15:07  dimitr
+
+	* firebird2/src/jrd/nbak.cpp (1.75):
+
+	Prevent crash when shutdown is followed by disconnect (for the same
+	attachment).
+
+2008-02-12 15:06  dimitr
+
+	* firebird2/src/remote/server.cpp (1.169):
+
+	Shutdown the port instead of exiting the process. This has the same
+	effect on CS but works for other modes as well.
+
+2008-02-12 01:05  asfernandes
+
+	* firebird2/src/jrd/: IntlManager.cpp (1.21), unicode_util.cpp
+	(1.32):
+
+	UNICODE_CI_AI (case-/accent- insensitive) collation - CORE-824
+
+2008-02-12 00:32  asfernandes
+
+	* firebird2/src/jrd/jrd.cpp (1.382):
+
+	Fix operator precedence
+
 2008-02-11 18:39  dimitr
 
 	* firebird2/src/jrd/jrd.cpp (1.381):
