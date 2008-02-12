@@ -62,7 +62,7 @@ namespace YValve
 
 	// force use of default memory pool for Y-Valve objects
 	typedef Firebird::GlobalStorage DefaultMemory;
-	
+
 	// stored handle types
 	typedef Jrd::jrd_tra StoredTra;
 	typedef void StoredReq;
@@ -126,10 +126,10 @@ namespace YValve
 		FB_API_HANDLE	public_handle;
 		Attachment*		parent;
     	FB_API_HANDLE*	user_handle;
-		
+
 	protected:
 		BaseHandle(UCHAR t, FB_API_HANDLE* pub, Attachment* par, USHORT imp = ~0);
-		
+
 	public:
 		static BaseHandle* translate(FB_API_HANDLE);
 		Jrd::Attachment* getAttachmentHandle();
@@ -141,7 +141,7 @@ namespace YValve
 			return value->public_handle;
 		}
 	};
-	
+
 	template <typename HType>
 		void toParent(Firebird::SortedArray<HType*>& members, HType* newMember, Firebird::Mutex& mutex)
 	{
@@ -258,7 +258,7 @@ namespace YValve
 			}
 		}
 	};
-	
+
 	class Request : public BaseHandle
 	{
 	public:
@@ -286,7 +286,7 @@ namespace YValve
 			fromParent<Request>(parent->requests, this, parent->mutex);
 		}
 	};
-	
+
 	class Blob : public BaseHandle
 	{
 	public:
@@ -314,7 +314,7 @@ namespace YValve
 			fromParent<Blob>(parent->blobs, this, parent->mutex);
 		}
 	};
-	
+
 	class Statement : public BaseHandle
 	{
 	public:
@@ -372,7 +372,6 @@ namespace YValve
 	public:
 		Service(StoredSvc* h, FB_API_HANDLE* pub, USHORT impl)
 			: BaseHandle(hType(), pub, 0, impl), handle(h)
-			  
 		{
 		}
 
@@ -382,6 +381,6 @@ namespace YValve
 		}
 	};
 
-}	
+} // namespace
 
 #endif // JRD_Y_HANDLE_H
