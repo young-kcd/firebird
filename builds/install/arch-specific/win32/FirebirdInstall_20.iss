@@ -218,7 +218,7 @@ AppVersion={#MyAppVerString}
 
 SourceDir=..\..\..\..\
 OutputBaseFilename={#MyAppName}-{#MyAppVerString}_{#PackageNumber}_{#PlatformTarget}{#debug_str}{#pdb_str}
-OutputManifestFile={#MyAppName}-{#MyAppVerString}_{#PackageNumber}_{#PlatformTarget}{#debug_str}{#pdb_str}_Setup-Manifest.txt
+;OutputManifestFile={#MyAppName}-{#MyAppVerString}_{#PackageNumber}_{#PlatformTarget}{#debug_str}{#pdb_str}_Setup-Manifest.txt
 OutputDir=builds\install_images
 ;!!! These directories are as seen from SourceDir !!!
 #define ScriptsDir "builds\install\arch-specific\win32"
@@ -266,7 +266,7 @@ Name: hu; MessagesFile: compiler:Languages\Hungarian.isl; InfoBeforeFile: {#Scri
 Name: it; MessagesFile: compiler:Languages\Italian.isl; InfoBeforeFile: {#ScriptsDir}\it\leggimi_installazione.txt; InfoAfterFile: {#ScriptsDir}\it\leggimi.txt
 Name: pl; MessagesFile: compiler:Languages\Polish.isl; InfoBeforeFile: {#ScriptsDir}\pl\instalacja_czytajto.txt; InfoAfterFile: {#ScriptsDir}\pl\czytajto.txt;
 Name: pt; MessagesFile: compiler:Languages\Portuguese.isl; InfoBeforeFile: {#ScriptsDir}\pt\instalacao_leia-me.txt; InfoAfterFile: {#ScriptsDir}\pt\leia-me.txt
-;Name: ru; MessagesFile: compiler:Languages\Russian.isl; InfoBeforeFile: {#ScriptsDir}\ru\installation_readme.txt; InfoAfterFile: {#ScriptsDir}\ru\readme.txt;
+Name: ru; MessagesFile: compiler:Languages\Russian.isl; InfoBeforeFile: {#ScriptsDir}\ru\installation_readme.txt; InfoAfterFile: {#ScriptsDir}\ru\readme.txt;
 Name: si; MessagesFile: compiler:Languages\Slovenian.isl; InfoBeforeFile: {#ScriptsDir}\si\instalacija_precitajMe.txt; InfoAfterFile: {#ScriptsDir}\readme.txt;
 #endif
 
@@ -281,7 +281,7 @@ hu.BeveledLabel=Magyar
 it.BeveledLabel=Italiano
 pl.BeveledLabel=Polski
 pt.BeveledLabel=Português
-;ru.BeveledLabel=Ðóññêèé
+ru.BeveledLabel=Ðóññêèé
 si.BeveledLabel=Slovenski
 #endif
 
@@ -296,7 +296,7 @@ si.BeveledLabel=Slovenski
 #include "it\custom_messages_it.inc"
 #include "pl\custom_messages_pl.inc"
 #include "pt\custom_messages_pt.inc"
-;#include "ru\custom_messages_ru.inc"
+#include "ru\custom_messages_ru.inc"
 #include "si\custom_messages_si.inc"
 #endif
 
