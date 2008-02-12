@@ -1225,14 +1225,16 @@ ISC_STATUS GDS_DSQL_FREE_CPP(ISC_STATUS*	user_status,
 		DsqlDatabaseContextHolder context(request->req_dbb, tdsql, &request->req_pool);
 
 		if (option & DSQL_drop) {
-		// Release everything associate with the request. 
-
+			// Release everything associated with the request
 			release_request(request, true);
 			*req_handle = NULL;
 		}
+		else if (option & DSQL_unprepare) {
+			// Release everything but the request itself
+			release_request(request, false);
+		}
 		else if (option & DSQL_close) {
-		// Just close the cursor associated with the request. 
-
+			// Just close the cursor associated with the request
 			if (!(request->req_flags & REQ_cursor_open))
 				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 501,
 					  isc_arg_gds, isc_dsql_cursor_close_err, 0);
@@ -2937,10 +2939,8 @@ static void close_cursor( dsql_req* request)
 
 	cursors_mutex->leave();
 
-	if (open_cursor) {
-		delete open_cursor;
-		request->req_open_cursor = NULL;
-	}
+	delete open_cursor;
+	request->req_open_cursor = NULL;
 }
 
 
@@ -4807,7 +4807,7 @@ static UCHAR* put_item(	UCHAR	item,
     @param top_level
 
  **/
-static void release_request(dsql_req* request, bool top_level)
+static void release_request(dsql_req* request, bool drop)
 {
 	tsql* tdsql = DSQL_get_thread_data();
 
@@ -4822,29 +4822,28 @@ static void release_request(dsql_req* request, bool top_level)
 		release_request(child, false);
 	}
 
-// For top level requests that are linked to a parent, unlink it
+	// For requests that are linked to a parent, unlink it
 
-	if (top_level && request->req_parent)
+	if (request->req_parent)
 	{
 		dsql_req* parent = request->req_parent;
-		for (dsql_req** ptr = &parent->req_offspring;
-			*ptr;
-			ptr = &(*ptr)->req_sibling)
+		for (dsql_req** ptr = &parent->req_offspring; *ptr; ptr = &(*ptr)->req_sibling)
 		{
 			if (*ptr == request) {
 				*ptr = request->req_sibling;
 				break;
 			}
 		}
+		request->req_parent = NULL;
 	}
 
-// If the request had an open cursor, close it
+	// If the request had an open cursor, close it
 
 	if (request->req_open_cursor) {
 		close_cursor(request);
 	}
 
-// If request is named, clear it from the hash table
+	// If request is named, clear it from the hash table
 
 	if (request->req_name) {
 		HSHD_remove(request->req_name);
@@ -4856,7 +4855,7 @@ static void release_request(dsql_req* request, bool top_level)
 		request->req_cursor = NULL;
 	}
 
-// If a request has been compiled, release it now
+	// If a request has been compiled, release it now
 
 	if (request->req_handle) {
 		DsqlCheckout dcoHolder(request->req_dbb);
@@ -4864,12 +4863,12 @@ static void release_request(dsql_req* request, bool top_level)
 		isc_release_request(status_vector, &request->req_handle);
 	}
 
-// free blr memory
+	// free blr memory
 	request->req_blr_data.free();
 
-// Only release the entire request for top level requests 
+	// Release the entire request if explicitly asked for
 
-	if (top_level)
+	if (drop)
 		DsqlMemoryPool::deletePool(&request->req_pool);
 }
 

@@ -26,8 +26,9 @@
 
 /* Definitions for DSQL free_statement routine */
 
-#define DSQL_close	1
-#define DSQL_drop	2
+#define DSQL_close		1
+#define DSQL_drop		2
+#define DSQL_unprepare	4
 
 /* Declare the extended SQLDA */
 
