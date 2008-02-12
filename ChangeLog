@@ -1,3 +1,11 @@
+2008-02-12 17:09  paulbeach
+
+	*
+	firebird2/src/install/arch-specific/darwin/launchd.org.firebird.gds.plist
+	(1.1.2.3):
+
+	update the launchdaemon plist file with the correct dtd url
+
 2008-02-02 14:30  alexpeshkoff
 
 	* firebird2/src/jrd/svc.cpp (1.67.2.11):
