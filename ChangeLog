@@ -1,3 +1,11 @@
+2008-02-12 17:09  paulbeach
+
+	*
+	firebird2/builds/install/arch-specific/darwin/launchd.org.firebird.gds.plist
+	(1.1.2.3):
+
+	update the launchdaemon plist file with the correct dtd url
+
 2008-02-06 17:19  paulbeach
 
 	* firebird2/builds/install/arch-specific/darwin/install-script
