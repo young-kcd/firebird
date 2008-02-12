@@ -740,9 +740,10 @@ BackupManager::BackupManager(thread_db* tdbb, Database* _database, int ini_state
 void BackupManager::shutdown_locks(thread_db* tdbb)
 {
 	delete alloc_lock;
+	alloc_lock = NULL;
 	delete database_lock;
+	database_lock = NULL;
 }
-
 
 BackupManager::~BackupManager()
 {
