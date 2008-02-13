@@ -154,7 +154,11 @@ inline bool is_network_error(const ISC_STATUS* vector)
 		vector[1] == isc_net_read_err;
 }
 
-static void bad_handle(ISC_STATUS);
+inline void bad_handle(ISC_STATUS code)
+{
+	Firebird::status_exception::raise(code, isc_arg_end);
+}
+
 inline void nullCheck(const FB_API_HANDLE* ptr, ISC_STATUS code)
 {
 	// this function is called for incoming API handlers,
@@ -170,8 +174,8 @@ inline void nullCheck(const FB_API_HANDLE* ptr, ISC_STATUS code)
 #endif
 
 #if !defined (SUPERCLIENT)
-static BOOLEAN shutdown_flag = FALSE;
-#endif /* !SUPERCLIENT */
+static bool shutdown_flag = false;
+#endif
 
 typedef ISC_STATUS(*PTR) (ISC_STATUS* user_status, ...);
 
@@ -587,20 +591,20 @@ namespace
 		{
 			try 
 			{
-				proc2 = ISC_signal(2, Handler2, 0);
-				proc15 = ISC_signal(15, Handler15, 0);
+				proc2 = ISC_signal(SIGINT, Handler2, 0);
+				proc15 = ISC_signal(SIGTERM, Handler15, 0);
 			}
 			catch (...)
 			{
 				gds__log("Failure setting ctrl-C handlers");
 			}
 		}
-		
+
 		static void propagateKill()
 		{
-			ISC_signal_cancel(2, Handler2, 0);
-			ISC_signal_cancel(15, Handler15, 0);
-			
+			ISC_signal_cancel(SIGINT, Handler2, 0);
+			ISC_signal_cancel(SIGTERM, Handler15, 0);
+
 			// if signal is not processed by someone else, exit now
 			if (!(killed == 2 ? proc2 : proc15))
 			{
@@ -608,13 +612,13 @@ namespace
 			}
 
 			// Someone else watches signals - let him shutdown gracefully
-			
+
 			// Using recursive mutex in signal handler routine - 
 			// relatively safe cause we need read-only access.
 			// With correctly implemented insert / remove methods in array
 			// and memcpy/memmove copying data with at least sizeof(void*)
 			// portions, this code is really safe.
-			
+
 			Firebird::MutexLockGuard guard(attachmentsMutex);
 			for (size_t n = 0; n < attachments().getCount(); ++n)
 			{
@@ -665,7 +669,7 @@ namespace
 				propagateKill();
 			}
 		}
-		
+
 		bool fatal() const
 		{
 			return (vector[0] == isc_arg_gds && vector[1] == isc_shutdown);
@@ -701,7 +705,7 @@ namespace
 	private:
 		YEntry(const YEntry&);	//prohibit copy constructor
 	};
-	
+
 #endif
 } // anonymous namespace
 
@@ -5217,22 +5221,6 @@ static SCHAR *alloc(SLONG length)
 }
 
 
-static void bad_handle(ISC_STATUS code)
-{
-/**************************************
- *
- *	b a d _ h a n d l e
- *
- **************************************
- *
- * Functional description
- *	Generate an error for a bad handle.
- *
- **************************************/
-	Firebird::status_exception::raise(code, isc_arg_end);
-}
-
-
 #ifdef DEV_BUILD
 static void check_status_vector(const ISC_STATUS* status)
  {
@@ -6102,7 +6090,7 @@ static void subsystem_exit(void) throw()
 
 
 #if !defined (SUPERCLIENT)
-BOOLEAN WHY_set_shutdown(BOOLEAN flag)
+bool WHY_set_shutdown(bool flag)
 {
 /**************************************
  *
@@ -6118,12 +6106,12 @@ BOOLEAN WHY_set_shutdown(BOOLEAN flag)
  *
  **************************************/
 
-	const BOOLEAN old_flag = shutdown_flag;
+	const bool old_flag = shutdown_flag;
 	shutdown_flag = flag;
 	return old_flag;
 }
 
-BOOLEAN WHY_get_shutdown()
+bool WHY_get_shutdown()
 {
 /**************************************
  *
@@ -6138,4 +6126,4 @@ BOOLEAN WHY_get_shutdown()
 
 	return shutdown_flag;
 }
-#endif /* SERVER_SHUTDOWN && !SUPERCLIENT */
+#endif // !SUPERCLIENT

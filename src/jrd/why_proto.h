@@ -285,8 +285,8 @@ ISC_STATUS API_ROUTINE gds__transaction_cleanup(ISC_STATUS*, FB_API_HANDLE*,
 void WHY_cleanup_transaction(struct why_hndl* transaction);
 
 #ifdef SERVER_SHUTDOWN
-BOOLEAN WHY_set_shutdown(BOOLEAN);
-BOOLEAN WHY_get_shutdown();
+bool WHY_set_shutdown(bool);
+bool WHY_get_shutdown();
 #endif /* SERVER_SHUTDOWN*/
 
 

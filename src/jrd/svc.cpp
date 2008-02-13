@@ -664,7 +664,7 @@ void Service::detach()
 #ifdef SERVER_SHUTDOWN
 	if (svc_do_shutdown) {
 #ifdef UNIX
-		kill(getpid(), 15);
+		kill(getpid(), SIGTERM);
 #else
 		JRD_shutdown_all(true);
 		if (shutdown_fct) {
@@ -876,7 +876,7 @@ ISC_STATUS Service::query2(thread_db* tdbb,
 			*info++ = item;
 			if (svc_user_flag & SVC_user_dba) {
 				svc_do_shutdown = false;
-				WHY_set_shutdown(FALSE);
+				WHY_set_shutdown(false);
 			}
 			else
 				need_admin_privs(&status, "isc_info_svc_svr_online");
@@ -886,7 +886,7 @@ ISC_STATUS Service::query2(thread_db* tdbb,
 			*info++ = item;
 			if (svc_user_flag & SVC_user_dba) {
 				svc_do_shutdown = true;
-				WHY_set_shutdown(TRUE);
+				WHY_set_shutdown(true);
 			}
 			else
 				need_admin_privs(&status, "isc_info_svc_svr_offline");
@@ -1272,7 +1272,7 @@ void Service::query(USHORT			send_item_length,
 			*info++ = item;
 			if (svc_user_flag & SVC_user_dba) {
 				svc_do_shutdown = false;
-				WHY_set_shutdown(FALSE);
+				WHY_set_shutdown(false);
 				*info++ = 0;	/* Success */
 			}
 			else
@@ -1283,7 +1283,7 @@ void Service::query(USHORT			send_item_length,
 			*info++ = item;
 			if (svc_user_flag & SVC_user_dba) {
 				svc_do_shutdown = true;
-				WHY_set_shutdown(TRUE);
+				WHY_set_shutdown(true);
 				*info++ = 0;	/* Success */
 			}
 			else
