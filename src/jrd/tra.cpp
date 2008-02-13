@@ -1608,14 +1608,8 @@ bool TRA_sweep(thread_db* tdbb, jrd_tra* trans)
 	dbb->dbb_flags |= DBB_sweep_in_progress;
 
 	jrd_tra* const tdbb_old_trans = tdbb->getTransaction();
-	jrd_tra* transaction = 0;
-/* The following line seems to fix a bug that appears on VMS and AIX
-   (and perhaps MPE XL).  It probably has to do with the fact that
-   the error handler below used to contain the first reference to
-   variable transaction, which is actually initialized a few lines
-   below that. */
 
-	transaction = *(&transaction);
+	jrd_tra* transaction = NULL;
 
 /* Clean up the temporary locks we've gotten in case anything goes wrong */
 
