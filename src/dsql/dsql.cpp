@@ -1393,7 +1393,7 @@ ISC_STATUS GDS_DSQL_PREPARE_CPP(ISC_STATUS*			user_status,
 		               0);
 		}
 
-		DsqlDatabaseContextHolder context(old_request->req_dbb, tdsql, DsqlMemoryPool::createPool());
+		DsqlDatabaseContextHolder context(database, tdsql, DsqlMemoryPool::createPool());
 
 // check to see if old request has an open cursor 
 
@@ -3149,61 +3149,61 @@ static ISC_STATUS execute_request(dsql_req*			request,
 	switch (request->req_type)
 	{
 	case REQ_START_TRANS:
-	{
-		DsqlCheckout dcoHolder(request->req_dbb);
-		s = isc_start_transaction(	tdsql->tsql_status,
-									&request->req_trans,
-									1,
-									&request->req_dbb->dbb_database_handle,
-									request->req_blr_data.getCount(),
-									request->req_blr_data.begin());
-		if (s)
-			punt();
-		*trans_handle = request->req_trans;
-		return FB_SUCCESS;
-	}
+		{
+			DsqlCheckout dcoHolder(request->req_dbb);
+			s = isc_start_transaction(	tdsql->tsql_status,
+										&request->req_trans,
+										1,
+										&request->req_dbb->dbb_database_handle,
+										request->req_blr_data.getCount(),
+										request->req_blr_data.begin());
+			if (s)
+				punt();
+			*trans_handle = request->req_trans;
+			return FB_SUCCESS;
+		}
 
 	case REQ_COMMIT:
-	{
-		DsqlCheckout dcoHolder(request->req_dbb);
-		s = isc_commit_transaction(tdsql->tsql_status,
-								   &request->req_trans);
-		if (s)
-			punt();
-		*trans_handle = 0;
-		return FB_SUCCESS;
-	}
+		{
+			DsqlCheckout dcoHolder(request->req_dbb);
+			s = isc_commit_transaction(tdsql->tsql_status,
+									   &request->req_trans);
+			if (s)
+				punt();
+			*trans_handle = 0;
+			return FB_SUCCESS;
+		}
 
 	case REQ_COMMIT_RETAIN:
-	{
-		DsqlCheckout dcoHolder(request->req_dbb);
-		s = isc_commit_retaining(tdsql->tsql_status,
-								 &request->req_trans);
-		if (s)
-			punt();
-		return FB_SUCCESS;
-	}
+		{
+			DsqlCheckout dcoHolder(request->req_dbb);
+			s = isc_commit_retaining(tdsql->tsql_status,
+									 &request->req_trans);
+			if (s)
+				punt();
+			return FB_SUCCESS;
+		}
 
 	case REQ_ROLLBACK:
-	{
-		DsqlCheckout dcoHolder(request->req_dbb);
-		s = isc_rollback_transaction(tdsql->tsql_status,
-									 &request->req_trans);
-		if (s)
-			punt();
-		*trans_handle = 0;
-		return FB_SUCCESS;
-	}
+		{
+			DsqlCheckout dcoHolder(request->req_dbb);
+			s = isc_rollback_transaction(tdsql->tsql_status,
+										 &request->req_trans);
+			if (s)
+				punt();
+			*trans_handle = 0;
+			return FB_SUCCESS;
+		}
 
 	case REQ_ROLLBACK_RETAIN:
-	{
-		DsqlCheckout dcoHolder(request->req_dbb);
-		s = isc_rollback_retaining(tdsql->tsql_status,
-								   &request->req_trans);
-		if (s)
-			punt();
-		return FB_SUCCESS;
-	}
+		{
+			DsqlCheckout dcoHolder(request->req_dbb);
+			s = isc_rollback_retaining(tdsql->tsql_status,
+									   &request->req_trans);
+			if (s)
+				punt();
+			return FB_SUCCESS;
+		}
 
 	case REQ_DDL:
 		DDL_execute(request);

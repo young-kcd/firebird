@@ -3967,7 +3967,7 @@ static RecordSource* gen_aggregate(thread_db* tdbb, OptimizerBlk* opt, jrd_nod* 
 				desc->dsc_length++;
 			}
 
-			bool asb_intl = desc->isText() && desc->getTextType() != ttype_none &&
+			const bool asb_intl = desc->isText() && desc->getTextType() != ttype_none &&
 				desc->getTextType() != ttype_binary && desc->getTextType() != ttype_ascii;
 
 			const USHORT count = asb_delta + 1 +

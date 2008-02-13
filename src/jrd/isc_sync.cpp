@@ -753,8 +753,8 @@ int ISC_event_post(event_t* event)
 
 	if (event->event_pid != process_id)
 		return ISC_kill(event->event_pid, event->event_id, event->event_handle);
-	else
-		return SetEvent((HANDLE) event->event_handle) ? 0 : -1;
+
+	return SetEvent((HANDLE) event->event_handle) ? 0 : -1;
 }
 
 

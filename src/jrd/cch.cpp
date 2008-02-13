@@ -6276,7 +6276,7 @@ static inline bool writeable(BufferDesc* bdb)
  *	neither it nor any of it's higher precedence cousins are
  *	marked for write.
  *  This is the starting point of recursive walk of precedence 
- *  graph. writeable_mark value used to mark alerady seen
+ *  graph. The writeable_mark member is used to mark already seen
  *  buffers to avoid repeated walk of the same sub-graph.
  *  Currently this function can't be called from more than one
  *  thread simultaneously. When SMP will be implemented we must
