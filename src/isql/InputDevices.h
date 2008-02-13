@@ -63,6 +63,7 @@ public:
 	};
 	
 	InputDevices();
+	explicit InputDevices(Firebird::MemoryPool&);
 	~InputDevices();
 	void clear(FILE* fpointer = 0);
 	//const indev* getHead();
@@ -99,6 +100,11 @@ inline void InputDevices::indev::close()
 
 
 inline InputDevices::InputDevices()
+	: m_count(0), m_head(0), m_ifp(0, ""), m_ofp(0, "")
+{
+}
+
+inline InputDevices::InputDevices(Firebird::MemoryPool&)
 	: m_count(0), m_head(0), m_ifp(0, ""), m_ofp(0, "")
 {
 }

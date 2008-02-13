@@ -60,6 +60,7 @@
 #include <errno.h>
 #include "../common/utils_proto.h"
 #include "../common/classes/array.h"
+#include "../common/classes/init.h"
 #include "../common/classes/ClumpletWriter.h"
 #include "../common/classes/TempFile.h"
 
@@ -385,7 +386,7 @@ static bool Merge_stderr;
 
 static ColList global_Cols;
 static int global_Col_default = 0; // Need to write code for it in the future.
-static InputDevices Filelist;
+static Firebird::GlobalPtr<InputDevices> Filelist;
 //static TEXT Tmpfile[MAXPATHLEN];
 static bool Abort_flag = false;
 static bool Interrupt_flag = false;
@@ -803,7 +804,7 @@ static void readNextInputLine(const char* prompt)
 		getColumn = 0;
 
 #ifdef HAVE_EDITLINE_H
-		if (Filelist.readingStdin())
+		if (Filelist->readingStdin())
 		{
 			// CVC: On 2005-04-02, use an empty prompt when not working in
 			// interactive mode to behave like @@@ below at request by Pavel.
@@ -815,7 +816,7 @@ static void readNextInputLine(const char* prompt)
 			}
 			// Let's count lines if someone wants to enable line number error messages
 			// for console reading for whatever reason.
-			++Filelist.Ifp().indev_aux;
+			++Filelist->Ifp().indev_aux;
 			return;
 		}
 
@@ -830,7 +831,7 @@ static void readNextInputLine(const char* prompt)
 
 		// Read the line
 		char buffer[MAX_USHORT];
-		if (fgets(buffer, sizeof(buffer), Filelist.Ifp().indev_fpointer) != NULL)
+		if (fgets(buffer, sizeof(buffer), Filelist->Ifp().indev_fpointer) != NULL)
 		{
 			size_t lineSize = strlen(buffer);
 
@@ -840,7 +841,7 @@ static void readNextInputLine(const char* prompt)
 				   (buffer[lineSize - 1] == '\n' || buffer[lineSize - 1] == '\r'))
 			{
 				buffer[--lineSize] = '\0';
-				++Filelist.Ifp().indev_aux;
+				++Filelist->Ifp().indev_aux;
 			}
 
 			lastInputLine = (char*) malloc(lineSize + 1);
@@ -1038,7 +1039,7 @@ void ISQL_errmsg(const ISC_STATUS* status)
 				}
 			}
 			*/
-			const InputDevices::indev& Ifp = Filelist.Ifp();
+			const InputDevices::indev& Ifp = Filelist->Ifp();
 			if (linenum != -1)
 			{
 				linenum += Ifp.indev_line;
@@ -3261,12 +3262,12 @@ static processing_state bulk_insert_hack(const char* command, XSQLDA** sqldap)
 		
 		TEXT errbuf[MSG_LENGTH];
 		sprintf(errbuf, "Stopped prematurely due to error in line %d with text:",
-			Filelist.Ifp().indev_aux);
+			Filelist->Ifp().indev_aux);
 		STDERROUT(errbuf);
 		STDERROUT(lastInputLine);
 		STDERROUT("Going to EOF");
 		// Avoid thousands of errors. Assume the file is full of bulk insertion data.
-		Filelist.gotoEof();
+		Filelist->gotoEof();
 			
 		ret = ps_ERR;
 	}
@@ -4021,7 +4022,7 @@ static void do_isql()
 		const char* Tmpfile = filename.c_str();
 		FILE* f = fopen(Tmpfile, "w+"); // It was w+b
 		if (f)
-			Filelist.Ofp().init(f, Tmpfile);
+			Filelist->Ofp().init(f, Tmpfile);
 		else
 		{
 			// If we can't open a temp file then bail
@@ -4107,12 +4108,12 @@ static void do_isql()
 			if (Input_file)
 			{
 				// close input files going back to stdin
-				Filelist.clear(stdin);
+				Filelist->clear(stdin);
 
 				// should have two stdin in Filelist
-				fb_assert(Filelist.count() == 2);
+				fb_assert(Filelist->count() == 2);
 
-				Filelist.removeIntoIfp();
+				Filelist->removeIntoIfp();
 				Input_file = false;
 			}
 		}
@@ -4220,7 +4221,7 @@ static void do_isql()
 	M__trans = 0;
 	gds_trans = 0;
 
-	InputDevices::indev& Ofp = Filelist.Ofp();
+	InputDevices::indev& Ofp = Filelist->Ofp();
 	// Should have a valid Temp file pointer
 	fb_assert(Ofp.indev_fpointer);
 	Ofp.drop();
@@ -4228,7 +4229,7 @@ static void do_isql()
 	if (global_sqlda)
 		ISQL_FREE(global_sqlda);
 	// CVC: If we were halt by an error and Bail, we have pending cleanup.
-	Filelist.clear();
+	Filelist->clear();
 	if (lastInputLine)
 		free(lastInputLine);
 		
@@ -4314,8 +4315,8 @@ static processing_state edit(const TEXT* const* cmd)
 		if (fp) {
 			// Push the current ifp on the indev
 
-			Filelist.insertIfp();
-			Filelist.Ifp().init(fp, path);
+			Filelist->insertIfp();
+			Filelist->Ifp().init(fp, path);
 			gds__edit(path, 0);
 			Input_file = true;
 			getColumn = -1;
@@ -4330,14 +4331,14 @@ static processing_state edit(const TEXT* const* cmd)
 	else {
 		// No file given, edit the temp file 
 
-		Filelist.insertIfp();
+		Filelist->insertIfp();
 		// Close the file, edit it, then reopen and read from the top
-		InputDevices::indev& Ofp = Filelist.Ofp();
+		InputDevices::indev& Ofp = Filelist->Ofp();
 		Ofp.close();
 		const char* Tmpfile = Ofp.fileName();
 		gds__edit(Tmpfile, 0);
 		Ofp.init(fopen(Tmpfile, "r+"), Tmpfile); // We don't check for failure.
-		Filelist.Ifp().init(Ofp);
+		Filelist->Ifp().init(Ofp);
 		Input_file = true;
 		getColumn = -1;
 	}
@@ -4461,7 +4462,7 @@ static processing_state escape(const TEXT* cmd)
 	//_flushall();
 	// Save Ofp position in case it's being used as input. See EDIT command.
 	fpos_t OfpPos = 0;
-	Filelist.Ofp().getPos(&OfpPos);
+	Filelist->Ofp().getPos(&OfpPos);
 	fflush(NULL); // Flush only output buffers.
 	const char* emptyCmd = "%ComSpec%";
 #else
@@ -4477,8 +4478,8 @@ static processing_state escape(const TEXT* cmd)
 #ifdef WIN_NT
 	// If we are reading from the temp file, restore the read position because
 	// it's opened in r+ mode in this case, that's R/W.
-	if (Filelist.sameInputAndOutput())
-		Filelist.Ofp().setPos(&OfpPos);
+	if (Filelist->sameInputAndOutput())
+		Filelist->Ofp().setPos(&OfpPos);
 #endif
 			
 	return rc ? FAIL : SKIP;
@@ -5301,7 +5302,7 @@ static processing_state get_statement(TEXT* const statement,
 	size_t valuable_count = 0; // counter of valuable (non-space) chars
 	const size_t term_length = Termlen - 1; // additional variable for decreasing calculation
 
-	Filelist.Ifp().indev_line = Filelist.Ifp().indev_aux;
+	Filelist->Ifp().indev_line = Filelist->Ifp().indev_aux;
 	bool done = false;
 
 	enum
@@ -5335,23 +5336,23 @@ static processing_state get_statement(TEXT* const statement,
 
 			// If we hit EOF at the top of the flist, exit time 
 			
-			if (Filelist.count() == 1)
+			if (Filelist->count() == 1)
 				return FOUND_EOF;
 
 			// If this is not tmpfile, close it 
 
-			if (!Filelist.sameInputAndOutput())
-				Filelist.Ifp().close();
+			if (!Filelist->sameInputAndOutput())
+				Filelist->Ifp().close();
 
 			// Reset to previous after other input
 
-			Filelist.removeIntoIfp();
+			Filelist->removeIntoIfp();
 
 			if (Interactive && !Input_file || Echo)
 				ISQL_prompt(statement_prompt);
 
 			// CVC: Let's detect if we went back to the first level.
-			if (Filelist.readingStdin())
+			if (Filelist->readingStdin())
 			{
 				Interactive = !stdin_redirected();
 				Input_file = false;
@@ -5511,7 +5512,7 @@ static processing_state get_statement(TEXT* const statement,
 		// Place each non frontend statement in the temp file if we are reading
 		// from stdin.
 
-		Filelist.saveCommand(statement, isqlGlob.global_Term);
+		Filelist->saveCommand(statement, isqlGlob.global_Term);
 	}
 
 	return ret;
@@ -6435,8 +6436,8 @@ static processing_state newinput(const TEXT* infile)
 
 	FILE* fp = fopen(file, "r");
 	if (fp) {
-		Filelist.insertIfp();
-		Filelist.Ifp().init(fp, file);
+		Filelist->insertIfp();
+		Filelist->Ifp().init(fp, file);
 	}
 	else {
 		ISQL_msg_get(FILE_OPEN_ERR, errbuf, SafeArg() << file);
@@ -6634,7 +6635,7 @@ static processing_state parse_arg(int argc,
 
 	// redirected stdin means act like -i was set
 
-	Filelist.Ifp().init(stdin, "stdin");
+	Filelist->Ifp().init(stdin, "stdin");
 
 	// Terminators are initialized
 
@@ -6648,7 +6649,7 @@ static processing_state parse_arg(int argc,
 
 	// Initialize list of input file pointers
 
-	//Filelist.clear();
+	//Filelist->clear();
 
 	// Interpret each command line argument
 
@@ -6918,9 +6919,9 @@ static processing_state parse_arg(int argc,
 
 	// If not input, then set up first filelist
 
-	if (Filelist.readingStdin()) {
-		Filelist.insert(stdin, "stdin");
-		fb_assert(Filelist.count() == 1);
+	if (Filelist->readingStdin()) {
+		Filelist->insert(stdin, "stdin");
+		fb_assert(Filelist->count() == 1);
 	}
 
 	return ret;
