@@ -134,6 +134,7 @@ namespace Jrd {
 		svc_stdout_head(0), svc_stdout_tail(0), svc_stdout(0), svc_argv(0), svc_argc(0),
 		svc_service(se), svc_resp_buf(0), svc_resp_ptr(0), svc_resp_buf_len(0),
 		svc_resp_len(0), svc_flags(0), svc_user_flag(0), svc_spb_version(0), svc_do_shutdown(false),
+		svc_uses_security_database(false),
 		svc_username(p), svc_enc_password(p), svc_switches(p), svc_perm_sw(p)
 
 	{
@@ -474,6 +475,7 @@ Service* SVC_attach(USHORT	service_length,
 /* If anything goes wrong, we want to be able to free any memory
    that may have been allocated. */
 	Service* service = 0;
+	bool useSecureDb = false;
 
 	try {
  	Firebird::ClumpletWriter spb(Firebird::ClumpletReader::SpbAttach, MAX_DPB_SIZE, 
@@ -523,6 +525,8 @@ Service* SVC_attach(USHORT	service_length,
 				(options.spb_network_protocol.isEmpty() || options.spb_remote_address.isEmpty() ? "" : "/") +
 									  options.spb_remote_address;
 			
+			useSecureDb = true;
+			SecurityDatabase::initialize();
 			SecurityDatabase::verifyUser(name, options.spb_user_name.nullStr(),
 					                     options.spb_password.nullStr(), 
 										 options.spb_password_enc.nullStr(),
@@ -555,6 +559,7 @@ Service* SVC_attach(USHORT	service_length,
 		(serv->serv_executable ? SVC_forked : 0) | (switches.hasData() ? SVC_cmd_line : 0);
 	service->svc_perm_sw = switches;
 	service->svc_user_flag = user_flag;
+	service->svc_uses_security_database = useSecureDb;
 	
 #ifdef SERVICE_THREAD
 	service->svc_stdout_head = 1;
@@ -614,6 +619,10 @@ Service* SVC_attach(USHORT	service_length,
 
 	}	// try
 	catch (const std::exception&) {
+		if (useSecureDb)
+		{
+			SecurityDatabase::shutdown();
+		}
 		delete service;
 		throw;
 	}
@@ -634,6 +643,10 @@ void SVC_detach(Service* service)
  *	Close down a service.
  *
  **************************************/
+	if (service->svc_uses_security_database)
+	{
+		SecurityDatabase::shutdown();
+	}
 
 #ifdef SERVER_SHUTDOWN
 	if (service->svc_do_shutdown) {
