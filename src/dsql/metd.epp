@@ -108,7 +108,7 @@ namespace {
 
 	class RecMutexHolder {
 	public:
-		RecMutexHolder(dsql_req* request) {
+		explicit RecMutexHolder(dsql_req* request) {
 			DsqlCheckout dcoHolder(request->req_dbb);
 			rec_mutex->enter();
 		}
@@ -119,7 +119,7 @@ namespace {
 #else
 	class RecMutexHolder {
 	public:
-		RecMutexHolder(dsql_req* request) { }
+		explicit RecMutexHolder(dsql_req* request) { }
 		~RecMutexHolder() { }
 	};
 #endif
@@ -400,76 +400,76 @@ USHORT METD_get_col_default(dsql_req* request,
 			RFL.RDB$FIELD_SOURCE EQ FLD.RDB$FIELD_NAME AND
 			RFL.RDB$FIELD_NAME EQ for_col_name
 		
-		DsqlSyncGuard dsGuard(request->req_dbb);
+			DsqlSyncGuard dsGuard(request->req_dbb);
 
-		if (!RFL.RDB$DEFAULT_VALUE.NULL) {
-			blob_id = &RFL.RDB$DEFAULT_VALUE;
-			*has_default = true;
-		}
-		else if (!FLD.RDB$DEFAULT_VALUE.NULL) {
-			blob_id = &FLD.RDB$DEFAULT_VALUE;
-			*has_default = true;
-		}
-		else
-			*has_default = false;
-
-		if (*has_default) {
-			{	// scope
-				DsqlCheckout dcoHolder2(request->req_dbb);
-
-				// open the blob 
-				stat = isc_open_blob2(status_vect, &DB, &request->req_trans,
-									  &blob_handle, blob_id, sizeof(blr_bpb),
-									  blr_bpb);
+			if (!RFL.RDB$DEFAULT_VALUE.NULL) {
+				blob_id = &RFL.RDB$DEFAULT_VALUE;
+				*has_default = true;
 			}
-			if (stat)
-				ERRD_punt(status_vect);
+			else if (!FLD.RDB$DEFAULT_VALUE.NULL) {
+				blob_id = &FLD.RDB$DEFAULT_VALUE;
+				*has_default = true;
+			}
+			else
+				*has_default = false;
 
-			// fetch segments. Assuming here that the buffer is big enough. 
-			ptr_in_buffer = buffer;
-			while (true)
-			{
+			if (*has_default) {
 				{	// scope
 					DsqlCheckout dcoHolder2(request->req_dbb);
 
-					stat = isc_get_segment(status_vect, &blob_handle,
-										   &length, buff_length, ptr_in_buffer);
+					// open the blob 
+					stat = isc_open_blob2(status_vect, &DB, &request->req_trans,
+										  &blob_handle, blob_id, sizeof(blr_bpb),
+										  blr_bpb);
 				}
-
-				ptr_in_buffer = ptr_in_buffer + length;
-				buff_length = buff_length - length;
-				result += length;
-
-				if (!stat)
-					continue;
-				else if (stat == isc_segstr_eof) {
-					// null terminate the buffer 
-					*ptr_in_buffer = 0;
-					break;
-				}
-				else
+				if (stat)
 					ERRD_punt(status_vect);
 
-			}
+				// fetch segments. Assuming here that the buffer is big enough. 
+				ptr_in_buffer = buffer;
+				while (true)
+				{
+					{	// scope
+						DsqlCheckout dcoHolder2(request->req_dbb);
 
-			{	// scope
-				DsqlCheckout dcoHolder2(request->req_dbb);
-				isc_close_blob(status_vect, &blob_handle);
-			}
+						stat = isc_get_segment(status_vect, &blob_handle,
+											   &length, buff_length, ptr_in_buffer);
+					}
 
-			/* the default string must be of the form:
-			   blr_version4 blr_literal ..... blr_eoc  */
-			fb_assert((buffer[0] == blr_version4) || (buffer[0] == blr_version5));
-			fb_assert(buffer[1] == blr_literal);
-		}
-		else {
-			if (request->req_dbb->dbb_db_SQL_dialect > SQL_DIALECT_V5)
-				buffer[0] = blr_version5;
-			else
-				buffer[0] = blr_version4;
-			buffer[1] = blr_eoc;
-			result = 2;
-		}
+					ptr_in_buffer = ptr_in_buffer + length;
+					buff_length = buff_length - length;
+					result += length;
+
+					if (!stat)
+						continue;
+					else if (stat == isc_segstr_eof) {
+						// null terminate the buffer 
+						*ptr_in_buffer = 0;
+						break;
+					}
+					else
+						ERRD_punt(status_vect);
+
+				}
+
+				{	// scope
+					DsqlCheckout dcoHolder2(request->req_dbb);
+					isc_close_blob(status_vect, &blob_handle);
+				}
+
+				/* the default string must be of the form:
+				   blr_version4 blr_literal ..... blr_eoc  */
+				fb_assert((buffer[0] == blr_version4) || (buffer[0] == blr_version5));
+				fb_assert(buffer[1] == blr_literal);
+			}
+			else {
+				if (request->req_dbb->dbb_db_SQL_dialect > SQL_DIALECT_V5)
+					buffer[0] = blr_version5;
+				else
+					buffer[0] = blr_version4;
+				buffer[1] = blr_eoc;
+				result = 2;
+			}
 
 		END_FOR 
 		ON_ERROR 
@@ -819,14 +819,12 @@ USHORT METD_get_domain_default(dsql_req* request,
 		        *has_default = false;
 
 		    if (*has_default) {
-			    ISC_STATUS stat;
-			    isc_blob_handle blob_handle;
+			    ISC_STATUS stat = 0;
+			    isc_blob_handle blob_handle = 0;
 
 				{	// scope
 					DsqlCheckout dcoHolder(request->req_dbb);
 
-			        // open the blob 
-				    blob_handle = 0;
 				    stat = isc_open_blob2(status_vect, &DB, &request->req_trans,
 				                          &blob_handle, blob_id, sizeof(blr_bpb),
 				                          blr_bpb);
@@ -837,7 +835,7 @@ USHORT METD_get_domain_default(dsql_req* request,
 		        // fetch segments. Assume buffer is big enough.  
 		        TEXT* ptr_in_buffer = buffer;
 		        while (true) {
-		            USHORT length;
+		            USHORT length = 0;
 
 					{	// scope
 						DsqlCheckout dcoHolder(request->req_dbb);
@@ -1775,106 +1773,104 @@ dsql_rel* METD_get_view_base(dsql_req* request,
 
 	while (cont)
 	{
-		{	// scope
-			DsqlCheckout dcoHolder(request->req_dbb);
+		DsqlCheckout dcoHolder(request->req_dbb);
 
-			FOR(REQUEST_HANDLE dbb->dbb_requests[irq_view_base]
+		FOR(REQUEST_HANDLE dbb->dbb_requests[irq_view_base]
+			TRANSACTION_HANDLE request->req_trans)
+			X IN RDB$VIEW_RELATIONS
+			WITH X.RDB$VIEW_NAME EQ view_name
+
+			// return NULL if there is more than one context
+			if (X.RDB$VIEW_CONTEXT != 1)
+			{
+				relation = NULL;
+				cont = false;
+				break;
+			}
+
+			{	// scope
+				DsqlSyncGuard dsGuard(request->req_dbb);
+
+				fb_utils::exact_name(X.RDB$CONTEXT_NAME);
+				fb_utils::exact_name(X.RDB$RELATION_NAME);
+
+				dsql_str* relation_name =
+					MAKE_string(X.RDB$RELATION_NAME, strlen(X.RDB$RELATION_NAME));
+				relation = METD_get_relation(request, relation_name);
+				delete relation_name;
+			}
+
+			Firebird::Array<Firebird::MetaName> ambiguities;
+			MetaNamePairMap currentAux;
+
+			if (!relation)
+			{
+				cont = false;
+				break;
+			}
+
+			FOR(REQUEST_HANDLE dbb->dbb_requests[irq_view_base_flds]
 				TRANSACTION_HANDLE request->req_trans)
-				X IN RDB$VIEW_RELATIONS
-				WITH X.RDB$VIEW_NAME EQ view_name
+				RFL IN RDB$RELATION_FIELDS
+				WITH RFL.RDB$RELATION_NAME EQ X.RDB$VIEW_NAME
 
-				// return NULL if there is more than one context
-				if (X.RDB$VIEW_CONTEXT != 1)
-				{
-					relation = NULL;
-					cont = false;
-					break;
-				}
+				if (RFL.RDB$BASE_FIELD.NULL || RFL.RDB$FIELD_NAME.NULL)
+					continue;
 
-				{	// scope
-					DsqlSyncGuard dsGuard(request->req_dbb);
+				DsqlSyncGuard dsGuard(request->req_dbb);
 
-					fb_utils::exact_name(X.RDB$CONTEXT_NAME);
-					fb_utils::exact_name(X.RDB$RELATION_NAME);
-
-					dsql_str* relation_name =
-						MAKE_string(X.RDB$RELATION_NAME, strlen(X.RDB$RELATION_NAME));
-					relation = METD_get_relation(request, relation_name);
-					delete relation_name;
-				}
-
-				Firebird::Array<Firebird::MetaName> ambiguities;
-				MetaNamePairMap currentAux;
-
-				if (!relation)
-				{
-					cont = false;
-					break;
-				}
-
-				FOR(REQUEST_HANDLE dbb->dbb_requests[irq_view_base_flds]
-					TRANSACTION_HANDLE request->req_trans)
-					RFL IN RDB$RELATION_FIELDS
-					WITH RFL.RDB$RELATION_NAME EQ X.RDB$VIEW_NAME
-
-					if (RFL.RDB$BASE_FIELD.NULL || RFL.RDB$FIELD_NAME.NULL)
-						continue;
-
-					DsqlSyncGuard dsGuard(request->req_dbb);
-
-					const Firebird::MetaName baseField(RFL.RDB$BASE_FIELD);
-					if (currentAux.exist(baseField))
-						ambiguities.add(baseField);
-					else
-					{
-						const Firebird::MetaName fieldName(RFL.RDB$FIELD_NAME);
-						if (first)
-						{
-							fields.put(fieldName, baseField);
-							currentAux.put(baseField, fieldName);
-						}
-						else
-						{
-							Firebird::MetaName field;
-
-							if (previousAux.get(fieldName, field))
-							{
-								fields.put(field, baseField);
-								currentAux.put(baseField, field);
-							}
-						}
-					}
-
-				END_FOR
-
-				for (const Firebird::MetaName* i = ambiguities.begin(); i != ambiguities.end(); ++i)
-				{
-					Firebird::MetaName field;
-
-					if (currentAux.get(*i, field))
-					{
-						currentAux.remove(*i);
-						fields.remove(field);
-					}
-				}
-
-				previousAux.takeOwnership(currentAux);
-
-				if (relation->rel_flags & REL_view)
-					view_name = X.RDB$RELATION_NAME;
+				const Firebird::MetaName baseField(RFL.RDB$BASE_FIELD);
+				if (currentAux.exist(baseField))
+					ambiguities.add(baseField);
 				else
 				{
-					cont = false;
-					break;
+					const Firebird::MetaName fieldName(RFL.RDB$FIELD_NAME);
+					if (first)
+					{
+						fields.put(fieldName, baseField);
+						currentAux.put(baseField, fieldName);
+					}
+					else
+					{
+						Firebird::MetaName field;
+
+						if (previousAux.get(fieldName, field))
+						{
+							fields.put(field, baseField);
+							currentAux.put(baseField, field);
+						}
+					}
 				}
 
-				first = false;
+			END_FOR
 
-			END_FOR 
-			ON_ERROR 
-				ERRD_punt(isc_status);
-			END_ERROR;
-		}
+			for (const Firebird::MetaName* i = ambiguities.begin(); i != ambiguities.end(); ++i)
+			{
+				Firebird::MetaName field;
+
+				if (currentAux.get(*i, field))
+				{
+					currentAux.remove(*i);
+					fields.remove(field);
+				}
+			}
+
+			previousAux.takeOwnership(currentAux);
+
+			if (relation->rel_flags & REL_view)
+				view_name = X.RDB$RELATION_NAME;
+			else
+			{
+				cont = false;
+				break;
+			}
+
+			first = false;
+
+		END_FOR 
+		ON_ERROR 
+			ERRD_punt(isc_status);
+		END_ERROR;
 	}
 
 	if (!relation)
