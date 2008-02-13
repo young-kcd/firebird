@@ -134,6 +134,7 @@ public:
 	USHORT	svc_user_flag;
 	USHORT	svc_spb_version;
 	bool	svc_do_shutdown;
+	bool	svc_uses_security_database;
 	Firebird::string	svc_username;
 	Firebird::string	svc_enc_password;
 #ifdef TRUSTED_SERVICES
