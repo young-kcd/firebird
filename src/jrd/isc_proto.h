@@ -27,7 +27,7 @@
 #include "../jrd/isc.h"
 #include "../common/classes/fb_string.h"
 
-bool	ISC_check_process_existence(SLONG, bool);
+bool	ISC_check_process_existence(SLONG);
 TEXT*	ISC_get_host(TEXT *, USHORT);
 const TEXT*	ISC_get_host(Firebird::string&);
 bool	ISC_get_user(Firebird::string*, int*, int*, const TEXT*);

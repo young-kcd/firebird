@@ -105,7 +105,7 @@ static TEXT user_name[256];
 #endif
 
 
-bool ISC_check_process_existence(SLONG pid, bool super_user)
+bool ISC_check_process_existence(SLONG pid)
 {
 /**************************************
  *
@@ -119,12 +119,8 @@ bool ISC_check_process_existence(SLONG pid, bool super_user)
  *
  **************************************/
 
-#if defined(UNIX)
-	return (kill((int) pid, 0) == -1 &&
-			(errno == ESRCH
-			 || (super_user && errno == EPERM)) ? false : true);
-#elif defined(WIN_NT)
-	HANDLE handle = OpenProcess(PROCESS_DUP_HANDLE, FALSE, (DWORD) pid);
+#ifdef WIN_NT
+	const HANDLE handle = OpenProcess(PROCESS_DUP_HANDLE, FALSE, (DWORD) pid);
 
 	if (!handle && GetLastError() != ERROR_ACCESS_DENIED)
 	{
@@ -134,7 +130,7 @@ bool ISC_check_process_existence(SLONG pid, bool super_user)
 	CloseHandle(handle);
 	return true;
 #else
-	return true;
+	return (kill((int) pid, 0) == -1 &&	errno == ESRCH) ? false : true;
 #endif
 }
 

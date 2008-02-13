@@ -941,7 +941,7 @@ static void prt_owner(OUTFILE outfile,
 			owner->own_pending_request);
 	FPRINTF(outfile, "\tProcess id: %6d, %s\n",
 			process->prc_process_id,
-			ISC_check_process_existence(process->prc_process_id, false) ? "Alive" : "Dead");
+			ISC_check_process_existence(process->prc_process_id) ? "Alive" : "Dead");
 	{
 		const USHORT flags = owner->own_flags;
 		FPRINTF(outfile, "\tFlags: 0x%02X ", flags);

@@ -2808,7 +2808,7 @@ static bool probe_processes()
 	{
 		prc* const process = (prc*) ((UCHAR *) lock_srq - OFFSET(prc*, prc_lhb_processes));
 		if (process->prc_process_id != LOCK_pid &&
-			!ISC_check_process_existence(process->prc_process_id, false))
+			!ISC_check_process_existence(process->prc_process_id))
 		{
 			dead_processes.add(process);
 		}

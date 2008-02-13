@@ -1275,7 +1275,7 @@ static void probe_processes(void)
 		PRB process = (PRB) ((UCHAR *) event_srq - OFFSET(PRB, prb_processes));
 		const SLONG process_offset = SRQ_REL_PTR(process);
 		if (process_offset != EVENT_process_offset &&
-			!ISC_check_process_existence(process->prb_process_id, false))
+			!ISC_check_process_existence(process->prb_process_id))
 		{
 			event_srq = (srq *) SRQ_ABS_PTR(event_srq->srq_backward);
 			delete_process(process_offset);
