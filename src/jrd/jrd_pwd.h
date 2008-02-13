@@ -111,6 +111,35 @@ private:
 	{
 		lookup_db = 0;
 	}
+
+public:
+	// shuts SecurityDatabase in case of errors during attach or create
+	// when attachment is created, control is passed to it using clear
+	class InitHolder
+	{
+	public:
+		InitHolder()
+			: shutdown(true)
+		{
+			SecurityDatabase::initialize();
+		}
+		
+		void clear()
+		{
+			shutdown = false;
+		}
+		
+		~InitHolder()
+		{
+			if (shutdown)
+			{
+				SecurityDatabase::shutdown();
+			}
+		}
+
+	private:
+		bool shutdown;
+	};
 };
 
 class DelayFailedLogin : public Firebird::Exception

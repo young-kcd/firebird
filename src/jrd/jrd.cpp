@@ -274,35 +274,6 @@ namespace
 		thread_db* tdbb;
 	};
 
-
-	// Shuts SecurityDatabase in case of errors during attach or create.
-	// When attachment is created, control is passed to it using clear
-	class SecurityInitHolder
-	{
-	public:
-		SecurityInitHolder()
-			: shutdown(true)
-		{
-			SecurityDatabase::initialize();
-		}
-		
-		void clear()
-		{
-			shutdown = false;
-		}
-		
-		~SecurityInitHolder()
-		{
-			if (shutdown)
-			{
-				SecurityDatabase::shutdown();
-			}
-		}
-
-	private:
-		bool shutdown;
-	};
-
 } // anonymous
 
 #ifdef  WIN_NT
@@ -671,7 +642,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 	UserId userId;
 	DatabaseOptions options;
 	bool invalid_client_SQL_dialect = false;
-	SecurityInitHolder siHolder;
+	SecurityDatabase::InitHolder siHolder;
 
 	try {
 		// Process database parameter block
@@ -1674,7 +1645,7 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 
 	UserId userId;
 	DatabaseOptions options;
-	SecurityInitHolder siHolder;
+	SecurityDatabase::InitHolder siHolder;
 
 	try {
 		// Process database parameter block

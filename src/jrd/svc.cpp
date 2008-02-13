@@ -562,6 +562,7 @@ Service::Service(USHORT	service_length, const TEXT* service_name,
 	Options options(spb);
 
 	// Perhaps checkout the user in the security database.
+	SecurityDatabase::InitHolder siHolder;
 	USHORT user_flag;
 	if (!strcmp(serv->serv_name, "anonymous")) {
 		user_flag = SVC_user_none;
@@ -585,12 +586,11 @@ Service::Service(USHORT	service_length, const TEXT* service_name,
 							 options.spb_remote_address.isEmpty() ? "" : "/") +
 										  options.spb_remote_address;
 
-				svc_uses_security_database = true;
-				SecurityDatabase::initialize();
 				SecurityDatabase::verifyUser(name, options.spb_user_name.nullStr(),
 						                     options.spb_password.nullStr(), 
 											 options.spb_password_enc.nullStr(),
 											 &id, &group, &node_id, remote);
+				svc_uses_security_database = true;
 			}
 		}
 
@@ -650,6 +650,11 @@ Service::Service(USHORT	service_length, const TEXT* service_name,
 	if (serv->serv_thd && options.spb_version == isc_spb_version1)
 	{
 		start(serv->serv_thd);
+	}
+
+	if (svc_uses_security_database)
+	{
+		siHolder.clear();
 	}
 }
 
