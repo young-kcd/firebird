@@ -4867,9 +4867,9 @@ static Database* init(thread_db* tdbb,
 			{
 				if (attach_flag) 
 					return dbb;
-				else
-					ERR_post(isc_no_meta_update, isc_arg_gds, isc_obj_in_use,
-							 isc_arg_string, "DATABASE", 0);
+
+				ERR_post(isc_no_meta_update, isc_arg_gds, isc_obj_in_use,
+						 isc_arg_string, "DATABASE", 0);
 			}
 		}
 #endif
