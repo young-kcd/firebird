@@ -793,7 +793,7 @@ public:
 	USHORT prc_inputs;
 	USHORT prc_defaults;
 	USHORT prc_outputs;
-	jrd_nod*	prc_input_msg;				// It's set once by met.epp and never used.
+	//jrd_nod*	prc_input_msg;				// It's set once by met.epp and never used.
 	jrd_nod*	prc_output_msg;
 	Format*		prc_input_fmt;
 	Format*		prc_output_fmt;

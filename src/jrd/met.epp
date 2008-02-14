@@ -3276,12 +3276,15 @@ jrd_prc* MET_procedure(thread_db* tdbb, int id, bool noscan, USHORT flags)
 					jrd_nod* node = csb->csb_rpt[i].csb_message;
 					if (node)
 					{
+						/*
 						if ((int) (IPTR) node->nod_arg[e_msg_number] == 0)
 						{
 							// Never used.
 							procedure->prc_input_msg = node;
 						}
-						else if ((int) (IPTR) node->nod_arg[e_msg_number] == 1)
+						else
+						*/
+						if ((int) (IPTR) node->nod_arg[e_msg_number] == 1)
 						{
 							procedure->prc_output_msg = node;
 						}
