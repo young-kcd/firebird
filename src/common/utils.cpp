@@ -39,6 +39,8 @@
 
 #include "../jrd/gdsassert.h"
 #include "../common/utils_proto.h"
+#include "../common/classes/locks.h"
+#include "../common/classes/init.h"
 #include "../jrd/constants.h"
 
 #ifdef HAVE_UNISTD_H
@@ -650,6 +652,14 @@ Firebird::PathName get_process_name()
 		buffer[len - 1] = 0;
 
 	return buffer;
+}
+
+SLONG genReadOnlyId()
+{
+	static Firebird::GlobalPtr<Firebird::Mutex> mutex;
+	Firebird::MutexLockGuard guard(mutex);
+	static SLONG cnt = 0;
+	return ++cnt;
 }
 
 } // namespace fb_utils

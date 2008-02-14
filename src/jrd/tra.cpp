@@ -65,6 +65,7 @@
 #include "../jrd/jrd_proto.h"
 #include "../common/classes/ClumpletWriter.h"
 #include "../common/classes/TriState.h"
+#include "../common/utils_proto.h"
 #include "../lock/lock_proto.h"
 
 
@@ -2315,7 +2316,7 @@ static void retain_context(thread_db* tdbb, jrd_tra* transaction,
 	new_number = bump_transaction_id(tdbb, &window);
 #else
 	if (dbb->dbb_flags & DBB_read_only)
-		new_number = ++dbb->dbb_next_transaction;
+		new_number = dbb->dbb_next_transaction + fb_utils::genReadOnlyId();
 	else {
 		const header_page* header = bump_transaction_id(tdbb, &window);
 		new_number = header->hdr_next_transaction;
@@ -2808,7 +2809,7 @@ static jrd_tra* transaction_start(thread_db* tdbb, jrd_tra* temp)
 
 #else /* SUPERSERVER_V2 */
 	if (dbb->dbb_flags & DBB_read_only) {
-		number = ++dbb->dbb_next_transaction;
+		number = dbb->dbb_next_transaction + fb_utils::genReadOnlyId();
 		oldest = dbb->dbb_oldest_transaction;
 		oldest_active = dbb->dbb_oldest_active;
 		oldest_snapshot = dbb->dbb_oldest_snapshot;
