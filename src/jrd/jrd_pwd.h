@@ -113,8 +113,8 @@ private:
 	}
 
 public:
-	// shuts SecurityDatabase in case of errors during attach or create
-	// when attachment is created, control is passed to it using clear
+	// Shuts SecurityDatabase in case of errors during attach or create.
+	// When attachment is created, control is passed to it using clear.
 	class InitHolder
 	{
 	public:

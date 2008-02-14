@@ -1236,8 +1236,10 @@ ISC_STATUS GDS_DSQL_FREE_CPP(ISC_STATUS*	user_status,
 		else if (option & DSQL_close) {
 			// Just close the cursor associated with the request
 			if (!(request->req_flags & REQ_cursor_open))
+			{
 				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 501,
 					  isc_arg_gds, isc_dsql_cursor_close_err, 0);
+			}
 
 			close_cursor(request);
 		}
@@ -1395,7 +1397,7 @@ ISC_STATUS GDS_DSQL_PREPARE_CPP(ISC_STATUS*			user_status,
 
 		DsqlDatabaseContextHolder context(database, tdsql, DsqlMemoryPool::createPool());
 
-// check to see if old request has an open cursor 
+		// check to see if old request has an open cursor 
 
 		if (old_request && (old_request->req_flags & REQ_cursor_open)) {
 			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 519,

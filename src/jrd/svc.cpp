@@ -1046,10 +1046,10 @@ ISC_STATUS Service::query2(thread_db* tdbb,
 					try {
 						svc_resp_buf = svc_resp_alloc.getBuffer(l);
 					}
-					catch(const Firebird::BadAlloc&) {	/* NOMEM: */
+					catch (const Firebird::BadAlloc&) {	// NOMEM:
 						DEV_REPORT("SVC_query: out of memory");
-						/* NOMEM: not really handled well */
-						l = 0;	/* set the length to zero */
+						// NOMEM: not really handled well
+						l = 0;	// set the length to zero
 					}
 					svc_resp_buf_len = l;
 				}
@@ -1452,10 +1452,10 @@ void Service::query(USHORT			send_item_length,
 					try {
 						svc_resp_buf = svc_resp_alloc.getBuffer(l);
 					}
-					catch(const Firebird::BadAlloc&) {	/* NOMEM: */
+					catch (const Firebird::BadAlloc&) {	// NOMEM:
 						DEV_REPORT("SVC_query: out of memory");
-						/* NOMEM: not really handled well */
-						l = 0;	/* set the length to zero */
+						// NOMEM: not really handled well
+						l = 0;	// set the length to zero
 					}
 					svc_resp_buf_len = l;
 				}
