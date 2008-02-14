@@ -156,16 +156,16 @@ public:
 	{
 	public:
 		SyncGuard(Database* arg, bool ast = false)
-			: dbb(arg)
+			: dbb(*arg)
 		{
-			dbb->dbb_sync.lock(ast);
+			dbb.dbb_sync.lock(ast);
 		}
 
 		~SyncGuard()
 		{
 			try
 			{
-				dbb->dbb_sync.unlock();
+				dbb.dbb_sync.unlock();
 			}
 			catch (const Firebird::Exception&)
 			{
@@ -178,19 +178,19 @@ public:
 		SyncGuard(const SyncGuard&);
 		SyncGuard& operator=(const SyncGuard&);
 
-		Database* dbb;
+		Database& dbb;
 	};
 
 	class Checkout
 	{
 	public:
 		explicit Checkout(Database* arg, bool flag = false)
-			: dbb(arg), io(flag)
+			: dbb(*arg), io(flag)
 		{
 #ifndef SUPERSERVER
 			if (!io)
 #endif
-				dbb->checkout();
+				dbb.checkout();
 		}
 
 		~Checkout()
@@ -198,7 +198,7 @@ public:
 #ifndef SUPERSERVER
 			if (!io)
 #endif
-				dbb->checkin();
+				dbb.checkin();
 		}
 
 	private:
@@ -206,7 +206,7 @@ public:
 		Checkout(const Checkout&);
 		Checkout& operator=(const Checkout&);
 
-		Database* dbb;
+		Database& dbb;
 		const bool io;
 	};
 	
@@ -214,16 +214,16 @@ public:
 	{
 	public:
 		CheckoutLockGuard(Database* dbb, Firebird::Mutex& m)
-			: mutex(&m)
+			: mutex(m)
 		{
 			Checkout dcoHolder(dbb);
-			mutex->enter();
+			mutex.enter();
 		}
 
 		~CheckoutLockGuard()
 		{
 			try {
-				mutex->leave();
+				mutex.leave();
 			}
 			catch (const Firebird::Exception&)
 			{
@@ -236,7 +236,7 @@ public:
 		CheckoutLockGuard(const CheckoutLockGuard&);
 		CheckoutLockGuard& operator=(const CheckoutLockGuard&);
 
-		Firebird::Mutex* mutex;
+		Firebird::Mutex& mutex;
 	};
 
 	typedef int (*crypt_routine) (const char*, void*, int, void*);
@@ -251,7 +251,7 @@ public:
 	// permanent memory pool, the entire delete() operation needs
 	// to complete _before_ the permanent pool is deleted, or else
 	// risk an aborted engine.
-	static void deleteDbb(Database* toDelete)
+	static void deleteDbb(Database* const toDelete)
 	{
 		if (!toDelete)
 			return;
