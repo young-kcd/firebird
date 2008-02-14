@@ -61,6 +61,8 @@ const USHORT DB_PAGE_SPACE		= 1;
 const USHORT TEMP_PAGE_SPACE	= 256;	
 
 class jrd_file;
+class Database;
+class thread_db;
 
 class PageSpace : public pool_alloc<type_PageSpace>
 {

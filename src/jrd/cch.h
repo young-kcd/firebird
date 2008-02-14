@@ -31,6 +31,11 @@
 #include "../jrd/pag.h"
 #endif
 
+#include "../jrd/que.h"
+#include "../jrd/lls.h"
+#include "../jrd/pag.h"
+#include "../jrd/isc.h"
+
 //#define CCH_DEBUG
 
 #ifdef CCH_DEBUG
@@ -246,7 +251,7 @@ class LatchWait : public pool_alloc<type_lwt>
 	thread_db*		lwt_tdbb;
 	LATCH			lwt_latch;		/* latch type requested */
 	que				lwt_waiters;	/* latch queue */
-	struct event_t	lwt_event;		/* grant event to wait on */
+	event_t			lwt_event;		/* grant event to wait on */
 	USHORT			lwt_flags;
 };
 

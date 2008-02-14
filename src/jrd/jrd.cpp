@@ -29,6 +29,7 @@
  *                         corruptions.
  *
  * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
+ * Claudio Valderrama C.
  *
  */
 
@@ -118,6 +119,8 @@
 #include "../jrd/event_proto.h"
 #include "../jrd/why_proto.h"
 #include "../jrd/flags.h"
+
+#include "../jrd/Database.h"
 
 #include "../common/config/config.h"
 #include "../common/config/dir_list.h"
@@ -5283,16 +5286,6 @@ static void setup_NT_handlers()
 #endif
 
 
-bool Database::onRawDevice()
-{
-#ifdef SUPPORT_RAW_DEVICES
-	return PIO_on_raw_device(dbb_filename);
-#else
-	return false;
-#endif
-}
-
-
 static void shutdown_database(Database* dbb, const bool release_pools)
 {
 /**************************************
@@ -6302,15 +6295,3 @@ void thread_db::setRequest(jrd_req* val)
 	reqStat = val ? &val->req_stats : RuntimeStatistics::getDummy();
 }
 
-Database::~Database()
-{
-	delete dbb_sys_trans;
-
-	destroyIntlObjects();
-
-	fb_assert(dbb_pools[0] == dbb_permanent);
-	for (size_t i = 1; i < dbb_pools.getCount(); ++i)
-	{
-		MemoryPool::deletePool(dbb_pools[i]);
-	}
-}
