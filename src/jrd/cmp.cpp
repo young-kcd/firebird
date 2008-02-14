@@ -1940,7 +1940,7 @@ IndexLock* CMP_get_index_lock(thread_db* tdbb, jrd_rel* relation, USHORT id)
 	index->idl_lock = lock;
 	lock->lck_parent = dbb->dbb_lock;
 	lock->lck_dbb = dbb;
-	lock->lck_key.lck_long = relation->rel_id * 1000 + id;
+	lock->lck_key.lck_long = (relation->rel_id << 16) | id;
 	lock->lck_length = sizeof(lock->lck_key.lck_long);
 	lock->lck_type = LCK_idx_exist;
 	lock->lck_owner_handle = LCK_get_owner_handle(tdbb, lock->lck_type);
