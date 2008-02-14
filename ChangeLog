@@ -1,3 +1,95 @@
+2008-02-14 17:34  alexpeshkoff
+
+	* firebird2/builds/:
+	install/arch-specific/linux/classic/rpmheader.txt.in (1.8),
+	install/arch-specific/solaris/CS/prototype.in (1.6),
+	posix/make.defaults (1.63):
+
+	changed soname for embedded library - frontported
+
+2008-02-14 13:43  robocop
+
+	* firebird2/src/jrd/Database.h (1.2):
+
+	Since those private data members can't change, let's use a
+	reference instead.
+
+2008-02-14 13:23  robocop
+
+	* firebird2/: src/jrd/Database.cpp (1.1), src/jrd/cch.h (1.36),
+	src/jrd/Database.h (1.1), src/jrd/jrd.cpp (1.386), src/jrd/jrd.h
+	(1.219), src/jrd/pag.h (1.16), builds/win32/msvc8/engine.vcproj
+	(1.17), builds/win32/msvc8/engine_classic.vcproj (1.17),
+	builds/win32/msvc8/engine_embed.vcproj (1.15):
+
+	Move some clutter out of jrd.h to Database.h and Database.cpp.
+
+2008-02-14 13:21  robocop
+
+	* firebird2/src/jrd/: jrd.h (1.218), met.epp (1.239):
+
+	Comment unused code.
+
+2008-02-14 12:52  alexpeshkoff
+
+	* firebird2/src/: common/utils.cpp (1.44), common/utils_proto.h
+	(1.22), jrd/pag.cpp (1.167), jrd/tra.cpp (1.153):
+
+	fixed posix build
+
+2008-02-14 12:51  alexpeshkoff
+
+	* firebird2/src/jrd/why.cpp (1.147):
+
+	added missing header
+
+2008-02-14 11:53  robocop
+
+	* firebird2/builds/install/arch-specific/sinixz/: Makefile.in
+	(1.2), pkginfo.in (1.2), postinstall.in (1.4), postremove.in (1.2),
+	preinstall.in (1.2), prototype.in (1.8):
+
+	We don't support Sinix-Z anymore.
+
+2008-02-14 11:08  alexpeshkoff
+
+	* firebird2/builds/posix/Makefile.in.static.gpre (1.21):
+
+	let gpre_static rebuild when library is changed
+
+2008-02-14 08:33  dimitr
+
+	* firebird2/src/lock/lock.cpp (1.141):
+
+	Sync declaration with definition.
+
+2008-02-14 08:31  robocop
+
+	* firebird2/src/jrd/jrd.cpp (1.385):
+
+	Style.
+
+2008-02-14 08:28  dimitr
+
+	* firebird2/src/jrd/cmp.cpp (1.280):
+
+	Did the author imagine databases with more than 1000 tables? It
+	seems not.
+
+2008-02-14 08:12  dimitr
+
+	* firebird2/src/jrd/jrd.cpp (1.384):
+
+	Cleanup, style and synchronization. Solved a few deadlocks and
+	races during attach.
+
+2008-02-14 02:31  asfernandes
+
+	* firebird2/src/: dsql/dsql.cpp (1.219), jrd/jrd_pwd.h (1.27),
+	jrd/svc.cpp (1.207):
+
+	Misc
+
 2008-02-13 17:52  dimitr
 
 	* firebird2/src/jrd/: svc.cpp (1.206), why.cpp (1.146), why_proto.h
