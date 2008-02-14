@@ -168,8 +168,8 @@ s none @prefix@/lib/libfbclient.so.2=@prefix@/lib/libfbclient.so.@FIREBIRD_VERSI
 s none @prefix@/lib/libfbclient.so=@prefix@/lib/libfbclient.so.1
 
 f none @prefix@/lib/libfbembed.so.@FIREBIRD_VERSION@=$SRCDIR/lib/libfbembed.so.@FIREBIRD_VERSION@ 0755 root root
-s none @prefix@/lib/libfbembed.so.2=@prefix@/lib/libfbembed.so.@FIREBIRD_VERSION@
-s none @prefix@/lib/libfbembed.so=@prefix@/lib/libfbembed.so.2
+s none @prefix@/lib/libfbembed.so.2.5=@prefix@/lib/libfbembed.so.@FIREBIRD_VERSION@
+s none @prefix@/lib/libfbembed.so=@prefix@/lib/libfbembed.so.@FIREBIRD_VERSION@
 
 f none @prefix@/lib/libib_util.so=$SRCDIR/lib/libib_util.so 0755 root root
 

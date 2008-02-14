@@ -207,7 +207,7 @@ BLRTABLE	= $(BIN)/blrtable$(EXEC_EXT)
 # 
 
 SharedLibraryName=libfbembed.${SHRLIB_EXT}.${FirebirdVersion}
-SharedLibrarySoName=libfbembed.${SHRLIB_EXT}.${MajorVer}
+SharedLibrarySoName=libfbembed.${SHRLIB_EXT}.${MajorVer}.${MinorVer}
 SharedLibraryBaseName=libfbembed.${SHRLIB_EXT}
 
 LIBFBEMBED_SO = $(LIB)/$(SharedLibraryName)
