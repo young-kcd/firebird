@@ -123,6 +123,10 @@ const UCHAR isc_dpb_version1 = 1;
 #include <unistd.h>
 #endif
 
+#ifdef HAVE_SIGNAL_H
+#include <signal.h>
+#endif
+
 #ifdef HAVE_FLOCK
 #include <sys/file.h>			/* for flock() */
 #endif
