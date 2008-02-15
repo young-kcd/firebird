@@ -35,6 +35,7 @@
 #include "../jrd/Database.h"
 #include "../jrd/isc.h"
 #include "../jrd/tra.h"
+#include "../jrd/os/pio_proto.h"
 
 // Thread data block / IPC related data blocks
 #include "../jrd/ThreadData.h"
