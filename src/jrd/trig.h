@@ -29,20 +29,6 @@
    check out GRANT.GDL, modify the trigger source to generate the
    proper blr, replace the blr in TRIG.H, and check both files back in. */
 
-/* NOTE:
-   The blr in trigger 1 has been manually changed to add a substring
-   operation to the four concatenations of SQL$ and the relation name.
-   This blr cannot be generate by gdef.  The modified blr is:
-
-       blr_cast, blr_varying2, 3, 0, 31, 0,
-       blr_substring,
-       blr_concatenate, 
-          blr_literal, blr_text2, 1, 0, 4, 0, 'S', 'Q', 'L', '$',
-          blr_field, 5, 17, 'R','D','B','$','R','E','L','A','T','I','O','N','_','N','A','M','E', 
-       blr_literal, blr_long, 0, 0,0,0,0,
-       blr_literal, blr_long, 0, 31,0,0,0,
-*/
-
 namespace Jrd {
 
 /* trigger definition structure */
@@ -109,21 +95,6 @@ static const TEXT trigger_1_msg_5 [] = "user does not have GRANT privileges on b
 
 static const UCHAR trigger1[] =
 {
-/* NOTE:
-   The blr in trigger 1 has been manually changed to add a substring
-   operation to the four concatenations of SQL$ and the relation name.
-   This avoids the generation of security class names that are longer
-   than 32 characters.
-   This blr cannot be generate by gdef.  The modified blr is:
-
-       blr_cast, blr_varying2, 3, 0, 31, 0,
-       blr_substring,
-       blr_concatenate, 
-          blr_literal, blr_text2, 1, 0, 4, 0, 'S', 'Q', 'L', '$',
-          blr_field, 5, 17, 'R','D','B','$','R','E','L','A','T','I','O','N','_','N','A','M','E', 
-       blr_literal, blr_long, 0, 0,0,0,0,
-       blr_literal, blr_long, 0, 31,0,0,0,
-*/
 	blr_version5,
 	blr_begin,
 	blr_if,
@@ -566,28 +537,21 @@ static const UCHAR trigger1[] =
 	blr_begin,
 	blr_assignment,
 	blr_cast, blr_varying2, 3, 0, 31, 0,
-	blr_substring,
 	blr_concatenate,
 	blr_literal, blr_text2, 1, 0, 4, 0, 'S', 'Q', 'L', '$',
-	blr_field, 6, 17, 'R', 'D', 'B', '$', 'R', 'E', 'L', 'A', 'T', 'I', 'O',
-		'N', '_', 'N', 'A', 'M', 'E',
-	blr_literal, blr_long, 0, 0, 0, 0, 0,
-	blr_literal, blr_long, 0, 31, 0, 0, 0,
+	blr_gen_id, 18, 'R', 'D', 'B', '$', 'S', 'E', 'C', 'U', 'R', 'I', 'T',
+		'Y', '_', 'C', 'L', 'A', 'S', 'S',
+	blr_literal, blr_long, 0, 1, 0, 0, 0,
 	blr_field, 15, 18, 'R', 'D', 'B', '$', 'S', 'E', 'C', 'U', 'R', 'I', 'T',
 		'Y', '_', 'C', 'L', 'A', 'S', 'S',
 	blr_end,
 	blr_if,
-	blr_neq,
+	blr_not,
+	blr_starting,
 	blr_field, 6, 18, 'R', 'D', 'B', '$', 'S', 'E', 'C', 'U', 'R', 'I', 'T',
 		'Y', '_', 'C', 'L', 'A', 'S', 'S',
 	blr_cast, blr_varying2, 3, 0, 31, 0,
-	blr_substring,
-	blr_concatenate,
 	blr_literal, blr_text2, 1, 0, 4, 0, 'S', 'Q', 'L', '$',
-	blr_field, 6, 17, 'R', 'D', 'B', '$', 'R', 'E', 'L', 'A', 'T', 'I', 'O',
-		'N', '_', 'N', 'A', 'M', 'E',
-	blr_literal, blr_long, 0, 0, 0, 0, 0,
-	blr_literal, blr_long, 0, 31, 0, 0, 0,
 	blr_leave, 3,
 	blr_end,
 	blr_end,
@@ -727,28 +691,21 @@ static const UCHAR trigger1[] =
 	blr_begin,
 	blr_assignment,
 	blr_cast, blr_varying2, 3, 0, 31, 0,
-	blr_substring,
 	blr_concatenate,
 	blr_literal, blr_text2, 1, 0, 4, 0, 'S', 'Q', 'L', '$',
-	blr_field, 18, 18, 'R', 'D', 'B', '$', 'P', 'R', 'O', 'C', 'E', 'D', 'U',
-		'R', 'E', '_', 'N', 'A', 'M', 'E',
-	blr_literal, blr_long, 0, 0, 0, 0, 0,
-	blr_literal, blr_long, 0, 31, 0, 0, 0,
+	blr_gen_id, 18, 'R', 'D', 'B', '$', 'S', 'E', 'C', 'U', 'R', 'I', 'T',
+		'Y', '_', 'C', 'L', 'A', 'S', 'S',
+	blr_literal, blr_long, 0, 1, 0, 0, 0,
 	blr_field, 20, 18, 'R', 'D', 'B', '$', 'S', 'E', 'C', 'U', 'R', 'I', 'T',
 		'Y', '_', 'C', 'L', 'A', 'S', 'S',
 	blr_end,
 	blr_if,
-	blr_neq,
+	blr_not,
+	blr_starting,
 	blr_field, 18, 18, 'R', 'D', 'B', '$', 'S', 'E', 'C', 'U', 'R', 'I', 'T',
 		'Y', '_', 'C', 'L', 'A', 'S', 'S',
 	blr_cast, blr_varying2, 3, 0, 31, 0,
-	blr_substring,
-	blr_concatenate,
 	blr_literal, blr_text2, 1, 0, 4, 0, 'S', 'Q', 'L', '$',
-	blr_field, 18, 18, 'R', 'D', 'B', '$', 'P', 'R', 'O', 'C', 'E', 'D', 'U',
-		'R', 'E', '_', 'N', 'A', 'M', 'E',
-	blr_literal, blr_long, 0, 0, 0, 0, 0,
-	blr_literal, blr_long, 0, 31, 0, 0, 0,
 	blr_leave, 3,
 	blr_end,
 	blr_end,
