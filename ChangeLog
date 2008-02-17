@@ -1,3 +1,22 @@
+2008-02-16 02:18  asfernandes
+
+	* firebird2/src/: dbs/grant.gdl (1.2), jrd/trig.h (1.23):
+
+	Fixed CORE-479 - Grants overwrite previous rdb$security_classes
+	entries
+
+2008-02-15 09:47  alexpeshkoff
+
+	* firebird2/builds/posix/make.shared.variables (1.82):
+
+	add Database.cpp to posix build
+
+2008-02-15 09:46  alexpeshkoff
+
+	* firebird2/src/jrd/Database.cpp (1.2):
+
+	missing header
+
 2008-02-14 17:34  alexpeshkoff
 
 	* firebird2/builds/:
