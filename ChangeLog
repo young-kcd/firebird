@@ -1,3 +1,9 @@
+2008-02-17 14:59  dimitr
+
+	* firebird2/src/jrd/isc_version.h (1.8.4.12):
+
+	Update.
+
 2008-02-13 13:47  alexpeshkoff
 
 	* firebird2/src/jrd/: svc.cpp (1.166.2.10), svc.h (1.38.4.2):
