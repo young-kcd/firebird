@@ -3704,7 +3704,7 @@ static void make_ok_test( const act* action, const gpre_req* request, int column
 
 static void make_port(const gpre_port* port, int column)
 {
-	printa(column, "struct {");
+	printa(column, "struct isc_%d_struct {", port->por_ident);
 
 	for (const ref* reference = port->por_references; reference;
 		 reference = reference->ref_next)
