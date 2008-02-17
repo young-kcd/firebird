@@ -1,4 +1,60 @@
   ***************************
+  * v2.1 Release Candidate 2
+  ***************************
+
+    * Bugfix CORE-1746
+        Expression index can be created while doing inserts into table
+      Contributor(s):
+        Vlad Horsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-1729
+        Server process terminates when attempting to select the MON$ data
+        against a heavily loaded system (many concurrent connections)
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-1728
+        Monitoring tables do not work after fresh linux install
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-1726
+        Failure in isc_service_start()
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-1724
+        Common table expressions cannot be used in computed columns and quantified predicates (IN / ANY / ALL)
+      Contributor(s):
+        Vlad Horsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-1716
+        Wrong variable initialization in recursive procedures
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-1715
+        Incorrect "key size exceeds implementation restriction for index" error
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-1713
+        Distinct with blob fields
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+      Note(s):
+        This change restores the legacy behavior of DISTINCT / UNION / GROUP BY and ORDER BY operations.
+        Please beware that they may produce incorrect result set, because the ordering / distinct
+        is performed using blob IDs instead of the blob contents.
+        It implies that changes CORE-859 and CORE-1530 are rolled back.
+
+    * Bugfix CORE-1694
+        Bug in create/alter database trigger (with Russian comment)
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+
+  ***************************
   * v2.1 Release Candidate 1
   ***************************
 
