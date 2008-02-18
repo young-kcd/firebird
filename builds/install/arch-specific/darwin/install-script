@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# $Id: install-script,v 1.1.2.11 2008-02-06 16:20:57 paulbeach Exp $
+# $Id: install-script,v 1.1.2.12 2008-02-18 11:58:26 paulbeach Exp $
 #
 # Script args:
 # $0: full path to script
@@ -22,23 +22,10 @@ echo $OSVERSION
 
 FB_FW="/Library/Frameworks/Firebird.framework"
 FB_RES="$FB_FW/Versions/A/Resources"
-INST_RES="$FB_RES/installer_files"
-
-# Install and start sysv semaphores
-echo "Install and start sysv semaphores"
-if test `uname -r | sed -e 's/\.[0-9]*//g'` -lt 6; then
-	if [ -e "SysV Semaphores" ]; then
-		mkdir -p /Library/StartupItems
-		if [ ! -e "/Library/StartupItems/SysV Semaphores" ]; then
-			cp -r "$INST_RES/SysV Semaphores" /Library/StartupItems
-			"/Library/StartupItems/SysV Semaphores/SysV Semaphores" start
-		fi
-	fi
-fi
 
 if test $OSVERSION -lt 5; then
 # Setup our services entry 
-echo "Setup the service entry pre 10.5"
+echo "Setup the service entry 10.4-"
 if niutil -list . /services/gds_db 2&>1 /dev/null ; then
 	echo -n
 else
@@ -48,15 +35,12 @@ else
 fi
 fi
 
-# No niutil on 10.5
-# Setup our services entry
-echo "Setup the service entry 10.5+"
 
 if test $OSVERSION -lt 5; then 
 # niutil works pre 10.5
 # Now for the group.  If the firebird group already exists, remember the
 # id if we need it to create the firebird user
-echo "Create the Firebird group pre 10.5"
+echo "Create the Firebird group 10.4-"
 if niutil -list . /groups/firebird 2&>1 /dev/null; then
 	NEW_GID=`niutil -readprop . /groups/firebird gid`
 else
@@ -66,10 +50,11 @@ else
 	niutil -createprop . /groups/firebird gid $NEW_GID
 	niutil -createprop . /groups/firebird users firebird
 fi
-fi
+else
 
 # No niutil on 10.5
 # Now create the firebird group
+echo "Create the Firebird group 10.5+"
 if dscl localhost -read /Local/Default/Groups/firebird 2&>1 /dev/null; then
 	echo "Group Found" 
 else
@@ -79,17 +64,17 @@ while [ "$?" = "0" ]; do
 	let "gid =$gid+1"
 	dscl localhost -search /Local/Default/Groups PrimaryGroupID $gid | grep $gid
 done
-echo "Create the Firebird group 10.5+"
 	dscl localhost -create /Local/Default/Groups/firebird
 	dscl localhost -create /Local/Default/Groups/firebird Password "*"
 	dscl localhost -create /Local/Default/Groups/firebird PrimaryGroupID $gid
 	dscl localhost -create /Local/Default/Groups/firebird RecordName firebird
 fi
+fi
 
 if test $OSVERSION -lt 5; then
 # niutil works pre 10.5
 # Now create the firebird user
-echo "Create the Firebird user pre 10.5"
+echo "Create the Firebird user 10.4-"
 if niutil -list . /users/firebird 2&>1 /dev/null; then
 	echo -n
 else
@@ -104,10 +89,11 @@ else
 	niutil -createprop . /users/firebird gid $NEW_GID
 	niutil -createprop . /users/firebird realname "Firebird Database"
 fi
-fi
+else
 
 # no niutil on 10.5 use dscl
 # Now create the firebird user
+echo "Create the Firebird user 10.5+"
 if dscl localhost -read /Local/Default/Users/firebird 2&>1 /dev/null; then
 	echo "User Found"
 else
@@ -126,6 +112,7 @@ echo "create the firebird user 10.5+"
 	dscl localhost -create /Local/Default/Users/firebird PrimaryGroupID $gid 
 	dscl localhost -create /Local/Default/Users/firebird UniqueID $ugid
 	dscl localhost -create /Local/Default/Users/firebird RealName "Firebird Database"
+fi
 fi
 
 # Shutdown any existing servers
@@ -155,16 +142,6 @@ else
     chmod a+s "$FB_FW/Resources/bin/fb_inet_server"
 fi
 
-# Install the startup item
-echo "Re-install the SuperServer startup item - if it already exists"
-if [ -f "$FB_FW/Versions/A/Resources/.SuperServer" ]; then
-	if [ -e "$INST_RES/Firebird.startup" ]; then
-		rm -rf /Library/StartupItems/Firebird
-		cp -r "$INST_RES/Firebird" /Library/StartupItems/Firebird
-	fi
-else
-	rm -rf /Library/StartupItems/Firebird
-fi
 
 # Remove all traces of Classic first
 echo "Remove all traces of Classic first"
@@ -191,7 +168,10 @@ fi
 # Install ourselves in the correct place - SuperServer
 echo "Install StartupItem in the correct place SuperServer"
 if [ -f "$FB_FW/Versions/A/Resources/.SuperServer" ]; then
-	cp -r $1/Contents/Resources/StartupItem /Library/StartupItems/Firebird
+	rm -fr /Library/StartupItems/Firebird
+	cp -r "$1/Contents/Resources/StartupItem" /Library/StartupItems/Firebird
+else
+	rm -fr /Library/StartupItems/Firebird
 fi
 
 # Install ourselves in the correct place - Classic 
@@ -263,6 +243,21 @@ if test -f /tmp/fb-security-database-update2.fdb; then
 	rm -f /tmp/fb-security-database-update2.fdb
 fi
 
+#Install the saved aliases.conf, if any
+echo "Install the saved aliases.conf file"
+if test -f /tmp/fb-aliases.conf; then
+	mv -f /tmp/fb-aliases.conf "$FB_RES/English.lproj/var/aliases.conf"
+	rm -f /temp/fb-aliases.conf
+fi
+
+#Install the saved UDF libraries, if any
+echo "Install the saved UDF libraries"
+for file in /tmp/*UDF_save_*; do
+new=`echo $file | sed -e 's/UDF_save_//g'`
+return=`basename $new`
+cp $file "$FB_RES/English.lproj/var/UDF/$return"
+rm $file
+done
 # Tell inetd/xinetd to reload their configuration files.
 echo "Tell inetd/xinetd to reload configuration files"
 if [ "$HUPNEEDED" = 'y' ]
