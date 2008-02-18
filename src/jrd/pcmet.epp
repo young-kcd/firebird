@@ -202,6 +202,10 @@ bool PCMET_expression_index(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 
 		// Actually create the index
 
+		bool releaseRelationLock = false;
+		Lock *relationLock = DFW_protect_relation(tdbb, transaction, relation, 
+								releaseRelationLock);
+
 		SelectivityList selectivity(*tdbb->getDefaultPool());
 
 		current_request = tdbb->getRequest();
@@ -209,23 +213,44 @@ bool PCMET_expression_index(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 		TRA_attach_request(transaction, idx.idx_expression_request);
 		tdbb->setRequest(idx.idx_expression_request);
 
-		fb_assert(work->dfw_id <= dbb->dbb_max_idx);
-		idx.idx_id = work->dfw_id;
-		IDX_create_index(tdbb, relation, &idx, work->dfw_name.c_str(), &work->dfw_id,
-						 transaction, selectivity);
-		fb_assert(work->dfw_id == idx.idx_id);
+		try {
+			fb_assert(work->dfw_id <= dbb->dbb_max_idx);
+			idx.idx_id = work->dfw_id;
+			IDX_create_index(tdbb, relation, &idx, work->dfw_name.c_str(), &work->dfw_id,
+							 transaction, selectivity);
+			fb_assert(work->dfw_id == idx.idx_id);
 
-		TRA_detach_request(idx.idx_expression_request);
-		tdbb->setRequest(current_request);
-		tdbb->setTransaction(current_transaction); 
-	
-		DFW_update_index(work->dfw_name.c_str(), idx.idx_id, selectivity);
+			TRA_detach_request(idx.idx_expression_request);
+			tdbb->setRequest(current_request);
+			tdbb->setTransaction(current_transaction); 
+		
+			DFW_update_index(work->dfw_name.c_str(), idx.idx_id, selectivity);
 
-		// Get rid of the pool containing the expression tree
+			// Get rid of the pool containing the expression tree
 
-		if (new_pool)
+			if (new_pool) {
+				JrdMemoryPool::deletePool(new_pool);
+			}
+
+			if (relationLock && releaseRelationLock) {
+				DFW_release_protect_lock(tdbb, transaction, relationLock);
+			}
+		}
+		catch (const Firebird::Exception&)
 		{
-			JrdMemoryPool::deletePool(new_pool);
+			TRA_detach_request(idx.idx_expression_request);
+			tdbb->setRequest(current_request);
+			tdbb->setTransaction(current_transaction); 
+		
+			if (new_pool) {
+				JrdMemoryPool::deletePool(new_pool);
+			}
+			
+			if (relationLock && releaseRelationLock) {
+				DFW_release_protect_lock(tdbb, transaction, relationLock);
+			}
+
+			throw;
 		}
 		break;
 	}

@@ -197,8 +197,6 @@ static void	setup_trigger_details(thread_db*, jrd_rel*, blb*, trig_vec**, const 
 	const TEXT*, bool);
 static bool validate_text_type (thread_db*, const TemporaryField*);
 
-static Lock* protect_relation(thread_db*, jrd_tra*, jrd_rel*, bool&);
-static void release_protect_lock(thread_db*, jrd_tra*, Lock*);
 static void check_partners(thread_db*, const USHORT);
 
 static const UCHAR nonnull_validation_blr[] =
@@ -1880,8 +1878,10 @@ static bool create_index(	thread_db*	tdbb,
 		try	
 		{
 			// Protect relation from modification to create consistent index
-			relationLock =
-				protect_relation(tdbb, transaction, relation, releaseRelationLock);
+			if (!(idx.idx_flags & idx_foreign)) {
+				relationLock = DFW_protect_relation(tdbb, transaction, relation, 
+								releaseRelationLock);
+			}
 									
 			if (idx.idx_flags & idx_foreign)
 			{
@@ -1905,9 +1905,20 @@ static bool create_index(	thread_db*	tdbb,
 				// defined enforces a foreign key constraint. This will prevent
 				// the constraint from being violated during index construction. 
 				
-				partnerLock =
-					protect_relation(tdbb, transaction,
-									 partner_relation, releasePartnerLock);
+				if (relation->rel_id < partner_relation->rel_id) 
+				{
+					relationLock = DFW_protect_relation(tdbb, transaction, relation, 
+									releaseRelationLock);
+					partnerLock = DFW_protect_relation(tdbb, transaction, partner_relation, 
+									releasePartnerLock);
+				}
+				else
+				{
+					partnerLock = DFW_protect_relation(tdbb, transaction, partner_relation, 
+									releasePartnerLock);
+					relationLock = DFW_protect_relation(tdbb, transaction, relation, 
+									releaseRelationLock);
+				}
 				
 				int bad_segment;
 				if (!IDX_check_master_types(tdbb, idx, partner_relation, bad_segment))
@@ -1966,19 +1977,19 @@ static bool create_index(	thread_db*	tdbb,
 				}
 			}
 			if (relationLock && releaseRelationLock) {
-				release_protect_lock(tdbb, transaction, relationLock);
+				DFW_release_protect_lock(tdbb, transaction, relationLock);
 			}
 			if (partnerLock && releasePartnerLock) {
-				release_protect_lock(tdbb, transaction, partnerLock);
+				DFW_release_protect_lock(tdbb, transaction, partnerLock);
 			}
 		}
 		catch (const Firebird::Exception&)
 		{
 			if (relationLock && releaseRelationLock) {
-				release_protect_lock(tdbb, transaction, relationLock);
+				DFW_release_protect_lock(tdbb, transaction, relationLock);
 			}
 			if (partnerLock && releasePartnerLock) {
-				release_protect_lock(tdbb, transaction, partnerLock);
+				DFW_release_protect_lock(tdbb, transaction, partnerLock);
 			}
 			throw;
 		}
@@ -5117,7 +5128,7 @@ static void put_summary_blob(blb* blob, RSR_T type, bid* blob_id)
 }
 
 
-static Lock* protect_relation(thread_db* tdbb, jrd_tra* transaction, jrd_rel* relation, bool& releaseLock)
+Lock* DFW_protect_relation(thread_db* tdbb, jrd_tra* transaction, jrd_rel* relation, bool& releaseLock)
 {
 /**************************************
 *
@@ -5151,7 +5162,9 @@ static Lock* protect_relation(thread_db* tdbb, jrd_tra* transaction, jrd_rel* re
 		}
 	}
 
-	if (inUse ) {
+	if (inUse ) 
+	{
+		releaseLock = false;
 		ERR_post(isc_no_meta_update,
 				isc_arg_gds, isc_obj_in_use,
 				isc_arg_string, relation->rel_name.c_str(),
@@ -5203,7 +5216,7 @@ static void put_summary_record(blb*		blob,
 }
 
 
-static void release_protect_lock(thread_db* tdbb, jrd_tra*	transaction, Lock* relLock)
+void DFW_release_protect_lock(thread_db* tdbb, jrd_tra*	transaction, Lock* relLock)
 {
 	vec<Lock*>* vector = transaction->tra_relation_locks;
 	if (vector) {
