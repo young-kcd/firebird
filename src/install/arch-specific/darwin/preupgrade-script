@@ -19,11 +19,35 @@ if test -f "$FB_FW/Firebird.framework/Versions/A/Resources/English.lproj/var/sec
 	mv -f "$FB_FW/Firebird.framework/Versions/A/Resources/English.lproj/var/security.fdb" /tmp/fb-security-database-update.fdb
 fi
 
+if test -f "$FB_FW/Versions/A/Resources/English.lproj/var/aliases.conf"; then
+	mv -f "$FB_FW/Versions/A/Resources/English.lproj/var/aliases.conf" /tmp/fb-aliases.conf
+fi
+
+for i in /Library/Frameworks/Firebird.framework/Resources/English.lproj/var/UDF/*;do
+x=`basename $i`
+if test $x = "fbudf.dylib"; then
+	echo -n
+elif test $x = "fbudf.sql"; then
+	echo -n
+elif test $x = "ib_udf.dylib"; then
+	echo -n
+elif test $x = "ib_udf.sql"; then
+	echo -n
+else
+	cp $i /tmp/UDF_save_$x
+fi
+done
 
 if [ -f /Library/StartupItems/Firebird/Firebird ]; then
 	/Library/StartupItems/Firebird/Firebird stop
+	rm -fr /Library/StartupItems/Firebird
 fi
-rm -rf "$FB_FW/Firebird.framework"
-rm -rf /Library/StartupItems/Firebird
+
+if [ -f /Library/LaunchDaemons/org.firebird.gds.plist ]; then
+	launchctl unload /Library/LaunchDaemons/org.firebird.gds.plist
+	rm /Library/LaunchDaemons/org.firebird.gds.plist
+fi
+
+rm -fr "$FB_FW/Firebird.framework"
 
 exit 0
