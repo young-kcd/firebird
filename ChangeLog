@@ -1,3 +1,13 @@
+2008-02-18 12:44  paulbeach
+
+	* firebird2/: builds/posix/postfix.darwin (1.1.2.13),
+	src/install/arch-specific/darwin/ReadMe.txt (1.1.2.3),
+	src/install/arch-specific/darwin/install-script (1.1.2.10),
+	src/install/arch-specific/darwin/preupgrade-script (1.1.2.5):
+
+	Add the Readme.txt, allow package upgrade of aliases.conf and UDF
+	files, so existing installations get upgraded properly.
+
 2008-02-12 17:09  paulbeach
 
 	*
