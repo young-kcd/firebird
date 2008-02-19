@@ -5788,6 +5788,8 @@ void JRD_shutdown_attachment(Attachment** handle, Attachment** released)
 
 	try
 	{
+		Firebird::MutexLockGuard guard(databases_mutex);
+
 		Attachment* attachment = *handle;
 		validateHandle(tdbb, attachment);
 		DatabaseContextHolder dbbHolder(tdbb);
