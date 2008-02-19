@@ -115,7 +115,10 @@ copyFiles() {
     mkdir $DestDir/doc/sql.extensions
     mkdir $DestDir/UDF 
     mkdir $DestDir/misc
-    mkdir $DestDir/upgrade
+    mkdir $DestDir/misc/upgrade
+	for i in ib_udf metadata security; do
+		mkdir $DestDir/misc/upgrade/$i
+	done
 
     mkdir -p $TargetDir@libdir@
     mkdir -p $TargetDir/usr/include
@@ -199,8 +202,10 @@ copyFiles() {
     cp $BuildRootDir/doc/README.user $DestDir/README
     
 #	Copy various upgrade stuff
-    cp $BuildRootDir/src/misc/upgrade/v2/* $DestDir/upgrade/
-    cp $BuildRootDir/src/misc/upgrade/v2.1/* $DestDir/upgrade/
+    cp $BuildRootDir/src/misc/intl.sql							$DestDir/misc/
+    cp $BuildRootDir/src/misc/upgrade/v2/ib_udf*				$DestDir/misc/upgrade/ib_udf/
+    cp $BuildRootDir/src/misc/upgrade/v2/security_database*		$DestDir/misc/upgrade/security/
+    cp $BuildRootDir/src/misc/upgrade/v2.1/metadata_charset*	$DestDir/misc/upgrade/metadata/
 
 #   Miscellaneous config and startup files
     cp $BuildRootDir/gen/install/misc/firebird.conf $DestDir/firebird.conf
