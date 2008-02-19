@@ -5162,7 +5162,7 @@ Lock* DFW_protect_relation(thread_db* tdbb, jrd_tra* transaction, jrd_rel* relat
 		}
 	}
 
-	if (inUse ) 
+	if (inUse) 
 	{
 		releaseLock = false;
 		ERR_post(isc_no_meta_update,
