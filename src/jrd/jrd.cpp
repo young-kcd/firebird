@@ -4895,10 +4895,8 @@ static Database* init(thread_db* tdbb,
 		// provide context pool for the rest stuff
 		Jrd::ContextPoolHolder context(tdbb, perm);
 
-#ifdef SUPERSERVER
 		dbb->dbb_next = databases;
 		databases = dbb;
-#endif
 
 		dbb->dbb_mutexes = FB_NEW(*dbb->dbb_permanent) Firebird::Mutex[DBB_MUTX_max];
 		dbb->dbb_internal = vec<jrd_req*>::newVector(*dbb->dbb_permanent, irq_MAX);
@@ -5431,7 +5429,7 @@ static void strip_quotes(Firebird::string& out)
 }
 
 
-static bool shutdown_dbb(thread_db* tdbb, Database* dbb, Attachment** released)
+static bool shutdown_dbb(thread_db* tdbb, Database* dbb)
 {
 /**************************************
  *
@@ -5471,26 +5469,11 @@ static bool shutdown_dbb(thread_db* tdbb, Database* dbb, Attachment** released)
 			}
 			catch (const Firebird::Exception&)
 			{
-				if (released)
-				{
-					*released = NULL;
-				}
 				return false;
-			}
-			
-			// attach became invalid pointer
-			// if we have someone interested in that fact, inform him
-			if (released)
-			{
-				*released++ = attach;
 			}
 		}
 	}
 
-	if (released)
-	{
-		*released = NULL;
-	}
 	return true;
 }
 
@@ -5511,7 +5494,8 @@ static bool shutdown_all()
  **************************************/
 	ThreadContextHolder tdbb;
 
-	try {
+	try
+	{
 		Firebird::MutexLockGuard guard(databases_mutex);
 
 		Database* dbb_next;
@@ -5519,7 +5503,7 @@ static bool shutdown_all()
 		{
 			dbb_next = dbb->dbb_next;
 
-			if (!shutdown_dbb(tdbb, dbb, NULL))
+			if (!shutdown_dbb(tdbb, dbb))
 			{
 				return false;
 			}
@@ -5534,7 +5518,6 @@ static bool shutdown_all()
 }
 
 
-#ifdef SERVER_SHUTDOWN
 TEXT* JRD_num_attachments(TEXT* const buf, USHORT buf_len, USHORT flag,
 						  ULONG* atts, ULONG* dbs)
 {
@@ -5573,86 +5556,82 @@ TEXT* JRD_num_attachments(TEXT* const buf, USHORT buf_len, USHORT flag,
 	}
 #endif
 
-	ULONG num_dbs = 0;
 	ULONG num_att = 0;
 	ULONG drive_mask = 0L;
 	USHORT total = 0;
 	Firebird::HalfStaticArray<Firebird::PathName, 8> dbFiles;
 
-	try {
-
-	databases_mutex->enter();
-
-	// Zip through the list of databases and count the number of local
-	// connections.  If buf is not NULL then copy all the database names
-	// that will fit into it.
-
-	for (Database* dbb = databases; dbb; dbb = dbb->dbb_next)
+	try
 	{
-		Database::SyncGuard dsGuard(dbb);
+		Firebird::MutexLockGuard guard(databases_mutex);
+
+		// Zip through the list of databases and count the number of local
+		// connections.  If buf is not NULL then copy all the database names
+		// that will fit into it.
+
+		for (Database* dbb = databases; dbb; dbb = dbb->dbb_next)
+		{
+			Database::SyncGuard dsGuard(dbb);
 
 #ifdef WIN_NT
-		// Get drive letters for db files
+			// Get drive letters for db files
 
-		if (flag == JRD_info_drivemask)
-		{
-			PageSpace* pageSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
-			for (jrd_file* files = pageSpace->file; files; files = files->fil_next)
-				ExtractDriveLetter(files->fil_string, &drive_mask);
-		}
-#endif
-
-		if (!(dbb->dbb_flags & (DBB_bugcheck | DBB_not_in_use | DBB_security_db)) &&
-			!(dbb->dbb_ast_flags & DBB_shutdown
-			  && dbb->dbb_ast_flags & DBB_shutdown_locks))
-		{
-			num_dbs++;
-			if (flag == JRD_info_dbnames) {
-				dbFiles.push(dbb->dbb_database_name);
-				total += sizeof(USHORT) + dbb->dbb_database_name.length();
-			}
-
-			for (const Attachment* attach = dbb->dbb_attachments; attach;
-				attach = attach->att_next)
+			if (flag == JRD_info_drivemask)
 			{
-				num_att++;
+				PageSpace* pageSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
+				for (jrd_file* files = pageSpace->file; files; files = files->fil_next)
+					ExtractDriveLetter(files->fil_string, &drive_mask);
+			}
+#endif
+
+			if (!(dbb->dbb_flags & (DBB_bugcheck | DBB_not_in_use | DBB_security_db)) &&
+				!(dbb->dbb_ast_flags & DBB_shutdown
+				  && dbb->dbb_ast_flags & DBB_shutdown_locks))
+			{
+				if (!dbFiles.exist(dbb->dbb_filename))
+					dbFiles.add(dbb->dbb_filename);
+				total += sizeof(USHORT) + dbb->dbb_filename.length();
+
+				for (const Attachment* attach = dbb->dbb_attachments; attach;
+					attach = attach->att_next)
+				{
+					num_att++;
 
 #ifdef WIN_NT
-				// Get drive letters for temp directories
+					// Get drive letters for temp directories
 
-				if (flag == JRD_info_drivemask) {
-					const Firebird::TempDirectoryList dirList;
-					for (size_t i = 0; i < dirList.getCount(); i++) {
-						const Firebird::PathName& path = dirList[i];
-						ExtractDriveLetter(path.c_str(), &drive_mask);
+					if (flag == JRD_info_drivemask) {
+						const Firebird::TempDirectoryList dirList;
+						for (size_t i = 0; i < dirList.getCount(); i++) {
+							const Firebird::PathName& path = dirList[i];
+							ExtractDriveLetter(path.c_str(), &drive_mask);
+						}
 					}
-				}
 #endif
+				}
 			}
 		}
-	}
-
-	databases_mutex->leave();
-
 	}
 	catch (const Firebird::Exception&)
 	{
-		// Here we ignore possible errors from databases_rec_mutex.
+		// Here we ignore possible errors from databases_mutex.
 		// They were always silently ignored, and for this function 
 		// we really have no way to notify world about mutex problem.
 		//		AP. 2008.
 	}
 
+	const ULONG num_dbs = dbFiles.getCount();
+
 	*atts = num_att;
 	*dbs = num_dbs;
 
-	if (dbFiles.getCount() > 0)
+	if (num_dbs > 0)
 	{
 		if (flag == JRD_info_dbnames)
 		{
 			if (buf_len < (sizeof(USHORT) + total))
 			{
-				lbuf = (TEXT *) gds__alloc((SLONG) (sizeof(USHORT) + total));
+				lbuf = (TEXT *) gds__alloc(sizeof(USHORT) + total);
 			}
 			TEXT* lbufp = lbuf;
 			if (lbufp)
@@ -5669,19 +5648,15 @@ TEXT* JRD_num_attachments(TEXT* const buf, USHORT buf_len, USHORT flag,
 				   last db name
 				 */
 
-				lbufp += sizeof(USHORT);
-				total = 0;
-				for (size_t n = 0; n < dbFiles.getCount(); ++n) {
+				*lbufp++ = (TEXT) num_dbs;
+				*lbufp++ = (TEXT) (num_dbs >> 8);
+
+				for (size_t n = 0; n < num_dbs; ++n) {
 					*lbufp++ = (TEXT) dbFiles[n].length();
 					*lbufp++ = (TEXT) (dbFiles[n].length() >> 8);
 					memcpy(lbufp, dbFiles[n].c_str(), dbFiles[n].length());
 					lbufp += dbFiles[n].length();
-					total++;
 				}
-				fb_assert(total == num_dbs);
-				lbufp = lbuf;
-				*lbufp++ = (TEXT) total;
-				*lbufp++ = (TEXT) (total >> 8);
 			}
 		}
 	}
@@ -5795,49 +5770,43 @@ void JRD_shutdown_all(bool asyncMode)
 	}
 }
 
-#else // SERVER_SHUTDOWN
 
-// This conditional compilation, though sitting under not
-// defined SERVER_SHUTDOWN, performs full or partial shutdown 
-// of database. SERVER_SHUTDOWN defined controls some other
-// aspects of operation, therefore was left "as is". 
-// Who wants to invent better name for it, please do it.
-
-void JRD_process_close()
+void JRD_shutdown_attachment(Attachment** handle, Attachment** released)
 {
-	shutdown_all();
-}
+/**************************************
+ *
+ *	J R D _ s h u t d o w n _ a t t a c h m e n t
+ *
+ **************************************
+ *
+ * Functional description
+ *	Release	attachment.
+ *
+ **************************************/
+	ISC_STATUS_ARRAY temp_status;
+	ThreadContextHolder tdbb(temp_status);
 
-void JRD_database_close(Attachment** handle, Attachment** released)
-{
-	ThreadContextHolder tdbb;
+	try
+	{
+		Attachment* attachment = *handle;
+		validateHandle(tdbb, attachment);
+		DatabaseContextHolder dbbHolder(tdbb);
 
-	try {
-		Firebird::MutexLockGuard guard(databases_mutex);
+		purge_attachment(tdbb, temp_status, attachment, true);
 
-		Database* dbb = databases;
-		for (; dbb; dbb = dbb->dbb_next)
+		if (released)
 		{
-			for (Attachment* attach = dbb->dbb_attachments; attach; attach = attach->att_next)
-			{
-				if (attach == *handle)
-				{
-					// got dbb to be closed
-					shutdown_dbb(tdbb, dbb, released);
-					return;
-				}
-			}
+			*released++ = attachment;
 		}
 	}
 	catch (const Firebird::Exception&)
+	{}	// no-op
+
+	if (released)
 	{
-		// This function is called from yValve as a last attempt to help 
-		// when terminate signal is sent to firebird server.
-		// Ignore possible mutex problems.
+		*released = NULL;
 	}
 }
-
-#endif // SERVER_SHUTDOWN
 
 
 static unsigned int purge_transactions(thread_db*	tdbb,

@@ -147,17 +147,13 @@ ISC_STATUS jrd8_unwind_request(ISC_STATUS *, Jrd::jrd_req**, SSHORT);
 
 void jrd_vtof(const char*, char*, SSHORT);
 
-#ifdef SERVER_SHUTDOWN
-/* Defines for paramater 3 of JRD_num_attachments */
+// Defines for paramater 3 of JRD_num_attachments
 const USHORT JRD_info_drivemask	= 1;
 const USHORT JRD_info_dbnames	= 2;
 
 TEXT*	JRD_num_attachments(TEXT* const, USHORT, USHORT, ULONG*, ULONG*);
 void	JRD_shutdown_all(bool);
-#else /* SERVER_SHUTDOWN */
-void	JRD_process_close();
-void	JRD_database_close(Jrd::Attachment**, Jrd::Attachment**);
-#endif /* SERVER_SHUTDOWN */
+void	JRD_shutdown_attachment(Jrd::Attachment**, Jrd::Attachment**);
 
 bool	JRD_reschedule(Jrd::thread_db*, SLONG, bool);
 

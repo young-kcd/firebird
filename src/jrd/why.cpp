@@ -94,13 +94,13 @@
 #include "../jrd/blr.h"
 #endif
 
-#if !defined (SUPERCLIENT) && !defined(SERVER_SHUTDOWN)
+#if !defined(SUPERCLIENT)
 #define CANCEL_disable  1
 #define CANCEL_enable   2
 #define CANCEL_raise    3
 //extern "C" ISC_STATUS jrd8_cancel_operation(ISC_STATUS *, Jrd::Attachment**, USHORT);
-void JRD_process_close();
-void JRD_database_close(Jrd::Attachment**, Jrd::Attachment**);
+void JRD_shutdown_all(bool);
+void JRD_shutdown_attachment(Jrd::Attachment**, Jrd::Attachment**);
 #endif
 
 using namespace YValve;
@@ -553,7 +553,7 @@ namespace
 			if (killed)
 			{
 #if !defined (SUPERCLIENT)
-				JRD_process_close();
+				JRD_shutdown_all(false);
 #endif
 				propagateKill();
 			}
@@ -570,7 +570,7 @@ namespace
 						releasedBuffer.getBuffer(attachments().getCount() + 1);
 					*released = 0;
 #if !defined (SUPERCLIENT)
-					JRD_database_close(&attach, released);
+					JRD_shutdown_attachment(&attach, released);
 #endif
 					markShutdown(released);
 				}
@@ -668,7 +668,7 @@ namespace
 				// but as long as we have not entered engine, 
 				// any call to it should be safe
 #if !defined (SUPERCLIENT)
-				JRD_process_close();
+				JRD_shutdown_all(false);
 #endif
 				propagateKill();
 			}

@@ -254,6 +254,21 @@ public:
 		data = this->getStorage();
 	}
 
+	bool find(const T& item, size_t& pos) const	{
+		for (size_t i = 0; i < count; i++) {
+			if (data[i] == item) {
+				pos = i;
+				return true;
+			}
+		}
+		return false;
+	}
+
+	bool exist(const T& item) const {
+		size_t pos;	// ignored
+		return find(item, pos);
+	}
+
 protected:
 	size_t count, capacity;
 	T* data;
@@ -289,8 +304,6 @@ public:
 	explicit SortedArray(size_t s) : Array<Value, Storage>(s) {}
 	SortedArray() : Array<Value, Storage>() {}
 
-	// NOTE: find method must be signal safe
-	// Used as such in GlobalRWLock::blockingAstHandler
 	bool find(const Key& item, size_t& pos) const {
 		size_t highBound = this->count, lowBound = 0;
 		while (highBound > lowBound) {
