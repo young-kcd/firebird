@@ -2578,8 +2578,7 @@ static USHORT lock_state(lbl* lock)
 }
 
 
-static void post_blockage(lrq* request,
-						  lbl* lock)
+static void post_blockage(lrq* request, lbl* lock)
 {
 /**************************************
  *

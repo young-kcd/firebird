@@ -6274,7 +6274,9 @@ static ISC_STATUS unwindAttach(const Firebird::Exception& ex,
 		}
 	}
 	catch (const Firebird::Exception&)
-	{} // no-op
+	{
+		// no-op
+	}
 
 	tdbb->tdbb_status_vector = save_status;
 	databases_mutex->leave();

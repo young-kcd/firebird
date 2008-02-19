@@ -27,8 +27,6 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.static.gpre,v 1.21 2008-02-14 10:08:04 alexpeshkoff Exp $
-#
 ROOT=..
 ObjModuleType=boot
 CFLAGS += -DBOOT_BUILD
