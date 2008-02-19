@@ -1882,8 +1882,7 @@ static bool create_index(	thread_db*	tdbb,
 				relationLock = DFW_protect_relation(tdbb, transaction, relation, 
 								releaseRelationLock);
 			}
-									
-			if (idx.idx_flags & idx_foreign)
+			else
 			{
 				idx.idx_id = MAX_USHORT;
 
