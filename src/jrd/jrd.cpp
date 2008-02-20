@@ -155,10 +155,6 @@ namespace
 		{
 			IntlManager::initialize();
 			PluginManager::load_engine_plugins();
-
-#if defined(WIN_NT) && !defined(SERVER_SHUTDOWN)
-			setup_NT_handlers();
-#endif
 		}
 
 		static void cleanup() {}
@@ -444,14 +440,9 @@ static ISC_STATUS	unwindAttach(const Firebird::Exception& ex,
 								 thread_db* tdbb, 
 								 Attachment* attachment, 
 								 Database* dbb);
-#if defined (WIN_NT)
-#ifdef SERVER_SHUTDOWN
+#ifdef WIN_NT
 static void		ExtractDriveLetter(const TEXT*, ULONG*);
-#else // SERVER_SHUTDOWN
-static void		setup_NT_handlers(void);
-static BOOLEAN	handler_NT(SSHORT);
-#endif	// SERVER_SHUTDOWN
-#endif	// WIN_NT
+#endif
 
 static Database*	init(thread_db*, const Firebird::PathName&, bool);
 static void		prepare(thread_db*, jrd_tra*, USHORT, const UCHAR*);
@@ -4791,37 +4782,6 @@ static ISC_STATUS handle_error(ISC_STATUS* user_status, ISC_STATUS code)
 }
 
 
-#if defined (WIN_NT) && !defined(SERVER_SHUTDOWN)
-static BOOLEAN handler_NT(SSHORT controlAction)
-{
-/**************************************
- *
- *      h a n d l e r _ N T
- *
- **************************************
- *
- * Functional description
- *	For some actions, get NT to issue a popup asking
- *	the user to delay.
- *
- **************************************/
-
-	switch (controlAction) {
-	case CTRL_CLOSE_EVENT:
-	case CTRL_LOGOFF_EVENT:
-	case CTRL_SHUTDOWN_EVENT:
-		return TRUE;			// NT will issue popup
-
-	case CTRL_C_EVENT:
-	case CTRL_BREAK_EVENT:
-		return FALSE;			// let it go
-	}
-	// So, what are we to return here?!
-	return FALSE;				// let it go
-}
-#endif
-
-
 static Database* init(thread_db* tdbb,
 					  const Firebird::PathName& expanded_filename,
 					  bool attach_flag)
@@ -5256,28 +5216,6 @@ static ISC_STATUS rollback(ISC_STATUS* user_status,
 
 	return user_status[1];
 }
-
-
-#if defined (WIN_NT) && !defined(SERVER_SHUTDOWN)
-static void setup_NT_handlers()
-{
-/**************************************
- *
- *      s e t u p _ N T _ h a n d l e r s
- *
- **************************************
- *
- * Functional description
- *      Set up Windows NT console control handlers for
- *      things that can happen.   The handler used for
- *      all cases, handler_NT(), will flush and close
- *      any open database files.
- *
- **************************************/
-
-	SetConsoleCtrlHandler((PHANDLER_ROUTINE) handler_NT, TRUE);
-}
-#endif
 
 
 static void shutdown_database(Database* dbb, const bool release_pools)
