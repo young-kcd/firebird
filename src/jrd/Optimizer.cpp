@@ -653,7 +653,7 @@ VaryingString* OPT_make_alias(thread_db* tdbb, const CompilerScratch* csb,
 	SET_TDBB(tdbb);
 	if (!base_tail->csb_view && !base_tail->csb_alias)
 		return NULL;
-		
+
 	const CompilerScratch::csb_repeat* csb_tail;
 	// calculate the length of the alias by going up through
 	// the view stack to find the lengths of all aliases;
@@ -1054,8 +1054,7 @@ void OptimizerRetrieval::findDependentFromStreams(jrd_nod* node,
 				(csb->csb_rpt[fieldStream].csb_flags & csb_active) &&
 				!(csb->csb_rpt[fieldStream].csb_flags & csb_trigger))
 			{
-				size_t pos;
-				if (!streamList->find(fieldStream, pos)) {
+				if (!streamList->exist(fieldStream)) {
 					streamList->add(fieldStream);
 				}
 			}
@@ -1069,8 +1068,7 @@ void OptimizerRetrieval::findDependentFromStreams(jrd_nod* node,
 			if (keyStream != stream &&
 				(csb->csb_rpt[keyStream].csb_flags & csb_active))
 			{
-				size_t pos;
-				if (!streamList->find(keyStream, pos)) {
+				if (!streamList->exist(keyStream)) {
 					streamList->add(keyStream);
 				}
 			}
@@ -1256,8 +1254,7 @@ InversionCandidate* OptimizerRetrieval::generateInversion(RecordSource** rsb)
 		tail = optimizer->opt_conjuncts.begin();
 		for (; tail < opt_end; tail++) {
 			if (!(tail->opt_conjunct_flags & opt_conjunct_used)) {
-				size_t pos;
-				if (matches.find(tail->opt_conjunct_node, pos)) {
+				if (matches.exist(tail->opt_conjunct_node)) {
 					tail->opt_conjunct_flags |= opt_conjunct_matched;
 				}
 			}
@@ -1623,7 +1620,7 @@ bool OptimizerRetrieval::getInversionCandidates(InversionCandidateList* inversio
 				// The constant DEFAULT_INDEX_COST 1 is an average for 
 				// the rootpage and non-leaf pages.
 				// Assuming the rootpage will stay in cache else the index
-				// cost is calculted to high. Better would be including
+				// cost is calculted too high. Better would be including
 				// the index-depth, but this is not possible due lack 
 				// on information at this time.
 				invCandidate->cost = DEFAULT_INDEX_COST + (scratch.selectivity * scratch.cardinality);
@@ -1947,8 +1944,7 @@ InversionCandidate* OptimizerRetrieval::makeInversion(InversionCandidateList* in
 					invCandidate->dependencies = currentInv->dependencies;
 					matches.clear();
 					for (size_t j = 0; j < currentInv->matches.getCount(); j++) {
-						size_t pos;
-						if (!matches.find(currentInv->matches[j], pos)) {
+						if (!matches.exist(currentInv->matches[j])) {
 							matches.add(currentInv->matches[j]);
 						}
 					}
@@ -1959,12 +1955,11 @@ InversionCandidate* OptimizerRetrieval::makeInversion(InversionCandidateList* in
 
 					return invCandidate;
 				}
-		
+
 				// Look if a match is already used by previous matches.
 				bool anyMatchAlreadyUsed = false;
 				for (size_t k = 0; k < currentInv->matches.getCount(); k++) {
-					size_t pos;
-					if (matches.find(currentInv->matches[k], pos)) {
+					if (matches.exist(currentInv->matches[k])) {
 						anyMatchAlreadyUsed = true;
 						break;
 					}
@@ -1975,8 +1970,7 @@ InversionCandidate* OptimizerRetrieval::makeInversion(InversionCandidateList* in
 					// If a match on this index was already used by another 
 					// index, add also the other matches from this index.
 					for (size_t j = 0; j < currentInv->matches.getCount(); j++) {
-						size_t pos;
-						if (!matches.find(currentInv->matches[j], pos)) {
+						if (!matches.exist(currentInv->matches[j])) {
 							matches.add(currentInv->matches[j]);
 						}
 					}
@@ -2137,14 +2131,12 @@ InversionCandidate* OptimizerRetrieval::makeInversion(InversionCandidateList* in
 					invCandidate->matchedSegments = bestCandidate->matchedSegments;
 					invCandidate->dependencies = bestCandidate->dependencies;
 					for (size_t j = 0; j < bestCandidate->matches.getCount(); j++) {
-						size_t pos;
-						if (!matches.find(bestCandidate->matches[j], pos)) {
+						if (!matches.exist(bestCandidate->matches[j])) {
 							matches.add(bestCandidate->matches[j]);
 						}
 					}
 					if (bestCandidate->boolean) {
-						size_t pos;
-						if (!matches.find(bestCandidate->boolean, pos)) {
+						if (!matches.exist(bestCandidate->boolean)) {
 							matches.add(bestCandidate->boolean);
 						}
 					}
@@ -2167,14 +2159,12 @@ InversionCandidate* OptimizerRetrieval::makeInversion(InversionCandidateList* in
 						MAX(bestCandidate->matchedSegments, invCandidate->matchedSegments);
 					invCandidate->dependencies += bestCandidate->dependencies;
 					for (size_t j = 0; j < bestCandidate->matches.getCount(); j++) {
-						size_t pos;
-						if (!matches.find(bestCandidate->matches[j], pos)) {
+						if (!matches.exist(bestCandidate->matches[j])) {
 	                        matches.add(bestCandidate->matches[j]);
 						}
 					}
 					if (bestCandidate->boolean) {
-						size_t pos;
-						if (!matches.find(bestCandidate->boolean, pos)) {
+						if (!matches.exist(bestCandidate->boolean)) {
 							matches.add(bestCandidate->boolean);
 						}
 					}
@@ -2570,8 +2560,7 @@ InversionCandidate* OptimizerRetrieval::matchOnIndexes(
 					matches.add(invCandidate1->matches[j]);
 				}				
 				for (j = 0; j < invCandidate2->matches.getCount(); j++) {
-					size_t pos;
-					if (matches.find(invCandidate2->matches[j], pos)) {
+					if (matches.exist(invCandidate2->matches[j])) {
 						invCandidate->matches.add(invCandidate2->matches[j]);
 					}					
 				}				
@@ -3339,8 +3328,7 @@ void OptimizerInnerJoin::getIndexedRelationship(InnerJoinStreamInfo* baseStream,
 		cost = 1 * candidate->indexes;
 	}
 
-	size_t pos;
-	if (candidate->dependentFromStreams.find(baseStream->stream, pos)) {
+	if (candidate->dependentFromStreams.exist(baseStream->stream)) {
 //		if (candidate->indexes) {
 			// If we could use more conjunctions on the testing stream
 			// with the base stream active as without the base stream
