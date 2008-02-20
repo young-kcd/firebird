@@ -5558,7 +5558,7 @@ TEXT* JRD_num_attachments(TEXT* const buf, USHORT buf_len, USHORT flag,
 
 	ULONG num_att = 0;
 	ULONG drive_mask = 0L;
-	USHORT total = 0;
+	ULONG total = 0;
 	Firebird::HalfStaticArray<Firebird::PathName, 8> dbFiles;
 
 	try
@@ -5578,8 +5578,8 @@ TEXT* JRD_num_attachments(TEXT* const buf, USHORT buf_len, USHORT flag,
 
 			if (flag == JRD_info_drivemask)
 			{
-				PageSpace* pageSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
-				for (jrd_file* files = pageSpace->file; files; files = files->fil_next)
+				const PageSpace* pageSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
+				for (const jrd_file* files = pageSpace->file; files; files = files->fil_next)
 					ExtractDriveLetter(files->fil_string, &drive_mask);
 			}
 #endif
@@ -5590,7 +5590,7 @@ TEXT* JRD_num_attachments(TEXT* const buf, USHORT buf_len, USHORT flag,
 			{
 				if (!dbFiles.exist(dbb->dbb_filename))
 					dbFiles.add(dbb->dbb_filename);
-				total += sizeof(USHORT) + dbb->dbb_filename.length();
+				total += sizeof(USHORT) + MIN(dbb->dbb_filename.length(), 255);
 
 				for (const Attachment* attach = dbb->dbb_attachments; attach;
 					attach = attach->att_next)
@@ -5648,14 +5648,16 @@ TEXT* JRD_num_attachments(TEXT* const buf, USHORT buf_len, USHORT flag,
 				   last db name
 				 */
 
+				 fb_assert(num_dbs < MAX_USHORT);
 				*lbufp++ = (TEXT) num_dbs;
 				*lbufp++ = (TEXT) (num_dbs >> 8);
 
 				for (size_t n = 0; n < num_dbs; ++n) {
-					*lbufp++ = (TEXT) dbFiles[n].length();
-					*lbufp++ = (TEXT) (dbFiles[n].length() >> 8);
-					memcpy(lbufp, dbFiles[n].c_str(), dbFiles[n].length());
-					lbufp += dbFiles[n].length();
+					const USHORT dblen = MIN(dbFiles[n].length(), 255);
+					*lbufp++ = (TEXT) dblen;
+					*lbufp++ = (TEXT) (dblen >> 8);
+					memcpy(lbufp, dbFiles[n].c_str(), dblen);
+					lbufp += dblen;
 				}
 			}
 		}
