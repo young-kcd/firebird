@@ -285,7 +285,7 @@ private:
 
 	inline void increment_mapping(size_t size);
 	inline void decrement_mapping(size_t size);
-	
+
 protected:
 	// Do not allow to create and destroy pool directly from outside
 	MemoryPool(MemoryPool* _parent, MemoryStats &_stats, void* first_extent, void* root_page);
@@ -293,29 +293,24 @@ protected:
 	// This should never be called
 	~MemoryPool() {
 	}
-	
-	// Used to create MemoryPool descendants
-	static MemoryPool* internal_create(size_t instance_size, 
-		MemoryPool* parent = NULL, MemoryStats& stats = *default_stats_group);
-	
+
 public:
 	// Default statistics group for process
 	static MemoryStats* default_stats_group;
 
 	// Pool created for process
 	static MemoryPool* processMemoryPool;
-	
+
 	// Create memory pool instance
-	static MemoryPool* createPool(MemoryPool* parent = NULL, MemoryStats& stats = *default_stats_group) {
-		return internal_create(sizeof(MemoryPool), parent, stats);
-	}
-	
+	static MemoryPool* createPool(MemoryPool* parent = NULL,
+								  MemoryStats& stats = *default_stats_group);
+
 	// Set context pool for current thread of execution
 	static MemoryPool* setContextPool(MemoryPool* newPool);
-	
+
 	// Get context pool for current thread of execution
 	static MemoryPool* getContextPool();
-	
+
 	// Set statistics group for pool. Usage counters will be decremented from 
 	// previously set group and added to new
 	void setStatsGroup(MemoryStats& stats);
