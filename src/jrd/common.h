@@ -70,13 +70,11 @@
 #ifdef SUPERSERVER
 #define SWEEP_THREAD
 #define GARBAGE_THREAD
-#elif !defined(SUPERCLIENT)
-#define AST_THREAD
+#define CANCEL_OPERATION
 #endif
 
 
 #ifdef SUPERSERVER
-#define CANCEL_OPERATION
 #define FB_ARCHITECTURE isc_info_db_class_server_access
 #else
 #define FB_ARCHITECTURE isc_info_db_class_classic_access

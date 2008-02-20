@@ -31,10 +31,6 @@
 #ifndef JRD_ISC_H
 #define JRD_ISC_H
 
-// For AST_THREAD
-#include "../jrd/common.h"
-#include "../jrd/sch_proto.h"
-
 // Firebird platform-specific synchronization data structures
 
 #ifdef UNIX
