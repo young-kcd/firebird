@@ -476,8 +476,8 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 				NodeStack deliverStack;
 
 				if (rse->rse_jointype != blr_inner) {
-					// Make list of nodes that can be delivered to a outer-stream.
-					// In fact this are all nodes except when a IS NULL (nod_missing)
+					// Make list of nodes that can be delivered to an outer-stream.
+					// In fact these are all nodes except when a IS NULL (nod_missing)
 					// comparision is done.
 					// Note! Don't forget that this can be burried inside a expression
 					// such as "CASE WHEN (FieldX IS NULL) THEN 0 ELSE 1 END = 0"
@@ -621,7 +621,7 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 	// opt_rpt[0..opt_conjuncts_count-1] = all conjunctions
 	//
 	// allowed = booleans that can never evaluate to NULL/Unknown or turn
-	//   NULL/Unkown into a True or False.
+	//   NULL/Unknown into a True or False.
 	SLONG distributed_count = 0;
 	NodeStack missingStack;
 	if (parent_stack && parent_stack->getCount())
@@ -2851,6 +2851,7 @@ static bool expression_possible_unknown(const jrd_nod* node)
 		case nod_lowcase:
 		case nod_substr:
 		case nod_trim:
+		case nod_sys_function:
 
 		case nod_like:
 		case nod_between:
@@ -3037,6 +3038,7 @@ static bool expression_contains_stream(CompilerScratch* csb,
 		case nod_lowcase:
 		case nod_substr:
 		case nod_trim:
+		case nod_sys_function:
 
 		case nod_like:
 		case nod_between:
@@ -5987,6 +5989,7 @@ static void get_expression_streams(const jrd_nod* node,
 		case nod_lowcase:
 		case nod_substr:
 		case nod_trim:
+		case nod_sys_function:
 
 		case nod_like:
 		case nod_between:
@@ -6151,14 +6154,14 @@ static jrd_nod* get_unmapped_node(thread_db* tdbb, jrd_nod* node,
 		case nod_lowcase:
 		case nod_substr:
 		case nod_trim:
+		case nod_sys_function:
 		{
 			// Check all sub-nodes of this node.
 			jrd_nod** ptr = node->nod_arg;
 			for (const jrd_nod* const* const end = ptr + node->nod_count;
 				ptr < end; ptr++)
 			{
-				if (get_unmapped_node(tdbb, *ptr, map, shellStream,
-					false) == NULL)
+				if (!get_unmapped_node(tdbb, *ptr, map, shellStream, false))
 				{
 					return NULL;
 				}
