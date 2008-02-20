@@ -31,9 +31,5 @@ then
     exit 1
 fi
 
-#if [ -f /etc/inet/inetd.conf ]; then
-#    echo "Restarting inetd..."
-#    kill -HUP `ps -e | grep inetd | awk '{print $1}'`
-#fi
 
 # EOF
