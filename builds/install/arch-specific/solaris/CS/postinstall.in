@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# $Header: /home/job/firebird/cvs-backup/firebird2/builds/install/arch-specific/solaris/CS/postinstall.in,v 1.2.4.2 2007-10-24 15:36:27 paulbeach Exp $
+# $Header: /home/job/firebird/cvs-backup/firebird2/builds/install/arch-specific/solaris/CS/postinstall.in,v 1.2.4.3 2008-02-20 14:38:53 paulbeach Exp $
 #------------------------------------------------------------------------------
 # $Copyright: 
 # Copyright (C) Siemens Nixdorf Informationssysteme AG 1994 - 1998
@@ -49,8 +49,7 @@ if [ -f /etc/inet/inetd.conf ]; then
     fi
 fi
 
-if [ $VERSION="5.10" ]
-then
+if [ $VERSION="5.10" ]; then
 	inetconv -f 
 	svcadm clear svc:/network/gds_db/tcp:default
 fi

@@ -29,8 +29,8 @@ d none @prefix@/bin  0755 root root
 
 #/usr/lib symlinks for compability with external tools
 
-s none /usr/lib/libfbembed.so=@prefix@/lib/libfbembed.so
-s none /usr/lib/libfbclient.so=@prefix@/lib/libfbclient.so
+s none /usr/lib/libfbembed.so.2=@prefix@/lib/libfbembed.so.2
+s none /usr/lib/libfbclient.so.2=@prefix@/lib/libfbclient.so.2
 
 d none @prefix@ 0755 root root
 

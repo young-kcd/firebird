@@ -39,6 +39,11 @@ fi
 #    fi
 #fi
 
+if [ $VERSION="5.10" ]; then
+	inetconv -f 
+	svcadm clear svc:/network/gds_db/tcp:default
+fi
+
 if [ -f /etc/profile ]; then
     grep -s "# Enhance PATH for Firebird2" /etc/profile >/dev/null 2>&1
     if [ $? -ne 0 ] ; then
