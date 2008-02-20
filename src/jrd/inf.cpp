@@ -304,7 +304,6 @@ int INF_database_info(const SCHAR* items,
 			length = INF_convert(0, buffer);
 			break;
 
-#ifdef SUPERSERVER
 		case isc_info_current_memory:
 			length = INF_convert(dbb->dbb_memory_stats.get_current_usage(), buffer);
 			break;
@@ -312,15 +311,6 @@ int INF_database_info(const SCHAR* items,
 		case isc_info_max_memory:
 			length = INF_convert(dbb->dbb_memory_stats.get_maximum_usage(), buffer);
 			break;
-#else
-		case isc_info_current_memory:
-			length = INF_convert(MemoryPool::default_stats_group->get_current_usage(), buffer);
-			break;
-
-		case isc_info_max_memory:
-			length = INF_convert(MemoryPool::default_stats_group->get_maximum_usage(), buffer);
-			break;
-#endif
 
 		case isc_info_attachment_id:
 			length = INF_convert(PAG_attachment_id(tdbb), buffer);

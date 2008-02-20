@@ -255,14 +255,14 @@ public:
 	{
 		if (!toDelete)
 			return;
-		MemoryPool* perm = toDelete->dbb_permanent;
-#ifdef SUPERSERVER
-		// Memory pool destruction below decrements memory statistics for 
-		// SuperServer situated in database block we are about to deallocate
-		// right now.
+
+		MemoryPool* const perm = toDelete->dbb_permanent;
+
+		// Memory pool destruction below decrements memory statistics
+		// situated in database block we are about to deallocate right now
 		Firebird::MemoryStats temp_stats;
 		perm->setStatsGroup(temp_stats);
-#endif
+
 		delete toDelete;
 		MemoryPool::deletePool(perm);
 	}

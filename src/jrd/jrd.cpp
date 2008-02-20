@@ -4877,15 +4877,11 @@ static Database* init(thread_db* tdbb,
 		}
 #endif
 
-#ifdef SUPERSERVER
 		Firebird::MemoryStats temp_stats;
 		MemoryPool* perm = MemoryPool::createPool(NULL, temp_stats);
 		dbb = Database::newDbb(perm);
 		perm->setStatsGroup(dbb->dbb_memory_stats);
-#else
-		MemoryPool* perm = MemoryPool::createPool(NULL);
-		dbb = Database::newDbb(perm);
-#endif
+
 		dbb->dbb_mutexes = temp_mutx;
 
 		tdbb->setDatabase(dbb);
