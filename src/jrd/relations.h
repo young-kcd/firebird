@@ -439,3 +439,9 @@ RELATION(nam_mon_rec_stats, rel_mon_rec_stats, ODS_11_1, rel_virtual)
 	FIELD(f_mon_rec_purges, nam_mon_rec_purges, fld_counter, 0, 0, 0, 0)
 	FIELD(f_mon_rec_expunges, nam_mon_rec_expunges, fld_counter, 0, 0, 0, 0)
 END_RELATION
+RELATION(nam_mon_ctx_vars, rel_mon_ctx_vars, ODS_11_2, rel_virtual)
+	FIELD(f_mon_ctx_vars_att_id, nam_mon_att_id, fld_att_id, 0, 0, 0, 0)
+	FIELD(f_mon_ctx_vars_tra_id, nam_mon_tra_id, fld_trans_id, 0, 0, 0, 0)
+	FIELD(f_mon_ctx_vars_name, nam_mon_var_name, fld_ctx_var_name, 0, 0, 0, 0)
+	FIELD(f_mon_ctx_vars_value, nam_mon_var_value, fld_ctx_var_value, 0, 0, 0, 0)
+END_RELATION

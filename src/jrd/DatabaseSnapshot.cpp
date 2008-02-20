@@ -413,6 +413,8 @@ DatabaseSnapshot::DatabaseSnapshot(thread_db* tdbb, MemoryPool& pool)
 		allocBuffer(tdbb, pool, rel_mon_io_stats);
 	RecordBuffer* const rec_stat_buffer =
 		allocBuffer(tdbb, pool, rel_mon_rec_stats);
+	RecordBuffer* const ctx_var_buffer =
+		allocBuffer(tdbb, pool, rel_mon_ctx_vars);
 
 	Database* const dbb = tdbb->getDatabase();
 	fb_assert(dbb);
@@ -511,6 +513,9 @@ DatabaseSnapshot::DatabaseSnapshot(thread_db* tdbb, MemoryPool& pool)
 				break;
 			case rel_mon_rec_stats:
 				buffer = rec_stat_buffer;
+				break;
+			case rel_mon_ctx_vars:
+				buffer = ctx_var_buffer;
 				break;
 			default:
 				fb_assert(false);
@@ -831,6 +836,8 @@ ClumpletReader* DatabaseSnapshot::dumpData(thread_db* tdbb, bool broadcast)
 		if (broadcast || attachment == self_attachment)
 		{
 			putAttachment(attachment, *writer, dbb->generateId());
+			putContextVars(attachment->att_context_vars, *writer,
+						   attachment->att_attachment_id, true);
 
 			// Transaction information
 
@@ -838,6 +845,8 @@ ClumpletReader* DatabaseSnapshot::dumpData(thread_db* tdbb, bool broadcast)
 				transaction; transaction = transaction->tra_next)
 			{
 				putTransaction(transaction, *writer, dbb->generateId());
+				putContextVars(transaction->tra_context_vars, *writer,
+							   transaction->tra_number, false);
 			}
 
 			// Request information
@@ -979,7 +988,7 @@ void DatabaseSnapshot::putDatabase(const Database* database,
 	writer.insertInt(f_mon_db_backup_state, temp);
 	// statistics
 	writer.insertBigInt(f_mon_db_stat_id, getGlobalId(stat_id));
-	putStatistics(&database->dbb_stats, writer, stat_id, stat_database);
+	putStatistics(database->dbb_stats, writer, stat_id, stat_database);
 }
 
 
@@ -1038,7 +1047,7 @@ void DatabaseSnapshot::putAttachment(const Attachment* attachment,
 	writer.insertInt(f_mon_att_gc, temp);
 	// statistics
 	writer.insertBigInt(f_mon_att_stat_id, getGlobalId(stat_id));
-	putStatistics(&attachment->att_stats, writer, stat_id, stat_attachment);
+	putStatistics(attachment->att_stats, writer, stat_id, stat_attachment);
 }
 
 
@@ -1093,7 +1102,7 @@ void DatabaseSnapshot::putTransaction(const jrd_tra* transaction,
 	writer.insertInt(f_mon_tra_auto_undo, temp);
 	// statistics
 	writer.insertBigInt(f_mon_tra_stat_id, getGlobalId(stat_id));
-	putStatistics(&transaction->tra_stats, writer, stat_id, stat_transaction);
+	putStatistics(transaction->tra_stats, writer, stat_id, stat_transaction);
 }
 
 
@@ -1137,7 +1146,7 @@ void DatabaseSnapshot::putRequest(const jrd_req* request,
 	writer.insertString(f_mon_stmt_sql_text, request->req_sql_text);
 	// statistics
 	writer.insertBigInt(f_mon_stmt_stat_id, getGlobalId(stat_id));
-	putStatistics(&request->req_stats, writer, stat_id, stat_statement);
+	putStatistics(request->req_stats, writer, stat_id, stat_statement);
 }
 
 
@@ -1193,16 +1202,14 @@ void DatabaseSnapshot::putCall(const jrd_req* request,
 	writer.insertInt(f_mon_call_src_column, request->req_src_column);
 	// statistics
 	writer.insertBigInt(f_mon_call_stat_id, getGlobalId(stat_id));
-	putStatistics(&request->req_stats, writer, stat_id, stat_call);
+	putStatistics(request->req_stats, writer, stat_id, stat_call);
 }
 
-void DatabaseSnapshot::putStatistics(const RuntimeStatistics* statistics,
+void DatabaseSnapshot::putStatistics(const RuntimeStatistics& statistics,
 									 Firebird::ClumpletWriter& writer,
 									 int stat_id,
 									 int stat_group)
 {
-	fb_assert(statistics);
-
 	// statistics id
 	const SINT64 id = getGlobalId(stat_id);
 
@@ -1211,32 +1218,50 @@ void DatabaseSnapshot::putStatistics(const RuntimeStatistics* statistics,
 	writer.insertBigInt(f_mon_io_stat_id, id);
 	writer.insertInt(f_mon_io_stat_group, stat_group);
 	writer.insertBigInt(f_mon_io_page_reads,
-						statistics->getValue(RuntimeStatistics::PAGE_READS));
+						statistics.getValue(RuntimeStatistics::PAGE_READS));
 	writer.insertBigInt(f_mon_io_page_writes,
-						statistics->getValue(RuntimeStatistics::PAGE_WRITES));
+						statistics.getValue(RuntimeStatistics::PAGE_WRITES));
 	writer.insertBigInt(f_mon_io_page_fetches,
-						statistics->getValue(RuntimeStatistics::PAGE_FETCHES));
+						statistics.getValue(RuntimeStatistics::PAGE_FETCHES));
 	writer.insertBigInt(f_mon_io_page_marks,
-						statistics->getValue(RuntimeStatistics::PAGE_MARKS));
+						statistics.getValue(RuntimeStatistics::PAGE_MARKS));
 
 	// logical I/O statistics
 	writer.insertByte(TAG_RECORD, rel_mon_rec_stats);
 	writer.insertBigInt(f_mon_rec_stat_id, id);
 	writer.insertInt(f_mon_rec_stat_group, stat_group);
 	writer.insertBigInt(f_mon_rec_seq_reads,
-						statistics->getValue(RuntimeStatistics::RECORD_SEQ_READS));
+						statistics.getValue(RuntimeStatistics::RECORD_SEQ_READS));
 	writer.insertBigInt(f_mon_rec_idx_reads,
-						statistics->getValue(RuntimeStatistics::RECORD_IDX_READS));
+						statistics.getValue(RuntimeStatistics::RECORD_IDX_READS));
 	writer.insertBigInt(f_mon_rec_inserts,
-						statistics->getValue(RuntimeStatistics::RECORD_INSERTS));
+						statistics.getValue(RuntimeStatistics::RECORD_INSERTS));
 	writer.insertBigInt(f_mon_rec_updates,
-						statistics->getValue(RuntimeStatistics::RECORD_UPDATES));
+						statistics.getValue(RuntimeStatistics::RECORD_UPDATES));
 	writer.insertBigInt(f_mon_rec_deletes,
-						statistics->getValue(RuntimeStatistics::RECORD_DELETES));
+						statistics.getValue(RuntimeStatistics::RECORD_DELETES));
 	writer.insertBigInt(f_mon_rec_backouts,
-						statistics->getValue(RuntimeStatistics::RECORD_BACKOUTS));
+						statistics.getValue(RuntimeStatistics::RECORD_BACKOUTS));
 	writer.insertBigInt(f_mon_rec_purges,
-						statistics->getValue(RuntimeStatistics::RECORD_PURGES));
+						statistics.getValue(RuntimeStatistics::RECORD_PURGES));
 	writer.insertBigInt(f_mon_rec_expunges,
-						statistics->getValue(RuntimeStatistics::RECORD_EXPUNGES));
+						statistics.getValue(RuntimeStatistics::RECORD_EXPUNGES));
+}
+
+void DatabaseSnapshot::putContextVars(Firebird::StringMap& variables,
+									  Firebird::ClumpletWriter& writer,
+									  int object_id, bool is_attachment)
+{
+	for (bool found = variables.getFirst(); found; found = variables.getNext())
+	{
+		writer.insertByte(TAG_RECORD, rel_mon_ctx_vars);
+
+		if (is_attachment)
+			writer.insertInt(f_mon_ctx_var_att_id, object_id);
+		else
+			writer.insertInt(f_mon_ctx_var_tra_id, object_id);
+
+		writer.insertString(f_mon_ctx_var_name, variables.current()->first);
+		writer.insertString(f_mon_ctx_var_value, variables.current()->second);
+	}
 }

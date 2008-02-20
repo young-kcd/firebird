@@ -125,7 +125,8 @@ private:
 	static void putTransaction(const jrd_tra*, Firebird::ClumpletWriter&, int);
 	static void putRequest(const jrd_req*, Firebird::ClumpletWriter&, int);
 	static void putCall(const jrd_req*, Firebird::ClumpletWriter&, int);
-	static void putStatistics(const RuntimeStatistics*, Firebird::ClumpletWriter&, int, int);
+	static void putStatistics(const RuntimeStatistics&, Firebird::ClumpletWriter&, int, int);
+	static void putContextVars(Firebird::StringMap&, Firebird::ClumpletWriter&, int, bool);
 
 	static Firebird::GlobalPtr<Firebird::Mutex> initMutex;
 	static SharedMemory* dump;

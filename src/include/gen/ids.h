@@ -440,4 +440,7 @@
 	const USHORT  f_mon_rec_purges = 8;
 	const USHORT  f_mon_rec_expunges = 9;
 
-
+	const USHORT  f_mon_ctx_var_att_id = 0;
+	const USHORT  f_mon_ctx_var_tra_id = 1;
+	const USHORT  f_mon_ctx_var_name = 2;
+	const USHORT  f_mon_ctx_var_value = 3;

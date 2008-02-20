@@ -149,3 +149,6 @@
 	FIELD(fld_debug_info	, nam_debug_info	, dtype_blob	, BLOB_SIZE		, isc_blob_debug_info	, 0, NULL)
 	FIELD(fld_prm_mechanism	, nam_prm_mechanism	, dtype_short	, sizeof(SSHORT), 0						, 0, NULL)
 	FIELD(fld_src_info		, nam_src_info		, dtype_long	, sizeof(SLONG)	, 0						, 0, NULL)
+
+	FIELD(fld_ctx_var_name	, nam_ctx_var_name	, dtype_varying	, 80			, 0						, 0, NULL)
+	FIELD(fld_ctx_var_value	, nam_ctx_var_value	, dtype_varying	, 255			, 0						, 0, NULL)
