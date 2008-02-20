@@ -117,10 +117,6 @@ SOURCE=..\..\..\gen\dsql\metd.cpp
 # End Group
 # Begin Source File
 
-SOURCE=..\..\..\src\dsql\alld.cpp
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\src\dsql\ddl.cpp
 # End Source File
 # Begin Source File
@@ -196,14 +192,6 @@ SOURCE=..\..\..\src\gpre\pretty.cpp
 # Begin Group "Header files"
 
 # PROP Default_Filter "h;hpp;hxx;hm;inl"
-# Begin Source File
-
-SOURCE=..\..\..\src\dsql\all.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\dsql\alld_proto.h
-# End Source File
 # Begin Source File
 
 SOURCE=..\..\..\src\dsql\array_proto.h

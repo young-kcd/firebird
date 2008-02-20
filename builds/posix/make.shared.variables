@@ -69,8 +69,7 @@ DSQL_ClientFiles = array.epp blob.epp \
                    preparse.cpp user_dsql.cpp utld.cpp keywords.cpp
 
 DSQL_ServerFiles=	metd.epp \
-                alld.cpp ddl.cpp dsql.cpp \
-	            errd.cpp gen.cpp hsh.cpp make.cpp \
+                ddl.cpp dsql.cpp errd.cpp gen.cpp hsh.cpp make.cpp \
 	            movd.cpp parse.cpp Parser.cpp pass1.cpp misc_func.cpp
 
 
