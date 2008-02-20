@@ -365,8 +365,7 @@ static void subsystem_enter(void) throw();
 static void subsystem_exit(void) throw();
 
 static event_t why_event[1];
-static SSHORT why_initialized = 0;
-static SLONG why_enabled = 0;
+static bool why_initialized = false;
 
 /* subsystem_usage is used to count how many active ATTACHMENTs are 
  * running though the why valve.  For the first active attachment
@@ -871,18 +870,6 @@ const int PROC_INTERNAL_COMPILE	= 56;	// internal call
 
 const int PROC_count			= 57;
 
-struct ENTRY
-{
-	const TEXT* name;
-	PTR address;
-};
-
-struct IMAGE
-{
-	const TEXT* name;
-	TEXT path[MAXPATHLEN]; // avoid problems with code changing literals.
-};
-
 /* Define complicated table for multi-subsystem world */
 
 extern "C" {
@@ -890,42 +877,25 @@ extern "C" {
 static ISC_STATUS no_entrypoint(ISC_STATUS * user_status, ...);
 
 #ifdef SUPERCLIENT
-#define ENTRYPOINT(gen,cur,bridge,rem,os2_rem,csi,rdb,pipe,bridge_pipe,win,winipi)	ISC_STATUS rem(ISC_STATUS * user_status, ...);
+#define ENTRYPOINT(cur,rem)	ISC_STATUS rem(ISC_STATUS * user_status, ...);
 #else
-#define ENTRYPOINT(gen,cur,bridge,rem,os2_rem,csi,rdb,pipe,bridge_pipe,win,winipi)	ISC_STATUS rem(ISC_STATUS * user_status, ...), cur(ISC_STATUS * user_status, ...);
+#define ENTRYPOINT(cur,rem)	ISC_STATUS rem(ISC_STATUS * user_status, ...), cur(ISC_STATUS * user_status, ...);
 #endif
 
 #include "../jrd/entry.h"
 
-static const IMAGE images[] =
+#define SUBSYSTEMS 2
+
+static PTR entrypoints[PROC_count * SUBSYSTEMS] =
 {
-	{"REMINT", "REMINT"},			/* Remote */
-
-#if !defined(SUPERCLIENT)
-	{"GDSSHR", "GDSSHR"},			/* Primary access method */
-#endif
-
-};
-
-#define SUBSYSTEMS		sizeof (images) / (sizeof (IMAGE))
-
-static ENTRY entrypoints[PROC_count * SUBSYSTEMS] =
-{
-#define ENTRYPOINT(gen,cur,bridge,rem,os2_rem,csi,rdb,pipe,bridge_pipe,win,winipi)	{NULL, rem},
+#define ENTRYPOINT(cur,rem)	rem,
 #include "../jrd/entry.h"
 
 #if !defined(SUPERCLIENT)
-#define ENTRYPOINT(gen,cur,bridge,rem,os2_rem,csi,rdb,pipe,bridge_pipe,win,winipi)	{NULL, cur},
+#define ENTRYPOINT(cur,rem)	cur,
 #include "../jrd/entry.h"
 #endif
 };
-
-#ifndef SUPERCLIENT
-static const TEXT *generic[] = {
-#define ENTRYPOINT(gen,cur,bridge,rem,os2_rem,csi,rdb,pipe,bridge_pipe,win,winipi)	gen,
-#include "../jrd/entry.h"
-};
-#endif
 
 } // extern "C"
 
@@ -1131,10 +1101,6 @@ ISC_STATUS API_ROUTINE GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 
 		for (n = 0; n < SUBSYSTEMS; n++)
 		{
-			if (why_enabled && !(why_enabled & (1 << n)))
-			{
-				continue;
-			}
 			if (!CALL(PROC_ATTACH_DATABASE, n) (ptr, temp_filename.length(), 
 												temp_filename.c_str(),
 												&handle, newDpb.getBufferLength(), 
@@ -1700,10 +1666,6 @@ ISC_STATUS API_ROUTINE GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 
 		for (n = 0; n < SUBSYSTEMS; n++)
 		{
-			if (why_enabled && !(why_enabled & (1 << n)))
-			{
-				continue;
-			}
 			if (!CALL(PROC_CREATE_DATABASE, n) (ptr, temp_filename.length(), 
 												temp_filename.c_str(),
 												&handle, newDpb.getBufferLength(), 
@@ -1973,18 +1935,7 @@ int API_ROUTINE gds__disable_subsystem(TEXT * subsystem)
  *	has been explicitly disabled, all are available.
  *
  **************************************/
-	const IMAGE* sys = images;
-	for (const IMAGE* const end = sys + SUBSYSTEMS; sys < end; sys++)
-	{
-		if (!strcmp(sys->name, subsystem)) {
-			if (!why_enabled)
-				why_enabled = ~why_enabled;
-			why_enabled &= ~(1 << (sys - images));
-			return TRUE;
-		}
-	}
-
-	return FALSE;
+	return TRUE;
 }
 
 
@@ -3600,17 +3551,7 @@ int API_ROUTINE gds__enable_subsystem(TEXT * subsystem)
  *	has been explicitly enabled, all are available.
  *
  **************************************/
-	const IMAGE *sys, *end;
-
-	for (sys = images, end = sys + SUBSYSTEMS; sys < end; sys++)
-		if (!strcmp(sys->name, subsystem)) {
-			if (!~why_enabled)
-				why_enabled = 0;
-			why_enabled |= (1 << (sys - images));
-			return TRUE;
-		}
-
-	return FALSE;
+	return TRUE;
 }
 
 
@@ -3636,7 +3577,7 @@ ISC_STATUS API_ROUTINE isc_wait_for_event(ISC_STATUS * user_status,
 		if (!why_initialized) 
 		{
 			gds__register_cleanup((FPTR_VOID_PTR) exit_handler, why_event);
-			why_initialized = TRUE;
+			why_initialized = true;
 			ISC_event_init(why_event, 0, 0);
 		}
 
@@ -4623,10 +4564,6 @@ ISC_STATUS API_ROUTINE GDS_SERVICE_ATTACH(ISC_STATUS* user_status,
 		ISC_STATUS* ptr = status;
 		for (n = 0; n < SUBSYSTEMS; n++) 
 		{
-			if (why_enabled && !(why_enabled & (1 << n)))
-			{
-				continue;
-			}
 			if (!CALL(PROC_SERVICE_ATTACH, n) (ptr,
 											   org_length, service_name,
 											   &handle, 
@@ -5400,8 +5337,7 @@ static void exit_handler(event_t* why_eventL)
 	CloseHandle((void *) why_eventL->event_handle);
 #endif
 
-	why_initialized = FALSE;
-	why_enabled = 0;
+	why_initialized = false;
 #if !(defined SUPERCLIENT || defined SUPERSERVER)
 	isc_enter_count = 0;
 	subsystem_usage = 0;
@@ -5488,8 +5424,7 @@ static int get_database_info(ISC_STATUS * status,
 }
 
 
-static const PTR get_entrypoint(int proc,
-								int implementation)
+static const PTR get_entrypoint(int proc, int implementation)
 {
 /**************************************
  *
@@ -5502,34 +5437,8 @@ static const PTR get_entrypoint(int proc,
  *
  **************************************/
 
-	ENTRY *ent = entrypoints + implementation * PROC_count + proc;
-	const PTR entrypoint = ent->address;
-
-	if (entrypoint)
-	{
-		return entrypoint;
-	}
-
-#ifndef SUPERCLIENT
-	const TEXT* image = images[implementation].path;
-	const TEXT* name = ent->name;
-	if (!name)
-	{
-		name = generic[proc];
-	}
-
-	if (image && name)
-	{
-		PTR entry = (PTR) Jrd::Module::lookup(image, name);
-		if (entry)
-		{
-			ent->address = entry;
-			return entry;
-		}
-	}
-#endif
-
-	return &no_entrypoint;
+	const PTR* const entry = entrypoints + implementation * PROC_count + proc;
+	return *entry ? *entry : &no_entrypoint;
 }
 
 
