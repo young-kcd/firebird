@@ -14,7 +14,8 @@ cd $FIREBIRD
 
 # Create lock files
 HOSTNAME=`uname -n`
-for i in isc_init1 isc_lock1 isc_event1 isc_monitor1
+VERSION=`uname -r`
+for i in isc_init1 isc_lock1 isc_event1
 do
     file=${i}.${HOSTNAME}
     touch ${file}
@@ -47,6 +48,10 @@ if [ -f /etc/inet/inetd.conf ]; then
     fi
 fi
 
+if [ $VERSION="5.10" ]; then
+	inetconv -f 
+	svcadm clear svc:/network/gds_db/tcp:default
+fi
 if [ -f /etc/profile ]; then
     grep -s "# Enhance PATH for Firebird2" /etc/profile >/dev/null 2>&1
     if [ $? -ne 0 ] ; then

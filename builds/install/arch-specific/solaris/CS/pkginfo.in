@@ -5,5 +5,5 @@ VERSION="@FIREBIRD_VERSION@"
 LOAD="@FIREBIRD_PACKAGE_VERSION@"
 CATEGORY="application"
 VENDOR="www.firebirdsql.org"
-BASEDIR=/usr/local
+BASEDIR=/opt/firebird
 EMAIL=pbeach at ibphoenix.com 

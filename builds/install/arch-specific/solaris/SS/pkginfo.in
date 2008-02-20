@@ -1,9 +1,9 @@
-PKG="FB2SI"
+PKG="Firebird2"
 NAME="Firebird2 Relational Database Server @ARCH_TYPE_SUFFIX@"
-ARCH="i386"
+ARCH="@CPU_TYPE@"
 VERSION="@FIREBIRD_VERSION@"
 LOAD="@FIREBIRD_PACKAGE_VERSION@"
 CATEGORY="application"
-VENDOR="WWW.FireBirdSQL.org"
-BASEDIR=/usr/local
-EMAIL=WHO IT WANT at users.sf.net
+VENDOR="www.firebirdsql.org"
+BASEDIR=/opt/firebird
+EMAIL=pbeach at ibphoenix.com
