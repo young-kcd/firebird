@@ -1,4 +1,186 @@
   **************************
+  * v2.0.4
+  **************************
+
+    * Fixed bug CORE-1746
+        Expression index can be created while doing inserts into table
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
+
+    * Fixed bug CORE-1726
+        Failure in isc_service_start()
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Fixed bug CORE-1702
+        Wrong record number calculation in garbage collector thread
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
+
+    * Fixed bug CORE-1681
+        Garbage data in the incoming remote packet may crash the server
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed bug CORE-1680
+        "gsec display" only shows some first users
+        when there are many users (>50) in security database
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Fixed bug CORE-1679
+        Garbage bytes in isc_service_query() output
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Fixed bug CORE-1674
+        Wrong access rights in doc subdirectory
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Fixed bug CORE-1657
+        AV with long inactive read-only read-commited transaction
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Fixed bug CORE-1644
+        Compilation error on GCC 4.1.1
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Fixed bug CORE-1610
+        Full shutdown causes database corruption if it happens
+        when SuperServer is running a query modifying data
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed bug CORE-1603
+        Possible buffer overflow with long user name
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Fixed bug CORE-1579
+        Corrupt BLOB in UDF if followed by a char* that is a timestamp
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Fixed bug CORE-1572
+        Error "multiple rows in singleton select" not reported in a view
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Fixed bug CORE-1549
+        Subquery-based predicates are not evaluated early in the join order
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed bug CORE-1533
+        JOIN on first record of ordered derived table returns wrong record
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed bug CORE-1501
+        Wrong access to SLONG data in dsql_nod
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Fixed bug CORE-1500
+        Data in EXECUTE STATEMENT internal buffer is not aligned correctly
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Fixed bug CORE-1499
+        Wrong alignment of data, used in INTL converters
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Fixed bug CORE-1484
+        AV in fbintl
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Fixed bug CORE-1481
+        GFIX may report false errors when using in-memory metadata
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
+
+    * Fixed bug CORE-1470
+        Server crashes with secondary file name > 127 characters
+      Contributor(s):
+        Claudio Valderrama <cvalde at usa.net>
+
+    * Fixed bug CORE-1462
+        Server crash caused by a buffer overrun in the optimizer
+        when more than 255 relation references exist in the query
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed bug CORE-1460
+        Server crashes when client registers its interest in events being connected via Named Pipes
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed bug CORE-1457
+        Server crashes attempting to deliver events for the just disconnected session
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
+
+    * Fixed bug CORE-1456
+        Wrong events delivery in the case of concurrent XNET connections
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
+
+    * Fixed bug CORE-1455
+        Crash in fbclient after unsuccessful user management API call
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Fixed bug CORE-1452
+        Client library crashes when attempting to process an event received
+        just prior to disconnection
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed bug CORE-1447
+        Buffer overrun when querying for database info on very long path
+        through isc_database_info() API call
+      Contributor(s):
+        Claudio Valderrama <cvalde at usa.net>
+
+    * Fixed bug CORE-1442
+        fbclient.dll / gds32.dll : readonly database files on isc_attach_database
+        (error code 0 instead of 335544727)
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed bug CORE-1419
+        Wrong current timestamp evaluation for selectable procedures
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed bug CORE-1199
+        Firebird SS: internal gds software consistency check
+        (CCH_precedence: block marked (212), file: cch.cpp line: 3640)
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
+
+    * Fixed bug CORE-1194
+        Fbclient access violation when handling fbserver shutdown
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed bug CORE-881
+        Singleton isn't respected in COMPUTED BY expressions
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Fixed bug CORE-100
+        Access Violation in fcblient.dll v1.5.3 on disconnecting
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+
+  **************************
   * v2.0.3
   **************************
 
@@ -16,6 +198,7 @@
       Contributor(s):
         Paul Beach <pbeach at ibphoenix.com>
         Alex Peshkov <peshkoff at mail.ru>
+
 
   **************************
   * v2.0.2
@@ -237,6 +420,7 @@
     * MacOS Firebird Classic Intel Port
       Contributor(s):
         Paul Beach <pbeach at ibphoenix.com>
+
 
   **************************
   * v2.0.1
@@ -505,6 +689,7 @@
       Contributor(s):
         Dmitry Yemanov <yemanov at yandex.ru>
 
+
   **************************
   * v2.0 Final
   **************************
@@ -520,6 +705,7 @@
       Contributor(s):
         Dmitry Yemanov <yemanov at yandex.ru>
         Alex Peshkov <peshkoff at mail.ru>
+
 
   **************************
   * v2.0 Release Candidate 5
@@ -584,6 +770,7 @@
       Contributor(s):
         Vlad Horsun <horsun at kdb.dp.ua>
 
+
   **************************
   * v2.0 Release Candidate 4
   **************************
@@ -639,6 +826,7 @@
         substring(current_user from 4) without "for" fails
       Contributor(s):
         Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
 
   **************************
   * v2.0 Release Candidate 3
@@ -716,6 +904,7 @@
         Wrong decoding of the SPB tags
       Contributor(s):
         Alex Peshkov <peshkoff at mail.ru>
+
 
   **************************
   * v2.0 Release Candidate 2
@@ -869,6 +1058,7 @@
         (column level before table level)
       Contributor(s):
         Dmitry Yemanov <yemanov at yandex.ru>
+
 
   **************************
   * v2.0 Release Candidate 1
@@ -1120,6 +1310,7 @@
         in procedure parameters default values
       Contributor(s):
         Vlad Horsun <horsun at kdb.dp.ua>
+
 
   **************
   * v2.0 Beta 2
@@ -1578,6 +1769,7 @@
       Contributor(s):
         Dmitry Yemanov <yemanov at yandex.ru>
 
+
   **************
   * v2.0 Beta 1
   **************
@@ -1920,6 +2112,7 @@
       Contributor(s):
         Dmitry Yemanov <yemanov at yandex.ru>
 
+
   **************
   * v2.0 Alpha 3
   **************
@@ -2261,6 +2454,7 @@
       Contributor(s):
         Adriano dos Santos Fernandes <adrianosf at uol.com.br>
 
+
   **************
   * v2.0 Alpha 2
   **************
@@ -2481,6 +2675,7 @@
         "gbak -se" (backup/restore via the service manager) didn't work
       Contributor(s):
         Dmitry Yemanov <yemanov at yandex.ru>
+
 
   **************
   * v2.0 Alpha 1
