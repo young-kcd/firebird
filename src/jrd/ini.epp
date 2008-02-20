@@ -776,7 +776,8 @@ void INI_init2()
 
 					// In ODS prior to 11.2 all varchar columns were actually
 					// two bytes shorter than defined in fields.h
-					if (ENCODE_ODS(major_version, minor_original) < ODS_11_2)
+					if (desc->dsc_dtype == dtype_varying &&
+						ENCODE_ODS(major_version, minor_original) < ODS_11_2)
 					{
 						desc->dsc_length -= sizeof(USHORT);
 					}
