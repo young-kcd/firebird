@@ -1935,7 +1935,7 @@ int API_ROUTINE gds__disable_subsystem(TEXT * subsystem)
  *	has been explicitly disabled, all are available.
  *
  **************************************/
-	return TRUE;
+	return FALSE;
 }
 
 
@@ -3551,7 +3551,7 @@ int API_ROUTINE gds__enable_subsystem(TEXT * subsystem)
  *	has been explicitly enabled, all are available.
  *
  **************************************/
-	return TRUE;
+	return FALSE;
 }
 
 
