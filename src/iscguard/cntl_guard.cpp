@@ -225,6 +225,7 @@ static void WINAPI control_thread( DWORD action)
 
 	switch (action) {
 	case SERVICE_CONTROL_STOP:
+	case SERVICE_CONTROL_SHUTDOWN:
 		report_status(SERVICE_STOP_PENDING, NO_ERROR, 1, 3000);
 		SetEvent(stop_event_handle);
 		return;
