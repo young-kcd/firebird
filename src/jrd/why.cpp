@@ -4444,16 +4444,6 @@ ISC_STATUS API_ROUTINE GDS_SEEK_BLOB(ISC_STATUS * user_status,
 		Blob* blob = translate<Blob>(blob_handle);
 		status.setPrimaryHandle(blob);
 
-/***
-if (blob->flags & HANDLE_BLOB_filter)
-    {
-    subsystem_exit();
-    BLF_close_blob (status, &blob->handle);
-    subsystem_enter();
-    }
-else
-***/
-
 		CALL(PROC_SEEK_BLOB, blob->implementation) (status,
 													&blob->handle,
 													mode,
