@@ -146,7 +146,6 @@
 #include "../jrd/intl.h"
 #include "../jrd/blr.h"
 #include "../jrd/constants.h"
-#include "../dsql/alld_proto.h"
 #include "../dsql/ddl_proto.h"
 #include "../dsql/errd_proto.h"
 #include "../dsql/hsh_proto.h"

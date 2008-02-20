@@ -35,7 +35,6 @@
 #define DSQL_DSQL_H
 
 #include "../jrd/common.h"
-#include "../dsql/all.h"
 #include "../common/classes/array.h"
 #include "../common/classes/GenericMap.h"
 #include "../common/classes/MetaName.h"
@@ -155,7 +154,7 @@ public:
 	class dsql_rel* dbb_relations;		//!< known relations in database
 	class dsql_prc*	dbb_procedures;		//!< known procedures in database
 	class dsql_udf*	dbb_functions;		//!< known functions in database
-	DsqlMemoryPool*	dbb_pool;			//!< The current pool for the dbb
+	MemoryPool*		dbb_pool;			//!< The current pool for the dbb
 	FB_API_HANDLE	dbb_database_handle;
 	FB_API_HANDLE	dbb_requests[irq_MAX];
 	dsql_str*		dbb_dfl_charset;
@@ -167,7 +166,7 @@ public:
 	USHORT			dbb_ods_version;	// major ODS version number
 	USHORT			dbb_minor_version;	// minor ODS version number
 
-	dsql_dbb(DsqlMemoryPool& p) : 
+	dsql_dbb(MemoryPool& p) : 
 		dbb_charsets_by_id(p, 16) 
 	{
 	}
@@ -198,7 +197,7 @@ enum dbb_flags_vals {
 class dsql_rel : public pool_alloc<dsql_type_dsql_rel>
 {
 public:
-	dsql_rel(DsqlMemoryPool& p)
+	dsql_rel(MemoryPool& p)
 		: rel_name(p),
 		  rel_owner(p)
 	{
@@ -227,7 +226,7 @@ enum rel_flags_vals {
 class dsql_fld : public pool_alloc<dsql_type_fld>
 {
 public:
-	dsql_fld(DsqlMemoryPool& p)
+	dsql_fld(MemoryPool& p)
 		: fld_type_of_name(p),
 		  fld_name(p),
 		  fld_source(p)
@@ -291,7 +290,7 @@ public:
 class dsql_prc : public pool_alloc<dsql_type_prc>
 {
 public:
-	dsql_prc(DsqlMemoryPool& p)
+	dsql_prc(MemoryPool& p)
 		: prc_name(p),
 		  prc_owner(p)
 	{
@@ -321,7 +320,7 @@ enum prc_flags_vals {
 class dsql_udf : public pool_alloc<dsql_type_udf>
 {
 public:
-	dsql_udf(DsqlMemoryPool& p)
+	dsql_udf(MemoryPool& p)
 		: udf_name(p)
 	{
 	}
@@ -444,7 +443,7 @@ public:
 	void	append_debug_info();
 	// end - member functions that should be private
 
-	dsql_req(DsqlMemoryPool& p) 
+	dsql_req(MemoryPool& p) 
 		: req_pool(p), 
 		req_main_context(p), 
 		req_context(&req_main_context), 
@@ -461,7 +460,7 @@ public:
 	dsql_req*	req_parent;		//!< Source request, if cursor update
 	dsql_req*	req_sibling;	//!< Next sibling request, if cursor update
 	dsql_req*	req_offspring;	//!< Cursor update requests
-	DsqlMemoryPool&	req_pool;
+	MemoryPool&	req_pool;
 	DsqlContextStack	req_main_context;
 	DsqlContextStack*	req_context;
     DsqlContextStack	req_union_context;	//!< Save contexts for views of unions
@@ -727,10 +726,10 @@ public:
 class tsql : public ThreadData
 {
 private:
-	DsqlMemoryPool*		tsql_default;
-	friend class Firebird::SubsystemContextPoolHolder <tsql, DsqlMemoryPool>;
+	MemoryPool* tsql_default;
+	friend class Firebird::SubsystemContextPoolHolder <tsql, MemoryPool>;
 
-	void setDefaultPool(DsqlMemoryPool* p)
+	void setDefaultPool(MemoryPool* p)
 	{
 		tsql_default = p;
 	}
@@ -750,15 +749,15 @@ public:
 		restoreSpecific();
 	}
 
-	ISC_STATUS*		tsql_status;
+	ISC_STATUS* tsql_status;
 
-	DsqlMemoryPool* getDefaultPool()
+	MemoryPool* getDefaultPool()
 	{
 		return tsql_default;
 	}
 };
 
-typedef Firebird::SubsystemContextPoolHolder <tsql, DsqlMemoryPool> 
+typedef Firebird::SubsystemContextPoolHolder <tsql, MemoryPool> 
 	DsqlContextPoolHolder;
 
 class DsqlCheckout

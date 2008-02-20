@@ -26,7 +26,6 @@
 #include "../dsql/dsql.h"
 #include "../jrd/ibase.h"
 #include "../jrd/gds_proto.h"
-#include "../dsql/alld_proto.h"
 #include "../dsql/errd_proto.h"
 #include "../dsql/hsh_proto.h"
 #include "../jrd/sch_proto.h"

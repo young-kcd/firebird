@@ -46,7 +46,6 @@
 #include "../jrd/intl.h"
 #include "../jrd/constants.h"
 #include "../jrd/align.h"
-#include "../dsql/alld_proto.h"
 #include "../dsql/errd_proto.h"
 #include "../dsql/hsh_proto.h"
 #include "../dsql/make_proto.h"

@@ -4883,7 +4883,7 @@ non_reserved_word :
  */
 
 
-void LEX_dsql_init (void)
+void LEX_dsql_init()
 {
 /**************************************
  *
@@ -4896,15 +4896,17 @@ void LEX_dsql_init (void)
  *	per session.
  *
  **************************************/
+	tsql* tdsql = DSQL_get_thread_data();
+
 	for (const TOK* token = KEYWORD_getTokens(); token->tok_string; ++token)
 	{
-		DSQL_SYM symbol = FB_NEW_RPT(*DSQL_permanent_pool, 0) dsql_sym;
+		DSQL_SYM symbol = FB_NEW_RPT(*tdsql->getDefaultPool(), 0) dsql_sym;
 		symbol->sym_string = (TEXT *) token->tok_string;
 		symbol->sym_length = strlen(token->tok_string);
 		symbol->sym_type = SYM_keyword;
 		symbol->sym_keyword = token->tok_ident;
 		symbol->sym_version = token->tok_version;
-		dsql_str* str = FB_NEW_RPT(*DSQL_permanent_pool, symbol->sym_length) dsql_str;
+		dsql_str* str = FB_NEW_RPT(*tdsql->getDefaultPool(), symbol->sym_length) dsql_str;
 		str->str_length = symbol->sym_length;
 		strncpy((char*)str->str_data, (char*)symbol->sym_string, symbol->sym_length);
 		symbol->sym_object = (void *) str;

@@ -72,7 +72,6 @@ nested FOR loops are added.
 #include "../jrd/intl.h"
 #include "../jrd/iberr.h"
 #include "../dsql/Parser.h"
-#include "../dsql/alld_proto.h"
 #include "../dsql/ddl_proto.h"
 #include "../dsql/dsql_proto.h"
 #include "../dsql/errd_proto.h"
@@ -135,7 +134,7 @@ namespace
 	class DsqlDatabaseContextHolder : public DsqlContextPoolHolder
 	{
 	public:
-		DsqlDatabaseContextHolder(dsql_dbb* dbb, tsql* tdsql, DsqlMemoryPool* pool)
+		DsqlDatabaseContextHolder(dsql_dbb* dbb, tsql* tdsql, MemoryPool* pool)
 			: DsqlContextPoolHolder(tdsql, pool),
 			  sync(dbb)
 		{
@@ -152,15 +151,17 @@ namespace
 
 	dsql_dbb* databases = NULL;
 	dsql_opn* open_cursors = NULL;
+	MemoryPool* permanent_pool = NULL;
+	Firebird::GlobalPtr<Firebird::Array<MemoryPool*>> pools;
+	Firebird::GlobalPtr<Firebird::Mutex> pools_mutex;
 
 	class DsqlGlobals
 	{
 	public:
 		static void init()
 		{
-			ALLD_init();
-			
-			DsqlContextPoolHolder context(DSQL_get_thread_data(), DSQL_permanent_pool);
+			permanent_pool = MemoryPool::createPool();
+			DsqlContextPoolHolder context(DSQL_get_thread_data(), permanent_pool);
 
 			HSHD_init();
 			LEX_dsql_init();
@@ -172,8 +173,36 @@ namespace
 		{
 			databases = NULL;
 			open_cursors = NULL;
+
 			HSHD_fini();
-			ALLD_fini();
+
+			while (pools->getCount())
+			{
+				MemoryPool::deletePool(pools->pop());
+			}
+
+			MemoryPool::deletePool(permanent_pool);
+			permanent_pool = NULL;
+		}
+
+		static MemoryPool* createPool()
+		{
+			Firebird::MutexLockGuard guard(pools_mutex);
+			MemoryPool* const pool = MemoryPool::createPool();
+			pools->add(pool);
+			return pool;
+		}
+
+		static void deletePool(MemoryPool* pool)
+		{
+			Firebird::MutexLockGuard guard(pools_mutex);
+			MemoryPool::deletePool(pool);
+
+			size_t pos;
+			if (pools->find(pool, pos))
+			{
+				pools->remove(pos);
+			}
 		}
 	};
 
@@ -487,7 +516,7 @@ GDS_DSQL_ALLOCATE_CPP(	ISC_STATUS*    user_status,
 	try
 	{
 		dsql_dbb* database = init(db_handle);
-		DsqlDatabaseContextHolder context(database, tdsql, DsqlMemoryPool::createPool());
+		DsqlDatabaseContextHolder context(database, tdsql, DsqlGlobals::createPool());
 
 		// allocate the request block 
 
@@ -627,7 +656,7 @@ ISC_STATUS	GDS_DSQL_EXECUTE_CPP(
 				((request->
 			  	req_type == REQ_EMBED_SELECT) ? REQ_embedded_sql_cursor : 0);
 
-			dsql_opn* open_cursor = FB_NEW(*DSQL_permanent_pool) dsql_opn;
+			dsql_opn* open_cursor = FB_NEW(*permanent_pool) dsql_opn;
 			request->req_open_cursor = open_cursor;
 			open_cursor->opn_request = request;
 			open_cursor->opn_transaction = *trans_handle;
@@ -693,7 +722,7 @@ static ISC_STATUS dsql8_execute_immediate_common(ISC_STATUS*	user_status,
 	{
 		dsql_dbb* database = init(db_handle);
 
-		DsqlDatabaseContextHolder context(database, tdsql, DsqlMemoryPool::createPool());
+		DsqlDatabaseContextHolder context(database, tdsql, DsqlGlobals::createPool());
 
 		// allocate the request block, then prepare the request 
 
@@ -1395,7 +1424,7 @@ ISC_STATUS GDS_DSQL_PREPARE_CPP(ISC_STATUS*			user_status,
 		               0);
 		}
 
-		DsqlDatabaseContextHolder context(database, tdsql, DsqlMemoryPool::createPool());
+		DsqlDatabaseContextHolder context(database, tdsql, DsqlGlobals::createPool());
 
 		// check to see if old request has an open cursor 
 
@@ -2845,7 +2874,7 @@ static void cleanup_database(FB_API_HANDLE* db_handle, void* flag)
 */
 	if (dbb) {
 		HSHD_finish(dbb);
-		DsqlMemoryPool::deletePool(dbb->dbb_pool);
+		DsqlGlobals::deletePool(dbb->dbb_pool);
 	}
 
 	if (!databases) {
@@ -4107,7 +4136,7 @@ static dsql_dbb* init(FB_API_HANDLE* db_handle)
 				return database;
 		}
 
-		DsqlMemoryPool* pool = DsqlMemoryPool::createPool();
+		MemoryPool* pool = DsqlGlobals::createPool();
 		database = FB_NEW(*pool) dsql_dbb(*pool);
 		database->dbb_pool = pool;
 		database->dbb_next = databases;
@@ -4632,33 +4661,8 @@ static dsql_req* prepare(
 
 // Generate BLR, DDL or TPB for request 
 
-#ifdef NOT_USED_OR_REPLACED
-
-	//What's a reason not to bloat request_pool?
-	//It was made to keep data local for that request...
-
-	if (request->req_type == REQ_START_TRANS ||
-		request->req_type == REQ_DDL ||
-		request->req_type == REQ_EXEC_PROCEDURE)
-	{
-		// Allocate persistent blr string from request's pool. 
-
-		request->req_blr_string = FB_NEW_RPT(*tdsql->getDefaultPool(), 980) dsql_str;
-	}
-	else {
-		/* Allocate transient blr string from permanent pool so
-		   as not to unnecessarily bloat the request's pool. */
-
-		request->req_blr_string = FB_NEW_RPT(*DSQL_permanent_pool, 980) dsql_str;
-	}
-	request->req_blr_string->str_length = 980;
-	request->req_blr = request->req_blr_string->str_data;
-	request->req_blr_yellow =
-		request->req_blr + request->req_blr_string->str_length;
-#endif
-
-/* Start transactions takes parameters via a parameter block.
-   The request blr string is used for that. */
+// Start transactions takes parameters via a parameter block.
+// The request blr string is used for that
 
 	if (request->req_type == REQ_START_TRANS) {
 		GEN_start_transaction(request, node);
@@ -4871,7 +4875,7 @@ static void release_request(dsql_req* request, bool drop)
 	// Release the entire request if explicitly asked for
 
 	if (drop)
-		DsqlMemoryPool::deletePool(&request->req_pool);
+		DsqlGlobals::deletePool(&request->req_pool);
 }
 
 

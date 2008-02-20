@@ -78,7 +78,6 @@
 #include "../jrd/intl.h"
 #include "../jrd/flags.h"
 #include "../jrd/constants.h"
-#include "../dsql/alld_proto.h"
 #include "../dsql/errd_proto.h"
 #include "../dsql/ddl_proto.h"
 #include "../dsql/gen_proto.h"
@@ -6637,8 +6636,8 @@ static void save_field(dsql_req* request, const TEXT* field_name)
 		return;
 	}
 
-	DsqlMemoryPool* p = relation->rel_flags & REL_new_relation ?
-				tdsql->getDefaultPool() : request->req_dbb->dbb_pool;
+	MemoryPool* p = relation->rel_flags & REL_new_relation ?
+		tdsql->getDefaultPool() : request->req_dbb->dbb_pool;
 	dsql_fld* field = FB_NEW(*p) dsql_fld(*p);
 	field->fld_name = field_name;
 	field->fld_next = relation->rel_fields;

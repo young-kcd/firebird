@@ -38,7 +38,6 @@
 #include "../jrd/ibase.h"
 #include "../jrd/align.h"
 #include "../jrd/intl.h"
-#include "../dsql/alld_proto.h"
 #include "../dsql/ddl_proto.h"
 #include "../dsql/metd_proto.h"
 #include "../dsql/hsh_proto.h"
@@ -1475,7 +1474,7 @@ dsql_rel* METD_get_relation(dsql_req* request, const dsql_str* name)
 
 	// Now see if it is in the database 
 
-	DsqlMemoryPool& pool =
+	MemoryPool& pool =
 		permanent ? *dbb->dbb_pool : *tdsql->getDefaultPool();
 
 	dsql_rel* relation = NULL;

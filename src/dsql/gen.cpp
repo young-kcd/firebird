@@ -42,7 +42,6 @@
 #include "../jrd/constants.h"
 #include "../jrd/intl.h"
 #include "../jrd/val.h"
-#include "../dsql/alld_proto.h"
 #include "../dsql/ddl_proto.h"
 #include "../dsql/errd_proto.h"
 #include "../dsql/gen_proto.h"
