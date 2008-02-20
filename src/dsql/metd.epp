@@ -102,26 +102,18 @@ static dsql_sym* lookup_symbol(dsql_dbb*, USHORT, const char*, SYM_TYPE, USHORT 
 static dsql_sym* lookup_symbol(dsql_dbb*, const dsql_str*, SYM_TYPE, USHORT = 0);
 
 namespace {
-#ifdef  SUPERSERVER
-	Firebird::GlobalPtr<Firebird::Mutex> rec_mutex;	// Metadata mutex 
+	Firebird::GlobalPtr<Firebird::Mutex> mutex;	// Metadata mutex 
 
-	class RecMutexHolder {
+	class MutexHolder {
 	public:
-		explicit RecMutexHolder(dsql_req* request) {
+		explicit MutexHolder(dsql_req* request) {
 			DsqlCheckout dcoHolder(request->req_dbb);
-			rec_mutex->enter();
+			mutex->enter();
 		}
-		~RecMutexHolder() {
-		    rec_mutex->leave();
+		~MutexHolder() {
+		    mutex->leave();
 		}
 	};
-#else
-	class RecMutexHolder {
-	public:
-		explicit RecMutexHolder(dsql_req* request) { }
-		~RecMutexHolder() { }
-	};
-#endif
 }
 
 
@@ -143,7 +135,7 @@ void METD_drop_collation(dsql_req* request, const dsql_str* name)
  *	accessing it.
  *
  **************************************/
-	RecMutexHolder holder(request);
+	MutexHolder holder(request);
 
 	// If the symbol wasn't defined, we've got nothing to do 
 	dsql_sym* symbol = lookup_symbol(request->req_dbb, name, SYM_intlsym_collation, 0);
@@ -179,7 +171,7 @@ void METD_drop_function(dsql_req* request, const dsql_str* name)
  *	accessing it.
  *
  **************************************/
-	RecMutexHolder holder(request);
+	MutexHolder holder(request);
 
     // If the symbol wasn't defined, we've got nothing to do 
     
@@ -217,7 +209,7 @@ void METD_drop_procedure(dsql_req* request, const dsql_str* name)
  *	accessing it.
  *
  **************************************/
-	RecMutexHolder holder(request);
+	MutexHolder holder(request);
 
 	// If the symbol wasn't defined, we've got nothing to do 
 
@@ -254,7 +246,7 @@ void METD_drop_relation(dsql_req* request, const dsql_str* name)
  *      accessing it.
  *
  **************************************/
-	RecMutexHolder holder(request);
+	MutexHolder holder(request);
 
 	// If the symbol wasn't defined, we've got nothing to do 
 
@@ -288,7 +280,7 @@ dsql_intlsym* METD_get_collation(dsql_req* request,
  *	If it doesn't exist, return NULL.
  *
  **************************************/
-	RecMutexHolder holder(request);
+	MutexHolder holder(request);
 
 	// Start by seeing if symbol is already defined 
 
@@ -493,7 +485,7 @@ dsql_intlsym* METD_get_charset(dsql_req* request, USHORT length, const char* nam
  *	If it doesn't exist, return NULL.
  *
  **************************************/
-	RecMutexHolder holder(request);
+	MutexHolder holder(request);
 
 	// Start by seeing if symbol is already defined 
 
@@ -945,7 +937,7 @@ dsql_udf* METD_get_function(dsql_req* request, const dsql_str* name)
 	dsql_nod* udf_param_node;
 	dsql_nod** ptr;
 
-	RecMutexHolder holder(request);
+	MutexHolder holder(request);
 
 	// Start by seeing if symbol is already defined 
 
@@ -1217,7 +1209,7 @@ dsql_prc* METD_get_procedure(dsql_req* request, const dsql_str* name)
 		return temp;
 	}
 
-	RecMutexHolder holder(request);
+	MutexHolder holder(request);
 
 	// Start by seeing if symbol is already defined 
 
@@ -1435,7 +1427,7 @@ dsql_rel* METD_get_relation(dsql_req* request, const dsql_str* name)
 
 	tsql* tdsql = DSQL_get_thread_data();
 
-	RecMutexHolder holder(request);
+	MutexHolder holder(request);
 
 	// Start by seeing if symbol is already defined 
 
