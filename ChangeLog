@@ -1,3 +1,35 @@
+2008-02-21 14:19  robocop
+
+	* firebird2/src/common/classes/ClumpletWriter.cpp (1.22):
+
+	Misc.
+
+2008-02-21 14:11  robocop
+
+	* firebird2/src/: dsql/dsql.h (1.118), isql/isql.epp (1.229),
+	jrd/ini.epp (1.96), jrd/why.cpp (1.152):
+
+	Misc.
+
+2008-02-21 05:24  robocop
+
+	* firebird2/src/: jrd/jrd.cpp (1.393), jrd/jrd_proto.h (1.55),
+	jrd/svc.cpp (1.208), remote/os/win32/cntl.cpp (1.30),
+	remote/os/win32/property.cpp (1.20), remote/os/win32/window.cpp
+	(1.23):
+
+	Undo the check for 255 bytes in JRD_num_attachments (let the
+	callers handle long paths).  Fix some memory leaks (at least one of
+	them signaled by myself years ago) when calling
+	JRD_num_attachments.  Introduce an enumeration for the "flag"
+	parameter in the same function.
+
+2008-02-20 21:49  dimitr
+
+	* firebird2/src/jrd/: why.cpp (1.151), y_handle.h (1.28):
+
+	More cleanup.
+
 2008-02-20 18:57  dimitr
 
 	* firebird2/src/jrd/why.cpp (1.150):
