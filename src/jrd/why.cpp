@@ -877,9 +877,9 @@ extern "C" {
 static ISC_STATUS no_entrypoint(ISC_STATUS * user_status, ...);
 
 #ifdef SUPERCLIENT
-#define ENTRYPOINT(cur,rem)	ISC_STATUS rem(ISC_STATUS * user_status, ...);
+#define ENTRYPOINT(cur, rem)	ISC_STATUS rem(ISC_STATUS* user_status, ...);
 #else
-#define ENTRYPOINT(cur,rem)	ISC_STATUS rem(ISC_STATUS * user_status, ...), cur(ISC_STATUS * user_status, ...);
+#define ENTRYPOINT(cur, rem)	ISC_STATUS rem(ISC_STATUS* user_status, ...), cur(ISC_STATUS* user_status, ...);
 #endif
 
 #include "../jrd/entry.h"
@@ -888,11 +888,11 @@ static ISC_STATUS no_entrypoint(ISC_STATUS * user_status, ...);
 
 static PTR entrypoints[PROC_count * SUBSYSTEMS] =
 {
-#define ENTRYPOINT(cur,rem)	rem,
+#define ENTRYPOINT(cur, rem)	rem,
 #include "../jrd/entry.h"
 
 #if !defined(SUPERCLIENT)
-#define ENTRYPOINT(cur,rem)	cur,
+#define ENTRYPOINT(cur, rem)	cur,
 #include "../jrd/entry.h"
 #endif
 };

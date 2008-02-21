@@ -604,7 +604,10 @@ void INI_init()
 			const gfld* gfield = &gfields[fld[RFLD_F_ID]];
 			desc->dsc_length = gfield->gfld_length;
 			if (gfield->gfld_dtype == dtype_varying)
+			{
+				fb_assert(desc->dsc_length <= MAX_USHORT - sizeof(USHORT));
 				desc->dsc_length += sizeof(USHORT);
+			}
 			desc->dsc_dtype = gfield->gfld_dtype;
 			desc->dsc_sub_type = gfield->gfld_sub_type;
 			if (desc->dsc_dtype == dtype_blob && desc->dsc_sub_type == isc_blob_text)

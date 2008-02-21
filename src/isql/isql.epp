@@ -8230,7 +8230,7 @@ static int process_statement(const TEXT* string,
 
 		if (statement_type == isc_info_sql_stmt_start_trans) {
 			// CVC: Starting a txn can fail, too. Let's check it, although I
-			// suspect isql will catch it in frontend() through get_statement(),
+			// suspect isql will catch it in frontend_set() through get_statement(),
 			// so this place has little chance to be reached.
 			if (newtrans(string) == FAIL)
 				return ps_ERR;

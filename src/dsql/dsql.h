@@ -166,7 +166,7 @@ public:
 	USHORT			dbb_ods_version;	// major ODS version number
 	USHORT			dbb_minor_version;	// minor ODS version number
 
-	dsql_dbb(MemoryPool& p) : 
+	explicit dsql_dbb(MemoryPool& p) : 
 		dbb_charsets_by_id(p, 16) 
 	{
 	}
@@ -197,7 +197,7 @@ enum dbb_flags_vals {
 class dsql_rel : public pool_alloc<dsql_type_dsql_rel>
 {
 public:
-	dsql_rel(MemoryPool& p)
+	explicit dsql_rel(MemoryPool& p)
 		: rel_name(p),
 		  rel_owner(p)
 	{
@@ -226,7 +226,7 @@ enum rel_flags_vals {
 class dsql_fld : public pool_alloc<dsql_type_fld>
 {
 public:
-	dsql_fld(MemoryPool& p)
+	explicit dsql_fld(MemoryPool& p)
 		: fld_type_of_name(p),
 		  fld_name(p),
 		  fld_source(p)
@@ -290,7 +290,7 @@ public:
 class dsql_prc : public pool_alloc<dsql_type_prc>
 {
 public:
-	dsql_prc(MemoryPool& p)
+	explicit dsql_prc(MemoryPool& p)
 		: prc_name(p),
 		  prc_owner(p)
 	{
@@ -320,7 +320,7 @@ enum prc_flags_vals {
 class dsql_udf : public pool_alloc<dsql_type_udf>
 {
 public:
-	dsql_udf(MemoryPool& p)
+	explicit dsql_udf(MemoryPool& p)
 		: udf_name(p)
 	{
 	}
@@ -443,7 +443,7 @@ public:
 	void	append_debug_info();
 	// end - member functions that should be private
 
-	dsql_req(MemoryPool& p) 
+	explicit dsql_req(MemoryPool& p) 
 		: req_pool(p), 
 		req_main_context(p), 
 		req_context(&req_main_context), 
