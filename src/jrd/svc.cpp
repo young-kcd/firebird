@@ -822,10 +822,8 @@ ISC_STATUS Service::query2(thread_db* tdbb,
 				ULONG num_att = 0;
 
 				*info++ = item;
-				TEXT* const ptr =
-					JRD_num_attachments(reinterpret_cast<char*>(dbbuf),
-										sizeof(dbbuf), JRD_info_dbnames,
-										&num_att, &num_dbs);
+				UCHAR* const ptr =
+					JRD_num_attachments(dbbuf, sizeof(dbbuf), JRD_info_dbnames, &num_att, &num_dbs);
 				/* Move the number of attachments into the info buffer */
 				if (!ck_space_for_numeric(info, end))
 					return 0;
@@ -839,28 +837,27 @@ ISC_STATUS Service::query2(thread_db* tdbb,
 				ADD_SPB_NUMERIC(info, num_dbs);
 
 				/* Move db names into the info buffer */
-				TEXT* ptr2 = ptr;
+				const TEXT* ptr2 = reinterpret_cast<const TEXT*>(ptr);
 				if (ptr2) {
 					USHORT num = (USHORT) isc_vax_integer(ptr2, sizeof(USHORT));
 					fb_assert(num == num_dbs);
 					ptr2 += sizeof(USHORT);
 					for (; num; num--) {
-						length =
-							(USHORT) isc_vax_integer(ptr2, sizeof(USHORT));
+						length = (USHORT) isc_vax_integer(ptr2, sizeof(USHORT));
 						ptr2 += sizeof(USHORT);
 						if (!
 							(info =
 							 INF_put_item(isc_spb_dbname, length, ptr2, info,
 										  end)))
 						{
-							// CVC: Shouldn't this place try to free ptr
-							// if it's different than dbbuf, too?
+							if (ptr != dbbuf)
+								gds__free(ptr);	// memory has been allocated by JRD_num_attachments()
 							return 0;
 						}
 						ptr2 += length;
 					}
 
-					if (ptr != reinterpret_cast<TEXT*>(dbbuf))
+					if (ptr != dbbuf)
 						gds__free(ptr);	// memory has been allocated by JRD_num_attachments()
 				}
 
@@ -1241,7 +1238,7 @@ void Service::query(USHORT			send_item_length,
 			{
 				ULONG num_att = 0;
 				ULONG num_dbs = 0;
-				JRD_num_attachments(NULL, 0, 0, &num_att, &num_dbs);
+				JRD_num_attachments(NULL, 0, JRD_info_none, &num_att, &num_dbs);
 				length = INF_convert(num_att, buffer);
 				info = INF_put_item(item,
 									length,

@@ -327,7 +327,7 @@ static void RefreshUserCount(HWND hDlg)
 	ULONG num_dbs = 0;
 	HCURSOR hOldCursor = SetCursor(LoadCursor(NULL, IDC_WAIT));
 
-	JRD_num_attachments(NULL, 0, 0, &num_att, &num_dbs);
+	JRD_num_attachments(NULL, 0, JRD_info_none, &num_att, &num_dbs);
 
 	char szText[MSG_STRINGLEN];
 	sprintf(szText, "%d", num_att);

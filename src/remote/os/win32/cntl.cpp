@@ -295,12 +295,13 @@ static THREAD_ENTRY_DECLARE cleanup_thread(THREAD_ENTRY_PARAM)
  *
  **************************************/
 	ULONG attach_count, database_count;
-	TEXT return_buffer[ERROR_BUFFER_LENGTH], *buff_ptr = return_buffer;
+	UCHAR return_buffer[ERROR_BUFFER_LENGTH];
 
 // find out if we have any attachments 
 // if we do then log a message to the log file
-	JRD_num_attachments(return_buffer, ERROR_BUFFER_LENGTH, JRD_info_dbnames,
-						&attach_count, &database_count);
+	UCHAR* const new_ptr =
+		JRD_num_attachments(return_buffer, ERROR_BUFFER_LENGTH, JRD_info_dbnames,
+							&attach_count, &database_count);
 
 // if we have active attachments then log messages
 	if (attach_count > 0) {
@@ -312,21 +313,29 @@ static THREAD_ENTRY_DECLARE cleanup_thread(THREAD_ENTRY_PARAM)
 
 		TEXT out_message[ERROR_BUFFER_LENGTH + 100];
 		// just get the ushort value and increment it by a ushort length
-		const USHORT num_databases = * (USHORT *) buff_ptr;
-		buff_ptr += sizeof(USHORT);
-		for (USHORT i = 0; i < num_databases; i++) {
-			const USHORT database_name_length = * (USHORT *) buff_ptr;
+		const UCHAR* buff_ptr(new_ptr);
+		if (buff_ptr)
+		{
+			const USHORT num_databases = *(USHORT*) buff_ptr;
 			buff_ptr += sizeof(USHORT);
-			print_ptr = print_buffer;
-			for (USHORT j = 0; j < database_name_length; j++)
-				*print_ptr++ = *buff_ptr++;
-			*print_ptr = '\0';
-			sprintf(out_message,
-					"The database %s was being accessed when the server was shutdown",
-					print_buffer);
-			gds__log(out_message);
+			for (USHORT i = 0; i < num_databases; i++) {
+				const USHORT database_name_length = *(USHORT*) buff_ptr;
+				fb_assert(database_name_length < ERROR_BUFFER_LENGTH);
+				buff_ptr += sizeof(USHORT);
+				print_ptr = print_buffer;
+				for (USHORT j = 0; j < database_name_length; j++)
+					*print_ptr++ = *buff_ptr++;
+				*print_ptr = '\0';
+				sprintf(out_message,
+						"The database %s was being accessed when the server was shutdown",
+						print_buffer);
+				gds__log(out_message);
+			}
 		}
 	}
+
+	if (new_ptr != return_buffer)
+		gds__free(new_ptr);
 
 	JRD_shutdown_all(false);
 	SRVR_shutdown();

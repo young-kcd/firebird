@@ -5452,7 +5452,7 @@ static bool shutdown_all()
 }
 
 
-TEXT* JRD_num_attachments(TEXT* const buf, USHORT buf_len, USHORT flag,
+UCHAR* JRD_num_attachments(UCHAR* const buf, USHORT buf_len, JRD_info_tag flag,
 						  ULONG* atts, ULONG* dbs)
 {
 /**************************************
@@ -5473,7 +5473,7 @@ TEXT* JRD_num_attachments(TEXT* const buf, USHORT buf_len, USHORT flag,
 
 	// protect against NULL value for buf
 
-	TEXT* lbuf = buf;
+	UCHAR* lbuf = buf;
 	if (!lbuf)
 		buf_len = 0;
 
@@ -5483,9 +5483,9 @@ TEXT* JRD_num_attachments(TEXT* const buf, USHORT buf_len, USHORT flag,
 
 	if (flag == JRD_info_drivemask) {
 		if (buf_len < sizeof(ULONG)) {
-		    lbuf = (TEXT*) gds__alloc((SLONG) (sizeof(ULONG)));
+		    lbuf = (UCHAR*) gds__alloc((SLONG) (sizeof(ULONG)));
 			if (!lbuf)
-				flag = 0;
+				flag = JRD_info_none;
 		}
 	}
 #endif
@@ -5524,7 +5524,7 @@ TEXT* JRD_num_attachments(TEXT* const buf, USHORT buf_len, USHORT flag,
 			{
 				if (!dbFiles.exist(dbb->dbb_filename))
 					dbFiles.add(dbb->dbb_filename);
-				total += sizeof(USHORT) + MIN(dbb->dbb_filename.length(), 255);
+				total += sizeof(USHORT) + dbb->dbb_filename.length();
 
 				for (const Attachment* attach = dbb->dbb_attachments; attach;
 					attach = attach->att_next)
@@ -5565,9 +5565,9 @@ TEXT* JRD_num_attachments(TEXT* const buf, USHORT buf_len, USHORT flag,
 		{
 			if (buf_len < (sizeof(USHORT) + total))
 			{
-				lbuf = (TEXT *) gds__alloc(sizeof(USHORT) + total);
+				lbuf = (UCHAR*) gds__alloc(sizeof(USHORT) + total);
 			}
-			TEXT* lbufp = lbuf;
+			UCHAR* lbufp = lbuf;
 			if (lbufp)
 			{
 				/*  Put db info into buffer. Format is as follows:
@@ -5583,13 +5583,13 @@ TEXT* JRD_num_attachments(TEXT* const buf, USHORT buf_len, USHORT flag,
 				 */
 
 				 fb_assert(num_dbs < MAX_USHORT);
-				*lbufp++ = (TEXT) num_dbs;
-				*lbufp++ = (TEXT) (num_dbs >> 8);
+				*lbufp++ = (UCHAR) num_dbs;
+				*lbufp++ = (UCHAR) (num_dbs >> 8);
 
 				for (size_t n = 0; n < num_dbs; ++n) {
-					const USHORT dblen = MIN(dbFiles[n].length(), 255);
-					*lbufp++ = (TEXT) dblen;
-					*lbufp++ = (TEXT) (dblen >> 8);
+					const USHORT dblen = dbFiles[n].length();
+					*lbufp++ = (UCHAR) dblen;
+					*lbufp++ = (UCHAR) (dblen >> 8);
 					memcpy(lbufp, dbFiles[n].c_str(), dblen);
 					lbufp += dblen;
 				}
@@ -5602,9 +5602,9 @@ TEXT* JRD_num_attachments(TEXT* const buf, USHORT buf_len, USHORT flag,
 		*(ULONG *) lbuf = drive_mask;
 #endif
 
-// CVC: Apparently, the original condition will leak memory, because flag
-// may be JRD_info_drivemask and memory could be allocated for that purpose,
-// as few as sizeof(ULONG), but a leak is a leak! I added the ifdef below.
+	// CVC: Apparently, the original condition will leak memory, because flag
+	// may be JRD_info_drivemask and memory could be allocated for that purpose,
+	// as few as sizeof(ULONG), but a leak is a leak! I added the ifdef below.
 	if (num_dbs == 0)
 	{
 #ifdef WIN_NT

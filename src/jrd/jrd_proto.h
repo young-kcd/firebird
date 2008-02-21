@@ -147,11 +147,15 @@ ISC_STATUS jrd8_unwind_request(ISC_STATUS *, Jrd::jrd_req**, SSHORT);
 
 void jrd_vtof(const char*, char*, SSHORT);
 
-// Defines for paramater 3 of JRD_num_attachments
-const USHORT JRD_info_drivemask	= 1;
-const USHORT JRD_info_dbnames	= 2;
+// Defines for parameter 3 of JRD_num_attachments
+enum JRD_info_tag
+{
+	JRD_info_none,
+	JRD_info_drivemask,
+	JRD_info_dbnames
+};
 
-TEXT*	JRD_num_attachments(TEXT* const, USHORT, USHORT, ULONG*, ULONG*);
+UCHAR*	JRD_num_attachments(UCHAR* const, USHORT, JRD_info_tag, ULONG*, ULONG*);
 void	JRD_shutdown_all(bool);
 void	JRD_shutdown_attachment(Jrd::Attachment**, Jrd::Attachment**);
 

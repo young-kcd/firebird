@@ -398,7 +398,7 @@ LRESULT CALLBACK WindowFunc(HWND hWnd,
 
 	case WM_DEVICECHANGE:
 		pdbcv = (PDEV_BROADCAST_VOLUME) lParam;
-		JRD_num_attachments(reinterpret_cast<char*>(&ulInUseMask),
+		JRD_num_attachments(reinterpret_cast<UCHAR*>(&ulInUseMask),
 							sizeof(ULONG), JRD_info_drivemask, &num_att,
 							&num_dbs);
 
@@ -553,7 +553,7 @@ BOOL CanEndServer(HWND hWnd, bool bSysExit)
  *****************************************************************************/
 	ULONG usNumAtt;
 	ULONG usNumDbs;
-	JRD_num_attachments(NULL, 0, 0, &usNumAtt, &usNumDbs);
+	JRD_num_attachments(NULL, 0, JRD_info_none, &usNumAtt, &usNumDbs);
 
 	char szMsgString[MSG_STRINGLEN];
 	sprintf(szMsgString, "%u ", usNumAtt);
