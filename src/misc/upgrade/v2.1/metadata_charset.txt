@@ -14,7 +14,7 @@ You should better connect each time in the database to do each pass.
 Creating the procedures in the database
 ---------------------------------------
  - 1. isql database.fdb
- - 2. SQL> input 'misc/upgrade/metadata_charset_create.sql';
+ - 2. SQL> input 'misc/upgrade/metadata/metadata_charset_create.sql';
 
 Checking your database
 ----------------------
@@ -33,7 +33,7 @@ The upgrade script will work correctly only if all your metadata was created usi
 Fixing the metadata
 -------------------
  - 1. isql database.fdb
- - 2. SQL> input 'misc/upgrade/metadata_charset_create.sql';
+ - 2. SQL> input 'misc/upgrade/metadata/metadata_charset_create.sql';
  - 3. SQL> select * from rdb$fix_metadata('WIN1252');  -- replace WIN1252 by your charset
  - 4. SQL> commit;
 
@@ -44,4 +44,4 @@ After this, you can remove the upgrade procedures.
 Removing the upgrade procedures
 -------------------------------
  - 1. isql database.fdb
- - 2. SQL> input 'misc/upgrade/metadata_charset_drop.sql';
+ - 2. SQL> input 'misc/upgrade/metadata/metadata_charset_drop.sql';
