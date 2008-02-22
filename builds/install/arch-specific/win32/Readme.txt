@@ -8,7 +8,6 @@ o Introduction
 o Intended Users
 o Known Issues
 o Features in this release (all platforms)
-o Bugs fixed in this release
 o Installation
 o Reporting Bugs
 

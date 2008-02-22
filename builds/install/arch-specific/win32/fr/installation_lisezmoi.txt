@@ -104,7 +104,7 @@ o Si Firebird est exécuté comme application (et non
   Vous devrez alors supprimer les fichiers restant
   manuellement.
 
-o La desintalltion laisse quatre fichiers dans le
+o La desinstallation laisse quatre fichiers dans le
   répertoire d'installation:
 
   - aliases.conf
