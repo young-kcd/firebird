@@ -258,7 +258,7 @@ SetupLogging=yes
 [Languages]
 Name: en; MessagesFile: compiler:Default.isl; InfoBeforeFile: {#ScriptsDir}\installation_readme.txt; InfoAfterFile: {#ScriptsDir}\readme.txt;
 #ifdef i18n
-Name: ba; MessagesFile: compiler:Languages\Bosnian.isl; InfoBeforeFile: {#ScriptsDir}\ba\Instalacija_ProcitajMe.txt; InfoAfterFile: {#ScriptsDir}\ba\ProcitajMe.txt;
+;Name: ba; MessagesFile: compiler:Languages\Bosnian.isl; InfoBeforeFile: {#ScriptsDir}\ba\Instalacija_ProcitajMe.txt; InfoAfterFile: {#ScriptsDir}\ba\ProcitajMe.txt;
 Name: fr; MessagesFile: compiler:Languages\French.isl; InfoBeforeFile: {#ScriptsDir}\fr\installation_lisezmoi.txt; InfoAfterFile: {#ScriptsDir}\fr\lisezmoi.txt;
 Name: de; MessagesFile: compiler:Languages\German.isl; InfoBeforeFile: {#ScriptsDir}\de\installation_liesmich.txt; InfoAfterFile: {#ScriptsDir}\de\liesmich.txt;
 Name: es; MessagesFile: compiler:Languages\Spanish.isl; InfoBeforeFile: {#ScriptsDir}\es\leame_instalacion.txt; InfoAfterFile: {#ScriptsDir}\es\leame.txt;
@@ -267,13 +267,13 @@ Name: it; MessagesFile: compiler:Languages\Italian.isl; InfoBeforeFile: {#Script
 Name: pl; MessagesFile: compiler:Languages\Polish.isl; InfoBeforeFile: {#ScriptsDir}\pl\instalacja_czytajto.txt; InfoAfterFile: {#ScriptsDir}\pl\czytajto.txt;
 Name: pt; MessagesFile: compiler:Languages\Portuguese.isl; InfoBeforeFile: {#ScriptsDir}\pt\instalacao_leia-me.txt; InfoAfterFile: {#ScriptsDir}\pt\leia-me.txt
 Name: ru; MessagesFile: compiler:Languages\Russian.isl; InfoBeforeFile: {#ScriptsDir}\ru\installation_readme.txt; InfoAfterFile: {#ScriptsDir}\ru\readme.txt;
-Name: si; MessagesFile: compiler:Languages\Slovenian.isl; InfoBeforeFile: {#ScriptsDir}\si\instalacija_precitajMe.txt; InfoAfterFile: {#ScriptsDir}\readme.txt;
+;Name: si; MessagesFile: compiler:Languages\Slovenian.isl; InfoBeforeFile: {#ScriptsDir}\si\instalacija_precitajMe.txt; InfoAfterFile: {#ScriptsDir}\readme.txt;
 #endif
 
 [Messages]
 en.BeveledLabel=English
 #ifdef i18n
-ba.BeveledLabel=Bosanski
+;ba.BeveledLabel=Bosanski
 fr.BeveledLabel=Français
 de.BeveledLabel=Deutsch
 es.BeveledLabel=Español
@@ -282,13 +282,13 @@ it.BeveledLabel=Italiano
 pl.BeveledLabel=Polski
 pt.BeveledLabel=Português
 ru.BeveledLabel=Ðóññêèé
-si.BeveledLabel=Slovenski
+;si.BeveledLabel=Slovenski
 #endif
 
 [CustomMessages]
 #include "custom_messages.inc"
 #ifdef i18n
-#include "ba\custom_messages_ba.inc"
+;#include "ba\custom_messages_ba.inc"
 #include "fr\custom_messages_fr.inc"
 #include "de\custom_messages_de.inc"
 #include "es\custom_messages_es.inc"
@@ -297,7 +297,7 @@ si.BeveledLabel=Slovenski
 #include "pl\custom_messages_pl.inc"
 #include "pt\custom_messages_pt.inc"
 #include "ru\custom_messages_ru.inc"
-#include "si\custom_messages_si.inc"
+;#include "si\custom_messages_si.inc"
 #endif
 
 #ifdef iss_debug
@@ -391,7 +391,6 @@ Name: {group}\Firebird ISQL Tool; Filename: {app}\bin\isql.exe; WorkingDir: {app
 Name: {group}\Firebird {#FB21_cur_ver} Release Notes; Filename: {app}\doc\Firebird_v{#FB21_cur_ver}.ReleaseNotes.pdf; MinVersion: 4.0,4.0; Comment: {#MyAppName} {cm:ReleaseNotes}
 Name: {group}\Firebird {#FB21_cur_ver} Installation Guide; Filename: {app}\doc\Firebird_v{#FB21_cur_ver}.InstallationGuide.pdf; MinVersion: 4.0,4.0; Comment: {#MyAppName} {cm:InstallationGuide}
 Name: {group}\Firebird {#FB21_cur_ver} Bug Fixes; Filename: {app}\doc\Firebird_v{#FB21_cur_ver}.BugFixes.pdf; MinVersion: 4.0,4.0; Comment: {#MyAppName} {cm:BugFixes}
-Name: {group}\Firebird {#FB20_cur_ver} Release Notes; Filename: {app}\doc\Firebird_v{#FB20_cur_ver}.ReleaseNotes.pdf; MinVersion: 4.0,4.0; Comment: {#MyAppName} {cm:ReleaseNotes}
 Name: {group}\Firebird {#FB15_cur_ver} Release Notes; Filename: {app}\doc\Firebird_v{#FB15_cur_ver}.ReleaseNotes.pdf; MinVersion: 4.0,4.0; Comment: {#MyAppName} {cm:ReleaseNotes}
 Name: {group}\Firebird 2.0 Quick Start Guide; Filename: {app}\doc\Firebird-2.0-QuickStart.pdf; MinVersion: 4.0,4.0; Comment: {#MyAppName}
 Name: "{group}\After Installation"; Filename: "{app}\doc\After_Installation.url"; Comment: "New User? Here's a quick guide to what you should do next."
@@ -414,7 +413,7 @@ Source: {#ScriptsDir}\firebirdsql.org.url; DestDir: {app}\doc; Components: Serve
 Source: {#ScriptsDir}\readme.txt; DestDir: {app}; Components: DevAdminComponent; Flags: ignoreversion;
 #ifdef i18n
 ;Translated files
-Source: {#ScriptsDir}\ba\*.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: ignoreversion; Languages: ba;
+;Source: {#ScriptsDir}\ba\*.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: ignoreversion; Languages: ba;
 Source: {#ScriptsDir}\fr\*.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: ignoreversion; Languages: fr;
 Source: {#ScriptsDir}\de\*.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: ignoreversion; Languages: de;
 Source: {#ScriptsDir}\es\*.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: ignoreversion; Languages: es;
@@ -422,8 +421,8 @@ Source: {#ScriptsDir}\hu\*.txt; DestDir: {app}\doc; Components: DevAdminComponen
 Source: {#ScriptsDir}\it\*.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: ignoreversion; Languages: it;
 Source: {#ScriptsDir}\pl\*.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: ignoreversion; Languages: pl;
 Source: {#ScriptsDir}\pt\*.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: ignoreversion; Languages: pt;
-;Source: {#ScriptsDir}\ru\*.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: ignoreversion; Languages: ru;
-Source: {#ScriptsDir}\si\*.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: ignoreversion; Languages: si;
+Source: {#ScriptsDir}\ru\*.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: ignoreversion; Languages: ru;
+;Source: {#ScriptsDir}\si\*.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: ignoreversion; Languages: si;
 #endif
 Source: {#FilesDir}\firebird.conf; DestDir: {app}; DestName: firebird.conf.default; Components: ServerComponent; check: FirebirdConfExists;
 Source: {#FilesDir}\firebird.conf; DestDir: {app}; DestName: firebird.conf; Components: ServerComponent; Flags: uninsneveruninstall; check: NoFirebirdConfExists
@@ -769,7 +768,7 @@ begin
   end
 
   CommandLine:=GetCmdTail;
-  
+
   if ((pos('HELP',Uppercase(CommandLine)) > 0) or
     (pos('/?',Uppercase(CommandLine)) > 0) or
     (pos('/H',Uppercase(CommandLine)) > 0) ) then begin
@@ -778,7 +777,7 @@ begin
     CloseHelpDlg;
     result := False;
     Exit;
-    
+
   end;
 
   if pos('FORCE',Uppercase(CommandLine)) > 0 then
@@ -829,11 +828,11 @@ begin
     if MsgBox(ExpandConstant('{cm:Winsock2Web1}')+#13#13+ExpandConstant('{cm:Winsock2Web2}'), mbInformation, MB_YESNO) = idYes then
       // User wants to visit the web page
       ShellExec('open', sMSWinsock2Update, '', '', SW_SHOWNORMAL, ewNoWait, ErrCode);
-      
+
 #ifdef setuplogging
   if OkToCopyLog then
     FileCopy (ExpandConstant ('{log}'), ExpandConstant ('{app}\InstallationLogFile.log'), FALSE);
-    
+
   RestartReplace (ExpandConstant ('{log}'), '');
 #endif /* setuplogging */
 
