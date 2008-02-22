@@ -1,3 +1,15 @@
+2008-02-22 11:40  asfernandes
+
+	* firebird2/src/misc/upgrade/v2.1/metadata_charset.txt (1.2):
+
+	Update doc.
+
+2008-02-22 03:51  asfernandes
+
+	* firebird2/src/dsql/metd.epp (1.109):
+
+	Misc
+
 2008-02-21 14:19  robocop
 
 	* firebird2/src/common/classes/ClumpletWriter.cpp (1.22):
