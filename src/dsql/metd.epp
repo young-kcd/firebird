@@ -1466,8 +1466,7 @@ dsql_rel* METD_get_relation(dsql_req* request, const dsql_str* name)
 
 	// Now see if it is in the database 
 
-	MemoryPool& pool =
-		permanent ? *dbb->dbb_pool : *tdsql->getDefaultPool();
+	MemoryPool& pool = permanent ? *dbb->dbb_pool : *tdsql->getDefaultPool();
 
 	dsql_rel* relation = NULL;
 
