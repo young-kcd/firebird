@@ -8,7 +8,6 @@ o Einführung
 o Verwendungszweck
 o Bekannte Probleme
 o Features in diesem Release (alle Plattformen)
-o Beseitigte Fehler in diesem Release
 o Installation
 o Bugs berichten
 
