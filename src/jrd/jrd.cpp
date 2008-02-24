@@ -4988,7 +4988,8 @@ static void prepare(thread_db* tdbb,
 	}
 
 	for (; transaction; transaction = transaction->tra_sibling) {
-		DatabaseContextHolder dbbHolder(tdbb);
+		validateHandle(tdbb, transaction->tra_attachment);
+		tdbb->setTransaction(transaction);
 		check_database(tdbb);
 		TRA_prepare(tdbb, transaction, length, msg);
 	}
