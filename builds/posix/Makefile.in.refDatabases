@@ -47,7 +47,7 @@ export DYLD_FRAMEWORK_PATH
 DYLD_FRAMEWORK_PATH=	$(OBJS)/firebird
 export INTERBASE
 
-MSG_SCRIPTS = msg.sql facilities2.sql locales.sql history2.sql messages2.sql \
+MSG_SCRIPTS = msg.sql facilities2.sql locales.sql sqlstates.h history2.sql messages2.sql \
               symbols2.sql system_errors2.sql transmsgs.fr_FR.sql transmsgs.de_DE.sql
 MSG_FILES = $(addprefix $(SRC_ROOT)/msgs/, $(MSG_SCRIPTS))
 

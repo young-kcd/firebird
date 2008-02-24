@@ -54,6 +54,7 @@ const ISC_LONG isc_arg_next_mach	= 15;	// NeXT/Mach error code
 const ISC_LONG isc_arg_netware		= 16;	// NetWare error code 
 const ISC_LONG isc_arg_win32		= 17;	// Win32 error code 
 const ISC_LONG isc_arg_warning		= 18;	// warning argument 
+const ISC_LONG isc_arg_sql_state	= 19;	// SQLSTATE 
 
 const ISC_LONG isc_arith_except                     = 335544321L;
 const ISC_LONG isc_bad_dbkey                        = 335544322L;
@@ -912,6 +913,7 @@ const ISC_LONG isc_err_max                          = 833;
 #define isc_arg_netware	16	/* NetWare error code */
 #define isc_arg_win32		17	/* Win32 error code */
 #define isc_arg_warning	18	/* warning argument */
+#define isc_arg_sql_state	19	/* SQLSTATE */
 
 #define isc_arith_except                     335544321L
 #define isc_bad_dbkey                        335544322L

@@ -10,8 +10,11 @@
 @echo create database '%FB_GEN_DB_DIR%/dbs/msg.fdb'; | "%FB_GEN_DIR%\isql_embed" -q
 @set FB_MSG_ISQL=@"%FB_GEN_DIR%\isql_embed" -q %FB_GEN_DB_DIR%/dbs/msg.fdb -i %FB_ROOT_PATH%\src\msgs\
 @%FB_MSG_ISQL%msg.sql
-@%FB_MSG_ISQL%facilities2.sql
 @echo.
+@echo loading facilities
+@%FB_MSG_ISQL%facilities2.sql
+@echo loading sql states
+@%FB_MSG_ISQL%sqlstates.sql
 @echo loading locales
 @%FB_MSG_ISQL%locales.sql
 @echo loading history
