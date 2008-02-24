@@ -1,3 +1,67 @@
+2008-02-24 16:28  dimitr
+
+	* firebird2/src/jrd/dyn.epp (1.117):
+
+	Ported SQLSTATE from Vulcan.  Part III: explicit passing of
+	isc_arg_sql_state.
+
+2008-02-24 16:27  dimitr
+
+	* firebird2/src/jrd/gds.cpp (1.240):
+
+	Misc.
+
+2008-02-24 15:59  dimitr
+
+	* firebird2/src/: common/StatusHolder.cpp (1.4),
+	common/fb_exception.cpp (1.34), dsql/errd.cpp (1.42),
+	dsql/user_dsql.cpp (1.49), dsql/utld.cpp (1.46), jrd/err.cpp
+	(1.73), jrd/gds.cpp (1.239), jrd/par.cpp (1.187), jrd/sdl.cpp
+	(1.47), jrd/status.cpp (1.15), jrd/why.cpp (1.154),
+	remote/protocol.cpp (1.63), remote/remote.cpp (1.51),
+	remote/server.cpp (1.170):
+
+	Ported SQLSTATE from Vulcan.  Part II: handling of
+	isc_arg_sql_state.
+
+2008-02-24 15:05  dimitr
+
+	* firebird2/builds/: win32/defs/fbclient.def (1.16),
+	posix/Makefile.in.refDatabases (1.33):
+
+	Ported SQLSTATE from Vulcan.  Part I: core changes.
+
+2008-02-24 15:02  dimitr
+
+	* firebird2/: src/include/gen/iberror.h (1.74),
+	src/include/gen/sql_code.h (1.78), src/include/gen/sql_state.h
+	(1.1), src/jrd/gds.cpp (1.238), src/jrd/ibase.h (1.127),
+	src/msgs/msg.sql (1.9), src/msgs/system_errors2.sql (1.15),
+	src/misc/codes.epp (1.22), builds/win32/create_msgs.bat (1.7):
+
+	Ported SQLSTATE from Vulcan.  Part I: core changes.
+
+2008-02-24 12:37  dimitr
+
+	* firebird2/src/jrd/rse.cpp (1.146):
+
+	Misc.
+
+2008-02-24 10:55  dimitr
+
+	* firebird2/src/jrd/jrd.cpp (1.394):
+
+	Fixed the mutex recursion in jrd8_prepare_transaction. Thanks to
+	Dmitry Kovalenko.
+
+2008-02-24 04:23  robocop
+
+	* firebird2/src/jrd/: TempSpace.h (1.9), TextType.cpp (1.8),
+	par.cpp (1.186), perf.cpp (1.38), rse.cpp (1.145), scl.epp (1.89),
+	tra.cpp (1.154), why.cpp (1.153), os/win32/winnt.cpp (1.61):
+
+	Misc.
+
 2008-02-22 11:40  asfernandes
 
 	* firebird2/src/misc/upgrade/v2.1/metadata_charset.txt (1.2):
