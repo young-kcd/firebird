@@ -4721,6 +4721,7 @@ ISC_STATUS rem_port::send_response(	PACKET*	sendL,
 			continue;
 
 		case isc_arg_interpreted:
+		case isc_arg_sql_state:
 			*v++ = *status_vector++;
 			*v++ = *status_vector++;
 			continue;

@@ -1281,6 +1281,7 @@ static void error_post(ISC_STATUS status, ...)
 
 		case isc_arg_string:
 		case isc_arg_interpreted:
+		case isc_arg_sql_state:
 			*p++ = (ISC_STATUS)(IPTR) va_arg(args, TEXT *);
 			break;
 

@@ -1679,6 +1679,7 @@ static bool_t xdr_status_vector(
 
 		case isc_arg_interpreted:
 		case isc_arg_string:
+		case isc_arg_sql_state:
 			if (xdrs->x_op == XDR_ENCODE) {
 				if (!xdr_wrapstring(xdrs, reinterpret_cast<SCHAR**>(vector++)))
 					return FALSE;

@@ -808,6 +808,7 @@ static void error(CompilerScratch* csb, ...)
 
 		case isc_arg_string:
 		case isc_arg_interpreted:
+		case isc_arg_sql_state:
 			*p++ = (ISC_STATUS) va_arg(args, TEXT *);
 			break;
 
@@ -3393,6 +3394,7 @@ static void warning(CompilerScratch* csb, ...)
 
 		case isc_arg_string:
 		case isc_arg_interpreted:
+		case isc_arg_sql_state:
 			*p++ = (ISC_STATUS) va_arg(args, TEXT *);
 			break;
 

@@ -679,6 +679,7 @@ void REMOTE_save_status_strings( ISC_STATUS* vector)
 
 		case isc_arg_interpreted:
 		case isc_arg_string:
+		case isc_arg_sql_state:
 			p = (TEXT*) *vector;
 			if (status != isc_arg_cstring)
 				l = strlen(p) + 1;

@@ -77,6 +77,7 @@ void STUFF_STATUS_function(ISC_STATUS* status_vector, ISC_STATUS status, va_list
 				break;
 
 			case isc_arg_interpreted:
+			case isc_arg_sql_state:
 				*p++ = (ISC_STATUS) va_arg(args, TEXT *);
 				break;
 
@@ -126,6 +127,7 @@ void PARSE_STATUS(const ISC_STATUS* status_vector, int &length, int &warning)
 		case isc_arg_string:
 		case isc_arg_number:
 		case isc_arg_interpreted:
+		case isc_arg_sql_state:
 		case isc_arg_vms:
 		case isc_arg_unix:
 		case isc_arg_win32:

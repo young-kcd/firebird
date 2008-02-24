@@ -61,6 +61,7 @@ void fill_status(ISC_STATUS *ptr, ISC_STATUS status, va_list status_args)
 			}
 		case isc_arg_string:
 		case isc_arg_interpreted:
+		case isc_arg_sql_state:
 			{
 				*ptr++ = dupStringTemp(reinterpret_cast<char*>(va_arg(status_args, ISC_STATUS)));
 				break;
@@ -98,6 +99,7 @@ void StringsBuffer::makePermanentVector(ISC_STATUS* perm, const ISC_STATUS* tran
 			break;
 		case isc_arg_string:
 		case isc_arg_interpreted:
+		case isc_arg_sql_state:
 			{
 				const char* temp = reinterpret_cast<char*>(*trans++);
 				*perm++ = (ISC_STATUS)(IPTR) (alloc(temp, strlen(temp)));
@@ -169,6 +171,7 @@ void status_exception::release_vector() throw()
 			break;
 		case isc_arg_string:
 		case isc_arg_interpreted:
+		case isc_arg_sql_state:
 			delete[] reinterpret_cast<char*>(*ptr++);
 			break;
 		default:

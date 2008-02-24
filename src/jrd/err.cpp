@@ -361,6 +361,7 @@ bool ERR_post_warning(ISC_STATUS status, ...)
 				break;
 
 			case isc_arg_interpreted:
+			case isc_arg_sql_state:
 				status_vector[indx++] = va_arg(args, ISC_STATUS);
 				break;
 

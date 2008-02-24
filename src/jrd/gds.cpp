@@ -902,9 +902,14 @@ static SLONG safe_interpret(char* const s, const size_t bufsize,
 		}
 		break;
 
+	case isc_arg_sql_state:
+		q = (const TEXT*) (*vector)[1];
+		sprintf(s, "SQLSTATE (%s)", q);
+		break;
+
 	case isc_arg_unix:
-		// The  strerror()  function  returns  the appropriate description
-		// string, or an unknown error message if the error code is unknown.
+		// The strerror() function returns the appropriate description string,
+		// or an unknown error message if the error code is unknown.
 		q = (const TEXT*) strerror(code);
 		if (legacy)
 			safe_strncpy(s, q, bufsize);

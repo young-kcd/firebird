@@ -5236,6 +5236,7 @@ static void check_status_vector(const ISC_STATUS* status)
 
 		case isc_arg_interpreted:
 		case isc_arg_string:
+		case isc_arg_sql_state:
 			length = strlen((const char*) *s);
 			/* This check is heuristic, not deterministic */
 			if (length > 1024 - 1)
@@ -5844,6 +5845,7 @@ static void save_error_string(ISC_STATUS * status)
 
 		case isc_arg_interpreted:
 		case isc_arg_string:
+		case isc_arg_sql_state:
 			l = (ULONG) strlen(reinterpret_cast<char*>(*status)) + 1;
 			if (l < len)
 			{

@@ -218,6 +218,7 @@ bool ERRD_post_warning(ISC_STATUS status, ...)
 			break;
 
 		case isc_arg_interpreted: 
+		case isc_arg_sql_state:
             pszTmp = va_arg(args, char*);
             status_vector[indx++] = reinterpret_cast<ISC_STATUS>(ERR_cstring(pszTmp));
 			break;
