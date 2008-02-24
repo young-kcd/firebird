@@ -1230,7 +1230,7 @@ static bool get_merge_join(
 {
 /**************************************
  *
- *	g e t _ m e r g e _ j o i n ( I B _ V 4 _ 1 )
+ *	g e t _ m e r g e _ j o i n
  *
  **************************************
  *
@@ -1288,9 +1288,9 @@ static bool get_merge_join(
 		if (record >= 0)
 		{
 			tail->irsb_mrg_last_fetched = -1;
-			const UCHAR* last_data = get_merge_data(tdbb, mfb, record);
+			const UCHAR* const last_data = get_merge_data(tdbb, mfb, record);
 			mfb->mfb_current_block = 0;
-			UCHAR* first_data = get_merge_data(tdbb, mfb, 0);
+			UCHAR* const first_data = get_merge_data(tdbb, mfb, 0);
 			if (first_data != last_data)
 				memcpy(first_data, last_data, map->smb_length);
 			mfb->mfb_equal_records = 1;
@@ -1371,12 +1371,9 @@ static bool get_merge_join(
 		RecordSource* sort_rsb = *ptr;
 		SortMap* map = (SortMap*) sort_rsb->rsb_arg[0];
 		merge_file* mfb = &tail->irsb_mrg_file;
+		Firebird::HalfStaticArray<ULONG, 64> key;
+		ULONG* const first_data = key.getBuffer(map->smb_key_length);
 		const ULONG key_length = map->smb_key_length * sizeof(ULONG);
-		UCHAR* first_data;
-		if (key_length > sizeof(key))
-			first_data = FB_NEW(*tdbb->getDefaultPool()) UCHAR[key_length];
-		else
-			first_data = (UCHAR *) key;
 		memcpy(first_data, get_merge_data(tdbb, mfb, 0), key_length);
 
 		SLONG record;
@@ -1393,8 +1390,6 @@ static bool get_merge_join(
 			tail->irsb_mrg_equal_end = record;
 		}
 
-		if (first_data != (UCHAR *) key)
-			delete[] first_data;
 		if (mfb->mfb_current_block)
 			write_merge_block(tdbb, mfb, mfb->mfb_current_block);
 	}
@@ -1412,7 +1407,7 @@ static bool get_merge_join(
 		 tail < tail_end; tail++)
 	{
 		ULONG most_blocks = 0;
-		irsb_mrg::irsb_mrg_repeat* best_tail = 0;
+		irsb_mrg::irsb_mrg_repeat* best_tail = NULL;
 		for (irsb_mrg::irsb_mrg_repeat* tail2 = impure->irsb_mrg_rpt;
 			tail2 < tail_end; tail2++)
 		{
@@ -1495,9 +1490,9 @@ static bool get_merge_join(thread_db* tdbb, RecordSource* rsb, irsb_mrg* impure)
 		SLONG record = tail->irsb_mrg_last_fetched;
 		if (record >= 0) {
 			tail->irsb_mrg_last_fetched = -1;
-			const UCHAR* last_data = get_merge_data(tdbb, mfb, record);
+			const UCHAR* const last_data = get_merge_data(tdbb, mfb, record);
 			mfb->mfb_current_block = 0;
-			UCHAR* first_data = get_merge_data(tdbb, mfb, 0);
+			UCHAR* const first_data = get_merge_data(tdbb, mfb, 0);
 			if (first_data != last_data)
 				memcpy(first_data, last_data, map->smb_length);
 			mfb->mfb_equal_records = 1;
@@ -1560,17 +1555,12 @@ static bool get_merge_join(thread_db* tdbb, RecordSource* rsb, irsb_mrg* impure)
 	for (ptr = rsb->rsb_arg, tail = impure->irsb_mrg_rpt; ptr < end;
 		 ptr += 2, tail++)
 	{
-		ULONG key[64];
-
 		RecordSource* sort_rsb = *ptr;
 		SortMap* map = (SortMap*) sort_rsb->rsb_arg[0];
 		merge_file* mfb = &tail->irsb_mrg_file;
+		Firebird::HalfStaticArray<ULONG, 64> key;
+		ULONG* const first_data = key.getBuffer(map->smb_key_length);
 		const ULONG key_length = map->smb_key_length * sizeof(ULONG);
-		UCHAR* first_data;
-		if (key_length > sizeof(key))
-			first_data = FB_NEW(*tdbb->getDefaultPool()) UCHAR[key_length];
-		else
-			first_data = (UCHAR *) key;
 		memcpy(first_data, get_merge_data(tdbb, mfb, 0), key_length);
 
 		SLONG record;
@@ -1587,8 +1577,6 @@ static bool get_merge_join(thread_db* tdbb, RecordSource* rsb, irsb_mrg* impure)
 			tail->irsb_mrg_equal_end = record;
 		}
 
-		if (first_data != (UCHAR *) key)
-			delete[] first_data;
 		if (mfb->mfb_current_block)
 			write_merge_block(tdbb, mfb, mfb->mfb_current_block);
 	}
@@ -1605,7 +1593,7 @@ static bool get_merge_join(thread_db* tdbb, RecordSource* rsb, irsb_mrg* impure)
 	for (const irsb_mrg::irsb_mrg_repeat* const tail_end = tail + rsb->rsb_count;
 		 tail < tail_end; tail++)
 	{
-		irsb_mrg::irsb_mrg_repeat* best_tail = 0;
+		irsb_mrg::irsb_mrg_repeat* best_tail = NULL;
 
 		ULONG most_blocks = 0;
 		for (irsb_mrg::irsb_mrg_repeat* tail2 = impure->irsb_mrg_rpt;
