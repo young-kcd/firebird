@@ -540,14 +540,14 @@ namespace {
 	class HugeStaticBuffer 
 	{
 	public:
-		HugeStaticBuffer(MemoryPool& p)
+		explicit HugeStaticBuffer(MemoryPool& p)
 			: zeroArray(p), 
 			zeroBuff(zeroArray.getBuffer(ZERO_BUF_SIZE)) 
 		{
 			memset(zeroBuff, 0, ZERO_BUF_SIZE);
 		}
 
-		const char* get() { return zeroBuff; }
+		const char* get() const { return zeroBuff; }
 
 	private:
 		Firebird::Array<char> zeroArray;

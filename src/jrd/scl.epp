@@ -144,26 +144,26 @@ void SCL_check_access(const SecurityClass* s_class,
 				 0);
 	}
 
-	const Attachment* const attachment = tdbb->getAttachment();
+	const Attachment& attachment = *tdbb->getAttachment();
 
 	// Allow the database owner to back up a database even if he does not have
 	// read access to all the tables in the database
 
-	if ((attachment->att_flags & ATT_gbak_attachment) && (mask & SCL_read))
+	if ((attachment.att_flags & ATT_gbak_attachment) && (mask & SCL_read))
 	{
 		return;
 	}
 
 	// Allow the locksmith any access to database 
 
-	if (attachment->locksmith())
+	if (attachment.locksmith())
 	{
 		return;
 	}
 
 	bool denied_db = false;
 
-	const SecurityClass* const att_class = attachment->att_security_class;
+	const SecurityClass* const att_class = attachment.att_security_class;
 	if (att_class && !(att_class->scl_flags & mask))
 	{
 		denied_db = true;
@@ -974,6 +974,7 @@ static bool check_user_group(const UCHAR* acl,
 		else				// processing group name
 		{
 			Firebird::UCharBuffer buffer;
+			fb_assert(l < length);  // Not sure how we can guarantee this.
 			UCHAR* user_group_name = buffer.getBuffer(length);
 			do {
 				const TEXT one_char = *acl++;

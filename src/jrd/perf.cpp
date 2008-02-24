@@ -246,7 +246,8 @@ void API_ROUTINE perf_get_info(FB_API_HANDLE* handle, PERF* perf)
 	const char* p = buffer;
 
 	while (true)
-		switch (*p++) {
+		switch (*p++)
+		{
 		case isc_info_reads:
 			perf->perf_reads = get_parameter(&p);
 			break;
@@ -283,12 +284,18 @@ void API_ROUTINE perf_get_info(FB_API_HANDLE* handle, PERF* perf)
 			return;
 
 		case isc_info_error:
-			if (p[2] == isc_info_marks)
+			switch (p[2])
+			{
+			 case isc_info_marks:
 				perf->perf_marks = 0;
-			else if (p[2] == isc_info_current_memory)
+				break;
+			case isc_info_current_memory:
 				perf->perf_current_memory = 0;
-			else if (p[2] == isc_info_max_memory)
+				break;
+			case isc_info_max_memory:
 				perf->perf_max_memory = 0;
+				break;
+			}
 			{
 				const SLONG temp = isc_vax_integer(p, 2);
 				fb_assert(temp <= MAX_SSHORT);

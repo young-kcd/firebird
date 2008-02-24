@@ -4191,7 +4191,7 @@ ISC_STATUS API_ROUTINE GDS_RECONNECT(ISC_STATUS* user_status,
 													   &handle,
 													   length, id))
 		{
-				return status[1];
+			return status[1];
 		}
 
 		new Transaction(handle, tra_handle, dbb);
@@ -5352,8 +5352,10 @@ static Transaction* find_transaction(Attachment* dbb,
  **************************************/
 
 	for (; transaction; transaction = transaction->next)
+	{
 		if (transaction->parent == dbb)
 			return transaction;
+	}
 
 	return NULL;
 }
@@ -5741,6 +5743,7 @@ static ISC_STATUS prepare(ISC_STATUS* user_status,
 	length = p - description;
 
 	for (sub = transaction->next; sub; sub = sub->next)
+	{
 		if (CALL(PROC_PREPARE, sub->implementation) (status,
 													 &sub->handle,
 													 length, description))
@@ -5750,6 +5753,7 @@ static ISC_STATUS prepare(ISC_STATUS* user_status,
 			}
 			return status[1];
 		}
+	}
 
 	if (description != tdr_buffer)
 		free_block(description);

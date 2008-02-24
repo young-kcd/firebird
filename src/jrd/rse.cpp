@@ -2241,47 +2241,51 @@ static bool get_record(thread_db*	tdbb,
 		break;
 
 	case rsb_skip:
-		switch (mode) {
-#ifdef SCROLLABLE_CURSORS
-		case RSE_get_backward:
-			if (((irsb_skip_n*) impure)->irsb_count > 0)
+		{
+			irsb_skip_n* skip = (irsb_skip_n*) impure;
+			switch (mode)
 			{
-				invalidate_child_rpbs(tdbb, rsb);
-				return false;
-			}
-			if (((irsb_skip_n*) impure)->irsb_count == 0)
-			{
-				((irsb_skip_n*) impure)->irsb_count++;
-				if (get_record(tdbb, rsb->rsb_next, NULL, mode))
+	#ifdef SCROLLABLE_CURSORS
+			case RSE_get_backward:
+				if (skip->irsb_count > 0)
+				{
 					invalidate_child_rpbs(tdbb, rsb);
-				return false;
-			}
-			((irsb_skip_n*) impure)->irsb_count++;
-			if (!get_record(tdbb, rsb->rsb_next, NULL, mode))
-				return false;
-			break;
-
-		case RSE_get_current:
-			if (((irsb_skip_n*) impure)->irsb_count >= 1)
-			{
-				invalidate_child_rpbs(tdbb, rsb);
-				return false;
-			}
-			else if (!get_record(tdbb, rsb->rsb_next, NULL, mode))
-				return false;
-			break;
-#endif
-
-		case RSE_get_forward:
-			while (((irsb_skip_n*) impure)->irsb_count > 1) {
-				((irsb_skip_n*) impure)->irsb_count--;
+					return false;
+				}
+				if (skip->irsb_count == 0)
+				{
+					skip->irsb_count++;
+					if (get_record(tdbb, rsb->rsb_next, NULL, mode))
+						invalidate_child_rpbs(tdbb, rsb);
+					return false;
+				}
+				skip->irsb_count++;
 				if (!get_record(tdbb, rsb->rsb_next, NULL, mode))
 					return false;
+				break;
+
+			case RSE_get_current:
+				if (skip->irsb_count >= 1)
+				{
+					invalidate_child_rpbs(tdbb, rsb);
+					return false;
+				}
+				if (!get_record(tdbb, rsb->rsb_next, NULL, mode))
+					return false;
+				break;
+	#endif
+
+			case RSE_get_forward:
+				while (skip->irsb_count > 1) {
+					skip->irsb_count--;
+					if (!get_record(tdbb, rsb->rsb_next, NULL, mode))
+						return false;
+				}
+				skip->irsb_count--;
+				if (!get_record(tdbb, rsb->rsb_next, NULL, mode))
+					return false;
+				break;
 			}
-			((irsb_skip_n*) impure)->irsb_count--;
-			if (!get_record(tdbb, rsb->rsb_next, NULL, mode))
-				return false;
-			break;
 		}
 		break;
 

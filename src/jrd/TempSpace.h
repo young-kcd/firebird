@@ -95,8 +95,8 @@ private:
 		{
 			if ((offset < this->size) && (offset + _size <= this->size))
 				return ptr + offset;
-			else
-				return NULL;
+
+			return NULL;
 		}
 		
 		bool sameFile(const TempFile* file) const

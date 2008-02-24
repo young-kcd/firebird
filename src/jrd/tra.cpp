@@ -646,8 +646,10 @@ int TRA_get_state(thread_db* tdbb, SLONG number)
 		return TPC_snapshot_state(tdbb, number);
 
 	if (number && dbb->dbb_pc_transactions)
+	{
 		if (TRA_precommited(tdbb, number, number))
 			return tra_precommitted;
+	}
 
 	return TRA_fetch_state(tdbb, number);
 }
@@ -1069,7 +1071,7 @@ void TRA_release_transaction(thread_db* tdbb, jrd_tra* transaction)
 		}
 	}
 
-	{
+	{ // scope
 		vec<jrd_rel*>& rels = *dbb->dbb_relations;
 		for (size_t i = 0; i < rels.count(); i++)
 		{
@@ -1080,7 +1082,7 @@ void TRA_release_transaction(thread_db* tdbb, jrd_tra* transaction)
 			}
 		}
 
-	}
+	} // end scope
 
 	// Release the locks associated with the transaction
 
@@ -1275,10 +1277,8 @@ void TRA_rollback(thread_db* tdbb, jrd_tra* transaction, const bool retaining_fl
 		retain_context(tdbb, transaction, false, state);
 		return;
 	}
-	else {
-		TRA_set_state(tdbb, transaction, transaction->tra_number, state);
-	}
 
+	TRA_set_state(tdbb, transaction, transaction->tra_number, state);
 	TRA_release_transaction(tdbb, transaction);
 }
 
@@ -1352,16 +1352,15 @@ void TRA_set_state(thread_db* tdbb, jrd_tra* transaction, SLONG number, SSHORT s
 
 	if (transaction && !(transaction->tra_flags & TRA_write))
 		return;
-	else {
-		{ //scope
-			Database::Checkout dcoHolder(dbb);
-			THREAD_YIELD();
-		}
-		tip = reinterpret_cast<tx_inv_page*>(CCH_FETCH(tdbb, &window, LCK_write, pag_transactions));
-		if (generation == tip->pag_generation)
-			CCH_MARK_MUST_WRITE(tdbb, &window);
-		CCH_RELEASE(tdbb, &window);
+
+	{ //scope
+		Database::Checkout dcoHolder(dbb);
+		THREAD_YIELD();
 	}
+	tip = reinterpret_cast<tx_inv_page*>(CCH_FETCH(tdbb, &window, LCK_write, pag_transactions));
+	if (generation == tip->pag_generation)
+		CCH_MARK_MUST_WRITE(tdbb, &window);
+	CCH_RELEASE(tdbb, &window);
 #endif
 
 }
@@ -1450,8 +1449,8 @@ int TRA_snapshot_state(thread_db* tdbb, const jrd_tra* trans, SLONG number)
 		int state = TPC_snapshot_state(tdbb, number);
 		if (state == tra_active)
 			return tra_committed;
-		else
-			return state;
+
+		return state;
 	}
 
 	// If the transaction is a commited sub-transction - do the easy lookup.

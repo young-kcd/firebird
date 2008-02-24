@@ -341,8 +341,8 @@ ULONG TextType::str_to_upper(ULONG srcLen,
 {
 	if (tt->texttype_fn_str_to_upper)
 		return (*tt->texttype_fn_str_to_upper)(tt, srcLen, src, dstLen, dst);
-	else
-		return Firebird::IntlUtil::toUpper(getCharSet(), srcLen, src, dstLen, dst, NULL);
+
+	return Firebird::IntlUtil::toUpper(getCharSet(), srcLen, src, dstLen, dst, NULL);
 }
 
 
@@ -353,8 +353,8 @@ ULONG TextType::str_to_lower(ULONG srcLen,
 {
 	if (tt->texttype_fn_str_to_lower)
 		return (*tt->texttype_fn_str_to_lower)(tt, srcLen, src, dstLen, dst);
-	else
-		return Firebird::IntlUtil::toLower(getCharSet(), srcLen, src, dstLen, dst, NULL);
+
+	return Firebird::IntlUtil::toLower(getCharSet(), srcLen, src, dstLen, dst, NULL);
 }
 
 

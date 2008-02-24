@@ -1106,9 +1106,8 @@ static SSHORT par_context(CompilerScratch* csb, SSHORT* context_ptr)
 		if (csb->csb_g_flags & csb_reuse_context) {
 			return tail->csb_stream;
 		}
-		else {
-			error(csb, isc_ctxinuse, 0);
-		}
+
+		error(csb, isc_ctxinuse, 0);
 	}
 
 	const SSHORT stream = csb->nextStream(false);
@@ -1476,10 +1475,9 @@ static jrd_nod* par_function(thread_db* tdbb, CompilerScratch* csb)
 			anode->nod_arg[e_fun_args] = par_args(tdbb, csb, VALUE);
 			return anode;
 		}
-		else {
-			csb->csb_running -= count;
-			error(csb, isc_funnotdef, isc_arg_string, ERR_cstring(name), 0);
-		}
+
+		csb->csb_running -= count;
+		error(csb, isc_funnotdef, isc_arg_string, ERR_cstring(name), 0);
 	}
 
 	UserFunction* homonyms;
@@ -2441,17 +2439,17 @@ static jrd_nod* par_rse(thread_db* tdbb, CompilerScratch* csb, SSHORT rse_op)
 				if (!rse->rse_jointype ||
 					(rse->rse_count == 2 && rse->rse_boolean))
 				{
-						// Convert right outer joins to left joins to avoid
-						// RIGHT JOIN handling at lower engine levels
-						if (rse->rse_jointype == blr_right) {
-							// Swap sub-streams
-							jrd_nod* temp = rse->rse_relation[0];
-							rse->rse_relation[0] = rse->rse_relation[1];
-							rse->rse_relation[1] = temp;
+					// Convert right outer joins to left joins to avoid
+					// RIGHT JOIN handling at lower engine levels
+					if (rse->rse_jointype == blr_right) {
+						// Swap sub-streams
+						jrd_nod* temp = rse->rse_relation[0];
+						rse->rse_relation[0] = rse->rse_relation[1];
+						rse->rse_relation[1] = temp;
 
-							rse->rse_jointype = blr_left;
-						}
-						return (jrd_nod*) rse;
+						rse->rse_jointype = blr_left;
+					}
+					return (jrd_nod*) rse;
 				}
 			}
 			syntax_error(csb, (TEXT*)((rse_op == blr_rs_stream) ?
