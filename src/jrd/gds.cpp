@@ -2313,9 +2313,9 @@ void API_ROUTINE fb_sqlstate(char* sqlstate, const ISC_STATUS* status_vector)
 
 							// we get 00000 for info messages like "Table %"
 							// these are completely ignored
-							if (!(strcmp ("00000", gds__sql_states[mid].sql_state) == 0))
+							if (!(strcmp("00000", gds__sql_states[mid].sql_state) == 0))
 							{
-								strcpy (sqlstate, gds__sql_states[mid].sql_state);
+								strcpy(sqlstate, gds__sql_states[mid].sql_state);
 
 								// 42000 is general syntax error, and HY000 is general API error.
 								// we may be able to find something more precise if we keep scanning.
