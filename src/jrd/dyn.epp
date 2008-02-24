@@ -190,10 +190,19 @@ void DYN_error(bool	status_flag,
 		return;
 
 	TEXT error_buffer[BUFFER_MEDIUM];
+	TEXT sqlstate[6];
 
 	if (number)
+	{
 		fb_msg_format(NULL, DYN_MSG_FAC, number,
-						sizeof(error_buffer), error_buffer, sarg);
+					  sizeof(error_buffer), error_buffer, sarg);
+
+		ISC_STATUS_ARRAY temp_status = {isc_arg_gds, 0, isc_arg_end};
+		temp_status[1] = ENCODE_ISC_MSG(number, DYN_MSG_FAC);
+		fb_sqlstate(sqlstate, temp_status);
+		if (!strcmp(sqlstate, "HY000"))
+			strcpy(sqlstate, "42000"); // default SQLSTATE for DYN
+	}
 
 	ISC_STATUS_ARRAY local_status;
 	ISC_STATUS* v1 = local_status;
@@ -205,6 +214,8 @@ void DYN_error(bool	status_flag,
 		*v1++ = isc_random;
 		*v1++ = isc_arg_string;
 		*v1++ = (ISC_STATUS) ERR_cstring(error_buffer);
+		*v1++ = isc_arg_sql_state;
+		*v1++ = (ISC_STATUS) ERR_cstring(sqlstate);
 	}
 	if (status_flag) {
 		const ISC_STATUS* v2 = tdbb->tdbb_status_vector;
