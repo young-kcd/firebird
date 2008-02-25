@@ -1,3 +1,9 @@
+2008-02-25 10:26  paul_reeves
+
+	* firebird2/builds/win32/install_classic.bat (1.1.2.2):
+
+	Dont run the guardian service if using the classic server.
+
 2008-02-18 12:44  paulbeach
 
 	* firebird2/: builds/posix/postfix.darwin (1.1.2.13),
