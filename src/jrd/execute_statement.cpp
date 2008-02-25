@@ -81,7 +81,20 @@ const SSHORT sqlType[] =
 /* dtype_int64		*/ SQL_INT64
 };
 
-static InitInstance<GenericMap<Pair<NonPooled<SSHORT, UCHAR> > > > sqlTypeToDscType;
+class SqlTypeToDscTypeMap : public GenericMap<Pair<NonPooled<SSHORT, UCHAR> > >
+{
+public:
+	explicit SqlTypeToDscTypeMap(MemoryPool& pool)
+		: GenericMap(pool)
+	{
+		for (int i = 0; i < FB_NELEM(sqlType); ++i)
+		{
+			put(sqlType[i], static_cast<UCHAR>(i));
+		}
+	}
+};
+
+static InitInstance<SqlTypeToDscTypeMap> sqlTypeToDscType;
 
 class CallbackWrapper
 {
@@ -112,14 +125,6 @@ private:
 void ExecuteStatement::Open(thread_db* tdbb, jrd_nod* sql, SSHORT nVars, bool SingleTon)
 {
 	SET_TDBB(tdbb);
-
-	// initialize sqlTypeToDscType in the first call to this function
-	// non-thread safe, require mutex in Fb3
-	if (sqlTypeToDscType().count() == 0)
-	{
-		for (int i = 0; i < FB_NELEM(sqlType); ++i)
-			sqlTypeToDscType().put(sqlType[i], static_cast<UCHAR>(i));
-	}
 
 	if (tdbb->getTransaction()->tra_callback_count >= MAX_CALLBACKS)
 		ERR_post(isc_exec_sql_max_call_exceeded, 0);
