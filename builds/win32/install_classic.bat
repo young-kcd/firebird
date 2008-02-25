@@ -1,3 +1,3 @@
 instreg install -z
-instsvc install -auto -classic -guardian -z
+instsvc install -auto -classic -z
 instsvc start
