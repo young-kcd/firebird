@@ -623,6 +623,7 @@ jrd_file* PIO_open(Database* dbb,
  *	Open a database file.
  *
  **************************************/
+	bool readOnly = false;
 	const TEXT* ptr = (string.hasData() ? string : file_name).c_str();
 	int desc = openFile(ptr, false, false, false);
 
@@ -646,6 +647,7 @@ jrd_file* PIO_open(Database* dbb,
 			PageSpace* pageSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
 			if (!pageSpace->file)
 				dbb->dbb_flags |= DBB_being_opened_read_only;
+			readOnly = true;
 		}
 	}
 
@@ -671,6 +673,8 @@ jrd_file* PIO_open(Database* dbb,
 	jrd_file *file;
 	try {
 		file = setup_file(dbb, string, desc);
+		if (readOnly)
+			file->fil_flags |= FIL_readonly;
 	}
 	catch (const Firebird::Exception&) {
 		close(desc);
