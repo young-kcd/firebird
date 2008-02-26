@@ -39,7 +39,6 @@ void	ISC_prefix_lock(TEXT*, const TEXT*);
 void	ISC_prefix_msg(TEXT*, const TEXT*);
 
 #ifdef WIN_NT
-bool	ISC_is_WinNT();
 struct _SECURITY_ATTRIBUTES* ISC_get_security_desc(void);
 #endif
 

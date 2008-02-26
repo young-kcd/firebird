@@ -89,11 +89,6 @@
 
 #include <direct.h>				// getcwd
 
-#if defined(SUPERCLIENT)
-static USHORT ostype = 0;
-const USHORT OSTYPE_NT		= 1;
-const USHORT OSTYPE_WIN_95	= 2;
-#endif
 #endif // WIN_NT
 
 const char* ISC_USER		= "ISC_USER";
@@ -4652,19 +4647,7 @@ static rem_port* analyze(Firebird::PathName&	file_name,
 /* Coerce host connections to loopback */
 
 #ifdef WIN_NT
-	if (!ostype)
-	{
-		if (ISC_is_WinNT())
-		{
-			ostype = OSTYPE_NT;
-		}
-		else
-		{
-			ostype = OSTYPE_WIN_95;
-		}
-	}
-
-	if (ostype == OSTYPE_NT && !port && node_name.isEmpty())
+	if (!port && node_name.isEmpty())
 	{
 		file_name.insert(0, "\\\\.\\");
 		if (ISC_analyze_pclan(file_name, node_name))

@@ -562,36 +562,8 @@ SLONG ISC_get_user_group_id(const TEXT* user_group_name)
 }
 #endif /* end of ifdef UNIX */
 
+
 #ifdef WIN_NT
-// Returns the type of OS: true for NT,
-// false for the 16-bit based ones (9x/ME, ...).
-//
-bool ISC_is_WinNT()
-{
-	// thread safe??? :-)
-	if (!os_type)
-	{
-		os_type = 1;			/* Default to NT */
-		/* The first time this routine is called we use the Windows API
-		   call GetVersion to determine whether Windows/NT or Chicago
-		   is running. */
-		OSVERSIONINFO OsVersionInfo;
-		
-		OsVersionInfo.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
-		if (GetVersionEx((LPOSVERSIONINFO) & OsVersionInfo))
-		{
-		 if (OsVersionInfo.dwPlatformId != VER_PLATFORM_WIN32_NT)
-			os_type = 2;
-		}
-
-	}
-
-	return (os_type != 2);
-}
-
-//____________________________________________________________
-//
-//
 LPSECURITY_ATTRIBUTES ISC_get_security_desc()
 {
 	if (security_attr.lpSecurityDescriptor)
@@ -671,5 +643,4 @@ LPSECURITY_ATTRIBUTES ISC_get_security_desc()
 
 	return &security_attr;
 }
-
 #endif

@@ -98,9 +98,6 @@ using namespace Jrd;
 #endif
 #define TEXT		SCHAR
 
-const USHORT OS_WINDOWS_NT	= 1;
-const USHORT OS_CHICAGO		= 2;
-
 #ifdef SUPERSERVER_V2
 static void release_io_event(jrd_file*, OVERLAPPED*);
 #endif
@@ -108,8 +105,6 @@ static bool	maybe_close_file(HANDLE&);
 static jrd_file* seek_file(jrd_file*, BufferDesc*, ISC_STATUS*, OVERLAPPED*, OVERLAPPED**);
 static jrd_file* setup_file(Database*, const Firebird::PathName&, HANDLE);
 static bool nt_error(TEXT*, const jrd_file*, ISC_STATUS, ISC_STATUS*);
-
-static USHORT ostype;
 
 #ifdef SUPERSERVER_V2
 static const DWORD g_dwShareFlags = FILE_SHARE_READ;	// no write sharing
@@ -209,9 +204,6 @@ jrd_file* PIO_create(Database* dbb, const Firebird::PathName& string,
  *
  **************************************/
 	const TEXT* file_name = string.c_str();
-
-	if (!ISC_is_WinNT())
-		share_delete = false;
 
 	DWORD dwShareMode = (temporary ? g_dwShareTempFlags : g_dwShareFlags);
 	if (share_delete)
@@ -322,26 +314,12 @@ void PIO_extend(Database* dbb, jrd_file* main_file, const ULONG extPages, const 
 			LARGE_INTEGER newSize; 
 			newSize.QuadPart = (ULONGLONG) (filePages + extendBy) * pageSize;
 
-			if (ostype == OS_CHICAGO) {	// WIN95
-				file->fil_mutex.enter();
-			}
-
 			const DWORD ret = SetFilePointer(hFile, newSize.LowPart, &newSize.HighPart, FILE_BEGIN);
 			if (ret == INVALID_SET_FILE_POINTER && GetLastError() != NO_ERROR) {
-				if (ostype == OS_CHICAGO) {
-					file->fil_mutex.leave();
-				}
 				nt_error("SetFilePointer", file, isc_io_write_err, 0);
 			}
 			if (!SetEndOfFile(hFile)) {
-				if (ostype == OS_CHICAGO) {
-					file->fil_mutex.leave();
-				}
 				nt_error("SetEndOfFile", file, isc_io_write_err, 0);
-			}
-
-			if (ostype == OS_CHICAGO) {
-				file->fil_mutex.leave();
 			}
 
 			leftPages -= extendBy;
@@ -364,15 +342,7 @@ void PIO_flush(jrd_file* main_file)
  **************************************/
 	for (jrd_file* file = main_file; file; file = file->fil_next)
 	{
-		if (ostype == OS_CHICAGO)
-		{
-			file->fil_mutex.enter();
-		}
 		FlushFileBuffers(file->fil_desc);
-		if (ostype == OS_CHICAGO)
-		{
-			file->fil_mutex.leave();
-		}
 	}
 }
 
@@ -462,26 +432,13 @@ void PIO_header(Database* dbb, SCHAR * address, int length)
 	OVERLAPPED overlapped;
 	OVERLAPPED* overlapped_ptr;
 
-	if (ostype == OS_CHICAGO)
-	{
-		file->fil_mutex.enter();
-		if (SetFilePointer(desc, 0, NULL, FILE_BEGIN) == (DWORD) -1)
-		{
-			file->fil_mutex.leave();
-			nt_error("SetFilePointer", file, isc_io_read_err, 0);
-		}
-		overlapped_ptr = NULL;
-	}
-	else
-	{
-		memset(&overlapped, 0, sizeof(OVERLAPPED));
-		overlapped_ptr = &overlapped;
+	memset(&overlapped, 0, sizeof(OVERLAPPED));
+	overlapped_ptr = &overlapped;
 #ifdef SUPERSERVER_V2
-		if (!(overlapped.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL)))
-			nt_error("Overlapped event", file, isc_io_read_err, 0);
-		ResetEvent(overlapped.hEvent);
+	if (!(overlapped.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL)))
+		nt_error("Overlapped event", file, isc_io_read_err, 0);
+	ResetEvent(overlapped.hEvent);
 #endif
-	}
 
     DWORD actual_length;
 	if (dbb->dbb_encrypt_key.hasData())
@@ -491,10 +448,6 @@ void PIO_header(Database* dbb, SCHAR * address, int length)
 		if (!ReadFile(desc, spare_buffer, length, &actual_length, overlapped_ptr)
 				|| actual_length != (DWORD)length)
 		{
-			if (ostype == OS_CHICAGO)
-			{
-				file->fil_mutex.leave();
-			}
 			nt_error("ReadFile", file, isc_io_read_err, 0);
 		}
 
@@ -514,10 +467,6 @@ void PIO_header(Database* dbb, SCHAR * address, int length)
 					nt_error("GetOverlappedResult", file, isc_io_read_err, 0);
 			}
 #else
-			if (ostype == OS_CHICAGO)
-			{
-				file->fil_mutex.leave();
-			}
 			nt_error("ReadFile", file, isc_io_read_err, 0);
 #endif
 		}
@@ -526,10 +475,6 @@ void PIO_header(Database* dbb, SCHAR * address, int length)
 #ifdef SUPERSERVER_V2
 	CloseHandle(overlapped.hEvent);
 #endif
-
-	if (ostype == OS_CHICAGO) {
-		file->fil_mutex.leave();
-	}
 }
 
 namespace {
@@ -590,9 +535,6 @@ USHORT PIO_init_data(Database* dbb, jrd_file* main_file, ISC_STATUS* status_vect
 	if (!file)
 		return 0;
 
-	if (ostype == OS_CHICAGO)
-		file->fil_mutex.leave();
-
 	if (file->fil_min_page + 8 > startPage)
 		return 0;
 
@@ -613,15 +555,9 @@ USHORT PIO_init_data(Database* dbb, jrd_file* main_file, ISC_STATUS* status_vect
 		if (!WriteFile(file->fil_desc, zero_buff, to_write, &written, overlapped_ptr) ||
 			to_write != written)
 		{
-			if (ostype == OS_CHICAGO)
-				file->fil_mutex.leave();
-
 			nt_error("WriteFile", file, isc_io_write_err, status_vector);
 			break;
 		}
-
-		if (ostype == OS_CHICAGO)
-			file->fil_mutex.leave();
 
 		leftPages -= write_pages;
 		i += write_pages;
@@ -649,9 +585,6 @@ jrd_file* PIO_open(Database* dbb,
  **************************************/
 	const TEXT* ptr = (string.hasData() ? string : file_name).c_str();
 	bool readOnly = false;
-
-	if (!ISC_is_WinNT())
-		share_delete = false;
 
 	HANDLE desc = CreateFile(ptr,
 					  GENERIC_READ | GENERIC_WRITE,
@@ -745,9 +678,6 @@ bool PIO_read(jrd_file* file, BufferDesc* bdb, Ods::pag* page, ISC_STATUS* statu
 		if (!ReadFile(desc, spare_buffer, size, &actual_length, overlapped_ptr)
 			|| actual_length != size)
 		{
-			if (ostype == OS_CHICAGO) {
-				file->fil_mutex.leave();
-			}
 			return nt_error("ReadFile", file, isc_io_read_err, status_vector);
 		}
 
@@ -769,9 +699,6 @@ bool PIO_read(jrd_file* file, BufferDesc* bdb, Ods::pag* page, ISC_STATUS* statu
 								status_vector);
 			}
 #else
-			if (ostype == OS_CHICAGO) {
-				file->fil_mutex.leave();
-			}
 			return nt_error("ReadFile", file, isc_io_read_err, status_vector);
 #endif
 		}
@@ -780,10 +707,6 @@ bool PIO_read(jrd_file* file, BufferDesc* bdb, Ods::pag* page, ISC_STATUS* statu
 #ifdef SUPERSERVER_V2
 	release_io_event(file, overlapped_ptr);
 #endif
-
-	if (ostype == OS_CHICAGO) {
-		file->fil_mutex.leave();
-	}
 
 	return true;
 }
@@ -973,9 +896,6 @@ bool PIO_write(jrd_file* file, BufferDesc* bdb, Ods::pag* page, ISC_STATUS* stat
 		if (!WriteFile(desc, spare_buffer, size, &actual_length, overlapped_ptr)
 			|| actual_length != size)
 		{
-			if (ostype == OS_CHICAGO) {
-				file->fil_mutex.leave();
-			}
 			return nt_error("WriteFile", file, isc_io_write_err, status_vector);
 		}
 	}
@@ -994,9 +914,6 @@ bool PIO_write(jrd_file* file, BufferDesc* bdb, Ods::pag* page, ISC_STATUS* stat
 								status_vector);
 			}
 #else
-			if (ostype == OS_CHICAGO) {
-				file->fil_mutex.leave();
-			}
 			return nt_error("WriteFile", file, isc_io_write_err, status_vector);
 #endif
 		}
@@ -1005,10 +922,6 @@ bool PIO_write(jrd_file* file, BufferDesc* bdb, Ods::pag* page, ISC_STATUS* stat
 #ifdef SUPERSERVER_V2
 	release_io_event(file, overlapped_ptr);
 #endif
-
-	if (ostype == OS_CHICAGO) {
-		file->fil_mutex.leave();
-	}
 
 	return true;
 }
@@ -1058,14 +971,14 @@ static void release_io_event(jrd_file* file, OVERLAPPED* overlapped)
 	if (!overlapped || !overlapped->hEvent)
 		return;
 
-	file->fil_mutex.enter();
+	Firebird::MutexLockGuard guard(file->fil_mutex);
+
 	for (int i = 0; i < MAX_FILE_IO; i++)
 		if (!file->fil_io_events[i]) {
 			file->fil_io_events[i] = overlapped->hEvent;
 			overlapped->hEvent = NULL;
 			break;
 		}
-	file->fil_mutex.leave();
 
 	if (overlapped->hEvent)
 		CloseHandle(overlapped->hEvent);
@@ -1108,47 +1021,33 @@ static jrd_file* seek_file(jrd_file*			file,
 	liOffset.QuadPart =
 		UInt32x32To64((DWORD) page, (DWORD) dbb->dbb_page_size);
 
-	if (ostype == OS_CHICAGO) {
-		file->fil_mutex.enter();
-		HANDLE desc = file->fil_desc;
+	overlapped->Offset = liOffset.LowPart;
+	overlapped->OffsetHigh = liOffset.HighPart;
+	overlapped->Internal = 0;
+	overlapped->InternalHigh = 0;
+	overlapped->hEvent = (HANDLE) 0;
 
-		if (SetFilePointer(desc,
-						   (LONG) liOffset.LowPart,
-						   &liOffset.HighPart, FILE_BEGIN) == 0xffffffff)
-		{
-			file->fil_mutex.leave();
-			nt_error("SetFilePointer", file, isc_io_access_err, status_vector);
-			return 0;
-		}
-		*overlapped_ptr = NULL;
-	}
-	else {
-		overlapped->Offset = liOffset.LowPart;
-		overlapped->OffsetHigh = liOffset.HighPart;
-		overlapped->Internal = 0;
-		overlapped->InternalHigh = 0;
-		overlapped->hEvent = (HANDLE) 0;
-
-		*overlapped_ptr = overlapped;
+	*overlapped_ptr = overlapped;
 
 #ifdef SUPERSERVER_V2
-		file->fil_mutex.enter();
-		for (USHORT i = 0; i < MAX_FILE_IO; i++) {
-			if (overlapped->hEvent = (HANDLE) file->fil_io_events[i]) {
-				file->fil_io_events[i] = 0;
-				break;
-			}
+	Firebird::MutexLockGuard guard(file->fil_mutex);
+
+	for (USHORT i = 0; i < MAX_FILE_IO; i++) {
+		if (overlapped->hEvent = (HANDLE) file->fil_io_events[i]) {
+			file->fil_io_events[i] = 0;
+			break;
 		}
-		file->fil_mutex.leave();
-		if (!overlapped->hEvent &&
-			!(overlapped->hEvent = CreateEvent(NULL, TRUE, FALSE, NULL)))
-		{
-			nt_error("CreateEvent", file, isc_io_access_err, status_vector);
-			return 0;
-		}
-		ResetEvent(overlapped->hEvent);
-#endif
 	}
+
+	if (!overlapped->hEvent &&
+		!(overlapped->hEvent = CreateEvent(NULL, TRUE, FALSE, NULL)))
+	{
+		nt_error("CreateEvent", file, isc_io_access_err, status_vector);
+		return 0;
+	}
+
+	ResetEvent(overlapped->hEvent);
+#endif
 
 	return file;
 }
@@ -1187,12 +1086,6 @@ static jrd_file* setup_file(Database*					dbb,
 	PageSpace* pageSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
 	if (pageSpace && pageSpace->file)
 		return file;
-
-/* Set a local variable that indicates whether we're running
-   under Windows/NT or Chicago */
-// CVC: local variable to all this unit, it means.
-
-	ostype = ISC_is_WinNT() ? OS_WINDOWS_NT : OS_CHICAGO;
 
 /* Build unique lock string for file and construct lock block */
 

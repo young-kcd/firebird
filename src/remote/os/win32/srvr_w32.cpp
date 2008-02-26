@@ -175,23 +175,7 @@ int WINAPI WinMain(HINSTANCE	hThisInst,
 #endif
 
 #ifdef SUPERSERVER
-	if (ISC_is_WinNT()) {	/* True - NT, False - Win95 */
-
-		/* CVC: This operating system call doesn't exist for W9x. */
-		typedef BOOL (__stdcall *PSetProcessAffinityMask)(HANDLE, DWORD);
-		PSetProcessAffinityMask SetProcessAffinityMask;
-
-		SetProcessAffinityMask = (PSetProcessAffinityMask)
-			GetProcAddress(GetModuleHandle("KERNEL32.DLL"), "SetProcessAffinityMask");
-		if (SetProcessAffinityMask) {
-			/* Mike Nordell - 11 Jun 2001: CPU affinity. */
-			(*SetProcessAffinityMask)(GetCurrentProcess(),
-				static_cast<DWORD>(Config::getCpuAffinityMask()));
-		}
-	}
-	else {
-		server_flag |= SRVR_non_service;
-	}
+	SetProcessAffinityMask(GetCurrentProcess(), static_cast<DWORD>(Config::getCpuAffinityMask()));
 #endif
 
 	protocol_inet[0] = 0;
@@ -202,9 +186,7 @@ int WINAPI WinMain(HINSTANCE	hThisInst,
 	HANDLE connection_handle = parse_args(lpszArgs, &server_flag);
 
 	if ((server_flag & (SRVR_inet | SRVR_wnet | SRVR_xnet)) == 0) {
-
-		if (ISC_is_WinNT())		/* True - NT, False - Win95 */
-			server_flag |= SRVR_wnet;
+		server_flag |= SRVR_wnet;
 		server_flag |= SRVR_inet;
 		server_flag |= SRVR_xnet;
 	}

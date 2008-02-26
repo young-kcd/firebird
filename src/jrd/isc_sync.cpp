@@ -1749,18 +1749,11 @@ UCHAR* ISC_map_file(
    initialized shared memory. */
 
 	make_object_name(expanded_filename, sizeof(expanded_filename), filename, "_event");
-	if (!ISC_is_WinNT())
-		event_handle =
-			CreateMutex(ISC_get_security_desc(), TRUE, expanded_filename);
-	else
-		event_handle =
-			CreateEvent(ISC_get_security_desc(), TRUE, FALSE,
-						expanded_filename);
+	event_handle =
+		CreateEvent(ISC_get_security_desc(), TRUE, FALSE,
+					expanded_filename);
 	if (!event_handle) {
-		if (!ISC_is_WinNT())
-			error(status_vector, "CreateMutex", GetLastError());
-		else
-			error(status_vector, "CreateEvent", GetLastError());
+		error(status_vector, "CreateEvent", GetLastError());
 		CloseHandle(file_handle);
 		return NULL;
 	}
@@ -1798,13 +1791,7 @@ UCHAR* ISC_map_file(
 	if (!init_flag) {
 		/* Wait for 10 seconds.  Then retry */
 
-		DWORD ret_event;
-		if (!ISC_is_WinNT()) {
-			ret_event = WaitForSingleObject(event_handle, 10000);
-			ReleaseMutex(event_handle);
-		}
-		else
-			ret_event = WaitForSingleObject(event_handle, 10000);
+		const DWORD ret_event = WaitForSingleObject(event_handle, 10000);
 
 		/* If we timed out, just retry.  It is possible that the
 		 * process doing the initialization died before setting the
@@ -1934,10 +1921,7 @@ UCHAR* ISC_map_file(
 
 	if (init_flag) {
 		FlushViewOfFile(address, 0);
-		if (!ISC_is_WinNT())
-			ReleaseMutex(event_handle);
-		else
-			SetEvent(event_handle);
+		SetEvent(event_handle);
 		if (SetFilePointer
 			(shmem_data->sh_mem_handle, length, NULL,
 			 FILE_BEGIN) == 0xFFFFFFFF
@@ -2663,22 +2647,12 @@ int ISC_mutex_init(MTX mutex, const TEXT* mutex_name)
 
 	make_object_name(name_buffer, sizeof(name_buffer), mutex_name, "_mutex");
 
-	if (ISC_is_WinNT())
-	{
-		return !initializeFastMutex(&mutex->mtx_fast, 
-			ISC_get_security_desc(), FALSE, name_buffer);
-	}
-
-	memset(&mutex->mtx_fast, 0, sizeof(FAST_MUTEX));
-
-	mutex->mtx_fast.hEvent =
-		CreateMutex(ISC_get_security_desc(), FALSE, name_buffer);
-
-	return (mutex->mtx_fast.hEvent) ? 0 : 1;
+	return !initializeFastMutex(&mutex->mtx_fast, 
+		ISC_get_security_desc(), FALSE, name_buffer);
 }
 
 
-void ISC_mutex_fini (struct mtx *mutex)
+void ISC_mutex_fini(struct mtx *mutex)
 {
 	if (mutex->mtx_fast.lpSharedInfo)
 		deleteFastMutex(&mutex->mtx_fast);
