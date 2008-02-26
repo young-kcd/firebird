@@ -130,6 +130,10 @@ using namespace Jrd;
 #define MASK		0666
 #endif
 
+#define FCNTL_BROKEN
+// please undefine FCNTL_BROKEN for operating systems,
+// that can successfully change BOTH O_DIRECT and O_SYNC using fcntl()
+
 static jrd_file* seek_file(jrd_file*, BufferDesc*, FB_UINT64 *, ISC_STATUS *);
 static jrd_file* setup_file(Database*, const Firebird::PathName&, int);
 static bool unix_error(TEXT*, jrd_file*, ISC_STATUS, ISC_STATUS*);
@@ -142,6 +146,8 @@ static bool raw_devices_check_file (const Firebird::PathName&);
 static bool raw_devices_validate_database (int, const Firebird::PathName&);
 static int  raw_devices_unlink_database (const Firebird::PathName&);
 #endif
+static int openFile(const char*, bool, bool);
+static bool maybe_close_file(int&);
 
 
 int PIO_add_file(Database* dbb, jrd_file* main_file, const Firebird::PathName& file_name, SLONG start)
@@ -332,7 +338,65 @@ void PIO_flush(jrd_file* main_file)
 }
 
 
-void PIO_force_write(jrd_file* file, bool flag)
+static int openFile(const char* name, bool forcedWrites, bool readOnly)
+{
+/**************************************
+ *
+ *	o p e n F i l e
+ *
+ **************************************
+ *
+ * Functional description
+ *	Open a file with appropriate flags.
+ *
+ **************************************/
+
+	int flag = O_BINARY | (readOnly ? O_RDONLY : O_RDWR);
+#ifdef SUPERSERVER_V2
+	flag |= SYNC;
+	// what to do with O_DIRECT here ?
+#else
+	if (forcedWrites)
+		flag |= SYNC;
+#endif
+
+	for (int i = 0; i < IO_RETRY; i++)
+	{
+		int desc = open(name, flag);
+		if (desc != -1)
+			return desc;
+		if (!SYSCALL_INTERRUPTED(errno))
+			break;
+	}
+
+	return -1;
+}
+
+
+static bool maybe_close_file(int& desc)
+{
+/**************************************
+ *
+ * M a y b e C l o s e F i l e
+ *
+ **************************************
+ *
+ * Functional description
+ * If the file is open, close it.
+ *
+ **************************************/
+
+	if (desc >= 0)
+	{
+		close(desc);
+		desc = -1;
+		return true;
+	}
+	return false;
+}
+
+
+void PIO_force_write(jrd_file* file, bool forcedWrites)
 {
 /**************************************
  *
@@ -344,30 +408,38 @@ void PIO_force_write(jrd_file* file, bool flag)
  *	Set (or clear) force write, if possible, for the database.
  *
  **************************************/
-	int control;
 
-/* Since all SUPERSERVER_V2 database and shadow I/O is synchronous, this
-   is a no-op. */
+// Since all SUPERSERVER_V2 database and shadow I/O is synchronous, this is a no-op. 
 
 #ifndef SUPERSERVER_V2
-	control = (flag) ? SYNC : 0;
+	const bool oldForce = (file->fil_flags & FIL_force_write) != 0;
 
-	if (fcntl(file->fil_desc, F_SETFL, control) == -1)
+	if (forcedWrites != oldForce)
 	{
-		ERR_post(isc_io_error,
-				 isc_arg_string, "fcntl SYNC",
-				 isc_arg_cstring, file->fil_length,
-				 ERR_string(file->fil_string, file->fil_length), isc_arg_gds,
-				 isc_io_access_err, isc_arg_unix, errno, 0);
-	}
-	else 
-	{
-		if (flag) {
-			file->fil_flags |= (FIL_force_write | FIL_force_write_init);
+		const int control = forcedWrites ? SYNC : 0;
+
+#ifndef FCNTL_BROKEN
+		if (fcntl(file->fil_desc, F_SETFL, control) == -1)
+		{
+			ERR_post(isc_io_error,
+					 isc_arg_string, "fcntl() SYNC/DIRECT",
+					 isc_arg_cstring, file->fil_length,
+					 ERR_string(file->fil_string, file->fil_length), isc_arg_gds,
+					 isc_io_access_err, isc_arg_unix, errno, 0);
 		}
-		else {
-			file->fil_flags &= ~FIL_force_write;
+#else //FCNTL_BROKEN
+		maybe_close_file(file->fil_desc);
+		file->fil_desc = openFile(file->fil_string, forcedWrites, file->fil_flags & FIL_readonly);
+		if (file->fil_desc == -1)
+		{
+			ERR_post(isc_io_error, isc_arg_string, "re open() for SYNC/DIRECT",
+					 isc_arg_cstring, file->fil_length, ERR_string(file->fil_string, file->fil_length),
+					 isc_arg_gds, isc_io_open_err, isc_arg_unix, errno, 0);
 		}
+#endif //FCNTL_BROKEN
+
+		file->fil_flags &= ~FIL_force_write;
+		file->fil_flags |= (forcedWrites ? FIL_force_write : 0);
 	}
 #endif
 }
@@ -541,6 +613,8 @@ SLONG PIO_act_alloc(Database* dbb)
 }
 
 
+
+
 jrd_file* PIO_open(Database* dbb,
 			 const Firebird::PathName& string,
 			 bool trace_flag,
@@ -559,30 +633,16 @@ jrd_file* PIO_open(Database* dbb,
  *	the connection to communication with a page/lock server.
  *
  **************************************/
-	int desc, flag;
+	bool readOnly = false;
 	const TEXT* ptr = (string.hasData() ? string : file_name).c_str();
-
-#ifdef SUPERSERVER_V2
-	flag = SYNC | O_RDWR | O_BINARY;
-#else
-	flag = O_RDWR | O_BINARY;
-#endif
-
-	for (int i = 0; i < IO_RETRY; i++)
-	{
-		if ((desc = open(ptr, flag)) != -1)
-			break;
-		if (!SYSCALL_INTERRUPTED(errno))
-			break;
-	}
+	int desc = openFile(ptr, false, false);
 
 	if (desc == -1) {
 		/* Try opening the database file in ReadOnly mode. The database file could
 		 * be on a RO medium (CD-ROM etc.). If this fileopen fails, return error.
 		 */
-		flag &= ~O_RDWR;
-		flag |= O_RDONLY;
-		if ((desc = open(ptr, flag)) == -1) {
+		desc = openFile(ptr, false, true);
+		if (desc == -1) {
 			ERR_post(isc_io_error,
 					 isc_arg_string, "open",
 					 isc_arg_cstring, file_name.length(), ERR_cstring(file_name),
@@ -596,6 +656,7 @@ jrd_file* PIO_open(Database* dbb,
 			 */
 			if (!dbb->dbb_file)
 				dbb->dbb_flags |= DBB_being_opened_read_only;
+			readOnly = true;
 		}
 	}
 
@@ -619,6 +680,8 @@ jrd_file* PIO_open(Database* dbb,
 	jrd_file *file;
 	try {
 		file = setup_file(dbb, string, desc);
+		if (readOnly)
+			file->fil_flags |= FIL_readonly;
 	} catch(const std::exception&) {
 		close(desc);
 		throw;
