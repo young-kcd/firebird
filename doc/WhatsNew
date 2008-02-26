@@ -104,6 +104,11 @@
       Contributor(s):
         Vlad Horsun <horsun at kdb.dp.ua>
 
+    * Fixed bug CORE-1476
+        Forced writes do not work on Linux
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
     * Fixed bug CORE-1470
         Server crashes with secondary file name > 127 characters
       Contributor(s):
