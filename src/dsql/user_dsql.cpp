@@ -36,39 +36,44 @@
  */
 
 #include "firebird.h"
-#include <stdio.h>
-#include <stdlib.h>
 #include "../jrd/common.h"
-#include <stdarg.h>
-#include "../dsql/dsql.h"
 #include "../dsql/chars.h"
 #include "../dsql/sqlda.h"
-#include "../jrd/blr.h"
-#include "gen/iberror.h"
-#include "../jrd/align.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/why_proto.h"
 #include "../dsql/user__proto.h"
+#include "gen/iberror.h"
+#include "../common/classes/init.h"
+#include "../common/classes/rwlock.h"
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdarg.h>
+
 
 enum name_type {
 	NAME_statement = 1,
 	NAME_cursor = 2
 };
 
-typedef FB_API_HANDLE HNDL;
-
 /* declare a structure which enables us to associate a cursor with a 
    statement and vice versa */
 
+struct dsql_dbb
+{
+	dsql_dbb* dbb_next;
+	FB_API_HANDLE dbb_handle;
+};
+
 struct dsql_name;	// fwd. decl.
 
-struct stmt
+struct dsql_stmt
 {
-	stmt*	stmt_next;			// next in chain 
+	dsql_stmt*	stmt_next;			// next in chain 
 	dsql_name*	stmt_stmt;			// symbol table entry for statement name
 	dsql_name*	stmt_cursor;		// symbol table entry for cursor name
-	HNDL	stmt_handle;		// stmt handle returned by dsql_xxx 
-	HNDL	stmt_db_handle;		// database handle for this statement 
+	FB_API_HANDLE	stmt_handle;		// stmt handle returned by dsql_xxx 
+	FB_API_HANDLE	stmt_db_handle;		// database handle for this statement 
 };
 
 // declare a structure to hold the cursor and statement names 
@@ -77,11 +82,18 @@ struct dsql_name
 {
 	dsql_name*	name_next;
 	dsql_name*	name_prev;
-	stmt*	name_stmt;
+	dsql_stmt*	name_stmt;
 	USHORT	name_length;
 	SCHAR	name_symbol[1];
 };
 
+// error block
+
+struct dsql_err_stblock
+{
+	ISC_STATUS* dsql_status;
+	ISC_STATUS* dsql_user_status;
+};
 
 static void		cleanup(void*);
 static void		cleanup_database(FB_API_HANDLE*, void*);
@@ -89,23 +101,23 @@ static ISC_STATUS	error(const Firebird::Exception& ex);
 static ISC_STATUS	error();
 static void		error_post(ISC_STATUS, ...);
 static dsql_name*		lookup_name(const SCHAR*, dsql_name*);
-static stmt*		lookup_stmt(const SCHAR*, dsql_name*, name_type);
+static dsql_stmt*		lookup_stmt(const SCHAR*, dsql_name*, name_type);
 static void		init(FB_API_HANDLE*);
-static dsql_name*		insert_name(const SCHAR*, dsql_name**, stmt*);
+static dsql_name*		insert_name(const SCHAR*, dsql_name**, dsql_stmt*);
 static USHORT	name_length(const SCHAR*);
 static void		remove_name(dsql_name*, dsql_name**);
 static bool		scompare(const SCHAR*, USHORT, const SCHAR*, USHORT);
 
 // declare the private data 
 
-#pragma FB_COMPILER_MESSAGE("Dragons ahead. Static data. Not thread safe!")
-
 static bool		init_flag		= false;	// whether we've been initialized 
 static dsql_err_stblock*	UDSQL_error		= NULL;
-static stmt*		statements		= NULL;
+static dsql_stmt*		statements		= NULL;
 static dsql_name*		statement_names	= NULL;
 static dsql_name*		cursor_names	= NULL;
 static dsql_dbb*		databases		= NULL;
+
+Firebird::GlobalPtr<Firebird::RWLock> global_sync;
 
 static inline void set_global_private_status(ISC_STATUS* user_status, ISC_STATUS* local_status)
 {
@@ -133,7 +145,7 @@ ISC_STATUS API_ROUTINE isc_embed_dsql_close(ISC_STATUS* user_status, const SCHAR
 	{
 		// get the symbol table entry
 
-		stmt* statement = lookup_stmt(name, cursor_names, NAME_cursor);
+		dsql_stmt* statement = lookup_stmt(name, cursor_names, NAME_cursor);
 
 		return isc_dsql_free_statement(	user_status,
 									&statement->stmt_handle,
@@ -162,7 +174,7 @@ ISC_STATUS API_ROUTINE isc_embed_dsql_declare(	ISC_STATUS*	user_status,
 	{
 		// get the symbol table entry
 
-		stmt* statement = lookup_stmt(stmt_name, statement_names, NAME_statement);
+		dsql_stmt* statement = lookup_stmt(stmt_name, statement_names, NAME_statement);
 
 		const ISC_STATUS s =
 			isc_dsql_set_cursor_name(user_status,
@@ -173,6 +185,7 @@ ISC_STATUS API_ROUTINE isc_embed_dsql_declare(	ISC_STATUS*	user_status,
 			return s;
 		}
 
+		Firebird::WriteLockGuard guard(global_sync);
 		statement->stmt_cursor = insert_name(cursor, &cursor_names, statement);
 
 		return s;
@@ -200,7 +213,7 @@ ISC_STATUS API_ROUTINE isc_embed_dsql_describe(ISC_STATUS* user_status,
 	{
 		// get the symbol table entry
 
-		stmt* statement = lookup_stmt(stmt_name, statement_names, NAME_statement);
+		dsql_stmt* statement = lookup_stmt(stmt_name, statement_names, NAME_statement);
 
 		return isc_dsql_describe(user_status,
 							 &statement->stmt_handle,
@@ -246,7 +259,7 @@ ISC_STATUS API_ROUTINE isc_embed_dsql_describe_bind(ISC_STATUS*	user_status,
 	{
 		// get the symbol table entry
 
-		stmt* statement = lookup_stmt(stmt_name, statement_names, NAME_statement);
+		dsql_stmt* statement = lookup_stmt(stmt_name, statement_names, NAME_statement);
 
 		return isc_dsql_describe_bind(user_status,
 								  &statement->stmt_handle,
@@ -297,7 +310,7 @@ ISC_STATUS API_ROUTINE isc_embed_dsql_execute2(ISC_STATUS*	user_status,
 	{
 		// get the symbol table entry
 
-		stmt* statement = lookup_stmt(stmt_name, statement_names, NAME_statement);
+		dsql_stmt* statement = lookup_stmt(stmt_name, statement_names, NAME_statement);
 
 		return isc_dsql_execute2(	user_status,
 								trans_handle,
@@ -395,7 +408,7 @@ ISC_STATUS API_ROUTINE isc_embed_dsql_fetch(ISC_STATUS* user_status,
 	INIT_DSQL(user_status, local_status);
 	try
 	{
-		stmt* statement = lookup_stmt(cursor_name, cursor_names, NAME_cursor);
+		dsql_stmt* statement = lookup_stmt(cursor_name, cursor_names, NAME_cursor);
 
 		return isc_dsql_fetch(user_status,
 						  &statement->stmt_handle,
@@ -428,7 +441,7 @@ ISC_STATUS API_ROUTINE isc_embed_dsql_fetch2(	ISC_STATUS*	user_status,
 	{
 		// get the symbol table entry
 
-		stmt* statement = lookup_stmt(cursor_name, cursor_names, NAME_cursor);
+		dsql_stmt* statement = lookup_stmt(cursor_name, cursor_names, NAME_cursor);
 
 		return isc_dsql_fetch2(	user_status,
 							&statement->stmt_handle,
@@ -518,7 +531,7 @@ ISC_STATUS API_ROUTINE isc_embed_dsql_insert(ISC_STATUS* user_status,
 	{
 		// get the symbol table entry 
 
-		stmt* statement = lookup_stmt(cursor_name, cursor_names, NAME_cursor);
+		dsql_stmt* statement = lookup_stmt(cursor_name, cursor_names, NAME_cursor);
 
 		return isc_dsql_insert(user_status,
 						   &statement->stmt_handle,
@@ -600,7 +613,7 @@ ISC_STATUS API_ROUTINE isc_embed_dsql_open2(ISC_STATUS* user_status,
 	{
 		// get the symbol table entry 
 
-		stmt* statement = lookup_stmt(cursor_name, cursor_names, NAME_cursor);
+		dsql_stmt* statement = lookup_stmt(cursor_name, cursor_names, NAME_cursor);
 
 		return isc_dsql_execute2(user_status,
 							 trans_handle,
@@ -635,8 +648,8 @@ ISC_STATUS API_ROUTINE isc_embed_dsql_prepare(ISC_STATUS*	user_status,
  **************************************/
 	ISC_STATUS s;
 	ISC_STATUS_ARRAY local_status;
-	stmt* statement;
-	HNDL stmt_handle;
+	dsql_stmt* statement;
+	FB_API_HANDLE stmt_handle;
 
 	init(db_handle);
 	set_global_private_status(user_status, local_status);
@@ -692,9 +705,11 @@ ISC_STATUS API_ROUTINE isc_embed_dsql_prepare(ISC_STATUS*	user_status,
 /* If a new statement was allocated, add it to the symbol table and insert it
    into the list of statements */
 
+	Firebird::WriteLockGuard guard(global_sync);
+
 	if (!statement)
 	{
-		statement = (stmt*) gds__alloc((SLONG) sizeof(stmt));
+		statement = (dsql_stmt*) gds__alloc((SLONG) sizeof(dsql_stmt));
 		// FREE: by user calling isc_embed_dsql_release() 
 		if (!statement)			// NOMEM: 
 			error_post(isc_virmemexh, 0);
@@ -706,12 +721,13 @@ ISC_STATUS API_ROUTINE isc_embed_dsql_prepare(ISC_STATUS*	user_status,
 		statement->stmt_next = statements;
 		statements = statement;
 
-		statement->stmt_db_handle = (HNDL) * db_handle;
-		statement->stmt_stmt =
-			insert_name(stmt_name, &statement_names, statement);
+		statement->stmt_db_handle = (FB_API_HANDLE) * db_handle;
+		statement->stmt_stmt = insert_name(stmt_name, &statement_names, statement);
 	}
 	else if (statement->stmt_cursor)
+	{
 		remove_name(statement->stmt_cursor, &cursor_names);
+	}
 
 	statement->stmt_handle = stmt_handle;
 	statement->stmt_cursor = NULL;
@@ -747,7 +763,7 @@ ISC_STATUS API_ROUTINE isc_embed_dsql_release(ISC_STATUS* user_status,
 	{
 		// If a request already exists under that name, purge it out 
 
-		stmt* statement = lookup_stmt(stmt_name, statement_names, NAME_statement);
+		dsql_stmt* statement = lookup_stmt(stmt_name, statement_names, NAME_statement);
 
 		ISC_STATUS s =
 			isc_dsql_free_statement(user_status,
@@ -759,6 +775,8 @@ ISC_STATUS API_ROUTINE isc_embed_dsql_release(ISC_STATUS* user_status,
 
 		// remove the statement from the symbol tables
 
+		Firebird::WriteLockGuard guard(global_sync);
+
 		if (statement->stmt_stmt)
 			remove_name(statement->stmt_stmt, &statement_names);
 		if (statement->stmt_cursor)
@@ -766,8 +784,8 @@ ISC_STATUS API_ROUTINE isc_embed_dsql_release(ISC_STATUS* user_status,
 
 		// and remove this statement from the local list
 
-		stmt* p;
-		for (stmt** stmt_ptr = &statements; p = *stmt_ptr; stmt_ptr = &p->stmt_next) {
+		dsql_stmt* p;
+		for (dsql_stmt** stmt_ptr = &statements; p = *stmt_ptr; stmt_ptr = &p->stmt_next) {
 			if (p == statement) {
 				*stmt_ptr = statement->stmt_next;
 				gds__free(statement);
@@ -889,7 +907,7 @@ ISC_STATUS API_ROUTINE isc_describe_bind(ISC_STATUS* status_vector,
 										reinterpret_cast<XSQLDA*>(sqlda));
 }
 
-ISC_STATUS API_ROUTINE isc_dsql_finish(HNDL* db_handle)
+ISC_STATUS API_ROUTINE isc_dsql_finish(FB_API_HANDLE* db_handle)
 {
 	return 0;
 }
@@ -1019,7 +1037,7 @@ ISC_STATUS API_ROUTINE gds__describe_bind(ISC_STATUS*	status_vector,
 	return isc_describe_bind(status_vector, statement_name, sqlda);
 }
 
-ISC_STATUS API_ROUTINE gds__dsql_finish(HNDL* db_handle)
+ISC_STATUS API_ROUTINE gds__dsql_finish(FB_API_HANDLE* db_handle)
 {
 	return isc_dsql_finish(db_handle);
 }
@@ -1111,10 +1129,10 @@ static void free_all_databases(dsql_dbb*& databasesL)
 	}
 }
 
-static void free_all_statements(stmt*& statementsL)
+static void free_all_statements(dsql_stmt*& statementsL)
 {
 	while (statementsL) {
-		stmt* statement = statementsL;
+		dsql_stmt* statement = statementsL;
 		statementsL = statement->stmt_next;
 		gds__free(statement);
 	}
@@ -1145,6 +1163,8 @@ static void cleanup(void* arg)
 	gds__free(UDSQL_error);
 	UDSQL_error = NULL;
 
+	Firebird::WriteLockGuard guard(global_sync);
+
 	free_all_databases(databases);
 	free_all_statements(statements);
 	free_all_names(statement_names);
@@ -1167,8 +1187,10 @@ static void cleanup_database(FB_API_HANDLE* db_handle, void* dummy)
 	// for each of the statements in this database, remove it
 	// from the local list and from the hash table
 
-	stmt** stmt_ptr = &statements;
-	stmt* p;
+	Firebird::WriteLockGuard guard(global_sync);
+
+	dsql_stmt** stmt_ptr = &statements;
+	dsql_stmt* p;
 
 	while (p = *stmt_ptr)
 	{
@@ -1193,7 +1215,7 @@ static void cleanup_database(FB_API_HANDLE* db_handle, void* dummy)
 
 	for (dsql_dbb** dbb_ptr = &databases; dbb = *dbb_ptr; dbb_ptr = &dbb->dbb_next)
 	{
-		if (dbb->dbb_database_handle == *db_handle)
+		if (dbb->dbb_handle == *db_handle)
 		{
 			*dbb_ptr = dbb->dbb_next;
 			gds__free(dbb);
@@ -1324,9 +1346,14 @@ static void init(FB_API_HANDLE* db_handle)
 	}
 
 	dsql_dbb* dbb;
-	for (dbb = databases; dbb; dbb = dbb->dbb_next) {
-		if (dbb->dbb_database_handle == *db_handle) {
-			return;
+
+	{ // scope
+		Firebird::ReadLockGuard guard(global_sync);
+
+		for (dbb = databases; dbb; dbb = dbb->dbb_next) {
+			if (dbb->dbb_handle == *db_handle) {
+				return;
+			}
 		}
 	}
 
@@ -1337,16 +1364,18 @@ static void init(FB_API_HANDLE* db_handle)
 		return;					// Not a great error handler
 	}
 
+	Firebird::WriteLockGuard guard(global_sync);
+
 	dbb->dbb_next = databases;
 	databases = dbb;
-	dbb->dbb_database_handle = *db_handle;
+	dbb->dbb_handle = *db_handle;
 
 	ISC_STATUS_ARRAY local_status;
 	isc_database_cleanup(local_status, db_handle, cleanup_database, NULL);
 }
 
 
-static dsql_name* insert_name(const TEXT* symbol_name, dsql_name** list_ptr, stmt* stmt)
+static dsql_name* insert_name(const TEXT* symbol_name, dsql_name** list_ptr, dsql_stmt* stmt)
 {
 /**************************************
  *
@@ -1391,6 +1420,8 @@ static dsql_name* lookup_name(const TEXT* name, dsql_name* list)
  *
  **************************************/
 
+	Firebird::ReadLockGuard guard(global_sync);
+
 	const USHORT l = name_length(name);
 	for (; list; list = list->name_next) {
 		if (scompare(name, l, list->name_symbol, list->name_length)) {
@@ -1402,7 +1433,7 @@ static dsql_name* lookup_name(const TEXT* name, dsql_name* list)
 }
 
 
-static stmt* lookup_stmt(const TEXT* name, dsql_name* list, name_type type)
+static dsql_stmt* lookup_stmt(const TEXT* name, dsql_name* list, name_type type)
 {
 /**************************************
  *
