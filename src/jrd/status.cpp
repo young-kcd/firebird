@@ -78,13 +78,13 @@ void STUFF_STATUS_function(ISC_STATUS* status_vector, ISC_STATUS status, va_list
 
 			case isc_arg_interpreted:
 			case isc_arg_sql_state:
-				*p++ = (ISC_STATUS) va_arg(args, TEXT *);
+				*p++ = (ISC_STATUS) va_arg(args, TEXT*);
 				break;
 
 			case isc_arg_cstring:
 				len = (int) va_arg(args, int);
 				*p++ = (ISC_STATUS) (len >= MAX_ERRSTR_LEN) ? MAX_ERRSTR_LEN : len;
-				*p++ = (ISC_STATUS) va_arg(args, TEXT *);
+				*p++ = (ISC_STATUS) va_arg(args, TEXT*);
 				break;
 
 			case isc_arg_number:

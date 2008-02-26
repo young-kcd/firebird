@@ -1366,8 +1366,6 @@ static bool get_merge_join(
 	for (ptr = rsb->rsb_arg, tail = impure->irsb_mrg_rpt; ptr < end;
 		 ptr += 2, tail++)
 	{
-		ULONG key[32];
-
 		RecordSource* sort_rsb = *ptr;
 		SortMap* map = (SortMap*) sort_rsb->rsb_arg[0];
 		merge_file* mfb = &tail->irsb_mrg_file;
@@ -2231,6 +2229,7 @@ static bool get_record(thread_db*	tdbb,
 	case rsb_skip:
 		{
 			irsb_skip_n* skip = (irsb_skip_n*) impure;
+
 			switch (mode)
 			{
 	#ifdef SCROLLABLE_CURSORS

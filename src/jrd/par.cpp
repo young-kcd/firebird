@@ -809,12 +809,12 @@ static void error(CompilerScratch* csb, ...)
 		case isc_arg_string:
 		case isc_arg_interpreted:
 		case isc_arg_sql_state:
-			*p++ = (ISC_STATUS) va_arg(args, TEXT *);
+			*p++ = (ISC_STATUS) va_arg(args, TEXT*);
 			break;
 
 		case isc_arg_cstring:
 			*p++ = (ISC_STATUS) va_arg(args, int);
-			*p++ = (ISC_STATUS) va_arg(args, TEXT *);
+			*p++ = (ISC_STATUS) va_arg(args, TEXT*);
 			break;
 
 		case isc_arg_number:
@@ -3395,12 +3395,12 @@ static void warning(CompilerScratch* csb, ...)
 		case isc_arg_string:
 		case isc_arg_interpreted:
 		case isc_arg_sql_state:
-			*p++ = (ISC_STATUS) va_arg(args, TEXT *);
+			*p++ = (ISC_STATUS) va_arg(args, TEXT*);
 			break;
 
 		case isc_arg_cstring:
 			*p++ = (ISC_STATUS) va_arg(args, int);
-			*p++ = (ISC_STATUS) va_arg(args, TEXT *);
+			*p++ = (ISC_STATUS) va_arg(args, TEXT*);
 			break;
 
 		case isc_arg_number:

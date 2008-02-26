@@ -296,11 +296,13 @@ void API_ROUTINE perf_get_info(FB_API_HANDLE* handle, PERF* perf)
 				perf->perf_max_memory = 0;
 				break;
 			}
+
 			{
 				const SLONG temp = isc_vax_integer(p, 2);
 				fb_assert(temp <= MAX_SSHORT);
 				p += temp + 2;
 			}
+
 			perf->perf_marks = 0;
 			break;
 

@@ -2280,6 +2280,7 @@ void API_ROUTINE fb_sqlstate(char* sqlstate, const ISC_STATUS* status_vector)
 	// step #2, see if we can find a mapping.
 	gdscode = 0;
 	s = status_vector;
+
 	while ((*s != isc_arg_end) && (!have_sqlstate))
 	{
 		if (*s == isc_arg_gds)
@@ -2328,6 +2329,7 @@ void API_ROUTINE fb_sqlstate(char* sqlstate, const ISC_STATUS* status_vector)
 						}
 					} // while
 				}
+
 				s++;
 			}
 		}

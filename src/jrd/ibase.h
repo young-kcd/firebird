@@ -617,7 +617,6 @@ void ISC_EXPORT isc_sqlcode_s(const ISC_STATUS*,
 void ISC_EXPORT fb_sqlstate(char*,
 							const ISC_STATUS*);
 
-
 void ISC_EXPORT isc_sql_interprete(short,
 								   ISC_SCHAR*,
 								   short);
