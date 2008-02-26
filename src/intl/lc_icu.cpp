@@ -150,12 +150,12 @@ bool LCICU_texttype_init(texttype* tt,
 			tt, name, charSetName, attributes,
 			specificAttributes, specificAttributesLength, configInfo);
 	}
-	else if (len > 8 && strcmp(name + len - 8, "_UNICODE") == 0)
+	if (len > 8 && strcmp(name + len - 8, "_UNICODE") == 0)
 	{
 		return texttype_unicode_init(
 			tt, name, charSetName, attributes,
 			specificAttributes, specificAttributesLength, configInfo);
 	}
-	else
-		return false;
+	
+	return false;
 }

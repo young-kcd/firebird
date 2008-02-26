@@ -30,6 +30,11 @@
 #include "intlobj_new.h"
 #include "../jrd/IntlUtil.h"
 #include "../jrd/os/mod_loader.h"
+//#include "unicode/ucol.h"
+//#include "unicode/ucnv.h"
+
+struct UCollator;
+struct USet;
 
 namespace Jrd {
 
@@ -93,10 +98,10 @@ public:
 		ICU* icu;
 		texttype* tt;
 		USHORT attributes;
-		void* compareCollator;
-		void* partialCollator;
-		void* sortCollator;
-		void* contractions;
+		UCollator* compareCollator;
+		UCollator* partialCollator;
+		UCollator* sortCollator;
+		USet* contractions;
 		int contractionsCount;
 	};
 	

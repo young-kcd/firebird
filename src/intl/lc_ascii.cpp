@@ -561,14 +561,14 @@ SSHORT famasc_compare(texttype* obj, ULONG l1, const BYTE* s1, ULONG l2, const B
 	for (ULONG i = 0; i < len; i++) {
 		if (s1[i] == s2[i])
 			continue;
-		else if (all_spaces(&s1[i], (SLONG) (l1 - i)))
+		if (all_spaces(&s1[i], (SLONG) (l1 - i)))
 			return -1;
-		else if (all_spaces(&s2[i], (SLONG) (l2 - i)))
+		if (all_spaces(&s2[i], (SLONG) (l2 - i)))
 			return 1;
-		else if (s1[i] < s2[i])
+		if (s1[i] < s2[i])
 			return -1;
-		else
-			return 1;
+		
+		return 1;
 	}
 
 	if (l1 > len) {

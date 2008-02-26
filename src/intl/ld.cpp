@@ -528,8 +528,8 @@ INTL_BOOL FB_DLL_EXPORT LD_lookup_texttype(texttype* tt, const ASCII* texttype_n
 					{
 						if (LD_lookup_charset(&cs, charset_name, configInfo))
 							break;
-						else
-							return false;
+						
+						return false;
 					}
 				}
 
@@ -572,13 +572,14 @@ ULONG FB_DLL_EXPORT LD_setup_attributes(
 
 	if (dstLen == 0)
 		return newSpecificAttributes.length();
-	else if (newSpecificAttributes.length() <= dstLen)
+	
+	if (newSpecificAttributes.length() <= dstLen)
 	{
 		memcpy(dst, newSpecificAttributes.begin(), newSpecificAttributes.length());
 		return newSpecificAttributes.length();
 	}
-	else
-		return INTL_BAD_STR_LENGTH;
+	
+	return INTL_BAD_STR_LENGTH;
 }
 
 

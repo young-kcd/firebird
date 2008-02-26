@@ -1771,21 +1771,21 @@ static sort_record* get_merge(merge_control* merge, sort_context* scb
 		}
 
 		if (!merge->mrg_record_b)
+		{
 			if (merge->mrg_stream_b) {
 				merge = (merge_control*) merge->mrg_stream_b;
-				continue;
 			}
 			else if ( (record = merge->mrg_record_a) ) {
 				merge->mrg_record_a = NULL;
 				merge = merge->mrg_header.rmh_parent;
-				continue;
 			}
 			else {
 				eof = true;
 				record = (sort_record*) - 1;
 				merge = merge->mrg_header.rmh_parent;
-				continue;
 			}
+			continue;
+		}
 
 		if (!merge->mrg_record_a) {
 			record = merge->mrg_record_b;

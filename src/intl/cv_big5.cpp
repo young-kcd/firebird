@@ -197,10 +197,8 @@ INTL_BOOL CVBIG5_check_big5(charset* cs,
 					*offending_position = big5_str - big5_str_start;
 				return (false);
 			}
-			else {
-				big5_str += 2;
-				big5_len -= 1;
-			}
+			big5_str += 2;
+			big5_len -= 1;
 		}
 		else {					/* it is a ASCII */
 
