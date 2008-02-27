@@ -2044,40 +2044,42 @@ ISC_STATUS GDS_DETACH(ISC_STATUS* user_status, Attachment** handle)
 
 	try
 	{
-		Firebird::MutexLockGuard guard(databases_mutex);
+		{ // scope
+			Firebird::MutexLockGuard guard(databases_mutex);
 
-		Attachment* attachment = *handle;
-		validateHandle(tdbb, attachment);
+			Attachment* attachment = *handle;
+			validateHandle(tdbb, attachment);
 
-		{ // holder scope
-			DatabaseContextHolder dbbHolder(tdbb);
+			{ // holder scope
+				DatabaseContextHolder dbbHolder(tdbb);
 
-			Database* dbb = tdbb->getDatabase();
+				Database* dbb = tdbb->getDatabase();
 
-			// if this is the last attachment, mark dbb as not in use
-			if (dbb->dbb_attachments == attachment &&
-				!attachment->att_next &&
-				!(dbb->dbb_flags & DBB_being_opened))
-			{
-				dbb->dbb_flags |= DBB_not_in_use;
-			}
+				// if this is the last attachment, mark dbb as not in use
+				if (dbb->dbb_attachments == attachment &&
+					!attachment->att_next &&
+					!(dbb->dbb_flags & DBB_being_opened))
+				{
+					dbb->dbb_flags |= DBB_not_in_use;
+				}
 
 #ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
-			LOG_call(log_detach, *handle);
-			LOG_call(log_statistics, dbb->dbb_reads, dbb->dbb_writes,
-					 dbb->dbb_max_memory);
+				LOG_call(log_detach, *handle);
+				LOG_call(log_statistics, dbb->dbb_reads, dbb->dbb_writes,
+						 dbb->dbb_max_memory);
 #endif
 
-			try
-			{
-				// Purge attachment, don't rollback open transactions
-				attachment->att_flags |= ATT_cancel_disable;
-				purge_attachment(tdbb, user_status, attachment, false);
-			}
-			catch (const Firebird::Exception&)
-			{
-				dbb->dbb_flags &= ~DBB_not_in_use;
-				throw;
+				try
+				{
+					// Purge attachment, don't rollback open transactions
+					attachment->att_flags |= ATT_cancel_disable;
+					purge_attachment(tdbb, user_status, attachment, false);
+				}
+				catch (const Firebird::Exception&)
+				{
+					dbb->dbb_flags &= ~DBB_not_in_use;
+					throw;
+				}
 			}
 		}
 
@@ -5246,9 +5248,9 @@ static void shutdown_database(Database* dbb, const bool release_pools)
 #endif
 	CMP_fini(tdbb);
 	CCH_fini(tdbb);
+
 	if (dbb->dbb_backup_manager)
 		dbb->dbb_backup_manager->shutdown(tdbb);
-	// FUN_fini(tdbb);
 
 	if (dbb->dbb_instance_lock)
 		LCK_release(tdbb, dbb->dbb_instance_lock);
@@ -5278,21 +5280,14 @@ static void shutdown_database(Database* dbb, const bool release_pools)
 		vec<jrd_rel*>* vector = dbb->dbb_relations;
 		vec<jrd_rel*>::iterator ptr = vector->begin(), end = vector->end();
 
-		for (; ptr < end; ++ptr)
+		while (ptr < end)
 		{
-			jrd_rel* relation = *ptr;
+			jrd_rel* relation = *ptr++;
 			if (relation)
 			{
 				if (relation->rel_file)
 				{
-					EXT_fini(*ptr, false);
-				}
-
-				for (IndexLock* index_lock = relation->rel_index_locks; index_lock;
-					index_lock = index_lock->idl_next)
-				{
-					if (index_lock->idl_lock)
-						LCK_release(tdbb, index_lock->idl_lock);
+					EXT_fini(relation, false);
 				}
 
 				for (IndexBlock* index_block = relation->rel_index_blocks; index_block;
