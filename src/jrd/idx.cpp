@@ -85,6 +85,7 @@ static PageNumber get_root_page(thread_db*, jrd_rel*);
 static int index_block_flush(void*);
 static IDX_E insert_key(thread_db*, jrd_rel*, Record*, jrd_tra*, WIN *, index_insertion*, jrd_rel**, USHORT *);
 static bool key_equal(const temporary_key*, const temporary_key*);
+static void release_index_block(thread_db*, IndexBlock*);
 static void signal_index_deletion(thread_db*, jrd_rel*, USHORT);
 
 
@@ -1501,18 +1502,7 @@ static int index_block_flush(void* ast_object)
 	tdbb->setDatabase(dbb);
 	tdbb->setAttachment(lock->lck_attachment);
 
-/* release the index expression request, which also has
-   the effect of releasing the expression tree */
-
-	if (index_block->idb_expression_request) {
-		CMP_release(tdbb, index_block->idb_expression_request);
-	}
-
-	index_block->idb_expression_request = NULL;
-	index_block->idb_expression = NULL;
-	MOVE_CLEAR(&index_block->idb_expression_desc, sizeof(struct dsc));
-
-	LCK_release(tdbb, lock);
+	release_index_block(tdbb, index_block);
 
 	return 0;
 }
@@ -1604,6 +1594,31 @@ static bool key_equal(const temporary_key* key1, const temporary_key* key2)
 }
 
 
+static void release_index_block(thread_db* tdbb, IndexBlock* index_block)
+{
+/**************************************
+ *
+ *	r e l e a s e _ i n d e x _ b l o c k
+ *
+ **************************************
+ *
+ * Functional description
+ *	Release index block structure.
+ *
+ **************************************/
+	if (index_block->idb_expression_request)
+	{
+		CMP_release(tdbb, index_block->idb_expression_request);
+	}
+
+	index_block->idb_expression_request = NULL;
+	index_block->idb_expression = NULL;
+	MOVE_CLEAR(&index_block->idb_expression_desc, sizeof(dsc));
+
+	LCK_release(tdbb, index_block->idb_lock);
+}
+
+
 static void signal_index_deletion(thread_db* tdbb, jrd_rel* relation, USHORT id)
 {
 /**************************************
@@ -1652,15 +1667,5 @@ static void signal_index_deletion(thread_db* tdbb, jrd_rel* relation, USHORT id)
 		LCK_lock(tdbb, lock, LCK_EX, LCK_WAIT);
 	}
 
-/* and clear out our index block as well */
-
-	if (index_block->idb_expression_request) {
-		CMP_release(tdbb, index_block->idb_expression_request);
-	}
-
-	index_block->idb_expression_request = NULL;
-	index_block->idb_expression = NULL;
-	MOVE_CLEAR(&index_block->idb_expression_desc, sizeof(struct dsc));
-
-	LCK_release(tdbb, lock);
+	release_index_block(tdbb, index_block);
 }
