@@ -152,7 +152,7 @@ namespace
 	dsql_dbb* databases = NULL;
 	dsql_opn* open_cursors = NULL;
 	MemoryPool* permanent_pool = NULL;
-	Firebird::GlobalPtr<Firebird::Array<MemoryPool*>> pools;
+	Firebird::GlobalPtr<Firebird::Array<MemoryPool*> > pools;
 	Firebird::GlobalPtr<Firebird::Mutex> pools_mutex;
 
 	class DsqlGlobals

@@ -81,11 +81,13 @@ const SSHORT sqlType[] =
 /* dtype_int64		*/ SQL_INT64
 };
 
-class SqlTypeToDscTypeMap : public GenericMap<Pair<NonPooled<SSHORT, UCHAR> > >
+typedef GenericMap<Pair<NonPooled<SSHORT, UCHAR> > > SqlTypeToDscTypeMap;
+
+class SqlTypeToDscTypeMapInit : public SqlTypeToDscTypeMap
 {
 public:
-	explicit SqlTypeToDscTypeMap(MemoryPool& pool)
-		: GenericMap(pool)
+	explicit SqlTypeToDscTypeMapInit(MemoryPool& pool)
+		: SqlTypeToDscTypeMap(pool)
 	{
 		for (int i = 0; i < FB_NELEM(sqlType); ++i)
 		{
@@ -94,7 +96,7 @@ public:
 	}
 };
 
-static InitInstance<SqlTypeToDscTypeMap> sqlTypeToDscType;
+static InitInstance<SqlTypeToDscTypeMapInit> sqlTypeToDscType;
 
 class CallbackWrapper
 {
