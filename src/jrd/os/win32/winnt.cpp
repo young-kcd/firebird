@@ -84,8 +84,12 @@ public:
 	}
 
 private:
-	Firebird::RWLock*	m_lock;
-	bool				m_exclusive;
+	// copying is prohibited
+	FileExtendLockGuard(const FileExtendLockGuard&);
+	FileExtendLockGuard& operator=(const FileExtendLockGuard&);
+
+	Firebird::RWLock* m_lock;
+	bool m_exclusive;
 };
 
 
@@ -486,8 +490,8 @@ namespace {
 	{
 	public:
 		explicit HugeStaticBuffer(MemoryPool& p)
-			: zeroArray(p), 
-			zeroBuff(zeroArray.getBuffer(ZERO_BUF_SIZE)) 
+			: zeroArray(p),
+			  zeroBuff(zeroArray.getBuffer(ZERO_BUF_SIZE))
 		{
 			memset(zeroBuff, 0, ZERO_BUF_SIZE);
 		}
@@ -495,6 +499,10 @@ namespace {
 		const char* get() const { return zeroBuff; }
 
 	private:
+		// copying is prohibited
+		HugeStaticBuffer(const HugeStaticBuffer&);
+		HugeStaticBuffer& operator=(const HugeStaticBuffer&);
+
 		Firebird::Array<char> zeroArray;
 		char* zeroBuff;
 	};
@@ -516,7 +524,7 @@ USHORT PIO_init_data(Database* dbb, jrd_file* main_file, ISC_STATUS* status_vect
  *	Initialize tail of file with zeros
  *
  **************************************/
-	const char* zero_buff = zeros().get();
+	const char* const zero_buff = zeros().get();
 
 	Database::Checkout dcoHolder(dbb, true);
 	FileExtendLockGuard extLock(main_file->fil_ext_lock, false);
@@ -583,7 +591,7 @@ jrd_file* PIO_open(Database* dbb,
  *	Open a database file.
  *
  **************************************/
-	const TEXT* ptr = (string.hasData() ? string : file_name).c_str();
+	const TEXT* const ptr = (string.hasData() ? string : file_name).c_str();
 	bool readOnly = false;
 
 	HANDLE desc = CreateFile(ptr,

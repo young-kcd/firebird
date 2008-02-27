@@ -513,16 +513,20 @@ namespace {
 	class HugeStaticBuffer 
 	{
 	public:
-		HugeStaticBuffer(MemoryPool& p)
+		explicit HugeStaticBuffer(MemoryPool& p)
 			: zeroArray(p), 
 			  zeroBuff(zeroArray.getBuffer(ZERO_BUF_SIZE)) 
 		{
 			memset(zeroBuff, 0, ZERO_BUF_SIZE);
 		}
 
-		const char* get() { return zeroBuff; }
+		const char* get() const { return zeroBuff; }
 
 	private:
+		// copying is prohibited
+		HugeStaticBuffer(const HugeStaticBuffer&);
+		HugeStaticBuffer& operator=(const HugeStaticBuffer&);
+
 		Firebird::Array<char> zeroArray;
 		char* zeroBuff;
 	};
@@ -619,7 +623,7 @@ jrd_file* PIO_open(Database* dbb,
  *	Open a database file.
  *
  **************************************/
-	const TEXT* ptr = (string.hasData() ? string : file_name).c_str();
+	const TEXT* const ptr = (string.hasData() ? string : file_name).c_str();
 	int desc = openFile(ptr, false, false, false);
 
 	if (desc == -1) {
