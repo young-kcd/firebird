@@ -107,6 +107,7 @@ class jrd_file : public pool_alloc_rpt<SCHAR, type_fil>
 
 const USHORT FIL_force_write		= 1;
 const USHORT FIL_force_write_init	= 2;
+const USHORT FIL_readonly			= 4;
 
 /* Physical IO trace events */
 
