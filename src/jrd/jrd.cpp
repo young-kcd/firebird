@@ -425,6 +425,11 @@ namespace {
 	enum vdnResult {vdnFail, vdnOk, vdnSecurity};
 }
 static vdnResult	verify_database_name(const Firebird::PathName&, ISC_STATUS*);
+static ISC_STATUS	unwindAttach(const std::exception& ex, 
+								 ISC_STATUS* userStatus, 
+								 thread_db* tdbb, 
+								 Attachment* attachment, 
+								 Database* dbb);
 #if defined (WIN_NT)
 #ifdef SERVER_SHUTDOWN
 static void		ExtractDriveLetter(const TEXT*, ULONG*);
@@ -1337,42 +1342,15 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 	return return_success(tdbb);
 
 	}	// try
+ 	catch (const Jrd::DelayFailedLogin& ex)
+	{
+		ISC_STATUS s = unwindAttach(ex, user_status, tdbb, attachment, dbb);
+		ex.sleep();
+		return s;
+	}
 	catch (const std::exception& ex)
 	{
-		ISC_STATUS_ARRAY temp_status;
-		try
-		{
-#if defined(V4_THREADING) && !defined(SUPERSERVER) 
-			if (initing_security)
-			{
-				V4_JRD_MUTEX_LOCK(dbb->dbb_mutexes + DBB_MUTX_init_fini);
-			}
-#endif
-			tdbb->tdbb_status_vector = temp_status;
-			dbb->dbb_flags &= ~DBB_being_opened;
-			release_attachment(attachment);
-
-			/* At this point, mutex dbb->dbb_mutexes [DBB_MUTX_init_fini] has been
-			   unlocked and mutex databases_mutex has been locked. */
-			if (MemoryPool::blk_type(dbb) == type_dbb)
-			{
-				if (!dbb->dbb_attachments)
-				{
-					shutdown_database(dbb, true);
-				}
-				else if (attachment)
-				{
-					delete attachment;
-				}
-			}
-#if defined(V4_THREADING) && !defined(SUPERSERVER) 
-			V4_JRD_MUTEX_UNLOCK(databases_mutex);
-#endif
-		}	// try
-		catch (const std::exception&) {}
-		tdbb->tdbb_status_vector = status;
-		JRD_SS_MUTEX_UNLOCK;
-		return error(user_status, ex);
+		return unwindAttach(ex, user_status, tdbb, attachment, dbb);
 	}
 }
 
@@ -2145,42 +2123,15 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 	return return_success(tdbb);
 
 	}	// try
+ 	catch (const Jrd::DelayFailedLogin& ex)
+	{
+		ISC_STATUS s = unwindAttach(ex, user_status, tdbb, attachment, dbb);
+		ex.sleep();
+		return s;
+	}
 	catch (const std::exception& ex)
 	{
-		ISC_STATUS_ARRAY temp_status;
-		try
-		{
-#if defined(V4_THREADING) && !defined(SUPERSERVER) 
-			if (initing_security)
-			{
-				V4_JRD_MUTEX_LOCK(dbb->dbb_mutexes + DBB_MUTX_init_fini);
-			}
-#endif
-			tdbb->tdbb_status_vector = temp_status;
-			dbb->dbb_flags &= ~DBB_being_opened;
-			release_attachment(attachment);
-
-			/* At this point, mutex dbb->dbb_mutexes [DBB_MUTX_init_fini] has been
-			   unlocked and mutex databases_mutex has been locked. */
-			if (MemoryPool::blk_type(dbb) == type_dbb)
-			{
-				if (!dbb->dbb_attachments)
-				{
-					shutdown_database(dbb, true);
-				}
-				else if (attachment)
-				{
-					delete attachment;
-				}
-			}
-#if defined(V4_THREADING) && !defined(SUPERSERVER) 
-			V4_JRD_MUTEX_UNLOCK(databases_mutex);
-#endif
-		}
-		catch (const std::exception&) {}
-		tdbb->tdbb_status_vector = status;
-		JRD_SS_MUTEX_UNLOCK;
-		return error(user_status, ex);
+		return unwindAttach(ex, user_status, tdbb, attachment, dbb);
 	}
 }
 
@@ -3483,6 +3434,13 @@ ISC_STATUS GDS_SERVICE_ATTACH(ISC_STATUS* user_status,
 	try
 	{
 		*svc_handle = SVC_attach(service_length, service_name, spb_length, spb);
+	}
+	catch (const Jrd::DelayFailedLogin& ex)
+	{
+		JRD_SS_MUTEX_UNLOCK;
+		ISC_STATUS s = error(user_status, ex);
+		ex.sleep();
+		return s;
 	}
 	catch (const std::exception& ex)
 	{
@@ -6729,6 +6687,7 @@ static void getUserInfo(UserId& user, const DatabaseOptions& options)
 			Firebird::string remote = options.dpb_network_protocol + 
 				(options.dpb_network_protocol.isEmpty() || options.dpb_remote_address.isEmpty() ? "" : "/") +
 				options.dpb_remote_address;
+
 			SecurityDatabase::verifyUser(name, 
 										 options.dpb_user_name.nullStr(), 
 										 options.dpb_password.nullStr(), 
@@ -6776,4 +6735,50 @@ static void getUserInfo(UserId& user, const DatabaseOptions& options)
 	{
 		user.usr_flags |= USR_locksmith;
 	}
+}
+
+static ISC_STATUS unwindAttach(const std::exception& ex, 
+							   ISC_STATUS* userStatus, 
+							   thread_db* tdbb, 
+							   Attachment* attachment, 
+							   Database* dbb)
+{
+	ISC_STATUS_ARRAY temp_status;
+	ISC_STATUS* status = tdbb->tdbb_status_vector;
+
+	try
+	{
+#if defined(V4_THREADING) && !defined(SUPERSERVER) 
+		if (initing_security)
+		{
+			V4_JRD_MUTEX_LOCK(dbb->dbb_mutexes + DBB_MUTX_init_fini);
+		}
+#endif
+		tdbb->tdbb_status_vector = temp_status;
+		dbb->dbb_flags &= ~DBB_being_opened;
+		release_attachment(attachment);
+
+		/* At this point, mutex dbb->dbb_mutexes [DBB_MUTX_init_fini] has been
+		   unlocked and mutex databases_mutex has been locked. */
+		if (MemoryPool::blk_type(dbb) == type_dbb)
+		{
+			if (!dbb->dbb_attachments)
+			{
+				shutdown_database(dbb, true);
+			}
+			else if (attachment)
+			{
+				delete attachment;
+			}
+		}
+#if defined(V4_THREADING) && !defined(SUPERSERVER) 
+		V4_JRD_MUTEX_UNLOCK(databases_mutex);
+#endif
+	}
+	catch (const std::exception&) {}
+
+	tdbb->tdbb_status_vector = status;
+	JRD_SS_MUTEX_UNLOCK;
+
+	return error(userStatus, ex);
 }

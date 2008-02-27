@@ -121,4 +121,27 @@ private:
 	}
 };
 
+namespace Jrd {
+
+class DelayFailedLogin : public Firebird::status_exception
+{
+private:
+	int seconds;
+public:
+	DelayFailedLogin(int sec) throw()
+		: Firebird::status_exception(), seconds(sec) 
+	{
+		ISC_STATUS temp[] = {isc_arg_gds, 
+							isc_login,
+							isc_arg_end};
+		set_status(temp, false);
+	}
+	virtual const char* what() const throw() { return "Jrd::DelayFailedLogin"; }
+	static void raise(int sec);
+	void sleep() const;
+};
+
+
+} // namespace Jrd
+
 #endif /* JRD_PWD_H */
