@@ -158,12 +158,12 @@ dsql_nod* MAKE_constant(dsql_str* constant, dsql_constant_type numeric_flag)
 
 	case CONSTANT_SINT64:
 		{
-			/* We convert the string to an int64.  We treat the two adjacent
-			   32-bit words node->nod_arg[0] and node->nod_arg[1] as a
-			   64-bit integer: if we ever port to a platform which requires
-			   8-byte alignment of int64 data, we will have to force 8-byte
-			   alignment of node->nod_arg, which is now only guaranteed
-			   4-byte alignment.    -- ChrisJ 1999-02-20 */
+			// We convert the string to an int64.  We treat the two adjacent
+			// 32-bit words node->nod_arg[0] and node->nod_arg[1] as a
+			// 64-bit integer: if we ever port to a platform which requires
+			// 8-byte alignment of int64 data, we will have to force 8-byte
+			// alignment of node->nod_arg, which is now only guaranteed
+			// 4-byte alignment.    -- ChrisJ 1999-02-20
 
 			node->nod_desc.dsc_dtype = dtype_int64;
 			node->nod_desc.dsc_length = sizeof(SINT64);
@@ -171,28 +171,96 @@ dsql_nod* MAKE_constant(dsql_str* constant, dsql_constant_type numeric_flag)
 			node->nod_desc.dsc_sub_type = 0;
 			node->nod_desc.dsc_address = (UCHAR*) node->nod_arg;
 
-			/* Now convert the string to an int64.  We can omit testing for
-			   overflow, because we would never have gotten here if yylex
-			   hadn't recognized the string as a valid 64-bit integer value.
-			   We *might* have "9223372936854775808", which works an an int64
-			   only if preceded by a '-', but that issue is handled in GEN_expr,
-			   and need not be addressed here. */
+			// Now convert the string to an int64.  We can omit testing for
+			// overflow, because we would never have gotten here if yylex
+			// hadn't recognized the string as a valid 64-bit integer value.
+			// We *might* have "9223372936854775808", which works an an int64
+			// only if preceded by a '-', but that issue is handled in GEN_expr,
+			// and need not be addressed here.
 
-			FB_UINT64 value = 0;
+			// Recent change to support hex numeric constants means the input
+			// string now can be X8000000000000000, for example.
+			// Hex constants coming through this code are guaranteed to be
+			// valid - they start with X and contains only 0-9, A-F.
+			// And, they will fit in a SINT64 without overflow.
+			
+			SINT64 value = 0;
 			const char* p = constant->str_data;
 
-			while (isdigit(*p))
-				value = 10 * value + (*(p++) - '0');
-			if (*p++ == '.') {
-				while (isdigit(*p)) {
-					value = 10 * value + (*p++ - '0');
-					node->nod_desc.dsc_scale--;
-				}
-			}
+			if (*p == 'X')
+			{
+				// oh no, a hex string!
+				*p++; // skip the 'X' part.
+				UCHAR byte = 0;
+				int nibble = ((strlen(p)) & 1);
+				SSHORT c;
 
-			*(FB_UINT64*) (node->nod_desc.dsc_address) = value;
-			break;
+				// hex string is already upper-cased
+				while ((isdigit(*p)) || ((*p >= 'A') && (*p <= 'F')))
+				{
+					// Now convert the character to a nibble
+					if (*p >= 'A')
+						c = (*p - 'A') + 10;
+					else
+						c = (*p - '0');
+
+					if (nibble)
+					{
+						byte = (byte << 4) + (UCHAR) c;
+						nibble = 0;
+						value = (value << 8) + byte;
+					}
+					else
+					{
+						byte = c;
+						nibble = 1;
+					}
+
+					*p++;
+				}
+
+				// if value is negative, then GEN_constant (from dsql/gen.cpp)
+				// is going to want 2 nodes: nod_negate (to hold the minus)
+				// and nod_constant as a child to hold the value.
+				if (value < 0)
+				{
+					value = -value;
+					*(SINT64*) node->nod_desc.dsc_address = value;
+					dsql_nod* sub = node;
+					node = MAKE_node(nod_negate, 1);
+					node->nod_arg[0] = sub;
+				}
+				else
+					*(SINT64*) node->nod_desc.dsc_address = value;
+			} // hex constant
+			else
+			{
+				// good old-fashioned base-10 number from SQLParse.cpp
+
+				// We convert the string to an int64.  We treat the two adjacent
+				// 32-bit words node->nod_arg[0] and node->nod_arg[1] as a
+				// 64-bit integer: if we ever port to a platform which requires
+				// 8-byte alignment of int64 data, we will have to force 8-byte
+				// alignment of node->nod_arg, which is now only guaranteed
+				// 4-byte alignment.    -- ChrisJ 1999-02-20
+				const char* p = constant->str_data;
+
+				while (isdigit(*p))
+					value = 10 * value + (*(p++) - '0');
+
+				if (*p++ == '.')
+				{
+					while (isdigit(*p))
+					{
+						value = 10 * value + (*p++ - '0');
+						node->nod_desc.dsc_scale--;
+					}
+				}
+
+				*(FB_UINT64*) (node->nod_desc.dsc_address) = value;
+			}
 		}
+		break;
 
 	case CONSTANT_DATE:
 	case CONSTANT_TIME:

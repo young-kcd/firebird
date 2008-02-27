@@ -152,6 +152,7 @@ static void integer_to_text(const dsc*, dsc*, FPTR_ERROR);
 static void string_to_datetime(const dsc*, GDS_TIMESTAMP*, EXPECT_DATETIME,
 							   FPTR_ERROR);
 static double power_of_ten(const int);
+static SINT64 hex_to_value(const char*& string, const char* end);
 
 #ifndef NATIVE_QUAD
 #ifndef WORDS_BIGENDIAN
@@ -1860,7 +1861,8 @@ static SSHORT decompose(const char* string,
  **************************************
  *
  * Functional description
- *      Decompose a numeric string in mantissa and exponent.
+ *      Decompose a numeric string in mantissa and exponent,
+ *      or if it is in hexadecimal notation.
  *
  **************************************/
 #ifndef NATIVE_QUAD
@@ -1888,11 +1890,54 @@ static SSHORT decompose(const char* string,
 	const SINT64 limit_by_10 = upper_limit / 10;	/* used to check for overflow */
 
 	const char* p = string;
-	const char* const end = p + length;
+	const char* end = p + length;
 
 	// skip initial spaces
 	for (; p < end && *p == ' '; p++)
 		;
+
+	// Check if this is a numeric hex string. Must start with 0x or 0X, and be
+	// no longer than 16 hex digits + 2 (the length of the 0x prefix) = 18.
+	if (p[0] == '0' && UPPER(p[1]) == 'X')
+	{
+		p += 2; // skip over 0x part
+
+		// skip non spaces
+		const char* q = p;
+		while (q < end && *q && *q != ' ')
+			++q;
+
+		end = q;
+
+		// skip trailing spaces
+		while (q < end && *q == ' ')
+			q++;
+
+		if (q != end || end - p == 0 || end - p > 16)
+			conversion_error(&errd, err);
+
+		q = p;
+		value = hex_to_value(q, end);
+
+		if (q != end)
+			conversion_error(&errd, err);
+
+		// 0xFFFFFFFF = -1; 0x0FFFFFFFF = 4294967295
+		if (end - p <= 8)
+			value = (SLONG) value;
+
+		if (dtype == dtype_long)
+		{
+			if (value < LONG_MIN_int64 || value > LONG_MAX_int64)
+				(*err)(isc_arith_except, 0);
+
+			*return_value = (SLONG) value;
+		}
+		else
+			*((SINT64*) return_value) = value;
+
+		return 0; // 0 scale for hex literals
+	}
 
 	for (; p < end; p++)
 	{
@@ -2747,3 +2792,59 @@ double power_of_ten(const int scale)
 	return upper_part[scale >> 5] * lower_part[scale & 0x1f];
 }
 
+
+SINT64 hex_to_value(const char*& string, const char* end)
+/*************************************
+ *
+ *      hex_to_value
+ *
+ *************************************
+ *
+ * Functional description
+ *      Convert a hex string to a numeric value. This code only
+ *      converts a hex string into a numeric value, and the
+ *      biggest hex string supported must fit into a BIGINT.
+ *
+ *      We assume that the caller has pre-processed the
+ *      input string, so that all characters here are upper case
+ *      and the length of the string is <= 16.
+ *
+ *************************************/
+{
+	// we already know this is a hex string, and there is no prefix.
+	// So, string is something like DEADBEEF.
+
+	SINT64 value = 0;
+	UCHAR byte = 0;
+	int nibble = ((end - string) & 1);
+	char ch;
+
+	while ((DIGIT((ch = UPPER(*string)))) || ((ch >= 'A') && (ch <= 'F')))
+	{
+		// Now convert the character to a nibble
+		SSHORT c;
+
+		if (ch >= 'A')
+			c = (ch - 'A') + 10;
+		else
+			c = (ch - '0');
+
+		if (nibble)
+		{
+			byte = (byte << 4) + (UCHAR) c;
+			nibble = 0;
+			value = (value << 8) + byte;
+		}
+		else
+		{
+			byte = c;
+			nibble = 1;
+		}
+
+		++string;
+	}
+
+	fb_assert(string <= end);
+
+	return value;
+}

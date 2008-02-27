@@ -5531,6 +5531,247 @@ int Parser::yylexAux()
 
 	fb_assert(lex.ptr <= lex.end);
 
+	// Hexadecimal string constant.  This is treated the same as a
+	// string constant, but is defined as: X'bbbb'
+	//
+	// Where the X is a literal 'x' or 'X' character, followed
+	// by a set of nibble values in single quotes.  The nibble
+	// can be 0-9, a-f, or A-F, and is converted from the hex.
+	// If an odd number of nibbles is given, a leading '0' is
+	// assumed. 
+	//
+	// The resulting value is stored in a string descriptor and
+	// returned to the parser as a string.  This can be stored
+	// in a character or binary item.
+	if ((c == 'x' || c == 'X') && *lex.ptr == '\'')
+	{
+		bool hexerror = false;
+
+		// Remember where we start from, to rescan later.
+		// Also we'll need to know the length of the buffer.
+		
+		const char* hexstring = (char*) ++lex.ptr;
+		int charlen = 0;
+
+		// Time to scan the string. Make sure the characters are legal,
+		// and find out how long the hex digit string is.
+		
+		for (;;)
+		{
+			if (lex.ptr >= lex.end)	// Unexpected EOS
+			{
+				hexerror = true;
+				break;
+			}
+			
+			c = *lex.ptr;
+			
+			if (c == '\'')			// Trailing quote, done
+			{
+				++lex.ptr;			// Skip the quote
+				break;
+			}
+
+			if (!(classes(c) & CHR_HEX))	// Illegal character
+			{
+				hexerror = true;
+				break;
+			}
+
+			++charlen;	// Okay, just count 'em
+			++lex.ptr;	// and advance...
+		}
+
+		// If we made it this far with no error, then convert the string.
+		if (!hexerror)
+		{
+			// At this point, see if the string length is odd.  If so, 
+			// we'll assume a leading zero.  Then figure out the length
+			// of the actual resulting hex string.  Allocate a second 
+			// temporary buffer for it.
+		
+			int nibble = (charlen & 1);  // IS_ODD(charlen)
+			Firebird::string temp;
+
+			// Re-scan over the hex string we got earlier, converting 
+			// adjacent bytes into nibble values.  Every other nibble, 
+			// write the saved byte to the temp space.  At the end of 
+			// this, the temp.space area will contain the binary 
+			// representation of the hex constant.
+			
+			UCHAR byte = 0;
+			for (int i = 0; i < charlen; i++)
+			{
+				c = UPPER7(hexstring[i]);
+
+				// Now convert the character to a nibble
+			
+				if (c >= 'A')
+					c = (c - 'A') + 10;
+				else
+					c = (c - '0');
+			
+				if (nibble)
+				{
+					byte = (byte << 4) + (UCHAR) c;
+					nibble = 0;
+					temp.append((char) byte);
+				}
+				else 
+				{
+					byte = c;
+					nibble = 1;
+				}
+			}
+
+			dsql_str* string = MAKE_string((char*) temp.c_str(), temp.length());
+			string->str_charset = "BINARY";
+			yylval = (dsql_nod*) string;
+			
+			return STRING;	
+		}  // if (!hexerror)...
+		
+		// If we got here, there was a parsing error.  Set the
+		// position back to where it was before we messed with
+		// it.  Then fall through to the next thing we might parse.
+
+		c = *lex.last_token;
+		lex.ptr = lex.last_token + 1;
+	}
+
+	// Hexadecimal numeric constants - 0xBBBBBB
+	//
+	// where the '0' and the 'X' (or 'x') are literal, followed
+	// by a set of nibbles, using 0-9, a-f, or A-F.  Odd numbers
+	// of nibbles assume a leading '0'.  The result is converted
+	// to an integer, and the result returned to the caller.  The
+	// token is identified as a NUMBER if it's a 32-bit or less
+	// value, or a NUMBER64INT if it requires a 64-bit number.
+	if ((c == '0') && (*lex.ptr == 'x' || *lex.ptr == 'X') &&
+		(classes(lex.ptr[1]) & CHR_HEX))
+	{
+		bool hexerror = false;
+
+		// Remember where we start from, to rescan later.
+		// Also we'll need to know the length of the buffer.
+
+		++lex.ptr;  // Skip the 'X' and point to the first digit
+		const char* hexstring = (char*) lex.ptr;
+		int charlen = 0;
+
+		// Time to scan the string. Make sure the characters are legal,
+		// and find out how long the hex digit string is.
+
+		for (;;)
+		{
+			if (lex.ptr >= lex.end)			// Unexpected EOS
+			{
+				hexerror = true;
+				break;
+			}
+
+			c = *lex.ptr;
+
+			if (!(classes(c) & CHR_HEX))	// End of digit string
+				break;
+
+			++charlen;			// Okay, just count 'em
+			++lex.ptr;			// and advance...
+
+			if (charlen > 16)	// Too many digits...
+			{
+				hexerror = true;
+				break;
+			}
+		}
+
+		// we have a valid hex token. Now give it back, either as
+		// an NUMBER or NUMBER64BIT.
+		if (!hexerror)
+		{
+			// if charlen > 8 (something like FFFF FFFF 0, w/o the spaces)
+			// then we have to return a NUMBER64BIT. We'll make a string
+			// node here, and let make.cpp worry about converting the
+			// string to a number and building the node later.
+			if (charlen > 8)
+			{
+				char cbuff[32];
+				cbuff[0] = 'X';
+				strncpy(&cbuff[1], hexstring, charlen);
+				cbuff[charlen + 1] = '\0';
+
+				char* p = &cbuff[1];
+
+				while (*p != '\0')
+				{
+					if ((*p >= 'a') && (*p <= 'f'))
+						*p = UPPER(*p);
+					p++;
+				}
+
+				yylval = (dsql_nod*) MAKE_string(cbuff, strlen(cbuff));
+				return NUMBER64BIT;
+			}
+			else
+			{
+				// we have an integer value. we'll return NUMBER.
+				// but we have to make a number value to be compatible
+				// with existing code.
+
+				// See if the string length is odd.  If so,
+				// we'll assume a leading zero.  Then figure out the length
+				// of the actual resulting hex string.  Allocate a second
+				// temporary buffer for it.
+
+				int nibble = (charlen & 1);  // IS_ODD(temp.length)
+				int hexlen = charlen / 2 + nibble;
+
+				// Re-scan over the hex string we got earlier, converting
+				// adjacent bytes into nibble values.  Every other nibble,
+				// write the saved byte to the temp space.  At the end of
+				// this, the temp.space area will contain the binary
+				// representation of the hex constant.
+
+				UCHAR byte = 0;
+				SINT64 value = 0;
+
+				for (int i = 0; i < charlen; i++)
+				{
+					c = UPPER(hexstring[i]);
+
+					// Now convert the character to a nibble
+
+					if (c >= 'A')
+						c = (c - 'A') + 10;
+					else
+						c = (c - '0');
+
+					if (nibble)
+					{
+						byte = (byte << 4) + (UCHAR) c;
+						nibble = 0;
+						value = (value << 8) + byte;
+					}
+					else 
+					{
+						byte = c;
+						nibble = 1;
+					}
+				}
+
+				yylval = (dsql_nod*)(long) value;
+				return NUMBER;
+			} // integer value
+		}  // if (!hexerror)...
+
+		// If we got here, there was a parsing error.  Set the
+		// position back to where it was before we messed with
+		// it.  Then fall through to the next thing we might parse.
+
+		c = *lex.last_token;
+		lex.ptr = lex.last_token + 1;
+	} // headecimal numeric constants
+
 	if ((tok_class & CHR_DIGIT) ||
 		((c == '.') && (lex.ptr < lex.end) && (classes(*lex.ptr) & CHR_DIGIT)))
 	{
