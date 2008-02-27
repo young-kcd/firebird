@@ -1163,12 +1163,14 @@ static void cleanup(void* arg)
 	gds__free(UDSQL_error);
 	UDSQL_error = NULL;
 
-	Firebird::WriteLockGuard guard(global_sync);
+	{ // scope
+		Firebird::WriteLockGuard guard(global_sync);
 
-	free_all_databases(databases);
-	free_all_statements(statements);
-	free_all_names(statement_names);
-	free_all_names(cursor_names);
+		free_all_databases(databases);
+		free_all_statements(statements);
+		free_all_names(statement_names);
+		free_all_names(cursor_names);
+	}
 
 	gds__unregister_cleanup(cleanup, 0);
 }
