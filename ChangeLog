@@ -1,3 +1,64 @@
+2008-02-27 17:00  asfernandes
+
+	* firebird2/src/: dsql/make.cpp (1.151), dsql/parse.y (1.260),
+	jrd/cvt.cpp (1.89):
+
+	Feature CORE-1760 - Support hex numeric and string literals
+
+2008-02-27 13:25  dimitr
+
+	* firebird2/src/jrd/jrd.cpp (1.395):
+
+	1) Fixed a deadlock related to SecurityDatabase.  2) Cleaned up the
+	code duplicated in CMP_shutdown_database(). This was a mistake in
+	one of my prior commits.
+
+2008-02-27 13:14  alexpeshkoff
+
+	*
+	firebird2/builds/install/arch-specific/linux/classic/postinstall.sh.in
+	(1.17):
+
+	Isc_* files are created in classicLibrary
+
+2008-02-27 13:03  dimitr
+
+	* firebird2/src/dsql/user_dsql.cpp (1.51):
+
+	Better lock scope.
+
+2008-02-27 10:32  dimitr
+
+	* firebird2/src/jrd/idx.cpp (1.131):
+
+	Cleanup.
+
+2008-02-27 06:55  dimitr
+
+	* firebird2/src/jrd/os/: win32/winnt.cpp (1.63), posix/unix.cpp
+	(1.82):
+
+	Misc by Dmitry Kovalenko.
+
+2008-02-27 06:08  dimitr
+
+	* firebird2/src/msgs/sqlstates.sql (1.1):
+
+	Added the forgotten file.
+
+2008-02-27 06:07  dimitr
+
+	* firebird2/builds/posix/Makefile.in.refDatabases (1.34):
+
+	Fixed my mistake.
+
+2008-02-27 01:09  asfernandes
+
+	* firebird2/src/: dsql/dsql.cpp (1.221), jrd/execute_statement.cpp
+	(1.33):
+
+	Fix GCC build
+
 2008-02-26 12:01  dimitr
 
 	* firebird2/src/: remote/interface.cpp (1.161),
