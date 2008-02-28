@@ -51,6 +51,7 @@ namespace
 	void allClean()
 	{
 		Firebird::InstanceControl::destructors();
+
 		try
 		{
 			Firebird::StaticMutex::release();
@@ -59,7 +60,7 @@ namespace
 		{
 			cleanError();
 		}
-		
+
 		try
 		{
 			Firebird::MemoryPool::cleanup();
@@ -112,7 +113,11 @@ namespace Firebird
 
 	InstanceControl::InstanceControl()
 	{
+		// Initialize required subsystems, including static mutex, needed next line
 		init();
+
+		// Ready to be used in static variables inside functions
+		MutexLockGuard guard(*mutex);
 		next = instanceList;
 		instanceList = this;
 	}

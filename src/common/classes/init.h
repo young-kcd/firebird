@@ -32,9 +32,20 @@
 
 namespace Firebird {
 
+// Support for common mutex for various inits
+
+class StaticMutex
+{
+protected:
+	static Mutex* mutex;
+public:
+	static void create();
+	static void release();
+};
+
 // InstanceControl - interface for almost all global variables
 
-class InstanceControl
+class InstanceControl : private StaticMutex
 {
 public:
 	InstanceControl();
@@ -80,21 +91,6 @@ public:
 	{
 		return instance;
 	}
-	bool operator!() const throw()
-	{
-		return instance ? false : true;
-	}
-};
-
-// Support for common mutex for various inits
-
-class StaticMutex
-{
-protected:
-	static Mutex* mutex;
-public:
-	static void create();
-	static void release();
 };
 
 // InitMutex - executes static void C::init() once and only once
