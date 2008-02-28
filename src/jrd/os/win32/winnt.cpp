@@ -89,7 +89,7 @@ private:
 	FileExtendLockGuard& operator=(const FileExtendLockGuard&);
 
 	Firebird::RWLock* m_lock;
-	bool m_exclusive;
+	const bool m_exclusive;
 };
 
 
@@ -195,7 +195,7 @@ void PIO_close(jrd_file* main_file)
 
 
 jrd_file* PIO_create(Database* dbb, const Firebird::PathName& string,
-					 bool overwrite, bool temporary, bool share_delete)
+					 const bool overwrite, const bool temporary, const bool share_delete)
 {
 /**************************************
  *
@@ -351,7 +351,7 @@ void PIO_flush(jrd_file* main_file)
 }
 
 
-void PIO_force_write(jrd_file* file, bool forceWrite, bool notUseFSCache)
+void PIO_force_write(jrd_file* file, const bool forceWrite, const bool notUseFSCache)
 {
 /**************************************
  *
@@ -504,7 +504,7 @@ namespace {
 		HugeStaticBuffer& operator=(const HugeStaticBuffer&);
 
 		Firebird::Array<char> zeroArray;
-		char* zeroBuff;
+		char* const zeroBuff;
 	};
 
 	static Firebird::InitInstance<HugeStaticBuffer> zeros;
@@ -577,9 +577,9 @@ USHORT PIO_init_data(Database* dbb, jrd_file* main_file, ISC_STATUS* status_vect
 
 jrd_file* PIO_open(Database* dbb,
 				   const Firebird::PathName& string,
-				   bool trace_flag,
+				   const bool /*trace_flag*/,
 				   const Firebird::PathName& file_name,
-				   bool share_delete)
+				   const bool share_delete)
 {
 /**************************************
  *
