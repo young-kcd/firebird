@@ -59,7 +59,6 @@
 
 namespace {
 
-TLS_DECLARE (void*, tSpecific);
 TLS_DECLARE (ThreadData*, tData);
 
 }
@@ -82,23 +81,6 @@ ThreadData* ThreadData::getSpecific(void)
 }
 
 
-void ThreadData::getSpecificData(void **t_data)
-{
-/**************************************
- *
- *	T H D _ g e t s p e c i f i c _ d a t a
- *
- **************************************
- *
- * Functional description
- *	return the previously stored t_data.
- *
- **************************************/
-
-	*t_data = TLS_GET(tSpecific);
-}
-
-
 void ThreadData::putSpecific()
 {
 /**************************************
@@ -113,23 +95,6 @@ void ThreadData::putSpecific()
 
 	threadDataPriorContext = TLS_GET(tData);
 	TLS_SET(tData, this);
-}
-
-
-void ThreadData::putSpecificData(void *t_data)
-{
-/**************************************
- *
- *	T H D _ p u t s p e c i f i c _ d a t a
- *
- **************************************
- *
- * Functional description
- *	Store the passed t_data
- *
- **************************************/
-
-	TLS_SET(tSpecific, t_data);
 }
 
 

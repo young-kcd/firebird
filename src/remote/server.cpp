@@ -848,7 +848,6 @@ static void addClumplets(Firebird::ClumpletWriter& dpb_buffer,
  *
  * Functional description
  *	Insert remote endpoint data into DPB address stack
- *  If configured, insert remote_attachment into dpb
  *
  **************************************/
 	Firebird::ClumpletWriter address_stack_buffer(Firebird::ClumpletReader::UnTagged, MAX_UCHAR - 2);
@@ -1028,12 +1027,12 @@ static void attach_database2(rem_port* port,
 	dpb_buffer.deleteWithTag(isc_dpb_gsec_attach);
 	dpb_buffer.deleteWithTag(isc_dpb_sec_attach);
 
-	dpb = dpb_buffer.getBuffer();
-	dl = dpb_buffer.getBufferLength();
-
 /* See if user has specified parameters relevant to the connection,
    they will be stuffed in the DPB if so. */
-	REMOTE_get_timeout_params(port, dpb, dl);
+	REMOTE_get_timeout_params(port, &dpb_buffer);
+
+	dpb = dpb_buffer.getBuffer();
+	dl = dpb_buffer.getBufferLength();
 
 	THREAD_EXIT();
 	if (operation == op_attach)
@@ -4948,7 +4947,7 @@ ISC_STATUS rem_port::service_attach(const char* service_name,
 	
 	/* See if user has specified parameters relevent to the connection,
 	   they will be stuffed in the SPB if so. */
-	REMOTE_get_timeout_params(this, spb.getBuffer(), spb.getBufferLength());
+	REMOTE_get_timeout_params(this, &spb);
 
 	THREAD_EXIT();
 	ISC_STATUS_ARRAY status_vector;

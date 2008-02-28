@@ -70,22 +70,18 @@
     fi
 
 
-    # Create log
-    touch firebird.log
-
-
-    # Update ownership and SUID bits for programs.
-    chown -R $RunUser:$RunUser $FBRootDir
-
+    # Update ownership and SUID bits for files.
     fixFilePermissions
 
+	# Create libgds.so links
     createLinksForBackCompatibility
 
+	# Prepare for uninstall
     buildUninstallFile
+
 
     # Update the /etc/inetd.conf or xinetd entry
     updateInetdServiceEntry
-
 
     # Get inetd to reread new init files.
     resetInetdServer

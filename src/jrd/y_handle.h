@@ -130,11 +130,11 @@ namespace YValve
 	public:
 		static BaseHandle* translate(FB_API_HANDLE);
 		Jrd::Attachment* getAttachmentHandle();
-		void cancel();
 		~BaseHandle();
 
 		// required to put pointers to it into the tree
-		static const FB_API_HANDLE& generate(const void* sender, BaseHandle* value) {
+		static const FB_API_HANDLE& generate(const void* sender, BaseHandle* value) 
+		{
 			return value->public_handle;
 		}
 	};
@@ -193,6 +193,9 @@ namespace YValve
 		// of collision is so slow here, that I prefer to save resources, using single mutex.
 		Firebird::Mutex mutex;
 
+		int enterCount;
+		Firebird::Mutex enterMutex;
+
 		Clean<AttachmentCleanupRoutine, FB_API_HANDLE*> cleanup;
 		StoredAtt* handle;
 		Firebird::PathName db_path;
@@ -211,7 +214,6 @@ namespace YValve
 
 	public:
 		Attachment(StoredAtt*, FB_API_HANDLE*, USHORT);
-		void cancel2();
 		~Attachment();
 	};
 

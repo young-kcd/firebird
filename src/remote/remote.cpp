@@ -48,7 +48,6 @@ static TEXT* attach_failures = NULL;
 static TEXT* attach_failures_ptr;
 
 static void cleanup_memory(void*);
-static SLONG get_parameter(const UCHAR**);
 
 
 void REMOTE_cleanup_transaction( RTR transaction)
@@ -322,9 +321,7 @@ void REMOTE_free_packet( rem_port* port, PACKET * packet, bool partial)
 }
 
 
-void REMOTE_get_timeout_params(
-										  rem_port* port,
-										  const UCHAR* dpb, USHORT dpb_length)
+void REMOTE_get_timeout_params(rem_port* port, Firebird::ClumpletReader* pb)
 {
 /**************************************
  *
@@ -341,99 +338,19 @@ void REMOTE_get_timeout_params(
  *
  **************************************/
 	bool got_dpb_connect_timeout = false;
-	bool got_dpb_dummy_packet_interval = false;
 
 	fb_assert(isc_dpb_connect_timeout == isc_spb_connect_timeout);
-	fb_assert(isc_dpb_dummy_packet_interval == isc_spb_dummy_packet_interval);
 
-	port->port_flags &= ~PORT_dummy_pckt_set;
+	port->port_connect_timeout = pb && pb->find(isc_dpb_connect_timeout) ? 
+								 pb->getInt() : Config::getConnectionTimeout();
 
-	if (dpb && dpb_length) {
-		const UCHAR* p = dpb;
-		const UCHAR* const end = p + dpb_length;
-
-		if (*p++ == isc_dpb_version1) {
-			while (p < end)
-				switch (*p++) {
-				case isc_dpb_connect_timeout:
-					port->port_connect_timeout = get_parameter(&p);
-					got_dpb_connect_timeout = true;
-					break;
-
-// 22 Aug 2003. Do not receive this parameter from the client as dummy packets
-//   either kill idle client process or cause unexpected disconnections. 
-//   This applies to all IB/FB versions.
-//				case isc_dpb_dummy_packet_interval:
-//					port->port_dummy_packet_interval = get_parameter(&p);
-//					got_dpb_dummy_packet_interval = true;
-//					port->port_flags |= PORT_dummy_pckt_set;
-//					break;
-
-				case isc_dpb_sys_user_name:
-			/** Store the user name in thread specific storage.
-			We need this later while expanding filename to
-			get the users home directory.
-			Normally the working directory is stored in
-			the attachment but in this case the attachment is 
-			not yet created.
-			Also note that the thread performing this task
-			has already called THREAD_ENTER
-		    **/
-					{
-						char* t_data;
-						int i = 0;
-						int l = *(p++);
-						if (l) {
-							t_data = (char *) malloc(l + 1);
-							do {
-								t_data[i] = *p;
-								if (t_data[i] == '.')
-									t_data[i] = 0;
-								i++;
-								p++;
-							} while (--l);
-						}
-						else
-							t_data = (char *) malloc(1);
-						t_data[i] = 0;
-
-
-						ThreadData::putSpecificData((void *) t_data);
-
-					}
-					break;
-
-				default:
-					{
-						// Skip over this parameter - not important to us
-						const USHORT len = *p++;
-						p += len;
-						break;
-					}
-				}
-		}
-	}
-
-	if (!got_dpb_connect_timeout || !got_dpb_dummy_packet_interval) {
-		/* Didn't find all parameters in the dpb, fetch configuration
-		   information from the configuration file and set the missing
-		   values */
-
-		if (!got_dpb_connect_timeout)
-			port->port_connect_timeout = Config::getConnectionTimeout();
-
-		if (!got_dpb_dummy_packet_interval) {
-			port->port_flags |= PORT_dummy_pckt_set;
-			port->port_dummy_packet_interval = Config::getDummyPacketInterval();
-		}
-	}
-/* Insure a meaningful keepalive interval has been set. Otherwise, too
-   many keepalive packets will drain network performance. */
-
+	port->port_flags |= PORT_dummy_pckt_set;
+	port->port_dummy_packet_interval = Config::getDummyPacketInterval();
 	if (port->port_dummy_packet_interval < 0)
 		port->port_dummy_packet_interval = DUMMY_INTERVAL;
 
 	port->port_dummy_timeout = port->port_dummy_packet_interval;
+
 #ifdef DEBUG
 	printf("REMOTE_get_timeout dummy = %lu conn = %lu\n",
 			  port->port_dummy_packet_interval, port->port_connect_timeout);
@@ -774,29 +691,6 @@ static void cleanup_memory( void *block)
 	gds__unregister_cleanup(cleanup_memory, 0);
 	attach_failures = NULL;
 }
-
-
-static SLONG get_parameter(const UCHAR** ptr)
-{
-/**************************************
- *
- *	g e t _ p a r a m e t e r
- *
- **************************************
- *
- * Functional description
- *	Pick up a VAX format parameter from a parameter block, including the
- *	length byte.
- *	This is a clone of jrd/jrd.c:get_parameter()
- *
- **************************************/
-	const SSHORT l = *(*ptr)++;
-	const SLONG parameter = gds__vax_integer(*ptr, l);
-	*ptr += l;
-
-	return parameter;
-}
-
 
 
 // TMN: Beginning of C++ port - ugly but a start

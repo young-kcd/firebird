@@ -112,6 +112,7 @@ enum literal_string_type
 #include "../isql/show_proto.h"
 #include "../jrd/perf_proto.h"
 #include "../jrd/utl_proto.h"
+#include "../jrd/why_proto.h"
 #include "../jrd/gdsassert.h"
 
 #ifdef SCROLLABLE_CURSORS
@@ -353,7 +354,7 @@ static int process_statement(const TEXT*, XSQLDA**);
 #ifdef WIN_NT
 static BOOL CALLBACK query_abort(DWORD);
 #else
-static void CLIB_ROUTINE query_abort(int);
+static int API_ROUTINE query_abort();
 #endif
 static bool stdin_redirected();
 static void strip_quotes(const TEXT*, TEXT*);
@@ -4037,14 +4038,7 @@ static void do_isql()
 #ifdef WIN_NT
 	SetConsoleCtrlHandler(query_abort, TRUE);
 #elif defined(HAVE_SIGACTION)
-	struct sigaction sig_action;
-	if (sigaction(SIGINT, NULL, &sig_action) == 0) {
-		sig_action.sa_handler = query_abort;
-		sig_action.sa_flags |= SA_RESTART;
-		sigaction(SIGINT, &sig_action, NULL);
-	}
-#else
-	signal(SIGINT, query_abort);
+	fb__shutdown_callback(0, query_abort, FB_SHUT_PREPROVIDERS);
 #endif
 
 	// Open database and start tansaction
@@ -8545,7 +8539,7 @@ static int process_statement(const TEXT* string,
 #ifdef WIN_NT
 static BOOL CALLBACK query_abort(DWORD dwCtrlType)
 #else
-static void CLIB_ROUTINE query_abort(int)
+static int API_ROUTINE query_abort()
 #endif
 {
 /**************************************
@@ -8559,18 +8553,31 @@ static void CLIB_ROUTINE query_abort(int)
  *
  **************************************/
 
+	bool flag = true;
+
 #ifdef WIN_NT
 	if (dwCtrlType != CTRL_C_EVENT)
 		return FALSE;
+#else
+	if (DB)
+	{
+		ISC_STATUS_ARRAY status;
+		flag = (gds__cancel_operation(status, &DB, CANCEL_raise) == FB_SUCCESS);
+	}
 #endif
 
-	if (Interactive)
-		Interrupt_flag = true;
-	else
-		Abort_flag = true;
+	if (flag)
+	{
+		if (Interactive)
+			Interrupt_flag = true;
+		else
+			Abort_flag = true;
+	}
 
 #ifdef WIN_NT
 	return TRUE;
+#else
+	return 1;	// we do not want to proceed with shutdown
 #endif
 }
 

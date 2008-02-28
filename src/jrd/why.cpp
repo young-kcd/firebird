@@ -88,18 +88,12 @@
 #include "../common/classes/rwlock.h"
 #include "../common/classes/auto.h"
 #include "../common/classes/init.h"
+#include "../common/classes/semaphore.h"
 #include "../jrd/constants.h"
+#include "../jrd/thread_proto.h"
+#include "../jrd/ThreadStart.h"
 #ifdef SCROLLABLE_CURSORS
 #include "../jrd/blr.h"
-#endif
-
-#if !defined(SUPERCLIENT)
-#define CANCEL_disable  1
-#define CANCEL_enable   2
-#define CANCEL_raise    3
-//extern "C" ISC_STATUS jrd8_cancel_operation(ISC_STATUS *, Jrd::Attachment**, USHORT);
-void JRD_shutdown_all(bool);
-void JRD_shutdown_attachment(Jrd::Attachment**, Jrd::Attachment**);
 #endif
 
 using namespace YValve;
@@ -166,7 +160,7 @@ inline void nullCheck(const FB_API_HANDLE* ptr, ISC_STATUS code)
 {
 	// this function is called for incoming API handlers,
 	// proposed to be created by the call
-	if (*ptr) 
+	if ((!ptr) || (*ptr)) 
 	{
 		bad_handle(code);
 	}
@@ -207,7 +201,56 @@ namespace
 	Firebird::GlobalPtr<Firebird::RWLock> handleMappingLock;
 
 	Firebird::InitInstance<Firebird::SortedArray<Attachment*> > attachments;
-	Firebird::GlobalPtr<Firebird::Mutex> attachmentsMutex;
+	Firebird::GlobalPtr<Firebird::Mutex> attachmentsMutex, shutdownMutex;
+
+	class ShutChain : public Firebird::GlobalStorage
+	{
+	private:
+		ShutChain(ShutChain* link, FPTR_INT cb, const int m)
+			: next(link), callBack(cb), mask(m) { }
+
+		~ShutChain() { }
+
+	private:
+		static ShutChain* list;
+		ShutChain* next;
+		FPTR_INT callBack;
+		int mask;
+
+	public:
+		static void add(FPTR_INT cb, const int m)
+		{
+			Firebird::MutexLockGuard guard(shutdownMutex);
+
+			for (ShutChain* chain = list; chain; chain = chain->next)
+			{
+				if (chain->callBack == cb && chain->mask == m)
+				{
+					return;
+				}
+			}
+
+			list = new ShutChain(list, cb, m);
+		}
+
+		static int run(const int m)
+		{
+			int rc = 0;
+			Firebird::MutexLockGuard guard(shutdownMutex);
+
+			for (ShutChain* chain = list; chain; chain = chain->next)
+			{
+				if (chain->mask & m && chain->callBack())
+				{
+					rc = 1;
+				}
+			}
+
+			return rc;
+		}
+	};
+
+	ShutChain* ShutChain::list = 0;
 };
 
 namespace YValve
@@ -220,7 +263,6 @@ namespace YValve
 
 		{ // scope for write lock on handleMappingLock
 			Firebird::WriteLockGuard sync(handleMappingLock);
-			fb_assert(handleMapping);
 			// Loop until we find an empty handle slot.
 			// This is to care of case when counter rolls over
 			do {
@@ -246,7 +288,6 @@ namespace YValve
 	{
 		Firebird::ReadLockGuard sync(handleMappingLock);
 
-		fb_assert(handleMapping);
 		HandleMapping::Accessor accessor(&handleMapping);
 		if (accessor.locate(handle))
 		{
@@ -268,15 +309,6 @@ namespace YValve
 		return parent ? parent->handle : 0;
 	}
 
-	void BaseHandle::cancel()
-	{
-		if (!parent)
-		{
-			return;
-		}
-		parent->cancel2();
-	}
-
 	BaseHandle::~BaseHandle()
 	{
 		if (user_handle)
@@ -287,7 +319,6 @@ namespace YValve
 		Firebird::WriteLockGuard sync(handleMappingLock);
 
 		// Silently ignore bad handles for PROD_BUILD
-		fb_assert(handleMapping);
 		if (handleMapping->locate(public_handle)) 
 		{
 			handleMapping->fastRemove();
@@ -411,22 +442,12 @@ const USHORT DESCRIBE_BUFFER_SIZE	= 1024;		// size of buffer used in isc_dsql_de
 
 namespace 
 {
-/*
- * class YEntry:
- * 1. Provides correct status vector for operation and init() it.
- * 2. Tracks subsystem_enter/exit() calls.
- *			For single-threaded systems:
- * 3. Knows location of primary handle and detachs database when
- *	  cancel / shutdown takes place.
- * In some cases (primarily - attach/create) specific handle may
- * be missing.
- */
-
+	// Status:	Provides correct status vector for operation and init() it.
 	class Status
 	{
 	public:
 		Status(ISC_STATUS* v) throw()
-			: local_vector(v ? v : local_status), doExit(true)
+			: local_vector(v ? v : local_status)
 		{
 			init_status(local_vector);
 		}
@@ -436,275 +457,156 @@ namespace
 			return local_vector;
 		}
 
-		// don't exit on missing user_status
-		// That feature is suspicious: on windows after
-		// printf() and exit() will happen silent exit. AP-2007.
-		void ok()
-		{
-			doExit = false;
-		}
-
 		~Status()
 		{
 #ifdef DEV_BUILD
 			check_status_vector(local_vector);
 #endif
-
-#ifndef SUPERSERVER
-			if (local_vector == local_status && 
-				local_vector[0] == isc_arg_gds &&
-				local_vector[1] != FB_SUCCESS &&
-				doExit)
-			{
-				// user did not specify status, but error took place:
-				// should better specify it next time :-(
-				gds__print_status(local_vector);
-				exit((int) local_vector[1]);
-			}
-#endif
 		}
+
 	private:
 		ISC_STATUS_ARRAY local_status;
 		ISC_STATUS* local_vector;
-		bool doExit;
 	};
 
-#ifndef SERVER_SHUTDOWN		// appears this macro has now nothing with shutdown
+#ifdef UNIX
+	int killed;
+	bool procInt, procTerm;
 
-	template <typename Array>
-	void markHandlesShutdown(Array handles)
+	Firebird::GlobalPtr<Firebird::SignalSafeSemaphore> shutdownSemaphore;
+
+	THREAD_ENTRY_DECLARE shutdownThread(THREAD_ENTRY_PARAM)
 	{
-		for (size_t n = 0; n < handles.getCount(); ++n)
+		for(;;)
 		{
-			handles[n]->flags |= HANDLE_shutdown;
-		}
-	}
-	
-	void markShutdown(Attachment* attach)
-	{
-		Firebird::MutexLockGuard guard(attach->mutex);
-		attach->flags |= HANDLE_shutdown;
-
-		markHandlesShutdown(attach->transactions);
-		markHandlesShutdown(attach->statements);
-		markHandlesShutdown(attach->requests);
-		markHandlesShutdown(attach->blobs);
-	}
-
-	// should be called with locked attachmentsMutex	
-	void markShutdown(Jrd::Attachment** list)
-	{
-		while (Jrd::Attachment* ja = *list++)
-		{
-			for (size_t n = 0; n < attachments().getCount(); ++n)
+			killed = 0;
+			try {
+				shutdownSemaphore->enter();
+			}
+			catch (Firebird::status_exception& e)
 			{
-				if (attachments()[n]->handle == ja)
+				TEXT buffer[1024];
+				const ISC_STATUS* vector = e.value();
+				if (! (vector && fb_interpret(buffer, sizeof(buffer), &vector)))
 				{
-					markShutdown(attachments()[n]);
-					break;
+					strcpy(buffer, "Unknown failure in shutdown thread in shutSem:enter()");
 				}
-			}		
+				gds__log(buffer, 0);
+				exit(0);
+			}
+
+			if (! killed)
+			{
+				break;
+			}
+		
+			// perform shutdown
+			ISC_STATUS_ARRAY status;
+			fb__shutdown(status);
+
+			if (status[0] == 1 && status[1] != 0)
+			{
+				char buffer[256];
+				const ISC_STATUS *vector = status;
+				if (!fb_interpret(buffer, sizeof(buffer), &vector))
+				{
+					strcpy(buffer, "Unknown failure in shutdown thread in fb__shutdown()");
+				}
+				gds__log(buffer, 0);
+			}
 		}
+
+		return 0;
 	}
 
+	void handler(int sig)
+	{
+		if (killed)
+		{
+			return;
+		}
+		killed = sig;
+#if !defined (SUPERCLIENT)
+		shutdown_flag = true;
+#endif
+		shutdownSemaphore->release();		
+	}
+
+	void handlerInt(void*)
+	{
+		handler(SIGINT);
+	}
+
+	void handlerTerm(void*)
+	{
+		handler(SIGTERM);
+	}
+
+	class CtrlCHandler
+	{
+	public:
+		CtrlCHandler(Firebird::MemoryPool&)
+		{
+			gds__thread_start(shutdownThread, 0, 0, 0, 0);
+
+			procInt = ISC_signal(SIGINT, handlerInt, 0);
+			procTerm = ISC_signal(SIGTERM, handlerTerm, 0);
+		}
+		
+		~CtrlCHandler()
+		{
+			ISC_signal_cancel(SIGINT, handlerInt, 0);
+			ISC_signal_cancel(SIGTERM, handlerTerm, 0);
+			
+			if (! killed)
+			{
+				// must be done to let shutdownThread close
+				shutdownSemaphore->release();
+				THREAD_YIELD();
+			}
+		}
+	};
+#endif //UNIX
+
+	// YEntry:	Tracks subsystem_enter/exit() calls.
+	//			Accounts activity per different attachments.
 	class YEntry : public Status
 	{
 	public:
 		YEntry(ISC_STATUS* v) throw()
-			: Status(v), recursive(false)
+			: Status(v), att(0)
 		{
 			subsystem_enter();
-
-			if (handle || killed) {
-				recursive = true;
-				return;
-			}
-			
-			handle = 0;
-			vector = (ISC_STATUS*)(*this);
-			inside = true;
-			if (!init)
-			{
-				init = true;
-				installCtrlCHandler();
-			}
+#ifdef UNIX
+			static Firebird::GlobalPtr<CtrlCHandler> ctrlCHandler;
+#endif //UNIX
 		}
 
-		void setPrimaryHandle(BaseHandle* h)
+		void setPrimaryHandle(BaseHandle* primary)
 		{
-			handle = h;
+			if (primary && primary->parent && (!att))
+			{
+				att = primary->parent;
+				Firebird::MutexLockGuard guard(att->enterMutex);
+				att->enterCount++;
+			}
 		}
 
 		~YEntry()
 		{
+			if (att)
+			{
+				Firebird::MutexLockGuard guard(att->enterMutex);
+				att->enterCount--;
+			}
 			subsystem_exit();
-
-			if (recursive)
-			{
-				return;
-			}
-
-			if (killed)
-			{
-#if !defined (SUPERCLIENT)
-				JRD_shutdown_all(false);
-#endif
-				propagateKill();
-			}
-			
-			if (fatal())
-			{
-				if (handle) 
-				{
-					Jrd::Attachment* attach = handle->getAttachmentHandle();
-					Firebird::HalfStaticArray<Jrd::Attachment*, 2> releasedBuffer;
-
-					Firebird::MutexLockGuard guard(attachmentsMutex);
-					Jrd::Attachment** released = 
-						releasedBuffer.getBuffer(attachments().getCount() + 1);
-					*released = 0;
-#if !defined (SUPERCLIENT)
-					JRD_shutdown_attachment(&attach, released);
-#endif
-					markShutdown(released);
-				}
-			}
-
-			inside = false;
-			handle = 0;
 		}
+
 	private:
 		YEntry(const YEntry&);	// prohibit copy constructor
-		
-		bool recursive;				// loopback call from ExecState, Udf, etc.
-
-		static bool inside;
-		static BaseHandle* handle;
-		static ISC_STATUS* vector;
-		static bool init;
-		static int killed;
-		static bool proc2, proc15;
-
-		static void installCtrlCHandler() throw()
-		{
-			try 
-			{
-				proc2 = ISC_signal(SIGINT, Handler2, 0);
-				proc15 = ISC_signal(SIGTERM, Handler15, 0);
-			}
-			catch (...)
-			{
-				gds__log("Failure setting ctrl-C handlers");
-			}
-		}
-
-		static void propagateKill()
-		{
-			ISC_signal_cancel(SIGINT, Handler2, 0);
-			ISC_signal_cancel(SIGTERM, Handler15, 0);
-
-			// if signal is not processed by someone else, exit now
-			if (!(killed == 2 ? proc2 : proc15))
-			{
-				exit(0);
-			}
-
-			// Someone else watches signals - let him shutdown gracefully
-
-			// Using recursive mutex in signal handler routine - 
-			// relatively safe cause we need read-only access.
-			// With correctly implemented insert / remove methods in array
-			// and memcpy/memmove copying data with at least sizeof(void*)
-			// portions, this code is really safe.
-
-			Firebird::MutexLockGuard guard(attachmentsMutex);
-			for (size_t n = 0; n < attachments().getCount(); ++n)
-			{
-				markShutdown(attachments()[n]);
-			}		
-		}
-
-		static void Handler2(void*)
-		{
-			if (killed)
-			{
-				return;		// do nothing - already killed
-			}
-			killed = 2;
-			Handler();
-		}
-
-		static void Handler15(void*)
-		{
-			if (killed)
-			{
-				return;		// do nothing - already killed
-			}
-			killed = 15;
-			Handler();
-		}
-
-		static void Handler()
-		{
-#if !defined (SUPERCLIENT)
-			shutdown_flag = true;
-#endif
-			if (inside)
-			{
-				if (handle)
-				{
-					handle->cancel();
-				}
-			}
-			else
-			{
-				// this function must in theory use only signal-safe code
-				// but as long as we have not entered engine, 
-				// any call to it should be safe
-#if !defined (SUPERCLIENT)
-				JRD_shutdown_all(false);
-#endif
-				propagateKill();
-			}
-		}
-
-		bool fatal() const
-		{
-			return (vector[0] == isc_arg_gds && vector[1] == isc_shutdown);
-		}
+		Attachment* att;
 	};
 
-	bool YEntry::init = false;
-	bool YEntry::inside = false;
-	BaseHandle* YEntry::handle = 0;
-	ISC_STATUS* YEntry::vector = 0;
-	int YEntry::killed = 0;
-	bool YEntry::proc2 = false;
-	bool YEntry::proc15 = false;
-
-#else
-
-	class YEntry : public Status
-	{
-	public:
-		YEntry(ISC_STATUS* v) : Status(v) 
-		{ 
-			subsystem_enter();
-		}
-
-		void setPrimaryHandle(BaseHandle* h)
-		{ 
-		}
-
-		~YEntry()
-		{
-			subsystem_exit();
-		}
-	private:
-		YEntry(const YEntry&);	//prohibit copy constructor
-	};
-
-#endif
 } // anonymous namespace
 
 
@@ -863,7 +765,9 @@ const int PROC_INTL_FUNCTION	= 54;	// internal call
 const int PROC_DSQL_CACHE		= 55;	// internal call
 const int PROC_INTERNAL_COMPILE	= 56;	// internal call
 
-const int PROC_count			= 57;
+const int PROC_SHUTDOWN			= 57;
+
+const int PROC_count			= 58;
 
 /* Define complicated table for multi-subsystem world */
 
@@ -986,18 +890,6 @@ static const SCHAR sql_prepare_info2[] =
 	isc_info_sql_alias,
 	isc_info_sql_describe_end
 };
-
-
-namespace YValve
-{
-	void Attachment::cancel2()
-	{
-#if !defined (SUPERCLIENT) && !defined(SERVER_SHUTDOWN)
-		ISC_STATUS_ARRAY local;
-		jrd8_cancel_operation(local, &handle, CANCEL_raise);
-#endif
-	}
-}
 
 
 ISC_STATUS API_ROUTINE GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
@@ -1282,10 +1174,18 @@ ISC_STATUS API_ROUTINE GDS_CANCEL_OPERATION(ISC_STATUS * user_status,
 	try 
 	{
 		Attachment* attachment = translate<Attachment>(handle);
-		status.setPrimaryHandle(attachment);
-		CALL(PROC_CANCEL_OPERATION, attachment->implementation) (status,
-															   &attachment->handle,
-															   option);
+		// mutex will be locked here for a really long time
+		Firebird::MutexLockGuard guard(attachment->enterMutex);	
+		if (attachment->enterCount)
+		{
+			CALL(PROC_CANCEL_OPERATION, attachment->implementation) (status,
+																	 &attachment->handle,
+																	 option);
+		}
+		else
+		{
+			Firebird::status_exception::raise(isc_random, isc_arg_string, "Nothing to cancel", 0);
+		}
 	}
 	catch (const Firebird::Exception& e)
 	{
@@ -2495,7 +2395,6 @@ ISC_STATUS API_ROUTINE GDS_DSQL_EXEC_IMMED2(ISC_STATUS* user_status,
 								 dasup.dasup_clauses[DASUP_CLAUSE_select].dasup_blr,
 								 out_msg_type, out_msg_length,
 								 dasup.dasup_clauses[DASUP_CLAUSE_select].dasup_msg);
-		status.ok();
 		if (!s)
 		{
 			s =	UTLD_parse_sqlda(status, &dasup, NULL, NULL, NULL, dialect,
@@ -2803,7 +2702,6 @@ ISC_STATUS API_ROUTINE GDS_DSQL_FETCH(ISC_STATUS* user_status,
 								dasup.dasup_clauses[DASUP_CLAUSE_select].dasup_msg);
 		if (s && s != 101)
 		{
-			status.ok();
 			return s;
 		}
 
@@ -2812,7 +2710,6 @@ ISC_STATUS API_ROUTINE GDS_DSQL_FETCH(ISC_STATUS* user_status,
 		{
 			return status[1];
 		}
-		status.ok();
 	}
 	catch (const Firebird::Exception& e)
 	{
@@ -2870,7 +2767,6 @@ ISC_STATUS API_ROUTINE GDS_DSQL_FETCH2(ISC_STATUS* user_status,
 							   direction, offset);
 		if (s && s != 101)
 		{
-			status.ok();
 			return s;
 		}
 
@@ -2879,7 +2775,6 @@ ISC_STATUS API_ROUTINE GDS_DSQL_FETCH2(ISC_STATUS* user_status,
 		{
 			return status[1];
 		}
-		status.ok();
 	}
 	catch (const Firebird::Exception& e)
 	{
@@ -2931,7 +2826,6 @@ ISC_STATUS API_ROUTINE GDS_DSQL_FETCH_M(ISC_STATUS* user_status,
 
 		if (s == 100 || s == 101)
 		{
-			status.ok();
 			return s;
 		}
 	}
@@ -2984,7 +2878,6 @@ ISC_STATUS API_ROUTINE GDS_DSQL_FETCH2_M(ISC_STATUS* user_status,
 
 		if (s == 100 || s == 101)
 		{
-			status.ok();
 			return s;
 		}
 	}
@@ -3625,7 +3518,6 @@ ISC_STATUS API_ROUTINE GDS_GET_SEGMENT(ISC_STATUS * user_status,
 
 		if (code == isc_segstr_eof || code == isc_segment) 
 		{
-			status.ok();
 			return code;
 		}
 	}
@@ -3686,8 +3578,8 @@ ISC_STATUS API_ROUTINE GDS_GET_SLICE(ISC_STATUS* user_status,
 }
 
 
-ISC_STATUS gds__handle_cleanup(ISC_STATUS * user_status,
-							   FB_API_HANDLE * user_handle)
+ISC_STATUS API_ROUTINE gds__handle_cleanup(ISC_STATUS * user_status,
+										   FB_API_HANDLE * user_handle)
 {
 /**************************************
  *
@@ -4810,7 +4702,6 @@ ISC_STATUS API_ROUTINE_VARARG GDS_START_TRANSACTION(ISC_STATUS * user_status,
 		va_end(ptr);
 
 		GDS_START_MULTIPLE(user_status, tra_handle, count, teb);
-		status.ok();
 	}
 	catch (const Firebird::Exception& e)
 	{
@@ -5378,7 +5269,6 @@ static ISC_STATUS get_transaction_info(ISC_STATUS* user_status,
 	{
 		TEXT buffer[16];
 		TEXT* p = *ptr;
-		status.ok();
 
 		if (CALL(PROC_TRANSACTION_INFO, transaction->implementation) (status,
 																	  &transaction->
@@ -5573,7 +5463,6 @@ static ISC_STATUS prepare(ISC_STATUS* user_status,
  *
  **************************************/
 	Status status(user_status);
-	status.ok();
 
 	Transaction* sub;
 	TEXT tdr_buffer[1024];
@@ -5918,3 +5807,75 @@ bool WHY_get_shutdown()
 	return shutdown_flag;
 }
 #endif // !SUPERCLIENT
+
+
+ISC_STATUS API_ROUTINE fb__shutdown(ISC_STATUS * user_status)
+{
+/**************************************
+ *
+ *	f b _ s h u t d o w n
+ *
+ **************************************
+ *
+ * Functional description
+ *	Shutdown firebird.
+ *
+ **************************************/
+	YEntry status(user_status);
+	try 
+	{
+		// Shutdown clients before providers
+		if (ShutChain::run(FB_SHUT_PREPROVIDERS) == 0)
+		{
+			// Shutdown providers
+			for (int n=0; n<SUBSYSTEMS; ++n)
+			{
+				PTR entry = get_entrypoint(PROC_SHUTDOWN, n);
+				if (entry != no_entrypoint) 
+				{
+					if (entry(status) != 0)
+						break;
+				}
+			}
+
+			// Shutdown clients after providers
+			if (ShutChain::run(FB_SHUT_POSTPROVIDERS) == 0)
+			{
+				// All clients are ready to exit
+				exit(0);
+			}
+		}
+	}
+	catch (const Firebird::Exception& e)
+	{
+		e.stuff_exception(status);
+	}
+
+	return status[1];
+}
+
+
+ISC_STATUS API_ROUTINE fb__shutdown_callback(ISC_STATUS * user_status, FPTR_INT callBack, const int mask)
+{
+/**************************************
+ *
+ *	f b _ s h u t d o w n _ c a l l b a c k
+ *
+ **************************************
+ *
+ * Functional description
+ *	Register client callback to be called when FB is going down.
+ *
+ **************************************/
+	YEntry status(user_status);
+	try 
+	{
+		ShutChain::add(callBack, mask);
+	}
+	catch (const Firebird::Exception& e)
+	{
+		e.stuff_exception(status);
+	}
+
+	return status[1];
+}

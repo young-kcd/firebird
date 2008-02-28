@@ -129,6 +129,7 @@
 #include "../jrd/IntlManager.h"
 #include "../common/classes/fb_tls.h"
 #include "../common/classes/ClumpletReader.h"
+#include "../common/utils_proto.h"
 #include "../jrd/DebugInterface.h"
 
 #include "../dsql/dsql.h"
@@ -464,6 +465,7 @@ static void		shutdown_database(Database*, const bool);
 static void		strip_quotes(Firebird::string&);
 static void		purge_attachment(thread_db*, ISC_STATUS*, Attachment*, const bool);
 static void		getUserInfo(UserId&, const DatabaseOptions&);
+static bool		shutdown_all();
 
 //____________________________________________________________
 //
@@ -542,6 +544,7 @@ const int BUFFER_LENGTH128		= 128;
 #define GDS_TRANSACT_REQUEST	jrd8_transact_request
 #define GDS_TRANSACTION_INFO	jrd8_transaction_info
 #define GDS_UNWIND				jrd8_unwind_request
+#define GDS_SHUTDOWN			jrd8_shutdown_all
 
 #define GDS_DSQL_ALLOCATE			jrd8_allocate_statement
 #define GDS_DSQL_EXECUTE			jrd8_execute
@@ -3378,6 +3381,35 @@ ISC_STATUS GDS_START(ISC_STATUS * user_status,
 }
 
 
+ISC_STATUS GDS_SHUTDOWN(ISC_STATUS * user_status)
+{
+/**************************************
+ *
+ *	G D S _ S H U T D O W N
+ *
+ **************************************
+ *
+ * Functional description
+ *	Rollback every transaction, release
+ *	every attachment, and shutdown every
+ *	database.
+ *
+ **************************************/
+	ISC_STATUS *s = user_status;
+	*s++ = isc_arg_gds;
+	*s = isc_arg_end;
+
+	if (!shutdown_all())
+	{
+		*s++ = isc_random;
+		*s++ = isc_arg_string;
+		*s++ = (ISC_STATUS)("Forced server shutdown - not all databases closed");
+	}
+
+	return user_status[1];
+}
+
+
 ISC_STATUS GDS_START_MULTIPLE(ISC_STATUS * user_status,
 							jrd_tra** tra_handle,
 							USHORT count,
@@ -3996,82 +4028,6 @@ ISC_STATUS GDS_DSQL_SQL_INFO(ISC_STATUS* user_status,
 
 	return user_status[1];
 }
-
-
-#ifdef SUPERSERVER
-bool JRD_getdir(Firebird::PathName& buf)
-{
-/**************************************
- *
- *	J R D _ g e t d i r
- *
- **************************************
- *
- * Functional description
- *	Current working directory is cached in the attachment
- *	block.  Get it out. This function could be called before
- *	an attachment is created. In such a case thread specific
- *	data (t_data) will hold the user name which will be used
- *	to get the users home directory.
- *
- **************************************/
-	char* t_data = NULL;
-	char b[MAXPATHLEN];
-
-	ThreadData::getSpecificData((void**) &t_data);
-
-	if (t_data) {
-#ifdef WIN_NT
-		GetCurrentDirectory(MAXPATHLEN, b);
-		buf = b;
-#else
-		const struct passwd* pwd;
-		strcpy(b, t_data);
-		pwd = getpwnam(b);
-		if (pwd)
-			buf = pwd->pw_dir;
-		else	// No home dir for this users here. Default to server dir
-			return fb_getcwd(buf);
-#endif
-	}
-	else
-	{
-		thread_db* tdbb = JRD_get_thread_data();
-
-   /** If the server has not done a JRD_set_thread_data prior to this call
-       (which will be the case when connecting via IPC), thread_db will
-       be NULL so do not attempt to get the attachment handle from
-       thread_db. Just return false as described below.  
-	   NOTE:  The only time
-       this code is entered via IPC is if the database name = "".
-   **/
-
-   /** In case of backup/restore APIs, JRD_set_thread_data has been done but
-       the thread's context is a 'gbak' specific, so don't try extract
-       attachment from there.
-   **/
-
-		Attachment* attachment;
-		if (tdbb && (tdbb->getType() == ThreadData::tddDBB))
-			attachment = tdbb->getAttachment();
-		else
-			return false;
-
-   /**
-    An older version of client will not be sending isc_dpb_working directory
-    so in all probabilities attachment->att_working_directory will be null.
-    return false so that ISC_expand_filename will create the file in fbserver's dir
-   **/
-		if (!attachment || attachment->att_working_directory.empty())
-		{
-			return false;
-		}
-		buf = attachment->att_working_directory;
-	}
-
-	return true;
-}
-#endif // SUPERSERVER
 
 
 #ifdef DEBUG_PROCS
@@ -4698,38 +4654,7 @@ void DatabaseOptions::get(const UCHAR* dpb, USHORT dpb_length, bool& invalid_cli
 		switch (rdr.getClumpTag())
 		{
 		case isc_dpb_working_directory:
-			{
-				rdr.getPath(dpb_working_directory);
-
-				// CLASSIC have no thread data. Init to zero.
-				char* t_data = 0;
-				ThreadData::getSpecificData((void **) &t_data);
-
-				// Null value for working_directory implies remote database. So get
-				// the users HOME directory
-#ifndef WIN_NT
-				if (dpb_working_directory.isEmpty()) {
-					struct passwd *passwd = NULL;
-
-					if (t_data)
-						passwd = getpwnam(t_data);
-					if (passwd) 
-					{
-						dpb_working_directory = passwd->pw_dir;
-					}
-					else {		// No home dir for this users here. Default to server dir
-						fb_getcwd(dpb_working_directory);
-					}
-				}
-#endif
-				if (t_data)
-				{
-					free(t_data);
-					t_data = NULL;
-				}
-				// Null out the thread local data so that further references will fail
-				ThreadData::putSpecificData(0);
-			}
+			rdr.getPath(dpb_working_directory);
 			break;
 
 		case isc_dpb_set_page_buffers:
@@ -6002,46 +5927,6 @@ void JRD_shutdown_all(bool asyncMode)
 	if (!flShutdownComplete)
 	{
 		gds__log("Forced server shutdown - not all databases closed");
-	}
-}
-
-
-void JRD_shutdown_attachment(Attachment** handle, Attachment** released)
-{
-/**************************************
- *
- *	J R D _ s h u t d o w n _ a t t a c h m e n t
- *
- **************************************
- *
- * Functional description
- *	Release	attachment.
- *
- **************************************/
-	ISC_STATUS_ARRAY temp_status;
-	ThreadContextHolder tdbb(temp_status);
-
-	try
-	{
-		Firebird::MutexLockGuard guard(databases_mutex);
-
-		Attachment* attachment = *handle;
-		validateHandle(tdbb, attachment);
-		DatabaseContextHolder dbbHolder(tdbb);
-
-		purge_attachment(tdbb, temp_status, attachment, true);
-
-		if (released)
-		{
-			*released++ = attachment;
-		}
-	}
-	catch (const Firebird::Exception&)
-	{}	// no-op
-
-	if (released)
-	{
-		*released = NULL;
 	}
 }
 

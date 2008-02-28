@@ -301,8 +301,7 @@ static rem_port*		inet_try_connect(	PACKET*,
 									Firebird::PathName&,
 									const TEXT*,
 									ISC_STATUS*,
-									const UCHAR*,
-									USHORT);
+									Firebird::ClumpletReader &);
 static bool_t	inet_write(XDR *, int);
 #if !(defined WIN_NT)
 static int		parse_hosts(const TEXT*, const TEXT*, const TEXT*);
@@ -406,8 +405,7 @@ rem_port* INET_analyze(Firebird::PathName& file_name,
 					const TEXT*	node_name,
 					const TEXT*	user_string,
 					bool	uv_flag,
-					const UCHAR*	dpb,
-					USHORT	dpb_length)
+					Firebird::ClumpletReader &dpb)
 {
 /**************************************
  *
@@ -489,7 +487,7 @@ rem_port* INET_analyze(Firebird::PathName& file_name,
 /* Try connection using first set of protocols.  punt if error */
 
 	rem_port* port = inet_try_connect(packet, rdb, file_name,
-								 node_name, status_vector, dpb, dpb_length);
+								 node_name, status_vector, dpb);
 	if (!port) {
 		return NULL;
 	}
@@ -516,7 +514,7 @@ rem_port* INET_analyze(Firebird::PathName& file_name,
 								 cnct->p_cnct_count);
 
 		port = inet_try_connect(packet, rdb, file_name,
-								node_name, status_vector, dpb, dpb_length);
+								node_name, status_vector, dpb);
 		if (!port) {
 			return NULL;
 		}
@@ -544,7 +542,7 @@ rem_port* INET_analyze(Firebird::PathName& file_name,
 								 cnct->p_cnct_count);
 
 		port = inet_try_connect(packet, rdb, file_name,
-								node_name, status_vector, dpb, dpb_length);
+								node_name, status_vector, dpb);
 		if (!port) {
 			return NULL;
 		}
@@ -591,7 +589,7 @@ rem_port* INET_analyze(Firebird::PathName& file_name,
 rem_port* INET_connect(const TEXT* name,
 							 PACKET* packet,
 							 ISC_STATUS* status_vector,
-							 USHORT flag, const UCHAR* dpb, USHORT dpb_length)
+							 USHORT flag, Firebird::ClumpletReader* dpb)
 {
 /**************************************
  *
@@ -622,7 +620,7 @@ rem_port* INET_connect(const TEXT* name,
 
 	rem_port* port = alloc_port(0);
 	port->port_status_vector = status_vector;
-	REMOTE_get_timeout_params(port, dpb, dpb_length);
+	REMOTE_get_timeout_params(port, dpb);
 	status_vector[0] = isc_arg_gds;
 	status_vector[1] = 0;
 	status_vector[2] = isc_arg_end;
@@ -1258,7 +1256,7 @@ static rem_port* alloc_port( rem_port* parent)
 	rem_port* port = (rem_port*) ALLR_block(type_port, INET_remote_buffer * 2);
 	port->port_type = port_inet;
 	port->port_state = state_pending;
-	REMOTE_get_timeout_params(port, 0, 0);
+	REMOTE_get_timeout_params(port, 0);
 
 	gethostname(buffer, sizeof(buffer));
 	port->port_host = REMOTE_make_string(buffer);
@@ -3095,8 +3093,7 @@ static rem_port* inet_try_connect(
 							 Firebird::PathName& file_name,
 							 const TEXT* node_name, 
 							 ISC_STATUS* status_vector,
-							 const UCHAR* dpb,
-							 USHORT dpb_length)
+							 Firebird::ClumpletReader& dpb)
 {
 /**************************************
  *
@@ -3124,9 +3121,7 @@ static rem_port* inet_try_connect(
 /* If we can't talk to a server, punt.  Let somebody else generate
    an error.  status_vector will have the network error info. */
 
-	rem_port* port =
-		INET_connect(node_name, packet, status_vector, FALSE, dpb,
-					 dpb_length);
+	rem_port* port = INET_connect(node_name, packet, status_vector, FALSE, &dpb);
 	if (!port) {
 		ALLR_free(rdb);
 		return NULL;

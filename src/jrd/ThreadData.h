@@ -68,9 +68,6 @@ public:
 	static ThreadData*	getSpecific(void);
 	void			putSpecific();
 	static void		restoreSpecific(void);
-
-	static void		getSpecificData(void** t_data);
-	static void		putSpecificData(void* t_data);
 };
 
 // Thread entry point definitions might much better look in ThreadStart.h,

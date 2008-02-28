@@ -23,17 +23,8 @@
 
 /* 
     Order of battle in ENTRY macro:
-	generic name
 	current local access method entrypoint
-	prior local access method (bridge) entrypoint
 	remote entrypoint
-	OS2 remote name
-	Central server interface
-	RDB interface entrypoint
-	Pipe server interface
-	Bridge pipe server interface
-	Windows local access method entrypoint
-	Win95 interprocess interface
 */
 
 /*****************************************************
@@ -225,5 +216,8 @@ ENTRYPOINT( jrd8_dsql_cache,
 
 ENTRYPOINT( jrd8_internal_compile_request,
 			/* REM_internal_compile_request */ no_entrypoint)
+
+ENTRYPOINT( jrd8_shutdown_all,
+			/* REM_shutdown_all */ no_entrypoint)
 
 #undef ENTRYPOINT

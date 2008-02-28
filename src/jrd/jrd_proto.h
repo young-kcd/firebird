@@ -143,7 +143,7 @@ ISC_STATUS jrd8_transact_request(ISC_STATUS*, Jrd::Attachment**,
 											   USHORT, SCHAR*, USHORT,
 											   SCHAR*);
 ISC_STATUS jrd8_unwind_request(ISC_STATUS *, Jrd::jrd_req**, SSHORT);
-
+ISC_STATUS jrd8_shutdown_all(ISC_STATUS *);
 ISC_STATUS jrd8_allocate_statement(ISC_STATUS*,
 								   Jrd::Attachment**,
 								   Jrd::dsql_req**);
@@ -209,42 +209,15 @@ enum JRD_info_tag
 
 UCHAR*	JRD_num_attachments(UCHAR* const, USHORT, JRD_info_tag, ULONG*, ULONG*);
 void	JRD_shutdown_all(bool);
-void	JRD_shutdown_attachment(Jrd::Attachment**, Jrd::Attachment**);
 
 bool	JRD_reschedule(Jrd::thread_db*, SLONG, bool);
 
 // Call this function from the debugger if desired
 void	JRD_print_pools(const char* filename);
 
-#ifdef SUPERSERVER
-bool	JRD_getdir(Firebird::PathName&);
-#endif
-
 #ifdef DEBUG_PROCS
 void	JRD_print_procedure_info(Jrd::thread_db*, const char*);
 #endif
-
-#ifdef WIN_NT
-#include <direct.h>
-#endif
-#ifdef HAVE_UNISTD_H
-#include <unistd.h>
-#endif
-
-inline bool fb_getcwd(Firebird::PathName& pn)
-{
-	char buffer[MAXPATHLEN];
-#if defined(WIN_NT)
-	_getcwd(buffer, MAXPATHLEN);
-#elif defined(HAVE_GETCWD)
-	getcwd(buffer, MAXPATHLEN);
-#else
-	getwd(buffer);
-#endif
-	pn = buffer;
-	return bool(buffer);
-}
-
 
 #endif /* JRD_JRD_PROTO_H */
 

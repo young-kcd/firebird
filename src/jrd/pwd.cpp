@@ -136,7 +136,7 @@ namespace {
 	};
 
 	const size_t MAX_CONCURRENT_FAILURES = 16;
-	const int MAX_FAILED_ATTEMPTS = 2; //4;
+	const int MAX_FAILED_ATTEMPTS = 4;
 	const int FAILURE_DELAY = 8; // seconds
 
 	class FailedLogins : private Firebird::SortedObjectsArray<FailedLogin, 

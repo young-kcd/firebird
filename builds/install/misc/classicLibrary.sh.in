@@ -13,6 +13,7 @@ DefaultLibrary=libfbembed
 
 
 fixFilePermissions() {
+	cd $FBRootDir
 	chown -R $RunUser:$RunGroup $FBRootDir
 
     # Turn other access off.
@@ -42,18 +43,6 @@ fixFilePermissions() {
     chmod a=rx isql 
     chmod a=rx qli
     
-    # Root SUID is still needed for group direct access.  
-	# General users cannot run though.
-    for i in fb_lock_mgr
-    do
-		if [ -f $i ]
-		then
-			chown root $i
-	        chmod ug=rx,o= $i
-    	    chmod ug+s $i
-		fi
-    done
-	
 	# set up libraries
 	cd $FBRootDir
 	cd lib
@@ -70,11 +59,14 @@ fixFilePermissions() {
     do
         FileName=$i.`hostname`
 		touch $FileName
+		chown $RunUser:$RunGroup $FileName
         chmod ug=rw,o= $FileName
     done
 
+    # Create log
+    touch firebird.log
+
     # Fix the rest
-	touch firebird.log
     chmod ug=rw,o= firebird.log
 	chmod a=r aliases.conf
 	chmod a=r firebird.conf

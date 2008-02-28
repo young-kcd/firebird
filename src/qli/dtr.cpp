@@ -51,6 +51,7 @@
 #include "../qli/meta_proto.h"
 #include "../qli/parse_proto.h"
 #include "../jrd/gds_proto.h"
+#include "../jrd/why_proto.h"
 #include "../jrd/perf_proto.h"
 #include "../include/fb_exception.h"
 #include "../common/utils_proto.h"
@@ -60,18 +61,13 @@ using MsgFormat::SafeArg;
 
 const char* STARTUP_FILE	= "HOME";	// Assume its Unix 
 
-#ifndef SIGQUIT
-#define SIGQUIT		SIGINT
-#define SIGPIPE		SIGINT
-#endif
-
 
 extern TEXT *QLI_prompt;
 
 static void enable_signals(void);
 static bool process_statement(bool);
 static void CLIB_ROUTINE signal_arith_excp(USHORT, USHORT, USHORT);
-static void CLIB_ROUTINE signal_quit(int);
+static int CLIB_ROUTINE async_quit();
 static bool yes_no(USHORT, const TEXT*);
 
 struct answer_t {
@@ -299,9 +295,13 @@ static void enable_signals(void)
  **************************************/
 	typedef void (*new_handler) (int);
 
-	signal(SIGQUIT, signal_quit);
-	signal(SIGINT, signal_quit);
-	signal(SIGPIPE, signal_quit);
+#ifdef SIGQUIT
+	signal(SIGQUIT, SIG_IGN);
+#endif
+	fb__shutdown_callback(0, async_quit, FB_SHUT_PREPROVIDERS);
+#ifdef SIGPIPE
+	signal(SIGPIPE, SIG_IGN);
+#endif
 	signal(SIGFPE, (new_handler) signal_arith_excp);
 }
 
@@ -559,7 +559,7 @@ static void CLIB_ROUTINE signal_arith_excp(USHORT sig, USHORT code, USHORT scp)
 }
 
 
-static void CLIB_ROUTINE signal_quit(int)
+static int CLIB_ROUTINE async_quit()
 {
 /**************************************
  *
@@ -571,12 +571,8 @@ static void CLIB_ROUTINE signal_quit(int)
  *	Stop whatever we happened to be doing.
  *
  **************************************/
-	//void (*prev_handler) ();
-
-	signal(SIGQUIT, SIG_DFL);
-	signal(SIGINT, SIG_DFL);
-
 	EXEC_abort();
+	return 1;
 }
 
 

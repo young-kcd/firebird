@@ -336,7 +336,7 @@ static bool isc_signal2(
 
 	/* Que up the new ISC signal handler routine */
 
-	que_signal(signal_number, handler, arg, flags, old_sig_w_siginfo);
+	que_signal(signal_number, handler, arg, flags, false);
 
 	return rc;
 }

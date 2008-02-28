@@ -255,6 +255,11 @@ SLONG API_ROUTINE isc_reset_fpe(USHORT);
 #define CANCEL_enable	2
 #define CANCEL_raise	3
 ISC_STATUS API_ROUTINE gds__cancel_operation(ISC_STATUS*, FB_API_HANDLE*, USHORT);
+ISC_STATUS API_ROUTINE gds__handle_cleanup(ISC_STATUS*, FB_API_HANDLE*);
+ISC_STATUS API_ROUTINE fb__shutdown(ISC_STATUS* user_status);
+const int FB_SHUT_PREPROVIDERS	= 1;
+const int FB_SHUT_POSTPROVIDERS	= 2;
+ISC_STATUS API_ROUTINE fb__shutdown_callback(ISC_STATUS* user_status, FPTR_INT callBack, const int mask);
 
 typedef void AttachmentCleanupRoutine(FB_API_HANDLE*, void*);
 typedef void TransactionCleanupRoutine(FB_API_HANDLE, void*);
@@ -263,8 +268,6 @@ ISC_STATUS API_ROUTINE isc_database_cleanup(ISC_STATUS*, FB_API_HANDLE*,
 												AttachmentCleanupRoutine*, void*);
 int API_ROUTINE gds__disable_subsystem(TEXT*);
 int API_ROUTINE gds__enable_subsystem(TEXT*);
-
-ISC_STATUS gds__handle_cleanup(ISC_STATUS*, FB_API_HANDLE*);
 
 #define INTL_FUNCTION_CHAR_LENGTH		1
 #define INTL_FUNCTION_CONV_TO_METADATA	2

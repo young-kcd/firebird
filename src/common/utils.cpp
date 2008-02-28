@@ -43,6 +43,9 @@
 #include "../common/classes/init.h"
 #include "../jrd/constants.h"
 
+#ifdef WIN_NT
+#include <direct.h>
+#endif
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
@@ -660,6 +663,19 @@ SLONG genReadOnlyId()
 	Firebird::MutexLockGuard guard(mutex);
 	static SLONG cnt = 0;
 	return ++cnt;
+}
+
+void getCwd(Firebird::PathName& pn)
+{
+	char *buffer = pn.getBuffer(MAXPATHLEN);
+#if defined(WIN_NT)
+	_getcwd(buffer, MAXPATHLEN);
+#elif defined(HAVE_GETCWD)
+	getcwd(buffer, MAXPATHLEN);
+#else
+	getwd(buffer);
+#endif
+	pn.recalculate_length();
 }
 
 } // namespace fb_utils

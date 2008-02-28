@@ -25,7 +25,7 @@
 #include <windows.h>
 #include "../jrd/common.h"
 #include "../../utilities/install/registry.h"
-#include "../jrd/jrd_proto.h"
+#include "../jrd/why_proto.h"
 #include "../jrd/thread_proto.h"
 
 
@@ -35,7 +35,7 @@ BOOL WINAPI DllMain(HINSTANCE h, DWORD reason, LPVOID reserved)
 
 	case DLL_PROCESS_DETACH:
 #ifdef EMBEDDED
-		JRD_shutdown_all(false);
+		fb__shutdown(0);
 #endif
 		break;
 

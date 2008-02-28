@@ -100,8 +100,8 @@ public:
 		tra_blobs(p),
 		tra_resources(*p),
 		tra_context_vars(*p),
-		tra_open_cursors(*p),
-		tra_lock_timeout(DEFAULT_LOCK_TIMEOUT)
+		tra_lock_timeout(DEFAULT_LOCK_TIMEOUT),
+		tra_open_cursors(*p)
 	{}
 
 	~jrd_tra()

@@ -337,7 +337,7 @@ static THREAD_ENTRY_DECLARE cleanup_thread(THREAD_ENTRY_PARAM)
 	if (new_ptr != return_buffer)
 		gds__free(new_ptr);
 
-	JRD_shutdown_all(false);
+	fb__shutdown(0);
 	SRVR_shutdown();
 	return 0;
 }

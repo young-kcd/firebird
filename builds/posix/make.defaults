@@ -273,6 +273,7 @@ FBEMBED_LINK= -L$(LIB) -lfbembed
 
 FB_SUPER_SERVER	= $(BIN)/fbserver$(EXEC_EXT)
 FB_CLASSIC_SERVER = $(BIN)/fb_inet_server$(EXEC_EXT)
+FB_DAEMON = $(BIN)/fb_smp_server$(EXEC_EXT)
 
 STATIC_CXXSUPPORT_LIB = -lsupc++
 

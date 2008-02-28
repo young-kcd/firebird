@@ -36,6 +36,7 @@ global:
 	gds__blob_size;
 	gds__cancel_blob;
 	gds__cancel_events;
+	gds__cancel_operation;
 	gds__close;
 	gds__close_blob;
 	gds__commit_retaining;
@@ -71,6 +72,7 @@ global:
 	gds__get_prefix;
 	gds__get_segment;
 	gds__get_slice;
+	gds__handle_cleanup;
 	gds__interprete;
 	gds__log;
 	gds__log_status;
@@ -132,6 +134,9 @@ global:
 
     gds_alloc_flag_unfreed;
     gds_alloc_report;
+
+	fb__shutdown;
+	fb__shutdown_callback;
 
 	perf_format;
 	perf_get_info;

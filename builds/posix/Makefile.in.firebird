@@ -327,10 +327,10 @@ otherfiles: misc_files
 
 #_ Embedded Firebird Targets (Classic)_______________________________________
 
-.PHONY: libfbembed inet_server embed_gfix embed_gbak embed_isql 
+.PHONY: libfbembed inet_server fb_smp_server embed_gfix embed_gbak embed_isql 
 .PHONY: embed_gpre embed_util
 
-classic_targets: $(PLAT_CLASSIC_PRE_TARGET) libfbembed inet_server embed_gfix embed_gbak embed_isql \
+classic_targets: $(PLAT_CLASSIC_PRE_TARGET) libfbembed inet_server fb_smp_server embed_gfix embed_gbak embed_isql \
 	embed_gpre embed_util embed_gdef embed_qli embed_fbudf libfbclient $(PLAT_CLASSIC_POST_TARGET)
 
 libfbembed:
@@ -338,6 +338,9 @@ libfbembed:
 
 inet_server:
 	$(MAKE) -f $(GEN_ROOT)/Makefile.inet_server
+
+fb_smp_server:
+	$(MAKE) -f $(GEN_ROOT)/Makefile.smp_server
 
 embed_gfix:
 	$(MAKE) -f $(GEN_ROOT)/Makefile.embed.gfix

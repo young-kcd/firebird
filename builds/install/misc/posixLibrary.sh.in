@@ -404,6 +404,8 @@ buildUninstallFile() {
 
     cp -r scripts $FBRootDir/misc/
     cp scripts/tarMainUninstall.sh $FBRootDir/bin/uninstall.sh
+
+	cd $FBRootDir
 }
 
 
@@ -447,6 +449,7 @@ createLinksForBackCompatibility() {
     # to ensure it loads the fb equivalent.  Eventually these should be 
     # optional and in a seperate rpm install.  MOD 7-Nov-2002.
 
+	cd $FBRootDir
 	if [ "$1" ]
 	then
 		# Use library name from parameter

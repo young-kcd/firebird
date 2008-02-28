@@ -55,6 +55,7 @@
 #include "../common/config/config.h"
 #include "../common/config/dir_list.h"
 #include "../common/classes/init.h"
+#include "../common/utils_proto.h"
 
 #include <sys/types.h>
 #ifdef HAVE_SYS_IPC_H
@@ -74,12 +75,6 @@
 #include "../common/config/config.h"
 
 const char INET_FLAG = ':';
-
-#ifdef SUPERSERVER
-#define GETWD(buf)		JRD_getdir(buf)
-#else
-#define GETWD(buf)		fb_getcwd(buf)
-#endif /* SUPERSERVER */
 
 #ifdef DARWIN
 #ifdef HAVE_SYS_PARAM_H
@@ -859,8 +854,9 @@ bool ISC_expand_filename(tstring& file_name, bool expand_mounts)
 	// Expand the file name 
 
 #ifdef SUPERSERVER
-	if ((!fully_qualified_path) && JRD_getdir(file_name))
+	if (!fully_qualified_path)
 	{
+		fb_utils::getCwd(file_name);
 		if (device.hasData() && device[0] == file_name[0]) {
 			// case where temp is of the form "c:foo.fdb" and
 			// expanded_name is "c:\x\y".
@@ -888,8 +884,7 @@ bool ISC_expand_filename(tstring& file_name, bool expand_mounts)
 	else
 #endif
 	{
-		// Here we get "." and ".." translated by the API, but ONLY IF we are using
-		// local conection, because in that case, JRD_getdir() returns false.
+		// Here we get "." and ".." translated by the API.
 		if (!get_full_path(temp, file_name))
 		{
 			file_name = temp;
@@ -1100,10 +1095,7 @@ static void expand_filename2(tstring& buff, bool expand_mounts)
 	// If the file is local, expand partial pathnames with default directory
 	if (*from && *from != '/') 
 	{
-		if (! GETWD(buff)) 
-		{
-			buff = "";
-		}
+		fb_utils::getCwd(buff);
 		buff += '/';
 	}
 

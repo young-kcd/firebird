@@ -26,10 +26,15 @@
 
 #include "../common/classes/fb_string.h"
 
+namespace Firebird
+{
+	class ClumpletReader;
+};
+
 rem_port*	INET_analyze(Firebird::PathName&, ISC_STATUS*, const TEXT*, const TEXT*,
-	bool, const UCHAR*, USHORT);
+	bool, Firebird::ClumpletReader&);
 rem_port*	INET_connect(const TEXT*, struct packet*, ISC_STATUS*, USHORT,
-	const UCHAR*, USHORT);
+	Firebird::ClumpletReader*);
 rem_port*	INET_reconnect(HANDLE, ISC_STATUS*);
 rem_port*	INET_server(int);
 void	INET_set_clients(int);

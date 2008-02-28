@@ -25,10 +25,7 @@
 
 #include "../jrd/common.h"
 #include "../dsql/dsql.h"
-
-namespace Dsql {
-	enum nod_t;
-}
+#include "../dsql/node.h"
 
 namespace Jrd {
 

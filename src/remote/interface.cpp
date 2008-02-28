@@ -86,9 +86,6 @@
 
 #ifdef WIN_NT
 #define sleep(seconds)		Sleep ((seconds) * 1000)
-
-#include <direct.h>				// getcwd
-
 #endif // WIN_NT
 
 const char* ISC_USER		= "ISC_USER";
@@ -130,9 +127,9 @@ static RVNT add_event(rem_port*);
 static void add_other_params(rem_port*, Firebird::ClumpletWriter&, const ParametersSet&);
 static void add_working_directory(Firebird::ClumpletWriter&, const Firebird::PathName&);
 static rem_port* analyze(Firebird::PathName&, ISC_STATUS*, const TEXT*,
-					bool, const UCHAR*, USHORT, Firebird::PathName&);
+					bool, Firebird::ClumpletReader&, Firebird::PathName&);
 static rem_port* analyze_service(Firebird::PathName&, ISC_STATUS*, const TEXT*, 
-					bool, const UCHAR*, USHORT);
+					bool, Firebird::ClumpletReader&);
 static bool batch_gds_receive(rem_port*, struct rmtque *,
 								 ISC_STATUS *, USHORT);
 static bool batch_dsql_fetch(rem_port*, struct rmtque *,
@@ -326,8 +323,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 		Firebird::PathName expanded_name(expanded_filename);
 		Firebird::PathName node_name;
 		rem_port* port = analyze(expanded_name, user_status, us, user_verification,
-					   newDpb.getBuffer(),
-					   newDpb.getBufferLength(), node_name);
+					   newDpb, node_name);
 		if (!port)
 		{
 			return user_status[1];
@@ -852,8 +848,7 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 		Firebird::PathName expanded_name(expanded_filename);
 		Firebird::PathName node_name;
 		const UCHAR* dpb2 = reinterpret_cast<const UCHAR*>(dpb);
-		rem_port* port = analyze(expanded_name, user_status, us,
-					   user_verification, dpb2, dpb_length, node_name);
+		rem_port* port = analyze(expanded_name, user_status, us, user_verification, newDpb, node_name);
 		if (!port) {
 			return user_status[1];
 		}
@@ -3835,9 +3830,8 @@ ISC_STATUS GDS_SERVICE_ATTACH(ISC_STATUS* user_status,
 		const bool user_verification = get_new_dpb(newSpb, user_string, spbParam);
 		const TEXT* us = (user_string.hasData()) ? user_string.c_str() : 0;
 
-		const UCHAR* spb2 = reinterpret_cast<const UCHAR*>(spb);
 		rem_port* port = analyze_service(expanded_name, user_status, us,
-						 user_verification, spb2, spb_length);
+						 user_verification, newSpb);
 		if (!port) {
 			return user_status[1];
 		}
@@ -4536,7 +4530,7 @@ static void add_working_directory(Firebird::ClumpletWriter& dpb,
 	// for WNet local node_name should be compared with "\\\\." ?
 	if (node_name == "localhost")
 	{
-		fb_getcwd(cwd);
+		fb_utils::getCwd(cwd);
 	}
 	dpb.insertPath(isc_dpb_working_directory, cwd);
 }
@@ -4546,8 +4540,7 @@ static rem_port* analyze(Firebird::PathName&	file_name,
 					ISC_STATUS*					status_vector,
 					const TEXT*					user_string,
 					bool						uv_flag,
-					const UCHAR*				dpb,
-					USHORT						dpb_length,
+					Firebird::ClumpletReader&	dpb,
 					Firebird::PathName&			node_name)
 {
 /**************************************
@@ -4588,16 +4581,14 @@ static rem_port* analyze(Firebird::PathName&	file_name,
 		if (ISC_analyze_tcp(file_name, node_name))
 		{
 			port = INET_analyze(file_name, status_vector,
-								node_name.c_str(), user_string, uv_flag, dpb,
-								dpb_length);
+								node_name.c_str(), user_string, uv_flag, dpb);
 
 			if (!port)
 			{
 				/* retry in case multiclient inet server not forked yet */
 				sleep(2);
 				port = INET_analyze(file_name, status_vector,
-									node_name.c_str(), user_string, uv_flag, dpb,
-									dpb_length);
+									node_name.c_str(), user_string, uv_flag, dpb);
 			}
 		}
 		else
@@ -4608,8 +4599,7 @@ static rem_port* analyze(Firebird::PathName&	file_name,
 				if (ISC_analyze_nfs(file_name, node_name))
 				{
 					port = INET_analyze(file_name, status_vector,
-										node_name.c_str(), user_string, uv_flag, dpb,
-										dpb_length);
+										node_name.c_str(), user_string, uv_flag, dpb);
 					if (!port)
 					{
 						/* retry in case multiclient inet server not forked yet */
@@ -4618,8 +4608,7 @@ static rem_port* analyze(Firebird::PathName&	file_name,
 						port =
 							INET_analyze(file_name, 
 										 status_vector, node_name.c_str(),
-										 user_string, uv_flag, dpb,
-										 dpb_length);
+										 user_string, uv_flag, dpb);
 					}
 				}
 			}
@@ -4668,8 +4657,7 @@ static rem_port* analyze(Firebird::PathName&	file_name,
 								node_name.c_str(),
 								user_string,
 								uv_flag,
-								dpb,
-								dpb_length);
+								dpb);
 		}
 	}
 
@@ -4690,8 +4678,7 @@ static rem_port* analyze_service(Firebird::PathName& service_name,
 							ISC_STATUS* status_vector,
 							const TEXT* user_string,
 							bool uv_flag,
-							const UCHAR* dpb,
-							USHORT dpb_length)
+							Firebird::ClumpletReader& spb)
 {
 /**************************************
  *
@@ -4723,8 +4710,7 @@ static rem_port* analyze_service(Firebird::PathName& service_name,
 	if (!port) {
 		if (ISC_analyze_tcp(service_name, node_name)) {
 			port = INET_analyze(service_name, status_vector,
-								node_name.c_str(), user_string, uv_flag, dpb,
-								dpb_length);
+								node_name.c_str(), user_string, uv_flag, spb);
 		}
 	}
 
@@ -4751,8 +4737,7 @@ static rem_port* analyze_service(Firebird::PathName& service_name,
 								node_name.c_str(), 
 								user_string,
 								uv_flag,
-								dpb,
-								dpb_length);
+								spb);
 		}
 	}
 #endif /* UNIX */

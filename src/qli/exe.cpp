@@ -26,6 +26,8 @@
 #include <setjmp.h>
 
 #include "../jrd/ibase.h"
+#include "../jrd/common.h"
+#include "../jrd/why_proto.h"
 #include "../qli/dtr.h"
 #include "../qli/exe.h"
 #include "../qli/all_proto.h"
@@ -102,13 +104,17 @@ void EXEC_abort(void)
  **************************************/
 	ISC_STATUS_ARRAY status_vector;
 
-	for (qli_req* request = QLI_requests; request; request = request->req_next)
+	for (DBB database = QLI_databases; database; database = database->dbb_next)
 	{
-		if (request->req_handle)
-			isc_unwind_request(status_vector, &request->req_handle, 0);
+		if (database->dbb_handle)
+		{
+			if (gds__cancel_operation(status_vector, &database->dbb_handle, CANCEL_raise) == 0)
+			{
+				QLI_abort = true;
+			}
+		}
 	}
 
-	QLI_abort = true;
 }
 
 

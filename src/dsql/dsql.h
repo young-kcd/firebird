@@ -301,8 +301,8 @@ public:
 	SSHORT		udf_character_set_id;
 	USHORT		udf_character_length;
     USHORT      udf_flags;
-	Firebird::Array<dsc> udf_arguments;
 	Firebird::MetaName udf_name;
+	Firebird::Array<dsc> udf_arguments;
 };
 
 // udf_flags bits
@@ -433,8 +433,8 @@ public:
     DsqlContextStack	req_dt_context;		//!< Save contexts for views of derived tables
 	dsql_sym* req_name;			//!< Name of request
 	dsql_sym* req_cursor;		//!< Cursor symbol, if any
-	dsql_dbb*	req_dbb;			//!< DSQL attachment
-	jrd_tra*	req_transaction;			//!< JRD transaction
+	dsql_dbb* req_dbb;			//!< DSQL attachment
+	jrd_tra* req_transaction;			//!< JRD transaction
 	dsql_nod* req_ddl_node;		//!< Store metadata request
 	dsql_nod* req_blk_node;		//!< exec_block node 
 	class dsql_blb* req_blob;			//!< Blob info for blob requests

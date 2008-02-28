@@ -599,6 +599,7 @@ jrd_file* PIO_open(Database* dbb,
  *	Open a database file.
  *
  **************************************/
+	bool readOnly = false;
 	const TEXT* const ptr = (string.hasData() ? string : file_name).c_str();
 	int desc = openFile(ptr, false, false, false);
 
@@ -613,16 +614,15 @@ jrd_file* PIO_open(Database* dbb,
 					 isc_arg_cstring, file_name.length(), ERR_cstring(file_name),
 					 isc_arg_gds, isc_io_open_err, isc_arg_unix, errno, 0);
 		}
-		else {
-			/* If this is the primary file, set Database flag to indicate that it is
-			 * being opened ReadOnly. This flag will be used later to compare with
-			 * the Header Page flag setting to make sure that the database is set
-			 * ReadOnly.
-			 */
-			PageSpace* pageSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
-			if (!pageSpace->file)
-				dbb->dbb_flags |= DBB_being_opened_read_only;
-		}
+		/* If this is the primary file, set Database flag to indicate that it is
+		 * being opened ReadOnly. This flag will be used later to compare with
+		 * the Header Page flag setting to make sure that the database is set
+		 * ReadOnly.
+		 */
+		PageSpace* pageSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
+		if (!pageSpace->file)
+			dbb->dbb_flags |= DBB_being_opened_read_only;
+		readOnly = true;
 	}
 
 	// posix_fadvise(desc, 0, 0, POSIX_FADV_RANDOM);
@@ -647,6 +647,8 @@ jrd_file* PIO_open(Database* dbb,
 	jrd_file *file;
 	try {
 		file = setup_file(dbb, string, desc);
+		if (readOnly)
+			file->fil_flags |= FIL_readonly;
 	}
 	catch (const Firebird::Exception&) {
 		close(desc);

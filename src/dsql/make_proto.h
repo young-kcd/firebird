@@ -27,18 +27,25 @@
 #define DSQL_MAKE_PROTO_H
 
 #include "../dsql/sym.h"
+#include "../dsql/node.h"
 
 namespace Jrd {
 	class dsql_nod;
 	class dsql_fld;
 	class dsql_req;
-	enum dsql_constant_type;
-	enum sym_type;
+
+// Parameters to MAKE_constant
+	enum dsql_constant_type {
+		CONSTANT_STRING		= 0, // stored as a string
+//		CONSTANT_SLONG		= 1, // stored as a SLONG
+		CONSTANT_DOUBLE		= 2, // stored as a string
+		CONSTANT_DATE		= 3, // stored as a SLONG
+		CONSTANT_TIME		= 4, // stored as a ULONG
+		CONSTANT_TIMESTAMP	= 5, // stored as a QUAD
+		CONSTANT_SINT64		= 6 // stored as a SINT64
+	};
 };
 
-namespace Dsql {
-	enum nod_t;
-}
 
 Jrd::dsql_nod* MAKE_const_slong(SLONG);
 Jrd::dsql_nod* MAKE_constant(Jrd::dsql_str*, Jrd::dsql_constant_type);
