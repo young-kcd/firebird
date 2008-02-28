@@ -83,8 +83,10 @@
 
 #include "gen/iberror.h"
 #include "../dsql/dsql.h"
+#include "../dsql/node.h"
 #include "../jrd/ibase.h"
 #include "../jrd/flags.h"
+#include "../jrd/jrd.h"
 #include "../dsql/errd_proto.h"
 #include "../dsql/hsh_proto.h"
 #include "../dsql/make_proto.h"
@@ -138,6 +140,9 @@ inline SLONG trigger_type_suffix(const int slot1, const int slot2, const int slo
 #include "../dsql/chars.h"
 
 const int MAX_TOKEN_LEN = 256;
+
+using namespace Jrd;
+using namespace Dsql;
 
 #ifdef NOT_USED_OR_REPLACED
 static bool		long_int(dsql_nod*, SLONG*);
@@ -380,7 +385,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 /* New tokens added v6.0 */
 
 %token COLUMN
-%token TYPE
+%token KW_TYPE
 %token EXTRACT
 %token YEAR
 %token MONTH
@@ -808,11 +813,11 @@ arg_desc	: init_data_type udf_data_type param_mechanism
 param_mechanism :
 			{ $$ = NULL; } /* Beware: ddl.cpp converts this to mean FUN_reference. */
 		| BY KW_DESCRIPTOR
-			{ $$ = MAKE_const_slong (Jrd::FUN_descriptor); }
+			{ $$ = MAKE_const_slong (FUN_descriptor); }
 		| BY SCALAR_ARRAY
-			{ $$ = MAKE_const_slong (Jrd::FUN_scalar_array); }
+			{ $$ = MAKE_const_slong (FUN_scalar_array); }
 		| KW_NULL
-			{ $$ = MAKE_const_slong (Jrd::FUN_ref_with_null); }
+			{ $$ = MAKE_const_slong (FUN_ref_with_null); }
 		;
 
 return_value1	: return_value
@@ -829,16 +834,16 @@ return_value	: init_data_type udf_data_type return_mechanism
 		;
 
 return_mechanism :
-			{ $$ = MAKE_const_slong (Jrd::FUN_reference); }
+			{ $$ = MAKE_const_slong (FUN_reference); }
 		| BY KW_VALUE
-			{ $$ = MAKE_const_slong (Jrd::FUN_value); }
+			{ $$ = MAKE_const_slong (FUN_value); }
 		| BY KW_DESCRIPTOR
-			{ $$ = MAKE_const_slong (Jrd::FUN_descriptor); }
+			{ $$ = MAKE_const_slong (FUN_descriptor); }
 		| FREE_IT
-			{ $$ = MAKE_const_slong (-1 * Jrd::FUN_reference); }
+			{ $$ = MAKE_const_slong (-1 * FUN_reference); }
 										 /* FUN_refrence with FREE_IT is -ve */
 		| BY KW_DESCRIPTOR FREE_IT
-			{ $$ = MAKE_const_slong (-1 * Jrd::FUN_descriptor); }
+			{ $$ = MAKE_const_slong (-1 * FUN_descriptor); }
 		;
 
 
@@ -1344,12 +1349,12 @@ simple_column_def_name  : simple_column_name
 
 data_type_descriptor :	init_data_type data_type
 			{ $$ = $1; }
-		| TYPE OF column_def_name
+		| KW_TYPE OF column_def_name
 			{
 				((dsql_fld*) $3)->fld_type_of_name = ((dsql_fld*) $3)->fld_name;
 				$$ = $3;
 			}
-		| TYPE OF COLUMN symbol_column_name '.' symbol_column_name
+		| KW_TYPE OF COLUMN symbol_column_name '.' symbol_column_name
 			{
 				lex.g_field = make_field(NULL);
 				lex.g_field->fld_type_of_table = ((dsql_str*) $4);
@@ -2212,7 +2217,7 @@ alter_domain_op	: SET domain_default end_trigger
 			{ $$ = make_node (nod_delete_rel_constraint, (int) 1, NULL); }
 		| TO simple_column_name
 			{ $$ = $2; }
-		| TYPE init_data_type non_array_type 
+		| KW_TYPE init_data_type non_array_type 
 			{ $$ = make_node (nod_mod_domain_type, 2, $2); }
 		;
 
@@ -2238,9 +2243,9 @@ alter_op	: DROP simple_column_name drop_behaviour
 				MAKE_const_slong((IPTR) $4)); }
 		| col_opt alter_column_name TO simple_column_name
 			{ $$ = make_node(nod_mod_field_name, 2, $2, $4); }
-		| col_opt alter_col_name TYPE alter_data_type_or_domain
+		| col_opt alter_col_name KW_TYPE alter_data_type_or_domain
 			{ $$ = make_node(nod_mod_field_type, e_mod_fld_type_count, $2, $4, NULL, NULL); }
-		| col_opt alter_col_name TYPE non_array_type def_computed
+		| col_opt alter_col_name KW_TYPE non_array_type def_computed
 			{
 				// Due to parser hacks, we should not pass $4 (non_array_type) to make_node. 
 				$$ = make_node(nod_mod_field_type, e_mod_fld_type_count, $2, NULL, NULL, $5);
@@ -2491,9 +2496,9 @@ domain_or_non_array_type_name
 	;
 
 domain_type
-	:	TYPE OF symbol_column_name
+	:	KW_TYPE OF symbol_column_name
 			{ lex.g_field->fld_type_of_name = ((dsql_str*) $3)->str_data; }
-	|	TYPE OF COLUMN symbol_column_name '.' symbol_column_name
+	|	KW_TYPE OF COLUMN symbol_column_name '.' symbol_column_name
 			{
 				lex.g_field->fld_type_of_name = ((dsql_str*) $6)->str_data;
 				lex.g_field->fld_type_of_table = ((dsql_str*) $4);
@@ -4772,7 +4777,7 @@ non_reserved_word :
 	| FREE_IT
 	| RESTRICT
 	| ROLE
-	| TYPE					// added in IB 6.0
+	| KW_TYPE				// added in IB 6.0
 	| KW_BREAK				// added in FB 1.0
 	| KW_DESCRIPTOR
 	| SUBSTRING
@@ -4883,7 +4888,7 @@ non_reserved_word :
  */
 
 
-void LEX_dsql_init()
+void LEX_dsql_init(MemoryPool& pool)
 {
 /**************************************
  *
@@ -4896,17 +4901,15 @@ void LEX_dsql_init()
  *	per session.
  *
  **************************************/
-	tsql* tdsql = DSQL_get_thread_data();
-
 	for (const TOK* token = KEYWORD_getTokens(); token->tok_string; ++token)
 	{
-		DSQL_SYM symbol = FB_NEW_RPT(*tdsql->getDefaultPool(), 0) dsql_sym;
+		DSQL_SYM symbol = FB_NEW_RPT(pool, 0) dsql_sym;
 		symbol->sym_string = (TEXT *) token->tok_string;
 		symbol->sym_length = strlen(token->tok_string);
 		symbol->sym_type = SYM_keyword;
 		symbol->sym_keyword = token->tok_ident;
 		symbol->sym_version = token->tok_version;
-		dsql_str* str = FB_NEW_RPT(*tdsql->getDefaultPool(), symbol->sym_length) dsql_str;
+		dsql_str* str = FB_NEW_RPT(pool, symbol->sym_length) dsql_str;
 		str->str_length = symbol->sym_length;
 		strncpy((char*)str->str_data, (char*)symbol->sym_string, symbol->sym_length);
 		symbol->sym_object = (void *) str;
@@ -4975,18 +4978,18 @@ static dsql_fld* make_field (dsql_nod* field_name)
  *	Make a field block of given name.
  *
  **************************************/
-	tsql* tdsql = DSQL_get_thread_data();
+	thread_db* tdbb = JRD_get_thread_data();
 
 	if (field_name == NULL)
 	{
-		dsql_fld* field = FB_NEW(*tdsql->getDefaultPool())
-			dsql_fld(*tdsql->getDefaultPool());
+		dsql_fld* field = FB_NEW(*tdbb->getDefaultPool())
+			dsql_fld(*tdbb->getDefaultPool());
 		field->fld_name = INTERNAL_FIELD_NAME;
 		return field;
 	}
 	const dsql_str* string = (dsql_str*) field_name->nod_arg[1];
-	dsql_fld* field = FB_NEW(*tdsql->getDefaultPool())
-		dsql_fld(*tdsql->getDefaultPool());
+	dsql_fld* field = FB_NEW(*tdbb->getDefaultPool())
+		dsql_fld(*tdbb->getDefaultPool());
 	field->fld_name = string->str_data;
 	field->fld_explicit_collation = false;
 	field->fld_not_nullable = false;
@@ -5008,9 +5011,9 @@ static dsql_fil* make_file()
  *	Make a file block
  *
  **************************************/
-	tsql* tdsql = DSQL_get_thread_data();
+	thread_db* tdbb = JRD_get_thread_data();
 		   
-	dsql_fil* temp_file = FB_NEW(*tdsql->getDefaultPool()) dsql_fil;
+	dsql_fil* temp_file = FB_NEW(*tdbb->getDefaultPool()) dsql_fil;
 
 	return temp_file;
 }
@@ -5028,7 +5031,7 @@ dsql_nod* Parser::make_list (dsql_nod* node)
  *	Collapse nested list nodes into single list.
  *
  **************************************/
-	tsql* tdsql = DSQL_get_thread_data();
+	thread_db* tdbb = JRD_get_thread_data();
 
 	if (node)
 	{
@@ -5037,7 +5040,7 @@ dsql_nod* Parser::make_list (dsql_nod* node)
 		USHORT l = stack.getCount();
 
 		const dsql_nod* old = node;
-		node = FB_NEW_RPT(*tdsql->getDefaultPool(), l) dsql_nod;
+		node = FB_NEW_RPT(*tdbb->getDefaultPool(), l) dsql_nod;
 		node->nod_count = l;
 		node->nod_type = nod_list;
 		node->nod_line = (USHORT) lex.lines_bk;
@@ -5069,9 +5072,9 @@ dsql_nod* Parser::make_parameter()
  *	Any change should also be made to function below
  *
  **************************************/
-	tsql* tdsql = DSQL_get_thread_data();
+	thread_db* tdbb = JRD_get_thread_data();
 
-	dsql_nod* node = FB_NEW_RPT(*tdsql->getDefaultPool(), e_par_count) dsql_nod;
+	dsql_nod* node = FB_NEW_RPT(*tdbb->getDefaultPool(), e_par_count) dsql_nod;
 	node->nod_type = nod_parameter;
 	node->nod_line = (USHORT) lex.lines_bk;
 	node->nod_column = (USHORT) (lex.last_token_bk - lex.line_start_bk + 1);
@@ -5095,9 +5098,9 @@ dsql_nod* Parser::make_node(NOD_TYPE type, int count, ...)
  *	Any change should also be made to function below
  *
  **************************************/
-	tsql* tdsql = DSQL_get_thread_data();
+	thread_db* tdbb = JRD_get_thread_data();
 
-	dsql_nod* node = FB_NEW_RPT(*tdsql->getDefaultPool(), count) dsql_nod;
+	dsql_nod* node = FB_NEW_RPT(*tdbb->getDefaultPool(), count) dsql_nod;
 	node->nod_type = type;
 	node->nod_line = (USHORT) lex.lines_bk;
 	node->nod_column = (USHORT) (lex.last_token_bk - lex.line_start_bk + 1);
@@ -5126,9 +5129,9 @@ dsql_nod* Parser::make_flag_node(NOD_TYPE type, SSHORT flag, int count, ...)
  *	Make a node of given type. Set flag field
  *
  **************************************/
-	tsql* tdsql = DSQL_get_thread_data();
+	thread_db* tdbb = JRD_get_thread_data();
 
-	dsql_nod* node = FB_NEW_RPT(*tdsql->getDefaultPool(), count) dsql_nod;
+	dsql_nod* node = FB_NEW_RPT(*tdbb->getDefaultPool(), count) dsql_nod;
 	node->nod_type = type;
 	node->nod_flags = flag;
 	node->nod_line = (USHORT) lex.lines_bk;

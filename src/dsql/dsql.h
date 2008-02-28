@@ -35,11 +35,12 @@
 #define DSQL_DSQL_H
 
 #include "../jrd/common.h"
+#include "../jrd/val.h"  // Get rid of duplicated FUN_T enum.
+#include "../jrd/Database.h"
 #include "../common/classes/array.h"
 #include "../common/classes/GenericMap.h"
 #include "../common/classes/MetaName.h"
 #include "../common/classes/stack.h"
-#include "../jrd/val.h"  // Get rid of duplicated FUN_T enum.
 
 #ifdef DEV_BUILD
 // This macro enables DSQL tracing code
@@ -50,14 +51,6 @@
 DEFINE_TRACE_ROUTINE(dsql_trace);
 #endif
 
-//! Dynamic SQL Error Status Block
-struct dsql_err_stblock
-{
-	ISC_STATUS* dsql_status;
-	ISC_STATUS* dsql_user_status;
-};
-
-
 // this table is used in data allocation to determine
 // whether a block has a variable length tail
 #include "../dsql/blk.h"
@@ -66,6 +59,42 @@ struct dsql_err_stblock
 #include "../include/fb_blk.h"
 
 #include "../dsql/sym.h"
+
+// Context aliases used in triggers
+const char* const OLD_CONTEXT		= "OLD";
+const char* const NEW_CONTEXT		= "NEW";
+const char* const TEMP_CONTEXT		= "TEMP";
+
+namespace Jrd
+{
+	class Database;
+	class Attachment;
+	class jrd_tra;
+	class jrd_req;
+	class blb;
+	struct bid;
+
+	class dsql_ctx;
+	class dsql_str;
+	class dsql_nod;
+	class dsql_intlsym;
+
+	typedef Firebird::Stack<dsql_ctx*> DsqlContextStack;
+	typedef Firebird::Stack<dsql_str*> DsqlStrStack;
+	typedef Firebird::Stack<dsql_nod*> DsqlNodStack;
+};
+
+class Firebird::MetaName;
+
+//======================================================================
+// remaining node definitions for local processing
+//
+
+/// Include definition of descriptor
+
+#include "../jrd/dsc.h"
+
+namespace Jrd {
 
 //! generic data type used to store strings
 class dsql_str : public pool_alloc_rpt<char, dsql_type_str>
@@ -80,60 +109,6 @@ public:
 // values used in str_flags
 
 const long STR_delimited_id		= 0x1L;
-
-// Context aliases used in triggers
-const char* const OLD_CONTEXT		= "OLD";
-const char* const NEW_CONTEXT		= "NEW";
-const char* const TEMP_CONTEXT		= "TEMP";
-
-class dsql_ctx;
-class dsql_str;
-class dsql_nod;
-class dsql_intlsym;
-typedef Firebird::Stack<dsql_ctx*> DsqlContextStack;
-typedef Firebird::Stack<dsql_str*> DsqlStrStack;
-typedef Firebird::Stack<dsql_nod*> DsqlNodStack;
-class Firebird::MetaName;
-
-//======================================================================
-// remaining node definitions for local processing
-//
-
-/// Include definition of descriptor
-
-#include "../jrd/dsc.h"
-
-//! internal DSQL requests
-enum irq_type_t {
-    irq_relation,		//!< lookup a relation
-    irq_fields,			//!< lookup a relation's fields
-    irq_dimensions,		//!< lookup a field's dimensions
-    irq_primary_key,	//!< lookup a primary key
-    irq_view,			//!< lookup a view's base relations
-    irq_view_base,		//!< lookup a view's base relations
-    irq_view_base_flds,	//!< lookup a view's base fields
-    irq_function,		//!< lookup a user defined function
-    irq_func_return,	//!< lookup a function's return argument
-    irq_procedure,		//!< lookup a stored procedure
-    irq_parameters,		//!< lookup a procedure's parameters
-    irq_parameters2,	//!< lookup a procedure's parameters (ODS 11.1)
-    irq_collation,		//!< lookup a collation name
-    irq_charset,		//!< lookup a character set
-    irq_trigger,		//!< lookup a trigger
-    irq_domain,			//!< lookup a domain
-    irq_type,			//!< lookup a symbolic name in RDB$TYPES
-    irq_col_default,	//!< lookup default for a column
-    irq_domain_2,		//!< lookup a domain
-    irq_exception,		//!< lookup an exception
-	irq_cs_name,		//!< lookup a charset name
-	irq_default_cs,		//!< lookup the default charset
-	irq_rel_ids,		//!< check relation/field ids
-
-    irq_MAX
-};
-
-// dsql_nod definition
-#include "../dsql/node.h"
 
 // blocks used to cache metadata
 
@@ -150,47 +125,39 @@ typedef Firebird::SortedArray
 class dsql_dbb : public pool_alloc<dsql_type_dbb>
 {
 public:
-	dsql_dbb*		dbb_next;
 	class dsql_rel* dbb_relations;		//!< known relations in database
 	class dsql_prc*	dbb_procedures;		//!< known procedures in database
 	class dsql_udf*	dbb_functions;		//!< known functions in database
-	MemoryPool*		dbb_pool;			//!< The current pool for the dbb
-	FB_API_HANDLE	dbb_database_handle;
-	FB_API_HANDLE	dbb_requests[irq_MAX];
+	MemoryPool&		dbb_pool;			//!< The current pool for the dbb
+	Database*		dbb_database;
+	Attachment*		dbb_attachment;
+	jrd_tra*		dbb_sys_trans;
 	dsql_str*		dbb_dfl_charset;
 	USHORT			dbb_base_level;		//!< indicates the version of the engine code itself
-	USHORT			dbb_flags;
+	bool			dbb_no_charset;
+	bool			dbb_read_only;
 	USHORT			dbb_db_SQL_dialect;
 	SSHORT			dbb_att_charset;	//!< characterset at time of attachment
 	IntlSymArray	dbb_charsets_by_id;	// charsets sorted by charset_id
 	USHORT			dbb_ods_version;	// major ODS version number
 	USHORT			dbb_minor_version;	// minor ODS version number
+	Firebird::Mutex dbb_cache_mutex;	// mutex protecting the DSQL metadata cache
 
 	explicit dsql_dbb(MemoryPool& p) : 
-		dbb_charsets_by_id(p, 16) 
+		dbb_pool(p), dbb_charsets_by_id(p, 16) 
+	{}
+
+	~dsql_dbb();
+
+	MemoryPool* createPool()
 	{
+		return dbb_database->createPool();
 	}
 
-public:
-	void checkout()
+	void deletePool(MemoryPool* pool)
 	{
-		syncMutex.leave();
+		dbb_database->deletePool(pool);
 	}
-
-	void checkin()
-	{
-		syncMutex.enter();
-	}
-
-private:
-	Firebird::Mutex syncMutex;
-};
-
-//! values used in dbb_flags
-enum dbb_flags_vals {
-	DBB_no_arrays	= 0x1,
-	DBB_no_charset	= 0x2,
-	DBB_read_only	= 0x4
 };
 
 //! Relation block
@@ -321,7 +288,7 @@ class dsql_udf : public pool_alloc<dsql_type_udf>
 {
 public:
 	explicit dsql_udf(MemoryPool& p)
-		: udf_name(p)
+		: udf_name(p), udf_arguments(p)
 	{
 	}
 
@@ -333,8 +300,8 @@ public:
 	USHORT		udf_length;
 	SSHORT		udf_character_set_id;
 	USHORT		udf_character_length;
-    dsql_nod*	udf_arguments;
     USHORT      udf_flags;
+	Firebird::Array<dsc> udf_arguments;
 	Firebird::MetaName udf_name;
 };
 
@@ -396,17 +363,16 @@ enum intlsym_flags_vals {
 
 // Forward declaration.
 class dsql_par;
-class dsql_opn;
 
 //! Request information
 enum REQ_TYPE
 {
 	REQ_SELECT, REQ_SELECT_UPD, REQ_INSERT, REQ_DELETE, REQ_UPDATE,
 	REQ_UPDATE_CURSOR, REQ_DELETE_CURSOR,
-	REQ_COMMIT, REQ_ROLLBACK, REQ_DDL, REQ_EMBED_SELECT,
+	REQ_COMMIT, REQ_ROLLBACK, REQ_CREATE_DB, REQ_DDL, REQ_EMBED_SELECT,
 	REQ_START_TRANS, REQ_GET_SEGMENT, REQ_PUT_SEGMENT, REQ_EXEC_PROCEDURE,
 	REQ_COMMIT_RETAIN, REQ_ROLLBACK_RETAIN, REQ_SET_GENERATOR, REQ_SAVEPOINT, 
-	REQ_EXEC_BLOCK, REQ_SELECT_BLOCK 
+	REQ_EXEC_BLOCK, REQ_SELECT_BLOCK
 };
 
 class dsql_req : public pool_alloc<dsql_type_req>
@@ -467,13 +433,12 @@ public:
     DsqlContextStack	req_dt_context;		//!< Save contexts for views of derived tables
 	dsql_sym* req_name;			//!< Name of request
 	dsql_sym* req_cursor;		//!< Cursor symbol, if any
-	dsql_dbb*	req_dbb;			//!< Database handle
-	FB_API_HANDLE	req_trans;			//!< Database transaction handle
-	dsql_opn* req_open_cursor;
+	dsql_dbb*	req_dbb;			//!< DSQL attachment
+	jrd_tra*	req_transaction;			//!< JRD transaction
 	dsql_nod* req_ddl_node;		//!< Store metadata request
 	dsql_nod* req_blk_node;		//!< exec_block node 
 	class dsql_blb* req_blob;			//!< Blob info for blob requests
-	FB_API_HANDLE	req_handle;				//!< OSRI request handle
+	jrd_req*	req_request;				//!< JRD request
 	//dsql_str*	req_blr_string;			//!< String block during BLR generation
 	Firebird::HalfStaticArray<BLOB_PTR, 1024> req_blr_data;
 	class dsql_msg* req_send;		//!< Message to be sent to start request
@@ -586,22 +551,13 @@ public:
 	dsql_nod*	blb_field;			//!< Related blob field
 	dsql_par*	blb_blob_id;		//!< Parameter to hold blob id
 	dsql_par*	blb_segment;		//!< Parameter for segments
-	dsql_nod* blb_from;
-	dsql_nod* blb_to;
-	class dsql_msg*	blb_open_in_msg;	//!< Input message to open cursor
-	class dsql_msg*	blb_open_out_msg;	//!< Output message from open cursor
-	class dsql_msg*	blb_segment_msg;	//!< Segment message
+	dsql_nod*	blb_from;
+	dsql_nod*	blb_to;
+	dsql_msg*	blb_open_in_msg;	//!< Input message to open cursor
+	dsql_msg*	blb_open_out_msg;	//!< Output message from open cursor
+	dsql_msg*	blb_segment_msg;	//!< Segment message
+	blb*		blb_blob;			//!< JRD blob
 };
-
-//! List of open cursors
-class dsql_opn : public pool_alloc<dsql_type_opn>
-{
-public:
-	dsql_opn*	opn_next;			//!< Next open cursor
-	dsql_req*	opn_request;		//!< Request owning the cursor
-	FB_API_HANDLE		opn_transaction;	//!< Transaction executing request
-};
-
 
 //! Transaction block
 class dsql_tra : public pool_alloc<dsql_type_tra>
@@ -719,97 +675,6 @@ public:
 	USHORT		par_index;			//!< Index into SQLDA, if appropriate
 };
 
-#include "../jrd/ThreadData.h"
-
-// DSQL threading declarations
-
-class tsql : public ThreadData
-{
-private:
-	MemoryPool* tsql_default;
-	friend class Firebird::SubsystemContextPoolHolder <tsql, MemoryPool>;
-
-	void setDefaultPool(MemoryPool* p)
-	{
-		tsql_default = p;
-	}
-
-public:
-	typedef tsql* Pointer;
-	tsql(ISC_STATUS* status, Pointer& ptr) 
-		: ThreadData(tddSQL), tsql_default(0), 
-		tsql_status(status)
-	{
-		ptr = this;
-		putSpecific();
-	}
-
-	~tsql()
-	{
-		restoreSpecific();
-	}
-
-	ISC_STATUS* tsql_status;
-
-	MemoryPool* getDefaultPool()
-	{
-		return tsql_default;
-	}
-};
-
-typedef Firebird::SubsystemContextPoolHolder <tsql, MemoryPool> 
-	DsqlContextPoolHolder;
-
-class DsqlCheckout
-{
-public:
-	explicit DsqlCheckout(dsql_dbb* arg)
-		: dbb(arg)
-	{
-		dbb->checkout();
-	}
-
-	~DsqlCheckout()
-	{
-		dbb->checkin();
-	}
-
-private:
-	// copying is prohibited
-	DsqlCheckout(const DsqlCheckout&);
-	DsqlCheckout& operator =(const DsqlCheckout&);
-
-private:
-	dsql_dbb* dbb;
-};
-
-class DsqlSyncGuard
-{
-public:
-	explicit DsqlSyncGuard(dsql_dbb* arg)
-		: dbb(arg)
-	{
-		dbb->checkin();
-	}
-
-	~DsqlSyncGuard()
-	{
-		dbb->checkout();
-	}
-
-private:
-	// copying is prohibited
-	DsqlSyncGuard(const DsqlSyncGuard&);
-	DsqlSyncGuard& operator =(const DsqlSyncGuard&);
-
-private:
-	dsql_dbb* dbb;
-};
-
-inline tsql* DSQL_get_thread_data() {
-	return (tsql*) ThreadData::getSpecific();
-}
-
 /*! \var unsigned DSQL_debug
     \brief Debug level 
     
@@ -824,38 +689,6 @@ inline tsql* DSQL_get_thread_data() {
     > 256   Display yacc parser output level = DSQL_level>>8
 */
 
-// macros for error generation
-
-#define BLKCHK(blk, type) if (MemoryPool::blk_type(blk) != (SSHORT) type) ERRD_bugcheck("expected type")
-
-#ifdef DSQL_DEBUG
-	extern unsigned DSQL_debug;
-#endif
-
-#ifdef DEV_BUILD
-// Verifies that a pointed to block matches the expected type.
-// Useful to find coding errors & memory globbers.
-
-#define DEV_BLKCHK(blk, typ)	{						\
-		if ((blk) && MemoryPool::blk_type(blk) != (SSHORT)typ) {	\
-			ERRD_assert_msg("Unexpected memory block type",			\
-							(char*) __FILE__,			\
-							(ULONG) __LINE__);			\
-		}												\
-	}
-
-#undef fb_assert
-void ERRD_assert_msg(const char*, const char*, ULONG);
-#define fb_assert(ex)	{if (!(ex)) {ERRD_assert_msg (NULL, (char*)__FILE__, __LINE__);}}
-
-#else // PROD_BUILD
-
-#define DEV_BLKCHK(blk, typ)
-#undef fb_assert
-#define fb_assert(ex)
-
-#endif // DEV_BUILD
-
 // CVC: Enumeration used for the COMMENT command.
 enum
 {
@@ -863,6 +696,14 @@ enum
 	ddl_udf, ddl_blob_filter, ddl_exception, ddl_generator, ddl_index, ddl_role,
 	ddl_charset, ddl_collation//, ddl_sec_class
 };
+
+}; // namespace
+
+// macros for error generation
+
+#ifdef DSQL_DEBUG
+	extern unsigned DSQL_debug;
+#endif
 
 #endif // DSQL_DSQL_H
 

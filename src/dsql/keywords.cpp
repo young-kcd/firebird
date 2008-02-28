@@ -360,7 +360,7 @@ static const TOK tokens[] =
 	{TRIGGER, "TRIGGER", 1, false},
 	{TRIM, "TRIM", 2, false},
 	{TRUNC, "TRUNC", 2, false},
-	{TYPE, "TYPE", 2, true},
+	{KW_TYPE, "TYPE", 2, true},
 	{UNCOMMITTED, "UNCOMMITTED", 1, false},
 	{UNDO, "UNDO", 2, true},
 	{UNION, "UNION", 1, false},

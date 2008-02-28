@@ -36,6 +36,7 @@ namespace Jrd {
 	class Service;
 	class thread_db;
 	struct teb;
+	class dsql_req;
 }
 
 extern "C" {
@@ -142,6 +143,57 @@ ISC_STATUS jrd8_transact_request(ISC_STATUS*, Jrd::Attachment**,
 											   USHORT, SCHAR*, USHORT,
 											   SCHAR*);
 ISC_STATUS jrd8_unwind_request(ISC_STATUS *, Jrd::jrd_req**, SSHORT);
+
+ISC_STATUS jrd8_allocate_statement(ISC_STATUS*,
+								   Jrd::Attachment**,
+								   Jrd::dsql_req**);
+ISC_STATUS jrd8_execute(ISC_STATUS*,
+						Jrd::jrd_tra**, Jrd::dsql_req**,
+						USHORT, const SCHAR*,
+						USHORT, USHORT, const SCHAR*,
+						USHORT, SCHAR*,
+						USHORT, USHORT, SCHAR*);
+ISC_STATUS jrd8_execute_immediate(ISC_STATUS*,
+								  Jrd::Attachment**,
+								  Jrd::jrd_tra**,
+								  USHORT, const TEXT*, USHORT,
+								  USHORT, const SCHAR*,
+								  USHORT, USHORT, const SCHAR*,
+								  USHORT, SCHAR*,
+								  USHORT, USHORT, SCHAR*);
+#ifdef SCROLLABLE_CURSORS
+ISC_STATUS jrd8_fetch(ISC_STATUS*,
+					  Jrd::dsql_req**,
+					  USHORT, const SCHAR*,
+					  USHORT, USHORT, SCHAR*,
+					  USHORT, SLONG);
+#else
+ISC_STATUS jrd8_fetch(ISC_STATUS*,
+					  Jrd::dsql_req**,
+					  USHORT, const SCHAR*,
+					  USHORT, USHORT, SCHAR*);
+#endif // SCROLLABLE_CURSORS 
+ISC_STATUS jrd8_free_statement(ISC_STATUS*,
+							   Jrd::dsql_req**,
+							   USHORT);
+ISC_STATUS jrd8_insert(ISC_STATUS*,
+					   Jrd::dsql_req**,
+					   USHORT, const SCHAR*,
+					   USHORT, USHORT, const SCHAR*);
+ISC_STATUS jrd8_prepare(ISC_STATUS*,
+						Jrd::jrd_tra**,
+						Jrd::dsql_req**,
+						USHORT, const TEXT*,
+						USHORT, USHORT, const SCHAR*,
+						USHORT, SCHAR*);
+ISC_STATUS jrd8_set_cursor(ISC_STATUS*,
+						   Jrd::dsql_req**,
+						   const TEXT*,
+						   USHORT);
+ISC_STATUS jrd8_sql_info(ISC_STATUS*,
+						 Jrd::dsql_req**,
+						 USHORT, const SCHAR*,
+						 USHORT, SCHAR*);
 
 } // extern "C"
 

@@ -29,7 +29,6 @@ extern "C" {
 #endif
 
 
-#ifndef WHY_NO_API
 #ifndef JRD_IBASE_H
 ISC_STATUS API_ROUTINE isc_dsql_allocate_statement(ISC_STATUS*, FB_API_HANDLE*, FB_API_HANDLE*);
 ISC_STATUS API_ROUTINE isc_dsql_alloc_statement2(ISC_STATUS*, FB_API_HANDLE*, FB_API_HANDLE*);
@@ -251,7 +250,6 @@ ISC_STATUS API_ROUTINE isc_wait_for_event(ISC_STATUS*, FB_API_HANDLE*, USHORT,
 SLONG API_ROUTINE isc_reset_fpe(USHORT);
 
 #endif	/* JRD_IBASE_H */
-#endif	/* WHY_NO_API */
 
 #define CANCEL_disable	1
 #define CANCEL_enable	2

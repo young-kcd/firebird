@@ -152,6 +152,7 @@ class TextType;
 //class jrd_prc;
 class Parameter;
 class jrd_fld;
+class dsql_dbb;
 
 // The database block, the topmost block in the metadata
 // cache for a database
@@ -324,6 +325,7 @@ public:
 	Firebird::GenericMap<Firebird::Pair<Firebird::Left<
 		Firebird::string, DSqlCacheItem> > > att_dsql_cache;	// DSQL cache locks
 #endif
+	dsql_dbb* att_dsql_instance;
 
 	bool locksmith() const;
 };

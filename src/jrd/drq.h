@@ -44,7 +44,7 @@
 #ifndef JRD_DRQ_H
 #define JRD_DRQ_H
 
-#define DYN_REQUEST(drt) (*dbb->dbb_dyn_req)[drt]
+#define DYN_REQUEST(drt) dbb->dbb_dyn_req[drt]
 
 const int drq_l_prot_mask	= 0;	/* lookup protection mask */
 const int drq_l_user_name	= 1;	/* lookup user name */

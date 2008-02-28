@@ -28,41 +28,38 @@
 #include "../jrd/gds_proto.h"
 #include "../dsql/errd_proto.h"
 #include "../dsql/hsh_proto.h"
-#include "../jrd/sch_proto.h"
+#include "../dsql/parse_proto.h"
 #include "../common/classes/init.h"
 
+using namespace Jrd;
 
-const int HASH_SIZE = 1021;
 static USHORT hash(const SCHAR*, USHORT);
 static bool remove_symbol(dsql_sym**, dsql_sym*);
 static bool scompare(const TEXT*, USHORT, const TEXT*, const USHORT);
 
-static DSQL_SYM* hash_table;
-static Firebird::GlobalPtr<Firebird::Mutex> hash_mutex;
-
-/**
-  
- 	HSHD_init
-  
-    @brief	create a new hash table
- 
-
-
- **/
-void HSHD_init()
+namespace
 {
-	UCHAR* p = (UCHAR *) gds__alloc(sizeof(DSQL_SYM) * HASH_SIZE);
-	// This is appropriate to throw exception here, callers check for it
-	if (!p)
+	const int HASH_SIZE = 1021;
+
+	class HashTable : public Firebird::Array<DSQL_SYM>
 	{
-		Firebird::BadAlloc::raise();
-	}
+	public:
+		explicit HashTable(MemoryPool& pool)
+			: Firebird::Array<DSQL_SYM>(pool)
+		{
+			grow(HASH_SIZE);
+		}
 
-	memset(p, 0, sizeof(DSQL_SYM) * HASH_SIZE);
+		static void init()
+		{
+			LEX_dsql_init(*getDefaultMemoryPool());
+		}
+	};
 
-	hash_table = (DSQL_SYM *) p;
+	Firebird::InitInstance<HashTable> hash_table;
+	Firebird::InitMutex<HashTable> hash_startup;
+	Firebird::GlobalPtr<Firebird::RWLock> hash_sync;
 }
-
 
 #ifdef DEV_BUILD
 
@@ -79,11 +76,12 @@ void HSHD_init()
  **/
 void HSHD_debug()
 {
-	Firebird::MutexLockGuard guard(hash_mutex);
+	Firebird::ReadLockGuard guard(hash_sync);
 
 	// dump each hash table entry 
-	for (SSHORT h = 0; h < HASH_SIZE; h++) {
-		for (DSQL_SYM collision = hash_table[h]; collision;
+	for (SSHORT h = 0; h < HASH_SIZE; h++)
+	{
+		for (DSQL_SYM collision = hash_table()[h]; collision;
 			 collision = collision->sym_collision)
 		{
 			// check any homonyms first 
@@ -105,28 +103,6 @@ void HSHD_debug()
 
 /**
   
- 	HSHD_fini
-  
-    @brief	Clear out the symbol table.  All the 
- 	symbols are deallocated with their pools.
- 
-
-
- **/
-void HSHD_fini()
-{
-	for (SSHORT i = 0; i < HASH_SIZE; i++)
-	{
-		hash_table[i] = NULL;
-	}
-
-	gds__free(hash_table);
-	hash_table = NULL;
-}
-
-
-/**
-  
  	HSHD_finish
   
     @brief	Remove symbols used by a particular database.
@@ -139,35 +115,47 @@ void HSHD_fini()
  **/
 void HSHD_finish( const void* database)
 {
-	Firebird::MutexLockGuard guard(hash_mutex);
+	Firebird::WriteLockGuard guard(hash_sync);
 
 	// check each hash table entry 
-	for (SSHORT h = 0; h < HASH_SIZE; h++) {
-		for (DSQL_SYM* collision = &hash_table[h]; *collision;) {
+	for (SSHORT h = 0; h < HASH_SIZE; h++)
+	{
+		for (DSQL_SYM* collision = &hash_table()[h]; *collision;)
+		{
 			// check any homonyms first 
 			DSQL_SYM chain = *collision;
-			for (DSQL_SYM* homptr = &chain->sym_homonym; *homptr;) {
+			for (DSQL_SYM* homptr = &chain->sym_homonym; *homptr;)
+			{
 				DSQL_SYM symbol = *homptr;
-				if (symbol->sym_dbb == database) {
+				if (symbol->sym_dbb == database)
+				{
 					*homptr = symbol->sym_homonym;
 					symbol = symbol->sym_homonym;
 				}
 				else
+				{
 					homptr = &symbol->sym_homonym;
+				}
 			}
 
 			// now, see if the root entry has to go 
-			if (chain->sym_dbb == database) {
-				if (chain->sym_homonym) {
+			if (chain->sym_dbb == database)
+			{
+				if (chain->sym_homonym)
+				{
 					chain->sym_homonym->sym_collision = chain->sym_collision;
 					*collision = chain->sym_homonym;
 				}
 				else
+				{
 					*collision = chain->sym_collision;
+				}
 				chain = *collision;
 			}
 			else
+			{
 				collision = &chain->sym_collision;
+			}
 		}
 	}
 }
@@ -185,14 +173,15 @@ void HSHD_finish( const void* database)
  **/
 void HSHD_insert(DSQL_SYM symbol)
 {
-	Firebird::MutexLockGuard guard(hash_mutex);
-
 	const USHORT h = hash(symbol->sym_string, symbol->sym_length);
 	const void* database = symbol->sym_dbb;
 
 	fb_assert(symbol->sym_type >= SYM_statement && symbol->sym_type <= SYM_eof);
 
-	for (DSQL_SYM old = hash_table[h]; old; old = old->sym_collision)
+	Firebird::WriteLockGuard guard(hash_sync);
+
+	for (DSQL_SYM old = hash_table()[h]; old; old = old->sym_collision)
+	{
 		if ((!database || (database == old->sym_dbb)) &&
 			scompare(symbol->sym_string, symbol->sym_length, old->sym_string,
 					 old->sym_length)) 
@@ -201,9 +190,10 @@ void HSHD_insert(DSQL_SYM symbol)
 			old->sym_homonym = symbol;
 			return;
 		}
+	}
 
-	symbol->sym_collision = hash_table[h];
-	hash_table[h] = symbol;
+	symbol->sym_collision = hash_table()[h];
+	hash_table()[h] = symbol;
 }
 
 
@@ -222,22 +212,26 @@ void HSHD_insert(DSQL_SYM symbol)
     @param parser_version
 
  **/
-DSQL_SYM HSHD_lookup(const void*    database,
-				const TEXT*    string,
-				SSHORT   length,
-				SYM_TYPE type,
-				USHORT   parser_version)
+DSQL_SYM HSHD_lookup(const void* database,
+					 const TEXT* string,
+					 SSHORT length,
+					 SYM_TYPE type,
+					 USHORT parser_version)
 {
-	Firebird::MutexLockGuard guard(hash_mutex);
+	hash_startup.init();
 
 	const USHORT h = hash(string, length);
-	for (DSQL_SYM symbol = hash_table[h]; symbol; symbol = symbol->sym_collision)
+
+	Firebird::ReadLockGuard guard(hash_sync);
+
+	for (DSQL_SYM symbol = hash_table()[h]; symbol; symbol = symbol->sym_collision)
 	{
 		if ((database == symbol->sym_dbb) &&
 			scompare(string, length, symbol->sym_string, symbol->sym_length))
 		{
 			// Search for a symbol of the proper type 
-			while (symbol && symbol->sym_type != type) {
+			while (symbol && symbol->sym_type != type)
+			{
 				symbol = symbol->sym_homonym;
 			}
 
@@ -246,8 +240,7 @@ DSQL_SYM HSHD_lookup(const void*    database,
 			 */
 			if (symbol)
 			{
-				if (parser_version < symbol->sym_version &&
-					type == SYM_keyword)
+				if (parser_version < symbol->sym_version && type == SYM_keyword)
 				{
 					return NULL;
 				}
@@ -272,14 +265,15 @@ DSQL_SYM HSHD_lookup(const void*    database,
  **/
 void HSHD_remove(DSQL_SYM symbol)
 {
-	Firebird::MutexLockGuard guard(hash_mutex);
+	Firebird::WriteLockGuard guard(hash_sync);
 
 	const USHORT h = hash(symbol->sym_string, symbol->sym_length);
 
-	for (DSQL_SYM* collision = &hash_table[h]; *collision;
+	for (DSQL_SYM* collision = &hash_table()[h]; *collision;
 		 collision = &(*collision)->sym_collision)
 	{
-		if (remove_symbol(collision, symbol)) {
+		if (remove_symbol(collision, symbol))
+		{
 			return;
 		}
 	}
@@ -312,16 +306,20 @@ void HSHD_remove(DSQL_SYM symbol)
     @param flag
 
  **/
-void HSHD_set_flag(
-				   const void* database,
-				   const TEXT* string, SSHORT length, SYM_TYPE type, SSHORT flag)
+void HSHD_set_flag(const void* database,
+				   const TEXT* string,
+				   SSHORT length,
+				   SYM_TYPE type,
+				   SSHORT flag)
 {
 /* as of now, there's no work to do if there is no database or if
    the type is not a relation, procedure or function */
 
 	if (!database)
 		return;
-	switch (type) {
+
+	switch (type)
+	{
 	case SYM_relation:
 	case SYM_procedure:
 	case SYM_udf:
@@ -330,27 +328,30 @@ void HSHD_set_flag(
 		return;
 	}
 
-	Firebird::MutexLockGuard guard(hash_mutex);
 	const USHORT h = hash(string, length);
-	for (DSQL_SYM symbol = hash_table[h]; symbol; symbol = symbol->sym_collision)
+
+	Firebird::WriteLockGuard guard(hash_sync);
+
+	for (DSQL_SYM symbol = hash_table()[h]; symbol; symbol = symbol->sym_collision)
 	{
 		if (symbol->sym_dbb && (database != symbol->sym_dbb) &&
-			scompare(string, length, symbol->sym_string, symbol->sym_length)) {
-
+			scompare(string, length, symbol->sym_string, symbol->sym_length))
+		{
 			// the symbol name matches and it's from a different database 
 
 			for (DSQL_SYM homonym = symbol; homonym;
-				homonym = homonym->sym_homonym)
+				 homonym = homonym->sym_homonym)
 			{
-				if (homonym->sym_type == type) {
-
+				if (homonym->sym_type == type)
+				{
 					// the homonym is of the correct type 
 
 					/* the next check is for the same relation or procedure ID,
 					   which indicates that it MAY be the same relation or
 					   procedure */
 
-					switch (type) {
+					switch (type)
+					{
 					case SYM_relation:
 						{
 							dsql_rel* sym_rel = (dsql_rel*) homonym->sym_object;
@@ -394,7 +395,8 @@ static USHORT hash(const SCHAR* string, USHORT length)
 {
 	ULONG value = 0;
 
-	while (length--) {
+	while (length--)
+	{
 		UCHAR c = *string++;
 		value = (value << 1) + c;
 	}
@@ -418,22 +420,26 @@ static USHORT hash(const SCHAR* string, USHORT length)
  **/
 static bool remove_symbol(DSQL_SYM* collision, DSQL_SYM symbol)
 {
-	if (symbol == *collision) {
+	if (symbol == *collision)
+	{
 	    DSQL_SYM homonym = symbol->sym_homonym;
-		if (homonym != NULL) {
+		if (homonym != NULL)
+		{
 			homonym->sym_collision = symbol->sym_collision;
 			*collision = homonym;
 		}
 		else
+		{
 			*collision = symbol->sym_collision;
+		}
 
 		return true;
 	}
 
-	for (DSQL_SYM* ptr = &(*collision)->sym_homonym; *ptr;
-		ptr = &(*ptr)->sym_homonym)
+	for (DSQL_SYM* ptr = &(*collision)->sym_homonym; *ptr; ptr = &(*ptr)->sym_homonym)
 	{
-		if (symbol == *ptr) {
+		if (symbol == *ptr)
+		{
 			*ptr = symbol->sym_homonym;
 			return true;
 		}
@@ -461,18 +467,19 @@ static bool remove_symbol(DSQL_SYM* collision, DSQL_SYM symbol)
 
  **/
 static bool scompare(const TEXT* string1,
-						USHORT length1,
-						const TEXT* string2, const USHORT length2)
+					 USHORT length1,
+					 const TEXT* string2,
+					 const USHORT length2)
 {
 
 	if (length1 != length2)
 		return false;
 
-	while (length1--) {
+	while (length1--)
+	{
 		if ((*string1++) != (*string2++))
 			return false;
 	}
 
 	return true;
 }
-

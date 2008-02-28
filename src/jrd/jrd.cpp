@@ -131,6 +131,9 @@
 #include "../common/classes/ClumpletReader.h"
 #include "../jrd/DebugInterface.h"
 
+#include "../dsql/dsql.h"
+#include "../dsql/dsql_proto.h"
+
 using namespace Jrd;
 
 const SSHORT WAIT_PERIOD	= -1;
@@ -190,6 +193,14 @@ namespace
 			Firebird::status_exception::raise(isc_bad_req_handle, 0);
 
 		validateHandle(tdbb, request->req_attachment);
+	}
+
+	inline void validateHandle(thread_db* tdbb, dsql_req* statement)
+	{
+		if (!statement->checkHandle())
+			Firebird::status_exception::raise(isc_bad_req_handle, 0);
+
+		validateHandle(tdbb, statement->req_dbb->dbb_attachment);
 	}
 
 	inline void validateHandle(thread_db* tdbb, blb* blob)
@@ -255,7 +266,7 @@ void Jrd::Trigger::compile(thread_db* tdbb)
 
 		Database* dbb = tdbb->getDatabase();
 
-		Database::CheckoutLockGuard guard(dbb, dbb->dbb_sp_rec_mutex);
+		Database::CheckoutLockGuard guard(dbb, dbb->dbb_sp_mutex);
 
 		if (request)
 		{
@@ -531,6 +542,17 @@ const int BUFFER_LENGTH128		= 128;
 #define GDS_TRANSACT_REQUEST	jrd8_transact_request
 #define GDS_TRANSACTION_INFO	jrd8_transaction_info
 #define GDS_UNWIND				jrd8_unwind_request
+
+#define GDS_DSQL_ALLOCATE			jrd8_allocate_statement
+#define GDS_DSQL_EXECUTE			jrd8_execute
+#define GDS_DSQL_EXECUTE_IMMEDIATE	jrd8_execute_immediate
+#define GDS_DSQL_FETCH				jrd8_fetch
+#define GDS_DSQL_FREE				jrd8_free_statement
+#define GDS_DSQL_INSERT				jrd8_insert
+#define GDS_DSQL_PREPARE			jrd8_prepare
+#define GDS_DSQL_SET_CURSOR			jrd8_set_cursor
+#define GDS_DSQL_SQL_INFO			jrd8_sql_info
+
 
 
 // External hook definitions
@@ -828,11 +850,11 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 	}
 
     // Attachments to a ReadOnly database need NOT do garbage collection
-    if (dbb->dbb_flags & DBB_read_only) {
-            attachment->att_flags |= ATT_no_cleanup;
+	if (dbb->dbb_flags & DBB_read_only) {
+		attachment->att_flags |= ATT_no_cleanup;
 	}
 
-    if (options.dpb_disable_wal) {
+	if (options.dpb_disable_wal) {
 		ERR_post(isc_lock_timeout, isc_arg_gds, isc_obj_in_use,
 				 isc_arg_string, 
                  ERR_string(file_name), 
@@ -1461,7 +1483,9 @@ ISC_STATUS GDS_COMMIT(ISC_STATUS * user_status, jrd_tra** tra_handle)
  **************************************/
 
 	if (commit(user_status, tra_handle, false) == FB_SUCCESS)
+	{
 		*tra_handle = NULL;
+	}
 
 	return user_status[1];
 }
@@ -2962,7 +2986,9 @@ ISC_STATUS GDS_ROLLBACK(ISC_STATUS * user_status, jrd_tra** tra_handle)
  *
  **************************************/
 	if (rollback(user_status, tra_handle, false) == FB_SUCCESS)
+	{
 		*tra_handle = NULL;
+	}
 
 	return user_status[1];
 }
@@ -3689,6 +3715,279 @@ ISC_STATUS GDS_UNWIND(ISC_STATUS * user_status,
 
 		// Unwind request. This just tweaks some bits.
 		EXE_unwind(tdbb, request);
+	}
+	catch (const Firebird::Exception& ex)
+	{
+		Firebird::stuff_exception(user_status, ex);
+	}
+
+	return user_status[1];
+}
+
+
+ISC_STATUS GDS_DSQL_ALLOCATE(ISC_STATUS* user_status,
+							 Attachment** db_handle,
+							 dsql_req** stmt_handle)
+{
+	ThreadContextHolder tdbb(user_status);
+
+	try
+	{
+		if (*stmt_handle)
+			Firebird::status_exception::raise(isc_bad_req_handle, 0);
+
+		Attachment* const attachment = *db_handle;
+		validateHandle(tdbb, attachment);
+		DatabaseContextHolder dbbHolder(tdbb);
+		check_database(tdbb);
+
+		*stmt_handle = DSQL_allocate_statement(tdbb, attachment);
+	}
+	catch (const Firebird::Exception& ex)
+	{
+		Firebird::stuff_exception(user_status, ex);
+	}
+
+	return user_status[1];
+}
+
+
+ISC_STATUS GDS_DSQL_EXECUTE(ISC_STATUS* user_status,
+							jrd_tra** tra_handle,
+							dsql_req** stmt_handle,
+							USHORT in_blr_length, const SCHAR* in_blr,
+							USHORT in_msg_type, USHORT in_msg_length, const SCHAR* in_msg,
+							USHORT out_blr_length, SCHAR* out_blr,
+							USHORT out_msg_type, USHORT out_msg_length, SCHAR* out_msg)
+{
+	ThreadContextHolder tdbb(user_status);
+
+	try
+	{
+		dsql_req* const statement = *stmt_handle;
+		validateHandle(tdbb, statement);
+		validateHandle(tdbb, *tra_handle);
+		DatabaseContextHolder dbbHolder(tdbb);
+		check_database(tdbb);
+
+		jrd_tra* transaction = find_transaction(tdbb, isc_segstr_wrong_db);
+
+		DSQL_execute(tdbb, tra_handle, statement,
+					 in_blr_length, reinterpret_cast<const UCHAR*>(in_blr),
+					 in_msg_type, in_msg_length, reinterpret_cast<const UCHAR*>(in_msg),
+					 out_blr_length, reinterpret_cast<UCHAR*>(out_blr),
+					 out_msg_type, out_msg_length, reinterpret_cast<UCHAR*>(out_msg));
+	}
+	catch (const Firebird::Exception& ex)
+	{
+		Firebird::stuff_exception(user_status, ex);
+	}
+
+	return user_status[1];
+}
+
+
+ISC_STATUS GDS_DSQL_EXECUTE_IMMEDIATE(ISC_STATUS* user_status,
+									  Attachment** db_handle,
+									  jrd_tra** tra_handle,
+									  USHORT length, const TEXT* string, USHORT dialect,
+									  USHORT in_blr_length, const SCHAR* in_blr,
+									  USHORT in_msg_type, USHORT in_msg_length, const SCHAR* in_msg,
+									  USHORT out_blr_length, SCHAR* out_blr,
+									  USHORT out_msg_type, USHORT out_msg_length, SCHAR* out_msg)
+{
+	ThreadContextHolder tdbb(user_status);
+
+	try
+	{
+		Attachment* const attachment = *db_handle;
+		validateHandle(tdbb, attachment);
+		validateHandle(tdbb, *tra_handle);
+		DatabaseContextHolder dbbHolder(tdbb);
+		check_database(tdbb);
+
+		jrd_tra* transaction = find_transaction(tdbb, isc_segstr_wrong_db);
+
+		DSQL_execute_immediate(tdbb, attachment, tra_handle,
+							   length, string, dialect,
+							   in_blr_length, reinterpret_cast<const UCHAR*>(in_blr),
+							   in_msg_type, in_msg_length, reinterpret_cast<const UCHAR*>(in_msg),
+							   out_blr_length, reinterpret_cast<UCHAR*>(out_blr),
+							   out_msg_type, out_msg_length, reinterpret_cast<UCHAR*>(out_msg));
+	}
+	catch (const Firebird::Exception& ex)
+	{
+		Firebird::stuff_exception(user_status, ex);
+	}
+
+	return user_status[1];
+}
+
+
+ISC_STATUS GDS_DSQL_FETCH(ISC_STATUS* user_status,
+						  dsql_req** stmt_handle,
+						  USHORT blr_length, const SCHAR* blr,
+						  USHORT msg_type, USHORT msg_length, SCHAR* dsql_msg_buf
+#ifdef SCROLLABLE_CURSORS
+						  , USHORT direction, SLONG offset
+#endif
+						  )
+{
+	ThreadContextHolder tdbb(user_status);
+
+	try
+	{
+		dsql_req* const statement = *stmt_handle;
+		validateHandle(tdbb, statement);
+		DatabaseContextHolder dbbHolder(tdbb);
+		check_database(tdbb);
+
+		return DSQL_fetch(tdbb, statement,
+						  blr_length, reinterpret_cast<const UCHAR*>(blr),
+						  msg_type, msg_length, reinterpret_cast<UCHAR*>(dsql_msg_buf)
+#ifdef SCROLLABLE_CURSORS
+						  , direction, offset
+#endif
+						  );
+	}
+	catch (const Firebird::Exception& ex)
+	{
+		Firebird::stuff_exception(user_status, ex);
+	}
+
+	return user_status[1];
+}
+
+
+ISC_STATUS GDS_DSQL_FREE(ISC_STATUS* user_status,
+						 dsql_req** stmt_handle,
+						 USHORT option)
+{
+	ThreadContextHolder tdbb(user_status);
+
+	try
+	{
+		dsql_req* const statement = *stmt_handle;
+		validateHandle(tdbb, statement);
+		DatabaseContextHolder dbbHolder(tdbb);
+		check_database(tdbb);
+
+		DSQL_free_statement(tdbb, statement, option);
+
+		if (option & DSQL_drop)
+			*stmt_handle = NULL;
+	}
+	catch (const Firebird::Exception& ex)
+	{
+		Firebird::stuff_exception(user_status, ex);
+	}
+
+	return user_status[1];
+}
+
+
+ISC_STATUS GDS_DSQL_INSERT(ISC_STATUS* user_status,
+						   dsql_req** stmt_handle,
+						   USHORT blr_length, const SCHAR* blr,
+						   USHORT msg_type, USHORT msg_length, const SCHAR*	dsql_msg_buf)
+{
+	ThreadContextHolder tdbb(user_status);
+
+	try
+	{
+		dsql_req* const statement = *stmt_handle;
+		validateHandle(tdbb, statement);
+		DatabaseContextHolder dbbHolder(tdbb);
+		check_database(tdbb);
+
+		DSQL_insert(tdbb, statement,
+					blr_length, reinterpret_cast<const UCHAR*>(blr),
+					msg_type, msg_length, reinterpret_cast<const UCHAR*>(dsql_msg_buf));
+	}
+	catch (const Firebird::Exception& ex)
+	{
+		Firebird::stuff_exception(user_status, ex);
+	}
+
+	return user_status[1];
+}
+
+
+ISC_STATUS GDS_DSQL_PREPARE(ISC_STATUS* user_status,
+							jrd_tra** tra_handle,
+							dsql_req** stmt_handle,
+							USHORT length, const TEXT* string, USHORT dialect,
+							USHORT item_length, const SCHAR* items,
+							USHORT buffer_length, SCHAR* buffer)
+{
+	ThreadContextHolder tdbb(user_status);
+
+	try
+	{
+		dsql_req* const statement = *stmt_handle;
+		validateHandle(tdbb, statement);
+		validateHandle(tdbb, *tra_handle);
+		DatabaseContextHolder dbbHolder(tdbb);
+		check_database(tdbb);
+
+		jrd_tra* transaction = find_transaction(tdbb, isc_segstr_wrong_db);
+
+		DSQL_prepare(tdbb, transaction, stmt_handle,
+					 length, string, dialect,
+					 item_length, reinterpret_cast<const UCHAR*>(items),
+					 buffer_length, reinterpret_cast<UCHAR*>(buffer));
+	}
+	catch (const Firebird::Exception& ex)
+	{
+		Firebird::stuff_exception(user_status, ex);
+	}
+
+	return user_status[1];
+}
+
+
+ISC_STATUS GDS_DSQL_SET_CURSOR(ISC_STATUS* user_status,
+							   dsql_req** stmt_handle,
+							   const TEXT* cursor,
+							   USHORT type)
+{
+	ThreadContextHolder tdbb(user_status);
+
+	try
+	{
+		dsql_req* const statement = *stmt_handle;
+		validateHandle(tdbb, statement);
+		DatabaseContextHolder dbbHolder(tdbb);
+		check_database(tdbb);
+
+		DSQL_set_cursor(tdbb, statement, cursor, type);
+	}
+	catch (const Firebird::Exception& ex)
+	{
+		Firebird::stuff_exception(user_status, ex);
+	}
+
+	return user_status[1];
+}
+
+
+ISC_STATUS GDS_DSQL_SQL_INFO(ISC_STATUS* user_status,
+							 dsql_req** stmt_handle,
+							 USHORT item_length, const SCHAR* items,
+							 USHORT info_length, SCHAR* info)
+{
+	ThreadContextHolder tdbb(user_status);
+
+	try
+	{
+		dsql_req* const statement = *stmt_handle;
+		validateHandle(tdbb, statement);
+		DatabaseContextHolder dbbHolder(tdbb);
+		check_database(tdbb);
+
+		DSQL_sql_info(tdbb, statement,
+					  item_length, reinterpret_cast<const UCHAR*>(items),
+					  info_length, reinterpret_cast<UCHAR*>(info));
 	}
 	catch (const Firebird::Exception& ex)
 	{
@@ -4857,8 +5156,6 @@ static Database* init(thread_db* tdbb,
 		databases = dbb;
 
 		dbb->dbb_mutexes = FB_NEW(*dbb->dbb_permanent) Firebird::Mutex[DBB_MUTX_max];
-		dbb->dbb_internal = vec<jrd_req*>::newVector(*dbb->dbb_permanent, irq_MAX);
-		dbb->dbb_dyn_req = vec<jrd_req*>::newVector(*dbb->dbb_permanent, drq_MAX);
 		dbb->dbb_flags |= DBB_exclusive;
 		dbb->dbb_sweep_interval = SWEEP_INTERVAL;
 
@@ -5077,6 +5374,12 @@ static void release_attachment(thread_db* tdbb, Attachment* attachment)
 	if (attachment->att_compatibility_table)
 		delete attachment->att_compatibility_table;
 
+	if (attachment->att_dsql_instance) {
+		MemoryPool* const pool = &attachment->att_dsql_instance->dbb_pool;
+		delete attachment->att_dsql_instance;
+		dbb->deletePool(pool);
+	}
+
 	// remove the attachment block from the dbb linked list
 
 	for (Attachment** ptr = &dbb->dbb_attachments; *ptr; ptr = &(*ptr)->att_next) {
@@ -5139,8 +5442,8 @@ Attachment::Attachment(Database* dbb) :
 #ifndef SUPERSERVER
 		, att_dsql_cache(*dbb->dbb_permanent)
 #endif
-		{
-		}
+{
+}
 
 
 static ISC_STATUS rollback(ISC_STATUS* user_status,

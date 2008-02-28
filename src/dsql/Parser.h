@@ -26,6 +26,13 @@
 #include "../jrd/common.h"
 #include "../dsql/dsql.h"
 
+namespace Dsql {
+	enum nod_t;
+}
+
+namespace Jrd {
+
+class dsql_nod;
 
 class Parser
 {
@@ -112,8 +119,8 @@ private:
 	const TEXT* lex_position();
 	YYSTYPE make_list (YYSTYPE node);
 	YYSTYPE make_parameter();
-	YYSTYPE make_node(NOD_TYPE type, int count, ...);
-	YYSTYPE make_flag_node(NOD_TYPE type, SSHORT flag, int count, ...);
+	YYSTYPE make_node(Dsql::nod_t type, int count, ...);
+	YYSTYPE make_flag_node(Dsql::nod_t type, SSHORT flag, int count, ...);
 // end - defined in parse.y
 
 private:
@@ -162,5 +169,6 @@ public:
 	LexerState lex;
 };
 
+}; // namespace
 
 #endif	// DSQL_PARSER_H

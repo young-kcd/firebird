@@ -74,8 +74,10 @@
 #include "../jrd/SysFunction.h"
 #include "../common/classes/MetaName.h"
 #include "../dsql/dsql.h"
+#include "../dsql/node.h"
 #include "../jrd/ibase.h"
 #include "../jrd/intl.h"
+#include "../jrd/jrd.h"
 #include "../jrd/flags.h"
 #include "../jrd/constants.h"
 #include "../dsql/errd_proto.h"
@@ -88,12 +90,16 @@
 #include "../jrd/sch_proto.h"
 #include "../jrd/thread_proto.h"
 #include "../jrd/gds_proto.h"
+#include "../jrd/jrd_proto.h"
 #include "../jrd/why_proto.h"
 #include "../common/utils_proto.h"
 
 #ifdef DSQL_DEBUG
 #include "../gpre/prett_proto.h"
 #endif
+
+using namespace Jrd;
+using namespace Dsql;
 
 
 const int BLOB_BUFFER_SIZE    = 4096;	// to read in blr blob for default values
@@ -315,7 +321,7 @@ void DDL_execute(dsql_req* request)
  *	metadata updates.
  *
  **************************************/
-	tsql* tdsql = DSQL_get_thread_data();
+	thread_db* tdbb = JRD_get_thread_data();
 
 #ifdef DSQL_DEBUG
 	if (DSQL_debug & 4) {
@@ -329,11 +335,10 @@ void DDL_execute(dsql_req* request)
 	ISC_STATUS s;
 
 	{	// scope
-		DsqlCheckout dcoHolder(request->req_dbb);
-
-		s = isc_ddl(tdsql->tsql_status, &request->req_dbb->dbb_database_handle,
-					&request->req_trans, length,
-					(const char*)(request->req_blr_data.begin()));
+		Database::Checkout dcoHolder(request->req_dbb->dbb_database);
+		s = jrd8_ddl(tdbb->tdbb_status_vector, &request->req_dbb->dbb_attachment,
+					 &request->req_transaction, length,
+					 (const SCHAR*)(request->req_blr_data.begin()));
 	}
 
 	// for delete & modify, get rid of the cached relation metadata
@@ -389,18 +394,17 @@ void DDL_execute(dsql_req* request)
 	}
 
 	if (s)
-		Firebird::status_exception::raise(tdsql->tsql_status);
+		Firebird::status_exception::raise(tdbb->tdbb_status_vector);
 
 #ifndef SUPERSERVER
 	if (string)
 	{
-		DsqlCheckout dcoHolder(request->req_dbb);
-
-		s = gds__dsql_cache(tdsql->tsql_status,
-			&request->req_dbb->dbb_database_handle, DSQL_CACHE_RELEASE, sym_type, string->str_data, NULL);
+		Database::Checkout dcoHolder(request->req_dbb->dbb_database);
+		s = jrd8_dsql_cache(tdbb->tdbb_status_vector,
+			&request->req_dbb->dbb_attachment, DSQL_CACHE_RELEASE, sym_type, string->str_data, NULL);
 
 		if (s)
-			Firebird::status_exception::raise(tdsql->tsql_status);
+			Firebird::status_exception::raise(tdbb->tdbb_status_vector);
 	}
 #endif	// SUPERSERVER
 }
@@ -421,7 +425,7 @@ void DDL_generate(dsql_req* request, dsql_nod* node)
  *
  **************************************/
 
-	if (request->req_dbb->dbb_flags & DBB_read_only) {
+	if (request->req_dbb->dbb_read_only) {
 		ERRD_post(isc_read_only_database, 0);
 		return;
 	}
@@ -1937,8 +1941,8 @@ static void define_field(
 	if (relation != NULL) {
 		if (! (relation->rel_flags & REL_new_relation))
 		{
-  			dsql_fld* perm_field = FB_NEW(*request->req_dbb->dbb_pool)
-				dsql_fld(*request->req_dbb->dbb_pool);
+  			dsql_fld* perm_field = FB_NEW(request->req_dbb->dbb_pool)
+				dsql_fld(request->req_dbb->dbb_pool);
 
 			*perm_field = *field;
 
@@ -2411,119 +2415,7 @@ static void define_index(dsql_req* request)
 }
 
 
-#ifdef NOT_USED_OR_REPLACED
-static dsql_nod* define_insert_action( dsql_req* request)
-{
-/**************************************
- *
- *	d e f i n e _ i n s e r t _ a c t i o n
- *
- **************************************
- *
- * Function
- *	Define an action statement which, given a view
- *	definition, will store a record from
- *	a view of a single relation into the
- *	base relation.
- *
- **************************************/
-	dsql_nod* select_node, *select_expr, *from_list;
-	dsql_nod* fields_node, *values_node, *field_node;
-	dsql_nod **ptr, **end, **ptr2, **end2;
-	dsql_lls* field_stack;
-	dsql_lls* value_stack;
-	dsql_rel* relation;
-	dsql_fld* field;
-
-	dsql_nod* ddl_node = request->req_ddl_node;
-
-// check whether this is an updatable view definition
-
-	if ((ddl_node->nod_type != nod_def_view && ddl_node->nod_type != nod_redef_view) ||
-		!(select_node = ddl_node->nod_arg[e_view_select]) ||
-		!(select_expr = select_node->nod_arg[e_sel_query_spec]) ||
-		!(from_list = select_expr->nod_arg[e_sel_from]) ||
-		from_list->nod_count != 1)
-	{
-		return NULL;
-	}
-
-// make up an action node consisting of a list of 1 insert statement
-
-	dsql_nod* action_node = MAKE_node(nod_list, (int) 1);
-	dsql_nod* insert_node = MAKE_node(nod_insert, (int) e_ins_count);
-	action_node->nod_arg[0] = insert_node;
-
-// use the relation referenced in the select statement to insert into
-
-	dsql_nod* relation_node = MAKE_node(nod_relation_name, (int) e_rln_count);
-	insert_node->nod_arg[e_ins_relation] = relation_node;
-	relation_node->nod_arg[e_rln_name] =
-		from_list->nod_arg[0]->nod_arg[e_rln_name];
-	relation_node->nod_arg[e_rln_alias] = (dsql_nod*) MAKE_cstring(TEMP_CONTEXT);
-
-/* get the list of values and fields to assign to -- if there is
-   no list of fields, get all fields in the base relation that
-   are not computed */
-
-	values_node = ddl_node->nod_arg[e_view_fields];
-	fields_node = select_expr->nod_arg[e_sel_list];
-	if (!fields_node)
-	{
-		const dsql_str* rel_name =
-			reinterpret_cast<const dsql_str*>(relation_node->nod_arg[e_rln_name]);
-		relation = METD_get_relation(request, rel_name);
-		field_stack = NULL;
-		for (field = relation->rel_fields; field; field = field->fld_next)
-		{
-			if (field->fld_flags & FLD_computed)
-				continue;
-			field_node = MAKE_node(nod_field_name, (int) e_fln_count);
-			field_node->nod_arg[e_fln_name] = (dsql_nod*) MAKE_cstring(field->fld_name.c_str());
-			LLS_PUSH(field_node, &field_stack);
-		}
-		fields_node = MAKE_list(field_stack);
-	}
-
-	if (!values_node)
-		values_node = fields_node;
-
-// generate the list of assignments to fields in the base relation
-
-	ptr = fields_node->nod_arg;
-	end = ptr + fields_node->nod_count;
-	ptr2 = values_node->nod_arg;
-	end2 = ptr2 + values_node->nod_count;
-	value_stack = field_stack = NULL;
-	for (; (ptr < end) && (ptr2 < end2); ptr++, ptr2++) {
-		field_node = *ptr;
-		if (field_node->nod_type == nod_alias)
-			field_node = field_node->nod_arg[e_alias_value];
-
-		// generate the actual assignment, assigning from a field in the "NEW" context
-
-		if (field_node->nod_type == nod_field_name) {
-			field_node->nod_arg[e_fln_context] =
-				(dsql_nod*) MAKE_cstring(TEMP_CONTEXT);
-			LLS_PUSH(field_node, &field_stack);
-
-			dsql_nod* value_node = MAKE_node(nod_field_name, (int) e_fln_count);
-			value_node->nod_arg[e_fln_name] = (*ptr2)->nod_arg[e_fln_name];
-			value_node->nod_arg[e_fln_context] =
-				(dsql_nod*) MAKE_cstring(NEW_CONTEXT);
-			LLS_PUSH(value_node, &value_stack);
-		}
-	}
-
-	insert_node->nod_arg[e_ins_values] = MAKE_list(value_stack);
-	insert_node->nod_arg[e_ins_fields] = MAKE_list(field_stack);
-
-	return action_node;
-}
-#endif
-
-
-static void define_procedure( dsql_req* request, NOD_TYPE op)
+static void define_procedure(dsql_req* request, NOD_TYPE op)
 {
 /**************************************
  *
@@ -2535,7 +2427,7 @@ static void define_procedure( dsql_req* request, NOD_TYPE op)
  *	Create DYN to store a procedure
  *
  **************************************/
-	tsql* tdsql = DSQL_get_thread_data();
+	thread_db* tdbb = JRD_get_thread_data();
 
 	SSHORT inputs  = 0, defaults = 0;
 	SSHORT outputs = 0;
@@ -2602,7 +2494,8 @@ static void define_procedure( dsql_req* request, NOD_TYPE op)
 
 	// fill req_procedure to allow procedure to self reference
 
-	dsql_prc* procedure = FB_NEW(*tdsql->getDefaultPool()) dsql_prc(*tdsql->getDefaultPool());
+	MemoryPool& pool = *tdbb->getDefaultPool();
+	dsql_prc* procedure = FB_NEW(pool) dsql_prc(pool);
 	procedure->prc_name = procedure_name->str_data;
 	request->req_procedure = procedure;
 
@@ -2845,8 +2738,6 @@ void DDL_gen_block(dsql_req* request, dsql_nod* node)
 	request->req_blk_node = node;
 	request->begin_debug();
 
-	tsql* tdsql = DSQL_get_thread_data();
-
 	dsql_nod* parameters;
 
 	// now do the input parameters
@@ -3007,7 +2898,7 @@ static void define_rel_constraint( dsql_req* request, dsql_nod* element)
 }
 
 
-static void define_relation( dsql_req* request)
+static void define_relation(dsql_req* request)
 {
 /**************************************
  *
@@ -3020,6 +2911,8 @@ static void define_relation( dsql_req* request)
  *	global fields for the local fields.
  *
  **************************************/
+	thread_db* tdbb = JRD_get_thread_data();
+
 	dsql_nod* ddl_node = request->req_ddl_node;
 
 	const dsql_nod* relation_node = ddl_node->nod_arg[e_drl_name];
@@ -3231,7 +3124,7 @@ static void define_shadow(dsql_req* request)
 //
 static void define_trigger(dsql_req* request, NOD_TYPE op)
 {
-	tsql* tdsql = DSQL_get_thread_data();
+	thread_db* tdbb = JRD_get_thread_data();
 
 	dsql_nod* trigger_node = request->req_ddl_node;
 	const dsql_str* trigger_name = (dsql_str*) trigger_node->nod_arg[e_trg_name];
@@ -3308,7 +3201,7 @@ static void define_trigger(dsql_req* request, NOD_TYPE op)
 							  0);
 				}
 
-				relation_node = FB_NEW_RPT(*tdsql->getDefaultPool(), e_rln_count) dsql_nod;
+				relation_node = FB_NEW_RPT(*tdbb->getDefaultPool(), e_rln_count) dsql_nod;
 				trigger_node->nod_arg[e_trg_table] = relation_node;
 				relation_node->nod_type = nod_relation_name;
 				relation_node->nod_count = e_rln_count;
@@ -3467,7 +3360,7 @@ static void define_udf( dsql_req* request)
 		// CVC: This is case of "returns <type> [by value|reference]"
 		// Some data types can not be returned as value
 
-		if (((int) ret_val_ptr[1]->getSlong() == Jrd::FUN_value) &&
+		if (((int) ret_val_ptr[1]->getSlong() == FUN_value) &&
 			(field->fld_dtype == dtype_text ||
 			 field->fld_dtype == dtype_varying ||
 			 field->fld_dtype == dtype_cstring ||
@@ -3533,7 +3426,7 @@ static void define_udf( dsql_req* request)
 		if (param_node[e_udf_param_type])
 		{
 			const SSHORT arg_mechanism = (SSHORT) param_node[e_udf_param_type]->getSlong();
-			if (arg_mechanism == Jrd::FUN_scalar_array)
+			if (arg_mechanism == FUN_scalar_array)
 				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -607,
 					isc_arg_gds, isc_random,
 					isc_arg_string, "BY SCALAR_ARRAY can't be used as a return parameter",
@@ -3555,7 +3448,7 @@ static void define_udf( dsql_req* request)
 			const bool free_it = ((SSHORT) ret_val_ptr[1]->getSlong() < 0);
 			request->append_number(isc_dyn_def_function_arg, blob_position);
 			request->append_number(isc_dyn_func_mechanism,
-					   (SSHORT)(SLONG) ((free_it ? -1 : 1) * Jrd::FUN_blob_struct));
+					   (SSHORT)(SLONG) ((free_it ? -1 : 1) * FUN_blob_struct));
 			/* if we have the free_it set then the blob has
 			   to be freed on return */
 		}
@@ -3604,11 +3497,11 @@ static void define_udf( dsql_req* request)
 			}
 			else if (field->fld_dtype == dtype_blob) {
 				request->append_number(isc_dyn_func_mechanism,
-										(SSHORT) Jrd::FUN_blob_struct);
+										(SSHORT) FUN_blob_struct);
 			}
 			else {
 				request->append_number(isc_dyn_func_mechanism,
-						   (SSHORT) Jrd::FUN_reference);
+						   (SSHORT) FUN_reference);
 			}
 
 			request->append_cstring(isc_dyn_function_name, udf_name);
@@ -3680,10 +3573,7 @@ static void define_update_action(dsql_req* request,
 		{
 			if (field->fld_flags & FLD_computed)
 				continue;
-			dsql_nod* field_node = MAKE_node(nod_field_name, (int) e_fln_count);
-			field_node->nod_arg[e_fln_name] =
-				(dsql_nod*) MAKE_cstring(field->fld_name.c_str());
-			field_stack.push(field_node);
+			field_stack.push(MAKE_field_name(field->fld_name.c_str()));
 		}
 		fields_node = MAKE_list(field_stack);
 	}
@@ -3847,6 +3737,8 @@ static void define_view( dsql_req* request, NOD_TYPE op)
  *	statement as the source of the view.
  *
  **************************************/
+	thread_db* tdbb = JRD_get_thread_data();
+
 	dsql_nod* node = request->req_ddl_node;
 	const dsql_str* view_name = (dsql_str*) node->nod_arg[e_view_name];
 	const dsql_rel* view_relation = NULL;
@@ -4202,7 +4094,7 @@ static void define_view( dsql_req* request, NOD_TYPE op)
 }
 
 
-static void define_view_trigger( dsql_req* request, dsql_nod* node, dsql_nod* rse,
+static void define_view_trigger(dsql_req* request, dsql_nod* node, dsql_nod* rse,
 	dsql_nod* items)
 {								// The fields in VIEW actually
 /**************************************
@@ -4215,7 +4107,7 @@ static void define_view_trigger( dsql_req* request, dsql_nod* node, dsql_nod* rs
  *	Create the ddl to define a trigger for a VIEW WITH CHECK OPTION.
  *
  **************************************/
-	tsql* tdsql = DSQL_get_thread_data();
+	thread_db* tdbb = JRD_get_thread_data();
 
 	dsql_nod* ddl_node = request->req_ddl_node;
 
@@ -4284,8 +4176,8 @@ static void define_view_trigger( dsql_req* request, dsql_nod* node, dsql_nod* rs
 
 			context = request->req_context->object();
 			if (context->ctx_alias) {
-				sav_context = FB_NEW(*tdsql->getDefaultPool())
-					dsql_ctx(*tdsql->getDefaultPool());
+				MemoryPool& pool = *tdbb->getDefaultPool();
+				sav_context = FB_NEW(pool) dsql_ctx(pool);
 				*sav_context = *context;
 			}
 		}
@@ -4679,7 +4571,7 @@ static void foreign_key( dsql_req* request, dsql_nod* element, const char* index
 }
 
 
-static void generate_dyn( dsql_req* request, dsql_nod* node)
+static void generate_dyn(dsql_req* request, dsql_nod* node)
 {
 /**************************************
  *
@@ -5785,7 +5677,7 @@ static SCHAR modify_privileges(dsql_req*		request,
 }
 
 
-static void modify_relation( dsql_req* request)
+static void modify_relation(dsql_req* request)
 {
 /**************************************
  *
@@ -5798,7 +5690,7 @@ static void modify_relation( dsql_req* request)
  *	global fields for the local fields.
  *
  **************************************/
-	tsql* tdsql = DSQL_get_thread_data();
+	thread_db* tdbb = JRD_get_thread_data();
 
 	dsql_nod* ddl_node = request->req_ddl_node;
 
@@ -6628,24 +6520,23 @@ static void save_field(dsql_req* request, const TEXT* field_name)
  *	in this request.
  *
  **************************************/
-
-	tsql* tdsql = DSQL_get_thread_data();
+	thread_db* tdbb = JRD_get_thread_data();
 
 	dsql_rel* relation = request->req_relation;
 	if (!relation) {
 		return;
 	}
 
-	MemoryPool* p = relation->rel_flags & REL_new_relation ?
-		tdsql->getDefaultPool() : request->req_dbb->dbb_pool;
-	dsql_fld* field = FB_NEW(*p) dsql_fld(*p);
+	MemoryPool& p = relation->rel_flags & REL_new_relation ?
+		*tdbb->getDefaultPool() : request->req_dbb->dbb_pool;
+	dsql_fld* field = FB_NEW(p) dsql_fld(p);
 	field->fld_name = field_name;
 	field->fld_next = relation->rel_fields;
 	relation->rel_fields = field;
 }
 
 
-static void save_relation( dsql_req* request, const dsql_str* relation_name)
+static void save_relation(dsql_req* request, const dsql_str* relation_name)
 {
 /**************************************
  *
@@ -6660,8 +6551,7 @@ static void save_relation( dsql_req* request, const dsql_str* relation_name)
  *	in this request.
  *
  **************************************/
-
-	tsql* tdsql = DSQL_get_thread_data();
+	thread_db* tdbb = JRD_get_thread_data();
 
 	if (request->req_flags & REQ_save_metadata) {
 		return;
@@ -6678,7 +6568,8 @@ static void save_relation( dsql_req* request, const dsql_str* relation_name)
 	}
 	else
 	{
-		relation = FB_NEW(*tdsql->getDefaultPool()) dsql_rel(*tdsql->getDefaultPool());
+		MemoryPool& pool = *tdbb->getDefaultPool();
+		relation = FB_NEW(pool) dsql_rel(pool);
 		relation->rel_name = relation_name->str_data;
 		if (ddl_node->nod_type == nod_def_relation || ddl_node->nod_type == nod_redef_relation)
 			relation->rel_flags = REL_creating;
@@ -6867,8 +6758,8 @@ static void modify_field(dsql_req*	request,
 	{
 		if (! (relation->rel_flags & REL_new_relation))
 		{
-  			dsql_fld* perm_field = FB_NEW(*request->req_dbb->dbb_pool)
-				dsql_fld(*request->req_dbb->dbb_pool);
+  			dsql_fld* perm_field = FB_NEW(request->req_dbb->dbb_pool)
+				dsql_fld(request->req_dbb->dbb_pool);
 			*perm_field = *field;
 
 			field = perm_field;
@@ -7122,15 +7013,13 @@ void dsql_req::append_meta_string(const char* string)
 	Firebird::UCharBuffer nameBuffer;
 
 	{	// scope
-		DsqlCheckout dcoHolder(req_dbb);
-
-		const ISC_STATUS s =
-			gds__intl_function(status_vector, &req_dbb->dbb_database_handle,
-				INTL_FUNCTION_CONV_TO_METADATA, CS_dynamic,
-				strlen(string), (const UCHAR*) string, &nameBuffer);
-
-		if (s)
+		Database::Checkout dcoHolder(req_dbb->dbb_database);
+		if (jrd8_intl_function(status_vector, &req_dbb->dbb_attachment,
+							   INTL_FUNCTION_CONV_TO_METADATA, CS_dynamic,
+							   strlen(string), (const UCHAR*) string, &nameBuffer))
+		{
 			ERRD_punt(status_vector);
+		}
 	}
 
 	append_string(0, (const TEXT*) nameBuffer.begin(), nameBuffer.getCount());

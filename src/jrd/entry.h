@@ -164,37 +164,37 @@ ENTRYPOINT( jrd8_drop_database,
 
 /* and the DSQL entry points */
 
-ENTRYPOINT( /* jrd8_allocate_statement */ no_entrypoint,
+ENTRYPOINT( jrd8_allocate_statement,
             REM_allocate_statement)
 
 ENTRYPOINT( /* jrd8_execute */ no_entrypoint,
             REM_execute)
 
-ENTRYPOINT( /* jrd8_execute2 */ no_entrypoint,
+ENTRYPOINT( jrd8_execute,
             REM_execute2)
 
 ENTRYPOINT( /* jrd8_execute_immediate */ no_entrypoint,
             REM_execute_immediate)
 
-ENTRYPOINT( /* jrd8_execute_immediate2 */ no_entrypoint,
+ENTRYPOINT( jrd8_execute_immediate,
             REM_execute_immediate2)
 
-ENTRYPOINT( /* jrd8_fetch */ no_entrypoint,
+ENTRYPOINT( jrd8_fetch,
             REM_fetch)
 
-ENTRYPOINT( /* jrd8_free_statement */ no_entrypoint,
+ENTRYPOINT( jrd8_free_statement,
             REM_free_statement)
 
-ENTRYPOINT( /* jrd8_insert */ no_entrypoint,
+ENTRYPOINT( jrd8_insert,
             REM_insert)
 
-ENTRYPOINT( /* jrd8_prepare */ no_entrypoint,
+ENTRYPOINT( jrd8_prepare,
             REM_prepare)
 
-ENTRYPOINT( /* jrd8_set_cursor */ no_entrypoint,
+ENTRYPOINT( jrd8_set_cursor,
             REM_set_cursor_name)
 
-ENTRYPOINT( /* jrd8_sql_info */ no_entrypoint,
+ENTRYPOINT( jrd8_sql_info,
             REM_sql_info)
 
 /* and service entry points */

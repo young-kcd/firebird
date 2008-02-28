@@ -83,7 +83,6 @@
 #include "../jrd/sch_proto.h"
 #include "../jrd/thread_proto.h"
 #include "../jrd/utl_proto.h"
-#include "../dsql/dsql_proto.h"
 #include "../dsql/prepa_proto.h"
 #include "../dsql/utld_proto.h"
 #include "../common/classes/rwlock.h"
@@ -172,10 +171,6 @@ inline void nullCheck(const FB_API_HANDLE* ptr, ISC_STATUS code)
 		bad_handle(code);
 	}
 }
-
-#if defined (SUPERCLIENT)
-#define NO_LOCAL_DSQL
-#endif
 
 #if !defined (SUPERCLIENT)
 static bool shutdown_flag = false;
@@ -1030,6 +1025,7 @@ ISC_STATUS API_ROUTINE GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 	USHORT n;
 
 	YEntry status(user_status);
+
 	try 
 	{
 		nullCheck(public_handle, isc_bad_db_handle);
@@ -1169,6 +1165,7 @@ ISC_STATUS API_ROUTINE GDS_BLOB_INFO(ISC_STATUS*	user_status,
  *
  **************************************/
 	YEntry status(user_status);
+
 	try 
 	{
 		Blob* blob = translate<Blob>(blob_handle);
@@ -1211,6 +1208,7 @@ ISC_STATUS API_ROUTINE GDS_CANCEL_BLOB(ISC_STATUS * user_status,
 	}
 
 	YEntry status(user_status);
+
 	try 
 	{
 		Blob* blob = translate<Blob>(blob_handle);
@@ -1247,6 +1245,7 @@ ISC_STATUS API_ROUTINE GDS_CANCEL_EVENTS(ISC_STATUS * user_status,
  *
  **************************************/
 	YEntry status(user_status);
+
 	try 
 	{
 		Attachment* attachment = translate<Attachment>(handle);
@@ -1279,6 +1278,7 @@ ISC_STATUS API_ROUTINE GDS_CANCEL_OPERATION(ISC_STATUS * user_status,
  *
  **************************************/
 	YEntry status(user_status);
+
 	try 
 	{
 		Attachment* attachment = translate<Attachment>(handle);
@@ -1310,6 +1310,7 @@ ISC_STATUS API_ROUTINE GDS_CLOSE_BLOB(ISC_STATUS * user_status,
  *
  **************************************/
 	YEntry status(user_status);
+
 	try 
 	{
 		Blob* blob = translate<Blob>(blob_handle);
@@ -1343,6 +1344,7 @@ ISC_STATUS API_ROUTINE GDS_COMMIT(ISC_STATUS * user_status,
  *
  **************************************/
 	YEntry status(user_status);
+
 	try 
 	{
 		Transaction* transaction = translate<Transaction>(tra_handle);
@@ -1415,6 +1417,7 @@ ISC_STATUS API_ROUTINE GDS_COMMIT_RETAINING(ISC_STATUS * user_status,
  *
  **************************************/
 	YEntry status(user_status);
+
 	try 
 	{
 		Transaction* transaction = translate<Transaction>(tra_handle);
@@ -1457,8 +1460,8 @@ ISC_STATUS API_ROUTINE GDS_COMPILE(ISC_STATUS* user_status,
  *
  **************************************/
 	YEntry status(user_status);
-	Attachment* dbb = 0;
-	StoredReq* rq = 0;
+	Attachment* dbb = NULL;
+	StoredReq* rq = NULL;
 	try 
 	{
 		dbb = translate<Attachment>(db_handle);
@@ -1504,6 +1507,7 @@ ISC_STATUS API_ROUTINE GDS_COMPILE2(ISC_STATUS* user_status,
  *
  **************************************/
 	Status status(user_status);
+
 	try 
 	{
 		if (GDS_COMPILE(status, db_handle, req_handle, blr_length, blr))
@@ -1596,6 +1600,7 @@ ISC_STATUS API_ROUTINE GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 	USHORT n;
 
 	YEntry status(user_status);
+
 	try 
 	{
 		nullCheck(public_handle, isc_bad_db_handle);
@@ -1730,6 +1735,7 @@ ISC_STATUS API_ROUTINE isc_database_cleanup(ISC_STATUS * user_status,
  *
  **************************************/
 	YEntry status(user_status);
+
 	try 
 	{
 		Attachment* attachment = translate<Attachment>(handle);
@@ -1764,6 +1770,7 @@ ISC_STATUS API_ROUTINE GDS_DATABASE_INFO(ISC_STATUS* user_status,
  *
  **************************************/
 	YEntry status(user_status);
+
 	try 
 	{
 		Attachment* attachment = translate<Attachment>(handle);
@@ -1801,6 +1808,7 @@ ISC_STATUS API_ROUTINE GDS_DDL(ISC_STATUS* user_status,
  *
  **************************************/
 	YEntry status(user_status);
+
 	try 
 	{
 		Attachment* attachment = translate<Attachment>(db_handle);
@@ -1852,6 +1860,7 @@ static ISC_STATUS detach_or_drop_database(ISC_STATUS * user_status, FB_API_HANDL
  *
  **************************************/
 	YEntry status(user_status);
+
 	try 
 	{
 		Attachment* dbb = translate<Attachment>(handle);
@@ -1985,6 +1994,7 @@ ISC_STATUS API_ROUTINE GDS_DSQL_ALLOC2(ISC_STATUS * user_status,
  *
  **************************************/
 	Status status(user_status);
+
 	try 
 	{
 		if (GDS_DSQL_ALLOCATE(user_status, db_handle, stmt_handle))
@@ -2019,9 +2029,8 @@ ISC_STATUS API_ROUTINE GDS_DSQL_ALLOCATE(ISC_STATUS * user_status,
  *
  **************************************/
 	YEntry status(user_status);
-	Attachment* dbb = 0;
-	StoredStm* stmt_handle = 0;
-	UCHAR flag = 0;
+	Attachment* dbb = NULL;
+	StoredStm* stmt_handle = NULL;
 
 	try 
 	{
@@ -2030,49 +2039,19 @@ ISC_STATUS API_ROUTINE GDS_DSQL_ALLOCATE(ISC_STATUS * user_status,
 		// check the statement handle to make sure it's NULL and then initialize it.
 		nullCheck(public_stmt_handle, isc_bad_stmt_handle);
 
-/* Attempt to have the implementation which processed the database attach
-   process the allocate statement.  This may not be feasible (e.g., the 
-   server doesn't support remote DSQL because it's the wrong version or 
-   something) in which case, execute the functionality locally (and hence 
-   remotely through the original Y-valve). */
-
-		ISC_STATUS s = isc_unavailable;
-		PTR entry = get_entrypoint(PROC_DSQL_ALLOCATE, dbb->implementation);
-		if (entry != no_entrypoint) 
-		{
-			s = (*entry) (status, &dbb->handle, &stmt_handle);
-		}
-
-#ifndef NO_LOCAL_DSQL
-		if (s == isc_unavailable) {
-			// if the entry point didn't exist or if the routine said the server
-			// didn't support the protocol... do it locally
-
-			flag = HANDLE_STATEMENT_local;
-			s = dsql8_allocate_statement(status, db_handle, &stmt_handle);
-		}
-#endif
-
-		if (status[1])
+		if (CALL(PROC_DSQL_ALLOCATE, dbb->implementation) (status, &dbb->handle, &stmt_handle))
 		{
 			return status[1];
 		}
 
 		Statement* statement = new Statement(stmt_handle, public_stmt_handle, dbb);
-		statement->flags = flag;
 	}
 	catch (const Firebird::Exception& e)
 	{
 		*public_stmt_handle = 0;
 		if (dbb && stmt_handle)
 		{
-#ifndef NO_LOCAL_DSQL
-			if (flag & HANDLE_STATEMENT_local)
-				dsql8_free_statement(status, &stmt_handle, DSQL_drop);
-			else
-#endif
-				CALL(PROC_DSQL_FREE, dbb->implementation) (status, &stmt_handle,
-													   DSQL_drop);
+			CALL(PROC_DSQL_FREE, dbb->implementation) (status, &stmt_handle, DSQL_drop);
 		}
 		e.stuff_exception(status);
 	}
@@ -2097,6 +2076,7 @@ ISC_STATUS API_ROUTINE isc_dsql_describe(ISC_STATUS * user_status,
  *
  **************************************/
 	Status status(user_status);
+
 	try 
 	{
 		Statement* statement = translate<Statement>(stmt_handle);
@@ -2165,6 +2145,7 @@ ISC_STATUS API_ROUTINE isc_dsql_describe_bind(ISC_STATUS * user_status,
  *
  **************************************/
 	Status status(user_status);
+
 	try 
 	{
 		Statement* statement = translate<Statement>(stmt_handle);
@@ -2361,72 +2342,46 @@ ISC_STATUS API_ROUTINE GDS_DSQL_EXECUTE2_M(ISC_STATUS* user_status,
  *
  **************************************/
 	YEntry status(user_status);
+
 	try
 	{
 		Statement* statement = translate<Statement>(stmt_handle);
 		status.setPrimaryHandle(statement);
-		Transaction* transaction = 0;
+		Transaction* transaction = NULL;
 		if (*tra_handle)
 		{
 			transaction = translate<Transaction>(tra_handle);
 		}
-		StoredTra *handle = 0;
-		PTR entry;
+		StoredTra* handle = NULL;
 
-#ifndef NO_LOCAL_DSQL
-		if (statement->flags & HANDLE_STATEMENT_local) {
-			dsql8_execute(status, tra_handle, &statement->handle,
-					  in_blr_length, in_blr, in_msg_type, in_msg_length,
-					  in_msg, out_blr_length, out_blr, out_msg_type,
-					  out_msg_length, out_msg);
-		}
-		else
-#endif
+		if (transaction)
 		{
-			if (transaction) {
-				Transaction *t = find_transaction(statement->parent, transaction);
-				if (!t)
-				{
-					bad_handle(isc_bad_trans_handle);
-				}
-				handle = t->handle;
-			}
-			entry = get_entrypoint(PROC_DSQL_EXECUTE2, statement->implementation);
-			if (entry != no_entrypoint &&
-				(*entry) (status,
-						  &handle,
-						  &statement->handle,
-						  in_blr_length,
-						  in_blr,
-						  in_msg_type,
-						  in_msg_length,
-						  in_msg,
-						  out_blr_length,
-						  out_blr,
-						  out_msg_type,
-						  out_msg_length, out_msg) != isc_unavailable);
-			else if (!out_blr_length && !out_msg_type && !out_msg_length)
-				CALL(PROC_DSQL_EXECUTE, statement->implementation) (status,
-																	&handle,
-																	&statement->handle,
-																	in_blr_length,
-																	in_blr,
-																	in_msg_type,
-																	in_msg_length,
-																	in_msg);
-			else
-				no_entrypoint(status);
-
-			if (!status[1])
+			Transaction* t = find_transaction(statement->parent, transaction);
+			if (!t)
 			{
-				if (transaction && !handle) {
-					delete transaction;
-					*tra_handle = 0;
-				}
-				else if (!transaction && handle)
-				{
-					transaction = new Transaction(handle, tra_handle, statement->parent);
-				}
+				bad_handle(isc_bad_trans_handle);
+			}
+			handle = t->handle;
+		}
+
+		CALL(PROC_DSQL_EXECUTE2, statement->implementation) (status,
+														     &handle,
+														     &statement->handle,
+														     in_blr_length, in_blr,
+														     in_msg_type, in_msg_length, in_msg,
+														     out_blr_length, out_blr,
+														     out_msg_type, out_msg_length, out_msg);
+
+		if (!status[1])
+		{
+			if (transaction && !handle)
+			{
+				delete transaction;
+				*tra_handle = 0;
+			}
+			else if (!transaction && handle)
+			{
+				transaction = new Transaction(handle, tra_handle, statement->parent);
 			}
 		}
 	}
@@ -2755,13 +2710,14 @@ ISC_STATUS API_ROUTINE GDS_DSQL_EXEC_IMM3_M(ISC_STATUS* user_status,
  *
  **************************************/
 	YEntry status(user_status);
+
 	try
 	{
 		Attachment* dbb = translate<Attachment>(db_handle);
 		status.setPrimaryHandle(dbb);
 
-		Transaction* transaction = 0;
-		StoredTra* handle = 0;
+		Transaction* transaction = NULL;
+		StoredTra* handle = NULL;
 
 		if (*tra_handle) 
 		{
@@ -2774,58 +2730,27 @@ ISC_STATUS API_ROUTINE GDS_DSQL_EXEC_IMM3_M(ISC_STATUS* user_status,
 			handle = t->handle;
 		}
 
-/* Attempt to have the implementation which processed the database attach
-   process the prepare statement.  This may not be feasible (e.g., the 
-   server doesn't support remote DSQL because it's the wrong version or 
-   something) in which case, execute the functionality locally (and hence 
-   remotely through the original Y-valve). */
+		CALL(PROC_DSQL_EXEC_IMMED2, dbb->implementation) (status,
+														  &dbb->handle,
+														  &handle,
+														  length, string, dialect,
+														  in_blr_length, in_blr,
+														  in_msg_type, in_msg_length, in_msg,
+														  out_blr_length, out_blr, 
+														  out_msg_type, out_msg_length, out_msg);
 
-		ISC_STATUS s = isc_unavailable;
-		PTR entry = get_entrypoint(PROC_DSQL_EXEC_IMMED2, dbb->implementation);
-		if (entry != no_entrypoint) {
-			s = (*entry) (status, &dbb->handle, &handle,
-						  length, string, dialect,
-						  in_blr_length, in_blr,
-						  in_msg_type, in_msg_length, in_msg,
-						  out_blr_length, out_blr, 
-						  out_msg_type, out_msg_length, out_msg);
-		}
-
-		if (s == isc_unavailable && !out_msg_length) {
-			entry = get_entrypoint(PROC_DSQL_EXEC_IMMED, dbb->implementation);
-			if (entry != no_entrypoint)
-			{
-				s = (*entry) (status, &dbb->handle, &handle,
-						  length, string, dialect,
-						  in_blr_length, in_blr, 
-						  in_msg_type, in_msg_length, in_msg);
-			}
-		}
-
-		if (s != isc_unavailable && !status[1])
+		if (!status[1])
 		{
-			if (transaction && !handle) {
+			if (transaction && !handle)
+			{
 				delete transaction;
 				*tra_handle = 0;
 			}
-			else if (!transaction && handle) {
+			else if (!transaction && handle)
+			{
 				transaction = new Transaction(handle, tra_handle, dbb);
 			}
 		}
-
-#ifndef NO_LOCAL_DSQL
-		if (s == isc_unavailable) {
-			// if the entry point didn't exist or if the routine said the server
-			// didn't support the protocol... do it locally
-
-			dsql8_execute_immediate(status, db_handle, tra_handle,
-								length, string, dialect,
-								in_blr_length, in_blr, in_msg_type,
-								in_msg_length, in_msg, out_blr_length,
-								out_blr, out_msg_type, out_msg_length,
-								out_msg);
-		}
-#endif
 	}
 	catch (const Firebird::Exception& e)
 	{
@@ -2852,6 +2777,7 @@ ISC_STATUS API_ROUTINE GDS_DSQL_FETCH(ISC_STATUS* user_status,
  *
  **************************************/
 	Status status(user_status);
+
 	try
 	{
 		if (!sqlda) 
@@ -2916,6 +2842,7 @@ ISC_STATUS API_ROUTINE GDS_DSQL_FETCH2(ISC_STATUS* user_status,
  *
  **************************************/
 	Status status(user_status);
+
 	try
 	{
 		if (!sqlda) 
@@ -2983,21 +2910,13 @@ ISC_STATUS API_ROUTINE GDS_DSQL_FETCH_M(ISC_STATUS* user_status,
  *
  **************************************/
 	YEntry status(user_status);
+
 	try 
 	{
 		Statement* statement = translate<Statement>(stmt_handle);
 		status.setPrimaryHandle(statement);
 
 		ISC_STATUS s =
-#ifndef NO_LOCAL_DSQL
-			(statement->flags & HANDLE_STATEMENT_local) ?
-				dsql8_fetch(status, &statement->handle, blr_length, blr, 
-							msg_type, msg_length, msg
-#ifdef SCROLLABLE_CURSORS
-							, (USHORT) 0, (ULONG) 1
-#endif // SCROLLABLE_CURSORS
-							) :
-#endif // NO_LOCAL_DSQL
 			CALL(PROC_DSQL_FETCH, statement->implementation) (status,
 															  &statement->handle,
 															  blr_length, blr,
@@ -3047,18 +2966,13 @@ ISC_STATUS API_ROUTINE GDS_DSQL_FETCH2_M(ISC_STATUS* user_status,
  *
  **************************************/
 	YEntry status(user_status);
+
 	try 
 	{
 		Statement* statement = translate<Statement>(stmt_handle);
 		status.setPrimaryHandle(statement);
 
 		ISC_STATUS s =
-#ifndef NO_LOCAL_DSQL
-			(statement->flags & HANDLE_STATEMENT_local) ?
-			dsql8_fetch(status,
-						&statement->handle, blr_length, blr, msg_type,
-						msg_length, msg, direction, offset) :
-#endif
 			CALL(PROC_DSQL_FETCH, statement->implementation) (status,
 															  &statement->
 															  handle,
@@ -3099,19 +3013,14 @@ ISC_STATUS API_ROUTINE GDS_DSQL_FREE(ISC_STATUS * user_status,
  *
  *****************************************/
 	YEntry status(user_status);
+
 	try
 	{
 		Statement* statement = translate<Statement>(stmt_handle);
 
-#ifndef NO_LOCAL_DSQL
-		if (statement->flags & HANDLE_STATEMENT_local)
-			dsql8_free_statement(status, &statement->handle, option);
-		else
-#endif
-			CALL(PROC_DSQL_FREE, statement->implementation) (status,
+		if (CALL(PROC_DSQL_FREE, statement->implementation) (status,
 															 &statement->handle,
-															 option);
-		if (status[1])
+															 option))
 		{
 			return status[1];
 		}
@@ -3148,6 +3057,7 @@ ISC_STATUS API_ROUTINE GDS_DSQL_INSERT(ISC_STATUS* user_status,
  *
  **************************************/
 	Status status(user_status);
+
 	try
 	{
 		Statement* statement = translate<Statement>(stmt_handle);
@@ -3195,6 +3105,7 @@ ISC_STATUS API_ROUTINE GDS_DSQL_INSERT_M(ISC_STATUS* user_status,
  *
  **************************************/
 	YEntry status(user_status);
+
 	try
 	{
 		Statement* statement = translate<Statement>(stmt_handle);
@@ -3202,18 +3113,11 @@ ISC_STATUS API_ROUTINE GDS_DSQL_INSERT_M(ISC_STATUS* user_status,
 
 		statement->checkPrepared();
 		sqlda_sup& dasup = statement->das;
-#ifndef NO_LOCAL_DSQL
-		if (statement->flags & HANDLE_STATEMENT_local)
-			dsql8_insert(status, &statement->handle, 
-						 blr_length, blr, msg_type, msg_length, msg);
-		else
-#endif
-			CALL(PROC_DSQL_INSERT, statement->implementation) (status,
-															   &statement->handle,
-															   blr_length, blr, 
-															   msg_type,
-															   msg_length,
-															   msg);
+
+		CALL(PROC_DSQL_INSERT, statement->implementation) (status,
+														   &statement->handle,
+														   blr_length, blr, 
+														   msg_type, msg_length, msg);
 	}
 	catch (const Firebird::Exception& e)
 	{
@@ -3243,6 +3147,7 @@ ISC_STATUS API_ROUTINE GDS_DSQL_PREPARE(ISC_STATUS* user_status,
  *
  **************************************/
 	Status status(user_status);
+
 	try
 	{
 		Statement* statement = translate<Statement>(stmt_handle);
@@ -3381,12 +3286,13 @@ ISC_STATUS API_ROUTINE GDS_DSQL_PREPARE_M(ISC_STATUS* user_status,
  *
  **************************************/
 	YEntry status(user_status);
+
 	try
 	{
 		Statement* statement = translate<Statement>(stmt_handle);
 		status.setPrimaryHandle(statement);
 
-		StoredTra *handle = 0;
+		StoredTra* handle = NULL;
 		if (*tra_handle) 
 		{
 			Transaction* transaction = translate<Transaction>(tra_handle);
@@ -3398,26 +3304,15 @@ ISC_STATUS API_ROUTINE GDS_DSQL_PREPARE_M(ISC_STATUS* user_status,
 			handle = transaction->handle;
 		}
 
-#ifndef NO_LOCAL_DSQL
-		if (statement->flags & HANDLE_STATEMENT_local)
-		{
-			dsql8_prepare(status, tra_handle, &statement->handle,
-						  length, string, dialect, item_length, items,
-						  buffer_length, buffer);
-		}
-		else
-#endif
-		{
-			CALL(PROC_DSQL_PREPARE, statement->implementation) (status,
-																&handle,
-																&statement->handle, 
-																length,
-																string, dialect,
-																item_length,
-																items,
-																buffer_length,
-																buffer);
-		}
+		CALL(PROC_DSQL_PREPARE, statement->implementation) (status,
+															&handle,
+															&statement->handle, 
+															length,
+															string, dialect,
+															item_length,
+															items,
+															buffer_length,
+															buffer);
 	}
 	catch (const Firebird::Exception& e)
 	{
@@ -3444,20 +3339,15 @@ ISC_STATUS API_ROUTINE GDS_DSQL_SET_CURSOR(ISC_STATUS* user_status,
  *
  **************************************/
 	YEntry status(user_status);
+
 	try
 	{
 		Statement* statement = translate<Statement>(stmt_handle);
 		status.setPrimaryHandle(statement);
 
-#ifndef NO_LOCAL_DSQL
-		if (statement->flags & HANDLE_STATEMENT_local)
-			dsql8_set_cursor(status, &statement->handle, cursor, type);
-		else
-#endif
-			CALL(PROC_DSQL_SET_CURSOR, statement->implementation) (status,
-																   &statement->
-																   handle, cursor,
-																   type);
+		CALL(PROC_DSQL_SET_CURSOR, statement->implementation) (status,
+															   &statement->handle,
+															   cursor, type);
 	}
 	catch (const Firebird::Exception& e)
 	{
@@ -3486,47 +3376,38 @@ ISC_STATUS API_ROUTINE GDS_DSQL_SQL_INFO(ISC_STATUS* user_status,
  *
  **************************************/
 	YEntry status(user_status);
+
 	try
 	{
 		Statement* statement = translate<Statement>(stmt_handle);
 		status.setPrimaryHandle(statement);
 
-#ifndef NO_LOCAL_DSQL
-		if (statement->flags & HANDLE_STATEMENT_local)
-			dsql8_sql_info(status, &statement->handle, item_length, items,
-					   buffer_length, buffer);
-		else
-#endif
+		if (( (item_length == 1) && (items[0] == isc_info_sql_stmt_type) ||
+			  (item_length == 2) && (items[0] == isc_info_sql_stmt_type) && 
+		      (items[1] == isc_info_end || items[1] == 0) ) &&
+			(statement->flags & HANDLE_STATEMENT_prepared) &&
+			statement->das.dasup_stmt_type)
 		{
-			if (( (item_length == 1) && (items[0] == isc_info_sql_stmt_type) ||
-				  (item_length == 2) && (items[0] == isc_info_sql_stmt_type) && 
-			      (items[1] == isc_info_end || items[1] == 0) ) &&
-				(statement->flags & HANDLE_STATEMENT_prepared) && 
-				statement->das.dasup_stmt_type)
+			if (buffer_length >= 8)
 			{
-				if (buffer_length >= 8)
-				{
-					*buffer++ = isc_info_sql_stmt_type;
-					put_short((UCHAR*) buffer, 4);
-					buffer += 2;
-					put_long((UCHAR*) buffer, statement->das.dasup_stmt_type);
-					buffer += 4;
-					*buffer = isc_info_end;
-				}
-				else 
-				{
-					*buffer = isc_info_truncated;
-				}
+				*buffer++ = isc_info_sql_stmt_type;
+				put_short((UCHAR*) buffer, 4);
+				buffer += 2;
+				put_long((UCHAR*) buffer, statement->das.dasup_stmt_type);
+				buffer += 4;
+				*buffer = isc_info_end;
 			}
 			else 
 			{
-				CALL(PROC_DSQL_SQL_INFO, statement->implementation) (status,
-																	 &statement->handle,
-																	 item_length,
-																	 items,
-																	 buffer_length,
-																	 buffer);
+				*buffer = isc_info_truncated;
 			}
+		}
+		else 
+		{
+			CALL(PROC_DSQL_SQL_INFO, statement->implementation) (status,
+																 &statement->handle,
+																 item_length, items,
+																 buffer_length, buffer);
 		}
 	}
 	catch (const Firebird::Exception& e)
@@ -3572,6 +3453,7 @@ ISC_STATUS API_ROUTINE isc_wait_for_event(ISC_STATUS * user_status,
  *
  **************************************/
 	Status status(user_status);
+
 	try
 	{
 		if (!why_initialized) 
@@ -3679,8 +3561,8 @@ ISC_STATUS API_ROUTINE GDS_INTERNAL_COMPILE(ISC_STATUS* user_status,
 											const UCHAR* dbginfo)
 {
 	YEntry status(user_status);
-	Attachment* dbb = 0;
-	StoredReq* rq = 0;
+	Attachment* dbb = NULL;
+	StoredReq* rq = NULL;
 
 	try
 	{

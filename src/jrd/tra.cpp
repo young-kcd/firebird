@@ -67,6 +67,8 @@
 #include "../common/classes/TriState.h"
 #include "../common/utils_proto.h"
 #include "../lock/lock_proto.h"
+#include "../dsql/dsql.h"
+#include "../dsql/dsql_proto.h"
 
 
 const int DYN_MSG_FAC	= 8;
@@ -767,6 +769,45 @@ void TRA_invalidate(Database* database, ULONG mask)
 }
 
 
+void TRA_link_cursor(jrd_tra* transaction, dsql_req* cursor)
+{
+/**************************************
+ *
+ *	T R A _ l i n k _ c u r s o r
+ *
+ **************************************
+ *
+ * Functional description
+ *	Add cursor to the list of open cursors belonging to this transaction.
+ *
+ **************************************/
+
+	fb_assert(!transaction->tra_open_cursors.exist(cursor));
+	transaction->tra_open_cursors.add(cursor);
+}
+
+
+void TRA_unlink_cursor(jrd_tra* transaction, dsql_req* cursor)
+{
+/**************************************
+ *
+ *	T R A _ u n l i n k _ c u r s o r
+ *
+ **************************************
+ *
+ * Functional description
+ *	Remove cursor from the list of open cursors.
+ *
+ **************************************/
+
+	size_t pos;
+	if (transaction->tra_open_cursors.find(cursor, pos))
+	{
+		transaction->tra_open_cursors.remove(pos);
+	}
+}
+
+
 void TRA_post_resources(thread_db* tdbb, jrd_tra* transaction, ResourceList& resources)
 {
 /**************************************
@@ -1122,7 +1163,7 @@ void TRA_release_transaction(thread_db* tdbb, jrd_tra* transaction)
 		}
 	}
 
-	// Release transaction's under-modification-rpb list.
+	// Release transaction's under-modification-rpb list
 
 	delete transaction->tra_rpblist;
 
@@ -1130,7 +1171,14 @@ void TRA_release_transaction(thread_db* tdbb, jrd_tra* transaction)
 
 	delete transaction->tra_db_snapshot;
 
-	// Release the transaction pool.
+	// Close all open DSQL cursors
+
+	while (transaction->tra_open_cursors.getCount())
+	{
+		DSQL_free_statement(tdbb, transaction->tra_open_cursors.pop(), DSQL_close);
+	}
+
+	// Release the transaction pool
 
 	MemoryPool* tra_pool = transaction->tra_pool;
 	delete transaction;

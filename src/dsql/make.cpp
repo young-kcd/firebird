@@ -42,6 +42,7 @@
 #include <ctype.h>
 #include <string.h>
 #include "../dsql/dsql.h"
+#include "../dsql/node.h"
 #include "../jrd/ibase.h"
 #include "../jrd/intl.h"
 #include "../jrd/constants.h"
@@ -53,6 +54,7 @@
 #include "../dsql/misc_func.h"
 #include "../dsql/utld_proto.h"
 #include "../jrd/DataTypeUtil.h"
+#include "../jrd/jrd.h"
 #include "../jrd/ods.h"
 #include "../jrd/ini.h"
 #include "../jrd/dsc_proto.h"
@@ -61,6 +63,8 @@
 #include "../jrd/why_proto.h"
 #include "../common/config/config.h"
 
+using namespace Jrd;
+using namespace Dsql;
 
 /* Firebird provides transparent conversion from string to date in
  * contexts where it makes sense.  This macro checks a descriptor to
@@ -89,9 +93,9 @@ static const char* db_key_name = "DB_KEY";
 
 dsql_nod* MAKE_const_slong(SLONG value)
 {
-	tsql* tdsql = DSQL_get_thread_data();
+	thread_db* tdbb = JRD_get_thread_data();
 
-	dsql_nod* node = FB_NEW_RPT(*tdsql->getDefaultPool(), 1) dsql_nod;
+	dsql_nod* node = FB_NEW_RPT(*tdbb->getDefaultPool(), 1) dsql_nod;
 	node->nod_type = nod_constant;
 	node->nod_desc.dsc_dtype = dtype_long;
 	node->nod_desc.dsc_length = sizeof(SLONG);
@@ -119,9 +123,9 @@ dsql_nod* MAKE_const_slong(SLONG value)
  **/
 dsql_nod* MAKE_constant(dsql_str* constant, dsql_constant_type numeric_flag)
 {
-	tsql* tdsql = DSQL_get_thread_data();
+	thread_db* tdbb = JRD_get_thread_data();
 
-	dsql_nod* node = FB_NEW_RPT(*tdsql->getDefaultPool(),
+	dsql_nod* node = FB_NEW_RPT(*tdbb->getDefaultPool(),
 						(numeric_flag == CONSTANT_TIMESTAMP ||
 						  numeric_flag == CONSTANT_SINT64) ? 2 : 1) dsql_nod;
 	node->nod_type = nod_constant;
@@ -334,9 +338,9 @@ dsql_nod* MAKE_constant(dsql_str* constant, dsql_constant_type numeric_flag)
  **/
 dsql_nod* MAKE_str_constant(dsql_str* constant, SSHORT character_set)
 {
-	tsql* tdsql = DSQL_get_thread_data();
+	thread_db* tdbb = JRD_get_thread_data();
 
-	dsql_nod* node = FB_NEW_RPT(*tdsql->getDefaultPool(), 1) dsql_nod;
+	dsql_nod* node = FB_NEW_RPT(*tdbb->getDefaultPool(), 1) dsql_nod;
 	node->nod_type = nod_constant;
 
 	DEV_BLKCHK(constant, dsql_type_str);
@@ -1555,6 +1559,24 @@ dsql_nod* MAKE_field(dsql_ctx* context, dsql_fld* field, dsql_nod* indices)
 
 /**
   
+ 	MAKE_field_name
+  
+    @brief	Make up a field name node.
+ 
+
+    @param field_name
+
+ **/
+dsql_nod* MAKE_field_name(const char* field_name)
+{
+    dsql_nod* const field_node = MAKE_node(nod_field_name, (int) e_fln_count);
+    field_node->nod_arg[e_fln_name] = (dsql_nod*) MAKE_cstring(field_name);
+	return field_node;
+}
+
+
+/**
+  
  	MAKE_list
   
     @brief	Make a list node from a linked list stack of things.
@@ -1591,9 +1613,9 @@ dsql_nod* MAKE_list(DsqlNodStack& stack)
  **/
 dsql_nod* MAKE_node(NOD_TYPE type, int count)
 {
-	tsql* tdsql = DSQL_get_thread_data();
+	thread_db* tdbb = JRD_get_thread_data();
 
-	dsql_nod* node = FB_NEW_RPT(*tdsql->getDefaultPool(), count) dsql_nod;
+	dsql_nod* node = FB_NEW_RPT(*tdbb->getDefaultPool(), count) dsql_nod;
 	node->nod_type = type;
 	node->nod_count = count;
 
@@ -1636,9 +1658,9 @@ dsql_par* MAKE_parameter(dsql_msg* message, bool sqlda_flag, bool null_flag,
 		}
 	}
 
-	tsql* tdsql = DSQL_get_thread_data();
+	thread_db* tdbb = JRD_get_thread_data();
 
-	dsql_par* parameter = FB_NEW(*tdsql->getDefaultPool()) dsql_par;
+	dsql_par* parameter = FB_NEW(*tdbb->getDefaultPool()) dsql_par;
 	parameter->par_message = message;
 	parameter->par_next = message->msg_parameters;
 	message->msg_parameters = parameter;
@@ -1716,9 +1738,9 @@ dsql_sym* MAKE_symbol(dsql_dbb* database,
 	fb_assert(name);
 	fb_assert(length > 0);
 
-	tsql* tdsql = DSQL_get_thread_data();
+	thread_db* tdbb = JRD_get_thread_data();
 
-	dsql_sym* symbol = FB_NEW_RPT(*tdsql->getDefaultPool(), length) dsql_sym;
+	dsql_sym* symbol = FB_NEW_RPT(*tdbb->getDefaultPool(), length) dsql_sym;
 	symbol->sym_type = type;
 	symbol->sym_object = (BLK) object;
 	symbol->sym_dbb = database;
@@ -1750,9 +1772,9 @@ dsql_sym* MAKE_symbol(dsql_dbb* database,
  **/
 dsql_str* MAKE_tagged_string(const char* strvar, size_t length, const char* charset)
 {
-	tsql* tdsql = DSQL_get_thread_data();
+	thread_db* tdbb = JRD_get_thread_data();
 
-	dsql_str* string = FB_NEW_RPT(*tdsql->getDefaultPool(), length) dsql_str;
+	dsql_str* string = FB_NEW_RPT(*tdbb->getDefaultPool(), length) dsql_str;
 	string->str_charset = charset;
 	string->str_length  = length;
 	memcpy(string->str_data, strvar, length);
@@ -1804,9 +1826,9 @@ dsql_nod* MAKE_variable(dsql_fld* field,
 {
 	DEV_BLKCHK(field, dsql_type_fld);
 
-	tsql* tdsql = DSQL_get_thread_data();
+	thread_db* tdbb = JRD_get_thread_data();
 
-	dsql_var* variable = FB_NEW_RPT(*tdsql->getDefaultPool(), strlen(name)) dsql_var;
+	dsql_var* variable = FB_NEW_RPT(*tdbb->getDefaultPool(), strlen(name)) dsql_var;
 	dsql_nod* node = MAKE_node(nod_variable, e_var_count);
 	node->nod_arg[e_var_variable] = (dsql_nod*) variable;
 	variable->var_msg_number = msg_number;
@@ -1819,6 +1841,7 @@ dsql_nod* MAKE_variable(dsql_fld* field,
 
 	return node;
 }
+
 
 /**
 

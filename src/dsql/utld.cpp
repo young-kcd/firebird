@@ -45,6 +45,7 @@
 #endif
 #include "../common/classes/init.h"
 
+using namespace Jrd;
 
 static void cleanup(void *);
 static ISC_STATUS error_dsql_804(ISC_STATUS *, ISC_STATUS);

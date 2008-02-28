@@ -23,6 +23,8 @@
 #include "firebird.h"
 #include "../dsql/Parser.h"
 
+using namespace Jrd;
+
 
 Parser::Parser(USHORT aClientDialect, USHORT aDbDialect, USHORT aParserVersion,
 			const TEXT* string, USHORT length, SSHORT characterSet)

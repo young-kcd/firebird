@@ -31,28 +31,33 @@
 #include "../include/fb_blk.h"
 #include "../jrd/exe.h"
 #include "../jrd/ibase.h"
+#include "../dsql/dsql.h"
 
 const int MAX_CALLBACKS	= 50;
 
+namespace Jrd {
+
 class ExecuteStatement {
 private:
-	FB_API_HANDLE Attachment;
-	FB_API_HANDLE Transaction;
-	FB_API_HANDLE Statement;
-	XSQLDA	* Sqlda;
-	SCHAR	* Buffer;
-	bool	SingleMode;
-	TEXT	StartOfSqlOperator[32];
-private:
-	XSQLDA*	MakeSqlda(Jrd::thread_db* tdbb, SSHORT n);
-	ISC_STATUS	ReMakeSqlda(ISC_STATUS *vector, Jrd::thread_db* tdbb);
-	ULONG	ParseSqlda(void);
+	dsql_req* statement;
+	Firebird::UCharBuffer* blr;
+	Firebird::UCharBuffer* message;
+	Firebird::Array<dsc>* values;
+	int varCount;
+	bool singleMode;
+	TEXT startOfSqlOperator[32];
+
+	void generateBlr(const dsc* desc);
+
 public:
 	void Open(Jrd::thread_db* tdbb, Jrd::jrd_nod* sql, SSHORT nVars, bool SingleTon);
 	bool Fetch(Jrd::thread_db* tdbb, Jrd::jrd_nod** FirstVar);
 	void Close(Jrd::thread_db* tdbb);
+
 	static void getString(Jrd::thread_db*, Firebird::string&, const dsc* d, const Jrd::jrd_req* r);
 };
+
+}; // namespace
 
 #endif // JRD_EXECUTE_STATEMENT_H
 

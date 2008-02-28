@@ -37,10 +37,12 @@
 #include <string.h>
 #include <stdio.h>
 #include "../dsql/dsql.h"
+#include "../dsql/node.h"
 #include "../jrd/ibase.h"
 #include "../jrd/align.h"
 #include "../jrd/constants.h"
 #include "../jrd/intl.h"
+#include "../jrd/jrd.h"
 #include "../jrd/val.h"
 #include "../dsql/ddl_proto.h"
 #include "../dsql/errd_proto.h"
@@ -53,6 +55,9 @@
 #include "../jrd/dsc_proto.h"
 #include "../jrd/why_proto.h"
 #include "gen/iberror.h"
+
+using namespace Jrd;
+using namespace Dsql;
 
 static void gen_aggregate(dsql_req*, const dsql_nod*);
 static void gen_cast(dsql_req*, const dsql_nod*);
@@ -161,8 +166,8 @@ void GEN_expr( dsql_req* request, dsql_nod* node)
 			!(ddl_node->nod_type == nod_def_domain ||
 			  ddl_node->nod_type == nod_mod_domain))
 		{
-				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 901,
-						  isc_arg_gds, isc_dsql_domain_err, 0);
+			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 901,
+					  isc_arg_gds, isc_dsql_domain_err, 0);
 		}
 		stuff(request, blr_fid);
 		stuff(request, 0);				// Context   
@@ -608,7 +613,7 @@ void GEN_expr( dsql_req* request, dsql_nod* node)
  **/
 void GEN_port( dsql_req* request, dsql_msg* message)
 {
-	tsql* tdsql = DSQL_get_thread_data();
+	thread_db* tdbb = JRD_get_thread_data();
 
 //	if (request->req_blr_string) {
 		stuff(request, blr_message);
@@ -706,7 +711,7 @@ void GEN_port( dsql_req* request, dsql_msg* message)
 
 // Allocate buffer for message 
 	const ULONG new_len = message->msg_length + DOUBLE_ALIGN - 1;
-	dsql_str* buffer = FB_NEW_RPT(*tdsql->getDefaultPool(), new_len) dsql_str;
+	dsql_str* buffer = FB_NEW_RPT(*tdbb->getDefaultPool(), new_len) dsql_str;
 	message->msg_buffer =
 		(UCHAR *) FB_ALIGN((U_IPTR) buffer->str_data, DOUBLE_ALIGN);
 
@@ -734,7 +739,9 @@ void GEN_port( dsql_req* request, dsql_msg* message)
  **/
 void GEN_request( dsql_req* request, dsql_nod* node)
 {
-	if (request->req_type == REQ_DDL) {
+	if (request->req_type == REQ_CREATE_DB ||
+		request->req_type == REQ_DDL)
+	{
 		DDL_generate(request, node);
 		return;
 	}

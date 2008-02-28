@@ -39,17 +39,15 @@ namespace Jrd {
 	class Attachment;
 	class jrd_tra;
 	class jrd_req;
+	class dsql_req;
 }
-
-class dsql_req;
 
 namespace YValve 
 {
 	// flags
 	const UCHAR HANDLE_TRANSACTION_limbo	= 0x01;
-	const UCHAR HANDLE_STATEMENT_local		= 0x02;	// Process DSQL statement locally
-	const UCHAR HANDLE_STATEMENT_prepared	= 0x04;
-	const UCHAR HANDLE_shutdown				= 0x08;	// Database shutdown
+	const UCHAR HANDLE_STATEMENT_prepared	= 0x02;
+	const UCHAR HANDLE_shutdown				= 0x04;	// Database shutdown
 
 	// forwards
 	class Attachment;
@@ -67,7 +65,7 @@ namespace YValve
 	typedef void StoredReq;
 	typedef void StoredBlb;
 	typedef Jrd::Attachment StoredAtt;
-	typedef dsql_req StoredStm;
+	typedef Jrd::dsql_req StoredStm;
 	typedef void StoredSvc;
 
 	template <typename CleanupRoutine, typename CleanupArg>

@@ -1475,34 +1475,29 @@ static void exec_sql(thread_db* tdbb, jrd_req* request, DSC* dsc)
  **************************************/
 	SET_TDBB(tdbb);
 
-	if (tdbb->getTransaction()->tra_callback_count >= MAX_CALLBACKS) {
+	jrd_tra* const transaction = tdbb->getTransaction();
+
+	if (transaction->tra_callback_count >= MAX_CALLBACKS)
+	{
 		ERR_post(isc_exec_sql_max_call_exceeded, 0);
 	}
 
 	Firebird::string sqlStatementText;
 	ExecuteStatement::getString(tdbb, sqlStatementText, dsc, request);
 
-	ISC_STATUS_ARRAY local;
-	memset(local, 0, sizeof(local));
-	ISC_STATUS* status = local;
+	transaction->tra_callback_count++;
 
-	tdbb->getTransaction()->tra_callback_count++;
-
-	{	// scope
-		Database::Checkout dcoHolder(tdbb->getDatabase());
-
-		callback_execute_immediate(status,
-								   tdbb->getAttachment(),
-								   tdbb->getTransaction(),
-								   sqlStatementText);
+	try
+	{
+		DSQL_callback_execute_immediate(tdbb, sqlStatementText);
+	}
+	catch (const Firebird::Exception&)
+	{
+		transaction->tra_callback_count--;
+		throw;
 	}
 
-	tdbb->getTransaction()->tra_callback_count--;
-
-	if (status[1]) {
- 		memcpy(tdbb->tdbb_status_vector, status, sizeof(local));
-		ERR_punt();
-	}
+	transaction->tra_callback_count--;
 }
 
 
@@ -2546,8 +2541,7 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 						((SCHAR *) request + node->nod_impure);
 				switch (request->req_operation) {
 				case jrd_req::req_evaluate:
-					impure->Open(tdbb, node->nod_arg[0], node->nod_count - 2,
-							(!node->nod_arg[1]));
+					impure->Open(tdbb, node->nod_arg[0], node->nod_count - 2, !node->nod_arg[1]);
 				case jrd_req::req_return:
 				case jrd_req::req_sync:
 					if (impure->Fetch(tdbb, &node->nod_arg[2])) {

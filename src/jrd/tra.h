@@ -36,8 +36,8 @@
 #include "../include/fb_blk.h"
 #include "../common/classes/tree.h"
 #include "../common/classes/GenericMap.h"
-#include "../jrd/rpb_chain.h"
 #include "../jrd/exe.h"
+#include "../jrd/rpb_chain.h"
 #include "../jrd/blb.h" // For bid structure
 #include "../jrd/sbm.h" // For bid structure
 
@@ -55,6 +55,8 @@ class Record;
 class VerbAction;
 class ArrayField;
 class Attachment;
+class DeferredWork;
+class dsql_opn;
 
 // Blobs active in transaction identified by bli_temp_id. Please keep this 
 // structure small as there can be huge amount of them floating in memory.
@@ -98,6 +100,7 @@ public:
 		tra_blobs(p),
 		tra_resources(*p),
 		tra_context_vars(*p),
+		tra_open_cursors(*p),
 		tra_lock_timeout(DEFAULT_LOCK_TIMEOUT)
 	{}
 
@@ -125,7 +128,7 @@ public:
 	Savepoint*	tra_save_free;	/* free savepoints */
 	SLONG tra_save_point_number;	/* next save point number to use */
 	ULONG tra_flags;
-	class DeferredWork*	tra_deferred_work;	/* work deferred to commit time */
+	DeferredWork*	tra_deferred_work;	/* work deferred to commit time */
 	ResourceList tra_resources;		/* resource existence list */
 	Firebird::StringMap tra_context_vars; // Context variables for the transaction
 	traRpbList* tra_rpblist;	/* active record_param's of given transaction */
@@ -137,6 +140,7 @@ public:
 	jrd_req* tra_requests;		// Doubly linked list of requests active in this transaction
 	DatabaseSnapshot* tra_db_snapshot; // Database state snapshot (for monitoring purposes)
 	RuntimeStatistics tra_stats;
+	Firebird::Array<dsql_req*> tra_open_cursors;
 
 private:
 	TempSpace* tra_temp_space;	// temp space storage

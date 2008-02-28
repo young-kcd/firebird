@@ -24,7 +24,6 @@
 #ifndef JRD_TRA_PROTO_H
 #define JRD_TRA_PROTO_H
 
-#include "../jrd/req.h"
 #include "../jrd/tra.h"
 
 namespace Jrd {
@@ -47,6 +46,8 @@ void	TRA_header_write(Jrd::thread_db*, Jrd::Database*, SLONG);
 #endif
 void	TRA_init(Jrd::thread_db*);
 void	TRA_invalidate(Jrd::Database*, ULONG);
+void	TRA_link_cursor(Jrd::jrd_tra*, Jrd::dsql_req*);
+void	TRA_unlink_cursor(Jrd::jrd_tra*, Jrd::dsql_req*);
 void	TRA_post_resources(Jrd::thread_db*, Jrd::jrd_tra*, Jrd::ResourceList&);
 bool	TRA_precommited(Jrd::thread_db*, SLONG, SLONG);
 void	TRA_prepare(Jrd::thread_db*, Jrd::jrd_tra*, USHORT, const UCHAR*);

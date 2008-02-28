@@ -24,7 +24,7 @@
 #ifndef DSQL_PARSE_PROTO_H
 #define DSQL_PARSE_PROTO_H
 
-void LEX_dsql_init(void);
+void LEX_dsql_init(MemoryPool&);
 
 #endif //  DSQL_PARSE_PROTO_H
 

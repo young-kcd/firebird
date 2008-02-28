@@ -41,6 +41,7 @@
 #include "../dsql/sqlda.h"
 #include "gen/iberror.h"
 #include "../jrd/iberr.h"
+#include "../jrd/jrd.h"
 #include "../dsql/errd_proto.h"
 #include "../dsql/utld_proto.h"
 
@@ -59,6 +60,8 @@
 
 #include "../jrd/gds_proto.h"
 #include "../common/utils_proto.h"
+
+using namespace Jrd;
 
 
 #ifdef DEV_BUILD
@@ -126,12 +129,12 @@ void ERRD_error( int code, const char* text)
 {
 	TEXT s[MAXPATHLEN + 140];
 
-	tsql* tdsql = DSQL_get_thread_data();
+	thread_db* tdbb = JRD_get_thread_data();
 
 	fb_utils::snprintf(s, sizeof(s), "** DSQL error: %s **\n", text);
 	TRACE(s);
 
-	ISC_STATUS* status_vector = tdsql->tsql_status;
+	ISC_STATUS* status_vector = tdbb->tdbb_status_vector;
     if (status_vector) {
         *status_vector++ = isc_arg_gds;
         *status_vector++ = isc_random;
@@ -163,7 +166,7 @@ bool ERRD_post_warning(ISC_STATUS status, ...)
 
 	va_start(args, status);
 
-	ISC_STATUS* status_vector = ((tsql*) DSQL_get_thread_data())->tsql_status;
+	ISC_STATUS* status_vector = JRD_get_thread_data()->tdbb_status_vector;
 	int indx = 0;
 
 	if (status_vector[0] != isc_arg_gds ||
@@ -263,7 +266,7 @@ bool ERRD_post_warning(ISC_STATUS status, ...)
  **/
 void ERRD_post(ISC_STATUS status, ...)
 {
-	ISC_STATUS* status_vector = ((tsql*) DSQL_get_thread_data())->tsql_status;
+	ISC_STATUS* status_vector = JRD_get_thread_data()->tdbb_status_vector;
 
 // stuff the status into temp buffer 
 	ISC_STATUS_ARRAY tmp_status;
@@ -362,19 +365,19 @@ void ERRD_post(ISC_STATUS status, ...)
  **/
 void ERRD_punt(const ISC_STATUS* local)
 {
-	tsql* tdsql = DSQL_get_thread_data();
+	thread_db* tdbb = JRD_get_thread_data();
 
 // copy local status into user status
 	if (local) {
-		UTLD_copy_status(local, tdsql->tsql_status);
+		UTLD_copy_status(local, tdbb->tdbb_status_vector);
 	}
 
 // Save any strings in a permanent location 
 
-	UTLD_save_status_strings(tdsql->tsql_status);
+	UTLD_save_status_strings(tdbb->tdbb_status_vector);
 
 // Give up whatever we were doing and return to the user. 
 
-	Firebird::status_exception::raise(tdsql->tsql_status);
+	Firebird::status_exception::raise(tdbb->tdbb_status_vector);
 }
 

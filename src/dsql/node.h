@@ -40,6 +40,8 @@
 
 // an enumeration of the possible node types in a syntax tree
 
+namespace Dsql {
+
 enum nod_t
 {
 	nod_unknown_type = 0,
@@ -362,101 +364,6 @@ enum nod_t
 	nod_del_user
 };
 
-typedef nod_t NOD_TYPE;
-
-/* definition of a syntax node created both
-   in parsing and in context recognition */
-
-class dsql_nod : public pool_alloc_rpt<class dsql_nod*, dsql_type_nod>
-{
-public:
-	NOD_TYPE nod_type;			// Type of node
-	DSC nod_desc;				// Descriptor
-	USHORT nod_line;			// Source line of the statement.
-	USHORT nod_column;			// Source column of the statement.
-	USHORT nod_count;			// Number of arguments
-	USHORT nod_flags;
-	dsql_nod* nod_arg[1];
-
-	dsql_nod() : nod_type(nod_unknown_type), nod_count(0), nod_flags(0) {}
-	SLONG getSlong() const
-	{
-		fb_assert(nod_type == nod_constant);
-		fb_assert(nod_desc.dsc_dtype == dtype_long);
-		fb_assert((void*) nod_desc.dsc_address == (void*) nod_arg);
-		return *((SLONG*) nod_arg);
-	}
-};
-
-// values of flags
-enum nod_flags_vals {
-	NOD_AGG_DISTINCT		= 1, // nod_agg_...
-
-	NOD_UNION_ALL			= 1, // nod_list
-	NOD_UNION_RECURSIVE 	= 2,
-
-	NOD_READ_ONLY			= 1, // nod_access
-	NOD_READ_WRITE			= 2,
-
-	NOD_WAIT				= 1, // nod_wait
-	NOD_NO_WAIT				= 2,
-
-	NOD_VERSION				= 1, // nod_version
-	NOD_NO_VERSION			= 2,
-
-	NOD_CONCURRENCY			= 1, // nod_isolation
-	NOD_CONSISTENCY			= 2,
-	NOD_READ_COMMITTED		= 4,
-
-	NOD_SHARED				= 1, // nod_lock_mode
-	NOD_PROTECTED			= 2,
-	NOD_READ				= 4,
-	NOD_WRITE				= 8,
-	
-	NOD_NO_AUTO_UNDO        = 1, // nod_tra_misc
-	NOD_IGNORE_LIMBO        = 2,
-	NOD_RESTART_REQUESTS    = 4,
-
-	NOD_NULLS_FIRST			= 1, // nod_order
-	NOD_NULLS_LAST			= 2,
-
-	REF_ACTION_CASCADE		= 1, // nod_ref_trig_action
-	REF_ACTION_SET_DEFAULT	= 2,
-	REF_ACTION_SET_NULL		= 4,
-	REF_ACTION_NONE			= 8,
-	// Node flag indicates that this node has a different type or result
-	// depending on the SQL dialect.
-	NOD_COMP_DIALECT		= 16, // nod_...2, see MAKE_desc
-
-	NOD_SELECT_EXPR_SINGLETON	= 1, // nod_select_expr
-	NOD_SELECT_EXPR_VALUE		= 2,
-	NOD_SELECT_EXPR_RECURSIVE	= 4, // recursive member of recursive CTE
-
-	NOD_CURSOR_EXPLICIT		= 1, // nod_cursor
-	NOD_CURSOR_FOR			= 2,
-	NOD_CURSOR_ALL			= USHORT(-1U),
-
-	NOD_DT_IGNORE_COLUMN_CHECK	= 1, // nod_cursor, see pass1_cursor_name
-
-	NOD_PERMANENT_TABLE			= 1, // nod_def_relation
-	NOD_GLOBAL_TEMP_TABLE_PRESERVE_ROWS	= 2,
-	NOD_GLOBAL_TEMP_TABLE_DELETE_ROWS	= 3,
-
-	NOD_SPECIAL_SYNTAX		= 1	// nod_sys_function
-};
-
-// Parameters to MAKE_constant
-enum dsql_constant_type {
-	CONSTANT_STRING		= 0, // stored as a string
-//	CONSTANT_SLONG		= 1, // stored as a SLONG
-	CONSTANT_DOUBLE		= 2, // stored as a string
-	CONSTANT_DATE		= 3, // stored as a SLONG
-	CONSTANT_TIME		= 4, // stored as a ULONG
-	CONSTANT_TIMESTAMP	= 5, // stored as a QUAD
-	CONSTANT_SINT64		= 6 // stored as a SINT64
-};
-
-
 /* enumerations of the arguments to a node, offsets
    within the variable tail nod_arg */
 
@@ -599,10 +506,6 @@ enum node_args {
 	e_prm_val_fld = 0,
 	e_prm_val_val,
 	e_prm_val_count,
-
-	e_msg_number = 0,		// nod_message
-	e_msg_text,
-	e_msg_count,
 
 	e_sel_query_spec = 0,	// nod_select_expr
 	e_sel_order,
@@ -1073,5 +976,105 @@ enum node_args {
 	e_user_last,
 	e_user_count
 };
+
+}; // namespace
+
+namespace Jrd {
+
+typedef Dsql::nod_t NOD_TYPE;
+
+/* definition of a syntax node created both
+   in parsing and in context recognition */
+
+class dsql_nod : public pool_alloc_rpt<class dsql_nod*, dsql_type_nod>
+{
+public:
+	NOD_TYPE nod_type;			// Type of node
+	DSC nod_desc;				// Descriptor
+	USHORT nod_line;			// Source line of the statement.
+	USHORT nod_column;			// Source column of the statement.
+	USHORT nod_count;			// Number of arguments
+	USHORT nod_flags;
+	dsql_nod* nod_arg[1];
+
+	dsql_nod() : nod_type(Dsql::nod_unknown_type), nod_count(0), nod_flags(0) {}
+	SLONG getSlong() const
+	{
+		fb_assert(nod_type == Dsql::nod_constant);
+		fb_assert(nod_desc.dsc_dtype == dtype_long);
+		fb_assert((void*) nod_desc.dsc_address == (void*) nod_arg);
+		return *((SLONG*) nod_arg);
+	}
+};
+
+// values of flags
+enum nod_flags_vals {
+	NOD_AGG_DISTINCT		= 1, // nod_agg_...
+
+	NOD_UNION_ALL			= 1, // nod_list
+	NOD_UNION_RECURSIVE 	= 2,
+
+	NOD_READ_ONLY			= 1, // nod_access
+	NOD_READ_WRITE			= 2,
+
+	NOD_WAIT				= 1, // nod_wait
+	NOD_NO_WAIT				= 2,
+
+	NOD_VERSION				= 1, // nod_version
+	NOD_NO_VERSION			= 2,
+
+	NOD_CONCURRENCY			= 1, // nod_isolation
+	NOD_CONSISTENCY			= 2,
+	NOD_READ_COMMITTED		= 4,
+
+	NOD_SHARED				= 1, // nod_lock_mode
+	NOD_PROTECTED			= 2,
+	NOD_READ				= 4,
+	NOD_WRITE				= 8,
+	
+	NOD_NO_AUTO_UNDO        = 1, // nod_tra_misc
+	NOD_IGNORE_LIMBO        = 2,
+	NOD_RESTART_REQUESTS    = 4,
+
+	NOD_NULLS_FIRST			= 1, // nod_order
+	NOD_NULLS_LAST			= 2,
+
+	REF_ACTION_CASCADE		= 1, // nod_ref_trig_action
+	REF_ACTION_SET_DEFAULT	= 2,
+	REF_ACTION_SET_NULL		= 4,
+	REF_ACTION_NONE			= 8,
+	// Node flag indicates that this node has a different type or result
+	// depending on the SQL dialect.
+	NOD_COMP_DIALECT		= 16, // nod_...2, see MAKE_desc
+
+	NOD_SELECT_EXPR_SINGLETON	= 1, // nod_select_expr
+	NOD_SELECT_EXPR_VALUE		= 2,
+	NOD_SELECT_EXPR_RECURSIVE	= 4, // recursive member of recursive CTE
+
+	NOD_CURSOR_EXPLICIT		= 1, // nod_cursor
+	NOD_CURSOR_FOR			= 2,
+	NOD_CURSOR_ALL			= USHORT(-1U),
+
+	NOD_DT_IGNORE_COLUMN_CHECK	= 1, // nod_cursor, see pass1_cursor_name
+
+	NOD_PERMANENT_TABLE			= 1, // nod_def_relation
+	NOD_GLOBAL_TEMP_TABLE_PRESERVE_ROWS	= 2,
+	NOD_GLOBAL_TEMP_TABLE_DELETE_ROWS	= 3,
+
+	NOD_SPECIAL_SYNTAX		= 1	// nod_sys_function
+};
+
+// Parameters to MAKE_constant
+enum dsql_constant_type {
+	CONSTANT_STRING		= 0, // stored as a string
+//	CONSTANT_SLONG		= 1, // stored as a SLONG
+	CONSTANT_DOUBLE		= 2, // stored as a string
+	CONSTANT_DATE		= 3, // stored as a SLONG
+	CONSTANT_TIME		= 4, // stored as a ULONG
+	CONSTANT_TIMESTAMP	= 5, // stored as a QUAD
+	CONSTANT_SINT64		= 6 // stored as a SINT64
+};
+
+}; // namespace
 
 #endif // DSQL_NODE_H

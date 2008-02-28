@@ -82,7 +82,7 @@
 				AdditionalOptions="/EHsc-"
 				Optimization="0"
 				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
-				PreprocessorDefinitions="DEBUG,_DEBUG,_LIB,_WINDOWS,SUPERSERVER,WIN32,DEV_BUILD,_X86_"
+				PreprocessorDefinitions="_DEBUG,_LIB,_WINDOWS,SUPERSERVER,WIN32,DEV_BUILD,_X86_"
 				ExceptionHandling="FALSE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"

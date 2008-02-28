@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 
-enum blk_t {
+enum dsql_blk_t {
 	dsql_type_MIN = 0,
 	dsql_type_ctx,
 	dsql_type_par,
@@ -37,7 +37,6 @@ enum blk_t {
 	dsql_type_str, // random string block
 	dsql_type_sym, // symbol block
 	dsql_type_err,
-	dsql_type_opn,
 	dsql_type_tra,
 	dsql_type_udf,
 	dsql_type_var,

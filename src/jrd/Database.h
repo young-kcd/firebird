@@ -43,6 +43,8 @@
 #include "../jrd/all.h"
 #include "../jrd/jrd_proto.h"
 #include "../jrd/val.h"
+#include "../jrd/irq.h"
+#include "../jrd/drq.h"
 #if defined(UNIX) && defined(SUPERSERVER)
 #include <setjmp.h>
 #endif
@@ -298,7 +300,7 @@ public:
 
 	DatabaseModules	dbb_modules;		// external function/filter modules
 	Firebird::Mutex* dbb_mutexes;		// Database block mutexes
-	Firebird::Mutex dbb_sp_rec_mutex;	// Mutex for accessing/updating stored procedure metadata
+	Firebird::Mutex dbb_sp_mutex;		// Mutex for accessing/updating stored procedure metadata
 	//SLONG dbb_sort_size;				// Size of sort space per sort, unused for now
 
 	UATOM dbb_ast_flags;				// flags modified at AST level
@@ -326,8 +328,8 @@ public:
 
 	Firebird::Array<MemoryPool*> dbb_pools;		// pools
 
-	vec<jrd_req*>*	dbb_internal;		// internal requests
-	vec<jrd_req*>*	dbb_dyn_req;		// internal dyn requests
+	Firebird::Array<jrd_req*> dbb_internal;		// internal requests
+	Firebird::Array<jrd_req*> dbb_dyn_req;		// internal dyn requests
 
 	SLONG dbb_oldest_active;			// Cached "oldest active" transaction
 	SLONG dbb_oldest_transaction;		// Cached "oldest interesting" transaction
@@ -423,11 +425,15 @@ private:
 		dbb_encrypt_key(*p),
 		dbb_permanent(p),
 		dbb_pools(*p, 4),
+		dbb_internal(*p),
+		dbb_dyn_req(*p),
 		dbb_lock_owner_id(getLockOwnerId()),
 		dbb_charsets(*p),
 		dbb_functions(*p)
 	{
 		dbb_pools.add(p);
+		dbb_internal.grow(irq_MAX);
+		dbb_dyn_req.grow(drq_MAX);
 	}
 
 	~Database();

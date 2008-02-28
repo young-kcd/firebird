@@ -42,14 +42,6 @@
 
 #define NODE(type, name, keyword) type,
 
-enum nod_t {
-#include "../jrd/nod.h"
-	nod_MAX
-#undef NODE
-};
-
-typedef nod_t NOD_T;
-
 #include "../jrd/dsc.h"
 #include "../jrd/rse.h"
 
@@ -73,6 +65,14 @@ class VaryingString;
 struct dsc;
 
 namespace Jrd {
+
+enum nod_t {
+#include "../jrd/nod.h"
+	nod_MAX
+#undef NODE
+};
+
+typedef nod_t NOD_T;
 
 class jrd_rel;
 class jrd_nod;

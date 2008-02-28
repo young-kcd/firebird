@@ -26,12 +26,9 @@
  */
 
 #include "firebird.h"
-#include "fb_types.h"
 #include "gen/iberror.h"
 
 #include "../jrd/common.h"
-#include <string.h>
-#include <math.h>
 #include "../jrd/jrd.h"
 #include "../jrd/tra.h"
 #include "../jrd/dsc.h"
@@ -39,342 +36,327 @@
 #include "../jrd/mov_proto.h"
 #include "../jrd/evl_proto.h"
 #include "../jrd/exe_proto.h"
-#include "../jrd/sch_proto.h"
-#include "../jrd/thread_proto.h"
-#define	WHY_NO_API
-#include "../jrd/why_proto.h"
-#include "../jrd/y_handle.h"
 #include "../jrd/align.h"
-
 #include "../jrd/execute_statement.h"
-#include "../common/classes/GenericMap.h"
-#include "../common/classes/init.h"
+#include "../dsql/dsql_proto.h"
+
+#include <string.h>
+#include <math.h>
 
 using namespace Jrd;
-using namespace Firebird;
-
-YValve::Attachment* GetWhyAttachment(ISC_STATUS*, Attachment*);
 
 namespace {
 
-const SSHORT sqlType[] =
-{
-/* dtype_unknown	*/ -1,
-/* dtype_text		*/ SQL_TEXT,
-/* dtype_cstring	*/ -1,
-/* dtype_varying	*/ SQL_VARYING,
-/* dtype_none1		*/ -1,
-/* dtype_none2		*/ -1,
-/* dtype_packed		*/ -1,
-/* dtype_byte		*/ -1,
-/* dtype_short		*/ SQL_SHORT,
-/* dtype_long		*/ SQL_LONG,
-/* dtype_quad		*/ SQL_QUAD,
-/* dtype_real		*/ SQL_FLOAT,
-/* dtype_double		*/ SQL_DOUBLE,
-/* dtype_d_float	*/ -1,				// Fix to use in VMS
-/* dtype_sql_date	*/ SQL_TYPE_DATE,
-/* dtype_sql_time	*/ SQL_TYPE_TIME,
-/* dtype_timestamp	*/ SQL_TIMESTAMP,
-/* dtype_blob		*/ SQL_BLOB,
-/* dtype_array		*/ SQL_ARRAY,		// Not supported for a while
-/* dtype_int64		*/ SQL_INT64
-};
-
-typedef GenericMap<Pair<NonPooled<SSHORT, UCHAR> > > SqlTypeToDscTypeMap;
-
-class SqlTypeToDscTypeMapInit : public SqlTypeToDscTypeMap
-{
-public:
-	explicit SqlTypeToDscTypeMapInit(MemoryPool& pool)
-		: SqlTypeToDscTypeMap(pool)
-	{
-		for (int i = 0; i < FB_NELEM(sqlType); ++i)
-		{
-			put(sqlType[i], static_cast<UCHAR>(i));
-		}
-	}
-};
-
-static InitInstance<SqlTypeToDscTypeMapInit> sqlTypeToDscType;
-
-class CallbackWrapper
-{
-public:
-	explicit CallbackWrapper(thread_db* arg)
-		: tdbb(arg)
-	{
-		tdbb->getTransaction()->tra_callback_count++;
-		tdbb->getDatabase()->checkout();
-	}
-
-	~CallbackWrapper()
-	{
-		tdbb->getDatabase()->checkin();
-		tdbb->getTransaction()->tra_callback_count--;
-	}
-
-private:
-	// copying is prohibited
-	CallbackWrapper(const CallbackWrapper&);
-	CallbackWrapper& operator=(const CallbackWrapper&);
-
-	thread_db* tdbb;
-};
+const UCHAR sql_output_info[] = {isc_info_sql_select, isc_info_sql_num_variables};
 
 } // anonymous namespace
 
-void ExecuteStatement::Open(thread_db* tdbb, jrd_nod* sql, SSHORT nVars, bool SingleTon)
+void ExecuteStatement::Open(thread_db* tdbb, jrd_nod* sql, SSHORT nVars, bool singleton)
 {
 	SET_TDBB(tdbb);
 
-	if (tdbb->getTransaction()->tra_callback_count >= MAX_CALLBACKS)
+	Attachment* const attachment = tdbb->getAttachment();
+	jrd_tra* transaction = tdbb->getTransaction();
+
+	if (transaction->tra_callback_count >= MAX_CALLBACKS)
+	{
 		ERR_post(isc_exec_sql_max_call_exceeded, 0);
+	}
 
-	Sqlda = 0;
-	Transaction = 0;
-	Buffer = 0;
-	SingleMode = SingleTon;
+	blr = NULL;
+	message = NULL;
+	values = NULL;
 
-	fb_assert(tdbb->getTransaction()->tra_pool);
-	Firebird::string SqlText;
-	getString(tdbb, SqlText, EVL_expr(tdbb, sql), tdbb->getRequest());
-	memcpy(StartOfSqlOperator, SqlText.c_str(), sizeof(StartOfSqlOperator) - 1);
-	StartOfSqlOperator[sizeof(StartOfSqlOperator) - 1] = 0;
+	varCount = nVars;
+	singleMode = singleton;
 
-	YValve::Attachment* temp_dbb = GetWhyAttachment(tdbb->tdbb_status_vector,
-		tdbb->getAttachment());
-	if (!temp_dbb)
-		ERR_punt();
+	Firebird::string sqlText;
+	getString(tdbb, sqlText, EVL_expr(tdbb, sql), tdbb->getRequest());
+	memcpy(startOfSqlOperator, sqlText.c_str(), sizeof(startOfSqlOperator) - 1);
+	startOfSqlOperator[sizeof(startOfSqlOperator) - 1] = 0;
 
-	Attachment = temp_dbb->public_handle;
-
-	YValve::Transaction* temp_tra = new YValve::Transaction(tdbb->getTransaction(), &Transaction, temp_dbb);
-
-	Statement = 0;
-	Sqlda = MakeSqlda(tdbb, nVars ? nVars : 1);
-	Sqlda->sqln = nVars;
-	Sqlda->version = 1;
-
-	ISC_STATUS_ARRAY local_status;
-	memset(local_status, 0, sizeof(local_status));
+	transaction->tra_callback_count++;
 
 	try
 	{
-		CallbackWrapper cwHolder(tdbb);
+		statement = DSQL_allocate_statement(tdbb, attachment);
 
-		ISC_STATUS* status = local_status;
+		const Database* const dbb = tdbb->getDatabase();
+		const int dialect = dbb->dbb_flags & DBB_DB_SQL_dialect_3 ? SQL_DIALECT_V6 : SQL_DIALECT_V5;
 
-		if (isc_dsql_allocate_statement(status, &Attachment, &Statement))
-			throw status;
+		UCHAR info_buffer[BUFFER_TINY], *info = info_buffer;
 
-		if (isc_dsql_prepare(status, &Transaction, &Statement,
-							 SqlText.length(), SqlText.c_str(),
-							 SQL_DIALECT_CURRENT, Sqlda))
+		DSQL_prepare(tdbb, transaction, &statement,
+					 sqlText.length(), sqlText.c_str(), dialect,
+					 sizeof(sql_output_info), sql_output_info,
+					 sizeof(info_buffer), info_buffer);
+
+		UCHAR tag = *info++;
+		fb_assert(tag == isc_info_sql_select);
+		tag = *info++;
+		fb_assert(tag == isc_info_sql_num_variables);
+		const int length = gds__vax_integer(info, sizeof(SSHORT));
+		info += sizeof(SSHORT);
+		const int number = gds__vax_integer(info, length);
+		info += length;
+		tag = *info++;
+		fb_assert(tag == isc_info_end);
+
+		if (!number)
 		{
-			throw status;
+			DSQL_free_statement(tdbb, statement, DSQL_drop);
+			statement = NULL;
+
+			ERR_post(isc_exec_sql_invalid_req,
+					 isc_arg_string, ERR_cstring(startOfSqlOperator),
+					 0);
 		}
 
-		if (!Sqlda->sqld) {  // Non-select statement - reject for a while
-			/*if (isc_dsql_execute(status, &Transaction,
-								   &Statement, SQLDA_VERSION1, 0))
-			{
-				throw status;
-			}*/
-			if (isc_dsql_free_statement(status, &Statement, DSQL_drop))
-				throw status;
+		if (number != varCount)
+		{
+			DSQL_free_statement(tdbb, statement, DSQL_drop);
+			statement = NULL;
 
-			Statement = 0;
-
-			status[0] = isc_arg_gds;
-			status[1] = isc_exec_sql_invalid_req;
-			status[2] = isc_arg_string;
-			status[3] = (ISC_STATUS)(U_IPTR) ERR_cstring(StartOfSqlOperator);
-			status[4] = isc_arg_end;
-			throw status;
+			ERR_post(isc_wronumarg, 0);
 		}
-		else {
-			if (ReMakeSqlda(status, tdbb))
-				throw status;
 
-			if (isc_dsql_describe(status, &Statement,
-								  SQLDA_VERSION1, Sqlda))
-			{
-				throw status;
-			}
+		DSQL_execute(tdbb, &transaction, statement,
+					 0, NULL, 0, 0, NULL,
+					 0, NULL, 0, 0, NULL);
 
-			Buffer = FB_NEW(*tdbb->getTransaction()->tra_pool) 
-				SCHAR[XSQLDA_LENGTH(ParseSqlda())];
-
-			ParseSqlda();
-
-			if (isc_dsql_execute(status, &Transaction,
-								 &Statement, SQLDA_VERSION1, 0))
-			{
-				throw status;
-			}
-		}
+		fb_assert(transaction == tdbb->getTransaction());
 	}
-	catch (const ISC_STATUS* status)
+	catch (const Firebird::Exception&)
 	{
-		memcpy(tdbb->tdbb_status_vector, status, ISC_STATUS_LENGTH);
-		Firebird::status_exception::raise(tdbb->tdbb_status_vector);
+		transaction->tra_callback_count--;
+		throw;
 	}
+
+	transaction->tra_callback_count--;
 }
 
 bool ExecuteStatement::Fetch(thread_db* tdbb, jrd_nod** jrdVar)
 {
-	// If already bugged - we should never get here
-	fb_assert(! (tdbb->tdbb_status_vector[0] == 1 &&
-			  tdbb->tdbb_status_vector[1] != 0));
-	if (! Statement)
+	fb_assert(statement);
+
+	size_t blr_length = 0;
+
+	if (!message && !blr && !values)
+	{
+		const size_t param_count = varCount * 2;
+
+		MemoryPool& pool = *tdbb->getDefaultPool();
+
+		values = FB_NEW(pool) Firebird::Array<dsc>(pool);
+		values->grow(param_count);
+
+		blr = FB_NEW(pool) Firebird::UCharBuffer(pool);
+		blr->add(blr_version5);
+		blr->add(blr_begin);
+		blr->add(blr_message);
+		blr->add(0);
+		blr->add(param_count);
+		blr->add(param_count >> 8);
+
+		size_t msg_length = 0;
+
+		for (int i = 0; i < varCount; i++)
+		{
+			jrd_nod* const target = jrdVar[i];
+			fb_assert(target);
+
+			dsc* const desc = EVL_assign_to(tdbb, target);
+			(*values)[i * 2] = *desc;
+
+			(*values)[i * 2 + 1].dsc_dtype = dtype_short;
+			(*values)[i * 2 + 1].dsc_length = sizeof(SSHORT);
+
+			// Generate BLR for the value
+			generateBlr(desc);
+			// Generate BLR for the NULL indicator
+			blr->add(blr_short);
+			blr->add(desc->dsc_scale);
+
+			// Calculate the value offset
+			msg_length = FB_ALIGN(msg_length, type_alignments[desc->dsc_dtype]);
+			(*values)[i * 2].dsc_address = (UCHAR*)(IPTR) msg_length;
+			msg_length += desc->dsc_length;
+
+			// Calculate the NULL indicator offset
+			msg_length = FB_ALIGN(msg_length, type_alignments[dtype_short]);
+			(*values)[i * 2 + 1].dsc_address = (UCHAR*)(IPTR) msg_length;
+			msg_length += sizeof(SSHORT);
+		}
+
+		blr->add(blr_end);
+		blr_length = blr->getCount();
+
+		message = FB_NEW(pool) Firebird::UCharBuffer(pool);
+		message->grow(msg_length);
+	}
+	else
+	{
+		memset(message->begin(), 0, message->getCount());
+	}
+
+	ISC_STATUS status = DSQL_fetch(tdbb, statement,
+						blr->getCount(), blr->begin(),
+						0, message->getCount(), message->begin());
+
+	if (status == 100)
+	{
+		DSQL_free_statement(tdbb, statement, DSQL_drop);
+		statement = NULL;
+
 		return false;
+	}
 
-	ISC_STATUS_ARRAY local;
-	ISC_STATUS* status = local;
-	memset(local, 0, sizeof(local));
-	status = local;
+	for (int i = 0; i < varCount; i++)
+	{
+		dsc desc = (*values)[i * 2];
+		desc.dsc_address = message->begin() + (IPTR) desc.dsc_address;
+		dsc null_desc = (*values)[i * 2 + 1];
+		null_desc.dsc_address = message->begin() + (IPTR) null_desc.dsc_address;
+		const bool null_flag = ((*(SSHORT*) null_desc.dsc_address) == 0) ? false : true;
+		EXE_assignment(tdbb, jrdVar[i], &desc, null_flag, NULL, NULL);
+	}
 
-	{ // scope
-		CallbackWrapper cwHolder(tdbb);
-		if (isc_dsql_fetch(status, &Statement,
-				SQLDA_VERSION1, Sqlda) == 100)
+	if (singleMode)
+	{
+		status = DSQL_fetch(tdbb, statement,
+							blr->getCount(), blr->begin(),
+							0, message->getCount(), message->begin());
+
+		if (status == 100)
 		{
-			isc_dsql_free_statement(status, &Statement, DSQL_drop);
+			DSQL_free_statement(tdbb, statement, DSQL_drop);
+			statement = NULL;
 
-			Statement = 0;
 			return false;
 		}
 
-		if (status[0] == 1 && status[1]) {
-			memcpy(tdbb->tdbb_status_vector, status, sizeof(local));
-			Firebird::status_exception::raise(tdbb->tdbb_status_vector);
-		}
+		ERR_post(isc_sing_select_err, 0);
 	}
 
-	const XSQLVAR *var = Sqlda->sqlvar;
-	for (int i = 0; i < Sqlda->sqld; i++, var++) {
-		dsc* d = EVL_assign_to(tdbb, jrdVar[i]);
-		if (d->dsc_dtype >= FB_NELEM(sqlType) || sqlType[d->dsc_dtype] < 0)
-		{
-			ERR_post(isc_exec_sql_invalid_var,
-					 isc_arg_number, i + 1,
-					 isc_arg_string, ERR_cstring(StartOfSqlOperator),
-					 0);
-		}
-
-		// build the src descriptor
-		dsc src;
-		src.clear();
-		sqlTypeToDscType().get((var->sqltype & ~1), src.dsc_dtype);
-		src.dsc_length = var->sqllen;
-		src.dsc_scale = var->sqlscale;
-		src.dsc_sub_type = var->sqlsubtype;
-		src.dsc_address = (UCHAR*) var->sqldata;
-
-		if ((var->sqltype & ~1) == SQL_VARYING)
-			src.dsc_length += sizeof(SSHORT);
-
-		// and assign to the target
-		EXE_assignment(tdbb, jrdVar[i], &src, (var->sqltype & 1) && (*var->sqlind < 0), NULL, NULL);
-	}
-
-	if (SingleMode) {
-		CallbackWrapper cwHolder(tdbb);
-		if (isc_dsql_fetch(status, &Statement, SQLDA_VERSION1, Sqlda) == 100)
-		{
-			isc_dsql_free_statement(status, &Statement, DSQL_drop);
-
-			Statement = 0;
-			return false;
-		}
-
-		if (! (status[0] == 1 && status[1])) {
-			status[0] = isc_arg_gds;
-			status[1] = isc_sing_select_err;
-			status[2] = isc_arg_end;
-		}
-		memcpy(tdbb->tdbb_status_vector, status, sizeof(local));
-		Firebird::status_exception::raise(tdbb->tdbb_status_vector);
-	}
 	return true;
 }
 
 void ExecuteStatement::Close(thread_db* tdbb)
 {
-	if (Statement) {
-		// for a while don't check for errors while freeing statement
-		CallbackWrapper cwHolder(tdbb);
-		isc_dsql_free_statement(0, &Statement, DSQL_drop);
-
-		Statement = 0;
-	}
-	char* p = reinterpret_cast<char*>(Sqlda);
-	delete[] p;
-	Sqlda = 0;
-	if (Transaction) {
-		delete YValve::translate<YValve::Transaction>(&Transaction);
-		Transaction = 0;
-	}
-	delete[] Buffer;
-	Buffer = 0;
-}
-
-XSQLDA* ExecuteStatement::MakeSqlda(thread_db* tdbb, short n)
-{
-	return (XSQLDA*)
-		FB_NEW(*tdbb->getTransaction()->tra_pool) char[XSQLDA_LENGTH(n)];
-}
-
-ISC_STATUS ExecuteStatement::ReMakeSqlda(ISC_STATUS *vector, thread_db* tdbb)
-{
-	if (Sqlda->sqln != Sqlda->sqld) {
-		vector[0] = isc_arg_gds;
-		vector[1] = isc_wronumarg;
-		vector[2] = isc_arg_end;
-	}
-	return vector[1];
-}
-
-ULONG ExecuteStatement::ParseSqlda(void)
-{
-	ULONG offset = 0;
-	int i = 0;
-
-	for (XSQLVAR* var = Sqlda->sqlvar; i < Sqlda->sqld; var++, i++)
+	if (statement)
 	{
-		USHORT length = var->sqllen;
-		const int type = var->sqltype & (~1);
-		UCHAR dscType;
-		sqlTypeToDscType().get(type, dscType);
-		if (type == SQL_VARYING)
-			length += sizeof (SSHORT);
-
-		const USHORT align = type_alignments[dscType];
-		if (align) {
-			offset = FB_ALIGN(offset, align);
-		}
-		var->sqldata = &Buffer[offset];
-		offset += length;
-
-		offset = FB_ALIGN(offset, sizeof(short));
-		var->sqlind = (short*) (&Buffer[offset]);
-		offset += sizeof (short);
+		DSQL_free_statement(tdbb, statement, DSQL_drop);
+		statement = NULL;
 	}
 
-	return offset;
+	delete blr;
+	blr = NULL;
+	delete message;
+	message = NULL;
+	delete values;
+	values = NULL;
 }
 
-void ExecuteStatement::getString(thread_db* tdbb, Firebird::string& s, const dsc* d, const jrd_req* r)
+void ExecuteStatement::getString(thread_db* tdbb,
+								 Firebird::string& sql,
+								 const dsc* desc,
+								 const jrd_req* request)
 {
 	MoveBuffer buffer;
 
-	UCHAR* p = 0;
-	const SSHORT l = (d && !(r->req_flags & req_null)) ?
-		MOV_make_string2(tdbb, d, d->getTextType(), &p, buffer) : 0; // !!! How call Msgs ?
-	if (!p) {
+	UCHAR* ptr = NULL;
+
+	const SSHORT len = (desc && !(request->req_flags & req_null)) ?
+		MOV_make_string2(tdbb, desc, desc->getTextType(), &ptr, buffer) : 0; // !!! How call Msgs ?
+
+	if (!ptr)
+	{
 		ERR_post(isc_exec_sql_invalid_arg, 0);
 	}
 
-	s.assign((const char*)p, l);
+	sql.assign((const char*)ptr, len);
+}
+
+void ExecuteStatement::generateBlr(const dsc* desc)
+{
+	fb_assert(blr);
+
+	USHORT length = 0;
+
+	switch (desc->dsc_dtype)
+	{
+	case dtype_text:
+		blr->add(blr_text2);
+		blr->add(desc->dsc_ttype());
+		blr->add(desc->dsc_ttype() >> 8);
+		length = desc->dsc_length;
+		blr->add(length);
+		blr->add(length >> 8);
+		break;
+
+	case dtype_varying:
+		blr->add(blr_varying2);
+		blr->add(desc->dsc_ttype());
+		blr->add(desc->dsc_ttype() >> 8);
+		length = desc->dsc_length - sizeof(USHORT);
+		blr->add(length);
+		blr->add(length >> 8);
+		break;
+
+	case dtype_short:
+		blr->add(blr_short);
+		blr->add(desc->dsc_scale);
+		break;
+
+	case dtype_long:
+		blr->add(blr_long);
+		blr->add(desc->dsc_scale);
+		break;
+
+	case dtype_quad:
+		blr->add(blr_quad);
+		blr->add(desc->dsc_scale);
+		break;
+
+	case dtype_int64:
+		blr->add(blr_int64);
+		blr->add(desc->dsc_scale);
+		break;
+
+	case dtype_real:
+		blr->add(blr_float);
+		break;
+
+	case dtype_double:
+		blr->add(blr_double);
+		break;
+
+	case dtype_sql_date:
+		blr->add(blr_sql_date);
+		break;
+
+	case dtype_sql_time:
+		blr->add(blr_sql_time);
+		break;
+
+	case dtype_timestamp:
+		blr->add(blr_timestamp);
+		break;
+
+	case dtype_array:
+		blr->add(blr_quad);
+		blr->add(0);
+		break;
+
+	case dtype_blob:
+		blr->add(blr_blob2);
+		blr->add(desc->dsc_sub_type);
+		blr->add(desc->dsc_sub_type >> 8);
+		blr->add(desc->getTextType());
+		blr->add(desc->getTextType() >> 8);
+		break;
+
+	default:
+		fb_assert(false);
+	}
 }

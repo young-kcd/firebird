@@ -26,6 +26,8 @@
 
 #include "../jrd/common.h"
 
+namespace Jrd {
+
 // possible symbol types 
 
 enum sym_type {
@@ -61,6 +63,8 @@ public:
 	TEXT sym_name[2];			// space for name, if necessary 
 };
 typedef dsql_sym *DSQL_SYM;
+
+}; // namespace
 
 #endif // DSQL_SYM_H
 
