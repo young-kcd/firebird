@@ -1389,16 +1389,14 @@ static dsql_name* insert_name(const TEXT* symbol_name, dsql_name** list_ptr, dsq
  * 	Add the name to the designated list.
  *
  **************************************/
-	USHORT l = name_length(symbol_name);
+	const USHORT l = name_length(symbol_name);
 	dsql_name* name = (dsql_name*) gds__alloc((SLONG) sizeof(dsql_name) + l);
 // FREE: by exit handler cleanup() or database_cleanup() 
 	if (!name)					// NOMEM: 
 		error_post(isc_virmemexh, 0);
 	name->name_stmt = stmt;
 	name->name_length = l;
-	TEXT* p = name->name_symbol;
-	while (l--)
-		*p++ = *symbol_name++;
+	memcpy(name->name_symbol, symbol_name, l);
 
 	if (name->name_next = *list_ptr)
 		name->name_next->name_prev = name;
