@@ -69,19 +69,9 @@
         addFirebirdUser
     fi
 
-
-    # Create Lock files
-    cd $FBRootDir
-
-    for i in isc_init1 isc_lock1 isc_event1 
-      do
-        FileName=$i.`hostname`
-        touch $FileName
-      done
-
     # Create log
+    cd $FBRootDir
     touch firebird.log
-
 
     # Update ownership and SUID bits for programs.
     chown -R $RunUser:$RunUser $FBRootDir

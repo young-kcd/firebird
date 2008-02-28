@@ -70,6 +70,7 @@ fixFilePermissions() {
     do
         FileName=$i.`hostname`
 		touch $FileName
+		chown $RunUser:$RunUser $FileName
         chmod ug=rw,o= $FileName
     done
 
