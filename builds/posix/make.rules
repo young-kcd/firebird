@@ -81,6 +81,10 @@ $(SRC_ROOT)/jrd/%.cpp:: $(SRC_ROOT)/jrd/%.epp
 	$(GPRE_CURRENT) $(JRD_GPRE_FLAGS) $< $@
 
 
+$(SRC_ROOT)/dsql/metd.cpp:: $(SRC_ROOT)/dsql/metd.epp 
+	$(GPRE_CURRENT) $(JRD_GPRE_FLAGS) $< $@
+
+
 $(SRC_ROOT)/dsql/%.cpp:: $(SRC_ROOT)/dsql/%.epp 
 	$(GPRE_CURRENT) $(DSQL_GPRE_FLAGS) $< $@
 
