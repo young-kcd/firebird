@@ -219,8 +219,8 @@ set bulk_insert INSERT INTO SQLSTATES (SQL_CLASS, SQL_SUBCLASS, SQL_STATE_TEXT) 
 ('XX', '000', 'Internal error')
 ('XX', '001', 'Data corrupted')
 ('XX', '002', 'Index corrupted')
-
---
+-- Do not put spaces before this. The bulk insertion treats an empty line as end of input, unless it's inside a quoted string.
+-- And empty line and stop cause the same effect, but stop is more evident.
 stop
 
 COMMIT WORK;
