@@ -190,7 +190,7 @@ void DYN_error(bool	status_flag,
 		return;
 
 	TEXT error_buffer[BUFFER_MEDIUM];
-	TEXT sqlstate[6];
+	ISC_SQLSTATE_STRING sqlstate;
 
 	if (number)
 	{

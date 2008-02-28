@@ -64,6 +64,10 @@ typedef intptr_t ISC_STATUS;
 #define ISC_STATUS_LENGTH	20
 typedef ISC_STATUS ISC_STATUS_ARRAY[ISC_STATUS_LENGTH];
 
+/* SQL State as defined in the SQL Standard. */
+#define ISC_SQLSTATE_SIZE   6
+typedef char ISC_SQLSTATE_STRING[ISC_SQLSTATE_SIZE];
+
 /******************************************************************/
 /* Define type, export and other stuff based on c/c++ and Windows */
 /******************************************************************/
@@ -140,4 +144,5 @@ typedef struct GDS_QUAD_t ISC_QUAD;
 #define	isc_quad_high	gds_quad_high
 #define	isc_quad_low	gds_quad_low
 
-#endif // INCLUDE_TYPES_PUB_H
+#endif /* INCLUDE_TYPES_PUB_H */
+
