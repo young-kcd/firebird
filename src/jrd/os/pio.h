@@ -122,6 +122,25 @@ const UCHAR PIOB_success	= 2;	/* I/O successfully completed */
 const UCHAR PIOB_pending	= 4;	/* Asynchronous I/O not yet completed */
 #endif
 
+static const int ZERO_BUF_SIZE = 1024 * 128;
+
+class HugeStaticBuffer 
+{
+public:
+	HugeStaticBuffer(MemoryPool& p)
+		: zeroArray(p), 
+		zeroBuff(zeroArray.getBuffer(ZERO_BUF_SIZE)) 
+	{
+		memset(zeroBuff, 0, ZERO_BUF_SIZE);
+	}
+
+	const char* get() { return zeroBuff; }
+
+private:
+	Firebird::Array<char> zeroArray;
+	char* zeroBuff;
+};
+
 } //namespace Jrd
 
 #endif // JRD_PIO_H

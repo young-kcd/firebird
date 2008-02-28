@@ -506,34 +506,9 @@ void PIO_header(Database* dbb, SCHAR * address, int length)
 #endif
 }
 
-namespace {
-	// we need a class here only to return memory on shutdown and avoid
-	// false memory leak reports
-	static const int ZERO_BUF_SIZE = 1024 * 128;
-
-	class HugeStaticBuffer 
-	{
-	public:
-		explicit HugeStaticBuffer(MemoryPool& p)
-			: zeroArray(p), 
-			  zeroBuff(zeroArray.getBuffer(ZERO_BUF_SIZE)) 
-		{
-			memset(zeroBuff, 0, ZERO_BUF_SIZE);
-		}
-
-		const char* get() const { return zeroBuff; }
-
-	private:
-		// copying is prohibited
-		HugeStaticBuffer(const HugeStaticBuffer&);
-		HugeStaticBuffer& operator=(const HugeStaticBuffer&);
-
-		Firebird::Array<char> zeroArray;
-		char* const zeroBuff;
-	};
-
-	static Firebird::InitInstance<HugeStaticBuffer> zeros;
-}
+// we need a class here only to return memory on shutdown and avoid
+// false memory leak reports
+static Firebird::InitInstance<HugeStaticBuffer> zeros;
 
 
 USHORT PIO_init_data(Database* dbb, jrd_file* main_file, ISC_STATUS* status_vector, 
