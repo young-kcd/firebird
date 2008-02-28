@@ -46,8 +46,8 @@ set bulk_insert INSERT INTO SQLSTATES (SQL_CLASS, SQL_SUBCLASS, SQL_STATE_TEXT) 
 ('0U', '000', 'Attempt to assign to non-updtable column')
 -- OV Attempt to Assign to Ordering Column
 ('OV', '000', 'Attempt to assign to Ordering Column')
--- 02 Case Not Found For Case Statement
-('02', '000', 'Case not found for case statement')
+-- 20 Case Not Found For Case Statement
+('20', '000', 'Case not found for case statement')
 -- 21 Cardinality Violation
 ('21', '000', 'Cardinality violation')
 ('21', 'S01', 'Insert value list does not match column list')
