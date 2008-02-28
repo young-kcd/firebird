@@ -258,6 +258,10 @@ void DSQL_execute(thread_db* tdbb,
 						out_msg_length, reinterpret_cast<UCHAR*>(out_msg),
 						singleton);
 	}
+	else
+	{
+		request->req_transaction = *tra_handle;
+	}
 
 /* If the output message length is zero on a REQ_SELECT then we must
  * be doing an OPEN cursor operation.
@@ -272,11 +276,8 @@ void DSQL_execute(thread_db* tdbb,
 		request->req_type == REQ_GET_SEGMENT ||
 		request->req_type == REQ_PUT_SEGMENT)
 	{
-		request->req_flags |= REQ_cursor_open |
-			((request->
-		  	req_type == REQ_EMBED_SELECT) ? REQ_embedded_sql_cursor : 0);
-
-		TRA_link_cursor(*tra_handle, request);
+		request->req_flags |= REQ_cursor_open;
+		TRA_link_cursor(request->req_transaction, request);
 	}
 }
 
@@ -975,8 +976,7 @@ static void close_cursor( dsql_req* request)
 		}
 	}
 
-	request->req_flags &= ~(REQ_cursor_open | REQ_embedded_sql_cursor);
-
+	request->req_flags &= ~REQ_cursor_open;
 	TRA_unlink_cursor(request->req_transaction, request);
 }
 
@@ -2666,7 +2666,7 @@ static dsql_req* prepare(thread_db* tdbb,
 #endif
 
 	request->req_type = REQ_SELECT;
-	request->req_flags &= ~(REQ_cursor_open | REQ_embedded_sql_cursor);
+	request->req_flags &= ~REQ_cursor_open;
 
 /*
  * No work is done during pass1 for set transaction - like
